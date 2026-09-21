@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 3-2 · 1단원 사회 변화와 다양한 문화
+  주제① 사회 변화로 달라진 생활 모습 · l02
+  「저출산으로 달라진 생활 모습을 살펴볼까요」
+  교과서 p.15~17 · 지도서 3차시(p.33~35) · [4사03-01]
+  수업 기법 = 자료(그래프) 분석하기 · 아이디어 평가 및 공유하기
+=========================================================================
+
+  ■ 직접조작 = 두 해를 견주면 보여요 판 (사회 3-2 둘째 판)
+  ⭐ 씨앗은 교과서 15쪽 그래프(연도별 태어나는 아이의 수)와 지도 꿀 Tip 한 줄 —
+     「수학적으로 엄밀하게 익히기보다 자료가 나타내는 바를 정확히 이해」.
+  ⭐ 막대 여섯 가운데 두 해를 골라 견준다. 견준 결과(줄었어요·늘었어요·같아요)는
+     저장하지 않고 두 막대의 수에서 한 줄로 나온다(bwDiff).
+  ⭐ 이웃한 해 다섯 쌍을 다 견주면 판을 읽는다. 끝 기준도 상수가 아니라 BW_N - 1.
+  ⭐ BW_BIRTH 를 읽는 자리는 bwBirthOf 단 하나 · BW_YEAR 는 bwYearOf 단 하나.
+  ⭐ 견준 쌍을 적는 자리 state.bwPairs.push 단 하나 · 지우는 자리 0 · 난수 0.
+
+  ■ 이 차시의 뼈대
+   1990년과 2000년처럼 거의 같아 보이는 쌍이 있어도, 어느 두 해를 견주어도
+   뒤의 해가 더 적다(늘어난 쌍 0). 그래서 「점점 줄어들고 있다」고 읽는다.
+
+  ■ 5단계
+   ① 두 해 견주기(이웃 다섯 쌍 · 멀리 떨어진 쌍도 자유) → ② 판 읽기 3택(정답 자리 2)
+   ③ 해결 방법 가·나·다 고르기(정답 없음 · 고른 까닭이 뜬다) → ④ 마무리 3택(정답 자리 0) → 완료
+      — 친구가 고른 방법과 까닭을 듣고 의견을 나누는 일은 교실 몫
+
+  ■ 가드 10종
+   ① 마무리 확정 후 네 처리기 전체 잠금       ② 무효 번호(안내조차 0)
+   ③ 이미 견준 두 해 — 판 불변                ④ 이웃 다섯 쌍을 다 견준 뒤 막대 — 판 불변
+   ⑤ 다 견주기 전 판 읽기 — 판 불변           ⑥ 이미 읽은 자리 — 판 불변
+   ⑦ 판 읽기 어긋난 답 — 판 불변              ⑧ 판을 읽기 전 방법 고르기 · 이미 고른 방법 — 판 불변
+   ⑨ 방법을 고르기 전 마무리 — 판 불변         ⑩ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 막대의 수는 교과서 그래프의 수를 만 명 단위 그대로 옮긴 것(캡션 상시).
+   ㉡ 해결 방법 세 가지는 어느 것이 더 낫다고 가리기 어려워 판은 정답을 정하지 않는다(캡션 상시).
+   ㉢ 친구와 의견을 나누는 일은 교실 몫(완료 카드 명시).
+
+  ■ 설계 원칙
+   · 뒤 차시 용어 0 — 오래 살게 된 변화·정보 기술·다른 나라와의 교류 갈래의 용어를 쓰지 않는다
+   · 새 사실 0 — 교과서 15~17쪽 · 지도서 33~35쪽 안의 사실만
+   · 교사용 참고 자료 0 · 「틀렸」 0 · 사람 형상 0 · 학생 이름 0
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>저출산으로 달라진 생활 모습을 살펴볼까요 · 사회 3-2</title>
+<meta name="kedu-lesson-id" content="g3_social_u1_l02_v1"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#4F46E5; --green-d:#4338CA; --cyan:#7C3AED;
+  --bg:#EEF2FF; --bub:#E0E7FF; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#E0E7FF;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#E0E7FF;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(79,70,229,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 두 해를 견주면 보여요 판 */
+.bw-wrap{max-width:780px;width:100%;margin:0 auto}
+.bw-head{background:#E0E7FF;color:#3730A3;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.bw-board{padding:9px;border-radius:14px;background:#F5F7FF;border:2px solid #C7D2FE}
+.bw-title{text-align:center;font-weight:800;color:#3730A3;font-size:clamp(12px,2vw,14px);margin-bottom:4px;word-break:keep-all}
+.bw-graph{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;align-items:end;height:170px;
+  border-bottom:2px solid #94A3B8;border-left:2px solid #94A3B8;padding:0 6px}
+.bw-bar{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:2px;
+  border:none;background:transparent;font-family:inherit;cursor:pointer;padding:0}
+.bw-num{font-size:clamp(11px,1.8vw,13px);font-weight:800;color:#3730A3}
+.bw-fill{width:70%;border-radius:6px 6px 0 0;background:#A5B4FC;border:2px solid #6366F1;border-bottom:none}
+.bw-bar[data-sel="1"] .bw-fill{background:#FCD34D;border-color:#D97706}
+.bw-bar[data-seen="1"] .bw-fill{background:#818CF8}
+.bw-years{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:3px 8px 0;
+  font-size:clamp(10px,1.7vw,12px);font-weight:800;color:#475569;text-align:center}
+.bw-axis{display:flex;justify-content:space-between;font-size:10px;color:#64748B;font-weight:700;margin-top:2px}
+.bw-list{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+.bw-row{border:2px solid #E2E8F0;border-radius:9px;background:#fff;padding:5px 9px;font-size:clamp(11px,1.9vw,14px);
+  line-height:1.45;word-break:keep-all}
+.bw-row[data-near="1"]{border-color:#A5B4FC}
+.bw-ways{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}
+.bw-way{border:2px solid #C7D2FE;border-radius:10px;background:#fff;padding:8px 7px;font-family:inherit;
+  font-size:clamp(11px,1.8vw,13px);font-weight:700;color:#0F172A;text-align:left;cursor:pointer;line-height:1.4;word-break:keep-all}
+.bw-way b{color:#4338CA}
+.bw-way[data-on="1"]{background:#DCFCE7;border-color:#16A34A}
+.bw-side{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.bw-key{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(11px,1.9vw,14px);line-height:1.6}
+.bw-key b{color:#4338CA}
+.bw-tell{border-radius:11px;padding:8px 12px;font-size:clamp(12px,2vw,15px);line-height:1.6;background:#F5F3FF;border-left:4px solid var(--cyan)}
+.bw-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FAFAFF;margin-top:9px;
+  font-size:clamp(12px,2vw,15px);line-height:1.6;word-break:keep-all}
+.bw-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.bw-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:9px 11px;font-family:inherit;
+  font-size:clamp(12px,2vw,15px);font-weight:700;color:#0F172A;text-align:left;line-height:1.45;word-break:keep-all;cursor:pointer}
+.bw-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .bw-graph{height:140px;gap:3px}
+  .bw-years{gap:3px}
+  .bw-ways{grid-template-columns:1fr}
+  .bw-side{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 모양과 기호 ===== */
+const SVG = {
+  // [동기 유발] 문을 닫은 초등학교
+  closed:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <rect x="34" y="30" width="92" height="46" rx="3" fill="#E2E8F0" stroke="#64748B" stroke-width="2"/>
+    <path d="M 28 32 L 80 12 L 132 32 Z" fill="#CBD5E1" stroke="#64748B" stroke-width="2"/>
+    <g fill="#94A3B8"><rect x="44" y="40" width="14" height="12" rx="1"/><rect x="102" y="40" width="14" height="12" rx="1"/></g>
+    <rect x="70" y="52" width="20" height="24" fill="#94A3B8"/>
+    <g stroke="#4338CA" stroke-width="3" stroke-linecap="round"><path d="M 64 50 L 96 78"/><path d="M 96 50 L 64 78"/></g>
+    <text x="80" y="90" font-size="7.5" fill="#3730A3" text-anchor="middle" font-weight="800">문을 닫은 학교</text></svg>`,
+  // 그래프 읽는 방법 — 제목 · 가로 · 세로 · 막대
+  howto:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <rect x="30" y="8" width="100" height="10" rx="3" fill="#E0E7FF"/>
+    <text x="80" y="16" font-size="7" fill="#3730A3" text-anchor="middle" font-weight="800">① 제목</text>
+    <path d="M 32 24 L 32 74 L 140 74" stroke="#475569" stroke-width="2" fill="none"/>
+    <g fill="#A5B4FC" stroke="#6366F1" stroke-width="1.2"><rect x="44" y="34" width="12" height="40"/><rect x="66" y="42" width="12" height="32"/><rect x="88" y="50" width="12" height="24"/><rect x="110" y="60" width="12" height="14"/></g>
+    <g font-size="6.5" font-weight="800" fill="#6D28D9"><text x="8" y="48">② 세로</text><text x="120" y="86">② 가로</text><text x="40" y="30">③ 막대</text></g></svg>`,
+  // 달라진 생활 모습 — 가족·학교·병원·일터
+  life:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <g stroke-width="2"><rect x="10" y="22" width="30" height="40" rx="5" fill="#fff" stroke="#4F46E5"/><rect x="47" y="22" width="30" height="40" rx="5" fill="#fff" stroke="#4F46E5"/>
+    <rect x="84" y="22" width="30" height="40" rx="5" fill="#fff" stroke="#4F46E5"/><rect x="121" y="22" width="30" height="40" rx="5" fill="#fff" stroke="#4F46E5"/></g>
+    <g stroke="#7C3AED" stroke-width="2.5" fill="none" stroke-linecap="round"><path d="M 25 36 L 25 50 M 20 45 L 25 50 L 30 45"/><path d="M 62 36 L 62 50 M 57 45 L 62 50 L 67 45"/>
+    <path d="M 99 36 L 99 50 M 94 45 L 99 50 L 104 45"/><path d="M 136 36 L 136 50 M 131 45 L 136 50 L 141 45"/></g>
+    <g font-size="7" font-weight="800" text-anchor="middle" fill="#3730A3"><text x="25" y="76">가족</text><text x="62" y="76">학생</text><text x="99" y="76">병원</text><text x="136" y="76">일손</text></g>
+    <text x="80" y="14" font-size="7.5" fill="#3730A3" text-anchor="middle" font-weight="800">줄어들고 있는 것</text></svg>`,
+  // 해결을 위한 노력
+  help:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <rect x="12" y="26" width="40" height="40" rx="7" fill="#fff" stroke="#4F46E5" stroke-width="2"/>
+    <rect x="60" y="26" width="40" height="40" rx="7" fill="#fff" stroke="#4F46E5" stroke-width="2"/>
+    <rect x="108" y="26" width="40" height="40" rx="7" fill="#fff" stroke="#4F46E5" stroke-width="2"/>
+    <g font-size="15" font-weight="800" text-anchor="middle" fill="#4338CA"><text x="32" y="52">가</text><text x="80" y="52">나</text><text x="128" y="52">다</text></g>
+    <text x="80" y="84" font-size="7.5" fill="#64748B" text-anchor="middle">어느 방법이 가장 도움이 될까요?</text></svg>`,
+  // 정리
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <path d="M 20 74 L 140 74" stroke="#94A3B8" stroke-width="2"/>
+    <g fill="#A5B4FC" stroke="#6366F1" stroke-width="1.2"><rect x="28" y="24" width="14" height="50"/><rect x="50" y="32" width="14" height="42"/><rect x="72" y="42" width="14" height="32"/><rect x="94" y="43" width="14" height="31"/><rect x="116" y="58" width="14" height="16"/></g>
+    <path d="M 30 18 Q 80 20 128 52" stroke="#7C3AED" stroke-width="2.5" fill="none" stroke-dasharray="4 3"/>
+    <text x="80" y="88" font-size="7.5" fill="#3730A3" text-anchor="middle" font-weight="800">점점 줄어들고 있어요</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 두 해를 견주면 보여요 판 =====
+   막대 여섯 가운데 두 해를 골라 견준다. 견준 결과는 두 막대의 수에서 한 줄로 나온다(bwDiff).
+   ⭐ 결과표 0 — 줄었는지 늘었는지 저장하지 않는다.
+   ⭐ 이웃한 해를 다 견주었는지도 셈으로 나온다(bwNearN === BW_N - 1).
+   ⭐ 늘어난 쌍은 언제나 0 — 어느 두 해를 견주어도 뒤의 해가 더 적다.
+   ================================================================= */
+const BW_N = 6;                                            // 막대 여섯
+const BW_YEAR = [1970, 1980, 1990, 2000, 2010, 2020];      // 교과서 15쪽 그래프의 가로
+const BW_BIRTH = [101, 86, 65, 64, 47, 27];                // 교과서 15쪽 그래프의 세로(만 명)
+const BW_TOP = 120;                                        // 그래프 세로 눈금의 끝(만 명)
+const BW_WAY = [
+  {mark:"가", text:"아이를 낳고 키우는 데 필요한 돈과 물품 등을 지원해요.", why:"아이를 키우는 데 돈이 필요하기 때문이라고 생각할 수 있어요."},
+  {mark:"나", text:"안전하고 쾌적한 보육 시설을 만들고 운영해요.",         why:"아이를 믿고 맡길 수 있는 보육 시설이 필요하기 때문이라고 생각할 수 있어요."},
+  {mark:"다", text:"부모가 자녀를 키우기 위해 일정 기간 일을 쉴 수 있는 제도를 운영해요.", why:"부모와 아이가 함께 지내는 시간이 중요하기 때문이라고 생각할 수 있어요."}
+];
+const BW_SAY_SAME = "이미 견준 두 해예요. 판은 그대로예요.";
+const BW_SAY_ALL = "이웃한 해를 모두 견주었어요. 이제 판을 읽어 봐요.";
+const BW_SAY_ORDER_R = "먼저 이웃한 두 해를 모두 견주어 봐요.";
+const BW_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const BW_SAY_ORDER_W = "먼저 판을 읽어 봐요.";
+const BW_SAY_WAYDONE = "이미 방법을 골랐어요. 친구가 고른 방법과 견주어 봐요.";
+const BW_SAY_ORDER_FIN = "먼저 도움이 된다고 생각하는 방법을 골라 봐요.";
+const BW_READQ = [
+  "1990년과 2000년은 거의 같으니 태어나는 아이의 수는 줄지 않고 있어요",
+  "막대가 여섯 개뿐이라 어떻게 변해 왔는지 알 수 없어요",
+  "어느 두 해를 견주어도 뒤의 해가 더 적으니, 태어나는 아이의 수가 점점 줄어들고 있어요"
+];
+const BW_READ_OK = 2;
+const BW_READ_BAD = "견준 쌍 가운데 늘어난 쌍이 있었는지 판의 머리띠를 다시 살펴봐요.";
+const BW_FINQ = [
+  "태어나는 아이의 수가 줄어들어 출산율이 감소하는 현상을 저출산이라고 하고, 저출산이 계속되면 학생 수와 일할 수 있는 사람의 수가 줄어들어요",
+  "저출산은 태어나는 아이의 수가 늘어나는 현상이에요",
+  "저출산이 계속되면 학생 수가 늘어나요"
+];
+const BW_FIN_OK = 0;
+const BW_FIN_BAD = "교과서 17쪽 「꼭 기억해요」를 다시 떠올려 봐요.";
+
+function bwYearOf(y){ return BW_YEAR[y]; }                                 // BW_YEAR 를 읽는 자리는 여기 단 하나
+function bwBirthOf(y){ return BW_BIRTH[y]; }                               // BW_BIRTH 를 읽는 자리는 여기 단 하나
+function bwWayOf(k){ return BW_WAY[k]; }                                   // BW_WAY 를 읽는 자리는 여기 단 하나
+function bwDiff(a,b){ return bwBirthOf(b) - bwBirthOf(a); }                // ★ 견준 결과는 두 막대의 수에서 한 줄로
+function bwHas(st,a,b){ return st.bwPairs.some(p => p[0] === a && p[1] === b); }
+function bwNearN(st){ return st.bwPairs.filter(p => p[1] - p[0] === 1).length; }
+function bwNearAll(st){ return bwNearN(st) === BW_N - 1; }
+function bwUpN(st){ return st.bwPairs.filter(p => bwDiff(p[0], p[1]) > 0).length; }
+function bwSeen(st,y){ return st.bwPairs.some(p => p[0] === y || p[1] === y); }
+function bwLine(a,b){
+  const d = bwDiff(a,b);
+  const tail = d < 0 ? `${-d}만 명 줄었어요` : d > 0 ? `${d}만 명 늘었어요` : `같아요`;
+  return `${bwYearOf(a)}년 ${bwBirthOf(a)}만 명 → ${bwYearOf(b)}년 ${bwBirthOf(b)}만 명 : ${tail}`;
+}
+function bwStage(st){
+  if(!bwNearAll(st)) return "cmp";
+  if(st.bwRead == null) return "read";
+  if(st.bwWay == null) return "way";
+  if(st.bwFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 막대 여섯과 견준 쌍 */
+function bwBar(st,y){
+  const h = Math.round(bwBirthOf(y) / BW_TOP * 100);
+  return `<button class="bw-bar" data-y="${y}" data-sel="${st.bwSel===y?1:0}" data-seen="${bwSeen(st,y)?1:0}" onclick="bwTap(${y})">`
+    + `<span class="bw-num">${bwBirthOf(y)}</span><span class="bw-fill" style="height:${h}%"></span></button>`;
+}
+function bwBoard(st){
+  let a='', b='';
+  for(let y=0;y<BW_N;y++){ a += bwBar(st,y); b += `<span>${bwYearOf(y)}</span>`; }
+  const rows = st.bwPairs.map(p => `<div class="bw-row" data-near="${p[1]-p[0]===1?1:0}">${bwLine(p[0],p[1])}</div>`).join('');
+  return `<div class="bw-board" data-near="${bwNearN(st)}" data-pairs="${st.bwPairs.length}" data-up="${bwUpN(st)}">
+    <div class="bw-title">우리나라에서 연도별 태어나는 아이의 수</div>
+    <div class="bw-graph">${a}</div><div class="bw-years">${b}</div>
+    <div class="bw-axis"><span>세로: 태어나는 아이의 수(만 명)</span><span>가로: 연도(년)</span></div>
+    <div class="bw-list">${rows}</div></div>`;
+}
+function bwWays(st){
+  return `<div class="bw-ways">${[0,1,2].map(k=>`<button class="bw-way" data-k="${k}" data-on="${st.bwWay===k?1:0}" onclick="bwPickWay(${k})"><b>${bwWayOf(k).mark}</b> ${bwWayOf(k).text}</button>`).join('')}</div>`;
+}
+function bwKey(st){
+  return `<div class="bw-key"><b>판을 보는 법</b><br>
+    막대 <b>두 개</b>를 차례로 눌러 두 해를 견주어요.<br>
+    바로 옆 해끼리 <b>이웃한 두 해</b>를 모두 견주어 봐요.<br>
+    멀리 떨어진 두 해를 견주어도 좋아요.</div>`;
+}
+function bwPanel(st){
+  const stage = bwStage(st);
+  let ask = '';
+  if(stage === "cmp"){
+    ask = st.bwSel == null
+      ? `<div class="bw-ask" data-step="cmp"><b>견주어 볼 첫 해의 막대를 눌러 봐요.</b></div>`
+      : `<div class="bw-ask" data-step="cmp"><b>${bwYearOf(st.bwSel)}년과 견줄 다른 해의 막대를 눌러 봐요.</b></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="bw-ask" data-step="read"><b>견준 쌍들을 보고, 태어나는 아이의 수가 어떻게 변해 왔는지 읽어 봐요.</b>
+      <div class="bw-opts">${BW_READQ.map((t,i)=>`<button class="bw-opt" onclick="bwRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "way"){
+    ask = `<div class="bw-ask" data-step="way"><b>저출산으로 나타나는 문제를 해결하는 데 가장 도움이 된다고 생각하는 방법을 골라 봐요.</b>${bwWays(st)}</div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="bw-ask" data-step="fin"><b>오늘 공부한 내용은 어떻게 정리할 수 있을까요?</b>
+      <div class="bw-opts">${BW_FINQ.map((t,i)=>`<button class="bw-opt" onclick="bwFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="bw-ask" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">태어나는 아이의 수가 점점 줄어들고 있고, 우리 사회는 여러 방법으로 저출산 문제를 해결하려고 노력하고 있어요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">※ 친구가 고른 방법과 까닭을 듣고 서로 의견을 나누는 일은 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`;
+  }
+  const tell = st.bwTell ? `<div class="bw-tell">${st.bwTell}</div>` : '';
+  const warn = st.bwMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.bwMsg}</div>` : '';
+  return `<div class="bw-wrap">
+    <div class="bw-head">견준 이웃한 해 <b>${bwNearN(st)}</b> / 5 · 견준 쌍 <b>${st.bwPairs.length}</b> · 늘어난 쌍 <b>${bwUpN(st)}</b></div>
+    ${bwBoard(st)}<div class="bw-side">${bwKey(st)}${tell}</div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 막대의 수는 <b>교과서 그래프의 수를 만 명 단위 그대로 옮긴 것</b>이에요. 해결 방법 세 가지는 어느 것이 더 낫다고 <b>가리기 어려워서</b> 판은 정답을 정하지 않아요.</div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 사회 변화와 다양한 문화 · 주제① 사회 변화로 달라진 생활 모습";
+const Q = [
+  {stem:"저출산의 뜻으로 알맞은 것은 무엇인가요?",
+   opts:["태어나는 아이의 수가 늘어나는 현상","학교의 수가 늘어나는 현상","태어나는 아이의 수가 줄어들어 출산율이 감소하는 현상","가족 구성원의 수가 늘어나는 현상"], correct:2, pts:POINTS_BASIC,
+   h1:"「저출산」의 「저」는 낮다는 뜻이에요.", h2:"태어나는 아이의 수가 어떻게 되는 현상일까요?",
+   reason:"태어나는 아이의 수가 줄어들어 출산율이 감소하는 현상을 저출산이라고 해요."},
+  {stem:"교과서 15쪽 그래프의 제목으로 알맞은 것은 무엇인가요?",
+   opts:["우리 학교의 학생 수","연도별 학교의 수","우리 동네 병원의 수","우리나라에서 연도별 태어나는 아이의 수"], correct:3, pts:POINTS_BASIC,
+   h1:"그래프 위쪽의 제목을 떠올려 봐요.", h2:"막대가 나타내는 것은 무엇의 수였나요?",
+   reason:"그래프의 제목은 「우리나라에서 연도별 태어나는 아이의 수」예요. 그래프를 읽을 때는 제목부터 확인해요."},
+  {stem:"그래프에서 우리나라에서 1990년에 태어난 아이의 수는 몇 명인가요?",
+   opts:["65만 명","86만 명","47만 명","101만 명"], correct:0, pts:POINTS_BASIC,
+   h1:"가로에서 1990년을 찾아봐요.", h2:"그 막대 위에 적힌 수를 읽어 봐요.",
+   reason:"1990년 막대 위의 수는 65예요. 세로의 단위가 만 명이라서 65만 명이에요."},
+  {stem:"그래프의 가로는 무엇을 나타내나요?",
+   opts:["태어나는 아이의 수","연도","학교의 수","병원의 수"], correct:1, pts:POINTS_BASIC,
+   h1:"가로 아래에 적힌 수를 떠올려 봐요.", h2:"1970, 1980, 1990 … 은 무엇일까요?",
+   reason:"그래프의 가로는 연도를, 세로는 태어나는 아이의 수를 나타내요."},
+  {stem:"판에서 1990년과 2000년을 견주었을 때 알 수 있는 것은 무엇인가요?",
+   opts:["21만 명 늘었어요","변하지 않았어요","10만 명 줄었어요","1만 명 줄었어요"], correct:3, pts:POINTS_APPLY,
+   h1:"두 막대의 수를 읽어 봐요.", h2:"65만 명과 64만 명이에요.",
+   reason:"1990년에는 65만 명, 2000년에는 64만 명이 태어나 1만 명 줄었어요. 거의 같아 보여도 줄어든 것이에요."},
+  {stem:"저출산이 계속되면 달라지는 생활 모습으로 알맞은 것은 무엇인가요?",
+   opts:["학생 수가 줄어들어요","출산을 도와주는 병원의 수가 늘어나요","가족 구성원의 수가 늘어나요","일할 수 있는 사람의 수가 늘어날 거예요"], correct:0, pts:POINTS_APPLY,
+   h1:"태어나는 아이가 줄면 학교에는 어떤 일이 생길까요?", h2:"판의 그래프가 어떻게 변해 왔는지 떠올려 봐요.",
+   reason:"저출산이 계속되면 학생 수가 줄어들고, 일할 수 있는 사람의 수도 줄어들 것으로 예상돼요."},
+  {stem:"오늘날 저출산 현상이 나타나는 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["학교가 너무 많기 때문이에요","병원이 너무 많기 때문이에요","결혼하지 않거나 아이를 낳아 기르는 것에 부담을 느끼는 사람이 많아졌기 때문이에요","그래프의 막대가 짧기 때문이에요"], correct:2, pts:POINTS_APPLY,
+   h1:"교과서 16쪽 본문을 떠올려 봐요.", h2:"사람들이 무엇에 부담을 느끼고 있나요?",
+   reason:"결혼하지 않거나 결혼하더라도 아이를 낳아 기르는 것에 부담을 느끼는 사람이 많아지면서 저출산 현상이 나타나고 있어요."},
+  {stem:"저출산으로 나타나는 문제를 해결하기 위한 노력으로 알맞은 것은 무엇인가요?",
+   opts:["학교의 문을 닫아요","안전하고 쾌적한 보육 시설을 만들고 운영해요","병원의 수를 줄여요","아이를 키우는 가정의 요금을 더 받아요"], correct:1, pts:POINTS_APPLY,
+   h1:"부모가 걱정 없이 아이를 키울 수 있으려면 무엇이 필요할까요?", h2:"판에서 고른 방법 가·나·다를 떠올려 봐요.",
+   reason:"우리 사회는 아이를 낳고 키우는 데 필요한 돈과 물품을 지원하고, 보육 시설을 만들고 운영하며, 부모가 일을 쉴 수 있는 제도를 운영해요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 문을 닫는 학교
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">학교는 왜 문을 닫았을까요?</h2>
+  <div class="ka-bub">지난 시간에 본 것처럼 <b>문을 닫는 초등학교</b>가 있어요. 예전보다 초등학생 수가 줄어들었기 때문이에요. 그렇다면 초등학생 수는 왜 줄어들었을까요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('closed','문을 닫은 학교')}</div>
+    <div class="note">초등학생 수가 줄어든 까닭을 먼저 짐작해 봐요. ※ 그림은 판이 새로 그린 도식이에요.</div>
+  </div>`});
+// 2 살펴보기 — 저출산이란 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">저출산이란 무엇일까요?</h2>
+  <div class="ka-bub">오늘날에는 아이를 낳지 않거나 적게 낳는 사람이 많아지면서 <span class="ka-emph">태어나는 아이의 수</span>가 예전보다 줄어들고 있어요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 태어나는 아이의 수가 줄어들어 <b>출산율이 감소하는 현상</b>을 <b>저출산</b>이라고 해요.<br>· 출산율은 여성 한 명이 낳을 것으로 예상되는 <b>평균적인 아이의 수</b>로 알 수 있어요.</div>`
+    :`<div class="note">「저출산」이 무슨 뜻일지 먼저 말해 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 살펴보기 — 그래프 읽는 방법
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">그래프 읽는 방법을 알아봐요</h2>
+  <div class="ka-bub">태어나는 아이의 수가 변하는 것을 <span class="ka-emph">그래프</span>로 나타내면 한눈에 알아보기 쉬워요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('howto','그래프 읽는 순서')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>그래프의 <b>제목</b>을 확인해요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>그래프의 <b>가로와 세로</b>가 무엇을 나타내는지 확인해요. 가로는 연도, 세로는 태어나는 아이의 수예요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>각각의 <b>막대가 나타내는 수</b>를 확인해요.</div></div>
+  </div></div>`});
+// 4 살펴보기 — 빈칸 채우기 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">빈칸에 알맞은 수를 찾아봐요</h2>
+  <div class="ka-bub">우리나라에서 1970년에는 101만 명, 1980년에는 86만 명, <span class="ka-emph">(　　)년</span>에는 65만 명, 2010년에는 <span class="ka-emph">(　　)만 명</span>의 아이가 태어났어요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 65만 명이 태어난 해는 <b>1990</b>년이에요.<br>· 2010년에 태어난 아이의 수는 <b>47</b>만 명이에요.</div>`
+    :`<div class="note">다음 장의 판에서 막대를 읽어 본 뒤 답을 확인해도 좋아요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 살펴보기 — 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">두 해를 견주면 보여요</h2>
+  <div class="ka-grp" style="align-items:stretch">${bwPanel(st)}</div>`});
+// 6 살펴보기 — 달라진 생활 모습 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">저출산으로 무엇이 달라지고 있을까요?</h2>
+  <div class="ka-bub">결혼하지 않거나 결혼하더라도 아이를 낳아 기르는 것에 <span class="ka-emph">부담을 느끼는 사람</span>이 많아지면서 저출산 현상이 나타나고 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('life','줄어들고 있는 것')}</div>
+  ${st.revealed?`<div class="answer-box">· <b>가족 구성원의 수</b>가 줄어들고 있어요.<br>· <b>학생 수</b>가 줄어들고 있어요.<br>· 출산을 도와주는 <b>병원의 수</b>가 줄어들고 있어요.<br>· <b>일할 수 있는 사람의 수</b>가 줄어들 것으로 예상돼요.</div>`
+    :`<div class="note">우리 주변에서 달라진 모습을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 살펴보기 — 해결을 위한 노력
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">문제를 해결하려는 노력을 알아봐요</h2>
+  <div class="ka-bub">우리 사회는 부모가 <span class="ka-emph">걱정 없이 아이를 낳아 키울 수 있는 환경</span>을 만들려고 여러 가지 방법을 마련하여 운영하고 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('help','여러 가지 방법')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>어린 자녀가 있거나 자녀가 많은 가정에는 <b>전기, 가스, 수도, 주차 요금</b> 등을 할인해 줘요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>지역에 따라 <b>자녀 교육비</b>를 지원해 주기도 해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>판에서 고른 방법과 그 까닭을 <b>친구들과 나누어</b> 봐요.</div></div>
+  </div>
+  <div class="note">※ 친구와 의견을 나누는 일은 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','점점 줄어드는 막대')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>태어나는 아이의 수가 줄어들어 출산율이 감소하는 현상을 <b>저출산</b>이라고 해요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>저출산이 계속되면 <b>학생 수</b>가 줄어들고, <b>일할 수 있는 사람의 수</b>가 줄어들 거예요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>우리 사회는 저출산으로 나타나는 문제를 해결하려고 <b>여러 가지 방법</b>을 마련하여 운영하고 있어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#4F46E5">사람들이 예전보다 오래 살게 되어</b> 달라진 생활 모습을 살펴봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"저출산의 뜻을 말할 수 있어요",st)}
+    ${selfCheck(1,"그래프를 읽고 태어나는 아이의 수가 어떻게 변해 왔는지 말할 수 있어요",st)}
+    ${selfCheck(2,"저출산으로 달라진 생활 모습을 설명할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">저출산으로 달라진 생활 모습을 살펴봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">판에서 고른 방법과 까닭을 <b style="color:#4F46E5">친구들과 나누는 일</b>은 교실 몫이에요. 서로의 생각을 들어 봐요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g3_2_social_u1_l02";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  bwSel:null, bwPairs:[], bwRead:null, bwWay:null, bwFin:null, bwMsg:"", bwTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function bwDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 막대 누르기 — 두 번 눌러 두 해를 견준다 */
+function bwTap(y){
+  if(state.bwFin!=null) return;                                                         // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(y) || y<0 || y>=BW_N) return;                                     // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(bwNearAll(state)){ state.bwMsg = BW_SAY_ALL; playThud(); bwDraw(); return; }          // 가드④: 이웃 다섯 쌍을 다 견준 뒤 — 판 불변
+  if(state.bwSel == null){ state.bwSel = y; state.bwMsg = ""; state.bwTell = ""; playBlip(); bwDraw(); return; }
+  if(state.bwSel === y){ state.bwSel = null; state.bwMsg = ""; playBlip(); bwDraw(); return; }   // 같은 막대를 다시 누르면 고르기를 푼다
+  const a = Math.min(state.bwSel, y), b = Math.max(state.bwSel, y);
+  if(bwHas(state,a,b)){ state.bwMsg = BW_SAY_SAME; playThud(); bwDraw(); return; }       // 가드③: 이미 견준 두 해 — 판 불변
+  state.bwPairs.push([a,b]);                                                             // ⭐ 견준 쌍을 적는 자리는 코드에 여기 단 하나 · 지우는 자리 0
+  state.bwSel = null;
+  state.bwMsg = ""; state.bwTell = bwLine(a,b); playBlip(); bwDraw();
+}
+/* 판 읽기 */
+function bwRead(i){
+  if(state.bwFin!=null) return;                                                         // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=BW_READQ.length) return;                          // 가드②
+  if(!bwNearAll(state)){ state.bwMsg = BW_SAY_ORDER_R; playThud(); bwDraw(); return; }    // 가드⑤: 다 견주기 전 — 판 불변
+  if(state.bwRead!=null){ state.bwMsg = BW_SAY_READDONE; bwDraw(); return; }             // 가드⑥: 이미 정한 자리 — 판 불변
+  if(i!==BW_READ_OK){ state.bwMsg = BW_READ_BAD; playThud(); bwDraw(); return; }         // 가드⑦: 어긋난 답 — 판 불변
+  state.bwRead = i; state.bwMsg = ""; state.bwTell = ""; playBlip(); bwDraw();
+}
+/* 해결 방법 고르기 — 정답 없음 */
+function bwPickWay(k){
+  if(state.bwFin!=null) return;                                                         // 가드①
+  if(!Number.isInteger(k) || k<0 || k>=BW_WAY.length) return;                            // 가드②
+  if(state.bwRead==null){ state.bwMsg = BW_SAY_ORDER_W; playThud(); bwDraw(); return; }  // 가드⑧: 판을 읽기 전 — 판 불변
+  if(state.bwWay!=null){ state.bwMsg = BW_SAY_WAYDONE; bwDraw(); return; }               // 가드⑧: 이미 고른 방법 — 판 불변
+  state.bwWay = k; state.bwMsg = ""; state.bwTell = `${bwWayOf(k).mark}를 골랐어요. ${bwWayOf(k).why}`; playBlip(); bwDraw();
+}
+/* 마무리 */
+function bwFin(i){
+  if(state.bwFin!=null) return;                                                         // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=BW_FINQ.length) return;                           // 가드②
+  if(state.bwWay==null){ state.bwMsg = BW_SAY_ORDER_FIN; playThud(); bwDraw(); return; } // 가드⑨: 방법을 고르기 전 — 판 불변
+  if(i!==BW_FIN_OK){ state.bwMsg = BW_FIN_BAD; playThud(); bwDraw(); return; }           // 가드⑩: 어긋난 답 — 판 불변
+  state.bwFin = i; state.bwMsg = ""; playChime(); bwDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
