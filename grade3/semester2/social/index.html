@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3학년 2학기 사회 | K-edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:#F5F7FA;min-height:100vh;color:#1A202C}
+
+.top-bar{background:#fff;border-bottom:1px solid #E2E8F0;height:52px;display:flex;align-items:center;padding:0 24px;gap:12px}
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:#718096;text-decoration:none;font-weight:500;transition:color .15s}
+.back-link:hover{color:#1A202C}
+.top-title{font-family:'Jua',sans-serif;font-size:16px;color:#1A202C}
+
+main{max-width:800px;margin:0 auto;padding:28px 20px 60px}
+
+.page-header{display:flex;align-items:center;gap:14px;margin-bottom:32px}
+.subject-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border-radius:50px;font-family:'Jua',sans-serif;font-size:18px;color:#fff;background:#16A34A}
+.page-title{font-family:'Jua',sans-serif;font-size:26px}
+
+.unit-section{margin-bottom:30px}
+.unit-header{display:flex;align-items:center;gap:10px;margin-bottom:6px;padding-bottom:8px;border-bottom:2px solid #E2E8F0}
+.unit-num{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:16px;color:#fff}
+.unit-name{font-family:'Jua',sans-serif;font-size:18px;color:#1A202C}
+.unit-count{font-size:13px;color:#A0AEC0;margin-left:auto}
+
+.sub-header{font-size:13px;font-weight:700;color:#718096;margin:16px 0 8px;padding-left:2px}
+
+.lesson-list{display:flex;flex-direction:column;gap:8px}
+.lesson-card{display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 1px 8px rgba(0,0,0,.05);cursor:pointer;text-decoration:none;color:#1A202C;border:2px solid transparent;transition:transform .15s,border-color .15s,box-shadow .15s}
+.lesson-card:hover{transform:translateY(-2px);border-color:var(--uc);box-shadow:0 6px 20px rgba(0,0,0,.1)}
+.lesson-num{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:14px;color:#fff;background:var(--uc);flex-shrink:0}
+.lesson-title{font-size:14px;font-weight:500;flex:1}
+.lesson-arrow{color:#CBD5E0;font-size:16px}
+.lesson-badge{font-size:11px;padding:2px 8px;border-radius:50px;font-weight:500;flex-shrink:0}
+.badge-tb{background:#EBF8FF;color:#2B6CB0}
+.badge-soon{background:#EDF2F7;color:#A0AEC0}
+
+.lesson-card-soon{background:#FAFAFA;box-shadow:none;border:1px dashed #E2E8F0;cursor:default;opacity:.7}
+.lesson-card-soon:hover{transform:none;border-color:#E2E8F0;box-shadow:none}
+.lesson-card-soon .lesson-num{background:#CBD5E0!important}
+.lesson-card-soon .lesson-title{color:#A0AEC0}
+
+footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;background:#fff}
+.footer-text{font-size:12px;color:#A0AEC0}
+.footer-text strong{color:#718096;font-weight:500}
+.footer-text a{color:#5B8EF8;text-decoration:none;margin-left:10px}
+.footer-text a:hover{text-decoration:underline}
+
+@media(max-width:600px){
+  .page-header{flex-direction:column;align-items:flex-start;gap:8px}
+  .page-title{font-size:22px}
+  .lesson-card{padding:12px 14px}
+}
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="top-bar">
+  <a class="back-link" href="/?view=subject">← 홈</a>
+  <span style="color:#E2E8F0">|</span>
+  <span class="top-title">🌏 3학년 2학기 사회</span>
+</div>
+
+<main>
+  <div class="page-header">
+    <div class="subject-badge">🍀 3학년 · 2학기</div>
+    <div class="page-title">🌏 사회</div>
+  </div>
+
+  <div id="content"></div>
+</main>
+
+<footer>
+  <p class="footer-text">Copyright © 2025 <strong>K-edu</strong> · Developed by Choe Jun-ho (Kumsung Elementary School) · All rights reserved.
+  <a href="/privacy/">개인정보 처리방침</a>
+  <a href="/terms/">서비스 이용약관</a></p>
+</footer>
+
+<script>
+const DIR1 = "1단원_사회변화와다양한문화/";
+const DIR2 = "2단원_옛날과오늘날의생활모습/";
+
+const UNITS = [
+  {
+    num: 1, name: "사회 변화와 다양한 문화", emoji: "🔄", color: "#4F46E5",
+    subunits: [
+      { sub: "① 사회 변화로 달라진 생활 모습", lessons: [
+        {n:1, file:DIR1+"g3_social_u1_l01_원인을찾으면.html", title:"우리 사회의 변화 모습을 살펴볼까요", track:"tb"},
+        {n:2, file:DIR1+"g3_social_u1_l02_저출산.html", title:"저출산으로 달라진 생활 모습을 살펴볼까요", track:"soon"},
+        {n:3, file:DIR1+"g3_social_u1_l03_고령화.html", title:"고령화로 달라진 생활 모습을 살펴볼까요", track:"soon"},
+        {n:4, file:DIR1+"g3_social_u1_l04_지능정보화.html", title:"지능정보화로 달라진 생활 모습을 살펴볼까요", track:"soon"},
+        {n:5, file:DIR1+"g3_social_u1_l05_세계화.html", title:"세계화로 달라진 생활 모습을 살펴볼까요", track:"soon"},
+        {n:6, file:DIR1+"g3_social_u1_l06_주제1정리.html", title:"[생각을 펼쳐요] 사회 변화로 달라진 생활 모습 정리", track:"soon"}
+      ]},
+      { sub: "② 다양한 문화에 대한 이해와 존중", lessons: [
+        {n:1, file:DIR1+"g3_social_u1_l07_문화.html", title:"문화가 무엇인지 알아볼까요", track:"soon"},
+        {n:2, file:DIR1+"g3_social_u1_l08_다양한문화.html", title:"우리 사회의 다양한 문화를 살펴볼까요", track:"soon"},
+        {n:3, file:DIR1+"g3_social_u1_l09_확산영향.html", title:"다양한 문화의 확산이 우리 사회에 미친 영향을 알아볼까요", track:"soon"},
+        {n:4, file:DIR1+"g3_social_u1_l10_해결노력.html", title:"다양한 문화의 확산으로 나타난 문제를 해결하기 위한 노력을 알아볼까요", track:"soon"},
+        {n:5, file:DIR1+"g3_social_u1_l11_주제2정리.html", title:"[생각을 펼쳐요] 다양한 문화에 대한 이해와 존중 정리", track:"soon"},
+        {n:6, file:DIR1+"g3_social_u1_l12_단원정리.html", title:"1단원 사회 변화와 다양한 문화 정리", track:"soon"}
+      ]}
+    ]
+  },
+  {
+    num: 2, name: "옛날과 오늘날의 생활 모습", emoji: "🏮", color: "#DB2777",
+    subunits: [
+      { sub: "① 옛날과 오늘날의 풍습", lessons: [
+        {n:1, file:DIR2+"g3_social_u2_l01_풍습.html", title:"풍습이 무엇인지 알아볼까요", track:"soon"},
+        {n:2, file:DIR2+"g3_social_u2_l02_일상풍습.html", title:"옛날의 일상생활 속 풍습을 알아볼까요", track:"soon"},
+        {n:3, file:DIR2+"g3_social_u2_l03_풍습비교.html", title:"옛날과 오늘날의 일상생활 속 풍습을 비교해 볼까요", track:"soon"},
+        {n:4, file:DIR2+"g3_social_u2_l04_세시풍속.html", title:"옛날의 세시 풍속을 알아볼까요", track:"soon"},
+        {n:5, file:DIR2+"g3_social_u2_l05_세시풍속비교.html", title:"옛날과 오늘날의 세시 풍속을 비교해 볼까요", track:"soon"},
+        {n:6, file:DIR2+"g3_social_u2_l06_풍습체험.html", title:"옛날부터 전해 내려오는 풍습을 체험해 볼까요", track:"soon"},
+        {n:7, file:DIR2+"g3_social_u2_l07_주제1정리.html", title:"[생각을 펼쳐요] 옛날과 오늘날의 풍습 정리", track:"soon"}
+      ]},
+      { sub: "② 교통의 변화로 달라진 생활 모습", lessons: [
+        {n:1, file:DIR2+"g3_social_u2_l08_교통.html", title:"교통이 무엇인지 알아볼까요", track:"soon"},
+        {n:2, file:DIR2+"g3_social_u2_l09_옛날교통.html", title:"옛날 사람들이 교통수단을 이용했던 모습을 알아볼까요", track:"soon"},
+        {n:3, file:DIR2+"g3_social_u2_l10_오늘날교통.html", title:"오늘날 사람들이 교통수단을 이용하는 모습을 알아볼까요", track:"soon"},
+        {n:4, file:DIR2+"g3_social_u2_l11_교통변화.html", title:"교통의 변화로 달라진 사람들의 생활 모습을 살펴볼까요", track:"soon"},
+        {n:5, file:DIR2+"g3_social_u2_l12_교통문제.html", title:"교통이 변화하면서 생긴 문제점과 해결 노력을 알아볼까요", track:"soon"},
+        {n:6, file:DIR2+"g3_social_u2_l13_미래교통.html", title:"미래의 교통 변화에 따라 달라질 사람들의 생활 모습을 살펴볼까요", track:"soon"},
+        {n:7, file:DIR2+"g3_social_u2_l14_주제2정리.html", title:"[생각을 펼쳐요] 교통의 변화로 달라진 생활 모습 정리", track:"soon"}
+      ]},
+      { sub: "③ 통신수단의 변화로 달라진 생활 모습", lessons: [
+        {n:1, file:DIR2+"g3_social_u2_l15_통신수단.html", title:"통신수단이 무엇인지 알아볼까요", track:"soon"},
+        {n:2, file:DIR2+"g3_social_u2_l16_옛날통신.html", title:"옛날 사람들이 통신수단을 이용했던 모습을 알아볼까요", track:"soon"},
+        {n:3, file:DIR2+"g3_social_u2_l17_오늘날통신.html", title:"오늘날 사람들이 통신수단을 이용하는 모습을 알아볼까요", track:"soon"},
+        {n:4, file:DIR2+"g3_social_u2_l18_통신변화.html", title:"통신수단의 변화로 달라진 사람들의 생활 모습을 살펴볼까요", track:"soon"},
+        {n:5, file:DIR2+"g3_social_u2_l19_바른이용.html", title:"통신수단을 올바르게 이용하는 방법을 알아볼까요", track:"soon"},
+        {n:6, file:DIR2+"g3_social_u2_l20_주제3정리.html", title:"[생각을 펼쳐요] 통신수단의 변화로 달라진 생활 모습 정리", track:"soon"},
+        {n:7, file:DIR2+"g3_social_u2_l21_단원정리.html", title:"2단원 옛날과 오늘날의 생활 모습 정리", track:"soon"}
+      ]}
+    ]
+  }
+];
+
+const content = document.getElementById('content');
+UNITS.forEach((unit) => {
+  const allLessons = unit.subunits.flatMap(s => s.lessons);
+  const tbCount = allLessons.filter(l => l.track === 'tb').length;
+  const soonCount = allLessons.filter(l => l.track === 'soon').length;
+
+  const section = document.createElement('div');
+  section.className = 'unit-section';
+
+  let html = `
+    <div class="unit-header">
+      <div class="unit-num" style="background:${unit.color}">${unit.num}</div>
+      <div class="unit-name">${unit.emoji} ${unit.num}단원: ${unit.name}</div>
+      <div class="unit-count">라이브 ${tbCount}차시${soonCount ? ' · 준비 중 ' + soonCount : ''}</div>
+    </div>
+  `;
+
+  unit.subunits.forEach(su => {
+    html += `<div class="sub-header">${su.sub}</div>`;
+    html += `<div class="lesson-list">`;
+    html += su.lessons.map(l => l.track === 'tb' ? `
+      <a class="lesson-card" href="${l.file}" style="--uc:${unit.color}">
+        <div class="lesson-num">${l.n}</div>
+        <div class="lesson-title">${l.title}</div>
+        <span class="lesson-badge badge-tb">교과서</span>
+        <div class="lesson-arrow">›</div>
+      </a>
+    ` : `
+      <div class="lesson-card lesson-card-soon">
+        <div class="lesson-num">${l.n}</div>
+        <div class="lesson-title">${l.title}</div>
+        <span class="lesson-badge badge-soon">준비 중</span>
+      </div>
+    `).join('');
+    html += `</div>`;
+  });
+
+  section.innerHTML = html;
+  content.appendChild(section);
+});
+</script>
+<script src="/kedu_accordion.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_next.js"></script><!-- 이어서 하기 — 다음 차시 카드 (2026-09-04) -->
+</body>
+</html>
