@@ -70,6 +70,11 @@ function runStage(sj, un, l) {
   ok(d.querySelector('#hud button[data-h="next"]'), tag + ' HUD 생성');
   ok(d.querySelector('#kt2-paper.anim, #kt2-paper .anim'), tag + ' 연출(anim) 걸림');
   ok(d.querySelector('#fx'), tag + ' 축하 캔버스');
+  // 케이에듀 학급 명단(가짜 DB) → 뽑기·발표 뽑기
+  try {
+    w.supabase = {}; w.getKeduDb = () => ({ auth: { getUser: () => Promise.resolve({ data: { user: { id: 't1' } } }) }, from: (tbl) => { const q = { select: () => q, eq: () => q, order: () => q, limit: () => q, then: (fn) => Promise.resolve(tbl === 'class_codes' ? { data: [{ id: 'c1', label: '1학년 3반' }] } : { data: [{ nickname: '김하나', seat_no: 2 }, { nickname: '이둘', seat_no: 1 }] }).then(fn) }; return q; } });
+    rosterChecks.push(st.loadRoster().then(() => { ok(st.rosterSrc === 'kedu' && st.classNames[0] === '1번 이둘' && st.classNames[1] === '2번 김하나', tag + ' 케이에듀 학급 명단 → 뽑기(번호순)'); st.openPick(); ok((d.querySelector('#ov-pick .pick-src').textContent || '').indexOf('1학년 3반') >= 0, tag + ' 뽑기 출처 표시'); st.closeOv(); }));
+  } catch (e) { fail++; fails.push(tag + ' 명단 예외: ' + e.message); }
   let zoomN = 0, misOk = true, bubN = 0, picN = 0, chipN = 0, illusN = 0;
   let guard = 0, acts = 0, frags = 0;
   while (st.idx < st.slides.length - 1 && guard++ < 2000) {
@@ -120,9 +125,9 @@ function runStage(sj, un, l) {
   try { st.celebrate(); st.pop(); st.hudAct('still', d.querySelector('#hud button[data-h="still"]')); st.hudAct('still', d.querySelector('#hud button[data-h="still"]')); st.hudAct('sound', d.querySelector('#hud button[data-h="sound"]')); } catch (e) { fail++; fails.push(tag + ' 연출 도구 예외: ' + e.message); }
   ok(true, tag + ' 실주행 ' + acts + ' 조작 · ' + frags + ' 조각 · 확대 가능 ' + zoomN + ' · 말풍선 ' + bubN);
   bubAll += bubN; picAll += picN; illusAll += illusN;
-  w.close();
   return { acts, frags };
 }
+const rosterChecks = [];
 let ran = 0, actsAll = 0, fragsAll = 0, bubAll = 0, picAll = 0, illusAll = 0;
 manifest.subjects.forEach(sj => {
   // 과목마다: 각 단원의 첫 차시 + 조작 많은 차시 하나
@@ -132,6 +137,8 @@ manifest.subjects.forEach(sj => {
     picks.forEach(l => { const r = runStage(sj, un, l); if (r) { ran++; actsAll += r.acts; fragsAll += r.frags; } });
   });
 });
+Promise.all(rosterChecks).then(() => {
 console.log('② 무대 실주행 —', ran, '차시 부팅 · 슬라이드 안 조작', actsAll, '회 · 조각 공개', fragsAll, '회 · 말풍선', bubAll, '· 장면 무대', picAll, '· 사진 폴백 무대', illusAll);
 console.log('결과: PASS', pass, '· FAIL', fail);
 if (fail) { console.log(fails.slice(0, 40).join('\n')); process.exit(1); }
+});

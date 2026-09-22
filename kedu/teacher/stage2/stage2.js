@@ -389,7 +389,8 @@
     self.applyPlan();
     self.IS = {}; self.rev = {}; self.frag = {}; self.idx = 0; self.allAtOnce = !!lsGet('kt2_all_at_once', false);
     self.still = !!lsGet('kt2_still', false); self.sound = lsGet('kt2_sound', true) !== false;
-    self.classNames = lsGet('kt2_names', []);
+    self.classNames = lsGet('kt2_names', []); self.rosterSrc = self.classNames.length ? 'manual' : 'none';
+    self.loadRoster();
     self.started = Date.now(); self.stageEnter = {}; self.penStore = {};
     const hash = parseInt((global.location.hash || '').replace('#', ''), 10);
     if (!isNaN(hash)) self.idx = Math.max(0, Math.min(hash - 1, self.slides.length - 1));
@@ -463,6 +464,12 @@
   Stage.prototype.exportPlan = function () { return JSON.stringify(Object.assign({ v: 1, slug: this.slug, key: this.key }, this.plan)); };
   Stage.prototype.importPlan = function (txt) { try { const p = JSON.parse(txt); if (!p || p.key !== this.key) { this.toast('이 차시의 판이 아니에요'); return false; } this.plan = Object.assign({ order: null, skip: [], added: [], text: {}, imgs: {}, tnote: {} }, p); delete this.plan.v; delete this.plan.slug; delete this.plan.key; this.savePlan(); this.slides = this.slides.filter(s => !s._added); this.applyPlanKeepIdx(); this.paint(0, true); this.toast('우리 반 판을 가져왔어요'); return true; } catch (e) { this.toast('가져오기 실패 — 붙여 넣은 글을 확인'); return false; } };
 
+  // 케이에듀 학급 명단 — 교사 계정의 활성 학급(class_codes) → student_seats(번호+이름). 있으면 뽑기·발표 뽑기가 이걸 쓴다.
+  Stage.prototype.loadRoster = function () {
+    const self = this; if (!global.supabase || typeof global.getKeduDb !== 'function') return Promise.resolve();
+    let db; try { db = global.getKeduDb(); } catch (e) { return Promise.resolve(); }
+    return db.auth.getUser().then(r => { const u = r && r.data && r.data.user; if (!u) return; return db.from('class_codes').select('id, label, grade').eq('teacher_id', u.id).eq('is_active', true).order('created_at', { ascending: false }).limit(1).then(c => { const code = c && c.data && c.data[0]; if (!code) return; return db.from('student_seats').select('nickname, seat_no').eq('class_code_id', code.id).then(sr => { const seats = (sr && sr.data) || []; if (!seats.length) return; seats.sort((a, b) => ((a.seat_no == null ? 999 : a.seat_no) - (b.seat_no == null ? 999 : b.seat_no)) || String(a.nickname).localeCompare(String(b.nickname), 'ko')); self.roster = seats.map(x => (x.seat_no != null ? x.seat_no + '번 ' : '') + (x.nickname || '')); self.rosterName = code.label || ((code.grade ? code.grade + '학년 ' : '') + '우리 반'); if (!self.classNames.length) { self.classNames = self.roster.slice(); self.rosterSrc = 'kedu'; } if (self.cur() && self.cur().block === 'present') self.paint(0, true); }); }); }).catch(() => { });
+  };
   Stage.prototype.state = function (sid) { if (!this.IS[sid]) this.IS[sid] = {}; return this.IS[sid]; };
   Stage.prototype.cur = function () { return this.slides[this.idx]; };
   Stage.prototype.build = function () {
@@ -508,7 +515,7 @@
       const km = paper.querySelector('[data-klab]');
       if (km) { const tool = km.getAttribute('data-klab'); let cfg = {}; try { cfg = JSON.parse(km.getAttribute('data-config') || '{}'); } catch (e) { } if (global.KLab) this.klabCleanup = global.KLab.mount(km, tool, cfg); else km.innerHTML = '<div class="legacy"><div class="t">🧊 케이랩 ' + esc(tool) + '</div><div class="d">교구 엔진이 이 페이지에 실리지 않았어요.</div></div>'; }
     }
-    this.decorate(paper, r); this.applyOverrides();
+    this.decorate(paper, r); this.applyOverrides(); this.fitBody();
     this.paintPen(); this.paintHud(); this.paintTnote();
     { const b = doc.querySelector('#hud button[data-h="tnote"]'); if (b) b.textContent = (((s.data || {}).tnote || s.tnote || r.teacherNote) ? '👩‍🏫•' : '👩‍🏫'); }
     try { global.history.replaceState(null, '', '#' + n); } catch (e) { }
@@ -527,7 +534,7 @@
     if (this.fragMax && this.frag[this.cur().id] < this.fragMax) {
       this.frag[this.cur().id]++;
       const kids = Array.from(doc.querySelector('#kt2-paper .kt2-body').children);
-      const el = kids[this.frag[this.cur().id]]; if (el) { el.classList.remove('hidden'); el.classList.add('just'); el.classList.add('anim'); this.pop(); }
+      const el = kids[this.frag[this.cur().id]]; if (el) { el.classList.remove('hidden'); el.classList.add('just'); el.classList.add('anim'); this.pop(); } this.fitBody();
       this.paintHud(); return;
     }
     if (this.idx < this.slides.length - 1) this.go(this.idx + 1, 1);
@@ -594,6 +601,20 @@
     if (r.cover) paper.classList.add('anim');
     else { const t = paper.querySelector('.kt2-title'); if (t) t.classList.add('anim'); Array.from(paper.querySelector('.kt2-body').children).forEach(el => { if (!el.classList.contains('hidden')) el.classList.add('anim'); }); }
     paper.querySelectorAll(ZOOMABLE).forEach(el => el.classList.add('zoomable'));
+  };
+  // 화면 넘침 방지 — 본문이 종이 안 자리보다 크면 통째로 줄인다(학년 등급 배율 위에 곱한다). 어떤 슬라이드도 종이 밖으로 못 나간다.
+  Stage.prototype.fitBody = function () {
+    const paper = doc.getElementById('kt2-paper'); const body = paper && paper.querySelector('.kt2-body'); if (!body) return;
+    const base = this.g <= 2 ? 1.06 : this.g <= 4 ? 1 : 0.95; body.style.zoom = '';
+    for (let i = 0; i < 4; i++) {
+      const avail = body.clientHeight, need = body.scrollHeight, availW = body.clientWidth, needW = body.scrollWidth;
+      if (!avail || !need) return;
+      if (need <= avail + 2 && needW <= availW + 2) return;
+      const cur = parseFloat(body.style.zoom) || base;
+      const z = Math.max(0.45, cur * Math.min(avail / need, availW / needW) * 0.97);
+      body.style.zoom = z; body.classList.add('shrunk');
+      if (z <= 0.46) return;
+    }
   };
   Stage.prototype.toggleZoom = function (el) { const on = el.classList.contains('zoomed'); doc.querySelectorAll('#kt2-paper .zoomed').forEach(x => x.classList.remove('zoomed')); if (!on) { el.classList.add('zoomed'); this.pop(); } };
   Stage.prototype.tone = function (f, dur, vol, type) { if (!this.sound) return; try { const AC = global.AudioContext || global.webkitAudioContext; if (!AC) return; this.ac = this.ac || new AC(); const ac = this.ac; const o = ac.createOscillator(), g = ac.createGain(); o.type = type || 'sine'; o.frequency.value = f; g.gain.value = 0.0001; o.connect(g); g.connect(ac.destination); const t0 = ac.currentTime; o.start(t0); g.gain.exponentialRampToValueAtTime(vol || 0.08, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + (dur || 0.12)); o.stop(t0 + (dur || 0.12) + 0.02); } catch (e) { } };
@@ -758,10 +779,12 @@
     const self = this; const o = doc.getElementById('ov-pick'); if (!o) return; const p = o.querySelector('.panel');
     const names = this.classNames.length ? this.classNames : Array.from({ length: 24 }, (_, i) => (i + 1) + '번');
     this.pickDone = this.pickDone || [];
-    p.innerHTML = '<h3>🎲 뽑기<span class="sp"></span><button class="x" data-x="1">✕</button></h3><div class="pick-name" id="pick-name">' + (this.pickLast != null ? esc(names[this.pickLast]) : '?') + '</div><div class="pick-left">남은 사람 ' + (names.length - this.pickDone.length) + ' / ' + names.length + '</div><div class="pick-list">' + names.map((n, i) => '<span class="' + (self.pickDone.includes(i) ? 'done' : '') + '">' + esc(n) + '</span>').join('') + '</div><div class="timer-ctl"><button class="btn main" data-p="go">뽑기 🎲</button><button class="btn" data-p="reset">처음부터</button></div><div class="pick-set"><textarea id="pick-names" placeholder="우리 반 이름을 한 줄에 한 명씩 붙여 넣으면 번호 대신 이름으로 뽑아요 (이 기기에만 저장)">' + esc(this.classNames.join('\n')) + '</textarea><button class="btn" data-p="save">저장</button></div>';
+    const src = this.rosterSrc === 'kedu' ? '🏫 ' + esc(this.rosterName || '우리 반') + ' 명단 ' + names.length + '명 (케이에듀 학급)' : this.rosterSrc === 'manual' ? '✎ 직접 넣은 이름 ' + names.length + '명' + (this.roster ? ' · <a href="#" data-p="use-kedu">케이에듀 학급 명단 쓰기</a>' : '') : '번호 1~24 (학급 명단이 없어요' + (global.supabase ? '' : '') + ')';
+    p.innerHTML = '<h3>🎲 뽑기<span class="sp"></span><button class="x" data-x="1">✕</button></h3><div class="pick-src">' + src + '</div><div class="pick-name" id="pick-name">' + (this.pickLast != null ? esc(names[this.pickLast]) : '?') + '</div><div class="pick-left">남은 사람 ' + (names.length - this.pickDone.length) + ' / ' + names.length + '</div><div class="pick-list">' + names.map((n, i) => '<span class="' + (self.pickDone.includes(i) ? 'done' : '') + '">' + esc(n) + '</span>').join('') + '</div><div class="timer-ctl"><button class="btn main" data-p="go">뽑기 🎲</button><button class="btn" data-p="reset">처음부터</button></div><div class="pick-set"><textarea id="pick-names" placeholder="' + (this.roster ? '케이에듀 학급 명단을 그대로 써요. 다른 이름을 쓰려면 여기에 한 줄에 한 명씩 (이 기기에만 저장 · 비우면 다시 학급 명단)' : '케이에듀에서 학급을 만들면 명단이 자동으로 와요. 지금은 한 줄에 한 명씩 붙여 넣기 (이 기기에만 저장)') + '">' + esc(this.rosterSrc === 'manual' ? this.classNames.join('\n') : '') + '</textarea><button class="btn" data-p="save">저장</button></div>';
     p.querySelector('[data-x]').addEventListener('click', () => self.closeOv());
     p.querySelector('[data-p="reset"]').addEventListener('click', () => { self.pickDone = []; self.pickLast = null; self.openPick(); });
-    p.querySelector('[data-p="save"]').addEventListener('click', () => { self.classNames = p.querySelector('#pick-names').value.split(/\n|,/).map(x => x.trim()).filter(Boolean); lsSet('kt2_names', self.classNames); self.pickDone = []; self.pickLast = null; self.toast('이름 ' + self.classNames.length + '명 저장'); self.openPick(); });
+    p.querySelector('[data-p="save"]').addEventListener('click', () => { self.classNames = p.querySelector('#pick-names').value.split(/\n|,/).map(x => x.trim()).filter(Boolean); lsSet('kt2_names', self.classNames); self.rosterSrc = self.classNames.length ? 'manual' : (self.roster ? 'kedu' : 'none'); if (!self.classNames.length && self.roster) self.classNames = self.roster.slice(); self.pickDone = []; self.pickLast = null; self.toast(self.classNames.length ? '이름 ' + self.classNames.length + '명 저장' : '직접 넣은 이름을 지웠어요'); self.openPick(); });
+    const uk = p.querySelector('[data-p="use-kedu"]'); if (uk) uk.addEventListener('click', e => { e.preventDefault(); lsSet('kt2_names', []); self.classNames = self.roster.slice(); self.rosterSrc = 'kedu'; self.pickDone = []; self.pickLast = null; self.openPick(); });
     p.querySelector('[data-p="go"]').addEventListener('click', () => {
       const pool = names.map((_, i) => i).filter(i => !self.pickDone.includes(i)); if (!pool.length) { self.toast('모두 뽑았어요 — 처음부터를 누르세요'); return; }
       const el = p.querySelector('#pick-name'); el.classList.add('spin'); let k = 0; const iv = setInterval(() => { el.textContent = names[pool[Math.floor(Math.random() * pool.length)]]; if (++k > 14) { clearInterval(iv); const pick = pool[Math.floor(Math.random() * pool.length)]; self.pickDone.push(pick); self.pickLast = pick; self.chime(1); self.openPick(); const e2 = p.querySelector('#pick-name'); e2.classList.add('pop'); } }, 60);
