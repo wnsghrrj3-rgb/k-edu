@@ -11,7 +11,7 @@
   const doc = global.document;
   const CATALOG_URL = '/kedu/activities/_CATALOG.json';
   const READY_TIMEOUT_MS = 5000;
-  const GENRE_KO = { duel_quiz: '선다 대결', balance: '저울 비교', bundle: '묶어 세기', sequence: '순서 잇기', relay: '반 전체 릴레이', explore: '개념 탐험', sort: '분류하기', text_hunt: '글 속 찾기', order_story: '순서 맞추기', claim_judge: '맞다·아니다', map_pin: '자리에 놓기', category_race: '분류 릴레이', fill_dialog: '대화 채우기', observe_pick: '관찰 고르기' };
+  const GENRE_KO = { duel_quiz: '선다 대결', balance: '저울 비교', bundle: '묶어 세기', sequence: '순서 잇기', relay: '반 전체 릴레이', explore: '개념 탐험', sort: '분류하기', text_hunt: '글 속 찾기', order_story: '순서 맞추기', claim_judge: '맞다·아니다', map_pin: '자리에 놓기', category_race: '분류 릴레이', fill_dialog: '대화 채우기', observe_pick: '관찰 고르기', catch_fall: '떨어지는 수 잡기' };
   const PHASE_KO = { intro: '도입', practice: '연습', wrapup: '정리' };
   const SUBJ_KO = { math: '수학', korean: '국어', science: '과학', social: '사회', english: '영어' };
   const LOG_KEY = 'kt2_act_log';

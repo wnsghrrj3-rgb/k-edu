@@ -31,6 +31,7 @@ GENRE_ENGINE = {
     'category_race': 'category_race',  # v4 신설 — 반 전체 순번 분류 릴레이
     'map_pin': 'map_pin',        # v4 신설 · 무대형 — 타일을 골라 자리에 놓기
     'text_hunt': 'text_hunt',    # v4 신설 · 무대형 — 글 속 조건 토큰 탭
+    # catch_fall(v4 D57) — 떨어지는 수를 잡아 모으는 실시간 무대. 활동 자체 루프(엔진 없음)
     # bundle · sort · explore는 활동 자체 루프 — 엔진 없이 core만 쓴다
 }
 
