@@ -64,14 +64,14 @@ window.KEDU_MAP["g3_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_social_u1_l06",
+     "lessonId": "g3_social_u1_l06_v1",
      "n": "6",
      "title": "[생각을 펼쳐요] 사회 변화로 달라진 생활 모습 정리",
      "sub": "① 사회 변화로 달라진 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/social/1단원_사회변화와다양한문화/g3_social_u1_l06_글자를찾아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
