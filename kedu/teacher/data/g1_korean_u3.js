@@ -70,6 +70,8 @@ LESSONS["u3_l01"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"🐻","label":"아기 곰 \"수바를 좋아해!\""},{"face":"👧","label":"하나 \"수바? 그게 뭐지?\""}],
+        "tnote": {"ask":["아기 곰이 쓴 \"수바\", 무슨 낱말일까?"],"watch":"수박 — 받침 하나가 빠지면 못 알아봄","min":3},
         "scene_title": "이상한 쪽지가 왔어요 💌",
         "visual": "💌",
         "question": "아기 곰이 쪽지에 ‘수바를 좋아해’라고 썼어요.<br>‘수바’가 무슨 낱말일까요?",
@@ -85,6 +87,7 @@ LESSONS["u3_l01"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"처포도\"는 어디에 뭘 넣어야 알아볼 수 있어?"],"watch":"\"처\"에 ㅇ → 청포도","min":4},
         "title": "받침을 빼면 뜻이 안 통해요",
         "content": "받침을 빼고 쓰면 무슨 낱말인지 알 수 없어요. 받침까지 **정확하게 써야** 내 마음이 친구에게 잘 전해져요!",
         "symbol_meanings": [
@@ -123,6 +126,7 @@ LESSONS["u3_l01"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["\"여피\"에 받침 두 개를 넣으면? 글씨 쓰는 거!"],"watch":"연필 — 두 글자 모두 받침","min":4},
         "title": "쪽지 속 낱말 바르게 고치기 ✏️",
         "sub": "아기 곰이 받침을 빼고 쓴 낱말이에요. 받침을 넣어 바르게 고쳐요. 카드를 누르면 답이 나와요!",
         "cards": [
@@ -154,6 +158,7 @@ LESSONS["u3_l01"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["받침을 빼고 써서 곤란했던 적 있어?"],"watch":"경험 없으면 \"친구 이름을 잘못 쓰면?\"으로","min":4},
         "title": "이 단원에서 배울 것을 말해요",
         "question": "이 단원에서는 두 가지를 배워요. 무엇이 궁금한지 이야기해 봐요.",
         "items": [
@@ -172,6 +177,7 @@ LESSONS["u3_l01"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"수바\"에 ㄱ을 넣어 \"수박\"을 바르게 써 볼까?"],"watch":"받침 위치 확인","min":5},
         "title": "받침을 넣어야 뜻이 통해요",
         "levels": {
           "읽기": {
@@ -201,6 +207,7 @@ LESSONS["u3_l01"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 받침 뺀 낱말, 뭘 넣어 고칠래?"],"watch":"고친 낱말을 소리 내 읽기","min":5},
         "tag": "👋 짝 활동",
         "title": "받침 넣어 고치기 짝 놀이",
         "type": "pair",
@@ -218,6 +225,7 @@ LESSONS["u3_l01"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["받침을 바르게 써야 하는 까닭은?"],"watch":"\"내 마음이 잘 전해져요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -486,6 +494,8 @@ LESSONS["u3_l02"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"바구니에 카드가 여덟 장!\""},{"face":"🐿️","label":"도토 \"ㄷ·ㅏ·ㄹ을 모으면… 달!\""}],
+        "tnote": {"ask":["바구니 카드 세 장으로 무슨 글자를 만들 수 있을까?"],"watch":"달·양·북 — 받침을 마지막에","min":3},
         "scene_title": "자모 카드 바구니 🧺",
         "visual": "🧺",
         "question": "바구니에 ㄷ·ㅏ·ㄹ·ㅇ·ㅑ·ㅂ·ㅜ·ㄱ 카드가 들어 있어요.<br>이 카드를 모으면 어떤 글자를 만들 수 있을까요?",
@@ -523,6 +533,7 @@ LESSONS["u3_l02"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"북\"은 ㅂ·ㅜ·ㄱ이 어떻게 쌓여 있어?"],"watch":"위아래로 쌓고 아래에 받침 — 세 층","min":4},
         "title": "자음자 + 모음자 + 받침",
         "content": "받침이 있는 글자는 **자음자 + 모음자** 아래에 **받침**을 더해 만들어요. 글자마다 받침이 오는 자리가 정해져 있어요!",
         "symbol_meanings": [
@@ -561,6 +572,7 @@ LESSONS["u3_l02"] =
       "stage": "활동",
       "block": "chosung_quiz",
       "data": {
+        "tnote": {"ask":["ㄴ ㅜ ㄴ을 모으면? 겨울에 내리는 거!"],"watch":"눈 — 두 ㄴ이 다른 자리","min":4},
         "title": "자모를 모으면 무슨 글자? 🧩",
         "sub": "자음자·모음자·받침을 보고 무슨 글자가 될지 생각해요. [정답 보기]를 누르면 답이 나와요",
         "items": [
@@ -600,6 +612,7 @@ LESSONS["u3_l02"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["ㄱ·ㅏ·ㅇ을 모으면 무슨 글자야?"],"watch":"강 — 읽어 확인","min":4},
         "title": "자모 카드로 새 글자를 만들어요",
         "question": "바구니 속 카드로 또 어떤 받침 글자를 만들 수 있을까요?",
         "items": [
@@ -618,6 +631,7 @@ LESSONS["u3_l02"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"다\" 아래에 ㄹ을 붙여 \"달\"을 써 볼까?"],"watch":"ㄹ 받침 모양이 뒤집히지 않게","min":5},
         "title": "짜임으로 받침 글자 만들기",
         "levels": {
           "읽기": {
@@ -647,6 +661,7 @@ LESSONS["u3_l02"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["세 카드를 어떤 순서로 놓았어?"],"watch":"자음자→모음자→받침 순서 말하기","min":5},
         "tag": "👋 짝 활동",
         "title": "자모＋받침 모으기 짝 활동",
         "type": "pair",
@@ -665,6 +680,7 @@ LESSONS["u3_l02"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["\"양\"의 받침은?"],"watch":"ㅇ","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -934,6 +950,8 @@ LESSONS["u3_l03"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"\"동◯\"… 한 칸이 비었어!\""},{"face":"👦","label":"두리 \"\"물\"을 넣으면 동물이 되겠다!\""}],
+        "tnote": {"ask":["\"동◯\"의 빈칸에 뭘 넣으면 낱말이 될까?"],"watch":"물 — 받침 글자가 낱말을 완성","min":3},
         "scene_title": "글자가 한 칸 비었어요 🕳️",
         "visual": "🧩",
         "question": "‘동◯’의 빈칸에 ‘물’을 넣으면 ‘동물’이 돼요.<br>받침 글자 하나가 낱말을 완성하네요!",
@@ -971,6 +989,7 @@ LESSONS["u3_l03"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"축구공\"에서 받침이 있는 글자는 어디야?"],"watch":"축·공 — 두 군데","min":4},
         "title": "낱말 속 받침 글자",
         "content": "우리가 쓰는 낱말 속에는 받침 글자가 들어 있어요. 받침 글자를 **바르게 써야** 낱말이 완성돼요!",
         "symbol_meanings": [
@@ -1009,6 +1028,7 @@ LESSONS["u3_l03"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["꼬리가 길고 도토리를 좋아해요. ㅁ 받침이 들어가요. 뭘까?"],"watch":"다람쥐","min":4},
         "title": "받침 낱말 맞히기 🎴",
         "sub": "받침 글자가 들어간 낱말이에요. 어떤 글자에 받침이 있는지 함께 살펴봐요!",
         "cards": [
@@ -1045,6 +1065,7 @@ LESSONS["u3_l03"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["받침 글자가 들어간 낱말 하나 말하고 받침이 어느 글자에 있는지도 말해 줄래?"],"watch":"발표 조건 두 가지","min":5},
         "title": "받침 낱말 발표하기 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 받침 글자가 들어간 낱말을 하나 말하고, 받침이 어느 글자에 있는지 알려 줘요!",
         "count": 24,
@@ -1061,6 +1082,7 @@ LESSONS["u3_l03"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"무\" 아래에 ㄹ을 넣어 \"물\"을 써 볼까?"],"watch":"동물의 \"물\"","min":5},
         "title": "받침 글자로 낱말 완성하기",
         "levels": {
           "읽기": {
@@ -1090,6 +1112,7 @@ LESSONS["u3_l03"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 보여 준 낱말에서 받침 있는 글자를 짚어 볼래?"],"watch":"받침 없는 글자와 구별","min":5},
         "tag": "👋 짝 활동",
         "title": "받침 낱말 찾기 짝 놀이",
         "type": "pair",
@@ -1107,6 +1130,7 @@ LESSONS["u3_l03"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["받침 글자를 바르게 써야 뭐가 완성돼?"],"watch":"\"낱말\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -1376,6 +1400,8 @@ LESSONS["u3_l04"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"하늘에 떠 있는 \"구르\"?\""},{"face":"🐿️","label":"도토 \"\"구름\"이 되려면 뭐가 필요할까?\""}],
+        "tnote": {"ask":["\"구르\"가 \"구름\"이 되려면 어디에 뭘 넣어야 해?"],"watch":"\"르\"에 ㅁ","min":3},
         "scene_title": "받침이 사라졌어요! ☁️",
         "visual": "☁️",
         "question": "하늘에 떠 있는 이것, ‘구르’라고 쓰면 이상해요.<br>무엇을 넣어야 ‘구름’이 될까요?",
@@ -1413,6 +1439,7 @@ LESSONS["u3_l04"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"채\"에 ㄱ을 넣으면? 글과 그림이 가득한 거!"],"watch":"책","min":4},
         "title": "받침을 넣으면 낱말이 완성돼요",
         "content": "그림을 보고 뜻을 떠올린 다음, **빠진 받침**을 넣으면 낱말이 완성돼요. 다 만들면 꼭 소리 내어 읽어 봐요!",
         "symbol_meanings": [
@@ -1451,6 +1478,7 @@ LESSONS["u3_l04"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["\"무통\"의 \"무\"에 ㄹ을 넣으면?"],"watch":"물통 — 앞 글자에 받침","min":4},
         "title": "빠진 받침을 넣어요 🔧",
         "sub": "받침이 빠진 낱말이에요. 그림을 보고 빠진 받침을 찾아 낱말을 완성해요!",
         "cards": [
@@ -1487,6 +1515,7 @@ LESSONS["u3_l04"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["가방 속에 받침 낱말이 있어? 꺼내서 보여 줄래?"],"watch":"연필·물통·색종이 — 실물","min":4},
         "title": "우리 둘레의 받침 낱말을 찾아요",
         "question": "교실과 우리 둘레에서 받침이 들어간 낱말을 찾아 말해 봐요.",
         "items": [
@@ -1505,6 +1534,7 @@ LESSONS["u3_l04"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"채\" 아래에 ㄱ을 넣어 \"책\"을 써 볼까?"],"watch":"ㄱ 받침","min":5},
         "title": "빠진 받침을 넣어 낱말 만들기",
         "levels": {
           "읽기": {
@@ -1534,6 +1564,7 @@ LESSONS["u3_l04"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["그림을 보고 어떤 받침을 넣을래? 넣고 나서 읽어 봐"],"watch":"읽어서 뜻이 통하면 정답","min":5},
         "tag": "👋 짝 활동",
         "title": "빠진 받침 채우기 짝 놀이",
         "type": "pair",
@@ -1552,6 +1583,7 @@ LESSONS["u3_l04"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["낱말을 만든 뒤에는 어떻게 해?"],"watch":"\"소리 내어 읽어요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -1821,6 +1853,8 @@ LESSONS["u3_l05"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"간판에 \"우상\"이라고 쓰여 있어!\""},{"face":"👦","label":"두리 \"비 올 때 쓰는 건 \"우산\" 아냐?\""}],
+        "tnote": {"ask":["\"우상\"… 비 올 때 쓰는 그거 맞아? 뭐가 잘못됐어?"],"watch":"받침 ㅇ→ㄴ","min":3},
         "scene_title": "이상한 간판을 봤어요 🏪",
         "visual": "🏪",
         "question": "가게 간판에 ‘우상’이라고 쓰여 있어요.<br>비 올 때 쓰는 그것… 무엇이 잘못됐을까요?",
@@ -1858,6 +1892,7 @@ LESSONS["u3_l05"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"잠화\"는 어느 받침을 뭘로 고쳐야 해?"],"watch":"ㅁ→ㅇ 장화","min":4},
         "title": "틀린 받침을 찾아 바르게",
         "content": "받침을 잘못 쓰면 다른 낱말이 되거나 뜻이 안 통해요. **틀린 곳을 찾고 → 바른 받침으로 고치고 → 소리 내어 읽어** 확인해요!",
         "symbol_meanings": [
@@ -1896,6 +1931,7 @@ LESSONS["u3_l05"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["\"거우\"라고 쓰면 내 모습이 비치는 게 될까? 뭘 넣어야 해?"],"watch":"ㄹ — 거울","min":4},
         "title": "틀린 낱말 바르게 고치기 🔍",
         "sub": "받침이 틀린 낱말이에요. 그림을 떠올리며 바르게 고쳐요. 카드를 누르면 바른 낱말이 나와요!",
         "cards": [
@@ -1932,6 +1968,7 @@ LESSONS["u3_l05"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["\"연필\"과 \"여핀\" 중 맞는 건? 어떻게 알았어?"],"watch":"읽어 보면 어색 — 소리로 판단","min":4},
         "title": "바르게 쓴 낱말을 골라요",
         "question": "두 낱말 중 바르게 쓴 것은 무엇일까요? 골라서 또박또박 읽어 봐요.",
         "items": [
@@ -1950,6 +1987,7 @@ LESSONS["u3_l05"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"우상\"을 바르게 고쳐 \"우산\"을 써 볼까?"],"watch":"받침만 바꿈","min":5},
         "title": "틀린 받침을 바르게 고치기",
         "levels": {
           "읽기": {
@@ -1979,6 +2017,7 @@ LESSONS["u3_l05"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 보여 준 틀린 낱말, 어디가 틀렸어? 고쳐 읽어 볼까?"],"watch":"틀린 자리를 먼저 찾기","min":5},
         "tag": "👋 짝 활동",
         "title": "틀린 받침 고치기 짝 놀이",
         "type": "pair",
@@ -1996,6 +2035,7 @@ LESSONS["u3_l05"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["고친 낱말은 어떻게 확인해?"],"watch":"\"소리 내어 읽어요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -2265,6 +2305,8 @@ LESSONS["u3_l06"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"\"꽃\" 맨 위 자음자, ㄱ이 두 개야!\""},{"face":"👧","label":"하나 \"쌍둥이 자음자다!\""}],
+        "tnote": {"ask":["\"꽃\"의 첫 자음자를 자세히 봐. ㄱ이 몇 개야?"],"watch":"두 개 — ㄲ","min":3},
         "scene_title": "쌍둥이 자음자? 👯",
         "visual": "👯",
         "question": "‘꽃’이라는 글자를 자세히 보세요.<br>맨 위 자음자가 ㄱ 두 개를 닮지 않았나요?",
@@ -2302,6 +2344,7 @@ LESSONS["u3_l06"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["ㄷ 두 개를 나란히 쓰면 뭐가 돼? 쫄깃한 간식!"],"watch":"ㄸ — 떡","min":4},
         "title": "같은 자음자 두 개가 나란히",
         "content": "ㄲ·ㄸ·ㅃ·ㅆ·ㅉ는 **같은 자음자 두 개**를 나란히 쓴 모양이에요. 그래서 쌍둥이 자음자처럼 보여요!",
         "symbol_meanings": [
@@ -2340,6 +2383,7 @@ LESSONS["u3_l06"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["ㅃ이 들어가요, 고소한 냄새! 뭘까?"],"watch":"빵","min":4},
         "title": "새 자음자가 들어간 낱말 🎴",
         "sub": "ㄲ·ㄸ·ㅃ·ㅆ가 들어간 낱말이에요. 어떤 자음자가 들어 있는지 함께 살펴봐요!",
         "cards": [
@@ -2376,6 +2420,7 @@ LESSONS["u3_l06"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["급식 안내판에서 쌍둥이 자음자를 찾아볼까?"],"watch":"찌개·떡볶이 — 실제 급식표","min":4},
         "title": "쌍둥이 자음자 모양을 찾아요",
         "question": "교실과 책 속에서 ㄲ·ㄸ·ㅃ·ㅆ·ㅉ 모양을 찾아 말해 봐요.",
         "items": [
@@ -2394,6 +2439,7 @@ LESSONS["u3_l06"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["ㄱ 두 개로 ㄲ을 써 볼까? 두 개가 붙어 있게"],"watch":"간격 주의","min":5},
         "title": "여러 가지 자음자의 모양 알기",
         "levels": {
           "읽기": {
@@ -2423,6 +2469,7 @@ LESSONS["u3_l06"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["자음자 카드 두 장을 나란히 놓으면 뭐가 돼? 그 소리가 든 낱말은?"],"watch":"ㄲ→꽃 등","min":5},
         "tag": "👋 짝 활동",
         "title": "쌍둥이 자음자 짝 맞추기",
         "type": "pair",
@@ -2440,6 +2487,7 @@ LESSONS["u3_l06"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["\"떡\"의 첫 자음자는?"],"watch":"ㄸ","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -2709,6 +2757,8 @@ LESSONS["u3_l07"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"🐻","label":"곰돌이 \"달콤한 걸 먹고 있어!\""},{"face":"🐿️","label":"도토 \"굴이야, 꿀이야?\""}],
+        "tnote": {"ask":["곰돌이가 먹는 건 \"굴\"일까 \"꿀\"일까? 소리 내 보면 뭐가 달라?"],"watch":"ㄲ이 더 힘줌","min":3},
         "scene_title": "굴일까, 꿀일까? 🍯",
         "visual": "🍯",
         "question": "곰돌이가 달콤한 것을 먹고 있어요.<br>‘굴’이라고 읽으면 맞을까요, ‘꿀’이라고 읽어야 할까요?",
@@ -2746,6 +2796,7 @@ LESSONS["u3_l07"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"방\"과 \"빵\"을 번갈아 소리 내 볼까? 어느 게 더 힘이 들어가?"],"watch":"빵 — 몸으로 힘 느끼기","min":4},
         "title": "자음자 하나로 소리와 뜻이 달라져요",
         "content": "ㄲ·ㄸ·ㅃ·ㅆ·ㅉ는 ㄱ·ㄷ·ㅂ·ㅅ·ㅈ보다 **더 힘주어** 소리 내요. 자음자가 바뀌면 소리도 뜻도 달라져요!",
         "symbol_meanings": [
@@ -2784,6 +2835,7 @@ LESSONS["u3_l07"] =
       "stage": "활동",
       "block": "chosung_quiz",
       "data": {
+        "tnote": {"ask":["ㄲ ㅜ ㄹ을 모으면? 곰돌이가 좋아하는 거!"],"watch":"꿀","min":4},
         "title": "자모를 모으면 무슨 낱말? 🧩",
         "sub": "쌍둥이 자음자가 들어간 글자예요. 자모를 모아 읽고 [정답 보기]로 확인해요!",
         "items": [
@@ -2823,6 +2875,7 @@ LESSONS["u3_l07"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["쌍둥이 자음자 낱말 하나 말해 볼래? 힘주어 소리 내 봐"],"watch":"발표 때 소리 강조","min":5},
         "title": "쌍둥이 자음자 낱말 발표 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. ㄲ·ㄸ·ㅃ·ㅆ·ㅉ가 들어간 낱말을 하나 말해요!",
         "count": 24,
@@ -2839,6 +2892,7 @@ LESSONS["u3_l07"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"굴↔꿀\", \"방↔빵\" 힘의 차이를 느끼며 읽어 볼까?"],"watch":"짝지어 읽기","min":5},
         "title": "자음자 소리의 차이 알기",
         "levels": {
           "읽기": {
@@ -2868,6 +2922,7 @@ LESSONS["u3_l07"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝과 \"살/쌀\" 카드를 번갈아 읽으면 뭐가 달라?"],"watch":"힘 차이","min":5},
         "tag": "👋 짝 활동",
         "title": "소리 짝 찾기 놀이",
         "type": "pair",
@@ -2885,6 +2940,7 @@ LESSONS["u3_l07"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["자음자가 바뀌면 뭐가 달라져?"],"watch":"\"소리와 뜻\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -3154,6 +3210,8 @@ LESSONS["u3_l08"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"구름이 토끼 모양이야!\""},{"face":"👦","label":"두리 \"나한텐 코끼리로 보이는데?\""}],
+        "tnote": {"ask":["저 구름, 무슨 모양으로 보여?"],"watch":"정답 없음 — 그림책 짐작하기로 연결","min":3},
         "scene_title": "구름이 변신해요 ☁️",
         "visual": "☁️",
         "question": "하늘에 뭉게뭉게 구름이 떠 있어요.<br>저 구름, 무슨 모양으로 보이나요?",
@@ -3191,6 +3249,7 @@ LESSONS["u3_l08"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["이야기를 읽기 전에 제목과 그림으로 뭘 할까?"],"watch":"짐작하기 — 세 약속 중 첫째","min":4},
         "title": "이야기를 읽는 약속",
         "content": "이야기를 읽을 때는 **제목과 그림으로 짐작**하고, **또박또박** 읽으며, 읽은 다음 **무슨 일이 있었는지** 떠올려요!",
         "symbol_meanings": [
@@ -3229,6 +3288,7 @@ LESSONS["u3_l08"] =
       "stage": "활동",
       "block": "read_aloud",
       "data": {
+        "tnote": {"ask":["제목을 보고 무슨 이야기일지 짐작해 볼까? 이제 읽어 보자"],"watch":"읽기 중 받침 소리 또박또박","min":6},
         "title": "구름이 변신하는 이야기 📖",
         "author": "구름과 동물이 나오는 그림책",
         "pages": [
@@ -3261,6 +3321,7 @@ LESSONS["u3_l08"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["주인공이 토끼에게 만들어 준 건? 호랑이 어디를 잡았어?"],"watch":"언덕·꼬리","min":4},
         "title": "이야기 내용을 확인해요",
         "question": "이야기를 잘 들었나요? 무슨 일이 있었는지 말해 봐요.",
         "items": [
@@ -3279,6 +3340,7 @@ LESSONS["u3_l08"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["이야기에 나온 낱말 하나를 골라 바르게 써 볼까?"],"watch":"구름 등","min":5},
         "title": "이야기를 읽고 내용 알기",
         "levels": {
           "읽기": {
@@ -3306,6 +3368,7 @@ LESSONS["u3_l08"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짐작한 것과 실제 이야기가 같았어, 달랐어?"],"watch":"달라도 좋음 — 짐작의 재미","min":5},
         "tag": "👋 짝 활동",
         "title": "이야기 짐작하고 나누기 짝 활동",
         "type": "pair",
@@ -3323,6 +3386,7 @@ LESSONS["u3_l08"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["읽은 다음에는 뭘 떠올릴까?"],"watch":"\"무슨 일이 있었는지\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -3555,6 +3619,8 @@ LESSONS["u3_l09"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"🐰","label":"토끼 \"깡충깡충!\""},{"face":"👧","label":"하나 \"뛰는 모양을 말로 하면 이렇구나!\""}],
+        "tnote": {"ask":["토끼가 뛰는 모양을 말로 하면? 몸으로도 해 볼까?"],"watch":"깡충깡충 — 몸짓 함께","min":3},
         "scene_title": "토끼는 어떻게 뛸까요? 🐰",
         "visual": "🐰",
         "question": "지난 시간 이야기 속 토끼를 떠올려요.<br>토끼가 뛰는 모양을 말로 나타내면 어떻게 될까요?",
@@ -3592,6 +3658,7 @@ LESSONS["u3_l09"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"깡충깡충·폴짝폴짝·뒤뚱뒤뚱\"에 쌍둥이 자음자가 몇 개 보여?"],"watch":"ㄲ·ㅉ·ㄸ","min":4},
         "title": "흉내 내는 말 속 쌍둥이 자음자",
         "content": "움직임이나 모양을 나타내는 **흉내 내는 말**에는 쌍둥이 자음자가 자주 들어가요. 또박또박 자신 있게 읽어 봐요!",
         "symbol_meanings": [
@@ -3630,6 +3697,7 @@ LESSONS["u3_l09"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["오리가 걷는 모양은? ㄸ이 들어가요"],"watch":"뒤뚱뒤뚱 — 몸짓","min":4},
         "title": "흉내 내는 말 맞히기 🎭",
         "sub": "어떤 모양을 나타내는 말일까요? 카드를 누르면 답이 나와요. 다 같이 몸으로도 흉내 내 봐요!",
         "cards": [
@@ -3666,6 +3734,7 @@ LESSONS["u3_l09"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["좋아하는 동물이 움직이는 모양을 흉내 내는 말로 발표해 볼래?"],"watch":"말+몸짓","min":5},
         "title": "동물 움직임 발표하기 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 좋아하는 동물과 그 동물이 움직이는 모양을 흉내 내는 말로 말해요!",
         "count": 24,
@@ -3682,6 +3751,7 @@ LESSONS["u3_l09"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"깡충깡충\"을 자신 있게 크게 읽어 볼까?"],"watch":"기어드는 목소리 X","min":5},
         "title": "흉내 내는 말 자신 있게 읽기",
         "levels": {
           "읽기": {
@@ -3709,6 +3779,7 @@ LESSONS["u3_l09"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 읽은 흉내 내는 말을 몸으로 보여 줄래?"],"watch":"역할 바꾸기","min":5},
         "tag": "👋 짝 활동",
         "title": "흉내 내는 말 몸짓 놀이",
         "type": "pair",
@@ -3726,6 +3797,7 @@ LESSONS["u3_l09"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["흉내 내는 말은 어떻게 읽어?"],"watch":"\"자신 있게 또박또박\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -3994,6 +4066,8 @@ LESSONS["u3_l10"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"교실을 둘러보자!\""},{"face":"🐿️","label":"도토 \"받침 있는 물건 이름이 몇 개나 될까?\""}],
+        "tnote": {"ask":["교실을 한 바퀴 둘러봐. 받침 있는 물건 이름이 몇 개나 보여?"],"watch":"칠판·책상·창문…","min":3},
         "scene_title": "‘교실’ 하면 무엇이 떠오르나요? 🏫",
         "visual": "🏫",
         "question": "교실을 한 바퀴 둘러봐요.<br>받침이 들어간 물건 이름이 몇 개나 보이나요?",
@@ -4031,6 +4105,7 @@ LESSONS["u3_l10"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["낱말 찾기 놀이 첫 순서가 뭐야?"],"watch":"주제 정하기","min":4},
         "title": "낱말 찾기 놀이 방법",
         "content": "오늘은 우리가 배운 받침 낱말로 놀이를 해요. **주제를 정하고 → 낱말을 쓰고 → 함께 확인**하는 순서예요!",
         "symbol_meanings": [
@@ -4069,6 +4144,7 @@ LESSONS["u3_l10"] =
       "stage": "활동",
       "block": "chosung_quiz",
       "data": {
+        "tnote": {"ask":["ㄱ ㅊ, 교실 물건이에요. 뭘까?"],"watch":"공책","min":4},
         "title": "교실 물건 초성 퀴즈 🏫",
         "sub": "주제는 ‘교실에 있는 물건’! 초성을 보고 받침 낱말을 맞혀요. [정답 보기]로 확인해요",
         "items": [
@@ -4108,6 +4184,7 @@ LESSONS["u3_l10"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["주제 하나 골라서 받침 낱말 세 개 말해 볼래?"],"watch":"과일·학용품·집 물건","min":5},
         "title": "주제별 받침 낱말 발표 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 주제(과일·학용품·집에 있는 물건)를 하나 골라 받침 낱말을 말해요!",
         "count": 24,
@@ -4124,6 +4201,7 @@ LESSONS["u3_l10"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"교실 물건\" 주제로 받침 낱말 하나 써 볼까?"],"watch":"공책·책상","min":5},
         "title": "주제를 정해 받침 낱말 찾기",
         "levels": {
           "읽기": {
@@ -4151,6 +4229,7 @@ LESSONS["u3_l10"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝과 정한 주제가 뭐야? 몇 개 모았어?"],"watch":"모은 낱말 다 읽기","min":5},
         "tag": "👋 짝 활동",
         "title": "주제 낱말 모으기 짝 놀이",
         "type": "pair",
@@ -4169,6 +4248,7 @@ LESSONS["u3_l10"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["모은 낱말은 어떻게 해?"],"watch":"\"함께 확인해요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -4437,6 +4517,8 @@ LESSONS["u3_l11"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"🐻","label":"곰 \"ㄱ을 ㅂ으로 바꾸면…\""},{"face":"🌷","label":"봄 \"내가 됐어! 마법이지?\""}],
+        "tnote": {"ask":["\"곰\"에서 ㄱ을 ㅂ으로 바꾸면 뭐가 돼?"],"watch":"봄 — 한 낱자가 뜻을 바꿈","min":3},
         "scene_title": "곰이 봄이 됐어요! 🐻🌷",
         "visual": "🪄",
         "question": "‘곰’에서 ㄱ을 ㅂ으로 바꾸면 ‘봄’이 돼요.<br>낱자 하나가 마법처럼 뜻을 바꿨네요?",
@@ -4474,6 +4556,7 @@ LESSONS["u3_l11"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"강\"과 \"공\"은 뭐가 바뀐 거야? 자음자? 모음자? 받침?"],"watch":"모음자 ㅏ↔ㅗ","min":4},
         "title": "무엇이 바뀌었을까요?",
         "content": "자음자·모음자·받침 중 **낱자 하나만 바뀌어도** 전혀 다른 낱말이 돼요. 무엇이 바뀌었는지 찾아봐요!",
         "symbol_meanings": [
@@ -4512,6 +4595,7 @@ LESSONS["u3_l11"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["\"말\"에서 ㅏ를 ㅜ로 바꾸면? 목마를 때 마셔요"],"watch":"물","min":4},
         "title": "변신 낱말 맞히기 🪄",
         "sub": "낱자 하나를 바꾸면 무슨 낱말이 될까요? 카드를 누르면 답이 나와요!",
         "cards": [
@@ -4548,6 +4632,7 @@ LESSONS["u3_l11"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["\"밥\"의 받침을 ㅇ으로 바꾸면?"],"watch":"방 — 새 변신 낱말 만들기","min":4},
         "title": "나도 변신 낱말을 만들어요",
         "question": "낱자 하나를 바꿔 새 낱말을 만들고 두 낱말을 모두 읽어 봐요.",
         "items": [
@@ -4566,6 +4651,7 @@ LESSONS["u3_l11"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"곰\"에서 ㄱ을 ㅂ으로 바꿔 \"봄\"을 써 볼까?"],"watch":"자음자만 바꿈","min":5},
         "title": "낱자가 바뀌면 뜻도 바뀌기",
         "levels": {
           "읽기": {
@@ -4595,6 +4681,7 @@ LESSONS["u3_l11"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 낱말에서 뭘 하나 바꿨어? 새 낱말은?"],"watch":"자음자·모음자·받침 중 하나","min":5},
         "tag": "👋 짝 활동",
         "title": "변신 낱말 짝 놀이",
         "type": "pair",
@@ -4612,6 +4699,7 @@ LESSONS["u3_l11"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["낱자 하나가 바뀌면 뭐가 바뀌어?"],"watch":"\"뜻\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -4881,6 +4969,8 @@ LESSONS["u3_l12"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"받침 빠진 쪽지에서 시작했지!\""},{"face":"👦","label":"두리 \"이제 변신 낱말까지 만들 수 있어!\""}],
+        "tnote": {"ask":["이 단원에서 뭘 배웠는지 하나씩 말해 볼까?"],"watch":"받침 쓰기·쌍둥이 자음자·변신 낱말","min":3},
         "scene_title": "우리가 걸어온 길 🚶",
         "visual": "🗺️",
         "question": "받침 빠진 쪽지에서 시작해 여기까지 왔어요.<br>이 단원에서 배운 것을 떠올려 볼까요?",
@@ -4918,6 +5008,7 @@ LESSONS["u3_l12"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"연피\"에 어떤 받침을 넣으면 연필이 돼?"],"watch":"ㄹ","min":4},
         "title": "두 갈래로 정리해요",
         "content": "이 단원에서 우리는 **받침 있는 글자 쓰기**와 **여러 가지 낱말 읽기**를 배웠어요. 받침을 골라 낱말을 완성하며 정리해요!",
         "symbol_meanings": [
@@ -4956,6 +5047,7 @@ LESSONS["u3_l12"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["받침 ㅂ을 넣어요, 음식을 담는 것! 뭘까?"],"watch":"접시","min":4},
         "title": "받침을 골라 낱말 완성! 🧺",
         "sub": "보기 ㄱ·ㄹ·ㅂ·ㅇ에서 알맞은 받침을 골라 낱말을 완성해요. 카드를 누르면 답이 나와요!",
         "cards": [
@@ -4992,6 +5084,7 @@ LESSONS["u3_l12"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["ㄲ과 짝이 되는 흉내 내는 말은? ㅉ은?"],"watch":"깡충깡충·쨍쨍","min":4},
         "title": "자음자와 흉내 내는 말을 이어요",
         "question": "쌍둥이 자음자와 그 자음자가 들어간 흉내 내는 말을 짝지어 말해 봐요.",
         "items": [
@@ -5010,6 +5103,7 @@ LESSONS["u3_l12"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"차\"에 ㅇ을 넣어 \"창\"을 써 볼까?"],"watch":"창문의 창","min":5},
         "title": "배운 내용 정리하기",
         "levels": {
           "읽기": {
@@ -5039,6 +5133,7 @@ LESSONS["u3_l12"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["보기 받침 ㄱ·ㄹ·ㅂ·ㅇ 중 뭘 골랐어? 읽어 보니 맞아?"],"watch":"읽어서 확인","min":5},
         "tag": "👋 짝 활동",
         "title": "받침 골라 낱말 완성 짝 놀이",
         "type": "pair",
@@ -5057,6 +5152,7 @@ LESSONS["u3_l12"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["이 단원에서 배운 두 가지는?"],"watch":"받침 쓰기·낱말 읽기","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -5325,6 +5421,8 @@ LESSONS["u3_l13"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"🐿️","label":"도토 \"상자 안에 글자가 가득!\""},{"face":"👧","label":"하나 \"색·종·이를 모으면 색종이!\""}],
+        "tnote": {"ask":["상자 속 글자를 골라 어떤 낱말을 만들 수 있을까?"],"watch":"색종이·하늘·여름","min":3},
         "scene_title": "글자 상자를 열어요 📦",
         "visual": "📦",
         "question": "상자 안에 색·종·이·하·늘·여·름 글자가 들어 있어요.<br>글자를 골라 어떤 낱말을 만들 수 있을까요?",
@@ -5362,6 +5460,7 @@ LESSONS["u3_l13"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"하늘\"에서 받침 있는 글자는?"],"watch":"늘 — ㄹ","min":4},
         "title": "글자를 모아 낱말을, 글씨는 바르게",
         "content": "상자 속 글자를 골라 모으면 낱말이 돼요. 만든 낱말은 **글자의 짜임을 생각하며 바르게** 써야 해요!",
         "symbol_meanings": [
@@ -5400,6 +5499,7 @@ LESSONS["u3_l13"] =
       "stage": "활동",
       "block": "chosung_quiz",
       "data": {
+        "tnote": {"ask":["ㄴ ㄱ ㄱ, 세 글자예요. 공으로 하는 운동!"],"watch":"농구공","min":4},
         "title": "마지막 초성 퀴즈 🏆",
         "sub": "이 단원에서 배운 낱말로 마지막 퀴즈! 초성을 보고 낱말을 맞혀요. [정답 보기]로 확인해요",
         "items": [
@@ -5439,6 +5539,7 @@ LESSONS["u3_l13"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["이 단원에서 잘하게 된 것 한 가지만 말해 볼래?"],"watch":"자기 평가","min":5},
         "title": "나를 돌아보며 발표해요 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 이 단원에서 잘하게 된 것 한 가지를 말해요. 친구와 비교하지 않아도 돼요!",
         "count": 24,
@@ -5455,6 +5556,7 @@ LESSONS["u3_l13"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"하\"와 \"늘\"을 모아 \"하늘\"을 바르게 써 볼까?"],"watch":"짜임 생각하며","min":5},
         "title": "기초 다지고 스스로 돌아보기",
         "levels": {
           "읽기": {
@@ -5484,6 +5586,7 @@ LESSONS["u3_l13"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝과 글자 카드로 낱말을 몇 개 만들었어? 다 읽어 볼까?"],"watch":"많이 만든 사람 칭찬","min":5},
         "tag": "👋 짝 활동",
         "title": "글자 모아 낱말 만들기 짝 대결",
         "type": "pair",
@@ -5501,6 +5604,7 @@ LESSONS["u3_l13"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["이 단원에서 뭐가 즐거웠어?"],"watch":"여러 답","min":3},
         "title": "오늘 확인해요",
         "items": [
           {

@@ -69,6 +69,8 @@ LESSONS["u2_l01"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"풍선을 모으니 사자가 됐어!\""},{"face":"👦","label":"두리 \"아래에 뭘 붙이니까 상장이 됐네?\""}],
+        "tnote": {"ask":["\"사자\"가 \"상장\"이 됐어. 글자 어디가 달라졌어?"],"watch":"아래에 자음자가 생김 — 손가락으로 아래를 짚게","min":3},
         "scene_title": "풍선 속 자음자와 모음자 🎈",
         "visual": "🎈",
         "question": "풍선 속 자음자·모음자를 모으면 ‘사자’가 돼요.<br>그 아래에 자음자를 더하면 ‘상장’이 돼요. 무엇이 달라졌을까요?",
@@ -84,6 +86,7 @@ LESSONS["u2_l01"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"사\" 아래 뭐가 붙어서 \"상\"이 됐어? 이 자리를 뭐라고 부를까?"],"watch":"\"받침\" 이름을 처음 말하는 자리 — 받쳐 준다는 뜻과 연결","min":4},
         "title": "글자 아래에 더해지는 ‘받침’",
         "content": "받침이 없는 글자 **아래쪽**에 자음자를 더하면 받침이 있는 글자가 돼요. 글자 아래에 있는 그 자음자를 **받침**이라고 해요!",
         "symbol_meanings": [
@@ -122,6 +125,7 @@ LESSONS["u2_l01"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["ㄱ·ㅗ·ㅇ이 모이면? 아래에 오는 건 뭐야?"],"watch":"공 — 받침 ㅇ 손가락 짚기","min":4},
         "title": "받침이 있는 글자 찾기",
         "sub": "그림을 보고 낱말을 말해요. 글자 아래에 받침이 있는지 함께 살펴봐요!",
         "cards": [
@@ -153,6 +157,7 @@ LESSONS["u2_l01"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["교실에서 받침 있는 글자 찾았어? 받침은 어디 있어?"],"watch":"칠판·창문 — 글자 아래를 짚어 보이게","min":4},
         "title": "받침이 있는 글자를 찾아 말해요",
         "question": "교실이나 우리 둘레에서 받침이 있는 글자를 찾아볼까요?",
         "items": [
@@ -171,6 +176,7 @@ LESSONS["u2_l01"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"공·별·문\" 읽을 때 마지막 소리를 끝까지 내 볼까?"],"watch":"받침 소리를 흘리는 아이 — \"고~\"가 아니라 \"공\"","min":5},
         "title": "받침이 있는 글자와 친해지기",
         "levels": {
           "읽기": {
@@ -198,6 +204,7 @@ LESSONS["u2_l01"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 가리킨 낱말에 받침이 있어, 없어?"],"watch":"받침 없는 것도 같이 찾아 비교","min":5},
         "tag": "👋 짝 활동",
         "title": "받침 글자 찾기 짝 놀이",
         "type": "pair",
@@ -215,6 +222,7 @@ LESSONS["u2_l01"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["글자 아래에 있는 자음자를 뭐라고 해?"],"watch":"\"받침\" 다 같이","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -484,6 +492,8 @@ LESSONS["u2_l02"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"간판을 못 읽어서 답답했어.\""},{"face":"👧","label":"하나 \"난 친구가 딴 데 보고 말해서 서운했어.\""}],
+        "tnote": {"ask":["글자를 못 읽어서 답답했던 적 있어? 어떤 때?"],"watch":"경험 두어 개 듣고 → 이 단원의 두 갈래로 연결","min":3},
         "scene_title": "이럴 때 답답했어요 😣",
         "visual": "🤔",
         "question": "글자를 못 읽어서 답답했던 적 있나요?<br>친구가 딴 곳을 보며 말해서 서운했던 적은요?",
@@ -521,6 +531,7 @@ LESSONS["u2_l02"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["이 단원에서 배울 두 가지가 뭐야?"],"watch":"받침 읽기·바른 자세 — 둘 다 말하게","min":4},
         "title": "이 단원에서 배울 두 가지",
         "content": "이 단원에서는 두 가지를 배워요. 하나는 **받침이 있는 글자**를 정확하게 읽기, 다른 하나는 **바른 자세**로 말하고 듣기예요!",
         "symbol_meanings": [
@@ -555,6 +566,7 @@ LESSONS["u2_l02"] =
       "stage": "활동",
       "block": "question",
       "data": {
+        "tnote": {"ask":["둘 중에 뭐가 더 궁금해? 왜?"],"watch":"손 들기로 반 전체 의견","min":4},
         "title": "무엇이 더 궁금한가요?",
         "question": "단원에서 배울 두 가지 중 어떤 것이 더 궁금한지 이야기해 봐요.",
         "items": [
@@ -573,6 +585,7 @@ LESSONS["u2_l02"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["이 단원에서 열심히 할 것을 한 문장으로 말해 볼래?"],"watch":"\"~을 열심히 하겠습니다\" 형태 시범","min":5},
         "title": "단원 다짐 발표하기 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 이 단원에서 무엇을 열심히 할지 다짐을 말해요!",
         "count": 24,
@@ -589,6 +602,7 @@ LESSONS["u2_l02"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"산·손·곰\" 읽을 때 받침 소리 끝까지 내 볼까?"],"watch":"5차시부터 본격 — 지금은 시도만","min":5},
         "title": "배울 것을 미리 만나기",
         "levels": {
           "읽기": {
@@ -616,6 +630,7 @@ LESSONS["u2_l02"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝의 다짐을 듣고 고개를 끄덕여 줬어?"],"watch":"듣는 자세 — 다음 차시 예고","min":5},
         "tag": "👋 짝 활동",
         "title": "다짐 나누기 짝 활동",
         "type": "pair",
@@ -633,6 +648,7 @@ LESSONS["u2_l02"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["발표할 땐 누구를 봐? 들을 땐?"],"watch":"듣는 사람/말하는 사람","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -855,6 +871,8 @@ LESSONS["u2_l03"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"\"차\"가 \"창\"이 됐어!\""},{"face":"🐿️","label":"도토 \"아래에 뭐가 생긴 거지?\""}],
+        "tnote": {"ask":["\"차\"와 \"창\"은 뭐가 달라?"],"watch":"ㅇ 받침 — 아래를 짚게","min":3},
         "scene_title": "무엇이 달라졌을까요? ✨",
         "visual": "🔤",
         "question": "‘차’ 아래에 ‘ㅇ’을 더하면 ‘창’이 돼요.<br>글자 아래에 무엇이 생겼을까요?",
@@ -892,6 +910,7 @@ LESSONS["u2_l03"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"산\"은 세 조각으로 나눌 수 있어. 뭐랑 뭐랑 뭐야?"],"watch":"ㅅ·ㅏ·ㄴ — 순서대로, 받침이 마지막","min":4},
         "title": "자음자 + 모음자 + 받침",
         "content": "받침이 있는 글자는 **자음자 + 모음자**에 **받침(자음자)**이 더해져 만들어져요. 받침은 글자 **아래쪽**에 와요!",
         "symbol_meanings": [
@@ -930,6 +949,7 @@ LESSONS["u2_l03"] =
       "stage": "활동",
       "block": "chosung_quiz",
       "data": {
+        "tnote": {"ask":["ㅅ ㅏ ㄴ을 모으면 무슨 글자? 힌트는 높이 솟은 자연!"],"watch":"산 — 받침을 마지막에 붙이는 순서","min":4},
         "title": "자모를 모으면 무슨 글자? 🧩",
         "sub": "자음자·모음자·받침을 보고 무슨 글자일지 생각해요. [정답 보기]를 누르면 답이 나와요",
         "items": [
@@ -969,6 +989,7 @@ LESSONS["u2_l03"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["\"가\"에 ㅇ 받침을 더하면 무슨 글자야?"],"watch":"강 — 소리 내 확인","min":4},
         "title": "받침을 넣어 글자를 만들어요",
         "question": "받침이 없는 글자에 받침을 더하면 무슨 글자가 될까요?",
         "items": [
@@ -987,6 +1008,7 @@ LESSONS["u2_l03"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"사\" 아래에 ㄴ을 써서 \"산\"을 만들어 볼까?"],"watch":"받침 크기가 너무 커지지 않게","min":5},
         "title": "받침 글자의 짜임 알기",
         "levels": {
           "읽기": {
@@ -1016,6 +1038,7 @@ LESSONS["u2_l03"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["글자 카드 아래 자음자 카드를 붙이면 무슨 글자야?"],"watch":"읽어 보고 뜻이 있으면 더 좋음","min":5},
         "tag": "👋 짝 활동",
         "title": "받침 붙이기 짝 활동",
         "type": "pair",
@@ -1034,6 +1057,7 @@ LESSONS["u2_l03"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["\"곰\"의 받침은 뭐야?"],"watch":"ㅁ — 아래를 짚게","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -1303,6 +1327,8 @@ LESSONS["u2_l04"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"\"소\"에 ㅁ을 넣으니 \"솜\"이 됐어!\""},{"face":"👧","label":"하나 \"다른 받침을 넣으면 뭐가 될까?\""}],
+        "tnote": {"ask":["\"소\"에 ㅁ 말고 ㄴ을 넣으면 무슨 글자야?"],"watch":"손 — 받침에 따라 다른 글자","min":3},
         "scene_title": "보기에서 받침을 골라요 🧰",
         "visual": "🧩",
         "question": "‘소’ 아래에 ㅁ을 넣으면 ‘솜’이 돼요.<br>다른 받침을 넣으면 또 무슨 글자가 될까요?",
@@ -1340,6 +1366,7 @@ LESSONS["u2_l04"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"비\"에 ㅅ 받침을 넣으면 뭐가 돼? 머리 빗는 거!"],"watch":"빗 — 뜻으로 확인","min":4},
         "title": "받침을 더해 새 글자 만들기",
         "content": "받침이 없는 글자 아래에 **알맞은 받침**을 더하면 새로운 글자가 돼요. 같은 글자라도 받침이 다르면 **다른 글자**가 돼요!",
         "symbol_meanings": [
@@ -1378,6 +1405,7 @@ LESSONS["u2_l04"] =
       "stage": "활동",
       "block": "chosung_quiz",
       "data": {
+        "tnote": {"ask":["무＋ㄹ은? 바＋ㅂ은?"],"watch":"물·밥 — 실물 그림 연결","min":4},
         "title": "받침을 넣으면 무슨 글자? 🧩",
         "sub": "받침 없는 글자에 받침을 넣어 보세요. [정답 보기]를 누르면 답이 나와요",
         "items": [
@@ -1417,6 +1445,7 @@ LESSONS["u2_l04"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["네가 만든 받침 글자, 뜻이 있는 글자야?"],"watch":"뜻 없는 글자도 만들기는 정답 — 뜻 있는 것 칭찬","min":5},
         "title": "내가 만든 받침 글자 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 받침을 넣어 만든 글자를 소리 내어 읽어 줘요!",
         "count": 24,
@@ -1433,6 +1462,7 @@ LESSONS["u2_l04"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"솜·빗·물·밥\" 받침을 손가락으로 짚으며 읽어 볼까?"],"watch":"받침 네 개가 전부 다름을 발견","min":5},
         "title": "받침을 넣어 글자 만들기",
         "levels": {
           "읽기": {
@@ -1462,6 +1492,7 @@ LESSONS["u2_l04"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 보여 준 글자에 어떤 받침을 넣을래? 무슨 글자가 됐어?"],"watch":"받침 카드 ㄱ·ㄴ·ㄹ·ㅁ·ㅂ·ㅇ 준비","min":5},
         "tag": "👋 짝 활동",
         "title": "받침 골라 넣기 짝 놀이",
         "type": "pair",
@@ -1480,6 +1511,7 @@ LESSONS["u2_l04"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["받침이 다르면 글자는 어떻게 될까?"],"watch":"\"다른 글자가 돼요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -1749,6 +1781,8 @@ LESSONS["u2_l05"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"🐿️","label":"도토 \"땅에 살고 다리가 넷, 목이 길어!\""},{"face":"👦","label":"두리 \"기린! 받침이 있네?\""}],
+        "tnote": {"ask":["다섯 고개! 땅에 살고, 다리 넷, 목이 아주 길어요. 뭘까?"],"watch":"기린 — \"린\"의 받침 ㄴ 짚기","min":3},
         "scene_title": "다섯 고개 놀이 🐾",
         "visual": "🦒",
         "question": "땅에 살고, 다리가 넷, 목이 아주 길어요.<br>받침이 있는 이 동물은 무엇일까요?",
@@ -1786,6 +1820,7 @@ LESSONS["u2_l05"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"낙타\"의 \"낙\"은 끝소리가 뭐야? 끝까지 내 볼까?"],"watch":"ㄱ 소리 — \"나타\"로 읽는 아이 잡기","min":4},
         "title": "받침마다 소리가 있어요",
         "content": "받침에는 여러 자음자를 쓸 수 있고, 받침마다 **끝소리**가 달라요. 받침에 주의하며 끝까지 또박또박 읽어요!",
         "symbol_meanings": [
@@ -1824,6 +1859,7 @@ LESSONS["u2_l05"] =
       "stage": "활동",
       "block": "chosung_quiz",
       "data": {
+        "tnote": {"ask":["ㄴ ㅏ ㄱ 다음에 ㅌ ㅏ. 무슨 낱말?"],"watch":"낙타 — 받침 ㄱ 소리 확인","min":4},
         "title": "받침 글자를 읽어요 🧩",
         "sub": "받침에 주의하며 무슨 낱말일지 생각해요. [정답 보기]를 누르면 답이 나와요",
         "items": [
@@ -1863,6 +1899,7 @@ LESSONS["u2_l05"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["선생님 따라 \"반지\" — 받침 ㄴ 소리 들려?"],"watch":"\"바지\"와 비교해 듣게","min":4},
         "title": "받침에 주의하며 읽어요",
         "question": "선생님을 따라 받침 소리에 주의하며 또박또박 읽어 볼까요?",
         "items": [
@@ -1881,6 +1918,7 @@ LESSONS["u2_l05"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"바\" 아래에 ㄴ을 넣어 \"반\"을 써 볼까?"],"watch":"반지의 앞 글자","min":5},
         "title": "ㄱ·ㅋ·ㄴ·ㄷ·ㅅ 받침 읽기",
         "levels": {
           "읽기": {
@@ -1910,6 +1948,7 @@ LESSONS["u2_l05"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 읽은 낱말 끝소리를 듣고 받침이 뭔지 맞혀 볼래?"],"watch":"듣기로 받침 판별 — 어려우면 글자 보고","min":5},
         "tag": "👋 짝 활동",
         "title": "받침 소리 맞히기 짝 놀이",
         "type": "pair",
@@ -1927,6 +1966,7 @@ LESSONS["u2_l05"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["받침마다 뭐가 달라?"],"watch":"\"끝소리\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -2196,6 +2236,8 @@ LESSONS["u2_l06"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"\"꽃\"이랑 \"꼬\"는 뭐가 달라?\""},{"face":"👦","label":"두리 \"끝에 ㅊ 소리가 있어!\""}],
+        "tnote": {"ask":["\"꽃\"과 \"꼬\", 소리 내 보면 뭐가 달라?"],"watch":"끝소리 유무 — 받침이 소리를 바꿈","min":3},
         "scene_title": "받침 소리 떠올리기 🔊",
         "visual": "🌸",
         "question": "‘꽃’과 ‘꼬’는 무엇이 다를까요?<br>받침 ㅊ이 만드는 끝소리를 함께 들어봐요!",
@@ -2233,6 +2275,7 @@ LESSONS["u2_l06"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"물\"의 ㄹ 받침 소리를 내 볼까? 혀가 어디에 닿아?"],"watch":"윗니 뒤 — 몸으로 느끼기","min":4},
         "title": "여러 받침의 끝소리",
         "content": "ㅈ·ㅊ·ㅌ은 받침에서 비슷한 끝소리가 나고, ㄹ은 또렷한 ㄹ 소리가 나요. 받침 **글자**를 보며 끝까지 또박또박 읽어요!",
         "symbol_meanings": [
@@ -2271,6 +2314,7 @@ LESSONS["u2_l06"] =
       "stage": "활동",
       "block": "chosung_quiz",
       "data": {
+        "tnote": {"ask":["ㄲ ㅗ 아래 ㅊ이면? 봄에 피는 거!"],"watch":"꽃 — 겹자음 ㄲ은 3단원 예고","min":4},
         "title": "받침 글자를 읽어요 🧩",
         "sub": "받침에 주의하며 무슨 낱말일지 생각해요. [정답 보기]를 누르면 답이 나와요",
         "items": [
@@ -2310,6 +2354,7 @@ LESSONS["u2_l06"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["\"솥·팥\" 받침 ㅌ 소리, 끝까지 내 볼까?"],"watch":"\"소·파\"로 흘리지 않게","min":4},
         "title": "받침에 주의하며 읽어요",
         "question": "선생님을 따라 받침 소리에 주의하며 또박또박 읽어 볼까요?",
         "items": [
@@ -2328,6 +2373,7 @@ LESSONS["u2_l06"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"꼬\" 아래에 ㅊ을 써서 \"꽃\"을 써 볼까?"],"watch":"ㅊ 받침 모양 주의","min":5},
         "title": "ㅈ·ㅊ·ㅌ·ㅎ·ㄹ 받침 읽기",
         "levels": {
           "읽기": {
@@ -2357,6 +2403,7 @@ LESSONS["u2_l06"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["카드 뽑아 읽을 때 받침 소리를 끝까지 냈어? 짝이 들어 줘"],"watch":"릴레이 — 빠르기보다 정확","min":5},
         "tag": "👋 짝 활동",
         "title": "받침 낱말 릴레이 짝 읽기",
         "type": "pair",
@@ -2374,6 +2421,7 @@ LESSONS["u2_l06"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["ㄹ 받침은 어떤 소리가 나?"],"watch":"\"또렷한 ㄹ 소리\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -2643,6 +2691,8 @@ LESSONS["u2_l07"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"\"고\"에 ㅁ이면 곰!\""},{"face":"👧","label":"하나 \"\"지\"에 ㅂ이면 집! 받침이 달라졌어!\""}],
+        "tnote": {"ask":["\"곰\"의 받침과 \"집\"의 받침은 뭐야? 소리가 어떻게 달라?"],"watch":"ㅁ은 입 다물기, ㅂ은 입술 붙이기","min":3},
         "scene_title": "받침이 다른 친구들 🔤",
         "visual": "🐻",
         "question": "‘고’에 ㅁ을 넣으면 곰, ‘지’에 ㅂ을 넣으면 집!<br>받침에 따라 무엇이 달라질까요?",
@@ -2680,6 +2730,7 @@ LESSONS["u2_l07"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"강\"의 ㅇ 받침 소리를 내면 코가 울려? 손을 코에 대 볼까?"],"watch":"ㅇ 받침 = 코 소리 체험","min":4},
         "title": "ㅁ·ㅂ·ㅍ·ㅇ 받침",
         "content": "ㅂ과 ㅍ은 받침에서 비슷한 끝소리가 나고, ㅁ과 ㅇ은 코로 울리는 소리예요. 받침 **글자**를 보며 끝까지 또박또박 읽어요!",
         "symbol_meanings": [
@@ -2718,6 +2769,7 @@ LESSONS["u2_l07"] =
       "stage": "활동",
       "block": "chosung_quiz",
       "data": {
+        "tnote": {"ask":["ㄱ ㅗ 아래 어떤 받침을 넣으면 곰이 될까?"],"watch":"ㅁ — 그림 힌트","min":4},
         "title": "그림에 알맞은 받침은? 🧩",
         "sub": "그림을 보고 어떤 받침이 들어갈지 생각해요. [정답 보기]를 누르면 답이 나와요",
         "items": [
@@ -2757,6 +2809,7 @@ LESSONS["u2_l07"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["네가 고른 받침 낱말, 받침 소리 살려 읽어 줄래?"],"watch":"발표 전 짝에게 먼저","min":5},
         "title": "내가 고른 받침 낱말 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 받침을 골라 만든 낱말을 소리 내어 읽어 줘요!",
         "count": 24,
@@ -2773,6 +2826,7 @@ LESSONS["u2_l07"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"지\" 아래에 ㅂ을 써서 \"집\"을 써 볼까?"],"watch":"ㅂ 받침 모양","min":5},
         "title": "ㅁ·ㅂ·ㅍ·ㅇ 받침 읽고 고르기",
         "levels": {
           "읽기": {
@@ -2802,6 +2856,7 @@ LESSONS["u2_l07"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["그림을 보고 ㅁ·ㅂ·ㅇ 중 어느 받침이 맞아?"],"watch":"읽어 보고 뜻이 통하는지로 확인","min":5},
         "tag": "👋 짝 활동",
         "title": "그림 보고 받침 고르기 짝 놀이",
         "type": "pair",
@@ -2820,6 +2875,7 @@ LESSONS["u2_l07"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["\"강\"의 받침은 뭐야?"],"watch":"ㅇ","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -3089,6 +3145,8 @@ LESSONS["u2_l08"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"발표하는데 친구가 딴 데를 봐.\""},{"face":"👦","label":"두리 \"삐딱하게 서면 듣는 사람 마음이 어떨까?\""}],
+        "tnote": {"ask":["발표하는 친구가 딴 곳을 보고 말하면 듣는 사람 마음이 어떨까?"],"watch":"\"내 말을 안 하는 것 같아요\" — 눈 맞춤의 뜻","min":3},
         "scene_title": "어떤 자세가 좋을까요? 🧍",
         "visual": "🎤",
         "question": "딴 곳을 보거나 삐딱하게 서서 발표하면<br>듣는 사람의 마음은 어떨까요?",
@@ -3126,6 +3184,7 @@ LESSONS["u2_l08"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["바른 발표 자세 다섯 가지 중 하나를 몸으로 보여 줄래?"],"watch":"눈·허리·손·다리·목소리 — 하나씩 시범","min":4},
         "title": "바른 발표 자세 다섯 가지",
         "content": "발표할 때는 **듣는 사람**을 바라보고, 허리를 곧게 세우며, 손과 다리를 자연스럽게 하고, **알맞은 크기**의 목소리로 또박또박 말해요!",
         "symbol_meanings": [
@@ -3164,6 +3223,7 @@ LESSONS["u2_l08"] =
       "stage": "활동",
       "block": "question",
       "data": {
+        "tnote": {"ask":["세 친구 중 누가 바른 자세야? 왜?"],"watch":"까닭까지 — 눈·허리로 근거","min":4},
         "title": "바른 자세로 발표하는 친구 찾기",
         "question": "세 친구의 발표 모습을 떠올려 봐요. 누가 바른 자세일까요? 그 까닭도 말해 봐요.",
         "items": [
@@ -3182,6 +3242,7 @@ LESSONS["u2_l08"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["바른 자세로 서서 이름·좋아하는 것·잘하는 것을 말해 볼래?"],"watch":"9차시 자기소개 예습 — 짧게","min":5},
         "title": "바른 자세로 자기소개하기 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 바른 자세로 이름·좋아하는 것·잘하는 것을 말해요!",
         "count": 24,
@@ -3198,6 +3259,7 @@ LESSONS["u2_l08"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["바른 발표 자세에서 제일 중요한 게 뭐라고 생각해?"],"watch":"정답 없음 — 까닭을 들음","min":5},
         "title": "바른 자세로 발표하기",
         "levels": {
           "읽기": {
@@ -3225,6 +3287,7 @@ LESSONS["u2_l08"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 발표할 때 눈·허리·목소리 중 잘한 걸 말해 줄래?"],"watch":"칭찬 한 가지","min":5},
         "tag": "👋 짝 활동",
         "title": "발표 자세 짝 점검",
         "type": "pair",
@@ -3242,6 +3305,7 @@ LESSONS["u2_l08"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["발표할 때 눈은 어디를 봐?"],"watch":"\"듣는 사람\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -3512,6 +3576,8 @@ LESSONS["u2_l09"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"나를 소개하라고? 뭘 말하지?\""},{"face":"🐿️","label":"도토 \"이름이랑 좋아하는 것부터!\""}],
+        "tnote": {"ask":["나를 소개한다면 제일 먼저 뭘 말할까?"],"watch":"이름 — 그 다음 좋아하는 것·잘하는 것","min":3},
         "scene_title": "나를 소개해요 😊",
         "visual": "🙋",
         "question": "친구들에게 나를 소개한다면<br>무엇을 말하고 싶나요?",
@@ -3549,6 +3615,7 @@ LESSONS["u2_l09"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["자기소개에 담을 세 가지가 뭐야?"],"watch":"이름·좋아하는 것·잘하는 것 — 손가락 셋","min":4},
         "title": "자기소개에 담을 내용",
         "content": "자기소개에는 **이름**, **좋아하는 것**, **잘하는 것**을 담아요. 너무 길지 않게, 바른 자세로 또박또박 말하면 돼요!",
         "symbol_meanings": [
@@ -3587,6 +3654,7 @@ LESSONS["u2_l09"] =
       "stage": "활동",
       "block": "question",
       "data": {
+        "tnote": {"ask":["내가 잘하는 것 하나를 마음속으로 정해 볼까?"],"watch":"못 정하는 아이 — \"좋아하는 것\"으로 대신 가능","min":4},
         "title": "소개할 내용을 정리해요",
         "question": "발표하기 전에 소개할 내용을 머릿속으로 정리해 봐요.",
         "items": [
@@ -3605,6 +3673,7 @@ LESSONS["u2_l09"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["\"제 이름은 ○○입니다\"로 시작해 볼까?"],"watch":"뽑힌 아이가 머뭇거리면 교사가 첫 문장 함께","min":6},
         "title": "바른 자세로 자기소개 발표 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 바른 자세로 이름·좋아하는 것·잘하는 것을 말해요!",
         "count": 24,
@@ -3621,6 +3690,7 @@ LESSONS["u2_l09"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["내 이름을 또박또박 써 볼까?"],"watch":"이름 쓰기가 어려운 아이는 첫 글자만","min":5},
         "title": "자기소개 준비하고 발표하기",
         "levels": {
           "읽기": {
@@ -3648,6 +3718,7 @@ LESSONS["u2_l09"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝에게 먼저 소개해 봤어? 짝은 자세를 봐 줘"],"watch":"발표 전 리허설","min":5},
         "tag": "👋 짝 활동",
         "title": "짝 자기소개 연습",
         "type": "pair",
@@ -3665,6 +3736,7 @@ LESSONS["u2_l09"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["자기소개에 담는 세 가지는?"],"watch":"이름·좋아하는 것·잘하는 것","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -3899,6 +3971,8 @@ LESSONS["u2_l10"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"하나! 둘!\""},{"face":"👦","label":"두리 \"앗, 나도 둘이라고 했어! 실패!\""}],
+        "tnote": {"ask":["숫자 외치기 놀이! 두 사람이 동시에 외치면 실패야. 왜 실패했을까?"],"watch":"\"안 들어서\" — 듣기의 필요성","min":4},
         "scene_title": "잘 들으면 좋아요 👂",
         "visual": "🚂",
         "question": "숫자를 하나부터 열까지 한 명씩 외쳐요.<br>두 사람이 동시에 외치면 실패! 집중해서 들어야겠죠?",
@@ -3936,6 +4010,7 @@ LESSONS["u2_l10"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["들을 때 손과 다리는 어떻게 할까? 지금 해 볼까?"],"watch":"손은 책상 위·다리 가지런히 — 반 전체 자세","min":4},
         "title": "바른 듣기 자세 다섯 가지",
         "content": "들을 때는 **말하는 사람**을 바라보고, 귀를 기울이며, 허리를 곧게 펴고, 손과 다리를 가지런히 해요. 그래야 잘 들려요!",
         "symbol_meanings": [
@@ -3974,6 +4049,7 @@ LESSONS["u2_l10"] =
       "stage": "활동",
       "block": "question",
       "data": {
+        "tnote": {"ask":["바르게 듣는 친구는 누구야? 어디를 보고 알았어?"],"watch":"눈·손·다리로 근거","min":4},
         "title": "바르게 듣는 친구 찾기",
         "question": "여러 친구의 듣는 모습을 떠올려 봐요. 누가 바르게 듣고 있나요? 까닭도 말해 봐요.",
         "items": [
@@ -3992,6 +4068,7 @@ LESSONS["u2_l10"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["선생님이 들려준 짧은 이야기에서 기억나는 것 하나!"],"watch":"이야기는 3~4문장으로 짧게","min":5},
         "title": "짧게 듣고 말해 보기 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 선생님이 들려준 짧은 이야기에서 기억나는 것을 말해요!",
         "count": 24,
@@ -4008,6 +4085,7 @@ LESSONS["u2_l10"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["바른 듣기 자세를 몸으로 보여 주며 말해 볼래?"],"watch":"\"말하는 사람을 봐요\" 등","min":5},
         "title": "바른 자세로 듣기",
         "levels": {
           "읽기": {
@@ -4035,6 +4113,7 @@ LESSONS["u2_l10"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 문장을 똑같이 따라 말했어?"],"watch":"한 낱말이라도 빠지면 다시","min":5},
         "tag": "👋 짝 활동",
         "title": "듣고 따라 말하기 짝 놀이",
         "type": "pair",
@@ -4052,6 +4131,7 @@ LESSONS["u2_l10"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["들을 때 눈은 어디를 봐?"],"watch":"\"말하는 사람\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -4322,6 +4402,8 @@ LESSONS["u2_l11"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"이야기 시작이래! 자세 바르게!\""},{"face":"👧","label":"하나 \"누가 나오는지 잘 들어 보자.\""}],
+        "tnote": {"ask":["이야기를 듣기 전에 자세부터 잡아 볼까? 뭘 생각하며 들을까?"],"watch":"누가·무엇을 — 듣기 목표 제시","min":3},
         "scene_title": "이야기가 시작돼요 📖",
         "visual": "👂",
         "question": "바른 자세를 갖추고,<br>이제 선생님이 들려주는 이야기에 귀를 기울여 볼까요?",
@@ -4359,6 +4441,7 @@ LESSONS["u2_l11"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["이야기를 들을 때 \"누가\"와 \"무엇을\" 말고 또 뭘 지킬까?"],"watch":"끝까지 듣기·바른 자세","min":4},
         "title": "내용을 파악하며 듣기",
         "content": "이야기를 들을 때는 **누가**, **무엇을 했는지** 생각하며 들어요. 바른 자세로 끝까지 귀를 기울이면 내용이 잘 기억나요!",
         "symbol_meanings": [
@@ -4397,6 +4480,7 @@ LESSONS["u2_l11"] =
       "stage": "활동",
       "block": "question",
       "data": {
+        "tnote": {"ask":["이야기에 누가 나왔어? 무슨 일이 있었어?"],"watch":"이야기 직후 바로 — 기억이 살아 있을 때","min":4},
         "title": "이야기 내용을 확인해요",
         "question": "방금 들은 이야기를 떠올리며 함께 이야기 나눠 봐요.",
         "items": [
@@ -4415,6 +4499,7 @@ LESSONS["u2_l11"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["가장 기억에 남는 장면을 말해 볼래?"],"watch":"정답 없음 — 까닭 하나","min":5},
         "title": "들은 내용을 나눠요 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 이야기에서 기억나는 것을 바른 자세로 말해요!",
         "count": 24,
@@ -4431,6 +4516,7 @@ LESSONS["u2_l11"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["이야기에 나온 인물 이름을 써 볼까?"],"watch":"못 쓰면 교사가 칠판에","min":5},
         "title": "이야기 집중해 듣기",
         "levels": {
           "읽기": {
@@ -4458,6 +4544,7 @@ LESSONS["u2_l11"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝과 번갈아 \"누가, 무엇을\" 하나씩 말해 볼까?"],"watch":"한 사람이 다 말하지 않게","min":5},
         "tag": "👋 짝 활동",
         "title": "이야기 되말하기 짝 활동",
         "type": "pair",
@@ -4475,6 +4562,7 @@ LESSONS["u2_l11"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["이야기는 어디까지 들어?"],"watch":"\"끝까지\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -4709,6 +4797,8 @@ LESSONS["u2_l12"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"\"기리\"? 뭔가 이상해!\""},{"face":"🐿️","label":"도토 \"받침이 하나 사라진 것 같아!\""}],
+        "tnote": {"ask":["\"기리\"… 뭐가 빠졌을까? 그림을 보고 찾아볼까?"],"watch":"ㄴ — 기린 그림 힌트","min":3},
         "scene_title": "받침이 사라졌어요! 🔍",
         "visual": "🦒",
         "question": "‘기리’… 어딘가 이상하죠?<br>이 낱말에서 사라진 받침은 무엇일까요?",
@@ -4746,6 +4836,7 @@ LESSONS["u2_l12"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"호라이\"에 어떤 받침이 빠졌어? 어느 글자에?"],"watch":"\"라\"에 ㅇ — 자리까지","min":4},
         "title": "빠진 받침을 찾아 넣기",
         "content": "낱말 그림과 소리를 떠올리면 **빠진 받침**을 찾을 수 있어요. 받침을 넣어 낱말을 완성하고 또박또박 읽어요!",
         "symbol_meanings": [
@@ -4784,6 +4875,7 @@ LESSONS["u2_l12"] =
       "stage": "활동",
       "block": "chosung_quiz",
       "data": {
+        "tnote": {"ask":["\"나타\"에 빠진 받침은? 어느 글자 아래에 넣을까?"],"watch":"\"나\"에 ㄱ — 낙타","min":4},
         "title": "빠진 받침을 넣어요 🧩",
         "sub": "그림을 보고 빠진 받침을 생각해요. [정답 보기]를 누르면 답이 나와요",
         "items": [
@@ -4823,6 +4915,7 @@ LESSONS["u2_l12"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["네가 만든 받침 빠진 문제, 친구들이 맞힐 수 있게 그림 힌트도 줄래?"],"watch":"문제 내는 아이가 정답 확인","min":5},
         "title": "내가 낸 받침 문제 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 받침이 빠진 낱말 문제를 친구들에게 내 봐요!",
         "count": 24,
@@ -4839,6 +4932,7 @@ LESSONS["u2_l12"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"리\"에 ㄴ을 넣어 \"기린\"을 완성해 써 볼까?"],"watch":"두 글자 모두 쓰기","min":5},
         "title": "빠진 받침을 넣어 낱말 완성하기",
         "levels": {
           "읽기": {
@@ -4868,6 +4962,7 @@ LESSONS["u2_l12"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 받침 빠진 낱말, 어디에 뭘 넣어야 해?"],"watch":"글자 자리와 받침 둘 다","min":5},
         "tag": "👋 짝 활동",
         "title": "받침 빠진 낱말 짝 퀴즈",
         "type": "pair",
@@ -4885,6 +4980,7 @@ LESSONS["u2_l12"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["\"나타\"에 빠진 받침은?"],"watch":"ㄱ (낙타)","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -5154,6 +5250,8 @@ LESSONS["u2_l13"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"받침 미로다! 보물이 있대!\""},{"face":"👧","label":"하나 \"알맞은 받침을 넣어야 지나갈 수 있어!\""}],
+        "tnote": {"ask":["미로를 지나려면 그림에 맞는 받침을 넣어야 해. 첫 칸부터 해 볼까?"],"watch":"교사가 첫 칸 시범","min":3},
         "scene_title": "받침 미로를 빠져나가요 🧭",
         "visual": "🗺️",
         "question": "그림에 알맞은 받침을 넣어 글자를 만들면<br>미로를 빠져나가 보물을 찾을 수 있어요!",
@@ -5191,6 +5289,7 @@ LESSONS["u2_l13"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["이 단원에서 배운 것 네 가지 중 뭐가 제일 기억나?"],"watch":"받침·여러 받침·발표·듣기","min":4},
         "title": "이 단원에서 배운 것",
         "content": "받침은 글자 **아래쪽**에 오는 자음자이고, 받침을 넣으면 새 글자가 돼요. 또 **바른 자세**로 말하고 듣는 법도 배웠어요!",
         "symbol_meanings": [
@@ -5229,6 +5328,7 @@ LESSONS["u2_l13"] =
       "stage": "활동",
       "block": "chosung_quiz",
       "data": {
+        "tnote": {"ask":["다＋ㄹ은? 고＋ㅇ은?"],"watch":"달·공 — 빠르게","min":4},
         "title": "받침을 넣어 낱말 만들기 🧩",
         "sub": "보기의 받침을 넣어 그림에 어울리는 낱말을 만들어요. [정답 보기]를 누르면 답이 나와요",
         "items": [
@@ -5268,6 +5368,7 @@ LESSONS["u2_l13"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["이제 잘 읽게 된 받침 글자가 뭐야? 더 노력할 건?"],"watch":"자기 평가 — 솔직하게","min":4},
         "title": "단원을 돌아봐요",
         "question": "이 단원에서 잘하게 된 것과 더 노력할 것을 이야기해 봐요.",
         "items": [
@@ -5286,6 +5387,7 @@ LESSONS["u2_l13"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["받침을 넣어 새 낱말을 하나 만들어 써 볼까?"],"watch":"뜻 있는 낱말이면 더 좋음","min":5},
         "title": "받침 글자로 단원 마무리하기",
         "levels": {
           "읽기": {
@@ -5313,6 +5415,7 @@ LESSONS["u2_l13"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝과 만든 낱말을 서로 읽어 줬어? 몇 개나 만들었어?"],"watch":"더 많이 만든 사람 칭찬해 주기","min":5},
         "tag": "👋 짝 활동",
         "title": "받침 낱말 만들기 짝 대결",
         "type": "pair",
@@ -5331,6 +5434,7 @@ LESSONS["u2_l13"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["이 단원에서 제일 재미있던 건?"],"watch":"여러 답","min":3},
         "title": "오늘 확인해요",
         "items": [
           {

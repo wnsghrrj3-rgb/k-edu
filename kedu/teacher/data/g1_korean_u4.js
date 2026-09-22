@@ -418,6 +418,27 @@
       ]
     },
     {
+      "id": "s02b",
+      "stage": "만나기",
+      "block": "motivate",
+      "data": {
+        "tnote": {"ask":["좋아하는 음식이 뭐야? 이름을 말해 볼까?"],"watch":"음식 이름 = 낱말 — 그림책 듣기 전 동기","min":3},
+        "scene_title": "오늘은 맛있는 시간! 🍴",
+        "img": "assets/photo/korean/food_words.jpg",
+        "kids": [
+          {
+            "face": "👧",
+            "label": "하나 \"난 김밥이 제일 좋아!\""
+          },
+          {
+            "face": "👦",
+            "label": "두리 \"난 도넛! 동글동글 달콤해!\""
+          }
+        ],
+        "question": "내가 좋아하는 음식은 뭐예요?<br>이름을 말해 볼까요?"
+      }
+    },
+    {
       "id": "s100",
       "stage": "도입",
       "block": "review",
@@ -444,6 +465,7 @@
       "stage": "열기",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["동글동글 구멍 뚫린 달콤한 빵은?"],"watch":"도넛","min":3},
         "title": "오늘은 맛있는 시간! 🍴",
         "sub": "카드를 눌러서 어떤 음식인지 맞혀 봐요!",
         "cards": [
@@ -475,6 +497,7 @@
       "stage": "만나기",
       "block": "read_aloud",
       "data": {
+        "tnote": {"ask":["표지를 보니 무슨 이야기일 것 같아? 음식 낱말이 나오면 손을 들어 볼까?"],"watch":"듣기 목표: 음식 낱말 찾기","min":7},
         "title": "그림책을 함께 들어요 📖",
         "author": "교사가 준비한 음식 그림책을 읽어 주세요",
         "pages": [
@@ -515,6 +538,7 @@
       "stage": "활동",
       "block": "chosung_quiz",
       "data": {
+        "tnote": {"ask":["이야기에 나온 음식, ㄱ ㅊ이 뭘까?"],"watch":"김치 — 초성","min":4},
         "title": "이야기에 나온 음식, 초성으로 맞혀 봐요!",
         "sub": "가운데 큰 글자를 보고 무슨 음식일지 생각해요. [정답 보기]를 누르면 답이 나와요",
         "items": [
@@ -561,6 +585,7 @@
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["\"저는 ○○을 좋아해요. 왜냐하면…\"으로 말해 볼래?"],"watch":"까닭까지","min":5},
         "title": "좋아하는 음식 발표하기 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 자신이 좋아하는 음식을 친구들에게 소개해요!",
         "count": 24,
@@ -578,6 +603,7 @@
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"도넛\"을 써 볼까? 받침이 뭐야?"],"watch":"ㅅ","min":5},
         "title": "이야기 속 음식 낱말 알아맞히기",
         "levels": {
           "읽기": {
@@ -604,6 +630,7 @@
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝에게 좋아하는 음식 이름과 맛을 말해 줄래?"],"watch":"\"달아요·매워요\"","min":5},
         "tag": "👋 짝 활동",
         "title": "좋아하는 음식 소개 짝 놀이",
         "type": "pair",
@@ -621,6 +648,7 @@
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["좋아하는 음식은 어떻게 말해?"],"watch":"\"이름을 넣어\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -941,6 +969,8 @@ LESSONS["u4_l06"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"토끼가 있어!\""},{"face":"👦","label":"두리 \"큰 토끼? 하얀 토끼? 어떤 토끼?\""}],
+        "tnote": {"ask":["그냥 \"토끼\"보다 더 자세히 말하려면 앞에 뭘 붙일까?"],"watch":"큰·하얀 — 꾸며 주는 말 예고","min":3},
         "scene_title": "어떤 토끼일까요? 🐰",
         "visual": "🐰",
         "question": "똑같은 토끼인데, 더 자세히 말하려면 어떻게 할까요?<br>(큰 토끼? 하얀 토끼? 깡충깡충 뛰는 토끼?)",
@@ -978,6 +1008,7 @@ LESSONS["u4_l06"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"사과\"와 \"빨간 사과\", 어느 게 머릿속에 더 잘 그려져?"],"watch":"꾸며 주는 말의 힘","min":4},
         "title": "꾸며 주는 말이란?",
         "content": "낱말 앞에 붙어서, **모양·색·크기·맛**을 더 자세히 알려 주는 말이에요.<br>‘사과’보다 ‘**빨간** 사과’가 머릿속에 더 또렷하게 그려지죠!",
         "symbol_meanings": [
@@ -1016,6 +1047,7 @@ LESSONS["u4_l06"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["코끼리는 어떤 크기일까? 앞에 붙여 말해 봐"],"watch":"큰 코끼리","min":4},
         "title": "어떤 낱말일까요?",
         "sub": "그림을 보고 꾸며 주는 말을 넣어 말해 봐요! 카드를 누르면 답이 나와요",
         "cards": [
@@ -1047,6 +1079,7 @@ LESSONS["u4_l06"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["좋아하는 것에 꾸며 주는 말을 붙여 소개해 볼래?"],"watch":"\"파란 가방\"","min":5},
         "title": "꾸며서 말해 볼까요? 🎤",
         "sub": "좋아하는 것에 꾸며 주는 말을 붙여 친구들에게 소개해요!",
         "count": 24,
@@ -1064,6 +1097,7 @@ LESSONS["u4_l06"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"빨간 사과\"를 써 볼까? 꾸며 주는 말은 어디에 있어?"],"watch":"앞","min":5},
         "title": "꾸며 주는 말을 붙여 말하기",
         "levels": {
           "읽기": {
@@ -1090,6 +1124,7 @@ LESSONS["u4_l06"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 낱말에 색·크기·맛 중 하나로 꾸며 볼래?"],"watch":"한 가지씩","min":5},
         "tag": "👋 짝 활동",
         "title": "꾸며 말하기 짝 놀이",
         "type": "pair",
@@ -1107,6 +1142,7 @@ LESSONS["u4_l06"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["꾸며 주는 말은 낱말 어디에 붙어?"],"watch":"\"앞\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -1384,6 +1420,8 @@ LESSONS["u4_l03"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"눈은 보고, 귀는 듣고!\""},{"face":"👦","label":"두리 \"그럼 코는? 손은?\""}],
+        "tnote": {"ask":["눈은 뭘 해? 귀는? 손은?"],"watch":"몸 낱말 + 하는 일","min":3},
         "scene_title": "내 몸을 얼마나 알까? 🧒",
         "visual": "🧒",
         "question": "눈은 무엇을 할까요? 손은요?<br>내 몸의 이름을 함께 알아봐요!",
@@ -1420,6 +1458,7 @@ LESSONS["u4_l03"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["냄새를 맡는 건 어디야? 손가락으로 짚어 볼까?"],"watch":"코 — 몸 짚기","min":4},
         "title": "몸을 나타내는 낱말",
         "content": "우리 몸에는 저마다 이름과 **하는 일**이 있어요. 낱말과 하는 일을 함께 알면 더 잘 기억나요!",
         "symbol_meanings": [
@@ -1462,6 +1501,7 @@ LESSONS["u4_l03"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["무엇으로 잡을까? 짚어 봐!"],"watch":"손","min":4},
         "title": "무엇으로 할까요?",
         "sub": "그림을 보고 어떤 몸의 이름인지 맞혀 봐요!",
         "cards": [
@@ -1493,6 +1533,7 @@ LESSONS["u4_l03"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["내 몸으로 할 수 있는 일을 하나 말해 볼래?"],"watch":"\"손으로 그림을 그려요\"","min":5},
         "title": "몸 낱말로 말해 볼까요? 🎤",
         "sub": "내 몸으로 할 수 있는 일을 친구들에게 말해요!",
         "count": 24,
@@ -1509,6 +1550,7 @@ LESSONS["u4_l03"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"눈·귀·손·발\" 읽으면서 몸을 짚어 볼까?"],"watch":"낱말+몸","min":5},
         "title": "몸을 나타내는 낱말과 하는 일",
         "levels": {
           "읽기": {
@@ -1535,6 +1577,7 @@ LESSONS["u4_l03"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 몸 낱말이 하는 일을 말해 줄래?"],"watch":"역할 바꿈","min":5},
         "tag": "👋 짝 활동",
         "title": "몸과 하는 일 잇기 짝 놀이",
         "type": "pair",
@@ -1552,6 +1595,7 @@ LESSONS["u4_l03"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["낱말과 함께 뭘 알면 잘 기억날까?"],"watch":"\"하는 일\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -1808,6 +1852,8 @@ LESSONS["u4_l04"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"우리 집엔 할머니도 계셔!\""},{"face":"👧","label":"하나 \"우리 집은 엄마랑 나랑 동생이야.\""}],
+        "tnote": {"ask":["우리 집에는 누가 함께 살아? 말하고 싶은 사람만 말해 볼까?"],"watch":"집마다 다름 존중 — 강요 X","min":3},
         "scene_title": "우리 집에는 누가 함께 살까요?",
         "visual": "🏠",
         "question": "집집마다 함께 사는 사람이 달라요.<br>사람마다 부르는 말도 다르답니다!",
@@ -1845,6 +1891,7 @@ LESSONS["u4_l04"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["나보다 먼저 태어난 남자는 뭐라고 불러?"],"watch":"형·오빠 — 부르는 사람에 따라","min":4},
         "title": "가족을 부르는 말",
         "content": "우리 집에 함께 사는 사람을 부르는 여러 가지 낱말이 있어요. 집마다 함께 사는 사람은 **다 달라요** — 누구든 소중한 우리 집 사람이에요.",
         "symbol_meanings": [
@@ -1883,6 +1930,7 @@ LESSONS["u4_l04"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["엄마·아빠를 낳아 주신 분은?"],"watch":"할머니·할아버지","min":4},
         "title": "뭐라고 부를까요?",
         "sub": "설명을 보고 어떻게 부르는지 맞혀 봐요!",
         "cards": [
@@ -1914,6 +1962,7 @@ LESSONS["u4_l04"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["우리 집 사람 한 명을 부르는 말을 넣어 소개해 볼래?"],"watch":"말하고 싶은 사람만","min":5},
         "title": "우리 집 사람을 소개해요 🎤",
         "sub": "함께 사는 사람 중 한 명을, 부르는 말을 넣어 소개해요 (말하고 싶은 사람만 해도 좋아요)",
         "count": 24,
@@ -1931,6 +1980,7 @@ LESSONS["u4_l04"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"할머니\"를 써 볼까?"],"watch":"받침 ㄹ","min":5},
         "title": "가족을 부르는 여러 가지 말",
         "levels": {
           "읽기": {
@@ -1957,6 +2007,7 @@ LESSONS["u4_l04"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝의 집과 우리 집, 함께 사는 사람이 같아?"],"watch":"다른 게 당연","min":5},
         "tag": "👋 짝 활동",
         "title": "우리 집 사람 소개 짝 놀이",
         "type": "pair",
@@ -1974,6 +2025,7 @@ LESSONS["u4_l04"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["집마다 함께 사는 사람은 어때?"],"watch":"\"다 달라요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -2211,6 +2263,8 @@ LESSONS["u4_l07"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"급식실! 밥 먹는 곳!\""},{"face":"🐿️","label":"도토 \"도서관에선 뭘 하지?\""}],
+        "tnote": {"ask":["교실 말고 우리 학교에 또 어디가 있어?"],"watch":"운동장·급식실·도서관…","min":3},
         "scene_title": "우리 학교를 둘러봐요 🏫",
         "visual": "🏫",
         "question": "교실 말고 또 어디가 있을까요?<br>운동장, 복도, 급식실… 무엇을 볼 수 있나요?",
@@ -2247,6 +2301,7 @@ LESSONS["u4_l07"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["급식실은 뭐 하는 곳이야? 도서관은?"],"watch":"장소+하는 일","min":4},
         "title": "학교에서 보는 낱말",
         "content": "학교에는 여러 **장소**가 있고, 저마다 **하는 일**이 달라요. 장소와 하는 일을 함께 알아봐요!",
         "symbol_meanings": [
@@ -2285,6 +2340,7 @@ LESSONS["u4_l07"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["뛰어놀고 운동하는 곳은?"],"watch":"운동장","min":4},
         "title": "어디일까요?",
         "sub": "하는 일을 보고 학교 어디인지 맞혀 봐요!",
         "cards": [
@@ -2316,6 +2372,7 @@ LESSONS["u4_l07"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["학교에서 자주 가는 곳은 어디야? 거기서 뭘 해?"],"watch":"두 가지 다","min":5},
         "title": "학교에서 본 것을 말해요 🎤",
         "sub": "학교에서 좋아하는 곳, 자주 가는 곳을 친구들에게 말해요!",
         "count": 24,
@@ -2332,6 +2389,7 @@ LESSONS["u4_l07"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"교실\"을 써 볼까?"],"watch":"받침 ㄹ","min":5},
         "title": "학교에서 보는 낱말과 하는 일",
         "levels": {
           "읽기": {
@@ -2358,6 +2416,7 @@ LESSONS["u4_l07"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 장소에서 뭘 해?"],"watch":"장소→일","min":5},
         "tag": "👋 짝 활동",
         "title": "학교 장소 잇기 짝 놀이",
         "type": "pair",
@@ -2375,6 +2434,7 @@ LESSONS["u4_l07"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["장소 낱말은 뭐랑 같이 알면 잘 기억나?"],"watch":"\"하는 일\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -2632,6 +2692,8 @@ LESSONS["u4_l08"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"집을 나서면 가게가 보여!\""},{"face":"👦","label":"두리 \"우리 동네엔 공원도 있어!\""}],
+        "tnote": {"ask":["집을 나서면 뭐가 보여? 우리 동네를 떠올려 볼까?"],"watch":"가게·병원·공원","min":3},
         "scene_title": "우리 동네에는 무엇이 있을까? 🏘",
         "visual": "🏘",
         "question": "집을 나서면 무엇이 보이나요?<br>가게, 병원, 공원… 우리 동네를 떠올려 봐요!",
@@ -2668,6 +2730,7 @@ LESSONS["u4_l08"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["편지를 부치려면 어디로 가야 해?"],"watch":"우체국","min":4},
         "title": "동네에서 보는 낱말",
         "content": "우리 동네에도 여러 **장소**가 있어요. 어떤 일을 하는 곳인지 알면 낱말이 더 잘 기억나요!",
         "symbol_meanings": [
@@ -2706,6 +2769,7 @@ LESSONS["u4_l08"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["아프거나 다쳤을 때 가는 곳은?"],"watch":"병원","min":4},
         "title": "어디일까요?",
         "sub": "하는 일을 보고 동네 어디인지 맞혀 봐요!",
         "cards": [
@@ -2737,6 +2801,7 @@ LESSONS["u4_l08"] =
       "stage": "활동",
       "block": "question",
       "data": {
+        "tnote": {"ask":["\"운동장\"은 학교? 동네? \"우체국\"은?"],"watch":"두 갈래 나누기","min":4},
         "title": "학교일까, 동네일까?",
         "question": "다음 낱말은 어디에서 볼 수 있을까요? 함께 ‘학교’와 ‘우리 동네’로 나눠 봐요!",
         "items": [
@@ -2758,6 +2823,7 @@ LESSONS["u4_l08"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"병원\"을 써 볼까?"],"watch":"받침 ㅇ·ㄴ","min":5},
         "title": "동네에서 보는 낱말과 하는 일",
         "levels": {
           "읽기": {
@@ -2784,6 +2850,7 @@ LESSONS["u4_l08"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝과 카드를 학교·동네로 나눴어? 둘 다 되는 것도 있어?"],"watch":"도서관 — 둘 다","min":5},
         "tag": "👋 짝 활동",
         "title": "학교·동네 낱말 나누기 짝 놀이",
         "type": "pair",
@@ -2801,6 +2868,7 @@ LESSONS["u4_l08"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["낱말을 어떻게 정리하면 좋아?"],"watch":"\"학교·동네로 나눠요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -3067,6 +3135,8 @@ LESSONS["u4_l01"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"이 꽃 이름이 뭐지?\""},{"face":"🐿️","label":"도토 \"이름을 알아야 말해 줄 수 있는데!\""}],
+        "tnote": {"ask":["처음 보는 꽃을 봤을 때 뭐가 제일 궁금해?"],"watch":"이름 — 낱말의 필요성","min":3},
         "scene_title": "이건 이름이 뭘까? 🌼",
         "visual": "🌼",
         "question": "처음 본 꽃이나 물건을 보고<br>“이름이 뭐지?” 궁금했던 적 있나요?",
@@ -3081,6 +3151,7 @@ LESSONS["u4_l01"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["해바라기 이름을 알면 친구에게 어떻게 말할 수 있어?"],"watch":"\"해바라기 봤어!\" — 이름 없이는 \"노란 꽃\"","min":4},
         "title": "이름을 알면 통해요",
         "content": "새로운 것을 보면 이름이 궁금해요. 이름(낱말)을 알면 다른 사람에게 **말로 전할 수** 있어요!",
         "symbol_meanings": [
@@ -3119,6 +3190,7 @@ LESSONS["u4_l01"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["비 온 뒤 하늘에 뜨는 것, 이름이 뭐야?"],"watch":"무지개","min":4},
         "title": "이건 무슨 이름일까요?",
         "sub": "그림을 보고 이름을 맞혀 봐요!",
         "cards": [
@@ -3150,6 +3222,7 @@ LESSONS["u4_l01"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["낱말을 많이 알면 뭐가 좋아질까?"],"watch":"세 가지 중 하나 이상","min":4},
         "title": "낱말을 알면 무엇이 좋을까요?",
         "question": "낱말을 많이 알면 어떤 점이 좋을지 함께 이야기해 봐요!",
         "items": [
@@ -3168,6 +3241,7 @@ LESSONS["u4_l01"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"해바라기·나비\"를 또박또박 읽어 볼까?"],"watch":"긴 낱말은 글자 수 세며","min":5},
         "title": "이름을 알면 말로 전할 수 있어요",
         "levels": {
           "읽기": {
@@ -3194,6 +3268,7 @@ LESSONS["u4_l01"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 보여 준 그림, 이름이 뭐야?"],"watch":"모르면 짝이 첫 글자 힌트","min":5},
         "tag": "👋 짝 활동",
         "title": "이름 알아맞히기 짝 놀이",
         "type": "pair",
@@ -3211,6 +3286,7 @@ LESSONS["u4_l01"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["새로운 걸 보면 뭐가 궁금해?"],"watch":"\"이름\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -3468,6 +3544,8 @@ LESSONS["u4_l02"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"그거 있잖아… 그거!\""},{"face":"👧","label":"하나 \"그게 뭔데? 이름을 말해 줘!\""}],
+        "tnote": {"ask":["\"그거 있잖아\"라고만 말하면 듣는 사람은 어떨까?"],"watch":"답답함 — 낱말이 필요한 까닭","min":3},
         "scene_title": "이름을 몰라 답답했던 적? 🤔",
         "visual": "🤔",
         "question": "갖고 싶은 걸 이름을 몰라<br>“그거 있잖아…”라고만 한 적 있나요?",
@@ -3504,6 +3582,7 @@ LESSONS["u4_l02"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["아플 때 \"여기\"라고만 하면 의사 선생님이 알 수 있을까?"],"watch":"\"배·머리\" 낱말 필요","min":4},
         "title": "낱말이 필요한 때",
         "content": "낱말을 알면 **정확하게 부탁하고, 묻고, 알려줄** 수 있어요. 낱말은 마음을 전하는 다리예요!",
         "symbol_meanings": [
@@ -3542,6 +3621,7 @@ LESSONS["u4_l02"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["목이 마를 때 뭐라고 말해야 물을 줄까?"],"watch":"물","min":4},
         "title": "이럴 때 어떤 낱말이 필요할까요?",
         "sub": "상황을 보고 알맞은 낱말을 떠올려 봐요!",
         "cards": [
@@ -3573,6 +3653,7 @@ LESSONS["u4_l02"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["이 단원에서 어떤 낱말들을 배울 것 같아?"],"watch":"몸·가족·학교·이웃 — 예고","min":4},
         "title": "이 단원에서 배울 낱말 🎒",
         "sub": "앞으로 어떤 낱말을 배울지 함께 말해 봐요!",
         "count": 24,
@@ -3589,6 +3670,7 @@ LESSONS["u4_l02"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["낱말을 몰라서 답답했던 때를 말해 볼래?"],"watch":"경험 공유","min":5},
         "title": "이럴 때 이런 낱말이 필요해요",
         "levels": {
           "읽기": {
@@ -3615,6 +3697,7 @@ LESSONS["u4_l02"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 상황에 어떤 낱말이 필요해?"],"watch":"상황→낱말","min":5},
         "tag": "👋 짝 활동",
         "title": "상황에 맞는 낱말 대기 짝 놀이",
         "type": "pair",
@@ -3632,6 +3715,7 @@ LESSONS["u4_l02"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["낱말은 마음을 전하는 뭐라고 했지?"],"watch":"\"다리\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -3889,6 +3973,8 @@ LESSONS["u4_l09"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"오늘 아침에 꽃집을 지나왔어!\""},{"face":"👧","label":"하나 \"난 신호등 앞에서 친구를 만났어!\""}],
+        "tnote": {"ask":["오늘 아침 학교 오는 길에 뭘 봤어? 누구를 만났어?"],"watch":"장소·사람 낱말","min":3},
         "scene_title": "학교 오는 길에 무엇을 봤나요? 🚸",
         "visual": "🚸",
         "question": "오늘 아침, 학교 오는 길에<br>무엇을 보고 누구를 만났나요?",
@@ -3932,6 +4018,7 @@ LESSONS["u4_l09"] =
       "stage": "만나기",
       "block": "read_aloud",
       "data": {
+        "tnote": {"ask":["이야기를 들으며 길에서 본 장소 낱말이 나오면 손을 들어 볼까?"],"watch":"듣기 목표","min":7},
         "title": "이야기를 함께 들어요 📖",
         "author": "교사가 준비한 ‘길’ 이야기 그림책을 읽어 주세요",
         "pages": [
@@ -3965,6 +4052,7 @@ LESSONS["u4_l09"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["이를 치료하는 곳은?"],"watch":"치과","min":4},
         "title": "길에서 본 것, 맞혀 봐요!",
         "sub": "이야기에 나온 곳을 그림으로 맞혀 봐요!",
         "cards": [
@@ -3997,6 +4085,7 @@ LESSONS["u4_l09"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["내 학교 가는 길 이야기를 낱말을 넣어 말해 볼래?"],"watch":"\"꽃집을 지나서…\"","min":5},
         "title": "내 학교 가는 길 이야기 🎤",
         "sub": "학교 오는 길에 본 것을 친구들에게 말해요!",
         "count": 24,
@@ -4013,6 +4102,7 @@ LESSONS["u4_l09"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"꽃집\"을 써 볼까? 받침이 두 개야!"],"watch":"ㅊ·ㅂ","min":5},
         "title": "길에서 만난 것 이야기하기",
         "levels": {
           "읽기": {
@@ -4039,6 +4129,7 @@ LESSONS["u4_l09"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 길 이야기에 어떤 낱말이 나왔어?"],"watch":"장소·물건 찾기","min":5},
         "tag": "👋 짝 활동",
         "title": "학교 가는 길 이야기 짝 놀이",
         "type": "pair",
@@ -4056,6 +4147,7 @@ LESSONS["u4_l09"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["이야기를 들을 때 뭘 찾았어?"],"watch":"\"장소·물건 낱말\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -4335,6 +4427,8 @@ LESSONS["u4_l10"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"우리 동네엔 빵집이 있어!\""},{"face":"🐿️","label":"도토 \"빵집에서 뭘 해? 문장으로 말해 봐!\""}],
+        "tnote": {"ask":["우리 동네 가게 이름을 하나 말하고, 거기서 뭘 하는지도 말해 볼까?"],"watch":"낱말→문장","min":3},
         "scene_title": "우리 동네엔 무엇이 있을까? 🏘",
         "visual": "🏘",
         "question": "우리 동네 길에는<br>어떤 가게와 장소가 있나요?",
@@ -4371,6 +4465,7 @@ LESSONS["u4_l10"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"신호등\"이라고만 말하는 것과 \"신호등을 봐요\"라고 말하는 것, 뭐가 달라?"],"watch":"문장이 더 잘 전해짐","min":4},
         "title": "낱말을 넣어 말하기",
         "content": "낱말 하나만 말하기보다 **낱말을 넣어 문장으로** 말하면 내 생각이 더 잘 전해져요!",
         "symbol_meanings": [
@@ -4409,6 +4504,7 @@ LESSONS["u4_l10"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["채소를 파는 곳은?"],"watch":"야채 가게·채소 가게 둘 다","min":4},
         "title": "무엇을 하는 곳일까요?",
         "sub": "그림을 보고 어떤 곳인지 맞혀 봐요!",
         "cards": [
@@ -4440,6 +4536,7 @@ LESSONS["u4_l10"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["\"나는 ○○에서 ○○해요\"로 말해 볼래?"],"watch":"문장 틀 제시","min":5},
         "title": "낱말을 넣어 말해 봐요 🎤",
         "sub": "배운 낱말을 넣어 한 문장으로 말해요!",
         "count": 24,
@@ -4456,6 +4553,7 @@ LESSONS["u4_l10"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"가구점\"을 넣어 짧은 문장을 만들어 볼까?"],"watch":"\"가구점에서 의자를 봐요\"","min":5},
         "title": "낱말을 넣어 문장으로 말하기",
         "levels": {
           "읽기": {
@@ -4482,6 +4580,7 @@ LESSONS["u4_l10"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 낱말을 넣어 문장을 만들었어?"],"watch":"낱말이 문장 안에 있는지","min":5},
         "tag": "👋 짝 활동",
         "title": "낱말 넣어 문장 만들기 짝 놀이",
         "type": "pair",
@@ -4499,6 +4598,7 @@ LESSONS["u4_l10"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["낱말 하나보다 문장으로 말하면?"],"watch":"\"생각이 더 잘 전해져요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -4755,6 +4855,8 @@ LESSONS["u4_l11"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"\"우산\"의 ㅜ를 우산 모양으로 그렸어!\""},{"face":"👧","label":"하나 \"글자가 그림이 됐네!\""}],
+        "tnote": {"ask":["\"우산\"의 ㅜ를 우산 모양으로 그리면 어떨까? 어떤 글자를 그림으로 바꿀까?"],"watch":"ㅜ의 모양이 우산과 닮음","min":3},
         "scene_title": "글자가 그림이 된다면? 🎨",
         "visual": "🎨",
         "question": "‘우산’의 ㅜ를 우산 모양으로 그리면<br>어떤 모습일까요?",
@@ -4791,6 +4893,7 @@ LESSONS["u4_l11"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"나무\"에서 어떤 글자를 나무 모양으로 그릴까?"],"watch":"ㅁ → 나무","min":4},
         "title": "그림 글자란?",
         "content": "낱말의 **자음자·모음자에 물건 모습**을 넣어 그리는 거예요. 글자만 봐도 무슨 낱말인지 알 수 있어요!",
         "symbol_meanings": [
@@ -4829,6 +4932,7 @@ LESSONS["u4_l11"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["바람을 넣어 부는 것, 어떤 글자를 풍선으로 그릴까?"],"watch":"풍선 — ㅇ","min":4},
         "title": "무슨 그림 글자일까요?",
         "sub": "물건 모습이 들어간 글자를 보고 낱말을 맞혀 봐요!",
         "cards": [
@@ -4860,6 +4964,7 @@ LESSONS["u4_l11"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["네 그림 글자를 보여 주며 어떤 글자를 무엇으로 그렸는지 말해 볼래?"],"watch":"\"ㅜ를 우산으로\"","min":5},
         "title": "내 그림 글자 소개하기 🎤",
         "sub": "내가 만든 그림 글자를 친구들에게 소개해요!",
         "count": 24,
@@ -4876,6 +4981,7 @@ LESSONS["u4_l11"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"우산\"을 그림 글자로 써 볼까?"],"watch":"글자 모양이 남아 있어야 읽힘","min":6},
         "title": "낱말을 그림 글자로 꾸미기",
         "levels": {
           "읽기": {
@@ -4902,6 +5008,7 @@ LESSONS["u4_l11"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝의 그림 글자, 무슨 낱말인지 읽을 수 있어?"],"watch":"읽히면 성공","min":5},
         "tag": "👋 짝 활동",
         "title": "그림 글자 소개 짝 놀이",
         "type": "pair",
@@ -4920,6 +5027,7 @@ LESSONS["u4_l11"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["그림 글자는 어디에 물건 모습을 넣어?"],"watch":"\"자음자·모음자\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -5176,6 +5284,8 @@ LESSONS["u4_l12"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"학교에 가면 책상도 있고…\""},{"face":"👦","label":"두리 \"책상도 있고, 의자도 있고!\""}],
+        "tnote": {"ask":["\"학교에 가면 책상도 있고…\" 다음엔 뭘 이을까?"],"watch":"앞 말을 기억해서 잇기","min":3},
         "scene_title": "학교에 가면 무엇이 있을까? 🏫",
         "visual": "🏫",
         "question": "“학교에 가면 책상도 있고…”<br>다음엔 무엇을 이어 말할까요?",
@@ -5212,6 +5322,7 @@ LESSONS["u4_l12"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["이어 말하기에서 제일 먼저 할 일이 뭐야?"],"watch":"듣기","min":4},
         "title": "이어 말하기 놀이",
         "content": "앞 친구가 말한 낱말을 **잘 듣고 기억한 뒤, 새 낱말을 보태** 말해요. 잘 들을수록 더 잘 이을 수 있어요!",
         "symbol_meanings": [
@@ -5250,6 +5361,7 @@ LESSONS["u4_l12"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["동네에서 보이는 것을 하나 이어 볼까?"],"watch":"신호등","min":4},
         "title": "어떤 낱말을 이을까요?",
         "sub": "주제에 맞는 낱말을 떠올려 봐요!",
         "cards": [
@@ -5281,6 +5393,7 @@ LESSONS["u4_l12"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["앞 친구가 말한 낱말을 다 기억해서 이어 볼래?"],"watch":"뽑기로 순서 — 막히면 반 전체가 도움","min":6},
         "title": "“학교에 가면” 이어 말하기 🎤",
         "sub": "앞 친구 낱말에 새 낱말을 보태 이어 말해요!",
         "count": 24,
@@ -5297,6 +5410,7 @@ LESSONS["u4_l12"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"책상\"을 써 볼까?"],"watch":"받침 ㄱ·ㅇ","min":5},
         "title": "낱말 이어 말하기 놀이",
         "levels": {
           "읽기": {
@@ -5323,6 +5437,7 @@ LESSONS["u4_l12"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝과 몇 개까지 이어 말했어?"],"watch":"기억이 끊기면 처음부터 다시","min":5},
         "tag": "👋 짝 활동",
         "title": "낱말 이어 말하기 짝 놀이",
         "type": "pair",
@@ -5338,6 +5453,7 @@ LESSONS["u4_l12"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["잘 들을수록 뭘 잘하게 돼?"],"watch":"\"이어 말하기\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -5594,6 +5710,8 @@ LESSONS["u4_l13"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"몸 낱말, 가족 낱말…\""},{"face":"🐿️","label":"도토 \"얼마나 기억날까?\""}],
+        "tnote": {"ask":["이 단원에서 배운 낱말 주제가 뭐뭐였어?"],"watch":"몸·가족·학교·이웃","min":3},
         "scene_title": "우리가 배운 낱말, 얼마나 기억날까? 🔍",
         "visual": "🔍",
         "question": "몸·가족·학교·이웃…<br>어떤 낱말을 배웠는지 떠올려 봐요!",
@@ -5630,6 +5748,7 @@ LESSONS["u4_l13"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["주제마다 낱말 하나씩 말해 볼까?"],"watch":"눈·할머니·교실·병원","min":4},
         "title": "이 단원에서 배운 낱말",
         "content": "네 가지 주제로 많은 낱말을 배웠어요. 함께 떠올려 봐요!",
         "symbol_meanings": [
@@ -5668,6 +5787,7 @@ LESSONS["u4_l13"] =
       "stage": "활동",
       "block": "chosung_quiz",
       "data": {
+        "tnote": {"ask":["ㅅ ㅎ ㄷ, 길 건널 때 보는 거!"],"watch":"신호등","min":4},
         "title": "숨은 낱말을 초성으로 찾아 봐요!",
         "sub": "가운데 큰 글자를 보고 무슨 낱말일지 생각해요. [정답 보기]를 누르면 답이 나와요",
         "items": [
@@ -5713,6 +5833,7 @@ LESSONS["u4_l13"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["삐뽀삐뽀 불을 끄는 건?"],"watch":"소방차","min":4},
         "title": "그림과 낱말을 이어 봐요",
         "sub": "그림을 보고 알맞은 낱말을 맞혀 봐요!",
         "cards": [
@@ -5744,6 +5865,7 @@ LESSONS["u4_l13"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"소방차\"를 써 볼까?"],"watch":"받침 ㅇ","min":5},
         "title": "단원 낱말 떠올리고 이어 보기",
         "levels": {
           "읽기": {
@@ -5770,6 +5892,7 @@ LESSONS["u4_l13"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝과 그림 보고 낱말 맞히기, 몇 개 맞혔어?"],"watch":"칭찬","min":5},
         "tag": "👋 짝 활동",
         "title": "숨은 낱말 찾기 짝 대결",
         "type": "pair",
@@ -5787,6 +5910,7 @@ LESSONS["u4_l13"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["이 단원에서 몇 가지 주제로 낱말을 배웠어?"],"watch":"네 가지","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -6044,6 +6168,8 @@ LESSONS["u4_l14"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"\"차례\"가 무슨 뜻이지?\""},{"face":"👦","label":"두리 \"순서대로 돌아오는 거 아냐?\""}],
+        "tnote": {"ask":["\"있다·없다·읽다·차례\" 중 뜻을 아는 낱말이 있어?"],"watch":"학습 낱말 — 아는 것부터","min":3},
         "scene_title": "이 낱말, 무슨 뜻일까? 🧐",
         "visual": "🧐",
         "question": "‘있다’, ‘없다’, ‘읽다’, ‘차례’…<br>공부할 때 자주 쓰는 낱말이에요!",
@@ -6080,6 +6206,7 @@ LESSONS["u4_l14"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"읽다\"는 무슨 뜻이야? 몸으로 보여 줄래?"],"watch":"글자를 보고 소리 내기","min":4},
         "title": "학습에 자주 쓰는 낱말",
         "content": "공부할 때 자주 만나는 낱말이에요. 뜻을 알면 책과 문제를 더 잘 이해할 수 있어요!",
         "symbol_meanings": [
@@ -6118,6 +6245,7 @@ LESSONS["u4_l14"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["순서대로 돌아오는 기회는?"],"watch":"차례","min":4},
         "title": "무슨 뜻일까요?",
         "sub": "낱말의 뜻을 보고 어떤 낱말인지 맞혀 봐요!",
         "cards": [
@@ -6149,6 +6277,7 @@ LESSONS["u4_l14"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["\"나·동…\" 낱말을 또박또박 읽고 써 볼래?"],"watch":"읽고 쓰기 둘 다","min":5},
         "title": "바르게 읽고 써 보기 🎤",
         "sub": "낱말을 또박또박 읽고, 바르게 써 봐요!",
         "count": 24,
@@ -6165,6 +6294,7 @@ LESSONS["u4_l14"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"차례\"를 넣어 짧게 말해 볼까?"],"watch":"\"차례를 지켜요\"","min":5},
         "title": "학습에 자주 쓰는 낱말 익히기",
         "levels": {
           "읽기": {
@@ -6191,6 +6321,7 @@ LESSONS["u4_l14"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 학습 낱말의 뜻을 말해 줄래?"],"watch":"뜻 잇기","min":5},
         "tag": "👋 짝 활동",
         "title": "학습 낱말 뜻 잇기 짝 놀이",
         "type": "pair",
@@ -6208,6 +6339,7 @@ LESSONS["u4_l14"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["학습 낱말 뜻을 알면 뭐가 좋아?"],"watch":"\"책과 문제를 잘 이해해요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {

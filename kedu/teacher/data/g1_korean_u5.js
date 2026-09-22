@@ -71,6 +71,8 @@ LESSONS["u5_l01"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"아침에 경비 아저씨를 만났어!\""},{"face":"👦","label":"두리 \"뭐라고 인사했어?\""}],
+        "tnote": {"ask":["오늘 아침 학교 오는 길에 누구를 만났어? 뭐라고 인사했어?"],"watch":"인사 안 한 아이도 괜찮음 — 다음부터","min":3},
         "scene_title": "아침 등굣길에서 🌞",
         "visual": "🌞",
         "question": "아침에 학교 오는 길, 누구를 만났나요?<br>만난 사람에게 어떤 인사를 했나요?",
@@ -86,6 +88,7 @@ LESSONS["u5_l01"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["인사를 하면 서로 뭐가 좋아질까?"],"watch":"기분·마음 — 아이 말로","min":4},
         "title": "인사는 마음을 여는 문",
         "content": "인사를 하면 서로 **기분이 좋아지고 마음이 가까워져요**. 이 단원에서는 알맞은 인사말, 인사가 담긴 시, 낱말을 바르게 읽는 법을 배워요!",
         "symbol_meanings": [
@@ -124,6 +127,7 @@ LESSONS["u5_l01"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["집을 나서며 엄마 아빠께 뭐라고 해?"],"watch":"다녀오겠습니다","min":4},
         "title": "우리가 아는 인사말 🎴",
         "sub": "이럴 때 어떤 인사를 할까요? 카드를 누르면 인사말이 나와요. 다 같이 큰 소리로 말해 봐요!",
         "cards": [
@@ -160,6 +164,7 @@ LESSONS["u5_l01"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["인사를 받았을 때 기분이 어땠어? 안 받아 주면?"],"watch":"두 경우 비교","min":4},
         "title": "인사를 하면 좋은 점",
         "question": "인사를 주고받았을 때 기분이 어땠는지 이야기해 봐요.",
         "items": [
@@ -178,6 +183,7 @@ LESSONS["u5_l01"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"안녕\"을 따라 써 볼까? 받침이 뭐야?"],"watch":"ㄴ·ㅇ","min":5},
         "title": "우리가 아는 인사말을 떠올려요",
         "levels": {
           "읽기": {
@@ -204,6 +210,7 @@ LESSONS["u5_l01"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 상황에 알맞은 인사말로 답해 볼래?"],"watch":"역할 교대","min":5},
         "tag": "👋 짝 활동",
         "title": "인사말 주고받기 짝 놀이",
         "type": "pair",
@@ -221,6 +228,7 @@ LESSONS["u5_l01"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["이 단원에서 배울 세 갈래는?"],"watch":"인사말·시·바르게 읽기","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -488,6 +496,8 @@ LESSONS["u5_l02"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"친구한텐 \"안녕!\"\""},{"face":"👧","label":"하나 \"선생님껜 \"안녕하세요\"! 왜 다르지?\""}],
+        "tnote": {"ask":["친구에겐 \"안녕\", 선생님껜 \"안녕하세요\". 왜 다를까?"],"watch":"웃어른께는 공손하게 — 높임","min":3},
         "scene_title": "누구에게 하는 인사일까요? 🤔",
         "visual": "🤔",
         "question": "같은 아침인데 친구에게는 ‘안녕’,<br>선생님께는 ‘안녕하세요’라고 해요. 왜 다를까요?",
@@ -525,6 +535,7 @@ LESSONS["u5_l02"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["친구와 헤어질 땐? 웃어른과 헤어질 땐?"],"watch":"잘 가 / 안녕히 가세요","min":4},
         "title": "상대에 따라 인사말이 달라요",
         "content": "**친구나 동생**에게는 짧고 다정하게, **웃어른**께는 공손한 말과 바른 자세로 인사해요. 상대를 생각하는 마음이 담겨 있어요!",
         "symbol_meanings": [
@@ -563,6 +574,7 @@ LESSONS["u5_l02"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["이웃 어른이 길을 알려 주셨어. 뭐라고 할까?"],"watch":"고맙습니다","min":4},
         "title": "알맞은 인사말 고르기 🎴",
         "sub": "누구에게 하는 인사인지 생각하며 알맞은 인사말을 골라요. 카드를 누르면 답이 나와요!",
         "cards": [
@@ -599,6 +611,7 @@ LESSONS["u5_l02"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["\"다녀오겠습니다\"는 누구에게 하는 말이야?"],"watch":"웃어른","min":4},
         "title": "친구 인사? 웃어른 인사?",
         "question": "다음 인사말은 친구에게 하는 말일까요, 웃어른께 하는 말일까요?",
         "items": [
@@ -617,6 +630,7 @@ LESSONS["u5_l02"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"안녕하세요\"를 써 볼까? 다섯 글자!"],"watch":"받침 ㄴ·ㅇ","min":5},
         "title": "상대에 알맞은 인사말 고르기",
         "levels": {
           "읽기": {
@@ -643,6 +657,7 @@ LESSONS["u5_l02"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 \"할머니\"라고 하면 뭐라고 인사할래?"],"watch":"상대에 맞게","min":5},
         "tag": "👋 짝 활동",
         "title": "상대 맞춰 인사하기 짝 놀이",
         "type": "pair",
@@ -660,6 +675,7 @@ LESSONS["u5_l02"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["인사말은 뭐에 따라 달라져?"],"watch":"\"상대(누구에게)\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -928,6 +944,8 @@ LESSONS["u5_l03"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"연필 떨어졌어! 주워 줄게.\""},{"face":"👦","label":"두리 \"고마워!\""}],
+        "tnote": {"ask":["친구가 연필을 주워 줬어. 뭐라고 말할까?"],"watch":"고마워 — 마음을 담아","min":3},
         "scene_title": "이럴 때 뭐라고 할까요? 💭",
         "visual": "💭",
         "question": "친구가 떨어뜨린 연필을 주워 줬더니<br>친구 얼굴이 환해졌어요. 친구는 뭐라고 말할까요?",
@@ -965,6 +983,7 @@ LESSONS["u5_l03"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["미안할 때 친구에겐? 선생님께는?"],"watch":"미안해 / 죄송합니다","min":4},
         "title": "마음을 전하는 인사말",
         "content": "고마울 때, 미안할 때, 축하할 때… **상황과 마음에 따라** 인사말이 달라져요. 마음을 담아 말해야 진짜 인사예요!",
         "symbol_meanings": [
@@ -1003,6 +1022,7 @@ LESSONS["u5_l03"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["실수로 친구 발을 밟았어. 뭐라고 할까?"],"watch":"미안해 — 표정도","min":4},
         "title": "상황에 알맞은 인사말 🎴",
         "sub": "어떤 상황인지 살펴보고 알맞은 인사말을 골라요. 카드를 누르면 답이 나와요!",
         "cards": [
@@ -1039,6 +1059,7 @@ LESSONS["u5_l03"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["상황 하나 골라서 마음을 담아 인사해 볼래?"],"watch":"표정·목소리","min":5},
         "title": "마음 담아 인사말 발표 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 상황 하나를 고르고 마음을 담아 인사말을 해 봐요!",
         "count": 24,
@@ -1055,6 +1076,7 @@ LESSONS["u5_l03"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"고마워\"를 써 볼까?"],"watch":"받침 없음","min":5},
         "title": "마음을 전하는 인사말 하기",
         "levels": {
           "읽기": {
@@ -1081,6 +1103,7 @@ LESSONS["u5_l03"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 보여 준 상황 카드에 뭐라고 인사할래?"],"watch":"도와줬을 때·잘못했을 때·생일","min":5},
         "tag": "👋 짝 활동",
         "title": "마음 담아 인사하기 짝 놀이",
         "type": "pair",
@@ -1098,6 +1121,7 @@ LESSONS["u5_l03"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["인사말은 뭘 담아 전해?"],"watch":"\"마음\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -1366,6 +1390,8 @@ LESSONS["u5_l04"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"안녕! …어? 대답이 없네.\""},{"face":"🐿️","label":"도토 \"인사는 주고받아야 완성이야!\""}],
+        "tnote": {"ask":["\"안녕!\" 했는데 아무 대답이 없으면 어떤 마음이야?"],"watch":"서운함 — 되받아 인사의 필요","min":3},
         "scene_title": "인사는 혼자 하는 게 아니에요 🤝",
         "visual": "🤝",
         "question": "“안녕!” 하고 인사했는데 아무 대답이 없다면?<br>인사는 주고받아야 완성돼요!",
@@ -1403,6 +1429,7 @@ LESSONS["u5_l04"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["역할놀이 순서 네 가지가 뭐야?"],"watch":"상황·역할·주고받기·바꾸기","min":4},
         "title": "역할놀이 하는 방법",
         "content": "역할놀이는 **상황을 정하고 → 역할을 나누고 → 진짜처럼 인사를 주고받는** 놀이예요. 받은 인사에는 알맞게 답해요!",
         "symbol_meanings": [
@@ -1441,6 +1468,7 @@ LESSONS["u5_l04"] =
       "stage": "활동",
       "block": "question",
       "data": {
+        "tnote": {"ask":["짝과 어떤 상황으로 할래? 누가 어른 역할이야?"],"watch":"상황·역할 정하기","min":4},
         "title": "역할놀이 상황을 정해요 🎭",
         "question": "짝과 함께 역할놀이를 해요. 어떤 상황으로 할지 정하고 인사를 주고받아요.",
         "items": [
@@ -1459,6 +1487,7 @@ LESSONS["u5_l04"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["앞에 나와서 짝과 인사를 주고받아 볼래?"],"watch":"받는 인사까지","min":6},
         "title": "역할놀이 발표하기 🎤",
         "sub": "버튼을 누르면 발표할 짝을 뽑아요. 짝과 함께 앞에 나와 역할놀이로 인사를 주고받아요!",
         "count": 24,
@@ -1475,6 +1504,7 @@ LESSONS["u5_l04"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["먼저 인사를 받으면 뭐라고 되돌려 줄까?"],"watch":"\"안녕!\"","min":5},
         "title": "역할을 정해 인사 주고받기",
         "levels": {
           "읽기": {
@@ -1501,6 +1531,7 @@ LESSONS["u5_l04"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["한 사람이 인사하면 다른 사람은? 역할을 바꿔 봤어?"],"watch":"주고받기","min":5},
         "tag": "👋 짝 활동",
         "title": "인사 역할놀이 짝 활동",
         "type": "pair",
@@ -1518,6 +1549,7 @@ LESSONS["u5_l04"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["인사는 혼자 해, 주고받아?"],"watch":"\"주고받아요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -1786,6 +1818,8 @@ LESSONS["u5_l05"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"해가 지네. 잘 시간이야.\""},{"face":"👦","label":"두리 \"난 엄마께 \"안녕히 주무세요\" 해!\""}],
+        "tnote": {"ask":["잠자리에 들 때 누구에게 어떤 인사를 해?"],"watch":"가족·인형·달님","min":3},
         "scene_title": "해가 지는 저녁이에요 🌆",
         "visual": "🌆",
         "question": "하루를 마치고 잠자리에 들 시간,<br>여러분은 누구에게 어떤 인사를 하나요?",
@@ -1823,6 +1857,7 @@ LESSONS["u5_l05"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["시를 들을 때 뭘 찾으며 들을까? 세 가지!"],"watch":"누가·누구에게·뭐라고","min":4},
         "title": "시를 듣는 약속",
         "content": "시를 들을 때는 **장면을 머릿속에 그리며** 들어요. 누가 나오는지, 누구에게 무슨 인사를 하는지 귀 기울여 봐요!",
         "symbol_meanings": [
@@ -1861,6 +1896,7 @@ LESSONS["u5_l05"] =
       "stage": "활동",
       "block": "read_aloud",
       "data": {
+        "tnote": {"ask":["눈을 감고 장면을 그리며 들어 볼까? 누가 나와?"],"watch":"읽어 주기 — 천천히","min":6},
         "title": "저녁 인사가 담긴 시 📖",
         "author": "저녁 인사가 나오는 동시",
         "pages": [
@@ -1893,6 +1929,7 @@ LESSONS["u5_l05"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["시 속 아이는 누구누구에게 인사했어?"],"watch":"가족·달님…","min":4},
         "title": "시의 내용을 확인해요",
         "question": "시를 잘 들었나요? 함께 확인해 봐요.",
         "items": [
@@ -1911,6 +1948,7 @@ LESSONS["u5_l05"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"잘 자요\"를 써 볼까?"],"watch":"띄어쓰기","min":5},
         "title": "저녁 인사가 담긴 시 듣고 알기",
         "levels": {
           "읽기": {
@@ -1937,6 +1975,7 @@ LESSONS["u5_l05"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝과 인형·별에게 저녁 인사를 해 볼래?"],"watch":"여러 대상","min":5},
         "tag": "👋 짝 활동",
         "title": "저녁 인사 나누기 짝 놀이",
         "type": "pair",
@@ -1952,6 +1991,7 @@ LESSONS["u5_l05"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["시 속 인사는 어떤 때 하는 인사야?"],"watch":"\"저녁(밤)\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -2184,6 +2224,8 @@ LESSONS["u5_l06"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"지난 시간 시, 우리가 읽어 볼까?\""},{"face":"👧","label":"하나 \"노래처럼 읽으면 재미있겠다!\""}],
+        "tnote": {"ask":["지난 시간 들은 시, 이번엔 우리가 소리 내 읽어 볼까? 어떻게 읽으면 재미있을까?"],"watch":"리듬·손뼉","min":3},
         "scene_title": "시를 소리 내어 읽으면 🎵",
         "visual": "🎵",
         "question": "지난 시간에 들은 저녁 인사 시,<br>이번에는 우리가 직접 소리 내어 읽어 볼까요?",
@@ -2221,6 +2263,7 @@ LESSONS["u5_l06"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["선생님 따라 한 행씩 읽어 볼까? 손뼉도 쳐 보자"],"watch":"리듬감","min":5},
         "title": "리듬감 있게 따라 읽는 법",
         "content": "시는 **노래처럼 리듬**이 있어요. 한 행씩 따라 읽고, 짝과 번갈아 읽고, 손뼉 박자에 맞춰 읽으면 더 재미있어요!",
         "symbol_meanings": [
@@ -2259,6 +2302,7 @@ LESSONS["u5_l06"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["창밖 달님에게는 뭐라고 저녁 인사할까?"],"watch":"\"달님, 잘 자요\"","min":4},
         "title": "누구에게 어떤 저녁 인사? 🌙",
         "sub": "저녁에 만나는 대상에게 알맞은 인사를 골라요. 카드를 누르고 다 같이 인사말을 읽어 봐요!",
         "cards": [
@@ -2295,6 +2339,7 @@ LESSONS["u5_l06"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["인사하고 싶은 대상을 정해 나만의 저녁 인사를 들려줄래?"],"watch":"대상+인사말","min":5},
         "title": "나만의 저녁 인사 발표 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 인사하고 싶은 대상을 고르고 나만의 저녁 인사를 만들어 말해요!",
         "count": 24,
@@ -2311,6 +2356,7 @@ LESSONS["u5_l06"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"○○야, 잘 자\"에 내가 정한 대상을 넣어 써 볼까?"],"watch":"쉼표","min":5},
         "title": "리듬감 있게 읽고 나만의 저녁 인사 만들기",
         "levels": {
           "읽기": {
@@ -2337,6 +2383,7 @@ LESSONS["u5_l06"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝의 저녁 인사에서 좋았던 점 하나 말해 줄래?"],"watch":"칭찬","min":5},
         "tag": "👋 짝 활동",
         "title": "나만의 저녁 인사 짝 발표",
         "type": "pair",
@@ -2352,6 +2399,7 @@ LESSONS["u5_l06"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["시를 소리 내어 읽으면 뭐가 살아나?"],"watch":"\"리듬\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -2620,6 +2668,8 @@ LESSONS["u5_l07"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"\"걸음\"이라고 쓰여 있는데…\""},{"face":"👦","label":"두리 \"읽으면 [거름]처럼 들려!\""}],
+        "tnote": {"ask":["\"걸음\"을 소리 내 읽어 볼까? 글자랑 똑같이 들려?"],"watch":"[거름] — 다름을 발견","min":3},
         "scene_title": "‘걸음’을 읽어 볼까요? 👣",
         "visual": "👣",
         "question": "‘걸음’이라고 쓰여 있는데<br>소리 내어 읽으면 [거름]처럼 들려요. 왜 그럴까요?",
@@ -2657,6 +2707,7 @@ LESSONS["u5_l07"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"걸음\"의 ㄹ 받침 소리가 어디로 갔어?"],"watch":"뒤 글자 \"음\" 자리로","min":4},
         "title": "받침이 뒤로 넘어가는 소리",
         "content": "받침 뒤에 **‘ㅇ’으로 시작하는 글자**가 오면, 받침 소리가 뒤 글자 자리로 넘어가 자연스럽게 이어져요. 글자는 그대로, 소리만 달라져요!",
         "symbol_meanings": [
@@ -2695,6 +2746,7 @@ LESSONS["u5_l07"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["\"국어\"를 읽으면 어떻게 들려?"],"watch":"[구거]","min":4},
         "title": "글자와 소리가 달라요 🔊",
         "sub": "글자를 보고, 소리 내어 읽으면 어떻게 들리는지 맞혀요. 카드를 누르면 소리가 나와요!",
         "cards": [
@@ -2731,6 +2783,7 @@ LESSONS["u5_l07"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["쓸 때도 [거름]이라고 쓰면 될까?"],"watch":"안 됨 — 글자는 걸음","min":4},
         "title": "왜 다르게 들릴까요?",
         "question": "글자와 소리가 다른 낱말에 대해 함께 생각해 봐요.",
         "items": [
@@ -2749,6 +2802,7 @@ LESSONS["u5_l07"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"걸음\"을 써 볼까? 소리 말고 글자대로!"],"watch":"받침 ㄹ·ㅁ","min":5},
         "title": "받침이 넘어가는 소리 알기",
         "levels": {
           "읽기": {
@@ -2775,6 +2829,7 @@ LESSONS["u5_l07"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 보여 준 낱말, 소리 내 보니 어떻게 들려?"],"watch":"글자 vs 소리","min":5},
         "tag": "👋 짝 활동",
         "title": "글자와 소리 견주기 짝 놀이",
         "type": "pair",
@@ -2792,6 +2847,7 @@ LESSONS["u5_l07"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["글자와 소리는 늘 같아?"],"watch":"\"다를 때가 있어요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -3061,6 +3117,8 @@ LESSONS["u5_l08"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"\"하늘\"은 [하늘] 그대로네?\""},{"face":"👧","label":"하나 \"\"웃음\"은 [우슴]! 달라!\""}],
+        "tnote": {"ask":["\"하늘\"과 \"웃음\", 소리 내 보면 어느 게 글자랑 달라?"],"watch":"웃음","min":3},
         "scene_title": "같을까요, 다를까요? ⚖️",
         "visual": "⚖️",
         "question": "‘하늘’은 글자대로 [하늘]로 들려요.<br>‘웃음’은요? 글자와 소리가 같을까요, 다를까요?",
@@ -3098,6 +3156,7 @@ LESSONS["u5_l08"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"길이\"는 어떻게 들려? 왜?"],"watch":"[기리] — ㄹ이 넘어감","min":4},
         "title": "두 갈래로 가려 읽어요",
         "content": "낱말에는 **글자대로 소리 나는 낱말**과 **받침이 넘어가 다르게 소리 나는 낱말**이 있어요. 가려내며 자연스럽게 읽어 봐요!",
         "symbol_meanings": [
@@ -3136,6 +3195,7 @@ LESSONS["u5_l08"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["\"할아버지\"는 글자대로 들려? 읽어 보자"],"watch":"[하라버지]","min":4},
         "title": "같은 소리? 다른 소리? 🔎",
         "sub": "이 낱말은 글자대로 들릴까요, 다르게 들릴까요? 먼저 읽어 보고 카드를 눌러 확인해요!",
         "cards": [
@@ -3172,6 +3232,7 @@ LESSONS["u5_l08"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["글자와 소리가 다른 낱말 하나 말하고 소리 내 볼래?"],"watch":"발표","min":5},
         "title": "소리가 넘어가는 낱말 발표 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 글자와 소리가 다른 낱말을 하나 말하고 자연스럽게 읽어요!",
         "count": 24,
@@ -3188,6 +3249,7 @@ LESSONS["u5_l08"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"악어\"를 써 볼까? 읽으면?"],"watch":"[아거]","min":5},
         "title": "같은 소리·다른 소리 가려 읽기",
         "levels": {
           "읽기": {
@@ -3214,6 +3276,7 @@ LESSONS["u5_l08"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝과 카드를 두 갈래로 나눠 봤어? 헷갈린 게 있어?"],"watch":"글자=소리 / 글자≠소리","min":5},
         "tag": "👋 짝 활동",
         "title": "두 갈래로 나누기 짝 놀이",
         "type": "pair",
@@ -3231,6 +3294,7 @@ LESSONS["u5_l08"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["낱말을 어떻게 나눠 볼 수 있어?"],"watch":"\"글자=소리 / 글자≠소리\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -3499,6 +3563,8 @@ LESSONS["u5_l09"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"아침에 일어나서 \"안녕히 주무셨어요?\"\""},{"face":"👦","label":"두리 \"밤엔 \"안녕히 주무세요\"! 하루 종일 인사네!\""}],
+        "tnote": {"ask":["아침부터 잘 때까지 인사를 몇 번이나 할까? 손가락으로 세어 볼까?"],"watch":"많음 — 하루 인사 지도","min":3},
         "scene_title": "아침부터 저녁까지 🕐",
         "visual": "🕐",
         "question": "아침에 눈 떠서 잠들 때까지,<br>우리는 하루에 인사를 몇 번이나 할까요?",
@@ -3536,6 +3602,7 @@ LESSONS["u5_l09"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["점심 급식실에서 먹기 전에 뭐라고 해?"],"watch":"잘 먹겠습니다","min":4},
         "title": "하루 인사 지도",
         "content": "하루를 따라가며 인사 상황을 그려 봐요. **때와 곳, 만나는 사람**에 따라 알맞은 인사말이 있어요!",
         "symbol_meanings": [
@@ -3574,6 +3641,7 @@ LESSONS["u5_l09"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["학교 끝나고 집에 돌아오면 뭐라고 해?"],"watch":"다녀왔습니다","min":4},
         "title": "이 상황엔 어떤 인사? 🎴",
         "sub": "하루 동안 만나는 상황이에요. 알맞은 인사말을 골라요. 카드를 누르면 답이 나와요!",
         "cards": [
@@ -3610,6 +3678,7 @@ LESSONS["u5_l09"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["오늘부터 집에서 꼭 할 인사 하나를 정해 볼까?"],"watch":"실천 다짐","min":4},
         "title": "인사 실천을 다짐해요",
         "question": "오늘부터 실천할 인사를 정해 이야기해 봐요.",
         "items": [
@@ -3628,6 +3697,7 @@ LESSONS["u5_l09"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"다녀오겠습니다\"를 써 볼까? 길지만 또박또박!"],"watch":"받침 여럿","min":5},
         "title": "하루 동안 알맞게 인사하기",
         "levels": {
           "읽기": {
@@ -3654,6 +3724,7 @@ LESSONS["u5_l09"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 때(등교·식사·잠자기)에 맞는 인사는?"],"watch":"때→인사","min":5},
         "tag": "👋 짝 활동",
         "title": "하루 인사 지도 짝 놀이",
         "type": "pair",
@@ -3671,6 +3742,7 @@ LESSONS["u5_l09"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["밥 먹기 전에 하는 인사는?"],"watch":"\"잘 먹겠습니다\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -3939,6 +4011,8 @@ LESSONS["u5_l10"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"🐿️","label":"도토 \"인사말로 놀이를 한대!\""},{"face":"👦","label":"두리 \"상황을 외치면 인사말로 답하는 거야!\""}],
+        "tnote": {"ask":["배운 인사말이 정말 많지? 놀이 규칙을 먼저 들어 볼까?"],"watch":"규칙 설명 전 흥미","min":3},
         "scene_title": "인사말로 놀 수 있다고요? 🎲",
         "visual": "🎲",
         "question": "이 단원에서 배운 인사말이 정말 많아요.<br>오늘은 그 인사말로 신나게 놀아 볼 거예요!",
@@ -3976,6 +4050,7 @@ LESSONS["u5_l10"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["상황을 말하면 뭐로 답해? 알맞은지 누가 판단해?"],"watch":"인사말 / 모둠 함께","min":4},
         "title": "인사 놀이 방법",
         "content": "한 사람이 **상황을 말하면**, 다른 사람이 **알맞은 인사말을 외쳐요**. 알맞으면 통과, 역할을 바꿔 계속해요!",
         "symbol_meanings": [
@@ -4014,6 +4089,7 @@ LESSONS["u5_l10"] =
       "stage": "활동",
       "block": "question",
       "data": {
+        "tnote": {"ask":["\"이웃 어른을 만났어!\" — 뭐라고 답할래?"],"watch":"안녕하세요 — 시범","min":5},
         "title": "모둠 인사 놀이 시작! 🎲",
         "question": "모둠별로 인사 놀이를 해요. 선생님이 먼저 시범 상황을 낼게요.",
         "items": [
@@ -4032,6 +4108,7 @@ LESSONS["u5_l10"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["뽑힌 친구가 상황을 외치면 반 전체가 답해 볼까?"],"watch":"큰 소리로","min":6},
         "title": "인사 놀이 무대 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 뽑힌 친구가 상황을 외치면, 반 전체가 알맞은 인사말로 답해요!",
         "count": 24,
@@ -4048,6 +4125,7 @@ LESSONS["u5_l10"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"고마워\"를 써 볼까?"],"watch":"쓰기","min":4},
         "title": "인사 놀이로 즐겁게 인사하기",
         "levels": {
           "읽기": {
@@ -4074,6 +4152,7 @@ LESSONS["u5_l10"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["술래가 외친 상황에 알맞게 답했어? 틀린 답은 왜 안 맞아?"],"watch":"판단 근거","min":5},
         "tag": "👋 짝 활동",
         "title": "인사 놀이 짝·모둠 활동",
         "type": "pair",
@@ -4091,6 +4170,7 @@ LESSONS["u5_l10"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["놀이로 인사하면 뭐가 좋아?"],"watch":"\"즐겁게 익혀요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -4359,6 +4439,8 @@ LESSONS["u5_l11"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"인사말들이 집을 잃었대!\""},{"face":"👦","label":"두리 \"\"안녕히 주무세요\"의 집은 어디지?\""}],
+        "tnote": {"ask":["\"안녕히 주무세요\"는 언제 하는 인사야? 집을 찾아 줄까?"],"watch":"잠자리에 들 때","min":3},
         "scene_title": "인사말이 집을 잃었어요 🏘️",
         "visual": "🏘️",
         "question": "인사말들이 자기 집(상황)을 찾고 있어요.<br>알맞은 집을 찾아 데려다줄 수 있나요?",
@@ -4396,6 +4478,7 @@ LESSONS["u5_l11"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["이 단원에서 배운 두 갈래가 뭐야?"],"watch":"인사말 / 글자와 소리","min":4},
         "title": "이 단원의 두 갈래 정리",
         "content": "이 단원에서 우리는 **상황·상대에 알맞은 인사말**과 **글자와 소리가 다른 낱말 읽기**를 배웠어요. 둘 다 차근차근 정리해요!",
         "symbol_meanings": [
@@ -4434,6 +4517,7 @@ LESSONS["u5_l11"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["\"다녀오겠습니다\"의 집은?"],"watch":"집을 나설 때","min":4},
         "title": "인사말 집 찾기 🏘️",
         "sub": "인사말이 어느 집(상황)에 사는지 찾아 줘요. 카드를 누르면 알맞은 집이 나와요!",
         "cards": [
@@ -4470,6 +4554,7 @@ LESSONS["u5_l11"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["\"국어\"는 어떻게 소리 나? \"바다\"도 달라져?"],"watch":"[구거] / 아니요","min":4},
         "title": "소리가 넘어가는 낱말 정리",
         "question": "글자와 소리가 다른 낱말을 다시 한번 정리해 봐요.",
         "items": [
@@ -4488,6 +4573,7 @@ LESSONS["u5_l11"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"인사말\"을 써 볼까?"],"watch":"받침 ㄴ·ㄹ","min":5},
         "title": "두 갈래로 배운 것 정리하기",
         "levels": {
           "읽기": {
@@ -4514,6 +4600,7 @@ LESSONS["u5_l11"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝과 인사말 카드를 집에 놓았어? 헷갈린 카드는?"],"watch":"상대·상황별","min":5},
         "tag": "👋 짝 활동",
         "title": "인사말 집 찾기 짝 놀이",
         "type": "pair",
@@ -4531,6 +4618,7 @@ LESSONS["u5_l11"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["이 단원은 몇 갈래로 배웠어?"],"watch":"두 갈래","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -4799,6 +4887,8 @@ LESSONS["u5_l12"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"단원 마지막 시간이야!\""},{"face":"👧","label":"하나 \"처음보다 인사를 잘하게 됐어!\""}],
+        "tnote": {"ask":["이 단원을 시작할 때보다 뭐가 늘었을까?"],"watch":"자기 돌아보기","min":3},
         "scene_title": "단원의 마지막 시간이에요 🎁",
         "visual": "🎁",
         "question": "인사말도, 시 읽기도, 소리 읽기도 배웠어요.<br>이 단원을 시작할 때보다 무엇이 늘었을까요?",
@@ -4836,6 +4926,7 @@ LESSONS["u5_l12"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"고맙습니다\"를 쓸 때 받침을 몇 개나 써야 해?"],"watch":"ㅂ·ㅂ·ㄷ… 정확하게","min":4},
         "title": "바르게 쓰고, 나를 돌아봐요",
         "content": "인사말을 **글자의 짜임을 생각하며 바르게 따라 쓰고**, 이 단원에서 내가 얼마나 자랐는지 **나 스스로** 돌아봐요!",
         "symbol_meanings": [
@@ -4874,6 +4965,7 @@ LESSONS["u5_l12"] =
       "stage": "활동",
       "block": "chosung_quiz",
       "data": {
+        "tnote": {"ask":["ㅊ ㅎ, 좋은 일이 생겼을 때!"],"watch":"축하","min":4},
         "title": "마지막 초성 퀴즈 🏆",
         "sub": "이 단원에서 배운 낱말로 마지막 퀴즈! 초성을 보고 낱말을 맞혀요. [정답 보기]로 확인해요",
         "items": [
@@ -4913,6 +5005,7 @@ LESSONS["u5_l12"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["이 단원에서 잘하게 된 것 한 가지를 말해 볼래?"],"watch":"친구와 비교 X","min":5},
         "title": "나를 돌아보며 발표해요 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 이 단원에서 잘하게 된 것 한 가지를 말해요. 친구와 비교하지 않아도 돼요!",
         "count": 24,
@@ -4929,6 +5022,7 @@ LESSONS["u5_l12"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"안녕\"을 바르게 써 볼까?"],"watch":"쓰기","min":5},
         "title": "바르게 쓰고 스스로 돌아보기",
         "levels": {
           "읽기": {
@@ -4955,6 +5049,7 @@ LESSONS["u5_l12"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 보여 준 초성, 무슨 인사말이야?"],"watch":"ㅇㄴ→안녕","min":5},
         "tag": "👋 짝 활동",
         "title": "초성 인사말 맞히기 짝 놀이",
         "type": "pair",
@@ -4972,6 +5067,7 @@ LESSONS["u5_l12"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["내가 잘하게 된 건 누구를 기준으로 봐?"],"watch":"\"지난날의 나\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {

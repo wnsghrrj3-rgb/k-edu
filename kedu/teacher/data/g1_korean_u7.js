@@ -72,6 +72,8 @@ LESSONS["u7_l01"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"🐻","label":"요리사 곰 \"당근!\""},{"face":"👧","label":"하나 \"당근을 달라는 거야, 씻으라는 거야?\""}],
+        "tnote": {"ask":["곰이 \"당근!\" 하고 외쳤어. 달라는 걸까, 씻으라는 걸까?"],"watch":"낱말 하나로는 모름","min":3},
         "scene_title": "요리하던 곰이 외쳤어요 🍳",
         "visual": "🍳",
         "question": "요리하던 곰이 “당근!” 하고 외쳤어요.<br>당근을 달라는 걸까요, 당근을 씻으라는 걸까요?",
@@ -87,6 +89,7 @@ LESSONS["u7_l01"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"물!\"이라고만 하면 마실 물일까, 쏟은 물일까?"],"watch":"알 수 없음","min":4},
         "title": "낱말 하나로는 모자라요",
         "content": "낱말 하나만 말하면 **무엇을 어떻게 하라는 건지** 알 수 없어요. 듣는 사람이 헷갈리지 않으려면 더 자세한 말이 필요해요!",
         "symbol_meanings": [
@@ -125,6 +128,7 @@ LESSONS["u7_l01"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["운동장에서 친구가 \"공!\" — 무슨 뜻일 수 있어?"],"watch":"던져·잡아·비켜","min":4},
         "title": "이 낱말, 무슨 뜻일까요? 🤔",
         "sub": "낱말 하나만 들었을 때 어떤 뜻일 수 있는지 함께 생각해요. 카드를 누르면 여러 뜻이 나와요!",
         "cards": [
@@ -156,6 +160,7 @@ LESSONS["u7_l01"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["낱말만 말해서 못 알아들은 적 있어? 어떻게 말하면 통할까?"],"watch":"문장으로","min":4},
         "title": "답답했던 경험을 나눠요",
         "question": "말이 잘 안 통해 답답했던 적이 있나요?",
         "items": [
@@ -174,6 +179,7 @@ LESSONS["u7_l01"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"사과\"만 들으면 뭘 하라는 건지 알아? \"사과를 먹어요\"는?"],"watch":"문장이 뜻을 살림","min":5},
         "title": "낱말만으로는 안 통해요 — 문장의 필요",
         "levels": {
           "읽기": {
@@ -200,6 +206,7 @@ LESSONS["u7_l01"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 낱말 하나만 말하면 뜻을 맞힐 수 있어? 문장으로 다시 말해 봐"],"watch":"비교 체험","min":5},
         "tag": "👋 짝 활동",
         "title": "낱말 하나로 통할까 짝 놀이",
         "type": "pair",
@@ -215,6 +222,7 @@ LESSONS["u7_l01"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["뜻을 잘 통하게 하려면?"],"watch":"\"문장으로 말해요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -482,6 +490,8 @@ LESSONS["u7_l02"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"🐻","label":"곰 \"당근을 씻어 줘!\""},{"face":"👦","label":"두리 \"이제 알겠다! 무엇을 어떻게 할지 말했어!\""}],
+        "tnote": {"ask":["\"당근!\"과 \"당근을 씻어 줘\", 뭐가 달라졌어?"],"watch":"무엇을·어떻게","min":3},
         "scene_title": "곰이 다시 말했어요 🐻",
         "visual": "🐻",
         "question": "이번에 곰이 “당근을 씻어 줘”라고 말했어요.<br>지난번 “당근!”과 무엇이 달라졌나요?",
@@ -519,6 +529,7 @@ LESSONS["u7_l02"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"물!\"을 문장으로 바꾸면?"],"watch":"물을 주세요","min":4},
         "title": "문장은 뜻을 또렷하게 해요",
         "content": "**누가·무엇을·어떻게**가 들어간 문장으로 말하면 듣는 사람이 헷갈리지 않아요. 이 단원에서 알맞은 낱말로 문장을 완성하는 법을 배워요!",
         "symbol_meanings": [
@@ -557,6 +568,7 @@ LESSONS["u7_l02"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["\"문!\"을 추울 때 문장으로 바꾸면?"],"watch":"문을 닫아 주세요","min":4},
         "title": "낱말을 문장으로 바꿔요 ✨",
         "sub": "낱말 하나를 뜻이 통하는 문장으로 바꿔요. 카드를 누르면 문장이 나와요. 다 같이 읽어 봐요!",
         "cards": [
@@ -593,6 +605,7 @@ LESSONS["u7_l02"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["이 단원에서 열심히 할 것을 문장으로 다짐해 볼래?"],"watch":"\"~하겠습니다\"","min":5},
         "title": "단원 다짐 발표하기 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 이 단원에서 무엇을 열심히 할지 다짐을 문장으로 말해요!",
         "count": 24,
@@ -609,6 +622,7 @@ LESSONS["u7_l02"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"새가 난다\"를 써 볼까?"],"watch":"띄어쓰기","min":5},
         "title": "문장으로 표현하면 잘 통해요",
         "levels": {
           "읽기": {
@@ -635,6 +649,7 @@ LESSONS["u7_l02"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 보여 준 그림을 문장으로 말하고 같이 읽었어?"],"watch":"한 문장","min":5},
         "tag": "👋 짝 활동",
         "title": "그림을 문장으로 짝 놀이",
         "type": "pair",
@@ -652,6 +667,7 @@ LESSONS["u7_l02"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["\"토끼가 뛴다\"는 뭘 나타내?"],"watch":"\"누가 어찌하는지\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -920,6 +936,8 @@ LESSONS["u7_l03"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"\"낚\"의 받침 자리 좀 봐!\""},{"face":"👦","label":"두리 \"ㄱ이 두 개야! 쌍둥이가 받침에도!\""}],
+        "tnote": {"ask":["\"낚시\"의 \"낚\" 받침 자리에 ㄱ이 몇 개야?"],"watch":"ㄲ 받침 — 3단원 쌍둥이 자음자 상기","min":3},
         "scene_title": "받침 자리에 쌍둥이가! 👯",
         "visual": "🎣",
         "question": "‘낚시’라는 글자를 자세히 보세요.<br>‘낚’의 받침 자리에 ㄱ이 몇 개 있나요?",
@@ -957,6 +975,7 @@ LESSONS["u7_l03"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"갔다\"의 받침은 뭐야? 3단원에서 본 쌍둥이 자음자 중 뭐지?"],"watch":"ㅆ","min":4},
         "title": "받침 자리의 ㄲ과 ㅆ",
         "content": "3단원에서 만난 쌍둥이 자음자 ㄲ·ㅆ는 **받침 자리에도** 올 수 있어요. 모양은 둘이지만 받침 한 자리에 꼭 맞게 써요!",
         "symbol_meanings": [
@@ -995,6 +1014,7 @@ LESSONS["u7_l03"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["신발 끈을 단단히 ◯◯ — ㄲ 받침이 들어가요"],"watch":"묶다","min":4},
         "title": "쌍받침 낱말 맞히기 🎴",
         "sub": "쌍받침 ㄲ·ㅆ가 들어간 낱말이에요. 어느 글자의 받침인지 함께 찾아봐요!",
         "cards": [
@@ -1031,6 +1051,7 @@ LESSONS["u7_l03"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["\"먹었다\"에서 ㅆ 받침은 어느 글자에 있어?"],"watch":"었","min":4},
         "title": "쌍받침 낱말을 더 찾아요",
         "question": "ㄲ이나 ㅆ가 받침으로 들어간 낱말을 더 찾아 말해 봐요.",
         "items": [
@@ -1049,6 +1070,7 @@ LESSONS["u7_l03"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"깎다·샀다\"를 받침에 주의하며 써 볼까?"],"watch":"받침 한 칸에 두 자음","min":5},
         "title": "쌍받침 ㄲ·ㅆ를 읽고 써요",
         "levels": {
           "읽기": {
@@ -1075,6 +1097,7 @@ LESSONS["u7_l03"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 쌍받침 낱말을 따라 써 봤어? 받침이 맞아?"],"watch":"확인","min":5},
         "tag": "👋 짝 활동",
         "title": "쌍받침 낱말 찾기 짝 놀이",
         "type": "pair",
@@ -1092,6 +1115,7 @@ LESSONS["u7_l03"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["\"있다·샀다\"의 받침은?"],"watch":"ㅆ","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -1361,6 +1385,8 @@ LESSONS["u7_l04"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"비 오는 날 노란 ◯◯을 쓰고 있어!\""},{"face":"👧","label":"하나 \"우유? 아니, 우산!\""}],
+        "tnote": {"ask":["빈자리에 들어갈 낱말은? 우유일까 우산일까? 어떻게 알았어?"],"watch":"그림을 자세히","min":3},
         "scene_title": "그림이 말을 걸어요 🖼️",
         "visual": "🖼️",
         "question": "비 오는 날 아이가 노란 ◯◯을 쓰고 있어요.<br>빈자리에 들어갈 낱말은 무엇일까요?",
@@ -1398,6 +1424,7 @@ LESSONS["u7_l04"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["그림에 꼭 맞는 낱말을 찾는 세 단계가 뭐야?"],"watch":"보기·떠올리기·맞춰 보기","min":4},
         "title": "그림을 보고 낱말을 골라요",
         "content": "그림 속 **모양·색깔·하는 일**을 자세히 보면 꼭 맞는 낱말이 보여요. 비슷한 낱말과 헷갈리지 않게 끝까지 살펴요!",
         "symbol_meanings": [
@@ -1436,6 +1463,7 @@ LESSONS["u7_l04"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["겨울에 손에 껴요. \"장갑\"과 \"장화\" 중?"],"watch":"장갑 — 손/발","min":4},
         "title": "그림에 꼭 맞는 낱말 🎯",
         "sub": "그림을 보고 알맞은 낱말을 골라요. 카드를 누르면 답이 나와요!",
         "cards": [
@@ -1472,6 +1500,7 @@ LESSONS["u7_l04"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["\"장갑\"과 \"장화\"를 어떻게 가려냈어?"],"watch":"손 vs 발","min":4},
         "title": "고른 까닭을 말해요",
         "question": "왜 그 낱말을 골랐는지 까닭을 이야기해 봐요.",
         "items": [
@@ -1490,6 +1519,7 @@ LESSONS["u7_l04"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["꽃 그림에 알맞은 낱말을 써 볼까?"],"watch":"꽃","min":5},
         "title": "그림에 알맞은 낱말을 찾아요",
         "levels": {
           "읽기": {
@@ -1515,6 +1545,7 @@ LESSONS["u7_l04"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 보여 준 그림에 어떤 낱말 카드를 짝지었어?"],"watch":"그림↔낱말","min":5},
         "tag": "👋 짝 활동",
         "title": "그림↔낱말 짝짓기 짝 놀이",
         "type": "pair",
@@ -1533,6 +1564,7 @@ LESSONS["u7_l04"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["알맞은 낱말을 찾으면?"],"watch":"\"문장을 잘 만들 수 있어요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -1801,6 +1833,8 @@ LESSONS["u7_l05"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"🐰","label":"토끼 \"나 지금 ◯◯을 먹어요!\""},{"face":"👦","label":"두리 \"주황색 길쭉한 거… 당근!\""}],
+        "tnote": {"ask":["\"토끼가 ◯◯을 먹어요\" — 그림 속 토끼가 뭘 먹고 있어?"],"watch":"당근","min":3},
         "scene_title": "문장에 구멍이 났어요 🕳️",
         "visual": "🧩",
         "question": "‘토끼가 ◯◯을 먹어요.’<br>그림 속 토끼는 무엇을 먹고 있을까요?",
@@ -1838,6 +1872,7 @@ LESSONS["u7_l05"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"아기가 ◯◯을 자요\" — 낮이니까 뭘 자?"],"watch":"낮잠","min":4},
         "title": "그림을 보고 알맞은 낱말을 넣어요",
         "content": "빈칸 문장은 **그림을 먼저 보고** 어울리는 낱말을 골라 채워요. 다 채우면 문장을 소리 내어 읽으며 어울리는지 확인해요!",
         "symbol_meanings": [
@@ -1876,6 +1911,7 @@ LESSONS["u7_l05"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["\"새가 ◯◯을 날아요\" — 구름이 떠 있는 곳!"],"watch":"하늘","min":4},
         "title": "빈칸에 알맞은 낱말은? 🧩",
         "sub": "그림을 떠올리며 빈칸에 들어갈 낱말을 골라요. 카드를 누르면 답이 나와요!",
         "cards": [
@@ -1912,6 +1948,7 @@ LESSONS["u7_l05"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["\"토끼가 당근을 먹어요\" — 다른 낱말을 넣으면 어떻게 돼?"],"watch":"이상해짐","min":4},
         "title": "완성한 문장을 읽고 까닭을 말해요",
         "question": "빈칸을 채운 문장을 또박또박 읽고, 왜 그 낱말을 골랐는지 말해 봐요.",
         "items": [
@@ -1930,6 +1967,7 @@ LESSONS["u7_l05"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"토끼가 ( ).\"에 알맞은 낱말을 넣어 볼까?"],"watch":"뛴다 등","min":5},
         "title": "낱말을 넣어 문장을 완성해요",
         "levels": {
           "읽기": {
@@ -1956,6 +1994,7 @@ LESSONS["u7_l05"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 빈칸 문장에 뭘 넣었어? 읽어 보니 어울려?"],"watch":"읽어 확인","min":5},
         "tag": "👋 짝 활동",
         "title": "빈칸 문장 완성 짝 놀이",
         "type": "pair",
@@ -1971,6 +2010,7 @@ LESSONS["u7_l05"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["알맞은 낱말은 뭐랑 어울려야 해?"],"watch":"\"그림·앞말\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -2240,6 +2280,8 @@ LESSONS["u7_l06"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"노랗고 줄무늬 있는 과일!\""},{"face":"👦","label":"두리 \"참외는 과일이다!\""}],
+        "tnote": {"ask":["노랗고 줄무늬 있는 이 과일, 한 문장으로 알려 주면?"],"watch":"\"참외는 과일이다\"","min":3},
         "scene_title": "이것은 무엇일까요? 🔍",
         "visual": "🍈",
         "question": "노랗고 줄무늬가 있는 이 과일!<br>한 문장으로 알려 주면 어떻게 말할까요?",
@@ -2277,6 +2319,7 @@ LESSONS["u7_l06"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"무엇은 무엇이다\" 앞에는 뭐가, 뒤에는 뭐가 와?"],"watch":"알려 줄 것 / 그것이 무엇인지","min":4},
         "title": "무엇은 무엇이다",
         "content": "어떤 것이 무엇인지 알려 줄 때는 **‘무엇은 무엇이다’** 모양으로 말해요. 앞에는 알려 줄 것, 뒤에는 그것이 무엇인지가 와요!",
         "symbol_meanings": [
@@ -2315,6 +2358,7 @@ LESSONS["u7_l06"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["토끼는 ◯◯이다 — 강아지·곰도 여기에!"],"watch":"동물","min":4},
         "title": "알맞은 말을 채워요 🧩",
         "sub": "‘무엇은 무엇이다’ 문장의 빈칸을 채워요. 카드를 누르면 답이 나와요!",
         "cards": [
@@ -2351,6 +2395,7 @@ LESSONS["u7_l06"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["교실 물건으로 \"무엇은 무엇이다\" 문장을 말해 볼래?"],"watch":"\"연필은 학용품이다\"","min":5},
         "title": "그림 보고 문장 말하기 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 교실 물건이나 좋아하는 것으로 ‘무엇은 무엇이다’ 문장을 말해요!",
         "count": 24,
@@ -2367,6 +2412,7 @@ LESSONS["u7_l06"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"장미는 ( )이다\"를 완성해 써 볼까?"],"watch":"꽃","min":5},
         "title": "'무엇은 무엇이다' 문장을 말해요",
         "levels": {
           "읽기": {
@@ -2394,6 +2440,7 @@ LESSONS["u7_l06"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 낱말로 \"○○은 ○○이다\" 문장을 만들었어?"],"watch":"설명 문장","min":5},
         "tag": "👋 짝 활동",
         "title": "무엇은 무엇이다 짝 놀이",
         "type": "pair",
@@ -2409,6 +2456,7 @@ LESSONS["u7_l06"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["\"무엇은 무엇이다\"는 뭘 알려 줘?"],"watch":"\"그것이 무엇인지\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -2676,6 +2724,8 @@ LESSONS["u7_l07"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"🐿️","label":"도토 \"나 도토리 들고 있어!\""},{"face":"👧","label":"하나 \"\"다람쥐가 도토리를 먹는다\"! 세 조각!\""}],
+        "tnote": {"ask":["다람쥐가 도토리를 들고 있어. 한 문장으로 말하면?"],"watch":"누가·무엇을·어찌하다","min":3},
         "scene_title": "누가 무엇을 하고 있나요? 👀",
         "visual": "🐿️",
         "question": "그림 속 다람쥐가 도토리를 들고 있어요.<br>이 장면을 한 문장으로 말하면?",
@@ -2713,6 +2763,7 @@ LESSONS["u7_l07"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"아이가 공을 던진다\"를 세 조각으로 나눠 볼까?"],"watch":"아이가/공을/던진다","min":4},
         "title": "누가 + 무엇을 + 어찌하다",
         "content": "움직임을 알려 줄 때는 **누가, 무엇을, 어찌하다** 세 조각을 차례로 말해요. 세 조각이 다 있어야 뜻이 잘 통해요!",
         "symbol_meanings": [
@@ -2751,6 +2802,7 @@ LESSONS["u7_l07"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["◯◯가 그림을 그린다 — 붓을 든 사람은?"],"watch":"화가","min":4},
         "title": "세 조각 문장을 완성해요 🧩",
         "sub": "빠진 조각을 채워 ‘누가 무엇을 하다’ 문장을 완성해요. 카드를 누르면 답이 나와요!",
         "cards": [
@@ -2787,6 +2839,7 @@ LESSONS["u7_l07"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["짝꿍은 지금 뭘 하고 있어? \"◯◯가 ◯◯을 ◯◯다\"로!"],"watch":"세 조각 확인","min":5},
         "title": "그림 속 움직임을 문장으로",
         "question": "교실 친구들의 모습을 보고 ‘누가 무엇을 하다’ 문장을 만들어 봐요.",
         "items": [
@@ -2805,6 +2858,7 @@ LESSONS["u7_l07"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"토끼가 ( )을 먹는다\"를 완성해 써 볼까?"],"watch":"당근","min":5},
         "title": "'누가 무엇을 하다' 문장을 말해요",
         "levels": {
           "읽기": {
@@ -2832,6 +2886,7 @@ LESSONS["u7_l07"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 보여 준 그림을 \"누가 무엇을 한다\"로 말했어? 조각이 다 있어?"],"watch":"빠진 조각 찾기","min":5},
         "tag": "👋 짝 활동",
         "title": "누가 무엇을 하다 짝 놀이",
         "type": "pair",
@@ -2849,6 +2904,7 @@ LESSONS["u7_l07"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["\"아이가 공을 던진다\"에서 \"무엇을\"은?"],"watch":"\"공을\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -3117,6 +3173,8 @@ LESSONS["u7_l08"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"🐰","label":"토끼 \"토끼는 동물이다!\""},{"face":"👦","label":"두리 \"토끼가 당근을 먹는다! 둘 다 토끼 문장인데 달라!\""}],
+        "tnote": {"ask":["\"토끼는 동물이다\"와 \"토끼가 당근을 먹는다\", 뭐가 달라?"],"watch":"설명/움직임","min":3},
         "scene_title": "토끼로 두 문장을! 🐰",
         "visual": "🐰",
         "question": "‘토끼는 동물이다.’ ‘토끼가 당근을 먹는다.’<br>둘 다 토끼 문장인데, 무엇이 다를까요?",
@@ -3154,6 +3212,7 @@ LESSONS["u7_l08"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["\"참외는 과일이다\"와 \"동생이 참외를 먹는다\", 어느 게 움직임 문장이야?"],"watch":"뒤","min":4},
         "title": "알려 주는 문장, 움직임 문장",
         "content": "**‘무엇은 무엇이다’**는 그것이 무엇인지 알려 주고, **‘누가 무엇을 하다’**는 움직임을 알려 줘요. 말하고 싶은 것에 따라 골라 써요!",
         "symbol_meanings": [
@@ -3192,6 +3251,7 @@ LESSONS["u7_l08"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["\"아빠가 빨래를 넌다\"는 어떤 문장 모양이야?"],"watch":"누가 무엇을 하다","min":4},
         "title": "어떤 문장 모양일까요? 🔎",
         "sub": "문장을 읽고 ‘무엇은 무엇이다’인지 ‘누가 무엇을 하다’인지 가려요. 카드를 누르면 답이 나와요!",
         "cards": [
@@ -3228,6 +3288,7 @@ LESSONS["u7_l08"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["좋아하는 것 하나로 두 가지 문장을 다 만들어 볼래?"],"watch":"설명+움직임","min":5},
         "title": "한 가지로 두 문장 발표 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 좋아하는 것 하나를 골라 두 가지 문장을 모두 말해요!",
         "count": 24,
@@ -3244,6 +3305,7 @@ LESSONS["u7_l08"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["설명 문장과 움직임 문장을 하나씩 써 볼까?"],"watch":"두 모양","min":5},
         "title": "두 가지 문장을 가려 써요",
         "levels": {
           "읽기": {
@@ -3270,6 +3332,7 @@ LESSONS["u7_l08"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 문장은 설명이야, 움직임이야? 어떻게 알았어?"],"watch":"\"이다/한다\"","min":5},
         "tag": "👋 짝 활동",
         "title": "문장 모양 가려내기 짝 놀이",
         "type": "pair",
@@ -3285,6 +3348,7 @@ LESSONS["u7_l08"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["두 문장을 가려 쓰면?"],"watch":"\"뜻을 정확히 전해요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -3553,6 +3617,8 @@ LESSONS["u7_l09"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"🐱","label":"고양이 \"책이 너무 좋아!\""},{"face":"👧","label":"하나 \"책에 푹 빠지면 무슨 일이 생길까?\""}],
+        "tnote": {"ask":["책 읽기를 너무 좋아하는 고양이! 책에 푹 빠지면 무슨 일이 생길까?"],"watch":"짐작하기","min":3},
         "scene_title": "책을 사랑한 고양이 🐱",
         "visual": "📚",
         "question": "책 읽기를 너무너무 좋아하는 고양이가 있어요.<br>책에 푹 빠지면 무슨 일이 생길까요?",
@@ -3590,6 +3656,7 @@ LESSONS["u7_l09"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["장면을 문장으로 만드는 순서 네 가지가 뭐야?"],"watch":"장면·움직임·문장·읽기","min":4},
         "title": "장면을 문장으로 만들어요",
         "content": "이야기를 들으며 **장면마다 누가 무엇을 했는지** 찾아요. 찾은 것을 세 조각 문장으로 말하면 이야기가 또렷해져요!",
         "symbol_meanings": [
@@ -3628,6 +3695,7 @@ LESSONS["u7_l09"] =
       "stage": "활동",
       "block": "read_aloud",
       "data": {
+        "tnote": {"ask":["장면마다 고양이가 뭘 하는지 찾으며 들어 볼까?"],"watch":"읽어 주기","min":7},
         "title": "책 속으로 떠난 고양이 이야기 📖",
         "author": "책 좋아하는 고양이가 나오는 그림책",
         "pages": [
@@ -3660,6 +3728,7 @@ LESSONS["u7_l09"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["첫 장면에서 고양이는 뭘 했어? 문장으로!"],"watch":"고양이가 책을 읽는다","min":4},
         "title": "장면을 문장으로 만들어요",
         "question": "이야기 장면을 떠올리며 ‘누가 무엇을 하다’ 문장을 만들어 봐요.",
         "items": [
@@ -3678,6 +3747,7 @@ LESSONS["u7_l09"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["장면 속 인물이 뭘 하는지 한 문장으로 써 볼까?"],"watch":"누가 무엇을","min":5},
         "title": "이야기를 보고 문장을 만들어요 ①",
         "levels": {
           "읽기": {
@@ -3704,6 +3774,7 @@ LESSONS["u7_l09"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 몸짓으로 보여 준 장면을 문장으로 말했어?"],"watch":"몸짓→문장","min":5},
         "tag": "👋 짝 활동",
         "title": "장면을 문장으로 짝 놀이",
         "type": "pair",
@@ -3719,6 +3790,7 @@ LESSONS["u7_l09"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["문장을 만들 때 살필 것은?"],"watch":"\"누가·무엇을·어찌하는지\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -3951,6 +4023,8 @@ LESSONS["u7_l10"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"🦉","label":"부엉이 \"집으로 날아간다!\""},{"face":"👦","label":"두리 \"그림만 보고도 문장을 만들 수 있네!\""}],
+        "tnote": {"ask":["네 장면 그림, 이야기 없이 그림만 보고 문장을 만들 수 있을까?"],"watch":"첫 장면 시범","min":3},
         "scene_title": "그림이 들려주는 이야기 🖼️",
         "visual": "🖼️",
         "question": "숲속 친구들의 하루를 그린 네 장면이 있어요.<br>그림만 보고도 문장을 만들 수 있을까요?",
@@ -3988,6 +4062,7 @@ LESSONS["u7_l10"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["여우 장면을 문장으로 말하면?"],"watch":"여우가 차를 마신다","min":4},
         "title": "그림만 보고 문장을 만들어요",
         "content": "이제 이야기 없이 **그림만 보고** 문장을 만들어요. 누가 나오는지, 무엇을 하는지 찾으면 문장이 완성돼요!",
         "symbol_meanings": [
@@ -4026,6 +4101,7 @@ LESSONS["u7_l10"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["곰이 ◯◯◯를 한다 — 에취!"],"watch":"재채기","min":4},
         "title": "장면 문장을 완성해요 🖼️",
         "sub": "그림 장면의 빈칸 문장을 완성해요. 카드를 누르면 답이 나와요!",
         "cards": [
@@ -4062,6 +4138,7 @@ LESSONS["u7_l10"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["네 장면 중 하나 골라서 그다음에 일어날 일을 문장으로 말해 볼래?"],"watch":"이어지는 이야기","min":5},
         "title": "이어지는 이야기 발표 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 네 장면 중 하나를 골라 그다음에 일어날 일을 문장으로 말해요!",
         "count": 24,
@@ -4078,6 +4155,7 @@ LESSONS["u7_l10"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["장면을 보고 이어지는 두 문장을 써 볼까?"],"watch":"\"그리고\"","min":5},
         "title": "이야기를 보고 문장을 만들어요 ②",
         "levels": {
           "읽기": {
@@ -4104,6 +4182,7 @@ LESSONS["u7_l10"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 첫 문장에 이어지는 문장을 만들었어?"],"watch":"두 문장 잇기","min":5},
         "tag": "👋 짝 활동",
         "title": "이어지는 문장 만들기 짝 놀이",
         "type": "pair",
@@ -4119,6 +4198,7 @@ LESSONS["u7_l10"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["두 문장을 이으면?"],"watch":"\"이야기가 자연스러워요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -4387,6 +4467,8 @@ LESSONS["u7_l11"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👧","label":"하나 \"카드 세 장이야!\""},{"face":"🐿️","label":"도토 \"차례로 놓으면… 다람쥐가 도토리를 먹는다!\""}],
+        "tnote": {"ask":["\"다람쥐가\" \"도토리를\" \"먹는다\" 카드 세 장을 차례로 놓으면?"],"watch":"문장","min":3},
         "scene_title": "카드 세 장의 비밀 🎴",
         "visual": "🎴",
         "question": "‘다람쥐가’ ‘도토리를’ ‘먹는다’ — 카드 세 장!<br>차례로 놓으면 무엇이 될까요?",
@@ -4424,6 +4506,7 @@ LESSONS["u7_l11"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["카드를 어떤 순서로 놓아야 해? 순서를 바꾸면?"],"watch":"누가·무엇을·어찌하다 / 어색","min":4},
         "title": "낱말 카드 놀이 방법",
         "content": "낱말 카드를 **누가 → 무엇을 → 어찌하다** 차례로 놓으면 문장이 돼요. 카드를 바꾸면 새 문장이 무궁무진 나와요!",
         "symbol_meanings": [
@@ -4462,6 +4545,7 @@ LESSONS["u7_l11"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["\"동생이\"+\"그림을\"+\"그린다\" 합치면?"],"watch":"동생이 그림을 그린다","min":4},
         "title": "카드를 모으면 무슨 문장? 🎴",
         "sub": "카드 세 장을 차례로 놓으면 어떤 문장이 될까요? 카드를 누르면 답이 나와요!",
         "cards": [
@@ -4498,6 +4582,7 @@ LESSONS["u7_l11"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["\"다람쥐가\"를 \"토끼가\"로 바꾸면? \"먹는다\"를 \"숨긴다\"로 바꾸면?"],"watch":"한 장만 바꾸기","min":4},
         "title": "카드를 바꿔 새 문장을 만들어요",
         "question": "카드 한 장만 바꿔서 새 문장을 만들어 봐요.",
         "items": [
@@ -4516,6 +4601,7 @@ LESSONS["u7_l11"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["\"토끼가/당근을/먹는다\" 카드를 순서대로 놓아 읽어 볼까?"],"watch":"순서","min":5},
         "title": "낱말 카드로 문장을 만들어요 ①",
         "levels": {
           "읽기": {
@@ -4542,6 +4628,7 @@ LESSONS["u7_l11"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝과 카드를 나눠 문장을 만들고 카드를 바꿔 다시 만들었어?"],"watch":"새 문장","min":5},
         "tag": "👋 짝 활동",
         "title": "낱말 카드 문장 만들기 짝 놀이",
         "type": "pair",
@@ -4559,6 +4646,7 @@ LESSONS["u7_l11"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["카드 순서를 바꾸면?"],"watch":"\"뜻이 어색해져요\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -4828,6 +4916,8 @@ LESSONS["u7_l12"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"오늘은 문장 한마당!\""},{"face":"👧","label":"하나 \"모둠 카드를 모으면 어떤 문장이 나올까?\""}],
+        "tnote": {"ask":["모둠 친구들과 카드를 모으면 어떤 문장이 태어날까?"],"watch":"기대감","min":3},
         "scene_title": "문장 만들기 한마당 🎪",
         "visual": "🎪",
         "question": "오늘은 우리 반 문장 한마당!<br>모둠 친구들과 카드를 모으면 어떤 문장이 태어날까요?",
@@ -4865,6 +4955,7 @@ LESSONS["u7_l12"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["모둠 카드 놀이 약속 네 가지가 뭐야?"],"watch":"나누기·차례·함께 읽기·대표 문장","min":4},
         "title": "모둠 카드 놀이 약속",
         "content": "모둠 놀이는 **약속을 지켜야** 즐거워요. 카드를 골고루 나누고, 차례를 지키고, 친구의 문장을 끝까지 들어요!",
         "symbol_meanings": [
@@ -4903,6 +4994,7 @@ LESSONS["u7_l12"] =
       "stage": "활동",
       "block": "question",
       "data": {
+        "tnote": {"ask":["카드를 누가·무엇을·어찌하다로 나눴어? 첫 문장 만들어 볼까?"],"watch":"모둠 진행","min":8},
         "title": "모둠 카드 놀이 한마당 🎴",
         "question": "모둠별로 카드를 나누고 문장 만들기 놀이를 시작해요. 화면의 약속을 보며 진행해요!",
         "items": [
@@ -4922,6 +5014,7 @@ LESSONS["u7_l12"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["우리 모둠 대표 문장과 고른 까닭을 말해 볼래?"],"watch":"모둠 발표","min":5},
         "title": "모둠 대표 문장 발표 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 우리 모둠의 대표 문장과 그 문장을 고른 까닭을 말해요!",
         "count": 24,
@@ -4938,6 +5031,7 @@ LESSONS["u7_l12"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["카드를 바꿔 새 문장을 만들어 써 볼까?"],"watch":"쓰기","min":4},
         "title": "낱말 카드로 문장을 만들어요 ②",
         "levels": {
           "읽기": {
@@ -4966,6 +5060,7 @@ LESSONS["u7_l12"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝에게 만든 문장을 소개하고 어떤 낱말을 골랐는지 말했어?"],"watch":"낱말 선택 까닭","min":4},
         "tag": "👋 짝 활동",
         "title": "문장 만들어 소개하기 짝 놀이",
         "type": "pair",
@@ -4983,6 +5078,7 @@ LESSONS["u7_l12"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["카드를 바꾸면 뭐가 달라져?"],"watch":"\"새로운 문장\"","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -5251,6 +5347,8 @@ LESSONS["u7_l13"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"🐻","label":"곰 \"당근!\""},{"face":"👧","label":"하나 \"이제 우린 \"당근을 씻어 줘\"라고 말할 수 있어!\""}],
+        "tnote": {"ask":["\"당근!\" 하고 외치던 곰, 기억나? 이제 우리는 어떻게 말할 수 있게 됐어?"],"watch":"문장으로","min":3},
         "scene_title": "우리가 걸어온 길 🗺️",
         "visual": "🗺️",
         "question": "“당근!” 하고 외치던 요리사 곰, 기억나나요?<br>이제 우리는 어떻게 말할 수 있게 됐을까요?",
@@ -5288,6 +5386,7 @@ LESSONS["u7_l13"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["이 단원에서 배운 두 갈래가 뭐야?"],"watch":"쌍받침 / 문장 만들기","min":4},
         "title": "두 갈래로 정리해요",
         "content": "이 단원에서 우리는 **쌍받침 ㄲ·ㅆ 읽고 쓰기**와 **알맞은 낱말로 문장 만들기**를 배웠어요. 하나씩 다시 짚어 봐요!",
         "symbol_meanings": [
@@ -5326,6 +5425,7 @@ LESSONS["u7_l13"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["받침 ㄲ이 들어가요, 교실 안이 아니라 문 너머!"],"watch":"밖","min":4},
         "title": "쌍받침 낱말 정리 퀴즈 🏆",
         "sub": "받침 ㄲ·ㅆ가 들어간 낱말을 맞혀요. 카드를 누르면 답이 나와요!",
         "cards": [
@@ -5362,6 +5462,7 @@ LESSONS["u7_l13"] =
       "stage": "발표",
       "block": "question",
       "data": {
+        "tnote": {"ask":["\"무엇은 무엇이다\" 문장 하나, \"누가 무엇을 하다\" 문장 하나 말해 볼래?"],"watch":"두 모양","min":4},
         "title": "문장 만들기로 마무리해요",
         "question": "배운 두 가지 문장 모양으로 마지막 문장을 만들어 봐요.",
         "items": [
@@ -5380,6 +5481,7 @@ LESSONS["u7_l13"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["이 단원에서 배운 것 중 하나를 골라 써 볼까?"],"watch":"쌍받침 낱말·문장","min":5},
         "title": "배운 내용을 정리해요",
         "levels": {
           "읽기": {
@@ -5407,6 +5509,7 @@ LESSONS["u7_l13"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝과 배운 것을 번갈아 말했어? 빠뜨린 게 있어?"],"watch":"서로 채우기","min":5},
         "tag": "👋 짝 활동",
         "title": "배운 것 이어 말하기 짝 활동",
         "type": "pair",
@@ -5422,6 +5525,7 @@ LESSONS["u7_l13"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["쌍받침 낱말 예를 말해 볼까?"],"watch":"꽃·있다·깎다","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
@@ -5690,6 +5794,8 @@ LESSONS["u7_l14"] =
       "stage": "만나기",
       "block": "motivate",
       "data": {
+        "kids": [{"face":"👦","label":"두리 \"아침에 기지개를 쭉!\""},{"face":"👧","label":"하나 \"장갑은 끼고, 신발은 신고! 말이 다 달라!\""}],
+        "tnote": {"ask":["장갑은 \"끼고\", 신발은 \"신고\". 물건마다 어울리는 말이 다르네? 모자는?"],"watch":"쓰다","min":3},
         "scene_title": "아침에 일어나면 기지개! 🌅",
         "visual": "🌅",
         "question": "아침에 일어나 기지개를 쭉 켜요.<br>장갑은 끼고, 신발은 신고… 물건마다 어울리는 말이 따로 있네요?",
@@ -5727,6 +5833,7 @@ LESSONS["u7_l14"] =
       "stage": "만나기",
       "block": "concept",
       "data": {
+        "tnote": {"ask":["리본은 뭐라고 해? 받침에 뭐가 있어?"],"watch":"묶다 — ㄲ","min":4},
         "title": "물건마다 어울리는 움직임 말",
         "content": "물건에는 **꼭 맞는 움직임 말**이 있어요. 장갑은 끼고, 신발은 신고, 모자는 쓰고, 리본은 묶어요. 알맞게 짝지어 말해요!",
         "symbol_meanings": [
@@ -5765,6 +5872,7 @@ LESSONS["u7_l14"] =
       "stage": "활동",
       "block": "card_quiz",
       "data": {
+        "tnote": {"ask":["신발을 ◯◯ — 나갈 때 발에 쏙!"],"watch":"신다","min":4},
         "title": "무엇을 어찌하다 짝짓기 🧤",
         "sub": "물건과 어울리는 움직임 말을 골라요. 카드를 누르면 답이 나와요!",
         "cards": [
@@ -5801,6 +5909,7 @@ LESSONS["u7_l14"] =
       "stage": "발표",
       "block": "present",
       "data": {
+        "tnote": {"ask":["1학기 국어에서 잘하게 된 것 한 가지를 말해 볼래?"],"watch":"한 학기 돌아보기","min":5},
         "title": "1학기 국어 돌아보기 발표 🎤",
         "sub": "버튼을 누르면 발표할 친구를 뽑아요. 1학기 국어에서 잘하게 된 것 한 가지를 말해요. 친구와 비교하지 않아도 돼요!",
         "count": 24,
@@ -5817,6 +5926,7 @@ LESSONS["u7_l14"] =
       "stage": "활동",
       "block": "leveled_problem",
       "data": {
+        "tnote": {"ask":["쌍받침 낱말 하나로 문장을 만들어 써 볼까?"],"watch":"\"꽃이 예쁘다\"","min":5},
         "title": "기초를 다지고 스스로 돌아봐요",
         "levels": {
           "읽기": {
@@ -5845,6 +5955,7 @@ LESSONS["u7_l14"] =
       "stage": "활동",
       "block": "offline_activity",
       "data": {
+        "tnote": {"ask":["짝이 말한 낱말로 문장을 만들고 잘한 점을 말해 줬어?"],"watch":"서로 확인","min":5},
         "tag": "👋 짝 활동",
         "title": "낱말·문장 다지기 짝 활동",
         "type": "pair",
@@ -5860,6 +5971,7 @@ LESSONS["u7_l14"] =
       "stage": "정리",
       "block": "exit_ticket",
       "data": {
+        "tnote": {"ask":["오늘 나는 지난번보다 뭐가 나아졌어?"],"watch":"\"지난날의 나\" 기준","min":3},
         "title": "오늘 확인해요",
         "items": [
           {
