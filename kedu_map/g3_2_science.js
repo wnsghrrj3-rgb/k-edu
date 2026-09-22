@@ -318,6 +318,103 @@ window.KEDU_MAP["g3_2_science"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 4,
+   "name": "감염병과 건강한 생활",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g3_science_u4_l01",
+     "lessonId": "g3_s2_sci_u4_l01_v1",
+     "n": "1",
+     "title": "활짝! 과학 열기 — 색칠 놀이로 그림 완성하기",
+     "sub": null,
+     "url": "/grade3/semester2/science/4단원_감염병과건강한생활/g3_sci_u4_l01_활짝과학열기.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u4_l02",
+     "lessonId": "g3_s2_sci_u4_l02_v1",
+     "n": "2",
+     "title": "생활 속 감염병의 예",
+     "sub": null,
+     "url": "/grade3/semester2/science/4단원_감염병과건강한생활/g3_sci_u4_l02_생활속감염병의예.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u4_l03",
+     "lessonId": "g3_s2_sci_u4_l03_v1",
+     "n": "3",
+     "title": "감염병의 위험성",
+     "sub": null,
+     "url": "/grade3/semester2/science/4단원_감염병과건강한생활/g3_sci_u4_l03_감염병의위험성.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u4_l04",
+     "lessonId": "g3_s2_sci_u4_l04_v1",
+     "n": "4",
+     "title": "감염병으로부터 안전한 사회",
+     "sub": null,
+     "url": "/grade3/semester2/science/4단원_감염병과건강한생활/g3_sci_u4_l04_감염병으로부터안전한사회.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u4_l05",
+     "lessonId": "g3_s2_sci_u4_l05_v1",
+     "n": "5~6",
+     "title": "생활 습관과 감염병 유행",
+     "sub": null,
+     "url": "/grade3/semester2/science/4단원_감염병과건강한생활/g3_sci_u4_l05_생활습관과감염병유행.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u4_l07",
+     "lessonId": "g3_s2_sci_u4_l07_v1",
+     "n": "7",
+     "title": "감염병의 예방과 건강한 생활",
+     "sub": null,
+     "url": "/grade3/semester2/science/4단원_감염병과건강한생활/g3_sci_u4_l07_감염병의예방과건강한생활.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u4_l08",
+     "lessonId": "g3_s2_sci_u4_l08_v1",
+     "n": "8~9",
+     "title": "창의가 반짝! / 팡팡! 과학 놀이터",
+     "sub": null,
+     "url": "/grade3/semester2/science/4단원_감염병과건강한생활/g3_sci_u4_l08_창의가반짝과학놀이터.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u4_l10",
+     "lessonId": "g3_s2_sci_u4_l10_v1",
+     "n": "10",
+     "title": "톡톡! 과학 — 세계 손 씻기의 날",
+     "sub": null,
+     "url": "/grade3/semester2/science/4단원_감염병과건강한생활/g3_sci_u4_l10_톡톡과학세계손씻기의날.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u4_l11",
+     "lessonId": "g3_s2_sci_u4_l11_v1",
+     "n": "11",
+     "title": "단원 마무리",
+     "sub": null,
+     "url": "/grade3/semester2/science/4단원_감염병과건강한생활/g3_sci_u4_l11_단원마무리.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
