@@ -1,0 +1,950 @@
+<!--
+K-edu 사회 6-2 · 1단원 세계의 자연환경 · 주제② 세계의 기후와 다양한 생활 모습 · 7차시(l07)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사10-02] · 교과서 p.34~36 · 지도서(대단원1 **9차시** 「열대 기후와 건조 기후 지역의 생활 모습을 알아볼까요」, 지도서 p.80~86) 근거.
+학습 목표: 열대 기후와 건조 기후 지역의 생활 모습을 설명할 수 있다.
+수업 기법 및 전략: 그래프 읽기 · 모둠 토의 · 탐구하기
+META = "1단원 세계의 자연환경 · ② 세계의 기후와 다양한 생활 모습"
+⚠️ 엔진은 l06(l05 → … → 6-1 사회 엔진 승계)에서 100% 승계 · 엔진 무수정. 1단원 색 #0369A1.
+⚠️ 회수 키 `g6_s2_social_u1_l07_v1`(학기 표지 s2 — l01 선례). 맵 키 `g6_social_u1_l07`.
+⚠️ 파일명 `창이갈라요` — 조작 이름(선례 승계).
+
+직접조작: 창이 가르는 두 기후의 집 판 (교과서 35~36쪽 전통 가옥 · 지도서 9차시 「건조 기후의 독특한 가옥 형태」 · 핵심 질문)
+  ⭐ 판에는 집 한 채와 부품 스위치 셋(창 크게/작게 · 벽 얇게/두꺼운 흙벽돌로 · 바닥 땅에서 띄워서/땅 위에)과
+     기후 탭 둘(열대 기후 지역 · 건조 기후 사막 지역)이 있다. 학생은 한 채의 집을 두 기후에 차례로 세워 본다.
+  ⭐ 기후마다 집이 **막거나 들여야 할 것 둘**이 있다(`HC_FORCE`) — 열대: 덥고 습한 공기(바람이 잘 통해야) · 해충과 불어나는 물(바닥을 띄워야) /
+     사막: 강한 햇볕과 더운 공기(벽이 두꺼워야) · 모래바람(창이 작아야). 판의 줄은 부품만 읽어 그린다(`hcBlock` 한 줄 · `HC_FORCE[` 읽는 자리 단 하나).
+  ⭐★ **한 채로는 두 기후에 다 맞을 수 없다 — 창이 가른다.** 집 여덟 모습 × 기후 둘 전수 — 열대에 맞는 집 둘(창 크게) ·
+     사막에 맞는 집 둘(창 작게) · 둘 다 맞는 집 0. 학생은 열대에 세운 뒤 **창을 바꿔야만** 사막에 세울 수 있다.
+     세운 기후는 줄지 않는다(`state.hcDone |=` 단 하나 · 덜어 내는 자리 0) — 집을 바꿔도 이미 세운 기록은 남는다.
+  ⭐ 「세우기」는 지금 부품으로 그 기후의 줄 둘이 모두 막혔을 때만 든다. 아니면 판 불변 · 안내에 부품 이름 0 —
+     무엇을 바꿀지는 학생이 판의 줄을 읽고 찾는다.
+  ⭐ 판 읽기는 두 기후에 다 세운 뒤에만 열린다(정답 자리 2). 이어서 **남은 곳 — 건조 기후의 초원 지역** 3택(정답 자리 0 · 이동식 가옥) → 마무리(정답 자리 1).
+  ⭐ 근거 = 교과서 34~36쪽 본문 · 지도서 9차시 발문·예시 답안·주요 내용 정리 · 교수 학습 자료 「건조 기후의 독특한 가옥 형태」(흙집 · 이동식 가옥).
+
+단계 — ① 두 기후에 집 세우기(순서 자유) → ② 판 읽기 3택(정답 자리 2) → ③ 초원 지역의 집 3택(정답 자리 0) →
+  ④ 마무리 3택 = 지도서 9차시 주요 내용 정리 · 학습 내용 정리(정답 자리 1).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 12종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 지금 있는 기후 탭 다시 누르기 무시 — 판 불변
+     ④ 이미 세운 기후에 다시 세우기 무시 — 판 불변
+     ⑤ 줄이 다 막히지 않은 집 세우기 무시 — 판 불변(안내에 부품 이름 0)
+     ⑥ 두 기후에 다 세우기 전 판 읽기 무시(순서) — 판 불변
+     ⑦ 판을 읽은 뒤 판 읽기 다시 무시 — 판 불변
+     ⑧ 판을 읽기 전 초원의 집 무시(순서) — 판 불변
+     ⑨ 초원의 집을 고른 뒤 다시 무시 — 판 불변
+     ⑩ 알맞지 않은 초원의 집 무시 — 판 불변(자리별 안내)
+     ⑪ 초원의 집을 고르기 전 마무리 무시(순서) — 판 불변
+     ⑫ 안내 표시 중 재클릭 무시(`hcBusy`).
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.hc-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **집·옷·풍경 그림은 도식이다** — 실제 모습은 교과서 사진으로 본다(캡션 상시).
+  ㉡ **같은 기후라도 생활 모습은 여러 가지다** — 한 곳의 모습을 그 기후 전체의 모습으로 여기지 않는다(지도서 「전형으로 일반화되지 않도록 주의」 · 완료 카드 명시).
+  ㉢ **기후 그래프의 수치는 쓰지 않는다** — 두 도시의 모습은 말로만(막대는 강수량, 선은 기온).
+  ㉣ **활동지(나라 찾기 · 사진 찾아 소개하기)와 모둠 토의는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 온대·냉대(10차시), 한대·고산(11차시) 지역의 생활 모습은 차시 예고 자리까지만.
+  **지명은 이 차시 원문이 든 것까지만** — 쿠알라룸푸르(말레이시아) · 므완자(탄자니아) · 타이 · 카이로(이집트).
+  교사용 참고 자료의 용어·수치(세부 기후 이름 · 연 강수량 기준값 · 위도 범위 · 넓이 비율) 0 · 네 자리 연도 0 · 쪽수 0 · 누리집 주소 0.
+  정서 — 어느 기후도 더 낫거나 못하게 그리지 않는다 · 사람 형상 0 · 옷은 옷 모양 도형으로만.
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u1_l07_v1">
+<title>열대 기후와 건조 기후 지역의 생활 모습을 알아볼까요 · 세계의 자연환경 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#0369A1; --green-d:#075985; --cyan:#0284C7;
+  --bg:#F0F9FF; --bub:#E0F2FE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 창이 가르는 두 기후의 집 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#075985;max-width:660px}
+.hc-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#F0F9FF;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.hc-board{display:flex;flex-direction:column;gap:5px;padding:8px}
+.hc-head{background:#E0F2FE;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#075985;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.hc-pic svg{width:100%;height:auto;display:block;border-radius:8px}
+.hc-force{display:flex;align-items:center;gap:6px;border-radius:7px;padding:4px 8px;font-weight:800;
+  font-size:clamp(9.6px,1.62vw,11.8px);border:2px solid #CBD5E0;background:#fff;color:#334155}
+.hc-force.ok{border-color:#059669;background:#ECFDF5;color:#065F46}
+.hc-force.no{border-color:#DC2626;background:#FEF2F2;color:#991B1B}
+.hc-force .mk{flex-shrink:0;width:1.4em;text-align:center}
+.hc-tally{background:#FEF3C7;border-radius:6px;padding:3px 8px;text-align:center;font-weight:800;color:#92400E;
+  font-size:clamp(9px,1.52vw,11px)}
+.hc-tent{background:#FFFBEB;border:2px solid #B45309;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#92400E;
+  font-size:clamp(9.4px,1.58vw,11.4px)}
+.hc-tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.hc-tabs button,.hc-parts button,.hc-go{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 4px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10.5px,1.8vw,13px)}
+.hc-tabs button.on{background:var(--green);color:#fff;border-color:var(--green)}
+.hc-parts{display:flex;flex-direction:column;gap:5px}
+.hc-parts button{text-align:left}
+.hc-go{background:#FFFBEB;border-color:var(--amber);color:var(--amber)}
+.hc-tabs button:hover,.hc-parts button:hover{background:var(--bub)}
+.hc-read,.hc-fin,.hc-nomad{display:flex;flex-direction:column;gap:5px}
+.hc-read button,.hc-fin button,.hc-nomad button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.hc-read button:hover,.hc-fin button:hover,.hc-nomad button:hover{background:var(--bub)}
+.hc-read button.no,.hc-fin button.no,.hc-nomad button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.hc-note{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠: 모든 그림은 내용을 나타낸 도식이며 실제 사진이나 실제 지도가 아니다.
+   ⚠️ 지명은 이 차시 원문이 든 곳까지만 쓴다. 사람 형상 대신 도형으로만 그린다(옷은 옷 모양 도형만).
+   ⚠️ 정직 원칙 ㉢: 기후 그래프의 수치는 그리지 않는다. */
+const SVG = {
+  // 1 들어가기 — 두 기후 지역의 전통 가옥과 의상(도형만)
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <rect x="8" y="10" width="148" height="132" rx="8" fill="#ECFDF5" stroke="#059669" stroke-width="1.4"/>
+    <rect x="164" y="10" width="148" height="132" rx="8" fill="#FFFBEB" stroke="#B45309" stroke-width="1.4"/>
+    <text x="82" y="26" font-size="9" fill="#065F46" text-anchor="middle" font-weight="800">열대 기후 지역</text>
+    <text x="238" y="26" font-size="9" fill="#92400E" text-anchor="middle" font-weight="800">건조 기후 지역</text>
+    <path d="M22 62 L62 40 L102 62 Z" fill="#A16207"/><rect x="28" y="62" width="68" height="34" fill="#FDE68A" stroke="#A16207"/>
+    <rect x="38" y="68" width="22" height="18" fill="#fff" stroke="#A16207"/><rect x="66" y="68" width="22" height="18" fill="#fff" stroke="#A16207"/>
+    ${[34,58,82].map(x=>`<rect x="${x}" y="96" width="5" height="26" fill="#78350F"/>`).join('')}
+    <path d="M118 60 L136 60 L140 118 L114 118 Z" fill="#fff" stroke="#94A3B8" stroke-width="1.2"/>
+    <rect x="178" y="56" width="74" height="62" fill="#D6A76A" stroke="#92400E" stroke-width="5"/><rect x="208" y="72" width="10" height="9" fill="#78350F"/>
+    <path d="M268 50 L292 50 L298 120 L262 120 Z" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.2"/><path d="M268 50 Q280 40 292 50" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.2"/>
+    <text x="82" y="136" font-size="7.4" fill="#065F46" text-anchor="middle" font-weight="700">큰 창 · 땅에서 띄운 바닥 · 얇은 옷</text>
+    <text x="238" y="136" font-size="7.4" fill="#92400E" text-anchor="middle" font-weight="700">두꺼운 벽 · 작은 창 · 온몸을 감싸는 옷</text>
+    <text x="160" y="160" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">집과 옷 모양만 나타낸 도식이에요 · 실제 모습은 교과서 사진으로 봐요</text></svg>`,
+  // 2 살펴보기 — 열대 기후: 적도 주변 · 열대 우림과 초원
+  trop:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <defs><clipPath id="tglb"><ellipse cx="80" cy="84" rx="62" ry="62"/></clipPath></defs>
+    <circle cx="80" cy="84" r="62" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.4"/>
+    <g clip-path="url(#tglb)"><rect x="18" y="70" width="124" height="28" fill="#059669"/></g>
+    <path d="M18 84 L142 84" stroke="#DC2626" stroke-width="1.4"/><text x="80" y="160" font-size="7.4" fill="#DC2626" text-anchor="middle" font-weight="800">적도 주변의 저위도 지역</text>
+    <rect x="160" y="16" width="150" height="62" rx="7" fill="#DCFCE7" stroke="#059669" stroke-width="1.2"/>
+    ${[176,198,220,242,264,286].map((x,i)=>`<path d="M${x} 66 L${x} 44" stroke="#78350F" stroke-width="3"/><circle cx="${x}" cy="${38+(i%2)*4}" r="11" fill="${i%2?'#15803D':'#16A34A'}"/>`).join('')}
+    <text x="235" y="74" font-size="7.4" fill="#065F46" text-anchor="middle" font-weight="800">일 년 내내 비가 많이 내리는 곳 — 열대 우림</text>
+    <rect x="160" y="88" width="150" height="62" rx="7" fill="#FEF9C3" stroke="#A16207" stroke-width="1.2"/>
+    <path d="M166 130 Q235 118 304 130 L304 144 L166 144 Z" fill="#D9F99D"/><path d="M262 130 L262 110" stroke="#78350F" stroke-width="2.4"/><ellipse cx="262" cy="106" rx="16" ry="5" fill="#65A30D"/>
+    <text x="235" y="100" font-size="7.4" fill="#92400E" text-anchor="middle" font-weight="800">건기와 우기가 번갈아 나타나는 곳 — 초원</text>
+    <text x="235" y="164" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">분포와 풍경을 나타낸 도식이에요</text></svg>`,
+  // 3 살펴보기 — 두 도시의 기후 그래프(모양만 · 수치 0)
+  graph:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    ${[['쿠알라룸푸르(말레이시아)',10,[1,1,1,1,1,1,1,1,1,1,1,1]],['므완자(탄자니아)',166,[1,1,1,1,0,0,0,0,0,1,1,1]]].map(t=>{const x=t[1];
+      return `<rect x="${x}" y="14" width="144" height="118" rx="7" fill="#fff" stroke="#CBD5E0"/>
+      <text x="${x+72}" y="28" font-size="7.8" fill="#075985" text-anchor="middle" font-weight="800">${t[0]}</text>`
+      + t[2].map((w,m)=>`<rect x="${x+12+m*10.5}" y="${w?64:104}" width="7" height="${w?56:16}" fill="#60A5FA"/>`).join('')
+      + `<path d="M${x+12} 46 L${x+136} 46" stroke="#DC2626" stroke-width="2"/>`;}).join('')}
+    <text x="160" y="146" font-size="7.4" fill="#334155" text-anchor="middle" font-weight="800">막대는 강수량 · 선은 기온</text>
+    <text x="160" y="162" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">모양만 나타낸 도식이에요 · 실제 그래프는 교과서로 봐요</text></svg>`,
+  // 4 살펴보기 — 열대 기후 지역의 생활 모습
+  life:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#ECFDF5"/>
+    ${[['전통적으로','화전 농업','카사바 · 얌 · 옥수수','#A16207'],['오늘날','대규모 재배','천연고무 · 카카오 · 바나나 · 커피','#15803D'],['오늘날','생태 관광','사파리 관광 · 전통 부족 생활 체험','#0369A1']].map((t,i)=>{const y=10+i*46;
+      return `<rect x="12" y="${y}" width="296" height="40" rx="8" fill="#fff" stroke="${t[3]}" stroke-width="1.4"/>
+      <text x="24" y="${y+16}" font-size="7.4" fill="#64748B" font-weight="800">${t[0]}</text>
+      <text x="24" y="${y+31}" font-size="9.4" fill="${t[3]}" font-weight="800">${t[1]}</text>
+      <text x="300" y="${y+25}" font-size="8" fill="#334155" text-anchor="end" font-weight="700">${t[2]}</text>`;}).join('')}
+    <text x="160" y="162" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">교과서 본문을 정리한 도식이에요</text></svg>`,
+  // 5 살펴보기 — 미디어 활동: 타이 음식 똠얌꿍
+  food:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <ellipse cx="96" cy="92" rx="70" ry="22" fill="#fff" stroke="#9A3412" stroke-width="1.6"/>
+    <path d="M26 92 Q96 160 166 92" fill="#fff" stroke="#9A3412" stroke-width="1.6"/>
+    <ellipse cx="96" cy="92" rx="62" ry="17" fill="#FB923C"/>
+    ${[[70,88],[100,94],[124,86]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="#DC2626"/>`).join('')}
+    <text x="96" y="146" font-size="9" fill="#9A3412" text-anchor="middle" font-weight="800">똠얌꿍</text>
+    ${['레몬그라스','라임잎','고추','고수','생강'].map((t,i)=>`<rect x="190" y="${18+i*24}" width="112" height="19" rx="9" fill="#fff" stroke="#15803D"/><text x="246" y="${31+i*24}" font-size="8" fill="#15803D" text-anchor="middle" font-weight="800">${t}</text>`).join('')}
+    <text x="160" y="164" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">음식 모양만 나타낸 도식이에요</text></svg>`,
+  // 6 살펴보기 — 건조 기후: 사막과 초원
+  dry:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <rect x="8" y="10" width="148" height="128" rx="8" fill="#FEF3C7" stroke="#B45309" stroke-width="1.2"/>
+    <circle cx="136" cy="30" r="12" fill="#F59E0B"/>
+    <path d="M8 118 Q50 96 92 118 Q124 104 156 118 L156 138 L8 138 Z" fill="#FDE68A"/>
+    <rect x="22" y="80" width="46" height="36" fill="#D6A76A" stroke="#92400E" stroke-width="4"/><rect x="40" y="92" width="8" height="7" fill="#78350F"/>
+    <ellipse cx="116" cy="118" rx="18" ry="5" fill="#38BDF8"/><path d="M106 116 L104 92" stroke="#78350F" stroke-width="2.4"/><path d="M94 90 Q104 84 114 90" fill="none" stroke="#15803D" stroke-width="3"/>
+    <text x="82" y="26" font-size="8.4" fill="#92400E" text-anchor="middle" font-weight="800">사막 지역</text>
+    <text x="82" y="152" font-size="7" fill="#92400E" text-anchor="middle" font-weight="700">흙벽돌 집 · 오아시스 주변 농사</text>
+    <rect x="164" y="10" width="148" height="128" rx="8" fill="#F7FEE7" stroke="#65A30D" stroke-width="1.2"/>
+    <path d="M164 108 Q238 96 312 108 L312 138 L164 138 Z" fill="#D9F99D"/>
+    <path d="M200 110 L200 86 Q224 66 248 86 L248 110 Z" fill="#F5F5F4" stroke="#78716C" stroke-width="1.6"/><rect x="218" y="96" width="12" height="14" fill="#A8A29E"/>
+    ${[[270,116],[288,112]].map(p=>`<ellipse cx="${p[0]}" cy="${p[1]}" rx="9" ry="6" fill="#fff" stroke="#78716C"/>`).join('')}
+    <text x="238" y="26" font-size="8.4" fill="#3F6212" text-anchor="middle" font-weight="800">초원 지역</text>
+    <text x="238" y="152" font-size="7" fill="#3F6212" text-anchor="middle" font-weight="700">유목 · 이동식 가옥</text>
+    <text x="160" y="166" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">풍경을 나타낸 도식이에요 · 실제 모습은 교과서 사진으로 봐요</text></svg>`,
+  // 문항 — 두 기후의 집을 가르는 창
+  pair:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <rect x="30" y="44" width="92" height="56" fill="#FDE68A" stroke="#A16207" stroke-width="2"/><path d="M22 44 L76 18 L130 44 Z" fill="#A16207"/>
+    <rect x="46" y="54" width="60" height="30" fill="#fff" stroke="#DC2626" stroke-width="2.4"/>
+    ${[40,72,104].map(x=>`<rect x="${x}" y="100" width="6" height="30" fill="#78350F"/>`).join('')}
+    <rect x="198" y="58" width="92" height="72" fill="#D6A76A" stroke="#92400E" stroke-width="7"/><path d="M190 58 L244 34 L298 58 Z" fill="#92400E"/>
+    <rect x="238" y="80" width="12" height="10" fill="#fff" stroke="#DC2626" stroke-width="2.4"/>
+    <text x="76" y="150" font-size="8" fill="#065F46" text-anchor="middle" font-weight="800">열대 기후 지역 — 큰 창</text>
+    <text x="244" y="150" font-size="8" fill="#92400E" text-anchor="middle" font-weight="800">사막 지역 — 작은 창</text>
+    <text x="160" y="166" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">집 모양만 나타낸 도식이에요</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <rect x="12" y="12" width="144" height="120" rx="9" fill="#ECFDF5" stroke="#059669" stroke-width="1.4"/>
+    <rect x="164" y="12" width="144" height="120" rx="9" fill="#FFFBEB" stroke="#B45309" stroke-width="1.4"/>
+    <text x="84" y="32" font-size="10" fill="#065F46" text-anchor="middle" font-weight="800">열대 기후</text>
+    <text x="236" y="32" font-size="10" fill="#92400E" text-anchor="middle" font-weight="800">건조 기후</text>
+    ${['적도 주변의 저위도','일 년 내내 기온이 높음','고상 가옥 · 얇은 옷'].map((t,i)=>`<text x="84" y="${60+i*24}" font-size="8" fill="#334155" text-anchor="middle" font-weight="700">${t}</text>`).join('')}
+    ${['강수량이 적은 곳','낮과 밤의 기온 차이가 큼','흙벽돌 집 · 이동식 가옥'].map((t,i)=>`<text x="236" y="${60+i*24}" font-size="8" fill="#334155" text-anchor="middle" font-weight="700">${t}</text>`).join('')}
+    <text x="160" y="154" font-size="8" fill="#64748B" text-anchor="middle" font-weight="700">기후에 맞추어 생활 모습이 달라요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#0369A1" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#0369A1" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#075985" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 창이 가르는 두 기후의 집 판 =====
+   ★ 집 한 채 · 부품 스위치 셋 · 기후 탭 둘. 판의 줄은 부품만 읽어 그린다(hcBlock).
+   ★★ 한 채로는 두 기후에 다 맞을 수 없다 — 창이 가른다. 세운 기후는 줄지 않는다(hcDone |=).
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. */
+const HC_NC = 2;
+
+/* 부품 — [이름, 0일 때, 1일 때] · 교과서 35~36쪽 · 지도서 「건조 기후의 독특한 가옥 형태」 */
+const HC_PART = [['창','크게','작게'],['벽','얇게','두꺼운 흙벽돌로'],['바닥','땅에서 띄워서','땅 위에']];
+/* 기후 탭 */
+const HC_CLIM = ['열대 기후 지역','건조 기후 사막 지역'];
+/* 기후마다 집이 막거나 들여야 할 것 둘 — [이름, 부품, 알맞은 값, 막았을 때, 못 막았을 때] */
+const HC_FORCE = [
+  [['덥고 습한 공기', 0, 0, '바람이 잘 통해요', '바람이 잘 통하지 않아요'],
+   ['해충과 불어나는 물', 2, 0, '바닥이 떠 있어 들어오지 못해요', '집 안까지 들어와요']],
+  [['강한 햇볕과 더운 공기', 1, 1, '두꺼운 벽이 막아 줘요', '집 안까지 들어와요'],
+   ['모래바람', 0, 1, '들어오지 못해요', '집 안까지 들어와요']]
+];
+
+/* ② 판 읽기 */
+const HC_READ = [
+  '집을 지을 때마다 알맞은 부품이 아무렇게나 바뀌기 때문이에요',
+  '두 기후 지역 모두 비가 많이 내리기 때문이에요',
+  '열대 기후 지역에서는 바람이 잘 통하도록 창을 크게, 사막 지역에서는 햇볕과 모래바람을 막도록 창을 작게 해야 해요 \u2014 기후가 달라 막고 들여야 할 것이 달라요'
+];
+const HC_READ_OK = 2;
+const HC_READ_NO = [
+  '판을 다시 봐요. 알맞은 부품은 바뀌지 않았어요 \u2014 <b>기후마다</b> 줄이 달랐어요. 판을 다시 읽어 봐요.',
+  '판을 다시 봐요. 두 기후의 <b>줄</b>은 서로 달랐어요. 판을 다시 읽어 봐요.',
+  null
+];
+
+/* ③ 남은 곳 — 건조 기후의 초원 지역 · 교과서 36쪽 「유목 생활을 하며 가축의 털이나 가죽으로 만든 이동식 가옥에서 생활합니다」 */
+const HC_NOMAD = ['가축의 털이나 가죽으로 만든 이동식 가옥', '기둥을 세워 바닥을 땅에서 띄운 집', '벽이 두껍고 창문이 작은 흙벽돌 집'];
+const HC_NOMAD_OK = 0;
+const HC_NOMAD_NO = [
+  null,
+  '초원의 사람들은 물과 풀을 찾아 <b>가축과 함께 옮겨 다녀요</b>. 한곳에 세워 두는 집이 알맞을까요? 판은 그대로예요.',
+  '초원의 사람들은 물과 풀을 찾아 <b>가축과 함께 옮겨 다녀요</b>. 한곳에 쌓아 올린 집이 알맞을까요? 판은 그대로예요.'
+];
+
+/* ④ 마무리 — 지도서 9차시 주요 내용 정리 · 학습 내용 정리 */
+const HC_FIN = [
+  '열대 기후와 건조 기후는 기온과 강수량이 같아서 두 지역의 생활 모습도 똑같아요',
+  '열대 기후는 일 년 내내 기온이 높고 기온 변화가 거의 없으며, 건조 기후는 강수량이 적고 낮과 밤의 기온 차이가 커요 \u2014 두 지역의 사람들은 기후에 맞추어 옷과 집, 음식과 일을 다르게 발달시켰어요',
+  '열대 기후와 건조 기후 지역의 사람들은 기후와 상관없이 모두 같은 집에서 살아요'
+];
+const HC_FIN_OK = 1;
+const HC_FIN_NO = [
+  '판을 떠올려 봐요. 두 기후는 <b>기온과 강수량</b>이 달라 줄도 달랐어요. 오늘의 정리를 다시 골라 봐요.',
+  null,
+  '판을 떠올려 봐요. 한 채의 집으로는 <b>두 기후에 다 맞을 수 없었어요</b>. 오늘의 정리를 다시 골라 봐요.'
+];
+
+/* 안내 */
+const HC_HERE = '지금 <b>이 기후 지역</b>에 있어요. 판은 그대로예요.';
+const HC_BUILT = '이 기후 지역에는 <b>이미 집을 세웠어요</b>. 다른 기후 지역으로 가 봐요. 판은 그대로예요.';
+const HC_NOFIT = '아직 <b>집 안까지 들어오는 것</b>이 있어요. 판의 빨간 줄을 읽고 부품을 바꿔 봐요. 판은 그대로예요.';
+const HC_ORDER_R = '아직 집을 세우지 않은 <b>기후 지역</b>이 있어요. 두 곳에 다 세운 뒤에 판을 읽을 수 있어요. 판은 그대로예요.';
+const HC_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const HC_ORDER_N = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const HC_NOMAD_AGAIN = '초원의 집은 <b>이미 골랐어요</b>. 판은 그대로예요.';
+const HC_ORDER_F = '아직 <b>초원의 집</b>을 고르지 않았어요. 먼저 골라 봐요. 판은 그대로예요.';
+const HC_ALL_MSG = '두 기후 지역에 <b>모두 집을 세웠어요.</b> 두 집은 어디가 달랐나요?';
+
+/* ★ 부품 값 — 셋을 읽는 자리 단 하나 */
+function hcPartOf(st,p){ return p===0 ? st.hcWin : p===1 ? st.hcWall : st.hcFloor; }
+/* ★ 줄 하나 — 부품만 읽어 막았는지 */
+function hcBlock(st,c,k){ return hcPartOf(st,HC_FORCE[c][k][1])===HC_FORCE[c][k][2]; }
+/* ★ 집이 그 기후에 맞는지 — 줄 둘이 다 막혔는지 */
+function hcFits(st,c){ return hcBlock(st,c,0) && hcBlock(st,c,1); }
+function hcBuiltOf(st,c){ return (st.hcDone & (1<<c))!==0; }
+function hcAll(st){ return st.hcDone===3; }
+
+function hcPic(st){
+  const c = st.hcC, big = hcPartOf(st,0)===0, thick = hcPartOf(st,1)===1, up = hcPartOf(st,2)===0;
+  const sky = c===0 ? '#DCFCE7' : '#FEF3C7', ground = c===0 ? '#86EFAC' : '#FDE68A';
+  const top = up ? 40 : 70, bot = up ? 100 : 130;
+  const deco = c===0
+    ? [30,262,284].map(x=>`<path d="M${x} 130 L${x} 104" stroke="#78350F" stroke-width="3"/><circle cx="${x}" cy="98" r="12" fill="#16A34A"/>`).join('')
+      + [40,70,236,256].map((x,i)=>`<path d="M${x} ${14+i*4} L${x-3} ${22+i*4}" stroke="#38BDF8" stroke-width="2"/>`).join('')
+    : `<circle cx="266" cy="26" r="14" fill="#F59E0B"/>` + `<path d="M8 124 Q40 110 72 124" fill="#FCD34D"/><path d="M236 126 Q268 112 300 126" fill="#FCD34D"/>`;
+  const win = big ? `<rect x="126" y="${top+10}" width="48" height="30" fill="#fff" stroke="#475569" stroke-width="1.6" data-win="0"/>`
+    : `<rect x="144" y="${top+18}" width="12" height="10" fill="#fff" stroke="#475569" stroke-width="1.6" data-win="1"/>`;
+  const posts = up ? [112,146,180].map(x=>`<rect x="${x}" y="100" width="7" height="30" fill="#78350F"/>`).join('') : '';
+  return `<svg viewBox="0 0 300 150" data-c="${c}"><rect width="300" height="150" fill="${sky}"/>
+    <rect x="0" y="130" width="300" height="20" fill="${ground}"/>${deco}
+    <path d="M96 ${top} L150 ${top-26} L204 ${top} Z" fill="${thick?'#92400E':'#A16207'}"/>
+    <rect x="104" y="${top}" width="92" height="${bot-top}" fill="${thick?'#D6A76A':'#FDE68A'}" stroke="${thick?'#92400E':'#A16207'}" stroke-width="${thick?9:2}" data-wall="${thick?1:0}"/>
+    ${win}${posts}
+    <text x="150" y="146" font-size="8" fill="#334155" text-anchor="middle" font-weight="800">${HC_CLIM[c]}</text></svg>`;
+}
+function hcForceRows(st){
+  const c = st.hcC;
+  return HC_FORCE[c].map((F,k)=>{ const b = hcBlock(st,c,k);
+    return `<div class="hc-force ${b?'ok':'no'}" data-force="${k}"><span class="mk">${b?'\u2714':'\u2716'}</span>${F[0]} \u2014 ${b?F[3]:F[4]}</div>`; }).join('');
+}
+
+function hcBoard(st){
+  const fin = st.hcFin!=null, all = hcAll(st);
+  const head = fin ? '두 기후 지역의 생활 모습을 살펴보았어요'
+    : st.hcNomad!=null ? '초원의 집까지 골랐어요 \u2014 이제 정리해요'
+    : st.hcRead!=null ? '건조 기후의 초원 지역을 살펴봐요'
+    : all ? '두 곳에 다 세웠어요 \u2014 두 집을 견주어 봐요'
+    : '한 채의 집을 두 기후 지역에 세워 봐요';
+  const tent = st.hcNomad!=null ? `<div class="hc-tent" data-tent="1">\u26FA 초원 지역 \u2014 ${HC_NOMAD[HC_NOMAD_OK]}</div>` : '';
+  const tally = `지은 집 \u00b7 ${HC_CLIM.map((t,c)=>t+' '+(hcBuiltOf(st,c)?'\u2714':'\u2014')).join(' \u00b7 ')}`;
+  return `<div class="hc-board" data-c="${st.hcC}" data-done="${st.hcDone}" data-read="${st.hcRead==null?-1:st.hcRead}" data-nomad="${st.hcNomad==null?-1:st.hcNomad}" data-fin="${fin?1:0}">
+    <div class="hc-head">${head}</div>
+    <div class="hc-pic">${hcPic(st)}</div>
+    ${hcForceRows(st)}
+    ${tent}
+    <div class="hc-tally" data-tally="1">${tally}</div>
+  </div>`;
+}
+
+function hcPanel(st){
+  const fin = st.hcFin!=null, all = hcAll(st);
+  const q = fin ? '열대 기후와 건조 기후 지역의 생활 모습을 살펴보았어요.'
+    : st.hcNomad!=null ? '오늘 공부한 내용을 어떻게 정리하면 좋을까요?'
+    : st.hcRead!=null ? '물과 풀을 찾아 옮겨 다니는 초원 지역에는 어떤 집이 알맞을까요?'
+    : all ? '한 채의 집으로는 두 기후 지역에 다 맞출 수 없었어요. 왜 그럴까요?'
+    : st.hcDone>0 ? '다른 기후 지역에도 집을 세워 봐요. 무엇을 바꿔야 할까요?'
+    : '이 기후 지역에서 집이 막거나 들여야 할 것은 무엇일까요?';
+  let right = `<div class="hc-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83C\uDFE0 창이 가르는 두 기후의 집</div>
+      열대 기후 지역에서는 바람이 잘 통하도록 <b>창을 크게</b> 만들고 바닥을 땅에서 띄웠어요.
+      건조 기후 사막 지역에서는 강한 햇볕과 모래바람을 막도록 <b>벽을 두껍게, 창을 작게</b> 만들었어요.
+      물과 풀을 찾아 옮겨 다니는 초원 지역에서는 <b>이동식 가옥</b>에서 생활해요 \u2014 사람들은 기후에 맞추어 생활 모습을 다르게 발달시켰어요.<br>
+      <span style="color:#64748B">판의 집은 생활 모습을 나타낸 <b>도식</b>이에요. 같은 기후 지역이라도 생활 모습은 여러 가지예요 \u2014 한 곳의 모습을 그 기후 전체의 모습으로 여기지 않아요.
+      사회과 부도로 나라를 찾고 사진을 찾아 소개하는 <b>활동지</b>와 <b>모둠 토의</b>는 교실에서 직접 해요.</span></div>`;
+  } else if(st.hcNomad!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="hc-fin">${HC_FIN.map((t,k)=>`<button class="${st.hcWrongF===k?'no':''}" onclick="hcFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.hcRead!=null){
+    right += `<div class="dw-step">\u26FA 남은 곳 \u2014 건조 기후의 초원 지역</div>`;
+    right += `<div class="hc-nomad">${HC_NOMAD.map((t,k)=>`<button class="${st.hcWrongN===k?'no':''}" onclick="hcNomadPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="hc-note">사막 주변의 초원 지역에 사는 사람들은 물과 풀이 있는 곳을 찾아 이동하며 가축을 길러요.</div>`;
+  } else if(all){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="hc-read">${HC_READ.map((t,k)=>`<button class="${st.hcWrongR===k?'no':''}" onclick="hcReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83C\uDF0D 기후 지역</div>`;
+    right += `<div class="hc-tabs">${HC_CLIM.map((t,c)=>`<button class="${c===st.hcC?'on':''}" data-clim="${c}" onclick="hcGo(${c})">${t}${hcBuiltOf(st,c)?' \u2714':''}</button>`).join('')}</div>`;
+    right += `<div class="dw-step">\uD83D\uDD27 부품 바꾸기</div>`;
+    right += `<div class="hc-parts">${HC_PART.map((P,p)=>`<button data-part="${p}" onclick="hcToggle(${p})">${P[0]} \u2014 <b>${P[1+hcPartOf(st,p)]}</b> (바꾸기)</button>`).join('')}</div>`;
+    right += `<button class="hc-go" onclick="hcBuild()">\uD83C\uDFD7\uFE0F 이 기후 지역에 집 세우기</button>`;
+    right += `<div class="hc-note">판의 줄이 <b>모두 초록</b>이 되면 세울 수 있어요. 감점은 없어요. 두 기후 지역에 다 세워 봐요.</div>`;
+  }
+  if(st.hcMsg) right += `<div class="dw-msg${st.hcWarn?' warn':''}">${st.hcMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83C\uDFE0 창이 가르는 두 기후의 집 판</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${hcBoard(st)}<div class="cvcap">판의 집은 생활 모습을 나타낸 <b>도식</b>이에요. 같은 기후 지역이라도 집의 모습은 여러 가지예요 \u2014 실제 모습은 교과서 사진으로 봐요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 세계의 자연환경 · ② 세계의 기후와 다양한 생활 모습";
+
+// 확인 4 + 적용 4 — 정답 다양화 [2,0,3,1,1,3,0,2](각 자리 2회)
+// ⚠️ 문항 내 연도·쪽수·수치 0 · 새 사실 0(교과서 34~36쪽 문면과 지도서 9차시 예시 답까지만).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"<b>열대 기후</b>가 주로 나타나는 곳은 어디인가요?",
+   opts:["극지방","고위도 지역","적도 주변의 저위도 지역","매우 높은 산지"],
+   correct:2, pts:POINTS_BASIC, scene:"trop",
+   reason:"열대 기후는 적도 주변의 저위도 지역에 주로 나타나요.",
+   h1:"지난 시간에 쌓은 띠를 떠올려 봐요.", h2:"적도 바로 위 칸에 쌓인 띠예요."},
+  {stem:"기후 그래프에 나타난 <b>열대 기후</b>의 기온 특징으로 알맞은 것은 무엇인가요?",
+   opts:["일 년 내내 기온이 높고 기온의 변화가 거의 없어요","여름은 덥고 겨울은 매우 추워요","일 년 내내 기온이 낮아요","계절마다 기온이 크게 바뀌어요"],
+   correct:0, pts:POINTS_BASIC, scene:"graph",
+   reason:"열대 기후는 일 년 내내 기온이 높고 기온의 변화가 거의 없어요.",
+   h1:"그래프의 선은 기온을 나타내요.", h2:"두 도시의 선 모양을 떠올려 봐요."},
+  {stem:"<b>건조 기후</b>의 특징으로 알맞은 것은 무엇인가요?",
+   opts:["일 년 내내 비가 많이 내려요","일 년 내내 기온이 낮아요","계절마다 비가 고르게 많이 내려요","강수량이 적고 낮과 밤의 기온 차이가 커요"],
+   correct:3, pts:POINTS_BASIC, scene:"dry",
+   reason:"건조 기후는 강수량이 적고 낮과 밤의 기온 차이가 커요.",
+   h1:"‘건조’는 메마르다는 뜻이에요.", h2:"낮과 밤을 견주어 봐요."},
+  {stem:"<b>유목</b>의 뜻으로 알맞은 것은 무엇인가요?",
+   opts:["나무와 풀을 태우고 남은 재를 거름 삼아 농사짓는 방식","물과 풀이 있는 곳을 찾아 이동하며 가축을 기르는 일","오아시스 주변에서 대추야자를 기르는 일","큰 규모로 커피를 재배하는 일"],
+   correct:1, pts:POINTS_BASIC, scene:"dry",
+   reason:"유목은 물과 풀이 있는 곳을 찾아 이동하며 가축을 기르는 일이에요. 나무와 풀을 태우고 남은 재를 거름 삼아 농사짓는 방식은 화전 농업이에요.",
+   h1:"초원 지역의 사람들을 떠올려 봐요.", h2:"옮겨 다니며 가축을 길러요."},
+  // 4단계 적용 (+15)
+  {stem:"<b>쿠알라룸푸르</b>와 <b>므완자</b>의 기후 그래프를 견주어 보았어요. 두 도시의 <b>차이점</b>으로 알맞은 것은 무엇인가요?",
+   opts:["쿠알라룸푸르는 비가 거의 내리지 않고, 므완자는 일 년 내내 비가 많이 내려요","쿠알라룸푸르는 일 년 내내 비가 많이 내리고, 므완자는 건기와 우기가 번갈아 나타나요","두 도시 모두 일 년 내내 비가 거의 내리지 않아요","두 도시 모두 계절마다 기온이 크게 바뀌어요"],
+   correct:1, pts:POINTS_APPLY, scene:"graph",
+   reason:"두 도시 모두 일 년 내내 기온이 높지만, 쿠알라룸푸르는 일 년 내내 비가 많이 내리고 므완자는 건기와 우기가 번갈아 나타나요.",
+   h1:"그래프의 막대는 강수량을 나타내요.", h2:"막대가 낮아지는 달이 있는 도시를 찾아봐요."},
+  {stem:"<b>타이</b> 음식에 다양한 향신료를 사용하는 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["향신료가 가장 구하기 어려운 재료이기 때문이에요","추운 날씨에 몸을 데우기 위해서예요","비가 적어 채소를 기를 수 없기 때문이에요","덥고 습해 음식이 쉽게 상하지 않도록 하기 위해서예요"],
+   correct:3, pts:POINTS_APPLY, scene:"food",
+   reason:"열대 기후 지역은 덥고 습하기 때문에 음식이 쉽게 상해요. 그래서 음식이 쉽게 상하지 않도록 다양한 향신료를 사용해요.",
+   h1:"타이에는 열대 기후가 나타나요.", h2:"덥고 습하면 음식은 어떻게 될까요?"},
+  {stem:"직접조작에서 <b>한 채의 집</b>으로 열대 기후 지역과 사막 지역에 모두 맞출 수 있었나요?",
+   opts:["없었어요 \u2014 열대 기후 지역은 창을 크게, 사막 지역은 창을 작게 해야 해서 창이 두 집을 갈랐어요","있었어요 \u2014 창을 크게 하면 두 곳 모두 맞았어요","있었어요 \u2014 벽만 두껍게 하면 두 곳 모두 맞았어요","있었어요 \u2014 바닥만 바꾸면 두 곳 모두 맞았어요"],
+   correct:0, pts:POINTS_APPLY, scene:"pair",
+   reason:"열대 기후 지역에서는 바람이 잘 통하도록 창을 크게, 사막 지역에서는 햇볕과 모래바람을 막도록 창을 작게 만들어요. 기후가 다르면 집의 모습도 달라요.",
+   h1:"판의 줄을 떠올려 봐요.", h2:"두 기후 지역에서 창은 각각 어땠나요?"},
+  {stem:"사막 지역의 사람들이 <b>온몸을 감싸는 옷</b>을 입는 까닭은 무엇인가요?",
+   opts:["비를 피하기 위해서예요","추운 겨울을 나기 위해서예요","강한 햇볕과 모래바람을 막기 위해서예요","해충을 피하기 위해서예요"],
+   correct:2, pts:POINTS_APPLY, scene:"dry",
+   reason:"사막 지역의 사람들은 강한 햇볕과 모래바람을 막으려고 온몸을 감싸는 옷을 입어요.",
+   h1:"사막의 햇볕을 떠올려 봐요.", h2:"바람에 날리는 것도 떠올려 봐요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 동기 유발 · 지도서 9차시
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">두 기후 지역의 전통 가옥과 의상을 살펴봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','열대 기후 지역 · 건조 기후 지역','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDFE0 생각을 열어요</div>
+      그림 속 전통 가옥과 의상의 모습은 각각 어떠한가요? 열대 기후와 건조 기후의 특징은 각각 어떠할까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 열대 기후 지역의 전통 가옥은 바람이 잘 통하도록 집의 <b>창문이 크며</b>, 의상은 <b>가볍고 얇아요</b>.<br>
+      \u2014 건조 기후 지역의 전통 가옥은 흙벽돌로 <b>벽을 두껍게</b> 만들었으며, 의상은 <b>온몸을 감싸고</b> 있어요.<br>
+      \u2014 열대 기후는 매우 덥고 비가 많이 내릴 것 같고, 건조 기후는 비가 적게 내려 건조할 것 같아요.</div>`
+      :`<div class="note">집과 옷의 모습을 견주어 보고, 자유롭게 생각해 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">지난 시간에는 세계의 기후 분포를 알아봤어요. 오늘은 열대 기후와 건조 기후 지역의 생활 모습을 알아봐요.</div></div>`});
+// 2 살펴보기 — reveal: 열대 기후의 특징
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">열대 기후는 어떤 특징이 있을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('trop','열대 기후의 분포와 풍경(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCD6 교과서 본문</div>
+      열대 기후는 적도 주변의 저위도 지역에 나타나며, 일 년 내내 기온이 높고 기온의 변화가 거의 없어요.
+      열대 기후 지역은 일 년 내내 비가 많이 내려 <b>열대 우림</b>을 이루는 곳도 있고, 건기와 우기가 번갈아 나타나 <b>초원</b>이 넓게 펼쳐진 곳도 있어요.<br>
+      <span style="color:#64748B">우기 \u2014 일 년 중 비가 많이 내리는 시기 \u00b7 건기 \u2014 일 년 중 비가 적게 내리는 시기</span></div>
+    ${st.revealed?`<div class="answer-box">열대 기후가 나타나는 지역은 어디인가요?<br>
+      \u2014 <b>적도 주변의 저위도 지역</b>에 주로 나타나요.<br>
+      열대 기후 지역에 나타나는 자연 경관은 어떠한가요?<br>
+      \u2014 일 년 내내 비가 많이 내리는 지역에서는 <b>열대 우림</b>을 이루고, 건기와 우기가 번갈아 나타나는 지역에서는 <b>초원</b>이 넓게 펼쳐져요.</div>`
+      :`<div class="note">열대 기후가 나타나는 지역은 어디일까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: 스스로 활동 두 도시의 기후 그래프
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">두 도시의 기후 그래프를 견주어 봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('graph','쿠알라룸푸르 · 므완자(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\u270F\uFE0F 스스로 활동</div>
+      열대 기후 지역에 있는 두 도시, 쿠알라룸푸르(말레이시아)와 므완자(탄자니아)의 기후 그래프를 비교해 봐요. 기후 그래프에서 <b>막대는 강수량</b>을, <b>선은 기온</b>을 나타내요.<br>
+      \u2460 두 도시의 연중 기온 변화의 공통점은 무엇일까요? \u2461 두 도시의 계절별 강수량의 차이점은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2460 <b>일 년 내내 기온이 높고</b> 기온의 변화가 거의 없어요.<br>
+      \u2461 쿠알라룸푸르는 <b>일 년 내내 비가 많이</b> 내리고, 므완자는 <b>건기와 우기가 번갈아</b> 나타나요.</div>`
+      :`<div class="note">그림은 모양만 나타낸 도식이에요. 실제 그래프는 교과서로 살펴봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+    <div class="tipbox">한 도시의 모습을 그 기후 전체의 모습으로 여기지 않아요. 같은 열대 기후라도 비가 내리는 모습은 달라요.</div></div>`});
+// 4 살펴보기 — reveal: 열대 기후 지역의 생활 모습
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">열대 기후 지역의 생활 모습을 살펴봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('life','열대 기후 지역의 생활 모습','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCD6 교과서 본문</div>
+      열대 기후 지역에서는 전통적으로 <b>화전 농업</b>을 통해 카사바, 얌, 옥수수 등을 재배했어요. 오늘날에는 천연고무, 카카오, 바나나, 커피 등을 대규모로 재배하며 사파리 관광, 전통 부족 생활 체험 등 생태 관광 산업도 이루어지고 있어요.<br>
+      <span style="color:#64748B">화전 농업 \u2014 나무와 풀을 태우고 남은 재를 거름 삼아 농사짓는 방식</span></div>
+    ${st.revealed?`<div class="answer-box">열대 기후 지역 사람들의 옷과 집은 어떠한가요?<br>
+      \u2014 <b>얇고 바람이 잘 통하는 옷</b>을 주로 입어요.<br>
+      \u2014 바람이 잘 통하도록 <b>창을 크게</b> 만들고 기둥을 세워 <b>바닥을 땅에서 띄워</b> 집을 지어요.</div>`
+      :`<div class="note">덥고 비가 많이 내리는 곳에서는 어떤 옷을 입고 어떤 집을 지을까요?</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 5 살펴보기 — reveal: 미디어 활동 똠얌꿍
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">기후가 음식에 미치는 영향을 알아봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('food','타이 음식, 똠얌꿍(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCF0 미디어 활동 \u2014 신문 기사 간추림</div>
+      열대 기후가 나타나는 타이에서는 음식이 쉽게 상하지 않도록 다양한 향신료를 사용하여 맵고 새콤한 맛이 나는 음식이 발달했어요.
+      타이를 대표하는 전통 음식인 똠얌꿍에는 레몬그라스, 라임잎, 고추, 고수, 생강 등 다양한 향신료가 들어가요. 고추의 매운맛은 땀을 흘리게 해 체온을 낮춰 줘요.</div>
+    ${st.revealed?`<div class="answer-box">열대 기후 지역에서 음식이 쉽게 상하는 까닭은 무엇일까요?<br>
+      \u2014 열대 기후 지역은 <b>덥고 습하기</b> 때문에 음식이 쉽게 상해요.<br>
+      \u2014 그래서 음식이 쉽게 상하지 않도록 <b>다양한 향신료</b>를 사용해요.</div>`
+      :`<div class="note">기사에서 향신료를 사용하는 까닭을 찾아봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 6 살펴보기 — reveal: 건조 기후의 특징과 생활 모습
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">건조 기후는 어떤 특징이 있을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('dry','사막 지역 · 초원 지역(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCD6 교과서 본문</div>
+      건조 기후는 저위도 지역과 중위도 지역의 연중 강수량이 적은 곳에 주로 나타나며, 낮과 밤의 기온 차이가 커요.
+      건조 기후 지역은 강수량이 매우 적어 <b>사막</b>이 넓게 나타나는 곳도 있고, 약간의 비나 눈이 내려 <b>초원</b>이 넓게 펼쳐진 곳도 있어요.
+      (카이로(이집트)의 기후 그래프로 살펴봐요.)</div>
+    ${st.revealed?`<div class="answer-box">건조 기후 지역에 사는 사람들의 생활 모습은 어떠한가요?<br>
+      \u2014 사막 지역의 사람들은 강한 햇볕과 모래바람을 막으려고 <b>온몸을 감싸는 옷</b>을 입고, <b>벽이 두껍고 창문이 작은 흙벽돌</b>로 만든 집에서 생활해요.<br>
+      \u2014 오아시스나 강 주변에서는 <b>밀이나 대추야자</b>를 재배해요.<br>
+      \u2014 사막 주변의 초원 지역에 사는 사람들은 <b>유목</b> 생활을 하며 가축의 털이나 가죽으로 만든 <b>이동식 가옥</b>에서 생활하고, 가축의 젖으로 만든 유제품이나 고기를 먹어요.</div>`
+      :`<div class="note">비가 매우 적은 곳과 약간의 비나 눈이 내리는 곳의 모습은 어떻게 다를까요?</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 7 살펴보기 — 직접조작(창이 가르는 두 기후의 집 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">두 기후 지역에 집을 세워요</h2>
+  ${hcPanel(st)}`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 9차시 주요 내용 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div>열대 기후 \u2014 <b>적도 주변의 저위도 지역</b> \u00b7 일 년 내내 기온이 높고 기온 변화가 거의 없음 \u00b7 화전 농업, 천연고무\u00b7카카오\u00b7바나나\u00b7커피 등 대규모 재배, 생태 관광 산업, 고상 가옥 등</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div>건조 기후 \u2014 <b>연 강수량이 적은 저위도 지역과 중위도 지역</b> \u00b7 강수량이 적고 낮과 밤의 기온 차이가 큼 \u00b7 온몸을 감싸는 옷, 사막의 흙벽돌로 만든 집, 초원의 유목 생활과 이동식 가옥 등</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 한 채의 집으로는 두 기후 지역에 다 맞출 수 없었어요. 창이 두 집을 갈랐어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b>온대 기후와 냉대 기후 지역의 생활 모습</b>을 알아봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공부한 내용을 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"열대 기후와 건조 기후의 특징을 말할 수 있어요",st)}
+    ${selfCheck(1,"열대 기후와 건조 기후 지역의 생활 모습을 설명할 수 있어요",st)}
+    ${selfCheck(2,"기후와 사람들의 생활 모습 사이의 관계를 탐구할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">온대 기후와 냉대 기후 지역의 생활 모습</b>을 알아봐요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u1_l07";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  hcWin:1, hcWall:0, hcFloor:1, hcC:0, hcDone:0,
+  hcRead:null, hcNomad:null, hcFin:null,
+  hcWrongR:null, hcWrongN:null, hcWrongF:null,
+  hcMsg:null, hcWarn:false, hcBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function hcRender(){ main.innerHTML = slides[state.idx].render(state); }
+function hcHold(msg){
+  state.hcWarn=true; state.hcBusy=true; state.hcMsg=msg;
+  playThud(); hcRender();
+  setTimeout(()=>{ state.hcBusy=false; state.hcWarn=false; state.hcMsg=null;
+    state.hcWrongR=null; state.hcWrongN=null; state.hcWrongF=null; hcRender(); },1600);
+}
+
+/* ① 부품 바꾸기 — 값 하나를 뒤집는다. 세운 기록(hcDone)은 건드리지 않는다. */
+function hcToggle(p){
+  if(state.hcFin!=null) return;                                        // 가드①
+  if(state.hcBusy) return;                                             // 가드⑫
+  if(!Number.isInteger(p) || p<0 || p>=HC_PART.length) return;         // 가드②
+  if(p===0) state.hcWin = 1-state.hcWin;
+  else if(p===1) state.hcWall = 1-state.hcWall;
+  else state.hcFloor = 1-state.hcFloor;
+  state.hcWarn=false;
+  state.hcMsg = `<b>${HC_PART[p][0]}</b>을 바꿨어요 \u2014 지금은 <b>${HC_PART[p][1+hcPartOf(state,p)]}</b>. 판의 줄을 살펴봐요.`;
+  playBlip(); hcRender();
+}
+
+/* ① 기후 탭 — 같은 집을 다른 기후 지역에 옮겨 본다. */
+function hcGo(c){
+  if(state.hcFin!=null) return;                                        // 가드①
+  if(state.hcBusy) return;                                             // 가드⑫
+  if(!Number.isInteger(c) || c<0 || c>=HC_NC) return;                  // 가드②
+  if(c===state.hcC){ hcHold(HC_HERE); return; }                        // 가드③ 판 불변
+  state.hcC = c;
+  state.hcWarn=false;
+  state.hcMsg = `같은 집을 <b>${HC_CLIM[c]}</b>에 옮겨 보았어요. 판의 줄을 읽어 봐요.`;
+  playBlip(); hcRender();
+}
+
+/* ① 세우기 — 지금 기후의 줄 둘이 다 막혔을 때만. ★ 세운 기록은 더하기만 한다. */
+function hcBuild(){
+  if(state.hcFin!=null) return;                                        // 가드①
+  if(state.hcBusy) return;                                             // 가드⑫
+  if(hcBuiltOf(state,state.hcC)){ hcHold(HC_BUILT); return; }          // 가드④ 판 불변
+  if(!hcFits(state,state.hcC)){ hcHold(HC_NOFIT); return; }            // 가드⑤ 판 불변
+  state.hcDone |= (1<<state.hcC);                                      // ★ 세운 기록이 느는 자리 단 하나 — 줄지 않음
+  state.hcWarn=false;
+  state.hcMsg = hcAll(state) ? HC_ALL_MSG : `<b>${HC_CLIM[state.hcC]}</b>에 집을 세웠어요. 이제 다른 기후 지역에도 세워 봐요.`;
+  playChime(); hcRender();
+}
+
+/* ② 판 읽기 — 두 기후에 다 세워야 열린다(가드⑥). */
+function hcReadPick(k){
+  if(state.hcFin!=null) return;                                        // 가드①
+  if(state.hcBusy) return;                                             // 가드⑫
+  if(!Number.isInteger(k) || k<0 || k>=HC_READ.length) return;         // 가드②
+  if(!hcAll(state)){ hcHold(HC_ORDER_R); return; }                     // 가드⑥ 순서 — 판 불변
+  if(state.hcRead!=null){ hcHold(HC_READ_AGAIN); return; }             // 가드⑦ 판 불변
+  if(k===HC_READ_OK){
+    state.hcRead=k; state.hcWrongR=null; state.hcWarn=false;
+    state.hcMsg = '판을 잘 읽었어요. <b>기후</b>가 다르면 집이 막고 들여야 할 것이 달라, <b>창</b>이 두 집을 갈랐어요.';
+    playChime(); hcRender(); return;
+  }
+  state.hcWrongR=k;
+  hcHold(HC_READ_NO[k]);
+}
+
+/* ③ 초원의 집 — 판을 읽은 뒤에만(가드⑧). */
+function hcNomadPick(k){
+  if(state.hcFin!=null) return;                                        // 가드①
+  if(state.hcBusy) return;                                             // 가드⑫
+  if(!Number.isInteger(k) || k<0 || k>=HC_NOMAD.length) return;        // 가드②
+  if(state.hcRead==null){ hcHold(HC_ORDER_N); return; }                // 가드⑧ 순서 — 판 불변
+  if(state.hcNomad!=null){ hcHold(HC_NOMAD_AGAIN); return; }           // 가드⑨ 판 불변
+  if(k!==HC_NOMAD_OK){ state.hcWrongN=k; hcHold(HC_NOMAD_NO[k]); return; } // 가드⑩ 판 불변
+  state.hcNomad = k;                                                   // ★ 초원의 집이 서는 자리 단 하나
+  state.hcWarn=false;
+  state.hcMsg = '초원 지역의 사람들은 <b>유목</b> 생활을 하며 <b>이동식 가옥</b>에서 생활해요. 가축과 함께 옮겨 다니기 알맞아요.';
+  playChime(); hcRender();
+}
+
+/* ④ 마무리 — 지도서 9차시 주요 내용 정리 */
+function hcFinish(k){
+  if(state.hcFin!=null) return;                                        // 가드①
+  if(state.hcBusy) return;                                             // 가드⑫
+  if(!Number.isInteger(k) || k<0 || k>=HC_FIN.length) return;          // 가드②
+  if(state.hcNomad==null){ hcHold(HC_ORDER_F); return; }               // 가드⑪ 순서 — 판 불변
+  if(k===HC_FIN_OK){
+    state.hcFin=k; state.hcWrongF=null; state.hcMsg=null; state.hcWarn=false;
+    playChime(); hcRender(); return;
+  }
+  state.hcWrongF=k;
+  hcHold(HC_FIN_NO[k]);
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 1단원 8차시(l08) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
