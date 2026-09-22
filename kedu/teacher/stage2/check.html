@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/kedu_gate.js"></script>
+<script src="/kedu_teacher_gate.js"></script>
+<title>2세대 무대 넘침 전수 점검</title>
+<link rel="stylesheet" href="stage2.css">
+<style>
+body{overflow:auto}
+.chk{max-width:1180px;margin:0 auto;padding:30px 24px 120px;color:#e8eef5}
+h1{font-family:var(--display);font-weight:700;font-size:30px;margin:0 0 6px}
+.sub{color:#8fa3b8;font-size:14px;line-height:1.6;margin-bottom:18px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.btn{font-size:14px;padding:10px 18px}
+.btn.main{background:var(--acc);color:#fff}
+.btn.ghost{background:rgba(255,255,255,.08);color:#fff}
+select{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:8px;padding:8px 10px;font:inherit}
+.prog{height:8px;border-radius:8px;background:rgba(255,255,255,.1);overflow:hidden;margin:10px 0}
+.prog i{display:block;height:100%;background:var(--acc);width:0}
+.stat{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:#9fb0c3}
+.stat b{color:#fff;font-size:18px;font-family:var(--display)}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:16px}
+th,td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;vertical-align:top}
+th{color:#8fa3b8;font-weight:800;font-size:11px;letter-spacing:.1em}
+td a{color:#fff}
+.bad{color:#F0506E;font-weight:800} .warn{color:#F5B942;font-weight:800} .ok{color:#4ee0b0}
+textarea{width:100%;height:160px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#c7d3e0;font:12px/1.5 ui-monospace,monospace;padding:10px;margin-top:12px}
+/* 측정 무대: 실제 1600×900 로 화면 밖에 둔다(축소 없이 재야 진짜 값) */
+#lab{position:fixed;left:-20000px;top:0;width:1600px;height:900px;overflow:visible}
+#lab .kt2-paper{position:absolute;inset:0}
+</style>
+</head>
+<body class="subj-math">
+<div class="chk">
+  <h1>넘침 전수 점검 — 2세대 무대</h1>
+  <div class="sub">이 페이지가 브라우저 안에서 모든 차시를 실제 1600×900 크기로 한 장씩 그려 보고, 본문이 종이 자리를 넘는 슬라이드를 잡아요(조각은 전부 펼친 상태·정답 열린 상태 두 번). 자동 축소(fitBody) 전 넘침과, 축소 뒤에도 0.85배 아래로 내려가야 하는 「설계 손볼 것」을 나눠 보여요. 다 돌면 아래 글을 복사해 베프에게 주세요.</div>
+  <div class="bar">
+    <select id="scope"><option value="all">전체 (481차시)</option></select>
+    <button class="btn main" id="run">▶ 점검 시작</button>
+    <button class="btn ghost" id="stop">■ 멈춤</button>
+    <button class="btn ghost" id="copy">📋 결과 복사</button>
+    <button class="btn ghost" id="dl">⬇ 결과 저장(.md)</button>
+    <span id="msg" style="color:#8fa3b8;font-size:13px"></span>
+  </div>
+  <div class="prog"><i id="pi"></i></div>
+  <div class="stat" id="stat"></div>
+  <table id="tbl"><thead><tr><th>#</th><th>차시</th><th>슬라이드</th><th>블록</th><th>넘침(전)</th><th>축소 배율</th><th>판정</th><th></th></tr></thead><tbody></tbody></table>
+  <textarea id="out" placeholder="점검이 끝나면 여기에 결과가 쌓여요"></textarea>
+</div>
+<div id="lab"><div id="kt2-stage" style="position:absolute;inset:0"><div class="kt2-canvas" id="kt2-canvas" style="transform:none"><div class="kt2-paper" id="kt2-paper"></div></div></div></div>
+<script>window.LESSONS = window.LESSONS || {}; window.KT2_NO_BOOT = true;</script>
+<script src="manifest.js"></script>
+<script src="stage2-art.js"></script>
+<script src="stage2.js"></script>
+<script>
+(function(){
+  var M = window.KT2_MANIFEST, R = window.KT2; var rows = [], stop = false, running = false;
+  var scope = document.getElementById('scope');
+  M.subjects.forEach(function(s){ var o = document.createElement('option'); o.value = s.slug; o.textContent = s.title + ' (' + s.units.reduce(function(a,u){ return a + u.lessons.length; }, 0) + '차시)'; scope.appendChild(o); });
+  function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function loadScript(src){ return new Promise(function(res, rej){ var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function(){ rej(new Error(src)); }; document.head.appendChild(s); }); }
+  // 슬라이드 하나를 실제 크기로 그리고 잰다 (Stage.paint 와 같은 뼈대, 조각 전부 펼침)
+  function measure(slide, meta, unitTitle, revealed, grade){
+    var paper = document.getElementById('kt2-paper'); document.body.className = 'subj-' + (window._subj || 'math') + ' tier-' + (grade <= 2 ? 'low' : grade <= 4 ? 'mid' : 'high');
+    var r = R.renderSlide(slide, { revealed: revealed, state: {}, meta: meta, unitTitle: unitTitle, classNames: [] });
+    if (r.cover) { paper.className = 'kt2-paper cover'; paper.setAttribute('data-stage', slide.stage); paper.innerHTML = r.body; }
+    else {
+      paper.className = 'kt2-paper'; paper.setAttribute('data-stage', slide.stage);
+      var tl = (r.title || '').length; var tcls = tl > 34 ? ' xs' : tl > 22 ? ' small' : '';
+      paper.innerHTML = '<div class="kt2-head"><span class="kt2-chip">' + esc(slide.stage) + '</span><span class="kt2-kicker">' + esc(meta.subtitle || meta.title || '') + '</span><span class="sp"></span></div>' + (r.title ? '<h1 class="kt2-title' + tcls + '">' + R.md(r.title) + '</h1>' : '') + (r.sub ? '<div class="kt2-sub">' + R.md(r.sub) + '</div>' : '') + '<div class="kt2-body' + (r.cls ? ' ' + r.cls : '') + '">' + r.body + '</div><div class="kt2-foot"><span class="brand">케이티처</span><span class="kt2-progress"><i></i></span><span class="sp"></span><span class="pg"><b>1</b> / 1</span></div>';
+    }
+    // 사진은 폴백 무대로(실물이 없으니 실제와 같게)
+    paper.querySelectorAll('.img-frame img').forEach(function(im){ R.imgFallback(im); });
+    var body = paper.querySelector('.kt2-body'); if (!body) return { over: 0, zoom: 1, wover: 0 };
+    body.style.zoom = ''; var over = Math.max(0, body.scrollHeight - body.clientHeight), wover = Math.max(0, body.scrollWidth - body.clientWidth);
+    var paperOver = Math.max(0, paper.scrollHeight - paper.clientHeight);
+    // fitBody 와 같은 계산
+    var base = grade <= 2 ? 1.06 : grade <= 4 ? 1 : 0.95; var z = base;
+    for (var i = 0; i < 4; i++) { var a = body.clientHeight, n = body.scrollHeight, aw = body.clientWidth, nw = body.scrollWidth; if (n <= a + 2 && nw <= aw + 2) break; z = Math.max(0.45, z * Math.min(a / n, aw / nw) * 0.97); body.style.zoom = z; }
+    var residual = Math.max(0, body.scrollHeight - body.clientHeight);
+    return { over: over, wover: wover, paperOver: paperOver, zoom: z / base, residual: residual };
+  }
+  async function run(){
+    if (running) return; running = true; stop = false; rows = []; document.querySelector('#tbl tbody').innerHTML = ''; document.getElementById('out').value = '';
+    var subs = M.subjects.filter(function(s){ return scope.value === 'all' || s.slug === scope.value; });
+    var total = 0; subs.forEach(function(s){ s.units.forEach(function(u){ total += u.lessons.length; }); });
+    var done = 0, slidesN = 0, overN = 0, badN = 0;
+    for (var si = 0; si < subs.length; si++) { var sj = subs[si]; window._subj = sj.subject;
+      for (var ui = 0; ui < sj.units.length; ui++) { var un = sj.units[ui]; if (stop) break;
+        window.LESSONS = {}; try { await loadScript('../' + un.file); } catch (e) { document.getElementById('msg').textContent = '못 읽음: ' + un.file; continue; }
+        for (var li = 0; li < un.lessons.length; li++) { var l = un.lessons[li]; var L = window.LESSONS[l.key]; if (!L) continue; var meta = L.meta || {};
+          (L.slides || []).forEach(function(s, i){ slidesN++;
+            [false, true].forEach(function(rev){ var m; try { m = measure(s, meta, un.title, rev, sj.grade); } catch (e) { m = { err: e.message }; }
+              if (m.err || m.over > 2 || m.wover > 2 || m.paperOver > 2) { if (!rev || m.err) overN++; var verdict = m.err ? '예외' : (m.zoom < 0.85 || m.residual > 2 ? '설계 손볼 것' : '자동 축소로 해결'); if (verdict !== '자동 축소로 해결') badN++;
+                rows.push({ slug: sj.slug, g: sj.grade, s: sj.subject, u: un.unit, key: l.key, title: l.title, n: i + 1, id: s.id, block: s.block, rev: rev, over: m.over, wover: m.wover, zoom: m.zoom, residual: m.residual, err: m.err, verdict: verdict }); } });
+          });
+          done++; document.getElementById('pi').style.width = (done / total * 100) + '%';
+          document.getElementById('stat').innerHTML = '<span>차시 <b>' + done + '</b>/' + total + '</span><span>슬라이드 <b>' + slidesN + '</b></span><span>넘침(축소 전) <b class="warn">' + overN + '</b></span><span>설계 손볼 것 <b class="bad">' + badN + '</b></span>';
+          if (done % 5 === 0) await new Promise(function(r){ setTimeout(r, 0); });
+        }
+      }
+    }
+    paintRows(); running = false; document.getElementById('msg').textContent = stop ? '멈췄어요' : '끝났어요 — 결과를 복사해 베프에게';
+  }
+  function paintRows(){
+    var tb = document.querySelector('#tbl tbody'); var seen = {}; var list = rows.filter(function(r){ var k = r.key + r.id + r.rev; if (seen[k]) return false; seen[k] = 1; return true; });
+    list.sort(function(a, b){ return (a.verdict === '설계 손볼 것' ? 0 : 1) - (b.verdict === '설계 손볼 것' ? 0 : 1) || (b.over - a.over); });
+    tb.innerHTML = list.slice(0, 600).map(function(r, i){ return '<tr><td>' + (i + 1) + '</td><td>' + esc(r.slug + ' u' + r.u + ' ' + r.key) + '<br><span style="color:#8fa3b8">' + esc(r.title) + '</span></td><td>#' + r.n + ' ' + esc(r.id) + (r.rev ? ' <small>(정답 열림)</small>' : '') + '</td><td>' + esc(r.block) + '</td><td>' + (r.err ? '예외 ' + esc(r.err) : ('↓' + r.over + (r.wover ? ' →' + r.wover : '') + (r.paperOver ? ' 종이↓' + r.paperOver : ''))) + '</td><td>' + (r.zoom ? '×' + r.zoom.toFixed(2) : '-') + '</td><td class="' + (r.verdict === '설계 손볼 것' ? 'bad' : r.verdict === '예외' ? 'bad' : 'ok') + '">' + r.verdict + '</td><td><a href="stage.html?g=' + r.g + '&s=' + r.s + '&u=' + r.u + '&l=' + encodeURIComponent(r.key) + '#' + r.n + '" target="_blank">열기</a></td></tr>'; }).join('');
+    var md = '# 2세대 무대 넘침 점검 결과 (' + new Date().toISOString().slice(0, 16).replace('T', ' ') + ')\n\n넘침(축소 전) ' + rows.filter(function(r){ return !r.rev; }).length + ' · 설계 손볼 것 ' + list.filter(function(r){ return r.verdict !== '자동 축소로 해결'; }).length + '\n\n| 차시 | 슬라이드 | 블록 | 넘침 | 배율 | 판정 |\n|---|---|---|---|---|---|\n' + list.map(function(r){ return '| ' + r.slug + ' ' + r.key + ' | #' + r.n + ' ' + r.id + (r.rev ? '(정답)' : '') + ' | ' + r.block + ' | ' + (r.err ? '예외' : '↓' + r.over + (r.wover ? ' →' + r.wover : '')) + ' | ' + (r.zoom ? r.zoom.toFixed(2) : '-') + ' | ' + r.verdict + ' |'; }).join('\n');
+    document.getElementById('out').value = md;
+  }
+  document.getElementById('run').onclick = run; document.getElementById('stop').onclick = function(){ stop = true; };
+  document.getElementById('copy').onclick = function(){ var ta = document.getElementById('out'); ta.select(); try { document.execCommand('copy'); document.getElementById('msg').textContent = '복사했어요'; } catch (e) {} };
+  document.getElementById('dl').onclick = function(){ var b = new Blob([document.getElementById('out').value], { type: 'text/markdown' }); var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = '넘침점검_' + new Date().toISOString().slice(0, 10) + '.md'; a.click(); };
+})();
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
