@@ -148,7 +148,7 @@ function boot(file, url, dbFake){
     ok($('.attempts button.on') && /2번째/.test($('.attempts button.on').textContent), '③′ 최신(2번째)이 먼저');
     const df = $('.diff'); ok(df && /1번째 글보다/.test(df.textContent), '③′ 「1번째 글보다」 한 줄');
     ok(df && /자동 표시 \d+ → \d+/.test(df.textContent) && /고침 \d+/.test(df.textContent), '③′ 자동 표시 몇 개 고쳤나 (' + (df && df.textContent) + ')');
-    ok(df && /고침 3/.test(df.textContent) && !/빠짐/.test(df.textContent), '③′ 근데·엄청·기때문 세 자리 고침, 빠진 요소 없음');
+    ok(df && /고침 4/.test(df.textContent) && !/빠짐/.test(df.textContent), '③′ 근데·엄청·기때문·예를들어 네 자리 고침, 빠진 요소 없음 (v3: 예를들어 추가)');
     d.querySelector('.attempts button[data-at="1"]').click(); await tick(); ok(!$('.diff'), '③′ 1번째 글에는 견줌 줄 없음');
   }
 

@@ -1,5 +1,5 @@
 /* ============================================================
-   케이글쓰기 대조 엔진 v2 (설계 v1 §4~§6 + v2 §10) — 2026-09-08
+   케이글쓰기 대조 엔진 v3 (설계 v1 §4~§6 + v2 §10 + v3 §12) — 2026-09-22
    목적: 규칙(틀·신호어·문구·표시 사전)만으로 글의 「틀」과 「글자」를 본다. 내용 판단 0, 점수 0.
    순수 함수 — DOM·네트워크 없음. 브라우저(window.KWRITE)와 node(module.exports) 공용.
    사용:
@@ -16,6 +16,12 @@
      · 이유↔예시 짝(고), 거의 같은 이유 두 번, 논제 낱말이 한 문단에만 몰림, 가운데 문단 첫 문장의 이어 주는 말(고)
      · 선생님 표시: 맞춤법·띄어쓰기·토씨(받침 계산)·말하는 투·문장 부호·끝맺음·긴 문장·같은 말 — 밴드별로 짚는 종류가 다르다
      · 카드 ≤3: 요소 red → 논제 red → 순서 → 요소 yellow → 논제 yellow → 짝·중복·몰림 → 문단 → 형식 → 분량
+   v3 추가(2026-09-22):
+     · word  낱말 가림 — 앞뒤 낱말이 증거일 때만 (다르다/틀리다, 잊다/잃다, 작다/적다, 낫다/낳다, 부치다/붙이다, 입다/신다/쓰다/끼다 …)
+     · agree 문장 호응 — 부사·앞말(왜냐하면·비록·만약·전혀·마치·아마·내 꿈은·이유는)이 있는데 짝이 되는 끝맺음이 없으면 문장 끝에 힌트(~기 때문이다). 고칠 글자를 정하지 않고 힌트만(fix 가 ~ 로 시작 → applyMark 는 글을 바꾸지 않음)
+     · tense 때 — 어제·작년·지난주 같은 말이 있는데 끝맺음이 현재형이면 힌트
+     · person 나·저 — 한 글에 나/내 와 저/제 가 섞이면 소수 쪽을 표시, ~다 글에 저/제 만 있으면 나/내 로
+     · rule 코드: dep(의존명사 — 앞 글자 받침(jong)·이름씨 예외(skipPrev)·뒷말 조건(after)) · ji_time(~ㄴ 지 + 시간) · skipSent(문장 전체에 이 말이 있으면 넘김)
    ============================================================ */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
@@ -36,12 +42,15 @@
     RX._da = rx(S.format.endings.da);
     RX._yo = rx(S.format.endings.yo);
     if (C) {
-      CX = { spelling: [], spacing: [], spoken: [] };
-      ['spelling', 'spacing', 'spoken'].forEach(function (k) {
+      CX = { spelling: [], spacing: [], spoken: [], word: [] };
+      ['spelling', 'spacing', 'spoken', 'word'].forEach(function (k) {
         (C[k] || []).forEach(function (e) {
-          CX[k].push({ re: e.re ? rxg(e.re) : null, fix: e.fix, why: e.why, skip: e.skip ? rx(e.skip) : null, skipPrev: e.skipPrev ? rx('^(' + e.skipPrev + ')$') : null, rule: e.rule || null, soft: !!e.soft, map: e.map || null });
+          CX[k].push({ re: e.re ? rxg(e.re) : null, fix: e.fix, why: e.why, skip: e.skip ? rx(e.skip) : null, skipPrev: e.skipPrev ? rx('^(' + e.skipPrev + ')$') : null, skipSent: e.skipSent ? rx(e.skipSent) : null, rule: e.rule || null, soft: !!e.soft, map: e.map || null, noun: e.noun, jong: e.jong, after: e.after || '' });
         });
       });
+      CX.agree = (C.agree || []).map(function (e) { return { id: e.id, re: rx(e.re), need: e.need ? rx(e.need) : null, bad: e.bad ? rx(e.bad) : null, hint: e.hint, why: e.why, soft: !!e.soft, types: e.types || null, at: e.at || 'end' }; });
+      if (C.tense) CX.tense = { time: rx(C.tense.timeWords), present: rx(C.tense.presentEnd), past: rx(C.tense.pastMark) };
+      if (C.person) CX.person = { na: rxg(C.person.na), jeo: rxg(C.person.jeo) };
       CX.punct = {};
       Object.keys(C.punct).forEach(function (k) { var p = C.punct[k]; CX.punct[k] = { re: p.re ? rxg(p.re) : null, why: p.why, fix: p.fix, skip: p.skip ? rx(p.skip) : null }; });
       CX.splitAt = rxg(C.long.splitAt);
@@ -114,7 +123,11 @@
   }
   function pushMark(list, s, from, len, kind, original, fixed, why, soft) {
     if (!original) return;
-    for (var k = 0; k < list.length; k++) { var o = list[k]; if (o.i === s.i && !(from + len <= o.from || from >= o.to)) return; } // 겹치면 먼저 것
+    for (var k = 0; k < list.length; k++) {
+      var o = list[k]; if (o.i !== s.i || from + len <= o.from || from >= o.to) continue;
+      if (len > (o.to - o.from) && !o.append) { list.splice(k, 1); k--; continue; } // 겹치면 더 긴(구체적인) 표시가 남는다
+      return;
+    }
     list.push({ i: s.i, from: from, to: from + len, kind: kind, original: original, fix: fixed, why: why, soft: !!soft });
   }
   function runList(list, s, kind, out, band) {
@@ -126,6 +139,7 @@
         if (!m[0].length) { e.re.lastIndex++; continue; }
         if (e.skip && e.skip.test(m[0])) continue;
         if (e.skipPrev && m[1] != null && e.skipPrev.test(m[1])) continue;
+        if (e.skipSent && e.skipSent.test(s.text)) continue;
         var fixed = subFix(e.fix, m, e.map);
         if (fixed === m[0]) continue;
         pushMark(out, s, m.index, m[0].length, kind, m[0], fixed, e.why, e.soft);
@@ -153,6 +167,30 @@
         var j = jong(m[1]); if (j !== 4 && j !== 8) continue;
         pushMark(out, s, m.index, m[0].length, kind, m[0], m[1] + ' 것', e.why, false);
       }
+    } else if (e.rule === 'l_ryeo') { // ㄹ받침 + 려고/려면 (할려고 → 하려고). ㄹ로 끝나는 움직씨(살다·놀다·만들다…)는 넘긴다
+      re = /([가-힣]+)(려|라)(고|면|다|는|던|고요|고서)(?![가-힣])/gu;
+      while ((m = re.exec(t))) {
+        var w = m[1], last = w[w.length - 1]; if (jong(last) !== 8) continue;
+        if (/(살|놀|만들|들|알|팔|열|풀|울|걸|밀|날|멀|길|물|빌|썰|돌|끌|몰|불|쓸|틀|흔들|떠들|시들|헐|깔|달|떨|털|늘|졸|꿀|굴|얼|벌|매달|졸|빨|헐|말|찔|일|갈|줄)$/u.test(w) && !/^(할|볼|갈|줄|올|될|탈|잘)$/u.test(w)) continue;
+        var stem = last === '을' ? w.slice(0, -1) + '으' : w.slice(0, -1) + String.fromCharCode(last.charCodeAt(0) - 8);
+        pushMark(out, s, m.index, m[0].length, kind, m[0], stem + '려' + m[3], e.why, false);
+      }
+    } else if (e.rule === 'dep') { // 의존명사 — 앞 글자 받침(jong) + 이름씨 예외(skipPrev) + 뒷말 조건(after)
+      re = rxg('([가-힣])(' + e.noun + ')' + (e.after || ''));
+      while ((m = re.exec(t))) {
+        if (e.jong.indexOf(jong(m[1])) < 0) continue;
+        if (e.skipPrev && e.skipPrev.test(m[1])) continue;
+        var before = t.slice(0, m.index + 1).match(/[가-힣]+$/u)[0];
+        if (before.length === 1 && !/^(할|볼|갈|올|줄|될|살|쓸|놀|들|알|잘|탈|풀|열|울|낼|걸|팔|뛸|짤|본|한|간|온|준|된|산|쓴|논|든|안|잔|탄|푼|연|운|낸|건|판|뛴|는|은|던)$/u.test(before)) continue; // 외자 이름씨(물·손) 뒤는 넘김
+        pushMark(out, s, m.index, m[0].length, kind, m[0], m[1] + ' ' + m[2], e.why, false);
+      }
+    } else if (e.rule === 'ji_time') { // ~ㄴ 지 + 시간 (만난지 한 달 → 만난 지)
+      re = /([가-힣])지(?=\s*(\d+|한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|스무|몇|오래|얼마|일주일|한참|삼|십|백)(?![가-힣]{3}))/gu;
+      while ((m = re.exec(t))) {
+        if (jong(m[1]) !== 4) continue;
+        if (/^(까|은|는|건|던|런|인)$/u.test(m[1]) && /^(까지|은지|는지)$/u.test(m[1] + '지')) continue;
+        pushMark(out, s, m.index, m[0].length, kind, m[0], m[1] + ' 지', e.why, false);
+      }
     }
   }
   function nounStems(sents) { // 글 전체에서 토씨 붙은 낱말의 줄기 — 두 번 이상 보이면 이름씨로 본다(오탐 방지)
@@ -176,6 +214,60 @@
       }
     });
   }
+  /* 문장 끝 낱말(부호 앞) 자리 */
+  function lastWord(t) {
+    var m = t.match(/([가-힣A-Za-z0-9~]+)[\s.!?…”’"')]*$/u);
+    if (!m) return null;
+    var from = m.index; return { from: from, len: m[1].length, word: m[1] };
+  }
+  /* 호응 — trigger 가 있고 (need 가 없거나 / bad 가 있으면) 문장 끝(또는 bad 자리)에 힌트 */
+  function runAgree(s, out, type) {
+    if (!CX.agree) return;
+    var t = unquote(s.text);
+    CX.agree.forEach(function (e) {
+      if (e.types && e.types.indexOf(type) < 0) return;
+      var tm = e.re.exec(t); if (!tm) return;
+      var rest = t.slice(tm.index + tm[0].length);
+      var lack = e.need ? !e.need.test(rest) : true;
+      var bm = e.bad ? e.bad.exec(t) : null;
+      var hit = e.bad ? (bm && lack) : lack;
+      if (!hit) return;
+      var at;
+      if (bm && e.at !== 'end') { var i0 = s.text.indexOf(bm[0]); at = i0 >= 0 ? { from: i0, len: bm[0].length, word: bm[0] } : lastWord(s.text); }
+      else at = lastWord(s.text);
+      if (!at) return;
+      pushMark(out, s, at.from, at.len, 'agree', at.word, '~' + e.hint.replace(/^~/, ''), e.why, e.soft);
+    });
+  }
+  /* 때 — 지난 때를 나타내는 말 + 현재형 끝맺음, 문장 안에 지난 표지가 하나도 없을 때 */
+  function runTense(s, out) {
+    if (!CX.tense) return;
+    var t = unquote(s.text);
+    var tm = CX.tense.time.exec(t); if (!tm) return;
+    if (!CX.tense.present.test(t)) return;
+    if (CX.tense.past.test(t)) return;
+    var at = lastWord(s.text); if (!at) return;
+    pushMark(out, s, at.from, at.len, 'tense', at.word, '~' + C.tense.hint.replace(/^~/, ''), fill(C.tense.why, { word: tm[1] }), true);
+  }
+  function runPerson(sents, out) {
+    var na = [], jeo = [];
+    sents.forEach(function (s) {
+      var t = unquote(s.text), m;
+      CX.person.na.lastIndex = 0; while ((m = CX.person.na.exec(t))) na.push({ s: s, m: m });
+      CX.person.jeo.lastIndex = 0; while ((m = CX.person.jeo.exec(t))) jeo.push({ s: s, m: m });
+    });
+    var mark = function (h, fix, why) { var i = h.s.text.indexOf(h.m[1]); if (i >= 0) pushMark(out, h.s, i, h.m[1].length, 'person', h.m[1], fix, why, true); };
+    if (na.length && jeo.length) {
+      var minor = na.length < jeo.length ? na : jeo, toJeo = na.length < jeo.length;
+      minor.forEach(function (h) { mark(h, toJeo ? C.person.fixJeo : C.person.fixNa, C.person.mixed); });
+      return;
+    }
+    if (jeo.length && !na.length) { // ~다 글인가?
+      var da = 0, yo = 0;
+      sents.forEach(function (s) { var t = unquote(s.text); if (/\?\s*$/.test(t)) return; if (/니다\s*[.!?]?\s*$/u.test(t) || RX._yo.test(t)) yo++; else if (RX._da.test(t)) da++; }); // ~습니다 는 높임(저·제 와 어울림)
+      if (da > yo && da >= 2) jeo.forEach(function (h) { mark(h, C.person.fixNa, C.person.jeoWithDa); });
+    }
+  }
   function correct(opt) {
     if (!C) return { marks: [], kinds: {}, byKind: {} };
     var band = bandOf(opt.band), type = opt.type || 'argue';
@@ -187,7 +279,10 @@
       if (allow.indexOf('spelling') >= 0) runList(CX.spelling, s, 'spelling', out, band);
       if (allow.indexOf('spacing') >= 0) runList(CX.spacing, s, 'spacing', out, band);
       if (allow.indexOf('particle') >= 0) runParticles(s, out, kws, stems);
+      if (allow.indexOf('word') >= 0) runList(CX.word, s, 'word', out, band);
       if (allow.indexOf('spoken') >= 0) runList(CX.spoken, s, 'spoken', out, band);
+      if (allow.indexOf('agree') >= 0) runAgree(s, out, type);
+      if (allow.indexOf('tense') >= 0) runTense(s, out);
       if (allow.indexOf('punct') >= 0) {
         var t = s.text, P = CX.punct, m;
         if (!/[.!?。…”’"]\s*$/u.test(t) && t.length > 5 && !(P.noEnd.skip && P.noEnd.skip.test(t))) out.push({ i: s.i, from: t.length, to: t.length, kind: 'punct', original: '', fix: P.noEnd.fix, why: P.noEnd.why, soft: false, append: true });
@@ -224,6 +319,8 @@
         });
       }
     }
+    /* 나·저 섞임 — 소수 쪽 표시. ~다 글에 저/제만 있으면 나/내 로 */
+    if (allow.indexOf('person') >= 0 && CX.person && S.format.endings.skipTypes.indexOf(type) < 0) runPerson(sents, out);
     /* 같은 낱말 — 가장 많이 나온 것 하나, 나오는 자리 전부 */
     if (allow.indexOf('repeat') >= 0) {
       var rw = S.format.repeatWord, freq = {}, chars = sents.reduce(function (n, s) { return n + s.text.replace(/\s+/g, '').length; }, 0);
@@ -373,6 +470,10 @@
       var sp = firstOf('spoken'); if (sp) format.push({ kind: 'spoken', word: sp.original, msg: fill(F.common.spoken, { word: sp.original, fix: sp.fix }) });
       var sl = firstOf('spelling') || firstOf('spacing') || firstOf('particle'); if (sl) format.push({ kind: 'spelling', word: sl.original, msg: fill(F.common.spelling, { word: sl.original, fix: sl.fix }) });
       var lg = firstOf('long'); if (lg) format.push({ kind: 'sentence', i: lg.i, msg: fill(F.common.sentence, { n: lg.i + 1 }) });
+      var ag = firstOf('agree'); if (ag) format.push({ kind: 'agree', i: ag.i, msg: fill(F.common.agree || '{n}번째 문장: {why}', { n: ag.i + 1, why: ag.why }) });
+      var wd = firstOf('word'); if (wd) format.push({ kind: 'word', word: wd.original, msg: wd.why });
+      var tn = firstOf('tense'); if (tn) format.push({ kind: 'tense', i: tn.i, msg: fill(F.common.tense || '{n}번째 문장: {why}', { n: tn.i + 1, why: tn.why }) });
+      var pe = firstOf('person'); if (pe) format.push({ kind: 'person', msg: pe.why });
       var rp = firstOf('repeat'); if (rp) format.push({ kind: 'repeat', word: rp.original, msg: rp.why });
       if (firstOf('ending')) format.push({ kind: 'endings', msg: F.common.endings });
     }
