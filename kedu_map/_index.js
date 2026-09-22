@@ -86,9 +86,9 @@ window.KEDU_MAP_INDEX = [
  },
  {
   "key": "g3_2_science",
-  "units": 2,
-  "lessons": 20,
-  "ready": 20
+  "units": 3,
+  "lessons": 29,
+  "ready": 29
  },
  {
   "key": "g3_2_social",

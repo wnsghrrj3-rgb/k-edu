@@ -221,6 +221,103 @@ window.KEDU_MAP["g3_2_science"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 3,
+   "name": "소리의 성질",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g3_science_u3_l01",
+     "lessonId": "g3_s2_sci_u3_l01_v1",
+     "n": "1",
+     "title": "활짝! 과학 열기 — 여러 가지 물체로 소리 내 보기",
+     "sub": null,
+     "url": "/grade3/semester2/science/3단원_소리의성질/g3_sci_u3_l01_활짝과학열기.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u3_l02",
+     "lessonId": "g3_s2_sci_u3_l02_v1",
+     "n": "2",
+     "title": "소리가 나는 물체의 특징",
+     "sub": null,
+     "url": "/grade3/semester2/science/3단원_소리의성질/g3_sci_u3_l02_소리가나는물체의특징.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u3_l03",
+     "lessonId": "g3_s2_sci_u3_l03_v1",
+     "n": "3",
+     "title": "큰 소리와 작은 소리",
+     "sub": null,
+     "url": "/grade3/semester2/science/3단원_소리의성질/g3_sci_u3_l03_큰소리와작은소리.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u3_l04",
+     "lessonId": "g3_s2_sci_u3_l04_v1",
+     "n": "4",
+     "title": "높은 소리와 낮은 소리",
+     "sub": null,
+     "url": "/grade3/semester2/science/3단원_소리의성질/g3_sci_u3_l04_높은소리와낮은소리.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u3_l05",
+     "lessonId": "g3_s2_sci_u3_l05_v1",
+     "n": "5",
+     "title": "소리의 전달",
+     "sub": null,
+     "url": "/grade3/semester2/science/3단원_소리의성질/g3_sci_u3_l05_소리의전달.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u3_l06",
+     "lessonId": "g3_s2_sci_u3_l06_v1",
+     "n": "6",
+     "title": "소음을 줄이는 방법",
+     "sub": null,
+     "url": "/grade3/semester2/science/3단원_소리의성질/g3_sci_u3_l06_소음을줄이는방법.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u3_l07",
+     "lessonId": "g3_s2_sci_u3_l07_v1",
+     "n": "7~8",
+     "title": "창의가 반짝! / 팡팡! 과학 놀이터",
+     "sub": null,
+     "url": "/grade3/semester2/science/3단원_소리의성질/g3_sci_u3_l07_창의가반짝과학놀이터.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u3_l09",
+     "lessonId": "g3_s2_sci_u3_l09_v1",
+     "n": "9",
+     "title": "톡톡! 과학 — 소리를 찍는 음향 카메라",
+     "sub": null,
+     "url": "/grade3/semester2/science/3단원_소리의성질/g3_sci_u3_l09_톡톡과학음향카메라.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u3_l10",
+     "lessonId": "g3_s2_sci_u3_l10_v1",
+     "n": "10",
+     "title": "단원 마무리",
+     "sub": null,
+     "url": "/grade3/semester2/science/3단원_소리의성질/g3_sci_u3_l10_단원마무리.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
