@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-09-22 · 과목 8 · 차시 481 · 슬라이드 7724 */
+   생성: 2026-09-22 · 과목 8 · 차시 481 · 슬라이드 7734 */
 window.KT2_MANIFEST = {
  "built": "2026-09-22",
  "lessons": 481,
- "slides": 7724,
+ "slides": 7734,
  "subjects": [
   {
    "slug": "g1_math",
@@ -305,7 +305,7 @@ window.KT2_MANIFEST = {
        "seven": [
         0,
         1,
-        0,
+        1,
         1,
         1,
         1,
@@ -357,7 +357,7 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
+        1,
         1,
         1,
         1,
@@ -383,7 +383,7 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
+        1,
         1,
         1,
         1,
@@ -409,7 +409,7 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
+        1,
         1,
         1,
         1,
@@ -435,7 +435,7 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
+        1,
         1,
         1,
         1,
@@ -461,7 +461,7 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
+        1,
         1,
         1,
         1,
@@ -521,7 +521,7 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
+        1,
         1,
         1,
         1,
@@ -599,7 +599,7 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
+        1,
         1,
         1,
         1,
@@ -625,7 +625,7 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
+        1,
         1,
         1,
         1,
@@ -651,7 +651,7 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
+        1,
         1,
         1,
         1,
@@ -703,7 +703,7 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
+        1,
         1,
         1,
         1,
@@ -729,7 +729,7 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
+        1,
         1,
         1,
         1,
@@ -742,21 +742,21 @@ window.KT2_MANIFEST = {
        "title": "수학이랑 확인해요",
        "meta_title": "수학이랑 확인해요",
        "std": "[2수01-04], [2수01-05], [2수01-06]",
-       "slides": 20,
+       "slides": 21,
        "stages": [
         3,
         5,
         5,
-        3,
+        4,
         4
        ],
        "interactive": 2,
-       "blocks": 13,
+       "blocks": 14,
        "seven": [
         1,
         1,
-        0,
-        0,
+        1,
+        1,
         1,
         1,
         1
@@ -966,21 +966,21 @@ window.KT2_MANIFEST = {
        "title": "9 다음 수를 알아볼까요 (10 개념 + 가르기)",
        "meta_title": "1학년 수학 5단원 2~3차시",
        "std": "[2수01-01] [2수01-04]",
-       "slides": 21,
+       "slides": 22,
        "stages": [
         3,
         5,
         5,
-        4,
+        5,
         4
        ],
        "interactive": 4,
-       "blocks": 14,
+       "blocks": 15,
        "seven": [
         1,
         1,
         1,
-        0,
+        1,
         1,
         1,
         1
@@ -992,21 +992,21 @@ window.KT2_MANIFEST = {
        "title": "십몇을 알아볼까요",
        "meta_title": "1학년 수학 5단원 4차시",
        "std": "[2수01-01] [2수01-03]",
-       "slides": 23,
+       "slides": 24,
        "stages": [
         4,
         7,
         4,
-        4,
+        5,
         4
        ],
        "interactive": 4,
-       "blocks": 17,
+       "blocks": 18,
        "seven": [
         1,
         1,
         1,
-        0,
+        1,
         1,
         1,
         1
@@ -1018,21 +1018,21 @@ window.KT2_MANIFEST = {
        "title": "모으기와 가르기를 해 볼까요",
        "meta_title": "1학년 수학 5단원 5차시",
        "std": "[2수01-04]",
-       "slides": 22,
+       "slides": 23,
        "stages": [
         4,
         6,
         4,
-        4,
+        5,
         4
        ],
        "interactive": 3,
-       "blocks": 17,
+       "blocks": 18,
        "seven": [
         1,
         1,
         1,
-        0,
+        1,
         1,
         1,
         1
@@ -1044,21 +1044,21 @@ window.KT2_MANIFEST = {
        "title": "10개씩 묶어 세어 볼까요",
        "meta_title": "1학년 수학 5단원 6차시",
        "std": "[2수01-01] [2수01-03]",
-       "slides": 22,
+       "slides": 23,
        "stages": [
         4,
         6,
         4,
-        4,
+        5,
         4
        ],
        "interactive": 2,
-       "blocks": 16,
+       "blocks": 17,
        "seven": [
         1,
         1,
-        0,
-        0,
+        1,
+        1,
         1,
         1,
         1
@@ -1070,21 +1070,21 @@ window.KT2_MANIFEST = {
        "title": "50까지의 수를 세어 볼까요",
        "meta_title": "1학년 수학 5단원 7차시",
        "std": "[2수01-01]",
-       "slides": 22,
+       "slides": 23,
        "stages": [
         4,
         5,
         5,
-        4,
+        5,
         4
        ],
        "interactive": 3,
-       "blocks": 15,
+       "blocks": 16,
        "seven": [
         1,
         1,
         1,
-        0,
+        1,
         1,
         1,
         1
@@ -1096,21 +1096,21 @@ window.KT2_MANIFEST = {
        "title": "50까지 수의 순서를 알아볼까요",
        "meta_title": "1학년 수학 5단원 8차시",
        "std": "[2수01-03]",
-       "slides": 22,
+       "slides": 23,
        "stages": [
         4,
         5,
         5,
-        4,
+        5,
         4
        ],
        "interactive": 2,
-       "blocks": 15,
+       "blocks": 16,
        "seven": [
         1,
         1,
         1,
-        0,
+        1,
         1,
         1,
         1
@@ -1122,21 +1122,21 @@ window.KT2_MANIFEST = {
        "title": "수의 크기를 비교해 볼까요",
        "meta_title": "1학년 수학 5단원 9차시",
        "std": "[2수01-03]",
-       "slides": 22,
+       "slides": 23,
        "stages": [
         4,
         5,
         5,
-        4,
+        5,
         4
        ],
        "interactive": 4,
-       "blocks": 17,
+       "blocks": 18,
        "seven": [
         1,
         1,
-        0,
-        0,
+        1,
+        1,
         1,
         1,
         1
@@ -1148,21 +1148,21 @@ window.KT2_MANIFEST = {
        "title": "수학이랑 확인해요 (단원 평가)",
        "meta_title": "1학년 수학 5단원 10차시",
        "std": "[2수01-01] [2수01-03] [2수01-04]",
-       "slides": 22,
+       "slides": 23,
        "stages": [
         4,
         3,
         7,
-        4,
+        5,
         4
        ],
        "interactive": 2,
-       "blocks": 13,
+       "blocks": 14,
        "seven": [
         1,
         1,
         1,
-        0,
+        1,
         1,
         1,
         1
@@ -1174,21 +1174,21 @@ window.KT2_MANIFEST = {
        "title": "수학이랑 만들어요 (창의 활동)",
        "meta_title": "1학년 수학 5단원 11차시",
        "std": "[2수01-03]",
-       "slides": 22,
+       "slides": 23,
        "stages": [
         4,
         5,
         5,
-        4,
+        5,
         4
        ],
        "interactive": 4,
-       "blocks": 14,
+       "blocks": 15,
        "seven": [
         1,
         1,
         1,
-        0,
+        1,
         1,
         1,
         1
@@ -1221,7 +1221,7 @@ window.KT2_MANIFEST = {
        "seven": [
         0,
         1,
-        0,
+        1,
         1,
         0,
         1,
@@ -1247,7 +1247,7 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
+        1,
         1,
         0,
         1,
@@ -1273,7 +1273,7 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
+        1,
         1,
         0,
         1,
