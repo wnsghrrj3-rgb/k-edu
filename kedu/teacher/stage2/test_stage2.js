@@ -67,6 +67,9 @@ function runStage(sj, un, l) {
   ok(st.slides.length === l.slides, tag + ' 슬라이드 수 ' + st.slides.length + ' = ' + l.slides);
   ok(d.querySelector('#kt2-paper').innerHTML.length > 100, tag + ' 첫 슬라이드 그림');
   ok(d.querySelector('#hud button[data-h="next"]'), tag + ' HUD 생성');
+  ok(d.querySelector('#kt2-paper.anim, #kt2-paper .anim'), tag + ' 연출(anim) 걸림');
+  ok(d.querySelector('#fx'), tag + ' 축하 캔버스');
+  let zoomN = 0, misOk = true, bubN = 0;
   let guard = 0, acts = 0, frags = 0;
   while (st.idx < st.slides.length - 1 && guard++ < 2000) {
     const before = st.idx;
@@ -76,6 +79,7 @@ function runStage(sj, un, l) {
     if (st.idx % 2 === 0) try { st.revealAll(); st.revealAll(); } catch (e) { fail++; fails.push(tag + ' #' + (st.idx + 1) + ' revealAll 예외: ' + e.message); }
     try { st.next(); } catch (e) { fail++; fails.push(tag + ' #' + (st.idx + 1) + ' next 예외: ' + e.message); break; }
     if (st.idx === before) frags++;
+    { const p2 = d.querySelector('#kt2-paper'); zoomN += p2.querySelectorAll('.zoomable').length; bubN += p2.querySelectorAll('.kid.talk .bub').length; if (st.cur().block === 'misconception' && p2.querySelectorAll('.mis-card').length !== 2) misOk = false; if (p2.querySelector('.zoomable')) { const z = p2.querySelector('.zoomable'); st.toggleZoom(z); if (!z.classList.contains('zoomed')) misOk = misOk && false; st.toggleZoom(z); } }
   }
   ok(st.idx === st.slides.length - 1, tag + ' 끝까지 넘김 (' + (st.idx + 1) + '/' + st.slides.length + ')');
   // 도구
@@ -86,11 +90,14 @@ function runStage(sj, un, l) {
   if (vid) { try { st.openExtra(vid.id); ok(!!d.querySelector('#ov-media iframe'), tag + ' 영상 오버레이 iframe'); st.closeOv(); } catch (e) { fail++; fails.push(tag + ' openExtra 예외: ' + e.message); } }
   // 건너뛰기
   if (st.slides.length > 3) { st.slides[1].included = false; st.go(0, -1); st.fragMax = 0; st.next(); ok(st.idx === 2, tag + ' 건너뛰기(2번 제외 → 3번으로)'); st.slides[1].included = true; }
-  ok(true, tag + ' 실주행 ' + acts + ' 조작 · ' + frags + ' 조각');
+  ok(misOk, tag + ' 오개념 두 칸·확대 토글');
+  try { st.celebrate(); st.pop(); st.hudAct('still', d.querySelector('#hud button[data-h="still"]')); st.hudAct('still', d.querySelector('#hud button[data-h="still"]')); st.hudAct('sound', d.querySelector('#hud button[data-h="sound"]')); } catch (e) { fail++; fails.push(tag + ' 연출 도구 예외: ' + e.message); }
+  ok(true, tag + ' 실주행 ' + acts + ' 조작 · ' + frags + ' 조각 · 확대 가능 ' + zoomN + ' · 말풍선 ' + bubN);
+  bubAll += bubN;
   w.close();
   return { acts, frags };
 }
-let ran = 0, actsAll = 0, fragsAll = 0;
+let ran = 0, actsAll = 0, fragsAll = 0, bubAll = 0;
 manifest.subjects.forEach(sj => {
   // 과목마다: 각 단원의 첫 차시 + 조작 많은 차시 하나
   sj.units.forEach(un => {
@@ -99,6 +106,6 @@ manifest.subjects.forEach(sj => {
     picks.forEach(l => { const r = runStage(sj, un, l); if (r) { ran++; actsAll += r.acts; fragsAll += r.frags; } });
   });
 });
-console.log('② 무대 실주행 —', ran, '차시 부팅 · 슬라이드 안 조작', actsAll, '회 · 조각 공개', fragsAll, '회');
+console.log('② 무대 실주행 —', ran, '차시 부팅 · 슬라이드 안 조작', actsAll, '회 · 조각 공개', fragsAll, '회 · 말풍선', bubAll);
 console.log('결과: PASS', pass, '· FAIL', fail);
 if (fail) { console.log(fails.slice(0, 40).join('\n')); process.exit(1); }

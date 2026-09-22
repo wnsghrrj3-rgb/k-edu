@@ -527,3 +527,89 @@ svg.tenframe .div{stroke:#7d8794;stroke-width:5;stroke-dasharray:8 6}
 /* 토스트 */
 #toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-10px);z-index:70;background:rgba(20,25,32,.92);border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:999px;padding:10px 20px;font-size:14px;font-weight:700;opacity:0;transition:all .25s;pointer-events:none}
 #toast.on{opacity:1;transform:translateX(-50%)}
+
+/* ═══════════════ 2차 — 움직임·연출 층 (2026-09-22) ═══════════════
+   원칙: 데이터 무개변. 부품마다 「등장」 연출 하나, 정답에 「축하」 하나, 그 밖엔 정적.
+   body.still 이면 전부 끈다(HUD 🎬 / 키 0). prefers-reduced-motion 도 끈다.       */
+.kt2-paper .anim [style*="--i"]{animation-delay:calc(var(--i) * var(--stg,70ms))}
+.anim svg.tenframe .cell.on{animation:kt2-cell .5s cubic-bezier(.2,.8,.2,1) both;transform-box:fill-box;transform-origin:center}
+@keyframes kt2-cell{0%{transform:scale(0);opacity:0}60%{transform:scale(1.18)}100%{transform:scale(1);opacity:1}}
+.anim .emoji-row span{animation:kt2-pop-in .55s cubic-bezier(.2,.9,.2,1.2) both;display:inline-block}
+@keyframes kt2-pop-in{0%{transform:scale(0) rotate(-12deg);opacity:0}70%{transform:scale(1.15) rotate(3deg)}100%{transform:none;opacity:1}}
+.anim .stack .cube{animation:kt2-drop .45s cubic-bezier(.2,.8,.2,1) both}
+@keyframes kt2-drop{0%{transform:translateY(-60px) scale(.6);opacity:0}70%{transform:translateY(4px)}100%{transform:none;opacity:1}}
+.anim .stack .lbl{animation:kt2-pop .5s both}
+.anim .seq .c,.anim .num-cards span,.anim .number-panel span,.anim .num-card-big{animation:kt2-slide-up .5s cubic-bezier(.2,.8,.2,1) both}
+.anim .seq .a{animation:kt2-fade .4s both}
+@keyframes kt2-slide-up{0%{transform:translateY(28px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes kt2-fade{0%{opacity:0}100%{opacity:1}}
+.seq .c.blank{animation:kt2-pulse 1.6s ease-in-out infinite}
+@keyframes kt2-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--st) 45%,transparent)}50%{box-shadow:0 0 0 14px transparent}}
+.anim .opt,.anim .point,.anim .steps li,.anim .ex,.anim .ord,.anim .tf-item,.anim .tfs,.anim .flip,.anim .cq,.anim .kid,.anim .af,.anim .pairs .cell,.anim .areas div,.anim .sa .row,.anim .light,.anim .team,.anim .trace{animation:kt2-slide-up .5s cubic-bezier(.2,.8,.2,1) both}
+.anim .af-ar,.anim .pairs .ar{animation:kt2-fade .5s both}
+.anim .big-q{animation:kt2-q .6s cubic-bezier(.2,.9,.2,1.1) both}
+@keyframes kt2-q{0%{transform:scale(.92);opacity:0}100%{transform:none;opacity:1}}
+.anim .objective-card{animation:kt2-q .7s cubic-bezier(.2,.9,.2,1.1) both}
+.anim .scenario{animation:kt2-slide-up .5s both}
+.anim .scenario .ic{animation:kt2-bob 2.4s ease-in-out .5s infinite}
+@keyframes kt2-bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+.anim .numline .dot{animation:kt2-pop-in .4s both}
+.anim .numline .dot.anchor,.anim .numline .dot.cur{animation:kt2-bounce .8s .5s both}
+@keyframes kt2-bounce{0%{transform:translate(-50%,0)}35%{transform:translate(-50%,-40px)}55%{transform:translate(-50%,0)}75%{transform:translate(-50%,-14px)}100%{transform:translate(-50%,0)}}
+.numline .dot{transform:translateX(-50%)}
+.anim .numline .ar{animation:kt2-slide-up .5s .7s both}
+.anim .trace .out{animation:kt2-draw 1.4s ease both}
+@keyframes kt2-draw{0%{-webkit-text-stroke-color:transparent;opacity:0}100%{opacity:1}}
+.anim .num-table tr{animation:kt2-fade .4s both}
+.anim .bidirect{animation:kt2-q .6s both}
+.anim .cz{animation:kt2-q .5s both}
+.anim .kt2-cover-emoji{animation:kt2-float 3s ease-in-out infinite}
+@keyframes kt2-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+.anim .kt2-cover-title{animation:kt2-slide-up .7s .1s both}
+.anim .kt2-cover-unit{animation:kt2-fade .6s both}
+.anim .kt2-cover-meta{animation:kt2-fade .6s .5s both}
+.kt2-title.anim{animation:kt2-title .55s cubic-bezier(.2,.8,.2,1) both}
+@keyframes kt2-title{0%{transform:translateX(-20px);opacity:0}100%{transform:none;opacity:1}}
+.anim .mis-card.w{animation:kt2-shake .7s .15s both}
+@keyframes kt2-shake{0%,100%{transform:none}20%{transform:translateX(-10px) rotate(-1deg)}40%{transform:translateX(10px) rotate(1deg)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+.anim .mis-card.r{animation:kt2-pop .6s both}
+.anim .mis-card .h i{display:inline-block;animation:kt2-pop .5s .3s both}
+
+/* 인물 장면: 말풍선 */
+.kid{position:relative}
+.kid .bub{position:relative;background:var(--white);border:3px solid var(--acc);border-radius:22px;padding:14px 22px;font-size:28px;font-weight:700;line-height:1.35;max-width:380px;margin-bottom:12px;text-wrap:balance}
+.kid .bub::after{content:"";position:absolute;left:50%;bottom:-16px;width:26px;height:26px;background:var(--white);border-right:3px solid var(--acc);border-bottom:3px solid var(--acc);transform:translateX(-50%) rotate(45deg)}
+.kid.talk{background:transparent;border:0;padding:6px 10px}
+.kid.talk .face{animation:kt2-bob 3s ease-in-out infinite}
+.kid.talk .who{font-size:22px;color:var(--ink-mut);font-weight:700}
+.anim .kid .bub{animation:kt2-pop-in .5s cubic-bezier(.2,.9,.2,1.15) both;transform-origin:50% 100%}
+
+/* 오개념 두 칸(조각) */
+.mis-card{width:600px;border-radius:26px;padding:30px 36px;font-size:34px;line-height:1.5;text-align:left;background:var(--white);border:3px solid var(--line)}
+.mis-card.w{border-color:var(--no);background:var(--no-soft)}
+.mis-card.r{border-color:var(--ok);background:var(--ok-soft)}
+.mis-card .h{display:flex;align-items:center;gap:12px;font-size:24px;font-weight:900;letter-spacing:.06em;margin-bottom:12px}
+.mis-card.w .h{color:var(--no)} .mis-card.r .h{color:var(--ok)}
+.mis-card .h i{font-style:normal;font-size:34px}
+.mis-hint{width:100%;text-align:center;font-size:26px;color:var(--ink-mut)}
+
+/* 정답 축하 */
+.answer.on .box{animation:kt2-flip .6s cubic-bezier(.2,.8,.2,1) both}
+@keyframes kt2-flip{0%{transform:rotateX(90deg);opacity:0}60%{transform:rotateX(-12deg)}100%{transform:none;opacity:1}}
+.options.revealed .opt.ok{animation:kt2-win .7s cubic-bezier(.2,.9,.2,1.1) both}
+@keyframes kt2-win{0%{transform:scale(1)}40%{transform:scale(1.08)}100%{transform:scale(1.02)}}
+.options.revealed .opt.ok .mk{animation:kt2-pop .5s .2s both}
+.pairs.revealed .ar{animation:kt2-pop .45s both}
+.lv-a{animation:kt2-flip .55s both}
+.flip.on .a{animation:kt2-flip .5s both}
+.cz.on{animation:kt2-win .6s both}
+.success{animation:kt2-pop .6s both}
+#fx{position:absolute;inset:0;z-index:6;pointer-events:none}
+
+/* 누르면 크게 보기(TV 강조) */
+.kt2-body .zoomable{cursor:zoom-in;transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s}
+.kt2-body .zoomed{transform:scale(1.22);z-index:3;box-shadow:0 24px 60px rgba(0,0,0,.25);cursor:zoom-out;position:relative}
+
+/* 연출 끔 */
+body.still .kt2-paper *,body.still .kt2-paper{animation:none!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.kt2-paper *{animation:none!important}}

@@ -88,6 +88,12 @@
     const p = /^(https?:|\/)/.test(src) ? src : '../' + src;
     return '<div class="img-frame"><img src="' + esc(p) + '" alt="" loading="lazy" onerror="var p=this.closest(\'.img-frame\');if(p)p.style.display=\'none\'"></div>';
   }
+  function isSpeech(t) { t = String(t || ''); return /["“”「」]/.test(t) || /[!?！？…~]$/.test(t.trim()); }
+  function kidCard(k) {
+    const face = esc(k.face || '🙂'), label = k.label || '';
+    if (isSpeech(label)) { const m = String(label).match(/^\s*([^"“「]{1,8})\s*["“「](.+)["”」]\s*$/); const who = m ? m[1] : ''; const say = m ? m[2] : String(label).replace(/^["“「]|["”」]$/g, ''); return '<div class="kid talk"><div class="bub">' + md(say) + '</div><div class="face">' + face + '</div>' + (who ? '<div class="who">' + md(who) + '</div>' : '') + (k.delta ? '<div class="delta">' + esc(k.delta) + '</div>' : '') + '</div>'; }
+    return '<div class="kid"><div class="face">' + face + '</div><div class="lbl">' + md(label) + '</div>' + (k.delta ? '<div class="delta">' + esc(k.delta) + '</div>' : '') + '</div>';
+  }
   function scenario(sc) { return '<div class="scenario"><div class="ic">' + esc(sc.icon || '💬') + '</div><div>' + md(sc.body || '') + '</div></div>'; }
   function optionBody(o) {
     if (o.emoji && o.count !== undefined) return '<div class="em">' + Array.from({ length: o.count }, () => esc(o.emoji)).join('') + '</div>';
@@ -152,7 +158,7 @@
         push(image(d.img)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>');
         if (d.emojis) push('<div class="emoji-row">' + d.emojis.map(e => '<span>' + esc(e) + '</span>').join('') + '</div>');
         if (d.emoji && d.count !== undefined) push(emojiCount(d.emoji, d.count, true));
-        if (d.kids) push('<div class="scene">' + d.kids.map(k => '<div class="kid"><div class="face">' + esc(k.face || '🙂') + '</div><div class="lbl">' + md(k.label || '') + '</div></div>').join('') + '</div>');
+        if (d.kids) push('<div class="scene">' + d.kids.map(kidCard).join('') + '</div>');
         if (d.scene) push('<div class="center-text">' + md(d.scene) + '</div>');
         if (d.teams) push('<div class="teams">' + d.teams.map(t => '<div class="team"><div class="team-name">' + md(t.name || '') + '</div>' + (t.emoji && t.count !== undefined ? emojiCount(t.emoji, t.count) : '') + '</div>').join('') + '</div>');
         if (d.number_panel) push('<div class="number-panel">' + d.number_panel.map(n => '<span>' + esc(n) + '</span>').join('') + '</div>');
@@ -161,7 +167,7 @@
       }
       case 'concept': {
         push(image(d.img)); if (d.content) push('<div class="big-text">' + md(d.content) + '</div>');
-        if (d.kids_after) push('<div class="scene">' + d.kids_after.map(k => '<div class="kid"><div class="face">' + esc(k.face || '🙂') + '</div><div class="lbl">' + md(k.label || '') + '</div>' + (k.delta ? '<div class="delta">' + esc(k.delta) + '</div>' : '') + '</div>').join('') + '</div>');
+        if (d.kids_after) push('<div class="scene">' + d.kids_after.map(kidCard).join('') + '</div>');
         if (d.items) push(tfRow(d.items));
         if (d.bidirect) push('<div class="bidirect">' + d.bidirect.map(l => l === '=' ? '<span class="eq">=</span>' : md(l)).join('<br>') + '</div>');
         if (d.examples) push('<div class="examples">' + d.examples.map(e => '<div class="ex">' + md(lbl(e)) + '</div>').join('') + '</div>');
@@ -250,7 +256,7 @@
         if (d.sub) { push('<div class="small-text">' + md(d.sub) + '</div>'); sub = ''; }
         break;
       }
-      case 'misconception': push('<div class="mis"><div class="w"><div class="h"><i>✗</i>' + esc(d.label || '이렇게 생각하기 쉬워요') + '</div>' + md(d.wrong) + '</div><div class="r"><div class="h"><i>✓</i>바르게 알기</div>' + md(d.right) + '</div>' + (d.hint ? '<div class="mis-hint">' + md(d.hint) + '</div>' : '') + '</div>'); break;
+      case 'misconception': cls = 'row'; push('<div class="mis-card w"><div class="h"><i>✗</i>' + esc(d.label || '이렇게 생각하기 쉬워요') + '</div>' + md(d.wrong) + '</div>'); push('<div class="mis-card r"><div class="h"><i>✓</i>바르게 알기</div>' + md(d.right) + '</div>'); if (d.hint) push('<div class="mis-hint">' + md(d.hint) + '</div>'); break;
       case 'number_line_demo': push(numLine(d.nl.range, d.nl.anchor)); if (d.caption) push('<div class="center-text">' + md(d.caption) + '</div>'); break;
       case 'leveled_problem': {
         const levels = d.levels || {}; const keys = Object.keys(levels); const cur = levels[S.level] ? S.level : (keys[0] || ''); const lv = levels[cur] || {};
@@ -372,6 +378,7 @@
     const seen = new Set();
     res.forEach(r => { if (!r || !r.id || seen.has(r.id)) return; seen.add(r.id); const i = self.extras.findIndex(e => e.id === r.id); if (i >= 0) self.extras[i] = Object.assign({}, self.extras[i], r); else self.extras.push(Object.assign({}, r)); const fits = Array.isArray(r.fit_slides) ? r.fit_slides : []; if (!fits.length) return; self.slides.forEach(s => { s.suggested_extras = (s.suggested_extras || []).slice(); if ((fits.includes(s.id) || fits.includes(s.block)) && !s.suggested_extras.includes(r.id)) s.suggested_extras.push(r.id); }); });
     self.IS = {}; self.rev = {}; self.frag = {}; self.idx = 0; self.allAtOnce = !!lsGet('kt2_all_at_once', false);
+    self.still = !!lsGet('kt2_still', false); self.sound = lsGet('kt2_sound', true) !== false;
     self.classNames = lsGet('kt2_names', []);
     self.started = Date.now(); self.stageEnter = {}; self.penStore = {};
     const hash = parseInt((global.location.hash || '').replace('#', ''), 10);
@@ -382,8 +389,8 @@
   Stage.prototype.cur = function () { return this.slides[this.idx]; };
   Stage.prototype.build = function () {
     const st = doc.getElementById('kt2-stage');
-    st.innerHTML = '<div class="kt2-canvas" id="kt2-canvas"><div class="kt2-paper" id="kt2-paper"></div><canvas id="pen" width="' + W + '" height="' + H + '"></canvas></div>';
-    doc.body.className = 'subj-' + this.s;
+    st.innerHTML = '<div class="kt2-canvas" id="kt2-canvas"><div class="kt2-paper" id="kt2-paper"></div><canvas id="fx" width="' + W + '" height="' + H + '"></canvas><canvas id="pen" width="' + W + '" height="' + H + '"></canvas></div>';
+    doc.body.className = 'subj-' + this.s + (this.still ? ' still' : '');
     const t = doc.getElementById('hud-top'); if (t) t.querySelector('.ttl').textContent = (this.g + '학년 ' + (SUBJ_KO[this.s] || this.s) + ' · ' + (this.unitTitle ? this.unitTitle + ' · ' : '') + (this.meta.subtitle || this.meta.title || this.key));
     doc.title = (this.meta.subtitle || this.meta.title || this.key) + ' — 케이티처 2세대';
     this.buildHud();
@@ -423,6 +430,7 @@
       const km = paper.querySelector('[data-klab]');
       if (km) { const tool = km.getAttribute('data-klab'); let cfg = {}; try { cfg = JSON.parse(km.getAttribute('data-config') || '{}'); } catch (e) { } if (global.KLab) this.klabCleanup = global.KLab.mount(km, tool, cfg); else km.innerHTML = '<div class="legacy"><div class="t">🧊 케이랩 ' + esc(tool) + '</div><div class="d">교구 엔진이 이 페이지에 실리지 않았어요.</div></div>'; }
     }
+    this.decorate(paper, r);
     this.paintPen(); this.paintHud(); this.paintTnote();
     { const b = doc.querySelector('#hud button[data-h="tnote"]'); if (b) b.textContent = (((s.data || {}).tnote || s.tnote || r.teacherNote) ? '👩‍🏫•' : '👩‍🏫'); }
     try { global.history.replaceState(null, '', '#' + n); } catch (e) { }
@@ -441,7 +449,7 @@
     if (this.fragMax && this.frag[this.cur().id] < this.fragMax) {
       this.frag[this.cur().id]++;
       const kids = Array.from(doc.querySelector('#kt2-paper .kt2-body').children);
-      const el = kids[this.frag[this.cur().id]]; if (el) { el.classList.remove('hidden'); el.classList.add('just'); }
+      const el = kids[this.frag[this.cur().id]]; if (el) { el.classList.remove('hidden'); el.classList.add('just'); el.classList.add('anim'); this.pop(); }
       this.paintHud(); return;
     }
     if (this.idx < this.slides.length - 1) this.go(this.idx + 1, 1);
@@ -457,6 +465,7 @@
       if (['review', 'exit_ticket', 'card_quiz'].includes(s.block)) { const n = ((s.data || {}).items || (s.data || {}).cards || []).length; S.flipped = Array.from({ length: n }, () => this.rev[id]); }
       if (s.block === 'chosung_quiz') S.on = this.rev[id];
       this.paint(0, true);
+      if (this.rev[id]) this.celebrate();
       this.toast(this.rev[id] ? '정답을 열었어요' : '정답을 숨겼어요');
     }
   };
@@ -465,12 +474,12 @@
     const a = btn.getAttribute('data-act'); const s = this.cur(); const S = this.state(s.id); const d = s.data || {}; const i = +btn.getAttribute('data-i');
     const rp = () => this.paint(0, true);
     switch (a) {
-      case 'flip': S.flipped = S.flipped || []; S.flipped[i] = !S.flipped[i]; rp(); break;
+      case 'flip': S.flipped = S.flipped || []; S.flipped[i] = !S.flipped[i]; rp(); if (S.flipped[i]) this.pop(); break;
       case 'light': S.lights = S.lights || []; S.lights[i] = (S.lights[i] || 0) + 1; rp(); break;
       case 'star': S.stars = S.stars || {}; { const k = +btn.getAttribute('data-k') + 1; S.stars[i] = S.stars[i] === k ? 0 : k; } rp(); break;
-      case 'reveal': this.rev[s.id] = !this.rev[s.id]; rp(); break;
+      case 'reveal': this.rev[s.id] = !this.rev[s.id]; rp(); if (this.rev[s.id]) this.celebrate(); break;
       case 'lv': S.level = btn.getAttribute('data-k'); this.rev[s.id] = false; rp(); break;
-      case 'cz-reveal': S.on = !S.on; rp(); break;
+      case 'cz-reveal': S.on = !S.on; rp(); if (S.on) this.celebrate(); break;
       case 'cz-prev': S.idx = Math.max(0, (S.idx || 0) - 1); S.on = false; rp(); break;
       case 'cz-next': S.idx = Math.min((d.items || []).length - 1, (S.idx || 0) + 1); S.on = false; rp(); break;
       case 'pr-next': { const count = +btn.getAttribute('data-count'); S.picked = S.picked || []; const pool = []; for (let k = 0; k < count; k++) if (!S.picked.includes(k)) pool.push(k); if (!pool.length) break; const pick = pool[Math.floor(Math.random() * pool.length)]; S.picked.push(pick); S.current = pick; rp(); this.chime(1); break; }
@@ -488,10 +497,37 @@
       case 'nl-plus': S.position = Math.min(+btn.getAttribute('data-max'), (S.position !== undefined ? S.position : (d.start || 5)) + 1); rp(); break;
       case 'nl-minus': S.position = Math.max(+btn.getAttribute('data-min'), (S.position !== undefined ? S.position : (d.start || 5)) - 1); rp(); break;
       case 'nl-reset': S.position = +btn.getAttribute('data-init'); rp(); break;
-      case 'ca': { S.order = S.order || (d.cards || [3, 1, 5, 2, 4]).slice(); if (S.sel === undefined || S.sel === null) S.sel = i; else if (S.sel === i) S.sel = null; else { const t = S.order[S.sel]; S.order[S.sel] = S.order[i]; S.order[i] = t; S.sel = null; } rp(); break; }
+      case 'ca': { S.order = S.order || (d.cards || [3, 1, 5, 2, 4]).slice(); if (S.sel === undefined || S.sel === null) S.sel = i; else if (S.sel === i) S.sel = null; else { const t = S.order[S.sel]; S.order[S.sel] = S.order[i]; S.order[i] = t; S.sel = null; } rp(); { const target = d.target || (d.cards || [3, 1, 5, 2, 4]).slice().sort((a, b) => a - b); if (JSON.stringify(S.order) === JSON.stringify(target)) this.celebrate(); } break; }
       case 'ca-reset': { const init = (d.cards || [3, 1, 5, 2, 4]).slice(); for (let k = init.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [init[k], init[j]] = [init[j], init[k]]; } S.order = init; S.sel = null; rp(); break; }
       case 'timer': this.timerStart((+btn.getAttribute('data-min') || 3) * 60); break;
     }
+  };
+
+  // ───────────────────────── 연출·소리·확대 ─────────────────────────
+  const STAGGER = ['svg.tenframe .cell.on', '.emoji-row span', '.stack .cube', '.seq > *', '.opt', '.point', '.steps li', '.examples .ex', '.ordinals .ord', '.tf-row .tf-item', '.tf-strip .tfs', '.flipgrid .flip', '.cq-grid .cq', '.scene .kid', '.arrow-flow > *', '.pairs > *', '.areas div', '.sa .row', '.signal .light', '.teams .team', '.trace-row .trace', '.num-table tr', '.num-cards span', '.number-panel span', '.numline .dot', '.dots i', '.i-tf div'];
+  const ZOOMABLE = '.tf-item, .opt, .img-frame, .scenario, .kid, .mis-card, .point, .bidirect, .num-table, .flip, .ex, .cz, .big-q, .steps li, .offline, .pr-card';
+  Stage.prototype.decorate = function (paper, r) {
+    // 목록 부품에 순번(--i) — 등장 연출이 차례로 흐르게
+    STAGGER.forEach(sel => { const groups = new Map(); paper.querySelectorAll(sel).forEach(el => { const p = el.parentNode; const n = groups.get(p) || 0; el.style.setProperty('--i', n); groups.set(p, n + 1); }); });
+    // 큰 목록은 간격을 줄인다
+    paper.querySelectorAll('.emoji-row, .seq, .tf-row, .options, .points, .steps, .flipgrid, .cq-grid, .num-table tbody, .dots, .numline').forEach(g => { const n = g.children.length; if (n > 12) g.style.setProperty('--stg', '30ms'); else if (n > 6) g.style.setProperty('--stg', '50ms'); });
+    // 보이는 것만 연출 시작(숨은 조각은 공개될 때 next() 가 건다)
+    if (r.cover) paper.classList.add('anim');
+    else { const t = paper.querySelector('.kt2-title'); if (t) t.classList.add('anim'); Array.from(paper.querySelector('.kt2-body').children).forEach(el => { if (!el.classList.contains('hidden')) el.classList.add('anim'); }); }
+    paper.querySelectorAll(ZOOMABLE).forEach(el => el.classList.add('zoomable'));
+  };
+  Stage.prototype.toggleZoom = function (el) { const on = el.classList.contains('zoomed'); doc.querySelectorAll('#kt2-paper .zoomed').forEach(x => x.classList.remove('zoomed')); if (!on) { el.classList.add('zoomed'); this.pop(); } };
+  Stage.prototype.tone = function (f, dur, vol, type) { if (!this.sound) return; try { const AC = global.AudioContext || global.webkitAudioContext; if (!AC) return; this.ac = this.ac || new AC(); const ac = this.ac; const o = ac.createOscillator(), g = ac.createGain(); o.type = type || 'sine'; o.frequency.value = f; g.gain.value = 0.0001; o.connect(g); g.connect(ac.destination); const t0 = ac.currentTime; o.start(t0); g.gain.exponentialRampToValueAtTime(vol || 0.08, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + (dur || 0.12)); o.stop(t0 + (dur || 0.12) + 0.02); } catch (e) { } };
+  Stage.prototype.pop = function () { this.tone(720, 0.09, 0.05, 'triangle'); };
+  Stage.prototype.celebrate = function (x, y) {
+    if (this.sound) { this.tone(660, 0.14, 0.07); setTimeout(() => this.tone(880, 0.14, 0.07), 110); setTimeout(() => this.tone(1320, 0.22, 0.07), 220); }
+    if (this.still) return;
+    const c = doc.getElementById('fx'); if (!c || !c.getContext) return; const ctx = c.getContext('2d'); if (!ctx) return;
+    const colors = ['#FF8A3D', '#4F8DF7', '#12B886', '#7C5CFF', '#F5B942', '#F05C8A'];
+    const ps = Array.from({ length: 90 }, () => ({ x: x !== undefined ? x : W / 2, y: y !== undefined ? y : H * 0.45, vx: (Math.random() - 0.5) * 28, vy: -Math.random() * 22 - 6, r: 6 + Math.random() * 8, c: colors[Math.floor(Math.random() * colors.length)], a: Math.random() * Math.PI, w: Math.random() * 0.3 - 0.15, life: 70 + Math.random() * 30 }));
+    let t = 0; const raf = global.requestAnimationFrame || (fn => setTimeout(fn, 16));
+    const step = () => { ctx.clearRect(0, 0, W, H); let alive = 0; ps.forEach(p => { if (t > p.life) return; alive++; p.vy += 0.55; p.x += p.vx; p.y += p.vy; p.vx *= 0.985; p.a += p.w; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.globalAlpha = Math.max(0, 1 - t / p.life); ctx.fillStyle = p.c; ctx.fillRect(-p.r / 2, -p.r / 3, p.r, p.r / 1.5); ctx.restore(); }); t++; if (alive && t < 130) raf(step); else ctx.clearRect(0, 0, W, H); };
+    raf(step);
   };
 
   // ───────────────────────── HUD ─────────────────────────
@@ -502,7 +538,7 @@
       + '<span class="stg" id="hud-stg"></span><span class="clock" id="hud-clock" title="수업 경과 시간 · 누르면 처음부터">0:00</span><span class="sep"></span>'
       + '<button data-h="answer" title="정답 공개 / 조각 모두 보이기 (A)">✅ 정답</button><button data-h="timer" title="타이머 (T)">⏱</button><button data-h="pick" title="뽑기 (D)">🎲</button><button data-h="score" title="점수판 (K)">🏆</button><span class="sep"></span>'
       + '<button data-h="pen" title="펜 (P)">✏️</button><button data-h="spot" title="스포트라이트 (S)">🔦</button><button data-h="black" title="검은 화면 (B)">🌑</button><span class="sep"></span>'
-      + '<button data-h="tnote" title="교사 발문 (N)">👩‍🏫</button><button data-h="res" title="자료 (R)">📎</button><button data-h="allat" title="조각 순차 공개 끄기/켜기 (1)">' + (this.allAtOnce ? '▤ 한번에' : '▥ 차례로') + '</button><span class="sep"></span>'
+      + '<button data-h="tnote" title="교사 발문 (N)">👩‍🏫</button><button data-h="res" title="자료 (R)">📎</button><button data-h="allat" title="조각 순차 공개 끄기/켜기 (1)">' + (this.allAtOnce ? '▤ 한번에' : '▥ 차례로') + '</button><button data-h="still" title="움직임·연출 끄기/켜기 (0)">' + (this.still ? '🎬 연출 꺼짐' : '🎬') + '</button><button data-h="sound" title="효과음 (M)">' + (this.sound ? '🔊' : '🔇') + '</button><span class="sep"></span>'
       + '<button data-h="full" title="전체 화면 (F)">⛶</button><button data-h="help" title="단축키 (?)">?</button>';
     const self = this;
     hud.addEventListener('click', e => { const b = e.target.closest('button[data-h]'); if (b) self.hudAct(b.getAttribute('data-h'), b); });
@@ -533,6 +569,8 @@
       case 'tnote': this.setTnote(!this.tnoteOn); break; case 'res': this.openRes(); break;
       case 'allat': this.allAtOnce = !this.allAtOnce; lsSet('kt2_all_at_once', this.allAtOnce); btn.textContent = this.allAtOnce ? '▤ 한번에' : '▥ 차례로'; this.paint(0, true); this.toast(this.allAtOnce ? '조각을 한 번에 보여요' : '조각을 차례로 보여요'); break;
       case 'full': this.fullscreen(); break; case 'help': this.openOv('ov-help'); break;
+      case 'still': this.still = !this.still; lsSet('kt2_still', this.still); doc.body.classList.toggle('still', this.still); btn.textContent = this.still ? '🎬 연출 꺼짐' : '🎬'; this.toast(this.still ? '움직임을 껐어요' : '움직임을 켰어요'); break;
+      case 'sound': this.sound = !this.sound; lsSet('kt2_sound', this.sound); btn.textContent = this.sound ? '🔊' : '🔇'; if (this.sound) this.pop(); break;
     }
   };
   Stage.prototype.toast = function (m) { const t = doc.getElementById('toast'); if (!t) return; t.textContent = m; t.classList.add('on'); clearTimeout(this._tt); this._tt = setTimeout(() => t.classList.remove('on'), 1600); };
@@ -687,7 +725,12 @@
   Stage.prototype.bindGlobal = function () {
     const self = this;
     global.addEventListener('resize', () => self.fit());
-    doc.getElementById('kt2-paper').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b) { self.act(b); return; } if (!self.pen && !e.target.closest('button, a, input, textarea, .klab-frame')) { const r = doc.getElementById('kt2-canvas').getBoundingClientRect(); if (e.clientX - r.left < r.width * 0.15) self.prev(); else self.next(); } });
+    doc.getElementById('kt2-paper').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b) { self.act(b); return; } if (self._lpDone) { self._lpDone = false; return; } if (!self.pen && !e.target.closest('button, a, input, textarea, .klab-frame')) { const zd = doc.querySelector('#kt2-paper .zoomed'); if (zd) { zd.classList.remove('zoomed'); return; } const r = doc.getElementById('kt2-canvas').getBoundingClientRect(); if (e.clientX - r.left < r.width * 0.15) self.prev(); else self.next(); } });
+    // 우클릭 / 길게 누르기 = 그 부품 크게 보기
+    const paperEl = doc.getElementById('kt2-paper');
+    paperEl.addEventListener('contextmenu', e => { const z = e.target.closest('.zoomable'); if (z) { e.preventDefault(); self.toggleZoom(z); } });
+    let lp; paperEl.addEventListener('touchstart', e => { const z = e.target.closest('.zoomable'); if (!z) return; lp = setTimeout(() => { self.toggleZoom(z); self._lpDone = true; }, 520); }, { passive: true });
+    paperEl.addEventListener('touchend', () => clearTimeout(lp)); paperEl.addEventListener('touchmove', () => clearTimeout(lp), { passive: true });
     doc.querySelectorAll('.ov').forEach(o => o.addEventListener('click', e => { if (e.target === o && o.id !== 'ov-res') self.closeOv(); if (e.target === o && o.id === 'ov-res') self.closeOv(); }));
     doc.addEventListener('keydown', e => {
       if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
@@ -702,10 +745,12 @@
       else if (k === 'd' || k === 'D') self.openPick(); else if (k === 'k' || k === 'K') self.openScore(); else if (k === 'n' || k === 'N') self.setTnote(!self.tnoteOn);
       else if (k === 'r' || k === 'R') self.openRes(); else if (k === 'g' || k === 'G') self.openToc(); else if (k === '?') self.openOv('ov-help');
       else if (k === '1') self.hudAct('allat', doc.querySelector('#hud button[data-h="allat"]'));
+      else if (k === '0') self.hudAct('still', doc.querySelector('#hud button[data-h="still"]'));
+      else if (k === 'm' || k === 'M') self.hudAct('sound', doc.querySelector('#hud button[data-h="sound"]'));
       else if (/^[2-9]$/.test(k)) { const st = STAGES[+k - 2]; if (st) { const i = self.slides.findIndex(x => x.stage === st); if (i >= 0) self.go(i, i > self.idx ? 1 : -1); } }
     });
     const help = doc.querySelector('#ov-help .keys');
-    if (help) help.innerHTML = [['→ 스페이스', '다음 조각 / 다음 슬라이드'], ['←', '이전 슬라이드'], ['A', '정답 공개 · 조각 모두'], ['1', '조각 차례로 ↔ 한번에'], ['2~6', '도입·전개·기본·응용·정리로 점프'], ['G', '목차 (건너뛸 슬라이드 체크)'], ['T', '타이머'], ['D', '뽑기'], ['K', '점수판'], ['P', '펜'], ['S', '스포트라이트'], ['B', '검은 화면'], ['N', '교사 발문 띠'], ['R', '자료 서랍'], ['F', '전체 화면'], ['Esc', '닫기 / 도구 끄기'], ['화면 클릭', '오른쪽 85% = 다음 · 왼쪽 15% = 이전']].map(x => '<div><span>' + x[1] + '</span><kbd>' + x[0] + '</kbd></div>').join('');
+    if (help) help.innerHTML = [['→ 스페이스', '다음 조각 / 다음 슬라이드'], ['←', '이전 슬라이드'], ['A', '정답 공개 · 조각 모두'], ['1', '조각 차례로 ↔ 한번에'], ['0', '움직임·연출 끄기/켜기'], ['M', '효과음'], ['우클릭 · 길게 누르기', '그 부품 크게 보기'], ['2~6', '도입·전개·기본·응용·정리로 점프'], ['G', '목차 (건너뛸 슬라이드 체크)'], ['T', '타이머'], ['D', '뽑기'], ['K', '점수판'], ['P', '펜'], ['S', '스포트라이트'], ['B', '검은 화면'], ['N', '교사 발문 띠'], ['R', '자료 서랍'], ['F', '전체 화면'], ['Esc', '닫기 / 도구 끄기'], ['화면 클릭', '오른쪽 85% = 다음 · 왼쪽 15% = 이전']].map(x => '<div><span>' + x[1] + '</span><kbd>' + x[0] + '</kbd></div>').join('');
     const hx = doc.querySelector('#ov-help [data-x]'); if (hx) hx.addEventListener('click', () => self.closeOv());
   };
 
