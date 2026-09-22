@@ -93,7 +93,7 @@
     const p = /^(https?:|\/)/.test(src) ? src : '../' + src;
     return '<div class="img-frame" data-title="' + esc(title || '') + '"><img src="' + esc(p) + '" alt="" loading="lazy" onerror="if(window.KT2&&KT2.imgFallback)KT2.imgFallback(this);else{var p=this.closest(\'.img-frame\');if(p)p.style.display=\'none\'}"></div>';
   }
-  function imgFallback(img) { const f = img.closest('.img-frame'); if (!f) return; const A = global.KT2_ART; if (!A) { f.style.display = 'none'; return; } f.classList.add('illus'); f.innerHTML = A.backdrop(A.kindOf(f.getAttribute('data-title'))); }
+  function imgFallback(img) { const f = img.closest('.img-frame'); if (!f) return; const A = global.KT2_ART; const body = f.closest('.kt2-body'); if (!A || (body && body.querySelector('.picture'))) { f.style.display = 'none'; f.classList.add('gone'); return; } f.classList.add('illus'); f.innerHTML = A.backdrop(A.kindOf(f.getAttribute('data-title'))); }
   // 인물 장면 = 그림책 무대 위에 선다
   function picture(sceneHtml, hint) { const A = global.KT2_ART; if (!A) return sceneHtml; return '<div class="picture ' + A.kindOf(hint) + '">' + A.backdrop(A.kindOf(hint)) + sceneHtml + '</div>'; }
   function isSpeech(t) { t = String(t || ''); return /["“”「」]/.test(t) || /[!?！？…~]$/.test(t.trim()); }
@@ -485,7 +485,7 @@
     const c = doc.getElementById('kt2-canvas'); if (!c) return;
     const vw = global.innerWidth, vh = global.innerHeight;
     const k = Math.min((vw - 24) / W, (vh - 24) / H);
-    c.style.transform = 'scale(' + k + ')'; this.scale = k;
+    c.style.transform = 'translate(-50%,-50%) scale(' + k + ')'; this.scale = k;
   };
   // 슬라이드 그리기
   Stage.prototype.paint = function (dir, keepFrag) {
@@ -517,6 +517,7 @@
       if (km) { const tool = km.getAttribute('data-klab'); let cfg = {}; try { cfg = JSON.parse(km.getAttribute('data-config') || '{}'); } catch (e) { } if (global.KLab) this.klabCleanup = global.KLab.mount(km, tool, cfg); else km.innerHTML = '<div class="legacy"><div class="t">🧊 케이랩 ' + esc(tool) + '</div><div class="d">교구 엔진이 이 페이지에 실리지 않았어요.</div></div>'; }
     }
     this.decorate(paper, r); this.applyOverrides(); this.fitBody();
+    { const self = this; paper.querySelectorAll('.img-frame img').forEach(im => { im.addEventListener('load', () => self.fitBody()); im.addEventListener('error', () => setTimeout(() => self.fitBody(), 0)); }); }
     this.paintPen(); this.paintHud(); this.paintTnote();
     { const b = doc.querySelector('#hud button[data-h="tnote"]'); if (b) b.textContent = (((s.data || {}).tnote || s.tnote || r.teacherNote) ? '👩‍🏫•' : '👩‍🏫'); }
     try { global.history.replaceState(null, '', '#' + n); } catch (e) { }
