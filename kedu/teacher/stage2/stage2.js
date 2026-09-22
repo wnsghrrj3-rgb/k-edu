@@ -27,7 +27,8 @@
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function md(t) {
     if (t == null || t === '') return '';
-    return esc(t).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    // 데이터가 쓰는 태그는 <br>·<b> 둘뿐(전수 497·12) — 그 둘만 되살리고 나머지는 글자로
+    return esc(t).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/&lt;br\s*\/?&gt;/gi, '<br>').replace(/&lt;b&gt;/gi, '<strong>').replace(/&lt;\/b&gt;/gi, '</strong>').replace(/\n/g, '<br>');
   }
   function hashSeed(str) { let h = 0; for (let i = 0; i < (str || '').length; i++) { h = ((h << 5) - h) + str.charCodeAt(i); h |= 0; } return Math.abs(h) || 1; }
   function seededShuffle(n, seed) { let s = seed || 1; const a = Array.from({ length: n }, (_, i) => i); for (let i = n - 1; i > 0; i--) { s = (s * 9301 + 49297) % 233280; const j = Math.floor((s / 233280) * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
