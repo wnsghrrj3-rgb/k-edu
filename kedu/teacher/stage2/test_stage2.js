@@ -1,0 +1,104 @@
+/* stage2/test_stage2.js — 2세대 무대 전수 하니스.
+   ① 렌더 전수: 모든 데이터 파일의 모든 슬라이드를 renderSlide 로 그린다(정답 닫힘·열림 두 번). 예외 0 · 본문 빈 슬라이드 0.
+   ② 무대 실주행: 과목마다 차시 몇 개를 stage.html 에 실제로 부팅해 끝까지 넘기고, 슬라이드마다 data-act 버튼을 전부 눌러 보고,
+      정답 공개·목차·자료·타이머·뽑기·점수판·펜·스포트라이트·검은 화면·발문을 연다. 예외 0.
+   실행: node kedu/teacher/stage2/test_stage2.js   (jsdom 필요: npm i jsdom)                           */
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+const { JSDOM } = require('jsdom');
+
+const ROOT = path.resolve(__dirname, '..');
+const DATA = path.join(ROOT, 'data');
+let pass = 0, fail = 0; const fails = [];
+function ok(cond, msg) { if (cond) pass++; else { fail++; fails.push(msg); } }
+
+// ── 공용: 데이터 파일 로드 ──
+function loadLessons(file) {
+  const L = {}; const ctx = { window: { LESSONS: L }, LESSONS: L, document: { getElementById: () => null } }; ctx.window.window = ctx.window;
+  vm.createContext(ctx); vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file }); return ctx.window.LESSONS || {};
+}
+// ── ① 렌더 전수 ──
+const dom0 = new JSDOM('<!doctype html><html><body></body></html>', { runScripts: 'outside-only' });
+const g0 = dom0.window; g0.KT2_NO_BOOT = true;
+vm.runInContext(fs.readFileSync(path.join(__dirname, 'stage2.js'), 'utf8'), dom0.getInternalVMContext(), { filename: 'stage2.js' });
+const KT2 = g0.KT2;
+const files = fs.readdirSync(DATA).filter(f => /^g\d_[a-z]+_u\d+\.js$/.test(f)).sort();
+let nSlides = 0, nLessons = 0; const blockSeen = {}; const fragBlocks = {}; let emptyBodies = [];
+files.forEach(f => {
+  const L = loadLessons(path.join(DATA, f));
+  Object.keys(L).forEach(k => {
+    const les = L[k]; nLessons++;
+    (les.slides || []).forEach(s => {
+      nSlides++; blockSeen[s.block] = (blockSeen[s.block] || 0) + 1;
+      [false, true].forEach(rev => {
+        try {
+          const r = KT2.renderSlide(s, { revealed: rev, state: {}, meta: les.meta || {}, unitTitle: 'U', classNames: [] });
+          ok(typeof r.body === 'string', f + ' ' + k + ' ' + s.id + ' body string');
+          if (!r.cover && !r.body.trim()) emptyBodies.push(f + ' ' + k + ' ' + s.id + ' ' + s.block);
+          if (rev === false && r.frag) fragBlocks[s.block] = (fragBlocks[s.block] || 0) + 1;
+        } catch (e) { fail++; fails.push(f + ' ' + k + ' ' + s.id + ' (' + s.block + ') 예외: ' + e.message); }
+      });
+    });
+  });
+});
+ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + ': ' + emptyBodies.slice(0, 8).join(' | '));
+console.log('① 렌더 전수 — 파일', files.length, '· 차시', nLessons, '· 슬라이드', nSlides, '× 2(정답 닫힘·열림)');
+console.log('   블록 종류', Object.keys(blockSeen).length, '· 조각 공개 블록', Object.keys(fragBlocks).length, '· 본문 빈 슬라이드', emptyBodies.length);
+
+// ── ② 무대 실주행 ──
+const manifest = (() => { const c = { window: {} }; vm.createContext(c); vm.runInContext(fs.readFileSync(path.join(__dirname, 'manifest.js'), 'utf8'), c); return c.window.KT2_MANIFEST; })();
+ok(manifest && manifest.lessons === nLessons, 'manifest 차시 수 = 데이터 차시 수 (' + (manifest && manifest.lessons) + ' vs ' + nLessons + ')');
+const html = fs.readFileSync(path.join(__dirname, 'stage.html'), 'utf8');
+function runStage(sj, un, l) {
+  const url = 'https://keduclass.com/kedu/teacher/stage2/stage.html?g=' + sj.grade + '&s=' + sj.subject + '&u=' + un.unit + '&l=' + l.key;
+  const dom = new JSDOM(html.replace(/<script src="[^"]+"><\/script>/g, ''), { url, pretendToBeVisual: true, runScripts: 'outside-only' });
+  const w = dom.window; const d = w.document; w.KT2_NO_BOOT = true; w.setInterval = () => 0;
+  w.HTMLCanvasElement.prototype.getContext = () => null; w.HTMLMediaElement.prototype.play = () => Promise.resolve();
+  const ctx = dom.getInternalVMContext();
+  const run = (p) => vm.runInContext(fs.readFileSync(p, 'utf8'), ctx, { filename: path.basename(p) });
+  w.LESSONS = {}; run(path.join(__dirname, 'manifest.js')); run(path.join(DATA, path.basename(un.file))); if (un.resources) run(path.join(ROOT, un.resources));
+  run(path.join(ROOT, 'engine/klab.js')); run(path.join(ROOT, 'engine/tools/shape3d.js')); run(path.join(ROOT, 'engine/tools/place_value.js'));
+  run(path.join(__dirname, 'stage2.js'));
+  const tag = sj.slug + '/' + l.key;
+  let st;
+  try { st = new w.KT2.Stage({ params: { g: String(sj.grade), s: sj.subject, u: String(un.unit), l: l.key }, lessons: w.LESSONS, unitTitle: un.title }); } catch (e) { fail++; fails.push(tag + ' 부팅 예외: ' + e.message); return; }
+  ok(st.slides.length === l.slides, tag + ' 슬라이드 수 ' + st.slides.length + ' = ' + l.slides);
+  ok(d.querySelector('#kt2-paper').innerHTML.length > 100, tag + ' 첫 슬라이드 그림');
+  ok(d.querySelector('#hud button[data-h="next"]'), tag + ' HUD 생성');
+  let guard = 0, acts = 0, frags = 0;
+  while (st.idx < st.slides.length - 1 && guard++ < 2000) {
+    const before = st.idx;
+    // 슬라이드 안 버튼 전부 눌러 보기(정답·조작)
+    const paper = d.querySelector('#kt2-paper');
+    Array.from(paper.querySelectorAll('[data-act]')).slice(0, 40).forEach(b => { try { st.act(b); acts++; } catch (e) { fail++; fails.push(tag + ' #' + (st.idx + 1) + ' act ' + b.getAttribute('data-act') + ' 예외: ' + e.message); } });
+    if (st.idx % 2 === 0) try { st.revealAll(); st.revealAll(); } catch (e) { fail++; fails.push(tag + ' #' + (st.idx + 1) + ' revealAll 예외: ' + e.message); }
+    try { st.next(); } catch (e) { fail++; fails.push(tag + ' #' + (st.idx + 1) + ' next 예외: ' + e.message); break; }
+    if (st.idx === before) frags++;
+  }
+  ok(st.idx === st.slides.length - 1, tag + ' 끝까지 넘김 (' + (st.idx + 1) + '/' + st.slides.length + ')');
+  // 도구
+  ['openToc', 'openRes', 'openTimer', 'openPick', 'openScore'].forEach(fn => { try { st[fn](); st.closeOv(); } catch (e) { fail++; fails.push(tag + ' ' + fn + ' 예외: ' + e.message); } });
+  try { st.setPen(true); st.setPen(false); st.setSpot(true); st.setSpot(false); st.setBlack(true); st.setBlack(false); st.setTnote(true); st.setTnote(false); st.timerStart(60); st.timerTick(); st.timerPause(); st.prev(); st.go(0, -1); } catch (e) { fail++; fails.push(tag + ' 도구 예외: ' + e.message); }
+  // 자료 열기(영상 → iframe)
+  const vid = st.extras.find(e => e.type === 'video' && (e.video_id || /v=/.test(e.url || '')));
+  if (vid) { try { st.openExtra(vid.id); ok(!!d.querySelector('#ov-media iframe'), tag + ' 영상 오버레이 iframe'); st.closeOv(); } catch (e) { fail++; fails.push(tag + ' openExtra 예외: ' + e.message); } }
+  // 건너뛰기
+  if (st.slides.length > 3) { st.slides[1].included = false; st.go(0, -1); st.fragMax = 0; st.next(); ok(st.idx === 2, tag + ' 건너뛰기(2번 제외 → 3번으로)'); st.slides[1].included = true; }
+  ok(true, tag + ' 실주행 ' + acts + ' 조작 · ' + frags + ' 조각');
+  w.close();
+  return { acts, frags };
+}
+let ran = 0, actsAll = 0, fragsAll = 0;
+manifest.subjects.forEach(sj => {
+  // 과목마다: 각 단원의 첫 차시 + 조작 많은 차시 하나
+  sj.units.forEach(un => {
+    const picks = [un.lessons[0]];
+    const inter = un.lessons.slice().sort((a, b) => b.interactive - a.interactive)[0]; if (inter && inter !== picks[0]) picks.push(inter);
+    picks.forEach(l => { const r = runStage(sj, un, l); if (r) { ran++; actsAll += r.acts; fragsAll += r.frags; } });
+  });
+});
+console.log('② 무대 실주행 —', ran, '차시 부팅 · 슬라이드 안 조작', actsAll, '회 · 조각 공개', fragsAll, '회');
+console.log('결과: PASS', pass, '· FAIL', fail);
+if (fail) { console.log(fails.slice(0, 40).join('\n')); process.exit(1); }

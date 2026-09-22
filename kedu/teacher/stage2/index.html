@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>케이티처 2세대 — 차시 목록</title>
+<script src="/kedu_gate.js"></script>
+<script src="/kedu_teacher_gate.js"></script>
+<link rel="stylesheet" href="stage2.css">
+<style>
+body{overflow:auto}
+.home{max-width:1180px;margin:0 auto;padding:40px 28px 120px;color:#e8eef5}
+.hero{display:flex;align-items:flex-end;gap:20px;margin-bottom:26px;flex-wrap:wrap}
+.hero h1{font-family:var(--display);font-weight:700;font-size:38px;margin:0;line-height:1.1}
+.hero h1 small{display:block;font-family:var(--body);font-weight:600;font-size:14px;color:#8fa3b8;letter-spacing:.12em;margin-bottom:8px}
+.hero .sp{flex:1}
+.hero .stat{font-size:13px;color:#8fa3b8;text-align:right;line-height:1.6}
+.hero .stat b{color:#fff;font-size:18px;font-family:var(--display)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.tabs button{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#c7d3e0;border-radius:999px;padding:9px 18px;font-size:14px;font-weight:700}
+.tabs button.on{background:#fff;color:#151b24;border-color:#fff}
+.tabs.subj button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.unit{margin-top:26px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:20px 22px}
+.unit h2{margin:0 0 14px;font-family:var(--display);font-weight:700;font-size:20px;display:flex;align-items:center;gap:12px}
+.unit h2 .n{width:38px;height:38px;border-radius:12px;background:var(--acc);color:#fff;display:grid;place-items:center;font-size:16px}
+.unit h2 .m{font-family:var(--body);font-size:12px;color:#8fa3b8;font-weight:600}
+.unit h2 .sp{flex:1}
+.unit h2 .res{font-size:11px;background:rgba(18,184,134,.18);color:#4ee0b0;border-radius:6px;padding:3px 8px;font-family:var(--body);font-weight:700}
+.lessons{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.ls{display:block;text-decoration:none;color:#e8eef5;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;transition:transform .15s,background .15s,border-color .15s}
+.ls:hover{transform:translateY(-3px);background:rgba(255,255,255,.08);border-color:var(--acc)}
+.ls .no{font-size:11px;color:#8fa3b8;font-weight:800;letter-spacing:.1em;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.ls .no i{width:6px;height:6px;border-radius:50%;background:var(--acc)}
+.ls .t{font-weight:700;font-size:15px;line-height:1.35;min-height:40px}
+.ls .bar{display:flex;gap:2px;margin-top:10px;height:5px;border-radius:5px;overflow:hidden}
+.ls .bar i{display:block;height:100%}
+.ls .m{font-size:11px;color:#8fa3b8;margin-top:8px;display:flex;gap:10px}
+.ls .m b{color:#c7d3e0}
+.empty{padding:60px;text-align:center;color:#8fa3b8}
+.note{font-size:12px;color:#8fa3b8;margin-top:30px;line-height:1.7}
+.note a{color:#9fb0c3}
+</style>
+</head>
+<body class="subj-math">
+<div class="home">
+  <div class="hero">
+    <h1><small>K-EDU TEACHER · 2세대 무대</small>케이티처</h1>
+    <span class="sp"></span>
+    <div class="stat" id="stat"></div>
+  </div>
+  <div class="tabs grade" id="tab-g"></div>
+  <div class="tabs subj" id="tab-s"></div>
+  <div id="units"></div>
+  <div class="note">화면 크기가 달라도 슬라이드는 같은 자리에 같은 크기로 보여요(1600×900 고정 캔버스). 차시를 열면 <b>→</b> 로 한 조각씩 보여 주고, <b>A</b> 로 정답을 열고, 아래 도구 막대에서 타이머·뽑기·점수판·펜을 써요. 1세대 무대는 그대로 <a href="../index.html">여기</a>에 있어요.</div>
+</div>
+<script src="manifest.js"></script>
+<script>
+(function(){
+  var M = window.KT2_MANIFEST; var C = {'도입':'#FF8A3D','전개':'#4F8DF7','기본문제':'#12B886','응용문제':'#7C5CFF','정리':'#2CB1D6'};
+  var q = {}; location.search.replace(/^\?/,'').split('&').forEach(function(kv){ var p=kv.split('='); if(p[0]) q[p[0]]=decodeURIComponent(p[1]||''); });
+  var grades = []; M.subjects.forEach(function(s){ if(grades.indexOf(s.grade)<0) grades.push(s.grade); });
+  var g = +q.g || +(localStorage.getItem('kt2_home_g')||grades[0]); if(grades.indexOf(g)<0) g = grades[0];
+  var s = q.s || localStorage.getItem('kt2_home_s') || '';
+  document.getElementById('stat').innerHTML = '<b>'+M.lessons+'</b>차시 · <b>'+M.slides.toLocaleString()+'</b>슬라이드<br>목록 생성 '+M.built;
+  function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function paint(){
+    var tg = document.getElementById('tab-g'); tg.innerHTML = grades.map(function(x){ return '<button class="'+(x===g?'on':'')+'" data-g="'+x+'">'+x+'학년</button>'; }).join('');
+    var subs = M.subjects.filter(function(x){ return x.grade===g; });
+    if(!subs.some(function(x){ return x.subject===s; })) s = subs[0].subject;
+    var ts = document.getElementById('tab-s'); ts.innerHTML = subs.map(function(x){ return '<button class="'+(x.subject===s?'on':'')+'" data-s="'+x.subject+'">'+x.subject_ko+'</button>'; }).join('');
+    document.body.className = 'subj-'+s; localStorage.setItem('kt2_home_g', g); localStorage.setItem('kt2_home_s', s);
+    var sj = subs.filter(function(x){ return x.subject===s; })[0];
+    var u = document.getElementById('units');
+    u.innerHTML = sj.units.map(function(un){
+      return '<div class="unit"><h2><span class="n">'+un.unit+'</span>'+esc(un.title)+'<span class="m">'+un.lessons.length+'차시</span><span class="sp"></span>'+(un.resources?'<span class="res">자료층 있음</span>':'')+'</h2><div class="lessons">'+un.lessons.map(function(l){
+        var tot = l.slides||1;
+        return '<a class="ls" href="stage.html?g='+g+'&s='+s+'&u='+un.unit+'&l='+encodeURIComponent(l.key)+'"><div class="no"><i></i>'+esc(l.no)+'차시'+(l.std?' <span style="opacity:.7">'+esc(l.std)+'</span>':'')+'</div><div class="t">'+esc(l.title)+'</div><div class="bar">'+['도입','전개','기본문제','응용문제','정리'].map(function(st,i){ return l.stages[i]?'<i style="width:'+(l.stages[i]/tot*100)+'%;background:'+C[st]+'"></i>':''; }).join('')+'</div><div class="m"><span><b>'+l.slides+'</b> 슬라이드</span>'+(l.interactive?'<span><b>'+l.interactive+'</b> 조작</span>':'')+'</div></a>';
+      }).join('')+'</div></div>';
+    }).join('') || '<div class="empty">아직 차시가 없어요</div>';
+    tg.querySelectorAll('button').forEach(function(b){ b.onclick=function(){ g=+b.getAttribute('data-g'); paint(); }; });
+    ts.querySelectorAll('button').forEach(function(b){ b.onclick=function(){ s=b.getAttribute('data-s'); paint(); }; });
+  }
+  paint();
+})();
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
