@@ -1,0 +1,976 @@
+<!--
+K-edu 사회 6-2 · 1단원 세계의 자연환경 · 주제① 세계 여러 지역의 지형 경관과 다양한 생활 모습 · 5차시(l05)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사10-01] · 교과서 p.26~29 · 지도서(대단원1 **6~7차시** 「세계의 지형 경관과 생활 모습을 조사해 볼까요」 +
+  주제 마무리 「재미있게 확인해요」·「얼마나 잘했을까」, 지도서 p.56~67) 근거 · 두 시간 한 파일.
+학습 목표: 세계의 지형 경관과 생활 모습을 조사하여 정리할 수 있다.
+수업 기법 및 전략: 인터넷 조사하기 · 조사 내용 정리하기 · 프레젠테이션으로 소개하기
+META = "1단원 세계의 자연환경 · ① 지형 경관과 다양한 생활 모습"
+⚠️ 엔진은 l04(l03 → l02 → l01 → 6-1 사회 엔진 승계)에서 100% 승계 · 엔진 무수정. 1단원 색 #0369A1.
+⚠️ 회수 키 `g6_s2_social_u1_l05_v1`(학기 표지 s2 — l01 선례). 맵 키 `g6_social_u1_l05`.
+⚠️ 파일명 `표에서나와요` — 조작 이름(선례 승계).
+
+직접조작: 표에서 나오는 소개 자료 판 (교과서 26~29쪽 · 지도서 활동지 p.62 「소개 자료에 들어갈 정보 수집하기」)
+  ⭐ 조사할 곳 둘(지도서 예시 — 이탈리아 에트나 화산 · 베트남 할롱베이) 가운데 하나를 고른다. **정답 없음.**
+  ⭐ 조사 카드 여덟 장(두 곳 × 활동지 네 칸 — 지형 경관 · 사람들의 생활 모습 · 소개하고 싶은 내용 · 자료)이 섞여 있다.
+     카드를 고른 뒤 정리표의 칸을 누른다. 카드는 자기 칸(`PV_CARD[k].r`)에만 들어가고, 고른 곳의 카드만 들어간다.
+  ⭐★ **소개 자료(슬라이드)를 담는 상태 0** — 슬라이드는 정리표(`pvPlace`·`pvFill`)만 읽어 그린다.
+     표의 빈 칸은 슬라이드의 빈 칸이고, 표에 담긴 글자가 곧 슬라이드의 글자다(조사 → 정리 → 소개 자료).
+  ⭐ 판 읽기는 표가 다 찬 뒤에만 열린다(정답 자리 2).
+  ⭐ 박람회 표지판(교과서 29쪽 「재미있게 확인해요」) — 옳은 설명 넷을 고를 때마다 표지판 글자가 앞에서부터 하나씩 켜진다.
+     **표지판은 고른 옳은 설명의 수만 센다**(`pvBits(pvSign)`) — 어느 문장부터 골라도 같은 판. 완성 = 「지형 경관」.
+  ⭐ 근거 = 지도서 6~7차시 예시 답안(에트나 화산 · 할롱베이 활동지 풀이) · 주요 내용 정리 1·2 · 재미있게 확인해요 정답 「지 형 경 관」.
+
+단계 — ① 조사할 곳 고르기(정답 없음) → ② 조사 카드를 정리표에 담기(순서 자유) → ③ 판 읽기 3택(정답 자리 2) →
+  ④ 박람회 표지판 — 옳은 설명 고르기(옳은 넷 · 순서 자유) → ⑤ 마무리 3택 = 지도서 주요 내용 정리 1 원문(정답 자리 0).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 16종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 곳을 고르기 전 카드 무시(순서) — 판 불변
+     ④ 고른 곳이 아닌 곳의 카드 무시 — 판 불변
+     ⑤ 이미 표에 담긴 카드 다시 무시 — 판 불변
+     ⑥ 표에 담기 시작한 뒤 곳 바꾸기 무시 — 판 불변
+     ⑦ 카드를 고르지 않고 칸 누르기 무시 — 판 불변
+     ⑧ 이미 찬 칸 다시 무시 — 판 불변
+     ⑨ 어울리지 않는 칸 무시 — 판 불변(고른 카드는 그대로 손에 남음)
+     ⑩ 표가 다 차기 전 판 읽기 무시(순서) — 판 불변
+     ⑪ 판을 읽은 뒤 판 읽기 다시 무시 — 판 불변
+     ⑫ 판을 읽기 전 표지판 무시(순서) — 판 불변
+     ⑬ 이미 고른 옳은 설명 다시 무시 — 판 불변
+     ⑭ 옳지 않은 설명 무시 — 판 불변(표지판 글자 그대로)
+     ⑮ 표지판을 다 채우기 전 마무리 무시(순서) — 판 불변
+     ⑯ 안내 표시 중 재클릭 무시(`pvBusy`).
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.pv-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 슬라이드는 프레젠테이션 도구의 도식이다** — 실제 도구의 화면과 기능은 교과서 28쪽으로 본다(캡션 상시).
+  ㉡ **조사 카드는 지도서의 예시다** — 실제 조사는 인터넷·책·신문·여행 책자로 직접 한다(캡션 상시).
+  ㉢ **조사할 곳 고르기에는 정답이 없다** — 판은 어느 곳도 채점하지 않는다.
+  ㉣ **프레젠테이션 만들기 · 모둠 공유 · 발표는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 기후(8차시~)는 차시 예고 자리까지만.
+  **지명은 이 차시 원문이 든 것까지만** — 에트나 화산(이탈리아) · 할롱베이(베트남) · 바덴해(유럽) · 그랜드 캐니언 + 지난 차시 돌아보기.
+  교사용 참고 자료의 수치(높이·면적·길이·사망자 수) 0 · 네 자리 연도 0 · 쪽수 0 · 누리집 주소 0.
+  정서 — 어느 곳의 생활도 더 낫거나 못하게 그리지 않는다 · 화산의 위험은 교과서가 말하는 만큼만 · 사람 형상 0.
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u1_l05_v1">
+<title>세계의 지형 경관과 생활 모습을 조사해 볼까요 · 세계의 자연환경 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#0369A1; --green-d:#075985; --cyan:#0284C7;
+  --bg:#F0F9FF; --bub:#E0F2FE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 표에서 나오는 소개 자료 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#075985;max-width:660px}
+.pv-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#F0F9FF;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.pv-board{display:flex;flex-direction:column;gap:6px;padding:8px}
+.pv-head{background:#E0F2FE;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#075985;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.pv-th{font-weight:800;color:#075985;font-size:clamp(10px,1.7vw,12.2px);margin-bottom:3px}
+.pv-tbl{display:flex;flex-direction:column;gap:3px}
+.pv-row{display:grid;grid-template-columns:5.6em 1fr;gap:6px;align-items:start;border:2px dashed #CBD5E0;background:#fff;
+  border-radius:9px;padding:5px 7px;cursor:pointer;font-family:inherit;text-align:left;
+  font-size:clamp(9.6px,1.62vw,11.8px);line-height:1.42;color:#334155}
+.pv-row .lb{font-weight:800;color:#0369A1}
+.pv-row .tx{color:#94A3B8;font-weight:600}
+.pv-row.on{border-style:solid;border-color:var(--green);background:#F0F9FF;cursor:default}
+.pv-row.on .tx{color:#0F172A;font-weight:700}
+.pv-row:hover{background:var(--bub)}
+.pv-slide{border:2px solid #94A3B8;border-radius:9px;background:#fff;overflow:hidden}
+.pv-bar{background:#F1F5F9;color:#64748B;font-size:clamp(8.6px,1.45vw,10.2px);font-weight:700;padding:3px 8px}
+.pv-title{text-align:center;font-weight:800;font-size:clamp(11.6px,1.95vw,14.4px);color:#0F172A;padding:6px 8px 2px}
+.pv-title.ph{color:#94A3B8;font-weight:700}
+.pv-line{font-size:clamp(9.4px,1.58vw,11.4px);line-height:1.45;color:#1E293B;padding:1px 10px}
+.pv-line b{color:#0369A1}
+.pv-ph{font-size:clamp(9.2px,1.55vw,11.2px);line-height:1.45;color:#CBD5E0;padding:1px 10px;font-weight:700}
+.pv-sign{display:flex;align-items:center;justify-content:center;gap:5px;background:#FFFBEB;border:2px solid #F59E0B;
+  border-radius:10px;padding:6px}
+.pv-sign span{width:2em;height:2em;display:flex;align-items:center;justify-content:center;border-radius:7px;
+  font-weight:800;font-size:clamp(12px,2.1vw,16px)}
+.pv-sign span.on{background:#0369A1;color:#fff}
+.pv-sign span.off{background:#fff;color:#CBD5E0;border:2px dashed #FCD34D}
+.pv-sign .cap{font-weight:800;color:#92400E;font-size:clamp(10px,1.7vw,12.4px);margin-left:4px}
+.pv-tally{background:#FEF3C7;border-radius:6px;padding:3px 8px;text-align:center;font-weight:800;color:#92400E;
+  font-size:clamp(9px,1.52vw,11px)}
+.pv-places{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.pv-places button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:8px 6px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10.5px,1.8vw,13px);line-height:1.4}
+.pv-places button .ct{display:block;font-size:clamp(8.6px,1.45vw,10.2px);font-weight:700;color:#64748B}
+.pv-places button.on{background:var(--green);color:#fff;border-color:var(--green)}
+.pv-places button.on .ct{color:#E0F2FE}
+.pv-places button:hover{background:var(--bub)}
+.pv-places button.on:hover{background:var(--green)}
+.pv-deck{display:flex;flex-direction:column;gap:4px}
+.pv-deck button{border:2px solid var(--cyan);background:#fff;color:#1E293B;border-radius:10px;padding:6px 9px;
+  cursor:pointer;font-family:inherit;font-weight:600;font-size:clamp(9.8px,1.66vw,12px);text-align:left;line-height:1.42}
+.pv-deck button.sel{border-color:#F59E0B;background:#FFFBEB;box-shadow:0 0 0 2px #FCD34D}
+.pv-deck button:hover{background:var(--bub)}
+.pv-read,.pv-fin,.pv-says{display:flex;flex-direction:column;gap:5px}
+.pv-read button,.pv-fin button,.pv-says button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.pv-read button:hover,.pv-fin button:hover,.pv-says button:hover{background:var(--bub)}
+.pv-read button.no,.pv-fin button.no,.pv-says button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.pv-says button.on{border-color:var(--green);background:#F0F9FF;cursor:default}
+.pv-note{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠: 모든 그림은 내용을 나타낸 도식이며 실제 사진이나 실제 도구 화면이 아니다.
+   ⚠️ 지명은 이 차시 원문이 든 곳까지만 쓴다. 사람 형상 대신 도형으로만 그린다. */
+const SVG = {
+  // 1 들어가기 — 이번 주제에서 배운 세 지형
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <text x="160" y="16" font-size="10.5" fill="#075985" text-anchor="middle" font-weight="800">어떤 지형 경관이 가장 인상 깊었나요?</text>
+    <rect x="8" y="24" width="98" height="104" rx="8" fill="#fff" stroke="#0369A1" stroke-width="1.2"/>
+    <rect x="12" y="30" width="90" height="74" fill="#E0F2FE"/><path d="M12 104 L44 50 L60 72 L78 42 L102 104 Z" fill="#94A3B8"/><path d="M70 55 L78 42 L86 55 Z" fill="#fff"/>
+    <text x="57" y="118" font-size="7.4" fill="#075985" text-anchor="middle" font-weight="800">산지 지형</text>
+    <rect x="111" y="24" width="98" height="104" rx="8" fill="#fff" stroke="#0369A1" stroke-width="1.2"/>
+    <rect x="115" y="30" width="90" height="74" fill="#BBF7D0"/><path d="M150 30 Q160 60 146 80 Q136 96 152 104 L168 104 Q154 96 162 80 Q176 60 166 30 Z" fill="#38BDF8"/>
+    <text x="160" y="118" font-size="7.4" fill="#075985" text-anchor="middle" font-weight="800">하천 지형</text>
+    <rect x="214" y="24" width="98" height="104" rx="8" fill="#fff" stroke="#0369A1" stroke-width="1.2"/>
+    <rect x="218" y="30" width="90" height="40" fill="#38BDF8"/><path d="M218 70 Q263 62 308 70 L308 104 L218 104 Z" fill="#FDE68A"/>
+    <text x="263" y="118" font-size="7.4" fill="#075985" text-anchor="middle" font-weight="800">해안 지형</text>
+    <text x="160" y="150" font-size="7.2" fill="#64748B" text-anchor="middle" font-weight="700">그림은 도식이에요 · 실제 모습은 교과서 사진으로 봐요</text></svg>`,
+  // 2 살펴보기 — 모둠에서 조사하고 싶은 주제 정하기
+  topic:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="16" font-size="10.5" fill="#075985" text-anchor="middle" font-weight="800">우리 모둠은 무엇을 조사할까요?</text>
+    ${[['산지 지형','사람들의 생활 모습'],['해변','관광 산업의 모습'],['보호받는 지형 경관','지키려는 노력'],['대륙별 큰 강','살아가는 모습']].map((t,i)=>{const x=10+(i%2)*154, y=26+Math.floor(i/2)*60;
+      return `<rect x="${x}" y="${y}" width="146" height="50" rx="12" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.2"/><circle cx="${x+18}" cy="${y+25}" r="9" fill="#BAE6FD"/><text x="${x+84}" y="${y+22}" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">${t[0]}</text><text x="${x+84}" y="${y+36}" font-size="6.8" fill="#334155" text-anchor="middle" font-weight="700">${t[1]}</text>`;}).join('')}
+    <text x="160" y="156" font-size="6.8" fill="#64748B" text-anchor="middle" font-weight="700">모둠마다 조사할 주제를 하나씩 정해요 · 그림은 도식이에요</text></svg>`,
+  // 3 살펴보기 — 인터넷으로 조사하기
+  search:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <rect x="14" y="12" width="292" height="140" rx="9" fill="#fff" stroke="#94A3B8" stroke-width="1.2"/>
+    <rect x="14" y="12" width="292" height="18" rx="9" fill="#E2E8F0"/>
+    <rect x="40" y="38" width="240" height="18" rx="9" fill="#fff" stroke="#0369A1" stroke-width="1.2"/>
+    <text x="54" y="50.5" font-size="7.4" fill="#334155" font-weight="700">세계의 지형 경관</text>
+    <rect x="30" y="66" width="80" height="16" rx="5" fill="#0369A1"/><text x="70" y="77" font-size="7" fill="#fff" text-anchor="middle" font-weight="800">사진 검색</text>
+    <rect x="120" y="66" width="80" height="16" rx="5" fill="#E0F2FE"/><text x="160" y="77" font-size="7" fill="#075985" text-anchor="middle" font-weight="800">동영상 검색</text>
+    <rect x="210" y="66" width="80" height="16" rx="5" fill="#E0F2FE"/><text x="250" y="77" font-size="7" fill="#075985" text-anchor="middle" font-weight="800">유네스코와 유산</text>
+    ${[0,1,2,3].map(k=>`<rect x="${30+k*66}" y="92" width="58" height="42" rx="4" fill="${['#BAE6FD','#FDE68A','#BBF7D0','#E9D5FF'][k]}"/>`).join('')}
+    <text x="160" y="164" font-size="6.8" fill="#64748B" text-anchor="middle" font-weight="700">그림은 도식이에요 · 책이나 신문, 여행 책자로도 조사할 수 있어요</text></svg>`,
+  // 4 살펴보기 — 소개 자료에 넣을 내용 정리하기(표)
+  table:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="16" font-size="10.5" fill="#075985" text-anchor="middle" font-weight="800">소개 자료에 넣을 내용을 정리해요</text>
+    ${['지형 경관','사람들의 생활 모습','소개하고 싶은 내용'].map((t,i)=>`<rect x="16" y="${26+i*38}" width="86" height="34" fill="#E0F2FE" stroke="#0369A1" stroke-width="1"/><text x="59" y="${46+i*38}" font-size="7.4" fill="#075985" text-anchor="middle" font-weight="800">${t}</text><rect x="102" y="${26+i*38}" width="202" height="34" fill="#fff" stroke="#0369A1" stroke-width="1"/>${[0,1].map(k=>`<rect x="110" y="${34+i*38+k*10}" width="${k?120:170}" height="5" rx="2" fill="#CBD5E0"/>`).join('')}`).join('')}
+    <text x="160" y="156" font-size="6.8" fill="#64748B" text-anchor="middle" font-weight="700">조사한 내용을 칸에 나누어 정리해요 · 그림은 도식이에요</text></svg>`,
+  // 5 살펴보기 — 프레젠테이션 도구의 기능
+  tool:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <rect x="14" y="12" width="292" height="140" rx="9" fill="#fff" stroke="#94A3B8" stroke-width="1.2"/>
+    <rect x="14" y="12" width="292" height="20" rx="9" fill="#E2E8F0"/>
+    <text x="30" y="25.5" font-size="7" fill="#334155" font-weight="800">파일 · 수정 · 보기 · 삽입 · 서식 · 슬라이드</text>
+    <rect x="250" y="16" width="48" height="12" rx="6" fill="#0369A1"/><text x="274" y="25" font-size="6.8" fill="#fff" text-anchor="middle" font-weight="800">공유</text>
+    ${[0,1,2].map(k=>`<rect x="24" y="${42+k*34}" width="44" height="28" rx="3" fill="#fff" stroke="${k===0?'#0369A1':'#CBD5E0'}" stroke-width="1.2"/><text x="46" y="${60+k*34}" font-size="7" fill="#64748B" text-anchor="middle" font-weight="800">${k+1}</text>`).join('')}
+    <rect x="80" y="42" width="214" height="96" rx="4" fill="#fff" stroke="#CBD5E0" stroke-width="1.2"/>
+    <text x="187" y="84" font-size="8.4" fill="#94A3B8" text-anchor="middle" font-weight="800">제목을 추가하려면 클릭하세요</text>
+    <text x="187" y="102" font-size="7" fill="#CBD5E0" text-anchor="middle" font-weight="700">부제목을 추가하려면 클릭하세요</text>
+    <text x="160" y="164" font-size="6.8" fill="#64748B" text-anchor="middle" font-weight="700">그림은 도식이에요 · 실제 도구 화면은 교과서로 봐요</text></svg>`,
+  // 7 살펴보기 — 완성한 소개 자료 발표하기
+  talk:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <rect x="70" y="14" width="180" height="96" rx="6" fill="#fff" stroke="#0369A1" stroke-width="1.6"/>
+    <path d="M80 100 L120 50 L140 72 L160 44 L200 100 Z" fill="#94A3B8"/><path d="M152 54 L160 44 L168 54 Z" fill="#fff"/>
+    ${[0,1,2].map(k=>`<circle cx="${216}" cy="${66+k*10}" r="3.4" fill="#F59E0B"/>`).join('')}
+    <text x="160" y="28" font-size="8.2" fill="#075985" text-anchor="middle" font-weight="800">에트나 화산</text>
+    ${[0,1,2,3,4].map(k=>`<circle cx="${60+k*50}" cy="138" r="10" fill="#BAE6FD"/><rect x="${50+k*50}" y="148" width="20" height="10" rx="3" fill="#BAE6FD"/>`).join('')}
+    <text x="160" y="166" font-size="6.8" fill="#64748B" text-anchor="middle" font-weight="700">그림은 도식이에요 · 발표는 교실에서 직접 해요</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <text x="160" y="20" font-size="11" fill="#075985" text-anchor="middle" font-weight="800">조사하는 방법</text>
+    ${['인터넷으로 조사하기','조사 내용 정리하기','소개 자료 만들기','발표하기'].map((t,i)=>`<rect x="${10+i*78}" y="36" width="70" height="44" rx="8" fill="#fff" stroke="#0369A1" stroke-width="1.3"/><text x="${45+i*78}" y="62" font-size="6.8" fill="#075985" text-anchor="middle" font-weight="800">${t}</text>${i<3?`<path d="M${81+i*78} 58 L${87+i*78} 58" stroke="#0369A1" stroke-width="2"/><path d="M${86+i*78} 54 L${90+i*78} 58 L${86+i*78} 62 Z" fill="#0369A1"/>`:''}`).join('')}
+    <rect x="16" y="94" width="288" height="30" rx="7" fill="#FFFBEB" stroke="#B45309" stroke-width="1.3"/>
+    <text x="160" y="113" font-size="8" fill="#92400E" text-anchor="middle" font-weight="800">세계의 지형 경관과 생활 모습은 다양해요</text>
+    <text x="160" y="150" font-size="8" fill="#64748B" text-anchor="middle" font-weight="700">소개 자료는 정리한 표에서 나왔어요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#0369A1" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#0369A1" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#075985" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 표에서 나오는 소개 자료 판 =====
+   ★ 조사할 곳 둘 가운데 하나를 고른다 — 정답 없음.
+   ★ 조사 카드 여덟 장(두 곳 × 네 칸)이 섞여 있다. 카드는 자기 칸에만, 고른 곳의 카드만 정리표에 들어간다.
+   ★★ 소개 자료(슬라이드)를 담는 상태 0 — 슬라이드는 정리표(pvPlace·pvFill)만 읽어 그린다.
+   ★ 표지판은 고른 옳은 설명의 수만 센다(pvBits) — 어느 문장부터 골라도 같은 판.
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. */
+const PV_NROW = 4;
+
+/* 조사할 곳 — 지도서 6~7차시 예시 답안 · 활동지 풀이 */
+const PV_PLACE = [
+  {name:'에트나 화산', where:'이탈리아', kind:'산지 지형'},
+  {name:'할롱베이', where:'베트남', kind:'해안 지형'}
+];
+/* 정리표의 칸 — 지도서 활동지 「소개 자료에 들어갈 정보 수집하기」 */
+const PV_ROW = ['지형 경관','사람들의 생활 모습','소개하고 싶은 내용','자료'];
+/* 조사 카드 여덟 장 — p = 곳 · r = 칸 · 섞인 차례는 고정 */
+const PV_CARD = [
+  {p:0, r:1, t:'화산이 만든 검은 토양을 이용하여 오렌지 농사를 지어요.'},
+  {p:1, r:0, t:'베트남의 할롱베이 \u2014 유네스코 자연유산에 등재될 만큼 독특한 자연환경으로 유명해요.'},
+  {p:0, r:3, t:'에트나 화산의 모습을 담은 사진'},
+  {p:1, r:2, t:'관광객이 많아져 주민들의 소득은 늘었지만 쓰레기 문제가 심각해졌어요. 할롱베이를 지키려고 노력하는 사람들의 이야기를 소개하고 싶어요.'},
+  {p:0, r:0, t:'이탈리아의 에트나 화산 \u2014 지금도 유럽에서 왕성하게 활동하는 화산 가운데 하나예요.'},
+  {p:1, r:3, t:'할롱베이의 지형 경관 사진 \u00b7 쓰레기가 많은 할롱베이 기사 영상 \u00b7 할롱베이 사람들의 노력 사진'},
+  {p:0, r:2, t:'위험한 화산 지역 주변에서도 주민들은 화산의 혜택을 이용하며 살아가요.'},
+  {p:1, r:1, t:'다양한 물고기가 잡히는 바다에서 어업을 하거나, 독특한 자연 경관을 보러 오는 관광객을 상대로 관광업을 하며 살아가요.'}
+];
+
+/* ③ 판 읽기 */
+const PV_READ = [
+  '소개 자료는 정리표와 상관없이 따로 만들어졌기 때문이에요',
+  '소개 자료에는 조사하지 않은 내용을 마음대로 넣었기 때문이에요',
+  '표를 한 칸 채울 때마다 소개 자료에도 그 내용이 나타났어요 \u2014 조사한 내용을 표에 정리하고, 그 내용으로 소개 자료를 만들었기 때문이에요'
+];
+const PV_READ_OK = 2;
+const PV_READ_NO = [
+  '판을 다시 봐요. 표에 칸을 채울 때마다 <b>슬라이드에도</b> 같은 글이 나타났어요. 판을 다시 읽어 봐요.',
+  '판을 다시 봐요. 슬라이드의 글은 모두 <b>표에 담은 조사 카드</b>의 글이었어요. 판을 다시 읽어 봐요.',
+  null
+];
+
+/* ④ 박람회 표지판 — 교과서 29쪽 「재미있게 확인해요」 */
+const PV_SAY = [
+  '지형 경관이 아름다운 곳은 관광 산업이 발달하기도 합니다.',
+  '산지 지형에서는 농사를 지을 수 없습니다.',
+  '해안 지역에는 세계 여러 나라의 배가 오가는 항구가 발달합니다.',
+  '강 주변의 넓은 평야에서 계단식 농사를 짓습니다.',
+  '세계의 지형 경관과 생활 모습은 다양합니다.',
+  '산지 지형에는 고원과 같이 비교적 넓고 평평한 곳도 있습니다.'
+];
+const PV_SAY_T = [true, false, true, false, true, true];
+const PV_SAY_NO = [
+  null,
+  '이 설명은 <b>옳지 않아요</b>. 산지를 떠올려 봐요. 산지에서도 사람들은 농사를 지으며 살아갔어요. 판은 그대로예요.',
+  null,
+  '이 설명은 <b>옳지 않아요</b>. 강 주변의 넓은 평야와 계단식 농사가 어울리는지 떠올려 봐요. 판은 그대로예요.',
+  null,
+  null
+];
+const PV_WORD = ['지','형','경','관'];
+
+/* ⑤ 마무리 — 지도서 6~7차시 주요 내용 정리 1 원문 */
+const PV_FIN = [
+  '세계에는 독특하고 아름다운 지형 경관이 많고, 여러 지형 경관에서 살아가는 사람들의 생활 모습이 다양해요',
+  '세계의 지형 경관은 어디나 비슷해서 사람들의 생활 모습도 모두 같아요',
+  '조사하지 않아도 지형 경관과 생활 모습을 소개 자료로 만들 수 있어요'
+];
+const PV_FIN_OK = 0;
+const PV_FIN_NO = [
+  null,
+  '조사 카드를 떠올려 봐요. 에트나 화산과 할롱베이의 <b>경관도, 생활 모습도</b> 서로 달랐어요. 오늘의 정리를 다시 골라 봐요.',
+  '판을 떠올려 봐요. 소개 자료의 글은 모두 <b>조사해서 정리한 표</b>에서 나왔어요. 오늘의 정리를 다시 골라 봐요.'
+];
+
+/* 안내 */
+const PV_NOPLACE = '아직 <b>조사할 곳</b>을 고르지 않았어요. 먼저 조사할 곳을 골라 봐요. 판은 그대로예요.';
+const PV_OTHER = '이 카드는 <b>다른 곳</b>의 조사 내용이에요. 우리가 고른 곳의 카드만 표에 담아요. 판은 그대로예요.';
+const PV_PLACED = '이 카드는 <b>이미 표에 담았어요</b>. 판은 그대로예요.';
+const PV_LOCKED = '표에 <b>이미 담기 시작했어요.</b> 조사할 곳은 바꿀 수 없어요. 판은 그대로예요.';
+const PV_NOPICK = '먼저 <b>조사 카드</b>를 하나 골라 봐요. 판은 그대로예요.';
+const PV_ROWFULL = '이 칸은 <b>이미 채웠어요</b>. 판은 그대로예요.';
+const PV_WRONGROW = '이 카드는 <b>이 칸에 어울리지 않아요</b>. 카드가 무엇을 말하는지 다시 읽고 칸을 골라 봐요. 판은 그대로예요.';
+const PV_ORDER_R = '아직 <b>빈 칸</b>이 있어요. 표를 다 채운 뒤에 판을 읽을 수 있어요. 판은 그대로예요.';
+const PV_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const PV_ORDER_S = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const PV_SAY_AGAIN = '이 설명은 <b>이미 골랐어요</b>. 판은 그대로예요.';
+const PV_ORDER_F = '아직 <b>표지판</b>이 다 채워지지 않았어요. 옳은 설명을 모두 골라 봐요. 판은 그대로예요.';
+const PV_ALL_MSG = '표를 <b>다 채웠어요.</b> 소개 자료도 함께 <b>완성</b>되었어요.';
+
+/* ★ 비트 수 — 표의 찬 칸 수 · 표지판의 켜진 글자 수 */
+function pvBits(n){ let c=0; for(let i=0;i<8;i++) if((n>>i)&1) c++; return c; }
+function pvHas(st,r){ return ((st.pvFill>>r)&1)===1; }
+function pvCardOf(p,r){ return PV_CARD.findIndex(c=>c.p===p && c.r===r); }
+function pvFull(st){ return st.pvFill===(1<<PV_NROW)-1; }
+function pvSignN(st){ return pvBits(st.pvSign); }
+function pvSignFull(st){ return pvSignN(st)===PV_WORD.length; }
+/* ★★ 슬라이드의 한 줄 — 정리표만 읽는다 */
+function pvSlideLine(st,r){ return (st.pvPlace!=null && pvHas(st,r)) ? PV_CARD[pvCardOf(st.pvPlace,r)].t : null; }
+
+function pvSlide(st){
+  const title = pvSlideLine(st,0)!=null ? PV_PLACE[st.pvPlace].name : null;
+  let s = `<div class="pv-slide" data-slide="1"><div class="pv-bar">\uD83D\uDDA5\uFE0F 슬라이드쇼 \u00b7 공유 \u2014 지형 경관과 사람들의 생활 모습</div>`;
+  s += title!=null ? `<div class="pv-title" data-stitle="1">${title}</div>` : `<div class="pv-title ph" data-stitle="0">제목을 추가하려면 클릭하세요</div>`;
+  for(let r=0;r<PV_NROW;r++){ const L = pvSlideLine(st,r);
+    s += L!=null ? `<div class="pv-line" data-sline="${r}"><b>${PV_ROW[r]}</b> ${L}</div>` : `<div class="pv-ph" data-sph="${r}">${PV_ROW[r]} \u2014 표를 채우면 나타나요</div>`; }
+  return s + `</div>`;
+}
+
+function pvBoard(st){
+  const fin = st.pvFin!=null, full = pvFull(st), n = pvSignN(st);
+  const head = fin ? '세계의 지형 경관과 생활 모습을 조사해 보았어요'
+    : pvSignFull(st) ? '박람회 표지판이 완성되었어요 \u2014 이제 정리해요'
+    : st.pvRead!=null ? '옳은 설명을 골라 박람회 표지판을 채워요'
+    : full ? '표를 다 채웠어요 \u2014 소개 자료를 살펴봐요'
+    : st.pvPlace!=null ? '조사 카드를 정리표에 담아요'
+    : '조사할 곳을 골라요';
+  const pl = st.pvPlace!=null ? ` \u2014 ${PV_PLACE[st.pvPlace].name}(${PV_PLACE[st.pvPlace].where} \u00b7 ${PV_PLACE[st.pvPlace].kind})` : '';
+  let tbl = `<div class="pv-tbl"><div class="pv-th">\uD83D\uDCDD 소개 자료에 넣을 내용 정리하기${pl}</div>`;
+  for(let r=0;r<PV_NROW;r++){ const on = st.pvPlace!=null && pvHas(st,r);
+    tbl += `<button class="pv-row${on?' on':''}" data-row="${r}" onclick="pvRow(${r})"><span class="lb">${PV_ROW[r]}</span><span class="tx" data-cellrow="${r}">${on ? PV_CARD[pvCardOf(st.pvPlace,r)].t : '빈 칸'}</span></button>`; }
+  tbl += `</div>`;
+  let sign = '';
+  if(st.pvRead!=null){
+    sign = `<div class="pv-sign" data-signn="${n}">${PV_WORD.map((c,i)=> i<n ? `<span class="on" data-letter="${i}">${c}</span>` : `<span class="off">?</span>`).join('')}<span class="cap">박람회</span></div>`;
+  }
+  const tally = `정리표 ${pvBits(st.pvFill)} / ${PV_NROW} \u00b7 표지판 ${n} / ${PV_WORD.length}`;
+  return `<div class="pv-board" data-place="${st.pvPlace==null?-1:st.pvPlace}" data-fill="${st.pvFill}" data-pick="${st.pvPick==null?-1:st.pvPick}" data-read="${st.pvRead==null?-1:st.pvRead}" data-sign="${st.pvSign}" data-fin="${fin?1:0}">
+    <div class="pv-head">${head}</div>
+    ${tbl}
+    ${pvSlide(st)}
+    ${sign}
+    <div class="pv-tally" data-tally="1">${tally}</div>
+  </div>`;
+}
+
+function pvPanel(st){
+  const fin = st.pvFin!=null, full = pvFull(st);
+  const q = fin ? '세계의 지형 경관과 생활 모습을 조사해 보았어요.'
+    : pvSignFull(st) ? '오늘 공부한 내용을 어떻게 정리하면 좋을까요?'
+    : st.pvRead!=null ? '옳은 설명을 모두 골라 박람회 표지판을 완성해 볼까요?'
+    : full ? '표를 다 채우자 소개 자료가 완성되었어요. 왜 그럴까요?'
+    : st.pvPlace!=null ? '조사한 내용을 표의 어느 칸에 담으면 좋을까요?'
+    : '우리 모둠은 어느 곳의 지형 경관과 생활 모습을 조사해 볼까요?';
+  let right = `<div class="pv-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83D\uDDA5\uFE0F 표에서 소개 자료가 나와요</div>
+      조사한 내용을 <b>정리표</b>에 나누어 담자, 그 내용이 그대로 <b>소개 자료</b>가 되었어요.
+      조사하기 \u2192 정리하기 \u2192 소개 자료 만들기 \u2192 발표하기 차례로 세계의 지형 경관과 생활 모습을 소개할 수 있어요.<br>
+      <span style="color:#64748B">판의 슬라이드는 프레젠테이션 도구의 <b>도식</b>이고, 조사 카드는 지도서의 예시예요. 실제 조사는 인터넷이나 책, 신문, 여행 책자로 직접 해요.
+      조사할 곳에는 정답이 없어요. 프레젠테이션 만들기와 <b>모둠 공유</b>, <b>발표</b>는 교실에서 직접 해요.</span></div>`;
+  } else if(pvSignFull(st)){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="pv-fin">${PV_FIN.map((t,k)=>`<button class="${st.pvWrongF===k?'no':''}" onclick="pvFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.pvRead!=null){
+    right += `<div class="dw-step">\uD83E\uDEA7 박람회 표지판</div>`;
+    right += `<div class="pv-says">${PV_SAY.map((t,k)=>`<button class="${((st.pvSign>>k)&1)?'on':st.pvWrongS===k?'no':''}" onclick="pvSayPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="pv-note">옳은 설명을 고를 때마다 표지판 글자가 <b>앞에서부터</b> 하나씩 켜져요. <b>어느 설명부터</b> 골라도 좋아요.</div>`;
+  } else if(full){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="pv-read">${PV_READ.map((t,k)=>`<button class="${st.pvWrongR===k?'no':''}" onclick="pvReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.pvPlace!=null){
+    right += `<div class="dw-step">\uD83D\uDCC7 조사 카드</div>`;
+    const deck = PV_CARD.map((c,k)=>({c,k})).filter(o=>!(o.c.p===st.pvPlace && pvHas(st,o.c.r)));
+    right += `<div class="pv-deck">${deck.map(o=>`<button class="${st.pvPick===o.k?'sel':''}" data-card="${o.k}" onclick="pvCard(${o.k})">${o.c.t}</button>`).join('')}</div>`;
+    if(st.pvFill===0) right += `<div class="pv-places">${PV_PLACE.map((p,k)=>`<button class="${st.pvPlace===k?'on':''}" onclick="pvChoose(${k})"><span class="ct">${p.where} \u00b7 ${p.kind}</span>${p.name}</button>`).join('')}</div>`;
+    right += `<div class="pv-note">카드를 하나 고른 뒤, 왼쪽 <b>정리표</b>에서 어울리는 칸을 눌러요. <b>다른 곳의 카드</b>도 섞여 있어요. 어느 칸부터 채워도 좋고, 감점은 없어요.</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83C\uDF0F 조사할 곳</div>`;
+    right += `<div class="pv-places">${PV_PLACE.map((p,k)=>`<button onclick="pvChoose(${k})"><span class="ct">${p.where} \u00b7 ${p.kind}</span>${p.name}</button>`).join('')}</div>`;
+    right += `<div class="pv-note">어느 곳을 골라도 좋아요. 조사할 곳에는 <b>정답이 없어요</b>. 표에 담기 전까지는 다시 바꿀 수 있어요.</div>`;
+  }
+  if(st.pvMsg) right += `<div class="dw-msg${st.pvWarn?' warn':''}">${st.pvMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83D\uDDA5\uFE0F 표에서 나오는 소개 자료 판</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${pvBoard(st)}<div class="cvcap">판의 슬라이드는 프레젠테이션 도구의 <b>도식</b>이에요. 조사 카드는 지도서의 예시예요 \u2014 실제 조사는 인터넷이나 책, 신문, 여행 책자로 직접 해요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 세계의 자연환경 · ① 지형 경관과 다양한 생활 모습";
+
+// 확인 4 + 적용 4 — 정답 다양화 [0,2,1,3,3,1,2,0](각 자리 2회)
+// ⚠️ 문항 내 연도·쪽수·높이·길이·수량 0 · 새 사실 0(교과서 26~29쪽 문면과 지도서 6~7차시 예시 답까지만).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"세계의 지형 경관과 생활 모습을 <b>조사하는 방법</b>을 차례대로 바르게 늘어놓은 것은 무엇인가요?",
+   opts:["인터넷으로 조사하기 \u2192 조사 내용 정리하기 \u2192 소개 자료 만들기 \u2192 발표하기","발표하기 \u2192 소개 자료 만들기 \u2192 조사 내용 정리하기 \u2192 인터넷으로 조사하기","소개 자료 만들기 \u2192 발표하기 \u2192 인터넷으로 조사하기 \u2192 조사 내용 정리하기","조사 내용 정리하기 \u2192 발표하기 \u2192 인터넷으로 조사하기 \u2192 소개 자료 만들기"],
+   correct:0, pts:POINTS_BASIC, scene:"search",
+   reason:"먼저 인터넷으로 조사하고, 조사한 내용을 정리한 뒤, 그 내용으로 소개 자료를 만들어 발표해요.",
+   h1:"정리하려면 먼저 무엇이 있어야 할까요?", h2:"발표는 맨 마지막에 해요."},
+  {stem:"이탈리아 <b>에트나 화산</b> 주변에서 살아가는 사람들의 생활 모습으로 알맞은 것은 무엇인가요?",
+   opts:["배 없이 장대를 이용해 물고기를 잡아요","갯벌을 이용해 질 좋은 소금을 만들어요","화산이 만든 검은 토양을 이용하여 오렌지 농사를 지어요","세계 여러 나라의 배가 오가는 항구에서 일해요"],
+   correct:2, pts:POINTS_BASIC, scene:"talk",
+   reason:"위험한 화산 지역 주변에서도 주민들은 화산이 만든 검은 토양을 이용하여 오렌지 농사를 지으며 화산의 혜택을 이용해 살아가요.",
+   h1:"화산이 만든 흙을 떠올려 봐요.", h2:"과일 농사를 떠올려 봐요."},
+  {stem:"프레젠테이션 도구로 소개 자료를 만들 때 <b>모둠원과 함께 작업</b>하려면 어떤 기능을 활용해야 하나요?",
+   opts:["삽입","공유","새 슬라이드","슬라이드 번호"],
+   correct:1, pts:POINTS_BASIC, scene:"tool",
+   reason:"‘공유’ 기능을 활용하면 모둠원과 함께 소개 자료를 만들 수 있어요.",
+   h1:"함께 쓰려면 친구에게 문서를 나눠 줘야 해요.", h2:"화면 오른쪽 위의 단추를 떠올려 봐요."},
+  {stem:"프레젠테이션 도구로 <b>여러 장의 슬라이드</b>를 추가하려면 어떻게 해야 하나요?",
+   opts:["메뉴의 ‘공유’ 기능을 이용해요","메뉴의 ‘보기’ 기능을 이용해요","‘+’를 눌러 새 문서를 만들어요","메뉴의 ‘삽입’ 기능 중 ‘새 슬라이드’를 이용해요"],
+   correct:3, pts:POINTS_BASIC, scene:"tool",
+   reason:"메뉴의 ‘삽입’ 기능 중 ‘새 슬라이드’를 이용하거나, 마우스 오른쪽 단추를 눌러 ‘새 슬라이드’로 추가할 수 있어요.",
+   h1:"‘삽입’ 기능을 떠올려 봐요.", h2:"새 문서가 아니라 새 슬라이드예요."},
+  // 4단계 적용 (+15)
+  {stem:"직접조작에서 <b>슬라이드에 나타난 글</b>은 어디에서 왔나요?",
+   opts:["슬라이드에 저절로 나타났어요","표와 상관없이 따로 적었어요","아무 곳의 카드나 섞어서 넣었어요","정리표에 담은 조사 카드에서 왔어요"],
+   correct:3, pts:POINTS_APPLY, scene:"table",
+   reason:"표를 한 칸 채울 때마다 슬라이드에도 그 내용이 나타났어요. 조사한 내용을 정리하고, 그 내용으로 소개 자료를 만들어요.",
+   h1:"판의 표와 슬라이드를 떠올려 봐요.", h2:"빈 칸이 있을 때 슬라이드는 어땠나요?"},
+  {stem:"지형 경관과 사람들의 생활 모습을 <b>생생하게</b> 소개하려면 어떤 자료를 보여 주면 좋을까요?",
+   opts:["숫자만 가득한 표","사진이나 동영상","아무 그림도 없는 빈 슬라이드","조사하지 않은 이야기"],
+   correct:1, pts:POINTS_APPLY, scene:"search",
+   reason:"동영상으로 지형 경관과 사람들의 생활 모습을 생생하게 보여 주거나, 사진으로 다양한 각도에서 지형 경관을 보여 주면 좋아요.",
+   h1:"교과서의 사진 검색 · 동영상 검색을 떠올려 봐요.", h2:"눈으로 볼 수 있는 자료예요."},
+  {stem:"박람회 표지판을 완성하려고 해요. <b>옳은 설명</b>은 무엇인가요?",
+   opts:["산지 지형에서는 농사를 지을 수 없습니다","강 주변의 넓은 평야에서 계단식 농사를 짓습니다","산지 지형에는 고원과 같이 비교적 넓고 평평한 곳도 있습니다","세계의 지형 경관은 어디나 똑같습니다"],
+   correct:2, pts:POINTS_APPLY, scene:"open",
+   reason:"산지 지형에는 고원과 같이 비교적 넓고 평평한 곳도 있어요. 사람들은 산지에서도 농사를 지으며 살아가요.",
+   h1:"산지 지형에서 배운 내용을 떠올려 봐요.", h2:"높은 곳에도 넓고 평평한 땅이 있었어요."},
+  {stem:"세계의 지형 경관과 생활 모습을 조사하며 <b>알게 된 점</b>을 바르게 말한 친구는 누구인가요?",
+   opts:["같은 지형이라도 그곳에 살아가는 사람들의 생활 모습은 다양해요","세계의 지형 경관은 우리나라와 모두 같아요","지형은 사람들의 생활 모습과 아무 상관이 없어요","조사할 곳은 정답이 정해져 있어요"],
+   correct:0, pts:POINTS_APPLY, scene:"open",
+   reason:"세계에는 다양한 지형 경관이 있고, 같은 지형이라도 그곳에 살아가는 사람들의 생활 모습은 다양해요.",
+   h1:"에트나 화산과 할롱베이를 견주어 봐요.", h2:"생활 모습이 모두 같았나요?"}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 동기 유발 · 교과서 26쪽
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">세계의 지형 경관을 떠올려 봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','산지 지형 · 하천 지형 · 해안 지형','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCD6 교과서 본문</div>
+      세계에는 다양한 지형 경관이 있어요. 세계의 지형 경관과 생활 모습을 조사하면 세계에는 독특하고 아름다운 지형 경관이 많으며,
+      그곳에서 살아가는 사람들의 생활 모습이 다양하다는 것을 알 수 있어요.</div>
+    ${st.revealed?`<div class="answer-box">이번 주제에서 배운 지형 가운데 어떤 지형 경관이 가장 인상 깊었나요?<br>
+      \u2014 우리나라 산보다 훨씬 크고 <b>만년설</b>이 쌓여 있는 산지 지형이 인상 깊었어요.<br>
+      \u2014 거대한 <b>폭포</b>가 쏟아지는 모습과 이를 보려고 찾아온 관광객의 모습이 기억나요.<br>
+      \u2014 사람들은 지형에 <b>적응</b>하거나 지형의 제약을 <b>극복</b>하며 살아가는 모습을 보여 주었어요.</div>`
+      :`<div class="note">산지, 하천, 해안 지형 가운데 가장 인상 깊었던 지형 경관을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">지난 시간에는 세계의 유명한 해안 지형과 생활 모습을 알아봤어요. 오늘은 세계의 지형 경관과 생활 모습을 조사해 소개 자료를 만들어 봐요.</div></div>`});
+// 2 살펴보기 — reveal: 우리 모둠에서 조사하고 싶은 주제 정하기
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">우리 모둠에서 조사하고 싶은 주제를 정해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('topic','모둠마다 조사할 주제를 하나씩 정해요','wide')}</div>
+    <div class="sum-list">
+      <div class="sum-item"><span class="n">\u2460</span><div>세계의 유명한 <b>산지 지형</b>과 사람들의 생활 모습을 조사하고 싶어요.</div></div>
+      <div class="sum-item"><span class="n">\u2461</span><div>세계의 유명한 <b>해변</b>과 관광 산업의 모습을 알아보고 싶어요.</div></div>
+      <div class="sum-item"><span class="n">\u2462</span><div>세계적으로 <b>보호받고 있는 지형 경관</b>과 이를 지키려는 사람들의 노력을 알아보고 싶어요.</div></div>
+      <div class="sum-item"><span class="n">\u2463</span><div><b>대륙별 큰 강</b>과 그곳에서 살아가는 사람들의 모습을 살펴보려 해요.</div></div>
+    </div>
+    ${st.revealed?`<div class="answer-box">조사하고 싶은 지형 \u2014 <b>하천 지형</b><br>
+      조사 내용 \u2014 <b>대륙별 하천 지형의 경관과 사람들의 생활 모습</b><br>
+      <span style="color:#64748B">교과서에 나온 내용을 더 자세히 조사하거나, 교과서에 나오지 않은 지형을 골라 조사할 수도 있어요.</span></div>`
+      :`<div class="note">조사하고 싶은 지형 경관과 생활 모습을 친구들과 이야기해 봐요.</div><button class="reveal-btn" onclick="reveal()">예시 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: 인터넷으로 조사하기
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">인터넷으로 지형 경관과 생활 모습을 조사해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('search','사진 검색 · 동영상 검색 · 유네스코와 유산','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDD0D 디지털+ 할 수 있어요</div>
+      인터넷을 활용하여 세계의 다양한 지형 경관과 사람들의 생활 모습을 조사해 봐요. <b>사진</b>이나 <b>동영상</b>을 활용하면 생생한 모습을 살펴볼 수 있어요.
+      \u2018유네스코와 유산\u2019 누리집에서는 세계의 <b>자연유산</b>을 살펴볼 수 있어요.</div>
+    ${st.revealed?`<div class="answer-box">소개 자료에 어떤 내용이 들어가면 좋을까요?<br>
+      \u2014 우리나라에서 보거나 경험하기 어려운 지형 경관이면 좋겠어요.<br>
+      \u2014 셰르파처럼 특정한 지역에서만 볼 수 있는 생활 모습이 있으면 흥미로울 것 같아요.<br>
+      \u2014 동영상으로 생생하게 보여 주거나, 사진으로 다양한 각도에서 지형 경관을 보여 주면 좋아요.</div>`
+      :`<div class="note">인터넷뿐만 아니라 책, 신문 기사, 여행 책자 같은 자료도 활용할 수 있어요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 4 살펴보기 — reveal: 소개 자료에 넣을 내용 정리하기
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">소개 자료에 넣을 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('table','지형 경관 · 사람들의 생활 모습 · 소개하고 싶은 내용','wide')}</div>
+    <div class="paper"><div class="ph">\u270F\uFE0F 스스로 활동</div>
+      조사한 자료를 바탕으로 소개 자료에 넣을 내용을 <b>지형 경관</b>, <b>사람들의 생활 모습</b>, <b>소개하고 싶은 내용</b>으로 나누어 정리해 봐요.</div>
+    ${st.revealed?`<div class="answer-box">\u00b7 지형 경관 \u2014 <b>이탈리아의 에트나 화산</b><br>
+      \u00b7 사람들의 생활 모습 \u2014 화산이 만든 검은 토양을 이용하여 <b>오렌지 농사</b>를 지어요.<br>
+      \u00b7 소개하고 싶은 내용 \u2014 위험한 화산 지역 주변에서도 주민들은 화산의 <b>혜택</b>을 이용하며 살아가요.</div>`
+      :`<div class="note">친구들은 유럽의 바덴해 갯벌을 보호하려는 사람들의 노력, 그랜드 캐니언의 웅장하고 독특한 지형 경관을 소개하려고 해요.</div><button class="reveal-btn" onclick="reveal()">예시 보기</button>`}
+  </div>`});
+// 5 살펴보기 — reveal: 프레젠테이션 도구의 기능
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">프레젠테이션 도구의 기능을 알아봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('tool','프레젠테이션 도구의 화면','wide')}</div>
+    <div class="sum-list">
+      <div class="sum-item"><span class="n">\u2460</span><div>새 문서를 만들려면 어느 부분을 눌러야 할까요?</div></div>
+      <div class="sum-item"><span class="n">\u2461</span><div>모둠원과 함께 작업하려면 어떤 기능을 활용해야 할까요?</div></div>
+      <div class="sum-item"><span class="n">\u2462</span><div>소개 자료에 글, 사진, 동영상은 어떻게 넣을까요?</div></div>
+      <div class="sum-item"><span class="n">\u2463</span><div>여러 장의 슬라이드는 어떻게 추가할까요?</div></div>
+    </div>
+    ${st.revealed?`<div class="answer-box">\u2460 <b>\u2018+\u2019</b>를 누르면 돼요.<br>
+      \u2461 <b>\u2018공유\u2019</b> 기능을 활용해요.<br>
+      \u2462 메뉴의 <b>\u2018삽입\u2019</b> 기능을 활용해요.<br>
+      \u2463 메뉴의 \u2018삽입\u2019 기능 중 <b>\u2018새 슬라이드\u2019</b>를 이용하거나, 마우스 오른쪽 단추를 눌러 \u2018새 슬라이드\u2019로 추가해요.</div>`
+      :`<button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+    <div class="note">프레젠테이션 도구는 학급 상황에 맞추어 다른 도구를 써도 좋아요.</div>
+  </div>`});
+// 6 살펴보기 — 직접조작(표에서 나오는 소개 자료 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">표에서 소개 자료가 나와요</h2>
+  ${pvPanel(st)}`});
+// 7 살펴보기 — reveal: 완성한 소개 자료를 발표해요
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">완성한 소개 자료를 발표해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('talk','소개 자료로 발표해요','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDDE3\uFE0F 발표 예시</div>
+      \u201C우리 모둠은 <b>화산 지형 경관</b>과 사람들의 생활 모습을 조사했습니다.\u201D<br>
+      \u201C이탈리아 에트나 화산 지역은 <b>오렌지 농사</b>가 활발합니다.\u201D</div>
+    ${st.revealed?`<div class="answer-box">세계의 지형 경관과 생활 모습을 조사하며 알게 된 점은 무엇인가요?<br>
+      \u2014 세계에는 <b>다양한 지형 경관</b>이 있다는 것을 알았어요.<br>
+      \u2014 같은 지형이라도 그곳에 살아가는 사람들의 <b>생활 모습은 다양하다</b>는 것을 알게 되었어요.</div>`
+      :`<button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="note">소개 자료 만들기와 발표는 교실에서 친구들과 직접 해요.</div></div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 6~7차시 주요 내용 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div>세계에는 <b>독특하고 아름다운 지형 경관</b>이 많아요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div>세계의 여러 지형 경관에서 살아가는 사람들의 <b>생활 모습이 다양</b>해요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div>지형 경관과 생활 모습을 조사하는 방법 \u2014 <b>인터넷으로 조사하기 \u2192 조사 내용 정리하기 \u2192 소개 자료 만들기 \u2192 발표하기</b></div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 조사 카드를 정리표에 담자 그 내용이 그대로 소개 자료가 되었어요. 박람회 표지판은 \u2018<b>지형 경관</b>\u2019으로 완성되었어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b>세계의 기후 분포</b>를 알아봐요.</div></div>`});
+// 17 정리: 자기 평가 — 교과서 29쪽 「얼마나 잘했을까」
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공부한 내용을 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"세계의 다양한 지형 경관과 그곳에서 살아가는 사람들의 생활 모습을 설명할 수 있어요",st)}
+    ${selfCheck(1,"세계의 다양한 지형 경관과 사람들의 생활 모습을 조사하여 소개 자료를 만들 수 있어요",st)}
+    ${selfCheck(2,"세계의 아름다운 지형 경관을 살펴보고, 개발과 보전에 관한 균형 있는 관점을 지니게 됐어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">세계의 기후 분포</b>를 알아봐요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u1_l05";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  pvPlace:null, pvPick:null, pvFill:0, pvRead:null, pvSign:0, pvFin:null,
+  pvWrongR:null, pvWrongS:null, pvWrongF:null,
+  pvMsg:null, pvWarn:false, pvBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function pvRender(){ main.innerHTML = slides[state.idx].render(state); }
+function pvHold(msg){
+  state.pvWarn=true; state.pvBusy=true; state.pvMsg=msg;
+  playThud(); pvRender();
+  setTimeout(()=>{ state.pvBusy=false; state.pvWarn=false; state.pvMsg=null;
+    state.pvWrongR=null; state.pvWrongS=null; state.pvWrongF=null; pvRender(); },1600);
+}
+
+/* ① 조사할 곳 고르기 — 정답 없음 · 표에 담기 전까지만 바꿀 수 있음(가드⑥). */
+function pvChoose(p){
+  if(state.pvFin!=null) return;                                        // 가드①
+  if(state.pvBusy) return;                                             // 가드⑯
+  if(!Number.isInteger(p) || p<0 || p>=PV_PLACE.length) return;        // 가드②
+  if(state.pvFill!==0){ pvHold(PV_LOCKED); return; }                   // 가드⑥ 판 불변
+  state.pvPlace = p; state.pvPick = null;                              // ★ 곳이 서는 자리 단 하나 · 판정 0
+  state.pvWarn=false;
+  state.pvMsg = `<b>${PV_PLACE[p].name}</b>의 지형 경관과 생활 모습을 조사해요. 조사 카드를 골라 정리표에 담아 봐요.`;
+  playBlip(); pvRender();
+}
+
+/* ② 조사 카드 고르기 */
+function pvCard(k){
+  if(state.pvFin!=null) return;                                        // 가드①
+  if(state.pvBusy) return;                                             // 가드⑯
+  if(!Number.isInteger(k) || k<0 || k>=PV_CARD.length) return;         // 가드②
+  if(state.pvPlace==null){ pvHold(PV_NOPLACE); return; }               // 가드③ 순서 — 판 불변
+  if(PV_CARD[k].p!==state.pvPlace){ pvHold(PV_OTHER); return; }        // 가드④ 판 불변
+  if(pvHas(state,PV_CARD[k].r)){ pvHold(PV_PLACED); return; }          // 가드⑤ 판 불변
+  state.pvPick = k;                                                    // ★ 카드를 손에 드는 자리 단 하나
+  state.pvWarn=false; state.pvMsg='카드를 골랐어요. 왼쪽 <b>정리표</b>에서 어울리는 칸을 눌러요.';
+  playBlip(); pvRender();
+}
+
+/* ③ 정리표의 칸 누르기 — ★ 표가 차면 슬라이드도 함께 찬다(슬라이드는 표만 읽음). */
+function pvRow(r){
+  if(state.pvFin!=null) return;                                        // 가드①
+  if(state.pvBusy) return;                                             // 가드⑯
+  if(!Number.isInteger(r) || r<0 || r>=PV_NROW) return;                // 가드②
+  if(state.pvPick==null){ pvHold(PV_NOPICK); return; }                 // 가드⑦ 판 불변
+  if(pvHas(state,r)){ pvHold(PV_ROWFULL); return; }                    // 가드⑧ 판 불변
+  if(PV_CARD[state.pvPick].r!==r){ pvHold(PV_WRONGROW); return; }      // 가드⑨ 판 불변
+  state.pvFill |= (1<<r); state.pvPick = null;                         // ★ 표가 차는 자리 단 하나 — 줄지 않음
+  state.pvWarn=false;
+  state.pvMsg = pvFull(state) ? PV_ALL_MSG : `<b>${PV_ROW[r]}</b> 칸을 채웠어요. 슬라이드에도 같은 내용이 나타났어요.`;
+  playBlip(); pvRender();
+}
+
+/* ④ 판 읽기 — 표가 다 차야 열린다(가드⑩). */
+function pvReadPick(k){
+  if(state.pvFin!=null) return;                                        // 가드①
+  if(state.pvBusy) return;                                             // 가드⑯
+  if(!Number.isInteger(k) || k<0 || k>=PV_READ.length) return;         // 가드②
+  if(!pvFull(state)){ pvHold(PV_ORDER_R); return; }                    // 가드⑩ 순서 — 판 불변
+  if(state.pvRead!=null){ pvHold(PV_READ_AGAIN); return; }             // 가드⑪ 판 불변
+  if(k===PV_READ_OK){
+    state.pvRead=k; state.pvWrongR=null; state.pvWarn=false;
+    state.pvMsg = '판을 잘 읽었어요. 조사한 내용을 <b>정리</b>하면 그 내용으로 <b>소개 자료</b>를 만들 수 있어요.';
+    playChime(); pvRender(); return;
+  }
+  state.pvWrongR=k;
+  pvHold(PV_READ_NO[k]);
+}
+
+/* ⑤ 박람회 표지판 — 옳은 설명을 고를 때마다 글자가 앞에서부터 하나씩 켜진다. */
+function pvSayPick(k){
+  if(state.pvFin!=null) return;                                        // 가드①
+  if(state.pvBusy) return;                                             // 가드⑯
+  if(!Number.isInteger(k) || k<0 || k>=PV_SAY.length) return;          // 가드②
+  if(state.pvRead==null){ pvHold(PV_ORDER_S); return; }                // 가드⑫ 순서 — 판 불변
+  if((state.pvSign>>k)&1){ pvHold(PV_SAY_AGAIN); return; }             // 가드⑬ 판 불변
+  if(!PV_SAY_T[k]){ state.pvWrongS=k; pvHold(PV_SAY_NO[k]); return; }  // 가드⑭ 판 불변
+  state.pvSign |= (1<<k);                                              // ★ 표지판이 켜지는 자리 단 하나 — 줄지 않음
+  state.pvWarn=false;
+  state.pvMsg = pvSignFull(state) ? '박람회 표지판이 <b>\u2018지형 경관\u2019</b>으로 완성되었어요!' : '옳은 설명이에요. 표지판 글자가 하나 켜졌어요.';
+  playBlip(); pvRender();
+}
+
+/* ⑥ 마무리 — 지도서 6~7차시 주요 내용 정리 1 원문 */
+function pvFinish(k){
+  if(state.pvFin!=null) return;                                        // 가드①
+  if(state.pvBusy) return;                                             // 가드⑯
+  if(!Number.isInteger(k) || k<0 || k>=PV_FIN.length) return;          // 가드②
+  if(!pvSignFull(state)){ pvHold(PV_ORDER_F); return; }                // 가드⑮ 순서 — 판 불변
+  if(k===PV_FIN_OK){
+    state.pvFin=k; state.pvWrongF=null; state.pvMsg=null; state.pvWarn=false;
+    playChime(); pvRender(); return;
+  }
+  state.pvWrongF=k;
+  pvHold(PV_FIN_NO[k]);
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 1단원 6차시(l06) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>

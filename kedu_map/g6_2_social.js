@@ -54,14 +54,14 @@ window.KEDU_MAP["g6_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u1_l05",
+     "lessonId": "g6_s2_social_u1_l05_v1",
      "n": "5",
      "title": "세계의 지형 경관과 생활 모습을 조사해 볼까요",
      "sub": "① 세계 여러 지역의 지형 경관과 다양한 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/1단원_세계의자연환경/g6_social_u1_l05_표에서나와요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
