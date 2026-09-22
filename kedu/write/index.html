@@ -100,10 +100,10 @@ textarea{min-height:240px;resize:vertical}
         .then(function(r){ if(r&&!r.error&&Array.isArray(r.data)&&r.data.length){state.tasks=r.data; if(state.step===1)render();} }).catch(function(){});
     }catch(e){}
   }
-  function usePrompt(pr){state.prompt=pr;state.type=pr.type;state.topic=pr.topic;state.kw=pr.keywords.slice();fixed=true;
+  function usePrompt(pr){state.prompt=pr;state.type=pr.type;state.topic=pr.topic;state.kw=pr.keywords.slice();state.kwAlt=pr.kw_alt||{};fixed=true;
     if(pr.bands.indexOf(KWRITE.bandOf(state.grade))<0){state.grade={low:2,mid:3,high:5}[pr.bands[0]];}}
   function render(){setBand();app.innerHTML='';[step1,step2][state.step-1]();window.scrollTo(0,0);}
-  function analyze(){return KWRITE.analyze({text:state.text,type:state.type,band:state.grade,topic:state.topic,keywords:state.kw});}
+  function analyze(){return KWRITE.analyze({text:state.text,type:state.type,band:state.grade,topic:state.topic,keywords:state.kw,kwAlt:state.kwAlt||{}});}
 
   /* ① 고르기·쓰기 */
   function step1(){
@@ -139,7 +139,7 @@ textarea{min-height:240px;resize:vertical}
       $('#topic').addEventListener('input',function(e){state.topic=e.target.value;});
       var pl=$('#prompts'); if(pl)pl.addEventListener('click',function(e){var b=e.target.closest('[data-p]');if(!b)return;state.text=ta.value;usePrompt(D.prompts.prompts.filter(function(x){return x.id===b.dataset.p;})[0]);render();});
     }
-    var un=$('#unpick'); if(un)un.addEventListener('click',function(){state.prompt=null;state.topic='';state.kw=[];fixed=false;state.text=ta.value;render();});
+    var un=$('#unpick'); if(un)un.addEventListener('click',function(){state.prompt=null;state.topic='';state.kw=[];state.kwAlt={};fixed=false;state.text=ta.value;render();});
     $('#go').addEventListener('click',function(){state.text=ta.value; if(!fixed)state.topic=$('#topic').value; state.result=analyze(); state.pop=null; state.step=2; render();});
   }
 

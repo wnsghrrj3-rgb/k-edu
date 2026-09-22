@@ -82,7 +82,8 @@ textarea{width:100%;padding:13px;border:1px solid var(--rule);border-radius:14px
     R=res.data; document.body.className='band-'+R.band; document.getElementById('ttl').textContent=R.title; render();
   }).catch(function(){fail('불러오지 못했어요. 새로고침해 볼까요?');});
 
-  function analyzeText(text){return KWRITE.analyze({text:text,type:R.type,band:R.band,topic:R.topic,keywords:R.keywords||[]});}
+  function kwAltOf(){var pr=R.prompt_id?D.prompts.prompts.filter(function(x){return x.id===R.prompt_id;})[0]:null;return pr&&pr.kw_alt||{};}
+  function analyzeText(text){return KWRITE.analyze({text:text,type:R.type,band:R.band,topic:R.topic,keywords:R.keywords||[],kwAlt:kwAltOf()});}
   function snapshot(r){return {engine:'v2',marks:r.teacher.marks,cards:r.cards,elements:Object.keys(r.elements).reduce(function(o,k){o[k]=r.elements[k].status;return o;},{}),structure:r.structure.issues.map(function(x){return x.code;}),length:r.length.chars,paras:r.paras.count};}
   function header(){
     var tp=D.templates.types[R.type], pr=R.prompt_id?D.prompts.prompts.filter(function(x){return x.id===R.prompt_id;})[0]:null;

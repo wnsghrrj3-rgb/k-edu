@@ -219,10 +219,11 @@ function draftFor(sub){
   return REV.draft;
 }
 function axisOf(run){ const p = run.prompt_id && D.prompts.prompts.find(x => x.id === run.prompt_id); return p && p.axis || ''; }
+function kwAltOf(run){ const p = run.prompt_id && D.prompts.prompts.find(x => x.id === run.prompt_id); return p && p.kw_alt || {}; }
 /* 2번째 글부터 — 바로 앞 글과 견주어 「고친 자리」를 한 줄로. 요소 ×/△ → ○, 자동 표시가 몇 개 사라졌나(앞 글의 original 이 새 글에 없으면 고친 것), 글자·문단 변화 */
 function changesSince(me, sub, r){
   const prev = me.subs.filter(x => x.attempt < sub.attempt).sort((a, b) => b.attempt - a.attempt)[0]; if (!prev) return null;
-  const run = REV.run, pr = KWRITE.analyze({ text: prev.text, type: run.type, band: run.band, topic: run.topic, keywords: run.keywords || [] });
+  const run = REV.run, pr = KWRITE.analyze({ text: prev.text, type: run.type, band: run.band, topic: run.topic, keywords: run.keywords || [], kwAlt: kwAltOf(run) });
   const rank = { red: 0, yellow: 1, green: 2 }, lines = [];
   const up = Object.keys(r.elements).filter(k => rank[r.elements[k].status] > rank[(pr.elements[k] || {}).status || 'red']).map(k => D.templates.colors[k].name);
   const down = Object.keys(r.elements).filter(k => rank[r.elements[k].status] < rank[(pr.elements[k] || {}).status || 'red']).map(k => D.templates.colors[k].name);
@@ -245,7 +246,7 @@ function renderReview(){
   let paper = '';
   if (!sub) paper = `<div class="soon">${me ? esc(me.name) + ' 학생은 아직 보내지 않았어요.' : '학생을 골라 주세요.'}</div>`;
   else {
-    const d = draftFor(sub), r = KWRITE.analyze({ text: sub.text, type: run.type, band: run.band, topic: run.topic, keywords: run.keywords || [] });
+    const d = draftFor(sub), r = KWRITE.analyze({ text: sub.text, type: run.type, band: run.band, topic: run.topic, keywords: run.keywords || [], kwAlt: kwAltOf(run) });
     const memos = KWPAPER.placeMemos(r, D.templates, D.feedback);
     const slots = Object.keys(r.elements).map(k => `<span class="${r.elements[k].status}">${esc(D.templates.colors[k].name)} ${r.elements[k].status === 'green' ? '○' : r.elements[k].status === 'yellow' ? '△' : '×'}</span>`).join('') + (r.topic ? `<span class="${r.topic.status}">논제 ${r.topic.status === 'green' ? '○' : r.topic.status === 'yellow' ? '△' : '×'}</span>` : '');
     const attempts = me.subs.length > 1 ? `<div class="attempts">${me.subs.map(x => `<button data-at="${x.attempt}" class="${x.id === sub.id ? 'on' : ''}">${x.attempt}번째${returned(x) ? ' ✓' : ''}</button>`).join('')}</div>` : '';
@@ -273,7 +274,7 @@ function renderReview(){
   view.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { if (REV.dirty && !confirm('저장하지 않은 변경이 있어요. 옮길까요?')) return; REV.cur = b.dataset.st; REV.attempt = null; REV.pop = null; REV.dirty = false; REV.draft = null; renderReview(); });
   if (!sub) return;
   view.querySelectorAll('[data-at]').forEach(b => b.onclick = () => { REV.attempt = +b.dataset.at; REV.pop = null; REV.draft = null; REV.dirty = false; renderReview(); });
-  const d = draftFor(sub), r = KWRITE.analyze({ text: sub.text, type: run.type, band: run.band, topic: run.topic, keywords: run.keywords || [] });
+  const d = draftFor(sub), r = KWRITE.analyze({ text: sub.text, type: run.type, band: run.band, topic: run.topic, keywords: run.keywords || [], kwAlt: kwAltOf(run) });
   const kwp = view.querySelector('.kwp');
   kwp.addEventListener('click', e => {
     if (e.target.closest('.pop')) return;

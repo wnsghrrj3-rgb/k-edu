@@ -7,6 +7,10 @@ const D = p => JSON.parse(fs.readFileSync(path.join(__dirname, '../kedu/write/da
 const C = D('corrections.json');
 K.init({ templates: D('templates.json'), signals: D('signals.json'), feedback: D('feedback.json'), corrections: C });
 const items = JSON.parse(fs.readFileSync(path.join(__dirname, 'kwrite_marks_v3.json'), 'utf8')).items;
+/* 오탐 루프 제안(tools/fp_loop.mjs --out) 이 있으면 같이 채점 — not: [{kind, original}] 이 표시가 있으면 안 됨 */
+const fpPath = path.join(__dirname, 'kwrite_fp_proposals.json');
+const fpItems = fs.existsSync(fpPath) ? (JSON.parse(fs.readFileSync(fpPath, 'utf8')).items || []) : [];
+fpItems.forEach(it => items.push(it));
 const verbose = process.argv.includes('-v');
 let mustN = 0, mustHit = 0, dirty = 0, fails = [];
 items.forEach((it, n) => {
@@ -17,6 +21,7 @@ items.forEach((it, n) => {
     const hit = marks.find(x => x.kind === m.kind && (!m.original || (x.original || '').includes(m.original) || m.original.includes(x.original || '\u0000')) && (!m.fix || (x.fix || '').includes(m.fix) || m.fix.includes(x.fix || '\u0000')));
     if (hit) mustHit++; else fails.push(`#${n} 「${it.t}」 표시 ${m.kind} ${m.original || ''}${m.fix ? ' → ' + m.fix : ''} 안 잡힘 — 잡힌 것: ${marks.map(x => x.kind + ':' + x.original + '→' + x.fix).join(', ') || '-'}`);
   });
+  (it.not || []).forEach(m => { if (marks.some(x => x.kind === m.kind && (x.original || '') === (m.original || ''))) { dirty++; fails.push(`#${n} 「${it.t}」 교사가 지운 표시 ${m.kind} '${m.original}' 가 아직 나옴`); } });
   (it.none || []).forEach(k => { if (marks.some(x => x.kind === k)) { dirty++; fails.push(`#${n} 「${it.t}」 ${k} 표시가 있으면 안 됨`); } });
   if (it.clean) marks.filter(m => !m.soft).forEach(m => { dirty++; fails.push(`#${n} 「${it.t}」 깨끗한 문장에 하드 표시 ${m.kind} '${m.original}' → ${m.fix}`); });
   if (verbose) console.log(n, it.t, '|', marks.map(x => x.kind + ':' + x.original + '→' + x.fix + (x.soft ? '(soft)' : '')).join(' · ') || '-');
@@ -30,7 +35,7 @@ let hyg = 0;
   if (e.re && e.fix) { const groups = (new RegExp(e.re + '|', 'u')).exec('').length - 1; (e.fix.match(/\$(\d)/g) || []).forEach(g => { if (+g.slice(1) > groups) { hyg++; fails.push(`위생 ${k}[${i}] fix ${g} > 그룹 ${groups}: ${e.re}`); } }); }
 }));
 (C.agree || []).forEach((e, i) => { if (bad.test(e.why)) { hyg++; fails.push(`위생 agree[${i}] why: ${e.why}`); } ['re', 'need', 'bad'].forEach(f => { if (e[f]) { try { new RegExp(e[f], 'u'); } catch (x) { hyg++; fails.push(`위생 agree[${i}] ${f}: ${e[f]}`); } } }); });
-console.log(`표시 재현 ${mustHit}/${mustN} · 오탐 ${dirty} · 사전 위생 ${hyg} (spelling ${C.spelling.length} · spacing ${C.spacing.length} · spoken ${C.spoken.length} · word ${C.word.length} · agree ${C.agree.length})`);
+console.log(`표시 재현 ${mustHit}/${mustN} · 오탐 ${dirty}${fpItems.length ? ' · 오탐 루프 제안 ' + fpItems.length + '건 포함' : ''} · 사전 위생 ${hyg} (spelling ${C.spelling.length} · spacing ${C.spacing.length} · spoken ${C.spoken.length} · word ${C.word.length} · agree ${C.agree.length})`);
 fails.forEach(f => console.log('  ✗', f));
 const ok = mustHit === mustN && dirty === 0 && hyg === 0;
 console.log(ok ? 'test_kedu_write_marks: PASS' : 'test_kedu_write_marks: FAIL');

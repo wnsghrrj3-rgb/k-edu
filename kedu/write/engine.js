@@ -5,7 +5,7 @@
    사용:
      KWRITE.init({templates, signals, feedback, corrections})   // data/*.json 네 장 주입(corrections 없으면 표시 기능만 꺼짐)
      KWRITE.split(text)                                          // → [{i, text, para}]
-     KWRITE.analyze({text, type, band, topic, keywords, marks})
+     KWRITE.analyze({text, type, band, topic, keywords, kwAlt, marks})   // kwAlt: {낱말: [유의어…]} — prompts.json kw_alt
         marks: { "<문장 i>": "C" | "R" | ... }   // 학생이 칠한 색 (§6 — 시스템 추정보다 학생 표시를 먼저 믿는다)
         → { sentences, elements, structure, topic, length, paras, format, cards, teacher, allGreen }
      KWRITE.correct({text, band, type, keywords})               // 「선생님 표시」만 따로 — 문장별 표시 [{i, from, to, kind, original, fix, why}]
@@ -21,6 +21,10 @@
      · agree 문장 호응 — 부사·앞말(왜냐하면·비록·만약·전혀·마치·아마·내 꿈은·이유는)이 있는데 짝이 되는 끝맺음이 없으면 문장 끝에 힌트(~기 때문이다). 고칠 글자를 정하지 않고 힌트만(fix 가 ~ 로 시작 → applyMark 는 글을 바꾸지 않음)
      · tense 때 — 어제·작년·지난주 같은 말이 있는데 끝맺음이 현재형이면 힌트
      · person 나·저 — 한 글에 나/내 와 저/제 가 섞이면 소수 쪽을 표시, ~다 글에 저/제 만 있으면 나/내 로
+   v3.1 추가(2026-09-22 저녁):
+     · runon 이어진 문장 — 「~다 그리고」「~요 나는」처럼 끝맺음 뒤 새 문장 첫 낱말이 오면 그 자리에 마침표(하드). 따옴표 안·라고/하고/싶다/보니 는 넘김
+     · hedge ~것 같다 남발 — 주장·설명 글에 2번 이상이면 자리마다 힌트(agree, soft)
+     · kwAlt 논제 유의어 — 논제 낱말 세기에 kw_alt 를 합산(퍼진 정도 계산에도)
      · rule 코드: dep(의존명사 — 앞 글자 받침(jong)·이름씨 예외(skipPrev)·뒷말 조건(after)) · ji_time(~ㄴ 지 + 시간) · skipSent(문장 전체에 이 말이 있으면 넘김)
    ============================================================ */
 (function (root, factory) {
@@ -54,6 +58,8 @@
       CX.punct = {};
       Object.keys(C.punct).forEach(function (k) { var p = C.punct[k]; CX.punct[k] = { re: p.re ? rxg(p.re) : null, why: p.why, fix: p.fix, skip: p.skip ? rx(p.skip) : null }; });
       CX.splitAt = rxg(C.long.splitAt);
+      if (C.hedge) CX.hedge = { re: rxg(C.hedge.re), min: C.hedge.min || 2, types: C.hedge.types || null };
+      if (C.runon) CX.runon = { re: rxg(C.runon.re), next: rx('^(' + C.runon.next + ')'), notNext: rx('^(' + C.runon.notNext + ')'), skipWord: C.runon.skipWord ? rx(C.runon.skipWord) : null, yoPrev: C.runon.yoPrev ? rx(C.runon.yoPrev) : null };
     }
     return true;
   }
@@ -214,6 +220,37 @@
       }
     });
   }
+  /* 따옴표 안인가 — 앞에 여는 따옴표가 홀수 개 */
+  function inQuote(t, idx) {
+    var a = t.slice(0, idx);
+    var open = (a.match(/[“"「‘']/g) || []).length, close = (a.match(/[”"」’']/g) || []).length;
+    if ((a.match(/["']/g) || []).length % 2 === 1) return true;
+    return open - close > 0;
+  }
+  /* 이어진 문장(v3.1) — 「~다 그리고 ~」「~요 나는 ~」 : 끝맺음 뒤 한 칸 띄고 이어 주는 말·주어 낱말이 오면 마침표 자리 */
+  function runRunon(s, out) {
+    if (!CX.runon) return;
+    var t = s.text, m; CX.runon.re.lastIndex = 0;
+    while ((m = CX.runon.re.exec(t))) {
+      var word = m[1], rest = t.slice(m.index + m[0].length);
+      if (word.replace(/[^가-힣]/g, '').length < 2) continue;              // 「다 같이」「다 먹었다」의 다
+      if (CX.runon.skipWord && CX.runon.skipWord.test(word)) continue;     // 나보다·날마다·바다
+      if (word[word.length - 1] === '요' && CX.runon.yoPrev && !CX.runon.yoPrev.test(word[word.length - 2])) continue; // 필요·중요
+      if (!CX.runon.next.test(rest)) continue;                              // 뒤에 새 문장 첫 낱말이 와야
+      if (CX.runon.notNext.test(rest)) continue;                            // 라고·하고·싶다·보니… 는 한 문장
+      if (inQuote(t, m.index)) continue;
+      var at = m.index + word.length - 1;
+      pushMark(out, s, at, 1, 'punct', word[word.length - 1], word[word.length - 1] + '.', C.runon.why, false);
+    }
+  }
+  /* ~것 같다 남발(주장·설명) — 한 글에 min 번 이상이면 자리마다 힌트 */
+  function runHedge(sents, out, type) {
+    if (!CX.hedge || (CX.hedge.types && CX.hedge.types.indexOf(type) < 0)) return;
+    var hits = [];
+    sents.forEach(function (s) { var t = s.text, m; CX.hedge.re.lastIndex = 0; while ((m = CX.hedge.re.exec(t))) { if (!inQuote(t, m.index)) hits.push({ s: s, m: m }); } });
+    if (hits.length < CX.hedge.min) return;
+    hits.forEach(function (h) { pushMark(out, h.s, h.m.index, h.m[0].length, 'agree', h.m[0], '~' + C.hedge.hint.replace(/^~/, ''), fill(C.hedge.why, { n: hits.length }), true); });
+  }
   /* 문장 끝 낱말(부호 앞) 자리 */
   function lastWord(t) {
     var m = t.match(/([가-힣A-Za-z0-9~]+)[\s.!?…”’"')]*$/u);
@@ -285,9 +322,10 @@
       if (allow.indexOf('tense') >= 0) runTense(s, out);
       if (allow.indexOf('punct') >= 0) {
         var t = s.text, P = CX.punct, m;
+        runRunon(s, out);
         if (!/[.!?。…”’"]\s*$/u.test(t) && t.length > 5 && !(P.noEnd.skip && P.noEnd.skip.test(t))) out.push({ i: s.i, from: t.length, to: t.length, kind: 'punct', original: '', fix: P.noEnd.fix, why: P.noEnd.why, soft: false, append: true });
         ['question', 'question2', 'multi', 'spaceBefore', 'noSpaceAfterComma'].forEach(function (k) {
-          var p = P[k]; if (!p.re) return; p.re.lastIndex = 0;
+          var p = P[k]; if (!p.re) return; if (p.skip && p.skip.test(t)) return; p.re.lastIndex = 0;
           while ((m = p.re.exec(t))) {
             var fx = (k === 'question' || k === 'question2') ? m[0].replace(/\.\s*$/, '?') : k === 'noSpaceAfterComma' ? ', ' : subFix(p.fix, m);
             if (k === 'noSpaceAfterComma') { pushMark(out, s, m.index, 1, 'punct', ',', fx, p.why, true); continue; }
@@ -296,6 +334,7 @@
         });
       }
     });
+    if (allow.indexOf('agree') >= 0) runHedge(sents, out, type);
     /* 긴 문장 — 나눌 자리 하나 */
     if (allow.indexOf('long') >= 0) {
       var lim = S.format.sentenceLength[band];
@@ -398,15 +437,17 @@
     var topic = null;
     var kws = (opt.keywords || []).map(function (k) { return String(k).trim(); }).filter(Boolean);
     if (!kws.length && opt.topic) kws = words(opt.topic).filter(function (w, i, a) { return a.indexOf(w) === i; }).slice(0, 3);
+    var kwAlt = opt.kwAlt || {};
+    var altOf = function (k) { return [k].concat(Array.isArray(kwAlt[k]) ? kwAlt[k] : []); };
     if (kws.length) {
       var body = text.replace(/\s+/g, '');
-      var counts = kws.map(function (k) { return (body.match(rxg(esc(k))) || []).length; });
+      var counts = kws.map(function (k) { return altOf(k).reduce(function (n, a) { return n + (body.match(rxg(esc(String(a).replace(/\s+/g, '')))) || []).length; }, 0); });
       var maxN = Math.max.apply(null, counts);
       var st = maxN >= 2 ? 'green' : maxN === 1 ? 'yellow' : 'red';
       var missing = kws[counts.indexOf(Math.min.apply(null, counts))];
       var perPara = [];
       for (var p = 0; p < paraCount; p++) perPara.push(0);
-      sents.forEach(function (s) { kws.forEach(function (k) { if (s.text.indexOf(k) >= 0) perPara[s.para]++; }); });
+      sents.forEach(function (s) { var flat = s.text.replace(/\s+/g, ''); kws.forEach(function (k) { if (altOf(k).some(function (a) { return flat.indexOf(String(a).replace(/\s+/g, '')) >= 0; })) perPara[s.para]++; }); });
       topic = { status: st, keywords: kws, counts: counts, perPara: perPara, msg: fill(F.common.topic[st], { kw: st === 'green' ? kws[0] : missing }) };
     }
 
