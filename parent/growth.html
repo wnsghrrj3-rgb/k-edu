@@ -19,6 +19,7 @@
    · 취약 → "함께 해보면 좋은 것" (가정 활동 제안으로 번역)
    · 열람 = 검증 완료(parent_student_links.verified_at) 자녀만 (RLS) · 열람 로그(report_parent_views)
    · v2: 이번 주 / 이번 달(4주 달력) 전환, 단원 진도를 문장으로, 차시 이름 정본, 인쇄
+   · v2.1(09-22): ✏️ 글쓰기 — 담임이 돌려준 케이글쓰기 첨삭(SQL #52 report_write)을 수준 말·한마디로. 점수 숫자 0, 다른 아이와 비교 0. 열람은 시범교 특례 그대로(이 화면 자체가 특례 뒤)
    ============================================= */
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -67,6 +68,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .unit-line .pb{width:110px;height:8px;background:#EDF2F7;border-radius:4px;overflow:hidden;flex:none}
 .unit-line .pb i{display:block;height:100%;background:var(--primary)}
 .unit-line .pc{font-size:12px;color:var(--sub);width:58px;text-align:right;flex:none}
+.wr{border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:9px}
+.wr .t{font-size:13.5px;font-weight:700;line-height:1.4}.wr .t small{font-weight:500;color:var(--sub);font-size:12px;display:block}
+.wr .lv{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.wr .lv span{background:#F7F8FA;border:1px solid #E2E8F0;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600}
+.wr .lv span.l0{background:#F0FAF4;border-color:#BEE3CE;color:#276749}.wr .lv span.l2{background:#FFF4EC;border-color:#F8CFAE;color:#9C4221}
+.wr .m{margin-top:8px;font-size:12.5px;line-height:1.6;color:var(--text);background:#EEF4FF;border-radius:10px;padding:8px 10px}
+.wr .m::before{content:'담임 한마디 · ';font-weight:700}
 .home-card{border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:9px}
 .home-card .t{font-size:13.5px;font-weight:700;line-height:1.4}
 .home-card .t small{font-weight:500;color:var(--sub);font-size:12px;display:block}
@@ -142,6 +149,10 @@ async function init(){
     db.from('report_morning_daily').select('student_id,run_date,subject').eq('student_id', studentId).gte('run_date', from),
     db.from('report_teacher_comments').select('comment, updated_at').eq('student_id', studentId).eq('visible_to_parent', true).limit(1)
   ]);
+  // 케이글쓰기 돌려받은 글(SQL #52 report_write) — 돌려준 것만·같은 과제는 마지막 글만. 뷰가 없으면 조용히 빈 목록
+  const writes = await db.from('report_write').select('run_id,type,title,attempt,levels,memo,graded_at,is_last').eq('student_id', studentId).eq('is_last', true).order('graded_at',{ascending:false}).limit(8).then(r => r.data || []).catch(() => []);
+  let wcrit = WCRIT_FALLBACK;
+  if(writes.length){ try{ const rb = await fetch('/kedu/write/data/rubric.json').then(r=>r.json()); if(rb && rb.criteria) wcrit = rb.criteria.map(c=>c.name); }catch(e){} }
   const prof = profRows && profRows[0];
   if(!prof){
     document.getElementById('app').innerHTML =
@@ -153,7 +164,7 @@ async function init(){
          cls: KR.classify(mastery||[], wrongs||[]),
          weeks: KR.buildWeeks(scores||[], morning||[], 4),
          units: KR.unitProgress(scores||[], mastery||[]),
-         morning: morning||[], cmt: (cmtRows&&cmtRows[0])||null, period:'week' };
+         morning: morning||[], cmt: (cmtRows&&cmtRows[0])||null, period:'week', writes, wcrit };
   render();
   logView('week');
 }
@@ -164,8 +175,16 @@ async function logView(period){
 }
 function setPeriod(p){ if(_D.period===p) return; _D.period = p; render(); logView(p); }
 
+// 케이글쓰기 — 유형 이름 · 수준 말(루브릭 0·1·2 → 학부모 말, 「노력 요함」은 화면에 안 쓴다 · 설계 §7 톤)
+const WTYPE = { argue:'주장하는 글', explain:'설명하는 글', book:'감상문', letter:'편지', story:'경험한 일' };
+const WLEVEL = ['잘하고 있습니다', '자라는 중입니다', '함께 보면 좋습니다'];
+const WCRIT_FALLBACK = ['글의 틀', '내용', '표현'];
 function render(){
   const { prof, cls, weeks, units, morning, cmt } = _D;
+  const writes = _D.writes || [], wcrit = _D.wcrit || WCRIT_FALLBACK;
+  const writesHtml = writes.slice(0,4).map(w => { const lv = w.levels || {};
+    const chips = wcrit.map((nm,i) => { const li = lv[String(i)]; return li==null ? '' : `<span class="l${li}">${esc(nm)} · ${esc(WLEVEL[li]||'')}</span>`; }).join('');
+    return `<div class="wr"><div class="t">${esc(w.title||'글쓰기')}<small>${esc(WTYPE[w.type]||w.type||'')}${w.attempt>1?' · '+w.attempt+'번째 글':''} · ${new Date(w.graded_at).toLocaleDateString('ko-KR')} 돌려줌</small></div>${chips?`<div class="lv">${chips}</div>`:''}${w.memo?`<div class="m">${esc(w.memo)}</div>`:''}</div>`; }).join('');
   const todayStr = KR.today();
   const DAY_KO = ['월','화','수','목','금','토','일'];
   const isWeek = _D.period === 'week';
@@ -236,6 +255,11 @@ function render(){
     ${units.length ? `<div class="sec"><h2>📚 단원별 걸음</h2>
       <div class="sub">아이가 손댄 단원만 보입니다. 끝까지 마친 차시 수와 다음 차시입니다.</div>
       ${unitsHtml}
+    </div>` : ''}
+
+    ${writesHtml ? `<div class="sec"><h2>✏️ 글쓰기</h2>
+      <div class="sub">담임 선생님이 첨삭해 돌려준 글입니다. 세 가지(글의 틀·내용·표현)를 말로만 적습니다 — 점수와 등급은 두지 않습니다.</div>
+      ${writesHtml}${writes.length>4?`<div class="sub" style="margin-top:8px">외 ${writes.length-4}편이 더 있습니다.</div>`:''}
     </div>` : ''}
 
     <div class="sec"><h2>🤝 함께 해보면 좋은 것</h2>

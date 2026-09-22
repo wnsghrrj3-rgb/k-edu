@@ -62,6 +62,11 @@ function fakeDb(role){
     student_profiles: [{ id:S1, nickname:'1번', grade:1, class_code_id:CC, user_id:'u-student' }],
     parent_student_links: [{ student_id:S1, parent_id:'u-parent', verified_at:iso(-10) }],
     report_parent_views: [], student_seats: seats,
+    // 케이글쓰기 돌려준 글(SQL #52 report_write) — is_last=false 는 앞 차수라 안 나와야 함
+    report_write: [
+      { student_id:S1, run_id:'r-w1', type:'argue', band:'low', title:'급식 남기지 않기', attempt:2, levels:{'0':0,'1':1,'2':2}, memo:'이유를 두 개나 썼구나. 마침표만 한 번 더 보자.', ask_rewrite:true, graded_at:iso(-1), reveal_to_student:true, is_last:true },
+      { student_id:S1, run_id:'r-w1', type:'argue', band:'low', title:'급식 남기지 않기', attempt:1, levels:{'0':2,'1':2,'2':2}, memo:'첫 글 메모(안 보여야 함)', ask_rewrite:true, graded_at:iso(-3), reveal_to_student:true, is_last:false },
+    ],
   };
   const build = (name) => {
     let rows = (tables[name]||[]).slice(); let single = false;
@@ -101,6 +106,8 @@ async function open(file, role, url){
       w.speechSynthesis = { cancel(){}, speak(){} }; w.SpeechSynthesisUtterance = function(){};
       w.navigator.clipboard = { writeText: async () => {} };
       w.alert = () => {};
+      // fetch(정적 JSON) → 로컬 파일. 케이글쓰기 rubric.json 등
+      w.fetch = async (u) => { const path = new URL(u, 'https://keduclass.com').pathname.replace(/^\//,''); const body = rd(path); return { ok:true, json: async () => JSON.parse(body), text: async () => body }; };
       // 지도(/kedu_map/*.js) 동적 로딩 → 로컬 파일을 직접 실행
       w.__appendScript = (el) => { try { w.eval(rd(new URL(el.src, 'https://keduclass.com').pathname.replace(/^\//,''))); setTimeout(()=>el.onload&&el.onload(),0); } catch(e){ setTimeout(()=>el.onerror&&el.onerror(e),0); } };
     }
@@ -195,6 +202,14 @@ async function open(file, role, url){
     ok(doc.querySelector('.unit .cells .next'), '내 학습: 다음 새 차시 강조');
     ok(doc.querySelectorAll('.go-card').length >= 3, '내 학습: 다음 걸음 카드');
     ok(/background:#EEF4FF/.test(doc.querySelector('.badge')?.getAttribute('style')||''), '내 학습: 뱃지 = 과목별 색(수학)');
+    // 케이글쓰기 「내가 쓴 글」 (report_write, 마지막 차수만)
+    const wrs = doc.querySelectorAll('.wr'); const wt = wrs[0]?.textContent || '';
+    ok(/내가 쓴 글/.test(txt) && wrs.length === 1, '내 학습: 내가 쓴 글 카드 — 마지막 차수 1편만 ' + wrs.length);
+    ok(/급식 남기지 않기/.test(wt) && /주장하는 글/.test(wt) && /2번째 글/.test(wt), '내 학습: 글 제목·유형·차수');
+    ok(/글의 틀 · 잘했어요/.test(wt) && /내용 · 잘 가고 있어요/.test(wt) && /표현 · 한 번 더!/.test(wt), '내 학습: 수준은 말로만(노력 요함 0)');
+    ok(!/노력 요함|첫 글 메모/.test(txt) && /마침표만 한 번 더/.test(wt), '내 학습: 한마디 노출·앞 차수 메모 미노출');
+    ok(/다시 써 보자고/.test(wt) && /task\.html\?run=r-w1/.test(wrs[0].getAttribute('href')||''), '내 학습: 다시 쓰기 안내 · 과제로 가는 링크');
+    ok(/돌려준 글이 1편/.test(win.eval('_speakText')), '내 학습: TTS 에 글쓰기 한 줄');
 
     // 특별 뱃지는 완주 단원·연속일이 있어야 뜬다 — 공유 데이터엔 없으므로 직접 그려 확인
     const KRw = win.KeduReport;
@@ -226,6 +241,11 @@ async function open(file, role, url){
     ok(/이번 주 아이가 한 것/.test(txt) && /잘 하고 있는 것/.test(txt) && /단원별 걸음/.test(txt) && /함께 해보면 좋은 것/.test(txt) && /담임 선생님 한마디/.test(txt), '학부모: 5섹션');
     ok(/9까지의 수/.test(doc.querySelector('.home-card')?.textContent||''), '학부모: 가정 활동 문구에 단원명');
     ok(/끝까지 마쳤습니다/.test(txt) && /수학 \d차시/.test(txt), '학부모: 요약 문장(완료 차시·과목)');
+    const pwr = doc.querySelectorAll('.wr'); const pwt = pwr[0]?.textContent || '';
+    ok(/✏️ 글쓰기/.test(txt) && pwr.length === 1 && /급식 남기지 않기/.test(pwt) && /2번째 글/.test(pwt), '학부모: 글쓰기 섹션 — 마지막 차수 1편');
+    ok(/글의 틀 · 잘하고 있습니다/.test(pwt) && /표현 · 함께 보면 좋습니다/.test(pwt) && !/노력 요함|잘함|보통/.test(pwt), '학부모: 수준은 학부모 말로만');
+    ok(/담임 한마디/.test(doc.querySelector('.wr .m')?.textContent + (win.getComputedStyle(doc.querySelector('.wr .m'),'::before').content||'')) || /마침표만 한 번 더/.test(pwt), '학부모: 담임 한마디 노출');
+    ok(!/첫 글 메모|다시 써 보자고/.test(txt), '학부모: 앞 차수 메모·다시쓰기 요청 미노출');
     ok(inserts.some(i => i.table==='report_parent_views' && i.row.period==='week' && i.row.student_id===S1), '학부모: 열람 로그 INSERT');
     win.setPeriod('month'); await sleep(10);
     const t2 = doc.getElementById('app').textContent;

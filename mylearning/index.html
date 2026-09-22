@@ -67,6 +67,15 @@ body.lower .badge{font-size:15.5px;padding:10px 16px 10px 11px}
 body.lower .badge .s{width:30px;height:30px;font-size:16px}
 .badge small{font-weight:500;opacity:.7;font-size:.85em}
 /* ③ 다시 해볼 것 · ④ 다음 걸음 */
+/* 내가 쓴 글(.wr) — 케이글쓰기 돌려받은 글(SQL #52 report_write). 점수 숫자 0, 수준은 말로만 */
+.wr{border:1.5px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:10px;background:#fff;text-decoration:none;color:inherit;display:block}
+.wr .t{font-weight:700;font-size:14.5px}.wr .t small{display:block;font-weight:500;opacity:.7;font-size:12px;margin-top:2px}
+.wr .lv{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.wr .lv span{background:#F7F8FA;border:1px solid #E2E8F0;border-radius:999px;padding:4px 10px;font-size:12.5px;font-weight:600}
+.wr .lv span.l0{background:#F0FAF4;border-color:#BEE3CE}.wr .lv span.l2{background:#FFF4EC;border-color:#F8CFAE}
+.wr .m{margin-top:8px;font-size:13px;line-height:1.5;background:#EEF4FF;border-radius:10px;padding:8px 10px}
+.wr .m::before{content:'💬 선생님 한마디 · ';font-weight:700}
+.wr .again{margin-top:8px;font-size:12.5px;color:#C05621;font-weight:700}
+body.lower .wr .t{font-size:16.5px}body.lower .wr .lv span{font-size:14px}body.lower .wr .m{font-size:14.5px}
 .go-card{display:flex;align-items:center;gap:12px;border:1.5px solid var(--border);border-radius:16px;padding:13px 14px;margin-bottom:10px;text-decoration:none;color:inherit;background:#fff}
 .go-card:active{transform:scale(.99)}
 .go-card .k{font-size:24px;flex:none}
@@ -124,6 +133,10 @@ const SUBJ_BADGE = {
   영어:{ico:'🅰️',bg:'#FFF0F3',bd:'#F7C6D0'}
 };
 const SUBJ_FALLBACK = {ico:'⭐',bg:'#F7F8FA',bd:'#E2E8F0'};
+// 케이글쓰기 — 유형 이름 · 수준 말(루브릭 0·1·2 → 학생 말, 「노력 요함」은 화면에 안 쓴다 · 설계 §7 톤)
+const WTYPE = { argue:'주장하는 글', explain:'설명하는 글', book:'감상문', letter:'편지', story:'경험한 일' };
+const WLEVEL = ['잘했어요', '잘 가고 있어요', '한 번 더!'];
+const WCRIT_FALLBACK = ['글의 틀', '내용', '표현'];
 // 연속 학습 단계 — 아래에서부터 처음 걸리는 것 하나만 준다
 const STREAK_TIERS = [
   {n:20,t:'스무 밤 연속',ico:'🌟'}, {n:14,t:'두 주 연속',ico:'💎'},
@@ -155,6 +168,10 @@ async function init(){
     db.from('report_morning_daily').select('student_id,run_date,subject').eq('student_id', p.id).gte('run_date', from),
     db.from('report_concept_mastery').select('*').eq('student_id', p.id)
   ]);
+  // 케이글쓰기 돌려받은 글(SQL #52 report_write) — 돌려준 것만·같은 과제는 마지막 글만(설계 §J: 학생은 돌려준 글만). 뷰가 없으면 조용히 빈 목록
+  const writes = await db.from('report_write').select('run_id,type,title,attempt,levels,memo,ask_rewrite,graded_at,is_last').eq('student_id', p.id).eq('is_last', true).order('graded_at',{ascending:false}).limit(12).then(r => r.data || []).catch(() => []);
+  let wcrit = WCRIT_FALLBACK;
+  if(writes.length){ try{ const rb = await fetch('/kedu/write/data/rubric.json').then(r=>r.json()); if(rb && rb.criteria) wcrit = rb.criteria.map(c=>c.name); }catch(e){} }
   await KR.loadCatalog((mastery||[]).map(m=>m.lesson_id).concat((scores||[]).map(r=>r.lesson_id), (wrongs||[]).map(w=>w.lesson_id)));
   const cls = KR.classify(mastery||[], wrongs||[]);
   const wk = KR.buildWeeks(scores||[], morning||[], 1)[0];
@@ -163,10 +180,11 @@ async function init(){
   const streak = KR.streak(scores||[], morning||[]);
   if((conceptRows||[]).length) await KR.loadConcepts(db);
   const cmap = KR.conceptMap(conceptRows||[]);
-  render(p, wk, cls, steps, units, streak, cmap);
+  render(p, wk, cls, steps, units, streak, cmap, writes, wcrit);
 }
 
-function render(p, wk, cls, steps, units, streak, cmap){
+function render(p, wk, cls, steps, units, streak, cmap, writes, wcrit){
+  writes = writes || []; wcrit = wcrit || WCRIT_FALLBACK;
   const todayStr = KR.today();
   const DAY_KO = ['월','화','수','목','금','토','일'];
   const daysHtml = Object.keys(wk.days).map((d,i) => {
@@ -249,6 +267,13 @@ function render(p, wk, cls, steps, units, streak, cmap){
       ${(cmap && cmap.weak.length) ? `<div class="note">${cmap.weak.slice(0,2).map(c=>`「${c.info.name}」은 한 번 더 보면 좋아요.`).join(' ')}</div>` : ''}
       ${(cmap && cmap.solid.length) ? `<div class="note">「${cmap.solid.slice(0,2).map(c=>c.info.name).join('」와 「')}」은 이제 탄탄해요!</div>` : ''}
     </div>
+    ${writes.length ? `<div class="card"><h2><span class="ico">✏️</span>내가 쓴 글</h2>
+      ${writes.slice(0,6).map(w => {
+        const lv = w.levels || {};
+        const chips = wcrit.map((nm,i) => { const li = lv[String(i)]; return li==null ? '' : `<span class="l${li}">${esc(nm)} · ${esc(WLEVEL[li]||'')}</span>`; }).join('');
+        return `<a class="wr" href="/kedu/write/task.html?run=${encodeURIComponent(w.run_id)}"><div class="t">${esc(w.title||'글쓰기')}<small>${esc(WTYPE[w.type]||w.type||'')}${w.attempt>1?' · '+w.attempt+'번째 글':''} · ${new Date(w.graded_at).toLocaleDateString('ko-KR')} 돌려받음</small></div>${chips?`<div class="lv">${chips}</div>`:''}${w.memo?`<div class="m">${esc(w.memo)}</div>`:''}${w.ask_rewrite?`<div class="again">✍️ 선생님이 고쳐서 다시 써 보자고 했어요</div>`:''}</a>`; }).join('')}
+      ${writes.length>6?`<div class="note">그리고 ${writes.length-6}편 더 있어요.</div>`:''}
+    </div>` : ''}
     <div class="card"><h2><span class="ico">👟</span>다음 걸음</h2>
       ${steps.length ? steps.map(st=>goCard(st, stepIcon[st.kind]||'👉', stepCta[st.kind]||'가 보기')).join('') : '<div class="empty">첫 차시를 열어 보면 여기에 다음 걸음이 생겨요!</div>'}
     </div>
@@ -264,7 +289,8 @@ function render(p, wk, cls, steps, units, streak, cmap){
     + (tros.length ? `새로 받은 뱃지는 ${tros.slice(0,2).map(b=>b.t).join(', ')} 이에요. ` : '')
     + (solidNames.length ? `탄탄한 것은 ${solidNames.join(', ')} 이에요. ` : '')
     + (retryNames.length ? `다시 해볼 것은 ${retryNames.join(', ')} 이에요. 한 번 더 하면 탄탄해져요. ` : '지금 다시 해볼 것은 없어요. 멋져요! ')
-    + (steps.length ? `다음 걸음은 ${shortTitle(KR.lesson(steps[0].lessonId))} 이에요.` : '');
+    + (steps.length ? `다음 걸음은 ${shortTitle(KR.lesson(steps[0].lessonId))} 이에요. ` : '')
+    + (writes.length ? `선생님이 돌려준 글이 ${writes.length}편 있어요.` : '');
 }
 function speakPage(){
   if(!('speechSynthesis' in window) || !_speakText) return;
