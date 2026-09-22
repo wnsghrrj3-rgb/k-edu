@@ -76,7 +76,7 @@
     '/english/v3/','/english/v3/samples/','/gifted/','/grade1/semester1/korean/',
     '/grade1/semester1/math/','/grade1/semester2/korean/','/grade1/semester2/math/','/grade2/semester1/korean/','/grade2/semester1/math/',
     '/grade3/semester1/korean/','/grade3/semester1/math/','/grade3/semester1/science/',
-    '/grade3/semester1/social/','/grade3/semester2/korean/','/grade4/semester1/korean/','/grade4/semester1/math/',
+    '/grade3/semester1/social/','/grade3/semester2/korean/','/grade3/semester2/science/','/grade4/semester1/korean/','/grade4/semester1/math/',
     '/grade4/semester1/science/','/grade4/semester1/social/','/grade5/semester1/korean/',
     '/grade5/semester1/math/','/grade5/semester1/science/','/grade5/semester1/social/',
     '/grade6/semester1/math/','/grade6/semester1/science/','/hub2/','/kbattle/','/kedu/activities/',
