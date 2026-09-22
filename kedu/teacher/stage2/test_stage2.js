@@ -22,6 +22,7 @@ function loadLessons(file) {
 // ── ① 렌더 전수 ──
 const dom0 = new JSDOM('<!doctype html><html><body></body></html>', { runScripts: 'outside-only' });
 const g0 = dom0.window; g0.KT2_NO_BOOT = true;
+vm.runInContext(fs.readFileSync(path.join(__dirname, 'stage2-art.js'), 'utf8'), dom0.getInternalVMContext(), { filename: 'stage2-art.js' });
 vm.runInContext(fs.readFileSync(path.join(__dirname, 'stage2.js'), 'utf8'), dom0.getInternalVMContext(), { filename: 'stage2.js' });
 const KT2 = g0.KT2;
 const files = fs.readdirSync(DATA).filter(f => /^g\d_[a-z]+_u\d+\.js$/.test(f)).sort();
@@ -60,7 +61,7 @@ function runStage(sj, un, l) {
   const run = (p) => vm.runInContext(fs.readFileSync(p, 'utf8'), ctx, { filename: path.basename(p) });
   w.LESSONS = {}; run(path.join(__dirname, 'manifest.js')); run(path.join(DATA, path.basename(un.file))); if (un.resources) run(path.join(ROOT, un.resources));
   run(path.join(ROOT, 'engine/klab.js')); run(path.join(ROOT, 'engine/tools/shape3d.js')); run(path.join(ROOT, 'engine/tools/place_value.js'));
-  run(path.join(__dirname, 'stage2.js'));
+  run(path.join(__dirname, 'stage2-art.js')); run(path.join(__dirname, 'stage2.js'));
   const tag = sj.slug + '/' + l.key;
   let st;
   try { st = new w.KT2.Stage({ params: { g: String(sj.grade), s: sj.subject, u: String(un.unit), l: l.key }, lessons: w.LESSONS, unitTitle: un.title }); } catch (e) { fail++; fails.push(tag + ' 부팅 예외: ' + e.message); return; }
@@ -69,7 +70,7 @@ function runStage(sj, un, l) {
   ok(d.querySelector('#hud button[data-h="next"]'), tag + ' HUD 생성');
   ok(d.querySelector('#kt2-paper.anim, #kt2-paper .anim'), tag + ' 연출(anim) 걸림');
   ok(d.querySelector('#fx'), tag + ' 축하 캔버스');
-  let zoomN = 0, misOk = true, bubN = 0;
+  let zoomN = 0, misOk = true, bubN = 0, picN = 0, chipN = 0, illusN = 0;
   let guard = 0, acts = 0, frags = 0;
   while (st.idx < st.slides.length - 1 && guard++ < 2000) {
     const before = st.idx;
@@ -79,7 +80,7 @@ function runStage(sj, un, l) {
     if (st.idx % 2 === 0) try { st.revealAll(); st.revealAll(); } catch (e) { fail++; fails.push(tag + ' #' + (st.idx + 1) + ' revealAll 예외: ' + e.message); }
     try { st.next(); } catch (e) { fail++; fails.push(tag + ' #' + (st.idx + 1) + ' next 예외: ' + e.message); break; }
     if (st.idx === before) frags++;
-    { const p2 = d.querySelector('#kt2-paper'); zoomN += p2.querySelectorAll('.zoomable').length; bubN += p2.querySelectorAll('.kid.talk .bub').length; if (st.cur().block === 'misconception' && p2.querySelectorAll('.mis-card').length !== 2) misOk = false; if (p2.querySelector('.zoomable')) { const z = p2.querySelector('.zoomable'); st.toggleZoom(z); if (!z.classList.contains('zoomed')) misOk = misOk && false; st.toggleZoom(z); } }
+    { const p2 = d.querySelector('#kt2-paper'); zoomN += p2.querySelectorAll('.zoomable').length; bubN += p2.querySelectorAll('.kid.talk .bub').length; picN += p2.querySelectorAll('.picture .bd').length; chipN += p2.querySelectorAll('svg.tenframe.chips .chip').length; p2.querySelectorAll('.img-frame img').forEach(im => { w.KT2.imgFallback(im); }); illusN += p2.querySelectorAll('.img-frame.illus .bd').length; if (st.cur().block === 'misconception' && p2.querySelectorAll('.mis-card').length !== 2) misOk = false; if (p2.querySelector('.zoomable')) { const z = p2.querySelector('.zoomable'); st.toggleZoom(z); if (!z.classList.contains('zoomed')) misOk = misOk && false; st.toggleZoom(z); } }
   }
   ok(st.idx === st.slides.length - 1, tag + ' 끝까지 넘김 (' + (st.idx + 1) + '/' + st.slides.length + ')');
   // 도구
@@ -103,6 +104,12 @@ function runStage(sj, un, l) {
     const exp = st.exportPlan(); ok(JSON.parse(exp).added.length === 1, tag + ' 내보내기');
     st.removeAdded(addedId); ok(st.slides.length === n0, tag + ' 추가 슬라이드 지우기');
     ok(st.importPlan(exp) && st.slides.length === n0 + 1, tag + ' 가져오기');
+    // 자료 연결 v2
+    ok(st.attachRes('https://www.youtube.com/watch?v=Qxi-dPmsl-Q', '테스트 영상') && st.fitFor(st.cur()).some(e => e.mine && e.video_id === 'Qxi-dPmsl-Q'), tag + ' 영상 붙이기 → 이 슬라이드에 맞는 자료');
+    ok(!st.attachRes('abc', ''), tag + ' 잘못된 주소 거절');
+    st.paint(0, true); ok(!!d.querySelector('#kt2-paper .kt2-res-badge'), tag + ' 📎 배지');
+    st.openRes(); ok(d.querySelector('#ov-res #res-url') && d.querySelector('#ov-res .res.fit') && /youtube\.com\/results/.test(d.querySelector('#ov-res a[href*="results"]').getAttribute('href')), tag + ' 서랍: 붙이기 칸·우리 반 자료·유튜브 찾기'); 
+    const myId = st.fitFor(st.cur()).find(e => e.mine).id; st.markBroken(myId); ok(!st.fitFor(st.cur()).some(e => e.id === myId), tag + ' 안 열려요 → 제외'); st.markBroken(myId); st.closeOv();
     const s7 = st.sevenOf(); ok(s7.length === 7, tag + ' 7요소 판정 ' + s7.filter(Boolean).length + '/7');
     st.resetPlan(); ok(st.slides.length === n0 && !st.planDirty(), tag + ' 원래 차시로');
     st.openToc(); ok(d.querySelectorAll('#ov-toc .seven span').length === 8 && d.querySelector('#ov-toc .toc-tools [data-a="ask"]'), tag + ' 목차 7요소·도구'); st.closeOv();
@@ -112,11 +119,11 @@ function runStage(sj, un, l) {
   ok(misOk, tag + ' 오개념 두 칸·확대 토글');
   try { st.celebrate(); st.pop(); st.hudAct('still', d.querySelector('#hud button[data-h="still"]')); st.hudAct('still', d.querySelector('#hud button[data-h="still"]')); st.hudAct('sound', d.querySelector('#hud button[data-h="sound"]')); } catch (e) { fail++; fails.push(tag + ' 연출 도구 예외: ' + e.message); }
   ok(true, tag + ' 실주행 ' + acts + ' 조작 · ' + frags + ' 조각 · 확대 가능 ' + zoomN + ' · 말풍선 ' + bubN);
-  bubAll += bubN;
+  bubAll += bubN; picAll += picN; illusAll += illusN;
   w.close();
   return { acts, frags };
 }
-let ran = 0, actsAll = 0, fragsAll = 0, bubAll = 0;
+let ran = 0, actsAll = 0, fragsAll = 0, bubAll = 0, picAll = 0, illusAll = 0;
 manifest.subjects.forEach(sj => {
   // 과목마다: 각 단원의 첫 차시 + 조작 많은 차시 하나
   sj.units.forEach(un => {
@@ -125,6 +132,6 @@ manifest.subjects.forEach(sj => {
     picks.forEach(l => { const r = runStage(sj, un, l); if (r) { ran++; actsAll += r.acts; fragsAll += r.frags; } });
   });
 });
-console.log('② 무대 실주행 —', ran, '차시 부팅 · 슬라이드 안 조작', actsAll, '회 · 조각 공개', fragsAll, '회 · 말풍선', bubAll);
+console.log('② 무대 실주행 —', ran, '차시 부팅 · 슬라이드 안 조작', actsAll, '회 · 조각 공개', fragsAll, '회 · 말풍선', bubAll, '· 장면 무대', picAll, '· 사진 폴백 무대', illusAll);
 console.log('결과: PASS', pass, '· FAIL', fail);
 if (fail) { console.log(fails.slice(0, 40).join('\n')); process.exit(1); }

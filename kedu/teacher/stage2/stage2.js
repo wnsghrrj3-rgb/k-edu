@@ -40,6 +40,7 @@
 
   // ───────────────────────── 시각 부품 ─────────────────────────
   function tenFrame(count, size) {
+    if (global.KT2_ART) return global.KT2_ART.tenFrameChips(count, size);
     size = size || 46; const gap = 5, cols = 5, rows = 2;
     const w = cols * size + (cols - 1) * gap, h = rows * size + (rows - 1) * gap;
     let cells = '';
@@ -86,11 +87,14 @@
     return '<div class="tf-item' + (it.is_anchor ? ' anchor' : '') + '">' + v + (it.num !== undefined ? '<div class="tf-num">' + esc(it.num) + '</div>' : '') + ((it.label || it.caption) ? '<div class="tf-cap">' + md(it.label || it.caption) + '</div>' : '') + (it.note ? '<div class="small-text">' + md(it.note) + '</div>' : '') + '</div>';
   }
   function tfRow(items) { return '<div class="tf-row">' + items.map(tfItem).join('') + '</div>'; }
-  function image(src) {
+  function image(src, title) {
     if (!src) return '';
     const p = /^(https?:|\/)/.test(src) ? src : '../' + src;
-    return '<div class="img-frame"><img src="' + esc(p) + '" alt="" loading="lazy" onerror="var p=this.closest(\'.img-frame\');if(p)p.style.display=\'none\'"></div>';
+    return '<div class="img-frame" data-title="' + esc(title || '') + '"><img src="' + esc(p) + '" alt="" loading="lazy" onerror="if(window.KT2&&KT2.imgFallback)KT2.imgFallback(this);else{var p=this.closest(\'.img-frame\');if(p)p.style.display=\'none\'}"></div>';
   }
+  function imgFallback(img) { const f = img.closest('.img-frame'); if (!f) return; const A = global.KT2_ART; if (!A) { f.style.display = 'none'; return; } f.classList.add('illus'); f.innerHTML = A.backdrop(A.kindOf(f.getAttribute('data-title'))); }
+  // 인물 장면 = 그림책 무대 위에 선다
+  function picture(sceneHtml, hint) { const A = global.KT2_ART; if (!A) return sceneHtml; return '<div class="picture ' + A.kindOf(hint) + '">' + A.backdrop(A.kindOf(hint)) + sceneHtml + '</div>'; }
   function isSpeech(t) { t = String(t || ''); return /["“”「」]/.test(t) || /[!?！？…~]$/.test(t.trim()); }
   function kidCard(k) {
     const face = esc(k.face || '🙂'), label = k.label || '';
@@ -158,10 +162,10 @@
       }
       case 'motivate': {
         title = d.scene_title || d.title || '';
-        push(image(d.img)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>');
+        push(image(d.img, title + ' ' + (d.desc || ''))); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>');
         if (d.emojis) push('<div class="emoji-row">' + d.emojis.map(e => '<span>' + esc(e) + '</span>').join('') + '</div>');
         if (d.emoji && d.count !== undefined) push(emojiCount(d.emoji, d.count, true));
-        if (d.kids) push('<div class="scene">' + d.kids.map(kidCard).join('') + '</div>');
+        if (d.kids) push(picture('<div class="scene">' + d.kids.map(kidCard).join('') + '</div>', title + ' ' + (d.scene || '') + ' ' + (d.desc || '') + ' ' + (d.question || '')));
         if (d.scene) push('<div class="center-text">' + md(d.scene) + '</div>');
         if (d.teams) push('<div class="teams">' + d.teams.map(t => '<div class="team"><div class="team-name">' + md(t.name || '') + '</div>' + (t.emoji && t.count !== undefined ? emojiCount(t.emoji, t.count) : '') + '</div>').join('') + '</div>');
         if (d.number_panel) push('<div class="number-panel">' + d.number_panel.map(n => '<span>' + esc(n) + '</span>').join('') + '</div>');
@@ -169,8 +173,8 @@
         break;
       }
       case 'concept': {
-        push(image(d.img)); if (d.content) push('<div class="big-text">' + md(d.content) + '</div>');
-        if (d.kids_after) push('<div class="scene">' + d.kids_after.map(kidCard).join('') + '</div>');
+        push(image(d.img, title + ' ' + (d.content || ''))); if (d.content) push('<div class="big-text">' + md(d.content) + '</div>');
+        if (d.kids_after) push(picture('<div class="scene">' + d.kids_after.map(kidCard).join('') + '</div>', title + ' ' + (d.content || '')));
         if (d.items) push(tfRow(d.items));
         if (d.bidirect) push('<div class="bidirect">' + d.bidirect.map(l => l === '=' ? '<span class="eq">=</span>' : md(l)).join('<br>') + '</div>');
         if (d.examples) push('<div class="examples">' + d.examples.map(e => '<div class="ex">' + md(lbl(e)) + '</div>').join('') + '</div>');
@@ -381,7 +385,7 @@
     const seen = new Set();
     res.forEach(r => { if (!r || !r.id || seen.has(r.id)) return; seen.add(r.id); const i = self.extras.findIndex(e => e.id === r.id); if (i >= 0) self.extras[i] = Object.assign({}, self.extras[i], r); else self.extras.push(Object.assign({}, r)); const fits = Array.isArray(r.fit_slides) ? r.fit_slides : []; if (!fits.length) return; self.slides.forEach(s => { s.suggested_extras = (s.suggested_extras || []).slice(); if ((fits.includes(s.id) || fits.includes(s.block)) && !s.suggested_extras.includes(r.id)) s.suggested_extras.push(r.id); }); });
     self.planKey = 'kt2_plan_' + self.slug + '_' + self.key;
-    self.plan = Object.assign({ order: null, skip: [], added: [], text: {}, imgs: {}, tnote: {} }, lsGet(self.planKey, {}) || {});
+    self.plan = Object.assign({ order: null, skip: [], added: [], text: {}, imgs: {}, tnote: {}, res: {}, broken: {} }, lsGet(self.planKey, {}) || {});
     self.applyPlan();
     self.IS = {}; self.rev = {}; self.frag = {}; self.idx = 0; self.allAtOnce = !!lsGet('kt2_all_at_once', false);
     self.still = !!lsGet('kt2_still', false); self.sound = lsGet('kt2_sound', true) !== false;
@@ -402,7 +406,17 @@
     this.slides = list;
   };
   Stage.prototype.savePlan = function () { this.plan.updated = new Date().toISOString().slice(0, 16); lsSet(this.planKey, this.plan); this.paintPlanBadge(); };
-  Stage.prototype.planDirty = function () { const p = this.plan; return !!((p.order && p.order.length) || (p.skip && p.skip.length) || (p.added && p.added.length) || Object.keys(p.text || {}).length || Object.keys(p.imgs || {}).length || Object.keys(p.tnote || {}).length); };
+  Stage.prototype.planDirty = function () { const p = this.plan; return !!((p.order && p.order.length) || (p.skip && p.skip.length) || (p.added && p.added.length) || Object.keys(p.text || {}).length || Object.keys(p.imgs || {}).length || Object.keys(p.tnote || {}).length || Object.keys(p.res || {}).length || Object.keys(p.broken || {}).length); };
+  // 이 슬라이드에 맞는 자료 = 실측 자료층(fit_slides) ∪ 교사가 붙인 것 − 안 열리는 것
+  Stage.prototype.fitFor = function (s) { const fit = new Set(s.suggested_extras || []); const mine = (this.plan.res && this.plan.res[s.id]) || []; const broken = this.plan.broken || {}; const list = this.extras.filter(e => fit.has(e.id) && !broken[e.id]); return list.concat(mine.filter(m => !broken[m.id])); };
+  Stage.prototype.attachRes = function (url, title) {
+    url = String(url || '').trim(); if (!/^https?:\/\//.test(url)) { this.toast('주소는 http 로 시작해야 해요'); return false; }
+    const sid = this.cur().id; const yt = (url.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/) || [])[1];
+    const e = { id: 'my_' + Date.now().toString(36), type: yt ? 'video' : 'link', url, video_id: yt || undefined, title: (title || '').trim() || (yt ? '우리 반 영상' : url.replace(/^https?:\/\//, '').slice(0, 40)), source: '우리 반', mine: true, verified: new Date().toISOString().slice(0, 10) };
+    this.plan.res[sid] = this.plan.res[sid] || []; this.plan.res[sid].push(e); this.savePlan(); this.toast((yt ? '영상' : '링크') + '을 이 슬라이드에 붙였어요'); return true;
+  };
+  Stage.prototype.markBroken = function (id) { this.plan.broken[id] = !this.plan.broken[id]; this.savePlan(); this.toast(this.plan.broken[id] ? '안 열리는 자료로 표시했어요 — 내보내기에 담겨요' : '다시 살렸어요'); };
+  Stage.prototype.searchUrl = function () { const s = this.cur(); const t = ((s.data || {}).scene_title || (s.data || {}).title || this.meta.subtitle || ''); const q = (this.g + '학년 ' + (SUBJ_KO[this.s] || '') + ' ' + t).replace(/\*\*/g, ''); return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q); };
   Stage.prototype.paintPlanBadge = function () { const b = doc.querySelector('#hud button[data-h="toc"]'); if (b) b.innerHTML = this.planDirty() ? '📑 목차 <small style="color:#FFD166">· 우리 반 판</small>' : '📑 목차'; };
   Stage.prototype.resetPlan = function () { this.plan = { order: null, skip: [], added: [], text: {}, imgs: {}, tnote: {} }; try { global.localStorage.removeItem(this.planKey); } catch (e) { } this.slides = this.slides.filter(s => !s._added); const L = this.lessonsRef && this.lessonsRef[this.key]; if (L) { const order = (L.slides || []).map(s => s.id); this.slides.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)); } this.slides.forEach(s => s.included = true); this.idx = Math.min(this.idx, this.slides.length - 1); this.paintPlanBadge(); this.paint(0, true); this.toast('원래 차시로 되돌렸어요'); };
   // 글자 덮어쓰기 경로 = .kt2-body 안 자식 순번 사슬. 제목은 'title'
@@ -482,7 +496,7 @@
       paper.innerHTML = '<div class="kt2-head"><span class="kt2-chip">' + esc(s.stage) + ' <small style="opacity:.6">' + pos + '/' + tot + '</small></span><span class="kt2-kicker">' + esc(this.meta.subtitle || this.meta.title || '') + '</span><span class="sp"></span>' + (r.answerable && this.rev[s.id] ? '<span class="kt2-answered">✔ 정답 공개</span>' : '') + '</div>'
         + (r.title ? '<h1 class="kt2-title' + tcls + '">' + md(r.title) + '</h1>' : '') + (r.sub ? '<div class="kt2-sub">' + md(r.sub) + '</div>' : '')
         + '<div class="kt2-body' + (r.cls ? ' ' + r.cls : '') + '">' + r.body + '</div>'
-        + '<div class="kt2-foot"><span class="brand">케이티처</span><span class="kt2-progress"><i style="width:' + Math.round((n / N) * 100) + '%"></i></span><span class="sp"></span><span class="pg"><b>' + n + '</b> / ' + N + '</span></div>';
+        + '<div class="kt2-foot"><span class="brand">케이티처</span>' + (function (fit) { return fit.length ? '<button class="kt2-res-badge" data-act="res-open" title="이 슬라이드에 맞는 자료 ' + fit.length + '개 (R)">📎 <b>' + fit.length + '</b></button>' : ''; })(this.fitFor(s)) + '<span class="kt2-progress"><i style="width:' + Math.round((n / N) * 100) + '%"></i></span><span class="sp"></span><span class="pg"><b>' + n + '</b> / ' + N + '</span></div>';
       // fragments
       if (r.frag && !this.allAtOnce) {
         const kids = Array.from(paper.querySelector('.kt2-body').children);
@@ -564,11 +578,12 @@
       case 'ca': { S.order = S.order || (d.cards || [3, 1, 5, 2, 4]).slice(); if (S.sel === undefined || S.sel === null) S.sel = i; else if (S.sel === i) S.sel = null; else { const t = S.order[S.sel]; S.order[S.sel] = S.order[i]; S.order[i] = t; S.sel = null; } rp(); { const target = d.target || (d.cards || [3, 1, 5, 2, 4]).slice().sort((a, b) => a - b); if (JSON.stringify(S.order) === JSON.stringify(target)) this.celebrate(); } break; }
       case 'ca-reset': { const init = (d.cards || [3, 1, 5, 2, 4]).slice(); for (let k = init.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [init[k], init[j]] = [init[j], init[k]]; } S.order = init; S.sel = null; rp(); break; }
       case 'timer': this.timerStart((+btn.getAttribute('data-min') || 3) * 60); break;
+      case 'res-open': this.openRes(); break;
     }
   };
 
   // ───────────────────────── 연출·소리·확대 ─────────────────────────
-  const STAGGER = ['svg.tenframe .cell.on', '.emoji-row span', '.stack .cube', '.seq > *', '.opt', '.point', '.steps li', '.examples .ex', '.ordinals .ord', '.tf-row .tf-item', '.tf-strip .tfs', '.flipgrid .flip', '.cq-grid .cq', '.scene .kid', '.arrow-flow > *', '.pairs > *', '.areas div', '.sa .row', '.signal .light', '.teams .team', '.trace-row .trace', '.num-table tr', '.num-cards span', '.number-panel span', '.numline .dot', '.dots i', '.i-tf div'];
+  const STAGGER = ['.tenframe .chip', '.picture .kid', 'svg.tenframe .cell.on', '.emoji-row span', '.stack .cube', '.seq > *', '.opt', '.point', '.steps li', '.examples .ex', '.ordinals .ord', '.tf-row .tf-item', '.tf-strip .tfs', '.flipgrid .flip', '.cq-grid .cq', '.scene .kid', '.arrow-flow > *', '.pairs > *', '.areas div', '.sa .row', '.signal .light', '.teams .team', '.trace-row .trace', '.num-table tr', '.num-cards span', '.number-panel span', '.numline .dot', '.dots i', '.i-tf div'];
   const ZOOMABLE = '.tf-item, .opt, .img-frame, .scenario, .kid, .mis-card, .point, .bidirect, .num-table, .flip, .ex, .cz, .big-q, .steps li, .offline, .pr-card';
   Stage.prototype.decorate = function (paper, r) {
     // 목록 부품에 순번(--i) — 등장 연출이 차례로 흐르게
@@ -660,20 +675,30 @@
   // 자료
   Stage.prototype.openRes = function () {
     const self = this; const p = doc.querySelector('#ov-res .panel'); if (!p) return;
-    const s = this.cur(); const fit = new Set(s.suggested_extras || []); const filter = self.resFilter || 'all';
+    const s = this.cur(); const filter = self.resFilter || 'all'; const broken = this.plan.broken || {};
+    const mine = (this.plan.res && this.plan.res[s.id]) || []; const fitIds = new Set(s.suggested_extras || []);
     const types = ['all'].concat(Object.keys(TYPE_LABEL).filter(t => self.extras.some(e => e.type === t)));
-    const card = e => { const un = e.type === 'video' && !(e.video_id || /youtu\.?be.*(v=|\/)[\w-]{11}/.test(e.url || '')); return '<div class="res' + (fit.has(e.id) ? ' fit' : '') + '" data-id="' + esc(e.id) + '"><div class="ic">' + esc(e.icon || ({ video: '🎥', link: '🔗', kedu: '🏠', book: '📚', game: '🎲', tip: '💡', misconception: '⚠️', fun_question: '❓', real_world: '🌍', extension: '➕', other_activity: '🧩' })[e.type] || '📎') + '</div><div><div class="t">' + esc(e.title || '') + '</div>' + (e.description ? '<div class="d">' + esc(e.description) + '</div>' : '') + '<div class="m"><span>' + esc(TYPE_LABEL[e.type] || e.type) + '</span>' + (e.source ? '<span>' + esc(e.source) + '</span>' : '') + ((e.status === '미확보' || un) && e.type === 'video' ? '<span class="no">미확보 · 검색으로 열림</span>' : '') + ((e.audience === 'teacher' || TEACHER_TYPES.has(e.type)) ? '<span class="tch">교사용</span>' : '') + '</div></div></div>'; };
+    const ICON = { video: '🎥', link: '🔗', kedu: '🏠', book: '📚', game: '🎲', tip: '💡', misconception: '⚠️', fun_question: '❓', real_world: '🌍', extension: '➕', other_activity: '🧩' };
+    const card = e => { const un = e.type === 'video' && !(e.video_id || /youtu\.?be.*(v=|\/)[\w-]{11}/.test(e.url || '')); const bk = !!broken[e.id]; return '<div class="res' + (fitIds.has(e.id) || e.mine ? ' fit' : '') + (bk ? ' broken' : '') + '" data-id="' + esc(e.id) + '"><div class="ic">' + esc(e.icon || ICON[e.type] || '📎') + '</div><div class="bd2"><div class="t">' + esc(e.title || '') + '</div>' + (e.description ? '<div class="d">' + esc(e.description) + '</div>' : '') + '<div class="m"><span>' + esc(TYPE_LABEL[e.type] || e.type) + '</span>' + (e.source ? '<span>' + esc(e.source) + '</span>' : '') + ((e.status === '미확보' || un) && e.type === 'video' ? '<span class="no">미확보 · 검색으로 열림</span>' : '') + ((e.audience === 'teacher' || TEACHER_TYPES.has(e.type)) ? '<span class="tch">교사용</span>' : '') + (bk ? '<span class="no">안 열림</span>' : '') + '</div></div><div class="ops"><button data-bk="' + esc(e.id) + '" title="' + (bk ? '다시 살리기' : '안 열려요 — 표시해 두면 내보내기에 담겨 준호가 고쳐요') + '">' + (bk ? '↺' : '⚠') + '</button>' + (e.mine ? '<button data-rm="' + esc(e.id) + '" title="떼기">🗑</button>' : '') + '</div></div>'; };
     const list = this.extras.filter(e => filter === 'all' || e.type === filter);
-    const fits = list.filter(e => fit.has(e.id)), rest = list.filter(e => !fit.has(e.id));
-    p.innerHTML = '<h3>📎 자료 <span style="font-size:12px;color:#8fa3b8;font-weight:600">' + this.extras.length + '개</span><span class="sp"></span><button class="x" data-x="1">✕</button></h3><div class="res-filter">' + types.map(t => '<button class="' + (t === filter ? 'on' : '') + '" data-f="' + t + '">' + (t === 'all' ? '전체' : esc(TYPE_LABEL[t])) + '</button>').join('') + '</div>'
-      + (fits.length ? '<div class="res-sec">이 슬라이드에 맞는 자료</div>' + fits.map(card).join('') : '') + (rest.length ? '<div class="res-sec">' + (fits.length ? '나머지' : '이 차시의 자료') + '</div>' + rest.map(card).join('') : '') + (!list.length ? '<div class="res-sec">이 종류의 자료가 없어요</div>' : '');
+    const fits = list.filter(e => fitIds.has(e.id)), rest = list.filter(e => !fitIds.has(e.id));
+    p.innerHTML = '<h3>📎 자료 <span style="font-size:12px;color:#8fa3b8;font-weight:600">' + (this.extras.length + mine.length) + '개</span><span class="sp"></span><button class="x" data-x="1">✕</button></h3>'
+      + '<div class="res-attach"><input id="res-url" placeholder="영상·자료 주소를 붙여 넣어요 (유튜브면 무대에서 바로 재생)"><input id="res-title" placeholder="이름(선택)"><button class="btn main" data-at="1">＋ 이 슬라이드에 붙이기</button><a class="btn" href="' + esc(this.searchUrl()) + '" target="_blank" rel="noopener">🔍 이 슬라이드로 유튜브 찾기 ↗</a><div class="hint">붙인 자료는 우리 반 판(이 기기)에 저장돼요 · 링크만 저장하고 영상은 복제하지 않아요</div></div>'
+      + '<div class="res-filter">' + types.map(t => '<button class="' + (t === filter ? 'on' : '') + '" data-f="' + t + '">' + (t === 'all' ? '전체' : esc(TYPE_LABEL[t])) + '</button>').join('') + '</div>'
+      + (mine.length ? '<div class="res-sec">우리 반이 붙인 자료</div>' + mine.map(card).join('') : '')
+      + (fits.length ? '<div class="res-sec">이 슬라이드에 맞는 자료</div>' + fits.map(card).join('') : '') + (rest.length ? '<div class="res-sec">' + (fits.length ? '나머지' : '이 차시의 자료') + '</div>' + rest.map(card).join('') : '') + (!list.length && !mine.length ? '<div class="res-sec">이 종류의 자료가 없어요 — 위에서 붙이거나 유튜브에서 찾아요</div>' : '');
     p.querySelector('[data-x]').addEventListener('click', () => self.closeOv());
+    p.querySelector('[data-at]').addEventListener('click', () => { if (self.attachRes(p.querySelector('#res-url').value, p.querySelector('#res-title').value)) { self.openRes(); self.paint(0, true); } });
+    p.querySelector('#res-url').addEventListener('keydown', e => { if (e.key === 'Enter') p.querySelector('[data-at]').click(); e.stopPropagation(); });
+    p.querySelector('#res-title').addEventListener('keydown', e => e.stopPropagation());
     p.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => { self.resFilter = b.getAttribute('data-f'); self.openRes(); }));
-    p.querySelectorAll('.res').forEach(el => el.addEventListener('click', () => self.openExtra(el.getAttribute('data-id'))));
+    p.querySelectorAll('[data-bk]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); self.markBroken(b.getAttribute('data-bk')); self.openRes(); self.paint(0, true); }));
+    p.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); const id = b.getAttribute('data-rm'); self.plan.res[s.id] = (self.plan.res[s.id] || []).filter(x => x.id !== id); if (!self.plan.res[s.id].length) delete self.plan.res[s.id]; self.savePlan(); self.openRes(); self.paint(0, true); }));
+    p.querySelectorAll('.res .bd2, .res .ic').forEach(el => el.addEventListener('click', () => self.openExtra(el.parentNode.getAttribute('data-id'))));
     this.openOv('ov-res');
   };
   Stage.prototype.openExtra = function (id) {
-    const e = this.extras.find(x => x.id === id); if (!e) return;
+    let e = this.extras.find(x => x.id === id); if (!e) { const mine = (this.plan.res && this.plan.res[this.cur().id]) || []; e = mine.find(x => x.id === id); } if (!e) return;
     const ytid = e.video_id || (String(e.url || '').match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/) || [])[1];
     if (e.type === 'video' && ytid) {
       const src = 'https://www.youtube-nocookie.com/embed/' + ytid + '?autoplay=1&rel=0' + (e.start ? '&start=' + (+e.start) : '') + (e.end ? '&end=' + (+e.end) : '');
@@ -687,8 +712,8 @@
   };
   Stage.prototype.showMedia = function (inner, e, href, hrefLabel) {
     this.closeOv(); const o = doc.getElementById('ov-media'); if (!o) return; this.media = o.querySelector('.frame'); this.media.innerHTML = inner;
-    o.querySelector('.bar').innerHTML = '<span>' + esc(e.title || '') + '</span>' + (e.note ? '<span style="color:#8fa3b8">· ' + esc(e.note) + '</span>' : '') + '<span class="sp"></span>' + (href ? '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(hrefLabel) + ' ↗</a>' : '') + '<a href="#" data-x="1">닫기 ✕</a>';
-    o.querySelector('[data-x]').addEventListener('click', ev => { ev.preventDefault(); this.closeOv(); }); this.openOv('ov-media');
+    o.querySelector('.bar').innerHTML = '<span>' + esc(e.title || '') + '</span>' + (e.note ? '<span style="color:#8fa3b8">· ' + esc(e.note) + '</span>' : '') + '<span class="sp"></span><a href="#" data-bk="1" title="안 열리면 표시해 두세요">⚠ 안 열려요</a>' + (href ? '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(hrefLabel) + ' ↗</a>' : '') + '<a href="#" data-x="1">닫기 ✕</a>';
+    o.querySelector('[data-x]').addEventListener('click', ev => { ev.preventDefault(); this.closeOv(); }); o.querySelector('[data-bk]').addEventListener('click', ev => { ev.preventDefault(); this.markBroken(e.id); this.closeOv(); this.paint(0, true); }); this.openOv('ov-media');
   };
   // 발문 띠
   Stage.prototype.setTnote = function (on) { this.tnoteOn = on; this.hudBtn('tnote', on); this.paintTnote(); };
@@ -845,6 +870,6 @@
       global.KT2 = global.KT2 || {}; global.KT2.stage = new Stage({ params: q, lessons: global.LESSONS, unitTitle });
     })();
   }
-  global.KT2 = { renderSlide, Stage, md, esc, STAGES, STAGE_MIN, BLOCK_LABEL, boot };
+  global.KT2 = { renderSlide, Stage, md, esc, STAGES, STAGE_MIN, BLOCK_LABEL, boot, imgFallback };
   if (doc && doc.getElementById && doc.getElementById('kt2-stage') && !global.KT2_NO_BOOT) { if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot); else boot(); }
 })(typeof window !== 'undefined' ? window : globalThis);
