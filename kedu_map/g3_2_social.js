@@ -44,14 +44,14 @@ window.KEDU_MAP["g3_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_social_u1_l04",
+     "lessonId": "g3_social_u1_l04_v1",
      "n": "4",
      "title": "지능정보화로 달라진 생활 모습을 살펴볼까요",
      "sub": "① 사회 변화로 달라진 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/social/1단원_사회변화와다양한문화/g3_social_u1_l04_두칸에담아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
