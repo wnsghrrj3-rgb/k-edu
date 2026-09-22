@@ -309,7 +309,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -335,7 +335,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -361,7 +361,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -387,7 +387,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -413,7 +413,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -439,7 +439,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -465,7 +465,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       }
      ]
@@ -499,7 +499,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -525,7 +525,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -551,7 +551,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -577,7 +577,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -603,7 +603,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -629,7 +629,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -655,7 +655,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -681,7 +681,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -707,7 +707,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -733,7 +733,7 @@ window.KT2_MANIFEST = {
         1,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -759,7 +759,7 @@ window.KT2_MANIFEST = {
         0,
         1,
         1,
-        0
+        1
        ]
       }
      ]
@@ -983,7 +983,7 @@ window.KT2_MANIFEST = {
         0,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -1009,7 +1009,7 @@ window.KT2_MANIFEST = {
         0,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -1035,7 +1035,7 @@ window.KT2_MANIFEST = {
         0,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -1061,7 +1061,7 @@ window.KT2_MANIFEST = {
         0,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -1087,7 +1087,7 @@ window.KT2_MANIFEST = {
         0,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -1113,7 +1113,7 @@ window.KT2_MANIFEST = {
         0,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -1139,7 +1139,7 @@ window.KT2_MANIFEST = {
         0,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -1165,7 +1165,7 @@ window.KT2_MANIFEST = {
         0,
         1,
         1,
-        0
+        1
        ]
       },
       {
@@ -1191,7 +1191,7 @@ window.KT2_MANIFEST = {
         0,
         1,
         1,
-        0
+        1
        ]
       }
      ]
@@ -1225,7 +1225,7 @@ window.KT2_MANIFEST = {
         1,
         0,
         1,
-        0
+        1
        ]
       },
       {
@@ -1251,7 +1251,7 @@ window.KT2_MANIFEST = {
         1,
         0,
         1,
-        0
+        1
        ]
       },
       {
@@ -1277,7 +1277,7 @@ window.KT2_MANIFEST = {
         1,
         0,
         1,
-        0
+        1
        ]
       }
      ]

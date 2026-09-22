@@ -106,35 +106,4 @@ const T = {
     s16: { ask: ['1단원에서 가장 재미있었던 건?'], watch: '세기·순서·비교 중 하나 말하면 정리', min: 2 }
   }
 };
-
-let src = fs.readFileSync(FILE, 'utf8');
-let added = 0, skipped = 0, missing = [];
-// 차시 구간 경계
-const marks = [...src.matchAll(/LESSONS\["(u\d+_l[\w]+)"\]\s*=/g)].map(m => ({ key: m[1], at: m.index }));
-function range(key) { const i = marks.findIndex(m => m.key === key); if (i < 0) return null; return [marks[i].at, i + 1 < marks.length ? marks[i + 1].at : src.length]; }
-for (const key of Object.keys(T)) {
-  const rg = range(key); if (!rg) { missing.push(key); continue; }
-  for (const sid of Object.keys(T[key])) {
-    const seg = src.slice(rg[0], rg[1]);
-    const re = new RegExp('"id":\\s*"' + sid + '"[\\s\\S]*?"data":\\s*\\{'); const m = seg.match(re);
-    if (!m) { missing.push(key + '/' + sid); continue; }
-    const at = rg[0] + m.index + m[0].length;
-    // 이 슬라이드 data 안에 이미 tnote 가 있으면 건너뜀(데이터 diff-0)
-    const after = src.slice(at, at + 4000); const closeIdx = after.search(/\n\s{2,6}\},?\n/);
-    if (/"tnote"\s*:/.test(after.slice(0, closeIdx > 0 ? closeIdx : 1500))) { skipped++; continue; }
-    const n = T[key][sid];
-    const ins = '\n        "tnote": ' + JSON.stringify(n) + ',';
-    src = src.slice(0, at) + ins + src.slice(at); added++;
-    // 경계 갱신
-    marks.forEach(mk => { if (mk.at > at) mk.at += ins.length; }); rg[1] += ins.length;
-  }
-}
-// 검산: 실행되는가 · 차시별 tnote 수
-const vm = require('vm'); const L = {}; const ctx = { window: { LESSONS: L }, LESSONS: L, document: { getElementById: () => null } }; ctx.window.window = ctx.window; vm.createContext(ctx); vm.runInContext(src, ctx);
-const report = Object.keys(L).map(k => k + ':' + (L[k].slides || []).filter(s => s.data && s.data.tnote).length).join(' ');
-const under = Object.keys(L).filter(k => (L[k].slides || []).filter(s => s.data && s.data.tnote).length < 6);
-console.log('tnote 추가', added, '· 이미 있음', skipped, '· 못 찾음', missing.length, missing.join(','));
-console.log('차시별 tnote:', report);
-if (under.length) { console.log('⛔ 6슬 미만:', under.join(',')); process.exit(1); }
-fs.writeFileSync(FILE, src);
-console.log('✅ g1_math_u1.js 갱신');
+require('./augment2_lib.js')(FILE, T);
