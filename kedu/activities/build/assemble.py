@@ -28,12 +28,16 @@ GENRE_ENGINE = {
     'duel_quiz': 'stream',
     'relay': 'relay',        # 반 전체 릴레이 — 승패 없는 협력형 (§10-5)
     'sequence': 'sequence',      # 무대형 — 카드를 순서대로 탭 (§10-4)
+    'category_race': 'category_race',  # v4 신설 — 반 전체 순번 분류 릴레이
+    'map_pin': 'map_pin',        # v4 신설 · 무대형 — 타일을 골라 자리에 놓기
+    'text_hunt': 'text_hunt',    # v4 신설 · 무대형 — 글 속 조건 토큰 탭
     # bundle · sort · explore는 활동 자체 루프 — 엔진 없이 core만 쓴다
 }
 
 SHELL = """<!doctype html>
 <html lang="ko">
 <head>
+<script src="/kedu_scope.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <title>{title} — K✦edu</title>
@@ -66,9 +70,14 @@ SHELL = """<!doctype html>
 <script>
 {src}
 </script>
+<script src="/kedu_back.js"></script><!-- 직접 주소로 열렸을 때만 보인다(케이박스 iframe 안에서는 스스로 물러남) -->
 </body>
 </html>
 """
+
+
+# 형제 트랙이 실물 30종에 주입해 둔 두 줄(/kedu_scope.js 계정 분리 · /kedu_back.js 돌아가기)을 조립기도 낸다 —
+# 재조립이 그 두 줄을 지우지 않도록 (2026-09-22).
 
 
 def read(p: Path) -> str:
