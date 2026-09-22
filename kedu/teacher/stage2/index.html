@@ -34,7 +34,10 @@ body{overflow:auto}
 .ls .t{font-weight:700;font-size:15px;line-height:1.35;min-height:40px}
 .ls .bar{display:flex;gap:2px;margin-top:10px;height:5px;border-radius:5px;overflow:hidden}
 .ls .bar i{display:block;height:100%}
-.ls .m{font-size:11px;color:#8fa3b8;margin-top:8px;display:flex;gap:10px}
+.ls .m{font-size:11px;color:#8fa3b8;margin-top:8px;display:flex;gap:10px;align-items:center}
+.ls .sv{display:flex;gap:2px;margin-left:auto}
+.ls .sv i{width:9px;height:9px;border-radius:3px;background:rgba(255,255,255,.12)}
+.ls .sv i.on{background:#4ee0b0}
 .ls .m b{color:#c7d3e0}
 .empty{padding:60px;text-align:center;color:#8fa3b8}
 .note{font-size:12px;color:#8fa3b8;margin-top:30px;line-height:1.7}
@@ -51,7 +54,7 @@ body{overflow:auto}
   <div class="tabs grade" id="tab-g"></div>
   <div class="tabs subj" id="tab-s"></div>
   <div id="units"></div>
-  <div class="note">화면 크기가 달라도 슬라이드는 같은 자리에 같은 크기로 보여요(1600×900 고정 캔버스). 차시를 열면 <b>→</b> 로 한 조각씩 보여 주고, <b>A</b> 로 정답을 열고, 아래 도구 막대에서 타이머·뽑기·점수판·펜을 써요. 1세대 무대는 그대로 <a href="../index.html">여기</a>에 있어요.</div>
+  <div class="note">화면 크기가 달라도 슬라이드는 같은 자리에 같은 크기로 보여요(1600×900 고정 캔버스). 카드 오른쪽 아래 초록 점 = 40분 7요소(복습 문항·실사·서사·교실 활동·수준별·출구·발문). 차시를 열면 <b>→</b> 로 한 조각씩 보여 주고, <b>A</b> 로 정답을 열고, 아래 도구 막대에서 타이머·뽑기·점수판·펜을 써요. 1세대 무대는 그대로 <a href="../index.html">여기</a>에 있어요.</div>
 </div>
 <script src="manifest.js"></script>
 <script>
@@ -74,7 +77,7 @@ body{overflow:auto}
     u.innerHTML = sj.units.map(function(un){
       return '<div class="unit"><h2><span class="n">'+un.unit+'</span>'+esc(un.title)+'<span class="m">'+un.lessons.length+'차시</span><span class="sp"></span>'+(un.resources?'<span class="res">자료층 있음</span>':'')+'</h2><div class="lessons">'+un.lessons.map(function(l){
         var tot = l.slides||1;
-        return '<a class="ls" href="stage.html?g='+g+'&s='+s+'&u='+un.unit+'&l='+encodeURIComponent(l.key)+'"><div class="no"><i></i>'+esc(l.no)+'차시'+(l.std?' <span style="opacity:.7">'+esc(l.std)+'</span>':'')+'</div><div class="t">'+esc(l.title)+'</div><div class="bar">'+['도입','전개','기본문제','응용문제','정리'].map(function(st,i){ return l.stages[i]?'<i style="width:'+(l.stages[i]/tot*100)+'%;background:'+C[st]+'"></i>':''; }).join('')+'</div><div class="m"><span><b>'+l.slides+'</b> 슬라이드</span>'+(l.interactive?'<span><b>'+l.interactive+'</b> 조작</span>':'')+'</div></a>';
+        return '<a class="ls" href="stage.html?g='+g+'&s='+s+'&u='+un.unit+'&l='+encodeURIComponent(l.key)+'"><div class="no"><i></i>'+esc(l.no)+'차시'+(l.std?' <span style="opacity:.7">'+esc(l.std)+'</span>':'')+'</div><div class="t">'+esc(l.title)+'</div><div class="bar">'+['도입','전개','기본문제','응용문제','정리'].map(function(st,i){ return l.stages[i]?'<i style="width:'+(l.stages[i]/tot*100)+'%;background:'+C[st]+'"></i>':''; }).join('')+'</div><div class="m"><span><b>'+l.slides+'</b> 슬라이드</span>'+(l.interactive?'<span><b>'+l.interactive+'</b> 조작</span>':'')+'<span class="sv" title="40분 7요소: '+(l.seven||[]).filter(Boolean).length+'/7">'+(l.seven||[]).map(function(v){ return '<i class="'+(v?'on':'')+'"></i>'; }).join('')+'</span></div></a>';
       }).join('')+'</div></div>';
     }).join('') || '<div class="empty">아직 차시가 없어요</div>';
     tg.querySelectorAll('button').forEach(function(b){ b.onclick=function(){ g=+b.getAttribute('data-g'); paint(); }; });

@@ -33,7 +33,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l02_03",
@@ -50,7 +59,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 3,
-       "blocks": 17
+       "blocks": 17,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l04_05",
@@ -67,7 +85,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 16
+       "blocks": 16,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l06",
@@ -84,7 +111,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 16
+       "blocks": 16,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l07",
@@ -101,7 +137,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 4,
-       "blocks": 16
+       "blocks": 16,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l08",
@@ -118,7 +163,16 @@ window.KT2_MANIFEST = {
         6
        ],
        "interactive": 6,
-       "blocks": 23
+       "blocks": 23,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l09",
@@ -135,7 +189,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 3,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l10",
@@ -152,7 +215,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 3,
-       "blocks": 16
+       "blocks": 16,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l11",
@@ -169,7 +241,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l12",
@@ -186,7 +267,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -211,7 +301,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l02",
@@ -228,7 +327,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 3,
-       "blocks": 17
+       "blocks": 17,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l03",
@@ -245,7 +353,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 4,
-       "blocks": 18
+       "blocks": 18,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l04",
@@ -262,7 +379,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 3,
-       "blocks": 16
+       "blocks": 16,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l05",
@@ -279,7 +405,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 3,
-       "blocks": 16
+       "blocks": 16,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l06",
@@ -296,7 +431,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l07",
@@ -313,7 +457,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -338,7 +491,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l02",
@@ -355,7 +517,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 3,
-       "blocks": 19
+       "blocks": 19,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l03",
@@ -372,7 +543,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 3,
-       "blocks": 18
+       "blocks": 18,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l04",
@@ -389,7 +569,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 3,
-       "blocks": 18
+       "blocks": 18,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l05",
@@ -406,7 +595,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 3,
-       "blocks": 18
+       "blocks": 18,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l06_07",
@@ -423,7 +621,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 3,
-       "blocks": 18
+       "blocks": 18,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l08",
@@ -440,7 +647,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 18
+       "blocks": 18,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l09_10",
@@ -457,7 +673,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 17
+       "blocks": 17,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l11",
@@ -474,7 +699,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l12",
@@ -491,7 +725,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 17
+       "blocks": 17,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l13",
@@ -508,7 +751,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 13
+       "blocks": 13,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -533,7 +785,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 16
+       "blocks": 16,
+       "seven": [
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l02",
@@ -550,7 +811,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l03",
@@ -567,7 +837,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 16
+       "blocks": 16,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l04",
@@ -584,7 +863,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 16
+       "blocks": 16,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l05",
@@ -601,7 +889,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l06",
@@ -618,7 +915,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l07",
@@ -635,7 +941,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 16
+       "blocks": 16,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -660,7 +975,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 4,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l04",
@@ -677,7 +1001,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 4,
-       "blocks": 17
+       "blocks": 17,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l05",
@@ -694,7 +1027,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 3,
-       "blocks": 17
+       "blocks": 17,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l06",
@@ -711,7 +1053,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 16
+       "blocks": 16,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l07",
@@ -728,7 +1079,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 3,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l08",
@@ -745,7 +1105,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l09",
@@ -762,7 +1131,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 4,
-       "blocks": 17
+       "blocks": 17,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l10",
@@ -779,7 +1157,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 13
+       "blocks": 13,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l11",
@@ -796,7 +1183,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 4,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -821,7 +1217,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 1,
-       "blocks": 9
+       "blocks": 9,
+       "seven": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l02",
@@ -838,7 +1243,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 1,
-       "blocks": 10
+       "blocks": 10,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l03",
@@ -855,7 +1269,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 1,
-       "blocks": 9
+       "blocks": 9,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0
+       ]
       }
      ]
     }
@@ -889,7 +1312,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l02",
@@ -906,7 +1338,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l03",
@@ -923,7 +1364,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l04",
@@ -940,7 +1390,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l05",
@@ -957,7 +1416,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l06",
@@ -974,7 +1442,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l07",
@@ -991,7 +1468,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l08",
@@ -1008,7 +1494,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l09",
@@ -1025,7 +1520,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l10",
@@ -1042,7 +1546,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l11",
@@ -1059,7 +1572,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l12",
@@ -1076,7 +1598,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l13",
@@ -1093,7 +1624,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l14",
@@ -1110,7 +1650,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -1135,7 +1684,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l02",
@@ -1152,7 +1710,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l03",
@@ -1169,7 +1736,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l04",
@@ -1186,7 +1762,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l05",
@@ -1203,7 +1788,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l06",
@@ -1220,7 +1814,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l07",
@@ -1237,7 +1840,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l08",
@@ -1254,7 +1866,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l09",
@@ -1271,7 +1892,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l10",
@@ -1288,7 +1918,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l11",
@@ -1305,7 +1944,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l12",
@@ -1322,7 +1970,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l13",
@@ -1339,7 +1996,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -1364,7 +2030,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l02",
@@ -1381,7 +2056,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l03",
@@ -1398,7 +2082,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l04",
@@ -1415,7 +2108,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l05",
@@ -1432,7 +2134,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l06",
@@ -1449,7 +2160,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l07",
@@ -1466,7 +2186,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l08",
@@ -1483,7 +2212,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l09",
@@ -1500,7 +2238,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l10",
@@ -1517,7 +2264,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l11",
@@ -1534,7 +2290,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l12",
@@ -1551,7 +2316,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l13",
@@ -1568,7 +2342,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -1593,7 +2376,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l02",
@@ -1610,7 +2402,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l03",
@@ -1627,7 +2428,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l04",
@@ -1644,7 +2454,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l05",
@@ -1661,7 +2480,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 6,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l06",
@@ -1678,7 +2506,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l07",
@@ -1695,7 +2532,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l08",
@@ -1712,7 +2558,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l09",
@@ -1729,7 +2584,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 5,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l10",
@@ -1746,7 +2610,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l11",
@@ -1763,7 +2636,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l12",
@@ -1780,7 +2662,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l13",
@@ -1797,7 +2688,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l14",
@@ -1814,7 +2714,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -1839,7 +2748,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l02",
@@ -1856,7 +2774,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l03",
@@ -1873,7 +2800,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l04",
@@ -1890,7 +2826,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l05",
@@ -1907,7 +2852,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l06",
@@ -1924,7 +2878,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l07",
@@ -1941,7 +2904,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l08",
@@ -1958,7 +2930,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l09",
@@ -1975,7 +2956,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l10",
@@ -1992,7 +2982,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l11",
@@ -2009,7 +3008,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l12",
@@ -2026,7 +3034,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -2051,7 +3068,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l02",
@@ -2068,7 +3094,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l03",
@@ -2085,7 +3120,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l04",
@@ -2102,7 +3146,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l05",
@@ -2119,7 +3172,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l06",
@@ -2136,7 +3198,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l07",
@@ -2153,7 +3224,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l08",
@@ -2170,7 +3250,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l09",
@@ -2187,7 +3276,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l10",
@@ -2204,7 +3302,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l11",
@@ -2221,7 +3328,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l12",
@@ -2238,7 +3354,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l13",
@@ -2255,7 +3380,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -2280,7 +3414,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l02",
@@ -2297,7 +3440,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l03",
@@ -2314,7 +3466,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l04",
@@ -2331,7 +3492,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l05",
@@ -2348,7 +3518,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l06",
@@ -2365,7 +3544,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l07",
@@ -2382,7 +3570,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l08",
@@ -2399,7 +3596,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l09",
@@ -2416,7 +3622,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l10",
@@ -2433,7 +3648,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l11",
@@ -2450,7 +3674,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l12",
@@ -2467,7 +3700,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l13",
@@ -2484,7 +3726,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l14",
@@ -2501,7 +3752,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     }
@@ -2535,7 +3795,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l02",
@@ -2552,7 +3821,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l03",
@@ -2569,7 +3847,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l04",
@@ -2586,7 +3873,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l05",
@@ -2603,7 +3899,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l06",
@@ -2620,7 +3925,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l07",
@@ -2637,7 +3951,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l08",
@@ -2654,7 +3977,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l09",
@@ -2671,7 +4003,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -2696,7 +4037,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l02",
@@ -2713,7 +4063,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l03",
@@ -2730,7 +4089,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l04",
@@ -2747,7 +4115,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l05",
@@ -2764,7 +4141,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l06",
@@ -2781,7 +4167,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l07",
@@ -2798,7 +4193,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l08",
@@ -2815,7 +4219,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l09",
@@ -2832,7 +4245,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -2857,7 +4279,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l02",
@@ -2874,7 +4305,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l03",
@@ -2891,7 +4331,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l04",
@@ -2908,7 +4357,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l05",
@@ -2925,7 +4383,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l06",
@@ -2942,7 +4409,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l07",
@@ -2959,7 +4435,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l08",
@@ -2976,7 +4461,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l09",
@@ -2993,7 +4487,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l10",
@@ -3010,7 +4513,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l11",
@@ -3027,7 +4539,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l12",
@@ -3044,7 +4565,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -3069,7 +4599,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 16
+       "blocks": 16,
+       "seven": [
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l02",
@@ -3086,7 +4625,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l03",
@@ -3103,7 +4651,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l04",
@@ -3120,7 +4677,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l05",
@@ -3137,7 +4703,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l06",
@@ -3154,7 +4729,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l07",
@@ -3171,7 +4755,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l08",
@@ -3188,7 +4781,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 16
+       "blocks": 16,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l09",
@@ -3205,7 +4807,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 16
+       "blocks": 16,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -3230,7 +4841,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l02",
@@ -3247,7 +4867,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l03",
@@ -3264,7 +4893,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l04",
@@ -3281,7 +4919,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l05",
@@ -3298,7 +4945,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l06",
@@ -3315,7 +4971,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l07",
@@ -3332,7 +4997,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -3357,7 +5031,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l02",
@@ -3374,7 +5057,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l03",
@@ -3391,7 +5083,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l04",
@@ -3408,7 +5109,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l05",
@@ -3425,7 +5135,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l06",
@@ -3442,7 +5161,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l07",
@@ -3459,7 +5187,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l08",
@@ -3476,7 +5213,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l09",
@@ -3493,7 +5239,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 2,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     }
@@ -3527,7 +5282,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l02",
@@ -3544,7 +5308,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l03",
@@ -3561,7 +5334,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l04",
@@ -3578,7 +5360,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l05",
@@ -3595,7 +5386,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l06",
@@ -3612,7 +5412,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l07",
@@ -3629,7 +5438,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l08",
@@ -3646,7 +5464,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l09",
@@ -3663,7 +5490,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l10",
@@ -3680,7 +5516,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l11",
@@ -3697,7 +5542,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l12",
@@ -3714,7 +5568,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l13",
@@ -3731,7 +5594,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u1_l14",
@@ -3748,7 +5620,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -3773,7 +5654,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l02",
@@ -3790,7 +5680,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l03",
@@ -3807,7 +5706,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l04",
@@ -3824,7 +5732,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l05",
@@ -3841,7 +5758,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l06",
@@ -3858,7 +5784,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l07",
@@ -3875,7 +5810,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l08",
@@ -3892,7 +5836,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l09",
@@ -3909,7 +5862,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l10",
@@ -3926,7 +5888,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l11",
@@ -3943,7 +5914,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l12",
@@ -3960,7 +5940,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l13",
@@ -3977,7 +5966,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l14",
@@ -3994,7 +5992,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u2_l15",
@@ -4011,7 +6018,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -4036,7 +6052,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l02",
@@ -4053,7 +6078,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l03",
@@ -4070,7 +6104,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l04",
@@ -4087,7 +6130,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l05",
@@ -4104,7 +6156,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l06",
@@ -4121,7 +6182,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l07",
@@ -4138,7 +6208,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l08",
@@ -4155,7 +6234,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l09",
@@ -4172,7 +6260,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l10",
@@ -4189,7 +6286,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l11",
@@ -4206,7 +6312,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l12",
@@ -4223,7 +6338,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l13",
@@ -4240,7 +6364,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l14",
@@ -4257,7 +6390,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u3_l15",
@@ -4274,7 +6416,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -4299,7 +6450,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l02",
@@ -4316,7 +6476,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l03",
@@ -4333,7 +6502,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l04",
@@ -4350,7 +6528,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l05",
@@ -4367,7 +6554,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l06",
@@ -4384,7 +6580,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l07",
@@ -4401,7 +6606,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l08",
@@ -4418,7 +6632,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l09",
@@ -4435,7 +6658,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l10",
@@ -4452,7 +6684,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l11",
@@ -4469,7 +6710,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l12",
@@ -4486,7 +6736,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l13",
@@ -4503,7 +6762,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l14",
@@ -4520,7 +6788,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u4_l15",
@@ -4537,7 +6814,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -4562,7 +6848,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l02",
@@ -4579,7 +6874,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l03",
@@ -4596,7 +6900,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l04",
@@ -4613,7 +6926,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l05",
@@ -4630,7 +6952,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l06",
@@ -4647,7 +6978,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l07",
@@ -4664,7 +7004,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l08",
@@ -4681,7 +7030,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l09",
@@ -4698,7 +7056,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l10",
@@ -4715,7 +7082,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l11",
@@ -4732,7 +7108,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l12",
@@ -4749,7 +7134,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l13",
@@ -4766,7 +7160,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u5_l14",
@@ -4783,7 +7186,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -4808,7 +7220,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l02",
@@ -4825,7 +7246,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l03",
@@ -4842,7 +7272,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l04",
@@ -4859,7 +7298,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l05",
@@ -4876,7 +7324,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l06",
@@ -4893,7 +7350,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l07",
@@ -4910,7 +7376,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l08",
@@ -4927,7 +7402,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l09",
@@ -4944,7 +7428,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l10",
@@ -4961,7 +7454,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l11",
@@ -4978,7 +7480,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l12",
@@ -4995,7 +7506,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l13",
@@ -5012,7 +7532,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l14",
@@ -5029,7 +7558,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u6_l15",
@@ -5046,7 +7584,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -5071,7 +7618,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l02",
@@ -5088,7 +7644,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l03",
@@ -5105,7 +7670,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l04",
@@ -5122,7 +7696,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l05",
@@ -5139,7 +7722,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l06",
@@ -5156,7 +7748,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l07",
@@ -5173,7 +7774,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l08",
@@ -5190,7 +7800,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l09",
@@ -5207,7 +7826,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l10",
@@ -5224,7 +7852,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l11",
@@ -5241,7 +7878,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l12",
@@ -5258,7 +7904,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 4,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l13",
@@ -5275,7 +7930,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l14",
@@ -5292,7 +7956,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u7_l15",
@@ -5309,7 +7982,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     },
@@ -5334,7 +8016,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u8_l02",
@@ -5351,7 +8042,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u8_l03",
@@ -5368,7 +8068,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u8_l04",
@@ -5385,7 +8094,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u8_l05",
@@ -5402,7 +8120,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u8_l06",
@@ -5419,7 +8146,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u8_l07",
@@ -5436,7 +8172,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u8_l08",
@@ -5453,7 +8198,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u8_l09",
@@ -5470,7 +8224,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u8_l10",
@@ -5487,7 +8250,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u8_l11",
@@ -5504,7 +8276,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u8_l12",
@@ -5521,7 +8302,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u8_l13",
@@ -5538,7 +8328,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u8_l14",
@@ -5555,7 +8354,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 12
+       "blocks": 12,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       },
       {
        "key": "u8_l15",
@@ -5572,7 +8380,16 @@ window.KT2_MANIFEST = {
         3
        ],
        "interactive": 3,
-       "blocks": 11
+       "blocks": 11,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0
+       ]
       }
      ]
     }
@@ -5606,7 +8423,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l02",
@@ -5623,7 +8449,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l03",
@@ -5640,7 +8475,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l04",
@@ -5657,7 +8501,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l05",
@@ -5674,7 +8527,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l06",
@@ -5691,7 +8553,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l07",
@@ -5708,7 +8579,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l08",
@@ -5725,7 +8605,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l09",
@@ -5742,7 +8631,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 13
+       "blocks": 13,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -5767,7 +8665,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l02",
@@ -5784,7 +8691,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l03",
@@ -5801,7 +8717,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l04",
@@ -5818,7 +8743,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l05",
@@ -5835,7 +8769,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l06",
@@ -5852,7 +8795,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l07",
@@ -5869,7 +8821,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l08",
@@ -5886,7 +8847,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 13
+       "blocks": 13,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -5911,7 +8881,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l02",
@@ -5928,7 +8907,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l03",
@@ -5945,7 +8933,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l04",
@@ -5962,7 +8959,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l05",
@@ -5979,7 +8985,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l06",
@@ -5996,7 +9011,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l07",
@@ -6013,7 +9037,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l08",
@@ -6030,7 +9063,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 13
+       "blocks": 13,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -6055,7 +9097,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l02",
@@ -6072,7 +9123,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l03",
@@ -6089,7 +9149,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l04",
@@ -6106,7 +9175,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l05",
@@ -6123,7 +9201,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l06",
@@ -6140,7 +9227,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l07",
@@ -6157,7 +9253,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l08",
@@ -6174,7 +9279,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 13
+       "blocks": 13,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -6199,7 +9313,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l02",
@@ -6216,7 +9339,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l03",
@@ -6233,7 +9365,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l04",
@@ -6250,7 +9391,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l05",
@@ -6267,7 +9417,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l06",
@@ -6284,7 +9443,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l07",
@@ -6301,7 +9469,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l08",
@@ -6318,7 +9495,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l09",
@@ -6335,7 +9521,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l10",
@@ -6352,7 +9547,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 13
+       "blocks": 13,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -6377,7 +9581,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l02",
@@ -6394,7 +9607,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l03",
@@ -6411,7 +9633,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l04",
@@ -6428,7 +9659,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l05",
@@ -6445,7 +9685,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l06",
@@ -6462,7 +9711,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l07",
@@ -6479,7 +9737,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l08",
@@ -6496,7 +9763,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l09",
@@ -6513,7 +9789,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l10",
@@ -6530,7 +9815,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l11",
@@ -6547,7 +9841,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 13
+       "blocks": 13,
+       "seven": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -6572,7 +9875,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       }
      ]
     }
@@ -6606,7 +9918,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l02",
@@ -6623,7 +9944,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l04",
@@ -6640,7 +9970,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l06",
@@ -6657,7 +9996,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l07",
@@ -6674,7 +10022,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l09",
@@ -6691,7 +10048,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l11",
@@ -6708,7 +10074,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l13",
@@ -6725,7 +10100,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -6750,7 +10134,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l02",
@@ -6767,7 +10160,16 @@ window.KT2_MANIFEST = {
         6
        ],
        "interactive": 3,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l05",
@@ -6784,7 +10186,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l07",
@@ -6801,7 +10212,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l09",
@@ -6818,7 +10238,16 @@ window.KT2_MANIFEST = {
         6
        ],
        "interactive": 3,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l12",
@@ -6835,7 +10264,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l14",
@@ -6852,7 +10290,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -6877,7 +10324,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l02",
@@ -6894,7 +10350,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l04",
@@ -6911,7 +10376,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l06",
@@ -6928,7 +10402,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l08",
@@ -6945,7 +10428,16 @@ window.KT2_MANIFEST = {
         6
        ],
        "interactive": 3,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l11",
@@ -6962,7 +10454,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l13",
@@ -6979,7 +10480,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -7004,7 +10514,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l02",
@@ -7021,7 +10540,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l04",
@@ -7038,7 +10566,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l06",
@@ -7055,7 +10592,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l08",
@@ -7072,7 +10618,16 @@ window.KT2_MANIFEST = {
         6
        ],
        "interactive": 3,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l11",
@@ -7089,7 +10644,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l13",
@@ -7106,7 +10670,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -7131,7 +10704,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l02",
@@ -7148,7 +10730,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l03",
@@ -7165,7 +10756,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l05",
@@ -7182,7 +10782,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l07",
@@ -7199,7 +10808,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l09",
@@ -7216,7 +10834,16 @@ window.KT2_MANIFEST = {
         6
        ],
        "interactive": 3,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l12",
@@ -7233,7 +10860,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u5_l14",
@@ -7250,7 +10886,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -7275,7 +10920,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l02",
@@ -7292,7 +10946,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l03",
@@ -7309,7 +10972,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l05",
@@ -7326,7 +10998,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l07",
@@ -7343,7 +11024,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l09",
@@ -7360,7 +11050,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l11",
@@ -7377,7 +11076,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u6_l13",
@@ -7394,7 +11102,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       }
      ]
     }
@@ -7428,7 +11145,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l02",
@@ -7445,7 +11171,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l03",
@@ -7462,7 +11197,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l04",
@@ -7479,7 +11223,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l05",
@@ -7496,7 +11249,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l06",
@@ -7513,7 +11275,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l07",
@@ -7530,7 +11301,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l09",
@@ -7547,7 +11327,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l10",
@@ -7564,7 +11353,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -7589,7 +11387,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l02",
@@ -7606,7 +11413,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l03",
@@ -7623,7 +11439,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l04",
@@ -7640,7 +11465,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l05",
@@ -7657,7 +11491,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l06",
@@ -7674,7 +11517,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l07",
@@ -7691,7 +11543,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l08",
@@ -7708,7 +11569,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l10",
@@ -7725,7 +11595,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l11",
@@ -7742,7 +11621,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -7767,7 +11655,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l02",
@@ -7784,7 +11681,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l03",
@@ -7801,7 +11707,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l04",
@@ -7818,7 +11733,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l05",
@@ -7835,7 +11759,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l06",
@@ -7852,7 +11785,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l07",
@@ -7869,7 +11811,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l09",
@@ -7886,7 +11837,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u3_l10",
@@ -7903,7 +11863,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -7928,7 +11897,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l02",
@@ -7945,7 +11923,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l04",
@@ -7962,7 +11949,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l05",
@@ -7979,7 +11975,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l06",
@@ -7996,7 +12001,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l07",
@@ -8013,7 +12027,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l08",
@@ -8030,7 +12053,16 @@ window.KT2_MANIFEST = {
         5
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l10",
@@ -8047,7 +12079,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u4_l11",
@@ -8064,7 +12105,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       }
      ]
     }
@@ -8098,7 +12148,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 14
+       "blocks": 14,
+       "seven": [
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l02",
@@ -8115,7 +12174,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l03",
@@ -8132,7 +12200,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l04",
@@ -8149,7 +12226,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l05",
@@ -8166,7 +12252,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l06",
@@ -8183,7 +12278,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l07",
@@ -8200,7 +12304,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l08",
@@ -8217,7 +12330,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l09",
@@ -8234,7 +12356,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l10",
@@ -8251,7 +12382,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l11",
@@ -8268,7 +12408,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l12",
@@ -8285,7 +12434,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u1_l13",
@@ -8302,7 +12460,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       }
      ]
     },
@@ -8327,7 +12494,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l02",
@@ -8344,7 +12520,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l03",
@@ -8361,7 +12546,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l04",
@@ -8378,7 +12572,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l05",
@@ -8395,7 +12598,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l06",
@@ -8412,7 +12624,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l07",
@@ -8429,7 +12650,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l08",
@@ -8446,7 +12676,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l09",
@@ -8463,7 +12702,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l10",
@@ -8480,7 +12728,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l11",
@@ -8497,7 +12754,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l12",
@@ -8514,7 +12780,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l13",
@@ -8531,7 +12806,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l14",
@@ -8548,7 +12832,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l15",
@@ -8565,7 +12858,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l16",
@@ -8582,7 +12884,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l17",
@@ -8599,7 +12910,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       },
       {
        "key": "u2_l18",
@@ -8616,7 +12936,16 @@ window.KT2_MANIFEST = {
         4
        ],
        "interactive": 2,
-       "blocks": 15
+       "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
       }
      ]
     }

@@ -88,6 +88,25 @@ function runStage(sj, un, l) {
   // 자료 열기(영상 → iframe)
   const vid = st.extras.find(e => e.type === 'video' && (e.video_id || /v=/.test(e.url || '')));
   if (vid) { try { st.openExtra(vid.id); ok(!!d.querySelector('#ov-media iframe'), tag + ' 영상 오버레이 iframe'); st.closeOv(); } catch (e) { fail++; fails.push(tag + ' openExtra 예외: ' + e.message); } }
+  // 편집 층(우리 반 판)
+  try {
+    const n0 = st.slides.length; st.go(1, 1);
+    st.setEdit(true); ok(d.body.classList.contains('editing') && d.querySelector('#kt2-paper .editable'), tag + ' 편집 모드 · 글자 편집 가능');
+    const ed = d.querySelector('#kt2-paper .editable'); if (ed) { ed.innerHTML = '고친 글자 ' + tag; ed.dispatchEvent(new w.Event('blur')); }
+    st.plan.imgs[st.cur().id] = 'data:image/gif;base64,R0lGODlhAQABAAAAACw='; st.savePlan();
+    st.setEdit(false); st.paint(0, true);
+    ok(d.querySelector('#kt2-paper').innerHTML.indexOf('고친 글자 ' + tag) >= 0, tag + ' 글자 덮어쓰기 유지');
+    ok(!!d.querySelector('#kt2-paper .img-frame.user img'), tag + ' 사진 자리 채움');
+    st.addSlide('ask'); ok(st.slides.length === n0 + 1 && st.cur()._added && st.cur().block === 'question', tag + ' 발문 슬라이드 추가');
+    st.setEdit(false); const addedId = st.cur().id; const i0 = st.idx; st.moveSlide(i0, -1); ok(st.slides[i0 - 1].id === addedId, tag + ' 슬라이드 이동');
+    st.setTnote(true); st.setEdit(true); st.paintTnote(); const ta = d.querySelector('#tn-edit'); ok(!!ta, tag + ' 발문 편집 칸'); if (ta) { ta.value = '왜 그럴까요?\n👀 거꾸로 세기'; d.querySelector('#tn-save').click(); } st.setEdit(false); st.paintTnote(); ok((d.querySelector('#tnote').textContent || '').indexOf('왜 그럴까요') >= 0, tag + ' 발문 저장·표시'); st.setTnote(false);
+    const exp = st.exportPlan(); ok(JSON.parse(exp).added.length === 1, tag + ' 내보내기');
+    st.removeAdded(addedId); ok(st.slides.length === n0, tag + ' 추가 슬라이드 지우기');
+    ok(st.importPlan(exp) && st.slides.length === n0 + 1, tag + ' 가져오기');
+    const s7 = st.sevenOf(); ok(s7.length === 7, tag + ' 7요소 판정 ' + s7.filter(Boolean).length + '/7');
+    st.resetPlan(); ok(st.slides.length === n0 && !st.planDirty(), tag + ' 원래 차시로');
+    st.openToc(); ok(d.querySelectorAll('#ov-toc .seven span').length === 8 && d.querySelector('#ov-toc .toc-tools [data-a="ask"]'), tag + ' 목차 7요소·도구'); st.closeOv();
+  } catch (e) { fail++; fails.push(tag + ' 편집 층 예외: ' + e.message + ' ' + (e.stack || '').split('\n')[1]); }
   // 건너뛰기
   if (st.slides.length > 3) { st.slides[1].included = false; st.go(0, -1); st.fragMax = 0; st.next(); ok(st.idx === 2, tag + ' 건너뛰기(2번 제외 → 3번으로)'); st.slides[1].included = true; }
   ok(misOk, tag + ' 오개념 두 칸·확대 토글');

@@ -62,9 +62,20 @@ files.forEach(f => {
     slides.forEach(sl => { stageCount[sl.stage] = (stageCount[sl.stage] || 0) + 1; });
     const blocks = [...new Set(slides.map(sl => sl.block))];
     const inter = slides.filter(sl => /card_quiz|chosung|present|interactive|klab|math_tool|leveled|exit_ticket|card_arrange|read_aloud/.test(sl.block)).length;
+    // 40분 7요소(차시_밀도_표준_v2 §2): ①복습 문항형 ②실사 ③서사 ④교실 활동 ⑤수준별 ⑥출구 ⑦발문 6슬↑
+    const has = (f) => slides.some(f);
+    const seven = [
+      has(sl => sl.block === 'review' && sl.data && Array.isArray(sl.data.items) && sl.data.items.length >= 2),
+      has(sl => sl.data && sl.data.img),
+      has(sl => sl.block === 'motivate' && sl.data && (sl.data.kids || sl.data.theme)) && has(sl => /summary|advanced_problem|leveled_problem/.test(sl.block) && sl.data && /곰이|펭이|[가-힣]+이가|[가-힣]+이는|[가-힣]+가 /.test(JSON.stringify(sl.data))),
+      has(sl => sl.block === 'offline_activity' && sl.data && (sl.data.steps || sl.data.goal)),
+      has(sl => sl.block === 'leveled_problem'),
+      has(sl => sl.block === 'exit_ticket'),
+      slides.filter(sl => (sl.data && sl.data.tnote) || sl.tnote).length >= 6
+    ];
     totalLessons++; totalSlides += slides.length;
     return { key: k, no: lessonNo(k), title: meta.subtitle || meta.title || k, meta_title: meta.title || '', std: meta.std || '', slides: slides.length,
-      stages: STAGES.map(st => stageCount[st] || 0), interactive: inter, blocks: blocks.length };
+      stages: STAGES.map(st => stageCount[st] || 0), interactive: inter, blocks: blocks.length, seven: seven.map(x => x ? 1 : 0) };
   });
   subjects[slug].units.push({ unit: u, title: titles[u] || (u + '단원'), file: 'data/' + f, resources: fs.existsSync(path.join(TEACHER, 'resources', slug + '_u' + u + '.js')) ? 'resources/' + slug + '_u' + u + '.js' : null, lessons });
 });

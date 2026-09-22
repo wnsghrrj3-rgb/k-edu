@@ -12,7 +12,10 @@
   const doc = global.document;
   const W = 1600, H = 900;
   const STAGES = ['도입', '전개', '기본문제', '응용문제', '정리'];
-  const STAGE_MIN = { '도입': 5, '전개': 15, '기본문제': 8, '응용문제': 7, '정리': 5 };
+  // 차시_밀도_표준_v2 §1: 도입 5~8 · 전개 25 · 정리 7~10 → 40분
+  const STAGE_MIN = { '도입': 7, '전개': 12, '기본문제': 7, '응용문제': 6, '정리': 8 };
+  const SEVEN = ['①복습 문항', '②실사 장면', '③차시 서사', '④교실 활동', '⑤수준별 문제', '⑥출구 확인', '⑦발문 6슬↑'];
+  const EDITABLE = '.kt2-title, .big-text, .center-text, .small-text, .big-q, .objective-card, .point > div, .steps li, .kid .bub, .kid .lbl, .flip .q, .flip .a, .mis-card, .offline .body, .offline .goal, .opt > div:not(.mk), .scenario > div:not(.ic), .lv-q, .ra-quote, .context-text, .bidirect, .tf-cap, .examples .ex, .areas div, .sa .lb, .light .lb, .cq .cl, .cq .nm, .legacy .t, .legacy .d, .kt2-cover-title, .kt2-sub';
   const STAGE_COLOR = { '도입': '#FF8A3D', '전개': '#4F8DF7', '기본문제': '#12B886', '응용문제': '#7C5CFF', '정리': '#2CB1D6' };
   const SUBJ_KO = { math: '수학', korean: '국어', science: '과학', social: '사회', english: '영어' };
   const NO_FRAG = new Set(['cover', 'objective', 'question', 'next_lesson', 'interactive_ten_frame', 'interactive_cube_stairs', 'interactive_number_line', 'klab', 'math_tool', 'quiz_gen', 'activity', 'card_arrange', 'card_quiz', 'chosung_quiz', 'present', 'read_aloud', 'leveled_problem', 'exit_ticket', 'trace', 'number_line_demo']);
@@ -367,7 +370,7 @@
     const q = opts.params;
     const lessons = opts.lessons || {};
     self.key = q.l; self.slug = 'g' + q.g + '_' + q.s; self.g = +q.g; self.s = q.s; self.u = +q.u;
-    const L = lessons[self.key];
+    const L = lessons[self.key]; self.lessonsRef = lessons;
     if (!L) { doc.getElementById('kt2-stage').innerHTML = '<div style="color:#fff;font-size:22px;text-align:center">차시를 찾지 못했어요: ' + esc(self.key) + '<br><a href="index.html" style="color:#9fb0c3">← 차시 목록</a></div>'; return; }
     self.meta = L.meta || {};
     self.unitTitle = opts.unitTitle || '';
@@ -377,6 +380,9 @@
     self.extras = (L.extras || []).map(e => Object.assign({}, e));
     const seen = new Set();
     res.forEach(r => { if (!r || !r.id || seen.has(r.id)) return; seen.add(r.id); const i = self.extras.findIndex(e => e.id === r.id); if (i >= 0) self.extras[i] = Object.assign({}, self.extras[i], r); else self.extras.push(Object.assign({}, r)); const fits = Array.isArray(r.fit_slides) ? r.fit_slides : []; if (!fits.length) return; self.slides.forEach(s => { s.suggested_extras = (s.suggested_extras || []).slice(); if ((fits.includes(s.id) || fits.includes(s.block)) && !s.suggested_extras.includes(r.id)) s.suggested_extras.push(r.id); }); });
+    self.planKey = 'kt2_plan_' + self.slug + '_' + self.key;
+    self.plan = Object.assign({ order: null, skip: [], added: [], text: {}, imgs: {}, tnote: {} }, lsGet(self.planKey, {}) || {});
+    self.applyPlan();
     self.IS = {}; self.rev = {}; self.frag = {}; self.idx = 0; self.allAtOnce = !!lsGet('kt2_all_at_once', false);
     self.still = !!lsGet('kt2_still', false); self.sound = lsGet('kt2_sound', true) !== false;
     self.classNames = lsGet('kt2_names', []);
@@ -385,12 +391,70 @@
     if (!isNaN(hash)) self.idx = Math.max(0, Math.min(hash - 1, self.slides.length - 1));
     self.build(); self.bindGlobal(); self.fit(); self.go(self.idx, 0, true);
   }
+  // ───────────────────────── 우리 반 판(편집 층) ─────────────────────────
+  Stage.prototype.applyPlan = function () {
+    const p = this.plan; const base = this.slides.filter(s => !s._added);
+    // 추가한 슬라이드(after = 앞 슬라이드 id)
+    (p.added || []).forEach(a => { if (!base.some(s => s.id === a.id)) { const i = base.findIndex(s => s.id === a.after); const sl = Object.assign({}, a, { included: true, _added: true, suggested_extras: [] }); base.splice(i >= 0 ? i + 1 : base.length, 0, sl); } });
+    let list = base;
+    if (Array.isArray(p.order) && p.order.length) { const byId = new Map(base.map(s => [s.id, s])); list = p.order.map(id => byId.get(id)).filter(Boolean); base.forEach(s => { if (!list.includes(s)) list.push(s); }); }
+    list.forEach(s => { s.included = !(p.skip || []).includes(s.id); });
+    this.slides = list;
+  };
+  Stage.prototype.savePlan = function () { this.plan.updated = new Date().toISOString().slice(0, 16); lsSet(this.planKey, this.plan); this.paintPlanBadge(); };
+  Stage.prototype.planDirty = function () { const p = this.plan; return !!((p.order && p.order.length) || (p.skip && p.skip.length) || (p.added && p.added.length) || Object.keys(p.text || {}).length || Object.keys(p.imgs || {}).length || Object.keys(p.tnote || {}).length); };
+  Stage.prototype.paintPlanBadge = function () { const b = doc.querySelector('#hud button[data-h="toc"]'); if (b) b.innerHTML = this.planDirty() ? '📑 목차 <small style="color:#FFD166">· 우리 반 판</small>' : '📑 목차'; };
+  Stage.prototype.resetPlan = function () { this.plan = { order: null, skip: [], added: [], text: {}, imgs: {}, tnote: {} }; try { global.localStorage.removeItem(this.planKey); } catch (e) { } this.slides = this.slides.filter(s => !s._added); const L = this.lessonsRef && this.lessonsRef[this.key]; if (L) { const order = (L.slides || []).map(s => s.id); this.slides.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)); } this.slides.forEach(s => s.included = true); this.idx = Math.min(this.idx, this.slides.length - 1); this.paintPlanBadge(); this.paint(0, true); this.toast('원래 차시로 되돌렸어요'); };
+  // 글자 덮어쓰기 경로 = .kt2-body 안 자식 순번 사슬. 제목은 'title'
+  Stage.prototype.pathOf = function (el) { if (el.classList.contains('kt2-title') || el.classList.contains('kt2-cover-title')) return 'title'; if (el.classList.contains('kt2-sub')) return 'sub'; const body = el.closest('.kt2-body'); if (!body) return null; const path = []; let n = el; while (n && n !== body) { const par = n.parentNode; path.unshift(Array.prototype.indexOf.call(par.children, n)); n = par; } return 'b.' + path.join('.'); };
+  Stage.prototype.byPath = function (path) { const paper = doc.getElementById('kt2-paper'); if (path === 'title') return paper.querySelector('.kt2-title, .kt2-cover-title'); if (path === 'sub') return paper.querySelector('.kt2-sub'); let n = paper.querySelector('.kt2-body'); if (!n) return null; const idx = path.slice(2).split('.').map(Number); for (const i of idx) { n = n && n.children[i]; } return n || null; };
+  Stage.prototype.applyOverrides = function () {
+    const sid = this.cur().id; const t = (this.plan.text || {})[sid] || {};
+    Object.keys(t).forEach(path => { const el = this.byPath(path); if (el) el.innerHTML = t[path]; });
+    const img = (this.plan.imgs || {})[sid]; const paper = doc.getElementById('kt2-paper');
+    if (img) { const slot = paper.querySelector('.placeholder, .img-frame'); const html = '<div class="img-frame user"><img src="' + img + '" alt=""></div>'; if (slot) { if (slot.classList.contains('img-frame')) slot.innerHTML = '<img src="' + img + '" alt="">'; else slot.outerHTML = html; slot.classList && slot.classList.add('user'); } else { const body = paper.querySelector('.kt2-body'); if (body) { body.insertAdjacentHTML('afterbegin', html); const first = body.firstElementChild; if (this.fragMax) { first.classList.add('frag'); this.fragMax++; } } } }
+    if (this.edit) this.paintEdit();
+  };
+  Stage.prototype.setEdit = function (on) { this.edit = on; this.hudBtn('edit', on); doc.body.classList.toggle('editing', on); if (on) this.toast('편집 — 글자를 눌러 고치고, 사진 자리에 사진을 끌어 놓아요 · 이 기기에만 저장'); this.paint(0, true); };
+  Stage.prototype.paintEdit = function () {
+    const paper = doc.getElementById('kt2-paper'); const self = this; const sid = this.cur().id;
+    paper.querySelectorAll(EDITABLE).forEach(el => { if (el.closest('.klab-frame')) return; el.setAttribute('contenteditable', 'true'); el.classList.add('editable'); el.addEventListener('blur', () => { const path = self.pathOf(el); if (!path) return; self.plan.text[sid] = self.plan.text[sid] || {}; self.plan.text[sid][path] = el.innerHTML; self.savePlan(); }); el.addEventListener('keydown', e => { if (e.key === 'Escape') el.blur(); e.stopPropagation(); }); });
+    // 사진 자리
+    const body = paper.querySelector('.kt2-body');
+    if (body && !this.curRender.cover) {
+      const slot = paper.querySelector('.placeholder, .img-frame');
+      const bar = doc.createElement('div'); bar.className = 'edit-bar';
+      bar.innerHTML = '<button data-e="photo">📷 ' + (slot ? '사진 바꾸기' : '사진 넣기') + '</button>' + ((this.plan.imgs || {})[sid] ? '<button data-e="photo-del">사진 빼기</button>' : '') + (((this.plan.text || {})[sid] && Object.keys(this.plan.text[sid]).length) ? '<button data-e="text-reset">글자 원래대로</button>' : '') + '<span class="note">사진·글자는 이 기기에만 저장돼요 (교재 사진은 교실 수업 범위 안에서만)</span>';
+      paper.appendChild(bar);
+      bar.querySelector('[data-e="photo"]').addEventListener('click', () => self.pickPhoto());
+      const del = bar.querySelector('[data-e="photo-del"]'); if (del) del.addEventListener('click', () => { delete self.plan.imgs[sid]; self.savePlan(); self.paint(0, true); });
+      const tr = bar.querySelector('[data-e="text-reset"]'); if (tr) tr.addEventListener('click', () => { delete self.plan.text[sid]; self.savePlan(); self.paint(0, true); });
+      if (slot) { slot.classList.add('drop'); slot.addEventListener('click', e => { e.stopPropagation(); self.pickPhoto(); }); }
+    }
+  };
+  Stage.prototype.pickPhoto = function () { const self = this; let inp = doc.getElementById('kt2-file'); if (!inp) { inp = doc.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.id = 'kt2-file'; inp.style.display = 'none'; doc.body.appendChild(inp); } inp.onchange = () => { const f = inp.files && inp.files[0]; if (f) self.loadPhoto(f); inp.value = ''; }; inp.click(); };
+  Stage.prototype.loadPhoto = function (file) {
+    const self = this; const sid = this.cur().id; if (!global.FileReader) return;
+    const rd = new global.FileReader(); rd.onload = () => { const im = new global.Image(); im.onload = () => { const max = 1280; const k = Math.min(1, max / Math.max(im.width, im.height)); const c = doc.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); const cx = c.getContext('2d'); cx.drawImage(im, 0, 0, c.width, c.height); let url; try { url = c.toDataURL('image/jpeg', 0.82); } catch (e) { url = rd.result; } if (url.length > 900000) { self.toast('사진이 너무 커요 — 더 작은 사진으로'); return; } self.plan.imgs[sid] = url; self.savePlan(); self.paint(0, true); self.toast('사진을 넣었어요 (이 기기에만)'); }; im.src = rd.result; }; rd.readAsDataURL(file);
+  };
+  Stage.prototype.addSlide = function (kind) {
+    const cur = this.cur(); const id = 'add_' + Date.now().toString(36); const stage = cur.stage;
+    const T = { ask: { block: 'question', data: { title: '생각해 봐요', content: '(발문을 적어요)' } }, act: { block: 'offline_activity', data: { title: '함께 해요', type: 'pair', goal: '(활동 목표)', steps: ['(1단계)', '(2단계)'], minutes: 3 } }, photo: { block: 'concept', data: { title: '함께 봐요', content: '(사진 설명)' } }, memo: { block: 'concept', data: { title: '(제목)', content: '(내용)' } } };
+    const t = T[kind] || T.memo; const sl = Object.assign({ id, stage, after: cur.id }, t);
+    this.plan.added.push(sl); this.savePlan(); this.applyPlanKeepIdx(); const i = this.slides.findIndex(s => s.id === id); this.go(i, 1); if (kind === 'photo') { this.setEdit(true); this.pickPhoto(); } else this.setEdit(true);
+  };
+  Stage.prototype.applyPlanKeepIdx = function () { const curId = this.cur() && this.cur().id; this.applyPlan(); const i = this.slides.findIndex(s => s.id === curId); this.idx = i >= 0 ? i : 0; };
+  Stage.prototype.moveSlide = function (i, dir) { const j = i + dir; if (j < 0 || j >= this.slides.length) return; const a = this.slides[i]; this.slides[i] = this.slides[j]; this.slides[j] = a; this.plan.order = this.slides.map(s => s.id); this.savePlan(); };
+  Stage.prototype.removeAdded = function (id) { this.plan.added = this.plan.added.filter(a => a.id !== id); if (this.plan.order) this.plan.order = this.plan.order.filter(x => x !== id); this.savePlan(); this.applyPlanKeepIdx(); };
+  Stage.prototype.exportPlan = function () { return JSON.stringify(Object.assign({ v: 1, slug: this.slug, key: this.key }, this.plan)); };
+  Stage.prototype.importPlan = function (txt) { try { const p = JSON.parse(txt); if (!p || p.key !== this.key) { this.toast('이 차시의 판이 아니에요'); return false; } this.plan = Object.assign({ order: null, skip: [], added: [], text: {}, imgs: {}, tnote: {} }, p); delete this.plan.v; delete this.plan.slug; delete this.plan.key; this.savePlan(); this.slides = this.slides.filter(s => !s._added); this.applyPlanKeepIdx(); this.paint(0, true); this.toast('우리 반 판을 가져왔어요'); return true; } catch (e) { this.toast('가져오기 실패 — 붙여 넣은 글을 확인'); return false; } };
+
   Stage.prototype.state = function (sid) { if (!this.IS[sid]) this.IS[sid] = {}; return this.IS[sid]; };
   Stage.prototype.cur = function () { return this.slides[this.idx]; };
   Stage.prototype.build = function () {
     const st = doc.getElementById('kt2-stage');
     st.innerHTML = '<div class="kt2-canvas" id="kt2-canvas"><div class="kt2-paper" id="kt2-paper"></div><canvas id="fx" width="' + W + '" height="' + H + '"></canvas><canvas id="pen" width="' + W + '" height="' + H + '"></canvas></div>';
-    doc.body.className = 'subj-' + this.s + (this.still ? ' still' : '');
+    doc.body.className = 'subj-' + this.s + (this.still ? ' still' : '') + ' tier-' + (this.g <= 2 ? 'low' : this.g <= 4 ? 'mid' : 'high');
     const t = doc.getElementById('hud-top'); if (t) t.querySelector('.ttl').textContent = (this.g + '학년 ' + (SUBJ_KO[this.s] || this.s) + ' · ' + (this.unitTitle ? this.unitTitle + ' · ' : '') + (this.meta.subtitle || this.meta.title || this.key));
     doc.title = (this.meta.subtitle || this.meta.title || this.key) + ' — 케이티처 2세대';
     this.buildHud();
@@ -430,7 +494,7 @@
       const km = paper.querySelector('[data-klab]');
       if (km) { const tool = km.getAttribute('data-klab'); let cfg = {}; try { cfg = JSON.parse(km.getAttribute('data-config') || '{}'); } catch (e) { } if (global.KLab) this.klabCleanup = global.KLab.mount(km, tool, cfg); else km.innerHTML = '<div class="legacy"><div class="t">🧊 케이랩 ' + esc(tool) + '</div><div class="d">교구 엔진이 이 페이지에 실리지 않았어요.</div></div>'; }
     }
-    this.decorate(paper, r);
+    this.decorate(paper, r); this.applyOverrides();
     this.paintPen(); this.paintHud(); this.paintTnote();
     { const b = doc.querySelector('#hud button[data-h="tnote"]'); if (b) b.textContent = (((s.data || {}).tnote || s.tnote || r.teacherNote) ? '👩‍🏫•' : '👩‍🏫'); }
     try { global.history.replaceState(null, '', '#' + n); } catch (e) { }
@@ -537,7 +601,7 @@
       + '<button class="nav" data-h="prev" title="이전 (←)">‹</button><span class="pg" id="hud-pg"></span><button class="nav" data-h="next" title="다음 (→ / 스페이스)">›</button><span class="sep"></span>'
       + '<span class="stg" id="hud-stg"></span><span class="clock" id="hud-clock" title="수업 경과 시간 · 누르면 처음부터">0:00</span><span class="sep"></span>'
       + '<button data-h="answer" title="정답 공개 / 조각 모두 보이기 (A)">✅ 정답</button><button data-h="timer" title="타이머 (T)">⏱</button><button data-h="pick" title="뽑기 (D)">🎲</button><button data-h="score" title="점수판 (K)">🏆</button><span class="sep"></span>'
-      + '<button data-h="pen" title="펜 (P)">✏️</button><button data-h="spot" title="스포트라이트 (S)">🔦</button><button data-h="black" title="검은 화면 (B)">🌑</button><span class="sep"></span>'
+      + '<button data-h="edit" title="편집 — 글자·사진·순서 (E)">✎ 편집</button><button data-h="pen" title="펜 (P)">✏️</button><button data-h="spot" title="스포트라이트 (S)">🔦</button><button data-h="black" title="검은 화면 (B)">🌑</button><span class="sep"></span>'
       + '<button data-h="tnote" title="교사 발문 (N)">👩‍🏫</button><button data-h="res" title="자료 (R)">📎</button><button data-h="allat" title="조각 순차 공개 끄기/켜기 (1)">' + (this.allAtOnce ? '▤ 한번에' : '▥ 차례로') + '</button><button data-h="still" title="움직임·연출 끄기/켜기 (0)">' + (this.still ? '🎬 연출 꺼짐' : '🎬') + '</button><button data-h="sound" title="효과음 (M)">' + (this.sound ? '🔊' : '🔇') + '</button><span class="sep"></span>'
       + '<button data-h="full" title="전체 화면 (F)">⛶</button><button data-h="help" title="단축키 (?)">?</button>';
     const self = this;
@@ -548,7 +612,7 @@
     let tmr; const show = () => { hud.classList.remove('hide'); if (top) top.classList.remove('hide'); clearTimeout(tmr); tmr = setTimeout(() => { if (!self.pen && !self.hudPinned) { hud.classList.add('hide'); if (top) top.classList.add('hide'); } }, 3200); };
     doc.addEventListener('mousemove', show); doc.addEventListener('touchstart', show, { passive: true }); show();
     hud.addEventListener('mouseenter', () => { self.hudPinned = true; }); hud.addEventListener('mouseleave', () => { self.hudPinned = false; show(); });
-    setInterval(() => self.tick(), 1000);
+    setInterval(() => self.tick(), 1000); this.paintPlanBadge();
   };
   Stage.prototype.paintHud = function () {
     const pg = doc.getElementById('hud-pg'); if (pg) pg.innerHTML = '<b>' + (this.idx + 1) + '</b>/' + this.slides.length + (this.fragMax ? ' <small style="color:#8fa3b8">·' + (this.frag[this.cur().id] + 1) + '/' + (this.fragMax + 1) + '</small>' : '');
@@ -565,7 +629,7 @@
     switch (h) {
       case 'toc': this.openToc(); break; case 'prev': this.prev(); break; case 'next': this.next(); break; case 'answer': this.revealAll(); break;
       case 'timer': this.openTimer(); break; case 'pick': this.openPick(); break; case 'score': this.openScore(); break;
-      case 'pen': this.setPen(!this.pen); break; case 'spot': this.setSpot(!this.spot); break; case 'black': this.setBlack(!this.black); break;
+      case 'pen': this.setPen(!this.pen); break; case 'edit': this.setEdit(!this.edit); break; case 'spot': this.setSpot(!this.spot); break; case 'black': this.setBlack(!this.black); break;
       case 'tnote': this.setTnote(!this.tnoteOn); break; case 'res': this.openRes(); break;
       case 'allat': this.allAtOnce = !this.allAtOnce; lsSet('kt2_all_at_once', this.allAtOnce); btn.textContent = this.allAtOnce ? '▤ 한번에' : '▥ 차례로'; this.paint(0, true); this.toast(this.allAtOnce ? '조각을 한 번에 보여요' : '조각을 차례로 보여요'); break;
       case 'full': this.fullscreen(); break; case 'help': this.openOv('ov-help'); break;
@@ -581,10 +645,16 @@
   Stage.prototype.hudBtn = function (h, on) { const b = doc.querySelector('#hud button[data-h="' + h + '"]'); if (b) b.classList.toggle('on', !!on); };
 
   // 목차
+  Stage.prototype.sevenOf = function () {
+    const sl = this.slides; const has = f => sl.some(f);
+    return [has(s => s.block === 'review' && s.data && Array.isArray(s.data.items) && s.data.items.length >= 2), has(s => (s.data && s.data.img) || (this.plan.imgs && this.plan.imgs[s.id])), has(s => s.block === 'motivate' && s.data && s.data.kids), has(s => s.block === 'offline_activity'), has(s => s.block === 'leveled_problem'), has(s => s.block === 'exit_ticket'), sl.filter(s => (s.data && s.data.tnote) || s.tnote || (this.plan.tnote && this.plan.tnote[s.id])).length >= 6];
+  };
   Stage.prototype.openToc = function () {
     const self = this; const box = doc.querySelector('#ov-toc .toc'); if (!box) return;
-    let last = ''; box.innerHTML = this.slides.map((s, i) => { let h = ''; if (s.stage !== last) { h += '<div class="stg-l"><i style="--c:' + STAGE_COLOR[s.stage] + '"></i>' + esc(s.stage) + '</div>'; last = s.stage; } const r = renderSlide(s, { revealed: false, state: {}, meta: self.meta, unitTitle: self.unitTitle, classNames: [] }); const t = r.cover ? '표지' : (r.title || (s.data || {}).title || ''); return h + '<div class="it' + (i === self.idx ? ' cur' : '') + (s.included ? ' on' : ' skip') + '" data-i="' + i + '"><span class="ck" data-ck="1">' + (s.included ? '✓' : '') + '</span><span class="n">' + (i + 1) + '</span><span class="t">' + esc(t) + '</span><span class="b">' + esc(BLOCK_LABEL[s.block] || s.block) + '</span></div>'; }).join('');
-    box.querySelectorAll('.it').forEach(el => el.addEventListener('click', e => { const i = +el.getAttribute('data-i'); if (e.target.getAttribute('data-ck')) { self.slides[i].included = !self.slides[i].included; el.classList.toggle('on'); el.classList.toggle('skip'); el.querySelector('.ck').textContent = self.slides[i].included ? '✓' : ''; return; } self.closeOv(); self.go(i, i > self.idx ? 1 : -1); }));
+    const sv = this.sevenOf(); const head = doc.querySelector('#ov-toc .seven'); if (head) head.innerHTML = SEVEN.map((n, i) => '<span class="' + (sv[i] ? 'on' : '') + '" title="' + (sv[i] ? '있음' : '없음') + '">' + n + '</span>').join('') + '<span class="sum">' + sv.filter(Boolean).length + '/7</span>';
+    const tools = doc.querySelector('#ov-toc .toc-tools'); if (tools) { tools.innerHTML = '<button class="btn" data-a="ask">＋ 발문</button><button class="btn" data-a="act">＋ 교실 활동</button><button class="btn" data-a="photo">＋ 사진 한 장</button><button class="btn" data-a="memo">＋ 빈 슬라이드</button><span class="sp"></span>' + (this.planDirty() ? '<button class="btn" data-a="export">내보내기</button><button class="btn" data-a="reset">원래 차시로</button>' : '<button class="btn" data-a="import">가져오기</button>'); tools.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => { const a = b.getAttribute('data-a'); if (a === 'reset') { self.closeOv(); self.resetPlan(); } else if (a === 'export') { const txt = self.exportPlan(); const ta = doc.createElement('textarea'); ta.value = txt; doc.body.appendChild(ta); ta.select(); try { doc.execCommand('copy'); self.toast('우리 반 판을 복사했어요 — 다른 기기에서 「가져오기」에 붙여 넣기'); } catch (e) { global.prompt('복사해서 다른 기기에 붙여 넣으세요', txt); } doc.body.removeChild(ta); } else if (a === 'import') { const txt = global.prompt('다른 기기에서 「내보내기」한 글을 붙여 넣어요'); if (txt) { self.importPlan(txt); self.openToc(); } } else { self.closeOv(); self.addSlide(a); } })); }
+    let last = ''; box.innerHTML = this.slides.map((s, i) => { let h = ''; if (s.stage !== last) { h += '<div class="stg-l"><i style="--c:' + STAGE_COLOR[s.stage] + '"></i>' + esc(s.stage) + '</div>'; last = s.stage; } const r = renderSlide(s, { revealed: false, state: {}, meta: self.meta, unitTitle: self.unitTitle, classNames: [] }); const t = r.cover ? '표지' : (r.title || (s.data || {}).title || ''); const ed = (self.plan.text[s.id] || self.plan.imgs[s.id] || self.plan.tnote[s.id]) ? ' <em>✎</em>' : ''; return h + '<div class="it' + (i === self.idx ? ' cur' : '') + (s.included ? ' on' : ' skip') + (s._added ? ' added' : '') + '" data-i="' + i + '"><span class="ck" data-ck="1">' + (s.included ? '✓' : '') + '</span><span class="n">' + (i + 1) + '</span><span class="t">' + esc(t) + ed + '</span><span class="b">' + esc(BLOCK_LABEL[s.block] || s.block) + '</span><span class="mv"><button data-mv="-1" title="위로">▲</button><button data-mv="1" title="아래로">▼</button>' + (s._added ? '<button data-del="1" title="지우기">🗑</button>' : '') + '</span></div>'; }).join('');
+    box.querySelectorAll('.it').forEach(el => el.addEventListener('click', e => { const i = +el.getAttribute('data-i'); const mv = e.target.getAttribute('data-mv'); if (mv) { self.moveSlide(i, +mv); self.idx = self.slides.findIndex(x => x.id === self.cur().id); self.openToc(); return; } if (e.target.getAttribute('data-del')) { self.removeAdded(self.slides[i].id); self.openToc(); self.paint(0, true); return; } if (e.target.getAttribute('data-ck')) { self.slides[i].included = !self.slides[i].included; self.plan.skip = self.slides.filter(x => !x.included).map(x => x.id); self.savePlan(); el.classList.toggle('on'); el.classList.toggle('skip'); el.querySelector('.ck').textContent = self.slides[i].included ? '✓' : ''; return; } self.closeOv(); self.go(i, i > self.idx ? 1 : -1); }));
     this.openOv('ov-toc');
   };
   // 자료
@@ -624,7 +694,8 @@
   Stage.prototype.setTnote = function (on) { this.tnoteOn = on; this.hudBtn('tnote', on); this.paintTnote(); };
   Stage.prototype.paintTnote = function () {
     const t = doc.getElementById('tnote'); if (!t) return; t.classList.toggle('on', !!this.tnoteOn); if (!this.tnoteOn) return;
-    const n = (this.cur().data || {}).tnote || this.cur().tnote; const memo = this.curRender && this.curRender.teacherNote;
+    const sid = this.cur().id; const n0 = (this.cur().data || {}).tnote || this.cur().tnote; const n = (this.plan.tnote && this.plan.tnote[sid]) || n0; const memo = this.curRender && this.curRender.teacherNote;
+    if (this.edit) { const self = this; t.innerHTML = '<span class="lb">발문 편집</span><textarea id="tn-edit" placeholder="한 줄에 발문 하나 · 마지막 줄이 👀 로 시작하면 유의점">' + esc(((n && n.ask) || []).join('\n') + (n && n.watch ? '\n👀 ' + n.watch : '')) + '</textarea><button class="btn" id="tn-save">저장</button>'; t.querySelector('#tn-save').addEventListener('click', () => { const lines = t.querySelector('#tn-edit').value.split('\n').map(x => x.trim()).filter(Boolean); const watch = lines.filter(x => x.startsWith('👀')).map(x => x.replace(/^👀\s*/, ''))[0] || ''; const ask = lines.filter(x => !x.startsWith('👀')); if (!ask.length && !watch) { delete self.plan.tnote[sid]; } else self.plan.tnote[sid] = { ask, watch, min: (n && n.min) || undefined }; self.savePlan(); self.toast('발문을 저장했어요'); }); return; }
     if (!n && !memo) { t.innerHTML = '<span class="none">이 슬라이드에는 교사 발문 메모가 없어요</span>'; return; }
     t.innerHTML = '<span class="lb">' + (n ? '발문' : '메모') + '</span><div>' + (n ? '<div class="ask">' + (n.ask || []).map(a => '<div>' + md(a) + '</div>').join('') + '</div>' + (n.watch ? '<div class="watch">👀 ' + md(n.watch) + '</div>' : '') : '') + (memo ? '<div class="watch">👉 ' + md(memo) + '</div>' : '') + '</div>' + (n && n.min ? '<span class="min">⏱ ' + esc(n.min) + '분</span>' : '');
   };
@@ -725,15 +796,18 @@
   Stage.prototype.bindGlobal = function () {
     const self = this;
     global.addEventListener('resize', () => self.fit());
-    doc.getElementById('kt2-paper').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b) { self.act(b); return; } if (self._lpDone) { self._lpDone = false; return; } if (!self.pen && !e.target.closest('button, a, input, textarea, .klab-frame')) { const zd = doc.querySelector('#kt2-paper .zoomed'); if (zd) { zd.classList.remove('zoomed'); return; } const r = doc.getElementById('kt2-canvas').getBoundingClientRect(); if (e.clientX - r.left < r.width * 0.15) self.prev(); else self.next(); } });
+    doc.getElementById('kt2-paper').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b) { self.act(b); return; } if (self._lpDone) { self._lpDone = false; return; } if (self.edit) return; if (!self.pen && !e.target.closest('button, a, input, textarea, .klab-frame')) { const zd = doc.querySelector('#kt2-paper .zoomed'); if (zd) { zd.classList.remove('zoomed'); return; } const r = doc.getElementById('kt2-canvas').getBoundingClientRect(); if (e.clientX - r.left < r.width * 0.15) self.prev(); else self.next(); } });
     // 우클릭 / 길게 누르기 = 그 부품 크게 보기
     const paperEl = doc.getElementById('kt2-paper');
+    paperEl.addEventListener('dragover', e => { if (self.edit) { e.preventDefault(); paperEl.classList.add('dragover'); } });
+    paperEl.addEventListener('dragleave', () => paperEl.classList.remove('dragover'));
+    paperEl.addEventListener('drop', e => { paperEl.classList.remove('dragover'); if (!self.edit) return; e.preventDefault(); const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f && /^image\//.test(f.type)) self.loadPhoto(f); });
     paperEl.addEventListener('contextmenu', e => { const z = e.target.closest('.zoomable'); if (z) { e.preventDefault(); self.toggleZoom(z); } });
     let lp; paperEl.addEventListener('touchstart', e => { const z = e.target.closest('.zoomable'); if (!z) return; lp = setTimeout(() => { self.toggleZoom(z); self._lpDone = true; }, 520); }, { passive: true });
     paperEl.addEventListener('touchend', () => clearTimeout(lp)); paperEl.addEventListener('touchmove', () => clearTimeout(lp), { passive: true });
     doc.querySelectorAll('.ov').forEach(o => o.addEventListener('click', e => { if (e.target === o && o.id !== 'ov-res') self.closeOv(); if (e.target === o && o.id === 'ov-res') self.closeOv(); }));
     doc.addEventListener('keydown', e => {
-      if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+      if (e.target && (/INPUT|TEXTAREA/.test(e.target.tagName) || e.target.isContentEditable)) return;
       const k = e.key; const ov = doc.querySelector('.ov.on');
       if (k === 'Escape') { if (ov) self.closeOv(); else if (self.pen) self.setPen(false); else if (self.spot) self.setSpot(false); else if (self.black) self.setBlack(false); return; }
       if (ov && ov.id !== 'ov-media') return;
@@ -745,12 +819,13 @@
       else if (k === 'd' || k === 'D') self.openPick(); else if (k === 'k' || k === 'K') self.openScore(); else if (k === 'n' || k === 'N') self.setTnote(!self.tnoteOn);
       else if (k === 'r' || k === 'R') self.openRes(); else if (k === 'g' || k === 'G') self.openToc(); else if (k === '?') self.openOv('ov-help');
       else if (k === '1') self.hudAct('allat', doc.querySelector('#hud button[data-h="allat"]'));
+      else if (k === 'e' || k === 'E') self.setEdit(!self.edit);
       else if (k === '0') self.hudAct('still', doc.querySelector('#hud button[data-h="still"]'));
       else if (k === 'm' || k === 'M') self.hudAct('sound', doc.querySelector('#hud button[data-h="sound"]'));
       else if (/^[2-9]$/.test(k)) { const st = STAGES[+k - 2]; if (st) { const i = self.slides.findIndex(x => x.stage === st); if (i >= 0) self.go(i, i > self.idx ? 1 : -1); } }
     });
     const help = doc.querySelector('#ov-help .keys');
-    if (help) help.innerHTML = [['→ 스페이스', '다음 조각 / 다음 슬라이드'], ['←', '이전 슬라이드'], ['A', '정답 공개 · 조각 모두'], ['1', '조각 차례로 ↔ 한번에'], ['0', '움직임·연출 끄기/켜기'], ['M', '효과음'], ['우클릭 · 길게 누르기', '그 부품 크게 보기'], ['2~6', '도입·전개·기본·응용·정리로 점프'], ['G', '목차 (건너뛸 슬라이드 체크)'], ['T', '타이머'], ['D', '뽑기'], ['K', '점수판'], ['P', '펜'], ['S', '스포트라이트'], ['B', '검은 화면'], ['N', '교사 발문 띠'], ['R', '자료 서랍'], ['F', '전체 화면'], ['Esc', '닫기 / 도구 끄기'], ['화면 클릭', '오른쪽 85% = 다음 · 왼쪽 15% = 이전']].map(x => '<div><span>' + x[1] + '</span><kbd>' + x[0] + '</kbd></div>').join('');
+    if (help) help.innerHTML = [['→ 스페이스', '다음 조각 / 다음 슬라이드'], ['←', '이전 슬라이드'], ['A', '정답 공개 · 조각 모두'], ['1', '조각 차례로 ↔ 한번에'], ['0', '움직임·연출 끄기/켜기'], ['E', '편집 — 글자·사진·순서(우리 반 판)'], ['M', '효과음'], ['우클릭 · 길게 누르기', '그 부품 크게 보기'], ['2~6', '도입·전개·기본·응용·정리로 점프'], ['G', '목차 (건너뛸 슬라이드 체크)'], ['T', '타이머'], ['D', '뽑기'], ['K', '점수판'], ['P', '펜'], ['S', '스포트라이트'], ['B', '검은 화면'], ['N', '교사 발문 띠'], ['R', '자료 서랍'], ['F', '전체 화면'], ['Esc', '닫기 / 도구 끄기'], ['화면 클릭', '오른쪽 85% = 다음 · 왼쪽 15% = 이전']].map(x => '<div><span>' + x[1] + '</span><kbd>' + x[0] + '</kbd></div>').join('');
     const hx = doc.querySelector('#ov-help [data-x]'); if (hx) hx.addEventListener('click', () => self.closeOv());
   };
 
