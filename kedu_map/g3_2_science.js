@@ -114,6 +114,113 @@ window.KEDU_MAP["g3_2_science"] = {
      "ready": true
     }
    ]
+  },
+  {
+   "num": 2,
+   "name": "지구와 바다",
+   "kind": "unit",
+   "lessons": [
+    {
+     "key": "g3_science_u2_l01",
+     "lessonId": "g3_s2_sci_u2_l01_v1",
+     "n": "1",
+     "title": "활짝! 과학 열기 — 지구의 다른 그림 찾기",
+     "sub": null,
+     "url": "/grade3/semester2/science/2단원_지구와바다/g3_sci_u2_l01_활짝과학열기.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u2_l02",
+     "lessonId": "g3_s2_sci_u2_l02_v1",
+     "n": "2",
+     "title": "지구의 대기",
+     "sub": null,
+     "url": "/grade3/semester2/science/2단원_지구와바다/g3_sci_u2_l02_지구의대기.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u2_l03",
+     "lessonId": "g3_s2_sci_u2_l03_v1",
+     "n": "3",
+     "title": "육지와 바다의 특징",
+     "sub": null,
+     "url": "/grade3/semester2/science/2단원_지구와바다/g3_sci_u2_l03_육지와바다의특징.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u2_l04",
+     "lessonId": "g3_s2_sci_u2_l04_v1",
+     "n": "4",
+     "title": "바닷물의 특징",
+     "sub": null,
+     "url": "/grade3/semester2/science/2단원_지구와바다/g3_sci_u2_l04_바닷물의특징.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u2_l05",
+     "lessonId": "g3_s2_sci_u2_l05_v1",
+     "n": "5",
+     "title": "바닷가에서 볼 수 있는 다양한 지형",
+     "sub": null,
+     "url": "/grade3/semester2/science/2단원_지구와바다/g3_sci_u2_l05_바닷가의다양한지형.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u2_l06",
+     "lessonId": "g3_s2_sci_u2_l06_v1",
+     "n": "6",
+     "title": "밀물과 썰물",
+     "sub": null,
+     "url": "/grade3/semester2/science/2단원_지구와바다/g3_sci_u2_l06_밀물과썰물.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u2_l07",
+     "lessonId": "g3_s2_sci_u2_l07_v1",
+     "n": "7",
+     "title": "갯벌의 가치와 보전",
+     "sub": null,
+     "url": "/grade3/semester2/science/2단원_지구와바다/g3_sci_u2_l07_갯벌의가치와보전.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u2_l08",
+     "lessonId": "g3_s2_sci_u2_l08_v1",
+     "n": "8~9",
+     "title": "창의가 반짝! / 팡팡! 과학 놀이터",
+     "sub": null,
+     "url": "/grade3/semester2/science/2단원_지구와바다/g3_sci_u2_l08_창의가반짝과학놀이터.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u2_l10",
+     "lessonId": "g3_s2_sci_u2_l10_v1",
+     "n": "10",
+     "title": "톡톡! 과학 — 아낌없이 주는 바다",
+     "sub": null,
+     "url": "/grade3/semester2/science/2단원_지구와바다/g3_sci_u2_l10_톡톡과학아낌없이주는바다.html",
+     "track": "tb",
+     "ready": true
+    },
+    {
+     "key": "g3_science_u2_l11",
+     "lessonId": "g3_s2_sci_u2_l11_v1",
+     "n": "11",
+     "title": "단원 마무리",
+     "sub": null,
+     "url": "/grade3/semester2/science/2단원_지구와바다/g3_sci_u2_l11_단원마무리.html",
+     "track": "tb",
+     "ready": true
+    }
+   ]
   }
  ]
 };
