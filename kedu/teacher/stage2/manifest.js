@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-09-22 · 과목 8 · 차시 481 · 슬라이드 7735 */
+   생성: 2026-09-22 · 과목 8 · 차시 481 · 슬라이드 7751 */
 window.KT2_MANIFEST = {
  "built": "2026-09-22",
  "lessons": 481,
- "slides": 7735,
+ "slides": 7751,
  "subjects": [
   {
    "slug": "g1_math",
@@ -3799,11 +3799,11 @@ window.KT2_MANIFEST = {
        "seven": [
         0,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -3825,11 +3825,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -3838,24 +3838,24 @@ window.KT2_MANIFEST = {
        "title": "몇백을 알아볼까요",
        "meta_title": "몇백을 알아볼까요",
        "std": "[2수01-02], [2수01-03]",
-       "slides": 14,
+       "slides": 15,
        "stages": [
         0,
         3,
         4,
-        1,
+        2,
         3
        ],
        "interactive": 2,
-       "blocks": 11,
+       "blocks": 12,
        "seven": [
         1,
         1,
-        0,
-        0,
         1,
         1,
-        0
+        1,
+        1,
+        1
        ]
       },
       {
@@ -3877,11 +3877,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -3890,24 +3890,24 @@ window.KT2_MANIFEST = {
        "title": "각 자리의 숫자는 얼마를 나타낼까요",
        "meta_title": "각 자리의 숫자는 얼마를 나타낼까요",
        "std": "[2수01-02]",
-       "slides": 14,
+       "slides": 15,
        "stages": [
         0,
         3,
         4,
-        1,
+        2,
         3
        ],
        "interactive": 2,
-       "blocks": 11,
+       "blocks": 12,
        "seven": [
         1,
         1,
-        0,
-        0,
         1,
         1,
-        0
+        1,
+        1,
+        1
        ]
       },
       {
@@ -3929,11 +3929,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -3955,11 +3955,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -3968,24 +3968,24 @@ window.KT2_MANIFEST = {
        "title": "수학이랑 확인해요",
        "meta_title": "수학이랑 확인해요",
        "std": "[2수01-02], [2수01-03]",
-       "slides": 14,
+       "slides": 15,
        "stages": [
         0,
         1,
         5,
-        1,
+        2,
         4
        ],
        "interactive": 2,
-       "blocks": 11,
+       "blocks": 12,
        "seven": [
         1,
-        0,
-        0,
-        0,
         1,
         1,
-        0
+        1,
+        1,
+        1,
+        1
        ]
       },
       {
@@ -4006,12 +4006,12 @@ window.KT2_MANIFEST = {
        "blocks": 12,
        "seven": [
         1,
-        0,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1,
+        1
        ]
       }
      ]
@@ -4041,11 +4041,11 @@ window.KT2_MANIFEST = {
        "seven": [
         0,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -4067,11 +4067,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -4080,24 +4080,24 @@ window.KT2_MANIFEST = {
        "title": "사각형을 알아보고 찾아볼까요",
        "meta_title": "사각형을 알아보고 찾아볼까요",
        "std": "[2수03-03], [2수03-04], [2수03-05]",
-       "slides": 14,
+       "slides": 15,
        "stages": [
         0,
         3,
         4,
-        1,
+        2,
         3
        ],
        "interactive": 2,
-       "blocks": 11,
+       "blocks": 12,
        "seven": [
         1,
         1,
-        0,
-        0,
         1,
         1,
-        0
+        1,
+        1,
+        1
        ]
       },
       {
@@ -4106,24 +4106,24 @@ window.KT2_MANIFEST = {
        "title": "원을 알아보고 찾아볼까요",
        "meta_title": "원을 알아보고 찾아볼까요",
        "std": "[2수03-03], [2수03-04]",
-       "slides": 14,
+       "slides": 15,
        "stages": [
         0,
         3,
         4,
-        1,
+        2,
         3
        ],
        "interactive": 2,
-       "blocks": 11,
+       "blocks": 12,
        "seven": [
         1,
         1,
-        0,
-        0,
         1,
         1,
-        0
+        1,
+        1,
+        1
        ]
       },
       {
@@ -4145,11 +4145,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -4171,11 +4171,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -4197,11 +4197,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -4223,11 +4223,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -4249,11 +4249,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       }
      ]
@@ -4283,11 +4283,11 @@ window.KT2_MANIFEST = {
        "seven": [
         0,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -4309,11 +4309,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -4335,7 +4335,7 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
+        1,
         1,
         1,
         1,
@@ -4361,11 +4361,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -4387,7 +4387,7 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
+        1,
         1,
         1,
         1,
@@ -4413,11 +4413,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -4439,11 +4439,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -4465,11 +4465,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -4491,11 +4491,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -4517,11 +4517,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -4530,24 +4530,24 @@ window.KT2_MANIFEST = {
        "title": "수학이랑 확인해요 (단원 평가)",
        "meta_title": "수학이랑 확인해요 (단원 평가)",
        "std": "[2수01-06] · [2수01-07] · [2수01-08] · [2수01-09]",
-       "slides": 14,
+       "slides": 15,
        "stages": [
         0,
         1,
         5,
-        1,
+        2,
         4
        ],
        "interactive": 2,
-       "blocks": 11,
+       "blocks": 12,
        "seven": [
         1,
         1,
-        0,
-        0,
         1,
         1,
-        0
+        1,
+        1,
+        1
        ]
       },
       {
@@ -4569,11 +4569,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       }
      ]
@@ -4832,24 +4832,24 @@ window.KT2_MANIFEST = {
        "title": "분류하기를 만나 볼까요 (단원 도입)",
        "meta_title": "분류하기를 만나 볼까요 (단원 도입)",
        "std": "[2수04-01]",
-       "slides": 14,
+       "slides": 15,
        "stages": [
         0,
         3,
         4,
-        1,
+        2,
         3
        ],
        "interactive": 2,
-       "blocks": 11,
+       "blocks": 12,
        "seven": [
         0,
         1,
-        0,
-        0,
         1,
         1,
-        0
+        1,
+        1,
+        1
        ]
       },
       {
@@ -4858,24 +4858,24 @@ window.KT2_MANIFEST = {
        "title": "분류는 어떻게 할까요",
        "meta_title": "분류는 어떻게 할까요",
        "std": "[2수04-01]",
-       "slides": 14,
+       "slides": 15,
        "stages": [
         0,
         3,
         4,
-        1,
+        2,
         3
        ],
        "interactive": 2,
-       "blocks": 11,
+       "blocks": 12,
        "seven": [
         1,
         1,
-        0,
-        0,
         1,
         1,
-        0
+        1,
+        1,
+        1
        ]
       },
       {
@@ -4884,24 +4884,24 @@ window.KT2_MANIFEST = {
        "title": "기준에 따라 분류해 볼까요",
        "meta_title": "기준에 따라 분류해 볼까요",
        "std": "[2수04-01]",
-       "slides": 14,
+       "slides": 15,
        "stages": [
         0,
         3,
         4,
-        1,
+        2,
         3
        ],
        "interactive": 2,
-       "blocks": 11,
+       "blocks": 12,
        "seven": [
         1,
         1,
-        0,
-        0,
         1,
         1,
-        0
+        1,
+        1,
+        1
        ]
       },
       {
@@ -4910,24 +4910,24 @@ window.KT2_MANIFEST = {
        "title": "분류하고 세어 볼까요",
        "meta_title": "분류하고 세어 볼까요",
        "std": "[2수04-01]",
-       "slides": 14,
+       "slides": 15,
        "stages": [
         0,
         3,
         4,
-        1,
+        2,
         3
        ],
        "interactive": 2,
-       "blocks": 11,
+       "blocks": 12,
        "seven": [
         1,
         1,
-        0,
-        0,
         1,
         1,
-        0
+        1,
+        1,
+        1
        ]
       },
       {
@@ -4936,24 +4936,24 @@ window.KT2_MANIFEST = {
        "title": "분류한 결과를 말해 볼까요",
        "meta_title": "분류한 결과를 말해 볼까요",
        "std": "[2수04-01]",
-       "slides": 14,
+       "slides": 15,
        "stages": [
         0,
         3,
         4,
-        1,
+        2,
         3
        ],
        "interactive": 2,
-       "blocks": 11,
+       "blocks": 12,
        "seven": [
         1,
         1,
-        0,
-        0,
         1,
         1,
-        0
+        1,
+        1,
+        1
        ]
       },
       {
@@ -4962,24 +4962,24 @@ window.KT2_MANIFEST = {
        "title": "수학이랑 확인해요 (단원 평가)",
        "meta_title": "수학이랑 확인해요 (단원 평가)",
        "std": "[2수04-01]",
-       "slides": 14,
+       "slides": 15,
        "stages": [
         0,
         2,
         4,
-        1,
+        2,
         4
        ],
        "interactive": 2,
-       "blocks": 12,
+       "blocks": 13,
        "seven": [
         1,
         1,
-        0,
-        0,
         1,
         1,
-        0
+        1,
+        1,
+        1
        ]
       },
       {
@@ -4988,24 +4988,24 @@ window.KT2_MANIFEST = {
        "title": "수학이랑 만들어요 (조각보 분류)",
        "meta_title": "수학이랑 만들어요 (조각보 분류)",
        "std": "[2수04-01]",
-       "slides": 14,
+       "slides": 15,
        "stages": [
         0,
         3,
         4,
-        1,
+        2,
         3
        ],
        "interactive": 2,
-       "blocks": 11,
+       "blocks": 12,
        "seven": [
         1,
         1,
-        0,
-        0,
         1,
         1,
-        0
+        1,
+        1,
+        1
        ]
       }
      ]
@@ -5022,24 +5022,24 @@ window.KT2_MANIFEST = {
        "title": "곱셈을 만나 볼까요 (단원 도입)",
        "meta_title": "곱셈을 만나 볼까요 (단원 도입)",
        "std": "[2수01-10]",
-       "slides": 14,
+       "slides": 15,
        "stages": [
         0,
         3,
         4,
-        1,
+        2,
         3
        ],
        "interactive": 2,
-       "blocks": 11,
+       "blocks": 12,
        "seven": [
         0,
         1,
-        0,
-        0,
         1,
         1,
-        0
+        1,
+        1,
+        1
        ]
       },
       {
@@ -5061,11 +5061,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -5087,11 +5087,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -5113,11 +5113,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -5139,11 +5139,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -5165,11 +5165,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -5191,11 +5191,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       },
       {
@@ -5204,24 +5204,24 @@ window.KT2_MANIFEST = {
        "title": "수학이랑 확인해요 (단원 평가)",
        "meta_title": "수학이랑 확인해요 (단원 평가)",
        "std": "[2수01-10]",
-       "slides": 13,
+       "slides": 15,
        "stages": [
         0,
         2,
         4,
-        1,
+        2,
         4
        ],
        "interactive": 2,
-       "blocks": 11,
+       "blocks": 13,
        "seven": [
         1,
         1,
-        0,
-        0,
         1,
         1,
-        0
+        1,
+        1,
+        1
        ]
       },
       {
@@ -5243,11 +5243,11 @@ window.KT2_MANIFEST = {
        "seven": [
         1,
         1,
-        0,
         1,
         1,
         1,
-        0
+        1,
+        1
        ]
       }
      ]
