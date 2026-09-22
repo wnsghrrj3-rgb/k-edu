@@ -44,14 +44,14 @@ window.KEDU_MAP["g6_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u1_l04",
+     "lessonId": "g6_s2_social_u1_l04_v1",
      "n": "4",
      "title": "세계의 유명한 해안 지형과 생활 모습을 알아볼까요",
      "sub": "① 세계 여러 지역의 지형 경관과 다양한 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/1단원_세계의자연환경/g6_social_u1_l04_함께움직여요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,

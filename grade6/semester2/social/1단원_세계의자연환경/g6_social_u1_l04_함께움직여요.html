@@ -1,0 +1,917 @@
+<!--
+K-edu 사회 6-2 · 1단원 세계의 자연환경 · 주제① 세계 여러 지역의 지형 경관과 다양한 생활 모습 · 4차시(l04)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사10-01] · 교과서 p.23~25 · 지도서(대단원1 **5차시** 「세계의 유명한 해안 지형과 생활 모습을 알아볼까요」,
+  지도서 p.49~55) 근거.
+학습 목표: 세계의 유명한 해안 지형의 특징과 생활 모습을 설명할 수 있다.
+수업 기법 및 전략: 사진 살펴보기 · 자료 조사하기 · 의견 나누기
+META = "1단원 세계의 자연환경 · ① 지형 경관과 다양한 생활 모습"
+⚠️ 엔진은 l03(l02 → l01 → 6-1 사회 엔진 승계)에서 100% 승계 · 엔진 무수정. 1단원 색 #0369A1.
+⚠️ 회수 키 `g6_s2_social_u1_l04_v1`(학기 표지 s2 — l01 선례). 맵 키 `g6_social_u1_l04`.
+⚠️ 파일명 `함께움직여요` — 조작 이름(선례 승계).
+
+직접조작: 두 칸이 함께 움직이는 판 (교과서 25쪽 [미디어 활동] 보라카이섬 신문 기사)
+  ⭐ 판에는 해안 관광지 섬 하나와 두 칸 — **긍정적 영향(일자리·소득)** · **부정적 영향(쓰레기·오염)** — 이 있다.
+  ⭐ 학생이 누르는 단추는 셋뿐이다 — 관광객 맞이하기 · 섬 쉬게 하기(폐쇄) · 섬 다시 열기.
+     어느 단추도 한 칸만 움직이지 않는다. 두 칸은 **같은 수 하나**(`bkLive` — 쉬면 0, 아니면 맞이한 관광객)만 읽는다.
+     두 칸을 담는 상태 0 · 한 칸만 바꾸는 자리 0.
+  ⭐ 근거 = 지도서 5차시 예시 답안 「긍정적 영향 — 관광 산업의 발달로 주민들에게 일자리가 생기고 소득이 늘어난다 /
+     부정적 영향 — 환경 오염 및 쓰레기 문제가 발생한다」 · 지도 꿀 Tip 「관광 산업에 관한 균형적 시각」.
+  ⭐ 판 읽기는 두 가지(섬이 관광객으로 가득 참 · 섬을 쉬게 함)를 모두 겪어야 열린다(`bkSeen` 두 비트 · 순서 자유 · 줄지 않음).
+  ⭐ 의견(찬성/반대)은 **정답이 없다** — 어느 쪽을 골라도 받아들이고, 고른 쪽이 치르는 값을 판에서 본 대로 적어 준다. 한 번만.
+
+단계 — ① 맞이하고 쉬게 하며 두 칸 살펴보기(순서 자유) → ② 판 읽기 3택(정답 자리 1) → ③ 나의 의견 찬성/반대(정답 없음) →
+  ④ 마무리 3택 = 지도서 5차시 주요 내용 정리 2·3 원문(정답 자리 2).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 12종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 섬이 쉬는 동안 관광객 맞이하기 무시 — 판 불변
+     ④ 관광객이 가득 찼을 때 맞이하기 무시 — 판 불변
+     ⑤ 쉬게 할 까닭이 없을 때(맞이한 관광객 0 · 이미 쉼) 쉬게 하기 무시 — 판 불변
+     ⑥ 섬이 열려 있을 때 다시 열기 무시 — 판 불변
+     ⑦ 두 가지를 모두 겪기 전 판 읽기 무시(순서) — 판 불변
+     ⑧ 판을 읽은 뒤 판 읽기 다시 무시 — 판 불변
+     ⑨ 판을 읽기 전 의견 무시(순서) — 판 불변
+     ⑩ 의견을 고른 뒤 의견 다시 무시(한 번만) — 판 불변
+     ⑪ 의견 전 마무리 무시(순서) — 판 불변
+     ⑫ 안내 표시 중 재클릭 무시(`bkBusy`).
+   재시도 허용(감점 없음), 조작·의견에 점수 0. 발문은 `.bk-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 그림은 도식이지 사진이 아니다** — 실제 모습은 교과서 사진으로 본다(캡션 상시).
+  ㉡ **판은 두 영향이 함께 움직인다는 것만 보였다** — 실제로는 두 영향의 크기가 언제나 같지는 않다(캡션 상시).
+  ㉢ **찬성과 반대에는 옳고 그름이 없다** — 판은 어느 의견도 채점하지 않는다.
+  ㉣ **친구와 의견 나누기 · 활동지 쓰기는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 기후(8차시~) 0 · 조사 차시(6~7차시)는 예고 자리까지만.
+  **지명은 이 차시 원문이 든 것까지만** — 포트 캠벨 국립 공원 · 펀디만 · 마케나 · 스리랑카 · 멕시코 · 네덜란드 · 프랑스 게랑드 ·
+    보라카이섬(필리핀) · 우리나라 서·남해안 · 미국 동부 연안 · 캐나다 동부 연안 · 브라질 아마존강 유역 · 유럽 북해 연안 ·
+    포르투갈 마리냐 해변 · 인도네시아 코모도섬 · 미국 조지아주 + 그 나라 이름.
+  교사용 참고 자료의 수치(길이·폭·면적·비율) 0 · 신문 기사의 수치(관광객 수·수입·기간) 0 · 네 자리 연도 0 · 쪽수 0.
+  정서 — 어느 해안 생활도 더 낫거나 못하게 그리지 않는다 · 찬성·반대 어느 쪽도 낮추지 않는다 · 사람 형상 0.
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u1_l04_v1">
+<title>세계의 유명한 해안 지형과 생활 모습을 알아볼까요 · 세계의 자연환경 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#0369A1; --green-d:#075985; --cyan:#0284C7;
+  --bg:#F0F9FF; --bub:#E0F2FE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 두 칸이 함께 움직이는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#075985;max-width:660px}
+.bk-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#F0F9FF;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.bk-ops{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+.bk-ops button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:6px 4px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10px,1.7vw,12.4px);line-height:1.3;
+  display:flex;flex-direction:column;align-items:center;gap:1px}
+.bk-ops button .ct{font-size:clamp(8.4px,1.4vw,10px);font-weight:700;color:#64748B}
+.bk-ops button:hover{background:var(--bub)}
+.bk-read{display:flex;flex-direction:column;gap:5px}
+.bk-read button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.bk-read button:hover{background:var(--bub)}
+.bk-read button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.bk-mine{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.bk-mine button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:8px 6px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10.5px,1.8vw,13px);line-height:1.4}
+.bk-mine button:hover{background:var(--bub)}
+.bk-said{background:#FFFBEB;border:2px solid #F59E0B;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#92400E}
+.bk-fin{display:flex;flex-direction:column;gap:5px}
+.bk-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;padding:7px 10px;
+  cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.bk-fin button:hover{background:var(--bub)}
+.bk-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.bk-note{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠: 모든 그림은 내용을 나타낸 도식이며 실제 사진이 아니다.
+   ⚠️ 지명은 이 차시 원문이 든 곳까지만 쓴다. 사람 형상 대신 도형으로만 그린다. */
+const SVG = {
+  // 1 들어가기 — 교과서 23쪽 해안 지형 셋
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <text x="160" y="16" font-size="10.5" fill="#075985" text-anchor="middle" font-weight="800">어떤 해안 지형의 모습인가요?</text>
+    <rect x="8" y="24" width="98" height="104" rx="8" fill="#fff" stroke="#0369A1" stroke-width="1.2"/>
+    <rect x="12" y="30" width="90" height="74" fill="#7DD3FC"/><path d="M12 30 L40 30 L44 104 L12 104 Z" fill="#D6B98C"/>
+    <rect x="58" y="52" width="10" height="52" fill="#D6B98C"/><rect x="78" y="62" width="9" height="42" fill="#D6B98C"/>
+    <text x="57" y="118" font-size="6.4" fill="#075985" text-anchor="middle" font-weight="800">포트 캠벨 국립 공원</text>
+    <rect x="111" y="24" width="98" height="104" rx="8" fill="#fff" stroke="#0369A1" stroke-width="1.2"/>
+    <rect x="115" y="30" width="90" height="36" fill="#7DD3FC"/><rect x="115" y="66" width="90" height="38" fill="#A8A29E"/>
+    ${[0,1,2,3].map(k=>`<path d="M${122+k*20} 76 q6 -4 12 0" stroke="#78716C" stroke-width="1.2" fill="none"/>`).join('')}
+    <text x="160" y="118" font-size="6.4" fill="#075985" text-anchor="middle" font-weight="800">펀디만 갯벌</text>
+    <rect x="214" y="24" width="98" height="104" rx="8" fill="#fff" stroke="#0369A1" stroke-width="1.2"/>
+    <rect x="218" y="30" width="90" height="40" fill="#38BDF8"/><path d="M218 70 Q263 62 308 70 L308 104 L218 104 Z" fill="#FDE68A"/>
+    <text x="263" y="118" font-size="6.4" fill="#075985" text-anchor="middle" font-weight="800">마케나 모래사장</text>
+    <text x="160" y="150" font-size="7.2" fill="#64748B" text-anchor="middle" font-weight="700">그림은 도식이에요 · 실제 모습은 교과서 사진으로 봐요</text></svg>`,
+  // 2 살펴보기 — 해안 지형의 경관 셋
+  feat:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="10.5" fill="#075985" text-anchor="middle" font-weight="800">해안 지형의 경관</text>
+    <rect x="10" y="28" width="96" height="100" rx="9" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.3"/>
+    <rect x="14" y="34" width="88" height="30" fill="#7DD3FC"/><rect x="14" y="64" width="88" height="60" fill="#A8A29E"/>
+    ${[0,1,2].map(k=>`<path d="M${22+k*26} 84 q7 -5 14 0" stroke="#78716C" stroke-width="1.3" fill="none"/>`).join('')}
+    <text x="58" y="142" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">갯벌</text>
+    <rect x="112" y="28" width="96" height="100" rx="9" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.3"/>
+    <rect x="116" y="34" width="88" height="44" fill="#38BDF8"/><path d="M116 78 Q160 70 204 78 L204 124 L116 124 Z" fill="#FDE68A"/>
+    <text x="160" y="142" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">모래사장</text>
+    <rect x="214" y="28" width="96" height="100" rx="9" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.3"/>
+    <rect x="218" y="34" width="88" height="90" fill="#7DD3FC"/><path d="M218 34 L246 34 L250 124 L218 124 Z" fill="#D6B98C"/>
+    <rect x="266" y="62" width="12" height="62" fill="#D6B98C"/><rect x="288" y="78" width="10" height="46" fill="#D6B98C"/>
+    <text x="262" y="142" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">절벽과 돌기둥</text>
+    <text x="160" y="162" font-size="6.8" fill="#64748B" text-anchor="middle" font-weight="700">그림은 도식이에요</text></svg>`,
+  // 3 살펴보기 — 교과서 24쪽 네 곳
+  life:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="16" font-size="10.5" fill="#075985" text-anchor="middle" font-weight="800">해안에서 살아가는 모습</text>
+    ${[['스리랑카','장대로 물고기 잡기'],['멕시코','모래사장 관광'],['네덜란드','항구'],['프랑스 게랑드','갯벌 염전']].map((t,i)=>{const x=8+i*78;
+      return `<rect x="${x}" y="26" width="72" height="108" rx="8" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.2"/><rect x="${x+4}" y="44" width="64" height="30" fill="#7DD3FC"/><rect x="${x+4}" y="74" width="64" height="22" fill="${i===3?'#A8A29E':'#FDE68A'}"/>${i===0?`<rect x="${x+20}" y="50" width="3" height="40" fill="#78350F"/><rect x="${x+44}" y="54" width="3" height="36" fill="#78350F"/>`:i===1?`<path d="M${x+22} 72 L${x+34} 60 L${x+46} 72 Z" fill="#F59E0B"/><rect x="${x+33}" y="70" width="2" height="14" fill="#78350F"/>`:i===2?`<path d="M${x+14} 64 L${x+54} 64 L${x+48} 72 L${x+20} 72 Z" fill="#334155"/><rect x="${x+26}" y="56" width="16" height="8" fill="#F59E0B"/>`:`${[0,1,2].map(k=>`<rect x="${x+10+k*18}" y="78" width="14" height="12" fill="#fff" stroke="#78716C" stroke-width=".8"/>`).join('')}`}<text x="${x+36}" y="36" font-size="7" fill="#075985" text-anchor="middle" font-weight="800">${t[0]}</text><text x="${x+36}" y="114" font-size="6.2" fill="#334155" text-anchor="middle" font-weight="700">${t[1]}</text>`;}).join('')}
+    <text x="160" y="154" font-size="6.8" fill="#64748B" text-anchor="middle" font-weight="700">그림은 도식이에요 · 실제 모습은 교과서 사진과 영상으로 봐요</text></svg>`,
+  // 5 살펴보기 — [미디어 활동] 보라카이섬
+  media:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <text x="160" y="18" font-size="10.5" fill="#075985" text-anchor="middle" font-weight="800">보라카이섬(필리핀)의 해변</text>
+    <rect x="20" y="30" width="280" height="44" fill="#7DD3FC"/><path d="M20 74 Q160 64 300 74 L300 120 L20 120 Z" fill="#FDE68A"/>
+    ${[[50,92],[84,100],[122,88],[160,104],[196,94],[232,102],[266,90]].map(p=>`<path d="M${p[0]-6} ${p[1]+6} L${p[0]} ${p[1]-5} L${p[0]+6} ${p[1]+6} Z" fill="#64748B"/>`).join('')}
+    <text x="160" y="140" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="800">관광객이 버리고 간 쓰레기로 뒤덮인 해변</text>
+    <text x="160" y="158" font-size="6.8" fill="#64748B" text-anchor="middle" font-weight="700">그림은 도식이에요</text></svg>`,
+  // 7 활동지 — 가 보고 싶은 해안
+  wish:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <text x="160" y="18" font-size="10.5" fill="#075985" text-anchor="middle" font-weight="800">가 보고 싶은 해안은 어디인가요?</text>
+    ${[['포르투갈','마리냐 해변','#D6B98C'],['인도네시아','코모도섬 모래사장','#FBCFE8'],['미국 조지아주','동부 해안의 갯벌','#A8A29E']].map((t,i)=>{const x=10+i*102;
+      return `<rect x="${x}" y="28" width="96" height="100" rx="9" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.2"/><rect x="${x+4}" y="44" width="88" height="34" fill="#7DD3FC"/><path d="M${x+4} 78 Q${x+48} 70 ${x+92} 78 L${x+92} 100 L${x+4} 100 Z" fill="${t[2]}"/><text x="${x+48}" y="40" font-size="7.4" fill="#075985" text-anchor="middle" font-weight="800">${t[0]}</text><text x="${x+48}" y="116" font-size="6.8" fill="#334155" text-anchor="middle" font-weight="800">${t[1]}</text>`;}).join('')}
+    <text x="160" y="152" font-size="6.8" fill="#64748B" text-anchor="middle" font-weight="700">그림은 도식이에요</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <text x="160" y="20" font-size="11" fill="#075985" text-anchor="middle" font-weight="800">오늘의 정리</text>
+    <rect x="16" y="32" width="288" height="30" rx="7" fill="#fff" stroke="#0369A1" stroke-width="1.3"/>
+    <text x="160" y="51" font-size="8.4" fill="#075985" text-anchor="middle" font-weight="800">해안에는 갯벌 · 모래사장 · 절벽과 돌기둥이 나타나요</text>
+    <rect x="16" y="68" width="288" height="30" rx="7" fill="#fff" stroke="#0369A1" stroke-width="1.3"/>
+    <text x="160" y="87" font-size="8.4" fill="#075985" text-anchor="middle" font-weight="800">관광 · 어업 · 염전 · 양식업 · 항구</text>
+    <rect x="16" y="104" width="288" height="30" rx="7" fill="#FFFBEB" stroke="#B45309" stroke-width="1.3"/>
+    <text x="160" y="123" font-size="8.2" fill="#92400E" text-anchor="middle" font-weight="800">관광 산업에는 긍정적 영향과 부정적 영향이 함께 있어요</text>
+    <text x="160" y="152" font-size="8" fill="#64748B" text-anchor="middle" font-weight="700">두 칸은 언제나 함께 움직였어요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#0369A1" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#0369A1" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#075985" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 두 칸이 함께 움직이는 판 =====
+   ★ 단추는 셋 — 관광객 맞이하기 · 섬 쉬게 하기 · 섬 다시 열기. 어느 단추도 한 칸만 움직이지 않는다.
+   ★★ 두 칸(긍정적 영향 · 부정적 영향)은 같은 수 하나(bkLive)만 읽는다. 두 칸을 담는 상태 0.
+   ★ 판 읽기는 두 가지(가득 참 · 쉬게 함)를 모두 겪어야 열린다(bkSeen 두 비트 · 순서 자유 · 줄지 않음).
+   ★ 의견(찬성/반대)은 정답이 없다 — 어느 쪽이든 받아들이고, 고른 쪽의 값을 판에서 본 대로 적어 준다. 한 번만.
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작·의견에 점수 0. */
+const BK_MAX = 3;   /* 관광객을 맞이하는 걸음 — 셋이면 섬이 가득 차요 */
+
+/* 두 칸의 줄 — 교과서 25쪽 [미디어 활동] 신문 기사 · 지도서 5차시 예시 답안 */
+const BK_GOOD = ['관광객을 맞는 일자리가 생겨요','주민들의 소득이 늘어요','주민 대부분이 관광 산업에서 일해요'];
+const BK_BAD = ['해변에 쓰레기가 생겨요','버리고 간 쓰레기가 늘어요','섬이 쓰레기로 뒤덮이고 바다가 오염돼요'];
+const BK_REST_G = '관광 일을 하던 주민들이 어려움을 겪어요';
+const BK_REST_B = '섬이 쉬는 동안 자연환경을 지켜요';
+
+/* ② 판 읽기 */
+const BK_READ = [
+  '관광객은 섬에 좋은 영향만 주고, 쓰레기는 관광과 상관없이 생기기 때문이에요',
+  '관광객이 늘면 일자리와 소득이 늘지만 쓰레기와 오염도 함께 늘고, 섬을 쉬게 하면 자연환경은 지키지만 일자리와 소득도 함께 줄기 때문이에요',
+  '섬을 쉬게 하면 모든 문제가 사라지고 주민들에게도 아무 어려움이 없기 때문이에요'
+];
+const BK_READ_OK = 1;
+const BK_READ_NO = [
+  '판을 다시 봐요. 관광객을 맞이할 때마다 <b>쓰레기·오염 칸도</b> 함께 올랐어요. 판을 다시 읽어 봐요.',
+  null,
+  '판을 다시 봐요. 섬을 쉬게 하자 <b>일자리·소득 칸도</b> 함께 내려갔어요. 판을 다시 읽어 봐요.'
+];
+
+/* ③ 나의 의견 — 교과서 25쪽 「나는 보라카이섬의 폐쇄에 ( 찬성 / 반대 )합니다」 · 정답 없음 */
+const BK_MINE = ['찬성해요','반대해요'];
+const BK_MINE_T = [
+  '찬성하면 섬의 <b>자연환경</b>을 지킬 수 있어요. 하지만 판에서 보았듯이 섬이 쉬는 동안 관광 일을 하는 주민들의 <b>일자리와 소득</b>도 함께 줄어요. 주민들의 생계를 도울 방법도 함께 생각해 봐요.',
+  '반대하면 주민들의 <b>일자리와 소득</b>을 지킬 수 있어요. 하지만 판에서 보았듯이 관광객이 늘수록 <b>쓰레기와 오염</b>도 함께 늘어요. 자연환경을 지킬 방법도 함께 생각해 봐요.'
+];
+
+/* ④ 마무리 — 지도서 5차시 주요 내용 정리 2·3 원문 */
+const BK_FIN = [
+  '해안 지형은 모두 모래사장이라서 사람들은 해수욕만 하며 살아가요',
+  '관광 산업은 해안 지역에 좋은 영향만 주므로 관광객은 많을수록 좋아요',
+  '해안에는 갯벌, 모래사장, 거대한 절벽이나 돌기둥이 나타나며, 사람들은 해안을 관광지로 이용하고 어업, 염전, 양식업을 하거나 항구로 이용해요'
+];
+const BK_FIN_OK = 2;
+const BK_FIN_NO = [
+  '해안의 모습을 떠올려 봐요. 갯벌, 모래사장, 절벽과 돌기둥처럼 <b>여러 가지</b> 모습이 있었어요. 오늘의 정리를 다시 골라 봐요.',
+  '판을 떠올려 봐요. 관광객이 늘면 <b>쓰레기와 오염</b>도 함께 늘었어요. 오늘의 정리를 다시 골라 봐요.',
+  null
+];
+
+/* 안내 */
+const BK_RESTING = '섬이 <b>쉬고 있어요.</b> 먼저 섬을 다시 연 뒤에 관광객을 맞이해 봐요. 판은 그대로예요.';
+const BK_FULL = '섬이 관광객으로 <b>가득 찼어요.</b> 더 맞이할 수 없어요. 판은 그대로예요.';
+const BK_NOREST = '지금은 <b>쉬게 할 까닭이 없어요.</b> 맞이한 관광객이 없거나 섬이 이미 쉬고 있어요. 판은 그대로예요.';
+const BK_NOTSHUT = '섬은 <b>이미 열려 있어요.</b> 판은 그대로예요.';
+const BK_ORDER_R = '아직 <b>겪어 보지 않은 것</b>이 있어요. 섬이 관광객으로 가득 차는 것과 섬을 쉬게 하는 것을 모두 해 본 뒤에 판을 읽을 수 있어요. 판은 그대로예요.';
+const BK_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const BK_ORDER_M = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const BK_MINE_AGAIN = '<b>이미 의견을 골랐어요.</b> 의견은 한 번만 골라요. 판은 그대로예요.';
+const BK_ORDER_F = '아직 <b>의견을 고르지 않았어요.</b> 의견을 먼저 골라 봐요. 판은 그대로예요.';
+const BK_ALL_MSG = '두 가지를 <b>모두 겪어 보았어요.</b> 두 칸은 언제나 <b>함께</b> 움직였어요.';
+
+/* ★★ 두 칸이 읽는 단 하나의 수 — 쉬면 0, 아니면 맞이한 관광객 */
+function bkLive(st){ return st.bkShut ? 0 : st.bkTour; }
+function bkGood(st){ return bkLive(st); }
+function bkBad(st){ return bkLive(st); }
+function bkSeenAll(st){ return st.bkSeen===3; }
+
+function bkCanvas(st){
+  const fin = st.bkFin!=null, live = bkLive(st), seen = bkSeenAll(st);
+  const head = fin ? '해안 지형과 생활 모습을 살펴보았어요'
+    : st.bkMine!=null ? '의견을 골랐어요 \u2014 이제 정리해요'
+    : st.bkRead!=null ? '판을 읽었어요 \u2014 나의 의견을 골라요'
+    : seen ? '두 가지를 모두 겪어 보았어요'
+    : '관광객을 맞이하고 섬을 쉬게 해 봐요';
+
+  /* 섬 — 파라솔 수 = 맞이한 관광객(쉬면 0) · 쓰레기 수 = 부정적 영향 칸 */
+  let isle = `<rect x="8" y="32" width="304" height="40" fill="${bkBad(st)>=BK_MAX?'#A8A29E':'#7DD3FC'}"/>
+    <path d="M8 72 Q160 62 312 72 L312 104 L8 104 Z" fill="#FDE68A"/>`;
+  for(let u=0;u<live;u++) isle += `<g data-umb="${u}"><path d="M${40+u*44} 84 L${52+u*44} 72 L${64+u*44} 84 Z" fill="#F59E0B"/><rect x="${51+u*44}" y="82" width="2" height="14" fill="#78350F"/></g>`;
+  for(let t=0;t<bkBad(st);t++) isle += `<path data-trash="${t}" d="M${200+t*30} 100 L${206+t*30} 88 L${212+t*30} 100 Z" fill="#64748B"/>`;
+  if(st.bkShut) isle += `<g data-closed="1"><rect x="96" y="40" width="128" height="20" rx="6" fill="#fff" stroke="#B45309" stroke-width="1.2"/>
+    <text x="160" y="53.5" font-size="7.2" fill="#92400E" text-anchor="middle" font-weight="800">섬이 쉬고 있어요</text></g>`;
+
+  /* 두 칸 — 둘 다 bkLive 하나에서 */
+  const cell = (x,label,n,lines,rest,tag,color)=>{
+    let s = `<g data-cell="${tag}" data-n="${n}"><rect x="${x}" y="112" width="146" height="132" rx="8" fill="#F8FAFC" stroke="${color}" stroke-width="1.3"/>
+      <text x="${x+73}" y="126" font-size="7.4" fill="${color}" text-anchor="middle" font-weight="800">${label}</text>`;
+    if(st.bkShut) s += `<text x="${x+73}" y="148" font-size="5.8" fill="#334155" text-anchor="middle" font-weight="700" data-rest="${tag}">${rest}</text>`;
+    else for(let r=0;r<n;r++) s += `<text x="${x+73}" y="${148+r*16}" font-size="5.8" fill="#334155" text-anchor="middle" font-weight="700" data-line="${tag}">${lines[r]}</text>`;
+    for(let b=0;b<BK_MAX;b++) s += `<rect x="${x+9+b*44}" y="204" width="40" height="18" rx="3" fill="${b<n?color:'#E2E8F0'}" ${b<n?`data-bar="${tag}"`:''}/>`;
+    return s + `<text x="${x+73}" y="238" font-size="6.6" fill="${color}" text-anchor="middle" font-weight="800">${n} / ${BK_MAX}</text></g>`;
+  };
+  const cells = cell(8,'긍정적 영향 \u00b7 일자리와 소득',bkGood(st),BK_GOOD,BK_REST_G,'good','#0369A1')
+              + cell(166,'부정적 영향 \u00b7 쓰레기와 오염',bkBad(st),BK_BAD,BK_REST_B,'bad','#B45309');
+  const tally = `관광객 ${live} / ${BK_MAX} \u00b7 가득 차 보기 ${(st.bkSeen&1)?'\u2713':'\u25CB'} \u00b7 쉬게 해 보기 ${(st.bkSeen&2)?'\u2713':'\u25CB'}`;
+  return `<svg viewBox="0 0 320 280" data-tour="${st.bkTour}" data-shut="${st.bkShut?1:0}" data-live="${live}" data-good="${bkGood(st)}" data-bad="${bkBad(st)}" data-seen="${st.bkSeen}" data-read="${st.bkRead==null?-1:st.bkRead}" data-mine="${st.bkMine==null?-1:st.bkMine}" data-fin="${fin?1:0}">
+    <rect width="320" height="280" fill="#fff"/>
+    <rect x="8" y="8" width="304" height="18" rx="6" fill="#E0F2FE"/>
+    <text x="160" y="20.5" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">${head}</text>
+    ${isle}
+    ${cells}
+    <rect x="8" y="252" width="304" height="20" rx="6" fill="#FEF3C7"/>
+    <text x="160" y="265.5" font-size="7" fill="#92400E" text-anchor="middle" font-weight="800" data-tally="1">${tally}</text>
+  </svg>`;
+}
+
+function bkPanel(st){
+  const fin = st.bkFin!=null, seen = bkSeenAll(st);
+  const q = fin ? '세계의 유명한 해안 지형과 생활 모습을 살펴보았어요.'
+    : st.bkMine!=null ? '오늘 공부한 내용을 어떻게 정리하면 좋을까요?'
+    : st.bkRead!=null ? '나는 보라카이섬의 폐쇄에 찬성하나요, 반대하나요?'
+    : seen ? '왜 한 칸만 올리거나 한 칸만 내릴 수는 없었을까요?'
+    : '관광객이 늘면 섬 주민들의 생활은 어떻게 달라질까요?';
+  let right = `<div class="bk-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83C\uDFD6\uFE0F 두 칸이 함께 움직여요</div>
+      관광객을 맞이하자 <b>일자리와 소득</b>이 늘었지만 <b>쓰레기와 오염</b>도 함께 늘었어요.
+      섬을 쉬게 하자 자연환경은 지켰지만 주민들의 <b>일자리와 소득</b>도 함께 줄었어요.
+      관광 산업에는 긍정적 영향과 부정적 영향이 함께 있어요.<br>
+      <span style="color:#64748B">판은 두 영향이 함께 움직인다는 것만 보인 <b>도식</b>이에요. 실제로는 두 영향의 크기가 언제나 같지는 않아요.
+      찬성과 반대에는 옳고 그름이 없어요. 친구와 <b>의견 나누기</b>와 활동지 쓰기는 교실에서 직접 해요.</span></div>`;
+  } else if(st.bkMine!=null){
+    right += `<div class="bk-said">나의 의견 \u2014 <b>${BK_MINE[st.bkMine]}</b><br>${BK_MINE_T[st.bkMine]}</div>`;
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="bk-fin">${BK_FIN.map((t,k)=>`<button class="${st.bkWrongF===k?'no':''}" onclick="bkFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.bkRead!=null){
+    right += `<div class="dw-step">\uD83D\uDDE3\uFE0F 나의 의견</div>`;
+    right += `<div class="bk-mine">${BK_MINE.map((t,k)=>`<button onclick="bkMinePick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="bk-note">어느 쪽을 골라도 좋아요. 의견에는 <b>옳고 그름이 없어요</b>. 판은 고른 쪽의 좋은 점과 걱정되는 점을 함께 보여 줘요.</div>`;
+  } else if(seen){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="bk-read">${BK_READ.map((t,k)=>`<button class="${st.bkWrongR===k?'no':''}" onclick="bkReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83C\uDFD6\uFE0F 섬을 움직여요</div>`;
+    right += `<div class="bk-ops">
+      <button onclick="bkWelcome()"><span class="ct">관광</span>관광객 맞이하기</button>
+      <button onclick="bkRest()"><span class="ct">폐쇄</span>섬 쉬게 하기</button>
+      <button onclick="bkOpen()"><span class="ct">다시</span>섬 다시 열기</button></div>`;
+    right += `<div class="bk-note">섬이 관광객으로 <b>가득 차 보기</b>와 섬을 <b>쉬게 해 보기</b>를 모두 해 봐요. <b>어느 것부터</b> 해도 좋아요. 몇 번이고 해도 되고, 감점은 없어요.</div>`;
+  }
+  if(st.bkMsg) right += `<div class="dw-msg${st.bkWarn?' warn':''}">${st.bkMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83C\uDFD6\uFE0F 두 칸이 함께 움직이는 판</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${bkCanvas(st)}<div class="cvcap">판의 그림은 <b>도식</b>이에요. 판은 관광의 두 영향이 함께 움직인다는 것만 보였어요 \u2014 실제로는 두 영향의 크기가 언제나 같지는 않아요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 세계의 자연환경 · ① 지형 경관과 다양한 생활 모습";
+
+// 확인 4 + 적용 4 — 정답 다양화 [3,1,2,0,0,2,1,3](각 자리 2회)
+// ⚠️ 문항 내 연도·쪽수·길이·폭·수량·비율 0 · 새 사실 0(교과서 23~25쪽 문면과 지도서 5차시 예시 답까지만).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"<b>해안 지형</b> 경관의 특징으로 알맞은 것은 무엇인가요?",
+   opts:["크고 작은 하천을 따라 계곡이 나타나요","모래 언덕이 끝없이 펼쳐진 사막이 나타나요","해발 고도가 높고 경사가 급한 산지만 나타나요","갯벌이나 모래사장, 거대한 절벽이나 돌기둥 등이 나타나요"],
+   correct:3, pts:POINTS_BASIC, scene:"feat",
+   reason:"바다와 육지가 만나는 해안에는 갯벌이나 모래사장, 거대한 절벽이나 돌기둥 등 여러 가지 모습의 해안 지형이 나타나요.",
+   h1:"「꼭! 기억해요」 ①을 떠올려 봐요.", h2:"바다와 육지가 만나는 곳을 떠올려 봐요."},
+  {stem:"「<b>깔때기 모양</b>의 지형으로 조수 간만의 차가 매우 큰 것으로 유명한 갯벌이야.」 친구가 설명하는 곳은 어디인가요?",
+   opts:["마케나 모래사장(미국)","펀디만 갯벌(캐나다)","포트 캠벨 국립 공원(오스트레일리아)","게랑드 염전(프랑스)"],
+   correct:1, pts:POINTS_BASIC, scene:"open",
+   reason:"캐나다 동부 해안에 있는 펀디만은 깔때기 모양의 지형으로 조수 간만의 차가 매우 큰 것으로 유명해요.",
+   h1:"갯벌을 찾아봐요.", h2:"캐나다 동부 해안을 떠올려 봐요."},
+  {stem:"<b>네덜란드</b>의 해안에 항구가 발달한 까닭은 무엇인가요?",
+   opts:["파도가 높고 거칠기 때문이에요","갯벌이 넓어 소금을 만들기 좋기 때문이에요","해안에 있어 배가 드나들기 좋기 때문이에요","모래사장이 넓고 경관이 아름답기 때문이에요"],
+   correct:2, pts:POINTS_BASIC, scene:"life",
+   reason:"네덜란드는 해안에 있어 배가 드나들기 좋아요. 배가 드나들기에 유리한 해안에는 항구가 발달해요.",
+   h1:"항구에는 무엇이 오가나요?", h2:"배를 떠올려 봐요."},
+  {stem:"프랑스 <b>게랑드</b> 주민들이 갯벌에 염전을 만든 까닭은 무엇인가요?",
+   opts:["드넓은 갯벌을 이용하여 염전을 만들기 좋기 때문이에요","배가 드나들기 편리하기 때문이에요","파도가 높아 장대로 물고기를 잡기 때문이에요","거대한 돌기둥이 많기 때문이에요"],
+   correct:0, pts:POINTS_BASIC, scene:"life",
+   reason:"프랑스 게랑드 지역 주민들은 드넓은 갯벌을 이용해 질 좋은 소금을 만들어요. 갯벌이 넓게 펼쳐진 해안에는 염전이 발달하기도 해요.",
+   h1:"염전에서는 무엇을 만드나요?", h2:"넓게 펼쳐진 갯벌을 떠올려 봐요."},
+  // 4단계 적용 (+15)
+  {stem:"직접조작에서 <b>관광객 맞이하기</b>를 한 번 누를 때 판에서 무엇이 달라졌나요?",
+   opts:["일자리·소득 칸과 쓰레기·오염 칸이 함께 한 칸씩 올랐어요","일자리·소득 칸만 올랐어요","쓰레기·오염 칸만 올랐어요","아무것도 달라지지 않았어요"],
+   correct:0, pts:POINTS_APPLY, scene:"media",
+   reason:"관광객이 늘면 주민들의 일자리와 소득이 늘지만, 쓰레기와 오염도 함께 늘어요. 판의 두 칸은 언제나 함께 움직였어요.",
+   h1:"판의 두 칸을 떠올려 봐요.", h2:"한 칸만 움직이는 단추가 있었나요?"},
+  {stem:"「꼭! 기억해요」 — 「배가 드나들기에 유리한 해안에는 염전이 발달합니다.」 이 문장을 <b>바르게 고친</b> 것은 무엇인가요?",
+   opts:["배가 드나들기에 유리한 해안에는 폭포가 발달합니다","배가 드나들기에 유리한 해안에는 평야가 발달합니다","배가 드나들기에 유리한 해안에는 항구가 발달합니다","배가 드나들기에 유리한 해안에는 돌기둥이 발달합니다"],
+   correct:2, pts:POINTS_APPLY, scene:"life",
+   reason:"배가 드나들기에 유리한 해안에는 항구가 발달해요. 염전은 갯벌이 넓게 펼쳐진 해안에 발달하기도 해요.",
+   h1:"네덜란드의 해안을 떠올려 봐요.", h2:"배가 드나드는 곳이에요."},
+  {stem:"<b>스리랑카</b> 사람들이 배 없이 장대를 이용해 물고기를 잡는 까닭은 무엇인가요?",
+   opts:["물고기가 모래사장에만 살기 때문이에요","파도가 높고 거칠기 때문이에요","항구가 너무 많기 때문이에요","갯벌에 염전이 있기 때문이에요"],
+   correct:1, pts:POINTS_APPLY, scene:"life",
+   reason:"스리랑카 해안은 파도가 높고 거칠어서 사람들이 배 없이 장대를 이용해 물고기를 잡았어요.",
+   h1:"바다의 모습을 떠올려 봐요.", h2:"배를 띄우기 어려운 바다예요."},
+  {stem:"보라카이섬 신문 기사를 읽고 관광 산업이 주민들에게 미친 영향을 <b>바르게</b> 말한 친구는 누구인가요?",
+   opts:["관광 산업은 좋은 영향만 주었어요","관광 산업은 나쁜 영향만 주었어요","섬을 폐쇄하면 주민들은 아무 어려움도 겪지 않아요","일자리가 생겨 경제에 도움이 되지만, 쓰레기로 자연환경이 오염되는 문제도 생겼어요"],
+   correct:3, pts:POINTS_APPLY, scene:"media",
+   reason:"관광 산업으로 주민들에게 일자리가 생겨 경제적으로 도움이 되지만, 섬의 자연환경이 오염되는 문제도 있어요.",
+   h1:"긍정적 영향과 부정적 영향을 모두 떠올려 봐요.", h2:"판의 두 칸이 어떻게 움직였나요?"}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 동기 유발 · 교과서 23쪽
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">바다와 육지가 만나는 해안을 살펴봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','포트 캠벨 국립 공원 · 펀디만 갯벌 · 마케나 모래사장','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCD6 교과서 본문</div>
+      바다와 육지가 만나는 해안에는 여러 가지 모습의 해안 지형이 나타나요. 해안의 <b>갯벌</b>이나 <b>모래사장</b>,
+      거대한 <b>절벽</b>이나 <b>돌기둥</b> 등은 해안 지역에서 볼 수 있는 지형 경관이에요.</div>
+    ${st.revealed?`<div class="answer-box">세계의 유명한 갯벌에는 어떤 곳이 있나요?<br>
+      \u2014 우리나라의 <b>서·남해안 갯벌</b>을 비롯해 <b>미국 동부 연안, 캐나다 동부 연안, 브라질 아마존강 유역, 유럽 북해 연안</b>의 갯벌이 세계적으로 유명해요.</div>`
+      :`<div class="note">여행 홍보 누리집에는 넓은 해변에서 쉬는 모습, 바다에서 스포츠를 즐기는 모습이 자주 나와요. 해안 지형은 어떤 특징을 가지고 있을까요?</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">지난 시간에는 세계의 유명한 하천 지형과 생활 모습을 알아봤어요. 오늘은 세계의 유명한 해안 지형과 사람들의 생활 모습을 알아봐요.</div></div>`});
+// 2 살펴보기 — reveal: 해안 지형 경관의 특징(핵심 질문)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">해안 지형 경관의 특징을 살펴봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('feat','갯벌 · 모래사장 · 절벽과 돌기둥','wide')}</div>
+    <div class="sum-list">
+      <div class="sum-item"><span class="n">\u2460</span><div>캐나다 동부 해안의 <b>펀디만</b>은 깔때기 모양의 지형으로, 조수 간만의 차가 매우 큰 것으로 유명해요.</div></div>
+      <div class="sum-item"><span class="n">\u2461</span><div>미국 하와이의 <b>마케나 모래사장</b>은 개발되지 않은 자연 그대로의 해변으로 유명해요.</div></div>
+      <div class="sum-item"><span class="n">\u2462</span><div>오스트레일리아의 <b>포트 캠벨 국립 공원</b>에서는 해안을 따라 펼쳐진 거대한 절벽과 돌기둥이 명소로 꼽혀요.</div></div>
+    </div>
+    ${st.revealed?`<div class="answer-box">해안 지형 경관의 특징은 무엇인가요?<br>
+      · 우리나라처럼 넓은 <b>갯벌</b>이 나타나기도 해요.<br>
+      · 해안에 넓은 <b>모래사장</b>이 펼쳐져 있어요.<br>
+      · 거대한 해안 <b>절벽과 돌기둥</b>이 나타나요.</div>`
+      :`<div class="note">사진을 보고 해안 지형 경관의 특징을 말해 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: 교과서 24쪽 스스로 활동
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">해안 지형에서 사람들은 어떻게 살아갈까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('life','스리랑카 · 멕시코 · 네덜란드 · 프랑스 게랑드','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCD6 교과서 본문</div>
+      해안 지역의 주민들은 주로 <b>어업</b>이나 <b>양식업</b>을 하며 살아가요. 배가 드나들기에 유리한 해안에는 <b>항구</b>가 발달하고,
+      경관이 아름다운 해안에는 <b>관광지</b>가 형성돼요. 갯벌이 넓게 펼쳐진 해안에는 <b>염전</b>이 발달하기도 해요.<br>
+      <span style="color:#64748B">양식업 \u2014 물고기나 조개 등을 인공적으로 기르는 일.</span></div>
+    <div class="sum-list">
+      <div class="sum-item"><span class="n">\u2460</span><div><b>스리랑카</b> 사람들은 배 없이 장대를 이용해 물고기를 잡아요.</div></div>
+      <div class="sum-item"><span class="n">\u2461</span><div><b>멕시코</b> 해변의 아름다운 모래사장에는 많은 관광객이 찾아와요.</div></div>
+      <div class="sum-item"><span class="n">\u2462</span><div><b>네덜란드</b>의 해안에 발달한 항구에는 세계 여러 나라의 배가 오가요.</div></div>
+      <div class="sum-item"><span class="n">\u2463</span><div>프랑스 <b>게랑드</b> 지역 주민들은 갯벌을 이용해 질 좋은 소금을 만들어요.</div></div>
+    </div>
+    ${st.revealed?`<div class="answer-box">왜 그렇게 살아갈까요?<br>
+      \u2460 파도가 높고 거칠기 때문이에요.<br>
+      \u2461 모래사장이 넓고 지형 경관이 아름답기 때문이에요.<br>
+      \u2462 해안에 있어 배가 드나들기 좋기 때문이에요.<br>
+      \u2463 드넓은 갯벌을 이용하여 염전을 만들기 좋기 때문이에요.</div>`
+      :`<button class="reveal-btn" onclick="reveal()">까닭 보기</button>`}
+  </div>`});
+// 4 살펴보기 — reveal: 핵심 질문 · 꼭 기억해요
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">해안 지형이 사람들의 생활 모습에 미친 영향</h2>
+  <div class="ka-grp"><div class="paper"><div class="ph">\u270F\uFE0F 스스로 활동</div>
+      사진을 보고, 해안 지형이 사람들의 생활 모습에 미친 영향을 써 봐요. 해안 지형 중 갯벌은 염전 말고 어떻게 이용할 수 있을까요?</div>
+    ${st.revealed?`<div class="answer-box">· 배가 드나들기에 유리한 해안에 <b>항구</b>가 발달해요.<br>
+      · 아름다운 해안 지형의 경관을 <b>관광지</b>로 이용해요.<br>
+      · 해안 지역의 주민들은 <b>어업</b>이나 <b>염전</b>, <b>양식업</b>을 해요.<br>
+      · 갯벌은 관광지로 이용하거나 양식업에 활용할 수도 있어요.</div>`
+      :`<button class="reveal-btn" onclick="reveal()">예시 보기</button>`}
+    <div class="paper"><div class="ph">\u2B50 꼭! 기억해요</div>
+      \u2460 바다와 육지가 만나는 <b>ㅎㅇ</b>에는 다양한 지형이 나타나요.<br>
+      \u2461 배가 드나들기에 유리한 해안에는 염전이 발달해요. ( \u25CB , \u2715 )</div>
+    ${st.revealed?`<div class="answer-box">\u2460 <b>해안</b><br>\u2461 <b>\u2715</b> \u2014 배가 드나들기에 유리한 해안에는 <b>항구</b>가 발달해요.</div>`:''}
+  </div>`});
+// 5 살펴보기 — reveal: [미디어 활동] 보라카이섬 신문 기사
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">관광 산업의 영향을 알아봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('media','쓰레기로 뒤덮인 보라카이 해변','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCF0 미디어 활동 \u2014 신문 기사</div>
+      필리핀의 <b>보라카이섬</b>은 해마다 아주 많은 관광객이 찾는 관광지예요. 그런데 관광객들이 버리고 간 쓰레기로 섬이 뒤덮이고,
+      오염된 물이 바다로 흘러들어 환경 오염이 심각해졌어요. 필리핀 정부는 환경을 보호하려고 보라카이섬을 한동안 <b>폐쇄</b>하기로 했어요.
+      그러자 대부분 관광 산업에서 일하는 지역 주민들이 경제적 어려움을 겪을 것이라는 걱정이 나왔어요.<br>
+      <span style="color:#64748B">폐쇄 \u2014 기관이나 시설을 없애거나 기능을 정지하는 것.</span></div>
+    ${st.revealed?`<div class="answer-box">관광 산업이 보라카이섬의 주민들에게 미친 영향은 무엇인가요?<br>
+      · <b>긍정적 영향</b> \u2014 관광 산업의 발달로 주민들에게 일자리가 생기고 소득이 늘어나요.<br>
+      · <b>부정적 영향</b> \u2014 환경 오염 및 쓰레기 문제가 발생해요.</div>`
+      :`<div class="note">기사를 읽고 관광 산업의 긍정적 영향과 부정적 영향을 찾아봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 6 살펴보기 — 직접조작(두 칸이 함께 움직이는 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">두 칸이 함께 움직여요</h2>
+  ${bkPanel(st)}`});
+// 7 활동지 — 가 보고 싶은 해안
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">가 보고 싶은 해안을 골라 봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('wish','포르투갈 마리냐 해변 · 인도네시아 코모도섬 모래사장 · 미국 조지아주 동부 해안의 갯벌','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCDD 활동지</div>
+      \u2460 세계에서 유명한 해안 지형 가운데 <b>가 보고 싶은 곳</b>과 까닭을 써 봐요.<br>
+      \u2461 고른 지형에서 살아가는 사람들의 <b>생활 모습</b>을 예상해 써 봐요.</div>
+    ${st.revealed?`<div class="answer-box">\u2460 가 보고 싶은 곳 \u2014 <b>인도네시아 코모도섬 모래사장</b><br>
+      까닭 \u2014 지금까지 봤던 모래와 달리 분홍색이라서 직접 가서 만져 보고 싶어요.<br>
+      \u2461 분홍색 모래사장을 보려고 찾아오는 관광객에게 숙박이나 음식을 제공하는 <b>관광 산업</b>에서 일하는 사람이 많을 것 같아요.</div>`
+      :`<button class="reveal-btn" onclick="reveal()">예시 보기</button>`}
+    <div class="note">활동지 쓰기와 친구와 의견 나누기는 교실에서 직접 해요.</div></div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 5차시 주요 내용 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div>세계의 유명한 해안 지형 \u2014 <b>마케나 모래사장, 펀디만 갯벌</b> 등이 있어요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div>해안에는 거대한 <b>절벽이나 돌기둥</b>을 볼 수 있고, <b>모래사장이나 갯벌</b>이 나타나요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div>해안 지형의 사람들은 경관을 <b>관광지</b>로 이용하고, <b>어업, 염전, 양식업</b> 등에 활용하며 <b>항구</b>로 이용하기도 해요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 관광객이 늘자 일자리·소득과 쓰레기·오염이 함께 늘었고, 섬을 쉬게 하자 둘 다 함께 줄었어요. 관광 산업에는 긍정적·부정적 영향이 함께 있어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b>세계의 지형 경관과 생활 모습</b>을 조사해 소개 자료를 만들어 봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 활동을 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"해안 지형의 경관 특징을 말할 수 있어요",st)}
+    ${selfCheck(1,"해안 지형에서 살아가는 사람들의 생활 모습을 지형과 관련지어 설명할 수 있어요",st)}
+    ${selfCheck(2,"관광 산업의 긍정적 영향과 부정적 영향을 함께 생각할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">세계의 지형 경관과 생활 모습</b>을 조사해 봐요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u1_l04";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  bkTour:0, bkShut:false, bkSeen:0, bkRead:null, bkMine:null, bkFin:null,
+  bkWrongR:null, bkWrongF:null,
+  bkMsg:null, bkWarn:false, bkBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function bkRender(){ main.innerHTML = slides[state.idx].render(state); }
+function bkHold(msg){
+  state.bkWarn=true; state.bkBusy=true; state.bkMsg=msg;
+  playThud(); bkRender();
+  setTimeout(()=>{ state.bkBusy=false; state.bkWarn=false; state.bkMsg=null;
+    state.bkWrongR=null; state.bkWrongF=null; bkRender(); },1600);
+}
+
+/* ① 관광객 맞이하기 — ★ 두 칸이 함께 오른다(두 칸은 bkLive 하나만 읽음). */
+function bkWelcome(){
+  if(state.bkFin!=null) return;                                        // 가드①
+  if(state.bkBusy) return;                                             // 가드⑫
+  if(state.bkShut){ bkHold(BK_RESTING); return; }                      // 가드③ 판 불변
+  if(state.bkTour>=BK_MAX){ bkHold(BK_FULL); return; }                 // 가드④ 판 불변
+  state.bkTour += 1;                                                   // ★ 관광객이 느는 자리 단 하나
+  if(state.bkTour===BK_MAX) state.bkSeen |= 1;                         // ★ 가득 차 보기 — 줄지 않음
+  state.bkWarn=false;
+  let m = '관광객을 맞이했어요. <b>일자리·소득 칸</b>과 <b>쓰레기·오염 칸</b>이 함께 한 칸 올랐어요.';
+  if(state.bkTour===BK_MAX) m += ' 섬이 관광객으로 <b>가득</b> 찼어요.';
+  state.bkMsg = bkSeenAll(state) ? BK_ALL_MSG : m;
+  playBlip(); bkRender();
+}
+
+/* ② 섬 쉬게 하기(폐쇄) — ★ 두 칸이 함께 내려간다. */
+function bkRest(){
+  if(state.bkFin!=null) return;                                        // 가드①
+  if(state.bkBusy) return;                                             // 가드⑫
+  if(state.bkShut || state.bkTour===0){ bkHold(BK_NOREST); return; }  // 가드⑤ 판 불변
+  state.bkShut = true;                                                 // ★ 섬이 쉬는 자리 단 하나
+  state.bkSeen |= 2;                                                   // ★ 쉬게 해 보기 — 줄지 않음
+  state.bkWarn=false;
+  state.bkMsg = bkSeenAll(state) ? BK_ALL_MSG : '섬을 쉬게 했어요. <b>쓰레기·오염 칸</b>과 <b>일자리·소득 칸</b>이 함께 내려갔어요.';
+  playBlip(); bkRender();
+}
+
+/* ③ 섬 다시 열기 — 관광객을 처음부터 다시 맞이한다. */
+function bkOpen(){
+  if(state.bkFin!=null) return;                                        // 가드①
+  if(state.bkBusy) return;                                             // 가드⑫
+  if(!state.bkShut){ bkHold(BK_NOTSHUT); return; }                     // 가드⑥ 판 불변
+  state.bkShut = false; state.bkTour = 0;                              // ★ 섬이 다시 열리는 자리 단 하나
+  state.bkWarn=false;
+  state.bkMsg = '섬을 다시 열었어요. 관광객을 <b>처음부터</b> 다시 맞이해요.';
+  playBlip(); bkRender();
+}
+
+/* ④ 판 읽기 — 두 가지를 모두 겪어야 열린다(가드⑦). */
+function bkReadPick(k){
+  if(state.bkFin!=null) return;                                        // 가드①
+  if(state.bkBusy) return;                                             // 가드⑫
+  if(!Number.isInteger(k) || k<0 || k>=BK_READ.length) return;         // 가드②
+  if(!bkSeenAll(state)){ bkHold(BK_ORDER_R); return; }                 // 가드⑦ 순서 — 판 불변
+  if(state.bkRead!=null){ bkHold(BK_READ_AGAIN); return; }             // 가드⑧ 판 불변
+  if(k===BK_READ_OK){
+    state.bkRead=k; state.bkWrongR=null; state.bkWarn=false;
+    state.bkMsg = '판을 잘 읽었어요. 관광 산업에는 <b>긍정적 영향</b>과 <b>부정적 영향</b>이 함께 있어요.';
+    playChime(); bkRender(); return;
+  }
+  state.bkWrongR=k;
+  bkHold(BK_READ_NO[k]);
+}
+
+/* ⑤ 나의 의견 — 정답 없음 · 한 번만(가드⑩). */
+function bkMinePick(k){
+  if(state.bkFin!=null) return;                                        // 가드①
+  if(state.bkBusy) return;                                             // 가드⑫
+  if(!Number.isInteger(k) || k<0 || k>=BK_MINE.length) return;         // 가드②
+  if(state.bkRead==null){ bkHold(BK_ORDER_M); return; }                // 가드⑨ 순서 — 판 불변
+  if(state.bkMine!=null){ bkHold(BK_MINE_AGAIN); return; }             // 가드⑩ 판 불변
+  state.bkMine = k;                                                    // ★ 의견이 서는 자리 단 하나 · 판정 0
+  state.bkWarn=false; state.bkMsg=null;
+  playBlip(); bkRender();
+}
+
+/* ⑥ 마무리 — 지도서 5차시 주요 내용 정리 2·3 원문 */
+function bkFinish(k){
+  if(state.bkFin!=null) return;                                        // 가드①
+  if(state.bkBusy) return;                                             // 가드⑫
+  if(!Number.isInteger(k) || k<0 || k>=BK_FIN.length) return;          // 가드②
+  if(state.bkMine==null){ bkHold(BK_ORDER_F); return; }                // 가드⑪ 순서 — 판 불변
+  if(k===BK_FIN_OK){
+    state.bkFin=k; state.bkWrongF=null; state.bkMsg=null; state.bkWarn=false;
+    playChime(); bkRender(); return;
+  }
+  state.bkWrongF=k;
+  bkHold(BK_FIN_NO[k]);
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 1단원 5차시(l05) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
