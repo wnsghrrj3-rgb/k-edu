@@ -64,14 +64,14 @@ window.KEDU_MAP["g6_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u1_l06",
+     "lessonId": "g6_s2_social_u1_l06_v1",
      "n": "6",
      "title": "세계의 기후 분포를 알아볼까요",
      "sub": "② 세계의 기후와 다양한 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/1단원_세계의자연환경/g6_social_u1_l06_적도에비춰요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
