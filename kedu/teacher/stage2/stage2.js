@@ -684,7 +684,7 @@
   // 목차
   Stage.prototype.sevenOf = function () {
     const sl = this.slides; const has = f => sl.some(f);
-    return [has(s => s.block === 'review' && s.data && Array.isArray(s.data.items) && s.data.items.length >= 2), has(s => (s.data && s.data.img) || (this.plan.imgs && this.plan.imgs[s.id])), has(s => s.block === 'motivate' && s.data && s.data.kids), has(s => s.block === 'offline_activity'), has(s => s.block === 'leveled_problem'), has(s => s.block === 'exit_ticket'), sl.filter(s => (s.data && s.data.tnote) || s.tnote || (this.plan.tnote && this.plan.tnote[s.id])).length >= 6];
+    return [has(s => s.block === 'review' && s.data && Array.isArray(s.data.items) && s.data.items.length >= 2), has(s => (s.data && s.data.img) || (this.plan.imgs && this.plan.imgs[s.id])), has(s => s.block === 'motivate' && s.data && (s.data.kids || s.data.theme)), has(s => s.block === 'offline_activity'), has(s => s.block === 'leveled_problem'), has(s => s.block === 'exit_ticket'), sl.filter(s => (s.data && s.data.tnote) || s.tnote || (this.plan.tnote && this.plan.tnote[s.id])).length >= 6];
   };
   Stage.prototype.openToc = function () {
     const self = this; const box = doc.querySelector('#ov-toc .toc'); if (!box) return;

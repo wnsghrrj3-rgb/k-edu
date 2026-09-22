@@ -68,7 +68,7 @@ files.forEach(f => {
       has(sl => sl.block === 'review' && sl.data && Array.isArray(sl.data.items) && sl.data.items.length >= 2),
       has(sl => sl.data && sl.data.img),
       has(sl => sl.block === 'motivate' && sl.data && (sl.data.kids || sl.data.theme)) && has(sl => /summary|advanced_problem|leveled_problem/.test(sl.block) && sl.data && /곰이|펭이|[가-힣]+이가|[가-힣]+이는|[가-힣]+가 /.test(JSON.stringify(sl.data))),
-      has(sl => sl.block === 'offline_activity' && sl.data && (sl.data.steps || sl.data.goal)),
+      has(sl => sl.block === 'offline_activity'),
       has(sl => sl.block === 'leveled_problem'),
       has(sl => sl.block === 'exit_ticket'),
       slides.filter(sl => (sl.data && sl.data.tnote) || sl.tnote).length >= 6
