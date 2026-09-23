@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-09-22 · 과목 8 · 차시 481 · 슬라이드 7751 */
+   생성: 2026-09-23 · 과목 8 · 차시 481 · 슬라이드 7752 */
 window.KT2_MANIFEST = {
- "built": "2026-09-22",
+ "built": "2026-09-23",
  "lessons": 481,
- "slides": 7751,
+ "slides": 7752,
  "subjects": [
   {
    "slug": "g1_math",
@@ -906,20 +906,20 @@ window.KT2_MANIFEST = {
        "title": "수학이랑 확인해요",
        "meta_title": "수학이랑 확인해요",
        "std": "[2수03-06]",
-       "slides": 17,
+       "slides": 18,
        "stages": [
-        2,
+        3,
         1,
         6,
         3,
         5
        ],
        "interactive": 2,
-       "blocks": 14,
+       "blocks": 15,
        "seven": [
         1,
         1,
-        0,
+        1,
         0,
         1,
         1,
