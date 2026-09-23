@@ -63,7 +63,9 @@
     const w = Math.max(u, x), h = 10 * u;
     return '<div class="base-ten" title="' + n + '"><svg viewBox="-2 -2 ' + (w + 4) + ' ' + (h + 4) + '" width="' + Math.round((w + 4) * 1.35) + '" height="' + Math.round((h + 4) * 1.35) + '" style="--bt:' + c + '" xmlns="http://www.w3.org/2000/svg">' + parts + '</svg><div class="bt-cap">' + (H ? '<b>백</b> ' + H + ' ' : '') + (T ? '<b>십</b> ' + T + ' ' : '') + (O ? '<b>일</b> ' + O : '') + '</div></div>';
   }
-  function emojiCount(e, n, big) { if ((+n || 0) > 20 || (/^(➕|➖|🟰|✅|✖️|✖|➗|❓|⭕|❌)$/.test(String(e || '').trim()) && (+n || 0) > 0)) return baseTen(n, e); return '<div class="emoji-row count' + (big ? ' big' : '') + '">' + Array.from({ length: Math.max(0, +n || 0) }, () => '<span>' + esc(e) + '</span>').join('') + '</div>'; }
+  function emojiCount(e, n, big) { if ((+n || 0) > 20 || (/^(➕|➖|🟰|✅|✖️|✖|➗|❓|⭕|❌)$/.test(String(e || '').trim()) && (+n || 0) > 0)) return baseTen(n, e);
+    const N = Math.max(0, +n || 0); if (N > 5) { let g = ''; for (let k = 0; k < N; k += 10) g += '<div class="eg">' + Array.from({ length: Math.min(10, N - k) }, () => '<span>' + esc(e) + '</span>').join('') + '</div>'; return '<div class="emoji-row count grid' + (big ? ' big' : '') + '">' + g + '</div>'; }
+    return '<div class="emoji-row count' + (big ? ' big' : '') + '">' + Array.from({ length: Math.max(0, +n || 0) }, () => '<span>' + esc(e) + '</span>').join('') + '</div>'; }
   function dots(n) { return '<div class="dots">' + Array.from({ length: +n || 0 }, () => '<i></i>').join('') + '</div>'; }
   function stack(n, cls, hero) { return '<div class="stack ' + (cls || '') + '">' + Array.from({ length: +n || 0 }, () => '<div class="cube"></div>').join('') + (hero ? '<div class="cb-hero">' + hero + '</div>' : '') + '<div class="lbl">' + n + '</div></div>'; }
   function dodo() { const A = global.KT2_ART; return A && A.character ? A.character('🐿️') : ''; }
@@ -110,7 +112,7 @@
     const p = /^(https?:|\/)/.test(src) ? src : '../' + src;
     return '<div class="img-frame" data-title="' + esc(title || '') + '"><img src="' + esc(p) + '" alt="" loading="lazy" onerror="if(window.KT2&&KT2.imgFallback)KT2.imgFallback(this);else{var p=this.closest(\'.img-frame\');if(p)p.style.display=\'none\'}"></div>';
   }
-  function imgFallback(img) { const f = img.closest('.img-frame'); if (!f) return; const A = global.KT2_ART; const body = f.closest('.kt2-body'); if (!A || (body && body.querySelector('.picture'))) { f.style.display = 'none'; f.classList.add('gone'); return; } f.classList.add('illus'); f.innerHTML = A.backdrop(A.kindOf(f.getAttribute('data-title'))); }
+  function imgFallback(img) { const f = img.closest('.img-frame'); if (!f) return; const A = global.KT2_ART; const body = f.closest('.kt2-body'); if (!A || (body && body.querySelector('.picture, .tf-row, .base-ten, .emoji-row.count, .steps, .i-cards, .ca-bins'))) { f.style.display = 'none'; f.classList.add('gone'); return; } f.classList.add('illus'); f.innerHTML = A.backdrop(A.kindOf(f.getAttribute('data-title'))); }
   // 인물 장면 = 그림책 무대 위에 선다
   function picture(sceneHtml, hint) { const A = global.KT2_ART; if (!A) return sceneHtml; return '<div class="picture ' + A.kindOf(hint) + '">' + A.backdrop(A.kindOf(hint)) + sceneHtml + '</div>'; }
   function isSpeech(t) { t = String(t || ''); return /["“”「」]/.test(t) || /[!?！？…~]$/.test(t.trim()); }
