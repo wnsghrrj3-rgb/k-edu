@@ -98,9 +98,10 @@
   function picture(sceneHtml, hint) { const A = global.KT2_ART; if (!A) return sceneHtml; return '<div class="picture ' + A.kindOf(hint) + '">' + A.backdrop(A.kindOf(hint)) + sceneHtml + '</div>'; }
   function isSpeech(t) { t = String(t || ''); return /["“”「」]/.test(t) || /[!?！？…~]$/.test(t.trim()); }
   function kidCard(k) {
-    const face = esc(k.face || '🙂'), label = k.label || '';
-    if (isSpeech(label)) { const m = String(label).match(/^\s*([^"“「]{1,8})\s*["“「](.+)["”」]\s*$/); const who = m ? m[1] : ''; const say = m ? m[2] : String(label).replace(/^["“「]|["”」]$/g, ''); return '<div class="kid talk"><div class="bub">' + md(say) + '</div><div class="face">' + face + '</div>' + (who ? '<div class="who">' + md(who) + '</div>' : '') + (k.delta ? '<div class="delta">' + esc(k.delta) + '</div>' : '') + '</div>'; }
-    return '<div class="kid"><div class="face">' + face + '</div><div class="lbl">' + md(label) + '</div>' + (k.delta ? '<div class="delta">' + esc(k.delta) + '</div>' : '') + '</div>';
+    const A = global.KT2_ART, chr = A && A.character ? A.character(k.face) : '';
+    const face = chr ? chr : esc(k.face || '🙂'), label = k.label || '';
+    if (isSpeech(label)) { const m = String(label).match(/^\s*([^"“「]{1,8})\s*["“「](.+)["”」]\s*$/); const who = m ? m[1] : ''; const say = m ? m[2] : String(label).replace(/^["“「]|["”」]$/g, ''); return '<div class="kid talk"><div class="bub">' + md(say) + '</div><div class="face' + (chr ? ' chr' : '') + '">' + face + '</div>' + (who ? '<div class="who">' + md(who) + '</div>' : '') + (k.delta ? '<div class="delta">' + esc(k.delta) + '</div>' : '') + '</div>'; }
+    return '<div class="kid"><div class="face' + (chr ? ' chr' : '') + '">' + face + '</div><div class="lbl">' + md(label) + '</div>' + (k.delta ? '<div class="delta">' + esc(k.delta) + '</div>' : '') + '</div>';
   }
   function scenario(sc) { return '<div class="scenario"><div class="ic">' + esc(sc.icon || '💬') + '</div><div>' + md(sc.body || '') + '</div></div>'; }
   function optionBody(o) {

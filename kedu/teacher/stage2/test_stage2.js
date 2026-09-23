@@ -46,6 +46,10 @@ files.forEach(f => {
 });
 ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + ': ' + emptyBodies.slice(0, 8).join(' | '));
 { const r = KT2.md('가<br>나 <b>다</b> <script>x</script>'); ok(r === '가<br>나 <strong>다</strong> &lt;script&gt;x&lt;/script&gt;', 'md: <br>·<b> 만 살리고 다른 태그는 글자로 (' + r + ')'); }
+{ const A = g0.KT2_ART; ['🐻', '🐧', '👧', '👦', '🐿️', '🐿'].forEach(f => ok(/^<svg class="chr c-/.test(A.character(f)) && /class="eyes"/.test(A.character(f)) && /class="m-open" opacity="0"/.test(A.character(f)), '인물 층: ' + f + ' → 그림 인물(눈·입 포함, 입은 기본 닫힘)')); ['🐰', '🙂', '', undefined].forEach(f => ok(A.character(f) === '', '인물 층: ' + f + ' → 이모지 그대로'));
+  const r1 = KT2.renderSlide({ id: 'x', block: 'motivate', data: { title: '공원', kids: [{ face: '👧', label: '하나 "같이 놀자!"' }, { face: '🐰', label: '토끼' }] } }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] });
+  ok((r1.body.match(/class="face chr"/g) || []).length === 1 && /<div class="face">🐰<\/div>/.test(r1.body), '인물 층: 아는 얼굴만 그림, 모르는 얼굴은 이모지 (kidCard)'); }
+let chrAll = 0;
 let brLeak = 0; files.forEach(f => { const L = loadLessons(path.join(DATA, f)); Object.keys(L).forEach(k => (L[k].slides || []).forEach(s => { const r = KT2.renderSlide(s, { revealed: false, state: {}, meta: L[k].meta || {}, unitTitle: 'U', classNames: [] }); if (/&lt;br|&lt;b&gt;/.test(r.body + r.title)) brLeak++; })); }); ok(brLeak === 0, '글자로 새는 <br>/<b> 슬라이드 ' + brLeak);
 console.log('① 렌더 전수 — 파일', files.length, '· 차시', nLessons, '· 슬라이드', nSlides, '× 2(정답 닫힘·열림)');
 console.log('   블록 종류', Object.keys(blockSeen).length, '· 조각 공개 블록', Object.keys(fragBlocks).length, '· 본문 빈 슬라이드', emptyBodies.length);
@@ -87,7 +91,7 @@ function runStage(sj, un, l) {
     if (st.idx % 2 === 0) try { st.revealAll(); st.revealAll(); } catch (e) { fail++; fails.push(tag + ' #' + (st.idx + 1) + ' revealAll 예외: ' + e.message); }
     try { st.next(); } catch (e) { fail++; fails.push(tag + ' #' + (st.idx + 1) + ' next 예외: ' + e.message); break; }
     if (st.idx === before) frags++;
-    { const p2 = d.querySelector('#kt2-paper'); zoomN += p2.querySelectorAll('.zoomable').length; bubN += p2.querySelectorAll('.kid.talk .bub').length; picN += p2.querySelectorAll('.picture .bd').length; chipN += p2.querySelectorAll('svg.tenframe.chips .chip').length; p2.querySelectorAll('.img-frame img').forEach(im => { w.KT2.imgFallback(im); }); illusN += p2.querySelectorAll('.img-frame.illus .bd').length; if (st.cur().block === 'misconception' && p2.querySelectorAll('.mis-card').length !== 2) misOk = false; if (p2.querySelector('.zoomable')) { const z = p2.querySelector('.zoomable'); st.toggleZoom(z); if (!z.classList.contains('zoomed')) misOk = misOk && false; st.toggleZoom(z); } }
+    { const p2 = d.querySelector('#kt2-paper'); zoomN += p2.querySelectorAll('.zoomable').length; bubN += p2.querySelectorAll('.kid.talk .bub').length; chrAll += p2.querySelectorAll('.kid .face.chr svg.chr').length; picN += p2.querySelectorAll('.picture .bd').length; chipN += p2.querySelectorAll('svg.tenframe.chips .chip').length; p2.querySelectorAll('.img-frame img').forEach(im => { w.KT2.imgFallback(im); }); illusN += p2.querySelectorAll('.img-frame.illus .bd').length; if (st.cur().block === 'misconception' && p2.querySelectorAll('.mis-card').length !== 2) misOk = false; if (p2.querySelector('.zoomable')) { const z = p2.querySelector('.zoomable'); st.toggleZoom(z); if (!z.classList.contains('zoomed')) misOk = misOk && false; st.toggleZoom(z); } }
   }
   ok(st.idx === st.slides.length - 1, tag + ' 끝까지 넘김 (' + (st.idx + 1) + '/' + st.slides.length + ')');
   // 도구
@@ -140,7 +144,8 @@ manifest.subjects.forEach(sj => {
   });
 });
 Promise.all(rosterChecks).then(() => {
-console.log('② 무대 실주행 —', ran, '차시 부팅 · 슬라이드 안 조작', actsAll, '회 · 조각 공개', fragsAll, '회 · 말풍선', bubAll, '· 장면 무대', picAll, '· 사진 폴백 무대', illusAll);
+console.log('② 무대 실주행 —', ran, '차시 부팅 · 슬라이드 안 조작', actsAll, '회 · 조각 공개', fragsAll, '회 · 말풍선', bubAll, '· 장면 무대', picAll, '· 사진 폴백 무대', illusAll, '· 그림 인물', chrAll);
+ok(chrAll > 0, '인물 층: 무대 실주행에서 그림 인물이 선다 (' + chrAll + ')');
 console.log('결과: PASS', pass, '· FAIL', fail);
 if (fail) { console.log(fails.slice(0, 40).join('\n')); process.exit(1); }
 });

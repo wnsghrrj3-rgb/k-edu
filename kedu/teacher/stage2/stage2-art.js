@@ -91,5 +91,57 @@
     const dx = 2 * size + 2 * gap + size + gap / 2;
     return '<svg class="tenframe chips" width="' + (w + 8) + '" height="' + (h + 8) + '" viewBox="-4 -4 ' + (w + 8) + ' ' + (h + 8) + '" xmlns="http://www.w3.org/2000/svg"><rect class="board" x="-4" y="-4" width="' + (w + 8) + '" height="' + (h + 8) + '" rx="14"/>' + cells + '<line class="div" x1="' + dx + '" y1="-4" x2="' + dx + '" y2="' + (h + 4) + '"/></svg>';
   }
-  global.KT2_ART = { kindOf, backdrop, tenFrameChips, kinds: Object.keys(BACK) };
+  // ── 13차 인물 층 — 주인공 다섯(곰이·펭이·하나·두리·도토)을 이모지 대신 코드로 그린 그림책 인물로.
+  //    140×160 viewBox · 발끝 y≈150. 숨쉬기(bodyg)·고개(head)·눈 깜빡임(eyes)·말할 때 입(m-open/m-closed)을 CSS 가 움직인다.
+  //    데이터는 그대로(face 이모지) — 모르는 얼굴은 '' 를 돌려주고 이모지가 그대로 선다.
+  const EYES = (lx, rx, y, r) => '<g class="eyes"><circle cx="' + lx + '" cy="' + y + '" r="' + r + '" fill="#2B1D12"/><circle cx="' + rx + '" cy="' + y + '" r="' + r + '" fill="#2B1D12"/><circle cx="' + (lx + r * .35) + '" cy="' + (y - r * .4) + '" r="' + (r * .34) + '" fill="#fff"/><circle cx="' + (rx + r * .35) + '" cy="' + (y - r * .4) + '" r="' + (r * .34) + '" fill="#fff"/></g>';
+  const CHEEKS = (lx, rx, y) => '<circle cx="' + lx + '" cy="' + y + '" r="6.5" fill="#F28B82" opacity=".55"/><circle cx="' + rx + '" cy="' + y + '" r="6.5" fill="#F28B82" opacity=".55"/>';
+  const MOUTH = (cx, y, ink) => '<g class="mouth"><path class="m-closed" d="M' + (cx - 7) + ' ' + y + ' Q' + cx + ' ' + (y + 7) + ' ' + (cx + 7) + ' ' + y + '" stroke="' + ink + '" stroke-width="2.6" fill="none" stroke-linecap="round"/><ellipse class="m-open" opacity="0" cx="' + cx + '" cy="' + (y + 3) + '" rx="5.5" ry="4.6" fill="#8A3030"/></g>';
+  const SHADOW = '<ellipse cx="70" cy="153" rx="42" ry="6.5" fill="#000" opacity=".16"/>';
+  const CHR = {
+    bear: () => SHADOW
+      + '<g class="bodyg"><ellipse cx="38" cy="114" rx="10" ry="17" fill="#A86A33" transform="rotate(22 38 114)"/><ellipse cx="102" cy="114" rx="10" ry="17" fill="#A86A33" transform="rotate(-22 102 114)"/>'
+      + '<ellipse cx="70" cy="118" rx="35" ry="32" fill="#B5773E"/><ellipse cx="70" cy="124" rx="22" ry="20" fill="#EBC89F"/><ellipse cx="53" cy="148" rx="13" ry="7" fill="#8E5A2B"/><ellipse cx="87" cy="148" rx="13" ry="7" fill="#8E5A2B"/></g>'
+      + '<g class="head"><circle cx="38" cy="36" r="15" fill="#B5773E"/><circle cx="38" cy="36" r="8" fill="#EBC89F"/><circle cx="102" cy="36" r="15" fill="#B5773E"/><circle cx="102" cy="36" r="8" fill="#EBC89F"/>'
+      + '<circle cx="70" cy="60" r="38" fill="#B5773E"/><ellipse cx="70" cy="75" rx="18" ry="14" fill="#EBC89F"/><ellipse cx="70" cy="68" rx="6.5" ry="4.8" fill="#4A2E17"/>'
+      + EYES(55, 85, 54, 4.6) + CHEEKS(45, 95, 72) + MOUTH(70, 79, '#4A2E17') + '</g>',
+    penguin: () => SHADOW
+      + '<g class="bodyg"><ellipse cx="34" cy="112" rx="9" ry="22" fill="#2D3A55" transform="rotate(24 34 112)"/><ellipse cx="106" cy="112" rx="9" ry="22" fill="#2D3A55" transform="rotate(-24 106 112)"/>'
+      + '<ellipse cx="70" cy="112" rx="37" ry="40" fill="#2D3A55"/><ellipse cx="70" cy="120" rx="25" ry="29" fill="#FFFFFF"/><ellipse cx="55" cy="150" rx="12" ry="5.5" fill="#F5A623"/><ellipse cx="85" cy="150" rx="12" ry="5.5" fill="#F5A623"/></g>'
+      + '<g class="head"><circle cx="70" cy="56" r="35" fill="#2D3A55"/><path d="M46 62 Q46 36 62 40 Q70 46 78 40 Q94 36 94 62 Q94 84 70 86 Q46 84 46 62 Z" fill="#FFFFFF"/>'
+      + EYES(59, 81, 57, 4.4) + CHEEKS(51, 89, 70)
+      + '<g class="mouth"><path class="m-closed" d="M61 67 L79 67 L70 77 Z" fill="#F5A623"/><g class="m-open" opacity="0"><path d="M61 65 L79 65 L70 72 Z" fill="#F5A623"/><path d="M63 74 L77 74 L70 81 Z" fill="#E0891A"/></g></g></g>',
+    girl: () => SHADOW
+      + '<g class="bodyg"><ellipse cx="45" cy="112" rx="7.5" ry="16" fill="#FFD9B8" transform="rotate(18 45 112)"/><ellipse cx="95" cy="112" rx="7.5" ry="16" fill="#FFD9B8" transform="rotate(-18 95 112)"/>'
+      + '<rect x="58" y="134" width="8" height="14" rx="3" fill="#FFD9B8"/><rect x="74" y="134" width="8" height="14" rx="3" fill="#FFD9B8"/>'
+      + '<path d="M44 140 L54 100 Q70 92 86 100 L96 140 Q70 146 44 140 Z" fill="#F76E8A"/><path d="M58 100 Q70 108 82 100" stroke="#fff" stroke-width="3" fill="none" opacity=".8"/>'
+      + '<ellipse cx="60" cy="150" rx="10" ry="5" fill="#6B3E2A"/><ellipse cx="80" cy="150" rx="10" ry="5" fill="#6B3E2A"/></g>'
+      + '<g class="head"><circle cx="30" cy="66" r="12" fill="#3B2A20"/><circle cx="110" cy="66" r="12" fill="#3B2A20"/><circle cx="38" cy="56" r="5" fill="#FFD166"/><circle cx="102" cy="56" r="5" fill="#FFD166"/>'
+      + '<circle cx="70" cy="58" r="36" fill="#3B2A20"/><ellipse cx="70" cy="64" rx="29" ry="30" fill="#FFD9B8"/>'
+      + '<path d="M40 58 Q44 28 70 28 Q96 28 100 58 Q90 44 76 46 Q72 38 66 46 Q50 44 40 58 Z" fill="#3B2A20"/>'
+      + EYES(58, 82, 64, 4.3) + CHEEKS(49, 91, 76) + MOUTH(70, 80, '#8A4B3A') + '</g>',
+    boy: () => SHADOW
+      + '<g class="bodyg"><ellipse cx="43" cy="112" rx="7.5" ry="16" fill="#FFD9B8" transform="rotate(18 43 112)"/><ellipse cx="97" cy="112" rx="7.5" ry="16" fill="#FFD9B8" transform="rotate(-18 97 112)"/>'
+      + '<rect x="57" y="138" width="9" height="11" rx="3" fill="#FFD9B8"/><rect x="74" y="138" width="9" height="11" rx="3" fill="#FFD9B8"/>'
+      + '<path d="M46 102 Q70 92 94 102 L95 130 L45 130 Z" fill="#4F8DF7"/><rect x="47" y="128" width="46" height="13" rx="4" fill="#2D3A55"/><circle cx="70" cy="112" r="5" fill="#FFD166"/>'
+      + '<ellipse cx="60" cy="150" rx="10" ry="5" fill="#2D3A55"/><ellipse cx="80" cy="150" rx="10" ry="5" fill="#2D3A55"/></g>'
+      + '<g class="head"><circle cx="41" cy="66" r="6.5" fill="#F4C9A3"/><circle cx="99" cy="66" r="6.5" fill="#F4C9A3"/><circle cx="70" cy="62" r="31" fill="#FFD9B8"/>'
+      + '<path d="M39 60 Q38 28 70 27 Q102 28 101 60 Q94 44 80 45 L74 36 L68 45 Q50 43 39 60 Z" fill="#2B2B2B"/>'
+      + EYES(58, 82, 64, 4.3) + CHEEKS(49, 91, 75) + MOUTH(70, 79, '#8A4B3A') + '</g>',
+    squirrel: () => SHADOW
+      + '<g class="bodyg"><path d="M92 140 Q138 124 128 76 Q121 38 94 44 Q116 58 108 90 Q101 116 84 130 Z" fill="#D9822B"/><path d="M100 60 Q118 70 112 96" stroke="#F0A860" stroke-width="7" fill="none" stroke-linecap="round" opacity=".8"/>'
+      + '<ellipse cx="64" cy="120" rx="26" ry="28" fill="#D9822B"/><ellipse cx="64" cy="126" rx="16" ry="19" fill="#F6D2A8"/>'
+      + '<ellipse cx="64" cy="110" rx="8" ry="9" fill="#A0642B"/><path d="M55 106 Q64 96 73 106 Z" fill="#6B4423"/>'
+      + '<ellipse cx="50" cy="112" rx="6" ry="9" fill="#C8731F" transform="rotate(30 50 112)"/><ellipse cx="78" cy="112" rx="6" ry="9" fill="#C8731F" transform="rotate(-30 78 112)"/>'
+      + '<ellipse cx="52" cy="148" rx="11" ry="5.5" fill="#B5651C"/><ellipse cx="76" cy="148" rx="11" ry="5.5" fill="#B5651C"/></g>'
+      + '<g class="head"><path d="M42 50 L46 24 L60 42 Z" fill="#D9822B"/><path d="M86 50 L82 24 L68 42 Z" fill="#D9822B"/><path d="M46 44 L48 31 L55 41 Z" fill="#F6D2A8"/><path d="M82 44 L80 31 L73 41 Z" fill="#F6D2A8"/>'
+      + '<circle cx="64" cy="64" r="28" fill="#D9822B"/><ellipse cx="64" cy="76" rx="15" ry="11" fill="#F6D2A8"/><ellipse cx="64" cy="70" rx="4" ry="3" fill="#4A2E17"/>'
+      + EYES(53, 75, 60, 4.8) + CHEEKS(44, 84, 72) + MOUTH(64, 77, '#4A2E17') + '</g>'
+  };
+  const FACE_CHR = { '🐻': 'bear', '🐧': 'penguin', '👧': 'girl', '👦': 'boy', '🐿️': 'squirrel', '🐿': 'squirrel' };
+  function character(face) {
+    const k = FACE_CHR[String(face || '').trim()]; if (!k) return '';
+    return '<svg class="chr c-' + k + '" viewBox="0 0 140 160" width="150" height="171" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' + face + '">' + CHR[k]() + '</svg>';
+  }
+  global.KT2_ART = { kindOf, backdrop, tenFrameChips, character, characters: Object.keys(CHR), kinds: Object.keys(BACK) };
 })(typeof window !== 'undefined' ? window : globalThis);
