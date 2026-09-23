@@ -94,24 +94,24 @@ window.KEDU_MAP["g6_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u1_l09",
+     "lessonId": "g6_s2_social_u1_l09_v1",
      "n": "9",
      "title": "한대 기후와 고산 기후 지역의 생활 모습을 알아볼까요",
      "sub": "② 세계의 기후와 다양한 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/1단원_세계의자연환경/g6_social_u1_l09_두길로가요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u1_l10",
+     "lessonId": "g6_s2_social_u1_l10_v1",
      "n": "10",
      "title": "기후에 따른 사람들의 다양한 생활 모습을 조사해 볼까요",
      "sub": "② 세계의 기후와 다양한 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/1단원_세계의자연환경/g6_social_u1_l10_찾아서꽂아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,

@@ -1,0 +1,893 @@
+<!--
+K-edu 사회 6-2 · 1단원 세계의 자연환경 · 주제② 세계의 기후와 다양한 생활 모습 · 10차시(l10) · 주제② 마무리
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사10-02] · 교과서 p.44~47 · 지도서(대단원1 **12차시** 「기후에 따른 사람들의 다양한 생활 모습을 조사해 볼까요」, 지도서 p.102~109) 근거.
+학습 목표: 기후에 따른 사람들의 다양한 생활 모습을 조사할 수 있다.
+수업 기법 및 전략: 모둠 토의 · 조사하기 · 디지털 영상 지도로 매핑하기
+META = "1단원 세계의 자연환경 · ② 세계의 기후와 다양한 생활 모습"
+⚠️ 엔진은 l09(l08 → … → 6-1 사회 엔진 승계)에서 100% 승계 · 엔진 무수정. 1단원 색 #0369A1.
+⚠️ 회수 키 `g6_s2_social_u1_l10_v1`(학기 표지 s2 — l01 선례). 맵 키 `g6_social_u1_l10`.
+⚠️ 파일명 `찾아서꽂아요` — 조작 이름(선례 승계).
+
+직접조작: 찾아서 꽂는 기후 생활 지도 판 (교과서 44~46쪽 할 수 있어요 · 매핑하기 · 지도서 12차시 발문)
+  ⭐ 판은 기후 여섯 칸(열대 · 건조 · 온대 · 냉대 · 한대 · 고산)의 도식 지도다. 검색어 여덟(옥수수 · 밀 · 벼 · 올리브와 포도 · 대추야자 · 순록 ·
+     알파카와 라마 · 관광)은 **앞 차시(l07~l09) 교과서 본문이 든 생활 모습**이다.
+  ⭐ 검색어를 누르면 「지도에 추가」 — 그 생활이 나타나는 기후 칸마다 핀이 선다. 검색 기록은 `state.mpSrch |=` 단 하나(덜어 내는 자리 0).
+     핀은 `mpOn(k,c)` 한 줄이 `MP_HIT[` 를 읽는 단 한 자리에서만 정해진다 — 칸마다 핀을 담는 상태 0.
+  ⭐★ 수첩 두 줄은 검색 기록에서만 선다(`mpCover`·`mpMany`): ① 여섯 기후 칸 모두에 핀(고루 나누어 조사 — 지도서 「편중되지 않도록 기후대별로」)
+     ② 한 기후 칸에 핀 셋(같은 기후 환경에서도 다양한 생활 모습 — 온대 기후의 밀 · 올리브와 포도 · 벼).
+     **옥수수와 밀은 한 번에 세 기후 칸에 핀을 세운다** — 한 생활이 여러 기후에 나타난다. 수첩을 담는 상태도, 정답 자리 상수도 없다.
+  ⭐ 최소 검색 — 첫째 줄 3 · 두 줄 모두 5(스모크 BFS).
+  ⭐ 판 읽기는 수첩 두 줄이 다 선 뒤에만 열린다(정답 자리 1). 이어서 **송끄란 축제(타이)** 3택(정답 자리 0 · 고르면 판의 열대 기후 칸에 송끄란 핀) → 마무리(정답 자리 2).
+  ⭐ 근거 = 교과서 44~47쪽 본문 · 꼭 기억해요 · 재미있게 확인해요 · 지도서 12차시 발문·예시 답안·활동지 풀이·주요 내용 정리 · 앞 차시 본문(l07~l09).
+
+단계 — ① 검색해서 지도에 꽂기 → ② 판 읽기 3택(정답 자리 1) → ③ 송끄란 축제 3택(정답 자리 0) →
+  ④ 마무리 3택 = 지도서 12차시 주요 내용 정리 · 학습 내용 정리(정답 자리 2).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 10종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 이미 꽂은 검색어 다시 무시 — 판 불변(안내)
+     ④ 수첩 두 줄이 다 서기 전 판 읽기 무시(순서) — 판 불변(안내에 검색어 이름 0)
+     ⑤ 판을 읽은 뒤 판 읽기 다시 무시 — 판 불변
+     ⑥ 판을 읽기 전 송끄란 무시(순서) — 판 불변
+     ⑦ 송끄란을 고른 뒤 다시 무시 — 판 불변
+     ⑧ 알맞지 않은 송끄란 설명 무시 — 판 불변(자리별 안내)
+     ⑨ 송끄란을 고르기 전 마무리 무시(순서) — 판 불변
+     ⑩ 안내 표시 중 재클릭 무시(`mpBusy`).
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.mp-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판·핀은 도식이다** — 실제 매핑은 디지털 영상 지도에서 한다(캡션 상시).
+  ㉡ **핀은 교과서가 든 예까지만이다** — 실제 생활 모습은 훨씬 여러 가지이고, 핀의 수가 그 기후 지역 생활의 많고 적음이나 살기 좋고 나쁨을 뜻하지 않는다
+     (지도서 「같은 기후 환경에서도 다양한 인간의 삶」 · 캡션·완료 카드 명시).
+  ㉢ **누리집 주소와 지도 서비스 이름은 쓰지 않는다**.
+  ㉣ **모둠 주제 정하기 · 인터넷 조사 · 디지털 영상 지도 매핑과 공유 · 활동지 · 더 알아보고 싶은 내용 쓰기는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 「생각을 펼쳐요」(13차시)는 차시 예고 자리까지만.
+  **지명은 원문이 든 것까지만** — 타이 · 일본 · 에스파냐(동기 유발 축제) · 서부 유럽 · 지중해 주변 · 우리나라 · 아시아(앞 차시 본문).
+  사람 형상 0 · 네 자리 연도 0 · 쪽수 0 · 누리집 주소 0 · 수치 0 · 어느 기후도 더 낫거나 못하게 그리지 않는다.
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u1_l10_v1">
+<title>기후에 따른 사람들의 다양한 생활 모습을 조사해 볼까요 · 세계의 자연환경 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#0369A1; --green-d:#075985; --cyan:#0284C7;
+  --bg:#F0F9FF; --bub:#E0F2FE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#E0F2FE;color:#075985}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 찾아서 꽂는 기후 생활 지도 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#075985;max-width:660px}
+.mp-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#F0F9FF;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.mp-board{display:flex;flex-direction:column;gap:5px;padding:8px}
+.mp-head{background:#E0F2FE;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#075985;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.mp-map{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.mp-cell{border:2px solid #CBD5E0;border-radius:7px;background:#fff;min-height:3.4em;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  text-align:center;font-weight:800;color:#334155;line-height:1.25;padding:3px 3px;gap:2px;font-size:clamp(8.8px,1.5vw,10.8px);min-width:0}
+.mp-cell.on{border-color:#0369A1;background:#F0F9FF}
+.mp-cell .cn{color:#075985}
+.mp-pins{display:flex;flex-wrap:wrap;gap:2px;justify-content:center}
+.mp-pin{background:#FEF3C7;border-radius:8px;padding:0 5px;color:#92400E;font-size:.9em;white-space:nowrap}
+.mp-pin.song{background:#FCE7F3;color:#9D174D}
+.mp-note{display:flex;flex-direction:column;gap:4px}
+.mp-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-radius:7px;padding:4px 8px;font-weight:800;
+  font-size:clamp(9.4px,1.58vw,11.4px);border:2px dashed #CBD5E0;background:#F8FAFC;color:#94A3B8}
+.mp-line.set{border-style:solid;border-color:#059669;background:#ECFDF5;color:#065F46}
+.mp-keys{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.mp-key{border:2px solid var(--amber);background:#FFFBEB;color:var(--amber);border-radius:10px;padding:7px 4px;
+  cursor:pointer;font-family:inherit;font-weight:800;font-size:clamp(10.4px,1.78vw,12.8px)}
+.mp-key:hover{background:var(--bub)}
+.mp-key.done{border-color:#CBD5E0;background:#F1F5F9;color:#64748B}
+.mp-read,.mp-fin,.mp-song{display:flex;flex-direction:column;gap:5px}
+.mp-read button,.mp-fin button,.mp-song button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.mp-read button:hover,.mp-fin button:hover,.mp-song button:hover{background:var(--bub)}
+.mp-read button.no,.mp-fin button.no,.mp-song button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.mp-hint{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:420px){ .mp-map{gap:3px} .mp-cell{padding:2px 1px;min-height:3em} .mp-keys{gap:3px} }
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠: 모든 그림은 내용을 나타낸 도식이며 실제 사진이나 실제 지도가 아니다.
+   ⚠️ 지명은 원문이 든 곳까지만 쓴다. 사람 형상 대신 도형으로만 그린다.
+   ⚠️ 정직 원칙 ㉢: 누리집 주소와 지도 서비스 이름은 그리지 않는다. */
+const SVG = {
+  // 1 들어가기 — 기후와 관련된 세 축제(도형만)
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    ${[['타이','송끄란 축제','#0EA5E9'],['일본','눈 축제','#93C5FD'],['에스파냐','토마토 축제','#DC2626']].map((t,i)=>{const x=10+i*102;
+      return `<rect x="${x}" y="12" width="96" height="118" rx="8" fill="#fff" stroke="${t[2]}" stroke-width="1.5"/>
+      <text x="${x+48}" y="30" font-size="9" fill="#334155" text-anchor="middle" font-weight="800">${t[0]}</text>
+      <text x="${x+48}" y="120" font-size="8.4" fill="#334155" text-anchor="middle" font-weight="800">${t[1]}</text>`;}).join('')}
+    ${[[40,62],[56,74],[72,58],[48,90],[66,92]].map(p=>`<path d="M${p[0]} ${p[1]} q4 -9 8 0 a4 4 0 0 1 -8 0 Z" fill="#38BDF8"/>`).join('')}
+    <path d="M134 104 L160 52 L186 104 Z" fill="#fff" stroke="#93C5FD" stroke-width="1.6"/><rect x="148" y="80" width="24" height="24" fill="#EFF6FF" stroke="#93C5FD"/>
+    ${[[236,64],[258,76],[280,60],[248,94],[272,92]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="7" fill="#EF4444"/><path d="M${p[0]-2} ${p[1]-7} l2 -3 l2 3" stroke="#16A34A" stroke-width="1.4" fill="none"/>`).join('')}
+    <text x="160" y="156" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">축제의 모습을 도형으로 나타낸 도식이에요 · 실제 모습은 교과서 사진과 영상으로 봐요</text></svg>`,
+  // 2 살펴보기 — 조사 주제 정하기
+  topic:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <circle cx="160" cy="80" r="30" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.6"/>
+    <text x="160" y="77" font-size="9" fill="#075985" text-anchor="middle" font-weight="800">기후와</text>
+    <text x="160" y="90" font-size="9" fill="#075985" text-anchor="middle" font-weight="800">생활 모습</text>
+    ${[['음식',60,30],['축제',260,30],['전통 의상',50,130],['이동 수단',270,130],['독특한 문화',160,150]].map(t=>`<path d="M160 80 L${t[1]} ${t[2]}" stroke="#BAE6FD" stroke-width="1.6"/>
+      <rect x="${t[1]-38}" y="${t[2]-12}" width="76" height="22" rx="11" fill="#FFFBEB" stroke="#B45309" stroke-width="1.2"/>
+      <text x="${t[1]}" y="${t[2]+3}" font-size="8.4" fill="#92400E" text-anchor="middle" font-weight="800">${t[0]}</text>`).join('')}
+    <circle cx="160" cy="80" r="30" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.6"/>
+    <text x="160" y="77" font-size="9" fill="#075985" text-anchor="middle" font-weight="800">기후와</text>
+    <text x="160" y="90" font-size="9" fill="#075985" text-anchor="middle" font-weight="800">생활 모습</text></svg>`,
+  // 3 살펴보기 — 조사할 지역 나누기
+  divide:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <rect x="10" y="12" width="146" height="124" rx="9" fill="#fff" stroke="#0369A1" stroke-width="1.4"/>
+    <rect x="164" y="12" width="146" height="124" rx="9" fill="#fff" stroke="#B45309" stroke-width="1.4"/>
+    <text x="83" y="30" font-size="9" fill="#075985" text-anchor="middle" font-weight="800">대륙별로 나누기</text>
+    <text x="237" y="30" font-size="9" fill="#92400E" text-anchor="middle" font-weight="800">기후별로 나누기</text>
+    ${['#0EA5E9','#22C55E','#F59E0B','#A855F7'].map((c,i)=>`<rect x="${22+(i%2)*64}" y="${42+Math.floor(i/2)*44}" width="58" height="36" rx="6" fill="${c}" fill-opacity=".22" stroke="${c}"/><circle cx="${51+(i%2)*64}" cy="${60+Math.floor(i/2)*44}" r="6" fill="${c}"/>`).join('')}
+    ${['열대','건조','온대','냉대','한대','고산'].map((t,i)=>`<rect x="${174+(i%3)*44}" y="${42+Math.floor(i/3)*44}" width="40" height="36" rx="6" fill="#FEF3C7" stroke="#B45309"/><text x="${194+(i%3)*44}" y="${64+Math.floor(i/3)*44}" font-size="8" fill="#92400E" text-anchor="middle" font-weight="800">${t}</text>`).join('')}
+    <text x="160" y="156" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="800">조사할 지역이 한곳에 몰리지 않게 나누어 맡아요</text></svg>`,
+  // 4 살펴보기 — 여러 자료로 조사하기
+  research:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    ${[['인터넷','#0369A1'],['책','#B45309'],['신문 기사','#334155'],['지도','#059669'],['통계 자료','#7C3AED']].map((t,i)=>{const x=10+i*61;
+      return `<rect x="${x}" y="20" width="56" height="70" rx="8" fill="#F8FAFC" stroke="${t[1]}" stroke-width="1.4"/>
+      <rect x="${x+10}" y="32" width="36" height="26" rx="4" fill="${t[1]}" fill-opacity=".18"/>
+      <text x="${x+28}" y="78" font-size="8" fill="${t[1]}" text-anchor="middle" font-weight="800">${t[0]}</text>`;}).join('')}
+    <rect x="40" y="104" width="240" height="40" rx="8" fill="#FFFBEB" stroke="#B45309" stroke-width="1.3"/>
+    <text x="160" y="121" font-size="8.4" fill="#92400E" text-anchor="middle" font-weight="800">소개글 + 사진이나 영상 · 관련 누리집</text>
+    <text x="160" y="135" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="700">여러 형태의 정보를 함께 모아요</text>
+    <text x="160" y="162" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">조사 방법을 정리한 도식이에요</text></svg>`,
+  // 5 살펴보기 — 디지털 영상 지도에 매핑하기
+  mapping:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <rect x="10" y="10" width="190" height="126" rx="8" fill="#fff" stroke="#0369A1" stroke-width="1.4"/>
+    <path d="M26 50 q20 -20 40 -6 q16 12 34 -4 q20 -14 40 2 l0 40 q-24 20 -48 6 q-20 -12 -40 4 q-16 10 -26 -6 Z" fill="#DCFCE7" stroke="#86EFAC"/>
+    <path d="M120 96 q20 -10 44 0 l14 22 l-60 0 Z" fill="#DCFCE7" stroke="#86EFAC"/>
+    ${[[60,56],[118,70],[150,108]].map(p=>`<path d="M${p[0]} ${p[1]+10} l-6 -10 a7 7 0 1 1 12 0 Z" fill="#DC2626"/><circle cx="${p[0]}" cy="${p[1]-3}" r="2.4" fill="#fff"/>`).join('')}
+    ${['① 레이어 추가','② 지도에 추가','③ 자료 입력'].map((t,i)=>`<rect x="210" y="${16+i*40}" width="100" height="30" rx="7" fill="#fff" stroke="#B45309" stroke-width="1.3"/><text x="260" y="${35+i*40}" font-size="8.4" fill="#92400E" text-anchor="middle" font-weight="800">${t}</text>`).join('')}
+    <text x="160" y="156" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">매핑 순서를 나타낸 도식이에요 · 실제 화면은 교과서로 봐요</text></svg>`,
+  // 6 살펴보기 — 조사 결과 공유하기
+  share:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    ${[['□□ 모둠','기후와 축제'],['△△ 모둠','기후와 독특한 문화'],['☆☆ 모둠','기후와 음식'],['☐☐ 모둠','기후와 전통 의상']].map((t,i)=>{const x=10+(i%2)*154, y=10+Math.floor(i/2)*62;
+      return `<rect x="${x}" y="${y}" width="146" height="54" rx="8" fill="#F8FAFC" stroke="#0369A1" stroke-width="1.3"/>
+      <text x="${x+73}" y="${y+22}" font-size="8.6" fill="#075985" text-anchor="middle" font-weight="800">${t[0]}</text>
+      <text x="${x+73}" y="${y+38}" font-size="8" fill="#334155" text-anchor="middle" font-weight="700">${t[1]}</text>`;}).join('')}
+    <text x="160" y="148" font-size="8" fill="#334155" text-anchor="middle" font-weight="800">지도 주소를 서로 나누고 조사 내용을 살펴봐요</text>
+    <text x="160" y="162" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">지도서 예시를 정리한 도식이에요</text></svg>`,
+  // 문항 — 온대 기후 칸의 핀 셋
+  pinq:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <rect x="90" y="16" width="140" height="110" rx="9" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.6"/>
+    <text x="160" y="36" font-size="10" fill="#075985" text-anchor="middle" font-weight="800">온대 기후</text>
+    ${['밀','올리브와 포도','벼'].map((t,i)=>`<rect x="110" y="${48+i*24}" width="100" height="18" rx="9" fill="#FEF3C7"/><text x="160" y="${61+i*24}" font-size="8.4" fill="#92400E" text-anchor="middle" font-weight="800">${t}</text>`).join('')}
+    <text x="160" y="148" font-size="8" fill="#334155" text-anchor="middle" font-weight="800">한 기후 칸에 선 핀 셋</text>
+    <text x="160" y="162" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">판을 나타낸 도식이에요 · 교과서가 든 예까지만 꽂았어요</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <rect x="12" y="12" width="144" height="120" rx="9" fill="#fff" stroke="#0369A1" stroke-width="1.4"/>
+    <rect x="164" y="12" width="144" height="120" rx="9" fill="#fff" stroke="#B45309" stroke-width="1.4"/>
+    <text x="84" y="34" font-size="10" fill="#075985" text-anchor="middle" font-weight="800">기후와 인간생활</text>
+    <text x="236" y="34" font-size="10" fill="#92400E" text-anchor="middle" font-weight="800">조사하기</text>
+    ${['기후는 생활 모습에','큰 영향을 줌','적응하고 극복하며','다양하게 살아감'].map((t,i)=>`<text x="84" y="${58+i*18}" font-size="8" fill="#334155" text-anchor="middle" font-weight="700">${t}</text>`).join('')}
+    ${['① 주제 정하기','② 인터넷으로 조사하기','③ 지도에 매핑하기','④ 지도 공유하기'].map((t,i)=>`<text x="236" y="${58+i*18}" font-size="8" fill="#334155" text-anchor="middle" font-weight="700">${t}</text>`).join('')}
+    <text x="160" y="154" font-size="8" fill="#64748B" text-anchor="middle" font-weight="700">같은 기후 환경에서도 다양한 생활 모습이 나타나요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#0369A1" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#0369A1" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#075985" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 찾아서 꽂는 기후 생활 지도 판 =====
+   ★ 기후 여섯 칸 · 검색어 여덟(앞 차시 교과서 본문이 든 생활 모습) · 검색하면 그 생활이 나타나는 기후 칸마다 핀.
+   ★★ 수첩 두 줄 — 여섯 기후 모두에 핀(고루) · 한 기후 칸에 핀 셋(같은 기후에서도 여러 가지) · 검색 기록 |= 만.
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. */
+const MP_NC = 6;
+/* 기후 여섯 · 앞 차시(l06~l09) 승계 */
+const MP_CLIM = ['열대 기후','건조 기후','온대 기후','냉대 기후','한대 기후','고산 기후'];
+/* 검색어 여덟 — 앞 차시 교과서 본문(l07 열대·건조 · l08 온대·냉대 · l09 한대·고산) */
+const MP_KEY = ['옥수수','밀','벼','올리브와 포도','대추야자','순록','알파카와 라마','관광'];
+/* 검색어마다 핀이 서는 기후 칸 — 옥수수: 열대(화전 농업)·냉대(여름)·고산 · 밀: 건조(오아시스나 강 주변)·온대(서부 유럽)·냉대(여름)
+   · 벼: 온대(우리나라를 비롯한 아시아) · 올리브와 포도: 온대(지중해 주변) · 대추야자: 건조 · 순록: 한대 · 알파카와 라마: 고산
+   · 관광: 열대(사파리 관광·생태 관광)·한대(오로라와 빙하) */
+const MP_HIT = [[0,3,5],[1,2,3],[2],[2],[1],[4],[5],[0,4]];
+/* 송끄란 축제가 놓이는 칸 — 열대 기후(지도서 12차시 활동지 예시 답안) */
+const MP_SONG = 0;
+/* 한 기후 칸에 핀 셋 */
+const MP_MANY = 3;
+
+/* ② 판 읽기 */
+const MP_READ = [
+  '한 기후 지역에는 한 가지 생활 모습만 나타나요 \u2014 온대 기후 지역에서는 벼농사만 지어요',
+  '같은 기후 환경에서도 여러 가지 생활 모습이 나타나고, 옥수수나 밀처럼 여러 기후 지역에서 기르는 것도 있어요 \u2014 조사할 곳을 기후별로 고루 나누면 다양한 모습을 볼 수 있어요',
+  '조사할 곳을 한 기후 지역에만 모아야 세계의 다양한 생활 모습을 볼 수 있어요'
+];
+const MP_READ_OK = 1;
+const MP_READ_NO = [
+  '판을 다시 봐요. <b>온대 기후</b> 칸에는 핀이 몇 개 섰나요? 판을 다시 읽어 봐요.',
+  null,
+  '판을 다시 봐요. 수첩의 <b>첫째 줄</b>은 핀이 어디에 섰을 때 채워졌나요? 판을 다시 읽어 봐요.'
+];
+
+/* ③ 송끄란 축제(타이) — 지도서 12차시 동기 유발 · 활동지 예시 답안 */
+const MP_SG = [
+  '열대 기후인 타이에서 일 년 중 가장 더운 시기에 열리는 축제로, 비가 많이 내려 농사가 잘되기를 기원하고 무더위를 잠시나마 없앤다는 뜻으로 서로에게 물을 뿌려요',
+  '건조 기후인 타이에서 비가 내리지 않기를 바라며 서로에게 모래를 뿌려요',
+  '한대 기후인 타이에서 겨울 동안 오로라를 보려고 모여요'
+];
+const MP_SG_OK = 0;
+const MP_SG_NO = [
+  null,
+  '송끄란 축제에서는 <b>비가 많이 내려</b> 농사가 잘되기를 기원해요. 타이는 어느 기후 지역일까요? 판은 그대로예요.',
+  '송끄란 축제는 일 년 중 <b>가장 더운 시기</b>에 열려요. 판은 그대로예요.'
+];
+
+/* ④ 마무리 — 지도서 12차시 주요 내용 정리 · 학습 내용 정리 */
+const MP_FIN = [
+  '기후는 사람들의 생활 모습에 영향을 주지 않아서 어느 곳에서나 똑같이 살아가요',
+  '조사한 정보는 혼자만 보고 다른 모둠과 나누지 않는 것이 좋아요',
+  '기후는 사람들의 생활 모습에 큰 영향을 주며, 세계 여러 나라 사람들은 기후에 적응하고 이를 극복하면서 다양한 모습으로 살아가요'
+];
+const MP_FIN_OK = 2;
+const MP_FIN_NO = [
+  '판을 떠올려 봐요. 기후 칸마다 <b>서로 다른 핀</b>이 섰어요. 오늘의 정리를 다시 골라 봐요.',
+  '판을 떠올려 봐요. 조사한 정보를 지도에 매핑하면 <b>다른 모둠과 나누어</b> 한눈에 볼 수 있어요. 오늘의 정리를 다시 골라 봐요.',
+  null
+];
+
+/* 안내 */
+const MP_AGAIN = '그 검색어는 <b>이미 지도에 꽂았어요</b>. 다른 검색어를 골라 봐요. 판은 그대로예요.';
+const MP_ORDER_R = '수첩에 아직 <b>비어 있는 줄</b>이 있어요. 더 검색해 본 뒤에 판을 읽을 수 있어요. 판은 그대로예요.';
+const MP_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const MP_ORDER_S = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const MP_SG_AGAIN = '송끄란 축제는 <b>이미 골랐어요</b>. 판은 그대로예요.';
+const MP_ORDER_F = '아직 <b>송끄란 축제</b>를 살펴보지 않았어요. 먼저 골라 봐요. 판은 그대로예요.';
+const MP_ALL_MSG = '<b>수첩의 두 줄</b>이 다 채워졌어요. 핀은 기후 칸마다 어떻게 섰나요?';
+
+/* ★ 검색했는지 · 그 칸에 핀이 서는지 — MP_HIT 을 읽는 자리 단 하나 */
+function mpDid(st,k){ return (st.mpSrch & (1<<k))!==0; }
+function mpOn(k,c){ return MP_HIT[k].indexOf(c)>=0; }
+/* ★ 그 칸의 핀 — 검색 기록에서만 · 칸마다 핀을 담는 상태 0 */
+function mpPins(st,c){ const r=[]; for(let k=0;k<MP_KEY.length;k++) if(mpDid(st,k) && mpOn(k,c)) r.push(k); return r; }
+/* ★★ 수첩 — 핀이 선 기후 칸 수 · 핀 셋이 모인 첫 칸(없으면 -1) */
+function mpCover(st){ let n=0; for(let c=0;c<MP_NC;c++) if(mpPins(st,c).length>0) n++; return n; }
+function mpMany(st){ for(let c=0;c<MP_NC;c++) if(mpPins(st,c).length>=MP_MANY) return c; return -1; }
+function mpAll(st){ return mpCover(st)===MP_NC && mpMany(st)>=0; }
+
+function mpMap(st){
+  let h='';
+  for(let c=0;c<MP_NC;c++){ const p = mpPins(st,c), sg = st.mpSong!=null && c===MP_SONG;
+    h += `<div class="mp-cell${p.length?' on':''}" data-clim="${c}" data-pins="${p.length}"><span class="cn">${MP_CLIM[c]}</span><span class="mp-pins">${p.map(k=>`<span class="mp-pin" data-key="${k}">\uD83D\uDCCC ${MP_KEY[k]}</span>`).join('')}${sg?`<span class="mp-pin song" data-song="1">\uD83C\uDF89 송끄란 축제(타이)</span>`:''}</span></div>`; }
+  return h;
+}
+function mpNote(st){
+  const n = mpCover(st), m = mpMany(st);
+  const l0 = n===MP_NC ? `<div class="mp-line set" data-line="0" data-cover="${n}">여섯 기후 칸 모두에 핀이 섰어요 \u2014 고루 나누어 조사했어요</div>`
+    : `<div class="mp-line" data-line="0" data-cover="${n}">핀이 선 기후 칸 ${n} / ${MP_NC}</div>`;
+  const l1 = m>=0 ? `<div class="mp-line set" data-line="1" data-many="${m}">${MP_CLIM[m]} 칸에 핀 셋 \u2014 같은 기후에서도 여러 가지 생활 모습이 나타나요</div>`
+    : `<div class="mp-line" data-line="1" data-many="-1">한 기후 칸에 핀이 셋 모인 곳 \u2014 아직 없어요</div>`;
+  return l0+l1;
+}
+
+function mpBoard(st){
+  const fin = st.mpFin!=null, all = mpAll(st);
+  const head = fin ? '기후에 따른 다양한 생활 모습을 지도에 모아 보았어요'
+    : st.mpSong!=null ? '송끄란 축제까지 꽂았어요 \u2014 이제 정리해요'
+    : st.mpRead!=null ? '다른 모둠의 축제 조사도 살펴봐요'
+    : all ? '수첩이 다 채워졌어요 \u2014 핀이 선 모습을 봐요'
+    : '검색해서 기후 생활 지도에 꽂아 봐요';
+  return `<div class="mp-board" data-srch="${st.mpSrch}" data-read="${st.mpRead==null?-1:st.mpRead}" data-spick="${st.mpSong==null?-1:st.mpSong}" data-fin="${fin?1:0}">
+    <div class="mp-head">${head}</div>
+    <div class="mp-map">${mpMap(st)}</div>
+    <div class="mp-note">${mpNote(st)}</div>
+  </div>`;
+}
+
+function mpPanel(st){
+  const fin = st.mpFin!=null, all = mpAll(st), n = mpCover(st), m = mpMany(st);
+  const q = fin ? '기후에 따른 사람들의 다양한 생활 모습을 조사해 보았어요.'
+    : st.mpSong!=null ? '오늘 공부한 내용을 어떻게 정리하면 좋을까요?'
+    : st.mpRead!=null ? '축제를 조사한 모둠의 지도에는 타이의 송끄란 축제가 있어요. 송끄란 축제는 기후와 어떤 관련이 있을까요?'
+    : all ? '핀은 기후 칸마다 어떻게 섰나요? 한 번 검색으로 여러 칸에 핀이 선 검색어도 있었나요?'
+    : n===MP_NC ? '여섯 기후 칸 모두에 핀이 섰어요. 한 기후 칸에 핀이 셋 모이게 하려면 무엇을 더 검색해 볼까요?'
+    : m>=0 ? '한 기후 칸에 핀이 셋 모였어요. 아직 핀이 없는 기후 칸이 있나요?'
+    : '검색어를 눌러 지도에 꽂아 봐요. 조사할 생활 모습이 한 기후에 몰리지 않았나요?';
+  let right = `<div class="mp-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83D\uDCCC 찾아서 꽂는 기후 생활 지도</div>
+      검색한 생활 모습을 지도에 꽂으니 <b>여섯 기후 칸에 서로 다른 핀</b>이 섰어요. 온대 기후 칸에는 밀, 올리브와 포도, 벼가 모여
+      <b>같은 기후 환경에서도 여러 가지 생활 모습</b>이 나타났고, 옥수수와 밀은 <b>여러 기후 칸</b>에 함께 섰어요.
+      세계 여러 나라 사람들은 기후에 <b>적응</b>하고, 이를 <b>극복</b>하면서 다양한 모습으로 살아가요.<br>
+      <span style="color:#64748B">판과 핀은 <b>도식</b>이에요. 핀은 교과서가 든 예까지만 꽂았어요 \u2014 실제 생활 모습은 훨씬 여러 가지이고, 핀의 수가 그 기후 지역 생활의 많고 적음이나 살기 좋고 나쁨을 뜻하지 않아요.
+      <b>모둠 주제 정하기</b>와 <b>인터넷 조사</b>, <b>디지털 영상 지도 매핑과 공유</b>, <b>활동지</b>, <b>더 알아보고 싶은 내용 쓰기</b>는 교실에서 직접 해요.</span></div>`;
+  } else if(st.mpSong!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="mp-fin">${MP_FIN.map((t,k)=>`<button class="${st.mpWrongF===k?'no':''}" onclick="mpFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.mpRead!=null){
+    right += `<div class="dw-step">\uD83C\uDF89 송끄란 축제(타이)</div>`;
+    right += `<div class="mp-song">${MP_SG.map((t,k)=>`<button class="${st.mpWrongS===k?'no':''}" onclick="mpSongPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="mp-hint">서로에게 물을 뿌리는 축제예요. 무더위와 비, 농사를 떠올려 봐요.</div>`;
+  } else if(all){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="mp-read">${MP_READ.map((t,k)=>`<button class="${st.mpWrongR===k?'no':''}" onclick="mpReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83D\uDD0D 검색해서 지도에 추가하기</div>`;
+    right += `<div class="mp-keys">${MP_KEY.map((t,k)=>`<button class="mp-key${mpDid(st,k)?' done':''}" onclick="mpFind(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="mp-hint">검색어를 누르면 그 생활 모습이 나타나는 기후 칸마다 핀이 서요. 수첩의 줄이 <b>모두 채워질 때까지</b> 검색해 봐요. 감점은 없어요.</div>`;
+  }
+  if(st.mpMsg) right += `<div class="dw-msg${st.mpWarn?' warn':''}">${st.mpMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83D\uDCCC 찾아서 꽂는 기후 생활 지도 판</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${mpBoard(st)}<div class="cvcap">판과 핀은 <b>도식</b>이에요. 핀은 교과서가 든 예까지만이에요 \u2014 핀의 수가 생활의 많고 적음을 뜻하지 않아요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 세계의 자연환경 · ② 세계의 기후와 다양한 생활 모습";
+
+// 확인 4 + 적용 4 — 정답 다양화 [2,1,3,0,1,3,0,2](각 자리 2회)
+// ⚠️ 문항 내 연도·쪽수·수치 0 · 새 사실 0(교과서 44~47쪽 문면 · 재미있게 확인해요 · 지도서 12차시 예시 답 · 앞 차시 본문까지만).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"기후에 따른 사람들의 생활 모습을 조사하려면 <b>가장 먼저</b> 무엇을 정해야 하나요?",
+   opts:["발표할 순서","매핑할 지도의 색깔","기후와 관련된 조사 주제","다음 시간 준비물"],
+   correct:2, pts:POINTS_BASIC, scene:"topic",
+   reason:"기후에 따른 사람들의 생활 모습을 조사하려면 가장 먼저 기후와 관련된 조사 주제를 정해야 해요. 기후와 축제, 기후와 음식, 기후와 전통 의상 같은 주제가 있어요.",
+   h1:"무엇을 조사할지부터 정해요.", h2:"기후와 축제, 기후와 음식처럼 정해요."},
+  {stem:"<b>매핑</b>의 뜻으로 알맞은 것은 무엇인가요?",
+   opts:["여러 나라의 기후 그래프를 그리는 것","디지털 영상 지도에 필요한 정보를 원하는 위치에 배치하는 것","모둠 이름을 정하는 것","조사한 내용을 공책에 옮겨 적는 것"],
+   correct:1, pts:POINTS_BASIC, scene:"mapping",
+   reason:"매핑은 디지털 영상 지도에 필요한 정보를 원하는 위치에 배치하는 것이에요. 조사한 정보를 지도 위에 배치하면 나라나 지역의 위치까지 한눈에 알 수 있어요.",
+   h1:"영어 낱말 ‘맵’은 지도라는 뜻이에요.", h2:"판에서 핀을 꽂은 일을 떠올려 봐요."},
+  {stem:"모둠 주제에 관한 사례를 조사할 때 조사 지역이 <b>특정 지역에 몰리지 않게</b> 하려면 어떻게 하면 좋을까요?",
+   opts:["모두 우리나라만 조사해요","한 사람이 모든 지역을 맡아요","가장 가까운 나라 하나만 조사해요","대륙별 또는 기후대별로 조사할 지역을 나누어 맡아요"],
+   correct:3, pts:POINTS_BASIC, scene:"divide",
+   reason:"내용이 특정 지역에 몰리지 않도록 대륙별 또는 기후대별로 조사할 지역을 나누어 맡으면 좋아요.",
+   h1:"모둠 친구들이 함께 나누어 맡아요.", h2:"판의 수첩 첫째 줄을 떠올려 봐요."},
+  {stem:"<b>옳은 설명</b>은 무엇인가요?",
+   opts:["한대 기후 지역에서는 순록을 기르며 유목 생활을 해요","냉대 기후는 일 년 내내 기온이 높고 기온 변화가 거의 없어요","온대 기후는 겨울이 여름보다 길고 몹시 추우며 눈이 많이 와요","대추야자는 온대 기후 지역에서 주로 기르는 식물이에요"],
+   correct:0, pts:POINTS_BASIC, scene:"sum",
+   reason:"한대 기후 지역에서는 순록을 기르며 유목 생활을 하기도 해요. 일 년 내내 기온이 높은 것은 열대 기후, 겨울이 여름보다 길고 몹시 추운 것은 냉대 기후, 대추야자는 건조 기후 지역에서 길러요.",
+   h1:"앞 차시에서 공부한 기후를 하나씩 떠올려 봐요.", h2:"판의 한대 기후 칸에 선 핀을 떠올려 봐요."},
+  // 4단계 적용 (+15)
+  {stem:"타이의 <b>송끄란 축제</b>에서 사람들이 서로에게 물을 뿌리는 까닭은 무엇인가요?",
+   opts:["눈이 많이 내리기를 바라서","비가 많이 내려 농사가 잘되기를 기원하고 무더위를 잠시나마 없앤다는 뜻으로","겨울 추위를 이기려고","모래바람을 막으려고"],
+   correct:1, pts:POINTS_APPLY, scene:"open",
+   reason:"송끄란 축제는 열대 기후인 타이에서 일 년 중 가장 더운 시기에 열려요. 비가 많이 내려 농사가 잘되기를 기원하고 무더위를 잠시나마 없앤다는 뜻으로 서로에게 물을 뿌려요.",
+   h1:"타이는 열대 기후 지역이에요.", h2:"가장 더운 시기에 열리는 축제예요."},
+  {stem:"판에서 <b>온대 기후 칸에 핀이 셋</b>(밀 · 올리브와 포도 · 벼) 선 것으로 알 수 있는 것은 무엇인가요?",
+   opts:["온대 기후 지역에는 한 가지 생활 모습만 나타나요","온대 기후 지역에서는 농사를 지을 수 없어요","핀이 많은 기후 지역이 더 살기 좋은 곳이에요","같은 기후 환경에서도 다양한 생활 모습이 나타나요"],
+   correct:3, pts:POINTS_APPLY, scene:"pinq",
+   reason:"같은 온대 기후 지역이라도 서부 유럽에서는 밀을, 지중해 주변에서는 올리브나 포도를, 우리나라를 비롯한 아시아에서는 벼를 많이 길러요. 같은 기후 환경에서도 다양한 생활 모습이 나타나요. 핀의 수는 교과서가 든 예일 뿐 살기 좋고 나쁨을 뜻하지 않아요.",
+   h1:"한 칸에 서로 다른 핀이 셋이에요.", h2:"핀의 수가 살기 좋고 나쁨을 뜻할까요?"},
+  {stem:"<b>옳은 설명</b>은 무엇인가요?",
+   opts:["지구는 둥글기 때문에 위도에 따라 햇볕을 받는 양이 달라요","고산 기후는 해발 고도가 낮은 바닷가에 나타나요","건조 기후는 일 년 내내 비가 많이 내려요","한대 기후는 적도 주변의 저위도 지역에 나타나요"],
+   correct:0, pts:POINTS_APPLY, scene:"sum",
+   reason:"지구는 둥글기 때문에 위도에 따라 햇볕을 받는 양이 달라요. 고산 기후는 해발 고도가 높은 산지 지역에, 한대 기후는 남극과 북극 주변의 고위도 지역에 나타나고, 건조 기후는 강수량이 적어요.",
+   h1:"기후 분포를 공부한 차시를 떠올려 봐요.", h2:"적도와 극지방이 받는 햇볕을 견주어 봐요."},
+  {stem:"세계 여러 나라 사람들은 기후에 (   )하고, 이를 (   )하면서 다양한 모습으로 살아가요. <b>괄호에 차례로 알맞은 낱말</b>은 무엇인가요?",
+   opts:["포기 · 외면","이동 · 정착","적응 · 극복","무시 · 반대"],
+   correct:2, pts:POINTS_APPLY, scene:"sum",
+   reason:"세계 여러 나라 사람들은 기후에 적응하고, 이를 극복하면서 다양한 모습으로 살아가요.",
+   h1:"기후에 맞추어 살아가는 것을 뭐라고 할까요?", h2:"어려움을 이겨 내는 것을 뭐라고 할까요?"}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 동기 유발 · 지도서 12차시
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">세 축제의 공통점을 찾아봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','타이 송끄란 축제 · 일본 눈 축제 · 에스파냐 토마토 축제','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDF89 생각을 열어요</div>
+      다음 축제의 공통점은 무엇인가요? 기후에 따른 사람들의 생활 모습에 관해 더 알고 싶은 내용이 있나요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 타이 송끄란 축제, 일본 눈 축제, 에스파냐 토마토 축제는 모두 <b>기후와 관련된 축제</b>예요.<br>
+      \u2014 기후에 따라 세계 여러 나라의 사람들은 <b>어떤 음식을 즐겨 먹는지</b> 알고 싶어요.</div>`
+      :`<div class="note">세 축제는 무엇과 관련이 있을까요? 자유롭게 생각해 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">지난 시간에는 한대 기후와 고산 기후 지역의 생활 모습을 알아봤어요. 오늘은 기후에 따른 사람들의 다양한 생활 모습을 조사해 봐요.</div></div>`});
+// 2 살펴보기 — reveal: 조사 주제 정하기
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">조사할 주제를 정해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('topic','기후와 생활 모습에 관한 주제','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCD6 교과서 본문</div>
+      기후는 사람들의 생활 모습에 큰 영향을 줘요. 세계의 기후와 생활 모습을 조사하면 <b>기후에 적응하고, 이를 극복하면서</b> 살아가는 사람들의 다양한 생활 모습을 살펴볼 수 있어요.
+      모둠 친구들과 함께 기후와 생활 모습에 관해 더 알고 싶은 주제를 정하고, 조사할 내용을 써 봐요.</div>
+    ${st.revealed?`<div class="answer-box">기후에 따른 사람들의 다양한 생활 모습을 조사하기에 알맞은 주제에는 어떤 것들이 있나요?<br>
+      \u2014 <b>기후와 축제</b> \u2014 기후와 관련된 세계 여러 나라의 축제가 많을 것 같아요.<br>
+      \u2014 <b>기후와 음식</b> \u2014 음식의 맛과 재료 등은 그 나라의 기후에 많은 영향을 받을 것 같아요.<br>
+      \u2014 <b>기후와 이동 수단</b> \u2014 기후 환경에 적응한 이동 수단이 다를 것 같아요.<br>
+      \u2014 <b>기후와 전통 의상</b> \u2014 옷의 모양과 재료 등은 기후의 영향을 많이 받을 것 같아요.<br>
+      \u2014 <b>기후가 만든 독특한 문화</b>가 많을 것 같아요.</div>`
+      :`<div class="note">기후와 생활 모습에 관해 무엇을 더 알고 싶나요?</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">주제를 고를 때는 기후에 따른 생활 모습과 관련 있는지, 세계 여러 지역에서 관련 내용을 쉽게 찾을 수 있는지 생각해 봐요.</div></div>`});
+// 3 살펴보기 — reveal: 조사할 지역 나누기
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">조사할 지역을 나누어 맡아요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('divide','대륙별로 나누기 · 기후별로 나누기(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83E\uDDED 생각해 봐요</div>
+      모둠 주제에 관한 다양한 사례를 조사하려면 조사할 지역을 어떻게 나누면 좋을까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 <b>대륙별로</b> 조사할 지역을 나누어 맡으면 좋겠어요.<br>
+      \u2014 <b>기후별로</b> 조사할 지역을 나누어 맡으면 좋겠어요.<br>
+      \u2014 이렇게 나누면 조사한 내용이 <b>특정 지역에 몰리지 않아요</b>.</div>`
+      :`<div class="note">모둠 친구들이 모두 같은 곳을 조사하면 어떻게 될까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 4 살펴보기 — reveal: 여러 자료로 조사하기
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">각자 정한 지역의 생활 모습을 조사해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('research','여러 가지 자료로 조사하기','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDD0E 조사하기</div>
+      각자 정한 지역의 생활 모습을 인터넷으로 조사해 봐요. 인터넷뿐만 아니라 <b>책, 신문 기사, 지도, 통계 자료</b> 등을 활용하여
+      소개글과 함께 사진이나 영상, 관련 누리집 등 여러 형태의 정보를 조사해요.</div>
+    ${st.revealed?`<div class="answer-box">조사 예시 \u2014 우리 모둠이 정한 주제: <b>기후와 축제</b> \u00b7 내가 조사할 지역: <b>아시아 지역</b><br>
+      \u2014 송끄란 축제는 <b>열대 기후인 타이</b>에서 일 년 중 가장 더운 시기에 열리는 축제예요.
+      비가 많이 내려 농사가 잘되기를 기원하고 무더위를 잠시나마 없앤다는 뜻으로 서로에게 물을 뿌려요.</div>`
+      :`<div class="note">조사한 내용은 어떻게 정리하면 좋을까요?</div><button class="reveal-btn" onclick="reveal()">예시 보기</button>`}
+  </div>`});
+// 5 살펴보기 — reveal: 디지털 영상 지도에 매핑하기
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">조사한 정보를 지도에 매핑해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('mapping','매핑하기(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDDFA\uFE0F 매핑하기</div>
+      <b>매핑</b> \u2014 디지털 영상 지도에 필요한 정보를 원하는 위치에 배치하는 것.<br>
+      매핑 준비하기 \u2014 디지털 영상 지도 누리집을 열고 지도를 만든 뒤, 지도 제목과 설명을 입력하고 지도 주소를 모둠 친구들과 공유해요.<br>
+      매핑하기 \u2014 ① 공유받은 지도에서 ‘레이어 추가’를 고르고 이름을 바꿔요. ② 조사한 나라를 검색한 뒤 ‘지도에 추가’를 골라요. ③ 기호를 활용해 조사한 자료를 입력해요.</div>
+    ${st.revealed?`<div class="answer-box">조사한 내용을 다른 모둠 친구들에게 어떤 방법으로 알리면 좋을까요?<br>
+      \u2014 <b>매핑</b>을 이용하면 좋을 것 같아요. 조사한 정보를 디지털 영상 지도 위에 배치하면 나라나 지역의 <b>위치까지 한눈에</b> 알 수 있고,
+      다른 모둠 친구들에게 보다 빠르고 쉽게 공유할 수 있어요.</div>`
+      :`<div class="note">지도 위에 정보를 놓으면 무엇이 좋을까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+    <div class="tipbox">지도를 공유할 때 수정할 수 있는 권한을 주어야 함께 지도를 만들 수 있어요. 실제 매핑은 교실에서 모둠 친구들과 함께 해요.</div></div>`});
+// 6 살펴보기 — reveal: 조사 결과 공유하기
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">조사 결과를 공유하고 더 알아보고 싶은 내용을 찾아요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('share','모둠별 조사 주제(지도서 예시)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83E\uDD1D 공유하기</div>
+      우리 모둠이 만든 디지털 영상 지도 주소를 다른 모둠과 공유해요. 다른 모둠의 조사 내용을 살펴보면서 <b>더 알아보고 싶은 내용</b>을 써 봐요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 기후와 축제 \u2014 기후변화로 사라지거나 새롭게 생긴 축제가 있는지 더 알고 싶어요.<br>
+      \u2014 기후와 전통 의상 \u2014 온대 기후가 나타나는 지역의 전통 의상과 우리나라의 전통 의상을 비교해 보고 싶어요.<br>
+      \u2014 기후와 음식 \u2014 비슷한 기후를 가진 지역끼리 음식 문화가 서로 다른 까닭을 알아보고 싶어요.<br>
+      \u2014 기후와 이동 수단 \u2014 우리나라에서 계절별로 이용하면 좋을 다른 나라의 이동 수단을 더 알고 싶어요.</div>`
+      :`<div class="note">다른 모둠의 지도를 볼 때 무엇을 살펴보면 좋을까요?</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">기후와 관련 있는 주제인지, 조사한 내용이 주제와 어울리는지 살펴보고 궁금한 점은 서로 묻고 답해요.</div></div>`});
+// 7 살펴보기 — 직접조작(찾아서 꽂는 기후 생활 지도 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">찾아서 기후 생활 지도에 꽂아 봐요</h2>
+  ${mpPanel(st)}`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 12차시 주요 내용 정리 · 꼭 기억해요
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div>기후와 인간생활 \u2014 기후는 사람들의 생활 모습에 큰 영향을 주며, 세계 여러 나라 사람들은 기후에 <b>적응</b>하고, 이를 <b>극복</b>하면서 다양한 모습으로 살아가요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div>기후와 생활 모습 조사하기 \u2014 <b>주제 정하기</b> \u2192 <b>인터넷으로 조사하기</b> \u2192 <b>디지털 영상 지도에 매핑하기</b> \u2192 <b>디지털 영상 지도를 공유하기</b></div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 여섯 기후 칸에 서로 다른 핀이 섰고, 온대 기후 칸에는 핀 셋이 모였어요. 같은 기후 환경에서도 다양한 생활 모습이 나타나요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b>‘생각을 펼쳐요’</b> 활동을 해요. 준비물은 <b>색칠 도구</b>예요.</div></div>`});
+// 17 정리: 자기 평가 — 얼마나 잘했을까
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공부한 내용을 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"세계의 다양한 기후 특징을 설명할 수 있어요",st)}
+    ${selfCheck(1,"세계의 기후와 사람들의 다양한 생활 모습을 관련지어 탐구할 수 있어요",st)}
+    ${selfCheck(2,"세계 여러 지역의 기후에 관심과 호기심을 가지고, 이를 탐구하려는 자세를 가져요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">‘생각을 펼쳐요’</b> 활동을 해요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u1_l10";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  mpSrch:0,
+  mpRead:null, mpSong:null, mpFin:null,
+  mpWrongR:null, mpWrongS:null, mpWrongF:null,
+  mpMsg:null, mpWarn:false, mpBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function mpRender(){ main.innerHTML = slides[state.idx].render(state); }
+function mpHold(msg){
+  state.mpWarn=true; state.mpBusy=true; state.mpMsg=msg;
+  playThud(); mpRender();
+  setTimeout(()=>{ state.mpBusy=false; state.mpWarn=false; state.mpMsg=null;
+    state.mpWrongR=null; state.mpWrongS=null; state.mpWrongF=null; mpRender(); },1600);
+}
+
+/* ① 검색해서 지도에 추가 — ★ 검색 기록은 더하기만 한다. */
+function mpFind(k){
+  if(state.mpFin!=null) return;                                        // 가드①
+  if(state.mpBusy) return;                                             // 가드⑩
+  if(!Number.isInteger(k) || k<0 || k>=MP_KEY.length) return;          // 가드②
+  if(mpDid(state,k)){ mpHold(MP_AGAIN); return; }                      // 가드③ 이미 꽂음 — 판 불변
+  state.mpSrch |= (1<<k);                                              // ★ 검색 기록이 느는 자리 단 하나 — 줄지 않음
+  state.mpWarn=false;
+  const n = MP_HIT[k].length;
+  state.mpMsg = mpAll(state) ? MP_ALL_MSG : `<b>「${MP_KEY[k]}」</b>을 검색해 지도에 추가했어요 \u2014 기후 칸 <b>${n}곳</b>에 핀이 섰어요.`;
+  playBlip(); mpRender();
+}
+
+/* ② 판 읽기 — 수첩 두 줄이 다 서야 열린다(가드④). */
+function mpReadPick(k){
+  if(state.mpFin!=null) return;                                        // 가드①
+  if(state.mpBusy) return;                                             // 가드⑩
+  if(!Number.isInteger(k) || k<0 || k>=MP_READ.length) return;         // 가드②
+  if(!mpAll(state)){ mpHold(MP_ORDER_R); return; }                     // 가드④ 순서 — 판 불변
+  if(state.mpRead!=null){ mpHold(MP_READ_AGAIN); return; }             // 가드⑤ 판 불변
+  if(k===MP_READ_OK){
+    state.mpRead=k; state.mpWrongR=null; state.mpWarn=false;
+    state.mpMsg = '판을 잘 읽었어요. 온대 기후 칸에는 <b>핀 셋</b>이 모였고, 옥수수와 밀은 <b>여러 기후 칸</b>에 섰어요 \u2014 기후에 따라, 또 같은 기후 안에서도 생활 모습은 여러 가지예요.';
+    playChime(); mpRender(); return;
+  }
+  state.mpWrongR=k;
+  mpHold(MP_READ_NO[k]);
+}
+
+/* ③ 송끄란 축제(타이) — 판을 읽은 뒤에만(가드⑥). */
+function mpSongPick(k){
+  if(state.mpFin!=null) return;                                        // 가드①
+  if(state.mpBusy) return;                                             // 가드⑩
+  if(!Number.isInteger(k) || k<0 || k>=MP_SG.length) return;           // 가드②
+  if(state.mpRead==null){ mpHold(MP_ORDER_S); return; }                // 가드⑥ 순서 — 판 불변
+  if(state.mpSong!=null){ mpHold(MP_SG_AGAIN); return; }               // 가드⑦ 판 불변
+  if(k!==MP_SG_OK){ state.mpWrongS=k; mpHold(MP_SG_NO[k]); return; }   // 가드⑧ 판 불변
+  state.mpSong = k;                                                    // ★ 송끄란 핀이 서는 자리 단 하나
+  state.mpWarn=false;
+  state.mpMsg = '송끄란 축제를 <b>열대 기후</b> 칸에 꽂았어요. 무더위와 비, 농사 \u2014 축제에도 기후가 담겨 있어요.';
+  playChime(); mpRender();
+}
+
+/* ④ 마무리 — 지도서 12차시 주요 내용 정리 */
+function mpFinish(k){
+  if(state.mpFin!=null) return;                                        // 가드①
+  if(state.mpBusy) return;                                             // 가드⑩
+  if(!Number.isInteger(k) || k<0 || k>=MP_FIN.length) return;          // 가드②
+  if(state.mpSong==null){ mpHold(MP_ORDER_F); return; }                // 가드⑨ 순서 — 판 불변
+  if(k===MP_FIN_OK){
+    state.mpFin=k; state.mpWrongF=null; state.mpMsg=null; state.mpWarn=false;
+    playChime(); mpRender(); return;
+  }
+  state.mpWrongF=k;
+  mpHold(MP_FIN_NO[k]);
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 1단원 11차시(l11) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
