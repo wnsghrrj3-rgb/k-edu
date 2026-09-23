@@ -1667,7 +1667,7 @@ window.KT2_MANIFEST = {
      "unit": 2,
      "title": "받침이 있는 글자를 읽어요",
      "file": "data/g1_korean_u2.js",
-     "resources": null,
+     "resources": "resources/g1_korean_u2.js",
      "lessons": [
       {
        "key": "u2_l01",
@@ -2013,7 +2013,7 @@ window.KT2_MANIFEST = {
      "unit": 3,
      "title": "낱말과 친해져요",
      "file": "data/g1_korean_u3.js",
-     "resources": null,
+     "resources": "resources/g1_korean_u3.js",
      "lessons": [
       {
        "key": "u3_l01",
@@ -2359,7 +2359,7 @@ window.KT2_MANIFEST = {
      "unit": 4,
      "title": "여러 가지 낱말을 익혀요",
      "file": "data/g1_korean_u4.js",
-     "resources": null,
+     "resources": "resources/g1_korean_u4.js",
      "lessons": [
       {
        "key": "u4_l01",
@@ -2731,7 +2731,7 @@ window.KT2_MANIFEST = {
      "unit": 5,
      "title": "반갑게 인사해요",
      "file": "data/g1_korean_u5.js",
-     "resources": null,
+     "resources": "resources/g1_korean_u5.js",
      "lessons": [
       {
        "key": "u5_l01",
@@ -3051,7 +3051,7 @@ window.KT2_MANIFEST = {
      "unit": 6,
      "title": "또박또박 읽어요",
      "file": "data/g1_korean_u6.js",
-     "resources": null,
+     "resources": "resources/g1_korean_u6.js",
      "lessons": [
       {
        "key": "u6_l01",
@@ -3397,7 +3397,7 @@ window.KT2_MANIFEST = {
      "unit": 7,
      "title": "알맞은 낱말을 찾아요",
      "file": "data/g1_korean_u7.js",
-     "resources": null,
+     "resources": "resources/g1_korean_u7.js",
      "lessons": [
       {
        "key": "u7_l01",
