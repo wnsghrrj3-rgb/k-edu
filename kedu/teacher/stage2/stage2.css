@@ -554,7 +554,8 @@ svg.tenframe .div{stroke:#7d8794;stroke-width:5;stroke-dasharray:8 6}
 .anim .scenario{animation:kt2-slide-up .5s both}
 .anim .scenario .ic{animation:kt2-bob 2.4s ease-in-out .5s infinite}
 @keyframes kt2-bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
-.anim .numline .dot{animation:kt2-pop-in .4s both}
+.anim .numline .dot{animation:kt2-dot-in .4s both}
+@keyframes kt2-dot-in{0%{transform:translateX(-50%) scale(0);opacity:0}70%{transform:translateX(-50%) scale(1.15)}100%{transform:translateX(-50%);opacity:1}}
 .anim .numline .dot.anchor,.anim .numline .dot.cur{animation:kt2-bounce .8s .5s both}
 @keyframes kt2-bounce{0%{transform:translate(-50%,0)}35%{transform:translate(-50%,-40px)}55%{transform:translate(-50%,0)}75%{transform:translate(-50%,-14px)}100%{transform:translate(-50%,0)}}
 .numline .dot{transform:translateX(-50%)}
@@ -752,3 +753,22 @@ svg.tenframe.chips .div{stroke:#7d8794;stroke-width:5;stroke-dasharray:8 6}
 @keyframes kt2-nod{0%,100%{transform:rotate(0) translateY(0)}50%{transform:rotate(-2deg) translateY(2px)}}
 /* 크게 볼 때·검은 무대(밤)에서도 윤곽이 산다 */
 .picture.night .kid .face.chr{filter:drop-shadow(0 0 10px rgba(255,255,255,.28)) drop-shadow(0 8px 10px rgba(0,0,0,.3))}
+
+/* ═══════════════ 14차 — 수직선 = 징검다리 (2026-09-23) ═══════════════
+   선은 개울, 점은 징검돌. 기준 수(anchor)·지금 수(cur)가 있으면 도토가 그 돌 위에 서고,
+   움직일 때마다(다시 그릴 때) 폴짝 뛰어 내려앉는다. DOM(dot·lb·data-act)은 그대로라 조작은 1세대와 같다.   */
+.numline .ln{top:50px;height:34px;border-radius:18px;background:linear-gradient(180deg,#9DD6F5,#5FB3E8);box-shadow:inset 0 -4px 0 rgba(0,0,0,.08)}
+.numline .ln::after{content:"";position:absolute;inset:8px 14px auto;height:4px;border-radius:4px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.7) 0 26px,transparent 26px 60px)}
+.numline .dot{top:52px;width:42px;height:30px;border-radius:50%/60%;background:linear-gradient(180deg,#D8CCBE,#B3A393);border:3px solid #8A7A6A;box-shadow:0 5px 0 rgba(0,0,0,.14)}
+.numline .dot.active{background:linear-gradient(180deg,#FFF1C9,#F5D78A);border-color:#C9A13E}
+.numline .dot.anchor,.numline .dot.cur{top:49px;width:52px;height:36px;background:linear-gradient(180deg,#FFD166,#F5A623);border-color:#C47F0E}
+.numline .lb{top:98px}
+.numline.hero{margin-top:120px}
+.nl-hero{position:absolute;top:-58px;width:96px;transform:translateX(-50%);pointer-events:none;z-index:2}
+.nl-hero svg.chr{display:block;width:96px;height:110px;overflow:visible}
+.nl-hero .chr .eyes{transform-box:fill-box;transform-origin:center;animation:kt2-blink 4.6s infinite}
+.nl-hero .chr .bodyg{transform-box:view-box;transform-origin:70px 150px;animation:kt2-breathe 3.4s ease-in-out infinite}
+.nl-hero .chr .m-open{opacity:0}
+.nl-hero{animation:kt2-hop .55s cubic-bezier(.3,.7,.3,1) both}
+@keyframes kt2-hop{0%{transform:translate(-50%,-46px) scale(.96,1.04)}60%{transform:translate(-50%,4px) scale(1.08,.9)}100%{transform:translate(-50%,0)}}
+.anim .numline.hero .dot.anchor,.anim .numline.hero .dot.cur{animation:kt2-dot-in .4s both}

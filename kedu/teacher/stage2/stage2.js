@@ -69,7 +69,10 @@
   }
   function tfStrip(arr) { return '<div class="tf-strip">' + arr.map(n => '<div class="tfs">' + tenFrame(n, 26) + '<b>' + n + '</b></div>').join('') + '</div>'; }
   function numLine(range, anchor, cur) {
-    const [min, max] = range; const n = max - min + 1; let h = '<div class="numline"><div class="ln"></div>';
+    const [min, max] = range; const n = max - min + 1; const A = global.KT2_ART;
+    const at = cur !== undefined ? cur : anchor; const hero = at !== undefined && at >= min && at <= max && A && A.character ? A.character('🐿️') : '';
+    let h = '<div class="numline' + (hero ? ' hero' : '') + '"><div class="ln"></div>';
+    if (hero) h += '<div class="nl-hero" style="left:' + (n > 1 ? ((at - min) / (n - 1)) * 100 : 0) + '%">' + hero + '</div>';
     for (let i = 0; i < n; i++) {
       const v = min + i, p = (i / (n - 1)) * 100;
       let cls = ''; if (v === anchor) cls = 'anchor'; else if (anchor !== undefined && (v === anchor - 1 || v === anchor + 1)) cls = 'active'; if (v === cur) cls = 'cur';
