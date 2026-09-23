@@ -114,14 +114,14 @@ window.KEDU_MAP["g6_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u1_l11",
+     "lessonId": "g6_s2_social_u1_l11_v1",
      "n": "11",
      "title": "[생각을 펼쳐요] 자연환경을 고려한 상품의 판매 계획 세우기",
      "sub": "② 세계의 기후와 다양한 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/1단원_세계의자연환경/g6_social_u1_l11_기능을끼워요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
