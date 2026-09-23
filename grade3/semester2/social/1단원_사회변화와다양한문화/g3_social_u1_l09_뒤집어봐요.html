@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 3-2 · 1단원 사회 변화와 다양한 문화
+  주제② 다양한 문화에 대한 이해와 존중 · l09 (주제 셋째 차시)
+  「다양한 문화의 확산이 우리 사회에 미친 영향을 알아볼까요」
+  교과서 p.43~47 · 지도서 12~13차시(p.89~95 · 두 시간 한 파일) · [4사03-02]
+  수업 기법 = 추론하기 · 생활 속 경험 공유하기
+=========================================================================
+
+  ■ 직접조작 = 두 면을 뒤집어 봐요 판 (사회 3-2 아홉째 판)
+  ⭐ 씨앗은 교과서 47쪽 「꼭 기억해요」 두 줄 — 다양한 문화를 누리며 살 수 있게 되었지만, 편견을 갖고 차별하는 문제가 생기기도 한다.
+  ⭐ 카드는 셋 — 외국인 이주민 · 1인 가구 · 반려동물과 함께 사는 사람. 카드마다 밝은 면(좋아진 점 · 교과서 43~45쪽)과 그늘 면(생긴 문제 · 교과서 46~47쪽)이 있다.
+  ⭐ 덮인 카드는 뒤집으면 밝은 면부터 · 그다음부터는 두 면을 오간다 — 면을 바꾸는 자리는 tnTurn 단 하나.
+  ⭐ 본 면 기록은 state.tnSeen |= 단 하나(줄지 않음) · 두 면을 다 본 카드 수는 저장 0 — 기록에서 센다(tnBothN).
+  ⭐ 끝 기준도 상수가 아니라 tnBothN === TN_N · TN_CARD 를 읽는 자리는 tnCardOf 단 하나 · TN_PICK 은 tnPickOf · 난수 0.
+
+  ■ 이 차시의 뼈대
+   어느 카드도 한 면만 있지 않다 — 세 카드 모두 밝은 면과 그늘 면이 함께 있다.
+   → 다양한 문화가 확산되면서 우리 사회에는 좋은 영향과 함께 문제도 나타난다(교과서 47쪽 「꼭 기억해요」).
+
+  ■ 5단계
+   ① 세 카드를 뒤집어 두 면 모두 보기 → ② 판 읽기 3택(정답 자리 2)
+   ③ 1인 가구에 인기 있을 것 같은 제품 가·나·다 고르기(정답 없음 · 고른 까닭이 뜬다)
+   ④ 마무리 3택(정답 자리 0) → 완료
+      — 반려동물로 다른 사람과 갈등을 겪은 경험 나누기 · 문화 소개 교육 프로그램 경험 나누기는 교실 몫
+
+  ■ 가드 10종
+   ① 마무리 확정 후 처리기 전체 잠금          ② 무효 번호(안내조차 0)
+   ③ 세 카드의 두 면을 다 본 뒤 뒤집기 — 판 불변 ④ 다 보기 전 판 읽기 — 판 불변
+   ⑤ 이미 읽은 자리 — 판 불변                 ⑥ 판 읽기 어긋난 답 — 판 불변
+   ⑦ 판을 읽기 전 제품 고르기 — 판 불변        ⑧ 이미 고른 제품 — 판 불변
+   ⑨ 제품을 고르기 전 마무리 — 판 불변         ⑩ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 카드 여섯 면의 말은 교과서 43~47쪽 글과 그림 말을 줄여 옮긴 것(캡션 상시).
+   ㉡ 제품 세 가지는 어느 것이 더 낫다고 가리기 어려워 판은 정답을 정하지 않는다(캡션 상시).
+   ㉢ 갈등을 겪은 경험 이야기, 문화 소개 교육 프로그램 경험 나누기는 교실 몫(완료 카드 명시).
+
+  ■ 설계 원칙
+   · 뒤 차시 이름은 차시 예고 한 자리뿐 — 해결을 위한 노력·제도·누리집 0
+   · 새 사실 0 — 교과서 43~47쪽 · 지도서 89~95쪽에 있는 사실만 · 교사용 참고 자료(수용성 점수·산업 규모·%) 0
+   · 「틀렸」 0 · 사람 형상 0 · 학생 이름 0 · 신문 이름 0 · 네 자리 연도 0
+   · 편견은 생각, 차별은 편견을 가지고 다르게 대우하는 것 — 생각과 행동을 나누어 적는다(지도 꿀 Tip)
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>다양한 문화의 확산이 우리 사회에 미친 영향을 알아볼까요 · 사회 3-2</title>
+<meta name="kedu-lesson-id" content="g3_social_u1_l09_v1"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#4F46E5; --green-d:#4338CA; --cyan:#7C3AED;
+  --bg:#EEF2FF; --bub:#E0E7FF; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#E0E7FF;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#E0E7FF;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(79,70,229,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 두 면을 뒤집어 봐요 판 */
+.tn-wrap{max-width:780px;width:100%;margin:0 auto}
+.tn-head{background:#E0E7FF;color:#3730A3;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.tn-board{padding:9px;border-radius:14px;background:#F5F7FF;border:2px solid #C7D2FE}
+.tn-title{text-align:center;font-weight:800;color:#3730A3;font-size:clamp(12px,2vw,14px);margin-bottom:6px;word-break:keep-all}
+.tn-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tn-card{display:flex;flex-direction:column;gap:6px;border:2px solid #C7D2FE;border-radius:12px;background:#fff;padding:8px;min-width:0}
+.tn-card[data-face="0"]{background:#FFFBEB;border-color:#FCD34D}
+.tn-card[data-face="1"]{background:#F1F5F9;border-color:#94A3B8}
+.tn-name{font-weight:800;color:#3730A3;font-size:clamp(12px,2vw,14px);text-align:center;word-break:keep-all}
+.tn-face{flex:1;font-size:clamp(11px,1.9vw,13px);line-height:1.5;color:#0F172A;word-break:keep-all;min-height:64px}
+.tn-face b{display:block;margin-bottom:2px}
+.tn-card[data-face="0"] .tn-face b{color:#B45309}
+.tn-card[data-face="1"] .tn-face b{color:#475569}
+.tn-seen{display:flex;gap:5px;justify-content:center;font-size:11px;font-weight:800}
+.tn-seen span{border-radius:999px;padding:1px 8px;background:#E2E8F0;color:#94A3B8}
+.tn-seen span[data-on="1"][data-s="0"]{background:#FDE68A;color:#92400E}
+.tn-seen span[data-on="1"][data-s="1"]{background:#CBD5E1;color:#334155}
+.tn-btn{border:none;border-radius:9px;background:#4F46E5;color:#fff;font-family:inherit;font-size:clamp(11px,1.8vw,13px);font-weight:800;padding:7px 6px;cursor:pointer}
+.tn-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}
+.tn-pk{border:2px solid #C7D2FE;border-radius:10px;background:#fff;padding:8px 7px;font-family:inherit;
+  font-size:clamp(11px,1.8vw,13px);font-weight:700;color:#0F172A;text-align:left;cursor:pointer;line-height:1.4;word-break:keep-all}
+.tn-pk b{color:#4338CA}
+.tn-side{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.tn-help{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(11px,1.9vw,14px);line-height:1.6}
+.tn-help b{color:#4338CA}
+.tn-tell{border-radius:11px;padding:8px 12px;font-size:clamp(12px,2vw,15px);line-height:1.6;background:#F5F3FF;border-left:4px solid var(--cyan)}
+.tn-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FAFAFF;margin-top:9px;
+  font-size:clamp(12px,2vw,15px);line-height:1.6;word-break:keep-all}
+.tn-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.tn-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:9px 11px;font-family:inherit;
+  font-size:clamp(12px,2vw,15px);font-weight:700;color:#0F172A;text-align:left;line-height:1.45;word-break:keep-all;cursor:pointer}
+.tn-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .tn-cards{grid-template-columns:1fr}
+  .tn-face{min-height:0}
+  .tn-picks{grid-template-columns:1fr}
+  .tn-side{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 모양과 기호 ===== */
+const SVG = {
+  // 세계 여러 나라의 문화를 소개하는 교실 — 칠판 · 여러 나라 깃발 기호
+  teach:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <rect x="20" y="18" width="120" height="50" rx="4" fill="#166534" stroke="#14532D" stroke-width="2"/>
+    <g stroke="#475569" stroke-width="1.2"><path d="M 40 28 L 40 52"/><path d="M 80 28 L 80 52"/><path d="M 120 28 L 120 52"/></g>
+    <rect x="40" y="28" width="18" height="12" fill="#DC2626"/><circle cx="49" cy="34" r="3" fill="#FACC15"/>
+    <rect x="80" y="28" width="18" height="12" fill="#fff"/><rect x="80" y="32" width="18" height="4" fill="#2563EB"/>
+    <rect x="120" y="28" width="18" height="12" fill="#16A34A"/><path d="M 120 28 L 138 40" stroke="#FACC15" stroke-width="2"/>
+    <g fill="#fff" font-size="6" font-weight="800" text-anchor="middle"><text x="80" y="62">세계 여러 나라의 문화</text></g>
+    <g fill="#818CF8"><rect x="30" y="76" width="16" height="8" rx="2"/><rect x="56" y="76" width="16" height="8" rx="2"/><rect x="88" y="76" width="16" height="8" rx="2"/><rect x="114" y="76" width="16" height="8" rx="2"/></g>
+    <text x="80" y="11" font-size="7.5" fill="#3730A3" text-anchor="middle" font-weight="800">다양한 문화를 소개하는 교실</text></svg>`,
+  // 1인 가구를 위한 작은 제품 — 소형 식기세척기 · 1인용 밥솥
+  small:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <rect x="22" y="30" width="48" height="40" rx="5" fill="#fff" stroke="#4F46E5" stroke-width="2"/><rect x="28" y="36" width="36" height="24" rx="3" fill="#E0E7FF"/><circle cx="60" cy="65" r="2" fill="#4F46E5"/>
+    <ellipse cx="116" cy="54" rx="22" ry="16" fill="#fff" stroke="#0D9488" stroke-width="2"/><path d="M 96 48 Q 116 36 136 48" fill="#CCFBF1" stroke="#0D9488" stroke-width="2"/><circle cx="116" cy="60" r="3" fill="#0D9488"/>
+    <g font-size="6" font-weight="800" text-anchor="middle" fill="#3730A3"><text x="46" y="84">소형 식기세척기</text><text x="116" y="84">1인용 밥솥</text></g>
+    <text x="80" y="14" font-size="7.5" fill="#3730A3" text-anchor="middle" font-weight="800">작은 제품이 인기를 끌어요</text></svg>`,
+  // 반려동물과 함께 사는 사람의 증가로 나타난 모습 — 집 · 가게 · 미용
+  petplus:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <g stroke="#4F46E5" stroke-width="2" fill="#fff"><rect x="6" y="28" width="44" height="44" rx="6"/><rect x="58" y="28" width="44" height="44" rx="6"/><rect x="110" y="28" width="44" height="44" rx="6"/></g>
+    <path d="M 16 48 L 28 38 L 40 48 L 40 62 L 16 62 Z" fill="#FDE68A" stroke="#D97706" stroke-width="1.5"/><circle cx="28" cy="56" r="3.5" fill="#7C3AED"/>
+    <g fill="#A78BFA"><rect x="64" y="36" width="10" height="8"/><rect x="78" y="36" width="10" height="8"/><rect x="64" y="50" width="10" height="8"/><rect x="78" y="50" width="10" height="8"/></g><path d="M 92 36 L 92 64" stroke="#0D9488" stroke-width="2"/>
+    <ellipse cx="128" cy="54" rx="9" ry="6" fill="#7C3AED"/><circle cx="138" cy="48" r="5" fill="#7C3AED"/><path d="M 116 40 L 124 46 M 124 40 L 116 46" stroke="#DB2777" stroke-width="2"/>
+    <g font-size="5.8" font-weight="800" text-anchor="middle" fill="#3730A3"><text x="28" y="84">화목한 생활</text><text x="80" y="84">물건을 파는 가게</text><text x="132" y="84">반려동물 미용사</text></g>
+    <text x="80" y="14" font-size="7.5" fill="#3730A3" text-anchor="middle" font-weight="800">반려동물과 함께 사는 사람이 늘어나면서</text></svg>`,
+  // 생긴 문제 — 부당한 대우 · 혼자 아플 때 · 이웃 간 갈등
+  shade:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F1F5F9"/>
+    <g stroke="#64748B" stroke-width="2" fill="#fff"><rect x="6" y="26" width="44" height="46" rx="6"/><rect x="58" y="26" width="44" height="46" rx="6"/><rect x="110" y="26" width="44" height="46" rx="6"/></g>
+    <circle cx="20" cy="46" r="7" fill="#FCD34D"/><circle cx="38" cy="46" r="7" fill="#A16207"/><path d="M 28 38 L 28 56" stroke="#DC2626" stroke-width="2" stroke-dasharray="3 2"/>
+    <path d="M 66 58 L 94 58 L 94 50 L 66 50 Z" fill="#E0E7FF" stroke="#475569" stroke-width="1.5"/><path d="M 72 42 Q 80 34 88 42" stroke="#475569" stroke-width="1.5" fill="none"/><text x="80" y="47" font-size="6" text-anchor="middle" fill="#475569">?</text>
+    <path d="M 118 36 L 126 42 L 118 48" stroke="#DC2626" stroke-width="2" fill="none"/><path d="M 124 36 L 132 42 L 124 48" stroke="#DC2626" stroke-width="2" fill="none"/><ellipse cx="140" cy="60" rx="7" ry="5" fill="#7C3AED"/>
+    <g font-size="5.6" font-weight="800" text-anchor="middle" fill="#334155"><text x="28" y="84">다르다는 까닭으로</text><text x="80" y="84">아플 때 혼자</text><text x="132" y="84">짖는 소리</text></g>
+    <text x="80" y="14" font-size="7.5" fill="#334155" text-anchor="middle" font-weight="800">다양한 문화가 확산되면서 생긴 문제</text></svg>`,
+  // 정리 — 두 면이 있는 세 카드
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EEF2FF"/>
+    <g stroke-width="2"><rect x="10" y="24" width="20" height="40" rx="3" fill="#FEF3C7" stroke="#D97706"/><rect x="30" y="24" width="20" height="40" rx="3" fill="#E2E8F0" stroke="#64748B"/>
+    <rect x="60" y="24" width="20" height="40" rx="3" fill="#FEF3C7" stroke="#D97706"/><rect x="80" y="24" width="20" height="40" rx="3" fill="#E2E8F0" stroke="#64748B"/>
+    <rect x="110" y="24" width="20" height="40" rx="3" fill="#FEF3C7" stroke="#D97706"/><rect x="130" y="24" width="20" height="40" rx="3" fill="#E2E8F0" stroke="#64748B"/></g>
+    <g font-size="9" text-anchor="middle"><text x="20" y="48">☀</text><text x="40" y="48">☁</text><text x="70" y="48">☀</text><text x="90" y="48">☁</text><text x="120" y="48">☀</text><text x="140" y="48">☁</text></g>
+    <g font-size="5.6" font-weight="800" text-anchor="middle" fill="#3730A3"><text x="30" y="80">외국인 이주민</text><text x="80" y="80">1인 가구</text><text x="130" y="80">반려동물</text></g>
+    <text x="80" y="13" font-size="7.5" fill="#3730A3" text-anchor="middle" font-weight="800">세 카드 모두 두 면이 있어요</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 두 면을 뒤집어 봐요 판 =====
+   카드 셋(외국인 이주민 · 1인 가구 · 반려동물과 함께 사는 사람)을 뒤집어 밝은 면과 그늘 면을 모두 본다.
+   ⭐ 덮인 카드는 뒤집으면 밝은 면부터 · 그다음부터는 두 면을 오간다 — 면을 바꾸는 자리는 tnTurn 단 하나.
+   ⭐ 본 면 기록은 state.tnSeen |= 단 하나(줄지 않음) · 두 면을 다 본 카드 수는 저장 0 — 기록에서 센다(tnBothN).
+   ⭐ 세 카드 모두 두 면을 보면 — 어느 카드도 한 면만 있지 않다.
+   ================================================================= */
+const TN_CARD = [                                           // 교과서 43~47쪽 — bright 는 좋아진 점(43~45쪽), shade 는 생긴 문제(46~47쪽)
+  {name:"외국인 이주민", ic:"🌏",
+   bright:{head:"좋아진 점", text:"외국인 이주민이 학생들에게 자신이 태어나고 자란 나라의 문화를 생생하게 알려 주는 교육 프로그램에 참여해요. 세계 여러 나라의 문화를 경험할 기회가 늘어났어요."},
+   shade:{head:"생긴 문제", text:"종교, 언어, 피부색 등이 다르다는 까닭으로 부당한 대우를 받는 사람들이 있어요. 낯선 문화에 대한 편견과 차별이 생기기도 해요."}},
+  {name:"1인 가구", ic:"🏠",
+   bright:{head:"좋아진 점", text:"크기가 작은 가전제품이 인기를 끌고, 상점에서 적은 양을 포장한 상품이 많아지고 있어요. 장보기, 세탁, 청소를 대신 해 주는 활동도 늘어나고 있어요."},
+   shade:{head:"생긴 문제", text:"혼자 사는 사람들은 외로움이나 불안함을 느끼기도 해요. 건강이나 안전에 문제가 생겼을 때 주변에 도움을 청할 사람이 없어 어려움을 겪기도 해요."}},
+  {name:"반려동물과 함께 사는 사람", ic:"🐾",
+   bright:{head:"좋아진 점", text:"반려동물과 함께 지내며 마음의 안정을 찾고 화목하게 생활해요. 반려동물 미용사, 수의사, 반려동물 훈련사처럼 관련 있는 직업도 늘어나고 있어요."},
+   shade:{head:"생긴 문제", text:"짖는 소리나 발소리, 배설물, 냄새 때문에 이웃 간에 갈등이 생기기도 해요. 버려지는 동물이 생기는 문제도 있어요."}}
+];
+const TN_N = 3;                                             // 카드 셋
+const TN_COVER = -1;                                        // 아직 뒤집지 않은 카드
+const TN_BRIGHT = 0;                                        // 밝은 면 — 좋아진 점
+const TN_SHADE = 1;                                         // 그늘 면 — 생긴 문제
+const TN_FACE_NAME = ["밝은 면", "그늘 면"];
+const TN_PICK = [
+  {mark:"가", text:"혼자서 이용할 수 있는 운동 기구",   why:"집에서 혼자 운동하고 싶은 사람에게 알맞을 수 있어요."},
+  {mark:"나", text:"아침에 잠을 깨워 주는 시계",       why:"아침에 깨워 줄 사람이 없는 사람에게 알맞을 수 있어요."},
+  {mark:"다", text:"집안일을 도와주는 로봇",           why:"혼자서 집안일을 모두 해야 하는 사람에게 알맞을 수 있어요."}
+];
+const TN_SAY_ALL = "세 카드의 두 면을 모두 봤어요. 이제 판을 읽어 봐요.";
+const TN_SAY_ORDER_R = "먼저 세 카드를 뒤집어 두 면을 모두 봐요.";
+const TN_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const TN_SAY_ORDER_P = "먼저 판을 읽어 봐요.";
+const TN_SAY_PICKDONE = "이미 제품을 골랐어요. 친구가 고른 제품과 견주어 봐요.";
+const TN_SAY_ORDER_FIN = "먼저 1인 가구에 인기 있을 것 같은 제품을 골라 봐요.";
+const TN_READQ = [
+  "밝은 면만 있는 카드도 있어요. 다양한 문화가 확산되면 좋은 점만 생겨요",
+  "그늘 면이 있는 카드는 나쁜 문화예요. 그늘 면이 있는 문화는 없애야 해요",
+  "세 카드 모두 두 면이 있어요. 다양한 문화가 확산되면서 좋은 영향과 함께 문제도 나타나요"
+];
+const TN_READ_OK = 2;
+const TN_READ_BAD = "카드마다 밝은 면과 그늘 면을 몇 개 보았는지 다시 읽어 봐요.";
+const TN_FINQ = [
+  "다양한 문화가 확산되면서 사람들은 원하는 문화를 누리며 살 수 있게 되었지만, 낯선 문화에 편견을 갖고 차별하는 문제가 생기기도 해요",
+  "다양한 문화가 확산되면서 우리 사회에는 아무 문제도 생기지 않았어요",
+  "다양한 문화가 확산되면서 사람들이 누릴 수 있는 문화가 줄어들었어요"
+];
+const TN_FIN_OK = 0;
+const TN_FIN_BAD = "세 카드의 밝은 면과 그늘 면을 다시 떠올려 봐요.";
+
+function tnCardOf(k){ return TN_CARD[k]; }                                    // TN_CARD 를 읽는 자리는 여기 단 하나
+function tnPickOf(p){ return TN_PICK[p]; }                                    // TN_PICK 을 읽는 자리는 여기 단 하나
+function tnCards(){ return [...Array(TN_N).keys()]; }
+function tnBit(k,f){ return 1 << (k*2 + f); }
+function tnSaw(st,k,f){ return (st.tnSeen & tnBit(k,f)) !== 0; }
+function tnTurn(st,k){ const face = st.tnFace[k]; st.tnFace[k] = face===TN_BRIGHT?TN_SHADE:TN_BRIGHT; }   // ⭐ 면을 바꾸는 자리 단 하나
+function tnBoth(st,k){ return tnSaw(st,k,TN_BRIGHT) && tnSaw(st,k,TN_SHADE); }  // ★ 두 면을 다 본 카드인지 — 한 줄로
+function tnBothN(st){ return tnCards().filter(k => tnBoth(st,k)).length; }
+function tnAll(st){ return tnBothN(st) === TN_N; }
+function tnSeenN(st){ let n = 0; for(const k of tnCards()) for(const f of [TN_BRIGHT,TN_SHADE]) if(tnSaw(st,k,f)) n++; return n; }
+function tnFaceText(st,k){ const C = tnCardOf(k), f = st.tnFace[k]; return f===TN_BRIGHT ? C.bright : C.shade; }
+function tnLine(st,k){
+  const C = tnCardOf(k), F = tnFaceText(st,k), N = tnBothN(st);
+  const tail = tnAll(st) ? ` — 세 카드 모두 두 면을 봤어요. 판을 읽어 봐요.` : ``;
+  return `「${C.name}」 카드의 ${TN_FACE_NAME[st.tnFace[k]]} — ${F.head}: ${F.text} 두 면을 다 본 카드 ${N} / ${TN_N}${tail}`;
+}
+function tnStage(st){
+  if(!tnAll(st)) return "turn";
+  if(st.tnRead == null) return "read";
+  if(st.tnPick == null) return "pick";
+  if(st.tnFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 카드 셋 · 본 면 표시 */
+function tnCardHTML(st,k){
+  const C = tnCardOf(k), f = st.tnFace[k];
+  const face = f===TN_COVER ? `<div class="tn-face">아직 뒤집지 않았어요. 뒤집어 봐요.</div>`
+    : `<div class="tn-face"><b>${TN_FACE_NAME[f]} · ${tnFaceText(st,k).head}</b>${tnFaceText(st,k).text}</div>`;
+  const seen = `<div class="tn-seen">${[TN_BRIGHT,TN_SHADE].map(s => `<span data-s="${s}" data-on="${tnSaw(st,k,s) ? 1 : 0}">${TN_FACE_NAME[s]}</span>`).join('')}</div>`;
+  return `<div class="tn-card" data-k="${k}" data-face="${f}" data-both="${tnBoth(st,k) ? 1 : 0}"><div class="tn-name">${C.ic} ${C.name}</div>${face}${seen}
+    <button class="tn-btn" data-k="${k}" onclick="tnFlip(${k})">카드 뒤집기</button></div>`;
+}
+function tnBoard(st){
+  return `<div class="tn-board" data-both="${tnBothN(st)}" data-seen="${tnSeenN(st)}">
+    <div class="tn-title">세 카드를 뒤집어 밝은 면과 그늘 면을 모두 살펴봐요</div>
+    <div class="tn-cards">${tnCards().map(k => tnCardHTML(st,k)).join('')}</div></div>`;
+}
+function tnPicks(st){
+  return `<div class="tn-picks">${[0,1,2].map(p=>`<button class="tn-pk" data-p="${p}" onclick="tnChoose(${p})"><b>${tnPickOf(p).mark}</b> ${tnPickOf(p).text}</button>`).join('')}</div>`;
+}
+function tnHelp(st){
+  return `<div class="tn-help"><b>카드 뒤집기</b>를 누르면 <b>밝은 면</b>(좋아진 점)이 먼저 보여요.<br>
+    한 번 더 누르면 <b>그늘 면</b>(생긴 문제)이 보여요.<br>
+    세 카드의 <b>두 면을 모두</b> 본 뒤 <b>판을 읽어</b> 봐요.</div>`;
+}
+function tnPanel(st){
+  const stage = tnStage(st);
+  let ask = '';
+  if(stage === "turn"){
+    ask = `<div class="tn-ask" data-step="turn"><b>다양한 문화가 확산되면서 우리 사회에는 어떤 영향이 나타났을까요? 세 카드를 뒤집어 두 면을 모두 봐요.</b></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="tn-ask" data-step="read"><b>세 카드의 두 면을 모두 보니 무엇을 알 수 있을까요?</b>
+      <div class="tn-opts">${TN_READQ.map((t,i)=>`<button class="tn-opt" onclick="tnRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "pick"){
+    ask = `<div class="tn-ask" data-step="pick"><b>1인 가구에 인기 있을 것 같은 제품을 하나 골라 봐요.</b>${tnPicks(st)}</div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="tn-ask" data-step="fin"><b>오늘 살펴본 다양한 문화의 확산이 우리 사회에 미친 영향은 어떻게 정리할 수 있을까요?</b>
+      <div class="tn-opts">${TN_FINQ.map((t,i)=>`<button class="tn-opt" onclick="tnFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="tn-ask" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">세 카드 모두 밝은 면과 그늘 면이 있었어요. 다양한 문화가 확산되면서 우리 사회에는 좋은 영향과 함께 여러 가지 문제도 나타나요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">※ <b>반려동물로 다른 사람과 갈등을 겪은 경험을 이야기하는 일</b>, <b>다른 나라의 문화를 소개하는 교육 프로그램에 참여한 경험을 나누는 일</b>은 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`;
+  }
+  const tell = st.tnTell ? `<div class="tn-tell">${st.tnTell}</div>` : '';
+  const warn = st.tnMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.tnMsg}</div>` : '';
+  return `<div class="tn-wrap">
+    <div class="tn-head">두 면을 다 본 카드 <b>${tnBothN(st)}</b> / ${TN_N} · 본 면 ${tnSeenN(st)} / ${TN_N*2}</div>
+    ${tnBoard(st)}<div class="tn-side">${tnHelp(st)}${tell}</div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 카드 여섯 면의 말은 <b>교과서 43~47쪽 글과 그림 말을 줄여 옮긴 것</b>이에요. 제품 세 가지는 어느 것이 더 낫다고 <b>가리기 어려워서</b> 판은 정답을 정하지 않아요.</div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 사회 변화와 다양한 문화 · 주제② 다양한 문화에 대한 이해와 존중";
+const Q = [
+  {stem:"「편견」의 뜻으로 알맞은 것은 무엇인가요?",
+   opts:["나와 다르고 익숙하지 않은 것에 대해 공정하지 못하고 한쪽으로 치우친 생각","다른 사람의 생각을 귀 기울여 듣는 태도","여러 나라의 문화를 골고루 경험하는 것","다른 지역에서 옮겨 와 사는 사람"], correct:0, pts:POINTS_BASIC,
+   h1:"「한쪽으로 치우친」이라는 말을 떠올려 봐요.", h2:"편견은 행동이 아니라 생각이에요.",
+   reason:"편견은 나와 다르고 익숙하지 않은 것에 대해 공정하지 못하고 한쪽으로 치우친 생각이에요."},
+  {stem:"「차별」의 뜻으로 알맞은 것은 무엇인가요?",
+   opts:["모든 사람을 똑같이 대하는 것","흩어져 널리 퍼지는 것","혼자서 생활하는 것","편견을 가지고 대상을 다르게 대우하는 것"], correct:3, pts:POINTS_BASIC,
+   h1:"편견이 행동으로 나타난 것이에요.", h2:"「다르게 대우하는」이라는 말을 찾아봐요.",
+   reason:"차별은 편견을 가지고 대상을 다르게 대우하는 것이에요."},
+  {stem:"교과서 44쪽 신문 기사에 나타난, 1인 가구가 많아지면서 달라진 모습으로 알맞은 것은 무엇인가요?",
+   opts:["크기가 큰 가전제품만 팔려요","크기가 작은 가전제품이 인기를 끌고, 적은 양을 포장한 상품이 많아지고 있어요","상점에서 적은 양을 포장한 상품이 사라지고 있어요","모든 사람이 넓은 집으로 옮겨 가고 있어요"], correct:1, pts:POINTS_BASIC,
+   h1:"혼자 살면 어떤 크기의 물건이 알맞을지 떠올려 봐요.", h2:"소형 식기세척기와 1인용 밥솥을 떠올려 봐요.",
+   reason:"1인 가구가 많아지면서 크기가 작은 가전제품이 인기를 끌고, 상점에서 적은 양을 포장한 상품이 많아지고 있어요."},
+  {stem:"반려동물과 관련 있는 직업이 아닌 것은 무엇인가요?",
+   opts:["반려동물의 건강을 돌봐 주는 수의사","반려동물의 문제 행동을 바로잡아 주는 반려동물 훈련사","비행기를 조종하는 조종사","반려동물의 미용과 청결을 관리해 주는 반려동물 미용사"], correct:2, pts:POINTS_BASIC,
+   h1:"반려동물을 돌보는 일인지 살펴봐요.", h2:"하늘을 나는 일은 반려동물과 관련이 없어요.",
+   reason:"반려동물과 관련 있는 직업에는 수의사, 반려동물 훈련사, 반려동물 미용사 등이 있어요. 조종사는 반려동물과 관련 있는 직업이 아니에요."},
+  {stem:"외국인 이주민이 늘어나면서 우리 사회에 나타난 좋은 영향으로 알맞은 것은 무엇인가요?",
+   opts:["다른 나라의 문화를 배울 기회가 줄어들었어요","우리 사회의 모든 문화가 한 가지로 같아졌어요","외국인 이주민은 우리 사회에서 일할 수 없게 되었어요","세계 여러 나라의 문화를 경험할 수 있는 기회가 늘어났어요"], correct:3, pts:POINTS_APPLY,
+   h1:"교과서 43쪽 교육 프로그램을 떠올려 봐요.", h2:"자신이 태어나고 자란 나라의 문화를 알려 주었어요.",
+   reason:"외국인 이주민이 늘어나면서 세계 여러 나라의 문화를 경험할 수 있는 기회가 늘어났어요."},
+  {stem:"혼자 사는 사람들이 겪는 어려움으로 알맞은 것은 무엇인가요?",
+   opts:["집안일을 도와줄 가족이 너무 많아요","아플 때 주변에 도움을 청할 사람이 없어 어려움을 겪기도 해요","반려동물을 기를 수 없어요","작은 가전제품을 살 수 없어요"], correct:1, pts:POINTS_APPLY,
+   h1:"교과서 47쪽 그림 속 말을 떠올려 봐요.", h2:"몸이 아플 때 돌봐 줄 사람을 떠올려 봐요.",
+   reason:"혼자 사는 사람들은 외로움이나 불안함을 느끼기도 하고, 건강이나 안전에 문제가 생겼을 때 도움을 청할 사람이 없어 어려움을 겪기도 해요."},
+  {stem:"교과서 47쪽 표에서, 반려동물로 이웃 간에 갈등이 생긴 까닭 가운데 첫째로 많은 것은 무엇인가요?",
+   opts:["짖는 소리나 발소리 같은 소음","배설물","냄새","물림"], correct:0, pts:POINTS_APPLY,
+   h1:"표의 순위 1을 찾아봐요.", h2:"귀로 듣는 것과 관련 있어요.",
+   reason:"반려동물로 이웃 간에 갈등이 생긴 까닭은 소음(짖음, 발소리)이 첫째이고, 배설물과 냄새가 그다음이에요."},
+  {stem:"판에서 세 카드를 뒤집어 두 면을 모두 본 뒤 알 수 있는 것은 무엇인가요?",
+   opts:["밝은 면만 있는 카드가 있어요","그늘 면이 있는 문화는 없애야 해요","다양한 문화가 확산되면서 좋은 영향과 함께 문제도 나타나요","다양한 문화는 우리 사회에 아무 영향도 주지 않아요"], correct:2, pts:POINTS_APPLY,
+   h1:"카드마다 몇 개의 면이 있었는지 떠올려 봐요.", h2:"세 카드 모두 두 면이 있었어요.",
+   reason:"세 카드 모두 밝은 면과 그늘 면이 있었어요. 다양한 문화가 확산되면서 좋은 영향과 함께 문제도 나타나요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 지난 시간 떠올리기
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">다양한 문화가 퍼지면 우리 사회는 어떻게 달라질까요?</h2>
+  <div class="ka-bub">지난 시간에는 우리 사회의 다양한 문화를 살펴봤어요. <b>외국인 이주민, 1인 가구, 반려동물</b>과 관련 있는 문화가 있었어요.</div>
+  <div class="ka-grp"><div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>외국인 이주민이 늘어나면서 나타난 문화</div></div>
+    <div class="sum-item"><span class="n">2</span><div>1인 가구가 늘어나면서 나타난 문화</div></div>
+    <div class="sum-item"><span class="n">3</span><div>반려동물과 함께 사는 사람이 늘어나면서 나타난 문화</div></div>
+  </div>
+    <div class="note">오늘은 <b>다양한 문화의 확산이 우리 사회에 미친 영향</b>을 알아봐요. 확산은 흩어져 널리 퍼지는 것이에요.</div>
+  </div>`});
+// 2 외국인 이주민의 좋은 영향 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 외국인 이주민</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">문화를 소개하는 사람들은 학생들에게 어떤 좋은 영향을 줄까요?</h2>
+  <div class="ka-bub">한국인과 결혼하여 우리나라에 살게 된 외국인 이주민들이 있어요. 이들은 중국, 베트남, 러시아, 볼리비아 등 세계 곳곳에서 왔어요. 이들 가운데 <span class="ka-emph">세계 여러 나라의 문화를 소개하는 교육 프로그램</span>에 참여하는 사람들이 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('teach','다양한 문화를 소개하는 교실')}</div>
+  ${st.revealed?`<div class="answer-box">· 학생들에게 <b>세계 여러 나라의 문화</b>를 소개해 줘요.<br>· 자신이 태어나고 자란 나라의 문화를 <b>생생하게</b> 알려 줘요.<br>· 우리 사회의 여러 분야에서 활동하는 외국인 이주민의 모습도 볼 수 있게 되었어요.</div>`
+    :`<div class="note">외국인 이주민이 참여하는 행사에서도 다양한 문화를 체험할 수 있어요. 먼저 생각해 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 1인 가구의 좋은 영향
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 1인 가구</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">1인 가구가 늘어나면서 생활 모습이 달라졌어요</h2>
+  <div class="ka-bub">1인 가구의 수가 늘어나면서 <span class="ka-emph">혼자 사는 사람들을 위한 시설이나 제품</span>이 늘어나고 있어요. 오늘날 우리 사회에는 부모와 자녀가 함께 사는 가구나 부부가 사는 가구보다 1인 가구가 더 많아요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('small','작은 제품')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>혼자 살기 때문에 비교적 <b>작은 집</b>에 사는 경우가 많아요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>크기가 작은 세탁기, 냉장고, 식기세척기처럼 <b>작은 가전제품</b>이 인기를 끌어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>상점에서 <b>적은 양을 포장한 상품</b>이 많아지고, 장보기·세탁·청소를 대신 해 주는 활동도 늘어나요.</div></div>
+  </div></div>`});
+// 4 반려동물의 좋은 영향 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 반려동물</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">반려동물과 관련 있는 직업에는 무엇이 있을까요?</h2>
+  <div class="ka-bub">사람들은 반려동물과 함께 지내면서 <span class="ka-emph">마음의 안정</span>을 찾기도 하고, 화목한 생활을 하는 데 도움을 얻기도 해요. 반려동물에게 필요한 물건을 만들고 사고파는 활동도 활발해졌어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('petplus','반려동물과 함께 사는 사람이 늘어나면서')}</div>
+  ${st.revealed?`<div class="answer-box">· <b>수의사</b> — 반려동물의 건강을 돌봐 줘요.<br>· <b>반려동물 훈련사</b> — 반려동물의 문제 행동을 바로잡아 줘요.<br>· <b>반려동물 미용사</b> — 반려동물의 미용과 청결을 관리해 줘요.</div>`
+    :`<div class="note">반려동물을 돌보는 사람들을 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  <div class="note">사람들은 자신이 원하는 <b>다양한 문화를 누리며</b> 살아갈 수 있게 되었어요. 누리고 선택할 수 있는 문화가 많아져 일상생활이 더욱 풍요로워졌어요.</div>
+  </div>`});
+// 5 생긴 문제 — 편견과 차별 · 1인 가구 · 반려동물
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 생긴 문제</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">다양한 문화가 확산되면서 여러 가지 문제가 생기기도 해요</h2>
+  <div class="ka-bub">나와 다르고 익숙하지 않은 것에 대해 공정하지 못하고 한쪽으로 치우친 <b>생각</b>을 <span class="ka-emph">편견</span>이라고 해요. 편견을 가지고 대상을 다르게 <b>대우하는 것</b>을 <span class="ka-emph">차별</span>이라고 해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('shade','생긴 문제')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>종교, 언어, 피부색 등이 다르다는 까닭으로 <b>부당한 대우</b>를 받는 사람들이 있어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>혼자 사는 사람들은 <b>외로움이나 불안함</b>을 느끼기도 하고, 아플 때 도움을 청할 사람이 없어 어려움을 겪기도 해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>반려동물로 <b>이웃 간에 갈등</b>이 생기거나 <b>버려지는 동물</b>이 생기기도 해요. 갈등이 생긴 까닭은 소음(짖음, 발소리), 배설물, 냄새 순으로 많아요.</div></div>
+  </div></div>`});
+// 6 꼭 기억해요 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 꼭 기억해요</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">빈칸에 들어갈 말은 무엇일까요?</h2>
+  <div class="ka-bub">① 우리 사회에 다양한 문화가 확산되면서 사람들은 자신이 원하는 다양한 문화를 ( 누리며 , 버리며 ) 살 수 있게 되었어요.<br>② 다양한 문화가 확산되면서 나와 다르고 익숙하지 않은 것에 대해 편견을 갖고 <span class="ka-emph">ㅊ ㅂ</span>하는 문제가 생기기도 해요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">① <b>누리며</b><br>② 편견을 갖고 <b>차별</b>하는 문제가 생기기도 해요.</div>`
+    :`<div class="note">좋아진 점과 생긴 문제를 떠올리며 먼저 생각해 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 스스로활동</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">두 면을 뒤집어 봐요</h2>
+  <div class="ka-grp" style="align-items:stretch">${tnPanel(st)}</div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">다양한 문화의 확산이 우리 사회에 미친 영향을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','두 면이 있는 세 카드')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>다양한 문화와 관련 있는 <b>활동이나 직업</b>이 늘어났어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>사람들은 자신이 원하는 <b>다양한 문화를 누리며</b> 살아갈 수 있게 되었어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>낯선 문화에 대한 <b>편견과 차별</b>, 1인 가구의 건강과 안전 문제, 반려동물로 생기는 문제가 나타나기도 해요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#4F46E5">다양한 문화의 확산으로 나타난 문제를 해결하기 위한 노력</b>을 알아봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"다양한 문화가 확산되면서 나타난 좋은 영향을 말할 수 있어요",st)}
+    ${selfCheck(1,"편견과 차별의 뜻을 구분하여 말할 수 있어요",st)}
+    ${selfCheck(2,"다양한 문화가 확산되면서 나타난 문제를 설명할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">다양한 문화의 확산이 우리 사회에 미친 영향을 알아봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">반려동물로 <b style="color:#4F46E5">다른 사람과 갈등을 겪은 경험</b>과 다른 나라의 문화를 소개하는 <b style="color:#4F46E5">교육 프로그램에 참여한 경험</b> 나누기는 교실 몫이에요. 친구들과 이야기해 봐요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g3_2_social_u1_l09";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  tnFace:Array(TN_N).fill(TN_COVER), tnSeen:0, tnRead:null, tnPick:null, tnFin:null, tnMsg:"", tnTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function tnDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 카드 뒤집기 */
+function tnFlip(k){
+  if(state.tnFin!=null) return;                                                         // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(k) || k<0 || k>=TN_N) return;                                     // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(tnAll(state)){ state.tnMsg = TN_SAY_ALL; playThud(); tnDraw(); return; }            // 가드③: 두 면을 다 본 뒤 — 판 불변
+  tnTurn(state,k);
+  state.tnSeen |= tnBit(k,state.tnFace[k]);                                              // ⭐ 본 면 기록 — 쌓는 자리 단 하나
+  state.tnMsg = ""; state.tnTell = tnLine(state,k); playBlip(); tnDraw();
+}
+/* 판 읽기 */
+function tnRead(i){
+  if(state.tnFin!=null) return;                                                         // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=TN_READQ.length) return;                          // 가드②
+  if(!tnAll(state)){ state.tnMsg = TN_SAY_ORDER_R; playThud(); tnDraw(); return; }       // 가드④: 다 보기 전 — 판 불변
+  if(state.tnRead!=null){ state.tnMsg = TN_SAY_READDONE; tnDraw(); return; }             // 가드⑤: 이미 정한 자리 — 판 불변
+  if(i!==TN_READ_OK){ state.tnMsg = TN_READ_BAD; playThud(); tnDraw(); return; }         // 가드⑥: 어긋난 답 — 판 불변
+  state.tnRead = i; state.tnMsg = ""; state.tnTell = `두 면을 다 본 카드 ${tnBothN(state)} / ${TN_N} — 어느 카드도 한 면만 있지 않았어요. 좋은 영향과 함께 문제도 나타나요.`; playBlip(); tnDraw();
+}
+/* 1인 가구에 인기 있을 것 같은 제품 고르기 — 정답 없음 */
+function tnChoose(p){
+  if(state.tnFin!=null) return;                                                         // 가드①
+  if(!Number.isInteger(p) || p<0 || p>=TN_PICK.length) return;                           // 가드②
+  if(state.tnRead==null){ state.tnMsg = TN_SAY_ORDER_P; playThud(); tnDraw(); return; }  // 가드⑦: 판을 읽기 전 — 판 불변
+  if(state.tnPick!=null){ state.tnMsg = TN_SAY_PICKDONE; tnDraw(); return; }             // 가드⑧: 이미 고른 제품 — 판 불변
+  state.tnPick = p; state.tnMsg = ""; state.tnTell = `${tnPickOf(p).mark}를 골랐어요. ${tnPickOf(p).why}`; playBlip(); tnDraw();
+}
+/* 마무리 */
+function tnFin(i){
+  if(state.tnFin!=null) return;                                                         // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=TN_FINQ.length) return;                           // 가드②
+  if(state.tnPick==null){ state.tnMsg = TN_SAY_ORDER_FIN; playThud(); tnDraw(); return; } // 가드⑨: 제품을 고르기 전 — 판 불변
+  if(i!==TN_FIN_OK){ state.tnMsg = TN_FIN_BAD; playThud(); tnDraw(); return; }           // 가드⑩: 어긋난 답 — 판 불변
+  state.tnFin = i; state.tnMsg = ""; playChime(); tnDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>

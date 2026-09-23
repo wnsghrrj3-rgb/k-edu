@@ -94,14 +94,14 @@ window.KEDU_MAP["g3_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_social_u1_l09",
+     "lessonId": "g3_social_u1_l09_v1",
      "n": "3",
      "title": "다양한 문화의 확산이 우리 사회에 미친 영향을 알아볼까요",
      "sub": "② 다양한 문화에 대한 이해와 존중",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/social/1단원_사회변화와다양한문화/g3_social_u1_l09_뒤집어봐요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
