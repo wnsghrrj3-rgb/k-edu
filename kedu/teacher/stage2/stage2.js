@@ -444,7 +444,7 @@
     self.IS = {}; self.rev = {}; self.frag = {}; self.idx = 0; self.allAtOnce = !!lsGet('kt2_all_at_once', false);
     self.still = !!lsGet('kt2_still', false); self.sound = lsGet('kt2_sound', true) !== false;
     self.classNames = lsGet('kt2_names', []); self.rosterSrc = self.classNames.length ? 'manual' : 'none';
-    self.loadRoster();
+    self.loadRoster(); self.cloudInit();
     self.started = Date.now(); self.stageEnter = {}; self.penStore = {};
     const hash = parseInt((global.location.hash || '').replace('#', ''), 10);
     if (!isNaN(hash)) self.idx = Math.max(0, Math.min(hash - 1, self.slides.length - 1));
@@ -461,7 +461,34 @@
     list.forEach(s => { s.included = !(p.skip || []).includes(s.id); });
     this.slides = list;
   };
-  Stage.prototype.savePlan = function () { this.plan.updated = new Date().toISOString().slice(0, 16); lsSet(this.planKey, this.plan); this.paintPlanBadge(); };
+  Stage.prototype.savePlan = function () { this.plan.updated = new Date().toISOString().slice(0, 19); lsSet(this.planKey, this.plan); this.paintPlanBadge(); this.pushPlanSoon(); };
+  // 20차 우리 반 판 서버 저장 — 승인 교사 본인 줄만(sql/setup_teacher_plans.sql #56). 표가 없거나 로그인 전이면 조용히 이 기기에만.
+  //   더 늦게 고친 쪽이 이긴다(plan.updated). 고칠 때마다 1.5초 모아 올림 · 되돌리기는 서버 줄도 지움.
+  Stage.prototype.cloudInit = function () {
+    const self = this; if (!global.supabase || typeof global.getKeduDb !== 'function') return Promise.resolve();
+    let db; try { db = global.getKeduDb(); } catch (e) { return Promise.resolve(); }
+    return db.auth.getUser().then(r => { const u = r && r.data && r.data.user; if (!u) return;
+      return db.from('teacher_plans').select('plan, updated_at').eq('teacher_id', u.id).eq('slug', self.slug).eq('lesson_key', self.key).maybeSingle().then(res => {
+        if (res.error) { self.cloud = 'off'; return; }
+        self._db = db; self._uid = u.id; self.cloud = 'on';
+        const row = res.data, localAt = self.plan.updated || '', srvAt = (row && row.plan && row.plan.updated) || '';
+        if (row && row.plan && srvAt > localAt) { self.adoptPlan(row.plan); self.toast('다른 기기에서 고친 우리 반 판을 불러왔어요'); }
+        else if (self.planDirty() && localAt > srvAt) self.pushPlan();
+        self.paintPlanBadge();
+      });
+    }).catch(() => { });
+  };
+  Stage.prototype.adoptPlan = function (p) {
+    this.plan = Object.assign({ order: null, skip: [], added: [], text: {}, imgs: {}, tnote: {}, res: {}, broken: {} }, p); lsSet(this.planKey, this.plan);
+    this.slides = this.slides.filter(s => !s._added); this.applyPlanKeepIdx(); this.paint(0, true);
+  };
+  Stage.prototype.pushPlanSoon = function () { if (this.cloud !== 'on') return; const self = this; clearTimeout(self._pt); self._pt = setTimeout(() => self.pushPlan(), 1500); };
+  Stage.prototype.pushPlan = function () {
+    const self = this; if (self.cloud !== 'on' || !self._db) return;
+    const q = self.planDirty() ? self._db.from('teacher_plans').upsert({ teacher_id: self._uid, slug: self.slug, lesson_key: self.key, plan: self.plan, updated_at: new Date().toISOString() }, { onConflict: 'teacher_id,slug,lesson_key' })
+      : self._db.from('teacher_plans').delete().eq('teacher_id', self._uid).eq('slug', self.slug).eq('lesson_key', self.key);
+    q.then(r => { self.cloudErr = !!(r && r.error); self.paintPlanBadge(); }, () => { self.cloudErr = true; self.paintPlanBadge(); });
+  };
   Stage.prototype.planDirty = function () { const p = this.plan; return !!((p.order && p.order.length) || (p.skip && p.skip.length) || (p.added && p.added.length) || Object.keys(p.text || {}).length || Object.keys(p.imgs || {}).length || Object.keys(p.tnote || {}).length || Object.keys(p.res || {}).length || Object.keys(p.broken || {}).length); };
   // 이 슬라이드에 맞는 자료 = 실측 자료층(fit_slides) ∪ 교사가 붙인 것 − 안 열리는 것
   Stage.prototype.fitFor = function (s) { const fit = new Set(s.suggested_extras || []); const mine = (this.plan.res && this.plan.res[s.id]) || []; const broken = this.plan.broken || {}; const list = this.extras.filter(e => fit.has(e.id) && !broken[e.id]); return list.concat(mine.filter(m => !broken[m.id])); };
@@ -473,8 +500,8 @@
   };
   Stage.prototype.markBroken = function (id) { this.plan.broken[id] = !this.plan.broken[id]; this.savePlan(); this.toast(this.plan.broken[id] ? '안 열리는 자료로 표시했어요 — 내보내기에 담겨요' : '다시 살렸어요'); };
   Stage.prototype.searchUrl = function () { const s = this.cur(); const t = ((s.data || {}).scene_title || (s.data || {}).title || this.meta.subtitle || ''); const q = (this.g + '학년 ' + (SUBJ_KO[this.s] || '') + ' ' + t).replace(/\*\*/g, ''); return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q); };
-  Stage.prototype.paintPlanBadge = function () { const b = doc.querySelector('#hud button[data-h="toc"]'); if (b) b.innerHTML = this.planDirty() ? '📑 목차 <small style="color:#FFD166">· 우리 반 판</small>' : '📑 목차'; };
-  Stage.prototype.resetPlan = function () { this.plan = { order: null, skip: [], added: [], text: {}, imgs: {}, tnote: {} }; try { global.localStorage.removeItem(this.planKey); } catch (e) { } this.slides = this.slides.filter(s => !s._added); const L = this.lessonsRef && this.lessonsRef[this.key]; if (L) { const order = (L.slides || []).map(s => s.id); this.slides.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)); } this.slides.forEach(s => s.included = true); this.idx = Math.min(this.idx, this.slides.length - 1); this.paintPlanBadge(); this.paint(0, true); this.toast('원래 차시로 되돌렸어요'); };
+  Stage.prototype.paintPlanBadge = function () { const b = doc.querySelector('#hud button[data-h="toc"]'); if (b) b.innerHTML = this.planDirty() ? '📑 목차 <small style="color:#FFD166">· 우리 반 판' + (this.cloud === 'on' ? (this.cloudErr ? ' ⚠' : ' ☁') : '') + '</small>' : '📑 목차'; b.title = this.cloud === 'on' ? (this.cloudErr ? '서버 저장 실패 — 이 기기에는 남아 있어요' : '우리 반 판이 계정에 저장돼요(다른 기기에서도 같은 판)') : '우리 반 판은 이 기기에만 저장돼요'; };
+  Stage.prototype.resetPlan = function () { this.plan = { order: null, skip: [], added: [], text: {}, imgs: {}, tnote: {} }; try { global.localStorage.removeItem(this.planKey); } catch (e) { } this.pushPlan(); this.slides = this.slides.filter(s => !s._added); const L = this.lessonsRef && this.lessonsRef[this.key]; if (L) { const order = (L.slides || []).map(s => s.id); this.slides.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)); } this.slides.forEach(s => s.included = true); this.idx = Math.min(this.idx, this.slides.length - 1); this.paintPlanBadge(); this.paint(0, true); this.toast('원래 차시로 되돌렸어요'); };
   // 글자 덮어쓰기 경로 = .kt2-body 안 자식 순번 사슬. 제목은 'title'
   Stage.prototype.pathOf = function (el) { if (el.classList.contains('kt2-title') || el.classList.contains('kt2-cover-title')) return 'title'; if (el.classList.contains('kt2-sub')) return 'sub'; const body = el.closest('.kt2-body'); if (!body) return null; const path = []; let n = el; while (n && n !== body) { const par = n.parentNode; path.unshift(Array.prototype.indexOf.call(par.children, n)); n = par; } return 'b.' + path.join('.'); };
   Stage.prototype.byPath = function (path) { const paper = doc.getElementById('kt2-paper'); if (path === 'title') return paper.querySelector('.kt2-title, .kt2-cover-title'); if (path === 'sub') return paper.querySelector('.kt2-sub'); let n = paper.querySelector('.kt2-body'); if (!n) return null; const idx = path.slice(2).split('.').map(Number); for (const i of idx) { n = n && n.children[i]; } return n || null; };

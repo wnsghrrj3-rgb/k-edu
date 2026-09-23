@@ -134,6 +134,17 @@ function runStage(sj, un, l) {
     w.supabase = {}; w.getKeduDb = () => ({ auth: { getUser: () => Promise.resolve({ data: { user: { id: 't1' } } }) }, from: (tbl) => { const q = { select: () => q, eq: () => q, order: () => q, limit: () => q, then: (fn) => Promise.resolve(tbl === 'class_codes' ? { data: [{ id: 'c1', label: '1학년 3반' }] } : { data: [{ nickname: '김하나', seat_no: 2 }, { nickname: '이둘', seat_no: 1 }] }).then(fn) }; return q; } });
     rosterChecks.push(st.loadRoster().then(() => { ok(st.rosterSrc === 'kedu' && st.classNames[0] === '1번 이둘' && st.classNames[1] === '2번 김하나', tag + ' 케이에듀 학급 명단 → 뽑기(번호순)'); st.openPick(); ok((d.querySelector('#ov-pick .pick-src').textContent || '').indexOf('1학년 3반') >= 0, tag + ' 뽑기 출처 표시'); st.closeOv(); }));
   } catch (e) { fail++; fails.push(tag + ' 명단 예외: ' + e.message); }
+  if (!global.__cloudTested && st.slides.length > 2) { global.__cloudTested = true;
+    const calls = []; const sid = st.slides[1].id;
+    const mk = (row, err) => () => ({ auth: { getUser: () => Promise.resolve({ data: { user: { id: 't1' } } }) }, from: (tbl) => { const q = { select: () => q, eq: () => q, maybeSingle: () => Promise.resolve(err ? { error: { code: '42P01' } } : { data: row }), upsert: (v, o) => { calls.push(['up', v, o]); return Promise.resolve({}); }, delete: () => { const dq = { eq: () => dq, then: (f, r) => { calls.push(['del']); return Promise.resolve({}).then(f, r); } }; return dq; } }; return q; } });
+    w.getKeduDb = mk(null, true); const origPlan = JSON.stringify(st.plan);
+    rosterChecks.push(st.cloudInit().then(() => { ok(st.cloud === 'off' && !st._db, '판 서버: 표 없음(42P01) → 조용히 이 기기에만');
+      w.getKeduDb = mk({ plan: { skip: [sid], updated: '2999-01-01T00:00:00' } }); return st.cloudInit(); }).then(() => {
+      ok(st.cloud === 'on' && st.plan.skip.indexOf(sid) >= 0 && !st.slides.find(x => x.id === sid).included, '판 서버: 서버 판이 더 새것 → 불러와 적용(건너뛰기)');
+      ok(/☁/.test(d.querySelector('#hud button[data-h="toc"]').innerHTML), '판 서버: 목차 배지 ☁');
+      st.pushPlan(); ok(calls.length && calls[0][0] === 'up' && calls[0][1].slug === st.slug && calls[0][1].lesson_key === st.key && calls[0][1].plan.skip[0] === sid && calls[0][2].onConflict === 'teacher_id,slug,lesson_key', '판 서버: 올리기 = 교사×차시 한 줄 upsert');
+      st.resetPlan(); return Promise.resolve(); }).then(() => new Promise(r => setTimeout(r, 0))).then(() => { ok(calls.some(c => c[0] === 'del'), '판 서버: 원래대로 되돌리기 → 서버 줄도 지움'); clearTimeout(st._pt); }));
+  }
   let zoomN = 0, misOk = true, bubN = 0, picN = 0, chipN = 0, illusN = 0, guideN = 0;
   let guard = 0, acts = 0, frags = 0;
   while (st.idx < st.slides.length - 1 && guard++ < 2000) {
