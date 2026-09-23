@@ -64,7 +64,7 @@ textarea{width:100%;height:160px;background:rgba(255,255,255,.05);border:1px sol
   // 슬라이드 하나를 실제 크기로 그리고 잰다 (Stage.paint 와 같은 뼈대, 조각 전부 펼침)
   function measure(slide, meta, unitTitle, revealed, grade){
     var paper = document.getElementById('kt2-paper'); document.body.className = 'subj-' + (window._subj || 'math') + ' tier-' + (grade <= 2 ? 'low' : grade <= 4 ? 'mid' : 'high');
-    var r = R.renderSlide(slide, { revealed: revealed, state: {}, meta: meta, unitTitle: unitTitle, classNames: [] });
+    var r = R.renderSlide(slide, { revealed: revealed, state: {}, meta: meta, unitTitle: unitTitle, classNames: [], guide: window._guide || [] });
     if (r.cover) { paper.className = 'kt2-paper cover'; paper.setAttribute('data-stage', slide.stage); paper.innerHTML = r.body; }
     else {
       paper.className = 'kt2-paper'; paper.setAttribute('data-stage', slide.stage);
@@ -90,7 +90,7 @@ textarea{width:100%;height:160px;background:rgba(255,255,255,.05);border:1px sol
     for (var si = 0; si < subs.length; si++) { var sj = subs[si]; window._subj = sj.subject;
       for (var ui = 0; ui < sj.units.length; ui++) { var un = sj.units[ui]; if (stop) break;
         window.LESSONS = {}; try { await loadScript('../' + un.file); } catch (e) { document.getElementById('msg').textContent = '못 읽음: ' + un.file; continue; }
-        for (var li = 0; li < un.lessons.length; li++) { var l = un.lessons[li]; var L = window.LESSONS[l.key]; if (!L) continue; var meta = L.meta || {};
+        for (var li = 0; li < un.lessons.length; li++) { var l = un.lessons[li]; var L = window.LESSONS[l.key]; if (!L) continue; var meta = L.meta || {}; window._guide = R.guideOf ? R.guideOf(L) : [];
           (L.slides || []).forEach(function(s, i){ slidesN++;
             [false, true].forEach(function(rev){ var m; try { m = measure(s, meta, un.title, rev, sj.grade); } catch (e) { m = { err: e.message }; }
               if (m.err || m.over > 2 || m.wover > 2 || m.paperOver > 2) { if (!rev || m.err) overN++; var verdict = m.err ? '예외' : (m.zoom < 0.85 || m.residual > 2 ? '설계 손볼 것' : '자동 축소로 해결'); if (verdict !== '자동 축소로 해결') badN++;

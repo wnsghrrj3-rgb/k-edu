@@ -53,8 +53,10 @@
   }
   function emojiCount(e, n, big) { return '<div class="emoji-row count' + (big ? ' big' : '') + '">' + Array.from({ length: Math.max(0, +n || 0) }, () => '<span>' + esc(e) + '</span>').join('') + '</div>'; }
   function dots(n) { return '<div class="dots">' + Array.from({ length: +n || 0 }, () => '<i></i>').join('') + '</div>'; }
-  function stack(n, cls) { return '<div class="stack ' + (cls || '') + '">' + Array.from({ length: +n || 0 }, () => '<div class="cube"></div>').join('') + '<div class="lbl">' + n + '</div></div>'; }
-  function staircase(a, b) { let h = '<div class="cubes">'; for (let n = a; n <= b; n++) h += stack(n); return h + '</div>'; }
+  function stack(n, cls, hero) { return '<div class="stack ' + (cls || '') + '">' + Array.from({ length: +n || 0 }, () => '<div class="cube"></div>').join('') + (hero ? '<div class="cb-hero">' + hero + '</div>' : '') + '<div class="lbl">' + n + '</div></div>'; }
+  function dodo() { const A = global.KT2_ART; return A && A.character ? A.character('🐿️') : ''; }
+  // 15차 — 연결 큐브 계단: 풀밭 위에 쌓고, 도토가 가장 높은 탑 꼭대기에 선다
+  function staircase(a, b) { let h = '<div class="cubes grass">'; for (let n = a; n <= b; n++) h += stack(n, '', n === b ? dodo() : ''); return h + '</div>'; }
   function sequence(seq, hl) {
     return '<div class="seq">' + seq.map((s, i) => {
       const blank = s === '?' || s === null || s === '';
@@ -107,6 +109,11 @@
     return '<div class="kid"><div class="face' + (chr ? ' chr' : '') + '">' + face + '</div><div class="lbl">' + md(label) + '</div>' + (k.delta ? '<div class="delta">' + esc(k.delta) + '</div>' : '') + '</div>';
   }
   function scenario(sc) { return '<div class="scenario"><div class="ic">' + esc(sc.icon || '💬') + '</div><div>' + md(sc.body || '') + '</div></div>'; }
+  // 15차 — 안내 인물: 그 차시에 나오는 그림 인물이 개념을 말해 주고(왼쪽), 문제 상황을 들려준다(오른쪽, 마주 봄)
+  function guideOf(lesson) { const A = global.KT2_ART, out = []; if (!A || !A.character || !lesson) return out; (lesson.slides || []).forEach(s => ((s.data || {}).kids || []).forEach(k => { if (k && k.face && A.character(k.face) && out.indexOf(k.face) < 0) out.push(k.face); })); return out.slice(0, 2); }
+  function guideSay(face, inner, side) { const A = global.KT2_ART; const chr = A && A.character ? A.character(face) : ''; if (!chr) return inner; return '<div class="guide-say ' + (side || 'l') + '"><div class="g-chr">' + chr + '</div><div class="g-bub">' + inner + '</div></div>'; }
+  function scenarioG(sc, g) { const f = g && (g[1] || g[0]); if (!f) return scenario(sc); return guideSay(f, '<div class="sc-body">' + (sc.icon ? '<span class="sc-ic">' + esc(sc.icon) + '</span>' : '') + md(sc.body || '') + '</div>', 'r q'); }
+  function symCards(list) { return '<div class="sym-cards">' + list.map(m => '<div class="sym"><b>' + md(String(m.symbol || '')) + '</b><span>' + md(String(m.meaning || '')) + '</span></div>').join('') + '</div>'; }
   function optionBody(o) {
     if (o.emoji && o.count !== undefined) return '<div class="em">' + Array.from({ length: o.count }, () => esc(o.emoji)).join('') + '</div>';
     if (o.ten_frame !== undefined) return tenFrame(o.ten_frame, 30);
@@ -153,7 +160,7 @@
         const first = lines.shift() || '';
         return { cover: true, body: (d.emoji ? '<div class="kt2-cover-emoji">' + esc(d.emoji) + '</div>' : '') + '<div class="kt2-cover-unit">' + esc(ctx.unitTitle || '') + '</div><div class="kt2-cover-title">' + md(first) + (lines.length ? '<span class="l2">' + lines.map(md).join('<br>') + '</span>' : '') + '</div>' + '<div class="kt2-cover-meta"><span>' + esc(ctx.meta.subtitle || ctx.meta.title || '') + '</span><span>⏱ ' + (ctx.meta.duration || 40) + '분</span>' + (ctx.meta.std ? '<span>' + esc(ctx.meta.std) + '</span>' : '') + '</div>' };
       }
-      case 'objective': push('<div class="objective-card">' + md(d.content || d.desc || '') + '</div>'); break;
+      case 'objective': push('<div class="objective-card">' + md(d.content || d.desc || '') + (Array.isArray(d.bullets) && d.bullets.length ? '<ol class="obj-list">' + d.bullets.map(b => '<li>' + md(String(b)) + '</li>').join('') + '</ol>' : '') + '</div>'); break;
       case 'question': push('<div class="big-q">' + md(d.content || d.question || '') + '</div>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
       case 'next_lesson': push('<div class="big-q soft">' + md(d.preview || '') + '</div>'); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); break;
       case 'review': {
@@ -178,7 +185,8 @@
         break;
       }
       case 'concept': {
-        push(image(d.img, title + ' ' + (d.content || ''))); if (d.content) push('<div class="big-text">' + md(d.content) + '</div>');
+        push(image(d.img, title + ' ' + (d.content || ''))); if (d.content) { const bt = '<div class="big-text">' + md(d.content) + '</div>'; push(ctx.guide && ctx.guide[0] && !d.kids_after ? guideSay(ctx.guide[0], bt, 'l') : bt); }
+        if (Array.isArray(d.symbol_meanings) && d.symbol_meanings.length) push(symCards(d.symbol_meanings));
         if (d.kids_after) push(picture('<div class="scene">' + d.kids_after.map(kidCard).join('') + '</div>', title + ' ' + (d.content || '')));
         if (d.items) push(tfRow(d.items));
         if (d.bidirect) push('<div class="bidirect">' + d.bidirect.map(l => l === '=' ? '<span class="eq">=</span>' : md(l)).join('<br>') + '</div>');
@@ -195,6 +203,7 @@
         if (d.linking_cube_staircase) push(staircase(d.linking_cube_staircase.range[0], d.linking_cube_staircase.range[1]));
         if (d.left && d.right) push('<div class="compare-cols"><div class="cmp">' + md(lbl(d.left)) + '</div><div class="cmp-sep">vs</div><div class="cmp">' + md(lbl(d.right)) + '</div></div>');
         if (d.items) push(tfRow(d.items)); if (d.content) push('<div class="center-text">' + md(d.content) + '</div>');
+        if (d.sub_text) push('<div class="center-text">' + md(d.sub_text) + '</div>');
         if (d.caption) push('<div class="center-text">' + md(d.caption) + '</div>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>');
         break;
       }
@@ -217,7 +226,7 @@
         if (d.sequence) push(sequence(d.sequence, d.highlight_pos));
         if (d.cards) push('<div class="num-cards">' + d.cards.map(c => '<span>' + esc(c) + '</span>').join('') + '</div>');
         if (d.target !== undefined && d.component === 'ten_frame') push('<div class="tf-item">' + tenFrame(0, 56) + '<div class="tf-cap">목표 ' + esc(d.target) + '</div></div>');
-        if (d.scenario) push(scenario(d.scenario));
+        if (d.scenario) push(scenarioG(d.scenario, ctx.guide));
         if (d.question) push('<div class="big-q">' + md(d.question) + '</div>');
         if (d.questions) push('<div class="q-list">' + d.questions.map(q => '<div class="big-q">' + md(lbl(q, 'q')) + '</div>').join('') + '</div>');
         if (d.challenge) push('<div class="big-q">' + md(d.challenge) + '</div>');
@@ -235,7 +244,7 @@
         break;
       }
       case 'multi': push(options(d.options || [], true, rev)); answerable = true; push('<div class="multi-hint">정답을 모두 골라요' + (d.expectedCount ? ' <b>' + esc(d.expectedCount) + '개</b>' : '') + '</div>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
-      case 'real_world': if (d.scenario) push(scenario(d.scenario)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); if (d.content) push('<div class="center-text">' + md(d.content) + '</div>'); if (d.question) push('<div class="big-q">' + md(d.question) + '</div>'); break;
+      case 'real_world': if (d.scenario) push(scenarioG(d.scenario, ctx.guide)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); if (d.content) push('<div class="center-text">' + md(d.content) + '</div>'); if (d.question) push('<div class="big-q">' + md(d.question) + '</div>'); break;
       case 'game': push('<ol class="steps">' + (d.steps || []).map(s => '<li>' + md(lbl(s)) + '</li>').join('') + '</ol>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
       case 'summary': {
         if (d.table) push(table(d.table)); if (d.ten_frame_strip) push(tfStrip(d.ten_frame_strip));
@@ -327,12 +336,12 @@
         push('<div class="i-tf">' + Array.from({ length: 10 }, (_, i) => '<div class="' + (i < n ? 'on' : '') + '" data-act="tf-cell" data-i="' + i + '"></div>').join('') + '</div>');
         push('<div class="i-num">' + n + '</div>');
         push('<div class="ctrls"><button class="btn" data-act="tf-minus">− 하나 빼기</button><button class="btn acc" data-act="tf-plus">+ 하나 더하기</button><button class="btn ghost" data-act="tf-reset" data-init="' + (d.start_count || 0) + '">처음으로</button></div>');
-        if (d.question) push('<div class="big-q">' + md(d.question) + '</div>');
+        if (d.question || d.prompt) push('<div class="big-q">' + md(d.question || d.prompt) + '</div>');
         break;
       }
       case 'interactive_cube_stairs': {
         const n = S.count !== undefined ? S.count : (d.start_count || 3);
-        push('<div class="i-cube-area">' + stack(n) + '</div>');
+        push('<div class="i-cube-area grass">' + stack(n, '', dodo()) + '</div>');
         push('<div class="ctrls"><button class="btn" data-act="cb-minus">− 하나 빼기</button><button class="btn acc" data-act="cb-plus">+ 하나 쌓기</button><button class="btn ghost" data-act="cb-reset" data-init="' + (d.start_count || 3) + '">처음으로</button></div>');
         if (d.question) push('<div class="big-q">' + md(d.question) + '</div>');
         break;
@@ -392,7 +401,7 @@
     self.key = q.l; self.slug = 'g' + q.g + '_' + q.s; self.g = +q.g; self.s = q.s; self.u = +q.u;
     const L = lessons[self.key]; self.lessonsRef = lessons;
     if (!L) { doc.getElementById('kt2-stage').innerHTML = '<div style="color:#fff;font-size:22px;text-align:center">차시를 찾지 못했어요: ' + esc(self.key) + '<br><a href="index.html" style="color:#9fb0c3">← 차시 목록</a></div>'; return; }
-    self.meta = L.meta || {};
+    self.meta = L.meta || {}; self.guide = guideOf(L);
     self.unitTitle = opts.unitTitle || '';
     self.slides = (L.slides || []).map(s => Object.assign({}, s, { included: true }));
     // 자료 병합(1세대 mergeResources 규약 그대로)
@@ -507,7 +516,7 @@
   Stage.prototype.paint = function (dir, keepFrag) {
     const s = this.cur(); if (!s) return;
     const paper = doc.getElementById('kt2-paper');
-    const r = renderSlide(s, { revealed: !!this.rev[s.id], state: this.state(s.id), meta: this.meta, unitTitle: this.unitTitle, classNames: this.classNames });
+    const r = renderSlide(s, { revealed: !!this.rev[s.id], state: this.state(s.id), meta: this.meta, unitTitle: this.unitTitle, classNames: this.classNames, guide: this.guide });
     this.curRender = r;
     const n = this.idx + 1, N = this.slides.length;
     const pos = this.slides.slice(0, this.idx + 1).filter(x => x.stage === s.stage).length, tot = this.slides.filter(x => x.stage === s.stage).length;
@@ -914,6 +923,6 @@
       global.KT2 = global.KT2 || {}; global.KT2.stage = new Stage({ params: q, lessons: global.LESSONS, unitTitle });
     })();
   }
-  global.KT2 = { renderSlide, Stage, md, esc, STAGES, STAGE_MIN, BLOCK_LABEL, boot, imgFallback };
+  global.KT2 = { renderSlide, Stage, md, esc, STAGES, STAGE_MIN, BLOCK_LABEL, boot, imgFallback, guideOf };
   if (doc && doc.getElementById && doc.getElementById('kt2-stage') && !global.KT2_NO_BOOT) { if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot); else boot(); }
 })(typeof window !== 'undefined' ? window : globalThis);

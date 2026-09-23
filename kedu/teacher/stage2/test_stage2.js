@@ -53,6 +53,38 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   ok(/numline hero/.test(r2.body) && /class="nl-hero" style="left:40%"/.test(r2.body) && (r2.body.match(/data-act="nl"/g) || []).length === 11, '징검다리: 지금 수(4) 돌 위에 도토 · 돌 11개 조작 그대로');
   const r3 = KT2.renderSlide({ id: 'z', block: 'interactive_number_line', data: { range: [0, 10], start: 4 } }, { revealed: false, state: { position: 7 }, meta: {}, unitTitle: 'U', classNames: [] });
   ok(/class="nl-hero" style="left:70%"/.test(r3.body), '징검다리: 움직이면 도토도 옮겨 선다 (7)'); }
+// ── 15차: 안내 인물 · 빠진 내용 되살리기 · 큐브 계단 ──
+{ const C = { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] };
+  const g = Object.assign({}, C, { guide: ['🐻', '🐧'] });
+  const a = KT2.renderSlide({ id: 'c', block: 'concept', data: { title: 't', content: '열이 **하나**' } }, g);
+  ok(/class="guide-say l"/.test(a.body) && /class="g-chr"><svg class="chr c-bear/.test(a.body) && /class="g-bub"><div class="big-text">열이 <strong>하나<\/strong><\/div>/.test(a.body), '안내 인물: 개념 글 = 첫 인물(곰이)이 왼쪽에서 말풍선으로');
+  const a0 = KT2.renderSlide({ id: 'c', block: 'concept', data: { title: 't', content: '열이 하나' } }, C);
+  ok(!/guide-say/.test(a0.body) && /<div class="big-text">열이 하나<\/div>/.test(a0.body), '안내 인물: 인물 없는 차시는 종전 그대로');
+  const b = KT2.renderSlide({ id: 'b', block: 'basic_problem', data: { title: 't', scenario: { icon: '🍬', body: '사탕이 5개' }, question: '몇 개?' } }, g);
+  ok(/class="guide-say r q"/.test(b.body) && /c-penguin/.test(b.body) && /class="sc-ic">🍬/.test(b.body), '안내 인물: 문제 상황 = 짝 인물(펭이)이 오른쪽에서 마주 보고');
+  const b1 = KT2.renderSlide({ id: 'b', block: 'real_world', data: { title: 't', scenario: { body: 'x' } } }, Object.assign({}, C, { guide: ['👧'] }));
+  ok(/guide-say r q/.test(b1.body) && /c-girl/.test(b1.body), '안내 인물: 짝이 없으면 첫 인물이 문제도 들려준다');
+  const kx = KT2.renderSlide({ id: 'k', block: 'concept', data: { title: 't', content: 'x', kids_after: [{ face: '👧', label: '하나' }] } }, g);
+  ok(!/guide-say/.test(kx.body), '안내 인물: 인물 장면(kids_after)이 있는 개념엔 겹쳐 세우지 않는다');
+  ok(JSON.stringify(KT2.guideOf({ slides: [{ data: { kids: [{ face: '🐰' }, { face: '👦' }] } }, { data: { kids: [{ face: '👦' }, { face: '🐿️' }, { face: '🐻' }] } }] })) === JSON.stringify(['👦', '🐿️']), '안내 인물: 차시의 kids 에서 그림 인물 둘(모르는 얼굴 건너뜀·중복 없음)');
+  const o = KT2.renderSlide({ id: 'o', block: 'objective', data: { title: 't', bullets: ['가', '나', '다'] } }, C);
+  ok((o.body.match(/<li>/g) || []).length === 3 && /obj-list/.test(o.body), '되살림: 목표 bullets → 번호 목록(빈 목표 카드였음)');
+  const sm = KT2.renderSlide({ id: 's', block: 'concept', data: { title: 't', content: 'x', symbol_meanings: [{ symbol: '자음자', meaning: 'ㄱ ㄴ' }, { symbol: '모음자', meaning: 'ㅏ ㅓ' }] } }, C);
+  ok((sm.body.match(/class="sym"/g) || []).length === 2 && /<b>자음자<\/b><span>ㄱ ㄴ<\/span>/.test(sm.body), '되살림: 개념 symbol_meanings → 낱말 카드');
+  const vd = KT2.renderSlide({ id: 'v', block: 'visual_demo', data: { title: 't', sub_text: '두 가지로 읽어요' } }, C);
+  ok(/두 가지로 읽어요/.test(vd.body), '되살림: visual_demo sub_text');
+  const tp = KT2.renderSlide({ id: 'p', block: 'interactive_ten_frame', data: { title: 't', start_count: 3, prompt: '4개를 더 눌러요' } }, C);
+  ok(/4개를 더 눌러요/.test(tp.body), '되살림: 십 배열판 prompt');
+  const cs = KT2.renderSlide({ id: 'q', block: 'interactive_cube_stairs', data: { title: 't', start_count: 3 } }, Object.assign({}, C, { state: { count: 5 } }));
+  ok(/i-cube-area grass/.test(cs.body) && (cs.body.match(/class="cube"/g) || []).length === 5 && /class="cb-hero"><svg class="chr c-squirrel/.test(cs.body) && /data-act="cb-plus"/.test(cs.body), '큐브 쌓기: 풀밭 위 탑(5) 꼭대기에 도토 · 조작 버튼 그대로');
+  const st2 = KT2.renderSlide({ id: 'w', block: 'concept', data: { title: 't', linking_cube_staircase: { range: [1, 5] } } }, C);
+  ok((st2.body.match(/cb-hero/g) || []).length === 1 && /cubes grass/.test(st2.body), '큐브 계단: 도토는 가장 높은 탑에만');
+}
+// 데이터에 있는데 무대가 안 그리는 필드 0 (메타·장식 필드만 예외) — 1·2세대 모두 목표 bullets 211 · symbol_meanings 232 를 버리고 있었다
+{ const src = fs.readFileSync(path.join(__dirname, 'stage2.js'), 'utf8') + fs.readFileSync(path.join(__dirname, 'stage2-activity.js'), 'utf8');
+  const ALLOW = new Set(['review.from', 'cover.subtitle', 'motivate.visual']); const miss = {};
+  files.forEach(f => { const L = loadLessons(path.join(DATA, f)); Object.keys(L).forEach(k => (L[k].slides || []).forEach(s => Object.keys(s.data || {}).forEach(key => { const t = s.block + '.' + key; if (ALLOW.has(t)) return; if (!new RegExp('d\\.' + key + '\\b|[\'"]' + key + '[\'"]').test(src)) miss[t] = (miss[t] || 0) + 1; }))); });
+  ok(Object.keys(miss).length === 0, '안 그리는 데이터 필드 0: ' + JSON.stringify(miss)); }
 let chrAll = 0;
 let brLeak = 0; files.forEach(f => { const L = loadLessons(path.join(DATA, f)); Object.keys(L).forEach(k => (L[k].slides || []).forEach(s => { const r = KT2.renderSlide(s, { revealed: false, state: {}, meta: L[k].meta || {}, unitTitle: 'U', classNames: [] }); if (/&lt;br|&lt;b&gt;/.test(r.body + r.title)) brLeak++; })); }); ok(brLeak === 0, '글자로 새는 <br>/<b> 슬라이드 ' + brLeak);
 console.log('① 렌더 전수 — 파일', files.length, '· 차시', nLessons, '· 슬라이드', nSlides, '× 2(정답 닫힘·열림)');
@@ -85,7 +117,7 @@ function runStage(sj, un, l) {
     w.supabase = {}; w.getKeduDb = () => ({ auth: { getUser: () => Promise.resolve({ data: { user: { id: 't1' } } }) }, from: (tbl) => { const q = { select: () => q, eq: () => q, order: () => q, limit: () => q, then: (fn) => Promise.resolve(tbl === 'class_codes' ? { data: [{ id: 'c1', label: '1학년 3반' }] } : { data: [{ nickname: '김하나', seat_no: 2 }, { nickname: '이둘', seat_no: 1 }] }).then(fn) }; return q; } });
     rosterChecks.push(st.loadRoster().then(() => { ok(st.rosterSrc === 'kedu' && st.classNames[0] === '1번 이둘' && st.classNames[1] === '2번 김하나', tag + ' 케이에듀 학급 명단 → 뽑기(번호순)'); st.openPick(); ok((d.querySelector('#ov-pick .pick-src').textContent || '').indexOf('1학년 3반') >= 0, tag + ' 뽑기 출처 표시'); st.closeOv(); }));
   } catch (e) { fail++; fails.push(tag + ' 명단 예외: ' + e.message); }
-  let zoomN = 0, misOk = true, bubN = 0, picN = 0, chipN = 0, illusN = 0;
+  let zoomN = 0, misOk = true, bubN = 0, picN = 0, chipN = 0, illusN = 0, guideN = 0;
   let guard = 0, acts = 0, frags = 0;
   while (st.idx < st.slides.length - 1 && guard++ < 2000) {
     const before = st.idx;
@@ -95,7 +127,7 @@ function runStage(sj, un, l) {
     if (st.idx % 2 === 0) try { st.revealAll(); st.revealAll(); } catch (e) { fail++; fails.push(tag + ' #' + (st.idx + 1) + ' revealAll 예외: ' + e.message); }
     try { st.next(); } catch (e) { fail++; fails.push(tag + ' #' + (st.idx + 1) + ' next 예외: ' + e.message); break; }
     if (st.idx === before) frags++;
-    { const p2 = d.querySelector('#kt2-paper'); zoomN += p2.querySelectorAll('.zoomable').length; bubN += p2.querySelectorAll('.kid.talk .bub').length; chrAll += p2.querySelectorAll('.kid .face.chr svg.chr').length; picN += p2.querySelectorAll('.picture .bd').length; chipN += p2.querySelectorAll('svg.tenframe.chips .chip').length; p2.querySelectorAll('.img-frame img').forEach(im => { w.KT2.imgFallback(im); }); illusN += p2.querySelectorAll('.img-frame.illus .bd').length; if (st.cur().block === 'misconception' && p2.querySelectorAll('.mis-card').length !== 2) misOk = false; if (p2.querySelector('.zoomable')) { const z = p2.querySelector('.zoomable'); st.toggleZoom(z); if (!z.classList.contains('zoomed')) misOk = misOk && false; st.toggleZoom(z); } }
+    { const p2 = d.querySelector('#kt2-paper'); zoomN += p2.querySelectorAll('.zoomable').length; bubN += p2.querySelectorAll('.kid.talk .bub').length; guideN += p2.querySelectorAll('.guide-say .g-chr svg.chr').length; chrAll += p2.querySelectorAll('.kid .face.chr svg.chr').length; picN += p2.querySelectorAll('.picture .bd').length; chipN += p2.querySelectorAll('svg.tenframe.chips .chip').length; p2.querySelectorAll('.img-frame img').forEach(im => { w.KT2.imgFallback(im); }); illusN += p2.querySelectorAll('.img-frame.illus .bd').length; if (st.cur().block === 'misconception' && p2.querySelectorAll('.mis-card').length !== 2) misOk = false; if (p2.querySelector('.zoomable')) { const z = p2.querySelector('.zoomable'); st.toggleZoom(z); if (!z.classList.contains('zoomed')) misOk = misOk && false; st.toggleZoom(z); } }
   }
   ok(st.idx === st.slides.length - 1, tag + ' 끝까지 넘김 (' + (st.idx + 1) + '/' + st.slides.length + ')');
   // 도구
@@ -134,11 +166,11 @@ function runStage(sj, un, l) {
   ok(misOk, tag + ' 오개념 두 칸·확대 토글');
   try { st.celebrate(); st.pop(); st.hudAct('still', d.querySelector('#hud button[data-h="still"]')); st.hudAct('still', d.querySelector('#hud button[data-h="still"]')); st.hudAct('sound', d.querySelector('#hud button[data-h="sound"]')); } catch (e) { fail++; fails.push(tag + ' 연출 도구 예외: ' + e.message); }
   ok(true, tag + ' 실주행 ' + acts + ' 조작 · ' + frags + ' 조각 · 확대 가능 ' + zoomN + ' · 말풍선 ' + bubN);
-  bubAll += bubN; picAll += picN; illusAll += illusN;
+  bubAll += bubN; picAll += picN; illusAll += illusN; guideAll += guideN;
   return { acts, frags };
 }
 const rosterChecks = [];
-let ran = 0, actsAll = 0, fragsAll = 0, bubAll = 0, picAll = 0, illusAll = 0;
+let ran = 0, actsAll = 0, fragsAll = 0, bubAll = 0, picAll = 0, illusAll = 0, guideAll = 0;
 manifest.subjects.forEach(sj => {
   // 과목마다: 각 단원의 첫 차시 + 조작 많은 차시 하나
   sj.units.forEach(un => {
@@ -150,6 +182,7 @@ manifest.subjects.forEach(sj => {
 Promise.all(rosterChecks).then(() => {
 console.log('② 무대 실주행 —', ran, '차시 부팅 · 슬라이드 안 조작', actsAll, '회 · 조각 공개', fragsAll, '회 · 말풍선', bubAll, '· 장면 무대', picAll, '· 사진 폴백 무대', illusAll, '· 그림 인물', chrAll);
 ok(chrAll > 0, '인물 층: 무대 실주행에서 그림 인물이 선다 (' + chrAll + ')');
+ok(guideAll > 0, '안내 인물: 무대 실주행에서 개념·문제 말풍선 인물이 선다 (' + guideAll + ')'); console.log('   안내 인물(개념·문제 말풍선)', guideAll);
 console.log('결과: PASS', pass, '· FAIL', fail);
 if (fail) { console.log(fails.slice(0, 40).join('\n')); process.exit(1); }
 });
