@@ -110,7 +110,7 @@
   }
   function scenario(sc) { return '<div class="scenario"><div class="ic">' + esc(sc.icon || '💬') + '</div><div>' + md(sc.body || '') + '</div></div>'; }
   // 15차 — 안내 인물: 그 차시에 나오는 그림 인물이 개념을 말해 주고(왼쪽), 문제 상황을 들려준다(오른쪽, 마주 봄)
-  function guideOf(lesson) { const A = global.KT2_ART, out = []; if (!A || !A.character || !lesson) return out; (lesson.slides || []).forEach(s => ((s.data || {}).kids || []).forEach(k => { if (k && k.face && A.character(k.face) && out.indexOf(k.face) < 0) out.push(k.face); })); return out.slice(0, 2); }
+  function guideOf(lesson) { const A = global.KT2_ART, out = []; if (!A || !A.character || !lesson) return out; (lesson.slides || []).forEach(s => ((s.data || {}).kids || []).forEach(k => { if (k && k.face && A.character(k.face) && (!A.isMain || A.isMain(k.face)) && out.indexOf(k.face) < 0) out.push(k.face); })); return out.slice(0, 2); }
   function guideSay(face, inner, side) { const A = global.KT2_ART; const chr = A && A.character ? A.character(face) : ''; if (!chr) return inner; return '<div class="guide-say ' + (side || 'l') + '"><div class="g-chr">' + chr + '</div><div class="g-bub">' + inner + '</div></div>'; }
   function scenarioG(sc, g) { const f = g && (g[1] || g[0]); if (!f) return scenario(sc); return guideSay(f, '<div class="sc-body">' + (sc.icon ? '<span class="sc-ic">' + esc(sc.icon) + '</span>' : '') + md(sc.body || '') + '</div>', 'r q'); }
   function symCards(list) { return '<div class="sym-cards">' + list.map(m => '<div class="sym"><b>' + md(String(m.symbol || '')) + '</b><span>' + md(String(m.meaning || '')) + '</span></div>').join('') + '</div>'; }

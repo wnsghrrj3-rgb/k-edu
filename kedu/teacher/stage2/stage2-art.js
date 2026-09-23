@@ -138,10 +138,104 @@
       + '<circle cx="64" cy="64" r="28" fill="#D9822B"/><ellipse cx="64" cy="76" rx="15" ry="11" fill="#F6D2A8"/><ellipse cx="64" cy="70" rx="4" ry="3" fill="#4A2E17"/>'
       + EYES(53, 75, 60, 4.8) + CHEEKS(44, 84, 72) + MOUTH(64, 77, '#4A2E17') + '</g>'
   };
-  const FACE_CHR = { '🐻': 'bear', '🐧': 'penguin', '👧': 'girl', '👦': 'boy', '🐿️': 'squirrel', '🐿': 'squirrel' };
-  function character(face) {
-    const k = FACE_CHR[String(face || '').trim()]; if (!k) return '';
-    return '<svg class="chr c-' + k + '" viewBox="0 0 140 160" width="150" height="171" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' + face + '">' + CHR[k]() + '</svg>';
+  // ── 16차 조연 층 — 장면 동물 여덟(토끼·부엉이·고양이·호랑이·오리·새·벌·나비) + 기분 얼굴 친구(🙂😊😀🤩😋🤔😮😟😐🙆).
+  //    주인공 다섯과 같은 틀(bodyg·head·eyes·mouth) — 숨쉬기·깜빡임·말할 때 입이 그대로 걸린다. 벌·나비는 날개(wing)가 팔랑.
+  //    조연은 안내 인물(개념·문제 말풍선)로 뽑지 않는다 — 그 자리는 주인공 다섯만(isMain).
+  Object.assign(CHR, {
+    rabbit: () => SHADOW
+      + '<g class="bodyg"><ellipse cx="44" cy="112" rx="8" ry="15" fill="#E6E1EE" transform="rotate(20 44 112)"/><ellipse cx="96" cy="112" rx="8" ry="15" fill="#E6E1EE" transform="rotate(-20 96 112)"/>'
+      + '<circle cx="101" cy="134" r="9" fill="#FFFFFF"/><ellipse cx="70" cy="119" rx="30" ry="31" fill="#F4F1F8"/><ellipse cx="70" cy="125" rx="18" ry="19" fill="#FFFFFF"/>'
+      + '<ellipse cx="55" cy="149" rx="14" ry="6" fill="#DCD5E6"/><ellipse cx="85" cy="149" rx="14" ry="6" fill="#DCD5E6"/></g>'
+      + '<g class="head"><ellipse cx="55" cy="22" rx="9.5" ry="27" fill="#F4F1F8" transform="rotate(-9 55 40)"/><ellipse cx="55" cy="24" rx="4.6" ry="19" fill="#F7B6C8" transform="rotate(-9 55 40)"/>'
+      + '<ellipse cx="85" cy="22" rx="9.5" ry="27" fill="#F4F1F8" transform="rotate(9 85 40)"/><ellipse cx="85" cy="24" rx="4.6" ry="19" fill="#F7B6C8" transform="rotate(9 85 40)"/>'
+      + '<circle cx="70" cy="64" r="32" fill="#F4F1F8"/><ellipse cx="70" cy="72" rx="4.5" ry="3.4" fill="#F07A9A"/>'
+      + EYES(58, 82, 60, 4.4) + CHEEKS(47, 93, 73) + MOUTH(70, 78, '#8A5A6A') + '</g>',
+    owl: () => SHADOW
+      + '<g class="bodyg"><ellipse cx="37" cy="110" rx="12" ry="27" fill="#7E5234" transform="rotate(12 37 110)"/><ellipse cx="103" cy="110" rx="12" ry="27" fill="#7E5234" transform="rotate(-12 103 110)"/>'
+      + '<ellipse cx="70" cy="112" rx="36" ry="40" fill="#A8744A"/><ellipse cx="70" cy="121" rx="22" ry="26" fill="#EBD6B4"/>'
+      + '<path d="M60 112 q5 5 10 0 q5 5 10 0 M58 124 q6 5 12 0 q6 5 12 0 M62 136 q4 4 8 0 q4 4 8 0" stroke="#C9A77C" stroke-width="2.4" fill="none"/>'
+      + '<ellipse cx="59" cy="151" rx="8" ry="4" fill="#F5A623"/><ellipse cx="81" cy="151" rx="8" ry="4" fill="#F5A623"/></g>'
+      + '<g class="head"><path d="M40 40 L43 12 L58 30 Z" fill="#8C5E3C"/><path d="M100 40 L97 12 L82 30 Z" fill="#8C5E3C"/>'
+      + '<circle cx="70" cy="56" r="35" fill="#A8744A"/><circle cx="56" cy="57" r="14.5" fill="#F6EAD6"/><circle cx="84" cy="57" r="14.5" fill="#F6EAD6"/>'
+      + EYES(56, 84, 57, 6.2) + CHEEKS(42, 98, 74)
+      + '<g class="mouth"><path class="m-closed" d="M65 68 L75 68 L70 77 Z" fill="#F5A623"/><g class="m-open" opacity="0"><path d="M65 66 L75 66 L70 71 Z" fill="#F5A623"/><path d="M66 74 L74 74 L70 80 Z" fill="#E0891A"/></g></g></g>',
+    cat: () => SHADOW
+      + '<g class="bodyg"><path d="M94 140 Q132 132 120 96" stroke="#F2A65A" stroke-width="11" fill="none" stroke-linecap="round"/><path d="M121 104 Q124 97 120 92" stroke="#D98433" stroke-width="11" fill="none" stroke-linecap="round"/>'
+      + '<ellipse cx="45" cy="113" rx="8" ry="15" fill="#E8964A" transform="rotate(18 45 113)"/><ellipse cx="95" cy="113" rx="8" ry="15" fill="#E8964A" transform="rotate(-18 95 113)"/>'
+      + '<ellipse cx="70" cy="120" rx="30" ry="30" fill="#F2A65A"/><ellipse cx="70" cy="126" rx="17" ry="19" fill="#FCE3C4"/>'
+      + '<ellipse cx="56" cy="149" rx="12" ry="6" fill="#FCE3C4"/><ellipse cx="84" cy="149" rx="12" ry="6" fill="#FCE3C4"/></g>'
+      + '<g class="head"><path d="M40 52 L44 16 L68 36 Z" fill="#F2A65A"/><path d="M46 44 L48 25 L61 37 Z" fill="#F7B6C8"/><path d="M100 52 L96 16 L72 36 Z" fill="#F2A65A"/><path d="M94 44 L92 25 L79 37 Z" fill="#F7B6C8"/>'
+      + '<circle cx="70" cy="62" r="33" fill="#F2A65A"/><path d="M62 31 L64 42 M70 30 L70 42 M78 31 L76 42" stroke="#D98433" stroke-width="4" stroke-linecap="round"/>'
+      + '<ellipse cx="70" cy="75" rx="15" ry="10.5" fill="#FCE3C4"/><path d="M66 69 L74 69 L70 74 Z" fill="#F07A9A"/>'
+      + '<path d="M50 72 L30 68 M50 77 L30 79 M90 72 L110 68 M90 77 L110 79" stroke="#7A4A2A" stroke-width="1.8" stroke-linecap="round"/>'
+      + EYES(57, 83, 59, 4.6) + CHEEKS(45, 95, 70) + MOUTH(70, 78, '#7A4A2A') + '</g>',
+    tiger: () => SHADOW
+      + '<g class="bodyg"><path d="M94 140 Q132 134 124 100" stroke="#F08A24" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M127 118 L118 116 M126 106 L117 106" stroke="#2B1D12" stroke-width="3.5" stroke-linecap="round"/>'
+      + '<ellipse cx="43" cy="113" rx="9" ry="16" fill="#E57E1C" transform="rotate(18 43 113)"/><ellipse cx="97" cy="113" rx="9" ry="16" fill="#E57E1C" transform="rotate(-18 97 113)"/>'
+      + '<ellipse cx="70" cy="119" rx="33" ry="31" fill="#F08A24"/><ellipse cx="70" cy="125" rx="19" ry="20" fill="#FFF3E2"/>'
+      + '<path d="M40 110 L50 112 M38 122 L49 122 M100 110 L90 112 M102 122 L91 122" stroke="#2B1D12" stroke-width="3.5" stroke-linecap="round"/>'
+      + '<ellipse cx="55" cy="149" rx="13" ry="6" fill="#FFF3E2"/><ellipse cx="85" cy="149" rx="13" ry="6" fill="#FFF3E2"/></g>'
+      + '<g class="head"><circle cx="42" cy="36" r="12" fill="#F08A24"/><circle cx="42" cy="36" r="6" fill="#2B1D12"/><circle cx="98" cy="36" r="12" fill="#F08A24"/><circle cx="98" cy="36" r="6" fill="#2B1D12"/>'
+      + '<circle cx="70" cy="62" r="35" fill="#F08A24"/><path d="M64 30 L66 40 M70 29 L70 41 M76 30 L74 40 M36 56 L46 58 M36 66 L45 65 M104 56 L94 58 M104 66 L95 65" stroke="#2B1D12" stroke-width="3.6" stroke-linecap="round"/>'
+      + '<ellipse cx="70" cy="76" rx="18" ry="12" fill="#FFF3E2"/><ellipse cx="70" cy="70" rx="5.5" ry="4" fill="#4A2E17"/>'
+      + EYES(56, 84, 58, 4.8) + CHEEKS(44, 96, 72) + MOUTH(70, 80, '#4A2E17') + '</g>',
+    duck: () => SHADOW
+      + '<g class="bodyg"><path d="M100 110 Q120 104 116 92 Q106 104 96 104 Z" fill="#F4BF2E"/><ellipse cx="70" cy="118" rx="35" ry="31" fill="#FFD34D"/><ellipse cx="88" cy="116" rx="16" ry="12" fill="#F4BF2E" transform="rotate(-15 88 116)"/>'
+      + '<path d="M44 149 l12 -4 l12 4 Z" fill="#F5902A"/><path d="M72 149 l12 -4 l12 4 Z" fill="#F5902A"/></g>'
+      + '<g class="head"><path d="M66 32 Q70 20 76 30 Q80 22 82 34" stroke="#F4BF2E" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="70" cy="62" r="31" fill="#FFD34D"/>'
+      + EYES(58, 82, 57, 4.4) + CHEEKS(46, 94, 69)
+      + '<g class="mouth"><ellipse class="m-closed" cx="70" cy="75" rx="15" ry="6" fill="#F5902A"/><g class="m-open" opacity="0"><ellipse cx="70" cy="72" rx="15" ry="5" fill="#F5902A"/><ellipse cx="70" cy="81" rx="12" ry="4.5" fill="#E07A1A"/><ellipse cx="70" cy="77" rx="8" ry="2.4" fill="#8A3030"/></g></g></g>',
+    bird: () => SHADOW
+      + '<g class="bodyg"><path d="M98 124 L126 116 L122 134 Z" fill="#3F8FD0"/><ellipse cx="70" cy="118" rx="32" ry="30" fill="#5AA9E6"/><ellipse cx="66" cy="126" rx="18" ry="18" fill="#DDEFFC"/>'
+      + '<ellipse cx="92" cy="114" rx="14" ry="11" fill="#3F8FD0" transform="rotate(-20 92 114)"/><path d="M60 146 l0 6 M58 152 l4 0 M80 146 l0 6 M78 152 l4 0" stroke="#F5902A" stroke-width="3" stroke-linecap="round"/></g>'
+      + '<g class="head"><path d="M64 34 Q66 22 72 30 Q74 22 78 32" stroke="#3F8FD0" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="70" cy="62" r="29" fill="#5AA9E6"/>'
+      + EYES(59, 81, 58, 4.3) + CHEEKS(48, 92, 70)
+      + '<g class="mouth"><path class="m-closed" d="M64 68 L76 68 L70 76 Z" fill="#F5A623"/><g class="m-open" opacity="0"><path d="M64 66 L76 66 L70 71 Z" fill="#F5A623"/><path d="M65 74 L75 74 L70 79 Z" fill="#E0891A"/></g></g></g>',
+    bee: () => SHADOW
+      + '<g class="bodyg"><ellipse class="wing wl" cx="46" cy="88" rx="17" ry="23" fill="#DDF1FF" stroke="#9CCBEA" stroke-width="2" opacity=".92" transform="rotate(-24 46 88)"/><ellipse class="wing wr" cx="94" cy="88" rx="17" ry="23" fill="#DDF1FF" stroke="#9CCBEA" stroke-width="2" opacity=".92" transform="rotate(24 94 88)"/>'
+      + '<path d="M70 150 L64 140 L76 140 Z" fill="#3B2A20"/><ellipse cx="70" cy="118" rx="31" ry="29" fill="#FFD34D"/>'
+      + '<path d="M41 110 Q70 102 99 110 L100 118 Q70 110 40 118 Z M40 128 Q70 120 100 128 L97 136 Q70 129 43 136 Z" fill="#3B2A20"/></g>'
+      + '<g class="head"><path d="M60 38 Q54 20 46 18 M80 38 Q86 20 94 18" stroke="#3B2A20" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="46" cy="18" r="4.5" fill="#3B2A20"/><circle cx="94" cy="18" r="4.5" fill="#3B2A20"/>'
+      + '<circle cx="70" cy="62" r="28" fill="#FFD34D"/>' + EYES(59, 81, 59, 4.3) + CHEEKS(49, 91, 70) + MOUTH(70, 76, '#6B4423') + '</g>',
+    butterfly: () => SHADOW
+      + '<g class="bodyg"><g class="wing wl"><ellipse cx="38" cy="88" rx="30" ry="26" fill="#F78FB3"/><ellipse cx="46" cy="126" rx="20" ry="17" fill="#FFD166"/><circle cx="34" cy="84" r="8" fill="#fff" opacity=".7"/></g>'
+      + '<g class="wing wr"><ellipse cx="102" cy="88" rx="30" ry="26" fill="#8FD3F7"/><ellipse cx="94" cy="126" rx="20" ry="17" fill="#B7E4A6"/><circle cx="106" cy="84" r="8" fill="#fff" opacity=".7"/></g>'
+      + '<ellipse cx="70" cy="116" rx="9" ry="32" fill="#6E4A80"/></g>'
+      + '<g class="head"><path d="M64 46 Q58 26 50 24 M76 46 Q82 26 90 24" stroke="#6E4A80" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="50" cy="24" r="4.5" fill="#6E4A80"/><circle cx="90" cy="24" r="4.5" fill="#6E4A80"/>'
+      + '<circle cx="70" cy="66" r="22" fill="#8E6AA0"/>' + EYES(62, 78, 64, 3.8) + CHEEKS(55, 85, 73) + MOUTH(70, 76, '#FFFFFF') + '</g>'
+  });
+  // 기분 얼굴 친구 — 🙂 류 이모지를 같은 틀의 아이로. 입 모양·눈썹만 기분마다 다르다.
+  const MOODS = {
+    smile: '<path class="m-closed" d="M63 80 Q70 87 77 80" stroke="#8A4B3A" stroke-width="2.6" fill="none" stroke-linecap="round"/>',
+    grin: '<path class="m-closed" d="M60 78 Q70 92 80 78 Z" fill="#8A3030"/>',
+    yum: '<g class="m-closed"><path d="M61 79 Q70 88 79 79" stroke="#8A4B3A" stroke-width="2.6" fill="none" stroke-linecap="round"/><ellipse cx="75" cy="85" rx="4.5" ry="5" fill="#F07A9A"/></g>',
+    think: '<path class="m-closed" d="M64 83 Q72 80 78 83" stroke="#8A4B3A" stroke-width="2.6" fill="none" stroke-linecap="round"/>',
+    wow: '<ellipse class="m-closed" cx="70" cy="83" rx="4.6" ry="5.8" fill="#8A3030"/>',
+    worry: '<path class="m-closed" d="M63 85 Q70 79 77 85" stroke="#8A4B3A" stroke-width="2.6" fill="none" stroke-linecap="round"/>',
+    flat: '<path class="m-closed" d="M63 83 L77 83" stroke="#8A4B3A" stroke-width="2.6" stroke-linecap="round"/>'
+  };
+  const BROWS = { think: '<path d="M52 53 Q58 49 64 52 M76 50 Q82 46 88 49" stroke="#3B2A20" stroke-width="2.6" fill="none" stroke-linecap="round"/>', worry: '<path d="M52 54 L63 51 M77 51 L88 54" stroke="#3B2A20" stroke-width="2.6" stroke-linecap="round"/>', wow: '<path d="M52 50 Q58 46 64 50 M76 50 Q82 46 88 50" stroke="#3B2A20" stroke-width="2.6" fill="none" stroke-linecap="round"/>' };
+  function friend(mood) {
+    return SHADOW
+      + '<g class="bodyg"><ellipse cx="44" cy="112" rx="7.5" ry="16" fill="#F7D2B0" transform="rotate(18 44 112)"/><ellipse cx="96" cy="112" rx="7.5" ry="16" fill="#F7D2B0" transform="rotate(-18 96 112)"/>'
+      + '<rect x="57" y="136" width="9" height="12" rx="3" fill="#F7D2B0"/><rect x="74" y="136" width="9" height="12" rx="3" fill="#F7D2B0"/>'
+      + '<path d="M46 102 Q70 92 94 102 L96 138 L44 138 Z" fill="#5CC08A"/><path d="M60 100 L70 110 L80 100" stroke="#fff" stroke-width="3" fill="none" opacity=".85"/>'
+      + '<ellipse cx="60" cy="150" rx="10" ry="5" fill="#4A4A4A"/><ellipse cx="80" cy="150" rx="10" ry="5" fill="#4A4A4A"/></g>'
+      + '<g class="head"><circle cx="70" cy="60" r="34" fill="#6B4423"/><ellipse cx="70" cy="66" rx="28" ry="29" fill="#F7D2B0"/>'
+      + '<path d="M41 62 Q40 30 70 29 Q100 30 99 62 Q94 46 70 44 Q46 46 41 62 Z" fill="#6B4423"/>'
+      + (BROWS[mood] || '') + EYES(58, 82, 64, 4.3) + CHEEKS(49, 91, 76)
+      + '<g class="mouth">' + (MOODS[mood] || MOODS.smile) + '<ellipse class="m-open" opacity="0" cx="70" cy="84" rx="5.5" ry="4.6" fill="#8A3030"/></g></g>';
   }
-  global.KT2_ART = { kindOf, backdrop, tenFrameChips, character, characters: Object.keys(CHR), kinds: Object.keys(BACK) };
+  ['smile', 'grin', 'yum', 'think', 'wow', 'worry', 'flat'].forEach(m => { CHR['friend-' + m] = () => friend(m); });
+  const FACE_CHR = { '🐻': 'bear', '🐧': 'penguin', '👧': 'girl', '👦': 'boy', '🐿️': 'squirrel', '🐿': 'squirrel',
+    '🐰': 'rabbit', '🐇': 'rabbit', '🦉': 'owl', '🐱': 'cat', '🐈': 'cat', '🐯': 'tiger', '🐅': 'tiger', '🦆': 'duck', '🐥': 'duck', '🐤': 'duck', '🐦': 'bird', '🐝': 'bee', '🦋': 'butterfly',
+    '🙂': 'friend-smile', '😊': 'friend-smile', '🙆': 'friend-smile', '😀': 'friend-grin', '😄': 'friend-grin', '🤩': 'friend-grin', '😋': 'friend-yum', '🤔': 'friend-think', '😮': 'friend-wow', '😲': 'friend-wow', '😟': 'friend-worry', '😢': 'friend-worry', '😐': 'friend-flat' };
+  const MAIN = ['bear', 'penguin', 'girl', 'boy', 'squirrel'];
+  const keyOf = (face) => FACE_CHR[String(face || '').trim()] || FACE_CHR[String(face || '').trim().replace(/\uFE0F/g, '')] || '';
+  function character(face) {
+    const k = keyOf(face); if (!k) return '';
+    return '<svg class="chr c-' + k + (MAIN.indexOf(k) < 0 ? ' cast' : '') + '" viewBox="0 0 140 160" width="150" height="171" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' + face + '">' + CHR[k]() + '</svg>';
+  }
+  function isMain(face) { return MAIN.indexOf(keyOf(face)) >= 0; }
+  global.KT2_ART = { kindOf, backdrop, tenFrameChips, character, isMain, faces: Object.keys(FACE_CHR), characters: Object.keys(CHR), kinds: Object.keys(BACK) };
 })(typeof window !== 'undefined' ? window : globalThis);

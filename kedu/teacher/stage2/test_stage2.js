@@ -46,9 +46,13 @@ files.forEach(f => {
 });
 ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + ': ' + emptyBodies.slice(0, 8).join(' | '));
 { const r = KT2.md('가<br>나 <b>다</b> <script>x</script>'); ok(r === '가<br>나 <strong>다</strong> &lt;script&gt;x&lt;/script&gt;', 'md: <br>·<b> 만 살리고 다른 태그는 글자로 (' + r + ')'); }
-{ const A = g0.KT2_ART; ['🐻', '🐧', '👧', '👦', '🐿️', '🐿'].forEach(f => ok(/^<svg class="chr c-/.test(A.character(f)) && /class="eyes"/.test(A.character(f)) && /class="m-open" opacity="0"/.test(A.character(f)), '인물 층: ' + f + ' → 그림 인물(눈·입 포함, 입은 기본 닫힘)')); ['🐰', '🙂', '', undefined].forEach(f => ok(A.character(f) === '', '인물 층: ' + f + ' → 이모지 그대로'));
-  const r1 = KT2.renderSlide({ id: 'x', block: 'motivate', data: { title: '공원', kids: [{ face: '👧', label: '하나 "같이 놀자!"' }, { face: '🐰', label: '토끼' }] } }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] });
-  ok((r1.body.match(/class="face chr"/g) || []).length === 1 && /<div class="face">🐰<\/div>/.test(r1.body), '인물 층: 아는 얼굴만 그림, 모르는 얼굴은 이모지 (kidCard)'); }
+{ const A = g0.KT2_ART; ['🐻', '🐧', '👧', '👦', '🐿️', '🐿'].forEach(f => ok(/^<svg class="chr c-/.test(A.character(f)) && /class="eyes"/.test(A.character(f)) && /class="m-open" opacity="0"/.test(A.character(f)), '인물 층: ' + f + ' → 그림 인물(눈·입 포함, 입은 기본 닫힘)')); ['🧺', '📦', '❓', '', undefined].forEach(f => ok(A.character(f) === '', '인물 층: ' + f + ' → 이모지 그대로'));
+  ['🐰', '🦉', '🐱', '🐯', '🦆', '🐦', '🐝', '🦋', '🙂', '😊', '😀', '🤩', '😋', '🤔', '😮', '😟', '😐', '🙆'].forEach(f => { const c = A.character(f); ok(/^<svg class="chr c-[a-z-]+ cast"/.test(c) && /class="eyes"/.test(c) && /class="bodyg"/.test(c) && /class="head"/.test(c) && /class="m-open" opacity="0"/.test(c) && !A.isMain(f), '조연 층: ' + f + ' → 그림 조연(눈·몸·고개·입, 안내 인물 아님)'); });
+  ['🐻', '🐧', '👧', '👦', '🐿️'].forEach(f => ok(A.isMain(f) && !/ cast"/.test(A.character(f)), '조연 층: 주인공 ' + f + ' 은 cast 아님'));
+  ok(/class="wing wl"/.test(A.character('🐝')) && /class="wing wr"/.test(A.character('🦋')), '조연 층: 벌·나비는 날개(wing) 좌우');
+  { const fs2 = ['🙂','😀','😋','🤔','😮','😟','😐'].map(f => A.character(f).replace(/aria-label="[^"]*"/, '').replace(/c-friend-[a-z]+/, '')); ok(new Set(fs2).size === 7, '조연 층: 기분 얼굴 일곱은 서로 다른 얼굴'); }
+  const r1 = KT2.renderSlide({ id: 'x', block: 'motivate', data: { title: '공원', kids: [{ face: '👧', label: '하나 "같이 놀자!"' }, { face: '🐰', label: '토끼' }, { face: '🧺', label: '바구니' }] } }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] });
+  ok((r1.body.match(/class="face chr"/g) || []).length === 2 && /c-rabbit cast/.test(r1.body) && /<div class="face">🧺<\/div>/.test(r1.body), '인물 층: 주인공·조연은 그림, 모르는 얼굴은 이모지 (kidCard)'); }
 { const r2 = KT2.renderSlide({ id: 'y', block: 'interactive_number_line', data: { range: [0, 10], start: 4 } }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] });
   ok(/numline hero/.test(r2.body) && /class="nl-hero" style="left:40%"/.test(r2.body) && (r2.body.match(/data-act="nl"/g) || []).length === 11, '징검다리: 지금 수(4) 돌 위에 도토 · 돌 11개 조작 그대로');
   const r3 = KT2.renderSlide({ id: 'z', block: 'interactive_number_line', data: { range: [0, 10], start: 4 } }, { revealed: false, state: { position: 7 }, meta: {}, unitTitle: 'U', classNames: [] });
