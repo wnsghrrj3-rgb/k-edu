@@ -84,14 +84,14 @@ window.KEDU_MAP["g3_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_social_u1_l08",
+     "lessonId": "g3_social_u1_l08_v1",
      "n": "2",
      "title": "우리 사회의 다양한 문화를 살펴볼까요",
      "sub": "② 다양한 문화에 대한 이해와 존중",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/social/1단원_사회변화와다양한문화/g3_social_u1_l08_깃발을꽂아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
