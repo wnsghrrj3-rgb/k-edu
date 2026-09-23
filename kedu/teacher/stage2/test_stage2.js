@@ -89,6 +89,19 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   const ALLOW = new Set(['review.from', 'cover.subtitle', 'motivate.visual']); const miss = {};
   files.forEach(f => { const L = loadLessons(path.join(DATA, f)); Object.keys(L).forEach(k => (L[k].slides || []).forEach(s => Object.keys(s.data || {}).forEach(key => { const t = s.block + '.' + key; if (ALLOW.has(t)) return; if (!new RegExp('d\\.' + key + '\\b|[\'"]' + key + '[\'"]').test(src)) miss[t] = (miss[t] || 0) + 1; }))); });
   ok(Object.keys(miss).length === 0, '안 그리는 데이터 필드 0: ' + JSON.stringify(miss)); }
+{ const C0 = { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] };
+  const bt = KT2.renderSlide({ id: 'bt', block: 'concept', data: { title: 't', items: [{ emoji: '🟦', count: 58, label: '58' }, { emoji: '🍎', count: 7, label: '7' }] } }, C0);
+  ok(/class="base-ten"/.test(bt.body) && (bt.body.match(/class="bt-t"/g) || []).length === 5 && (bt.body.match(/class="bt-o"/g) || []).length === 8 && (bt.body.match(/<span>🍎<\/span>/g) || []).length === 7, '수 모형: 20 넘는 개수는 십 막대 5·낱개 8, 작은 개수는 이모지 그대로');
+  const b2 = KT2.renderSlide({ id: 'b2', block: 'concept', data: { title: 't', items: [{ emoji: '🟥', count: 104 }] } }, C0);
+  ok((b2.body.match(/class="bt-h"/g) || []).length === 1 && (b2.body.match(/class="bt-t"/g) || []).length === 0 && (b2.body.match(/class="bt-o"/g) || []).length === 4, '수 모형: 104 = 백 1·십 0·일 4');
+  const cl = { id: 'cl', block: 'card_arrange', data: { title: 't', cards: ['책', '공', '휴지'], target: ['상자', '공', '기둥'] } };
+  const c1 = KT2.renderSlide(cl, C0); ok((c1.body.match(/class="ca-bin"/g) || []).length === 3 && (c1.body.match(/class="ca-chip/g) || []).length === 3 && !/i-card/.test(c1.body), '분류형 카드: 통 3 · 카드 3 (순서 맞추기 아님)');
+  const c2 = KT2.renderSlide(cl, { revealed: false, state: { assign: { 0: '상자', 1: '공', 2: '상자' } }, meta: {}, unitTitle: 'U', classNames: [] });
+  ok((c2.body.match(/ca-chip in wrong/g) || []).length === 1 && !/잘했어요/.test(c2.body), '분류형 카드: 틀린 통에 담은 카드 표시');
+  const c3 = KT2.renderSlide(cl, Object.assign({}, C0, { revealed: true })); ok((c3.body.match(/ca-chip in"/g) || []).length === 3, '분류형 카드: 정답 공개 = 모두 제 통에');
+  { const pq = { id: 'pq', block: 'basic_problem', data: { title: 't', question: '42 - 19 는?', answer: 23, note: '풀이: 12-9=3 → 23.' } };
+    ok(!/풀이/.test(KT2.renderSlide(pq, C0).body) && /풀이/.test(KT2.renderSlide(pq, Object.assign({}, C0, { revealed: true })).body), '풀이 쪽지: 정답 열 때만'); }
+  const c4 = KT2.renderSlide({ id: 'so', block: 'card_arrange', data: { cards: [3, 1, 2] } }, C0); ok(/class="i-cards"/.test(c4.body) && !/ca-bin/.test(c4.body), '순서 카드: 수 정렬은 종전 그대로'); }
 let chrAll = 0;
 let brLeak = 0; files.forEach(f => { const L = loadLessons(path.join(DATA, f)); Object.keys(L).forEach(k => (L[k].slides || []).forEach(s => { const r = KT2.renderSlide(s, { revealed: false, state: {}, meta: L[k].meta || {}, unitTitle: 'U', classNames: [] }); if (/&lt;br|&lt;b&gt;/.test(r.body + r.title)) brLeak++; })); }); ok(brLeak === 0, '글자로 새는 <br>/<b> 슬라이드 ' + brLeak);
 console.log('① 렌더 전수 — 파일', files.length, '· 차시', nLessons, '· 슬라이드', nSlides, '× 2(정답 닫힘·열림)');

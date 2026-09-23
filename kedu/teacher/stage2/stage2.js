@@ -51,7 +51,19 @@
     }
     return '<svg class="tenframe" width="' + (w + 4) + '" height="' + (h + 4) + '" viewBox="-2 -2 ' + (w + 4) + ' ' + (h + 4) + '" xmlns="http://www.w3.org/2000/svg">' + cells + '</svg>';
   }
-  function emojiCount(e, n, big) { return '<div class="emoji-row count' + (big ? ' big' : '') + '">' + Array.from({ length: Math.max(0, +n || 0) }, () => '<span>' + esc(e) + '</span>').join('') + '</div>'; }
+  // 18차 수 모형 — 스무 개가 넘으면 이모지를 줄줄이 늘어놓지 않고 백 판·십 막대·낱개로 그린다(58개 이모지가 한 장을 0.3배로 줄이던 것).
+  function baseTen(n, e) {
+    n = Math.max(0, Math.min(999, Math.round(+n || 0))); const H = Math.floor(n / 100), T = Math.floor(n % 100 / 10), O = n % 10;
+    const COL = { '🟥': '#F0656B', '🔴': '#F0656B', '🟦': '#4F8DF7', '🔵': '#4F8DF7', '🟩': '#3CB878', '🟨': '#F5C542', '🟧': '#F5902A', '🟪': '#9B6BE0' };
+    const c = COL[String(e || '').trim()] || 'var(--acc)'; const u = 13, g = 5; let x = 0, parts = '';
+    const cell = (cx, cy) => '<rect x="' + cx + '" y="' + cy + '" width="' + u + '" height="' + u + '" rx="2"/>';
+    for (let h = 0; h < H; h++) { let r = ''; for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) r += cell(x + j * u, i * u); parts += '<g class="bt-h">' + r + '</g>'; x += 10 * u + g * 2; }
+    for (let t = 0; t < T; t++) { let r = ''; for (let i = 0; i < 10; i++) r += cell(x, i * u); parts += '<g class="bt-t">' + r + '</g>'; x += u + g; }
+    if (O) { x += g; for (let o = 0; o < O; o++) parts += '<g class="bt-o">' + cell(x + (o % 2) * (u + 3), 10 * u - u - Math.floor(o / 2) * (u + 3)) + '</g>'; x += 2 * u + 3; }
+    const w = Math.max(u, x), h = 10 * u;
+    return '<div class="base-ten" title="' + n + '"><svg viewBox="-2 -2 ' + (w + 4) + ' ' + (h + 4) + '" width="' + Math.round((w + 4) * 1.35) + '" height="' + Math.round((h + 4) * 1.35) + '" style="--bt:' + c + '" xmlns="http://www.w3.org/2000/svg">' + parts + '</svg><div class="bt-cap">' + (H ? '<b>백</b> ' + H + ' ' : '') + (T ? '<b>십</b> ' + T + ' ' : '') + (O ? '<b>일</b> ' + O : '') + '</div></div>';
+  }
+  function emojiCount(e, n, big) { if ((+n || 0) > 20 || (/^(➕|➖|🟰|✅|✖️|✖|➗|❓|⭕|❌)$/.test(String(e || '').trim()) && (+n || 0) > 0)) return baseTen(n, e); return '<div class="emoji-row count' + (big ? ' big' : '') + '">' + Array.from({ length: Math.max(0, +n || 0) }, () => '<span>' + esc(e) + '</span>').join('') + '</div>'; }
   function dots(n) { return '<div class="dots">' + Array.from({ length: +n || 0 }, () => '<i></i>').join('') + '</div>'; }
   function stack(n, cls, hero) { return '<div class="stack ' + (cls || '') + '">' + Array.from({ length: +n || 0 }, () => '<div class="cube"></div>').join('') + (hero ? '<div class="cb-hero">' + hero + '</div>' : '') + '<div class="lbl">' + n + '</div></div>'; }
   function dodo() { const A = global.KT2_ART; return A && A.character ? A.character('🐿️') : ''; }
@@ -147,10 +159,13 @@
 
   // ───────────────────────── 슬라이드 렌더 ─────────────────────────
   // 반환 { title, sub, body(HTML), cls, frag(순차 공개 여부), answerable }
+  function isClassify(cards, target) { return !!(cards && target) && (target.length !== cards.length || !target.every(t => cards.indexOf(t) >= 0) || !cards.every(c => target.indexOf(c) >= 0)); }
   function renderSlide(slide, ctx) {
     let d = slide.data || {}; const rev = !!ctx.revealed; const S = ctx.state; const seed = hashSeed(slide.id || '');
     // 👉 로 시작하는 note 는 교사에게 주는 말이라 학생 화면(TV)에 안 띄우고 발문 띠(N)로 보낸다
     let teacherNote = '';
+    // 18차 — 「풀이:」 쪽지는 답을 말해 버린다. 정답(A)을 열 때만 보인다.
+    if (isStr(d.note) && /^\s*풀이\s*[:：]/.test(d.note) && !rev) d = Object.assign({}, d, { note: undefined });
     if (isStr(d.note) && /^\s*👉/.test(d.note)) { teacherNote = d.note.replace(/^\s*👉\s*/, ''); d = Object.assign({}, d, { note: undefined }); }
     const b = []; let title = d.title || ''; let sub = d.sub || ''; let cls = ''; let answerable = false;
     const push = (h) => { if (h) b.push(h); };
@@ -356,9 +371,21 @@
       }
       case 'card_arrange': {
         const init = d.cards || [3, 1, 5, 2, 4]; const target = d.target || [...init].sort((a, b) => a - b);
+        if (isClassify(init, target)) {
+          // 18차 분류형 — 카드마다 가야 할 통이 있다(순서 맞추기가 아니다). 카드를 누르고 통을 누른다.
+          const bins = target.filter((b, i) => target.indexOf(b) === i); const A = S.assign || {}; const ok = init.every((c, i) => A[i] === target[i]);
+          const at = (i) => rev ? target[i] : A[i];
+          push('<div class="center-text">' + md(String(d.instruction || '카드를 누르고, 알맞은 통을 눌러요').replace(/드래그해서|끌어서/g, '눌러서')) + '</div>');
+          push('<div class="ca-tray">' + init.map((c, i) => at(i) === undefined ? '<button class="ca-chip' + (S.sel === i ? ' sel' : '') + '" data-act="ca" data-i="' + i + '">' + md(String(c)) + '</button>' : '').join('') + '</div>');
+          push('<div class="ca-bins">' + bins.map(b => '<div class="ca-bin" data-act="ca-bin" data-b="' + esc(b) + '"><div class="ca-bin-h">' + md(String(b)) + '</div><div class="ca-bin-in">' + init.map((c, i) => at(i) === b ? '<button class="ca-chip in' + (rev || A[i] === target[i] ? '' : ' wrong') + '" data-act="ca" data-i="' + i + '">' + md(String(c)) + '</button>' : '').join('') + '</div></div>').join('') + '</div>');
+          if (ok) push('<div class="success">🎉 잘했어요! 모두 알맞은 통에 담았어요.</div>');
+          push('<div class="ctrls"><button class="btn ghost" data-act="ca-reset">처음부터</button></div>');
+          break;
+        }
         const order = S.order || init.slice(); const ok = JSON.stringify(order) === JSON.stringify(target);
+        const wordy = init.some(c => String(c).length > 2);
         push('<div class="center-text">' + md(d.instruction || '카드 두 장을 차례로 눌러 자리를 바꿔요. 작은 수부터 큰 수 순서로!') + '</div>');
-        push('<div class="i-cards">' + order.map((n, i) => '<div class="i-card' + (S.sel === i ? ' sel' : '') + (ok ? ' ok' : '') + '" data-act="ca" data-i="' + i + '">' + esc(n) + '</div>').join('') + '</div>');
+        push('<div class="i-cards' + (wordy ? ' wordy' : '') + '">' + (rev ? target : order).map((n, i) => '<div class="i-card' + (S.sel === i ? ' sel' : '') + (ok || rev ? ' ok' : '') + '" data-act="ca" data-i="' + i + '">' + esc(n) + '</div>').join('') + '</div>');
         if (ok) push('<div class="success">🎉 잘했어요! 순서대로 잘 놓았어요.</div>');
         push('<div class="ctrls"><button class="btn ghost" data-act="ca-reset">다시 섞기</button></div>');
         break;
@@ -610,15 +637,17 @@
       case 'nl-plus': S.position = Math.min(+btn.getAttribute('data-max'), (S.position !== undefined ? S.position : (d.start || 5)) + 1); rp(); break;
       case 'nl-minus': S.position = Math.max(+btn.getAttribute('data-min'), (S.position !== undefined ? S.position : (d.start || 5)) - 1); rp(); break;
       case 'nl-reset': S.position = +btn.getAttribute('data-init'); rp(); break;
-      case 'ca': { S.order = S.order || (d.cards || [3, 1, 5, 2, 4]).slice(); if (S.sel === undefined || S.sel === null) S.sel = i; else if (S.sel === i) S.sel = null; else { const t = S.order[S.sel]; S.order[S.sel] = S.order[i]; S.order[i] = t; S.sel = null; } rp(); { const target = d.target || (d.cards || [3, 1, 5, 2, 4]).slice().sort((a, b) => a - b); if (JSON.stringify(S.order) === JSON.stringify(target)) this.celebrate(); } break; }
-      case 'ca-reset': { const init = (d.cards || [3, 1, 5, 2, 4]).slice(); for (let k = init.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [init[k], init[j]] = [init[j], init[k]]; } S.order = init; S.sel = null; rp(); break; }
+      case 'ca': if (isClassify(d.cards, d.target)) { S.assign = S.assign || {}; if (S.assign[i] !== undefined) { delete S.assign[i]; S.sel = i; } else S.sel = (S.sel === i ? null : i); rp(); break; }
+        { S.order = S.order || (d.cards || [3, 1, 5, 2, 4]).slice(); if (S.sel === undefined || S.sel === null) S.sel = i; else if (S.sel === i) S.sel = null; else { const t = S.order[S.sel]; S.order[S.sel] = S.order[i]; S.order[i] = t; S.sel = null; } rp(); { const target = d.target || (d.cards || [3, 1, 5, 2, 4]).slice().sort((a, b) => a - b); if (JSON.stringify(S.order) === JSON.stringify(target)) this.celebrate(); } break; }
+      case 'ca-bin': { if (S.sel === undefined || S.sel === null) break; S.assign = S.assign || {}; S.assign[S.sel] = btn.getAttribute('data-b'); S.sel = null; rp(); { const c = d.cards || [], t = d.target || []; if (c.every((x, k) => S.assign[k] === t[k])) this.celebrate(); else this.pop(); } break; }
+      case 'ca-reset': if (isClassify(d.cards, d.target)) { S.assign = {}; S.sel = null; rp(); break; } { const init = (d.cards || [3, 1, 5, 2, 4]).slice(); for (let k = init.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [init[k], init[j]] = [init[j], init[k]]; } S.order = init; S.sel = null; rp(); break; }
       case 'timer': this.timerStart((+btn.getAttribute('data-min') || 3) * 60); break;
       case 'res-open': this.openRes(); break;
     }
   };
 
   // ───────────────────────── 연출·소리·확대 ─────────────────────────
-  const STAGGER = ['.tenframe .chip', '.picture .kid', 'svg.tenframe .cell.on', '.emoji-row span', '.stack .cube', '.seq > *', '.opt', '.point', '.steps li', '.examples .ex', '.ordinals .ord', '.tf-row .tf-item', '.tf-strip .tfs', '.flipgrid .flip', '.cq-grid .cq', '.scene .kid', '.arrow-flow > *', '.pairs > *', '.areas div', '.sa .row', '.signal .light', '.teams .team', '.trace-row .trace', '.num-table tr', '.num-cards span', '.number-panel span', '.numline .dot', '.dots i', '.i-tf div'];
+  const STAGGER = ['.base-ten', '.ca-chip', '.ca-bin', '.tenframe .chip', '.picture .kid', 'svg.tenframe .cell.on', '.emoji-row span', '.stack .cube', '.seq > *', '.opt', '.point', '.steps li', '.examples .ex', '.ordinals .ord', '.tf-row .tf-item', '.tf-strip .tfs', '.flipgrid .flip', '.cq-grid .cq', '.scene .kid', '.arrow-flow > *', '.pairs > *', '.areas div', '.sa .row', '.signal .light', '.teams .team', '.trace-row .trace', '.num-table tr', '.num-cards span', '.number-panel span', '.numline .dot', '.dots i', '.i-tf div'];
   const ZOOMABLE = '.tf-item, .opt, .img-frame, .scenario, .kid, .mis-card, .point, .bidirect, .num-table, .flip, .ex, .cz, .big-q, .steps li, .offline, .pr-card';
   Stage.prototype.decorate = function (paper, r) {
     // 목록 부품에 순번(--i) — 등장 연출이 차례로 흐르게
