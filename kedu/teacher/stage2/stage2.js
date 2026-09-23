@@ -541,7 +541,7 @@
       const km = paper.querySelector('[data-klab]');
       if (km) { const tool = km.getAttribute('data-klab'); let cfg = {}; try { cfg = JSON.parse(km.getAttribute('data-config') || '{}'); } catch (e) { } if (global.KLab) this.klabCleanup = global.KLab.mount(km, tool, cfg); else km.innerHTML = '<div class="legacy"><div class="t">🧊 케이랩 ' + esc(tool) + '</div><div class="d">교구 엔진이 이 페이지에 실리지 않았어요.</div></div>'; }
     }
-    this.decorate(paper, r); this.applyOverrides(); this.fitBody();
+    this.decorate(paper, r); this.applyOverrides(); this.fitBody(); this.refitLater(); { const self = this; setTimeout(() => self.fitBody(), 400); }
     { const self = this; paper.querySelectorAll('.img-frame img').forEach(im => { im.addEventListener('load', () => self.fitBody()); im.addEventListener('error', () => setTimeout(() => self.fitBody(), 0)); }); }
     this.paintPen(); this.paintHud(); this.paintTnote();
     { const b = doc.querySelector('#hud button[data-h="tnote"]'); if (b) b.textContent = (((s.data || {}).tnote || s.tnote || r.teacherNote) ? '👩‍🏫•' : '👩‍🏫'); }
@@ -634,15 +634,21 @@
   Stage.prototype.fitBody = function () {
     const paper = doc.getElementById('kt2-paper'); const body = paper && paper.querySelector('.kt2-body'); if (!body) return;
     const base = this.g <= 2 ? 1.06 : this.g <= 4 ? 1 : 0.95; body.style.zoom = '';
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 8; i++) {
       const avail = body.clientHeight, need = body.scrollHeight, availW = body.clientWidth, needW = body.scrollWidth;
       if (!avail || !need) return;
       if (need <= avail + 2 && needW <= availW + 2) return;
       const cur = parseFloat(body.style.zoom) || base;
-      const z = Math.max(0.45, cur * Math.min(avail / need, availW / needW) * 0.97);
+      const z = Math.max(0.35, cur * Math.min(avail / need, availW / needW) * 0.97);
       body.style.zoom = z; body.classList.add('shrunk');
-      if (z <= 0.46) return;
+      if (z <= 0.351) return;
     }
+  };
+  // 17차 — 글꼴이 늦게 오거나 창 크기가 바뀌면 다시 맞춘다(첫 측정이 대체 글꼴 기준이라 뒤늦게 넘치던 것).
+  Stage.prototype.refitLater = function () {
+    const self = this; if (self._refitBound) return; self._refitBound = true;
+    try { if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(() => self.fitBody()); } catch (e) { }
+    try { global.addEventListener('resize', () => { clearTimeout(self._rt); self._rt = setTimeout(() => self.fitBody(), 120); }); } catch (e) { }
   };
   Stage.prototype.toggleZoom = function (el) { const on = el.classList.contains('zoomed'); doc.querySelectorAll('#kt2-paper .zoomed').forEach(x => x.classList.remove('zoomed')); if (!on) { el.classList.add('zoomed'); this.pop(); } };
   Stage.prototype.tone = function (f, dur, vol, type) { if (!this.sound) return; try { const AC = global.AudioContext || global.webkitAudioContext; if (!AC) return; this.ac = this.ac || new AC(); const ac = this.ac; const o = ac.createOscillator(), g = ac.createGain(); o.type = type || 'sine'; o.frequency.value = f; g.gain.value = 0.0001; o.connect(g); g.connect(ac.destination); const t0 = ac.currentTime; o.start(t0); g.gain.exponentialRampToValueAtTime(vol || 0.08, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + (dur || 0.12)); o.stop(t0 + (dur || 0.12) + 0.02); } catch (e) { } };

@@ -78,9 +78,17 @@ textarea{width:100%;height:160px;background:rgba(255,255,255,.05);border:1px sol
     var paperOver = Math.max(0, paper.scrollHeight - paper.clientHeight);
     // fitBody 와 같은 계산
     var base = grade <= 2 ? 1.06 : grade <= 4 ? 1 : 0.95; var z = base;
-    for (var i = 0; i < 4; i++) { var a = body.clientHeight, n = body.scrollHeight, aw = body.clientWidth, nw = body.scrollWidth; if (n <= a + 2 && nw <= aw + 2) break; z = Math.max(0.45, z * Math.min(a / n, aw / nw) * 0.97); body.style.zoom = z; }
-    var residual = Math.max(0, body.scrollHeight - body.clientHeight);
-    return { over: over, wover: wover, paperOver: paperOver, zoom: z / base, residual: residual };
+    for (var i = 0; i < 8; i++) { var a = body.clientHeight, n = body.scrollHeight, aw = body.clientWidth, nw = body.scrollWidth; if (n <= a + 2 && nw <= aw + 2) break; z = Math.max(0.35, z * Math.min(a / n, aw / nw) * 0.97); body.style.zoom = z; if (z <= 0.351) break; }
+    var residual = Math.max(0, body.scrollHeight - body.clientHeight, body.scrollWidth - body.clientWidth);
+    // 17차 — 안쪽에서 잘리는 것: overflow 숨김 상자 안 넘침 · 종이 밖으로 나간 요소
+    var clip = [], pr = paper.getBoundingClientRect();
+    body.querySelectorAll('*').forEach(function(el){ var cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') return;
+      if ((cs.overflow === 'hidden' || cs.overflowY === 'hidden' || cs.overflowX === 'hidden') && el.clientHeight > 0 && (el.scrollHeight > el.clientHeight + 3 || el.scrollWidth > el.clientWidth + 3) && !el.matches('.klab-frame,.klab-frame *')) clip.push((el.className && el.className.baseVal === undefined ? String(el.className).split(' ')[0] : el.tagName) + '(안)');
+      if (cs.textOverflow === 'ellipsis' && el.scrollWidth > el.clientWidth + 2) clip.push('말줄임');
+    });
+    paper.querySelectorAll('.kt2-kicker,.kt2-title').forEach(function(el){ if (el.scrollWidth > el.clientWidth + 2) clip.push(String(el.className).split(' ')[0] + '(머리)'); });
+    body.querySelectorAll('.bub,.g-bub,.kid,.opt,.card,h2,h3,p,li,.big-text').forEach(function(el){ var r = el.getBoundingClientRect(); if (!r.width) return; if (r.top < pr.top - 1 || r.bottom > pr.bottom + 1 || r.left < pr.left - 1 || r.right > pr.right + 1) clip.push((String(el.className).split(' ')[0] || el.tagName) + '(밖)'); });
+    return { over: over, wover: wover, paperOver: paperOver, zoom: z / base, residual: residual, clip: clip };
   }
   async function run(){
     if (running) return; running = true; stop = false; rows = []; document.querySelector('#tbl tbody').innerHTML = ''; document.getElementById('out').value = '';
@@ -93,8 +101,8 @@ textarea{width:100%;height:160px;background:rgba(255,255,255,.05);border:1px sol
         for (var li = 0; li < un.lessons.length; li++) { var l = un.lessons[li]; var L = window.LESSONS[l.key]; if (!L) continue; var meta = L.meta || {}; window._guide = R.guideOf ? R.guideOf(L) : [];
           (L.slides || []).forEach(function(s, i){ slidesN++;
             [false, true].forEach(function(rev){ var m; try { m = measure(s, meta, un.title, rev, sj.grade); } catch (e) { m = { err: e.message }; }
-              if (m.err || m.over > 2 || m.wover > 2 || m.paperOver > 2) { if (!rev || m.err) overN++; var verdict = m.err ? '예외' : (m.zoom < 0.85 || m.residual > 2 ? '설계 손볼 것' : '자동 축소로 해결'); if (verdict !== '자동 축소로 해결') badN++;
-                rows.push({ slug: sj.slug, g: sj.grade, s: sj.subject, u: un.unit, key: l.key, title: l.title, n: i + 1, id: s.id, block: s.block, rev: rev, over: m.over, wover: m.wover, zoom: m.zoom, residual: m.residual, err: m.err, verdict: verdict }); } });
+              if (m.err || m.over > 2 || m.wover > 2 || m.paperOver > 2 || (m.clip && m.clip.length)) { if (!rev || m.err) overN++; var verdict = m.err ? '예외' : (m.residual > 2 || (m.clip && m.clip.length) ? '잘림' : m.zoom < 0.85 ? '설계 손볼 것' : '자동 축소로 해결'); if (verdict !== '자동 축소로 해결') badN++;
+                rows.push({ slug: sj.slug, g: sj.grade, s: sj.subject, u: un.unit, key: l.key, title: l.title, n: i + 1, id: s.id, block: s.block, rev: rev, over: m.over, wover: m.wover, zoom: m.zoom, residual: m.residual, err: m.err, clip: (m.clip||[]).join(','), verdict: verdict }); } });
           });
           done++; document.getElementById('pi').style.width = (done / total * 100) + '%';
           document.getElementById('stat').innerHTML = '<span>차시 <b>' + done + '</b>/' + total + '</span><span>슬라이드 <b>' + slidesN + '</b></span><span>넘침(축소 전) <b class="warn">' + overN + '</b></span><span>설계 손볼 것 <b class="bad">' + badN + '</b></span>';
@@ -106,9 +114,9 @@ textarea{width:100%;height:160px;background:rgba(255,255,255,.05);border:1px sol
   }
   function paintRows(){
     var tb = document.querySelector('#tbl tbody'); var seen = {}; var list = rows.filter(function(r){ var k = r.key + r.id + r.rev; if (seen[k]) return false; seen[k] = 1; return true; });
-    list.sort(function(a, b){ return (a.verdict === '설계 손볼 것' ? 0 : 1) - (b.verdict === '설계 손볼 것' ? 0 : 1) || (b.over - a.over); });
+    var rk = function(v){ return v === '예외' ? -1 : v === '잘림' ? 0 : v === '설계 손볼 것' ? 1 : 2; }; list.sort(function(a, b){ return rk(a.verdict) - rk(b.verdict) || (b.over - a.over); });
     tb.innerHTML = list.slice(0, 600).map(function(r, i){ return '<tr><td>' + (i + 1) + '</td><td>' + esc(r.slug + ' u' + r.u + ' ' + r.key) + '<br><span style="color:#8fa3b8">' + esc(r.title) + '</span></td><td>#' + r.n + ' ' + esc(r.id) + (r.rev ? ' <small>(정답 열림)</small>' : '') + '</td><td>' + esc(r.block) + '</td><td>' + (r.err ? '예외 ' + esc(r.err) : ('↓' + r.over + (r.wover ? ' →' + r.wover : '') + (r.paperOver ? ' 종이↓' + r.paperOver : ''))) + '</td><td>' + (r.zoom ? '×' + r.zoom.toFixed(2) : '-') + '</td><td class="' + (r.verdict === '설계 손볼 것' ? 'bad' : r.verdict === '예외' ? 'bad' : 'ok') + '">' + r.verdict + '</td><td><a href="stage.html?g=' + r.g + '&s=' + r.s + '&u=' + r.u + '&l=' + encodeURIComponent(r.key) + '#' + r.n + '" target="_blank">열기</a></td></tr>'; }).join('');
-    var md = '# 2세대 무대 넘침 점검 결과 (' + new Date().toISOString().slice(0, 16).replace('T', ' ') + ')\n\n넘침(축소 전) ' + rows.filter(function(r){ return !r.rev; }).length + ' · 설계 손볼 것 ' + list.filter(function(r){ return r.verdict !== '자동 축소로 해결'; }).length + '\n\n| 차시 | 슬라이드 | 블록 | 넘침 | 배율 | 판정 |\n|---|---|---|---|---|---|\n' + list.map(function(r){ return '| ' + r.slug + ' ' + r.key + ' | #' + r.n + ' ' + r.id + (r.rev ? '(정답)' : '') + ' | ' + r.block + ' | ' + (r.err ? '예외' : '↓' + r.over + (r.wover ? ' →' + r.wover : '')) + ' | ' + (r.zoom ? r.zoom.toFixed(2) : '-') + ' | ' + r.verdict + ' |'; }).join('\n');
+    var md = '# 2세대 무대 넘침 점검 결과 (' + new Date().toISOString().slice(0, 16).replace('T', ' ') + ')\n\n넘침(축소 전) ' + rows.filter(function(r){ return !r.rev; }).length + ' · 잘림 ' + list.filter(function(r){ return r.verdict === '잘림' || r.verdict === '예외'; }).length + ' · 작게 줄어듦(0.85배 아래) ' + list.filter(function(r){ return r.verdict === '설계 손볼 것'; }).length + '\n\n| 차시 | 슬라이드 | 블록 | 넘침 | 배율 | 판정 | 잘린 곳 |\n|---|---|---|---|---|---|---|\n' + list.map(function(r){ return '| ' + r.slug + ' ' + r.key + ' | #' + r.n + ' ' + r.id + (r.rev ? '(정답)' : '') + ' | ' + r.block + ' | ' + (r.err ? '예외' : '↓' + r.over + (r.wover ? ' →' + r.wover : '')) + ' | ' + (r.zoom ? r.zoom.toFixed(2) : '-') + ' | ' + r.verdict + ' | ' + (r.clip || '') + ' |'; }).join('\n');
     document.getElementById('out').value = md;
   }
   document.getElementById('run').onclick = run; document.getElementById('stop').onclick = function(){ stop = true; };
