@@ -141,14 +141,14 @@ window.KEDU_MAP["g6_2_social"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l01",
+     "lessonId": "g6_s2_social_u2_l01_v1",
      "n": "1",
      "title": "시장경제가 무엇인지 알아볼까요",
      "sub": "① 우리나라 시장경제의 특징",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/2단원_시장경제와국가간거래/g6_social_u2_l01_줄을당겨요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
