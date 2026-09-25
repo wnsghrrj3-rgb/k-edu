@@ -220,6 +220,6 @@ window.KEDU_MAP_INDEX = [
   "key": "g6_2_social",
   "units": 3,
   "lessons": 36,
-  "ready": 11
+  "ready": 12
  }
 ];

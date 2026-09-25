@@ -124,14 +124,14 @@ window.KEDU_MAP["g6_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u1_l12",
+     "lessonId": "g6_s2_social_u1_l12_v1",
      "n": "12",
      "title": "1단원 마무리 — 생각 그물·교실 놀이",
      "sub": "② 세계의 기후와 다양한 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/1단원_세계의자연환경/g6_social_u1_l12_빙고를외쳐요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
