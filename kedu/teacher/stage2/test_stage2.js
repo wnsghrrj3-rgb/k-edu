@@ -103,6 +103,30 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   { const pq = { id: 'pq', block: 'basic_problem', data: { title: 't', question: '42 - 19 는?', answer: 23, note: '풀이: 12-9=3 → 23.' } };
     ok(!/풀이/.test(KT2.renderSlide(pq, C0).body) && /풀이/.test(KT2.renderSlide(pq, Object.assign({}, C0, { revealed: true })).body), '풀이 쪽지: 정답 열 때만'); }
   const c4 = KT2.renderSlide({ id: 'so', block: 'card_arrange', data: { cards: [3, 1, 2] } }, C0); ok(/class="i-cards"/.test(c4.body) && !/ca-bin/.test(c4.body), '순서 카드: 수 정렬은 종전 그대로'); }
+// ── 21차 개념 그림 층(stage2-fig.js) — 데이터 fig 전수 · 수평대 기울기 방향 · 화살표 s<m<l · 범례 · 개념 장에만 ──
+{ const FG = g0.KT2_FIG; const C0 = { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] };
+  const byFile = {}; let figBad = [];
+  const walk = (f, cb) => { if (!f || typeof f !== 'object') return; cb(f); (f.items || []).forEach(p => walk(p && p.fig ? p.fig : null, cb)); };
+  files.forEach(fn => { const L = loadLessons(path.join(DATA, fn)); Object.keys(L).forEach(k => (L[k].slides || []).forEach(s => { if (!s.data || !s.data.fig) return;
+    byFile[fn] = (byFile[fn] || 0) + 1; const f = s.data.fig; const tag = fn + ' ' + k + ' ' + s.id;
+    if (s.block !== 'concept') figBad.push(tag + ' 개념 장 아님(' + s.block + ')');
+    const h = FG.render(f); if (!h) figBad.push(tag + ' 그림 빈 글자');
+    walk(f, x => { if (FG.parts.indexOf(x.k) < 0) figBad.push(tag + ' 모르는 부품 ' + x.k); if (x.k === 'tools' || x.k === 'chain') (x.items || []).forEach(c => { if (FG.icons.indexOf(c.name) < 0 && !c.emoji) figBad.push(tag + ' 아이콘 없음 ' + c.name); }); });
+    const r = KT2.renderSlide(s, C0); if (!/class="fig" data-fig=/.test(r.body)) figBad.push(tag + ' 무대에 그림 안 섬');
+    if (/<text[^>]*>[^<]*(undefined|NaN)/.test(h) || /NaN/.test(h)) figBad.push(tag + ' NaN/undefined');
+    walk(f, x => { if (x.k === 'balance') { const m = (FG.render(x).match(/data-ang="(-?[\d.]+)"/) || [])[1]; const a = +m; const want = x.l === x.r ? 0 : x.l > x.r ? -1 : 1; if (Math.sign(a) !== want) figBad.push(tag + ' 수평대 방향 ' + x.l + '·' + x.r + ' → ' + a); } });
+  })); });
+  ok(figBad.length === 0, '개념 그림 층: 데이터 fig 전수(부품·아이콘·수평대 방향·개념 장·무대) ' + figBad.slice(0, 6).join(' | '));
+  ok(byFile['g3_science_u1.js'] === 29, '개념 그림 층: 3학년 과학 1단원 개념 장 29장에 그림 (' + byFile['g3_science_u1.js'] + ')');
+  console.log('   개념 그림 층 데이터', JSON.stringify(byFile));
+  const S = FG.sizes; ok(S.s < S.m && S.m < S.l, '개념 그림 층: 화살표 길이 s<m<l');
+  const lens = (h) => (h.match(/data-len="(\d+)"/g) || []).map(x => +x.replace(/\D/g, ''));
+  const hs = FG.render({ k: 'force', act: 'push', obj: 'ball', size: 's' }), hl = FG.render({ k: 'force', act: 'push', obj: 'ball', size: 'l' });
+  ok(lens(hs)[0] < lens(hl)[0] && /class="f-arrow a-s"/.test(hs) && /class="f-arrow a-l"/.test(hl), '개념 그림 층: 약하게(s) 화살표가 세게(l)보다 짧고 가늘다');
+  ok(/fig-key/.test(hs) && !/fig-key/.test(FG.render({ k: 'balance', l: 2, r: 2 })) && !/fig-key/.test(FG.render({ k: 'force', act: 'none' })), '개념 그림 층: 화살표 있는 그림에만 범례 칩');
+  ok(/수평/.test(FG.render({ k: 'balance', l: 3, r: 3 })) && /왼쪽으로 기욺/.test(FG.render({ k: 'balance', l: 5, r: 2 })) && /오른쪽으로 기욺/.test(FG.render({ k: 'balance', l: 1, r: 4 })), '개념 그림 층: 수평대 캡션 자동(수평·왼쪽·오른쪽)');
+  ok((FG.render({ k: 'panels', items: [{ label: 'a', fig: { k: 'force' } }, { label: 'b', fig: { k: 'lever' } }, { label: 'c', fig: { k: 'slope' } }] }).match(/class="fig-panel"/g) || []).length === 3 && FG.render({ k: 'nope' }) === '' && FG.render(null) === '', '개념 그림 층: 나란히 3칸 · 모르는 부품/없음은 빈 글자');
+  const plain = { id: 'p', block: 'concept', data: { title: 't', content: '힘' } }; ok(!/class="fig"/.test(KT2.renderSlide(plain, C0).body), '개념 그림 층: fig 없는 장은 종전 그대로(diff-0)'); }
 let chrAll = 0;
 let brLeak = 0; files.forEach(f => { const L = loadLessons(path.join(DATA, f)); Object.keys(L).forEach(k => (L[k].slides || []).forEach(s => { const r = KT2.renderSlide(s, { revealed: false, state: {}, meta: L[k].meta || {}, unitTitle: 'U', classNames: [] }); if (/&lt;br|&lt;b&gt;/.test(r.body + r.title)) brLeak++; })); }); ok(brLeak === 0, '글자로 새는 <br>/<b> 슬라이드 ' + brLeak);
 console.log('① 렌더 전수 — 파일', files.length, '· 차시', nLessons, '· 슬라이드', nSlides, '× 2(정답 닫힘·열림)');
