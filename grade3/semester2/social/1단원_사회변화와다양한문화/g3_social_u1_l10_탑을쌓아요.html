@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 3-2 · 1단원 사회 변화와 다양한 문화
+  주제② 다양한 문화에 대한 이해와 존중 · l10 (주제 넷째 차시)
+  「다양한 문화의 확산으로 나타난 문제를 해결하기 위한 노력을 알아볼까요」
+  교과서 p.48~52 · 지도서 14~15차시(p.98~102 · 두 시간 한 파일) · [4사03-02]
+  수업 기법 = 토의하기 · 돌아가며 말하기
+=========================================================================
+
+  ■ 직접조작 = 존중의 탑을 쌓아요 판 (사회 3-2 열째 판)
+  ⭐ 씨앗은 교과서 49쪽 「할 수 있어요」(바람직한 태도·바람직하지 못한 태도 → 우리 반 실천 약속)와 51쪽 「꼭 기억해요」.
+  ⭐ 태도 블록 여섯 — 우리 반 실천 약속 셋(지도서 99쪽) · 바람직하지 못한 태도 셋(지도서 99쪽 예시). 판은 어느 블록이 어느 쪽인지 미리 알려 주지 않는다.
+  ⭐ 탑은 세 칸 · 블록은 꼭대기에만 올리고 꼭대기에서만 내린다(아래 블록을 빼려면 위 블록부터 내려야 한다).
+  ⭐ 바람직하지 못한 태도 블록이 하나라도 들어 있으면 탑이 기운다 — 기운 정도는 저장 0, 쌓인 블록에서 센다(twBadN).
+  ⭐ 끝 기준도 상수가 아니라 twDone(탑이 가득 차고 twBadN === 0) · 쌓는 자리 twStack.push · 내리는 자리 twStack.pop 단 하나씩 · TW_BLOCK 을 읽는 자리는 twBlockOf 단 하나 · TW_PICK 은 twPickOf · 난수 0.
+
+  ■ 이 차시의 뼈대
+   곧게 선 탑은 바람직한 태도 블록 셋으로만 쌓을 수 있다 — 한 블록이라도 바람직하지 못한 태도면 탑이 기운다.
+   → 다양한 문화가 존중받는 사회를 만들려면 서로 다름을 인정하고 존중하는 태도가 필요하다(교과서 51쪽 「꼭 기억해요」).
+
+  ■ 5단계
+   ① 탑 쌓기 → ② 판 읽기 3택(정답 자리 1)
+   ③ 내가 미나와 같은 반 친구라면 해 줄 일 가·나·다 고르기(정답 없음 · 고른 까닭이 뜬다 · 교과서 48쪽)
+   ④ 마무리 3택(정답 자리 2) → 완료
+      — 모둠 토의로 우리 반 실천 약속 정하기 · 붙임딱지 붙이기와 도움 이야기하기 · 우리 지역 다문화 축제 조사는 교실 몫
+
+  ■ 가드 13종
+   ① 마무리 확정 후 처리기 전체 잠금          ② 무효 번호(안내조차 0)
+   ③ 탑이 곧게 다 선 뒤 쌓기·내리기 — 판 불변 ④ 이미 쌓은 블록 — 판 불변
+   ⑤ 가득 찬 탑에 쌓기 — 판 불변             ⑥ 빈 탑에서 내리기 — 판 불변
+   ⑦ 다 쌓기 전 판 읽기 — 판 불변             ⑧ 이미 읽은 자리 — 판 불변
+   ⑨ 판 읽기 어긋난 답 — 판 불변              ⑩ 판을 읽기 전 고르기 — 판 불변
+   ⑪ 이미 고른 자리 — 판 불변                 ⑫ 고르기 전 마무리 — 판 불변
+   ⑬ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 블록 여섯의 말은 지도서 99쪽 예시 답안과 우리 반 실천 약속을 옮긴 것(캡션 상시).
+   ㉡ 미나에게 해 줄 일 세 가지는 어느 것이 더 낫다고 가리기 어려워 판은 정답을 정하지 않는다(캡션 상시).
+   ㉢ 모둠 토의로 실천 약속 정하기, 붙임딱지 붙이기, 다문화 축제 조사는 교실 몫(완료 카드 명시).
+
+  ■ 설계 원칙
+   · 뒤 차시 이름은 차시 예고 한 자리뿐
+   · 새 사실 0 — 교과서 48~52쪽 · 지도서 98~102쪽에 있는 사실만 · 누리집 주소 0 · 참고 도서 0 · 축제 이름 0
+   · 「틀렸」 0 · 사람 형상 0 · 지어낸 학생 이름 0(미나는 교과서 48쪽 만화 영화 속 인물) · 네 자리 연도 0
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>다양한 문화의 확산으로 나타난 문제를 해결하기 위한 노력을 알아볼까요 · 사회 3-2</title>
+<meta name="kedu-lesson-id" content="g3_social_u1_l10_v1"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#4F46E5; --green-d:#4338CA; --cyan:#7C3AED;
+  --bg:#EEF2FF; --bub:#E0E7FF; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#E0E7FF;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#E0E7FF;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(79,70,229,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 존중의 탑을 쌓아요 판 */
+.tw-wrap{max-width:780px;width:100%;margin:0 auto}
+.tw-head{background:#DCFCE7;color:#166534;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.tw-board{padding:9px;border-radius:14px;background:#F0FDF4;border:2px solid #BBF7D0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:10px}
+.tw-title{grid-column:1/-1;text-align:center;font-weight:800;color:#166534;font-size:clamp(12px,2vw,14px);word-break:keep-all}
+.tw-tower{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-height:190px}
+.tw-flag{font-size:13px;font-weight:800;color:#166534;min-height:22px}
+.tw-stack{display:flex;flex-direction:column-reverse;gap:4px;width:100%;max-width:240px;transform-origin:50% 100%;transition:transform .35s}
+.tw-slot{border:2px dashed #86EFAC;border-radius:9px;min-height:40px;display:flex;align-items:center;justify-content:center;
+  font-size:clamp(10px,1.7vw,12px);color:#94A3B8;background:#fff;padding:4px 6px;text-align:center;word-break:keep-all}
+.tw-slot[data-b]{border-style:solid;border-color:#16A34A;background:#F7FEE7;color:#14532D;font-weight:700}
+.tw-slot[data-top="1"]{box-shadow:0 0 0 3px #FDE68A}
+.tw-base{width:100%;max-width:260px;height:10px;border-radius:5px;background:#65A30D;margin-top:4px}
+.tw-pool{display:grid;grid-template-columns:1fr;gap:6px;align-content:start}
+.tw-blk{border:2px solid #BBF7D0;border-radius:10px;background:#fff;padding:7px 9px;font-family:inherit;font-size:clamp(11px,1.8vw,13px);
+  font-weight:700;color:#0F172A;text-align:left;cursor:pointer;line-height:1.4;word-break:keep-all}
+.tw-blk[data-in="1"]{opacity:.45;cursor:default}
+.tw-take{border:none;border-radius:9px;background:#15803D;color:#fff;font-family:inherit;font-size:clamp(11px,1.8vw,13px);font-weight:800;padding:7px 10px;cursor:pointer;margin-top:6px}
+.tw-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}
+.tw-pk{border:2px solid #BBF7D0;border-radius:10px;background:#fff;padding:8px 7px;font-family:inherit;
+  font-size:clamp(11px,1.8vw,13px);font-weight:700;color:#0F172A;text-align:left;cursor:pointer;line-height:1.4;word-break:keep-all}
+.tw-pk b{color:#15803D}
+.tw-side{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.tw-help{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(11px,1.9vw,14px);line-height:1.6}
+.tw-help b{color:#15803D}
+.tw-tell{border-radius:11px;padding:8px 12px;font-size:clamp(12px,2vw,15px);line-height:1.6;background:#F5F3FF;border-left:4px solid var(--cyan)}
+.tw-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FAFAFF;margin-top:9px;
+  font-size:clamp(12px,2vw,15px);line-height:1.6;word-break:keep-all}
+.tw-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.tw-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:9px 11px;font-family:inherit;
+  font-size:clamp(12px,2vw,15px);font-weight:700;color:#0F172A;text-align:left;line-height:1.45;word-break:keep-all;cursor:pointer}
+.tw-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .tw-board{grid-template-columns:1fr}
+  .tw-tower{min-height:0}
+  .tw-picks{grid-template-columns:1fr}
+  .tw-side{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 모양과 기호 ===== */
+const SVG = {
+  // 미나 이야기 — 모자 · 미술 시간 그림 · 교실 문
+  hat:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <path d="M 22 62 Q 42 30 62 62 Z" fill="#F59E0B" stroke="#B45309" stroke-width="2"/><rect x="14" y="60" width="56" height="6" rx="3" fill="#B45309"/>
+    <rect x="80" y="26" width="34" height="42" rx="3" fill="#fff" stroke="#15803D" stroke-width="2"/><circle cx="97" cy="42" r="8" fill="#FDE68A" stroke="#B45309" stroke-width="1.2"/><path d="M 89 58 Q 97 52 105 58" stroke="#15803D" stroke-width="1.5" fill="none"/>
+    <rect x="124" y="22" width="26" height="50" rx="3" fill="#E2E8F0" stroke="#64748B" stroke-width="2"/><circle cx="144" cy="48" r="2" fill="#64748B"/>
+    <g font-size="6" font-weight="800" text-anchor="middle" fill="#166534"><text x="42" y="80">늘 쓰는 모자</text><text x="97" y="80">미술 시간 그림</text><text x="137" y="80">교실 밖으로</text></g>
+    <text x="80" y="13" font-size="7.5" fill="#166534" text-anchor="middle" font-weight="800">만화 영화 속 미나 이야기</text></svg>`,
+  // 우리 사회의 노력 ① ~ ⑤ — 학교 · 공원 · 모여서 고민 · 시청 · 혼자 사는 집
+  help1:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <g stroke="#15803D" stroke-width="1.6" fill="#fff"><rect x="4" y="26" width="28" height="40" rx="4"/><rect x="36" y="26" width="28" height="40" rx="4"/><rect x="68" y="26" width="28" height="40" rx="4"/><rect x="100" y="26" width="28" height="40" rx="4"/><rect x="132" y="26" width="24" height="40" rx="4"/></g>
+    <path d="M 10 44 L 18 36 L 26 44 L 26 58 L 10 58 Z" fill="#BBF7D0"/><circle cx="46" cy="52" r="4" fill="#7C3AED"/><path d="M 50 50 L 58 44" stroke="#475569" stroke-width="1.5"/>
+    <g fill="#FDE68A"><circle cx="76" cy="44" r="4"/><circle cx="88" cy="44" r="4"/><circle cx="82" cy="54" r="4"/></g>
+    <rect x="106" y="36" width="16" height="22" fill="#DBEAFE"/><path d="M 136 50 L 144 42 L 152 50 L 152 60 L 136 60 Z" fill="#FDE68A"/>
+    <g font-size="7" font-weight="800" text-anchor="middle" fill="#166534"><text x="18" y="80">①</text><text x="50" y="80">②</text><text x="82" y="80">③</text><text x="114" y="80">④</text><text x="144" y="80">⑤</text></g>
+    <text x="80" y="13" font-size="7.5" fill="#166534" text-anchor="middle" font-weight="800">문제를 해결하기 위한 우리 사회의 노력 ①~⑤</text></svg>`,
+  // 우리 사회의 노력 ⑥ ~ ⑨ — 누리집 · 동물 보호 센터 · 문화 체험 행사 · 함께 요리
+  help2:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <g stroke="#15803D" stroke-width="1.6" fill="#fff"><rect x="6" y="26" width="34" height="40" rx="4"/><rect x="44" y="26" width="34" height="40" rx="4"/><rect x="82" y="26" width="34" height="40" rx="4"/><rect x="120" y="26" width="34" height="40" rx="4"/></g>
+    <rect x="12" y="32" width="22" height="16" rx="2" fill="#DBEAFE"/><path d="M 16 54 L 30 54 M 16 58 L 26 58" stroke="#475569" stroke-width="1.5"/>
+    <ellipse cx="61" cy="52" rx="8" ry="5" fill="#A16207"/><circle cx="69" cy="46" r="4" fill="#A16207"/><path d="M 50 36 L 72 36" stroke="#DB2777" stroke-width="2"/>
+    <rect x="88" y="34" width="10" height="7" fill="#DC2626"/><rect x="100" y="34" width="10" height="7" fill="#2563EB"/><rect x="94" y="45" width="10" height="7" fill="#16A34A"/>
+    <path d="M 126 52 L 148 52 L 144 60 L 130 60 Z" fill="#94A3B8"/><path d="M 132 46 Q 137 40 142 46" stroke="#F97316" stroke-width="1.5" fill="none"/>
+    <g font-size="7" font-weight="800" text-anchor="middle" fill="#166534"><text x="23" y="80">⑥</text><text x="61" y="80">⑦</text><text x="99" y="80">⑧</text><text x="137" y="80">⑨</text></g>
+    <text x="80" y="13" font-size="7.5" fill="#166534" text-anchor="middle" font-weight="800">문제를 해결하기 위한 우리 사회의 노력 ⑥~⑨</text></svg>`,
+  // 바람직한 태도와 바람직하지 못한 태도 — 저울 대신 두 칸
+  way:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <rect x="12" y="24" width="62" height="48" rx="6" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/><rect x="86" y="24" width="62" height="48" rx="6" fill="#F1F5F9" stroke="#94A3B8" stroke-width="2"/>
+    <text x="43" y="54" font-size="16" text-anchor="middle">○</text><text x="117" y="54" font-size="16" text-anchor="middle">✕</text>
+    <g font-size="6" font-weight="800" text-anchor="middle"><text x="43" y="84" fill="#166534">바람직한 태도</text><text x="117" y="84" fill="#475569">바람직하지 못한 태도</text></g>
+    <text x="80" y="13" font-size="7.5" fill="#166534" text-anchor="middle" font-weight="800">다양한 문화를 대하는 태도</text></svg>`,
+  // 정리 — 곧게 선 탑과 존중 깃발
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <rect x="50" y="76" width="60" height="6" rx="3" fill="#65A30D"/>
+    <g fill="#F7FEE7" stroke="#16A34A" stroke-width="2"><rect x="56" y="62" width="48" height="13" rx="3"/><rect x="56" y="47" width="48" height="13" rx="3"/><rect x="56" y="32" width="48" height="13" rx="3"/></g>
+    <path d="M 80 32 L 80 16" stroke="#475569" stroke-width="1.5"/><path d="M 80 16 L 96 20 L 80 24 Z" fill="#16A34A"/>
+    <text x="118" y="24" font-size="7" font-weight="800" fill="#166534">존중</text>
+    <text x="80" y="11" font-size="7.5" fill="#166534" text-anchor="middle" font-weight="800">바람직한 태도로 곧게 선 탑</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 존중의 탑을 쌓아요 판 =====
+   태도 블록 여섯 가운데 셋을 골라 세 칸 탑을 쌓는다. 블록은 꼭대기에만 올리고 꼭대기에서만 내린다.
+   ⭐ 쌓는 자리 twStack.push · 내리는 자리 twStack.pop 단 하나씩 — 탑을 바꾸는 곳은 이 둘뿐.
+   ⭐ 기운 정도는 저장 0 — 쌓인 블록 가운데 바람직하지 못한 태도 블록 수를 센다(twBadN).
+   ⭐ 탑이 가득 차고 한 블록도 기울게 하지 않으면 — 곧게 선 탑 위에 존중 깃발.
+   ================================================================= */
+const TW_BLOCK = [                                          // 지도서 99쪽 — good 은 우리 반 실천 약속, 나머지는 바람직하지 못한 태도의 사례
+  {text:"다른 문화에 대한 편견을 갖지 않고 차별하지 않아요",           good:true},
+  {text:"외국인 이주민을 무시하고 경계해요",                          good:false},
+  {text:"다른 문화의 사람들이 겪는 어려움에 관심을 가져요",           good:true},
+  {text:"1인 가구의 사람들을 이상하다고 생각해요",                    good:false},
+  {text:"서로 다른 문화를 이해하고 존중해요",                          good:true},
+  {text:"반려동물을 가족이라고 생각하는 사람들을 비난해요",           good:false}
+];
+const TW_N = 6;                                             // 블록 여섯
+const TW_H = 3;                                             // 탑은 세 칸
+const TW_TILT = 6;                                          // 바람직하지 못한 태도 블록 하나마다 기우는 각도(도)
+const TW_PICK = [
+  {mark:"가", text:"모자를 벗은 모습도 예쁘다고 말해 줄 거예요",                 why:"미나가 부끄러워하지 않도록 마음을 알아주는 말이에요."},
+  {mark:"나", text:"모자 벗은 모습이 전혀 이상하지 않다고 말해 줄 거예요",       why:"피부색이 달라도 이상하지 않다는 것을 알려 주는 말이에요."},
+  {mark:"다", text:"미나가 겪는 어려움에 관심을 갖고 먼저 다가가 이야기를 나눌 거예요", why:"다른 문화를 가진 친구가 겪는 어려움에 관심을 갖는 행동이에요."}
+];
+const TW_SAY_ALL = "탑이 곧게 다 섰어요. 이제 판을 읽어 봐요.";
+const TW_SAY_IN = "이미 탑에 쌓은 블록이에요. 탑은 그대로예요.";
+const TW_SAY_FULL = "탑이 세 칸 모두 찼어요. 바꾸고 싶으면 꼭대기 블록부터 내려 봐요.";
+const TW_SAY_EMPTY = "탑에 쌓은 블록이 없어요. 먼저 블록을 쌓아 봐요.";
+const TW_SAY_ORDER_R = "먼저 탑을 곧게 다 쌓아 봐요.";
+const TW_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const TW_SAY_ORDER_P = "먼저 판을 읽어 봐요.";
+const TW_SAY_PICKDONE = "이미 골랐어요. 친구가 고른 것과 견주어 봐요.";
+const TW_SAY_ORDER_FIN = "먼저 내가 미나와 같은 반 친구라면 할 일을 골라 봐요.";
+const TW_READQ = [
+  "블록을 세 개만 쌓으면 어떤 블록이든 탑이 곧게 서요. 어떤 태도를 가져도 괜찮아요",
+  "바람직한 태도 블록으로만 쌓아야 탑이 곧게 서요. 다양한 문화가 존중받는 사회를 만들려면 모두가 바람직한 태도를 가져야 해요",
+  "바람직하지 못한 태도 블록을 맨 아래에 두면 탑이 곧게 서요. 잘 보이지 않는 곳의 태도는 괜찮아요"
+];
+const TW_READ_OK = 1;
+const TW_READ_BAD = "기울어진 탑과 곧게 선 탑에 어떤 블록이 쌓였는지 다시 읽어 봐요.";
+const TW_FINQ = [
+  "다양한 문화가 확산되면서 나타나는 문제를 해결하려면 다른 문화보다 우리 문화를 더 소중하게 생각해야 해요",
+  "다양한 문화의 확산으로 나타난 문제는 저절로 사라지므로 아무 노력도 하지 않아도 돼요",
+  "다양한 문화를 대할 때는 서로 다름을 인정하고 존중하는 태도가 필요하고, 우리 사회도 문제를 예방하거나 해결하려고 여러 가지 노력을 해요"
+];
+const TW_FIN_OK = 2;
+const TW_FIN_BAD = "교과서 51쪽 「꼭 기억해요」와 곧게 선 탑을 다시 떠올려 봐요.";
+
+function twBlockOf(b){ return TW_BLOCK[b]; }                                  // TW_BLOCK 을 읽는 자리는 여기 단 하나
+function twPickOf(p){ return TW_PICK[p]; }                                    // TW_PICK 을 읽는 자리는 여기 단 하나
+function twBlocks(){ return [...Array(TW_N).keys()]; }
+function twIn(st,b){ return st.twStack.includes(b); }
+function twBad(b){ return !twBlockOf(b).good; }                               // ★ 바람직하지 못한 태도 블록인지 — 한 줄로
+function twBadN(st){ return st.twStack.filter(twBad).length; }
+function twGoodN(st){ return st.twStack.length - twBadN(st); }
+function twFull(st){ return st.twStack.length === TW_H; }
+function twDone(st){ return twFull(st) && twBadN(st) === 0; }
+function twTop(st){ return st.twStack.length ? st.twStack[st.twStack.length-1] : -1; }
+function twLine(st,b,up){
+  const B = twBlockOf(b), n = st.twStack.length, bad = twBadN(st);
+  const act = up ? `「${B.text}」 블록을 쌓았어요.` : `「${B.text}」 블록을 내렸어요.`;
+  const lean = bad ? ` 탑이 기울었어요 — 바람직하지 못한 태도 블록 ${bad}개.` : (n ? ` 탑이 곧게 서 있어요.` : ``);
+  const tail = twDone(st) ? ` 세 칸이 모두 찼고 곧게 섰어요 — 존중 깃발이 올라갔어요. 판을 읽어 봐요.` : ``;
+  return `${act} 쌓은 블록 ${n} / ${TW_H}.${lean}${tail}`;
+}
+function twStage(st){
+  if(!twDone(st)) return "build";
+  if(st.twRead == null) return "read";
+  if(st.twPick == null) return "pick";
+  if(st.twFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 탑 · 블록 더미 */
+function twTower(st){
+  const slots = [...Array(TW_H).keys()].map(h => {
+    const b = st.twStack[h];
+    return b === undefined ? `<div class="tw-slot">빈 칸</div>`
+      : `<div class="tw-slot" data-b="${b}" data-top="${h === st.twStack.length-1 ? 1 : 0}">${twBlockOf(b).text}</div>`;
+  }).join('');
+  return `<div class="tw-tower"><div class="tw-flag">${twDone(st) ? '🚩 존중' : ''}</div>
+    <div class="tw-stack" style="transform:rotate(${twBadN(st)*TW_TILT}deg)">${slots}</div><div class="tw-base"></div>
+    <button class="tw-take" onclick="twTake()">꼭대기 블록 내리기</button></div>`;
+}
+function twPool(st){
+  return `<div class="tw-pool">${twBlocks().map(b => `<button class="tw-blk" data-b="${b}" data-in="${twIn(st,b) ? 1 : 0}" onclick="twPut(${b})">${twBlockOf(b).text}</button>`).join('')}</div>`;
+}
+function twBoard(st){
+  return `<div class="tw-board" data-n="${st.twStack.length}" data-bad="${twBadN(st)}" data-done="${twDone(st) ? 1 : 0}">
+    <div class="tw-title">태도 블록을 골라 세 칸 탑을 곧게 쌓아 봐요</div>
+    ${twTower(st)}${twPool(st)}</div>`;
+}
+function twPicks(st){
+  return `<div class="tw-picks">${[0,1,2].map(p=>`<button class="tw-pk" data-p="${p}" onclick="twChoose(${p})"><b>${twPickOf(p).mark}</b> ${twPickOf(p).text}</button>`).join('')}</div>`;
+}
+function twHelp(st){
+  return `<div class="tw-help">블록을 누르면 탑의 <b>꼭대기</b>에 쌓여요.<br>
+    <b>꼭대기 블록 내리기</b>로 맨 위 블록부터 내릴 수 있어요.<br>
+    세 칸을 모두 채우고 탑이 <b>곧게 서면</b> 판을 읽어 봐요.</div>`;
+}
+function twPanel(st){
+  const stage = twStage(st);
+  let ask = '';
+  if(stage === "build"){
+    ask = `<div class="tw-ask" data-step="build"><b>서로 다른 문화를 가진 사람들과 더불어 살아가려면 어떤 태도가 필요할까요? 탑이 곧게 서도록 블록을 쌓아 봐요.</b></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="tw-ask" data-step="read"><b>곧게 선 탑을 보니 무엇을 알 수 있을까요?</b>
+      <div class="tw-opts">${TW_READQ.map((t,i)=>`<button class="tw-opt" onclick="twRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "pick"){
+    ask = `<div class="tw-ask" data-step="pick"><b>내가 미나와 같은 반 친구라면 미나를 위해 어떤 일을 할지 하나 골라 봐요.</b>${twPicks(st)}</div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="tw-ask" data-step="fin"><b>다양한 문화의 확산으로 나타난 문제를 해결하려면 어떻게 해야 할까요?</b>
+      <div class="tw-opts">${TW_FINQ.map((t,i)=>`<button class="tw-opt" onclick="twFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="tw-ask" data-fin="1" style="border-color:#86EFAC;background:#F0FDF4">
+      <b style="color:#166534">바람직한 태도 블록으로만 탑이 곧게 섰어요. 다양한 문화가 존중받는 사회를 만들려면 서로 다름을 인정하고 존중하는 태도가 필요하고, 모두 함께 노력해야 해요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">※ <b>모둠 친구들과 토의하여 우리 반 실천 약속을 정하는 일</b>, <b>붙임딱지를 붙이고 그림 속 노력이 주는 도움을 이야기하는 일</b>, <b>우리 지역의 다문화 축제를 조사하는 일</b>은 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`;
+  }
+  const tell = st.twTell ? `<div class="tw-tell">${st.twTell}</div>` : '';
+  const warn = st.twMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.twMsg}</div>` : '';
+  return `<div class="tw-wrap">
+    <div class="tw-head">쌓은 블록 <b>${st.twStack.length}</b> / ${TW_H} · ${twBadN(st) ? `탑이 기울었어요` : `탑이 곧게 서 있어요`}</div>
+    ${twBoard(st)}<div class="tw-side">${twHelp(st)}${tell}</div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 블록 여섯의 말은 <b>지도서 99쪽 예시 답안과 우리 반 실천 약속</b>을 옮긴 것이에요. 미나에게 해 줄 일 세 가지는 어느 것이 더 낫다고 <b>가리기 어려워서</b> 판은 정답을 정하지 않아요.</div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 사회 변화와 다양한 문화 · 주제② 다양한 문화에 대한 이해와 존중";
+const Q = [
+  {stem:"만화 영화 속 미나가 집 밖에 나갈 때 항상 모자를 쓰는 까닭은 무엇인가요?",
+   opts:["햇볕이 너무 뜨거워서","다른 사람들이 자신의 피부색을 이상하게 여긴다고 생각해서","모자를 모으는 것이 취미라서","학교에서 모자를 쓰라고 해서"], correct:1, pts:POINTS_BASIC,
+   h1:"교과서 48쪽 이야기를 다시 읽어 봐요.", h2:"미나는 피부색 때문에 걱정했어요.",
+   reason:"미나는 다른 사람들이 자신의 피부색을 이상하게 여긴다고 생각해서 집 밖에 나갈 때 항상 모자를 써요."},
+  {stem:"다양한 문화를 대하는 바람직한 태도로 알맞은 것은 무엇인가요?",
+   opts:["외국인 이주민을 무시하고 경계해요","1인 가구의 사람들을 이상하다고 생각해요","다른 종교의 가르침을 이해하려고 하지 않아요","나와 다른 문화를 가진 사람들의 어려움에 관심을 가져요"], correct:3, pts:POINTS_BASIC,
+   h1:"존중하는 태도를 찾아봐요.", h2:"나머지 셋은 바람직하지 못한 태도예요.",
+   reason:"나와 다른 문화를 가진 사람들의 어려움에 관심을 갖는 것은 바람직한 태도예요. 무시하고 경계하거나 이상하다고 생각하는 것은 바람직하지 못한 태도예요."},
+  {stem:"교과서 50쪽 공원 그림에서, 반려견과 산책할 때 해야 할 일로 알맞은 것은 무엇인가요?",
+   opts:["입마개를 착용시키고 목줄을 채워요","목줄을 풀고 마음껏 뛰게 해요","다른 사람이 없는 밤에만 산책해요","반려견을 집에만 두어요"], correct:0, pts:POINTS_BASIC,
+   h1:"물림 사고를 막는 방법을 떠올려 봐요.", h2:"입과 목에 채우는 것이 있어요.",
+   reason:"반려견과 산책할 때는 입마개를 착용시키고 목줄을 채워요. 반려견으로 인한 물림 사고를 예방할 수 있어요."},
+  {stem:"국가 인권 위원회에서 하는 일로 알맞은 것은 무엇인가요?",
+   opts:["버려진 반려동물에게 새 주인을 찾아 줘요","1인 가구를 위한 요리 프로그램을 운영해요","편견과 차별을 막을 수 있는 제도를 만들고 관련 기관을 운영해요","세계 여러 나라의 음식을 팔아요"], correct:2, pts:POINTS_BASIC,
+   h1:"인권을 지키는 기관이에요.", h2:"편견과 차별을 막는 일과 관련 있어요.",
+   reason:"국가 인권 위원회는 편견과 차별을 막을 수 있는 제도를 만들고 관련 기관을 운영해요. 억울하게 차별을 당했을 때 도움을 요청할 수 있어요."},
+  {stem:"한국어에 서툰 외국인을 돕기 위한 우리 사회의 노력으로 알맞은 것은 무엇인가요?",
+   opts:["한국어로만 안내해요","외국인은 시청에 들어올 수 없어요","한국 생활에 적응하는 데 필요한 정보를 다양한 언어로 제공해요","외국인에게는 아무 정보도 주지 않아요"], correct:2, pts:POINTS_APPLY,
+   h1:"교과서 50쪽 시청 그림을 떠올려 봐요.", h2:"여러 나라의 말로 알려 줘요.",
+   reason:"한국어에 서툰 외국인을 위해 원활한 의사소통을 지원하고, 한국 생활에 적응하는 데 필요한 정보를 다양한 언어로 제공해요."},
+  {stem:"혼자 사는 사람들을 위한 우리 사회의 노력으로 알맞은 것은 무엇인가요?",
+   opts:["1인 가구를 위한 다양한 프로그램을 운영하고, 안전하고 편안한 환경에서 살 수 있도록 지원해요","혼자 사는 사람들은 모두 함께 살게 해요","혼자 사는 사람들에게는 도움을 주지 않아요","혼자 사는 사람들은 요리를 배울 수 없어요"], correct:0, pts:POINTS_APPLY,
+   h1:"교과서 50~51쪽 ⑤와 ⑨ 그림을 떠올려 봐요.", h2:"건강과 안전을 챙기도록 도와요.",
+   reason:"우리 사회는 1인 가구를 위한 다양한 프로그램을 운영하고, 혼자 사는 사람들이 안전하고 편안한 환경에서 살 수 있도록 지원해요."},
+  {stem:"유니버설 디자인에 대한 설명으로 알맞은 것은 무엇인가요?",
+   opts:["어른만 사용할 수 있도록 디자인하는 것","한 나라 사람만 쓸 수 있도록 디자인하는 것","값비싼 물건만 디자인하는 것","나이, 국적, 언어, 장애 등과 관계없이 누구나 사용하기 쉽도록 물건이나 시설을 디자인하는 것"], correct:3, pts:POINTS_APPLY,
+   h1:"「모두를 위한 디자인」이라는 말을 떠올려 봐요.", h2:"누구나 공평하고 손쉽게 이용할 수 있어요.",
+   reason:"유니버설 디자인은 사람들의 타고난 조건이나 능력, 처한 환경과 관계없이 누구나 사용하기 쉽도록 물건이나 시설 등을 디자인하는 것이에요."},
+  {stem:"판에서 탑을 곧게 쌓은 뒤 알 수 있는 것은 무엇인가요?",
+   opts:["어떤 블록이든 세 개만 쌓으면 탑이 곧게 서요","바람직한 태도 블록으로만 쌓아야 탑이 곧게 서요","바람직하지 못한 태도 블록은 맨 아래에 두면 괜찮아요","탑은 블록을 쌓지 않아도 곧게 서요"], correct:1, pts:POINTS_APPLY,
+   h1:"탑이 기울었을 때 어떤 블록이 있었는지 떠올려 봐요.", h2:"한 블록이라도 바람직하지 못하면 탑이 기울었어요.",
+   reason:"바람직하지 못한 태도 블록이 하나라도 있으면 탑이 기울었어요. 다양한 문화가 존중받는 사회를 만들려면 모두가 바람직한 태도를 가져야 해요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 지난 시간 떠올리기
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">편견과 차별의 문제는 어떻게 해결할 수 있을까요?</h2>
+  <div class="ka-bub">지난 시간에는 다양한 문화의 확산이 우리 사회에 미친 영향을 알아봤어요. 다른 문화에 대한 이해가 부족하면 <b>편견과 차별</b>의 문제가 나타날 수 있어요.</div>
+  <div class="ka-grp"><div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>편견과 차별의 문제로 사람들 사이에 <b>갈등</b>이 생기기도 해요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>일상생활에서도 다른 문화에 대한 편견과 차별의 문제가 생길 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>자신과 피부색이 다른 사람을 이상하게 쳐다보거나 경계하는 것도 그 가운데 하나예요.</div></div>
+  </div>
+    <div class="note">오늘은 <b>다양한 문화의 확산으로 나타난 문제를 해결하기 위한 노력</b>을 알아봐요.</div>
+  </div>`});
+// 2 미나 이야기 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 미디어 활동</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">미나가 겪는 어려움은 무엇일까요?</h2>
+  <div class="ka-bub">부모님이 외국인 이주민인 미나는 피부색이 검어요. 미나는 다른 사람들이 자신의 피부색을 이상하게 여긴다고 생각해서 집 밖에 나갈 때면 항상 <span class="ka-emph">모자</span>를 써요. 어느 날 미술 시간에 한 친구가 모자를 벗은 미나의 모습을 그렸어요. 부끄러움을 느낀 미나는 교실 밖으로 뛰쳐나갔어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('hat','교과서 48쪽 만화 영화 이야기')}</div>
+  ${st.revealed?`<div class="answer-box">· 모자를 벗은 자신의 모습을 그린 친구의 그림을 보고 <b>부끄러움</b>을 느꼈어요.<br>· 다른 사람들이 자신의 피부색을 <b>이상하게 여긴다고</b> 생각해 늘 모자를 써요.</div>`
+    :`<div class="note">내가 미나와 같은 반 친구라면 어떤 일을 할지도 함께 생각해 봐요. 먼저 생각해 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 다양한 문화를 대하는 태도
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 할 수 있어요</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">다양한 문화를 대하는 바람직한 태도는 무엇일까요?</h2>
+  <div class="ka-bub">서로 다른 문화를 가진 사람들과 <span class="ka-emph">더불어 살아가기</span> 위해 필요한 태도를 생각해 봐요. 우리 사회의 외국인 이주민, 1인 가구, 반려동물과 함께 사는 사람들을 대하는 태도를 떠올려 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('way','다양한 문화를 대하는 태도')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">○</span><div><b>바람직한 태도</b> — 다양한 문화를 존중해요. 다른 문화를 올바르게 이해하려고 노력해요.</div></div>
+    <div class="sum-item"><span class="n">✕</span><div><b>바람직하지 못한 태도</b> — 외국인 이주민을 무시하고 경계해요. 반려동물과 함께 사는 사람들을 배려하지 않아요.</div></div>
+  </div>
+  <div class="note">모둠 친구들과 의견을 주고받은 뒤 <b>우리 반 실천 약속</b>을 정해 봐요. 약속을 제안할 때는 그 까닭도 말해요.</div></div>`});
+// 4 우리 사회의 노력 ①~⑤ (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 친구와 활동</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">우리 사회는 문제를 해결하려고 어떤 노력을 할까요?</h2>
+  <div class="ka-bub">우리 사회는 다양한 문화의 확산으로 나타나는 문제를 <span class="ka-emph">예방하거나 해결하려고</span> 여러 가지 노력을 하고 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('help1','교과서 50쪽 그림 ①~⑤')}</div>
+  ${st.revealed?`<div class="answer-box">① 학교에서 <b>다양한 문화를 이해하는 교육</b>을 실시해요.<br>② 반려견과 산책할 때는 <b>입마개를 착용시키고 목줄</b>을 채워요.<br>③ 다양한 문화가 존중받는 사회를 만들기 위한 방법을 고민해요.<br>④ 한국어에 서툰 외국인을 위해 <b>원활한 의사소통</b>을 지원하고, 필요한 정보를 다양한 언어로 제공해요.<br>⑤ 혼자 사는 사람들이 <b>안전하고 편안한 환경</b>에서 살 수 있도록 지원해요.</div>`
+    :`<div class="note">① 학교 건물 안 · ② 반려견과 산책하는 공원 · ③ 여럿이 모여 고민하는 모습 · ④ 시청 건물 안 · ⑤ 혼자 사는 사람의 집이에요. 어떤 노력일지 먼저 생각해 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 우리 사회의 노력 ⑥~⑨
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 친구와 활동</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">그림 속 노력은 어떤 도움을 줄까요?</h2>
+  <div class="ka-bub">그림 속 모습이 <span class="ka-emph">다양한 문화가 함께하는 사회</span>를 만드는 데 어떤 도움을 주는지 친구들과 이야기해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('help2','교과서 51쪽 그림 ⑥~⑨')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">⑥</span><div>국가 인권 위원회는 <b>편견과 차별을 막을 수 있는 제도</b>를 만들고 관련 기관을 운영해요. 억울하게 차별을 당했을 때 도움을 요청할 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">⑦</span><div>동물 보호 센터는 <b>버려진 반려동물</b>을 돌봐 주고 새로운 주인을 만나게 해 줘요.</div></div>
+    <div class="sum-item"><span class="n">⑧</span><div>세계 여러 나라의 문화를 <b>이해하고 체험</b>할 수 있는 행사를 열어요.</div></div>
+    <div class="sum-item"><span class="n">⑨</span><div><b>1인 가구를 위한 다양한 프로그램</b>을 운영해요. 혼자 사는 사람들이 건강을 챙기고 안전하게 지낼 수 있어요.</div></div>
+  </div>
+  <div class="note">별별 직업 속으로 — <b>유니버설 디자이너</b>는 나이, 국적, 언어, 장애 등과 관계없이 누구나 쉽게 이용할 수 있도록 물건이나 시설을 디자인해요.</div></div>`});
+// 6 꼭 기억해요 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 꼭 기억해요</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">알맞은 것은 무엇일까요?</h2>
+  <div class="ka-bub">① 다양한 문화가 확산되면서 나타나는 문제를 해결하려면 다른 문화보다 우리 문화를 더 소중하게 생각해야 해요. ( ○ , ✕ )<br>② 다양한 문화를 대할 때는 서로 다름을 인정하고 <span class="ka-emph">ㅈ ㅈ</span>하는 태도가 필요해요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">① <b>✕</b> — 내가 누리는 문화가 소중하듯 다른 사람이 누리는 문화도 소중해요.<br>② 서로 다름을 인정하고 <b>존중</b>하는 태도가 필요해요.</div>`
+    :`<div class="note">내가 누리는 문화와 다른 사람이 누리는 문화를 함께 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 스스로활동</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">존중의 탑을 쌓아요</h2>
+  <div class="ka-grp" style="align-items:stretch">${twPanel(st)}</div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">문제를 해결하기 위한 노력을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','곧게 선 존중의 탑')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>다양한 문화를 대할 때는 서로 다름을 인정하고 <b>존중하는 태도</b>가 필요해요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>우리 사회는 교육, 의사소통 지원, 제도와 기관, 체험 행사 등으로 <b>문제를 예방하거나 해결</b>하려고 노력해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>다양한 문화가 존중받는 사회를 만들기 위해 <b>모두 함께</b> 노력해야 해요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#4F46E5">다양한 문화에 대한 이해와 존중</b>에서 배운 내용을 정리해요. 준비물은 색칠 도구예요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"다양한 문화를 대하는 바람직한 태도를 말할 수 있어요",st)}
+    ${selfCheck(1,"다양한 문화의 확산으로 나타난 문제를 해결하기 위한 우리 사회의 노력을 설명할 수 있어요",st)}
+    ${selfCheck(2,"다양한 문화가 존중받는 사회를 만들기 위해 내가 할 일을 말할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">문제를 해결하기 위한 노력을 알아봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">모둠 친구들과 <b style="color:#4F46E5">우리 반 실천 약속</b>을 정하고, <b style="color:#4F46E5">우리 지역의 다문화 축제</b>를 조사하는 일은 교실 몫이에요. 친구들과 이야기해 봐요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g3_2_social_u1_l10";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  twStack:[], twRead:null, twPick:null, twFin:null, twMsg:"", twTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function twDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 블록 쌓기 */
+function twPut(b){
+  if(state.twFin!=null) return;                                                         // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(b) || b<0 || b>=TW_N) return;                                     // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(twDone(state)){ state.twMsg = TW_SAY_ALL; playThud(); twDraw(); return; }           // 가드③: 곧게 다 선 뒤 — 판 불변
+  if(twIn(state,b)){ state.twMsg = TW_SAY_IN; playThud(); twDraw(); return; }            // 가드④: 이미 쌓은 블록 — 판 불변
+  if(twFull(state)){ state.twMsg = TW_SAY_FULL; playThud(); twDraw(); return; }          // 가드⑤: 가득 찬 탑 — 판 불변
+  state.twStack.push(b);                                                                 // ⭐ 쌓는 자리 단 하나
+  state.twMsg = ""; state.twTell = twLine(state,b,true); playBlip(); twDraw();
+}
+/* 꼭대기 블록 내리기 */
+function twTake(){
+  if(state.twFin!=null) return;                                                         // 가드①
+  if(twDone(state)){ state.twMsg = TW_SAY_ALL; playThud(); twDraw(); return; }           // 가드③
+  if(!state.twStack.length){ state.twMsg = TW_SAY_EMPTY; playThud(); twDraw(); return; } // 가드⑥: 빈 탑 — 판 불변
+  const b = state.twStack.pop();                                                         // ⭐ 내리는 자리 단 하나
+  state.twMsg = ""; state.twTell = twLine(state,b,false); playBlip(); twDraw();
+}
+/* 판 읽기 */
+function twRead(i){
+  if(state.twFin!=null) return;                                                         // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=TW_READQ.length) return;                          // 가드②
+  if(!twDone(state)){ state.twMsg = TW_SAY_ORDER_R; playThud(); twDraw(); return; }      // 가드⑦: 다 쌓기 전 — 판 불변
+  if(state.twRead!=null){ state.twMsg = TW_SAY_READDONE; twDraw(); return; }             // 가드⑧: 이미 정한 자리 — 판 불변
+  if(i!==TW_READ_OK){ state.twMsg = TW_READ_BAD; playThud(); twDraw(); return; }         // 가드⑨: 어긋난 답 — 판 불변
+  state.twRead = i; state.twMsg = ""; state.twTell = `바람직한 태도 블록 ${twGoodN(state)} / ${TW_H} — 한 블록도 기울게 하지 않았어요. 모두가 바람직한 태도를 가질 때 다양한 문화가 존중받아요.`; playBlip(); twDraw();
+}
+/* 미나를 위해 할 일 고르기 — 정답 없음 */
+function twChoose(p){
+  if(state.twFin!=null) return;                                                         // 가드①
+  if(!Number.isInteger(p) || p<0 || p>=TW_PICK.length) return;                           // 가드②
+  if(state.twRead==null){ state.twMsg = TW_SAY_ORDER_P; playThud(); twDraw(); return; }  // 가드⑩: 판을 읽기 전 — 판 불변
+  if(state.twPick!=null){ state.twMsg = TW_SAY_PICKDONE; twDraw(); return; }             // 가드⑪: 이미 고른 자리 — 판 불변
+  state.twPick = p; state.twMsg = ""; state.twTell = `${twPickOf(p).mark}를 골랐어요. ${twPickOf(p).why}`; playBlip(); twDraw();
+}
+/* 마무리 */
+function twFin(i){
+  if(state.twFin!=null) return;                                                         // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=TW_FINQ.length) return;                           // 가드②
+  if(state.twPick==null){ state.twMsg = TW_SAY_ORDER_FIN; playThud(); twDraw(); return; } // 가드⑫: 고르기 전 — 판 불변
+  if(i!==TW_FIN_OK){ state.twMsg = TW_FIN_BAD; playThud(); twDraw(); return; }           // 가드⑬: 어긋난 답 — 판 불변
+  state.twFin = i; state.twMsg = ""; playChime(); twDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>

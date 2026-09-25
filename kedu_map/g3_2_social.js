@@ -104,14 +104,14 @@ window.KEDU_MAP["g3_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_social_u1_l10",
+     "lessonId": "g3_social_u1_l10_v1",
      "n": "4",
      "title": "다양한 문화의 확산으로 나타난 문제를 해결하기 위한 노력을 알아볼까요",
      "sub": "② 다양한 문화에 대한 이해와 존중",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/social/1단원_사회변화와다양한문화/g3_social_u1_l10_탑을쌓아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
