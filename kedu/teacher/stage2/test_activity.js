@@ -31,7 +31,7 @@ function boot(g, s, u, key, opt) {
   const sj = manifest.subjects.find(x => x.slug === 'g' + g + '_' + s); const un = sj.units.find(x => x.unit === +u);
   w.LESSONS = {}; run(path.join(__dirname, 'manifest.js')); run(path.join(DATA, path.basename(un.file))); if (un.resources) run(path.join(ROOT, un.resources));
   run(path.join(ROOT, 'engine/klab.js')); run(path.join(ROOT, 'engine/tools/shape3d.js')); run(path.join(ROOT, 'engine/tools/place_value.js'));
-  run(path.join(__dirname, 'stage2-art.js'));
+  run(path.join(__dirname, 'stage2-art.js')); run(path.join(__dirname, 'stage2-fig.js'));
   if (!opt.noLayer) { run(path.join(__dirname, 'stage2-activity.js')); run(path.join(__dirname, 'stage2-quick.js')); }
   run(path.join(__dirname, 'stage2.js'));
   if (!w.LESSONS[key]) throw new Error('차시 키 없음 ' + key);

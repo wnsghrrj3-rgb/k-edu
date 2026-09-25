@@ -112,7 +112,7 @@
     const p = /^(https?:|\/)/.test(src) ? src : '../' + src;
     return '<div class="img-frame" data-title="' + esc(title || '') + '"><img src="' + esc(p) + '" alt="" loading="lazy" onerror="if(window.KT2&&KT2.imgFallback)KT2.imgFallback(this);else{var p=this.closest(\'.img-frame\');if(p)p.style.display=\'none\'}"></div>';
   }
-  function imgFallback(img) { const f = img.closest('.img-frame'); if (!f) return; const A = global.KT2_ART; const body = f.closest('.kt2-body'); if (!A || (body && body.querySelector('.picture, .tf-row, .base-ten, .emoji-row.count, .steps, .i-cards, .ca-bins'))) { f.style.display = 'none'; f.classList.add('gone'); return; } f.classList.add('illus'); f.innerHTML = A.backdrop(A.kindOf(f.getAttribute('data-title'))); }
+  function imgFallback(img) { const f = img.closest('.img-frame'); if (!f) return; const A = global.KT2_ART; const body = f.closest('.kt2-body'); if (!A || (body && body.querySelector('.picture, .tf-row, .base-ten, .emoji-row.count, .steps, .i-cards, .ca-bins, .fig'))) { f.style.display = 'none'; f.classList.add('gone'); return; } f.classList.add('illus'); f.innerHTML = A.backdrop(A.kindOf(f.getAttribute('data-title'))); }
   // 인물 장면 = 그림책 무대 위에 선다
   function picture(sceneHtml, hint) { const A = global.KT2_ART; if (!A) return sceneHtml; return '<div class="picture ' + A.kindOf(hint) + '">' + A.backdrop(A.kindOf(hint)) + sceneHtml + '</div>'; }
   function isSpeech(t) { t = String(t || ''); return /["“”「」]/.test(t) || /[!?！？…~]$/.test(t.trim()); }
@@ -203,6 +203,7 @@
       }
       case 'concept': {
         push(image(d.img, title + ' ' + (d.content || ''))); if (d.content) { const bt = '<div class="big-text">' + md(d.content) + '</div>'; push(ctx.guide && ctx.guide[0] && !d.kids_after ? guideSay(ctx.guide[0], bt, 'l') : bt); }
+        if (d.fig && global.KT2_FIG) { const fg = global.KT2_FIG.render(d.fig); if (fg) push(fg); } // 21차 개념 그림 층
         if (Array.isArray(d.symbol_meanings) && d.symbol_meanings.length) push(symCards(d.symbol_meanings));
         if (d.kids_after) push(picture('<div class="scene">' + d.kids_after.map(kidCard).join('') + '</div>', title + ' ' + (d.content || '')));
         if (d.items) push(tfRow(d.items));

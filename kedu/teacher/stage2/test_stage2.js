@@ -23,6 +23,7 @@ function loadLessons(file) {
 const dom0 = new JSDOM('<!doctype html><html><body></body></html>', { runScripts: 'outside-only' });
 const g0 = dom0.window; g0.KT2_NO_BOOT = true;
 vm.runInContext(fs.readFileSync(path.join(__dirname, 'stage2-art.js'), 'utf8'), dom0.getInternalVMContext(), { filename: 'stage2-art.js' });
+vm.runInContext(fs.readFileSync(path.join(__dirname, 'stage2-fig.js'), 'utf8'), dom0.getInternalVMContext(), { filename: 'stage2-fig.js' });
 vm.runInContext(fs.readFileSync(path.join(__dirname, 'stage2.js'), 'utf8'), dom0.getInternalVMContext(), { filename: 'stage2.js' });
 const KT2 = g0.KT2;
 const files = fs.readdirSync(DATA).filter(f => /^g\d_[a-z]+_u\d+\.js$/.test(f)).sort();
@@ -120,7 +121,7 @@ function runStage(sj, un, l) {
   const run = (p) => vm.runInContext(fs.readFileSync(p, 'utf8'), ctx, { filename: path.basename(p) });
   w.LESSONS = {}; run(path.join(__dirname, 'manifest.js')); run(path.join(DATA, path.basename(un.file))); if (un.resources) run(path.join(ROOT, un.resources));
   run(path.join(ROOT, 'engine/klab.js')); run(path.join(ROOT, 'engine/tools/shape3d.js')); run(path.join(ROOT, 'engine/tools/place_value.js'));
-  run(path.join(__dirname, 'stage2-art.js')); run(path.join(__dirname, 'stage2.js'));
+  run(path.join(__dirname, 'stage2-art.js')); run(path.join(__dirname, 'stage2-fig.js')); run(path.join(__dirname, 'stage2.js'));
   const tag = sj.slug + '/' + l.key;
   let st;
   try { st = new w.KT2.Stage({ params: { g: String(sj.grade), s: sj.subject, u: String(un.unit), l: l.key }, lessons: w.LESSONS, unitTitle: un.title }); } catch (e) { fail++; fails.push(tag + ' 부팅 예외: ' + e.message); return; }
