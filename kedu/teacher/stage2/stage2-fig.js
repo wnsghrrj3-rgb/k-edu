@@ -5,6 +5,7 @@
    · 그림 문법 하나: **주황 화살표 = 힘, 굵고 길수록 큰 힘.** 모든 부품이 같은 화살표를 쓴다.
    · 부품: panels(나란히 견주기) · force(밀기·당기기·누르기·멈추기·들기) · balance(수평대) · lever(지레) · slope(빗면)
            · scale(전자저울·용수철저울) · hand(손 어림) · tools(도구 카드) · chain(카드 사이 화살표) · places(쓰이는 곳)
+   · 23차(2026-09-28) 길이·시간 부품 추가: ruler(자)·joins(이어 붙여 어림)·road(거리 띠·km 표지판)·clock(시·분·초바늘)·tvert(시간 세로셈) · 카드 on(주황 강조)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
    ============================================================================ */
 (function (global) {
@@ -158,7 +159,7 @@
   };
   function card(it) {
     const name = it.name || '', svg = ICON[name] || ICON[it.kind] || '';
-    return '<div class="fig-card' + (it.kind ? ' k-' + (it.kind === '지레' ? 'lever' : it.kind === '빗면' ? 'slope' : 'other') : '') + (!svg && !it.emoji ? ' text' : '') + '">' + (svg ? '<svg class="fig-ico" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">' + svg + '</svg>' : it.emoji ? '<div class="fig-emo">' + esc(it.emoji) + '</div>' : '') + '<b>' + esc(name) + '</b>' + (it.kind ? '<span>' + esc(it.kind) + '</span>' : '') + '</div>';
+    return '<div class="fig-card' + (it.kind ? ' k-' + (it.kind === '지레' ? 'lever' : it.kind === '빗면' ? 'slope' : 'other') : '') + (!svg && !it.emoji ? ' text' : '') + (it.on ? ' on' : '') + '">' + (svg ? '<svg class="fig-ico" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">' + svg + '</svg>' : it.emoji ? '<div class="fig-emo">' + esc(it.emoji) + '</div>' : '') + '<b>' + esc(name) + '</b>' + (it.kind ? '<span>' + esc(it.kind) + '</span>' : '') + '</div>';
   }
   function tools(o, joiner) { return '<div class="fig-cards">' + (o.items || []).map(card).join(joiner || '') + '</div>'; }
 
@@ -349,8 +350,114 @@
   // ── eq: 큰 식 카드(SVG 글자만) ──
   function eq(o) { const lines = [].concat(o.lines || o.text || []); let s = ''; const n = lines.length, gap = Math.min(64, 220 / Math.max(1, n)); lines.forEach((t, i) => { const hi = /\*\*/.test(t); s += txt(230, 140 - (n - 1) * gap / 2 + i * gap + 10, String(t).replace(/\*\*/g, ''), n > 3 ? 26 : 34, hi ? BLUE2 : INK); }); if (o.tag) s += txt(230, 250, o.tag, 20, '#6B7C93'); return svgWrap(s, 'fig-eq'); }
 
-  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq };
-  const HTML_PARTS = { vert };
+  // ══ 23차(2026-09-28) 길이·시간 부품 — ruler(자)·joins(이어 붙여 어림)·road(거리 띠·km 표지판)·clock(시계)·tvert(시간 세로셈) ══
+  // 그림 문법 그대로: 파랑 = 잰 것 · 연회색 = 눈금 · 주황 = 강조(1 mm 한 칸·초바늘·1초 한 칸·받아올림).
+  // ── ruler: cm·mm 눈금 자. obj {cm,mm,name} 가 있으면 그 길이만큼 파란 막대를 자 위에 올린다. zoom 은 1 cm 를 10칸으로 크게 ──
+  function ruler(o) {
+    let s = '';
+    if (o.zoom) { // 1 cm 를 크게 — 작은 눈금 10칸, 한 칸(주황) = 1 mm
+      const x0 = 60, x1 = 400, y = 96, cw = (x1 - x0) / 10, at = o.at == null ? 3 : o.at;
+      s += '<rect x="20" y="' + (y - 4) + '" width="420" height="70" rx="8" fill="#FFF7DE" stroke="#E2C98F" stroke-width="3"/>';
+      s += '<rect class="o-mm on" x="' + (x0 + cw * at) + '" y="' + (y - 4) + '" width="' + cw + '" height="70" fill="#FFD9C2"/>';
+      for (let i = 0; i <= 10; i++) { const x = x0 + cw * i, big = i === 0 || i === 10, mid = i === 5; s += '<line class="o-tick' + (big ? ' big' : '') + '" x1="' + x + '" y1="' + (y - 4) + '" x2="' + x + '" y2="' + (y + (big ? 50 : mid ? 36 : 24)) + '" stroke="' + INK + '" stroke-width="' + (big ? 4 : 2.5) + '"/>'; }
+      s += txt(x0, y - 16, o.left == null ? '0' : String(o.left), 24) + txt(x1, y - 16, o.right == null ? '1' : String(o.right), 24) + txt(436, y + 60, 'cm', 18, '#6B7C93', 800, 'end');
+      s += '<path d="M' + x0 + ' ' + (y - 40) + 'v-10h' + (x1 - x0) + 'v10" fill="none" stroke="' + BLUE2 + '" stroke-width="3"/>' + txt((x0 + x1) / 2, y - 58, o.topLabel || '1 cm', 28, BLUE2);
+      const ax = x0 + cw * (at + 0.5); s += arrow(ax, y + 108, 'u', 's').replace('data-len', 'data-mm="1" data-len') + txt(230, y + 136, o.cellLabel || '작은 눈금 한 칸 = 1 mm', 24, ORANGE, 900);
+      if (o.show !== false) s += txt(230, 262, o.show || '1 cm = 10 mm', 30, INK);
+      return svgWrap(s, 'fig-ruler zoom', '0 0 460 280');
+    }
+    const obj = o.obj || null; const cm = obj ? (obj.cm | 0) : 0, mm = obj ? (obj.mm | 0) : 0; const len = cm + mm / 10;
+    const from = o.from != null ? o.from | 0 : (obj && len > 3 && len <= 12 ? Math.max(0, Math.floor(len) - 1) : 0); // 12 cm 넘으면 0 부터(5 mm 눈금·5 cm 마다 숫자)
+    const to = o.to != null ? o.to | 0 : Math.max(from + 3, Math.ceil(len + 0.001));
+    const span = Math.max(1, to - from), x0 = 40, x1 = 420, y = 160, pw = (x1 - x0) / span, fine = span <= 6, every = span > 10 ? 5 : 1; // 6 cm 넘으면 mm 눈금은 5 mm 만 · 10 cm 넘으면 숫자는 5 cm 마다
+    const X = (v) => x0 + (v - from) * pw;
+    s += '<rect x="' + (x0 - 24) + '" y="' + (y - 4) + '" width="' + (x1 - x0 + 48) + '" height="64" rx="8" fill="#FFF7DE" stroke="#E2C98F" stroke-width="3"/>';
+    for (let i = 0; i <= span; i++) { const x = X(from + i); s += '<line class="o-tick big" x1="' + x + '" y1="' + (y - 4) + '" x2="' + x + '" y2="' + (y + 40) + '" stroke="' + INK + '" stroke-width="' + (every > 1 && (from + i) % every ? 2 : 3.5) + '"/>' + ((from + i) % every === 0 ? txt(x, y + 58 - 4, String(from + i), 20, INK, 800) : '');
+      if (i < span) for (let k = 1; k < 10; k++) { if (!fine && k !== 5) continue; const xx = X(from + i + k / 10); s += '<line class="o-tick" x1="' + xx + '" y1="' + (y - 4) + '" x2="' + xx + '" y2="' + (y + (k === 5 ? 26 : 16)) + '" stroke="' + INK + '" stroke-width="' + (k === 5 ? 2.5 : 1.8) + '"/>'; } }
+    s += txt(x1 + 30, y + 30, 'cm', 20, '#6B7C93', 800, 'end');
+    if (obj) { // 잰 것 — 파란 막대(자 위) · 자 밖에서 시작하면 잘린 표시
+      const xs = len > 0 && from > 0 ? x0 - 24 : X(0), xe = X(len), yb = y - 62, hb = 40;
+      s += '<rect class="o-obj" x="' + xs + '" y="' + yb + '" width="' + Math.max(6, xe - xs) + '" height="' + hb + '" rx="12" fill="' + BLUE + '" stroke="' + BLUE2 + '" stroke-width="3"/>';
+      if (from > 0) s += '<path d="M' + (xs + 4) + ' ' + (yb - 6) + ' l6 12 l-6 12 l6 12 l-6 12 l6 12" stroke="#fff" stroke-width="4" fill="none"/>';
+      if (obj.name) s += txt((xs + xe) / 2, yb + 27, obj.name, 22, '#fff', 900);
+      if (mm) { const xc = X(cm); s += '<path class="o-mmspan" d="M' + xc + ' ' + (yb - 10) + 'v-12h' + (xe - xc) + 'v12" fill="none" stroke="' + ORANGE + '" stroke-width="3"/>' + txt((xc + xe) / 2, yb - 30, mm + ' mm', 22, ORANGE, 900);
+        s += txt((xs + xc) / 2, yb - 30, (from > 0 ? '' : '') + cm + ' cm', 22, BLUE2, 900); }
+      else s += txt((xs + xe) / 2, yb - 12, cm + ' cm', 22, BLUE2, 900);
+      s += '<line x1="' + xe + '" y1="' + (yb + hb) + '" x2="' + xe + '" y2="' + (y + 40) + '" stroke="' + ORANGE + '" stroke-width="3" stroke-dasharray="6 5"/>';
+    }
+    if (o.show) s += txt(230, 250, o.show, 30, INK);
+    return svgWrap(s, 'fig-ruler', '0 0 460 ' + (o.show ? 270 : 230));
+  }
+  // ── joins: 아는 길이를 이어 붙여 어림 — items [{name, cm, emoji}] 또는 rep {name, cm, n}(같은 것 n 번) · total 글자(약 ○ cm) ──
+  function joins(o) {
+    const items = o.rep ? Array.from({ length: Math.max(1, o.rep.n | 0) }, () => ({ name: o.rep.name, cm: o.rep.cm })) : (o.items || []);
+    const sum = items.reduce((a, b) => a + (+b.cm || 0), 0) || 1; const x0 = 30, x1 = 430, y = 130, h = 54; let s = '', x = x0;
+    const cols = [BLUE, GRN, PURP, YEL];
+    items.forEach((it, i) => { const w = (x1 - x0) * (+it.cm || 0) / sum; const many = items.length > 6;
+      s += '<rect class="o-join" x="' + x + '" y="' + (y - h / 2) + '" width="' + w + '" height="' + h + '" rx="' + (many ? 6 : 12) + '" fill="' + (o.rep ? (i % 2 ? '#F7D2B0' : '#EDB98C') : cols[i % 4]) + '" stroke="#fff" stroke-width="3"/>';
+      if (!many) s += txt(x + w / 2, y - h / 2 - 12, it.name + (it.cm != null ? ' 약 ' + it.cm + ' cm' : ''), 22, INK, 800);
+      x += w; });
+    if (o.rep) s += txt(230, y - h / 2 - 14, o.rep.name + ' 약 ' + o.rep.cm + ' cm × ' + items.length + '번', 24, INK, 800);
+    s += '<path d="M' + x0 + ' ' + (y + h / 2 + 12) + 'v10h' + (x1 - x0) + 'v-10" fill="none" stroke="' + ORANGE + '" stroke-width="3"/>' + txt(230, y + h / 2 + 52, o.total || ('약 ' + sum + ' cm'), 32, ORANGE, 900);
+    if (o.note) s += txt(230, y + h / 2 + 84, o.note, 20, '#6B7C93', 700);
+    return svgWrap(s, 'fig-joins', '0 0 460 ' + (o.note ? 230 : 210));
+  }
+  // ── road: 거리 띠 — unit(m)씩 n 칸, 1000 m 마다 km 표지 · sign(표지판 글자) · est(어림) ──
+  function road(o) {
+    const unit = Math.max(1, o.unit | 0 || 100), n = Math.max(1, o.n | 0 || Math.ceil(((o.km | 0) * 1000 + (o.m | 0)) / unit)), total = o.total != null ? o.total | 0 : ((o.km != null || o.m != null) ? (o.km | 0) * 1000 + (o.m | 0) : 0);
+    const x0 = 36, x1 = 384, y = 132, w = x1 - x0, X = (mt) => x0 + w * mt / (unit * n); let s = '';
+    s += '<rect x="' + (x0 - 10) + '" y="' + (y - 26) + '" width="' + (w + 20) + '" height="52" rx="10" fill="#8C9BAA"/><line x1="' + x0 + '" y1="' + y + '" x2="' + x1 + '" y2="' + y + '" stroke="#fff" stroke-width="4" stroke-dasharray="14 12"/>';
+    if (total) s += '<rect class="o-dist" x="' + x0 + '" y="' + (y - 12) + '" width="' + (X(Math.min(total, unit * n)) - x0) + '" height="24" rx="6" fill="' + BLUE + '" opacity=".85"/>';
+    const hasKm = unit * n >= 1000, every = n <= 5 ? 1 : n <= 10 ? 2 : hasKm ? 0 : 5; // 칸이 많고 km 표지가 있으면 사이 숫자는 생략
+    for (let i = 0; i <= n; i++) { const mt = i * unit, x = X(mt), km = mt % 1000 === 0 && mt > 0, end = i === n; const lab = i === 0 || km || end || (every && i % every === 0);
+      s += '<line class="o-rtick' + (km ? ' km' : '') + '" x1="' + x + '" y1="' + (y - 34) + '" x2="' + x + '" y2="' + (y + 34) + '" stroke="' + (km ? ORANGE : INK) + '" stroke-width="' + (km ? 5 : lab ? 3 : 1.5) + '"' + (km || lab ? '' : ' opacity=".55"') + '/>';
+      if (!lab) continue; const t = km ? (o.est ? '약 ' : '') + (mt / 1000) + ' km' : (i === 0 ? '0' : (o.est ? '약 ' : '') + mt + ' m'); s += txt(x, y + 60, t, km ? 24 : 18, km ? ORANGE : INK, 800); }
+    if (o.est && n <= 6) for (let i = 0; i < n; i++) s += txt(X(i * unit + unit / 2), y - 44, '약 ' + unit + ' m', 20, BLUE2, 800);
+    if (o.sign) { const sw = Math.max(96, String(o.sign).length * 12 + 24), sx = Math.min(460 - sw - 4, x1 - sw / 2); s += '<rect x="' + (x1 - 4) + '" y="' + (y - 22) + '" width="8" height="60" fill="#8A6A4A"/><rect x="' + sx + '" y="' + (y - 78) + '" width="' + sw + '" height="48" rx="8" fill="#2E7D4F" stroke="#fff" stroke-width="3"/>' + txt(sx + sw / 2, y - 46, o.sign, 22, '#fff', 900); }
+    if (o.label) s += txt(230, 34, o.label, 28, INK, 900);
+    if (o.show) s += txt(230, 232, o.show, 28, INK, 800);
+    return svgWrap(s, 'fig-road', '0 0 460 ' + (o.show ? 254 : 206));
+  }
+  // ── clock: 시계(시·분·초바늘) — hi 'tick'(작은 눈금 한 칸 = 1초) · 'big'(큰 눈금 한 칸 = 5초) · 'round'(한 바퀴 = 60초) · names(바늘 이름) ──
+  function clock(o) {
+    const cx = 230, cy = 140, r = o.r || 112, h = +o.h || 0, m = +o.m || 0, sec = +o.s || 0, hasSec = o.sec !== false; let s = '';
+    s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 12) + '" fill="#fff" stroke="' + INK + '" stroke-width="5"/>';
+    const P = (deg, rr) => [cx + rr * Math.sin(deg * Math.PI / 180), cy - rr * Math.cos(deg * Math.PI / 180)];
+    const arc = (d0, d1, rr, col, wd) => { const a = P(d0, rr), b = P(d1, rr); return '<path class="o-arc" d="M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + ' A' + rr + ' ' + rr + ' 0 ' + (d1 - d0 > 180 ? 1 : 0) + ' 1 ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1) + '" fill="none" stroke="' + col + '" stroke-width="' + wd + '" stroke-linecap="round"/>'; };
+    if (o.hi === 'round') s += '<circle class="o-arc" cx="' + cx + '" cy="' + cy + '" r="' + (r - 6) + '" fill="none" stroke="' + ORANGE + '" stroke-width="12" opacity=".75"/>';
+    if (o.hi === 'tick') { const d0 = sec * 6; s += arc(d0, d0 + 6, r - 6, ORANGE, 14); }
+    if (o.hi === 'big') { const d0 = Math.floor(sec / 5) * 30; s += arc(d0, d0 + 30, r - 6, ORANGE, 14); }
+    for (let i = 0; i < 60; i++) { const big = i % 5 === 0, a = P(i * 6, r), b = P(i * 6, r - (big ? 16 : 8)); s += '<line class="o-ctick' + (big ? ' big' : '') + '" x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) + '" stroke="' + INK + '" stroke-width="' + (big ? 4 : 2) + '"/>'; }
+    for (let i = 1; i <= 12; i++) { const p = P(i * 30, r - 34); s += txt(p[0].toFixed(1), (+p[1] + 9).toFixed(1), String(i), 24, INK, 800); }
+    const hd = (h % 12) * 30 + m * 0.5 + sec / 120, md = m * 6 + sec * 0.1, sd = sec * 6;
+    const hand = (deg, len, wd, col, cls) => { const p = P(deg, len); return '<line class="o-hand ' + cls + '" x1="' + cx + '" y1="' + cy + '" x2="' + p[0].toFixed(1) + '" y2="' + p[1].toFixed(1) + '" stroke="' + col + '" stroke-width="' + wd + '" stroke-linecap="round"/>'; };
+    if (o.hi === 'sec' && hasSec) s += hand(sd, r * 0.9, 16, '#FFD9C2', 'o-hi'); // 초바늘 강조(연주황 띠)
+    s += hand(hd, r * 0.55, 10, INK, 'h') + hand(md, r * 0.82, 7, BLUE2, 'm') + (hasSec ? hand(sd, r * 0.9, 3.5, ORANGE, 's') : '') + '<circle cx="' + cx + '" cy="' + cy + '" r="8" fill="' + INK + '"/>';
+    let legY = 0; if (o.names) { legY = 1; s += '<g class="o-legend">' + '<line x1="70" y1="294" x2="100" y2="294" stroke="' + INK + '" stroke-width="9" stroke-linecap="round"/>' + txt(108, 302, '짧은바늘 = 시', 20, INK, 800, 'start')
+      + '<line x1="238" y1="294" x2="278" y2="294" stroke="' + BLUE2 + '" stroke-width="6" stroke-linecap="round"/>' + txt(286, 302, '긴바늘 = 분', 20, BLUE2, 800, 'start')
+      + (hasSec ? '<line x1="154" y1="332" x2="200" y2="332" stroke="' + ORANGE + '" stroke-width="3.5" stroke-linecap="round"/>' + txt(208, 340, '가는 바늘 = 초', 20, ORANGE, 800, 'start') : '') + '</g>'; }
+    let show = o.show; if (show === true) show = h + '시 ' + m + '분' + (hasSec ? ' ' + sec + '초' : '');
+    let yy = legY ? (hasSec ? 354 : 316) : 266;
+    if (show) { s += '<rect x="80" y="' + yy + '" width="300" height="46" rx="12" fill="#F1F4F8"/>' + txt(230, yy + 32, show, 28, INK, 900); yy += 56; }
+    if (o.note) { s += txt(230, yy + 22, o.note, 22, o.hi ? ORANGE : '#6B7C93', 800); yy += 36; }
+    return svgWrap(s, 'fig-clock', '0 0 460 ' + (yy + 4));
+  }
+  // ── tvert: 시간 세로셈(HTML) — a·b = [시,분,초] 또는 [분,초] · units 칸 이름 · runits 답 칸 이름 · 60 넘으면 받아올림(주황) · 모자라면 받아내림(빨강 +60) ──
+  function tvert(o) {
+    const units = o.units || ['시', '분', '초'], runits = o.runits || units, N = units.length, op = o.op || '+';
+    const nz = (x) => x == null ? null : (+x || 0), A = (o.a || []).map(nz), B = (o.b || []).map(nz); while (A.length < N) A.unshift(0); while (B.length < N) B.unshift(0); const NA = A.map(x => x || 0), NB = B.map(x => x || 0); // null 칸 = 그 단위가 없음(빈칸)
+    const R = [], carry = [], borrow = [];
+    if (op === '+') { let c = 0; for (let i = N - 1; i >= 0; i--) { let v = NA[i] + NB[i] + c; c = 0; if (i > 0 && v >= 60) { v -= 60; c = 1; carry[i - 1] = true; } R[i] = v; } }
+    else { let br = 0; for (let i = N - 1; i >= 0; i--) { let v = NA[i] - br - NB[i]; br = 0; if (v < 0 && i > 0) { v += 60; br = 1; borrow[i] = true; } R[i] = v; } }
+    const lead = (arr) => { let i = 0; while (i < N - 1 && !arr[i]) i++; return i; }; // 앞쪽 0 은 빈칸
+    const row = (arr, us, cls, from) => '<div class="tv-row ' + cls + '">' + arr.map((v, i) => '<span' + (i < from || v == null ? ' class="mute"' : '') + '>' + (i < from || v == null ? '' : v + '<u>' + esc(us[i] || '') + '</u>') + '</span>').join('') + '</div>';
+    const top = '<div class="tv-row tv-carry">' + A.map((v, i) => '<span>' + (op === '+' && carry[i] ? '1' : op !== '+' && borrow[i + 1] ? '<i>' + (NA[i] - 1) + '</i>' : op !== '+' && borrow[i] ? '<b>+60</b>' : '') + '</span>').join('') + '</div>';
+    const h = '<div class="tv n' + N + '">' + top + row(A, units, 'tv-a', lead(A)) + row(B, units, 'tv-b', lead(B)).replace('<div class="tv-row tv-b">', '<div class="tv-row tv-b"><em>' + (op === '+' ? '+' : '−') + '</em>') + '<div class="tv-line"></div>' + (o.answer === false ? '' : row(R, runits, 'tv-r', lead(R))) + '</div>';
+    return '<div class="fig-vert fig-tvert" data-r="' + R.join(',') + '">' + h + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
+  }
+
+  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock };
+  const HTML_PARTS = { vert, tvert };
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
