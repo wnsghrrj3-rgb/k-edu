@@ -151,34 +151,34 @@ window.KEDU_MAP["g6_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l02",
+     "lessonId": "g6_s2_social_u2_l02_v1",
      "n": "2",
      "title": "가계와 기업의 역할을 알아볼까요",
      "sub": "① 우리나라 시장경제의 특징",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/2단원_시장경제와국가간거래/g6_social_u2_l02_고리를끊어요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l03",
+     "lessonId": "g6_s2_social_u2_l03_v1",
      "n": "3",
      "title": "근로자의 권리를 보호하는 모습을 살펴볼까요",
      "sub": "① 우리나라 시장경제의 특징",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/2단원_시장경제와국가간거래/g6_social_u2_l03_저울을맞춰요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l04",
+     "lessonId": "g6_s2_social_u2_l04_v1",
      "n": "4",
      "title": "기업의 자유와 사회적 책임을 알아볼까요",
      "sub": "① 우리나라 시장경제의 특징",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/2단원_시장경제와국가간거래/g6_social_u2_l04_돛과키를달아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,

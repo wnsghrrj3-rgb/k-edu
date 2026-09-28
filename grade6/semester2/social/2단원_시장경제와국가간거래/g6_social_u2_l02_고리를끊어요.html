@@ -1,0 +1,922 @@
+<!--
+K-edu 사회 6-2 · 2단원 시장경제와 국가 간 거래 · 주제① 우리나라 시장경제의 특징 · 2차시(l02)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사11-01] · 교과서 p.63~68 · 지도서(대단원2 **3~4차시** 「가계와 기업의 역할을 알아볼까요」, 지도서 p.141~146) 근거 · 두 시간 한 파일.
+학습 목표: 가계와 기업의 역할을 설명할 수 있다.
+수업 기법 및 전략: 돌아가며 말하기 · 쌍 비교 분석
+META = "2단원 시장경제와 국가 간 거래 · 주제① 우리나라 시장경제의 특징"
+⚠️ 엔진은 u2 l01(→ u1 l12 → … 6-1 사회 엔진)에서 100% 승계 · 엔진 무수정 · 2단원 색 #A16207 그대로.
+⚠️ 회수 키 `g6_s2_social_u2_l02_v1` · 맵 키 `g6_social_u2_l02` · 파일명 `고리를끊어요` — 조작 이름(선례 승계).
+
+직접조작: 가계와 기업을 잇는 고리 판
+  ⭐ 씨앗은 지도서 3~4차시 두 핵심 질문 — 「시장경제에서 가계가 역할을 제대로 못한다면 어떤 일이 일어날까요?」
+     「기업이 역할을 제대로 못한다면 어떤 일이 일어날까요?」 + 교과서 67쪽 「가계와 기업은 … 밀접한 관계를 맺으며 도움을 주고받습니다」.
+  ⭐ 고리 넷이 한 바퀴를 이룬다 — ⓪ 가계 → 기업 일손 · ① 기업 → 가계 물건·서비스(시장에서) · ② 가계 → 기업 물건값(시장에서) ·
+     ③ 기업 → 가계 소득(급여). 흐름 표시(말)는 고리 앞에 서 있고 「한 칸 돌려요」로 한 고리씩 나아간다(rgPos 0~4 · 4 = 한 바퀴).
+  ⭐ 가위로 고리 하나를 끊을 수 있다(한 번에 하나 · 다시 누르면 이음 · 다른 고리를 누르면 가위가 옮겨 감).
+     흐름이 멈추는지는 **멈춤을 담는 상태 없이** `rgStop(st) = st.rgCut === st.rgPos % 4` 한 줄이 그때그때 정한다.
+  ⭐★ 가계가 하는 일(⓪·②)이 끊겨도, 기업이 하는 일(①·③)이 끊겨도 흐름 전체가 그 자리에서 멈춘다 — 멈춘 자리의 모습은
+     지도서 예시 답안 원문(`RG_LINK[k].stop`)으로 보여 준다.
+  ⭐ 수첩 세 줄(한 바퀴 다 돈 판 · 가계가 하는 일이 끊겨 멈춘 판 · 기업이 하는 일이 끊겨 멈춘 판)은
+     본 판 기록 `state.rgSeen |=` 단 하나(`rgLook`)에서만 선다(줄 상태 0 · 줄지 않음). 세 줄 최소 걸음은 판 전수 BFS.
+  ⭐ 판 읽기는 세 줄이 다 선 뒤에만(정답 자리 1). 이어서 기업의 성장이 주는 도움 3택(정답 자리 2) →
+     마무리 3택 = 가계와 기업의 관계(정답 자리 0).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 9종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 멈춘 자리에서 돌리기 무시 — 판 불변(가위를 거두거나 옮기라는 안내)
+     ④ 수첩 세 줄이 선 뒤 판 움직이기(가위·돌리기) 무시 — 판 불변
+     ⑤ 세 줄 전 판 읽기 무시 · 읽은 뒤 다시 무시 · 알맞지 않은 읽기 무시(자리별 안내)
+     ⑥ 판을 읽기 전 성장 3택 무시 · 고른 뒤 다시 무시 · 알맞지 않은 도움 무시
+     ⑦ 도움을 고르기 전 마무리 무시(순서)
+     ⑧ 알맞지 않은 마무리 무시
+     ⑨ 안내 표시 중 재클릭 무시(`rgBusy`).
+   수첩 줄은 기록에서만 — 가위를 거두어도 줄지 않음(|= 단 하나).
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.rg-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판은 가계와 기업의 관계를 어림해 나타낸 도식이다** — 실제 경제에서는 은행·정부 등 여러 주체와 여러 시장이 얽혀 있고,
+     판은 가계와 기업 사이의 네 흐름만 보여 준다(캡션 상시).
+  ㉡ **판에는 금액을 적지 않는다** — 자동차 비교도 가격을 별점으로만(교과서 금액 생략).
+  ㉢ **고리가 끊기면 한 번에 모두 멈추는 것은 판의 단순화**다 — 실제로는 서서히 어려워진다(캡션 「어림」으로 명시).
+  ㉣ **자동차 비교표 직접 채우기 · 신문 기사 스크랩 · 붙임딱지 · 별별 직업 속으로는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 근로자의 권리 · 기업의 사회적 책임 · 공정 거래 · 경제성장 · 무역 0(차시 예고 한 자리만).
+  **교사용 참고 자료 0** — 참고 도서·저자·출판사 · 신문 이름·날짜 · 활동지 · 평가 관점 · 쌍 비교 분석 용어.
+  사람 형상 0 · 네 자리 연도 0 · 금액 0 · 쪽수 0 · 실제 상호·기업 이름 0 · 누리집 주소 0 · 「수요·공급」 0.
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u2_l02_v1">
+<title>가계와 기업의 역할을 알아볼까요 · 시장경제와 국가 간 거래 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#A16207; --green-d:#854D0E; --cyan:#CA8A04;
+  --bg:#FEFCE8; --bub:#FEF9C3; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#FEF9C3;color:#854D0E}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 가계와 기업을 잇는 고리 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#FEF9C3;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#854D0E;max-width:660px}
+.rg-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#FEFCE8;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.rg-board{display:flex;flex-direction:column;gap:6px;padding:8px}
+.rg-head{background:#FEF3C7;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#854D0E;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.rg-ends{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+.rg-who{border:2px solid #E2E8F0;border-radius:9px;padding:5px 4px;text-align:center;font-weight:800;background:#fff;
+  font-size:clamp(10.4px,1.76vw,12.6px)}
+.rg-who.w0{border-color:#0EA5E9;color:#0369A1} .rg-who.w1{border-color:#A16207;color:#854D0E}
+.rg-mk{border:2px dashed #A16207;border-radius:20px;padding:3px 10px;font-weight:800;color:#854D0E;background:#FEFCE8;
+  font-size:clamp(9.4px,1.6vw,11.4px)}
+.rg-links{display:flex;flex-direction:column;gap:4px}
+.rg-link{display:grid;grid-template-columns:22px 1fr auto;gap:5px;align-items:center;border:2px solid #E2E8F0;border-radius:8px;
+  padding:4px 6px;background:#F8FAFC;font-size:clamp(9.2px,1.56vw,11.2px);font-weight:700;color:#475569;line-height:1.35}
+.rg-link .ar{font-weight:800;text-align:center;font-size:13px}
+.rg-link.done{border-color:#059669;background:#ECFDF5;color:#065F46}
+.rg-link.next{border-color:#A16207;background:#FEF9C3;color:#854D0E}
+.rg-link.cut{border-color:#DC2626;border-style:dashed;background:#FEF2F2;color:#B91C1C}
+.rg-link button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:7px;padding:3px 6px;cursor:pointer;
+  font-family:inherit;font-weight:800;font-size:clamp(8.6px,1.46vw,10.4px);white-space:nowrap}
+.rg-link button:hover{background:var(--bub)}
+.rg-go{border:2px solid #A16207;background:#A16207;color:#fff;border-radius:9px;padding:6px 8px;cursor:pointer;font-family:inherit;
+  font-weight:800;font-size:clamp(10px,1.7vw,12.4px)}
+.rg-state{border-radius:8px;padding:5px 8px;font-weight:800;font-size:clamp(9.6px,1.64vw,11.6px);line-height:1.45;text-align:center}
+.rg-state.stop{background:#FEE2E2;color:#B91C1C} .rg-state.lap{background:#DCFCE7;color:#166534} .rg-state.go{background:#F1F5F9;color:#334155}
+.rg-note{display:flex;flex-direction:column;gap:4px}
+.rg-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-radius:7px;padding:4px 8px;font-weight:800;
+  font-size:clamp(9.4px,1.58vw,11.4px);border:2px dashed #CBD5E0;background:#F8FAFC;color:#94A3B8}
+.rg-line.set{border-style:solid;border-color:#059669;background:#ECFDF5;color:#065F46}
+.rg-read,.rg-comp,.rg-fin{display:flex;flex-direction:column;gap:5px}
+.rg-read button,.rg-comp button,.rg-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.rg-read button:hover,.rg-comp button:hover,.rg-fin button:hover{background:var(--bub)}
+.rg-read button.no,.rg-comp button.no,.rg-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.rg-hint{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:420px){ .rg-link{grid-template-columns:18px 1fr auto;padding:3px 4px} .rg-link button{padding:2px 4px} }
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠: 모든 그림은 내용을 나타낸 도식이며 실제 사진이나 실제 기업이 아니다.
+   ⚠️ 사람 형상 대신 도형으로만 그린다. 금액은 적지 않는다. */
+const SVG = {
+  // 1 들어가기 — 우리 가족의 하루
+  day:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    ${[['오전 10시','일터에서 일해요','#0369A1'],['오후 5시','자동차를 살펴봐요','#A16207'],['오후 7시','함께 식사해요','#15803D'],['오후 10시','저축을 의논해요','#7C3AED']].map((t,i)=>`<rect x="${12+i*76}" y="30" width="68" height="86" rx="9" fill="#fff" stroke="${t[2]}" stroke-width="1.6"/>
+      <rect x="${12+i*76}" y="30" width="68" height="20" rx="9" fill="${t[2]}"/><text x="${46+i*76}" y="44" font-size="8" fill="#fff" text-anchor="middle" font-weight="800">${t[0]}</text>
+      <circle cx="${46+i*76}" cy="74" r="13" fill="${t[2]}" opacity=".18" stroke="${t[2]}"/>
+      <text x="${46+i*76}" y="104" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">${t[1]}</text>`).join('')}
+    <text x="160" y="146" font-size="8.4" fill="#334155" text-anchor="middle" font-weight="800">가족의 하루에도 경제활동이 들어 있어요</text></svg>`,
+  // 2 살펴보기 — 가계의 역할
+  home:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <path d="M122 70 L160 40 L198 70 Z" fill="#0369A1" opacity=".75"/><rect x="132" y="70" width="56" height="44" fill="#fff" stroke="#0369A1" stroke-width="1.6"/>
+    <text x="160" y="98" font-size="10" fill="#075985" text-anchor="middle" font-weight="800">가계</text>
+    ${[['생산 활동에 참여','소득을 얻어요',20],['물건·서비스를','소비해요',222]].map(t=>`<rect x="${t[2]}" y="56" width="80" height="44" rx="9" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.2"/>
+      <text x="${t[2]+40}" y="74" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">${t[0]}</text>
+      <text x="${t[2]+40}" y="88" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">${t[1]}</text>`).join('')}
+    <path d="M100 78 L128 86" stroke="#0369A1" stroke-width="1.6"/><path d="M192 86 L222 78" stroke="#0369A1" stroke-width="1.6"/>
+    <text x="160" y="142" font-size="8" fill="#334155" text-anchor="middle" font-weight="800">적은 비용으로 가장 큰 만족을 얻으려고 노력해요</text></svg>`,
+  // 3 살펴보기 — 자동차 비교(별점 도식)
+  car:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    ${['자동차 ①','자동차 ②','자동차 ③'].map((t,i)=>`<rect x="${20+i*98}" y="22" width="86" height="96" rx="9" fill="#fff" stroke="#A16207" stroke-width="1.4"/>
+      <rect x="${34+i*98}" y="40" width="58" height="20" rx="8" fill="#A16207" opacity=".22" stroke="#A16207"/>
+      <circle cx="${46+i*98}" cy="62" r="5" fill="#334155"/><circle cx="${80+i*98}" cy="62" r="5" fill="#334155"/>
+      <text x="${63+i*98}" y="84" font-size="8.4" fill="#854D0E" text-anchor="middle" font-weight="800">${t}</text>
+      <text x="${63+i*98}" y="102" font-size="7.4" fill="#64748B" text-anchor="middle" font-weight="700">${['7인승','5인승','9인승'][i]}</text>`).join('')}
+    <text x="160" y="140" font-size="8.2" fill="#334155" text-anchor="middle" font-weight="800">기준을 정해 비교하면 합리적으로 고를 수 있어요</text>
+    <text x="160" y="156" font-size="7.2" fill="#64748B" text-anchor="middle" font-weight="700">가격은 금액 대신 별점으로만 나타냈어요</text></svg>`,
+  // 4 살펴보기 — 기업의 역할
+  firm:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <rect x="126" y="50" width="68" height="58" fill="#fff" stroke="#A16207" stroke-width="1.6"/>
+    ${[0,1].map(r=>[0,1,2].map(c=>`<rect x="${134+c*20}" y="${58+r*18}" width="12" height="10" fill="#FDE68A"/>`).join('')).join('')}
+    <text x="160" y="124" font-size="9.6" fill="#854D0E" text-anchor="middle" font-weight="800">기업</text>
+    ${[['생산·판매',14,22],['근로자 고용',14,82],['급여 지급',226,22],['연구·세금',226,82]].map(t=>`<rect x="${t[1]}" y="${t[2]}" width="80" height="34" rx="8" fill="#FEFCE8" stroke="#A16207" stroke-width="1.2"/>
+      <text x="${t[1]+40}" y="${t[2]+21}" font-size="8" fill="#854D0E" text-anchor="middle" font-weight="800">${t[0]}</text>`).join('')}
+    <text x="160" y="152" font-size="7.8" fill="#334155" text-anchor="middle" font-weight="800">일자리를 주고, 물건이나 서비스를 생산해 이윤을 얻어요</text></svg>`,
+  // 6 살펴보기 — 가계 · 시장 · 기업
+  ring:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    <rect x="16" y="56" width="70" height="48" rx="9" fill="#fff" stroke="#0369A1" stroke-width="1.6"/><text x="51" y="84" font-size="10" fill="#075985" text-anchor="middle" font-weight="800">가계</text>
+    <rect x="234" y="56" width="70" height="48" rx="9" fill="#fff" stroke="#A16207" stroke-width="1.6"/><text x="269" y="84" font-size="10" fill="#854D0E" text-anchor="middle" font-weight="800">기업</text>
+    <ellipse cx="160" cy="80" rx="34" ry="20" fill="#fff" stroke="#A16207" stroke-width="1.6" stroke-dasharray="4 3"/><text x="160" y="84" font-size="9" fill="#854D0E" text-anchor="middle" font-weight="800">시장</text>
+    <path d="M86 50 Q160 12 234 50" fill="none" stroke="#0369A1" stroke-width="1.8" marker-end="url(#ra)"/>
+    <path d="M234 110 Q160 148 86 110" fill="none" stroke="#A16207" stroke-width="1.8" marker-end="url(#rb)"/>
+    <defs><marker id="ra" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#0369A1"/></marker>
+      <marker id="rb" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#A16207"/></marker></defs>
+    <text x="160" y="24" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">일손 · 물건값</text>
+    <text x="160" y="146" font-size="7.6" fill="#854D0E" text-anchor="middle" font-weight="800">소득 · 물건과 서비스</text></svg>`,
+  // 7 살펴보기 — 기업의 성장 노력
+  grow:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    ${[['생산 시설을 늘려요',0],['오래된 시설을 바꿔요',1],['품질·생산량이 높아져요',2]].map((t,i)=>`<rect x="${14+i*102}" y="36" width="92" height="56" rx="9" fill="#FEFCE8" stroke="#A16207" stroke-width="1.4"/>
+      <text x="${60+i*102}" y="68" font-size="7.8" fill="#854D0E" text-anchor="middle" font-weight="800">${t[0]}</text>`).join('')}
+    <path d="M106 64 L116 64" stroke="#A16207" stroke-width="2"/><path d="M208 64 L218 64" stroke="#A16207" stroke-width="2"/>
+    <rect x="70" y="108" width="180" height="26" rx="13" fill="#A16207"/>
+    <text x="160" y="125" font-size="8.6" fill="#fff" text-anchor="middle" font-weight="800">나라 경제가 발전하는 데 도움</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    <rect x="16" y="30" width="118" height="64" rx="9" fill="#fff" stroke="#0369A1" stroke-width="1.4"/>
+    <rect x="186" y="30" width="118" height="64" rx="9" fill="#fff" stroke="#A16207" stroke-width="1.4"/>
+    <text x="75" y="58" font-size="10" fill="#075985" text-anchor="middle" font-weight="800">가계</text>
+    <text x="75" y="76" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="700">생산 참여 · 소비</text>
+    <text x="245" y="58" font-size="10" fill="#854D0E" text-anchor="middle" font-weight="800">기업</text>
+    <text x="245" y="76" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="700">일자리 · 생산 · 이윤</text>
+    <path d="M136 56 L184 56" stroke="#334155" stroke-width="2"/><path d="M184 70 L136 70" stroke="#334155" stroke-width="2"/>
+    <rect x="70" y="112" width="180" height="26" rx="13" fill="#A16207"/>
+    <text x="160" y="129" font-size="9" fill="#fff" text-anchor="middle" font-weight="800">시장에서 만나 도움을 주고받아요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#A16207" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#A16207" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#854D0E" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 가계와 기업을 잇는 고리 판 =====
+   ★ 고리 넷(일손 · 물건과 서비스 · 물건값 · 소득)이 한 바퀴 · 흐름 표시는 rgPos(0~4, 4 = 한 바퀴) · 가위는 rgCut(-1 = 없음).
+   ★★ 흐름이 멈추는지는 rgStop 한 줄에서만 · 멈춤을 담는 상태 0 · 본 판 기록은 |= 만(rgSeen · rgLook 단 하나).
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. 금액 0. */
+const RG_N = 4;
+const RG_LAP = 4;
+/* 고리 넷 — f 는 보내는 쪽(0 가계 · 1 기업) */
+const RG_LINK = [
+  {f:0, t:'일손', do:'가계가 기업에 일손을 줘요',
+   stop:'기업이 물건이나 서비스를 생산하는 데 필요한 일손을 얻지 못해 생산이 어려워져요'},
+  {f:1, t:'물건과 서비스', do:'기업이 만든 물건이나 서비스가 시장에 나와요',
+   stop:'가계가 시장에서 필요한 물건이나 서비스를 구하기 어려워져요'},
+  {f:0, t:'물건값', do:'가계가 시장에서 물건값을 내고 소비해요',
+   stop:'기업이 시장에서 이윤을 얻지 못해 기업을 운영하거나 성장하기 어려워져요'},
+  {f:1, t:'소득', do:'기업이 일한 대가로 가계에 급여를 줘요',
+   stop:'가계가 소득을 얻지 못해 시장에서 필요한 물건이나 서비스를 사기 어려워져요'}
+];
+const RG_WHO = ['가계','기업'];
+/* 수첩 세 줄 — 본 판 기록의 자리 1 · 2 · 4 */
+const RG_NOTE = ['고리가 끊기지 않고 한 바퀴 다 돈 판','가계가 하는 일(일손 · 물건값)이 끊겨 멈춘 판','기업이 하는 일(물건과 서비스 · 소득)이 끊겨 멈춘 판'];
+const RG_ALL = 7;
+
+/* ② 판 읽기 */
+const RG_READ = [
+  '가계가 하는 일이 끊기면 가계만 어려워지고, 기업은 그대로였어요',
+  '어느 쪽 고리가 끊겨도 흐름 전체가 멈춰, 가계도 기업도 어려워졌어요',
+  '고리가 끊겨도 흐름은 다른 길로 돌아 계속 이어졌어요'
+];
+const RG_READ_OK = 1;
+const RG_READ_NO = [
+  '판을 다시 봐요. 가계가 <b>일손</b>을 주지 못했을 때, 멈춘 자리의 모습은 누가 어려워졌다고 했나요? 판을 다시 읽어 봐요.',
+  null,
+  '판을 다시 봐요. 가위가 있는 고리에 흐름이 닿았을 때 흐름은 <b>그 자리에서</b> 어떻게 되었나요? 판을 다시 읽어 봐요.'
+];
+
+/* ③ 기업의 성장이 소비자에게 주는 도움 — 교과서 66쪽 · 지도서 예시 답안 */
+const RG_COMP = [
+  '기업이 성장하면 일자리가 줄어들어 가계가 경제활동에 참여하기 어려워요',
+  '기업의 노력은 기업에만 도움이 되고, 소비자와는 상관이 없어요',
+  '생산 기술이 발전하고 상품이 많이 생산되면, 소비자는 품질이 좋은 상품을 저렴한 가격에 살 수 있어요'
+];
+const RG_COMP_OK = 2;
+const RG_COMP_NO = [
+  '기업의 노력을 떠올려 봐요. 기업이 꾸준히 성장하면 일자리는 <b>많아져요</b>. 판은 그대로예요.',
+  '기업의 노력을 떠올려 봐요. 생산 시설을 늘리고 바꾼 기업은 <b>고객</b>에게 무엇을 줄 수 있게 되었나요? 판은 그대로예요.',
+  null
+];
+
+/* ④ 마무리 — 교과서 67쪽 가계와 기업의 관계 */
+const RG_FIN = [
+  '가계는 기업의 생산 활동에 참여해 소득을 얻고 그 소득으로 기업이 만든 물건이나 서비스를 소비하며, 가계와 기업은 시장에서 만나 도움을 주고받아요',
+  '가계는 물건을 만들어 팔고, 기업은 그 물건을 사서 쓰기만 해요',
+  '가계와 기업은 서로 만나지 않고 저마다 따로 경제활동을 해요'
+];
+const RG_FIN_OK = 0;
+const RG_FIN_NO = [
+  null,
+  '판을 떠올려 봐요. 일손은 <b>가계</b>에서 기업으로, 물건과 서비스는 <b>기업</b>에서 가계로 흘렀어요. 오늘의 정리를 다시 골라 봐요.',
+  '판을 떠올려 봐요. 고리 하나만 끊겨도 흐름 전체가 멈췄어요 \u2014 가계와 기업은 <b>이어져</b> 있어요. 오늘의 정리를 다시 골라 봐요.'
+];
+
+/* 안내 */
+const RG_STUCK = '흐름이 <b>끊긴 고리</b>에 닿아 멈췄어요. 가위를 거두거나 다른 고리로 옮겨 봐요. 판은 그대로예요.';
+const RG_LOCK = '수첩의 세 줄이 <b>모두 섰어요</b>. 판은 이대로 둬요. 판을 읽어 봐요. 판은 그대로예요.';
+const RG_ORDER_R = '아직 <b>수첩의 세 줄</b>이 다 서지 않았어요. 판을 더 움직여 본 뒤에 읽을 수 있어요. 판은 그대로예요.';
+const RG_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const RG_ORDER_C = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const RG_COMP_AGAIN = '기업의 성장이 주는 도움은 <b>이미 골랐어요</b>. 판은 그대로예요.';
+const RG_ORDER_F = '아직 <b>기업의 성장이 주는 도움</b>을 고르지 않았어요. 먼저 골라 봐요. 판은 그대로예요.';
+const RG_ALL_MSG = '수첩의 세 줄이 <b>모두 섰어요</b>. 판을 읽어 봐요.';
+
+/* ★ 흐름이 멈추는지 — 가위와 흐름 표시를 견주는 한 줄(멈춤을 담는 자리 0) */
+function rgStop(st){ return st.rgCut === st.rgPos % RG_N; }
+/* ★ 이 판이 수첩의 어느 줄인지 — 한 줄 */
+function rgBit(st){ return rgStop(st) ? (RG_LINK[st.rgCut].f===0 ? 2 : 4) : (st.rgPos===RG_LAP ? 1 : 0); }
+function rgHas(st,b){ return (st.rgSeen & b)!==0; }
+function rgAll(st){ return st.rgSeen===RG_ALL; }
+/* ★ 고리 — RG_LINK 를 처리기가 읽는 자리 단 하나 */
+function rgLinkOf(k){ return RG_LINK[k]; }
+
+function rgLinks(st){
+  return `<div class="rg-links">${RG_LINK.map((L,i)=>{ const cut=st.rgCut===i, done=!cut && i<st.rgPos, next=!cut && !done && i===st.rgPos;
+    return `<div class="rg-link${cut?' cut':done?' done':next?' next':''}" data-link="${i}" data-cut="${cut?1:0}" data-done="${done?1:0}">
+      <span class="ar">${cut?'\u2702\uFE0F':L.f===0?'\u2192':'\u2190'}</span>
+      <span>${RG_WHO[L.f]} \u2192 ${RG_WHO[1-L.f]} \u00b7 <b>${L.t}</b></span>
+      <button data-k="${i}" onclick="rgCutAt(${i})">${cut?'\uD83D\uDD17 잇기':'\u2702\uFE0F 끊기'}</button></div>`; }).join('')}</div>`;
+}
+function rgState(st){
+  const s = rgStop(st) ? 'stop' : st.rgPos===RG_LAP ? 'lap' : 'go';
+  const t = s==='stop' ? `\u26D4 흐름이 멈췄어요 \u2014 ${RG_LINK[st.rgCut].stop}`
+    : s==='lap' ? '\uD83D\uDD04 고리를 한 바퀴 다 돌았어요'
+    : `\u25B6 다음 차례 \u2014 ${RG_LINK[st.rgPos].do}`;
+  return `<div class="rg-state ${s}" data-s="${s}">${t}</div>`;
+}
+function rgNote(st){
+  return RG_NOTE.map((t,i)=>{ const b=1<<i, on=rgHas(st,b);
+    return `<div class="rg-line${on?' set':''}" data-line="${i}">${on?'\u2714 '+t+'을 봤어요':t+' \u2014 아직 못 봤어요'}</div>`; }).join('');
+}
+
+function rgBoard(st){
+  const fin = st.rgFin!=null, all = rgAll(st);
+  const head = fin ? '가계와 기업의 역할을 알아봤어요'
+    : st.rgComp!=null ? '기업의 성장이 주는 도움까지 골랐어요 \u2014 이제 정리해요'
+    : st.rgRead!=null ? '기업의 성장이 주는 도움을 골라 봐요'
+    : all ? '수첩의 세 줄이 모두 섰어요 \u2014 판을 읽어 봐요'
+    : '고리를 끊어 보고 흐름을 돌려 봐요';
+  return `<div class="rg-board" data-cut="${st.rgCut}" data-pos="${st.rgPos}" data-stop="${rgStop(st)?1:0}" data-seen="${st.rgSeen}" data-all="${all?1:0}" data-read="${st.rgRead==null?-1:st.rgRead}" data-comp="${st.rgComp==null?-1:st.rgComp}" data-fin="${fin?1:0}">
+    <div class="rg-head">${head}</div>
+    <div class="rg-ends"><div class="rg-who w0">\uD83C\uDFE0 가계</div><div class="rg-mk">시장</div><div class="rg-who w1">\uD83C\uDFED 기업</div></div>
+    ${rgLinks(st)}
+    ${rgState(st)}
+    <button class="rg-go" onclick="rgStep()">\u25B6 한 칸 돌려요</button>
+    <div class="rg-note">${rgNote(st)}</div>
+  </div>`;
+}
+
+function rgPanel(st){
+  const fin = st.rgFin!=null, all = rgAll(st);
+  const q = fin ? '고리 판으로 가계와 기업의 역할과 관계를 알아봤어요.'
+    : st.rgComp!=null ? '오늘 공부한 내용을 정리해요. 가계와 기업은 어떤 관계일까요?'
+    : st.rgRead!=null ? '기업이 성장하려고 노력하면 소비자에게는 어떤 좋은 점이 있을까요?'
+    : all ? '가계가 하는 일이 끊겼을 때도, 기업이 하는 일이 끊겼을 때도 흐름을 살펴봤어요. 판에서 무엇을 알 수 있나요?'
+    : st.rgSeen!==0 ? '수첩의 세 줄을 모두 세워 봐요. 가계가 하는 일과 기업이 하는 일을 하나씩 끊어 보면 흐름은 어떻게 될까요?'
+    : '가계와 기업은 네 가지를 주고받아요. 흐름을 한 칸씩 돌려 보고, 고리를 끊으면 어떻게 되는지 살펴봐요.';
+  let right = `<div class="rg-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83D\uDD17 가계와 기업을 잇는 고리 판</div>
+      가계는 기업에 <b>일손</b>을 주고 <b>소득</b>을 얻어, 기업이 만든 <b>물건과 서비스</b>를 <b>물건값</b>을 내고 소비했어요.
+      어느 쪽 고리가 끊겨도 흐름 전체가 멈췄지요. 가계와 기업은 시장에서 만나 <b>밀접한 관계를 맺으며 도움을 주고받아요</b>.<br>
+      <span style="color:#64748B">판은 가계와 기업의 관계를 어림한 <b>도식</b>이에요. 실제로는 여러 주체와 여러 시장이 얽혀 있고, 한 번에 모두 멈추기보다 서서히 어려워져요.
+      <b>자동차 비교표 채우기</b>, <b>신문 기사 찾아 붙이기</b>, <b>붙임딱지 활동</b>과 <b>별별 직업 알아보기</b>는 교실에서 직접 해요.</span></div>`;
+  } else if(st.rgComp!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="rg-fin">${RG_FIN.map((t,k)=>`<button class="${st.rgWrongF===k?'no':''}" onclick="rgFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.rgRead!=null){
+    right += `<div class="dw-step">\uD83C\uDFED 기업의 성장이 주는 도움</div>`;
+    right += `<div class="rg-comp">${RG_COMP.map((t,k)=>`<button class="${st.rgWrongC===k?'no':''}" onclick="rgCompPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="rg-hint">어떤 기업은 생산 시설을 늘리고 오래된 시설을 바꾸어 상품의 품질과 생산량을 높였어요. 고객에게 더 안정적으로 상품을 내놓을 수 있게 되었지요.</div>`;
+  } else if(all){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="rg-read">${RG_READ.map((t,k)=>`<button class="${st.rgWrongR===k?'no':''}" onclick="rgReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83D\uDD17 고리 판</div>`;
+    right += `<div class="rg-hint"><b>한 칸 돌려요</b>를 누르면 흐름이 고리를 하나씩 지나가요. <b>끊기</b>를 누르면 그 고리에 가위가 놓여요(한 번에 하나). 수첩의 <b>세 줄</b>이 모두 서면 판을 읽을 수 있어요. 감점은 없어요.</div>`;
+  }
+  if(st.rgMsg) right += `<div class="dw-msg${st.rgWarn?' warn':''}">${st.rgMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83D\uDD17 가계와 기업을 잇는 고리 판</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${rgBoard(st)}<div class="cvcap">판은 가계와 기업의 관계를 어림한 <b>도식</b>이에요. 실제로는 여러 주체와 여러 시장이 얽혀 있어요 \u2014 판은 가계와 기업 사이의 네 흐름만 보여 줘요. 금액은 적지 않았어요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 시장경제와 국가 간 거래 · 주제① 우리나라 시장경제의 특징";
+
+// 확인 4 + 적용 4 — 정답 다양화 [1,3,0,2,0,2,3,1](각 자리 2회)
+// ⚠️ 문항 내 연도·쪽수·금액 0 · 새 사실 0(교과서 63~68쪽 문면 · 지도서 3~4차시까지만).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"가계는 기업의 생산 활동에 참여하고 그에 대한 대가로 무엇을 얻나요?",
+   opts:["비용","소득","이윤","세금"],
+   correct:1, pts:POINTS_BASIC, scene:"home",
+   reason:"가계는 기업의 생산 활동에 참여하고 그 대가로 소득을 얻어요. 이렇게 얻은 소득으로 기업에서 만든 물건이나 서비스를 소비해요.",
+   h1:"판에서 기업이 가계에 준 것을 떠올려 봐요.", h2:"일한 대가로 받는 급여가 여기에 들어가요."},
+  {stem:"사람들의 생활에 필요한 물건이나 서비스를 <b>생산하고 판매하여</b> 그 대가로 이윤을 얻는 것은 무엇인가요?",
+   opts:["가계","시장","서비스","기업"],
+   correct:3, pts:POINTS_BASIC, scene:"firm",
+   reason:"기업은 가계에 일자리를 제공하고, 사람들의 생활에 필요한 물건이나 서비스를 생산하고 판매하여 그 대가로 이윤을 얻어요.",
+   h1:"꼭 기억해요의 ㄱ ㅇ을 떠올려 봐요.", h2:"판의 오른쪽이었어요."},
+  {stem:"기업이 하는 일로 <b>알맞지 않은</b> 것은 무엇인가요?",
+   opts:["가계를 대신해 살림을 꾸려요","상품을 생산하려고 근로자를 고용하고 급여를 지급해요","더 좋은 물건이나 서비스를 생산하려고 연구해요","판매로 얻은 수익에 대하여 나라에 세금을 내요"],
+   correct:0, pts:POINTS_BASIC, scene:"firm",
+   reason:"기업은 물건을 생산해 판매하거나 서비스를 제공하고, 근로자를 고용해 급여를 지급하며, 더 좋은 물건을 만들려고 연구하고, 수익에 대하여 나라에 세금을 내요. 살림을 꾸려 가는 것은 가계예요.",
+   h1:"기업의 역할 넷을 떠올려 봐요.", h2:"살림을 꾸려 가는 공동체는 누구였나요?"},
+  {stem:"가계는 소득을 고려하여 어떤 소비를 하려고 노력하나요?",
+   opts:["가장 비싼 물건만 사는 소비","다른 집과 똑같이 사는 소비","적은 비용으로 가장 큰 만족을 얻을 수 있는 소비","소득보다 더 많이 쓰는 소비"],
+   correct:2, pts:POINTS_BASIC, scene:"car",
+   reason:"가계는 소득을 고려하여 적은 비용으로 가장 큰 만족을 얻을 수 있는 소비를 하려고 노력해요. 자동차를 고를 때 기준을 정해 비교한 것도 이런 노력이에요.",
+   h1:"자동차 고르기를 떠올려 봐요.", h2:"비용과 만족을 함께 생각해요."},
+  // 4단계 적용 (+15)
+  {stem:"판에서 <b>가계가 기업에 일손을 주는 고리</b>를 끊고 흐름을 돌렸을 때 어떻게 되었나요?",
+   opts:["흐름이 그 자리에서 멈추고, 기업은 생산에 필요한 일손을 얻지 못했어요","기업 쪽 흐름은 그대로 계속 돌았어요","흐름이 다른 고리로 돌아 한 바퀴를 마쳤어요","가계가 소득을 더 많이 얻었어요"],
+   correct:0, pts:POINTS_APPLY, scene:"ring",
+   reason:"가계가 역할을 제대로 못하면 기업은 물건이나 서비스를 생산하는 데 필요한 일손을 얻지 못해 생산이 어려워져요. 흐름은 끊긴 자리에서 멈췄어요.",
+   h1:"수첩의 둘째 줄을 떠올려 봐요.", h2:"끊긴 고리에 흐름이 닿으면 어떻게 되었나요?"},
+  {stem:"가족이 자동차를 살 때 <b>기준 세 가지를 정해 비교하는</b> 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["가장 비싼 자동차를 고르려고","광고에 가장 많이 나온 자동차를 고르려고","우리 가족에게 꼭 필요한 조건을 갖춘 자동차를 합리적으로 고르려고","친구 가족과 같은 자동차를 고르려고"],
+   correct:2, pts:POINTS_APPLY, scene:"car",
+   reason:"가족마다 중요하게 생각하는 기준이 달라서 선택의 결과는 다양할 수 있어요. 모아 둔 돈으로 살 수 있는 자동차 가운데 우리 가족에게 꼭 필요한 조건을 갖춘 자동차를 고르는 것이 합리적 선택이에요.",
+   h1:"가격, 연비, 크기 같은 기준을 떠올려 봐요.", h2:"합리적 선택은 무엇을 기준으로 했나요?"},
+  {stem:"시장경제에서 <b>기업이 역할을 제대로 못한다면</b> 어떤 일이 일어날까요?",
+   opts:["기업만 어려워지고 가계는 그대로예요","가계가 더 많은 소득을 얻게 돼요","시장에 물건이 넘쳐 나게 돼요","가계는 소득을 얻지 못해 필요한 물건이나 서비스를 구입하기 어려워져요"],
+   correct:3, pts:POINTS_APPLY, scene:"ring",
+   reason:"기업이 역할을 제대로 못하면 가계는 소득을 얻지 못해 시장에서 필요한 물건이나 서비스를 구입하기 어려워지고, 시장에서 필요한 물건이나 서비스를 구하기도 어려워져요.",
+   h1:"수첩의 셋째 줄을 떠올려 봐요.", h2:"기업이 가계에 주던 것은 무엇이었나요?"},
+  {stem:"기업이 성장하려고 <b>생산 시설을 늘리고 오래된 시설을 바꾸었을 때</b> 소비자가 얻는 좋은 점은 무엇인가요?",
+   opts:["물건을 살 수 있는 곳이 사라져요","품질이 우수한 상품을 저렴한 가격에 살 수 있어요","물건을 살 때 고를 필요가 없어져요","물건값을 내지 않아도 돼요"],
+   correct:1, pts:POINTS_APPLY, scene:"grow",
+   reason:"상품의 생산 기술이 발전하면 품질이 좋은 상품을, 상품이 많이 생산되면 보다 저렴한 가격으로 상품을 살 수 있어요. 이러한 기업의 노력은 나라 경제가 발전하는 데 도움이 돼요.",
+   h1:"기업의 성장 노력을 떠올려 봐요.", h2:"품질과 생산량이 모두 높아졌어요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 우리 가족의 경제활동 · 지도서 3~4차시 동기 유발
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">우리 가족은 어떻게 경제활동을 할까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('day','가족의 하루(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCA1 생각을 열어요</div>
+      지난 시간에는 시장경제가 무엇인지 알아봤어요. 우리 가족이 경제활동을 하는 모습을 떠올려 봐요. 우리 가족은 어떻게 소득을 얻고 있나요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 부모님이 회사에서 일한 대가로 <b>소득</b>을 얻어요.<br>
+      \u2014 가게를 운영하면서 소득을 얻어요.<br>
+      \u2014 은행에 <b>저축</b>을 해서 이자를 받아 소득을 얻을 수도 있어요.<br>
+      \u2014 주말마다 생활에 필요한 물품을 구입하고, 영화관에서 영화를 보기도 해요.</div>`
+      :`<div class="note">우리 집의 경제활동 모습을 친구들과 돌아가며 이야기해 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">오늘은 <b>가계와 기업의 역할</b>을 알아봐요.</div></div>`});
+// 2 살펴보기 — reveal: 가계의 역할
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">시장경제에서 가계는 어떤 일을 할까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('home','가계의 역할(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDFE0 가족의 하루</div>
+      오전 10시에 부모님은 각자 일터에서 일해요. 오후 5시에는 자동차 판매점에서 가족에게 필요한 자동차를 살펴봐요.
+      오후 7시에는 가족이 모여 함께 식사를 하고, 오후 10시에는 부모님이 저축에 관해 의논해요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 가계는 기업의 <b>생산 활동에 참여</b>하고 그에 대한 대가로 <b>소득</b>을 얻어요.<br>
+      \u2014 이렇게 얻은 소득으로 기업에서 만든 물건이나 서비스를 <b>소비</b>해요.<br>
+      \u2014 가계는 소득을 고려하여 <b>적은 비용으로 가장 큰 만족</b>을 얻을 수 있는 소비를 하려고 노력해요.</div>`
+      :`<div class="note">가족의 하루에서 경제활동을 찾아봐요. 시장경제에서 가계의 역할은 무엇일까요?</div><button class="reveal-btn" onclick="reveal()">정리 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: 가계의 합리적 선택(자동차)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">가계의 합리적 선택 \u2014 자동차 고르기</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('car','자동차 세 대(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDE97 할 수 있어요</div>
+      우리 가족은 모아 둔 돈으로 자동차를 사려고 해요. 크기, 가격, 디자인, 품질 보증, 연비처럼 여러 기준이 있어요.
+      우리 가족이 중요하게 생각하는 기준 세 가지를 정해 자동차를 비교해 봐요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 예) 기준을 <b>디자인 \u00b7 연비 \u00b7 가격</b>으로 정했어요.<br>
+      \u2014 자동차 ① 디자인 \u2605\u2605\u2605\u2605\u2605 \u00b7 연비 \u2605\u2605\u2605\u2605\u2606 \u00b7 가격 \u2605\u2605\u2605\u2605\u2606<br>
+      \u2014 자동차 ② 디자인 \u2605\u2605\u2605\u2606\u2606 \u00b7 연비 \u2605\u2605\u2605\u2606\u2606 \u00b7 가격 \u2605\u2605\u2605\u2605\u2605<br>
+      \u2014 자동차 ③ 디자인 \u2605\u2605\u2606\u2606\u2606 \u00b7 연비 \u2605\u2605\u2605\u2605\u2605 \u00b7 가격 \u2605\u2605\u2605\u2606\u2606<br>
+      \u2014 자동차 ①을 골랐어요. 디자인이 예쁘고, 연비가 좋으며, 가격도 적당하기 때문이에요.<br>
+      \u2014 가족마다 중요하게 생각하는 기준이 달라서 <b>선택의 결과는 다양할 수 있어요</b>. 남은 돈은 저축하거나 필요한 곳에 쓸 수 있어요.</div>`
+      :`<div class="note">자동차를 고르는 기준은 가족마다 같을까요?</div><button class="reveal-btn" onclick="reveal()">예시 보기</button>`}
+  </div>`});
+// 4 살펴보기 — reveal: 기업의 역할
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">시장경제에서 기업은 어떤 일을 할까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('firm','기업의 역할(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDFED 기업</div>
+      자동차를 생산하는 기업을 떠올려 봐요. 기업은 어떤 일을 하고 있을까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 물건을 생산해 판매하거나 서비스를 제공해요.<br>
+      \u2014 상품을 생산하려고 근로자를 고용하고, 근로자에게 급여를 지급해요.<br>
+      \u2014 더 좋은 물건이나 서비스를 생산하려고 연구해요.<br>
+      \u2014 물건이나 서비스 판매로 얻은 수익에 대하여 나라에 세금을 내요.<br>
+      \u2014 기업은 가계에 <b>일자리를 제공</b>하고, 생활에 필요한 물건이나 서비스를 <b>생산하고 판매</b>하여 그 대가로 <b>이윤</b>을 얻어요.</div>`
+      :`<div class="note">기업이 하는 일을 네 가지 찾아봐요.</div><button class="reveal-btn" onclick="reveal()">정리 보기</button>`}
+  </div>`});
+// 5 살펴보기 — 직접조작(가계와 기업을 잇는 고리 판)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">고리를 끊어 보며 가계와 기업의 관계를 살펴봐요</h2>
+  ${rgPanel(st)}`});
+// 6 살펴보기 — reveal: 가계 · 기업 · 시장의 관계
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">가계, 기업, 시장은 어떤 관계일까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('ring','가계 \u00b7 시장 \u00b7 기업(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83E\uDD14 핵심 질문</div>
+      가계가 역할을 제대로 못한다면, 기업이 역할을 제대로 못한다면 어떤 일이 일어날까요? 판에서 멈춘 모습을 떠올려 봐요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 시장은 가계와 기업이 만나서 서로 필요한 것을 주고받을 수 있게 해 줘요.<br>
+      \u2014 기업은 가계에 일자리를 제공하고, 가계는 기업의 생산 활동에 참여하여 소득을 얻어요. 가계는 이렇게 얻은 소득으로 기업에서 만든 물건이나 서비스를 소비해요.<br>
+      \u2014 이처럼 가계와 기업은 다양한 형태의 시장에서 만나 <b>밀접한 관계를 맺으며 도움을 주고받아요</b>.</div>`
+      :`<div class="note">가계와 기업은 서로 무엇을 주고받았나요?</div><button class="reveal-btn" onclick="reveal()">정리 보기</button>`}
+  </div>`});
+// 7 살펴보기 — reveal: 기업의 성장 노력 · 꼭 기억해요
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">기업은 성장하려고 어떤 노력을 할까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('grow','기업의 성장 노력(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCF0 기업의 노력</div>
+      어떤 기업은 생산 시설을 늘리고 오래된 시설을 바꾸어 상품의 품질과 생산량을 높였어요. 오랫동안 고객과 함께하려면 기업이 꾸준히 성장하고 발전해야 한대요.<br>
+      <b>꼭! 기억해요</b> \u2014 1 가계는 기업의 생산 활동에 참여하고 그에 대한 대가로 ( 소득 , 비용 )을 얻어요. 2 ㄱ ㅇ 은/는 물건이나 서비스를 생산하고 판매하여 그 대가로 이윤을 얻어요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 기업은 물건의 생산량을 늘리려고 생산 시설에 투자하거나, 생산 비용을 줄이고 판매량을 늘릴 방법을 찾는 등 더 많은 이윤을 얻으려고 다양한 노력을 해요.<br>
+      \u2014 이러한 기업의 노력은 <b>나라 경제가 발전하는 데 도움</b>이 돼요. 기업이 꾸준히 성장하면 일자리도 많아져요.<br>
+      \u2014 꼭 기억해요 1 \u2014 <b>소득</b> \u00b7 2 \u2014 <b>기업</b></div>`
+      :`<div class="note">기업이 성장하려고 기울이는 노력은 나라 경제에 어떤 영향을 줄까요?</div><button class="reveal-btn" onclick="reveal()">정리 보기</button>`}
+  </div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 3~4차시 학습 내용 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div><b>가계</b>는 기업의 생산 활동에 참여하고 그 대가로 소득을 얻으며, 소득으로 물건이나 서비스를 소비해요. 적은 비용으로 가장 큰 만족을 얻는 소비를 하려고 노력해요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div><b>기업</b>은 가계에 일자리를 제공하고, 물건이나 서비스를 생산하고 판매하여 그 대가로 이윤을 얻어요. 성장하려는 기업의 노력은 나라 경제가 발전하는 데 도움이 돼요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div>가계와 기업은 다양한 형태의 시장에서 만나 <b>밀접한 관계</b>를 맺으며 도움을 주고받아요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 가계가 하는 일이 끊겨도, 기업이 하는 일이 끊겨도 고리의 흐름 전체가 멈췄어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b>근로자의 권리를 보호하는 모습</b>을 살펴봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공부한 내용을 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"시장경제에서 가계의 역할을 설명할 수 있어요",st)}
+    ${selfCheck(1,"시장경제에서 기업의 역할을 설명할 수 있어요",st)}
+    ${selfCheck(2,"가계와 기업이 어떤 관계인지 말할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">근로자의 권리를 보호하는 모습</b>을 살펴봐요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u2_l02";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  rgCut:-1, rgPos:0, rgSeen:0,
+  rgRead:null, rgComp:null, rgFin:null,
+  rgWrongR:null, rgWrongC:null, rgWrongF:null,
+  rgMsg:null, rgWarn:false, rgBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function rgRender(){ main.innerHTML = slides[state.idx].render(state); }
+function rgHold(msg){
+  state.rgWarn=true; state.rgBusy=true; state.rgMsg=msg;
+  playThud(); rgRender();
+  setTimeout(()=>{ state.rgBusy=false; state.rgWarn=false; state.rgMsg=null;
+    state.rgWrongR=null; state.rgWrongC=null; state.rgWrongF=null; rgRender(); },1600);
+}
+/* ★ 본 판 기록 — 더하기만 하는 자리 단 하나 */
+function rgLook(){ state.rgSeen |= rgBit(state); }
+function rgSay(base){
+  state.rgWarn=false;
+  if(rgAll(state)){ state.rgMsg = RG_ALL_MSG; playChime(); }
+  else { state.rgMsg = base; playBlip(); }
+  rgRender();
+}
+
+/* ① 가위 — 고리 하나를 끊거나 잇기(한 번에 하나) */
+function rgCutAt(k){
+  if(state.rgFin!=null) return;                                        // 가드①
+  if(state.rgBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=RG_N) return;                   // 가드②
+  if(rgAll(state)){ rgHold(RG_LOCK); return; }                         // 가드④ 판 불변
+  const L = rgLinkOf(k);
+  state.rgCut = state.rgCut===k ? -1 : k;                              // ★ 가위가 놓이는 자리 단 하나
+  rgLook();
+  rgSay(state.rgCut!==k ? `「${L.t}」 고리를 <b>다시 이었어요</b>.`
+    : rgStop(state) ? `「${L.t}」 고리를 <b>끊었어요</b> \u2014 흐름이 바로 이 고리 앞에 있어 <b>흐름이 멈췄어요</b>.`
+    : `「${L.t}」 고리를 <b>끊었어요</b>. 흐름을 돌려 봐요.`);
+}
+
+/* ② 한 칸 돌리기 — 흐름이 고리 하나를 지나감 */
+function rgStep(){
+  if(state.rgFin!=null) return;                                        // 가드①
+  if(state.rgBusy) return;                                             // 가드⑨
+  if(rgAll(state)){ rgHold(RG_LOCK); return; }                         // 가드④ 판 불변
+  if(rgStop(state)){ rgHold(RG_STUCK); return; }                       // 가드③ 판 불변
+  const L = rgLinkOf(state.rgPos % RG_N);
+  state.rgPos = state.rgPos % RG_N + 1;                                // ★ 흐름이 나아가는 자리 단 하나
+  rgLook();
+  rgSay(rgStop(state) ? `「${L.do}」 \u2014 그런데 다음 고리가 끊겨 <b>흐름이 멈췄어요</b>.`
+    : state.rgPos===RG_LAP ? `「${L.do}」 \u2014 고리를 <b>한 바퀴</b> 다 돌았어요.`
+    : `「${L.do}」 \u2014 흐름이 한 칸 나아갔어요.`);
+}
+
+/* ③ 판 읽기 — 수첩 세 줄 뒤에만(가드⑤). */
+function rgReadPick(k){
+  if(state.rgFin!=null) return;                                        // 가드①
+  if(state.rgBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=RG_READ.length) return;         // 가드②
+  if(!rgAll(state)){ rgHold(RG_ORDER_R); return; }                     // 가드⑤ 순서 — 판 불변
+  if(state.rgRead!=null){ rgHold(RG_READ_AGAIN); return; }             // 가드⑤ 판 불변
+  if(k===RG_READ_OK){
+    state.rgRead=k; state.rgWrongR=null; state.rgWarn=false;
+    state.rgMsg = '판을 잘 읽었어요. 가계와 기업은 <b>서로 이어져</b> 있어서, 어느 한쪽이 역할을 못하면 다른 쪽도 어려워져요.';
+    playChime(); rgRender(); return;
+  }
+  state.rgWrongR=k;
+  rgHold(RG_READ_NO[k]);
+}
+
+/* ④ 기업의 성장이 주는 도움 — 판을 읽은 뒤에만(가드⑥). */
+function rgCompPick(k){
+  if(state.rgFin!=null) return;                                        // 가드①
+  if(state.rgBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=RG_COMP.length) return;         // 가드②
+  if(state.rgRead==null){ rgHold(RG_ORDER_C); return; }                // 가드⑥ 순서 — 판 불변
+  if(state.rgComp!=null){ rgHold(RG_COMP_AGAIN); return; }             // 가드⑥ 판 불변
+  if(k!==RG_COMP_OK){ state.rgWrongC=k; rgHold(RG_COMP_NO[k]); return; } // 가드⑥ 판 불변
+  state.rgComp = k;                                                    // ★ 도움을 고르는 자리 단 하나
+  state.rgWarn=false;
+  state.rgMsg = '기업이 성장하려고 노력하면 소비자는 <b>품질이 좋은 상품을 더 저렴하게</b> 살 수 있어요 \u2014 나라 경제가 발전하는 데도 도움이 돼요.';
+  playChime(); rgRender();
+}
+
+/* ⑤ 마무리 — 교과서 67쪽 가계와 기업의 관계 */
+function rgFinish(k){
+  if(state.rgFin!=null) return;                                        // 가드①
+  if(state.rgBusy) return;                                             // 가드⑨
+  if(!Number.isInteger(k) || k<0 || k>=RG_FIN.length) return;          // 가드②
+  if(state.rgComp==null){ rgHold(RG_ORDER_F); return; }                // 가드⑦ 순서 — 판 불변
+  if(k===RG_FIN_OK){
+    state.rgFin=k; state.rgWrongF=null; state.rgMsg=null; state.rgWarn=false;
+    playChime(); rgRender(); return;
+  }
+  state.rgWrongF=k;
+  rgHold(RG_FIN_NO[k]);                                                // 가드⑧ 판 불변
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='g6_social_u2_l03_저울을맞춰요.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
