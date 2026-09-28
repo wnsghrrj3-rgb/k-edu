@@ -39,18 +39,20 @@ function lessonNo(key) {
   return m[2] ? a + '~' + String(+m[2]) : a;
 }
 
-const files = fs.readdirSync(DATA).filter(f => /^g\d_[a-z]+_u\d+\.js$/.test(f)).sort();
+const FILE_RE = /^g(\d)(?:s(\d))?_([a-z]+)_u(\d+)\.js$/; // 28차: 2학기 = g3s2_math_u1.js
+const files = fs.readdirSync(DATA).filter(f => FILE_RE.test(f)).sort();
 const subjects = {};
 let totalLessons = 0, totalSlides = 0;
 files.forEach(f => {
-  const m = f.match(/^g(\d)_([a-z]+)_u(\d+)\.js$/);
-  const g = +m[1], s = m[2], u = +m[3];
-  const slug = 'g' + g + '_' + s;
+  const m = f.match(FILE_RE);
+  const g = +m[1], t = +(m[2] || 1), s = m[3], u = +m[4];
+  const slug = 'g' + g + (t > 1 ? 's' + t : '') + '_' + s;
   const L = loadLessons(path.join(DATA, f));
   if (!subjects[slug]) {
-    subjects[slug] = { slug, grade: g, subject: s, subject_ko: SUBJ_KO[s] || s, title: g + '학년 ' + (SUBJ_KO[s] || s), units: [] };
+    subjects[slug] = { slug, grade: g, term: t, subject: s, subject_ko: SUBJ_KO[s] || s, title: g + '학년 ' + (t > 1 ? t + '학기 ' : '') + (SUBJ_KO[s] || s), units: [] };
   }
   const titles = unitTitles(path.join(TEACHER, slug + '.html'));
+  if (!titles[u]) { const any = Object.values(L).find(d => d && d.meta && d.meta.unit_title); if (any) titles[u] = any.meta.unit_title; } // 2학기는 1세대 홈이 없어 meta.unit_title
   const lessons = Object.keys(L).filter(k => k.startsWith('u' + u + '_')).sort((a, b) => {
     const na = +(a.match(/_l(\d+)/) || [0, 0])[1], nb = +(b.match(/_l(\d+)/) || [0, 0])[1];
     return na - nb;
@@ -82,7 +84,7 @@ files.forEach(f => {
 Object.values(subjects).forEach(s => s.units.sort((a, b) => a.unit - b.unit));
 
 const order = ['math', 'korean', 'science', 'social', 'english'];
-const list = Object.values(subjects).sort((a, b) => a.grade - b.grade || order.indexOf(a.subject) - order.indexOf(b.subject));
+const list = Object.values(subjects).sort((a, b) => a.grade - b.grade || order.indexOf(a.subject) - order.indexOf(b.subject) || a.term - b.term);
 const out = '/* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.\n   생성: ' + new Date().toISOString().slice(0, 10) + ' · 과목 ' + list.length + ' · 차시 ' + totalLessons + ' · 슬라이드 ' + totalSlides + ' */\n'
   + 'window.KT2_MANIFEST = ' + JSON.stringify({ built: new Date().toISOString().slice(0, 10), lessons: totalLessons, slides: totalSlides, subjects: list }, null, 1) + ';\n';
 fs.writeFileSync(path.join(__dirname, 'manifest.js'), out);

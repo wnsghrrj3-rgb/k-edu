@@ -63,21 +63,23 @@ body{overflow:auto}
   var q = {}; location.search.replace(/^\?/,'').split('&').forEach(function(kv){ var p=kv.split('='); if(p[0]) q[p[0]]=decodeURIComponent(p[1]||''); });
   var grades = []; M.subjects.forEach(function(s){ if(grades.indexOf(s.grade)<0) grades.push(s.grade); });
   var g = +q.g || +(localStorage.getItem('kt2_home_g')||grades[0]); if(grades.indexOf(g)<0) g = grades[0];
-  var s = q.s || localStorage.getItem('kt2_home_s') || '';
+  var s = q.s ? ('g'+g+(+q.t>1?'s'+q.t:'')+'_'+q.s) : (localStorage.getItem('kt2_home_slug') || ''); // 28차: 탭 = 과목×학기(slug)
   document.getElementById('stat').innerHTML = '<b>'+M.lessons+'</b>차시 · <b>'+M.slides.toLocaleString()+'</b>슬라이드<br>목록 생성 '+M.built;
   function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
   function paint(){
     var tg = document.getElementById('tab-g'); tg.innerHTML = grades.map(function(x){ return '<button class="'+(x===g?'on':'')+'" data-g="'+x+'">'+x+'학년</button>'; }).join('');
     var subs = M.subjects.filter(function(x){ return x.grade===g; });
-    if(!subs.some(function(x){ return x.subject===s; })) s = subs[0].subject;
-    var ts = document.getElementById('tab-s'); ts.innerHTML = subs.map(function(x){ return '<button class="'+(x.subject===s?'on':'')+'" data-s="'+x.subject+'">'+x.subject_ko+'</button>'; }).join('');
-    document.body.className = 'subj-'+s; localStorage.setItem('kt2_home_g', g); localStorage.setItem('kt2_home_s', s);
-    var sj = subs.filter(function(x){ return x.subject===s; })[0];
+    var multi = {}; subs.forEach(function(x){ multi[x.subject] = (multi[x.subject]||0) + 1; });
+    if(!subs.some(function(x){ return x.slug===s; })) s = subs[0].slug;
+    var ts = document.getElementById('tab-s'); ts.innerHTML = subs.map(function(x){ var tl = (x.term||1)>1 ? ' '+x.term+'학기' : (multi[x.subject]>1 ? ' 1학기' : ''); return '<button class="'+(x.slug===s?'on':'')+'" data-s="'+x.slug+'">'+x.subject_ko+tl+'</button>'; }).join('');
+    var sj = subs.filter(function(x){ return x.slug===s; })[0];
+    document.body.className = 'subj-'+sj.subject; localStorage.setItem('kt2_home_g', g); localStorage.setItem('kt2_home_slug', s);
+    var tq = (sj.term||1)>1 ? '&t='+sj.term : '';
     var u = document.getElementById('units');
     u.innerHTML = sj.units.map(function(un){
       return '<div class="unit"><h2><span class="n">'+un.unit+'</span>'+esc(un.title)+'<span class="m">'+un.lessons.length+'차시</span><span class="sp"></span>'+(un.resources?'<span class="res">자료층 있음</span>':'')+'</h2><div class="lessons">'+un.lessons.map(function(l){
         var tot = l.slides||1;
-        return '<a class="ls" href="stage.html?g='+g+'&s='+s+'&u='+un.unit+'&l='+encodeURIComponent(l.key)+'"><div class="no"><i></i>'+esc(l.no)+'차시'+(l.std?' <span style="opacity:.7">'+esc(l.std)+'</span>':'')+'</div><div class="t">'+esc(l.title)+'</div><div class="bar">'+['도입','전개','기본문제','응용문제','정리'].map(function(st,i){ return l.stages[i]?'<i style="width:'+(l.stages[i]/tot*100)+'%;background:'+C[st]+'"></i>':''; }).join('')+'</div><div class="m"><span><b>'+l.slides+'</b> 슬라이드</span>'+(l.interactive?'<span><b>'+l.interactive+'</b> 조작</span>':'')+'<span class="sv" title="40분 7요소: '+(l.seven||[]).filter(Boolean).length+'/7">'+(l.seven||[]).map(function(v){ return '<i class="'+(v?'on':'')+'"></i>'; }).join('')+'</span></div></a>';
+        return '<a class="ls" href="stage.html?g='+g+'&s='+sj.subject+tq+'&u='+un.unit+'&l='+encodeURIComponent(l.key)+'"><div class="no"><i></i>'+esc(l.no)+'차시'+(l.std?' <span style="opacity:.7">'+esc(l.std)+'</span>':'')+'</div><div class="t">'+esc(l.title)+'</div><div class="bar">'+['도입','전개','기본문제','응용문제','정리'].map(function(st,i){ return l.stages[i]?'<i style="width:'+(l.stages[i]/tot*100)+'%;background:'+C[st]+'"></i>':''; }).join('')+'</div><div class="m"><span><b>'+l.slides+'</b> 슬라이드</span>'+(l.interactive?'<span><b>'+l.interactive+'</b> 조작</span>':'')+'<span class="sv" title="40분 7요소: '+(l.seven||[]).filter(Boolean).length+'/7">'+(l.seven||[]).map(function(v){ return '<i class="'+(v?'on':'')+'"></i>'; }).join('')+'</span></div></a>';
       }).join('')+'</div></div>';
     }).join('') || '<div class="empty">아직 차시가 없어요</div>';
     tg.querySelectorAll('button').forEach(function(b){ b.onclick=function(){ g=+b.getAttribute('data-g'); paint(); }; });

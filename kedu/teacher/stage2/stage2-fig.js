@@ -7,6 +7,7 @@
            · scale(전자저울·용수철저울) · hand(손 어림) · tools(도구 카드) · chain(카드 사이 화살표) · places(쓰이는 곳)
    · 24차(2026-09-28) 국어 부품 추가: sent/sents(문장 짜임)·pause(띄어 읽기 ∨)·text(글 읽기 판)·para(문단 중심·뒷받침)·sort2(두 갈래 통)·mood(인물 마음)·sound(소리·표기)·letter(편지지)·note(메모지)
    · 23차(2026-09-28) 길이·시간 부품 추가: ruler(자)·joins(이어 붙여 어림)·road(거리 띠·km 표지판)·clock(시·분·초바늘)·tvert(시간 세로셈) · 카드 on(주황 강조)
+   · 28차(2026-09-29) 3학년 2학기 곱셈 부품: vmul(곱셈 세로셈 — 올림 수·부분 곱 두 줄) · grid(모눈 가르기 — 덩이마다 부분 곱) · range(어림 사이 띠)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
    ============================================================================ */
 (function (global) {
@@ -761,10 +762,58 @@
     const c = (x, cls) => { const v = so(x); return '<span class="sc-mc ' + cls + '">' + sci(v) + md(v.name || '') + '</span>'; };
     const tag = rows.some(r => r[2]); return '<div class="sc-mimic n' + rows.length + (tag ? ' tag' : '') + '"><div class="sc-mrow head"><span>' + esc(o.ha || '자연에서') + '</span><em></em><span>' + esc(o.hb || '만든 물건') + '</span>' + (tag ? '<span></span>' : '') + '</div>' + rows.map(r => '<div class="sc-mrow">' + c(r[0], 'a') + '<em><i>' + esc(o.verb || '본떠요') + '</i>→</em>' + c(r[1], 'b') + (tag ? (r[2] ? '<u>' + md(r[2]) + '</u>' : '<span></span>') : '') + '</div>').join('') + '</div>' + (o.note ? '<div class="so-lnote">' + md(o.note) + '</div>' : '');
   }
+
+  // ── 28차(2026-09-29) 3학년 2학기 곱셈 부품: vmul(곱셈 세로셈) · grid(모눈 가르기) · range(어림 사이) ──
+  // vmul: a × b 세로셈(HTML). b 가 한 자리면 올림 수를 윗자리 위에 작게, 두 자리면 부분 곱 두 줄(십의 자리 줄은 한 자리 밀어) + 합.
+  //       hi: 0 = 일의 자리 줄 · 1 = 십의 자리 줄 · 'r' = 답 · zero:true 면 밀어 적은 자리에 0 · answer:false 면 답 칸 비움
+  function vmul(o) {
+    const a = Math.max(0, +o.a | 0), b = Math.max(0, +o.b | 0), r = a * b; const two = b >= 10 && b % 10 !== 0;
+    const bu = b % 10, bt10 = Math.floor(b / 10) % 10, p1 = a * bu, p2 = a * bt10;
+    const N = Math.max(String(r).length, String(a).length, String(b).length, two ? String(p2).length + 1 : 0);
+    const row = (str, cls, sign, extra) => { const t = String(str).padStart(N, ' ').split(''); return '<div class="vt-row ' + cls + '" style="grid-template-columns:repeat(' + N + ',54px)"' + (extra || '') + '>' + (sign ? '<em>' + sign + '</em>' : '') + t.map(x => '<span>' + (x === ' ' ? '' : esc(x)) + '</span>').join('') + '</div>'; };
+    let carryRow = '';
+    if (!two && b < 10 && o.carry !== false) { const A = String(a).split('').map(Number); const C = new Array(N).fill(''); let c = 0; const off = N - A.length; for (let i = A.length - 1; i >= 0; i--) { const v = A[i] * b + c; c = Math.floor(v / 10); if (c && i > 0) C[off + i - 1] = String(c); } if (C.some(Boolean)) carryRow = '<div class="vt-row vt-carry vm-carry" style="grid-template-columns:repeat(' + N + ',54px)">' + C.map(x => '<span>' + x + '</span>').join('') + '</div>'; }
+    const hi = (k) => o.hi === k ? ' vm-hi' : '';
+    let h = '<div class="vt vm" data-r="' + r + '"' + (two ? ' data-p="' + p1 + ',' + (p2 * 10) + '"' : '') + '>' + carryRow + row(a, 'vt-a') + row(b, 'vt-b', '×') + '<div class="vt-line"></div>';
+    if (two) { h += row(p1, 'vm-p vm-p1' + hi(0)) + row(o.zero ? String(p2 * 10) : String(p2) + ' ', 'vm-p vm-p2' + hi(1)) + '<div class="vt-line"></div>'; }
+    h += (o.answer === false ? row(''.padStart(N, ' '), 'vt-r vm-blank') : row(r, 'vt-r' + hi('r'))) + '</div>';
+    const side = two && o.side !== false ? '<div class="vm-side"><div class="vm-sl' + hi(0) + '">' + a + ' × ' + bu + ' = ' + p1 + '</div><div class="vm-sl' + hi(1) + '">' + a + ' × ' + (bt10 * 10) + ' = ' + (p2 * 10) + '</div></div>' : '';
+    return '<div class="fig-vert fig-vmul">' + '<div class="vm-wrap">' + h + side + '</div>' + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
+  }
+  // grid: 가로 w칸 × 세로 h칸 모눈을 sw·sh 로 갈라 덩이마다 부분 곱. 덩이 수 = sw 칸 × sh 칸.
+  function grid(o) {
+    const w = Math.max(1, o.w | 0), h = Math.max(1, o.h | 0);
+    const sw = (o.sw && o.sw.length ? o.sw : [w]).map(x => x | 0), sh = (o.sh && o.sh.length ? o.sh : [h]).map(x => x | 0);
+    const sc = Math.min(340 / w, 170 / h, 26), x0 = 86 + (340 - w * sc) / 2, y0 = 70; const FILL = ['#DCE8FB', '#FFE8CC', '#D9F2E3', '#EDE3FA'];
+    let s = '', yy = y0, k = 0;
+    sh.forEach((hh, j) => { let xx = x0; sw.forEach((ww, i) => { const bw = ww * sc, bh = hh * sc, col = FILL[(j * sw.length + i) % 4]; s += '<rect class="o-blk" x="' + xx.toFixed(1) + '" y="' + yy.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh.toFixed(1) + '" fill="' + col + '" data-v="' + (ww * hh) + '"/>';
+      if (o.cells !== false && w <= 45 && h <= 45) { for (let c = 1; c < ww; c++) s += '<line x1="' + (xx + c * sc).toFixed(1) + '" y1="' + yy.toFixed(1) + '" x2="' + (xx + c * sc).toFixed(1) + '" y2="' + (yy + bh).toFixed(1) + '" stroke="rgba(43,52,64,.16)" stroke-width="1"/>'; for (let c = 1; c < hh; c++) s += '<line x1="' + xx.toFixed(1) + '" y1="' + (yy + c * sc).toFixed(1) + '" x2="' + (xx + bw).toFixed(1) + '" y2="' + (yy + c * sc).toFixed(1) + '" stroke="rgba(43,52,64,.16)" stroke-width="1"/>'; }
+      const lab = o.labels === false ? '' : (bw > 96 && bh > 30 ? ww + ' × ' + hh + ' = ' + (ww * hh) : (bw > 34 && bh > 22 ? String(ww * hh) : '')); if (lab) s += txt(xx + bw / 2, yy + bh / 2 + 9, lab, bw > 96 && bh > 30 ? 22 : 18, INK);
+      xx += bw; k++; }); yy += hh * sc; });
+    let xx = x0; sw.forEach((ww, i) => { if (i) s += '<line class="o-cut" x1="' + xx.toFixed(1) + '" y1="' + (y0 - 8) + '" x2="' + xx.toFixed(1) + '" y2="' + (y0 + h * sc + 8).toFixed(1) + '" stroke="' + ORANGE + '" stroke-width="4"/>'; s += txt(xx + ww * sc / 2, y0 - 14, String(ww), 22, BLUE2); xx += ww * sc; });
+    yy = y0; sh.forEach((hh, j) => { if (j) s += '<line class="o-cut" x1="' + (x0 - 8) + '" y1="' + yy.toFixed(1) + '" x2="' + (x0 + w * sc + 8).toFixed(1) + '" y2="' + yy.toFixed(1) + '" stroke="' + ORANGE + '" stroke-width="4"/>'; s += txt(x0 - 16, yy + hh * sc / 2 + 8, String(hh), 22, BLUE2, 800, 'end'); yy += hh * sc; });
+    s += '<rect x="' + x0.toFixed(1) + '" y="' + y0 + '" width="' + (w * sc).toFixed(1) + '" height="' + (h * sc).toFixed(1) + '" fill="none" stroke="' + INK + '" stroke-width="3"/>';
+    s += txt(230, 32, o.title || ('가로 ' + w + '칸 × 세로 ' + h + '칸'), 24, '#6B7C93', 700);
+    const parts = []; sh.forEach(hh => sw.forEach(ww => parts.push(ww * hh)));
+    const by = y0 + h * sc + 44; if (o.sum !== false) s += txt(230, by, (parts.length > 1 ? parts.join(' + ') + ' = ' : '') + (w * h), 28, BLUE2);
+    return svgWrap(s, 'fig-grid', '0 0 460 ' + Math.round(by + 20));
+  }
+  // range: 어림 사이 — lo~hi 띠(주황) 위에 계산한 값 at(파랑, 사이 밖이면 빨강)
+  function range(o) {
+    const lo = +o.lo, hi = +o.hi, at = o.at == null ? null : +o.at; const span = hi - lo, pad = span * 0.35, a0 = lo - pad, a1 = hi + pad; const X = (v) => 40 + 380 * (v - a0) / (a1 - a0), y = 160;
+    let s = '<line x1="30" y1="' + y + '" x2="430" y2="' + y + '" stroke="' + INK + '" stroke-width="4"/><path d="M430 ' + y + ' l-14 -9 v18 z" fill="' + INK + '"/>';
+    s += '<rect class="o-band" x="' + X(lo) + '" y="' + (y - 16) + '" width="' + (X(hi) - X(lo)) + '" height="32" rx="8" fill="#FFE1CC" stroke="' + ORANGE + '" stroke-width="3"/>';
+    [lo, hi].forEach(v => { s += '<line x1="' + X(v) + '" y1="' + (y - 24) + '" x2="' + X(v) + '" y2="' + (y + 24) + '" stroke="' + ORANGE + '" stroke-width="4"/>' + txt(X(v), y + 56, String(v), 26, ORANGE); });
+    const inn = at != null && at >= lo && at <= hi;
+    if (at != null) s += '<circle class="o-at' + (inn ? '' : ' out') + '" cx="' + X(Math.max(a0, Math.min(a1, at))) + '" cy="' + y + '" r="13" fill="' + (inn ? BLUE2 : RED) + '" stroke="#fff" stroke-width="3"/>' + txt(X(Math.max(a0, Math.min(a1, at))), y - 34, (o.atLabel || String(at)), 28, inn ? BLUE2 : RED);
+    s += txt(230, 44, o.label || (lo + '보다 크고 ' + hi + '보다 작아요'), 24, INK);
+    if (o.tag) s += txt(230, 262, o.tag, 20, '#6B7C93');
+    return svgWrap(s, 'fig-range', null).replace('<svg ', '<svg data-in="' + (at == null ? '' : inn ? 1 : 0) + '" ');
+  }
   const SC_PARTS = { ask, habitat, trait, anat, cycle, cond, need, bins, mimic };
 
-  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock };
-  const HTML_PARTS = { vert, tvert };
+  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock, grid, range };
+  const HTML_PARTS = { vert, tvert, vmul };
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';

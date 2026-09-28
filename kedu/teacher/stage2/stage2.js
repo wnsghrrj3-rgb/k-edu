@@ -423,12 +423,15 @@
     return { title, sub, body: b.join(''), cls, frag: !NO_FRAG.has(slide.block) && b.length > 1, answerable, teacherNote };
   }
 
+  // 28차: 학기(t) — 1학기는 종전 그대로 g3_math, 2학기는 g3s2_math (data/g3s2_math_u1.js · 판 저장 slug 도 따로)
+  function slugOf(q) { const t = +(q && q.t) || 1; return 'g' + q.g + (t > 1 ? 's' + t : '') + '_' + q.s; }
+
   // ───────────────────────── 무대 ─────────────────────────
   function Stage(opts) {
     const self = this;
     const q = opts.params;
     const lessons = opts.lessons || {};
-    self.key = q.l; self.slug = 'g' + q.g + '_' + q.s; self.g = +q.g; self.s = q.s; self.u = +q.u;
+    self.key = q.l; self.slug = slugOf(q); self.g = +q.g; self.s = q.s; self.u = +q.u; self.t = +q.t > 1 ? +q.t : 1;
     const L = lessons[self.key]; self.lessonsRef = lessons;
     if (!L) { doc.getElementById('kt2-stage').innerHTML = '<div style="color:#fff;font-size:22px;text-align:center">차시를 찾지 못했어요: ' + esc(self.key) + '<br><a href="index.html" style="color:#9fb0c3">← 차시 목록</a></div>'; return; }
     self.meta = L.meta || {}; self.guide = guideOf(L);
@@ -736,7 +739,7 @@
     const self = this;
     hud.addEventListener('click', e => { const b = e.target.closest('button[data-h]'); if (b) self.hudAct(b.getAttribute('data-h'), b); });
     hud.querySelector('#hud-clock').addEventListener('click', () => { self.started = Date.now(); self.stageEnter = {}; self.stageEnter[self.cur().stage] = Date.now(); self.toast('수업 시계를 처음으로'); });
-    const top = doc.getElementById('hud-top'); if (top) top.querySelector('.home').setAttribute('href', 'index.html?g=' + this.g + '&s=' + this.s);
+    const top = doc.getElementById('hud-top'); if (top) top.querySelector('.home').setAttribute('href', 'index.html?g=' + this.g + '&s=' + this.s + (this.t > 1 ? '&t=' + this.t : ''));
     // 자동 숨김
     let tmr; const show = () => { hud.classList.remove('hide'); if (top) top.classList.remove('hide'); clearTimeout(tmr); tmr = setTimeout(() => { if (!self.pen && !self.hudPinned) { hud.classList.add('hide'); if (top) top.classList.add('hide'); } }, 3200); };
     doc.addEventListener('mousemove', show); doc.addEventListener('touchstart', show, { passive: true }); show();
@@ -978,7 +981,7 @@
   function boot() {
     const q = params(); if (!q.g || !q.s || !q.u || !q.l) { doc.getElementById('kt2-stage').innerHTML = '<div style="color:#fff;text-align:center;font-size:20px">주소에 g·s·u·l 이 필요해요.<br><a href="index.html" style="color:#9fb0c3">← 차시 목록</a></div>'; return; }
     global.LESSONS = global.LESSONS || {};
-    const slug = 'g' + q.g + '_' + q.s;
+    const slug = slugOf(q);
     const man = global.KT2_MANIFEST; let unitTitle = ''; let resFile = null;
     if (man) { const sj = man.subjects.find(x => x.slug === slug); const un = sj && sj.units.find(x => x.unit === +q.u); if (un) { unitTitle = un.title; resFile = un.resources; } }
     const scripts = ['../data/' + slug + '_u' + q.u + '.js']; if (resFile) scripts.push('../' + resFile);
@@ -988,6 +991,6 @@
       global.KT2 = global.KT2 || {}; global.KT2.stage = new Stage({ params: q, lessons: global.LESSONS, unitTitle });
     })();
   }
-  global.KT2 = { renderSlide, Stage, md, esc, STAGES, STAGE_MIN, BLOCK_LABEL, boot, imgFallback, guideOf };
+  global.KT2 = { renderSlide, Stage, md, esc, STAGES, STAGE_MIN, BLOCK_LABEL, boot, imgFallback, guideOf, slugOf };
   if (doc && doc.getElementById && doc.getElementById('kt2-stage') && !global.KT2_NO_BOOT) { if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot); else boot(); }
 })(typeof window !== 'undefined' ? window : globalThis);

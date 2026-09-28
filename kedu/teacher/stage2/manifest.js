@@ -1,13 +1,14 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-09-23 · 과목 8 · 차시 481 · 슬라이드 7752 */
+   생성: 2026-09-28 · 과목 8 · 차시 481 · 슬라이드 7752 */
 window.KT2_MANIFEST = {
- "built": "2026-09-23",
+ "built": "2026-09-28",
  "lessons": 481,
  "slides": 7752,
  "subjects": [
   {
    "slug": "g1_math",
    "grade": 1,
+   "term": 1,
    "subject": "math",
    "subject_ko": "수학",
    "title": "1학년 수학",
@@ -1287,6 +1288,7 @@ window.KT2_MANIFEST = {
   {
    "slug": "g1_korean",
    "grade": 1,
+   "term": 1,
    "subject": "korean",
    "subject_ko": "국어",
    "title": "1학년 국어",
@@ -3770,6 +3772,7 @@ window.KT2_MANIFEST = {
   {
    "slug": "g2_math",
    "grade": 2,
+   "term": 1,
    "subject": "math",
    "subject_ko": "수학",
    "title": "2학년 수학",
@@ -5257,6 +5260,7 @@ window.KT2_MANIFEST = {
   {
    "slug": "g2_korean",
    "grade": 2,
+   "term": 1,
    "subject": "korean",
    "subject_ko": "국어",
    "title": "2학년 국어",
@@ -8398,6 +8402,7 @@ window.KT2_MANIFEST = {
   {
    "slug": "g3_math",
    "grade": 3,
+   "term": 1,
    "subject": "math",
    "subject_ko": "수학",
    "title": "3학년 수학",
@@ -9893,6 +9898,7 @@ window.KT2_MANIFEST = {
   {
    "slug": "g3_korean",
    "grade": 3,
+   "term": 1,
    "subject": "korean",
    "subject_ko": "국어",
    "title": "3학년 국어",
@@ -11120,6 +11126,7 @@ window.KT2_MANIFEST = {
   {
    "slug": "g3_science",
    "grade": 3,
+   "term": 1,
    "subject": "science",
    "subject_ko": "과학",
    "title": "3학년 과학",
@@ -12123,6 +12130,7 @@ window.KT2_MANIFEST = {
   {
    "slug": "g3_social",
    "grade": 3,
+   "term": 1,
    "subject": "social",
    "subject_ko": "사회",
    "title": "3학년 사회",

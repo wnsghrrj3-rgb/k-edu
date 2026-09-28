@@ -26,7 +26,7 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, 'stage2-art.js'), 'utf8'), 
 vm.runInContext(fs.readFileSync(path.join(__dirname, 'stage2-fig.js'), 'utf8'), dom0.getInternalVMContext(), { filename: 'stage2-fig.js' });
 vm.runInContext(fs.readFileSync(path.join(__dirname, 'stage2.js'), 'utf8'), dom0.getInternalVMContext(), { filename: 'stage2.js' });
 const KT2 = g0.KT2;
-const files = fs.readdirSync(DATA).filter(f => /^g\d_[a-z]+_u\d+\.js$/.test(f)).sort();
+const files = fs.readdirSync(DATA).filter(f => /^g\d(?:s\d)?_[a-z]+_u\d+\.js$/.test(f)).sort();
 let nSlides = 0, nLessons = 0; const blockSeen = {}; const fragBlocks = {}; let emptyBodies = [];
 files.forEach(f => {
   const L = loadLessons(path.join(DATA, f));
@@ -209,6 +209,12 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
     ok(/fig-sc/.test(FG.render({ k: 'ask', q: 'q', yes: ['a'] })) && /fig-panel/.test(FG.render({ k: 'panels', items: [{ label: 'a', fig: { k: 'anat', of: 'leaf' } }, { label: 'b', fig: { k: 'anat', of: 'fish' } }] })), '과학 부품(27차): 혼자일 땐 흰 칸 없이(fig-sc) · 나란히 칸에도 들어감');
     let dash = 0, pre = []; files.filter(fn => /g3_science_u[234]\.js$/.test(fn)).forEach(fn => { const L = loadLessons(path.join(DATA, fn)); Object.keys(L).forEach(k => L[k].slides.forEach(s => { if (s.data && s.data.fig) { const j = JSON.stringify(s.data.fig); if (/ — /.test(j)) dash++; if (/^u2_l0[1-4]$/.test(k) && /아가미|gill/.test(j)) pre.push(k + '/' + s.id); } })); }); ok(dash === 0 && pre.length === 0, '과학 부품(27차): 그림 글자에 「 — 」 0 · 「아가미」는 u2 l05 부터(선행 0) ' + dash + ' ' + pre.join(',')); }
   ok(byFile['g3_science_u2.js'] === 32 && byFile['g3_science_u3.js'] === 29 && byFile['g3_science_u4.js'] === 31, '개념 그림 층(27차): 3학년 과학 u2 32·u3 29·u4 31 장에 그림 — 3학년 과학 개념 장 121장 전부 (' + [byFile['g3_science_u2.js'], byFile['g3_science_u3.js'], byFile['g3_science_u4.js']].join('·') + ')');
+  // ── 28차 3학년 2학기 곱셈 부품 — vmul·grid·range + 학기(t) slug ──
+  { const VM = FG.render({ k: 'vmul', a: 39, b: 26, hi: 1 }), V1 = FG.render({ k: 'vmul', a: 426, b: 3 }), G = FG.render({ k: 'grid', w: 24, h: 13, sw: [20, 4], sh: [10, 3] }), RG = FG.render({ k: 'range', lo: 800, hi: 1200, at: 1014 }), RO = FG.render({ k: 'range', lo: 800, hi: 1200, at: 1300 });
+    ok(/data-r="1014"/.test(VM) && /data-p="234,780"/.test(VM) && /vm-p2 vm-hi/.test(VM) && /data-r="1278"/.test(V1) && /vm-carry/.test(V1) && !/vm-carry/.test(FG.render({ k: 'vmul', a: 213, b: 3 })), '곱셈 부품(28차): 세로셈 39×26 = 234·780·1014(십의 자리 줄 강조) · 426×3 올림 표시 · 올림 없으면 표시 없음');
+    ok((G.match(/class="o-blk"/g) || []).length === 4 && /200 \+ 40 \+ 60 \+ 12 = 312/.test(G) && (G.match(/class="o-cut"/g) || []).length === 2 && (FG.render({ k: 'grid', w: 16, h: 7, sh: [10, 6] }).match(/class="o-blk"/g) || []).length === 2, '곱셈 부품(28차): 모눈 24×13 네 덩이 · 부분 곱 합 312 · 가르는 선 둘 · 두 덩이 가르기');
+    ok(/data-in="1"/.test(RG) && /data-in="0"/.test(RO) && /o-band/.test(RG), '곱셈 부품(28차): 어림 사이 띠 — 1014 는 안(파랑)·1300 은 밖(빨강)');
+    ok(KT2.slugOf({ g: 3, s: 'math' }) === 'g3_math' && KT2.slugOf({ g: 3, s: 'math', t: '2' }) === 'g3s2_math' && KT2.slugOf({ g: 3, s: 'math', t: '1' }) === 'g3_math', '학기(28차): 1학기 slug 그대로 · 2학기 = g3s2_math'); }
   ok(byFile['g3_science_u1.js'] === 29, '개념 그림 층: 3학년 과학 1단원 개념 장 29장에 그림 (' + byFile['g3_science_u1.js'] + ')');
   console.log('   개념 그림 층 데이터', JSON.stringify(byFile));
   const S = FG.sizes; ok(S.s < S.m && S.m < S.l, '개념 그림 층: 화살표 길이 s<m<l');
@@ -229,7 +235,7 @@ const manifest = (() => { const c = { window: {} }; vm.createContext(c); vm.runI
 ok(manifest && manifest.lessons === nLessons, 'manifest 차시 수 = 데이터 차시 수 (' + (manifest && manifest.lessons) + ' vs ' + nLessons + ')');
 const html = fs.readFileSync(path.join(__dirname, 'stage.html'), 'utf8');
 function runStage(sj, un, l) {
-  const url = 'https://keduclass.com/kedu/teacher/stage2/stage.html?g=' + sj.grade + '&s=' + sj.subject + '&u=' + un.unit + '&l=' + l.key;
+  const url = 'https://keduclass.com/kedu/teacher/stage2/stage.html?g=' + sj.grade + '&s=' + sj.subject + ((sj.term || 1) > 1 ? '&t=' + sj.term : '') + '&u=' + un.unit + '&l=' + l.key;
   const dom = new JSDOM(html.replace(/<script src="[^"]+"><\/script>/g, ''), { url, pretendToBeVisual: true, runScripts: 'outside-only' });
   const w = dom.window; const d = w.document; w.KT2_NO_BOOT = true; w.setInterval = () => 0;
   w.HTMLCanvasElement.prototype.getContext = () => null; w.HTMLMediaElement.prototype.play = () => Promise.resolve();
@@ -240,7 +246,7 @@ function runStage(sj, un, l) {
   run(path.join(__dirname, 'stage2-art.js')); run(path.join(__dirname, 'stage2-fig.js')); run(path.join(__dirname, 'stage2.js'));
   const tag = sj.slug + '/' + l.key;
   let st;
-  try { st = new w.KT2.Stage({ params: { g: String(sj.grade), s: sj.subject, u: String(un.unit), l: l.key }, lessons: w.LESSONS, unitTitle: un.title }); } catch (e) { fail++; fails.push(tag + ' 부팅 예외: ' + e.message); return; }
+  try { st = new w.KT2.Stage({ params: { g: String(sj.grade), s: sj.subject, t: String(sj.term || 1), u: String(un.unit), l: l.key }, lessons: w.LESSONS, unitTitle: un.title }); } catch (e) { fail++; fails.push(tag + ' 부팅 예외: ' + e.message); return; }
   ok(st.slides.length === l.slides, tag + ' 슬라이드 수 ' + st.slides.length + ' = ' + l.slides);
   ok(d.querySelector('#kt2-paper').innerHTML.length > 100, tag + ' 첫 슬라이드 그림');
   ok(d.querySelector('#hud button[data-h="next"]'), tag + ' HUD 생성');
