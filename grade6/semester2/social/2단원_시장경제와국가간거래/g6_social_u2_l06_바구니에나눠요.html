@@ -1,0 +1,907 @@
+<!--
+K-edu 사회 6-2 · 2단원 시장경제와 국가 간 거래 · 주제② 경제성장과 우리 생활 · 6차시(l06)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사11-02] · 교과서 p.81~84 · 지도서(대단원2 **9차시** 「경제성장이 우리 생활에 미치는 영향을 알아볼까요」, 지도서 p.183~186) 근거.
+학습 목표: 경제성장이 우리 생활에 미치는 영향을 설명할 수 있다.
+수업 기법 및 전략: 카드 분류 · 모둠 문장 만들기
+META = "2단원 시장경제와 국가 간 거래 · 주제② 경제성장과 우리 생활"
+⚠️ 엔진은 u2 l05(→ u2 l04 → … 6-1 사회 엔진)에서 100% 승계 · 엔진 무수정 · 2단원 색 #A16207 그대로.
+⚠️ 회수 키 `g6_s2_social_u2_l06_v1` · 맵 키 `g6_social_u2_l06` · 파일명 `바구니에나눠요` — 조작 이름(선례 승계).
+
+직접조작: 경제성장이 바꾼 생활을 네 바구니에 나누는 카드 판
+  ⭐ 씨앗은 지도서 9차시 전개 「경제성장과 관련된 카드를 분류하며 관련 내용과 연관 지어 봅시다」
+     (첨단 기술 · 문화 산업 · 교육 · 의료 카드를 주제에 따라 분류하고 뒷면에 생활의 변화를 쓰기)와 교과서 81~83쪽.
+  ⭐ 카드 여덟 장(바구니마다 두 장) · 카드를 하나 들고(`qnHold`) 바구니를 고른다. 카드의 바구니는 **담는 상태 없이** `qnHome(c)` 한 줄이 정한다.
+  ⭐ 알맞은 바구니에 놓으면 카드가 뒤집혀 **뒷면(생활의 변화)** 이 보인다. 놓은 기록은 `state.qnPut |=` 단 하나(`qnNote` · 바구니 처리기에서만)에서만 선다(줄지 않음 · 되돌리기 없음).
+  ⭐ 수첩 네 줄은 바구니가 찼는지 `qnFull` 한 줄에서만 읽는다(줄 상태 0).
+  ⭐ 판 읽기는 네 줄이 다 선 뒤에만(정답 자리 1) → 핵심 질문 「경제성장과 문화 산업은 어떤 관계가 있을까요?」 3택(정답 자리 2) →
+     마무리 3택 = 삶의 질이 높아져요(정답 자리 0).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 9종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 수첩 네 줄이 선 뒤 판 움직이기(카드·바구니) 무시 — 판 불변
+     ④ 네 줄 전 판 읽기 무시 · 읽은 뒤 다시 무시 · 알맞지 않은 읽기 무시(자리별 안내)
+     ⑤ 판을 읽기 전 관계 3택 무시 · 고른 뒤 다시 무시 · 알맞지 않은 관계 무시
+     ⑥ 관계를 고르기 전 마무리 무시(순서)
+     ⑦ 알맞지 않은 마무리 무시
+     ⑧ 안내 표시 중 재클릭 무시(`qnBusy`)
+     ⑨ 이미 놓은 카드 들기 · 카드 없이 바구니 고르기 · 알맞지 않은 바구니 무시 — 판 불변.
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.qn-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **카드와 그림은 교과서 사진을 나타낸 도식** — 실제 사진이 아니다(캡션 상시).
+  ㉡ **그래프는 늘어난 흐름만 보이는 도식** — 금액·수명 수치는 적지 않는다.
+  ㉢ **경제성장이 생활에 미치는 영향은 좋은 변화만 있는 것은 아니다** — 문제는 다음 시간에 알아본다(캡션 한 자리 · 차시 예고).
+  ㉣ **영상 보기 · 카드 뒷면 쓰기 · 모둠 문장 만들기 · 밑줄 긋기 · 직업 소개 영상은 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 빠른 경제성장으로 생긴 문제 · 해결 방법 · 무역 0(차시 예고 한 자리만).
+  **교사용 참고 자료 0** — 참고 도서·저자·출판사 · 누리집 주소 · 활동지 · 평가 관점.
+  사람 형상 0 · 금액 0 · 비율 0 · 수명 수치 0 · 쪽수 0 · 실제 기업·신문 이름 0.
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u2_l06_v1">
+<title>경제성장이 우리 생활에 미치는 영향을 알아볼까요 · 시장경제와 국가 간 거래 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#A16207; --green-d:#854D0E; --cyan:#CA8A04;
+  --bg:#FEFCE8; --bub:#FEF9C3; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#FEF9C3;color:#854D0E}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 경제성장이 바꾼 생활을 네 바구니에 나누는 카드 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#FEF9C3;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#854D0E;max-width:660px}
+.qn-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#FEFCE8;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.qn-board{display:flex;flex-direction:column;gap:6px;padding:8px}
+.qn-head{background:#FEF3C7;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#854D0E;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.qn-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.qn-card{border:2px solid #CBD5E0;background:#fff;color:#334155;border-radius:8px;padding:5px 4px;cursor:pointer;
+  font-family:inherit;font-weight:800;font-size:clamp(8.4px,1.44vw,10.4px);line-height:1.35;min-height:46px}
+.qn-card:hover{background:#F8FAFC}
+.qn-card.held{border-color:#0369A1;background:#E0F2FE;color:#075985;box-shadow:0 0 0 2px #7DD3FC}
+.qn-card.put{border-style:solid;border-color:#059669;background:#ECFDF5;color:#065F46;cursor:default}
+.qn-card .bk{display:block;font-size:.86em;color:#047857;margin-top:2px}
+.qn-baskets{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.qn-basket{border:2px solid #A16207;background:#FEFCE8;color:#854D0E;border-radius:10px;padding:5px 3px;cursor:pointer;
+  font-family:inherit;font-weight:800;font-size:clamp(9px,1.54vw,11px);line-height:1.35}
+.qn-basket:hover{background:#FEF3C7}
+.qn-basket .ic{display:block;font-size:1.3em}
+.qn-basket .cnt{display:block;font-size:.84em;color:#64748B}
+.qn-basket.full{border-color:#059669;background:#ECFDF5;color:#065F46}
+.qn-note{display:flex;flex-direction:column;gap:4px}
+.qn-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-radius:7px;padding:4px 8px;font-weight:800;
+  font-size:clamp(9.4px,1.58vw,11.4px);border:2px dashed #CBD5E0;background:#F8FAFC;color:#94A3B8}
+.qn-line.set{border-style:solid;border-color:#059669;background:#ECFDF5;color:#065F46}
+.qn-read,.qn-mean,.qn-fin{display:flex;flex-direction:column;gap:5px}
+.qn-read button,.qn-mean button,.qn-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.qn-read button:hover,.qn-mean button:hover,.qn-fin button:hover{background:var(--bub)}
+.qn-read button.no,.qn-mean button.no,.qn-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.qn-hint{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:420px){ .qn-cards,.qn-baskets{grid-template-columns:repeat(2,1fr)} }
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠·㉡: 모든 그림은 내용을 나타낸 도식이며 실제 사진이 아니다.
+   ⚠️ 사람 형상 대신 도형으로만 그린다. 금액·수치는 적지 않는다. */
+const SVG = {
+  // 1 들어가기 — 경제가 성장하면 생활은?(도식)
+  wish:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    <rect x="118" y="58" width="84" height="44" rx="10" fill="#A16207"/>
+    <text x="160" y="78" font-size="9" fill="#fff" text-anchor="middle" font-weight="800">경제가</text>
+    <text x="160" y="92" font-size="9" fill="#fff" text-anchor="middle" font-weight="800">성장하면?</text>
+    ${[['\uD83E\uDD16',40,34],['\uD83C\uDFAC',280,34],['\uD83D\uDCDA',40,128],['\uD83C\uDFE5',280,128]].map(t=>`<circle cx="${t[1]}" cy="${t[2]}" r="22" fill="#fff" stroke="#A16207" stroke-width="1.4"/>
+      <text x="${t[1]}" y="${t[2]+7}" font-size="18" text-anchor="middle">${t[0]}</text>
+      <path d="M${t[1]<160?t[1]+22:t[1]-22} ${t[2]} L${t[1]<160?118:202} ${t[2]<80?62:98}" stroke="#CA8A04" stroke-width="1.4" stroke-dasharray="4 3"/>`).join('')}
+    <text x="160" y="158" font-size="7.8" fill="#334155" text-anchor="middle" font-weight="800">우리 생활의 여러 부분(도식)</text></svg>`,
+  // 2 살펴보기 — 첨단 기술(도식)
+  tech:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    ${[['드론','\uD83D\uDE81',10],['로봇 자동화','\uD83E\uDD16',88],['자율 주행','\uD83D\uDE97',166],['생성형 인공지능','\uD83D\uDCA1',244]].map(t=>`<rect x="${t[2]}" y="30" width="68" height="84" rx="10" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.4"/>
+      <text x="${t[2]+34}" y="76" font-size="24" text-anchor="middle">${t[1]}</text>
+      <text x="${t[2]+34}" y="102" font-size="7.4" fill="#075985" text-anchor="middle" font-weight="800">${t[0]}</text>`).join('')}
+    <text x="160" y="144" font-size="8" fill="#334155" text-anchor="middle" font-weight="800">첨단 기술이 빠르게 발전해요(도식)</text></svg>`,
+  // 3 살펴보기 — 신문 기사(도식)
+  news:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    <rect x="40" y="12" width="240" height="146" rx="6" fill="#fff" stroke="#A16207" stroke-width="1.6"/>
+    <rect x="52" y="22" width="216" height="22" rx="4" fill="#A16207"/>
+    <text x="160" y="37" font-size="9.2" fill="#fff" text-anchor="middle" font-weight="800">콘텐츠 산업 수출액 역대 최대</text>
+    <line x1="60" y1="140" x2="260" y2="140" stroke="#94A3B8" stroke-width="1"/>
+    ${[8,12,16,22,28,34,42,50,58].map((h,i)=>`<rect x="${66+i*21}" y="${140-h*1.4}" width="13" height="${h*1.4}" rx="2" fill="#CA8A04"/>`).join('')}
+    <text x="160" y="152" font-size="7" fill="#64748B" text-anchor="middle" font-weight="700">늘어나는 흐름만 나타낸 도식(수치 없음)</text></svg>`,
+  // 4 살펴보기 — 교육과 의료(도식)
+  life:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <rect x="12" y="20" width="142" height="110" rx="10" fill="#F0FDF4" stroke="#15803D" stroke-width="1.4"/>
+    <rect x="30" y="38" width="106" height="46" rx="4" fill="#14532D"/>
+    <rect x="44" y="92" width="22" height="16" rx="3" fill="#A7F3D0"/><rect x="72" y="92" width="22" height="16" rx="3" fill="#A7F3D0"/><rect x="100" y="92" width="22" height="16" rx="3" fill="#A7F3D0"/>
+    <text x="83" y="124" font-size="7.8" fill="#166534" text-anchor="middle" font-weight="800">디지털 기기를 활용한 수업</text>
+    <rect x="166" y="20" width="142" height="110" rx="10" fill="#FFF1F2" stroke="#BE123C" stroke-width="1.4"/>
+    <line x1="180" y1="104" x2="296" y2="104" stroke="#94A3B8" stroke-width="1"/>
+    ${[30,36,42,48,53,56].map((h,i)=>`<rect x="${186+i*18}" y="${104-h}" width="11" height="${h}" rx="2" fill="#FB7185"/>`).join('')}
+    <text x="237" y="124" font-size="7.8" fill="#9F1239" text-anchor="middle" font-weight="800">기대 수명이 늘어났어요</text>
+    <text x="160" y="152" font-size="7.4" fill="#64748B" text-anchor="middle" font-weight="700">교실과 의료의 변화(도식 · 수치 없음)</text></svg>`,
+  // 문항 — 빅데이터(도식)
+  data:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    ${Array.from({length:24},(_,i)=>`<circle cx="${30+(i%8)*18}" cy="${40+Math.floor(i/8)*24}" r="6" fill="${i%5===0?'#0369A1':'#BAE6FD'}"/>`).join('')}
+    <path d="M178 64 L214 64" stroke="#0369A1" stroke-width="2.4"/><path d="M214 58 L224 64 L214 70 Z" fill="#0369A1"/>
+    <rect x="232" y="36" width="72" height="56" rx="8" fill="#fff" stroke="#0369A1" stroke-width="1.4"/>
+    <text x="268" y="60" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">필요한</text>
+    <text x="268" y="73" font-size="7.6" fill="#075985" text-anchor="middle" font-weight="800">데이터 분석</text>
+    <text x="160" y="140" font-size="8" fill="#334155" text-anchor="middle" font-weight="800">많은 양의 데이터에서 필요한 것을 찾아요(도식)</text></svg>`,
+  // 6 살펴보기 — 경제성장과 문화 산업(도식)
+  loop:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    <rect x="24" y="50" width="100" height="50" rx="10" fill="#fff" stroke="#A16207" stroke-width="1.6"/>
+    <text x="74" y="80" font-size="9" fill="#854D0E" text-anchor="middle" font-weight="800">경제성장</text>
+    <rect x="196" y="50" width="100" height="50" rx="10" fill="#fff" stroke="#A16207" stroke-width="1.6"/>
+    <text x="246" y="80" font-size="9" fill="#854D0E" text-anchor="middle" font-weight="800">문화 산업 발달</text>
+    <path d="M124 64 Q160 40 196 64" fill="none" stroke="#CA8A04" stroke-width="2"/><path d="M190 58 L198 66 L188 68 Z" fill="#CA8A04"/>
+    <path d="M196 88 Q160 112 124 88" fill="none" stroke="#CA8A04" stroke-width="2"/><path d="M130 94 L122 86 L132 84 Z" fill="#CA8A04"/>
+    <text x="160" y="40" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">문화에 관한 관심이 높아져요</text>
+    <text x="160" y="124" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">경제성장에 도움을 줘요</text></svg>`,
+  // 7 살펴보기 — 삶의 질(도식)
+  up:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    ${[['첨단 기술',14],['문화 산업',90],['교육',166],['의료',242]].map((t,i)=>`<rect x="${t[1]}" y="${104-i*14}" width="64" height="${22+i*14}" rx="6" fill="#FEFCE8" stroke="#A16207" stroke-width="1.2"/>
+      <text x="${t[1]+32}" y="${120-i*7}" font-size="7.6" fill="#854D0E" text-anchor="middle" font-weight="800">${t[0]}</text>`).join('')}
+    <rect x="60" y="136" width="200" height="22" rx="11" fill="#A16207"/>
+    <text x="160" y="151" font-size="8.6" fill="#fff" text-anchor="middle" font-weight="800">사람들의 삶의 질이 높아져요</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0F9FF"/>
+    ${['\uD83E\uDD16','\uD83C\uDFAC','\uD83D\uDCDA','\uD83C\uDFE5'].map((e,i)=>`<rect x="${26+i*70}" y="30" width="58" height="70" rx="8" fill="#fff" stroke="#A16207" stroke-width="1.4"/>
+      <text x="${55+i*70}" y="74" font-size="22" text-anchor="middle">${e}</text>`).join('')}
+    <rect x="50" y="122" width="220" height="24" rx="12" fill="#A16207"/>
+    <text x="160" y="138" font-size="8.6" fill="#fff" text-anchor="middle" font-weight="800">경제성장은 우리 생활을 바꿔요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#A16207" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#A16207" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#854D0E" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 경제성장이 바꾼 생활을 네 바구니에 나누는 카드 판 =====
+   ★ 카드를 하나 들고(qnHold · 드는 자리 한 줄) 바구니를 고른다.
+   ★★ 카드의 바구니는 qnHome 한 줄에서만 · 담는 상태 0 · 놓은 기록은 |= 만(qnPut · qnNote 단 하나).
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. */
+/* 바구니 넷 — 지도서 9차시 카드 분류(첨단 기술 · 문화 산업 · 교육 · 의료) */
+const QN_BASK = [
+  {t:'첨단 기술', i:'\uD83E\uDD16'},
+  {t:'문화 산업', i:'\uD83C\uDFAC'},
+  {t:'교육',     i:'\uD83D\uDCDA'},
+  {t:'의료',     i:'\uD83C\uDFE5'}
+];
+/* 카드 여덟 — 앞면(교과서 81~83쪽의 모습) · 바구니 · 뒷면(생활의 변화) */
+const QN_CARD = [
+  {t:'드론이 밭에 농약을 뿌려요',                 b:0, back:'사람의 힘이 덜 들고 일이 빨라져요'},
+  {t:'게임·음악·웹툰 같은 콘텐츠를 세계에 수출해요', b:1, back:'콘텐츠 산업과 관련한 일자리가 더 많이 생겨요'},
+  {t:'전자 칠판과 스마트 기기로 수업해요',          b:2, back:'교육의 질이 높아져요'},
+  {t:'치료하기 힘들었던 병을 치료할 수 있어요',      b:3, back:'수준 높은 의료 혜택을 받을 수 있어요'},
+  {t:'로봇 자동화로 공장에서 물건을 만들어요',       b:0, back:'물건을 생산하는 속도가 빨라지고 생산량이 늘어나요'},
+  {t:'사람들의 기대 수명이 늘어났어요',             b:3, back:'더 오래 건강하게 살 수 있어요'},
+  {t:'생활이 풍족해져 문화에 관한 관심이 높아져요',   b:1, back:'문화와 관련한 산업이 발달해요'},
+  {t:'에듀 테크로 새로운 교육 서비스를 받아요',       b:2, back:'첨단 기술로 교육 서비스가 나아져요'}
+];
+const QN_N = 8;
+const QN_ALL = 255;
+/* 수첩 네 줄 — 바구니가 찬 자리 */
+const QN_NOTE = ['첨단 기술 바구니의 두 장','문화 산업 바구니의 두 장','교육 바구니의 두 장','의료 바구니의 두 장'];
+/* 알맞지 않은 바구니 — 바구니마다 한 문장 */
+const QN_WRONG = [
+  '이 카드는 <b>첨단 기술</b> 바구니에 맞지 않아요. 카드의 앞면을 다시 읽어 봐요. 판은 그대로예요.',
+  '이 카드는 <b>문화 산업</b> 바구니에 맞지 않아요. 카드의 앞면을 다시 읽어 봐요. 판은 그대로예요.',
+  '이 카드는 <b>교육</b> 바구니에 맞지 않아요. 카드의 앞면을 다시 읽어 봐요. 판은 그대로예요.',
+  '이 카드는 <b>의료</b> 바구니에 맞지 않아요. 카드의 앞면을 다시 읽어 봐요. 판은 그대로예요.'
+];
+
+/* ② 판 읽기 */
+const QN_READ = [
+  '경제성장은 첨단 기술에만 영향을 미치고, 교육이나 의료와는 관계가 없어요',
+  '경제가 성장하면 첨단 기술, 문화 산업, 교육, 의료처럼 우리 생활의 여러 부분이 달라져요',
+  '네 바구니의 카드는 모두 경제성장과 관계없는 변화예요'
+];
+const QN_READ_OK = 1;
+const QN_READ_NO = [
+  '판을 다시 봐요. 카드가 놓인 바구니는 <b>몇 개</b>였나요? 판을 다시 읽어 봐요.',
+  null,
+  '판을 다시 봐요. 카드의 뒷면은 경제가 성장하며 생긴 <b>생활의 변화</b>였어요. 판을 다시 읽어 봐요.'
+];
+
+/* ③ 핵심 질문 — 경제성장과 문화 산업은 어떤 관계가 있을까요? */
+const QN_MEAN = [
+  '문화 산업은 경제와 아무 관계가 없어요',
+  '경제가 성장하면 문화 산업은 줄어들어요',
+  '경제가 성장해 생활이 풍족해지면 문화에 관한 관심이 높아져 문화 산업이 발달하고, 문화 산업이 발달하면 경제성장에 도움을 줘요'
+];
+const QN_MEAN_OK = 2;
+const QN_MEAN_NO = [
+  '문화 산업 바구니의 카드 뒷면을 떠올려 봐요. 콘텐츠를 수출하면 <b>일자리</b>가 더 생겼어요. 판은 그대로예요.',
+  '문화 산업 바구니의 카드를 떠올려 봐요. 생활이 풍족해지면 문화에 관한 관심이 <b>높아졌어요</b>. 판은 그대로예요.',
+  null
+];
+
+/* ④ 마무리 — 교과서 83쪽 */
+const QN_FIN = [
+  '경제가 성장하면 교육의 질이 높아지고 수준 높은 의료 혜택을 받을 수 있게 되는 등 사람들의 삶의 질이 높아져요',
+  '경제가 성장해도 사람들의 생활은 달라지지 않아요',
+  '경제가 성장하면서 달라진 것은 공장의 수뿐이에요'
+];
+const QN_FIN_OK = 0;
+const QN_FIN_NO = [
+  null,
+  '수첩의 네 줄을 떠올려 봐요. 네 바구니 모두에 <b>생활의 변화</b>가 담겼어요. 오늘의 정리를 다시 골라 봐요.',
+  '공장뿐 아니라 <b>문화, 교육, 의료</b> 바구니에도 카드가 놓였어요. 오늘의 정리를 다시 골라 봐요.'
+];
+
+/* 안내 */
+const QN_LOCK = '수첩의 네 줄이 <b>모두 섰어요</b>. 카드는 이대로 둬요. 판을 읽어 봐요. 판은 그대로예요.';
+const QN_PUT_AGAIN = '그 카드는 <b>이미 바구니에 놓았어요</b>. 아직 놓지 않은 카드를 골라 봐요. 판은 그대로예요.';
+const QN_EMPTY = '먼저 <b>카드를 하나</b> 골라 들어요. 그다음 바구니를 골라요. 판은 그대로예요.';
+const QN_ORDER_R = '아직 <b>수첩의 네 줄</b>이 다 서지 않았어요. 카드를 모두 나눈 뒤에 읽을 수 있어요. 판은 그대로예요.';
+const QN_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const QN_ORDER_M = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const QN_MEAN_AGAIN = '경제성장과 문화 산업의 관계는 <b>이미 골랐어요</b>. 판은 그대로예요.';
+const QN_ORDER_F = '아직 <b>경제성장과 문화 산업의 관계</b>를 고르지 않았어요. 먼저 골라 봐요. 판은 그대로예요.';
+const QN_ALL_MSG = '수첩의 네 줄이 <b>모두 섰어요</b>. 판을 읽어 봐요.';
+
+/* ★ 카드의 바구니 — 한 줄(담는 자리 0) */
+function qnHome(c){ return QN_CARD[c].b; }
+function qnIn(st,c){ return (st.qnPut >> c & 1) === 1; }
+/* ★ 바구니가 찼는지 — 한 줄 */
+function qnFull(st,b){ return QN_CARD.every((x,c)=>x.b!==b || qnIn(st,c)); }
+function qnAll(st){ return st.qnPut===QN_ALL; }
+function qnCount(st,b){ return QN_CARD.filter((x,c)=>x.b===b && qnIn(st,c)).length; }
+
+function qnCards(st){
+  return `<div class="qn-cards">${QN_CARD.map((x,c)=>{ const put=qnIn(st,c), held=st.qnHold===c;
+    return `<button class="qn-card${put?' put':''}${held?' held':''}" data-c="${c}" data-put="${put?1:0}" data-held="${held?1:0}" onclick="qnPick(${c})">${put?`\u2714 ${x.back}<span class="bk">${QN_BASK[qnHome(c)].i} ${QN_BASK[qnHome(c)].t}</span>`:x.t}</button>`; }).join('')}</div>`;
+}
+function qnBaskets(st){
+  return `<div class="qn-baskets">${QN_BASK.map((k,b)=>{ const full=qnFull(st,b);
+    return `<button class="qn-basket${full?' full':''}" data-b="${b}" data-full="${full?1:0}" onclick="qnDrop(${b})"><span class="ic">${k.i}</span>${k.t}<span class="cnt">${qnCount(st,b)} / 2장</span></button>`; }).join('')}</div>`;
+}
+function qnNotes(st){
+  return QN_NOTE.map((t,b)=>{ const on=qnFull(st,b);
+    return `<div class="qn-line${on?' set':''}" data-line="${b}">${on?'\u2714 '+t+'을 모두 놓았어요':t+' \u2014 아직 다 놓지 않았어요'}</div>`; }).join('');
+}
+
+function qnBoard(st){
+  const fin = st.qnFin!=null, all = qnAll(st);
+  const head = fin ? '경제성장이 우리 생활에 미치는 영향을 알아봤어요'
+    : st.qnMean!=null ? '관계까지 골랐어요 \u2014 이제 정리해요'
+    : st.qnRead!=null ? '경제성장과 문화 산업의 관계를 골라 봐요'
+    : all ? '수첩의 네 줄이 모두 섰어요 \u2014 판을 읽어 봐요'
+    : st.qnHold>=0 ? '든 카드를 알맞은 바구니에 놓아 봐요'
+    : '카드를 하나 골라 들어 봐요';
+  return `<div class="qn-board" data-put="${st.qnPut}" data-hold="${st.qnHold}" data-all="${all?1:0}" data-read="${st.qnRead==null?-1:st.qnRead}" data-mean="${st.qnMean==null?-1:st.qnMean}" data-fin="${fin?1:0}">
+    <div class="qn-head">${head}</div>
+    ${qnCards(st)}
+    ${qnBaskets(st)}
+    <div class="qn-note">${qnNotes(st)}</div>
+  </div>`;
+}
+
+function qnPanel(st){
+  const fin = st.qnFin!=null, all = qnAll(st);
+  const q = fin ? '경제성장이 바꾼 생활을 네 바구니에 나누며 경제성장이 우리 생활에 미치는 영향을 알아봤어요.'
+    : st.qnMean!=null ? '오늘 공부한 내용을 정리해요. 경제가 성장하면 사람들의 삶은 어떻게 달라지나요?'
+    : st.qnRead!=null ? '핵심 질문 \u2014 경제성장과 문화 산업은 어떤 관계가 있을까요?'
+    : all ? '카드를 모두 나눴어요. 판에서 무엇을 알 수 있나요?'
+    : st.qnPut!==0 ? '수첩의 네 줄을 모두 세워 봐요. 남은 카드는 어느 바구니에 들어갈까요?'
+    : '경제가 성장하면서 우리 생활은 어떻게 달라졌을까요? 카드를 알맞은 바구니에 나눠 봐요.';
+  let right = `<div class="qn-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83E\uDDFA 경제성장과 우리 생활</div>
+      경제가 성장하면서 <b>첨단 기술</b>이 발전해 생산 속도가 빨라지고 생산량이 늘었어요. 생활이 풍족해지며 <b>문화 산업</b>이 발달했고,
+      <b>교육</b>의 질이 높아지고 수준 높은 <b>의료</b> 혜택도 받을 수 있게 됐어요. 이처럼 경제가 성장하면 사람들의 <b>삶의 질</b>이 높아져요.<br>
+      <span style="color:#64748B">카드와 그림은 교과서 사진을 나타낸 <b>도식</b>이에요. 경제성장이 좋은 변화만 가져온 것은 아니에요 \u2014 다음 시간에 알아봐요.
+      <b>영상 보기</b>, <b>카드 뒷면 쓰기</b>, <b>모둠 문장 만들기</b>, <b>밑줄 긋기</b>와 <b>직업 소개 영상</b>은 교실에서 직접 해요.</span></div>`;
+  } else if(st.qnMean!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="qn-fin">${QN_FIN.map((t,k)=>`<button class="${st.qnWrongF===k?'no':''}" onclick="qnFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.qnRead!=null){
+    right += `<div class="dw-step">\uD83E\uDD14 핵심 질문</div>`;
+    right += `<div class="qn-mean">${QN_MEAN.map((t,k)=>`<button class="${st.qnWrongM===k?'no':''}" onclick="qnMeanPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="qn-hint">문화 산업 바구니에 놓은 두 카드의 앞면과 뒷면을 함께 떠올려 봐요.</div>`;
+  } else if(all){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="qn-read">${QN_READ.map((t,k)=>`<button class="${st.qnWrongR===k?'no':''}" onclick="qnReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83E\uDDFA 카드를 바구니에 나누기</div>`;
+    right += `<div class="qn-hint"><b>카드</b>를 눌러 들고, 알맞은 <b>바구니</b>를 누르면 카드가 뒤집혀 <b>뒷면(생활의 변화)</b>이 보여요. 든 카드를 한 번 더 누르면 내려놓아요. 수첩의 <b>네 줄</b>이 모두 서면 판을 읽을 수 있어요. 감점은 없어요.</div>`;
+  }
+  if(st.qnMsg) right += `<div class="dw-msg${st.qnWarn?' warn':''}">${st.qnMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83E\uDDFA 경제성장이 바꾼 생활을 네 바구니에 나눠요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${qnBoard(st)}<div class="cvcap">카드는 교과서 사진 속 모습을 글로 옮긴 <b>도식</b>이에요. 카드 한 장이 여러 바구니와 이어질 수도 있지만, 오늘은 교과서의 갈래대로 나눠요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 시장경제와 국가 간 거래 · 주제② 경제성장과 우리 생활";
+
+// 확인 4 + 적용 4 — 정답 다양화 [3,1,2,0,2,0,1,3](각 자리 2회)
+// ⚠️ 문항 내 금액·비율·수명 수치·쪽수 0 · 새 사실 0(교과서 81~84쪽 문면 · 지도서 9차시까지만).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"경제성장에 따라 <b>첨단 기술</b>이 빠르게 발전하면서 생긴 변화로 알맞은 것은 무엇인가요?",
+   opts:["물건을 생산하는 속도가 느려졌어요","생산량이 줄어들었어요","사람이 해야 할 힘든 일이 더 많아졌어요","물건이나 서비스를 생산하는 속도가 빨라지고 생산량이 늘어났어요"],
+   correct:3, pts:POINTS_BASIC, scene:"tech",
+   reason:"경제성장에 따라 첨단 기술이 빠르게 발전하면서 물건이나 서비스를 생산하는 속도가 빨라지고 생산량이 늘어나는 등 많은 변화가 생겼어요.",
+   h1:"첨단 기술 바구니의 카드 뒷면을 떠올려 봐요.", h2:"속도와 생산량이 어떻게 달라졌나요?"},
+  {stem:"경제가 성장하면서 <b>문화와 관련한 산업</b>이 발달한 까닭은 무엇인가요?",
+   opts:["문화 산업을 하지 못하게 막았기 때문이에요","새로운 일자리가 많이 생기고 국민의 소득이 증가해 사람들의 생활이 풍족해지면서 문화에 관한 관심이 높아졌기 때문이에요","사람들이 모두 일을 그만두었기 때문이에요","물건의 가격이 모두 같아졌기 때문이에요"],
+   correct:1, pts:POINTS_BASIC, scene:"loop",
+   reason:"경제가 성장하면서 새로운 일자리가 많이 생기고 국민의 소득이 증가했어요. 사람들의 생활이 풍족해지면서 문화에 관한 관심이 높아져 문화와 관련한 산업이 발달했어요.",
+   h1:"생활이 풍족해지면 무엇에 관심이 높아지나요?", h2:"일자리와 소득이 늘었어요."},
+  {stem:"신문 기사에서 <b>콘텐츠 산업</b>에 포함된다고 한 부문으로만 묶은 것은 무엇인가요?",
+   opts:["철강, 조선, 석유 화학","쌀, 채소, 과일","게임, 영화, 음악, 만화","자동차, 반도체, 가전제품"],
+   correct:2, pts:POINTS_BASIC, scene:"news",
+   reason:"콘텐츠 산업은 게임, 영화, 방송, 출판, 만화, 음악, 애니메이션, 광고, 캐릭터 등의 부문을 포함해요.",
+   h1:"신문 기사에서 밑줄을 그을 곳을 떠올려 봐요.", h2:"즐기고 보고 듣는 것들이에요."},
+  {stem:"<b>빅데이터 전문가</b>가 하는 일로 알맞은 것은 무엇인가요?",
+   opts:["다양한 분야에서 빠르게 생기는 많은 양의 데이터 중에서 필요한 데이터를 찾아내어 분석해요","병원에서 환자를 치료해요","공장에서 로봇을 조립해요","밭에서 농사를 지어요"],
+   correct:0, pts:POINTS_BASIC, scene:"data",
+   reason:"빅데이터 전문가는 다양한 분야에서 빠른 속도로 발생하는 많은 양의 데이터, 곧 빅데이터 중에서 필요한 데이터를 찾아내어 분석하는 일을 해요.",
+   h1:"별별 직업 속으로를 떠올려 봐요.", h2:"데이터로 사람들의 마음을 읽어요."},
+  // 4단계 적용 (+15)
+  {stem:"카드 판에서 「<b>사람들의 기대 수명이 늘어났어요</b>」 카드는 어느 바구니에 놓았나요?",
+   opts:["첨단 기술","문화 산업","의료","교육"],
+   correct:2, pts:POINTS_APPLY, scene:"life",
+   reason:"의료 기술이 발달하면서 치료하기 힘들었던 병을 치료할 수 있게 되었고, 사람들의 기대 수명이 늘어났어요. 그래서 의료 바구니에 놓았어요.",
+   h1:"수명이 늘어난 까닭을 떠올려 봐요.", h2:"병을 치료하는 기술과 관계가 있어요."},
+  {stem:"<b>의료 기술</b>이 발달하면서 우리 생활에 생긴 변화로 알맞은 것은 무엇인가요?",
+   opts:["치료하기 힘들었던 병을 치료할 수 있게 되고 기대 수명이 늘어났어요","기대 수명이 줄어들었어요","병원이 모두 사라졌어요","의료 혜택을 받기가 더 어려워졌어요"],
+   correct:0, pts:POINTS_APPLY, scene:"life",
+   reason:"경제가 성장하면서 수준 높은 의료 혜택을 받을 수 있게 되었어요. 의료 기술이 발달하면서 기대 수명이 늘어났어요.",
+   h1:"의료 바구니의 두 카드를 떠올려 봐요.", h2:"수명이 어떻게 달라졌나요?"},
+  {stem:"<b>콘텐츠 산업</b>이 더 발달하면 우리 경제에는 어떤 변화가 생길까요?",
+   opts:["콘텐츠와 관련한 일자리가 모두 사라져요","세계 여러 나라 사람들이 우리나라의 문화 콘텐츠를 소비하면서 관련 일자리가 더 많이 생기고, 경제가 더 성장하게 될 거예요","다른 산업의 수출이 모두 멈춰요","우리 경제와는 아무 관계가 없어요"],
+   correct:1, pts:POINTS_APPLY, scene:"news",
+   reason:"세계 여러 나라 사람들이 우리나라의 문화 콘텐츠를 소비하게 되면 콘텐츠 산업과 관련한 일자리가 더 많이 생기고, 우리나라의 경제가 더 성장하게 될 거예요.",
+   h1:"문화 산업 바구니의 카드 뒷면을 떠올려 봐요.", h2:"일자리가 어떻게 달라졌나요?"},
+  {stem:"경제가 성장하면 <b>사람들의 삶</b>은 어떻게 달라지나요?",
+   opts:["삶의 질이 낮아져요","아무것도 달라지지 않아요","교육과 의료가 모두 나빠져요","교육의 질이 높아지고 수준 높은 의료 혜택을 받을 수 있게 되는 등 삶의 질이 높아져요"],
+   correct:3, pts:POINTS_APPLY, scene:"up",
+   reason:"경제가 성장하면서 교육의 질이 높아지고, 수준 높은 의료 혜택도 받을 수 있게 됐어요. 이처럼 경제가 성장하면 사람들의 삶의 질이 높아져요.",
+   h1:"꼭 기억해요의 둘째 문장이에요.", h2:"삶의 질이 어떻게 되나요?"}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 동기 유발
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">경제가 성장하면 우리 생활은 어떻게 변할까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('wish','경제가 성장하면?(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCA1 생각을 열어요</div>
+      지난 시간에는 <b>경제성장이 무엇인지</b> 알아봤어요. 경제가 성장한다는 것은 국민의 소득이 증가하고, 국가의 생산 수준이나 경제 규모가 커지는 것이었어요.
+      그렇다면 경제가 성장하면 우리 생활은 어떻게 변할 것 같나요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 돈을 많이 벌게 되면서 사고 싶은 것을 많이 살 수 있고 가족과 <b>여행</b>도 자주 갈 수 있을 것 같아요.<br>
+      \u2014 좋은 물건을 싼 가격에 살 수 있어 생활이 더 <b>편리</b>해질 것 같아요.<br>
+      \u2014 <b>기술</b>이 발달해서 필요한 것을 더 쉽고 빠르게 얻을 수 있을 것 같아요.</div>`
+      :`<div class="note">생각을 자유롭게 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">오늘은 <b>경제성장이 우리 생활에 미치는 영향</b>을 알아봐요.</div></div>`});
+// 2 살펴보기 — reveal: 첨단 기술
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">첨단 기술이 발전하면 우리 생활에 어떤 변화가 있을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('tech','첨단 기술(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDE81 첨단 기술 살펴보기</div>
+      경제성장에 따라 <b>드론</b>, <b>로봇 자동화</b>, <b>자율 주행</b>, <b>생성형 인공지능</b> 같은 첨단 기술이 빠르게 발전했어요.
+      생성형 인공지능은 이야기, 영상, 음악, 미술 작품 등 새로운 콘텐츠를 만들어 내는 인공지능이에요.
+      이런 첨단 기술이 발전하면 우리 생활에는 어떤 변화가 있을까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 물건이나 서비스를 생산하는 <b>속도가 빨라지고</b> <b>생산량이 늘어나요</b>.<br>
+      \u2014 사람들의 힘이 덜 들게 되고 생활이 <b>편리</b>해져요.<br>
+      \u2014 많은 상품을 적은 비용으로 생산할 수 있게 되어 경제가 더 성장할 거예요.</div>`
+      :`<div class="note">첨단 기술과 관련한 경험을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">변화 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: 문화 산업(미디어 활동)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">경제성장과 문화 산업은 어떤 관계가 있을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('news','신문 기사(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCF0 콘텐츠 산업 수출액 역대 최대</div>
+      신문 기사의 제목을 먼저 보고 내용을 짐작해 봐요. 기사에 따르면 우리나라 <b>콘텐츠 산업</b>의 수출액이 역대 가장 많았어요.
+      콘텐츠 산업은 <b>게임, 영화, 방송, 출판, 만화, 음악, 애니메이션, 광고, 캐릭터</b> 등의 부문을 포함해요.
+      콘텐츠 산업이 더 발달하면 우리 경제에는 어떤 변화가 생길까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 경제가 성장하면서 새로운 일자리가 많이 생기고 국민의 소득이 증가해, 사람들의 생활이 <b>풍족</b>해지면서 <b>문화와 관련한 산업</b>이 발달했어요.<br>
+      \u2014 세계 여러 나라 사람들이 우리나라의 문화 콘텐츠를 소비하면서 관련 <b>일자리</b>가 더 많이 생기고, 우리나라 경제가 더 성장할 거예요.</div>`
+      :`<div class="note">기사의 제목에서 무엇을 짐작할 수 있나요?</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 4 살펴보기 — reveal: 교육과 의료
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">경제가 성장하면서 교육과 의료는 어떻게 달라졌을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('life','교실과 의료의 변화(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDFEB 교육과 의료 살펴보기</div>
+      교실에서는 <b>전자 칠판</b>과 <b>스마트 기기</b>를 활용해 수업하게 됐어요. 교육에 인공지능, 빅데이터 등의 첨단 기술을 적용해 교육 서비스를 개선하거나 새로운 서비스를 제공하는 교육을 <b>에듀 테크</b>라고 해요.
+      의료 기술이 발전하면 우리 생활에는 어떤 변화가 있을까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 경제가 성장하면서 <b>교육의 질</b>이 높아졌어요.<br>
+      \u2014 의료 기술이 발전하면 치료하기 힘들었던 병을 치료할 수 있게 되고, 사람들의 <b>기대 수명</b>이 늘어나요.<br>
+      \u2014 경제가 성장하면서 <b>수준 높은 의료 혜택</b>을 받을 수 있게 됐어요.</div>`
+      :`<div class="note">과거와 오늘날의 교실 모습을 견줘 봐요.</div><button class="reveal-btn" onclick="reveal()">변화 보기</button>`}
+  </div>`});
+// 5 살펴보기 — 직접조작(카드 나누기)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">경제성장이 바꾼 생활을 카드로 나눠 봐요</h2>
+  ${qnPanel(st)}`});
+// 6 살펴보기 — reveal: 핵심 질문(경제성장과 문화 산업)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">경제성장과 문화 산업은 서로 어떤 도움을 줄까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('loop','경제성장과 문화 산업(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83E\uDD14 핵심 질문</div>
+      카드 판의 문화 산업 바구니를 떠올려 봐요. 경제성장과 문화 산업은 어떤 관계가 있을까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 경제가 성장하면 사람들이 문화에 관한 관심이 높아져서 <b>문화 산업이 발전</b>해요.<br>
+      \u2014 문화 산업이 계속 발전하면 <b>경제성장에 큰 도움</b>을 줘요.<br>
+      \u2014 경제와 문화 산업은 서로 이어져 함께 성장하고 발전해요.</div>`
+      :`<div class="note">화살표가 양쪽으로 이어진 까닭을 생각해 봐요.</div><button class="reveal-btn" onclick="reveal()">정리 보기</button>`}
+  </div>`});
+// 7 살펴보기 — reveal: 꼭 기억해요
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">경제가 성장하면 삶의 질은 어떻게 될까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('up','삶의 질(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCCC 꼭! 기억해요</div>
+      경제가 성장하면서 교육의 질이 높아지고, 수준 높은 의료 혜택도 받을 수 있게 됐어요. 이처럼 경제가 성장하면 사람들의 <b>삶의 질</b>이 높아져요.<br>
+      1 경제성장에 따라 사람들의 생활이 풍족해지면서 ( 문화 , 정치 )와 관련한 산업이 발달했습니다.
+      2 경제가 성장하면 사람들의 삶의 질이 높아집니다. ( \u25CB , \u2715 )</div>
+    ${st.revealed?`<div class="answer-box">\u2014 꼭 기억해요 1 \u2014 <b>문화</b> \u00b7 2 \u2014 <b>\u25CB</b><br>
+      \u2014 첨단 기술이 발전하면서 우리 일상의 많은 부분이 <b>데이터</b>로 남아요. 이런 빅데이터 중에서 필요한 데이터를 찾아 분석하는 <b>빅데이터 전문가</b>라는 직업도 생겼어요.</div>`
+      :`<div class="note">괄호 속 알맞은 말과 ○, ✕를 먼저 골라 봐요.</div><button class="reveal-btn" onclick="reveal()">정리 보기</button>`}
+  </div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 9차시 주요 내용 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div><b>첨단 기술</b> \u2014 빠르게 발전하면서 물건이나 서비스를 생산하는 속도가 빨라지고 생산량이 늘어났어요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div><b>문화 산업</b> \u2014 새로운 일자리가 생기고 소득이 늘어 생활이 풍족해지면서 문화와 관련한 산업이 발달했어요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div><b>교육과 의료</b> \u2014 교육의 질이 높아지고, 수준 높은 의료 혜택을 받을 수 있게 됐어요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 여덟 장의 카드가 네 바구니에 모두 나뉘었어요. 경제가 성장하면 사람들의 삶의 질이 높아져요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b>빠른 경제성장으로 발생한 문제</b>를 알아봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공부한 내용을 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"경제성장이 우리 생활에 미치는 영향을 설명할 수 있어요",st)}
+    ${selfCheck(1,"경제성장과 문화 산업의 관계를 말할 수 있어요",st)}
+    ${selfCheck(2,"경제성장으로 달라진 우리 생활에 관심을 두게 됐어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">빠른 경제성장으로 발생한 문제</b>를 알아봐요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u2_l06";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  qnPut:0, qnHold:-1,
+  qnRead:null, qnMean:null, qnFin:null,
+  qnWrongR:null, qnWrongM:null, qnWrongF:null,
+  qnMsg:null, qnWarn:false, qnBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function qnRender(){ main.innerHTML = slides[state.idx].render(state); }
+function qnHoldMsg(msg){
+  state.qnWarn=true; state.qnBusy=true; state.qnMsg=msg;
+  playThud(); qnRender();
+  setTimeout(()=>{ state.qnBusy=false; state.qnWarn=false; state.qnMsg=null;
+    state.qnWrongR=null; state.qnWrongM=null; state.qnWrongF=null; qnRender(); },1600);
+}
+/* ★ 놓은 기록 — 더하기만 하는 자리 단 하나 */
+function qnNote(){ state.qnPut |= 1 << state.qnHold; }
+
+/* ① 카드 — 들기 · 든 카드를 다시 누르면 내려놓기 */
+function qnPick(c){
+  if(state.qnFin!=null) return;                                        // 가드①
+  if(state.qnBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(c) || c<0 || c>=QN_N) return;                   // 가드②
+  if(qnAll(state)){ qnHoldMsg(QN_LOCK); return; }                      // 가드③ 판 불변
+  if(qnIn(state,c)){ qnHoldMsg(QN_PUT_AGAIN); return; }                // 가드⑨ 이미 놓은 카드 — 판 불변
+  state.qnHold = state.qnHold===c ? -1 : c;                            // ★ 카드를 드는 자리 단 하나
+  state.qnWarn=false; state.qnMsg=null; playBlip(); qnRender();
+}
+
+/* ② 바구니 — 든 카드를 놓기 */
+function qnDrop(b){
+  if(state.qnFin!=null) return;                                        // 가드①
+  if(state.qnBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(b) || b<0 || b>=QN_BASK.length) return;         // 가드②
+  if(qnAll(state)){ qnHoldMsg(QN_LOCK); return; }                      // 가드③ 판 불변
+  if(state.qnHold<0){ qnHoldMsg(QN_EMPTY); return; }                   // 가드⑨ 카드 없음 — 판 불변
+  if(qnHome(state.qnHold)!==b){ qnHoldMsg(QN_WRONG[b]); return; }      // 가드⑨ 알맞지 않은 바구니 — 판 불변
+  const c = state.qnHold;
+  qnNote();
+  state.qnHold = -1;
+  state.qnWarn=false;
+  if(qnAll(state)){ state.qnMsg = QN_ALL_MSG; playChime(); }
+  else { state.qnMsg = `「${QN_BASK[b].t}」 바구니에 놓았어요 \u2014 뒷면: ${QN_CARD[c].back}.`; playBlip(); }
+  qnRender();
+}
+
+/* ③ 판 읽기 — 수첩 네 줄 뒤에만(가드④). */
+function qnReadPick(k){
+  if(state.qnFin!=null) return;                                        // 가드①
+  if(state.qnBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=QN_READ.length) return;         // 가드②
+  if(!qnAll(state)){ qnHoldMsg(QN_ORDER_R); return; }                  // 가드④ 순서 — 판 불변
+  if(state.qnRead!=null){ qnHoldMsg(QN_READ_AGAIN); return; }          // 가드④ 판 불변
+  if(k===QN_READ_OK){
+    state.qnRead=k; state.qnWrongR=null; state.qnWarn=false;
+    state.qnMsg = '판을 잘 읽었어요. 경제가 성장하면 우리 생활의 <b>여러 부분</b>이 달라져요.';
+    playChime(); qnRender(); return;
+  }
+  state.qnWrongR=k;
+  qnHoldMsg(QN_READ_NO[k]);
+}
+
+/* ④ 핵심 질문 — 판을 읽은 뒤에만(가드⑤). */
+function qnMeanPick(k){
+  if(state.qnFin!=null) return;                                        // 가드①
+  if(state.qnBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=QN_MEAN.length) return;         // 가드②
+  if(state.qnRead==null){ qnHoldMsg(QN_ORDER_M); return; }             // 가드⑤ 순서 — 판 불변
+  if(state.qnMean!=null){ qnHoldMsg(QN_MEAN_AGAIN); return; }          // 가드⑤ 판 불변
+  if(k!==QN_MEAN_OK){ state.qnWrongM=k; qnHoldMsg(QN_MEAN_NO[k]); return; } // 가드⑤ 판 불변
+  state.qnMean = k;                                                    // ★ 관계를 고르는 자리 단 하나
+  state.qnWarn=false;
+  state.qnMsg = '경제가 성장하면 <b>문화 산업</b>이 발달하고, 문화 산업이 발달하면 <b>경제성장</b>에 도움을 줘요.';
+  playChime(); qnRender();
+}
+
+/* ⑤ 마무리 — 교과서 83쪽 */
+function qnFinish(k){
+  if(state.qnFin!=null) return;                                        // 가드①
+  if(state.qnBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=QN_FIN.length) return;          // 가드②
+  if(state.qnMean==null){ qnHoldMsg(QN_ORDER_F); return; }             // 가드⑥ 순서 — 판 불변
+  if(k===QN_FIN_OK){
+    state.qnFin=k; state.qnWrongF=null; state.qnMsg=null; state.qnWarn=false;
+    playChime(); qnRender(); return;
+  }
+  state.qnWrongF=k;
+  qnHoldMsg(QN_FIN_NO[k]);                                             // 가드⑦ 판 불변
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 2단원 7차시(l07) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
