@@ -5,6 +5,7 @@
    · 그림 문법 하나: **주황 화살표 = 힘, 굵고 길수록 큰 힘.** 모든 부품이 같은 화살표를 쓴다.
    · 부품: panels(나란히 견주기) · force(밀기·당기기·누르기·멈추기·들기) · balance(수평대) · lever(지레) · slope(빗면)
            · scale(전자저울·용수철저울) · hand(손 어림) · tools(도구 카드) · chain(카드 사이 화살표) · places(쓰이는 곳)
+   · 24차(2026-09-28) 국어 부품 추가: sent/sents(문장 짜임)·pause(띄어 읽기 ∨)·text(글 읽기 판)·para(문단 중심·뒷받침)·sort2(두 갈래 통)·mood(인물 마음)·sound(소리·표기)·letter(편지지)·note(메모지)
    · 23차(2026-09-28) 길이·시간 부품 추가: ruler(자)·joins(이어 붙여 어림)·road(거리 띠·km 표지판)·clock(시·분·초바늘)·tvert(시간 세로셈) · 카드 on(주황 강조)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
    ============================================================================ */
@@ -456,9 +457,86 @@
     return '<div class="fig-vert fig-tvert" data-r="' + R.join(',') + '">' + h + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
   }
 
+
+  // ── 24차(2026-09-28) 국어 부품 — 그림 문법: **파랑 = 누가/무엇이 · 사실 · 중심 문장** / **주황 = 어찌하다·어떠하다·무엇이다 · 의견 · 쉬어 읽기 ∨ · 강조** / 초록 = 뒷받침 · 어울림 / 빨강 = 어울리지 않음 · 잘못된 표기 ──
+  const md = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<b class="hi">$1</b>');
+  const TYPE = { act: '어찌하다', state: '어떠하다', what: '무엇이다' }, TSUB = { act: '움직임', state: '성질·상태', what: '무엇인지' };
+  const chip = (t, cls) => t ? '<i class="ko-tag ' + (cls || '') + '">' + esc(t) + '</i>' : '';
+  // sent / sents: 문장의 짜임 — a = 누가/무엇이(파랑) · b = 뒷부분(주황, t = act·state·what) · tree = 세 갈래 한눈에
+  function sents(o) {
+    if (o.tree) {
+      const ex = {}; (o.items || []).forEach(i => { if (i.t) ex[i.t] = i.b; });
+      return '<div class="ko-tree"><div class="ko-a big"><i>누가/무엇이</i>' + md(o.a || '콩이가') + '</div><em>+</em><div class="ko-branches">'
+        + ['act', 'state', 'what'].map(t => '<div class="ko-b t-' + t + '"><i>' + TYPE[t] + '</i><u>' + TSUB[t] + '</u>' + (ex[t] ? md(ex[t]) : '') + '</div>').join('') + '</div></div>';
+    }
+    const items = o.items || [{ a: o.a, b: o.b, t: o.t, bad: o.bad }];
+    return '<div class="ko-sents">' + items.map(it => { const t = TYPE[it.t] ? it.t : ''; return '<div class="ko-sent' + (it.bad ? ' bad' : '') + '"><span class="ko-a"><i>' + esc(it.la || '누가/무엇이') + '</i>' + md(it.a) + '</span>' + (it.mark ? '<i class="ko-p1">∨</i>' : '<em>/</em>') + '<span class="ko-b' + (t ? ' t-' + t : '') + '"><i>' + esc(it.lb || (t ? TYPE[t] : '뒷부분')) + (t && it.sub !== false ? '<u>' + TSUB[t] + '</u>' : '') + '</i>' + md(it.b) + '</span>' + (it.bad ? '<b class="ko-x">✗ 어색해요</b>' : it.ok ? '<b class="ko-o">○ 어울려요</b>' : '') + '</div>'; }).join('') + '</div>';
+  }
+  // pause: 띄어 읽기 — 글줄 안의 ∨(조금 쉬어)·∨∨(조금 더 쉬어)를 주황 쐐기로 · rows = 부호 표(쉼표·마침표·물음표)
+  const wedge = (s) => md(s).replace(/∨∨|∨/g, m => m.length > 1 ? '<i class="ko-p2">∨∨</i>' : '<i class="ko-p1">∨</i>');
+  function pause(o) {
+    let s = '';
+    if (o.rows) s += '<div class="ko-rows">' + o.rows.map(r => '<div class="ko-row"><b class="ko-sym">' + esc(r.sym) + '</b><span>' + esc(r.name) + '</span>' + (r.mark ? wedge(r.mark) : '<i class="ko-up">↗</i>') + '<u>' + md(r.say) + '</u></div>').join('') + '</div>';
+    if (o.lines) s += '<div class="ko-lines">' + o.lines.map(l => '<div class="ko-line">' + wedge(l) + '</div>').join('') + '</div>';
+    if (!s) return '';
+    return '<div class="ko-pause">' + s + (o.key === false ? '' : '<div class="ko-key"><i class="ko-p1">∨</i> 조금 쉬어요 &nbsp;·&nbsp; <i class="ko-p2">∨∨</i> 조금 더 쉬어요</div>') + '</div>';
+  }
+  // text: 글 읽기 판 — 책 종이 위 글줄(번호) · 줄마다 tag(사실·의견·중심·뒷받침·어색) · poem = 시(번호 작게)
+  const TAGC = { '사실': 'fact', '의견': 'opin', '중심': 'main', '중심 문장': 'main', '뒷받침': 'sub', '뒷받침 문장': 'sub', '어색': 'odd', '어울리지 않아요': 'odd' };
+  function text(o) {
+    const lines = (o.lines || []).map(l => typeof l === 'string' ? { t: l } : l);
+    return '<div class="ko-text' + (o.poem ? ' poem' : '') + '">' + (o.title ? '<div class="ko-title">' + md(o.title) + '</div>' : '')
+      + '<ol class="ko-ol' + (o.num === false ? ' nonum' : '') + '">' + lines.map(l => '<li' + (l.tag && TAGC[l.tag] ? ' class="' + TAGC[l.tag] + '"' : '') + '>' + (o.num === false ? '' : '<em></em>') + '<span>' + md(String(l.t).replace(/^\d+\s+/, '')) + '</span>' + (l.tag ? chip(l.tag, TAGC[l.tag] || '') : '') + '</li>').join('') + '</ol></div>';
+  }
+  // para: 문단 짜임 — main 중심 문장(파랑) 아래 subs 뒷받침(초록), odd 는 빨강 ✗ · pairs = 중심 → 뒷받침 짝 · indent = 첫 칸 들여 쓰기 표시
+  function para(o) {
+    if (o.pairs) return '<div class="ko-pairs">' + o.pairs.map(p => '<div class="ko-pair"><span class="ko-main">' + chip(o.mainTag || '중심 문장', 'main') + md(p[0]) + '</span><i class="fig-chain-ar">→</i><span class="ko-sub">' + chip(o.subTag || '뒷받침 문장', 'sub') + md(p[1]) + '</span></div>').join('') + '</div>';
+    const subs = (o.subs || []).map(x => typeof x === 'string' ? { t: x } : x);
+    return '<div class="ko-para">' + (o.indent ? '<div class="ko-indent"><i></i>한 칸 들여 써요</div>' : '') + '<div class="ko-main">' + chip(o.mainTag || '중심 문장', 'main') + md(o.main) + '</div>'
+      + (subs.length ? '<div class="ko-conn"><i></i></div><div class="ko-subs n' + subs.length + '">' + subs.map(x => '<div class="ko-sub' + (x.odd ? ' odd' : '') + '">' + chip(x.odd ? (o.oddTag || '어울리지 않아요') : (o.subTag || '뒷받침 문장'), x.odd ? 'odd' : 'sub') + md(x.t) + (x.odd ? '<b class="ko-x">✗</b>' : '') + '</div>').join('') + '</div>' : '') + '</div>';
+  }
+  // sort2: 두 갈래 통 — a(파랑)·b(주황) 이름·글줄·hint
+  function sort2(o) {
+    const bin = (b, cls) => !b || (!b.name && !(b.items || []).length) ? '' : '<div class="ko-bin ' + cls + '"><div class="ko-binh">' + esc(b.name || '') + '</div>' + (b.items || []).map(t => '<div class="ko-item">' + md(t) + '</div>').join('') + (b.hint ? '<div class="ko-hint">' + md(b.hint) + '</div>' : '') + '</div>';
+    const bins = [bin(o.a, 'a'), bin(o.b, 'b')].filter(Boolean); if (!bins.length) return ''; // 이름도 글줄도 없는 통은 안 그린다(한 통만도 됨)
+    return '<div class="ko-sort2 n' + bins.length + '">' + bins.join('') + '</div>';
+  }
+  // mood: 인물의 마음 — who(얼굴 이모지 → 그림 인물, 기분 얼굴 🙂😟😮🤔 도 됨) · say 말풍선 · feel 마음(주황) · how 목소리·표정(회색) · flow = 마음 변화 화살표 줄
+  function figWho(face, cls) {
+    const A = global.KT2_ART; const s = A && A.character ? A.character(face || '🙂') : '';
+    return s ? '<div class="ko-chr ' + (cls || '') + '">' + s + '</div>' : '<div class="ko-chr emo ' + (cls || '') + '">' + esc(face || '🙂') + '</div>';
+  }
+  function mood(o) {
+    if (o.flow) return '<div class="ko-flow">' + o.flow.map((f, i) => (i ? '<i class="fig-chain-ar">→</i>' : '') + '<div class="ko-step">' + figWho(f.who) + '<b>' + md(f.name || '') + '</b>' + (f.note ? '<u>' + md(f.note) + '</u>' : '') + '</div>').join('') + '</div>';
+    const items = o.items || [];
+    return '<div class="ko-moods n' + items.length + '">' + items.map((it, i) => '<div class="ko-mood' + (i % 2 ? ' mirror' : '') + '">' + (it.say ? '<div class="ko-bub">' + md(it.say) + '</div>' : '') + figWho(it.who) + (it.name ? '<b class="ko-name">' + esc(it.name) + '</b>' : '') + (it.feel ? '<span class="ko-feel">' + md(it.feel) + '</span>' : '') + (it.how ? '<span class="ko-how">' + md(it.how) + '</span>' : '') + '</div>').join('') + '</div>';
+  }
+  // sound: 소리·표기 카드 — items{w,s} 낱말 → [소리](주황) · pairs [[a,b]] 견줌(ox = 왼쪽 바름 ○ · 오른쪽 틀림 ✗ / 아니면 띄어쓰기 두 뜻 ↔, 낱말마다 칸) · rule 한 줄
+  const words = (t) => String(t).split(' ').map(w => '<i>' + md(w) + '</i>').join('<s></s>');
+  function sound(o) {
+    let s = '';
+    if (o.rule) s += '<div class="ko-rule">' + md(o.rule) + '</div>';
+    if (o.items) s += '<div class="ko-snds">' + o.items.map(it => '<div class="ko-snd"><b>' + md(it.w) + '</b><em>→</em><b class="s">' + esc(it.s) + '</b></div>').join('') + '</div>';
+    if (o.pairs) s += '<div class="ko-prs' + (o.ox ? ' ox' : '') + '">' + o.pairs.map(p => '<div class="ko-pr"><span class="l">' + (o.ox ? '<b class="ko-o">○</b>' : '') + words(p[0]) + '</span><em>↔</em><span class="r">' + (o.ox ? '<b class="ko-x">✗</b>' : '') + words(p[1]) + '</span></div>').join('') + '</div>';
+    return s ? '<div class="ko-sound">' + s + '</div>' : '';
+  }
+  // letter: 편지지 — to 받는 사람(파랑) · lines 본문(md) · from 쓴 사람 · parts = 짜임만(빈칸 이름표)
+  function letter(o) {
+    if (o.parts) return '<div class="ko-letter parts">' + o.parts.map(p => '<div class="ko-blank">' + chip(p, /받는|쓴/.test(p) ? 'main' : /마음/.test(p) ? 'opin' : 'sub') + '<i></i></div>').join('') + '</div>';
+    return '<div class="ko-letter">' + (o.to ? '<div class="ko-to">' + chip(o.toTag || '받는 사람', 'main') + md(o.to) + '</div>' : '')
+      + (o.lines || []).map(l => { const x = typeof l === 'string' ? { t: l } : l; return '<div class="ko-ln' + (x.tag ? ' tagged' : '') + '">' + (x.tag ? chip(x.tag, TAGC[x.tag] || (/마음/.test(x.tag) ? 'opin' : 'sub')) : '') + md(x.t) + '</div>'; }).join('')
+      + (o.from ? '<div class="ko-from">' + md(o.from) + chip(o.fromTag || '쓴 사람', 'main') + '</div>' : '') + '</div>';
+  }
+  // note: 메모지 — title 제목 · items{t,star} 번호·⭐
+  function note(o) {
+    const items = (o.items || []).map(x => typeof x === 'string' ? { t: x } : x);
+    return '<div class="ko-note">' + (o.title ? '<div class="ko-ntitle">' + chip(o.titleTag || '제목', 'main') + md(o.title) + '</div>' : '') + '<ol>' + items.map(x => '<li>' + md(x.t) + (x.star ? '<b class="ko-star">⭐</b>' : '') + '</li>').join('') + '</ol></div>';
+  }
+  const KO_PARTS = { sent: sents, sents, pause, text, para, sort2, mood, sound, letter, note };
+
   const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock };
   const HTML_PARTS = { vert, tvert };
-  function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k]; return fn ? fn(f) : ''; }
+  function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
     const cap = (p.fig ? p.label : '') || (f.k === 'balance' && f.cap !== false ? balanceCap(f) : ''); // 22차: 부품 자신의 label 은 그림 안에 그리므로 나란히 칸(items)의 label 만 캡션
@@ -473,8 +551,9 @@
     else if (f.k === 'tools') body = tools(f);
     else if (f.k === 'chain') body = tools(f, '<div class="fig-chain-ar">→</div>').replace('fig-cards', 'fig-cards chain');
     else if (f.k === 'places') body = '<div class="fig-cards places">' + (f.items || []).map(card).join('') + '</div>';
+    else if (KO_PARTS[f.k]) { body = KO_PARTS[f.k](f); if (!body) return ''; body = '<div class="fig-ko">' + body + '</div>'; } // 24차 국어 부품은 흰 칸 없이 그대로(자기 종이·통을 갖는다)
     else { const p = panel(f); if (!p) return ''; body = '<div class="fig-panels n1">' + p + '</div>'; }
     return '<div class="fig" data-fig="' + esc(f.k) + '">' + body + (f.key !== false && hasArrow(f) ? KEY : '') + '</div>';
   }
-  global.KT2_FIG = { render, parts: Object.keys(PARTS).concat(Object.keys(HTML_PARTS), ['panels', 'tools', 'chain', 'places']), icons: Object.keys(ICON), sizes: AL };
+  global.KT2_FIG = { render, parts: Object.keys(PARTS).concat(Object.keys(HTML_PARTS), Object.keys(KO_PARTS), ['panels', 'tools', 'chain', 'places']), icons: Object.keys(ICON), sizes: AL };
 })(typeof window !== 'undefined' ? window : globalThis);
