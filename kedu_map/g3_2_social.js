@@ -114,24 +114,24 @@ window.KEDU_MAP["g3_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_social_u1_l11",
+     "lessonId": "g3_social_u1_l11_v1",
      "n": "5",
      "title": "[생각을 펼쳐요] 다양한 문화에 대한 이해와 존중 정리",
      "sub": "② 다양한 문화에 대한 이해와 존중",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/social/1단원_사회변화와다양한문화/g3_social_u1_l11_버스를찾아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_social_u1_l12",
+     "lessonId": "g3_social_u1_l12_v1",
      "n": "6",
      "title": "1단원 사회 변화와 다양한 문화 정리",
      "sub": "② 다양한 문화에 대한 이해와 존중",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/social/1단원_사회변화와다양한문화/g3_social_u1_l12_딩고를외쳐요.html",
+     "track": "tb",
+     "ready": true
     }
    ]
   },
