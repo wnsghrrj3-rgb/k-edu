@@ -105,18 +105,41 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   const c4 = KT2.renderSlide({ id: 'so', block: 'card_arrange', data: { cards: [3, 1, 2] } }, C0); ok(/class="i-cards"/.test(c4.body) && !/ca-bin/.test(c4.body), '순서 카드: 수 정렬은 종전 그대로'); }
 // ── 21차 개념 그림 층(stage2-fig.js) — 데이터 fig 전수 · 수평대 기울기 방향 · 화살표 s<m<l · 범례 · 개념 장에만 ──
 { const FG = g0.KT2_FIG; const C0 = { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] };
-  const byFile = {}; let figBad = [];
+  const byFile = {}; let figBad = []; let textCards = 0, mathParts = 0;
   const walk = (f, cb) => { if (!f || typeof f !== 'object') return; cb(f); (f.items || []).forEach(p => walk(p && p.fig ? p.fig : null, cb)); };
   files.forEach(fn => { const L = loadLessons(path.join(DATA, fn)); Object.keys(L).forEach(k => (L[k].slides || []).forEach(s => { if (!s.data || !s.data.fig) return;
     byFile[fn] = (byFile[fn] || 0) + 1; const f = s.data.fig; const tag = fn + ' ' + k + ' ' + s.id;
     if (s.block !== 'concept') figBad.push(tag + ' 개념 장 아님(' + s.block + ')');
     const h = FG.render(f); if (!h) figBad.push(tag + ' 그림 빈 글자');
-    walk(f, x => { if (FG.parts.indexOf(x.k) < 0) figBad.push(tag + ' 모르는 부품 ' + x.k); if (x.k === 'tools' || x.k === 'chain') (x.items || []).forEach(c => { if (FG.icons.indexOf(c.name) < 0 && !c.emoji) figBad.push(tag + ' 아이콘 없음 ' + c.name); }); });
+    walk(f, x => { if (FG.parts.indexOf(x.k) < 0) figBad.push(tag + ' 모르는 부품 ' + x.k); if (x.k === 'tools' || x.k === 'chain') (x.items || []).forEach(c => { if (FG.icons.indexOf(c.name) < 0 && !c.emoji) { textCards++; if (!/fig-card text"/.test(FG.render({ k: 'tools', items: [c] }))) figBad.push(tag + ' 글자 카드 아님 ' + c.name); } }); });
+    // 22차 수학 부품 검산 — 칸 수·색칠 수·세로셈 답·직각 표시·수 모형 개수·나눔 개수·배열 점 수
+    walk(f, x => { const H = FG.render(x); const cnt = (re) => (H.match(re) || []).length;
+      if (x.k === 'frac') { const n = Math.max(1, x.n | 0), m = Math.max(0, Math.min(n, x.m | 0)); if (cnt(/class="o-slice/g) !== n || cnt(/class="o-slice on"/g) !== m) figBad.push(tag + ' 분수 칸 ' + n + '/' + m); mathParts++; }
+      if (x.k === 'fracs') { (x.items || []).forEach(i => { const n = Math.max(1, i.n | 0), m = Math.max(0, Math.min(n, i.m | 0)); const one = FG.render({ k: 'fracs', items: [i] }); if ((one.match(/class="o-slice/g) || []).length !== n || (one.match(/class="o-slice on"/g) || []).length !== m) figBad.push(tag + ' 띠 칸 ' + n + '/' + m); }); if (x.cmp) { const a = x.items[0], b = x.items[1]; const va = a.m / a.n, vb = b.m / b.n; const want = va > vb ? '>' : va < vb ? '<' : '='; if (x.cmp !== want) figBad.push(tag + ' 견줌 기호 ' + x.cmp + '≠' + want); } mathParts++; }
+      if (x.k === 'numline') { if (cnt(/class="o-mark"/g) !== (x.marks || []).length) figBad.push(tag + ' 수직선 점 수'); (x.marks || []).forEach(mk => { const at = typeof mk.at === 'string' && /\//.test(mk.at) ? (+mk.at.split('/')[0]) / (+mk.at.split('/')[1]) : +mk.at; if (!(at >= 0 && at <= 1)) figBad.push(tag + ' 수직선 점 범위 ' + mk.at); }); mathParts++; }
+      if (x.k === 'tenbox') { const m = Math.max(0, Math.min(10, x.m | 0)); if (cnt(/class="o-slice on"/g) !== m || cnt(/class="o-slice/g) !== 10) figBad.push(tag + ' 10칸 판 ' + m); mathParts++; }
+      if (x.k === 'vert') { const want = x.op === '−' ? x.a - x.b : x.a + x.b; const got = (H.match(/class="vt-row vt-r">([\s\S]*?)<\/div>/) || ['', ''])[1].replace(/<[^>]+>/g, '').replace(/\s/g, ''); if (+got !== want) figBad.push(tag + ' 세로셈 답 ' + got + '≠' + want); if (x.op === '+' && ((x.a % 10) + (x.b % 10) >= 10) && !/vt-carry"><span>[^<]*<\/span><span>1<\/span>/.test(H)) figBad.push(tag + ' 받아올림 표시 없음'); mathParts++; }
+      if (x.k === 'geo') { if (x.type === 'angle' && x.right && !/o-right/.test(H)) figBad.push(tag + ' 직각 표시 없음'); if (x.type === 'list') { const nt = (x.items || []).filter(i => (i.t || 'tri') === 'tri' && i.right !== false).length; if (cnt(/o-right/g) < nt) figBad.push(tag + ' 직각삼각형 표시 부족'); if (cnt(/<polygon/g) + cnt(/<line x1="-50"/g) !== (x.items || []).length) figBad.push(tag + ' 도형 수'); } mathParts++; }
+      if (x.k === 'bt') { const n = x.n | 0; if (cnt(/class="o-hund"/g) !== Math.floor(n / 100) || cnt(/class="o-ten"/g) !== Math.floor(n / 10) % 10 || cnt(/class="o-one"/g) !== n % 10) figBad.push(tag + ' 수 모형 개수 ' + n); mathParts++; }
+      if (x.k === 'regroup') { if (cnt(/class="o-one"/g) !== 10 || cnt(/class="o-ten"/g) !== 1) figBad.push(tag + ' 묶기/풀기 개수'); mathParts++; }
+      if (x.k === 'share') { const g = Math.max(1, x.groups | 0); if (cnt(/<ellipse/g) !== g || cnt(/<circle cx=/g) !== Math.floor((x.total | 0) / g) * g) figBad.push(tag + ' 접시 나누기 ' + x.total + '/' + g); mathParts++; }
+      if (x.k === 'bundle') { const per = Math.max(1, x.per | 0), g = Math.floor((x.total | 0) / per); if (cnt(/stroke-dasharray="10 6"/g) !== g || cnt(/<circle cx=/g) !== g * per) figBad.push(tag + ' 묶기 ' + x.total + '/' + per); mathParts++; }
+      if (x.k === 'arr') { if (cnt(/<circle cx=/g) !== (x.r | 0) * (x.c | 0)) figBad.push(tag + ' 배열 점 수'); mathParts++; }
+      if (x.k === 'mulrows') { const a = x.a | 0, b = x.b | 0; if (cnt(/class="o-ten"/g) !== Math.floor(a / 10) * b || cnt(/class="o-one"/g) !== (a % 10) * b || !new RegExp('(= |>)' + (a * b) + '<').test(H)) figBad.push(tag + ' 부분 곱 줄 ' + a + '×' + b); mathParts++; }
+    });
     const r = KT2.renderSlide(s, C0); if (!/class="fig" data-fig=/.test(r.body)) figBad.push(tag + ' 무대에 그림 안 섬');
     if (/<text[^>]*>[^<]*(undefined|NaN)/.test(h) || /NaN/.test(h)) figBad.push(tag + ' NaN/undefined');
     walk(f, x => { if (x.k === 'balance') { const m = (FG.render(x).match(/data-ang="(-?[\d.]+)"/) || [])[1]; const a = +m; const want = x.l === x.r ? 0 : x.l > x.r ? -1 : 1; if (Math.sign(a) !== want) figBad.push(tag + ' 수평대 방향 ' + x.l + '·' + x.r + ' → ' + a); } });
   })); });
   ok(figBad.length === 0, '개념 그림 층: 데이터 fig 전수(부품·아이콘·수평대 방향·개념 장·무대) ' + figBad.slice(0, 6).join(' | '));
+  ok(mathParts > 100, '개념 그림 층(22차): 수학 부품 검산 ' + mathParts + '자리 · 글자 카드 ' + textCards);
+  { const V = FG.render({ k: 'vert', a: 453, b: 138, op: '−' }); ok(/vt-r">[\s\S]*?3[\s\S]*?1[\s\S]*?5/.test(V) && /<i>4<\/i>/.test(V), '개념 그림 층(22차): 세로셈 받아내림 — 십의 자리 5→4 표시 · 답 315');
+    const V2 = FG.render({ k: 'vert', a: 34, b: 52, op: '+' }); ok(/vt-r">[\s\S]*?<span>8<\/span><span>6<\/span>/.test(V2) && !/<span>0<\/span><span>8<\/span>/.test(V2), '개념 그림 층(22차): 두 자리 덧셈 답 86 · 앞자리 0 없음');
+    const B = FG.render({ k: 'balance', l: 2, r: 2 }); ok(/fig-svg/.test(B), '개념 그림 층(22차): 21차 부품 그대로');
+    const c4 = FG.render({ k: 'frac', n: 4, m: 3, shape: 'circle' }); ok((c4.match(/<path class="o-slice/g) || []).length === 4, '개념 그림 층(22차): 원 분수 4조각');
+    const NL = FG.render({ k: 'numline', n: 10, dec: true, marks: [{ at: 0.7, label: '0.7' }], hop: true }); ok((NL.match(/0\.[1-9]/g) || []).length >= 9 && (NL.match(/ Q/g) || []).length === 7, '개념 그림 층(22차): 소수 수직선 눈금 0.1~0.9 · 0.7까지 뜀 7번');
+    ok(/fig-card text/.test(FG.render({ k: 'chain', items: [{ name: '10분의 1' }, { name: '1' }] })) && !/fig-emo/.test(FG.render({ k: 'chain', items: [{ name: '1' }] })), '개념 그림 층(22차): 글자 카드는 빈 이모지 칸 없음');
+    ok(FG.render({ k: 'bundle', total: 12, per: 3 }).indexOf('4묶음') > 0 && (FG.render({ k: 'share', total: 12, groups: 3 }).match(/4개/g) || []).length === 3, '개념 그림 층(22차): 12를 3개씩 = 4묶음 · 12를 3접시 = 4개씩'); }
   ok(byFile['g3_science_u1.js'] === 29, '개념 그림 층: 3학년 과학 1단원 개념 장 29장에 그림 (' + byFile['g3_science_u1.js'] + ')');
   console.log('   개념 그림 층 데이터', JSON.stringify(byFile));
   const S = FG.sizes; ok(S.s < S.m && S.m < S.l, '개념 그림 층: 화살표 길이 s<m<l');
