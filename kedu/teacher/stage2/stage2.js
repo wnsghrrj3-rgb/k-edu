@@ -398,6 +398,7 @@
         let h = '<div class="offline"><div class="ic">' + esc(d.icon || TI[d.type] || '🙋') + '</div><div class="tag">' + md(d.tag || TL[d.type] || '교실에서 함께 해요') + '</div>';
         if (d.goal) h += '<div class="goal">🎯 ' + md(d.goal) + '</div>'; if (d.body) h += '<div class="body">' + md(d.body) + '</div>';
         if (d.steps && d.steps.length) h += '<ol class="steps">' + d.steps.map(s => '<li>' + md(lbl(s)) + '</li>').join('') + '</ol>';
+        if (Array.isArray(d.solo) && d.solo.length) h += '<div class="solo"><span class="lb">🙋 혼자라면</span>' + d.solo.map(x => '<span>' + md(x) + '</span>').join('<i>→</i>') + '</div>'; // 29차: 1인 대체 흐름(방향 결정 ③)
         if (Array.isArray(d.materials) && d.materials.length) h += '<div class="mats"><span class="lb">준비물</span>' + d.materials.map(m => '<span>' + md(m) + '</span>').join('') + '</div>';
         else if (isStr(d.materials) && d.materials) h += '<div class="mats"><span class="lb">준비물</span><span>' + md(d.materials) + '</span></div>';
         if (d.minutes) h += '<div class="ctrls" style="justify-content:flex-start"><button class="btn main" data-act="timer" data-min="' + (+d.minutes) + '">⏱ ' + esc(d.minutes) + '분 타이머 켜기</button></div>';

@@ -233,6 +233,10 @@ console.log('   블록 종류', Object.keys(blockSeen).length, '· 조각 공개
 // ── ② 무대 실주행 ──
 const manifest = (() => { const c = { window: {} }; vm.createContext(c); vm.runInContext(fs.readFileSync(path.join(__dirname, 'manifest.js'), 'utf8'), c); return c.window.KT2_MANIFEST; })();
 ok(manifest && manifest.lessons === nLessons, 'manifest 차시 수 = 데이터 차시 수 (' + (manifest && manifest.lessons) + ' vs ' + nLessons + ')');
+{ const sj = manifest && manifest.subjects.find(x => x.slug === 'g3s2_math'); const u1 = sj && sj.units.find(x => x.unit === 1); ok(sj && sj.term === 2 && sj.title === '3학년 2학기 수학' && u1 && u1.title === '곱셈' && u1.lessons.length === 10 && u1.lessons.every(l => l.slides === 19 && l.seven.every(Boolean)), '29차: 2학기 수학 u1 곱셈 10차시 × 19장 · 7요소 전부 (manifest)');
+  const r = KT2.renderSlide({ id: 'o', block: 'offline_activity', data: { title: 'x', type: 'pair', steps: ['가', '나'], solo: ['혼자 가', '혼자 나', '혼자 다'] } }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] });
+  const r0 = KT2.renderSlide({ id: 'o', block: 'offline_activity', data: { title: 'x', type: 'pair', steps: ['가'] } }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] });
+  ok(/class="solo"><span class="lb">🙋 혼자라면<\/span>/.test(r.body) && (r.body.match(/<i>→<\/i>/g) || []).length === 2 && !/class="solo"/.test(r0.body), '29차: 교실 활동 1인 흐름 줄(solo) — 있으면 → 로 잇고, 없으면 종전 그대로'); }
 const html = fs.readFileSync(path.join(__dirname, 'stage.html'), 'utf8');
 function runStage(sj, un, l) {
   const url = 'https://keduclass.com/kedu/teacher/stage2/stage.html?g=' + sj.grade + '&s=' + sj.subject + ((sj.term || 1) > 1 ? '&t=' + sj.term : '') + '&u=' + un.unit + '&l=' + l.key;

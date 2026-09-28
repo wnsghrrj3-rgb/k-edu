@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-09-28 · 과목 8 · 차시 481 · 슬라이드 7752 */
+   생성: 2026-09-28 · 과목 9 · 차시 491 · 슬라이드 7942 */
 window.KT2_MANIFEST = {
  "built": "2026-09-28",
- "lessons": 481,
- "slides": 7752,
+ "lessons": 491,
+ "slides": 7942,
  "subjects": [
   {
    "slug": "g1_math",
@@ -9881,6 +9881,284 @@ window.KT2_MANIFEST = {
        ],
        "interactive": 2,
        "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "slug": "g3s2_math",
+   "grade": 3,
+   "term": 2,
+   "subject": "math",
+   "subject_ko": "수학",
+   "title": "3학년 2학기 수학",
+   "units": [
+    {
+     "unit": 1,
+     "title": "곱셈",
+     "file": "data/g3s2_math_u1.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u1_l01",
+       "no": "1",
+       "title": "곱셈을 만나 볼까요 (단원 도입)",
+       "meta_title": "곱셈을 만나 볼까요 (단원 도입)",
+       "std": "[4수01-08]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l02",
+       "no": "2",
+       "title": "세 자리 수에 한 자리 수를 곱해 볼까요 (1)",
+       "meta_title": "세 자리 수에 한 자리 수를 곱해 볼까요 (1)",
+       "std": "[4수01-08]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l03",
+       "no": "3",
+       "title": "세 자리 수에 한 자리 수를 곱해 볼까요 (2)",
+       "meta_title": "세 자리 수에 한 자리 수를 곱해 볼까요 (2)",
+       "std": "[4수01-08]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l04",
+       "no": "4",
+       "title": "세 자리 수에 한 자리 수를 곱해 볼까요 (3)",
+       "meta_title": "세 자리 수에 한 자리 수를 곱해 볼까요 (3)",
+       "std": "[4수01-08]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l05",
+       "no": "5",
+       "title": "몇십을 곱해 볼까요",
+       "meta_title": "몇십을 곱해 볼까요",
+       "std": "[4수01-08]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l06",
+       "no": "6",
+       "title": "몇에 몇십몇을 곱해 볼까요",
+       "meta_title": "몇에 몇십몇을 곱해 볼까요",
+       "std": "[4수01-08]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l07",
+       "no": "7",
+       "title": "몇십몇에 몇십몇을 곱해 볼까요 (1)",
+       "meta_title": "몇십몇에 몇십몇을 곱해 볼까요 (1)",
+       "std": "[4수01-08]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l08",
+       "no": "8",
+       "title": "몇십몇에 몇십몇을 곱해 볼까요 (2)",
+       "meta_title": "몇십몇에 몇십몇을 곱해 볼까요 (2)",
+       "std": "[4수01-08]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l09",
+       "no": "9",
+       "title": "걸리버와 함께 살아요",
+       "meta_title": "걸리버와 함께 살아요",
+       "std": "[4수01-08]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l10",
+       "no": "10",
+       "title": "스스로 마무리해요 (단원 마무리)",
+       "meta_title": "스스로 마무리해요 (단원 마무리)",
+       "std": "[4수01-08]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
        "seven": [
         1,
         1,
