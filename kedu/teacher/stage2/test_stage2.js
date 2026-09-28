@@ -174,6 +174,7 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
     const NT = FG.render({ k: 'note', title: '무당벌레', items: [{ t: 'a', star: true }, 'b'] }); ok(/ko-note/.test(NT) && (NT.match(/<li>/g) || []).length === 2 && (NT.match(/ko-star/g) || []).length === 1, '국어 부품(24차): 메모지 = 제목·번호 둘·⭐ 하나');
     ok(FG.render({ k: 'panels', items: [{ label: 'a', fig: { k: 'text', lines: ['x'] } }, { label: 'b', fig: { k: 'note', items: ['y'] } }] }).match(/class="fig-panel"/g).length === 2 && /fig-ko/.test(FG.render({ k: 'text', lines: ['x'] })) && !/fig-panels/.test(FG.render({ k: 'text', lines: ['x'] })), '국어 부품(24차): 나란히 칸에도 들어가고 · 혼자일 땐 흰 칸 없이(fig-ko)'); }
   ok(byFile['g3_korean_u2.js'] === 37 && byFile['g3_korean_u3.js'] === 34 && byFile['g3_korean_u6.js'] === 34, '개념 그림 층(24차): 3학년 국어 u2 37·u3 34·u6 34 장에 그림 (' + [byFile['g3_korean_u2.js'], byFile['g3_korean_u3.js'], byFile['g3_korean_u6.js']].join('·') + ')');
+  ok(byFile['g3_korean_u1.js'] === 35 && byFile['g3_korean_u4.js'] === 34 && byFile['g3_korean_u5.js'] === 37, '개념 그림 층(25차): 3학년 국어 u1 35·u4 34·u5 37 장에 그림 — 국어 개념 장 211장 전부 (' + [byFile['g3_korean_u1.js'], byFile['g3_korean_u4.js'], byFile['g3_korean_u5.js']].join('·') + ')');
   ok(byFile['g3_science_u1.js'] === 29, '개념 그림 층: 3학년 과학 1단원 개념 장 29장에 그림 (' + byFile['g3_science_u1.js'] + ')');
   console.log('   개념 그림 층 데이터', JSON.stringify(byFile));
   const S = FG.sizes; ok(S.s < S.m && S.m < S.l, '개념 그림 층: 화살표 길이 s<m<l');

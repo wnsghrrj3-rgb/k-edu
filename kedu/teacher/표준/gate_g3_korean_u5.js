@@ -355,7 +355,7 @@ T('본차시가 -ㄹ게 표기 규칙을 실제로 다룬다 (근거 확인)', (
 
 /* ⚠️ 오답 마스킹은 문자열이 아니라 **필드 단위**로 한다 (u2 선례).
    잘못된 표기가 실리는 곳은 l14의 이 세 필드뿐이다. */
-const MASK14 = [['s04', 'kids'], ['s07', 'content'], ['s08', 'wrong'], ['s11', 'question']];
+const MASK14 = [['s04', 'kids'], ['s07', 'content'], ['s07', 'fig'], ['s08', 'wrong'], ['s11', 'question']]; // 2세대 25차: s07 그림(sound ox)은 ✗ 표시된 선언 오답
 function maskedStudent() {
   const out = [];
   KEYS.forEach(k => {
