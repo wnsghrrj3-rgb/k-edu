@@ -181,14 +181,14 @@ window.KEDU_MAP["g6_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l05",
+     "lessonId": "g6_s2_social_u2_l05_v1",
      "n": "5",
      "title": "경제성장이 무엇인지 알아볼까요",
      "sub": "② 경제성장과 우리 생활",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/2단원_시장경제와국가간거래/g6_social_u2_l05_기간을골라요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
