@@ -651,9 +651,121 @@
   }
   const SO_PARTS = { tline, map, link, then, groups, pcard, news, post, exhibit };
 
+  // ── 27차(2026-09-29) 과학 생물 부품 — 그림 문법: **그렇다·있음·같게 할 조건 = 파랑 ○ / 아니다·없음 = 회색 ✗ / 주황 = 기준 질문·다르게 할 조건·지금 단계·강조 / 초록 = 자람·싹·결과**
+  //    사는 곳 = 땅 위(풀빛)·땅속(흙빛)·하늘(하늘빛)·강과 연못(파랑)·바다(짙은 파랑)·사막(모래빛)·극지(얼음빛)·들과 산(초록) ──
+  // 이모지가 없거나 틀리는 생물은 작은 그림(48×48)으로 — 이름만 주면 알아서 고른다
+  const SCI = {
+    '두더지': '<ellipse cx="26" cy="28" rx="18" ry="13" fill="#5A4A42"/><ellipse cx="9" cy="30" rx="7" ry="5" fill="#E8A3A8"/><circle cx="6" cy="29" r="1.8" fill="#8A3A44"/><path d="M14 38 l-6 5 M18 40 l-3 6 M34 39 l3 6 M38 37 l6 5" stroke="#E8A3A8" stroke-width="4" stroke-linecap="round"/><circle cx="17" cy="23" r="1.6" fill="#1E1E1E"/>',
+    '은행나무': '<path d="M24 44 L24 28" stroke="#8C7A3A" stroke-width="3"/><path d="M24 28 C8 26 4 12 8 6 C14 10 20 6 24 12 C28 6 34 10 40 6 C44 12 40 26 24 28 Z" fill="#E8C53A" stroke="#B89A22" stroke-width="2"/><path d="M24 12 L24 27" stroke="#B89A22" stroke-width="2"/>',
+    '부레옥잠': '<path d="M2 34 H46" stroke="#5B8DEF" stroke-width="3"/><ellipse cx="16" cy="30" rx="7" ry="6" fill="#8CCB6A" stroke="#4E8A3A" stroke-width="2"/><ellipse cx="32" cy="30" rx="7" ry="6" fill="#8CCB6A" stroke="#4E8A3A" stroke-width="2"/><path d="M16 24 C10 14 14 6 20 4 M32 24 C38 14 34 6 28 4" stroke="#4E8A3A" stroke-width="3" fill="none"/><ellipse cx="20" cy="8" rx="7" ry="5" fill="#5CC08A"/><ellipse cx="28" cy="8" rx="7" ry="5" fill="#5CC08A"/><path d="M20 36 v10 M24 36 v12 M28 36 v10" stroke="#8A6B4A" stroke-width="2"/>',
+    '검정말': '<path d="M2 8 H46" stroke="#5B8DEF" stroke-width="3"/><path d="M24 46 V12" stroke="#2E7A4A" stroke-width="3"/><path d="M24 40 l-9 -4 M24 40 l9 -4 M24 32 l-9 -4 M24 32 l9 -4 M24 24 l-8 -4 M24 24 l8 -4 M24 17 l-6 -4 M24 17 l6 -4" stroke="#2E9E63" stroke-width="3" stroke-linecap="round"/>',
+    '용설란': '<path d="M24 44 C14 30 6 22 4 10 C12 18 18 26 24 44 Z M24 44 C34 30 42 22 44 10 C36 18 30 26 24 44 Z M24 44 C20 28 20 14 24 2 C28 14 28 28 24 44 Z" fill="#7FB59A" stroke="#4E8A6A" stroke-width="2"/>',
+    '알로에': '<path d="M24 44 C16 34 10 26 8 14 C14 22 20 30 24 44 Z M24 44 C32 34 38 26 40 14 C34 22 28 30 24 44 Z M24 44 C22 32 22 20 24 8 C26 20 26 32 24 44 Z" fill="#8CCB6A" stroke="#4E8A3A" stroke-width="2"/><path d="M12 22 l-3 1 M36 22 l3 1 M11 28 l-3 1 M37 28 l3 1" stroke="#fff" stroke-width="2"/>',
+    '도꼬마리': '<ellipse cx="24" cy="26" rx="11" ry="15" fill="#9C8A4A"/><g stroke="#6E5E2A" stroke-width="2.4" stroke-linecap="round"><path d="M13 16 l-5 -3 M12 24 l-6 0 M13 32 l-5 3 M35 16 l5 -3 M36 24 l6 0 M35 32 l5 3 M18 12 l-2 -5 M30 12 l2 -5 M18 40 l-2 5 M30 40 l2 5 M24 11 v-6 M24 41 v6"/></g>',
+    '파리지옥': '<path d="M24 46 V30" stroke="#4E8A3A" stroke-width="3"/><path d="M24 30 C10 30 6 20 10 10 C16 18 20 22 24 30 Z" fill="#6DBB5A" stroke="#3E7A2E" stroke-width="2"/><path d="M24 30 C38 30 42 20 38 10 C32 18 28 22 24 30 Z" fill="#E0605A" stroke="#A8322E" stroke-width="2"/><path d="M11 10 l-2 -4 M15 13 l-1 -4 M35 13 l1 -4 M39 10 l2 -4" stroke="#3E7A2E" stroke-width="2"/>',
+    '끈끈이주걱': '<path d="M24 46 V20" stroke="#4E8A3A" stroke-width="3"/><ellipse cx="24" cy="14" rx="9" ry="11" fill="#E27A5A"/><g fill="#F7E07A"><circle cx="17" cy="8" r="2.4"/><circle cx="24" cy="4" r="2.4"/><circle cx="31" cy="8" r="2.4"/><circle cx="15" cy="16" r="2.4"/><circle cx="33" cy="16" r="2.4"/><circle cx="24" cy="12" r="2.4"/></g>',
+    '벌레잡이통풀': '<path d="M14 6 C20 2 32 2 36 8 L32 12 C28 8 20 8 16 10 Z" fill="#A8322E"/><path d="M16 10 C14 24 14 38 24 44 C34 38 34 24 32 12 C28 8 20 8 16 10 Z" fill="#8CCB6A" stroke="#4E8A3A" stroke-width="2"/><path d="M18 26 C20 34 24 38 28 34" stroke="#C7E6B0" stroke-width="3" fill="none"/>',
+    '통발': '<path d="M2 8 H46" stroke="#5B8DEF" stroke-width="3"/><path d="M8 24 C18 20 30 28 40 22" stroke="#2E9E63" stroke-width="3" fill="none"/><circle cx="14" cy="32" r="5" fill="#C7E6B0" stroke="#4E8A3A" stroke-width="2"/><circle cx="26" cy="34" r="5" fill="#C7E6B0" stroke="#4E8A3A" stroke-width="2"/><circle cx="37" cy="30" r="5" fill="#C7E6B0" stroke="#4E8A3A" stroke-width="2"/><path d="M14 27 v-4 M26 29 v-5 M37 25 v-3" stroke="#2E9E63" stroke-width="2"/>',
+    '알': '<ellipse cx="16" cy="30" rx="6" ry="9" fill="#F5D24A" stroke="#C9A21E" stroke-width="2"/><ellipse cx="32" cy="30" rx="6" ry="9" fill="#F5D24A" stroke="#C9A21E" stroke-width="2"/><ellipse cx="24" cy="18" rx="6" ry="9" fill="#F5D24A" stroke="#C9A21E" stroke-width="2"/><path d="M16 22 v16 M32 22 v16 M24 10 v16" stroke="#C9A21E" stroke-width="1.2"/>',
+    '번데기': '<path d="M6 40 L42 8" stroke="#8A6B4A" stroke-width="3"/><path d="M22 34 C12 34 10 22 16 14 C22 6 34 8 36 14 C38 22 32 32 22 34 Z" fill="#B9C98A" stroke="#7A8A4A" stroke-width="2"/><path d="M18 18 C24 20 28 24 30 30 M16 24 C22 26 26 28 26 32" stroke="#7A8A4A" stroke-width="1.6" fill="none"/>',
+    '올챙이': '<ellipse cx="18" cy="24" rx="11" ry="9" fill="#4A4A52"/><path d="M28 24 C34 18 40 30 46 22" stroke="#4A4A52" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="13" cy="21" r="2" fill="#fff"/>',
+    '잠자리': '<path d="M24 10 V44" stroke="#3E6FCF" stroke-width="5" stroke-linecap="round"/><circle cx="24" cy="8" r="5" fill="#3E6FCF"/><g fill="#CFE3F7" stroke="#7FA6D6" stroke-width="1.5" opacity=".95"><ellipse cx="12" cy="16" rx="11" ry="4" transform="rotate(-8 12 16)"/><ellipse cx="36" cy="16" rx="11" ry="4" transform="rotate(8 36 16)"/><ellipse cx="13" cy="24" rx="10" ry="3.6" transform="rotate(8 13 24)"/><ellipse cx="35" cy="24" rx="10" ry="3.6" transform="rotate(-8 35 24)"/></g>',
+    '매미': '<ellipse cx="24" cy="28" rx="8" ry="14" fill="#5A4A3A"/><circle cx="24" cy="12" r="6" fill="#6A5A42"/><circle cx="19" cy="11" r="2.2" fill="#E0605A"/><circle cx="29" cy="11" r="2.2" fill="#E0605A"/><g fill="#E6F0F5" stroke="#9AB0BC" stroke-width="1.5" opacity=".9"><path d="M20 18 C8 22 6 38 14 42 C18 36 20 28 20 18 Z"/><path d="M28 18 C40 22 42 38 34 42 C30 36 28 28 28 18 Z"/></g>',
+    '사마귀': '<path d="M16 44 L26 26 L30 10" stroke="#5CAA4A" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M30 10 l6 -4 l2 6 Z" fill="#5CAA4A"/><path d="M27 20 l-8 -4 l2 -6 M28 22 l-6 2" stroke="#4E8A3A" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M22 34 l-8 4 M20 38 l6 6 M24 30 l8 6" stroke="#4E8A3A" stroke-width="2.4" stroke-linecap="round"/>',
+    '나팔꽃': '<path d="M24 46 V28" stroke="#4E8A3A" stroke-width="3"/><path d="M24 30 L10 8 C16 4 32 4 38 8 Z" fill="#7B6CD9" stroke="#5A4AB8" stroke-width="2"/><ellipse cx="24" cy="8" rx="14" ry="4" fill="#A99BF0"/><circle cx="24" cy="10" r="3" fill="#fff"/>',
+    '감나무': '<path d="M24 44 V30" stroke="#8C6A3E" stroke-width="4"/><circle cx="24" cy="18" r="15" fill="#5CAA4A"/><circle cx="17" cy="20" r="5" fill="#F28A2E"/><circle cx="30" cy="14" r="5" fill="#F28A2E"/><circle cx="29" cy="26" r="5" fill="#F28A2E"/>',
+    '봉숭아': '<path d="M24 46 V18" stroke="#6DBB5A" stroke-width="3"/><path d="M24 34 l-10 -6 M24 26 l10 -6" stroke="#5CAA4A" stroke-width="4" stroke-linecap="round"/><g fill="#F0679A"><circle cx="24" cy="12" r="5"/><circle cx="18" cy="16" r="4.5"/><circle cx="30" cy="16" r="4.5"/></g><circle cx="24" cy="14" r="2.6" fill="#FFD3E2"/>',
+    '강아지풀': '<path d="M24 46 C24 34 26 24 30 16" stroke="#6DBB5A" stroke-width="3" fill="none"/><ellipse cx="32" cy="10" rx="5" ry="10" fill="#C9D98A" transform="rotate(20 32 10)"/><path d="M18 46 C16 36 12 30 8 26" stroke="#6DBB5A" stroke-width="3" fill="none"/>',
+    '고라니': '<ellipse cx="22" cy="28" rx="13" ry="8" fill="#B08A5A"/><path d="M13 34 v10 M18 35 v9 M27 35 v9 M32 34 v10" stroke="#8C6A3E" stroke-width="3"/><path d="M32 24 L38 12" stroke="#B08A5A" stroke-width="6" stroke-linecap="round"/><ellipse cx="40" cy="10" rx="6" ry="4.5" fill="#B08A5A"/><path d="M42 13 l1 4" stroke="#fff" stroke-width="2"/><circle cx="41" cy="9" r="1.4" fill="#1E1E1E"/>',
+    '물까치': '<ellipse cx="22" cy="24" rx="10" ry="8" fill="#9FB4C8"/><circle cx="32" cy="18" r="6" fill="#2B3440"/><path d="M38 18 l6 1 l-6 2" fill="#2B3440"/><path d="M14 24 L2 32" stroke="#6C8FB8" stroke-width="5" stroke-linecap="round"/><path d="M18 20 C22 16 28 18 26 24" fill="#6C8FB8"/><path d="M20 32 v8 M24 32 v8" stroke="#2B3440" stroke-width="2"/>'
+  };
+  const SCE = { '다람쥐': '🐿️', '개미': '🐜', '지렁이': '🪱', '뱀': '🐍', '참새': '🐦', '독수리': '🦅', '나비': '🦋', '벌': '🐝', '비둘기': '🕊️', '붕어': '🐟', '상어': '🦈', '문어': '🐙', '게': '🦀', '조개': '🐚', '낙타': '🐫', '사막여우': '🦊', '북극곰': '🐻‍❄️', '펭귄': '🐧', '도마뱀': '🦎', '토끼': '🐰', '기린': '🦒', '코끼리': '🐘', '거북': '🐢', '물고기': '🐟', '새': '🐦', '오리': '🦆', '강아지': '🐕', '개': '🐕', '고양이': '🐈', '햄스터': '🐹', '민들레': '🌼', '소나무': '🌲', '단풍나무': '🍁', '토끼풀': '☘️', '수련': '🪷', '부들': '🌾', '선인장': '🌵', '바오바브나무': '🌳', '연잎': '🪷', '돌멩이': '🪨', '돌': '🪨', '벽돌': '🧱', '자동차': '🚗', '닭': '🐓', '병아리': '🐤', '어린 닭': '🐥', '다 자란 닭': '🐓', '개구리': '🐸', '소': '🐄', '돌고래': '🐬', '박쥐': '🦇', '벼': '🌾', '강낭콩': '🫘', '사과나무': '🍎', '애벌레': '🐛', '배추흰나비': '🦋', '어른벌레': '🦋', '무당벌레': '🐞', '사슴벌레': '🪲', '메뚜기': '🦗', '씨': '🫘', '싹': '🌱', '꽃': '🌸', '열매': '🫛', '자람': '🌿', '풀': '🌿', '나무': '🌳' };
+  const sci = (it) => { const x = so(it), no = x.ic === 'none'; const ic = no ? '' : SCI[x.ic || x.name], em = x.emoji || (no ? '' : SCE[x.name]); return ic ? '<svg class="sc-ic" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">' + ic + '</svg>' : em ? '<i>' + esc(em) + '</i>' : ''; }; // ic:'none' = 그림 없이(같은 이름이 다른 생물일 때)
+  const scChip = (it) => { const x = so(it); return '<span class="so-chip sc-chip' + (x.on ? ' on' : '') + (x.x ? ' x' : '') + '">' + sci(x) + md(x.name || '') + (x.tag ? '<u>' + md(x.tag) + '</u>' : '') + '</span>'; };
+  // ask: 기준 질문으로 두 갈래 — q 질문(주황) · yes/no 칩 · ya/na 갈래 이름(기본 그렇다/아니다) · yt/nt 갈래 아래 한 줄 · note
+  function ask(o) {
+    const br = (items, lab, t, cls) => '<div class="sc-br ' + cls + '"><div class="sc-brh"><b>' + (cls === 'y' ? '○' : '✗') + '</b>' + md(lab) + '</div><div class="sc-brs">' + (items || []).map(scChip).join('') + '</div>' + (t ? '<div class="sc-brt">' + md(t) + '</div>' : '') + '</div>';
+    if (!o.q && !(o.yes || []).length) return '';
+    return '<div class="sc-ask"><div class="sc-q"><i>?</i>' + md(o.q || '') + '</div><div class="sc-fork"><i></i></div><div class="sc-brr">' + br(o.yes, o.ya || '그렇다', o.yt, 'y') + br(o.no, o.na || '아니다', o.nt, 'n') + '</div>' + (o.note ? '<div class="so-lnote">' + md(o.note) + '</div>' : '') + '</div>';
+  }
+  // habitat: 사는 곳 판 — zones [{at, name, items, note, on}] · at = land·under·sky·fresh·sea·water·desert·polar·field · stack:true 는 위아래(땅 위 / 땅속)
+  const HAB = { land: ['땅 위', '🌿'], under: ['땅속', '🟫'], sky: ['하늘', '☁️'], fresh: ['강과 연못', '🏞️'], sea: ['바다', '🌊'], water: ['물', '💧'], desert: ['사막', '🏜️'], polar: ['극지', '🧊'], field: ['들과 산', '⛰️'], lake: ['강과 호수', '🏞️'] };
+  function habitat(o) {
+    const zs = (o.zones || []).filter(z => z && HAB[z.at]); if (!zs.length) return '';
+    return '<div class="sc-hab n' + zs.length + (o.stack ? ' stack' : '') + '">' + zs.map(z => '<div class="sc-zone ' + z.at + (z.on ? ' on' : '') + '"><div class="sc-zh"><i>' + HAB[z.at][1] + '</i>' + md(z.name || HAB[z.at][0]) + '</div><div class="sc-zi">' + (z.items || []).map(scChip).join('') + '</div>' + (z.note ? '<div class="sc-zn">' + md(z.note) + '</div>' : '') + '</div>').join('') + '</div>' + (o.note ? '<div class="so-lnote">' + md(o.note) + '</div>' : '');
+  }
+  // trait: 생김새 → 쓸모 — emoji·name(또는 subs 여럿) · rows [{part, use}] (part 주황 → use) · env 사는 곳 꼬리표
+  function trait(o) {
+    const one1 = (s) => '<div class="sc-trait"><div class="sc-who">' + (sci(s) || '<i>❔</i>') + '<b>' + md(s.name || '') + '</b>' + (s.env ? '<span class="sc-env ' + (s.envAt || '') + '">' + md(s.env) + '</span>' : '') + '</div><div class="sc-rows">' + (s.rows || []).map(r => '<div class="sc-row"><span class="sc-part">' + md(r.part) + '</span><em>→</em><span class="sc-use">' + md(r.use) + '</span></div>').join('') + '</div></div>';
+    const subs = o.subs || [o]; if (!subs.some(s => (s.rows || []).length)) return '';
+    return '<div class="sc-traits n' + subs.length + '">' + subs.map(one1).join('') + '</div>' + (o.note ? '<div class="so-lnote">' + md(o.note) + '</div>' : '');
+  }
+  // anat: 이름표 그림 — of = leaf(잎몸·잎맥·잎자루) · fish(지느러미·아가미·비늘) · insect(머리·가슴·배·다리 세 쌍·날개 두 쌍) · cactus(줄기·가시·뿌리) · hyacinth(부레옥잠 볼록한 잎자루 속 공기) · hi 강조할 이름표(주황) · labels 이름표 글자 바꾸기
+  const ANAT = {
+    leaf: { d: '<path d="M230 40 C330 60 380 150 330 220 C300 250 260 250 230 244 C200 250 160 250 130 220 C80 150 130 60 230 40 Z" fill="#7CC46A" stroke="#3E8A2E" stroke-width="5"/><path d="M230 46 L230 246" stroke="#DDF2C9" stroke-width="6"/><g stroke="#DDF2C9" stroke-width="4" fill="none"><path d="M230 90 L178 70 M230 90 L282 70 M230 130 L160 110 M230 130 L300 110 M230 170 L158 160 M230 170 L302 160 M230 208 L176 206 M230 208 L284 206"/></g><path d="M230 246 L230 300" stroke="#4E8A3A" stroke-width="10" stroke-linecap="round"/>', L: { blade: ['잎몸', 300, 190, 402, 214], vein: ['잎맥', 272, 72, 402, 60], stalk: ['잎자루', 232, 282, 402, 290] }, vb: '0 0 520 320' },
+    fish: { d: '<path d="M80 160 C120 80 300 70 360 160 C300 250 120 240 80 160 Z" fill="#7FB3E8" stroke="#3E6FCF" stroke-width="5"/><path d="M360 160 L440 110 L430 160 L440 210 Z" fill="#5B8DEF" stroke="#3E6FCF" stroke-width="5" stroke-linejoin="round"/><path d="M190 88 C210 50 250 50 270 86 Z" fill="#5B8DEF" stroke="#3E6FCF" stroke-width="4"/><path d="M200 200 C214 236 236 236 250 206 Z" fill="#5B8DEF" stroke="#3E6FCF" stroke-width="4"/><path d="M150 112 C170 140 170 180 150 208" stroke="#2E5AAF" stroke-width="6" fill="none"/><g fill="none" stroke="#B9D4F2" stroke-width="3">' + [0, 1, 2, 3].map(r => [0, 1, 2, 3, 4].map(c => '<path d="M' + (190 + c * 30) + ' ' + (122 + r * 26) + ' q14 12 0 24"/>').join('')).join('') + '</g><circle cx="116" cy="146" r="10" fill="#fff"/><circle cx="114" cy="146" r="5" fill="#1E1E1E"/>', L: { fin: ['지느러미', 232, 64, 400, 34], gill: ['아가미', 158, 180, 90, 286], scale: ['비늘', 262, 172, 420, 290] }, vb: '0 0 520 320' },
+    insect: { d: '', L: { head: ['머리', 124, 170, 46, 250], thorax: ['가슴', 214, 160, 214, 290], belly: ['배', 350, 150, 470, 40], leg: ['다리 세 쌍', 250, 236, 470, 290], wing: ['날개 두 쌍', 150, 70, 150, 24] }, vb: '0 0 520 320' },
+    cactus: { d: '<path d="M60 250 H460" stroke="#D9BF93" stroke-width="10"/><path d="M200 250 C196 180 196 110 206 70 C214 40 250 40 258 70 C268 110 268 180 264 250 Z" fill="#6DBB5A" stroke="#3E7A2E" stroke-width="5"/><path d="M206 150 C170 150 160 130 164 104 C168 90 184 92 184 108 C184 124 196 128 206 128" fill="#6DBB5A" stroke="#3E7A2E" stroke-width="5"/><path d="M216 130 C220 160 220 200 216 236 M248 130 C244 160 244 200 248 236" stroke="#A7DDF2" stroke-width="8" stroke-linecap="round" opacity=".9"/><g stroke="#F2E6B0" stroke-width="3" stroke-linecap="round">' + [[206, 90, -1], [258, 96, 1], [204, 170, -1], [262, 180, 1], [204, 210, -1], [262, 220, 1], [168, 112, -1]].map(p => '<path d="M' + p[0] + ' ' + p[1] + ' l' + (p[2] * 16) + ' -8 M' + p[0] + ' ' + p[1] + ' l' + (p[2] * 16) + ' 4"/>').join('') + '</g><g stroke="#A0703C" stroke-width="5" fill="none" stroke-linecap="round"><path d="M230 250 C200 262 150 266 90 262 M230 250 C260 262 310 266 380 262 M216 252 C190 272 150 286 110 290 M246 252 C272 272 312 286 360 290"/></g>', L: { stem: ['줄기 · 물 저장', 248, 150, 320, 70], spine: ['가시 · 잎이 변함', 272, 181, 320, 170], root: ['넓게 뻗은 뿌리', 360, 262, 320, 290] }, vb: '0 0 560 320' },
+    hyacinth: { d: '<rect x="20" y="170" width="480" height="140" fill="#D6EBFA"/><path d="M20 170 H500" stroke="#5B8DEF" stroke-width="5"/><g fill="#8CCB6A" stroke="#3E7A2E" stroke-width="4"><ellipse cx="200" cy="164" rx="34" ry="26"/><ellipse cx="300" cy="164" rx="34" ry="26"/></g><g fill="#fff" opacity=".85"><circle cx="192" cy="160" r="6"/><circle cx="206" cy="170" r="4"/><circle cx="296" cy="158" r="5"/><circle cx="310" cy="168" r="6"/></g><path d="M200 140 C190 100 200 70 222 56 M300 140 C312 100 300 70 280 56" stroke="#3E7A2E" stroke-width="7" fill="none"/><ellipse cx="220" cy="54" rx="36" ry="26" fill="#5CC08A" stroke="#2E7A4A" stroke-width="4"/><ellipse cx="284" cy="54" rx="36" ry="26" fill="#5CC08A" stroke="#2E7A4A" stroke-width="4"/><g stroke="#8A6B4A" stroke-width="4" fill="none"><path d="M240 184 C236 220 244 250 238 290 M252 186 C256 230 248 260 256 296 M264 184 C270 220 262 250 270 286"/></g>', L: { stalk: ['볼록한 잎자루', 176, 178, 60, 250], air: ['공기주머니', 304, 164, 420, 110], root: ['뿌리', 262, 260, 420, 280] }, vb: '0 0 520 320' }
+  };
+  function insectBody(wing) {
+    let s = '';
+    if (wing) s += '<g fill="#F4F6FA" stroke="#9AA6B2" stroke-width="3" opacity=".96"><path d="M200 146 C170 40 120 30 110 70 C104 100 150 130 200 150 Z"/><path d="M230 146 C260 40 320 30 330 70 C336 100 290 130 230 150 Z"/><path d="M204 160 C170 200 150 230 170 244 C190 252 206 210 210 164 Z" opacity=".9"/><path d="M226 160 C260 200 280 230 260 244 C240 252 224 210 220 164 Z" opacity=".9"/></g>';
+    s += '<g stroke="#2B3440" stroke-width="5" fill="none" stroke-linecap="round">' + [180, 214, 248].map((x, i) => '<path d="M' + x + ' 176 L' + (x - 30 + i * 20) + ' 214 L' + (x - 44 + i * 26) + ' 250"/><path d="M' + x + ' 144 L' + (x - 30 + i * 20) + ' 106 L' + (x - 44 + i * 26) + ' 76"/>').join('') + '</g>';
+    s += '<path d="M112 136 C96 100 84 90 70 88 M112 150 C90 122 76 118 62 122" stroke="#2B3440" stroke-width="4" fill="none" stroke-linecap="round"/>';
+    s += '<circle cx="130" cy="160" r="30" fill="#6B7C93"/><ellipse cx="214" cy="160" rx="54" ry="32" fill="#8A9AB0"/><ellipse cx="344" cy="160" rx="84" ry="40" fill="#A6B4C6"/><g stroke="#8A9AB0" stroke-width="3">' + [310, 340, 370].map(x => '<path d="M' + x + ' 124 v72"/>').join('') + '</g><circle cx="118" cy="152" r="6" fill="#fff"/>';
+    return s;
+  }
+  function anat(o) {
+    const A = ANAT[o.of]; if (!A) return '';
+    let s = o.of === 'insect' ? insectBody(o.wing !== false) : A.d;
+    const hi = [].concat(o.hi || []), lab = o.labels || {};
+    Object.keys(A.L).forEach(k => {
+      if (o.of === 'insect' && k === 'wing' && o.wing === false) return;
+      if (o.only && o.only.indexOf(k) < 0) return;
+      const L = A.L[k], on = hi.indexOf(k) >= 0, t = lab[k] || L[0], w = Math.max(90, t.length * 25 + 28), left = L[3] < L[1];
+      const vw = +A.vb.split(' ')[2]; const bx = Math.max(6, Math.min(vw - w - 6, left ? L[3] - w + 20 : L[3] - 20)); // 이름표는 그림 틀 안에서만
+      s += '<g class="o-lab' + (on ? ' on' : '') + '"><line x1="' + L[1] + '" y1="' + L[2] + '" x2="' + L[3] + '" y2="' + L[4] + '" stroke="' + (on ? ORANGE : '#6B7C93') + '" stroke-width="' + (on ? 5 : 3) + '"/><circle cx="' + L[1] + '" cy="' + L[2] + '" r="7" fill="' + (on ? ORANGE : '#6B7C93') + '"/><rect x="' + bx + '" y="' + (L[4] - 22) + '" width="' + w + '" height="42" rx="21" fill="' + (on ? ORANGE : '#fff') + '" stroke="' + (on ? ORANGE : '#6B7C93') + '" stroke-width="3"/>' + txt(bx + w / 2, L[4] + 9, t, 24, on ? '#fff' : INK, 900) + '</g>';
+    });
+    return '<div class="sc-anat">' + svgWrap(s, 'fig-anat ' + o.of, A.vb) + (o.note ? '<div class="so-lnote">' + md(o.note) + '</div>' : '') + '</div>';
+  }
+  // cycle: 한살이 — who 생물 이름 · stages [{name, emoji}] (이름만 주면 그림은 알아서) · hi 지금 단계(주황) · next:true 는 hi 다음 칸에 「다음은」 · fade 는 hi 뒤를 흐리게 · loop 다시 이어짐 한 줄 · skip 빠진 단계(빨강 아님, 점선)
+  function cycle(o) {
+    const st = (o.stages || []).map(so); if (!st.length) return '';
+    const hi = o.hi == null ? -1 : o.hi;
+    const cell = (x, i) => '<div class="sc-st' + (i === hi ? ' on' : '') + (o.next && i === hi + 1 ? ' nx' : '') + (o.fade && hi >= 0 && i > hi + (o.next ? 1 : 0) ? ' fade' : '') + (x.skip ? ' skip' : '') + '"><div class="sc-stic">' + (sci(x) || '<i>' + (i + 1) + '</i>') + '</div><b>' + md(x.name || '') + '</b>' + (x.note ? '<u>' + md(x.note) + '</u>' : '') + (o.next && i === hi + 1 ? '<span class="sc-nxt">다음은</span>' : '') + '</div>';
+    return '<div class="sc-cycle n' + st.length + '">' + (o.who ? '<div class="sc-cwho">' + sci({ name: o.who, emoji: o.whoEmoji }) + '<b>' + md(o.who) + '</b>' + (o.tag ? '<span>' + md(o.tag) + '</span>' : '') + '</div>' : '') + '<div class="sc-sts">' + st.map((x, i) => (i ? '<em class="sc-ar">→</em>' : '') + cell(x, i)).join('') + '</div>' + (o.loop ? '<div class="sc-loop"><i></i><b>↺ ' + md(o.loop === true ? '다시 이어져요' : o.loop) + '</b></div>' : '') + (o.note ? '<div class="so-lnote">' + md(o.note) + '</div>' : '') + '</div>';
+  }
+  // cond: 조건 실험 — cols [{name, emoji}] 두 컵·화분 · rows [{name, emoji, v:[가, 나], diff}] diff = 다르게 할 조건(주황) · 나머지 = 같게 할 조건(파랑) · result {name, v:[가, 나], win} 결과(초록)
+  function cond(o) {
+    const cols = (o.cols || []).map(so); const rows = o.rows || []; if (!cols.length || !rows.length) return '';
+    const head = '<div class="sc-crow head"><span></span>' + cols.map(c => '<span class="sc-ccol">' + sci(c) + '<b>' + md(c.name || '') + '</b></span>').join('') + '<span></span></div>';
+    const row = (r) => '<div class="sc-crow ' + (r.diff ? 'diff' : 'same') + '"><span class="sc-cname">' + (r.emoji ? '<i>' + esc(r.emoji) + '</i>' : '') + md(r.name) + '</span>' + (r.v || []).map(v => '<span class="sc-cv">' + md(v) + '</span>').join('') + '<span class="sc-ctag">' + (r.diff ? '다르게' : '같게') + '</span></div>';
+    const res = o.result ? '<div class="sc-crow res"><span class="sc-cname">' + md(o.result.name || '결과') + '</span>' + (o.result.v || []).map((v, i) => '<span class="sc-cv' + (o.result.win === i ? ' win' : '') + '">' + md(v) + '</span>').join('') + '<span class="sc-ctag">결과</span></div>' : '';
+    return '<div class="sc-cond' + (cols.length > 2 ? ' n3' : '') + '">' + (o.title ? '<div class="sc-ctitle">' + md(o.title) + '</div>' : '') + head + rows.map(row).join('') + res + '</div>' + (o.note ? '<div class="so-lnote">' + md(o.note) + '</div>' : '');
+  }
+  // need: 무엇이 필요할까 — title · items [{name, emoji, ok}] ok = 필요해요(파랑 ○) · false = 없어도 돼요(회색 ✗) · 여러 줄은 cols [{title, items}]
+  function need(o) {
+    const col = (c) => '<div class="sc-need"><div class="sc-nh">' + md(c.title || '') + '</div>' + (c.items || []).map(x => '<div class="sc-ni ' + (x.ok === false ? 'no' : 'ok') + '">' + (x.emoji ? '<i>' + esc(x.emoji) + '</i>' : '') + '<b>' + md(x.name) + '</b><em>' + (x.ok === false ? '✗ 없어도 돼요' : '○ 필요해요') + '</em></div>').join('') + '</div>';
+    const cs = o.cols || [o]; if (!cs.some(c => (c.items || []).length)) return '';
+    return '<div class="sc-needs n' + cs.length + '">' + cs.map(col).join('') + '</div>' + (o.note ? '<div class="so-lnote">' + md(o.note) + '</div>' : '');
+  }
+  // bins: 과학 갈래 통 — groups 와 같되 생물 이름이면 그림이 알아서 붙는다
+  function bins(o) {
+    const bs = (o.bins || []).filter(b => b && (b.name || (b.items || []).length)); if (!bs.length) return '';
+    return '<div class="so-groups sc-bins n' + bs.length + '">' + bs.map((b, i) => '<div class="so-bin ' + (b.tone || 't' + i) + '"><div class="so-binh">' + (b.emoji ? '<i>' + esc(b.emoji) + '</i>' : '') + md(b.name || '') + '</div><div class="so-bitems">' + (b.items || []).map(scChip).join('') + '</div>' + (b.hint ? '<div class="so-hint">' + md(b.hint) + '</div>' : '') + '</div>').join('') + '</div>' + (o.note ? '<div class="so-lnote">' + md(o.note) + '</div>' : '');
+  }
+  // mimic: 본뜨기 — verb 화살표 위 낱말(기본 본떠요 · 한살이 「자라서」·잡는 방법 「이렇게」 등) · rows [[자연, 물건, 좋은 점]] 자연(초록) → 본떠요(주황) → 물건(파랑) · 좋은 점 꼬리표
+  function mimic(o) {
+    const rows = o.rows || []; if (!rows.length) return '';
+    const c = (x, cls) => { const v = so(x); return '<span class="sc-mc ' + cls + '">' + sci(v) + md(v.name || '') + '</span>'; };
+    const tag = rows.some(r => r[2]); return '<div class="sc-mimic n' + rows.length + (tag ? ' tag' : '') + '"><div class="sc-mrow head"><span>' + esc(o.ha || '자연에서') + '</span><em></em><span>' + esc(o.hb || '만든 물건') + '</span>' + (tag ? '<span></span>' : '') + '</div>' + rows.map(r => '<div class="sc-mrow">' + c(r[0], 'a') + '<em><i>' + esc(o.verb || '본떠요') + '</i>→</em>' + c(r[1], 'b') + (tag ? (r[2] ? '<u>' + md(r[2]) + '</u>' : '<span></span>') : '') + '</div>').join('') + '</div>' + (o.note ? '<div class="so-lnote">' + md(o.note) + '</div>' : '');
+  }
+  const SC_PARTS = { ask, habitat, trait, anat, cycle, cond, need, bins, mimic };
+
   const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock };
   const HTML_PARTS = { vert, tvert };
-  function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k]; return fn ? fn(f) : ''; }
+  function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
     const cap = (p.fig ? p.label : '') || (f.k === 'balance' && f.cap !== false ? balanceCap(f) : ''); // 22차: 부품 자신의 label 은 그림 안에 그리므로 나란히 칸(items)의 label 만 캡션
@@ -668,10 +780,11 @@
     else if (f.k === 'tools') body = tools(f);
     else if (f.k === 'chain') body = tools(f, '<div class="fig-chain-ar">→</div>').replace('fig-cards', 'fig-cards chain');
     else if (f.k === 'places') body = '<div class="fig-cards places">' + (f.items || []).map(card).join('') + '</div>';
+    else if (SC_PARTS[f.k]) { body = SC_PARTS[f.k](f); if (!body) return ''; body = '<div class="fig-ko fig-so fig-sc">' + body + '</div>'; } // 27차 과학 생물 부품
     else if (SO_PARTS[f.k]) { body = SO_PARTS[f.k](f); if (!body) return ''; body = '<div class="fig-ko fig-so">' + body + '</div>'; } // 26차 사회 부품도 자기 종이·통을 갖는다
     else if (KO_PARTS[f.k]) { body = KO_PARTS[f.k](f); if (!body) return ''; body = '<div class="fig-ko">' + body + '</div>'; } // 24차 국어 부품은 흰 칸 없이 그대로(자기 종이·통을 갖는다)
     else { const p = panel(f); if (!p) return ''; body = '<div class="fig-panels n1">' + p + '</div>'; }
     return '<div class="fig" data-fig="' + esc(f.k) + '">' + body + (f.key !== false && hasArrow(f) ? KEY : '') + '</div>';
   }
-  global.KT2_FIG = { render, parts: Object.keys(PARTS).concat(Object.keys(HTML_PARTS), Object.keys(KO_PARTS), Object.keys(SO_PARTS), ['panels', 'tools', 'chain', 'places']), icons: Object.keys(ICON), sizes: AL };
+  global.KT2_FIG = { render, parts: Object.keys(PARTS).concat(Object.keys(HTML_PARTS), Object.keys(KO_PARTS), Object.keys(SO_PARTS), Object.keys(SC_PARTS), ['panels', 'tools', 'chain', 'places']), icons: Object.keys(ICON), sizes: AL };
 })(typeof window !== 'undefined' ? window : globalThis);
