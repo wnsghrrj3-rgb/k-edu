@@ -534,9 +534,126 @@
   }
   const KO_PARTS = { sent: sents, sents, pause, text, para, sort2, mood, sound, letter, note };
 
+  // ── 26차(2026-09-28) 사회 부품 — 그림 문법: **때 = 옛날·과거(갈색) · 오늘·현재(파랑) · 미래(초록)** / **주황 = 시간의 흐름 화살표 · 길찾기 길 · 찾은 곳 · 강조** / 장소 = 자연이 만든 곳(초록) · 사람이 만든 곳(파랑) ──
+  const ERA = { past: '과거', now: '현재', future: '미래', old: '옛날', today: '오늘' };
+  const eraCls = (e) => e === 'past' || e === 'old' ? 'past' : e === 'future' ? 'future' : e === 'now' || e === 'today' ? 'now' : '';
+  const so = (it) => typeof it === 'string' ? { name: it } : (it || {});
+  const soChip = (it) => { const x = so(it); return '<span class="so-chip' + (x.on ? ' on' : '') + (x.x ? ' x' : '') + '">' + (x.emoji ? '<i>' + esc(x.emoji) + '</i>' : '') + md(x.name || '') + '</span>'; };
+  // tline: 시간 띠·연표 — zones(과거·현재·미래 세 구역에 낱말) 또는 items{when, what, emoji, era, on}(왼쪽 → 오른쪽 = 나중) · arrow 이름
+  function tline(o) {
+    const ar = '<div class="so-arrow"><i></i><b>' + esc(o.arrow || '시간의 흐름') + '</b></div>';
+    if (o.zones) return '<div class="so-tline zones">' + '<div class="so-zones">' + o.zones.map(z => '<div class="so-zone ' + eraCls(z.era) + (z.on ? ' on' : '') + '"><div class="so-zh">' + esc(z.name || ERA[z.era] || '') + '</div>' + (z.note ? '<u>' + md(z.note) + '</u>' : '') + '<div class="so-zw">' + (z.words || []).map(soChip).join('') + '</div></div>').join('') + '</div>' + ar + '</div>';
+    const items = (o.items || []).map(so);
+    if (!items.length) return '';
+    return '<div class="so-tline n' + items.length + '"><div class="so-evs">' + items.map((e, i) => '<div class="so-ev ' + eraCls(e.era) + (e.on ? ' on' : '') + (e.blank ? ' blank' : '') + '">' + (e.emoji ? '<div class="so-evemo">' + esc(e.emoji) + '</div>' : '') + '<b>' + md(e.what || e.name || '') + '</b>' + (e.when ? '<span class="so-when">' + esc(e.when) + '</span>' : '<span class="so-when n">' + (i + 1) + '</span>') + '</div>').join('') + '</div>' + ar + (o.note ? '<div class="so-tnote">' + md(o.note) + '</div>' : '') + '</div>';
+  }
+  // map: 마을 지도(SVG) — pins 장소 이름 · hi 찾은 곳(주황 핀) · route [출발, 도착] 주황 길 · search 검색창 글자 · zoom 'in'(확대)·'out'(축소) · sat 디지털 영상 지도(사진 같은 바탕) · legend 기호 풀이
+  const MAPW = 640, MAPH = 450, ROADY = 250, ROADX = 320;
+  const SLOT = [[92, 150], [218, 150], [422, 150], [548, 150], [92, 346], [218, 346], [422, 346], [548, 346]];
+  const HOME = { '학교': 0, '도서관': 1, '병원': 2, '보건소': 3, '시장': 4, '소방서': 5, '우체국': 6, '경찰서': 7, '공원': 4, '놀이터': 1, '집': 5, '우리 집': 5, '가게': 3, '문화원': 1, '박물관': 3, '마을 회관': 7 };
+  const PLACE = { '학교': ['🏫', '#E8A33D'], '도서관': ['📚', '#7B6CD9'], '병원': ['🏥', '#E0413C'], '보건소': ['🩺', '#E86A6A'], '시장': ['🧺', '#D9822B'], '소방서': ['🚒', '#D23B2E'], '우체국': ['📮', '#E55B3C'], '경찰서': ['👮', '#3E6FCF'], '공원': ['🌳', '#2E9E63'], '놀이터': ['🛝', '#F5A623'], '집': ['🏠', '#A86F3C'], '우리 집': ['🏠', '#A86F3C'], '가게': ['🏪', '#5CC08A'], '문화원': ['🏛️', '#8A6FB8'], '박물관': ['🏛️', '#8A6FB8'], '마을 회관': ['🏘️', '#8A6FB8'] };
+  function mapSlots(names) { const used = {}, at = {}; names.forEach(n => { const h = HOME[n]; if (h != null && !used[h]) { used[h] = 1; at[n] = h; } }); names.forEach(n => { if (at[n] != null) return; for (let i = 0; i < SLOT.length; i++) if (!used[i]) { used[i] = 1; at[n] = i; break; } }); return at; }
+  function mapPlace(n, i, hi, sat) {
+    const p = SLOT[i], pc = PLACE[n] || ['📍', '#6B7C93'], on = hi === n, x = p[0], y = p[1];
+    let s = '<g class="o-place' + (on ? ' on' : '') + '" data-p="' + esc(n) + '">';
+    s += sat ? '<rect x="' + (x - 50) + '" y="' + (y - 38) + '" width="100" height="76" rx="6" fill="#8C969E" stroke="#6C757C" stroke-width="3"/><rect x="' + (x - 40) + '" y="' + (y - 28) + '" width="80" height="56" rx="4" fill="#A9B2B9"/>'
+      : '<rect x="' + (x - 50) + '" y="' + (y - 38) + '" width="100" height="76" rx="14" fill="#fff" stroke="' + pc[1] + '" stroke-width="5"/><rect x="' + (x - 50) + '" y="' + (y - 38) + '" width="100" height="16" rx="8" fill="' + pc[1] + '"/>';
+    s += '<text x="' + x + '" y="' + (y + 22) + '" text-anchor="middle" font-size="40">' + esc(pc[0]) + '</text>';
+    s += '<rect x="' + (x - 56) + '" y="' + (y + 42) + '" width="112" height="32" rx="16" fill="' + (on ? ORANGE : 'rgba(255,255,255,.92)') + '"/>' + txt(x, y + 66, n, 22, on ? '#fff' : INK, 900);
+    if (on) s += '<rect x="' + (x - 58) + '" y="' + (y - 46) + '" width="116" height="92" rx="18" fill="none" stroke="' + ORANGE + '" stroke-width="6"/><g class="o-pin"><path d="M' + x + ' ' + (y - 48) + ' l-16 -26 a20 20 0 1 1 32 0 Z" fill="' + ORANGE + '" stroke="#fff" stroke-width="3"/><circle cx="' + x + '" cy="' + (y - 88) + '" r="7" fill="#fff"/></g>';
+    return s + '</g>';
+  }
+  function map(o) {
+    const names = (o.pins && o.pins.length ? o.pins : ['학교', '도서관', '병원', '시장', '소방서', '우체국']).slice(0, 8);
+    const at = mapSlots(names), sat = !!o.sat;
+    const PAD = o.zoom === 'out' ? 300 : o.zoom === 'in' ? 60 : 0; // 확대/축소 때만 바탕을 넓힌다(보이는 곳만큼 · 나머지는 clipPath 로 잘림)
+    let base = '<rect x="' + (-PAD) + '" y="' + (-PAD) + '" width="' + (MAPW + 2 * PAD) + '" height="' + (MAPH + 2 * PAD) + '" fill="' + (sat ? '#5E7A4E' : '#EEF4E6') + '"/>';
+    if (sat) for (let i = 0; i < 26; i++) base += '<circle cx="' + ((i * 97) % 700 - 20) + '" cy="' + ((i * 53) % 400) + '" r="' + (18 + (i % 4) * 7) + '" fill="#4C6A3E" opacity=".55"/>';
+    else base += '<path d="M' + (-PAD) + ' 432 Q160 410 300 440 T' + (MAPW + PAD) + ' 428 L' + (MAPW + PAD) + ' ' + (MAPH + PAD) + ' L' + (-PAD) + ' ' + (MAPH + PAD) + ' Z" fill="#BFE1F5"/>';
+    const rc = sat ? '#9C9A92' : '#FFFFFF', re = sat ? '#7E7C75' : '#D5DCE4';
+    base += '<rect x="' + (-PAD) + '" y="' + (ROADY - 20) + '" width="' + (MAPW + 2 * PAD) + '" height="40" fill="' + rc + '" stroke="' + re + '" stroke-width="3"/><rect x="' + (ROADX - 20) + '" y="' + (-PAD) + '" width="40" height="' + (MAPH + 2 * PAD) + '" fill="' + rc + '" stroke="' + re + '" stroke-width="3"/>';
+    base += '<line x1="' + (-PAD) + '" y1="' + ROADY + '" x2="' + (MAPW + PAD) + '" y2="' + ROADY + '" stroke="' + (sat ? '#E8E4D0' : '#E3E8EE') + '" stroke-width="3" stroke-dasharray="16 12"/>';
+    if (o.zoom === 'out') { [[-150, 150], [-150, 346], [790, 150], [790, 346], [-40, -60], [440, -60], [560, 540], [120, 540], [-150, -60], [790, -60]].forEach(p => { base += '<rect x="' + (p[0] - 40) + '" y="' + (p[1] - 30) + '" width="80" height="60" rx="10" fill="' + (sat ? '#8C969E' : '#fff') + '" stroke="#C9D2DC" stroke-width="4"/><text x="' + p[0] + '" y="' + (p[1] + 14) + '" text-anchor="middle" font-size="34">🏠</text>'; }); }
+    let route = '';
+    if (o.route && at[o.route[0]] != null && at[o.route[1]] != null) {
+      const a = SLOT[at[o.route[0]]], b = SLOT[at[o.route[1]]], ya = a[1] < ROADY ? a[1] + 40 : a[1] - 40, yb = b[1] < ROADY ? b[1] + 40 : b[1] - 40;
+      const pts = [[a[0], ya], [a[0], ROADY], [b[0], ROADY], [b[0], yb]];
+      route = '<polyline class="o-route" points="' + pts.map(p => p.join(',')).join(' ') + '" fill="none" stroke="' + ORANGE + '" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 16"/>'
+        + '<circle cx="' + a[0] + '" cy="' + ROADY + '" r="15" fill="' + BLUE2 + '" stroke="#fff" stroke-width="4"/>' + '<circle cx="' + b[0] + '" cy="' + ROADY + '" r="15" fill="' + ORANGE + '" stroke="#fff" stroke-width="4"/>';
+    }
+    let pl = ''; names.forEach(n => { pl += mapPlace(n, at[n], o.hi || (o.route ? null : null), sat); });
+    if (route) { const fa = SLOT[at[o.route[0]]][0], fb = SLOT[at[o.route[1]]][0]; const flag = (x, t, c) => '<rect x="' + (x - 34) + '" y="' + (ROADY + 22) + '" width="68" height="30" rx="15" fill="' + c + '"/>' + txt(x, ROADY + 44, t, 20, '#fff', 900); pl += '<g class="o-flag">' + flag(fa, '출발', BLUE2) + flag(fb, '도착', ORANGE) + '</g>'; }
+    let world = base + route + pl;
+    const hiAt = o.hi && at[o.hi] != null ? SLOT[at[o.hi]] : [ROADX, ROADY];
+    if (o.zoom === 'in') world = '<g transform="translate(' + (MAPW / 2) + ' ' + (MAPH / 2 + 20) + ') scale(2) translate(' + (-hiAt[0]) + ' ' + (-hiAt[1]) + ')">' + world + '</g>';
+    else if (o.zoom === 'out') world = '<g transform="translate(' + (MAPW / 2) + ' ' + (MAPH / 2) + ') scale(0.56) translate(' + (-ROADX) + ' ' + (-ROADY) + ')">' + world + '</g>';
+    let ui = '';
+    if (o.search) ui += '<g class="o-search"><rect x="16" y="14" width="300" height="50" rx="25" fill="#fff" stroke="' + BLUE2 + '" stroke-width="4"/><text x="40" y="49" font-size="26">🔍</text>' + txt(80, 49, o.search, 26, INK, 800, 'start') + '</g>';
+    ui += '<g class="o-zoombtn"><rect x="' + (MAPW - 62) + '" y="' + (MAPH - 128) + '" width="46" height="46" rx="10" fill="' + (o.zoom === 'in' ? ORANGE : '#fff') + '" stroke="#C9D2DC" stroke-width="3"/>' + txt(MAPW - 39, MAPH - 94, '+', 34, o.zoom === 'in' ? '#fff' : INK, 900) + '<rect x="' + (MAPW - 62) + '" y="' + (MAPH - 74) + '" width="46" height="46" rx="10" fill="' + (o.zoom === 'out' ? ORANGE : '#fff') + '" stroke="#C9D2DC" stroke-width="3"/>' + txt(MAPW - 39, MAPH - 40, '−', 34, o.zoom === 'out' ? '#fff' : INK, 900) + '</g>';
+    return '<div class="so-map' + (sat ? ' sat' : '') + '"><svg class="fig-svg fig-map" viewBox="0 0 ' + MAPW + ' ' + MAPH + '" xmlns="http://www.w3.org/2000/svg" role="img"><clipPath id="mapclip"><rect width="' + MAPW + '" height="' + MAPH + '" rx="18"/></clipPath><g clip-path="url(#mapclip)">' + world + ui + '</g></svg>' + (o.tag || sat ? '<div class="so-maptag' + (sat ? ' sat' : '') + '">' + esc(o.tag || '디지털 영상 지도') + '</div>' : '') + (o.legend ? '<div class="so-legend">' + o.legend.map(soChip).join('') + '</div>' : '') + '</div>';
+  }
+  // link: 짝 잇기 — rows [[a, b]] (a·b = 글자 또는 {emoji,name}) · ha/hb 머리 · g 같은 오른쪽 칸 이름끼리 같은 색 · note 한 줄
+  const GC = ['g0', 'g1', 'g2', 'g3', 'g4'];
+  function link(o) {
+    const rows = o.rows || []; if (!rows.length) return ''; const gi = {}; let n = 0;
+    rows.forEach(r => { const k = so(r[1]).name; if (gi[k] == null) gi[k] = n++; });
+    const cell = (x, cls) => { const v = so(x); return '<span class="so-lc ' + cls + '">' + (v.emoji ? '<i>' + esc(v.emoji) + '</i>' : '') + md(v.name || '') + '</span>'; };
+    return '<div class="so-link n' + rows.length + '">' + (o.ha || o.hb ? '<div class="so-lrow head"><span>' + esc(o.ha || '') + '</span><em></em><span>' + esc(o.hb || '') + '</span></div>' : '')
+      + rows.map(r => '<div class="so-lrow ' + (o.same ? 'g0' : GC[gi[so(r[1]).name] % GC.length]) + '">' + cell(r[0], 'a') + '<em>→</em>' + cell(r[1], 'b') + '</div>').join('') + (o.note ? '<div class="so-lnote">' + md(o.note) + '</div>' : '') + '</div>';
+  }
+  // then: 옛날 ↔ 오늘 — rows [{old, now}] (글자 또는 {emoji,name,note}) · scene:true 는 두 거리 그림 · heads 머리 이름
+  function street(old) {
+    let s = '<rect width="460" height="280" fill="' + (old ? '#F6EBD6' : '#E6F1FC') + '"/>';
+    if (old) {
+      s += '<path d="M0 220 Q230 200 460 220 L460 280 L0 280 Z" fill="#D9BF93"/><path d="M180 280 Q220 232 236 214 L256 214 Q262 236 300 280 Z" fill="#C9A874"/>';
+      [[70, 168], [190, 176], [350, 170]].forEach(p => { s += '<rect x="' + (p[0] - 46) + '" y="' + p[1] + '" width="92" height="46" fill="#F3E3C3" stroke="#8C6A3E" stroke-width="3"/><rect x="' + (p[0] - 12) + '" y="' + (p[1] + 14) + '" width="24" height="32" fill="#8C6A3E"/><path d="M' + (p[0] - 70) + ' ' + (p[1] + 4) + ' Q' + (p[0] - 44) + ' ' + (p[1] - 2) + ' ' + (p[0] - 40) + ' ' + (p[1] - 26) + ' L' + (p[0] + 40) + ' ' + (p[1] - 26) + ' Q' + (p[0] + 44) + ' ' + (p[1] - 2) + ' ' + (p[0] + 70) + ' ' + (p[1] + 4) + ' Z" fill="#5A4A3C"/>'; });
+      s += '<circle cx="420" cy="60" r="26" fill="#F5C45A" opacity=".8"/>';
+    } else {
+      [[40, 70, 150], [120, 40, 180], [300, 50, 170], [380, 30, 190]].forEach(b => { s += '<rect x="' + b[0] + '" y="' + b[1] + '" width="70" height="' + b[2] + '" fill="#9FB7D4" stroke="#6C88AD" stroke-width="3"/>'; for (let r = b[1] + 14; r < b[1] + b[2] - 20; r += 26) for (let c = b[0] + 10; c < b[0] + 60; c += 22) s += '<rect x="' + c + '" y="' + r + '" width="14" height="14" fill="#E6F1FC"/>'; });
+      s += '<rect x="0" y="220" width="460" height="60" fill="#6B7480"/><line x1="0" y1="250" x2="460" y2="250" stroke="#fff" stroke-width="4" stroke-dasharray="26 18"/><rect x="200" y="228" width="60" height="22" rx="8" fill="#F2545B"/><circle cx="212" cy="252" r="6" fill="#2B3440"/><circle cx="248" cy="252" r="6" fill="#2B3440"/>';
+    }
+    return '<svg class="fig-svg so-street" viewBox="0 0 460 280" xmlns="http://www.w3.org/2000/svg" role="img">' + s + '</svg>';
+  }
+  function then(o) {
+    const h = o.heads || ['옛날', '오늘'];
+    if (o.scene) return '<div class="so-then scene"><div class="so-tcol past"><div class="so-th">' + esc(h[0]) + '</div>' + street(true) + (o.old ? '<div class="so-tcap">' + md(o.old) + '</div>' : '') + '</div><em class="so-tar">→</em><div class="so-tcol now"><div class="so-th">' + esc(h[1]) + '</div>' + street(false) + (o.now ? '<div class="so-tcap">' + md(o.now) + '</div>' : '') + '</div></div>';
+    const rows = o.rows || []; if (!rows.length) return '';
+    const cell = (x) => { const v = so(x); return '<div class="so-tc">' + (v.emoji ? '<i>' + esc(v.emoji) + '</i>' : '') + '<b>' + md(v.name || '') + '</b>' + (v.note ? '<u>' + md(v.note) + '</u>' : '') + '</div>'; };
+    return '<div class="so-then"><div class="so-trow head"><div class="so-th past">' + esc(h[0]) + '</div><em></em><div class="so-th now">' + esc(h[1]) + '</div></div>' + rows.map(r => '<div class="so-trow"><div class="past">' + cell(r.old) + '</div><em class="so-tar">→</em><div class="now">' + cell(r.now) + '</div></div>').join('') + (o.note ? '<div class="so-lnote">' + md(o.note) + '</div>' : '') + '</div>';
+  }
+  // groups: 두~네 갈래 통 — bins [{name, emoji, tone, items[글자 또는 {emoji,name}], hint}] · tone nat(자연)·man(사람)·past·now·future·x(아닌 것) · 없으면 차례 색
+  function groups(o) {
+    const bins = (o.bins || []).filter(b => b && (b.name || (b.items || []).length)); if (!bins.length) return '';
+    return '<div class="so-groups n' + bins.length + '">' + bins.map((b, i) => '<div class="so-bin ' + (b.tone || 't' + i) + '"><div class="so-binh">' + (b.emoji ? '<i>' + esc(b.emoji) + '</i>' : '') + md(b.name || '') + '</div><div class="so-bitems">' + (b.items || []).map(soChip).join('') + '</div>' + (b.hint ? '<div class="so-hint">' + md(b.hint) + '</div>' : '') + '</div>').join('') + '</div>';
+  }
+  // pcard: 장소 카드 · 그림일기 — place·emoji ① 곳 · did ② 겪은 일 · feel ③ 마음(face 얼굴) · diary 그림일기 틀 · blank 빈칸
+  function pcard(o) {
+    const row = (n, lab, v, cls) => '<div class="so-prow ' + cls + '"><i>' + n + '</i><span class="so-plab">' + lab + '</span><b>' + (o.blank ? '' : md(v || '')) + '</b></div>';
+    const pic = o.diary ? '<div class="so-ppic">' + (o.blank ? '' : '<span>' + esc(o.emoji || '🏞️') + '</span>' + (o.face ? figWho(o.face, 'so-pface') : '')) + '</div>' : '';
+    return '<div class="so-pcard' + (o.diary ? ' diary' : '') + (!o.diary && o.face && !o.blank ? ' hasface' : '') + '"><div class="so-ptitle">' + esc(o.title || (o.diary ? '그림일기' : '장소 카드')) + '</div>' + pic + '<div class="so-prows">' + row('①', '곳', (o.emoji && !o.diary ? o.emoji + ' ' : '') + (o.place || ''), 'p') + row('②', '겪은 일', o.did, 'd') + row('③', '마음', o.feel, 'f') + '</div>' + (!o.diary && o.face && !o.blank ? figWho(o.face, 'so-pface side') : '') + '</div>';
+  }
+  // news: 마을 신문 — name 신문 이름 · photo 사진 칸 이모지 · title 기사 제목 · body 소개 글 · items 소식 · tags 칸 이름표(① 사진 ② 소개 글 ③ 소식)
+  function news(o) {
+    const tg = (t) => o.tags ? '<i class="so-ntag">' + t + '</i>' : '';
+    return '<div class="so-news"><div class="so-nhead">' + esc(o.name || '우리 마을 신문') + '</div><div class="so-nbody"><div class="so-nphoto">' + tg('① 사진') + '<span>' + esc(o.photo || '📷') + '</span></div><div class="so-ntext">' + tg('② 소개 글') + (o.title ? '<b>' + md(o.title) + '</b>' : '') + (o.body ? '<p>' + md(o.body) + '</p>' : '') + '</div></div>' + ((o.items || []).length ? '<div class="so-nitems">' + tg('③ 소식') + (o.items || []).map(t => '<span>📢 ' + md(t) + '</span>').join('') + '</div>' : '') + '</div>';
+  }
+  // post: 공유 앱 화면 — art 작품 이모지 · title · who 올린 사람 · comments [{t, who, ok, bad}] · rules 지킬 점
+  function post(o) {
+    const cm = (o.comments || []).map(so);
+    return '<div class="so-post"><div class="so-phone"><div class="so-pbar">' + esc(o.app || '우리 반 공유 앱') + '</div><div class="so-part">' + esc(o.art || '🖼️') + '</div><div class="so-pmeta"><b>' + md(o.title || '') + '</b>' + (o.who ? '<span>' + esc(o.who) + '</span>' : '') + '<span class="so-heart">♥ ' + (o.likes | 0 || 3) + '</span></div>'
+      + cm.map(c => '<div class="so-cm' + (c.bad ? ' bad' : c.ok ? ' ok' : '') + '">' + (c.who ? '<i>' + esc(c.who) + '</i>' : '') + '<span>' + md(c.t || c.name || '') + '</span>' + (c.bad ? '<b class="ko-x">✗</b>' : c.ok ? '<b class="ko-o">○</b>' : '') + '</div>').join('') + '</div>'
+      + ((o.rules || []).length ? '<div class="so-rules">' + o.rules.map(r => { const x = so(r); return '<div class="so-rule' + (x.x ? ' x' : '') + '">' + (x.emoji ? '<i>' + esc(x.emoji) + '</i>' : '') + md(x.name) + '</div>'; }).join('') + '</div>' : '') + '</div>';
+  }
+  // exhibit: 전시관 진열대 — title 전시 주제 · items [{emoji, name, use}] 물건마다 명패(이름·쓰임) · label 명패 이름표
+  function exhibit(o) {
+    const items = (o.items || []).map(so); if (!items.length && !o.title) return '';
+    return '<div class="so-exh">' + (o.title ? '<div class="so-exht">' + chip('전시 주제', 'main') + md(o.title) + '</div>' : '') + '<div class="so-shelf">' + items.map(it => '<div class="so-exi"><div class="so-exemo">' + esc(it.emoji || '🏺') + '</div><div class="so-plate">' + (o.label ? '<i>명패</i>' : '') + '<b>' + md(it.name || '') + '</b>' + (it.use ? '<u>' + md(it.use) + '</u>' : '') + '</div></div>').join('') + '</div></div>';
+  }
+  const SO_PARTS = { tline, map, link, then, groups, pcard, news, post, exhibit };
+
   const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock };
   const HTML_PARTS = { vert, tvert };
-  function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k]; return fn ? fn(f) : ''; }
+  function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
     const cap = (p.fig ? p.label : '') || (f.k === 'balance' && f.cap !== false ? balanceCap(f) : ''); // 22차: 부품 자신의 label 은 그림 안에 그리므로 나란히 칸(items)의 label 만 캡션
@@ -551,9 +668,10 @@
     else if (f.k === 'tools') body = tools(f);
     else if (f.k === 'chain') body = tools(f, '<div class="fig-chain-ar">→</div>').replace('fig-cards', 'fig-cards chain');
     else if (f.k === 'places') body = '<div class="fig-cards places">' + (f.items || []).map(card).join('') + '</div>';
+    else if (SO_PARTS[f.k]) { body = SO_PARTS[f.k](f); if (!body) return ''; body = '<div class="fig-ko fig-so">' + body + '</div>'; } // 26차 사회 부품도 자기 종이·통을 갖는다
     else if (KO_PARTS[f.k]) { body = KO_PARTS[f.k](f); if (!body) return ''; body = '<div class="fig-ko">' + body + '</div>'; } // 24차 국어 부품은 흰 칸 없이 그대로(자기 종이·통을 갖는다)
     else { const p = panel(f); if (!p) return ''; body = '<div class="fig-panels n1">' + p + '</div>'; }
     return '<div class="fig" data-fig="' + esc(f.k) + '">' + body + (f.key !== false && hasArrow(f) ? KEY : '') + '</div>';
   }
-  global.KT2_FIG = { render, parts: Object.keys(PARTS).concat(Object.keys(HTML_PARTS), Object.keys(KO_PARTS), ['panels', 'tools', 'chain', 'places']), icons: Object.keys(ICON), sizes: AL };
+  global.KT2_FIG = { render, parts: Object.keys(PARTS).concat(Object.keys(HTML_PARTS), Object.keys(KO_PARTS), Object.keys(SO_PARTS), ['panels', 'tools', 'chain', 'places']), icons: Object.keys(ICON), sizes: AL };
 })(typeof window !== 'undefined' ? window : globalThis);
