@@ -1006,21 +1006,24 @@
     if (v > 0) s += '<rect class="o-water" x="' + (x0 + 3) + '" y="' + Y(v).toFixed(1) + '" width="' + (x1 - x0 - 6) + '" height="' + (bot - Y(v) - 3).toFixed(1) + '" fill="' + WATER + '" opacity=".85"/><line x1="' + (x0 + 3) + '" y1="' + Y(v).toFixed(1) + '" x2="' + (x1 - 3) + '" y2="' + Y(v).toFixed(1) + '" stroke="' + WATER2 + '" stroke-width="3"/>';
     for (let i = 1; i <= n; i++) { const y = Y(i * step).toFixed(1), big = i % every === 0 || i === n; s += '<line x1="' + x0 + '" y1="' + y + '" x2="' + (x0 + (big ? 30 : 16)) + '" y2="' + y + '" stroke="' + INK + '" stroke-width="' + (big ? 3 : 2) + '"/>'; if (big) s += txt(x0 - 12, (+y + 7).toFixed(1), nfmt(i * step), 20, '#5A6472', 800, 'end'); }
     s += '<path d="M' + (x0 - 12) + ' ' + top + ' L' + x0 + ' ' + rim + ' V' + (bot - 8) + ' Q' + x0 + ' ' + bot + ' ' + (x0 + 8) + ' ' + bot + ' H' + (x1 - 8) + ' Q' + x1 + ' ' + bot + ' ' + x1 + ' ' + (bot - 8) + ' V' + rim + '" fill="none" stroke="' + INK + '" stroke-width="4" stroke-linejoin="round"/>';
-    s += txt(x1 + 10, rim + 6, '(' + unit + ')', 18, '#6B7C93', 700, 'start');
+    s += txt(x0 - 12, top - 4, '(' + unit + ')', 18, '#6B7C93', 700, 'end'); // 33차+ 단위는 눈금 숫자 위(읽은 값과 안 겹치게)
     if (o.read !== false && (v > 0 || o.show)) { const y = Y(v); s += '<path d="M' + (x1 + 8) + ' ' + y.toFixed(1) + ' l18 -9 v18 Z" fill="' + ORANGE + '"/>' + txt(x1 + 32, (y + 9).toFixed(1), o.q ? '?' : (o.show || nfmt(v) + ' ' + unit), o.q ? 32 : 24, '#C2551A', 900, 'start'); }
+    const rl = o.read !== false && (v > 0 || o.show) ? (o.q ? 1 : String(o.show || nfmt(v) + ' ' + unit).length) : 0, W = Math.max(460, Math.ceil(x1 + 32 + rl * 15 + 16));
     if (o.label) s += txt(230, 34, o.label, 22, '#3B4252');
-    return svgWrap(s, 'fig-beaker', '0 0 460 250').replace('<svg ', '<svg data-max="' + max + '" data-step="' + step + '" data-v="' + nfmt(v) + '" ');
+    return svgWrap(s, 'fig-beaker', '0 0 ' + W + ' 250').replace('<svg ', '<svg data-max="' + max + '" data-step="' + step + '" data-v="' + nfmt(v) + '" ');
   }
   // dial: 바늘 저울 — max·step·v · unit(g|kg) · major(글자 붙는 간격, 같은 단위) · kg:true 면 g 저울 글자를 kg 로(1000 → 1 kg) · q · read:false · show
   function dial(o) {
     const max = +o.max || 1000, step = +o.step || 100, v = Math.max(0, Math.min(max, +o.v || 0)), unit = o.unit || 'g', n = Math.round(max / step), major = +o.major || (n <= 10 ? step : n % 5 === 0 ? step * 5 : step * 2);
-    const cx = 230, cy = 146, r = 96, A = (val) => RAD(-90 + 330 * val / max), P = (val, rr) => [(cx + rr * Math.cos(A(val))).toFixed(1), (cy + rr * Math.sin(A(val))).toFixed(1)];
+    const cx = 230, cy = 146, r = 96, A = (val) => RAD(-90 + 300 * val / max), P = (val, rr) => [(cx + rr * Math.cos(A(val))).toFixed(1), (cy + rr * Math.sin(A(val))).toFixed(1)];
     let s = '<rect x="182" y="16" width="96" height="10" rx="5" fill="#9AA6B4"/><rect x="222" y="24" width="16" height="14" fill="#9AA6B4"/>'
       + '<rect x="' + (cx - 126) + '" y="34" width="252" height="226" rx="34" fill="#EEF1F5" stroke="#8FA3B8" stroke-width="3"/><circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 8) + '" fill="#fff" stroke="' + INK + '" stroke-width="4"/>';
+    let L = '';
     for (let i = 0; i <= n; i++) { const val = i * step, big = Math.abs(val / major - Math.round(val / major)) < 1e-9, a = P(val, r), b = P(val, r - (big ? 16 : 9)); s += '<line x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] + '" stroke="' + (big ? INK : '#8A93A0') + '" stroke-width="' + (big ? 3 : 2) + '"/>';
-      if (big) { const t = P(val, r - 32), lab = o.kg ? (val ? nfmt(val / 1000) : '0') : nfmt(val); s += txt(t[0], (+t[1] + 7).toFixed(1), lab, n > 20 ? 17 : 19, '#3B4252', 800); } }
-    s += txt(cx, cy + 46, o.kg ? 'kg' : unit, 16, '#8A93A0', 700);
+      if (big) { const t = P(val, r - 32), lab = o.kg ? (val ? nfmt(val / 1000) : '0') : nfmt(val); L += txt(t[0], (+t[1] + 7).toFixed(1), lab, n > 20 ? 17 : 19, '#3B4252', 800); } }
+    s += txt(cx, cy - 22, o.kg ? 'kg' : unit, 16, '#8A93A0', 700);
     const nd = P(v, r - 12); s += '<line class="o-needle" x1="' + cx + '" y1="' + cy + '" x2="' + nd[0] + '" y2="' + nd[1] + '" stroke="' + ORANGE + '" stroke-width="5" stroke-linecap="round"/><circle cx="' + cx + '" cy="' + cy + '" r="9" fill="' + ORANGE + '" stroke="#fff" stroke-width="3"/>';
+    s += '<g paint-order="stroke" stroke="#fff" stroke-width="5" stroke-linejoin="round">' + L + '</g>'; // 33차+ 눈금 숫자는 바늘 위에(가려지지 않게)
     if (o.read !== false) s += '<rect x="' + (cx - 86) + '" y="268" width="172" height="40" rx="12" fill="#FFF1E6"/>' + txt(cx, 297, o.q ? '?' : (o.show || nfmt(v) + ' ' + unit), 26, '#C2551A', 900);
     if (o.label) s += txt(230, o.read !== false ? 336 : 290, o.label, 20, '#3B4252');
     return svgWrap(s, 'fig-dial', '0 0 460 ' + (o.label ? (o.read !== false ? 348 : 300) : o.read !== false ? 316 : 272)).replace('<svg ', '<svg data-max="' + max + '" data-step="' + step + '" data-v="' + nfmt(v) + '" ');
@@ -1064,10 +1067,53 @@
     if (o.label) s += txt(230, 30, o.label, 22, '#3B4252');
     return svgWrap(s, 'fig-tubs', '0 0 460 ' + (yb + 16)).replace('<svg ', '<svg data-sum="' + nfmt(sum) + '" data-total="' + (o.total == null ? '' : nfmt(o.total)) + '" ');
   }
+
+  // ══ 34차(2026-09-29) 3학년 2학기 그림그래프 부품 — ptable(자료 표 + 합계) · ograph(◯ 그래프) · pgraph(그림그래프: 큰·작은 그림 단위 1~3종) · area2(가로·세로 2배 = 넓이 4배) ══
+  // 그림 문법: 파랑 = 합계·그림이 나타내는 수 · 주황 = 찾는 항목(hi)·물음(?) · 빨강 = 잘못 그린 줄(bad) · 회색 점선 = 빈 줄(채울 곳)
+  const rowsOf = (o) => (o.items || o.rows || []).map(r => (typeof r === 'string' ? { name: r } : r));
+  // ptable: head(항목 이름) · items[{name,v,q}] · unit · total(true = 합계 칸, 숫자 = 주어진 합계) · q:'total' · hi(이름 또는 번호) · rowName(두 번째 줄 이름)
+  function ptable(o) {
+    const it = rowsOf(o), unit = o.unit || '명', sum = it.reduce((a, r) => a + (+r.v || 0), 0), hiOf = (r, i) => o.hi != null && (o.hi === i || o.hi === r.name || (Array.isArray(o.hi) && o.hi.indexOf(r.name) >= 0));
+    const tot = o.total === false ? null : (typeof o.total === 'number' ? o.total : sum);
+    let h = '<table class="pt"><tr><th>' + esc(o.head || '항목') + '</th>' + it.map((r, i) => '<td class="' + (hiOf(r, i) ? 'hi' : '') + '">' + esc(r.name) + '</td>').join('') + (tot != null ? '<td class="sum">합계</td>' : '') + '</tr>';
+    h += '<tr><th>' + esc(o.rowName || ('수(' + unit + ')')) + '</th>' + it.map((r, i) => '<td class="n' + (hiOf(r, i) ? ' hi' : '') + (r.q ? ' q' : '') + '">' + (r.q ? '?' : esc(r.v)) + '</td>').join('') + (tot != null ? '<td class="n sum' + (o.q === 'total' ? ' q' : '') + '">' + (o.q === 'total' ? '?' : esc(tot)) + '</td>' : '') + '</tr></table>';
+    return '<div class="fig-vert fig-ptable" data-sum="' + sum + '" data-total="' + (tot == null ? '' : tot) + '" data-vals="' + it.map(r => +r.v || 0).join(',') + '">' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + h + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
+  }
+  // ograph: ◯ 그래프(아래에서 위로) — items[{name,v}] · max(줄 수) · hi
+  function ograph(o) {
+    const it = rowsOf(o), mx = +o.max || Math.max.apply(null, it.map(r => +r.v || 0).concat(1));
+    let h = '<div class="og" style="grid-template-columns:44px repeat(' + it.length + ',minmax(64px,1fr))">';
+    for (let y = mx; y >= 1; y--) { h += '<span class="og-y">' + y + '</span>' + it.map((r, i) => '<span class="og-c' + ((+r.v || 0) >= y ? ' on' : '') + (o.hi === i || o.hi === r.name ? ' hi' : '') + '">' + ((+r.v || 0) >= y ? '◯' : '') + '</span>').join(''); }
+    h += '<span class="og-y u">' + esc(o.unit ? '(' + o.unit + ')' : '') + '</span>' + it.map((r, i) => '<span class="og-x' + (o.hi === i || o.hi === r.name ? ' hi' : '') + '">' + esc(r.name) + '</span>').join('') + '</div>';
+    return '<div class="fig-vert fig-ograph" data-vals="' + it.map(r => +r.v || 0).join(',') + '">' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + h + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
+  }
+  // pgraph: 그림그래프 — title · head · unit · icon · units[10,1] 또는 [100,10,1] · rows[{name,v,c:[개수…](잘못 그린 줄은 c 로 직접),blank,q,bad}] · show(수 칸) · hi · legend:false
+  const pgSplit = (v, units) => { let r = +v || 0; return units.map(u => { const n = Math.floor(r / u + 1e-9); r -= n * u; return n; }); };
+  function pgraph(o) {
+    const it = rowsOf(o), units = (o.units || [10, 1]).map(Number), unit = o.unit || '명', icon = o.icon || '🙂', SZ = units.length === 3 ? ['l', 'm', 's'] : units.length === 2 ? ['l', 's'] : ['s'];
+    const vals = [];
+    let h = '<table class="pg"><tr class="pg-head"><th>' + esc(o.head || '항목') + '</th><th>' + esc(o.col || (unit === '명' ? '학생 수' : '수')) + '</th>' + (o.show ? '<th class="pg-n">' + esc(unit) + '</th>' : '') + '</tr>';
+    it.forEach((r, i) => {
+      const c = r.c || pgSplit(r.v, units), val = c.reduce((a, n, k) => a + n * units[k], 0), hi = o.hi === i || o.hi === r.name || (Array.isArray(o.hi) && o.hi.indexOf(r.name) >= 0); vals.push(r.blank ? '' : val);
+      const pics = r.blank ? '<span class="pg-blank">&nbsp;</span>' : c.map((n, k) => Array.from({ length: n }, () => '<i class="pg-ic ' + SZ[k] + '">' + esc(r.icon || icon) + '</i>').join('')).join('');
+      h += '<tr class="' + (hi ? 'hi ' : '') + (r.bad ? 'bad ' : '') + (r.blank ? 'blank' : '') + '"><th>' + esc(r.name) + '</th><td class="pg-pics">' + pics + '</td>' + (o.show ? '<td class="pg-n' + (r.q ? ' q' : '') + '">' + (r.blank || r.q ? (r.q ? '?' : '') : val) + '</td>' : '') + '</tr>';
+    });
+    h += '</table>';
+    const leg = o.legend === false ? '' : '<div class="pg-leg">' + units.map((u, k) => '<span><i class="pg-ic ' + SZ[k] + '">' + esc(icon) + '</i> ' + u + unit + '</span>').join('') + '</div>';
+    return '<div class="fig-vert fig-pgraph" data-vals="' + vals.join(',') + '" data-units="' + units.join(',') + '">' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + h + leg + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
+  }
+  // area2: 같은 그림을 가로·세로 2배로 — 넓이는 4배 (icon · k 배율 2)
+  function area2(o) {
+    const k = +o.k2 || 2, a = 60, ic = o.icon || '⚽'; let s = '<rect x="60" y="' + (200 - a) + '" width="' + a + '" height="' + a + '" rx="8" fill="#EEF4FD" stroke="' + BLUE + '" stroke-width="3"/>' + '<text x="90" y="' + (200 - a / 2 + 14) + '" font-size="38" text-anchor="middle">' + esc(ic) + '</text>' + txt(90, 234, '처음 그림', 20, '#3B4252', 800);
+    const X = 250, B = a * k; s += '<rect x="' + X + '" y="' + (200 - B) + '" width="' + B + '" height="' + B + '" rx="10" fill="#FFF1E6" stroke="' + ORANGE + '" stroke-width="3"/>';
+    for (let i = 1; i < k; i++) s += '<line x1="' + (X + a * i) + '" y1="' + (200 - B) + '" x2="' + (X + a * i) + '" y2="200" stroke="' + ORANGE + '" stroke-width="2" stroke-dasharray="6 5"/><line x1="' + X + '" y1="' + (200 - a * i) + '" x2="' + (X + B) + '" y2="' + (200 - a * i) + '" stroke="' + ORANGE + '" stroke-width="2" stroke-dasharray="6 5"/>';
+    s += '<text x="' + (X + B / 2) + '" y="' + (200 - B / 2 + 26) + '" font-size="' + (38 * k) + '" text-anchor="middle">' + esc(ic) + '</text>' + txt(X + B / 2, 234, '가로·세로 ' + k + '배 → 넓이 ' + (k * k) + '배', 20, '#C2551A', 900) + '<path d="M140 150 H' + (X - 16) + '" stroke="#8A93A0" stroke-width="3" marker-end="url(#a2ar)"/><defs><marker id="a2ar" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8Z" fill="#8A93A0"/></marker></defs>';
+    return svgWrap(s, 'fig-area2', '0 0 460 250').replace('<svg ', '<svg data-k="' + k + '" data-area="' + (k * k) + '" ');
+  }
   const SC_PARTS = { ask, habitat, trait, anat, cycle, cond, need, bins, mimic };
 
-  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock, grid, range, brem, circ, compass, cgrid, crow, fgroup, fmix, nline, beaker, dial, tilt, cups, tubs };
-  const HTML_PARTS = { vert, tvert, vmul, vdiv };
+  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock, grid, range, brem, circ, compass, cgrid, crow, fgroup, fmix, nline, beaker, dial, tilt, cups, tubs, area2 };
+  const HTML_PARTS = { vert, tvert, vmul, vdiv, ptable, ograph, pgraph };
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
