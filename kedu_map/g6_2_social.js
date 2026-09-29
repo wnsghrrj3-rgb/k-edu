@@ -211,14 +211,14 @@ window.KEDU_MAP["g6_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l08",
+     "lessonId": "g6_s2_social_u2_l08_v1",
      "n": "8",
      "title": "빠른 경제성장으로 발생한 문제를 해결해 볼까요",
      "sub": "② 경제성장과 우리 생활",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/2단원_시장경제와국가간거래/g6_social_u2_l08_점수판을채워요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
