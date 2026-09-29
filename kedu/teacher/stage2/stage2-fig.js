@@ -10,6 +10,7 @@
    · 28차(2026-09-29) 3학년 2학기 곱셈 부품: vmul(곱셈 세로셈 — 올림 수·부분 곱 두 줄) · grid(모눈 가르기 — 덩이마다 부분 곱) · range(어림 사이 띠)
    · 30차(2026-09-29) 3학년 2학기 나눗셈 부품: vdiv(나눗셈 세로셈 — 몫 자리 맞춤·가운데 0·내림·나머지·확인 식) · brem(묶고 남은 것 따로)
    · 31차(2026-09-29) 3학년 2학기 원 부품: circ(중심·반지름·지름·중심을 지나지 않는 선분·점·접은 선·띠종이·점 찍기) · compass(벌린 길이 = 반지름) · cgrid(모눈 위 원 무늬) · crow(지름으로 바꾸어 크기 견주기)
+   · 32차(2026-09-29) 3학년 2학기 분수와 소수 부품: fgroup(묶어서 분수·분수만큼) · fmix(1보다 큰 분수·소수 — 가분수·대분수 띠/원) · nline(1보다 큰 수직선 — 분수·대분수·소수 점)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
    ============================================================================ */
 (function (global) {
@@ -933,9 +934,69 @@
     if (o.label) s += txt(230, 30, o.label, 22, '#3B4252');
     return svgWrap(s, 'fig-crow').replace('<svg ', '<svg data-ds="' + ds.join(',') + '" ');
   }
+  // ══ 32차(2026-09-29) 3학년 2학기 분수와 소수 부품 — fgroup(묶어서 분수·분수만큼) · fmix(1보다 큰 분수·소수 — 가분수·대분수·1.4) · nline(1보다 큰 수직선) ══
+  // 그림 문법 그대로: 파랑 = 색칠한(센) 부분 · 연회색 = 남은 칸 · 주황 = 수직선 점·강조 · 굵은 검정 선 = 1(전체 하나)의 경계
+  const fval = (v) => { if (typeof v === 'number') return v; const t = String(v).trim(); let m; if ((m = t.match(/^(\d+)\s*·\s*(\d+)\s*\/\s*(\d+)$/))) return +m[1] + m[2] / m[3]; if ((m = t.match(/^(\d+)\s*\/\s*(\d+)$/))) return m[1] / m[2]; return +t; };
+  // 글자·분수·대분수를 한 줄로 — tokens: ['8의', '1/2', '=', '4'] · '2·3/4' 는 자연수 + 쌓은 분수
+  function tokW(t, sz) { let m; if ((m = String(t).match(/^(\d+)·(\d+)\/(\d+)$/))) return String(m[1]).length * sz * 0.62 + 6 + Math.max(sz * 0.9, Math.max(m[2].length, m[3].length) * sz * 0.62); if ((m = String(t).match(/^(\d+)\/(\d+)$/))) return Math.max(sz * 0.9, Math.max(m[1].length, m[2].length) * sz * 0.62); return Array.from(String(t)).reduce((a, c) => a + (/[가-힣]/.test(c) ? sz * 0.98 : /\s/.test(c) ? sz * 0.3 : sz * 0.6), 0); }
+  function seqText(cx, y, toks, sz, col) {
+    sz = sz || 28; const gap = sz * 0.28, ws = toks.map(t => tokW(t, sz)), tot = ws.reduce((a, b) => a + b, 0) + gap * (toks.length - 1); let x = cx - tot / 2, s = '';
+    toks.forEach((t, i) => { const w = ws[i], mid = x + w / 2; let m;
+      if ((m = String(t).match(/^(\d+)·(\d+)\/(\d+)$/))) { const ww = String(m[1]).length * sz * 0.62; s += txt((x + ww / 2).toFixed(1), (y + sz * 0.35).toFixed(1), m[1], sz * 1.15, col) + fracText(+(x + ww + 6 + (w - ww - 6) / 2).toFixed(1), y, m[2] + '/' + m[3], sz).replace(/fill="#2B3440"/g, 'fill="' + (col || INK) + '"').replace('stroke="#2B3440"', 'stroke="' + (col || INK) + '"'); }
+      else if (/^\d+\/\d+$/.test(String(t))) s += fracText(+mid.toFixed(1), y, String(t), sz).replace(/fill="#2B3440"/g, 'fill="' + (col || INK) + '"').replace('stroke="#2B3440"', 'stroke="' + (col || INK) + '"');
+      else s += txt(mid.toFixed(1), (y + sz * 0.35).toFixed(1), t, sz, col);
+      x += w + gap; });
+    return s;
+  }
+  // fgroup: total 개를 per 개씩 묶은 g 묶음 중 m 묶음 색칠 — 「m 묶음은 g 묶음 중의 m → m/g」 · of:true 면 「total 의 m/g = m×per」
+  function fgroup(o) {
+    const total = Math.max(1, o.total | 0), per = Math.max(1, o.per | 0), g = Math.floor(total / per), m = Math.max(0, Math.min(g, o.m | 0));
+    const rows = g > 8 ? 2 : 1, cnt = Math.ceil(g / rows), top = o.label ? 50 : 22, bot = o.show === false ? 262 : 196, bw = Math.min(118, 440 / cnt - 8), bh = (bot - top) / rows - 10;
+    const dc = per <= 3 ? per : per === 4 ? 2 : 3, dr = Math.ceil(per / dc), dr2 = Math.max(5, Math.min(13, (bw - 14) / dc / 2 - 2, (bh - 14) / dr / 2 - 2)); let s = '';
+    for (let i = 0; i < g; i++) { const r = Math.floor(i / cnt), c = i % cnt, inRow = Math.min(cnt, g - r * cnt), x = 230 - inRow * (bw + 8) / 2 + c * (bw + 8) + 4, y = top + r * (bh + 10), on = i < m;
+      s += '<rect class="o-grp' + (on ? ' on' : '') + '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="14" fill="' + (on ? '#E6EEFD' : '#fff') + '" stroke="' + (on ? BLUE2 : REST2) + '" stroke-width="3" stroke-dasharray="' + (per > 1 ? '9 6' : '0') + '"/>';
+      for (let j = 0; j < per; j++) { const cc = j % dc, rr = Math.floor(j / dc); const px = x + bw / 2 + (cc - (dc - 1) / 2) * (dr2 * 2 + 4), py = y + bh / 2 + (rr - (dr - 1) / 2) * (dr2 * 2 + 4); s += '<circle class="o-it" cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + dr2.toFixed(1) + '" fill="' + (on ? (o.color || BLUE) : (o.rest || REST2)) + '" stroke="#fff" stroke-width="2"/>'; } }
+    if (o.label) s += txt(230, 32, o.label, 22, '#3B4252');
+    if (o.show !== false) { const toks = o.show != null ? [].concat(o.show) : o.of ? [total + '의', m + '/' + g, '=', String(m * per)] : [g + '묶음 중 ' + m + '묶음', '→', m + '/' + g]; s += seqText(230, 238, toks, 26, o.of ? BLUE2 : INK); }
+    return svgWrap(s, 'fig-fgroup').replace('<svg ', '<svg data-g="' + g + '" data-m="' + m + '" data-v="' + m * per + '" ');
+  }
+  // fmix: 1(전체 하나)을 n 칸으로 나눈 띠·원 units 개에 m 칸 색칠 — 가분수 m/n · 대분수 · dec:true 면 n=10 소수(1.4)
+  function fmix(o) {
+    const n = Math.max(1, o.n | 0), m = Math.max(0, o.m | 0), units = Math.max(1, o.units || Math.ceil(m / n) || 1), whole = Math.floor(m / n), part = m % n, shape = o.shape || 'bar';
+    const imp = m + '/' + n, mix = whole ? (part ? whole + '·' + part + '/' + n : String(whole)) : imp, dec = (m / 10).toFixed(1).replace(/\.0$/, o.dec ? '.0' : '');
+    let s = ''; const top = o.label ? 50 : 30;
+    if (shape === 'circle') { const cw = 440 / units, r = Math.min(66, cw / 2 - 10), cy = top + 78;
+      for (let u = 0; u < units; u++) { const cx = 10 + cw * u + cw / 2;
+        for (let i = 0; i < n; i++) { const k = u * n + i, on = k < m, a0 = -Math.PI / 2 + i * 2 * Math.PI / n, a1 = a0 + 2 * Math.PI / n; if (n === 1) { s += '<circle class="o-slice' + (on ? ' on' : '') + '" cx="' + cx.toFixed(1) + '" cy="' + cy + '" r="' + r.toFixed(1) + '" fill="' + (on ? BLUE : REST) + '"/>'; continue; }
+          s += '<path class="o-slice' + (on ? ' on' : '') + '" d="M' + cx.toFixed(1) + ' ' + cy + ' L' + (cx + r * Math.cos(a0)).toFixed(1) + ' ' + (cy + r * Math.sin(a0)).toFixed(1) + ' A' + r.toFixed(1) + ' ' + r.toFixed(1) + ' 0 ' + (n === 2 ? 1 : 0) + ' 1 ' + (cx + r * Math.cos(a1)).toFixed(1) + ' ' + (cy + r * Math.sin(a1)).toFixed(1) + ' Z" fill="' + (on ? BLUE : REST) + '" stroke="#fff" stroke-width="3"/>'; }
+        s += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy + '" r="' + r.toFixed(1) + '" fill="none" stroke="' + INK + '" stroke-width="4"/>'; } }
+    else { const x0 = 30, bw = 400, bh = 64, y0 = top + 36, uw = bw / units, cw = uw / n;
+      for (let u = 0; u < units; u++) for (let i = 0; i < n; i++) { const k = u * n + i, on = k < m; s += '<rect class="o-slice' + (on ? ' on' : '') + '" x="' + (x0 + k * cw).toFixed(1) + '" y="' + y0 + '" width="' + cw.toFixed(1) + '" height="' + bh + '" fill="' + (on ? BLUE : REST) + '" stroke="#fff" stroke-width="' + (cw < 12 ? 1.5 : 3) + '"/>'; }
+      for (let u = 0; u <= units; u++) { const x = x0 + u * uw; s += '<line x1="' + x.toFixed(1) + '" y1="' + (y0 - 6) + '" x2="' + x.toFixed(1) + '" y2="' + (y0 + bh + 6) + '" stroke="' + INK + '" stroke-width="4"/>' + (o.ticks !== false ? txt(x.toFixed(1), y0 - 16, String(u), 20, '#6B7C93', 800) : ''); }
+      s += '<rect x="' + x0 + '" y="' + y0 + '" width="' + bw + '" height="' + bh + '" fill="none" stroke="' + INK + '" stroke-width="4" rx="4"/>'; }
+    const show = o.show != null ? o.show : o.dec ? 'dec' : 'both';
+    if (show !== false) { const toks = Array.isArray(show) ? show : show === 'dec' ? ['0.1이 ' + m + '개', '=', dec] : show === 'mixed' ? [mix] : show === 'improper' ? [imp] : (whole && part ? [imp, '=', mix] : whole ? [imp, '=', mix] : [imp]); s += seqText(230, shape === 'circle' ? top + 190 : top + 162, toks, 28, BLUE2); }
+    if (o.label) s += txt(230, 30, o.label, 22, '#3B4252');
+    const Hh = shape === 'circle' ? top + 236 : top + 206;
+    return svgWrap(s, 'fig-fmix ' + shape, '0 0 460 ' + Math.max(220, Hh)).replace('<svg ', '<svg data-n="' + n + '" data-m="' + m + '" data-w="' + whole + '" data-p="' + part + '" ');
+  }
+  // nline: lo~hi 수직선, 1을 n 칸으로 — marks [{at:'2·1/5'|'13/9'|1.8, label, q}] · dec:true 면 칸마다 소수 글자 · frac:true 면 칸마다 분수 글자
+  function nline(o) {
+    const lo = o.lo | 0, hi = Math.max(lo + 1, o.hi | 0), n = Math.max(1, o.n | 0), steps = (hi - lo) * n, x0 = 36, x1 = 424, y = o.marks && o.marks.length ? 168 : 130, w = x1 - x0, X = (v) => x0 + w * (v - lo) / (hi - lo); let s = '';
+    s += '<line x1="' + (x0 - 18) + '" y1="' + y + '" x2="' + (x1 + 22) + '" y2="' + y + '" stroke="' + INK + '" stroke-width="4"/><path d="M' + (x1 + 22) + ' ' + y + ' l-12 -8 v16 Z" fill="' + INK + '"/>';
+    for (let i = 0; i <= steps; i++) { const x = x0 + w * i / steps, big = i % n === 0; s += '<line x1="' + x.toFixed(1) + '" y1="' + (y - (big ? 18 : 10)) + '" x2="' + x.toFixed(1) + '" y2="' + (y + (big ? 18 : 10)) + '" stroke="' + INK + '" stroke-width="' + (big ? 4 : 2.5) + '"/>';
+      if (big) s += txt(x.toFixed(1), y + 50, String(lo + i / n), 26); else if (o.dec && n === 10 && steps <= 20) s += txt(x.toFixed(1), y + 40, (lo + i / n).toFixed(1), 13, '#6B7C93', 700); else if (o.frac && steps <= 12) s += fracText(+x.toFixed(1), y + 36, (lo * n + i) + '/' + n, 16).replace(/fill="#2B3440"/g, 'fill="#6B7C93"').replace('stroke="#2B3440"', 'stroke="#6B7C93"'); }
+    const vals = [];
+    (o.marks || []).forEach((mk, j) => { const v = fval(mk.at); vals.push(+v.toFixed(4)); const x = X(v), col = j === 0 ? ORANGE : j === 1 ? GRN : PURP;
+      s += '<circle class="o-mark" cx="' + x.toFixed(1) + '" cy="' + y + '" r="11" fill="' + col + '" stroke="#fff" stroke-width="3"/>';
+      const lab = mk.q ? '?' : mk.label != null ? mk.label : String(mk.at); const ly = y - 58 - (j % 2 ? 52 : 0);
+      s += mk.q ? txt(x.toFixed(1), ly + 10, '?', 34, ORANGE, 900) : seqText(x, ly, [lab], 24, col === ORANGE ? '#C2551A' : col === GRN ? '#2E7D4F' : '#7A52B3'); });
+    if (o.label) s += txt(230, 30, o.label, 22, '#3B4252');
+    return svgWrap(s, 'fig-nline').replace('<svg ', '<svg data-at="' + vals.join(',') + '" data-lo="' + lo + '" data-hi="' + hi + '" data-n="' + n + '" ');
+  }
   const SC_PARTS = { ask, habitat, trait, anat, cycle, cond, need, bins, mimic };
 
-  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock, grid, range, brem, circ, compass, cgrid, crow };
+  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock, grid, range, brem, circ, compass, cgrid, crow, fgroup, fmix, nline };
   const HTML_PARTS = { vert, tvert, vmul, vdiv };
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
