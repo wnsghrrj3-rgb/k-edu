@@ -1,0 +1,909 @@
+<!--
+K-edu 사회 6-2 · 2단원 시장경제와 국가 간 거래 · 주제③ 세계 속의 무역 · 9차시(l09)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사11-03] · 교과서 p.94~96 · 지도서(대단원2 **13차시** 「무역이 무엇인지 알아볼까요」, 지도서 p.214~216) 근거.
+학습 목표: 무역이 무엇인지 설명할 수 있다.
+수업 기법 및 전략: 피라미드 토의하기 · 인터넷 조사하기
+META = "2단원 시장경제와 국가 간 거래 · 주제③ 세계 속의 무역"
+⚠️ 엔진은 u2 l08(→ u2 l07 → … 6-1 사회 엔진)에서 100% 승계 · 엔진 무수정 · 2단원 색 #A16207 그대로.
+⚠️ 회수 키 `g6_s2_social_u2_l09_v1` · 맵 키 `g6_social_u2_l09` · 파일명 `배에실어요` — 조작 이름(선례 승계).
+
+직접조작: 벽란도 부두에서 물건 상자를 배에 싣고 내리며, 어느 쪽에서 보느냐에 따라 수입·수출이 뒤바뀌는 것을 보는 판
+  ⭐ 씨앗은 교과서 95쪽 「벽란도에서 다른 나라 상인들이 팔았던 물건과 사 갔던 물건은 무엇인지 각각 밑줄을 그어 봅시다」와
+     교과서 96쪽 무역·수입·수출의 뜻(다른 나라에서 사 오는 것 = 수입 · 다른 나라에 파는 것 = 수출).
+  ⭐ 물건 상자 아홉은 교과서 95쪽 글 그대로 — 다른 나라 상인이 가져온 비단·약재·서적·악기·보석(다섯) · 고려에서 사 간 삼베·모시·인삼·종이(넷).
+     상자는 자기가 난 쪽 부두에서 시작한다(`YB_GOODS[k].from` — 0 고려 벽란도 · 1 다른 나라 상인의 배).
+  ⭐ 상자를 누르면 건너편으로 옮겨지고 그 상자를 고른다(`ybTap` · 옮긴 기록 `state.ybSent |=` 단 하나 · 고른 자리 `state.ybAt =` 단 하나 · 한 번 판 물건은 되돌리지 않음).
+  ⭐ 보는 쪽은 둘(`ybView` 0 고려 벽란도 · 1 다른 나라 상인) — 바꾸는 자리 `ybFlip` 하나.
+  ⭐ ★ 상자가 지금 있는 쪽은 `ybSide` 한 줄 · ★★ 옮긴 상자의 이름표(수입/수출)는 `ybWord` 한 줄(난 쪽 = 보는 쪽이면 수출 · 아니면 수입 · 담는 상태 0).
+  ⭐ ★★ 수첩에 적은 기록은 `state.ybLog |=` 단 하나(`ybNote` · 적기 처리기에서만 · 줄지 않음) — 수첩 세 줄 =
+     ① 고려에서 보니 사 온 물건 = 수입 ② 고려에서 보니 판 물건 = 수출 ③ 다른 나라 상인 쪽에서 보니 수입과 수출이 뒤바뀜. 줄 종류는 `ybKind` 한 줄.
+  ⭐ 판 읽기는 세 줄 뒤에만(정답 자리 1) → 핵심 질문 「무역이란 무엇인가요?」 3택(정답 자리 2) →
+     마무리 3택 = 수입과 수출의 뜻(정답 자리 0).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 9종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 세 줄이 선 뒤 판 움직이기(상자·보는 쪽·적기) 무시 — 판 불변
+     ④ 세 줄 전 판 읽기 무시 · 읽은 뒤 다시 무시 · 알맞지 않은 읽기 무시(자리별 안내)
+     ⑤ 판을 읽기 전 핵심 질문 무시 · 고른 뒤 다시 무시 · 알맞지 않은 답 무시
+     ⑥ 핵심 질문 전 마무리 무시(순서)
+     ⑦ 알맞지 않은 마무리 무시
+     ⑧ 안내 표시 중 재클릭 무시(`ybBusy`)
+     ⑨ 고른 상자 없이 적기 · 이미 선 줄 다시 적기 무시 — 판 불변.
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.yb-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판은 교과서 속 벽란도 글을 옮긴 도식**이다 — 실제 그림·지도가 아니다(캡션 상시).
+  ㉡ **물건 아홉은 글에 나온 것뿐**이다 — 벽란도에서 오간 물건이 이것뿐이라는 뜻이 아니다(캡션 상시).
+  ㉢ **수치는 적지 않는다** — 금액·양·거리·연도 0.
+  ㉣ **생산지 찾아보기 · 제목 짓기와 피라미드 토의 · 인터넷 뉴스 조사는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 무역이 이루어지는 까닭·주요 수출입품·상호 의존·경쟁 0(차시 예고 한 자리만).
+  **교사용 참고 자료 0** — 참고 도서·저자·출판사 · 누리집 주소 · 활동지(신드바드) · 평가 관점 · GRASPS · 지도서 읽기 자료(흑요석·페니키아·조공 무역).
+  사람 형상 0 · 금액 0 · 비율 0 · 쪽수 0 · 실제 기관·신문 이름 0 · 연도 0.
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u2_l09_v1">
+<title>무역이 무엇인지 알아볼까요 · 시장경제와 국가 간 거래 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#A16207; --green-d:#854D0E; --cyan:#CA8A04;
+  --bg:#FEFCE8; --bub:#FEF9C3; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#FEF9C3;color:#854D0E}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 벽란도 부두에서 상자를 옮기며 수입·수출을 보는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#FEF9C3;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#854D0E;max-width:660px}
+.yb-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#FEFCE8;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.yb-board{display:flex;flex-direction:column;gap:6px;padding:8px}
+.yb-head{background:#FEF3C7;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#854D0E;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.yb-sea{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:linear-gradient(90deg,#FEF3C7 0,#FEF3C7 49%,#BAE6FD 51%,#BAE6FD 100%);
+  border-radius:10px;padding:5px}
+.yb-dock{display:flex;flex-direction:column;gap:4px;background:rgba(255,255,255,.55);border-radius:8px;padding:5px;min-height:120px}
+.yb-dock.view{outline:3px solid #059669;outline-offset:-3px}
+.yb-dname{text-align:center;font-weight:800;color:#854D0E;font-size:clamp(9px,1.52vw,11px)}
+.yb-dock[data-side="1"] .yb-dname{color:#075985}
+.yb-box{border:2px solid #B45309;background:#FFFBEB;color:#78350F;border-radius:7px;padding:4px 5px;cursor:pointer;
+  font-family:inherit;font-weight:800;font-size:clamp(9px,1.52vw,11px);line-height:1.3;display:flex;align-items:center;justify-content:space-between;gap:4px}
+.yb-box:hover{background:#FEF3C7}
+.yb-box.at{box-shadow:0 0 0 3px #0369A1}
+.yb-box .tag{border-radius:5px;padding:1px 5px;font-size:.92em;background:#F1F5F9;color:#94A3B8}
+.yb-box .tag.in{background:#DBEAFE;color:#1E40AF}
+.yb-box .tag.out{background:#DCFCE7;color:#166534}
+.yb-row{display:flex;gap:6px;flex-wrap:wrap}
+.yb-flip,.yb-look{flex:1 1 140px;border:2px solid #0369A1;background:#E0F2FE;color:#075985;border-radius:9px;padding:6px 8px;cursor:pointer;
+  font-family:inherit;font-weight:800;font-size:clamp(9.6px,1.62vw,11.8px)}
+.yb-flip{border-color:#A16207;background:#FEF9C3;color:#854D0E}
+.yb-flip:hover{background:#FEF08A}
+.yb-look:hover{background:#BAE6FD}
+.yb-say{border-radius:8px;padding:5px 8px;font-weight:800;font-size:clamp(9.2px,1.56vw,11.2px);line-height:1.4;
+  background:#F8FAFC;color:#475569;border:2px dashed #CBD5E0}
+.yb-say.at{background:#EFF6FF;color:#1E3A8A;border-style:solid;border-color:#0369A1}
+.yb-note{display:flex;flex-direction:column;gap:4px}
+.yb-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-radius:7px;padding:4px 8px;font-weight:800;
+  font-size:clamp(9.4px,1.58vw,11.4px);border:2px dashed #CBD5E0;background:#F8FAFC;color:#94A3B8}
+.yb-line.set{border-style:solid;border-color:#059669;background:#ECFDF5;color:#065F46}
+.yb-read,.yb-mean,.yb-fin{display:flex;flex-direction:column;gap:5px}
+.yb-read button,.yb-mean button,.yb-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.yb-read button:hover,.yb-mean button:hover,.yb-fin button:hover{background:var(--bub)}
+.yb-read button.no,.yb-mean button.no,.yb-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.yb-hint{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:420px){ .yb-sea{grid-template-columns:1fr 1fr;gap:3px} .yb-box{font-size:8.6px;padding:3px} }
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠·㉢: 모든 그림은 내용을 나타낸 도식이며 실제 사진·지도가 아니다.
+   ⚠️ 사람 형상 대신 도형으로만 그린다. 금액·양·거리·연도는 적지 않는다. */
+const SVG = {
+  // 1 들어가기 — 교실 물건과 생산지(도식 · 교과서 94쪽)
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    ${[['\uD83D\uDEAA','출입문'],['\uD83D\uDCDA','책꽂이'],['\uD83E\uDE91','의자'],['\u270F\uFE0F','연필'],['\uD83D\uDCF1','태블릿'],['\uD83D\uDC55','옷']].map((t,i)=>`<rect x="${14+i*50}" y="40" width="44" height="62" rx="8" fill="#fff" stroke="#A16207" stroke-width="1.4"/>
+      <text x="${36+i*50}" y="72" font-size="18" text-anchor="middle">${t[0]}</text>
+      <text x="${36+i*50}" y="94" font-size="7.4" fill="#854D0E" text-anchor="middle" font-weight="800">${t[1]}</text>`).join('')}
+    <text x="160" y="130" font-size="8" fill="#334155" text-anchor="middle" font-weight="800">교실 물건과 재료는 어디에서 왔을까요?(도식)</text></svg>`,
+  // 2 살펴보기 — 다른 나라에서 온 물건과 음식(도식)
+  life:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <circle cx="160" cy="84" r="30" fill="#FEF3C7" stroke="#A16207" stroke-width="1.6"/>
+    <text x="160" y="88" font-size="8" fill="#854D0E" text-anchor="middle" font-weight="800">우리 생활</text>
+    ${[[60,44,'\uD83E\uDDF9'],[260,44,'\u2712\uFE0F'],[60,126,'\uD83E\uDD6D'],[260,126,'\uD83E\uDD69']].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="18" fill="#fff" stroke="#0369A1" stroke-width="1.4"/>
+      <text x="${p[0]}" y="${p[1]+6}" font-size="16" text-anchor="middle">${p[2]}</text>
+      <path d="M${p[0]<160?p[0]+18:p[0]-18} ${p[1]} L${p[0]<160?130:190} ${p[1]<84?70:98}" stroke="#0369A1" stroke-width="1.6" stroke-dasharray="3 2"/>`).join('')}
+    <text x="160" y="162" font-size="7.4" fill="#64748B" text-anchor="middle" font-weight="700">다른 나라에서 생산한 물건과 음식(도식)</text></svg>`,
+  // 3 살펴보기 — 고려 시대 벽란도(상상 도식)
+  port:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#E0F2FE"/>
+    <rect x="0" y="0" width="120" height="170" fill="#FEF3C7"/>
+    <rect x="96" y="70" width="40" height="12" fill="#A16207"/>
+    <path d="M170 110 L260 110 L246 128 L184 128 Z" fill="#92400E"/><path d="M214 110 L214 54" stroke="#78350F" stroke-width="2.4"/>
+    <path d="M216 56 L252 100 L216 100 Z" fill="#fff" stroke="#94A3B8" stroke-width="1"/>
+    ${[[30,60],[62,60],[30,92],[62,92]].map(p=>`<rect x="${p[0]}" y="${p[1]}" width="24" height="20" rx="3" fill="#fff" stroke="#B45309" stroke-width="1.2"/>`).join('')}
+    <text x="60" y="140" font-size="8" fill="#854D0E" text-anchor="middle" font-weight="800">고려 벽란도</text>
+    <text x="215" y="146" font-size="8" fill="#075985" text-anchor="middle" font-weight="800">송·아라비아 상인의 배</text>
+    <text x="160" y="22" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="800">여러 나라 상인이 드나든 항구(상상 도식)</text></svg>`,
+  // 5 살펴보기 — 무역·수입·수출(도식)
+  mean:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <rect x="18" y="50" width="96" height="64" rx="10" fill="#FEF9C3" stroke="#A16207" stroke-width="1.6"/>
+    <rect x="206" y="50" width="96" height="64" rx="10" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.6"/>
+    <text x="66" y="87" font-size="9" fill="#854D0E" text-anchor="middle" font-weight="800">우리나라</text>
+    <text x="254" y="87" font-size="9" fill="#075985" text-anchor="middle" font-weight="800">다른 나라</text>
+    <path d="M118 70 L200 70" stroke="#166534" stroke-width="2.4"/><path d="M198 64 L208 70 L198 76 Z" fill="#166534"/>
+    <path d="M202 96 L122 96" stroke="#1E40AF" stroke-width="2.4"/><path d="M124 90 L114 96 L124 102 Z" fill="#1E40AF"/>
+    <text x="160" y="62" font-size="8" fill="#166534" text-anchor="middle" font-weight="800">팔아요 = 수출</text>
+    <text x="160" y="112" font-size="8" fill="#1E40AF" text-anchor="middle" font-weight="800">사 와요 = 수입</text>
+    <text x="160" y="150" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="800">나라와 나라 사이에 사고팔거나 교환해요(도식)</text></svg>`,
+  // 6 살펴보기 — 무역 관련 뉴스(도식)
+  news:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    ${[0,1].map(i=>`<rect x="${26+i*140}" y="30" width="128" height="96" rx="8" fill="#fff" stroke="${i?'#166534':'#1E40AF'}" stroke-width="1.6"/>
+      <rect x="${38+i*140}" y="42" width="104" height="10" rx="3" fill="${i?'#DCFCE7':'#DBEAFE'}"/>
+      ${[0,1,2,3].map(r=>`<rect x="${38+i*140}" y="${62+r*14}" width="${104-r*12}" height="6" rx="3" fill="#E2E8F0"/>`).join('')}
+      <text x="${90+i*140}" y="50" font-size="7.4" fill="${i?'#166534':'#1E40AF'}" text-anchor="middle" font-weight="800">${i?'수출 관련 뉴스':'수입 관련 뉴스'}</text>`).join('')}
+    <text x="160" y="150" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="800">다양한 분야의 무역 소식(도식)</text></svg>`,
+  // 7 살펴보기 — 꼭 기억해요(도식)
+  keep:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    <path d="M60 84 L260 84" stroke="#A16207" stroke-width="3" stroke-dasharray="6 4"/>
+    <path d="M70 76 L60 84 L70 92" fill="none" stroke="#A16207" stroke-width="3"/><path d="M250 76 L260 84 L250 92" fill="none" stroke="#A16207" stroke-width="3"/>
+    <circle cx="40" cy="84" r="18" fill="#FEF9C3" stroke="#A16207" stroke-width="1.6"/><circle cx="280" cy="84" r="18" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.6"/>
+    <text x="160" y="134" font-size="8" fill="#334155" text-anchor="middle" font-weight="800">나라와 나라 사이에 물자나 서비스가 오가요(도식)</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#1E293B"/>
+    ${['생산지 찾기','벽란도','무역의 뜻','뉴스 찾기'].map((t,i)=>`<rect x="${20+i*74}" y="52" width="62" height="40" rx="8" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2"/>
+      <text x="${51+i*74}" y="76" font-size="7.2" fill="#9A3412" text-anchor="middle" font-weight="800">${t}</text>${i<3?`<path d="M${82+i*74} 72 L${92+i*74} 72" stroke="#FDE68A" stroke-width="2"/>`:''}`).join('')}
+    <text x="160" y="128" font-size="8.6" fill="#FDE68A" text-anchor="middle" font-weight="800">무역이 무엇인지 알아봤어요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#A16207" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#A16207" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#854D0E" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 벽란도 부두에서 상자를 옮기며 수입·수출을 보는 판 =====
+   ★ 상자를 누르면 건너편으로 옮겨지고 그 상자를 고른다(ybTap · 옮긴 기록 |= 단 하나 · 고른 자리 = 단 하나 · 되돌리기 없음).
+   ★★ 상자가 있는 쪽은 ybSide 한 줄 · 이름표(수입/수출)는 ybWord 한 줄 — 난 쪽과 보는 쪽이 같으면 수출, 다르면 수입(담는 상태 0).
+   ★★ 수첩 기록은 |= 만(ybLog · ybNote 단 하나 · 적기 처리기에서만) — 줄 종류는 ybKind 한 줄.
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. */
+/* 물건 상자 아홉 — 교과서 95쪽 벽란도 글(from 0 = 고려에서 사 간 물건 · 1 = 다른 나라 상인이 가져와 판 물건) */
+const YB_GOODS = [
+  {t:'비단', from:1}, {t:'삼베', from:0}, {t:'약재', from:1},
+  {t:'모시', from:0}, {t:'서적', from:1}, {t:'인삼', from:0},
+  {t:'악기', from:1}, {t:'종이', from:0}, {t:'보석', from:1}
+];
+/* 보는 쪽 둘 */
+const YB_SIDE = ['고려 벽란도','다른 나라 상인'];
+const YB_N = 9;
+const YB_ALL = 7;
+/* 수첩 세 줄 */
+const YB_LINE = [
+  '고려에서 보니 다른 나라에서 사 온 물건은 수입이에요',
+  '고려에서 보니 다른 나라에 판 물건은 수출이에요',
+  '다른 나라 상인 쪽에서 보니 수입과 수출이 뒤바뀌었어요'
+];
+
+/* ② 판 읽기 */
+const YB_READ = [
+  '물건마다 수입인지 수출인지가 처음부터 정해져 있었어요',
+  '같은 물건이 오가도 어느 나라에서 보느냐에 따라 수입이 되기도 하고 수출이 되기도 했어요',
+  '벽란도에서는 물건이 다른 나라에서 고려로 한쪽으로만 오갔어요'
+];
+const YB_READ_OK = 1;
+const YB_READ_NO = [
+  '수첩 셋째 줄을 다시 봐요. 보는 쪽을 바꾸자 같은 상자의 <b>이름표</b>가 바뀌었어요. 판을 다시 읽어 봐요.',
+  null,
+  '삼베, 모시, 인삼, 종이는 <b>어느 쪽</b>으로 옮겨졌나요? 판을 다시 읽어 봐요.'
+];
+
+/* ③ 핵심 질문 — 무역이란 무엇인가요? */
+const YB_MEAN = [
+  '한 나라 안에서 사람들끼리 물건을 사고파는 활동이에요',
+  '다른 나라 물건을 구경만 하는 활동이에요',
+  '나라와 나라 사이에 물자나 서비스를 사고팔거나 교환하는 활동이에요'
+];
+const YB_MEAN_OK = 2;
+const YB_MEAN_NO = [
+  '벽란도에는 <b>여러 나라</b>의 상인들이 드나들었어요. 판은 그대로예요.',
+  '상자는 부두에 머물지 않고 <b>건너편으로 옮겨졌어요</b>. 판은 그대로예요.',
+  null
+];
+
+/* ④ 마무리 — 지도서 13차시 주요 내용 정리 */
+const YB_FIN = [
+  '다른 나라에서 물자나 서비스를 사 오는 것은 수입이고, 다른 나라에 물자나 서비스를 파는 것은 수출이에요',
+  '다른 나라에서 물자나 서비스를 사 오는 것은 수출이고, 다른 나라에 물자나 서비스를 파는 것은 수입이에요',
+  '나라와 나라 사이에 물건을 사고파는 일은 오늘날에만 있고 옛날에는 없었어요'
+];
+const YB_FIN_OK = 0;
+const YB_FIN_NO = [
+  null,
+  '고려에서 보았을 때 비단의 이름표를 떠올려 봐요. 오늘의 정리를 다시 골라 봐요.',
+  '고려 시대 <b>벽란도</b>를 떠올려 봐요. 오늘의 정리를 다시 골라 봐요.'
+];
+
+/* 안내 */
+const YB_LOCK = '수첩 <b>세 줄이 모두 섰어요</b>. 부두는 이대로 둬요. 판을 읽어 봐요. 판은 그대로예요.';
+const YB_NONE = '아직 <b>고른 상자</b>가 없어요. 상자를 눌러 건너편으로 옮긴 뒤에 적어요. 판은 그대로예요.';
+const YB_AGAIN = '그 줄은 <b>이미 적었어요</b>. 다른 상자를 고르거나 보는 쪽을 바꿔 봐요. 판은 그대로예요.';
+const YB_ORDER_R = '아직 <b>수첩 세 줄</b>이 다 서지 않았어요. 세 줄을 모두 적은 뒤에 읽을 수 있어요. 판은 그대로예요.';
+const YB_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const YB_ORDER_K = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const YB_MEAN_AGAIN = '무역이 무엇인지는 <b>이미 골랐어요</b>. 판은 그대로예요.';
+const YB_ORDER_F = '아직 <b>무역이 무엇인지</b> 고르지 않았어요. 먼저 골라 봐요. 판은 그대로예요.';
+const YB_ALL_MSG = '수첩 <b>세 줄이 모두 섰어요</b>. 판을 읽어 봐요.';
+
+function ybGood(k){ return YB_GOODS[k]; }
+function ybIsSent(st,k){ return (st.ybSent >> k & 1)===1; }
+/* ★ 상자가 지금 있는 쪽 — 한 줄 */
+function ybSide(st,k){ return ybIsSent(st,k) ? 1 - ybGood(k).from : ybGood(k).from; }
+/* ★★ 이름표 — 한 줄(옮기지 않은 상자는 이름표 없음 · 난 쪽 = 보는 쪽이면 수출) */
+function ybWord(st,k){ return !ybIsSent(st,k) ? '' : ybGood(k).from===st.ybView ? '수출' : '수입'; }
+/* ★ 줄 종류 — 한 줄(고른 상자 없으면 -1 · 다른 나라 쪽에서 보면 2 · 고려에서 보면 수입 0 / 수출 1) */
+function ybKind(st){ return (st.ybAt<0 || !ybIsSent(st,st.ybAt)) ? -1 : st.ybView===1 ? 2 : ybGood(st.ybAt).from===0 ? 1 : 0; }
+function ybHas(st,l){ return (st.ybLog & (1<<l))!==0; }
+function ybLines(st){ return [0,1,2].filter(l=>ybHas(st,l)).length; }
+function ybAll(st){ return st.ybLog===YB_ALL; }
+
+function ybDock(st,s){
+  const ks=[0,1,2,3,4,5,6,7,8].filter(k=>ybSide(st,k)===s);
+  return `<div class="yb-dock${st.ybView===s?' view':''}" data-side="${s}" data-n="${ks.length}"><div class="yb-dname">${s===0?'\u2693 고려 벽란도':'\u26F5 다른 나라 상인의 배'}</div>`+
+    ks.map(k=>{ const w=ybWord(st,k);
+      return `<button class="yb-box${st.ybAt===k?' at':''}" data-k="${k}" data-word="${w}" onclick="ybTap(${k})">\uD83D\uDCE6 ${ybGood(k).t}<span class="tag${w==='수입'?' in':w==='수출'?' out':''}">${w||'제자리'}</span></button>`; }).join('')+`</div>`;
+}
+function ybNotes(st){
+  return YB_LINE.map((t,l)=>{ const on=ybHas(st,l);
+    return `<div class="yb-line${on?' set':''}" data-line="${l}">${on?'\u2714 '+t:'\u2610 아직 적지 않은 줄'}</div>`; }).join('');
+}
+
+function ybBoard(st){
+  const fin = st.ybFin!=null, all = ybAll(st), k=ybKind(st);
+  const head = fin ? '무역이 무엇인지 알아봤어요'
+    : st.ybMean!=null ? '무역이 무엇인지까지 골랐어요 \u2014 이제 정리해요'
+    : st.ybRead!=null ? '무역이 무엇인지 골라 봐요'
+    : all ? '수첩 세 줄이 모두 섰어요 \u2014 판을 읽어 봐요'
+    : k>=0 ? '고른 상자의 이름표를 보고 수첩에 적어 봐요'
+    : '상자를 눌러 건너편으로 옮겨 봐요';
+  const say = k>=0 ? `<div class="yb-say at">「${ybGood(st.ybAt).t}」 \u2014 ${YB_SIDE[st.ybView]} 쪽에서 보면 <b>${ybWord(st,st.ybAt)}</b>이에요.</div>`
+    : `<div class="yb-say">상자를 누르면 건너편 부두로 옮겨져요. 한 번 판 물건은 되돌리지 않아요.</div>`;
+  return `<div class="yb-board" data-sent="${st.ybSent}" data-at="${st.ybAt}" data-view="${st.ybView}" data-log="${st.ybLog}" data-lines="${ybLines(st)}" data-all="${all?1:0}" data-kind="${k}" data-read="${st.ybRead==null?-1:st.ybRead}" data-mean="${st.ybMean==null?-1:st.ybMean}" data-fin="${fin?1:0}">
+    <div class="yb-head">${head}</div>
+    <div class="yb-sea">${ybDock(st,0)}${ybDock(st,1)}</div>
+    ${say}
+    <div class="yb-row"><button class="yb-flip" data-flip="1" onclick="ybFlip()">\uD83D\uDC40 지금은 ${YB_SIDE[st.ybView]} 쪽에서 봐요 \u2014 바꿔 보기</button>
+    <button class="yb-look" data-look="1" onclick="ybWrite()">\u270D\uFE0F 수첩에 적기</button></div>
+    <div class="yb-note">${ybNotes(st)}</div>
+  </div>`;
+}
+
+function ybPanel(st){
+  const fin = st.ybFin!=null, all = ybAll(st);
+  const q = fin ? '벽란도 부두에서 상자를 옮기며 무역이 무엇인지 알아봤어요.'
+    : st.ybMean!=null ? '오늘 공부한 내용을 정리해요. 수입과 수출은 각각 무엇인가요?'
+    : st.ybRead!=null ? '핵심 질문 \u2014 무역이란 무엇인가요?'
+    : all ? '수첩 세 줄이 모두 섰어요. 판에서 무엇을 알 수 있나요?'
+    : st.ybLog!==0 ? '다른 상자를 옮기거나 보는 쪽을 바꿔 보며 수첩 세 줄을 모두 세워요.'
+    : '고려 시대 벽란도 부두예요. 상자를 옮기며 이름표가 어떻게 붙는지 살펴봐요.';
+  let right = `<div class="yb-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\u2693 무역이 무엇인지 알아봐요</div>
+      나라와 나라 사이에 물자나 서비스를 사고팔거나 교환하는 활동을 <b>무역</b>이라고 해요.
+      다른 나라에서 물자나 서비스를 사 오는 것은 <b>수입</b>, 다른 나라에 물자나 서비스를 파는 것은 <b>수출</b>이에요. 같은 물건이라도 어느 나라에서 보느냐에 따라 수입이 되기도 하고 수출이 되기도 해요.<br>
+      <span style="color:#64748B">판은 교과서 속 벽란도 글을 옮긴 도식이에요.
+      <b>교실 물건의 생산지 찾아보기</b>, <b>글의 제목 짓기와 피라미드 토의</b>, <b>인터넷에서 무역 뉴스 찾기</b>는 교실에서 직접 해요.</span></div>`;
+  } else if(st.ybMean!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="yb-fin">${YB_FIN.map((t,k)=>`<button class="${st.ybWrongF===k?'no':''}" onclick="ybFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.ybRead!=null){
+    right += `<div class="dw-step">\uD83E\uDD14 핵심 질문</div>`;
+    right += `<div class="yb-mean">${YB_MEAN.map((t,k)=>`<button class="${st.ybWrongK===k?'no':''}" onclick="ybMeanPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="yb-hint">벽란도에 드나든 상인들이 어디에서 왔는지 떠올려 봐요.</div>`;
+  } else if(all){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="yb-read">${YB_READ.map((t,k)=>`<button class="${st.ybWrongR===k?'no':''}" onclick="ybReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83D\uDCE6 상자를 옮겨 이름표 보기</div>`;
+    right += `<div class="yb-hint"><b>상자</b>를 누르면 건너편 부두로 옮겨지고 그 상자가 골라져요. 옮긴 상자에는 <b>이름표</b>가 붙어요. <b>수첩에 적기</b>를 누르면 고른 상자의 이름표가 수첩에 적혀요. <b>보는 쪽</b>도 바꿔 보며 수첩 세 줄을 모두 세우면 판을 읽을 수 있어요. 감점은 없어요.</div>`;
+  }
+  if(st.ybMsg) right += `<div class="dw-msg${st.ybWarn?' warn':''}">${st.ybMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\u2693 벽란도 부두에서 상자를 배에 실어요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${ybBoard(st)}<div class="cvcap">판은 교과서 속 벽란도 글을 옮긴 <b>도식</b>이에요. 물건 아홉은 글에 나온 것뿐이고, 벽란도에서 오간 물건이 이것뿐이라는 뜻은 아니에요. 수치는 적지 않았어요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 시장경제와 국가 간 거래 · 주제③ 세계 속의 무역";
+
+// 확인 4 + 적용 4 — 정답 다양화 [1,3,2,0,2,0,3,1](각 자리 2회)
+// ⚠️ 문항 내 금액·비율·수치·연도·쪽수 0 · 새 사실 0(교과서 94~96쪽 문면 · 지도서 13차시까지만) · 무역이 이루어지는 까닭 0.
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"<b>무역</b>의 뜻으로 알맞은 것은 무엇인가요?",
+   opts:["한 나라 안의 시장에서 물건을 사고파는 일","나라와 나라 사이에 물자나 서비스를 사고팔거나 교환하는 일","이웃끼리 물건을 빌려주는 일","공장에서 물건을 만드는 일"],
+   correct:1, pts:POINTS_BASIC, scene:"mean",
+   reason:"나라와 나라 사이에 물자나 서비스를 사고팔거나 교환하는 일을 무역이라고 해요.",
+   h1:"벽란도에 누가 드나들었는지 떠올려 봐요.", h2:"「나라와 나라 사이」가 열쇠예요."},
+  {stem:"무역을 하는 과정에서 <b>수입</b>은 무엇인가요?",
+   opts:["다른 나라에 물자나 서비스를 파는 것","우리나라 안에서 물건을 옮기는 것","물건을 창고에 모아 두는 것","다른 나라에서 물자나 서비스를 사 오는 것"],
+   correct:3, pts:POINTS_BASIC, scene:"mean",
+   reason:"다른 나라에서 물자나 서비스를 사 오는 것을 수입이라고 해요.",
+   h1:"고려에서 보았을 때 비단의 이름표를 떠올려 봐요.", h2:"들여오는 쪽이에요."},
+  {stem:"벽란도에서 다른 나라 상인들이 <b>가져와서 판</b> 물건이 <u>아닌</u> 것은 무엇인가요?",
+   opts:["비단","서적","인삼","보석"],
+   correct:2, pts:POINTS_BASIC, scene:"port",
+   reason:"다른 나라 상인들은 비단, 약재, 서적, 악기, 보석 등을 가져와서 팔고, 고려에서 삼베, 모시, 인삼, 종이 등을 사 갔어요.",
+   h1:"처음에 고려 벽란도 쪽에 있던 상자를 떠올려 봐요.", h2:"다른 나라 상인이 사 간 물건이에요."},
+  {stem:"무역을 하는 과정에서 <b>수출</b>은 무엇인가요?",
+   opts:["다른 나라에 물자나 서비스를 파는 것","다른 나라에서 물자나 서비스를 사 오는 것","한 나라 안에서 물건을 파는 것","물건을 쓰지 않고 버리는 것"],
+   correct:0, pts:POINTS_BASIC, scene:"mean",
+   reason:"다른 나라에 물자나 서비스를 파는 것을 수출이라고 해요.",
+   h1:"고려에서 보았을 때 인삼의 이름표를 떠올려 봐요.", h2:"내보내는 쪽이에요."},
+  // 4단계 적용 (+15)
+  {stem:"벽란도에서 고려 사람이 송나라 상인에게 <b>인삼</b>을 팔았어요. <b>고려</b> 쪽에서 보면 이것은 무엇인가요?",
+   opts:["수입이에요","무역이 아니에요","수출이에요","한 나라 안의 거래예요"],
+   correct:2, pts:POINTS_APPLY, scene:"port",
+   reason:"고려가 다른 나라에 물건을 판 것이니 고려 쪽에서 보면 수출이에요.",
+   h1:"인삼은 어느 쪽 부두에서 출발했나요?", h2:"다른 나라에 파는 것이에요."},
+  {stem:"같은 <b>인삼</b>을 이번에는 <b>송나라 상인</b> 쪽에서 보면 무엇인가요?",
+   opts:["수입이에요","수출이에요","무역이 아니에요","아무 일도 일어나지 않았어요"],
+   correct:0, pts:POINTS_APPLY, scene:"port",
+   reason:"송나라 상인은 다른 나라인 고려에서 인삼을 사 간 것이니 송나라 쪽에서 보면 수입이에요. 같은 물건이라도 어느 나라에서 보느냐에 따라 수입이 되기도 하고 수출이 되기도 해요.",
+   h1:"보는 쪽을 바꿨을 때 이름표가 어떻게 되었나요?", h2:"다른 나라에서 사 온 것이에요."},
+  {stem:"「드라마, 예능 수출로 한국 널리 알린다」라는 뉴스 제목에서 알 수 있는 것은 무엇인가요?",
+   opts:["무역은 손에 잡히는 물건만 사고팔아요","우리나라는 드라마를 다른 나라에서 사 오기만 해요","드라마와 예능은 무역과 관계가 없어요","물건뿐 아니라 드라마와 예능도 다른 나라에 팔아요"],
+   correct:3, pts:POINTS_APPLY, scene:"news",
+   reason:"우리나라의 드라마와 예능을 다른 나라에 파는 수출이 이루어지고 있어요. 이처럼 다양한 분야에서 수입과 수출이 활발히 이루어지고 있어요.",
+   h1:"「수출」이라는 낱말을 찾아봐요.", h2:"다른 나라에 파는 것이에요."},
+  {stem:"교실에 있는 여러 물건과 재료의 <b>생산지가 다양한</b> 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["교실 물건은 모두 우리나라에서만 만들었기 때문이에요","다양한 나라에서 생산된 물건이나 재료를 우리나라로 들여왔기 때문이에요","물건에 나라 이름을 아무렇게나 붙였기 때문이에요","물건이 저절로 생겨났기 때문이에요"],
+   correct:1, pts:POINTS_APPLY, scene:"open",
+   reason:"다양한 나라에서 생산된 물건이나 재료를 우리나라로 들여왔기 때문이에요. 우리나라에는 없는 물건이나 재료를 다른 나라에서 사 오기도 해요.",
+   h1:"출입문과 의자의 재료를 떠올려 봐요.", h2:"다른 나라에서 들여왔어요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 동기 유발(교실 물건과 재료의 생산지)
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">교실 물건은 어디에서 왔을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','교실 물건과 생산지(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCA1 생각을 열어요</div>
+      교실을 둘러봐요. <b>인도네시아</b>에서 자란 나무로 만든 출입문, <b>사우디아라비아</b>에서 생산한 원유로 만든 플라스틱 책꽂이, <b>오스트레일리아</b>에서 캐낸 철로 만든 의자,
+      <b>중국</b>에서 만든 연필, <b>미국</b>에서 만든 프로그램을 사용하는 태블릿, <b>베트남</b>에서 만든 옷이 있어요. 교실에 있는 여러 물건과 재료의 생산지가 다양한 까닭은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 다양한 나라에서 생산된 물건이나 재료를 우리나라로 <b>들여왔기</b> 때문이에요.<br>
+      \u2014 우리나라에는 없는 물건이나 재료를 다른 나라에서 <b>사 왔기</b> 때문이에요.</div>`
+      :`<div class="note">물건과 재료가 처음 만들어진 곳을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">오늘은 <b>무역이 무엇인지</b> 알아봐요.</div></div>`});
+// 2 살펴보기 — reveal: 다른 나라에서 생산한 물건·음식 경험
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">다른 나라에서 생산한 물건을 써 본 적이 있나요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('life','다른 나라에서 온 물건과 음식(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83E\uDDFA 우리 생활 속 경험</div>
+      우리는 평소에 세계 여러 나라에서 생산한 물건을 사용하거나 음식을 먹어요. 여러분이 경험한 다른 나라에서 생산한 물건이나 음식은 무엇이었나요?
+      다른 나라 사람들도 우리나라에서 생산한 상품을 이용할까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 중국에서 만든 <b>청소기</b>, 일본에서 만든 <b>필기구</b>를 사용하고 있어요.<br>
+      \u2014 타이에서 들여온 <b>망고</b>, 미국에서 들여온 <b>소고기</b>를 먹어 본 적이 있어요.<br>
+      \u2014 다른 나라 사람들도 <b>우리나라에서 생산한 상품</b>을 이용해요. 이러한 모습은 과거 사람들의 생활에서도 확인할 수 있어요.</div>`
+      :`<div class="note">집에 있는 물건이나 먹어 본 과일을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: 고려 시대 벽란도(교과서 95쪽 스스로 활동)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">고려 시대 벽란도에서는 어떤 일이 일어났을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('port','고려 시대 벽란도(상상 도식)','wide')}</div>
+    <div class="paper"><div class="ph">\u2693 고려 시대 벽란도의 모습</div>
+      고려 시대의 수도인 개경 근처에 <b>벽란도</b>라는 큰 항구가 있었어요. 이곳에는 가까운 송나라 상인부터 멀리 떨어진 아라비아 상인까지 여러 나라의 상인들이 드나들었어요.
+      다른 나라에서 온 상인들은 비단, 약재, 서적, 악기, 보석 등을 가져와서 팔고, 고려에서 삼베, 모시, 인삼, 종이 등을 사 갔어요.
+      다른 나라 상인들이 팔았던 물건과 사 갔던 물건은 각각 무엇인가요? 벽란도에서 일어난 일이 잘 드러나도록 글의 제목을 지어 봐요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 다른 나라 상인들이 <b>팔았던</b> 물건: 비단, 약재, 서적, 악기, 보석<br>
+      \u2014 다른 나라 상인들이 <b>사 갔던</b> 물건: 삼베, 모시, 인삼, 종이<br>
+      \u2014 제목 예: 「여러 나라 상인들이 모여 교류가 이루어지는 곳, 벽란도」, 「여러 나라의 귀한 물건이 모이는 벽란도」</div>`
+      :`<div class="note">「가져와서 팔고」와 「사 갔습니다」를 찾아봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 4 살펴보기 — 직접조작(벽란도 부두)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">벽란도 부두에서 상자를 옮기며 이름표를 살펴봐요</h2>
+  ${ybPanel(st)}`});
+// 5 살펴보기 — reveal: 무역·수입·수출의 뜻
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">무역, 수입, 수출은 각각 무엇일까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('mean','무역·수입·수출(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCD6 무역의 의미</div>
+      사람들은 필요와 이익에 따라 다른 사람들과 물자나 서비스를 주고받으며 살아가요. 나라와 나라 사이에서도 이런 일이 일어나요.
+      <b>물자</b>는 어떤 활동에 필요한 물건이나 물건을 만드는 데 필요한 원료예요. 무역이란 무엇인가요? 수입과 수출은 각각 무엇인가요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 나라와 나라 사이에서 물자나 서비스를 사고팔거나 교환하는 활동을 <b>무역</b>이라고 해요.<br>
+      \u2014 무역을 하는 과정에서 다른 나라에서 물자나 서비스를 사 오는 것을 <b>수입</b>이라고 해요.<br>
+      \u2014 다른 나라에 물자나 서비스를 파는 것을 <b>수출</b>이라고 해요.</div>`
+      :`<div class="note">부두에서 붙은 이름표 둘을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">정리 보기</button>`}
+  </div>`});
+// 6 살펴보기 — reveal: 무역과 관련한 뉴스(교과서 96쪽 친구와 활동)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">무역과 관련한 뉴스에는 무엇이 있을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('news','무역 관련 뉴스(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCF0 무역과 관련한 뉴스 기사 제목</div>
+      수입 관련 뉴스 \u2014 「수입 학용품, 안전 확인 필수」, 「어린이 입맛 맞춘 수입 과자 인기」<br>
+      수출 관련 뉴스 \u2014 「국내 떡볶이 수출 길 활짝」, 「드라마, 예능 수출로 한국 널리 알린다」<br>
+      기사 제목들을 보고 알 수 있는 사실은 무엇인가요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 학용품, 과자 같은 물건을 다른 나라에서 사 오고, 떡볶이 같은 음식과 드라마, 예능을 다른 나라에 팔아요.<br>
+      \u2014 우리 생활과 관련해 <b>다양한 분야</b>에서 수입과 수출이 <b>활발히</b> 이루어지고 있어요.</div>`
+      :`<div class="note">「수입」과 「수출」이라는 낱말이 들어간 제목을 견줘 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 7 살펴보기 — reveal: 꼭 기억해요
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">꼭 기억할 내용을 확인해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('keep','나라와 나라 사이(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCCC 꼭! 기억해요</div>
+      1 나라와 나라 사이에 물자나 서비스를 사고팔거나 교환하는 일을 \u3141 \u3147 (이)라고 합니다.<br>
+      2 다른 나라에서 물자나 서비스를 사 오는 것을 수출이라고 합니다. ( 맞아요 , 틀려요 )</div>
+    ${st.revealed?`<div class="answer-box">\u2014 꼭 기억해요 1 \u2014 <b>무역</b> \u00b7 2 \u2014 <b>틀려요</b><br>
+      \u2014 다른 나라에서 물자나 서비스를 사 오는 것은 <b>수입</b>이에요.</div>`
+      :`<div class="note">초성에 맞는 낱말과 괄호 속 알맞은 말을 먼저 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">정리 보기</button>`}
+  </div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 13차시 주요 내용 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div><b>무역</b> \u2014 나라와 나라 사이에 물자나 서비스를 사고팔거나 교환하는 활동이에요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div><b>수입</b> \u2014 다른 나라에서 물자나 서비스를 사 오는 것이에요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div><b>수출</b> \u2014 다른 나라에 물자나 서비스를 파는 것이에요.</div></div>
+    <div class="sum-item"><span class="n">\u2463</span><div><b>벽란도</b> \u2014 고려 시대에도 여러 나라 상인들이 드나들며 물건을 사고팔았어요. 오늘날에는 다양한 분야에서 수입과 수출이 활발히 이루어져요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 같은 물건이라도 어느 나라에서 보느냐에 따라 수입이 되기도 하고 수출이 되기도 했어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b>무역이 이루어지는 까닭</b>을 알아봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공부한 내용을 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"무역이 무엇인지 설명할 수 있어요",st)}
+    ${selfCheck(1,"수입과 수출을 구별할 수 있어요",st)}
+    ${selfCheck(2,"우리나라를 비롯한 세계 여러 나라의 무역에 관심을 갖게 됐어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">무역이 이루어지는 까닭</b>을 알아봐요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u2_l09";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  ybSent:0, ybAt:-1, ybView:0, ybLog:0,
+  ybRead:null, ybMean:null, ybFin:null,
+  ybWrongR:null, ybWrongK:null, ybWrongF:null,
+  ybMsg:null, ybWarn:false, ybBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function ybRender(){ main.innerHTML = slides[state.idx].render(state); }
+function ybHold(msg){
+  state.ybWarn=true; state.ybBusy=true; state.ybMsg=msg;
+  playThud(); ybRender();
+  setTimeout(()=>{ state.ybBusy=false; state.ybWarn=false; state.ybMsg=null;
+    state.ybWrongR=null; state.ybWrongK=null; state.ybWrongF=null; ybRender(); },1600);
+}
+/* ★ 수첩 기록 — 더하기만 하는 자리 단 하나 */
+function ybNote(l){ state.ybLog |= (1 << l); }
+
+/* ① 상자 — 난 쪽에 있으면 건너편으로 옮기고, 옮긴 상자면 고르기만 */
+function ybTap(k){
+  if(state.ybFin!=null) return;                                        // 가드①
+  if(state.ybBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=YB_N) return;                   // 가드②
+  if(ybAll(state)){ ybHold(YB_LOCK); return; }                         // 가드③ 판 불변
+  state.ybSent |= (1 << k);                                            // ★ 옮긴 기록 — 더하기만(되돌리기 없음)
+  state.ybAt = k;                                                      // ★ 고른 상자 자리 단 하나
+  state.ybWarn=false; state.ybMsg=null; playBlip(); ybRender();
+}
+
+/* ② 보는 쪽 바꾸기 */
+function ybFlip(){
+  if(state.ybFin!=null) return;                                        // 가드①
+  if(state.ybBusy) return;                                             // 가드⑧
+  if(ybAll(state)){ ybHold(YB_LOCK); return; }                         // 가드③ 판 불변
+  state.ybView = 1 - state.ybView;                                     // ★ 보는 쪽이 바뀌는 자리 단 하나
+  state.ybWarn=false; state.ybMsg=null; playBlip(); ybRender();
+}
+
+/* ③ 수첩에 적기 — 고른 상자가 있고 아직 적지 않은 줄일 때만(가드⑨) */
+function ybWrite(){
+  if(state.ybFin!=null) return;                                        // 가드①
+  if(state.ybBusy) return;                                             // 가드⑧
+  if(ybAll(state)){ ybHold(YB_LOCK); return; }                         // 가드③ 판 불변
+  const l = ybKind(state);
+  if(l<0){ ybHold(YB_NONE); return; }                                  // 가드⑨ 고른 상자 없음 — 판 불변
+  if(ybHas(state,l)){ ybHold(YB_AGAIN); return; }                      // 가드⑨ 이미 선 줄 — 판 불변
+  ybNote(l);
+  state.ybWarn=false;
+  if(ybAll(state)){ state.ybMsg = YB_ALL_MSG; playChime(); }
+  else { state.ybMsg = `수첩에 적었어요 \u2014 ${YB_LINE[l]}. 다른 상자를 옮기거나 보는 쪽을 바꿔 봐요.`; playChime(); }
+  ybRender();
+}
+
+/* ④ 판 읽기 — 수첩 세 줄 뒤에만(가드④). */
+function ybReadPick(k){
+  if(state.ybFin!=null) return;                                        // 가드①
+  if(state.ybBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=YB_READ.length) return;         // 가드②
+  if(!ybAll(state)){ ybHold(YB_ORDER_R); return; }                     // 가드④ 순서 — 판 불변
+  if(state.ybRead!=null){ ybHold(YB_READ_AGAIN); return; }             // 가드④ 판 불변
+  if(k===YB_READ_OK){
+    state.ybRead=k; state.ybWrongR=null; state.ybWarn=false;
+    state.ybMsg = '판을 잘 읽었어요. 물건이 나라와 나라 사이를 오갈 때, <b>사 오는 쪽</b>에서는 수입이고 <b>파는 쪽</b>에서는 수출이에요.';
+    playChime(); ybRender(); return;
+  }
+  state.ybWrongR=k;
+  ybHold(YB_READ_NO[k]);
+}
+
+/* ⑤ 핵심 질문 — 판을 읽은 뒤에만(가드⑤). */
+function ybMeanPick(k){
+  if(state.ybFin!=null) return;                                        // 가드①
+  if(state.ybBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=YB_MEAN.length) return;         // 가드②
+  if(state.ybRead==null){ ybHold(YB_ORDER_K); return; }                // 가드⑤ 순서 — 판 불변
+  if(state.ybMean!=null){ ybHold(YB_MEAN_AGAIN); return; }             // 가드⑤ 판 불변
+  if(k!==YB_MEAN_OK){ state.ybWrongK=k; ybHold(YB_MEAN_NO[k]); return; } // 가드⑤ 판 불변
+  state.ybMean = k;                                                    // ★ 핵심 질문을 고르는 자리 단 하나
+  state.ybWarn=false;
+  state.ybMsg = '나라와 나라 사이에 물자나 서비스를 사고팔거나 교환하는 활동이 <b>무역</b>이에요.';
+  playChime(); ybRender();
+}
+
+/* ⑥ 마무리 — 지도서 13차시 주요 내용 정리 */
+function ybFinish(k){
+  if(state.ybFin!=null) return;                                        // 가드①
+  if(state.ybBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=YB_FIN.length) return;          // 가드②
+  if(state.ybMean==null){ ybHold(YB_ORDER_F); return; }                // 가드⑥ 순서 — 판 불변
+  if(k===YB_FIN_OK){
+    state.ybFin=k; state.ybWrongF=null; state.ybMsg=null; state.ybWarn=false;
+    playChime(); ybRender(); return;
+  }
+  state.ybWrongF=k;
+  ybHold(YB_FIN_NO[k]);                                                // 가드⑦ 판 불변
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 2단원 10차시(l10) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
