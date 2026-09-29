@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 3-2 · 2단원 옛날과 오늘날의 생활 모습
+  주제① 옛날과 오늘날의 풍습 · l03
+  「옛날과 오늘날의 일상생활 속 풍습을 비교해 볼까요」
+  교과서 p.72~76 · 지도서 4~5차시(p.142~151) · 두 시간 한 파일 · [4사04-01]
+  수업 기법 = 조사하기, 비교하기
+=========================================================================
+
+  ■ 직접조작 = 두 장면을 견주어 도장을 찍어요 판 (사회 3-2 열다섯째 판 · 2단원 셋째 판)
+  ⭐ 씨앗은 교과서 72~73쪽 결혼 풍습 그림과 지도서 143쪽 비교표 — 장소, 입는 옷, 주고받는 물건,
+     결혼식을 마친 뒤 하는 일, 비슷한 점(축복 · 알림).
+  ⭐ 비교표에 줄 여섯이 있다. 처음엔 줄 이름만 보이고 칸은 가려져 있다.
+     돋보기로 한 줄을 고르면 옛날 칸과 오늘날 칸이 함께 열린다.
+  ⭐ 두 칸을 견주어 「달라요」나 「같아요」 도장을 찍는다. 맞는 도장이어야 찍힌다.
+  ⭐ 짝표가 코드에 따로 없다. 줄이 자기 도장 번호를 품고 있다(DJ_ROW[i].k).
+     DJ_ROW 를 읽는 자리 djRowOf · DJ_PICK 은 djPickOf 단 하나씩.
+  ⭐ 다른 줄·같은 줄 수는 저장 0 — 찍힌 도장(djMark)에서 셈으로 나온다(djDiffN · djSameN).
+  ⭐ 판을 바꾸는 자리 djSet 단 하나(state.djMark |= 1 << i) · 지우는 자리 0 · 난수 0.
+
+  ■ 이 차시의 뼈대
+   옛날과 오늘날의 결혼 풍습은 다르지만, 부부가 된 것을 알리고 신랑 신부의 미래를 축복해 주는 마음은 변함없다.
+   옛날 풍습 중에는 변화하면서 이어져 내려오는 풍습도 있고, 사라져 가는 풍습도 있다.
+
+  ■ 5단계
+   ① 돋보기로 줄 고르기 → ② 도장 찍기(줄 여섯) → ③ 판 읽기 3택(정답 자리 1)
+   ④ 인터넷으로 조사하고 싶은 풍습 가·나·다 고르기(정답 없음 · 고른 까닭이 뜬다 · 교과서 76쪽 할 수 있어요)
+   ⑤ 마무리 3택(정답 자리 2) → 완료
+      — 인터넷으로 조사해 표에 정리하는 일 · 친구들과 나누는 일은 교실 몫
+
+  ■ 가드 12종
+   ① 마무리 확정 후 처리기 전체 잠금          ② 무효 번호(안내조차 0)
+   ③ 이미 도장을 찍은 줄 고르기 — 판 불변      ④ 줄을 고르기 전 도장 — 판 불변
+   ⑤ 두 칸과 맞지 않는 도장 — 판 불변          ⑥ 다 찍기 전 판 읽기 — 판 불변
+   ⑦ 이미 읽은 자리 — 판 불변                ⑧ 판 읽기 어긋난 답 — 판 불변
+   ⑨ 판을 읽기 전 고르기 — 판 불변           ⑩ 이미 고른 자리 — 판 불변
+   ⑪ 고르기 전 마무리 — 판 불변              ⑫ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 줄 여섯의 말은 교과서 72~73쪽의 결혼 풍습을 판이 줄여 적은 것(캡션 상시).
+   ㉡ 조사하고 싶은 풍습은 사람마다 달라 판은 정답을 정하지 않는다(캡션 상시).
+   ㉢ 인터넷으로 조사해 표에 정리하는 일, 친구들과 나누는 일은 교실 몫(완료 카드 명시).
+
+  ■ 설계 원칙
+   · 뒤 차시 이름은 차시 예고 한 자리뿐 · 교통·통신수단 용어 0
+   · 새 사실 0 — 교과서 72~76쪽 · 지도서 142~151쪽에 있는 사실만 · 누리집 주소 0 · 신문 이름 0
+   · 폐백은 「드리기도 해요」 — 모든 결혼식에서 드린다는 오개념을 만들지 않음(지도서 144쪽)
+   · 「틀렸」 0 · 사람 형상 0 · 지어낸 학생 이름 0 · 네 자리 연도 0 · 지역 이름 0
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>옛날과 오늘날의 일상생활 속 풍습을 비교해 볼까요 · 사회 3-2</title>
+<meta name="kedu-lesson-id" content="g3_social_u2_l03_v1"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#DB2777; --green-d:#BE185D; --cyan:#C026D3;
+  --bg:#FDF2F8; --bub:#FCE7F3; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#FCE7F3;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#FCE7F3;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(219,39,119,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 두 장면을 견주어 도장을 찍어요 판 */
+.dj-wrap{max-width:780px;width:100%;margin:0 auto}
+.dj-head{background:#FCE7F3;color:#9D174D;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.dj-board{padding:9px;border-radius:14px;background:#FDF2F8;border:2px solid #FBCFE8;display:grid;grid-template-columns:1fr;gap:6px}
+.dj-title{text-align:center;font-weight:800;color:#9D174D;font-size:clamp(12px,2vw,14px);word-break:keep-all}
+.dj-lab{font-size:clamp(11px,1.8vw,13px);font-weight:800;color:#BE185D;margin-bottom:2px}
+.dj-row,.dj-top{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,2fr) minmax(0,2fr) minmax(0,1.3fr);gap:5px;align-items:stretch}
+.dj-top div{font-size:clamp(10px,1.6vw,12px);font-weight:800;color:#9D174D;text-align:center}
+.dj-row{border-radius:11px;border:2px dashed #F9A8D4;background:#fff;padding:5px}
+.dj-row[data-st="look"]{border:3px solid #DB2777;background:#FFF7FB}
+.dj-row[data-st="done"]{border-style:solid;border-color:#F472B6}
+.dj-name{font-weight:800;font-size:clamp(11px,1.8vw,13px);color:#9D174D;display:flex;align-items:center;justify-content:center;text-align:center;word-break:keep-all}
+.dj-cell{font-size:clamp(10px,1.6vw,12px);color:#0F172A;background:#FDF2F8;border-radius:7px;padding:4px 5px;line-height:1.35;word-break:keep-all;
+  display:flex;align-items:center;justify-content:center;text-align:center;min-height:34px}
+.dj-cell[data-open="0"]{color:#F9A8D4;font-weight:800}
+.dj-cell[data-side="1"]{background:#FCE7F3}
+.dj-mark{display:flex;align-items:center;justify-content:center}
+.dj-lens{border:2px solid #F472B6;border-radius:999px;background:#fff;color:#BE185D;font-family:inherit;font-weight:800;
+  font-size:clamp(10px,1.6vw,12px);padding:4px 8px;cursor:pointer}
+.dj-lens[data-on="1"]{background:#DB2777;color:#fff;border-color:#9D174D}
+.dj-seal{font-weight:800;font-size:clamp(10px,1.6vw,12px);border-radius:999px;padding:3px 8px;border:2px solid}
+.dj-seal[data-k="0"]{color:#BE185D;border-color:#DB2777;background:#FFF1F2}
+.dj-seal[data-k="1"]{color:#1E40AF;border-color:#3B82F6;background:#EFF6FF}
+.dj-pads{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.dj-pad{border:none;border-radius:11px;font-family:inherit;font-weight:800;font-size:clamp(12px,2vw,15px);padding:9px 8px;cursor:pointer}
+.dj-pad[data-k="0"]{background:#DB2777;color:#fff}
+.dj-pad[data-k="1"]{background:#3B82F6;color:#fff}
+.dj-pad[data-on="0"]{opacity:.45}
+.dj-help{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(11px,1.9vw,14px);line-height:1.6}
+.dj-help b{color:#BE185D}
+.dj-side{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.dj-tell{border-radius:11px;padding:8px 12px;font-size:clamp(12px,2vw,15px);line-height:1.6;background:#FDF2F8;border-left:4px solid var(--cyan)}
+.dj-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}
+.dj-pk{border:2px solid #FBCFE8;border-radius:10px;background:#fff;padding:8px 7px;font-family:inherit;
+  font-size:clamp(11px,1.8vw,13px);font-weight:700;color:#0F172A;text-align:left;cursor:pointer;line-height:1.4;word-break:keep-all}
+.dj-pk b{color:#BE185D}
+.dj-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FFFAFD;margin-top:9px;
+  font-size:clamp(12px,2vw,15px);line-height:1.6;word-break:keep-all}
+.dj-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.dj-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:9px 11px;font-family:inherit;
+  font-size:clamp(12px,2vw,15px);font-weight:700;color:#0F172A;text-align:left;line-height:1.45;word-break:keep-all;cursor:pointer}
+.dj-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .dj-top{display:none}
+  .dj-row{grid-template-columns:1fr 1fr}
+  .dj-name{grid-column:1/-1}
+  .dj-mark{grid-column:1/-1}
+  .dj-picks{grid-template-columns:1fr}
+  .dj-side{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 모양과 기호 ===== */
+const SVG = {
+  // 들어가기 — 혼례상 위의 나무 기러기
+  goose:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <rect x="30" y="58" width="100" height="9" rx="3" fill="#fff" stroke="#DB2777" stroke-width="1.5"/><path d="M 38 67 L 38 84 M 122 67 L 122 84" stroke="#DB2777" stroke-width="1.5"/>
+    <g fill="#FDE68A" stroke="#B45309" stroke-width="1.3"><ellipse cx="66" cy="48" rx="13" ry="7"/><circle cx="54" cy="38" r="5"/><path d="M 49 38 L 43 40 L 49 41 Z"/>
+      <ellipse cx="102" cy="48" rx="13" ry="7"/><circle cx="114" cy="38" r="5"/><path d="M 119 38 L 125 40 L 119 41 Z"/></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">나무로 만든 기러기 한 쌍</text></svg>`,
+  // 옛날 결혼 풍습 — 신부 집 · 말 · 기러기
+  old:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <path d="M 92 50 L 120 30 L 148 50 Z" fill="#FDE68A" stroke="#B45309" stroke-width="1.5"/><rect x="98" y="50" width="44" height="24" fill="#fff" stroke="#B45309" stroke-width="1.5"/>
+    <path d="M 18 70 L 18 56 Q 20 46 34 46 L 56 46 L 62 36 L 68 40 L 64 50 L 64 70 M 26 70 L 26 58 M 54 70 L 54 58" fill="none" stroke="#92400E" stroke-width="2" stroke-linecap="round"/>
+    <path d="M 70 62 L 88 62" stroke="#DB2777" stroke-width="2" stroke-dasharray="3 3"/><path d="M 86 58 L 91 62 L 86 66" fill="none" stroke="#DB2777" stroke-width="2"/>
+    <g font-size="6.6" font-weight="800" text-anchor="middle" fill="#9D174D"><text x="40" y="84">말을 타고</text><text x="120" y="86">신부 집</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">옛날 결혼 풍습</text></svg>`,
+  // 오늘날 결혼 풍습 — 결혼식장 · 반지
+  now:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <rect x="16" y="32" width="58" height="44" rx="4" fill="#fff" stroke="#DB2777" stroke-width="1.5"/><path d="M 16 32 L 45 20 L 74 32" fill="none" stroke="#DB2777" stroke-width="1.5"/>
+    <g fill="#F9A8D4"><circle cx="30" cy="46" r="4"/><circle cx="45" cy="44" r="4"/><circle cx="60" cy="46" r="4"/></g>
+    <g fill="none" stroke="#B45309" stroke-width="3"><circle cx="106" cy="52" r="11"/><circle cx="124" cy="52" r="11"/></g>
+    <g font-size="6.6" font-weight="800" text-anchor="middle" fill="#9D174D"><text x="45" y="86">결혼식장</text><text x="115" y="80">반지</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">오늘날 결혼 풍습</text></svg>`,
+  // 풍습의 변화 — 이어지는 길과 끊기는 길
+  change:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <path d="M 14 38 L 146 38" stroke="#DB2777" stroke-width="4" stroke-linecap="round"/><path d="M 138 32 L 148 38 L 138 44" fill="none" stroke="#DB2777" stroke-width="3"/>
+    <path d="M 14 70 L 74 70" stroke="#94A3B8" stroke-width="4" stroke-linecap="round" stroke-dasharray="7 6"/>
+    <g font-size="6.6" font-weight="800" fill="#9D174D"><text x="14" y="30">옛날</text><text x="126" y="30">오늘날</text></g>
+    <g font-size="6.6" font-weight="800" text-anchor="middle"><text x="80" y="52" fill="#BE185D">변화하면서 이어져 내려와요</text><text x="112" y="74" fill="#64748B">사라져 가요</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">옛날 풍습은 어떻게 되었을까요</text></svg>`,
+  // 정리 — 도장이 찍힌 비교표
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <rect x="16" y="24" width="128" height="60" rx="5" fill="#fff" stroke="#DB2777" stroke-width="1.5"/>
+    <path d="M 16 44 L 144 44 M 16 64 L 144 64 M 58 24 L 58 84 M 100 24 L 100 84" stroke="#FBCFE8" stroke-width="1.2"/>
+    <g fill="none" stroke-width="2"><circle cx="122" cy="34" r="7" stroke="#DB2777"/><circle cx="122" cy="54" r="7" stroke="#DB2777"/><circle cx="122" cy="74" r="7" stroke="#3B82F6"/></g>
+    <g font-size="6.2" font-weight="800" text-anchor="middle" fill="#9D174D"><text x="37" y="37">장소</text><text x="37" y="57">물건</text><text x="37" y="77">마음</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">달라진 것과 변함없는 것</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 두 장면을 견주어 도장을 찍어요 판 =====
+   돋보기로 비교표의 한 줄을 고르면 옛날 칸과 오늘날 칸이 함께 열린다. 두 칸을 견주어 도장을 찍는다.
+   ⭐ 판을 바꾸는 자리 djSet 단 하나 — 도장이 찍히는 곳은 여기뿐 · 지우는 자리 0.
+   ⭐ 짝표 0 — 줄이 자기 도장 번호를 품는다(DJ_ROW[i].k · 0 달라요 · 1 같아요).
+   ⭐ 다른 줄·같은 줄 수는 저장 0 — 찍힌 도장(djMark)에서 센다(djDiffN · djSameN).
+   ⭐ 줄 순서는 자유 — 어느 줄부터 견주어도 된다.
+   ================================================================= */
+const DJ_ROW = [                                                    // 교과서 72~73쪽 결혼 풍습 · 지도서 143쪽 비교표 — 말은 판이 줄여 적음
+  {name:"장소", old:"신부 집", now:"결혼식장, 공원 등", k:0},
+  {name:"축복", old:"가족과 친척들이 신랑 신부를 축복해 줘요", now:"가족과 친척들이 신랑 신부를 축복해 줘요", k:1},
+  {name:"입는 옷", old:"혼례복(한복)", now:"턱시도, 웨딩드레스", k:0},
+  {name:"주고받는 물건", old:"나무로 만든 기러기", now:"반지", k:0},
+  {name:"알림", old:"사람들에게 두 사람이 부부가 된 것을 알려요", now:"사람들에게 두 사람이 부부가 된 것을 알려요", k:1},
+  {name:"결혼식을 마친 뒤", old:"신부 집에서 며칠을 보낸 뒤 신랑 집으로 가요", now:"신혼여행을 떠나요", k:0}
+];
+const DJ_SEAL = ["달라요", "같아요"];
+const DJ_PICK = [                                                   // 교과서 76쪽 할 수 있어요 — 인터넷으로 조사할 주제
+  {mark:"가", text:"출생", why:"아기가 태어났을 때 옛날과 오늘날 사람들이 어디에서 무엇을 하는지 견주어 조사할 수 있어요."},
+  {mark:"나", text:"첫돌", why:"첫 번째 생일에 옛날과 오늘날 사람들이 어떻게 잔치를 하는지 견주어 조사할 수 있어요."},
+  {mark:"다", text:"장례", why:"사람이 죽었을 때 옛날과 오늘날 장례를 치르는 모습이 무엇이 달라졌는지 견주어 조사할 수 있어요."}
+];
+const DJ_SAY_DONE = "이미 도장을 찍은 줄이에요. 남은 줄을 골라요.";
+const DJ_SAY_LOOKFIRST = "먼저 돋보기로 견줄 줄을 하나 골라요.";
+const DJ_SAY_OUT = "두 칸을 다시 천천히 견줘 봐요.";
+const DJ_SAY_ORDER_R = "먼저 여섯 줄에 도장을 모두 찍어 봐요.";
+const DJ_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const DJ_SAY_ORDER_P = "먼저 판을 읽어 봐요.";
+const DJ_SAY_PICKDONE = "이미 골랐어요. 친구가 고른 것과 견주어 봐요.";
+const DJ_SAY_ORDER_FIN = "먼저 조사하고 싶은 풍습을 골라 봐요.";
+const DJ_READQ = [
+  "옛날과 오늘날의 결혼 풍습은 모든 것이 똑같아요",
+  "결혼하는 장소, 입는 옷, 주고받는 물건은 달라졌지만 부부가 된 것을 알리고 축복해 주는 마음은 같아요",
+  "오늘날 결혼식에는 축복해 주는 가족과 친척이 없어요"
+];
+const DJ_READ_OK = 1;
+const DJ_READ_BAD = "도장이 찍힌 줄을 다시 살펴봐요.";
+const DJ_FINQ = [
+  "옛날 풍습은 오늘날 모두 사라졌어요",
+  "풍습은 한번 정해지면 조금도 바뀌지 않아요",
+  "옛날과 오늘날의 풍습을 비교하면 사람들의 생활이 무엇이 달라졌는지 알 수 있어요"
+];
+const DJ_FIN_OK = 2;
+const DJ_FIN_BAD = "도장을 찍은 비교표를 다시 떠올려 봐요.";
+
+function djRowOf(i){ return DJ_ROW[i]; }                                      // DJ_ROW 를 읽는 자리는 여기 단 하나
+function djPickOf(p){ return DJ_PICK[p]; }                                    // DJ_PICK 을 읽는 자리는 여기 단 하나
+function djRows(){ return [...Array(DJ_ROW.length).keys()]; }
+function djIsDone(st,i){ return (st.djMark >> i & 1) === 1; }                 // ★ 도장이 찍힌 줄 — 찍힌 도장에서
+function djLeft(st){ return djRows().filter(i => !djIsDone(st,i)); }          // ★ 남은 줄
+function djDiffN(st){ return djRows().filter(i => djIsDone(st,i) && djRowOf(i).k === 0).length; }   // ★ 달라요 줄 — 셈으로
+function djSameN(st){ return djRows().filter(i => djIsDone(st,i) && djRowOf(i).k === 1).length; }   // ★ 같아요 줄 — 셈으로
+function djAll(st){ return djLeft(st).length === 0; }                         // ★ 끝 기준 = 남은 줄 0
+function djSet(i){ state.djMark |= 1 << i; }                                  // ⭐ 판을 바꾸는 자리 단 하나
+function djStage(st){
+  if(!djAll(st)) return "play";
+  if(st.djRead == null) return "read";
+  if(st.djPick == null) return "pick";
+  if(st.djFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 비교표 여섯 줄 · 도장 두 개 */
+function djRowHTML(st,i){
+  const sd = djIsDone(st,i) ? "done" : st.djAt === i ? "look" : "next";
+  const open = sd !== "next";
+  const cell = (side,t) => `<div class="dj-cell" data-side="${side}" data-open="${open ? 1 : 0}">${open ? t : '?'}</div>`;
+  const mark = sd === "done"
+    ? `<span class="dj-seal" data-k="${djRowOf(i).k}">${DJ_SEAL[djRowOf(i).k]}</span>`
+    : `<button class="dj-lens" data-i="${i}" data-on="${sd === "look" ? 1 : 0}" onclick="djLook(${i})">돋보기</button>`;
+  return `<div class="dj-row" data-i="${i}" data-st="${sd}"><div class="dj-name">${djRowOf(i).name}</div>${cell(0,djRowOf(i).old)}${cell(1,djRowOf(i).now)}<div class="dj-mark">${mark}</div></div>`;
+}
+function djTable(st){
+  return `<div><div class="dj-lab">비교표 — 돋보기로 한 줄씩 열어요</div>
+    <div class="dj-top"><div>견줄 것</div><div>옛날 결혼 풍습</div><div>오늘날 결혼 풍습</div><div>도장</div></div>
+    ${DJ_ROW.map((_,i) => djRowHTML(st,i)).join('')}</div>`;
+}
+function djPads(st){
+  return `<div class="dj-pads">${[0,1].map(k => `<button class="dj-pad" data-k="${k}" data-on="${st.djAt == null ? 0 : 1}" onclick="djStamp(${k})">${DJ_SEAL[k]} 도장</button>`).join('')}</div>`;
+}
+function djBoard(st){
+  return `<div class="dj-board" data-mark="${st.djMark}" data-diff="${djDiffN(st)}" data-same="${djSameN(st)}" data-left="${djLeft(st).length}">
+    <div class="dj-title">옛날과 오늘날의 결혼 풍습을 견주어 도장을 찍어요</div>
+    ${djTable(st)}${djAll(st) ? '' : djPads(st)}</div>`;
+}
+function djPicks(st){
+  return `<div class="dj-picks">${[0,1,2].map(p=>`<button class="dj-pk" data-p="${p}" onclick="djPick(${p})"><b>${djPickOf(p).mark}</b> ${djPickOf(p).text}</button>`).join('')}</div>`;
+}
+function djHelp(st){
+  return `<div class="dj-help">견줄 줄의 <b>돋보기</b>를 눌러 두 칸을 <b>열어요</b>.<br>
+    옛날 칸과 오늘날 칸을 견주어 <b>달라요</b>나 <b>같아요</b> 도장을 찍어요.<br>
+    어느 줄부터 견주어도 좋아요.</div>`;
+}
+function djPanel(st){
+  const stage = djStage(st);
+  let ask = '';
+  if(stage === "play"){
+    ask = `<div class="dj-ask" data-step="play"><b>옛날과 오늘날의 결혼 풍습에서 무엇이 달라졌고 무엇이 같은지 견주며 도장을 찍어 봐요.</b></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="dj-ask" data-step="read"><b>여섯 줄에 도장을 모두 찍은 판을 보니 무엇을 알 수 있을까요?</b>
+      <div class="dj-opts">${DJ_READQ.map((t,i)=>`<button class="dj-opt" onclick="djRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "pick"){
+    ask = `<div class="dj-ask" data-step="pick"><b>옛날과 오늘날을 견주어 인터넷으로 조사하고 싶은 풍습을 하나 골라 봐요.</b>${djPicks(st)}</div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="dj-ask" data-step="fin"><b>옛날과 오늘날의 풍습을 비교하면 무엇을 알 수 있을까요?</b>
+      <div class="dj-opts">${DJ_FINQ.map((t,i)=>`<button class="dj-opt" onclick="djFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="dj-ask" data-fin="1" style="border-color:#F9A8D4;background:#FDF2F8">
+      <b style="color:#9D174D">비교표 여섯 줄에 도장을 모두 찍었어요. 결혼하는 모습은 달라졌지만, 부부가 된 것을 알리고 축복해 주는 마음은 변함없어요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">※ <b>고른 풍습을 인터넷으로 조사해 표에 정리하는 일</b>, <b>친구들과 나누는 일</b>은 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`;
+  }
+  const tell = st.djTell ? `<div class="dj-tell">${st.djTell}</div>` : '';
+  const warn = st.djMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.djMsg}</div>` : '';
+  return `<div class="dj-wrap">
+    <div class="dj-head">도장 <b>${DJ_ROW.length - djLeft(st).length}</b> / ${DJ_ROW.length} 줄 · 달라요 <b>${djDiffN(st)}</b> · 같아요 <b>${djSameN(st)}</b> · 남은 줄 <b>${djLeft(st).length}</b></div>
+    ${djBoard(st)}<div class="dj-side">${djHelp(st)}${tell}</div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 줄 여섯의 말은 <b>교과서 72~73쪽</b>의 결혼 풍습을 판이 줄여 적은 것이에요. 조사하고 싶은 풍습은 <b>사람마다 달라서</b> 판은 정답을 정하지 않아요.</div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 옛날과 오늘날의 생활 모습 · 주제① 옛날과 오늘날의 풍습";
+const Q = [
+  {stem:"옛날에 결혼하는 날 신랑이 신부 집으로 가지고 간 것은 무엇인가요?",
+   opts:["반지","나무로 만든 기러기","꽃다발","복주머니"], correct:1, pts:POINTS_BASIC,
+   h1:"한번 짝을 맺으면 평생 함께한다고 하는 새예요.", h2:"교과서 72쪽 옛날 결혼 풍습을 떠올려 봐요.",
+   reason:"결혼하는 날 신랑은 나무로 만든 기러기를 가지고 말을 타고 신부 집으로 갔어요."},
+  {stem:"폐백은 무엇인가요?",
+   opts:["결혼식이 끝나고 떠나는 여행","평생 함께할 것을 약속하며 주고받는 물건","아기가 태어나면 대문에 치는 줄","신부가 처음으로 신랑 부모나 신랑 쪽 어른들을 뵐 때 큰절을 올리는 것"], correct:3, pts:POINTS_BASIC,
+   h1:"어른들께 드리는 인사예요.", h2:"교과서 73쪽 낱말 풀이를 떠올려 봐요.",
+   reason:"폐백은 신부가 처음으로 신랑 부모나 신랑 쪽 어른들을 뵐 때 큰절을 올리는 것이에요."},
+  {stem:"오늘날 결혼식에서 신랑 신부가 평생 함께할 것을 약속하며 주고받는 것은 무엇인가요?",
+   opts:["반지","나무로 만든 기러기","대추와 밤","금줄"], correct:0, pts:POINTS_BASIC,
+   h1:"손가락에 끼워요.", h2:"교과서 72쪽 오늘날 결혼 풍습을 떠올려 봐요.",
+   reason:"오늘날에는 결혼식장에서 평생 함께할 것을 약속하며 반지를 주고받아요."},
+  {stem:"옛날에 혼례가 끝나면 신랑 신부는 어떻게 했나요?",
+   opts:["곧바로 신혼여행을 떠났어요","결혼식장에서 기념사진을 찍었어요","신부 집에서 며칠을 보낸 뒤에 신랑 집으로 갔어요","각자 자기 집으로 돌아갔어요"], correct:2, pts:POINTS_BASIC,
+   h1:"혼례는 신부 집에서 치렀어요.", h2:"교과서 73쪽 옛날 결혼 풍습을 떠올려 봐요.",
+   reason:"옛날에는 혼례가 끝나면 신랑 신부가 신부 집에서 며칠을 보낸 뒤에 신랑 집으로 갔어요."},
+  {stem:"다음 중 변화하면서 오늘날까지 이어져 내려오는 풍습은 무엇인가요?",
+   opts:["금줄 치기","관례","백일잔치","21일 동안 밖에 나가지 않기"], correct:2, pts:POINTS_APPLY,
+   h1:"오늘날에도 아기가 태어난 지 100일이 되는 날에 해요.", h2:"교과서 74쪽을 떠올려 봐요.",
+   reason:"오늘날에도 아기가 태어난 지 100일이 되는 날에 백일잔치를 해요. 백일잔치는 변화하면서 이어져 내려오는 풍습이에요."},
+  {stem:"다음 중 오늘날 사라져 가는 풍습은 무엇인가요?",
+   opts:["금줄 치기","회갑잔치","폐백","백일잔치"], correct:0, pts:POINTS_APPLY,
+   h1:"오늘날 아기가 태어났을 때 거의 볼 수 없어요.", h2:"교과서 74쪽 사라져 가는 풍습을 떠올려 봐요.",
+   reason:"오늘날에는 아기가 태어나도 금줄을 치는 집을 거의 볼 수 없어요. 금줄 치기는 사라져 가는 풍습이에요."},
+  {stem:"옛날과 오늘날의 결혼 풍습에서 비슷한 점은 무엇인가요?",
+   opts:["결혼하는 장소가 같아요","입는 옷이 같아요","주고받는 물건이 같아요","가족과 친척들이 신랑 신부의 미래를 축복해 주는 마음이 같아요"], correct:3, pts:POINTS_APPLY,
+   h1:"달라진 것이 아니라 변함없는 것을 찾아요.", h2:"교과서 73쪽 아래 글을 떠올려 봐요.",
+   reason:"옛날과 오늘날의 결혼 풍습은 다르지만, 사람들에게 부부가 된 것을 알리고 가족과 친척들이 신랑 신부의 미래를 축복해 주는 마음은 변함없어요."},
+  {stem:"판에서 여섯 줄에 도장을 모두 찍고 알 수 있는 것은 무엇인가요?",
+   opts:["옛날과 오늘날의 결혼 풍습은 모든 것이 똑같아요","결혼하는 장소, 입는 옷, 주고받는 물건은 달라졌지만 부부가 된 것을 알리고 축복해 주는 마음은 같아요","오늘날 결혼식에는 축복해 주는 가족과 친척이 없어요","도장은 아무 줄에나 아무것이나 찍을 수 있어요"], correct:1, pts:POINTS_APPLY,
+   h1:"달라요 도장과 같아요 도장을 떠올려 봐요.", h2:"같아요 도장은 축복과 알림 줄에 찍혔어요.",
+   reason:"결혼하는 장소, 입는 옷, 주고받는 물건은 달라졌지만 부부가 된 것을 알리고 축복해 주는 마음은 옛날이나 오늘날이나 같아요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 전통 결혼식 경험
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">전통 결혼식을 본 적이 있나요?</h2>
+  <div class="ka-bub">옛날과 오늘날의 풍습은 서로 <b>비슷한 점</b>도 있고 <span class="ka-emph">다른 점</span>도 있어요. 결혼 풍습을 견주어 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('goose','전통 결혼식에 놓이는 나무 기러기')}</div>
+  <div class="note">옛날과 오늘날의 풍습을 비교하면 사람들의 생활이 무엇이 달라졌는지 알 수 있어요.</div></div>`});
+// 2 옛날 결혼식 떠올리기 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 생각을 열어요</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛날 사람들은 어떻게 결혼식을 했을까요?</h2>
+  <div class="ka-bub">요즘과 같은 <span class="ka-emph">결혼식장</span>이 없던 때를 떠올려 봐요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">예) <b>한복</b>을 입고 결혼식을 했을 것 같아요.<br>예) 요즘과 같은 결혼식장이 없어서 <b>다른 곳</b>에서 했을 것 같아요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 예시를 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">예시 보기</button>`}
+  </div>`});
+// 3 옛날 결혼 풍습
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 옛날 결혼 풍습</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛날에는 어떻게 결혼했을까요?</h2>
+  <div class="ka-bub">옛날에는 <b>신부 집</b>에서 <span class="ka-emph">혼례</span>를 치렀어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('old','교과서 72~73쪽 — 옛날 결혼 풍습')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>결혼하는 날 신랑은 <b>나무로 만든 기러기</b>를 가지고 말을 타고 신부 집으로 갔어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>신랑은 나무 기러기를 신부 측에 건네주고, 신랑 신부는 <b>혼례복</b>을 입고 많은 사람의 축하 속에서 혼례를 치렀어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>혼례가 끝나면 신랑 신부는 신부 집에서 며칠을 보낸 뒤에 신랑 집으로 갔고, 신랑 집안 어른들께 <b>폐백</b>을 드렸어요.</div></div>
+  </div></div>`});
+// 4 기러기와 폐백 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 옛날 결혼 풍습</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">왜 나무 기러기를 건네주었을까요?</h2>
+  <div class="ka-bub">기러기가 <span class="ka-emph">짝을 맺는 모습</span>을 떠올려 봐요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 기러기는 한번 짝을 맺으면 평생 함께한다고 해요. 그래서 <b>오래도록 행복하게 함께 살자는 의미</b>로 나무 기러기를 줬어요.<br>· <b>폐백</b>은 신부가 처음으로 신랑 부모나 신랑 쪽 어른들을 뵐 때 큰절을 올리는 것이에요.<br>· 폐백 할 때 어른들은 신랑 신부가 자식을 많이 낳고 부자가 되라는 뜻에서 <b>대추와 밤</b> 등을 던져 줘요.</div>`
+    :`<div class="note">까닭을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 오늘날 결혼 풍습
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 오늘날 결혼 풍습</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘날에는 어떻게 결혼할까요?</h2>
+  <div class="ka-bub">오늘날에는 <b>결혼식장</b>에서 <span class="ka-emph">결혼식</span>을 하는 모습을 흔히 볼 수 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('now','교과서 72~73쪽 — 오늘날 결혼 풍습')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>결혼식장에서 <b>턱시도와 웨딩드레스</b>를 입고 결혼식을 하고, 평생 함께할 것을 약속하며 <b>반지</b>를 주고받아요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>사람들과 축하와 감사의 인사를 나누고 기념사진을 찍어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>전통 혼례복을 입고 양쪽 집안 어른들께 폐백을 <b>드리기도</b> 해요. 결혼식이 끝나면 신랑 신부는 <b>신혼여행</b>을 떠나요.</div></div>
+  </div></div>`});
+// 6 풍습의 변화 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 풍습의 변화</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛날 풍습은 오늘날 어떻게 되었을까요?</h2>
+  <div class="ka-bub">옛날 풍습 중에는 <b>이어져 내려오는</b> 풍습도 있고, <span class="ka-emph">사라져 가는</span> 풍습도 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('change','교과서 74~75쪽 — 풍습의 변화')}</div>
+  ${st.revealed?`<div class="answer-box">· <b>변화하면서 이어져 내려오는 풍습</b> — 백일잔치, 회갑잔치, 폐백 등이 있어요. 오늘날에도 아기가 태어난 지 100일이 되는 날에 잔치를 해요.<br>· <b>사라져 가는 풍습</b> — 금줄 치기, 관례 등이 있어요. 오늘날에는 아기가 태어나도 금줄을 치는 집을 거의 볼 수 없어요.<br>· 장례 풍습도 달라지고 있어요. 땅에 묻는 매장이 줄고 <b>수목장</b>이나 <b>해양장</b>으로 치르는 경우가 많아지고 있어요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 비교표</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">두 장면을 견주어 도장을 찍어요</h2>
+  <div class="ka-grp" style="align-items:stretch">${djPanel(st)}</div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛날과 오늘날의 일상생활 속 풍습을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','달라진 것과 변함없는 것')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>옛날과 오늘날의 결혼 풍습은 결혼하는 <b>장소</b>, <b>입는 옷</b>, <b>주고받는 물건</b> 등이 달라요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>사람들에게 부부가 된 것을 알리고, 가족과 친척들이 신랑 신부의 미래를 <b>축복해 주는 마음</b>은 변함없어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>옛날 풍습 중에는 <b>변화하면서 이어져 내려오는</b> 풍습도 있고, <b>사라져 가는</b> 풍습도 있어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#DB2777">옛날의 세시 풍속</b>을 알아봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"옛날과 오늘날 결혼 풍습의 다른 점을 말할 수 있어요",st)}
+    ${selfCheck(1,"옛날과 오늘날 결혼 풍습의 비슷한 점을 말할 수 있어요",st)}
+    ${selfCheck(2,"이어져 내려오는 풍습과 사라져 가는 풍습을 예를 들어 말할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">옛날과 오늘날의 일상생활 속 풍습을 비교해 봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">옛날 풍습 한 가지를 골라 오늘날과 견주어 <b style="color:#DB2777">조사하고</b>, 다른 점과 비슷한 점을 <b style="color:#DB2777">표에 정리해</b> 봐요. 이건 교실 몫이에요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g3_2_social_u2_l03";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  djAt:null, djMark:0, djRead:null, djPick:null, djFin:null, djMsg:"", djTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function djDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 돋보기 — 견줄 줄 하나 */
+function djLook(i){
+  if(state.djFin!=null) return;                                                            // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(i) || i<0 || i>=DJ_ROW.length) return;                              // 가드②: 무효 줄 — 안내조차 띄우지 않음
+  if(djIsDone(state,i)){ state.djMsg = DJ_SAY_DONE; playThud(); djDraw(); return; }        // 가드③: 이미 찍은 줄 — 판 불변
+  state.djAt = i;
+  state.djMsg = ""; state.djTell = `「${djRowOf(i).name}」 줄을 열었어요. 옛날 칸과 오늘날 칸을 견줘 봐요.`; playBlip(); djDraw();
+}
+/* 도장 — 연 줄에 */
+function djStamp(k){
+  if(state.djFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(k) || k<0 || k>=DJ_SEAL.length || djAll(state)) return;             // 가드②: 무효 도장 · 다 찍은 뒤
+  if(state.djAt==null){ state.djMsg = DJ_SAY_LOOKFIRST; playThud(); djDraw(); return; }    // 가드④: 줄을 고르기 전 — 판 불변
+  const i = state.djAt;
+  if(djRowOf(i).k !== k){ state.djMsg = DJ_SAY_OUT; playThud(); djDraw(); return; }        // 가드⑤: 맞지 않는 도장 — 판 불변
+  djSet(i); state.djAt = null;
+  state.djMsg = ""; state.djTell = `「${djRowOf(i).name}」 줄에 「${DJ_SEAL[k]}」 도장을 찍었어요.`;
+  if(djAll(state)){ playChime(); } else { playBlip(); } djDraw();
+}
+/* 판 읽기 */
+function djRead(i){
+  if(state.djFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=DJ_READQ.length) return;                           // 가드②
+  if(!djAll(state)){ state.djMsg = DJ_SAY_ORDER_R; playThud(); djDraw(); return; }         // 가드⑥: 다 찍기 전 — 판 불변
+  if(state.djRead!=null){ state.djMsg = DJ_SAY_READDONE; djDraw(); return; }               // 가드⑦: 이미 정한 자리 — 판 불변
+  if(i!==DJ_READ_OK){ state.djMsg = DJ_READ_BAD; playThud(); djDraw(); return; }           // 가드⑧: 어긋난 답 — 판 불변
+  state.djRead = i; state.djMsg = ""; state.djTell = `여섯 줄 가운데 달라요 도장이 ${djDiffN(state)}개, 같아요 도장이 ${djSameN(state)}개예요. 결혼하는 모습은 달라졌지만, 부부가 된 것을 알리고 축복해 주는 마음은 변함없어요.`; playBlip(); djDraw();
+}
+/* 조사하고 싶은 풍습 고르기 — 정답 없음 */
+function djPick(p){
+  if(state.djFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(p) || p<0 || p>=DJ_PICK.length) return;                             // 가드②
+  if(state.djRead==null){ state.djMsg = DJ_SAY_ORDER_P; playThud(); djDraw(); return; }    // 가드⑨: 판을 읽기 전 — 판 불변
+  if(state.djPick!=null){ state.djMsg = DJ_SAY_PICKDONE; djDraw(); return; }               // 가드⑩: 이미 고른 자리 — 판 불변
+  state.djPick = p; state.djMsg = ""; state.djTell = `${djPickOf(p).mark}를 골랐어요. ${djPickOf(p).why}`; playBlip(); djDraw();
+}
+/* 마무리 */
+function djFin(i){
+  if(state.djFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=DJ_FINQ.length) return;                             // 가드②
+  if(state.djPick==null){ state.djMsg = DJ_SAY_ORDER_FIN; playThud(); djDraw(); return; }  // 가드⑪: 고르기 전 — 판 불변
+  if(i!==DJ_FIN_OK){ state.djMsg = DJ_FIN_BAD; playThud(); djDraw(); return; }             // 가드⑫: 어긋난 답 — 판 불변
+  state.djFin = i; state.djMsg = ""; playChime(); djDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
