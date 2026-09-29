@@ -167,7 +167,7 @@
   // 차시인가 — 학습지('ws:{set}')·쪽지('quiz:{id}')는 차시가 아니다. 차시 지도·단원 진도·다음 걸음에서 제외 (v3.1, 2026-09-02)
   function isLessonId(id){ return !!id && !/^(ws|quiz):/.test(String(id)); }
   // 학습지 세트 id → 과목 (g1_math_u1_L01_basic → math). 과목별 주간 집계용
-  function wsSubject(lessonId){ const m = /^(?:ws|quiz):g\d_([a-z]+)_/.exec(String(lessonId||'')); return m ? m[1] : null; }
+  function wsSubject(lessonId){ const m = /^(?:ws|quiz):g\d(?:_\d)?_([a-z]+)_/.exec(String(lessonId||'')); return m ? m[1] : null; }   /* 학기 표시 허용 (2026-09-29) */
 
   // =============================================
   // 3. 일별 시리즈 — 모든 시간 집계의 기초
@@ -436,7 +436,7 @@
   function wsUrl(setId){ return '/kedu/worksheet/play.html?set=' + encodeURIComponent(setId); }
   // 세트 키 → 사람이 읽는 이름 ('g1_math_u1_L02_basic' → '2차시 · 기본')
   function wsLabel(setId){
-    const m = String(setId || '').match(/^g(\d)_([a-z]+)_u(\d+)_(?:L(\d+)_(basic|challenge)|review_([a-d]))$/i);
+    const m = String(setId || '').match(/^g(\d)(?:_\d)?_([a-z]+)_u(\d+)_(?:L(\d+)_(basic|challenge)|review_([a-d]))$/i);   /* (?:_\d)? = 학기 — 2학기 세트 g1_2_math_u1_L02 도 읽는다 (2026-09-29 교정) */
     if(!m) return String(setId || '');
     if(m[6]) return '단원 종합 ' + m[6].toUpperCase() + '형';
     return Number(m[4]) + '차시 · ' + (m[5].toLowerCase() === 'basic' ? '기본' : '도전');

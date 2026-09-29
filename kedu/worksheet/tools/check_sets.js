@@ -81,7 +81,11 @@ const ASSETS = {
   pattern_grid:   ['rows'],
   /* v0.8 — 1학년 2학기 「덧셈과 뺄셈(3)」 */
   vert:           ['top', 'bottom'],
-  bundle_pair:    ['left', 'right']
+  bundle_pair:    ['left', 'right'],
+  /* v0.9 — 국어 (2026-09-29): 짧은 글 · 말풍선 · 장면 */
+  passage:        ['lines'],
+  speech:         ['turns'],
+  scene:          ['icon']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -231,6 +235,22 @@ function checkAsset(where, a) {
     if (!Array.isArray(a.hi) || a.hi.length < 2) bad(where, 'hundred_chart hi 는 2개 이상');
     else { const cs = (a.cells || []).map(c => Number(c)); a.hi.forEach(h => { if (cs.indexOf(Number(h)) < 0 && !(a.cells || []).some(c => c === null || c === '?')) bad(where, 'hundred_chart hi 에 표에 없는 수 ' + h); }); }
   }
+  if (a.type === 'passage') {
+    if (!Array.isArray(a.lines) || !a.lines.length) bad(where, 'passage lines 비었음');
+    else {
+      if (a.lines.length > 8) bad(where, 'passage 는 8줄까지 (1학년이 한 화면에서 읽을 만큼)');
+      a.lines.forEach((ln, i) => { if (!ln || !String(ln).trim()) bad(where, `passage lines[${i}] 비었음`); if (String(ln).length > 60) bad(where, `passage lines[${i}] 60자 초과`); });
+      if (a.hi !== undefined) { if (!Array.isArray(a.hi)) bad(where, 'passage hi 는 배열'); else a.hi.forEach(h => { if (!a.lines.some(ln => String(ln).indexOf(String(h)) >= 0)) bad(where, 'passage hi 에 글에 없는 말 ' + h); }); }
+    }
+  }
+  if (a.type === 'speech') {
+    if (!Array.isArray(a.turns) || !a.turns.length) bad(where, 'speech turns 비었음');
+    else { if (a.turns.length > 6) bad(where, 'speech 는 6마디까지'); a.turns.forEach((t, i) => { if (!t || !t.who || !t.text) bad(where, `speech turns[${i}] who/text 없음`); }); }
+  }
+  if (a.type === 'scene') {
+    if (!a.icon || !String(a.icon).trim()) bad(where, 'scene icon 비었음');
+    if (a.text !== undefined && String(a.text).length > 80) bad(where, 'scene text 80자 초과');
+  }
   if (a.type === 'group_row') {
     if (!Array.isArray(a.groups) || a.groups.length < 2) bad(where, 'group_row groups 가 2무리 미만');
     else a.groups.forEach((g, i) => { if (!g.item || !(Number(g.n) >= 0)) bad(where, `group_row groups[${i}] item/n 없음`); });
@@ -252,6 +272,9 @@ function checkQ(where, q, opt) {
   if (!Array.isArray(q.explanation) || q.explanation.length !== 3) bad(where, '해설이 3줄이 아님');
   else q.explanation.forEach((l, i) => { if (!l || !String(l).trim()) bad(where, `해설 ${i + 1}번째 줄 비었음`); });
 
+  if (q.mis !== undefined && !MIS.has(q.mis)) bad(where, '문항 기본 오개념(mis) 사전에 없는 코드 ' + q.mis);
+  /* 선긋기·OX 의 「O/X 자체 오답」은 보기가 없어 오개념을 못 단다 — 새 단원(국어부터)은 문항에 mis 를 직접 단다 */
+  if (!opt.variant && (q.kind === 'match' || q.kind === 'ox') && !q.mis && opt.requireMis) bad(where, q.kind + ' 문항에 기본 오개념(mis) 없음 — 틀렸을 때 리포트가 읽을 코드가 없다');
   checkAsset(where, q.asset);
   if (q.asset && typeof q.asset === 'object' && ASSETS[q.asset.type]) {
     try { if (!ENG.drawAsset(q.asset, ENG.rng(7))) bad(where, '화면에서 에셋이 빈칸으로 나옴'); }
@@ -332,9 +355,27 @@ function checkSet(file) {
   }
 
   let fuzzed = 0, stale = [];
+  const requireMis = d.subject !== 'math';   /* 수학 옛 세트는 엔진 misFor 폴백으로, 국어부터는 명시 */
   d.questions.forEach(q => {
     const where = `${name} #${q.seq}`;
-    checkQ(where, q);
+    checkQ(where, q, { requireMis });
+    /* v0.9 alt 갈래 — 조각 하나하나가 문항 규격을 지키는지, 원본과 정말 다른지 */
+    if (q.variant_rule && q.variant_rule.alt !== undefined) {
+      const alts = q.variant_rule.alt;
+      if (!Array.isArray(alts) || !alts.length) bad(where, 'alt 가 비었다');
+      else alts.forEach((pc, i) => {
+        if (!pc || typeof pc !== 'object') return bad(where, `alt[${i}] 가 객체가 아님`);
+        const ok = ['stem', 'asset', 'options', 'answer', 'pairs', 'reason_options', 'explanation', 'answer_guide', 'kind'];
+        Object.keys(pc).forEach(k => { if (ok.indexOf(k) < 0) bad(where, `alt[${i}] 에 모르는 칸 ${k}`); });
+        if (!pc.stem) bad(where, `alt[${i}] 에 stem 없음 — 다른 문제여야 한다`);
+        const kind = pc.kind || q.kind;
+        if (kind === 'sa' && !pc.answer && !q.answer) bad(where, `alt[${i}] 단답에 answer 없음`);
+        if ((kind === 'mc' || kind === 'blank' || kind === 'error') && !pc.options) bad(where, `alt[${i}] 객관식에 options 없음 — 발문이 바뀌면 보기도 함께`);
+        if (kind === 'ox' && (!pc.answer || !pc.reason_options)) bad(where, `alt[${i}] OX 에 answer·reason_options 없음`);
+        if (kind === 'match' && !pc.pairs) bad(where, `alt[${i}] 선긋기에 pairs 없음`);
+        if (!pc.explanation) bad(where, `alt[${i}] 에 해설 없음 — 다른 문제엔 다른 해설`);
+      });
+    }
 
     /* 변형 퍼즈 — 같은 문제 재탕 금지 규칙이 붙은 문항만 */
     if (!q.variant_rule) return;

@@ -170,6 +170,10 @@ const KR = win.KeduReport;
   ok(KR.wsLabel('g1_math_u1_L02_basic') === '2차시 · 기본', '세트 이름 (기본)');
   ok(KR.wsLabel('g1_math_u1_L05_challenge') === '5차시 · 도전', '세트 이름 (도전)');
   ok(KR.wsLabel('g1_math_u1_review_c') === '단원 종합 C형', '세트 이름 (단원 종합)');
+  ok(KR.wsLabel('g1_2_math_u1_L03_basic') === '3차시 · 기본', '세트 이름 — 학기 표시 있는 2학기 세트 (2026-09-29 교정)');
+  ok(KR.wsLabel('g1_2_kor_u1_review_a') === '단원 종합 A형', '세트 이름 — 국어 단원 종합');
+  ok(KR.wsSubject('ws:g1_2_kor_u1_L01_basic') === 'kor', '세트 과목 — 학기 표시 있는 국어 세트');
+  ok(KR.wsSubject('ws:g1_2_math_u6_L02_basic') === 'math', '세트 과목 — 학기 표시 있는 수학 세트');
   ok(KR.wsUrl('g1_math_u1_L02_basic').startsWith('/kedu/worksheet/play.html?set='), '세트 URL');
 
   // 화면: 교사·학생 페이지가 새 뷰를 실제로 읽는가 + 금지어

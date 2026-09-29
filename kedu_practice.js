@@ -45,7 +45,7 @@
     if (entry.challenge) btns += link(entry.challenge, '🔥 도전', '조금 더 어려워요', false);
     if (!btns && entry.review && entry.review.length) {
       btns += link(entry.review[0], '✍ 단원 종합 문제', '25문항', true);
-      if (entry.review[1]) btns += link(entry.review[1], '한 번 더 (다른 문제)', '같은 내용 · 다른 수', false);
+      if (entry.review[1]) btns += link(entry.review[1], '한 번 더 (다른 문제)', '같은 내용 · 다른 문제', false);
     }
     if (!btns) return '';
     return '<div id="kedu-practice" style="width:100%;max-width:720px;margin:18px auto 0;background:var(--c-card,#fff);border:2px solid var(--c-primary,#2F855A);border-radius:18px;padding:16px 18px;box-shadow:0 4px 16px rgba(0,0,0,.06);text-align:left">' +

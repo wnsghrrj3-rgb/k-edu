@@ -47,7 +47,7 @@ w = out.append
 w('-- =============================================')
 w('-- seed_worksheet_%s.sql' % PREFIX)
 w('-- %d학년 %d학기 %s %s 「%s」 — 개념 %d · 오개념 %d · 문항 %d'
-  % (grade, semester, {'math': '수학'}.get(subject, subject), unit, unit_name,
+  % (grade, semester, {'math': '수학', 'kor': '국어'}.get(subject, subject), unit, unit_name,
      len(used_c), len(used_m), sum(len(d['questions']) for d in docs)))
 w('-- 생성: kedu/worksheet/tools/sets_to_seed.py (파일이 정본, 이 파일은 적재본)')
 w('-- 의존: setup_worksheet_bank.sql')

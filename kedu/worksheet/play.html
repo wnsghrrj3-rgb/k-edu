@@ -83,6 +83,28 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .plate .tray{min-width:180px;min-height:86px;border:1px solid var(--rule-strong);border-radius:14px;background:var(--tint);display:flex;align-items:center;justify-content:center;gap:10px;font-size:34px;padding:12px 18px}
 .plate .tray.empty::after{content:'비어 있어요';font-size:15px;color:var(--muted)}
 .plate em{font-style:normal;font-size:15px;color:var(--muted)}
+/* v0.9 — 국어 에셋: 짧은 글·말풍선·장면 (2026-09-29) */
+.passage{width:100%;max-width:560px;border:1px solid var(--rule-strong);border-radius:14px;background:var(--tint);padding:14px 18px;font-size:19px;line-height:1.75}
+.passage h4{margin:0 0 6px;font-size:15px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+.passage .ln{display:flex;gap:10px;align-items:flex-start}
+.passage .ln i{font-style:normal;flex:0 0 22px;height:22px;border-radius:11px;background:var(--card);border:1px solid var(--rule-strong);font-size:12px;display:flex;align-items:center;justify-content:center;color:var(--muted);margin-top:6px}
+.passage .ln b{background:#FFF3B0;border-radius:4px;padding:0 3px;font-weight:700}
+.speech{width:100%;max-width:560px;display:flex;flex-direction:column;gap:10px}
+.speech .tn{display:flex;gap:10px;align-items:flex-start}
+.speech .tn.me{flex-direction:row-reverse}
+.speech .who{flex:0 0 auto;font-size:14px;color:var(--muted);padding-top:10px;min-width:34px;text-align:center}
+.speech .bub{background:var(--card);border:1px solid var(--rule-strong);border-radius:16px;padding:10px 14px;font-size:19px;line-height:1.55;max-width:80%}
+.speech .tn.me .bub{background:#E8F5EE}
+.scene{display:flex;flex-direction:column;align-items:center;gap:8px;max-width:520px;text-align:center}
+.scene .ic{font-size:54px;line-height:1.15;letter-spacing:.06em}
+.scene .cap{font-size:18px;line-height:1.55;color:var(--ink-soft)}
+.pq .ppass{margin:8px 0 8px 30px;padding:8px 12px;border:1px solid #888;border-radius:8px;font-size:13px;line-height:1.75}
+.pq .ppass h4{margin:0 0 2px;font-size:11px;color:#555}
+.pq .ppass b{text-decoration:underline;font-weight:400}
+.pq .pspeech{margin:8px 0 8px 30px;font-size:13px;line-height:1.8}
+.pq .pspeech b{display:inline-block;min-width:40px;font-weight:400;color:#555}
+.pq .pscene{margin:6px 0 6px 30px;font-size:13px;line-height:1.6}
+.pq .pscene span{font-size:20px;margin-right:8px}
 /* v0.3 — 1학년 2학기 「100까지의 수」 에셋 3종 */
 .bund{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center}
 .bund .ten{display:grid;grid-template-columns:repeat(2,1fr);gap:3px;padding:6px;border:1px solid var(--rule-strong);border-radius:8px;background:var(--tint)}
@@ -531,6 +553,11 @@ function drawAsset(a, r){
       const rr = rng(bag.length * 131 + (P[0] ? String(P[0].shape).charCodeAt(0) : 7) * 17 + SEED);
       const mixed = shuffle(bag, rr);
       return `<div class="shart"><div class="bd">${mixed.map(s => shapeSVG(s)).join('')}</div>${a.name ? `<em>${esc(a.name)} 그림</em>` : ''}</div>`; }
+    /* v0.9 — 국어 에셋 (2026-09-29) */
+    case 'passage': { const hi = (a.hi || []).map(String); const mark = t => { let out = esc(t); hi.forEach(h => { if (h) out = out.split(esc(h)).join('<b>' + esc(h) + '</b>'); }); return out; };
+      return `<div class="passage">${a.title ? `<h4>${esc(a.title)}</h4>` : ''}${(a.lines || []).map((ln, i) => `<div class="ln">${a.numbered === false ? '' : `<i>${i + 1}</i>`}<span>${mark(ln)}</span></div>`).join('')}</div>`; }
+    case 'speech': return `<div class="speech">${(a.turns || []).map(t => `<div class="tn${t.who === '나' ? ' me' : ''}"><span class="who">${esc(t.who || '')}</span><div class="bub">${esc(t.text || '')}</div></div>`).join('')}</div>`;
+    case 'scene': return `<div class="scene"><div class="ic">${esc(a.icon || '')}</div>${a.text ? `<div class="cap">${esc(a.text)}</div>` : ''}</div>`;
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
@@ -541,6 +568,15 @@ function optText(t){ if (typeof t !== 'object') return String(t); if (t.type ===
 /* ---------- 변형 엔진 (오답 「다시 해볼까?」용) — 같은 문제 재탕 금지 ---------- */
 function makeVariant(q, r){
   const v = JSON.parse(JSON.stringify(q)); const rule = q.variant_rule; if (!rule) return v; v.variant = true;
+  /* v0.9 — alt 갈래: 글로 된 문항(국어)은 수를 바꿀 수 없다. 사람이 미리 써 둔 다른 문항 가운데 하나를 낸다.
+     alt 하나하나는 stem·asset·options·answer·pairs·reason_options·explanation 을 통째로 갈아 끼우는 조각.
+     오개념 코드는 조각이 직접 단다(엔진이 지어내지 않는다). 2026-09-29 */
+  if (Array.isArray(rule.alt) && rule.alt.length){
+    const piece = rule.alt[Math.floor(r() * rule.alt.length)];
+    ['stem', 'asset', 'options', 'answer', 'pairs', 'reason_options', 'explanation', 'answer_guide', 'kind'].forEach(k => { if (piece[k] !== undefined) v[k] = JSON.parse(JSON.stringify(piece[k])); });
+    if (piece.asset === null) delete v.asset;
+    return v;
+  }
   const a = v.asset;
   const POOL = rule.pool || [1,2,3,4,5];                 // 이 문항이 다룰 수의 후보
   const RNG_ = rule.range || [Math.min.apply(null, POOL), Math.max.apply(null, POOL)];
@@ -1343,6 +1379,7 @@ const source = QUIZ
       wait();
     })
   : fetch(`data/${SET}.json`).then(r => r.json());
+if (!QUIZ) fetch('data/_concepts.json').then(r => r.json()).then(d => { window.__MISDIC = d; }).catch(() => {});   /* 마무리 「연습할 것」 이름용, 실패해도 그만 */
 
 source.then(d => {
   if (!d) throw new Error('no-set');
@@ -1419,6 +1456,14 @@ function showFB(q, ok, detail){
   fb.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
+/* 문항이 오개념 코드를 직접 안 달았을 때(선긋기·OX 의 O/X 자체가 틀림) 쓸 코드 —
+   ① q.mis ② 같은 세트·같은 개념의 다른 문항 보기가 단 코드 ③ 없으면 null (옛 'M01' 은 1학기 전용 코드라 다른 단원에선 거짓 태그였다. 2026-09-29) */
+function misFor(q){
+  if (q.mis) return q.mis;
+  for (const x of (Q || [])){ if (x.concept !== q.concept) continue;
+    for (const o of ((x.options || []).concat(x.reason_options || []))){ const c = o.mis || o.mis_target; if (c) return c; } }
+  return null;
+}
 /* 객관식 계열 */
 function widgetMC(q, el, r, prev){
   const opts = shuffle(q.options.map((o, i) => Object.assign({i}, o)), r); const visual = opts.some(o => typeof o.t === 'object');
@@ -1436,7 +1481,7 @@ function widgetSA(q, el, r, prev){
   const box = document.getElementById('box');
   const finish = (ok) => { box.classList.add(ok ? 'ok' : 'no'); box.textContent = val; el.querySelectorAll('button').forEach(b => b.disabled = true); if (!ok) box.textContent = `${val} → ${q.answer[0]}`; };
   if (prev){ finish(prev.ok); showFB(q, prev.ok, prev); return; }
-  const check = () => { if (!val.trim()) return; const norm = s => s.replace(/\s/g, ''); const ok = q.answer.some(a => norm(a) === norm(val)); finish(ok); grade(q, ok, {val}); };
+  const check = () => { if (!val.trim()) return; const norm = s => s.replace(/[\s.!?,。]/g, '');   /* 띄어쓰기·마침표는 답에 안 친다 (국어 단답, 2026-09-29) */ const ok = q.answer.some(a => norm(a) === norm(val)); finish(ok); grade(q, ok, {val}); };
   if (numeric) el.querySelectorAll('.pad button').forEach(b => b.onclick = () => { const n = b.dataset.n; if (n === 'del') val = val.slice(0, -1); else if (n === 'go') return check(); else if (val.length < 2) val += n; box.textContent = val || '\u00a0'; });
   else { const ta = document.getElementById('ta'); ta.oninput = () => val = ta.value; document.getElementById('go').onclick = check; }
 }
@@ -1449,7 +1494,7 @@ function widgetOX(q, el, r, prev){
     rb.forEach(b => { b.disabled = true; const o = q.reason_options[b.dataset.i]; if (o.correct) b.classList.add('ok'); else if (Number(b.dataset.i) === ri) b.classList.add('no'); }); };
   if (prev){ finish(prev.ox, prev.reason); showFB(q, prev.ok, prev); return; }
   oxb.forEach(b => b.onclick = () => { chosenOX = b.dataset.v; oxb.forEach(x => x.classList.toggle('sel', x === b)); document.getElementById('reason').style.display = ''; TTS.speak('왜 그렇게 생각했나요? ' + reasons.map(o => o.t).join(', 아니면 ')); });
-  rb.forEach(b => b.onclick = () => { if (!chosenOX) return; const o = q.reason_options[b.dataset.i]; const ok = chosenOX === q.answer && !!o.correct; finish(chosenOX, Number(b.dataset.i)); grade(q, ok, {ox:chosenOX, reason:Number(b.dataset.i), mis:o.mis || (chosenOX !== q.answer ? 'M01' : null)}); });
+  rb.forEach(b => b.onclick = () => { if (!chosenOX) return; const o = q.reason_options[b.dataset.i]; const ok = chosenOX === q.answer && !!o.correct; finish(chosenOX, Number(b.dataset.i)); grade(q, ok, {ox:chosenOX, reason:Number(b.dataset.i), mis:o.mis || (chosenOX !== q.answer ? misFor(q) : null)}); });
 }
 /* 연결하기 */
 function widgetMatch(q, el, r, prev){
@@ -1466,7 +1511,7 @@ function widgetMatch(q, el, r, prev){
   wrap.querySelectorAll('.r').forEach(b => b.onclick = () => { if (selL === null) return; const ri = b.dataset.i; Object.keys(links).forEach(k => { if (links[k] === ri) delete links[k]; }); links[selL] = ri;
     wrap.querySelectorAll('.l').forEach(x => x.classList.toggle('done', x.dataset.i in links)); wrap.querySelectorAll('.r').forEach(x => x.classList.toggle('done', Object.values(links).includes(x.dataset.i)));
     wrap.querySelectorAll('.l').forEach(x => x.classList.remove('sel')); selL = null; draw(false); go.disabled = Object.keys(links).length < q.pairs.length; });
-  go.onclick = () => { const ok = Object.entries(links).every(([a, b]) => a === b); finish(); grade(q, ok, {links:Object.assign({}, links), mis: ok ? null : 'M01'}); };
+  go.onclick = () => { const ok = Object.entries(links).every(([a, b]) => a === b); finish(); grade(q, ok, {links:Object.assign({}, links), mis: ok ? null : misFor(q)}); };
   window.addEventListener('resize', () => draw(!!state.answers[idx]));
 }
 /* 서술형 — 교사 채점 */
@@ -1492,11 +1537,13 @@ function renderFinish(){
   }
   const misCount = {}; wrong.forEach(x => { if (x.a.mis) misCount[x.a.mis] = (misCount[x.a.mis] || 0) + 1; }); const topMis = Object.entries(misCount).sort((a, b) => b[1] - a[1])[0];
   const MISFALLBACK = {M01:'하나씩 짚으며 빠짐없이 세기', M02:'수를 바르게 읽기', M03:'마지막에 센 수가 모두의 수예요', M05:'묻는 줄부터 찾기', M06:'수의 순서 익히기', M10:'크기 말고 개수로 세기'};
-  const MISNAME = new Proxy({}, { get: (_, k) => (QUIZ && window.keduQuiz && window.keduQuiz.misName(k)) || MISFALLBACK[k] });
+  /* 파일 학습지는 _concepts.json 의 practice(아이 말 한 줄) → text 순으로 읽는다 — MISFALLBACK 은 1학기 수학 코드뿐이라 다른 단원에선 「다시 차근차근 세기」가 거짓으로 떴다 (2026-09-29) */
+  const MISDIC = (window.__MISDIC && window.__MISDIC.misconceptions) || {};
+  const MISNAME = new Proxy({}, { get: (_, k) => (QUIZ && window.keduQuiz && window.keduQuiz.misName(k)) || MISFALLBACK[k] || (MISDIC[k] && (MISDIC[k].practice || MISDIC[k].text)) || null });
   const label = wrong.length === 0 ? '참 잘했어요' : wrong.length <= 2 ? '잘했어요' : '끝까지 했어요';
   app.innerHTML = `<div class="finish"><div class="stamp">${label}<small>${new Date().getMonth()+1}월 ${new Date().getDate()}일</small></div><h2>${esc(DATA.title.replace(/ — .*/, ''))}</h2>
    <p>${Q.length}문제 중 ${okN}문제를 맞혔어요${pend ? ` · ${pend}문제는 선생님이 확인해요` : ''}</p>
-   ${topMis ? `<div class="weak">이번에 연습할 것 하나 — <b>${MISNAME[topMis[0]] || '다시 차근차근 세기'}</b></div>` : ''}
+   ${topMis ? `<div class="weak">이번에 연습할 것 하나 — <b>${MISNAME[topMis[0]] || (DATA.subject === 'math' ? '다시 차근차근 세기' : '틀린 문제를 다시 읽어 보기')}</b></div>` : ''}
    <div class="row">${wrong.length ? `<button class="big" data-nav="retry">다시 해볼까? (${wrong.length})</button>` : ''}<button class="big ghost" data-nav="again">처음부터</button></div>
    <div class="alt">${QUIZ ? '' : `<a href="play.html?set=${SET}&mode=paper">시험지(A4)로 풀기</a><span>·</span><a href="./">학습지 목록</a><span>·</span>`}<a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
   if (QUIZ && window.keduQuiz && !PREVIEW) try { window.keduQuiz.recordEnd(okN, Q.length, null); } catch(e){}
@@ -1582,6 +1629,10 @@ function paperAsset(a){
       P.forEach(p => { for (let i = 0; i < Math.max(0, Number(p.n) || 0); i++) bag.push(SHAPE_CH[p.shape] || '■'); });
       const mixed = shuffle(bag, rng(bag.length * 131 + 5));
       return `<div class="pshart">${mixed.join(' ')}<em>${a.name ? esc(a.name) + ' 그림 — ' : ''}■ 네모 ▲ 세모 ● 동그라미</em></div>`; }
+    case 'passage': { const hi = (a.hi || []).map(String); const mark = t => { let out = esc(t); hi.forEach(h => { if (h) out = out.split(esc(h)).join('<b>' + esc(h) + '</b>'); }); return out; };
+      return `<div class="ppass">${a.title ? `<h4>${esc(a.title)}</h4>` : ''}${(a.lines || []).map((ln, i) => `<div>${a.numbered === false ? '' : (i + 1) + '. '}${mark(ln)}</div>`).join('')}</div>`; }
+    case 'speech': return `<div class="pspeech">${(a.turns || []).map(t => `<div><b>${esc(t.who || '')}</b> ${esc(t.text || '')}</div>`).join('')}</div>`;
+    case 'scene': return `<div class="pscene"><span>${esc(a.icon || '')}</span>${esc(a.text || '')}</div>`;
     case 'plate': return `<div class="pplate">${a.n === 0 ? '(비어 있음)' : a.item.repeat(a.n)}</div>`;
   } return '';
 }
@@ -1602,11 +1653,11 @@ function renderPaper(){
   // 교사용 정답표
   const key = `<div class="sheet key-sheet"><div class="ph"><div><h1>${esc(title)} — 교사용</h1><div class="meta">정답 · 개념 · 오답 선택지의 오개념</div></div></div>
    <table class="key"><tr><th>번호</th><th>난이도</th><th>유형</th><th>정답</th><th>개념</th><th>오답 → 오개념</th></tr>${shuffled.map((x, i) => { const q = x.q; let ans = '';
-     if (q.kind === 'sa') ans = q.answer.join(' / '); else if (q.kind === 'essay') ans = q.answer_guide.answer + ' (채점: ' + q.answer_guide.scoring_points.join(' · ') + ')'; else if (q.kind === 'match') ans = q.pairs.map(p => `${paperOptText(p.l)}–${paperOptText(p.r)}`).join(', ');
+     if (q.kind === 'sa') ans = q.answer.join(' / '); else if (q.kind === 'essay') ans = typeof q.answer_guide === 'string' ? q.answer_guide : (q.answer_guide.answer + ' (채점: ' + (q.answer_guide.scoring_points || []).join(' · ') + ')'); else if (q.kind === 'match') ans = q.pairs.map(p => `${paperOptText(p.l)}–${paperOptText(p.r)}`).join(', ');
      else if (q.kind === 'ox') ans = q.answer + ' / ' + circ[q.reason_options.findIndex(o => o.correct)]; else ans = circ[x.opts.findIndex(o => o.correct)] + ' ' + paperOptText(x.opts.find(o => o.correct).t);
      const mis = q.options ? x.opts.map((o, k) => o.mis ? `${circ[k]}→${o.mis}` : '').filter(Boolean).join(' ') : (q.reason_options ? q.reason_options.filter(o => o.mis).map(o => o.mis).join(' ') : '');
      return `<tr><td>${i + 1}</td><td>D${q.difficulty}</td><td>${q.kind}</td><td>${ans}</td><td>${q.concept}</td><td>${mis}</td></tr>`; }).join('')}</table>
-   <p style="font-size:12px;color:#555;margin-top:14px">오개념 코드: M01 세기 누락·중복 · M02 수 읽기 혼동 · M03 기수성 · M04 몇째/몇 개 혼동 · M05 기준 방향 무시 · M06 순서 흐트러짐 · M07 크다/작다 방향 반대 · M08 0을 수로 인정 못함 · M09 0과 1 혼동 · M10 길이로 비교 · M11 많다/적다 반대 (정본: handoff/kedu/worksheet/g1_math_u1/개념트리_오개념.md)</p></div>`;
+   <p style="font-size:12px;color:#555;margin-top:14px">오개념 코드의 뜻은 단원마다 다르다 — 정본: handoff/kedu/worksheet/&lt;단원&gt;/개념트리_오개념.md (1학기 1단원 M01~M11 · 2학기부터 M1-2-u1-X01 · 국어 K1-2-u1-X01 꼴)</p></div>`;
   const toolbar = `<div class="toolbar"><button onclick="window.print()">인쇄 / PDF 저장</button><button onclick="location.href='play.html?set=${SET}'">화면으로 풀기</button><button onclick="location.href='./'">학습지 목록</button><button onclick="location.href='${BACK.href}'">${esc(BACK.label)}</button></div>`;
   // 문항 수를 고정으로 자르지 않고, 실제 높이를 재서 A4 한 장 안에 들어가는 만큼만 싣는다.
   // (문항마다 그림·보기·답란 높이가 달라 고정 개수로는 아래로 넘친다)
