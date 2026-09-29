@@ -1,0 +1,911 @@
+<!--
+K-edu 사회 6-2 · 2단원 시장경제와 국가 간 거래 · 주제③ 세계 속의 무역 · 10차시(l10)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사11-03] · 교과서 p.97~99 · 지도서(대단원2 **14차시** 「무역이 이루어지는 까닭을 알아볼까요」, 지도서 p.220~223) 근거.
+학습 목표: 무역이 이루어지는 까닭을 설명할 수 있다.
+수업 기법 및 전략: 추론하기 · 돌아가며 말하기
+META = "2단원 시장경제와 국가 간 거래 · 주제③ 세계 속의 무역"
+⚠️ 엔진은 u2 l09(→ u2 l08 → … 6-1 사회 엔진)에서 100% 승계 · 엔진 무수정 · 2단원 색 #A16207 그대로.
+⚠️ 회수 키 `g6_s2_social_u2_l10_v1` · 맵 키 `g6_social_u2_l10` · 파일명 `무역길을이어요` — 조작 이름(선례 승계).
+
+직접조작: 가상의 두 나라(㉮·㉯)가 물자 넷을 누가 만들지 정하면, 두 나라 창고가 「없어요/아쉬워요/넉넉해요」로 바뀌는 판
+  ⭐ 씨앗은 교과서 97쪽 스스로 활동(비행기를 만드는 기술이 없다면 · 천연가스를 생산할 수 없다면)과
+     교과서 98쪽 친구와 활동(㉮ 나라는 높은 수준의 기술 → 옷 · ㉯ 나라는 쌀 재배에 알맞은 환경 → 쌀).
+  ⭐ 물자 넷 = 옷 · 쌀 · 비행기 · 천연가스(`GK_GOODS` — can[나라] = 만들 수 있나 · best = 더 잘 만드는 나라).
+     비행기·천연가스는 97쪽 글을 두 나라에 옮겨 붙인 도식이다(㉮만 비행기 · ㉯만 천연가스) — 캡션 상시.
+  ⭐ 물자를 누르면 만드는 쪽이 「각자 만들어요 → ㉮가 만들어 나눠요 → ㉯가 만들어 나눠요」로 돈다
+     (`gkTap` · 판 바꾸는 자리 `state.gkPick =` 단 하나 · 물자마다 두 비트).
+  ⭐ ★ 나라별 창고 칸은 `gkGet` 한 줄 — 만드는 나라가 못 만들면 없어요(0) · 더 잘 만드는 나라가 아니면 아쉬워요(1) · 아니면 넉넉해요(2) · 담는 상태 0.
+  ⭐ ★ 수출/수입 표시는 `gkWord` 한 줄(각자거나 못 만들면 없음 · 만드는 나라 = 수출 · 다른 나라 = 수입).
+  ⭐ ★ 판의 모습(줄 종류)은 `gkKind` 한 줄 = 여덟 칸 가운데 가장 낮은 칸.
+  ⭐ ★★ 기록장 기록은 `state.gkLog |=` 단 하나(`gkNote` · 적기 처리기에서만 · 줄지 않음) — 기록장 세 줄 =
+     ① 구할 수 없는 물자가 있으면 생활에 문제가 생김 ② 구할 수는 있어도 품질이 낮거나 값이 비싼 물자가 있음
+     ③ 두 나라가 각각 잘 만드는 것을 만들어 서로 사고파니 두 나라 모두 넉넉해짐.
+  ⭐ 판 읽기는 세 줄 뒤에만(정답 자리 2) → 핵심 질문 「무역이 이루어지는 까닭은 무엇일까요?」 3택(정답 자리 0) →
+     마무리 3택 = 꼭 기억해요 2(정답 자리 1).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 9종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 세 줄이 선 뒤 판 움직이기(물자·적기) 무시 — 판 불변
+     ④ 세 줄 전 판 읽기 무시 · 읽은 뒤 다시 무시 · 알맞지 않은 읽기 무시(자리별 안내)
+     ⑤ 판을 읽기 전 핵심 질문 무시 · 고른 뒤 다시 무시 · 알맞지 않은 답 무시
+     ⑥ 핵심 질문 전 마무리 무시(순서)
+     ⑦ 알맞지 않은 마무리 무시
+     ⑧ 안내 표시 중 재클릭 무시(`gkBusy`)
+     ⑨ 이미 적은 줄 다시 적기 무시 — 판 불변.
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.gk-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **㉮·㉯ 나라는 교과서 속 가상의 두 나라**이고, 판은 교과서 글을 옮긴 **도식**이다(캡션 상시).
+  ㉡ **비행기·천연가스 칸은 교과서 97쪽 글을 두 나라에 옮겨 붙인 것**이다 — 실제 나라의 모습이 아니다(캡션 상시).
+  ㉢ **수치는 적지 않는다** — 생산량·금액·비율·연도 0(아쉬워요 = 품질이 낮거나 값이 비쌈, 말로만).
+  ㉣ **돌아가며 말하기 · 좋은 점을 친구와 이야기하기 · 무역 사례 더 찾기는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 무역이 이루어지는 다양한 모습·주요 수출입품·상호 의존·경쟁 0(차시 예고 한 자리만).
+  **교사용 참고 자료 0** — 참고 도서·저자·출판사 · 누리집 주소 · 절대 우위·비교 우위·기회비용 · 사진 해설 속 나라 이름 · 활동지 · GRASPS.
+  사람 형상 0 · 금액 0 · 비율 0 · 쪽수 0 · 실제 기관·기업 이름 0 · 연도 0.
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u2_l10_v1">
+<title>무역이 이루어지는 까닭을 알아볼까요 · 시장경제와 국가 간 거래 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#A16207; --green-d:#854D0E; --cyan:#CA8A04;
+  --bg:#FEFCE8; --bub:#FEF9C3; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#FEF9C3;color:#854D0E}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 두 나라 사이에 무역 길을 잇는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#FEF9C3;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#854D0E;max-width:660px}
+.gk-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#FEFCE8;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.gk-board{display:flex;flex-direction:column;gap:6px;padding:8px}
+.gk-head{background:#FEF3C7;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#854D0E;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.gk-grid{display:grid;grid-template-columns:1.35fr 1fr 1fr;gap:4px;align-items:stretch}
+.gk-th{text-align:center;font-weight:800;border-radius:6px;padding:3px 4px;font-size:clamp(9px,1.52vw,11px)}
+.gk-th.a{background:#FEF9C3;color:#854D0E}
+.gk-th.b{background:#E0F2FE;color:#075985}
+.gk-th.g{background:#F1F5F9;color:#475569}
+.gk-good{border:2px solid #B45309;background:#FFFBEB;color:#78350F;border-radius:7px;padding:4px 5px;cursor:pointer;
+  font-family:inherit;font-weight:800;font-size:clamp(9px,1.52vw,11px);line-height:1.3;text-align:left;display:flex;flex-direction:column;gap:2px}
+.gk-good:hover{background:#FEF3C7}
+.gk-good .mk{font-weight:700;color:#0369A1;font-size:.92em}
+.gk-good .ft{font-weight:600;color:#94A3B8;font-size:.86em}
+.gk-cell{border-radius:7px;padding:3px 4px;text-align:center;font-weight:800;font-size:clamp(9px,1.5vw,10.8px);line-height:1.3;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:2px solid #E2E8F0;background:#F8FAFC;color:#94A3B8}
+.gk-cell.lv0{border-color:#FCA5A5;background:#FEF2F2;color:#B91C1C}
+.gk-cell.lv1{border-color:#FCD34D;background:#FFFBEB;color:#92400E}
+.gk-cell.lv2{border-color:#6EE7B7;background:#ECFDF5;color:#065F46}
+.gk-cell .tag{border-radius:5px;padding:0 5px;font-size:.9em}
+.gk-cell .tag.in{background:#DBEAFE;color:#1E40AF}
+.gk-cell .tag.out{background:#DCFCE7;color:#166534}
+.gk-row{display:flex;gap:6px;flex-wrap:wrap}
+.gk-look{flex:1 1 140px;border:2px solid #0369A1;background:#E0F2FE;color:#075985;border-radius:9px;padding:6px 8px;cursor:pointer;
+  font-family:inherit;font-weight:800;font-size:clamp(9.6px,1.62vw,11.8px)}
+.gk-look:hover{background:#BAE6FD}
+.gk-say{border-radius:8px;padding:5px 8px;font-weight:800;font-size:clamp(9.2px,1.56vw,11.2px);line-height:1.4;
+  background:#EFF6FF;color:#1E3A8A;border:2px solid #0369A1}
+.gk-note{display:flex;flex-direction:column;gap:4px}
+.gk-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-radius:7px;padding:4px 8px;font-weight:800;
+  font-size:clamp(9.4px,1.58vw,11.4px);border:2px dashed #CBD5E0;background:#F8FAFC;color:#94A3B8}
+.gk-line.set{border-style:solid;border-color:#059669;background:#ECFDF5;color:#065F46}
+.gk-read,.gk-mean,.gk-fin{display:flex;flex-direction:column;gap:5px}
+.gk-read button,.gk-mean button,.gk-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.gk-read button:hover,.gk-mean button:hover,.gk-fin button:hover{background:var(--bub)}
+.gk-read button.no,.gk-mean button.no,.gk-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.gk-hint{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:420px){ .gk-grid{grid-template-columns:1.2fr 1fr 1fr;gap:3px} .gk-good,.gk-cell{font-size:8.6px;padding:3px} }
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠·㉢: 모든 그림은 내용을 나타낸 도식이며 실제 사진·지도가 아니다.
+   ⚠️ 사람 형상 대신 도형으로만 그린다. 생산량·금액·비율·연도는 적지 않는다. */
+const SVG = {
+  // 1 들어가기 — 우리가 이용하는 물자와 서비스(도식)
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    <circle cx="160" cy="80" r="30" fill="#FEF3C7" stroke="#A16207" stroke-width="1.6"/>
+    <text x="160" y="84" font-size="8" fill="#854D0E" text-anchor="middle" font-weight="800">우리 생활</text>
+    ${[[56,40,'\uD83C\uDF5C','음식'],[264,40,'\uD83D\uDD27','수리 서비스'],[56,124,'\uD83D\uDCF1','전자 제품'],[264,124,'\uD83D\uDC55','옷']].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="18" fill="#fff" stroke="#0369A1" stroke-width="1.4"/>
+      <text x="${p[0]}" y="${p[1]+5}" font-size="15" text-anchor="middle">${p[2]}</text>
+      <text x="${p[0]}" y="${p[1]+30}" font-size="7" fill="#075985" text-anchor="middle" font-weight="800">${p[3]}</text>
+      <path d="M${p[0]<160?p[0]+18:p[0]-18} ${p[1]} L${p[0]<160?132:188} ${p[1]<80?68:92}" stroke="#0369A1" stroke-width="1.4" stroke-dasharray="3 2"/>`).join('')}
+    <text x="160" y="164" font-size="7.4" fill="#334155" text-anchor="middle" font-weight="800">모두 우리나라에서만 구할 수 있을까요?(도식)</text></svg>`,
+  // 2 살펴보기 — 비행기를 만드는 기술이 없다면 · 천연가스를 생산할 수 없다면(도식)
+  lack:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    ${[0,1].map(i=>`<rect x="${24+i*148}" y="28" width="124" height="96" rx="10" fill="#fff" stroke="${i?'#0369A1':'#A16207'}" stroke-width="1.6"/>
+      <text x="${86+i*148}" y="74" font-size="26" text-anchor="middle">${i?'\uD83D\uDD25':'\u2708\uFE0F'}</text>
+      <path d="M${58+i*148} 50 L${114+i*148} 96" stroke="#DC2626" stroke-width="3" stroke-linecap="round"/>
+      <text x="${86+i*148}" y="112" font-size="7.6" fill="${i?'#075985':'#854D0E'}" text-anchor="middle" font-weight="800">${i?'천연가스를 생산할 수 없다면':'비행기를 만드는 기술이 없다면'}</text>`).join('')}
+    <text x="160" y="150" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="800">한 나라 안에서 구할 수 없는 물자(도식)</text></svg>`,
+  // 3 살펴보기 — ㉮ 나라와 ㉯ 나라(가상 도식)
+  two:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#fff"/>
+    <rect x="18" y="30" width="120" height="96" rx="10" fill="#FEF9C3" stroke="#A16207" stroke-width="1.6"/>
+    <rect x="182" y="30" width="120" height="96" rx="10" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.6"/>
+    <text x="78" y="50" font-size="9" fill="#854D0E" text-anchor="middle" font-weight="800">㉮ 나라</text>
+    <text x="242" y="50" font-size="9" fill="#075985" text-anchor="middle" font-weight="800">㉯ 나라</text>
+    <text x="78" y="86" font-size="22" text-anchor="middle">\u2699\uFE0F</text>
+    <text x="242" y="86" font-size="22" text-anchor="middle">\uD83C\uDF3E</text>
+    <text x="78" y="110" font-size="7.2" fill="#854D0E" text-anchor="middle" font-weight="800">높은 수준의 기술</text>
+    <text x="242" y="110" font-size="7.2" fill="#075985" text-anchor="middle" font-weight="800">쌀 재배에 알맞은 환경</text>
+    <text x="160" y="152" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="800">두 나라 모두 쌀과 옷을 생산할 수 있어요(가상 도식)</text></svg>`,
+  // 5 살펴보기 — 서로 잘 만드는 것을 사고팔아요(도식)
+  gain:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    <rect x="18" y="50" width="96" height="64" rx="10" fill="#FEF9C3" stroke="#A16207" stroke-width="1.6"/>
+    <rect x="206" y="50" width="96" height="64" rx="10" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.6"/>
+    <text x="66" y="80" font-size="9" fill="#854D0E" text-anchor="middle" font-weight="800">㉮ 나라</text>
+    <text x="254" y="80" font-size="9" fill="#075985" text-anchor="middle" font-weight="800">㉯ 나라</text>
+    <text x="66" y="102" font-size="14" text-anchor="middle">\uD83D\uDC55</text><text x="254" y="102" font-size="14" text-anchor="middle">\uD83C\uDF3E</text>
+    <path d="M118 70 L200 70" stroke="#166534" stroke-width="2.4"/><path d="M198 64 L208 70 L198 76 Z" fill="#166534"/>
+    <path d="M202 96 L122 96" stroke="#1E40AF" stroke-width="2.4"/><path d="M124 90 L114 96 L124 102 Z" fill="#1E40AF"/>
+    <text x="160" y="62" font-size="11" text-anchor="middle">\uD83D\uDC55</text><text x="160" y="116" font-size="11" text-anchor="middle">\uD83C\uDF3E</text>
+    <text x="160" y="150" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="800">잘 만드는 것을 만들어 서로 사고팔아요(도식)</text></svg>`,
+  // 6 살펴보기 — 흑연과 전기차 배터리(도식)
+  graph:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    ${[['\u270F\uFE0F','흑연'],['\uD83D\uDD0B','전기차 배터리'],['\uD83D\uDE97','전기차']].map((t,i)=>`<rect x="${20+i*102}" y="40" width="76" height="70" rx="10" fill="#fff" stroke="#475569" stroke-width="1.4"/>
+      <text x="${58+i*102}" y="80" font-size="22" text-anchor="middle">${t[0]}</text>
+      <text x="${58+i*102}" y="102" font-size="7.4" fill="#334155" text-anchor="middle" font-weight="800">${t[1]}</text>${i<2?`<path d="M${98+i*102} 75 L${120+i*102} 75" stroke="#A16207" stroke-width="2"/><path d="M${118+i*102} 70 L${124+i*102} 75 L${118+i*102} 80 Z" fill="#A16207"/>`:''}`).join('')}
+    <text x="160" y="146" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="800">흑연을 들여와 배터리를 만들어 내보내요(도식)</text></svg>`,
+  // 7 살펴보기 — 꼭 기억해요(도식)
+  keep:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    <path d="M60 70 L260 70" stroke="#166534" stroke-width="3"/><path d="M252 62 L262 70 L252 78 Z" fill="#166534"/>
+    <path d="M260 100 L60 100" stroke="#1E40AF" stroke-width="3"/><path d="M68 92 L58 100 L68 108 Z" fill="#1E40AF"/>
+    <circle cx="40" cy="85" r="18" fill="#FEF9C3" stroke="#A16207" stroke-width="1.6"/><circle cx="280" cy="85" r="18" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.6"/>
+    <text x="160" y="140" font-size="8" fill="#334155" text-anchor="middle" font-weight="800">잘 만드는 것은 내보내고, 만들기 어려운 것은 들여와요(도식)</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#1E293B"/>
+    ${['구할 수 없는 물자','두 나라 이야기','흑연 사례','무역의 까닭'].map((t,i)=>`<rect x="${14+i*76}" y="52" width="66" height="40" rx="8" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2"/>
+      <text x="${47+i*76}" y="76" font-size="6.8" fill="#9A3412" text-anchor="middle" font-weight="800">${t}</text>${i<3?`<path d="M${80+i*76} 72 L${90+i*76} 72" stroke="#FDE68A" stroke-width="2"/>`:''}`).join('')}
+    <text x="160" y="128" font-size="8.6" fill="#FDE68A" text-anchor="middle" font-weight="800">무역이 이루어지는 까닭을 알아봤어요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#A16207" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#A16207" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#854D0E" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 두 나라 사이에 무역 길을 잇는 판 =====
+   ★ 물자를 누르면 만드는 쪽이 각자 → ㉮ → ㉯ 로 돈다(gkTap · 판 바꾸는 자리 state.gkPick = 단 하나 · 물자마다 두 비트).
+   ★ 나라별 창고 칸은 gkGet 한 줄 · 수출/수입 표시는 gkWord 한 줄 · 판의 모습은 gkKind 한 줄(담는 상태 0).
+   ★★ 기록장 기록은 |= 만(gkLog · gkNote 단 하나 · 적기 처리기에서만).
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. */
+/* 물자 넷 — 교과서 97~98쪽(can = [㉮, ㉯] 만들 수 있나 · best = 더 잘 만드는 나라 0 ㉮ · 1 ㉯) */
+const GK_GOODS = [
+  {t:'옷', ic:'\uD83D\uDC55', can:[1,1], best:0, ft:'㉮는 기술 수준이 높아요'},
+  {t:'쌀', ic:'\uD83C\uDF3E', can:[1,1], best:1, ft:'㉯는 쌀 재배에 알맞은 환경이에요'},
+  {t:'비행기', ic:'\u2708\uFE0F', can:[1,0], best:0, ft:'수준 높은 기술이 필요해요'},
+  {t:'천연가스', ic:'\uD83D\uDD25', can:[0,1], best:1, ft:'매장된 곳이 많지 않아요'}
+];
+/* 두 나라 · 만드는 쪽 셋 · 창고 칸 셋 */
+const GK_LAND = ['㉮ 나라','㉯ 나라'];
+const GK_MAKER = ['각자 만들어요','㉮가 만들어 나눠요','㉯가 만들어 나눠요'];
+const GK_LV = ['없어요','아쉬워요','넉넉해요'];
+const GK_N = 4;
+const GK_ALL = 7;
+/* 기록장 세 줄 */
+const GK_LINE = [
+  '한 나라 안에서 구할 수 없는 물자가 있으면 생활에 문제가 생겨요',
+  '구할 수는 있어도 품질이 낮거나 값이 비싼 물자가 있어요',
+  '두 나라가 각각 잘 만드는 것을 만들어 서로 사고파니 두 나라 모두 넉넉해졌어요'
+];
+/* 판의 모습 — 줄 종류와 같은 자리 */
+const GK_SAY = [
+  '지금 판에는 <b>없어요</b> 칸이 있어요 \u2014 구할 수 없는 물자가 있어요.',
+  '지금 판에는 <b>없어요</b> 칸은 없지만 <b>아쉬워요</b> 칸이 있어요.',
+  '지금 판은 여덟 칸이 모두 <b>넉넉해요</b>.'
+];
+
+/* ② 판 읽기 */
+const GK_READ = [
+  '두 나라가 각자 모든 물자를 만들 때 가장 넉넉했어요',
+  '한 나라가 모든 물자를 만들 수 있어서 다른 나라와 사고팔 필요가 없었어요',
+  '나라마다 만들 수 있는 물자와 잘 만드는 물자가 달라서, 잘 만드는 것을 만들어 서로 사고팔 때 두 나라 모두 넉넉해졌어요'
+];
+const GK_READ_OK = 2;
+const GK_READ_NO = [
+  '기록장 첫째 줄을 다시 봐요. 모두 <b>각자 만들어요</b>였을 때 어떤 칸이 있었나요? 판을 다시 읽어 봐요.',
+  '<b>비행기</b>와 <b>천연가스</b> 칸을 다시 봐요. 두 나라가 모두 만들 수 있었나요? 판을 다시 읽어 봐요.',
+  null
+];
+
+/* ③ 핵심 질문 — 무역이 이루어지는 까닭은 무엇일까요? */
+const GK_MEAN = [
+  '나라마다 자연환경, 자원, 자본, 기술 등에 차이가 있어 더 효율적으로 생산할 수 있는 물자나 서비스가 다르기 때문이에요',
+  '나라마다 필요한 물자나 서비스가 모두 똑같기 때문이에요',
+  '한 나라 안에서 필요한 모든 물자나 서비스를 만들 수 있기 때문이에요'
+];
+const GK_MEAN_OK = 0;
+const GK_MEAN_NO = [
+  null,
+  '㉮ 나라와 ㉯ 나라가 <b>잘 만드는 것</b>이 같았나요? 판은 그대로예요.',
+  '<b>천연가스</b>를 ㉮ 나라 안에서 구할 수 있었나요? 판은 그대로예요.'
+];
+
+/* ④ 마무리 — 교과서 99쪽 꼭 기억해요 2 */
+const GK_FIN = [
+  '각 나라가 효율적으로 생산하는 상품을 수입하고, 효율적으로 생산하기 어려운 상품을 수출하면 더 우수한 품질의 상품을 저렴한 가격으로 사용할 수 있어요',
+  '각 나라가 효율적으로 생산하는 상품을 수출하고, 효율적으로 생산하기 어려운 상품을 수입하면 더 우수한 품질의 상품을 저렴한 가격으로 사용할 수 있어요',
+  '한 나라 안에서 구할 수 있는 물자나 서비스는 절대로 다른 나라에서 들여오지 않아요'
+];
+const GK_FIN_OK = 1;
+const GK_FIN_NO = [
+  '판에서 옷을 ㉮가 만들어 나눴을 때 ㉮ 나라 칸의 표시를 떠올려 봐요. 오늘의 정리를 다시 골라 봐요.',
+  null,
+  '쌀은 ㉮ 나라 안에서도 만들 수 있었지만 ㉯ 나라에서 들여올 때 <b>넉넉해요</b>가 되었어요. 오늘의 정리를 다시 골라 봐요.'
+];
+
+/* 안내 */
+const GK_LOCK = '기록장 <b>세 줄이 모두 섰어요</b>. 판은 이대로 둬요. 판을 읽어 봐요. 판은 그대로예요.';
+const GK_AGAIN = '지금 판의 모습은 <b>이미 적었어요</b>. 물자를 눌러 만드는 쪽을 바꿔 봐요. 판은 그대로예요.';
+const GK_ORDER_R = '아직 <b>기록장 세 줄</b>이 다 서지 않았어요. 세 줄을 모두 적은 뒤에 읽을 수 있어요. 판은 그대로예요.';
+const GK_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const GK_ORDER_K = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const GK_MEAN_AGAIN = '무역이 이루어지는 까닭은 <b>이미 골랐어요</b>. 판은 그대로예요.';
+const GK_ORDER_F = '아직 <b>무역이 이루어지는 까닭</b>을 고르지 않았어요. 먼저 골라 봐요. 판은 그대로예요.';
+const GK_ALL_MSG = '기록장 <b>세 줄이 모두 섰어요</b>. 판을 읽어 봐요.';
+
+function gkGood(g){ return GK_GOODS[g]; }
+function gkMk(st,g){ return (st.gkPick >> (2*g)) & 3; }
+function gkSet(p,g,m){ return (p & ~(3 << (2*g))) | (m << (2*g)); }
+/* ★ 창고 칸 — 한 줄(만드는 나라가 못 만들면 0 없어요 · 더 잘 만드는 나라가 아니면 1 아쉬워요 · 아니면 2 넉넉해요) */
+function gkGet(st,c,g){ const m = gkMk(st,g)===0 ? c : gkMk(st,g)-1; return !gkGood(g).can[m] ? 0 : gkGood(g).best===m ? 2 : 1; }
+/* ★ 수출/수입 — 한 줄(각자거나 못 만들면 없음 · 만드는 나라 = 수출 · 다른 나라 = 수입) */
+function gkWord(st,c,g){ return (gkMk(st,g)===0 || gkGet(st,c,g)===0) ? '' : gkMk(st,g)-1===c ? '수출' : '수입'; }
+/* ★ 판의 모습(줄 종류) — 한 줄(여덟 칸 가운데 가장 낮은 칸) */
+function gkKind(st){ return Math.min(...[0,1].map(c=>Math.min(...[0,1,2,3].map(g=>gkGet(st,c,g))))); }
+function gkHas(st,l){ return (st.gkLog & (1<<l))!==0; }
+function gkLines(st){ return [0,1,2].filter(l=>gkHas(st,l)).length; }
+function gkAll(st){ return st.gkLog===GK_ALL; }
+
+function gkRows(st){
+  return [0,1,2,3].map(g=>{ const m=gkMk(st,g);
+    return `<button class="gk-good" data-g="${g}" data-mk="${m}" onclick="gkTap(${g})"><span>${gkGood(g).ic} ${gkGood(g).t}</span><span class="mk">\u21BB ${GK_MAKER[m]}</span><span class="ft">${gkGood(g).ft}</span></button>`+
+      [0,1].map(c=>{ const v=gkGet(st,c,g), w=gkWord(st,c,g);
+        return `<div class="gk-cell lv${v}" data-c="${c}" data-g="${g}" data-lv="${v}" data-word="${w}"><span>${v===0?'\u2716':v===1?'\u25B3':'\u25CE'} ${GK_LV[v]}</span>${w?`<span class="tag${w==='수입'?' in':' out'}">${w}</span>`:''}</div>`; }).join(''); }).join('');
+}
+function gkNotes(st){
+  return GK_LINE.map((t,l)=>{ const on=gkHas(st,l);
+    return `<div class="gk-line${on?' set':''}" data-line="${l}">${on?'\u2714 '+t:'\u2610 아직 적지 않은 줄'}</div>`; }).join('');
+}
+
+function gkBoard(st){
+  const fin = st.gkFin!=null, all = gkAll(st), k=gkKind(st);
+  const head = fin ? '무역이 이루어지는 까닭을 알아봤어요'
+    : st.gkMean!=null ? '무역이 이루어지는 까닭까지 골랐어요 \u2014 이제 정리해요'
+    : st.gkRead!=null ? '무역이 이루어지는 까닭을 골라 봐요'
+    : all ? '기록장 세 줄이 모두 섰어요 \u2014 판을 읽어 봐요'
+    : st.gkLog!==0 ? '물자를 눌러 만드는 쪽을 바꾸고, 달라진 판을 적어 봐요'
+    : '지금 판의 모습을 기록장에 적어 봐요';
+  return `<div class="gk-board" data-pick="${st.gkPick}" data-log="${st.gkLog}" data-lines="${gkLines(st)}" data-all="${all?1:0}" data-kind="${k}" data-read="${st.gkRead==null?-1:st.gkRead}" data-mean="${st.gkMean==null?-1:st.gkMean}" data-fin="${fin?1:0}">
+    <div class="gk-head">${head}</div>
+    <div class="gk-grid"><div class="gk-th g">물자 \u00b7 만드는 쪽</div><div class="gk-th a">${GK_LAND[0]} 창고</div><div class="gk-th b">${GK_LAND[1]} 창고</div>${gkRows(st)}</div>
+    <div class="gk-say" data-say="${k}">${GK_SAY[k]}</div>
+    <div class="gk-row"><button class="gk-look" data-look="1" onclick="gkWrite()">\u270D\uFE0F 기록장에 적기</button></div>
+    <div class="gk-note">${gkNotes(st)}</div>
+  </div>`;
+}
+
+function gkPanel(st){
+  const fin = st.gkFin!=null, all = gkAll(st);
+  const q = fin ? '두 나라 사이에 무역 길을 이으며 무역이 이루어지는 까닭을 알아봤어요.'
+    : st.gkMean!=null ? '오늘 공부한 내용을 정리해요. 무엇을 내보내고 무엇을 들여올까요?'
+    : st.gkRead!=null ? '핵심 질문 \u2014 무역이 이루어지는 까닭은 무엇일까요?'
+    : all ? '기록장 세 줄이 모두 섰어요. 판에서 무엇을 알 수 있나요?'
+    : st.gkLog!==0 ? '물자를 눌러 만드는 쪽을 바꿔 보며 기록장 세 줄을 모두 세워요.'
+    : '가상의 두 나라가 물자 넷을 모두 각자 만들고 있어요. 두 나라 창고를 살펴봐요.';
+  let right = `<div class="gk-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83D\uDEA2 무역이 이루어지는 까닭을 알아봐요</div>
+      사람들은 한 나라 안에서 구하기 어려운 물자나 서비스를 이용하려고 <b>무역</b>을 해요.
+      나라마다 자연환경, 자원, 자본, 기술 등에 차이가 있어서, 각 나라는 더 잘 생산할 수 있는 물자나 서비스를 <b>수출</b>하고 더 잘 생산하지 못하거나 부족한 물자나 서비스를 <b>수입</b>해 이익을 얻으려고 해요.<br>
+      <span style="color:#64748B">판은 교과서 속 가상의 두 나라 이야기를 옮긴 도식이에요.
+      <b>돌아가며 말하기</b>, <b>무역의 좋은 점을 친구와 이야기하기</b>, <b>우리 생활 속 무역 사례 더 찾기</b>는 교실에서 직접 해요.</span></div>`;
+  } else if(st.gkMean!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="gk-fin">${GK_FIN.map((t,k)=>`<button class="${st.gkWrongF===k?'no':''}" onclick="gkFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.gkRead!=null){
+    right += `<div class="dw-step">\uD83E\uDD14 핵심 질문</div>`;
+    right += `<div class="gk-mean">${GK_MEAN.map((t,k)=>`<button class="${st.gkWrongK===k?'no':''}" onclick="gkMeanPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="gk-hint">㉮ 나라와 ㉯ 나라가 무엇이 달랐는지 떠올려 봐요.</div>`;
+  } else if(all){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="gk-read">${GK_READ.map((t,k)=>`<button class="${st.gkWrongR===k?'no':''}" onclick="gkReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83D\uDEA2 만드는 쪽을 바꿔 창고 보기</div>`;
+    right += `<div class="gk-hint"><b>물자</b>를 누를 때마다 만드는 쪽이 <b>각자 → ㉮ → ㉯</b> 차례로 바뀌어요. 창고 칸은 <b>없어요</b>(구할 수 없어요), <b>아쉬워요</b>(구할 수는 있지만 품질이 낮거나 값이 비싸요), <b>넉넉해요</b> 가운데 하나예요. <b>기록장에 적기</b>를 누르면 지금 판의 모습이 적혀요. 세 줄을 모두 세우면 판을 읽을 수 있어요. 감점은 없어요.</div>`;
+  }
+  if(st.gkMsg) right += `<div class="dw-msg${st.gkWarn?' warn':''}">${st.gkMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83D\uDEA2 두 나라 사이에 무역 길을 이어요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${gkBoard(st)}<div class="cvcap">판은 교과서 속 가상의 두 나라 이야기를 옮긴 <b>도식</b>이에요. 비행기와 천연가스 칸은 교과서 속 다른 글을 두 나라에 옮겨 붙였을 뿐, 실제 나라의 모습은 아니에요. 수치는 적지 않았어요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 시장경제와 국가 간 거래 · 주제③ 세계 속의 무역";
+
+// 확인 4 + 적용 4 — 정답 다양화 [2,0,3,1,3,1,0,2](각 자리 2회)
+// ⚠️ 문항 내 금액·비율·수치·연도·쪽수 0 · 새 사실 0(교과서 97~99쪽 문면 · 지도서 14차시까지만) · 무역이 이루어지는 다양한 모습 0.
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"사람들이 <b>무역</b>을 하는 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["한 나라 안에서 모든 물자를 쉽게 구할 수 있어서","다른 나라 물자는 모두 품질이 낮아서","한 나라 안에서 구하기 어려운 물자나 서비스를 이용하려고","나라마다 필요한 물자가 하나도 없어서"],
+   correct:2, pts:POINTS_BASIC, scene:"lack",
+   reason:"사람들은 한 나라 안에서 구하기 어려운 물자나 서비스를 이용하려고 무역을 해요.",
+   h1:"판에서 처음에 보인 「없어요」 칸을 떠올려 봐요.", h2:"「구하기 어려운」이 열쇠예요."},
+  {stem:"한 나라가 <b>천연가스를 생산할 수 없다면</b> 어떤 문제가 생길까요?",
+   opts:["난방을 하지 못하고 차량을 운행할 수 없게 될 거예요","비행기를 더 많이 만들 수 있을 거예요","쌀을 재배하기 어려워질 거예요","아무 문제도 생기지 않을 거예요"],
+   correct:0, pts:POINTS_BASIC, scene:"lack",
+   reason:"천연가스는 난방을 하거나 차량을 운행할 때 연료로 사용하는 자원이에요. 생산할 수 없다면 난방을 하지 못하고 차량을 운행할 수 없게 될 거예요.",
+   h1:"천연가스는 어디에 쓰이는 자원인가요?", h2:"연료로 쓰여요."},
+  {stem:"한 나라 안에서 <b>구할 수 있는</b> 물자나 서비스라도 다른 나라에서 수입하는 까닭은 무엇인가요?",
+   opts:["다른 나라 물자는 항상 값이 더 비싸서","한 나라 안에서 만든 것은 쓸 수 없어서","수입을 하면 무역이 아니게 되어서","더 좋은 품질이나 더 값싼 물자나 서비스를 다른 나라로부터 구할 수 있어서"],
+   correct:3, pts:POINTS_BASIC, scene:"gain",
+   reason:"한 나라 안에서 생산되는 것보다 더 좋은 품질이나 더 값싼 물자나 서비스를 다른 나라로부터 구할 수 있기 때문이에요.",
+   h1:"판에서 쌀을 ㉯가 만들어 나눴을 때 ㉮ 나라 칸을 떠올려 봐요.", h2:"「아쉬워요」가 「넉넉해요」로 바뀌었어요."},
+  {stem:"나라마다 더 잘 생산할 수 있는 물자나 서비스가 <b>다른</b> 까닭은 무엇인가요?",
+   opts:["나라마다 사람들의 이름이 달라서","나라마다 자연환경, 자원, 자본, 기술 등에 차이가 있어서","나라마다 쓰는 달력이 달라서","모든 나라가 같은 물자만 만들기로 약속해서"],
+   correct:1, pts:POINTS_BASIC, scene:"two",
+   reason:"나라마다 자연환경, 자원, 자본, 기술 등에 차이가 있어서 각각 효율적으로 생산할 수 있는 물자나 서비스가 달라요.",
+   h1:"㉮ 나라와 ㉯ 나라는 각각 무엇을 갖추고 있었나요?", h2:"기술과 환경을 떠올려 봐요."},
+  // 4단계 적용 (+15)
+  {stem:"㉮ 나라는 높은 수준의 기술을 갖추고 있어요. 같은 시간과 비용을 들인다면 ㉮ 나라가 생산하여 <b>수출할 때 더 유리한</b> 상품은 무엇인가요?",
+   opts:["쌀","아무것도 없어요","쌀과 옷이 똑같아요","옷"],
+   correct:3, pts:POINTS_APPLY, scene:"two",
+   reason:"㉮ 나라는 높은 수준의 기술을 갖추고 있어서 같은 시간과 비용을 들인다면 쌀보다 옷을 생산하여 수출할 때 더 큰 이익을 얻을 수 있어요.",
+   h1:"판에서 옷을 누가 만들어 나눌 때 두 나라 칸이 넉넉해졌나요?", h2:"기술이 필요한 상품이에요."},
+  {stem:"㉯ 나라는 쌀을 재배하기에 알맞은 환경이에요. 같은 시간과 비용을 들인다면 ㉯ 나라가 생산하여 <b>수출할 때 더 유리한</b> 상품은 무엇인가요?",
+   opts:["옷","쌀","쌀과 옷이 똑같아요","아무것도 수출하지 않아요"],
+   correct:1, pts:POINTS_APPLY, scene:"two",
+   reason:"㉯ 나라는 쌀을 재배하기에 알맞은 환경이어서 같은 시간과 비용을 들인다면 옷보다 쌀을 생산하여 수출할 때 더 큰 이익을 얻을 수 있어요.",
+   h1:"판에서 쌀을 누가 만들어 나눌 때 두 나라 칸이 넉넉해졌나요?", h2:"환경이 알맞은 상품이에요."},
+  {stem:"과거 우리나라는 세계적인 흑연 생산국이었지만 오늘날에는 흑연을 거의 생산하지 않게 됐어요. 그 까닭은 무엇인가요?",
+   opts:["다른 나라에서 저렴한 가격의 흑연을 수입하게 되었기 때문이에요","흑연이 더 이상 쓸모없어졌기 때문이에요","흑연을 다른 나라에 모두 수출했기 때문이에요","흑연으로 아무것도 만들 수 없기 때문이에요"],
+   correct:0, pts:POINTS_APPLY, scene:"graph",
+   reason:"다른 나라에서 저렴한 가격의 흑연을 수입하면서 우리나라에서는 흑연을 거의 생산하지 않게 됐어요.",
+   h1:"흑연은 지금도 연필·스마트폰·배터리에 쓰여요.", h2:"「저렴한 가격」이 열쇠예요."},
+  {stem:"우리나라는 수입한 흑연을 어떻게 사용하나요?",
+   opts:["모두 다시 그대로 수출해요","연필로만 만들어 우리나라에서만 써요","전기차 배터리를 만들어 수출해요","창고에 쌓아 두기만 해요"],
+   correct:2, pts:POINTS_APPLY, scene:"graph",
+   reason:"우리나라는 수입한 흑연으로 전기차 배터리를 만들어 수출해요. 흑연을 생산하는 나라에서는 이 배터리가 장착된 전기차를 수입하여 이용하기도 해요.",
+   h1:"흑연 → 배터리 → 전기차 그림을 떠올려 봐요.", h2:"우리나라가 잘 만드는 것이에요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 동기 유발(우리가 이용하는 물자와 서비스)
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">필요한 것을 모두 우리나라에서만 구할 수 있을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','우리가 이용하는 물자와 서비스(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCA1 생각을 열어요</div>
+      지난 시간에는 무역이 무엇인지 알아봤어요. 사람들은 음식을 사 먹거나 전자 제품 수리 서비스를 받는 등 다양한 물자나 서비스를 이용하며 살아가요.
+      우리가 이용하는 물자나 서비스를 모두 우리나라에서만 생산할 수 있을까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 모두 우리나라 안에서만 <b>구하기는 어려울</b> 것 같아요.<br>
+      \u2014 <b>다른 나라</b>에서도 생산해야 할 것 같아요.</div>`
+      :`<div class="note">어제 먹은 음식과 쓰는 물건을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">오늘은 <b>무역이 이루어지는 까닭</b>을 알아봐요.</div></div>`});
+// 2 살펴보기 — reveal: 비행기·천연가스(교과서 97쪽 스스로 활동)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">한 나라에 이런 상황이 생긴다면 어떤 문제가 생길까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('lack','구할 수 없는 물자(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\u2708\uFE0F 비행기와 천연가스</div>
+      비행기를 만드는 데는 수준 높은 기술이 필요해서 일부 국가에서만 비행기를 만들 수 있어요.<br>
+      천연가스는 난방을 하거나 차량을 운행할 때 연료로 사용하는 자원이에요. 천연가스가 매장되어 있는 곳은 많지 않아서 일부 국가에서만 천연가스를 생산할 수 있어요.<br>
+      비행기를 만드는 기술이 없다면, 천연가스를 생산할 수 없다면 어떤 문제가 생길까요? 이를 바탕으로 무역이 필요한 까닭을 써 봐요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 비행기를 이용할 수 없어 <b>여행이나 교류</b>가 불편해질 거예요.<br>
+      \u2014 <b>난방</b>을 하지 못하고 <b>차량</b>을 운행할 수 없게 될 거예요.<br>
+      \u2014 무역이 필요한 까닭: 한 나라에서 <b>구하기 어려운</b> 물자나 서비스를 이용하기 위해서예요.</div>`
+      :`<div class="note">비행기와 천연가스가 우리 생활 어디에 쓰이는지 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: ㉮ 나라와 ㉯ 나라(교과서 98쪽 친구와 활동)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">㉮ 나라와 ㉯ 나라는 무엇을 생산하면 좋을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('two','㉮ 나라와 ㉯ 나라(가상 도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDF3E 두 나라 이야기</div>
+      ㉮ 나라와 ㉯ 나라는 모두 쌀과 옷을 생산할 수 있어요. ㉮ 나라는 ㉯ 나라보다 같은 시간과 비용을 들일 때 더 많은 양의 쌀과 옷을 생산할 수 있어요.
+      ㉮ 나라는 높은 수준의 기술을 갖추고 있어요. ㉯ 나라는 ㉮ 나라에 비해 기술 수준이 낮지만, 쌀을 재배하기에 적합한 환경이에요.
+      쌀과 옷은 두 나라 사람 모두에게 꼭 필요한 상품이에요. 두 나라가 같은 시간과 비용을 들인다면, 각 나라가 생산하여 수출할 때 더 유리한 상품은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 ㉮ 나라는 <b>옷</b>, ㉯ 나라는 <b>쌀</b>을 생산하여 수출할 때 더 큰 이익을 얻을 수 있어요.<br>
+      \u2014 두 나라가 서로 더 큰 이익을 얻을 수 있는 상품을 무역하면 <b>두 나라 모두</b> 더욱 풍족해질 수 있어요.</div>`
+      :`<div class="note">㉮ 나라의 기술과 ㉯ 나라의 환경을 견줘 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 4 살펴보기 — 직접조작(두 나라 사이 무역 길)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">누가 만들지 정하며 두 나라 창고를 살펴봐요</h2>
+  ${gkPanel(st)}`});
+// 5 살펴보기 — reveal: 구할 수 있어도 들여오는 까닭 · 무역의 좋은 점
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">구할 수 있는 물자도 다른 나라에서 들여올까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('gain','서로 잘 만드는 것을 사고팔아요(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83E\uDD1D 무역을 통해 얻을 수 있는 좋은 점</div>
+      사람들은 한 나라 안에서 구하기 어려운 물자나 서비스를 이용하려고 무역을 해요. 한편 한 나라 안에서 구할 수 있더라도 여러 가지 이유로 다른 나라에서 생산한 물자나 서비스를 수입하기도 해요.
+      그 까닭은 무엇일까요? ㉮ 나라는 옷, ㉯ 나라는 쌀처럼 두 나라가 서로 더 큰 이익을 얻을 수 있는 상품을 무역하면 얻게 되는 좋은 점은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 한 나라 안에서 생산되는 것보다 <b>더 좋은 품질</b>이나 <b>더 값싼</b> 물자나 서비스를 다른 나라로부터 구할 수 있기 때문이에요.<br>
+      \u2014 각 나라가 더 큰 이익을 얻을 수 있는 상품을 생산하는 데 <b>집중</b>할 수 있어 더 큰 경제적 이익을 얻을 수 있어요.<br>
+      \u2014 두 나라가 무역을 하여 필요한 물자를 얻음으로써 두 나라 모두 더욱 <b>풍족</b>해질 수 있어요.</div>`
+      :`<div class="note">판에서 쌀을 ㉯가 만들어 나눴을 때 ㉮ 나라 칸이 어떻게 바뀌었는지 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 6 살펴보기 — reveal: 흑연과 전기차 배터리(교과서 99쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">흑연과 전기차 배터리 이야기에서 무엇을 알 수 있을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('graph','흑연과 전기차 배터리(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDD0B 흑연 이야기</div>
+      흑연은 연필뿐만 아니라 스마트폰, 배터리의 원료로 쓰이는 자원이에요. 과거 우리나라는 세계적인 흑연 생산국이었지만, 다른 나라에서 저렴한 가격의 흑연을 수입하면서 우리나라에서는 거의 생산하지 않게 됐어요.
+      우리나라는 수입한 흑연으로 전기차 배터리를 만들어 수출해요. 흑연을 생산하는 나라에서는 우리나라에서 만든 이 배터리가 장착된 전기차를 수입하여 이용하기도 해요.
+      이 사례를 통해 알 수 있는 사실은 무엇인가요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 나라마다 <b>효율적으로 생산할 수 있는</b> 물자나 서비스가 달라요.<br>
+      \u2014 나라마다 자연환경, 자원, 자본, 기술 등에 차이가 있어 무역을 해요. 각 나라는 다른 나라보다 더 잘 생산할 수 있는 물자나 서비스를 <b>수출</b>하고, 더 잘 생산하지 못하거나 부족한 물자나 서비스를 <b>수입</b>함으로써 이익을 얻으려고 노력해요.</div>`
+      :`<div class="note">흑연은 들여오고 배터리는 내보내요. 왜 그럴까요?</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 7 살펴보기 — reveal: 꼭 기억해요
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">꼭 기억할 내용을 확인해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('keep','내보내고 들여와요(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCCC 꼭! 기억해요</div>
+      1 한 나라 안에서 구할 수 있는 물자나 서비스를 다른 나라에서 수입하기도 합니다. ( 맞아요 , 틀려요 )<br>
+      2 각 나라가 효율적으로 생산하는 상품을 ( 수출 , 수입 )하고, 효율적으로 생산하기 어려운 상품을 ( 수출 , 수입 )하면 더 우수한 품질의 상품을 저렴한 가격으로 사용할 수 있습니다.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 꼭 기억해요 1 \u2014 <b>맞아요</b><br>
+      \u2014 꼭 기억해요 2 \u2014 효율적으로 생산하는 상품은 <b>수출</b>, 생산하기 어려운 상품은 <b>수입</b></div>`
+      :`<div class="note">괄호 속 알맞은 말을 먼저 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">정리 보기</button>`}
+  </div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 14차시 주요 내용 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div><b>구하기 어려운 물자</b> \u2014 사람들은 한 나라 안에서 구하기 어려운 물자나 서비스를 이용하려고 무역을 해요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div><b>나라마다 다른 조건</b> \u2014 나라마다 자연환경, 자원, 자본, 기술 등에 차이가 있어 각각 효율적으로 생산할 수 있는 물자나 서비스가 달라요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div><b>수출과 수입으로 얻는 이익</b> \u2014 다른 나라보다 더 잘 생산할 수 있는 것은 수출하고, 더 잘 생산하지 못하거나 부족한 것은 수입해 이익을 얻어요.</div></div>
+    <div class="sum-item"><span class="n">\u2463</span><div><b>흑연과 배터리</b> \u2014 우리나라는 흑연을 수입해 전기차 배터리를 만들어 수출해요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 두 나라가 각자 모두 만들 때보다, 잘 만드는 것을 만들어 서로 사고팔 때 두 나라 창고가 모두 넉넉해졌어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b>무역이 이루어지는 다양한 모습</b>을 살펴봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공부한 내용을 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"무역이 필요한 까닭을 말할 수 있어요",st)}
+    ${selfCheck(1,"무역을 통해 얻을 수 있는 좋은 점을 설명할 수 있어요",st)}
+    ${selfCheck(2,"무역이 이루어지는 까닭을 사례를 들어 설명할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">무역이 이루어지는 다양한 모습</b>을 살펴봐요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u2_l10";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  gkPick:0, gkLog:0,
+  gkRead:null, gkMean:null, gkFin:null,
+  gkWrongR:null, gkWrongK:null, gkWrongF:null,
+  gkMsg:null, gkWarn:false, gkBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function gkRender(){ main.innerHTML = slides[state.idx].render(state); }
+function gkHold(msg){
+  state.gkWarn=true; state.gkBusy=true; state.gkMsg=msg;
+  playThud(); gkRender();
+  setTimeout(()=>{ state.gkBusy=false; state.gkWarn=false; state.gkMsg=null;
+    state.gkWrongR=null; state.gkWrongK=null; state.gkWrongF=null; gkRender(); },1600);
+}
+/* ★ 기록장 기록 — 더하기만 하는 자리 단 하나 */
+function gkNote(l){ state.gkLog |= (1 << l); }
+
+/* ① 물자 — 만드는 쪽을 각자 → ㉮ → ㉯ 차례로 바꿈 */
+function gkTap(g){
+  if(state.gkFin!=null) return;                                        // 가드①
+  if(state.gkBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(g) || g<0 || g>=GK_N) return;                   // 가드②
+  if(gkAll(state)){ gkHold(GK_LOCK); return; }                         // 가드③ 판 불변
+  state.gkPick = gkSet(state.gkPick, g, (gkMk(state,g)+1)%3);          // ★ 판이 바뀌는 자리 단 하나
+  state.gkWarn=false; state.gkMsg=null; playBlip(); gkRender();
+}
+
+/* ② 기록장에 적기 — 아직 적지 않은 판의 모습일 때만(가드⑨) */
+function gkWrite(){
+  if(state.gkFin!=null) return;                                        // 가드①
+  if(state.gkBusy) return;                                             // 가드⑧
+  if(gkAll(state)){ gkHold(GK_LOCK); return; }                         // 가드③ 판 불변
+  const l = gkKind(state);
+  if(gkHas(state,l)){ gkHold(GK_AGAIN); return; }                      // 가드⑨ 이미 선 줄 — 판 불변
+  gkNote(l);
+  state.gkWarn=false;
+  if(gkAll(state)){ state.gkMsg = GK_ALL_MSG; playChime(); }
+  else { state.gkMsg = `기록장에 적었어요 \u2014 ${GK_LINE[l]}. 물자를 눌러 만드는 쪽을 바꿔 봐요.`; playChime(); }
+  gkRender();
+}
+
+/* ③ 판 읽기 — 기록장 세 줄 뒤에만(가드④). */
+function gkReadPick(k){
+  if(state.gkFin!=null) return;                                        // 가드①
+  if(state.gkBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=GK_READ.length) return;         // 가드②
+  if(!gkAll(state)){ gkHold(GK_ORDER_R); return; }                     // 가드④ 순서 — 판 불변
+  if(state.gkRead!=null){ gkHold(GK_READ_AGAIN); return; }             // 가드④ 판 불변
+  if(k===GK_READ_OK){
+    state.gkRead=k; state.gkWrongR=null; state.gkWarn=false;
+    state.gkMsg = '판을 잘 읽었어요. 두 나라가 <b>잘 만드는 것</b>을 만들어 서로 사고팔 때 여덟 칸이 모두 넉넉해졌어요.';
+    playChime(); gkRender(); return;
+  }
+  state.gkWrongR=k;
+  gkHold(GK_READ_NO[k]);
+}
+
+/* ④ 핵심 질문 — 판을 읽은 뒤에만(가드⑤). */
+function gkMeanPick(k){
+  if(state.gkFin!=null) return;                                        // 가드①
+  if(state.gkBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=GK_MEAN.length) return;         // 가드②
+  if(state.gkRead==null){ gkHold(GK_ORDER_K); return; }                // 가드⑤ 순서 — 판 불변
+  if(state.gkMean!=null){ gkHold(GK_MEAN_AGAIN); return; }             // 가드⑤ 판 불변
+  if(k!==GK_MEAN_OK){ state.gkWrongK=k; gkHold(GK_MEAN_NO[k]); return; } // 가드⑤ 판 불변
+  state.gkMean = k;                                                    // ★ 핵심 질문을 고르는 자리 단 하나
+  state.gkWarn=false;
+  state.gkMsg = '나라마다 조건이 달라 <b>잘 만드는 것</b>이 다르기 때문에 무역이 이루어져요.';
+  playChime(); gkRender();
+}
+
+/* ⑤ 마무리 — 교과서 99쪽 꼭 기억해요 2 */
+function gkFinish(k){
+  if(state.gkFin!=null) return;                                        // 가드①
+  if(state.gkBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=GK_FIN.length) return;          // 가드②
+  if(state.gkMean==null){ gkHold(GK_ORDER_F); return; }                // 가드⑥ 순서 — 판 불변
+  if(k===GK_FIN_OK){
+    state.gkFin=k; state.gkWrongF=null; state.gkMsg=null; state.gkWarn=false;
+    playChime(); gkRender(); return;
+  }
+  state.gkWrongF=k;
+  gkHold(GK_FIN_NO[k]);                                                // 가드⑦ 판 불변
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 2단원 11차시(l11) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
