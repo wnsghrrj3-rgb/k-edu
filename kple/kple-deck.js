@@ -280,7 +280,8 @@
         return toOxConfig(deck);
       case 'co_draw':
         return { topic: deck.title };
-      case 'catch_mind': {
+      case 'catch_mind':
+      case 'draw_phone': {                       // G8 그림전화 — 제시어 = 낱말(캐치마인드와 같은 계약)
         var words = (deck.items || []).map(function (it) { return norm(it.a); }).filter(Boolean);
         return { words: words.length ? words : null, title: deck.title };
       }
