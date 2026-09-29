@@ -274,6 +274,7 @@
       case 'quiz_show':
       case 'speed_quiz':
       case 'goldenbell':                         // G5 골든벨 — 같은 4지선다 계약(+answerText 로 주관식)
+      case 'calc_relay':                         // G6 계산 릴레이 — 같은 4지선다 계약
         return toQuizConfig(deck);
       case 'ox_survival':                        // G7 OX — 명제 변환
         return toOxConfig(deck);
