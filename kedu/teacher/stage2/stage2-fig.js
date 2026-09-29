@@ -449,15 +449,15 @@
   }
   // ── tvert: 시간 세로셈(HTML) — a·b = [시,분,초] 또는 [분,초] · units 칸 이름 · runits 답 칸 이름 · 60 넘으면 받아올림(주황) · 모자라면 받아내림(빨강 +60) ──
   function tvert(o) {
-    const units = o.units || ['시', '분', '초'], runits = o.runits || units, N = units.length, op = o.op || '+';
+    const units = o.units || ['시', '분', '초'], runits = o.runits || units, N = units.length, op = o.op || '+', BASE = +o.base || 60; // 33차: base 1000 = L·mL / kg·g
     const nz = (x) => x == null ? null : (+x || 0), A = (o.a || []).map(nz), B = (o.b || []).map(nz); while (A.length < N) A.unshift(0); while (B.length < N) B.unshift(0); const NA = A.map(x => x || 0), NB = B.map(x => x || 0); // null 칸 = 그 단위가 없음(빈칸)
     const R = [], carry = [], borrow = [];
-    if (op === '+') { let c = 0; for (let i = N - 1; i >= 0; i--) { let v = NA[i] + NB[i] + c; c = 0; if (i > 0 && v >= 60) { v -= 60; c = 1; carry[i - 1] = true; } R[i] = v; } }
-    else { let br = 0; for (let i = N - 1; i >= 0; i--) { let v = NA[i] - br - NB[i]; br = 0; if (v < 0 && i > 0) { v += 60; br = 1; borrow[i] = true; } R[i] = v; } }
+    if (op === '+') { let c = 0; for (let i = N - 1; i >= 0; i--) { let v = NA[i] + NB[i] + c; c = 0; if (i > 0 && v >= BASE) { v -= BASE; c = 1; carry[i - 1] = true; } R[i] = v; } }
+    else { let br = 0; for (let i = N - 1; i >= 0; i--) { let v = NA[i] - br - NB[i]; br = 0; if (v < 0 && i > 0) { v += BASE; br = 1; borrow[i] = true; } R[i] = v; } }
     const lead = (arr) => { let i = 0; while (i < N - 1 && !arr[i]) i++; return i; }; // 앞쪽 0 은 빈칸
     const row = (arr, us, cls, from) => '<div class="tv-row ' + cls + '">' + arr.map((v, i) => '<span' + (i < from || v == null ? ' class="mute"' : '') + '>' + (i < from || v == null ? '' : v + '<u>' + esc(us[i] || '') + '</u>') + '</span>').join('') + '</div>';
-    const top = '<div class="tv-row tv-carry">' + A.map((v, i) => '<span>' + (op === '+' && carry[i] ? '1' : op !== '+' && borrow[i + 1] ? '<i>' + (NA[i] - 1) + '</i>' : op !== '+' && borrow[i] ? '<b>+60</b>' : '') + '</span>').join('') + '</div>';
-    const h = '<div class="tv n' + N + '">' + top + row(A, units, 'tv-a', lead(A)) + row(B, units, 'tv-b', lead(B)).replace('<div class="tv-row tv-b">', '<div class="tv-row tv-b"><em>' + (op === '+' ? '+' : '−') + '</em>') + '<div class="tv-line"></div>' + (o.answer === false ? '' : row(R, runits, 'tv-r', lead(R))) + '</div>';
+    const top = '<div class="tv-row tv-carry">' + A.map((v, i) => '<span>' + (op === '+' && carry[i] ? '1' : op !== '+' && borrow[i + 1] ? '<i>' + (NA[i] - 1) + '</i>' : op !== '+' && borrow[i] ? '<b>+' + BASE + '</b>' : '') + '</span>').join('') + '</div>';
+    const h = '<div class="tv n' + N + (BASE >= 1000 ? ' wide' : '') + '">' + top + row(A, units, 'tv-a', lead(A)) + row(B, units, 'tv-b', lead(B)).replace('<div class="tv-row tv-b">', '<div class="tv-row tv-b"><em>' + (op === '+' ? '+' : '−') + '</em>') + '<div class="tv-line"></div>' + (o.answer === false ? '' : row(R, runits, 'tv-r', lead(R))) + '</div>';
     return '<div class="fig-vert fig-tvert" data-r="' + R.join(',') + '">' + h + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
   }
 
@@ -994,9 +994,79 @@
     if (o.label) s += txt(230, 30, o.label, 22, '#3B4252');
     return svgWrap(s, 'fig-nline').replace('<svg ', '<svg data-at="' + vals.join(',') + '" data-lo="' + lo + '" data-hi="' + hi + '" data-n="' + n + '" ');
   }
+
+  // ══ 33차(2026-09-29) 3학년 2학기 들이와 무게 부품 — beaker(눈금 비커) · dial(바늘 저울) · tilt(양팔저울) · cups(컵·수조 물 높이) · tubs(통에 나누어 담기) ══
+  // 그림 문법: 하늘색 = 담긴 물 · 주황 = 읽은 눈금(바늘·물 높이 표시) · 연회색 = 작은 눈금 · 굵은 눈금 = 글자가 붙는 눈금.
+  const WATER = '#8EC5F5', WATER2 = '#5DA8EA';
+  const nfmt = (v) => String(+(+v).toFixed(3));
+  // beaker: max·step(한 칸 크기)·v(물 높이) · unit(mL) · every(글자 붙는 칸 간격) · q(읽은 값 대신 ?) · read:false(읽은 값 없음) · show(읽은 값 글자)
+  function beaker(o) {
+    const max = +o.max || 1000, step = +o.step || 100, v = Math.max(0, Math.min(max, +o.v || 0)), unit = o.unit || 'mL', n = Math.round(max / step), every = o.every || (n <= 10 ? 1 : n % 5 === 0 ? 5 : 2);
+    const top = o.label ? 60 : 30, bot = 236, x0 = 176, x1 = 296, rim = top + 14, Y = (val) => bot - (bot - rim - 8) * val / max; let s = '';
+    if (v > 0) s += '<rect class="o-water" x="' + (x0 + 3) + '" y="' + Y(v).toFixed(1) + '" width="' + (x1 - x0 - 6) + '" height="' + (bot - Y(v) - 3).toFixed(1) + '" fill="' + WATER + '" opacity=".85"/><line x1="' + (x0 + 3) + '" y1="' + Y(v).toFixed(1) + '" x2="' + (x1 - 3) + '" y2="' + Y(v).toFixed(1) + '" stroke="' + WATER2 + '" stroke-width="3"/>';
+    for (let i = 1; i <= n; i++) { const y = Y(i * step).toFixed(1), big = i % every === 0 || i === n; s += '<line x1="' + x0 + '" y1="' + y + '" x2="' + (x0 + (big ? 30 : 16)) + '" y2="' + y + '" stroke="' + INK + '" stroke-width="' + (big ? 3 : 2) + '"/>'; if (big) s += txt(x0 - 12, (+y + 7).toFixed(1), nfmt(i * step), 20, '#5A6472', 800, 'end'); }
+    s += '<path d="M' + (x0 - 12) + ' ' + top + ' L' + x0 + ' ' + rim + ' V' + (bot - 8) + ' Q' + x0 + ' ' + bot + ' ' + (x0 + 8) + ' ' + bot + ' H' + (x1 - 8) + ' Q' + x1 + ' ' + bot + ' ' + x1 + ' ' + (bot - 8) + ' V' + rim + '" fill="none" stroke="' + INK + '" stroke-width="4" stroke-linejoin="round"/>';
+    s += txt(x1 + 10, rim + 6, '(' + unit + ')', 18, '#6B7C93', 700, 'start');
+    if (o.read !== false && (v > 0 || o.show)) { const y = Y(v); s += '<path d="M' + (x1 + 8) + ' ' + y.toFixed(1) + ' l18 -9 v18 Z" fill="' + ORANGE + '"/>' + txt(x1 + 32, (y + 9).toFixed(1), o.q ? '?' : (o.show || nfmt(v) + ' ' + unit), o.q ? 32 : 24, '#C2551A', 900, 'start'); }
+    if (o.label) s += txt(230, 34, o.label, 22, '#3B4252');
+    return svgWrap(s, 'fig-beaker', '0 0 460 250').replace('<svg ', '<svg data-max="' + max + '" data-step="' + step + '" data-v="' + nfmt(v) + '" ');
+  }
+  // dial: 바늘 저울 — max·step·v · unit(g|kg) · major(글자 붙는 간격, 같은 단위) · kg:true 면 g 저울 글자를 kg 로(1000 → 1 kg) · q · read:false · show
+  function dial(o) {
+    const max = +o.max || 1000, step = +o.step || 100, v = Math.max(0, Math.min(max, +o.v || 0)), unit = o.unit || 'g', n = Math.round(max / step), major = +o.major || (n <= 10 ? step : n % 5 === 0 ? step * 5 : step * 2);
+    const cx = 230, cy = 146, r = 96, A = (val) => RAD(-90 + 330 * val / max), P = (val, rr) => [(cx + rr * Math.cos(A(val))).toFixed(1), (cy + rr * Math.sin(A(val))).toFixed(1)];
+    let s = '<rect x="182" y="16" width="96" height="10" rx="5" fill="#9AA6B4"/><rect x="222" y="24" width="16" height="14" fill="#9AA6B4"/>'
+      + '<rect x="' + (cx - 126) + '" y="34" width="252" height="226" rx="34" fill="#EEF1F5" stroke="#8FA3B8" stroke-width="3"/><circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 8) + '" fill="#fff" stroke="' + INK + '" stroke-width="4"/>';
+    for (let i = 0; i <= n; i++) { const val = i * step, big = Math.abs(val / major - Math.round(val / major)) < 1e-9, a = P(val, r), b = P(val, r - (big ? 16 : 9)); s += '<line x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] + '" stroke="' + (big ? INK : '#8A93A0') + '" stroke-width="' + (big ? 3 : 2) + '"/>';
+      if (big) { const t = P(val, r - 32), lab = o.kg ? (val ? nfmt(val / 1000) : '0') : nfmt(val); s += txt(t[0], (+t[1] + 7).toFixed(1), lab, n > 20 ? 17 : 19, '#3B4252', 800); } }
+    s += txt(cx, cy + 46, o.kg ? 'kg' : unit, 16, '#8A93A0', 700);
+    const nd = P(v, r - 12); s += '<line class="o-needle" x1="' + cx + '" y1="' + cy + '" x2="' + nd[0] + '" y2="' + nd[1] + '" stroke="' + ORANGE + '" stroke-width="5" stroke-linecap="round"/><circle cx="' + cx + '" cy="' + cy + '" r="9" fill="' + ORANGE + '" stroke="#fff" stroke-width="3"/>';
+    if (o.read !== false) s += '<rect x="' + (cx - 86) + '" y="268" width="172" height="40" rx="12" fill="#FFF1E6"/>' + txt(cx, 297, o.q ? '?' : (o.show || nfmt(v) + ' ' + unit), 26, '#C2551A', 900);
+    if (o.label) s += txt(230, o.read !== false ? 336 : 290, o.label, 20, '#3B4252');
+    return svgWrap(s, 'fig-dial', '0 0 460 ' + (o.label ? (o.read !== false ? 348 : 300) : o.read !== false ? 316 : 272)).replace('<svg ', '<svg data-max="' + max + '" data-step="' + step + '" data-v="' + nfmt(v) + '" ');
+  }
+  // tilt: 양팔저울 — l·r {name, emoji, sub} · down 'l'|'r'|'eq' · cap(아래 글자, false 면 없음)
+  function tilt(o) {
+    const Lr = so(o.l), Rr = so(o.r), d = o.down === 'l' || o.down === 'r' ? o.down : 'eq', ang = d === 'l' ? -9 : d === 'r' ? 9 : 0, cx = 230, by = 74, arm = 150, a = RAD(ang);
+    const eL = [cx - arm * Math.cos(a), by - arm * Math.sin(a)], eR = [cx + arm * Math.cos(a), by + arm * Math.sin(a)];
+    let s = '<path d="M' + (cx - 60) + ' 238 H' + (cx + 60) + ' L' + (cx + 20) + ' 222 H' + (cx - 20) + ' Z" fill="#8A93A0"/><rect x="' + (cx - 6) + '" y="' + by + '" width="12" height="150" fill="#9AA6B4"/>';
+    s += '<line class="o-beam" data-ang="' + ang + '" x1="' + eL[0].toFixed(1) + '" y1="' + eL[1].toFixed(1) + '" x2="' + eR[0].toFixed(1) + '" y2="' + eR[1].toFixed(1) + '" stroke="' + WOOD2 + '" stroke-width="10" stroke-linecap="round"/><circle cx="' + cx + '" cy="' + by + '" r="9" fill="#fff" stroke="#5A6472" stroke-width="3"/>';
+    const pan = (e, it, heavy) => { const x = e[0], py = e[1] + 70; let t = '<path d="M' + x.toFixed(1) + ' ' + e[1].toFixed(1) + ' L' + (x - 56).toFixed(1) + ' ' + py.toFixed(1) + ' M' + x.toFixed(1) + ' ' + e[1].toFixed(1) + ' L' + (x + 56).toFixed(1) + ' ' + py.toFixed(1) + '" stroke="#8A93A0" stroke-width="2"/>';
+      t += '<path d="M' + (x - 64).toFixed(1) + ' ' + py.toFixed(1) + ' Q' + x.toFixed(1) + ' ' + (py + 30).toFixed(1) + ' ' + (x + 64).toFixed(1) + ' ' + py.toFixed(1) + ' Z" fill="#DDE3EA" stroke="#8A93A0" stroke-width="3"/>';
+      if (it.emoji) t += '<text x="' + x.toFixed(1) + '" y="' + (py - 4).toFixed(1) + '" text-anchor="middle" font-size="44">' + esc(it.emoji) + '</text>';
+      t += txt(x.toFixed(1), (py + 50).toFixed(1), it.name || '', 22, heavy ? '#C2551A' : INK, 900); if (it.sub) t += txt(x.toFixed(1), (py + 76).toFixed(1), it.sub, 18, BLUE2, 800); return t; };
+    s += pan(eL, Lr, d === 'l') + pan(eR, Rr, d === 'r');
+    const heavy = d === 'l' ? Lr.name : d === 'r' ? Rr.name : '', cap = o.cap === false ? '' : o.cap || (d === 'eq' ? '수평 — 두 무게가 같아요' : heavy + ' 쪽으로 기울었어요 → 더 무거워요');
+    if (cap) s += txt(230, 272, cap, 20, '#3B4252', 800);
+    return svgWrap(s, 'fig-tilt', '0 0 460 ' + (cap ? 286 : 262)).replace('<svg ', '<svg data-down="' + d + '" ');
+  }
+  // cups: 컵·수조 여럿 — items [{name, lv(0~1), w, h, color, hi, full}] · pour:[i,j] 옮겨 담기 화살표 · label
+  function cups(o) {
+    const it = (o.items || []).map(so), k = Math.max(1, it.length), cw = 440 / k, bot = 206, top = o.label ? 56 : 28; let s = '';
+    it.forEach((c, i) => { const w = Math.min(cw - 30, 84 * (c.w || 1)), h = Math.min(bot - top - 10, 128 * (c.h || 1)), x = 10 + cw * i + cw / 2 - w / 2, y = bot - h, lv = Math.max(0, Math.min(1, +c.lv || 0)), wy = bot - h * lv, col = c.color || '#8A93A0';
+      if (lv > 0) s += '<rect class="o-water" x="' + (x + 3).toFixed(1) + '" y="' + wy.toFixed(1) + '" width="' + (w - 6).toFixed(1) + '" height="' + (bot - wy - 3).toFixed(1) + '" fill="' + WATER + '" opacity=".85"/><line x1="' + (x + 3).toFixed(1) + '" y1="' + wy.toFixed(1) + '" x2="' + (x + w - 3).toFixed(1) + '" y2="' + wy.toFixed(1) + '" stroke="' + WATER2 + '" stroke-width="3"/>';
+      s += '<path d="M' + x.toFixed(1) + ' ' + y.toFixed(1) + ' V' + (bot - 6) + ' Q' + x.toFixed(1) + ' ' + bot + ' ' + (x + 6).toFixed(1) + ' ' + bot + ' H' + (x + w - 6).toFixed(1) + ' Q' + (x + w).toFixed(1) + ' ' + bot + ' ' + (x + w).toFixed(1) + ' ' + (bot - 6) + ' V' + y.toFixed(1) + '" fill="none" stroke="' + col + '" stroke-width="5" stroke-linejoin="round"/>';
+      if (o.level) s += '<line x1="' + (x - 6).toFixed(1) + '" y1="' + wy.toFixed(1) + '" x2="' + (x + w + 6).toFixed(1) + '" y2="' + wy.toFixed(1) + '" stroke="' + ORANGE + '" stroke-width="2" stroke-dasharray="6 5"/>';
+      s += txt((x + w / 2).toFixed(1), bot + 30, c.name || '', cw < 110 ? 18 : 22, c.hi ? '#C2551A' : INK, 900); if (c.sub) s += txt((x + w / 2).toFixed(1), bot + 54, c.sub, 16, '#6B7C93', 800); });
+    if (Array.isArray(o.pour) && k > 1) { const [i, j] = o.pour, xa = 10 + cw * i + cw / 2, xb = 10 + cw * j + cw / 2, yy = top + 6; s += '<path d="M' + (xa + 10).toFixed(1) + ' ' + (yy + 22) + ' Q' + ((xa + xb) / 2).toFixed(1) + ' ' + (yy - 18) + ' ' + (xb - 16).toFixed(1) + ' ' + (yy + 22) + '" fill="none" stroke="' + ORANGE + '" stroke-width="4" stroke-dasharray="9 6"/><path d="M' + (xb - 16).toFixed(1) + ' ' + (yy + 22) + ' l-4 -14 l14 6 Z" fill="' + ORANGE + '"/>'; }
+    if (o.label) s += txt(230, 30, o.label, 22, '#3B4252');
+    return svgWrap(s, 'fig-cups', '0 0 460 ' + (it.some(c => c.sub) ? 268 : 248)).replace('<svg ', '<svg data-lv="' + it.map(c => +(+c.lv || 0).toFixed(3)).join(',') + '" ');
+  }
+  // tubs: 통에 나누어 담기 — rows [{size, n}] · unit · total(목표) · 줄마다 size × n 을 통 그림으로, 아래에 합 = total
+  function tubs(o) {
+    const rows = o.rows || [], unit = o.unit || 'L', top = o.label ? 50 : 18, rh = Math.min(62, (212 - top) / Math.max(1, rows.length)); let s = '', sum = 0; const parts = [];
+    rows.forEach((r, i) => { const y = top + i * rh, n = Math.max(0, r.n | 0), sz = +r.size, v = sz * n; sum += v; if (n) parts.push(nfmt(v) + ' ' + unit);
+      s += '<rect x="14" y="' + (y + 6).toFixed(1) + '" width="84" height="' + (rh - 14).toFixed(1) + '" rx="10" fill="#EEF4FD" stroke="' + BLUE + '" stroke-width="2"/>' + txt(56, (y + rh / 2 + 7).toFixed(1), nfmt(sz) + ' ' + unit, 20, BLUE2, 900);
+      const tw = Math.min(28, 206 / Math.max(1, n) - 4); for (let j = 0; j < n; j++) { const x = 110 + j * (tw + 4); s += '<rect class="o-tub" x="' + x.toFixed(1) + '" y="' + (y + 10).toFixed(1) + '" width="' + tw.toFixed(1) + '" height="' + (rh - 22).toFixed(1) + '" rx="6" fill="' + WATER + '" stroke="' + WATER2 + '" stroke-width="2"/>'; }
+      s += n ? txt(446, (y + rh / 2 + 8).toFixed(1), n + '개 → ' + nfmt(v) + ' ' + unit, 20, INK, 800, 'end') : txt(446, (y + rh / 2 + 8).toFixed(1), '안 써요', 20, '#8A93A0', 800, 'end'); });
+    const ok = o.total == null || Math.abs(sum - o.total) < 1e-9, yb = top + rows.length * rh + 34;
+    s += txt(230, yb, (parts.length ? parts.join(' + ') : '0 ' + unit) + ' = ' + nfmt(sum) + ' ' + unit, 26, ok ? BLUE2 : RED, 900);
+    if (o.label) s += txt(230, 30, o.label, 22, '#3B4252');
+    return svgWrap(s, 'fig-tubs', '0 0 460 ' + (yb + 16)).replace('<svg ', '<svg data-sum="' + nfmt(sum) + '" data-total="' + (o.total == null ? '' : nfmt(o.total)) + '" ');
+  }
   const SC_PARTS = { ask, habitat, trait, anat, cycle, cond, need, bins, mimic };
 
-  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock, grid, range, brem, circ, compass, cgrid, crow, fgroup, fmix, nline };
+  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock, grid, range, brem, circ, compass, cgrid, crow, fgroup, fmix, nline, beaker, dial, tilt, cups, tubs };
   const HTML_PARTS = { vert, tvert, vmul, vdiv };
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
