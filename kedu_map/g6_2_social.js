@@ -251,14 +251,14 @@ window.KEDU_MAP["g6_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l12",
+     "lessonId": "g6_s2_social_u2_l12_v1",
      "n": "12",
      "title": "무역을 통한 세계 여러 나라의 상호 의존과 경쟁 관계를 살펴볼까요",
      "sub": "③ 세계 속의 무역",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/2단원_시장경제와국가간거래/g6_social_u2_l12_관세를매겨요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
