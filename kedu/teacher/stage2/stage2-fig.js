@@ -477,13 +477,14 @@
     return '<div class="ko-sents">' + items.map(it => { const t = TYPE[it.t] ? it.t : ''; return '<div class="ko-sent' + (it.bad ? ' bad' : '') + '"><span class="ko-a"><i>' + esc(it.la || '누가/무엇이') + '</i>' + md(it.a) + '</span>' + (it.mark ? '<i class="ko-p1">∨</i>' : '<em>/</em>') + '<span class="ko-b' + (t ? ' t-' + t : '') + '"><i>' + esc(it.lb || (t ? TYPE[t] : '뒷부분')) + (t && it.sub !== false ? '<u>' + TSUB[t] + '</u>' : '') + '</i>' + md(it.b) + '</span>' + (it.bad ? '<b class="ko-x">✗ 어색해요</b>' : it.ok ? '<b class="ko-o">○ 어울려요</b>' : '') + '</div>'; }).join('') + '</div>';
   }
   // pause: 띄어 읽기 — 글줄 안의 ∨(조금 쉬어)·∨∨(조금 더 쉬어)를 주황 쐐기로 · rows = 부호 표(쉼표·마침표·물음표)
-  const wedge = (s) => md(s).replace(/∨∨|∨/g, m => m.length > 1 ? '<i class="ko-p2">∨∨</i>' : '<i class="ko-p1">∨</i>');
+  // 36차: sym2 = 「조금 더 쉬어」 표시를 교과서 기호(예: ≡)로 — 없으면 종전 ∨∨ 그대로
+  const wedge = (s, s2) => { let h = md(s).replace(/∨∨|∨/g, m => m.length > 1 ? '<i class="ko-p2">∨∨</i>' : '<i class="ko-p1">∨</i>'); if (s2) h = h.split(esc(s2)).join('<i class="ko-p2">' + esc(s2) + '</i>'); return h; };
   function pause(o) {
     let s = '';
     if (o.rows) s += '<div class="ko-rows">' + o.rows.map(r => '<div class="ko-row"><b class="ko-sym">' + esc(r.sym) + '</b><span>' + esc(r.name) + '</span>' + (r.mark ? wedge(r.mark) : '<i class="ko-up">↗</i>') + '<u>' + md(r.say) + '</u></div>').join('') + '</div>';
-    if (o.lines) s += '<div class="ko-lines">' + o.lines.map(l => '<div class="ko-line">' + wedge(l) + '</div>').join('') + '</div>';
+    if (o.lines) s += '<div class="ko-lines">' + o.lines.map(l => '<div class="ko-line">' + wedge(l, o.sym2) + '</div>').join('') + '</div>';
     if (!s) return '';
-    return '<div class="ko-pause">' + s + (o.key === false ? '' : '<div class="ko-key"><i class="ko-p1">∨</i> 조금 쉬어요 &nbsp;·&nbsp; <i class="ko-p2">∨∨</i> 조금 더 쉬어요</div>') + '</div>';
+    return '<div class="ko-pause">' + s + (o.key === false ? '' : '<div class="ko-key"><i class="ko-p1">∨</i> 조금 쉬어요 &nbsp;·&nbsp; <i class="ko-p2">' + esc(o.sym2 || '∨∨') + '</i> 조금 더 쉬어요</div>') + '</div>';
   }
   // text: 글 읽기 판 — 책 종이 위 글줄(번호) · 줄마다 tag(사실·의견·중심·뒷받침·어색) · poem = 시(번호 작게)
   const TAGC = { '사실': 'fact', '의견': 'opin', '중심': 'main', '중심 문장': 'main', '뒷받침': 'sub', '뒷받침 문장': 'sub', '어색': 'odd', '어울리지 않아요': 'odd' };
