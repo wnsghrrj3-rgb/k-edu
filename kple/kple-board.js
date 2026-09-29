@@ -78,6 +78,20 @@
       '.kpb-pbtn:active{transform:scale(.94);} .kpb-pbtn[disabled]{opacity:.3;}',
       '.kpb-myteam{display:inline-block;padding:6px 12px;border-radius:999px;font-weight:900;margin-bottom:10px;border:2px solid;}',
       '.kpb-rank{list-style:none;padding:0;margin:14px auto;max-width:520px;text-align:left;}',
+      '.kpb-bingo{display:grid;gap:5px;margin:6px 0;}',
+      '.kpb-bcell{aspect-ratio:1/1;border:2px solid rgba(255,255,255,.18);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;',
+        'font-weight:800;font-size:clamp(11px,3.2vw,15px);font-family:inherit;padding:2px;word-break:keep-all;line-height:1.15;}',
+      '.kpb-bcell[disabled]{opacity:.9;} .kpb-bcell.on{background:var(--kp-mint,#2dd4bf);color:#0f172a;border-color:#fff;text-decoration:line-through;}',
+      '.kpb-bcell.find{border-color:var(--kp-yellow,#ffd23f);box-shadow:0 0 0 3px rgba(255,210,63,.35);animation:kpbPulse 1s infinite;cursor:pointer;}',
+      '@keyframes kpbPulse{50%{transform:scale(1.06);}}',
+      '.kpb-bcell.shake{animation:kpbShake .4s;} @keyframes kpbShake{25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}',
+      '.kpb-race{max-width:900px;margin:8px auto;display:grid;gap:5px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));}',
+      '.kpb-race-row{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px;}',
+      '.kpb-race-row.bingo .kpb-race-name{color:var(--kp-yellow,#ffd23f);}',
+      '.kpb-race-name{width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
+      '.kpb-race-bar{flex:1;height:12px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}',
+      '.kpb-race-bar span{display:block;height:100%;background:linear-gradient(90deg,var(--kp-mint,#2dd4bf),var(--kp-yellow,#ffd23f));transition:width .4s;}',
+      '.kpb-race-n{opacity:.7;font-size:13px;width:82px;text-align:right;}',
       '.kpb-rank li{padding:10px 16px;border-radius:14px;background:rgba(255,255,255,.08);margin:6px 0;font-weight:800;font-size:22px;display:flex;justify-content:space-between;}'
     ].join('');
     document.head.appendChild(s);
@@ -216,6 +230,7 @@
         var i = expected.indexOf(name); if (i >= 0 && !(name in answered)) expected.splice(i, 1);
         if (!done && Object.keys(answered).length >= expected.length) finish('all');
       },
+      finish: function () { finish('host'); },   // 호스트 「지금 공개」 — 지금까지의 답으로 마감
       cancel: function () { done = true; if (timer) clearTimeout(timer); },
       pub: function () { return { gate: seq, q: Q.q, choices: Q.choices, to: expected.slice(), answered: Object.keys(answered), timeout: opts.timeout || 0 }; },   // KP-1: answer 없음
       isDone: function () { return done; }
