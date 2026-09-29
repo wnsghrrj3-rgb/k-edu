@@ -11,7 +11,7 @@ export class Danger {
     this.g = g; this.cfg = { nightRadius: 9, graceSec: 14, eyesAt: 4, starveSec: 45, torchSec: 90, lairRadius: 8, lairSec: 18, ...cfg };
     this.t = 0; this.starveT = 0; this.lairT = 0; this.enc = null; this.eyes = null; this.torchUntil = 0;
   }
-  get night() { const s = this.g.story; return !!(s?.nightOn && s.skyName === 'night'); }
+  get night() { const s = this.g.story; if (!s) return false; return s.isNight != null ? s.isNight : !!(s.nightOn && s.skyName === 'night'); }   /* transition 이 정한 밤(둘째 밤 포함), 없으면 예전 규칙 */
   firePos() { const f = this.g.fire; return f && f.visible && (this.g.fireBase || 0) > 0 ? f.position : null; }
   hasTorch() { return performance.now() < this.torchUntil; }
   lightTorch() { this.torchUntil = performance.now() + this.cfg.torchSec * 1000; if (!this.torch && this.g.e.scene?.add) { this.torch = new THREE.PointLight(0xff9a3a, 1.6, 9, 1.5); this.g.e.scene.add(this.torch); } this.g.flag('torch:lit'); this.g.ui.say('가지 끝에 불이 붙는다. 오래 못 간다.', 3200); }
@@ -79,7 +79,7 @@ export class Danger {
     const food = this.cfg.food || ['berry', 'root', 'meat', 'cooked', 'fish', 'shell']; const have = g.inventory.filter((k) => food.includes(k)); const lose = Math.floor(have.length / 2); for (let i = 0; i < lose; i++) g.take(have[i]); g.renderInv?.();
     g.hunger = Math.max(g.hunger, 22);
     const f = this.firePos() || (g.e.areas?.get('camp') ? g.e.areas.get('camp') : null); if (f) { g.p.pos.x = f.x + 1.5; g.p.pos.z = f.z + 1.5; if (g.e.groundY) g.p.pos.y = g.e.groundY(g.p.pos.x, g.p.pos.z) + (g.world.eye || 1.55); }
-    g.ui.say(this.cfg.wakeSay || '…불 곁이다. 누가 데려왔다. 「혼자 가지 마.」', 5200);
+    g.ui.say(this.cfg.wakeSay || '…불 곁이다. 누가 데려왔다. 「혼자 가지 마.」', 5200); g.life?.afterCollapse(reason);
     g.updateMission?.(true); g.save?.touch(); g.p.enabled = true; this.collapsing = false;
   }
 }

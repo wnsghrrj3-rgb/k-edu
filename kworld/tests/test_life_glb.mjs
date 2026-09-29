@@ -5,12 +5,13 @@ const base = new URL('../eras/life/', import.meta.url);
 const buffer = fs.readFileSync(new URL('paleo.glb', base));
 const data = JSON.parse(buffer.subarray(20, 20 + buffer.readUInt32LE(12)).toString());
 const read = (f) => JSON.parse(fs.readFileSync(new URL(f, base)));
-const world = read('world.json'), items = read('items.json'), npcDefs = read('npcs.json'), missions = read('missions.json');
+const world = read('world.json'), items = read('items.json'), npcDefs = read('npcs.json'), missions = read('missions.json'), scene = read('scene.json'), life = read('life.json');
+const sceneTypes = new Set((scene.add || []).map((a) => a.name.split('_')[0]));
 const names = data.nodes.map((n) => n.name || '');
 const ix = names.filter((n) => n.startsWith('ix_'));
 const types = new Set(ix.map((n) => n.split('_')[1]));
 for (const t of types) assert.ok(items.targets[t], `대상 ${t} 가 items.json 에 없음`);
-for (const t of Object.keys(items.targets)) assert.ok(types.has(t), `items.json 대상 ${t} 가 GLB 에 없음`);
+for (const t of Object.keys(items.targets)) assert.ok(types.has(t) || sceneTypes.has(t), `items.json 대상 ${t} 가 GLB·scene 에 없음`);
 const areas = names.filter((n) => n.startsWith('area_')).map((n) => n.slice(5));
 for (const a of Object.keys(world.areas)) assert.ok(areas.includes(a), `구역 ${a} 없음`);
 assert.equal(Object.keys(world.areas).length, 12, '구역 12');
@@ -21,7 +22,10 @@ for (const id of Object.keys(npcDefs)) assert.ok(npcs.includes(id), `NPC ${id} �
 for (const id of npcs) assert.ok(npcDefs[id], `GLB NPC ${id} 가 npcs.json 에 없음`);
 assert.equal(npcs.length, 6, 'NPC 6');
 const list = Array.isArray(missions) ? missions : missions.missions || Object.values(missions);
-assert.equal(list.length, 12, '미션 12');
+assert.equal(list.length, 7, '꼭 나오는 상황 7 = 미션 7');
+const must = life.situations.filter((x) => x.must); assert.equal(must.length, 7, '꼭 나오는 상황 7'); assert.ok(life.situations.length - must.length >= life.mixedCount, '섞여 나오는 상황 ≥ mixedCount');
+for (const m of list) assert.ok(must.some((x) => 'sit:' + x.id + ':done' === m.done), `미션 ${m.id} 가 상황과 안 맞음`);
+for (const sit of life.situations) { if (sit.place) assert.ok(world.areas[sit.place], `상황 ${sit.id} 장소 ${sit.place}`); for (const c of sit.choices) assert.ok(c.done || c.count, `상황 ${sit.id} 선택 ${c.id} 에 done/count 없음`); }
 assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');
 const h = read('height.json'); assert.ok(h && typeof h === 'object', 'height.json');
 console.log(`paleo.glb: ix ${ix.length} (${[...types].join(',')}) · areas ${areas.length} · npc ${npcs.length} · ${(buffer.length / 1e6).toFixed(2)}MB`);

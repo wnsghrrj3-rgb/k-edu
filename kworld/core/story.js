@@ -105,7 +105,7 @@ export class Story {
   }
   transition(name, sec = 9) {
     this.captureDay(); if (!this.day) return;
-    this.from = this.snapshot(); this.to = this.pal(name); this.trT = 0; this.trSec = sec; this.skyName = name;
+    this.from = this.snapshot(); this.to = this.pal(name); this.trT = 0; this.trSec = sec; this.skyName = name; this.isNight = name === 'night';   // 위험층이 보는 밤(사건 sky:night 로 오는 둘째 밤 포함)
     this.g.sound?.set('wind', { night: 0.42, dull: 0.5, rainy: 0.55 }[name] ?? 0.35);
   }
   snapshot() { const e = this.g.e; const hemi = e.scene.children.find((o) => o.isHemisphereLight); const u = e.skyDome && e.skyDome.material.uniforms;

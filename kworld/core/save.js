@@ -4,7 +4,7 @@
 export class Save {
   constructor(g, era) { this.g = g; this.era = era; this.key = 'kworld_progress:' + era; this.timer = null; this.enabled = true; }
   snapshot() {
-    const g = this.g; return { v: 1, era: this.era, flags: [...g.flags], inventory: [...g.inventory], hunger: Math.round(g.hunger), pos: g.p ? [Math.round(g.p.pos.x * 10) / 10, Math.round(g.p.pos.z * 10) / 10, Math.round((g.p.yaw || 0) * 100) / 100] : null, results: g.results || [], telemetry: g.telemetry || null, char: g.character?.id || null, mi: g.mi, t: Date.now() };
+    const g = this.g; return { v: 1, era: this.era, flags: [...g.flags], inventory: [...g.inventory], hunger: Math.round(g.hunger), pos: g.p ? [Math.round(g.p.pos.x * 10) / 10, Math.round(g.p.pos.z * 10) / 10, Math.round((g.p.yaw || 0) * 100) / 100] : null, results: g.results || [], telemetry: g.telemetry || null, char: g.character?.id || null, mi: g.mi, life: g.life?.snapshot() || null, t: Date.now() };
   }
   /** 깃발이 설 때마다 부른다 — 3초 뒤 한 번만 쓴다 */
   touch() { if (!this.enabled || this.g.story?.cutsceneOn) return; clearTimeout(this.timer); this.timer = setTimeout(() => this.write(), 3000); }
@@ -36,6 +36,10 @@ export class Save {
       else if (F('act9')) { st.transition('day', 0.5); g.setFire(F('act10')); }
       else if (F('share:done')) { st.nightOn = true; st.transition('night', 0.5); g.setFire(true, !F('fire:alive')); g.hungerMul = F('fire:alive') ? 1 : (g.world.night?.coldMul || 1.8); }
       for (const ev of g.world.events || []) if (g.cond(ev.on)) ev.done = true;
+      if (g.life) {   // 인생 층: 하늘·불은 상황 깃발로 되짚는다(사건은 지나간 것으로)
+        if (F('gone:1') || F('sit:rain:done')) st.transition('day', 0.5); else if (F('rain:on')) { st.transition('rainy', 0.5); st.rain(true); } else if (F('sit:share:done')) st.transition('night', 0.5); else if (F('day:2') || F('fire:kept')) st.transition('day', 0.5);
+        if (F('fire:kept')) g.setFire(true); else if (F('night:1')) g.setFire(true, true);
+      }
     }
     if (snap.pos && g.p) { g.p.pos.x = snap.pos[0]; g.p.pos.z = snap.pos[1]; g.p.yaw = snap.pos[2] || 0; if (g.e.groundY) g.p.pos.y = g.e.groundY(snap.pos[0], snap.pos[1]) + (g.world.eye || 1.55); }
     g.updateMission?.(true); g.restoring = false;

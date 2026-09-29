@@ -11,6 +11,7 @@ import { Sound } from './sound.js';
 import { Save } from './save.js';
 import { Danger } from './danger.js';
 import { Story } from './story.js';
+import { Life } from './life.js';
 
 const J = (u) => fetch(u).then((r) => r.json());
 
@@ -34,6 +35,8 @@ export class Game {
     if (this.world.splat && new URLSearchParams(location.search).get('fx') !== '0') applySplat(this.e, this.world.splat);   // 바닥 스플랫(흙·풀·자갈 섞기) — 표면 텍스처 위에
     // 장면 층: GLB 위에 json 좌표로 대상·사람을 더 놓는다(이야기형 시대) — landscape 보다 먼저, 나무가 이 대상들을 피하도록
     if (this.world.scene) { this.story = new Story(this, await J(this.base + this.world.scene)); this.story.apply(); }
+    // 인생 층: 상황·값·능력·흔적(역사 인생게임) — world.life 가 가리킬 때만
+    if (this.world.life) this.life = new Life(this, await J(this.base + this.world.life));
     // 시대별 장식 코드는 world.json 이 가리킬 때만(코어는 시대 이름을 모른다)
     if (this.world.landscape) { const { buildLandscape } = await import(new URL(this.base + this.world.landscape, location.href).href); buildLandscape(this.e, this.quality(), { treeModel: this.world.treeModel ? new URL(this.base + this.world.treeModel, location.href).href : null }); }
     // 보이는 것: 절차 하늘·햇빛 먼지·물결. ?fx=0 이면 끔. 후처리(블룸·색보정·SMAA)·그림자 4096·햇빛 먼지는 **?post=1 일 때만**(09-16 준호: 기본이 굼떴음 → 무거운 층은 켜서 보는 것으로), ?ao=1 로 구석 어둠 추가
@@ -70,8 +73,9 @@ export class Game {
       const pick = await new Promise((res) => this.ui.open(`<div class="chk"><div class="tag">저장된 이야기</div><h3>이어서 할까?</h3><p>깃발 ${saved.flags.length}개 · ${new Date(saved.t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</p></div>`, [{ label: '이어서 하기', primary: true, onClick: () => { this.ui.close(); res(true); } }, { label: '처음부터', onClick: () => { this.ui.close(); res(false); } }]));
       if (pick) this.save.apply(saved); else this.save.clear();
       if (this.world.characters) await this.chooseCharacter(this.world.characters, pick ? saved.char : null);
+      if (this.life) { this.life.begin(); if (pick) this.life.restore(saved.life); }
       if (!pick && this.world.prologue) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; }
-    } else { if (this.world.characters) await this.chooseCharacter(this.world.characters, null); if (this.world.prologue && this.story) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; } }
+    } else { if (this.world.characters) await this.chooseCharacter(this.world.characters, null); if (this.life) this.life.begin(); if (this.world.prologue && this.story) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; } }
     if (new URLSearchParams(location.search).get('peek') === '1' && this.story) this.story.peek();
     this.ui.intro(this.world.title, this.world.question);
     setTimeout(() => this.ui.say(this.world.intro, 5000), 400);
@@ -148,7 +152,7 @@ export class Game {
   take(k) { const i = this.inventory.indexOf(k); if (i >= 0) this.inventory.splice(i, 1); }
   give(k) { this.inventory.push(k); this.renderInv(); }
   flag(f) { if (Array.isArray(f)) { for (const x of f) this.flag(x); return; } if (!f || this.flags.has(f)) return; this.save?.touch();
-    if (/^act\d+$/.test(f)) this.checkpoint = { act: f, flags: [...this.flags, f], inventory: [...this.inventory] };   /* 체크포인트: ACT 시작마다(쓰러지면 여기로) */ this.flags.add(f); this.checkGate(); if (this.story) this.story.onFlag(); }
+    if (/^act\d+$/.test(f)) this.checkpoint = { act: f, flags: [...this.flags, f], inventory: [...this.inventory] };   /* 체크포인트: ACT 시작마다(쓰러지면 여기로) */ this.flags.add(f); this.checkGate(); if (this.story) this.story.onFlag(); if (this.life) this.life.onFlag(); }
   /** 대상 정의: kinds(종류별 덮어쓰기) → rename(깃발에 따라 이름·동사·규칙이 바뀜, 첫 맞는 것) */
   defFor(t) {
     let d = this.items.targets[t.type]; if (!d) return null;
@@ -170,7 +174,7 @@ export class Game {
   tick(dt) {
     // 배고픔
     const h = this.world.hunger; const before = this.hunger; this.hunger = Math.max(0, this.hunger - h.perSecond * (this.hungerMul || 1) * (this.stats.hunger || 1) * dt); if (before > 0 && this.hunger === 0) (this.telemetry ??= { missions: [], hints: 0, starved: 0 }).starved++;
-    const slow = this.hunger < h.slowBelow; this.p.speedMul = (slow ? 0.55 : 1) * (this.stats.speed || 1); this.ui.setHunger(this.hunger, slow);
+    const slow = this.hunger < h.slowBelow; this.p.speedMul = (slow ? 0.55 : 1) * (this.stats.speed || 1) * (this.life?.speedMul || 1); this.ui.setHunger(this.hunger, slow);
     // 대상 안내
     if (!this.ui.isOpen()) {
       const t = this.target = this.e.pickTarget(this.e.camera, 3.2, this.p.pos);
@@ -238,6 +242,7 @@ export class Game {
     if (rule.choices) return this.choose(t, rule);
     if (rule.requiresFlags && !rule.requiresFlags.every((f) => this.flags.has(f))) { this.ui.say(rule.failNoFlag || rule.fail || '아직은 할 수 없어.', 4200); this.flag(rule.failFlag); if (rule.failHunger) this.hunger = Math.max(0, this.hunger + rule.failHunger); return; }
     if (rule.requires && !this.has(rule.requires)) { this.ui.say(rule.failNoTool || rule.fail || '지금은 할 수 없어.'); return; }
+    if (rule.roll && this.life && !this.life.roll(rule)) return;   // 굴림: 능력 단계 — 실패해도 막히지 않고 「왜」 한 줄
     if (rule.consumes) { const need = {}; for (const c of rule.consumes) need[c] = (need[c] || 0) + 1;
       for (const [c, n] of Object.entries(need)) if (this.count(c) < n) { this.ui.say(rule['failNo' + c[0].toUpperCase() + c.slice(1)] || `${this.items.items[c].name}이(가) ${n > 1 ? n + '개 ' : ''}없어.`); return; } }
     if (rule.consumes) for (const c of rule.consumes) this.take(c);
@@ -253,7 +258,7 @@ export class Game {
       else this.e.removeInteractable(t.name);
     }
     if (rule.why) setTimeout(() => this.showWhy(rule.why), 900);
-    this.after(t, rule);
+    this.after(t, rule); this.life?.onFlag();   // 주머니가 바뀐 것도 상황을 푼다(열매 셋)
   }
   /** 행동 뒤 공통: 배고픔 변화·달아나기·탐험일지 */
   after(t, rule) {
@@ -263,11 +268,14 @@ export class Game {
     if (rule.flee && this.story) this.story.flee(t, rule);
     if (rule.journal && this.story) setTimeout(() => this.story.journal(rule.journal), 1200);
   }
+  /** 회색 선택지 — c.if(깃발·hurt:·val: 조건)가 거짓이면 못 누른다, 이유 한 줄(c.gray). 「안 되는 게 아니라 조금 더 어렵게」는 roll 로, 진짜 막힘만 여기 */
+  grayOf(c) { if (!c.if) return {}; const ok = this.life ? this.life.cond(c.if) : this.cond(c.if); return ok ? {} : { disabled: true, reason: c.gray || '지금은 할 수 없다.' }; }
   /** 대상 앞 선택(먹는다 / 그냥 둔다 / 가져간다 …) — 정답 없음, 고른 것은 깃발로 남는다 */
   choose(t, rule) {
     this.p.enabled = false; this.flag(rule.flag);   // 살펴본 것 자체가 깃발(선택 전에)
-    this.ui.open(`<div class="npc"><b>${rule.name || ''}</b><p>${rule.text || ''}</p></div>`, rule.choices.map((c) => ({ label: c.label, primary: true, onClick: () => {
+    this.ui.open(`<div class="npc"><b>${rule.name || ''}</b><p>${rule.text || ''}</p></div>`, rule.choices.filter((c) => !c.showIf || this.cond(c.showIf)).map((c) => ({ label: c.label, primary: true, ...this.grayOf(c), onClick: () => {
       this.ui.close(); this.p.enabled = true;
+      if (c.roll && this.life && !this.life.roll(c)) return;
       if (c.requiresFlags && !c.requiresFlags.every((f) => this.flags.has(f))) { this.ui.say(c.failNoFlag || '아직은 할 수 없어.', 4200); this.flag(c.failFlag); return; }
       if (c.requires && !this.has(c.requires)) { this.ui.say(c.failNoTool || '지금은 할 수 없어.', 4200); return; }
       if (c.consumes) { const need = {}; for (const k of c.consumes) need[k] = (need[k] || 0) + 1; for (const [k, n] of Object.entries(need)) if (this.count(k) < n) { this.ui.say(c.failNoTool || `${this.items.items[k].name}이(가) ${n}개는 있어야 한다.`, 4200); return; } for (const k of c.consumes) this.take(k); this.renderInv(); }
@@ -301,9 +309,9 @@ export class Game {
     for (const [k, n] of Object.entries(need)) if (this.count(k) < n) { this.ui.say('아무것도 안 됐어. 재료가 모자라.'); return; }
     if (this.fumble(r.out)) { this.ui.close(); this.p.enabled = true; this.ui.say(r.almost || '…거의 됐다. 손이 미끄러졌다. 다시.', 3600); return; }
     for (const i of r.in) if (!(r.keep || []).includes(i)) this.take(i);
-    this.inventory.push(out); this.renderInv(); this.ui.close(); this.p.enabled = true;
+    this.inventory.push(out); this.renderInv(); this.ui.close(); this.p.enabled = true; if (out === 'torch') this.danger?.lightTorch();
     const d = this.items.items[out]; this.ui.say(r.say || `${d.icon} ${d.name}이(가) 됐다!`, r.say ? 4800 : 3200);
-    this.flag(r.flag); if (r.journal && this.story) setTimeout(() => this.story.journal(r.journal), 1400);
+    this.flag(r.flag); this.life?.onFlag(); if (r.journal && this.story) setTimeout(() => this.story.journal(r.journal), 1400);
     if (d.why) setTimeout(() => this.showWhy(d.why), 900);
   }
   /** 고르는 만들기: 같은 갈래(cat) 물건 n개를 골라 부딪쳐 본다 — 짝에 따라 되기도, 안 되기도 */
@@ -328,7 +336,7 @@ export class Game {
     this.p.enabled = false;
     const done = () => { this.ui.close(); this.p.enabled = true; this.flag(line.flag); if (line.why) setTimeout(() => this.showWhy(line.why), 600); if (line.journal && this.story) setTimeout(() => this.story.journal(line.journal), 900); };
     if (line.choices) { // 선택형 대사(딜레마) — 정답 없음, 고른 것은 깃발로만 남는다
-      this.ui.open(`<div class="npc"><b>${npc.name}</b><p>${line.text}</p></div>`, line.choices.map((c) => ({ label: c.label, primary: true, onClick: () => { this.ui.close(); this.p.enabled = true; this.flag(line.flag); this.flag(c.flag); if (c.say) this.ui.say(c.say, 5600); this.after(t, c); if (c.journal && this.story) setTimeout(() => this.story.journal(c.journal), 1200); const w = c.why || line.why; if (w) setTimeout(() => this.showWhy(w), 1400); } })), 'npcpanel');
+      this.ui.open(`<div class="npc"><b>${npc.name}</b><p>${line.text}</p></div>`, line.choices.filter((c) => !c.showIf || this.cond(c.showIf)).map((c) => ({ label: c.label, primary: true, ...this.grayOf(c), onClick: () => { this.ui.close(); this.p.enabled = true; if (c.requires && !this.has(c.requires)) { this.ui.say(c.failNoTool || '지금은 할 수 없어.', 4200); return; } if (c.roll && this.life && !this.life.roll(c)) return; if (c.consumes) { for (const k of c.consumes) if (!this.has(k)) { this.ui.say(c.failNoTool || `${this.items.items[k].name}이(가) 없어.`, 4200); return; } for (const k of c.consumes) this.take(k); this.renderInv(); } const gv = [].concat(c.gives || []); if (gv.length) { this.inventory.push(...gv); this.renderInv(); } this.flag(line.flag); this.flag(c.flag); if (c.say) this.ui.say(c.say, 5600); this.after(t, c); if (c.journal && this.story) setTimeout(() => this.story.journal(c.journal), 1200); const w = c.why || line.why; if (w) setTimeout(() => this.showWhy(w), 1400); } })), 'npcpanel');
       return;
     }
     this.ui.npcLine(npc.name, line.text, done);

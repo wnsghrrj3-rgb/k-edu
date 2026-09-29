@@ -3,7 +3,14 @@
   "stone": {
    "name": "돌",
    "icon": "🪨",
-   "desc": "강가에서 주운 둥근 돌"
+   "desc": "강가에서 주운 둥근 돌",
+   "cat": "stone"
+  },
+  "flint": {
+   "name": "검은 돌",
+   "icon": "⬛",
+   "desc": "깨면 바로 날이 서는 돌. 멀리서 왔다",
+   "cat": "stone"
   },
   "berry": {
    "name": "열매",
@@ -11,11 +18,50 @@
    "desc": "덤불에서 딴 열매. 먹을 수 있다",
    "eat": 8
   },
+  "fish": {
+   "name": "물고기",
+   "icon": "🐟",
+   "desc": "여울에서 잡았다. 불에 구우면 된다",
+   "eat": 14
+  },
+  "meat": {
+   "name": "고기",
+   "icon": "🥩",
+   "desc": "사슴 고기. 내일이면 상한다",
+   "eat": 25
+  },
+  "branch": {
+   "name": "마른 가지",
+   "icon": "🪵",
+   "desc": "불에 넣거나, 창 자루로"
+  },
   "handaxe": {
    "name": "주먹도끼",
    "icon": "🔪",
    "desc": "돌을 돌로 쳐서 날을 세웠다",
    "bag": true
+  },
+  "shard": {
+   "name": "깨진 조각",
+   "icon": "🔹",
+   "desc": "두 쪽 난 주먹도끼 조각. 날은 살아 있다"
+  },
+  "scraper": {
+   "name": "긁개",
+   "icon": "🪒",
+   "desc": "깨진 조각으로 만든 긁개. 가죽 긁기에 좋다",
+   "bag": true
+  },
+  "spear": {
+   "name": "창",
+   "icon": "🗡️",
+   "desc": "날 세운 돌로 가지를 깎았다. 사냥은 이걸로",
+   "bag": true
+  },
+  "torch": {
+   "name": "횃불",
+   "icon": "🔥",
+   "desc": "불붙은 가지. 오래 못 간다"
   }
  },
  "recipes": [
@@ -26,7 +72,57 @@
    ],
    "out": "handaxe",
    "name": "돌 부딪치기",
-   "flag": "made:handaxe"
+   "flag": "made:handaxe",
+   "almost": "…조각이 엉뚱하게 떨어졌다. 손이 아직 안 익었다. 다시.",
+   "say": "🔪 날이 섰다! 못생겼지만 주먹도끼다.",
+   "journal": "flake"
+  },
+  {
+   "in": [
+    "flint",
+    "stone"
+   ],
+   "out": "handaxe",
+   "name": "검은 돌 깨기",
+   "flag": "made:handaxe",
+   "say": "🔪 한 번에 날이 섰다. 검은 돌은 다르다.",
+   "journal": "flake"
+  },
+  {
+   "in": [
+    "shard",
+    "stone"
+   ],
+   "out": "scraper",
+   "name": "조각 다듬기",
+   "flag": "made:scraper",
+   "showIf": "sit:broken:open",
+   "say": "🪒 조각을 다듬어 긁개가 됐다. 버릴 게 없다."
+  },
+  {
+   "in": [
+    "handaxe",
+    "branch"
+   ],
+   "out": "spear",
+   "name": "가지 깎기",
+   "keep": [
+    "handaxe"
+   ],
+   "flag": "made:spear",
+   "almost": "…끝이 뭉툭하게 깎였다. 다시.",
+   "say": "🗡️ 창이다. 끝이 뾰족하다. 이제 앞에 설 수 있다.",
+   "journal": "spear"
+  },
+  {
+   "in": [
+    "branch"
+   ],
+   "out": "torch",
+   "name": "불붙이기",
+   "flag": "made:torch",
+   "showIf": "fire:kept",
+   "say": "🔥 가지 끝에 불이 붙었다. 오래 못 간다 — 빨리."
   }
  ],
  "targets": {
@@ -41,7 +137,59 @@
    "verb": "살펴보기",
    "say": "돌을 둥글게 놓은 불 자리. 밤에는 여기가 제일 따뜻하다. 꺼지면 짐승이 온다.",
    "flag": "seen:fire",
-   "info": "불 자리. 밤을 지키는 곳."
+   "info": "불 자리. 밤을 지키는 곳.",
+   "rename": [
+    {
+     "if": "night:1 && !fire:kept && !fire:slept",
+     "name": "사그라드는 불",
+     "verb": "마른 가지를 넣는다",
+     "consumes": [
+      "branch"
+     ],
+     "failNoBranch": "넣을 가지가 없다. 막집 옆에 마른 가지가 떨어져 있다.",
+     "set": "lit",
+     "flag": "fire:kept",
+     "say": "가지가 타닥거린다. 불이 살아난다.",
+     "info": "작은 불씨. 곧 꺼진다."
+    },
+    {
+     "if": "fire:kept",
+     "name": "불",
+     "verb": "살펴보기",
+     "say": "불이 잘 탄다. 곁에 있으면 짐승이 안 온다.",
+     "flag": "seen:fire2",
+     "info": "불. 우리 것."
+    }
+   ]
+  },
+  "stick": {
+   "name": "마른 가지",
+   "verb": "줍기",
+   "gives": "branch",
+   "remove": true,
+   "info": "막집 옆에 떨어진 마른 가지. 불에도, 창에도."
+  },
+  "bed": {
+   "name": "막집 잠자리",
+   "verb": "살펴보기",
+   "say": "가죽을 깐 자리. 밤에 여기서 잔다.",
+   "info": "막집 안 잠자리.",
+   "rename": [
+    {
+     "if": "rain:on && !sit:rain:done",
+     "name": "막집",
+     "verb": "여기 남아 비를 피한다",
+     "flag": "rain:camp",
+     "say": "가죽을 끌어당겼다. 물소리가 가까워진다…"
+    },
+    {
+     "if": "night:1 && !fire:kept && !fire:slept",
+     "name": "막집 잠자리",
+     "verb": "눕는다 — 잔다",
+     "flag": "fire:slept",
+     "say": "눈을 감는다. …불씨가 작아진다."
+    }
+   ]
   },
   "stone": {
    "name": "돌",
@@ -58,13 +206,38 @@
    "empty": "열매가 다 떨어졌어…",
    "info": "빨간 열매가 달린 덤불. 몇 번 따면 없어진다."
   },
+  "dbush": {
+   "name": "까만 열매 덤불",
+   "verb": "살펴보기",
+   "info": "처음 보는 까만 열매.",
+   "flag": "seen:dbush",
+   "choices": [
+    {
+     "label": "먹어 본다",
+     "roll": {
+      "ab": "눈",
+      "hard": 3,
+      "why": "눈이 밝으면 새가 안 먹는 열매인 걸 알아본다. 아직은 못 봤다.",
+      "fail": "…달다. 그리고 배가 뒤틀린다."
+     },
+     "rollFailFlag": "berry:sick",
+     "rollFailHunger": -15,
+     "flag": "berry:eyed",
+     "say": "…새 한 마리도 안 건드리는 열매다. 눈에 들어왔다. 뱉었다."
+    },
+    {
+     "label": "그냥 둔다",
+     "flag": "berry:leave",
+     "say": "모르는 건 안 먹는다."
+    }
+   ]
+  },
   "deer": {
    "name": "사슴",
-   "verb": "사냥하기",
-   "requires": "spear",
-   "failNoTool": "맨손으로는 안 돼. 혼자서도 안 돼. 사냥은 여럿이 창을 들고.",
-   "fail": "사슴이 훌쩍 달아났다.",
-   "info": "풀을 뜯는 사슴. 가까이 가면 놀란다."
+   "verb": "다가가기",
+   "fail": "사슴이 고개를 든다. 혼자서는 안 된다. 사냥 이끄는 사람에게.",
+   "info": "풀을 뜯는 사슴. 가까이 가면 놀란다.",
+   "say": "사슴이 고개를 든다. 혼자서는 안 된다. 사냥 이끄는 사람에게."
   },
   "track": {
    "name": "큰 발자국",
@@ -85,10 +258,66 @@
   "cave": {
    "name": "동굴 입구",
    "verb": "살펴보기",
-   "say": "어둡다. 안쪽에서 낮게 숨 쉬는 소리. …무언가 먼저 살고 있다. 여기서 살려면 저것부터 내보내야 한다.",
+   "say": "어둡다. 안쪽에서 낮게 숨 쉬는 소리. …무언가 먼저 살고 있다.",
    "flag": "seen:cave",
    "once": true,
-   "info": "산 밑에 뚫린 어두운 입구."
+   "info": "산 밑에 뚫린 어두운 입구.",
+   "rename": [
+    {
+     "if": "rain:on && !sit:rain:done",
+     "name": "동굴",
+     "verb": "횃불을 들고 들어간다",
+     "requires": "torch",
+     "failNoTool": "안에서 낮게 우는 소리. 불 없이는 못 들어간다. 횃불 — 마른 가지를 불에서 붙인다.",
+     "roll": {
+      "ab": "몸",
+      "hard": 2,
+      "why": "몸이 버텨야 앞으로 밀 수 있다. 횃불이 흔들리면 그것이 안다.",
+      "fail": "…그것이 으르렁댔다. 물러났다. 횃불은 아직 탄다."
+     },
+     "flag": "rain:cave",
+     "once": false,
+     "say": "횃불 앞에서 그것이 물러났다. 안은 마르고 바람이 없다."
+    },
+    {
+     "if": "sit:bear:open && !sit:bear:done",
+     "name": "동굴 입구",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "seen:cave2",
+     "choices": [
+      {
+       "label": "횃불을 들고 들어가 쫓는다",
+       "requires": "torch",
+       "failNoTool": "횃불이 없다. 불에서 마른 가지에 붙인다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 2,
+        "why": "몸이 버텨야 밀어붙일 수 있다.",
+        "fail": "…그것이 으르렁댔다. 물러났다."
+       },
+       "flag": "cave:fire",
+       "say": "소리치며 횃불을 밀었다. 그것이 뛰쳐나갔다."
+      },
+      {
+       "label": "입구에서 기다린다",
+       "roll": {
+        "ab": "배",
+        "hard": 2,
+        "why": "배가 든든해야 오래 기다린다. 배가 먼저 졌다.",
+        "fail": "…기다리다 배가 고파 돌아섰다. 다시 올 수는 있다."
+       },
+       "flag": "cave:wait",
+       "say": "해가 기울 때쯤 그것이 나와 강 쪽으로 갔다."
+      },
+      {
+       "label": "물러난다",
+       "flag": "cave:back",
+       "say": "오늘은 아니다."
+      }
+     ]
+    }
+   ]
   },
   "shelter": {
    "name": "옛 불 자리",
@@ -96,15 +325,80 @@
    "say": "바위가 지붕처럼 튀어나와 비를 막는다. 바닥에 검게 탄 돌. 우리보다 먼저 누군가 여기서 지냈다.",
    "flag": "seen:shelter",
    "once": true,
-   "info": "바위 그늘 바닥의 검은 돌들."
+   "info": "바위 그늘 바닥의 검은 돌들.",
+   "rename": [
+    {
+     "if": "rain:on && !sit:rain:done",
+     "name": "바위 그늘",
+     "verb": "여기서 비를 피한다",
+     "once": false,
+     "flag": "rain:shelter",
+     "say": "바위 밑. 빗소리만 크다. 젖지 않는다."
+    }
+   ]
   },
   "fish": {
    "name": "물고기 떼",
    "verb": "살펴보기",
-   "say": "얕은 물에 물고기가 몰려 있다. 맨손으로는 미끄럽다. 돌로 막거나, 뾰족한 나무가 있으면…",
+   "say": "얕은 물에 물고기가 몰려 있다. 맨손으로는 미끄럽다.",
    "flag": "seen:fish",
    "once": true,
-   "info": "여울에 모인 물고기."
+   "info": "여울에 모인 물고기.",
+   "rename": [
+    {
+     "if": "sit:fish:open && !sit:fish:done",
+     "name": "물고기 떼",
+     "verb": "잡아 본다",
+     "once": false,
+     "flag": "seen:fish2",
+     "choices": [
+      {
+       "label": "맨손으로 잡는다",
+       "roll": {
+        "ab": "발",
+        "hard": 3,
+        "why": "발이 빨라야 미끄러지는 놈을 따라간다.",
+        "fail": "…손 사이로 빠져나갔다. 물만 튀었다."
+       },
+       "gives": "fish",
+       "flag": "fish:hand",
+       "say": "🐟 세 번째에 한 마리가 손 안에서 퍼덕였다."
+      },
+      {
+       "label": "돌 두 개로 물길을 막아 몬다",
+       "consumes": [
+        "stone",
+        "stone"
+       ],
+       "failNoTool": "돌이 두 개는 있어야 한다.",
+       "roll": {
+        "ab": "손",
+        "hard": 2,
+        "why": "돌을 딱 맞게 놓아야 물길이 좁아진다.",
+        "fail": "…돌 사이로 다 빠져나갔다. 돌은 그대로 있다."
+       },
+       "gives": [
+        "fish",
+        "fish"
+       ],
+       "flag": "fish:stone",
+       "say": "🐟🐟 물길이 좁아지자 그리로 몰렸다. 두 마리."
+      },
+      {
+       "label": "창으로 찌른다",
+       "requires": "spear",
+       "failNoTool": "창이 없다. 주먹도끼로 가지를 깎으면 된다.",
+       "gives": [
+        "fish",
+        "fish",
+        "fish"
+       ],
+       "flag": "fish:spear",
+       "say": "🐟🐟🐟 창끝이 물속으로. 세 마리."
+      }
+     ]
+    }
+   ]
   },
   "flint": {
    "name": "돌 나는 곳",
@@ -112,7 +406,38 @@
    "say": "깨면 날이 서는 검은 돌이 여기 널려 있다. 강가 둥근 돌보다 훨씬 좋다. 그런데 막집에서 너무 멀다.",
    "flag": "seen:flint",
    "once": true,
-   "info": "깨면 날카로워지는 검은 돌 무더기."
+   "info": "깨면 날카로워지는 검은 돌 무더기.",
+   "rename": [
+    {
+     "if": "sit:far:open && !sit:far:done",
+     "name": "검은 돌 무더기",
+     "verb": "돌을 고른다",
+     "once": false,
+     "flag": "seen:flint2",
+     "choices": [
+      {
+       "label": "다녀온다 — 검은 돌을 지고 간다",
+       "roll": {
+        "ab": "배",
+        "hard": 2,
+        "why": "멀다. 배가 든든해야 지고 돌아간다.",
+        "fail": "…반쯤 가다 배가 비어 돌을 내려놓았다. 다시 올 수는 있다."
+       },
+       "gives": [
+        "flint",
+        "flint"
+       ],
+       "flag": "far:go",
+       "say": "⬛⬛ 검은 돌 둘. 무겁다. 돌아가는 길이 멀다."
+      },
+      {
+       "label": "가까운 돌로 버틴다",
+       "flag": "far:stay",
+       "say": "둥근 돌로 한다. 두 번 칠 것을 네 번 친다."
+      }
+     ]
+    }
+   ]
   },
   "view": {
    "name": "돌무더기",

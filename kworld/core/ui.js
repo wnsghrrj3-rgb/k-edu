@@ -46,7 +46,7 @@ export class UI {
   open(html, buttons = [], cls = '') {
     this.panel.className = 'open ' + cls; this.panel.innerHTML = `<div class="pbody">${html}</div><div class="pbtns"></div>`;
     const bb = this.panel.querySelector('.pbtns');
-    for (const b of buttons) { const el = document.createElement('button'); el.textContent = b.label; if (b.primary) el.className = 'primary'; el.onclick = b.onClick; bb.appendChild(el); }
+    for (const b of buttons) { const el = document.createElement('button'); el.textContent = b.label; if (b.primary) el.className = 'primary'; if (b.disabled) { el.className = 'gray'; el.title = b.reason || ''; el.onclick = () => this.say(`🚫 ${b.reason || '지금은 할 수 없다.'}`, 4200); } else el.onclick = b.onClick; bb.appendChild(el); }
     return this.panel;
   }
   close() { this.panel.className = ''; this.panel.innerHTML = ''; }
