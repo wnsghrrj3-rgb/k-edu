@@ -9,6 +9,7 @@
    · 23차(2026-09-28) 길이·시간 부품 추가: ruler(자)·joins(이어 붙여 어림)·road(거리 띠·km 표지판)·clock(시·분·초바늘)·tvert(시간 세로셈) · 카드 on(주황 강조)
    · 28차(2026-09-29) 3학년 2학기 곱셈 부품: vmul(곱셈 세로셈 — 올림 수·부분 곱 두 줄) · grid(모눈 가르기 — 덩이마다 부분 곱) · range(어림 사이 띠)
    · 30차(2026-09-29) 3학년 2학기 나눗셈 부품: vdiv(나눗셈 세로셈 — 몫 자리 맞춤·가운데 0·내림·나머지·확인 식) · brem(묶고 남은 것 따로)
+   · 31차(2026-09-29) 3학년 2학기 원 부품: circ(중심·반지름·지름·중심을 지나지 않는 선분·점·접은 선·띠종이·점 찍기) · compass(벌린 길이 = 반지름) · cgrid(모눈 위 원 무늬) · crow(지름으로 바꾸어 크기 견주기)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
    ============================================================================ */
 (function (global) {
@@ -855,9 +856,86 @@
     s += txt(230, 44, o.label || (total + '개를 ' + k + '개씩 묶으면'), 24) + txt(r ? 180 : 230, 140 + bh / 2 + 32, g + '묶음', 26, BLUE2);
     return svgWrap(s, 'fig-brem').replace('<svg ', '<svg data-g="' + g + '" data-r="' + r + '" ');
   }
+  // ── 31차(2026-09-29) 3학년 2학기 원 부품: circ(원 하나) · compass(컴퍼스) · cgrid(모눈 위 원 무늬) · crow(크기 견주기) ──
+  // 원 그림 문법: 파랑 = 반지름 · 주황 = 지름 · 회색 = 원의 중심을 지나지 않는 선분 · 검정 점 = 원의 중심(ㅇ)
+  const RAD = (d) => d * Math.PI / 180;
+  function offLab(p, q, t, col, d) { // 선분 p→q 가운데에서 위쪽으로 비켜 글자
+    const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2, dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy) || 1; let nx = -dy / L, ny = dx / L; if (ny > 0) { nx = -nx; ny = -ny; } d = d == null ? 22 : d;
+    return txt((mx + nx * d).toFixed(1), (my + ny * d + 8).toFixed(1), t, 22, col);
+  }
+  function circ(o) {
+    const cx = o.cx || 230, cy = o.cy || 150, R = o.R || 100, u = o.unit || 'cm';
+    const at = (deg, k) => [cx + R * (k == null ? 1 : k) * Math.cos(RAD(deg)), cy - R * (k == null ? 1 : k) * Math.sin(RAD(deg))];
+    const ln = (p, q, col, w, cls, dash) => '<line class="' + cls + '" x1="' + p[0].toFixed(1) + '" y1="' + p[1].toFixed(1) + '" x2="' + q[0].toFixed(1) + '" y2="' + q[1].toFixed(1) + '" stroke="' + col + '" stroke-width="' + w + '" stroke-linecap="round"' + (dash ? ' stroke-dasharray="' + dash + '"' : '') + '/>';
+    const dot = (p, lab, fill, below, st) => '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="7" fill="' + (fill || INK) + '" stroke="' + (st || '#fff') + '" stroke-width="' + (st ? 3 : 2) + '"/>' + (lab ? txt(p[0].toFixed(1), (p[1] + (below ? 34 : -14)).toFixed(1), lab, 22) : '');
+    const C = [cx, cy]; let s = '';
+    if (o.oval) { s += '<ellipse class="o-oval" cx="' + cx + '" cy="' + cy + '" rx="' + (R * 1.5).toFixed(0) + '" ry="' + (R * 0.72).toFixed(0) + '" fill="#F4F8FF" stroke="' + INK + '" stroke-width="4"/>'; }
+    else if (o.line !== false) s += '<circle class="o-circ" cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="#F4F8FF" stroke="' + INK + '" stroke-width="4"/>';
+    if (o.dots) for (let i = 0; i < o.dots; i++) { const p = at(360 * i / o.dots + 90); s += '<circle class="o-dot" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="6" fill="' + BLUE2 + '"/>' + (i % 3 === 0 ? ln(C, p, REST2, 3, 'o-spoke', '6 6') : ''); }
+    if (o.strip) { const H2 = o.strip.holes || [1, 2, 3, 4], a = o.strip.at || H2[H2.length - 1], k = R / a, ex = cx + k * H2[H2.length - 1] + 18; // 누름 못과 띠종이
+      s += '<rect class="o-strip" x="' + (cx - 18) + '" y="' + (cy - 14) + '" width="' + (ex - cx + 18).toFixed(1) + '" height="28" rx="8" fill="#FFE8C2" stroke="' + WOOD + '" stroke-width="3"/>';
+      H2.forEach(h => { const x = cx + k * h; s += '<circle cx="' + x.toFixed(1) + '" cy="' + cy + '" r="7" fill="#fff" stroke="' + WOOD2 + '" stroke-width="2"/>' + txt(x.toFixed(1), cy + 36, h, 18, h === a ? '#C2551A' : '#6B7C93', 800); });
+      s += txt((ex + 8).toFixed(1), cy + 36, u, 16, '#6B7C93', 700, 'start');
+      const px = cx + k * a; s += '<path class="o-pencil" d="M' + px.toFixed(1) + ' ' + (cy - 6) + ' l-10 -40 h20 Z" fill="' + YEL + '" stroke="' + INK + '" stroke-width="2"/>';
+      s += '<circle class="o-pin" cx="' + cx + '" cy="' + cy + '" r="11" fill="' + RED + '" stroke="#fff" stroke-width="3"/>'; }
+    if (o.fold) { const p = at(o.fold === true ? 90 : o.fold), q = at((o.fold === true ? 90 : o.fold) + 180); s += ln([p[0], p[1] - 14], [q[0], q[1] + 14], ORANGE, 5, 'o-fold', '12 8') + txt(p[0] + 58, p[1] + 4, '접은 선', 20, ORANGE); }
+    (o.chords || []).forEach((c) => { const p = at(c.a), q = at(c.b); s += ln(p, q, '#8A93A0', 5, 'o-chord' + (c.on ? ' on' : '')) + (c.lab ? offLab(p, q, c.lab, '#5A6472', 22).replace('font-size="22"', 'font-size="24"') : '') + dot(p, c.la, '#8A93A0', Math.sin(RAD(c.a)) < 0) + dot(q, c.lb, '#8A93A0', Math.sin(RAD(c.b)) < 0); });
+    (o.diam || []).forEach((a, i) => { const p = at(a), q = at(a + 180); s += ln(p, q, ORANGE, 6, 'o-diam' + (o.hi === 'd' ? ' on' : ''));
+      if (o.split && i === 0 && o.rcm != null) { s += offLab(p, C, o.rcm + ' ' + u, BLUE2) + offLab(C, q, o.rcm + ' ' + u, BLUE2) + txt(cx, (cy + 52).toFixed(1), '지름 ' + o.dcm + ' ' + u, 24, ORANGE); }
+      else if (o.dlab || (o.dcm != null && (i === 0 || o.all))) s += offLab(p, q, o.dlab || (o.dcm + ' ' + u), ORANGE, 18);
+      if (o.dlabs && o.dlabs[i]) { const m = at(a, 0.62); s += txt((m[0] + 4).toFixed(1), (m[1] - 14).toFixed(1), o.dlabs[i], 24, '#C2551A'); } });
+    (o.radii || []).forEach((a, i) => { const p = at(a); s += ln(C, p, BLUE, 6, 'o-rad' + (o.hi === 'r' ? ' on' : '')) + '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="6" fill="' + BLUE + '"/>';
+      if (o.rcm != null && (i === 0 || o.all)) s += offLab(C, p, o.rcm + ' ' + u, BLUE2, 18); });
+    (o.pts || []).forEach(pt => { const p = at(pt.a, pt.d); s += '<g class="o-pt' + (pt.d === 1 ? ' on' : '') + '">' + dot(p, pt.lab, pt.d === 1 ? ORANGE : '#fff', false, pt.d === 1 ? '' : INK) + '</g>'; });
+    if (o.center !== false && !o.oval) s += '<circle class="o-center" cx="' + cx + '" cy="' + cy + '" r="7" fill="' + INK + '"/>' + (o.cl !== '' ? txt(cx - 18, cy + 30, o.cl || 'ㅇ', 22) : '');
+    if (o.names) { s += txt(cx - 30, cy + 58, '원의 중심', 18, INK, 800, 'end').replace('text-anchor="end"', 'text-anchor="middle"'); if ((o.radii || []).length) s += offLab(C, at(o.radii[0]), '반지름', BLUE2, -24); if ((o.diam || []).length && !o.split) s += offLab(at(o.diam[0]), at(o.diam[0] + 180), '지름', ORANGE, -26); }
+    if (o.oval) s += txt(cx + R * 1.5 - 6, cy - R * 0.72, '✗', 34, RED);
+    if (o.label) s += txt(230, 30, o.label, 22, '#3B4252');
+    const attrs = 'data-rcm="' + (o.rcm != null ? o.rcm : '') + '" data-dcm="' + (o.dcm != null ? o.dcm : '') + '" data-nr="' + (o.radii || []).length + '" data-nd="' + (o.diam || []).length + '" ';
+    return svgWrap(s, 'fig-circ').replace('<svg ', '<svg ' + attrs);
+  }
+  // compass: 컴퍼스를 cm 만큼 벌려 그린 원. 벌린 길이 = 반지름 → 지름 = 2배(data-open·data-d).
+  function compass(o) {
+    const cm = Math.max(1, +o.cm || 1), max = Math.max(cm, +o.max || cm), k = Math.min(34, 118 / max), R = cm * k, cx = o.steps ? 170 : 200, cy = 168;
+    let s = '<circle class="o-circ" cx="' + cx + '" cy="' + cy + '" r="' + R.toFixed(1) + '" fill="#F4F8FF" stroke="' + INK + '" stroke-width="4"' + (o.draft ? ' stroke-dasharray="10 8"' : '') + '/>';
+    const px = cx + R, apx = cx + R / 2, apy = cy - Math.max(96, R * 0.9 + 40);
+    s += '<line x1="' + cx + '" y1="' + cy + '" x2="' + px.toFixed(1) + '" y2="' + cy + '" stroke="' + BLUE + '" stroke-width="6" stroke-linecap="round"/>' + txt(((cx + px) / 2).toFixed(1), cy + 32, cm + ' cm', 22, BLUE2);
+    s += '<line x1="' + apx.toFixed(1) + '" y1="' + apy.toFixed(1) + '" x2="' + cx + '" y2="' + (cy - 3) + '" stroke="#6B7C93" stroke-width="7" stroke-linecap="round"/><line x1="' + apx.toFixed(1) + '" y1="' + apy.toFixed(1) + '" x2="' + px.toFixed(1) + '" y2="' + (cy - 10) + '" stroke="#6B7C93" stroke-width="7" stroke-linecap="round"/>'
+      + '<rect x="' + (apx - 7).toFixed(1) + '" y="' + (apy - 26).toFixed(1) + '" width="14" height="24" rx="5" fill="#3B4252"/><circle cx="' + apx.toFixed(1) + '" cy="' + apy.toFixed(1) + '" r="8" fill="#3B4252"/>'
+      + '<path d="M' + (px - 6).toFixed(1) + ' ' + (cy - 26) + ' h12 l-6 20 Z" fill="' + YEL + '" stroke="' + INK + '" stroke-width="2"/><circle cx="' + cx + '" cy="' + cy + '" r="6" fill="' + RED + '"/>' + txt(cx - 18, cy + 30, 'ㅇ', 20);
+    if (o.steps) { s += txt(cx - 34, cy + 62, '① 중심 ㅇ', 20, ORANGE) + txt(((cx + px) / 2 + 60).toFixed(1), cy + 62, '② ' + cm + ' cm 벌리기', 20, BLUE2)
+      + '<path d="M' + (cx - R * 0.94).toFixed(1) + ' ' + (cy - R * 0.34).toFixed(1) + ' A' + (R + 16).toFixed(1) + ' ' + (R + 16).toFixed(1) + ' 0 0 1 ' + (cx - R * 0.2).toFixed(1) + ' ' + (cy - R - 14).toFixed(1) + '" fill="none" stroke="' + ORANGE + '" stroke-width="4"/><path d="M' + (cx - R * 0.2).toFixed(1) + ' ' + (cy - R - 14).toFixed(1) + ' l-14 -8 l2 16 Z" fill="' + ORANGE + '"/>'
+      + txt(398, 120, '③ 침 꽂고', 20, '#3B4252') + txt(398, 148, '한 바퀴', 20, '#3B4252'); }
+    else s += txt(380, 108, '벌린 길이', 18, '#6B7C93', 700) + txt(380, 140, cm + ' cm', 30, BLUE2) + txt(380, 182, '지름 ' + 2 * cm + ' cm', 22, ORANGE);
+    if (o.label) s += txt(230, 30, o.label, 22, o.bad ? RED : '#3B4252');
+    return svgWrap(s, 'fig-compass').replace('<svg ', '<svg data-open="' + cm + '" data-d="' + 2 * cm + '" ');
+  }
+  // cgrid: 모눈 위 원 무늬 — items [{x,y,r}] (모눈 칸). show:'r' 이면 원마다 반지름 칸 수, q 번째 원은 점선 「?」, path:true 면 중심을 잇는 주황 점선.
+  function cgrid(o) {
+    const lab = o.show === 'r' || o.q != null, top = o.label ? 40 : 14, avH = 280 - top - (lab ? 38 : 14), cols = o.cols || 12, rows = o.rows || 4, c = Math.min(440 / cols, avH / rows), x0 = (460 - c * cols) / 2, y0 = top + (avH - c * rows) / 2;
+    let s = ''; for (let i = 0; i <= cols; i++) s += '<line x1="' + (x0 + i * c).toFixed(1) + '" y1="' + y0.toFixed(1) + '" x2="' + (x0 + i * c).toFixed(1) + '" y2="' + (y0 + rows * c).toFixed(1) + '" stroke="#D5DEE9" stroke-width="1.5"/>';
+    for (let j = 0; j <= rows; j++) s += '<line x1="' + x0.toFixed(1) + '" y1="' + (y0 + j * c).toFixed(1) + '" x2="' + (x0 + cols * c).toFixed(1) + '" y2="' + (y0 + j * c).toFixed(1) + '" stroke="#D5DEE9" stroke-width="1.5"/>';
+    const P = (it) => [x0 + it.x * c, y0 + it.y * c], items = o.items || [];
+    if (o.path && items.length > 1) s += '<polyline points="' + items.map(it => P(it).map(v => v.toFixed(1)).join(',')).join(' ') + '" fill="none" stroke="' + ORANGE + '" stroke-width="4" stroke-dasharray="8 6"/>';
+    items.forEach((it, i) => { const p = P(it), isQ = o.q === i;
+      s += '<circle class="o-circ' + (isQ ? ' q' : '') + '" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (it.r * c).toFixed(1) + '" fill="' + (isQ ? 'none' : 'rgba(91,141,239,.10)') + '" stroke="' + (isQ ? REST2 : BLUE2) + '" stroke-width="' + (isQ ? 3 : 4) + '"' + (isQ ? ' stroke-dasharray="8 6"' : '') + '/><circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="5" fill="' + (o.path ? ORANGE : INK) + '"/>';
+      if (!isQ && o.show === 'r') s += '<line x1="' + p[0].toFixed(1) + '" y1="' + p[1].toFixed(1) + '" x2="' + (p[0] + it.r * c).toFixed(1) + '" y2="' + p[1].toFixed(1) + '" stroke="' + BLUE + '" stroke-width="4"/>';
+      if (o.show === 'r' || isQ) s += txt(p[0].toFixed(1), (y0 + rows * c + 26).toFixed(1), isQ ? '?' : it.r + '칸', 20, isQ ? ORANGE : BLUE2); });
+    if (o.label) s += txt(230, 26, o.label, 22, '#3B4252');
+    return svgWrap(s, 'fig-cgrid').replace('<svg ', '<svg data-rs="' + items.map(it => it.r).join(',') + '" ');
+  }
+  // crow: 크기 견주기 — items [{r}|{d}, lab] 을 지름으로 바꾸어 같은 비율로 나란히. 가장 큰 원은 주황 테(data-ds = 지름들).
+  function crow(o) {
+    const items = o.items || [], ds = items.map(it => it.d != null ? +it.d : 2 * it.r), mx = Math.max.apply(null, ds.concat(1)), n = items.length || 1, cw = 460 / n, k = Math.min(cw - 16, 170) / mx; let s = '';
+    items.forEach((it, i) => { const x = cw * i + cw / 2, r = ds[i] * k / 2, big = ds[i] === mx;
+      s += '<circle cx="' + x.toFixed(1) + '" cy="130" r="' + r.toFixed(1) + '" fill="' + (big ? '#FFF1E6' : '#F4F8FF') + '" stroke="' + (big ? ORANGE : INK) + '" stroke-width="4"/><circle cx="' + x.toFixed(1) + '" cy="130" r="4" fill="' + INK + '"/>'
+        + txt(x.toFixed(1), 238, it.lab || (it.d != null ? '지름 ' + it.d : '반지름 ' + it.r), 18, '#3B4252', 800) + txt(x.toFixed(1), 264, '→ 지름 ' + ds[i], 18, big ? '#C2551A' : BLUE2, 800); });
+    if (o.label) s += txt(230, 30, o.label, 22, '#3B4252');
+    return svgWrap(s, 'fig-crow').replace('<svg ', '<svg data-ds="' + ds.join(',') + '" ');
+  }
   const SC_PARTS = { ask, habitat, trait, anat, cycle, cond, need, bins, mimic };
 
-  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock, grid, range, brem };
+  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock, grid, range, brem, circ, compass, cgrid, crow };
   const HTML_PARTS = { vert, tvert, vmul, vdiv };
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
