@@ -8,6 +8,7 @@
    · 24차(2026-09-28) 국어 부품 추가: sent/sents(문장 짜임)·pause(띄어 읽기 ∨)·text(글 읽기 판)·para(문단 중심·뒷받침)·sort2(두 갈래 통)·mood(인물 마음)·sound(소리·표기)·letter(편지지)·note(메모지)
    · 23차(2026-09-28) 길이·시간 부품 추가: ruler(자)·joins(이어 붙여 어림)·road(거리 띠·km 표지판)·clock(시·분·초바늘)·tvert(시간 세로셈) · 카드 on(주황 강조)
    · 28차(2026-09-29) 3학년 2학기 곱셈 부품: vmul(곱셈 세로셈 — 올림 수·부분 곱 두 줄) · grid(모눈 가르기 — 덩이마다 부분 곱) · range(어림 사이 띠)
+   · 30차(2026-09-29) 3학년 2학기 나눗셈 부품: vdiv(나눗셈 세로셈 — 몫 자리 맞춤·가운데 0·내림·나머지·확인 식) · brem(묶고 남은 것 따로)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
    ============================================================================ */
 (function (global) {
@@ -810,10 +811,54 @@
     if (o.tag) s += txt(230, 262, o.tag, 20, '#6B7C93');
     return svgWrap(s, 'fig-range', null).replace('<svg ', '<svg data-in="' + (at == null ? '' : inn ? 1 : 0) + '" ');
   }
+  // ── 30차(2026-09-29) 3학년 2학기 나눗셈 부품: vdiv(나눗셈 세로셈 — 몫 자리 맞춤·내림·나머지) · brem(묶고 남은 것 따로) ──
+  // vdiv: a ÷ d 세로셈(HTML). 몫은 나누어지는 수의 자리에 맞추어 위에, 나눌 수 없는 가운데 자리는 몫에 0.
+  //       단계마다 (몫 숫자 × d) 를 그 자리 아래에 적고 줄을 그은 뒤, 남은 수에 다음 자리를 내려 적는다(몫 숫자 0 인 자리는 곱 줄 없이 내림만).
+  //       hi: 'q' 몫 · 'r' 나머지 줄 · 숫자 k = k번째 단계(곱·남은 수) 주황 · steps:false 면 몫과 나누어지는 수만 · answer:false 면 몫·단계 비움
+  //       side:false 면 옆 칸 없음 · check:true 면 옆 칸에 확인 식(나누는 수 × 몫 + 나머지 = 나누어지는 수)
+  function vdivCalc(a, d) {
+    const D = String(a).split('').map(Number), N = D.length; let cur = 0, started = false; const qd = [], steps = [];
+    for (let i = 0; i < N; i++) { cur = cur * 10 + D[i]; if (!started && cur < d && i < N - 1) { qd.push(''); continue; } const q = Math.floor(cur / d); started = true; qd.push(String(q)); if (q > 0) steps.push({ col: i, cur, prod: q * d }); cur -= q * d; }
+    return { N, qd, steps, rem: cur, q: Math.floor(a / d) };
+  }
+  function vdiv(o) {
+    const a = Math.max(0, +o.a | 0), d = Math.max(1, +o.d | 0), C = vdivCalc(a, d), N = C.N;
+    const cols = 'grid-template-columns:62px repeat(' + N + ',54px)';
+    const at = (num, end) => { const t = String(num).split(''); const arr = new Array(N).fill(''); for (let i = 0; i < t.length; i++) { const c = end - (t.length - 1) + i; if (c >= 0 && c < N) arr[c] = t[i]; } return arr; };
+    const row = (arr, cls, lead) => '<div class="vd-row ' + cls + '" style="' + cols + '"><span class="vd-l">' + (lead || '') + '</span>' + arr.map(x => '<span>' + esc(x) + '</span>').join('') + '</div>';
+    const line = (from, to) => '<div class="vd-row vd-ln" style="' + cols + '"><span class="vd-l"></span>' + new Array(N).fill(0).map((_, i) => '<span' + (i >= from && i <= to ? ' class="on"' : '') + '></span>').join('') + '</div>';
+    const hi = (k) => (o.hi === k ? ' vd-hi' : '');
+    const blank = o.answer === false;
+    let h = '<div class="vd" data-a="' + a + '" data-d="' + d + '" data-q="' + C.q + '" data-rem="' + C.rem + '">';
+    h += row(blank ? new Array(N).fill('') : C.qd, 'vd-q' + hi('q') + (blank ? ' vd-blank' : ''));
+    h += row(String(a).split(''), 'vd-a', '<b>' + d + '</b>');
+    if (o.steps !== false && !blank) {
+      C.steps.forEach((st, k) => {
+        const pl = String(st.prod).length; h += row(at(st.prod, st.col), 'vd-p' + hi(k)) + line(st.col - pl + 1, st.col);
+        const nx = C.steps[k + 1]; const last = !nx; const end = last ? N - 1 : nx.col; const val = last ? C.rem : nx.cur;
+        h += row(at(val, end), (last ? 'vd-r' + hi('r') : 'vd-w') + hi(k).replace('vd-hi', last ? '' : 'vd-hi'));
+      });
+    }
+    h += '</div>';
+    const sideLines = [];
+    if (o.side !== false && !blank) { sideLines.push('<div class="vd-sl' + hi('q') + '">몫 <b>' + C.q + '</b></div>'); sideLines.push('<div class="vd-sl' + hi('r') + '">나머지 <b>' + C.rem + '</b></div>'); if (o.check) sideLines.push('<div class="vd-sl vd-ck">' + d + ' × ' + C.q + (C.rem ? ' + ' + C.rem : '') + ' = ' + a + '</div>'); }
+    const side = sideLines.length ? '<div class="vd-side">' + sideLines.join('') + '</div>' : '';
+    return '<div class="fig-vert fig-vdiv"><div class="vd-wrap">' + h + side + '</div>' + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
+  }
+  // brem: total 개를 per 개씩 묶기 — 묶음(점선 상자) + 남은 것(빨강 테 「나머지」). 묶음 수가 몫, 남은 수가 나머지.
+  function brem(o) {
+    const total = Math.max(0, o.total | 0), k = Math.max(1, o.per | 0), g = Math.floor(total / k), r = total % k; let s = '';
+    const AW2 = r ? 340 : 440, bw = AW2 / Math.max(1, g), cs = Math.min(22, (bw - 14) / Math.min(k, 3));
+    const perRow = Math.min(k, 3), rows = Math.ceil(k / perRow), bh = rows * cs + 22;
+    for (let i = 0; i < g; i++) { const cx = 10 + bw * i + bw / 2, half = Math.min(60, bw / 2 - 5); s += '<rect class="o-grp" x="' + (cx - half).toFixed(1) + '" y="' + (140 - bh / 2).toFixed(1) + '" width="' + (2 * half).toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="12" fill="#FFF7E0" stroke="' + YEL + '" stroke-width="3" stroke-dasharray="8 5"/>'; for (let j = 0; j < k; j++) { const col = j % perRow, rw = Math.floor(j / perRow); s += '<circle cx="' + (cx - (perRow - 1) * cs / 2 + col * cs).toFixed(1) + '" cy="' + (140 - (rows - 1) * cs / 2 + rw * cs).toFixed(1) + '" r="' + Math.max(4, cs * 0.38).toFixed(1) + '" fill="' + (o.color || BLUE) + '" stroke="#fff" stroke-width="2"/>'; } }
+    if (r) { const x0 = 360, half = 44; s += '<rect class="o-rest" x="' + (x0 - 2) + '" y="' + (140 - bh / 2 - 4).toFixed(1) + '" width="' + (half * 2 + 4) + '" height="' + (bh + 8).toFixed(1) + '" rx="12" fill="#FFF0F0" stroke="' + RED + '" stroke-width="3"/>'; for (let j = 0; j < r; j++) { const col = j % 3, rw = Math.floor(j / 3); s += '<circle cx="' + (x0 + half - (Math.min(r, 3) - 1) * 12 + col * 24) + '" cy="' + (140 - (Math.ceil(r / 3) - 1) * 12 + rw * 24) + '" r="8" fill="' + RED + '" stroke="#fff" stroke-width="2"/>'; } s += txt(x0 + half, 140 + bh / 2 + 32, '나머지 ' + r, 22, RED); }
+    s += txt(230, 44, o.label || (total + '개를 ' + k + '개씩 묶으면'), 24) + txt(r ? 180 : 230, 140 + bh / 2 + 32, g + '묶음', 26, BLUE2);
+    return svgWrap(s, 'fig-brem').replace('<svg ', '<svg data-g="' + g + '" data-r="' + r + '" ');
+  }
   const SC_PARTS = { ask, habitat, trait, anat, cycle, cond, need, bins, mimic };
 
-  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock, grid, range };
-  const HTML_PARTS = { vert, tvert, vmul };
+  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock, grid, range, brem };
+  const HTML_PARTS = { vert, tvert, vmul, vdiv };
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
