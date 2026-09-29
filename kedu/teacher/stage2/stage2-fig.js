@@ -654,7 +654,33 @@
     const items = (o.items || []).map(so); if (!items.length && !o.title) return '';
     return '<div class="so-exh">' + (o.title ? '<div class="so-exht">' + chip('전시 주제', 'main') + md(o.title) + '</div>' : '') + '<div class="so-shelf">' + items.map(it => '<div class="so-exi"><div class="so-exemo">' + esc(it.emoji || '🏺') + '</div><div class="so-plate">' + (o.label ? '<i>명패</i>' : '') + '<b>' + md(it.name || '') + '</b>' + (it.use ? '<u>' + md(it.use) + '</u>' : '') + '</div></div>').join('') + '</div></div>';
   }
-  const SO_PARTS = { tline, map, link, then, groups, pcard, news, post, exhibit };
+  // ── 45차(2026-09-30) 사회 3-2 부품 — 그림 문법 그대로(주황 = 견준 두 해·칠한 사람 · 파랑 = 나머지) ──
+  // sbars: 세로 막대그래프 — title · x[] 가로 이름 · v[] 값 · unit 단위 · xl/yl 가로·세로 이름 · hi[] 주황으로 견줄 막대 번호 · cmp:true 면 hi 두 막대 차이 캡션 · data-v
+  function sbars(o) {
+    const x = o.x || [], v = (o.v || []).map(Number); if (!v.length) return '';
+    const n = v.length, W0 = 760, H0 = 400, L = 70, R = 24, T = 30, B = 70, mx = Math.max.apply(null, v) || 1;
+    const step = Math.pow(10, Math.floor(Math.log10(mx))), top = Math.ceil(mx / step) * step, gw = (W0 - L - R) / n, bw = Math.min(70, gw * 0.56), hi = o.hi || [];
+    let s = '';
+    for (let i = 0; i <= 4; i++) { const yv = top * i / 4, y = H0 - B - (H0 - T - B) * i / 4; s += '<line x1="' + L + '" y1="' + y + '" x2="' + (W0 - R) + '" y2="' + y + '" stroke="#DCE3EC" stroke-width="2"/><text x="' + (L - 10) + '" y="' + (y + 7) + '" font-size="20" text-anchor="end" fill="#6B7C93">' + (Math.round(yv * 10) / 10) + '</text>'; }
+    v.forEach((val, i) => { const h = (H0 - T - B) * val / top, cx = L + gw * i + gw / 2, on = hi.indexOf(i) >= 0;
+      s += '<rect x="' + (cx - bw / 2) + '" y="' + (H0 - B - h) + '" width="' + bw + '" height="' + h + '" rx="6" fill="' + (on ? '#FF7A2F' : '#7FA4E8') + '"/>'
+        + '<text x="' + cx + '" y="' + (H0 - B - h - 10) + '" font-size="24" font-weight="800" text-anchor="middle" fill="' + (on ? '#D9591A' : '#2B4C8C') + '">' + val + '</text>'
+        + '<text x="' + cx + '" y="' + (H0 - B + 30) + '" font-size="21" text-anchor="middle" fill="#334">' + esc(String(x[i] == null ? '' : x[i])) + '</text>'; });
+    s += '<line x1="' + L + '" y1="' + (H0 - B) + '" x2="' + (W0 - R) + '" y2="' + (H0 - B) + '" stroke="#334" stroke-width="3"/>';
+    s += '<text x="' + (W0 - R) + '" y="' + (H0 - 8) + '" font-size="19" text-anchor="end" fill="#6B7C93">' + esc(o.xl || '') + '</text><text x="' + 8 + '" y="' + 20 + '" font-size="19" fill="#6B7C93">' + esc(o.yl || '') + '</text>';
+    let cap = o.caption || '';
+    if (o.cmp && hi.length === 2) { const a = v[hi[0]], b = v[hi[1]], d = Math.abs(a - b); cap = x[hi[0]] + ' ' + a + (o.unit || '') + ' → ' + x[hi[1]] + ' ' + b + (o.unit || '') + ' · ' + (d === 0 ? '같아요' : d + (o.unit || '') + ' ' + (b < a ? '줄었어요' : '늘었어요')); }
+    return '<div class="so-bars" data-v="' + v.join(',') + '" data-hi="' + hi.join(',') + '">' + (o.title ? '<div class="so-bt">' + md(o.title) + '</div>' : '') + '<svg class="fig-svg" viewBox="0 0 ' + W0 + ' ' + H0 + '" xmlns="http://www.w3.org/2000/svg" role="img">' + s + '</svg>' + (cap ? '<div class="so-bcap">' + md(cap) + '</div>' : '') + '</div>';
+  }
+  // dots: 백 명 마을 — groups [{name, on 칠한 수, of 전체(기본 100)}] · lab 칠한 사람 이름 · rest 나머지 이름 · 동그라미 하나 = 한 사람(10 × 10) · data-on
+  function dots(o) {
+    const gs = (o.groups || []).filter(Boolean); if (!gs.length) return '';
+    const one = (g) => { const of = g.of || 100, on = Math.max(0, Math.min(of, +g.on || 0)); let s = '';
+      for (let i = 0; i < of; i++) { const r = Math.floor(i / 10), c = i % 10, k = of - 1 - i < on; s += '<circle cx="' + (14 + c * 26) + '" cy="' + (14 + r * 26) + '" r="10" fill="' + (k ? '#FF7A2F' : '#C9D8F2') + '"/>'; }
+      return '<div class="so-dot1"><div class="so-dh">' + esc(g.name || '') + '</div><svg class="fig-svg" viewBox="0 0 264 ' + (Math.ceil(of / 10) * 26 + 2) + '" xmlns="http://www.w3.org/2000/svg" role="img">' + s + '</svg><div class="so-dc"><b>' + esc(o.lab || '노인') + ' ' + on + '명</b> · ' + esc(o.rest || '나머지') + ' ' + (of - on) + '명</div></div>'; };
+    return '<div class="so-dots n' + gs.length + '" data-on="' + gs.map(g => +g.on || 0).join(',') + '">' + gs.map(one).join('') + (o.note ? '<div class="so-dnote">' + md(o.note) + '</div>' : '') + '</div>';
+  }
+  const SO_PARTS = { tline, map, link, then, groups, pcard, news, post, exhibit, sbars, dots };
 
   // ── 27차(2026-09-29) 과학 생물 부품 — 그림 문법: **그렇다·있음·같게 할 조건 = 파랑 ○ / 아니다·없음 = 회색 ✗ / 주황 = 기준 질문·다르게 할 조건·지금 단계·강조 / 초록 = 자람·싹·결과**
   //    사는 곳 = 땅 위(풀빛)·땅속(흙빛)·하늘(하늘빛)·강과 연못(파랑)·바다(짙은 파랑)·사막(모래빛)·극지(얼음빛)·들과 산(초록) ──
