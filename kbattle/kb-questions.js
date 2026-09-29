@@ -49,13 +49,15 @@
 
     var p = q.payload, a = q.answer;
     if (pub) { // 공개 문제: payload 형태만 확인
-      if (q.type === 'mcq' && !(p && Array.isArray(p.choices) && p.choices.length === 4)) errs.push('mcq: choices 4개 아님');
+      if (q.type === 'mcq' && !(p && Array.isArray(p.choices) && p.choices.length >= 2 && p.choices.length <= 4)) errs.push('mcq: choices 2~4개 아님');
       if (q.type === 'order' && !(p && Array.isArray(p.items) && p.items.length >= 3 && p.items.length <= 6)) errs.push('order: items 3~6개 아님');
       return errs;
     }
     if (q.type === 'mcq') {
-      if (!p || !Array.isArray(p.choices) || p.choices.length !== 4) errs.push('mcq: choices 4개 아님');
-      else if (!(a && a.index >= 0 && a.index < 4)) errs.push('mcq: answer.index 0~3 아님');
+      // 보기 수 2~4 (2026-09-29: 「비교하기」「여러 가지 모양」처럼 교과서 자체가 2·3지선다인 단원이 있다.
+      //   4지로 억지 교란지를 만들면 티가 나고, 버리면 그 단원 문제가 0개가 됐다.)
+      if (!p || !Array.isArray(p.choices) || p.choices.length < 2 || p.choices.length > 4) errs.push('mcq: choices 2~4개 아님');
+      else if (!(a && a.index >= 0 && a.index < p.choices.length)) errs.push('mcq: answer.index 범위 밖');
     } else if (q.type === 'ox') {
       if (!(a && (a.value === true || a.value === false))) errs.push('ox: answer.value 불리언 아님');
     } else if (q.type === 'numpad') {
@@ -135,7 +137,7 @@
 
   function renderMcq(q, el, done) {
     el.innerHTML = promptHtml(q) +
-      '<div class="kb-choices">' + q.payload.choices.map(function (c, i) {
+      '<div class="kb-choices kb-c' + q.payload.choices.length + '">' + q.payload.choices.map(function (c, i) {
         return '<button class="kb-choice" data-i="' + i + '">' + esc(c) + '</button>';
       }).join('') + '</div>';
     var btns = el.querySelectorAll('.kb-choice');

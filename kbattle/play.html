@@ -21,6 +21,12 @@
 <script src="kb-roster.js"></script>
 <script src="kb-battle.js"></script>
 <script src="kb-mode-race.js"></script>
+<!-- 호스트가 싣는 모드 6종을 폰도 전부 싣는다 — 안 실으면 그 모드의 폰 바(생명·구조대·보물 힌트·폭탄·팀·조각)가 통째로 안 뜬다 (2026-09-29 수정) -->
+<script src="kb-mode-puzzle.js"></script>
+<script src="kb-mode-tower.js"></script>
+<script src="kb-mode-treasure.js"></script>
+<script src="kb-mode-survival.js"></script>
+<script src="kb-mode-bomb.js"></script>
 <script>
 /* 학생 폰 — 들어가는 문.
    헌법 제7조: 신원 = 학급 명부(비밀번호 없음). 아이는 자기 이름을 탭할 뿐이다.
@@ -173,8 +179,10 @@
     var ctx;
     try { ctx = Kple.join(code, name, { el: document.getElementById('play'), game: 'kbattle' }); }
     catch (e) { setConn(String(e.message || e), 'err'); gate(); return; }
+    // 같은 방에 같은 이름이 있으면 호스트가 「이름②」로 구분해 준다 — 폰에도 그렇게 보여 준다
+    ctx.on('name', function (n) { setConn('연결됨 · 방 ' + code + ' · ' + n.name + ' (같은 이름이 있어서 이렇게 보여요)', 'ok'); });
     ctx.on('status', function (s) {
-      if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + code + ' · ' + name, 'ok');
+      if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + code + ' · ' + ctx.name, 'ok');
       else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setConn('연결 오류: ' + s, 'err');
       else setConn(s);
     });

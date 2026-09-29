@@ -90,8 +90,8 @@
 
     if (item.type === 'choice') {
       var ch = (item.choices || []).map(String);
-      if (ch.length !== 4) return null;                       // 4지 아니면 안 낸다
-      if (!(item.answer >= 0 && item.answer < 4)) return null;
+      if (ch.length < 2 || ch.length > 4) return null;        // 보기 2~4개(KBQ 규칙과 일치)
+      if (!(item.answer >= 0 && item.answer < ch.length)) return null;
       base.type = 'mcq';
       base.payload = { choices: ch };
       base.answer = { index: item.answer };
@@ -132,17 +132,28 @@
 
     var grade = parseInt((unitKey.match(/^g(\d+)/) || [0, 1])[1], 10) || 1;
     var gb = band(grade);
-    var res;
-    try { res = C.generate({ lesson: unitKey, n: n, seed: seed }); }
-    catch (e) { return []; }
-
-    var out = [];
-    (res.items || []).forEach(function (it, i) {
-      // concept = 템플릿이 알려주면 그것, 아니면 단원명. 교사 대시보드의 가로축이 된다(제9조).
-      var concept = it.concept || unitName[unitKey] || unitKey;
-      var q = toKBQ(it, 'kq:' + unitKey + ':' + seed + ':' + n + ':' + i, concept, gb);
-      if (q && root.KBQ && root.KBQ.validate(q).length === 0) out.push(q);
-    });
+    // 생성 → KBQ 번역(글자 입력형 등은 버려진다). 버려져서 n개가 안 차면 더 많이 생성해 채운다.
+    //   (2026-09-29: 「평면도형」처럼 절반이 서술형인 단원은 10문제 요청에 3개만 나오던 문제)
+    //   결정성 유지: 같은 (단원·seed·n) 이면 같은 절차 → 같은 세트·같은 qid (오답 복원의 전제).
+    function build(count) {
+      var res;
+      try { res = C.generate({ lesson: unitKey, n: count, seed: seed }); }
+      catch (e) { return []; }
+      var arr = [], seen = {};
+      (res.items || []).forEach(function (it, i) {
+        // concept = 템플릿이 알려주면 그것, 아니면 단원명. 교사 대시보드의 가로축이 된다(제9조).
+        var concept = it.concept || unitName[unitKey] || unitKey;
+        var q = toKBQ(it, 'kq:' + unitKey + ':' + seed + ':' + n + ':' + i, concept, gb);
+        if (!q || !root.KBQ || root.KBQ.validate(q).length !== 0) return;
+        var sig = q.prompt.text + '|' + JSON.stringify(q.answer);   // 같은 문제 두 번은 안 낸다
+        if (seen[sig]) return;
+        seen[sig] = 1; arr.push(q);
+      });
+      return arr;
+    }
+    var out = build(n);
+    if (out.length < n) out = build(n * 4);   // 채움 시도 1회 (그래도 모자라면 있는 만큼)
+    out = out.slice(0, n);
     setCache[ck] = out;
     return out;
   }
@@ -185,6 +196,7 @@
   root.KBKQuiz = {
     catalog: catalog, load: load, set: set, byIds: byIds, prepare: prepare,
     isKQ: function (qid) { return !!parse(qid); },
-    _parse: parse, _toKBQ: toKBQ, _base: BASE
+    _parse: parse, _toKBQ: toKBQ, _base: BASE,
+    _clear: function () { setCache = {}; }   // 테스트용(복원 결정성 검증 — 캐시 없이 다시 생성)
   };
 })();

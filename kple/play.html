@@ -79,8 +79,9 @@
       catch (e) { setConn(String(e.message || e), 'err'); root.innerHTML = gateHTML; bindGate(); return; }
       activeCtx = ctx;
       if (window.KpleParty) { try { activeParty = KpleParty.attachPlayer(ctx, { el: playEl }); } catch (e) {} }
+      ctx.on('name', function (n) { setConn('연결됨 · 방 ' + code + ' · ' + n.name + ' (같은 이름이 있어서 이렇게 보여요)', 'ok'); });
       ctx.on('status', function (s) {
-        if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + code, 'ok');
+        if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + code + ' · ' + ctx.name, 'ok');
         else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setConn('연결 오류: ' + s, 'err');
         else setConn(s);
       });

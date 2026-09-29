@@ -13,10 +13,11 @@
      Kple.join(roomCode, nickname, opts)  → 방코드로 참가(학생 폰)
 
    메시지(둘 다 broadcast event 'kp'):
-     참가자 → 호스트 : { kind:'join', name }
+     참가자 → 호스트 : { kind:'join', name, uid }   uid = 기기 꼬리표(동명이인 구분, 2026-09-29)
                        { kind:'answer', ... 게임 자유 ... }
                        { kind:'bye', name }
-     호스트 → 참가자 : { kind:'roster', names:[...] }
+     호스트 → 참가자 : { kind:'welcome', game, uid, name }  ← 그 uid 폰만 표시명(이름②…)을 받아 단다
+                       { kind:'roster', names:[...] }
                        { kind:'state', ... 게임 자유 ... }
      게임별 payload 모양은 게임 모듈이 정한다. 코어는 운반만 한다.
 
@@ -51,6 +52,31 @@
   }
 
   function channelName(code) { return 'kple:' + String(code).toUpperCase(); }
+
+  // ── 기기 id(uid) — 동명이인 구분용 (2026-09-29) ──
+  //   신원은 여전히 "이름"이다(제7조·제8조). uid 는 이름이 아니라 "이 폰이 누구 폰인지"를 호스트가
+  //   구분하는 꼬리표일 뿐: 개인정보 0, 서버 저장 0, 같은 폰에서 나갔다 들어오면 같은 값(재입장 점수 유지).
+  var UID_KEY = 'kple_uid';
+  function deviceUid() {
+    var u = null;
+    try { u = localStorage.getItem(UID_KEY); } catch (e) {}
+    if (!u) {
+      u = makeRoomCode(6);
+      try { localStorage.setItem(UID_KEY, u); } catch (e) {}
+    }
+    return u;
+  }
+  // 이름이 같아도 uid 가 다르면 다른 사람 → 표시명에 ②③… 을 붙여 구분한다.
+  var CIRCLED = '②③④⑤⑥⑦⑧⑨';
+  function distinctName(base, roster, owner, uid) {
+    if (!uid) return base;                                   // 옛 참가자(uid 없음) = 옛 동작
+    if (owner[base] === undefined || owner[base] === uid) return base;
+    for (var i = 0; i < CIRCLED.length; i++) {
+      var cand = base + CIRCLED[i];
+      if (owner[cand] === undefined || owner[cand] === uid) return cand;
+    }
+    return base + '·' + uid.slice(-2);
+  }
 
   // ---- Supabase 클라이언트 확보 ------------------------------------------
   function getDb() {
@@ -97,7 +123,9 @@
     if (!def || !def.host) throw new Error('[Kple] 게임 없음(host): ' + gameName);
 
     var code = opts.roomCode || makeRoomCode(4);
-    var roster = [];   // 참가자 이름 목록
+    var roster = [];   // 참가자 이름 목록(표시명)
+    var owner = {};    // 표시명 → uid  (동명이인 구분·재입장 판별)
+    var byUid = {};    // uid → 표시명 (answer/bye 의 이름을 uid 기준으로 바로잡음)
     var listeners = { join: [], answer: [], bye: [], status: [] };
     var conn = null;   // 아래에서 할당(핸들러 등록 후 구독)
 
@@ -105,19 +133,38 @@
       (listeners[kind] || []).forEach(function (fn) { try { fn(data); } catch (e) { console.error(e); } });
     }
 
+    // 참가자가 보낸 이름을 "이 방에서의 표시명"으로 바로잡는다.
+    //   uid 있음: uid 가 이미 아는 폰이면 그 폰의 표시명 / 처음이면 이름 충돌 시 ②③… 부여
+    //   uid 없음: 옛 동작(이름 그대로)
+    //   "같은 사람" = 같은 uid + 같은 입력 이름. (같은 기기 두 탭에서 다른 이름으로 들어오면 두 사람 —
+    //    가족 태블릿·교사 시험 탭. 같은 기기 같은 이름 = 재입장 → 점수 유지.)
+    function who(p) { return p.uid ? (p.uid + '\n' + String(p.name || '')) : null; }
+    function resolveName(p) {
+      var k = who(p);
+      if (!k) return p.name;
+      if (byUid[k]) return byUid[k];
+      return distinctName(String(p.name || ''), roster, owner, k);
+    }
     function onMsg(p) {
       if (p.kind === 'join') {
-        if (roster.indexOf(p.name) === -1) roster.push(p.name);
-        conn.send({ kind: 'welcome', game: gameName });  // 참가자가 이 방의 게임을 알게
+        var nm = resolveName(p);
+        if (p.uid) { owner[nm] = who(p); byUid[who(p)] = nm; }
+        if (roster.indexOf(nm) === -1) roster.push(nm);
+        // welcome 에 배정 표시명을 실어 보낸다 — 해당 uid 폰만 자기 이름을 바꿔 단다.
+        conn.send({ kind: 'welcome', game: gameName, uid: p.uid, name: nm, asked: p.name });
         broadcastRoster();
-        emit('join', p);              // 게임이 받아서 필요 시 resync state 되쏨
+        emit('join', Object.assign({}, p, { name: nm }));   // 게임은 표시명만 본다
       } else if (p.kind === 'bye') {
-        var i = roster.indexOf(p.name);
+        var bn = p.uid ? (byUid[p.uid + '\n' + String(p.asked || p.name || '')] || p.name) : p.name;
+        var i = roster.indexOf(bn);
         if (i !== -1) roster.splice(i, 1);
         broadcastRoster();
-        emit('bye', p);
+        emit('bye', Object.assign({}, p, { name: bn }));
       } else if (p.kind === 'answer') {
-        emit('answer', p);
+        // 폰이 아직 표시명을 못 받았어도(welcome 유실) uid 로 바로잡아 채점 누락을 막는다
+        // 폰이 아직 표시명을 못 받았어도(welcome 유실) 입력 이름+uid 로 바로잡아 채점 누락을 막는다
+        var ak = p.uid ? (p.uid + '\n' + String(p.asked || p.name || '')) : null;
+        emit('answer', ak && byUid[ak] ? Object.assign({}, p, { name: byUid[ak] }) : p);
       }
     }
 
@@ -144,8 +191,9 @@
   function join(roomCode, nickname, opts) {
     opts = opts || {};
     roomCode = String(roomCode || '').toUpperCase().trim();
-
-    var listeners = { roster: [], state: [], status: [] };
+    // uid: 기본 = 이 기기의 꼬리표(localStorage). opts.uid 로 지정 가능, false 면 옛 방식(이름만).
+    var uid = (opts.uid === false) ? null : (opts.uid || deviceUid());
+    var listeners = { roster: [], state: [], status: [], name: [] };
     var conn = null;       // 핸들러 등록 후 구독
     var mounted = false;
     var pending = [];      // 마운트 전 도착한 state 버퍼(welcome 보다 state 가 먼저 올 경우 대비)
@@ -157,11 +205,13 @@
     var ctx = {
       role: 'join',
       roomCode: roomCode,
-      name: nickname,
+      name: nickname,          // 호스트가 ②③… 을 붙여 주면 welcome 수신 시 갱신된다
+      askedName: nickname,     // 내가 입력한 원래 이름
+      uid: uid,
       el: opts.el,
-      answer: function (data) { var m = Object.assign({ kind: 'answer', name: nickname }, data); return conn.send(m); },
+      answer: function (data) { var m = Object.assign({ kind: 'answer', name: ctx.name, asked: nickname, uid: uid }, data); return conn.send(m); },
       on: function (kind, fn) { if (listeners[kind]) listeners[kind].push(fn); },
-      leave: function () { if (conn) { conn.send({ kind: 'bye', name: nickname }); conn.close(); } },
+      leave: function () { if (conn) { conn.send({ kind: 'bye', name: ctx.name, asked: nickname, uid: uid }); conn.close(); } },
       close: function () { if (conn) conn.close(); }
     };
 
@@ -176,7 +226,14 @@
     }
 
     function onMsg(p) {
-      if (p.kind === 'welcome') { mountGame(p.game); }
+      if (p.kind === 'welcome') {
+        // 내 uid 앞으로 온 welcome 이면 호스트가 정한 표시명을 받아 단다 (동명이인 → 이름②)
+        if (uid && p.uid === uid && p.asked === nickname && p.name && p.name !== ctx.name) {
+          var prev = ctx.name; ctx.name = p.name;
+          emit('name', { name: p.name, asked: p.asked || nickname, prev: prev });
+        }
+        mountGame(p.game);
+      }
       else if (p.kind === 'roster') { if (mounted) emit('roster', p); }
       else if (p.kind === 'state') { if (mounted) emit('state', p); else pending.push(p); }
     }
@@ -188,7 +245,7 @@
       emit('status', status);
       if (status === 'SUBSCRIBED') {
         // 구독 직후 입장 신호 → 호스트가 welcome + 현재 state 되쏨(늦은 입장 동기화)
-        c.send({ kind: 'join', name: nickname });
+        c.send({ kind: 'join', name: nickname, uid: uid });   // 재구독(백그라운드 복귀) 때도 다시 쏨 → 호스트 resync
       }
     });
     return ctx;
@@ -203,6 +260,6 @@
   window.Kple = {
     register: register, has: hasGame, list: listGames,
     host: host, join: join,
-    makeRoomCode: makeRoomCode
+    makeRoomCode: makeRoomCode, deviceUid: deviceUid
   };
 })();

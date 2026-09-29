@@ -130,14 +130,21 @@
   // ── 우리 반 배운 것: 차시 데이터(window.LESSONS) 온디맨드 로드 ──
   // 파일=단원 하나. 키는 u{단원}_l{차시} (학년·과목 접두 없음 → 한 번에 한 파일만).
   // 화이트리스트(아래 매니페스트)에 있는 파일만 로드 — URL 파라미터 임의 주입 차단.
-  var UNIT_MAP = { 1: { 국어: [1,2,3,4,5,6,7], 수학: [1,2,3,4,5,6] },
-                   2: { 국어: [1,2,3,4,5,6,7,8], 수학: [1,2,3,5,6] } };
-  var SUBJ_SLUG = { 국어: 'korean', 수학: 'math' };
-  var UNIT_MANIFEST = {};   // file -> {grade, subject, unit}
-  Object.keys(UNIT_MAP).forEach(function (g) {
-    Object.keys(UNIT_MAP[g]).forEach(function (subj) {
-      UNIT_MAP[g][subj].forEach(function (u) {
-        UNIT_MANIFEST['g' + g + '_' + SUBJ_SLUG[subj] + '_u' + u] = { grade: +g, subject: subj, unit: u };
+  // 키 = 파일 접두(g1 / g2 / g3 / g3s2 …). 2026-09-29: 3학년 1·2학기 + 과학·사회 추가
+  //   (kedu/teacher/data/ 에 파일이 생기면 여기 줄 하나 추가 — 이 표에 없는 파일은 URL로도 못 연다.)
+  var UNIT_MAP = {
+    g1:   { label: '1학년',        국어: [1,2,3,4,5,6,7],   수학: [1,2,3,4,5,6] },
+    g2:   { label: '2학년',        국어: [1,2,3,4,5,6,7,8], 수학: [1,2,3,5,6] },
+    g3:   { label: '3학년 1학기',  국어: [1,2,3,4,5,6],     수학: [1,2,3,4,5,6,7], 과학: [1,2,3,4], 사회: [1,2] },
+    g3s2: { label: '3학년 2학기',  국어: [1,2,3,4,5],       수학: [1,2,3,4,5,6] }
+  };
+  var SUBJ_SLUG = { 국어: 'korean', 수학: 'math', 과학: 'science', 사회: 'social' };
+  var SUBJECTS = Object.keys(SUBJ_SLUG);
+  var UNIT_MANIFEST = {};   // file -> {gk, label, subject, unit}
+  Object.keys(UNIT_MAP).forEach(function (gk) {
+    SUBJECTS.forEach(function (subj) {
+      (UNIT_MAP[gk][subj] || []).forEach(function (u) {
+        UNIT_MANIFEST[gk + '_' + SUBJ_SLUG[subj] + '_u' + u] = { gk: gk, label: UNIT_MAP[gk].label, subject: subj, unit: u };
       });
     });
   });
@@ -152,7 +159,7 @@
         var deck = KpleDeck.from({ lessons: keys });
         if (!deck || !deck.items || !deck.items.length) { rej(new Error('문항 없음')); return; }
         var m = UNIT_MANIFEST[file];
-        deck.title = m.grade + '학년 ' + m.subject + ' ' + m.unit + '단원';
+        deck.title = m.label + ' ' + m.subject + ' ' + m.unit + '단원';
         _deckCache[file] = deck; res(deck);
       }
       window.LESSONS = {};   // 단원 격리(키 충돌 방지)
@@ -206,23 +213,30 @@
 
   // 학년 → 과목 → 단원 트리. 단원 클릭 시 그 차시 덱을 로드해 consume(deck).
   function renderLessonTree(host, consume) {
-    var grade = 1, subject = '수학';
+    var gk = 'g1', subject = '수학';
     function pill(label, on, attr) {
       return '<button class="kp-lt-pill' + (on ? ' on' : '') + '" ' + attr + '>' + label + '</button>';
     }
     function draw() {
-      var units = (UNIT_MAP[grade] && UNIT_MAP[grade][subject]) || [];
+      var g = UNIT_MAP[gk] || {};
+      var subjHere = SUBJECTS.filter(function (sj) { return (g[sj] || []).length; });   // 그 학년에 있는 과목만 알약으로
+      if (subjHere.indexOf(subject) < 0) subject = subjHere[0] || '수학';
+      var units = g[subject] || [];
       host.innerHTML =
-        '<div class="kp-lt-row">' + pill('1학년', grade === 1, 'data-g="1"') + pill('2학년', grade === 2, 'data-g="2"') +
-          '<span class="kp-lt-sep"></span>' + pill('국어', subject === '국어', 'data-s="국어"') + pill('수학', subject === '수학', 'data-s="수학"') + '</div>' +
+        '<div class="kp-lt-row">' + Object.keys(UNIT_MAP).map(function (k) {
+            return pill(UNIT_MAP[k].label, gk === k, 'data-g="' + k + '"');
+          }).join('') + '</div>' +
+        '<div class="kp-lt-row">' + subjHere.map(function (sj) {
+            return pill(sj, subject === sj, 'data-s="' + sj + '"');
+          }).join('') + '</div>' +
         '<div class="kp-lt-units">' + units.map(function (u) {
           return '<button class="kp-lt-u" data-u="' + u + '">' + u + '단원</button>';
         }).join('') + '</div>';
-      [].forEach.call(host.querySelectorAll('[data-g]'), function (b) { b.onclick = function () { grade = +b.getAttribute('data-g'); draw(); }; });
+      [].forEach.call(host.querySelectorAll('[data-g]'), function (b) { b.onclick = function () { gk = b.getAttribute('data-g'); draw(); }; });
       [].forEach.call(host.querySelectorAll('[data-s]'), function (b) { b.onclick = function () { subject = b.getAttribute('data-s'); draw(); }; });
       [].forEach.call(host.querySelectorAll('[data-u]'), function (b) {
         b.onclick = function () {
-          var file = 'g' + grade + '_' + SUBJ_SLUG[subject] + '_u' + b.getAttribute('data-u');
+          var file = gk + '_' + SUBJ_SLUG[subject] + '_u' + b.getAttribute('data-u');
           b.textContent = '불러오는 중…'; b.disabled = true;
           loadLessonDeck(file).then(consume).catch(function (e) {
             setConn(String((e && e.message) || e), 'err'); b.textContent = b.getAttribute('data-u') + '단원'; b.disabled = false;

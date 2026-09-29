@@ -206,7 +206,8 @@
 
     render();
     ctx._test = { get phase() { return phase; }, get scores() { return scores; },
-                  get streaks() { return streaks; }, get mode() { return mode; } };
+                  get streaks() { return streaks; }, get mode() { return mode; },
+                  get answered() { return answered; }, get questions() { return questions; } };
   }
 
   /* ---------------- 참가자(학생 폰) ----------------
