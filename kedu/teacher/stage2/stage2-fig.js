@@ -504,7 +504,7 @@
   function sort2(o) {
     const bin = (b, cls) => !b || (!b.name && !(b.items || []).length) ? '' : '<div class="ko-bin ' + cls + '"><div class="ko-binh">' + esc(b.name || '') + '</div>' + (b.items || []).map(t => '<div class="ko-item">' + md(t) + '</div>').join('') + (b.hint ? '<div class="ko-hint">' + md(b.hint) + '</div>' : '') + '</div>';
     const bins = [bin(o.a, 'a'), bin(o.b, 'b')].filter(Boolean); if (!bins.length) return ''; // 이름도 글줄도 없는 통은 안 그린다(한 통만도 됨)
-    return '<div class="ko-sort2 n' + bins.length + '">' + bins.join('') + '</div>';
+    return '<div class="ko-sort2 n' + bins.length + (o.wide ? ' wide' : '') + '">' + bins.join('') + '</div>';
   }
   // mood: 인물의 마음 — who(얼굴 이모지 → 그림 인물, 기분 얼굴 🙂😟😮🤔 도 됨) · say 말풍선 · feel 마음(주황) · how 목소리·표정(회색) · flow = 마음 변화 화살표 줄
   function figWho(face, cls) {

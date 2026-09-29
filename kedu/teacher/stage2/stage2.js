@@ -175,7 +175,7 @@
       case 'cover': {
         const lines = String(d.title || '').split('\n').filter(Boolean);
         const first = lines.shift() || '';
-        return { cover: true, body: (d.emoji ? '<div class="kt2-cover-emoji">' + esc(d.emoji) + '</div>' : '') + '<div class="kt2-cover-unit">' + esc(ctx.unitTitle || '') + '</div><div class="kt2-cover-title">' + md(first) + (lines.length ? '<span class="l2">' + lines.map(md).join('<br>') + '</span>' : '') + '</div>' + '<div class="kt2-cover-meta"><span>' + esc(ctx.meta.subtitle || ctx.meta.title || '') + '</span><span>⏱ ' + (ctx.meta.duration || 40) + '분</span>' + (ctx.meta.std ? '<span>' + esc(ctx.meta.std) + '</span>' : '') + '</div>' };
+        return { cover: true, body: (d.emoji ? '<div class="kt2-cover-emoji">' + esc(d.emoji) + '</div>' : '') + '<div class="kt2-cover-unit">' + esc(ctx.unitTitle || '') + '</div><div class="kt2-cover-title">' + md(first) + (lines.length ? '<span class="l2">' + lines.map(md).join('<br>') + '</span>' : '') + '</div>' + '<div class="kt2-cover-meta"><span>' + esc(ctx.meta.subtitle || ctx.meta.title || '') + '</span><span>⏱ ' + (ctx.meta.duration || ctx.meta.duration_min || 40) + '분</span>' + (ctx.meta.std ? '<span>' + esc(ctx.meta.std) + '</span>' : '') + '</div>' };
       }
       case 'objective': push('<div class="objective-card">' + md(d.content || d.desc || '') + (Array.isArray(d.bullets) && d.bullets.length ? '<ol class="obj-list">' + d.bullets.map(b => '<li>' + md(String(b)) + '</li>').join('') + '</ol>' : '') + '</div>'); break;
       case 'question': push('<div class="big-q">' + md(d.content || d.question || '') + '</div>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
@@ -755,7 +755,7 @@
     stg.querySelectorAll('i').forEach(el => el.addEventListener('click', () => { const st = el.getAttribute('data-st'); const i = self.slides.findIndex(x => x.stage === st); if (i >= 0) self.go(i, i > self.idx ? 1 : -1); }));
   };
   Stage.prototype.tick = function () {
-    const c = doc.getElementById('hud-clock'); if (c) { const sec = (Date.now() - this.started) / 1000; c.textContent = fmtClock(sec); c.classList.toggle('over', sec > (this.meta.duration || 40) * 60); }
+    const c = doc.getElementById('hud-clock'); if (c) { const sec = (Date.now() - this.started) / 1000; c.textContent = fmtClock(sec); c.classList.toggle('over', sec > (this.meta.duration || this.meta.duration_min || 40) * 60); }
     if (this.timer) this.timerTick();
   };
   Stage.prototype.hudAct = function (h, btn) {
