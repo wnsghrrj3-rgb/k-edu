@@ -171,14 +171,14 @@ window.KEDU_MAP["g3_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_social_u2_l04",
+     "lessonId": "g3_social_u2_l04_v1",
      "n": "4",
      "title": "옛날의 세시 풍속을 알아볼까요",
      "sub": "① 옛날과 오늘날의 풍습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/social/2단원_옛날과오늘날의생활모습/g3_social_u2_l04_수수께끼를풀어요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
