@@ -12,13 +12,21 @@ const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<'
 
 export class Life {
   constructor(g, data) {
-    this.g = g; this.d = data; this.values = { craft: 0, heart: 0 }; this.abil = {}; this.xp = {}; this.hurt = new Set(); this.opened = new Set(); this.done = new Set(); this.queue = []; this.log = []; this.tries = {}; this.seed = 0; this.mixed = null; this.busy = false;
+    this.g = g; this.d = data; this.values = { craft: 0, heart: 0, grain: 0 }; this.abil = {}; this.xp = {}; this.hurt = new Set(); this.opened = new Set(); this.done = new Set(); this.queue = []; this.log = []; this.tries = {}; this.seed = 0; this.mixed = null; this.busy = false;
   }
   /** 태어남 뒤(캐릭터가 정해진 뒤) 부른다 — 능력 단계·섞여 나오는 상황 뽑기 */
   begin() {
     const c = this.g.character; for (const a of ABIL) { this.abil[a] = c?.levels?.[a] ?? 2; this.xp[a] = 0; }
+    this.carryIn();
     if (!this.mixed) { this.seed = this.seed || ((Date.now() % 100000) + Math.floor(Math.random() * 1000)); this.mixed = this.pickMixed(this.seed); }
     this.g.e.onFrame.push((dt) => this.tick(dt)); this.hud(); this.render();
+  }
+  /** 조상에게서 넘어온 값 — d.carry = { from:'life', keep:['craft','heart'] }. 지난 시대 끝 카드가 localStorage 에 남긴 것을 한 번만 더한다(이번 판 저장에 들어가면 다시 안 더함) */
+  carryIn() {
+    const c = this.d.carry; if (!c || this.carried || typeof localStorage === 'undefined') return; this.carried = true;
+    let v = null; try { v = JSON.parse(localStorage.getItem('kworld_carry:' + c.from) || 'null'); } catch { } if (!v) return;
+    const got = []; for (const k of c.keep || ['craft', 'heart']) { const n = Math.round((v[k] || 0) * (c.ratio ?? 0.5)); if (n > 0) { this.values[k] = (this.values[k] || 0) + n; got.push(`${{ craft: '✋ 솜씨', heart: '🤝 인심', grain: '🌾 곡식' }[k] || k} ${n}`); } }
+    if (got.length) setTimeout(() => this.g.ui.say(`${c.say || '조상에게서 넘어온 것'} — ${got.join(' · ')}`, 5200), 1800);
   }
   /** 씨앗으로 섞여 나오는 상황을 n개 뽑는다(판마다 다르게, 저장하면 같은 판) */
   pickMixed(seed) {
@@ -78,7 +86,7 @@ export class Life {
   hit(c) { if (c.done && !this.g.cond(c.done)) return false; if (c.count && this.g.count(c.count[0]) < c.count[1]) return false; if (!c.done && !c.count) return false; return true; }
   finish(s, c) {
     const g = this.g; this.done.add(s.id);
-    const deltas = []; if (c.craft) { this.add('craft', c.craft); deltas.push(`✋ 솜씨 ${c.craft > 0 ? '+' : ''}${c.craft}`); } if (c.heart) { this.add('heart', c.heart); deltas.push(`🤝 인심 ${c.heart > 0 ? '+' : ''}${c.heart}`); }
+    const deltas = []; if (c.craft) { this.add('craft', c.craft); deltas.push(`✋ 솜씨 ${c.craft > 0 ? '+' : ''}${c.craft}`); } if (c.heart) { this.add('heart', c.heart); deltas.push(`🤝 인심 ${c.heart > 0 ? '+' : ''}${c.heart}`); } if (c.grain && this.d.grain?.open) { this.add('grain', c.grain); deltas.push(`🌾 곡식 ${c.grain > 0 ? '+' : ''}${c.grain}`); }
     for (const a of [].concat(c.gain || [])) this.gain(a, 1); if (c.hurt) this.injure(c.hurt);
     this.log.push({ sit: s.id, choice: c.id, t: Date.now() }); g.telemetry && ((g.telemetry.life ??= []).push({ sit: s.id, choice: c.id }));
     this.queue.push({ kind: 'result', s, c, deltas }); if (c.then) this.queue.push({ kind: 'then', list: c.then });
@@ -124,7 +132,8 @@ export class Life {
     const g = this.g; g.p.enabled = false; const v = this.values; const branch = (e.branches || []).find((b) => this.cond(b.if)) || (e.branches || []).slice(-1)[0] || {};
     g.flag(['life:end', 'life:' + (branch.id || 'end')]); g.results = [...(g.results || []), { id: 'life:end', concept: 'hist.life', ok: true, open: JSON.stringify({ craft: v.craft, heart: v.heart, hurt: [...this.hurt], log: this.log, branch: branch.id }) }];
     const marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h);
-    const html = `<div class="chk life end"><div class="tag">${esc(e.tag || '이번 삶')}</div><h3>${esc(branch.title || e.title || '')}</h3>${(branch.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}<ul class="mlist"><li>✋ 솜씨 <b>${v.craft}</b> · 🤝 인심 <b>${v.heart}</b> · 🌾 곡식 🔒</li><li>능력 ${ABIL.map((a) => `${a} ${DOTS(this.abil[a])}`).join(' · ')}</li>${marks.length ? `<li>흔적 — ${esc(marks.join(', '))}</li>` : ''}<li>겪은 상황 ${this.log.length}가지</li></ul>${e.fact ? `<div class="facts"><div>📜 <b>실제</b> ${esc(e.fact)}</div></div>` : ''}${e.next ? `<p class="sub">${esc(e.next)}</p>` : ''}</div>`;
+    try { localStorage.setItem('kworld_carry:' + g.era, JSON.stringify({ craft: v.craft, heart: v.heart, grain: v.grain || 0, branch: branch.id, t: Date.now() })); } catch { }
+    const html = `<div class="chk life end"><div class="tag">${esc(e.tag || '이번 삶')}</div><h3>${esc(branch.title || e.title || '')}</h3>${(branch.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}<ul class="mlist"><li>✋ 솜씨 <b>${v.craft}</b> · 🤝 인심 <b>${v.heart}</b> · 🌾 곡식 ${this.d.grain?.open ? `<b>${v.grain || 0}</b>` : '🔒'}</li><li>능력 ${ABIL.map((a) => `${a} ${DOTS(this.abil[a])}`).join(' · ')}</li>${marks.length ? `<li>흔적 — ${esc(marks.join(', '))}</li>` : ''}<li>겪은 상황 ${this.log.length}가지</li></ul>${e.fact ? `<div class="facts"><div>📜 <b>실제</b> ${esc(e.fact)}</div></div>` : ''}${e.next ? `<p class="sub">${esc(e.next)}</p>` : ''}</div>`;
     const btns = [{ label: e.again || '다시 태어난다', primary: true, onClick: () => { g.save?.clear(); const u = new URL(location.href); u.searchParams.set('resume', '0'); location.href = u.toString(); } }];
     if (g.world.gate) btns.push({ label: g.world.gate.ready ? `${g.world.gate.nextName}로 가기` : `${g.world.gate.nextName}로 (준비 중)`, onClick: () => { const gt = g.world.gate; if (gt.ready) { const u = new URL(location.href); u.searchParams.set('era', gt.next); location.href = u.toString(); } else g.ui.say(`${gt.nextName}는 다음에 열려. 솜씨·인심은 그때 넘어간다.`, 4000); } });
     btns.push({ label: '더 둘러보기', onClick: () => { g.ui.close(); g.p.enabled = true; } });
@@ -132,7 +141,7 @@ export class Life {
   }
   // ---------- 저장 ----------
   snapshot() { return { values: this.values, abil: this.abil, xp: this.xp, hurt: [...this.hurt], opened: [...this.opened], done: [...this.done], log: this.log, seed: this.seed, mixed: this.mixed, tries: this.tries }; }
-  restore(s) { if (!s) return; Object.assign(this.values, s.values || {}); Object.assign(this.abil, s.abil || {}); Object.assign(this.xp, s.xp || {}); this.hurt = new Set(s.hurt || []); this.opened = new Set(s.opened || []); this.done = new Set(s.done || []); this.log = s.log || []; this.seed = s.seed || this.seed; this.mixed = s.mixed || this.mixed; this.tries = s.tries || {}; this.render(); }
+  restore(s) { if (!s) return; this.carried = true; Object.assign(this.values, s.values || {}); Object.assign(this.abil, s.abil || {}); Object.assign(this.xp, s.xp || {}); this.hurt = new Set(s.hurt || []); this.opened = new Set(s.opened || []); this.done = new Set(s.done || []); this.log = s.log || []; this.seed = s.seed || this.seed; this.mixed = s.mixed || this.mixed; this.tries = s.tries || {}; this.render(); }
   // ---------- 화면 ----------
   hud() {
     if (typeof document === 'undefined' || typeof document.createElement !== 'function' || document.getElementById('life')) return;
@@ -142,7 +151,7 @@ export class Life {
   render() {
     if (!this.el) return; const v = this.values; const prev = this.el.dataset.v || '';
     const marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h).join(' · ');
-    this.el.innerHTML = `<div class="v"><span>✋ 솜씨</span><b>${v.craft}</b></div><div class="v"><span>🤝 인심</span><b>${v.heart}</b></div><div class="v lock" title="${esc(this.d.grainLocked || '들고 다닐 수도, 쌓아 둘 수도 없다.')}"><span>🌾 곡식</span><b>🔒</b></div><div class="ab">${ABIL.map((a) => `<span>${a} <i>${DOTS(this.abil[a] ?? 2)}</i></span>`).join('')}</div>${marks ? `<div class="hurt">흔적 · ${esc(marks)}</div>` : ''}`;
-    const now = `${v.craft}/${v.heart}/${ABIL.map((a) => this.abil[a]).join('')}`; if (prev && prev !== now) { this.el.classList.remove('up'); void this.el.offsetWidth; this.el.classList.add('up'); } this.el.dataset.v = now;
+    this.el.innerHTML = `<div class="v"><span>✋ 솜씨</span><b>${v.craft}</b></div><div class="v"><span>🤝 인심</span><b>${v.heart}</b></div>${this.d.grain?.open ? `<div class="v" title="${esc(this.d.grain.note || '')}"><span>🌾 곡식</span><b>${v.grain || 0}</b></div>` : `<div class="v lock" title="${esc(this.d.grainLocked || '들고 다닐 수도, 쌓아 둘 수도 없다.')}"><span>🌾 곡식</span><b>🔒</b></div>`}<div class="ab">${ABIL.map((a) => `<span>${a} <i>${DOTS(this.abil[a] ?? 2)}</i></span>`).join('')}</div>${marks ? `<div class="hurt">흔적 · ${esc(marks)}</div>` : ''}`;
+    const now = `${v.craft}/${v.heart}/${v.grain || 0}/${ABIL.map((a) => this.abil[a]).join('')}`; if (prev && prev !== now) { this.el.classList.remove('up'); void this.el.offsetWidth; this.el.classList.add('up'); } this.el.dataset.v = now;
   }
 }

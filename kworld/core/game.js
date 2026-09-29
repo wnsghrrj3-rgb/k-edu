@@ -18,7 +18,7 @@ const J = (u) => fetch(u).then((r) => r.json());
 
 export class Game {
   constructor(eraPath) {
-    this.base = eraPath.replace(/\/?$/, '/');
+    this.base = eraPath.replace(/\/?$/, '/'); this.era = this.base.split('/').filter(Boolean).pop() || 'world';   // 저장·태어남·넘겨받기 키(?era=… 와 같다)
     this.inventory = []; this.flags = new Set(); this.hunger = 50; this.results = null;
     this.ui = new UI();
   }
