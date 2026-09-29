@@ -181,14 +181,14 @@ window.KEDU_MAP["g3_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_social_u2_l05",
+     "lessonId": "g3_social_u2_l05_v1",
      "n": "5",
      "title": "옛날과 오늘날의 세시 풍속을 비교해 볼까요",
      "sub": "① 옛날과 오늘날의 풍습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/social/2단원_옛날과오늘날의생활모습/g3_social_u2_l05_형광펜을칠해요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
