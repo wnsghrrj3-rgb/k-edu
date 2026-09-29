@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-09-29 · 과목 10 · 차시 588 · 슬라이드 9785 */
+   생성: 2026-09-29 · 과목 11 · 차시 598 · 슬라이드 9975 */
 window.KT2_MANIFEST = {
  "built": "2026-09-29",
- "lessons": 588,
- "slides": 9785,
+ "lessons": 598,
+ "slides": 9975,
  "subjects": [
   {
    "slug": "g1_math",
@@ -15011,6 +15011,284 @@ window.KT2_MANIFEST = {
        ],
        "interactive": 2,
        "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "slug": "g3s2_science",
+   "grade": 3,
+   "term": 2,
+   "subject": "science",
+   "subject_ko": "과학",
+   "title": "3학년 2학기 과학",
+   "units": [
+    {
+     "unit": 1,
+     "title": "물체와 물질",
+     "file": "data/g3s2_science_u1.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u1_l01",
+       "no": "1",
+       "title": "활짝! 과학 열기 — 물체 탐정놀이",
+       "meta_title": "활짝! 과학 열기 — 물체 탐정놀이",
+       "std": "[4과05-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l02",
+       "no": "2",
+       "title": "물체를 이루는 물질",
+       "meta_title": "물체를 이루는 물질",
+       "std": "[4과05-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l03",
+       "no": "3",
+       "title": "여러 가지 물질의 성질",
+       "meta_title": "여러 가지 물질의 성질",
+       "std": "[4과05-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l04",
+       "no": "4",
+       "title": "물질의 종류에 따른 물체의 분류",
+       "meta_title": "물질의 종류에 따른 물체의 분류",
+       "std": "[4과05-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l05",
+       "no": "5",
+       "title": "고체와 액체의 성질",
+       "meta_title": "고체와 액체의 성질",
+       "std": "[4과05-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l06",
+       "no": "6",
+       "title": "기체의 성질",
+       "meta_title": "기체의 성질",
+       "std": "[4과05-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l07",
+       "no": "7",
+       "title": "고체, 액체, 기체의 성질 비교",
+       "meta_title": "고체, 액체, 기체의 성질 비교",
+       "std": "[4과05-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l08",
+       "no": "8",
+       "title": "창의가 반짝! 팡팡! 과학 놀이터 — 쓰임새 있는 물체 설계",
+       "meta_title": "창의가 반짝! 팡팡! 과학 놀이터 — 쓰임새 있는 물체 설계",
+       "std": "[4과05-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l10",
+       "no": "10",
+       "title": "톡톡! 과학 — 3D 프린터",
+       "meta_title": "톡톡! 과학 — 3D 프린터",
+       "std": "[4과05-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l11",
+       "no": "11",
+       "title": "물체와 물질 (단원 마무리)",
+       "meta_title": "물체와 물질 (단원 마무리)",
+       "std": "[4과05-01][4과05-02][4과05-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
        "seven": [
         1,
         1,
