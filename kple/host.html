@@ -74,6 +74,16 @@
         <div class="kp-pick-title">캐치마인드</div>
         <div class="kp-pick-desc">그리고 맞히기</div>
       </button>
+      <button class="kp-pick-card" data-game="goldenbell">
+        <div class="kp-pick-emoji">🔔</div>
+        <div class="kp-pick-title">골든벨</div>
+        <div class="kp-pick-desc">틀리면 탈락 · 끝까지 살아남기</div>
+      </button>
+      <button class="kp-pick-card" data-game="ox_survival">
+        <div class="kp-pick-emoji">⭕❌</div>
+        <div class="kp-pick-title">OX 서바이벌</div>
+        <div class="kp-pick-desc">실시간 분포 바 · 탈락전</div>
+      </button>
       <!-- 🎪 살아나는 무대: 엔진은 여기(games/live-stage.js)에 살아 있지만 문은 케이아트에 있다.
            그림 그리는 아이가 케이아트에서 "다 같이 살려볼까"로 넘어오는 게 맞는 동선이라
            케이플 홈 카드에서는 뺐다. 진입: /draw/ 툴바 🎪 → /kple/host.html?game=live_stage -->
@@ -87,6 +97,8 @@
 <script src="games/speed-quiz.js"></script>
 <script src="games/co-draw.js"></script>
 <script src="games/catch-mind.js"></script>
+<script src="games/goldenbell.js"></script>
+<script src="games/ox-survival.js"></script>
 <script src="/labs/livestage-core.js"></script>
 <script src="games/live-stage.js"></script>
 <script src="kple-deck.js"></script>
@@ -116,6 +128,7 @@
       };
     } catch (e) {}
     if (window.KpleParty) { try { activeParty = KpleParty.attach(ctx, { el: app }); } catch (e) {} }
+    ctx.party = activeParty || null;   /* K2 게임이 연출(countdown·champion)·팀점수(setScores)를 부를 수 있게 (2026-09-29) */
     ctx.on('status', function (s) {
       if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + ctx.roomCode, 'ok');
       else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setConn('연결 오류: ' + s + ' (망 차단 가능성)', 'err');
@@ -303,7 +316,7 @@
       if (!kv) return; var p = kv.split('='); q[decodeURIComponent(p[0])] = decodeURIComponent(p[1] || '');
     });
     if (!q.game) return;
-    if (!/^(quiz_show|speed_quiz|co_draw|catch_mind|live_stage)$/.test(q.game)) return;
+    if (!/^(quiz_show|speed_quiz|co_draw|catch_mind|live_stage|goldenbell|ox_survival)$/.test(q.game)) return;
     if (!window.supabase) { setConn('Supabase 로드 실패 (망 확인)', 'err'); return; }
 
     // 덱 없는 진입 — 그림 게임은 문항이 필요 없으므로 차시 없이 바로 연다.

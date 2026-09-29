@@ -243,17 +243,40 @@
     var qs = [];
     items.forEach(function (it) {
       var c = makeChoices(it, deckAnswers, deck.subject);
-      if (c) qs.push({ q: it.q, choices: c.choices, answer: c.answer, hint: it.hint || '' });
+      if (c) qs.push({ q: it.q, choices: c.choices, answer: c.answer, hint: it.hint || '', answerText: norm(it.a) });
     });
     return qs.length ? { questions: qs, title: deck.title } : null;
+  }
+  /* ── OX 변환(2026-09-29, G7): 문항 {q,a} → 명제 {s,o}
+       참(O) = 「q → 정답 a」 / 거짓(X) = 「q → 교란 답」(수학 ±·같은 덱 다른 정답).
+       O/X 는 i 번째 문항의 결정적 교대(홀짝) — 같은 덱이면 늘 같은 판, 한쪽으로 안 쏠림.
+       교란 답을 못 만드는 문항은 O 만 가능 → 건너뜀(전부 O 인 판 방지).                  */
+  function toOxConfig(deck) {
+    var items = (deck.items || []).filter(function (it) { return it.q && it.a && !isOpenAnswer(it.a); });
+    var deckAnswers = items.map(function (it) { return norm(it.a); });
+    var out = [], flip = 0;
+    items.forEach(function (it) {
+      var truth = norm(it.a), falseA = null;
+      if (it.options && it.options.length >= 2) {
+        var o = it.options.map(norm).filter(function (v) { return v && v !== truth; }); falseA = o[0] || null;
+      }
+      if (!falseA) { var w = isNumeric(it.a) ? distractMath(it.a) : null; if (!w) w = distractWord(it.a, deckAnswers); falseA = w ? w[0] : null; }
+      if (!falseA) return;                         // X 를 못 만들면 명제도 안 만듦
+      var isO = (flip++ % 2 === 0);
+      var q = norm(it.q).replace(/[?？]\s*$/, '');
+      out.push({ s: q + ' → ' + (isO ? truth : falseA), o: isO, why: isO ? '' : ('정답은 「' + truth + '」') });
+    });
+    return out.length >= 3 ? { statements: out, title: deck.title } : null;
   }
   function toGame(deck, gameId) {
     if (!deck) return null;
     switch (gameId) {
       case 'quiz_show':
       case 'speed_quiz':
-      case 'goldenbell':                         // 예약(게이트 후) — 같은 4지선다 계약
+      case 'goldenbell':                         // G5 골든벨 — 같은 4지선다 계약(+answerText 로 주관식)
         return toQuizConfig(deck);
+      case 'ox_survival':                        // G7 OX — 명제 변환
+        return toOxConfig(deck);
       case 'co_draw':
         return { topic: deck.title };
       case 'catch_mind': {
