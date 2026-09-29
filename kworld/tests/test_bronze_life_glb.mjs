@@ -1,0 +1,36 @@
+// 청동기 넓은 터 GLB 구조 검증 — NPC 8·구역 13·spawn·미션 대상이 json 과 맞는지 (WebGL 없이 GLB JSON 청크만)
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const base = new URL('../eras/bronze-life/', import.meta.url);
+const buffer = fs.readFileSync(new URL('bronze.glb', base));
+const data = JSON.parse(buffer.subarray(20, 20 + buffer.readUInt32LE(12)).toString());
+const read = (f) => JSON.parse(fs.readFileSync(new URL(f, base)));
+const world = read('world.json'), items = read('items.json'), npcDefs = read('npcs.json'), missions = read('missions.json'), scene = read('scene.json'), life = read('life.json');
+const sceneTypes = new Set((scene.add || []).map((a) => a.name.split('_')[0]));
+const names = data.nodes.map((n) => n.name || '');
+const ix = names.filter((n) => n.startsWith('ix_'));
+const types = new Set(ix.map((n) => n.split('_')[1]));
+for (const t of types) assert.ok(items.targets[t], `대상 ${t} 가 items.json 에 없음`);
+for (const t of Object.keys(items.targets)) assert.ok(types.has(t) || sceneTypes.has(t), `items.json 대상 ${t} 가 GLB·scene 에 없음`);
+const areas = names.filter((n) => n.startsWith('area_')).map((n) => n.slice(5));
+for (const a of Object.keys(world.areas)) assert.ok(areas.includes(a), `구역 ${a} 없음`);
+assert.equal(Object.keys(world.areas).length, 13, '구역 13');
+assert.ok(areas.includes(world.face), `시작 시선 구역 ${world.face}`);
+assert.ok(names.includes('spawn'), 'spawn');
+const npcs = ix.filter((n) => n.startsWith('ix_npc_')).map((n) => n.slice(7));
+for (const id of Object.keys(npcDefs)) assert.ok(npcs.includes(id), `NPC ${id} 가 GLB 에 없음`);
+for (const id of npcs) assert.ok(npcDefs[id], `GLB NPC ${id} 가 npcs.json 에 없음`);
+assert.equal(npcs.length, 10, 'NPC 10');
+const mats = new Set((data.materials || []).map((m) => m.name));
+for (const t of ['grain_full', 'dolmen_cap', 'dolmen_lying']) assert.ok(mats.has(t), `숨김 재질 ${t}`);
+assert.ok(ix.filter((n) => n.startsWith('ix_bigpaddy_')).length === 2 && ix.filter((n) => n.startsWith('ix_smallpaddy_')).length === 2, '큰 논 2·작은 논 2');
+const list = missions.missions;
+assert.equal(list.length, 7, '꼭 나오는 상황 7 = 미션 7');
+const must = life.situations.filter((x) => x.must); assert.equal(must.length, 7, '꼭 나오는 상황 7'); assert.ok(life.situations.length - must.length >= life.mixedCount, '섞여 나오는 상황 ≥ mixedCount');
+for (const m of list) assert.ok(must.some((x) => 'sit:' + x.id + ':done' === m.done), `미션 ${m.id} 가 상황과 안 맞음`);
+for (const sit of life.situations) { if (sit.place) assert.ok(world.areas[sit.place], `상황 ${sit.id} 장소 ${sit.place}`); for (const c of sit.choices) assert.ok(c.done || c.count, `상황 ${sit.id} 선택 ${c.id} 에 done/count 없음`); }
+assert.ok(life.grain?.open && life.carry?.from === 'neo' && life.status?.rules?.length === 3, '곡식 칸 + 신석기에서 넘겨받음 + 신분 셋');
+assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');
+const paleo = JSON.parse(fs.readFileSync(new URL('../eras/neo/world.json', import.meta.url))); assert.equal(paleo.gate?.next, 'bronze-life', '신석기 끝 카드 → 청동기 문');
+const h = read('height.json'); assert.ok(h && typeof h === 'object', 'height.json');
+console.log(`bronze.glb: ix ${ix.length} (${[...types].join(',')}) · areas ${areas.length} · npc ${npcs.length} · ${(buffer.length / 1e6).toFixed(2)}MB`);

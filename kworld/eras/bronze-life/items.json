@@ -1,0 +1,508 @@
+{
+ "items": {
+  "stone": {
+   "name": "돌",
+   "icon": "🪨",
+   "desc": "둥근 돌. 갈판에 갈면 반달돌칼",
+   "cat": "stone"
+  },
+  "sickle": {
+   "name": "반달돌칼",
+   "icon": "🌙",
+   "desc": "갈아 만든 반달 칼. 이삭만 딴다",
+   "bag": true
+  },
+  "grain": {
+   "name": "벼",
+   "icon": "🌾",
+   "desc": "논에서 딴 벼 이삭. 쌓아 둘 수 있다",
+   "eat": 8
+  },
+  "millet": {
+   "name": "조",
+   "icon": "🌾",
+   "desc": "밭뙈기에서 거둔 조",
+   "eat": 6
+  },
+  "copper": {
+   "name": "구리돌",
+   "icon": "🟤",
+   "desc": "초록 얼룩이 있는 돌. 녹이면 구리"
+  },
+  "tin": {
+   "name": "주석돌",
+   "icon": "⚪",
+   "desc": "깊은 골에서만 난다. 아주 귀하다"
+  },
+  "charcoal": {
+   "name": "숯",
+   "icon": "⬛",
+   "desc": "숯가마에서 얻었다. 화덕을 뜨겁게 한다"
+  },
+  "sword": {
+   "name": "비파형동검",
+   "icon": "🗡️",
+   "desc": "구리와 주석을 녹여 부었다. 누구 것인가",
+   "bag": true
+  },
+  "mirror": {
+   "name": "청동거울",
+   "icon": "🪞",
+   "desc": "제사에 쓰는 거울. 햇빛을 담는다",
+   "bag": true
+  },
+  "fish": {
+   "name": "물고기",
+   "icon": "🐟",
+   "desc": "나루에서 잡았다",
+   "eat": 12
+  },
+  "salt": {
+   "name": "소금",
+   "icon": "🧂",
+   "desc": "장사꾼에게 바꾼 소금. 귀하다"
+  },
+  "torch": {
+   "name": "횃불",
+   "icon": "🔥",
+   "desc": "화덕에서 붙인 가지"
+  }
+ },
+ "recipes": [
+  {
+   "in": [
+    "copper",
+    "copper",
+    "tin",
+    "charcoal"
+   ],
+   "out": "sword",
+   "name": "청동 붓기",
+   "flag": "made:sword",
+   "almost": "…쇳물이 거푸집에서 튀었다. 숯을 더 넣어야 한다. 다시.",
+   "say": "🗡️ 거푸집을 깼다. 비파 모양 칼. 갈면 빛난다.",
+   "journal": "sword"
+  }
+ ],
+ "targets": {
+  "npc": {
+   "name": "사람",
+   "verb": "말 걸기",
+   "info": "우리 마을 사람이다.",
+   "flag": "talk:any"
+  },
+  "stone": {
+   "name": "돌",
+   "verb": "줍기",
+   "gives": "stone",
+   "remove": true,
+   "info": "둥근 돌."
+  },
+  "gatefront": {
+   "name": "마을 문",
+   "verb": "살펴보기",
+   "say": "기둥 둘, 들보 하나. 목책은 짐승도 막지만 사람도 막는다. 안과 밖이 생겼다.",
+   "flag": "seen:gate",
+   "once": true,
+   "info": "목책 마을의 하나뿐인 문."
+  },
+  "fire": {
+   "name": "화덕",
+   "verb": "살펴보기",
+   "say": "쇳물 자국이 굳어 있다. 여기서 구리를 녹인다.",
+   "flag": "seen:fire",
+   "info": "대장간 화덕.",
+   "rename": [
+    {
+     "if": "sit:sword:open && !made:sword",
+     "name": "화덕",
+     "verb": "청동을 붓는다",
+     "once": false,
+     "requires": "copper",
+     "consumes": [
+      "copper",
+      "copper",
+      "tin",
+      "charcoal"
+     ],
+     "failNoTool": "구리돌 둘·주석돌 하나·숯이 있어야 한다. 동쪽 골짜기·깊은 골·숯 숲.",
+     "failNoTin": "구리만으론 무르다. 주석돌이 있어야 — 깊은 골.",
+     "failNoCharcoal": "불이 안 뜨겁다. 숯이 있어야 — 북서 숯 숲.",
+     "roll": {
+      "ab": "손",
+      "hard": 2,
+      "why": "쇳물은 한 번에 부어야 한다. 손이 떨리면 거푸집이 갈라진다.",
+      "fail": "…거푸집이 갈라졌다. 쇳물이 흙에 스몄다. 돌은 남았다."
+     },
+     "gives": "sword",
+     "flag": "made:sword",
+     "journal": "sword",
+     "say": "🗡️ 거푸집을 깼다. 비파 모양 칼."
+    }
+   ]
+  },
+  "mold": {
+   "name": "거푸집·도가니",
+   "verb": "살펴보기",
+   "say": "돌을 파서 만든 거푸집. 칼 모양이 파여 있다. 도가니엔 굳은 쇳물.",
+   "flag": "seen:mold",
+   "once": true,
+   "info": "청동 칼 거푸집."
+  },
+  "slab": {
+   "name": "갈판",
+   "verb": "살펴보기",
+   "say": "갈판. 돌을 갈아 반달 칼을 만든다.",
+   "flag": "seen:slab",
+   "info": "갈판.",
+   "rename": [
+    {
+     "if": "sit:rice:open && !made:sickle",
+     "name": "갈판",
+     "verb": "돌을 갈아 반달돌칼로",
+     "once": false,
+     "consumes": [
+      "stone"
+     ],
+     "failNoTool": "갈 돌이 없다. 마을 바닥에 둥근 돌.",
+     "roll": {
+      "ab": "손",
+      "hard": 1,
+      "why": "구멍 둘을 뚫고 날을 얇게 갈아야 이삭이 잘린다.",
+      "fail": "…날이 두껍다. 이삭이 안 잘린다. 돌이 닳았다."
+     },
+     "gives": "sickle",
+     "flag": "made:sickle",
+     "journal": "sickle",
+     "say": "🌙 반달 모양. 구멍에 끈을 꿰어 손에 걸었다."
+    }
+   ]
+  },
+  "granary": {
+   "name": "곳간",
+   "hidden": [
+    "grain_full"
+   ],
+   "verb": "살펴보기",
+   "say": "기둥 위 창고. 쥐 막는 판. 남는 것이 있어야 짓는 집.",
+   "flag": "seen:granary",
+   "once": true,
+   "info": "우두머리의 곳간.",
+   "rename": [
+    {
+     "if": "sit:granary:open && !sit:granary:done && status:rich",
+     "name": "우리 집 곳간",
+     "verb": "벼를 넣는다",
+     "once": false,
+     "requires": "grain",
+     "consumes": [
+      "grain",
+      "grain"
+     ],
+     "failNoTool": "넣을 벼가 둘은 있어야.",
+     "set": "full",
+     "reveal": [
+      "grain_full"
+     ],
+     "flag": [
+      "granary:mine",
+      "granary:done"
+     ],
+     "say": "🌾 볏단을 올렸다. 우리 집 곳간이 찼다."
+    },
+    {
+     "if": "sit:granary:open && !sit:granary:done && !status:rich",
+     "name": "우두머리 곳간",
+     "verb": "벼를 바친다",
+     "once": false,
+     "requires": "grain",
+     "consumes": [
+      "grain"
+     ],
+     "failNoTool": "바칠 벼가 없다.",
+     "set": "full",
+     "reveal": [
+      "grain_full"
+     ],
+     "flag": [
+      "granary:tribute",
+      "granary:done"
+     ],
+     "say": "🌾 우두머리 곳간에 한 단. 「고맙다.」 내 것이 아니다."
+    },
+    {
+     "if": "granary:done",
+     "name": "곳간",
+     "verb": "살펴보기",
+     "once": true,
+     "flag": "seen:granary2",
+     "say": "볏단이 들어 있다. 겨울이 두 번 지나도 남는다."
+    }
+   ]
+  },
+  "sheaf": {
+   "name": "볏단 더미",
+   "verb": "살펴보기",
+   "say": "큰 집 앞에 볏단이 쌓여 있다. 한 집 것이라기엔 많다.",
+   "flag": "seen:sheaf",
+   "once": true,
+   "info": "우두머리 집 앞 볏단."
+  },
+  "field": {
+   "name": "밭뙈기",
+   "verb": "조 거두기",
+   "requiresFlags": [
+    "status:poor"
+   ],
+   "failNoFlag": "밭뙈기는 논 없는 집 것이다.",
+   "gives": [
+    "millet"
+   ],
+   "remove": true,
+   "flag": "cut:field",
+   "say": "🌾 조 한 단. 논이 없는 집은 이걸로 겨울을 난다.",
+   "info": "조를 심은 작은 밭."
+  },
+  "ditch": {
+   "name": "파다 만 도랑",
+   "verb": "살펴보기",
+   "say": "강에서 논으로 물길을 내다 말았다. 혼자서는 못 판다.",
+   "flag": "seen:ditch",
+   "once": true,
+   "info": "물길. 파다 만 자리.",
+   "rename": [
+    {
+     "if": "sit:water:open && !sit:water:done",
+     "name": "파다 만 도랑",
+     "verb": "함께 판다",
+     "once": false,
+     "requiresFlags": [
+      "ditch:crew"
+     ],
+     "failNoFlag": "혼자서는 안 된다. 논 사람에게 「같이 파자」고 해야.",
+     "roll": {
+      "ab": "몸",
+      "hard": 2,
+      "why": "물길은 하루 만에 파야 한다. 몸이 버텨야.",
+      "fail": "…허리가 꺾였다. 반만 팠다. 내일 또."
+     },
+     "flag": "water:ditch",
+     "say": "⛏️ 셋이 하루 종일. 물이 흘러 들어왔다. 옆 마을 물은 건드리지 않았다."
+    }
+   ]
+  },
+  "copper": {
+   "name": "구리돌",
+   "verb": "캐기",
+   "gives": "copper",
+   "remove": true,
+   "info": "초록 얼룩이 낀 돌. 무겁다."
+  },
+  "rock": {
+   "name": "바위",
+   "verb": "캐 보기",
+   "say": "…그냥 돌이다. 초록 얼룩이 없다.",
+   "flag": "tried:rock",
+   "info": "골짜기 바위."
+  },
+  "tin": {
+   "name": "주석돌",
+   "verb": "캐기",
+   "gives": "tin",
+   "remove": true,
+   "roll": {
+    "ab": "눈",
+    "hard": 2,
+    "why": "주석돌은 회색 바위 틈에 회색으로 박혀 있다. 눈이 찾는다.",
+    "fail": "…부스러기만. 다시 살핀다."
+   },
+   "info": "희고 무거운 돌. 이 골에만 있다."
+  },
+  "charcoal": {
+   "name": "숯가마",
+   "verb": "숯 꺼내기",
+   "gives": [
+    "charcoal",
+    "charcoal"
+   ],
+   "uses": 2,
+   "empty": "가마가 비었다. 나무를 넣고 며칠 태워야 한다.",
+   "info": "흙으로 덮은 가마. 며칠을 태웠다."
+  },
+  "log": {
+   "name": "쓰러진 나무",
+   "verb": "살펴보기",
+   "say": "숯가마에 들어갈 나무.",
+   "flag": "seen:log",
+   "info": "숯감."
+  },
+  "dolmensite": {
+   "name": "고인돌 자리",
+   "hidden": [
+    "dolmen_cap"
+   ],
+   "verb": "살펴보기",
+   "say": "받침돌 둘이 섰다. 덮개돌은 아직 땅에 누워 있다. 통나무 넷.",
+   "flag": "seen:dolmensite",
+   "once": true,
+   "info": "덮개돌을 올리다 만 자리.",
+   "rename": [
+    {
+     "if": "sit:dolmen:open && !sit:dolmen:done && !status:rich",
+     "name": "덮개돌",
+     "verb": "끈다",
+     "once": false,
+     "roll": {
+      "ab": "몸",
+      "hard": 3,
+      "why": "수십 명이 같은 순간에 당겨야 한다. 몸이 버텨야 줄을 놓지 않는다.",
+      "fail": "…줄이 손에서 빠졌다. 돌이 밀렸다. 옆 사람 발을 스쳤다."
+     },
+     "rollHurt": "leg",
+     "set": "up",
+     "hide": [
+      "dolmen_lying"
+     ],
+     "reveal": [
+      "dolmen_cap"
+     ],
+     "flag": [
+      "dolmen:pull",
+      "dolmen:up"
+     ],
+     "journal": "dolmen",
+     "say": "🪨 통나무 위로. 「하나, 둘!」 덮개돌이 받침돌 위에 올라앉았다."
+    },
+    {
+     "if": "sit:dolmen:open && !sit:dolmen:done && status:rich",
+     "name": "덮개돌",
+     "verb": "위에서 시킨다",
+     "once": false,
+     "set": "up",
+     "hide": [
+      "dolmen_lying"
+     ],
+     "reveal": [
+      "dolmen_cap"
+     ],
+     "flag": [
+      "dolmen:order",
+      "dolmen:up"
+     ],
+     "journal": "dolmen",
+     "say": "🪨 「당겨!」 줄을 잡은 건 논 없는 집 사람들이었다. 돌이 올라갔다."
+    },
+    {
+     "if": "dolmen:up",
+     "name": "고인돌",
+     "verb": "살펴보기",
+     "once": true,
+     "flag": "seen:dolmen2",
+     "say": "덮개돌이 올라갔다. 그 밑에 우두머리가 눕는다."
+    }
+   ]
+  },
+  "olddolmen": {
+   "name": "옛 고인돌",
+   "verb": "살펴보기",
+   "say": "옛 우두머리의 무덤. 돌 밑에 청동 칼이 묻혔다고 한다. 한 사람을 위해 수십 명이 끌었다.",
+   "flag": "seen:olddolmen",
+   "once": true,
+   "info": "오래된 고인돌."
+  },
+  "emptypit": {
+   "name": "빈 저장 구덩이",
+   "verb": "살펴보기",
+   "say": "바닥까지 긁었다. 이 마을은 올해 논이 말랐다.",
+   "flag": "seen:emptypit",
+   "once": true,
+   "info": "강 건너 마을의 빈 구덩이."
+  },
+  "tower": {
+   "name": "망대",
+   "verb": "올라가 본다",
+   "say": "논, 목책, 강. 강 건너 마을에서 연기. …그 너머에도 연기.",
+   "flag": "seen:tower",
+   "once": true,
+   "info": "망대. 사방이 보인다."
+  },
+  "deer": {
+   "name": "사슴",
+   "verb": "다가가기",
+   "fail": "달아난다.",
+   "say": "사슴이 달아난다. 목책 안에서는 사슴을 볼 일이 줄었다.",
+   "info": "망대 밑 사슴."
+  },
+  "fish": {
+   "name": "물고기",
+   "verb": "잡기",
+   "gives": "fish",
+   "remove": true,
+   "roll": {
+    "ab": "발",
+    "hard": 1,
+    "why": "미끄럽다.",
+    "fail": "…놓쳤다."
+   },
+   "info": "나루터 얕은 물."
+  },
+  "bigpaddy": {
+   "name": "우두머리 논",
+   "start": "grown",
+   "states": {
+    "grown": {
+     "verb": "이삭 따기",
+     "requiresFlags": [
+      "status:rich"
+     ],
+     "failNoFlag": "이건 우두머리 땅이다. 논 사람이 지켜본다. 네 집 논은 저 작은 것 — 아니면 밭뙈기.",
+     "requires": "sickle",
+     "failNoTool": "손으로는 이삭이 안 끊어진다. 갈판에서 반달돌칼.",
+     "gives": [
+      "grain",
+      "grain",
+      "grain",
+      "grain"
+     ],
+     "set": "cut",
+     "flag": "cut:paddy",
+     "say": "🌾🌾🌾🌾 넓은 논. 네 단. 남는다.",
+     "info": "넓은 논. 벼가 누렇다."
+    },
+    "cut": {
+     "verb": "살펴보기",
+     "say": "딴 논.",
+     "info": "딴 논."
+    }
+   }
+  },
+  "smallpaddy": {
+   "name": "작은 논",
+   "start": "grown",
+   "states": {
+    "grown": {
+     "verb": "이삭 따기",
+     "requiresFlags": [
+      "status:farmer"
+     ],
+     "failNoFlag": "이 논은 논 있는 집 것이다. 네 집은 밭뙈기 — 동북쪽. 우두머리 집이면 넓은 논.",
+     "requires": "sickle",
+     "failNoTool": "손으로는 이삭이 안 끊어진다. 갈판에서 반달돌칼.",
+     "gives": [
+      "grain",
+      "grain"
+     ],
+     "set": "cut",
+     "flag": "cut:paddy",
+     "say": "🌾🌾 작은 논. 두 단. 겨울까지는 된다.",
+     "info": "작은 논."
+    },
+    "cut": {
+     "verb": "살펴보기",
+     "say": "딴 논.",
+     "info": "딴 논."
+    }
+   }
+  }
+ }
+}

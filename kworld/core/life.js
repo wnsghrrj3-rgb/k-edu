@@ -17,7 +17,7 @@ export class Life {
   /** 태어남 뒤(캐릭터가 정해진 뒤) 부른다 — 능력 단계·섞여 나오는 상황 뽑기 */
   begin() {
     const c = this.g.character; for (const a of ABIL) { this.abil[a] = c?.levels?.[a] ?? 2; this.xp[a] = 0; }
-    this.carryIn();
+    this.carryIn(); this.setStatus();
     if (!this.mixed) { this.seed = this.seed || ((Date.now() % 100000) + Math.floor(Math.random() * 1000)); this.mixed = this.pickMixed(this.seed); }
     this.g.e.onFrame.push((dt) => this.tick(dt)); this.hud(); this.render();
   }
@@ -25,8 +25,14 @@ export class Life {
   carryIn() {
     const c = this.d.carry; if (!c || this.carried || typeof localStorage === 'undefined') return; this.carried = true;
     let v = null; try { v = JSON.parse(localStorage.getItem('kworld_carry:' + c.from) || 'null'); } catch { } if (!v) return;
-    const got = []; for (const k of c.keep || ['craft', 'heart']) { const n = Math.round((v[k] || 0) * (c.ratio ?? 0.5)); if (n > 0) { this.values[k] = (this.values[k] || 0) + n; got.push(`${{ craft: '✋ 솜씨', heart: '🤝 인심', grain: '🌾 곡식' }[k] || k} ${n}`); } }
+    const got = []; for (const k of c.keep || ['craft', 'heart']) { const n = Math.round((v[k] || 0) * (c.ratios?.[k] ?? c.ratio ?? 0.5)); if (n > 0) { this.values[k] = (this.values[k] || 0) + n; got.push(`${{ craft: '✋ 솜씨', heart: '🤝 인심', grain: '🌾 곡식' }[k] || k} ${n}`); } }
     if (got.length) setTimeout(() => this.g.ui.say(`${c.say || '조상에게서 넘어온 것'} — ${got.join(' · ')}`, 5200), 1800);
+  }
+  /** 신분 — d.status = { rules:[{id,name,if,say}] }: 넘겨받은 값(곡식 등)으로 태어날 때 정해진다. 대본이 아니라 수치. 깃발 status:<id> */
+  setStatus() {
+    const st = this.d.status; if (!st?.rules?.length) return;
+    const r = st.rules.find((x) => this.cond(x.if)) || st.rules[st.rules.length - 1]; this.status = r.id; this.statusName = r.name; this.g.flags.add('status:' + r.id);
+    if (r.say) setTimeout(() => this.g.ui.say(`🏠 ${r.name} — ${r.say}`, 6200), 4200);
   }
   /** 씨앗으로 섞여 나오는 상황을 n개 뽑는다(판마다 다르게, 저장하면 같은 판) */
   pickMixed(seed) {
@@ -59,7 +65,7 @@ export class Life {
   injure(kind) { if (this.hurt.has(kind)) return; this.hurt.add(kind); const t = (this.d.hurts || {})[kind]; this.g.ui.say(t?.say || '…다쳤다. 흔적이 남는다.', 4800); this.render(); this.g.save?.touch(); }
   get speedMul() { return this.hurt.has('leg') ? (this.d.hurts?.leg?.speed ?? 0.7) : 1; }
   /** 선택지 회색 — c.if 조건이 거짓이면 못 누른다(이유 한 줄). hurt:leg 같은 흔적도 깃발처럼 본다 */
-  cond(expr) { if (!expr) return true; return expr.split('&&').every((t) => { t = t.trim(); const neg = t.startsWith('!'); const f = neg ? t.slice(1) : t; const v = f.startsWith('hurt:') ? this.hurt.has(f.slice(5)) : (f.startsWith('val:') ? this.valCond(f.slice(4)) : this.g.flags.has(f)); return neg ? !v : v; }); }
+  cond(expr) { if (!expr) return true; return expr.split('&&').every((t) => { t = t.trim(); const neg = t.startsWith('!'); const f = neg ? t.slice(1) : t; const v = f.startsWith('hurt:') ? this.hurt.has(f.slice(5)) : f.startsWith('sex:') ? (this.g.sex?.id === f.slice(4)) : f.startsWith('status:') ? (this.status === f.slice(7)) : (f.startsWith('val:') ? this.valCond(f.slice(4)) : this.g.flags.has(f)); return neg ? !v : v; }); }
   valCond(s) { const m = s.match(/^(\w+)(>=|<=|>|<|=)(\d+)$/); if (!m) return false; const v = this.values[m[1]] || 0, n = Number(m[3]); return { '>=': v >= n, '<=': v <= n, '>': v > n, '<': v < n, '=': v === n }[m[2]]; }
   // ---------- 상황 ----------
   tick(dt) {
@@ -132,16 +138,16 @@ export class Life {
     const g = this.g; g.p.enabled = false; const v = this.values; const branch = (e.branches || []).find((b) => this.cond(b.if)) || (e.branches || []).slice(-1)[0] || {};
     g.flag(['life:end', 'life:' + (branch.id || 'end')]); g.results = [...(g.results || []), { id: 'life:end', concept: 'hist.life', ok: true, open: JSON.stringify({ craft: v.craft, heart: v.heart, hurt: [...this.hurt], log: this.log, branch: branch.id }) }];
     const marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h);
-    try { localStorage.setItem('kworld_carry:' + g.era, JSON.stringify({ craft: v.craft, heart: v.heart, grain: v.grain || 0, branch: branch.id, t: Date.now() })); } catch { }
-    const html = `<div class="chk life end"><div class="tag">${esc(e.tag || '이번 삶')}</div><h3>${esc(branch.title || e.title || '')}</h3>${(branch.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}<ul class="mlist"><li>✋ 솜씨 <b>${v.craft}</b> · 🤝 인심 <b>${v.heart}</b> · 🌾 곡식 ${this.d.grain?.open ? `<b>${v.grain || 0}</b>` : '🔒'}</li><li>능력 ${ABIL.map((a) => `${a} ${DOTS(this.abil[a])}`).join(' · ')}</li>${marks.length ? `<li>흔적 — ${esc(marks.join(', '))}</li>` : ''}<li>겪은 상황 ${this.log.length}가지</li></ul>${e.fact ? `<div class="facts"><div>📜 <b>실제</b> ${esc(e.fact)}</div></div>` : ''}${e.next ? `<p class="sub">${esc(e.next)}</p>` : ''}</div>`;
+    try { localStorage.setItem('kworld_carry:' + g.era, JSON.stringify({ craft: v.craft, heart: v.heart, grain: v.grain || 0, branch: branch.id, status: this.status || null, hurt: [...this.hurt], t: Date.now() })); } catch { }
+    const html = `<div class="chk life end"><div class="tag">${esc(e.tag || '이번 삶')}</div><h3>${esc(branch.title || e.title || '')}</h3>${(branch.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}<ul class="mlist"><li>✋ 솜씨 <b>${v.craft}</b> · 🤝 인심 <b>${v.heart}</b> · 🌾 곡식 ${this.d.grain?.open ? `<b>${v.grain || 0}</b>` : '🔒'}</li><li>능력 ${ABIL.map((a) => `${a} ${DOTS(this.abil[a])}`).join(' · ')}</li>${marks.length ? `<li>흔적 — ${esc(marks.join(', '))}</li>` : ''}${this.statusName ? `<li>🏠 ${esc(this.statusName)}</li>` : ''}<li>겪은 상황 ${this.log.length}가지</li></ul>${e.fact ? `<div class="facts"><div>📜 <b>실제</b> ${esc(e.fact)}</div></div>` : ''}${e.next ? `<p class="sub">${esc(e.next)}</p>` : ''}</div>`;
     const btns = [{ label: e.again || '다시 태어난다', primary: true, onClick: () => { g.save?.clear(); const u = new URL(location.href); u.searchParams.set('resume', '0'); location.href = u.toString(); } }];
     if (g.world.gate) btns.push({ label: g.world.gate.ready ? `${g.world.gate.nextName}로 가기` : `${g.world.gate.nextName}로 (준비 중)`, onClick: () => { const gt = g.world.gate; if (gt.ready) { const u = new URL(location.href); u.searchParams.set('era', gt.next); location.href = u.toString(); } else g.ui.say(`${gt.nextName}는 다음에 열려. 솜씨·인심은 그때 넘어간다.`, 4000); } });
     btns.push({ label: '더 둘러보기', onClick: () => { g.ui.close(); g.p.enabled = true; } });
     g.ui.open(html, btns); g.save?.touch();
   }
   // ---------- 저장 ----------
-  snapshot() { return { values: this.values, abil: this.abil, xp: this.xp, hurt: [...this.hurt], opened: [...this.opened], done: [...this.done], log: this.log, seed: this.seed, mixed: this.mixed, tries: this.tries }; }
-  restore(s) { if (!s) return; this.carried = true; Object.assign(this.values, s.values || {}); Object.assign(this.abil, s.abil || {}); Object.assign(this.xp, s.xp || {}); this.hurt = new Set(s.hurt || []); this.opened = new Set(s.opened || []); this.done = new Set(s.done || []); this.log = s.log || []; this.seed = s.seed || this.seed; this.mixed = s.mixed || this.mixed; this.tries = s.tries || {}; this.render(); }
+  snapshot() { return { status: this.status, statusName: this.statusName, values: this.values, abil: this.abil, xp: this.xp, hurt: [...this.hurt], opened: [...this.opened], done: [...this.done], log: this.log, seed: this.seed, mixed: this.mixed, tries: this.tries }; }
+  restore(s) { if (!s) return; this.carried = true; if (s.status) { this.status = s.status; this.statusName = s.statusName; this.g.flags.add('status:' + s.status); } Object.assign(this.values, s.values || {}); Object.assign(this.abil, s.abil || {}); Object.assign(this.xp, s.xp || {}); this.hurt = new Set(s.hurt || []); this.opened = new Set(s.opened || []); this.done = new Set(s.done || []); this.log = s.log || []; this.seed = s.seed || this.seed; this.mixed = s.mixed || this.mixed; this.tries = s.tries || {}; this.render(); }
   // ---------- 화면 ----------
   hud() {
     if (typeof document === 'undefined' || typeof document.createElement !== 'function' || document.getElementById('life')) return;
@@ -151,7 +157,7 @@ export class Life {
   render() {
     if (!this.el) return; const v = this.values; const prev = this.el.dataset.v || '';
     const marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h).join(' · ');
-    this.el.innerHTML = `<div class="v"><span>✋ 솜씨</span><b>${v.craft}</b></div><div class="v"><span>🤝 인심</span><b>${v.heart}</b></div>${this.d.grain?.open ? `<div class="v" title="${esc(this.d.grain.note || '')}"><span>🌾 곡식</span><b>${v.grain || 0}</b></div>` : `<div class="v lock" title="${esc(this.d.grainLocked || '들고 다닐 수도, 쌓아 둘 수도 없다.')}"><span>🌾 곡식</span><b>🔒</b></div>`}<div class="ab">${ABIL.map((a) => `<span>${a} <i>${DOTS(this.abil[a] ?? 2)}</i></span>`).join('')}</div>${marks ? `<div class="hurt">흔적 · ${esc(marks)}</div>` : ''}`;
+    this.el.innerHTML = `<div class="v"><span>✋ 솜씨</span><b>${v.craft}</b></div><div class="v"><span>🤝 인심</span><b>${v.heart}</b></div>${this.d.grain?.open ? `<div class="v" title="${esc(this.d.grain.note || '')}"><span>🌾 곡식</span><b>${v.grain || 0}</b></div>` : `<div class="v lock" title="${esc(this.d.grainLocked || '들고 다닐 수도, 쌓아 둘 수도 없다.')}"><span>🌾 곡식</span><b>🔒</b></div>`}<div class="ab">${ABIL.map((a) => `<span>${a} <i>${DOTS(this.abil[a] ?? 2)}</i></span>`).join('')}</div>${this.statusName ? `<div class="hurt" style="color:#e9b65b">🏠 ${esc(this.statusName)}</div>` : ''}${marks ? `<div class="hurt">흔적 · ${esc(marks)}</div>` : ''}`;
     const now = `${v.craft}/${v.heart}/${v.grain || 0}/${ABIL.map((a) => this.abil[a]).join('')}`; if (prev && prev !== now) { this.el.classList.remove('up'); void this.el.offsetWidth; this.el.classList.add('up'); } this.el.dataset.v = now;
   }
 }
