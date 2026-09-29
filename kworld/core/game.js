@@ -6,6 +6,7 @@ import { UI } from './ui.js';
 import { createFire } from './fire.js';
 import { bindMinimap } from './minimap.js';
 import { addSkyDome, addMotes, enhanceWater, applySurfaces } from './visuals.js';
+import { addScenery } from './scenery.js';
 import { applySplat } from './terrain.js';
 import { Sound } from './sound.js';
 import { Save } from './save.js';
@@ -52,6 +53,8 @@ export class Game {
     try { this.sound = new Sound(this); } catch (err) { console.warn('sound', err); }
     const vq = new URLSearchParams(location.search).get('view'); this.p.setView(vq || this.world.view || 'fp');
     this.p.bindJoystick(document.getElementById('stick'), document.getElementById('knob'));
+    // 풍경층: 원경 산·바람 풀·새·꽃가루·손맛 — world.scenery 가 있을 때만, ?fx=0 이면 끔(후처리 없이 도는 가벼운 층)
+    if (this.world.scenery && qs.get('fx') !== '0') addScenery(this.e, this.world.scenery, this.quality(), this.p);
     // 시작 시선: 야영지 쪽(있으면) 을 바라봄
     const camp = this.e.areas.get(this.world.face || 'camp'); if (camp) { const d = camp.clone().sub(this.p.pos); this.p.yaw = Math.atan2(-d.x, -d.z); }
     if (this.world.look) this.applyLook(this.world.look);
