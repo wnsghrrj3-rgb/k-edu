@@ -248,7 +248,7 @@
         if (d.question) push('<div class="big-q">' + md(d.question) + '</div>');
         if (d.questions) push('<div class="q-list">' + d.questions.map(q => '<div class="big-q">' + md(lbl(q, 'q')) + '</div>').join('') + '</div>');
         if (d.challenge) push('<div class="big-q">' + md(d.challenge) + '</div>');
-        if (d.options) { push(options(d.options, false, rev)); answerable = answerable || d.options.some(o => o.correct); }
+        if (d.options) { push(options(d.options, !!d.multi, rev)); answerable = answerable || d.options.some(o => o.correct); if (d.multi) push('<div class="multi-hint">☑ 여러 개를 고를 수 있어요</div>'); } // 35차: 국어 「모두 고르기」
         const ab = answerBox(d, rev); if (ab) { push(ab); answerable = true; }
         if (d.note) push('<div class="small-text">' + md(d.note) + '</div>');
         break;

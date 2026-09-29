@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-09-29 · 과목 9 · 차시 537 · 슬라이드 8816 */
+   생성: 2026-09-29 · 과목 10 · 차시 545 · 슬라이드 8968 */
 window.KT2_MANIFEST = {
  "built": "2026-09-29",
- "lessons": 537,
- "slides": 8816,
+ "lessons": 545,
+ "slides": 8968,
  "subjects": [
   {
    "slug": "g1_math",
@@ -12623,6 +12623,232 @@ window.KT2_MANIFEST = {
        ],
        "interactive": 2,
        "blocks": 15,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "slug": "g3s2_korean",
+   "grade": 3,
+   "term": 2,
+   "subject": "korean",
+   "subject_ko": "국어",
+   "title": "3학년 2학기 국어",
+   "units": [
+    {
+     "unit": 1,
+     "title": "경험과 관련지으며 이해해요",
+     "file": "data/g3s2_korean_u1.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u1_l01",
+       "no": "1",
+       "title": "경험과 관련지으며 이해해요 (단원 도입)",
+       "meta_title": "경험과 관련지으며 이해해요 (단원 도입)",
+       "std": "[4국05-02][4국01-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l02",
+       "no": "2",
+       "title": "경험을 떠올리며 시 읽기",
+       "meta_title": "경험을 떠올리며 시 읽기",
+       "std": "[4국05-02][4국05-05]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l04",
+       "no": "4",
+       "title": "경험을 떠올리며 이야기 감상하기",
+       "meta_title": "경험을 떠올리며 이야기 감상하기",
+       "std": "[4국05-02][4국05-05]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l06",
+       "no": "6",
+       "title": "중요한 내용을 간추리며 듣기",
+       "meta_title": "중요한 내용을 간추리며 듣기",
+       "std": "[4국01-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l07",
+       "no": "7",
+       "title": "영상을 보고 중요한 내용 간추리기",
+       "meta_title": "영상을 보고 중요한 내용 간추리기",
+       "std": "[4국01-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l09",
+       "no": "9",
+       "title": "이야기를 듣고 글로 정리하기",
+       "meta_title": "이야기를 듣고 글로 정리하기",
+       "std": "[4국01-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l11",
+       "no": "11",
+       "title": "배운 내용 실천하기",
+       "meta_title": "배운 내용 실천하기",
+       "std": "단원 전체 통합",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l13",
+       "no": "13",
+       "title": "단원 마무리 · 기초 다지기",
+       "meta_title": "단원 마무리 · 기초 다지기",
+       "std": "단원 전체 통합",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
        "seven": [
         1,
         1,
