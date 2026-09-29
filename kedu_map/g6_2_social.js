@@ -261,14 +261,14 @@ window.KEDU_MAP["g6_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u2_l13",
+     "lessonId": "g6_s2_social_u2_l13_v1",
      "n": "13",
      "title": "[생각을 펼쳐요] 기업 운영 계획 세우고 기업 소개 잡지 완성하기",
      "sub": "③ 세계 속의 무역",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/2단원_시장경제와국가간거래/g6_social_u2_l13_표지를꾸며요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,

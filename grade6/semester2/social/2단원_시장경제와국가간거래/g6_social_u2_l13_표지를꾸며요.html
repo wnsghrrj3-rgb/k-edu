@@ -1,0 +1,918 @@
+<!--
+K-edu 사회 6-2 · 2단원 시장경제와 국가 간 거래 · 생각을 펼쳐요 · 13차시(l13)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사11-01]·[6사11-03] · 교과서 p.112~113 · 지도서(대단원2 **19차시** 「[생각을 펼쳐요] 기업 운영 계획 세우고 기업 소개 잡지 완성하기」, 지도서 p.252~253) 근거.
+학습 목표: '시장경제와 국가 간 거래'에서 공부한 내용을 바탕으로 창의·융합 활동을 할 수 있다.
+수업 기법 및 전략: 돌아가며 말하기 · 융합 교과 사회·미술
+META = "2단원 시장경제와 국가 간 거래 · 생각을 펼쳐요"
+⚠️ 엔진은 u2 l12(→ u2 l11 → … 6-1 사회 엔진)에서 100% 승계 · 엔진 무수정 · 2단원 색 #A16207 그대로.
+⚠️ 회수 키 `g6_s2_social_u2_l13_v1` · 맵 키 `g6_social_u2_l13` · 파일명 `표지를꾸며요` — 조작 이름(선례 승계 · 6-2 u1 l11 생각을 펼쳐요 선례).
+
+직접조작: 「이달의 기업」 잡지 표지 판 — 기업의 목표 단추(이윤만 → 지속가능한 성장 → 환경을 지키며 성장)와 근로자를 위한 노력 단추(켬·끔)를 바꾸면
+  표지의 머리글·탐방 글과 「표지에 드러난 기업의 모습」이 바뀐다.
+  ⭐ 씨앗은 교과서 112~113쪽(대표 상품 · 상품의 특징 · 주요 수출국 · 사회적 책임을 다하는 기업으로서 달성하고 싶은 목표 ·
+     근로자의 권리를 보호하려는 노력 · 이달의 기업 표지) · 지도서 19차시 발문·예시 답안(☆☆ 게임 · 중국과 인도 · 지속가능한 성장 ·
+     환경을 지키는 기업 · 성과급과 임금 인상·휴가 보장 · 매주 근로자와 대화의 시간).
+  ⭐ 목표 단추·노력 단추 둘(zcTap) — 판 바꾸는 자리 state.zcGate = 단 하나(목표 + 3 × 노력).
+  ⭐ ★ 표지에 드러난 모습 수는 `zcShow` 한 줄 — (목표가 이윤만이 아니면 1) + (노력 켬이면 1) · 별 문면 `ZC_STAR[zcShow]` · 담는 상태 0.
+  ⭐ ★ 판의 모습(줄 종류)은 `zcKind` 한 줄(표 `ZC_KIND` = [3,0,0,1,2,2]) — 사회적 책임 목표만 = 0 · 근로자를 위한 노력만 = 1 ·
+     둘 다 = 2 이달의 기업 표지 · 이윤만·노력 없음 = 3 기업의 특징이 드러나지 않음(적을 수 없음).
+  ⭐ ★★ 기록장 기록은 `state.zcLog |=` 단 하나(`zcNote` · 적기 처리기에서만 · 줄지 않음) — 세 줄 최소 6걸음(BFS).
+  ⭐ 판 읽기는 세 줄 뒤에만(정답 자리 2) → 핵심 질문 「기업의 대표로서 잡지 표지에 우리 기업의 어떤 모습을 담으면 좋을까요?」 3택(정답 자리 0)
+     → 마무리 3택 = 지도서 19차시 핵심 역량(시장경제의 주체인 기업의 바람직한 역할 · 정답 자리 1).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 10종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 세 줄이 선 뒤 판 움직이기(목표·노력·적기) 무시 — 판 불변
+     ④ 세 줄 전 판 읽기 무시 · 읽은 뒤 다시 무시 · 알맞지 않은 읽기 무시(자리별 안내)
+     ⑤ 판을 읽기 전 핵심 질문 무시 · 고른 뒤 다시 무시 · 알맞지 않은 답 무시
+     ⑥ 핵심 질문 전 마무리 무시(순서)
+     ⑦ 알맞지 않은 마무리 무시
+     ⑧ 안내 표시 중 재클릭 무시(`zcBusy`)
+     ⑨ 이미 적은 줄 다시 적기 무시 — 판 불변
+     ⑩ 기업의 특징이 드러나지 않은 표지 적기 무시 — 판 불변.
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.zc-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 잡지 표지와 ◯◯ 기업은 도식**이다 — 실제 기업이 아니고, 대표 상품과 수출국은 교과서·지도서 예시다(캡션 상시).
+  ㉡ **이윤을 얻는 것은 기업의 자연스러운 목표**다 — 판은 이윤만 적힌 표지에 기업의 다른 모습이 드러나지 않는다는 것만 보인다(완료 카드).
+  ㉢ **수치는 적지 않는다** — 매출·임금·성과급 금액 0.
+  ㉣ **잡지 표지 색칠해 완성하기 · 수출하고 싶은 나라 조사하기 · 완성한 표지 친구들에게 소개하기(돌아가며 말하기) · 컴퓨터 편집 프로그램으로 표지 만들기는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 생각 그물·교실 놀이 0(차시 예고 한 자리만).
+  **교사용 참고 자료 0** — 활동지 · 평가 관점 · 참고 도서 · 생성형 인공지능 프로그램 안내.
+  사람 형상 0 · 금액 0 · 비율 0 · 쪽수 0 · 실제 기업 이름 0 · 연도 0.
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u2_l13_v1">
+<title>[생각을 펼쳐요] 기업 운영 계획 세우고 기업 소개 잡지 완성하기 · 시장경제와 국가 간 거래 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#A16207; --green-d:#854D0E; --cyan:#CA8A04;
+  --bg:#FEFCE8; --bub:#FEF9C3; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#FEF9C3;color:#854D0E}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 목표와 노력을 바꾸며 이달의 기업 잡지 표지를 꾸미는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#FEF9C3;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#854D0E;max-width:660px}
+.zc-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#FEFCE8;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.zc-board{display:flex;flex-direction:column;gap:6px;padding:8px}
+.zc-head{background:#FEF3C7;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#854D0E;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.zc-gate{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.zc-ctl{border:2px solid #94A3B8;background:#F8FAFC;color:#475569;border-radius:9px;padding:5px 6px;cursor:pointer;font-family:inherit;
+  font-weight:800;font-size:clamp(9px,1.52vw,11px);line-height:1.3;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center}
+.zc-ctl[data-lv="1"]{border-color:#7C3AED;background:#F5F3FF;color:#5B21B6}
+.zc-ctl[data-lv="2"]{border-color:#059669;background:#ECFDF5;color:#065F46}
+.zc-ctl .dot{display:flex;gap:3px}
+.zc-ctl .dot i{display:block;width:9px;height:9px;border-radius:50%;background:#CBD5E0}
+.zc-ctl .dot i.on{background:#7C3AED}
+.zc-ctl .st{font-weight:700;font-size:.9em}
+.zc-cover{border:3px solid #1E293B;border-radius:10px;background:#FFFBEB;padding:6px 8px;display:flex;flex-direction:column;gap:4px}
+.zc-mast{text-align:center;font-weight:900;color:#9A3412;font-size:clamp(12px,2vw,15px);letter-spacing:.08em}
+.zc-mast small{display:block;font-weight:700;color:#78350F;font-size:.62em;letter-spacing:0}
+.zc-good{border-radius:7px;padding:3px 7px;background:#EFF6FF;color:#1E40AF;border:1.5px solid #93C5FD;font-weight:800;
+  font-size:clamp(8.8px,1.48vw,10.8px);line-height:1.35}
+.zc-slot{border-radius:7px;padding:4px 7px;font-weight:800;font-size:clamp(9px,1.52vw,11px);line-height:1.38;border:2px dashed #CBD5E0;background:#F8FAFC;color:#94A3B8}
+.zc-slot[data-on="1"]{border-style:solid;border-color:#7C3AED;background:#F5F3FF;color:#4C1D95}
+.zc-slot[data-who="goal"][data-lv="0"]{border-color:#FDBA74;background:#FFF7ED;color:#9A3412}
+.zc-star{border-radius:8px;padding:4px 8px;font-weight:800;font-size:clamp(9px,1.52vw,11px);text-align:center;border:2px dashed #FDBA74;background:#FFF7ED;color:#9A3412}
+.zc-star[data-star="2"]{border-style:solid;border-color:#059669;background:#ECFDF5;color:#065F46}
+.zc-row{display:flex;gap:6px;flex-wrap:wrap}
+.zc-look{flex:1 1 140px;border:2px solid #0369A1;background:#E0F2FE;color:#075985;border-radius:9px;padding:6px 8px;cursor:pointer;
+  font-family:inherit;font-weight:800;font-size:clamp(9.6px,1.62vw,11.8px)}
+.zc-look:hover{background:#BAE6FD}
+.zc-say{border-radius:8px;padding:5px 8px;font-weight:800;font-size:clamp(9.2px,1.56vw,11.2px);line-height:1.4;
+  background:#EFF6FF;color:#1E3A8A;border:2px solid #0369A1}
+.zc-note{display:flex;flex-direction:column;gap:4px}
+.zc-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-radius:7px;padding:4px 8px;font-weight:800;
+  font-size:clamp(9.4px,1.58vw,11.4px);border:2px dashed #CBD5E0;background:#F8FAFC;color:#94A3B8}
+.zc-line.set{border-style:solid;border-color:#059669;background:#ECFDF5;color:#065F46}
+.zc-read,.zc-mean,.zc-fin{display:flex;flex-direction:column;gap:5px}
+.zc-read button,.zc-mean button,.zc-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.zc-read button:hover,.zc-mean button:hover,.zc-fin button:hover{background:var(--bub)}
+.zc-read button.no,.zc-mean button.no,.zc-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.zc-hint{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:420px){ .zc-gate{gap:3px} .zc-ctl,.zc-slot,.zc-good{font-size:8.4px;padding:3px} }
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠·㉢: 모든 그림은 내용을 나타낸 도식이며 실제 사진·기업·잡지가 아니다.
+   ⚠️ 사람 형상 대신 도형으로만 그린다. 금액·비율·연도는 적지 않는다. */
+const SVG = {
+  // 1 들어가기 — 단원에서 공부한 세 주제(도식)
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    ${[['\uD83C\uDFEA','가계와 기업'],['\uD83D\uDCC8','경제성장'],['\uD83D\uDEA2','세계 속의 무역']].map((t,i)=>`<rect x="${14+i*102}" y="32" width="90" height="84" rx="10" fill="#fff" stroke="#A16207" stroke-width="1.5"/>
+      <text x="${59+i*102}" y="72" font-size="22" text-anchor="middle">${t[0]}</text>
+      <text x="${59+i*102}" y="98" font-size="7.4" fill="#854D0E" text-anchor="middle" font-weight="800">${t[1]}</text>`).join('')}
+    <text x="160" y="146" font-size="7.8" fill="#334155" text-anchor="middle" font-weight="800">시장경제와 국가 간 거래에서 공부한 세 주제(도식)</text></svg>`,
+  // 2 살펴보기 — 알리고 싶은 대표 상품(도식)
+  goods:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    <rect x="22" y="30" width="126" height="90" rx="12" fill="#fff" stroke="#7C3AED" stroke-width="1.6"/>
+    <rect x="172" y="30" width="126" height="90" rx="12" fill="#fff" stroke="#0369A1" stroke-width="1.6"/>
+    <text x="85" y="70" font-size="24" text-anchor="middle">\uD83C\uDFAE</text><text x="85" y="98" font-size="7.4" fill="#5B21B6" text-anchor="middle" font-weight="800">물건 \u2014 ☆☆ 게임</text>
+    <text x="235" y="70" font-size="24" text-anchor="middle">\uD83D\uDCE6</text><text x="235" y="98" font-size="7.4" fill="#075985" text-anchor="middle" font-weight="800">서비스 \u2014 집 앞 배달</text>
+    <text x="160" y="148" font-size="7.8" fill="#334155" text-anchor="middle" font-weight="800">물건도 서비스도 대표 상품이 될 수 있어요(도식)</text></svg>`,
+  // 3 살펴보기 — 수출하고 싶은 나라(도식)
+  export:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#EFF6FF"/>
+    <rect x="16" y="50" width="76" height="56" rx="10" fill="#fff" stroke="#A16207" stroke-width="1.5"/><text x="54" y="80" font-size="20" text-anchor="middle">\uD83C\uDFE2</text>
+    <text x="54" y="98" font-size="6.8" fill="#854D0E" text-anchor="middle" font-weight="800">◯◯ 기업</text>
+    <path d="M96 64 L176 44" stroke="#1E40AF" stroke-width="2" stroke-dasharray="5 3"/><path d="M96 92 L176 114" stroke="#1E40AF" stroke-width="2" stroke-dasharray="5 3"/>
+    <rect x="182" y="24" width="122" height="44" rx="10" fill="#fff" stroke="#1E40AF" stroke-width="1.5"/><text x="243" y="44" font-size="8" fill="#1E3A8A" text-anchor="middle" font-weight="800">중국</text>
+    <text x="243" y="58" font-size="6.6" fill="#475569" text-anchor="middle" font-weight="700">인구가 많아요</text>
+    <rect x="182" y="92" width="122" height="44" rx="10" fill="#fff" stroke="#1E40AF" stroke-width="1.5"/><text x="243" y="112" font-size="8" fill="#1E3A8A" text-anchor="middle" font-weight="800">인도</text>
+    <text x="243" y="126" font-size="6.6" fill="#475569" text-anchor="middle" font-weight="700">나라의 특징을 조사해요</text>
+    <text x="160" y="160" font-size="7.4" fill="#334155" text-anchor="middle" font-weight="800">상품이 필요할 만한 나라를 골라요(도식)</text></svg>`,
+  // 4 살펴보기 — 사회적 책임을 다하는 기업의 목표(도식)
+  goal:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0FDF4"/>
+    ${[['\uD83C\uDF31','환경을 지켜요'],['\uD83D\uDCC8','지속가능한 성장'],['\uD83C\uDF0F','전 세계인이 즐기는 상품']].map((t,i)=>`<rect x="${14+i*102}" y="34" width="90" height="80" rx="10" fill="#fff" stroke="#059669" stroke-width="1.5"/>
+      <text x="${59+i*102}" y="72" font-size="22" text-anchor="middle">${t[0]}</text>
+      <text x="${59+i*102}" y="98" font-size="6.8" fill="#065F46" text-anchor="middle" font-weight="800">${t[1]}</text>`).join('')}
+    <text x="160" y="146" font-size="7.8" fill="#334155" text-anchor="middle" font-weight="800">사회적 책임을 다하는 기업이 되려는 목표(도식)</text></svg>`,
+  // 5 살펴보기 — 근로자의 권리를 보호하려는 노력(도식)
+  work:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    ${[['\uD83D\uDCAC','매주 대화의 시간'],['\uD83C\uDF81','성과급·임금 인상'],['\uD83C\uDFD6\uFE0F','휴가 보장']].map((t,i)=>`<rect x="${14+i*102}" y="34" width="90" height="80" rx="10" fill="#fff" stroke="#C2410C" stroke-width="1.5"/>
+      <text x="${59+i*102}" y="72" font-size="22" text-anchor="middle">${t[0]}</text>
+      <text x="${59+i*102}" y="98" font-size="6.8" fill="#9A3412" text-anchor="middle" font-weight="800">${t[1]}</text>`).join('')}
+    <text x="160" y="146" font-size="7.8" fill="#334155" text-anchor="middle" font-weight="800">일하고 싶은 근로 환경을 만드는 노력(도식)</text></svg>`,
+  // 7 살펴보기 — 이달의 기업 표지(도식)
+  cover:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <rect x="96" y="10" width="128" height="150" rx="6" fill="#FFFBEB" stroke="#1E293B" stroke-width="2.4"/>
+    <text x="160" y="32" font-size="12" fill="#9A3412" text-anchor="middle" font-weight="900">이달의 기업</text>
+    <rect x="106" y="44" width="108" height="30" rx="5" fill="#F0FDF4" stroke="#059669" stroke-width="1.2"/><text x="160" y="62" font-size="6.4" fill="#065F46" text-anchor="middle" font-weight="800">사회적 책임 목표</text>
+    <rect x="106" y="80" width="108" height="30" rx="5" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.2"/><text x="160" y="98" font-size="6.4" fill="#9A3412" text-anchor="middle" font-weight="800">근로자를 위한 노력</text>
+    <rect x="106" y="116" width="108" height="30" rx="5" fill="#EFF6FF" stroke="#1E40AF" stroke-width="1.2"/><text x="160" y="134" font-size="6.4" fill="#1E3A8A" text-anchor="middle" font-weight="800">대표 상품</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#1E293B"/>
+    ${['대표 상품','수출국','책임 목표','근로자 노력'].map((t,i)=>`<rect x="${14+i*76}" y="52" width="66" height="40" rx="8" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2"/>
+      <text x="${47+i*76}" y="76" font-size="6.8" fill="#9A3412" text-anchor="middle" font-weight="800">${t}</text>${i<3?`<path d="M${80+i*76} 72 L${90+i*76} 72" stroke="#FDE68A" stroke-width="2"/>`:''}`).join('')}
+    <text x="160" y="128" font-size="8.6" fill="#FDE68A" text-anchor="middle" font-weight="800">기업 운영 계획을 세우고 잡지 표지에 담았어요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FEFCE8"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#A16207" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#A16207" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#854D0E" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 이달의 기업 잡지 표지 판 =====
+   ★ 목표 단추·노력 단추 둘(zcTap) — 판 바꾸는 자리 state.zcGate = 단 하나(목표 + 3 × 노력).
+   ★ 표지에 드러난 모습 수는 zcShow 한 줄 · 별 문면 ZC_STAR · 판의 모습 zcKind 한 줄(담는 상태 0).
+   ★★ 기록장 기록은 |= 만(zcLog · zcNote 단 하나 · 적기 처리기에서만).
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. 잡지와 ◯◯ 기업은 도식이다. */
+const ZC_N = 2;
+const ZC_ALL = 7;
+/* 기업의 목표 세 단계 — 교과서 112쪽 · 지도서 19차시 예시 답안 */
+const ZC_GOALTXT = ['이윤만 적었어요','지속가능한 성장','환경을 지키며 성장'];
+const ZC_GOAL = [
+  '이윤을 많이 남기는 ◯◯ 기업',
+  '전 세계인이 즐기는 1등 게임을 개발하여 지속가능한 성장을 하는 ◯◯ 기업',
+  '지속가능한 성장을 위해 환경을 지키는 ◯◯ 기업'
+];
+const ZC_WORKTXT = ['아직 적지 않았어요','대화·성과급·휴가'];
+const ZC_WORK = '매주 근로자와 대화의 시간을 갖고, 성과가 높은 근로자에게 성과급을 주며 휴가를 보장하는 ◯◯ 기업 탐방';
+const ZC_GOOD = '\uD83C\uDFAE 대표 상품 ☆☆ 게임 \u2014 여러 가지 캐릭터가 다양한 과제를 해결하며 성장해요 \u00b7 주요 수출국 중국, 인도';
+/* ★ 판의 모습 표 — 칸 = 목표 + 3 × 노력
+   0 사회적 책임 목표가 드러난 표지 · 1 근로자를 위한 노력이 드러난 표지 · 2 둘 다 드러난 이달의 기업 표지 · 3 기업의 특징이 드러나지 않음 */
+const ZC_KIND = [3, 0, 0, 1, 2, 2];
+/* 기록장 세 줄 */
+const ZC_LINE = [
+  '지속가능한 성장이나 환경을 지키는 목표를 적으니 표지에 사회적 책임을 다하려는 기업의 모습이 드러나요',
+  '근로자와 대화하고 성과급과 휴가를 보장하는 노력을 적으니 표지에 근로자의 권리를 보호하려는 기업의 모습이 드러나요',
+  '사회적 책임 목표와 근로자를 위한 노력을 함께 적으니 기업의 특징이 잘 드러난 이달의 기업 표지가 돼요'
+];
+/* 판의 모습 — 줄 종류와 같은 자리 */
+const ZC_SAY = [
+  '지금 표지에는 <b>사회적 책임을 다하려는 목표</b>가 드러나요.',
+  '지금 표지에는 <b>근로자를 위한 노력</b>이 드러나요.',
+  '지금 표지에는 <b>사회적 책임 목표</b>와 <b>근로자를 위한 노력</b>이 함께 드러나요.',
+  '지금 표지에는 <b>이윤</b>만 적혀 있어 우리 기업의 특징이 잘 드러나지 않아요.'
+];
+/* 표지에 드러난 모습 — zcShow 자리 */
+const ZC_STAR = [
+  '\u2B50 표지에 우리 기업의 특징이 잘 드러나지 않아요',
+  '\u2B50\u2B50 표지에 우리 기업의 특징이 조금 드러나요',
+  '\u2B50\u2B50\u2B50 표지에 우리 기업의 특징이 잘 드러나요'
+];
+
+/* ② 판 읽기 */
+const ZC_READ = [
+  '이윤만 적은 표지에 우리 기업의 특징이 가장 잘 드러났어요',
+  '근로자를 위한 노력은 표지에 적어도 드러나지 않았어요',
+  '사회적 책임을 다하려는 목표와 근로자의 권리를 보호하려는 노력을 함께 적으니 우리 기업의 특징이 잘 드러난 표지가 되었어요'
+];
+const ZC_READ_OK = 2;
+const ZC_READ_NO = [
+  '기록장 첫째 줄을 다시 봐요. 이윤만 적었을 때 표지에 별이 <b>몇 개</b> 떴나요? 판을 다시 읽어 봐요.',
+  '기록장 둘째 줄을 다시 봐요. 노력 단추를 켜니 표지에 <b>무엇</b>이 드러났나요? 판을 다시 읽어 봐요.',
+  null
+];
+
+/* ③ 핵심 질문 — 기업의 대표로서 잡지 표지에 우리 기업의 어떤 모습을 담으면 좋을까요? */
+const ZC_MEAN = [
+  '대표 상품과 주요 수출국, 사회적 책임을 다하려는 목표, 근로자의 권리를 보호하려는 노력을 담아요',
+  '이윤을 많이 남긴 것만 크게 담아요',
+  '다른 기업의 상품이 나쁘다는 글을 담아요'
+];
+const ZC_MEAN_OK = 0;
+const ZC_MEAN_NO = [
+  null,
+  '기록장 첫째·둘째 줄을 떠올려 봐요. 이윤 말고 <b>무엇</b>을 적었을 때 기업의 특징이 드러났나요? 판은 그대로예요.',
+  '판의 표지에 다른 기업을 <b>흉보는</b> 칸이 있었나요? 기록장 셋째 줄을 떠올려 봐요. 판은 그대로예요.'
+];
+
+/* ④ 마무리 — 지도서 19차시 핵심 역량 · 기업의 바람직한 역할 */
+const ZC_FIN = [
+  '기업은 이윤만 추구하면 되고, 근로자의 권리는 생각하지 않아도 돼요',
+  '기업은 좋은 상품을 만들어 수출하며 이윤을 얻는 동시에, 사회적 책임을 다하고 근로자의 권리를 보호하려고 노력해야 해요',
+  '기업은 한 나라 안에서만 상품을 팔아야 해요'
+];
+const ZC_FIN_OK = 1;
+const ZC_FIN_NO = [
+  '기록장 둘째 줄을 떠올려 봐요. 근로자와 대화하고 휴가를 보장하는 노력은 <b>누구</b>의 권리를 지키나요? 오늘의 정리를 다시 골라 봐요.',
+  null,
+  '판의 대표 상품은 <b>어느 나라</b>에 수출하고 싶었나요? 오늘의 정리를 다시 골라 봐요.'
+];
+
+/* 안내 */
+const ZC_LOCK = '기록장 <b>세 줄이 모두 섰어요</b>. 표지는 이대로 둬요. 판을 읽어 봐요. 판은 그대로예요.';
+const ZC_AGAIN = '지금 표지의 모습은 <b>이미 적었어요</b>. 단추를 눌러 표지를 바꿔 봐요. 판은 그대로예요.';
+const ZC_BLANK = '지금 표지에는 <b>이윤</b>만 적혀 있어 어떤 기업인지 알아보기 어려워요. 목표나 노력을 바꿔 봐요. 판은 그대로예요.';
+const ZC_ORDER_R = '아직 <b>기록장 세 줄</b>이 다 서지 않았어요. 세 줄을 모두 적은 뒤에 읽을 수 있어요. 판은 그대로예요.';
+const ZC_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const ZC_ORDER_K = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const ZC_MEAN_AGAIN = '표지에 담을 모습은 <b>이미 골랐어요</b>. 판은 그대로예요.';
+const ZC_ORDER_F = '아직 <b>표지에 담을 모습</b>을 고르지 않았어요. 먼저 골라 봐요. 판은 그대로예요.';
+const ZC_ALL_MSG = '기록장 <b>세 줄이 모두 섰어요</b>. 판을 읽어 봐요.';
+
+function zcGoalOf(st){ return st.zcGate % 3; }
+function zcWorkOf(st){ return (st.zcGate / 3) | 0; }
+/* ★ 표지에 드러난 모습 수 — 한 줄 */
+function zcShow(st){ return (zcGoalOf(st) > 0 ? 1 : 0) + zcWorkOf(st); }
+/* ★ 판의 모습(줄 종류) — 한 줄(표 ZC_KIND) */
+function zcKind(st){ return ZC_KIND[st.zcGate]; }
+function zcHas(st,l){ return (st.zcLog & (1<<l))!==0; }
+function zcLines(st){ return [0,1,2].filter(l=>zcHas(st,l)).length; }
+function zcAll(st){ return st.zcLog===ZC_ALL; }
+
+function zcCtls(st){
+  const g=zcGoalOf(st), k=zcWorkOf(st);
+  return `<button class="zc-ctl" data-a="0" data-lv="${g}" onclick="zcTap(0)"><span>\uD83C\uDFAF 기업의 목표</span><span class="dot">${[1,2].map(i=>`<i class="${g>=i?'on':''}"></i>`).join('')}</span><span class="st">${ZC_GOALTXT[g]}</span></button>`
+    + `<button class="zc-ctl" data-a="1" data-lv="${k?2:0}" onclick="zcTap(1)"><span>\uD83E\uDD1D 근로자를 위한 노력</span><span class="dot"><i class="${k?'on':''}"></i></span><span class="st">${ZC_WORKTXT[k]}</span></button>`;
+}
+function zcCover(st){
+  const g=zcGoalOf(st), k=zcWorkOf(st);
+  return `<div class="zc-mast">이달의 기업<small>우리나라 대표 기업을 알아보는</small></div>`
+    + `<div class="zc-slot" data-who="goal" data-lv="${g}" data-on="${g>0?1:0}">\uD83C\uDFAF ${ZC_GOAL[g]}</div>`
+    + `<div class="zc-slot" data-who="work" data-on="${k}">${k?'\uD83E\uDD1D '+ZC_WORK:'\u2610 근로자를 위한 노력 칸이 비어 있어요'}</div>`
+    + `<div class="zc-good">${ZC_GOOD}</div>`;
+}
+function zcNotes(st){
+  return ZC_LINE.map((t,l)=>{ const on=zcHas(st,l);
+    return `<div class="zc-line${on?' set':''}" data-line="${l}">${on?'\u2714 '+t:'\u2610 아직 적지 않은 줄'}</div>`; }).join('');
+}
+
+function zcBoard(st){
+  const fin = st.zcFin!=null, all = zcAll(st), k=zcKind(st), s=zcShow(st);
+  const head = fin ? '기업 운영 계획을 세우고 잡지 표지를 꾸며 봤어요'
+    : st.zcMean!=null ? '표지에 담을 모습까지 골랐어요 \u2014 이제 정리해요'
+    : st.zcRead!=null ? '표지에 담을 우리 기업의 모습을 골라 봐요'
+    : all ? '기록장 세 줄이 모두 섰어요 \u2014 판을 읽어 봐요'
+    : st.zcLog!==0 ? '단추를 바꿔 다른 표지를 찾아 적어 봐요'
+    : '단추를 눌러 표지를 바꾸고, 기록장에 적어 봐요';
+  return `<div class="zc-board" data-gate="${st.zcGate}" data-goal="${zcGoalOf(st)}" data-work="${zcWorkOf(st)}" data-show="${s}" data-log="${st.zcLog}" data-lines="${zcLines(st)}" data-all="${all?1:0}" data-kind="${k}" data-read="${st.zcRead==null?-1:st.zcRead}" data-mean="${st.zcMean==null?-1:st.zcMean}" data-fin="${fin?1:0}">
+    <div class="zc-head">${head}</div>
+    <div class="zc-gate">${zcCtls(st)}</div>
+    <div class="zc-cover">${zcCover(st)}</div>
+    <div class="zc-star" data-star="${s}">${ZC_STAR[s]}</div>
+    <div class="zc-say" data-say="${k}">${ZC_SAY[k]}</div>
+    <div class="zc-row"><button class="zc-look" data-look="1" onclick="zcWrite()">\u270D\uFE0F 기록장에 적기</button></div>
+    <div class="zc-note">${zcNotes(st)}</div>
+  </div>`;
+}
+
+function zcPanel(st){
+  const fin = st.zcFin!=null, all = zcAll(st);
+  const q = fin ? '기업의 대표가 되어 기업 운영 계획을 세우고 이달의 기업 표지를 꾸며 봤어요.'
+    : st.zcMean!=null ? '오늘 공부한 내용을 정리해요. 시장경제에서 기업은 어떤 역할을 해야 할까요?'
+    : st.zcRead!=null ? '핵심 질문 \u2014 기업의 대표로서 잡지 표지에 우리 기업의 어떤 모습을 담으면 좋을까요?'
+    : all ? '기록장 세 줄이 모두 섰어요. 판에서 무엇을 알 수 있나요?'
+    : st.zcLog!==0 ? '단추를 바꿔 가며 기록장 세 줄을 모두 세워요.'
+    : '도식 속 이달의 기업 표지에 ☆☆ 게임을 만드는 ◯◯ 기업이 실려요. 지금 표지에는 이윤만 적혀 있어요.';
+  let right = `<div class="zc-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83C\uDFE2 기업의 바람직한 역할</div>
+      기업은 좋은 상품을 만들어 다른 나라에 수출하며 <b>이윤</b>을 얻어요. 이윤을 얻는 것은 기업의 자연스러운 목표예요.
+      그와 함께 <b>사회적 책임</b>을 다하려는 목표를 세우고, <b>근로자의 권리</b>를 보호하려고 노력하면 우리 기업의 특징이 잘 드러나요.<br>
+      <span style="color:#64748B">판의 잡지와 ◯◯ 기업은 도식이고, 대표 상품과 수출국은 교과서 예시예요.
+      <b>색칠 도구로 잡지 표지 완성하기</b>, <b>수출하고 싶은 나라 조사하기</b>, <b>완성한 표지를 친구들에게 소개하기</b>, <b>컴퓨터 편집 프로그램으로 표지 만들기</b>는 교실에서 직접 해요.</span></div>`;
+  } else if(st.zcMean!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="zc-fin">${ZC_FIN.map((t,k)=>`<button class="${st.zcWrongF===k?'no':''}" onclick="zcFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.zcRead!=null){
+    right += `<div class="dw-step">\uD83E\uDD14 핵심 질문</div>`;
+    right += `<div class="zc-mean">${ZC_MEAN.map((t,k)=>`<button class="${st.zcWrongK===k?'no':''}" onclick="zcMeanPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="zc-hint">기록장 셋째 줄을 적을 때의 표지를 떠올려 봐요.</div>`;
+  } else if(all){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="zc-read">${ZC_READ.map((t,k)=>`<button class="${st.zcWrongR===k?'no':''}" onclick="zcReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83D\uDCF0 표지를 바꾸며 보기</div>`;
+    right += `<div class="zc-hint"><b>기업의 목표</b> 단추를 누를 때마다 이윤만 \u2192 지속가능한 성장 \u2192 환경을 지키며 성장 \u2192 다시 이윤만으로 바뀌어요. <b>근로자를 위한 노력</b> 단추는 표지에 근로자를 위한 노력을 적거나 지워요. 별은 표지에 우리 기업의 특징이 얼마나 드러났는지 보여 줘요. <b>기록장에 적기</b>를 누르면 지금 표지의 모습이 적혀요. 세 줄을 모두 세우면 판을 읽을 수 있어요. 감점은 없어요.</div>`;
+  }
+  if(st.zcMsg) right += `<div class="dw-msg${st.zcWarn?' warn':''}">${st.zcMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83D\uDCF0 이달의 기업 표지를 꾸며요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${zcBoard(st)}<div class="cvcap">판의 잡지와 ◯◯ 기업은 <b>도식</b>이에요. 실제 기업이 아니고, 대표 상품과 수출국은 교과서 예시예요. 별은 표지에 드러난 모습을 센 것일 뿐 기업의 점수가 아니에요. 수치는 적지 않았어요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 시장경제와 국가 간 거래 · 생각을 펼쳐요";
+
+// 확인 4 + 적용 4 — 정답 다양화 [0,2,3,1,2,0,1,3](각 자리 2회)
+// ⚠️ 문항 내 금액·비율·연도·쪽수 0 · 새 사실 0(교과서 112~113쪽 · 지도서 19차시 · 앞 차시 본문까지만).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"기업의 대표가 되어 다른 나라에 알리고 싶은 <b>대표 상품</b>을 떠올릴 때 알맞은 것은 무엇인가요?",
+   opts:["물건뿐 아니라 배달 서비스처럼 서비스도 대표 상품이 될 수 있어요","대표 상품은 손으로 만질 수 있는 물건만 될 수 있어요","대표 상품은 다른 기업의 상품에서 골라요","대표 상품은 정하지 않아도 돼요"],
+   correct:0, pts:POINTS_BASIC, scene:"goods",
+   reason:"기업의 대표 상품은 물건일 수도, 서비스일 수도 있어요. 여러 캐릭터가 등장하는 게임도, 집 앞에 필요한 물건을 빠르게 배달해 주는 서비스도 대표 상품이 될 수 있어요.",
+   h1:"교과서 예시에는 게임과 배달이 있었어요.", h2:"「물건이나 서비스」가 열쇠예요."},
+  {stem:"우리 기업의 상품을 <b>수출하고 싶은 나라</b>를 고를 때 알맞은 방법은 무엇인가요?",
+   opts:["이름이 마음에 드는 나라를 아무렇게나 골라요","우리나라와 가장 가까운 나라만 골라요","그 나라의 특징이나 현황을 조사하여 우리 상품이 필요할 만한 나라를 골라요","우리 상품이 필요 없는 나라를 골라요"],
+   correct:2, pts:POINTS_BASIC, scene:"export",
+   reason:"기업의 상품이 필요할 만한 나라를 조사하여 수출하고 싶은 나라를 골라요. 그 나라를 고른 까닭을 친구들에게 발표할 수 있어요.",
+   h1:"상품을 살 사람이 있는 나라를 떠올려 봐요.", h2:"「조사」가 열쇠예요."},
+  {stem:"<b>사회적 책임을 다하는 기업</b>으로서 달성하고 싶은 목표로 알맞은 것은 무엇인가요?",
+   opts:["다른 기업이 문을 닫게 만들자","근로자의 휴가를 줄이자","환경은 생각하지 말고 빨리 만들자","매년 성장하고, 지속가능한 환경을 지키는 기업이 되자"],
+   correct:3, pts:POINTS_BASIC, scene:"goal",
+   reason:"환경을 보호하며 성장하는 기업이 되려고 「매년 성장하고, 지속가능한 환경을 지키는 기업이 되자!」 같은 목표를 세울 수 있어요.",
+   h1:"판에서 목표 단추를 눌렀을 때 별이 뜬 목표를 떠올려 봐요.", h2:"「지속가능한 환경」이 열쇠예요."},
+  {stem:"<b>근로자의 권리를 보호하려는 노력</b>으로 알맞은 것은 무엇인가요?",
+   opts:["근로자가 쉬는 날 없이 일하게 해요","매주 근로자와 대화의 시간을 가지며 일하고 싶은 근로 환경을 만들어요","약속한 임금보다 적게 줘요","근로자의 의견은 듣지 않아요"],
+   correct:1, pts:POINTS_BASIC, scene:"work",
+   reason:"매주 근로자와 대화의 시간을 가지며 일하고 싶은 근로 환경을 만들 수 있어요. 성과가 높은 근로자에게 성과급을 주고 휴가를 보장하는 노력도 있어요.",
+   h1:"판의 노력 단추에 적힌 글을 떠올려 봐요.", h2:"「대화의 시간」이 열쇠예요."},
+  // 4단계 적용 (+15)
+  {stem:"교과서 예시에서 게임을 만드는 기업이 게임을 <b>중국</b>에 수출하고 싶다고 한 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["중국에는 게임이 하나도 없어서","중국은 우리나라보다 땅이 좁아서","중국은 인구가 많아 우리 게임을 즐길 사람이 많을 것 같아서","중국은 게임을 수입하지 않아서"],
+   correct:2, pts:POINTS_APPLY, scene:"export",
+   reason:"인구가 많은 나라에는 우리 게임을 즐길 사람도 많을 거예요. 그래서 우리 기업의 게임을 인구가 많은 중국에 수출하고 싶다고 했어요.",
+   h1:"상품을 살 사람이 많은 나라를 떠올려 봐요.", h2:"「인구」가 열쇠예요."},
+  {stem:"잡지 표지에 「<b>매주 근로자와 대화의 시간을 갖는 ◯◯ 기업 탐방</b>」이라고 적었어요. 이 글은 기업의 어떤 모습을 드러내나요?",
+   opts:["근로자의 권리를 보호하려고 노력하는 기업의 모습","환경을 지키는 기업의 모습","수출하는 나라를 늘리는 기업의 모습","이윤만 남기는 기업의 모습"],
+   correct:0, pts:POINTS_APPLY, scene:"cover",
+   reason:"근로자와 대화하며 일하고 싶은 근로 환경을 만드는 것은 근로자의 권리를 보호하려는 노력이에요. 판에서 노력 단추를 켰을 때 드러난 모습이에요.",
+   h1:"판의 기록장 둘째 줄을 떠올려 봐요.", h2:"「근로자」가 열쇠예요."},
+  {stem:"잡지 표지에 「<b>지속가능한 성장을 위해 환경을 지키는 ◯◯ 기업</b>」이라고 적었어요. 이 글은 기업의 어떤 모습을 드러내나요?",
+   opts:["근로자에게 휴가를 주는 모습","사회적 책임을 다하려는 기업의 모습","다른 나라와 무역을 하지 않는 모습","상품 가격을 올리려는 모습"],
+   correct:1, pts:POINTS_APPLY, scene:"goal",
+   reason:"환경을 지키며 지속가능한 성장을 하려는 것은 사회적 책임을 다하려는 기업의 목표예요. 판에서 목표 단추로 드러난 모습이에요.",
+   h1:"판의 기록장 첫째 줄을 떠올려 봐요.", h2:"「사회적 책임」이 열쇠예요."},
+  {stem:"우리 기업의 게임이 여러 나라에 많이 <b>수출</b>되면 우리나라에 생길 수 있는 일로 알맞은 것은 무엇인가요?",
+   opts:["일자리가 줄어들어요","관련 산업이 작아져요","상품을 덜 만들어도 돼요","더 많이 생산해야 하므로 산업이 성장하고, 일자리와 소득이 늘어나요"],
+   correct:3, pts:POINTS_APPLY, scene:"sum",
+   reason:"수출이 늘어나면 더 많은 물자나 서비스를 생산해야 하므로 산업이 성장해요. 이에 따라 일자리가 늘어나고 사람들의 소득도 증가해요.",
+   h1:"지난 시간 무역을 통한 경쟁을 떠올려 봐요.", h2:"산업, 일자리, 소득이 열쇠예요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 동기 유발(단원에서 공부한 내용 떠올리기)
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">'시장경제와 국가 간 거래'에서 무엇을 공부했나요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','단원에서 공부한 세 주제(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCA1 생각을 열어요</div>
+      지금까지 '시장경제와 국가 간 거래'에서 여러 가지를 공부했어요. 돌아가며 말하듯이, 주제마다 떠오르는 내용을 하나씩 말해 봐요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 시장경제에서 <b>가계와 기업의 역할</b>을 살펴봤어요.<br>
+      \u2014 시장경제에서 기업의 자유와 <b>근로자의 권리</b>, 기업의 <b>사회적 책임</b>을 알아봤어요.<br>
+      \u2014 <b>경제성장</b>의 의미와 경제성장이 우리 생활에 미친 영향, 빠른 경제성장으로 발생한 문제와 해결 방안을 알아봤어요.<br>
+      \u2014 <b>무역</b>의 의미와 나라 간에 무역이 발생하는 까닭, 무역을 통한 상호 의존과 경쟁 관계를 알아봤어요.</div>`
+      :`<div class="note">가계와 기업, 경제성장, 무역을 차례로 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">오늘은 단원에서 공부한 내용을 바탕으로 <b>기업의 대표</b>가 되어 기업 운영 계획을 세우고, 기업을 소개하는 잡지의 표지를 완성해 봐요.</div></div>`});
+// 2 살펴보기 — reveal: 대표 상품(교과서 112쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">다른 나라에 알리고 싶은 우리 기업의 대표 상품은 무엇일까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('goods','물건과 서비스(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDFAE 기업의 대표 상품</div>
+      내가 기업을 운영하는 대표가 되었다고 생각해 봐요. 다른 나라에 알리고 싶은 우리 기업의 대표 상품은 <b>물건</b>일 수도, <b>서비스</b>일 수도 있어요.<br>
+      우리 기업의 대표 상품과 그 상품의 특징은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 여러 가지 캐릭터가 등장해서 다양한 과제를 해결하며 성장해 나가는 <b>게임</b>을 알리고 싶어요.<br>
+      \u2014 소비자의 선호도를 반영하여 집 앞에 여러 가지 필요한 물건을 빠르게 <b>배달</b>해 주는 서비스를 알리고 싶어요.</div>`
+      :`<div class="note">물건 하나, 서비스 하나를 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: 수출하고 싶은 나라(교과서 112쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">우리 기업의 상품을 어느 나라에 수출하고 싶나요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('export','수출하고 싶은 나라(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDEA2 주요 수출국</div>
+      우리 기업의 상품이 필요할 만한 나라를 조사하여 수출하고 싶은 나라를 골라요. 나라의 특징이나 현황을 살펴보고, 그 나라를 고른 까닭을 말할 수 있어야 해요.<br>
+      게임과 배달 서비스는 각각 어느 나라에 수출하면 좋을까요? 그 까닭은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 우리 기업의 게임을 <b>인구가 많은</b> 중국에 수출하고 싶어요.<br>
+      \u2014 상품을 빠르게 배달해 주는 서비스를 인도에 수출하고 싶어요.<br>
+      \u2014 수출하고 싶은 나라를 고른 까닭은 그 나라를 조사한 내용으로 친구들에게 발표해요.</div>`
+      :`<div class="note">우리 상품을 살 사람이 많은 나라를 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 4 살펴보기 — reveal: 사회적 책임 목표(교과서 112쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">사회적 책임을 다하는 기업으로서 어떤 목표를 세울까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('goal','사회적 책임 목표(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDF31 사회적 책임을 다하는 기업</div>
+      기업은 상품을 팔아 이윤을 얻어요. 그런데 시장경제에서 기업은 이윤을 얻는 것과 함께 <b>사회적 책임</b>도 다해야 한다고 공부했어요.<br>
+      사회적 책임을 다하는 기업으로서 우리 기업이 달성하고 싶은 목표는 무엇일까요? 친구들의 목표와 견주어 봐요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 「전 세계인이 구입하는 1등 게임을 개발하여 <b>지속가능한 성장</b>을 하는 기업」이라는 목표를 달성하고 싶어요.<br>
+      \u2014 환경을 보호하며 성장하는 기업이 되려고 「매년 성장하고, <b>지속가능한 환경</b>을 지키는 기업이 되자!」라는 목표를 달성하고 싶어요.</div>`
+      :`<div class="note">이윤 말고도 기업이 지키고 싶은 것을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 5 살펴보기 — reveal: 근로자의 권리 보호(교과서 112쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">근로자의 권리를 보호하려고 어떤 노력을 할까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('work','근로자를 위한 노력(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83E\uDD1D 근로자의 권리를 보호하려는 노력</div>
+      기업은 근로자와 함께 상품을 만들어요. 이윤 추구 말고도 근로자의 권리를 보호하려는 노력을 떠올려 봐요.<br>
+      우리 기업은 근로자의 권리를 보호하려고 어떤 노력을 기울일 수 있을까요? 친구들이 적은 내용에서 인상 깊었던 점도 말해 봐요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 성실히 일하고 성과가 높은 근로자에게는 <b>성과급</b>을 주고 더 높은 임금 인상을 실시하며, <b>휴가</b>를 보장하도록 노력할 거예요.<br>
+      \u2014 매주 근로자와 <b>대화의 시간</b>을 가지며 일하고 싶은 근로 환경을 만들 수 있도록 노력할 거예요.</div>`
+      :`<div class="note">일한 만큼의 보상, 쉬는 날, 대화를 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">다음 판에서 목표와 노력을 바꾸며 <b>이달의 기업</b> 표지를 꾸며 봐요.</div></div>`});
+// 6 살펴보기 — 직접조작(이달의 기업 표지를 꾸며요)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">목표와 노력을 바꾸며 이달의 기업 표지를 꾸며요</h2>
+  ${zcPanel(st)}`});
+// 7 살펴보기 — reveal: 잡지 표지 완성하기(교과서 113쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">기업의 특징이 잘 드러나도록 잡지 표지를 완성해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('cover','이달의 기업 표지(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCF0 이달의 기업</div>
+      「우리나라 대표 기업을 알아보는 이달의 기업」 잡지의 표지를 꾸며요. 표지에는 <b>사회적 책임을 다하는 기업으로서 달성하고 싶은 목표</b>, <b>근로자의 권리를 보호하려는 노력</b>, <b>기업의 대표 상품</b>, 자랑하고 싶은 기업의 모습을 담아요.<br>
+      판에서 세운 우리 기업의 표지에는 어떤 글을 담으면 좋을까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 전 세계인이 구입하는 1등 게임을 개발하여 지속가능한 성장을 하는 △△ 기업<br>
+      \u2014 성실히 일하고 성과가 높은 근로자에게 충분한 보상을 하는 △△ 기업!<br>
+      \u2014 여러 가지 캐릭터가 다양한 과제를 해결하며 성장해 나가는 ☆☆ 게임!<br>
+      \u2014 표지는 색칠 도구로 꾸미고, 완성한 표지를 친구들에게 소개해요.</div>`
+      :`<div class="note">목표, 노력, 대표 상품을 한 줄씩 적어 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 19차시
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div><b>대표 상품</b> \u2014 다른 나라에 알리고 싶은 우리 기업의 대표 상품(물건이나 서비스)과 그 특징을 정해요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div><b>주요 수출국</b> \u2014 상품이 필요할 만한 나라를 조사하여 수출하고 싶은 나라를 골라요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div><b>사회적 책임 목표</b> \u2014 지속가능한 성장, 환경을 지키는 기업처럼 사회적 책임을 다하려는 목표를 세워요.</div></div>
+    <div class="sum-item"><span class="n">\u2463</span><div><b>근로자를 위한 노력</b> \u2014 대화의 시간, 성과급, 휴가 보장처럼 근로자의 권리를 보호하려고 노력해요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 이윤만 적은 표지에는 기업의 특징이 잘 드러나지 않았고, 사회적 책임 목표와 근로자를 위한 노력을 함께 적으니 이달의 기업 표지가 되었어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b>'시장경제와 국가 간 거래'에서 공부한 내용을 정리</b>해요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공부한 내용을 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"우리 기업의 대표 상품과 수출하고 싶은 나라를 정할 수 있어요",st)}
+    ${selfCheck(1,"사회적 책임을 다하는 기업의 목표와 근로자를 위한 노력을 세울 수 있어요",st)}
+    ${selfCheck(2,"기업의 특징이 잘 드러나도록 잡지 표지에 담을 내용을 고를 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">단원에서 공부한 내용을 정리</b>해요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u2_l13";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  zcGate:0, zcLog:0,
+  zcRead:null, zcMean:null, zcFin:null,
+  zcWrongR:null, zcWrongK:null, zcWrongF:null,
+  zcMsg:null, zcWarn:false, zcBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function zcRender(){ main.innerHTML = slides[state.idx].render(state); }
+function zcHold(msg){
+  state.zcWarn=true; state.zcBusy=true; state.zcMsg=msg;
+  playThud(); zcRender();
+  setTimeout(()=>{ state.zcBusy=false; state.zcWarn=false; state.zcMsg=null;
+    state.zcWrongR=null; state.zcWrongK=null; state.zcWrongF=null; zcRender(); },1600);
+}
+/* ★ 기록장 기록 — 더하기만 하는 자리 단 하나 */
+function zcNote(l){ state.zcLog |= (1 << l); }
+
+/* ① 표지 단추 — 0 기업의 목표(이윤만 → 지속가능한 성장 → 환경을 지키며 성장 → 이윤만) · 1 근로자를 위한 노력(켬·끔) */
+function zcTap(a){
+  if(state.zcFin!=null) return;                                        // 가드①
+  if(state.zcBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(a) || a<0 || a>=ZC_N) return;                   // 가드②
+  if(zcAll(state)){ zcHold(ZC_LOCK); return; }                         // 가드③ 판 불변
+  const g=zcGoalOf(state), k=zcWorkOf(state);
+  state.zcGate = a===0 ? (g+1)%3 + 3*k : g + 3*(1-k);                  // ★ 판이 바뀌는 자리 단 하나
+  state.zcWarn=false; state.zcMsg=null; playBlip(); zcRender();
+}
+
+/* ② 기록장에 적기 — 기업의 특징이 드러나고(가드⑩) 아직 적지 않았을 때만(가드⑨) */
+function zcWrite(){
+  if(state.zcFin!=null) return;                                        // 가드①
+  if(state.zcBusy) return;                                             // 가드⑧
+  if(zcAll(state)){ zcHold(ZC_LOCK); return; }                         // 가드③ 판 불변
+  const l = zcKind(state);
+  if(l===3){ zcHold(ZC_BLANK); return; }                               // 가드⑩ 특징이 드러나지 않음 — 판 불변
+  if(zcHas(state,l)){ zcHold(ZC_AGAIN); return; }                      // 가드⑨ 이미 선 줄 — 판 불변
+  zcNote(l);
+  state.zcWarn=false;
+  if(zcAll(state)){ state.zcMsg = ZC_ALL_MSG; playChime(); }
+  else { state.zcMsg = `기록장에 적었어요 \u2014 ${ZC_LINE[l]}. 단추를 바꿔 다른 표지를 찾아봐요.`; playChime(); }
+  zcRender();
+}
+
+/* ③ 판 읽기 — 세 줄 뒤에만(가드④) */
+function zcReadPick(k){
+  if(state.zcFin!=null) return;                                        // 가드①
+  if(state.zcBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=ZC_READ.length) return;         // 가드②
+  if(!zcAll(state)){ zcHold(ZC_ORDER_R); return; }                     // 가드④ 순서 — 판 불변
+  if(state.zcRead!=null){ zcHold(ZC_READ_AGAIN); return; }             // 가드④ 판 불변
+  if(k===ZC_READ_OK){
+    state.zcRead=k; state.zcWrongR=null; state.zcWarn=false;
+    state.zcMsg = '판을 잘 읽었어요. <b>사회적 책임 목표</b>와 <b>근로자를 위한 노력</b>을 함께 적으니 별이 가장 많이 떴어요.';
+    playChime(); zcRender(); return;
+  }
+  state.zcWrongR=k;
+  zcHold(ZC_READ_NO[k]);
+}
+
+/* ④ 핵심 질문 — 판을 읽은 뒤에만(가드⑤). */
+function zcMeanPick(k){
+  if(state.zcFin!=null) return;                                        // 가드①
+  if(state.zcBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=ZC_MEAN.length) return;         // 가드②
+  if(state.zcRead==null){ zcHold(ZC_ORDER_K); return; }                // 가드⑤ 순서 — 판 불변
+  if(state.zcMean!=null){ zcHold(ZC_MEAN_AGAIN); return; }             // 가드⑤ 판 불변
+  if(k!==ZC_MEAN_OK){ state.zcWrongK=k; zcHold(ZC_MEAN_NO[k]); return; } // 가드⑤ 판 불변
+  state.zcMean = k;                                                    // ★ 핵심 질문을 고르는 자리 단 하나
+  state.zcWarn=false;
+  state.zcMsg = '대표 상품과 주요 수출국, <b>사회적 책임 목표</b>, <b>근로자를 위한 노력</b>을 담으면 우리 기업의 특징이 잘 드러나요.';
+  playChime(); zcRender();
+}
+
+/* ⑤ 마무리 — 지도서 19차시 핵심 역량 */
+function zcFinish(k){
+  if(state.zcFin!=null) return;                                        // 가드①
+  if(state.zcBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=ZC_FIN.length) return;          // 가드②
+  if(state.zcMean==null){ zcHold(ZC_ORDER_F); return; }                // 가드⑥ 순서 — 판 불변
+  if(k===ZC_FIN_OK){
+    state.zcFin=k; state.zcWrongF=null; state.zcMsg=null; state.zcWarn=false;
+    playChime(); zcRender(); return;
+  }
+  state.zcWrongF=k;
+  zcHold(ZC_FIN_NO[k]);                                                // 가드⑦ 판 불변
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 2단원 14차시(l14) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
