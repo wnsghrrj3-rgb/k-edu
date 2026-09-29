@@ -141,14 +141,14 @@ window.KEDU_MAP["g3_2_social"] = {
    "kind": "unit",
    "lessons": [
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_social_u2_l01",
+     "lessonId": "g3_social_u2_l01_v1",
      "n": "1",
      "title": "풍습이 무엇인지 알아볼까요",
      "sub": "① 옛날과 오늘날의 풍습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/social/2단원_옛날과오늘날의생활모습/g3_social_u2_l01_동그라미에놓아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
