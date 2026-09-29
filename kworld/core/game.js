@@ -100,10 +100,33 @@ export class Game {
   /** 손재주: craft 가 1보다 크면 첫 성공이 그만큼 어렵다(같은 것은 한 번만 미끄러진다 — 막지 않고 늦출 뿐) */
   fumble(key) { const c = this.stats.craft || 1; if (c <= 1 || !key) return false; this.fumbled ??= new Set(); if (this.fumbled.has(key)) return false; if (Math.random() < 1 - 1 / c) { this.fumbled.add(key); return true; } this.fumbled.add(key); return false; }
   async chooseCharacter(chars, saved) {
+    if (this.world.birth) return this.chooseBirth(chars, saved);
     if (saved) { const c = chars.find((x) => x.id === saved); if (c) { this.setCharacter(c); return; } }
     let remembered = null; try { remembered = localStorage.getItem('kworld_char:' + this.era); } catch { }
     const c = await new Promise((res) => this.ui.open(`<div class="chk"><div class="tag">누구로 살까</div><h3>강가의 사람 넷</h3><p class="sub">누구를 골라도 같은 것을 겪는다. 편한 것과 힘든 것이 다를 뿐.</p><ul class="mlist">${chars.map((x) => `<li><b>${x.name}</b><div class="mhint">👍 ${x.plus}<br>👎 ${x.minus}</div></li>`).join('')}</ul></div>`, chars.map((x) => ({ label: x.name, primary: x.id === remembered, onClick: () => { this.ui.close(); res(x); } }))));
     this.setCharacter(c);
+  }
+  /** 태어남(역사 인생게임): 첫 판은 뽑기(능력 × 성별, 못 고름) — 「너는 이렇게 태어났다」 카드 한 장. 두 번째 판부터는 「다시 뽑기 / 골라서」 */
+  async chooseBirth(chars, saved) {
+    const b = this.world.birth; const sexes = b.sexes || [{ id: 'f', name: '여자' }, { id: 'm', name: '남자' }]; const key = 'kworld_birth:' + this.era;
+    let last = null; try { last = JSON.parse(localStorage.getItem(key) || 'null'); } catch { }
+    const apply = (c, sx) => { this.sex = sx; this.setCharacter(c); try { localStorage.setItem(key, JSON.stringify({ char: c.id, sex: sx.id, n: (last?.n || 0) + 1 })); } catch { } };
+    if (saved && last) { const c = chars.find((x) => x.id === (saved.char || last.char)); const sx = sexes.find((x) => x.id === last.sex) || sexes[0]; if (c) { apply(c, sx); return; } }
+    const draw = () => [chars[Math.floor(Math.random() * chars.length)], sexes[Math.floor(Math.random() * sexes.length)]];
+    const dots = (lv) => ({ 3: '●●●', 2: '●●○', 1: '●○○' })[lv] || '●●○';
+    const card = (c, sx, again) => `<div class="chk"><div class="tag">${again ? '다시 태어난다' : '너는 이렇게 태어났다'}</div><h3>${sx.name}아이, ${c.name}</h3><p class="sub">${b.sub || '태어남은 고를 수 없다. 그다음부터는 전부 네 선택이다.'}</p><ul class="mlist">${Object.entries(c.levels || {}).map(([k, v]) => `<li><b>${k}</b> <span class="mhint">${dots(v)}</span></li>`).join('')}</ul><div class="mhint">👍 ${c.plus}<br>👎 ${c.minus}</div></div>`;
+    let pick = null;
+    if (last && last.n >= 1) {   // 두 번째 판부터: 뽑기 또는 고르기
+      const how = await new Promise((res) => this.ui.open(`<div class="chk"><div class="tag">다시 태어난다</div><h3>이번엔 어떻게 태어날까</h3><p class="sub">지난 판: ${sexes.find((x) => x.id === last.sex)?.name || ''}아이, ${chars.find((x) => x.id === last.char)?.name || ''}</p></div>`, [{ label: '뽑기', primary: true, onClick: () => { this.ui.close(); res('draw'); } }, { label: '골라서', onClick: () => { this.ui.close(); res('pick'); } }]));
+      if (how === 'pick') {
+        const c = await new Promise((res) => this.ui.open(`<div class="chk"><div class="tag">골라서</div><h3>어떤 아이로</h3><ul class="mlist">${chars.map((x) => `<li><b>${x.name}</b><div class="mhint">👍 ${x.plus}<br>👎 ${x.minus}</div></li>`).join('')}</ul></div>`, chars.map((x) => ({ label: x.name, onClick: () => { this.ui.close(); res(x); } }))));
+        const sx = await new Promise((res) => this.ui.open(`<div class="chk"><div class="tag">골라서</div><h3>${c.name} — 여자아이? 남자아이?</h3><p class="sub">${b.sexNote || '구석기에는 둘의 차이가 거의 없다. 뒤 시대에서 갈린다.'}</p></div>`, sexes.map((x) => ({ label: x.name, onClick: () => { this.ui.close(); res(x); } }))));
+        pick = [c, sx];
+      }
+    }
+    const [c, sx] = pick || draw();
+    await new Promise((res) => this.ui.open(card(c, sx, !!(last && last.n >= 1)), [{ label: b.button || '눈을 뜬다', primary: true, onClick: () => { this.ui.close(); res(); } }]));
+    apply(c, sx);
   }
   setCharacter(c) { this.character = c; try { localStorage.setItem('kworld_char:' + this.era, c.id); } catch { } (this.telemetry ??= { missions: [], hints: 0, starved: 0 }).character = c.id; if (c.look) this.applyLook(c.look); }
   /** 몸 색 바꾸기 — 처음 색(옷 0x506a62·머리 0x302d28)을 기억해 두고 여러 번 바꿔도 되게 */
