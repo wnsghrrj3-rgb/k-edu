@@ -1,0 +1,911 @@
+<!--
+K-edu 사회 6-2 · 3단원 지구촌 사람들 · 주제① 세계의 인구 분포 · 1차시(u3 l01)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사12-01] · 교과서 p.124~128 · 지도서(대단원3 **2~3차시** 「세계의 인구 분포를 알아볼까요」, 지도서 p.272~276) 근거 · 두 시간 한 파일.
+학습 목표: 세계의 인구 분포 특징과 이에 영향을 미치는 요인을 설명할 수 있다.
+META = "3단원 지구촌 사람들 · 주제① 세계의 인구 분포"
+⚠️ 엔진은 u2 l14(→ u2 l13 → … 6-1 사회 엔진)에서 100% 승계 · 엔진 무수정 · **3단원 색 #7C3AED**(팔레트 치환 `PAL`).
+⚠️ 회수 키 `g6_s2_social_u3_l01_v1` · 맵 키 `g6_social_u3_l01` · 파일명 `돋보기를옮겨요` — 조작 이름(선례 승계).
+
+직접조작: 「돋보기를 옮겨요」 판 (교과서 125~127쪽 · 지도서 2~3차시 발문)
+  ⭐ 씨앗은 지도서 274쪽 발문 — 동아시아와 남부 아시아(기후가 온화한 평야 · 농업) · 서부 유럽(산업 · 일자리 · 교통) ·
+     사하라 사막(강수량이 매우 적음) · 알래스카(기온이 매우 낮음). 교과서 125쪽 「인구 분포에 영향을 주는 요인」.
+  ⭐ 돋보기 옮기기 단추·까닭 카드 넘기기 단추 둘(hxTap) — 판 바꾸는 자리 state.hxGate = 단 하나(지역 + 4 × 까닭).
+  ⭐ ★ 돋보기 속 지역과 고른 까닭이 맞는지는 `hxKind` 한 줄(표 `HX_MATCH` = [1,3,2,0]) — 맞으면 지역 번호 · 아니면 4(핀을 꽂을 수 없음).
+  ⭐ ★★ 핀 기록은 `state.hxLog |=` 단 하나(`hxNote` · 핀 꽂기 처리기에서만 · 줄지 않음) — 핀 네 개 최소 걸음(BFS).
+  ⭐ 판에는 어느 까닭이 맞는지 표시하지 않는다(DOM 에 맞는 까닭 자리 0) — 점의 많고 적음과 지역의 환경을 견주어 찾는다.
+  ⭐ 판 읽기는 핀 네 개 뒤에만(정답 자리 1) → 꼭! 기억해요 빈칸 3택(교과서 128쪽 「자연환경」 · 정답 자리 0)
+     → 마무리 3택 = 지도서 2~3차시 주요 내용 정리(세계의 인구 분포 · 정답 자리 2).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 10종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 핀 네 개가 꽂힌 뒤 판 움직이기(돋보기·까닭·핀) 무시 — 판 불변
+     ④ 핀 네 개 전 판 읽기 무시 · 읽은 뒤 다시 무시 · 알맞지 않은 읽기 무시(자리별 안내)
+     ⑤ 판을 읽기 전 빈칸 무시 · 고른 뒤 다시 무시 · 알맞지 않은 빈칸 무시
+     ⑥ 빈칸 전 마무리 무시(순서)
+     ⑦ 알맞지 않은 마무리 무시
+     ⑧ 안내 표시 중 재클릭 무시(`hxBusy`)
+     ⑨ 이미 핀을 꽂은 지역에 다시 꽂기 무시 — 판 불변
+     ⑩ 맞지 않는 까닭으로 핀 꽂기 무시 — 판 불변.
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.hx-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 지도와 점은 도식이다** — 실제 인구 분포 지도가 아니고, 점의 개수는 인구수가 아니라 많고 적음만 나타낸다(캡션 상시).
+  ㉡ **지역 표시는 대략의 자리일 뿐**이다 — 경계·거리·면적 0.
+  ㉢ **판은 맞는 까닭이 어디 있는지 알려 주지 않는다** — 맞지 않는 까닭을 고르면 「맞지 않아요」라고만 알린다.
+  ㉣ **통계 누리집 살펴보기 · 붙임딱지 붙이기 · 지도에 ○표 하기 · 친구와 이야기하기는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 인구수·인구 밀도·인구 구조(u3 l02~l04)는 차시 예고 자리까지만.
+  **새 사실 0** — 교과서 124~128쪽 · 지도서 2~3차시 본문까지만. 수치는 교과서 자료(100명 마을 · 약 90 % · 약 25억 명 · 약 81억 명)만.
+  사람 형상 0 · 금액 0 · 나라별 인구수 0 · 쪽수 0.
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u3_l01_v1">
+<title>세계의 인구 분포를 알아볼까요 · 지구촌 사람들 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#7C3AED; --green-d:#5B21B6; --cyan:#8B5CF6;
+  --bg:#F5F3FF; --bub:#EDE9FE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#EDE9FE;color:#5B21B6}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 돋보기를 옮기며 인구가 많거나 적은 까닭 카드를 골라 핀을 꽂는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#EDE9FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#5B21B6;max-width:660px}
+.hx-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#F5F3FF;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.hx-board{display:flex;flex-direction:column;gap:6px;padding:8px}
+.hx-head{background:#EDE9FE;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#5B21B6;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.hx-gate{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.hx-ctl{border:2px solid #7C3AED;background:#F5F3FF;color:#5B21B6;border-radius:9px;padding:5px 6px;cursor:pointer;font-family:inherit;
+  font-weight:800;font-size:clamp(9px,1.52vw,11px);line-height:1.3;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center}
+.hx-ctl[data-a="1"]{border-color:#B45309;background:#FFFBEB;color:#92400E}
+.hx-ctl .dot{display:flex;gap:3px}
+.hx-ctl .dot i{display:block;width:9px;height:9px;border-radius:50%;background:#CBD5E0}
+.hx-ctl .dot i.on{background:#7C3AED}
+.hx-ctl[data-a="1"] .dot i.on{background:#B45309}
+.hx-ctl .st{font-weight:700;font-size:.9em}
+.hx-map{border:2px solid #CBD5E0;border-radius:10px;background:#EFF6FF;overflow:hidden}
+.hx-map svg{display:block;width:100%;height:auto}
+.hx-lens{border:3px solid #1E293B;border-radius:10px;background:#fff;padding:6px 8px;display:flex;gap:8px;align-items:center}
+.hx-lens .ring{flex:0 0 auto;width:62px;height:62px;border-radius:50%;border:4px solid #5B21B6;background:#FAF5FF;position:relative;overflow:hidden}
+.hx-lens .ring b{position:absolute;width:5px;height:5px;border-radius:50%;background:#7C3AED}
+.hx-lens .txt{display:flex;flex-direction:column;gap:2px}
+.hx-area{font-weight:900;color:#4C1D95;font-size:clamp(11.5px,1.9vw,14px)}
+.hx-many{font-weight:800;font-size:clamp(9px,1.52vw,11px);color:#475569}
+.hx-why{display:flex;flex-direction:column;gap:4px}
+.hx-card{display:flex;gap:6px;align-items:flex-start;border-radius:7px;padding:4px 7px;font-weight:700;font-size:clamp(9px,1.52vw,11px);line-height:1.4;
+  border:2px solid #E2E8F0;background:#fff;color:#334155}
+.hx-card .no{flex:0 0 auto;font-weight:900;color:#64748B}
+.hx-card[data-pt="1"]{border-color:#B45309;background:#FEF3C7;color:#78350F}
+.hx-card[data-pt="1"] .no{color:#B45309}
+.hx-say{border-radius:8px;padding:5px 8px;font-weight:800;font-size:clamp(9.2px,1.56vw,11.2px);line-height:1.4;
+  background:#FFFBEB;color:#78350F;border:2px solid #B45309}
+.hx-row{display:flex;gap:6px;flex-wrap:wrap}
+.hx-pin{flex:1 1 140px;border:2px solid #7C3AED;background:#EDE9FE;color:#5B21B6;border-radius:9px;padding:6px 8px;cursor:pointer;
+  font-family:inherit;font-weight:800;font-size:clamp(9.6px,1.62vw,11.8px)}
+.hx-pin:hover{background:#DDD6FE}
+.hx-note{display:flex;flex-direction:column;gap:4px}
+.hx-note .nh{font-weight:900;color:#5B21B6;font-size:clamp(9.4px,1.58vw,11.4px)}
+.hx-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-radius:7px;padding:4px 8px;font-weight:800;
+  font-size:clamp(9.2px,1.56vw,11.2px);line-height:1.38;border:2px dashed #CBD5E0;background:#F8FAFC;color:#94A3B8}
+.hx-line.set{border-style:solid;border-color:#059669;background:#ECFDF5;color:#065F46}
+.hx-read,.hx-mean,.hx-fin{display:flex;flex-direction:column;gap:5px}
+.hx-read button,.hx-mean button,.hx-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.hx-read button:hover,.hx-mean button:hover,.hx-fin button:hover{background:var(--bub)}
+.hx-read button.no,.hx-mean button.no,.hx-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.hx-hint{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:420px){ .hx-gate{gap:3px} .hx-ctl,.hx-card,.hx-line{font-size:8.4px;padding:3px} .hx-lens .ring{width:48px;height:48px} }
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠·㉡: 모든 그림은 내용을 나타낸 도식이며 실제 지도·사진이 아니다.
+   ⚠️ 사람 형상 대신 도형으로만 그린다. 수치는 교과서 자료만 적는다. */
+/* 지도 땅(도식) */
+const HX_LAND = `<ellipse cx="70" cy="50" rx="52" ry="30" fill="#E2E8F0"/><ellipse cx="100" cy="116" rx="20" ry="30" fill="#E2E8F0"/>
+    <ellipse cx="156" cy="46" rx="22" ry="14" fill="#E2E8F0"/><ellipse cx="164" cy="98" rx="26" ry="36" fill="#E2E8F0"/>
+    <ellipse cx="232" cy="62" rx="60" ry="32" fill="#E2E8F0"/><ellipse cx="268" cy="124" rx="22" ry="12" fill="#E2E8F0"/>`;
+const SVG = {
+  // 1 들어가기 — 세계가 100명이 사는 마을이라면(교과서 124쪽 · 도식)
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    ${[['아시아',59],['아프리카',18],['유럽',9],['남아메리카',8],['북아메리카',5],['오세아니아',1]].map((t,i)=>`<text x="70" y="${34+i*20}" font-size="7.4" fill="#4C1D95" text-anchor="end" font-weight="800">${t[0]}</text>
+      <rect x="76" y="${26+i*20}" width="${Math.max(3,t[1]*3.6)}" height="11" rx="3" fill="#8B5CF6"/>
+      <text x="${82+Math.max(3,t[1]*3.6)}" y="${34+i*20}" font-size="7.2" fill="#334155" font-weight="800">${t[1]}명</text>`).join('')}
+    <text x="160" y="160" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="800">세계가 100명이 사는 마을이라면(도식 · 국제 연합 자료)</text></svg>`,
+  // 2 살펴보기 — 사람들이 모여 사는 곳(도식)
+  live:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFFBEB"/>
+    <rect x="16" y="26" width="138" height="104" rx="10" fill="#fff" stroke="#B45309" stroke-width="1.5"/>
+    <text x="85" y="46" font-size="8" fill="#92400E" text-anchor="middle" font-weight="900">자연환경</text>
+    ${['기온','강수량','지형'].map((t,i)=>`<rect x="36" y="${56+i*22}" width="98" height="16" rx="6" fill="#FEF3C7"/><text x="85" y="${67+i*22}" font-size="7" fill="#78350F" text-anchor="middle" font-weight="800">${t}</text>`).join('')}
+    <rect x="166" y="26" width="138" height="104" rx="10" fill="#fff" stroke="#7C3AED" stroke-width="1.5"/>
+    <text x="235" y="46" font-size="8" fill="#5B21B6" text-anchor="middle" font-weight="900">인문환경</text>
+    ${['산업','교통','문화'].map((t,i)=>`<rect x="186" y="${56+i*22}" width="98" height="16" rx="6" fill="#EDE9FE"/><text x="235" y="${67+i*22}" font-size="7" fill="#4C1D95" text-anchor="middle" font-weight="800">${t}</text>`).join('')}
+    <text x="160" y="152" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="800">인구 분포에 영향을 주는 두 가지 요인(도식)</text></svg>`,
+  // 3 살펴보기 — 인구가 많은 곳과 적은 곳(교과서 125쪽 사진 · 도식)
+  photo:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <text x="80" y="20" font-size="7.8" fill="#5B21B6" text-anchor="middle" font-weight="900">인구가 많이 분포하는 지역</text>
+    <text x="240" y="20" font-size="7.8" fill="#92400E" text-anchor="middle" font-weight="900">인구가 적게 분포하는 지역</text>
+    ${[['\uD83C\uDFED','산업'],['\uD83C\uDF3E','평야'],['\u2693','항구']].map((t,i)=>`<rect x="14" y="${28+i*40}" width="132" height="34" rx="8" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1.2"/>
+      <text x="36" y="${50+i*40}" font-size="15" text-anchor="middle">${t[0]}</text><text x="92" y="${49+i*40}" font-size="7.4" fill="#4C1D95" text-anchor="middle" font-weight="800">${t[1]}</text>`).join('')}
+    ${[['\uD83C\uDF34','열대 우림'],['\uD83C\uDFDC\uFE0F','사막'],['\u2744\uFE0F','극지방']].map((t,i)=>`<rect x="174" y="${28+i*40}" width="132" height="34" rx="8" fill="#FFFBEB" stroke="#B45309" stroke-width="1.2"/>
+      <text x="196" y="${50+i*40}" font-size="15" text-anchor="middle">${t[0]}</text><text x="252" y="${49+i*40}" font-size="7.4" fill="#78350F" text-anchor="middle" font-weight="800">${t[1]}</text>`).join('')}
+    <text x="160" y="162" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">사진 대신 그린 도식이에요</text></svg>`,
+  // 4 살펴보기 — 세계의 인구 분포 지도(교과서 126쪽 · 도식)
+  dots:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#EFF6FF"/>
+    ${HX_LAND}
+    ${[[230,66],[236,74],[226,76],[244,70],[240,82],[222,70],[232,84],[214,82],[218,90],[208,86],[152,46],[158,50],[146,50],[160,44],[250,62],[256,72]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="2" fill="#5B21B6"/>`).join('')}
+    ${[[40,34],[164,88],[70,56],[100,110],[268,122]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="2" fill="#5B21B6"/>`).join('')}
+    <path d="M0 96 L320 96" stroke="#94A3B8" stroke-width=".8" stroke-dasharray="4 3"/><text x="6" y="92" font-size="6.4" fill="#64748B" font-weight="800">적도</text>
+    <text x="160" y="162" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">점이 많을수록 인구가 많이 분포해요(도식 · 점 개수는 인구수가 아니에요)</text></svg>`,
+  // 5 살펴보기 — 위도와 인구 분포(도식)
+  lat:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    ${[['고위도','#DBEAFE',16,'인구가 적어요'],['중위도','#EDE9FE',46,'인구가 많아요'],['저위도','#FEF3C7',76,''],['저위도','#FEF3C7',106,''],['중위도','#EDE9FE',136,'']].map(t=>`<rect x="20" y="${t[2]}" width="280" height="26" fill="${t[1]}"/>
+      <text x="30" y="${t[2]+17}" font-size="7.4" fill="#334155" font-weight="800">${t[0]}</text><text x="290" y="${t[2]+17}" font-size="7.2" fill="#4C1D95" text-anchor="end" font-weight="800">${t[3]}</text>`).join('')}
+    <path d="M20 102 L300 102" stroke="#DC2626" stroke-width="1.2"/><text x="160" y="99" font-size="6.8" fill="#DC2626" text-anchor="middle" font-weight="800">적도</text>
+    <text x="160" y="36" font-size="7" fill="#1E3A8A" text-anchor="middle" font-weight="800">북반구</text><text x="160" y="126" font-size="7" fill="#1E3A8A" text-anchor="middle" font-weight="800">남반구</text></svg>`,
+  // 7 살펴보기 — 대륙별 세계 인구의 변화(교과서 128쪽 · 도식)
+  change:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    <circle cx="86" cy="78" r="30" fill="#fff" stroke="#7C3AED" stroke-width="2"/><text x="86" y="76" font-size="8" fill="#4C1D95" text-anchor="middle" font-weight="900">1950년</text><text x="86" y="88" font-size="7.4" fill="#334155" text-anchor="middle" font-weight="800">약 25억 명</text>
+    <circle cx="222" cy="78" r="52" fill="#fff" stroke="#7C3AED" stroke-width="2"/><text x="222" y="76" font-size="9" fill="#4C1D95" text-anchor="middle" font-weight="900">2023년</text><text x="222" y="90" font-size="8" fill="#334155" text-anchor="middle" font-weight="800">약 81억 명</text>
+    <path d="M122 78 L164 78" stroke="#7C3AED" stroke-width="2.4"/><path d="M158 72 L166 78 L158 84" fill="none" stroke="#7C3AED" stroke-width="2.4"/>
+    <text x="160" y="156" font-size="7.4" fill="#334155" text-anchor="middle" font-weight="800">원의 크기는 세계의 인구수를 나타내요(도식 · 국제 연합 자료)</text></svg>`,
+  // 확인 — 인구 분포에 영향을 주는 요인(도식)
+  factor:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FAF5FF"/>
+    <circle cx="160" cy="82" r="30" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.6"/><text x="160" y="86" font-size="8" fill="#4C1D95" text-anchor="middle" font-weight="900">인구 분포</text>
+    ${[['기온',40,30],['강수량',40,82],['지형',40,134],['산업',280,30],['교통',280,82],['문화',280,134]].map(t=>`<rect x="${t[1]-30}" y="${t[2]-11}" width="60" height="20" rx="7" fill="#fff" stroke="${t[1]<160?'#B45309':'#7C3AED'}" stroke-width="1.3"/>
+      <text x="${t[1]}" y="${t[2]+3}" font-size="7" fill="#334155" text-anchor="middle" font-weight="800">${t[0]}</text><path d="M${t[1]<160?t[1]+30:t[1]-30} ${t[2]} L${t[1]<160?130:190} 82" stroke="#CBD5E0" stroke-width="1.2"/>`).join('')}</svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#1E1B4B"/>
+    ${['자연환경','인문환경','인구 분포'].map((t,i)=>`<rect x="${18+i*100}" y="52" width="84" height="40" rx="8" fill="#EDE9FE" stroke="#A78BFA" stroke-width="2"/>
+      <text x="${60+i*100}" y="76" font-size="7.4" fill="#4C1D95" text-anchor="middle" font-weight="800">${t}</text>${i<2?`<path d="M${102+i*100} 72 L${118+i*100} 72" stroke="#DDD6FE" stroke-width="2"/>`:''}`).join('')}
+    <text x="160" y="128" font-size="8.6" fill="#DDD6FE" text-anchor="middle" font-weight="800">세계의 인구는 고르게 분포하지 않아요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#7C3AED" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#7C3AED" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#5B21B6" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 돋보기를 옮겨요 판 =====
+   ★ 돋보기 옮기기 단추·까닭 카드 넘기기 단추 둘(hxTap) — 판 바꾸는 자리 state.hxGate = 단 하나(지역 + 4 × 까닭).
+   ★ 돋보기 속 지역과 고른 까닭이 맞는지는 hxKind 한 줄(표 HX_MATCH · 담는 상태 0).
+   ★★ 핀 기록은 |= 만(hxLog · hxNote 단 하나 · 핀 꽂기 처리기에서만).
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. 지도와 점은 도식이다. 판은 맞는 까닭 자리를 화면에 드러내지 않는다. */
+const HX_N = 2;
+const HX_ALL = 15;
+/* 돋보기 지역 넷 — 지도서 274쪽 발문 */
+const HX_AREA = ['동아시아와 남부 아시아','서부 유럽','사하라 사막','알래스카'];
+const HX_MANY = [1, 1, 0, 0];
+const HX_MANYTXT = ['점이 드물어요 \u2014 인구가 적게 분포해요','점이 빽빽해요 \u2014 인구가 많이 분포해요'];
+/* 까닭 카드 넷 — 교과서 125쪽 · 지도서 273~274쪽 */
+const HX_WHY = [
+  '기온이 매우 낮아 식물이 자라기 어렵고, 사람들이 생활하기 어려워요',
+  '기후가 온화한 평야 지역으로 농업이 발달했어요',
+  '강수량이 매우 적어 물을 구하기 어려워요',
+  '산업이 발달하여 일자리가 풍부하고 교통이 편리해요'
+];
+const HX_NO = ['㉠','㉡','㉢','㉣'];
+/* ★ 지역마다 맞는 까닭 자리 — 판에는 드러내지 않는다 */
+const HX_MATCH = [1, 3, 2, 0];
+/* 돋보기 속 점(도식) — 많음 14 · 적음 2 · 고정 자리 */
+const HX_DOTS = [
+  [[18,22],[40,36]],
+  [[10,12],[22,10],[34,14],[44,22],[14,26],[28,24],[40,32],[12,38],[24,40],[36,44],[46,38],[20,50],[32,52],[44,50]]
+];
+const HX_AT = [[232,78],[152,48],[160,84],[40,32]];
+
+/* ② 판 읽기 */
+const HX_READ = [
+  '인구는 지구상에 고르게 분포하고, 땅이 넓은 곳일수록 사람이 많아요',
+  '인구는 고르게 분포하지 않아요. 기후가 온화한 평야나 산업이 발달한 곳에는 많이, 너무 건조하거나 추운 곳에는 적게 분포해요',
+  '인구가 많은 곳과 적은 곳은 모두 같은 까닭 카드와 이어졌어요'
+];
+const HX_READ_OK = 1;
+const HX_READ_NO = [
+  '핀 네 개를 다시 봐요. 점이 <b>빽빽한 곳</b>과 <b>드문 곳</b>이 함께 있었나요? 판을 다시 읽어 봐요.',
+  null,
+  '핀 네 개의 까닭을 다시 봐요. 지역마다 <b>같은 까닭</b>이었나요? 판을 다시 읽어 봐요.'
+];
+/* ③ 꼭! 기억해요 빈칸 — 교과서 128쪽 */
+const HX_MEAN = ['자연환경', '인문환경', '경제성장'];
+const HX_MEAN_OK = 0;
+const HX_MEAN_NO = [
+  null,
+  '<b>인문환경</b>은 뒤에 나온 산업, 교통, 문화 등이에요. 기온, 강수량, 지형은 무엇일까요? 판은 그대로예요.',
+  '<b>경제성장</b>은 2단원에서 공부한 말이에요. 기온, 강수량, 지형처럼 자연이 만든 환경을 떠올려 봐요. 판은 그대로예요.'
+];
+/* ④ 마무리 — 지도서 2~3차시 주요 내용 정리 */
+const HX_FIN = [
+  '세계의 인구는 모든 대륙에 똑같이 나뉘어 살고, 자연환경만 인구 분포에 영향을 줘요',
+  '세계 인구는 대부분 남반구에 살고, 추운 고위도 지역에 가장 많이 분포해요',
+  '세계의 인구는 고르게 분포하지 않고, 북반구, 기후가 온화한 중위도 지역, 평야 지역, 해안 지역, 일자리가 풍부한 지역 등에 많이 분포해요'
+];
+const HX_FIN_OK = 2;
+const HX_FIN_NO = [
+  '돋보기 속 점을 떠올려 봐요. 점이 <b>빽빽한 곳</b>과 <b>드문 곳</b>이 있었어요. 산업, 교통 같은 <b>인문환경</b>도 떠올려 봐요. 오늘의 정리를 다시 골라 봐요.',
+  '세계 인구가 어느 반구에 더 많이 사는지, 알래스카처럼 <b>기온이 매우 낮은 곳</b>에 사람이 많았는지 떠올려 봐요. 오늘의 정리를 다시 골라 봐요.',
+  null
+];
+/* 안내 */
+const HX_LOCK = '핀 <b>네 개를 모두 꽂았어요</b>. 돋보기는 이대로 둬요. 판을 읽어 봐요. 판은 그대로예요.';
+const HX_AGAIN = '이 지역에는 <b>이미 핀을 꽂았어요</b>. 돋보기를 옮겨 다른 지역을 살펴봐요. 판은 그대로예요.';
+const HX_NOT = '고른 까닭 카드는 돋보기 속 지역과 <b>맞지 않아요</b>. 점의 많고 적음과 그 지역의 기후, 산업을 떠올려 다른 까닭 카드를 골라 봐요. 판은 그대로예요.';
+const HX_ORDER_R = '아직 <b>핀 네 개</b>를 다 꽂지 않았어요. 네 지역에 모두 핀을 꽂은 뒤에 읽을 수 있어요. 판은 그대로예요.';
+const HX_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const HX_ORDER_K = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const HX_MEAN_AGAIN = '꼭! 기억해요 빈칸은 <b>이미 채웠어요</b>. 판은 그대로예요.';
+const HX_ORDER_F = '아직 <b>꼭! 기억해요 빈칸</b>을 채우지 않았어요. 먼저 골라 봐요. 판은 그대로예요.';
+const HX_ALL_MSG = '핀 <b>네 개를 모두 꽂았어요</b>. 판을 읽어 봐요.';
+
+function hxAreaOf(st){ return st.hxGate % 4; }
+function hxWhyOf(st){ return (st.hxGate / 4) | 0; }
+/* ★ 돋보기 속 지역과 고른 까닭이 맞는지 — 한 줄(표 HX_MATCH) · 맞으면 지역 번호 · 아니면 4 */
+function hxKind(st){ return HX_MATCH[hxAreaOf(st)] === hxWhyOf(st) ? hxAreaOf(st) : 4; }
+function hxHas(st,l){ return (st.hxLog & (1<<l))!==0; }
+function hxPins(st){ return [0,1,2,3].filter(l=>hxHas(st,l)).length; }
+function hxAll(st){ return st.hxLog===HX_ALL; }
+
+function hxCtls(st){
+  const r=hxAreaOf(st), y=hxWhyOf(st);
+  return `<button class="hx-ctl" data-a="0" data-lv="${r}" onclick="hxTap(0)"><span>\uD83D\uDD0D 돋보기 옮기기</span><span class="dot">${[0,1,2,3].map(i=>`<i class="${r===i?'on':''}"></i>`).join('')}</span><span class="st">${HX_AREA[r]}</span></button>`
+    + `<button class="hx-ctl" data-a="1" data-lv="${y}" onclick="hxTap(1)"><span>\uD83C\uDCCF 까닭 카드 넘기기</span><span class="dot">${[0,1,2,3].map(i=>`<i class="${y===i?'on':''}"></i>`).join('')}</span><span class="st">${HX_NO[y]} 카드</span></button>`;
+}
+function hxMap(st){
+  const r=hxAreaOf(st);
+  return `<svg viewBox="0 0 320 150"><rect width="320" height="150" fill="#EFF6FF"/>${HX_LAND}
+    ${HX_AT.map((p,i)=>`<circle class="hx-at" data-at="${i}" data-on="${r===i?1:0}" cx="${p[0]}" cy="${p[1]}" r="${r===i?13:5}" fill="${r===i?'none':'#94A3B8'}" stroke="${r===i?'#5B21B6':'#fff'}" stroke-width="${r===i?3:1.2}"/>${hxHas(st,i)?`<text x="${p[0]}" y="${p[1]-8}" font-size="10" text-anchor="middle">\uD83D\uDCCD</text>`:''}`).join('')}</svg>`;
+}
+function hxLens(st){
+  const r=hxAreaOf(st), m=HX_MANY[r];
+  return `<div class="ring" data-many="${m}">${HX_DOTS[m].map(p=>`<b style="left:${p[0]}px;top:${p[1]}px"></b>`).join('')}</div>
+    <div class="txt"><div class="hx-area" data-area="${r}">\uD83D\uDD0D ${HX_AREA[r]}</div><div class="hx-many">${HX_MANYTXT[m]}</div></div>`;
+}
+function hxCards(st){
+  const y=hxWhyOf(st);
+  return HX_WHY.map((t,i)=>`<div class="hx-card" data-no="${i}" data-pt="${y===i?1:0}"><span class="no">${HX_NO[i]}</span><span>${t}</span></div>`).join('');
+}
+function hxNotes(st){
+  return HX_AREA.map((t,l)=>{ const on=hxHas(st,l);
+    return `<div class="hx-line${on?' set':''}" data-line="${l}">${on?'\uD83D\uDCCD '+t+' \u2014 인구가 '+(HX_MANY[l]?'많아요':'적어요')+' \u00b7 까닭: '+HX_WHY[HX_MATCH[l]]:'\u2610 '+t+' \u2014 아직 핀을 꽂지 않았어요'}</div>`; }).join('');
+}
+
+function hxBoard(st){
+  const fin = st.hxFin!=null, all = hxAll(st), r=hxAreaOf(st), y=hxWhyOf(st);
+  const head = fin ? '돋보기로 세계의 인구 분포를 살펴보고 정리했어요'
+    : st.hxMean!=null ? '꼭! 기억해요 빈칸까지 채웠어요 \u2014 이제 정리해요'
+    : st.hxRead!=null ? '꼭! 기억해요 빈칸을 채워 봐요'
+    : all ? '핀 네 개를 모두 꽂았어요 \u2014 판을 읽어 봐요'
+    : st.hxLog!==0 ? '돋보기를 옮겨 다른 지역에도 핀을 꽂아 봐요'
+    : '돋보기 속 점을 보고, 알맞은 까닭 카드를 골라 핀을 꽂아요';
+  return `<div class="hx-board" data-gate="${st.hxGate}" data-area="${r}" data-why="${y}" data-log="${st.hxLog}" data-pins="${hxPins(st)}" data-all="${all?1:0}" data-read="${st.hxRead==null?-1:st.hxRead}" data-mean="${st.hxMean==null?-1:st.hxMean}" data-fin="${fin?1:0}">
+    <div class="hx-head">${head}</div>
+    <div class="hx-gate">${hxCtls(st)}</div>
+    <div class="hx-map">${hxMap(st)}</div>
+    <div class="hx-lens">${hxLens(st)}</div>
+    <div class="hx-why">${hxCards(st)}</div>
+    <div class="hx-say" data-say="${y}">지금 <b>${HX_NO[y]} 까닭 카드</b>를 골랐어요. 이 까닭이 돋보기 속 지역과 맞을까요?</div>
+    <div class="hx-row"><button class="hx-pin" data-pin="1" onclick="hxWrite()">\uD83D\uDCCD 핀 꽂기</button></div>
+    <div class="hx-note"><div class="nh">\uD83D\uDDFA\uFE0F 핀 기록장</div>${hxNotes(st)}</div>
+  </div>`;
+}
+
+function hxPanel(st){
+  const fin = st.hxFin!=null, all = hxAll(st);
+  const q = fin ? '돋보기로 세계의 인구 분포와 그 까닭을 살펴봤어요.'
+    : st.hxMean!=null ? '오늘 공부한 내용을 정리해요. 세계의 인구는 어떻게 분포하나요?'
+    : st.hxRead!=null ? '꼭! 기억해요 \u2014 「기온, 강수량, 지형 등 (  )과/와 산업, 교통, 문화 등 인문환경은 세계의 인구 분포에 많은 영향을 줍니다」의 빈칸에 알맞은 말은 무엇일까요?'
+    : all ? '핀 네 개를 모두 꽂았어요. 판에서 무엇을 알 수 있나요?'
+    : st.hxLog!==0 ? '돋보기를 옮겨 가며 네 지역에 모두 핀을 꽂아요.'
+    : '도식 지도의 네 지역에 돋보기를 대 봐요. 인구가 많거나 적은 까닭은 무엇일까요?';
+  let right = `<div class="hx-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83D\uDD0D 돋보기로 살펴보며 정리했어요</div>
+      세계의 인구는 <b>고르게 분포하지 않아요</b>. 기온, 강수량, 지형 등 <b>자연환경</b>과 산업, 교통, 문화 등 <b>인문환경</b>이 인구 분포에 영향을 줘요.
+      기후가 온화한 평야나 산업이 발달한 곳에는 인구가 많이, 사막이나 극지방처럼 생활하기 어려운 곳에는 적게 분포해요.<br>
+      <span style="color:#64748B">판의 지도와 점은 도식이에요.
+      <b>통계 누리집 살펴보기</b>, <b>붙임딱지 붙이기</b>, <b>지도에서 인구가 많은 곳에 ○표 하기</b>, <b>친구와 이야기하기</b>는 교실에서 직접 해요.</span></div>`;
+  } else if(st.hxMean!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="hx-fin">${HX_FIN.map((t,k)=>`<button class="${st.hxWrongF===k?'no':''}" onclick="hxFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.hxRead!=null){
+    right += `<div class="dw-step">\uD83D\uDCCC 꼭! 기억해요 빈칸</div>`;
+    right += `<div class="hx-mean">${HX_MEAN.map((t,k)=>`<button class="${st.hxWrongK===k?'no':''}" onclick="hxMeanPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="hx-hint">기온, 강수량, 지형은 자연이 만든 환경이에요.</div>`;
+  } else if(all){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="hx-read">${HX_READ.map((t,k)=>`<button class="${st.hxWrongR===k?'no':''}" onclick="hxReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83D\uDD0D 돋보기를 옮겨요</div>`;
+    right += `<div class="hx-hint"><b>돋보기 옮기기</b> 단추를 누를 때마다 동아시아와 남부 아시아 \u2192 서부 유럽 \u2192 사하라 사막 \u2192 알래스카 \u2192 다시 동아시아와 남부 아시아로 옮겨 가요. <b>까닭 카드 넘기기</b> 단추는 ㉠ \u2192 ㉡ \u2192 ㉢ \u2192 ㉣ 차례로 골라요. 돋보기 속 지역과 맞는 까닭 카드를 고르고 <b>핀 꽂기</b>를 누르면 핀 기록장에 적혀요. 네 지역에 모두 핀을 꽂으면 판을 읽을 수 있어요. 감점은 없어요.</div>`;
+  }
+  if(st.hxMsg) right += `<div class="dw-msg${st.hxWarn?' warn':''}">${st.hxMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83D\uDD0D 돋보기를 옮겨요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${hxBoard(st)}<div class="cvcap">판의 지도와 점은 <b>도식</b>이에요. 실제 인구 분포 지도가 아니고, 점의 개수는 인구수가 아니라 많고 적음만 나타내요. 지역 표시는 대략의 자리예요. 판은 어느 까닭이 맞는지 미리 알려 주지 않아요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 지구촌 사람들 · 주제① 세계의 인구 분포";
+
+// 확인 4 + 적용 4 — 정답 다양화 [1,3,0,2,3,1,2,0](각 자리 2회)
+// ⚠️ 새 사실 0(교과서 124~128쪽 · 지도서 2~3차시까지만) · 수치는 교과서 자료만 · 나라별 인구수·인구 밀도·인구 구조 0(뒤 차시).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"인구 분포에 영향을 주는 <b>자연환경</b> 요인으로 알맞은 것은 무엇인가요?",
+   opts:["산업","기온, 강수량, 지형","교통","문화"],
+   correct:1, pts:POINTS_BASIC, scene:"factor",
+   reason:"기온, 강수량, 지형 등은 자연환경 요인이에요. 산업, 교통, 문화 등은 인문환경 요인이에요.",
+   h1:"자연이 만든 환경과 사람이 만든 환경을 나누어 봐요.", h2:"「꼭! 기억해요」 빈칸을 떠올려 봐요."},
+  {stem:"세계가 100명이 사는 마을이라면, 사람이 <b>가장 많이</b> 사는 대륙은 어디인가요?",
+   opts:["오세아니아","유럽","북아메리카","아시아"],
+   correct:3, pts:POINTS_BASIC, scene:"open",
+   reason:"세계가 100명이 사는 마을이라면 아시아에 59명이 살아요. 인구가 가장 많은 대륙은 아시아예요.",
+   h1:"들어가기의 막대를 떠올려 봐요.", h2:"가장 긴 막대를 찾아봐요."},
+  {stem:"세계의 인구 분포 지도에서 <b>점이 많을수록</b> 무엇을 나타내나요?",
+   opts:["인구가 많이 분포하는 지역","땅이 넓은 지역","산이 높은 지역","비가 많이 오는 지역"],
+   correct:0, pts:POINTS_BASIC, scene:"dots",
+   reason:"세계의 인구 분포 지도는 인구를 점으로 나타내요. 점이 많을수록 인구가 많이 분포하는 지역이에요.",
+   h1:"돋보기 속 점을 떠올려 봐요.", h2:"점은 사람이 사는 정도를 나타내요."},
+  {stem:"세계에서 인구가 <b>가장 적은</b> 대륙은 어디인가요?",
+   opts:["아시아","아프리카","오세아니아","유럽"],
+   correct:2, pts:POINTS_BASIC, scene:"open",
+   reason:"세계가 100명이 사는 마을이라면 오세아니아에는 1명이 살아요. 인구가 가장 적은 대륙은 오세아니아예요.",
+   h1:"들어가기의 막대를 떠올려 봐요.", h2:"가장 짧은 막대를 찾아봐요."},
+  // 4단계 적용 (+15)
+  {stem:"<b>알래스카</b> 지역에 인구가 적은 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["산업이 발달하여 일자리가 풍부하기 때문이에요","넓은 평야에서 농업이 발달했기 때문이에요","강수량이 많아 열대 우림이 우거졌기 때문이에요","기온이 매우 낮아 사람들이 생활하기 어렵기 때문이에요"],
+   correct:3, pts:POINTS_APPLY, scene:"lat",
+   reason:"알래스카는 한대 기후가 나타나는 지역으로, 기온이 매우 낮아 사람들이 생활하기 어려워요. 그래서 인구가 적어요.",
+   h1:"돋보기 판의 알래스카 핀을 떠올려 봐요.", h2:"고위도 지역의 기후를 떠올려 봐요."},
+  {stem:"<b>서부 유럽</b>에 인구가 많은 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["강수량이 매우 적어 물을 구하기 어렵기 때문이에요","기후가 온화하고 산업이 발달하여 일자리가 풍부하며 교통이 편리하기 때문이에요","기온이 매우 낮기 때문이에요","열대 우림이 우거져 있기 때문이에요"],
+   correct:1, pts:POINTS_APPLY, scene:"dots",
+   reason:"서부 유럽은 기후가 온화하고 산업이 발달하여 일자리가 풍부하며 교통이 편리해요. 그래서 인구가 많이 분포해요.",
+   h1:"돋보기 판의 서부 유럽 핀을 떠올려 봐요.", h2:"인문환경 요인을 떠올려 봐요."},
+  {stem:"저위도, 중위도, 고위도 가운데 인구가 <b>많이</b> 분포하는 곳과 그 까닭을 알맞게 말한 것은 무엇인가요?",
+   opts:["고위도 — 냉대 기후와 한대 기후가 나타나기 때문이에요","저위도 — 기온이 매우 높기 때문이에요","중위도 — 온대 기후처럼 온화한 기후가 나타나기 때문이에요","세 곳 모두 인구가 똑같이 분포해요"],
+   correct:2, pts:POINTS_APPLY, scene:"lat",
+   reason:"중위도 지역에는 온대 기후처럼 사람들이 생활하기 좋고 농사를 짓기에 알맞은 온화한 기후가 나타나요. 그래서 인구가 많이 분포해요.",
+   h1:"위도와 인구 슬라이드를 떠올려 봐요.", h2:"「온화한 기후」가 열쇠예요."},
+  {stem:"1950년과 2023년의 대륙별 세계 인구 원그래프를 보고 <b>알맞게 말한 것</b>은 무엇인가요?",
+   opts:["세계 인구가 크게 늘었고, 세계에서 아프리카가 차지하는 인구 비율이 크게 늘어났어요","유럽의 인구 비율이 줄었으니 유럽의 인구수도 반드시 줄었어요","세계 인구는 1950년보다 줄어들었어요","모든 대륙의 인구 비율이 똑같이 늘었어요"],
+   correct:0, pts:POINTS_APPLY, scene:"change",
+   reason:"세계 인구는 약 25억 명에서 약 81억 명으로 크게 늘었고, 아프리카가 차지하는 인구 비율이 크게 늘었어요. 인구 비율이 줄었다고 인구수가 줄어든 것은 아니에요.",
+   h1:"대륙별 인구 변화 슬라이드를 떠올려 봐요.", h2:"「비율」과 「인구수」는 달라요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 동기 유발(세계가 100명이 사는 마을이라면)
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">세계가 100명이 사는 마을이라면 어떨까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','세계가 100명이 사는 마을이라면(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCA1 생각을 열어요</div>
+      세계 인구를 100명으로 줄여 대륙마다 몇 명이 사는지 나타냈어요. 자료를 보고 알 수 있는 사실은 무엇인가요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 <b>아시아</b>에 가장 많은 59명이 살아요.<br>
+      \u2014 <b>오세아니아</b>에는 가장 적은 1명이 살아요.<br>
+      \u2014 대륙마다 사는 사람의 수가 달라요. 세계의 인구는 <b>고르게 분포하지 않아요</b>.</div>`
+      :`<div class="note">가장 긴 막대와 가장 짧은 막대를 찾아봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">오늘은 세계의 인구가 <b>어디에 많이, 어디에 적게</b> 사는지, 그 까닭은 무엇인지 알아봐요.</div></div>`});
+// 2 살펴보기 — reveal: 사람들이 모여 사는 곳(교과서 125쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">사람들은 어떤 곳에 모여 살까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('live','인구 분포에 영향을 주는 요인(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDFE0 모여 사는 곳</div>
+      옛날부터 사람들은 기후가 온화한 지역이나 평야 지역, 해안 지역 등 자연환경이 유리한 지역에 모여 살았어요.
+      오늘날에는 어떤 지역에 사람들이 모여 살까요? 인구 분포에 영향을 주는 요인은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 오늘날에는 산업이 발달하여 <b>일자리</b>가 풍부하고 <b>교통</b>이 편리하며 교육과 문화 시설이 잘 갖추어진 지역에 사람이 모여 살아요.<br>
+      \u2014 기온, 강수량, 지형 등 <b>자연환경</b>과 산업, 교통, 문화 등 <b>인문환경</b>은 인구 분포에 많은 영향을 줘요.</div>`
+      :`<div class="note">옛날과 오늘날을 나누어 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: 인구가 많은 곳과 적은 곳(교과서 125쪽 사진)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">인구가 많은 지역과 적은 지역은 어떤 특징이 있나요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('photo','인구가 많은 지역과 적은 지역(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDDBC\uFE0F 여섯 지역</div>
+      산업이 발달한 곳, 평야, 항구가 있는 곳에는 인구가 많고, 열대 우림, 사막, 극지방에는 인구가 적어요. 각 지역은 어떤 특징이 있을까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 인구가 많은 곳: 일찍부터 과학과 기술이 발전하여 <b>다양한 산업</b>이 발달했어요. 강수량이 많고 <b>비옥한 평야</b>가 있어 농사에 유리해요. 바다를 이용해 무역을 하거나 해산물을 쉽게 얻을 수 있어요.<br>
+      \u2014 인구가 적은 곳: 기온이 높고 강수량이 많아 <b>열대 우림</b>이 우거져 있어요. 강수량이 매우 적어 물을 구하기 어려워요. 기온이 매우 낮아 식물이 자라기 어려워요.</div>`
+      :`<div class="note">기온, 강수량, 지형, 산업을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 4 살펴보기 — reveal: 세계의 인구 분포 지도(교과서 126쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">세계의 인구 분포 지도를 살펴봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('dots','세계의 인구 분포(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDDFA\uFE0F 점으로 나타낸 지도</div>
+      세계의 인구 분포 지도는 인구를 점으로 나타내요. 점이 많을수록 인구가 많이 분포하는 지역이에요.
+      세계에서 인구가 많은 지역과 적은 지역은 어디인가요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 인구가 많은 지역: <b>동아시아</b>와 <b>남부 아시아</b>, <b>서부 유럽</b>이에요.<br>
+      \u2014 인구가 적은 지역: <b>사하라 사막</b>과 같은 건조 기후 지역, <b>알래스카</b>와 같은 극지방이에요.<br>
+      \u2014 세계 인구는 특정한 지역에 모여 있어요. 같은 대륙이나 나라 안에서도 지역마다 사람들이 모여 사는 정도가 달라요.</div>`
+      :`<div class="note">점이 빽빽한 곳과 드문 곳을 찾아봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 5 살펴보기 — reveal: 위도와 인구 분포(교과서 127쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">어느 반구, 어느 위도에 사람이 많이 살까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('lat','위도와 인구 분포(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDF10 반구와 위도</div>
+      북반구와 남반구 가운데 인구가 많이 분포하는 곳은 어디일까요? 저위도, 중위도, 고위도 가운데에서는 어디일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 세계 인구의 약 90 %가 육지가 많은 <b>북반구</b>에 살아요.<br>
+      \u2014 온대 기후처럼 기후가 온화한 <b>중위도</b> 지역에 인구가 많이 분포해요.<br>
+      \u2014 냉대 기후와 한대 기후가 나타나는 <b>고위도</b> 지역에는 인구가 적게 분포해요.</div>`
+      :`<div class="note">위도는 기후에 큰 영향을 준다는 것을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">다음 판에서 돋보기를 옮기며 인구가 많거나 적은 <b>까닭</b>을 찾아봐요.</div></div>`});
+// 6 살펴보기 — 직접조작(돋보기를 옮겨요)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">돋보기를 옮기며 인구가 많거나 적은 까닭을 찾아요</h2>
+  ${hxPanel(st)}`});
+// 7 살펴보기 — reveal: 대륙별 세계 인구의 변화(교과서 128쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">대륙별 세계 인구는 어떻게 변했을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('change','1950년과 2023년 세계 인구(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCC8 세계 인구의 변화</div>
+      세계 인구는 계속 늘어 오늘날에는 80억 명이 넘는 사람이 살고 있어요. 1950년과 비교하여 2023년에 대륙별 인구 비율은 어떻게 달라졌을까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 세계 인구는 1950년 <b>약 25억 명</b>에서 2023년 <b>약 81억 명</b>으로 늘었어요.<br>
+      \u2014 인구 비율이 늘어난 대륙: <b>아프리카, 아시아, 남아메리카, 오세아니아</b> \u00b7 줄어든 대륙: 유럽, 북아메리카예요.<br>
+      \u2014 세계에서 아프리카가 차지하는 인구 비율이 크게 늘었어요. 인구 <b>비율</b>이 줄었다고 인구<b>수</b>가 줄어든 것은 아니에요.</div>`
+      :`<div class="note">원의 크기와 대륙의 몫을 나누어 살펴봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 2~3차시 주요 내용 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div><b>인구 분포에 영향을 주는 요인</b> \u2014 기온, 강수량, 지형 등 자연환경과 산업, 교통, 문화 등 인문환경이에요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div><b>세계의 인구 분포</b> \u2014 고르게 분포하지 않고, 북반구, 기후가 온화한 중위도 지역, 평야 지역, 해안 지역, 일자리가 풍부한 지역 등에 많이 분포해요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div><b>대륙별 인구의 변화</b> \u2014 세계 인구는 크게 늘었고, 아프리카가 차지하는 인구 비율이 크게 늘었어요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 돋보기로 네 지역의 점을 살펴보고, 인구가 많거나 적은 까닭 카드를 골라 핀을 꽂았어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b>세계 여러 나라의 인구수</b>를 알아봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공부한 내용을 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"인구 분포에 영향을 주는 자연환경 요인과 인문환경 요인을 말할 수 있어요",st)}
+    ${selfCheck(1,"세계의 인구 분포 지도를 보고 인구가 많은 지역과 적은 지역을 찾을 수 있어요",st)}
+    ${selfCheck(2,"인구가 많거나 적은 까닭을 지역의 환경과 관련지어 설명할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">세계 여러 나라의 인구수</b>를 알아봐요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u3_l01";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  hxGate:0, hxLog:0,
+  hxRead:null, hxMean:null, hxFin:null,
+  hxWrongR:null, hxWrongK:null, hxWrongF:null,
+  hxMsg:null, hxWarn:false, hxBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function hxRender(){ main.innerHTML = slides[state.idx].render(state); }
+function hxHold(msg){
+  state.hxWarn=true; state.hxBusy=true; state.hxMsg=msg;
+  playThud(); hxRender();
+  setTimeout(()=>{ state.hxBusy=false; state.hxWarn=false; state.hxMsg=null;
+    state.hxWrongR=null; state.hxWrongK=null; state.hxWrongF=null; hxRender(); },1600);
+}
+/* ★ 핀 기록 — 더하기만 하는 자리 단 하나 */
+function hxNote(l){ state.hxLog |= (1 << l); }
+
+/* ① 판 단추 — 0 돋보기 옮기기(동아시아와 남부 아시아 → 서부 유럽 → 사하라 사막 → 알래스카 → 처음) · 1 까닭 카드 넘기기(㉠ → ㉡ → ㉢ → ㉣ → ㉠) */
+function hxTap(a){
+  if(state.hxFin!=null) return;                                        // 가드①
+  if(state.hxBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(a) || a<0 || a>=HX_N) return;                   // 가드②
+  if(hxAll(state)){ hxHold(HX_LOCK); return; }                         // 가드③ 판 불변
+  const r=hxAreaOf(state), y=hxWhyOf(state);
+  state.hxGate = a===0 ? (r+1)%4 + 4*y : r + 4*((y+1)%4);              // ★ 판이 바뀌는 자리 단 하나
+  state.hxWarn=false; state.hxMsg=null; playBlip(); hxRender();
+}
+
+/* ② 핀 꽂기 — 고른 까닭이 맞고(가드⑩) 아직 꽂지 않았을 때만(가드⑨) */
+function hxWrite(){
+  if(state.hxFin!=null) return;                                        // 가드①
+  if(state.hxBusy) return;                                             // 가드⑧
+  if(hxAll(state)){ hxHold(HX_LOCK); return; }                         // 가드③ 판 불변
+  const l = hxKind(state);
+  if(l===4){ hxHold(HX_NOT); return; }                                 // 가드⑩ 맞지 않는 까닭 — 판 불변
+  if(hxHas(state,l)){ hxHold(HX_AGAIN); return; }                      // 가드⑨ 이미 꽂은 지역 — 판 불변
+  hxNote(l);
+  state.hxWarn=false;
+  if(hxAll(state)){ state.hxMsg = HX_ALL_MSG; playChime(); }
+  else { state.hxMsg = `핀을 꽂았어요 \u2014 ${HX_AREA[l]}에는 인구가 ${HX_MANY[l]?'많아요':'적어요'}. 까닭: ${HX_WHY[HX_MATCH[l]]}. 돋보기를 옮겨 다른 지역도 살펴봐요.`; playChime(); }
+  hxRender();
+}
+
+/* ③ 판 읽기 — 핀 네 개 뒤에만(가드④) */
+function hxReadPick(k){
+  if(state.hxFin!=null) return;                                        // 가드①
+  if(state.hxBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=HX_READ.length) return;         // 가드②
+  if(!hxAll(state)){ hxHold(HX_ORDER_R); return; }                     // 가드④ 순서 — 판 불변
+  if(state.hxRead!=null){ hxHold(HX_READ_AGAIN); return; }             // 가드④ 판 불변
+  if(k===HX_READ_OK){
+    state.hxRead=k; state.hxWrongR=null; state.hxWarn=false;
+    state.hxMsg = '판을 잘 읽었어요. 인구는 <b>고르게 분포하지 않고</b>, 지역의 환경에 따라 많이 사는 곳과 적게 사는 곳이 나뉘어요.';
+    playChime(); hxRender(); return;
+  }
+  state.hxWrongR=k;
+  hxHold(HX_READ_NO[k]);
+}
+
+/* ④ 꼭! 기억해요 빈칸 — 판을 읽은 뒤에만(가드⑤). */
+function hxMeanPick(k){
+  if(state.hxFin!=null) return;                                        // 가드①
+  if(state.hxBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=HX_MEAN.length) return;         // 가드②
+  if(state.hxRead==null){ hxHold(HX_ORDER_K); return; }                // 가드⑤ 순서 — 판 불변
+  if(state.hxMean!=null){ hxHold(HX_MEAN_AGAIN); return; }             // 가드⑤ 판 불변
+  if(k!==HX_MEAN_OK){ state.hxWrongK=k; hxHold(HX_MEAN_NO[k]); return; } // 가드⑤ 판 불변
+  state.hxMean = k;                                                    // ★ 빈칸을 고르는 자리 단 하나
+  state.hxWarn=false;
+  state.hxMsg = '기온, 강수량, 지형 등 <b>자연환경</b>과 산업, 교통, 문화 등 인문환경은 세계의 인구 분포에 많은 영향을 줘요.';
+  playChime(); hxRender();
+}
+
+/* ⑤ 마무리 — 지도서 2~3차시 주요 내용 정리 */
+function hxFinish(k){
+  if(state.hxFin!=null) return;                                        // 가드①
+  if(state.hxBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=HX_FIN.length) return;          // 가드②
+  if(state.hxMean==null){ hxHold(HX_ORDER_F); return; }                // 가드⑥ 순서 — 판 불변
+  if(k===HX_FIN_OK){
+    state.hxFin=k; state.hxWrongF=null; state.hxMsg=null; state.hxWarn=false;
+    playChime(); hxRender(); return;
+  }
+  state.hxWrongF=k;
+  hxHold(HX_FIN_NO[k]);                                                // 가드⑦ 판 불변
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 3단원 2차시(u3 l02) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
