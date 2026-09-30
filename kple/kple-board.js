@@ -122,6 +122,18 @@
       '.kpb-dcell.h,.kpb-dcell.v{background:rgba(255,255,255,.14);} .kpb-dcell.h{height:8px;align-self:center;width:86%;justify-self:center;} .kpb-dcell.v{width:8px;justify-self:center;height:86%;align-self:center;}',
       '.kpb-dcell.on{background:#fff;} .kpb-dcell.box{font-size:22px;} button.kpb-dcell.h,button.kpb-dcell.v{background:rgba(255,210,63,.35);} button.kpb-dcell.on{background:#fff;}',
       '.kpb-dcell.h[disabled],.kpb-dcell.v[disabled]{opacity:1;}',
+      '.kpb-ywrap{display:flex;gap:18px;align-items:flex-start;justify-content:center;flex-wrap:wrap;}',
+      '.kpb-yut{position:relative;width:min(58vh,520px);aspect-ratio:1/1;margin:6px auto;}',
+      '.kpb-yut-lines{position:absolute;inset:0;width:100%;height:100%;}',
+      '.kpb-ynode{position:absolute;width:9%;height:9%;transform:translate(-50%,-50%);border-radius:50%;background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.35);',
+        'display:flex;align-items:center;justify-content:center;gap:1px;font-size:clamp(16px,2vw,26px);}',
+      '.kpb-ynode.big{width:12.5%;height:12.5%;background:rgba(255,210,63,.18);border-color:var(--kp-yellow,#ffd23f);}',
+      '.kpb-ynode.new{box-shadow:0 0 0 5px rgba(255,210,63,.45);}',
+      '.kpb-ypiece{width:70%;height:70%;border-radius:50%;border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:.9em;box-shadow:0 3px 8px rgba(0,0,0,.4);margin:-6%;animation:kpbPop .5s;}',
+      '.kpb-yhome{display:flex;flex-direction:column;gap:8px;min-width:200px;}',
+      '.kpb-yteam{padding:10px 14px;border-radius:14px;border:3px solid;background:rgba(255,255,255,.06);font-weight:900;font-size:clamp(18px,1.8vw,26px);}',
+      '.kpb-ymini{display:inline-block;margin-left:6px;font-size:1.1em;} .kpb-ymini.fin{color:var(--kp-yellow,#ffd23f);} .kpb-ymini.out{opacity:.55;}',
+      '.kpb-ythrow{display:inline-block;animation:kpbRoll .9s ease;}',
       '.kpb-rank li{padding:12px 20px;border-radius:14px;background:rgba(255,255,255,.08);margin:8px 0;font-weight:900;font-size:clamp(24px,2.6vw,34px);display:flex;justify-content:space-between;}'
     ].join('');
     document.head.appendChild(s);

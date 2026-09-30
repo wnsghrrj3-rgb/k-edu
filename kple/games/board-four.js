@@ -83,7 +83,7 @@
       lastGate = { ok: ok, runner: runner, answer: res.answer };
       ctx.sendState(Object.assign({ phase: 'gate_result' }, snap(), { result: { ok: ok, runner: runner, answer: res.answer } }));
       if (ok) beginPick(runner);
-      else { last = { kind: 'miss', team: tm.team, runner: runner }; tm.advanceRunner(); moveTimer = setTimeout(nextTurn, 1600); render(); }
+      else { last = { kind: 'miss', team: tm.team, runner: runner }; tm.advanceRunner(); phase = 'move'; push({ move: last }); render(); moveTimer = setTimeout(nextTurn, 1600); }
     }
     function beginPick(runner) {
       phase = 'pick'; pickSeq += 1;

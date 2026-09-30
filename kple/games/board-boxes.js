@@ -62,7 +62,7 @@
     function onGate(res) {
       gate = null; var runner = tm.runner(), ok = res.grade === 'all';
       ctx.sendState(Object.assign({ phase: 'gate_result' }, snap(), { result: { ok: ok, runner: runner, answer: res.answer } }));
-      if (ok) askPick(); else { last = { kind: 'miss', team: tm.team, runner: runner }; tm.advanceRunner(); phase = 'move'; render(); moveTimer = setTimeout(function () { tm.next(); beginTurn(); }, showMs || 1600); }
+      if (ok) askPick(); else { last = { kind: 'miss', team: tm.team, runner: runner }; tm.advanceRunner(); phase = 'move'; push({ move: last }); render(); moveTimer = setTimeout(function () { tm.next(); beginTurn(); }, showMs || 1600); }
     }
     function askPick() {
       seq += 1; phase = 'pick';
