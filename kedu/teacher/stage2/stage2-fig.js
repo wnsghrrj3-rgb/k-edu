@@ -680,7 +680,15 @@
       return '<div class="so-dot1"><div class="so-dh">' + esc(g.name || '') + '</div><svg class="fig-svg" viewBox="0 0 264 ' + (Math.ceil(of / 10) * 26 + 2) + '" xmlns="http://www.w3.org/2000/svg" role="img">' + s + '</svg><div class="so-dc"><b>' + esc(o.lab || '노인') + ' ' + on + '명</b> · ' + esc(o.rest || '나머지') + ' ' + (of - on) + '명</div></div>'; };
     return '<div class="so-dots n' + gs.length + '" data-on="' + gs.map(g => +g.on || 0).join(',') + '">' + gs.map(one).join('') + (o.note ? '<div class="so-dnote">' + md(o.note) + '</div>' : '') + '</div>';
   }
-  const SO_PARTS = { tline, map, link, then, groups, pcard, news, post, exhibit, sbars, dots };
+  // led: 전광판(54차) — cols 칸 수 · kinds [갈래 이름] · cells [{name, k}] (k < kinds.length = 불 켠 칸 · 그 밖 = 꺼진 칸) · caption
+  //      켠 칸은 갈래마다 색(노랑·주황·하늘) · data-lit = 켠 칸 수 · data-shape = 줄마다 #(켬)/.(끔) 을 | 로 이음 — 켠 칸이 모여 글자·수가 나타나는 판
+  function led(o) {
+    const cells = (o.cells || []).filter(Boolean), W = Math.max(1, o.cols | 0 || 8), K = (o.kinds || []).length; if (!cells.length) return '';
+    const on = (c) => c.k != null && c.k >= 0 && c.k < K; const rows = []; for (let i = 0; i < cells.length; i += W) rows.push(cells.slice(i, i + W).map(c => on(c) ? '#' : '.').join(''));
+    return '<div class="so-led" data-lit="' + cells.filter(on).length + '" data-shape="' + rows.join('|') + '"><div class="so-ledg" style="grid-template-columns:repeat(' + W + ',1fr)">' + cells.map(c => '<span class="so-lc ' + (on(c) ? 'on k' + c.k : 'off') + '">' + esc(c.name || '') + '</span>').join('') + '</div>'
+      + (K ? '<div class="so-ledk">' + o.kinds.map((n, i) => '<span><i class="k' + i + '"></i>' + esc(n) + '</span>').join('') + '<span><i class="off"></i>꺼진 칸</span></div>' : '') + (o.caption ? '<div class="so-lnote">' + md(o.caption) + '</div>' : '') + '</div>';
+  }
+  const SO_PARTS = { tline, map, link, then, groups, pcard, news, post, exhibit, sbars, dots, led };
 
   // ── 27차(2026-09-29) 과학 생물 부품 — 그림 문법: **그렇다·있음·같게 할 조건 = 파랑 ○ / 아니다·없음 = 회색 ✗ / 주황 = 기준 질문·다르게 할 조건·지금 단계·강조 / 초록 = 자람·싹·결과**
   //    사는 곳 = 땅 위(풀빛)·땅속(흙빛)·하늘(하늘빛)·강과 연못(파랑)·바다(짙은 파랑)·사막(모래빛)·극지(얼음빛)·들과 산(초록) ──

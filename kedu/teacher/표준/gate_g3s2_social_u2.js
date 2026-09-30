@@ -1,9 +1,9 @@
-/* gate_g3s2_social_u2.js — 3학년 2학기 사회 2단원 「옛날과 오늘날의 생활 모습」 케이티처 2세대 게이트 (53차, 베프) · u1 게이트와 같은 꼴.
-   재료 = 자기주도 사회 3-2 2단원(지금 채워진 l01~l06) → src_g3s2_social_u2.json(parse_selfdirected_soc.js). 2세대 무대(stage2.js renderSlide)로 실렌더한다.
-   A 로드·meta(두 시간 한 파일 l03·l04·l06 = 80분 · covers = 지도서 2~10차시 빈틈 0 · 성취기준 = 원문 [4사04-01]) · B 19장 골격 · C 7요소 · D 복습 계보(1단원 u1_l12 → l01 → … → l06)
-   E 정답 표시 · F 원문 계승 · G 그림(판 부품 = groups 2·tline·then·tools·chain) · H 중복 0 · I 실렌더 + 1인 흐름 · J extras 22 · K 발문 6장↑·분 합
-   L 선행 용어(학생 화면: 두레·품앗이 l02 전 · 폐백·수목장·해양장 l03 전 · 부럼·오곡밥·양력·수리취떡 l04 전 · 직업 l05 전 · 투호·고누·제기차기·지도사 l06 전 0 — 표지·다음 예고 제외 · 원문도 같은 차례)
-   M 판 대조(원문 판의 표 ↔ 판 그림 + 뜻 규칙으로 따로 셈: l01 두 동그라미 · l02 일생 길 축하·위로 · l03 비교표 같아요/달라요 · l04 다섯 명절 단서 · l05 형광펜 두 색 · l06 만들기 차례) · N 차단 어휘 0
+/* gate_g3s2_social_u2.js — 3학년 2학기 사회 2단원 「옛날과 오늘날의 생활 모습」 케이티처 2세대 게이트 (53차, 베프 · 54차 l07·l08 이어 붙임) · u1 게이트와 같은 꼴.
+   재료 = 자기주도 사회 3-2 2단원(지금 채워진 l01~l08) → src_g3s2_social_u2.json(parse_selfdirected_soc.js). 2세대 무대(stage2.js renderSlide)로 실렌더한다.
+   A 로드·meta(두 시간 한 파일 l03·l04·l06 = 80분 · covers = 지도서 2~12차시 빈틈 0 · 성취기준 = 원문 [4사04-01] · l08 만 [4사04-02]) · B 19장 골격 · C 7요소 · D 복습 계보(1단원 u1_l12 → l01 → … → l08)
+   E 정답 표시 · F 원문 계승 · G 그림(판 부품 = groups 3·led(전광판)·tline·then·tools·chain) · H 중복 0 · I 실렌더 + 1인 흐름 · J extras 22 · K 발문 6장↑·분 합
+   L 선행 용어(학생 화면: 두레·품앗이 l02 전 · 폐백·수목장·해양장 l03 전 · 부럼·오곡밥·양력·수리취떡 l04 전 · 직업 l05 전 · 투호·고누·제기차기·지도사 l06 전 · 카네이션·플라잉 디스크 l07 전 · 교통수단·교통로·항공로·수로·케이블카 l08 전 0 — 표지·다음 예고 제외 · 원문도 같은 차례)
+   M 판 대조(원문 판의 표 ↔ 판 그림 + 뜻 규칙으로 따로 셈: l01 두 동그라미 · l02 일생 길 축하·위로 · l03 비교표 같아요/달라요 · l04 다섯 명절 단서 · l05 형광펜 두 색 · l06 만들기 차례 · l07 전광판(led) 두 갈래 + 켠 칸 모양 = 숫자 24 · l08 네 길) · N 차단 어휘 0
    실행: NODE_PATH=/home/claude/.jsdom/node_modules node kedu/teacher/표준/gate_g3s2_social_u2.js */
 'use strict';
 const fs = require('fs');
@@ -20,7 +20,7 @@ function load(file) { const L = {}; const c = { window: { LESSONS: L }, LESSONS:
 const L = load(path.join(TDIR, 'data/g3s2_social_u2.js'));
 const PREV = load(path.join(TDIR, 'data/g3s2_social_u1.js'));
 const SRC = JSON.parse(fs.readFileSync(path.join(TDIR, 'scripts/src_g3s2_social_u2.json'), 'utf8'));
-const KEYS = Array.from({ length: 6 }, (_, i) => 'u2_l' + String(i + 1).padStart(2, '0'));
+const KEYS = Array.from({ length: 8 }, (_, i) => 'u2_l' + String(i + 1).padStart(2, '0'));
 const ORDER = ['cover', 'review', 'motivate', 'concept', 'concept', 'concept', 'concept', 'misconception', 'basic_problem', 'basic_problem', 'basic_problem', 'leveled_problem', 'offline_activity', 'real_world', 'advanced_problem', 'exit_ticket', 'summary', 'self_assessment', 'next_lesson'];
 const STAGE = ['도입', '도입', '도입', '전개', '전개', '전개', '전개', '전개', '기본문제', '기본문제', '기본문제', '기본문제', '응용문제', '응용문제', '응용문제', '정리', '정리', '정리', '정리'];
 const UT = '옛날과 오늘날의 생활 모습';
@@ -37,13 +37,13 @@ const con = (k) => L[k].slides.filter(s => s.block === 'concept');
 const board = (k) => con(k).find(s => SLI(k, s.src).kind === 'board');
 
 console.log('═══ A. 로드 ═══');
-T('6차시 키(자기주도 파일 번호 u2_l01~l06 — 지금 채워진 것)', () => ok(JSON.stringify(Object.keys(L)) === JSON.stringify(KEYS), Object.keys(L).join(',')));
+T('8차시 키(자기주도 파일 번호 u2_l01~l08 — 지금 채워진 것)', () => ok(JSON.stringify(Object.keys(L)) === JSON.stringify(KEYS), Object.keys(L).join(',')));
 T('meta: 3학년 2학기 사회 · unit 1 · unit_title · covers = 지도서 차시 · 분 = 40 × 차시 수 · 성취기준 = 원문 · live_url 실파일', () => KEYS.forEach(k => { const m = L[k].meta, c = SRC[k].covers;
   ok(m.grade === 3 && m.term === 2 && m.unit === 2 && m.unit_title === UT && m.subject === '사회' && m.n === +k.slice(-2), k);
   ok(m.covers === (c.length === 2 ? c[0] + '·' + c[1] + '차시' : c[0] + '차시'), k + ' covers'); ok(m.duration_min === 40 * c.length, k + ' 분');
-  ok(/^\[4사04-01\]$/.test(m.std) && m.std === SRC[k].std, k + ' std ' + m.std); ok(m.title === nb(SRC[k].title), k + ' 제목');
+  ok((k === 'u2_l08' ? /^\[4사04-02\]$/ : /^\[4사04-01\]$/).test(m.std) && m.std === SRC[k].std, k + ' std ' + m.std); ok(m.title === nb(SRC[k].title), k + ' 제목');
   ok(fs.existsSync(path.join(TDIR, m.live_url)), k + ' live_url'); }));
-T('두 시간 한 파일 = l03·l04·l06 (원문 머리 주석) · 지도서 2~10차시 빈틈 0', () => { ok(KEYS.filter(k => SRC[k].covers.length === 2).join() === 'u2_l03,u2_l04,u2_l06'); const all = [].concat(...KEYS.map(k => SRC[k].covers)); ok(all.join() === Array.from({ length: 9 }, (_, i) => i + 2).join(), all.join()); });
+T('두 시간 한 파일 = l03·l04·l06 (원문 머리 주석) · 지도서 2~12차시 빈틈 0', () => { ok(KEYS.filter(k => SRC[k].covers.length === 2).join() === 'u2_l03,u2_l04,u2_l06'); const all = [].concat(...KEYS.map(k => SRC[k].covers)); ok(all.join() === Array.from({ length: 11 }, (_, i) => i + 2).join(), all.join()); });
 
 console.log('═══ B. 19장 골격 ═══');
 KEYS.forEach(k => T(k + ' 19장 · 블록 차례 · 단계 · id', () => { const sl = L[k].slides; ok(sl.length === 19, sl.length); sl.forEach((s, i) => { ok(s.block === ORDER[i], s.id + ' ' + s.block); ok(s.stage === STAGE[i], s.id + ' stage'); ok(s.id === 's' + String(i + 1).padStart(2, '0'), s.id); }); }));
@@ -81,10 +81,10 @@ KEYS.forEach(k => T(k + ' 오개념 = 원문 판 마무리 3택(틀린 보기 �
   const nx = L[k].slides[18].data.preview; if (SRC[k].next) ok(nx === nb(SRC[k].next), '다음 ≠ 원문'); else ok(/다음 시간에는/.test(nx), '다음'); }));
 
 console.log('═══ G. 그림 ═══');
-const SO = ['tools', 'chain', 'note', 'then', 'groups', 'link', 'sort2', 'tline'];
+const SO = ['tools', 'chain', 'note', 'then', 'groups', 'link', 'sort2', 'tline', 'led'];
 KEYS.forEach(k => T(k + ' 개념 4장 렌더 · 사회 부품 · 빈 그림·NaN 0 · 카드 이름 ** 0', () => con(k).forEach(s => { const f = s.data.fig; ok(f && SO.indexOf(f.k) >= 0, s.id + ' 부품 ' + (f && f.k)); const h = FIG.render(f); ok(h && h.length > 150, s.id + ' 빈 그림'); ok(!/NaN|undefined|\[object/.test(h), s.id + ' 깨짐'); (f.items || []).forEach(it => it && it.name && ok(!/\*\*/.test(it.name), s.id + ' ** ' + it.name)); })));
-T('부품 가짓수 ≥ 5 · 판 부품 = groups 2·tline 1·then 1·tools 1·chain 1', () => { const cnt = {}; KEYS.forEach(k => con(k).forEach(s => cnt[s.data.fig.k] = (cnt[s.data.fig.k] || 0) + 1)); const bc = {}; KEYS.forEach(k => { const f = board(k).data.fig; bc[f.k] = (bc[f.k] || 0) + 1; });
-  ok(Object.keys(cnt).length >= 5, JSON.stringify(cnt)); ok(bc.groups === 2 && bc.tline === 1 && bc.then === 1 && bc.tools === 1 && bc.chain === 1, JSON.stringify(bc)); });
+T('부품 가짓수 ≥ 5 · 판 부품 = groups 3·led 1·tline 1·then 1·tools 1·chain 1', () => { const cnt = {}; KEYS.forEach(k => con(k).forEach(s => cnt[s.data.fig.k] = (cnt[s.data.fig.k] || 0) + 1)); const bc = {}; KEYS.forEach(k => { const f = board(k).data.fig; bc[f.k] = (bc[f.k] || 0) + 1; });
+  ok(Object.keys(cnt).length >= 5, JSON.stringify(cnt)); ok(bc.groups === 3 && bc.led === 1 && bc.tline === 1 && bc.then === 1 && bc.tools === 1 && bc.chain === 1, JSON.stringify(bc)); });
 T('tline 일곱 칸 렌더 · 켠 칸(위로) 하나', () => { const h = FIG.render(board('u2_l02').data.fig); ok((h.match(/so-ev /g) || []).length === 7, '칸 수'); ok((h.match(/so-ev [^"]* on/g) || []).length === 1, '켠 칸'); });
 
 console.log('═══ H. 중복 ═══');
@@ -104,7 +104,7 @@ T('발문 차시마다 6장↑ · ask 2 · watch · min', () => KEYS.forEach(k =
 T('발문 분 합 — 40분 30~45 · 80분 60~88 · 교실 활동 분 = 발문 분', () => KEYS.forEach(k => { const d = L[k].meta.duration_min; const m = L[k].slides.reduce((a, s) => a + (s.data.tnote ? s.data.tnote.min : 0), 0); ok(d === 40 ? m >= 30 && m <= 45 : m >= 60 && m <= 88, k + ' ' + m + '/' + d); const act = L[k].slides[12].data; ok(act.minutes === act.tnote.min, k + ' 활동 분'); }));
 
 console.log('═══ L. 선행 용어 ═══');
-const FIRST = [['두레', 'u2_l02'], ['품앗이', 'u2_l02'], ['폐백', 'u2_l03'], ['수목장', 'u2_l03'], ['해양장', 'u2_l03'], ['부럼', 'u2_l04'], ['오곡밥', 'u2_l04'], ['양력', 'u2_l04'], ['수리취떡', 'u2_l04'], ['직업', 'u2_l05'], ['투호', 'u2_l06'], ['고누', 'u2_l06'], ['제기차기', 'u2_l06'], ['지도사', 'u2_l06']];
+const FIRST = [['두레', 'u2_l02'], ['품앗이', 'u2_l02'], ['폐백', 'u2_l03'], ['수목장', 'u2_l03'], ['해양장', 'u2_l03'], ['부럼', 'u2_l04'], ['오곡밥', 'u2_l04'], ['양력', 'u2_l04'], ['수리취떡', 'u2_l04'], ['직업', 'u2_l05'], ['투호', 'u2_l06'], ['고누', 'u2_l06'], ['제기차기', 'u2_l06'], ['지도사', 'u2_l06'], ['카네이션', 'u2_l07'], ['플라잉 디스크', 'u2_l07'], ['교통수단', 'u2_l08'], ['교통로', 'u2_l08'], ['항공로', 'u2_l08'], ['수로', 'u2_l08'], ['케이블카', 'u2_l08']];
 const vis = (s) => (s.block === 'next_lesson' || s.block === 'cover') ? '' : JSON.stringify(Object.assign({}, s.data, { tnote: undefined }));
 FIRST.forEach(([w0, k0]) => T('「' + w0 + '」 ' + k0 + ' 전 학생 화면 0 · ' + k0 + ' 에는 나옴', () => { const i0 = KEYS.indexOf(k0); KEYS.forEach((k, i) => { if (i < i0) L[k].slides.forEach(s => ok(vis(s).indexOf(w0) < 0, k + ' ' + s.id)); }); ok(L[k0].slides.some(s => vis(s).indexOf(w0) >= 0), k0 + ' 에 없음'); }));
 T('선행 검사기 자체 확인 — l02 개념 장에 「투호」를 심으면 잡는다', () => { const s = L.u2_l02.slides[3]; const keep = s.data.content; s.data.content = keep + ' 투호'; let caught = false; try { KEYS.slice(0, 5).forEach(k => L[k].slides.forEach(x => ok(vis(x).indexOf('투호') < 0))); } catch (e) { caught = true; } s.data.content = keep; ok(caught, '못 잡음'); });
@@ -136,6 +136,21 @@ T('l06 만들기 차례 — chain 넷 = JM_STEP n 차례 · 첫 단계 = 문항 
   b.JM_GEAR.forEach(g => ok(g.need === (/윷|제기|투호/.test(g.name) ? 0 : 1), g.name + ' 준비물 규칙')); });
 T('판 검사기 자체 확인 — l01 카드 하나를 다른 동그라미로, l06 차례 둘을 바꾸면 잡는다', () => { const f = fig('u2_l01'); const x = f.bins[0].items.shift(); f.bins[1].items.push(x); let c1 = false; try { BD('u2_l01').PC_CARD.forEach(c => ok(f.bins[c.r].items.indexOf(c.text) >= 0)); } catch (e) { c1 = true; } f.bins[1].items.pop(); f.bins[0].items.unshift(x);
   const g = fig('u2_l06'); const t = g.items[1]; g.items[1] = g.items[2]; g.items[2] = t; const ord = BD('u2_l06').JM_STEP.slice().sort((a, b) => a.n - b.n).map(x => x.text); const c2 = g.items.map(x => x.name).join('|') !== ord.join('|'); g.items[2] = g.items[1]; g.items[1] = t; ok(c1 && c2, '못 잡음'); });
+T('l07 전광판(led) — 40칸 = BJ_CELL 차례·이름·갈래 그대로 · 켠 칸 두 갈래 = k(0 세시 음식 · 1 하던 일) · 뜻 규칙으로 따로 셈(음식 = l04 다섯 명절 음식 + 부럼 · 하던 일 = 명절·절기 놀이·의례) · 여섯·열다섯 · 나머지는 일상생활 속 풍습·요즘 생활(켜지 않음)', () => { const b = BD('u2_l07'), f = fig('u2_l07'); ok(f.k === 'led' && f.cols === 8 && f.kinds.join() === b.BJ_KIND.join() && f.cells.length === 40, 'led 판'); b.BJ_CELL.forEach((c, i) => ok(f.cells[i].name === c.name && f.cells[i].k === c.k, c.name + ' 칸 자리'));
+  const food = new Set(BD('u2_l04').SX_DAY.map(d => d.food).concat(['부럼'])); const doing = /^(버선 선물|연날리기|쥐불놀이|차례|널뛰기|세배|윷놀이|씨름|다리밟기|그네뛰기|달맞이|강강술래|부채 선물|달집 태우기|소싸움)$/;
+  b.BJ_CELL.forEach(c => { const want = food.has(c.name) ? 0 : doing.test(c.name) ? 1 : 2; ok(c.k === want, c.name + ' 규칙 ' + c.k + '≠' + want); });
+  ok(b.BJ_CELL.filter(c => c.k === 0).length === 6 && b.BJ_CELL.filter(c => c.k === 1).length === 15, '여섯·열다섯'); ok(b.BJ_KIND.join() === '세시 음식,명절·절기에 하던 일', 'BJ_KIND'); });
+T('l07 켠 칸 모양 — 8열 × 5줄 전광판(렌더된 data-shape·data-lit)에서 켠 21칸이 숫자 「2」(3×5)·「4」(4×5) 모양 그대로(따로 그린 글꼴과 대조) = 판 읽기 정답 = 문항 8 정답 = 그림 풀이', () => { const b = BD('u2_l07'), C = b.BJ_CELL, W = b.BJ_COLS; ok(W === 8 && C.length === 40, '8 × 5');
+  const FONT = { 2: ['###', '..#', '###', '#..', '###'], 4: ['#.#.', '#.#.', '####', '..#.', '..#.'] }; const want = FONT[2].map((r, y) => r + '.' + FONT[4][y]); const got = [0, 1, 2, 3, 4].map(y => C.slice(y * W, y * W + W).map(c => c.k < 2 ? '#' : '.').join(''));
+  ok(got.join('|') === want.join('|'), got.join('|')); const lit = C.filter(c => c.k < 2).length; ok(lit === 21, '켠 칸 ' + lit); const h = FIG.render(fig('u2_l07')); ok(h.indexOf('data-shape="' + want.join('|') + '"') >= 0 && h.indexOf('data-lit="21"') >= 0, '렌더 모양'); ok((h.match(/so-lc on k0/g) || []).length === 6 && (h.match(/so-lc on k1/g) || []).length === 15 && (h.match(/so-lc off/g) || []).length === 19, '렌더 칸 색');
+  ok(b.BJ_READQ[b.BJ_READ_OK] === '24' && qa('u2_l07', 7) === '24', '판 읽기·문항 8'); ok(fig('u2_l07').caption.indexOf(lit + '개') >= 0 && fig('u2_l07').caption.indexOf('**24**') >= 0, '그림 풀이'); });
+T('l08 네 길 — 네 칸 = RO_LANE(하늘·철도·도로·강과 바다 = 항공로·철도·도로·수로) · 탈것마다 칸 = RO_CAR k · 뜻 규칙(비행기 → 하늘 · 열차 → 철도 · 배 → 강과 바다 · 버스·오토바이·자전거 → 도로) · 처음부터 제 길에 있는 탈것은 버스 하나(「이미 제 길」 말이 쓰이는 자리) · 판 읽기 정답 = 문항 8 정답', () => { const b = BD('u2_l08'), f = fig('u2_l08'); ok(f.k === 'groups' && f.bins.length === 4);
+  ok(b.RO_LANE.map(x => x.name + ':' + x.road).join() === '하늘:항공로,철도:철도,도로:도로,강과 바다:수로', '네 길'); const rule = (n) => /비행기|헬기/.test(n) ? 0 : /열차|기차|지하철/.test(n) ? 1 : /배|여객선|유람선/.test(n) ? 3 : /버스|오토바이|자전거|자동차|트럭/.test(n) ? 2 : -1;
+  b.RO_CAR.forEach(c => { ok(c.k === rule(c.name), c.name + ' 규칙');  ok(f.bins[c.k].items.some(x => x.name === c.name && x.emoji === c.icon), c.name + ' 칸'); ok(c.why.indexOf(c.name) === 0, c.name + ' 까닭'); });
+  ok(b.RO_CAR.filter(c => c.at === c.k).map(c => c.name).join() === '버스' && /이미 제 길/.test(b.RO_SAY_RIGHT), '처음부터 제 길'); ok(f.bins.map(x => x.name).join() === '하늘 — 항공로,철도,도로,강과 바다 — 수로', '칸 이름(길 이름 = 교통로 이름이면 한 번만)'); ok(b.RO_READQ[b.RO_READ_OK] === qa('u2_l08', 7) && /저마다 다니는 교통로/.test(qa('u2_l08', 7)), '판 읽기·문항 8');
+  ok(L.u2_l08.slides[14].data.note.indexOf('**항공로**') >= 0 && L.u2_l08.slides[14].data.note.indexOf('**수로**') >= 0, '생각을 넓혀요 풀이'); });
+T('l07·l08 검사기 자체 확인 — 전광판 칸 하나를 끄거나 탈것 하나를 다른 길로 옮기면 잡는다', () => { const C = BD('u2_l07').BJ_CELL; const c0 = C.find(c => c.name === '떡국'); c0.k = 2; const got = [0, 1, 2, 3, 4].map(y => C.slice(y * 8, y * 8 + 8).map(c => c.k < 2 ? '#' : '.').join('')).join('|'); c0.k = 0; const c1 = got !== '###.#.#.|..#.#.#.|###.####|#.....#.|###...#.';
+  const f = fig('u2_l08'); const x = f.bins[2].items.shift(); f.bins[0].items.push(x); const c2 = !BD('u2_l08').RO_CAR.every(c => f.bins[c.k].items.some(y => y.name === c.name)); f.bins[0].items.pop(); f.bins[2].items.unshift(x); ok(c1 && c2, '못 잡음'); });
 console.log('═══ N. 차단 어휘 ═══');
 T('데이터·생성기 차단 어휘 0 (박음·빵꾸·갈아엎·결로)', () => { const t = fs.readFileSync(path.join(TDIR, 'data/g3s2_social_u2.js'), 'utf8') + fs.readFileSync(path.join(TDIR, 'scripts/gen_g3s2_social_u2.js'), 'utf8'); ['박음', '빵꾸', '갈아엎', '결로'].forEach(x => ok(t.indexOf(x) < 0, x)); });
 
