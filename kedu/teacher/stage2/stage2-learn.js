@@ -8,6 +8,7 @@
    · 채점 문항을 풀기 전에는 다음 장으로 안 넘어간다(정답 보기를 누르면 넘어갈 수 있다 — 0점).
    · 49차: 수준별 문제 — 고른 수준의 답으로 채점(수 칸·단위·몫과 나머지·분수) · 푸는 동안 수준 잠금 · 교사용 「정답 보기」 단추 없음 ·
      여러 답(open)·글 답은 스스로 확인. 100점과 따로 「🏅 도전」으로 센다(수준마다 문제가 달라 점수에 섞으면 쉬운 수준을 고르게 된다).
+   · 55차: 수준별 글 답의 보기·차례·갈래 꼴도 같은 조작(고르기·차례 놓기·나눠 담기)으로 채점 — 🏅 도전으로 센다.
    · 51차: 짝 잇기(왼쪽 누르고 → 오른쪽 짝) · 나눠 담기(카드 누르고 → 통) · 차례 놓기(카드를 누르는 차례대로 칸에) · 단위 붙은 수 답(칸마다 단위).
      틀리면 맞은 것은 그대로 두고 틀린 것만 되돌린다(어디가 틀렸는지 보이게) — 점수는 다른 문항과 같다(한 번에 만점 · 두 번째 절반).
    진입: learn.html?g=3&t=2&s=social&u=1&l=u1_l04
@@ -80,12 +81,14 @@
   // ── 학생이 푸는 층 ─────────────────────────────────────────────
   // 수준별 문제 — 지금 고른 수준(교사 무대 renderSlide 와 같은 규칙: state.level 이 없으면 첫 수준)
   function lvCur(s, S) { const ks = Object.keys((s.lv && s.lv.levels) || {}); return (S && s.lv.levels[S.level]) ? S.level : (ks[0] || ''); }
+  const LV_BODY = new Set(['pick', 'multi', 'match', 'sort', 'order']); // 55차 — 수준 답 표에도 기본 문제와 같은 조작
   function lvWidget(s, st, cur) {
     const L = s.lv.levels[cur]; if (!L) return '';
     const fin = st.done || st.gaveUp || (L.kind === 'self' && st.shown);
     let h = '<div class="lw lw-lv lw-' + L.kind + (fin ? ' fin' : '') + '" data-lv="' + esc(cur) + '">';
     if (!fin && L.kind === 'nums') h += '<div class="lw-row lw-parts">' + L.parts.map((p, i) => (p.pre ? '<span class="lw-u">' + esc(p.pre) + '</span>' : '') + '<input class="lw-in' + (L.parts.length > 1 ? ' sm' : '') + (st.wrong.length ? ' no' : '') + '" data-p="' + i + '" inputmode="decimal" autocomplete="off" placeholder="?" value="' + esc((st.vals || [])[i] || '') + '">' + (p.unit ? '<span class="lw-u">' + esc(p.unit) + '</span>' : '') + (p.post ? '<span class="lw-u">' + esc(p.post) + '</span>' : '') + (p.comma ? '<span class="lw-sep">,</span>' : '')).join('') + '<button class="btn main" data-lact="check">확인하기</button></div>';
     else if (!fin && L.kind === 'frac') h += '<div class="lw-row"><input class="lw-in' + (st.wrong.length ? ' no' : '') + '" data-p="0" autocomplete="off" placeholder="분자/분모" value="' + esc((st.vals || [])[0] || '') + '"><button class="btn main" data-lact="check">확인하기</button></div><div class="lw-tip sm">분수는 「7/9」처럼 써요</div>';
+    else if (LV_BODY.has(L.kind)) h += kindBody(L, Object.assign({ mp: {}, pl: {}, seq: [], vals: [], wrong: [], sel: [], pick: null }, st), fin);
     else if (!fin && L.kind === 'self') h += '<div class="lw-row"><span class="lw-tip">' + (L.open ? '💡 여러 답이 나올 수 있어요 — 먼저 내 생각을 정해요' : '🤔 먼저 스스로 생각해 봐요') + '</span><button class="btn main" data-lact="show">정답 보기</button></div>';
     if (fin) {
       h += '<div class="lv-a' + (L.open ? ' open' : '') + '">' + (L.open ? '💡 여러 답이 가능해요' + (L.a ? ' — ' + md(String(L.a)) : '') : '✅ ' + md(String(L.a != null ? L.a : ''))) + '</div>';
@@ -96,12 +99,9 @@
     if (fin) h += '<div class="lw-tip sm">다른 수준도 풀어 볼 수 있어요 ↑</div>';
     return h + '</div>';
   }
-  function widget(s, st, lvKey) {
-    if (s.lv) { const cur = lvKey || lvCur(s, null); return lvWidget(s, st, cur); }
-    const L = s.learn; if (!L) return '';
-    st = Object.assign({ mp: {}, pl: {}, seq: [], vals: [], wrong: [], sel: [], pick: null }, st); // 그리기만 — 빈 칸 기본값
-    const fin = st.done || st.gaveUp;
-    let h = '<div class="lw lw-' + L.kind + (fin ? ' fin' : '') + '">';
+  // 55차 — 고르기·짝·갈래·차례·수 칸 그리기를 기본 문제와 수준별 문제가 함께 쓴다(fin = 끝낸 뒤 정답 자리)
+  function kindBody(L, st, fin) {
+    let h = '';
     if (L.kind === 'pick' || L.kind === 'multi') {
       h += '<div class="options n' + L.options.length + (fin ? ' revealed' : '') + '">' + L.options.map((o, i) => {
         const on = L.kind === 'multi' ? st.sel.indexOf(i) >= 0 : false;
@@ -130,10 +130,19 @@
       else h += '<div class="lw-row lw-parts lw-nb">' + L.parts.map((p, i) => (p.pre ? '<span class="lw-u">' + esc(p.pre) + '</span>' : '') + '<input class="lw-in' + (L.parts.length > 1 ? ' sm' : '') + (st.wrong.length ? ' no' : '') + '" data-p="' + i + '" inputmode="decimal" autocomplete="off" placeholder="?" value="' + esc(st.vals[i] || '') + '">' + (p.unit ? '<span class="lw-u">' + esc(p.unit) + '</span>' : '') + (p.comma ? '<span class="lw-sep">,</span>' : '')).join('') + '<button class="btn main" data-lact="check">확인하기</button></div>';
     } else if (L.kind === 'num') {
       h += '<div class="lw-row">' + (fin ? '<div class="answer on"><span>답</span><div class="box">' + md(String(L.answer)) + '</div></div>' : '<input class="lw-in' + (st.wrong.length ? ' no' : '') + '" id="lw-in" inputmode="numeric" autocomplete="off" placeholder="?" value="' + esc(st.val) + '"><button class="btn main" data-lact="check">확인하기</button>') + '</div>';
-    } else if (L.kind === 'self') {
+    }
+    return h;
+  }
+  function widget(s, st, lvKey) {
+    if (s.lv) { const cur = lvKey || lvCur(s, null); return lvWidget(s, st, cur); }
+    const L = s.learn; if (!L) return '';
+    st = Object.assign({ mp: {}, pl: {}, seq: [], vals: [], wrong: [], sel: [], pick: null }, st); // 그리기만 — 빈 칸 기본값
+    const fin = st.done || st.gaveUp;
+    let h = '<div class="lw lw-' + L.kind + (fin ? ' fin' : '') + '">';
+    if (L.kind === 'self') {
       if (!st.shown) h += '<div class="lw-row"><span class="lw-tip">🤔 먼저 스스로 생각해 봐요</span><button class="btn main" data-lact="show">정답 보기</button></div>';
       else h += (L.answer !== undefined ? '<div class="answer on"><span>답</span><div class="box">' + md(String(L.answer)) + '</div></div>' : '');
-    }
+    } else h += kindBody(L, st, fin);
     if (!fin && st.tries > 0 && L.kind !== 'self') h += '<div class="lw-row"><span class="lw-msg">다시 생각해 봐요! 🔁</span><button class="btn ghost" data-lact="giveup">정답 볼래요</button></div>';
     if ((fin || (L.kind === 'self' && st.shown)) && L.note) h += '<div class="small-text lw-note">' + md(L.note) + '</div>';
     if (st.done && L.pts) h += '<div class="lw-got">⭐ +' + st.got + '</div>';
@@ -204,42 +213,53 @@
   Learn.prototype.answer = function (s, ans) {
     if (s.lv) return this.answerLv(s, ans);
     const L = s.learn, st = this.ls(s.id); if (!L || st.done || st.gaveUp) return;
-    if (L.kind === 'num' && String(ans == null ? '' : ans).trim() === '') { this.toast('답을 넣어 봐요'); return; }
-    if (L.kind === 'multi' && !(ans || []).length) { this.toast('하나 이상 골라요'); return; }
-    if ((L.kind === 'match' || L.kind === 'sort' || L.kind === 'order') && (!Array.isArray(ans) || ans.length !== L.key.length || ans.some(v => v === undefined || v === null))) { this.toast(L.kind === 'match' ? '짝을 모두 이어 봐요' : L.kind === 'sort' ? '카드를 모두 통에 담아 봐요' : '칸을 모두 채워 봐요'); return; }
-    if ((L.kind === 'nums' || L.kind === 'frac') && (!Array.isArray(ans) || ans.some(v => String(v == null ? '' : v).trim() === ''))) { this.toast('빈칸을 채워 봐요'); return; }
+    if (!this.ready(L, ans)) return;
     st.tries++;
     const ok = P().check(L, ans);
     const sec = Math.round((Date.now() - (st.t0 || this.started)) / 1000);
     try { if (global.kedu && global.kedu.recordAnswer) global.kedu.recordAnswer(this.qid(s), ok, sec, null, { src: 'kt2-learn', slug: this.slug, kind: L.kind, try: st.tries }); } catch (e) { }
     if (ok) { st.done = true; st.got = P().gained(L, st.tries, false); this.score += st.got; this.paint(0, true); this.celebrate(); }
     else {
-      if (L.kind === 'pick') st.wrong.push(ans); else st.wrong = [1]; if (L.kind === 'multi') st.sel = [];
-      // 짝·갈래·차례 — 맞은 것은 두고 틀린 것만 되돌린다(틀린 자리를 빨갛게)
-      if (L.kind === 'match') { st.wrong = []; L.key.forEach((v, i) => { if (st.mp[i] !== v) { st.wrong.push(i); delete st.mp[i]; } }); st.pick = st.wrong.length ? st.wrong[0] : null; }
-      if (L.kind === 'sort') { st.wrong = []; L.key.forEach((v, i) => { if (st.pl[i] !== v) { st.wrong.push(i); delete st.pl[i]; } }); st.pick = null; }
-      if (L.kind === 'order') { st.wrong = []; const keep = []; L.key.forEach((v, k) => { if (st.seq[k] === v) keep[k] = v; else st.wrong.push(k); }); st.seq = keep; } this.tone(200, 0.18, 0.05, 'square'); this.paint(0, true); const w = doc.querySelector('.lw'); if (w) w.classList.add('shake'); }
+      markWrong(L, st, ans); this.tone(200, 0.18, 0.05, 'square'); this.paint(0, true); const w = doc.querySelector('.lw'); if (w) w.classList.add('shake'); }
   };
+  // 55차 — 기본 문제·수준별 문제가 같이 쓰는 빈칸 확인과 틀린 자리 되돌리기
+  Learn.prototype.ready = function (L, ans) {
+    if (L.kind === 'num' && String(ans == null ? '' : ans).trim() === '') { this.toast('답을 넣어 봐요'); return false; }
+    if (L.kind === 'pick' && (typeof ans !== 'number' || !L.options[ans])) return false;
+    if (L.kind === 'multi' && !(ans || []).length) { this.toast('하나 이상 골라요'); return false; }
+    if ((L.kind === 'match' || L.kind === 'sort' || L.kind === 'order') && (!Array.isArray(ans) || ans.length !== L.key.length || ans.some(v => v === undefined || v === null))) { this.toast(L.kind === 'match' ? '짝을 모두 이어 봐요' : L.kind === 'sort' ? '카드를 모두 통에 담아 봐요' : '칸을 모두 채워 봐요'); return false; }
+    if ((L.kind === 'nums' || L.kind === 'frac') && (!Array.isArray(ans) || ans.some(v => String(v == null ? '' : v).trim() === ''))) { this.toast('빈칸을 채워 봐요'); return false; }
+    return true;
+  };
+  function markWrong(L, st, ans) {
+    if (L.kind === 'pick') st.wrong.push(ans); else st.wrong = [1]; if (L.kind === 'multi') st.sel = [];
+    // 짝·갈래·차례 — 맞은 것은 두고 틀린 것만 되돌린다(틀린 자리를 빨갛게)
+    if (L.kind === 'match') { st.wrong = []; L.key.forEach((v, i) => { if (st.mp[i] !== v) { st.wrong.push(i); delete st.mp[i]; } }); st.pick = st.wrong.length ? st.wrong[0] : null; }
+    if (L.kind === 'sort') { st.wrong = []; L.key.forEach((v, i) => { if (st.pl[i] !== v) { st.wrong.push(i); delete st.pl[i]; } }); st.pick = null; }
+    if (L.kind === 'order') { st.wrong = []; const keep = []; L.key.forEach((v, k) => { if (st.seq[k] === v) keep[k] = v; else st.wrong.push(k); }); st.seq = keep; }
+  }
   // 수준별 — 고른 수준의 답으로 채점 · 기록은 수준마다 따로(키_장_lv1~3 · level 이름을 곁들임) · 점수(100)에는 안 넣는다
   Learn.prototype.answerLv = function (s, ans) {
     const cur = lvCur(s, this.state(s.id)), L = s.lv.levels[cur], st = this.ls(s.id + '|' + cur); if (!L || st.done || st.gaveUp) return;
-    const vals = Array.isArray(ans) ? ans : [ans]; if (vals.some(v => String(v == null ? '' : v).trim() === '')) { this.toast('빈칸을 채워 봐요'); return; }
-    st.tries++; const ok = P().check(L, L.kind === 'frac' ? vals[0] : vals);
+    const body = LV_BODY.has(L.kind); // 55차 — 고르기·차례·갈래는 기본 문제와 같은 답 꼴
+    const vals = Array.isArray(ans) ? ans : [ans]; if (body ? !this.ready(L, ans) : vals.some(v => String(v == null ? '' : v).trim() === '')) { if (!body) this.toast('빈칸을 채워 봐요'); return; }
+    st.tries++; const ok = P().check(L, body ? ans : L.kind === 'frac' ? vals[0] : vals);
     const sec = Math.round((Date.now() - (st.t0 || this.started)) / 1000);
     try { if (global.kedu && global.kedu.recordAnswer) global.kedu.recordAnswer(this.qid(s) + '_lv' + (Object.keys(s.lv.levels).indexOf(cur) + 1), ok, sec, null, { src: 'kt2-learn', slug: this.slug, kind: 'lv-' + L.kind, level: cur, try: st.tries }); } catch (e) { }
     if (ok) { st.done = true; this.lvWins = (this.lvWins || 0) + 1; this.paint(0, true); this.celebrate(); }
-    else { st.wrong = [1]; this.tone(200, 0.18, 0.05, 'square'); this.paint(0, true); const w = doc.querySelector('.lw'); if (w) w.classList.add('shake'); }
+    else { if (body) markWrong(L, st, ans); else st.wrong = [1]; this.tone(200, 0.18, 0.05, 'square'); this.paint(0, true); const w = doc.querySelector('.lw'); if (w) w.classList.add('shake'); }
   };
   Learn.prototype.lact = function (b) {
     if (!b) return;
     const s = this.cur(), a = b.getAttribute('data-lact');
     if (s.lv && a !== 'again') {
       const cur = lvCur(s, this.state(s.id)), st = this.ls(s.id + '|' + cur); if (!st.t0) st.t0 = Date.now();
-      if (a === 'check') { const v = []; doc.querySelectorAll('.lw-lv .lw-in').forEach(el => { v[+el.getAttribute('data-p')] = el.value; st.vals[+el.getAttribute('data-p')] = el.value; }); return this.answerLv(s, v); }
+      if (a === 'check' && !LV_BODY.has(s.lv.levels[cur].kind)) { const v = []; doc.querySelectorAll('.lw-lv .lw-in').forEach(el => { v[+el.getAttribute('data-p')] = el.value; st.vals[+el.getAttribute('data-p')] = el.value; }); return this.answerLv(s, v); }
       if (a === 'giveup') { st.gaveUp = true; try { if (global.kedu && global.kedu.recordAnswer && st.tries === 0) global.kedu.recordAnswer(this.qid(s) + '_lv' + (Object.keys(s.lv.levels).indexOf(cur) + 1), false, null, null, { src: 'kt2-learn', gaveUp: true, level: cur }); } catch (e) { } return this.paint(0, true); }
       if (a === 'show') { st.shown = true; this.pop(); return this.paint(0, true); }
     }
-    const L = s.learn, st = this.ls(s.id), i = +b.getAttribute('data-i');
+    const lk = s.lv ? lvCur(s, this.state(s.id)) : null; // 55차 — 수준별 고르기·차례·갈래는 고른 수준의 답 표와 상태로
+    const L = s.lv ? s.lv.levels[lk] : s.learn, st = this.ls(s.lv ? s.id + '|' + lk : s.id), i = +b.getAttribute('data-i'); if (!L) return;
     if (!st.t0) st.t0 = Date.now();
     if (a === 'pick') return this.answer(s, i);
     if (a === 'multi') { const k = st.sel.indexOf(i); if (k >= 0) st.sel.splice(k, 1); else st.sel.push(i); st.wrong = []; this.pop(); return this.paint(0, true); }

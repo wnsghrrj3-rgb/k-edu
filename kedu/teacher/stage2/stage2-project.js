@@ -9,6 +9,7 @@
      num(수 넣기) · self(생각하고 정답 보기) } · 생각을 넓혀요 → self · 「풀이」 쪽지는 푼 뒤에만
    · 51차: 짝 잇기(match) · 나눠 담기(sort) · 차례 놓기(order) · 단위 붙은 수 답(nums) — 정본 answer 글에서 떼어 채점한다(답 글은 학생 층으로만)
    · 50차: 1학기 정본 — 물음 글 안 보기(「A · B 중에서」·「① … — 어느 것」) → 하나 고르기 · 답이 「A, B」면 모두 고르기 · 수 답만 num(글 답 input 은 스스로 확인)
+   · 55차: 수준별 글 답의 보기·차례·갈래 꼴 → 수준 답 표에도 pick·multi·order·sort
    · 49차: 수준별 문제 → lv 답 표(수준마다 nums·frac·self) — 고른 수준의 답으로 채점, 100점과 따로 「도전 🏅」로 센다
    · 점수(자기주도와 같은 100점): pick·multi·num 이 채점 문항 — 한 번에 맞히면 만점, 두 번째면 절반, 정답 보기면 0.
    진입: KT2_PROJECT.project(lesson) → { meta, slides[] }  (node 에서도 돈다 — 게이트가 같은 함수를 쓴다)
@@ -40,15 +41,17 @@
         break;
       }
       case 'leveled_problem': {
-        Object.values(d.levels || {}).forEach(lv => { if (lv && isStr(lv.q) && PAIRISH.test(lv.q)) lv.q += '\n' + SOLO_FALLBACK; });
         // 49차 — 수준별 답 표: 고른 수준의 답으로 채점(수·수+단위·몫과 나머지·분수) · 여러 답(open)·글 답은 스스로 확인.
         // 답 글(a)·풀이(steps)는 data 에서 빼 학생 층(lv)으로만 옮긴다 — 첫 화면 renderSlide 에 답이 섞일 틈을 없앤다.
+        // 55차 — 글 답 가운데 보기·차례·갈래 꼴(lvStructured)은 기본 문제와 같은 하나/모두 고르기·차례 놓기·나눠 담기로.
         const lvs = {};
         Object.keys(d.levels || {}).forEach(k => {
-          const lv = d.levels[k] || {}; const g = lv.open ? null : parseLevelAnswer(lv.a);
+          const lv = d.levels[k] || {}; let g = lv.open ? null : parseLevelAnswer(lv.a);
+          if (!g && !lv.open) { const ch = lvStructured(lv.q, lv.a); if (ch) { g = ch.learn; if (ch.question) lv.q = ch.question; } }
           lvs[k] = Object.assign(g || { kind: 'self' }, { a: lv.a, steps: lv.steps, open: !!lv.open });
           delete lv.a; delete lv.steps; delete lv.open;
         });
+        Object.values(d.levels || {}).forEach(lv => { if (lv && isStr(lv.q) && PAIRISH.test(lv.q)) lv.q += '\n' + SOLO_FALLBACK; });
         s.lv = { levels: lvs };
         break;
       }
@@ -171,6 +174,17 @@
     const idx = shuffleIdx(rights.length, q + a); const shown = idx.map(i => rights[i]);
     return { learn: { kind: 'match', left: show, right: shown, key: rights.map(r => shown.indexOf(r)) } };
   }
+  // 55차 — 수준별 문제의 글 답 가운데 떼어 채점할 수 있는 꼴만: 물음 속 보기(하나/모두 고르기) · 차례 놓기 · 나눠 담기.
+  //   수준별 글 답은 대개 까닭·견주기·예시를 곁들인 말하기라 짝 잇기(「밤나무 — 나무(줄기가 굵고…)」)는 받지 않는다.
+  //   물음이 까닭·방법을 함께 묻거나(「까닭도」·「무엇을 보고」) 답이 예시·괄호 풀이·덧말을 달면 스스로 확인 그대로.
+  const LV_ASKMORE = /까닭|왜|무엇을 보고|어떻게/, LV_LOOSE = /^예\s*[—–:]|^예\)|여러 답|[()（）]/, LV_MARK = /[—–=→↔]/;
+  function lvStructured(q0, a0) {
+    const q = flat(q0), a = flat(a0); if (!a || LV_ASKMORE.test(q) || LV_LOOSE.test(a)) return null;
+    let ch = inlineChoices(q0, a0); if (ch) return { learn: { kind: ch.multi ? 'multi' : 'pick', options: ch.options, inline: true }, question: ch.question };
+    ch = structured(q0, a0); if (!ch || (ch.learn.kind !== 'order' && ch.learn.kind !== 'sort')) return null;
+    if (ch.learn.items.some(x => LV_MARK.test(x) || / · /.test(x)) || (ch.learn.bins || []).some(x => LV_MARK.test(x))) return null; // 덧말이 카드에 섞임(「담 · 첫 글자의 받침…」)
+    return ch;
+  }
   // 51차 — 기본 문제의 단위 붙은 수 답(「100 cm」·「7 cm 1 mm」·「3분 5초」·「4개」): 수준별과 같은 칸 넣기로 채점
   const UNITS = new Set(['', 'cm', 'mm', 'm', 'km', 'g', 'kg', 't', 'L', 'mL', '시', '분', '초', '시간', '개', '명', '원', '번', '장', '권', '살', '일', '달', '년', '층', '쪽', '칸', '묶음', '봉지', '상자', '배', '마리', '자루', '송이', '대', '켤레', '그루', '걸음', '바퀴', '뼘', '줄', '통', '병', '컵', '조각', '판', 'cm²', '개월']);
   function unitAnswer(q0, ans) {
@@ -241,7 +255,7 @@
   // 몇 번째에 맞혔나 → 얻는 점수
   function gained(learn, tries, gaveUp) { if (!learn || !learn.pts || gaveUp) return 0; return tries <= 1 ? learn.pts : tries === 2 ? Math.ceil(learn.pts / 2) : 0; }
 
-  const API = { project, projectSlide, check, gained, parseLevelAnswer, inlineChoices, structured, unitAnswer, SCORED, SOLO_FALLBACK };
+  const API = { project, projectSlide, check, gained, parseLevelAnswer, inlineChoices, structured, unitAnswer, lvStructured, SCORED, SOLO_FALLBACK };
   global.KT2_PROJECT = API;
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
 })(typeof window !== 'undefined' ? window : globalThis);

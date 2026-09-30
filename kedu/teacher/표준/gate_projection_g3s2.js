@@ -9,6 +9,8 @@
    D 채점: 문항 점수 합 = 100 · check() 가 정답만 받는다(하나 고르기 보기마다 · 모두 고르기 · 수 넣기) · gained 규칙
    D+ 49차: 수준별 채점 — 수준마다 답 표(nums·frac·self) = 정본 답 글 · 식 문제는 따로 셈해 정본 답 검산 ·
       check() 가 맞는 답만 받는다 · 첫 화면(수준마다)에 답 없음 · 교사용 「정답 보기」 단추는 학생 화면에서 빠진다
+   D3 55차: 수준별 글 답의 보기·차례·갈래 꼴 — 정답 = 정본 답 글 · 보기는 정본 물음 글에서 · 까닭·예시·괄호 덧말 답은 채점 안 함 ·
+      짝 꼴은 수준에서 안 받음 · 섞임 · check() · 첫 화면에 조작 판은 있고 놓인 답·정답 표시 없음
    E 혼자 흐름: 투영 교실 활동 글에 짝·모둠 말 0 · 짝·모둠 말이 남은 문제는 혼자라면 줄이 붙는다
    G 52차 배정 링크: 케이박스 받은 박스가 선생님이 담은 자기주도 차시(원문 주소)를 켠 단원만 learn.html 로 연다 ·
       projmap 원문 주소 전부가 차시 지도(kedu_map)에 있다(= 어느 단원을 켜도 배정이 따라온다) · 켠 단원 차시마다 같은 키로 ·
@@ -86,7 +88,8 @@ PJ.forEach(({ slug, key, L, pj }) => pj.slides.forEach(s => {
     const t2 = box.textContent.replace(/\s+/g, ' '); const q = String((s.data.levels[k] || {}).q || ''); const a = String(LV.a == null ? '' : LV.a).replace(/\*\*/g, '').trim();
     ok(!box.querySelector('[data-act="reveal"]'), tag + ' ' + k + ' 교사용 정답 보기 단추가 학생 화면에');
     ok(t2.indexOf('✅') < 0 && !box.querySelector('.lv-a,.lv-steps'), tag + ' ' + k + ' 수준 답이 첫 화면에');
-    if (!LV.open && a.length >= 2 && q.indexOf(a) < 0) ok(t2.indexOf(a) < 0, tag + ' ' + k + ' 수준 답 글이 첫 화면에: ' + a.slice(0, 16));
+    if (LV.kind === 'pick' || LV.kind === 'multi') ok(!box.querySelector('.opt.ok') && ![].some.call(box.querySelectorAll('.opt .mk'), m => m.textContent === '☑'), tag + ' ' + k + ' 수준 보기 정답 표시가 첫 화면에'); // 55차 — 보기 글 = 답 글(하나 고르기)은 보여야 한다
+    else if (!LV.open && a.length >= 2 && q.indexOf(a) < 0) ok(t2.indexOf(a) < 0, tag + ' ' + k + ' 수준 답 글이 첫 화면에: ' + a.slice(0, 16));
   });
   if (s.learn && s.learn.kind === 'num') ok(tx.indexOf(String(s.learn.answer)) < 0 || String(d0.question || '').indexOf(String(s.learn.answer)) >= 0 || text(r.body).indexOf(String(s.learn.answer)) >= 0, tag + ' 수 넣기 답이 학생 층에');
 }));
@@ -226,6 +229,43 @@ ok(nGr >= 90, '채점 수준 ' + nGr + ' (90 아래로 줄어듦)'); ok(nCalc >=
 { const L0 = { parts: [{ v: 4 }, { v: 5 }], kind: 'nums' }; ok(P.check(L0, ['4', '5']) && !P.check(L0, ['5', '4']) && !P.check(L0, ['4']) && !P.check(L0, '4'), '검산기 자체: 몫·나머지 두 칸'); }
 { const t = P.parseLevelAnswer; ok(JSON.stringify(t('몫 4, 나머지 5').parts.map(p => [p.pre, p.v])) === '[["몫",4],["나머지",5]]' && t('6 L 50 mL').parts[1].unit === 'mL' && t('7봉지, 3개 남음').parts[1].post === '남음' && t('약 900 g') === null && t('241 × 3 (723 > 564)') === null && t('12,000원').parts[0].v === 12000, '파서 자체 확인'); }
 console.log('  수준 ' + nLv + ' · 채점 ' + nGr + ' · 식 셈 검산 ' + nCalc + ' · 꼴 ' + JSON.stringify(lvKind));
+
+sec('D3. 수준별 보기·차례·갈래 (55차)');
+{ let nB = 0; const kinds = {};
+  PJ.forEach(({ slug, key, L, pj }) => pj.slides.filter(s => s.lv).forEach(s => {
+    const src = L.slides.find(x => x.id === s.id).data.levels || {};
+    Object.keys(s.lv.levels).forEach(k => { const LV = s.lv.levels[k], o = src[k] || {}, tag = slug + ' ' + key + ' ' + s.id + ' ' + k;
+      if (!/^(pick|multi|order|sort|match)$/.test(LV.kind)) return; nB++; kinds[LV.kind] = (kinds[LV.kind] || 0) + 1;
+      const q0 = String(o.q || '').replace(/\*\*/g, ''), a = String(o.a || '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim();
+      ok(!o.open && LV.kind !== 'match', tag + ' 여러 답·짝 꼴을 수준에서 채점');
+      ok(!/까닭|왜|무엇을 보고|어떻게/.test(q0) && !/^예\s*[—–:]|여러 답|[()（）]/.test(a), tag + ' 까닭·예시·괄호 덧말 답을 채점');
+      if (LV.kind === 'pick' || LV.kind === 'multi') {
+        const want = LV.options.filter(x => x.correct).map(x => x.text); const parts = a.split(/\s*,\s*|\s+·\s+/);
+        ok(LV.kind === 'pick' ? want.length === 1 && want[0] === a : want.length >= 2 && want.length === parts.length && want.every(w => parts.indexOf(w) >= 0), tag + ' 수준 보기 정답 = 정본 답');
+        ok(LV.options.every(x => q0.indexOf(x.text) >= 0), tag + ' 수준 보기가 정본 물음 글에 없음');
+        ok(String(s.data.levels[k].q).indexOf(LV.options[0].text + ' · ') < 0, tag + ' 수준 물음 글에 보기가 남음');
+        const ci = LV.options.map((x, i) => x.correct ? i : -1).filter(i => i >= 0), wi = LV.options.findIndex(x => !x.correct);
+        ok(LV.kind === 'pick' ? P.check(LV, ci[0]) && !P.check(LV, wi) : P.check(LV, ci) && !P.check(LV, ci.slice(1)) && !P.check(LV, ci.concat([wi]).sort()), tag + ' 수준 보기 채점');
+      }
+      if (LV.kind === 'order') {
+        const want = a.split(/\s*→\s*/); ok(LV.key.map(i => LV.items[i]).join(' → ') === want.join(' → '), tag + ' 수준 차례 = 정본 답 「→」 글');
+        ok(LV.key.some((v, i) => v !== i), tag + ' 수준 차례 안 섞임'); ok(P.check(LV, LV.key) && !P.check(LV, LV.key.slice().reverse()) && !P.check(LV, LV.key.slice(0, -1)), tag + ' 수준 차례 채점');
+      }
+      if (LV.kind === 'sort') {
+        LV.items.forEach((it, i) => { const bn = LV.bins[LV.key[i]], nx = LV.bins[LV.key[i] + 1]; const seg = a.slice(a.indexOf(bn), nx ? a.indexOf(nx, a.indexOf(bn) + bn.length) : a.length); ok(a.indexOf(bn) >= 0 && seg.indexOf(it) >= 0, tag + ' 수준 카드 ' + it + ' 가 제 통 글에 없음'); });
+        ok(LV.items.length === a.split(/\s+\/\s+/).map(x => x.split(/\s*[—–]\s*/)[1] || '').join(' · ').split(' · ').filter(Boolean).length, tag + ' 수준 카드 수 = 답 글 조각 수');
+        const bad = LV.key.map((v, i) => i ? v : (v + 1) % LV.bins.length); ok(P.check(LV, LV.key) && !P.check(LV, bad), tag + ' 수준 담기 채점');
+      }
+      LV.items && ok(LV.items.every(x => !/[—–=→↔]/.test(x) && !/ · /.test(x)), tag + ' 수준 카드에 덧말');
+      // 학생 층 첫 화면: 조작 판은 있고 정답 자리는 비어 있다
+      const box = g.document.createElement('div'); box.innerHTML = W(s, fresh(), k);
+      ok(!!box.querySelector(LV.kind === 'order' ? '.lo' : LV.kind === 'sort' ? '.ls-bins' : '.options'), tag + ' 수준 조작 판 없음');
+      ok(!box.querySelector('.lo-slot.on,.ca-bin-in .ls-chip,.opt.ok,.lv-a'), tag + ' 수준 첫 화면에 놓인 답');
+    });
+  }));
+  ok(nB >= 10, '수준 보기·차례·갈래 ' + nB + ' (10 아래로 줄어듦)');
+  { const f = P.lvStructured; ok(f('밤나무와 봉숭아는 각각 풀인가요, 나무인가요? 까닭도 말해 봐요.', '밤나무 — 나무 / 봉숭아 — 풀') === null && f('내 띠에 넣을 일 셋을 차례대로 말해 봐요.', '예 — 태어남 → 걸음마 → 입학') === null && f('「달」, 「다리」, 「담」을 사전에 실리는 차례대로 말해 봐요.', '다리 → 달 → 담 · 첫 글자의 받침') === null && f('A · B · C 가운데 둥근 것은 무엇일까요?', 'B').learn.kind === 'pick' && f('손 씻기를 차례대로 말해 봐요.', '가 → 나 → 다').learn.kind === 'order', '수준 떼기 자체 확인(거절 꼴 포함)'); }
+  console.log('  수준 보기·차례·갈래 ' + nB + ' · ' + JSON.stringify(kinds)); }
 
 sec('E. 혼자 흐름');
 const PAIR = /짝|모둠|친구와|친구에게|다 함께/;
