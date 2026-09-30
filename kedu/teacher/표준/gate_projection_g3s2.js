@@ -4,6 +4,8 @@
    C 학생 화면(푼 전·첫 화면) 글에 정답·풀이·교사에게 하는 말 없음 — renderSlide + 학생 층(widget) 실제 HTML 로 검사
    B+ 48차: 출구 퀴즈 수 답 문항을 편 장(from) — 답 = 정본 출구 답 · 기본 문제와 같은 물음은 안 폄
    D 채점: 문항 점수 합 = 100 · check() 가 정답만 받는다(하나 고르기 보기마다 · 모두 고르기 · 수 넣기) · gained 규칙
+   D+ 49차: 수준별 채점 — 수준마다 답 표(nums·frac·self) = 정본 답 글 · 식 문제는 따로 셈해 정본 답 검산 ·
+      check() 가 맞는 답만 받는다 · 첫 화면(수준마다)에 답 없음 · 교사용 「정답 보기」 단추는 학생 화면에서 빠진다
    E 혼자 흐름: 투영 교실 활동 글에 짝·모둠 말 0 · 짝·모둠 말이 남은 문제는 혼자라면 줄이 붙는다
    실행: NODE_PATH=…/jsdom/node_modules node kedu/teacher/표준/gate_projection_g3s2.js                 */
 'use strict';
@@ -45,6 +47,7 @@ PJ.forEach(({ slug, key, L, pj }) => {
   pj.slides.forEach(s => { nSlide++;
     if (s.block === 'misconception') ok(s.data.hint === undefined, tag + ' ' + s.id + ' 오개념 hint');
     if (s.block === 'exit_ticket') ok(s.data.self === undefined, tag + ' ' + s.id + ' 신호등');
+    if (s.block === 'leveled_problem') { const src = L.slides.find(x => x.id === s.id).data.levels || {}; ok(!!s.lv && JSON.stringify(Object.keys(s.lv.levels)) === JSON.stringify(Object.keys(src)), tag + ' ' + s.id + ' 수준 답 표 = 정본 수준'); Object.values(s.data.levels || {}).forEach(lv => ok(lv.a === undefined && lv.steps === undefined, tag + ' ' + s.id + ' 투영 data 에 수준 답·풀이가 남음')); }
     if (s.block === 'offline_activity') { nOff++; const src = L.slides.find(x => x.id === s.id).data; ok(s.data.type === 'individual' && JSON.stringify(s.data.steps) === JSON.stringify(src.solo), tag + ' ' + s.id + ' 혼자 흐름 = 원 solo'); ok(s.data.minutes === undefined && s.data.materials === undefined, tag + ' ' + s.id + ' 타이머·준비물'); }
   });
   const own = pj.slides.filter(s => !s.from);
@@ -71,6 +74,14 @@ PJ.forEach(({ slug, key, L, pj }) => pj.slides.forEach(s => {
   const d0 = src.data || {};
   const tn = d0.tnote; if (tn) (tn.ask || []).concat(tn.watch ? [tn.watch] : []).forEach(a => { const t = String(a).replace(/\*\*/g, ''); if (t.length >= 12 && JSON.stringify(s.data).replace(/\*\*/g, '').indexOf(t) < 0) ok(tx.indexOf(t) < 0, tag + ' 발문 글이 학생 화면에: ' + t.slice(0, 20)); });
   if (s.block === 'misconception' && d0.hint && d0.hint.length >= 12) ok(tx.indexOf(d0.hint.replace(/\*\*/g, '').slice(0, 20)) < 0, tag + ' 오개념 hint 가 학생 화면에');
+  if (s.lv) Object.keys(s.lv.levels).forEach(k => {
+    const LV = s.lv.levels[k]; const r2 = KT2.renderSlide(s, { revealed: false, state: { level: k }, meta: pj.meta, unitTitle: 'U', classNames: [] });
+    const box = g.document.createElement('div'); box.innerHTML = r2.body + W(s, fresh(), k); box.querySelectorAll(g.KT2_LEARN.STRIP).forEach(b => b.remove());
+    const t2 = box.textContent.replace(/\s+/g, ' '); const q = String((s.data.levels[k] || {}).q || ''); const a = String(LV.a == null ? '' : LV.a).replace(/\*\*/g, '').trim();
+    ok(!box.querySelector('[data-act="reveal"]'), tag + ' ' + k + ' 교사용 정답 보기 단추가 학생 화면에');
+    ok(t2.indexOf('✅') < 0 && !box.querySelector('.lv-a,.lv-steps'), tag + ' ' + k + ' 수준 답이 첫 화면에');
+    if (!LV.open && a.length >= 2 && q.indexOf(a) < 0) ok(t2.indexOf(a) < 0, tag + ' ' + k + ' 수준 답 글이 첫 화면에: ' + a.slice(0, 16));
+  });
   if (s.learn && s.learn.kind === 'num') ok(tx.indexOf(String(s.learn.answer)) < 0 || String(d0.question || '').indexOf(String(s.learn.answer)) >= 0 || text(r.body).indexOf(String(s.learn.answer)) >= 0, tag + ' 수 넣기 답이 학생 층에');
 }));
 console.log('  그린 장 ' + nChk);
@@ -88,6 +99,34 @@ PJ.forEach(({ slug, key, pj }) => {
   });
 });
 console.log('  채점 문항 ' + nQ + ' · 차시당 채점 문항 수 분포 ' + JSON.stringify(dist));
+
+sec('D+. 수준별 채점');
+const NUMONLY = /^-?\d[\d,]*(\.\d+)?$/; let nLv = 0, nGr = 0, nCalc = 0; const lvKind = {};
+// 식 문제는 따로 셈한다(생성기·파서와 독립) — 「a × b 는 얼마」 · 「a ÷ b 의 몫과 나머지」
+function calc(q) { const t = String(q).replace(/\*\*/g, ''); let m = t.match(/^(\d[\d,]*)\s*([×÷+\-−])\s*(\d[\d,]*)\s*(은|는|의)/); if (!m) return null; const x = +m[1].replace(/,/g, ''), y = +m[3].replace(/,/g, '');
+  if (m[2] === '×') return [x * y]; if (m[2] === '+') return [x + y]; if (m[2] === '-' || m[2] === '−') return [x - y]; if (m[2] === '÷') return /나머지/.test(t) ? [Math.floor(x / y), x % y] : (/몫/.test(t) || !(x % y)) ? [Math.floor(x / y)] : null; return null; }
+PJ.forEach(({ slug, key, L, pj }) => pj.slides.filter(s => s.lv).forEach(s => {
+  const src = L.slides.find(x => x.id === s.id).data.levels || {};
+  Object.keys(s.lv.levels).forEach(k => { nLv++; const LV = s.lv.levels[k], o = src[k] || {}, tag = slug + ' ' + key + ' ' + s.id + ' ' + k; lvKind[LV.kind] = (lvKind[LV.kind] || 0) + 1;
+    ok(LV.a === o.a && JSON.stringify(LV.steps) === JSON.stringify(o.steps), tag + ' 답 표 글 = 정본');
+    if (o.open) { ok(LV.kind === 'self' && LV.open, tag + ' 여러 답인데 채점'); return; }
+    const a = String(o.a == null ? '' : o.a).replace(/\*\*/g, '').trim();
+    if (NUMONLY.test(a.replace(/\s/g, ''))) ok(LV.kind === 'nums' && LV.parts.length === 1 && LV.parts[0].v === Number(a.replace(/[\s,]/g, '')), tag + ' 수 답인데 채점 안 함');
+    if (/^약\s|보다|[㉠-㉮]|·\d+\//.test(a)) ok(LV.kind === 'self', tag + ' 어림·범위·기호·대분수 답을 채점함');
+    if (LV.kind === 'nums') { nGr++;
+      const vs = LV.parts.map(p => String(p.v)); ok(LV.parts.every(p => a.indexOf(String(p.v).replace(/\B(?=(\d{3})+(?!\d))/g, ',')) >= 0 || a.indexOf(String(p.v)) >= 0), tag + ' 답 칸 수가 정본 답 글에 없음');
+      ok(P.check(LV, vs) && P.check(LV, vs.map(v => ' ' + v + ' ')) && !P.check(LV, vs.map((v, i) => i ? v : String(Number(v) + 1))) && !P.check(LV, vs.map(() => '')) && !P.check(LV, vs.slice(0, -1).concat(vs.length > 1 ? [] : ['x'])), tag + ' 수 칸 채점');
+      if (LV.parts[0].v >= 1000) ok(P.check(LV, [LV.parts[0].v.toLocaleString('en-US')].concat(vs.slice(1))), tag + ' 쉼표 수');
+      if (LV.parts.length > 1) ok(!P.check(LV, vs.slice().reverse()) || vs.every(v => v === vs[0]), tag + ' 칸 차례 바꿔도 맞음');
+      const c = calc(o.q); if (c) { nCalc++; ok(c.length === LV.parts.length && c.every((v, i) => v === LV.parts[i].v), tag + ' 식을 셈한 값 ' + c.join('·') + ' ≠ 정본 답 ' + a); }
+    }
+    if (LV.kind === 'frac') { nGr++; const [x, y] = LV.answer.split('/'); ok(a.replace(/\s/g, '') === LV.answer && P.check(LV, LV.answer) && P.check(LV, x + ' / ' + y) && !P.check(LV, y + '/' + x) && !P.check(LV, ''), tag + ' 분수 채점'); }
+  });
+}));
+ok(nGr >= 90, '채점 수준 ' + nGr + ' (90 아래로 줄어듦)'); ok(nCalc >= 20, '식 셈 검산 ' + nCalc);
+{ const L0 = { parts: [{ v: 4 }, { v: 5 }], kind: 'nums' }; ok(P.check(L0, ['4', '5']) && !P.check(L0, ['5', '4']) && !P.check(L0, ['4']) && !P.check(L0, '4'), '검산기 자체: 몫·나머지 두 칸'); }
+{ const t = P.parseLevelAnswer; ok(JSON.stringify(t('몫 4, 나머지 5').parts.map(p => [p.pre, p.v])) === '[["몫",4],["나머지",5]]' && t('6 L 50 mL').parts[1].unit === 'mL' && t('7봉지, 3개 남음').parts[1].post === '남음' && t('약 900 g') === null && t('241 × 3 (723 > 564)') === null && t('12,000원').parts[0].v === 12000, '파서 자체 확인'); }
+console.log('  수준 ' + nLv + ' · 채점 ' + nGr + ' · 식 셈 검산 ' + nCalc + ' · 꼴 ' + JSON.stringify(lvKind));
 
 sec('E. 혼자 흐름');
 const PAIR = /짝|모둠|친구와|친구에게|다 함께/;

@@ -7,6 +7,7 @@
      출구 신호등 self(손 든 수 세기) · 교실 활동의 짝·모둠 흐름(→ 🙋 혼자라면 흐름으로 바꿈) · 타이머 분
    · 바꾸는 것(학생이 스스로 푸는 자리): 기본 문제 → learn { kind: pick(하나 고르기) · multi(모두 고르기) ·
      num(수 넣기) · self(생각하고 정답 보기) } · 생각을 넓혀요 → self · 「풀이」 쪽지는 푼 뒤에만
+   · 49차: 수준별 문제 → lv 답 표(수준마다 nums·frac·self) — 고른 수준의 답으로 채점, 100점과 따로 「도전 🏅」로 센다
    · 점수(자기주도와 같은 100점): pick·multi·num 이 채점 문항 — 한 번에 맞히면 만점, 두 번째면 절반, 정답 보기면 0.
    진입: KT2_PROJECT.project(lesson) → { meta, slides[] }  (node 에서도 돈다 — 게이트가 같은 함수를 쓴다)
    ============================================================================ */
@@ -38,6 +39,15 @@
       }
       case 'leveled_problem': {
         Object.values(d.levels || {}).forEach(lv => { if (lv && isStr(lv.q) && PAIRISH.test(lv.q)) lv.q += '\n' + SOLO_FALLBACK; });
+        // 49차 — 수준별 답 표: 고른 수준의 답으로 채점(수·수+단위·몫과 나머지·분수) · 여러 답(open)·글 답은 스스로 확인.
+        // 답 글(a)·풀이(steps)는 data 에서 빼 학생 층(lv)으로만 옮긴다 — 첫 화면 renderSlide 에 답이 섞일 틈을 없앤다.
+        const lvs = {};
+        Object.keys(d.levels || {}).forEach(k => {
+          const lv = d.levels[k] || {}; const g = lv.open ? null : parseLevelAnswer(lv.a);
+          lvs[k] = Object.assign(g || { kind: 'self' }, { a: lv.a, steps: lv.steps, open: !!lv.open });
+          delete lv.a; delete lv.steps; delete lv.open;
+        });
+        s.lv = { levels: lvs };
         break;
       }
       case 'basic_problem': {
@@ -59,6 +69,21 @@
     return s;
   }
 
+  // 수준별 답 글 → 채점 꼴. 「약 ~」(어림)·「~보다 크고」·기호(㉠)·대분수는 채점하지 않는다(스스로 확인).
+  //   '175개' → nums [175 개] · '몫 4, 나머지 5' → nums [몫 4][나머지 5] · '7봉지, 3개 남음' → [7 봉지][3 개 남음] ·
+  //   '6 L 50 mL' → [6 L][50 mL] · '7/9' → frac
+  const UNIT = '(?:\\s*(?!몫|나머지)(mL|mm|cm|km|kg|m|L|g|t|[가-힣]{1,3})(?=$|[\\s,]))';
+  function parseLevelAnswer(a0) {
+    const a = String(a0 == null ? '' : a0).replace(/\*\*/g, '').trim(); if (!a) return null;
+    let m = a.match(/^(\d+)\s*\/\s*(\d+)$/); if (m) return { kind: 'frac', answer: m[1] + '/' + m[2] };
+    const re = new RegExp('^(몫|나머지)?\\s*(-?(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?)' + UNIT + '?(\\s*남음)?'); const parts = []; let rest = a;
+    while (rest.length) {
+      m = rest.match(re); if (!m || !m[0].trim()) return null;
+      parts.push({ pre: m[1] || '', v: Number(m[2].replace(/,/g, '')), unit: m[3] || '', post: m[4] ? '남음' : '' });
+      rest = rest.slice(m[0].length); const sep = rest.match(/^\s*,\s*|^\s+(?=[\d몫나])/); if (!rest.length) break; if (!sep) return null; if (sep[0].indexOf(',') >= 0) parts[parts.length - 1].comma = true; rest = rest.slice(sep[0].length);
+    }
+    return parts.length && parts.length <= 4 ? { kind: 'nums', parts } : null;
+  }
   const SCORED = new Set(['pick', 'multi', 'num']);
   const NUMERIC = /^-?\d[\d,]*(\.\d+)?$/;
   function project(lesson) {
@@ -95,12 +120,14 @@
     if (learn.kind === 'pick') return !!(learn.options[ans] && learn.options[ans].correct);
     if (learn.kind === 'multi') { const want = learn.options.map((o, i) => o.correct ? i : -1).filter(i => i >= 0); const got = (ans || []).slice().sort((a, b) => a - b); return want.length === got.length && want.every((v, i) => v === got[i]); }
     if (learn.kind === 'num') { const v = String(ans == null ? '' : ans).replace(/[\s,]/g, ''); return v !== '' && Number(v) === Number(learn.answer); }
+    if (learn.kind === 'nums') { const a = Array.isArray(ans) ? ans : [ans]; return learn.parts.length === a.length && learn.parts.every((p, i) => { const v = String(a[i] == null ? '' : a[i]).replace(/[\s,]/g, ''); return v !== '' && Number(v) === p.v; }); }
+    if (learn.kind === 'frac') { const v = String(ans == null ? '' : ans).replace(/\s/g, ''); return v === learn.answer; }
     return false;
   }
   // 몇 번째에 맞혔나 → 얻는 점수
   function gained(learn, tries, gaveUp) { if (!learn || !learn.pts || gaveUp) return 0; return tries <= 1 ? learn.pts : tries === 2 ? Math.ceil(learn.pts / 2) : 0; }
 
-  const API = { project, projectSlide, check, gained, SCORED, SOLO_FALLBACK };
+  const API = { project, projectSlide, check, gained, parseLevelAnswer, SCORED, SOLO_FALLBACK };
   global.KT2_PROJECT = API;
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -6,6 +6,8 @@
    · 기록은 자기주도 원문과 **같은 자리**(projmap.js: lesson_id·진도 키) — kedu_tracker·브리지·scope 가 그대로 받는다.
      문항마다 kedu.recordAnswer(키_장, 맞음) · 끝에 saveProgress(true) → 진도(100점) + recordLessonEnd.
    · 채점 문항을 풀기 전에는 다음 장으로 안 넘어간다(정답 보기를 누르면 넘어갈 수 있다 — 0점).
+   · 49차: 수준별 문제 — 고른 수준의 답으로 채점(수 칸·단위·몫과 나머지·분수) · 푸는 동안 수준 잠금 · 교사용 「정답 보기」 단추 없음 ·
+     여러 답(open)·글 답은 스스로 확인. 100점과 따로 「🏅 도전」으로 센다(수준마다 문제가 달라 점수에 섞으면 쉬운 수준을 고르게 된다).
    진입: learn.html?g=3&t=2&s=social&u=1&l=u1_l04
    ============================================================================ */
 (function (global) {
@@ -16,6 +18,8 @@
   const STAGES = ['도입', '전개', '기본문제', '응용문제', '정리'];
   const M = ['①', '②', '③', '④', '⑤', '⑥'];
   const esc = (s) => K().esc(s), md = (t) => K().md(t);
+  // 교사 무대 전용 단추 — 학생 화면에서 뺀다(타이머·자료 서랍·수준별 문제의 교사용 「정답 보기」: 학생 층이 수준마다 채점한다)
+  const STRIP = '[data-act="timer"],[data-act="res-open"],.kt2-res-badge,[data-act="reveal"]';
 
   function Learn(o) {
     const self = this;
@@ -35,9 +39,16 @@
   ['decorate', 'fitBody', 'refitLater', 'tone', 'pop', 'celebrate', 'toggleZoom'].forEach(m => { Learn.prototype[m] = function () { return K().Stage.prototype[m].apply(this, arguments); }; });
   Learn.prototype.chime = function () { this.pop(); };
   Learn.prototype.timerStart = function () { }; Learn.prototype.openRes = function () { };
-  Learn.prototype.act = function (btn) { return K().Stage.prototype.act.call(this, btn); };
+  Learn.prototype.act = function (btn) {
+    const s = this.cur();
+    if (btn.getAttribute('data-act') === 'lv' && s && s.lv) { // 푸는 동안(한 번 이상 틀리고 아직 못 끝냄) 다른 수준으로 못 옮긴다
+      const cur = lvCur(s, this.state(s.id)), st = this.ls(s.id + '|' + cur);
+      if (btn.getAttribute('data-k') !== cur && st.tries > 0 && !st.done && !st.gaveUp) { this.toast('지금 고른 수준 문제를 먼저 끝내요 ✏️'); return; }
+    }
+    return K().Stage.prototype.act.call(this, btn);
+  };
   Learn.prototype.state = function (sid) { return this.IS[sid] || (this.IS[sid] = {}); };
-  Learn.prototype.ls = function (sid) { return this.L[sid] || (this.L[sid] = { tries: 0, done: false, gaveUp: false, sel: [], wrong: [], val: '', shown: false }); };
+  Learn.prototype.ls = function (sid) { return this.L[sid] || (this.L[sid] = { tries: 0, done: false, gaveUp: false, sel: [], wrong: [], val: '', vals: [], shown: false }); };
   Learn.prototype.cur = function () { return this.slides[this.idx]; };
 
   Learn.prototype.build = function () {
@@ -61,7 +72,26 @@
   };
 
   // ── 학생이 푸는 층 ─────────────────────────────────────────────
-  function widget(s, st) {
+  // 수준별 문제 — 지금 고른 수준(교사 무대 renderSlide 와 같은 규칙: state.level 이 없으면 첫 수준)
+  function lvCur(s, S) { const ks = Object.keys((s.lv && s.lv.levels) || {}); return (S && s.lv.levels[S.level]) ? S.level : (ks[0] || ''); }
+  function lvWidget(s, st, cur) {
+    const L = s.lv.levels[cur]; if (!L) return '';
+    const fin = st.done || st.gaveUp || (L.kind === 'self' && st.shown);
+    let h = '<div class="lw lw-lv lw-' + L.kind + (fin ? ' fin' : '') + '" data-lv="' + esc(cur) + '">';
+    if (!fin && L.kind === 'nums') h += '<div class="lw-row lw-parts">' + L.parts.map((p, i) => (p.pre ? '<span class="lw-u">' + esc(p.pre) + '</span>' : '') + '<input class="lw-in' + (L.parts.length > 1 ? ' sm' : '') + (st.wrong.length ? ' no' : '') + '" data-p="' + i + '" inputmode="decimal" autocomplete="off" placeholder="?" value="' + esc((st.vals || [])[i] || '') + '">' + (p.unit ? '<span class="lw-u">' + esc(p.unit) + '</span>' : '') + (p.post ? '<span class="lw-u">' + esc(p.post) + '</span>' : '') + (p.comma ? '<span class="lw-sep">,</span>' : '')).join('') + '<button class="btn main" data-lact="check">확인하기</button></div>';
+    else if (!fin && L.kind === 'frac') h += '<div class="lw-row"><input class="lw-in' + (st.wrong.length ? ' no' : '') + '" data-p="0" autocomplete="off" placeholder="분자/분모" value="' + esc((st.vals || [])[0] || '') + '"><button class="btn main" data-lact="check">확인하기</button></div><div class="lw-tip sm">분수는 「7/9」처럼 써요</div>';
+    else if (!fin && L.kind === 'self') h += '<div class="lw-row"><span class="lw-tip">' + (L.open ? '💡 여러 답이 나올 수 있어요 — 먼저 내 생각을 정해요' : '🤔 먼저 스스로 생각해 봐요') + '</span><button class="btn main" data-lact="show">정답 보기</button></div>';
+    if (fin) {
+      h += '<div class="lv-a' + (L.open ? ' open' : '') + '">' + (L.open ? '💡 여러 답이 가능해요' + (L.a ? ' — ' + md(String(L.a)) : '') : '✅ ' + md(String(L.a != null ? L.a : ''))) + '</div>';
+      if (L.steps && L.steps.length) h += '<div class="lv-steps">' + L.steps.map(x => '<span>' + md(x) + '</span>').join('<i>→</i>') + '</div>';
+    }
+    if (!fin && st.tries > 0 && L.kind !== 'self') h += '<div class="lw-row"><span class="lw-msg">다시 생각해 봐요! 🔁</span><button class="btn ghost" data-lact="giveup">정답 볼래요</button></div>';
+    if (st.done) h += '<div class="lw-got">🏅 ' + esc(cur) + ' 도전 성공!</div>';
+    if (fin) h += '<div class="lw-tip sm">다른 수준도 풀어 볼 수 있어요 ↑</div>';
+    return h + '</div>';
+  }
+  function widget(s, st, lvKey) {
+    if (s.lv) { const cur = lvKey || lvCur(s, null); return lvWidget(s, st, cur); }
     const L = s.learn; if (!L) return '';
     const fin = st.done || st.gaveUp;
     let h = '<div class="lw lw-' + L.kind + (fin ? ' fin' : '') + '">';
@@ -90,6 +120,7 @@
     const r = K().renderSlide(s, { revealed: !!this.rev[s.id], state: this.state(s.id), meta: this.meta, unitTitle: this.unitTitle, classNames: [], guide: this.guide });
     const n = this.idx + 1, N = this.slides.length;
     const pos = this.slides.slice(0, n).filter(x => x.stage === s.stage).length, tot = this.slides.filter(x => x.stage === s.stage).length;
+    const lk = s.lv ? lvCur(s, this.state(s.id)) : ''; const wst = this.ls(s.lv ? s.id + '|' + lk : s.id);
     const foot = '<div class="kt2-foot"><span class="brand">케이에듀 자기주도</span><span class="sp"></span><span class="pg"><b>' + n + '</b> / ' + N + '</span></div>';
     if (r.cover) {
       paper.className = 'kt2-paper cover' + (dir ? ' enter' + (dir < 0 ? ' back' : '') : ''); paper.setAttribute('data-stage', s.stage);
@@ -97,23 +128,25 @@
     } else {
       paper.className = 'kt2-paper' + (dir ? ' enter' + (dir < 0 ? ' back' : '') : ''); paper.setAttribute('data-stage', s.stage);
       const tl = (r.title || '').length; const tcls = tl > 34 ? ' xs' : tl > 22 ? ' small' : '';
-      let body = r.body + widget(s, this.ls(s.id)) + (s.solo ? '<div class="lw-solo">' + md(s.solo) + '</div>' : '');
+      let body = r.body + widget(s, wst, lk) + (s.solo ? '<div class="lw-solo">' + md(s.solo) + '</div>' : '');
       if (n === N) body += this.doneCard();
       paper.innerHTML = '<div class="kt2-head"><span class="kt2-chip">' + esc(s.stage) + ' <small style="opacity:.6">' + pos + '/' + tot + '</small></span><span class="kt2-kicker">' + esc(this.meta.title || '') + '</span><span class="sp"></span></div>'
         + (r.title ? '<h1 class="kt2-title' + tcls + '">' + md(r.title) + '</h1>' : '') + (r.sub ? '<div class="kt2-sub">' + md(r.sub) + '</div>' : '')
         + '<div class="kt2-body' + (r.cls ? ' ' + r.cls : '') + '">' + body + '</div>' + foot;
     }
     // 교사 무대 전용 단추는 학생 화면에서 뺀다(수준별 문제의 「정답 보기」는 남긴다 — 스스로 확인)
-    paper.querySelectorAll('[data-act="timer"],[data-act="res-open"],.kt2-res-badge').forEach(b => b.remove());
+    paper.querySelectorAll(STRIP).forEach(b => b.remove());
+    if (s.lv) paper.querySelectorAll('.lv-tabs button').forEach(b => { const st = this.L[s.id + '|' + b.getAttribute('data-k')]; if (st && st.done) b.classList.add('won'); });
     this.decorate(paper, r); if (quiet) paper.querySelectorAll('.anim').forEach(el => el.classList.remove('anim')); this.fitBody(); this.refitLater(); { const self = this; setTimeout(() => self.fitBody(), 400); }
     paper.querySelectorAll('.img-frame img').forEach(im => { im.addEventListener('error', () => { try { K().imgFallback(im); } catch (e) { } setTimeout(() => this.fitBody(), 0); }); im.addEventListener('load', () => this.fitBody()); });
+    paper.querySelectorAll('.lw-lv .lw-in').forEach((el, i, all) => { el.addEventListener('input', () => { wst.vals[+el.getAttribute('data-p')] = el.value; }); el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); if (i < all.length - 1) all[i + 1].focus(); else this.lact(paper.querySelector('.lw-lv [data-lact="check"]')); } }); if (i === 0 && !this._noFocus) setTimeout(() => { try { el.focus({ preventScroll: true }); } catch (e) { } }, 60); });
     const inp = doc.getElementById('lw-in'); if (inp) { inp.addEventListener('input', () => { this.ls(s.id).val = inp.value; }); inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); this.answer(s, inp.value); } }); if (!this._noFocus) setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch (e) { } }, 60); }
     this.paintBar();
     try { global.history.replaceState(null, '', '#' + n); } catch (e) { }
   };
   Learn.prototype.doneCard = function () {
     const n = this.scoredIds.length;
-    return '<div class="lw-done"><div class="big">🎉 오늘 공부를 다 했어요!</div><div class="sc">⭐ <b>' + this.score + '</b> / 100</div>' + (n ? '<div class="sub">문제 ' + n + '개 · 한 번에 맞히면 만점, 두 번째에 맞히면 절반이에요.</div>' : '') + '<div class="lw-row"><a class="btn main" href="' + esc(this.hubUrl()) + '">목록으로</a><button class="btn ghost" data-lact="again">처음부터 다시</button></div></div>';
+    return '<div class="lw-done"><div class="big">🎉 오늘 공부를 다 했어요!</div><div class="sc">⭐ <b>' + this.score + '</b> / 100</div>' + (n ? '<div class="sub">문제 ' + n + '개 · 한 번에 맞히면 만점, 두 번째에 맞히면 절반이에요.</div>' : '') + (this.lvWins ? '<div class="sub">🏅 수준별 도전 ' + this.lvWins + '개 성공</div>' : '') + '<div class="lw-row"><a class="btn main" href="' + esc(this.hubUrl()) + '">목록으로</a><button class="btn ghost" data-lact="again">처음부터 다시</button></div></div>';
   };
   Learn.prototype.paintBar = function () {
     const s = this.cur(); const el = doc.getElementById('lb-steps'); if (!el) return;
@@ -122,7 +155,11 @@
     doc.getElementById('lb-prev').disabled = this.idx === 0;
     const nx = doc.getElementById('lb-next'); const last = this.idx === this.slides.length - 1; nx.textContent = last ? '끝 ✔' : '다음 ▶'; nx.classList.toggle('locked', this.locked());
   };
-  Learn.prototype.locked = function () { const s = this.cur(); if (!s || !s.learn || !P().SCORED.has(s.learn.kind)) return false; const st = this.ls(s.id); return !(st.done || st.gaveUp); };
+  Learn.prototype.locked = function () {
+    const s = this.cur(); if (!s) return false;
+    if (s.lv) return !Object.keys(s.lv.levels).some(k => { const st = this.L[s.id + '|' + k]; return st && (st.done || st.gaveUp || st.shown); }); // 한 수준이라도 끝내야 넘어간다
+    if (!s.learn || !P().SCORED.has(s.learn.kind)) return false; const st = this.ls(s.id); return !(st.done || st.gaveUp);
+  };
 
   // ── 넘기기 ─────────────────────────────────────────────
   Learn.prototype.go = function (i, dir) {
@@ -138,6 +175,7 @@
   // ── 풀기 ─────────────────────────────────────────────
   Learn.prototype.qid = function (s) { return this.key + '_' + s.id; };
   Learn.prototype.answer = function (s, ans) {
+    if (s.lv) return this.answerLv(s, ans);
     const L = s.learn, st = this.ls(s.id); if (!L || st.done || st.gaveUp) return;
     if (L.kind === 'num' && String(ans == null ? '' : ans).trim() === '') { this.toast('답을 넣어 봐요'); return; }
     if (L.kind === 'multi' && !(ans || []).length) { this.toast('하나 이상 골라요'); return; }
@@ -148,15 +186,33 @@
     if (ok) { st.done = true; st.got = P().gained(L, st.tries, false); this.score += st.got; this.paint(0, true); this.celebrate(); }
     else { if (L.kind === 'pick') st.wrong.push(ans); else st.wrong = [1]; if (L.kind === 'multi') st.sel = []; this.tone(200, 0.18, 0.05, 'square'); this.paint(0, true); const w = doc.querySelector('.lw'); if (w) w.classList.add('shake'); }
   };
+  // 수준별 — 고른 수준의 답으로 채점 · 기록은 수준마다 따로(키_장_lv1~3 · level 이름을 곁들임) · 점수(100)에는 안 넣는다
+  Learn.prototype.answerLv = function (s, ans) {
+    const cur = lvCur(s, this.state(s.id)), L = s.lv.levels[cur], st = this.ls(s.id + '|' + cur); if (!L || st.done || st.gaveUp) return;
+    const vals = Array.isArray(ans) ? ans : [ans]; if (vals.some(v => String(v == null ? '' : v).trim() === '')) { this.toast('빈칸을 채워 봐요'); return; }
+    st.tries++; const ok = P().check(L, L.kind === 'frac' ? vals[0] : vals);
+    const sec = Math.round((Date.now() - (st.t0 || this.started)) / 1000);
+    try { if (global.kedu && global.kedu.recordAnswer) global.kedu.recordAnswer(this.qid(s) + '_lv' + (Object.keys(s.lv.levels).indexOf(cur) + 1), ok, sec, null, { src: 'kt2-learn', slug: this.slug, kind: 'lv-' + L.kind, level: cur, try: st.tries }); } catch (e) { }
+    if (ok) { st.done = true; this.lvWins = (this.lvWins || 0) + 1; this.paint(0, true); this.celebrate(); }
+    else { st.wrong = [1]; this.tone(200, 0.18, 0.05, 'square'); this.paint(0, true); const w = doc.querySelector('.lw'); if (w) w.classList.add('shake'); }
+  };
   Learn.prototype.lact = function (b) {
-    const s = this.cur(), L = s.learn, st = this.ls(s.id), a = b.getAttribute('data-lact'), i = +b.getAttribute('data-i');
+    if (!b) return;
+    const s = this.cur(), a = b.getAttribute('data-lact');
+    if (s.lv && a !== 'again') {
+      const cur = lvCur(s, this.state(s.id)), st = this.ls(s.id + '|' + cur); if (!st.t0) st.t0 = Date.now();
+      if (a === 'check') { const v = []; doc.querySelectorAll('.lw-lv .lw-in').forEach(el => { v[+el.getAttribute('data-p')] = el.value; st.vals[+el.getAttribute('data-p')] = el.value; }); return this.answerLv(s, v); }
+      if (a === 'giveup') { st.gaveUp = true; try { if (global.kedu && global.kedu.recordAnswer && st.tries === 0) global.kedu.recordAnswer(this.qid(s) + '_lv' + (Object.keys(s.lv.levels).indexOf(cur) + 1), false, null, null, { src: 'kt2-learn', gaveUp: true, level: cur }); } catch (e) { } return this.paint(0, true); }
+      if (a === 'show') { st.shown = true; this.pop(); return this.paint(0, true); }
+    }
+    const L = s.learn, st = this.ls(s.id), i = +b.getAttribute('data-i');
     if (!st.t0) st.t0 = Date.now();
     if (a === 'pick') return this.answer(s, i);
     if (a === 'multi') { const k = st.sel.indexOf(i); if (k >= 0) st.sel.splice(k, 1); else st.sel.push(i); st.wrong = []; this.pop(); return this.paint(0, true); }
     if (a === 'check') { if (L.kind === 'multi') return this.answer(s, st.sel.slice()); const inp = doc.getElementById('lw-in'); return this.answer(s, inp ? inp.value : st.val); }
     if (a === 'giveup') { st.gaveUp = true; st.got = 0; try { if (global.kedu && global.kedu.recordAnswer && st.tries === 0) global.kedu.recordAnswer(this.qid(s), false, null, null, { src: 'kt2-learn', gaveUp: true }); } catch (e) { } return this.paint(0, true); }
     if (a === 'show') { st.shown = true; this.pop(); return this.paint(0, true); }
-    if (a === 'again') { this.IS = {}; this.rev = {}; this.L = {}; this.score = 0; return this.go(0, -1); }
+    if (a === 'again') { this.IS = {}; this.rev = {}; this.L = {}; this.score = 0; this.lvWins = 0; return this.go(0, -1); }
   };
 
   // ── 끝 — 원문과 같은 자리에 기록 ─────────────────────────────
@@ -198,6 +254,6 @@
     s.onerror = () => { box.innerHTML = '<div class="lmsg">차시 자료를 못 읽었어요.</div>'; };
     doc.head.appendChild(s);
   }
-  global.KT2_LEARN = { Learn, boot, widget };
+  global.KT2_LEARN = { Learn, boot, widget, lvCur, STRIP };
   if (doc && doc.getElementById && doc.getElementById('kt2-stage') && !global.KT2_LEARN_NO_BOOT) { if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot); else boot(); }
 })(typeof window !== 'undefined' ? window : globalThis);
