@@ -1148,7 +1148,54 @@
   const SC_PARTS = { ask, habitat, trait, anat, cycle, cond, need, bins, mimic };
 
   const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock, grid, range, brem, circ, compass, cgrid, crow, fgroup, fmix, nline, beaker, dial, tilt, cups, tubs, area2 };
-  const HTML_PARTS = { vert, tvert, vmul, vdiv, ptable, ograph, pgraph };
+
+  // ══ 57차(2026-09-30) 4학년 1학기 큰 수 부품 — pvt(자릿값판) · jump(뛰어 세기 띠) · notes(지폐·동전 묶음) ══
+  // 그림 문법: 여덟 자리까지는 자리 이름 한 줄(천만~일) · 아홉 자리부터 네 자리마다 띠(일·만·억·조) + 천·백·십·일 · 주황 = 짚는 자리 · 초록 = 견줄 때 처음 달라지는 자리 · 파랑 = 풀어 쓴 식·읽는 말.
+  const BN_PLACE = ['일', '십', '백', '천', '만', '십만', '백만', '천만', '억', '십억', '백억', '천억', '조', '십조', '백조', '천조'];
+  const BN_BAND = ['일', '만', '억', '조'], BN_SUB = ['일', '십', '백', '천'];
+  const BN_DG = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+  function readKo(v) { // 네 자리씩 끊어 읽기 — 한 묶음 안의 1 은 천·백·십 앞에서 안 읽고, 묶음 값이 1 이면 「일만·일억·일조」
+    const d = String(v).replace(/\D/g, '').replace(/^0+/, ''); if (!d) return '영';
+    const out = []; for (let g = 0; g * 4 < d.length; g++) { const part = d.slice(Math.max(0, d.length - 4 * (g + 1)), d.length - 4 * g).padStart(4, '0'); if (+part === 0) continue;
+      let t = ''; for (let i = 0; i < 4; i++) { const n = +part[i], pl = 3 - i; if (!n) continue; t += (pl && n === 1 ? '' : BN_DG[n]) + (pl ? BN_SUB[pl] : ''); }
+      if (+part === 1 && g) t = '일'; out.unshift(t + (g ? BN_BAND[g] : '')); }
+    return out.join(' ');
+  }
+  const placeIdx = (name) => BN_PLACE.indexOf(name);
+  function expandOf(v) { const d = String(v).replace(/\D/g, ''); const parts = []; for (let i = 0; i < d.length; i++) if (+d[i]) parts.push(d[i] + '0'.repeat(d.length - 1 - i)); return parts; }
+  function pvt(o) {
+    const rows = (o.rows || [{ v: o.v }]).map(r => (typeof r === 'object' ? r : { v: r })).map(r => Object.assign({}, r, { v: String(r.v).replace(/\D/g, '') }));
+    const cols = Math.max(o.cols || 0, ...rows.map(r => r.v.length), 1); const his = [].concat(o.hi == null ? [] : o.hi).map(placeIdx);
+    let diff = -1; if (o.cmp && rows.length === 2 && rows[0].v.length === rows[1].v.length) { for (let i = rows[0].v.length - 1; i >= 0; i--) { if (rows[0].v[rows[0].v.length - 1 - i] !== rows[1].v[rows[1].v.length - 1 - i]) { diff = i; break; } } }
+    const lab = rows.some(r => r.label); let h = '<table class="pv">';
+    const banded = cols > 8; if (banded) { h += '<tr class="pv-band">' + (lab ? '<th></th>' : ''); for (let b = Math.ceil(cols / 4) - 1; b >= 0; b--) { const span = Math.min(4, cols - 4 * b); h += '<th colspan="' + span + '" class="b' + b + '">' + BN_BAND[b] + '</th>'; } h += '</tr>'; }
+    h += '<tr class="pv-head">' + (lab ? '<th></th>' : ''); for (let i = cols - 1; i >= 0; i--) h += '<th class="b' + Math.floor(i / 4) + (his.indexOf(i) >= 0 ? ' hi' : '') + (i === diff ? ' df' : '') + '">' + (banded ? BN_SUB[i % 4] : BN_PLACE[i]) + '</th>'; h += '</tr>';
+    rows.forEach(r => { h += '<tr class="pv-row">' + (lab ? '<th class="pv-lab">' + esc(r.label || '') + '</th>' : ''); for (let i = cols - 1; i >= 0; i--) { const ch = i < r.v.length ? r.v[r.v.length - 1 - i] : ''; const q = o.q != null && placeIdx(o.q) === i;
+      h += '<td class="b' + Math.floor(i / 4) + (his.indexOf(i) >= 0 ? ' hi' : '') + (i === diff ? ' df' : '') + (q ? ' q' : '') + '">' + (q ? '?' : ch) + '</td>'; } h += '</tr>'; });
+    h += '</table>';
+    let foot = '';
+    if (o.expand && rows.length === 1) foot += '<div class="pv-eq">' + esc(rows[0].v) + ' = ' + expandOf(rows[0].v).join(' + ') + '</div>';
+    if (o.read) foot += rows.map(r => '<div class="pv-read">' + (rows.length > 1 || o.expand ? esc(r.v) + ' → ' : '') + '<b>' + esc(readKo(r.v)) + '</b></div>').join('');
+    if (o.cmp && rows.length === 2) { const a = rows[0].v, b = rows[1].v, sg = a.length !== b.length ? (a.length > b.length ? '>' : '<') : (a === b ? '=' : (a > b ? '>' : '<')); foot += '<div class="pv-eq">' + esc(a) + ' ' + sg + ' ' + esc(b) + '</div>'; }
+    return '<div class="fig-vert fig-pvt" data-vals="' + rows.map(r => r.v).join(',') + '" data-cols="' + cols + '"' + (diff >= 0 ? ' data-diff="' + BN_PLACE[diff] + '"' : '') + '>' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + '<div class="pv-wrap">' + h + '</div>' + foot + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
+  }
+  function stepLabel(n) { const a = Math.abs(n); const t = a % 1e12 === 0 ? a / 1e12 + '조' : a % 1e8 === 0 ? a / 1e8 + '억' : a % 1e4 === 0 ? a / 1e4 + '만' : String(a); return (n < 0 ? '−' : '+') + t; }
+  function jump(o) {
+    const st = Number(String(o.start).replace(/\D/g, '')), step = Number(o.step), n = Math.max(2, o.n | 0); const seq = Array.from({ length: n }, (_, i) => st + step * i);
+    const lead = Math.floor(Math.log10(Math.abs(step)) + 1e-9); const pow = Math.pow(10, lead); const clean = Math.abs(step) % pow === 0 && Math.abs(step) / pow < 10;
+    const dAt = (v) => { const d = String(v); return +(d[d.length - 1 - lead] || 0); }; const carry = seq.some((v, i) => i && dAt(v) - dAt(seq[i - 1]) !== step / pow); // 받아올림·내림이 끼면 「씩 커져요」 알림·칸 표시를 안 한다
+    const qs = [].concat(o.q == null ? [] : o.q);
+    const box = (v, i) => { if (qs.indexOf(i) >= 0) return '<span class="jp-b q">?</span>'; const d = String(v); if (!clean || carry || o.hiDigit === false) return '<span class="jp-b">' + d + '</span>';
+      const at = d.length - 1 - lead; return '<span class="jp-b">' + esc(d.slice(0, at)) + '<i>' + esc(d[at]) + '</i>' + esc(d.slice(at + 1)) + '</span>'; };
+    let h = '<div class="jp">'; seq.forEach((v, i) => { if (i) h += '<span class="jp-a"><em>' + stepLabel(step) + '</em>→</span>'; h += box(v, i); }); h += '</div>';
+    return '<div class="fig-vert fig-jump" data-seq="' + seq.join(',') + '" data-step="' + step + '">' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + h + (clean && !carry && o.hiDigit !== false ? '<div class="jp-key"><i></i>' + BN_PLACE[lead] + '의 자리가 ' + (step > 0 ? '1씩 커져요' : '1씩 작아져요').replace('1씩', (Math.abs(step) / pow) + '씩') + '</div>' : '') + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
+  }
+  function notes(o) { // items [{v:1000, n:10}] — 지폐(1000 이상)·동전 · 합계
+    const it = o.items || []; const tot = it.reduce((a, r) => a + r.v * r.n, 0);
+    const one = (r) => { const bill = r.v >= 1000; return Array.from({ length: r.n }, () => '<span class="nt-' + (bill ? 'bill' : 'coin') + ' v' + r.v + '">' + r.v + (bill ? '원' : '') + '</span>').join(''); };
+    return '<div class="fig-vert fig-notes" data-total="' + tot + '">' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + it.map(r => '<div class="nt-row">' + one(r) + '<b class="nt-n">' + r.v + '원 × ' + r.n + '</b></div>').join('') + (o.total === false ? '' : '<div class="pv-eq">모두 ' + (o.q ? '?' : tot + '원') + '</div>') + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
+  }
+  const HTML_PARTS = { vert, tvert, vmul, vdiv, ptable, ograph, pgraph, pvt, jump, notes };
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
@@ -1170,5 +1217,5 @@
     else { const p = panel(f); if (!p) return ''; body = '<div class="fig-panels n1">' + p + '</div>'; }
     return '<div class="fig" data-fig="' + esc(f.k) + '">' + body + (f.key !== false && hasArrow(f) ? KEY : '') + '</div>';
   }
-  global.KT2_FIG = { render, parts: Object.keys(PARTS).concat(Object.keys(HTML_PARTS), Object.keys(KO_PARTS), Object.keys(SO_PARTS), Object.keys(SC_PARTS), ['panels', 'tools', 'chain', 'places']), icons: Object.keys(ICON), sizes: AL };
+  global.KT2_FIG = { render, readKo, parts: Object.keys(PARTS).concat(Object.keys(HTML_PARTS), Object.keys(KO_PARTS), Object.keys(SO_PARTS), Object.keys(SC_PARTS), ['panels', 'tools', 'chain', 'places']), icons: Object.keys(ICON), sizes: AL };
 })(typeof window !== 'undefined' ? window : globalThis);

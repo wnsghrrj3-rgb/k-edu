@@ -22,7 +22,7 @@ def parse(path):
     parts = re.split(r'<div class="slide(?: active)?"', body)[1:]
     out = {'file': os.path.basename(path), 'pill': clean(first(r'class="ka-pill">(.*?)<', src)), 'slides': [], 'problems': [], 'summary': '', 'next': '', 'next_q': ''}
     m = re.search(r'LESSON_TITLE\s*=\s*[\'"](.*?)[\'"]', src)
-    out['title'] = m.group(1) if m else re.sub(r'^g\d_\w+?_u\d+_l\d+_', '', os.path.basename(path))[:-5]
+    out['title'] = m.group(1) if m else re.sub(r'^g\d_\w+?_u\d+_l?\d+_', '', os.path.basename(path))[:-5]
     for p in parts:
         stage = first(r'data-stage="(.*?)"', p)
         if 'data-q-id' in p[:200]:
@@ -34,6 +34,10 @@ def parse(path):
             opts = re.findall(r'<button class="mcq-opt" data-correct="(\d)">(.*?)</button>', p, re.S)
             if opts:
                 q['opts'] = [clean(t) for _, t in opts]; q['ci'] = [c for c, _ in opts].index('1')
+            if 'a' not in q and 'opts' not in q:  # 57차: 4학년 원문은 수 패드 답을 스크립트 setupPad('qN', 답, …) 에 둔다
+                qid = first(r'data-q-id="(.*?)"', p)
+                m2 = re.search(r"setupPad\(\s*'" + re.escape(qid) + r"'\s*,\s*([^,]+?)\s*,", src)
+                if m2: q['a'] = m2.group(1).strip().strip('\'"')
             out['problems'].append(q); continue
         title = clean(first(r'class="slide-title">(.*?)</h2>', p))
         if 'summary-card' in p: out['summary'] = clean(first(r'class="summary-card">(.*?)</div>', p)); continue
@@ -46,7 +50,9 @@ def parse(path):
 
 if __name__ == '__main__':
     d, o = sys.argv[1], sys.argv[2]
-    files = sorted(f for f in os.listdir(d) if f.endswith('.html') and re.match(r'g\d_\w+_u\d+_l\d+', f))
-    res = {re.search(r'_(u\d+_l\d+)_', f).group(1): parse(os.path.join(d, f)) for f in files}
+    # 57차: 4학년 원문은 파일 이름이 g4_math_u1_03_… (l 없음) — 키는 u1_l03 으로 맞춘다
+    files = sorted(f for f in os.listdir(d) if f.endswith('.html') and re.match(r'g\d_\w+_u\d+_l?\d+_', f))
+    key = lambda f: (lambda m: 'u%d_l%02d' % (int(m.group(1)), int(m.group(2))))(re.search(r'_u(\d+)_l?(\d+)_', f))
+    res = {key(f): parse(os.path.join(d, f)) for f in files}
     json.dump(res, open(o, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print(o, len(res), '차시', sum(len(v['slides']) for v in res.values()), '개념 장', sum(len(v['problems']) for v in res.values()), '문제')
