@@ -24,6 +24,8 @@
     const pj = P().project(o.lesson); self.meta = pj.meta; self.slides = pj.slides; self.scoredIds = pj.scored;
     self.guide = K().guideOf(o.lesson);
     self.map = (global.KT2_PROJMAP || {})[self.slug + ':' + self.key] || null;
+    // 이어서 하기 발자국 — 원문 차시와 같은 자리·같은 꼴(kedu_tracker footprint): 목록·홈의 「▶ 이어서 하기」가 이어지게
+    try { const lm = self.map && decodeURIComponent(self.map.url).match(/^\/grade([1-6])\/semester([12])\/([a-z]+)\/(.+\.html)$/); if (lm) global.localStorage.setItem('kedu_last:' + lm[1] + '_' + lm[2] + '_' + lm[3], JSON.stringify({ file: lm[4], title: (o.lesson.meta && o.lesson.meta.title) || self.key, at: Date.now() })); } catch (e) { }
     self.IS = {}; self.rev = {}; self.L = {}; self.idx = 0; self.score = 0; self.finished = false;
     self.sound = true; self.still = false; self.started = Date.now();
     const hash = parseInt((global.location.hash || '').replace('#', ''), 10); if (!isNaN(hash)) self.idx = Math.max(0, Math.min(hash - 1, self.slides.length - 1));
