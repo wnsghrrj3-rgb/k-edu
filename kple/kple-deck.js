@@ -278,6 +278,7 @@
       case 'board_ladder':                       // B1 보드 오르락내리락 — 문제 게이트(4지선다)
       case 'board_bingo':                        // B10 빙고 — 4지선다 + answerText 로 판 구성
       case 'board_four':                         // B3 네 개 먼저 — 주자 1인 게이트(4지선다)
+      case 'board_match':                        // B7 같은 그림 — q↔answerText 짝(4지선다 계약에서 추출)
         return toQuizConfig(deck);
       case 'ox_survival':                        // G7 OX — 명제 변환
         return toOxConfig(deck);
