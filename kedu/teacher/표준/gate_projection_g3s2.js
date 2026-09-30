@@ -10,6 +10,9 @@
    D+ 49차: 수준별 채점 — 수준마다 답 표(nums·frac·self) = 정본 답 글 · 식 문제는 따로 셈해 정본 답 검산 ·
       check() 가 맞는 답만 받는다 · 첫 화면(수준마다)에 답 없음 · 교사용 「정답 보기」 단추는 학생 화면에서 빠진다
    E 혼자 흐름: 투영 교실 활동 글에 짝·모둠 말 0 · 짝·모둠 말이 남은 문제는 혼자라면 줄이 붙는다
+   G 52차 배정 링크: 케이박스 받은 박스가 선생님이 담은 자기주도 차시(원문 주소)를 켠 단원만 learn.html 로 연다 ·
+      projmap 원문 주소 전부가 차시 지도(kedu_map)에 있다(= 어느 단원을 켜도 배정이 따라온다) · 켠 단원 차시마다 같은 키로 ·
+      끈 단원·바깥 링크·다른 종류(link)는 그대로 · cwb/cwi 가 붙는다 · learn 의 목록 단추는 박스에서 왔으면 받은 박스로
    실행: NODE_PATH=…/jsdom/node_modules node kedu/teacher/표준/gate_projection_g3s2.js                 */
 'use strict';
 const fs = require('fs'), path = require('path'), vm = require('vm');
@@ -237,6 +240,57 @@ PJ.forEach(({ slug, key, pj }) => pj.slides.forEach(s => {
 
 sec('F. 정본 무개변');
 all.forEach(({ slug, key, L }) => { const before = JSON.stringify(L); P.project(L); ok(JSON.stringify(L) === before, slug + ' ' + key + ' project() 가 정본을 바꿈'); });
+
+sec('G. 배정 링크 (52차)');
+{
+  const SW = fs.readFileSync(path.join(S2, 'proj_switch.js'), 'utf8');
+  const ON = JSON.parse((SW.match(/var ON = (\[[^\]]*\])/) || [])[1].replace(/'/g, '"'));
+  const CTX = new Map();
+  const mk = (href) => { const d = new JSDOM('<!doctype html><html><body></body></html>', { url: href, runScripts: 'outside-only' }); ['projmap.js', 'proj_switch.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(S2, f), 'utf8'), d.getInternalVMContext(), { filename: f })); CTX.set(d.window, d.getInternalVMContext()); return d.window; };
+  const w = mk('https://keduclass.com/classwork/inbox.html'); const PJS = w.KT2_PROJ;
+  ok(!!PJS && typeof PJS.to === 'function' && JSON.stringify(PJS.ON) === JSON.stringify(ON), 'KT2_PROJ.to 노출·ON 같음');
+  // 차시 지도(선생님이 고르는 곳) — 3학년 여덟 장
+  const KM = {}; ['g3_1_korean', 'g3_1_math', 'g3_1_science', 'g3_1_social', 'g3_2_korean', 'g3_2_math', 'g3_2_science', 'g3_2_social'].forEach(k => { const c = { window: {} }; vm.createContext(c); vm.runInContext(fs.readFileSync(path.join(ROOT, 'kedu_map', k + '.js'), 'utf8'), c); Object.assign(KM, c.window.KEDU_MAP); });
+  const kmUrls = new Set(); Object.values(KM).forEach(m => m.units.forEach(u => u.lessons.forEach(l => { if (l.url) kmUrls.add(decodeURIComponent(l.url)); })));
+  let nIn = 0; Object.keys(MAP).forEach(k => { const u = decodeURIComponent(MAP[k].url); if (kmUrls.has(u)) nIn++; else ok(false, k + ' 원문 주소가 차시 지도에 없음 — 켜도 배정은 원문으로 감: ' + u); });
+  ok(nIn === Object.keys(MAP).length, 'projmap 원문 ' + nIn + '/' + Object.keys(MAP).length + ' 가 차시 지도에 있음');
+  let nOn = 0, nOff = 0;
+  Object.keys(MAP).forEach(k => {
+    const i = k.indexOf(':'), slug = k.slice(0, i), key = k.slice(i + 1), unit = key.split('_')[0], on = ON.indexOf(slug + ':' + unit) >= 0;
+    const raw = MAP[k].url, enc = encodeURI(raw), to = PJS.to(raw);
+    if (on) { nOn++; const m = slug.match(/^g(\d)(?:s(\d))?_([a-z]+)$/);
+      ok(to === '/kedu/teacher/stage2/learn.html?g=' + m[1] + '&t=' + (m[2] || 1) + '&s=' + m[3] + '&u=' + unit.slice(1) + '&l=' + key, k + ' 켠 단원인데 투영 주소가 아님: ' + to);
+      ok(PJS.to(enc) === to && PJS.to(enc + '?cwb=x') === to && PJS.to('https://keduclass.com' + enc) === to, k + ' 인코딩·쿼리·절대 주소에서 같은 투영'); }
+    else { nOff++; ok(to === null, k + ' 끈 단원인데 투영으로 감'); }
+  });
+  ok(nOn >= 10, '켠 단원 차시 ' + nOn); ok(PJS.to('https://example.com/grade3/semester2/math/1단원_곱셈/x.html') === null && PJS.to('') === null && PJS.to(null) === null, '지도 밖·빈 주소 = null');
+  // ?proj=off 목록에서도 받은 박스 판정은 같다(목록 카드만 안 돌림)
+  ok(mk('https://keduclass.com/grade3/semester2/math/index.html?proj=off').KT2_PROJ.to(MAP[Object.keys(MAP).find(k => ON.some(o => k.indexOf(o + '_') === 0))].url) !== null, 'proj=off 는 목록 카드만 끔');
+  // 받은 박스 배선 — 스크립트 차례 + boxOpenUrl 실제 동작
+  const IB = fs.readFileSync(path.join(ROOT, 'classwork', 'inbox.html'), 'utf8');
+  const iPm = IB.indexOf('/kedu/teacher/stage2/projmap.js'), iSw = IB.indexOf('/kedu/teacher/stage2/proj_switch.js'), iMain = IB.indexOf('function boxOpenUrl');
+  ok(iPm > 0 && iSw > iPm && iMain > iSw, '받은 박스: projmap → proj_switch → 본문 차례');
+  const fn = (IB.match(/function boxOpenUrl\(it\)\{[\s\S]*?\n\}/) || [])[0]; ok(!!fn, 'boxOpenUrl 찾음');
+  if (fn) {
+    w.current = { bundle: { id: '11111111-2222-3333-4444-555555555555' } }; vm.runInContext(fn, CTX.get(w));
+    const kOn = Object.keys(MAP).find(k => ON.some(o => k.indexOf(o + '_') === 0)), kOff = Object.keys(MAP).find(k => !ON.some(o => k.indexOf(o + '_') === 0));
+    const cw = '&cwb=11111111-2222-3333-4444-555555555555&cwi=99999999-8888-7777-6666-555555555555';
+    const it = (kind, url) => ({ kind, url, id: '99999999-8888-7777-6666-555555555555' });
+    ok(w.boxOpenUrl(it('selfstudy', MAP[kOn].url)) === PJS.to(MAP[kOn].url) + cw, '켠 단원 자기주도 항목 → learn + cwb/cwi: ' + w.boxOpenUrl(it('selfstudy', MAP[kOn].url)));
+    ok(w.boxOpenUrl(it('selfstudy', MAP[kOff].url)) === MAP[kOff].url + '?' + cw.slice(1), '끈 단원 자기주도 항목 = 원문 + cwb/cwi');
+    ok(w.boxOpenUrl(it('link', MAP[kOn].url)) === MAP[kOn].url + '?' + cw.slice(1), '자료(link) 종류는 켠 단원이어도 원문');
+    const src = it('selfstudy', MAP[kOn].url); w.boxOpenUrl(src); ok(src.url === MAP[kOn].url, 'boxOpenUrl 이 항목(DB 주소)을 바꾸지 않음');
+  }
+  // learn 무대: 박스 파이프가 실려 있고, 목록 단추는 박스로
+  const LH = fs.readFileSync(path.join(S2, 'learn.html'), 'utf8');
+  ok(LH.indexOf('/kedu_kbox_adapter.js') > 0 && LH.indexOf('/kedu_back.js') > LH.indexOf('stage2-learn.js'), 'learn.html 에 케이박스 어댑터·kedu_back');
+  const hub = (search) => { const d = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https://keduclass.com/kedu/teacher/stage2/learn.html' + search, runScripts: 'outside-only' }); const c = d.getInternalVMContext(); d.window.KT2_NO_BOOT = true; d.window.KT2_LEARN_NO_BOOT = true; ['stage2-art.js', 'stage2-fig.js', 'stage2.js', 'stage2-project.js', 'stage2-learn.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(S2, f), 'utf8'), c, { filename: f })); const L = d.window.KT2_LEARN; const o = Object.create(L.Learn ? L.Learn.prototype : Object.getPrototypeOf(L)); o.map = { url: '/grade3/semester2/math/1단원_곱셈/x.html' }; return o.hubUrl(); };
+  let hb, hn; try { hb = hub('?g=3&t=2&s=math&u=1&l=u1_l01&cwb=11111111-2222-3333-4444-555555555555&cwi=99999999-8888-7777-6666-555555555555'); hn = hub('?g=3&t=2&s=math&u=1&l=u1_l01'); } catch (e) { hb = 'ERR ' + e.message; }
+  ok(hb === '/classwork/inbox.html?box=11111111-2222-3333-4444-555555555555', 'learn 목록 단추(박스에서) = 받은 박스: ' + hb);
+  ok(hn === '/grade3/semester2/math/index.html', 'learn 목록 단추(목록에서) = 과목 목록: ' + hn);
+  ok(hub('?cwb=../../evil') === '/grade3/semester2/math/index.html', 'learn: 이상한 cwb 는 무시');
+  console.log('  켠 차시 ' + nOn + ' · 끈 차시 ' + nOff + ' · 차시 지도 안 ' + nIn);
+}
 
 console.log('\n결과: ' + pass + ' 통과 / ' + fail + ' 실패'); if (fails.length) console.log(fails.join('\n'));
 process.exit(fail ? 1 : 0);

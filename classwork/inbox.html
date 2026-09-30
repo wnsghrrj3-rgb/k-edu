@@ -7,6 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/kedu_config.js"></script>
+<!-- 52차: 선생님이 담은 자기주도 차시 → 켠 단원만 투영 무대(learn.html)로 (proj_switch.js ON 표 · 끄면 원문) -->
+<script src="/kedu/teacher/stage2/projmap.js"></script>
+<script src="/kedu/teacher/stage2/proj_switch.js"></script>
 <style id="kedu-title-font">/* 케이에듀 제목 폰트 토큰 — 교체 시 이 블록만 수정 (2026-07-04, 학교안심 모험가) */
 
 :root{--kedu-title:'Gowun Batang','Gowun Dodum',serif}
@@ -172,6 +175,7 @@ function kquizSeed(itemId, profileId){
 // 케이퀴즈 항목 열기 URL — cwb/cwi 딥링크 + (seed 없으면) per-student seed 부여
 function boxOpenUrl(it){
   if(!it.url) return '';
+  if(it.kind==='selfstudy' && window.KT2_PROJ){ var pj = window.KT2_PROJ.to(it.url); if(pj) it = Object.assign({}, it, { url: pj }); }   // 52차 투영 바꿔치기 (DB 주소는 원문 그대로)
   if(/^https?:\/\//i.test(it.url) && it.url.indexOf(location.origin)!==0) return it.url;   // 바깥 링크는 그대로
   if(/[?&]cwb=/.test(it.url)) return it.url;
   var sep = it.url.indexOf('?')>=0 ? '&' : '?';

@@ -65,7 +65,11 @@
       + '<span class="lb-score" id="lb-score">⭐ 0</span>'
       + '<button class="lb-btn main" id="lb-next" aria-label="다음">다음 ▶</button>';
   };
-  Learn.prototype.hubUrl = function () { const u = this.map && this.map.url; if (!u) return '/'; const p = u.split('/'); return p.slice(0, 4).join('/') + '/index.html'; }; // /grade3/semester2/<과목>/index.html
+  Learn.prototype.hubUrl = function () {
+    // 52차: 케이박스에서 열었으면(cwb) 목록 대신 받은 박스로 — kedu_back 의 「📦 박스로 돌아가기」와 같은 곳
+    try { const b = new URLSearchParams(global.location.search || '').get('cwb'); if (b && /^[0-9a-f-]{36}$/i.test(b)) return '/classwork/inbox.html?box=' + encodeURIComponent(b); } catch (e) { }
+    const u = this.map && this.map.url; if (!u) return '/'; const p = u.split('/'); return p.slice(0, 4).join('/') + '/index.html';
+  }; // /grade3/semester2/<과목>/index.html
   Learn.prototype.fit = function () {
     const c = doc.getElementById('kt2-canvas'); if (!c) return;
     const barH = 64, vw = global.innerWidth, vh = global.innerHeight - barH;
