@@ -18,6 +18,8 @@
    H 56차 학습리포트 차시 링크: kedu_report_lib 가 projmap·proj_switch 를 먼저 실은 페이지(내 학습·교사 학습리포트)에서
       켠 단원 차시의 「열기」 주소를 learn.html 로 돌린다 · srcUrl = 원문 · 끈 단원·스위치 없는 페이지는 원문 ·
       기록 id(lesson_id) → 지도 → 같은 투영 키 · 폴백(unit_id) 주소도 같은 규칙 · 스크립트 차례
+   I 57차 문 목록 잠금: /kedu_map/·kedu_report_lib 를 쓰는 살아 있는 페이지 전부 = 문(projmap → proj_switch) 또는 사유 적힌 예외 ·
+      스위치 싣는 페이지 = 문 목록 · 예외가 사유대로인지(골라 담기 원문 저장 · 학부모 주소 안 씀 · hub2 실험)
    실행: NODE_PATH=…/jsdom/node_modules node kedu/teacher/표준/gate_projection_g3s2.js                 */
 'use strict';
 const fs = require('fs'), path = require('path'), vm = require('vm');
@@ -333,6 +335,44 @@ sec('G. 배정 링크 (52차)');
   ok(hn === '/grade3/semester2/math/index.html', 'learn 목록 단추(목록에서) = 과목 목록: ' + hn);
   ok(hub('?cwb=../../evil') === '/grade3/semester2/math/index.html', 'learn: 이상한 cwb 는 무시');
   console.log('  켠 차시 ' + nOn + ' · 끈 차시 ' + nOff + ' · 차시 지도 안 ' + nIn);
+}
+
+sec('I. 차시 문 목록 잠금 (57차)');
+{
+  // 지도(/kedu_map/)나 학습리포트 lib 로 차시 주소를 다루는 살아 있는 페이지를 전부 훑어, 투영 스위치를 싣거나(문) 사유가 적힌 예외여야 한다.
+  // 새 페이지가 생기면 여기서 레드 → 스위치 한 줄을 싣거나 NO_SWITCH 에 사유를 적는다.
+  const cp = require('child_process');
+  const gitLs = (re) => { try { return cp.execFileSync('git', ['-c', 'core.quotePath=false', 'grep', '-lE', re, 'HEAD', '--', '*.html', '*.js'], { cwd: ROOT, encoding: 'utf8' }).split('\n').filter(Boolean).map(l => l.replace(/^HEAD:/, '')); } catch (e) { return e.status === 1 ? [] : null; } };
+  const read = (f) => { const a = path.join(ROOT, f); if (fs.existsSync(a)) return fs.readFileSync(a, 'utf8'); try { return cp.execFileSync('git', ['show', 'HEAD:' + f], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 << 20 }); } catch (e) { return null; } };
+  const DEAD = /^(archive|tests|audit|kedu_map|redesign|design)\/|^kedu\/teacher\/(표준|data|scripts)\//;
+  const SELF = ['kedu_report_lib.js'];
+  const NO_SWITCH = {
+    'classwork/index.html': '교사 골라 담기 — 원문 주소를 DB 에 저장, 여는 건 받은 박스(G)',
+    'hub2/index.html': '실험 페이지 — 어디서도 안 이어짐(audit 고아 제외)',
+    'parent/growth.html': '리포트 lib 를 싣지만 차시 주소를 안 씀'
+  };
+  const DOORS = ['mylearning/index.html', 'teacher/learning-report.html', 'classwork/inbox.html'];
+  // 목록 문: projmap 에 있는 학년·학기 과목 목록 전부
+  const listDoors = {}; Object.keys(MAP).forEach(k => { const m = k.split(':')[0].match(/^g(\d)(?:s(\d))?_([a-z]+)$/); listDoors['grade' + m[1] + '/semester' + (m[2] || 1) + '/' + m[3] + '/index.html'] = 1; });
+  Object.keys(listDoors).forEach(f => DOORS.push(f));
+  const live = gitLs('/kedu_map/|kedu_report_lib\\.js'); ok(Array.isArray(live) && live.length > 0, 'git grep 동작');
+  let nLive = 0;
+  (live || []).filter(f => !DEAD.test(f) && SELF.indexOf(f) < 0).forEach(f => { nLive++;
+    ok(DOORS.indexOf(f) >= 0 || NO_SWITCH[f], '새 차시 문: ' + f + ' — proj_switch 를 싣거나 NO_SWITCH 에 사유를 적을 것'); });
+  // 문: 모두 projmap → proj_switch 차례로 싣는다
+  DOORS.forEach(f => { const H = read(f); ok(!!H, f + ' 읽기'); if (!H) return; const a = H.indexOf('/kedu/teacher/stage2/projmap.js'), b = H.indexOf('/kedu/teacher/stage2/proj_switch.js');
+    ok(a > 0 && b > a, '문 ' + f + ': projmap → proj_switch'); });
+  // 예외: 실제로 사유대로인가
+  { const H = read('classwork/index.html') || ''; ok(/kind:'selfstudy', name, url:l\.url/.test(H) && H.indexOf('proj_switch') < 0, '골라 담기는 원문 주소를 담는다(투영 주소를 DB 에 넣지 않음)'); }
+  { const H = read('parent/growth.html') || ''; ok(H.indexOf('kedu_report_lib.js') > 0 && !/lessonUrl|srcUrl|projUrl|\.url\b/.test(H), 'parent/growth.html 이 차시 주소를 안 씀(이름만)'); }
+  { const A = read('audit/config.json') || ''; let j = null; try { j = JSON.parse(A); } catch (e) {} ok(!!j && (j.orphan_ignore_prefixes || []).indexOf('hub2/') >= 0, 'hub2 = audit 고아 제외(실험)'); }
+  Object.keys(NO_SWITCH).forEach(f => ok(!!read(f), '예외 ' + f + ' 가 아직 있음(없어졌으면 목록에서 뺄 것)'));
+  // 스위치를 싣는 모든 페이지는 projmap 을 먼저 싣는다
+  const sw = gitLs('stage2/proj_switch\\.js') || []; let nSw = 0;
+  sw.filter(f => !DEAD.test(f) && !/^kedu\/teacher\/stage2\//.test(f) && SELF.indexOf(f) < 0).forEach(f => { nSw++; const H = read(f) || ''; const a = H.indexOf('/kedu/teacher/stage2/projmap.js'), b = H.indexOf('/kedu/teacher/stage2/proj_switch.js');
+    ok(a > 0 && b > a, f + ': proj_switch 앞에 projmap'); ok(DOORS.indexOf(f) >= 0, f + ': 스위치를 싣는데 문 목록에 없음'); });
+  ok(nSw === DOORS.length, '스위치 싣는 페이지 ' + nSw + ' = 문 ' + DOORS.length);
+  console.log('  살아 있는 지도·리포트 페이지 ' + nLive + ' · 문 ' + DOORS.length + ' · 예외 ' + Object.keys(NO_SWITCH).length);
 }
 
 (async () => {
