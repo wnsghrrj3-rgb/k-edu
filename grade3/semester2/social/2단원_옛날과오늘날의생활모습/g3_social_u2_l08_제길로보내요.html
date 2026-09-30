@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 3-2 · 2단원 옛날과 오늘날의 생활 모습
+  주제② 교통의 변화로 달라진 생활 모습 · l08 (주제 첫 차시)
+  「교통이 무엇인지 알아볼까요」
+  교과서 p.94~96 · 지도서 12차시(p.184~186) · [4사04-02]
+  수업 기법 = 개념 파악하기 · 사진 자료 살펴보기
+=========================================================================
+
+  ■ 직접조작 = 제 길로 보내요 판 (사회 3-2 스무째 판 · 2단원 여덟째 판)
+  ⭐ 씨앗은 교과서 94쪽 「생각을 열어요」 — 그림 속 교통수단이 실제로는 다니지 않는 길에 있다.
+     교통수단을 골라 실제로 다니는 길(교통로)로 보낸다.
+  ⭐ 교통수단마다 지금 있는 길 at 과 자기가 다니는 길 k 를 품는다(RO_CAR[v]) — 정답표 0.
+  ⭐ 지금 있는 길 · 제 길을 다니는 수 · 단계는 저장 0 — 판(roHome)에서 셈으로 나온다(roLaneOf · roRightN · roStage).
+  ⭐ 판을 바꾸는 자리 roSet 단 하나(state.roHome |= 1 << v) · 되돌리는 자리 0 · 난수 0.
+     고른 교통수단(roAt)은 손에 든 것일 뿐 판이 아니다.
+
+  ■ 이 차시의 뼈대
+   어떤 장소에서 다른 장소로 사람이 이동하거나 물건을 옮기는 것을 교통이라고 한다.
+   교통은 주로 교통로를 따라 움직이는 교통수단에 의해 이루어진다.
+   사람들은 생활하면서 필요에 따라 다양한 교통수단을 이용한다.
+
+  ■ 5단계
+   ① 교통수단 고르기 → 제 길로 보내기(다섯 대) → ② 판 읽기 3택(정답 자리 1)
+   ③ 최근에 이용한 교통수단 가·나·다·라 고르기(정답 없음 · 교과서 96쪽 친구와 활동)
+   ④ 마무리 3택(정답 자리 2) → 완료
+      — 교통수단을 이용한 경험을 친구들과 이야기하기는 교실 몫
+
+  ■ 가드 12종
+   ① 마무리 확정 후 처리기 전체 잠금          ② 무효 번호(안내조차 0)
+   ③ 이미 제 길을 다니는 교통수단 — 판 불변    ④ 교통수단을 고르기 전 길 누르기 — 판 불변
+   ⑤ 실제로 다니지 않는 길 — 판 불변          ⑥ 다 보내기 전 판 읽기 — 판 불변
+   ⑦ 이미 읽은 자리 — 판 불변                 ⑧ 판 읽기 어긋난 답 — 판 불변
+   ⑨ 판을 읽기 전 고르기 — 판 불변            ⑩ 이미 고른 자리 — 판 불변
+   ⑪ 고르기 전 마무리 — 판 불변               ⑫ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 교통수단과 길은 교과서 94쪽 「생각을 열어요」 그림을 판이 옮긴 것(캡션 상시).
+   ㉡ 최근에 이용한 교통수단은 사람마다 달라 판은 정답을 정하지 않는다(캡션 상시).
+   ㉢ 교통수단을 이용한 경험을 친구들과 이야기하기는 교실 몫(완료 카드 명시).
+
+  ■ 설계 원칙
+   · 뒤 차시 내용은 차시 예고 한 자리뿐 — 옛날 교통수단은 예고 문장에만
+   · 새 사실 0 — 교과서 94~96쪽 · 지도서 184~186쪽에 있는 사실만
+   · 「틀렸」 0 · 사람 형상 0 · 지어낸 학생 이름 0 · 누리집 주소 0 · 네 자리 연도 0 · 지역 이름 0
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>교통이 무엇인지 알아볼까요 · 사회 3-2</title>
+<meta name="kedu-lesson-id" content="g3_social_u2_l08_v1"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#DB2777; --green-d:#BE185D; --cyan:#C026D3;
+  --bg:#FDF2F8; --bub:#FCE7F3; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#FCE7F3;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#FCE7F3;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(219,39,119,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 제 길로 보내요 판 */
+.ro-wrap{max-width:780px;width:100%;margin:0 auto}
+.ro-head{background:#FCE7F3;color:#9D174D;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.ro-board{border-radius:14px;overflow:hidden;border:3px solid #CBD5E1;display:grid;grid-template-rows:repeat(4,auto)}
+.ro-title{text-align:center;font-weight:800;color:#334155;background:#F1F5F9;font-size:clamp(12px,2vw,14px);word-break:keep-all;padding:6px 8px}
+.ro-lane{display:flex;align-items:center;gap:6px;padding:7px 8px;min-height:52px;border-top:2px dashed rgba(255,255,255,.7)}
+.ro-lane[data-l="0"]{background:#DBEAFE}
+.ro-lane[data-l="1"]{background:#E7E5E4;background-image:repeating-linear-gradient(90deg,transparent 0 16px,#A8A29E 16px 19px)}
+.ro-lane[data-l="2"]{background:#CBD5E1;background-image:linear-gradient(transparent 46%,#FEF08A 46% 54%,transparent 54%)}
+.ro-lane[data-l="3"]{background:#BAE6FD}
+.ro-go{flex:0 0 auto;min-width:74px;border:2px solid #64748B;border-radius:9px;background:#fff;font-family:inherit;font-weight:800;
+  color:#334155;font-size:clamp(10px,1.7vw,12px);padding:6px 5px;cursor:pointer;line-height:1.25;word-break:keep-all;text-align:center}
+.ro-go[data-ready="1"]{border-color:#DB2777;color:#9D174D;box-shadow:0 0 0 3px #FBCFE8}
+.ro-cars{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 auto}
+.ro-car{border:2px solid #94A3B8;border-radius:10px;background:#fff;font-family:inherit;font-weight:700;color:#0F172A;
+  font-size:clamp(11px,1.8vw,13px);padding:5px 8px;cursor:pointer;line-height:1.2;white-space:nowrap}
+.ro-car i{font-style:normal;margin-right:3px}
+.ro-car[data-hold="1"]{border-color:#DB2777;background:#FDF2F8;box-shadow:0 0 0 3px #F9A8D4}
+.ro-car[data-ok="1"]{border-color:#16A34A;background:#F0FDF4;cursor:default}
+.ro-help{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(11px,1.9vw,14px);line-height:1.6}
+.ro-help b{color:#BE185D}
+.ro-side{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.ro-tell{border-radius:11px;padding:8px 12px;font-size:clamp(12px,2vw,15px);line-height:1.6;background:#FDF2F8;border-left:4px solid var(--cyan)}
+.ro-picks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}
+.ro-pk{border:2px solid #FBCFE8;border-radius:10px;background:#fff;padding:8px 7px;font-family:inherit;
+  font-size:clamp(11px,1.8vw,13px);font-weight:700;color:#0F172A;text-align:left;cursor:pointer;line-height:1.4;word-break:keep-all}
+.ro-pk b{color:#BE185D}
+.ro-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FFFAFD;margin-top:9px;
+  font-size:clamp(12px,2vw,15px);line-height:1.6;word-break:keep-all}
+.ro-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.ro-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:9px 11px;font-family:inherit;
+  font-size:clamp(12px,2vw,15px);font-weight:700;color:#0F172A;text-align:left;line-height:1.45;word-break:keep-all;cursor:pointer}
+.ro-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .ro-lane{padding:6px 5px;gap:4px}
+  .ro-go{min-width:60px;padding:5px 3px}
+  .ro-car{padding:4px 6px}
+  .ro-picks{grid-template-columns:1fr}
+  .ro-side{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 모양과 기호 ===== */
+const SVG = {
+  // 생각을 열어요 — 길이 뒤섞인 그림(교과서 94쪽)
+  mix:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#DBEAFE"/>
+    <rect x="0" y="40" width="160" height="16" fill="#E7E5E4"/><path d="M 0 48 L 160 48" stroke="#A8A29E" stroke-width="1" stroke-dasharray="4 3"/>
+    <rect x="0" y="56" width="160" height="18" fill="#CBD5E1"/><path d="M 0 65 L 160 65" stroke="#FEF08A" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <rect x="0" y="74" width="160" height="22" fill="#7DD3FC"/>
+    <g font-size="11" text-anchor="middle"><text x="32" y="30">\u{1F3CD}\uFE0F</text><text x="80" y="52">\u2708\uFE0F</text><text x="40" y="70">\u{1F6A2}</text><text x="110" y="90">\u{1F686}</text><text x="140" y="90">\u{1F6B2}</text><text x="120" y="70">\u{1F68C}</text></g>
+    <text x="80" y="13" font-size="7.5" fill="#1E3A8A" text-anchor="middle" font-weight="800">어딘가 이상한 그림</text></svg>`,
+  // 교통 — 사람이 이동하고 물건을 옮겨요
+  move:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <rect x="10" y="36" width="36" height="30" rx="4" fill="#fff" stroke="#DB2777" stroke-width="1.4"/><path d="M 16 36 L 28 26 L 40 36" fill="none" stroke="#DB2777" stroke-width="1.4"/>
+    <rect x="114" y="36" width="36" height="30" rx="4" fill="#fff" stroke="#DB2777" stroke-width="1.4"/><path d="M 120 36 L 132 26 L 144 36" fill="none" stroke="#DB2777" stroke-width="1.4"/>
+    <rect x="46" y="58" width="68" height="10" fill="#CBD5E1"/>
+    <path d="M 56 50 L 104 50 M 98 45 L 104 50 L 98 55" fill="none" stroke="#C026D3" stroke-width="2"/>
+    <g font-size="6.2" font-weight="800" text-anchor="middle" fill="#9D174D"><text x="28" y="80">어떤 장소</text><text x="132" y="80">다른 장소</text><text x="80" y="82">교통로</text><text x="80" y="42">사람 · 물건</text></g>
+    <text x="80" y="13" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">교통</text></svg>`,
+  // 강과 바다, 하늘의 교통로
+  route:`<svg viewBox="0 0 160 96"><rect width="160" height="48" fill="#DBEAFE"/><rect y="48" width="160" height="48" fill="#7DD3FC"/>
+    <path d="M 12 30 Q 80 8 148 30" fill="none" stroke="#1D4ED8" stroke-width="1.4" stroke-dasharray="4 3"/>
+    <path d="M 12 74 Q 80 60 148 74" fill="none" stroke="#0369A1" stroke-width="1.4" stroke-dasharray="4 3"/>
+    <g font-size="11" text-anchor="middle"><text x="80" y="24">\u2708\uFE0F</text><text x="80" y="72">\u{1F6A2}</text></g>
+    <g font-size="6.4" font-weight="800" text-anchor="middle" fill="#1E3A8A"><text x="30" y="42">항공로</text><text x="30" y="90">수로</text></g>
+    <text x="118" y="42" font-size="5.6" fill="#334155" text-anchor="middle" font-weight="700">눈에 보이지 않아요</text></svg>`,
+  // 교통수단을 이용하는 까닭 — 교과서 96쪽
+  why:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.1"><rect x="8" y="22" width="44" height="30" rx="5"/><rect x="58" y="22" width="44" height="30" rx="5"/><rect x="108" y="22" width="44" height="30" rx="5"/><rect x="8" y="58" width="44" height="30" rx="5"/><rect x="58" y="58" width="44" height="30" rx="5"/><rect x="108" y="58" width="44" height="30" rx="5"/></g>
+    <g font-size="10" text-anchor="middle"><text x="30" y="40">\u{1F687}</text><text x="80" y="40">\u{1F69A}</text><text x="130" y="40">\u{1F6A0}</text><text x="30" y="76">\u26F4\uFE0F</text><text x="80" y="76">\u{1F6B2}</text><text x="130" y="76">\u{1F681}</text></g>
+    <g font-size="5" font-weight="700" text-anchor="middle" fill="#334155"><text x="30" y="49">이동</text><text x="80" y="49">짐 옮기기</text><text x="130" y="49">경치 구경</text><text x="30" y="85">강·바다</text><text x="80" y="85">운동</text><text x="130" y="85">구하기</text></g>
+    <text x="80" y="14" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">필요에 따라 다양한 교통수단</text></svg>`,
+  // 정리 — 교통수단과 교통로
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <rect x="12" y="30" width="54" height="46" rx="6" fill="#fff" stroke="#DB2777" stroke-width="1.4"/>
+    <rect x="94" y="30" width="54" height="46" rx="6" fill="#fff" stroke="#DB2777" stroke-width="1.4"/>
+    <path d="M 68 53 L 90 53 M 84 47 L 90 53 L 84 59" fill="none" stroke="#C026D3" stroke-width="2"/>
+    <g font-size="7" font-weight="800" text-anchor="middle" fill="#9D174D"><text x="39" y="50">교통수단</text><text x="121" y="50">교통로</text></g>
+    <g font-size="5.8" font-weight="700" text-anchor="middle" fill="#334155"><text x="39" y="63">이동하는 도구</text><text x="121" y="63">다니는 길</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">교통이 무엇인지</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 제 길로 보내요 판 =====
+   교과서 94쪽 「생각을 열어요」 그림 — 교통수단을 골라 실제로 다니는 길(교통로)로 보낸다.
+   ⭐ 판을 바꾸는 자리 roSet 단 하나 — state.roHome |= 1 << v · 되돌리는 자리 0.
+   ⭐ 정답표 0 — 교통수단마다 지금 있는 길 at 과 자기가 다니는 길 k 를 품는다(RO_CAR[v]).
+   ⭐ 지금 있는 길 · 제 길을 다니는 수 · 단계는 저장 0 — 판(roHome)에서 센다(roLaneOf · roRightN · roStage).
+   ================================================================= */
+const RO_LANE = [                                                   // 교과서 95쪽 · 지도서 185쪽 — 교통로
+  {name:"하늘", road:"항공로"}, {name:"철도", road:"철도"}, {name:"도로", road:"도로"}, {name:"강과 바다", road:"수로"}
+];
+const RO_CAR = [                                                    // 교과서 94쪽 그림 · 지도서 184쪽 예시 답안
+  {name:"배", icon:"\u{1F6A2}", at:2, k:3, why:"배는 강이나 바다로 다닐 수 있기 때문이에요."},
+  {name:"비행기", icon:"\u2708\uFE0F", at:1, k:0, why:"비행기는 하늘로 다니기 때문이에요."},
+  {name:"열차", icon:"\u{1F686}", at:3, k:1, why:"열차는 철도로 다닐 수 있기 때문이에요."},
+  {name:"오토바이", icon:"\u{1F3CD}\uFE0F", at:0, k:2, why:"오토바이는 도로로 다니기 때문이에요."},
+  {name:"자전거", icon:"\u{1F6B2}", at:3, k:2, why:"자전거는 자전거 도로로 다니기 때문이에요."},
+  {name:"버스", icon:"\u{1F68C}", at:2, k:2, why:"버스는 도로로 다니기 때문이에요."}
+];
+const RO_PICK = [                                                   // 교과서 96쪽 친구와 활동 · 지도서 186쪽
+  {mark:"가", text:"지하철", why:"다른 장소로 이동할 때 이용해요. 가족과 영화관에 가려고 이용할 수 있어요."},
+  {mark:"나", text:"자전거", why:"가까운 거리를 이동하거나 운동할 때 이용해요."},
+  {mark:"다", text:"케이블카", why:"높은 곳으로 이동하거나 경치를 구경할 때 이용해요."},
+  {mark:"라", text:"여객선", why:"강이나 바다에서 이동할 때 이용해요."}
+];
+const RO_SAY_RIGHT = "이미 제 길을 다니고 있어요. 다른 교통수단을 골라 봐요.";
+const RO_SAY_HOLD = "먼저 길을 옮길 교통수단을 골라 봐요.";
+const RO_SAY_WRONG = "그 교통수단이 실제로 다니는 길이 아니에요. 다시 떠올려 봐요.";
+const RO_SAY_ORDER_R = "먼저 교통수단을 모두 제 길로 보내 봐요.";
+const RO_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const RO_SAY_ORDER_P = "먼저 판을 읽어 봐요.";
+const RO_SAY_PICKDONE = "이미 골랐어요. 친구가 고른 교통수단과 견주어 봐요.";
+const RO_SAY_ORDER_FIN = "먼저 최근에 이용한 교통수단을 골라 봐요.";
+const RO_READQ = [
+  "교통수단은 아무 길로나 다닐 수 있어요",
+  "교통수단은 저마다 다니는 교통로를 따라 움직여요",
+  "하늘과 강, 바다에는 교통로가 없어요"
+];
+const RO_READ_OK = 1;
+const RO_READ_BAD = "교통수단이 제 길로 간 모습을 다시 살펴봐요.";
+const RO_FINQ = [
+  "교통수단은 사람이 이동할 때만 쓰고 물건을 옮길 때는 쓰지 않아요",
+  "같은 교통수단은 언제나 한 가지 까닭으로만 이용해요",
+  "사람들은 생활하면서 필요에 따라 다양한 교통수단을 이용해요"
+];
+const RO_FIN_OK = 2;
+const RO_FIN_BAD = "교통수단을 이용하는 까닭을 다시 떠올려 봐요.";
+
+function roCarOf(v){ return RO_CAR[v]; }                                       // RO_CAR 를 읽는 자리는 여기 단 하나
+function roLaneName(l){ return RO_LANE[l]; }                                   // RO_LANE 을 읽는 자리는 여기 단 하나
+function roPickOf(p){ return RO_PICK[p]; }                                     // RO_PICK 을 읽는 자리는 여기 단 하나
+function roCars(){ return [...Array(RO_CAR.length).keys()]; }
+function roLaneOf(st,v){ return (st.roHome >> v & 1) === 1 ? roCarOf(v).k : roCarOf(v).at; }   // ★ 지금 있는 길 — 판의 비트에서
+function roRight(st,v){ return roLaneOf(st,v) === roCarOf(v).k; }                              // ★ 제 길인지 — 교통수단이 품은 길에서
+function roRightN(st){ return roCars().filter(v => roRight(st,v)).length; }                    // ★ 제 길을 다니는 수 — 셈으로
+function roAll(st){ return roRightN(st) === RO_CAR.length; }                                   // ★ 끝 기준 = 모두 제 길
+function roSet(v){ state.roHome |= 1 << v; }                                   // ⭐ 판을 바꾸는 자리 단 하나
+function roStage(st){
+  if(!roAll(st)) return "move";
+  if(st.roRead == null) return "read";
+  if(st.roPick == null) return "pick";
+  if(st.roFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 길 넷 */
+function roLanes(st){
+  return [0,1,2,3].map(l => {
+    const cars = roCars().filter(v => roLaneOf(st,v) === l);
+    return `<div class="ro-lane" data-l="${l}">
+      <button class="ro-go" data-l="${l}" data-ready="${st.roAt >= 0 ? 1 : 0}" onclick="roGo(${l})">${roLaneName(l).name}${roLaneName(l).road === roLaneName(l).name ? '' : '<br>' + roLaneName(l).road}</button>
+      <div class="ro-cars">${cars.map(v => `<button class="ro-car" data-v="${v}" data-hold="${st.roAt === v ? 1 : 0}" data-ok="${(st.roHome >> v & 1) === 1 ? 1 : 0}" onclick="roHold(${v})"><i>${roCarOf(v).icon}</i>${roCarOf(v).name}</button>`).join('')}</div></div>`;
+  }).join('');
+}
+function roBoard(st){
+  return `<div class="ro-board" data-home="${st.roHome}" data-right="${roRightN(st)}" data-all="${roAll(st) ? 1 : 0}">
+    <div class="ro-title">교통수단을 골라 실제로 다니는 길로 보내요</div>
+    ${roLanes(st)}</div>`;
+}
+function roPicks(st){
+  return `<div class="ro-picks">${[0,1,2,3].map(p=>`<button class="ro-pk" data-p="${p}" onclick="roPick(${p})"><b>${roPickOf(p).mark}</b> ${roPickOf(p).text}</button>`).join('')}</div>`;
+}
+function roHelp(st){
+  return `<div class="ro-help">① 길이 이상한 <b>교통수단</b>을 눌러 골라요.<br>
+    ② 그 교통수단이 실제로 다니는 <b>길</b>의 단추를 눌러 보내요.<br>
+    교통수단이 모두 <b>제 길</b>을 다니면 판을 읽어요.</div>`;
+}
+function roPanel(st){
+  const stage = roStage(st);
+  let ask = '';
+  if(stage === "move"){
+    ask = `<div class="ro-ask" data-step="move"><b>그림에서 실제로 보기 어려운 모습을 찾아 교통수단을 제 길로 보내 봐요.</b></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="ro-ask" data-step="read"><b>교통수단을 모두 제 길로 보냈어요. 판에서 무엇을 알 수 있나요?</b>
+      <div class="ro-opts">${RO_READQ.map((t,i)=>`<button class="ro-opt" onclick="roRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "pick"){
+    ask = `<div class="ro-ask" data-step="pick"><b>최근에 이용한 교통수단을 하나 골라 봐요.</b>${roPicks(st)}</div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="ro-ask" data-step="fin"><b>‘교통이 무엇인지’ 공부한 내용을 정리해 보니 무엇을 알 수 있을까요?</b>
+      <div class="ro-opts">${RO_FINQ.map((t,i)=>`<button class="ro-opt" onclick="roFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="ro-ask" data-fin="1" style="border-color:#F9A8D4;background:#FDF2F8">
+      <b style="color:#9D174D">교통수단이 모두 제 길을 다녀요. 내가 이용해 본 교통수단과 그 교통수단이 다니는 교통로를 친구들과 이야기해 봐요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">※ <b>최근에 이용한 교통수단과 이용한 까닭을 쓰고 친구들과 이야기하기</b>는 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`;
+  }
+  const tell = st.roTell ? `<div class="ro-tell">${st.roTell}</div>` : '';
+  const warn = st.roMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.roMsg}</div>` : '';
+  return `<div class="ro-wrap">
+    <div class="ro-head">제 길을 다니는 교통수단 <b>${roRightN(st)}</b> / ${RO_CAR.length}</div>
+    ${roBoard(st)}<div class="ro-side">${roHelp(st)}${tell}</div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 교통수단과 길은 <b>교과서 94쪽 「생각을 열어요」 그림</b>을 판이 옮긴 것이에요. 최근에 이용한 교통수단은 <b>사람마다 달라서</b> 판은 정답을 정하지 않아요.</div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 옛날과 오늘날의 생활 모습 · 주제② 교통의 변화로 달라진 생활 모습";
+const Q = [
+  {stem:"어떤 장소에서 다른 장소로 사람이 이동하거나 물건을 옮기는 것을 무엇이라고 하나요?",
+   opts:["교통","풍습","교통로","세시 풍속"], correct:0, pts:POINTS_BASIC,
+   h1:"오늘 공부한 차시의 이름에 들어 있는 낱말이에요.", h2:"명절에 먼 곳에 있는 친척을 만나러 가는 일을 떠올려 봐요.",
+   reason:"어떤 장소에서 다른 장소로 사람이 이동하거나 물건을 옮기는 것을 교통이라고 해요."},
+  {stem:"교통수단이란 무엇인가요?",
+   opts:["교통에 이용하는 길","해마다 일정한 때에 되풀이하는 풍습","사람이 이동하거나 물건을 옮길 때 사용하는 도구","사람들이 모여 사는 곳"], correct:2, pts:POINTS_BASIC,
+   h1:"자동차, 기차, 배, 비행기를 한데 묶는 낱말이에요.", h2:"‘수단’은 무엇을 하는 데 쓰는 도구라는 뜻이에요.",
+   reason:"교통수단은 사람이 이동하거나 물건을 옮길 때 사용하는 도구를 말해요."},
+  {stem:"다음 중 교통로가 아닌 것은 무엇인가요?",
+   opts:["도로","철도","수로","자동차"], correct:3, pts:POINTS_BASIC,
+   h1:"교통로는 교통에 이용하는 길이에요.", h2:"길이 아니라 길 위를 다니는 것을 찾아봐요.",
+   reason:"도로, 철도, 수로는 교통에 이용하는 길인 교통로예요. 자동차는 교통수단이에요."},
+  {stem:"하늘에서 비행기가 다니도록 정해진 길을 무엇이라고 하나요?",
+   opts:["수로","항공로","철도","고속 국도"], correct:1, pts:POINTS_BASIC,
+   h1:"하늘의 교통로는 눈에 보이지 않아요.", h2:"비행기가 다니는 길이에요.",
+   reason:"하늘에도 보이지는 않지만 비행기가 다니도록 정해진 항공로가 있어요."},
+  {stem:"많은 짐을 옮길 때 이용하는 교통수단은 무엇인가요?",
+   opts:["케이블카","여객선","지게차와 트럭","구조 헬기"], correct:2, pts:POINTS_APPLY,
+   h1:"교과서 96쪽 사진을 떠올려 봐요.", h2:"짐을 들어 올려 나르거나 화물을 실어 나르는 교통수단이에요.",
+   reason:"많은 짐을 옮길 때는 지게차와 트럭 같은 교통수단을 이용해요."},
+  {stem:"위험에 빠진 사람을 구할 때 이용하는 교통수단은 무엇인가요?",
+   opts:["구조 헬기","유람선","자전거","지하철"], correct:0, pts:POINTS_APPLY,
+   h1:"하늘을 날아 빠르게 가는 교통수단이에요.", h2:"교과서 96쪽 사진을 떠올려 봐요.",
+   reason:"위험에 빠진 사람을 구할 때는 구조 헬기 같은 교통수단을 이용해요."},
+  {stem:"「생각을 열어요」 그림에서 실제 교통수단을 이용하는 모습으로 보기 어려운 것은 무엇인가요?",
+   opts:["자동차가 도로로 다녀요","열차가 바다 위를 달려요","배가 바다로 다녀요","비행기가 하늘로 다녀요"], correct:1, pts:POINTS_APPLY,
+   h1:"교통수단마다 다니는 교통로가 있어요.", h2:"열차가 다니는 교통로를 떠올려 봐요.",
+   reason:"열차는 철도로 다닐 수 있어서 바다 위를 달리는 모습은 실제로 보기 어려워요."},
+  {stem:"판에서 교통수단을 모두 제 길로 보낸 뒤 알 수 있는 것은 무엇인가요?",
+   opts:["교통수단은 아무 길로나 다닐 수 있어요","하늘과 강, 바다에는 교통로가 없어요","교통로는 도로 하나뿐이에요","교통수단은 저마다 다니는 교통로를 따라 움직여요"], correct:3, pts:POINTS_APPLY,
+   h1:"판에서 교통수단이 간 길을 떠올려 봐요.", h2:"비행기, 열차, 배가 간 길이 모두 달랐어요.",
+   reason:"교통은 주로 교통로를 따라 움직이는 교통수단에 의해 이루어져요. 교통수단은 저마다 다니는 교통로가 있어요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 생각을 열어요
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">그림 속 교통수단은 어느 길로 다니고 있나요?</h2>
+  <div class="ka-bub">그림에서 <span class="ka-emph">실제로 보기 어려운 모습</span>을 찾아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('mix','교과서 94쪽 — 생각을 열어요')}</div>
+  <div class="note">상상이 아니라 실제 모습을 떠올리며 살펴봐요. 찾은 모습은 조금 뒤 판에서 바로잡아요.</div></div>`});
+// 2 그림 속 교통수단과 길 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 생각을 열어요</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">그림에는 어떤 교통수단과 길이 나타나 있나요?</h2>
+  <div class="ka-bub">교통수단과 그 교통수단이 <span class="ka-emph">다니는 길</span>을 나누어 말해 봐요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 교통수단: 자동차, 버스, 비행기, 열차, 배 등이 있어요.<br>· 다니는 길: 도로, 철도, 강, 바다, 하늘 등이 있어요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 교통의 뜻
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 교통</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">교통이란 무엇인가요?</h2>
+  <div class="ka-bub">명절에 먼 곳에 있는 친척을 만나러 가기도 하고, 집에서 음식이나 물건을 <span class="ka-emph">주문해 받기</span>도 해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('move','교과서 95쪽')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>교통</b> — 어떤 장소에서 다른 장소로 사람이 이동하거나 물건을 옮기는 것이에요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>교통수단</b> — 사람이 이동하거나 물건을 옮길 때 사용하는 도구예요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>교통로</b> — 도로, 철도, 수로, 항공로 등 교통에 이용하는 길이에요.</div></div>
+  </div></div>`});
+// 4 강과 바다, 하늘의 교통로 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 교통로</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">강과 바다, 하늘에도 교통수단이 다니는 길이 정해져 있을까요?</h2>
+  <div class="ka-bub">도로나 철도처럼 <span class="ka-emph">눈에 보이지는 않는</span> 길도 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('route','교통로')}</div>
+  ${st.revealed?`<div class="answer-box">· 강과 바다: 배가 다니도록 정해진 수로가 있어요. 화물선, 유람선, 요트, 물속으로 다니는 잠수함이 있어요.<br>· 하늘: 비행기가 다니도록 정해진 항공로가 있어요. 비행기, 헬리콥터, 물건을 옮길 때 사용하는 드론이 있어요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 교통수단을 이용하는 까닭
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 이용하는 까닭</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">사람들은 왜 교통수단을 이용할까요?</h2>
+  <div class="ka-bub">같은 교통수단이라도 <span class="ka-emph">이용하는 까닭</span>이 다양할 수 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('why','교과서 96쪽')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>다른 장소로 이동할 때 — <b>지하철</b> · 많은 짐을 옮길 때 — <b>지게차와 트럭</b></div></div>
+    <div class="sum-item"><span class="n">2</span><div>높은 곳으로 이동하거나 경치를 구경할 때 — <b>케이블카</b> · 강이나 바다에서 이동할 때 — <b>여객선</b></div></div>
+    <div class="sum-item"><span class="n">3</span><div>가까운 거리를 이동하거나 운동할 때 — <b>자전거</b> · 위험에 빠진 사람을 구할 때 — <b>구조 헬기</b></div></div>
+  </div></div>`});
+// 6 내가 알고 있는 교통수단과 교통로 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 스스로 활동</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">내가 알고 있는 교통수단과 그 교통수단이 이용하는 교통로를 말해 봐요</h2>
+  <div class="ka-bub">생활 속에서 <span class="ka-emph">직접 이용해 본</span> 교통수단부터 떠올려 봐요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 마을버스 — 도로<br>· 고속버스 — 고속 국도<br>· 지하철 — 철도<br>· 자전거 — 자전거 도로<br>· 유람선 — 바다나 강의 정해진 수로</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 판에서 바로잡아요</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">제 길로 보내요</h2>
+  <div class="ka-grp" style="align-items:stretch">${roPanel(st)}</div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">교통이 무엇인지 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','교통수단과 교통로')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>어떤 장소에서 다른 장소로 사람이 이동하거나 물건을 옮기는 것을 <b>교통</b>이라고 해요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>교통수단</b>은 사람이 이동하거나 물건을 옮길 때 사용하는 도구, <b>교통로</b>는 교통에 이용하는 길이에요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>사람들은 생활하면서 <b>필요에 따라</b> 다양한 교통수단을 이용해요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#DB2777">옛날 사람들</b>이 교통수단을 이용했던 모습을 알아봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"교통의 뜻을 말할 수 있어요",st)}
+    ${selfCheck(1,"교통수단과 그 교통수단이 이용하는 교통로를 짝 지을 수 있어요",st)}
+    ${selfCheck(2,"교통수단을 이용한 경험과 이용한 까닭을 이야기할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">교통이 무엇인지 알아봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">최근에 이용한 <b style="color:#DB2777">교통수단</b>과 이용한 까닭을 친구들과 이야기해 봐요. 이건 교실 몫이에요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g3_2_social_u2_l08";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  roHome:0, roAt:-1, roRead:null, roPick:null, roFin:null, roMsg:"", roTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function roDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 교통수단 고르기 — 손에 들 뿐 판은 그대로 */
+function roHold(v){
+  if(state.roFin!=null) return;                                                            // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(v) || v<0 || v>=RO_CAR.length) return;                              // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(roRight(state,v)){ state.roMsg = RO_SAY_RIGHT; playThud(); roDraw(); return; }         // 가드③: 이미 제 길 — 판 불변
+  state.roAt = state.roAt === v ? -1 : v;
+  state.roMsg = ""; state.roTell = state.roAt === v ? `${roCarOf(v).name}를 골랐어요. 실제로 다니는 길의 단추를 눌러 봐요.` : `${roCarOf(v).name}를 내려놓았어요.`;
+  playBlip(); roDraw();
+}
+/* 길로 보내기 */
+function roGo(l){
+  if(state.roFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(l) || l<0 || l>=RO_LANE.length) return;                             // 가드②
+  if(state.roAt < 0){ state.roMsg = RO_SAY_HOLD; playThud(); roDraw(); return; }            // 가드④: 고르기 전 — 판 불변
+  const v = state.roAt;
+  if(l !== roCarOf(v).k){ state.roMsg = RO_SAY_WRONG; playThud(); roDraw(); return; }       // 가드⑤: 실제로 다니지 않는 길 — 판 불변
+  roSet(v); state.roAt = -1;
+  state.roMsg = ""; state.roTell = `${roCarOf(v).name}가 ${roLaneName(l).road}로 갔어요. ${roCarOf(v).why}`
+    + (roAll(state) ? ` 교통수단이 모두 제 길을 다녀요.` : '');
+  if(roAll(state)) playChime(); else playBlip(); roDraw();
+}
+/* 판 읽기 */
+function roRead(i){
+  if(state.roFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=RO_READQ.length) return;                           // 가드②
+  if(!roAll(state)){ state.roMsg = RO_SAY_ORDER_R; playThud(); roDraw(); return; }         // 가드⑥: 다 보내기 전 — 판 불변
+  if(state.roRead!=null){ state.roMsg = RO_SAY_READDONE; roDraw(); return; }               // 가드⑦: 이미 정한 자리 — 판 불변
+  if(i!==RO_READ_OK){ state.roMsg = RO_READ_BAD; playThud(); roDraw(); return; }           // 가드⑧: 어긋난 답 — 판 불변
+  state.roRead = i; state.roMsg = ""; state.roTell = `교통수단 ${roRightN(state)}개가 모두 제 길을 다녀요. 교통은 주로 교통로를 따라 움직이는 교통수단에 의해 이루어져요.`; playBlip(); roDraw();
+}
+/* 최근에 이용한 교통수단 고르기 — 정답 없음 */
+function roPick(p){
+  if(state.roFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(p) || p<0 || p>=RO_PICK.length) return;                             // 가드②
+  if(state.roRead==null){ state.roMsg = RO_SAY_ORDER_P; playThud(); roDraw(); return; }    // 가드⑨: 판을 읽기 전 — 판 불변
+  if(state.roPick!=null){ state.roMsg = RO_SAY_PICKDONE; roDraw(); return; }               // 가드⑩: 이미 고른 자리 — 판 불변
+  state.roPick = p; state.roMsg = ""; state.roTell = `${roPickOf(p).mark}를 골랐어요. ${roPickOf(p).text} — ${roPickOf(p).why}`; playBlip(); roDraw();
+}
+/* 마무리 */
+function roFin(i){
+  if(state.roFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=RO_FINQ.length) return;                             // 가드②
+  if(state.roPick==null){ state.roMsg = RO_SAY_ORDER_FIN; playThud(); roDraw(); return; }  // 가드⑪: 고르기 전 — 판 불변
+  if(i!==RO_FIN_OK){ state.roMsg = RO_FIN_BAD; playThud(); roDraw(); return; }             // 가드⑫: 어긋난 답 — 판 불변
+  state.roFin = i; state.roMsg = ""; playChime(); roDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
