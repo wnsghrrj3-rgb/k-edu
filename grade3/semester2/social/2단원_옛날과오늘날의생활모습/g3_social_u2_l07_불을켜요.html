@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 3-2 · 2단원 옛날과 오늘날의 생활 모습
+  주제① 옛날과 오늘날의 풍습 · l07 (주제 마무리)
+  「[생각을 펼쳐요] 옛날과 오늘날의 풍습 정리」
+  교과서 p.91~93 · 지도서 11차시(p.180~181) · [4사04-01]
+  수업 기법 = 돌아가며 말하기
+=========================================================================
+
+  ■ 직접조작 = 전광판에 불을 켜요 판 (사회 3-2 열아홉째 판 · 2단원 일곱째 판)
+  ⭐ 씨앗은 교과서 93쪽 「재미있게 확인해요」 — 낱말 마흔 칸 가운데 ① 옛날에 먹었던 세시 음식,
+     ② 옛날 명절이나 절기에 하던 일을 색칠하면 숨은 수가 나타난다.
+  ⭐ 칸 마흔(8 × 5)의 낱말과 자리는 교과서 93쪽 그대로. 칸마다 자기 갈래 k 를 품는다(BJ_CELL[c].k · 0 음식 · 1 하던 일 · 2 아님) — 정답표 0.
+  ⭐ 켠 불 수 · 음식 불 수 · 하던 일 불 수 · 단계는 저장 0 — 판(bjRow)에서 셈으로 나온다(bjFoodN · bjWorkN · bjStage).
+  ⭐ 판을 바꾸는 자리 bjSet 단 하나(state.bjRow[c >> 3] |= 1 << (c & 7) · 줄 다섯 × 여덟 칸) · 지우는 자리 0 · 난수 0.
+
+  ■ 이 차시의 뼈대
+   옛날 명절이나 절기마다 먹던 음식과 하던 일이 있었다(세시 풍속).
+   불을 켠 스물한 칸이 모여 24가 나타난다.
+   오늘날 풍습 가운데 미래에 전해 주고 싶은 풍습을 찾아 풍습 설명과 담긴 뜻을 말할 수 있다.
+
+  ■ 5단계
+   ① 세시 음식 칸에 불 켜기 → ② 명절·절기에 하던 일 칸에 불 켜기 → ③ 판 읽기 3택(나타난 수 · 정답 자리 1)
+   ④ 미래에 전해 주고 싶은 오늘날 풍습 가·나·다·라 고르기(정답 없음 · 교과서 91쪽 선택 활동 1)
+   ⑤ 마무리 3택(정답 자리 0) → 완료
+      — 만화로 표현하기 · 새로운 놀이 만들기 · 돌아가며 말하기는 교실 몫
+
+  ■ 가드 12종
+   ① 마무리 확정 후 처리기 전체 잠금          ② 무효 번호(안내조차 0)
+   ③ 이미 켠 칸 — 판 불변                     ④ 세시 음식도 하던 일도 아닌 칸 — 판 불변
+   ⑤ 음식 불을 다 켜기 전 하던 일 칸 — 판 불변 ⑥ 불을 다 켜기 전 판 읽기 — 판 불변
+   ⑦ 이미 읽은 자리 — 판 불변                 ⑧ 판 읽기 어긋난 답 — 판 불변
+   ⑨ 판을 읽기 전 고르기 — 판 불변            ⑩ 이미 고른 자리 — 판 불변
+   ⑪ 고르기 전 마무리 — 판 불변               ⑫ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 낱말 마흔 칸과 색칠할 칸은 교과서 93쪽을 옮긴 것(캡션 상시).
+   ㉡ 미래에 전해 주고 싶은 풍습은 사람마다 달라 판은 정답을 정하지 않는다(캡션 상시).
+   ㉢ 만화로 표현하기, 새로운 놀이 만들기, 친구들과 돌아가며 말하기는 교실 몫(완료 카드 명시).
+
+  ■ 설계 원칙
+   · 뒤 주제 용어는 차시 예고 한 자리뿐 — 주제②의 낱말은 예고 문장에만 한 번 쓴다
+   · 새 사실 0 — 교과서 91~93쪽 · 지도서 180~181쪽 · 앞 여섯 차시에서 공부한 사실만
+   · 「틀렸」 0 · 사람 형상 0 · 지어낸 학생 이름 0 · 누리집 주소 0 · 네 자리 연도 0 · 지역 이름 0
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[생각을 펼쳐요] 옛날과 오늘날의 풍습 정리 · 사회 3-2</title>
+<meta name="kedu-lesson-id" content="g3_social_u2_l07_v1"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#DB2777; --green-d:#BE185D; --cyan:#C026D3;
+  --bg:#FDF2F8; --bub:#FCE7F3; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#FCE7F3;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#FCE7F3;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(219,39,119,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 전광판에 불을 켜요 판 */
+.bj-wrap{max-width:780px;width:100%;margin:0 auto}
+.bj-head{background:#FCE7F3;color:#9D174D;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.bj-board{padding:9px;border-radius:14px;background:#1E293B;border:3px solid #334155}
+.bj-title{text-align:center;font-weight:800;color:#FBCFE8;font-size:clamp(12px,2vw,14px);word-break:keep-all;margin-bottom:7px}
+.bj-grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px}
+.bj-cell{border:2px solid #475569;border-radius:7px;background:#F8FAFC;font-family:inherit;font-weight:700;color:#334155;
+  font-size:clamp(9px,1.7vw,12px);padding:5px 1px;cursor:pointer;line-height:1.25;word-break:keep-all;text-align:center;min-height:40px}
+.bj-cell[data-on="1"][data-k="0"]{background:#FDE68A;border-color:#D97706;color:#78350F;cursor:default}
+.bj-cell[data-on="1"][data-k="1"]{background:#F9A8D4;border-color:#DB2777;color:#831843;cursor:default}
+.bj-board[data-all="1"] .bj-cell[data-on="0"]{opacity:.35}
+.bj-legend{display:flex;gap:10px;justify-content:center;margin-top:7px;font-size:clamp(10px,1.7vw,12px);color:#E2E8F0;font-weight:700}
+.bj-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.bj-help{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(11px,1.9vw,14px);line-height:1.6}
+.bj-help b{color:#BE185D}
+.bj-side{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.bj-tell{border-radius:11px;padding:8px 12px;font-size:clamp(12px,2vw,15px);line-height:1.6;background:#FDF2F8;border-left:4px solid var(--cyan)}
+.bj-picks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}
+.bj-pk{border:2px solid #FBCFE8;border-radius:10px;background:#fff;padding:8px 7px;font-family:inherit;
+  font-size:clamp(11px,1.8vw,13px);font-weight:700;color:#0F172A;text-align:left;cursor:pointer;line-height:1.4;word-break:keep-all}
+.bj-pk b{color:#BE185D}
+.bj-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FFFAFD;margin-top:9px;
+  font-size:clamp(12px,2vw,15px);line-height:1.6;word-break:keep-all}
+.bj-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.bj-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:9px 11px;font-family:inherit;
+  font-size:clamp(12px,2vw,15px);font-weight:700;color:#0F172A;text-align:left;line-height:1.45;word-break:keep-all;cursor:pointer}
+.bj-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .bj-board{padding:6px}
+  .bj-grid{gap:3px}
+  .bj-cell{padding:4px 0;min-height:36px;border-radius:5px}
+  .bj-picks{grid-template-columns:1fr}
+  .bj-side{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 모양과 기호 ===== */
+const SVG = {
+  // 들어가기 — 주제①에서 공부한 풍습
+  topic:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <g stroke="#DB2777" stroke-width="1.2" fill="#fff"><rect x="8" y="22" width="44" height="30" rx="5"/><rect x="58" y="22" width="44" height="30" rx="5"/><rect x="108" y="22" width="44" height="30" rx="5"/><rect x="33" y="58" width="44" height="30" rx="5"/><rect x="83" y="58" width="44" height="30" rx="5"/></g>
+    <g font-size="6.2" font-weight="800" text-anchor="middle" fill="#9D174D"><text x="30" y="40">풍습의 뜻</text><text x="80" y="40">일상생활 풍습</text><text x="130" y="40">세시 풍속</text><text x="55" y="76">옛날과 오늘날</text><text x="105" y="76">풍습 체험</text></g>
+    <text x="80" y="13" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">주제①에서 공부한 풍습</text></svg>`,
+  // 선택 활동 1 — 시험을 치르는 사람에게 엿 주기
+  yeot:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <rect x="30" y="30" width="46" height="46" rx="6" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+    <path d="M 40 44 L 66 44 M 40 54 L 66 54 M 40 64 L 66 64" stroke="#D97706" stroke-width="3" stroke-linecap="round"/>
+    <rect x="94" y="30" width="40" height="50" rx="3" fill="#fff" stroke="#64748B" stroke-width="1.3"/>
+    <path d="M 100 42 L 128 42 M 100 50 L 128 50 M 100 58 L 120 58" stroke="#94A3B8" stroke-width="1.4"/>
+    <path d="M 104 68 L 110 74 L 124 62" fill="none" stroke="#DB2777" stroke-width="2.2"/>
+    <g font-size="6.4" font-weight="800" text-anchor="middle" fill="#334155"><text x="53" y="88">엿</text><text x="114" y="90">시험</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">시험을 치르는 사람에게 엿 주기</text></svg>`,
+  // 선택 활동 2 — 플라잉 디스크 윷놀이
+  disc:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <rect x="80" y="26" width="60" height="60" fill="#fff" stroke="#475569" stroke-width="1.2"/>
+    <path d="M 80 26 L 140 86 M 140 26 L 80 86" stroke="#94A3B8" stroke-width="1"/>
+    <g fill="#FCE7F3" stroke="#DB2777" stroke-width="1"><circle cx="80" cy="26" r="4"/><circle cx="140" cy="26" r="4"/><circle cx="80" cy="86" r="4"/><circle cx="140" cy="86" r="4"/><circle cx="110" cy="56" r="4"/></g>
+    <ellipse cx="38" cy="50" rx="22" ry="8" fill="#BFDBFE" stroke="#1D4ED8" stroke-width="1.4"/>
+    <path d="M 62 48 Q 70 44 76 46" fill="none" stroke="#64748B" stroke-width="1.2" stroke-dasharray="3 2"/>
+    <g font-size="6.4" font-weight="800" text-anchor="middle" fill="#334155"><text x="38" y="72">플라잉 디스크</text><text x="110" y="94">윷놀이 판</text></g>
+    <text x="80" y="14" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">전통 놀이 + 새로운 도구</text></svg>`,
+  // 정리 — 옛날과 오늘날을 잇는 풍습
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <rect x="12" y="30" width="54" height="46" rx="6" fill="#fff" stroke="#DB2777" stroke-width="1.4"/>
+    <rect x="94" y="30" width="54" height="46" rx="6" fill="#fff" stroke="#DB2777" stroke-width="1.4"/>
+    <path d="M 68 53 L 90 53 M 84 47 L 90 53 L 84 59" fill="none" stroke="#C026D3" stroke-width="2"/>
+    <g font-size="7" font-weight="800" text-anchor="middle" fill="#9D174D"><text x="39" y="50">옛날</text><text x="121" y="50">오늘날</text></g>
+    <g font-size="5.8" font-weight="700" text-anchor="middle" fill="#334155"><text x="39" y="63">생활과 생각</text><text x="121" y="63">이어지는 풍습</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">옛날과 오늘날의 풍습</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 전광판에 불을 켜요 판 =====
+   교과서 93쪽 낱말 마흔 칸 — ① 옛날에 먹었던 세시 음식 칸, ② 옛날 명절이나 절기에 하던 일 칸에 불을 켜면 숨은 수가 나타난다.
+   ⭐ 판을 바꾸는 자리 bjSet 단 하나 — 줄 다섯(bjRow) × 여덟 칸 · 켜기만 있고 끄는 자리 0.
+   ⭐ 정답표 0 — 칸마다 자기 갈래 k 를 품는다(BJ_CELL[c].k · 0 음식 · 1 하던 일 · 2 아님).
+   ⭐ 켠 불 수 · 음식 불 수 · 하던 일 불 수 · 단계는 저장 0 — 판(bjRow)에서 센다(bjFoodN · bjWorkN · bjStage).
+   ================================================================= */
+const BJ_COLS = 8;
+const BJ_CELL = [                                                   // 교과서 93쪽 — 낱말과 자리 그대로(8칸 × 5줄)
+  {name:"떡국", k:0}, {name:"버선 선물", k:1}, {name:"연날리기", k:1}, {name:"축구", k:2}, {name:"쥐불놀이", k:1}, {name:"미역국", k:2}, {name:"차례", k:1}, {name:"장례식", k:2},
+  {name:"술래잡기", k:2}, {name:"줄넘기", k:2}, {name:"널뛰기", k:1}, {name:"빵", k:2}, {name:"세배", k:1}, {name:"잡채", k:2}, {name:"수리취떡", k:0}, {name:"책 읽기", k:2},
+  {name:"윷놀이", k:1}, {name:"씨름", k:1}, {name:"부럼", k:0}, {name:"금줄 치기", k:2}, {name:"다리밟기", k:1}, {name:"오곡밥", k:0}, {name:"그네뛰기", k:1}, {name:"달맞이", k:1},
+  {name:"강강술래", k:1}, {name:"김장", k:2}, {name:"품앗이", k:2}, {name:"달리기", k:2}, {name:"돌잔치", k:2}, {name:"우유 선물", k:2}, {name:"부채 선물", k:1}, {name:"밤 까기", k:2},
+  {name:"달집 태우기", k:1}, {name:"소싸움", k:1}, {name:"송편", k:0}, {name:"결혼식", k:2}, {name:"라면", k:2}, {name:"회갑잔치", k:2}, {name:"팥죽", k:0}, {name:"머리 감기", k:2}
+];
+const BJ_KIND = ["세시 음식", "명절·절기에 하던 일"];
+const BJ_PICK = [                                                   // 교과서 91쪽 선택 활동 1 · 지도서 181쪽 예시 · 앞 차시
+  {mark:"가", text:"시험을 치르는 사람에게 엿 주기", why:"시험 점수가 높게 나오기를 바라고, 합격을 기원하는 마음이 담겨 있어요."},
+  {mark:"나", text:"어버이날 부모님께 카네이션 선물하기", why:"부모님의 사랑에 감사하는 마음이 담겨 있어요."},
+  {mark:"다", text:"설날에 복주머니 선물하기", why:"설날에 복이 들어오기를 바라는 마음이 담겨 있어요."},
+  {mark:"라", text:"내가 찾은 다른 풍습", why:"풍습 설명과 담긴 뜻을 적고 만화로 그려 친구들에게 소개해 봐요."}
+];
+const BJ_SAY_ON = "이미 불을 켠 칸이에요. 다른 칸을 찾아봐요.";
+const BJ_SAY_NOT = "옛날 명절이나 절기에 먹던 음식이나 하던 일인지 다시 떠올려 봐요.";
+const BJ_SAY_FOODFIRST = "먼저 옛날에 먹었던 세시 음식 칸에 불을 모두 켜요.";
+const BJ_SAY_ORDER_R = "먼저 불을 모두 켜 봐요.";
+const BJ_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const BJ_SAY_ORDER_P = "먼저 판을 읽어 봐요.";
+const BJ_SAY_PICKDONE = "이미 골랐어요. 친구가 고른 풍습과 견주어 봐요.";
+const BJ_SAY_ORDER_FIN = "먼저 미래에 전해 주고 싶은 풍습을 골라 봐요.";
+const BJ_READQ = ["21", "24", "42"];
+const BJ_READ_OK = 1;
+const BJ_READ_BAD = "불을 켠 칸들이 모여 만든 모양을 다시 살펴봐요.";
+const BJ_FINQ = [
+  "옛날 풍습에는 옛날 사람들의 생활과 생각이 담겨 있고, 오늘날까지 이어져 내려오는 풍습도 있어요",
+  "옛날 풍습은 오늘날 모두 사라져서 찾아볼 수 없어요",
+  "세시 풍속은 해마다 되풀이하지 않아서 풍습이 아니에요"
+];
+const BJ_FIN_OK = 0;
+const BJ_FIN_BAD = "주제①에서 공부한 풍습을 다시 떠올려 봐요.";
+
+function bjCellOf(c){ return BJ_CELL[c]; }                                     // BJ_CELL 을 읽는 자리는 여기 단 하나
+function bjPickOf(p){ return BJ_PICK[p]; }                                     // BJ_PICK 을 읽는 자리는 여기 단 하나
+function bjCells(){ return [...Array(BJ_CELL.length).keys()]; }
+function bjIsOn(st,c){ return (st.bjRow[c >> 3] >> (c & 7) & 1) === 1; }        // ★ 켠 칸 — 판의 비트에서
+function bjKindN(k){ return bjCells().filter(c => bjCellOf(c).k === k).length; }            // ★ 갈래별 칸 수 — 칸이 품은 갈래에서
+function bjOnN(st,k){ return bjCells().filter(c => bjIsOn(st,c) && bjCellOf(c).k === k).length; }
+function bjFoodN(st){ return bjOnN(st,0); }                                                   // ★ 음식 불 수 — 셈으로
+function bjWorkN(st){ return bjOnN(st,1); }                                                   // ★ 하던 일 불 수 — 셈으로
+function bjLitN(st){ return bjCells().filter(c => bjIsOn(st,c)).length; }
+function bjFoodAll(st){ return bjFoodN(st) === bjKindN(0); }
+function bjAll(st){ return bjFoodAll(st) && bjWorkN(st) === bjKindN(1); }                    // ★ 끝 기준 = 두 갈래 모두
+function bjSet(c){ state.bjRow[c >> 3] |= 1 << (c & 7); }                    // ⭐ 판을 바꾸는 자리 단 하나
+function bjStage(st){
+  if(!bjFoodAll(st)) return "food";
+  if(!bjAll(st)) return "work";
+  if(st.bjRead == null) return "read";
+  if(st.bjPick == null) return "pick";
+  if(st.bjFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 전광판 칸 마흔 */
+function bjGrid(st){
+  return `<div class="bj-grid">${bjCells().map(c => {
+    const on = bjIsOn(st,c);
+    return `<button class="bj-cell" data-c="${c}" data-on="${on ? 1 : 0}" data-k="${on ? bjCellOf(c).k : ''}" onclick="bjLight(${c})">${bjCellOf(c).name}</button>`;
+  }).join('')}</div>`;
+}
+function bjBoard(st){
+  return `<div class="bj-board" data-row="${st.bjRow.join(',')}" data-lit="${bjLitN(st)}" data-all="${bjAll(st) ? 1 : 0}">
+    <div class="bj-title">전광판에 불을 켜면 숨은 수가 나타나요</div>
+    ${bjGrid(st)}
+    <div class="bj-legend"><span><i style="background:#FDE68A"></i>${BJ_KIND[0]}</span><span><i style="background:#F9A8D4"></i>${BJ_KIND[1]}</span></div></div>`;
+}
+function bjPicks(st){
+  return `<div class="bj-picks">${[0,1,2,3].map(p=>`<button class="bj-pk" data-p="${p}" onclick="bjPick(${p})"><b>${bjPickOf(p).mark}</b> ${bjPickOf(p).text}</button>`).join('')}</div>`;
+}
+function bjHelp(st){
+  return `<div class="bj-help">① 옛날에 먹었던 <b>세시 음식</b> 칸에 불을 켜요.<br>
+    ② 옛날 명절이나 절기에 <b>하던 일</b> 칸에 불을 켜요.<br>
+    불이 켜진 칸들이 모여 <b>숨은 수</b>가 나타나요.</div>`;
+}
+function bjPanel(st){
+  const stage = bjStage(st);
+  let ask = '';
+  if(stage === "food"){
+    ask = `<div class="bj-ask" data-step="food"><b>① 옛날에 먹었던 세시 음식 칸을 찾아 불을 켜 봐요.</b></div>`;
+  } else if(stage === "work"){
+    ask = `<div class="bj-ask" data-step="work"><b>② 옛날 명절이나 절기에 하던 일 칸을 찾아 불을 켜 봐요.</b></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="bj-ask" data-step="read"><b>전광판에 나타난 수는 무엇인가요?</b>
+      <div class="bj-opts">${BJ_READQ.map((t,i)=>`<button class="bj-opt" onclick="bjRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "pick"){
+    ask = `<div class="bj-ask" data-step="pick"><b>오늘날 풍습 가운데 미래에 전해 주고 싶은 풍습을 하나 골라 봐요.</b>${bjPicks(st)}</div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="bj-ask" data-step="fin"><b>‘옛날과 오늘날의 풍습’에서 공부한 내용을 정리해 보니 무엇을 알 수 있을까요?</b>
+      <div class="bj-opts">${BJ_FINQ.map((t,i)=>`<button class="bj-opt" onclick="bjFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="bj-ask" data-fin="1" style="border-color:#F9A8D4;background:#FDF2F8">
+      <b style="color:#9D174D">전광판에 숨은 수를 찾았어요. 옛날 풍습에 담긴 생활과 생각을 떠올리며 미래에 전해 주고 싶은 풍습을 친구들과 이야기해 봐요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">※ <b>미래에 전해 주고 싶은 풍습을 만화로 표현하기</b>, <b>전통 놀이로 새로운 놀이 만들기</b>, <b>친구들과 돌아가며 말하기</b>는 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`;
+  }
+  const tell = st.bjTell ? `<div class="bj-tell">${st.bjTell}</div>` : '';
+  const warn = st.bjMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.bjMsg}</div>` : '';
+  return `<div class="bj-wrap">
+    <div class="bj-head">세시 음식 <b>${bjFoodN(st)}</b> / ${bjKindN(0)} · 하던 일 <b>${bjWorkN(st)}</b> / ${bjKindN(1)}</div>
+    ${bjBoard(st)}<div class="bj-side">${bjHelp(st)}${tell}</div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 낱말 마흔 칸과 불을 켤 칸은 <b>교과서 93쪽</b>을 판이 옮긴 것이에요. 미래에 전해 주고 싶은 풍습은 <b>사람마다 달라서</b> 판은 정답을 정하지 않아요.</div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 옛날과 오늘날의 생활 모습 · 주제① 옛날과 오늘날의 풍습";
+const Q = [
+  {stem:"옛날부터 되풀이되어 전해 오는 생활 습관과 생활 모습을 무엇이라고 하나요?",
+   opts:["절기","명절","덕담","풍습"], correct:3, pts:POINTS_BASIC,
+   h1:"주제①의 이름에 들어 있는 낱말이에요.", h2:"생일날 미역국을 먹는 것을 떠올려 봐요.",
+   reason:"옛날부터 되풀이되어 전해 오는 생활 습관과 생활 모습을 풍습이라고 해요."},
+  {stem:"해마다 일정한 때에 되풀이하는 풍습을 무엇이라고 하나요?",
+   opts:["품앗이","세시 풍속","돌잡이","금줄"], correct:1, pts:POINTS_BASIC,
+   h1:"명절이나 절기마다 되풀이하는 풍습이에요.", h2:"전광판 판의 이름표를 떠올려 봐요.",
+   reason:"해마다 일정한 때에 되풀이하는 풍습을 세시 풍속이라고 해요."},
+  {stem:"다음 중 옛날에 먹었던 세시 음식이 아닌 것은 무엇인가요?",
+   opts:["떡국","송편","라면","팥죽"], correct:2, pts:POINTS_BASIC,
+   h1:"명절이나 절기에 먹던 음식을 떠올려 봐요.", h2:"설날, 추석, 동지에 먹던 음식을 떠올려 봐요.",
+   reason:"떡국은 설날, 송편은 추석, 팥죽은 동지에 먹던 세시 음식이에요. 라면은 세시 음식이 아니에요."},
+  {stem:"다음 중 옛날 명절이나 절기에 하던 일은 무엇인가요?",
+   opts:["쥐불놀이","축구","책 읽기","달리기"], correct:0, pts:POINTS_BASIC,
+   h1:"정월 대보름에 하던 일을 떠올려 봐요.", h2:"달맞이와 함께 하던 일이에요.",
+   reason:"쥐불놀이는 정월 대보름에 하던 일이에요."},
+  {stem:"시험을 치르는 사람에게 엿을 주는 풍습에는 어떤 마음이 담겨 있나요?",
+   opts:["더운 여름을 시원하게 보내라는 마음","이가 튼튼해지기를 바라는 마음","시험 점수가 높게 나오기를 바라고, 합격을 기원하는 마음","부모님의 사랑에 감사하는 마음"], correct:2, pts:POINTS_APPLY,
+   h1:"교과서 91쪽 만화를 떠올려 봐요.", h2:"엿을 받는 사람은 시험을 앞두고 있어요.",
+   reason:"시험을 치르는 사람에게 엿을 주는 풍습에는 시험 점수가 높게 나오기를 바라고, 합격을 기원하는 마음이 담겨 있어요."},
+  {stem:"플라잉 디스크 윷놀이는 어떤 전통 놀이를 새로운 도구와 결합해 만든 놀이인가요?",
+   opts:["윷놀이","제기차기","투호","고누"], correct:0, pts:POINTS_APPLY,
+   h1:"놀이 이름에 전통 놀이 이름이 들어 있어요.", h2:"윷 대신 던지는 도구가 바뀌었어요.",
+   reason:"플라잉 디스크 윷놀이는 윷 대신 플라잉 디스크를 던져서 윷놀이 판에 적힌 글자를 통과하면 그 말을 옮길 수 있는 놀이예요."},
+  {stem:"설날 모습 가운데 옛날부터 오늘날까지 이어져 내려오는 것은 무엇인가요?",
+   opts:["해외여행 가기","영화 보기","보드게임 하기","차례 지내고 세배하고 떡국 먹기"], correct:3, pts:POINTS_APPLY,
+   h1:"옛날 설날에도 하던 일을 골라 봐요.", h2:"친척들이 모여서 하는 일이에요.",
+   reason:"설날에 친척들이 모여 차례를 지내고, 세배하고, 떡국을 먹는 모습은 옛날부터 이어져 내려오고 있어요."},
+  {stem:"판에서 세시 음식과 명절·절기에 하던 일 칸에 불을 모두 켜면 전광판에 나타나는 수는 무엇인가요?",
+   opts:["21","24","42","20"], correct:1, pts:POINTS_APPLY,
+   h1:"불을 켠 칸들이 모여 만든 모양을 떠올려 봐요.", h2:"불을 켠 칸의 수와 나타난 수는 달라요.",
+   reason:"불을 켠 21칸이 모여 24가 나타나요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 주제에서 공부한 내용 떠올리기
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">‘옛날과 오늘날의 풍습’에서 무엇을 공부했나요?</h2>
+  <div class="ka-bub">오늘은 주제①에서 공부한 내용을 <span class="ka-emph">다양한 방법</span>으로 정리해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('topic','주제①에서 공부한 풍습')}</div>
+  <div class="note">지난 시간에는 옛날부터 전해 내려오는 풍습을 체험해 봤어요. 친구들과 돌아가며 공부한 내용을 말해 봐요.</div></div>`});
+// 2 공부한 내용 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 생각을 열어요</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">‘옛날과 오늘날의 풍습’에서 공부한 내용은 무엇인가요?</h2>
+  <div class="ka-bub">공부한 차례를 떠올리며 <span class="ka-emph">자유롭게</span> 말해 봐요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 풍습의 의미와 옛날의 일상생활 속 풍습에 관해 알아봤어요.<br>· 옛날과 오늘날의 일상생활 속 풍습을 비교해 봤어요.<br>· 옛날 세시 풍속을 알아봤어요.<br>· 옛날과 오늘날의 세시 풍속을 비교해 봤어요.<br>· 옛날부터 전해 내려오는 풍습을 체험해 봤어요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 선택 활동 1 — 미래에 전해 주고 싶은 풍습
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 선택 활동 1</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">미래에 전해 주고 싶은 오늘날 풍습을 만화로 표현해 봐요</h2>
+  <div class="ka-bub">오늘날 생활 습관이나 생활 모습 가운데 <span class="ka-emph">미래에 이어질 좋은 풍습</span>을 찾아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('yeot','교과서 91쪽 — 예시')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>풍습 설명</b> — 시험을 치르는 사람에게 엿을 주는 풍습이에요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>담긴 뜻</b> — 시험 점수가 높게 나오기를 바라고, 합격을 기원하는 마음이 담겨 있어요.</div></div>
+  </div></div>`});
+// 4 카네이션 풍습에 담긴 뜻 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 담긴 뜻</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">어버이날 부모님께 카네이션을 선물하는 풍습에는 어떤 뜻이 담겨 있을까요?</h2>
+  <div class="ka-bub">풍습 설명과 <span class="ka-emph">담긴 뜻</span>을 함께 적어 봐요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 풍습 설명: 어버이날 부모님께 카네이션을 선물하는 풍습이에요.<br>· 담긴 뜻: 부모님의 사랑에 감사하는 마음이 담겨 있어요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 선택 활동 2 — 새로운 놀이 만들기
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 선택 활동 2</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">전통 놀이로 새로운 놀이를 만들어 봐요</h2>
+  <div class="ka-bub">전통 놀이를 <span class="ka-emph">새로운 도구</span>나 오늘날 놀이와 결합해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('disc','교과서 92쪽 — 예시')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>새로운 놀이 이름</b> — 플라잉 디스크 윷놀이 · <b>전통 놀이 이름</b> — 윷놀이</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>도구</b> — 플라잉 디스크, 윷놀이 판, 말판</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>놀이 방법</b> — 윷 대신 플라잉 디스크를 던져서 윷놀이 판에 적힌 글자를 통과하면 그 말을 옮길 수 있어요.</div></div>
+  </div></div>`});
+// 6 달리는 제기차기 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 새로운 놀이</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">제기차기로 새로운 놀이를 만든다면 어떻게 만들 수 있을까요?</h2>
+  <div class="ka-bub">전통 놀이에서 <span class="ka-emph">새롭게 바꿀 수 있는 부분</span>을 생각해 봐요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 새로운 놀이 이름: 달리는 제기차기<br>· 도구: 제기, 안전 고깔(반환점)<br>· 놀이 방법: 제기를 차면서 안전 고깔(반환점)을 돌아오는 경기로, 다른 사람보다 먼저 들어오면 이겨요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 재미있게 확인해요</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">전광판에 불을 켜요</h2>
+  <div class="ka-grp" style="align-items:stretch">${bjPanel(st)}</div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛날과 오늘날의 풍습을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','옛날과 오늘날의 풍습')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>옛날부터 되풀이되어 전해 오는 생활 습관과 생활 모습을 <b>풍습</b>, 해마다 일정한 때에 되풀이하는 풍습을 <b>세시 풍속</b>이라고 해요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>옛날 명절이나 절기마다 <b>먹던 음식</b>과 <b>하던 일</b>이 있었고, 오늘날까지 이어져 내려오는 풍습도 있어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>옛날 풍습에는 <b>옛날 사람들의 생활과 생각</b>이 담겨 있어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#DB2777">교통</b>이 무엇인지 알아봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"옛날 세시 풍속의 종류와 담긴 의미, 오늘날과 비교해 변화한 모습을 조사할 수 있어요",st)}
+    ${selfCheck(1,"옛날의 일상생활 속 풍습이 오늘날 변화한 모습과 변화하지 않은 모습을 설명할 수 있어요",st)}
+    ${selfCheck(2,"옛날 풍습에 담긴 생활과 생각을 이해하고 풍습을 소중히 여기는 마음을 가졌어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">옛날과 오늘날의 풍습을 정리했어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">미래에 전해 주고 싶은 풍습을 <b style="color:#DB2777">만화</b>로 그리거나, 전통 놀이로 <b style="color:#DB2777">새로운 놀이</b>를 만들어 봐요. 이건 교실 몫이에요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g3_2_social_u2_l07";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  bjRow:[0,0,0,0,0], bjRead:null, bjPick:null, bjFin:null, bjMsg:"", bjTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function bjDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 칸에 불 켜기 */
+function bjLight(c){
+  if(state.bjFin!=null) return;                                                            // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(c) || c<0 || c>=BJ_CELL.length) return;                             // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(bjIsOn(state,c)){ state.bjMsg = BJ_SAY_ON; playThud(); bjDraw(); return; }             // 가드③: 이미 켠 칸 — 판 불변
+  if(bjCellOf(c).k === 2){ state.bjMsg = BJ_SAY_NOT; playThud(); bjDraw(); return; }        // 가드④: 세시 음식도 하던 일도 아닌 칸 — 판 불변
+  if(bjCellOf(c).k === 1 && !bjFoodAll(state)){ state.bjMsg = BJ_SAY_FOODFIRST; playThud(); bjDraw(); return; }  // 가드⑤: 음식 불을 다 켜기 전 하던 일 — 판 불변
+  bjSet(c);
+  const nm = bjCellOf(c).name;
+  state.bjMsg = ""; state.bjTell = `${nm}에 불을 켰어요. ${BJ_KIND[bjCellOf(c).k]}이에요.`
+    + (bjAll(state) ? ` 불을 모두 켰어요. 전광판에 숨은 수가 나타났어요.` : (bjCellOf(c).k === 0 && bjFoodAll(state)) ? ` 세시 음식 칸에 불을 모두 켰어요. 이제 하던 일 칸을 찾아요.` : '');
+  if(bjAll(state) || (bjCellOf(c).k === 0 && bjFoodAll(state))) playChime(); else playBlip(); bjDraw();
+}
+/* 판 읽기 */
+function bjRead(i){
+  if(state.bjFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=BJ_READQ.length) return;                           // 가드②
+  if(!bjAll(state)){ state.bjMsg = BJ_SAY_ORDER_R; playThud(); bjDraw(); return; }         // 가드⑥: 불을 다 켜기 전 — 판 불변
+  if(state.bjRead!=null){ state.bjMsg = BJ_SAY_READDONE; bjDraw(); return; }               // 가드⑦: 이미 정한 자리 — 판 불변
+  if(i!==BJ_READ_OK){ state.bjMsg = BJ_READ_BAD; playThud(); bjDraw(); return; }           // 가드⑧: 어긋난 답 — 판 불변
+  state.bjRead = i; state.bjMsg = ""; state.bjTell = `세시 음식 ${bjFoodN(state)}칸과 하던 일 ${bjWorkN(state)}칸, 불을 켠 ${bjLitN(state)}칸이 모여 ${BJ_READQ[BJ_READ_OK]}가 나타났어요. 옛날 명절이나 절기마다 먹던 음식과 하던 일이 있었어요.`; playBlip(); bjDraw();
+}
+/* 미래에 전해 주고 싶은 풍습 고르기 — 정답 없음 */
+function bjPick(p){
+  if(state.bjFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(p) || p<0 || p>=BJ_PICK.length) return;                             // 가드②
+  if(state.bjRead==null){ state.bjMsg = BJ_SAY_ORDER_P; playThud(); bjDraw(); return; }    // 가드⑨: 판을 읽기 전 — 판 불변
+  if(state.bjPick!=null){ state.bjMsg = BJ_SAY_PICKDONE; bjDraw(); return; }               // 가드⑩: 이미 고른 자리 — 판 불변
+  state.bjPick = p; state.bjMsg = ""; state.bjTell = `${bjPickOf(p).mark}를 골랐어요. ${bjPickOf(p).text} — ${bjPickOf(p).why}`; playBlip(); bjDraw();
+}
+/* 마무리 */
+function bjFin(i){
+  if(state.bjFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=BJ_FINQ.length) return;                             // 가드②
+  if(state.bjPick==null){ state.bjMsg = BJ_SAY_ORDER_FIN; playThud(); bjDraw(); return; }  // 가드⑪: 고르기 전 — 판 불변
+  if(i!==BJ_FIN_OK){ state.bjMsg = BJ_FIN_BAD; playThud(); bjDraw(); return; }             // 가드⑫: 어긋난 답 — 판 불변
+  state.bjFin = i; state.bjMsg = ""; playChime(); bjDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
