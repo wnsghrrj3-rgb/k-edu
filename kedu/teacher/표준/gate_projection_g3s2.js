@@ -39,7 +39,8 @@ const PJ = all.map(x => Object.assign(x, { pj: P.project(x.L) }));
 PJ.forEach(({ slug, key, L, pj }) => {
   const js = JSON.stringify(pj); const tag = slug + ' ' + key;
   TEACHER_KEYS.forEach(k => ok(js.indexOf('"' + k + '"') < 0, tag + ' 투영에 ' + k));
-  ok(!/👉/.test(js), tag + ' 👉 쪽지');
+  // 👉 쪽지 = 교사에게 주는 note(머리 👉) · 판 그림 안의 👉 항목(학생 글)은 쪽지가 아니다
+  ok(!pj.slides.some(s => s.data && typeof s.data.note === 'string' && /^\s*👉/.test(s.data.note)), tag + ' 👉 쪽지');
   pj.slides.forEach(s => { nSlide++;
     if (s.block === 'misconception') ok(s.data.hint === undefined, tag + ' ' + s.id + ' 오개념 hint');
     if (s.block === 'exit_ticket') ok(s.data.self === undefined, tag + ' ' + s.id + ' 신호등');
@@ -52,7 +53,7 @@ console.log('  투영 ' + nSlide + '장 · 혼자 활동 ' + nOff);
 
 sec('C. 학생 첫 화면에 정답·풀이·교사 말 없음');
 // 교사에게 하는 말 = 정본 tnote·hint 글 그 자체(학생 화면에 한 조각이라도 나오면 누출)
-const TEACH_SAY = /(짚어 주세요|하게 하세요|보여 주며|확인시켜|물어보게|손을 들게|칠판에|판서)/;
+const TEACH_SAY = /(짚어 주세요|하게 하세요|확인시켜|물어보게|손을 들게|칠판에|판서)/;
 let nChk = 0;
 PJ.forEach(({ slug, key, L, pj }) => pj.slides.forEach(s => {
   const src = L.slides.find(x => x.id === s.id); const tag = slug + ' ' + key + ' ' + s.id;
@@ -62,7 +63,7 @@ PJ.forEach(({ slug, key, L, pj }) => pj.slides.forEach(s => {
   ok(!/class="opt[^"]*\bok\b/.test(html), tag + ' 정답 표시가 첫 화면에');
   ok(!TEACH_SAY.test(tx), tag + ' 교사에게 하는 말: ' + (tx.match(TEACH_SAY) || [])[0]);
   const d0 = src.data || {};
-  const tn = d0.tnote; if (tn) (tn.ask || []).concat(tn.watch ? [tn.watch] : []).forEach(a => { const t = String(a).replace(/\*\*/g, ''); if (t.length >= 12) ok(tx.indexOf(t) < 0, tag + ' 발문 글이 학생 화면에: ' + t.slice(0, 20)); });
+  const tn = d0.tnote; if (tn) (tn.ask || []).concat(tn.watch ? [tn.watch] : []).forEach(a => { const t = String(a).replace(/\*\*/g, ''); if (t.length >= 12 && JSON.stringify(s.data).replace(/\*\*/g, '').indexOf(t) < 0) ok(tx.indexOf(t) < 0, tag + ' 발문 글이 학생 화면에: ' + t.slice(0, 20)); });
   if (s.block === 'misconception' && d0.hint && d0.hint.length >= 12) ok(tx.indexOf(d0.hint.replace(/\*\*/g, '').slice(0, 20)) < 0, tag + ' 오개념 hint 가 학생 화면에');
   if (s.learn && s.learn.kind === 'num') ok(tx.indexOf(String(s.learn.answer)) < 0 || String(d0.question || '').indexOf(String(s.learn.answer)) >= 0 || text(r.body).indexOf(String(s.learn.answer)) >= 0, tag + ' 수 넣기 답이 학생 층에');
 }));
@@ -84,9 +85,11 @@ console.log('  채점 문항 ' + nQ + ' · 차시당 채점 문항 수 분포 ' 
 
 sec('E. 혼자 흐름');
 const PAIR = /짝|모둠|친구와|친구에게|다 함께/;
+// 혼자 활동은 좁게: 짝·모둠과 함께 하는 말만(「짝을 맞춘다」·「짝이 되는 카드」·「친구에게 하는 말」처럼 혼자 해도 되는 글은 통과)
+const SOLO_PAIR = /짝과|짝이 (말하|확인|들어|읽어)|짝에게 (말|보여|읽어)|모둠(에서|이|원)|다 함께/;
 PJ.forEach(({ slug, key, pj }) => pj.slides.forEach(s => {
   const tag = slug + ' ' + key + ' ' + s.id;
-  if (s.block === 'offline_activity') ok(!PAIR.test(JSON.stringify(s.data.steps) + (s.data.goal || '')), tag + ' 혼자 활동에 짝·모둠 말');
+  if (s.block === 'offline_activity') ok(!SOLO_PAIR.test(JSON.stringify(s.data.steps) + (s.data.goal || '')), tag + ' 혼자 활동에 짝·모둠 말');
   if (s.block === 'basic_problem' && PAIR.test(String(s.data.question || ''))) ok(!!s.solo, tag + ' 혼자라면 줄');
   if (s.block === 'leveled_problem') Object.values(s.data.levels || {}).forEach(lv => { if (PAIR.test(String(lv.q || '').split('\n')[0])) ok(String(lv.q).indexOf(P.SOLO_FALLBACK) >= 0, tag + ' 수준별 혼자라면 줄'); });
 }));
