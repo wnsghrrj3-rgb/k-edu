@@ -4,6 +4,7 @@
      id  = scores.lesson_id (원문 <meta name="kedu-lesson-id">, 없으면 파일 이름)
      ls  = 기기 진도 키 (원문 LS_KEY / kedu_progress_…)
      url = 원문 주소 (바꿔치기 전까지 학생이 실제로 여는 곳)
+   50차: 1학기 정본 g3_<과목> 은 데이터의 meta.live_url 로 원문을 찾는다.
    실행: node kedu/teacher/scripts/build_projmap.js  → kedu/teacher/stage2/projmap.js */
 const fs = require('fs'), path = require('path');
 const ROOT = path.resolve(__dirname, '../../..'), SCR = __dirname;
@@ -17,14 +18,31 @@ for (const f of fs.readdirSync(SCR).filter(x => /^src_g(\d)s(\d)_(\w+)_u\d+\.jso
   const src = JSON.parse(fs.readFileSync(path.join(SCR, f), 'utf8'));
   for (const [key, L] of Object.entries(src)) {
     const hit = files.find(p => path.basename(p) === L.file); if (!hit) { miss.push(key + ' ' + L.file); continue; }
+    put('g' + g + 's' + t + '_' + s + ':' + key, hit);
+  }
+}
+// 50차 — 1학기 정본(g3_<과목>)은 추출 재료(src_*.json) 없이 1세대 생성기가 만든 데이터라, 차시마다 meta.live_url(원문 주소)을 쓴다.
+//   키 번호 ≠ 원문 파일 번호인 단원(과학 u4 · 국어 묶음 차시)이 있어 이름 규칙으로 짐작하지 않는다 — live_url 이 정본.
+const DATA = path.join(ROOT, 'kedu/teacher/data');
+for (const f of fs.readdirSync(DATA).filter(x => /^g3_(korean|math|science|social)_u\d+\.js$/.test(x)).sort()) {
+  const slug = f.replace(/_u\d+\.js$/, ''); const Ls = {}; const ctx = { window: { LESSONS: Ls }, LESSONS: Ls }; ctx.window.window = ctx.window;
+  require('vm').createContext(ctx); require('vm').runInContext(fs.readFileSync(path.join(DATA, f), 'utf8'), ctx);
+  for (const [key, L] of Object.entries(ctx.window.LESSONS)) {
+    const u = L && L.meta && L.meta.live_url; if (!u) { miss.push(slug + ':' + key + ' live_url 없음'); continue; }
+    const abs = path.resolve(path.join(ROOT, 'kedu/teacher'), u);
+    if (!fs.existsSync(abs)) { miss.push(slug + ':' + key + ' ' + u); continue; }
+    put(slug + ':' + key, abs);
+  }
+}
+function put(k, hit) {
+    const L = { file: path.basename(hit) };
     const h = fs.readFileSync(hit, 'utf8');
     const meta = (h.match(/<meta name="kedu-lesson-id" content="([^"]+)"/) || [])[1];
     // 진도 키 — 사회: LS_KEY 글자 그대로 · 수학·과학: 'kedu_progress_' + LESSON_ID · 국어: 기기 진도 없음(null — recordLessonEnd 만)
     const lid = (h.match(/LESSON_ID\s*=\s*['"`]([^'"`]+)['"`]/) || [])[1];
     const ls = (h.match(/LS_KEY\s*=\s*["'`]([^"'`]+)["'`]/) || h.match(/["'`](kedu_progress_[A-Za-z0-9_]+)["'`]/) || [])[1]
       || (lid && /['"`]kedu_progress_['"`]\s*\+\s*LESSON_ID/.test(h) ? 'kedu_progress_' + lid : null);
-    map['g' + g + 's' + t + '_' + s + ':' + key] = { id: meta || L.file.replace(/\.html$/, ''), ls, url: '/' + path.relative(ROOT, hit).split(path.sep).join('/'), file: L.file };
-  }
+    map[k] = { id: meta || L.file.replace(/\.html$/, ''), ls, url: '/' + path.relative(ROOT, hit).split(path.sep).join('/'), file: L.file };
 }
 const out = path.join(ROOT, 'kedu/teacher/stage2/projmap.js');
 fs.writeFileSync(out, '/* 생성물 — scripts/build_projmap.js 가 만든다. 손으로 고치지 말 것. 케이티처 키 → 자기주도 원문 회수 키(id·ls·url) */\nwindow.KT2_PROJMAP = ' + JSON.stringify(map, null, 0).replace(/\},"/g, '},\n"') + ';\n');

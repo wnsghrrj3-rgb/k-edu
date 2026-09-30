@@ -7,6 +7,7 @@
      출구 신호등 self(손 든 수 세기) · 교실 활동의 짝·모둠 흐름(→ 🙋 혼자라면 흐름으로 바꿈) · 타이머 분
    · 바꾸는 것(학생이 스스로 푸는 자리): 기본 문제 → learn { kind: pick(하나 고르기) · multi(모두 고르기) ·
      num(수 넣기) · self(생각하고 정답 보기) } · 생각을 넓혀요 → self · 「풀이」 쪽지는 푼 뒤에만
+   · 50차: 1학기 정본 — 물음 글 안 보기(「A · B 중에서」·「① … — 어느 것」) → 하나 고르기 · 답이 「A, B」면 모두 고르기 · 수 답만 num(글 답 input 은 스스로 확인)
    · 49차: 수준별 문제 → lv 답 표(수준마다 nums·frac·self) — 고른 수준의 답으로 채점, 100점과 따로 「도전 🏅」로 센다
    · 점수(자기주도와 같은 100점): pick·multi·num 이 채점 문항 — 한 번에 맞히면 만점, 두 번째면 절반, 정답 보기면 0.
    진입: KT2_PROJECT.project(lesson) → { meta, slides[] }  (node 에서도 돈다 — 게이트가 같은 함수를 쓴다)
@@ -51,9 +52,10 @@
         break;
       }
       case 'basic_problem': {
-        const learn = { note: d.note };
+        const learn = { note: d.note }; let ch;
         if (Array.isArray(d.options) && d.options.length) { learn.kind = d.multi ? 'multi' : 'pick'; learn.options = d.options; }
-        else if (d.answer !== undefined && d.input !== undefined) { learn.kind = 'num'; learn.answer = d.answer; }
+        else if (d.answer !== undefined && d.input !== undefined && NUMERIC.test(String(d.answer).trim())) { learn.kind = 'num'; learn.answer = Number(String(d.answer).replace(/,/g, '')); }
+        else if (d.answer !== undefined && (ch = inlineChoices(d.question, d.answer))) { learn.kind = ch.multi ? 'multi' : 'pick'; learn.options = ch.options; learn.inline = true; d.question = ch.question; }
         else if (d.answer !== undefined) { learn.kind = 'self'; learn.answer = d.answer; }
         if (learn.kind) { ['options', 'multi', 'answer', 'input', 'note'].forEach(k => delete d[k]); s.learn = learn; }
         if (isStr(d.question) && PAIRISH.test(d.question)) s.solo = SOLO_FALLBACK;
@@ -69,6 +71,29 @@
     return s;
   }
 
+  // 50차 — 1학기(1세대 생성기) 기본 문제는 보기를 물음 글 안에 적는다: 「A · B · C 중에서 … ?」·「A · B — … ?」·「① … ② … — 어느 것일까요?」.
+  //   보기를 떼어 하나 고르기로 바꾼다 — 정본 답과 글자가 꼭 같은 보기가 정확히 하나일 때만(아니면 스스로 확인 그대로).
+  const norm = (x) => String(x == null ? '' : x).replace(/\*\*/g, '').replace(/[‘’“”"'「」]/g, '').replace(/[.!?。]+$/, '').replace(/\s+/g, ' ').trim();
+  function inlineChoices(q0, ans) {
+    const q = String(q0 || ''); let opts = null, rest = '';
+    let m = q.match(/^([\s\S]*?)①([\s\S]*?)\s+[—–-]\s+([^—–]*\?)\s*$/);
+    if (m) { opts = ('①' + m[2]).split(/[①②③④⑤⑥]/).map(norm).filter(Boolean); rest = (m[1].trim() ? m[1].trim() + ' ' : '') + m[3].trim(); }
+    else if ((m = q.match(/^([^?—–]*? · [^?—–]*?)\s*(?:중에서|가운데|[—–])\s*([^—–]*\?)\s*$/))) { opts = m[1].split(' · ').map(norm).filter(Boolean); rest = m[2].trim(); }
+    if (!opts || opts.length < 2 || opts.length > 6 || !rest) return null;
+    const a = norm(ans); let want = opts.filter(o => o === a); let multi = false;
+    if (want.length !== 1) { // 「A, B」 — 모두 고르기(각 조각이 보기와 글자가 같고 둘 이상)
+      const parts = String(ans == null ? '' : ans).split(/\s*,\s*/).map(norm).filter(Boolean);
+      if (parts.length < 2 || parts.length >= opts.length || !parts.every(p => opts.filter(o => o === p).length === 1) || new Set(parts).size !== parts.length) return null;
+      want = parts; multi = true;
+    }
+    const isAns = (o) => want.indexOf(o) >= 0;
+    if (opts.some(o => o.length > 40)) return null;
+    // 원문은 정답을 맨 앞에 두는 일이 잦다 — 물음 글로 정한 차례로 섞는다(열 때마다 같은 차례)
+    let h = 0; for (const c of q) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    const idx = opts.map((o, i) => i); for (let i = idx.length - 1; i > 0; i--) { h = (h * 1103515245 + 12345) >>> 0; const j = (h >>> 16) % (i + 1); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    if (idx.every((v, i) => v === i)) idx.push(idx.shift()); // 원래 차례 그대로면 한 칸 돌린다
+    return { question: rest, multi, options: idx.map(i => ({ text: opts[i], correct: isAns(opts[i]) })) };
+  }
   // 수준별 답 글 → 채점 꼴. 「약 ~」(어림)·「~보다 크고」·기호(㉠)·대분수는 채점하지 않는다(스스로 확인).
   //   '175개' → nums [175 개] · '몫 4, 나머지 5' → nums [몫 4][나머지 5] · '7봉지, 3개 남음' → [7 봉지][3 개 남음] ·
   //   '6 L 50 mL' → [6 L][50 mL] · '7/9' → frac
@@ -127,7 +152,7 @@
   // 몇 번째에 맞혔나 → 얻는 점수
   function gained(learn, tries, gaveUp) { if (!learn || !learn.pts || gaveUp) return 0; return tries <= 1 ? learn.pts : tries === 2 ? Math.ceil(learn.pts / 2) : 0; }
 
-  const API = { project, projectSlide, check, gained, parseLevelAnswer, SCORED, SOLO_FALLBACK };
+  const API = { project, projectSlide, check, gained, parseLevelAnswer, inlineChoices, SCORED, SOLO_FALLBACK };
   global.KT2_PROJECT = API;
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
 })(typeof window !== 'undefined' ? window : globalThis);

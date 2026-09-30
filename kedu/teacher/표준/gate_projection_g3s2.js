@@ -1,4 +1,5 @@
-/* 표준/gate_projection_g3s2.js — 자기주도 투영(47차) 게이트 · 3학년 2학기 정본 전부
+/* 표준/gate_projection_g3s2.js — 자기주도 투영(47차) 게이트 · 3학년 2학기 정본 전부 + 50차부터 3학년 1학기 정본(g3_*) 전부
+   D1 50차: 1학기 물음 속 보기 → 하나 고르기(정답 = 정본 answer · 보기 수 · 물음 글에 보기 안 남음 · 정답 자리 쏠림 없음) · 글 답은 수 넣기 안 됨
    A 회수 지도: 케이티처 키마다 projmap 항목 · 원문 파일이 있고 id = 원문 <meta kedu-lesson-id> · 진도 키 = 원문 규칙
    B 교사 층 누출 0: 투영 데이터에 tnote·hint·👉·extras·suggested_extras·신호등 self 없음 · 교실 활동 = 혼자 흐름
    C 학생 화면(푼 전·첫 화면) 글에 정답·풀이·교사에게 하는 말 없음 — renderSlide + 학생 층(widget) 실제 HTML 로 검사
@@ -18,7 +19,7 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>', { runScripts:
 ['stage2-art.js', 'stage2-fig.js', 'stage2.js', 'stage2-project.js', 'stage2-learn.js', 'projmap.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(S2, f), 'utf8'), dom.getInternalVMContext(), { filename: f }));
 const KT2 = g.KT2, P = g.KT2_PROJECT, W = g.KT2_LEARN.widget, MAP = g.KT2_PROJMAP;
 function load(f) { const L = {}; const ctx = { window: { LESSONS: L }, LESSONS: L }; ctx.window.window = ctx.window; vm.createContext(ctx); vm.runInContext(fs.readFileSync(f, 'utf8'), ctx); return ctx.window.LESSONS; }
-const files = fs.readdirSync(path.join(T, 'data')).filter(f => /^g3s2_[a-z]+_u\d+\.js$/.test(f)).sort();
+const files = fs.readdirSync(path.join(T, 'data')).filter(f => /^g3(s2)?_[a-z]+_u\d+\.js$/.test(f)).sort();
 const all = []; files.forEach(f => { const slug = f.replace(/_u\d+\.js$/, ''); const L = load(path.join(T, 'data', f)); Object.keys(L).forEach(k => all.push({ slug, key: k, L: L[k] })); });
 const text = (html) => { const d = g.document.createElement('div'); d.innerHTML = html; return d.textContent.replace(/\s+/g, ' '); };
 const fresh = () => ({ tries: 0, done: false, gaveUp: false, sel: [], wrong: [], val: '', shown: false });
@@ -62,7 +63,7 @@ console.log('  투영 ' + nSlide + '장 · 혼자 활동 ' + nOff);
 
 sec('C. 학생 첫 화면에 정답·풀이·교사 말 없음');
 // 교사에게 하는 말 = 정본 tnote·hint 글 그 자체(학생 화면에 한 조각이라도 나오면 누출)
-const TEACH_SAY = /(짚어 주세요|하게 하세요|확인시켜|물어보게|손을 들게|칠판에|판서)/;
+const TEACH_SAY = /(짚어 주세요|하게 하세요|확인시켜|물어보게|손을 들게|칠판에[^.!?]{0,14}(주세요|하세요|두세요)|판서)/; // 50차: 「칠판에 5분의 3이 적혀 있어요」(학생 장면)는 교사 말이 아니다
 let nChk = 0;
 PJ.forEach(({ slug, key, L, pj }) => pj.slides.forEach(s => {
   const src = L.slides.find(x => x.id === (s.from || s.id)); const tag = slug + ' ' + key + ' ' + s.id;
@@ -99,6 +100,30 @@ PJ.forEach(({ slug, key, pj }) => {
   });
 });
 console.log('  채점 문항 ' + nQ + ' · 차시당 채점 문항 수 분포 ' + JSON.stringify(dist));
+
+sec('D1. 1학기 물음 속 보기 → 하나 고르기 (50차)');
+// 1세대 생성기 기본 문제: 보기를 물음 글 안에 적음. 투영은 그 보기를 떼어 하나 고르기로 — 정답 = 정본 answer 글자 그대로.
+const nrm = (x) => String(x == null ? '' : x).replace(/\*\*/g, '').replace(/[‘’“”"'「」]/g, '').replace(/[.!?。]+$/, '').replace(/\s+/g, ' ').trim();
+let nInl = 0, nNum1 = 0, nMul1 = 0; const posDist = {}; const leftSelf = [];
+PJ.forEach(({ slug, key, L, pj }) => { if (/s2_/.test(slug)) return; const tag = slug + ' ' + key;
+  pj.slides.forEach(s => { if (s.block !== 'basic_problem' || s.from) return; const src = L.slides.find(x => x.id === s.id).data; const q0 = String(src.question || ''); const Lr = s.learn;
+    if (Lr && Lr.inline) { nInl++;
+      const c = Lr.options.filter(o => o.correct).map(o => o.text).sort();
+      if (Lr.kind === 'multi') { const w = String(src.answer).split(/\s*,\s*/).map(nrm).sort(); nMul1++; ok(c.length >= 2 && JSON.stringify(c) === JSON.stringify(w) && c.length < Lr.options.length, tag + ' ' + s.id + ' 모두 고르기 정답 = 정본 답 조각'); }
+      else ok(c.length === 1 && c[0] === nrm(src.answer), tag + ' ' + s.id + ' 떼어 낸 보기 정답 = 정본 답');
+      ok(Lr.options.every(o => nrm(q0).indexOf(o.text) >= 0), tag + ' ' + s.id + ' 보기가 정본 물음 글에 없음');
+      const want = /①/.test(q0) ? (q0.match(/[①②③④⑤⑥]/g) || []).length : (q0.split(/\s*(?:중에서|가운데|[—–])\s*/)[0].split(' · ').length);
+      ok(Lr.options.length === want, tag + ' ' + s.id + ' 보기 수 ' + Lr.options.length + ' ≠ ' + want);
+      ok(!/[①②③④]| · /.test(s.data.question) && !/\*\*/.test(Lr.options.map(o => o.text).join('')) && /\?$/.test(s.data.question.trim()), tag + ' ' + s.id + ' 물음 글에 보기가 남음');
+      const i = Lr.options.findIndex(o => o.correct); posDist[i] = (posDist[i] || 0) + 1;
+    } else if (Lr && Lr.kind === 'num') { nNum1++; ok(Number(String(src.answer).replace(/,/g, '')) === Lr.answer && src.input !== undefined, tag + ' ' + s.id + ' 1학기 수 답'); }
+    else if (Lr && Lr.kind === 'self' && / · |①/.test(q0)) leftSelf.push(tag + ' ' + s.id);
+    if (src.input !== undefined && !/^-?\d[\d,]*(\.\d+)?$/.test(String(src.answer).trim())) ok(!Lr || Lr.kind !== 'num', tag + ' ' + s.id + ' 글 답이 수 넣기로');
+  });
+});
+ok(nInl >= 200, '1학기 하나 고르기 ' + nInl + ' (200 이상이어야)');
+ok((posDist[0] || 0) < nInl * 0.4, '정답이 첫 보기에 몰림 ' + JSON.stringify(posDist));
+console.log('  1학기 하나 고르기 ' + nInl + ' (모두 고르기 ' + nMul1 + ') · 수 넣기 ' + nNum1 + ' · 정답 자리 ' + JSON.stringify(posDist) + ' · 보기 꼴인데 스스로 확인으로 남은 것 ' + leftSelf.length);
 
 sec('D+. 수준별 채점');
 const NUMONLY = /^-?\d[\d,]*(\.\d+)?$/; let nLv = 0, nGr = 0, nCalc = 0; const lvKind = {};
