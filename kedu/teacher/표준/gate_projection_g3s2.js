@@ -2,6 +2,7 @@
    A 회수 지도: 케이티처 키마다 projmap 항목 · 원문 파일이 있고 id = 원문 <meta kedu-lesson-id> · 진도 키 = 원문 규칙
    B 교사 층 누출 0: 투영 데이터에 tnote·hint·👉·extras·suggested_extras·신호등 self 없음 · 교실 활동 = 혼자 흐름
    C 학생 화면(푼 전·첫 화면) 글에 정답·풀이·교사에게 하는 말 없음 — renderSlide + 학생 층(widget) 실제 HTML 로 검사
+   B+ 48차: 출구 퀴즈 수 답 문항을 편 장(from) — 답 = 정본 출구 답 · 기본 문제와 같은 물음은 안 폄
    D 채점: 문항 점수 합 = 100 · check() 가 정답만 받는다(하나 고르기 보기마다 · 모두 고르기 · 수 넣기) · gained 규칙
    E 혼자 흐름: 투영 교실 활동 글에 짝·모둠 말 0 · 짝·모둠 말이 남은 문제는 혼자라면 줄이 붙는다
    실행: NODE_PATH=…/jsdom/node_modules node kedu/teacher/표준/gate_projection_g3s2.js                 */
@@ -46,7 +47,12 @@ PJ.forEach(({ slug, key, L, pj }) => {
     if (s.block === 'exit_ticket') ok(s.data.self === undefined, tag + ' ' + s.id + ' 신호등');
     if (s.block === 'offline_activity') { nOff++; const src = L.slides.find(x => x.id === s.id).data; ok(s.data.type === 'individual' && JSON.stringify(s.data.steps) === JSON.stringify(src.solo), tag + ' ' + s.id + ' 혼자 흐름 = 원 solo'); ok(s.data.minutes === undefined && s.data.materials === undefined, tag + ' ' + s.id + ' 타이머·준비물'); }
   });
-  ok(pj.slides.length === L.slides.length - L.slides.filter(s => s.block === 'offline_activity' && !(s.data.solo || []).length).length, tag + ' 장 수');
+  const own = pj.slides.filter(s => !s.from);
+  const expectDrop = L.slides.filter(s => s.block === 'offline_activity' && !(s.data.solo || []).length).length;
+  const exitGone = L.slides.filter(s => s.block === 'exit_ticket' && !own.some(x => x.id === s.id)).length;
+  ok(own.length === L.slides.length - expectDrop - exitGone, tag + ' 장 수');
+  // 48차 출구 펴기: 편 장의 답 = 정본 출구 문항 답 · 편 장이 없는데 출구 장이 사라지면 안 됨
+  pj.slides.filter(s => s.from).forEach(s => { const ex = L.slides.find(x => x.id === s.from); const it = ex && (ex.data.items || []).find(i => i.q === s.data.question); ok(!!it && Number(String(it.a).replace(/,/g, '')) === s.learn.answer && s.learn.kind === 'num', tag + ' ' + s.id + ' 출구 편 장 답'); });
   ok(JSON.stringify(L).indexOf('"tnote"') >= 0 || true, '');
 });
 console.log('  투영 ' + nSlide + '장 · 혼자 활동 ' + nOff);
@@ -56,7 +62,7 @@ sec('C. 학생 첫 화면에 정답·풀이·교사 말 없음');
 const TEACH_SAY = /(짚어 주세요|하게 하세요|확인시켜|물어보게|손을 들게|칠판에|판서)/;
 let nChk = 0;
 PJ.forEach(({ slug, key, L, pj }) => pj.slides.forEach(s => {
-  const src = L.slides.find(x => x.id === s.id); const tag = slug + ' ' + key + ' ' + s.id;
+  const src = L.slides.find(x => x.id === (s.from || s.id)); const tag = slug + ' ' + key + ' ' + s.id;
   const r = KT2.renderSlide(s, { revealed: false, state: {}, meta: pj.meta, unitTitle: 'U', classNames: [] });
   const html = r.body + W(s, fresh()) + (s.solo || ''); const tx = text(html); nChk++;
   ok(!/풀이\s*[:：]/.test(tx), tag + ' 풀이가 첫 화면에');

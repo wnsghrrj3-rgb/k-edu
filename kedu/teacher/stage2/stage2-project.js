@@ -60,9 +60,27 @@
   }
 
   const SCORED = new Set(['pick', 'multi', 'num']);
+  const NUMERIC = /^-?\d[\d,]*(\.\d+)?$/;
   function project(lesson) {
     const L = lesson || {};
-    const slides = (L.slides || []).map(projectSlide).filter(Boolean);
+    let slides = (L.slides || []).map(projectSlide).filter(Boolean);
+    // 48차 — 출구 퀴즈의 수 답 문항을 학생이 직접 넣어 채점하는 장으로 편다(자기주도 원문의 문제 8개 가운데
+    // 정본 출구에 옮겨 둔 것을 되살림). 기본 문제와 같은 물음(식)은 두 번 채점하지 않는다. 글 답 문항은 출구 장에 남긴다.
+    const qkey = (q) => String(q || '').replace(/\*\*/g, '').replace(/\s+/g, '').replace(/(은|는)?(얼마|몇)(인가요|일까요|이에요|예요)?\??$/, '');
+    const basicQ = new Set(slides.filter(s => s.block === 'basic_problem').map(s => qkey(s.data.question)));
+    slides = slides.flatMap(s => {
+      if (s.block !== 'exit_ticket' || !Array.isArray(s.data.items)) return [s];
+      const keep = [], out = [];
+      s.data.items.forEach(it => {
+        const a = String(it && it.a != null ? it.a : '').trim();
+        if (NUMERIC.test(a) && !basicQ.has(qkey(it.q))) out.push(it); else if (!(NUMERIC.test(a) && basicQ.has(qkey(it.q)))) keep.push(it);
+      });
+      const made = out.map((it, i) => ({ id: s.id + '_' + (i + 1), from: s.id, stage: s.stage, block: 'basic_problem',
+        data: { title: (s.data.title || '오늘 확인해요') + ' ' + '①②③④⑤⑥'.charAt(i), question: it.q },
+        learn: { kind: 'num', answer: Number(String(it.a).replace(/,/g, '')) } }));
+      if (keep.length) { s.data.items = keep; return [s].concat(made); }
+      return made.length ? made : [s];
+    });
     const scored = slides.filter(s => s.learn && SCORED.has(s.learn.kind)).map(s => s.id);
     const n = scored.length;
     // 100점을 채점 문항에 나눈다 — 나머지는 앞 문항부터 1점씩(합이 꼭 100)
