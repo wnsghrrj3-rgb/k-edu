@@ -1,5 +1,7 @@
 /* 표준/gate_projection_g3s2.js — 자기주도 투영(47차) 게이트 · 3학년 2학기 정본 전부 + 50차부터 3학년 1학기 정본(g3_*) 전부
    D1 50차: 1학기 물음 속 보기 → 하나 고르기(정답 = 정본 answer · 보기 수 · 물음 글에 보기 안 남음 · 정답 자리 쏠림 없음) · 글 답은 수 넣기 안 됨
+   D2 51차: 짝 잇기·나눠 담기·차례 놓기·단위 붙은 수 답 — 떼어 낸 짝·갈래·차례 = 정본 answer 글(글자 자리로 따로 대조) ·
+      보기는 섞였고 첫 화면에 이은 것·담은 것·놓은 것·✅ 없음 · check() 가 맞는 배치만 받는다(하나만 바꿔도 틀림) · 정본 answer 는 투영 data 에서 빠짐
    A 회수 지도: 케이티처 키마다 projmap 항목 · 원문 파일이 있고 id = 원문 <meta kedu-lesson-id> · 진도 키 = 원문 규칙
    B 교사 층 누출 0: 투영 데이터에 tnote·hint·👉·extras·suggested_extras·신호등 self 없음 · 교실 활동 = 혼자 흐름
    C 학생 화면(푼 전·첫 화면) 글에 정답·풀이·교사에게 하는 말 없음 — renderSlide + 학생 층(widget) 실제 HTML 로 검사
@@ -104,19 +106,21 @@ console.log('  채점 문항 ' + nQ + ' · 차시당 채점 문항 수 분포 ' 
 sec('D1. 1학기 물음 속 보기 → 하나 고르기 (50차)');
 // 1세대 생성기 기본 문제: 보기를 물음 글 안에 적음. 투영은 그 보기를 떼어 하나 고르기로 — 정답 = 정본 answer 글자 그대로.
 const nrm = (x) => String(x == null ? '' : x).replace(/\*\*/g, '').replace(/[‘’“”"'「」]/g, '').replace(/[.!?。]+$/, '').replace(/\s+/g, ' ').trim();
+// 51차: 보기와 답 글이 괄호 풀이·띄어쓰기만 다른 경우(「어찌하다(움직임)」 = 「어찌하다」)
+const same = (o, x) => o === x || o.replace(/\s/g, '') === x.replace(/\s/g, '') || o.replace(/\s*\([^)]*\)$/, '') === x;
 let nInl = 0, nNum1 = 0, nMul1 = 0; const posDist = {}; const leftSelf = [];
 PJ.forEach(({ slug, key, L, pj }) => { if (/s2_/.test(slug)) return; const tag = slug + ' ' + key;
   pj.slides.forEach(s => { if (s.block !== 'basic_problem' || s.from) return; const src = L.slides.find(x => x.id === s.id).data; const q0 = String(src.question || ''); const Lr = s.learn;
     if (Lr && Lr.inline) { nInl++;
       const c = Lr.options.filter(o => o.correct).map(o => o.text).sort();
-      if (Lr.kind === 'multi') { const w = String(src.answer).split(/\s*,\s*/).map(nrm).sort(); nMul1++; ok(c.length >= 2 && JSON.stringify(c) === JSON.stringify(w) && c.length < Lr.options.length, tag + ' ' + s.id + ' 모두 고르기 정답 = 정본 답 조각'); }
-      else ok(c.length === 1 && c[0] === nrm(src.answer), tag + ' ' + s.id + ' 떼어 낸 보기 정답 = 정본 답');
+      if (Lr.kind === 'multi') { const w = String(src.answer).split(/\s*,\s*|\s+·\s+/).map(nrm); nMul1++; ok(c.length >= 2 && c.length === w.length && w.every(x => c.some(o => same(o, x))) && c.length < Lr.options.length, tag + ' ' + s.id + ' 모두 고르기 정답 = 정본 답 조각'); }
+      else ok(c.length === 1 && same(c[0], nrm(src.answer)), tag + ' ' + s.id + ' 떼어 낸 보기 정답 = 정본 답');
       ok(Lr.options.every(o => nrm(q0).indexOf(o.text) >= 0), tag + ' ' + s.id + ' 보기가 정본 물음 글에 없음');
       const want = /①/.test(q0) ? (q0.match(/[①②③④⑤⑥]/g) || []).length : (q0.split(/\s*(?:중에서|가운데|[—–])\s*/)[0].split(' · ').length);
       ok(Lr.options.length === want, tag + ' ' + s.id + ' 보기 수 ' + Lr.options.length + ' ≠ ' + want);
-      ok(!/[①②③④]| · /.test(s.data.question) && !/\*\*/.test(Lr.options.map(o => o.text).join('')) && /\?$/.test(s.data.question.trim()), tag + ' ' + s.id + ' 물음 글에 보기가 남음');
+      ok(!/[①②③④]| · /.test(s.data.question) && !/\*\*/.test(Lr.options.map(o => o.text).join('')) && /(\?|요\.?)$/.test(s.data.question.trim()), tag + ' ' + s.id + ' 물음 글에 보기가 남음');
       const i = Lr.options.findIndex(o => o.correct); posDist[i] = (posDist[i] || 0) + 1;
-    } else if (Lr && Lr.kind === 'num') { nNum1++; ok(Number(String(src.answer).replace(/,/g, '')) === Lr.answer && src.input !== undefined, tag + ' ' + s.id + ' 1학기 수 답'); }
+    } else if (Lr && Lr.kind === 'num') { nNum1++; ok(Number(String(src.answer).replace(/,/g, '')) === Lr.answer && (src.input !== undefined || (Lr.a === String(src.answer).trim() && /몇|얼마|언제|며칠/.test(q0))), tag + ' ' + s.id + ' 1학기 수 답'); }
     else if (Lr && Lr.kind === 'self' && / · |①/.test(q0)) leftSelf.push(tag + ' ' + s.id);
     if (src.input !== undefined && !/^-?\d[\d,]*(\.\d+)?$/.test(String(src.answer).trim())) ok(!Lr || Lr.kind !== 'num', tag + ' ' + s.id + ' 글 답이 수 넣기로');
   });
@@ -124,6 +128,73 @@ PJ.forEach(({ slug, key, L, pj }) => { if (/s2_/.test(slug)) return; const tag =
 ok(nInl >= 200, '1학기 하나 고르기 ' + nInl + ' (200 이상이어야)');
 ok((posDist[0] || 0) < nInl * 0.4, '정답이 첫 보기에 몰림 ' + JSON.stringify(posDist));
 console.log('  1학기 하나 고르기 ' + nInl + ' (모두 고르기 ' + nMul1 + ') · 수 넣기 ' + nNum1 + ' · 정답 자리 ' + JSON.stringify(posDist) + ' · 보기 꼴인데 스스로 확인으로 남은 것 ' + leftSelf.length);
+
+sec('D2. 짝 잇기 · 나눠 담기 · 차례 놓기 · 단위 붙은 수 답 (51차)');
+// 떼어 낸 것을 정본 answer 글자 자리로 따로 대조한다(파서와 독립): 짝은 「L<가름표>R」 이 답 글에 그대로 · 갈래는 통 이름 사이에 그 카드 · 차례는 「→」 로 이은 글 그대로.
+const flat = (x) => String(x == null ? '' : x).replace(/\*\*/g, '').replace(/\s*\n\s*/g, ' ').replace(/\s+/g, ' ').trim();
+const SEPS = [' ↔ ', '↔', ' = ', ' — ', '—', ' – ', '-', ' - ', '='];
+const kc = {}; let nD2 = 0;
+PJ.forEach(({ slug, key, L, pj }) => pj.slides.forEach(s => {
+  const Lr = s.learn; if (!Lr || ['match', 'sort', 'order', 'nums', 'frac'].indexOf(Lr.kind) < 0 || s.from) return;
+  nD2++; kc[Lr.kind] = (kc[Lr.kind] || 0) + 1;
+  const src = L.slides.find(x => x.id === s.id).data, A = flat(src.answer), tag = slug + ' ' + key + ' ' + s.id;
+  ok(s.data.answer === undefined, tag + ' 투영 data 에 정본 answer 가 남음');
+  const perm = (k, n) => k.length === n && new Set(k).size === n && k.every(v => v >= 0 && v < n);
+  const box = g.document.createElement('div'); box.innerHTML = W(s, fresh());
+  ok(!box.querySelector('.ok,.lw-got,.answer'), tag + ' 첫 화면에 정답 표시');
+  if (Lr.kind === 'match') {
+    const n = Lr.left.length; ok(n >= 2 && n <= 6 && Lr.right.length === n && perm(Lr.key, n), tag + ' 짝 모양');
+    ok(Lr.key.some((v, i) => v !== i), tag + ' 오른쪽이 섞이지 않음');
+    const A2 = A.replace(/(^|\/ )\d(?=[^\d\s.,])/g, '$1'); // 원문 줄 번호가 붙은 왼쪽(「2자리 때문에 …」)
+    Lr.left.forEach((l, i) => { const r = Lr.right[Lr.key[i]];
+      const direct = SEPS.some(sp => A.indexOf(l + sp + r) >= 0 || A2.indexOf(l + sp + r) >= 0);
+      // 보이는 왼쪽이 물음 글 항목 전체(「우리 학교 도서관은 좋습니다」)일 때 — 답 글의 왼쪽(「도서관」)이 그 안에 있고 물음 글에도 그 항목이 있어야
+      const viaQ = !direct && flat(src.question).indexOf(l) >= 0 && SEPS.some(sp => { const m = A.indexOf(sp + r); if (m < 0) return false; const lw = A.slice(0, m).split(/, | \/ /).pop(); return !!lw && l.indexOf(lw) > 0; });
+      ok(direct || viaQ, tag + ' 짝 「' + l.slice(0, 12) + ' ↔ ' + r.slice(0, 12) + '」 이 정본 답 글에 없음'); });
+    ok(!box.querySelector('.lm-it.on'), tag + ' 첫 화면에 이은 짝');
+    { const k = Lr.key.slice(); [k[0], k[1]] = [k[1], k[0]]; ok(P.check(Lr, Lr.key.slice()) && !P.check(Lr, k) && !P.check(Lr, Lr.key.slice(0, -1)) && !P.check(Lr, []), tag + ' 짝 채점'); }
+  }
+  if (Lr.kind === 'sort') {
+    const n = Lr.items.length, B = Lr.bins; ok(B.length >= 2 && B.length <= 4 && n >= 3 && Lr.key.length === n && Lr.key.every(k => k >= 0 && k < B.length) && B.every((_, k) => Lr.key.indexOf(k) >= 0), tag + ' 갈래 모양');
+    const pos = []; B.forEach((b, k) => pos.push(A.indexOf(b, k ? pos[k - 1] + 1 : 0))); ok(pos.every(p => p >= 0), tag + ' 통 이름이 정본 답 글 차례대로 없음');
+    Lr.items.forEach((t, i) => { const k = Lr.key[i], at = A.indexOf(t, pos[k] + B[k].length), end = k + 1 < B.length ? pos[k + 1] : A.length; ok(at >= 0 && at < end, tag + ' 카드 「' + t.slice(0, 12) + '」 가 ' + B[k] + ' 칸 글에 없음'); });
+    ok(n === B.length + (A.match(/ · /g) || []).length, tag + ' 카드 수 ' + n + ' ≠ 답 글 조각 수');
+    ok(!Lr.key.every((v, i) => !i || v >= Lr.key[i - 1]) && !Lr.key.every((v, i) => !i || v <= Lr.key[i - 1]), tag + ' 카드가 통 차례대로 놓여 있음(안 섞임)');
+    ok(!box.querySelector('.ca-bin-in .ca-chip') && box.querySelectorAll('.ls-tray .ca-chip').length === n, tag + ' 첫 화면에 담긴 카드');
+    { const k = Lr.key.slice(); const j = k.findIndex(v => v !== k[0]); [k[0], k[j]] = [k[j], k[0]]; ok(P.check(Lr, Lr.key.slice()) && !P.check(Lr, k) && !P.check(Lr, Lr.key.slice(0, -1)), tag + ' 갈래 채점'); }
+  }
+  if (Lr.kind === 'order') {
+    const n = Lr.items.length; ok(n >= 3 && perm(Lr.key, n), tag + ' 차례 모양');
+    ok(Lr.key.map(i => Lr.items[i]).join(' → ') === A.split(/\s*→\s*/).map(x => x.replace(/^\d+\s+/, '')).join(' → '), tag + ' 차례 = 정본 답 글');
+    ok(Lr.key.some((v, i) => v !== i) && Lr.key.some((v, i) => v !== n - 1 - i), tag + ' 카드가 답 차례·거꾸로 차례 그대로');
+    ok(!box.querySelector('.lo-slot.on') && box.querySelectorAll('.ls-tray .ca-chip').length === n, tag + ' 첫 화면에 놓인 칸');
+    { const k = Lr.key.slice(); [k[0], k[1]] = [k[1], k[0]]; ok(P.check(Lr, Lr.key.slice()) && !P.check(Lr, k) && !P.check(Lr, Lr.key.slice(0, -1)), tag + ' 차례 채점'); }
+  }
+  if (Lr.kind === 'nums' || Lr.kind === 'frac') {
+    ok(Lr.a === A, tag + ' 답 글 = 정본');
+    ok(!/분의|약\s|보다/.test(A) && /몇|얼마|언제|며칠/.test(flat(src.question)), tag + ' 분수 말·어림·범위 답을 채점');
+    if (Lr.kind === 'nums') {
+      Lr.parts.forEach(p => ok(new RegExp('(^|[^\\d])' + p.v + '\\s*' + (p.unit || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![a-zA-Z가-힣])').test(A), tag + ' 칸 「' + p.v + p.unit + '」 가 정본 답 글에 없음'));
+      const vs = Lr.parts.map(p => String(p.v)); ok(P.check(Lr, vs) && !P.check(Lr, vs.map((v, i) => i ? v : String(+v + 1))) && !P.check(Lr, vs.map(() => '')), tag + ' 단위 칸 채점');
+      if (vs.length > 1) ok(!P.check(Lr, vs.slice().reverse()) || vs.every(v => v === vs[0]), tag + ' 칸 차례 바꿔도 맞음');
+      const t = box.textContent, body = text(KT2.renderSlide(s, { revealed: false, state: {}, meta: pj.meta, unitTitle: 'U', classNames: [] }).body);
+      ok(!box.querySelector('.lw-in[value]:not([value=""])'), tag + ' 첫 화면 칸에 수가 들어 있음');
+      ok(t.indexOf(A) < 0 || body.indexOf(A) >= 0, tag + ' 답 글이 학생 층에');
+    }
+  }
+}));
+ok((kc.match || 0) >= 70 && (kc.sort || 0) >= 60 && (kc.order || 0) >= 3 && (kc.nums || 0) >= 25, '51차 새 꼴 수가 줄어듦 ' + JSON.stringify(kc));
+{ // 파서 자체 확인 — 대표 꼴과 거절해야 할 꼴
+  const S = P.structured;
+  const m1 = S('보다 · 듣다 · 냄새 맡다는 각각 몸의 어느 기관과 이어질까요?', '보다-눈, 듣다-귀, 냄새 맡다-코');
+  const m2 = S('이어요', '나이 ↔ 연세 / 이름 ↔ 성함');
+  const s1 = S('고체일까요, 액체일까요?', '🧱 고체 — 지우개 · 가위 / 💧 액체 — 간장 · 우유');
+  const o1 = S('차례대로 놓으면 어떻게 될까요?', 'A가 → B가 → C가');
+  ok(m1 && m1.learn.kind === 'match' && m1.learn.left.join() === '보다,듣다,냄새 맡다' && m2 && m2.learn.kind === 'match' && s1 && s1.learn.kind === 'sort' && s1.learn.bins.length === 2 && o1 && o1.learn.kind === 'order', '파서 자체: 짝·갈래·차례');
+  ok(!S('두 부분으로 나누면?', '콩이가 / 뛰어갑니다., 민주는 / 친절합니다.') && !S('한 문장으로 말해 봐요.', '여러 답 (예: …)') && !S('각각 무엇일까요?', '문단, 중심 문장, 뒷받침 문장') && !S('이어요', 'A ↔ B / A ↔ C'), '파서 자체: 짝이 아닌 꼴·같은 오른쪽은 거절');
+  const U = P.unitAnswer; ok(U('몇 cm일까요?', '100 cm').kind === 'nums' && U('몇 분 몇 초일까요?', '3분 5초').parts.length === 2 && !U('얼마일까요?', '4분의 3') && !U('약 얼마일까요?', '약 6 cm') && !U('어느 쪽일까요?', '1보다 작아요'), '파서 자체: 단위 답');
+}
+console.log('  새 꼴 ' + nD2 + ' ' + JSON.stringify(kc));
 
 sec('D+. 수준별 채점');
 const NUMONLY = /^-?\d[\d,]*(\.\d+)?$/; let nLv = 0, nGr = 0, nCalc = 0; const lvKind = {};

@@ -7,6 +7,7 @@
      출구 신호등 self(손 든 수 세기) · 교실 활동의 짝·모둠 흐름(→ 🙋 혼자라면 흐름으로 바꿈) · 타이머 분
    · 바꾸는 것(학생이 스스로 푸는 자리): 기본 문제 → learn { kind: pick(하나 고르기) · multi(모두 고르기) ·
      num(수 넣기) · self(생각하고 정답 보기) } · 생각을 넓혀요 → self · 「풀이」 쪽지는 푼 뒤에만
+   · 51차: 짝 잇기(match) · 나눠 담기(sort) · 차례 놓기(order) · 단위 붙은 수 답(nums) — 정본 answer 글에서 떼어 채점한다(답 글은 학생 층으로만)
    · 50차: 1학기 정본 — 물음 글 안 보기(「A · B 중에서」·「① … — 어느 것」) → 하나 고르기 · 답이 「A, B」면 모두 고르기 · 수 답만 num(글 답 input 은 스스로 확인)
    · 49차: 수준별 문제 → lv 답 표(수준마다 nums·frac·self) — 고른 수준의 답으로 채점, 100점과 따로 「도전 🏅」로 센다
    · 점수(자기주도와 같은 100점): pick·multi·num 이 채점 문항 — 한 번에 맞히면 만점, 두 번째면 절반, 정답 보기면 0.
@@ -56,6 +57,8 @@
         if (Array.isArray(d.options) && d.options.length) { learn.kind = d.multi ? 'multi' : 'pick'; learn.options = d.options; }
         else if (d.answer !== undefined && d.input !== undefined && NUMERIC.test(String(d.answer).trim())) { learn.kind = 'num'; learn.answer = Number(String(d.answer).replace(/,/g, '')); }
         else if (d.answer !== undefined && (ch = inlineChoices(d.question, d.answer))) { learn.kind = ch.multi ? 'multi' : 'pick'; learn.options = ch.options; learn.inline = true; d.question = ch.question; }
+        else if (d.answer !== undefined && (ch = structured(d.question, d.answer))) { Object.assign(learn, ch.learn); if (ch.question) d.question = ch.question; }
+        else if (d.answer !== undefined && d.input === undefined && (ch = unitAnswer(d.question, d.answer))) { Object.assign(learn, ch); }
         else if (d.answer !== undefined) { learn.kind = 'self'; learn.answer = d.answer; }
         if (learn.kind) { ['options', 'multi', 'answer', 'input', 'note'].forEach(k => delete d[k]); s.learn = learn; }
         if (isStr(d.question) && PAIRISH.test(d.question)) s.solo = SOLO_FALLBACK;
@@ -78,13 +81,15 @@
     const q = String(q0 || ''); let opts = null, rest = '';
     let m = q.match(/^([\s\S]*?)①([\s\S]*?)\s+[—–-]\s+([^—–]*\?)\s*$/);
     if (m) { opts = ('①' + m[2]).split(/[①②③④⑤⑥]/).map(norm).filter(Boolean); rest = (m[1].trim() ? m[1].trim() + ' ' : '') + m[3].trim(); }
-    else if ((m = q.match(/^([^?—–]*? · [^?—–]*?)\s*(?:중에서|가운데|[—–])\s*([^—–]*\?)\s*$/))) { opts = m[1].split(' · ').map(norm).filter(Boolean); rest = m[2].trim(); }
+    else if ((m = q.match(/^([^?—–]*? · [^?—–]*?)\s*(?:중에서|가운데|[—–])\s*([^—–]*(?:\?|요\.?))\s*$/))) { opts = m[1].split(' · ').map(norm).filter(Boolean); rest = m[2].trim(); }
     if (!opts || opts.length < 2 || opts.length > 6 || !rest) return null;
-    const a = norm(ans); let want = opts.filter(o => o === a); let multi = false;
-    if (want.length !== 1) { // 「A, B」 — 모두 고르기(각 조각이 보기와 글자가 같고 둘 이상)
-      const parts = String(ans == null ? '' : ans).split(/\s*,\s*/).map(norm).filter(Boolean);
-      if (parts.length < 2 || parts.length >= opts.length || !parts.every(p => opts.filter(o => o === p).length === 1) || new Set(parts).size !== parts.length) return null;
-      want = parts; multi = true;
+    // 51차: 보기 글과 답 글이 괄호 풀이·띄어쓰기만 다를 때도 같은 보기(「어찌하다(움직임)」 = 「어찌하다」 · 「설명 1(…)」 = 「설명 1 (…)」)
+    const same = (o, x) => o === x || o.replace(/\s/g, '') === x.replace(/\s/g, '') || o.replace(/\s*\([^)]*\)$/, '') === x;
+    const a = norm(ans); let want = opts.filter(o => same(o, a)); let multi = false;
+    if (want.length !== 1) { // 「A, B」·「A · B」 — 모두 고르기(각 조각이 보기와 글자가 같고 둘 이상)
+      const parts = String(ans == null ? '' : ans).split(/\s*,\s*|\s+·\s+/).map(norm).filter(Boolean);
+      if (parts.length < 2 || parts.length >= opts.length || !parts.every(p => opts.filter(o => same(o, p)).length === 1) || new Set(parts).size !== parts.length) return null;
+      want = parts.map(p => opts.find(o => same(o, p))); multi = true;
     }
     const isAns = (o) => want.indexOf(o) >= 0;
     if (opts.some(o => o.length > 40)) return null;
@@ -93,6 +98,89 @@
     const idx = opts.map((o, i) => i); for (let i = idx.length - 1; i > 0; i--) { h = (h * 1103515245 + 12345) >>> 0; const j = (h >>> 16) % (i + 1); [idx[i], idx[j]] = [idx[j], idx[i]]; }
     if (idx.every((v, i) => v === i)) idx.push(idx.shift()); // 원래 차례 그대로면 한 칸 돌린다
     return { question: rest, multi, options: idx.map(i => ({ text: opts[i], correct: isAns(opts[i]) })) };
+  }
+
+  // 51차 — 답 글이 짝·갈래·차례로 된 문제: 정본 answer 에서 떼어 학생이 직접 잇고·담고·놓게 한다.
+  //   짝 잇기   「L ↔ R / L ↔ R」(2학기) · 「L = R / L = R」 · 「A · B · C 는 각각 …?」 + 「A-x, B-y, C-z」(1학기)
+  //   나눠 담기 「🧱 고체 — a · b / 💧 액체 — c」(2학기) · 「땅 = 다람쥐 · 너구리 / 땅속 = …」(1학기)
+  //   차례 놓기 「… 차례대로 …?」 + 「A → B → C」
+  //   떼어 낼 수 없거나 모양이 조금이라도 어긋나면 null(스스로 확인 그대로).
+  const flat = (x) => String(x == null ? '' : x).replace(/\*\*/g, '').replace(/\s*\n\s*/g, ' ').replace(/\s+/g, ' ').trim();
+  function shuffleIdx(n, seed) {
+    let h = 0; for (const c of String(seed)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    const idx = Array.from({ length: n }, (_, i) => i); for (let i = n - 1; i > 0; i--) { h = (h * 1103515245 + 12345) >>> 0; const j = (h >>> 16) % (i + 1); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    if (idx.every((v, i) => v === i)) idx.push(idx.shift());
+    if (n > 2 && idx.every((v, i) => v === n - 1 - i)) idx.push(idx.shift()); // 거꾸로 차례도 피한다(뒤집기만 하면 풀리지 않게)
+    return idx;
+  }
+  function splitPair(seg, arrowOnly) {
+    const res = arrowOnly ? [/\s*↔\s*/] : [/\s+=\s+/, /\s+[—–]\s+/, /[—–]/, /\s*=\s*/, /(?<=[가-힣)\]])-(?=\S)/];
+    for (const re of res) { const m = seg.match(re); if (m && m.index > 0) { const L = seg.slice(0, m.index).trim(), R = seg.slice(m.index + m[0].length).trim(); if (L && R) return [L, R]; } }
+    return null;
+  }
+  const uniq = (a) => new Set(a).size === a.length;
+  // 물음 글 앞에 담을 것·놓을 것을 늘어놓았으면(「다람쥐 · 지렁이 … — 땅 위에 사는 무리는?」) 떼어 뒷말만 남긴다 — 늘어놓은 것이 곧 보기일 때만
+  function dropList(q, items) {
+    const m = q.match(/^([^—–?]+ · [^—–?]+?)(?:\s*[—–]\s*|\s+가운데\s+|\s+을\s+)(.+)$/); if (!m) return null;
+    const list = m[1].split(' · ').map(x => x.trim()); return list.length === items.length && list.every(x => items.indexOf(x) >= 0) ? m[2].trim() : null;
+  }
+  function structured(q0, ans) {
+    const q = flat(q0), a = flat(ans); if (!a) return null;
+    // 차례 놓기
+    if (/차례/.test(q) && (a.match(/→/g) || []).length >= 2) {
+      const items = a.split(/\s*→\s*/).map(x => x.replace(/^\d+\s+/, '').trim());
+      if (items.length < 3 || items.length > 6 || !uniq(items) || items.some(x => !x || x.length > 40)) return null;
+      const idx = shuffleIdx(items.length, q + a); const shown = idx.map(i => items[i]);
+      return { learn: { kind: 'order', items: shown, key: items.map(t => shown.indexOf(t)) }, question: dropList(q, items) };
+    }
+    let segs, form;
+    if (/↔/.test(a)) { segs = a.split(/\s+\/\s+/); form = 'arrow'; if (segs.some(x => (x.match(/↔/g) || []).length !== 1)) return null; }
+    else if (/\s\/\s/.test(a)) { segs = a.split(/\s+\/\s+/); form = 'slash'; }
+    else if (/각각/.test(q)) { segs = a.split(/,\s*(?=[^,]*?(?:[—–=]|[가-힣)\]]-\S))/); form = 'comma'; }
+    else return null;
+    const pairs = segs.map(x => splitPair(x, form === 'arrow')); if (pairs.some(p => !p)) return null;
+    if (pairs.length < 2 || pairs.length > 6) return null;
+    // 원문 글 판의 줄 번호가 붙어 온 왼쪽(「2자리 때문에 …」·「3학기 초에 …」 = 2·3·4번 줄) — 번호가 차례로 이어질 때만 뗀다
+    const dg = pairs.map(p => (p[0].match(/^(\d)(?=[^\d\s.,])/) || [])[1]);
+    if (dg.every(Boolean) && dg.every((d, i) => +d === +dg[0] + i)) pairs.forEach(p => { p[0] = p[0].slice(1); });
+    const lefts = pairs.map(p => p[0]), rights = pairs.map(p => p[1]);
+    if (!uniq(lefts)) return null;
+    // 나눠 담기 — 「/」 로 가른 갈래에 「 · 」 로 여러 개가 담긴 꼴
+    if (form === 'slash' && rights.some(r => / · /.test(r))) {
+      const bins = lefts, groups = rights.map(r => r.split(/\s+·\s+/).map(x => x.trim()));
+      const items = [].concat.apply([], groups); if (bins.length > 4 || items.length < 3 || items.length > 10 || !uniq(items) || items.some(x => !x || x.length > 40) || bins.some(b => b.length > 30)) return null;
+      const bin = []; groups.forEach((g, k) => g.forEach(() => bin.push(k)));
+      const idx = shuffleIdx(items.length, q + a);
+      // 통 차례대로 몰려 있으면(「고체 고체 액체 액체」) 한 칸씩 돌려 섞는다 — 카드 차례만 보고 담을 수 없게
+      const mono = (k) => k.every((v, i) => !i || v >= k[i - 1]) || k.every((v, i) => !i || v <= k[i - 1]);
+      for (let t = 0; t < items.length && mono(idx.map(i => bin[i])); t++) idx.push(idx.shift());
+      const shown = idx.map(i => items[i]), key = idx.map(i => bin[i]);
+      // 1학기: 물음 글 앞에 담을 것들을 늘어놓았으면(「다람쥐 · 지렁이 … — 땅 위에 사는 무리는?」) 떼어 뒷말만 남긴다
+      return { learn: { kind: 'sort', bins, items: shown, key }, question: dropList(q, items) };
+    }
+    // 짝 잇기
+    if (!uniq(rights) || lefts.concat(rights).some(x => x.length > 60)) return null;
+    if (pairs.some(([l, r]) => r.replace(/[\/\s.]/g, '') === l.replace(/[\s.]/g, ''))) return null; // 「콩이가 뛰어갑니다 ↔ 콩이가 / 뛰어갑니다」 같은 나누기 문제는 짝이 아니다
+    let show = lefts;
+    if (form === 'comma') { // 물음 글에 늘어놓은 왼쪽 수 = 짝 수 · 왼쪽 이름이 물음 글에 있어야
+      const pre = q.split(/각각/)[0]; const list = pre.split(' · ').map(x => x.replace(/\s*[—–]\s*$/, '').trim()); if (list.length !== pairs.length || !lefts.every(l => pre.indexOf(l) >= 0)) return null;
+      // 답 글이 줄여 적은 왼쪽(「도서관」)이 물음 글 항목 한가운데 있으면(「우리 학교 도서관은 좋습니다」) 물음 글 항목을 보인다
+      show = lefts.map(l => { const hit = list.filter(x => x.indexOf(l) >= 0); return hit.length === 1 && hit[0].indexOf(l) > 0 && !/[—–]/.test(hit[0]) ? hit[0] : l; });
+      if (!uniq(show)) show = lefts;
+    }
+    const idx = shuffleIdx(rights.length, q + a); const shown = idx.map(i => rights[i]);
+    return { learn: { kind: 'match', left: show, right: shown, key: rights.map(r => shown.indexOf(r)) } };
+  }
+  // 51차 — 기본 문제의 단위 붙은 수 답(「100 cm」·「7 cm 1 mm」·「3분 5초」·「4개」): 수준별과 같은 칸 넣기로 채점
+  const UNITS = new Set(['', 'cm', 'mm', 'm', 'km', 'g', 'kg', 't', 'L', 'mL', '시', '분', '초', '시간', '개', '명', '원', '번', '장', '권', '살', '일', '달', '년', '층', '쪽', '칸', '묶음', '봉지', '상자', '배', '마리', '자루', '송이', '대', '켤레', '그루', '걸음', '바퀴', '뼘', '줄', '통', '병', '컵', '조각', '판', 'cm²', '개월']);
+  function unitAnswer(q0, ans) {
+    const q = flat(q0), a = flat(ans);
+    if (!/몇|얼마|언제|며칠/.test(q) || /분의|약\s|보다/.test(a)) return null;
+    const g = parseLevelAnswer(a); if (!g) return null;
+    if (g.kind === 'frac') return { kind: 'frac', answer: g.answer, a };
+    if (g.parts.some(p => !UNITS.has(p.unit) || p.post)) return null;
+    if (g.parts.length === 1 && !g.parts[0].unit && !g.parts[0].pre) return { kind: 'num', answer: g.parts[0].v, a };
+    return { kind: 'nums', parts: g.parts, a };
   }
   // 수준별 답 글 → 채점 꼴. 「약 ~」(어림)·「~보다 크고」·기호(㉠)·대분수는 채점하지 않는다(스스로 확인).
   //   '175개' → nums [175 개] · '몫 4, 나머지 5' → nums [몫 4][나머지 5] · '7봉지, 3개 남음' → [7 봉지][3 개 남음] ·
@@ -109,7 +197,7 @@
     }
     return parts.length && parts.length <= 4 ? { kind: 'nums', parts } : null;
   }
-  const SCORED = new Set(['pick', 'multi', 'num']);
+  const SCORED = new Set(['pick', 'multi', 'num', 'nums', 'frac', 'match', 'sort', 'order']);
   const NUMERIC = /^-?\d[\d,]*(\.\d+)?$/;
   function project(lesson) {
     const L = lesson || {};
@@ -146,13 +234,14 @@
     if (learn.kind === 'multi') { const want = learn.options.map((o, i) => o.correct ? i : -1).filter(i => i >= 0); const got = (ans || []).slice().sort((a, b) => a - b); return want.length === got.length && want.every((v, i) => v === got[i]); }
     if (learn.kind === 'num') { const v = String(ans == null ? '' : ans).replace(/[\s,]/g, ''); return v !== '' && Number(v) === Number(learn.answer); }
     if (learn.kind === 'nums') { const a = Array.isArray(ans) ? ans : [ans]; return learn.parts.length === a.length && learn.parts.every((p, i) => { const v = String(a[i] == null ? '' : a[i]).replace(/[\s,]/g, ''); return v !== '' && Number(v) === p.v; }); }
-    if (learn.kind === 'frac') { const v = String(ans == null ? '' : ans).replace(/\s/g, ''); return v === learn.answer; }
+    if (learn.kind === 'frac') { const v = String(Array.isArray(ans) ? ans[0] : ans == null ? '' : ans).replace(/\s/g, ''); return v === learn.answer; }
+    if (learn.kind === 'match' || learn.kind === 'sort' || learn.kind === 'order') { const a = Array.isArray(ans) ? ans : []; return a.length === learn.key.length && learn.key.every((v, i) => a[i] === v); }
     return false;
   }
   // 몇 번째에 맞혔나 → 얻는 점수
   function gained(learn, tries, gaveUp) { if (!learn || !learn.pts || gaveUp) return 0; return tries <= 1 ? learn.pts : tries === 2 ? Math.ceil(learn.pts / 2) : 0; }
 
-  const API = { project, projectSlide, check, gained, parseLevelAnswer, inlineChoices, SCORED, SOLO_FALLBACK };
+  const API = { project, projectSlide, check, gained, parseLevelAnswer, inlineChoices, structured, unitAnswer, SCORED, SOLO_FALLBACK };
   global.KT2_PROJECT = API;
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
 })(typeof window !== 'undefined' ? window : globalThis);

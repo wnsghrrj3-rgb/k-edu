@@ -8,6 +8,8 @@
    · 채점 문항을 풀기 전에는 다음 장으로 안 넘어간다(정답 보기를 누르면 넘어갈 수 있다 — 0점).
    · 49차: 수준별 문제 — 고른 수준의 답으로 채점(수 칸·단위·몫과 나머지·분수) · 푸는 동안 수준 잠금 · 교사용 「정답 보기」 단추 없음 ·
      여러 답(open)·글 답은 스스로 확인. 100점과 따로 「🏅 도전」으로 센다(수준마다 문제가 달라 점수에 섞으면 쉬운 수준을 고르게 된다).
+   · 51차: 짝 잇기(왼쪽 누르고 → 오른쪽 짝) · 나눠 담기(카드 누르고 → 통) · 차례 놓기(카드를 누르는 차례대로 칸에) · 단위 붙은 수 답(칸마다 단위).
+     틀리면 맞은 것은 그대로 두고 틀린 것만 되돌린다(어디가 틀렸는지 보이게) — 점수는 다른 문항과 같다(한 번에 만점 · 두 번째 절반).
    진입: learn.html?g=3&t=2&s=social&u=1&l=u1_l04
    ============================================================================ */
 (function (global) {
@@ -48,7 +50,7 @@
     return K().Stage.prototype.act.call(this, btn);
   };
   Learn.prototype.state = function (sid) { return this.IS[sid] || (this.IS[sid] = {}); };
-  Learn.prototype.ls = function (sid) { return this.L[sid] || (this.L[sid] = { tries: 0, done: false, gaveUp: false, sel: [], wrong: [], val: '', vals: [], shown: false }); };
+  Learn.prototype.ls = function (sid) { return this.L[sid] || (this.L[sid] = { tries: 0, done: false, gaveUp: false, sel: [], wrong: [], val: '', vals: [], shown: false, mp: {}, pick: null, pl: {}, seq: [] }); };
   Learn.prototype.cur = function () { return this.slides[this.idx]; };
 
   Learn.prototype.build = function () {
@@ -93,6 +95,7 @@
   function widget(s, st, lvKey) {
     if (s.lv) { const cur = lvKey || lvCur(s, null); return lvWidget(s, st, cur); }
     const L = s.learn; if (!L) return '';
+    st = Object.assign({ mp: {}, pl: {}, seq: [], vals: [], wrong: [], sel: [], pick: null }, st); // 그리기만 — 빈 칸 기본값
     const fin = st.done || st.gaveUp;
     let h = '<div class="lw lw-' + L.kind + (fin ? ' fin' : '') + '">';
     if (L.kind === 'pick' || L.kind === 'multi') {
@@ -102,6 +105,25 @@
         return '<button class="' + cls + '" data-lact="' + L.kind + '" data-i="' + i + '"' + (fin ? ' disabled' : '') + '><div class="mk">' + (L.kind === 'multi' ? (on || (fin && o.correct) ? '☑' : '☐') : (M[i] || i + 1)) + '</div><div>' + md(o.text || '') + '</div></button>';
       }).join('') + '</div>';
       if (L.kind === 'multi' && !fin) h += '<div class="lw-row"><span class="lw-tip">☑ 알맞은 것을 모두 골라요</span><button class="btn main" data-lact="check">확인하기</button></div>';
+    } else if (L.kind === 'match') { // 짝 잇기 — 왼쪽 ①②③ 을 누르고 오른쪽 짝을 누른다 · 이은 오른쪽에 같은 번호가 붙는다
+      const mp = fin ? L.key.reduce((o, v, i) => (o[i] = v, o), {}) : st.mp; const owner = (j) => { for (const i in mp) if (mp[i] === j) return +i; return -1; };
+      h += '<div class="lm">' + '<div class="lm-col">' + L.left.map((t, i) => '<button class="lm-it l' + (mp[i] !== undefined ? ' on c' + i : '') + (st.pick === i && !fin ? ' sel' : '') + (fin ? ' ok' : '') + (st.wrong.indexOf(i) >= 0 && !fin ? ' no' : '') + '" data-lact="ml" data-i="' + i + '"' + (fin ? ' disabled' : '') + '><b class="lm-n c' + i + '">' + M[i] + '</b><span>' + md(t) + '</span></button>').join('') + '</div>'
+        + '<div class="lm-col">' + L.right.map((t, j) => { const w = owner(j); return '<button class="lm-it r' + (w >= 0 ? ' on c' + w : '') + (fin ? ' ok' : '') + '" data-lact="mr" data-i="' + j + '"' + (fin ? ' disabled' : '') + '><b class="lm-n' + (w >= 0 ? ' c' + w : ' empty') + '">' + (w >= 0 ? M[w] : '') + '</b><span>' + md(t) + '</span></button>'; }).join('') + '</div></div>';
+      if (!fin) h += '<div class="lw-row"><span class="lw-tip">왼쪽을 누르고 → 오른쪽 짝을 눌러요</span><button class="btn main" data-lact="check">확인하기</button></div>';
+    } else if (L.kind === 'sort') { // 나눠 담기 — 카드를 누르고 통을 누른다 · 통 안 카드를 누르면 다시 꺼낸다
+      const pl = fin ? L.key.reduce((o, v, i) => (o[i] = v, o), {}) : st.pl; const chip = (i, inBin) => '<button class="ca-chip ls-chip' + (inBin ? ' in' : '') + (st.pick === i && !fin ? ' sel' : '') + (st.wrong.indexOf(i) >= 0 && !inBin && !fin ? ' wrong' : '') + (fin ? ' ok' : '') + '" data-lact="si" data-i="' + i + '"' + (fin ? ' disabled' : '') + '>' + md(L.items[i]) + '</button>';
+      const tray = L.items.map((t, i) => pl[i] === undefined ? chip(i, false) : '').join('');
+      if (!fin) h += '<div class="ca-tray ls-tray">' + (tray || '<span class="lw-tip sm">다 담았어요 — 확인해 봐요</span>') + '</div>';
+      h += '<div class="ca-bins ls-bins">' + L.bins.map((b, k) => '<div class="ca-bin ls-bin' + (fin ? ' ok' : '') + '" data-lact="sb" data-b="' + k + '"><div class="ca-bin-h">' + md(b) + '</div><div class="ca-bin-in">' + L.items.map((t, i) => pl[i] === k ? chip(i, true) : '').join('') + '</div></div>').join('') + '</div>';
+      if (!fin) h += '<div class="lw-row"><span class="lw-tip">카드를 누르고 → 알맞은 통을 눌러요</span><button class="btn main" data-lact="check">확인하기</button></div>';
+    } else if (L.kind === 'order') { // 차례 놓기 — 카드를 누르는 차례대로 칸에 들어간다 · 칸을 누르면 다시 꺼낸다
+      const seq = fin ? L.key.slice() : st.seq;
+      h += '<div class="lo">' + L.items.map((t, k) => '<button class="lo-slot' + (seq[k] !== undefined ? ' on' : '') + (st.wrong.indexOf(k) >= 0 && !fin ? ' no' : '') + (fin ? ' ok' : '') + '" data-lact="os" data-k="' + k + '"' + (fin ? ' disabled' : '') + '><b>' + (k + 1) + '</b><span>' + (seq[k] !== undefined ? md(L.items[seq[k]]) : '') + '</span></button>' + (k < L.items.length - 1 ? '<i class="lo-ar">→</i>' : '')).join('') + '</div>';
+      if (!fin) { const tray = L.items.map((t, i) => seq.indexOf(i) < 0 ? '<button class="ca-chip" data-lact="oi" data-i="' + i + '">' + md(t) + '</button>' : '').join(''); h += '<div class="ca-tray ls-tray">' + (tray || '<span class="lw-tip sm">다 놓았어요 — 확인해 봐요</span>') + '</div><div class="lw-row"><span class="lw-tip">먼저 일어난 것부터 차례로 눌러요</span><button class="btn main" data-lact="check">확인하기</button></div>'; }
+    } else if (L.kind === 'nums' || L.kind === 'frac') { // 단위 붙은 수 답 — 칸마다 단위(수준별과 같은 칸 넣기)
+      if (fin) h += '<div class="lw-row"><div class="answer on"><span>답</span><div class="box">' + md(String(L.a != null ? L.a : L.answer)) + '</div></div></div>';
+      else if (L.kind === 'frac') h += '<div class="lw-row lw-nb"><input class="lw-in' + (st.wrong.length ? ' no' : '') + '" data-p="0" autocomplete="off" placeholder="분자/분모" value="' + esc(st.vals[0] || '') + '"><button class="btn main" data-lact="check">확인하기</button></div><div class="lw-tip sm">분수는 「7/9」처럼 써요</div>';
+      else h += '<div class="lw-row lw-parts lw-nb">' + L.parts.map((p, i) => (p.pre ? '<span class="lw-u">' + esc(p.pre) + '</span>' : '') + '<input class="lw-in' + (L.parts.length > 1 ? ' sm' : '') + (st.wrong.length ? ' no' : '') + '" data-p="' + i + '" inputmode="decimal" autocomplete="off" placeholder="?" value="' + esc(st.vals[i] || '') + '">' + (p.unit ? '<span class="lw-u">' + esc(p.unit) + '</span>' : '') + (p.comma ? '<span class="lw-sep">,</span>' : '')).join('') + '<button class="btn main" data-lact="check">확인하기</button></div>';
     } else if (L.kind === 'num') {
       h += '<div class="lw-row">' + (fin ? '<div class="answer on"><span>답</span><div class="box">' + md(String(L.answer)) + '</div></div>' : '<input class="lw-in' + (st.wrong.length ? ' no' : '') + '" id="lw-in" inputmode="numeric" autocomplete="off" placeholder="?" value="' + esc(st.val) + '"><button class="btn main" data-lact="check">확인하기</button>') + '</div>';
     } else if (L.kind === 'self') {
@@ -140,6 +162,7 @@
     this.decorate(paper, r); if (quiet) paper.querySelectorAll('.anim').forEach(el => el.classList.remove('anim')); this.fitBody(); this.refitLater(); { const self = this; setTimeout(() => self.fitBody(), 400); }
     paper.querySelectorAll('.img-frame img').forEach(im => { im.addEventListener('error', () => { try { K().imgFallback(im); } catch (e) { } setTimeout(() => this.fitBody(), 0); }); im.addEventListener('load', () => this.fitBody()); });
     paper.querySelectorAll('.lw-lv .lw-in').forEach((el, i, all) => { el.addEventListener('input', () => { wst.vals[+el.getAttribute('data-p')] = el.value; }); el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); if (i < all.length - 1) all[i + 1].focus(); else this.lact(paper.querySelector('.lw-lv [data-lact="check"]')); } }); if (i === 0 && !this._noFocus) setTimeout(() => { try { el.focus({ preventScroll: true }); } catch (e) { } }, 60); });
+    paper.querySelectorAll('.lw-nb .lw-in').forEach((el, i, all) => { el.addEventListener('input', () => { wst.vals[+el.getAttribute('data-p')] = el.value; }); el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); if (i < all.length - 1) all[i + 1].focus(); else this.lact(paper.querySelector('.lw-nb [data-lact="check"]')); } }); if (i === 0 && !this._noFocus) setTimeout(() => { try { el.focus({ preventScroll: true }); } catch (e) { } }, 60); });
     const inp = doc.getElementById('lw-in'); if (inp) { inp.addEventListener('input', () => { this.ls(s.id).val = inp.value; }); inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); this.answer(s, inp.value); } }); if (!this._noFocus) setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch (e) { } }, 60); }
     this.paintBar();
     try { global.history.replaceState(null, '', '#' + n); } catch (e) { }
@@ -179,12 +202,19 @@
     const L = s.learn, st = this.ls(s.id); if (!L || st.done || st.gaveUp) return;
     if (L.kind === 'num' && String(ans == null ? '' : ans).trim() === '') { this.toast('답을 넣어 봐요'); return; }
     if (L.kind === 'multi' && !(ans || []).length) { this.toast('하나 이상 골라요'); return; }
+    if ((L.kind === 'match' || L.kind === 'sort' || L.kind === 'order') && (!Array.isArray(ans) || ans.length !== L.key.length || ans.some(v => v === undefined || v === null))) { this.toast(L.kind === 'match' ? '짝을 모두 이어 봐요' : L.kind === 'sort' ? '카드를 모두 통에 담아 봐요' : '칸을 모두 채워 봐요'); return; }
+    if ((L.kind === 'nums' || L.kind === 'frac') && (!Array.isArray(ans) || ans.some(v => String(v == null ? '' : v).trim() === ''))) { this.toast('빈칸을 채워 봐요'); return; }
     st.tries++;
     const ok = P().check(L, ans);
     const sec = Math.round((Date.now() - (st.t0 || this.started)) / 1000);
     try { if (global.kedu && global.kedu.recordAnswer) global.kedu.recordAnswer(this.qid(s), ok, sec, null, { src: 'kt2-learn', slug: this.slug, kind: L.kind, try: st.tries }); } catch (e) { }
     if (ok) { st.done = true; st.got = P().gained(L, st.tries, false); this.score += st.got; this.paint(0, true); this.celebrate(); }
-    else { if (L.kind === 'pick') st.wrong.push(ans); else st.wrong = [1]; if (L.kind === 'multi') st.sel = []; this.tone(200, 0.18, 0.05, 'square'); this.paint(0, true); const w = doc.querySelector('.lw'); if (w) w.classList.add('shake'); }
+    else {
+      if (L.kind === 'pick') st.wrong.push(ans); else st.wrong = [1]; if (L.kind === 'multi') st.sel = [];
+      // 짝·갈래·차례 — 맞은 것은 두고 틀린 것만 되돌린다(틀린 자리를 빨갛게)
+      if (L.kind === 'match') { st.wrong = []; L.key.forEach((v, i) => { if (st.mp[i] !== v) { st.wrong.push(i); delete st.mp[i]; } }); st.pick = st.wrong.length ? st.wrong[0] : null; }
+      if (L.kind === 'sort') { st.wrong = []; L.key.forEach((v, i) => { if (st.pl[i] !== v) { st.wrong.push(i); delete st.pl[i]; } }); st.pick = null; }
+      if (L.kind === 'order') { st.wrong = []; const keep = []; L.key.forEach((v, k) => { if (st.seq[k] === v) keep[k] = v; else st.wrong.push(k); }); st.seq = keep; } this.tone(200, 0.18, 0.05, 'square'); this.paint(0, true); const w = doc.querySelector('.lw'); if (w) w.classList.add('shake'); }
   };
   // 수준별 — 고른 수준의 답으로 채점 · 기록은 수준마다 따로(키_장_lv1~3 · level 이름을 곁들임) · 점수(100)에는 안 넣는다
   Learn.prototype.answerLv = function (s, ans) {
@@ -209,7 +239,21 @@
     if (!st.t0) st.t0 = Date.now();
     if (a === 'pick') return this.answer(s, i);
     if (a === 'multi') { const k = st.sel.indexOf(i); if (k >= 0) st.sel.splice(k, 1); else st.sel.push(i); st.wrong = []; this.pop(); return this.paint(0, true); }
-    if (a === 'check') { if (L.kind === 'multi') return this.answer(s, st.sel.slice()); const inp = doc.getElementById('lw-in'); return this.answer(s, inp ? inp.value : st.val); }
+    // 51차 짝 잇기 · 나눠 담기 · 차례 놓기
+    if (a === 'ml') { st.pick = i; this.pop(); return this.paint(0, true); } // 이은 뒤 다음 왼쪽이 저절로 골라진다 — 다시 눌러도 풀리지 않게(고르기만)
+    if (a === 'mr') { if (st.pick === null || st.pick === undefined) { for (const k in st.mp) if (st.mp[k] === i) { delete st.mp[k]; this.pop(); return this.paint(0, true); } this.toast('왼쪽을 먼저 눌러요'); return; }
+      for (const k in st.mp) if (st.mp[k] === i) delete st.mp[k]; st.mp[st.pick] = i; st.wrong = st.wrong.filter(x => x !== st.pick);
+      const nx = L.left.findIndex((_, k) => st.mp[k] === undefined); st.pick = nx >= 0 ? nx : null; this.pop(); return this.paint(0, true); }
+    if (a === 'si') { if (st.pl[i] !== undefined) { delete st.pl[i]; st.pick = i; } else st.pick = st.pick === i ? null : i; this.pop(); return this.paint(0, true); }
+    if (a === 'sb') { if (st.pick === null || st.pick === undefined) { this.toast('카드를 먼저 눌러요'); return; } st.pl[st.pick] = +b.getAttribute('data-b'); st.wrong = st.wrong.filter(x => x !== st.pick); st.pick = null; this.pop(); return this.paint(0, true); }
+    if (a === 'oi') { let k = 0; while (st.seq[k] !== undefined) k++; if (k < L.key.length) { st.seq[k] = i; st.wrong = st.wrong.filter(x => x !== k); } this.pop(); return this.paint(0, true); }
+    if (a === 'os') { const k = +b.getAttribute('data-k'); if (st.seq[k] !== undefined) { st.seq[k] = undefined; this.pop(); return this.paint(0, true); } return; }
+    if (a === 'check') { if (L.kind === 'multi') return this.answer(s, st.sel.slice());
+      if (L.kind === 'match') return this.answer(s, L.left.map((_, k) => st.mp[k]));
+      if (L.kind === 'sort') return this.answer(s, L.items.map((_, k) => st.pl[k]));
+      if (L.kind === 'order') return this.answer(s, L.key.map((_, k) => st.seq[k]));
+      if (L.kind === 'nums' || L.kind === 'frac') { const v = []; doc.querySelectorAll('.lw-nb .lw-in').forEach(el => { v[+el.getAttribute('data-p')] = el.value; st.vals[+el.getAttribute('data-p')] = el.value; }); return this.answer(s, L.kind === 'frac' ? [v[0]] : v); }
+      const inp = doc.getElementById('lw-in'); return this.answer(s, inp ? inp.value : st.val); }
     if (a === 'giveup') { st.gaveUp = true; st.got = 0; try { if (global.kedu && global.kedu.recordAnswer && st.tries === 0) global.kedu.recordAnswer(this.qid(s), false, null, null, { src: 'kt2-learn', gaveUp: true }); } catch (e) { } return this.paint(0, true); }
     if (a === 'show') { st.shown = true; this.pop(); return this.paint(0, true); }
     if (a === 'again') { this.IS = {}; this.rev = {}; this.L = {}; this.score = 0; this.lvWins = 0; return this.go(0, -1); }
