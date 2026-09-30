@@ -1,0 +1,891 @@
+<!--
+K-edu 사회 6-2 · 3단원 지구촌 사람들 · 주제① 세계의 인구 분포 · 2차시(u3 l02)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사12-01] · 교과서 p.129~131 · 지도서(대단원3 **4차시** 「세계 여러 나라의 인구수를 알아볼까요」, 지도서 p.280~284) 근거.
+학습 목표: 인구수를 주제로 세계 여러 나라의 인구 특징을 설명할 수 있다.
+META = "3단원 지구촌 사람들 · 주제① 세계의 인구 분포"
+⚠️ 엔진은 u3 l01(→ u2 l14 → … 6-1 사회 엔진)에서 100% 승계 · 엔진 무수정 · 3단원 색 #7C3AED.
+⚠️ 회수 키 `g6_s2_social_u3_l02_v1` · 맵 키 `g6_social_u3_l02` · 파일명 `꼭지를돌려요` — 조작 이름(선례 승계).
+
+직접조작: 「인구 물통의 꼭지를 돌려요」 판 (교과서 131쪽 · 지도서 4차시 핵심 질문 「나라의 인구수 변화에 영향을 주는 요인」)
+  ⭐ 씨앗은 지도서 283쪽 핵심 질문 — 나라의 인구수는 출생, 사망, 인구의 이동, 환경의 변화 등에 따라 달라진다.
+     들어오는 꼭지 둘(출생 · 들어오는 이동) · 나가는 꼭지 둘(사망 · 나가는 이동). 환경의 변화는 투발루 예(이주 계획)로 나가는 이동에 잇는다.
+  ⭐ 꼭지 단추 넷(wvTap) — 판 바꾸는 자리 state.wvGate = 단 하나(꼭지 열림 네 비트 · ^=).
+  ⭐ ★ 물통이 늘지·그대로인지·줄지는 `wvDir` 한 줄(표 `WV_SIDE` = [1,1,-1,-1] 합의 부호).
+  ⭐ ★ 어느 요인을 적을 수 있는지는 `wvKind` 한 줄 — 꼭지가 **딱 하나** 열렸을 때만 그 번호 · 아니면 4(적을 수 없음).
+  ⭐ ★★ 요인 기록은 `state.wvLog |=` 단 하나(`wvNote` · 요인 적기 처리기에서만 · 줄지 않음) — 네 요인 최소 걸음(BFS 11).
+  ⭐ 판 읽기는 네 요인 뒤에만(정답 자리 2) → 꼭! 기억해요 빈칸 3택(교과서 131쪽 「인구의 이동」 · 정답 자리 1)
+     → 마무리 3택 = 지도서 4차시 주요 내용 정리(정답 자리 0).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 10종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 네 요인을 다 적은 뒤 판 움직이기(꼭지·적기) 무시 — 판 불변
+     ④ 네 요인 전 판 읽기 무시 · 읽은 뒤 다시 무시 · 알맞지 않은 읽기 무시(자리별 안내)
+     ⑤ 판을 읽기 전 빈칸 무시 · 고른 뒤 다시 무시 · 알맞지 않은 빈칸 무시
+     ⑥ 빈칸 전 마무리 무시(순서)
+     ⑦ 알맞지 않은 마무리 무시
+     ⑧ 안내 표시 중 재클릭 무시(`wvBusy`)
+     ⑨ 이미 적은 요인 다시 적기 무시 — 판 불변
+     ⑩ 꼭지가 하나도 안 열렸거나 둘 이상 열렸을 때 적기 무시(`WV_ONE`) — 판 불변.
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.wv-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 물통과 꼭지는 도식이다** — 물의 양은 실제 인구수가 아니라 늘고 줄어드는 방향만 나타낸다(캡션 상시).
+  ㉡ **판은 나라별 인구수나 인구 성장률을 계산하지 않는다** — 수치는 교과서 자료만 슬라이드에 적는다.
+  ㉢ **물통 칸의 사망은 요인 이름일 뿐**이다 — 사람 형상·장면 0.
+  ㉣ **사회과 부도에서 나라 찾기 · 국가 통계 포털 살펴보기 · 더 알아보고 싶은 나라 조사하기 · 친구와 이야기하기는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 인구 밀도·인구 구조(u3 l03~l04)는 차시 예고 자리까지만.
+  **새 사실 0** — 교과서 129~131쪽 · 지도서 4차시 본문까지만. 수치는 교과서 자료(인도 약 14억 3,807만 명 · 미국 약 3억 4,348만 명 ·
+  리비아 약 731만 명 · 투발루 9,816명 · 2023년 기준 · 1억 명 · 10억 명)만. 인구 성장률 수치 0 · 순위 표 0 · 특정 나라 편견 문면 0(지도서 282쪽 유의점).
+  사람 형상 0 · 금액 0 · 쪽수 0.
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u3_l02_v1">
+<title>세계 여러 나라의 인구수를 알아볼까요 · 지구촌 사람들 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#7C3AED; --green-d:#5B21B6; --cyan:#8B5CF6;
+  --bg:#F5F3FF; --bub:#EDE9FE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#EDE9FE;color:#5B21B6}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 인구 물통의 꼭지를 하나씩 열고 잠가 인구수를 바꾸는 요인을 적는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#EDE9FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#5B21B6;max-width:660px}
+.wv-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#F5F3FF;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.wv-board{display:flex;flex-direction:column;gap:6px;padding:8px}
+.wv-head{background:#EDE9FE;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#5B21B6;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.wv-gate{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.wv-tap{border:2px solid #CBD5E0;background:#F8FAFC;color:#475569;border-radius:9px;padding:5px 6px;cursor:pointer;font-family:inherit;
+  font-weight:800;font-size:clamp(9px,1.52vw,11px);line-height:1.3;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.wv-tap .sd{font-size:.86em;font-weight:700;color:#94A3B8}
+.wv-tap .st{font-weight:900;font-size:.92em}
+.wv-tap[data-side="in"][data-on="1"]{border-color:#7C3AED;background:#EDE9FE;color:#4C1D95}
+.wv-tap[data-side="out"][data-on="1"]{border-color:#B45309;background:#FEF3C7;color:#78350F}
+.wv-tank{border:2px solid #CBD5E0;border-radius:10px;background:#F8FAFC;overflow:hidden}
+.wv-tank svg{display:block;width:100%;height:auto}
+.wv-say{border-radius:8px;padding:5px 8px;font-weight:800;font-size:clamp(9.2px,1.56vw,11.2px);line-height:1.4;
+  background:#F5F3FF;color:#4C1D95;border:2px solid #7C3AED}
+.wv-say[data-dir="-1"]{background:#FFFBEB;color:#78350F;border-color:#B45309}
+.wv-say[data-dir="0"]{background:#F8FAFC;color:#334155;border-color:#94A3B8}
+.wv-row{display:flex;gap:6px;flex-wrap:wrap}
+.wv-pen{flex:1 1 140px;border:2px solid #7C3AED;background:#EDE9FE;color:#5B21B6;border-radius:9px;padding:6px 8px;cursor:pointer;
+  font-family:inherit;font-weight:800;font-size:clamp(9.6px,1.62vw,11.8px)}
+.wv-pen:hover{background:#DDD6FE}
+.wv-note{display:flex;flex-direction:column;gap:4px}
+.wv-note .nh{font-weight:900;color:#5B21B6;font-size:clamp(9.4px,1.58vw,11.4px)}
+.wv-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-radius:7px;padding:4px 8px;font-weight:800;
+  font-size:clamp(9.2px,1.56vw,11.2px);line-height:1.38;border:2px dashed #CBD5E0;background:#F8FAFC;color:#94A3B8}
+.wv-line.set{border-style:solid;border-color:#059669;background:#ECFDF5;color:#065F46}
+.wv-read,.wv-mean,.wv-fin{display:flex;flex-direction:column;gap:5px}
+.wv-read button,.wv-mean button,.wv-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.wv-read button:hover,.wv-mean button:hover,.wv-fin button:hover{background:var(--bub)}
+.wv-read button.no,.wv-mean button.no,.wv-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.wv-hint{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:420px){ .wv-gate{gap:3px} .wv-tap,.wv-line{font-size:8.4px;padding:3px} }
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠·㉡: 모든 그림은 내용을 나타낸 도식이며 실제 지도·사진이 아니다.
+   ⚠️ 사람 형상 대신 도형으로만 그린다. 수치는 교과서 자료만 적는다. */
+const SVG = {
+  // 1 들어가기 — 네 나라의 인구수(교과서 130쪽 · 2023년 기준 · 도식)
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    ${[['인도','약 14억 3,807만 명'],['미국','약 3억 4,348만 명'],['리비아','약 731만 명'],['투발루','9,816명']].map((t,i)=>`<rect x="${14+(i%2)*152}" y="${18+((i/2)|0)*62}" width="140" height="50" rx="9" fill="#fff" stroke="#7C3AED" stroke-width="1.4"/>
+      <text x="${84+(i%2)*152}" y="${38+((i/2)|0)*62}" font-size="9" fill="#4C1D95" text-anchor="middle" font-weight="900">${t[0]}</text>
+      <text x="${84+(i%2)*152}" y="${55+((i/2)|0)*62}" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="800">${t[1]}</text>`).join('')}
+    <text x="160" y="160" font-size="7.4" fill="#334155" text-anchor="middle" font-weight="800">2023년 기준 · 국제 연합 자료(도식)</text></svg>`,
+  // 2 살펴보기 — 인구수가 1억 명 이상인 나라(지도서 281쪽 예시 답안 · 도식)
+  map:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#EFF6FF"/>
+    ${[['아시아',8],['아프리카',4],['북아메리카',2],['유럽',1],['남아메리카',1],['오세아니아',0]].map((t,i)=>`<text x="74" y="${30+i*21}" font-size="7.4" fill="#1E3A8A" text-anchor="end" font-weight="800">${t[0]}</text>
+      ${Array.from({length:t[1]},(_,k)=>`<circle cx="${88+k*16}" cy="${27+i*21}" r="6" fill="#7C3AED"/>`).join('')}
+      <text x="${t[1]?92+t[1]*16:84}" y="${30+i*21}" font-size="7" fill="#334155" font-weight="800">${t[1]?t[1]+'개 나라':'없어요'}</text>`).join('')}
+    <text x="160" y="160" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">인구수가 1억 명 이상인 나라(도식 · 동그라미 하나가 한 나라)</text></svg>`,
+  // 3 살펴보기 — 면적과 인구수(교과서 129쪽 친구와 활동 · 도식)
+  area:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFFBEB"/>
+    <rect x="16" y="22" width="170" height="104" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.4"/>
+    ${[[50,60],[140,96]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="#92400E"/>`).join('')}
+    <text x="101" y="142" font-size="7.4" fill="#78350F" text-anchor="middle" font-weight="800">면적이 넓어도 살기 어려운 곳</text>
+    <rect x="210" y="52" width="92" height="74" rx="10" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
+    ${[[224,64],[240,70],[256,62],[272,72],[288,66],[228,86],[246,92],[262,84],[280,94],[232,108],[250,112],[270,106],[288,114]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="#5B21B6"/>`).join('')}
+    <text x="256" y="142" font-size="7.4" fill="#4C1D95" text-anchor="middle" font-weight="800">면적이 좁아도 사람이 많은 곳</text>
+    <text x="160" y="162" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">면적이 넓다고 인구수가 반드시 많은 것은 아니에요(도식)</text></svg>`,
+  // 4 살펴보기 — 인구수가 많은 나라(교과서 130쪽 · 도식)
+  many:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    ${[['\uD83C\uDF3E','인도','강수량이 많고 토양이 비옥해요'],['\uD83C\uDFED','미국','다양한 산업 · 이민 오는 사람']].map((t,i)=>`<rect x="${14+i*152}" y="24" width="140" height="104" rx="10" fill="#fff" stroke="#7C3AED" stroke-width="1.4"/>
+      <text x="${84+i*152}" y="62" font-size="22" text-anchor="middle">${t[0]}</text>
+      <text x="${84+i*152}" y="88" font-size="9" fill="#4C1D95" text-anchor="middle" font-weight="900">${t[1]}</text>
+      <text x="${84+i*152}" y="108" font-size="6.8" fill="#334155" text-anchor="middle" font-weight="800">${t[2]}</text>`).join('')}
+    <text x="160" y="156" font-size="7.4" fill="#334155" text-anchor="middle" font-weight="800">인구수가 많은 나라(사진 대신 그린 도식이에요)</text></svg>`,
+  // 5 살펴보기 — 인구수가 적은 나라(교과서 130쪽 · 도식)
+  few:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFFBEB"/>
+    ${[['\uD83C\uDFDC\uFE0F','리비아','국토 대부분이 사막이에요'],['\uD83C\uDFDD\uFE0F','투발루','남태평양의 작은 섬나라예요']].map((t,i)=>`<rect x="${14+i*152}" y="24" width="140" height="104" rx="10" fill="#fff" stroke="#B45309" stroke-width="1.4"/>
+      <text x="${84+i*152}" y="62" font-size="22" text-anchor="middle">${t[0]}</text>
+      <text x="${84+i*152}" y="88" font-size="9" fill="#78350F" text-anchor="middle" font-weight="900">${t[1]}</text>
+      <text x="${84+i*152}" y="108" font-size="6.8" fill="#334155" text-anchor="middle" font-weight="800">${t[2]}</text>`).join('')}
+    <text x="160" y="156" font-size="7.4" fill="#334155" text-anchor="middle" font-weight="800">인구수가 적은 나라(사진 대신 그린 도식이에요)</text></svg>`,
+  // 7 살펴보기 — 나라별 인구 성장률(교과서 131쪽 · 도식)
+  grow:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <rect x="18" y="22" width="130" height="104" rx="10" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
+    <text x="83" y="42" font-size="8.4" fill="#4C1D95" text-anchor="middle" font-weight="900">아프리카</text>
+    <path d="M70 108 L70 62 M60 72 L70 58 L80 72 M96 108 L96 62 M86 72 L96 58 L106 72" fill="none" stroke="#7C3AED" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="83" y="120" font-size="7" fill="#4C1D95" text-anchor="middle" font-weight="800">성장률이 높은 나라가 많아요</text>
+    <rect x="172" y="22" width="130" height="104" rx="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.4"/>
+    <text x="237" y="42" font-size="8.4" fill="#78350F" text-anchor="middle" font-weight="900">유럽</text>
+    <path d="M237 58 L237 104 M227 94 L237 108 L247 94" fill="none" stroke="#B45309" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="237" y="120" font-size="7" fill="#78350F" text-anchor="middle" font-weight="800">낮거나 줄어드는 나라가 많아요</text>
+    <text x="160" y="156" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">나라별 인구 성장률(도식 · 화살표는 수치가 아니에요)</text></svg>`,
+  // 확인 — 인구수를 바꾸는 요인(도식)
+  tank:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FAF5FF"/>
+    <rect x="124" y="40" width="72" height="84" rx="8" fill="#fff" stroke="#7C3AED" stroke-width="1.6"/>
+    <rect x="126" y="80" width="68" height="42" rx="6" fill="#C4B5FD"/>
+    <text x="160" y="72" font-size="7.6" fill="#4C1D95" text-anchor="middle" font-weight="900">나라의 인구수</text>
+    ${[['출생',30],['들어오는 이동',70]].map(t=>`<rect x="14" y="${t[1]-10}" width="80" height="20" rx="7" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.2"/><text x="54" y="${t[1]+3}" font-size="7" fill="#4C1D95" text-anchor="middle" font-weight="800">${t[0]}</text><path d="M94 ${t[1]} L120 ${t[1]+20}" stroke="#7C3AED" stroke-width="1.6"/>`).join('')}
+    ${[['사망',100],['나가는 이동',140]].map(t=>`<rect x="226" y="${t[1]-10}" width="80" height="20" rx="7" fill="#FEF3C7" stroke="#B45309" stroke-width="1.2"/><text x="266" y="${t[1]+3}" font-size="7" fill="#78350F" text-anchor="middle" font-weight="800">${t[0]}</text><path d="M200 ${t[1]-24} L226 ${t[1]}" stroke="#B45309" stroke-width="1.6"/>`).join('')}
+    <text x="160" y="160" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">나라의 인구수를 바꾸는 요인(도식)</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#1E1B4B"/>
+    ${['출생 · 사망','인구의 이동','환경의 변화'].map((t,i)=>`<rect x="${18+i*100}" y="52" width="84" height="40" rx="8" fill="#EDE9FE" stroke="#A78BFA" stroke-width="2"/>
+      <text x="${60+i*100}" y="76" font-size="7.4" fill="#4C1D95" text-anchor="middle" font-weight="800">${t}</text>`).join('')}
+    <text x="160" y="128" font-size="8.6" fill="#DDD6FE" text-anchor="middle" font-weight="800">세계 여러 나라의 인구수는 나라마다 달라요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#7C3AED" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#7C3AED" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#5B21B6" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 인구 물통의 꼭지를 돌려요 판 =====
+   ★ 꼭지 단추 넷(wvTap) — 판 바꾸는 자리 state.wvGate = 단 하나(꼭지 열림 네 비트 · ^=).
+   ★ 물통이 늘지·그대로인지·줄지는 wvDir 한 줄(표 WV_SIDE) · 적을 수 있는 요인은 wvKind 한 줄(꼭지 딱 하나).
+   ★★ 요인 기록은 |= 만(wvLog · wvNote 단 하나 · 요인 적기 처리기에서만).
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. 물통과 꼭지는 도식이다. */
+const WV_N = 4;
+const WV_ALL = 15;
+/* 꼭지 넷 — 지도서 283쪽 핵심 질문 · 교과서 131쪽 */
+const WV_TAP = ['출생','들어오는 이동','사망','나가는 이동'];
+/* ★ 들어오는 꼭지 +1 · 나가는 꼭지 −1 */
+const WV_SIDE = [1, 1, -1, -1];
+const WV_ICON = ['\uD83C\uDF31','\uD83D\uDEEC','\uD83C\uDF42','\uD83D\uDEEB'];
+const WV_DIRTXT = ['인구수가 줄어요','인구수가 그대로예요','인구수가 늘어요'];
+/* 요인마다 교과서 130~131쪽 · 지도서 283쪽 예 — 적은 뒤에만 기록장에 보인다 */
+const WV_EX = [
+  '인도 \u2014 출생률이 높아 인구수가 계속 늘어날 전망이에요',
+  '미국 \u2014 일자리를 찾아 이민 오는 사람이 많아요',
+  '출생보다 사망이 많아지면 나라의 인구수가 줄어들어요',
+  '투발루 \u2014 기후변화로 나라가 바다에 잠길 위험에 빠져 주민들이 다른 나라로 이주할 계획이에요'
+];
+const WV_LV = [30, 56, 82];
+
+/* ② 판 읽기 */
+const WV_READ = [
+  '인구수는 출생만으로 정해지고, 사람들이 다른 나라로 옮겨 가는 것과는 상관없어요',
+  '어느 꼭지를 열어도 나라의 인구수는 늘 그대로예요',
+  '출생과 들어오는 이동은 인구수를 늘리고, 사망과 나가는 이동은 인구수를 줄여요'
+];
+const WV_READ_OK = 2;
+const WV_READ_NO = [
+  '기록장의 <b>들어오는 이동</b>과 <b>나가는 이동</b> 줄을 다시 봐요. 옮겨 오고 옮겨 가는 것도 물통을 바꿨나요? 판을 다시 읽어 봐요.',
+  '꼭지를 하나씩 열었을 때 물통이 <b>늘거나 줄었나요</b>? 기록장을 다시 봐요. 판을 다시 읽어 봐요.',
+  null
+];
+/* ③ 꼭! 기억해요 빈칸 — 교과서 131쪽 */
+const WV_MEAN = ['나라의 면적', '인구의 이동', '나라의 이름'];
+const WV_MEAN_OK = 1;
+const WV_MEAN_NO = [
+  '교과서에서 <b>나라의 면적이 넓다고</b> 반드시 인구수가 많은 것은 아니라고 했어요. 물통의 꼭지를 떠올려 봐요. 판은 그대로예요.',
+  null,
+  '나라의 이름은 인구수를 바꾸지 않아요. 들어오고 나가는 꼭지를 떠올려 봐요. 판은 그대로예요.'
+];
+/* ④ 마무리 — 지도서 4차시 주요 내용 정리 */
+const WV_FIN = [
+  '세계 여러 나라의 인구수는 나라마다 다르고, 인도와 미국처럼 인구가 많은 나라도, 리비아와 투발루처럼 인구가 적은 나라도 있어요. 나라의 인구수는 출생, 사망, 인구의 이동, 환경의 변화 등에 따라 달라져요',
+  '나라의 면적이 넓을수록 인구수가 반드시 많고, 나라의 인구수는 한번 정해지면 달라지지 않아요',
+  '인구수가 많은 나라는 대부분 오세아니아에 모여 있고, 아프리카 나라들의 인구수는 앞으로 줄어들 거예요'
+];
+const WV_FIN_OK = 0;
+const WV_FIN_NO = [
+  null,
+  '리비아처럼 <b>면적에 비해 인구수가 적은</b> 나라를 떠올려 봐요. 꼭지를 열면 물통이 어떻게 됐나요? 오늘의 정리를 다시 골라 봐요.',
+  '인구수가 많은 나라가 모여 있는 <b>대륙</b>과 아프리카의 <b>인구 성장률</b>을 떠올려 봐요. 오늘의 정리를 다시 골라 봐요.'
+];
+/* 안내 */
+const WV_LOCK = '네 요인을 <b>모두 적었어요</b>. 꼭지는 이대로 둬요. 판을 읽어 봐요. 판은 그대로예요.';
+const WV_AGAIN = '이 요인은 <b>이미 적었어요</b>. 다른 꼭지를 하나만 열어 봐요. 판은 그대로예요.';
+const WV_ONE = '꼭지를 <b>딱 하나만</b> 열어야 어느 요인 때문에 인구수가 달라지는지 알 수 있어요. 꼭지 하나만 열고 적어 봐요. 판은 그대로예요.';
+const WV_ORDER_R = '아직 <b>네 요인</b>을 다 적지 않았어요. 네 요인을 모두 적은 뒤에 읽을 수 있어요. 판은 그대로예요.';
+const WV_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const WV_ORDER_K = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const WV_MEAN_AGAIN = '꼭! 기억해요 빈칸은 <b>이미 채웠어요</b>. 판은 그대로예요.';
+const WV_ORDER_F = '아직 <b>꼭! 기억해요 빈칸</b>을 채우지 않았어요. 먼저 골라 봐요. 판은 그대로예요.';
+const WV_ALL_MSG = '네 요인을 <b>모두 적었어요</b>. 판을 읽어 봐요.';
+
+function wvOpen(st,i){ return (st.wvGate & (1<<i))!==0; }
+/* ★ 물통 — 한 줄(표 WV_SIDE 합의 부호) · 1 늘어요 · 0 그대로 · -1 줄어요 */
+function wvDir(st){ return Math.sign([0,1,2,3].reduce((s,i)=>s+(wvOpen(st,i)?WV_SIDE[i]:0),0)); }
+/* ★ 적을 수 있는 요인 — 한 줄 · 꼭지가 딱 하나 열렸을 때만 그 번호 · 아니면 4 */
+function wvKind(st){ const i=[1,2,4,8].indexOf(st.wvGate); return i<0 ? 4 : i; }
+function wvHas(st,l){ return (st.wvLog & (1<<l))!==0; }
+function wvLines(st){ return [0,1,2,3].filter(l=>wvHas(st,l)).length; }
+function wvAll(st){ return st.wvLog===WV_ALL; }
+
+function wvTaps(st){
+  return WV_TAP.map((t,i)=>{ const on=wvOpen(st,i)?1:0;
+    return `<button class="wv-tap" data-t="${i}" data-side="${WV_SIDE[i]>0?'in':'out'}" data-on="${on}" onclick="wvTap(${i})"><span>${WV_ICON[i]} ${t}</span><span class="sd">${WV_SIDE[i]>0?'들어오는 꼭지':'나가는 꼭지'}</span><span class="st">${on?'열림':'잠김'}</span></button>`; }).join('');
+}
+function wvTank(st){
+  const d=wvDir(st), lv=WV_LV[d+1];
+  const pipe=(i,x1,y1,x2,y2,c)=>`<path class="wv-flow" data-f="${i}" data-on="${wvOpen(st,i)?1:0}" d="M${x1} ${y1} L${x2} ${y2}" stroke="${wvOpen(st,i)?c:'#CBD5E0'}" stroke-width="${wvOpen(st,i)?5:3}" stroke-linecap="round"${wvOpen(st,i)?'':' stroke-dasharray="4 4"'}/>`;
+  return `<svg viewBox="0 0 320 130"><rect width="320" height="130" fill="#F8FAFC"/>
+    ${pipe(0,40,22,122,40,'#7C3AED')}${pipe(1,40,58,122,58,'#7C3AED')}${pipe(2,198,72,280,72,'#B45309')}${pipe(3,198,98,280,112,'#B45309')}
+    ${[[0,40,22],[1,40,58]].map(p=>`<text x="${p[1]-4}" y="${p[2]+3}" font-size="7" fill="#4C1D95" text-anchor="end" font-weight="800">${WV_TAP[p[0]]}</text>`).join('')}
+    ${[[2,280,72],[3,280,112]].map(p=>`<text x="${p[1]+4}" y="${p[2]+3}" font-size="7" fill="#78350F" font-weight="800">${WV_TAP[p[0]]}</text>`).join('')}
+    <rect x="122" y="18" width="76" height="104" rx="8" fill="#fff" stroke="#5B21B6" stroke-width="2"/>
+    <rect class="wv-water" data-dir="${d}" x="124" y="${120-lv}" width="72" height="${lv}" rx="6" fill="#C4B5FD"/>
+    <text x="160" y="${114-lv}" font-size="12" text-anchor="middle">${d>0?'\u2B06\uFE0F':d<0?'\u2B07\uFE0F':'\u23F8\uFE0F'}</text>
+    <text x="160" y="116" font-size="7" fill="#4C1D95" text-anchor="middle" font-weight="900">나라의 인구수</text></svg>`;
+}
+function wvNotes(st){
+  return WV_TAP.map((t,l)=>{ const on=wvHas(st,l);
+    return `<div class="wv-line${on?' set':''}" data-line="${l}">${on?'\u270F\uFE0F '+t+' \u2014 '+WV_DIRTXT[WV_SIDE[l]+1]+' \u00b7 '+WV_EX[l]:'\u2610 '+t+' \u2014 아직 적지 않았어요'}</div>`; }).join('');
+}
+
+function wvBoard(st){
+  const fin = st.wvFin!=null, all = wvAll(st), d=wvDir(st);
+  const open=[0,1,2,3].filter(i=>wvOpen(st,i)), inN=open.filter(i=>WV_SIDE[i]>0).length, outN=open.length-inN;
+  const head = fin ? '인구 물통으로 인구수를 바꾸는 요인을 살펴보고 정리했어요'
+    : st.wvMean!=null ? '꼭! 기억해요 빈칸까지 채웠어요 \u2014 이제 정리해요'
+    : st.wvRead!=null ? '꼭! 기억해요 빈칸을 채워 봐요'
+    : all ? '네 요인을 모두 적었어요 \u2014 판을 읽어 봐요'
+    : st.wvLog!==0 ? '다른 꼭지를 하나만 열어 다음 요인도 적어 봐요'
+    : '꼭지를 하나 열고 물통을 살펴본 뒤 요인을 적어요';
+  return `<div class="wv-board" data-gate="${st.wvGate}" data-dir="${d}" data-log="${st.wvLog}" data-lines="${wvLines(st)}" data-all="${all?1:0}" data-read="${st.wvRead==null?-1:st.wvRead}" data-mean="${st.wvMean==null?-1:st.wvMean}" data-fin="${fin?1:0}">
+    <div class="wv-head">${head}</div>
+    <div class="wv-gate">${wvTaps(st)}</div>
+    <div class="wv-tank">${wvTank(st)}</div>
+    <div class="wv-say" data-dir="${d}" data-open="${open.length}">열린 꼭지 <b>${open.length}개</b>(들어오는 꼭지 ${inN}개 \u00b7 나가는 꼭지 ${outN}개) \u2014 <b>${WV_DIRTXT[d+1]}</b></div>
+    <div class="wv-row"><button class="wv-pen" data-pen="1" onclick="wvWrite()">\u270F\uFE0F 요인 적기</button></div>
+    <div class="wv-note"><div class="nh">\uD83D\uDCD2 요인 기록장</div>${wvNotes(st)}</div>
+  </div>`;
+}
+
+function wvPanel(st){
+  const fin = st.wvFin!=null, all = wvAll(st);
+  const q = fin ? '인구 물통으로 나라의 인구수를 바꾸는 요인을 살펴봤어요.'
+    : st.wvMean!=null ? '오늘 공부한 내용을 정리해요. 세계 여러 나라의 인구수는 어떠한가요?'
+    : st.wvRead!=null ? '꼭! 기억해요 \u2014 「나라의 인구수는 출생과 사망, (  ), 환경의 변화 등에 따라 달라집니다」의 빈칸에 알맞은 말은 무엇일까요?'
+    : all ? '네 요인을 모두 적었어요. 판에서 무엇을 알 수 있나요?'
+    : st.wvLog!==0 ? '꼭지를 하나씩 열어 가며 네 요인을 모두 적어요.'
+    : '인구 물통의 꼭지를 열고 잠가 봐요. 나라의 인구수는 무엇 때문에 달라질까요?';
+  let right = `<div class="wv-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83D\uDEB0 인구 물통으로 살펴보며 정리했어요</div>
+      세계 여러 나라의 인구수는 <b>나라마다 달라요</b>. 인도, 미국처럼 인구가 많은 나라도 있고 리비아, 투발루처럼 인구가 적은 나라도 있어요.
+      나라의 인구수는 <b>출생, 사망, 인구의 이동, 환경의 변화</b> 등에 따라 달라져요.<br>
+      <span style="color:#64748B">판의 물통과 꼭지는 도식이에요.
+      <b>사회과 부도에서 나라 찾기</b>, <b>국가 통계 포털 살펴보기</b>, <b>더 알아보고 싶은 나라 조사하기</b>, <b>친구와 이야기하기</b>는 교실에서 직접 해요.</span></div>`;
+  } else if(st.wvMean!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="wv-fin">${WV_FIN.map((t,k)=>`<button class="${st.wvWrongF===k?'no':''}" onclick="wvFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.wvRead!=null){
+    right += `<div class="dw-step">\uD83D\uDCCC 꼭! 기억해요 빈칸</div>`;
+    right += `<div class="wv-mean">${WV_MEAN.map((t,k)=>`<button class="${st.wvWrongK===k?'no':''}" onclick="wvMeanPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="wv-hint">들어오는 이동과 나가는 이동을 함께 부르는 말이에요.</div>`;
+  } else if(all){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="wv-read">${WV_READ.map((t,k)=>`<button class="${st.wvWrongR===k?'no':''}" onclick="wvReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83D\uDEB0 꼭지를 돌려요</div>`;
+    right += `<div class="wv-hint">꼭지 단추를 누르면 <b>열리고</b>, 다시 누르면 <b>잠겨요</b>. 위의 두 꼭지(출생 \u00b7 들어오는 이동)는 물통으로 들어오는 꼭지, 아래 두 꼭지(사망 \u00b7 나가는 이동)는 물통에서 나가는 꼭지예요. 꼭지를 <b>하나만</b> 열고 <b>요인 적기</b>를 누르면 기록장에 적혀요. 네 요인을 모두 적으면 판을 읽을 수 있어요. 감점은 없어요.</div>`;
+  }
+  if(st.wvMsg) right += `<div class="dw-msg${st.wvWarn?' warn':''}">${st.wvMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83D\uDEB0 인구 물통의 꼭지를 돌려요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${wvBoard(st)}<div class="cvcap">판의 물통과 꼭지는 <b>도식</b>이에요. 물의 양은 실제 인구수가 아니라 늘고 줄어드는 방향만 나타내요. 판은 나라별 인구수나 인구 성장률을 계산하지 않아요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 지구촌 사람들 · 주제① 세계의 인구 분포";
+
+// 확인 4 + 적용 4 — 정답 다양화 [2,0,1,3,0,2,3,1](각 자리 2회)
+// ⚠️ 새 사실 0(교과서 129~131쪽 · 지도서 4차시까지만) · 수치는 교과서 자료만 · 인구 밀도·인구 구조 0(뒤 차시).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"교과서의 네 나라 가운데 인구수가 <b>가장 많은</b> 나라는 어디인가요?",
+   opts:["미국","리비아","인도","투발루"],
+   correct:2, pts:POINTS_BASIC, scene:"open",
+   reason:"인도의 인구수는 약 14억 3,807만 명(2023년 기준)으로, 세계에서 인구수가 가장 많은 나라예요.",
+   h1:"들어가기의 네 나라 카드를 떠올려 봐요.", h2:"「억」이 가장 앞에 크게 붙은 나라를 찾아봐요."},
+  {stem:"나라별 인구수를 나타낸 지도에서 <b>색이 진할수록</b> 무엇을 나타내나요?",
+   opts:["인구수가 많은 나라","면적이 넓은 나라","기온이 높은 나라","산이 많은 나라"],
+   correct:0, pts:POINTS_BASIC, scene:"map",
+   reason:"나라별 인구수 지도에서 색의 진하기는 인구수를 나타내요. 색이 진할수록 인구수가 많아요.",
+   h1:"지도의 범례(총인구)를 떠올려 봐요.", h2:"10억 이상이 가장 진한 색이에요."},
+  {stem:"인구수가 많은 나라가 <b>모여 있는</b> 대륙은 어디인가요?",
+   opts:["유럽","아시아","오세아니아","남아메리카"],
+   correct:1, pts:POINTS_BASIC, scene:"map",
+   reason:"대체로 아시아에 있는 나라들은 인구수가 많아요. 인구수가 1억 명 이상인 나라도 아시아에 가장 많아요.",
+   h1:"동그라미가 가장 많은 줄을 찾아봐요.", h2:"「꼭! 기억해요」 1번을 떠올려 봐요."},
+  {stem:"<b>인구 성장률</b>의 뜻으로 알맞은 것은 무엇인가요?",
+   opts:["나라의 면적이 넓어지는 비율","나라의 산업이 발달하는 비율","인구가 가장 많은 나라의 차례","일정한 지역 안에 사는 인구가 증가하는 비율"],
+   correct:3, pts:POINTS_BASIC, scene:"grow",
+   reason:"인구 성장률은 일정한 지역 안에 사는 인구가 증가하는 비율이에요.",
+   h1:"교과서의 낱말 풀이를 떠올려 봐요.", h2:"「인구」와 「증가」가 들어간 뜻을 찾아봐요."},
+  // 4단계 적용 (+15)
+  {stem:"<b>미국</b>에 인구가 많은 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["기후가 온화하고 다양한 산업이 발달하여 일자리를 찾아 이민 오는 사람이 많기 때문이에요","국토 대부분이 건조한 기후가 나타나는 사막이기 때문이에요","남태평양에 있는 작은 섬나라이기 때문이에요","기온이 매우 낮아 식물이 자라기 어렵기 때문이에요"],
+   correct:0, pts:POINTS_APPLY, scene:"many",
+   reason:"미국은 기후가 온화하고 다양한 산업이 발달하여 일자리를 찾아 이민 오는 사람이 많아요. 그래서 세계에서 세 번째로 인구수가 많아요.",
+   h1:"인구 물통의 「들어오는 이동」 꼭지를 떠올려 봐요.", h2:"「이민」이 열쇠예요."},
+  {stem:"<b>리비아</b>가 국토의 면적에 비해 인구수가 적은 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["강수량이 많고 토양이 비옥하기 때문이에요","일자리를 찾아 이민 오는 사람이 많기 때문이에요","국토 대부분이 건조한 기후가 나타나는 사막이기 때문이에요","나라가 바다에 잠길 위험에 빠져 있기 때문이에요"],
+   correct:2, pts:POINTS_APPLY, scene:"few",
+   reason:"리비아는 국토 대부분이 건조한 기후가 나타나는 사막이에요. 그래서 국토의 면적에 비해 인구수가 매우 적은 편이에요.",
+   h1:"인구가 적은 나라 슬라이드를 떠올려 봐요.", h2:"물을 구하기 어려운 곳을 떠올려 봐요."},
+  {stem:"나라별 인구 성장률 지도에 나타난 인구 성장률이 계속되면, <b>아프리카 나라들의 인구수</b>는 어떻게 될까요?",
+   opts:["지금보다 줄어들 거예요","지금과 똑같을 거예요","유럽 나라들과 똑같이 줄어들 거예요","지금보다 늘어날 거예요"],
+   correct:3, pts:POINTS_APPLY, scene:"grow",
+   reason:"대체로 아프리카에 있는 나라들은 인구 성장률이 높아요. 이 성장률이 계속되면 아프리카 나라들의 인구수는 지금보다 늘어날 거예요.",
+   h1:"인구 성장률 슬라이드의 화살표를 떠올려 봐요.", h2:"성장률이 높으면 인구가 계속 늘어요."},
+  {stem:"<b>투발루</b>의 인구는 앞으로 어떻게 변화할까요? 알맞게 말한 것을 고르세요.",
+   opts:["출생률이 높아 인구가 크게 늘어날 거예요","기후변화로 주민들이 다른 나라로 이주할 계획이라서 인구가 줄어들 거예요","일자리를 찾아 이민 오는 사람이 많아 인구가 늘어날 거예요","인구의 이동과 상관없이 늘 그대로일 거예요"],
+   correct:1, pts:POINTS_APPLY, scene:"few",
+   reason:"투발루는 기후변화로 나라가 바다에 잠길 위험에 빠져 있어 주민들이 다른 나라로 이주할 계획이에요. 그래서 인구가 줄어들 거예요.",
+   h1:"인구 물통의 「나가는 이동」 꼭지를 떠올려 봐요.", h2:"환경의 변화도 인구수를 바꿔요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 동기 유발(세계 여러 나라의 인구수 예상하기)
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">나라마다 인구수는 얼마나 다를까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','네 나라의 인구수(2023년 기준 · 도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCA1 생각을 열어요</div>
+      지난 시간에는 세계의 인구 분포를 알아봤어요. 네 나라 카드에 적힌 수는 무엇을 나타낼까요? 세계 여러 나라의 인구수는 어떠할까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 카드의 수는 그 나라의 <b>인구수</b>예요.<br>
+      \u2014 나라마다 인구수가 <b>달라요</b>. 인구가 많은 나라도 있고 적은 나라도 있어요.</div>`
+      :`<div class="note">가장 큰 수와 가장 작은 수를 찾아봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">오늘은 <b>세계 여러 나라의 인구수</b>를 알아봐요.</div></div>`});
+// 2 살펴보기 — reveal: 나라별 인구수(교과서 129쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">인구수가 많은 나라는 어느 대륙에 많을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('map','인구수가 1억 명 이상인 나라(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDDFA\uFE0F 나라별 인구수 지도</div>
+      나라별 인구수 지도에서 색의 진하기는 인구수를 나타내요. 색이 진할수록 인구수가 많아요.
+      인구수가 10억 명 이상인 나라는 어디인가요? 인구수가 많은 나라는 어느 대륙에 모여 있나요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 인구수가 <b>10억 명 이상</b>인 나라는 <b>인도</b>와 <b>중국</b>이에요.<br>
+      \u2014 인구수가 1억 명 이상인 나라는 아시아에 가장 많고, 오세아니아에는 없어요.<br>
+      \u2014 대체로 <b>아시아</b>에 있는 나라들은 인구수가 많고, <b>오세아니아</b>에 있는 나라들은 인구수가 적어요.</div>`
+      :`<div class="note">동그라미가 가장 많은 대륙과 하나도 없는 대륙을 찾아봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: 면적과 인구수(교과서 129쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">나라의 면적이 넓으면 인구수도 많을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('area','면적과 인구수(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCCF 면적과 인구수</div>
+      면적이 넓은 나라는 모두 인구수가 많을까요? 지도에서 알 수 있는 사실은 무엇인가요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 나라의 면적이 넓다고 해서 <b>반드시 인구수가 많은 것은 아니에요</b>.<br>
+      \u2014 사람들이 살기 어려운 지역에 있는 나라들은 면적에 비해 인구수가 적어요.<br>
+      \u2014 세계 여러 나라의 인구수는 <b>나라마다 달라요</b>.</div>`
+      :`<div class="note">지난 시간에 배운 살기 어려운 지역을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 4 살펴보기 — reveal: 인구수가 많은 나라(교과서 130쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">인도와 미국은 왜 인구가 많을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('many','인구수가 많은 나라(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDF3E 인구수가 많은 나라</div>
+      한 나라의 인구수는 기후, 지형 등 자연환경과 산업, 교통 등 인문환경의 영향을 많이 받아요. 인도와 미국의 인구 특징과 그 까닭은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 <b>인도</b>(약 14억 3,807만 명): 세계에서 인구수가 가장 많아요. 강수량이 많고 토양이 비옥하여 <b>농업</b>이 발달했으며, 출생률이 높아 인구수가 계속 늘어날 전망이에요.<br>
+      \u2014 <b>미국</b>(약 3억 4,348만 명): 세계에서 세 번째로 인구수가 많아요. 기후가 온화하고 <b>다양한 산업</b>이 발달하여 일자리를 찾아 <b>이민</b> 오는 사람이 많아요.</div>`
+      :`<div class="note">자연환경과 인문환경을 나누어 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 5 살펴보기 — reveal: 인구수가 적은 나라(교과서 130쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">리비아와 투발루는 왜 인구가 적을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('few','인구수가 적은 나라(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDFDD\uFE0F 인구수가 적은 나라</div>
+      리비아와 투발루는 인구수가 적은 나라예요. 두 나라의 인구 특징과 그 까닭은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 <b>리비아</b>(약 731만 명): 국토 대부분이 건조한 기후가 나타나는 <b>사막</b>이에요. 그래서 국토의 면적에 비해 인구수가 매우 적은 편이에요.<br>
+      \u2014 <b>투발루</b>(9,816명): 남태평양에 있는 <b>작은 섬나라</b>로 인구수가 매우 적어요. 기후변화로 나라가 바다에 잠길 위험에 빠져 있어 주민들은 다른 나라로 <b>이주할 계획</b>이에요.</div>`
+      :`<div class="note">땅의 모습과 기후변화를 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">다음 판에서 나라의 인구수를 <b>늘리고 줄이는 요인</b>을 인구 물통의 꼭지로 알아봐요.</div></div>`});
+// 6 살펴보기 — 직접조작(인구 물통의 꼭지를 돌려요)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">꼭지를 하나씩 열며 인구수를 바꾸는 요인을 찾아요</h2>
+  ${wvPanel(st)}`});
+// 7 살펴보기 — reveal: 나라별 인구 성장률(교과서 131쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">세계 여러 나라의 인구는 어떻게 변할까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('grow','나라별 인구 성장률(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCC8 인구 성장률</div>
+      <b>인구 성장률</b>은 일정한 지역 안에 사는 인구가 증가하는 비율이에요. 인구수가 줄어드는 나라가 많이 모여 있는 대륙은 어디인가요?
+      지도에 나타난 인구 성장률이 계속되면 아프리카 나라들의 인구수는 어떻게 될까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 대체로 <b>아프리카</b>에 있는 나라들은 인구 성장률이 높고, <b>유럽</b>에 있는 나라들은 인구 성장률이 낮거나 감소하고 있어요.<br>
+      \u2014 이 성장률이 계속되면 아프리카 나라들의 인구수는 <b>지금보다 늘어날</b> 거예요.<br>
+      \u2014 사람들은 일자리를 얻거나 전쟁을 피하는 등 다양한 목적으로 다른 나라로 이동해요.</div>`
+      :`<div class="note">위로 향한 화살표와 아래로 향한 화살표를 비교해 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 4차시 주요 내용 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div><b>세계 여러 나라의 인구수</b> \u2014 나라마다 달라요. 대체로 아시아에 있는 나라들은 인구수가 많고, 오세아니아에 있는 나라들은 인구수가 적어요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div><b>나라별 인구 특징</b> \u2014 인도는 농업이, 미국은 다양한 산업이 발달하여 인구가 많아요. 리비아는 국토의 대부분이 사막이라 면적에 비해 인구가 적고, 투발루는 작은 섬나라라 인구가 적어요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div><b>인구수 변화에 영향을 주는 요인</b> \u2014 출생, 사망, 인구의 이동, 환경의 변화 등이에요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 인구 물통의 꼭지를 하나씩 열어 인구수를 늘리는 요인과 줄이는 요인을 적었어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b>세계 여러 나라의 인구 밀도</b>를 알아봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공부한 내용을 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"세계 여러 나라의 인구수가 나라마다 다르다는 것을 말할 수 있어요",st)}
+    ${selfCheck(1,"인구수가 많은 나라와 적은 나라의 인구 특징과 그 까닭을 설명할 수 있어요",st)}
+    ${selfCheck(2,"나라의 인구수를 바꾸는 요인을 말할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">세계 여러 나라의 인구 밀도</b>를 알아봐요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u3_l02";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  wvGate:0, wvLog:0,
+  wvRead:null, wvMean:null, wvFin:null,
+  wvWrongR:null, wvWrongK:null, wvWrongF:null,
+  wvMsg:null, wvWarn:false, wvBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function wvRender(){ main.innerHTML = slides[state.idx].render(state); }
+function wvHold(msg){
+  state.wvWarn=true; state.wvBusy=true; state.wvMsg=msg;
+  playThud(); wvRender();
+  setTimeout(()=>{ state.wvBusy=false; state.wvWarn=false; state.wvMsg=null;
+    state.wvWrongR=null; state.wvWrongK=null; state.wvWrongF=null; wvRender(); },1600);
+}
+/* ★ 요인 기록 — 더하기만 하는 자리 단 하나 */
+function wvNote(l){ state.wvLog |= (1 << l); }
+
+/* ① 꼭지 단추 — 0 출생 · 1 들어오는 이동 · 2 사망 · 3 나가는 이동(누를 때마다 열림 ↔ 잠김) */
+function wvTap(a){
+  if(state.wvFin!=null) return;                                        // 가드①
+  if(state.wvBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(a) || a<0 || a>=WV_N) return;                   // 가드②
+  if(wvAll(state)){ wvHold(WV_LOCK); return; }                         // 가드③ 판 불변
+  state.wvGate ^= (1 << a);                                            // ★ 판이 바뀌는 자리 단 하나
+  state.wvWarn=false; state.wvMsg=null; playBlip(); wvRender();
+}
+
+/* ② 요인 적기 — 꼭지가 딱 하나 열렸고(가드⑩) 아직 적지 않았을 때만(가드⑨) */
+function wvWrite(){
+  if(state.wvFin!=null) return;                                        // 가드①
+  if(state.wvBusy) return;                                             // 가드⑧
+  if(wvAll(state)){ wvHold(WV_LOCK); return; }                         // 가드③ 판 불변
+  const l = wvKind(state);
+  if(l===4){ wvHold(WV_ONE); return; }                                 // 가드⑩ 꼭지 하나가 아님 — 판 불변
+  if(wvHas(state,l)){ wvHold(WV_AGAIN); return; }                      // 가드⑨ 이미 적은 요인 — 판 불변
+  wvNote(l);
+  state.wvWarn=false;
+  if(wvAll(state)){ state.wvMsg = WV_ALL_MSG; playChime(); }
+  else { state.wvMsg = `적었어요 \u2014 ${WV_TAP[l]} 꼭지만 열면 ${WV_DIRTXT[WV_SIDE[l]+1]}. 꼭지를 잠그고 다른 꼭지를 하나만 열어 봐요.`; playChime(); }
+  wvRender();
+}
+
+/* ③ 판 읽기 — 네 요인 뒤에만(가드④) */
+function wvReadPick(k){
+  if(state.wvFin!=null) return;                                        // 가드①
+  if(state.wvBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=WV_READ.length) return;         // 가드②
+  if(!wvAll(state)){ wvHold(WV_ORDER_R); return; }                     // 가드④ 순서 — 판 불변
+  if(state.wvRead!=null){ wvHold(WV_READ_AGAIN); return; }             // 가드④ 판 불변
+  if(k===WV_READ_OK){
+    state.wvRead=k; state.wvWrongR=null; state.wvWarn=false;
+    state.wvMsg = '판을 잘 읽었어요. 나라의 인구수는 <b>출생</b>과 <b>들어오는 이동</b>으로 늘고, <b>사망</b>과 <b>나가는 이동</b>으로 줄어요.';
+    playChime(); wvRender(); return;
+  }
+  state.wvWrongR=k;
+  wvHold(WV_READ_NO[k]);
+}
+
+/* ④ 꼭! 기억해요 빈칸 — 판을 읽은 뒤에만(가드⑤). */
+function wvMeanPick(k){
+  if(state.wvFin!=null) return;                                        // 가드①
+  if(state.wvBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=WV_MEAN.length) return;         // 가드②
+  if(state.wvRead==null){ wvHold(WV_ORDER_K); return; }                // 가드⑤ 순서 — 판 불변
+  if(state.wvMean!=null){ wvHold(WV_MEAN_AGAIN); return; }             // 가드⑤ 판 불변
+  if(k!==WV_MEAN_OK){ state.wvWrongK=k; wvHold(WV_MEAN_NO[k]); return; } // 가드⑤ 판 불변
+  state.wvMean = k;                                                    // ★ 빈칸을 고르는 자리 단 하나
+  state.wvWarn=false;
+  state.wvMsg = '나라의 인구수는 출생과 사망, <b>인구의 이동</b>, 환경의 변화 등에 따라 달라져요.';
+  playChime(); wvRender();
+}
+
+/* ⑤ 마무리 — 지도서 4차시 주요 내용 정리 */
+function wvFinish(k){
+  if(state.wvFin!=null) return;                                        // 가드①
+  if(state.wvBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=WV_FIN.length) return;          // 가드②
+  if(state.wvMean==null){ wvHold(WV_ORDER_F); return; }                // 가드⑥ 순서 — 판 불변
+  if(k===WV_FIN_OK){
+    state.wvFin=k; state.wvWrongF=null; state.wvMsg=null; state.wvWarn=false;
+    playChime(); wvRender(); return;
+  }
+  state.wvWrongF=k;
+  wvHold(WV_FIN_NO[k]);                                                // 가드⑦ 판 불변
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 3단원 3차시(u3 l03) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
