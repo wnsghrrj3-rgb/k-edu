@@ -318,14 +318,14 @@ window.KEDU_MAP["g6_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u3_l04",
+     "lessonId": "g6_s2_social_u3_l04_v1",
      "n": "4",
      "title": "세계 여러 나라의 인구 구조를 알아볼까요",
      "sub": "① 세계의 인구 분포",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/3단원_지구촌사람들/g6_social_u3_l04_층을나눠요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,

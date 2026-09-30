@@ -1,0 +1,875 @@
+<!--
+K-edu 사회 6-2 · 3단원 지구촌 사람들 · 주제① 세계의 인구 분포 · 4차시(u3 l04 · 주제① 마무리)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사12-01] · 교과서 p.135~139 · 지도서(대단원3 **6차시** 「세계 여러 나라의 인구 구조를 알아볼까요」, 지도서 p.294~299) 근거.
+학습 목표: 세계 여러 나라의 인구 구조 특징을 설명할 수 있다.
+META = "3단원 지구촌 사람들 · 주제① 세계의 인구 분포"
+⚠️ 엔진은 u3 l03(→ u3 l02 → … 6-1 사회 엔진)에서 100% 승계 · 엔진 무수정 · 3단원 색 #7C3AED.
+⚠️ 회수 키 `g6_s2_social_u3_l04_v1` · 맵 키 `g6_social_u3_l04` · 파일명 `층을나눠요` — 조작 이름(선례 승계).
+
+직접조작: 「층을 나눠요」 판 (교과서 136~137쪽 · 지도서 6차시 「출생률과 사망률이 낮고 평균 수명이 긴 나라는 유소년층의 비율이 낮고 노년층의 비율이 높음」)
+  ⭐ 씨앗은 지도서 299쪽 주요 내용 정리 — 인구 구조는 출생률, 사망률 등에 따라 다르게 나타나며, 인구 피라미드로 한눈에 볼 수 있다.
+     단추 셋 — 출생률(낮아요 ↔ 높아요) · 사망률(낮아요 ↔ 높아요) · 연령층 선(지웠어요 ↔ 그었어요).
+  ⭐ 단추 셋(cgTap) — 판 바꾸는 자리 state.cgGate = 단 하나(세 비트 · ^=).
+  ⭐ ★ 아래층(유소년층) 막대는 `CG_YOUNG`, 위층(노년층) 막대는 `CG_OLD` 한 줄 표 · 층의 모양은 `cgTilt` 한 줄(두 막대를 견준 부호).
+  ⭐ ★ 어느 판을 적을 수 있는지는 `cgKind` 한 줄 — **연령층 선을 그었을 때만** 출생률·사망률 두 비트 번호 · 아니면 4(적을 수 없음).
+  ⭐ ★★ 판 기록은 `state.cgLog |=` 단 하나(`cgNote` · 판 적기 처리기에서만 · 줄지 않음) — 네 판 최소 걸음(BFS 8).
+  ⭐ 판 읽기는 네 판 뒤에만(정답 자리 0) → 꼭! 기억해요 빈칸 3택(교과서 137쪽 「출생률, 사망률」 · 정답 자리 1)
+     → 마무리 3택 = 지도서 6차시 주요 내용 정리(정답 자리 1).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 10종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 네 판을 다 적은 뒤 판 움직이기(단추·적기) 무시 — 판 불변
+     ④ 네 판 전 판 읽기 무시 · 읽은 뒤 다시 무시 · 알맞지 않은 읽기 무시(자리별 안내)
+     ⑤ 판을 읽기 전 빈칸 무시 · 고른 뒤 다시 무시 · 알맞지 않은 빈칸 무시
+     ⑥ 빈칸 전 마무리 무시(순서)
+     ⑦ 알맞지 않은 마무리 무시
+     ⑧ 안내 표시 중 재클릭 무시(`cgBusy`)
+     ⑨ 이미 적은 판 다시 적기 무시 — 판 불변
+     ⑩ 연령층 선을 긋지 않고 적기 무시(`CG_LINE`) — 판 불변.
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.cg-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 막대는 도식이다** — 막대 길이는 실제 인구 비율이 아니다(캡션 상시).
+  ㉡ **판은 나라별 인구 구조를 계산하지 않는다** — 수치는 교과서 자료만 슬라이드에 적는다.
+  ㉢ **판에 사람 형상 0** — 막대 도형만.
+  ㉣ **인구 피라미드 누리집 살펴보기 · 필요한 시설 이야기하기 · 인구 구조 그래프 그리기 · 친구와 이야기하기는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 지구촌을 위협하는 문제(주제②)는 차시 예고 자리까지만.
+  **새 사실 0** — 교과서 135~139쪽 · 지도서 6차시 본문까지만. 수치는 교과서 자료(연령별 세계 인구 구조 1960~2020 ·
+  인도네시아 54.4 % · 원그래프 두 개)만 · 2040 수치 0(학생이 그리는 예상이라 적지 않음) · 신문 이름 0 · 특정 나라 편견 문면 0.
+  사람 형상 0 · 금액 0 · 쪽수 0 · 누리집 주소 0.
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u3_l04_v1">
+<title>세계 여러 나라의 인구 구조를 알아볼까요 · 지구촌 사람들 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#7C3AED; --green-d:#5B21B6; --cyan:#8B5CF6;
+  --bg:#F5F3FF; --bub:#EDE9FE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#EDE9FE;color:#5B21B6}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 출생률과 사망률을 바꾸고 연령층 선을 그어 인구 구조를 적는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#EDE9FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#5B21B6;max-width:660px}
+.cg-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#F5F3FF;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.cg-board{display:flex;flex-direction:column;gap:6px;padding:8px}
+.cg-head{background:#EDE9FE;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#5B21B6;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.cg-gate{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.cg-btn{border:2px solid #CBD5E0;background:#F8FAFC;color:#475569;border-radius:9px;padding:5px 6px;cursor:pointer;font-family:inherit;
+  font-weight:800;font-size:clamp(9px,1.52vw,11px);line-height:1.3;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.cg-btn .st{font-weight:900;font-size:.92em}
+.cg-btn[data-on="1"]{border-color:#7C3AED;background:#EDE9FE;color:#4C1D95}
+.cg-btn[data-b="2"][data-on="1"]{border-color:#B45309;background:#FEF3C7;color:#78350F}
+.cg-land{border:2px solid #CBD5E0;border-radius:10px;background:#F8FAFC;overflow:hidden}
+.cg-land svg{display:block;width:100%;height:auto}
+.cg-say{border-radius:8px;padding:5px 8px;font-weight:800;font-size:clamp(9.2px,1.56vw,11.2px);line-height:1.4;
+  background:#F8FAFC;color:#334155;border:2px solid #94A3B8}
+.cg-say[data-line="1"]{background:#F5F3FF;color:#4C1D95;border-color:#7C3AED}
+.cg-row{display:flex;gap:6px;flex-wrap:wrap}
+.cg-pen{flex:1 1 140px;border:2px solid #7C3AED;background:#EDE9FE;color:#5B21B6;border-radius:9px;padding:6px 8px;cursor:pointer;
+  font-family:inherit;font-weight:800;font-size:clamp(9.6px,1.62vw,11.8px)}
+.cg-pen:hover{background:#DDD6FE}
+.cg-note{display:flex;flex-direction:column;gap:4px}
+.cg-note .nh{font-weight:900;color:#5B21B6;font-size:clamp(9.4px,1.58vw,11.4px)}
+.cg-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-radius:7px;padding:4px 8px;font-weight:800;
+  font-size:clamp(9.2px,1.56vw,11.2px);line-height:1.38;border:2px dashed #CBD5E0;background:#F8FAFC;color:#94A3B8}
+.cg-line.set{border-style:solid;border-color:#059669;background:#ECFDF5;color:#065F46}
+.cg-read,.cg-mean,.cg-fin{display:flex;flex-direction:column;gap:5px}
+.cg-read button,.cg-mean button,.cg-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.cg-read button:hover,.cg-mean button:hover,.cg-fin button:hover{background:var(--bub)}
+.cg-read button.no,.cg-mean button.no,.cg-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.cg-hint{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:420px){ .cg-gate{gap:3px} .cg-btn,.cg-line{font-size:8.4px;padding:3px} }
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠·㉡: 모든 그림은 내용을 나타낸 도식이며 실제 포스터·사진이 아니다.
+   ⚠️ 사람 형상 대신 도형으로만 그린다. 수치는 교과서 자료만 적는다. */
+const SVG = {
+  // 1 들어가기 — 두 가지 인구 정책 포스터(도식)
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    ${[['\uD83D\uDC76','아이를 낳아 길러요','아이를 더 낳도록 권하는 포스터','#7C3AED','#4C1D95'],['\u2696\uFE0F','알맞게 낳아요','아이를 덜 낳도록 권하는 포스터','#B45309','#78350F']].map((t,i)=>`<rect x="${16+i*150}" y="20" width="138" height="108" rx="10" fill="#fff" stroke="${t[3]}" stroke-width="1.6"/>
+      <text x="${85+i*150}" y="58" font-size="22" text-anchor="middle">${t[0]}</text>
+      <text x="${85+i*150}" y="84" font-size="9" fill="${t[4]}" text-anchor="middle" font-weight="900">${t[1]}</text>
+      <text x="${85+i*150}" y="106" font-size="6.8" fill="#334155" text-anchor="middle" font-weight="800">${t[2]}</text>`).join('')}
+    <text x="160" y="152" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">두 포스터의 공통된 주제는 무엇일까요?(도식)</text></svg>`,
+  // 2 살펴보기 — 연령별 세계 인구 구조의 변화(교과서 135쪽 · 도식)
+  graph:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    ${[['1960',37.4,57.6,5.0],['1980',35.5,58.7,5.8],['2000',30.4,62.8,6.8],['2020',25.8,64.9,9.3]].map((c,i)=>{ const x=40+i*66, H=1.2; const y0=140, hy=c[1]*H, hm=c[2]*H, ho=c[3]*H;
+      return `<rect x="${x}" y="${y0-hy}" width="40" height="${hy}" fill="#DDD6FE"/><text x="${x+20}" y="${y0-hy/2+3}" font-size="6.6" fill="#4C1D95" text-anchor="middle" font-weight="900">${c[1].toFixed(1)}</text>
+      <rect x="${x}" y="${y0-hy-hm}" width="40" height="${hm}" fill="#E2E8F0"/><text x="${x+20}" y="${y0-hy-hm/2+3}" font-size="6.6" fill="#334155" text-anchor="middle" font-weight="900">${c[2].toFixed(1)}</text>
+      <rect x="${x}" y="${y0-hy-hm-ho}" width="40" height="${ho}" fill="#FDE68A"/><text x="${x+52}" y="${y0-hy-hm-ho/2+3}" font-size="6.4" fill="#78350F" text-anchor="middle" font-weight="900">${c[3].toFixed(1)}</text>
+      <text x="${x+20}" y="152" font-size="7" fill="#334155" text-anchor="middle" font-weight="800">${c[0]}</text>`; }).join('')}
+    <text x="160" y="164" font-size="6.6" fill="#334155" text-anchor="middle" font-weight="800">아래 보라 = 유소년층 · 가운데 회색 = 청장년층 · 위 노랑 = 노년층(단위 %)</text></svg>`,
+  // 3 살펴보기 — 인구 피라미드 읽기(교과서 136쪽 · 도식)
+  pyr:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    ${[[70,0],[60,1],[50,2],[40,3],[30,4],[20,5],[12,6]].map(r=>`<rect x="${158-r[0]}" y="${120-r[1]*14}" width="${r[0]}" height="12" fill="#A78BFA"/><rect x="162" y="${120-r[1]*14}" width="${r[0]}" height="12" fill="#F9A8D4"/>`).join('')}
+    <path d="M160 20 L160 136" stroke="#334155" stroke-width="1.2"/>
+    <text x="60" y="150" font-size="8" fill="#4C1D95" text-anchor="middle" font-weight="900">\u2190 남자</text>
+    <text x="260" y="150" font-size="8" fill="#9D174D" text-anchor="middle" font-weight="900">여자 \u2192</text>
+    <text x="178" y="16" font-size="7.6" fill="#334155" text-anchor="middle" font-weight="900">\u2191 연령</text>
+    <text x="160" y="164" font-size="7" fill="#334155" text-anchor="middle" font-weight="800">인구 피라미드의 가로축과 세로축(도식)</text></svg>`,
+  // 4 살펴보기 — 나이지리아와 일본(교과서 136쪽 · 도식)
+  two:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    ${[['나이지리아',[70,56,42,30,20,12,6]],['일본',[30,36,42,46,48,44,36]]].map((t,i)=>`<text x="${82+i*156}" y="18" font-size="9" fill="#4C1D95" text-anchor="middle" font-weight="900">${t[0]}</text>
+      ${t[1].map((w,r)=>`<rect x="${82+i*156-w/2-1}" y="${118-r*14}" width="${w/2}" height="12" fill="#A78BFA"/><rect x="${82+i*156+1}" y="${118-r*14}" width="${w/2}" height="12" fill="#F9A8D4"/>`).join('')}`).join('')}
+    <text x="160" y="150" font-size="7" fill="#334155" text-anchor="middle" font-weight="800">두 나라의 인구 피라미드 모양(도식 · 막대 길이는 수치가 아니에요)</text></svg>`,
+  // 5 살펴보기 — 인도네시아의 인구 구조(교과서 137쪽 · 도식)
+  indo:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFFBEB"/>
+    ${[['\u2474',['13.1','50.5','36.4']],['\u2475',['25.0','68.0','7.0']]].map((t,i)=>`<rect x="${14+i*152}" y="16" width="140" height="112" rx="10" fill="#fff" stroke="#B45309" stroke-width="1.4"/>
+      <text x="${84+i*152}" y="38" font-size="10" fill="#78350F" text-anchor="middle" font-weight="900">${t[0]}</text>
+      ${['0~14세','15~64세','65세 이상'].map((a,k)=>`<text x="${50+i*152}" y="${62+k*22}" font-size="7.4" fill="#334155" font-weight="800">${a}</text><text x="${128+i*152}" y="${62+k*22}" font-size="7.6" fill="#78350F" text-anchor="end" font-weight="900">${t[1][k]} %</text>`).join('')}`).join('')}
+    <text x="160" y="152" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">인도네시아의 인구 구조는 어느 쪽일까요?(도식)</text></svg>`,
+  // 7 살펴보기 — 독특한 인구 구조(교과서 138쪽 · 도식)
+  uniq:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    ${[['사우디아라비아'],['아랍 에미리트']].map((t,i)=>`<text x="${82+i*156}" y="18" font-size="8.6" fill="#4C1D95" text-anchor="middle" font-weight="900">${t[0]}</text>
+      ${[16,16,20,34,60,62,40,18].map((w,r)=>`<rect x="${82+i*156-w-1}" y="${124-r*13}" width="${w}" height="11" fill="#A78BFA"/><rect x="${82+i*156+1}" y="${124-r*13}" width="${Math.round(w*(r>=3&&r<=6?0.45:0.9))}" height="11" fill="#F9A8D4"/>`).join('')}`).join('')}
+    <text x="160" y="154" font-size="7" fill="#334155" text-anchor="middle" font-weight="800">청장년층, 특히 남자 인구가 두드러지게 많아요(도식)</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#1E1B4B"/>
+    ${['출생률','사망률','인구 구조'].map((t,i)=>`<rect x="${18+i*100}" y="52" width="84" height="40" rx="8" fill="#EDE9FE" stroke="#A78BFA" stroke-width="2"/>
+      <text x="${60+i*100}" y="76" font-size="7.8" fill="#4C1D95" text-anchor="middle" font-weight="800">${t}</text>`).join('')}
+    <text x="160" y="128" font-size="8.6" fill="#DDD6FE" text-anchor="middle" font-weight="800">세계 여러 나라의 인구 구조는 나라마다 달라요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#7C3AED" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#7C3AED" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#5B21B6" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 층을 나눠요 판 =====
+   ★ 단추 셋(cgTap) — 판 바꾸는 자리 state.cgGate = 단 하나(세 비트 · ^=): 0 출생률 · 1 사망률 · 2 연령층 선.
+   ★ 아래층(유소년층) 막대는 CG_YOUNG · 위층(노년층) 막대는 CG_OLD · 층의 모양은 cgTilt 한 줄 · 적을 수 있는 판은 cgKind 한 줄(선을 그었을 때만).
+   ★★ 판 기록은 |= 만(cgLog · cgNote 단 하나 · 판 적기 처리기에서만).
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. 막대는 도식이다. */
+const CG_N = 3;
+const CG_ALL = 15;
+/* 단추 셋 — 출생률 · 사망률 · 연령층 선 */
+const CG_BTN = ['출생률','사망률','연령층 선'];
+const CG_ICON = ['\uD83D\uDC76','\u231B','\u2702\uFE0F'];
+const CG_ST = [['낮아요','높아요'],['낮아요','높아요'],['지웠어요','그었어요']];
+/* ★ 도식의 막대 반폭 — 아래층(출생률 낮아요 · 높아요) · 위층(사망률 낮아요 · 높아요) · 가운데 층은 그대로. 실제 비율이 아니다 */
+const CG_YOUNG = [20, 60];
+const CG_OLD = [60, 20];
+const CG_MID = 44;
+const CG_BAND = ['유소년층','청장년층','노년층'];
+const CG_SHAPE = ['위층이 넓은 모양','위아래가 비슷한 모양','아래층이 넓은 모양'];
+/* 판 넷 — 출생률 · 사망률 두 비트 번호 */
+const CG_CASE = ['출생률 낮음 \u00b7 사망률 낮음','출생률 높음 \u00b7 사망률 낮음','출생률 낮음 \u00b7 사망률 높음','출생률 높음 \u00b7 사망률 높음'];
+/* 판마다 교과서 136~137쪽 · 지도서 296~297쪽 예 — 적은 뒤에만 기록장에 보인다 */
+const CG_EX = [
+  '일본 \u2014 출생률과 사망률이 낮고 평균 수명이 길어 유소년층 비율이 낮고 노년층 비율이 높아요',
+  '출생률이 높으면 아래층인 유소년층 비율이 높아져요',
+  '사망률이 높고 평균 수명이 짧으면 위층인 노년층 비율이 낮아져요',
+  '나이지리아 \u2014 출생률과 사망률이 높고 평균 수명이 짧아 유소년층 비율이 높고 노년층 비율이 낮아요'
+];
+
+/* ② 판 읽기 */
+const CG_READ = [
+  '출생률이 높으면 유소년층 비율이 높아지고, 사망률이 낮고 평균 수명이 길면 노년층 비율이 높아져요',
+  '출생률과 사망률이 달라져도 인구 구조는 언제나 같은 모양이에요',
+  '사망률이 높을수록 노년층 비율이 높아져요'
+];
+const CG_READ_OK = 0;
+const CG_READ_NO = [
+  null,
+  '기록장의 <b>출생률 낮음 \u00b7 사망률 낮음</b> 줄과 <b>출생률 높음 \u00b7 사망률 높음</b> 줄을 견주어 봐요. 층의 모양이 같았나요? 판을 다시 읽어 봐요.',
+  '기록장의 <b>출생률 낮음 \u00b7 사망률 높음</b> 줄을 다시 봐요. 사망률이 높아지면 위층 막대는 어떻게 됐나요? 판을 다시 읽어 봐요.'
+];
+/* ③ 꼭! 기억해요 빈칸 — 교과서 137쪽 */
+const CG_MEAN = ['인구 밀도, 면적', '출생률, 사망률', '기후, 지형'];
+const CG_MEAN_OK = 1;
+const CG_MEAN_NO = [
+  '인구 밀도와 면적은 지난 시간에 공부한 낱말이에요. 판에서 누른 <b>단추 두 개</b>를 떠올려 봐요. 판은 그대로예요.',
+  null,
+  '기후와 지형은 인구가 <b>어디에 모여 사는지</b>와 관련 있어요. 판에서 누른 단추 두 개를 떠올려 봐요. 판은 그대로예요.'
+];
+/* ④ 마무리 — 지도서 6차시 주요 내용 정리 */
+const CG_FIN = [
+  '인구 구조는 나라의 면적으로 정해지고, 나이지리아는 노년층 비율이 높은 나라예요',
+  '인구 구조는 연령, 성 등을 기준으로 한 인구의 짜임새로, 인구 피라미드로 한눈에 볼 수 있어요. 출생률과 사망률이 낮고 평균 수명이 긴 나라는 유소년층 비율이 낮고 노년층 비율이 높으며, 출생률과 사망률이 높고 평균 수명이 짧은 나라는 유소년층 비율이 높고 노년층 비율이 낮아요',
+  '출생률과 사망률이 낮은 일본은 유소년층 비율이 높고, 인구 구조를 살펴보아도 미래의 인구 변화는 예상할 수 없어요'
+];
+const CG_FIN_OK = 1;
+const CG_FIN_NO = [
+  '기록장에서 층의 모양을 바꾼 것은 <b>출생률</b>과 <b>사망률</b> 단추였어요. 나이지리아 줄도 다시 봐요. 오늘의 정리를 다시 골라 봐요.',
+  null,
+  '기록장의 <b>일본</b> 줄을 다시 봐요. 교과서에서는 인구 구조를 살펴보면 미래의 인구 변화를 예상할 수 있다고 했어요. 오늘의 정리를 다시 골라 봐요.'
+];
+/* 안내 */
+const CG_LOCK = '네 판을 <b>모두 적었어요</b>. 단추는 이대로 둬요. 판을 읽어 봐요. 판은 그대로예요.';
+const CG_AGAIN = '이 판은 <b>이미 적었어요</b>. 출생률이나 사망률 단추를 눌러 다른 판을 만들어 봐요. 판은 그대로예요.';
+const CG_LINE = '<b>연령층 선</b>을 그어야 층을 나누어 볼 수 있어요. 연령층 선 단추를 눌러 선을 긋고 적어 봐요. 판은 그대로예요.';
+const CG_ORDER_R = '아직 <b>네 판</b>을 다 적지 않았어요. 네 판을 모두 적은 뒤에 읽을 수 있어요. 판은 그대로예요.';
+const CG_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const CG_ORDER_K = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const CG_MEAN_AGAIN = '꼭! 기억해요 빈칸은 <b>이미 채웠어요</b>. 판은 그대로예요.';
+const CG_ORDER_F = '아직 <b>꼭! 기억해요 빈칸</b>을 채우지 않았어요. 먼저 골라 봐요. 판은 그대로예요.';
+const CG_ALL_MSG = '네 판을 <b>모두 적었어요</b>. 판을 읽어 봐요.';
+
+function cgOn(st,b){ return (st.cgGate & (1<<b))!==0; }
+/* ★ 층의 모양 — 한 줄 · 0 위층이 넓음 · 1 비슷함 · 2 아래층이 넓음 */
+function cgTilt(st){ return Math.sign(CG_YOUNG[st.cgGate & 1] - CG_OLD[(st.cgGate >> 1) & 1]) + 1; }
+/* ★ 적을 수 있는 판 — 한 줄 · 연령층 선을 그었을 때만 출생률·사망률 두 비트 번호 · 아니면 4 */
+function cgKind(st){ return (st.cgGate & 4) ? (st.cgGate & 3) : 4; }
+function cgHas(st,l){ return (st.cgLog & (1<<l))!==0; }
+function cgLines(st){ return [0,1,2,3].filter(l=>cgHas(st,l)).length; }
+function cgAll(st){ return st.cgLog===CG_ALL; }
+
+function cgBtns(st){
+  return CG_BTN.map((t,b)=>{ const on=cgOn(st,b)?1:0;
+    return `<button class="cg-btn" data-b="${b}" data-on="${on}" onclick="cgTap(${b})"><span>${CG_ICON[b]} ${t}</span><span class="st">${CG_ST[b][on]}</span></button>`; }).join('');
+}
+function cgLand(st){
+  const yw=CG_YOUNG[st.cgGate & 1], ow=CG_OLD[(st.cgGate >> 1) & 1], ln=cgOn(st,2);
+  const rows=[[2,ow],[2,ow],[1,CG_MID],[1,CG_MID],[1,CG_MID],[0,yw],[0,yw]];
+  const bars=rows.map((r,i)=>{ const y=8+i*11;
+    return `<rect class="cg-bar" data-band="${r[0]}" data-side="L" x="${159-r[1]}" y="${y}" width="${r[1]}" height="10" fill="#A78BFA"/><rect class="cg-bar" data-band="${r[0]}" data-side="R" x="161" y="${y}" width="${r[1]}" height="10" fill="#F9A8D4"/>`; }).join('');
+  const cuts=ln?[29.5,62.5].map(y=>`<path class="cg-cut" d="M84 ${y} L236 ${y}" stroke="#B45309" stroke-width="2" stroke-dasharray="5 3"/>`).join('')
+    +[[18,2],[46,1],[79,0]].map(t=>`<text class="cg-tag" x="24" y="${t[0]+3}" font-size="7.4" fill="#78350F" font-weight="900">${CG_BAND[t[1]]}</text>`).join(''):'';
+  return `<svg viewBox="0 0 320 96" data-young="${yw}" data-old="${ow}" data-line="${ln?1:0}"><rect width="320" height="96" fill="#F8FAFC"/>${bars}<path d="M160 6 L160 86" stroke="#334155" stroke-width="1"/>${cuts}<text x="118" y="94" font-size="6.8" fill="#4C1D95" text-anchor="middle" font-weight="800">\u2190 남자</text><text x="202" y="94" font-size="6.8" fill="#9D174D" text-anchor="middle" font-weight="800">여자 \u2192</text></svg>`;
+}
+function cgNotes(st){
+  return CG_CASE.map((t,l)=>{ const on=cgHas(st,l);
+    return `<div class="cg-line${on?' set':''}" data-line="${l}">${on?'\u270F\uFE0F '+t+' \u2014 '+CG_SHAPE[cgTilt({cgGate:l})]+' \u00b7 '+CG_EX[l]:'\u2610 '+t+' \u2014 아직 적지 않았어요'}</div>`; }).join('');
+}
+
+function cgBoard(st){
+  const fin = st.cgFin!=null, all = cgAll(st), ln=cgOn(st,2);
+  const head = fin ? '연령층 선으로 인구 구조를 살펴보고 정리했어요'
+    : st.cgMean!=null ? '꼭! 기억해요 빈칸까지 채웠어요 \u2014 이제 정리해요'
+    : st.cgRead!=null ? '꼭! 기억해요 빈칸을 채워 봐요'
+    : all ? '네 판을 모두 적었어요 \u2014 판을 읽어 봐요'
+    : st.cgLog!==0 ? '출생률이나 사망률을 바꿔 다음 판도 적어 봐요'
+    : '출생률과 사망률을 정하고 연령층 선을 그어 판을 적어요';
+  return `<div class="cg-board" data-gate="${st.cgGate}" data-log="${st.cgLog}" data-lines="${cgLines(st)}" data-all="${all?1:0}" data-read="${st.cgRead==null?-1:st.cgRead}" data-mean="${st.cgMean==null?-1:st.cgMean}" data-fin="${fin?1:0}">
+    <div class="cg-head">${head}</div>
+    <div class="cg-gate">${cgBtns(st)}</div>
+    <div class="cg-land">${cgLand(st)}</div>
+    <div class="cg-say" data-line="${ln?1:0}">출생률 <b>${CG_ST[0][cgOn(st,0)?1:0]}</b> \u00b7 사망률 <b>${CG_ST[1][cgOn(st,1)?1:0]}</b> \u2014 ${ln?`층을 나눈 모양: <b>${CG_SHAPE[cgTilt(st)]}</b>`:'연령층 선을 그어야 층의 모양을 알 수 있어요'}</div>
+    <div class="cg-row"><button class="cg-pen" data-pen="1" onclick="cgWrite()">\u270F\uFE0F 판 적기</button></div>
+    <div class="cg-note"><div class="nh">\uD83D\uDCD2 인구 구조 기록장</div>${cgNotes(st)}</div>
+  </div>`;
+}
+
+function cgPanel(st){
+  const fin = st.cgFin!=null, all = cgAll(st);
+  const q = fin ? '연령층 선으로 세계 여러 나라의 인구 구조를 살펴봤어요.'
+    : st.cgMean!=null ? '오늘 공부한 내용을 정리해요. 세계 여러 나라의 인구 구조는 어떠한가요?'
+    : st.cgRead!=null ? '꼭! 기억해요 \u2014 「인구 구조는 (  ), (  ) 등에 따라 다르게 나타납니다」의 빈칸에 알맞은 말은 무엇일까요?'
+    : all ? '네 판을 모두 적었어요. 판에서 무엇을 알 수 있나요?'
+    : st.cgLog!==0 ? '출생률과 사망률을 바꿔 가며 네 판을 모두 적어요.'
+    : '출생률과 사망률을 바꾸고 연령층 선을 그어 봐요. 층의 모양은 무엇에 따라 달라질까요?';
+  let right = `<div class="cg-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\u2702\uFE0F 연령층 선으로 살펴보며 정리했어요</div>
+      <b>인구 구조</b>는 연령, 성 등을 기준으로 한 인구의 짜임새로, <b>인구 피라미드</b>로 한눈에 볼 수 있어요.
+      출생률과 사망률이 낮고 평균 수명이 긴 나라는 <b>유소년층 비율이 낮고 노년층 비율이 높아요</b>. 출생률과 사망률이 높고 평균 수명이 짧은 나라는 <b>유소년층 비율이 높고 노년층 비율이 낮아요</b>.<br>
+      <span style="color:#64748B">판의 막대는 도식이에요.
+      <b>누리집에서 인구 피라미드 살펴보기</b>, <b>두 나라에 필요한 시설 이야기하기</b>, <b>세계 인구 구조 그래프 그려 보기</b>, <b>친구와 이야기하기</b>는 교실에서 직접 해요.</span></div>`;
+  } else if(st.cgMean!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="cg-fin">${CG_FIN.map((t,k)=>`<button class="${st.cgWrongF===k?'no':''}" onclick="cgFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.cgRead!=null){
+    right += `<div class="dw-step">\uD83D\uDCCC 꼭! 기억해요 빈칸</div>`;
+    right += `<div class="cg-mean">${CG_MEAN.map((t,k)=>`<button class="${st.cgWrongK===k?'no':''}" onclick="cgMeanPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="cg-hint">판에서 층의 모양을 바꾼 단추 두 개의 이름을 떠올려 봐요.</div>`;
+  } else if(all){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="cg-read">${CG_READ.map((t,k)=>`<button class="${st.cgWrongR===k?'no':''}" onclick="cgReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\u2702\uFE0F 층을 나눠요</div>`;
+    right += `<div class="cg-hint"><b>출생률</b> 단추를 누르면 아래층 막대가 짧아지거나 길어지고, <b>사망률</b> 단추를 누르면 위층 막대가 길어지거나 짧아져요. <b>연령층 선</b> 단추를 눌러 선을 그으면 층을 나누어 볼 수 있어요. 선을 그은 채로 <b>판 적기</b>를 누르면 기록장에 적혀요. 네 판을 모두 적으면 판을 읽을 수 있어요. 감점은 없어요.</div>`;
+  }
+  if(st.cgMsg) right += `<div class="dw-msg${st.cgWarn?' warn':''}">${st.cgMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\u2702\uFE0F 층을 나눠요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${cgBoard(st)}<div class="cvcap">판의 막대는 <b>도식</b>이에요. 막대 길이는 실제 인구 비율이 아니고, 가운데 층은 늘 그대로 그렸어요. 판은 나라별 인구 구조를 계산하지 않아요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 지구촌 사람들 · 주제① 세계의 인구 분포";
+
+// 확인 4 + 적용 4 — 정답 다양화 [2,0,3,1,0,2,1,3](각 자리 2회)
+// ⚠️ 새 사실 0(교과서 135~139쪽 · 지도서 6차시까지만) · 수치는 교과서 자료만 · 지구촌 문제 0(뒤 차시).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"<b>인구 구조</b>의 뜻으로 알맞은 것은 무엇인가요?",
+   opts:["일정한 면적(1 km\u00b2) 안에 사는 인구수","나라 전체에 사는 인구수","연령, 성 등을 기준으로 한 인구의 짜임새","나라의 면적을 넓은 차례로 나타낸 것"],
+   correct:2, pts:POINTS_BASIC, scene:"graph",
+   reason:"인구 구조는 연령, 성 등을 기준으로 한 인구의 짜임새예요. 일정한 면적 안에 사는 인구수는 인구 밀도예요.",
+   h1:"교과서의 낱말 풀이를 떠올려 봐요.", h2:"「연령」과 「성」이 열쇠예요."},
+  {stem:"연령별 세계 인구 구조의 변화 그래프에서 1960년에 비해 2020년에는 <b>어떻게 달라졌나요</b>?",
+   opts:["유소년층 비율은 줄어들고 노년층 비율은 늘어났어요","유소년층 비율은 늘어나고 노년층 비율은 줄어들었어요","세 연령층의 비율이 모두 그대로예요","청장년층 비율이 가장 낮아졌어요"],
+   correct:0, pts:POINTS_BASIC, scene:"graph",
+   reason:"유소년층 비율은 37.4 %에서 25.8 %로 줄어들고, 노년층 비율은 5.0 %에서 9.3 %로 늘어났어요.",
+   h1:"아래 보라 칸과 위 노랑 칸의 수를 견주어 봐요.", h2:"보라 칸은 작아지고 노랑 칸은 커졌어요."},
+  {stem:"<b>인구 피라미드</b>의 가로축과 세로축은 각각 무엇을 나타내나요?",
+   opts:["가로축은 나라 이름, 세로축은 인구 밀도","가로축은 연도, 세로축은 인구수","가로축 왼쪽은 여자, 오른쪽은 남자, 세로축은 면적","가로축 왼쪽은 남자 인구 비율, 오른쪽은 여자 인구 비율, 세로축은 연령"],
+   correct:3, pts:POINTS_BASIC, scene:"pyr",
+   reason:"인구 피라미드의 가로축 왼쪽은 남자 인구 비율, 오른쪽은 여자 인구 비율을 나타내고, 세로축은 연령을 나타내요.",
+   h1:"피라미드 그림의 화살표를 떠올려 봐요.", h2:"위로 갈수록 나이가 많아져요."},
+  {stem:"<b>나이지리아</b> 인구 구조의 특징으로 알맞은 것은 무엇인가요?",
+   opts:["유소년층 비율이 낮고 노년층 비율이 높아요","유소년층 비율이 높고 노년층 비율이 낮아요","출생률과 사망률이 모두 낮아요","평균 수명이 일본보다 길어요"],
+   correct:1, pts:POINTS_BASIC, scene:"two",
+   reason:"나이지리아는 유소년층 비율이 높고 노년층 비율이 낮으며, 출생률과 사망률이 높고 평균 수명이 짧아요.",
+   h1:"층을 나눠요 판의 「출생률 높음 · 사망률 높음」 줄을 떠올려 봐요.", h2:"아래층이 넓은 모양이에요."},
+  // 4단계 적용 (+15)
+  {stem:"노년층 비율이 높은 <b>일본</b>에 더 많이 필요할 시설로 알맞은 것은 무엇인가요?",
+   opts:["요양원, 노인 복지 센터처럼 노인을 위한 시설","유치원, 학교처럼 어린이를 위한 시설","어린이 놀이터만 새로 짓는 시설","아무 시설도 필요하지 않아요"],
+   correct:0, pts:POINTS_APPLY, scene:"two",
+   reason:"일본은 노년층의 비율이 높아서 요양원, 노인 복지 센터 등 노인을 위한 시설이 필요해요.",
+   h1:"일본에서 비율이 높은 연령층을 떠올려 봐요.", h2:"위층이 넓은 모양이었어요."},
+  {stem:"출생률과 사망률이 <b>낮고</b> 평균 수명이 <b>긴</b> 나라의 인구 구조는 일반적으로 어떠한가요?",
+   opts:["유소년층 비율이 높고 노년층 비율이 낮아요","세 연령층의 비율이 모두 같아요","유소년층 비율이 낮고 노년층 비율이 높아요","청장년층이 하나도 없어요"],
+   correct:2, pts:POINTS_APPLY, scene:"two",
+   reason:"일반적으로 출생률과 사망률이 낮고 평균 수명이 긴 나라는 유소년층의 비율이 낮고 노년층의 비율이 높아요.",
+   h1:"층을 나눠요 판의 「출생률 낮음 · 사망률 낮음」 줄을 떠올려 봐요.", h2:"일본의 인구 구조를 떠올려 봐요."},
+  {stem:"세계 여러 나라의 기업이 <b>인도네시아</b> 시장에 주목하는 까닭을 인구 구조와 관련해 고르면 무엇인가요?",
+   opts:["노년층 비율이 매우 높기 때문이에요","유행에 민감하고 소비 성향이 높은 젊은 인구의 비율이 높기 때문이에요","인구 밀도가 가장 낮은 나라이기 때문이에요","유소년층이 하나도 없기 때문이에요"],
+   correct:1, pts:POINTS_APPLY, scene:"indo",
+   reason:"인도네시아는 전체 인구의 54.4 %가 1980~1990년대생으로, 유행에 민감하고 소비 성향이 높은 젊은 인구의 비율이 높아요.",
+   h1:"두 원그래프 가운데 15~64세 비율이 높은 쪽을 떠올려 봐요.", h2:"「젊은 시장」이라는 말이 열쇠예요."},
+  {stem:"사우디아라비아, 아랍 에미리트에 <b>청장년층</b> 인구가 두드러지게 많은 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["출생률이 갑자기 매우 높아졌기 때문이에요","노년층이 모두 다른 나라로 떠났기 때문이에요","면적이 넓어져 인구 밀도가 높아졌기 때문이에요","경제성장 과정에서 세계 여러 나라의 근로자를 받아들였기 때문이에요"],
+   correct:3, pts:POINTS_APPLY, scene:"uniq",
+   reason:"석유 자원이 풍부한 두 나라는 경제성장 과정에서 인도, 파키스탄, 필리핀 등 세계 여러 나라에서 근로자를 받아들여 청장년층 인구가 많은 독특한 인구 구조가 나타났어요.",
+   h1:"풍덩 사회 속으로의 말풍선을 떠올려 봐요.", h2:"일자리를 찾아온 사람들이에요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 동기 유발(인구 정책 포스터)
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">두 포스터는 무엇을 말하고 있을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','두 가지 포스터(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCA1 생각을 열어요</div>
+      지난 시간에는 세계 여러 나라의 인구 밀도를 알아봤어요. 세계에는 인구가 늘어나는 나라도 있고 줄어드는 나라도 있어요. 두 포스터에 담긴 공통된 주제는 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 두 포스터의 공통된 주제는 <b>인구</b>예요.<br>
+      \u2014 아이를 더 낳도록 권하는 나라는 <b>유소년층 비율이 낮아졌을</b> 것 같고, 덜 낳도록 권하는 나라는 <b>유소년층 비율이 높아졌을</b> 것 같아요.</div>`
+      :`<div class="note">왼쪽과 오른쪽 포스터가 권하는 것을 견주어 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">오늘은 <b>세계 여러 나라의 인구 구조</b>를 알아봐요.</div></div>`});
+// 2 살펴보기 — reveal: 인구 구조의 뜻 · 세계 인구 구조의 변화(교과서 135쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">세계 인구 구조는 어떻게 변해 왔을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('graph','연령별 세계 인구 구조의 변화(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCCA 인구 구조</div>
+      <b>인구 구조</b>는 연령, 성 등을 기준으로 한 인구의 짜임새예요. 나라나 특정 지역의 인구 구조를 살펴보면 미래의 인구 변화를 예상할 수 있어요.
+      그래프는 세계 인구를 유소년층(0~14세), 청장년층(15~64세), 노년층(65세 이상)으로 나누었어요. 1960년에 비해 2020년에는 어떻게 달라졌나요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 <b>유소년층</b> 인구 비율은 줄어들었고, <b>노년층</b> 인구 비율은 늘어났어요.<br>
+      \u2014 청장년층의 인구 비율이 가장 높아요.<br>
+      \u2014 이런 변화가 이어진다면 앞으로 유소년층 비율은 더 줄고 노년층 비율은 더 늘어날 것으로 예상할 수 있어요.</div>`
+      :`<div class="note">아래 보라 칸과 위 노랑 칸의 수를 견주어 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: 인구 피라미드(교과서 136쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">인구 피라미드는 어떻게 읽을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('pyr','인구 피라미드 읽기(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDD3A 인구 피라미드</div>
+      <b>인구 피라미드</b>는 국가나 특정 지역의 연령별, 성별 인구를 나타낸 그래프예요. 인구 피라미드의 가로축과 세로축은 각각 무엇을 나타낼까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 가로축 왼쪽: <b>남자 인구 비율</b> \u00b7 가로축 오른쪽: <b>여자 인구 비율</b><br>
+      \u2014 세로축: <b>나이(연령)</b><br>
+      \u2014 인구 피라미드로 연령별, 성별 인구 구조를 <b>한눈에</b> 파악할 수 있어요.</div>`
+      :`<div class="note">화살표가 가리키는 쪽을 살펴봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 4 살펴보기 — reveal: 나이지리아와 일본(교과서 136쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">나이지리아와 일본의 인구 구조는 어떻게 다를까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('two','두 나라의 인구 피라미드(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\u2696\uFE0F 두 나라의 인구 구조 견주기</div>
+      두 나라의 유소년층 비율, 노년층 비율, 출생률, 사망률, 평균 수명을 견주어 봐요. 두 나라에 더 많이 필요할 시설은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 <b>나이지리아</b>: 유소년층 비율 높다 \u00b7 노년층 비율 낮다 \u00b7 출생률 높다 \u00b7 사망률 높다 \u00b7 평균 수명 짧다 \u2192 유치원, 학교처럼 <b>어린이를 위한 시설</b>이 필요해요.<br>
+      \u2014 <b>일본</b>: 유소년층 비율 낮다 \u00b7 노년층 비율 높다 \u00b7 출생률 낮다 \u00b7 사망률 낮다 \u00b7 평균 수명 길다 \u2192 요양원, 노인 복지 센터처럼 <b>노인을 위한 시설</b>이 필요해요.</div>`
+      :`<div class="note">아래층과 위층의 막대 길이를 견주어 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">인구 구조는 <b>출생률, 사망률</b> 등에 따라 다르게 나타나요.</div></div>`});
+// 5 살펴보기 — reveal: 젊은 시장 인도네시아(교과서 137쪽 미디어 활동)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">세계가 주목하는 「젊은 시장」은 어떤 곳일까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('indo','두 가지 인구 구조(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCF0 신문 기사 읽기</div>
+      높은 경제성장을 이어 오고 있는 인도네시아는 전체 인구의 54.4 %가 1980~1990년대생이에요. 세계 여러 나라의 기업들은 젊은 소비자들이 관심을 보이는 화장품, 스마트폰 등에 투자를 늘리고 있어요. 인도네시아의 인구 구조는 ⑴과 ⑵ 가운데 어느 쪽일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 인도네시아의 인구 구조는 <b>⑵</b>예요. 15~64세, 곧 청장년층의 비율이 가장 높아요.<br>
+      \u2014 기업들이 주목하는 까닭: 유행에 민감하고 소비 성향이 높은 <b>젊은 인구의 비율이 높기</b> 때문이에요.<br>
+      \u2014 이처럼 인구 구조는 경제, 문화 등 <b>우리 생활</b>과 밀접한 관계가 있어요.</div>`
+      :`<div class="note">15~64세 비율이 높은 쪽을 찾아봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">다음 판에서 출생률과 사망률을 바꾸며 <b>연령층 선</b>으로 층을 나누어 봐요.</div></div>`});
+// 6 살펴보기 — 직접조작(층을 나눠요)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">출생률과 사망률을 바꾸며 층을 나누어 봐요</h2>
+  ${cgPanel(st)}`});
+// 7 살펴보기 — reveal: 풍덩 사회 속으로 — 독특한 인구 구조(교과서 138쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">독특한 인구 구조를 가진 나라가 있어요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('uniq','두 나라의 인구 피라미드(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDF0A 풍덩 사회 속으로</div>
+      석유 자원이 풍부한 사우디아라비아, 아랍 에미리트, 쿠웨이트, 카타르 등은 경제성장 과정에서 인도, 파키스탄, 필리핀 등 세계 여러 나라에서 근로자를 받아들였어요. 두 나라 인구의 공통점과 그 까닭은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 <b>청장년층</b>의 인구가 두드러지게 많아요. 전체 인구에서 외국인 근로자가 차지하는 비중이 높아요.<br>
+      \u2014 경제성장을 위해 세계 여러 나라로부터 <b>외국인 근로자</b>를 받아들였기 때문이에요.<br>
+      \u2014 외국인 근로자가 더 이상 필요하지 않아 자기 나라로 돌아간다면 청장년층의 인구 비율이 <b>줄어들</b> 거예요.</div>`
+      :`<div class="note">가운데 층의 막대 길이를 살펴봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 6차시 주요 내용 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div><b>인구 구조</b> \u2014 연령, 성 등을 기준으로 한 인구의 짜임새예요. 인구 피라미드를 살펴보면 인구 구조를 한눈에 볼 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div><b>세계 여러 나라의 인구 구조</b> \u2014 출생률과 사망률이 낮고 평균 수명이 긴 나라는 유소년층 비율이 낮고 노년층 비율이 높아요. 출생률과 사망률이 높고 평균 수명이 짧은 나라는 유소년층 비율이 높고 노년층 비율이 낮아요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div><b>인구 구조와 우리 생활</b> \u2014 인구 구조를 살펴보면 미래의 인구 변화를 예상할 수 있고, 인구 구조는 경제, 문화 등 우리 생활과 밀접한 관계가 있어요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 출생률과 사망률을 바꾸며 연령층 선으로 층을 나누어 인구 구조가 다른 네 판을 적었어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b>지구촌을 위협하는 여러 가지 문제</b>를 알아봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공부한 내용을 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"인구 구조의 뜻과 인구 피라미드 읽는 방법을 말할 수 있어요",st)}
+    ${selfCheck(1,"출생률과 사망률에 따라 인구 구조가 다르게 나타나는 것을 설명할 수 있어요",st)}
+    ${selfCheck(2,"세계 여러 나라의 다양한 인구 특징에 호기심을 가지고 찾을 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">지구촌을 위협하는 여러 가지 문제</b>를 알아봐요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u3_l04";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  cgGate:0, cgLog:0,
+  cgRead:null, cgMean:null, cgFin:null,
+  cgWrongR:null, cgWrongK:null, cgWrongF:null,
+  cgMsg:null, cgWarn:false, cgBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function cgRender(){ main.innerHTML = slides[state.idx].render(state); }
+function cgHold(msg){
+  state.cgWarn=true; state.cgBusy=true; state.cgMsg=msg;
+  playThud(); cgRender();
+  setTimeout(()=>{ state.cgBusy=false; state.cgWarn=false; state.cgMsg=null;
+    state.cgWrongR=null; state.cgWrongK=null; state.cgWrongF=null; cgRender(); },1600);
+}
+/* ★ 판 기록 — 더하기만 하는 자리 단 하나 */
+function cgNote(l){ state.cgLog |= (1 << l); }
+
+/* ① 단추 — 0 출생률(낮아요 ↔ 높아요) · 1 사망률(낮아요 ↔ 높아요) · 2 연령층 선(지웠어요 ↔ 그었어요) */
+function cgTap(b){
+  if(state.cgFin!=null) return;                                        // 가드①
+  if(state.cgBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(b) || b<0 || b>=CG_N) return;                   // 가드②
+  if(cgAll(state)){ cgHold(CG_LOCK); return; }                         // 가드③ 판 불변
+  state.cgGate ^= (1 << b);                                            // ★ 판이 바뀌는 자리 단 하나
+  state.cgWarn=false; state.cgMsg=null; playBlip(); cgRender();
+}
+
+/* ② 판 적기 — 연령층 선을 그었고(가드⑩) 아직 적지 않았을 때만(가드⑨) */
+function cgWrite(){
+  if(state.cgFin!=null) return;                                        // 가드①
+  if(state.cgBusy) return;                                             // 가드⑧
+  if(cgAll(state)){ cgHold(CG_LOCK); return; }                         // 가드③ 판 불변
+  const l = cgKind(state);
+  if(l===4){ cgHold(CG_LINE); return; }                                // 가드⑩ 연령층 선을 긋지 않음 — 판 불변
+  if(cgHas(state,l)){ cgHold(CG_AGAIN); return; }                      // 가드⑨ 이미 적은 판 — 판 불변
+  cgNote(l);
+  state.cgWarn=false;
+  if(cgAll(state)){ state.cgMsg = CG_ALL_MSG; playChime(); }
+  else { state.cgMsg = `적었어요 \u2014 ${CG_CASE[l]}이면 ${CG_SHAPE[cgTilt(state)]}이에요. 출생률이나 사망률 단추를 눌러 다른 판을 만들어 봐요.`; playChime(); }
+  cgRender();
+}
+
+/* ③ 판 읽기 — 네 판 뒤에만(가드④) */
+function cgReadPick(k){
+  if(state.cgFin!=null) return;                                        // 가드①
+  if(state.cgBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=CG_READ.length) return;         // 가드②
+  if(!cgAll(state)){ cgHold(CG_ORDER_R); return; }                     // 가드④ 순서 — 판 불변
+  if(state.cgRead!=null){ cgHold(CG_READ_AGAIN); return; }             // 가드④ 판 불변
+  if(k===CG_READ_OK){
+    state.cgRead=k; state.cgWrongR=null; state.cgWarn=false;
+    state.cgMsg = '판을 잘 읽었어요. <b>출생률</b>은 아래층을, <b>사망률과 평균 수명</b>은 위층을 바꾸어 나라마다 인구 구조가 다르게 나타나요.';
+    playChime(); cgRender(); return;
+  }
+  state.cgWrongR=k;
+  cgHold(CG_READ_NO[k]);
+}
+
+/* ④ 꼭! 기억해요 빈칸 — 판을 읽은 뒤에만(가드⑤). */
+function cgMeanPick(k){
+  if(state.cgFin!=null) return;                                        // 가드①
+  if(state.cgBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=CG_MEAN.length) return;         // 가드②
+  if(state.cgRead==null){ cgHold(CG_ORDER_K); return; }                // 가드⑤ 순서 — 판 불변
+  if(state.cgMean!=null){ cgHold(CG_MEAN_AGAIN); return; }             // 가드⑤ 판 불변
+  if(k!==CG_MEAN_OK){ state.cgWrongK=k; cgHold(CG_MEAN_NO[k]); return; } // 가드⑤ 판 불변
+  state.cgMean = k;                                                    // ★ 빈칸을 고르는 자리 단 하나
+  state.cgWarn=false;
+  state.cgMsg = '인구 구조는 <b>출생률, 사망률</b> 등에 따라 다르게 나타나요.';
+  playChime(); cgRender();
+}
+
+/* ⑤ 마무리 — 지도서 6차시 주요 내용 정리 */
+function cgFinish(k){
+  if(state.cgFin!=null) return;                                        // 가드①
+  if(state.cgBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=CG_FIN.length) return;          // 가드②
+  if(state.cgMean==null){ cgHold(CG_ORDER_F); return; }                // 가드⑥ 순서 — 판 불변
+  if(k===CG_FIN_OK){
+    state.cgFin=k; state.cgWrongF=null; state.cgMsg=null; state.cgWarn=false;
+    playChime(); cgRender(); return;
+  }
+  state.cgWrongF=k;
+  cgHold(CG_FIN_NO[k]);                                                // 가드⑦ 판 불변
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 3단원 5차시(u3 l05) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
