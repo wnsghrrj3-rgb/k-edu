@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 3-2 · 2단원 옛날과 오늘날의 생활 모습
+  주제② 교통의 변화로 달라진 생활 모습 · l09
+  「옛날 사람들이 교통수단을 이용했던 모습을 알아볼까요」
+  교과서 p.97~99 · 지도서 13차시(p.190~195) · [4사04-02]
+  수업 기법 = 사진 자료 살펴보기 · 돌아가며 말하기
+=========================================================================
+
+  ■ 직접조작 = 힘 바늘을 맞춰요 판 (사회 3-2 스물한째 판 · 2단원 아홉째 판)
+  ⭐ 씨앗은 교과서 97~98쪽 스스로 활동 「옛날 교통수단을 움직이는 힘」과 99쪽 기계의 힘.
+     교통수단 카드마다 힘 바늘이 있다. 사람 · 동물 · 바람 · 기계 가운데 그 교통수단을 움직인 힘을 눌러 바늘을 맞춘다.
+     옛날 교통수단 여섯을 먼저, 과학 기술이 발달하면서 생겨난 교통수단 넷을 뒤에.
+  ⭐ 교통수단마다 자기를 움직인 힘 k 를 품는다(GG_CAR[v]) — 정답표 0.
+  ⭐ 바늘 자리 · 자연의 힘 수 · 기계의 힘 수 · 단계는 저장 0 — 판(ggOn)에서 셈으로 나온다(ggNeedle · ggNatN · ggMachN · ggStage).
+  ⭐ 판을 바꾸는 자리 ggSet 단 하나(state.ggOn |= 1 << v) · 되돌리는 자리 0 · 난수 0.
+
+  ■ 이 차시의 뼈대
+   옛날 사람들은 주로 걸어서 이동했지만 말, 달구지, 가마, 뗏목, 나룻배, 돛단배 같은 교통수단도 이용했다.
+   옛날 교통수단은 자연에서 쉽게 얻을 수 있는 재료로 만들었고 사람이나 동물, 자연의 힘을 이용해 움직였다.
+   과학 기술이 발달하면서 기계의 힘으로 움직이는 교통수단이 생겼다.
+
+  ■ 5단계
+   ① 옛날 교통수단 여섯의 힘 바늘 → 새로 생긴 교통수단 넷의 힘 바늘 → ② 판 읽기 3택(정답 자리 2)
+   ③ 타 보고 싶은 옛날 교통수단 가·나·다·라 고르기(정답 없음 · 교과서 99쪽 친구와 활동)
+   ④ 마무리 3택(정답 자리 1) → 완료
+      — 타 보고 싶은 까닭을 쓰고 친구들과 이야기하기는 교실 몫
+
+  ■ 가드 12종
+   ① 마무리 확정 후 처리기 전체 잠금          ② 무효 번호(안내조차 0)
+   ③ 이미 맞춘 바늘 — 판 불변                 ④ 옛날 교통수단을 다 맞추기 전 새 교통수단 — 판 불변
+   ⑤ 그 교통수단을 움직인 힘이 아님 — 판 불변  ⑥ 다 맞추기 전 판 읽기 — 판 불변
+   ⑦ 이미 읽은 자리 — 판 불변                 ⑧ 판 읽기 어긋난 답 — 판 불변
+   ⑨ 판을 읽기 전 고르기 — 판 불변            ⑩ 이미 고른 자리 — 판 불변
+   ⑪ 고르기 전 마무리 — 판 불변               ⑫ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 교통수단과 설명은 교과서 97~99쪽을 판이 옮긴 것(캡션 상시).
+   ㉡ 타 보고 싶은 옛날 교통수단은 사람마다 달라 판은 정답을 정하지 않는다(캡션 상시).
+   ㉢ 타 보고 싶은 까닭을 쓰고 친구들과 이야기하기는 교실 몫(완료 카드 명시).
+
+  ■ 설계 원칙
+   · 뒤 차시 내용은 차시 예고 한 자리뿐 — 오늘날 교통수단 이용 모습은 예고 문장에만
+   · 새 사실 0 — 교과서 97~99쪽 · 지도서 190~195쪽에 있는 사실만
+   · 「틀렸」 0 · 사람 형상 0 · 지어낸 학생 이름 0 · 누리집 주소 0 · 네 자리 연도 0 · 지역 이름 0
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>옛날 사람들이 교통수단을 이용했던 모습을 알아볼까요 · 사회 3-2</title>
+<meta name="kedu-lesson-id" content="g3_social_u2_l09_v1"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#DB2777; --green-d:#BE185D; --cyan:#C026D3;
+  --bg:#FDF2F8; --bub:#FCE7F3; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#FCE7F3;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#FCE7F3;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(219,39,119,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 힘 바늘을 맞춰요 판 */
+.gg-wrap{max-width:800px;width:100%;margin:0 auto}
+.gg-head{background:#FCE7F3;color:#9D174D;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.gg-board{border-radius:14px;border:3px solid #CBD5E1;background:#F8FAFC;padding:8px}
+.gg-title{text-align:center;font-weight:800;color:#334155;font-size:clamp(12px,2vw,14px);word-break:keep-all;margin:2px 0 6px}
+.gg-era{font-weight:800;font-size:clamp(11px,1.8vw,13px);color:#9D174D;margin:6px 2px 5px;word-break:keep-all}
+.gg-era[data-era="1"]{color:#475569;border-top:2px dashed #CBD5E1;padding-top:7px}
+.gg-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.gg-cards[data-era="1"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+.gg-card{border:2px solid #CBD5E1;border-radius:11px;background:#fff;padding:6px 5px;text-align:center}
+.gg-card[data-on="1"]{border-color:#16A34A;background:#F0FDF4}
+.gg-card[data-wait="1"]{opacity:.55}
+.gg-name{font-weight:800;color:#0F172A;font-size:clamp(12px,1.9vw,14px);word-break:keep-all}
+.gg-hint{font-size:clamp(10px,1.6vw,12px);color:#64748B;word-break:keep-all;line-height:1.3;min-height:2.6em}
+.gg-dial{display:block;width:74px;height:40px;margin:2px auto 3px}
+.gg-pws{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px}
+.gg-pw{border:1.5px solid #E2E8F0;border-radius:7px;background:#F8FAFC;font-family:inherit;font-weight:700;color:#334155;
+  font-size:clamp(10px,1.6vw,12px);padding:3px 2px;cursor:pointer;white-space:nowrap}
+.gg-pw i{font-style:normal;margin-right:2px}
+.gg-pw[data-at="1"]{border-color:#16A34A;background:#DCFCE7;color:#166534}
+.gg-help{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(11px,1.9vw,14px);line-height:1.6}
+.gg-help b{color:#BE185D}
+.gg-side{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.gg-tell{border-radius:11px;padding:8px 12px;font-size:clamp(12px,2vw,15px);line-height:1.6;background:#FDF2F8;border-left:4px solid var(--cyan)}
+.gg-picks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}
+.gg-pk{border:2px solid #FBCFE8;border-radius:10px;background:#fff;padding:8px 7px;font-family:inherit;
+  font-size:clamp(11px,1.8vw,13px);font-weight:700;color:#0F172A;text-align:left;cursor:pointer;line-height:1.4;word-break:keep-all}
+.gg-pk b{color:#BE185D}
+.gg-ask{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FFFAFD;margin-top:9px;
+  font-size:clamp(12px,2vw,15px);line-height:1.6;word-break:keep-all}
+.gg-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.gg-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:9px 11px;font-family:inherit;
+  font-size:clamp(12px,2vw,15px);font-weight:700;color:#0F172A;text-align:left;line-height:1.45;word-break:keep-all;cursor:pointer}
+.gg-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .gg-board{padding:6px}
+  .gg-cards,.gg-cards[data-era="1"]{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+  .gg-picks{grid-template-columns:1fr}
+  .gg-side{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 모양과 기호 ===== */
+const SVG = {
+  // 옛날의 교통로 — 흙길과 강
+  road:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#ECFCCB"/>
+    <path d="M 0 70 Q 60 52 90 60 T 160 44" fill="none" stroke="#D6D3D1" stroke-width="12"/>
+    <path d="M 0 30 Q 50 20 100 30 T 160 22" fill="none" stroke="#7DD3FC" stroke-width="14"/>
+    <g font-size="6.4" font-weight="800" text-anchor="middle" fill="#3F6212"><text x="40" y="86">자연스럽게 생긴 길</text><text x="118" y="14" fill="#0369A1">강</text></g>
+    <text x="80" y="50" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">옛날의 교통로</text></svg>`,
+  // 옛날 교통수단 — 땅과 물
+  old:`<svg viewBox="0 0 160 96"><rect width="160" height="48" fill="#ECFCCB"/><rect y="48" width="160" height="48" fill="#BAE6FD"/>
+    <g font-size="13" text-anchor="middle"><text x="40" y="36">\\u{1F40E}</text><text x="120" y="36">\\u{1F402}</text><text x="40" y="82">\\u26F5</text><text x="120" y="82">\\u{1F6F6}</text></g>
+    <g font-size="5.8" font-weight="800" text-anchor="middle" fill="#334155"><text x="40" y="45">말</text><text x="120" y="45">달구지</text><text x="40" y="92">돛단배</text><text x="120" y="92">나룻배</text></g>
+    <text x="80" y="12" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">옛날 교통수단</text></svg>`,
+  // 움직이는 힘 — 사람 · 동물 · 바람
+  power:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.2"><circle cx="32" cy="50" r="20"/><circle cx="80" cy="50" r="20"/><circle cx="128" cy="50" r="20"/></g>
+    <g font-size="15" text-anchor="middle"><text x="32" y="55">\\u{1F4AA}</text><text x="80" y="55">\\u{1F402}</text><text x="128" y="55">\\u{1F4A8}</text></g>
+    <g font-size="6.6" font-weight="800" text-anchor="middle" fill="#9D174D"><text x="32" y="84">사람</text><text x="80" y="84">동물</text><text x="128" y="84">바람</text></g>
+    <text x="80" y="16" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">자연의 힘</text></svg>`,
+  // 기계의 힘 — 과학 기술이 발달하면서
+  steam:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F1F5F9"/>
+    <circle cx="80" cy="50" r="15" fill="#fff" stroke="#475569" stroke-width="1.4"/>
+    <text x="80" y="55" font-size="14" text-anchor="middle">\\u2699\\uFE0F</text>
+    <g font-size="12" text-anchor="middle"><text x="26" y="36">\\u{1F682}</text><text x="134" y="36">\\u{1F6A2}</text><text x="26" y="84">\\u{1F697}</text><text x="134" y="84">\\u{1F6E9}\\uFE0F</text></g>
+    <g font-size="5.4" font-weight="700" text-anchor="middle" fill="#334155"><text x="26" y="46">수증기</text><text x="134" y="46">수증기</text><text x="26" y="94">석유</text><text x="134" y="94">석유</text></g>
+    <text x="80" y="14" font-size="7.5" fill="#334155" text-anchor="middle" font-weight="800">기계의 힘</text></svg>`,
+  // 정리 — 자연의 힘에서 기계의 힘으로
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <rect x="10" y="30" width="58" height="46" rx="6" fill="#fff" stroke="#DB2777" stroke-width="1.4"/>
+    <rect x="92" y="30" width="58" height="46" rx="6" fill="#fff" stroke="#475569" stroke-width="1.4"/>
+    <path d="M 70 53 L 88 53 M 82 47 L 88 53 L 82 59" fill="none" stroke="#C026D3" stroke-width="2"/>
+    <g font-size="7" font-weight="800" text-anchor="middle"><text x="39" y="50" fill="#9D174D">자연의 힘</text><text x="121" y="50" fill="#334155">기계의 힘</text></g>
+    <g font-size="5.6" font-weight="700" text-anchor="middle" fill="#334155"><text x="39" y="63">사람 · 동물 · 바람</text><text x="121" y="63">과학 기술의 발달</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">옛날 교통수단</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 힘 바늘을 맞춰요 판 =====
+   교과서 97~99쪽 — 교통수단 카드마다 힘 바늘이 있다. 그 교통수단을 움직인 힘을 눌러 바늘을 맞춘다.
+   ⭐ 판을 바꾸는 자리 ggSet 단 하나 — state.ggOn |= 1 << v · 되돌리는 자리 0.
+   ⭐ 정답표 0 — 교통수단마다 자기를 움직인 힘 k 와 때 era 를 품는다(GG_CAR[v]).
+   ⭐ 바늘 자리 · 자연의 힘 수 · 기계의 힘 수 · 단계는 저장 0 — 판(ggOn)에서 센다(ggNeedle · ggNatN · ggMachN · ggStage).
+   ================================================================= */
+const GG_POW = [                                                    // 교과서 97쪽 스스로 활동 · 99쪽 꼭 기억해요
+  {name:"사람", icon:"\u{1F4AA}"}, {name:"동물", icon:"\u{1F402}"}, {name:"바람", icon:"\u{1F4A8}"}, {name:"기계", icon:"\u2699\uFE0F"}
+];
+const GG_CAR = [                                                    // 교과서 97~99쪽 · 지도서 190~192쪽
+  {name:"말", era:0, k:1, hint:"타고 다녔어요", say:"먼 거리를 이동하거나 빨리 갈 때는 말을 타고 다녔어요."},
+  {name:"달구지", era:0, k:1, hint:"소나 말이 끄는 수레", say:"소나 말이 끄는 수레를 이용하여 무거운 짐을 옮겼어요."},
+  {name:"가마", era:0, k:0, hint:"가마꾼이 들어 옮겨요", say:"가마에 사람을 태우고 가마꾼이 가마를 들어 옮겼어요."},
+  {name:"뗏목", era:0, k:0, hint:"긴 막대기로 밀어요", say:"통나무 여러 개를 이어 붙여 만든 뗏목을 타고 사람이 직접 긴 막대기로 밀어 강을 건너거나 물건을 옮겼어요."},
+  {name:"나룻배", era:0, k:0, hint:"노를 저어요", say:"사람과 짐을 싣고 사람이 주로 노를 저어 강의 양쪽을 오갔어요."},
+  {name:"돛단배", era:0, k:2, hint:"돛을 달았어요", say:"배에 바람의 힘을 이용하는 돛을 달고 강이나 바다를 건넜어요."},
+  {name:"증기 기차", era:1, k:3, hint:"수증기의 힘", say:"물을 끓이면 생기는 수증기의 힘으로 움직이는 기차예요."},
+  {name:"증기선", era:1, k:3, hint:"수증기의 힘", say:"물을 끓이면 생기는 수증기의 힘으로 움직이는 배예요."},
+  {name:"자동차", era:1, k:3, hint:"석유의 힘", say:"석유의 힘으로 움직여요."},
+  {name:"프로펠러 비행기", era:1, k:3, hint:"석유의 힘", say:"석유의 힘으로 움직여요."}
+];
+const GG_PICK = [                                                   // 교과서 99쪽 친구와 활동 · 지도서 192쪽
+  {mark:"가", text:"증기 기차", why:"칙칙폭폭 소리를 내면서 천천히 가는 기차를 타 보고 싶기 때문이에요."},
+  {mark:"나", text:"돛단배", why:"바람의 힘으로 강이나 바다를 건너 보고 싶기 때문이에요."},
+  {mark:"다", text:"나룻배", why:"노를 저어 강의 양쪽을 오가 보고 싶기 때문이에요."},
+  {mark:"라", text:"가마", why:"가마꾼이 들어 옮기는 가마에 타 보고 싶기 때문이에요."}
+];
+const GG_ANG = [-67.5, -22.5, 22.5, 67.5];                           // 바늘 각도 — 힘 넷의 자리(그림일 뿐)
+const GG_SAY_ON = "이미 바늘을 맞췄어요. 다른 교통수단을 골라 봐요.";
+const GG_SAY_OLDFIRST = "먼저 옛날 교통수단의 힘 바늘부터 맞춰 봐요.";
+const GG_SAY_WRONG = "그 힘으로 움직이지 않았어요. 카드에 적힌 설명을 다시 읽어 봐요.";
+const GG_SAY_ORDER_R = "먼저 교통수단의 힘 바늘을 모두 맞춰 봐요.";
+const GG_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const GG_SAY_ORDER_P = "먼저 판을 읽어 봐요.";
+const GG_SAY_PICKDONE = "이미 골랐어요. 친구가 고른 교통수단과 견주어 봐요.";
+const GG_SAY_ORDER_FIN = "먼저 타 보고 싶은 옛날 교통수단을 골라 봐요.";
+const GG_READQ = [
+  "옛날 교통수단은 모두 동물의 힘으로 움직였어요",
+  "과학 기술이 발달해도 교통수단을 움직이는 힘은 그대로예요",
+  "옛날 교통수단은 사람·동물·바람의 힘으로, 새로 생긴 교통수단은 기계의 힘으로 움직여요"
+];
+const GG_READ_OK = 2;
+const GG_READ_BAD = "바늘이 멈춘 자리를 옛날과 새로 생긴 교통수단으로 나누어 다시 살펴봐요.";
+const GG_FINQ = [
+  "과학 기술이 발달하면서 교통수단이 느려지고 더 불편해졌어요",
+  "과학 기술이 발달하면서 더 먼 곳을 더 빠르고 편하게 이동하고, 더 많은 물건을 한꺼번에 옮길 수 있게 됐어요",
+  "옛날 사람들은 교통수단을 이용하지 않고 늘 걸어서만 이동했어요"
+];
+const GG_FIN_OK = 1;
+const GG_FIN_BAD = "기계의 힘으로 움직이는 교통수단이 생긴 뒤의 생활을 다시 떠올려 봐요.";
+
+function ggCarOf(v){ return GG_CAR[v]; }                                       // GG_CAR 를 읽는 자리는 여기 단 하나
+function ggPowOf(p){ return GG_POW[p]; }                                       // GG_POW 를 읽는 자리는 여기 단 하나
+function ggPickOf(p){ return GG_PICK[p]; }                                     // GG_PICK 을 읽는 자리는 여기 단 하나
+function ggCars(){ return [...Array(GG_CAR.length).keys()]; }
+function ggIsOn(st,v){ return (st.ggOn >> v & 1) === 1; }                                        // ★ 맞춘 바늘인지 — 판의 비트에서
+function ggNeedle(st,v){ return ggIsOn(st,v) ? ggCarOf(v).k : -1; }                                // ★ 바늘 자리 — 맞추기 전은 쉼(-1)
+function ggEraN(e){ return ggCars().filter(v => ggCarOf(v).era === e).length; }
+function ggNatN(st){ return ggCars().filter(v => ggIsOn(st,v) && ggCarOf(v).k < 3).length; }      // ★ 자연의 힘 — 셈으로
+function ggMachN(st){ return ggCars().filter(v => ggIsOn(st,v) && ggCarOf(v).k === 3).length; }   // ★ 기계의 힘 — 셈으로
+function ggOldAll(st){ return ggCars().filter(v => ggCarOf(v).era === 0).every(v => ggIsOn(st,v)); }
+function ggAll(st){ return ggCars().every(v => ggIsOn(st,v)); }                                  // ★ 끝 기준 = 바늘 모두
+function ggSet(v){ state.ggOn |= 1 << v; }                                     // ⭐ 판을 바꾸는 자리 단 하나
+function ggStage(st){
+  if(!ggOldAll(st)) return "old";
+  if(!ggAll(st)) return "new";
+  if(st.ggRead == null) return "read";
+  if(st.ggPick == null) return "pick";
+  if(st.ggFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 카드마다 힘 바늘 */
+function ggDial(st,v){
+  const n = ggNeedle(st,v), a = (n < 0 ? -90 : GG_ANG[n]) * Math.PI / 180;
+  const x = (37 + 26 * Math.sin(a)).toFixed(1), y = (36 - 26 * Math.cos(a)).toFixed(1);
+  return `<svg class="gg-dial" viewBox="0 0 74 40"><path d="M 7 36 A 30 30 0 0 1 67 36" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1.4"/>
+    <path d="M 37 36 L 37 8 M 37 36 L 16 15 M 37 36 L 58 15" stroke="#E2E8F0" stroke-width="1"/>
+    <line x1="37" y1="36" x2="${x}" y2="${y}" stroke="${n < 0 ? '#94A3B8' : '#16A34A'}" stroke-width="2.6" stroke-linecap="round"/>
+    <circle cx="37" cy="36" r="3" fill="#334155"/></svg>`;
+}
+function ggCard(st,v){
+  const wait = ggCarOf(v).era === 1 && !ggOldAll(st);
+  return `<div class="gg-card" data-v="${v}" data-on="${ggIsOn(st,v) ? 1 : 0}" data-wait="${wait ? 1 : 0}">
+    <div class="gg-name">${ggCarOf(v).name}</div><div class="gg-hint">${ggCarOf(v).hint}</div>${ggDial(st,v)}
+    <div class="gg-pws">${[0,1,2,3].map(p => `<button class="gg-pw" data-p="${p}" data-at="${ggNeedle(st,v) === p ? 1 : 0}" onclick="ggTurn(${v},${p})"><i>${ggPowOf(p).icon}</i>${ggPowOf(p).name}</button>`).join('')}</div></div>`;
+}
+function ggBoard(st){
+  const era = e => ggCars().filter(v => ggCarOf(v).era === e).map(v => ggCard(st,v)).join('');
+  return `<div class="gg-board" data-on="${st.ggOn}" data-nat="${ggNatN(st)}" data-mach="${ggMachN(st)}" data-all="${ggAll(st) ? 1 : 0}">
+    <div class="gg-title">교통수단을 움직인 힘을 눌러 바늘을 맞춰요</div>
+    <div class="gg-era" data-era="0">옛날 교통수단</div><div class="gg-cards" data-era="0">${era(0)}</div>
+    <div class="gg-era" data-era="1">과학 기술이 발달하면서 생겨난 교통수단</div><div class="gg-cards" data-era="1">${era(1)}</div></div>`;
+}
+function ggPicks(st){
+  return `<div class="gg-picks">${[0,1,2,3].map(p=>`<button class="gg-pk" data-p="${p}" onclick="ggPick(${p})"><b>${ggPickOf(p).mark}</b> ${ggPickOf(p).text}</button>`).join('')}</div>`;
+}
+function ggHelp(st){
+  return `<div class="gg-help">① <b>옛날 교통수단</b> 여섯의 힘 바늘을 먼저 맞춰요.<br>
+    ② 과학 기술이 발달하면서 생겨난 <b>교통수단</b> 넷의 바늘을 맞춰요.<br>
+    바늘을 모두 맞추면 <b>판을 읽어요</b>.</div>`;
+}
+function ggPanel(st){
+  const stage = ggStage(st);
+  let ask = '';
+  if(stage === "old"){
+    ask = `<div class="gg-ask" data-step="old"><b>옛날 교통수단은 무엇의 힘으로 움직였을까요? 카드의 설명을 읽고 바늘을 맞춰 봐요.</b></div>`;
+  } else if(stage === "new"){
+    ask = `<div class="gg-ask" data-step="new"><b>과학 기술이 발달하면서 생겨난 교통수단은 무엇의 힘으로 움직일까요?</b></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="gg-ask" data-step="read"><b>바늘을 모두 맞췄어요. 판에서 무엇을 알 수 있나요?</b>
+      <div class="gg-opts">${GG_READQ.map((t,i)=>`<button class="gg-opt" onclick="ggRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "pick"){
+    ask = `<div class="gg-ask" data-step="pick"><b>옛날 교통수단 가운데 타 보고 싶은 것을 하나 골라 봐요.</b>${ggPicks(st)}</div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="gg-ask" data-step="fin"><b>기계의 힘으로 움직이는 교통수단이 생기면서 사람들의 생활은 어떻게 달라졌을까요?</b>
+      <div class="gg-opts">${GG_FINQ.map((t,i)=>`<button class="gg-opt" onclick="ggFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="gg-ask" data-fin="1" style="border-color:#F9A8D4;background:#FDF2F8">
+      <b style="color:#9D174D">힘 바늘을 모두 맞췄어요. 옛날 교통수단은 자연의 힘으로, 새로 생긴 교통수단은 기계의 힘으로 움직였어요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">※ <b>타 보고 싶은 옛날 교통수단과 그 까닭을 쓰고 친구들과 이야기하기</b>는 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`;
+  }
+  const tell = st.ggTell ? `<div class="gg-tell">${st.ggTell}</div>` : '';
+  const warn = st.ggMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.ggMsg}</div>` : '';
+  return `<div class="gg-wrap">
+    <div class="gg-head">자연의 힘 <b>${ggNatN(st)}</b> / ${ggEraN(0)} · 기계의 힘 <b>${ggMachN(st)}</b> / ${ggEraN(1)}</div>
+    ${ggBoard(st)}<div class="gg-side">${ggHelp(st)}${tell}</div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 교통수단과 설명은 <b>교과서 97~99쪽</b>을 판이 옮긴 것이에요. 타 보고 싶은 옛날 교통수단은 <b>사람마다 달라서</b> 판은 정답을 정하지 않아요.</div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 옛날과 오늘날의 생활 모습 · 주제② 교통의 변화로 달라진 생활 모습";
+const Q = [
+  {stem:"옛날 교통수단을 만든 재료의 공통점은 무엇인가요?",
+   opts:["석유로 만든 재료","자연에서 쉽게 얻을 수 있는 재료","쇠로만 만든 재료","전기로 만든 재료"], correct:1, pts:POINTS_BASIC,
+   h1:"뗏목은 통나무 여러 개를 이어 붙여 만들었어요.", h2:"나무나 풀의 줄기를 떠올려 봐요.",
+   reason:"옛날 교통수단은 나무나 풀의 줄기 등 자연에서 쉽게 얻을 수 있는 재료로 만들었어요."},
+  {stem:"소나 말이 끄는 수레를 이용하여 무거운 짐을 옮긴 옛날 교통수단은 무엇인가요?",
+   opts:["가마","뗏목","나룻배","달구지"], correct:3, pts:POINTS_BASIC,
+   h1:"바퀴가 달린 수레예요.", h2:"동물의 힘으로 움직였어요.",
+   reason:"달구지는 소나 말이 끄는 수레예요. 무거운 짐을 옮길 때 이용했어요."},
+  {stem:"배에 바람의 힘을 이용하는 돛을 달고 강이나 바다를 건넌 교통수단은 무엇인가요?",
+   opts:["돛단배","나룻배","증기선","뗏목"], correct:0, pts:POINTS_BASIC,
+   h1:"이름에 ‘돛’이 들어 있어요.", h2:"나룻배에는 없는 것이 달려 있어요.",
+   reason:"돛단배에는 나룻배에 없는 돛이 달려 있어요. 바람의 힘을 이용해 강이나 바다를 건넜어요."},
+  {stem:"과학 기술이 발달하면서 생겨난 교통수단은 무엇의 힘으로 움직이나요?",
+   opts:["사람","바람","기계","동물"], correct:2, pts:POINTS_BASIC,
+   h1:"증기 기차, 증기선, 자동차, 비행기를 떠올려 봐요.", h2:"수증기나 석유의 힘으로 움직이는 것이에요.",
+   reason:"과학 기술이 발달하면서 사람들은 기계의 힘으로 움직이는 기차, 배, 자동차, 비행기 등을 만들었어요."},
+  {stem:"옛날 교통수단을 움직이는 힘으로 알맞지 않은 것은 무엇인가요?",
+   opts:["사람","동물","바람","석유"], correct:3, pts:POINTS_APPLY,
+   h1:"옛날 교통수단은 자연의 힘을 이용했어요.", h2:"자동차와 비행기를 움직이는 힘을 찾아봐요.",
+   reason:"옛날 교통수단은 사람, 동물, 바람의 힘으로 움직였어요. 석유의 힘으로 움직이는 것은 자동차와 비행기예요."},
+  {stem:"가마는 어떻게 이용했나요?",
+   opts:["소가 끌고 갔어요","가마꾼이 가마를 들어 옮겼어요","바람의 힘으로 움직였어요","수증기의 힘으로 움직였어요"], correct:1, pts:POINTS_APPLY,
+   h1:"가마에는 사람이 탔어요.", h2:"사람의 힘으로 움직였어요.",
+   reason:"가마에 사람을 태우고 앞뒤로 가마꾼이 가마를 들어 옮겼어요."},
+  {stem:"물을 끓이면 생기는 수증기의 힘으로 움직이는 교통수단은 무엇인가요?",
+   opts:["자동차","프로펠러 비행기","증기 기차","달구지"], correct:2, pts:POINTS_APPLY,
+   h1:"이름에 ‘증기’가 들어 있어요.", h2:"자동차와 비행기는 석유의 힘으로 움직여요.",
+   reason:"증기 기차와 증기선은 물을 끓이면 생기는 수증기의 힘으로 움직여요."},
+  {stem:"판에서 교통수단의 힘 바늘을 모두 맞춘 뒤 알 수 있는 것은 무엇인가요?",
+   opts:["옛날 교통수단은 사람·동물·바람의 힘으로, 새로 생긴 교통수단은 기계의 힘으로 움직여요","옛날 교통수단은 모두 동물의 힘으로 움직였어요","과학 기술이 발달해도 교통수단을 움직이는 힘은 그대로예요","옛날 교통수단은 모두 기계의 힘으로 움직였어요"], correct:0, pts:POINTS_APPLY,
+   h1:"판에서 옛날 교통수단의 바늘이 멈춘 자리를 떠올려 봐요.", h2:"새로 생긴 교통수단 넷의 바늘은 모두 같은 자리에 멈췄어요.",
+   reason:"옛날 교통수단은 사람이나 동물, 자연의 힘을 이용해 움직였어요. 과학 기술이 발달하면서 기계의 힘으로 움직이는 교통수단이 생겼어요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 동기 유발
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">자동차나 기차가 없던 옛날에는 어떻게 이동하고 물건을 옮겼을까요?</h2>
+  <div class="ka-bub">지난 시간에는 <span class="ka-emph">교통</span>이 무엇인지 알아봤어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('old','교과서 97~98쪽')}</div>
+  <div class="note">직접 걸어서 옮겼을지, 동물이나 수레, 배를 이용했을지 떠올려 봐요.</div></div>`});
+// 2 옛날의 교통로 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 옛날의 교통로</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛날에도 교통로가 있었나요?</h2>
+  <div class="ka-bub">비 내린 다음 날에는 흙길이 <span class="ka-emph">젖어서 불편</span>했어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('road','교과서 97쪽')}</div>
+  ${st.revealed?`<div class="answer-box">· 사람들이 많이 다녀서 자연스럽게 생긴 길을 교통로로 이용했어요.<br>· 강도 교통로로 이용했어요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 옛날 교통수단 살펴보기
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 옛날 교통수단</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛날 사람들은 어떤 교통수단을 이용했나요?</h2>
+  <div class="ka-bub">주로 걸어서 이동했지만 <span class="ka-emph">교통수단</span>도 이용했어요.</div>
+  <div class="ka-grp"><div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>말</b> — 먼 거리를 이동하거나 빨리 갈 때 타고 다녔어요. <b>달구지</b> — 소나 말이 끄는 수레로 무거운 짐을 옮겼어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>가마</b> — 사람을 태우고 가마꾼이 들어 옮겼어요. <b>뗏목</b> — 통나무를 이어 붙여 만들고 긴 막대기로 밀어 강을 건넜어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>나룻배</b> — 사람이 노를 저어 강의 양쪽을 오갔어요. <b>돛단배</b> — 바람의 힘을 이용하는 돛을 달고 강이나 바다를 건넜어요.</div></div>
+  </div></div>`});
+// 4 스스로 활동 — 재료와 힘 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 스스로 활동</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛날 교통수단을 만든 재료와 움직이는 힘은 무엇일까요?</h2>
+  <div class="ka-bub">재료의 <span class="ka-emph">공통점</span>과 교통수단을 움직인 힘을 찾아봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('power','교과서 97쪽')}</div>
+  ${st.revealed?`<div class="answer-box">· 재료: 나무나 풀의 줄기 등 자연에서 쉽게 얻을 수 있는 재료였어요.<br>· 움직이는 힘: 사람, 동물, 바람의 힘으로 움직였어요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 과학 기술이 발달하면서 생겨난 교통수단
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 기계의 힘</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">과학 기술이 발달하면서 어떤 교통수단이 생겼나요?</h2>
+  <div class="ka-bub">사람들은 <span class="ka-emph">기계의 힘</span>으로 움직이는 교통수단을 만들기 시작했어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('steam','교과서 99쪽')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>물을 끓이면 생기는 <b>수증기의 힘</b>으로 움직이는 <b>증기 기차</b>와 <b>증기선</b>을 만들었어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>석유의 힘</b>으로 움직이는 <b>자동차</b>와 <b>프로펠러 비행기</b>를 만들었어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>더 먼 곳을 더 빠르고 편하게 이동하고, 더 많은 물건을 <b>한꺼번에</b> 옮길 수 있게 됐어요.</div></div>
+  </div></div>`});
+// 6 자연의 힘으로 움직이면 좋은 점 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 생각 나누기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">자연의 힘으로 교통수단을 움직이면 어떤 점이 좋을까요?</h2>
+  <div class="ka-bub">사람, 동물, 바람의 힘을 이용한 <span class="ka-emph">옛날 교통수단</span>을 떠올려 봐요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 환경이 오염되지 않아요.<br>· 연료를 수시로 채우지 않아도 돼요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 판에서 맞춰요</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">힘 바늘을 맞춰요</h2>
+  <div class="ka-grp" style="align-items:stretch">${ggPanel(st)}</div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛날 사람들이 교통수단을 이용했던 모습을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','자연의 힘에서 기계의 힘으로')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>옛날에는 <b>말, 달구지, 가마, 뗏목, 나룻배, 돛단배</b> 등의 교통수단을 이용했어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>옛날 교통수단은 자연에서 쉽게 얻을 수 있는 재료로 만들었고, 돛단배는 바람과 같은 <b>자연</b>의 힘을 이용했어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>과학 기술이 발달하면서 <b>기계</b>의 힘으로 움직이는 교통수단을 만들었어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#DB2777">오늘날 사람들</b>이 교통수단을 이용하는 모습을 알아봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"옛날 교통수단의 종류를 말할 수 있어요",st)}
+    ${selfCheck(1,"옛날 교통수단을 만든 재료와 움직이는 힘을 말할 수 있어요",st)}
+    ${selfCheck(2,"과학 기술이 발달하면서 생겨난 교통수단의 특징을 말할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">옛날 사람들이 교통수단을 이용했던 모습을 알아봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">타 보고 싶은 <b style="color:#DB2777">옛날 교통수단</b>과 그 까닭을 친구들과 이야기해 봐요. 이건 교실 몫이에요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g3_2_social_u2_l09";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  ggOn:0, ggRead:null, ggPick:null, ggFin:null, ggMsg:"", ggTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function ggDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 힘 바늘 맞추기 */
+function ggTurn(v,p){
+  if(state.ggFin!=null) return;                                                            // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(v) || v<0 || v>=GG_CAR.length) return;                              // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(!Number.isInteger(p) || p<0 || p>=GG_POW.length) return;                              // 가드②
+  if(ggIsOn(state,v)){ state.ggMsg = GG_SAY_ON; playThud(); ggDraw(); return; }             // 가드③: 이미 맞춘 바늘 — 판 불변
+  if(ggCarOf(v).era === 1 && !ggOldAll(state)){ state.ggMsg = GG_SAY_OLDFIRST; playThud(); ggDraw(); return; }   // 가드④: 옛날 먼저 — 판 불변
+  if(p !== ggCarOf(v).k){ state.ggMsg = GG_SAY_WRONG; playThud(); ggDraw(); return; }       // 가드⑤: 그 힘이 아님 — 판 불변
+  ggSet(v);
+  state.ggMsg = ""; state.ggTell = `${ggCarOf(v).name}의 바늘이 ${ggPowOf(p).name}에 멈췄어요. ${ggCarOf(v).say}`
+    + (ggAll(state) ? ` 바늘을 모두 맞췄어요.` : (ggCarOf(v).era === 0 && ggOldAll(state) ? ` 이제 새로 생긴 교통수단의 바늘을 맞춰 봐요.` : ''));
+  if(ggAll(state)) playChime(); else playBlip(); ggDraw();
+}
+/* 판 읽기 */
+function ggRead(i){
+  if(state.ggFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=GG_READQ.length) return;                           // 가드②
+  if(!ggAll(state)){ state.ggMsg = GG_SAY_ORDER_R; playThud(); ggDraw(); return; }         // 가드⑥: 다 맞추기 전 — 판 불변
+  if(state.ggRead!=null){ state.ggMsg = GG_SAY_READDONE; ggDraw(); return; }               // 가드⑦: 이미 정한 자리 — 판 불변
+  if(i!==GG_READ_OK){ state.ggMsg = GG_READ_BAD; playThud(); ggDraw(); return; }           // 가드⑧: 어긋난 답 — 판 불변
+  state.ggRead = i; state.ggMsg = ""; state.ggTell = `자연의 힘 ${ggNatN(state)}가지 · 기계의 힘 ${ggMachN(state)}가지. 옛날 교통수단은 사람이나 동물, 자연의 힘을 이용해 움직였고, 과학 기술이 발달하면서 기계의 힘으로 움직이는 교통수단이 생겼어요.`; playBlip(); ggDraw();
+}
+/* 타 보고 싶은 옛날 교통수단 고르기 — 정답 없음 */
+function ggPick(p){
+  if(state.ggFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(p) || p<0 || p>=GG_PICK.length) return;                             // 가드②
+  if(state.ggRead==null){ state.ggMsg = GG_SAY_ORDER_P; playThud(); ggDraw(); return; }    // 가드⑨: 판을 읽기 전 — 판 불변
+  if(state.ggPick!=null){ state.ggMsg = GG_SAY_PICKDONE; ggDraw(); return; }               // 가드⑩: 이미 고른 자리 — 판 불변
+  state.ggPick = p; state.ggMsg = ""; state.ggTell = `${ggPickOf(p).mark}를 골랐어요. 나는 ${ggPickOf(p).text}를 타 보고 싶어요. 왜냐하면 ${ggPickOf(p).why}`; playBlip(); ggDraw();
+}
+/* 마무리 */
+function ggFin(i){
+  if(state.ggFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=GG_FINQ.length) return;                             // 가드②
+  if(state.ggPick==null){ state.ggMsg = GG_SAY_ORDER_FIN; playThud(); ggDraw(); return; }  // 가드⑪: 고르기 전 — 판 불변
+  if(i!==GG_FIN_OK){ state.ggMsg = GG_FIN_BAD; playThud(); ggDraw(); return; }             // 가드⑫: 어긋난 답 — 판 불변
+  state.ggFin = i; state.ggMsg = ""; playChime(); ggDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
