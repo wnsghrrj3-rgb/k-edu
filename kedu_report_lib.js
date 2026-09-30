@@ -1,6 +1,9 @@
 // =============================================
 // 케이학습리포트 공용 라이브러리 (kedu_report_lib.js v3.1 — 2026-09-02)
 // v3.1: 학습지(ws:)·쪽지(quiz:) 기록을 차시 집계(도달 지도·단원 진도·하다 만 차시·반복 오답 차시)에서 제외 — isLessonId()
+// v3.2 (2026-09-30 케이티처 2세대 56차): 차시 열기 주소 투영 — 페이지가 projmap.js·proj_switch.js 를 먼저 실었으면
+//   켠 단원 차시의 url 을 투영 무대(learn.html)로 돌린다(info.srcUrl = 원문). 안 실었거나 끈 단원이면 원문 그대로.
+//   기록 id(lesson_id)는 원문과 같아 집계는 그대로 — 바뀌는 건 「열기」 주소뿐.
 // 명세: handoff/kedu/학습리포트_설계_v1.md
 // 교사(R1)·학생(R2)·학부모(R3) 세 화면이 같은 집계 위의 세 스킨이 되도록
 // 계산은 여기서 한 번만 짓는다 (설계 §0). 규칙 기반 — 외부 API 호출 없음.
@@ -63,6 +66,13 @@
     });
   }
 
+  // 56차: 켠 단원만 투영 주소 — KT2_PROJ(proj_switch.js)가 없거나 null 이면 원문
+  function projUrl(u){
+    if(!u) return u;
+    try { const p = window.KT2_PROJ && typeof window.KT2_PROJ.to === 'function' ? window.KT2_PROJ.to(u) : null; return p || u; }
+    catch(e){ return u; }
+  }
+
   function indexMap(key){
     const map = window.KEDU_MAP && window.KEDU_MAP[key];
     if(!map || _unitIndex[key]) return;
@@ -76,7 +86,7 @@
           lessonId:l.lessonId, key:l.key, grade:map.grade, semester:map.semester,
           subject:map.subject, subjectKo:unit.subjectKo,
           unitNum:u.num, unitName:u.name, n:l.n, order:i, title:l.title || '', sub:l.sub||null,
-          url:l.url || null, ready:l.ready !== false, track:l.track||null, mapped:true
+          url:projUrl(l.url || null), srcUrl:l.url || null, ready:l.ready !== false, track:l.track||null, mapped:true
         };
         info.label = info.subjectKo + ' ' + u.num + '단원 · ' + (l.n ? l.n + '차시 ' : '') + info.title;
         info.short = info.subjectKo + ' · ' + info.title;
@@ -341,7 +351,7 @@
   // 차시 열기 URL — 지도 URL 우선, 없으면 기록된 unit_id(경로)
   function lessonUrl(lessonId, fallback){
     const info = lesson(lessonId);
-    return info.url || fallback || null;
+    return info.url || projUrl(fallback || null) || null;
   }
 
 
@@ -487,7 +497,7 @@
 
   window.KeduReport = {
     // 카탈로그
-    loadCatalog, lesson, prettyLesson, lessonUrl, cmpLesson, parseId,
+    loadCatalog, lesson, prettyLesson, lessonUrl, projUrl, cmpLesson, parseId,
     // 날짜
     kstDateStr, mondayOf, addDays, fmtMD, today, fmtDur,
     // 집계

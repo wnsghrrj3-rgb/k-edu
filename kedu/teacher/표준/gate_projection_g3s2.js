@@ -15,6 +15,9 @@
    G 52차 배정 링크: 케이박스 받은 박스가 선생님이 담은 자기주도 차시(원문 주소)를 켠 단원만 learn.html 로 연다 ·
       projmap 원문 주소 전부가 차시 지도(kedu_map)에 있다(= 어느 단원을 켜도 배정이 따라온다) · 켠 단원 차시마다 같은 키로 ·
       끈 단원·바깥 링크·다른 종류(link)는 그대로 · cwb/cwi 가 붙는다 · learn 의 목록 단추는 박스에서 왔으면 받은 박스로
+   H 56차 학습리포트 차시 링크: kedu_report_lib 가 projmap·proj_switch 를 먼저 실은 페이지(내 학습·교사 학습리포트)에서
+      켠 단원 차시의 「열기」 주소를 learn.html 로 돌린다 · srcUrl = 원문 · 끈 단원·스위치 없는 페이지는 원문 ·
+      기록 id(lesson_id) → 지도 → 같은 투영 키 · 폴백(unit_id) 주소도 같은 규칙 · 스크립트 차례
    실행: NODE_PATH=…/jsdom/node_modules node kedu/teacher/표준/gate_projection_g3s2.js                 */
 'use strict';
 const fs = require('fs'), path = require('path'), vm = require('vm');
@@ -332,5 +335,54 @@ sec('G. 배정 링크 (52차)');
   console.log('  켠 차시 ' + nOn + ' · 끈 차시 ' + nOff + ' · 차시 지도 안 ' + nIn);
 }
 
+(async () => {
+sec('H. 학습리포트 차시 링크 (56차)');
+{
+  const SW = fs.readFileSync(path.join(S2, 'proj_switch.js'), 'utf8');
+  const ON = JSON.parse((SW.match(/var ON = (\[[^\]]*\])/) || [])[1].replace(/'/g, '"'));
+  const MAPS = ['g3_1_korean', 'g3_1_math', 'g3_1_science', 'g3_1_social', 'g3_2_korean', 'g3_2_math', 'g3_2_science', 'g3_2_social'];
+  const LIB = fs.readFileSync(path.join(ROOT, 'kedu_report_lib.js'), 'utf8');
+  const mkR = async (withSwitch) => {
+    const d = new JSDOM('<!doctype html><html><head></head><body></body></html>', { url: 'https://keduclass.com/mylearning/index.html', runScripts: 'outside-only' }); const c = d.getInternalVMContext();
+    if (withSwitch) ['projmap.js', 'proj_switch.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(S2, f), 'utf8'), c, { filename: f }));
+    MAPS.forEach(k => vm.runInContext(fs.readFileSync(path.join(ROOT, 'kedu_map', k + '.js'), 'utf8'), c, { filename: k }));
+    d.window.KEDU_MAP_INDEX = MAPS.map(k => ({ key: k }));
+    vm.runInContext(LIB, c, { filename: 'kedu_report_lib.js' });
+    await d.window.KeduReport.loadCatalog([]); return d.window;
+  };
+  const byId = {}; MAPS.forEach(k => { const c = { window: {} }; vm.createContext(c); vm.runInContext(fs.readFileSync(path.join(ROOT, 'kedu_map', k + '.js'), 'utf8'), c); c.window.KEDU_MAP[k].units.forEach(u => u.lessons.forEach(l => { byId[l.lessonId] = l; })); });
+  {
+    const wOn = await mkR(true), wOff = await mkR(false), KR = wOn.KeduReport, KR0 = wOff.KeduReport, PJS = wOn.KT2_PROJ;
+    ok(typeof KR.projUrl === 'function', 'KeduReport.projUrl 노출');
+    let nOn = 0, nOff = 0, nId = 0;
+    Object.keys(MAP).forEach(k => {
+      const i = k.indexOf(':'), slug = k.slice(0, i), key = k.slice(i + 1), unit = key.split('_')[0], on = ON.indexOf(slug + ':' + unit) >= 0;
+      const km = Object.values(byId).find(l => l.url && decodeURIComponent(l.url) === decodeURIComponent(MAP[k].url)); if (!km) { ok(false, k + ' 차시 지도에 원문 없음'); return; }
+      const info = KR.lesson(km.lessonId), info0 = KR0.lesson(km.lessonId);
+      ok(info.mapped && info.srcUrl === km.url, k + ' srcUrl = 원문');
+      ok(info0.url === km.url, k + ' 스위치 없는 페이지 = 원문 주소: ' + info0.url);
+      if (MAP[k].id === km.lessonId) nId++;
+      if (on) { nOn++; const want = PJS.to(km.url); ok(!!want && info.url === want && KR.lessonUrl(km.lessonId, 'x') === want, k + ' 켠 단원 열기 = learn: ' + info.url);
+        ok(/^\/kedu\/teacher\/stage2\/learn\.html\?g=\d&t=\d&s=[a-z]+&u=\d+&l=/.test(info.url) && info.url.endsWith('&l=' + key), k + ' 같은 투영 키'); }
+      else { nOff++; ok(info.url === km.url && KR.lessonUrl(km.lessonId) === km.url, k + ' 끈 단원인데 열기가 바뀜: ' + info.url); }
+    });
+    ok(nOn >= 10, '켠 차시 ' + nOn);
+    ok(nId === Object.keys(MAP).length, '기록 id = 지도 lessonId ' + nId + '/' + Object.keys(MAP).length + ' (리포트 집계가 투영 기록을 같은 차시로 읽음)');
+    // 폴백(unit_id) — 지도에 없는 id 라도 원문 주소가 켠 단원이면 투영
+    const kOn = Object.keys(MAP).find(k => ON.some(o => k.indexOf(o + '_') === 0)), kOff = Object.keys(MAP).find(k => !ON.some(o => k.indexOf(o + '_') === 0));
+    ok(KR.lessonUrl('zz_unknown', MAP[kOn].url) === PJS.to(MAP[kOn].url), '폴백 주소도 켠 단원이면 투영');
+    ok(KR.lessonUrl('zz_unknown', MAP[kOff].url) === MAP[kOff].url && KR.lessonUrl('zz_unknown', null) === null && KR0.lessonUrl('zz_unknown', MAP[kOn].url) === MAP[kOn].url, '폴백: 끈 단원·없음·스위치 없음 = 그대로');
+    ok(KR.projUrl('https://example.com/a.html') === 'https://example.com/a.html' && KR.projUrl('') === '' && KR.projUrl(null) === null, 'projUrl 지도 밖 그대로');
+    // 페이지 배선: projmap → proj_switch → kedu_report_lib 차례 (내 학습·교사 학습리포트)
+    ['mylearning/index.html', 'teacher/learning-report.html'].forEach(f => {
+      const H = fs.readFileSync(path.join(ROOT, f), 'utf8');
+      const a = H.indexOf('/kedu/teacher/stage2/projmap.js'), b = H.indexOf('/kedu/teacher/stage2/proj_switch.js'), c = H.indexOf('kedu_report_lib.js');
+      ok(a > 0 && b > a && c > b, f + ': projmap → proj_switch → kedu_report_lib 차례');
+    });
+    console.log('  켠 차시 ' + nOn + ' · 끈 차시 ' + nOff + ' · id 일치 ' + nId);
+  }
+}
+
 console.log('\n결과: ' + pass + ' 통과 / ' + fail + ' 실패'); if (fails.length) console.log(fails.join('\n'));
 process.exit(fail ? 1 : 0);
+})().catch(e => { console.log('H 예외 ' + e.stack); process.exit(1); });
