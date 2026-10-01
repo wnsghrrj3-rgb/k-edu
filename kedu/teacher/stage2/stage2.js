@@ -139,7 +139,8 @@
   function options(opts, multi, revealed) {
     if (!opts || !opts.length) return '';
     const M = ['A', 'B', 'C', 'D', 'E', 'F'];
-    return '<div class="options n' + opts.length + (revealed ? ' revealed' : '') + '">' + opts.map((o, i) => {
+    const lng = opts.some(o => String(o.label != null ? o.label : o.text != null ? o.text : o).replace(/\*\*/g, '').length > 8) ? ' long' : ''; // 60차 — 긴 보기(그림 옆 칸에서 한 줄로)
+    return '<div class="options n' + opts.length + lng + (revealed ? ' revealed' : '') + '">' + opts.map((o, i) => {
       const ok = !!o.correct;
       return '<div class="opt' + (revealed && ok ? ' ok' : '') + '"><div class="mk">' + (multi ? (revealed && ok ? '☑' : '☐') : (M[i] || i + 1)) + '</div>' + optionBody(o) + '</div>';
     }).join('') + '</div>';
@@ -234,6 +235,7 @@
         break;
       }
       case 'basic_problem': case 'advanced_problem': {
+        const b0 = b.length; let figH = ''; // 60차 — 그림 붙은 문제 장은 좌(그림)·우(글·물음·답) 두 칸
         if (d.context) push('<div class="context-text">' + md(d.context) + '</div>');
         if (d.ten_frame_anchor !== undefined) push('<div class="tf-item anchor">' + tenFrame(d.ten_frame_anchor, 56) + '<div class="tf-num">' + esc(d.ten_frame_anchor) + '</div></div>');
         if (d.ten_frame !== undefined) push('<div class="tf-item anchor">' + tenFrame(d.ten_frame, 56) + '<div class="tf-num">' + esc(d.ten_frame) + '</div></div>');
@@ -245,13 +247,14 @@
         if (d.cards) push('<div class="num-cards">' + d.cards.map(c => '<span>' + esc(c) + '</span>').join('') + '</div>');
         if (d.target !== undefined && d.component === 'ten_frame') push('<div class="tf-item">' + tenFrame(0, 56) + '<div class="tf-cap">목표 ' + esc(d.target) + '</div></div>');
         if (d.scenario) push(scenarioG(d.scenario, ctx.guide));
-        if (d.fig && global.KT2_FIG) { const fg = global.KT2_FIG.render(d.fig); if (fg) push(fg); } // 59차 — 문제 장 그림(각도기·각의 합 — 물음표 칸으로 답을 가림)
+        if (d.fig && global.KT2_FIG) { const fg = global.KT2_FIG.render(d.fig); if (fg) { push(fg); figH = fg; } } // 59차 — 문제 장 그림(각도기·각의 합 — 물음표 칸으로 답을 가림)
         if (d.question) push('<div class="big-q">' + md(d.question) + '</div>');
         if (d.questions) push('<div class="q-list">' + d.questions.map(q => '<div class="big-q">' + md(lbl(q, 'q')) + '</div>').join('') + '</div>');
         if (d.challenge) push('<div class="big-q">' + md(d.challenge) + '</div>');
         if (d.options) { push(options(d.options, !!d.multi, rev)); answerable = answerable || d.options.some(o => o.correct); if (d.multi) push('<div class="multi-hint">☑ 여러 개를 고를 수 있어요</div>'); } // 35차: 국어 「모두 고르기」
         const ab = answerBox(d, rev); if (ab) { push(ab); answerable = true; }
         if (d.note) push('<div class="small-text">' + md(d.note) + '</div>');
+        if (figH) { const rest = b.splice(b0).filter(h => h !== figH); b.push('<div class="prob-split"><div class="ps-fig">' + figH + '</div><div class="ps-main">' + rest.join('') + '</div></div>'); }
         break;
       }
       case 'match': {
