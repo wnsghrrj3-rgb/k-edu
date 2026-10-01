@@ -241,14 +241,14 @@ window.KEDU_MAP["g3_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_social_u2_l11",
+     "lessonId": "g3_social_u2_l11_v1",
      "n": "4",
      "title": "교통의 변화로 달라진 사람들의 생활 모습을 살펴볼까요",
      "sub": "② 교통의 변화로 달라진 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/social/2단원_옛날과오늘날의생활모습/g3_social_u2_l11_일정표를꽂아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,

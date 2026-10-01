@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 3-2 · 2단원 옛날과 오늘날의 생활 모습
+  주제② 교통의 변화로 달라진 생활 모습 · l11
+  「교통의 변화로 달라진 사람들의 생활 모습을 살펴볼까요」
+  교과서 p.105~110 · 지도서 16~17차시(p.204~210 · 두 시간 한 파일) · [4사04-02]
+  수업 기법 = 자료 비교하기 · 의견 나누기
+=========================================================================
+
+  ■ 직접조작 = 일정표를 꽂아요 판 (사회 3-2 스물셋째 판 · 2단원 열한째 판)
+  ⭐ 씨앗은 교과서 107쪽 할 수 있어요 「옛날과 오늘날의 이동 모습 비교하기」.
+     섞어 둔 일정 카드 일곱(박 선비 셋 · 수이 넷)을 눌러, 그 사람의 일정표 띠 다음 칸에 차례대로 꽂는다.
+     한 사람의 띠가 다 차면 부산에서 서울까지 걸린 시간이 드러난다.
+  ⭐ 카드마다 자기 사람 t 와 차례 n 을 품는다(YJ_CARD[i]) — 정답표 0.
+  ⭐ 사람별 꽂은 수 · 칸에 놓인 카드 · 단계는 저장 0 — 판(yjOn)에서 셈으로 나온다(yjPutN · yjAt · yjStage).
+  ⭐ 판을 바꾸는 자리 yjSet 단 하나(state.yjOn |= 1 << i) · 되돌리는 자리 0 · 난수 0 · 손에 드는 것 0.
+
+  ■ 이 차시의 뼈대
+   교통수단과 교통 시설이 발달하면서 먼 곳까지 더 빠르게 갈 수 있게 됐고, 가기 어려웠던 곳에 쉽게 갈 수 있게 됐다.
+   교통의 발달로 사람들의 생활 공간도 더욱 확대됐다.
+   교통의 변화로 몇몇 직업이 사라지기도 했지만 옛날에 없었던 다양한 직업이 새로 생겼다.
+
+  ■ 5단계
+   ① 일정 카드 일곱을 두 사람의 일정표에 차례대로 꽂기 → ② 판 읽기 3택(정답 자리 1)
+   ③ 교통과 관련하여 관심 있는 직업 가·나·다 고르기(정답 없음 · 교과서 109쪽 친구와 활동)
+   ④ 마무리 3택(정답 자리 0) → 완료
+      — 먼 곳으로 가서 여가를 즐긴 경험 쓰기 · 관심 있는 직업과 까닭 이야기하기는 교실 몫
+
+  ■ 가드 11종
+   ① 마무리 확정 후 처리기 전체 잠금          ② 무효 번호(안내조차 0)
+   ③ 이미 꽂은 카드 — 판 불변                 ④ 앞선 일정 먼저(차례 ≠ 꽂은 수) — 판 불변
+   ⑤ 다 꽂기 전 판 읽기 — 판 불변             ⑥ 이미 읽은 자리 — 판 불변
+   ⑦ 판 읽기 어긋난 답 — 판 불변              ⑧ 판을 읽기 전 고르기 — 판 불변
+   ⑨ 이미 고른 자리 — 판 불변                 ⑩ 고르기 전 마무리 — 판 불변
+   ⑪ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 두 사람의 일정과 걸린 시간은 교과서 107쪽 그림·지도서 207쪽을 판이 옮긴 것(캡션 상시).
+   ㉡ 관심 있는 직업은 사람마다 달라 판은 정답을 정하지 않는다(캡션 상시).
+   ㉢ 여가 경험 쓰기와 관심 있는 직업 이야기하기는 교실 몫(완료 카드 명시).
+
+  ■ 설계 원칙
+   · 뒤 차시 내용은 차시 예고 한 자리뿐 — 교통이 변화하면서 생긴 문제점은 예고 문장에만
+   · 새 사실 0 — 교과서 105~110쪽 · 지도서 204~210쪽에 있는 사실만
+   · 「틀렸」 0 · 사람 형상 0(걸어서는 발자국) · 지어낸 학생 이름 0(박 선비·수이는 교과서 인물) · 누리집 주소 0 · 네 자리 연도 0
+   · 지역 이름은 교과서 107쪽 것(부산·상주·충주·한양·서울)만
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>교통의 변화로 달라진 사람들의 생활 모습을 살펴볼까요 · 사회 3-2</title>
+<meta name="kedu-lesson-id" content="g3_social_u2_l11_v1"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#DB2777; --green-d:#BE185D; --cyan:#C026D3;
+  --bg:#FDF2F8; --bub:#FCE7F3; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#FCE7F3;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#FCE7F3;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(219,39,119,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 일정표를 꽂아요 판 */
+.yj-wrap{max-width:820px;width:100%;margin:0 auto}
+.yj-head{background:#FCE7F3;color:#9D174D;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.yj-board{border-radius:14px;border:3px solid #CBD5E1;background:#F8FAFC;padding:8px}
+.yj-title{text-align:center;font-weight:800;color:#334155;font-size:clamp(12px,2vw,14px);word-break:keep-all;margin:2px 0 6px}
+.yj-rows{display:grid;grid-template-columns:1fr;gap:6px}
+.yj-row{border-radius:11px;padding:6px 7px;border:2px solid #E2E8F0}
+.yj-row[data-t="0"]{background:#FFFBEB;border-color:#FDE68A}
+.yj-row[data-t="1"]{background:#F0F9FF;border-color:#BAE6FD}
+.yj-row[data-done="1"]{border-color:#16A34A}
+.yj-rn{display:flex;justify-content:space-between;gap:6px;font-weight:800;font-size:clamp(11px,1.8vw,13px);color:#9D174D;margin:0 2px 5px;word-break:keep-all}
+.yj-time{color:#166534}
+.yj-slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.yj-slot{border:2px dashed #94A3B8;border-radius:9px;background:#fff;min-height:44px;padding:4px 3px;text-align:center;
+  font-size:clamp(10px,1.6vw,12px);font-weight:700;color:#94A3B8;line-height:1.3;word-break:keep-all}
+.yj-slot[data-on="1"]{border:2px solid #16A34A;background:#DCFCE7;color:#166534}
+.yj-slot i{display:block;font-style:normal;font-size:1.3em}
+.yj-deck{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:8px}
+.yj-card{border:2px solid #F9A8D4;border-radius:10px;background:#fff;padding:5px 5px;font-family:inherit;font-weight:700;color:#0F172A;
+  font-size:clamp(10px,1.6vw,12px);line-height:1.35;cursor:pointer;word-break:keep-all;text-align:left}
+.yj-card i{font-style:normal;font-size:1.3em;margin-right:2px}
+.yj-card b{display:block;color:#9D174D}
+.yj-card[data-on="1"]{border-color:#CBD5E1;background:#F1F5F9;color:#94A3B8}
+.yj-card[data-on="1"] b{color:#94A3B8}
+.yj-help{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(11px,1.9vw,14px);line-height:1.6}
+.yj-help b{color:#BE185D}
+.yj-side{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.yj-tell{border-radius:11px;padding:8px 12px;font-size:clamp(12px,2vw,15px);line-height:1.6;background:#FDF2F8;border-left:4px solid var(--cyan)}
+.yj-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}
+.yj-pk{border:2px solid #FBCFE8;border-radius:10px;background:#fff;padding:8px 7px;font-family:inherit;
+  font-size:clamp(11px,1.8vw,13px);font-weight:700;color:#0F172A;text-align:left;cursor:pointer;line-height:1.4;word-break:keep-all}
+.yj-pk b{color:#BE185D}
+.yj-ask2{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FFFAFD;margin-top:9px;
+  font-size:clamp(12px,2vw,15px);line-height:1.6;word-break:keep-all}
+.yj-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.yj-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:9px 11px;font-family:inherit;
+  font-size:clamp(12px,2vw,15px);font-weight:700;color:#0F172A;text-align:left;line-height:1.45;word-break:keep-all;cursor:pointer}
+.yj-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .yj-board{padding:6px}
+  .yj-slots{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .yj-deck{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .yj-picks{grid-template-columns:1fr}
+  .yj-side{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 모양과 기호 ===== */
+const SVG = {
+  // 옛날과 오늘날 — 말·달구지 / 고속 열차·트럭
+  oldnew:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFBEB"/><rect x="80" width="80" height="96" fill="#F0F9FF"/>
+    <path d="M 80 20 L 80 90" stroke="#F9A8D4" stroke-width="1.4" stroke-dasharray="3 3"/>
+    <g font-size="14" text-anchor="middle"><text x="40" y="46">\u{1F40E}</text><text x="40" y="74">\u{1F6DE}</text><text x="120" y="46">\u{1F684}</text><text x="120" y="74">\u{1F69A}</text></g>
+    <g font-size="5.8" font-weight="800" text-anchor="middle" fill="#334155"><text x="40" y="54">말</text><text x="40" y="83">달구지</text><text x="120" y="54">고속 열차</text><text x="120" y="83">트럭</text></g>
+    <g font-size="6.6" font-weight="800" text-anchor="middle" fill="#9D174D"><text x="40" y="16">옛날</text><text x="120" y="16">오늘날</text></g></svg>`,
+  // 옛날과 오늘날 비교 — 세 짝
+  compare:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.1"><rect x="8" y="22" width="144" height="20" rx="5"/><rect x="8" y="46" width="144" height="20" rx="5"/><rect x="8" y="70" width="144" height="20" rx="5"/></g>
+    <g font-size="11" text-anchor="middle"><text x="26" y="36">\u{1F40E}</text><text x="134" y="36">\u{1F684}</text><text x="26" y="60">\u{1F6DE}</text><text x="134" y="60">\u{1F69A}</text><text x="26" y="84">\u26F5</text><text x="134" y="84">\u{1F6F3}\uFE0F</text></g>
+    <g font-size="5.6" font-weight="800" text-anchor="middle" fill="#334155"><text x="80" y="35">말 \u2192 고속 열차</text><text x="80" y="59">달구지 \u2192 트럭</text><text x="80" y="83">돛단배 \u2192 여객선</text></g>
+    <text x="80" y="14" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">옛날과 오늘날</text></svg>`,
+  // 생활 공간의 확대 — 네 사례
+  space:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.1"><rect x="8" y="22" width="68" height="32" rx="6"/><rect x="84" y="22" width="68" height="32" rx="6"/><rect x="8" y="58" width="68" height="32" rx="6"/><rect x="84" y="58" width="68" height="32" rx="6"/></g>
+    <g font-size="12" text-anchor="middle"><text x="42" y="40">\u{1F68C}</text><text x="118" y="40">\u{1F695}</text><text x="42" y="76">\u{1F36A}</text><text x="118" y="76">\u2708\uFE0F</text></g>
+    <g font-size="5.4" font-weight="800" text-anchor="middle" fill="#334155"><text x="42" y="50">출퇴근 버스</text><text x="118" y="50">교통 약자 택시</text><text x="42" y="86">세계 과자 판매점</text><text x="118" y="86">해외여행</text></g>
+    <text x="80" y="14" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">넓어진 생활 공간</text></svg>`,
+  // 새로 생긴 직업 — 땅 위 · 하늘 · 바다
+  jobs:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFBEB"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.2"><rect x="8" y="26" width="44" height="46" rx="6"/><rect x="58" y="26" width="44" height="46" rx="6"/><rect x="108" y="26" width="44" height="46" rx="6"/></g>
+    <g font-size="14" text-anchor="middle"><text x="30" y="54">\u{1F686}</text><text x="80" y="54">\u2708\uFE0F</text><text x="130" y="54">\u{1F6A2}</text></g>
+    <g font-size="5.6" font-weight="800" text-anchor="middle" fill="#334155"><text x="30" y="86">땅 위</text><text x="80" y="86">하늘</text><text x="130" y="86">바다</text></g>
+    <text x="80" y="14" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">새로 생긴 직업</text></svg>`,
+  // 별별 직업 속으로 — 도선사
+  pilot:`<svg viewBox="0 0 160 96"><rect width="160" height="56" fill="#E0F2FE"/><rect y="56" width="160" height="40" fill="#7DD3FC"/>
+    <rect x="118" y="44" width="42" height="12" fill="#94A3B8"/><text x="139" y="53" font-size="5.6" font-weight="800" text-anchor="middle" fill="#fff">부두</text>
+    <g font-size="16" text-anchor="middle"><text x="40" y="62">\u{1F6A2}</text></g><g font-size="10" text-anchor="middle"><text x="84" y="70">\u{1F6E5}\uFE0F</text></g>
+    <path d="M 56 64 Q 70 74 78 68" stroke="#DB2777" stroke-width="1.2" fill="none" stroke-dasharray="2 2"/>
+    <g font-size="5.6" font-weight="800" text-anchor="middle" fill="#0F172A"><text x="40" y="84">큰 배</text><text x="84" y="84">도선사가 탄 배</text></g>
+    <text x="80" y="14" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">항구에 들어오는 배를 안내해요</text></svg>`,
+  // 정리 — 빨라진 이동 · 넓어진 생활 공간 · 새로 생긴 직업
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.3"><rect x="6" y="32" width="44" height="38" rx="6"/><rect x="58" y="32" width="44" height="38" rx="6"/><rect x="110" y="32" width="44" height="38" rx="6"/></g>
+    <path d="M 51 51 L 57 51 M 103 51 L 109 51" stroke="#C026D3" stroke-width="2"/>
+    <g font-size="6" font-weight="800" text-anchor="middle" fill="#9D174D"><text x="28" y="54">빨라진 이동</text><text x="80" y="54">생활 공간</text><text x="132" y="54">새 직업</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">교통의 변화와 생활</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 일정표를 꽂아요 판 =====
+   교과서 107쪽 — 섞어 둔 일정 카드를 눌러 박 선비와 수이의 일정표에 차례대로 꽂는다.
+   ⭐ 판을 바꾸는 자리 yjSet 단 하나 — state.yjOn |= 1 << i · 되돌리는 자리 0.
+   ⭐ 정답표 0 — 카드마다 자기 사람 t 와 차례 n 을 품는다(YJ_CARD[i]).
+   ⭐ 사람별 꽂은 수 · 칸에 놓인 카드 · 단계는 저장 0 — 판(yjOn)에서 센다(yjPutN · yjAt · yjStage).
+   ================================================================= */
+const YJ_WHO = [                                                      // 교과서 107쪽 · 지도서 207쪽 걸린 시간
+  {name:"박 선비", icon:"\u{1F4DC}", time:"15일 정도"},
+  {name:"수이", icon:"\u{1F392}", time:"반나절 정도"}
+];
+const YJ_CARD = [                                                     // 교과서 107쪽 일정 — 섞어 둔 차례
+  {t:1, n:1, icon:"\u{1F684}", how:"고속 열차", route:"부산역 \u2192 서울역", when:"오전 7시 출발 · 오전 9시 30분 도착",
+   say:"수이는 부산역에서 서울역까지 고속 열차를 타고 이동했어요."},
+  {t:0, n:2, icon:"\u{1F6F6}", how:"나룻배", route:"충주 \u2192 한양(서울)", when:"9월 15일 도착",
+   say:"박 선비는 충주에서 한양까지 나룻배를 타고 이동했어요."},
+  {t:1, n:3, icon:"\u{1F695}", how:"택시", route:"시내 관광", when:"친척 집에 간 다음",
+   say:"수이는 택시를 타고 시내를 관광했어요."},
+  {t:0, n:0, icon:"\u{1F463}", how:"걸어서", route:"부산 \u2192 상주", when:"9월 1일 출발 · 9월 7일 도착",
+   say:"박 선비는 부산에서 상주까지 걸어서 이동했어요."},
+  {t:1, n:0, icon:"\u{1F687}", how:"지하철", route:"집 \u2192 부산역", when:"오전 6시 출발",
+   say:"수이는 집에서 부산역까지 지하철을 타고 갔어요."},
+  {t:0, n:1, icon:"\u{1F40E}", how:"말", route:"상주 \u2192 충주", when:"9월 11일 도착",
+   say:"박 선비는 상주에서 충주까지 말을 타고 이동했어요."},
+  {t:1, n:2, icon:"\u{1F68C}", how:"버스", route:"서울역 \u2192 친척 집", when:"낮 12시 도착",
+   say:"수이는 서울에 도착해 버스를 타고 친척 집으로 갔어요."}
+];
+const YJ_PICK = [                                                     // 교과서 109쪽 친구와 활동 · 지도서 209쪽 예시 답안
+  {mark:"가", text:"항공기 조종사", why:"세계 여러 나라를 많이 다니고 싶기 때문이에요."},
+  {mark:"나", text:"해양 경찰관", why:"바다에서 위험에 빠진 사람들을 도와주고 싶기 때문이에요."},
+  {mark:"다", text:"철도 기관사", why:"달리는 열차의 맨 앞에서 철도를 보면 매우 재미있을 것 같기 때문이에요."}
+];
+const YJ_SAY_DONE = "이미 꽂은 일정이에요. 다른 카드를 살펴봐요.";
+const YJ_SAY_ORDER = "그보다 앞선 일정이 있어요. 출발한 날과 시각을 다시 살펴봐요.";
+const YJ_SAY_ORDER_R = "먼저 일정 카드를 모두 꽂아 봐요.";
+const YJ_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const YJ_SAY_ORDER_P = "먼저 판을 읽어 봐요.";
+const YJ_SAY_PICKDONE = "이미 골랐어요. 친구가 고른 직업과 견주어 봐요.";
+const YJ_SAY_ORDER_FIN = "먼저 관심 있는 직업을 골라 봐요.";
+const YJ_READQ = [
+  "교통이 발달해도 이동하는 데 걸리는 시간은 옛날과 똑같아요",
+  "교통이 발달하면서 더 먼 곳으로 편하고 빠르게 이동할 수 있게 됐어요",
+  "교통수단이 많아질수록 이동하는 데 시간이 더 오래 걸려요"
+];
+const YJ_READ_OK = 1;
+const YJ_READ_BAD = "두 사람이 이용한 교통수단과 걸린 시간을 다시 견주어 봐요.";
+const YJ_FINQ = [
+  "교통이 발달하면서 생활 공간이 넓어지고 다양한 직업이 새로 생겼어요",
+  "교통이 발달하면서 사람들의 생활 공간이 더욱 좁아졌어요",
+  "교통이 변해도 사람들이 하는 일은 옛날과 똑같아요"
+];
+const YJ_FIN_OK = 0;
+const YJ_FIN_BAD = "먼 곳에 있는 직장에 다니는 모습과 그림 속 여러 직업을 다시 떠올려 봐요.";
+
+function yjCardOf(i){ return YJ_CARD[i]; }                                     // YJ_CARD 를 읽는 자리는 여기 단 하나
+function yjWhoOf(t){ return YJ_WHO[t]; }                                       // YJ_WHO 를 읽는 자리는 여기 단 하나
+function yjPickOf(p){ return YJ_PICK[p]; }                                     // YJ_PICK 을 읽는 자리는 여기 단 하나
+function yjCards(){ return [...Array(YJ_CARD.length).keys()]; }
+function yjIsOn(st,i){ return (st.yjOn >> i & 1) === 1; }                                        // ★ 꽂은 카드인지 — 판의 비트에서
+function yjPutN(st,t){ return yjCards().filter(i => yjIsOn(st,i) && yjCardOf(i).t === t).length; }   // ★ 사람별 꽂은 수 — 셈으로
+function yjNeed(t){ return yjCards().filter(i => yjCardOf(i).t === t).length; }
+function yjAt(st,t,n){ const i = yjCards().find(i => yjIsOn(st,i) && yjCardOf(i).t === t && yjCardOf(i).n === n); return i === undefined ? -1 : i; }   // ★ 칸에 놓인 카드 — 카드가 품은 t·n 에서
+function yjDone(st,t){ return yjPutN(st,t) === yjNeed(t); }
+function yjAll(st){ return yjCards().every(i => yjIsOn(st,i)); }                                 // ★ 끝 기준 = 카드 모두
+function yjSet(i){ state.yjOn |= 1 << i; }                                     // ⭐ 판을 바꾸는 자리 단 하나
+function yjStage(st){
+  if(!yjAll(st)) return "put";
+  if(st.yjRead == null) return "read";
+  if(st.yjPick == null) return "pick";
+  if(st.yjFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 두 사람의 일정표와 일정 카드 */
+function yjSlot(st,t,n){
+  const i = yjAt(st,t,n);
+  return i < 0 ? `<div class="yj-slot" data-n="${n}" data-on="0">${n + 1}</div>`
+    : `<div class="yj-slot" data-n="${n}" data-on="1"><i>${yjCardOf(i).icon}</i>${yjCardOf(i).how}</div>`;
+}
+function yjRow(st,t){
+  const done = yjDone(st,t);
+  return `<div class="yj-row" data-t="${t}" data-done="${done ? 1 : 0}"><div class="yj-rn"><span>${yjWhoOf(t).icon} ${yjWhoOf(t).name}의 여행</span>${done ? `<span class="yj-time">걸린 시간: ${yjWhoOf(t).time}</span>` : ''}</div>
+      <div class="yj-slots">${[...Array(yjNeed(t)).keys()].map(n => yjSlot(st,t,n)).join('')}</div></div>`;
+}
+function yjCardBtn(st,i){
+  return `<button class="yj-card" data-i="${i}" data-on="${yjIsOn(st,i) ? 1 : 0}" onclick="yjPut(${i})"><b><i>${yjCardOf(i).icon}</i>${yjCardOf(i).how}</b>${yjCardOf(i).route}<br>${yjCardOf(i).when}</button>`;
+}
+function yjBoard(st){
+  return `<div class="yj-board" data-on="${st.yjOn}" data-t0="${yjPutN(st,0)}" data-t1="${yjPutN(st,1)}" data-all="${yjAll(st) ? 1 : 0}">
+    <div class="yj-title">일정 카드를 눌러 두 사람의 일정표에 차례대로 꽂아요</div>
+    <div class="yj-rows">${yjRow(st,0)}${yjRow(st,1)}</div>
+    <div class="yj-deck">${yjCards().map(i => yjCardBtn(st,i)).join('')}</div></div>`;
+}
+function yjPicks(st){
+  return `<div class="yj-picks">${[0,1,2].map(p=>`<button class="yj-pk" data-p="${p}" onclick="yjPick(${p})"><b>${yjPickOf(p).mark}</b> ${yjPickOf(p).text}</button>`).join('')}</div>`;
+}
+function yjHelp(st){
+  return `<div class="yj-help">① 가장 먼저 한 <b>일정 카드</b>를 눌러요.<br>
+    ② 카드는 그 사람의 <b>일정표 다음 칸</b>에 꽂혀요.<br>
+    일곱 장을 모두 꽂으면 <b>판을 읽어요</b>.</div>`;
+}
+function yjPanel(st){
+  const stage = yjStage(st);
+  let ask = '';
+  if(stage === "put"){
+    ask = `<div class="yj-ask2" data-step="put"><b>박 선비와 수이는 부산에서 서울까지 어떻게 갔을까요? 일정을 차례대로 꽂아 봐요.</b></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="yj-ask2" data-step="read"><b>일정표를 모두 꽂았어요. 판에서 무엇을 알 수 있나요?</b>
+      <div class="yj-opts">${YJ_READQ.map((t,i)=>`<button class="yj-opt" onclick="yjRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "pick"){
+    ask = `<div class="yj-ask2" data-step="pick"><b>교통과 관련한 직업 가운데 관심 있는 직업을 하나 골라 봐요.</b>${yjPicks(st)}</div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="yj-ask2" data-step="fin"><b>교통이 발달하면서 사람들의 생활 모습은 어떻게 달라졌을까요?</b>
+      <div class="yj-opts">${YJ_FINQ.map((t,i)=>`<button class="yj-opt" onclick="yjFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="yj-ask2" data-fin="1" style="border-color:#F9A8D4;background:#FDF2F8">
+      <b style="color:#9D174D">일정표를 모두 꽂았어요. 교통이 발달하면서 더 먼 곳까지 빠르고 편하게 이동하게 됐고, 생활 공간이 넓어지고 다양한 직업이 새로 생겼어요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">※ <b>먼 곳으로 가서 여가를 즐긴 경험 쓰기</b>와 <b>관심 있는 직업과 그 까닭을 친구들과 이야기하기</b>는 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`;
+  }
+  const tell = st.yjTell ? `<div class="yj-tell">${st.yjTell}</div>` : '';
+  const warn = st.yjMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.yjMsg}</div>` : '';
+  return `<div class="yj-wrap">
+    <div class="yj-head">${yjWhoOf(0).name} <b>${yjPutN(st,0)}</b> / ${yjNeed(0)} · ${yjWhoOf(1).name} <b>${yjPutN(st,1)}</b> / ${yjNeed(1)}</div>
+    ${yjBoard(st)}<div class="yj-side">${yjHelp(st)}${tell}</div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 두 사람의 일정과 걸린 시간은 <b>교과서 107쪽</b> 그림을 판이 옮긴 것이에요. 관심 있는 직업은 <b>사람마다 달라서</b> 판은 정답을 정하지 않아요.</div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 옛날과 오늘날의 생활 모습 · 주제② 교통의 변화로 달라진 생활 모습";
+const Q = [
+  {stem:"오늘날 말이나 달구지를 이용하는 모습을 보기 힘든 까닭은 무엇인가요?",
+   opts:["말과 달구지가 모두 사라졌기 때문이에요","더 편리하고 빠른 교통수단이 생겼기 때문이에요","사람들이 먼 곳으로 이동하지 않기 때문이에요","길이 모두 없어졌기 때문이에요"], correct:1, pts:POINTS_BASIC,
+   h1:"오늘날 길에서 자주 보는 교통수단을 떠올려 봐요.", h2:"버스나 지하철을 타면 걸어가는 것보다 더 빨라요.",
+   reason:"더 편리하고 빠른 교통수단이 생겼기 때문에 오늘날에는 말이나 달구지를 이용하는 모습을 보기 힘들어요."},
+  {stem:"달구지와 트럭으로 짐을 실어 나르는 모습을 비교했을 때 달라진 점은 무엇인가요?",
+   opts:["짐을 실을 수 없게 됐어요","더 가까운 곳까지만 갈 수 있게 됐어요","날씨에 영향을 더 많이 받게 됐어요","더 많은 짐을 싣고 먼 곳까지 이동할 수 있어요"], correct:3, pts:POINTS_BASIC,
+   h1:"트럭은 기계의 힘으로 움직여요.", h2:"한 번에 실어 나를 수 있는 짐의 양을 떠올려 봐요.",
+   reason:"트럭을 이용하면 더 많은 짐을 싣고 더 먼 곳까지 더 빨리 이동할 수 있어요."},
+  {stem:"교통의 변화로 거의 사라진 직업은 무엇인가요?",
+   opts:["가마꾼","항공기 조종사","철도 기관사","해양 경찰관"], correct:0, pts:POINTS_BASIC,
+   h1:"옛날 교통수단과 관련한 직업을 떠올려 봐요.", h2:"가마의 앞뒤에서 가마를 들고 가는 일을 했어요.",
+   reason:"가마꾼, 뱃사공 등의 직업은 거의 사라졌어요. 항공기 조종사, 철도 기관사, 해양 경찰관은 교통의 변화로 새로 생긴 직업이에요."},
+  {stem:"배들이 안전하게 항구를 드나들도록 안내하는 직업은 무엇인가요?",
+   opts:["택배 기사","항공관제사","도선사","주차장 관리인"], correct:2, pts:POINTS_BASIC,
+   h1:"항구의 바다 밑을 속속들이 알고 있어요.", h2:"큰 배의 선장이 도움을 요청하는 사람이에요.",
+   reason:"도선사는 항구에 들어오는 큰 배에 타서 배들이 안전하게 항구를 드나들도록 안내해요."},
+  {stem:"교통의 발달로 생활 공간이 넓어진 모습으로 알맞지 않은 것은 무엇인가요?",
+   opts:["버스를 타고 먼 곳에 있는 직장에 다녀요","세계 여러 곳에서 만든 물건을 쉽게 구해요","집 가까운 곳에서만 지내고 먼 곳에는 가지 못해요","다른 나라로 여행하는 사람이 많아졌어요"], correct:2, pts:POINTS_APPLY,
+   h1:"생활 공간이 넓어지면 더 먼 곳까지 오가요.", h2:"교과서 106쪽 사진 네 장을 떠올려 봐요.",
+   reason:"교통의 발달로 먼 곳에 있는 직장이나 학교에 다니고, 여러 곳에서 만든 물건을 사고팔고, 먼 곳으로 여행을 갈 수 있게 됐어요."},
+  {stem:"박 선비가 부산에서 한양(서울)까지 가는 데 걸린 시간은 얼마 정도인가요?",
+   opts:["15일 정도","반나절 정도","한 시간 정도","하루 정도"], correct:0, pts:POINTS_APPLY,
+   h1:"박 선비는 걸어서, 말을 타고, 나룻배를 타고 이동했어요.", h2:"9월 1일에 출발해서 9월 15일에 도착했어요.",
+   reason:"박 선비는 9월 1일에 부산에서 출발하여 9월 15일에 한양에 도착했으니 15일 정도 걸렸어요."},
+  {stem:"이동에 불편을 겪는 사람도 안전하고 편하게 이동하도록 돕는 교통수단은 무엇인가요?",
+   opts:["돛단배","가마","달구지","교통 약자 택시"], correct:3, pts:POINTS_APPLY,
+   h1:"교과서 106쪽 사진을 떠올려 봐요.", h2:"오늘날 생긴 교통수단이에요.",
+   reason:"교통 약자 택시가 생겨 이동에 불편을 겪는 사람도 안전하고 편하게 이동할 수 있어요."},
+  {stem:"판에서 두 사람의 일정표를 모두 꽂은 뒤 알 수 있는 것은 무엇인가요?",
+   opts:["교통이 발달해도 이동하는 데 걸리는 시간은 옛날과 똑같아요","교통이 발달하면서 더 먼 곳으로 편하고 빠르게 이동할 수 있게 됐어요","교통수단이 많아질수록 이동하는 데 시간이 더 오래 걸려요","옛날 사람들은 한 가지 교통수단만 이용했어요"], correct:1, pts:POINTS_APPLY,
+   h1:"두 사람이 부산에서 서울까지 가는 데 걸린 시간을 견주어 봐요.", h2:"박 선비는 15일 정도, 수이는 반나절 정도 걸렸어요.",
+   reason:"걸어가거나 말이나 배를 이용한 박 선비는 15일 정도 걸렸지만, 수이는 지하철, 고속 열차, 버스를 이용해 반나절 만에 갔어요. 교통이 발달하면서 더 먼 곳으로 편하고 빠르게 이동할 수 있게 됐어요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 동기 유발
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘날 말이나 달구지를 이용하는 모습을 보기 힘든 까닭은 무엇일까요?</h2>
+  <div class="ka-bub">지난 시간에는 <span class="ka-emph">오늘날 사람들</span>이 교통수단을 이용하는 모습을 알아봤어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('oldnew','교과서 105쪽')}</div>
+  <div class="note">걸어가는 것과 버스나 지하철을 타고 가는 것은 무엇이 다를지 떠올려 봐요.</div></div>`});
+// 2 옛날과 오늘날의 교통수단 이용 모습 비교 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 옛날과 오늘날</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛날과 오늘날의 교통수단 이용 모습을 비교하면 무엇이 달라졌나요?</h2>
+  <div class="ka-bub">교통수단과 교통 시설이 발달하면서 사람들의 <span class="ka-emph">생활 모습</span>에도 많은 변화가 생겼어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('compare','교과서 105쪽')}</div>
+  ${st.revealed?`<div class="answer-box">· 말 → 고속 열차: 먼 곳까지 더 빠르고 편하게 갈 수 있어요. 돛단배 → 여객선: 가기 어려웠던 곳에 쉽고 빠르게 갈 수 있어요.<br>· 달구지 → 트럭: 더 많은 짐을 싣고 먼 곳까지 이동할 수 있어요.</div>`
+    :`<div class="note">세 짝을 하나씩 견주어 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 생활 공간의 확대
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 넓어진 생활 공간</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">교통의 발달로 사람들의 생활 공간은 어떻게 달라졌나요?</h2>
+  <div class="ka-bub">교통의 발달로 사람들의 <span class="ka-emph">생활 공간</span>도 더욱 넓어졌어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('space','교과서 106쪽')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>출퇴근 버스</b>를 타고 먼 곳에 있는 직장에 다닐 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>교통 약자 택시</b>가 생겨 이동에 불편을 겪는 사람도 안전하고 편하게 이동할 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>세계 과자 판매점</b>처럼 세계 여러 곳에서 만든 물건을 쉽게 구할 수 있고, <b>해외여행</b>을 하는 사람이 많아졌어요.</div></div>
+  </div></div>`});
+// 4 새로 생긴 직업 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 새로 생긴 직업</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">교통의 변화로 새로 생긴 직업에는 무엇이 있나요?</h2>
+  <div class="ka-bub">각종 교통수단을 <span class="ka-emph">운전하거나 고치는 일</span>, 안전하게 이용하도록 <span class="ka-emph">돕는 일</span>이 새로 생겼어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('jobs','교과서 108~109쪽')}</div>
+  ${st.revealed?`<div class="answer-box">· 땅 위: 철도 기관사, 자동차 정비사, 지하철 역무원, 버스 운전기사, 택배 기사 · 하늘: 항공기 조종사, 공항 안전 요원, 항공 정비사<br>· 바다: 해양 경찰관, 등대 관리원, 도선사, 선장, 크레인 기사</div>`
+    :`<div class="note">기차역, 공항, 항구에서 일하는 사람들을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 사라졌거나 사라져 가는 직업
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 사라져 가는 직업</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">교통의 변화로 사라졌거나 사라져 가는 직업도 있나요?</h2>
+  <div class="ka-bub">교통의 변화로 몇몇 직업은 <span class="ka-emph">사라지기도</span> 했어요.</div>
+  <div class="ka-grp"><div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>가마꾼</b>은 가마의 앞뒤에서 가마를 들고 가는 일을 했어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>뱃사공</b>은 노를 젓거나 막대기로 밀어 나룻배를 움직이는 일을 했어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>가마꾼, 뱃사공 등의 직업은 오늘날 <b>거의 사라졌어요</b>.</div></div>
+  </div></div>`});
+// 6 별별 직업 속으로 — 도선사 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 별별 직업 속으로</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">항구에 들어오는 배들을 안내하는 도선사는 어떤 일을 하나요?</h2>
+  <div class="ka-bub">교통수단의 발달로 <span class="ka-emph">큰 배</span>들이 항구를 드나드는 일이 잦아졌어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('pilot','교과서 110쪽')}</div>
+  ${st.revealed?`<div class="answer-box">· 도선사는 배들이 안전하게 항구를 드나들도록 안내해요. 항구의 바닷속 장애물이나 물의 흐름을 모르면 큰 배가 위험에 빠질 수 있기 때문이에요.<br>· 도선사의 안내로 부두에 도착한 배를 움직이지 않도록 밧줄로 묶으면 도선사의 임무는 끝나요.</div>`
+    :`<div class="note">큰 배의 선장이 왜 도선사에게 도움을 요청할지 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 판에서 꽂아요</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">일정표를 꽂아요</h2>
+  <div class="ka-grp" style="align-items:stretch">${yjPanel(st)}</div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">교통의 변화로 달라진 사람들의 생활 모습을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','빨라진 이동 · 생활 공간 · 새 직업')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>같은 시간에 갈 수 있는 거리가 늘었고, 같은 거리도 <b>더 빠르게</b> 갈 수 있게 됐어요. 한 번에 실어 나를 수 있는 짐의 양도 많아졌어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>교통의 발달로 사람들의 <b>생활 공간</b>은 더욱 확대됐어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>교통의 변화로 다양한 <b>직업</b>이 새로 생겼어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#DB2777">교통이 변화하면서 생긴 문제점</b>과 해결 노력을 알아봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"옛날과 오늘날의 이동 모습을 비교할 수 있어요",st)}
+    ${selfCheck(1,"교통의 발달로 넓어진 생활 공간을 말할 수 있어요",st)}
+    ${selfCheck(2,"교통의 변화로 새로 생긴 직업과 사라진 직업을 말할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">교통의 변화로 달라진 사람들의 생활 모습을 살펴봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">교통과 관련하여 <b style="color:#DB2777">관심 있는 직업</b>과 그 까닭을 친구들과 이야기해 봐요. 이건 교실 몫이에요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g3_2_social_u2_l11";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  yjOn:0, yjRead:null, yjPick:null, yjFin:null, yjMsg:"", yjTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function yjDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 일정 카드 꽂기 */
+function yjPut(i){
+  if(state.yjFin!=null) return;                                                            // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(i) || i<0 || i>=YJ_CARD.length) return;                             // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(yjIsOn(state,i)){ state.yjMsg = YJ_SAY_DONE; playThud(); yjDraw(); return; }          // 가드③: 이미 꽂은 카드 — 판 불변
+  const t = yjCardOf(i).t;
+  if(yjCardOf(i).n !== yjPutN(state,t)){ state.yjMsg = YJ_SAY_ORDER; playThud(); yjDraw(); return; }   // 가드④: 앞선 일정 먼저 — 판 불변
+  yjSet(i);
+  state.yjMsg = ""; state.yjTell = yjCardOf(i).say + (yjDone(state,t) ? ` 부산에서 서울까지 ${yjWhoOf(t).time} 걸렸어요.` : '') + (yjAll(state) ? ` 일정표를 모두 꽂았어요.` : '');
+  if(yjDone(state,t)) playChime(); else playBlip(); yjDraw();
+}
+/* 판 읽기 */
+function yjRead(i){
+  if(state.yjFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=YJ_READQ.length) return;                           // 가드②
+  if(!yjAll(state)){ state.yjMsg = YJ_SAY_ORDER_R; playThud(); yjDraw(); return; }         // 가드⑤: 다 꽂기 전 — 판 불변
+  if(state.yjRead!=null){ state.yjMsg = YJ_SAY_READDONE; yjDraw(); return; }               // 가드⑥: 이미 정한 자리 — 판 불변
+  if(i!==YJ_READ_OK){ state.yjMsg = YJ_READ_BAD; playThud(); yjDraw(); return; }           // 가드⑦: 어긋난 답 — 판 불변
+  state.yjRead = i; state.yjMsg = ""; state.yjTell = `${yjWhoOf(0).name} ${yjWhoOf(0).time} · ${yjWhoOf(1).name} ${yjWhoOf(1).time}. 교통이 발달하면서 더 먼 곳으로 편하고 빠르게 이동할 수 있게 됐어요.`; playBlip(); yjDraw();
+}
+/* 관심 있는 직업 고르기 — 정답 없음 */
+function yjPick(p){
+  if(state.yjFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(p) || p<0 || p>=YJ_PICK.length) return;                             // 가드②
+  if(state.yjRead==null){ state.yjMsg = YJ_SAY_ORDER_P; playThud(); yjDraw(); return; }    // 가드⑧: 판을 읽기 전 — 판 불변
+  if(state.yjPick!=null){ state.yjMsg = YJ_SAY_PICKDONE; yjDraw(); return; }               // 가드⑨: 이미 고른 자리 — 판 불변
+  state.yjPick = p; state.yjMsg = ""; state.yjTell = `${yjPickOf(p).mark}를 골랐어요. ${yjPickOf(p).text} — ${yjPickOf(p).why}`; playBlip(); yjDraw();
+}
+/* 마무리 */
+function yjFin(i){
+  if(state.yjFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=YJ_FINQ.length) return;                             // 가드②
+  if(state.yjPick==null){ state.yjMsg = YJ_SAY_ORDER_FIN; playThud(); yjDraw(); return; }  // 가드⑩: 고르기 전 — 판 불변
+  if(i!==YJ_FIN_OK){ state.yjMsg = YJ_FIN_BAD; playThud(); yjDraw(); return; }             // 가드⑪: 어긋난 답 — 판 불변
+  state.yjFin = i; state.yjMsg = ""; playChime(); yjDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
