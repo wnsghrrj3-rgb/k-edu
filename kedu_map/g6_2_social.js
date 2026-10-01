@@ -338,14 +338,14 @@ window.KEDU_MAP["g6_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u3_l06",
+     "lessonId": "g6_s2_social_u3_l06_v1",
      "n": "6",
      "title": "지구촌을 위협하는 여러 가지 문제를 조사해 볼까요",
      "sub": "② 지구촌의 문제와 지속가능한 미래",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/3단원_지구촌사람들/g6_social_u3_l06_쪽지를붙여요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
