@@ -11,6 +11,7 @@
    · 30차(2026-09-29) 3학년 2학기 나눗셈 부품: vdiv(나눗셈 세로셈 — 몫 자리 맞춤·가운데 0·내림·나머지·확인 식) · brem(묶고 남은 것 따로)
    · 31차(2026-09-29) 3학년 2학기 원 부품: circ(중심·반지름·지름·중심을 지나지 않는 선분·점·접은 선·띠종이·점 찍기) · compass(벌린 길이 = 반지름) · cgrid(모눈 위 원 무늬) · crow(지름으로 바꾸어 크기 견주기)
    · 32차(2026-09-29) 3학년 2학기 분수와 소수 부품: fgroup(묶어서 분수·분수만큼) · fmix(1보다 큰 분수·소수 — 가분수·대분수 띠/원) · nline(1보다 큰 수직선 — 분수·대분수·소수 점)
+   · 60차(2026-10-01) vmul parts:false(answer:false 와 함께 — 부분 곱 줄까지 비움, 문제 장용)
    · 59차(2026-10-01) 4학년 1학기 각도 부품: ang(각 하나 — 호·도·직각 ㄱ자·단위 각 칸·어림 기준선·예각/직각/둔각) · prot(각도기 — 안쪽·바깥쪽 눈금, 밑금 방향에 따라 읽는 눈금) · asum(각도의 합·차·한 점에 모으기) · polyang(삼각형·사각형 안쪽 각 — 크기대로 그림·대각선)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
    ============================================================================ */
@@ -814,9 +815,10 @@
     if (!two && b < 10 && o.carry !== false) { const A = String(a).split('').map(Number); const C = new Array(N).fill(''); let c = 0; const off = N - A.length; for (let i = A.length - 1; i >= 0; i--) { const v = A[i] * b + c; c = Math.floor(v / 10); if (c && i > 0) C[off + i - 1] = String(c); } if (C.some(Boolean)) carryRow = '<div class="vt-row vt-carry vm-carry" style="grid-template-columns:repeat(' + N + ',54px)">' + C.map(x => '<span>' + x + '</span>').join('') + '</div>'; }
     const hi = (k) => o.hi === k ? ' vm-hi' : '';
     let h = '<div class="vt vm" data-r="' + r + '"' + (two ? ' data-p="' + p1 + ',' + (p2 * 10) + '"' : '') + '>' + carryRow + row(a, 'vt-a') + row(b, 'vt-b', '×') + '<div class="vt-line"></div>';
-    if (two) { h += row(p1, 'vm-p vm-p1' + hi(0)) + row(o.zero ? String(p2 * 10) : String(p2) + ' ', 'vm-p vm-p2' + hi(1)) + '<div class="vt-line"></div>'; }
+    const pb = o.answer === false && o.parts === false; // 60차 — 문제 장: 부분 곱 줄도 비움(답을 가림)
+    if (two) { h += row(pb ? '' : p1, 'vm-p vm-p1' + hi(0) + (pb ? ' vm-blank' : '')) + row(pb ? '' : (o.zero ? String(p2 * 10) : String(p2) + ' '), 'vm-p vm-p2' + hi(1) + (pb ? ' vm-blank' : '')) + '<div class="vt-line"></div>'; }
     h += (o.answer === false ? row(''.padStart(N, ' '), 'vt-r vm-blank') : row(r, 'vt-r' + hi('r'))) + '</div>';
-    const side = two && o.side !== false ? '<div class="vm-side"><div class="vm-sl' + hi(0) + '">' + a + ' × ' + bu + ' = ' + p1 + '</div><div class="vm-sl' + hi(1) + '">' + a + ' × ' + (bt10 * 10) + ' = ' + (p2 * 10) + '</div></div>' : '';
+    const side = two && o.side !== false && !pb ? '<div class="vm-side"><div class="vm-sl' + hi(0) + '">' + a + ' × ' + bu + ' = ' + p1 + '</div><div class="vm-sl' + hi(1) + '">' + a + ' × ' + (bt10 * 10) + ' = ' + (p2 * 10) + '</div></div>' : '';
     return '<div class="fig-vert fig-vmul">' + '<div class="vm-wrap">' + h + side + '</div>' + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
   }
   // grid: 가로 w칸 × 세로 h칸 모눈을 sw·sh 로 갈라 덩이마다 부분 곱. 덩이 수 = sw 칸 × sh 칸.
