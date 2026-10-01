@@ -11,6 +11,7 @@
    · 30차(2026-09-29) 3학년 2학기 나눗셈 부품: vdiv(나눗셈 세로셈 — 몫 자리 맞춤·가운데 0·내림·나머지·확인 식) · brem(묶고 남은 것 따로)
    · 31차(2026-09-29) 3학년 2학기 원 부품: circ(중심·반지름·지름·중심을 지나지 않는 선분·점·접은 선·띠종이·점 찍기) · compass(벌린 길이 = 반지름) · cgrid(모눈 위 원 무늬) · crow(지름으로 바꾸어 크기 견주기)
    · 32차(2026-09-29) 3학년 2학기 분수와 소수 부품: fgroup(묶어서 분수·분수만큼) · fmix(1보다 큰 분수·소수 — 가분수·대분수 띠/원) · nline(1보다 큰 수직선 — 분수·대분수·소수 점)
+   · 59차(2026-10-01) 4학년 1학기 각도 부품: ang(각 하나 — 호·도·직각 ㄱ자·단위 각 칸·어림 기준선·예각/직각/둔각) · prot(각도기 — 안쪽·바깥쪽 눈금, 밑금 방향에 따라 읽는 눈금) · asum(각도의 합·차·한 점에 모으기) · polyang(삼각형·사각형 안쪽 각 — 크기대로 그림·대각선)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
    ============================================================================ */
 (function (global) {
@@ -1194,6 +1195,96 @@
     const it = o.items || []; const tot = it.reduce((a, r) => a + r.v * r.n, 0);
     const one = (r) => { const bill = r.v >= 1000; return Array.from({ length: r.n }, () => '<span class="nt-' + (bill ? 'bill' : 'coin') + ' v' + r.v + '">' + r.v + (bill ? '원' : '') + '</span>').join(''); };
     return '<div class="fig-vert fig-notes" data-total="' + tot + '">' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + it.map(r => '<div class="nt-row">' + one(r) + '<b class="nt-n">' + r.v + '원 × ' + r.n + '</b></div>').join('') + (o.total === false ? '' : '<div class="pv-eq">모두 ' + (o.q ? '?' : tot + '원') + '</div>') + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
+  }
+
+  { // 59차 각도 부품 — 이름이 겹치지 않게 블록 안에 둔다
+  // ══ 59차(2026-10-01) 4학년 1학기 각도 부품 — ang(각 하나) · prot(각도기) · asum(각도의 합·차·모으기) · polyang(삼각형·사각형의 각) ══
+  // 그림 문법: 주황 호 = 잰(보는) 각 · 파랑·초록 부채꼴 = 더하는 두 각 · 연회색 빗금 = 덜어 낸 각 · 회색 점선 = 어림 기준선(45°·90°·135°) · 주황 ㄱ자 = 직각.
+  const DR = Math.PI / 180;
+  const dirPt = (cx, cy, r, a) => [cx + r * Math.cos(a * DR), cy - r * Math.sin(a * DR)];
+  const fx = (n) => (+n).toFixed(1);
+  function fitMap(pts, box) { // 단위 좌표 점들을 box [x0,y0,x1,y1] 안에 가운데 맞춤
+    box = box || [34, 30, 426, 250]; const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]); const mnx = Math.min(...xs), mxx = Math.max(...xs), mny = Math.min(...ys), mxy = Math.max(...ys);
+    const sc = Math.min((box[2] - box[0]) / Math.max(1e-6, mxx - mnx), (box[3] - box[1]) / Math.max(1e-6, mxy - mny), 260); const ox = (box[0] + box[2]) / 2 - sc * (mnx + mxx) / 2, oy = (box[1] + box[3]) / 2 - sc * (mny + mxy) / 2;
+    const f = (p) => [ox + sc * p[0], oy + sc * p[1]]; f.sc = sc; return f;
+  }
+  function wedge(cx, cy, r, a1, a2, fill, extra) { const p1 = dirPt(cx, cy, r, a1), p2 = dirPt(cx, cy, r, a2); const big = (a2 - a1) > 180 ? 1 : 0; if (a2 - a1 >= 359.9) return '<circle cx="' + fx(cx) + '" cy="' + fx(cy) + '" r="' + fx(r) + '" fill="' + fill + '"' + (extra || '') + '/>'; return '<path d="M' + fx(cx) + ' ' + fx(cy) + ' L' + fx(p1[0]) + ' ' + fx(p1[1]) + ' A' + fx(r) + ' ' + fx(r) + ' 0 ' + big + ' 0 ' + fx(p2[0]) + ' ' + fx(p2[1]) + ' Z" fill="' + fill + '"' + (extra || '') + '/>'; }
+  function arcP(cx, cy, r, a1, a2, col, w) { if (a2 - a1 >= 359.9) return '<circle cx="' + fx(cx) + '" cy="' + fx(cy) + '" r="' + fx(r) + '" fill="none" stroke="' + (col || ORANGE) + '" stroke-width="' + (w || 5) + '"/>'; const p1 = dirPt(cx, cy, r, a1), p2 = dirPt(cx, cy, r, a2); return '<path d="M' + fx(p1[0]) + ' ' + fx(p1[1]) + ' A' + fx(r) + ' ' + fx(r) + ' 0 ' + ((a2 - a1) > 180 ? 1 : 0) + ' 0 ' + fx(p2[0]) + ' ' + fx(p2[1]) + '" fill="none" stroke="' + (col || ORANGE) + '" stroke-width="' + (w || 5) + '" stroke-linecap="round"/>'; }
+  const rayL = (x1, y1, x2, y2, col, w) => '<line x1="' + fx(x1) + '" y1="' + fx(y1) + '" x2="' + fx(x2) + '" y2="' + fx(y2) + '" stroke="' + (col || INK) + '" stroke-width="' + (w || 6) + '" stroke-linecap="round"/>';
+  const kindOf = (d) => (d > 0 && d < 90 ? '예각' : d === 90 ? '직각' : d > 90 && d < 180 ? '둔각' : d === 180 ? '일직선' : '');
+  const degT = (d, q) => (q ? '?' : d + '°');
+  function ang(o) {
+    const d = +o.deg, r0 = +(o.rot || 0), l1 = o.sides ? o.sides[0] : 1, l2 = o.sides ? o.sides[1] : 1;
+    const raw = [[0, 0], [l1 * Math.cos(r0 * DR), -l1 * Math.sin(r0 * DR)], [l2 * Math.cos((r0 + d) * DR), -l2 * Math.sin((r0 + d) * DR)]];
+    for (let a = r0; a <= r0 + d; a += 15) raw.push([0.42 * Math.cos(a * DR), -0.42 * Math.sin(a * DR)]);
+    [].concat(o.ref || []).forEach(rf => { const rr = Math.min(l1, l2) * 1.18; raw.push([rr * Math.cos((r0 + rf) * DR), -rr * Math.sin((r0 + rf) * DR)]); });
+    const F = fitMap(raw, [40, o.label || o.kind ? 30 : 34, 420, o.label || o.kind ? 218 : 250]); const V = F(raw[0]), A = F(raw[1]), B = F(raw[2]); const R = Math.min(0.3 * F.sc, 64);
+    let s = '';
+    [].concat(o.ref || []).forEach(rf => { const e = dirPt(V[0], V[1], Math.min(l1, l2) * F.sc * 0.95, r0 + rf); s += '<line x1="' + fx(V[0]) + '" y1="' + fx(V[1]) + '" x2="' + fx(e[0]) + '" y2="' + fx(e[1]) + '" stroke="#9AA6B2" stroke-width="3" stroke-dasharray="8 7"/>' + txt(fx(dirPt(V[0], V[1], Math.min(l1, l2) * F.sc + 16, r0 + rf)[0]), fx(dirPt(V[0], V[1], Math.min(l1, l2) * F.sc + 16, r0 + rf)[1] + 6), rf + '°', 17, '#7A8796', 700); });
+    if (o.unit) { const u = +o.unit; for (let a = r0, i = 0; a < r0 + d - 1e-6; a += u, i++) s += wedge(V[0], V[1], R * 1.9, a, Math.min(a + u, r0 + d), i % 2 ? '#FFE3CC' : '#FFF3E6', ' stroke="#F6B98A" stroke-width="2"'); }
+    s += rayL(V[0], V[1], A[0], A[1]) + rayL(V[0], V[1], B[0], B[1]);
+    if (d === 90 && o.show !== 'num') s += rightMark(V[0], V[1], A[0], A[1], B[0], B[1], 30);
+    else if (o.arc !== false && !o.unit) s += arcP(V[0], V[1], R, r0, r0 + d);
+    s += '<circle cx="' + fx(V[0]) + '" cy="' + fx(V[1]) + '" r="7" fill="' + INK + '"/>';
+    if (o.show !== false) { const lp = dirPt(V[0], V[1], (o.unit ? R * 1.9 : R) + 34, r0 + d / 2); s += txt(fx(lp[0]), fx(lp[1] + 10), o.unit ? (o.q ? '? 칸' : Math.round(d / o.unit) + '칸') : degT(d, o.q), 30, o.q ? RED : ORANGE); }
+    if (o.label || o.kind) s += txt(230, 262, o.label || kindOf(d), 26, BLUE2);
+    return svgWrap(s, 'fig-ang').replace('<svg class="fig-svg fig-ang"', '<svg class="fig-svg fig-ang" data-deg="' + d + '"' + (o.unit ? ' data-units="' + (d / o.unit) + '"' : '') + (o.kind ? ' data-kind="' + kindOf(d) + '"' : ''));
+  }
+  function prot(o) { // 각도기 — 안쪽 눈금은 오른쪽 0, 바깥쪽 눈금은 왼쪽 0. from:'right' 이면 밑금이 오른쪽 변 → 안쪽 눈금을 읽는다
+    const d = +o.deg, left = o.from === 'left'; const C = [230, 232], R = 186; let s = '';
+    s += '<path d="M' + (C[0] - R - 8) + ' ' + C[1] + ' A' + (R + 8) + ' ' + (R + 8) + ' 0 0 1 ' + (C[0] + R + 8) + ' ' + C[1] + ' Z" fill="#EAF3FF" fill-opacity=".85" stroke="#8FB4E8" stroke-width="3"/>';
+    for (let a = 0; a <= 180; a += 5) { const big = a % 10 === 0; const p1 = dirPt(C[0], C[1], R + 8, a), p2 = dirPt(C[0], C[1], R + 8 - (big ? 16 : 9), a); s += '<line x1="' + fx(p1[0]) + '" y1="' + fx(p1[1]) + '" x2="' + fx(p2[0]) + '" y2="' + fx(p2[1]) + '" stroke="#5E7FAF" stroke-width="' + (big ? 2.4 : 1.4) + '"/>'; }
+    const phi2 = left ? 180 - d : d; // 둘째 변 방향
+    for (let a = 0; a <= 180; a += 30) { const aa = a === 0 ? 5 : a === 180 ? 175 : a; const pin = dirPt(C[0], C[1], R - 30, aa), pout = dirPt(C[0], C[1], R - 56, aa); s += txt(fx(pin[0]), fx(pin[1] + 6), String(180 - a), 15, '#8A97A8', 700) + txt(fx(pout[0]), fx(pout[1] + 6), String(a), 15, '#8A97A8', 700); }
+    s += '<line x1="' + (C[0] - R - 8) + '" y1="' + C[1] + '" x2="' + (C[0] + R + 8) + '" y2="' + C[1] + '" stroke="#5E7FAF" stroke-width="3"/>';
+    const base = dirPt(C[0], C[1], R + 26, left ? 180 : 0), tip = dirPt(C[0], C[1], R + 26, phi2);
+    s += rayL(C[0], C[1], base[0], base[1], INK, 6) + rayL(C[0], C[1], tip[0], tip[1], INK, 6) + arcP(C[0], C[1], 46, Math.min(phi2, left ? 180 : 0), Math.max(phi2, left ? 180 : 0));
+    const rd = left ? 180 - phi2 : phi2, other = 180 - rd; const rp = dirPt(C[0], C[1], left ? R - 30 : R - 56, phi2);
+    s += '<circle cx="' + fx(rp[0]) + '" cy="' + fx(rp[1]) + '" r="21" fill="#fff" stroke="' + ORANGE + '" stroke-width="3"/>' + txt(fx(rp[0]), fx(rp[1] + 7), o.read === false ? '?' : String(rd), 19, ORANGE);
+    s += '<circle cx="' + C[0] + '" cy="' + C[1] + '" r="7" fill="' + ORANGE + '"/>';
+    if (o.parts) s += txt(C[0], C[1] + 30, '중심', 18, ORANGE) + txt(left ? C[0] + 150 : C[0] - 150, C[1] + 30, '밑금', 18, '#5E7FAF');
+    return svgWrap(s, 'fig-prot', '0 0 460 272').replace('<svg class="fig-svg fig-prot"', '<svg class="fig-svg fig-prot" data-deg="' + d + '" data-read="' + rd + '" data-other="' + other + '"');
+  }
+  function asum(o) { // parts 여러 각을 한 점에 이어 붙임(op '+') · op '-' 이면 parts[0] 에서 parts[1] 을 덜어 냄
+    const P = (o.parts || [o.a, o.b]).map(Number), op = o.op || '+'; const qi = o.q == null ? -1 : +o.q; const tot = op === '-' ? P[0] - P[1] : P.reduce((a, b) => a + b, 0); const span = op === '-' ? P[0] : tot;
+    const raw = [[0, 0], [1, 0], [Math.cos(span * DR), -Math.sin(span * DR)]]; for (let a = 0; a <= span; a += 10) raw.push([Math.cos(a * DR), -Math.sin(a * DR)]);
+    const F = fitMap(raw, [48, 36, 412, o.label === false ? 250 : 222]); const V = F([0, 0]); const L = F.sc; const COLS = ['#CFE0FB', '#D6F2E1', '#FFE3CC', '#EFE2FA', '#FDE8EC'], EDGE = [BLUE, GRN, ORANGE, PURP, RED]; let s = '', a0 = 0;
+    const lab = (a1, a2, t, col, rr) => { if (o.nums === false) return ''; const p = dirPt(V[0], V[1], L * (rr || 0.62), (a1 + a2) / 2); return txt(fx(p[0]), fx(p[1] + 9), t, (a2 - a1) < 32 ? 22 : 26, col); };
+    if (op === '-') { s += wedge(V[0], V[1], L * 0.92, 0, P[0], '#E4ECF7'); s += wedge(V[0], V[1], L * 0.92, 0, P[1], '#D5DCE5', ' stroke="#9AA6B2" stroke-width="2" stroke-dasharray="6 5"'); s += wedge(V[0], V[1], L * 0.92, P[1], P[0], COLS[1]);
+      [0, P[1], P[0]].forEach(a => { const e = dirPt(V[0], V[1], L, a); s += rayL(V[0], V[1], e[0], e[1], a === P[1] ? '#8A97A8' : INK, a === P[1] ? 4 : 6); });
+      s += lab(0, P[1], (qi === 1 ? '?' : P[1] + '°'), '#6B7C93', 0.6) + lab(P[1], P[0], qi === 2 ? '?' : tot + '°', '#2E8B57', 0.7) + arcP(V[0], V[1], L * 0.98, 0, P[0], ORANGE, 4) + (o.nums === false ? '' : (() => { const p = dirPt(V[0], V[1], L * 1.08, P[0] / 2); return txt(fx(p[0]), fx(p[1]), qi === 0 ? '?' : P[0] + '°', 22, ORANGE); })()); }
+    else { P.forEach((a, i) => { s += wedge(V[0], V[1], L * 0.92, a0, a0 + a, COLS[i % 5], ' stroke="' + EDGE[i % 5] + '" stroke-width="2"'); a0 += a; });
+      a0 = 0; P.forEach((a, i) => { s += lab(a0, a0 + a, qi === i ? '?' : a + '°', qi === i ? RED : INK, P.length > 2 ? 0.66 : 0.6); a0 += a; });
+      const edges = [0]; P.reduce((acc, a) => { edges.push(acc + a); return acc + a; }, 0); edges.forEach((a, i) => { if (a >= 360 && i) return; const e = dirPt(V[0], V[1], L, a); s += rayL(V[0], V[1], e[0], e[1], INK, i === 0 || i === edges.length - 1 ? 6 : 4); });
+      if (P.length > 1 && tot < 359.9) s += arcP(V[0], V[1], L * 0.98, 0, tot, ORANGE, 4); }
+    s += '<circle cx="' + fx(V[0]) + '" cy="' + fx(V[1]) + '" r="7" fill="' + INK + '"/>';
+    const terms = op === '-' ? [P[0], P[1], tot] : P.concat(tot); const tt = terms.map((a, i) => (qi === i ? '?' : a + '°')); const eqT = o.label != null && o.label !== false ? o.label : (op === '-' ? tt[0] + ' − ' + tt[1] + ' = ' + tt[2] : tt.slice(0, -1).join(' + ') + ' = ' + tt[tt.length - 1] + (qi !== P.length && tot === 180 ? ' (일직선)' : qi !== P.length && tot === 360 ? ' (한 바퀴)' : ''));
+    if (o.label !== false) s += txt(230, 262, eqT, P.length > 3 ? 22 : 26, BLUE2);
+    return svgWrap(s, 'fig-asum').replace('<svg class="fig-svg fig-asum"', '<svg class="fig-svg fig-asum" data-parts="' + P.join(',') + '" data-op="' + op + '" data-r="' + tot + '"' + (qi >= 0 ? ' data-q="' + qi + '"' : ''));
+  }
+  function polyVerts(A) { // 안쪽 각 A(도) — 삼각형은 사인 법칙, 사각형은 두 변을 정해 닫히게
+    const n = A.length; if (n === 3) { const [a, b, c] = A; const la = Math.sin(a * DR), lc = Math.sin(c * DR); const P0 = [0, 0], P1 = [lc, 0], P2 = [la * Math.cos(b * DR) * -1 + lc, 0]; const bx = Math.sin(b * DR); // 꼭짓점 0 에서 각 a, 1 에서 각 b
+      const x2 = lc - la * Math.cos(b * DR), y2 = -la * Math.sin(b * DR); void P2; void bx; return [P0, P1, [x2, y2]]; }
+    const ext = A.map(a => 180 - a); let best = null;
+    for (const l0 of [0.6, 0.75, 0.9, 1, 1.15, 1.3, 1.5]) for (const l1 of [0.6, 0.75, 0.9, 1, 1.15, 1.3, 1.5]) { const th = [0]; for (let i = 1; i < 4; i++) th.push(th[i - 1] + ext[i]); const u = th.map(t => [Math.cos(t * DR), -Math.sin(t * DR)]);
+      const rx = -(l0 * u[0][0] + l1 * u[1][0]), ry = -(l0 * u[0][1] + l1 * u[1][1]); const det = u[2][0] * u[3][1] - u[3][0] * u[2][1]; if (Math.abs(det) < 1e-9) continue; const l2 = (rx * u[3][1] - u[3][0] * ry) / det, l3 = (u[2][0] * ry - rx * u[2][1]) / det; if (l2 <= 0 || l3 <= 0) continue;
+      const L = [l0, l1, l2, l3]; const V = [[0, 0]]; for (let i = 0; i < 3; i++) V.push([V[i][0] + L[i] * u[i][0], V[i][1] + L[i] * u[i][1]]); let ar = 0; for (let i = 0; i < 4; i++) { const a = V[i], b = V[(i + 1) % 4]; ar += a[0] * b[1] - b[0] * a[1]; } const pe = L.reduce((x, y) => x + y, 0); const sc = Math.abs(ar) / 2 / (pe * pe) * Math.min(1, Math.min(...L) / Math.max(...L) * 2.5); if (!best || sc > best.sc) best = { sc, V }; }
+    if (best) { const V = best.V; return [V[0], V[1], V[2], V[3]].map((p, i, a) => p); }
+    return [[0, 0], [1, 0], [1, -1], [0, -1]];
+  }
+  function polyang(o) {
+    const A = (o.angs || []).map(Number); const qi = o.q == null ? -1 : +o.q; const n = A.length; const V0 = polyVerts(A); const F = fitMap(V0, [70, 40, 390, o.label === false ? 236 : 214]); const V = V0.map(F); let s = '';
+    s += poly(V.map(p => [fx(p[0]), fx(p[1])]), o.color || (n === 3 ? '#DFF5E6' : '#FFF1D6'));
+    if (o.diag && n === 4) s += '<line x1="' + fx(V[0][0]) + '" y1="' + fx(V[0][1]) + '" x2="' + fx(V[2][0]) + '" y2="' + fx(V[2][1]) + '" stroke="' + ORANGE + '" stroke-width="4" stroke-dasharray="10 7"/>';
+    const cx = V.reduce((a, p) => a + p[0], 0) / n, cy = V.reduce((a, p) => a + p[1], 0) / n;
+    V.forEach((p, i) => { const pa = V[(i + n - 1) % n], pb = V[(i + 1) % n]; const a1 = Math.atan2(-(pa[1] - p[1]), pa[0] - p[0]) / DR, a2 = Math.atan2(-(pb[1] - p[1]), pb[0] - p[0]) / DR; let lo = Math.min(a1, a2), hi = Math.max(a1, a2); if (hi - lo > 180) { const t = lo; lo = hi; hi = t + 360; }
+      if (A[i] === 90 && qi !== i) s += rightMark(p[0], p[1], pa[0], pa[1], pb[0], pb[1], 20); else s += arcP(p[0], p[1], 26, lo, hi, qi === i ? RED : ORANGE, 4);
+      const ua = [pa[0] - p[0], pa[1] - p[1]], ub = [pb[0] - p[0], pb[1] - p[1]]; const na = Math.hypot(ua[0], ua[1]) || 1, nb = Math.hypot(ub[0], ub[1]) || 1; let bx = ua[0] / na + ub[0] / nb, by = ua[1] / na + ub[1] / nb; let bl = Math.hypot(bx, by); if (bl < 1e-6) { bx = cx - p[0]; by = cy - p[1]; bl = Math.hypot(bx, by) || 1; } const kk = A[i] > 110 ? 44 : A[i] < 50 ? 70 : 56; const lx = p[0] + bx / bl * kk, ly = p[1] + by / bl * kk; s += txt(fx(lx), fx(ly + 9), qi === i ? '?' : A[i] + '°', 24, qi === i ? RED : INK); });
+    const tot = A.reduce((a, b) => a + b, 0);
+    if (o.label !== false) s += txt(230, 262, o.label || (A.map((a, i) => (qi === i ? '?' : a + '°')).join(' + ') + ' = ' + tot + '°'), n > 3 ? 22 : 24, BLUE2);
+    return svgWrap(s, 'fig-polyang').replace('<svg class="fig-svg fig-polyang"', '<svg class="fig-svg fig-polyang" data-angs="' + A.join(',') + '" data-sum="' + tot + '"' + (qi >= 0 ? ' data-q="' + qi + '"' : ''));
+  }
+  Object.assign(PARTS, { ang, prot, asum, polyang });
   }
   const HTML_PARTS = { vert, tvert, vmul, vdiv, ptable, ograph, pgraph, pvt, jump, notes };
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }

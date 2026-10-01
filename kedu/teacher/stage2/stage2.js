@@ -245,6 +245,7 @@
         if (d.cards) push('<div class="num-cards">' + d.cards.map(c => '<span>' + esc(c) + '</span>').join('') + '</div>');
         if (d.target !== undefined && d.component === 'ten_frame') push('<div class="tf-item">' + tenFrame(0, 56) + '<div class="tf-cap">목표 ' + esc(d.target) + '</div></div>');
         if (d.scenario) push(scenarioG(d.scenario, ctx.guide));
+        if (d.fig && global.KT2_FIG) { const fg = global.KT2_FIG.render(d.fig); if (fg) push(fg); } // 59차 — 문제 장 그림(각도기·각의 합 — 물음표 칸으로 답을 가림)
         if (d.question) push('<div class="big-q">' + md(d.question) + '</div>');
         if (d.questions) push('<div class="q-list">' + d.questions.map(q => '<div class="big-q">' + md(lbl(q, 'q')) + '</div>').join('') + '</div>');
         if (d.challenge) push('<div class="big-q">' + md(d.challenge) + '</div>');

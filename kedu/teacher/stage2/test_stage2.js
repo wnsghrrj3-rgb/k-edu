@@ -109,7 +109,8 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   const walk = (f, cb) => { if (!f || typeof f !== 'object') return; cb(f); (f.items || []).forEach(p => walk(p && p.fig ? p.fig : null, cb)); };
   files.forEach(fn => { const L = loadLessons(path.join(DATA, fn)); Object.keys(L).forEach(k => (L[k].slides || []).forEach(s => { if (!s.data || !s.data.fig) return;
     byFile[fn] = (byFile[fn] || 0) + 1; const f = s.data.fig; const tag = fn + ' ' + k + ' ' + s.id;
-    if (s.block !== 'concept') figBad.push(tag + ' 개념 장 아님(' + s.block + ')');
+    if (s.block !== 'concept' && s.block !== 'basic_problem') // 59차: 기본 문제 장에도 그림(물음표 칸)
+    figBad.push(tag + ' 개념 장 아님(' + s.block + ')');
     const h = FG.render(f); if (!h) figBad.push(tag + ' 그림 빈 글자');
     walk(f, x => { if (FG.parts.indexOf(x.k) < 0) figBad.push(tag + ' 모르는 부품 ' + x.k); if (x.k === 'tools' || x.k === 'chain') (x.items || []).forEach(c => { if (FG.icons.indexOf(c.name) < 0 && !c.emoji) { textCards++; if (!/fig-card[^"]* text[^"]*"/.test(FG.render({ k: 'tools', items: [c] }))) figBad.push(tag + ' 글자 카드 아님 ' + c.name); } }); });
     // 22차 수학 부품 검산 — 칸 수·색칠 수·세로셈 답·직각 표시·수 모형 개수·나눔 개수·배열 점 수
