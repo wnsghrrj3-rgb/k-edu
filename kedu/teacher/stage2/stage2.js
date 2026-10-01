@@ -136,6 +136,7 @@
     if (o.text) return '<div>' + md(o.text) + '</div>';
     return '';
   }
+  function dataFig(f) { return !!f && (['bar', 'pgraph', 'ptable'].indexOf(f.k) >= 0 || (f.k === 'panels' && (f.items || []).some(i => dataFig(i.fig)))); } // 63차
   function options(opts, multi, revealed) {
     if (!opts || !opts.length) return '';
     const M = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -204,7 +205,8 @@
       }
       case 'concept': {
         push(image(d.img, title + ' ' + (d.content || ''))); if (d.content) { const bt = '<div class="big-text">' + md(d.content) + '</div>'; push(ctx.guide && ctx.guide[0] && !d.kids_after ? guideSay(ctx.guide[0], bt, 'l') : bt); }
-        if (d.fig && global.KT2_FIG) { const fg = global.KT2_FIG.render(d.fig); if (fg) push(fg); } // 21차 개념 그림 층
+        if (d.fig && global.KT2_FIG) { const fg = global.KT2_FIG.render(d.fig); if (fg) { // 63차 — 자료 그래프(막대·그림그래프·표) 개념 장은 말풍선 옆에 그림(세로로 쌓으면 0.72~0.84)
+          if (d.content && dataFig(d.fig)) { const tx = b.pop(); push('<div class="concept-split"><div class="cs-text">' + tx + '</div><div class="cs-fig">' + fg + '</div></div>'); } else push(fg); } } // 21차 개념 그림 층
         if (Array.isArray(d.symbol_meanings) && d.symbol_meanings.length) push(symCards(d.symbol_meanings));
         if (d.kids_after) push(picture('<div class="scene">' + d.kids_after.map(kidCard).join('') + '</div>', title + ' ' + (d.content || '')));
         if (d.items) push(tfRow(d.items));
