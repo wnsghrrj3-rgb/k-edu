@@ -1288,6 +1288,62 @@
   }
   Object.assign(PARTS, { ang, prot, asum, polyang });
   }
+  { // 61차 삼각형 부품 — 이름이 겹치지 않게 블록 안에 둔다
+  // ══ 61차(2026-10-01) 4학년 1학기 삼각형 부품 — tri(삼각형 하나: 각으로 또는 세 변으로) · paper(색종이 자르기) ══
+  // 그림 문법(자기주도 원문과 같음): 빨간 호 = 예각 · 검은 ㄱ자 = 직각 · 파란 호 = 둔각(mark:'kind') · 같은 변 = 같은 눈금(／) · 같은 각 = 같은 겹 호(mark:'eq') · 회색 점선 = 접는 선.
+  const DR = Math.PI / 180; const fx = (n) => (+n).toFixed(1);
+  function fitMap(pts, box) { // 단위 좌표 점들을 box [x0,y0,x1,y1] 안에 가운데 맞춤
+    box = box || [34, 30, 426, 250]; const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]); const mnx = Math.min(...xs), mxx = Math.max(...xs), mny = Math.min(...ys), mxy = Math.max(...ys);
+    const sc = Math.min((box[2] - box[0]) / Math.max(1e-6, mxx - mnx), (box[3] - box[1]) / Math.max(1e-6, mxy - mny), 260); const ox = (box[0] + box[2]) / 2 - sc * (mnx + mxx) / 2, oy = (box[1] + box[3]) / 2 - sc * (mny + mxy) / 2;
+    const f = (p) => [ox + sc * p[0], oy + sc * p[1]]; f.sc = sc; return f;
+  }
+  const KC = { 예각: RED, 직각: INK, 둔각: BLUE2 };
+  const kindT = (d) => (d < 89.5 ? '예각' : d <= 90.5 ? '직각' : '둔각');
+  const triKind = (A) => { const m = Math.max(...A); return m > 90.5 ? '둔각삼각형' : m >= 89.5 ? '직각삼각형' : '예각삼각형'; };
+  const sideKind = (L) => { const e = (x, y) => Math.abs(x - y) < 1e-6 * Math.max(x, y) + 1e-9; const n = [e(L[0], L[1]), e(L[1], L[2]), e(L[2], L[0])].filter(Boolean).length; return n === 3 ? '정삼각형' : n ? '이등변삼각형' : ''; };
+  const angAt = (P, i) => { const p = P[i], a = P[(i + 2) % 3], b = P[(i + 1) % 3]; const v1 = [a[0] - p[0], a[1] - p[1]], v2 = [b[0] - p[0], b[1] - p[1]]; return Math.acos(Math.max(-1, Math.min(1, (v1[0] * v2[0] + v1[1] * v2[1]) / Math.hypot(...v1) / Math.hypot(...v2)))) / DR; };
+  function arcAt(p, a, b, r, col, w) { const a1 = Math.atan2(-(a[1] - p[1]), a[0] - p[0]) / DR, a2 = Math.atan2(-(b[1] - p[1]), b[0] - p[0]) / DR; let lo = Math.min(a1, a2), hi = Math.max(a1, a2); if (hi - lo > 180) { const t = lo; lo = hi; hi = t + 360; }
+    const q1 = [p[0] + r * Math.cos(lo * DR), p[1] - r * Math.sin(lo * DR)], q2 = [p[0] + r * Math.cos(hi * DR), p[1] - r * Math.sin(hi * DR)]; return '<path d="M' + fx(q1[0]) + ' ' + fx(q1[1]) + ' A' + r + ' ' + r + ' 0 0 0 ' + fx(q2[0]) + ' ' + fx(q2[1]) + '" fill="none" stroke="' + col + '" stroke-width="' + (w || 4) + '" stroke-linecap="round"/>'; }
+  function tick(a, b, n) { const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2; const L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; const ux = (b[0] - a[0]) / L, uy = (b[1] - a[1]) / L; let s = ''; for (let k = 0; k < n; k++) { const off = (k - (n - 1) / 2) * 9; const cx = mx + ux * off, cy = my + uy * off; s += '<line class="t-tick" x1="' + fx(cx - uy * 11 - ux * 4) + '" y1="' + fx(cy + ux * 11 - uy * 4) + '" x2="' + fx(cx + uy * 11 + ux * 4) + '" y2="' + fx(cy - ux * 11 + uy * 4) + '" stroke="' + ORANGE + '" stroke-width="4" stroke-linecap="round"/>'; } return s; }
+  function triRaw(o) { // 단위 좌표(위가 −y) 세 꼭짓점 · 변 0-1, 1-2, 2-0
+    if (o.len) { const [c, a, b] = o.len.map(Number); const x = (c * c + b * b - a * a) / (2 * c); return [[0, 0], [c, 0], [x, -Math.sqrt(Math.max(0, b * b - x * x))]]; }
+    const [A, B, C] = o.angs.map(Number); const lc = Math.sin(C * DR), la = Math.sin(A * DR); void lc; return [[0, 0], [Math.sin(C * DR), 0], [Math.sin(C * DR) - la * Math.cos(B * DR), -la * Math.sin(B * DR)]]; }
+  function tri(o) {
+    let P = triRaw(o); const r0 = +(o.rot || 0); if (r0) P = P.map(p => [p[0] * Math.cos(r0 * DR) + p[1] * Math.sin(r0 * DR), -p[0] * Math.sin(r0 * DR) + p[1] * Math.cos(r0 * DR)]);
+    const cap = o.label ? 1 : 0; const zb = [70, 40, 390, cap ? 210 : 240], zs = o.size ? +o.size : 1, zc = [(zb[0] + zb[2]) / 2, (zb[1] + zb[3]) / 2]; const F = fitMap(P, [zc[0] - (zc[0] - zb[0]) * zs, zc[1] - (zc[1] - zb[1]) * zs, zc[0] + (zb[2] - zc[0]) * zs, zc[1] + (zb[3] - zc[1]) * zs]); const V = P.map(F);
+    const A = [0, 1, 2].map(i => angAt(V, i)); const Ar = A.map(a => Math.round(a)); const Lr = [0, 1, 2].map(i => Math.hypot(P[(i + 1) % 3][0] - P[i][0], P[(i + 1) % 3][1] - P[i][1]));
+    const qi = o.q == null ? -1 : +o.q; let s = '';
+    s += poly(V.map(p => [fx(p[0]), fx(p[1])]), o.color || '#E9F1FD');
+    if (o.fold != null && o.fold !== false) { const ap = o.fold === true ? (Ar[0] === Ar[1] ? 2 : Ar[1] === Ar[2] ? 0 : 1) : +o.fold; const a = V[(ap + 1) % 3], b = V[(ap + 2) % 3]; s += '<line class="t-fold" x1="' + fx(V[ap][0]) + '" y1="' + fx(V[ap][1]) + '" x2="' + fx((a[0] + b[0]) / 2) + '" y2="' + fx((a[1] + b[1]) / 2) + '" stroke="#8A97A8" stroke-width="3" stroke-dasharray="9 7"/>'; }
+    // 같은 변 눈금 — 변의 길이(len 이면 주어진 수, 아니면 사인 법칙)로 판정
+    const SL = o.len ? o.len.map(Number) : [Math.sin(Ar[2] * DR), Math.sin(Ar[0] * DR), Math.sin(Ar[1] * DR)].map(x => Math.round(x * 1e6) / 1e6);
+    if (o.ticks !== false) { const eq = (x, y) => Math.abs(x - y) < 1e-6; [0, 1, 2].forEach(i => { const n = [0, 1, 2].filter(j => j !== i && eq(SL[i], SL[j])).length; if (n) s += tick(V[i], V[(i + 1) % 3], 1); }); }
+    const cx = (V[0][0] + V[1][0] + V[2][0]) / 3, cy = (V[0][1] + V[1][1] + V[2][1]) / 3; const mk = o.mark || 'kind';
+    const shown = o.show === false ? [] : o.show === true || o.show == null ? (mk === 'deg' ? [0, 1, 2] : []) : [].concat(o.show);
+    const groups = {}; Ar.forEach((a, i) => { (groups[a] = groups[a] || []).push(i); }); let gi = 0; const gOf = {}; Object.keys(groups).forEach(k => { if (groups[k].length > 1) { gi++; groups[k].forEach(i => { gOf[i] = gi; }); } });
+    V.forEach((p, i) => { const a = V[(i + 2) % 3], b = V[(i + 1) % 3]; const kd = kindT(A[i]);
+      if (mk === 'kind') { if (kd === '직각') s += rightMark(p[0], p[1], a[0], a[1], b[0], b[1], 22).replace('stroke="' + ORANGE + '"', 'stroke="' + INK + '"'); else s += arcAt(p, a, b, 26, KC[kd], 5); }
+      else if (mk === 'eq') { if (gOf[i]) for (let k = 0; k < gOf[i]; k++) s += arcAt(p, a, b, 24 + k * 8, ORANGE, 4); else if (kd === '직각') s += rightMark(p[0], p[1], a[0], a[1], b[0], b[1], 20).replace('stroke="' + ORANGE + '"', 'stroke="' + INK + '"'); }
+      else if (mk === 'deg') { if (kd === '직각' && qi !== i) s += rightMark(p[0], p[1], a[0], a[1], b[0], b[1], 20).replace('stroke="' + ORANGE + '"', 'stroke="' + INK + '"'); else if (shown.indexOf(i) >= 0 || qi === i) s += arcAt(p, a, b, 24, qi === i ? RED : ORANGE, 4); }
+      if (shown.indexOf(i) >= 0 || qi === i) { const ua = [a[0] - p[0], a[1] - p[1]], ub = [b[0] - p[0], b[1] - p[1]]; const na = Math.hypot(...ua) || 1, nb = Math.hypot(...ub) || 1; let bx = ua[0] / na + ub[0] / nb, by = ua[1] / na + ub[1] / nb; let bl = Math.hypot(bx, by); if (bl < 1e-6) { bx = cx - p[0]; by = cy - p[1]; bl = Math.hypot(bx, by) || 1; } const kk = A[i] > 110 ? 46 : A[i] < 45 ? 74 : 58; s += txt(fx(p[0] + bx / bl * kk), fx(p[1] + by / bl * kk + 9), qi === i ? '?' : Ar[i] + '°', 24, qi === i ? RED : INK); } });
+    if (o.len && o.cm !== false) [0, 1, 2].forEach(i => { const a = V[i], b = V[(i + 1) % 3]; const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2; let nx = mx - cx, ny = my - cy; const nl = Math.hypot(nx, ny) || 1; s += txt(fx(mx + nx / nl * 30), fx(my + ny / nl * 30 + 8), o.lq === i ? '? cm' : String(o.len[i]) + ' cm', 21, o.lq === i ? RED : '#3E6FCF', 800); });
+    if (o.st) [0, 1, 2].forEach(i => { if (!o.st[i]) return; const a = V[i], b = V[(i + 1) % 3]; const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2; let nx = mx - cx, ny = my - cy; const nl = Math.hypot(nx, ny) || 1; s += txt(fx(mx + nx / nl * 30), fx(my + ny / nl * 30 + 8), o.st[i], 21, '#3E6FCF', 800); });
+    if (o.label) s += txt(230, 262, o.label, 24, BLUE2);
+    return svgWrap(s, 'fig-tri').replace('<svg class="fig-svg fig-tri"', '<svg class="fig-svg fig-tri" data-angs="' + Ar.join(',') + '" data-kind="' + triKind(Ar) + '" data-side="' + sideKind(SL) + '"' + (o.len ? ' data-len="' + o.len.join(',') + '"' : '') + (qi >= 0 ? ' data-q="' + qi + '"' : ''));
+  }
+  function paper(o) { // 색종이(정사각형 0~4 좌표, 아래가 +y) · pieces [[ [x,y]… ]] · rest = 잘리지 않고 남은 칸 · num 조각 번호 · kind 직각 표시
+    const S = 196, X0 = 132, Y0 = 34, k = S / 4; const M = (p) => [X0 + p[0] * k, Y0 + p[1] * k]; let s = '';
+    s += '<rect x="' + X0 + '" y="' + Y0 + '" width="' + S + '" height="' + S + '" fill="#FFF6D9" stroke="#C9A64A" stroke-width="3"/>';
+    const FILL = ['#FDE2E2', '#DCE8FB', '#DDF4E6', '#FFF1D6', '#EFE2FA', '#E3F2F9']; const kinds = [];
+    (o.pieces || []).forEach((pc, i) => { const V = pc.map(M); s += poly(V.map(p => [fx(p[0]), fx(p[1])]), FILL[i % FILL.length], ' class="pp-piece"');
+      if (pc.length === 3) { const A = [0, 1, 2].map(j => angAt(V, j)); kinds.push(triKind(A.map(Math.round))); if (o.mark !== false) V.forEach((p, j) => { if (Math.abs(A[j] - 90) < 0.5) s += rightMark(p[0], p[1], V[(j + 2) % 3][0], V[(j + 2) % 3][1], V[(j + 1) % 3][0], V[(j + 1) % 3][1], 14).replace('stroke="' + ORANGE + '"', 'stroke="' + INK + '"').replace('stroke-width="5"', 'stroke-width="3"'); else if (A[j] > 90.5) s += arcAt(p, V[(j + 2) % 3], V[(j + 1) % 3], 18, BLUE2, 4); }); } else kinds.push('');
+      if (o.num !== false) { const c = V.reduce((a, p) => [a[0] + p[0] / V.length, a[1] + p[1] / V.length], [0, 0]); s += txt(fx(c[0]), fx(c[1] + 9), '①②③④⑤⑥⑦⑧'[i], 26, INK); } });
+    (o.rest || []).forEach(pc => { const V = pc.map(M); s += poly(V.map(p => [fx(p[0]), fx(p[1])]), '#FFF6D9', ' stroke-dasharray="6 5" class="pp-rest"'); });
+    if (o.label) s += txt(230, 262, o.label, 24, BLUE2);
+    return svgWrap(s, 'fig-paper').replace('<svg class="fig-svg fig-paper"', '<svg class="fig-svg fig-paper" data-kinds="' + kinds.join(',') + '" data-n="' + (o.pieces || []).length + '"' + ((o.rest || []).length ? ' data-rest="' + o.rest.length + '"' : ''));
+  }
+  Object.assign(PARTS, { tri, paper });
+  }
   const HTML_PARTS = { vert, tvert, vmul, vdiv, ptable, ograph, pgraph, pvt, jump, notes };
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
