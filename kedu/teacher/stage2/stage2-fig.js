@@ -1343,6 +1343,57 @@
     return svgWrap(s, 'fig-paper').replace('<svg class="fig-svg fig-paper"', '<svg class="fig-svg fig-paper" data-kinds="' + kinds.join(',') + '" data-n="' + (o.pieces || []).length + '"' + ((o.rest || []).length ? ' data-rest="' + o.rest.length + '"' : ''));
   }
   Object.assign(PARTS, { tri, paper });
+  // ══ 62차(2026-10-02) 4학년 1학기 막대그래프 부품 — bar(막대그래프: 세로·가로 · 눈금 한 칸 · 두 자료 한 그래프 · 빈 막대) ══
+  // 그림 문법(자기주도 원문과 같음): 파랑 막대 = 자료 · 주황 막대 = 짚는 막대(hi) · 두 자료는 파랑·주황 + 범례 · 회색 눈금선 = 눈금 한 칸 · 주황 점선 「?」 = 아직 못 그린 막대.
+  // x 항목 이름[] · v 값[] (또는 sets [{name, v[]}] 두 자료 · by 'item'(항목별로 묶기, 기본)|'set'(자료별로 묶기))
+  // step 눈금 한 칸 · max 눈금 끝(기본 = step 배수로 올림) · every 수 글자를 붙이는 칸 간격(기본 자동) · unit 단위 · xl 가로 이름 · yl 세로 이름 · title
+  // horiz 가로 막대 · vals 막대 끝에 수(기본 없음 — 눈금을 세어 읽는 것이 과제) · hi 주황 막대 번호 · hide true(막대 없음 — 틀만)|[i](그 막대만 빈 자리 「?」) · bw 막대 굵기(0.2~0.8, 기본 0.5)
+  // data-v 그린 값 · data-step · data-max · data-cells 칸 수 · data-horiz · data-hide · 막대 rect.bb[data-i][data-s] · 눈금선 line.bg(0 포함 칸마다)
+  function wrap2(t, n) { t = String(t == null ? '' : t); if (t.length <= n) return [t]; const sp = [...t.matchAll(/ /g)].map(m => m.index); if (!sp.length) { const h = Math.ceil(t.length / 2); return [t.slice(0, h), t.slice(h)]; } const mid = t.length / 2; const i = sp.reduce((a, b) => (Math.abs(b - mid) < Math.abs(a - mid) ? b : a)); return [t.slice(0, i), t.slice(i + 1)]; }
+  function bar(o) {
+    const sets = o.sets ? o.sets.map(s => ({ name: s.name, v: (s.v || []).map(Number) })) : [{ name: '', v: (o.v || []).map(Number) }];
+    const x = o.x || [], n = x.length, ns = sets.length; if (!n || sets.some(s => s.v.length !== n)) return '';
+    const step = +o.step || 1, all = [].concat(...sets.map(s => s.v)), top = +o.max || Math.max(step, Math.ceil(Math.max.apply(null, all) / step) * step), nt = Math.round(top / step);
+    const every = +o.every || (nt <= 12 ? 1 : ([2, 5, 10, 4, 3, 6, 20, 25, 50].find(d => nt % d === 0 && nt / d <= 10) || Math.ceil(nt / 10))), hz = !!o.horiz, hide = o.hide === true ? 'all' : [].concat(o.hide || []), hi = [].concat(o.hi == null ? [] : o.hi), bwr = Math.max(0.2, Math.min(0.8, +o.bw || 0.5));
+    const TP = o.title ? 42 : 0, W0 = 760, H0 = TP + (hz ? 60 + n * (ns > 1 ? 74 : 56) + 90 : 440), L = hz ? 190 : 92, R = 30, T = TP + (ns > 1 ? 64 : 44), B = hz ? 74 : 92;
+    const PW = W0 - L - R, PH = H0 - T - B, len = (v) => (Math.min(v, top) / top) * (hz ? PW : PH);
+    const COL = ['#6F9BEA', '#FF9F5A'], HI = '#FF7A2F';
+    let s = '';
+    // 눈금선 + 수 글자
+    for (let i = 0; i <= nt; i++) { const val = Math.round(step * i * 1000) / 1000; const lab = i % every === 0;
+      if (hz) { const gx = L + PW * i / nt; s += '<line class="bg" x1="' + fx(gx) + '" y1="' + T + '" x2="' + fx(gx) + '" y2="' + (T + PH) + '" stroke="' + (i ? '#DCE3EC' : INK) + '" stroke-width="' + (i ? 2 : 3) + '"/>' + (lab ? txt(fx(gx), T + PH + 28, String(val), 20, '#5B6B80', 700) : ''); }
+      else { const gy = T + PH - PH * i / nt; s += '<line class="bg" x1="' + L + '" y1="' + fx(gy) + '" x2="' + (L + PW) + '" y2="' + fx(gy) + '" stroke="' + (i ? '#DCE3EC' : INK) + '" stroke-width="' + (i ? 2 : 3) + '"/>' + (lab ? txt(L - 12, fx(gy + 7), String(val), 20, '#5B6B80', 700, 'end') : ''); } }
+    // 축
+    s += hz ? '<line x1="' + L + '" y1="' + (T + PH) + '" x2="' + (L + PW) + '" y2="' + (T + PH) + '" stroke="' + INK + '" stroke-width="3"/>' : '<line x1="' + L + '" y1="' + T + '" x2="' + L + '" y2="' + (T + PH) + '" stroke="' + INK + '" stroke-width="3"/>';
+    // 막대 자리
+    const slots = []; const by = o.by === 'set' && ns > 1 ? 'set' : 'item';
+    if (by === 'item') x.forEach((nm, i) => sets.forEach((st, j) => slots.push({ i, j, grp: i, sub: j, gn: ns })));
+    else sets.forEach((st, j) => x.forEach((nm, i) => slots.push({ i, j, grp: j, sub: i, gn: n })));
+    const G = by === 'item' ? n : ns, gw = (hz ? PH : PW) / G;
+    const thick = Math.min(by === 'item' && ns > 1 ? 44 : 64, gw * bwr / (by === 'item' ? ns : n) * (by === 'item' && ns === 1 ? 1 : 1.6));
+    const cells = [];
+    slots.forEach(sl => { const val = sets[sl.j].v[sl.i], c0 = (hz ? T : L) + gw * sl.grp + gw / 2, off = (sl.sub - (sl.gn - 1) / 2) * thick * 1.08, mid = c0 + off, h = len(val), on = hi.indexOf(sl.i) >= 0 && ns === 1, hid = hide === 'all' || hide.indexOf(sl.i) >= 0;
+      cells.push(Math.round(val / step * 1000) / 1000);
+      const col = on ? HI : COL[sl.j % 2];
+      if (hid) { s += hz ? '<rect class="bq" data-i="' + sl.i + '" x="' + (L + 4) + '" y="' + fx(mid - thick / 2) + '" width="40" height="' + fx(thick) + '" rx="5" fill="none" stroke="' + HI + '" stroke-width="2.5" stroke-dasharray="6 5"/>' + txt(L + 24, fx(mid + 8), '?', 22, HI, 900) : '<rect class="bq" data-i="' + sl.i + '" x="' + fx(mid - thick / 2) + '" y="' + (T + PH - 40) + '" width="' + fx(thick) + '" height="40" rx="5" fill="none" stroke="' + HI + '" stroke-width="2.5" stroke-dasharray="6 5"/>' + txt(fx(mid), T + PH - 12, '?', 22, HI, 900); }
+      else if (h > 0) { s += hz ? '<rect class="bb" data-i="' + sl.i + '" data-s="' + sl.j + '" x="' + L + '" y="' + fx(mid - thick / 2) + '" width="' + fx(h) + '" height="' + fx(thick) + '" fill="' + col + '"/>' : '<rect class="bb" data-i="' + sl.i + '" data-s="' + sl.j + '" x="' + fx(mid - thick / 2) + '" y="' + fx(T + PH - h) + '" width="' + fx(thick) + '" height="' + fx(h) + '" fill="' + col + '"/>';
+        if (o.vals) s += hz ? txt(fx(L + h + 8), fx(mid + 8), String(val), 21, on ? '#C2551A' : '#2B4C8C', 900, 'start') : txt(fx(mid), fx(T + PH - h - 8), String(val), 21, on ? '#C2551A' : '#2B4C8C', 900); }
+      // 항목 이름(자료별로 묶을 땐 막대마다 작게)
+      if (by === 'set') s += hz ? txt(L - 10, fx(mid + 6), x[sl.i], 15, '#334', 700, 'end') : txt(fx(mid), T + PH + 22, String(x[sl.i]), 15, '#334', 700); });
+    // 묶음 이름
+    for (let g = 0; g < G; g++) { const c0 = (hz ? T : L) + gw * g + gw / 2, name = by === 'item' ? x[g] : sets[g].name, on = by === 'item' && ns === 1 && hi.indexOf(g) >= 0;
+      const ln = wrap2(name, hz ? 7 : Math.max(4, Math.floor(gw / 22)));
+      if (hz) ln.forEach((t, k) => { s += txt(by === 'set' ? 74 : L - 12, fx(c0 + 7 + (k - (ln.length - 1) / 2) * 24), t, by === 'set' ? 19 : 20, on ? '#C2551A' : '#334', 800, 'end'); });
+      else ln.forEach((t, k) => { s += txt(fx(c0), T + PH + (by === 'set' ? 46 : 28) + k * 23, t, 20, on ? '#C2551A' : '#334', 800); }); }
+    // 축 이름·단위
+    const un = o.unit ? '(' + o.unit + ')' : '';
+    if (hz) { s += txt(L + PW, H0 - 10, (o.xl || '') + un, 19, '#6B7C93', 800, 'end') + txt(8, T - 14, o.yl || '', 19, '#6B7C93', 800, 'start'); }
+    else { s += txt(8, T - 16, (o.yl || '') + un, 19, '#6B7C93', 800, 'start') + txt(L + PW, H0 - 8, o.xl || '', 19, '#6B7C93', 800, 'end'); }
+    if (ns > 1) sets.forEach((st, j) => { const lx = W0 - R - 300 + j * 150; s += '<rect x="' + lx + '" y="' + (TP + 12) + '" width="22" height="18" fill="' + COL[j] + '"/>' + txt(lx + 28, TP + 28, st.name, 18, '#334', 800, 'start'); });
+    const head = o.title ? txt(W0 / 2, 30, o.title, 24, INK, 900) : '';
+    return svgWrap(head + s, 'fig-bar', '0 0 ' + W0 + ' ' + H0).replace('<svg class="fig-svg fig-bar"', '<svg class="fig-svg fig-bar" data-v="' + sets.map(st => st.v.join(',')).join('|') + '" data-step="' + step + '" data-max="' + top + '" data-cells="' + cells.join(',') + '" data-horiz="' + (hz ? 1 : 0) + '" data-by="' + by + '" data-hide="' + (hide === 'all' ? 'all' : hide.join(',')) + '"' + (o.title ? ' data-title="' + esc(o.title) + '"' : ''));
+  }
+  Object.assign(PARTS, { bar });
   }
   const HTML_PARTS = { vert, tvert, vmul, vdiv, ptable, ograph, pgraph, pvt, jump, notes };
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
