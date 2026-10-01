@@ -1,0 +1,877 @@
+<!--
+K-edu 사회 6-2 · 3단원 지구촌 사람들 · 주제② 지구촌의 문제와 지속가능한 미래 · 5차시(u3 l05 · 주제② 첫 차시)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사12-02] · 교과서 p.140~142 · 지도서(대단원3 **7차시** 「지구촌을 위협하는 여러 가지 문제를 알아볼까요」, 지도서 p.312~314) 근거.
+학습 목표: 지구촌을 위협하는 여러 가지 문제를 설명할 수 있다.
+META = "3단원 지구촌 사람들 · 주제② 지구촌의 문제와 지속가능한 미래"
+⚠️ 엔진은 u3 l04(→ u3 l03 → … 6-1 사회 엔진)에서 100% 승계 · 엔진 무수정 · 3단원 색 #7C3AED.
+⚠️ 회수 키 `g6_s2_social_u3_l05_v1` · 맵 키 `g6_social_u3_l05` · 파일명 `실을이어요` — 조작 이름(선례 승계).
+
+직접조작: 「실을 이어요」 판 (교과서 142쪽 · 지도서 7차시 「지구촌을 위협하는 문제 — 자원과 에너지 고갈 · 생태계 파괴 · 기후변화 · 난민」)
+  ⭐ 씨앗은 지도서 314쪽 주요 내용 정리 — 지구촌을 위협하는 문제 ① 자원과 에너지 고갈 ② 생태계 파괴 ③ 기후변화 ④ 난민.
+     왼쪽 원인 카드 넷(교과서 142쪽 문장) · 오른쪽 문제 카드 넷(자리는 고정으로 섞음) · 가운데 실.
+  ⭐ 원인 카드(ytPick) — 고른 원인은 state.ytSel 한 칸(0~3 · 4 = 고르지 않음 · 같은 카드를 다시 누르면 내려놓음).
+  ⭐ ★ 원인과 문제의 짝은 `YT_MATCH` 한 줄 표 · 이을 수 있는지는 `ytFit` 한 줄.
+  ⭐ ★★ 실 기록은 `state.ytLog |=` 단 하나(`ytNote` · 문제 카드 처리기에서만 · 줄지 않음) — 네 실 최소 걸음(BFS 8).
+  ⭐ 판 읽기는 네 실 뒤에만(정답 자리 2) → 꼭! 기억해요 빈칸 3택(교과서 142쪽 「기후변화」 · 정답 자리 0)
+     → 마무리 3택 = 지도서 7차시 주요 내용 정리(정답 자리 2).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 11종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 네 실을 다 이은 뒤 판 움직이기(원인·문제 카드) 무시 — 판 불변
+     ④ 네 실 전 판 읽기 무시 · 읽은 뒤 다시 무시 · 알맞지 않은 읽기 무시(자리별 안내)
+     ⑤ 판을 읽기 전 빈칸 무시 · 고른 뒤 다시 무시 · 알맞지 않은 빈칸 무시
+     ⑥ 빈칸 전 마무리 무시(순서)
+     ⑦ 알맞지 않은 마무리 무시
+     ⑧ 안내 표시 중 재클릭 무시(`ytBusy`)
+     ⑨ 이미 이은 원인 카드 다시 고르기 무시 — 판 불변
+     ⑩ 원인 카드를 고르지 않고 문제 카드 누르기 무시(`YT_PICK`) — 판 불변
+     ⑪ 짝이 아닌 문제 카드에 잇기 무시(`YT_NO`) — 판 불변 · 고른 원인도 그대로.
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.yt-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 실은 도식이다** — 한 원인에 한 문제만 이었지만, 실제 지구촌 문제는 여러 원인이 얽혀 있다(캡션 상시).
+  ㉡ **판은 문제의 크기를 재지 않는다** — 수치는 교과서 기사 자료만 슬라이드에 적는다.
+  ㉢ **판에 사람 형상 0** — 카드와 실만.
+  ㉣ **지구촌 전등 끄기 캠페인 경험 이야기하기 · 신문 기사에서 문제 찾아 쓰기 · 돌아가며 말하기 · 영상 보기는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 지구촌 문제 조사하기(8~9차시)·지속가능한 미래(10~11차시)는 차시 예고 자리까지만.
+  **새 사실 0** — 교과서 140~142쪽 · 지도서 7차시 본문까지만. 수치는 교과서 자료(약 13 % · 3분의 2 · 2002년 이후 ·
+  3월 마지막 주 토요일 한 시간)만 · 신문 이름 0 · 특정 나라 편견 문면 0.
+  사람 형상 0 · 금액 0 · 쪽수 0 · 누리집 주소 0.
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u3_l05_v1">
+<title>지구촌을 위협하는 여러 가지 문제를 알아볼까요 · 지구촌 사람들 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#7C3AED; --green-d:#5B21B6; --cyan:#8B5CF6;
+  --bg:#F5F3FF; --bub:#EDE9FE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#EDE9FE;color:#5B21B6}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 원인 카드와 문제 카드를 실로 이어 지구촌 문제를 적는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#EDE9FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#5B21B6;max-width:660px}
+.yt-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#F5F3FF;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.yt-board{display:flex;flex-direction:column;gap:6px;padding:8px}
+.yt-head{background:#EDE9FE;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#5B21B6;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.yt-web{display:grid;grid-template-columns:1fr 46px 1fr;gap:4px;align-items:stretch}
+.yt-col{display:grid;grid-template-rows:repeat(4,1fr);gap:4px}
+.yt-mid{border-radius:8px;background:#F8FAFC;overflow:hidden}
+.yt-mid svg{display:block;width:100%;height:100%}
+.yt-c,.yt-p{border:2px solid #CBD5E0;background:#F8FAFC;color:#475569;border-radius:9px;padding:5px 6px;cursor:pointer;font-family:inherit;
+  font-weight:800;font-size:clamp(8.8px,1.48vw,10.8px);line-height:1.32;text-align:left;min-height:42px}
+.yt-c[data-on="1"]{border-color:#7C3AED;background:#EDE9FE;color:#4C1D95;box-shadow:0 0 0 2px #DDD6FE}
+.yt-c[data-tied="1"],.yt-p[data-tied="1"]{border-color:#059669;background:#ECFDF5;color:#065F46}
+.yt-p{text-align:center}
+.yt-say{border-radius:8px;padding:5px 8px;font-weight:800;font-size:clamp(9.2px,1.56vw,11.2px);line-height:1.4;
+  background:#F8FAFC;color:#334155;border:2px solid #94A3B8}
+.yt-say[data-sel="1"]{background:#F5F3FF;color:#4C1D95;border-color:#7C3AED}
+.yt-note{display:flex;flex-direction:column;gap:4px}
+.yt-note .nh{font-weight:900;color:#5B21B6;font-size:clamp(9.4px,1.58vw,11.4px)}
+.yt-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-radius:7px;padding:4px 8px;font-weight:800;
+  font-size:clamp(9.2px,1.56vw,11.2px);line-height:1.38;border:2px dashed #CBD5E0;background:#F8FAFC;color:#94A3B8}
+.yt-line.set{border-style:solid;border-color:#059669;background:#ECFDF5;color:#065F46}
+.yt-read,.yt-mean,.yt-fin{display:flex;flex-direction:column;gap:5px}
+.yt-read button,.yt-mean button,.yt-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.yt-read button:hover,.yt-mean button:hover,.yt-fin button:hover{background:var(--bub)}
+.yt-read button.no,.yt-mean button.no,.yt-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.yt-hint{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:420px){ .yt-web{grid-template-columns:1fr 30px 1fr} .yt-c,.yt-p,.yt-line{font-size:8.4px;padding:3px} }
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠·㉡: 모든 그림은 내용을 나타낸 도식이며 실제 사진이 아니다.
+   ⚠️ 사람 형상 대신 도형으로만 그린다. 수치는 교과서 자료만 적는다. */
+const SVG = {
+  // 1 들어가기 — 지구촌 전등 끄기 캠페인(불 끄기 전 · 불 끈 후 · 도식)
+  open:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    ${[['불 끄기 전','#FEF3C7','#F59E0B'],['불 끈 후','#1E1B4B','#334155']].map((t,i)=>`<rect x="${16+i*150}" y="18" width="138" height="112" rx="10" fill="${i?'#0F172A':'#E0F2FE'}" stroke="#7C3AED" stroke-width="1.6"/>
+      ${[[30,60,26,56],[62,44,30,72],[98,70,24,46]].map(b=>`<rect x="${16+i*150+b[0]}" y="${b[1]}" width="${b[2]}" height="${b[3]}" fill="${t[2]}"/>
+        ${[0,1,2].map(r=>`<rect x="${16+i*150+b[0]+5}" y="${b[1]+6+r*13}" width="${b[2]-10}" height="6" fill="${t[1]}"/>`).join('')}`).join('')}
+      <text x="${85+i*150}" y="146" font-size="8.6" fill="#4C1D95" text-anchor="middle" font-weight="900">${t[0]}</text>`).join('')}
+    <text x="160" y="163" font-size="7" fill="#334155" text-anchor="middle" font-weight="800">매년 3월 마지막 주 토요일, 한 시간 동안 불을 꺼요(도식)</text></svg>`,
+  // 2 살펴보기 — 지구촌(지구가 하나의 마을처럼 · 도식)
+  vill:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <circle cx="160" cy="80" r="56" fill="#DBEAFE" stroke="#7C3AED" stroke-width="2"/>
+    <path d="M122 60 Q140 48 160 58 Q178 70 198 60 M118 96 Q146 108 170 96 Q188 88 204 98" fill="none" stroke="#059669" stroke-width="5" stroke-linecap="round"/>
+    ${[[108,40],[206,44],[100,112],[214,112],[160,26]].map(p=>`<text x="${p[0]}" y="${p[1]}" font-size="14" text-anchor="middle">\uD83C\uDFE0</text>`).join('')}
+    <path d="M108 44 Q160 6 206 48 M100 116 Q160 150 214 116" fill="none" stroke="#B45309" stroke-width="1.6" stroke-dasharray="4 3"/>
+    <text x="160" y="160" font-size="7.4" fill="#334155" text-anchor="middle" font-weight="800">과학 기술과 교통\u00b7통신의 발달로 가까워진 지구촌(도식)</text></svg>`,
+  // 3 살펴보기 — 파괴되고 있는 열대 우림(교과서 141쪽 신문 기사 · 도식)
+  forest:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0FDF4"/>
+    <circle cx="92" cy="80" r="48" fill="#BBF7D0" stroke="#047857" stroke-width="1.6"/>
+    <path d="M92 80 L92 32 A48 48 0 1 1 50.4 104 Z" fill="#FDE68A" stroke="#B45309" stroke-width="1.4"/>
+    <text x="92" y="146" font-size="7.6" fill="#065F46" text-anchor="middle" font-weight="900">열대 우림 중 3분의 2가 파괴됐어요</text>
+    <rect x="164" y="26" width="140" height="104" rx="10" fill="#fff" stroke="#047857" stroke-width="1.4"/>
+    ${['지구 표면의 약 13 %를 덮던 열대 우림','2002년 이후 사라진 면적은','프랑스의 영토보다 넓어요','원인: 농사, 에너지 사용, 목축, 각종 산업'].map((t,k)=>`<text x="172" y="${48+k*22}" font-size="6.8" fill="#334155" font-weight="800">${t}</text>`).join('')}
+    <text x="160" y="163" font-size="7" fill="#334155" text-anchor="middle" font-weight="800">신문 기사 속 열대 우림(도식)</text></svg>`,
+  // 4 살펴보기 — 지구촌을 위협하는 문제 넷(교과서 142쪽 · 도식)
+  four:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    ${[['\u26CF\uFE0F','자원과 에너지 문제'],['\uD83C\uDF33','생태계 파괴 문제'],['\uD83C\uDF21\uFE0F','기후변화 문제'],['\uD83C\uDFE0','난민 문제']].map((t,i)=>`<rect x="${10+i*76}" y="30" width="70" height="92" rx="10" fill="#fff" stroke="#7C3AED" stroke-width="1.4"/>
+      <text x="${45+i*76}" y="72" font-size="22" text-anchor="middle">${t[0]}</text>
+      <text x="${45+i*76}" y="104" font-size="6.6" fill="#4C1D95" text-anchor="middle" font-weight="900">${t[1]}</text>`).join('')}
+    <text x="160" y="150" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">지구촌을 위협하는 여러 가지 문제(도식)</text></svg>`,
+  // 5 살펴보기 — 네 장면(교과서 142쪽 사진 · 도식)
+  photo:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    ${[['\u2460','\u26CF\uFE0F','깎여 나간 산지'],['\u2461','\uD83C\uDF33','베어진 열대 우림'],['\u2462','\uD83E\uDDCA','녹아 무너지는 빙하'],['\u2463','\uD83D\uDEA4','바다 위의 작은 보트']].map((t,i)=>`<rect x="${10+i*76}" y="24" width="70" height="100" rx="10" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+      <text x="${20+i*76}" y="40" font-size="9" fill="#5B21B6" font-weight="900">${t[0]}</text>
+      <text x="${45+i*76}" y="80" font-size="22" text-anchor="middle">${t[1]}</text>
+      <text x="${45+i*76}" y="110" font-size="6.4" fill="#334155" text-anchor="middle" font-weight="800">${t[2]}</text>`).join('')}
+    <text x="160" y="150" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">네 장면은 각각 어떤 문제일까요?(도식)</text></svg>`,
+  // 7 살펴보기 — 우리가 들어 본 지구촌 문제(지도서 7차시 · 도식)
+  more:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#EFF6FF"/>
+    <rect x="16" y="24" width="136" height="100" rx="10" fill="#fff" stroke="#0369A1" stroke-width="1.4"/>
+    <text x="84" y="68" font-size="24" text-anchor="middle">\uD83D\uDC3B\uD83E\uDDCA</text>
+    <text x="84" y="104" font-size="7" fill="#0C4A6E" text-anchor="middle" font-weight="900">살 곳이 사라지는 북극곰</text>
+    <rect x="168" y="24" width="136" height="100" rx="10" fill="#fff" stroke="#0369A1" stroke-width="1.4"/>
+    <text x="236" y="68" font-size="24" text-anchor="middle">\uD83C\uDF0A\uD83D\uDC22</text>
+    <text x="236" y="104" font-size="7" fill="#0C4A6E" text-anchor="middle" font-weight="900">비닐\u00b7플라스틱 쓰레기와 바다 생물</text>
+    <text x="160" y="150" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">이 밖에 알고 있는 지구촌 문제(도식)</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#1E1B4B"/>
+    ${['자원과 에너지','생태계 파괴','기후변화','난민'].map((t,i)=>`<rect x="${12+i*76}" y="52" width="68" height="40" rx="8" fill="#EDE9FE" stroke="#A78BFA" stroke-width="2"/>
+      <text x="${46+i*76}" y="76" font-size="7.2" fill="#4C1D95" text-anchor="middle" font-weight="800">${t}</text>`).join('')}
+    <text x="160" y="128" font-size="8.6" fill="#DDD6FE" text-anchor="middle" font-weight="800">가까워진 지구촌, 함께 겪는 문제</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#7C3AED" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#7C3AED" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#5B21B6" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 실을 이어요 판 =====
+   ★ 원인 카드(ytPick) — 고른 원인은 state.ytSel 한 칸(0~3 · 4 = 고르지 않음). 같은 카드를 다시 누르면 내려놓는다.
+   ★ 원인과 문제의 짝은 YT_MATCH 한 줄 표 · 이을 수 있는지는 ytFit 한 줄.
+   ★★ 실 기록은 |= 만(ytLog · ytNote 단 하나 · 문제 카드 처리기에서만).
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. 실은 도식이다. */
+const YT_N = 4;
+const YT_ALL = 15;
+/* 원인 카드 넷 — 교과서 142쪽 */
+const YT_CAUSE = ['사람들이 많은 자원을 사용해요','자연환경을 무분별하게 개발해요','석유나 석탄 등의 화석 연료를 지나치게 사용해요','전쟁, 재난 등의 문제가 일어나요'];
+/* 문제 카드 넷 — 판의 오른쪽 자리(고정으로 섞음) */
+const YT_PROB = ['기후변화 문제','난민 문제','자원과 에너지 문제','생태계 파괴 문제'];
+/* ★ 원인 → 문제 자리 — 한 줄 표 */
+const YT_MATCH = [2, 3, 0, 1];
+/* 이은 뒤에만 기록장에 보이는 영향 — 교과서 142쪽 */
+const YT_EFF = [
+  '지구의 자원이 줄어들고 있어요',
+  '동식물의 살 곳이 사라지고 있어요',
+  '기후변화가 심해지고 있어요',
+  '살던 곳을 떠나는 난민이 늘고 있어요'
+];
+/* 이은 뒤에만 보이는 장면 예 — 지도서 314쪽 사진 해설 */
+const YT_EX = [
+  '\u2460 광산 개발로 산지 일부가 깎인 페루의 구리 광산',
+  '\u2461 벌채로 손상된 인도네시아 수마트라섬의 열대 우림',
+  '\u2462 녹아 무너지고 있는 아르헨티나 로스글라시아레스 국립공원의 빙하',
+  '\u2463 남지중해에서 보트에 탄 채 구조를 요청하는 난민'
+];
+
+/* ② 판 읽기 */
+const YT_READ = [
+  '지구촌 문제는 한 나라 안에서만 일어나고 다른 나라에는 영향을 주지 않아요',
+  '기후변화 문제는 전쟁 때문에 생기는 문제예요',
+  '지구촌 문제는 자원 사용, 무분별한 개발, 화석 연료 사용, 전쟁과 재난 같은 까닭으로 나타나 동식물과 사람의 삶에 영향을 미쳐요'
+];
+const YT_READ_OK = 2;
+const YT_READ_NO = [
+  '기록장의 <b>기후변화 문제</b> 줄과 <b>난민 문제</b> 줄을 다시 봐요. 지구촌은 서로 가까워져 한 나라의 문제가 다른 나라에도 영향을 미칠 수 있어요. 판을 다시 읽어 봐요.',
+  '기록장에서 <b>기후변화 문제</b>와 이은 원인 카드를 다시 봐요. 무엇을 지나치게 사용했나요? 판을 다시 읽어 봐요.',
+  null
+];
+/* ③ 꼭! 기억해요 빈칸 — 교과서 142쪽 */
+const YT_MEAN = ['기후변화', '인구 구조', '교통 발달'];
+const YT_MEAN_OK = 0;
+const YT_MEAN_NO = [
+  null,
+  '인구 구조는 지난 시간에 공부한 낱말이에요. 판에서 <b>화석 연료</b> 카드와 이은 문제를 떠올려 봐요. 판은 그대로예요.',
+  '교통의 발달은 지구촌이 <b>가까워진 까닭</b>이에요. 판에서 화석 연료 카드와 이은 문제를 떠올려 봐요. 판은 그대로예요.'
+];
+/* ④ 마무리 — 지도서 7차시 주요 내용 정리 */
+const YT_FIN = [
+  '지구촌은 나라끼리 서로 멀어진 모습이고, 지구촌 문제는 자원과 에너지 문제 하나뿐이에요',
+  '지구촌은 과학 기술의 발달로 가까워졌고, 난민 문제는 화석 연료를 지나치게 사용해서 생긴 문제예요',
+  '지구촌은 과학 기술과 교통\u00b7통신의 발달로 지구가 하나의 마을처럼 가까워진 모습이고, 지구촌은 자원과 에너지 고갈, 생태계 파괴, 기후변화, 난민 등의 문제를 겪고 있어요'
+];
+const YT_FIN_OK = 2;
+const YT_FIN_NO = [
+  '지구촌은 지구가 하나의 마을처럼 <b>가까워진</b> 모습이에요. 기록장에 이은 실도 넷이었어요. 오늘의 정리를 다시 골라 봐요.',
+  '기록장의 <b>난민 문제</b> 줄을 다시 봐요. 난민 문제와 이은 원인 카드는 무엇이었나요? 오늘의 정리를 다시 골라 봐요.',
+  null
+];
+/* 안내 */
+const YT_LOCK = '네 실을 <b>모두 이었어요</b>. 카드는 이대로 둬요. 판을 읽어 봐요. 판은 그대로예요.';
+const YT_AGAIN = '이 원인 카드는 <b>이미 이었어요</b>. 아직 잇지 않은 원인 카드를 골라 봐요. 판은 그대로예요.';
+const YT_PICK = '먼저 왼쪽 <b>원인 카드</b>를 골라야 실을 이을 수 있어요. 판은 그대로예요.';
+const YT_ORDER_R = '아직 <b>네 실</b>을 다 잇지 않았어요. 네 실을 모두 이은 뒤에 읽을 수 있어요. 판은 그대로예요.';
+const YT_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const YT_ORDER_K = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const YT_MEAN_AGAIN = '꼭! 기억해요 빈칸은 <b>이미 채웠어요</b>. 판은 그대로예요.';
+const YT_ORDER_F = '아직 <b>꼭! 기억해요 빈칸</b>을 채우지 않았어요. 먼저 골라 봐요. 판은 그대로예요.';
+const YT_ALL_MSG = '네 실을 <b>모두 이었어요</b>. 판을 읽어 봐요.';
+function YT_NO(c,p){ return `「${YT_CAUSE[c]}」 카드와 <b>${YT_PROB[p]}</b> 카드는 짝이 아니에요. 원인 카드의 낱말을 다시 읽고 알맞은 문제 카드를 찾아봐요. 판은 그대로예요.`; }
+
+function ytHas(st,c){ return (st.ytLog & (1<<c))!==0; }
+/* ★ 이을 수 있는지 — 한 줄 · 고른 원인의 짝 자리일 때만 */
+function ytFit(c,p){ return YT_MATCH[c]===p; }
+function ytTiedP(st,p){ return [0,1,2,3].some(c=>ytHas(st,c) && YT_MATCH[c]===p); }
+function ytLines(st){ return [0,1,2,3].filter(c=>ytHas(st,c)).length; }
+function ytAll(st){ return st.ytLog===YT_ALL; }
+
+function ytCards(st){
+  const L = YT_CAUSE.map((t,c)=>{ const on=st.ytSel===c?1:0, td=ytHas(st,c)?1:0;
+    return `<button class="yt-c" data-c="${c}" data-on="${on}" data-tied="${td}" onclick="ytPick(${c})">${t}</button>`; }).join('');
+  const R = YT_PROB.map((t,p)=>{ const td=ytTiedP(st,p)?1:0;
+    return `<button class="yt-p" data-p="${p}" data-tied="${td}" onclick="ytTie(${p})">${t}</button>`; }).join('');
+  return {L,R};
+}
+function ytThread(st){
+  const y=i=>15+i*30;
+  const lines=[0,1,2,3].filter(c=>ytHas(st,c)).map(c=>`<path class="yt-str" data-c="${c}" d="M0 ${y(c)} C24 ${y(c)} 22 ${y(YT_MATCH[c])} 46 ${y(YT_MATCH[c])}" fill="none" stroke="#059669" stroke-width="2.4"/>`).join('');
+  const hold=st.ytSel<4?`<circle class="yt-knot" cx="4" cy="${y(st.ytSel)}" r="4" fill="#7C3AED"/>`:'';
+  return `<svg viewBox="0 0 46 120" preserveAspectRatio="none" data-sel="${st.ytSel}" data-str="${ytLines(st)}"><rect width="46" height="120" fill="#F8FAFC"/>${lines}${hold}</svg>`;
+}
+function ytNotes(st){
+  return YT_CAUSE.map((t,c)=>{ const on=ytHas(st,c);
+    return `<div class="yt-line${on?' set':''}" data-line="${c}">${on?'\u270F\uFE0F '+t+' \u2192 '+YT_PROB[YT_MATCH[c]]+' \u2014 '+YT_EFF[c]+' \u00b7 '+YT_EX[c]:'\u2610 '+t+' \u2014 아직 잇지 않았어요'}</div>`; }).join('');
+}
+
+function ytBoard(st){
+  const fin = st.ytFin!=null, all = ytAll(st), sel = st.ytSel<4;
+  const head = fin ? '실을 이어 지구촌 문제를 살펴보고 정리했어요'
+    : st.ytMean!=null ? '꼭! 기억해요 빈칸까지 채웠어요 \u2014 이제 정리해요'
+    : st.ytRead!=null ? '꼭! 기억해요 빈칸을 채워 봐요'
+    : all ? '네 실을 모두 이었어요 \u2014 판을 읽어 봐요'
+    : st.ytLog!==0 ? '다른 원인 카드도 골라 실을 이어 봐요'
+    : '원인 카드를 고르고 알맞은 문제 카드에 실을 이어요';
+  const k = ytCards(st);
+  return `<div class="yt-board" data-sel="${st.ytSel}" data-log="${st.ytLog}" data-lines="${ytLines(st)}" data-all="${all?1:0}" data-read="${st.ytRead==null?-1:st.ytRead}" data-mean="${st.ytMean==null?-1:st.ytMean}" data-fin="${fin?1:0}">
+    <div class="yt-head">${head}</div>
+    <div class="yt-web"><div class="yt-col">${k.L}</div><div class="yt-mid">${ytThread(st)}</div><div class="yt-col">${k.R}</div></div>
+    <div class="yt-say" data-sel="${sel?1:0}">${sel?`고른 원인: <b>${YT_CAUSE[st.ytSel]}</b> \u2014 알맞은 문제 카드를 눌러 실을 이어요`:'왼쪽 원인 카드를 하나 골라요'}</div>
+    <div class="yt-note"><div class="nh">\uD83D\uDCD2 지구촌 문제 기록장</div>${ytNotes(st)}</div>
+  </div>`;
+}
+
+function ytPanel(st){
+  const fin = st.ytFin!=null, all = ytAll(st);
+  const q = fin ? '실을 이어 지구촌을 위협하는 여러 가지 문제를 살펴봤어요.'
+    : st.ytMean!=null ? '오늘 공부한 내용을 정리해요. 지구촌을 위협하는 문제에는 어떤 것이 있나요?'
+    : st.ytRead!=null ? '꼭! 기억해요 \u2014 「지구촌에는 자원과 에너지 고갈, 생태계 파괴, (  ), 난민 등의 문제가 나타나고 있습니다」의 빈칸에 알맞은 말은 무엇일까요?'
+    : all ? '네 실을 모두 이었어요. 판에서 무엇을 알 수 있나요?'
+    : st.ytLog!==0 ? '남은 원인 카드도 알맞은 문제 카드에 이어요.'
+    : '원인 카드와 문제 카드를 실로 이어 봐요. 지구촌을 위협하는 문제는 왜 나타날까요?';
+  let right = `<div class="yt-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83E\uDDF5 실을 이으며 정리했어요</div>
+      <b>지구촌</b>은 과학 기술과 교통\u00b7통신의 발달로 지구가 하나의 마을처럼 가까워진 모습이에요.
+      지구촌은 <b>자원과 에너지 고갈</b>, <b>생태계 파괴</b>, <b>기후변화</b>, <b>난민</b> 등의 문제를 겪고 있어요.<br>
+      <span style="color:#64748B">판의 실은 도식이에요. 실제 지구촌 문제는 여러 원인이 얽혀 있어요.
+      <b>지구촌 전등 끄기 캠페인 경험 이야기하기</b>, <b>신문 기사에서 지구촌 문제 찾아 쓰기</b>, <b>돌아가며 말하기</b>, <b>생태계 파괴 영상 보기</b>는 교실에서 직접 해요.</span></div>`;
+  } else if(st.ytMean!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="yt-fin">${YT_FIN.map((t,k)=>`<button class="${st.ytWrongF===k?'no':''}" onclick="ytFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.ytRead!=null){
+    right += `<div class="dw-step">\uD83D\uDCCC 꼭! 기억해요 빈칸</div>`;
+    right += `<div class="yt-mean">${YT_MEAN.map((t,k)=>`<button class="${st.ytWrongK===k?'no':''}" onclick="ytMeanPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="yt-hint">판에서 화석 연료 카드와 이은 문제 카드의 이름을 떠올려 봐요.</div>`;
+  } else if(all){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="yt-read">${YT_READ.map((t,k)=>`<button class="${st.ytWrongR===k?'no':''}" onclick="ytReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83E\uDDF5 실을 이어요</div>`;
+    right += `<div class="yt-hint">왼쪽 <b>원인 카드</b>를 누르면 실 끝을 잡아요. 같은 카드를 다시 누르면 내려놓아요. 실을 잡은 채로 오른쪽 <b>문제 카드</b>를 누르면, 짝이 맞을 때 실이 이어지고 기록장에 적혀요. 네 실을 모두 이으면 판을 읽을 수 있어요. 감점은 없어요.</div>`;
+  }
+  if(st.ytMsg) right += `<div class="dw-msg${st.ytWarn?' warn':''}">${st.ytMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83E\uDDF5 실을 이어요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${ytBoard(st)}<div class="cvcap">판의 실은 <b>도식</b>이에요. 판에서는 원인 하나에 문제 하나를 이었지만, 실제 지구촌 문제는 여러 원인이 얽혀 있어요. 판은 문제의 크기를 재지 않아요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 지구촌 사람들 · 주제② 지구촌의 문제와 지속가능한 미래";
+
+// 확인 4 + 적용 4 — 정답 다양화 [2,0,3,1,0,2,1,3](각 자리 2회)
+// ⚠️ 새 사실 0(교과서 140~142쪽 · 지도서 7차시까지만) · 수치는 교과서 자료만 · 지속가능한 미래 노력 0(뒤 차시).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"<b>지구촌</b>의 뜻으로 알맞은 것은 무엇인가요?",
+   opts:["지구의 여러 나라가 서로 멀리 떨어져 사는 모습","한 나라 안에 있는 작은 마을","과학 기술과 교통\u00b7통신의 발달로 지구가 하나의 마을처럼 가까워진 모습","지구에서 인구가 가장 많은 도시"],
+   correct:2, pts:POINTS_BASIC, scene:"vill",
+   reason:"지구촌은 과학 기술과 교통\u00b7통신의 발달로 지구가 하나의 마을처럼 가까워진 모습을 말해요.",
+   h1:"「지구」와 「마을」을 함께 떠올려 봐요.", h2:"무엇이 발달해 가까워졌을까요?"},
+  {stem:"신문 기사에서 열대 우림이 파괴된 <b>가장 큰 원인</b>으로 꼽힌 것은 무엇인가요?",
+   opts:["농사, 에너지 사용, 목축, 각종 산업 등 인간의 활동","열대 우림에 사는 동물들의 활동","지구의 인구가 줄어든 것","열대 우림이 탄소를 많이 흡수한 것"],
+   correct:0, pts:POINTS_BASIC, scene:"forest",
+   reason:"기사에서는 농사, 에너지 사용, 목축, 각종 산업 등 인간의 활동이 열대 우림 파괴의 가장 큰 원인으로 꼽혔어요.",
+   h1:"기사 속 「원인」 줄을 떠올려 봐요.", h2:"사람이 하는 일이에요."},
+  {stem:"석유나 석탄 등의 <b>화석 연료</b>를 지나치게 사용하여 심해지고 있는 지구촌 문제는 무엇인가요?",
+   opts:["난민 문제","생태계 파괴 문제","인구 밀도 문제","기후변화 문제"],
+   correct:3, pts:POINTS_BASIC, scene:"four",
+   reason:"석유나 석탄 등의 화석 연료를 지나치게 사용하여 지구 온난화에 따른 기후변화 문제가 심해지고 있어요.",
+   h1:"실을 이어요 판의 화석 연료 카드를 떠올려 봐요.", h2:"지구 온난화와 관련 있어요."},
+  {stem:"전쟁, 재난 등의 문제로 <b>살던 곳을 떠나는 사람</b>이 늘어나는 지구촌 문제는 무엇인가요?",
+   opts:["자원과 에너지 문제","난민 문제","기후변화 문제","생태계 파괴 문제"],
+   correct:1, pts:POINTS_BASIC, scene:"four",
+   reason:"정치, 종교, 인종 등의 차이에 따른 갈등이나 전쟁, 재난 등으로 나라와 고향을 잃은 난민이 늘고 있어요.",
+   h1:"실을 이어요 판의 전쟁, 재난 카드를 떠올려 봐요.", h2:"나라와 고향을 잃은 사람들이에요."},
+  // 4단계 적용 (+15)
+  {stem:"열대 우림이 지금처럼 <b>계속 훼손된다면</b> 지구촌에 어떤 영향을 미칠까요?",
+   opts:["열대 우림에 사는 동식물이 살 곳을 잃고, 흡수하는 탄소가 줄어 지구 온난화가 빨라질 수 있어요","열대 우림이 줄어들수록 지구 온난화의 속도가 느려져요","동식물이 살 곳이 오히려 늘어나요","지구촌에는 아무 영향도 없어요"],
+   correct:0, pts:POINTS_APPLY, scene:"forest",
+   reason:"열대 우림은 지구 생명체의 절반 이상이 살고 탄소를 많이 흡수해 지구 온난화의 속도를 늦추는 역할을 해요. 계속 훼손되면 동식물이 살 곳을 잃고 지구 온난화가 빨라질 수 있어요.",
+   h1:"기사 속 열대 우림의 역할을 떠올려 봐요.", h2:"탄소를 흡수하는 숲이 사라지면 어떻게 될까요?"},
+  {stem:"광산 개발로 <b>산지 일부가 깎인</b> 모습은 어떤 지구촌 문제와 가장 관련이 깊나요?",
+   opts:["난민 문제","기후변화 문제","자원과 에너지 문제","인구 구조 문제"],
+   correct:2, pts:POINTS_APPLY, scene:"photo",
+   reason:"사람들이 많은 자원을 사용하고 이를 위해 자원을 개발하면서 지구의 자원이 줄어들고 있어요. 광산 개발로 깎인 산지는 자원과 에너지 문제를 보여 줘요.",
+   h1:"네 장면 가운데 ①을 떠올려 봐요.", h2:"땅에서 캐내는 것은 무엇일까요?"},
+  {stem:"지구촌 시대에 나타나는 <b>문제점</b>으로 알맞은 것은 무엇인가요?",
+   opts:["멀리 떨어진 곳의 소식을 쉽고 빠르게 들을 수 있어요","한 나라의 문제가 다른 나라에 영향을 미칠 수 있어요","여러 나라 사람들과 문화를 교류할 수 있어요","각 나라의 다양한 정보를 얻을 수 있어요"],
+   correct:1, pts:POINTS_APPLY, scene:"vill",
+   reason:"지구촌 시대에는 한 나라의 문제가 다른 나라에 영향을 미칠 수 있고, 교류가 많아지면서 갈등이 생길 수도 있어요. 나머지는 지구촌 시대의 좋은 점이에요.",
+   h1:"좋은 점과 문제점을 나누어 봐요.", h2:"가까워졌기 때문에 생기는 걱정이에요."},
+  {stem:"세계 여러 나라 사람들이 <b>지구촌 전등 끄기 캠페인</b>에 참여하는 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["밤에 별을 보기 위해서만이에요","전기 요금을 올리기 위해서예요","한 나라만의 문제를 알리기 위해서예요","에너지를 절약하고 지구 환경의 중요성을 알리기 위해서예요"],
+   correct:3, pts:POINTS_APPLY, scene:"open",
+   reason:"사람들은 에너지를 절약하고, 지구 환경의 중요성을 알리며 지구 환경 보호를 실천하기 위해 지구촌 전등 끄기 캠페인에 참여해요.",
+   h1:"생각을 열어요의 사진을 떠올려 봐요.", h2:"불을 끄면 무엇을 아낄 수 있을까요?"}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 동기 유발(지구촌 전등 끄기 캠페인)
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">왜 한 시간 동안 불을 끌까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('open','불 끄기 전과 불 끈 후(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCA1 생각을 열어요</div>
+      세계 여러 나라 사람들이 매년 3월 마지막 주 토요일에 한 시간 동안 불을 끄는 「지구촌 전등 끄기 캠페인」에 참여해요. 사람들이 이 캠페인에 참여하는 까닭은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 <b>에너지를 절약</b>하기 위해서예요.<br>
+      \u2014 <b>지구 환경의 중요성</b>을 알리고 지구 환경 보호를 실천하기 위해서예요.</div>`
+      :`<div class="note">불을 끄면 무엇을 아낄 수 있을지 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">오늘은 <b>지구촌을 위협하는 여러 가지 문제</b>를 알아봐요.</div></div>`});
+// 2 살펴보기 — reveal: 지구촌의 의미(교과서 141쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">지구촌이란 무엇일까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('vill','가까워진 지구촌(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDF0D 지구촌</div>
+      과학 기술과 교통\u00b7통신의 발달로 우리는 지구가 하나의 마을처럼 가까워진 <b>지구촌</b> 시대에 살고 있어요. 지구촌 시대를 살면서 얻는 좋은 점과 나타나는 문제점은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 좋은 점: 멀리 떨어진 곳의 소식을 <b>쉽고 빠르게</b> 들을 수 있고, 각 나라의 다양한 정보를 얻으며, 여러 나라 사람들과 <b>문화를 교류</b>할 수 있어요.<br>
+      \u2014 문제점: <b>한 나라의 문제가 다른 나라에 영향</b>을 미칠 수 있고, 사람들 사이에 교류가 많아지면서 갈등이 생길 수 있어요.</div>`
+      :`<div class="note">다른 나라 소식을 알게 된 경험을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: 신문 기사 속 열대 우림(교과서 141쪽 미디어 활동)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">신문 기사에 나타난 지구촌 문제는 무엇일까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('forest','신문 기사 속 열대 우림(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCF0 파괴되고 있는 열대 우림</div>
+      지구 표면의 약 13 %를 덮고 있던 열대 우림 중 3분의 2가 파괴됐다는 연구 결과가 나왔어요. 특히 2002년 이후 사라진 열대 우림의 면적은 프랑스의 영토보다 더 넓어요. 기사에 나타난 지구촌 문제와 그 원인은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 지구촌 문제: <b>인간의 활동으로 열대 우림이 파괴</b>되고 있어요.<br>
+      \u2014 원인: 농사, 에너지 사용, 목축, 각종 산업 등 <b>인간의 활동</b>이 가장 큰 원인으로 꼽혔어요.</div>`
+      :`<div class="note">기사 속 「원인」을 찾아봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 4 살펴보기 — reveal: 열대 우림이 계속 훼손된다면(교과서 141쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">열대 우림이 계속 훼손된다면 어떻게 될까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('four','지구촌을 위협하는 문제(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDF33 열대 우림의 역할</div>
+      열대 우림은 지구 생명체의 절반 이상이 살고 있을 뿐만 아니라 탄소를 많이 흡수하여 지구 온난화의 속도를 늦추는 역할을 해요. 열대 우림이 지금처럼 계속 훼손된다면 지구촌에 어떤 영향을 미칠까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 열대 우림에서 살아가는 <b>동식물이 살 곳을 잃게</b> 돼요.<br>
+      \u2014 탄소 흡수를 돕는 열대 우림이 사라져 <b>기후변화 문제가 커질</b> 수 있어요.<br>
+      \u2014 그래서 세계 여러 나라가 <b>함께</b> 열대 우림 보존을 위해 힘써야 해요.</div>`
+      :`<div class="note">열대 우림의 두 가지 역할을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">지구촌에는 <b>자원과 에너지</b>, <b>생태계 파괴</b>, <b>기후변화</b>, <b>난민</b> 등의 문제가 나타나고 있어요.</div></div>`});
+// 5 살펴보기 — reveal: 네 장면(교과서 142쪽 사진)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">네 장면은 각각 어떤 문제를 보여 줄까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('photo','네 장면(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDD0D 장면 살펴보기</div>
+      산업이 발달하면서 지구의 자원과 에너지는 <b>고갈</b>되고 있어요. 고갈은 돈이나 물자 등이 다하여 없어진다는 뜻이에요. 네 장면은 각각 어떤 지구촌 문제를 보여 줄까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 \u2460 깎여 나간 산지: <b>자원과 에너지 문제</b><br>
+      \u2014 \u2461 베어진 열대 우림: <b>생태계 파괴 문제</b><br>
+      \u2014 \u2462 녹아 무너지는 빙하: <b>기후변화 문제</b><br>
+      \u2014 \u2463 바다 위의 작은 보트: <b>난민 문제</b></div>`
+      :`<div class="note">장면마다 무엇이 줄어들거나 사라지는지 살펴봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">다음 판에서 <b>원인</b>과 <b>문제</b>를 실로 이어 봐요.</div></div>`});
+// 6 살펴보기 — 직접조작(실을 이어요)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">원인과 문제를 실로 이어 봐요</h2>
+  ${ytPanel(st)}`});
+// 7 살펴보기 — reveal: 이 밖에 알고 있는 지구촌 문제(지도서 7차시)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">이 밖에 어떤 지구촌 문제를 알고 있나요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('more','들어 본 지구촌 문제(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDDE3\uFE0F 돌아가며 말하기</div>
+      지구촌 문제에 대해 들었거나 알고 있는 내용을 떠올려 봐요. 뉴스, 영상, 책에서 본 지구촌 문제에는 무엇이 있을까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 지구의 온도가 높아져 <b>북극곰의 살 곳이 사라지고</b> 있다는 영상을 본 적이 있어요.<br>
+      \u2014 전쟁으로 살던 곳을 떠난 <b>난민</b>들이 정착할 곳을 찾지 못해 어렵게 생활하고 있다는 소식을 들었어요.<br>
+      \u2014 사람들이 사용하고 버린 <b>비닐이나 플라스틱 쓰레기</b>로 바다 생물들이 고통받고 있다는 내용을 책에서 읽었어요.</div>`
+      :`<div class="note">뉴스나 책에서 본 장면을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 7차시 주요 내용 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div><b>지구촌</b> \u2014 과학 기술과 교통\u00b7통신의 발달로 지구가 하나의 마을처럼 가까워진 모습이에요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div><b>지구촌을 위협하는 문제</b> \u2014 지구촌은 자원과 에너지 고갈, 생태계 파괴, 기후변화, 난민 등의 문제를 겪고 있어요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div><b>지구촌 문제의 영향</b> \u2014 한 나라의 문제가 다른 나라에 영향을 미칠 수 있어, 세계 여러 나라가 함께 힘써야 해요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 원인 카드와 문제 카드를 실로 이어 지구촌을 위협하는 네 가지 문제를 적었어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b>지구촌을 위협하는 여러 가지 문제를 조사</b>해 봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공부한 내용을 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"지구촌의 뜻을 말할 수 있어요",st)}
+    ${selfCheck(1,"지구촌을 위협하는 여러 가지 문제와 그 원인을 설명할 수 있어요",st)}
+    ${selfCheck(2,"지구촌 문제에 관심을 가지고 친구들과 이야기할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">지구촌을 위협하는 여러 가지 문제를 조사</b>해 봐요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u3_l05";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  ytSel:4, ytLog:0,
+  ytRead:null, ytMean:null, ytFin:null,
+  ytWrongR:null, ytWrongK:null, ytWrongF:null,
+  ytMsg:null, ytWarn:false, ytBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function ytRender(){ main.innerHTML = slides[state.idx].render(state); }
+function ytHold(msg){
+  state.ytWarn=true; state.ytBusy=true; state.ytMsg=msg;
+  playThud(); ytRender();
+  setTimeout(()=>{ state.ytBusy=false; state.ytWarn=false; state.ytMsg=null;
+    state.ytWrongR=null; state.ytWrongK=null; state.ytWrongF=null; ytRender(); },1600);
+}
+/* ★ 실 기록 — 더하기만 하는 자리 단 하나 */
+function ytNote(c){ state.ytLog |= (1 << c); }
+
+/* ① 원인 카드 — 실 끝을 잡거나(고름) 같은 카드를 다시 눌러 내려놓음 */
+function ytPick(c){
+  if(state.ytFin!=null) return;                                        // 가드①
+  if(state.ytBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(c) || c<0 || c>=YT_N) return;                   // 가드②
+  if(ytAll(state)){ ytHold(YT_LOCK); return; }                         // 가드③ 판 불변
+  if(ytHas(state,c)){ ytHold(YT_AGAIN); return; }                      // 가드⑨ 이미 이은 원인 — 판 불변
+  state.ytSel = (state.ytSel===c) ? 4 : c;                             // ★ 원인을 고르는 자리 단 하나
+  state.ytWarn=false; state.ytMsg=null; playBlip(); ytRender();
+}
+
+/* ② 문제 카드 — 원인을 골랐고(가드⑩) 짝이 맞을 때만(가드⑪) 실을 잇는다 */
+function ytTie(p){
+  if(state.ytFin!=null) return;                                        // 가드①
+  if(state.ytBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(p) || p<0 || p>=YT_N) return;                   // 가드②
+  if(ytAll(state)){ ytHold(YT_LOCK); return; }                         // 가드③ 판 불변
+  const c = state.ytSel;
+  if(c===4){ ytHold(YT_PICK); return; }                                // 가드⑩ 원인을 고르지 않음 — 판 불변
+  if(!ytFit(c,p)){ ytHold(YT_NO(c,p)); return; }                       // 가드⑪ 짝이 아님 — 판 불변
+  ytNote(c); state.ytSel = 4;
+  state.ytWarn=false;
+  if(ytAll(state)){ state.ytMsg = YT_ALL_MSG; playChime(); }
+  else { state.ytMsg = `이었어요 \u2014 ${YT_CAUSE[c]} \u2192 <b>${YT_PROB[p]}</b>. ${YT_EFF[c]}. 다른 원인 카드도 골라 봐요.`; playChime(); }
+  ytRender();
+}
+
+/* ③ 판 읽기 — 네 실 뒤에만(가드④) */
+function ytReadPick(k){
+  if(state.ytFin!=null) return;                                        // 가드①
+  if(state.ytBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=YT_READ.length) return;         // 가드②
+  if(!ytAll(state)){ ytHold(YT_ORDER_R); return; }                     // 가드④ 순서 — 판 불변
+  if(state.ytRead!=null){ ytHold(YT_READ_AGAIN); return; }             // 가드④ 판 불변
+  if(k===YT_READ_OK){
+    state.ytRead=k; state.ytWrongR=null; state.ytWarn=false;
+    state.ytMsg = '판을 잘 읽었어요. 지구촌 문제는 <b>사람들의 활동과 전쟁, 재난</b> 같은 까닭으로 나타나 <b>동식물과 사람의 삶</b>에 영향을 미쳐요.';
+    playChime(); ytRender(); return;
+  }
+  state.ytWrongR=k;
+  ytHold(YT_READ_NO[k]);
+}
+
+/* ④ 꼭! 기억해요 빈칸 — 판을 읽은 뒤에만(가드⑤). */
+function ytMeanPick(k){
+  if(state.ytFin!=null) return;                                        // 가드①
+  if(state.ytBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=YT_MEAN.length) return;         // 가드②
+  if(state.ytRead==null){ ytHold(YT_ORDER_K); return; }                // 가드⑤ 순서 — 판 불변
+  if(state.ytMean!=null){ ytHold(YT_MEAN_AGAIN); return; }             // 가드⑤ 판 불변
+  if(k!==YT_MEAN_OK){ state.ytWrongK=k; ytHold(YT_MEAN_NO[k]); return; } // 가드⑤ 판 불변
+  state.ytMean = k;                                                    // ★ 빈칸을 고르는 자리 단 하나
+  state.ytWarn=false;
+  state.ytMsg = '지구촌에는 자원과 에너지 고갈, 생태계 파괴, <b>기후변화</b>, 난민 등의 문제가 나타나고 있어요.';
+  playChime(); ytRender();
+}
+
+/* ⑤ 마무리 — 지도서 7차시 주요 내용 정리 */
+function ytFinish(k){
+  if(state.ytFin!=null) return;                                        // 가드①
+  if(state.ytBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=YT_FIN.length) return;          // 가드②
+  if(state.ytMean==null){ ytHold(YT_ORDER_F); return; }                // 가드⑥ 순서 — 판 불변
+  if(k===YT_FIN_OK){
+    state.ytFin=k; state.ytWrongF=null; state.ytMsg=null; state.ytWarn=false;
+    playChime(); ytRender(); return;
+  }
+  state.ytWrongF=k;
+  ytHold(YT_FIN_NO[k]);                                                // 가드⑦ 판 불변
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 3단원 6차시(u3 l06) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
