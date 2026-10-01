@@ -251,14 +251,14 @@ window.KEDU_MAP["g3_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_social_u2_l12",
+     "lessonId": "g3_social_u2_l12_v1",
      "n": "5",
      "title": "교통이 변화하면서 생긴 문제점과 해결 노력을 알아볼까요",
      "sub": "② 교통의 변화로 달라진 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/social/2단원_옛날과오늘날의생활모습/g3_social_u2_l12_매듭을풀어요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
