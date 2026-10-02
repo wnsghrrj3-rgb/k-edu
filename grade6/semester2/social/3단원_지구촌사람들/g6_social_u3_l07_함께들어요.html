@@ -1,0 +1,875 @@
+<!--
+K-edu 사회 6-2 · 3단원 지구촌 사람들 · 주제② 지구촌의 문제와 지속가능한 미래 · 7차시(u3 l07)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사12-02] · 교과서 p.148~151 · 지도서(대단원3 **10~11차시** 「지속가능한 미래를 위한 노력을 살펴볼까요」, 지도서 p.326~329 · 두 시간 한 파일) 근거.
+학습 목표: 지속가능한 미래를 위한 노력을 설명할 수 있다.
+수업 기법 및 전략: 표현하기 · 조사하기 · 의견 나누기
+META = "3단원 지구촌 사람들 · 주제② 지구촌의 문제와 지속가능한 미래"
+⚠️ 엔진은 u3 l06(→ u3 l05 → … 6-1 사회 엔진)에서 100% 승계 · 엔진 무수정 · 3단원 색 #7C3AED.
+⚠️ 회수 키 `g6_s2_social_u3_l07_v1` · 맵 키 `g6_social_u3_l07` · 파일명 `함께들어요` — 조작 이름(선례 승계).
+
+직접조작: 「함께 들어요」 판 (교과서 148~150쪽 개인·기업·국가·국제기구·비정부 기구의 노력 · 지도서 327쪽 친구와 활동 예시 답안 「혼자만의 노력으로 안 돼요. 힘을 모아 지구를 지켜요.」)
+  ⭐ 씨앗은 교과서 148~150쪽 노력 열 가지(주체마다 둘) — 노력 카드 열 장이 정해진 차례(고정으로 섞음)로 한 장씩 온다.
+  ⭐ 판 가운데에 지구가 받침에 놓여 있고, 다섯 주체(개인 · 기업 · 국가 · 국제기구 · 비정부 기구)의 줄 다섯이 받침에 매여 있다.
+  ⭐ ★ 지금 온 카드는 `state.hdAt` 한 숫자(0~10)가 정한다 — 카드를 고르는 상태 0 · 준 카드를 담는 배열 0.
+  ⭐ ★ 카드를 받을 주체는 `HD_TO` 한 줄 표 · 받을 수 있는지는 `hdFit` 한 줄 · 카드를 넘기는 자리(`state.hdAt += 1`)는 코드에 단 하나.
+  ⭐ ★ 주체마다 카드 두 장이 모이면 그 줄이 팽팽해진다(`hdTaut`) — 그러나 **지구는 다섯 줄이 모두 팽팽해질 때 한꺼번에** 올라간다.
+     ★★ 핵심 신규성 = **문턱 반응** — 열 장 가운데 아홉 장까지 모아도(어느 주체의 줄이 몇 개 팽팽해져도) 지구의 높이는 **처음과 같다**.
+        지구가 올라가는 자리(`hdUp`)는 코드에 단 하나 · 지구 높이 전용 상태 0 · 조금씩 올라가는 중간 높이 0.
+  ⭐ 판 읽기는 지구가 올라간 뒤에만(정답 자리 1) → 꼭! 기억해요 빈칸 3택(교과서 151쪽 2번 「비정부 기구」 · 정답 자리 1)
+     → 마무리 3택 = 지도서 10~11차시 주요 내용 정리 · 학습 내용 정리(정답 자리 2).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 9종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 열 장을 다 모은 뒤 줄 누르기 무시(`HD_LOCK`) — 판 불변
+     ④ 지구가 올라가기 전 판 읽기 무시 · 읽은 뒤 다시 무시 · 알맞지 않은 읽기 무시(자리별 안내)
+     ⑤ 판을 읽기 전 빈칸 무시 · 고른 뒤 다시 무시 · 알맞지 않은 빈칸 무시
+     ⑥ 빈칸 전 마무리 무시(순서)
+     ⑦ 알맞지 않은 마무리 무시
+     ⑧ 안내 표시 중 재클릭 무시(`hdBusy`)
+     ⑨ 그 노력을 하지 않는 주체의 줄 누르기 무시(`HD_NO`) — 판 불변 · 지금 온 카드도 그대로 · 안내에 알맞은 주체 이름 0.
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.hd-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 지구·받침·줄은 도식이다** — 줄이 지구를 실제로 들어 올리는 것이 아니고, 「함께해야 이루어진다」를 나타낸 그림이다(캡션 상시).
+  ㉡ **판은 노력의 크기를 재지 않는다** — 줄 다섯은 굵기가 같고, 어느 주체가 더 중요하다는 뜻이 아니다.
+  ㉢ **판에 사람 형상 0** — 지구·받침·줄·카드만.
+  ㉣ **인터넷으로 각 주체의 노력 조사하기 · 사진·영상과 함께 정리하기 · 우리 반 인터넷 게시판에 올리기 · 댓글로 의견 나누기 · 친구와 문장 쓰기 · 공익 광고·탄소 줄이기 영상 보기는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 지속가능한 미래를 위해 우리가 할 수 있는 일 실천하기(12차시)는 차시 예고 자리까지만.
+  **새 사실 0** — 교과서 148~151쪽 · 지도서 10~11차시 본문까지만.
+  수치 0(교과서 이 쪽에 수치 없음) · 금액 0 · 쪽수 0 · 누리집 주소 0 · 특정 나라 편견 문면 0 · 사람 형상 0.
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u3_l07_v1">
+<title>지속가능한 미래를 위한 노력을 살펴볼까요 · 지구촌 사람들 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#7C3AED; --green-d:#5B21B6; --cyan:#8B5CF6;
+  --bg:#F5F3FF; --bub:#EDE9FE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#EDE9FE;color:#5B21B6}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 노력 카드를 다섯 주체의 줄에 모아 지구를 함께 들어 올리는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#EDE9FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#5B21B6;max-width:660px}
+.hd-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#F5F3FF;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.hd-board{display:flex;flex-direction:column;gap:6px;padding:8px}
+.hd-head{background:#EDE9FE;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#5B21B6;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.hd-sky{border-radius:8px;overflow:hidden;background:#EEF2FF}
+.hd-sky svg{display:block;width:100%;height:auto}
+.hd-card{border:2px solid #7C3AED;background:#F5F3FF;color:#4C1D95;border-radius:9px;padding:6px 8px;
+  font-weight:800;font-size:clamp(9.4px,1.6vw,11.6px);line-height:1.42}
+.hd-card .hd-no{display:inline-block;border-radius:5px;padding:0 5px;margin-right:4px;background:#7C3AED;color:#fff;font-weight:900}
+.hd-card[data-end="1"]{border-color:#059669;background:#ECFDF5;color:#065F46}
+.hd-who{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.hd-w{display:flex;flex-direction:column;gap:3px;align-items:stretch;border:2px solid #CBD5E0;background:#F8FAFC;color:#334155;
+  border-radius:8px;padding:4px 4px;cursor:pointer;font-family:inherit;text-align:center;min-height:64px}
+.hd-w[data-taut="1"]{border-color:#7C3AED;background:#EDE9FE;color:#4C1D95}
+.hd-wn{font-weight:900;font-size:clamp(8.6px,1.46vw,10.6px);line-height:1.25}
+.hd-ring{font-size:clamp(9px,1.5vw,11px);letter-spacing:1px;color:#7C3AED}
+.hd-got{font-weight:700;font-size:clamp(7.4px,1.26vw,9.2px);line-height:1.3;color:#475569;text-align:left;
+  border-top:1px dashed #CBD5E0;padding-top:2px}
+.hd-tally{font-weight:800;color:#5B21B6;font-size:clamp(9.2px,1.56vw,11.2px);text-align:center}
+.hd-read,.hd-mean,.hd-fin{display:flex;flex-direction:column;gap:5px}
+.hd-read button,.hd-mean button,.hd-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.hd-read button:hover,.hd-mean button:hover,.hd-fin button:hover{background:var(--bub)}
+.hd-read button.no,.hd-mean button.no,.hd-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.hd-hint{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:520px){ .hd-who{grid-template-columns:repeat(3,1fr)} }
+@media(max-width:380px){ .hd-who{grid-template-columns:1fr 1fr} .hd-w,.hd-got{font-size:8.4px} }
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠·㉡: 모든 그림은 내용을 나타낸 도식이며 실제 사진이 아니다.
+   ⚠️ 사람 형상 대신 도형으로만 그린다. 이 차시 교과서 쪽에는 수치가 없으므로 수치를 적지 않는다. */
+const SVG = {
+  // 1 들어가기 — 공익 광고: 사라지는 동식물(지도서 326쪽 동기 유발 · 도식)
+  ad:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#ECFDF5"/>
+    <rect x="40" y="18" width="240" height="112" rx="10" fill="#fff" stroke="#047857" stroke-width="1.6"/>
+    ${[['\uD83D\uDC3B',84],['\uD83D\uDC22',134],['\uD83C\uDF3A',184],['\uD83D\uDC1D',234]].map((t,i)=>`<text x="${t[1]}" y="70" font-size="22" text-anchor="middle" opacity="${1-i*0.22}">${t[0]}</text>`).join('')}
+    <path d="M70 92 L250 92" stroke="#94A3B8" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <text x="160" y="112" font-size="7.6" fill="#065F46" text-anchor="middle" font-weight="900">다양한 동식물이 사라지고 있어요</text>
+    <text x="160" y="152" font-size="7" fill="#334155" text-anchor="middle" font-weight="800">공익 광고 영상(도식)</text></svg>`,
+  // 2 살펴보기 — 오늘의 세대가 미래 세대에 물려줘요(교과서 148쪽 · 도식)
+  mean:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    <rect x="18" y="44" width="96" height="64" rx="12" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.6"/>
+    <text x="66" y="74" font-size="8.4" fill="#4C1D95" text-anchor="middle" font-weight="900">오늘날의</text>
+    <text x="66" y="90" font-size="8.4" fill="#4C1D95" text-anchor="middle" font-weight="900">모든 사람</text>
+    <circle cx="160" cy="76" r="26" fill="#DBEAFE" stroke="#0369A1" stroke-width="1.6"/>
+    <text x="160" y="84" font-size="22" text-anchor="middle">\uD83C\uDF0F</text>
+    <rect x="206" y="44" width="96" height="64" rx="12" fill="#ECFDF5" stroke="#059669" stroke-width="1.6"/>
+    <text x="254" y="82" font-size="8.4" fill="#065F46" text-anchor="middle" font-weight="900">미래 세대</text>
+    <path d="M116 76 L130 76 M190 76 L204 76" stroke="#7C3AED" stroke-width="2.4"/>
+    <path d="M198 70 L206 76 L198 82" fill="none" stroke="#7C3AED" stroke-width="2.4"/>
+    <text x="160" y="132" font-size="7.4" fill="#4C1D95" text-anchor="middle" font-weight="800">지구 환경을 개선하고 보존해 물려줘요</text>
+    <text x="160" y="158" font-size="7" fill="#334155" text-anchor="middle" font-weight="800">지속가능한 미래(도식)</text></svg>`,
+  // 3 살펴보기 — 개인의 노력(교과서 148쪽 · 도식)
+  me:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0FDF4"/>
+    ${[['\u267B\uFE0F','분리배출과 재활용'],['\uD83D\uDECD\uFE0F','녹색 제품 소비'],['\uD83D\uDCA1','자원과 에너지 아끼기'],['\uD83C\uDF3F','서식지 보존']].map((t,i)=>`<rect x="${10+i*76}" y="30" width="70" height="90" rx="10" fill="#fff" stroke="#047857" stroke-width="1.4"/>
+      <text x="${45+i*76}" y="74" font-size="22" text-anchor="middle">${t[0]}</text>
+      <text x="${45+i*76}" y="104" font-size="6.2" fill="#065F46" text-anchor="middle" font-weight="900">${t[1]}</text>`).join('')}
+    <text x="160" y="150" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">개인의 노력(도식)</text></svg>`,
+  // 4 살펴보기 — 기업과 국가의 노력(교과서 149쪽 · 도식)
+  firm:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#EFF6FF"/>
+    <rect x="12" y="20" width="142" height="108" rx="12" fill="#fff" stroke="#0369A1" stroke-width="1.4"/>
+    <text x="83" y="38" font-size="8" fill="#0C4A6E" text-anchor="middle" font-weight="900">기업의 노력</text>
+    <text x="52" y="78" font-size="22" text-anchor="middle">\uD83E\uDDF4</text><text x="114" y="78" font-size="22" text-anchor="middle">\uD83D\uDC5F</text>
+    <text x="52" y="102" font-size="6" fill="#0C4A6E" text-anchor="middle" font-weight="800">라벨 없는 생수병</text>
+    <text x="114" y="102" font-size="6" fill="#0C4A6E" text-anchor="middle" font-weight="800">재활용 운동화</text>
+    <rect x="166" y="20" width="142" height="108" rx="12" fill="#fff" stroke="#7C3AED" stroke-width="1.4"/>
+    <text x="237" y="38" font-size="8" fill="#4C1D95" text-anchor="middle" font-weight="900">국가의 노력</text>
+    <text x="206" y="78" font-size="22" text-anchor="middle">\uD83D\uDCDC</text><text x="268" y="78" font-size="22" text-anchor="middle">\uD83C\uDFE0</text>
+    <text x="206" y="102" font-size="6" fill="#4C1D95" text-anchor="middle" font-weight="800">기후변화 협약</text>
+    <text x="268" y="102" font-size="6" fill="#4C1D95" text-anchor="middle" font-weight="800">난민 보호 시설</text>
+    <text x="160" y="152" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">기업과 국가의 노력(도식)</text></svg>`,
+  // 5 살펴보기 — 국제기구와 비정부 기구(교과서 150쪽 · 도식)
+  org:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F8FAFC"/>
+    <rect x="10" y="16" width="146" height="116" rx="12" fill="#EFF6FF" stroke="#0369A1" stroke-width="1.4"/>
+    <text x="83" y="34" font-size="8" fill="#0C4A6E" text-anchor="middle" font-weight="900">국제기구</text>
+    ${['국제 연합(UN)','국제 연합 아동 기금(UNICEF)','국제 연합 난민 기구(UNHCR)'].map((t,k)=>`<text x="83" y="${60+k*24}" font-size="6.6" fill="#0C4A6E" text-anchor="middle" font-weight="800">${t}</text>`).join('')}
+    <rect x="164" y="16" width="146" height="116" rx="12" fill="#ECFDF5" stroke="#047857" stroke-width="1.4"/>
+    <text x="237" y="34" font-size="8" fill="#065F46" text-anchor="middle" font-weight="900">비정부 기구</text>
+    ${['세계 자연 기금','국경 없는 의사회','그린피스'].map((t,k)=>`<text x="237" y="${60+k*24}" font-size="6.6" fill="#065F46" text-anchor="middle" font-weight="800">${t}</text>`).join('')}
+    <text x="160" y="154" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">지구촌 문제 해결에 힘쓰는 단체(도식)</text></svg>`,
+  // 7 살펴보기 — 인터넷으로 조사하고 게시판에 올려요(교과서 151쪽 · 도식)
+  net:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#EEF2FF"/>
+    <rect x="30" y="16" width="260" height="118" rx="10" fill="#fff" stroke="#4338CA" stroke-width="1.4"/>
+    <rect x="30" y="16" width="260" height="18" rx="10" fill="#C7D2FE"/>
+    <text x="160" y="29" font-size="7" fill="#312E81" text-anchor="middle" font-weight="900">우리 반 인터넷 게시판</text>
+    ${['지구촌 문제','노력 주체','지구촌 문제 해결을 위한 노력'].map((t,k)=>`<rect x="${42+k*80}" y="44" width="${k===2?92:72}" height="22" rx="5" fill="#EEF2FF" stroke="#6366F1" stroke-width="1"/>
+      <text x="${42+k*80+(k===2?46:36)}" y="58" font-size="5.8" fill="#312E81" text-anchor="middle" font-weight="900">${t}</text>`).join('')}
+    ${[80,98,116].map(y=>`<text x="50" y="${y}" font-size="10">\uD83D\uDCAC</text><rect x="66" y="${y-8}" width="${150+((y/2)%40)}" height="9" rx="4" fill="#E2E8F0"/>`).join('')}
+    <text x="160" y="156" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">조사한 내용을 올리고 댓글로 의견을 나눠요(도식)</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#1E1B4B"/>
+    ${['개인','기업','국가','국제기구','비정부 기구'].map((t,i)=>`<rect x="${8+i*62}" y="52" width="56" height="36" rx="8" fill="#EDE9FE" stroke="#A78BFA" stroke-width="2"/>
+      <text x="${36+i*62}" y="74" font-size="7" fill="#4C1D95" text-anchor="middle" font-weight="800">${t}</text>`).join('')}
+    <text x="160" y="124" font-size="8.6" fill="#DDD6FE" text-anchor="middle" font-weight="800">모두 힘을 모아 지속가능한 미래로</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#7C3AED" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#7C3AED" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#5B21B6" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 함께 들어요 판 =====
+   ★ 지금 온 카드는 state.hdAt 한 숫자(0~10)가 정한다 — 카드를 고르는 상태 0 · 준 카드를 담는 배열 0.
+   ★ 카드를 받을 주체는 HD_TO 한 줄 표 · 받을 수 있는지는 hdFit 한 줄 · 카드를 넘기는 자리는 단 하나(state.hdAt += 1).
+   ★★ 지구는 다섯 줄이 모두 팽팽해질 때 한꺼번에 올라간다 — 올라가는 자리(hdUp)는 단 하나 · 중간 높이 0.
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. 지구·받침·줄은 도식이다. */
+const HD_N = 10;
+const HD_W = 5;
+/* 다섯 주체 — 교과서 148~150쪽 */
+const HD_WHO = ['개인','기업','국가','국제기구','비정부 기구'];
+/* 노력 카드 열 장 — 정해진 차례(고정으로 섞음) */
+const HD_CARD = [
+  '쓰레기를 분리배출하고 재활용해요',
+  '국제 연합(UN) \u2014 국제 평화와 안전을 지키고자 정치, 경제, 사회, 문화 등에서 국제적인 협력을 해 나가요',
+  '라벨을 없애고 플라스틱 뚜껑의 크기를 줄인 생수병을 만들어요',
+  '국경 없는 의사회 \u2014 전쟁이나 질병, 자연재해 등으로 고통받는 사람들에게 차별 없이 의료를 제공해요',
+  '기후변화 협약에 가입하고 탄소 배출을 줄이려는 목표를 세워요',
+  '녹색 제품을 소비하고 일회용품 사용을 줄여요',
+  '그린피스 \u2014 환경을 연구하고 해양 생태계를 보호하는 활동을 해요',
+  '플라스틱을 재활용해 운동화를 만들어요',
+  '국제 연합 아동 기금(UNICEF) \u2014 전쟁이나 가난 등으로 어려움을 겪는 어린이에게 의료, 식량, 교육 등을 제공해요',
+  '난민 보호 시설을 마련하고, 난민들이 우리 사회에 적응하도록 도와요'
+];
+/* ★ 카드 → 주체 — 한 줄 표 */
+const HD_TO = [0, 3, 1, 4, 2, 0, 4, 1, 3, 2];
+
+/* ② 판 읽기 */
+const HD_READ = [
+  '개인 한 사람이 열심히 노력하면 지구촌 문제는 모두 해결돼요',
+  '개인, 기업, 국가, 국제기구, 비정부 기구가 모두 힘을 모아야 지구촌의 지속가능한 미래를 만들 수 있어요',
+  '국제기구만 노력하면 되고, 개인과 기업은 할 일이 없어요'
+];
+const HD_READ_OK = 1;
+const HD_READ_NO = [
+  '판의 <b>줄 하나</b>가 팽팽해졌을 때를 떠올려 봐요. 그때 지구는 움직이지 않았어요. 판을 다시 읽어 봐요.',
+  null,
+  '판의 <b>다섯 줄</b>을 다시 봐요. 줄마다 노력 카드가 두 장씩 모였어요. 판을 다시 읽어 봐요.'
+];
+/* ③ 꼭! 기억해요 빈칸 — 교과서 151쪽 2번 */
+const HD_MEAN = ['국제기구', '비정부 기구', '기업'];
+const HD_MEAN_OK = 1;
+const HD_MEAN_NO = [
+  '국제기구는 <b>세계 여러 나라</b>로 구성되어요. 판에서 국경 없는 의사회와 그린피스의 카드를 받은 줄을 떠올려 봐요. 판은 그대로예요.',
+  null,
+  '기업은 제품을 만들고 경영하는 곳이에요. 판에서 국경 없는 의사회와 그린피스의 카드를 받은 줄을 떠올려 봐요. 판은 그대로예요.'
+];
+/* ④ 마무리 — 지도서 10~11차시 주요 내용 정리 · 학습 내용 정리 */
+const HD_FIN = [
+  '지속가능한 미래는 지금 세대가 자원을 마음껏 써서 이루어지므로, 미래 세대를 생각하지 않아도 돼요',
+  '지구촌 문제는 국가만 해결할 수 있어서, 개인과 기업은 노력하지 않아도 돼요',
+  '지구촌의 지속가능한 미래는 오늘날의 모든 사람이 지구 환경을 개선하고 보존하여 미래 세대에 물려주려는 노력 속에서 이루어지고, 개인, 기업, 국가, 국제기구, 비정부 기구가 함께 노력해요'
+];
+const HD_FIN_OK = 2;
+const HD_FIN_NO = [
+  '지속가능한 미래는 지구 환경을 <b>개선하고 보존하여 미래 세대에 물려주려는</b> 노력 속에서 이루어져요. 오늘의 정리를 다시 골라 봐요.',
+  '판에서 개인과 기업의 줄도 팽팽해져야 지구가 올라갔어요. <b>모든 주체</b>가 함께 노력해요. 오늘의 정리를 다시 골라 봐요.',
+  null
+];
+/* 안내 */
+const HD_LOCK = '노력 카드 열 장을 <b>모두 모았어요</b>. 판을 읽어 봐요. 판은 그대로예요.';
+const HD_ORDER_R = '아직 <b>지구가 올라가지 않았어요</b>. 노력 카드를 모두 모은 뒤에 읽을 수 있어요. 판은 그대로예요.';
+const HD_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const HD_ORDER_K = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const HD_MEAN_AGAIN = '꼭! 기억해요 빈칸은 <b>이미 채웠어요</b>. 판은 그대로예요.';
+const HD_ORDER_F = '아직 <b>꼭! 기억해요 빈칸</b>을 채우지 않았어요. 먼저 골라 봐요. 판은 그대로예요.';
+const HD_UP_MSG = '다섯 줄이 <b>모두 팽팽해졌어요</b>. 지구가 올라갔어요. 판을 읽어 봐요.';
+function HD_NO(w){ return `지금 온 카드는 <b>${HD_WHO[w]}</b>의 노력이 아니에요. 카드의 낱말을 다시 읽고, 이 노력을 하는 주체의 줄을 찾아봐요. 판은 그대로예요.`; }
+
+/* ★ 받을 수 있는지 — 한 줄 · 지금 온 카드의 주체일 때만 */
+function hdFit(i,w){ return HD_TO[i]===w; }
+function hdGot(st,w){ return [0,1,2,3,4,5,6,7,8,9].filter(i=>i<st.hdAt && HD_TO[i]===w); }
+function hdTaut(st,w){ return hdGot(st,w).length===2; }
+function hdTautN(st){ return [0,1,2,3,4].filter(w=>hdTaut(st,w)).length; }
+/* ★★ 지구가 올라가는 자리 — 단 하나 */
+function hdUp(st){ return st.hdAt===HD_N; }
+
+function hdSky(st){
+  const up=hdUp(st), ey=up?34:92;
+  const X=[34,98,160,222,286];
+  const ropes=X.map((x,w)=>{ const t=hdTaut(st,w);
+    return `<g class="hd-rope" data-w="${w}" data-taut="${t?1:0}"><line x1="${x}" y1="10" x2="${x}" y2="${ey+16}" stroke="${t?'#7C3AED':'#CBD5E0'}" stroke-width="${t?3:2}"${t?'':' stroke-dasharray="4 4"'}/><line x1="${x}" y1="${ey+16}" x2="160" y2="${ey+20}" stroke="${t?'#7C3AED':'#CBD5E0'}" stroke-width="1.4"/></g>`; }).join('');
+  return `<svg viewBox="0 0 320 130" data-up="${up?1:0}"><rect width="320" height="130" fill="#EEF2FF"/>
+    <rect x="14" y="4" width="292" height="7" rx="3" fill="#94A3B8"/>
+    <rect x="0" y="118" width="320" height="12" fill="#D6D3D1"/>
+    ${ropes}
+    <g class="hd-earth" data-up="${up?1:0}"><rect x="118" y="${ey+16}" width="84" height="8" rx="3" fill="#92400E"/>
+      <circle cx="160" cy="${ey}" r="16" fill="#DBEAFE" stroke="#0369A1" stroke-width="1.6"/>
+      <text x="160" y="${ey+6}" font-size="16" text-anchor="middle">\uD83C\uDF0F</text></g>
+  </svg>`;
+}
+function hdWho(st){
+  return HD_WHO.map((t,w)=>{ const g=hdGot(st,w), tt=hdTaut(st,w);
+    return `<button class="hd-w" data-w="${w}" data-n="${g.length}" data-taut="${tt?1:0}" onclick="hdGive(${w})"><span class="hd-wn">${t}</span><span class="hd-ring">${g.length>=1?'\u25CF':'\u25CB'}${g.length>=2?'\u25CF':'\u25CB'}</span>${g.map(i=>`<span class="hd-got">${HD_CARD[i]}</span>`).join('')}</button>`; }).join('');
+}
+
+function hdBoard(st){
+  const fin = st.hdFin!=null, up = hdUp(st);
+  const head = fin ? '다섯 주체가 함께 지구를 들어 올렸어요'
+    : st.hdMean!=null ? '꼭! 기억해요 빈칸까지 채웠어요 \u2014 이제 정리해요'
+    : st.hdRead!=null ? '꼭! 기억해요 빈칸을 채워 봐요'
+    : up ? '지구가 올라갔어요 \u2014 판을 읽어 봐요'
+    : st.hdAt>0 ? '다음 카드도 알맞은 주체의 줄에 모아 봐요'
+    : '노력 카드를 읽고 그 노력을 하는 주체의 줄을 눌러요';
+  return `<div class="hd-board" data-at="${st.hdAt}" data-taut="${hdTautN(st)}" data-up="${up?1:0}" data-read="${st.hdRead==null?-1:st.hdRead}" data-mean="${st.hdMean==null?-1:st.hdMean}" data-fin="${fin?1:0}">
+    <div class="hd-head">${head}</div>
+    <div class="hd-sky">${hdSky(st)}</div>
+    <div class="hd-card" data-end="${up?1:0}">${up?'노력 카드를 모두 모았어요':`<span class="hd-no">${st.hdAt+1} / 10</span>지금 온 노력 카드: <b>${HD_CARD[st.hdAt]}</b>`}</div>
+    <div class="hd-who">${hdWho(st)}</div>
+    <div class="hd-tally">모은 노력 카드 ${st.hdAt} / 10 \u00b7 팽팽해진 줄 ${hdTautN(st)} / 5</div>
+  </div>`;
+}
+
+function hdPanel(st){
+  const fin = st.hdFin!=null, up = hdUp(st);
+  const q = fin ? '다섯 주체의 노력을 모으며 지속가능한 미래를 위한 노력을 살펴봤어요.'
+    : st.hdMean!=null ? '오늘 공부한 내용을 정리해요. 지구촌의 지속가능한 미래는 어떻게 이루어지나요?'
+    : st.hdRead!=null ? '꼭! 기억해요 \u2014 「개인이나 민간단체가 중심이 되어 공공의 이익을 지키려고 만든 (  )가 있습니다」의 빈칸에 알맞은 말은 무엇일까요?'
+    : up ? '지구가 올라갔어요. 판에서 무엇을 알 수 있나요?'
+    : st.hdAt>0 ? '다음 노력 카드도 알맞은 주체의 줄에 모아요.'
+    : '노력 카드를 읽고, 그 노력을 하는 주체의 줄에 모아 봐요. 지구촌의 지속가능한 미래를 위해 누가 어떤 노력을 할까요?';
+  let right = `<div class="hd-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83C\uDF0F 함께 들어 올리며 정리했어요</div>
+      지구촌의 지속가능한 미래는 오늘날의 모든 사람이 지구 환경을 <b>개선하고 보존하여 미래 세대에 물려주려는</b> 노력 속에서 이루어져요.
+      <b>개인</b>, <b>기업</b>, <b>국가</b>, <b>국제기구</b>, <b>비정부 기구</b>가 각자의 자리에서 함께 노력해요.<br>
+      <span style="color:#64748B">판의 지구와 줄은 도식이에요. 줄이 실제로 지구를 들어 올리는 것은 아니에요.
+      <b>인터넷으로 각 주체의 노력 조사하기</b>, <b>사진과 영상으로 정리하기</b>, <b>우리 반 인터넷 게시판에 올리기</b>, <b>댓글로 의견 나누기</b>, <b>친구와 함께 바라는 문장 쓰기</b>, <b>공익 광고와 탄소 줄이기 영상 보기</b>는 교실에서 직접 해요.</span></div>`;
+  } else if(st.hdMean!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="hd-fin">${HD_FIN.map((t,k)=>`<button class="${st.hdWrongF===k?'no':''}" onclick="hdFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.hdRead!=null){
+    right += `<div class="dw-step">\uD83D\uDCCC 꼭! 기억해요 빈칸</div>`;
+    right += `<div class="hd-mean">${HD_MEAN.map((t,k)=>`<button class="${st.hdWrongK===k?'no':''}" onclick="hdMeanPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="hd-hint">국경 없는 의사회와 그린피스의 카드를 어느 줄에 모았는지 떠올려 봐요.</div>`;
+  } else if(up){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="hd-read">${HD_READ.map((t,k)=>`<button class="${st.hdWrongR===k?'no':''}" onclick="hdReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83C\uDF0F 함께 들어요</div>`;
+    right += `<div class="hd-hint">판 가운데 <b>지금 온 노력 카드</b>를 읽고, 그 노력을 하는 <b>주체의 줄</b>을 눌러요. 알맞은 줄이면 카드가 모이고 다음 카드가 와요. 한 주체에 카드 두 장이 모이면 그 줄이 팽팽해져요. 줄이 팽팽해질 때마다 지구가 어떻게 되는지 지켜봐요. 감점은 없어요.</div>`;
+  }
+  if(st.hdMsg) right += `<div class="dw-msg${st.hdWarn?' warn':''}">${st.hdMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83C\uDF0F 함께 들어요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${hdBoard(st)}<div class="cvcap">판의 지구, 받침, 줄은 <b>도식</b>이에요. 줄이 실제로 지구를 들어 올리는 것은 아니고, 함께해야 이루어진다는 뜻을 나타낸 그림이에요. 다섯 줄은 굵기가 같아요. 판은 노력의 크기를 재지 않아요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 지구촌 사람들 · 주제② 지구촌의 문제와 지속가능한 미래";
+
+// 확인 4 + 적용 4 — 정답 다양화 [2,0,3,1,0,2,1,3](각 자리 2회)
+// ⚠️ 새 사실 0(교과서 148~151쪽 · 지도서 10~11차시까지만) · 수치 0 · 실천 계획 세우기 0(뒤 차시).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"지구촌의 <b>지속가능한 미래</b>는 어떻게 이루어지나요?",
+   opts:["지금 세대가 자원을 마음껏 쓰면 이루어져요","한 나라만 노력하면 이루어져요","오늘날의 모든 사람이 지구 환경을 개선하고 보존하여 미래 세대에 물려주려는 노력 속에서 이루어져요","미래 세대가 알아서 해결하면 이루어져요"],
+   correct:2, pts:POINTS_BASIC, scene:"mean",
+   reason:"지구촌의 지속가능한 미래는 오늘날의 모든 사람이 지구 환경을 개선하고 보존하여 미래 세대에 물려주려는 노력 속에서 이루어져요.",
+   h1:"「미래 세대」라는 낱말을 떠올려 봐요.", h2:"지금 사는 모든 사람의 노력이 필요해요."},
+  {stem:"지속가능한 미래를 위한 <b>개인의 노력</b>으로 알맞은 것은 무엇인가요?",
+   opts:["쓰레기를 분리배출하고 재활용해요","안 쓰는 전등을 켜 두어요","일회용품을 더 많이 써요","동식물이 사는 곳을 넓혀 개발해요"],
+   correct:0, pts:POINTS_BASIC, scene:"me",
+   reason:"개인은 쓰레기를 분리배출하고 재활용하며, 녹색 제품을 소비하고 일회용품 사용을 줄이고, 자원과 에너지를 아껴요. 동식물이 살아가는 곳도 함부로 훼손하지 않고 보존해요.",
+   h1:"교실이나 집에서 할 수 있는 일을 떠올려 봐요.", h2:"버리는 물건을 다시 쓰는 일과 관련 있어요."},
+  {stem:"사람들이 <b>녹색 제품</b>을 소비하는 까닭은 무엇인가요?",
+   opts:["값이 가장 비싸기 때문이에요","포장이 화려하기 때문이에요","유행하는 색깔이기 때문이에요","물건을 생산할 때 자원이나 에너지를 적게 사용하여 오염 물질 배출을 최소화하기 때문이에요"],
+   correct:3, pts:POINTS_BASIC, scene:"me",
+   reason:"녹색 제품은 물건을 생산할 때 지구의 자원이나 에너지를 적게 사용하여 오염 물질 배출을 최소화해요.",
+   h1:"녹색 제품을 만들 때 무엇을 아낄까요?", h2:"자원과 에너지, 그리고 오염 물질과 관련 있어요."},
+  {stem:"<b>비정부 기구</b>는 어떻게 만들어졌나요?",
+   opts:["세계 여러 나라가 모여 만들었어요","개인이나 민간단체가 중심이 되어 공공의 이익을 지키려고 만들었어요","한 기업이 물건을 팔려고 만들었어요","한 나라의 정부가 법으로 만들었어요"],
+   correct:1, pts:POINTS_BASIC, scene:"org",
+   reason:"비정부 기구는 개인이나 민간단체가 중심이 되어 공공의 이익을 지키려고 만든 것이에요. 세계 여러 나라로 구성된 것은 국제기구예요.",
+   h1:"「비정부」는 정부가 아니라는 뜻이에요.", h2:"개인이나 민간단체가 중심이에요."},
+  // 4단계 적용 (+15)
+  {stem:"<b>라벨을 없애고</b> 플라스틱 뚜껑의 크기를 줄인 생수병을 만드는 것은 어느 주체의 노력인가요?",
+   opts:["기업","국제기구","비정부 기구","국가"],
+   correct:0, pts:POINTS_APPLY, scene:"firm",
+   reason:"기업은 친환경 소재의 제품을 생산하는 기술을 개발하고 자원을 적게 사용한 제품을 생산해요. 라벨이 없는 생수병은 재활용이 잘되도록 돕고 폐기물도 줄여요.",
+   h1:"물건을 만들어 파는 곳을 떠올려 봐요.", h2:"함께 들어요 판에서 생수병 카드를 모은 줄이에요."},
+  {stem:"<b>기후변화 협약</b>에 가입하고 탄소 배출을 줄이려는 목표를 세우는 것은 어느 주체의 노력인가요?",
+   opts:["개인","기업","국가","비정부 기구"],
+   correct:2, pts:POINTS_APPLY, scene:"firm",
+   reason:"국가는 지구촌 문제에 대응하여 법과 제도를 마련하고 다양한 정책을 펼쳐요. 국제 협약에 가입해 세계적 노력에 동참하고, 난민 보호 시설도 마련해요.",
+   h1:"협약에 가입하는 것은 누구일까요?", h2:"법과 제도, 정책을 만드는 주체예요."},
+  {stem:"전쟁이나 가난 등으로 어려움을 겪는 <b>어린이에게 의료, 식량, 교육</b> 등을 제공하는 국제기구는 무엇인가요?",
+   opts:["그린피스","국제 연합 아동 기금(UNICEF)","국경 없는 의사회","세계 자연 기금"],
+   correct:1, pts:POINTS_APPLY, scene:"org",
+   reason:"국제 연합 아동 기금(UNICEF)은 전쟁이나 가난 등으로 어려움을 겪는 어린이에게 의료, 식량, 교육 등을 제공해요.",
+   h1:"이름에 「아동」이 들어 있어요.", h2:"국제 연합에 속한 기구예요."},
+  {stem:"<b>국경 없는 의사회</b>가 지구촌 문제를 해결하려고 하는 활동은 무엇인가요?",
+   opts:["해양 생태계를 보호하는 캠페인만 해요","국제 협약을 만들어 나라에 지키게 해요","재활용 운동화를 만들어 팔아요","전쟁이나 질병, 자연재해 등으로 고통받는 사람들에게 차별 없이 의료를 제공해요"],
+   correct:3, pts:POINTS_APPLY, scene:"org",
+   reason:"국경 없는 의사회는 비정부 기구로, 전쟁이나 질병, 자연재해 등으로 고통받는 사람들에게 차별 없이 의료를 제공해요.",
+   h1:"이름에 「의사」가 들어 있어요.", h2:"아픈 사람을 돕는 일이에요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 공익 광고(지도서 326쪽 동기 유발)
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">사라지는 동식물과 함께 살아가려면?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('ad','공익 광고 영상(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCFA 공익 광고</div>
+      지난 시간에는 지구촌을 위협하는 여러 가지 문제를 조사해 봤어요. 공익 광고 영상에서는 다양한 동식물이 사라지고 있는 모습을 보여 줘요. 이런 일이 생기는 까닭은 무엇일까요? 지구에 사는 다양한 동식물과 함께 공존하려면 우리는 어떤 자세를 가져야 할까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 까닭: <b>무분별한 개발과 환경 오염</b>으로 동식물의 서식지가 사라지고 있기 때문이에요.<br>
+      \u2014 자세: <b>인간 위주로 생각하는 태도</b>를 버리고 지구촌에 사는 <b>모두를 생각하는 자세</b>가 필요해요.</div>`
+      :`<div class="note">동식물이 살던 곳은 어떻게 되었을까요?</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">오늘은 <b>지속가능한 미래를 위한 노력</b>을 살펴봐요.</div></div>`});
+// 2 살펴보기 — reveal: 지속가능한 미래의 의미(교과서 148쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">지속가능한 미래는 어떻게 가능할까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('mean','지속가능한 미래(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDF0F 지속가능한 미래</div>
+      지구촌의 미래를 위해 생각과 생활 습관을 바꾸려고 노력하는 사람들이 늘고 있어요. 또한 기업과 국가도 지구촌 문제 상황에 대응하려고 다양한 노력을 기울이고 있어요. 지구촌의 지속가능한 미래는 어떻게 가능할까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 지구촌의 지속가능한 미래는 <b>오늘날의 모든 사람</b>이 지구 환경을 <b>개선하고 보존</b>하여 <b>미래 세대에 물려주려는</b> 노력 속에서 이루어져요.</div>`
+      :`<div class="note">그림에서 지구는 누구에게서 누구에게로 가나요?</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: 개인의 노력(교과서 148쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">개인은 어떤 노력을 할 수 있을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('me','개인의 노력(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDF31 개인의 노력</div>
+      개인은 일상생활에서 쓰레기 배출을 줄이고, 에너지를 절약하는 등 지구촌 문제를 해결하려고 노력해요. 여러분은 생활 속에서 지구촌을 위해 어떤 실천을 하고 있나요? 녹색 제품을 소비하는 까닭은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 <b>녹색 제품</b>을 소비하고 <b>일회용품 사용</b>을 줄여요.<br>
+      \u2014 쓰레기를 <b>분리배출</b>하고 <b>재활용</b>해요.<br>
+      \u2014 물 적게 쓰기, 안 쓰는 전등 끄기 등을 실천해 <b>자원과 에너지</b>를 아껴요.<br>
+      \u2014 동식물이 살아가는 곳을 함부로 훼손하지 않고 <b>보존</b>해요.<br>
+      \u2014 녹색 제품은 물건을 생산할 때 자원이나 에너지를 적게 사용하여 <b>오염 물질 배출을 최소화</b>하기 때문이에요.</div>`
+      :`<div class="note">집과 교실에서 할 수 있는 일을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 4 살펴보기 — reveal: 기업과 국가의 노력(교과서 149쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">기업과 국가는 어떤 노력을 하고 있을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('firm','기업과 국가의 노력(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDFED \uD83C\uDFDB\uFE0F 기업과 국가</div>
+      지구촌의 지속가능한 미래를 위해 기업은 어떤 노력을 하고 있을까요? 국가는 지구촌 문제에 대응하여 어떤 노력을 하고 있을까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 기업: 탄소 배출을 줄일 수 있는 제품을 개발하고, 생태계 보존을 위해 노력하는 등 <b>책임 있는 경영</b>을 해요. <b>친환경 소재</b>의 제품을 생산하는 기술을 개발하고, <b>자원을 적게 사용한 제품</b>을 생산해요.<br>
+      \u2014 국가: 지구촌 문제에 대응하여 <b>법과 제도</b>를 마련하고 다양한 정책을 펼쳐요. <b>국제 협약</b>을 준수하고, 지구촌 문제 해결에 개인과 기업이 참여할 수 있도록 도와요. 난민 보호 시설을 마련하고, 기후변화 협약에 가입해요.</div>`
+      :`<div class="note">그림 속 생수병과 운동화, 협약과 보호 시설을 살펴봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 5 살펴보기 — reveal: 국제기구와 비정부 기구(교과서 150쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">국제기구와 비정부 기구는 어떤 노력을 할까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('org','국제기구와 비정부 기구(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83E\uDD1D 국제기구와 비정부 기구</div>
+      세계 여러 나라가 함께 해결해야 할 지구촌 문제가 늘어나면서 다양한 국제기구가 만들어졌어요. 세계 여러 나라로 구성된 국제기구는 국제법과 질서를 지키고, 지구촌 공동체로서 책임 있는 역할을 다하려고 노력해요. 또한 개인이나 민간단체가 중심이 되어 공공의 이익을 지키려고 만든 비정부 기구도 여러 활동을 해요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 국제 연합(UN): 국제 평화와 안전을 지키고자 국제적인 협력을 해 나가요.<br>
+      \u2014 국제 연합 아동 기금(UNICEF): 어려움을 겪는 어린이에게 의료, 식량, 교육 등을 제공해요.<br>
+      \u2014 국제 연합 난민 기구(UNHCR): 난민을 보호하고, 생활에 필요한 물품, 의료, 교육 등을 제공해요.<br>
+      \u2014 세계 자연 기금: 생물 다양성을 보전하고 기후변화에 대응하는 활동을 해요.<br>
+      \u2014 국경 없는 의사회: 고통받는 사람들에게 차별 없이 의료를 제공해요.<br>
+      \u2014 그린피스: 환경을 연구하고 해양 생태계를 보호하는 활동을 해요.</div>`
+      :`<div class="note">「국제」와 「비정부」라는 낱말의 뜻을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">다음 판에서 <b>노력 카드</b>를 다섯 주체의 <b>줄</b>에 모아 봐요.</div></div>`});
+// 6 살펴보기 — 직접조작(함께 들어요)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">노력 카드를 모아 지구를 함께 들어 올려요</h2>
+  ${hdPanel(st)}`});
+// 7 살펴보기 — reveal: [디지털+ 할 수 있어요] 인터넷으로 조사하기 · 친구와 활동(교과서 149·151쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">인터넷으로 지속가능한 미래를 위한 노력을 조사해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('net','우리 반 인터넷 게시판(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCBB 디지털+ 할 수 있어요</div>
+      자원과 에너지 고갈, 생태계 파괴, 기후변화, 난민 등 지구촌 문제 해결을 위해 개인, 기업, 국가, 국제기구, 비정부 기구 등 각 주체가 어떤 노력을 하는지 인터넷을 활용해 조사해 봐요. 조사한 내용은 사진, 영상 등과 함께 정리해 우리 반 인터넷 게시판에 올리고, 친구들이 조사한 내용에 댓글을 달며 의견을 나눠요. 지속가능한 미래를 만드는 데 개인, 기업, 국가가 함께 참여하기를 바라는 문장도 써 봐요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 조사 표에는 <b>지구촌 문제</b>, <b>노력 주체</b>, <b>지구촌 문제 해결을 위한 노력</b>을 정리해요.<br>
+      \u2014 교과서에 나온 사례 말고도 <b>다양한 실제 사례</b>를 찾아봐요.<br>
+      \u2014 바라는 문장 예시: 「지구촌을 위해 하나 된 우리, 함께 만들어 가는 미래」, 「혼자만의 노력으로 안 돼요. 힘을 모아 지구를 지켜요.」</div>`
+      :`<div class="note">조사 표의 세 칸을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">조사하기, 게시판에 올리기, 댓글 달기는 <b>교실에서 직접</b> 해요.</div></div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 10~11차시 주요 내용 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div><b>지속가능한 미래</b> \u2014 오늘날의 모든 사람이 지구 환경을 개선하고 보존하여 미래 세대에 물려주려는 노력 속에서 이루어져요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div><b>개인 \u00b7 기업 \u00b7 국가</b> \u2014 개인은 쓰레기 분리배출, 재활용 등을, 기업은 자원을 적게 사용한 제품 생산, 친환경 제품 개발 등을, 국가는 기후변화 협약 가입, 난민 보호 등을 해요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div><b>국제기구 \u00b7 비정부 기구</b> \u2014 국제 연합, 국제 연합 아동 기금, 국제 연합 난민 기구 같은 국제기구와 국경 없는 의사회, 세계 자연 기금, 그린피스 같은 비정부 기구도 노력해요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 노력 카드를 다섯 주체의 줄에 모았더니, 다섯 줄이 모두 팽팽해졌을 때 지구가 올라갔어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b>지속가능한 미래를 위해 우리가 할 수 있는 일</b>을 실천해 봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">공부한 내용을 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"지속가능한 미래의 뜻을 말할 수 있어요",st)}
+    ${selfCheck(1,"개인, 기업, 국가가 하는 노력을 설명할 수 있어요",st)}
+    ${selfCheck(2,"국제기구와 비정부 기구가 하는 노력을 설명할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">지속가능한 미래를 위해 우리가 할 수 있는 일</b>을 실천해 봐요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u3_l07";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  hdAt:0,
+  hdRead:null, hdMean:null, hdFin:null,
+  hdWrongR:null, hdWrongK:null, hdWrongF:null,
+  hdMsg:null, hdWarn:false, hdBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function hdRender(){ main.innerHTML = slides[state.idx].render(state); }
+function hdHold(msg){
+  state.hdWarn=true; state.hdBusy=true; state.hdMsg=msg;
+  playThud(); hdRender();
+  setTimeout(()=>{ state.hdBusy=false; state.hdWarn=false; state.hdMsg=null;
+    state.hdWrongR=null; state.hdWrongK=null; state.hdWrongF=null; hdRender(); },1600);
+}
+
+/* ① 주체의 줄 — 지금 온 카드가 그 주체의 노력일 때만(가드⑨) 카드가 모이고 다음 카드가 온다 */
+function hdGive(w){
+  if(state.hdFin!=null) return;                                        // 가드①
+  if(state.hdBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(w) || w<0 || w>=HD_W) return;                   // 가드②
+  if(hdUp(state)){ hdHold(HD_LOCK); return; }                          // 가드③ 판 불변
+  const i = state.hdAt;
+  if(!hdFit(i,w)){ hdHold(HD_NO(w)); return; }                         // 가드⑨ 그 주체의 노력이 아님 — 판 불변
+  state.hdAt += 1;                                                     // ★ 카드를 넘기는 자리 단 하나
+  state.hdWarn=false;
+  if(hdUp(state)){ state.hdMsg = HD_UP_MSG; playChime(); }
+  else { state.hdMsg = `모였어요 \u2014 <b>${HD_WHO[w]}</b>의 줄에 카드 ${hdGot(state,w).length}장. ${hdTaut(state,w)?'이 줄이 팽팽해졌어요. 지구는 어떻게 되었나요?':'한 장 더 모이면 이 줄이 팽팽해져요.'}`; playBlip(); }
+  hdRender();
+}
+
+/* ② 판 읽기 — 지구가 올라간 뒤에만(가드④) */
+function hdReadPick(k){
+  if(state.hdFin!=null) return;                                        // 가드①
+  if(state.hdBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=HD_READ.length) return;         // 가드②
+  if(!hdUp(state)){ hdHold(HD_ORDER_R); return; }                      // 가드④ 순서 — 판 불변
+  if(state.hdRead!=null){ hdHold(HD_READ_AGAIN); return; }             // 가드④ 판 불변
+  if(k===HD_READ_OK){
+    state.hdRead=k; state.hdWrongR=null; state.hdWarn=false;
+    state.hdMsg = '판을 잘 읽었어요. 줄 하나, 둘이 팽팽해져도 지구는 그대로였고, <b>다섯 줄이 모두</b> 팽팽해졌을 때 지구가 올라갔어요. 혼자만의 노력으로는 안 되고 <b>힘을 모아야</b> 해요.';
+    playChime(); hdRender(); return;
+  }
+  state.hdWrongR=k;
+  hdHold(HD_READ_NO[k]);
+}
+
+/* ③ 꼭! 기억해요 빈칸 — 판을 읽은 뒤에만(가드⑤). */
+function hdMeanPick(k){
+  if(state.hdFin!=null) return;                                        // 가드①
+  if(state.hdBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=HD_MEAN.length) return;         // 가드②
+  if(state.hdRead==null){ hdHold(HD_ORDER_K); return; }                // 가드⑤ 순서 — 판 불변
+  if(state.hdMean!=null){ hdHold(HD_MEAN_AGAIN); return; }             // 가드⑤ 판 불변
+  if(k!==HD_MEAN_OK){ state.hdWrongK=k; hdHold(HD_MEAN_NO[k]); return; } // 가드⑤ 판 불변
+  state.hdMean = k;                                                    // ★ 빈칸을 고르는 자리 단 하나
+  state.hdWarn=false;
+  state.hdMsg = '개인이나 민간단체가 중심이 되어 공공의 이익을 지키려고 만든 <b>비정부 기구</b>가 있어요.';
+  playChime(); hdRender();
+}
+
+/* ④ 마무리 — 지도서 10~11차시 주요 내용 정리 */
+function hdFinish(k){
+  if(state.hdFin!=null) return;                                        // 가드①
+  if(state.hdBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=HD_FIN.length) return;          // 가드②
+  if(state.hdMean==null){ hdHold(HD_ORDER_F); return; }                // 가드⑥ 순서 — 판 불변
+  if(k===HD_FIN_OK){
+    state.hdFin=k; state.hdWrongF=null; state.hdMsg=null; state.hdWarn=false;
+    playChime(); hdRender(); return;
+  }
+  state.hdWrongF=k;
+  hdHold(HD_FIN_NO[k]);                                                // 가드⑦ 판 불변
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 3단원 8차시(u3 l08) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
