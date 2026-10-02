@@ -13,6 +13,7 @@
    · 32차(2026-09-29) 3학년 2학기 분수와 소수 부품: fgroup(묶어서 분수·분수만큼) · fmix(1보다 큰 분수·소수 — 가분수·대분수 띠/원) · nline(1보다 큰 수직선 — 분수·대분수·소수 점)
    · 60차(2026-10-01) vmul parts:false(answer:false 와 함께 — 부분 곱 줄까지 비움, 문제 장용)
    · 59차(2026-10-01) 4학년 1학기 각도 부품: ang(각 하나 — 호·도·직각 ㄱ자·단위 각 칸·어림 기준선·예각/직각/둔각) · prot(각도기 — 안쪽·바깥쪽 눈금, 밑금 방향에 따라 읽는 눈금) · asum(각도의 합·차·한 점에 모으기) · polyang(삼각형·사각형 안쪽 각 — 크기대로 그림·대각선)
+   · 64차(2026-10-02) 4학년 1학기 관계와 규칙 부품: bal(저울 — 식을 셈해 기울기) · shapes(모양의 배열 — 변하는/변하지 않는 부분) · ngrid(수 배열표·수열) · eqs(계산식의 배열) · eqc(등호 카드 — 옳음은 부품이 셈)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
    ============================================================================ */
 (function (global) {
@@ -1396,6 +1397,95 @@
   Object.assign(PARTS, { bar });
   }
   const HTML_PARTS = { vert, tvert, vmul, vdiv, ptable, ograph, pgraph, pvt, jump, notes };
+  { // 64차 관계와 규칙 부품 — 이름이 겹치지 않게 블록 안에 둔다
+  // ══ 64차(2026-10-02) 4학년 1학기 관계와 규칙 부품 — bal(저울: 두 양) · eqc(등호 카드: 옳음 판정은 부품이 셈) · ngrid(수 배열표·수열) · eqs(계산식의 배열) · shapes(모양의 배열) ══
+  // 그림 문법(자기주도 원문과 같음): 청록 = 변하는 부분 · 노랑 = 변하지 않는 부분 · 주황 「?」·「□」 = 구할 자리 · 노란 칸 = 짚는 줄.
+  const fx6 = (n) => (+n).toFixed(1);
+  const OPS = (e) => String(e == null ? '' : e).replace(/×/g, '*').replace(/÷/g, '/').replace(/[−–-]/g, '-');
+  function calc6(e) { const x = OPS(e).replace(/\s+/g, ''); if (!x || !/^[\d*+\-/().]+$/.test(x)) return NaN; try { const v = Function('return (' + x + ')')(); return Number.isFinite(v) ? Math.round(v * 1e6) / 1e6 : NaN; } catch (er) { return NaN; } }
+  const show6 = (e) => String(e == null ? '' : e).replace(/\*/g, '×').replace(/\//g, '÷').replace(/(\d)-(?=\d|□|\()/g, '$1−');
+  function tx6(x, y, t, sz, col, w, anc) { return '<text x="' + x + '" y="' + y + '" text-anchor="' + (anc || 'middle') + '" font-size="' + sz + '" font-weight="' + (w || 800) + '" fill="' + (col || INK) + '">' + esc(t) + '</text>'; }
+  const TEAL = '#2FB5AA', TEALD = '#168A80', GOLD = '#F6C445', GOLDD = '#C99A12', EMPH = '#FF7A2F';
+  // bal: 저울 — l·r = 식 글자 또는 {expr, blocks[]} · level 수평으로 그림(값을 모를 때) · hideR 오른쪽 접시 「?」 · note 아래 글자
+  //   기울기는 부품이 식을 셈해서 정한다(무거운 쪽이 내려감) · 셈이 안 되는 식(□·?)은 level 이어야 수평 · data-l/r/tilt
+  function bal(o) {
+    const side = (v) => (typeof v === 'object' && v ? v : { expr: v == null ? '' : String(v) });
+    const Ls = side(o.l), Rs = side(o.r), lv = calc6(Ls.expr), rv = o.hideR ? NaN : calc6(Rs.expr);
+    const tilt = o.level || isNaN(lv) || isNaN(rv) ? 0 : lv === rv ? 0 : lv > rv ? -7 : 7, cx = 230, by = 70, arm = 138, a = tilt * Math.PI / 180;
+    const eL = [cx - arm * Math.cos(a), by - arm * Math.sin(a)], eR = [cx + arm * Math.cos(a), by + arm * Math.sin(a)];
+    let s = '<path d="M' + (cx - 64) + ' 252 H' + (cx + 64) + ' L' + (cx + 22) + ' 234 H' + (cx - 22) + ' Z" fill="#8A93A0"/><rect x="' + (cx - 7) + '" y="' + by + '" width="14" height="168" fill="#9AA6B4"/>';
+    s += '<line class="o-beam" data-ang="' + tilt + '" x1="' + fx6(eL[0]) + '" y1="' + fx6(eL[1]) + '" x2="' + fx6(eR[0]) + '" y2="' + fx6(eR[1]) + '" stroke="' + WOOD2 + '" stroke-width="10" stroke-linecap="round"/><circle cx="' + cx + '" cy="' + by + '" r="9" fill="#fff" stroke="#5A6472" stroke-width="3"/>';
+    const pan = (e, sd, hide, cls) => { const x = e[0], py = e[1] + 82; let t = '<g class="' + cls + '"><path d="M' + fx6(x) + ' ' + fx6(e[1]) + ' L' + fx6(x - 62) + ' ' + fx6(py) + ' M' + fx6(x) + ' ' + fx6(e[1]) + ' L' + fx6(x + 62) + ' ' + fx6(py) + '" stroke="#8A93A0" stroke-width="2"/>';
+      t += '<path d="M' + fx6(x - 72) + ' ' + fx6(py) + ' Q' + fx6(x) + ' ' + fx6(py + 30) + ' ' + fx6(x + 72) + ' ' + fx6(py) + ' Z" fill="#DDE3EA" stroke="#8A93A0" stroke-width="3"/>';
+      if (hide) t += tx6(fx6(x), fx6(py - 8), '?', 40, EMPH, 900);
+      else if (sd.blocks && sd.blocks.length) { const b = sd.blocks, n = b.length, bw = Math.min(56, 136 / n - 4), tw = n * (bw + 4) - 4; b.forEach((lab, i) => { const bx = x - tw / 2 + i * (bw + 4), q = /\?|□/.test(lab); t += '<rect class="blk" x="' + fx6(bx) + '" y="' + fx6(py - 40) + '" width="' + fx6(bw) + '" height="36" rx="7" fill="' + (q ? '#fff' : TEAL) + '" stroke="' + (q ? EMPH : TEALD) + '" stroke-width="2.5"' + (q ? ' stroke-dasharray="5 4"' : '') + '/>' + tx6(fx6(bx + bw / 2), fx6(py - 15), lab, String(lab).length > 3 ? 15 : 19, q ? EMPH : '#fff', 900); }); }
+      if (!hide && !(sd.blocks || []).some(b => /\?|□/.test(b))) t += tx6(fx6(x), fx6(py + 46), show6(sd.expr), 26, INK, 900); // 모르는 블록(?)이 있으면 식을 쓰지 않는다 — 답이 보임
+      return t + '</g>'; };
+    s += pan(eL, Ls, false, 'pan-l') + pan(eR, Rs, !!o.hideR, 'pan-r');
+    const cap = o.note || (o.hideR ? '' : tilt === 0 ? '수평 — 두 양의 크기가 같아요' : '');
+    if (cap) s += tx6(230, 292, cap, 20, '#3B4252', 800);
+    return svgWrap(s, 'fig-bal', '0 0 460 ' + (cap ? 306 : 278)).replace('<svg ', '<svg data-l="' + (isNaN(lv) ? '' : lv) + '" data-r="' + (isNaN(rv) ? '' : rv) + '" data-tilt="' + tilt + '" ');
+  }
+  // shapes: 모양의 배열 — pat(cross 십자 자석 4n · stair 쌓기나무 1+3+5… · square n×n · tstair 계단 1+2+3… · row3 사각형 3+2… · vert3 세로 3+2…
+  //   · wing 날개 2n · mid3 양끝 3개씩+가운데 2n · straw 종이 빨대 3·9·18…) · ns 순서 번호[] · eq 식[](ns 와 같은 길이) · q 다음 칸 「?」(true 또는 순서 이름)
+  //   · circle 동그라미 · cnt false(개수 글자 숨김 — 셀 문제) · data-counts · g.sh-it[data-n][data-c]
+  const ORD6 = ['첫째', '둘째', '셋째', '넷째', '다섯째', '여섯째', '일곱째', '여덟째', '아홉째', '열째'];
+  const PAT = {
+    cross: (k) => { const c = []; for (let i = 1; i <= k; i++) c.push([k, k - i, 'v'], [k, k + i, 'v'], [k - i, k, 'v'], [k + i, k, 'v']); return c; },
+    stair: (k) => { const c = []; for (let r = 1; r <= k; r++) for (let i = 0; i < 2 * r - 1; i++) c.push([k - r + i, r - 1, r === 1 ? 'f' : 'v']); return c; },
+    square: (k) => { const c = []; for (let y = 0; y < k; y++) for (let x = 0; x < k; x++) c.push([x, y, 'v']); return c; },
+    tstair: (k) => { const c = []; for (let r = 1; r <= k; r++) for (let i = 0; i < r; i++) c.push([i, r - 1, 'v']); return c; }, // 계단 — 아래로 갈수록 한 칸씩 길어짐
+    row3: (k) => { const c = [[0, 0, 'f'], [0, 1, 'f'], [0, 2, 'f']]; for (let col = 1; col < k; col++) c.push([col, 1, 'v'], [col, 2, 'v']); return c; },
+    vert3: (k) => { const c = [[0, k, 'f'], [0, k - 1, 'f'], [0, k + 1, 'f']]; for (let i = 1; i < k; i++) c.push([0, k - 1 - i, 'v'], [0, k + 1 + i, 'v']); return c; },
+    wing: (k) => { const c = []; for (let i = 0; i < k; i++) c.push([i, 0, i ? 'v' : 'f'], [i, 1, i ? 'v' : 'f']); return c; },
+    mid3: (k) => { const c = []; for (let i = 0; i < 3; i++) c.push([i, 0, 'f']); for (let i = 0; i < 2 * k; i++) c.push([3 + i, 0, 'v']); for (let i = 0; i < 3; i++) c.push([3 + 2 * k + i, 0, 'f']); return c; },
+    straw: (k) => { const c = []; for (let r = 0; r < k; r++) for (let j = 0; j < 3 * (r + 1); j++) c.push([j % 6, r * 2 + Math.floor(j / 6), r ? 'v' : 'f', 's']); return c; }
+  };
+  function shapes(o) {
+    const P = PAT[o.pat]; if (!P) return ''; const ns = [].concat(o.ns || [1, 2, 3, 4]), eqs = [].concat(o.eq || []);
+    const its = ns.map((n, i) => ({ n, ord: ORD6[n - 1] || n + '째', c: P(n), eq: eqs[i] }));
+    const maxR = Math.max.apply(null, its.map(it => Math.max.apply(null, it.c.map(c => c[1])) + 1)), gap = 3;
+    const sumC = its.reduce((a, it) => a + Math.max.apply(null, it.c.map(c => c[0])) + 1, 0);
+    let u = Math.min(30, 190 / maxR - gap); u = Math.max(10, Math.min(u, (880 - its.length * 70) / Math.max(1, sumC) - gap));
+    const top = 40, colH = maxR * (u + gap), lab = top + colH + 34; let x = 20, s = '';
+    its.forEach((it, i) => { const w = (Math.max.apply(null, it.c.map(c => c[0])) + 1) * (u + gap) - gap, cw = Math.max(w, 76), x0 = x + (cw - w) / 2, y0 = top + colH - (Math.max.apply(null, it.c.map(c => c[1])) + 1) * (u + gap);
+      s += '<g class="sh-it" data-n="' + it.n + '" data-c="' + it.c.length + '">' + tx6(fx6(x + cw / 2), 26, it.ord, 22, '#5B6B80', 800);
+      it.c.forEach(c => { const cx0 = x0 + c[0] * (u + gap), cy0 = y0 + c[1] * (u + gap), fl = c[2] === 'f' ? GOLD : TEAL, st = c[2] === 'f' ? GOLDD : TEALD;
+        if (c[3] === 's') s += '<rect class="sc ' + c[2] + '" x="' + fx6(cx0 + u * 0.38) + '" y="' + fx6(cy0) + '" width="' + fx6(u * 0.24) + '" height="' + fx6(u * 1.6) + '" rx="2" fill="' + fl + '" stroke="' + st + '" stroke-width="1.5"/>';
+        else if (o.circle) s += '<circle class="sc ' + c[2] + '" cx="' + fx6(cx0 + u / 2) + '" cy="' + fx6(cy0 + u / 2) + '" r="' + fx6(u / 2 - 1) + '" fill="' + fl + '" stroke="' + st + '" stroke-width="2"/>';
+        else s += '<rect class="sc ' + c[2] + '" x="' + fx6(cx0) + '" y="' + fx6(cy0) + '" width="' + fx6(u) + '" height="' + fx6(u) + '" rx="' + fx6(u * 0.18) + '" fill="' + fl + '" stroke="' + st + '" stroke-width="2"/>'; });
+      if (o.cnt !== false) s += tx6(fx6(x + cw / 2), lab, it.c.length + '개', 24, INK, 900);
+      if (it.eq) s += tx6(fx6(x + cw / 2), lab + (o.cnt !== false ? 30 : 0), show6(it.eq), it.eq.length > 9 ? 18 : 21, TEALD, 900);
+      s += '</g>'; x += cw; if (i < its.length - 1 || o.q) { s += tx6(fx6(x + 18), fx6(top + colH / 2 + 8), '→', 26, '#9AA6B4', 900); x += 36; } });
+    if (o.q) { const qn = typeof o.q === 'string' ? o.q : ORD6[ns[ns.length - 1]] || '다음'; s += '<g class="sh-q">' + tx6(fx6(x + 40), 26, qn, 22, EMPH, 900) + '<rect x="' + fx6(x + 6) + '" y="' + fx6(top + colH / 2 - 34) + '" width="68" height="68" rx="12" fill="#fff" stroke="' + EMPH + '" stroke-width="3" stroke-dasharray="7 5"/>' + tx6(fx6(x + 40), fx6(top + colH / 2 + 14), '?', 40, EMPH, 900) + '</g>'; x += 84; }
+    const H6 = lab + (eqs.length ? (o.cnt !== false ? 44 : 14) : 10) + (o.cnt === false && !eqs.length ? -24 : 0);
+    return svgWrap(s, 'fig-shapes', '0 0 ' + Math.round(x + 20) + ' ' + Math.round(H6)).replace('<svg ', '<svg data-pat="' + esc(o.pat) + '" data-counts="' + its.map(it => it.c.length).join(',') + '" ');
+  }
+  Object.assign(PARTS, { bal, shapes });
+  // ngrid: 수 배열표·수열 — rows [[칸]] (칸 = 수·글자 또는 {v, q:true(「?」), hl:'teal'|'gold'|'emph'}) · hl 'row'(첫 줄)|'diag'(↘)|'col'(첫 칸 줄) · head 첫 줄·첫 칸이 머리(덧셈표) · arrow 아래 글자
+  function ngrid(o) {
+    const rows = o.rows || []; const cell = (c) => (c !== null && typeof c === 'object' ? c : { v: c });
+    const hlOf = (c, r, i) => c.hl || (o.hl === 'row' && r === 0 && !(o.head && i === 0) ? 'teal' : o.hl === 'diag' && r === i ? 'gold' : o.hl === 'col' && i === 0 ? 'teal' : '');
+    let h = '<table class="ng' + (o.head ? ' head' : '') + '">' + rows.map((row, r) => '<tr>' + row.map((c0, i) => { const c = cell(c0), hl = hlOf(c, r, i), hd = o.head && (r === 0 || i === 0);
+      return '<td class="' + [hd ? 'hd' : '', hl ? 'hl-' + hl : '', c.q ? 'q' : ''].filter(Boolean).join(' ') + '"' + (c.q ? ' data-q="1"' : '') + '>' + (c.q ? '?' : esc(c.v == null ? '' : c.v)) + '</td>'; }).join('') + '</tr>').join('') + '</table>';
+    const data = rows.map(row => row.map(c0 => { const c = cell(c0); return c.q ? '?' : String(c.v == null ? '' : c.v); }).join(',')).join('|');
+    return '<div class="fig-vert fig-ngrid" data-rows="' + esc(data) + '">' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + '<div class="ng-wrap">' + h + '</div>' + (o.arrow ? '<div class="ng-ar">' + esc(o.arrow) + '</div>' : '') + '</div>';
+  }
+  // eqs: 계산식의 배열 — items [{ord, eq, blank(구할 식 — 「?」·「□」 그대로), hl}] · title
+  function eqs(o) {
+    const it = o.items || [];
+    return '<div class="fig-vert fig-eqs">' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + it.map(r => '<div class="eqs-row' + (r.hl || r.blank ? ' hl' : '') + (r.blank ? ' blank' : '') + '" data-eq="' + esc(OPS(r.eq)) + '"' + (r.blank ? ' data-blank="1"' : '') + '><span class="eo">' + esc(r.ord || '') + '</span><span class="ee">' + esc(show6(r.eq)) + '</span></div>').join('') + (o.arrow ? '<div class="ng-ar">' + esc(o.arrow) + '</div>' : '') + '</div>';
+  }
+  // eqc: 등호 카드 — items [{l, r, judge(옳음 표시), hl:'l'|'r'}] · 옳음 ○/× 는 부품이 양쪽을 셈해서 정한다(데이터에 쓰지 않음) · note 아래 글자
+  function eqc(o) {
+    const it = o.items || (o.l != null ? [o] : []);
+    return '<div class="fig-vert fig-eqc">' + it.map(r => { const lv = calc6(r.l), rv = calc6(r.r), okv = !isNaN(lv) && !isNaN(rv) ? lv === rv : null;
+      const bx = (t, on) => '<span class="ec-b' + (on ? ' on' : '') + '">' + esc(show6(t)) + '</span>';
+      return '<div class="ec-row" data-l="' + (isNaN(lv) ? '' : lv) + '" data-r="' + (isNaN(rv) ? '' : rv) + '" data-ok="' + (okv == null ? '' : okv) + '">' + bx(r.l, r.hl === 'l') + '<span class="ec-eq">=</span>' + bx(r.r, r.hl === 'r') + (r.judge && okv != null ? '<span class="ec-j ' + (okv ? 'ok' : 'no') + '">' + (okv ? '옳아요 ○' : '옳지 않아요 ×') + '</span>' : '') + '</div>'; }).join('') + (o.note ? '<div class="ng-ar">' + esc(o.note) + '</div>' : '') + '</div>';
+  }
+  Object.assign(HTML_PARTS, { ngrid, eqs, eqc });
+  global.KT2_CALC6 = calc6;
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
