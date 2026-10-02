@@ -136,7 +136,7 @@
     if (o.text) return '<div>' + md(o.text) + '</div>';
     return '';
   }
-  function dataFig(f) { return !!f && (['bar', 'pgraph', 'ptable'].indexOf(f.k) >= 0 || (f.k === 'panels' && (f.items || []).some(i => dataFig(i.fig)))); } // 63차
+  function dataFig(f) { return !!f && (['bar', 'pgraph', 'ptable', 'ngrid', 'eqs', 'eqc', 'bal', 'shapes'].indexOf(f.k) >= 0 || (f.k === 'panels' && (f.items || []).some(i => dataFig(i.fig)))); } // 63차 · 65차 관계·규칙 부품
   function options(opts, multi, revealed) {
     if (!opts || !opts.length) return '';
     const M = ['A', 'B', 'C', 'D', 'E', 'F'];
