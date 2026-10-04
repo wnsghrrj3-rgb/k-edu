@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-01 · 과목 13 · 차시 700 · 슬라이드 11913 */
+   생성: 2026-10-04 · 과목 14 · 차시 709 · 슬라이드 12084 */
 window.KT2_MANIFEST = {
- "built": "2026-10-01",
- "lessons": 700,
- "slides": 11913,
+ "built": "2026-10-04",
+ "lessons": 709,
+ "slides": 12084,
  "subjects": [
   {
    "slug": "g1_math",
@@ -18871,6 +18871,258 @@ window.KT2_MANIFEST = {
        "title": "스스로 마무리해요 (단원 정리)",
        "meta_title": "스스로 마무리해요 (단원 정리)",
        "std": "관계와 규칙 — 크기가 같은 두 양의 관계를 식으로 나타내기·수·모양·계산식의 배열에서 규칙 찾기 (성취기준 번호 확인 필요)",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "slug": "g4_science",
+   "grade": 4,
+   "term": 1,
+   "subject": "science",
+   "subject_ko": "과학",
+   "title": "4학년 과학",
+   "units": [
+    {
+     "unit": 1,
+     "title": "자석의 이용",
+     "file": "data/g4_science_u1.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u1_l01",
+       "no": "1",
+       "title": "활짝! 과학 열기 — 자석 다트 놀이",
+       "meta_title": "활짝! 과학 열기 — 자석 다트 놀이",
+       "std": "[4과09-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l02",
+       "no": "2",
+       "title": "자석에 붙는 물체",
+       "meta_title": "자석에 붙는 물체",
+       "std": "[4과09-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l03",
+       "no": "3",
+       "title": "자석과 자석에 붙는 물체 사이의 힘",
+       "meta_title": "자석과 자석에 붙는 물체 사이의 힘",
+       "std": "[4과09-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l04",
+       "no": "4",
+       "title": "자석과 자석 사이의 힘",
+       "meta_title": "자석과 자석 사이의 힘",
+       "std": "[4과09-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l06",
+       "no": "6",
+       "title": "나침반과 자석",
+       "meta_title": "나침반과 자석",
+       "std": "[4과09-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l07",
+       "no": "7",
+       "title": "자석의 이용",
+       "meta_title": "자석의 이용",
+       "std": "[4과09-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l08",
+       "no": "8",
+       "title": "자석을 이용한 장치 설계",
+       "meta_title": "자석을 이용한 장치 설계",
+       "std": "[4과09-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l10",
+       "no": "10",
+       "title": "자석과 첨단 과학 기술",
+       "meta_title": "자석과 첨단 과학 기술",
+       "std": "[4과09-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l11",
+       "no": "11",
+       "title": "단원 마무리 — 자석의 이용 한눈에",
+       "meta_title": "단원 마무리 — 자석의 이용 한눈에",
+       "std": "[4과09-01][4과09-02][4과09-03]",
        "slides": 19,
        "stages": [
         3,
