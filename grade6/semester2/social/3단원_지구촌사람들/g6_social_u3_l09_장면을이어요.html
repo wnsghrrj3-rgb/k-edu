@@ -1,0 +1,915 @@
+<!--
+K-edu 사회 6-2 · 3단원 지구촌 사람들 · 생각을 펼쳐요 · 9차시(u3 l09)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사12-01]·[6사12-02] · 교과서 p.156~157 · 지도서(대단원3 **13차시** 「[생각을 펼쳐요] 그림책 스토리보드 만들기」, 지도서 p.346~347) 근거.
+학습 목표: '지구촌 사람들'에서 공부한 내용을 바탕으로 창의·융합 활동을 할 수 있다.
+수업 기법 및 전략: 글쓰기 · 스토리보드 만들기 · 융합 교과 사회·국어·미술
+META = "3단원 지구촌 사람들 · 생각을 펼쳐요"
+⚠️ 엔진은 u3 l08(→ u3 l07 → … 6-1 사회 엔진)에서 100% 승계 · 엔진 무수정 · 3단원 색 #7C3AED.
+⚠️ 회수 키 `g6_s2_social_u3_l09_v1` · 맵 키 `g6_social_u3_l09` · 파일명 `장면을이어요` — 조작 이름(선례 승계 · 6-2 u1 l11 · u2 l13 생각을 펼쳐요 선례).
+
+직접조작: 「장면을 이어요」 판 (교과서 156~157쪽 그림책 계획서 · 스토리보드 예시 그림 순서 1~6)
+  ⭐ 씨앗은 교과서 157쪽 스토리보드 예시 — 여섯 장면의 그림(그림 설명)과 글·대사, 156쪽 계획서(제목·주제·대상·줄거리).
+  ⭐ 그림 장면을 하나 고르고(jnFrame) 그 그림에 어울리는 글 카드를 고르면(jnCard) 장면에 글이 이어진다.
+  ⭐ ★ 이어진 장면은 `state.jnPut` 한 비트 수(0~63)가 정한다 — 장면별 글 배열 0 · 카드별 사용 배열 0(쓴 카드는 jnPut 에서 읽음).
+  ⭐ ★ 글 카드가 그 장면과 이어지는지는 `jnFit` 한 줄(표 `JN_DECK` = [3,0,5,1,2,4] — 카드 자리 → 장면) · 잇는 자리(`state.jnPut |=`)는 코드에 단 하나.
+     ★★ 핵심 신규성 = **그림과 글 짝짓기(장면 고정)** — 고른 장면의 그림과 이어지지 않는 글은 붙지 않고, 안내에는 알맞은 카드가 드러나지 않는다.
+        이은 장면에는 그 장면이 담은 단원 주제(세계의 인구 분포 · 지구촌의 문제와 지속가능한 미래)가 드러나 셈 줄로 모인다.
+  ⭐ 판 읽기는 여섯 장면이 다 이어진 뒤에만(정답 자리 1) → 계획 세우기 빈칸 3택(지도서 347쪽 「독자」 · 정답 자리 2)
+     → 마무리 3택 = 지도서 13차시 학습 목표·지도 방법(정답 자리 0).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 11종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 여섯 장면이 다 이어진 뒤 장면 고르기·카드 고르기 무시(`JN_LOCK`) — 판 불변
+     ④ 다 잇기 전 판 읽기 무시 · 읽은 뒤 다시 무시 · 알맞지 않은 읽기 무시(자리별 안내)
+     ⑤ 판을 읽기 전 빈칸 무시 · 고른 뒤 다시 무시 · 알맞지 않은 빈칸 무시
+     ⑥ 빈칸 전 마무리 무시(순서)
+     ⑦ 알맞지 않은 마무리 무시
+     ⑧ 안내 표시 중 재클릭 무시(`jnBusy`)
+     ⑨ 장면을 고르기 전 카드 무시(`JN_PICK_FIRST`) · 이미 글이 있는 장면 고르기 무시(`JN_FILLED`) — 판 불변
+     ⑩ 이미 이은 카드 다시 무시(`JN_USED`) — 판 불변
+     ⑪ 고른 장면과 이어지지 않는 글 무시(`JN_NOFIT`) — 판 불변 · 안내에 알맞은 카드 문면 0.
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.jn-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 그림 장면은 도식이다** — 판에서는 그림을 그리거나 색칠하지 않는다(캡션 상시).
+  ㉡ **계획서와 여섯 장면은 교과서 예시다** — 실제 그림책의 주제와 줄거리는 모둠이 함께 정한다.
+  ㉢ **판에 사람 형상 0** — 지구·건물·천막·온도계·재활용 표시·팻말 그림과 번호만.
+  ㉣ **그림책 주제 정하기 · 줄거리 만들기 · 역할 나누기 · 장면 그리고 색칠하기 · 그림책 발표회 · 느낀 점 이야기하기는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 3단원 마무리(14차시)는 차시 예고 자리까지만.
+  **새 사실 0** — 교과서 156~157쪽 · 지도서 13차시 본문 · 앞 차시 본문까지만.
+  수치는 계획서 예시의 독자 나이(「8~9세」 · 「6~7세」)만 · 금액 0 · 쪽수 0 · 누리집 주소 0 · 사람 형상 0.
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u3_l09_v1">
+<title>[생각을 펼쳐요] 그림책 스토리보드 만들기 · 지구촌 사람들 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#7C3AED; --green-d:#5B21B6; --cyan:#8B5CF6;
+  --bg:#F5F3FF; --bub:#EDE9FE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#EDE9FE;color:#5B21B6}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 그림 장면마다 어울리는 글을 이어 그림책 스토리보드를 완성하는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#EDE9FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#5B21B6;max-width:660px}
+.jn-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#F5F3FF;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.jn-board{display:flex;flex-direction:column;gap:6px;padding:8px}
+.jn-head{background:#EDE9FE;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#5B21B6;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.jn-plan{border:2px solid #C4B5FD;background:#fff;border-radius:9px;padding:5px 7px;display:grid;grid-template-columns:auto 1fr;gap:2px 7px;
+  font-size:clamp(8.4px,1.42vw,10.2px);line-height:1.35;color:#334155}
+.jn-plan .jn-pk{font-weight:900;color:#5B21B6;white-space:nowrap}
+.jn-frames{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.jn-f{border:2px solid #CBD5E0;background:#F8FAFC;color:#334155;border-radius:9px;padding:4px 5px;cursor:pointer;font-family:inherit;
+  display:flex;flex-direction:column;align-items:stretch;gap:2px;text-align:left;min-height:44px}
+.jn-f:hover{border-color:#7C3AED}
+.jn-f[data-sel="1"]{border-color:#D97706;background:#FFFBEB}
+.jn-f[data-put="1"]{border-color:#7C3AED;background:#F5F3FF}
+.jn-f .jn-no{align-self:flex-start;border-radius:5px;padding:0 5px;background:#7C3AED;color:#fff;font-weight:900;font-size:clamp(8.4px,1.42vw,10.2px)}
+.jn-f svg{display:block;width:100%;height:auto;border-radius:6px}
+.jn-f .jn-d{font-weight:700;font-size:clamp(7.8px,1.32vw,9.6px);line-height:1.3;color:#475569}
+.jn-f .jn-t{font-weight:900;font-size:clamp(8.2px,1.4vw,10px);line-height:1.32;color:#4C1D95;border-top:1px dashed #DDD6FE;padding-top:2px}
+.jn-f .jn-t.jn-blank{color:#94A3B8;font-weight:700}
+.jn-f .jn-pt{align-self:flex-start;border-radius:5px;padding:0 4px;background:#EDE9FE;color:#4C1D95;font-weight:900;font-size:clamp(7.6px,1.28vw,9.2px)}
+.jn-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.jn-c{border:2px solid #A78BFA;background:#fff;color:#334155;border-radius:8px;padding:5px 5px;cursor:pointer;font-family:inherit;
+  font-weight:800;font-size:clamp(8.4px,1.42vw,10.2px);line-height:1.32;text-align:left;min-height:44px}
+.jn-c:hover{background:#F5F3FF}
+.jn-c[data-used="1"]{border-color:#E2E8F0;background:#F1F5F9;color:#94A3B8}
+.jn-c .jn-lb{display:inline-block;border-radius:5px;padding:0 4px;margin-right:3px;background:#EDE9FE;color:#4C1D95;font-weight:900}
+.jn-tally{font-weight:800;color:#5B21B6;font-size:clamp(9.2px,1.56vw,11.2px);text-align:center}
+.jn-read,.jn-mean,.jn-fin{display:flex;flex-direction:column;gap:5px}
+.jn-read button,.jn-mean button,.jn-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.jn-read button:hover,.jn-mean button:hover,.jn-fin button:hover{background:var(--bub)}
+.jn-read button.no,.jn-mean button.no,.jn-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.jn-hint{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:520px){ .jn-frames,.jn-cards{grid-template-columns:repeat(2,1fr)} }
+@media(max-width:380px){ .jn-c,.jn-f .jn-t{font-size:8.4px} }
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠·㉡: 모든 그림은 내용을 나타낸 도식이며 실제 사진이 아니다.
+   ⚠️ 사람 형상 대신 도형으로만 그린다. 수치를 그림에 적지 않는다. */
+const SVG = {
+  // 1 들어가기 — 단원에서 공부한 내용 떠올리기(지도서 346쪽 동기 유발 · 도식)
+  recall:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    <rect x="22" y="22" width="124" height="98" rx="12" fill="#fff" stroke="#7C3AED" stroke-width="1.6"/>
+    <text x="84" y="70" font-size="28" text-anchor="middle">\uD83C\uDF0F</text>
+    ${[[50,48],[118,46],[60,92],[110,94],[40,70],[128,72]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#A78BFA"/>`).join('')}
+    <text x="84" y="110" font-size="7" fill="#4C1D95" text-anchor="middle" font-weight="900">세계의 인구 분포</text>
+    <rect x="174" y="22" width="124" height="98" rx="12" fill="#fff" stroke="#047857" stroke-width="1.6"/>
+    <text x="216" y="70" font-size="24" text-anchor="middle">\uD83C\uDF21\uFE0F</text>
+    <text x="256" y="70" font-size="24" text-anchor="middle">\u267B\uFE0F</text>
+    <text x="236" y="110" font-size="6.6" fill="#065F46" text-anchor="middle" font-weight="900">지구촌의 문제와 지속가능한 미래</text>
+    <text x="160" y="150" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">「지구촌 사람들」에서 공부한 두 주제(도식)</text></svg>`,
+  // 2 살펴보기 — 스토리보드(지도서 347쪽 · 도식)
+  board:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#EFF6FF"/>
+    ${[0,1,2].map(i=>`<rect x="${16+i*100}" y="18" width="88" height="62" rx="8" fill="#fff" stroke="#0369A1" stroke-width="1.4"/>
+      <circle cx="${28+i*100}" cy="30" r="8" fill="#7C3AED"/><text x="${28+i*100}" y="33.5" font-size="8" fill="#fff" text-anchor="middle" font-weight="900">${i+1}</text>
+      <path d="M${36+i*100} 66 Q${60+i*100} 40 ${84+i*100} 60" fill="none" stroke="#94A3B8" stroke-width="1.6" stroke-dasharray="3 3"/>
+      <rect x="${16+i*100}" y="86" width="88" height="34" rx="6" fill="#fff" stroke="#A78BFA" stroke-width="1.2"/>
+      <line x1="${24+i*100}" y1="98" x2="${96+i*100}" y2="98" stroke="#CBD5E0" stroke-width="1.4"/>
+      <line x1="${24+i*100}" y1="108" x2="${80+i*100}" y2="108" stroke="#CBD5E0" stroke-width="1.4"/>`).join('')}
+    ${[0,1].map(i=>`<path d="M${106+i*100} 50 L${114+i*100} 50" stroke="#7C3AED" stroke-width="2"/>`).join('')}
+    <text x="160" y="150" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">장면별 그림과 글로 이야기의 흐름을 적어요(도식)</text></svg>`,
+  // 3 살펴보기 — 그림책 계획 세우기 순서(교과서 156쪽 이렇게 해 봐요 · 도식)
+  steps:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    ${[['\uD83D\uDCA1','주제 정하기'],['\uD83D\uDCDD','줄거리 만들기'],['\uD83E\uDDE9','역할 나누기'],['\uD83C\uDFA4','발표회 열기']].map((t,i)=>`<rect x="${10+i*77}" y="28" width="68" height="86" rx="10" fill="#fff" stroke="#7C3AED" stroke-width="1.4"/>
+      <circle cx="${44+i*77}" cy="40" r="8" fill="#7C3AED"/><text x="${44+i*77}" y="43.5" font-size="8" fill="#fff" text-anchor="middle" font-weight="900">${i+1}</text>
+      <text x="${44+i*77}" y="82" font-size="22" text-anchor="middle">${t[0]}</text>
+      <text x="${44+i*77}" y="104" font-size="6.4" fill="#4C1D95" text-anchor="middle" font-weight="900">${t[1]}</text>`).join('')}
+    <text x="160" y="148" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">그림책을 만드는 순서(도식)</text></svg>`,
+  // 4 살펴보기 — 그림책 계획서(교과서 156쪽 · 도식)
+  plan:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFFBEB"/>
+    <rect x="60" y="14" width="200" height="118" rx="10" fill="#fff" stroke="#B45309" stroke-width="1.6"/>
+    ${['그림책 제목','주제','대상','줄거리'].map((t,i)=>`<rect x="70" y="${24+i*26}" width="56" height="20" rx="5" fill="#FEF3C7"/>
+      <text x="98" y="${37+i*26}" font-size="7" fill="#92400E" text-anchor="middle" font-weight="900">${t}</text>
+      <line x1="134" y1="${34+i*26}" x2="248" y2="${34+i*26}" stroke="#E5E7EB" stroke-width="2"/>`).join('')}
+    <text x="160" y="154" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">그림책 계획서(도식)</text></svg>`,
+  // 5 살펴보기 — 역할을 나누어 스토리보드 만들기(지도서 347쪽 · 도식)
+  roles:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#ECFDF5"/>
+    ${[0,1,2,3].map(i=>`<rect x="${14+i*76}" y="20" width="64" height="58" rx="8" fill="#fff" stroke="#047857" stroke-width="1.4"/>
+      <text x="${46+i*76}" y="58" font-size="20" text-anchor="middle">\uD83D\uDD8D\uFE0F</text>
+      <circle cx="${46+i*76}" cy="100" r="11" fill="#D1FAE5" stroke="#047857" stroke-width="1.6"/>
+      <text x="${46+i*76}" y="104" font-size="9" fill="#065F46" text-anchor="middle" font-weight="900">${['\u3131','\u3134','\u3137','\u3139'][i]}</text>
+      <line x1="${46+i*76}" y1="89" x2="${46+i*76}" y2="80" stroke="#047857" stroke-width="1.6"/>`).join('')}
+    <text x="160" y="146" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">모둠 친구마다 맡은 장면을 그려요(도식)</text></svg>`,
+  // 7 살펴보기 — 그림책 발표회(지도서 347쪽 · 도식)
+  show:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <rect x="96" y="18" width="128" height="86" rx="8" fill="#fff" stroke="#C2410C" stroke-width="1.6"/>
+    <text x="160" y="70" font-size="30" text-anchor="middle">\uD83D\uDCD6</text>
+    <line x1="130" y1="104" x2="116" y2="130" stroke="#9A3412" stroke-width="2.4"/><line x1="190" y1="104" x2="204" y2="130" stroke="#9A3412" stroke-width="2.4"/>
+    <text x="58" y="66" font-size="22" text-anchor="middle">\uD83D\uDCAC</text>
+    <text x="262" y="66" font-size="22" text-anchor="middle">\uD83D\uDCAC</text>
+    <text x="160" y="152" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">그림책 발표회(도식)</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#1E1B4B"/>
+    ${[0,1,2,3,4,5].map(i=>`<rect x="${22+i*47}" y="48" width="38" height="44" rx="6" fill="#EDE9FE" stroke="#A78BFA" stroke-width="2"/>
+      <text x="${41+i*47}" y="75" font-size="12" fill="#4C1D95" text-anchor="middle" font-weight="900">${i+1}</text>`).join('')}
+    <text x="160" y="124" font-size="8.6" fill="#DDD6FE" text-anchor="middle" font-weight="800">장면이 이어지면 그림책 이야기가 돼요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#7C3AED" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#7C3AED" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#5B21B6" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 장면을 이어요 판 =====
+   ★ 이어진 장면은 state.jnPut 한 비트 수(0~63)가 정한다 — 장면별 글 배열 0 · 카드별 사용 배열 0.
+   ★ 글 카드가 그 장면과 이어지는지는 jnFit 한 줄(표 JN_DECK) · 잇는 자리는 단 하나(state.jnPut |=).
+   ★★ 고른 장면의 그림과 이어지지 않는 글은 붙지 않는다 — 안내에는 알맞은 카드가 드러나지 않는다.
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. 그림 장면은 도식이다. */
+const JN_N = 6;
+const JN_ALL = 63;
+/* 그림책 계획서 — 교과서 156쪽 예시 */
+const JN_PLAN = [
+  ['그림책 제목', '지구와 함께 살아가는 우리'],
+  ['주제', '지구촌 사람들과 함께하는 지속가능한 미래를 위한 노력'],
+  ['대상', '8~9세 어린이'],
+  ['줄거리', '지구촌에는 많은 사람이 살아가고 있다. 지구촌을 위협하는 여러 가지 문제를 해결하고 지구를 지키려고 많은 사람이 캠페인을 벌인다.']
+];
+/* 여섯 장면의 그림 설명 — 교과서 157쪽 그림 순서 1~6 */
+const JN_PIC = [
+  '지구촌에 다양한 인종의 사람들이 살아가는 모습',
+  '발달한 도시에 빼곡하게 사람들이 살아가는 모습',
+  '드넓은 초원에서 유목하는 사람의 모습',
+  '병든 지구와 이를 지켜보며 걱정하는 어린이들의 모습',
+  '분리수거장에서 쓰레기를 분리배출하는 모습',
+  '\u2018지구를 위해 함께 행동해요.\u2019라고 쓴 캠페인 보드를 들고 있는 모습'
+];
+/* 그림 도식 — 사람 형상 0 */
+const JN_ICON = [
+  ['\uD83C\uDF0F'], ['\uD83C\uDFD9\uFE0F'], ['\u26FA','\uD83D\uDC11'],
+  ['\uD83C\uDF0F','\uD83C\uDF21\uFE0F'], ['\u267B\uFE0F'], ['\uD83E\uDEA7','\uD83D\uDC9A']
+];
+/* 여섯 장면의 글·대사 — 교과서 157쪽 */
+const JN_TXT = [
+  ['글', '지구촌 곳곳에 많은 사람이 살아가고 있어요.'],
+  ['글', '어떤 지역은 인구가 많고'],
+  ['글', '어떤 지역은 인구가 적어요.'],
+  ['글', '하지만 지구가 병들어 아파하고 있어요.'],
+  ['대사', '지구를 위해 우리 모두 분리배출을 실천해요!'],
+  ['대사', '지구야, 우리가 지켜 줄게!']
+];
+/* ★ 카드 자리 → 장면 — 한 줄 표 */
+const JN_DECK = [3, 0, 5, 1, 2, 4];
+/* 장면이 담은 단원 주제 — 0 세계의 인구 분포 · 1 지구촌의 문제와 지속가능한 미래 */
+const JN_PART = [0, 0, 0, 1, 1, 1];
+const JN_PNAME = ['세계의 인구 분포', '지구촌의 문제와 지속가능한 미래'];
+
+/* ② 판 읽기 */
+const JN_READ = [
+  '글 카드는 장면 순서와 상관없이 아무 장면에나 넣어도 이야기가 이어져요',
+  '스토리보드는 장면별 그림과 글로 이야기의 흐름을 보여 줘요. 이 그림책은 세계의 인구 분포에서 시작해 지구촌의 문제와 우리의 실천으로 이어져, 단원에서 공부한 내용이 골고루 담겼어요',
+  '이 그림책의 여섯 장면에는 지구촌의 문제만 담겨 있어요'
+];
+const JN_READ_OK = 1;
+const JN_READ_NO = [
+  '판의 <b>여섯 장면</b>을 다시 봐요. 글 카드는 그림과 이어지는 장면에만 들어갔어요. 판을 다시 읽어 봐요.',
+  null,
+  '판의 <b>셈 줄</b>을 다시 봐요. 세계의 인구 분포를 담은 장면도 있어요. 판을 다시 읽어 봐요.'
+];
+/* ③ 계획 세우기 빈칸 — 지도서 347쪽 */
+const JN_MEAN = ['그림책의 크기', '색칠 도구', '독자'];
+const JN_MEAN_OK = 2;
+const JN_MEAN_NO = [
+  '그림책의 크기보다 먼저 <b>누가 읽을지</b>를 생각해요. 판은 그대로예요.',
+  '색칠 도구는 이 활동의 <b>준비물</b>이에요. 빈칸에는 내용의 수준을 맞출 때 생각하는 사람을 가리키는 말이 들어가요. 판은 그대로예요.',
+  null
+];
+/* ④ 마무리 — 지도서 13차시 학습 목표·지도 방법 */
+const JN_FIN = [
+  '단원에서 공부한 세계의 인구 분포와 지구촌의 문제, 지속가능한 미래를 위한 노력을 바탕으로, 독자의 수준에 맞게 장면별 그림과 글을 구성해 그림책 스토리보드를 만들어요. 친구들과 역할을 나누어 협력하고 발표회에서 공유해요',
+  '스토리보드는 그림만 있으면 되므로 글이나 대사는 넣지 않아요',
+  '그림책은 한 친구가 혼자 만들어야 하므로 역할을 나누지 않아요'
+];
+const JN_FIN_OK = 0;
+const JN_FIN_NO = [
+  null,
+  '판의 장면마다 <b>그림과 글</b>이 함께 들어갔어요. 오늘의 정리를 다시 골라 봐요.',
+  '그림책 스토리보드는 <b>모둠 친구들과 역할을 나누어</b> 만들어요. 오늘의 정리를 다시 골라 봐요.'
+];
+/* 안내 */
+const JN_LOCK = '여섯 장면에 글을 <b>이미 모두 이었어요</b>. 판을 읽어 봐요. 판은 그대로예요.';
+const JN_FILLED = '그 장면에는 <b>이미 글이 있어요</b>. 아직 빈 장면을 골라 봐요. 판은 그대로예요.';
+const JN_PICK_FIRST = '아직 <b>그림 장면</b>을 고르지 않았어요. 글을 넣을 장면부터 골라요. 판은 그대로예요.';
+const JN_USED = '그 글 카드는 <b>이미 다른 장면에 이었어요</b>. 남은 카드에서 골라 봐요. 판은 그대로예요.';
+const JN_ORDER_R = '아직 <b>여섯 장면을 다 잇지 않았어요</b>. 모든 장면에 글이 들어간 뒤에 읽을 수 있어요. 판은 그대로예요.';
+const JN_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const JN_ORDER_K = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const JN_MEAN_AGAIN = '계획 세우기 빈칸은 <b>이미 채웠어요</b>. 판은 그대로예요.';
+const JN_ORDER_F = '아직 <b>계획 세우기 빈칸</b>을 채우지 않았어요. 먼저 골라 봐요. 판은 그대로예요.';
+const JN_END_MSG = '여섯 장면에 글이 모두 이어졌어요. <b>그림책 이야기가 완성됐어요</b>. 판을 읽어 봐요.';
+function JN_NOFIT(f){ return `고른 글은 <b>${f+1}번 장면</b>의 그림과 이어지지 않아요. 그림 설명을 다시 읽고, 그 장면에서 하고 싶은 말이 무엇인지 생각해 봐요. 판은 그대로예요.`; }
+
+/* ★ 이어진 장면 — 비트 하나 · 카드가 장면과 이어지는지 — 한 줄 */
+function jnHas(m,f){ return ((m>>f)&1)===1; }
+function jnFit(f,c){ return JN_DECK[c]===f; }
+function jnUsed(st,c){ return jnHas(st.jnPut, JN_DECK[c]); }
+function jnCount(st){ return [0,1,2,3,4,5].filter(f=>jnHas(st.jnPut,f)).length; }
+function jnPartN(st,p){ return [0,1,2,3,4,5].filter(f=>JN_PART[f]===p && jnHas(st.jnPut,f)).length; }
+/* ★★ 여섯 장면을 다 잇는 자리 — 단 하나 */
+function jnDone(st){ return st.jnPut===JN_ALL; }
+
+function jnPic(f){
+  const ic=JN_ICON[f];
+  return `<svg viewBox="0 0 100 44"><rect width="100" height="44" fill="#F5F3FF"/>${ic.map((e,k)=>`<text x="${ic.length===1?50:34+k*32}" y="31" font-size="22" text-anchor="middle">${e}</text>`).join('')}</svg>`;
+}
+function jnFrames(st){
+  return `<div class="jn-frames">${[0,1,2,3,4,5].map(f=>{ const put=jnHas(st.jnPut,f), sel=st.jnSel===f;
+    return `<button class="jn-f" data-f="${f}" data-put="${put?1:0}" data-sel="${sel?1:0}" onclick="jnFrame(${f})"><span class="jn-no">${f+1}</span>${jnPic(f)}<span class="jn-d">${JN_PIC[f]}</span>${put?`<span class="jn-t">${JN_TXT[f][0]}: ${JN_TXT[f][1]}</span><span class="jn-pt">${JN_PNAME[JN_PART[f]]}</span>`:'<span class="jn-t jn-blank">글\u00b7대사 칸이 비어 있어요</span>'}</button>`; }).join('')}</div>`;
+}
+function jnCards(st){
+  return `<div class="jn-cards">${JN_DECK.map((x,c)=>`<button class="jn-c" data-c="${c}" data-used="${jnUsed(st,c)?1:0}" onclick="jnCard(${c})"><span class="jn-lb">${JN_TXT[x][0]}</span>${JN_TXT[x][1]}</button>`).join('')}</div>`;
+}
+
+function jnBoard(st){
+  const fin = st.jnFin!=null, done = jnDone(st), n = jnCount(st);
+  const head = fin ? '장면을 이어 그림책 스토리보드를 완성했어요'
+    : st.jnMean!=null ? '계획 세우기 빈칸까지 채웠어요 \u2014 이제 정리해요'
+    : st.jnRead!=null ? '계획 세우기 빈칸을 채워 봐요'
+    : done ? '여섯 장면에 글이 모두 이어졌어요 \u2014 판을 읽어 봐요'
+    : st.jnSel!=null ? `${st.jnSel+1}번 장면을 골랐어요 \u2014 어울리는 글 카드를 골라요`
+    : n>0 ? '아직 빈 장면을 골라 이어 가요'
+    : '그림 장면을 하나 고르고, 그 그림에 어울리는 글 카드를 골라요';
+  return `<div class="jn-board" data-put="${st.jnPut}" data-n="${n}" data-sel="${st.jnSel==null?-1:st.jnSel}" data-done="${done?1:0}" data-read="${st.jnRead==null?-1:st.jnRead}" data-mean="${st.jnMean==null?-1:st.jnMean}" data-fin="${fin?1:0}">
+    <div class="jn-head">${head}</div>
+    <div class="jn-plan">${JN_PLAN.map(r=>`<span class="jn-pk">${r[0]}</span><span>${r[1]}</span>`).join('')}</div>
+    ${jnFrames(st)}
+    ${jnCards(st)}
+    <div class="jn-tally">이은 장면 ${n} / 6 \u00b7 ${JN_PNAME[0]} ${jnPartN(st,0)} / 3 \u00b7 ${JN_PNAME[1]} ${jnPartN(st,1)} / 3</div>
+  </div>`;
+}
+
+function jnPanel(st){
+  const fin = st.jnFin!=null, done = jnDone(st);
+  const q = fin ? '그림 장면마다 글을 이어 단원에서 공부한 내용을 담은 그림책 스토리보드를 완성했어요.'
+    : st.jnMean!=null ? '오늘 공부한 내용을 정리해요. 그림책 스토리보드는 어떻게 만들까요?'
+    : st.jnRead!=null ? '계획 세우기 \u2014 「그림책 제작을 위한 계획을 세울 때는 (  )을/를 정하고, 그 수준에 맞는 내용을 구성해야 합니다」의 빈칸에 알맞은 말은 무엇일까요?'
+    : done ? '여섯 장면에 글이 모두 이어졌어요. 판에서 무엇을 알 수 있나요?'
+    : jnCount(st)>0 ? '빈 장면에도 글을 이어 가요. 그림과 글이 이야기의 흐름에 맞나요?'
+    : '단원에서 공부한 내용을 담은 그림책 스토리보드를 만들어 봐요. 그림 장면마다 어떤 글이 어울릴까요?';
+  let right = `<div class="jn-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83D\uDCD6 장면을 이어 정리했어요</div>
+      <b>스토리보드</b>는 장면을 구성하며 이야기의 흐름을 작성한 것이에요. 판의 여섯 장면은 <b>세계의 인구 분포</b>에서 시작해 <b>지구촌의 문제와 지속가능한 미래</b>로 이어졌어요.
+      그림책을 만들 때는 <b>독자의 수준</b>에 맞게 내용을 구성하고, 모둠 친구들과 <b>역할을 나누어</b> 협력해요.<br>
+      <span style="color:#64748B">판의 그림 장면과 계획서는 교과서 예시를 나타낸 도식이에요. 판에서는 그림을 그리거나 색칠하지 않았어요.
+      <b>그림책 주제 정하기</b>, <b>줄거리 만들기</b>, <b>역할 나누기</b>, <b>장면 그리고 색칠하기</b>, <b>그림책 발표회</b>, <b>느낀 점 이야기하기</b>는 교실에서 직접 해요.</span></div>`;
+  } else if(st.jnMean!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="jn-fin">${JN_FIN.map((t,k)=>`<button class="${st.jnWrongF===k?'no':''}" onclick="jnFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.jnRead!=null){
+    right += `<div class="dw-step">\uD83D\uDCCC 계획 세우기 빈칸</div>`;
+    right += `<div class="jn-mean">${JN_MEAN.map((t,k)=>`<button class="${st.jnWrongK===k?'no':''}" onclick="jnMeanPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="jn-hint">초성 힌트 \u2014 ㄷ ㅈ. 판의 계획서 「대상」 칸에는 이 그림책을 읽을 사람이 적혀 있어요.</div>`;
+  } else if(done){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="jn-read">${JN_READ.map((t,k)=>`<button class="${st.jnWrongR===k?'no':''}" onclick="jnReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83D\uDCD6 장면을 이어요</div>`;
+    right += `<div class="jn-hint">판의 계획서를 읽고, <b>그림 장면</b>을 하나 골라요.<br>
+      \u2460 그림과 그림 설명을 읽어요.<br>
+      \u2461 그 장면에 어울리는 <b>글 카드</b>를 골라 이어요. 「글」은 장면을 설명하는 글이고, 「대사」는 등장인물이 하는 말이에요.<br>
+      \u2462 여섯 장면을 모두 이으면 그림책 이야기가 완성돼요. 감점은 없어요.</div>`;
+  }
+  if(st.jnMsg) right += `<div class="dw-msg${st.jnWarn?' warn':''}">${st.jnMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83D\uDCD6 장면을 이어요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${jnBoard(st)}<div class="cvcap">판의 그림 장면은 <b>도식</b>이에요. 계획서와 여섯 장면은 교과서에 나온 예시예요. 판에서는 그림을 그리거나 색칠하지 않아요. 실제 그림책의 주제와 줄거리는 모둠이 함께 정해요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 지구촌 사람들 · 생각을 펼쳐요";
+
+// 확인 4 + 적용 4 — 정답 다양화 [2,0,3,1,0,2,1,3](각 자리 2회)
+// ⚠️ 새 사실 0(교과서 156~157쪽 · 지도서 13차시까지만) · 단원 마무리 0(뒤 차시).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"<b>스토리보드</b>란 무엇인가요?",
+   opts:["그림책을 다 만든 뒤에 쓰는 감상문","책에 실린 낱말의 뜻을 모은 사전","영화나 애니메이션 같은 영상물을 제작하기 위해 필요한 장면을 구성하며 이야기의 흐름을 작성한 것","그림책을 읽은 사람의 이름을 적은 표"],
+   correct:2, pts:POINTS_BASIC, scene:"board",
+   reason:"스토리보드는 영화나 애니메이션 같은 영상물을 제작하기 위해 필요한 장면을 구성하며 이야기의 흐름을 작성한 것이에요.",
+   h1:"「장면」과 「이야기의 흐름」이라는 낱말을 떠올려 봐요.", h2:"영상물을 만들기 전에 작성해요."},
+  {stem:"스토리보드에는 <b>어떤 내용</b>이 들어가야 할까요?",
+   opts:["장면별 줄거리와 스케치 형식의 그림","장면 없이 그림책 제목 한 줄","다른 모둠 그림책의 줄거리","그림책을 읽은 친구들의 점수"],
+   correct:0, pts:POINTS_BASIC, scene:"board",
+   reason:"스토리보드에는 줄거리와 스케치 형식의 그림이 장면별로 들어가요.",
+   h1:"판에서 장면마다 무엇과 무엇을 이었나요?", h2:"그림과 줄거리가 함께 들어가요."},
+  {stem:"그림책 <b>계획서</b>에 적는 항목으로 알맞게 묶인 것은 무엇인가요?",
+   opts:["그림책의 쪽수·종이의 크기·글자 크기","색칠 도구·가위·풀","작가의 나이·인쇄한 곳·인쇄한 날","그림책 제목·주제·대상·줄거리"],
+   correct:3, pts:POINTS_BASIC, scene:"plan",
+   reason:"그림책 계획서에는 그림책 제목, 주제, 대상, 줄거리를 적어요.",
+   h1:"판 위쪽 계획서의 칸 이름을 떠올려 봐요.", h2:"누가 읽을지를 적는 칸이 있어요."},
+  {stem:"그림책 제작을 위한 계획을 세울 때 <b>고려할 점</b>으로 알맞은 것은 무엇인가요?",
+   opts:["독자와 상관없이 어려운 낱말을 많이 써요","독자를 정하고, 독자의 수준에 맞는 내용을 구성해요","줄거리 없이 그리고 싶은 장면만 그려요","단원에서 공부한 내용과 관계없는 주제를 정해요"],
+   correct:1, pts:POINTS_BASIC, scene:"plan",
+   reason:"독자를 정하고, 독자의 수준에 맞는 내용을 구성해야 해요. 줄거리에 맞게 이야기의 흐름이 잘 드러나야 해요.",
+   h1:"그림책을 읽을 사람을 생각해 봐요.", h2:"「수준」이라는 낱말을 찾아봐요."},
+  // 4단계 적용 (+15)
+  {stem:"그림책의 대상을 <b>8~9세 어린이</b>로 정했을 때, 글을 쓰는 방법으로 알맞은 것은 무엇인가요?",
+   opts:["어린이가 이해하기 쉬운 낱말로 짧게 써요","어려운 낱말을 많이 넣어 길게 써요","어른이 좋아할 내용만 골라 써요","장면마다 같은 글을 되풀이해 써요"],
+   correct:0, pts:POINTS_APPLY, scene:"plan",
+   reason:"내용을 구성할 때는 독자의 수준과 특징을 고려해요. 8~9세 어린이가 읽을 그림책이라면 어린이가 이해하기 쉽게 써요.",
+   h1:"독자의 수준을 떠올려 봐요.", h2:"판의 글 카드가 어떤 말로 쓰였는지 생각해 봐요."},
+  {stem:"「발달한 도시에 빼곡하게 사람들이 살아가는 모습 \u2014 어떤 지역은 인구가 많고」 <b>다음 장면</b>으로 이야기의 흐름이 자연스러운 것은 무엇인가요?",
+   opts:["분리수거장에서 쓰레기를 분리배출하는 모습 \u2014 지구를 위해 우리 모두 분리배출을 실천해요!","캠페인 보드를 들고 있는 모습 \u2014 지구야, 우리가 지켜 줄게!","드넓은 초원에서 유목하는 사람의 모습 \u2014 어떤 지역은 인구가 적어요.","병든 지구와 이를 지켜보며 걱정하는 어린이들의 모습 \u2014 하지만 지구가 병들어 아파하고 있어요."],
+   correct:2, pts:POINTS_APPLY, scene:"board",
+   reason:"인구가 많은 지역 다음에 인구가 적은 지역을 보여 주면, 세계의 인구가 고르게 분포하지 않는다는 이야기가 자연스럽게 이어져요.",
+   h1:"「인구가 많고」 다음에 이어질 말을 떠올려 봐요.", h2:"판에서 3번 장면에 이은 글이에요."},
+  {stem:"단원에서 공부한 내용을 그림책에 담을 때 <b>알맞은 방법</b>은 무엇인가요?",
+   opts:["한 차시에서 배운 내용만 골라 담아요","세계 인구의 특징과 지속가능한 지구촌의 주제가 골고루 드러나게 담아요","공부한 내용과 관계없는 이야기를 지어 담아요","글은 빼고 그림만 담아요"],
+   correct:1, pts:POINTS_APPLY, scene:"recall",
+   reason:"단원에서 공부한 내용을 전반적으로 반영해, 세계 인구의 특징과 지속가능한 지구촌의 주제가 골고루 드러나게 구성해요.",
+   h1:"판의 셈 줄에 나온 두 주제를 떠올려 봐요.", h2:"「골고루」라는 낱말을 찾아봐요."},
+  {stem:"그림책 발표회에서 다른 모둠의 발표를 들을 때 <b>관심 있게 살펴봐야 할 점</b>은 무엇인가요?",
+   opts:["발표하는 친구의 목소리 크기만 살펴봐요","다른 모둠의 실수만 찾아 적어요","그림을 얼마나 빨리 그렸는지만 살펴봐요","내용과 수준이 적절한지, 계획대로 스토리보드가 제작되었는지 살펴봐요"],
+   correct:3, pts:POINTS_APPLY, scene:"show",
+   reason:"다른 모둠의 발표를 들을 때는 내용과 수준이 적절한지 생각하며 듣고, 계획대로 스토리보드가 제작되었는지 살펴봐요.",
+   h1:"계획서와 스토리보드를 함께 떠올려 봐요.", h2:"「내용과 수준」을 찾아봐요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 단원에서 공부한 내용 떠올리기(지도서 346쪽 동기 유발)
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">「지구촌 사람들」에서 무엇을 공부했나요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('recall','단원에서 공부한 두 주제(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDF10 단원 돌아보기</div>
+      이번 단원 「지구촌 사람들」에서 공부한 내용은 무엇인가요? 앞 차시에서 살펴본 것을 차례대로 떠올려 봐요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 기온, 강수량 등의 <b>자연환경</b>과 산업, 교통 등 <b>인문환경</b>이 세계의 인구 분포에 미치는 영향을 알아봤어요.<br>
+      \u2014 지도, 통계 자료 등을 활용하여 <b>세계 여러 나라의 인구 특징</b>을 알아봤어요.<br>
+      \u2014 <b>지구촌을 위협하는 문제 상황</b>을 살펴보고, 이러한 문제를 해결하기 위해 어떠한 노력이 이루어지고 있는지 살펴봤어요.<br>
+      \u2014 지구촌 문제를 해결하는 데 동참하기 위해 <b>우리가 할 수 있는 일</b>을 실천했어요.</div>`
+      :`<div class="note">세계의 인구 분포와 지구촌의 문제를 함께 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">오늘은 단원에서 공부한 내용을 담은 <b>그림책 스토리보드</b>를 만들어 봐요.</div></div>`});
+// 2 살펴보기 — reveal: 스토리보드(지도서 347쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스토리보드는 무엇일까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('board','스토리보드(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDFAC 스토리보드</div>
+      이 단원에서 공부한 내용을 담은 그림책 스토리보드를 만들어 봐요. 스토리보드란 무엇일까요? 스토리보드에는 어떤 내용이 들어가야 할까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 <b>스토리보드</b>는 영화나 애니메이션 같은 영상물을 제작하기 위해 필요한 <b>장면을 구성하며 이야기의 흐름을 작성한 것</b>이에요.<br>
+      \u2014 스토리보드에는 <b>줄거리</b>와 <b>스케치 형식의 그림</b>이 장면별로 들어가요.</div>`
+      :`<div class="note">그림의 칸마다 무엇이 들어 있는지 살펴봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: 그림책 계획 세우기(교과서 156쪽 · 지도서 346~347쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">그림책에 어떤 내용을 담을지 계획해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('steps','그림책을 만드는 순서(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDDD2\uFE0F 이렇게 해 봐요</div>
+      \u2460 이 단원에서 공부한 내용과 관련하여 주제를 정해요. \u2461 그림책에 어떤 내용을 담을지 친구들과 이야기하고, 줄거리를 만들어요.
+      \u2462 각자 완성할 부분을 나누어 역할을 정하고, 스토리보드를 만들어요. \u2463 그림책 발표회를 열어 다른 모둠의 친구들과 공유해요.<br>
+      그림책 제작을 위한 계획을 세울 때 고려할 점은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 독자를 정하고, <b>독자의 수준</b>에 맞는 내용을 구성해야 해요.<br>
+      \u2014 줄거리에 맞게 <b>이야기의 흐름</b>이 잘 드러나야 해요.<br>
+      \u2014 단원에서 공부한 내용을 전반적으로 반영해, <b>세계 인구의 특징</b>과 <b>지속가능한 지구촌</b>의 주제가 골고루 드러나게 구성해요.</div>`
+      :`<div class="note">그림책을 읽을 사람과 이야기의 흐름을 함께 생각해 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">어떤 내용으로 그림책을 만들고 싶은지 친구들과 <b>충분히 협의</b>해요.</div></div>`});
+// 4 살펴보기 — reveal: 그림책 계획서(교과서 156쪽 · 지도서 346쪽 다른 예시)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">그림책 계획서를 살펴봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('plan','그림책 계획서(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCCB 계획서 예시</div>
+      그림책 제목: 지구와 함께 살아가는 우리 \u00b7 주제: 지구촌 사람들과 함께하는 지속가능한 미래를 위한 노력 \u00b7 대상: 8~9세 어린이 \u00b7
+      줄거리: 지구촌에는 많은 사람이 살아가고 있다. 지구촌을 위협하는 여러 가지 문제를 해결하고 지구를 지키려고 많은 사람이 캠페인을 벌인다.<br>
+      다른 계획서는 어떻게 쓸 수 있을까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 그림책 제목: <b>내 친구 지구</b><br>
+      \u2014 주제: 우리 모두 지구촌의 지속가능한 미래를 위해 생활 속 작은 일부터 실천하자.<br>
+      \u2014 대상: <b>6~7세 어린이</b><br>
+      \u2014 줄거리: 지구촌에는 다양한 인종의 사람들이 흩어져 살고 있다. 지구촌 사람들과 동식물, 자연이 함께 행복하게 살아가려면 생활 속 작은 실천을 통해 지속가능한 미래를 만들어 가야 한다.</div>`
+      :`<div class="note">제목, 주제, 대상, 줄거리 네 칸을 살펴봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">두 계획서 모두 <b>세계의 인구 분포</b>와 <b>지속가능한 미래</b>를 함께 담았어요.</div></div>`});
+// 5 살펴보기 — reveal: 역할을 나누어 스토리보드 만들기(교과서 157쪽 · 지도서 347쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">역할을 나누어 스토리보드를 만들어요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('roles','역할 나누기(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDD8D\uFE0F 스토리보드 완성하기</div>
+      계획에서 만든 줄거리를 그림으로 표현하고 필요한 설명과 글, 대사 등을 넣어 스토리보드를 완성해 봐요. 스토리보드는 <b>그림 순서</b>, <b>그림</b>, <b>그림 설명\u00b7글\u00b7대사</b> 칸으로 이루어져요. 모둠에서는 어떻게 만들까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 <b>역할을 나누어</b> 스토리보드를 작성해요.<br>
+      \u2014 <b>줄거리에 맞는 그림</b>을 그리며 스토리보드를 완성해요. 준비물은 색칠 도구예요.<br>
+      \u2014 만드는 중간에 단원에서 공부한 내용을 바탕으로 그림책을 구성하고 있는지 확인해요.</div>`
+      :`<div class="note">모둠 친구들이 장면을 어떻게 나누어 맡을까요?</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">다음 판에서 교과서 예시 장면마다 어울리는 <b>글</b>을 이어 봐요.</div></div>`});
+// 6 살펴보기 — 직접조작(장면을 이어요)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">그림 장면마다 어울리는 글을 이어요</h2>
+  ${jnPanel(st)}`});
+// 7 살펴보기 — reveal: 그림책 발표회(지도서 347쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">그림책 발표회를 열어요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('show','그림책 발표회(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDFA4 그림책 발표회</div>
+      그림책 제작 계획과 완성한 스토리보드를 모둠별로 발표해 봐요. 다른 모둠의 발표를 들을 때 관심 있게 살펴봐야 할 점은 무엇일까요? 이번 활동을 하며 생각하거나 느낀 점은 무엇인가요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 살펴볼 점: <b>내용과 수준이 적절한지</b> 생각하며 들어요. <b>계획대로 스토리보드가 제작되었는지</b> 살펴봐요.<br>
+      \u2014 느낀 점: 그림책 스토리보드를 만들면서 이번 단원에서 공부한 내용을 정리해 볼 수 있었어요. 스토리보드로 그림책을 만들어 동생에게 들려주고 싶어요.</div>`
+      :`<div class="note">계획서와 스토리보드를 함께 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">그림책 발표회는 <b>교실</b>에서 친구들과 직접 열어요.</div></div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 13차시 학습 목표·지도 방법
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div><b>스토리보드</b> \u2014 장면을 구성하며 이야기의 흐름을 작성한 것으로, 장면별로 줄거리와 스케치 형식의 그림이 들어가요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div><b>그림책 계획</b> \u2014 독자를 정하고 독자의 수준에 맞게, 세계 인구의 특징과 지속가능한 지구촌의 주제가 골고루 드러나도록 구성해요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div><b>함께 만들기</b> \u2014 역할을 나누어 스토리보드를 만들고, 그림책 발표회에서 내용과 수준이 적절한지 살펴보며 공유해요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 그림 장면마다 어울리는 글을 이어, 세계의 인구 분포에서 지구촌의 문제와 실천으로 이어지는 이야기를 완성했어요.</div></div>
+  </div>
+  <div class="note">스토리보드로 그림책을 만들어 동생에게 들려줘도 좋아요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 활동을 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"단원에서 공부한 내용을 떠올려 그림책의 주제와 줄거리를 정할 수 있어요",st)}
+    ${selfCheck(1,"독자의 수준을 생각하며 장면별 그림과 글을 구성할 수 있어요",st)}
+    ${selfCheck(2,"친구들과 역할을 나누어 협력하고, 발표를 들으며 생각을 나눌 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">3단원 마무리</b>로 단원에서 공부한 내용을 정리해요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u3_l09";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  jnPut:0, jnSel:null,
+  jnRead:null, jnMean:null, jnFin:null,
+  jnWrongR:null, jnWrongK:null, jnWrongF:null,
+  jnMsg:null, jnWarn:false, jnBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function jnRender(){ main.innerHTML = slides[state.idx].render(state); }
+function jnHold(msg){
+  state.jnWarn=true; state.jnBusy=true; state.jnMsg=msg;
+  playThud(); jnRender();
+  setTimeout(()=>{ state.jnBusy=false; state.jnWarn=false; state.jnMsg=null;
+    state.jnWrongR=null; state.jnWrongK=null; state.jnWrongF=null; jnRender(); },1600);
+}
+
+/* ① 장면 고르기 — 빈 장면만(가드③·⑨) */
+function jnFrame(f){
+  if(state.jnFin!=null) return;                                        // 가드①
+  if(state.jnBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(f) || f<0 || f>=JN_N) return;                   // 가드②
+  if(jnDone(state)){ jnHold(JN_LOCK); return; }                        // 가드③ 판 불변
+  if(jnHas(state.jnPut,f)){ jnHold(JN_FILLED); return; }               // 가드⑨ 이미 글이 있는 장면 — 판 불변
+  state.jnSel = f;                                                     // ★ 장면을 고르는 자리 단 하나
+  state.jnWarn=false;
+  state.jnMsg = `<b>${f+1}번 장면</b>을 골랐어요. 이 그림에 어울리는 글 카드를 골라요.`;
+  playBlip(); jnRender();
+}
+
+/* ② 글 카드 — 고른 장면과 이어질 때만 붙는다(가드③·⑨·⑩·⑪) */
+function jnCard(c){
+  if(state.jnFin!=null) return;                                        // 가드①
+  if(state.jnBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(c) || c<0 || c>=JN_N) return;                   // 가드②
+  if(jnDone(state)){ jnHold(JN_LOCK); return; }                        // 가드③ 판 불변
+  if(state.jnSel==null){ jnHold(JN_PICK_FIRST); return; }              // 가드⑨ 장면 먼저 — 판 불변
+  if(jnUsed(state,c)){ jnHold(JN_USED); return; }                      // 가드⑩ 이미 이은 카드 — 판 불변
+  const f = state.jnSel;
+  if(!jnFit(f,c)){ jnHold(JN_NOFIT(f)); return; }                      // 가드⑪ 그림과 이어지지 않음 — 판 불변
+  state.jnPut |= (1<<f);                                               // ★ 장면에 글을 잇는 자리 단 하나
+  state.jnSel = null;
+  state.jnWarn=false;
+  if(jnDone(state)){ state.jnMsg = JN_END_MSG; playChime(); }
+  else { state.jnMsg = `<b>${f+1}번 장면</b>에 글을 이었어요. 이 장면은 <b>${JN_PNAME[JN_PART[f]]}</b>를 담았어요.`; playBlip(); }
+  jnRender();
+}
+
+/* ③ 판 읽기 — 다 이은 뒤에만(가드④) */
+function jnReadPick(k){
+  if(state.jnFin!=null) return;                                        // 가드①
+  if(state.jnBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=JN_READ.length) return;         // 가드②
+  if(!jnDone(state)){ jnHold(JN_ORDER_R); return; }                    // 가드④ 순서 — 판 불변
+  if(state.jnRead!=null){ jnHold(JN_READ_AGAIN); return; }             // 가드④ 판 불변
+  if(k===JN_READ_OK){
+    state.jnRead=k; state.jnWrongR=null; state.jnWarn=false;
+    state.jnMsg = '판을 잘 읽었어요. 장면마다 그림과 글이 이어져 <b>이야기의 흐름</b>이 생겼고, 단원의 두 주제가 골고루 담겼어요.';
+    playChime(); jnRender(); return;
+  }
+  state.jnWrongR=k;
+  jnHold(JN_READ_NO[k]);
+}
+
+/* ④ 계획 세우기 빈칸 — 판을 읽은 뒤에만(가드⑤). */
+function jnMeanPick(k){
+  if(state.jnFin!=null) return;                                        // 가드①
+  if(state.jnBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=JN_MEAN.length) return;         // 가드②
+  if(state.jnRead==null){ jnHold(JN_ORDER_K); return; }                // 가드⑤ 순서 — 판 불변
+  if(state.jnMean!=null){ jnHold(JN_MEAN_AGAIN); return; }             // 가드⑤ 판 불변
+  if(k!==JN_MEAN_OK){ state.jnWrongK=k; jnHold(JN_MEAN_NO[k]); return; } // 가드⑤ 판 불변
+  state.jnMean = k;                                                    // ★ 빈칸을 고르는 자리 단 하나
+  state.jnWarn=false;
+  state.jnMsg = '그림책 제작을 위한 계획을 세울 때는 <b>독자</b>를 정하고, 그 수준에 맞는 내용을 구성해야 해요.';
+  playChime(); jnRender();
+}
+
+/* ⑤ 마무리 — 지도서 13차시 학습 목표·지도 방법 */
+function jnFinish(k){
+  if(state.jnFin!=null) return;                                        // 가드①
+  if(state.jnBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=JN_FIN.length) return;          // 가드②
+  if(state.jnMean==null){ jnHold(JN_ORDER_F); return; }                // 가드⑥ 순서 — 판 불변
+  if(k===JN_FIN_OK){
+    state.jnFin=k; state.jnWrongF=null; state.jnMsg=null; state.jnWarn=false;
+    playChime(); jnRender(); return;
+  }
+  state.jnWrongF=k;
+  jnHold(JN_FIN_NO[k]);                                                // 가드⑦ 판 불변
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 3단원 10차시(u3 l10) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
