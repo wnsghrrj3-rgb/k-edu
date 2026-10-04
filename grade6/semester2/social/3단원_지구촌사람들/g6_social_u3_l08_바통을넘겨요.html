@@ -1,0 +1,899 @@
+<!--
+K-edu 사회 6-2 · 3단원 지구촌 사람들 · 주제② 지구촌의 문제와 지속가능한 미래 · 8차시(u3 l08)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사12-02] · 교과서 p.152~155 · 지도서(대단원3 **12차시** 「지속가능한 미래를 위해 우리가 할 수 있는 일을 실천해 볼까요」, 지도서 p.338~341) 근거.
+학습 목표: 지속가능한 미래를 위해 우리가 할 수 있는 일을 실천할 수 있다.
+수업 기법 및 전략: 모둠 토의 · 의사 결정 및 실천하기
+META = "3단원 지구촌 사람들 · 주제② 지구촌의 문제와 지속가능한 미래"
+⚠️ 엔진은 u3 l07(→ u3 l06 → … 6-1 사회 엔진)에서 100% 승계 · 엔진 무수정 · 3단원 색 #7C3AED.
+⚠️ 회수 키 `g6_s2_social_u3_l08_v1` · 맵 키 `g6_social_u3_l08` · 파일명 `바통을넘겨요` — 조작 이름(선례 승계).
+
+직접조작: 「바통을 넘겨요」 판 (교과서 152~153쪽 「지속가능한 미래 만들기」 실천 인증 릴레이 ①~④ · 더하기(+) 노력·빼기(−) 노력 · 지도서 339쪽 예시 답안)
+  ⭐ 씨앗은 교과서·지도서의 생활 속 실천 넷 — 네 친구가 인증 순서대로 바통을 이어받는다.
+  ⭐ 바통을 쥔 친구는 릴레이 순서대로 ① 인증 사진 찍기 → ② 실천한 내용 기록하기(더하기(+) 노력인지 빼기(−) 노력인지 게시판 칸을 골라) → ③ 다음 친구에게 알리기를 한다.
+  ⭐ ★ 릴레이가 어디까지 왔는지는 `state.boPos` 한 숫자(0~12)가 정한다 — 친구별 단계 배열 0 · 게시판 기록 배열 0.
+  ⭐ ★ 지금 바통을 쥔 친구는 `boRun`(boPos ÷ 3) 한 자리 · 지금 할 일은 `boNeed` 한 줄 · 기록 칸은 `BO_KIND` 한 줄 표 · 릴레이를 한 칸 넘기는 자리(`state.boPos += 1`)는 코드에 단 하나.
+     ★★ 핵심 신규성 = **이어 달리기(차례 의존)** — 앞 친구가 ③ 알리기를 마치기 전에는 다음 친구의 실천 카드가 나타나지 않고, 한 친구 안에서도 ①→②→③ 차례를 건너뛸 수 없다.
+        바통은 한 번에 한 친구만 쥔다(바통 그림 단 하나) · 게시판 기록은 ②를 마친 친구의 것만 · 판에 미리 보이는 뒤 친구 카드 0.
+  ⭐ 판 읽기는 넷째 친구까지 바통이 이어진 뒤에만(정답 자리 2) → 꼭! 기억해요 빈칸 3택(교과서 153쪽 「세계시민」 · 정답 자리 0)
+     → 마무리 3택 = 지도서 12차시 주요 내용 정리(정답 자리 1).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 10종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 넷째 친구까지 마친 뒤 단추 누르기 무시(`BO_LOCK`) — 판 불변
+     ④ 릴레이가 끝나기 전 판 읽기 무시 · 읽은 뒤 다시 무시 · 알맞지 않은 읽기 무시(자리별 안내)
+     ⑤ 판을 읽기 전 빈칸 무시 · 고른 뒤 다시 무시 · 알맞지 않은 빈칸 무시
+     ⑥ 빈칸 전 마무리 무시(순서)
+     ⑦ 알맞지 않은 마무리 무시
+     ⑧ 안내 표시 중 재클릭 무시(`boBusy`)
+     ⑨ 릴레이 차례를 건너뛰는 단추 무시(`boOrderMsg`) — 판 불변 · 안내는 순서표 번호만
+     ⑩ 그 실천이 아닌 게시판 칸 고르기 무시(`BO_SIGN`) — 판 불변 · 안내에 알맞은 칸 이름 0.
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.bo-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 트랙과 바통은 도식이다** — 판에서는 실제로 사진을 찍거나 게시판에 올리지 않는다(캡션 상시).
+  ㉡ **네 친구의 실천은 교과서·지도서의 예시다** — 판은 실천의 크기를 재지 않는다.
+  ㉢ **판에 사람 형상 0** — 번호 동그라미·바통·깃발·카드만.
+  ㉣ **토의 주제 정하기 · 모둠 토의 · 실천 계획 세우기 · 실제 인증 사진 찍고 올리기 · 릴레이 결과와 소감 나누기 · 「세계시민으로서 우리의 노력은 ○○이다」 표현하기 · 탑승구 번호 찾기는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 생각을 펼쳐요(13차시)는 차시 예고 자리까지만.
+  **새 사실 0** — 교과서 152~155쪽 · 지도서 12차시 본문까지만.
+  수치는 지도서 예시 답안의 「1명당 3일간」만 · 금액 0 · 쪽수 0 · 누리집 주소 0 · 특정 나라 편견 문면 0 · 사람 형상 0.
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u3_l08_v1">
+<title>지속가능한 미래를 위해 우리가 할 수 있는 일을 실천해 볼까요 · 지구촌 사람들 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#7C3AED; --green-d:#5B21B6; --cyan:#8B5CF6;
+  --bg:#F5F3FF; --bub:#EDE9FE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#EDE9FE;color:#5B21B6}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 네 친구가 실천 인증 릴레이 순서대로 바통을 이어받는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#EDE9FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#5B21B6;max-width:660px}
+.bo-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#F5F3FF;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.bo-board{display:flex;flex-direction:column;gap:6px;padding:8px}
+.bo-head{background:#EDE9FE;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#5B21B6;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.bo-track{border-radius:8px;overflow:hidden;background:#F5F3FF}
+.bo-track svg{display:block;width:100%;height:auto}
+.bo-card{border:2px solid #7C3AED;background:#F5F3FF;color:#4C1D95;border-radius:9px;padding:6px 8px;
+  font-weight:800;font-size:clamp(9.4px,1.6vw,11.6px);line-height:1.42}
+.bo-card .bo-no{display:inline-block;border-radius:5px;padding:0 5px;margin-right:4px;background:#7C3AED;color:#fff;font-weight:900}
+.bo-card[data-end="1"]{border-color:#059669;background:#ECFDF5;color:#065F46}
+.bo-prog{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
+.bo-prog span{border:1.5px solid #CBD5E0;background:#F8FAFC;color:#94A3B8;border-radius:6px;padding:1px 6px;
+  font-weight:800;font-size:clamp(8.6px,1.46vw,10.4px)}
+.bo-prog span[data-on="1"]{border-color:#7C3AED;background:#EDE9FE;color:#4C1D95}
+.bo-acts{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.bo-a{border:2px solid #CBD5E0;background:#F8FAFC;color:#334155;border-radius:8px;padding:5px 4px;cursor:pointer;
+  font-family:inherit;font-weight:900;font-size:clamp(8.6px,1.46vw,10.6px);line-height:1.3;text-align:center;min-height:44px}
+.bo-a:hover{border-color:#7C3AED;background:#F5F3FF}
+.bo-wall{border:2px dashed #C4B5FD;background:#fff;border-radius:9px;padding:5px 7px;display:flex;flex-direction:column;gap:3px}
+.bo-wall .bo-wt{font-weight:900;color:#5B21B6;font-size:clamp(9px,1.5vw,11px)}
+.bo-rec{font-weight:700;font-size:clamp(8.4px,1.42vw,10.2px);line-height:1.35;color:#334155;border-top:1px dashed #DDD6FE;padding-top:2px}
+.bo-rec .bo-k{display:inline-block;border-radius:5px;padding:0 4px;margin-right:3px;background:#EDE9FE;color:#4C1D95;font-weight:900}
+.bo-empty{color:#94A3B8;font-weight:700;font-size:clamp(8.4px,1.42vw,10.2px)}
+.bo-tally{font-weight:800;color:#5B21B6;font-size:clamp(9.2px,1.56vw,11.2px);text-align:center}
+.bo-read,.bo-mean,.bo-fin{display:flex;flex-direction:column;gap:5px}
+.bo-read button,.bo-mean button,.bo-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.bo-read button:hover,.bo-mean button:hover,.bo-fin button:hover{background:var(--bub)}
+.bo-read button.no,.bo-mean button.no,.bo-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.bo-hint{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:520px){ .bo-acts{grid-template-columns:repeat(2,1fr)} }
+@media(max-width:380px){ .bo-a,.bo-rec{font-size:8.4px} }
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠·㉡: 모든 그림은 내용을 나타낸 도식이며 실제 사진이 아니다.
+   ⚠️ 사람 형상 대신 도형으로만 그린다. 수치를 그림에 적지 않는다. */
+const SVG = {
+  // 1 들어가기 — 생활 속 실천 영상(지도서 338쪽 동기 유발 · 도식)
+  video:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <rect x="40" y="16" width="240" height="112" rx="10" fill="#fff" stroke="#C2410C" stroke-width="1.6"/>
+    <text x="104" y="70" font-size="26" text-anchor="middle">\uD83C\uDF21\uFE0F</text>
+    <text x="160" y="70" font-size="26" text-anchor="middle">\uD83D\uDCA1</text>
+    <text x="216" y="70" font-size="26" text-anchor="middle">\uD83C\uDF5A</text>
+    <text x="104" y="98" font-size="6.6" fill="#9A3412" text-anchor="middle" font-weight="900">지구의 온도</text>
+    <text x="160" y="98" font-size="6.6" fill="#9A3412" text-anchor="middle" font-weight="900">빈 교실 전등</text>
+    <text x="216" y="98" font-size="6.6" fill="#9A3412" text-anchor="middle" font-weight="900">먹을 만큼만</text>
+    <text x="160" y="152" font-size="7" fill="#334155" text-anchor="middle" font-weight="800">생활 속 실천 영상(도식)</text></svg>`,
+  // 2 살펴보기 — 세계시민(교과서 152쪽 · 도식)
+  citizen:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    <circle cx="160" cy="78" r="30" fill="#DBEAFE" stroke="#0369A1" stroke-width="1.8"/>
+    <text x="160" y="88" font-size="26" text-anchor="middle">\uD83C\uDF0F</text>
+    ${[[70,46,'협력'],[250,46,'책임'],[70,110,'관심'],[250,110,'실천']].map(t=>`<line x1="160" y1="78" x2="${t[0]}" y2="${t[1]}" stroke="#A78BFA" stroke-width="1.6" stroke-dasharray="4 3"/>
+      <rect x="${t[0]-30}" y="${t[1]-13}" width="60" height="26" rx="13" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
+      <text x="${t[0]}" y="${t[1]+4}" font-size="8.4" fill="#4C1D95" text-anchor="middle" font-weight="900">${t[2]}</text>`).join('')}
+    <text x="160" y="150" font-size="7.4" fill="#334155" text-anchor="middle" font-weight="800">지구촌 문제는 우리 모두의 문제(도식)</text></svg>`,
+  // 3 살펴보기 — 토의하고 싶은 주제 정하기(교과서 152쪽 · 도식)
+  pick:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#EFF6FF"/>
+    <rect x="24" y="26" width="122" height="96" rx="12" fill="#fff" stroke="#0369A1" stroke-width="1.6"/>
+    <text x="85" y="74" font-size="26" text-anchor="middle">\uD83C\uDF21\uFE0F</text>
+    <text x="85" y="104" font-size="7.6" fill="#0C4A6E" text-anchor="middle" font-weight="900">기후변화 문제</text>
+    <rect x="174" y="26" width="122" height="96" rx="12" fill="#fff" stroke="#7C3AED" stroke-width="1.6"/>
+    <text x="235" y="74" font-size="26" text-anchor="middle">\uD83C\uDFE0</text>
+    <text x="235" y="104" font-size="7.6" fill="#4C1D95" text-anchor="middle" font-weight="900">난민 문제</text>
+    <text x="160" y="152" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">내가 생각한 주제와 모둠에서 정한 주제(도식)</text></svg>`,
+  // 4 살펴보기 — 더하기(+) 노력과 빼기(−) 노력(교과서 152쪽 · 도식)
+  plus:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F0FDF4"/>
+    <rect x="14" y="16" width="140" height="116" rx="12" fill="#fff" stroke="#047857" stroke-width="1.6"/>
+    <circle cx="84" cy="44" r="16" fill="#D1FAE5" stroke="#047857" stroke-width="1.6"/>
+    <path d="M76 44 L92 44 M84 36 L84 52" stroke="#047857" stroke-width="3" stroke-linecap="round"/>
+    <text x="84" y="82" font-size="8" fill="#065F46" text-anchor="middle" font-weight="900">더하기 노력</text>
+    <text x="84" y="100" font-size="6.6" fill="#065F46" text-anchor="middle" font-weight="800">더 자주 해야 할 것</text>
+    <rect x="166" y="16" width="140" height="116" rx="12" fill="#fff" stroke="#B91C1C" stroke-width="1.6"/>
+    <circle cx="236" cy="44" r="16" fill="#FEE2E2" stroke="#B91C1C" stroke-width="1.6"/>
+    <path d="M228 44 L244 44" stroke="#B91C1C" stroke-width="3" stroke-linecap="round"/>
+    <text x="236" y="82" font-size="8" fill="#7F1D1D" text-anchor="middle" font-weight="900">빼기 노력</text>
+    <text x="236" y="100" font-size="6.6" fill="#7F1D1D" text-anchor="middle" font-weight="800">줄이거나 없애야 할 것</text>
+    <text x="160" y="154" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">우리가 할 수 있는 일 나누기(도식)</text></svg>`,
+  // 5 살펴보기 — 실천 인증 릴레이(교과서 153쪽 · 도식)
+  relay:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    ${[['\uD83D\uDCF7','인증 사진'],['\uD83D\uDCDD','실천 기록'],['\uD83D\uDCE3','다음 친구에게'],['\uD83D\uDD01','같은 방식으로']].map((t,i)=>`<rect x="${10+i*77}" y="28" width="68" height="86" rx="10" fill="#fff" stroke="#7C3AED" stroke-width="1.4"/>
+      <circle cx="${44+i*77}" cy="40" r="8" fill="#7C3AED"/><text x="${44+i*77}" y="43.5" font-size="8" fill="#fff" text-anchor="middle" font-weight="900">${i+1}</text>
+      <text x="${44+i*77}" y="82" font-size="22" text-anchor="middle">${t[0]}</text>
+      <text x="${44+i*77}" y="104" font-size="6" fill="#4C1D95" text-anchor="middle" font-weight="900">${t[1]}</text>`).join('')}
+    <text x="160" y="148" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">실천 인증 릴레이 순서(도식)</text></svg>`,
+  // 7 살펴보기 — 별별 직업 속으로: 에코 제품 디자이너(교과서 154쪽 · 도식)
+  eco:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#ECFDF5"/>
+    <rect x="22" y="22" width="124" height="98" rx="12" fill="#fff" stroke="#047857" stroke-width="1.4"/>
+    <text x="84" y="72" font-size="28" text-anchor="middle">\uD83E\uDE91</text>
+    <text x="84" y="102" font-size="6.6" fill="#065F46" text-anchor="middle" font-weight="900">버려진 가구로 다시 만든 가구</text>
+    <rect x="174" y="22" width="124" height="98" rx="12" fill="#fff" stroke="#047857" stroke-width="1.4"/>
+    <text x="236" y="72" font-size="28" text-anchor="middle">\uD83D\uDC55</text>
+    <text x="236" y="102" font-size="6.6" fill="#065F46" text-anchor="middle" font-weight="900">다 쓴 페트병으로 만든 옷</text>
+    <text x="160" y="148" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">에코 제품 디자이너(도식)</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#1E1B4B"/>
+    ${[0,1,2,3].map(i=>`<circle cx="${52+i*72}" cy="70" r="18" fill="#EDE9FE" stroke="#A78BFA" stroke-width="2"/>
+      <text x="${52+i*72}" y="75" font-size="12" fill="#4C1D95" text-anchor="middle" font-weight="900">${i+1}</text>`).join('')}
+    ${[0,1,2].map(i=>`<path d="M${72+i*72} 70 L${104+i*72} 70" stroke="#A78BFA" stroke-width="2.4"/>`).join('')}
+    <text x="160" y="124" font-size="8.6" fill="#DDD6FE" text-anchor="middle" font-weight="800">작은 실천이 이어지면 지구를 지켜요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#7C3AED" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#7C3AED" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#5B21B6" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 바통을 넘겨요 판 =====
+   ★ 릴레이가 어디까지 왔는지는 state.boPos 한 숫자(0~12)가 정한다 — 친구별 단계 배열 0 · 게시판 기록 배열 0.
+   ★ 바통을 쥔 친구는 boRun 한 자리 · 지금 할 일은 boNeed 한 줄 · 기록 칸은 BO_KIND 한 줄 표 · 넘기는 자리는 단 하나(state.boPos += 1).
+   ★★ 앞 친구가 알리기를 마치기 전에는 다음 친구의 실천 카드가 나타나지 않는다 — 차례를 건너뛸 수 없다.
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. 트랙과 바통은 도식이다. */
+const BO_N = 4;
+const BO_S = 3;
+const BO_END = 12;
+/* 네 친구 — 인증 순서(교과서 153쪽 · 지도서 339쪽 예시 답안) */
+const BO_WHO = ['첫째 친구','둘째 친구','셋째 친구','넷째 친구'];
+/* 네 친구의 실천 — 교과서 153쪽 · 지도서 338~340쪽 */
+const BO_CARD = [
+  '종이컵 대신 다회용 컵을 사용해요',
+  '양치질이나 세수할 때 물을 잠가 물 낭비를 줄여요',
+  '급식 시간에 먹을 만큼만 받아 음식물 쓰레기를 줄여요',
+  '장을 볼 때 시장바구니를 사용해요'
+];
+/* ★ 실천 → 게시판 칸 — 한 줄 표(0 더하기 · 1 빼기) */
+const BO_KIND = [0, 1, 1, 0];
+const BO_KNAME = ['더하기(+) 노력', '빼기(\u2212) 노력'];
+/* 단추 넷 — 릴레이 순서 ①·②·③ */
+const BO_ACT = ['\uD83D\uDCF7 인증 사진 찍기', '\uD83D\uDCDD 더하기(+) 노력으로 기록하기', '\uD83D\uDCDD 빼기(\u2212) 노력으로 기록하기', '\uD83D\uDCE3 다음 친구에게 알리기'];
+const BO_STEPNAME = ['인증 사진', '실천 기록', '알리기'];
+
+/* ② 판 읽기 */
+const BO_READ = [
+  '한 번 실천하면 끝이므로 다음 친구에게 알리지 않아도 돼요',
+  '실천은 바통을 처음 쥔 한 친구만 하면 돼요',
+  '한 친구가 실천하고 다음 친구에게 알리면 실천이 이어져요. 내가 하는 작은 실천이 이어지면 지구촌 문제 해결에 도움이 될 수 있어요'
+];
+const BO_READ_OK = 2;
+const BO_READ_NO = [
+  '판의 <b>트랙</b>을 다시 봐요. 바통은 알림을 따라 다음 친구에게 넘어가 넷째 친구까지 이어졌어요. 판을 다시 읽어 봐요.',
+  '판의 <b>게시판</b>을 다시 봐요. 네 친구가 모두 실천을 기록했어요. 판을 다시 읽어 봐요.',
+  null
+];
+/* ③ 꼭! 기억해요 빈칸 — 교과서 153쪽 */
+const BO_MEAN = ['세계시민', '국제기구', '비정부 기구'];
+const BO_MEAN_OK = 0;
+const BO_MEAN_NO = [
+  null,
+  '국제기구는 <b>세계 여러 나라</b>로 구성된 단체예요. 빈칸에는 사람을 가리키는 말이 들어가요. 판은 그대로예요.',
+  '비정부 기구는 개인이나 민간단체가 중심이 되어 만든 <b>단체</b>예요. 빈칸에는 사람을 가리키는 말이 들어가요. 판은 그대로예요.'
+];
+/* ④ 마무리 — 지도서 12차시 주요 내용 정리 */
+const BO_FIN = [
+  '지구촌 문제는 먼 나라의 일이므로, 우리 생활과는 관계없어요',
+  '세계시민은 지구촌의 지속가능한 미래를 위해 협력하며 책임 있게 행동하는 사람이에요. 지구촌 문제를 우리 모두의 문제로 여기고, 생활 속에서 작은 일부터 실천해요',
+  '큰 노력만 의미가 있으므로, 생활 속 작은 실천은 하지 않아도 돼요'
+];
+const BO_FIN_OK = 1;
+const BO_FIN_NO = [
+  '세계시민은 지구촌 문제를 <b>우리 모두의 문제</b>로 여겨요. 오늘의 정리를 다시 골라 봐요.',
+  null,
+  '판에서 네 친구의 <b>작은 실천</b>이 이어졌어요. 내가 하는 행동에 책임감을 가져요. 오늘의 정리를 다시 골라 봐요.'
+];
+/* 안내 */
+const BO_LOCK = '릴레이를 <b>이미 마쳤어요</b>. 판을 읽어 봐요. 판은 그대로예요.';
+const BO_ORDER_R = '아직 <b>릴레이가 끝나지 않았어요</b>. 마지막 친구까지 바통이 이어진 뒤에 읽을 수 있어요. 판은 그대로예요.';
+const BO_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const BO_ORDER_K = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const BO_MEAN_AGAIN = '꼭! 기억해요 빈칸은 <b>이미 채웠어요</b>. 판은 그대로예요.';
+const BO_ORDER_F = '아직 <b>꼭! 기억해요 빈칸</b>을 채우지 않았어요. 먼저 골라 봐요. 판은 그대로예요.';
+const BO_PHOTO_FIRST = '아직 <b>인증 사진</b>을 찍지 않았어요. 릴레이 순서 ①부터 해요. 판은 그대로예요.';
+const BO_PHOTO_AGAIN = '<b>인증 사진</b>은 이미 찍었어요. 릴레이 순서 ②를 봐요. 판은 그대로예요.';
+const BO_REC_FIRST = '아직 <b>실천한 내용</b>을 기록하지 않았어요. 릴레이 순서 ②를 봐요. 판은 그대로예요.';
+const BO_REC_DONE = '사진과 기록은 <b>이미 마쳤어요</b>. 릴레이 순서 ③을 봐요. 판은 그대로예요.';
+const BO_END_MSG = '넷째 친구까지 실천을 마치고 알렸어요. <b>바통이 모두 이어졌어요</b>. 판을 읽어 봐요.';
+function BO_SIGN(a){ return `고른 칸은 <b>${BO_KNAME[a-1]}</b> 칸이에요. 이 실천은 그 칸에 들어가지 않아요. 카드를 다시 읽고, 더 자주 해야 할 것인지 줄이거나 없애야 할 것인지 생각해 봐요. 판은 그대로예요.`; }
+
+/* ★ 바통을 쥔 친구 — 한 자리 · 지금 할 일 — 한 줄 */
+function boRun(p){ return Math.floor(p/BO_S); }
+function boNeed(p){ const s=p%BO_S; return s===0 ? 0 : s===1 ? 1+BO_KIND[boRun(p)] : 3; }
+function boMark(st,r){ return Math.max(0, Math.min(BO_S, st.boPos - r*BO_S)); }
+function boPassed(st){ return [0,1,2,3].filter(r=>boMark(st,r)===BO_S).length; }
+function boRecN(st){ return [0,1,2,3].filter(r=>boMark(st,r)>=2).length; }
+/* ★★ 릴레이를 마치는 자리 — 단 하나 */
+function boDone(st){ return st.boPos===BO_END; }
+function boOrderMsg(p,a){ const s=p%BO_S; return s===0 ? BO_PHOTO_FIRST : s===1 ? (a===0 ? BO_PHOTO_AGAIN : BO_REC_FIRST) : BO_REC_DONE; }
+
+function boTrack(st){
+  const done=boDone(st), at=done?BO_N:boRun(st.boPos);
+  const X=[44,112,180,248];
+  const lanes=[0,1,2].map(r=>{ const on=boMark(st,r)===BO_S;
+    return `<line class="bo-lane" data-r="${r}" data-on="${on?1:0}" x1="${X[r]+16}" y1="54" x2="${X[r+1]-16}" y2="54" stroke="${on?'#7C3AED':'#CBD5E0'}" stroke-width="${on?4:2}"${on?'':' stroke-dasharray="5 4"'}/>`; }).join('');
+  const goal=`<line class="bo-lane" data-r="3" data-on="${done?1:0}" x1="${X[3]+16}" y1="54" x2="290" y2="54" stroke="${done?'#7C3AED':'#CBD5E0'}" stroke-width="${done?4:2}"${done?'':' stroke-dasharray="5 4"'}/>`;
+  const st4=X.map((x,r)=>{ const m=boMark(st,r), cur=!done && r===at;
+    return `<g class="bo-st" data-r="${r}" data-mark="${m}" data-cur="${cur?1:0}"><circle cx="${x}" cy="54" r="15" fill="${m===BO_S?'#7C3AED':cur?'#FEF3C7':'#fff'}" stroke="${cur?'#D97706':'#7C3AED'}" stroke-width="${cur?3:1.6}"/>
+      <text x="${x}" y="59" font-size="12" fill="${m===BO_S?'#fff':'#4C1D95'}" text-anchor="middle" font-weight="900">${r+1}</text>
+      <text x="${x}" y="88" font-size="10" text-anchor="middle">${m>=1?'\uD83D\uDCF7':'\u00B7'}${m>=2?'\uD83D\uDCDD':'\u00B7'}${m>=3?'\uD83D\uDCE3':'\u00B7'}</text></g>`; }).join('');
+  const bx=done?296:X[at];
+  return `<svg viewBox="0 0 320 104" data-at="${at}"><rect width="320" height="104" fill="#F5F3FF"/>
+    ${lanes}${goal}${st4}
+    <text x="300" y="60" font-size="16" text-anchor="middle">\uD83C\uDFC1</text>
+    <g class="bo-baton" data-at="${at}"><rect x="${bx-12}" y="20" width="24" height="7" rx="3.5" fill="#D97706" stroke="#92400E" stroke-width="1"/></g>
+  </svg>`;
+}
+function boWall(st){
+  const recs=[0,1,2,3].filter(r=>boMark(st,r)>=2);
+  return `<div class="bo-wall" data-n="${recs.length}"><div class="bo-wt">\uD83D\uDCCB 실천 인증 게시판</div>${recs.length?recs.map(r=>`<div class="bo-rec" data-r="${r}"><span class="bo-k">${BO_KNAME[BO_KIND[r]]}</span>${BO_WHO[r]} \u00b7 ${BO_CARD[r]}</div>`).join(''):'<div class="bo-empty">아직 올라온 기록이 없어요</div>'}</div>`;
+}
+
+function boBoard(st){
+  const fin = st.boFin!=null, done = boDone(st), r = boRun(st.boPos), m = done?0:st.boPos%BO_S;
+  const head = fin ? '바통을 이어받으며 세계시민으로 실천했어요'
+    : st.boMean!=null ? '꼭! 기억해요 빈칸까지 채웠어요 \u2014 이제 정리해요'
+    : st.boRead!=null ? '꼭! 기억해요 빈칸을 채워 봐요'
+    : done ? '바통이 넷째 친구까지 이어졌어요 \u2014 판을 읽어 봐요'
+    : st.boPos>0 ? '릴레이 순서대로 이어 가요'
+    : '바통을 쥔 친구의 실천 카드를 읽고 릴레이 순서대로 눌러요';
+  const prog = done ? '' : `<div class="bo-prog">${BO_STEPNAME.map((t,k)=>`<span data-k="${k}" data-on="${k<m?1:0}">${k+1} ${t}</span>`).join('')}</div>`;
+  return `<div class="bo-board" data-pos="${st.boPos}" data-run="${done?BO_N:r}" data-step="${m}" data-done="${done?1:0}" data-read="${st.boRead==null?-1:st.boRead}" data-mean="${st.boMean==null?-1:st.boMean}" data-fin="${fin?1:0}">
+    <div class="bo-head">${head}</div>
+    <div class="bo-track">${boTrack(st)}</div>
+    <div class="bo-card" data-end="${done?1:0}">${done?'네 친구가 모두 실천을 마쳤어요':`<span class="bo-no">${r+1} / 4</span>${BO_WHO[r]}의 실천: <b>${BO_CARD[r]}</b>`}</div>
+    ${prog}
+    <div class="bo-acts">${BO_ACT.map((t,a)=>`<button class="bo-a" data-a="${a}" onclick="boAct(${a})">${t}</button>`).join('')}</div>
+    ${boWall(st)}
+    <div class="bo-tally">바통을 넘긴 친구 ${boPassed(st)} / 4 \u00b7 게시판 기록 ${boRecN(st)} / 4</div>
+  </div>`;
+}
+
+function boPanel(st){
+  const fin = st.boFin!=null, done = boDone(st);
+  const q = fin ? '실천 인증 릴레이를 이어 가며 지속가능한 미래를 위해 우리가 할 수 있는 일을 실천해 봤어요.'
+    : st.boMean!=null ? '오늘 공부한 내용을 정리해요. 세계시민은 어떤 사람이고, 어떤 자세가 필요한가요?'
+    : st.boRead!=null ? '꼭! 기억해요 \u2014 「지구촌의 지속가능한 미래를 위해 협력하며 책임 있게 행동하는 사람을 (  )(이)라고 합니다」의 빈칸에 알맞은 말은 무엇일까요?'
+    : done ? '바통이 넷째 친구까지 이어졌어요. 판에서 무엇을 알 수 있나요?'
+    : st.boPos>0 ? '릴레이 순서대로 이어 가요. 바통은 지금 누가 쥐고 있나요?'
+    : '친구들과 실천 인증 릴레이를 해 봐요. 지속가능한 미래를 위해 우리가 할 수 있는 일은 무엇일까요?';
+  let right = `<div class="bo-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83C\uDFC1 바통을 이어받으며 정리했어요</div>
+      <b>세계시민</b>은 지구촌의 지속가능한 미래를 위해 <b>협력하며 책임 있게 행동하는</b> 사람이에요.
+      지구촌 문제를 <b>우리 모두의 문제</b>로 여기고, 내가 하는 행동에 책임감을 가지고 <b>생활 속에서 작은 일부터</b> 실천해요.<br>
+      <span style="color:#64748B">판의 트랙과 바통은 도식이에요. 판에서는 실제로 사진을 찍거나 게시판에 올리지 않았어요.
+      <b>토의하고 싶은 주제 정하기</b>, <b>모둠 토의</b>, <b>실천 계획 세우기</b>, <b>실제로 인증 사진 찍고 올리기</b>, <b>릴레이 결과와 소감 나누기</b>, <b>「세계시민으로서 우리의 노력은 ○○이다」 표현하기</b>, <b>탑승구 번호 찾기</b>는 교실에서 직접 해요.</span></div>`;
+  } else if(st.boMean!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="bo-fin">${BO_FIN.map((t,k)=>`<button class="${st.boWrongF===k?'no':''}" onclick="boFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.boRead!=null){
+    right += `<div class="dw-step">\uD83D\uDCCC 꼭! 기억해요 빈칸</div>`;
+    right += `<div class="bo-mean">${BO_MEAN.map((t,k)=>`<button class="${st.boWrongK===k?'no':''}" onclick="boMeanPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="bo-hint">초성 힌트 \u2014 ㅅ ㄱ ㅅ ㅁ. 빈칸에는 단체가 아니라 사람을 가리키는 말이 들어가요.</div>`;
+  } else if(done){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="bo-read">${BO_READ.map((t,k)=>`<button class="${st.boWrongR===k?'no':''}" onclick="boReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83C\uDFC1 바통을 넘겨요</div>`;
+    right += `<div class="bo-hint">판의 <b>바통을 쥔 친구</b>의 실천 카드를 읽고, 릴레이 순서대로 단추를 눌러요.<br>
+      \u2460 실천하는 모습을 담아 인증 사진을 찍어요.<br>
+      \u2461 인증 사진과 함께 실천한 내용을 기록해요. 더 자주 해야 할 것은 <b>더하기(+) 노력</b>, 줄이거나 없애야 할 것은 <b>빼기(\u2212) 노력</b> 칸에 올려요.<br>
+      \u2462 다음 차례인 친구에게 알려요.<br>
+      \u2463 다음 친구도 \u2460~\u2462과 같은 방식으로 참여해요. 감점은 없어요.</div>`;
+  }
+  if(st.boMsg) right += `<div class="dw-msg${st.boWarn?' warn':''}">${st.boMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83C\uDFC1 바통을 넘겨요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${boBoard(st)}<div class="cvcap">판의 트랙과 바통은 <b>도식</b>이에요. 판에서는 실제로 사진을 찍거나 게시판에 올리지 않아요. 네 친구의 실천은 교과서와 지도서에 나온 예시예요. 판은 실천의 크기를 재지 않아요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 지구촌 사람들 · 주제② 지구촌의 문제와 지속가능한 미래";
+
+// 확인 4 + 적용 4 — 정답 다양화 [1,3,0,2,3,1,2,0](각 자리 2회)
+// ⚠️ 새 사실 0(교과서 152~155쪽 · 지도서 12차시까지만) · 생각을 펼쳐요 0(뒤 차시).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"<b>세계시민</b>은 어떤 사람인가요?",
+   opts:["한 나라 안의 일에만 관심을 두는 사람","지구촌의 지속가능한 미래를 위해 협력하며 책임 있게 행동하는 사람","다른 나라에 여행을 가 본 적이 있는 사람","지구촌 문제를 다른 사람이 해결하기를 기다리는 사람"],
+   correct:1, pts:POINTS_BASIC, scene:"citizen",
+   reason:"지구촌의 지속가능한 미래를 위해 협력하며 책임 있게 행동하는 사람을 세계시민이라고 해요.",
+   h1:"「세계」와 「시민」이라는 낱말을 함께 떠올려 봐요.", h2:"협력과 책임이라는 낱말과 관련 있어요."},
+  {stem:"세계시민으로서 필요한 <b>태도</b>로 알맞은 것은 무엇인가요?",
+   opts:["지구촌 문제는 먼 나라의 일이라고 생각해요","큰 단체만 노력하면 된다고 생각해요","문제가 생기면 다른 나라가 해결하기를 기다려요","지구촌 문제가 우리 모두의 문제라는 생각을 갖고 해결하려고 노력해요"],
+   correct:3, pts:POINTS_BASIC, scene:"citizen",
+   reason:"세계시민으로서 지구촌 문제가 우리 모두의 문제라는 생각을 갖고 이를 해결하려 노력하는 태도가 필요해요.",
+   h1:"지구촌 문제는 누구의 문제일까요?", h2:"「우리 모두」라는 말을 찾아봐요."},
+  {stem:"모둠에서 정한 주제와 관련하여 <b>우리가 할 수 있는 일</b>을 생각할 때 고려할 점으로 알맞은 것은 무엇인가요?",
+   opts:["우리가 일상생활에서 실천 가능한 것인지 생각해요","가장 어렵고 큰 일만 골라요","한 번만 하면 끝나는 일만 골라요","다른 사람에게 맡길 수 있는 일만 골라요"],
+   correct:0, pts:POINTS_BASIC, scene:"pick",
+   reason:"우리가 일상생활에서 실천 가능한 것이어야 하고, 지구촌 문제를 해결하는 데 얼마나 효과가 있는지 생각하며, 더 해야 할 것과 덜 해야 할 것을 구분해요.",
+   h1:"우리가 직접 실천해야 하는 일이에요.", h2:"생활 속에서 할 수 있는지를 따져 봐요."},
+  {stem:"<b>더하기(+) 노력</b>은 무엇을 말하나요?",
+   opts:["줄이거나 없애야 할 것","다른 사람에게 미루어야 할 것","더 자주 해야 할 것","한 번만 해 보아야 할 것"],
+   correct:2, pts:POINTS_BASIC, scene:"plus",
+   reason:"더하기(+) 노력은 더 자주 해야 할 것이고, 빼기(\u2212) 노력은 줄이거나 없애야 할 것이에요.",
+   h1:"「더하기」라는 낱말의 뜻을 떠올려 봐요.", h2:"자주 할수록 좋은 일이에요."},
+  // 4단계 적용 (+15)
+  {stem:"다음 중 <b>빼기(\u2212) 노력</b>으로 알맞은 것은 무엇인가요?",
+   opts:["시장바구니 사용하기","다회용품 사용하기","다음 친구에게 실천 알리기","플라스틱 덜 사용하기"],
+   correct:3, pts:POINTS_APPLY, scene:"plus",
+   reason:"플라스틱을 덜 사용하는 것은 줄이거나 없애야 할 것이므로 빼기(\u2212) 노력이에요. 시장바구니와 다회용품을 사용하는 것은 더 자주 해야 할 더하기(+) 노력이에요.",
+   h1:"줄이거나 없애야 할 것을 찾아봐요.", h2:"「덜」이라는 낱말이 들어 있어요."},
+  {stem:"실천 인증 릴레이에서 <b>인증 사진을 찍은 다음</b>에는 무엇을 하나요?",
+   opts:["바로 릴레이를 끝내요","인증 사진과 함께 실천한 내용을 구체적으로 기록해요","다음 친구의 실천을 대신 해 줘요","실천 주제를 다시 정해요"],
+   correct:1, pts:POINTS_APPLY, scene:"relay",
+   reason:"실천하는 모습을 담아 인증 사진을 찍은 뒤, 인증 사진과 함께 실천한 내용을 구체적으로 기록하고, 다음 차례인 친구에게 알려요.",
+   h1:"릴레이 순서 ②를 떠올려 봐요.", h2:"바통을 넘겨요 판에서 사진 다음에 누른 단추예요."},
+  {stem:"재미있게 확인해요 \u2014 다음 중 <b>옳은 설명</b>은 무엇인가요?",
+   opts:["지구촌 문제는 관련 있는 나라들만의 노력으로 해결해야 해요","지구촌의 지속가능한 미래를 위해 에너지 사용량을 늘려요","그린피스는 환경 보호 등의 활동을 하는 비정부 기구예요","세계시민은 지구촌 문제를 남의 일로 여겨요"],
+   correct:2, pts:POINTS_APPLY, scene:"citizen",
+   reason:"그린피스는 환경 보호 등의 활동을 하는 비정부 기구예요. 지구촌 문제는 모두가 함께 노력해야 하고, 지속가능한 미래를 위해서는 에너지를 아껴야 해요.",
+   h1:"지난 시간에 살펴본 비정부 기구를 떠올려 봐요.", h2:"환경 보호와 관련 있는 단체예요."},
+  {stem:"<b>에코 제품 디자이너</b>는 어떤 일을 하나요?",
+   opts:["자연에서 얻은 재료나 버려진 물건을 활용해 자연과 사람에게 해가 되지 않는 제품을 만들거나 디자인해요","환경은 생각하지 않고 모양이 화려한 제품만 디자인해요","제품을 다 사용한 뒤 버리는 과정은 생각하지 않아요","새로 만든 재료로만 제품을 만들어요"],
+   correct:0, pts:POINTS_APPLY, scene:"eco",
+   reason:"에코 제품 디자이너는 자연에서 얻은 재료나 버려진 물건을 활용해 자연과 사람에게 해가 되지 않는 제품을 만들거나 디자인하고, 제품을 다 사용한 후 버리는 과정까지 생각해요.",
+   h1:"「에코」는 환경을 생각한다는 뜻이에요.", h2:"버려진 가구로 다시 만든 가구를 떠올려 봐요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 생활 속 실천 영상(지도서 338쪽 동기 유발)
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">생활 속에서 실천할 수 있는 노력은?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('video','생활 속 실천 영상(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCFA 생활 속 실천 영상</div>
+      지난 시간에는 지속가능한 미래를 위한 노력을 살펴봤어요. 생활 속 실천 영상은 어떤 내용일까요? 영상 속 실천 내용 중 우리가 실천할 수 있는 노력에는 어떤 것이 있을까요? 지구촌 문제를 해결하는 데 개인의 노력은 어떤 의미가 있을까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 영상: <b>탄소 배출</b>로 지구의 온도가 높아지고 있다는 내용이에요.<br>
+      \u2014 실천: <b>빈 교실의 전등을 꺼요.</b> 먹을 만큼만 음식을 덜어 <b>음식물 쓰레기의 양을 줄여요.</b><br>
+      \u2014 의미: 사람들이 친환경 소재의 물품을 구입하자 기업의 제품 생산 방식이 변하는 데서 알 수 있듯이, 개인의 노력은 <b>기업과 사회의 변화</b>를 만들 수 있어요.</div>`
+      :`<div class="note">교실과 급식실에서 할 수 있는 일을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">오늘은 <b>지속가능한 미래를 위해 우리가 할 수 있는 일</b>을 실천해 봐요.</div></div>`});
+// 2 살펴보기 — reveal: 세계시민(교과서 152쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">세계시민은 어떤 사람일까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('citizen','세계시민(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDF0F 세계시민</div>
+      세계 여러 나라가 협력하여 지구촌 문제의 해결 방안을 마련하고 실천할 때 지속가능한 미래를 이룰 수 있어요. 지구촌의 지속가능한 미래를 위해 우리는 어떤 사람이 되어야 할까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 지구촌의 지속가능한 미래를 위해 <b>협력하며 책임 있게 행동하는</b> 사람을 <b>세계시민</b>이라고 해요.<br>
+      \u2014 세계시민은 다양한 지구촌 문제에 관심을 두고, 이를 해결할 수 있는 방법을 고민해요.<br>
+      \u2014 세계시민으로서 지구촌 문제가 <b>우리 모두의 문제</b>라는 생각을 갖고 이를 해결하려 노력하는 태도가 필요해요.</div>`
+      :`<div class="note">그림의 네 낱말을 살펴봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: 토의하고 싶은 주제 정하기(교과서 152쪽 · 지도서 339쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">토의하고 싶은 주제를 정해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('pick','토의 주제 정하기(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDDE3\uFE0F 친구와 활동</div>
+      지구촌을 위협하는 문제에는 자원과 에너지가 고갈되는 문제, 무분별한 개발로 생태계가 파괴되는 문제, 살던 곳을 떠나는 난민이 늘어나는 문제 등이 있어요. 지구촌 문제의 해결 방안 중 토의하고 싶은 주제를 정해 봐요. 모둠에서 주제를 정할 때 주의해야 할 점은 무엇일까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 주제 예: 기후변화 문제가 심각하다고 생각해 지구의 온도를 낮출 방법을, 힘든 생활을 하는 난민 어린이들을 도와줄 방법을 토의할 수 있어요.<br>
+      \u2014 주의할 점: 서로 <b>관심 있는 주제가 다를 수 있음</b>을 이해하고, 서로의 <b>의견을 존중</b>해요.<br>
+      \u2014 우리가 할 수 있는 일을 생각할 때는 <b>일상생활에서 실천 가능한 것</b>인지, 지구촌 문제를 해결하는 데 <b>얼마나 효과가 있는지</b> 생각하고, 더 해야 할 것과 덜 해야 할 것을 구분해요.</div>`
+      :`<div class="note">모둠 친구들의 생각이 서로 다르면 어떻게 할까요?</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 4 살펴보기 — reveal: 더하기(+) 노력과 빼기(−) 노력(교과서 152쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">우리가 할 수 있는 일을 나눠 써 봐요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('plus','더하기 노력과 빼기 노력(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\u2795 \u2796 우리가 할 수 있는 일</div>
+      정한 주제와 관련하여 우리가 할 수 있는 일을 생각하고, 기준에 따라 써 봐요. 나의 습관을 바꾸거나 다른 사람을 돕는 일, 내가 혼자 할 수 있는 일이나 학급 전체가 할 수 있는 일 등 다양한 노력을 떠올려 봐요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 <b>더하기(+) 노력</b>(더 자주 해야 할 것): 시장바구니 사용하기, 다회용품 사용하기<br>
+      \u2014 <b>빼기(\u2212) 노력</b>(줄이거나 없애야 할 것): 플라스틱 덜 사용하기, 안 쓰는 전등 끄기<br>
+      \u2014 개개인의 실천뿐만 아니라 학교나 학급 차원에서 실천할 방법을 떠올려 보는 것도 좋아요.</div>`
+      :`<div class="note">더 자주 해야 할 것과 줄여야 할 것을 하나씩 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 5 살펴보기 — reveal: 실천 인증 릴레이 계획(교과서 153쪽 · 지도서 339~340쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">실천 인증 릴레이 계획을 세워요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('relay','실천 인증 릴레이 순서(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCC5 지속가능한 미래 만들기 실천 인증 릴레이</div>
+      떠올린 노력 중 하나를 골라 실천 계획을 세우고, 친구들과 실천 인증 릴레이를 해 봐요. 계획에는 실천 기간, 실천 횟수, 실천 장소, 인증 내용 올리는 방법, 인증 순서, 구체적인 실천 계획을 적어요.<br>
+      \u2460 실천하는 모습을 담아 인증 사진을 찍어요. \u2461 인증 사진과 함께 실천한 내용을 구체적으로 기록해요. \u2462 다음 차례인 친구에게 알려요. \u2463 다음 사람은 \u2460~\u2462과 같은 방식으로 실천 활동에 참여해요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 계획 예: 실천 횟수는 1명당 3일간, 실천 장소는 집, 학교, 마을 등, 실천하는 모습을 사진 또는 동영상으로 촬영하여 올리고, 정한 인증 순서대로 이어 가요.<br>
+      \u2014 구체적인 계획 예: 양치질이나 세수할 때, 학교에서 손을 씻을 때 물을 잠그거나 받아서 사용하는 모습을 촬영해요.<br>
+      \u2014 태도: 내가 하는 <b>작은 실천이 지구를 살릴 수 있는 일</b>임을 기억하고, <b>책임감 있게</b> 참여해요.</div>`
+      :`<div class="note">한 사람이 얼마만큼, 어떻게 인증할지 정해야 해요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">한 번의 실천으로 끝나지 않도록 <b>실천 기간과 횟수</b> 등을 친구들과 협의해요. 다음 판에서 <b>바통</b>을 이어받아 봐요.</div></div>`});
+// 6 살펴보기 — 직접조작(바통을 넘겨요)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">릴레이 순서대로 바통을 넘겨요</h2>
+  ${boPanel(st)}`});
+// 7 살펴보기 — reveal: 별별 직업 속으로(교과서 154쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">별별 직업 속으로 \u2014 에코 제품 디자이너</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('eco','에코 제품 디자이너(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\u267B\uFE0F 지구의 환경을 생각하는 디자인을 해요</div>
+      환경을 생각하는 제품을 찾는 사람이 늘면서, 직업을 통해서도 지구촌의 지속가능한 미래를 위해 이바지할 수 있어요. 에코 제품 디자이너는 어떤 일을 할까요? 에코 제품 디자이너가 되려면 어떤 것이 필요할까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 하는 일: <b>자연에서 얻은 재료나 버려진 물건</b>을 활용해 자연과 사람에게 해가 되지 않는 제품을 만들거나 디자인해요. 제품의 재료뿐만 아니라 <b>제품을 다 사용한 후 버리는 과정까지</b> 고려해요.<br>
+      \u2014 필요한 것: 친환경 재료나 재활용 재료의 특성을 이해하고 관련 지식을 갖춰야 해요. 제품이 지구에 미치는 영향을 생각하고, 디자인과 관련 있는 공부를 하는 것도 도움이 돼요.</div>`
+      :`<div class="note">버려진 가구와 다 쓴 페트병이 어떻게 바뀌었나요?</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">실천 인증 릴레이는 <b>교실 밖 생활</b>에서 친구들과 직접 이어 가요.</div></div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 12차시 주요 내용 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div><b>세계시민</b> \u2014 지구촌의 지속가능한 미래를 위해 협력하며 책임 있게 행동하는 사람이에요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div><b>필요한 자세</b> \u2014 지구촌 문제를 우리 모두의 문제로 여기고 해결하려고 노력해요. 내가 하는 행동에 책임감을 가지고 생활 속에서 작은 일부터 실천해요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div><b>실천 인증 릴레이</b> \u2014 더하기(+) 노력과 빼기(\u2212) 노력 가운데 하나를 골라 계획을 세우고, 인증 사진 찍기 \u2192 기록하기 \u2192 다음 친구에게 알리기로 이어 가요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 한 친구가 순서를 마쳐야 다음 친구가 바통을 이어받았고, 넷째 친구까지 실천이 이어졌어요.</div></div>
+  </div>
+  <div class="note">「세계시민으로서 우리의 노력은 ○○이다」로 표현해 봐요. 예: 나비의 날갯짓과 같다 \u2014 우리의 작은 실천이 사회에 큰 변화를 가져올 수 있다.</div></div>`});
+// 17 정리: 자기 평가 — 교과서 155쪽 주제 마무리 「얼마나 잘했을까」
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">주제를 마무리하며 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"지구촌을 위협하는 여러 가지 문제와 원인을 설명할 수 있어요",st)}
+    ${selfCheck(1,"지구촌의 지속가능한 미래를 위한 다양한 노력을 조사할 수 있어요",st)}
+    ${selfCheck(2,"지속가능한 미래를 위해 협력하고 책임 있게 행동하는 태도를 갖게 됐어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 공부를 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">다음 시간에는 <b style="color:var(--amber)">생각을 펼쳐요</b> 활동을 해요. 준비물은 <b>색칠 도구</b>예요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u3_l08";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  boPos:0,
+  boRead:null, boMean:null, boFin:null,
+  boWrongR:null, boWrongK:null, boWrongF:null,
+  boMsg:null, boWarn:false, boBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function boRender(){ main.innerHTML = slides[state.idx].render(state); }
+function boHold(msg){
+  state.boWarn=true; state.boBusy=true; state.boMsg=msg;
+  playThud(); boRender();
+  setTimeout(()=>{ state.boBusy=false; state.boWarn=false; state.boMsg=null;
+    state.boWrongR=null; state.boWrongK=null; state.boWrongF=null; boRender(); },1600);
+}
+
+/* ① 릴레이 단추 — 지금 할 일(boNeed)일 때만 한 칸 넘어간다(가드⑨·⑩) */
+function boAct(a){
+  if(state.boFin!=null) return;                                        // 가드①
+  if(state.boBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(a) || a<0 || a>=BO_ACT.length) return;          // 가드②
+  if(boDone(state)){ boHold(BO_LOCK); return; }                        // 가드③ 판 불변
+  const p = state.boPos, r = boRun(p), need = boNeed(p);
+  if(a!==need){
+    if(p%BO_S===1 && (a===1 || a===2)){ boHold(BO_SIGN(a)); return; }  // 가드⑩ 그 칸이 아님 — 판 불변
+    boHold(boOrderMsg(p,a)); return;                                   // 가드⑨ 차례를 건너뜀 — 판 불변
+  }
+  state.boPos += 1;                                                    // ★ 릴레이를 넘기는 자리 단 하나
+  state.boWarn=false;
+  if(boDone(state)){ state.boMsg = BO_END_MSG; playChime(); }
+  else if(a===0){ state.boMsg = `<b>${BO_WHO[r]}</b>가 실천하는 모습을 담아 인증 사진을 찍었어요.`; playBlip(); }
+  else if(a!==3){ state.boMsg = `<b>${BO_WHO[r]}</b>의 실천을 <b>${BO_KNAME[a-1]}</b>으로 게시판에 기록했어요.`; playBlip(); }
+  else { state.boMsg = `<b>${BO_WHO[r]}</b>가 다음 차례인 <b>${BO_WHO[r+1]}</b>에게 알렸어요. 바통이 넘어갔어요.`; playBlip(); }
+  boRender();
+}
+
+/* ② 판 읽기 — 릴레이를 마친 뒤에만(가드④) */
+function boReadPick(k){
+  if(state.boFin!=null) return;                                        // 가드①
+  if(state.boBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=BO_READ.length) return;         // 가드②
+  if(!boDone(state)){ boHold(BO_ORDER_R); return; }                    // 가드④ 순서 — 판 불변
+  if(state.boRead!=null){ boHold(BO_READ_AGAIN); return; }             // 가드④ 판 불변
+  if(k===BO_READ_OK){
+    state.boRead=k; state.boWrongR=null; state.boWarn=false;
+    state.boMsg = '판을 잘 읽었어요. 한 친구의 실천이 알림을 따라 다음 친구에게 이어져 넷째 친구까지 닿았어요. <b>작은 실천</b>도 이어지면 지구를 지키는 힘이 될 수 있어요.';
+    playChime(); boRender(); return;
+  }
+  state.boWrongR=k;
+  boHold(BO_READ_NO[k]);
+}
+
+/* ③ 꼭! 기억해요 빈칸 — 판을 읽은 뒤에만(가드⑤). */
+function boMeanPick(k){
+  if(state.boFin!=null) return;                                        // 가드①
+  if(state.boBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=BO_MEAN.length) return;         // 가드②
+  if(state.boRead==null){ boHold(BO_ORDER_K); return; }                // 가드⑤ 순서 — 판 불변
+  if(state.boMean!=null){ boHold(BO_MEAN_AGAIN); return; }             // 가드⑤ 판 불변
+  if(k!==BO_MEAN_OK){ state.boWrongK=k; boHold(BO_MEAN_NO[k]); return; } // 가드⑤ 판 불변
+  state.boMean = k;                                                    // ★ 빈칸을 고르는 자리 단 하나
+  state.boWarn=false;
+  state.boMsg = '지구촌의 지속가능한 미래를 위해 협력하며 책임 있게 행동하는 사람을 <b>세계시민</b>이라고 해요.';
+  playChime(); boRender();
+}
+
+/* ④ 마무리 — 지도서 12차시 주요 내용 정리 */
+function boFinish(k){
+  if(state.boFin!=null) return;                                        // 가드①
+  if(state.boBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=BO_FIN.length) return;          // 가드②
+  if(state.boMean==null){ boHold(BO_ORDER_F); return; }                // 가드⑥ 순서 — 판 불변
+  if(k===BO_FIN_OK){
+    state.boFin=k; state.boWrongF=null; state.boMsg=null; state.boWarn=false;
+    playChime(); boRender(); return;
+  }
+  state.boWrongF=k;
+  boHold(BO_FIN_NO[k]);                                                // 가드⑦ 판 불변
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 3단원 9차시(u3 l09) 미양산 — 양산 시 재배선
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>

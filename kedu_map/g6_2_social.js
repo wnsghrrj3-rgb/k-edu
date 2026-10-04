@@ -358,14 +358,14 @@ window.KEDU_MAP["g6_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g6_social_u3_l08",
+     "lessonId": "g6_s2_social_u3_l08_v1",
      "n": "8",
      "title": "지속가능한 미래를 위해 우리가 할 수 있는 일을 실천해 볼까요",
      "sub": "② 지구촌의 문제와 지속가능한 미래",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade6/semester2/social/3단원_지구촌사람들/g6_social_u3_l08_바통을넘겨요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
