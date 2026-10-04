@@ -40,7 +40,7 @@ export class Danger {
     if (this.torchUntil && !this.hasTorch() && g.has?.('torch')) { g.take('torch'); g.renderInv?.(); this.torchUntil = 0; g.ui.say('횃불이 꺼졌다.', 2600); }
     // 1) 밤, 불 밖, 횃불 없음
     let danger = false;
-    if (this.night && !this.hasTorch()) { const f = this.firePos(); const d = f ? Math.hypot(p.pos.x - f.x, p.pos.z - f.z) : Infinity; danger = d > this.cfg.nightRadius; }
+    if (this.night && !this.hasTorch()) { const f = this.firePos(); const d = f ? Math.hypot(p.pos.x - f.x, p.pos.z - f.z) : Infinity; danger = d > this.cfg.nightRadius; if (danger && (this.cfg.safe || []).some(([x, z, r]) => Math.hypot(p.pos.x - x, p.pos.z - z) < r)) danger = false; }   // safe: [[x,z,r]] 성 안처럼 밤에도 안전한 자리
     if (danger) {
       this.t += dt;
       if (this.t > this.cfg.eyesAt && !this.eyesOn) { this.showEyes(true); g.ui.say('…어둠 속에 눈.', 2600); g.sound?.thump?.(0.3); g.sound?.play('growl', 0.5); }

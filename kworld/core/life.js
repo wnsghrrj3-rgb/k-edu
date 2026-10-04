@@ -25,6 +25,7 @@ export class Life {
   carryIn() {
     const c = this.d.carry; if (!c || this.carried || typeof localStorage === 'undefined') return; this.carried = true;
     let v = null; try { v = JSON.parse(localStorage.getItem('kworld_carry:' + c.from) || 'null'); } catch { } if (!v) return;
+    if (v.branch) this.g.flags.add('from:' + v.branch); if (v.status) this.g.flags.add('fromstatus:' + v.status);   // 지난 시대의 갈림·신분을 깃발로(신분 규칙 if 에서 from:<branch> 로 읽는다)
     const got = []; for (const k of c.keep || ['craft', 'heart']) { const n = Math.round((v[k] || 0) * (c.ratios?.[k] ?? c.ratio ?? 0.5)); if (n > 0) { this.values[k] = (this.values[k] || 0) + n; got.push(`${{ craft: '✋ 솜씨', heart: '🤝 인심', grain: '🌾 곡식' }[k] || k} ${n}`); } }
     if (got.length) setTimeout(() => this.g.ui.say(`${c.say || '조상에게서 넘어온 것'} — ${got.join(' · ')}`, 5200), 1800);
   }
@@ -33,6 +34,11 @@ export class Life {
     const st = this.d.status; if (!st?.rules?.length) return;
     const r = st.rules.find((x) => this.cond(x.if)) || st.rules[st.rules.length - 1]; this.status = r.id; this.statusName = r.name; this.g.flags.add('status:' + r.id);
     if (r.say) setTimeout(() => this.g.ui.say(`🏠 ${r.name} — ${r.say}`, 6200), 4200);
+  }
+  /** 신분이 삶 중간에 바뀐다(법으로 종이 되거나, 값을 치르고 풀려나거나) — 선택지 c.status = '<id>' */
+  setStatusTo(id) {
+    const st = this.d.status; const r = st?.rules?.find((x) => x.id === id); if (!r) return; if (this.status) this.g.flags.delete('status:' + this.status);
+    this.status = r.id; this.statusName = r.name; this.g.flags.add('status:' + r.id); this.g.ui.say(`🏠 ${r.name}`, 3600); this.render(); this.g.save?.touch();
   }
   /** 씨앗으로 섞여 나오는 상황을 n개 뽑는다(판마다 다르게, 저장하면 같은 판) */
   pickMixed(seed) {
@@ -62,7 +68,7 @@ export class Life {
     return `${tail}${hist >= 2 ? ` 벌써 ${hist}번째다 — 하면 할수록 익는다.` : ''}`;
   }
   /** 흔적 — 다침. 끝까지 남는다. leg: 절뚝(느려짐) */
-  injure(kind) { if (this.hurt.has(kind)) return; this.hurt.add(kind); const t = (this.d.hurts || {})[kind]; this.g.ui.say(t?.say || '…다쳤다. 흔적이 남는다.', 4800); this.render(); this.g.save?.touch(); }
+  injure(kind) { if (this.hurt.has(kind)) return; this.hurt.add(kind); this.g.flags.add('hurt:' + kind); /* 깃발로도 — items.json rename if 에서 hurt:leg 로 읽는다 */ const t = (this.d.hurts || {})[kind]; this.g.ui.say(t?.say || '…다쳤다. 흔적이 남는다.', 4800); this.render(); this.g.save?.touch(); }
   get speedMul() { return this.hurt.has('leg') ? (this.d.hurts?.leg?.speed ?? 0.7) : 1; }
   /** 선택지 회색 — c.if 조건이 거짓이면 못 누른다(이유 한 줄). hurt:leg 같은 흔적도 깃발처럼 본다 */
   cond(expr) { if (!expr) return true; return expr.split('&&').every((t) => { t = t.trim(); const neg = t.startsWith('!'); const f = neg ? t.slice(1) : t; const v = f.startsWith('hurt:') ? this.hurt.has(f.slice(5)) : f.startsWith('sex:') ? (this.g.sex?.id === f.slice(4)) : f.startsWith('status:') ? (this.status === f.slice(7)) : (f.startsWith('val:') ? this.valCond(f.slice(4)) : this.g.flags.has(f)); return neg ? !v : v; }); }
@@ -93,7 +99,7 @@ export class Life {
   finish(s, c) {
     const g = this.g; this.done.add(s.id);
     const deltas = []; if (c.craft) { this.add('craft', c.craft); deltas.push(`✋ 솜씨 ${c.craft > 0 ? '+' : ''}${c.craft}`); } if (c.heart) { this.add('heart', c.heart); deltas.push(`🤝 인심 ${c.heart > 0 ? '+' : ''}${c.heart}`); } if (c.grain && this.d.grain?.open) { this.add('grain', c.grain); deltas.push(`🌾 곡식 ${c.grain > 0 ? '+' : ''}${c.grain}`); }
-    for (const a of [].concat(c.gain || [])) this.gain(a, 1); if (c.hurt) this.injure(c.hurt);
+    for (const a of [].concat(c.gain || [])) this.gain(a, 1); if (c.hurt) this.injure(c.hurt); if (c.status) this.setStatusTo(c.status); if (c.flag) for (const f of [].concat(c.flag)) g.flags.add(f);   // 결과가 바로 세우는 깃발(then 은 카드 뒤, 이건 즉시)
     this.log.push({ sit: s.id, choice: c.id, t: Date.now() }); g.telemetry && ((g.telemetry.life ??= []).push({ sit: s.id, choice: c.id }));
     this.queue.push({ kind: 'result', s, c, deltas }); if (c.then) this.queue.push({ kind: 'then', list: c.then });
     g.flag(['sit:' + s.id + ':done', 'sit:' + s.id + ':' + c.id]);   // 결과 카드를 먼저 줄 세운 뒤 깃발(깃발이 여는 다음 상황은 그 뒤에)
@@ -124,7 +130,7 @@ export class Life {
   /** 결과 뒤 세상 바꾸기(사건과 같은 명령어 + remove/fire) */
   doThen(list) {
     const g = this.g; const rest = [];
-    for (const a of list) { if (a.remove) { for (const pat of [].concat(a.remove)) for (const k of [...g.e.interactables.keys()]) if (k === pat || (pat.endsWith('*') && k.startsWith(pat.slice(0, -1)))) g.e.removeInteractable(k); } else if (a.take) { for (const k of [].concat(a.take)) g.take(k); g.renderInv?.(); } else if (a.takeAll) { let n = 0; while (g.has(a.takeAll)) { g.take(a.takeAll); n++; } g.renderInv?.(); } else if (a.halfFood) { const have = g.inventory.filter((k) => (this.d.food || ['berry', 'meat', 'fish']).includes(k)); for (let i = 0; i < Math.floor(have.length / 2); i++) g.take(have[i]); g.renderInv?.(); } else if (a.give) { for (const k of [].concat(a.give)) g.inventory.push(k); g.renderInv?.(); } else if (a.flee) { for (const k of [...g.e.interactables.keys()]) if (k === a.flee.pattern || (a.flee.pattern.endsWith('*') && k.startsWith(a.flee.pattern.slice(0, -1)))) { const it = g.e.interactables.get(k); if (it && g.story) g.story.flee(it, { flee: { to: a.flee.to || [0, 90], sec: a.flee.sec || 4 } }); } } else if (a.end) { this.end(a.end); } else rest.push(a); }
+    for (const a of list) { if (a.remove) { for (const pat of [].concat(a.remove)) for (const k of [...g.e.interactables.keys()]) if (k === pat || (pat.endsWith('*') && k.startsWith(pat.slice(0, -1)))) g.e.removeInteractable(k); } else if (a.take) { for (const k of [].concat(a.take)) g.take(k); g.renderInv?.(); } else if (a.takeAll) { let n = 0; while (g.has(a.takeAll)) { g.take(a.takeAll); n++; } g.renderInv?.(); } else if (a.halfFood) { const have = g.inventory.filter((k) => (this.d.food || ['berry', 'meat', 'fish']).includes(k)); for (let i = 0; i < Math.floor(have.length / 2); i++) g.take(have[i]); g.renderInv?.(); } else if (a.give) { for (const k of [].concat(a.give)) g.inventory.push(k); g.renderInv?.(); } else if (a.flee) { for (const k of [...g.e.interactables.keys()]) if (k === a.flee.pattern || (a.flee.pattern.endsWith('*') && k.startsWith(a.flee.pattern.slice(0, -1)))) { const it = g.e.interactables.get(k); if (it && g.story) g.story.flee(it, { flee: { to: a.flee.to || [0, 90], sec: a.flee.sec || 4 } }); } } else if (a.end) { this.end(a.end); } else if (a.show) { const it = g.e.interactables.get(a.show.name) || g.e.interactables.get('ix_' + a.show.name); if (it?.obj?.traverse) g.showMats(it, a.show.mats || [], a.show.on !== false); } else rest.push(a); }
     if (rest.length) g.story?.doActions(rest);
   }
   /** 쓰러진 뒤(위험층) — 상황 앞으로 돌아온다: 열린 상황은 다시 열리고, 값·흔적은 남는다 */

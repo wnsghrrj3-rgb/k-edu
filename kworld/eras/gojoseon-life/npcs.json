@@ -1,0 +1,604 @@
+{
+ "king": {
+  "name": "군장(왕검)",
+  "lines": [
+   {
+    "if": "sit:war:open && !sit:war:done && status:noble && !war:said",
+    "text": "강 건너에 한나라. 성을 지킨다. …어떤 어른들은 「넘겨주자」고 한다. 너는 내 곁이다. 어느 쪽이냐.",
+    "choices": [
+     {
+      "label": "지킵니다 — 성문을 닫읍시다",
+      "flag": [
+       "war:hold",
+       "war:said"
+      ],
+      "say": "「성문을 닫아라.」 한 해다. 버틸 수 있을까."
+     },
+     {
+      "label": "넘겨주자고 합니다",
+      "flag": [
+       "war:yield",
+       "war:said"
+      ],
+      "say": "군장이 나를 노려봤다. 어떤 어른들이 고개를 끄덕였다. 성 안이 둘로 갈라졌다."
+     }
+    ]
+   },
+   {
+    "if": "sit:war:open && !sit:war:done && !status:noble",
+    "text": "성을 지킨다. 농민은 토성을 쌓고 창을 든다. 쇠 다루는 손은 창을 만든다. 종은… 주인이 시키는 대로."
+   },
+   {
+    "if": "sit:court:open && !sit:court:done",
+    "text": "법 외는 어른에게 가라. 법은 내가 아니라 어른이 왼다. 나는 정한다."
+   },
+   {
+    "if": "!talk:king",
+    "flag": "talk:king",
+    "text": "마을이 아니라 나라다. 논도 물도 법도 내가 정한다. 하늘이 그렇게 시켰다 — 어른들이 그렇게 말한다."
+   },
+   {
+    "text": "곳간 셋이 전부 내 것이다. 그래서 내가 정한다."
+   }
+  ]
+ },
+ "judge": {
+  "name": "법 외는 어른",
+  "lines": [
+   {
+    "if": "sit:court:open && !sit:court:done && !law:heard",
+    "text": "먼저 법을 들어라. 저기 돌 단, 흰 깃발 아래서 왼다."
+   },
+   {
+    "if": "sit:court:open && !sit:court:done && hurt:thief",
+    "text": "네 차례다. 밤에 군장 곳간에 손을 댔지. 「훔친 자는 그 집 노비로 삼는다. 풀려나려면 50만 전 — 벼 다섯 단.」 값이 있나.",
+    "choices": [
+     {
+      "label": "값을 치른다 — 벼 다섯 단",
+      "if": "val:grain>=5",
+      "gray": "벼 다섯 단이 없다. 법은 값을 알고, 값은 집을 안다.",
+      "consumes": [
+       "grain",
+       "grain",
+       "grain",
+       "grain",
+       "grain"
+      ],
+      "failNoTool": "벼 다섯 단이 손에 있어야.",
+      "flag": "court:paid",
+      "say": "다섯 단을 군장 곳간에 올렸다. 「풀어 줘라.」 흔적은 남았다."
+     },
+     {
+      "label": "…값이 없다",
+      "flag": "court:enslaved",
+      "say": "「그 집 종으로 삼는다.」 큰 집 뒤 작은 움집. 내 땅이 없어졌다."
+     }
+    ]
+   },
+   {
+    "if": "sit:court:open && !sit:court:done",
+    "text": "옆집 농민이 벼 두 단을 훔쳤다. 「훔친 자는 그 집 노비로 삼는다. 풀려나려면 50만 전.」 …너는 어쩔 테냐.",
+    "choices": [
+     {
+      "label": "법대로 — 노비로",
+      "if": "status:noble",
+      "gray": "정하는 건 군장 곁의 집이다.",
+      "flag": "court:law",
+      "say": "「노비로.」 군장이 끄덕였다. 옆집 농민이 큰 집 뒤로 끌려갔다."
+     },
+     {
+      "label": "값을 내준다 — 벼 세 단",
+      "if": "status:noble",
+      "gray": "값을 대신 낼 수 있는 건 곳간 있는 집이다.",
+      "consumes": [
+       "grain",
+       "grain",
+       "grain"
+      ],
+      "failNoTool": "벼 세 단이 손에 있어야.",
+      "flag": "court:pay",
+      "say": "「풀어 줘라.」 옆집 농민이 내 발 앞에 엎드렸다."
+     },
+     {
+      "label": "값을 보탠다 — 벼 한 단",
+      "if": "!status:noble && !status:slave",
+      "gray": "종은 낼 벼가 없고, 군장 곁은 보태지 않고 내준다.",
+      "consumes": [
+       "grain"
+      ],
+      "failNoTool": "벼 한 단이 손에 있어야.",
+      "flag": "court:help",
+      "say": "열 집이 한 단씩. 모자랐지만 군장이 받았다."
+     },
+     {
+      "label": "풀려날 값을 묻는다",
+      "if": "status:slave",
+      "gray": "종만 묻는다.",
+      "flag": "court:ask",
+      "say": "「50만 전. 벼 다섯 단으로 친다.」 …넷 중 하나씩 받으면 스무 해."
+     },
+     {
+      "label": "본다",
+      "flag": "court:watch",
+      "say": "옆집 농민이 끌려갔다. 법은 외는 것이고, 나는 듣는 것이다."
+     }
+    ]
+   },
+   {
+    "if": "sit:brawl:done && !talk:judge2",
+    "flag": "talk:judge2",
+    "text": "장터 일은 들었다. 다치게 한 자는 곡식으로. 법이 있으니 싸움도 셈이다."
+   },
+   {
+    "if": "!talk:judge",
+    "flag": "talk:judge",
+    "text": "법은 여덟 조목. 돌에 새기지 않고 입으로 왼다. 사람을 죽인 자는 죽인다. 다치게 한 자는 곡식으로 갚는다. 훔친 자는 노비가 된다."
+   },
+   {
+    "text": "법은 모두에게 같다 — 값은 다르지만."
+   }
+  ]
+ },
+ "smith": {
+  "name": "쇠 다루는 사람",
+  "lines": [
+   {
+    "if": "sit:harvest:open && !sit:harvest:done && status:smith",
+    "text": "논은 없다. 모루에서 쇠를 두드려 괭이를 만들어라. 논 사람이 벼 두 단을 낸다."
+   },
+   {
+    "if": "sit:hoe:open && !sit:hoe:done",
+    "text": "부러진 괭이? 벼 한 단이면 반나절에 잇는다. 아니면 네 손으로 벼려 보든지.",
+    "choices": [
+     {
+      "label": "벼 한 단 주고 고친다",
+      "consumes": [
+       "grain"
+      ],
+      "failNoTool": "벼 한 단.",
+      "flag": "hoe:paid",
+      "say": "반나절. 이었다. 「남의 것은 비싸지.」"
+     },
+     {
+      "label": "안 돌려주겠다",
+      "flag": "hoe:keep",
+      "say": "「…법 외는 어른이 훔친 것과 같다고 할 텐데.」 벼 두 단을 물었다."
+     }
+    ]
+   },
+   {
+    "if": "sit:war:open && !sit:war:done && status:smith",
+    "text": "쇠 덩이를 모루에 올려라. 창이 필요하다. 군장이 기다린다."
+   },
+   {
+    "if": "!talk:smith",
+    "flag": "talk:smith",
+    "text": "청동은 거울이고, 쇠는 괭이다. 쇠가 오자 농사가 달라졌다. …아직 비싸서 가진 집부터지만."
+   },
+   {
+    "text": "쇠는 다시 달궈 이을 수 있다. 돌은 못 한다."
+   }
+  ]
+ },
+ "owner": {
+  "name": "가진 집 주인",
+  "lines": [
+   {
+    "if": "sit:sale:open && !sit:sale:done && status:slave",
+    "text": "너를 판다. 강 건너 집이 벼 세 단을 낸다지. …값을 치르면 풀려난다. 벼 다섯 단. 있나.",
+    "choices": [
+     {
+      "label": "값을 치른다 — 벼 다섯 단",
+      "if": "val:grain>=5",
+      "gray": "벼 다섯 단이 없다.",
+      "consumes": [
+       "grain",
+       "grain",
+       "grain",
+       "grain",
+       "grain"
+      ],
+      "failNoTool": "벼 다섯 단이 손에 있어야.",
+      "flag": "sale:free",
+      "say": "줄을 풀었다. 「이제 네 몸이다.」"
+     },
+     {
+      "label": "…팔려 간다",
+      "flag": "sale:sold",
+      "say": "새 주인. 강 건너. 짐을 졌다."
+     }
+    ]
+   },
+   {
+    "if": "sit:sale:open && !sit:sale:done",
+    "text": "종을 판다. 벼 세 단. 손이 좋은 아이다.",
+    "choices": [
+     {
+      "label": "산다 — 벼 세 단",
+      "if": "status:noble",
+      "gray": "종을 사는 건 곳간 있는 집이다.",
+      "consumes": [
+       "grain",
+       "grain",
+       "grain"
+      ],
+      "failNoTool": "벼 세 단이 손에 있어야.",
+      "flag": "sale:buy",
+      "say": "사람 하나가 내 집 뒤로 갔다."
+     },
+     {
+      "label": "본다",
+      "flag": "sale:watch",
+      "say": "사람이 벼 세 단에 팔렸다. 나는 봤다."
+     }
+    ]
+   },
+   {
+    "if": "!talk:owner",
+    "flag": "talk:owner",
+    "text": "종이 셋. 밭은 동쪽. 종은 넷 중 하나를 받는다. 법이 그렇다."
+   },
+   {
+    "text": "곳간이 있으면 사람도 산다. 그게 이 시대다."
+   }
+  ]
+ },
+ "slave": {
+  "name": "종",
+  "lines": [
+   {
+    "if": "status:slave && !talk:slave",
+    "flag": "talk:slave",
+    "text": "…너도 그 집이구나. 넷 중 하나. 풀려날 값은 벼 다섯 단이래. 스무 해. 전쟁이 나면 — 아무도 안 쫓는다더라."
+   },
+   {
+    "if": "!talk:slave",
+    "flag": "talk:slave",
+    "text": "주인 밭을 부친다. 넷 중 하나가 내 것. 조상이 흉년에 빌린 벼 때문이래."
+   },
+   {
+    "text": "법에 풀려나는 길이 적혀 있대. 멀대."
+   }
+  ]
+ },
+ "guard": {
+  "name": "성문 지키는 사람",
+  "lines": [
+   {
+    "if": "sit:fall:open && !sit:fall:done",
+    "text": "한나라 벼슬아치가 성에 앉았다. 남을 거면 이름을 적어라. 가려면 — 고개든 강이든.",
+    "choices": [
+     {
+      "label": "남는다 — 이름을 적는다",
+      "flag": "fall:stay",
+      "say": "이름이 적혔다. 세금 걷는 사람이 바뀌었다."
+     }
+    ]
+   },
+   {
+    "if": "sit:war:open && !sit:war:done && status:slave",
+    "text": "종이 싸움에 나가나? …주인이 「살아 돌아오면 풀어 준다」고 했다지. 남자면 앞줄이다.",
+    "choices": [
+     {
+      "label": "값 대신 싸운다",
+      "if": "sex:m && !hurt:leg",
+      "gray": "이 성 싸움터엔 남자가 나간다. 다리를 절면 못 나간다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 2,
+       "why": "창은 몸이다.",
+       "fail": "…창을 놓쳤다. 뒤로 밀렸다. 살았다. 약속은 없던 일이 됐다."
+      },
+      "rollFailFlag": "war:lost",
+      "flag": "war:slavefight",
+      "say": "여울 앞줄. 살았다. 주인이 줄을 풀었다."
+     }
+    ]
+   },
+   {
+    "if": "sit:war:open && !sit:war:done",
+    "text": "한나라다. 여울로 온다. 창을 들 사람은 성문으로.",
+    "choices": [
+     {
+      "label": "싸움에 나간다",
+      "if": "sex:m && !hurt:leg",
+      "gray": "이 성 싸움터엔 남자가 나간다. 다리를 절면 못 나간다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 2,
+       "why": "창은 몸이다. 밀리면 사람을 잃는다.",
+       "fail": "…창을 놓쳤다. 뒤로 밀렸다. 살았다."
+      },
+      "rollFailFlag": "war:lost",
+      "flag": "war:fight",
+      "say": "여울에서 막았다. 쇠 창이 부딪혔다. 한나라 군이 물러났다 — 오늘은."
+     }
+    ]
+   },
+   {
+    "if": "steal:caught && !guard:seen",
+    "flag": "guard:seen",
+    "text": "…어젯밤 곳간 앞. 네 얼굴을 봤다. 법 외는 어른이 기다린다."
+   },
+   {
+    "if": "!talk:guard",
+    "flag": "talk:guard",
+    "text": "밤엔 성문을 닫는다. 곳간 앞도 돈다. 창은 짐승보다 사람에게 더 자주 든다."
+   },
+   {
+    "text": "성 안은 법이다. 성 밖은 — 모른다."
+   }
+  ]
+ },
+ "priest": {
+  "name": "제사 맡은 사람",
+  "lines": [
+   {
+    "if": "sit:heaven:open && !sit:heaven:done",
+    "text": "하늘에 올리는 날이다. 군장이 제단에 오른다. 📖 전해 오기를 — 하늘에서 내려온 환웅, 곰이 된 여자, 그 아들 단군왕검이 이 나라를 열었다고 한다. …너는 어디에 서나.",
+    "choices": [
+     {
+      "label": "제단에 선다 — 군장 뒤에",
+      "if": "status:noble",
+      "gray": "제단엔 군장 곁의 집만 오른다.",
+      "flag": "rite:stand",
+      "say": "군장 뒤에 섰다. 연기가 곧게 올랐다. 아래 사람들이 나를 봤다."
+     },
+     {
+      "label": "무녀 곁에 선다",
+      "if": "sex:f && !status:slave",
+      "gray": "제단 둘레 흰 천은 여자가 든다. 종은 못 선다.",
+      "flag": "rite:maiden",
+      "say": "흰 천을 들었다. 노래를 따라 했다."
+     },
+     {
+      "label": "이야기를 듣는다 — 그게 정말이야?",
+      "flag": "rite:story",
+      "say": "「나라엔 처음 이야기가 있어야 한다. 정말인지는… 하늘이 안다.」"
+     },
+     {
+      "label": "땔감을 나른다",
+      "if": "status:slave",
+      "gray": "땔감은 종이 나른다.",
+      "flag": "rite:wood",
+      "say": "제단 아래서 나무를 날랐다. 연기는 내가 피웠다. 절은 군장이 했다."
+     }
+    ]
+   },
+   {
+    "if": "sit:drought:open && !sit:drought:done",
+    "text": "이레째 비가 없다. 제단에 올릴까, 논으로 가 도랑을 팔까. 둘 다 하는 사람도 있다.",
+    "choices": [
+     {
+      "label": "논으로 가서 도랑을 판다",
+      "roll": {
+       "ab": "몸",
+       "hard": 2,
+       "why": "사흘 동안 판다. 몸이 버텨야.",
+       "fail": "…이틀째 허리가 꺾였다. 비가 먼저 왔다."
+      },
+      "flag": "drought:ditch",
+      "say": "강에서 논까지. 사흘. 물이 왔다. 비도 왔다."
+     }
+    ]
+   },
+   {
+    "if": "!talk:priest",
+    "flag": "talk:priest",
+    "text": "군장이 제사장이다. 하늘의 자손이 다스린다 — 그 이야기가 다스릴 자격이다."
+   },
+   {
+    "text": "신단수 가지에 흰 천. 하늘과 땅이 닿는 자리."
+   }
+  ]
+ },
+ "farmer": {
+  "name": "논 사람",
+  "lines": [
+   {
+    "if": "sit:harvest:open && !sit:harvest:done && made:hoe && status:smith",
+    "text": "쇠 괭이? 벼 두 단 낸다. 줘.",
+    "choices": [
+     {
+      "label": "괭이를 판다 — 벼 두 단",
+      "requires": "ironhoe",
+      "failNoTool": "괭이가 없다. 모루에서.",
+      "consumes": [
+       "ironhoe"
+      ],
+      "gives": [
+       "grain",
+       "grain"
+      ],
+      "flag": "cut:smith",
+      "say": "🌾🌾 「깊이 파이겠다.」 논 사람이 좋아했다."
+     }
+    ]
+   },
+   {
+    "if": "sit:harvest:open && !sit:harvest:done",
+    "text": "넓은 논은 군장 곁의 집 것, 작은 논은 우리 것. 거둔 것 중 한 단은 나라에 — 군장 곳간에. 돌낫은 갈판에서."
+   },
+   {
+    "if": "!talk:farmer",
+    "flag": "talk:farmer",
+    "text": "조상 때는 「바쳤고」, 지금은 「거둬 간다」. 말이 달라졌다. 벼는 같은데."
+   },
+   {
+    "text": "쇠 괭이가 벼 두 단이래. 옆집은 샀어."
+   }
+  ]
+ },
+ "overseer": {
+  "name": "밭 감독",
+  "lines": [
+   {
+    "if": "sit:harvest:open && !sit:harvest:done && status:slave",
+    "text": "거둬라. 넷 중 셋은 주인 것. 하나가 네 것. 셈은 내가 한다."
+   },
+   {
+    "if": "!talk:overseer",
+    "flag": "talk:overseer",
+    "text": "이 밭은 가진 집 것이다. 종이 부친다. 논 사람은 손대지 마라."
+   },
+   {
+    "text": "넷 중 하나. 법이 그렇다."
+   }
+  ]
+ },
+ "runaway": {
+  "name": "도망 노비",
+  "lines": [
+   {
+    "if": "sit:runaway:open && !sit:runaway:done && status:slave",
+    "text": "…너도 그 집이구나. 전쟁이 나면 뛰어. 그땐 아무도 안 쫓아. 깊은 숲 바위 밑.",
+    "choices": [
+     {
+      "label": "말을 기억해 둔다",
+      "flag": "run:tempt",
+      "say": "「전쟁이 나면.」 기억했다."
+     },
+     {
+      "label": "모른 척한다",
+      "flag": "run:ignore",
+      "say": "못 봤다. 불 자리도, 사람도."
+     }
+    ]
+   },
+   {
+    "if": "sit:runaway:open && !sit:runaway:done",
+    "text": "…말하지 마. 열흘 전에 뛰었어. 주인이 벼 한 단을 걸었다더라.",
+    "choices": [
+     {
+      "label": "숨겨 준다",
+      "flag": "run:hidehim",
+      "say": "「누구한테도 말하지 마.」 법을 어겼다. 사람은 지켰다."
+     },
+     {
+      "label": "고한다 — 벼 한 단",
+      "flag": "run:tell",
+      "gives": [
+       "grain"
+      ],
+      "say": "주인의 사람들이 개를 끌고 숲으로 갔다. 벼 한 단이 내게 왔다. …다음 날 그 사람이 절뚝이며 끌려왔다."
+     },
+     {
+      "label": "모른 척한다",
+      "flag": "run:ignore",
+      "say": "못 봤다. 불 자리도, 사람도."
+     }
+    ]
+   },
+   {
+    "if": "!talk:runaway",
+    "flag": "talk:runaway",
+    "text": "…누구냐. 성 사람이냐."
+   },
+   {
+    "text": "산엔 법이 없다. 밥도 없지만."
+   }
+  ]
+ },
+ "trader": {
+  "name": "연나라 장사꾼",
+  "lines": [
+   {
+    "if": "sit:iron:open && !sit:iron:done",
+    "text": "쇠 괭이 벼 두 단, 쇠 창 세 단, 쇠 덩이 한 단. 강을 타고 왔다. 종은 — 주인 벼로 받아 가든지.",
+    "choices": [
+     {
+      "label": "쇠 괭이 — 벼 두 단",
+      "if": "!status:slave && !status:smith",
+      "gray": "종은 가질 수 없다. 쇠 다루는 집은 덩이를 산다.",
+      "consumes": [
+       "grain",
+       "grain"
+      ],
+      "failNoTool": "벼 두 단이 손에 있어야.",
+      "gives": [
+       "ironhoe"
+      ],
+      "flag": "iron:buy",
+      "journal": "ironhoe",
+      "say": "⛏️ 쇠 날. 돌보다 깊이 판다."
+     },
+     {
+      "label": "쇠 창 — 벼 세 단",
+      "if": "status:noble",
+      "gray": "창을 사는 건 군장 곁의 집이다.",
+      "consumes": [
+       "grain",
+       "grain",
+       "grain"
+      ],
+      "failNoTool": "벼 세 단이 손에 있어야.",
+      "gives": [
+       "ironspear"
+      ],
+      "flag": "iron:spear",
+      "say": "🔱 날이 길다. 군장이 봤다. 「좋은 창이다.」"
+     },
+     {
+      "label": "쇠 덩이 — 벼 한 단",
+      "if": "status:smith",
+      "gray": "덩이는 쇠 다루는 집이 산다.",
+      "consumes": [
+       "grain"
+      ],
+      "failNoTool": "벼 한 단이 손에 있어야.",
+      "gives": [
+       "iron"
+      ],
+      "flag": "iron:learn",
+      "say": "⬛ 두드리면 괭이도 창도 된다."
+     },
+     {
+      "label": "주인 심부름 — 받아 간다",
+      "if": "status:slave",
+      "gray": "종만.",
+      "flag": "iron:carry",
+      "gives": [
+       "ironhoe"
+      ],
+      "say": "주인 벼로 받았다. 내 것이 아니다. 짊어졌다."
+     },
+     {
+      "label": "안 산다 — 돌로 버틴다",
+      "flag": "iron:no",
+      "say": "「옆집은 샀는데.」 벼는 먹는다."
+     }
+    ]
+   },
+   {
+    "if": "sit:coin:open && !sit:coin:done",
+    "text": "칼 모양 돈. 벼 한 단에 하나. 남쪽에서도 받는다. 좌판에서 골라라 — 가짜 조심.",
+    "choices": [
+     {
+      "label": "안 바꾼다",
+      "flag": "coin:no",
+      "say": "「다음에.」 장사꾼이 웃었다."
+     }
+    ]
+   },
+   {
+    "if": "sit:fall:open && !sit:fall:done",
+    "text": "성이 넘어갔군. 배로 북쪽에 간다. 부여. 쇠 다루는 손이면 자리가 있다. 아니어도 — 들이 넓다.",
+    "choices": [
+     {
+      "label": "배로 북쪽에 간다",
+      "flag": "fall:north",
+      "say": "강을 거슬렀다. 부여. 말과 넓은 들."
+     }
+    ]
+   },
+   {
+    "if": "!talk:trader",
+    "flag": "talk:trader",
+    "text": "강을 따라 오르내린다. 북쪽엔 쇠, 남쪽엔 소금. 요즘은 돈도 받는다."
+   },
+   {
+    "text": "쇠가 벼다. 요즘은."
+   }
+  ]
+ }
+}
