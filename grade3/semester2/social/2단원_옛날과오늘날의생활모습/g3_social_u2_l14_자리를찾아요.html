@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 3-2 · 2단원 옛날과 오늘날의 생활 모습
+  주제② 교통의 변화로 달라진 생활 모습 · l14 (주제 마무리)
+  「[생각을 펼쳐요] 교통의 변화로 달라진 생활 모습 정리」
+  교과서 p.117~119 · 지도서 20차시(p.232~233) · [4사04-02]
+  수업 기법 = 상상하여 그리기 · 돌아가며 말하기
+=========================================================================
+
+  ■ 직접조작 = 자리를 찾아요 판 (사회 3-2 스물여섯째 판 · 2단원 열넷째 판)
+  ⭐ 씨앗은 교과서 119쪽 「재미있게 확인해요」 — 돋보기 탐정이 고속 열차에 탄 사람을 찾는다.
+     단서 세 장이 맞는 설명이면 앞 보기, 맞지 않는 설명이면 뒤 보기 쪽으로 자리가 좁혀진다.
+  ⭐ 단서마다 자기 참·거짓 t 와 보기 둘 a 를 품는다(JR_CLUE[i]) — 정답 자리표 0.
+     자리마다 자기 칸·쪽·수 f 를 품는다(JR_SEAT[s].f) — 찾을 자리는 단서의 t 에서 셈으로 나온다(jrWant).
+  ⭐ 푼 단서 수 · 남은 자리 · 단계는 저장 0 — 판(jrOn)에서 셈으로 나온다(jrDoneN · jrLeft · jrStage).
+  ⭐ 판을 바꾸는 자리 jrSet 단 하나(state.jrOn |= 1 << b) · 되돌리는 자리 0 · 난수 0.
+     비트 0~2 = 푼 단서 · 비트 3 = 자리 찾음.
+  ⭐ 자리판(두 칸 × 네 자리)은 교과서 그림을 판이 줄여 꾸민 것 — 정직 캡션 상시.
+
+  ■ 이 차시의 뼈대
+   교통의 발달로 사람들과 물건의 이동이 빨라지고 편리해졌다.
+   교통이 발달하면서 교통 체증, 환경 문제 같은 문제점도 생겨 해결하려고 노력하고 있다.
+   교통의 변화로 여러 가지 새로운 시설이 생기고 사람들의 생활 모습이 달라졌다.
+
+  ■ 5단계
+   ① 단서 세 장을 맞다·아니다로 풀어 자리 좁히기 → ② 남은 자리 하나 누르기
+   ③ 판 읽기 3택(정답 자리 2 · 단서 2가 맞지 않는 까닭)
+   ④ 마음에 드는 독특한 교통 표지판 가·나·다 고르기(정답 없음 · 교과서 118쪽)
+   ⑤ 마무리 3택(정답 자리 1) → 완료
+      — 미래 교통수단 그리기 · 새로운 교통 표지판 만들기 · 돌아가며 말하기는 교실 몫
+
+  ■ 가드 14종
+   ① 마무리 확정 후 처리기 전체 잠금          ② 무효 번호(안내조차 0)
+   ③ 이미 푼 단서 — 판 불변                   ④ 단서 판단 어긋남 — 판 불변
+   ⑤ 단서를 다 풀기 전 자리 — 판 불변          ⑥ 이미 자리를 찾음 — 판 불변
+   ⑦ 찾는 자리가 아님 — 판 불변                ⑧ 자리를 찾기 전 판 읽기 — 판 불변
+   ⑨ 이미 읽은 자리 — 판 불변                 ⑩ 판 읽기 어긋난 답 — 판 불변
+   ⑪ 판을 읽기 전 고르기 — 판 불변            ⑫ 이미 고른 자리 — 판 불변
+   ⑬ 고르기 전 마무리 — 판 불변               ⑭ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 단서 세 문장은 교과서 119쪽을 옮긴 것이고, 자리판은 판이 줄여 꾸민 것(캡션 상시).
+   ㉡ 마음에 드는 표지판은 사람마다 달라 판은 정답을 정하지 않는다(캡션 상시).
+   ㉢ 미래 교통수단 그리기, 새로운 교통 표지판 만들기, 친구들과 돌아가며 말하기는 교실 몫(완료 카드 명시).
+
+  ■ 설계 원칙
+   · 뒤 주제 용어는 차시 예고 한 자리뿐 — 주제③의 낱말은 예고 문장에만 한 번 쓴다
+   · 새 사실 0 — 교과서 117~119쪽 · 지도서 232~233쪽 · 앞 여섯 차시에서 공부한 사실만
+   · 「틀렸」 0 · 사람 형상 0 · 지어낸 학생 이름 0 · 누리집 주소 0 · 네 자리 연도 0 · 지역 이름 0
+     (나라 이름은 교과서 118쪽 표지판 셋 — 영국 · 스웨덴 · 네덜란드 — 만)
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[생각을 펼쳐요] 교통의 변화로 달라진 생활 모습 정리 · 사회 3-2</title>
+<meta name="kedu-lesson-id" content="g3_social_u2_l14_v1"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#DB2777; --green-d:#BE185D; --cyan:#C026D3;
+  --bg:#FDF2F8; --bub:#FCE7F3; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#FCE7F3;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#FCE7F3;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(219,39,119,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 자리를 찾아요 판 */
+.jr-wrap{max-width:820px;width:100%;margin:0 auto}
+.jr-head{background:#FCE7F3;color:#9D174D;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.jr-board{border-radius:14px;border:3px solid #CBD5E1;background:#F8FAFC;padding:8px}
+.jr-title{text-align:center;font-weight:800;color:#334155;font-size:clamp(12px,2vw,14px);word-break:keep-all;margin:2px 0 6px}
+.jr-clues{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.jr-clue{border-radius:12px;padding:8px 8px;border:2px solid #F9A8D4;background:#fff;font-size:clamp(11px,1.8vw,13px);
+  font-weight:700;color:#0F172A;line-height:1.45;word-break:keep-all}
+.jr-clue[data-done="1"]{border-color:#16A34A;background:#F0FDF4}
+.jr-clue b{display:block;color:#BE185D;margin-bottom:3px}
+.jr-clue small{display:block;color:#64748B;font-weight:700;margin-top:4px}
+.jr-yn{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px}
+.jr-yn button{border:2px solid #FBCFE8;border-radius:9px;background:#FDF2F8;font-family:inherit;font-weight:800;color:#9D174D;
+  font-size:clamp(11px,1.8vw,13px);padding:5px 4px;cursor:pointer}
+.jr-train{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.jr-car{border:2px solid #CBD5E1;border-radius:12px;background:#fff;padding:6px}
+.jr-car h4{margin:0 0 5px;text-align:center;font-size:clamp(12px,2vw,14px);color:#334155}
+.jr-seats{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.jr-side{font-size:clamp(10px,1.6vw,12px);color:#64748B;font-weight:800;text-align:center}
+.jr-seat{min-height:42px;border-radius:10px;border:2px solid #F9A8D4;background:#fff;font-family:inherit;font-weight:800;
+  font-size:clamp(13px,2.2vw,16px);color:#0F172A;cursor:pointer}
+.jr-seat[data-out="1"]{opacity:.35;background:#F1F5F9;border-color:#E2E8F0}
+.jr-seat[data-hit="1"]{border-color:#16A34A;background:#DCFCE7;cursor:default}
+.jr-help{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(11px,1.9vw,14px);line-height:1.6}
+.jr-help b{color:#BE185D}
+.jr-side2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.jr-tell{border-radius:11px;padding:8px 12px;font-size:clamp(12px,2vw,15px);line-height:1.6;background:#FDF2F8;border-left:4px solid var(--cyan)}
+.jr-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}
+.jr-pk{border:2px solid #FBCFE8;border-radius:10px;background:#fff;padding:8px 7px;font-family:inherit;
+  font-size:clamp(11px,1.8vw,13px);font-weight:700;color:#0F172A;text-align:left;cursor:pointer;line-height:1.4;word-break:keep-all}
+.jr-pk b{color:#BE185D}
+.jr-ask2{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FFFAFD;margin-top:9px;
+  font-size:clamp(12px,2vw,15px);line-height:1.6;word-break:keep-all}
+.jr-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.jr-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:9px 11px;font-family:inherit;
+  font-size:clamp(12px,2vw,15px);font-weight:700;color:#0F172A;text-align:left;line-height:1.45;word-break:keep-all;cursor:pointer}
+.jr-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .jr-board{padding:6px}
+  .jr-clues{grid-template-columns:1fr}
+  .jr-picks{grid-template-columns:1fr}
+  .jr-side2{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 모양과 기호 ===== */
+const SVG = {
+  // 주제②에서 공부한 내용
+  topic:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.2"><rect x="6" y="24" width="46" height="54" rx="6"/><rect x="57" y="24" width="46" height="54" rx="6"/><rect x="108" y="24" width="46" height="54" rx="6"/></g>
+    <g font-size="14" text-anchor="middle"><text x="29" y="50">\u{1F40E}</text><text x="80" y="50">\u{1F684}</text><text x="131" y="50">\u{1F680}</text></g>
+    <g font-size="5.4" font-weight="800" text-anchor="middle" fill="#334155"><text x="29" y="66">옛날</text><text x="80" y="66">오늘날</text><text x="131" y="66">미래</text></g>
+    <path d="M 52 51 L 57 51 M 103 51 L 108 51" stroke="#C026D3" stroke-width="2"/>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">교통의 변화로 달라진 생활 모습</text></svg>`,
+  // 교과서 117쪽 — 옛날 사람들이 상상한 미래 교통수단
+  old:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFBEB"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.2"><rect x="14" y="24" width="60" height="54" rx="6"/><rect x="86" y="24" width="60" height="54" rx="6"/></g>
+    <g font-size="15" text-anchor="middle"><text x="44" y="50">\u{1F695}</text><text x="116" y="50">\u{1F6F7}</text></g>
+    <g font-size="9" text-anchor="middle"><text x="60" y="36">\u2601\uFE0F</text><text x="132" y="36">\u2699\uFE0F</text></g>
+    <g font-size="5.4" font-weight="800" text-anchor="middle" fill="#334155"><text x="44" y="64">하늘을 나는</text><text x="44" y="71">택시</text><text x="116" y="64">기계로 움직이는</text><text x="116" y="71">눈썰매</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">옛날 사람들이 상상한 미래의 교통수단</text></svg>`,
+  // 교과서 118쪽 — 독특한 교통 표지판 셋
+  sign:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <g stroke="#B91C1C" stroke-width="2" fill="#fff"><path d="M 29 26 L 47 58 L 11 58 Z"/><circle cx="80" cy="44" r="17"/></g>
+    <rect x="114" y="27" width="34" height="34" rx="4" fill="#2563EB"/>
+    <g font-size="13" text-anchor="middle"><text x="29" y="54">\u{1F98C}</text><text x="80" y="49">\u{1F4F1}</text><text x="131" y="50">\u{1F463}</text></g>
+    <g font-size="5.2" font-weight="800" text-anchor="middle" fill="#334155"><text x="29" y="70">동물 조심</text><text x="80" y="70">걸으며 스마트폰 X</text><text x="131" y="70">보행자 우선 도로</text></g>
+    <g font-size="5" font-weight="700" text-anchor="middle" fill="#64748B"><text x="29" y="78">영국</text><text x="80" y="78">스웨덴</text><text x="131" y="78">네덜란드</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">여러 나라의 독특한 교통 표지판</text></svg>`,
+  // 정리 — 빨라지고 편리 · 문제와 노력 · 새 시설과 생활
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.3"><rect x="6" y="32" width="44" height="38" rx="6"/><rect x="58" y="32" width="44" height="38" rx="6"/><rect x="110" y="32" width="44" height="38" rx="6"/></g>
+    <path d="M 51 51 L 57 51 M 103 51 L 109 51" stroke="#C026D3" stroke-width="2"/>
+    <g font-size="5.6" font-weight="800" text-anchor="middle" fill="#9D174D"><text x="28" y="49">빠르고</text><text x="28" y="57">편리해요</text><text x="80" y="49">문제와</text><text x="80" y="57">해결 노력</text><text x="132" y="49">새 시설과</text><text x="132" y="57">생활 모습</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">교통의 변화로 달라진 생활 모습</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 자리를 찾아요 판 =====
+   교과서 119쪽 「재미있게 확인해요」 — 돋보기 탐정을 도와, 단서 세 장을 풀어 고속 열차에 탄 사람의 자리를 찾는다.
+   ⭐ 판을 바꾸는 자리 jrSet 단 하나 — state.jrOn |= 1 << b · 되돌리는 자리 0. 비트 0~2 = 푼 단서 · 비트 3 = 자리 찾음.
+   ⭐ 정답 자리표 0 — 단서마다 참·거짓 t 와 보기 둘 a 를 품고(JR_CLUE[i]), 자리마다 칸·쪽·수 f 를 품는다(JR_SEAT[s].f).
+   ⭐ 남은 자리 · 푼 단서 수 · 단계는 저장 0 — 판(jrOn)에서 센다(jrFits · jrLeft · jrDoneN · jrStage).
+   ================================================================= */
+const JR_CLUE = [                                                     // 교과서 119쪽 단서 셋 — 맞으면 a[0] · 맞지 않으면 a[1]
+  {say:"교통의 발달로 사람들과 물건의 이동이 빨라지고 편리해졌습니다.", t:1, a:["1호차","2호차"]},
+  {say:"교통이 발달하면서 교통의 문제점이 모두 해결됐습니다.", t:0, a:["왼쪽","오른쪽"]},
+  {say:"교통의 변화로 여러 가지 새로운 시설이 생기고 사람들의 생활 모습이 달라졌습니다.", t:1, a:["짝수","홀수"]}
+];
+const JR_SEAT = [                                                     // 두 칸 × 네 자리 — f = [칸, 쪽, 수] (판이 줄여 꾸민 자리판)
+  {n:1, f:[0,0,1]}, {n:2, f:[0,0,0]}, {n:3, f:[0,1,1]}, {n:4, f:[0,1,0]},
+  {n:1, f:[1,0,1]}, {n:2, f:[1,0,0]}, {n:3, f:[1,1,1]}, {n:4, f:[1,1,0]}
+];
+const JR_PICK = [                                                     // 교과서 118쪽 — 여러 나라의 독특한 교통 표지판
+  {mark:"가", text:"동물을 조심하라는 표지판(영국)", why:"도로를 가로지르는 동물을 조심하라는 뜻이에요."},
+  {mark:"나", text:"걸으면서 스마트폰을 쓰지 말라는 표지판(스웨덴)", why:"거리를 걸으면서 스마트폰을 사용하지 말라는 뜻이에요."},
+  {mark:"다", text:"보행자 우선 도로를 알리는 표지판(네덜란드)", why:"보행자 우선 도로임을 알리는 뜻이에요."}
+];
+const JR_SAY_DONE = "이미 푼 단서예요. 아직 풀지 않은 단서를 읽어 봐요.";
+const JR_SAY_BAD = "단서 문장을 주제②에서 공부한 내용과 견주어 다시 읽어 봐요.";
+const JR_SAY_ORDER_S = "먼저 단서 세 장을 모두 풀어 봐요.";
+const JR_SAY_HIT = "이미 찾는 사람의 자리를 찾았어요. 판을 읽어 봐요.";
+const JR_SAY_ORDER_R = "먼저 찾는 사람의 자리를 눌러 봐요.";
+const JR_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const JR_SAY_ORDER_P = "먼저 판을 읽어 봐요.";
+const JR_SAY_PICKDONE = "이미 골랐어요. 친구가 고른 표지판과 견주어 봐요.";
+const JR_SAY_ORDER_FIN = "먼저 마음에 드는 표지판을 골라 봐요.";
+const JR_READQ = [
+  "교통이 발달하면서 교통의 문제점이 모두 사라졌기 때문이에요",
+  "교통은 옛날부터 오늘날까지 달라지지 않았기 때문이에요",
+  "교통이 발달하면서 교통 체증, 환경 문제 같은 문제점이 생겨 지금도 해결하려고 노력하고 있기 때문이에요"
+];
+const JR_READ_OK = 2;
+const JR_READ_BAD = "주제②에서 알아본 교통의 문제점과 해결 노력을 다시 떠올려 봐요.";
+const JR_FINQ = [
+  "교통이 바뀌어도 사람들의 생활 모습은 그대로예요",
+  "교통의 변화로 사람들과 물건의 이동이 빨라지고 편리해졌으며, 새로운 시설이 생기고 사람들의 생활 모습이 달라졌어요",
+  "교통이 발달하면서 사람들은 가까운 곳에서만 지내게 됐어요"
+];
+const JR_FIN_OK = 1;
+const JR_FIN_BAD = "단서 세 장에서 맞는 설명이었던 두 장을 다시 읽어 봐요.";
+
+function jrClueOf(i){ return JR_CLUE[i]; }                                     // JR_CLUE 를 읽는 자리는 여기 단 하나
+function jrSeatOf(s){ return JR_SEAT[s]; }                                     // JR_SEAT 를 읽는 자리는 여기 단 하나
+function jrPickOf(p){ return JR_PICK[p]; }                                     // JR_PICK 을 읽는 자리는 여기 단 하나
+function jrClues(){ return [...Array(JR_CLUE.length).keys()]; }
+function jrSeats(){ return [...Array(JR_SEAT.length).keys()]; }
+function jrDone(st,i){ return (st.jrOn >> i & 1) === 1; }                                         // ★ 푼 단서 — 판의 비트에서
+function jrHit(st){ return (st.jrOn >> 3 & 1) === 1; }                                            // ★ 자리 찾음 — 판의 비트에서
+function jrWant(i){ return jrClueOf(i).t ? 0 : 1; }                                               // ★ 단서가 남기는 쪽 — 단서의 참·거짓에서
+function jrFits(st,s){ return jrClues().every(i => !jrDone(st,i) || jrSeatOf(s).f[i] === jrWant(i)); }
+function jrDoneN(st){ return jrClues().filter(i => jrDone(st,i)).length; }
+function jrLeft(st){ return jrSeats().filter(s => jrFits(st,s)).length; }
+function jrAll(st){ return jrClues().every(i => jrDone(st,i)); }                                  // ★ 단서 모두 풂
+function jrName(s){ const S = jrSeatOf(s); return `${jrClueOf(0).a[S.f[0]]} ${S.n}번`; }
+function jrSet(b){ state.jrOn |= 1 << b; }                                     // ⭐ 판을 바꾸는 자리 단 하나
+function jrStage(st){
+  if(!jrAll(st)) return "clue";
+  if(!jrHit(st)) return "seat";
+  if(st.jrRead == null) return "read";
+  if(st.jrPick == null) return "pick";
+  if(st.jrFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 단서 셋 · 자리 여덟 */
+function jrClueBox(st,i){
+  const C = jrClueOf(i), done = jrDone(st,i);
+  const tail = done ? `<small>${C.t ? "맞는 설명" : "맞지 않는 설명"} → ${C.a[jrWant(i)]}</small>`
+    : `<small>맞으면 ${C.a[0]} · 맞지 않으면 ${C.a[1]}</small><div class="jr-yn"><button data-y="1" onclick="jrJudge(${i},1)">맞아요</button><button data-y="0" onclick="jrJudge(${i},0)">아니에요</button></div>`;
+  return `<div class="jr-clue" data-i="${i}" data-done="${done ? 1 : 0}"><b>단서 ${i+1}</b>${C.say}${tail}</div>`;
+}
+function jrSeatBtn(st,s){
+  const hit = jrHit(st) && jrFits(st,s), out = !jrFits(st,s);
+  if(hit) return `<div class="jr-seat" data-s="${s}" data-out="0" data-hit="1">\u{1F50D} ${jrSeatOf(s).n}</div>`;
+  return `<button class="jr-seat" data-s="${s}" data-out="${out ? 1 : 0}" data-hit="0" onclick="jrSeat(${s})">${jrSeatOf(s).n}</button>`;
+}
+function jrCar(st,c){
+  const ss = jrSeats().filter(s => jrSeatOf(s).f[0] === c);
+  const L = ss.filter(s => jrSeatOf(s).f[1] === 0), R = ss.filter(s => jrSeatOf(s).f[1] === 1);
+  const rows = L.map((s,j) => jrSeatBtn(st,s) + jrSeatBtn(st,R[j])).join('');
+  return `<div class="jr-car" data-car="${c}"><h4>\u{1F684} ${jrClueOf(0).a[c]}</h4><div class="jr-seats"><div class="jr-side">${jrClueOf(1).a[0]}</div><div class="jr-side">${jrClueOf(1).a[1]}</div>${rows}</div></div>`;
+}
+function jrBoard(st){
+  return `<div class="jr-board" data-on="${st.jrOn}" data-done="${jrDoneN(st)}" data-left="${jrLeft(st)}" data-hit="${jrHit(st) ? 1 : 0}">
+    <div class="jr-title">단서를 풀어 고속 열차에 탄 사람이 앉아 있는 자리를 찾아요</div>
+    <div class="jr-clues">${jrClues().map(i => jrClueBox(st,i)).join('')}</div>
+    <div class="jr-train">${[0,1].map(c => jrCar(st,c)).join('')}</div></div>`;
+}
+function jrPicks(st){
+  return `<div class="jr-picks">${[0,1,2].map(p=>`<button class="jr-pk" data-p="${p}" onclick="jrPick(${p})"><b>${jrPickOf(p).mark}</b> ${jrPickOf(p).text}</button>`).join('')}</div>`;
+}
+function jrHelp(st){
+  return `<div class="jr-help">① <b>단서</b>가 맞는 설명인지 <b>맞아요 · 아니에요</b>로 정해요.<br>
+    ② 단서를 풀 때마다 남는 <b>자리</b>가 줄어요.<br>
+    단서 셋을 다 풀면 남은 <b>자리 하나</b>를 눌러요.</div>`;
+}
+function jrPanel(st){
+  const stage = jrStage(st);
+  let ask = '';
+  if(stage === "clue"){
+    ask = `<div class="jr-ask2" data-step="clue"><b>안녕? 나는 돋보기 탐정이야. 단서를 풀어 고속 열차에 탄 사람의 자리를 함께 찾아 줄래?</b></div>`;
+  } else if(stage === "seat"){
+    ask = `<div class="jr-ask2" data-step="seat"><b>단서를 모두 풀었어요. 남은 자리 하나를 눌러 봐요.</b></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="jr-ask2" data-step="read"><b>자리를 찾았어요. 단서 2가 맞지 않는 설명인 까닭은 무엇인가요?</b>
+      <div class="jr-opts">${JR_READQ.map((t,i)=>`<button class="jr-opt" onclick="jrRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "pick"){
+    ask = `<div class="jr-ask2" data-step="pick"><b>교과서 118쪽의 독특한 교통 표지판 가운데 마음에 드는 것을 하나 골라 봐요.</b>${jrPicks(st)}</div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="jr-ask2" data-step="fin"><b>교통의 변화로 사람들의 생활 모습은 어떻게 달라졌나요?</b>
+      <div class="jr-opts">${JR_FINQ.map((t,i)=>`<button class="jr-opt" onclick="jrFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="jr-ask2" data-fin="1" style="border-color:#F9A8D4;background:#FDF2F8">
+      <b style="color:#9D174D">돋보기 탐정을 도와 자리를 찾았어요. 교통의 변화로 사람들과 물건의 이동이 빨라지고 편리해졌으며, 새로운 시설이 생기고 사람들의 생활 모습이 달라졌어요. 교통이 발달하면서 생긴 문제점은 지금도 해결하려고 노력하고 있어요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">※ <b>미래 교통수단 그리기</b>와 <b>새로운 교통 표지판 만들기</b>, 친구들과 <b>돌아가며 말하기</b>는 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`;
+  }
+  const tell = st.jrTell ? `<div class="jr-tell">${st.jrTell}</div>` : '';
+  const warn = st.jrMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.jrMsg}</div>` : '';
+  return `<div class="jr-wrap">
+    <div class="jr-head">푼 단서 <b>${jrDoneN(st)}</b> / ${JR_CLUE.length} · 남은 자리 <b>${jrLeft(st)}</b></div>
+    ${jrBoard(st)}<div class="jr-side2">${jrHelp(st)}${tell}</div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 단서 세 문장은 <b>교과서 119쪽</b>을 옮긴 것이고, 자리판은 판이 <b>줄여 꾸민 것</b>이에요. 마음에 드는 표지판은 <b>사람마다 달라서</b> 판은 정답을 정하지 않아요.</div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 옛날과 오늘날의 생활 모습 · 주제② 교통의 변화로 달라진 생활 모습";
+const Q = [
+  {stem:"어떤 장소에서 다른 장소로 사람이 이동하거나 물건을 옮기는 것을 무엇이라고 하나요?",
+   opts:["교통수단","교통 시설","교통","교통로"], correct:2, pts:POINTS_BASIC,
+   h1:"주제② 첫 시간에 배운 낱말이에요.", h2:"교통수단은 도구, 교통로는 길이에요.",
+   reason:"어떤 장소에서 다른 장소로 사람이 이동하거나 물건을 옮기는 것을 교통이라고 해요."},
+  {stem:"옛날 교통수단에 관한 설명으로 알맞은 것은 무엇인가요?",
+   opts:["돛단배는 바람과 같은 자연의 힘을 이용했어요","옛날에는 비행기로 먼 곳을 다녔어요","옛날 교통수단은 모두 기계의 힘으로 움직였어요","옛날에는 고속 열차로 짐을 옮겼어요"], correct:0, pts:POINTS_BASIC,
+   h1:"말, 달구지, 가마, 뗏목, 나룻배, 돛단배를 떠올려 봐요.", h2:"돛단배의 돛은 무엇을 받아 움직였나요?",
+   reason:"옛날 교통수단은 자연에서 쉽게 얻을 수 있는 재료로 만들었고, 돛단배는 바람과 같은 자연의 힘을 이용했어요."},
+  {stem:"교통수단과 교통 시설이 다양해지면서 안전을 위해 생긴 것은 무엇인가요?",
+   opts:["가마","나룻배","뗏목","여러 가지 신호와 약속"], correct:3, pts:POINTS_BASIC,
+   h1:"오늘날 교통수단을 이용하는 모습을 떠올려 봐요.", h2:"건널목과 어린이 보호 구역에서 지키는 것이에요.",
+   reason:"교통수단과 교통 시설이 다양해지면서 안전을 위한 여러 가지 신호와 약속이 생겼어요."},
+  {stem:"교통의 발달로 달라진 생활 모습으로 알맞은 것은 무엇인가요?",
+   opts:["같은 거리를 가는 데 시간이 더 오래 걸려요","사람들의 생활 공간이 더욱 확대됐어요","한 번에 실어 나를 수 있는 짐의 양이 줄었어요","새로 생긴 직업이 하나도 없어요"], correct:1, pts:POINTS_BASIC,
+   h1:"같은 시간에 갈 수 있는 거리가 어떻게 달라졌나요?", h2:"더 먼 곳까지 오가며 생활할 수 있어요.",
+   reason:"교통의 발달로 사람들의 생활 공간은 더욱 확대됐고, 다양한 직업도 새로 생겼어요."},
+  {stem:"교통이 변화하면서 생긴 문제를 해결하려는 노력으로 알맞은 것은 무엇인가요?",
+   opts:["자동차를 더 많이 타요","교통안전 수칙을 지키지 않아요","교통 시설을 모두 없애요","친환경 에너지를 사용해요"], correct:3, pts:POINTS_APPLY,
+   h1:"환경 문제를 줄이는 방법을 떠올려 봐요.", h2:"과학적인 교통 관리, 새로운 교통 시설 개발도 노력이에요.",
+   reason:"문제를 해결하려고 과학적인 교통 관리, 새로운 교통 시설 개발, 친환경 에너지 사용 등 다양하게 노력하고 있어요."},
+  {stem:"미래 교통수단은 어떤 방향으로 발전하고 있나요?",
+   opts:["더 느리게 움직이는 방향","더 빠르고 안전하면서 환경을 보호하는 방향","사람이 직접 끌어서 움직이는 방향","환경은 생각하지 않는 방향"], correct:1, pts:POINTS_APPLY,
+   h1:"자율 주행 휠체어와 초고속 자기 부상 열차를 떠올려 봐요.", h2:"빠르기만이 아니라 안전과 환경도 생각해요.",
+   reason:"미래 교통수단은 더 빠르고 안전하면서 환경을 보호하는 방향으로 발전하고 있어요."},
+  {stem:"교과서 118쪽 스웨덴의 교통 표지판에 담긴 뜻은 무엇인가요?",
+   opts:["거리를 걸으면서 스마트폰을 사용하지 말라는 뜻","도로를 가로지르는 동물을 조심하라는 뜻","보행자 우선 도로임을 알리는 뜻","자동차가 빨리 달려도 된다는 뜻"], correct:0, pts:POINTS_APPLY,
+   h1:"표지판 속 기호를 떠올려 봐요.", h2:"걸으면서 하면 위험한 일이 무엇일까요?",
+   reason:"스웨덴의 교통 표지판은 거리를 걸으면서 스마트폰을 사용하지 말라는 뜻이에요."},
+  {stem:"단서 2 「교통이 발달하면서 교통의 문제점이 모두 해결됐습니다」가 맞지 않는 설명인 까닭은 무엇인가요?",
+   opts:["교통이 발달하면서 교통의 문제점이 모두 사라졌기 때문이에요","교통은 옛날부터 오늘날까지 달라지지 않았기 때문이에요","교통이 발달하면서 교통 체증, 환경 문제 같은 문제점이 생겨 지금도 해결하려고 노력하고 있기 때문이에요","교통수단이 하나도 없기 때문이에요"], correct:2, pts:POINTS_APPLY,
+   h1:"판에서 단서 2를 어떻게 풀었나요?", h2:"교통이 변화하면서 생긴 문제점을 떠올려 봐요.",
+   reason:"교통이 발달하면서 교통 체증, 환경 문제 같은 문제점이 생겼고, 지금도 해결하려고 다양하게 노력하고 있어요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 주제에서 공부한 내용 떠올리기
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">‘교통의 변화로 달라진 생활 모습’에서 무엇을 공부했나요?</h2>
+  <div class="ka-bub">오늘은 주제②에서 공부한 내용을 <span class="ka-emph">다양한 방법</span>으로 정리해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('topic','주제②에서 공부한 교통')}</div>
+  <div class="note">지난 시간에는 미래의 교통 변화에 따라 달라질 생활 모습을 살펴봤어요. 친구들과 돌아가며 공부한 내용을 말해 봐요.</div></div>`});
+// 2 공부한 내용 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 생각을 열어요</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">‘교통의 변화로 달라진 생활 모습’에서 공부한 내용은 무엇인가요?</h2>
+  <div class="ka-bub">교통수단 하나보다 <span class="ka-emph">교통 환경의 변화</span>로 생활 모습이 어떻게 달라졌는지 떠올려 봐요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 교통의 의미와 교통수단의 종류를 살펴봤어요.<br>· 옛날과 오늘날의 교통수단 변화를 파악하고, 교통수단을 이용하는 모습을 알아봤어요.<br>· 교통 변화에 따른 사람들의 생활 모습의 변화를 알아봤어요.<br>· 교통 변화로 나타난 문제점과 해결 노력을 알아봤어요.<br>· 미래 교통수단과 달라질 생활 모습을 살펴봤어요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 선택 활동 1 — 미래 교통수단 그리기
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 선택 활동 1</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">100년 후의 교통수단과 생활 모습을 상상해 봐요</h2>
+  <div class="ka-bub">옛날 사람들이 상상했던 <span class="ka-emph">미래의 교통수단</span> 그림을 살펴봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('old','교과서 117쪽')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>옛날 사람들은 <b>하늘을 나는 택시</b>, <b>기계로 움직이는 눈썰매</b> 같은 미래의 교통수단을 상상했어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>오늘날 교통수단의 <b>한계나 문제점</b>을 풀 방법을 미래 교통수단에 넣어 봐요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>내가 상상한 미래 교통수단을 그리고, <b>특징</b>과 <b>달라질 생활 모습</b>을 적어요.</div></div>
+  </div></div>`});
+// 4 상상한 미래 교통수단 예시 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 상상한 교통수단</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">하늘을 나는 신발을 상상한다면 특징과 생활 모습을 어떻게 적을 수 있을까요?</h2>
+  <div class="ka-bub">특징과 함께 <span class="ka-emph">달라질 생활 모습</span>까지 적어 봐요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 특징: 하늘을 날 수 있는 장치와 안전하게 착륙할 수 있는 기능을 넣은 신발이에요.<br>· 달라질 생활 모습: 언제든지 쉽고 빠르게 이동할 수 있어요. 차를 타고 이동할 필요가 없어져 도로가 줄고 공원이 많아질 거예요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 선택 활동 2 — 교통 표지판 만들기
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 선택 활동 2</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">여러 나라의 독특한 교통 표지판을 살펴봐요</h2>
+  <div class="ka-bub">표지판을 살펴보고 <span class="ka-emph">새로운 교통 표지판</span>을 만들어 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sign','교과서 118쪽')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>영국</b> — 도로를 가로지르는 동물을 조심하라는 뜻의 교통 표지판이에요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>스웨덴</b> — 거리를 걸으면서 스마트폰을 사용하지 말라는 뜻의 교통 표지판이에요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>네덜란드</b> — 보행자 우선 도로임을 알리는 교통 표지판이에요.</div></div>
+  </div></div>`});
+// 6 새로운 교통 표지판 예시 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 새로운 표지판</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">새로운 교통 표지판을 만든다면 어떤 표지판을 만들 수 있을까요?</h2>
+  <div class="ka-bub">거리를 다니면서 <span class="ka-emph">안내가 필요하다고 느꼈던 일</span>을 떠올려 봐요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 표지판 설명: 횡단보도가 어디에 있는지 알려 주는 표지판이에요.<br>· 표지판 그림을 그리고, 어떤 뜻인지 설명을 함께 적어요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 재미있게 확인해요</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">자리를 찾아요</h2>
+  <div class="ka-grp" style="align-items:stretch">${jrPanel(st)}</div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">교통의 변화로 달라진 생활 모습을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','교통의 변화로 달라진 생활 모습')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>교통의 발달로 사람들과 물건의 이동이 <b>빨라지고 편리</b>해졌어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>교통이 발달하면서 생긴 <b>문제점</b>을 해결하려고 지금도 다양하게 노력하고 있어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>교통의 변화로 여러 가지 <b>새로운 시설</b>이 생기고 사람들의 생활 모습이 달라졌어요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#DB2777">통신수단</b>이 무엇인지 알아봐요.</div></div>`});
+// 17 스스로 돌아보기 — 얼마나 잘했을까
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"교통의 변화가 사람들의 생활 모습에 끼친 영향을 말할 수 있어요",st)}
+    ${selfCheck(1,"옛날과 오늘날의 교통을 비교하여 설명할 수 있어요",st)}
+    ${selfCheck(2,"일상생활 속에서 교통수단을 안전하게 이용하려는 마음을 가졌어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">교통의 변화로 달라진 생활 모습을 정리했어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">상상한 <b style="color:#DB2777">미래 교통수단</b>을 그리거나 <b style="color:#DB2777">새로운 교통 표지판</b>을 만들어 봐요. 이건 교실 몫이에요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g3_2_social_u2_l14";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  jrOn:0, jrRead:null, jrPick:null, jrFin:null, jrMsg:"", jrTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function jrDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 단서 풀기 */
+function jrJudge(i,y){
+  if(state.jrFin!=null) return;                                                            // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(i) || i<0 || i>=JR_CLUE.length || (y!==0 && y!==1)) return;          // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(jrDone(state,i)){ state.jrMsg = JR_SAY_DONE; playThud(); jrDraw(); return; }          // 가드③: 이미 푼 단서 — 판 불변
+  if(y !== jrClueOf(i).t){ state.jrMsg = JR_SAY_BAD; playThud(); jrDraw(); return; }       // 가드④: 판단 어긋남 — 판 불변
+  jrSet(i);
+  const C = jrClueOf(i);
+  state.jrMsg = ""; state.jrTell = `단서 ${i+1} — ${C.t ? "맞는 설명" : "맞지 않는 설명"}이에요. 「${C.a[jrWant(i)]}」 쪽 자리만 남아요.` + (jrAll(state) ? ` 남은 자리를 눌러 봐요.` : '');
+  if(jrAll(state)) playChime(); else playBlip(); jrDraw();
+}
+/* 자리 누르기 */
+function jrSeat(s){
+  if(state.jrFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(s) || s<0 || s>=JR_SEAT.length) return;                             // 가드②
+  if(!jrAll(state)){ state.jrMsg = JR_SAY_ORDER_S; playThud(); jrDraw(); return; }         // 가드⑤: 단서를 다 풀기 전 — 판 불변
+  if(jrHit(state)){ state.jrMsg = JR_SAY_HIT; jrDraw(); return; }                          // 가드⑥: 이미 찾음 — 판 불변
+  if(!jrFits(state,s)){ state.jrMsg = `「${jrName(s)}」 자리는 단서와 맞지 않아요. 남은 자리를 찾아봐요.`; playThud(); jrDraw(); return; }   // 가드⑦: 찾는 자리가 아님 — 판 불변
+  jrSet(3);
+  state.jrMsg = ""; state.jrTell = `「${jrName(s)}」 자리 — 찾는 사람이 여기 앉아 있어요.`; playChime(); jrDraw();
+}
+/* 판 읽기 */
+function jrRead(i){
+  if(state.jrFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=JR_READQ.length) return;                           // 가드②
+  if(!jrHit(state)){ state.jrMsg = JR_SAY_ORDER_R; playThud(); jrDraw(); return; }         // 가드⑧: 자리를 찾기 전 — 판 불변
+  if(state.jrRead!=null){ state.jrMsg = JR_SAY_READDONE; jrDraw(); return; }               // 가드⑨: 이미 정한 자리 — 판 불변
+  if(i!==JR_READ_OK){ state.jrMsg = JR_READ_BAD; playThud(); jrDraw(); return; }           // 가드⑩: 어긋난 답 — 판 불변
+  state.jrRead = i; state.jrMsg = ""; state.jrTell = `단서 2는 맞지 않는 설명이에요. 교통이 발달하면서 생긴 문제점을 해결하려고 과학적인 교통 관리, 친환경 에너지 사용 등 다양하게 노력하고 있어요.`; playBlip(); jrDraw();
+}
+/* 마음에 드는 표지판 고르기 — 정답 없음 */
+function jrPick(p){
+  if(state.jrFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(p) || p<0 || p>=JR_PICK.length) return;                             // 가드②
+  if(state.jrRead==null){ state.jrMsg = JR_SAY_ORDER_P; playThud(); jrDraw(); return; }    // 가드⑪: 판을 읽기 전 — 판 불변
+  if(state.jrPick!=null){ state.jrMsg = JR_SAY_PICKDONE; jrDraw(); return; }               // 가드⑫: 이미 고른 자리 — 판 불변
+  state.jrPick = p; state.jrMsg = ""; state.jrTell = `${jrPickOf(p).mark}를 골랐어요. ${jrPickOf(p).text} — ${jrPickOf(p).why}`; playBlip(); jrDraw();
+}
+/* 마무리 */
+function jrFin(i){
+  if(state.jrFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=JR_FINQ.length) return;                             // 가드②
+  if(state.jrPick==null){ state.jrMsg = JR_SAY_ORDER_FIN; playThud(); jrDraw(); return; }  // 가드⑬: 고르기 전 — 판 불변
+  if(i!==JR_FIN_OK){ state.jrMsg = JR_FIN_BAD; playThud(); jrDraw(); return; }             // 가드⑭: 어긋난 답 — 판 불변
+  state.jrFin = i; state.jrMsg = ""; playChime(); jrDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>

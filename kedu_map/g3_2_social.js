@@ -271,14 +271,14 @@ window.KEDU_MAP["g3_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_social_u2_l14",
+     "lessonId": "g3_social_u2_l14_v1",
      "n": "7",
      "title": "[생각을 펼쳐요] 교통의 변화로 달라진 생활 모습 정리",
      "sub": "② 교통의 변화로 달라진 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/social/2단원_옛날과오늘날의생활모습/g3_social_u2_l14_자리를찾아요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
