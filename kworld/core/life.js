@@ -17,7 +17,8 @@ export class Life {
   /** 태어남 뒤(캐릭터가 정해진 뒤) 부른다 — 능력 단계·섞여 나오는 상황 뽑기 */
   begin() {
     const c = this.g.character; for (const a of ABIL) { this.abil[a] = c?.levels?.[a] ?? 2; this.xp[a] = 0; }
-    this.carryIn(); this.setStatus();
+    if (c?.id) this.g.flags.add('char:' + c.id); if (this.g.sex?.id) this.g.flags.add('sex:' + this.g.sex.id);   // 성별·인물도 깃발로(items rename if 에서 sex:f 로 읽는다)
+    this.carryIn(); this.setNation(); this.setStatus();
     if (!this.mixed) { this.seed = this.seed || ((Date.now() % 100000) + Math.floor(Math.random() * 1000)); this.mixed = this.pickMixed(this.seed); }
     this.g.e.onFrame.push((dt) => this.tick(dt)); this.hud(); this.render();
   }
@@ -25,15 +26,21 @@ export class Life {
   carryIn() {
     const c = this.d.carry; if (!c || this.carried || typeof localStorage === 'undefined') return; this.carried = true;
     let v = null; try { v = JSON.parse(localStorage.getItem('kworld_carry:' + c.from) || 'null'); } catch { } if (!v) return;
-    if (v.branch) this.g.flags.add('from:' + v.branch); if (v.status) this.g.flags.add('fromstatus:' + v.status);   // 지난 시대의 갈림·신분을 깃발로(신분 규칙 if 에서 from:<branch> 로 읽는다)
+    if (v.branch) this.g.flags.add('from:' + v.branch); if (v.status) this.g.flags.add('fromstatus:' + v.status); if (v.nation) this.g.flags.add('fromnation:' + v.nation);   // 지난 시대의 갈림·신분을 깃발로(신분 규칙 if 에서 from:<branch> 로 읽는다)
     const got = []; for (const k of c.keep || ['craft', 'heart']) { const n = Math.round((v[k] || 0) * (c.ratios?.[k] ?? c.ratio ?? 0.5)); if (n > 0) { this.values[k] = (this.values[k] || 0) + n; got.push(`${{ craft: '✋ 솜씨', heart: '🤝 인심', grain: '🌾 곡식' }[k] || k} ${n}`); } }
     if (got.length) setTimeout(() => this.g.ui.say(`${c.say || '조상에게서 넘어온 것'} — ${got.join(' · ')}`, 5200), 1800);
+  }
+  /** 나라 — d.nation = { rules:[{id,name,if,say}] }: 지난 시대 끝 갈림(from:<branch>)으로 어느 나라 사람으로 태어나는지 정해진다. 깃발 nation:<id> */
+  setNation() {
+    const nt = this.d.nation; if (!nt?.rules?.length) return;
+    const r = nt.rules.find((x) => this.cond(x.if)) || nt.rules[nt.rules.length - 1]; this.nation = r.id; this.nationName = r.name; this.g.flags.add('nation:' + r.id);
+    if (r.say) setTimeout(() => this.g.ui.say(`🏳️ ${r.name} — ${r.say}`, 6200), 3000);
   }
   /** 신분 — d.status = { rules:[{id,name,if,say}] }: 넘겨받은 값(곡식 등)으로 태어날 때 정해진다. 대본이 아니라 수치. 깃발 status:<id> */
   setStatus() {
     const st = this.d.status; if (!st?.rules?.length) return;
     const r = st.rules.find((x) => this.cond(x.if)) || st.rules[st.rules.length - 1]; this.status = r.id; this.statusName = r.name; this.g.flags.add('status:' + r.id);
-    if (r.say) setTimeout(() => this.g.ui.say(`🏠 ${r.name} — ${r.say}`, 6200), 4200);
+    if (r.say) setTimeout(() => this.g.ui.say(`🏠 ${r.name} — ${r.say}`, 6200), this.nation ? 9600 : 4200);
   }
   /** 신분이 삶 중간에 바뀐다(법으로 종이 되거나, 값을 치르고 풀려나거나) — 선택지 c.status = '<id>' */
   setStatusTo(id) {
@@ -144,16 +151,16 @@ export class Life {
     const g = this.g; g.p.enabled = false; const v = this.values; const branch = (e.branches || []).find((b) => this.cond(b.if)) || (e.branches || []).slice(-1)[0] || {};
     g.flag(['life:end', 'life:' + (branch.id || 'end')]); g.results = [...(g.results || []), { id: 'life:end', concept: 'hist.life', ok: true, open: JSON.stringify({ craft: v.craft, heart: v.heart, hurt: [...this.hurt], log: this.log, branch: branch.id }) }];
     const marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h);
-    try { localStorage.setItem('kworld_carry:' + g.era, JSON.stringify({ craft: v.craft, heart: v.heart, grain: v.grain || 0, branch: branch.id, status: this.status || null, hurt: [...this.hurt], t: Date.now() })); } catch { }
-    const html = `<div class="chk life end"><div class="tag">${esc(e.tag || '이번 삶')}</div><h3>${esc(branch.title || e.title || '')}</h3>${(branch.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}<ul class="mlist"><li>✋ 솜씨 <b>${v.craft}</b> · 🤝 인심 <b>${v.heart}</b> · 🌾 곡식 ${this.d.grain?.open ? `<b>${v.grain || 0}</b>` : '🔒'}</li><li>능력 ${ABIL.map((a) => `${a} ${DOTS(this.abil[a])}`).join(' · ')}</li>${marks.length ? `<li>흔적 — ${esc(marks.join(', '))}</li>` : ''}${this.statusName ? `<li>🏠 ${esc(this.statusName)}</li>` : ''}<li>겪은 상황 ${this.log.length}가지</li></ul>${e.fact ? `<div class="facts"><div>📜 <b>실제</b> ${esc(e.fact)}</div></div>` : ''}${e.next ? `<p class="sub">${esc(e.next)}</p>` : ''}</div>`;
+    try { localStorage.setItem('kworld_carry:' + g.era, JSON.stringify({ craft: v.craft, heart: v.heart, grain: v.grain || 0, branch: branch.id, status: this.status || null, nation: this.nation || null, hurt: [...this.hurt], t: Date.now() })); } catch { }
+    const html = `<div class="chk life end"><div class="tag">${esc(e.tag || '이번 삶')}</div><h3>${esc(branch.title || e.title || '')}</h3>${(branch.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}<ul class="mlist"><li>✋ 솜씨 <b>${v.craft}</b> · 🤝 인심 <b>${v.heart}</b> · 🌾 곡식 ${this.d.grain?.open ? `<b>${v.grain || 0}</b>` : '🔒'}</li><li>능력 ${ABIL.map((a) => `${a} ${DOTS(this.abil[a])}`).join(' · ')}</li>${marks.length ? `<li>흔적 — ${esc(marks.join(', '))}</li>` : ''}${this.nationName || this.statusName ? `<li>${this.nationName ? `🏳️ ${esc(this.nationName)} · ` : ''}${this.statusName ? `🏠 ${esc(this.statusName)}` : ''}</li>` : ''}<li>겪은 상황 ${this.log.length}가지</li></ul>${e.fact ? `<div class="facts"><div>📜 <b>실제</b> ${esc(e.fact)}</div></div>` : ''}${e.next ? `<p class="sub">${esc(e.next)}</p>` : ''}</div>`;
     const btns = [{ label: e.again || '다시 태어난다', primary: true, onClick: () => { g.save?.clear(); const u = new URL(location.href); u.searchParams.set('resume', '0'); location.href = u.toString(); } }];
     if (g.world.gate) btns.push({ label: g.world.gate.ready ? `${g.world.gate.nextName}로 가기` : `${g.world.gate.nextName}로 (준비 중)`, onClick: () => { const gt = g.world.gate; if (gt.ready) { const u = new URL(location.href); u.searchParams.set('era', gt.next); location.href = u.toString(); } else g.ui.say(`${gt.nextName}는 다음에 열려. 솜씨·인심은 그때 넘어간다.`, 4000); } });
     btns.push({ label: '더 둘러보기', onClick: () => { g.ui.close(); g.p.enabled = true; } });
     g.ui.open(html, btns); g.save?.touch();
   }
   // ---------- 저장 ----------
-  snapshot() { return { status: this.status, statusName: this.statusName, values: this.values, abil: this.abil, xp: this.xp, hurt: [...this.hurt], opened: [...this.opened], done: [...this.done], log: this.log, seed: this.seed, mixed: this.mixed, tries: this.tries }; }
-  restore(s) { if (!s) return; this.carried = true; if (s.status) { this.status = s.status; this.statusName = s.statusName; this.g.flags.add('status:' + s.status); } Object.assign(this.values, s.values || {}); Object.assign(this.abil, s.abil || {}); Object.assign(this.xp, s.xp || {}); this.hurt = new Set(s.hurt || []); this.opened = new Set(s.opened || []); this.done = new Set(s.done || []); this.log = s.log || []; this.seed = s.seed || this.seed; this.mixed = s.mixed || this.mixed; this.tries = s.tries || {}; this.render(); }
+  snapshot() { return { nation: this.nation, nationName: this.nationName, status: this.status, statusName: this.statusName, values: this.values, abil: this.abil, xp: this.xp, hurt: [...this.hurt], opened: [...this.opened], done: [...this.done], log: this.log, seed: this.seed, mixed: this.mixed, tries: this.tries }; }
+  restore(s) { if (!s) return; this.carried = true; if (s.nation) { this.nation = s.nation; this.nationName = s.nationName; this.g.flags.add('nation:' + s.nation); } if (this.g.sex?.id) this.g.flags.add('sex:' + this.g.sex.id); if (s.status) { this.status = s.status; this.statusName = s.statusName; this.g.flags.add('status:' + s.status); } Object.assign(this.values, s.values || {}); Object.assign(this.abil, s.abil || {}); Object.assign(this.xp, s.xp || {}); this.hurt = new Set(s.hurt || []); this.opened = new Set(s.opened || []); this.done = new Set(s.done || []); this.log = s.log || []; this.seed = s.seed || this.seed; this.mixed = s.mixed || this.mixed; this.tries = s.tries || {}; this.render(); }
   // ---------- 화면 ----------
   hud() {
     if (typeof document === 'undefined' || typeof document.createElement !== 'function' || document.getElementById('life')) return;
@@ -163,7 +170,7 @@ export class Life {
   render() {
     if (!this.el) return; const v = this.values; const prev = this.el.dataset.v || '';
     const marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h).join(' · ');
-    this.el.innerHTML = `<div class="v"><span>✋ 솜씨</span><b>${v.craft}</b></div><div class="v"><span>🤝 인심</span><b>${v.heart}</b></div>${this.d.grain?.open ? `<div class="v" title="${esc(this.d.grain.note || '')}"><span>🌾 곡식</span><b>${v.grain || 0}</b></div>` : `<div class="v lock" title="${esc(this.d.grainLocked || '들고 다닐 수도, 쌓아 둘 수도 없다.')}"><span>🌾 곡식</span><b>🔒</b></div>`}<div class="ab">${ABIL.map((a) => `<span>${a} <i>${DOTS(this.abil[a] ?? 2)}</i></span>`).join('')}</div>${this.statusName ? `<div class="hurt" style="color:#e9b65b">🏠 ${esc(this.statusName)}</div>` : ''}${marks ? `<div class="hurt">흔적 · ${esc(marks)}</div>` : ''}`;
+    this.el.innerHTML = `<div class="v"><span>✋ 솜씨</span><b>${v.craft}</b></div><div class="v"><span>🤝 인심</span><b>${v.heart}</b></div>${this.d.grain?.open ? `<div class="v" title="${esc(this.d.grain.note || '')}"><span>🌾 곡식</span><b>${v.grain || 0}</b></div>` : `<div class="v lock" title="${esc(this.d.grainLocked || '들고 다닐 수도, 쌓아 둘 수도 없다.')}"><span>🌾 곡식</span><b>🔒</b></div>`}<div class="ab">${ABIL.map((a) => `<span>${a} <i>${DOTS(this.abil[a] ?? 2)}</i></span>`).join('')}</div>${this.nationName ? `<div class="hurt" style="color:#9fc4e9">🏳️ ${esc(this.nationName)}</div>` : ''}${this.statusName ? `<div class="hurt" style="color:#e9b65b">🏠 ${esc(this.statusName)}</div>` : ''}${marks ? `<div class="hurt">흔적 · ${esc(marks)}</div>` : ''}`;
     const now = `${v.craft}/${v.heart}/${v.grain || 0}/${ABIL.map((a) => this.abil[a]).join('')}`; if (prev && prev !== now) { this.el.classList.remove('up'); void this.el.offsetWidth; this.el.classList.add('up'); } this.el.dataset.v = now;
   }
 }

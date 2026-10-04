@@ -1,0 +1,837 @@
+{
+ "items": {
+  "stone": {
+   "name": "돌",
+   "icon": "🪨",
+   "desc": "모난 돌. 갈면 돌낫, 지면 성벽"
+  },
+  "sickle": {
+   "name": "돌낫",
+   "icon": "🌙",
+   "desc": "갈아 만든 돌 칼. 이삭을 딴다",
+   "bag": true
+  },
+  "grain": {
+   "name": "곡식",
+   "icon": "🌾",
+   "desc": "논에서 딴 곡식. 세금도 이것으로 낸다",
+   "eat": 8
+  },
+  "cloth": {
+   "name": "베",
+   "icon": "🧵",
+   "desc": "베틀에서 짠 베 한 필. 세금이자 돈"
+  },
+  "ingot": {
+   "name": "덩이쇠",
+   "icon": "⬛",
+   "desc": "가야의 납작한 쇠 덩이. 두드리면 보습도 창도 된다"
+  },
+  "plow": {
+   "name": "쇠 보습",
+   "icon": "⛏️",
+   "desc": "쇠 날 보습. 돌보다 깊이 판다",
+   "bag": true
+  },
+  "sword": {
+   "name": "쇠 칼",
+   "icon": "🗡️",
+   "desc": "긴 쇠 칼. 귀족의 것",
+   "bag": true
+  },
+  "spear": {
+   "name": "쇠 창",
+   "icon": "🔱",
+   "desc": "쇠 날 창. 싸움에 든다",
+   "bag": true
+  },
+  "gold": {
+   "name": "금박",
+   "icon": "✨",
+   "desc": "얇게 편 금. 부처에 입힌다"
+  },
+  "silk": {
+   "name": "자주 비단",
+   "icon": "👘",
+   "desc": "자주색 비단. 벼슬 높은 집만 입는다",
+   "bag": true
+  },
+  "linen": {
+   "name": "삼베 옷감",
+   "icon": "🪢",
+   "desc": "삼베. 평민이 입는다"
+  },
+  "deed": {
+   "name": "땅문서",
+   "icon": "📜",
+   "desc": "내 논의 문서. 빚에 잡혔다"
+  },
+  "fish": {
+   "name": "물고기",
+   "icon": "🐟",
+   "desc": "강가에서 잡았다",
+   "eat": 12
+  },
+  "torch": {
+   "name": "횃불",
+   "icon": "🔥",
+   "desc": "화덕에서 붙인 가지"
+  }
+ },
+ "recipes": [],
+ "targets": {
+  "npc": {
+   "name": "사람",
+   "verb": "말 걸기",
+   "info": "이 마을 사람이다.",
+   "flag": "talk:any"
+  },
+  "stone": {
+   "name": "돌",
+   "verb": "줍기",
+   "gives": "stone",
+   "remove": true,
+   "info": "모난 돌. 성벽에 쌓는 돌이다."
+  },
+  "fish": {
+   "name": "물고기",
+   "verb": "잡기",
+   "gives": "fish",
+   "remove": true,
+   "info": "여울의 물고기."
+  },
+  "log": {
+   "name": "쓰러진 나무",
+   "verb": "살펴보기",
+   "say": "쓰러진 통나무. 산속 사람들이 불을 땐 자리가 옆에 있다.",
+   "flag": "seen:log",
+   "info": "쓰러진 나무."
+  },
+  "granary": {
+   "name": "곳간",
+   "hidden": [
+    "grain_full"
+   ],
+   "verb": "살펴보기",
+   "say": "기둥 위 곳간 둘. 큰 것은 귀족 것. 흰 깃발 꽂힌 것은 나라 곳간 — 고구려는 흉년에 여기를 연다.",
+   "flag": "seen:granary",
+   "once": true,
+   "info": "곳간 둘 — 귀족 것, 나라 것.",
+   "rename": [
+    {
+     "if": "sit:famine:open && !sit:famine:done && nation:goguryeo && !status:slave && !status:noble",
+     "name": "나라 곳간",
+     "verb": "진대법으로 빌린다",
+     "once": false,
+     "gives": [
+      "grain",
+      "grain"
+     ],
+     "flag": "famine:jindae",
+     "journal": "jindae",
+     "say": "🌾🌾 두 단. 「가을에 갚아라. 못 갚아도 종은 안 된다.」"
+    },
+    {
+     "if": "sit:famine:open && !sit:famine:done && status:slave",
+     "name": "귀족 곳간",
+     "verb": "지키며 잔다",
+     "once": false,
+     "flag": "famine:guard",
+     "say": "곳간 앞 바닥. 세 번 깼다. 주인이 밥 한 그릇을 더 줬다."
+    },
+    {
+     "if": "sit:famine:open && !sit:famine:done && !nation:goguryeo",
+     "name": "나라 곳간",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "문이 잠겼다. 「나라 곳간은 전쟁 때 연다.」 고구려엔 진대법이 있다고 한다 — 여긴 아니다."
+    }
+   ]
+  },
+  "fortgranary": {
+   "name": "군량 곳간",
+   "hidden": [
+    "grain_full"
+   ],
+   "verb": "살펴보기",
+   "say": "성 안 곳간. 전쟁 때 먹을 곡식. 평민이 낸 세금이 여기 쌓인다.",
+   "flag": "seen:fortgranary",
+   "once": true,
+   "info": "군량 곳간."
+  },
+  "slavehut": {
+   "name": "노비의 집",
+   "verb": "살펴보기",
+   "say": "기와집 뒤 작은 집 둘. 말뚝에 줄. 주인 논을 부치고 넷 중 하나를 받는다.",
+   "flag": "seen:slavehut",
+   "once": true,
+   "info": "노비의 집."
+  },
+  "loom": {
+   "name": "베틀",
+   "verb": "살펴보기",
+   "say": "베틀. 실을 걸어 베를 짠다. 한 필이 세금 하나다. 베는 여자가 짰다.",
+   "flag": "seen:loom",
+   "info": "베틀.",
+   "rename": [
+    {
+     "if": "sit:tax:open && !sit:tax:done && sex:f && !status:slave && !weave:done",
+     "name": "베틀",
+     "verb": "베를 짠다",
+     "once": false,
+     "roll": {
+      "ab": "손",
+      "hard": 1,
+      "why": "실이 엉킨다. 손이 익어야 한다.",
+      "fail": "…실이 끊어졌다. 다시."
+     },
+     "gives": "cloth",
+     "flag": "weave:done",
+     "journal": "cloth",
+     "say": "🧵 한 필. 세금으로 낸다."
+    },
+    {
+     "if": "sit:tax:open && !sit:tax:done && sex:m",
+     "name": "베틀",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "베틀은 여자 일이었다. 남자는 논으로."
+    },
+    {
+     "if": "sit:tax:open && !sit:tax:done && status:slave",
+     "name": "베틀",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "주인집 베틀이다. 노비는 주인 논으로."
+    }
+   ]
+  },
+  "decree": {
+   "name": "나라의 영",
+   "verb": "살펴보기",
+   "say": "돌 단 위 자주 깃발. 나라의 법(율령)을 읽는 자리. 「벼슬에 따라 옷 색을 정한다. 세금은 곡식·베·몸이다.」",
+   "flag": "law:heard",
+   "journal": "code",
+   "info": "율령을 읽는 자리."
+  },
+  "stall": {
+   "name": "비단 좌판",
+   "verb": "살펴보기",
+   "say": "자주색 비단. 「벼슬 높은 집만 입습니다.」 색이 자리다.",
+   "flag": "seen:stall",
+   "info": "비단 좌판.",
+   "rename": [
+    {
+     "if": "sit:robe:open && !sit:robe:done && status:noble",
+     "name": "비단 좌판",
+     "verb": "자주 비단을 산다",
+     "once": false,
+     "consumes": [
+      "grain",
+      "grain"
+     ],
+     "failNoGrain": "곡식 두 단이 손에 있어야.",
+     "gives": "silk",
+     "flag": "robe:buy",
+     "say": "👘 자주 비단. 입고 나가니 사람들이 비켰다."
+    },
+    {
+     "if": "sit:robe:open && !sit:robe:done",
+     "name": "비단 좌판",
+     "verb": "자주 비단을 산다",
+     "once": false,
+     "requiresFlags": [
+      "status:noble"
+     ],
+     "failNoFlag": "「그 색은 못 팝니다. 벼슬 없는 집이 입으면 벌입니다.」 — 삼베를 사거나, 본다.",
+     "say": ""
+    }
+   ]
+  },
+  "saltstall": {
+   "name": "소금·삼베 좌판",
+   "verb": "살펴보기",
+   "say": "소금과 삼베. 소금은 바다에서, 삼베는 들에서.",
+   "flag": "seen:salt",
+   "info": "소금·삼베 좌판.",
+   "rename": [
+    {
+     "if": "sit:robe:open && !sit:robe:done",
+     "name": "소금·삼베 좌판",
+     "verb": "삼베를 산다",
+     "once": false,
+     "consumes": [
+      "grain"
+     ],
+     "failNoGrain": "곡식 한 단이 손에 있어야.",
+     "gives": "linen",
+     "flag": "robe:linen",
+     "say": "🪢 삼베 반 필. 「자주색은요?」 「벌 받습니다.」"
+    }
+   ]
+  },
+  "fire": {
+   "name": "화덕",
+   "verb": "살펴보기",
+   "say": "쇠 덩이를 달군다. 붉게. 두드리면 보습도 창도 된다.",
+   "flag": "seen:fire",
+   "info": "대장간 화덕."
+  },
+  "anvil": {
+   "name": "모루",
+   "verb": "살펴보기",
+   "say": "쇠를 두드리는 돌. 덩이쇠가 옆에 쌓였다.",
+   "flag": "seen:anvil",
+   "info": "쇠를 두드리는 자리.",
+   "rename": [
+    {
+     "if": "sit:tax:open && !sit:tax:done && status:artisan && !made:plow",
+     "name": "모루",
+     "verb": "덩이쇠를 두드려 보습으로",
+     "once": false,
+     "roll": {
+      "ab": "손",
+      "hard": 2,
+      "why": "달군 쇠는 식기 전에 두드려야 한다.",
+      "fail": "…식었다. 다시 달군다."
+     },
+     "gives": "plow",
+     "flag": "made:plow",
+     "journal": "plow",
+     "say": "⛏️ 쇠 보습. 소작 농민이 곡식 두 단을 낸다고 했다."
+    },
+    {
+     "if": "sit:corvee:open && !sit:corvee:done && status:artisan && !corvee:smith",
+     "name": "모루",
+     "verb": "성문 쇠장식을 만든다",
+     "once": false,
+     "roll": {
+      "ab": "손",
+      "hard": 2,
+      "why": "띠쇠는 길고 얇다. 손이 느리면 휜다.",
+      "fail": "…휘었다. 다시 달군다."
+     },
+     "flag": "corvee:smith",
+     "say": "⚒️ 성문 띠쇠 넷. 군관이 「빠르다」고 했다."
+    },
+    {
+     "if": "sit:war:open && !sit:war:done && status:artisan && !war:arms",
+     "name": "모루",
+     "verb": "덩이쇠를 두드려 창으로",
+     "once": false,
+     "requires": "ingot",
+     "consumes": [
+      "ingot"
+     ],
+     "failNoTool": "덩이쇠가 있어야. 대장간 더미에서.",
+     "roll": {
+      "ab": "손",
+      "hard": 2,
+      "why": "창날은 얇고 길다. 보습보다 어렵다.",
+      "fail": "…날이 휘었다. 다시 달군다."
+     },
+     "gives": "spear",
+     "flag": "war:arms",
+     "say": "🔱 쇠 창. 군관이 가져갔다. 「더 만들어라.」"
+    }
+   ]
+  },
+  "ingot": {
+   "name": "덩이쇠 더미",
+   "verb": "살펴보기",
+   "say": "납작한 쇠 덩이. 가야에서 왔다. 재료이자 돈이다 — 무덤에도 수백 장씩 묻는다.",
+   "flag": "seen:ingot",
+   "info": "가야 덩이쇠.",
+   "rename": [
+    {
+     "if": "sit:iron:open && !sit:iron:done && nation:gaya && !status:slave",
+     "name": "덩이쇠 더미",
+     "verb": "덩이쇠를 진다 — 나루로",
+     "once": false,
+     "gives": "ingot",
+     "flag": "ingot:took",
+     "say": "⬛ 덩이쇠 한 짐. 나루 큰 배에 싣는다."
+    },
+    {
+     "if": "status:artisan",
+     "name": "덩이쇠 더미",
+     "verb": "덩이쇠를 집는다",
+     "once": false,
+     "gives": "ingot",
+     "flag": "ingot:took",
+     "say": "⬛ 덩이쇠. 모루로."
+    }
+   ]
+  },
+  "ironstall": {
+   "name": "덩이쇠·소금 좌판",
+   "verb": "살펴보기",
+   "say": "나루 좌판. 덩이쇠와 소금. 배가 오가는 날 장이 선다.",
+   "flag": "seen:ironstall",
+   "info": "나루 좌판."
+  },
+  "ship": {
+   "name": "큰 배",
+   "verb": "살펴보기",
+   "say": "돛 단 큰 배. 바다 건너 왜로 간다. 덩이쇠·비단·사람을 싣는다.",
+   "flag": "seen:ship",
+   "info": "왜로 가는 배.",
+   "rename": [
+    {
+     "if": "sit:iron:open && !sit:iron:done && nation:gaya",
+     "name": "큰 배",
+     "verb": "덩이쇠를 싣는다 — 왜에 판다",
+     "once": false,
+     "requires": "ingot",
+     "consumes": [
+      "ingot"
+     ],
+     "failNoTool": "덩이쇠가 있어야. 대장간 더미에서 진다.",
+     "gives": [
+      "grain",
+      "grain",
+      "grain"
+     ],
+     "flag": "iron:sell",
+     "journal": "ingot",
+     "say": "🌾🌾🌾 곡식 세 단과 구슬. 바다 건너 사람들이 쇠를 샀다."
+    },
+    {
+     "if": "sit:fall:open && !sit:fall:done",
+     "name": "큰 배",
+     "verb": "바다를 건넌다 — 왜로",
+     "once": false,
+     "flag": "fall:wa",
+     "say": "🚢 돛이 올랐다. 해안이 작아진다."
+    }
+   ]
+  },
+  "fortgate": {
+   "name": "산성 남문",
+   "verb": "살펴보기",
+   "say": "돌로 쌓은 성. 마을 위 언덕. 전쟁이 나면 마을 사람이 전부 올라온다. 평소엔 군관 몇이 지킨다.",
+   "flag": "seen:fortgate",
+   "once": true,
+   "info": "산성의 하나뿐인 문."
+  },
+  "wall": {
+   "name": "헐린 성벽",
+   "verb": "살펴보기",
+   "say": "큰비에 무너진 자리. 돌 더미와 지게. 성은 사람이 쌓는다 — 누가.",
+   "flag": "seen:wall",
+   "info": "성벽이 무너진 자리.",
+   "rename": [
+    {
+     "if": "sit:corvee:open && !sit:corvee:done && status:slave",
+     "name": "헐린 성벽",
+     "verb": "주인 대신 돌을 쌓는다",
+     "once": false,
+     "requires": "stone",
+     "consumes": [
+      "stone"
+     ],
+     "failNoTool": "돌이 있어야. 마을 바닥의 모난 돌.",
+     "roll": {
+      "ab": "몸",
+      "hard": 2,
+      "why": "돌 지게는 몸이다.",
+      "fail": "…허리가 꺾였다. 반만 쌓았다."
+     },
+     "flag": "wall:slave",
+     "say": "🪨 열흘. 주인 집 몫. 주인은 집에 있었다."
+    },
+    {
+     "if": "sit:corvee:open && !sit:corvee:done && !status:noble && !status:chief && !status:artisan",
+     "name": "헐린 성벽",
+     "verb": "돌을 쌓는다",
+     "once": false,
+     "requires": "stone",
+     "consumes": [
+      "stone"
+     ],
+     "failNoTool": "돌이 있어야. 마을 바닥의 모난 돌.",
+     "roll": {
+      "ab": "몸",
+      "hard": 2,
+      "why": "돌 지게는 몸이다. 하루 종일.",
+      "fail": "…허리가 꺾였다. 반만 쌓았다. 내일 또."
+     },
+     "flag": "wall:carry",
+     "say": "🪨 열흘. 성벽이 다시 섰다. 손은 부르텄다."
+    },
+    {
+     "if": "sit:corvee:open && !sit:corvee:done",
+     "name": "헐린 성벽",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "돌을 지는 건 평민의 일이다. 귀족은 성주에게, 촌주는 마을 어른 자리에서, 장인은 모루에서."
+    }
+   ]
+  },
+  "drum": {
+   "name": "북",
+   "verb": "살펴보기",
+   "say": "성의 북. 성 쌓을 때도, 전쟁 때도 이것이 운다.",
+   "flag": "seen:drum",
+   "info": "성의 북."
+  },
+  "spearrack": {
+   "name": "창 걸이",
+   "verb": "살펴보기",
+   "say": "창 여덟. 전쟁이 나면 평민이 든다. 귀족은 제 칼을 든다.",
+   "flag": "seen:spearrack",
+   "info": "창 걸이."
+  },
+  "buddha": {
+   "name": "부처",
+   "hidden": [
+    "buddha_gold"
+   ],
+   "verb": "살펴보기",
+   "say": "돌로 깎은 부처. 눈을 감고 웃는다. 스님이 「임금은 부처의 뜻」이라 한다.",
+   "flag": "seen:buddha",
+   "info": "불상.",
+   "rename": [
+    {
+     "if": "sit:temple:open && !sit:temple:done && status:artisan && !temple:gild",
+     "name": "부처",
+     "verb": "금을 입힌다",
+     "once": false,
+     "roll": {
+      "ab": "손",
+      "hard": 2,
+      "why": "금박은 숨결에도 찢어진다. 손이 떨리면 안 된다.",
+      "fail": "…찢어졌다. 다시 편다."
+     },
+     "reveal": [
+      "buddha_gold"
+     ],
+     "flag": "temple:gild",
+     "journal": "buddha",
+     "say": "✨ 부처가 빛난다. 스님이 곡식 두 단을 냈다."
+    },
+    {
+     "if": "temple:gild",
+     "name": "금부처",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "금을 입힌 부처. 내 손이다."
+    }
+   ]
+  },
+  "offering": {
+   "name": "공양 자리",
+   "verb": "살펴보기",
+   "say": "부처 앞 돌 단. 쌀·물·꽃을 올린다.",
+   "flag": "seen:offering",
+   "info": "쌀 올리는 자리.",
+   "rename": [
+    {
+     "if": "sit:temple:open && !sit:temple:done && !status:artisan",
+     "name": "공양 자리",
+     "verb": "쌀을 올린다",
+     "once": false,
+     "consumes": [
+      "grain"
+     ],
+     "failNoGrain": "곡식 한 단이 손에 있어야.",
+     "flag": "temple:offer",
+     "say": "🌾 한 단. 스님이 이름을 적었다. 「다음 생엔 좋은 집에.」"
+    }
+   ]
+  },
+  "bigpaddy": {
+   "name": "귀족 논",
+   "verb": "살펴보기",
+   "say": "넓다. 노비들이 일한다. 거둔 것 중 한 단만 나라에 — 나머지는 기와집으로.",
+   "flag": "seen:bigpaddy",
+   "info": "귀족의 넓은 논.",
+   "rename": [
+    {
+     "if": "sit:tax:open && !sit:tax:done && status:noble",
+     "name": "귀족 논",
+     "verb": "이삭을 딴다",
+     "once": false,
+     "requires": "sickle",
+     "failNoTool": "돌낫이 있어야. 마을 돌을 주워 갈판에서.",
+     "gives": [
+      "grain",
+      "grain",
+      "grain",
+      "grain",
+      "grain"
+     ],
+     "flag": "cut:big",
+     "say": "🌾×5 다섯 단. 노비들이 날랐다. 한 단은 성주에게."
+    },
+    {
+     "if": "sit:tax:open && !sit:tax:done",
+     "name": "귀족 논",
+     "verb": "이삭을 딴다",
+     "once": false,
+     "requiresFlags": [
+      "status:noble"
+     ],
+     "failNoFlag": "귀족 논이다. 「누구 논에 손을 대느냐.」 네 땅으로.",
+     "say": ""
+    }
+   ]
+  },
+  "smallpaddy": {
+   "name": "소작 논",
+   "verb": "살펴보기",
+   "say": "작은 논. 평민 것. 세 단을 거두면 한 단은 나라에, 베 한 필도.",
+   "flag": "seen:smallpaddy",
+   "info": "평민의 작은 논.",
+   "rename": [
+    {
+     "if": "sit:tax:open && !sit:tax:done && !status:noble && !status:slave && !status:artisan",
+     "name": "소작 논",
+     "verb": "이삭을 딴다",
+     "once": false,
+     "requires": "sickle",
+     "failNoTool": "돌낫이 있어야. 마을 돌을 주워 갈판에서.",
+     "gives": [
+      "grain",
+      "grain",
+      "grain"
+     ],
+     "flag": "cut:small",
+     "say": "🌾×3 세 단. 한 단은 나라에."
+    },
+    {
+     "if": "sit:tax:open && !sit:tax:done",
+     "name": "소작 논",
+     "verb": "이삭을 딴다",
+     "once": false,
+     "requiresFlags": [
+      "status:farmer"
+     ],
+     "failNoFlag": "평민 집 논이다. 네 땅으로 — 귀족은 넓은 논, 노비는 주인 논, 장인은 모루.",
+     "say": ""
+    }
+   ]
+  },
+  "lordfield": {
+   "name": "주인 논",
+   "verb": "살펴보기",
+   "say": "귀족의 작은 논. 노비가 부친다. 넷 중 하나를 받는다.",
+   "flag": "seen:lordfield",
+   "info": "노비가 부치는 주인 논.",
+   "rename": [
+    {
+     "if": "sit:tax:open && !sit:tax:done && status:slave",
+     "name": "주인 논",
+     "verb": "이삭을 딴다",
+     "once": false,
+     "requires": "sickle",
+     "failNoTool": "돌낫이 있어야. 마을 돌을 주워 갈판에서.",
+     "gives": [
+      "grain"
+     ],
+     "flag": "cut:slave",
+     "say": "🌾 네 단 중 한 단. 셋은 주인 것."
+    },
+    {
+     "if": "sit:tax:open && !sit:tax:done",
+     "name": "주인 논",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "노비가 부치는 논이다. 네 땅으로."
+    }
+   ]
+  },
+  "target": {
+   "name": "과녁",
+   "verb": "살펴보기",
+   "say": "활 과녁. 젊은이들이 쏜다.",
+   "flag": "seen:target",
+   "info": "과녁.",
+   "rename": [
+    {
+     "if": "sit:hwarang:open && !sit:hwarang:done",
+     "name": "과녁",
+     "verb": "활을 쏜다",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 2,
+      "why": "과녁은 멀다. 눈이 익어야 한다.",
+      "fail": "…빗나갔다. 한 발 더."
+     },
+     "flag": "hwa:shoot",
+     "say": "🏹 세 발. 둘이 과녁. 「눈이 좋다.」"
+    }
+   ]
+  },
+  "bowrack": {
+   "name": "활 걸이",
+   "verb": "살펴보기",
+   "say": "활 셋. 화살통. 고구려 사람은 말 위에서도 쏜다고 한다.",
+   "flag": "seen:bowrack",
+   "info": "활 걸이."
+  },
+  "pit": {
+   "name": "무덤 구덩이",
+   "verb": "살펴보기",
+   "say": "큰 무덤 옆 구덩이. 널이 놓였다. 옛날엔 종을 산 채로 같이 묻었다. 신라는 502년에 법으로 금했다.",
+   "flag": "seen:pit",
+   "info": "순장 구덩이.",
+   "rename": [
+    {
+     "if": "sit:tomb:open && !sit:tomb:done && status:slave && nation:silla",
+     "name": "무덤 구덩이",
+     "verb": "법을 말한다 — 「지증왕이 금했다」",
+     "once": false,
+     "flag": "tomb:spared",
+     "journal": "sunjang",
+     "say": "🪦 이름이 불렸다. 「지증왕이 금했다.」 구덩이가 메워졌다. 법이 나를 살렸다."
+    },
+    {
+     "if": "sit:tomb:open && !sit:tomb:done && status:slave",
+     "name": "무덤 구덩이",
+     "verb": "뛴다 — 숲으로",
+     "once": false,
+     "roll": {
+      "ab": "발",
+      "hard": 3,
+      "why": "무덤 벌판은 트여 있다. 발이 빨라야 한다.",
+      "fail": "…숲 어귀에서 잡혔다. 다리를 맞았다."
+     },
+     "rollFailFlag": "tomb:caught",
+     "rollHurt": "leg",
+     "flag": "tomb:run",
+     "say": "🏃 숲으로. 사흘 뒤 다른 이름이 불렸다고 한다."
+    },
+    {
+     "if": "sit:tomb:open && !sit:tomb:done && !status:noble && !status:slave",
+     "name": "무덤 구덩이",
+     "verb": "흙을 진다",
+     "once": false,
+     "roll": {
+      "ab": "몸",
+      "hard": 1,
+      "why": "흙 지게도 몸이다.",
+      "fail": "…허리. 반만."
+     },
+     "flag": "tomb:dig",
+     "say": "⛏️ 한 달. 산이 됐다."
+    }
+   ]
+  },
+  "mound": {
+   "name": "큰 무덤",
+   "verb": "살펴보기",
+   "say": "흙을 산처럼 쌓은 무덤. 안에 금관·덩이쇠·그릇. 가진 집의 힘을 산 사람에게 보여 주는 것이다.",
+   "flag": "seen:mound",
+   "info": "고분."
+  },
+  "hollow": {
+   "name": "바위 밑 불 자리",
+   "verb": "살펴보기",
+   "say": "깊은 숲 바위 밑. 불 자리와 사람 하나. 나라가 망하면 사람이 모인다고 한다.",
+   "flag": "seen:hollow",
+   "info": "산속 사람의 자리.",
+   "rename": [
+    {
+     "if": "sit:fall:open && !sit:fall:done && !nation:silla",
+     "name": "산속 사람들",
+     "verb": "되살리려는 무리에 든다 ⚠",
+     "once": false,
+     "flag": "fall:revolt",
+     "say": "🏴 깃발을 들었다. 두 해. 토벌군이 왔다."
+    }
+   ]
+  },
+  "stele": {
+   "name": "돌비",
+   "verb": "살펴보기",
+   "say": "돌에 새긴 글자. 「임금이 이곳에 와 땅을 살폈다.」 비를 세운 나라가 이 땅의 주인이다.",
+   "flag": "seen:stele",
+   "info": "국경 비.",
+   "rename": [
+    {
+     "if": "sit:war:open && !sit:war:done && status:slave",
+     "name": "강 건너",
+     "verb": "강을 건넌다 — 다른 나라로",
+     "once": false,
+     "roll": {
+      "ab": "발",
+      "hard": 3,
+      "why": "횃불이 여울을 비춘다. 발이 빨라야 한다.",
+      "fail": "…여울 한가운데서 횃불. 끌려 돌아왔다."
+     },
+     "rollFailFlag": "war:caught",
+     "rollHurt": "leg",
+     "flag": "war:cross",
+     "say": "🏃 강 건너 군졸 — 「도망친 사람입니다.」 「그럼 우리 나라 사람이다.」"
+    },
+    {
+     "if": "sit:stele:open && !sit:stele:done",
+     "name": "돌비",
+     "verb": "읽는다",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 2,
+      "why": "글자가 작고 닳았다.",
+      "fail": "…글자가 안 읽힌다. 가까이."
+     },
+     "flag": "stele:read",
+     "journal": "stele",
+     "say": "📜 「임금이 땅을 살피고 백성을 위로했다.」 우리 마을 이름은 없다."
+    }
+   ]
+  },
+  "foecamp": {
+   "name": "강 건너 벌판",
+   "verb": "살펴보기",
+   "say": "강 건너 빈 벌판. 돌비 하나. 전쟁이 나면 여기 천막이 선다.",
+   "flag": "seen:foe",
+   "info": "강 건너 벌판.",
+   "rename": [
+    {
+     "if": "war:on",
+     "name": "적군 진영",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "천막 여섯. 푸른 깃발. 저쪽도 농민이 창을 들었다. 같은 강을 두고."
+    }
+   ]
+  },
+  "pass": {
+   "name": "고갯마루 돌무더기",
+   "verb": "살펴보기",
+   "say": "돌무더기와 흰 천. 고개 너머는 다른 나라. 넘어간 사람들이 돌 하나씩 올렸다.",
+   "flag": "seen:pass",
+   "info": "고개 — 다른 나라로 가는 길.",
+   "rename": [
+    {
+     "if": "sit:fall:open && !sit:fall:done && !nation:silla",
+     "name": "고개",
+     "verb": "북으로 넘는다",
+     "once": false,
+     "flag": "fall:north",
+     "say": "⛰️ 돌 하나를 올리고 넘었다. 옛 고구려 땅으로."
+    },
+    {
+     "if": "sit:craftsman:open && !sit:craftsman:done && status:artisan",
+     "name": "고개",
+     "verb": "넘어간다 — 기술을 들고",
+     "once": false,
+     "flag": "craft:move",
+     "journal": "ureuk",
+     "say": "⛰️ 고개 너머. 그 나라 임금이 「절을 지어라」."
+    },
+    {
+     "if": "sit:craftsman:open && !sit:craftsman:done",
+     "name": "고개",
+     "verb": "돌 하나 올리고 돌아선다",
+     "once": false,
+     "flag": "craft:stay",
+     "say": "🪨 돌 하나. 마을이 보였다."
+    }
+   ]
+  }
+ }
+}
