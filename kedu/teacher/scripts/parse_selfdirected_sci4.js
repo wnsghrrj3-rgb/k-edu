@@ -50,7 +50,7 @@ function parse(file) {
     if (/class="sum-list"/.test(html) && stage === '정리') { out.summary = all(/<div class="sum-item"[^>]*><span class="si-i">(.*?)<\/span>([\s\S]*?)<\/div>/, html).map(m => clean(m[2])); out.summary_icons = all(/<span class="si-i">(.*?)<\/span>/, html).map(m => m[1]); return; }
     if (/class="self-row"/.test(html)) { out.self = title; return; }
     if (/class="next-preview"/.test(html)) { out.next = clean(first(/class="next-preview">([\s\S]*?)<\/div>/, html)); out.next_icons = all(/<span>(.*?)<\/span>/, first(/class="intro-row"[^>]*>([\s\S]*?)<\/div>/, html)).map(m => m[1]); return; }
-    const sl = { i: idx, stage, badge, title, kind: 'concept', text: clean(first(/class="bub">([\s\S]*?)<\/div>/, html)) };
+    const sl = { i: idx, stage, badge, title, kind: 'concept', text: clean(first(/class="bub"[^>]*>([\s\S]*?)<\/div>/, html)) }; /* 69차: u4 정리 장 말풍선은 카드 뒤 · style 속성이 붙어 있음 */
     if (/class="intro"/.test(html)) { sl.kind = 'intro'; sl.icons = all(/<span>(.*?)<\/span>/, first(/class="intro-row">([\s\S]*?)<\/div>/, html)).map(m => m[1]); }
     if (/class="recall"/.test(html)) { sl.kind = stage === '도입' ? 'predict' : 'recall'; sl.recall = clean(first(/class="recall">([\s\S]*?)<\/div>/, html)); }
     if (/class="sum-list"/.test(html)) { sl.kind = 'list'; sl.items = all(/<div class="sum-item"[^>]*><span class="si-i">(.*?)<\/span>([\s\S]*?)<\/div>/, html).map(m => ({ emoji: m[1], t: clean(m[2]) })); }
