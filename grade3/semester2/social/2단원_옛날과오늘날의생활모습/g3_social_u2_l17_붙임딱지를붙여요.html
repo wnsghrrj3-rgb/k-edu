@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 3-2 · 2단원 옛날과 오늘날의 생활 모습
+  주제③ 통신수단의 변화로 달라진 생활 모습 · l17 (주제 셋째 시간)
+  「오늘날 사람들이 통신수단을 이용하는 모습을 알아볼까요」
+  교과서 p.126~130 · 지도서 23~24차시(p.250~254 · 두 시간 한 파일) · [4사04-02]
+  수업 기법 = 그림 자료 살펴보기 · 의견 나누기
+=========================================================================
+
+  ■ 직접조작 = 붙임딱지를 붙여요 판 (사회 3-2 스물아홉째 판 · 2단원 열일곱째 판)
+  ⭐ 씨앗은 교과서 126쪽 스스로 활동(활동 자료 12 — 알맞은 곳에 붙임딱지 붙이기)과
+     지도서 250~251쪽 말풍선 장면.
+     딱지 종이에서 딱지 한 장을 떼어 들고, 그 통신수단을 이용하는 장면에 붙인다.
+  ⭐ 장면마다 자기 통신수단 dev 를 품는다(BT_SCENE[s].dev) — 정답 자리표 0.
+     맞는지는 든 딱지 = 장면이 품은 dev, 한 자리 견주기(btStick).
+  ⭐ 붙인 장면이 판 — btOn 비트 하나 · 단계는 저장 0(btAll · btStage).
+  ⭐ 판을 바꾸는 자리 btNext 단 하나(state.btOn |= 1<<s) · 되돌리는 자리 0 · 난수 0.
+     든 딱지(btHand)는 판이 아닌 손 위치 — 붙이면 비운다.
+
+  ■ 이 차시의 뼈대
+   과학 기술이 발달하면서 먼 곳에 있는 사람과 소식이나 정보를 쉽고 빠르게 주고받을 수 있는
+   여러 가지 통신수단이 생겨났다. 오늘날 사람들은 일상생활과 학교에서 다양한 통신수단을 이용하며,
+   여러 사람과 동시에 많은 정보를 실시간으로 빠르게 주고받는다.
+
+  ■ 5단계
+   ① 딱지 떼기 → 장면에 붙이기 (딱지 여섯) → ② 판 읽기 3택(정답 자리 1)
+   ③ 여행을 계획하거나 여행할 때 이용할 통신수단 가·나·다 고르기(정답 없음 · 교과서 127쪽)
+   ④ 마무리 3택(정답 자리 2) → 완료
+      — 통신수단 쓰기 · 친구들과 이야기하기 · 학교에서 통신수단 찾아보기는 교실 몫
+
+  ■ 가드 14종
+   ① 마무리 확정 후 처리기 전체 잠금          ② 무효 번호(안내조차 0)
+   ③ 여섯 장을 다 붙인 뒤 떼기·붙이기 — 판 불변
+   ④ 이미 붙인 딱지 떼기 — 판 불변            ⑤ 빈손으로 붙이기 — 판 불변
+   ⑥ 이미 딱지를 붙인 장면 — 판 불변          ⑦ 어울리지 않는 장면 — 판·손 불변
+   ⑧ 다 붙이기 전 판 읽기 — 판 불변           ⑨ 이미 읽은 자리 — 판 불변
+   ⑩ 판 읽기 어긋난 답 — 판 불변              ⑪ 판을 읽기 전 고르기 — 판 불변
+   ⑫ 이미 고른 자리 — 판 불변                 ⑬ 고르기 전 마무리 — 판 불변
+   ⑭ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 장면 여섯과 딱지는 교과서 126~127쪽 그림을 따랐고, 판에 놓은 차례는 판이 꾸민 것(캡션 상시).
+   ㉡ 여행 때 이용할 통신수단은 사람마다 달라 판은 정답을 정하지 않는다(캡션 상시).
+   ㉢ 통신수단 쓰기, 친구들과 이야기하기, 학교에서 통신수단 찾아보기는 교실 몫(완료 카드 명시).
+
+  ■ 설계 원칙
+   · 지도서 예시의 지명은 넣지 않는다 — 여행 고르기는 통신수단과 쓰임만
+   · 뒤 차시 용어는 차시 예고 한 자리뿐
+   · 새 사실 0 — 교과서 126~130쪽 · 지도서 250~254쪽에서만
+   · 「틀렸」 0 · 사람 형상 0 · 지어낸 학생 이름 0 · 누리집 주소 0 · 네 자리 연도 0 · 지역·나라 이름 0
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오늘날 사람들이 통신수단을 이용하는 모습을 알아볼까요 · 사회 3-2</title>
+<meta name="kedu-lesson-id" content="g3_social_u2_l17_v1"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#DB2777; --green-d:#BE185D; --cyan:#C026D3;
+  --bg:#FDF2F8; --bub:#FCE7F3; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#FCE7F3;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#FCE7F3;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(219,39,119,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 붙임딱지를 붙여요 판 */
+.bt-wrap{max-width:820px;width:100%;margin:0 auto}
+.bt-head{background:#FCE7F3;color:#9D174D;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.bt-board{border-radius:14px;border:3px solid #CBD5E1;background:#F8FAFC;padding:8px}
+.bt-title{text-align:center;font-weight:800;color:#334155;font-size:clamp(12px,2vw,14px);word-break:keep-all;margin:2px 0 6px}
+.bt-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.bt-scene{border-radius:12px;padding:7px 7px;border:2px dashed #F9A8D4;background:#fff;font-family:inherit;cursor:pointer;
+  font-size:clamp(11px,1.8vw,13px);font-weight:700;color:#334155;line-height:1.4;word-break:keep-all;text-align:center;min-height:82px}
+.bt-scene .bt-mk{display:block;font-size:20px}
+.bt-scene .bt-slot{display:block;margin-top:5px;border-radius:8px;border:1.5px dashed #CBD5E1;padding:3px 4px;color:#94A3B8;font-size:clamp(10px,1.6vw,12px)}
+.bt-scene[data-on="1"]{border-style:solid;border-color:#16A34A;background:#F0FDF4;cursor:default}
+.bt-scene[data-on="1"] .bt-slot{border:1.5px solid #16A34A;background:#DCFCE7;color:#15803D}
+.bt-sheet{margin-top:9px;border:2px solid #FBCFE8;border-radius:12px;background:#FFFBEB;padding:7px}
+.bt-sheet-t{text-align:center;font-weight:800;color:#92400E;font-size:clamp(11px,1.8vw,13px);margin-bottom:5px}
+.bt-tags{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.bt-tag{border:2px solid #F59E0B;border-radius:10px;background:#fff;padding:6px 6px;font-family:inherit;font-weight:800;
+  font-size:clamp(11px,1.8vw,13px);color:#0F172A;cursor:pointer;line-height:1.35;word-break:keep-all}
+.bt-tag[data-up="1"]{background:#DB2777;border-color:#BE185D;color:#fff;transform:translateY(-3px);box-shadow:0 3px 0 #FBCFE8}
+.bt-tag[data-used="1"]{background:#F1F5F9;border-style:dashed;border-color:#CBD5E1;color:#94A3B8;cursor:default}
+.bt-hand{text-align:center;margin-top:7px;font-weight:800;color:#9D174D;font-size:clamp(12px,2vw,14px);word-break:keep-all}
+.bt-help{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(11px,1.9vw,14px);line-height:1.6}
+.bt-help b{color:#BE185D}
+.bt-side2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.bt-tell{border-radius:11px;padding:8px 12px;font-size:clamp(12px,2vw,15px);line-height:1.6;background:#FDF2F8;border-left:4px solid var(--cyan)}
+.bt-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}
+.bt-pk{border:2px solid #FBCFE8;border-radius:10px;background:#fff;padding:8px 7px;font-family:inherit;
+  font-size:clamp(11px,1.8vw,13px);font-weight:700;color:#0F172A;text-align:left;cursor:pointer;line-height:1.4;word-break:keep-all}
+.bt-pk b{color:#BE185D}
+.bt-ask2{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FFFAFD;margin-top:9px;
+  font-size:clamp(12px,2vw,15px);line-height:1.6;word-break:keep-all}
+.bt-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.bt-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:9px 11px;font-family:inherit;
+  font-size:clamp(12px,2vw,15px);font-weight:700;color:#0F172A;text-align:left;line-height:1.45;word-break:keep-all;cursor:pointer}
+.bt-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .bt-board{padding:6px}
+  .bt-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+  .bt-scene{font-size:10.5px;padding:5px 4px;min-height:74px}
+  .bt-tags{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+  .bt-picks{grid-template-columns:1fr}
+  .bt-side2{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 모양과 기호 ===== */
+const SVG = {
+  // 교과서 126~127쪽 — 일상생활 속 통신수단
+  now:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.2"><rect x="5" y="24" width="35" height="52" rx="6"/><rect x="44" y="24" width="35" height="52" rx="6"/><rect x="83" y="24" width="35" height="52" rx="6"/><rect x="122" y="24" width="35" height="52" rx="6"/></g>
+    <g font-size="14" text-anchor="middle"><text x="22" y="50">\u{1F4F1}</text><text x="61" y="50">\u{1F4BB}</text><text x="100" y="50">\u{1F4FA}</text><text x="139" y="50">\u{1F6A6}</text></g>
+    <g font-size="5.2" font-weight="800" text-anchor="middle" fill="#334155"><text x="22" y="66">휴대 전화</text><text x="61" y="66">컴퓨터</text><text x="100" y="66">텔레비전</text><text x="139" y="66">신호등</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">오늘날 일상생활에서 이용하는 통신수단</text></svg>`,
+  // 교과서 128쪽 — 학교에 있는 통신수단
+  school:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.2"><rect x="5" y="24" width="35" height="52" rx="6"/><rect x="44" y="24" width="35" height="52" rx="6"/><rect x="83" y="24" width="35" height="52" rx="6"/><rect x="122" y="24" width="35" height="52" rx="6"/></g>
+    <g font-size="14" text-anchor="middle"><text x="22" y="50">\u{1F4FA}</text><text x="61" y="50">\u{1F4CB}</text><text x="100" y="50">\u{1F4E2}</text><text x="139" y="50">\u{260E}\u{FE0F}</text></g>
+    <g font-size="5.2" font-weight="800" text-anchor="middle" fill="#334155"><text x="22" y="66">전자 칠판</text><text x="61" y="66">태블릿 컴퓨터</text><text x="100" y="66">스피커</text><text x="139" y="66">전화기</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">학교에서 이용하는 통신수단</text></svg>`,
+  // 교과서 129쪽 — 오늘날 통신수단의 특징
+  feat:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFBEB"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.2"><rect x="5" y="24" width="35" height="52" rx="6"/><rect x="44" y="24" width="35" height="52" rx="6"/><rect x="83" y="24" width="35" height="52" rx="6"/><rect x="122" y="24" width="35" height="52" rx="6"/></g>
+    <g font-size="14" text-anchor="middle"><text x="22" y="48">\u{1F68C}</text><text x="61" y="48">\u{1F4AC}</text><text x="100" y="48">\u{1F4E7}</text><text x="139" y="48">\u{1F3B5}</text></g>
+    <g font-size="4.8" font-weight="800" text-anchor="middle" fill="#334155"><text x="22" y="62">실시간으로</text><text x="22" y="69">빠르게</text><text x="61" y="62">여러 사람과</text><text x="61" y="69">동시에</text><text x="100" y="62">많은 정보를</text><text x="100" y="69">한 번에</text><text x="139" y="62">하나로</text><text x="139" y="69">여러 방법</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">오늘날 통신수단의 특징</text></svg>`,
+  // 정리 — 옛날과 오늘날
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.3"><rect x="8" y="28" width="62" height="48" rx="6"/><rect x="90" y="28" width="62" height="48" rx="6"/></g>
+    <g font-size="14" text-anchor="middle"><text x="39" y="52">\u{1F4DC}</text><text x="121" y="52">\u{1F4F1}</text></g>
+    <text x="80" y="54" font-size="10" text-anchor="middle" fill="#DB2777">\u{27A1}\u{FE0F}</text>
+    <g font-size="5.4" font-weight="800" text-anchor="middle" fill="#9D174D"><text x="39" y="68">옛날 통신수단</text><text x="121" y="68">오늘날 통신수단</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">쉽고 빠르게 주고받는 오늘날의 통신수단</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 붙임딱지를 붙여요 판 =====
+   교과서 126쪽 스스로 활동(활동 자료 12) · 지도서 250~251쪽 말풍선 장면
+   — 딱지 종이에서 딱지를 떼어 들고, 그 통신수단을 이용하는 장면에 붙인다.
+   ⭐ 판을 바꾸는 자리 btNext 단 하나 — state.btOn |= 1<<s · 되돌리는 자리 0. btOn = 붙인 장면 비트.
+   ⭐ 정답 자리표 0 — 장면마다 자기 통신수단 dev 를 품는다(BT_SCENE[s].dev).
+   ⭐ 단계는 저장 0 — 판(btOn)에서 센다(btAll · btStage). 든 딱지 btHand 는 손 위치.
+   ================================================================= */
+const BT_TAG = [                                                      // 딱지 종이 여섯 — 교과서 126~127쪽 통신수단
+  {mark:"\u{1F4E1}", name:"무전기"},
+  {mark:"\u{1F514}", name:"등하교 알리미"},
+  {mark:"\u{1F4F1}", name:"모바일 메신저"},
+  {mark:"\u{1F4BB}", name:"컴퓨터"},
+  {mark:"\u{1FAA7}", name:"디지털 안내판"},
+  {mark:"\u{1F4CA}", name:"대기 정보 알리미"}
+];
+const BT_SCENE = [                                                    // 장면 여섯 — 지도서 250~251쪽 말풍선 · 놓은 차례는 판이 꾸민 것
+  {mark:"\u{1F4AC}", dev:2, say:"바로바로 답장을 확인할 수 있으니 편해.", use:"스마트폰으로 어디에서나 대화하며 소식을 주고받아요."},
+  {mark:"\u{1F68F}", dev:4, say:"곧 버스가 도착하겠군.", use:"버스 정류장에서 버스가 오는 시각을 미리 확인해요."},
+  {mark:"\u{1F33F}", dev:5, say:"오늘은 미세 먼지 없이 깨끗하네.", use:"미세 먼지 상황을 확인해요."},
+  {mark:"\u{1F3EB}", dev:1, say:"학교에 잘 도착했네.", use:"부모님이 자녀의 등하교 상황을 확인해요."},
+  {mark:"\u{1F681}", dev:0, say:"이쪽으로 구조 헬기를 보내 주세요!", use:"구급 대원이 구조 헬기를 요청해요."},
+  {mark:"\u{1F4F0}", dev:3, say:"뉴스에서 날씨를 알려 주네. 전자 우편도 확인해야겠다.", use:"일기 예보와 전자 우편을 확인해요."}
+];
+const BT_FULL = 63;                                                   // 여섯 장면 비트
+const BT_PICK = [                                                     // 교과서 127쪽 친구와 활동 — 쓰임은 지도서 251쪽 예시에서(지명 뺌)
+  {mark:"가", text:"스마트폰", why:"기차표나 비행기표를 미리 예매할 수 있어요."},
+  {mark:"나", text:"태블릿 컴퓨터", why:"방문할 장소를 미리 검색할 수 있어요."},
+  {mark:"다", text:"길 도우미(내비게이션)", why:"처음 가는 곳도 길을 찾아갈 수 있어요."}
+];
+const BT_SAY_ALL = "딱지 여섯 장을 모두 붙였어요. 판을 읽어 봐요.";
+const BT_SAY_USED = "이미 붙인 딱지예요. 남은 딱지를 떼어 봐요.";
+const BT_SAY_EMPTY = "먼저 딱지 종이에서 딱지를 한 장 떼어 봐요.";
+const BT_SAY_ON = "이미 딱지를 붙인 장면이에요. 다른 장면을 골라 봐요.";
+const BT_SAY_BAD = "말풍선을 다시 읽고, 이 장면에서 어떤 통신수단을 이용하는지 살펴봐요.";
+const BT_SAY_ORDER_R = "먼저 딱지 여섯 장을 모두 붙여 봐요.";
+const BT_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const BT_SAY_ORDER_P = "먼저 판을 읽어 봐요.";
+const BT_SAY_PICKDONE = "이미 골랐어요. 친구가 고른 통신수단과 견주어 봐요.";
+const BT_SAY_ORDER_FIN = "먼저 여행할 때 이용할 통신수단을 골라 봐요.";
+const BT_READQ = [
+  "오늘날 통신수단은 날씨의 영향을 많이 받아서 소식을 늦게 전할 때가 많아요",
+  "오늘날 사람들은 일상생활에서 모바일 메신저, 디지털 안내판, 컴퓨터처럼 다양한 통신수단을 이용해 소식이나 정보를 쉽고 빠르게 주고받아요",
+  "오늘날에는 모든 장면에서 한 가지 통신수단만 이용해요"
+];
+const BT_READ_OK = 1;
+const BT_READ_BAD = "판에 붙인 딱지 여섯 장과 장면을 다시 떠올려 봐요.";
+const BT_FINQ = [
+  "오늘날 통신수단은 날씨의 영향을 많이 받아서 많은 내용을 자세하게 전하기 어려워요",
+  "오늘날 사람들은 통신수단 없이 직접 찾아가야만 소식을 전할 수 있어요",
+  "오늘날 사람들은 다양한 통신수단을 이용해 여러 사람과 동시에 많은 정보를 실시간으로 빠르게 주고받아요"
+];
+const BT_FIN_OK = 2;
+const BT_FIN_BAD = "오늘 살펴본 오늘날 통신수단의 특징을 다시 떠올려 봐요.";
+
+function btTagOf(t){ return BT_TAG[t]; }                                       // BT_TAG 를 읽는 자리는 여기 단 하나
+function btSceneOf(s){ return BT_SCENE[s]; }                                   // BT_SCENE 을 읽는 자리는 여기 단 하나
+function btPickOf(p){ return BT_PICK[p]; }                                     // BT_PICK 을 읽는 자리는 여기 단 하나
+function btIsOn(st,s){ return ((st.btOn >> s) & 1) === 1; }
+function btUsed(st,t){ return BT_SCENE.some((S,s) => btIsOn(st,s) && btSceneOf(s).dev === t); }
+function btCount(st){ let c = 0; for(let s=0;s<BT_SCENE.length;s++) if(btIsOn(st,s)) c++; return c; }
+function btAll(st){ return st.btOn === BT_FULL; }                                            // ★ 여섯 장 모두 붙임
+function btNext(s){ state.btOn |= 1 << s; }                                    // ⭐ 판을 바꾸는 자리 단 하나
+function btStage(st){
+  if(!btAll(st)) return "stick";
+  if(st.btRead == null) return "read";
+  if(st.btPick == null) return "pick";
+  if(st.btFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 장면 여섯 · 딱지 종이 */
+function btSceneBox(st,s){
+  const S = btSceneOf(s), on = btIsOn(st,s);
+  const slot = on ? `${btTagOf(S.dev).mark} ${btTagOf(S.dev).name}` : '딱지 붙일 곳';
+  return `<button class="bt-scene" data-s="${s}" data-on="${on ? 1 : 0}" onclick="btStick(${s})"><span class="bt-mk">${S.mark}</span>${S.say}<span class="bt-slot">${slot}</span></button>`;
+}
+function btTagBtn(st,t){
+  const T = btTagOf(t), used = btUsed(st,t), up = st.btHand === t;
+  return `<button class="bt-tag" data-t="${t}" data-up="${up ? 1 : 0}" data-used="${used ? 1 : 0}" onclick="btLift(${t})">${used ? '\u2705' : T.mark} ${T.name}</button>`;
+}
+function btSheet(st){
+  const hand = st.btHand == null ? '손에 든 딱지 없음' : `손에 든 딱지 — ${btTagOf(st.btHand).mark} ${btTagOf(st.btHand).name}`;
+  return `<div class="bt-sheet"><div class="bt-sheet-t">\u{1F3F7}\uFE0F 딱지 종이</div>
+    <div class="bt-tags">${BT_TAG.map((T,t) => btTagBtn(st,t)).join('')}</div>
+    <div class="bt-hand" data-hand="${st.btHand == null ? '' : 1}">${hand}</div></div>`;
+}
+function btBoard(st){
+  return `<div class="bt-board" data-on="${st.btOn}" data-hand="${st.btHand == null ? '' : st.btHand}">
+    <div class="bt-title">오늘날 사람들이 통신수단을 이용하는 장면에 알맞은 딱지를 붙여요</div>
+    <div class="bt-grid">${BT_SCENE.map((S,s) => btSceneBox(st,s)).join('')}</div>
+    ${btAll(st) ? '' : btSheet(st)}</div>`;
+}
+function btPicks(st){
+  return `<div class="bt-picks">${[0,1,2].map(p=>`<button class="bt-pk" data-p="${p}" onclick="btPick(${p})"><b>${btPickOf(p).mark}</b> ${btPickOf(p).text}</button>`).join('')}</div>`;
+}
+function btHelp(st){
+  return `<div class="bt-help">① <b>딱지 종이</b>에서 딱지를 한 장 눌러 떼어요.<br>
+    ② 그 통신수단을 이용하는 <b>장면</b>을 눌러 붙여요.<br>
+    ③ 든 딱지를 다시 누르면 <b>내려놓아요</b>.</div>`;
+}
+function btPanel(st){
+  const stage = btStage(st);
+  let ask = '';
+  if(stage === "stick"){
+    ask = `<div class="bt-ask2" data-step="stick"><b>말풍선을 읽고, 사람들이 어떤 통신수단을 이용하는지 살펴봐요. 딱지 여섯 장을 알맞은 장면에 붙여 봐요.</b></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="bt-ask2" data-step="read"><b>딱지 여섯 장을 모두 붙였어요. 판을 보니 오늘날 사람들은 통신수단을 어떻게 이용하나요?</b>
+      <div class="bt-opts">${BT_READQ.map((t,i)=>`<button class="bt-opt" onclick="btRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "pick"){
+    ask = `<div class="bt-ask2" data-step="pick"><b>여행을 계획하거나 여행할 때 나는 어떤 통신수단을 이용하고 싶나요?</b>${btPicks(st)}</div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="bt-ask2" data-step="fin"><b>오늘날 사람들은 통신수단을 이용해 소식이나 정보를 어떻게 주고받나요?</b>
+      <div class="bt-opts">${BT_FINQ.map((t,i)=>`<button class="bt-opt" onclick="btFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="bt-ask2" data-fin="1" style="border-color:#F9A8D4;background:#FDF2F8">
+      <b style="color:#9D174D">딱지 여섯 장을 모두 알맞은 장면에 붙였어요. 오늘날 사람들은 휴대 전화, 컴퓨터, 텔레비전 등 다양한 통신수단을 이용해 여러 사람과 동시에 많은 정보를 실시간으로 빠르게 주고받아요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">※ 여행할 때 이용할 통신수단을 <b>쓰고</b> 친구들과 <b>이야기하기</b>, 우리 학교에서 <b>통신수단 찾아보기</b>는 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`;
+  }
+  const tell = st.btTell ? `<div class="bt-tell">${st.btTell}</div>` : '';
+  const warn = st.btMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.btMsg}</div>` : '';
+  return `<div class="bt-wrap">
+    <div class="bt-head">붙인 딱지 <b>${btCount(st)}</b> / ${BT_SCENE.length}</div>
+    ${btBoard(st)}<div class="bt-side2">${btHelp(st)}${tell}</div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 장면과 딱지는 <b>교과서 126~127쪽</b> 그림을 따랐고, 판에 놓은 차례는 판이 <b>꾸민 것</b>이에요. 여행할 때 이용할 통신수단은 <b>사람마다 달라서</b> 판은 정답을 정하지 않아요.</div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 옛날과 오늘날의 생활 모습 · 주제③ 통신수단의 변화로 달라진 생활 모습";
+const Q = [
+  {stem:"스마트폰 등을 이용하여 어디에서나 대화하거나 정보를 주고받을 수 있는 통신수단은 무엇인가요?",
+   opts:["봉수","방","모바일 메신저","파발"], correct:2, pts:POINTS_BASIC,
+   h1:"바로바로 답장을 확인할 수 있는 통신수단이에요.", h2:"옛날 통신수단이 아니라 오늘날 통신수단이에요.",
+   reason:"모바일 메신저는 스마트폰 등을 이용하여 어디에서나 대화하거나 정보를 주고받을 수 있는 통신수단이에요."},
+  {stem:"버스 정류장에서 버스가 오는 시각을 미리 확인할 수 있게 해 주는 통신수단은 무엇인가요?",
+   opts:["디지털 안내판","서찰","북","신호 연"], correct:0, pts:POINTS_BASIC,
+   h1:"판에서 「곧 버스가 도착하겠군.」 장면을 떠올려 봐요.", h2:"정류장에 세워져 있어 여러 사람이 함께 봐요.",
+   reason:"버스 정류장의 디지털 안내판을 보고 버스가 오는 시각을 미리 확인할 수 있어요."},
+  {stem:"부모님이 자녀의 등하교 상황을 확인할 수 있게 해 주는 통신수단은 무엇인가요?",
+   opts:["대기 정보 알리미","신호등","나발","등하교 알리미"], correct:3, pts:POINTS_BASIC,
+   h1:"판에서 「학교에 잘 도착했네.」 장면을 떠올려 봐요.", h2:"학교에 오가는 것을 알려 줘요.",
+   reason:"등하교 알리미를 통해 부모님이 자녀의 등하교 상황을 확인할 수 있어요."},
+  {stem:"학교에서 수업 종소리나 안내 방송이 나오는 통신수단은 무엇인가요?",
+   opts:["전자 칠판","스피커","봉수","태블릿 컴퓨터"], correct:1, pts:POINTS_BASIC,
+   h1:"소리로 알려 주는 통신수단이에요.", h2:"교실이나 복도, 운동장에도 있어요.",
+   reason:"학교에서는 스피커로 수업 종소리나 안내 방송이 나와요."},
+  {stem:"오늘날 통신수단의 특징으로 알맞은 것은 무엇인가요?",
+   opts:["여러 사람에게 실시간으로 빠르게 정보를 전달해요","날씨의 영향을 많이 받아요","소식을 전하는 데 시간이 오래 걸려요","많은 내용을 자세하게 전하기 어려워요"], correct:0, pts:POINTS_APPLY,
+   h1:"알맞은 것을 찾아요.", h2:"나머지 셋은 지난 시간에 알아본 옛날 통신수단의 특징이에요.",
+   reason:"오늘날 통신수단은 여러 사람에게 실시간으로 빠르게 정보를 전달하고, 여러 사람과 동시에 정보를 주고받을 수 있어요."},
+  {stem:"축구 심판이 규칙에 따라 경고나 퇴장을 알릴 때 사용하는 것은 무엇인가요?",
+   opts:["디지털 안내판","마을 안내 방송","전자 우편","여러 색의 카드"], correct:3, pts:POINTS_APPLY,
+   h1:"하는 일에 따라 이용하는 통신수단이 달라요.", h2:"경고는 노란색, 퇴장은 빨간색이에요.",
+   reason:"축구 심판은 규칙에 따라 옐로카드(경고)와 레드카드(퇴장)처럼 여러 색의 카드를 사용해요."},
+  {stem:"판에서 「이쪽으로 구조 헬기를 보내 주세요!」 장면에 붙인 딱지는 무엇인가요?",
+   opts:["모바일 메신저","등하교 알리미","무전기","컴퓨터"], correct:2, pts:POINTS_APPLY,
+   h1:"판에서 구조 헬기 장면을 떠올려 봐요.", h2:"구급 대원이 들고 다니며 바로 말을 전해요.",
+   reason:"구급 대원은 무전기로 구조 헬기를 요청해요."},
+  {stem:"판에서 딱지를 붙여 보며 알게 된 오늘날 사람들의 통신수단 이용 모습은 무엇인가요?",
+   opts:["오늘날 통신수단은 날씨의 영향을 많이 받아서 소식을 늦게 전할 때가 많아요","오늘날 사람들은 일상생활에서 모바일 메신저, 디지털 안내판, 컴퓨터처럼 다양한 통신수단을 이용해 소식이나 정보를 쉽고 빠르게 주고받아요","오늘날에는 모든 장면에서 한 가지 통신수단만 이용해요","오늘날 통신수단은 위급한 상황에서만 이용해요"], correct:1, pts:POINTS_APPLY,
+   h1:"판에서 딱지 여섯 장을 붙인 장면을 떠올려 봐요.", h2:"장면마다 붙인 딱지가 모두 같았나요?",
+   reason:"오늘날 사람들은 일상생활에서 다양한 통신수단을 이용해 소식이나 정보를 쉽고 빠르게 주고받아요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 통신수단을 이용한 경험
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">여러분은 언제 통신수단을 이용하나요?</h2>
+  <div class="ka-bub">지난 시간에는 <span class="ka-emph">옛날 사람들</span>이 통신수단을 이용했던 모습을 알아봤어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('now','교과서 126~127쪽')}</div>
+  <div class="note">부모님과 통화할 때, 숙제할 때, 가족들과 텔레비전을 볼 때처럼 내가 통신수단을 이용했던 때를 자유롭게 말해 봐요.</div></div>`});
+// 2 통신수단이 없다면 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 생각해 보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">통신수단이 없다면 어떻게 될까요?</h2>
+  <div class="ka-bub">오늘날 사람들은 생활 속에서 <span class="ka-emph">다양한 통신수단</span>을 이용하고 있어요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 부모님이나 친구들과 연락할 때 휴대 전화가 없으면 불편할 것 같아요.<br>· 텔레비전이 없으면 심심할 것 같아요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 일상생활 속 통신수단
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 일상생활의 통신수단</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘날 사람들이 일상생활에서 이용하는 통신수단에는 어떤 것들이 있나요?</h2>
+  <div class="ka-bub">과학 기술이 발달하면서 소식이나 정보를 <span class="ka-emph">쉽고 빠르게</span> 주고받을 수 있게 되었어요.</div>
+  <div class="ka-grp"><div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>모바일 메신저</b>는 스마트폰 등을 이용하여 어디에서나 대화하거나 정보를 주고받을 수 있는 통신수단이에요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>버스 정류장의 <b>디지털 안내판</b>을 보고 버스가 오는 시각을 미리 확인해요. <b>대기 정보 알리미</b>로 미세 먼지 상황을 확인해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>휴대 전화로 <b>안전 안내 문자</b>를 받고, <b>신호등</b>의 신호에 따라 안전하게 횡단보도를 건너요.</div></div>
+  </div></div>`});
+// 4 학교에 있는 통신수단 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 학교의 통신수단</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">학교에서 공부할 때 통신수단을 어떻게 이용하나요?</h2>
+  <div class="ka-bub">교과서 128쪽 그림을 보며 <span class="ka-emph">우리 교실</span>도 떠올려 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('school','교과서 128쪽')}</div>
+  ${st.revealed?`<div class="answer-box">· 텔레비전이나 전자 칠판으로 영상을 보면서 공부해요.<br>· 태블릿 컴퓨터로 궁금한 내용을 찾아봐요.<br>· 스피커로 수업 종소리나 안내 방송이 나와요.<br>· 전화기로 다른 교실에 있는 선생님들과 연락해요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 오늘날 통신수단의 특징
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 오늘날 통신수단의 특징</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘날 사람들이 이용하는 통신수단의 특징은 무엇인가요?</h2>
+  <div class="ka-bub">정보를 찾고 <span class="ka-emph">의사소통하는 방식</span>이 옛날과 달라졌어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('feat','교과서 129쪽')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>여러 사람에게 <b>실시간으로 빠르게</b> 정보를 전달해요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>여러 사람과 <b>동시에</b> 연락하거나 정보를 주고받아요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>글, 사진, 동영상 등 다양하고 많은 정보를 <b>한 번에</b> 주고받고, 하나의 통신수단으로 다양한 통신 방법을 이용해요.</div></div>
+  </div></div>`});
+// 6 장소나 하는 일에 따라 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 풍덩 사회 속으로</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">생활하는 장소나 하는 일에 따라 사람들은 어떤 통신수단을 이용하나요?</h2>
+  <div class="ka-bub">교과서 130쪽 장면을 보며 <span class="ka-emph">하는 일</span>에 알맞은 통신수단을 생각해 봐요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 야구 심판은 멀리서도 잘 보이도록 수신호를 사용해요.<br>· 교통경찰은 자동차들이 안전하게 이동할 수 있도록 수신호와 호루라기를 사용해요.<br>· 축구 심판은 규칙에 따라 여러 색의 카드를 사용해요.<br>· 집들이 서로 떨어져 있거나 농사일을 주로 하는 곳에서는 마을 안내 방송으로 소식을 전해요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 스스로 활동</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">붙임딱지를 붙여요</h2>
+  <div class="ka-grp" style="align-items:stretch">${btPanel(st)}</div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘날 사람들이 통신수단을 이용하는 모습을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','오늘날 통신수단')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>오늘날 사람들은 일상생활에서 <b>휴대 전화, 컴퓨터, 텔레비전, 라디오, 길 도우미, 폐회로 텔레비전(CCTV), 신호등, 재난 경보기</b> 등 다양한 통신수단을 이용해요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>학교에서는 텔레비전, 전자 칠판, 스피커, 전화기, 태블릿 컴퓨터 등을 이용해 공부해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>오늘날 통신수단으로 여러 사람과 <b>동시에</b> 많은 정보를 <b>실시간으로 빠르게</b> 주고받아요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#DB2777">통신수단의 변화</b>로 달라진 사람들의 생활 모습을 살펴봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"오늘날 사람들이 이용하는 통신수단의 이름을 말할 수 있어요",st)}
+    ${selfCheck(1,"오늘날 사람들이 통신수단을 이용하는 모습을 설명할 수 있어요",st)}
+    ${selfCheck(2,"오늘날 통신수단의 특징을 말할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘날 사람들이 통신수단을 이용하는 모습을 알아봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">통신수단을 이용해 <b style="color:#DB2777">정보를 찾고 활용한 경험</b>을 쓰고 친구들과 이야기해 봐요. 이건 교실 몫이에요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g3_2_social_u2_l17";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  btOn:0, btHand:null, btRead:null, btPick:null, btFin:null, btMsg:"", btTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function btDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 딱지 떼기 — 손 위치일 뿐 판은 그대로(든 딱지를 다시 누르면 내려놓음) */
+function btLift(t){
+  if(state.btFin!=null) return;                                                            // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(t) || t<0 || t>=BT_TAG.length) return;                              // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(btAll(state)){ state.btMsg = BT_SAY_ALL; btDraw(); return; }                          // 가드③: 다 붙인 뒤 — 판 불변
+  if(btUsed(state,t)){ state.btMsg = BT_SAY_USED; playThud(); btDraw(); return; }           // 가드④: 이미 붙인 딱지 — 판 불변
+  state.btHand = (state.btHand === t) ? null : t; state.btMsg = ""; playBlip(); btDraw();
+}
+/* 장면에 붙이기 */
+function btStick(s){
+  if(state.btFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(s) || s<0 || s>=BT_SCENE.length) return;                            // 가드②
+  if(btAll(state)){ state.btMsg = BT_SAY_ALL; btDraw(); return; }                          // 가드③
+  if(state.btHand == null){ state.btMsg = BT_SAY_EMPTY; playThud(); btDraw(); return; }    // 가드⑤: 빈손 — 판 불변
+  if(btIsOn(state,s)){ state.btMsg = BT_SAY_ON; playThud(); btDraw(); return; }            // 가드⑥: 이미 붙인 장면 — 판 불변
+  const S = btSceneOf(s);
+  if(state.btHand !== S.dev){ state.btMsg = BT_SAY_BAD; playThud(); btDraw(); return; }    // 가드⑦: 어울리지 않는 장면 — 판·손 불변
+  btNext(s);
+  state.btHand = null; state.btMsg = "";
+  state.btTell = `${btTagOf(S.dev).name} — ${S.use}` + (btAll(state) ? ` 딱지 여섯 장을 모두 붙였어요.` : '');
+  if(btAll(state)) playChime(); else playBlip(); btDraw();
+}
+/* 판 읽기 */
+function btRead(i){
+  if(state.btFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=BT_READQ.length) return;                           // 가드②
+  if(!btAll(state)){ state.btMsg = BT_SAY_ORDER_R; playThud(); btDraw(); return; }         // 가드⑧: 다 붙이기 전 — 판 불변
+  if(state.btRead!=null){ state.btMsg = BT_SAY_READDONE; btDraw(); return; }               // 가드⑨: 이미 정한 자리 — 판 불변
+  if(i!==BT_READ_OK){ state.btMsg = BT_READ_BAD; playThud(); btDraw(); return; }           // 가드⑩: 어긋난 답 — 판 불변
+  state.btRead = i; state.btMsg = ""; state.btTell = `과학 기술이 발달하면서 먼 곳에 있는 사람과 소식이나 정보를 쉽고 빠르게 주고받을 수 있는 여러 가지 통신수단이 생겨났어요. 오늘날 사람들은 휴대 전화, 컴퓨터, 텔레비전, 모바일 메신저, 라디오, 신호등, 재난 경보기 등 다양한 통신수단을 이용해요.`; playBlip(); btDraw();
+}
+/* 여행할 때 이용할 통신수단 고르기 — 정답 없음 */
+function btPick(p){
+  if(state.btFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(p) || p<0 || p>=BT_PICK.length) return;                             // 가드②
+  if(state.btRead==null){ state.btMsg = BT_SAY_ORDER_P; playThud(); btDraw(); return; }    // 가드⑪: 판을 읽기 전 — 판 불변
+  if(state.btPick!=null){ state.btMsg = BT_SAY_PICKDONE; btDraw(); return; }               // 가드⑫: 이미 고른 자리 — 판 불변
+  state.btPick = p; state.btMsg = ""; state.btTell = `${btPickOf(p).mark}를 골랐어요. ${btPickOf(p).text} — ${btPickOf(p).why}`; playBlip(); btDraw();
+}
+/* 마무리 */
+function btFin(i){
+  if(state.btFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=BT_FINQ.length) return;                             // 가드②
+  if(state.btPick==null){ state.btMsg = BT_SAY_ORDER_FIN; playThud(); btDraw(); return; }  // 가드⑬: 고르기 전 — 판 불변
+  if(i!==BT_FIN_OK){ state.btMsg = BT_FIN_BAD; playThud(); btDraw(); return; }             // 가드⑭: 어긋난 답 — 판 불변
+  state.btFin = i; state.btMsg = ""; playChime(); btDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
