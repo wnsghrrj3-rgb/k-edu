@@ -291,14 +291,14 @@ window.KEDU_MAP["g3_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_social_u2_l16",
+     "lessonId": "g3_social_u2_l16_v1",
      "n": "2",
      "title": "옛날 사람들이 통신수단을 이용했던 모습을 알아볼까요",
      "sub": "③ 통신수단의 변화로 달라진 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/social/2단원_옛날과오늘날의생활모습/g3_social_u2_l16_봉수를올려요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,

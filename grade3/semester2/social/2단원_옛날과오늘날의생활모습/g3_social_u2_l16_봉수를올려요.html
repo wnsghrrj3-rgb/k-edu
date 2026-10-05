@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 3-2 · 2단원 옛날과 오늘날의 생활 모습
+  주제③ 통신수단의 변화로 달라진 생활 모습 · l16 (주제 둘째 시간)
+  「옛날 사람들이 통신수단을 이용했던 모습을 알아볼까요」
+  교과서 p.123~125 · 지도서 22차시(p.242~248) · [4사04-02]
+  수업 기법 = 그림 자료 살펴보기 · 돌아가며 말하기
+=========================================================================
+
+  ■ 직접조작 = 봉수를 올려요 판 (사회 3-2 스물여덟째 판 · 2단원 열여섯째 판)
+  ⭐ 씨앗은 교과서 125쪽 봉수·파발과 지도서 245쪽 그림 해설(연기나 불의 개수로 위급한 정도),
+     지도서 247쪽(구름과 안개가 짙으면 봉수가 잘 전달되지 않아 파발로 보완).
+     봉수대 지기가 되어 차례로 오는 소식 다섯을 전한다 — 굴뚝을 눌러 연기·불의 개수를 맞추고
+     낮이면 연기, 밤이면 불로 바꿔 「봉수 올리기」. 안개 낀 날은 「파발 보내기」.
+  ⭐ 소식마다 자기 낮·밤 time · 위급한 정도 n · 안개 fog 를 품는다(BH_MSG[k]) — 정답 자리표 0.
+     맞는지는 올린 수 = 품은 n, 연기·불 = 품은 time, 두 자리 견주기(bhSend).
+  ⭐ 전한 소식 수가 판 — bhAt 한 숫자 · 단계는 저장 0(bhAll · bhStage).
+  ⭐ 판을 바꾸는 자리 bhNext 단 하나(state.bhAt += 1) · 되돌리는 자리 0 · 난수 0.
+     올린 굴뚝 수(bhN)와 연기·불(bhK)은 판이 아닌 손 위치 — 소식을 전하면 비운다.
+
+  ■ 이 차시의 뼈대
+   옛날 사람들은 서찰, 방, 신호 연, 신호 깃발, 북, 나발, 파발, 봉수 등 다양한 통신수단을 이용했다.
+   옛날 통신수단은 소식을 전하는 데 시간이 오래 걸렸고, 많은 내용을 자세하고 정확하게 전하기 어려웠으며,
+   날씨의 영향을 많이 받았다. 그래도 그때는 널리 이용하던 통신수단이었다.
+
+  ■ 5단계
+   ① 굴뚝 누르기 · 연기↔불 → 봉수 올리기 / 파발 보내기 (소식 다섯) → ② 판 읽기 3택(정답 자리 2 · 봉수의 특징)
+   ③ 장군이라면 이용하고 싶은 옛날 통신수단 가·나·다 고르기(정답 없음 · 교과서 125쪽 · 지도서 예시 까닭)
+   ④ 마무리 3택(정답 자리 0) → 완료
+      — 통신수단과 까닭 쓰기 · 친구들과 이야기하기 · 역할극은 교실 몫
+
+  ■ 가드 14종
+   ① 마무리 확정 후 처리기 전체 잠금          ② 무효 번호(안내조차 0)
+   ③ 안개 낀 날 봉수 올리기 — 판 불변          ④ 굴뚝이 빈 채 올리기 — 판 불변
+   ⑤ 개수·연기/불 어긋남 — 판 불변            ⑥ 다섯 소식을 다 전한 뒤 굴뚝·바꾸기·올리기·파발 — 판 불변
+   ⑦ 맑은 날 파발 — 판 불변                   ⑧ 다 전하기 전 판 읽기 — 판 불변
+   ⑨ 이미 읽은 자리 — 판 불변                 ⑩ 판 읽기 어긋난 답 — 판 불변
+   ⑪ 판을 읽기 전 고르기 — 판 불변            ⑫ 이미 고른 자리 — 판 불변
+   ⑬ 고르기 전 마무리 — 판 불변               ⑭ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 연기·불의 개수는 지도서 245쪽 그림 해설을 따랐고, 소식 다섯과 차례는 판이 꾸민 것(캡션 상시).
+   ㉡ 이용하고 싶은 통신수단은 사람마다 달라 판은 정답을 정하지 않는다(캡션 상시).
+   ㉢ 통신수단과 까닭 쓰기, 친구들과 이야기하기, 역할극은 교실 몫(완료 카드 명시).
+
+  ■ 설계 원칙
+   · 옛날 통신수단의 불편함에 중심을 두지 않는다 — 그때는 널리 이용한 통신수단(지도서 245쪽)
+   · 뒤 차시 용어는 차시 예고 한 자리뿐
+   · 새 사실 0 — 교과서 123~125쪽 · 지도서 242~248쪽에서만
+   · 「틀렸」 0 · 사람 형상 0 · 지어낸 학생 이름 0 · 누리집 주소 0 · 네 자리 연도 0 · 지역·나라 이름 0
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>옛날 사람들이 통신수단을 이용했던 모습을 알아볼까요 · 사회 3-2</title>
+<meta name="kedu-lesson-id" content="g3_social_u2_l16_v1"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#DB2777; --green-d:#BE185D; --cyan:#C026D3;
+  --bg:#FDF2F8; --bub:#FCE7F3; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#FCE7F3;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#FCE7F3;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(219,39,119,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 봉수를 올려요 판 */
+.bh-wrap{max-width:820px;width:100%;margin:0 auto}
+.bh-head{background:#FCE7F3;color:#9D174D;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.bh-board{border-radius:14px;border:3px solid #CBD5E1;background:#F8FAFC;padding:8px}
+.bh-title{text-align:center;font-weight:800;color:#334155;font-size:clamp(12px,2vw,14px);word-break:keep-all;margin:2px 0 6px}
+.bh-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.bh-msg{border-radius:10px;padding:6px 6px;border:2px solid #E2E8F0;background:#fff;font-size:clamp(10px,1.6vw,12px);
+  font-weight:700;color:#64748B;line-height:1.4;word-break:keep-all;text-align:center}
+.bh-msg b{display:block;color:#475569}
+.bh-msg[data-now="1"]{border-color:#DB2777;background:#FDF2F8;color:#0F172A;box-shadow:0 0 0 2px #FBCFE8}
+.bh-msg[data-sent="1"]{border-color:#16A34A;background:#F0FDF4;color:#15803D}
+.bh-now{margin-top:8px;border:2px solid #F9A8D4;border-radius:12px;background:#fff;padding:8px 10px;text-align:center;
+  font-weight:800;color:#0F172A;font-size:clamp(13px,2.1vw,16px);word-break:keep-all}
+.bh-now[data-fog="1"]{background:#F1F5F9;border-color:#94A3B8}
+.bh-tower{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:8px;align-items:end}
+.bh-pit{border:2px solid #FBCFE8;border-radius:10px 10px 4px 4px;background:#FFFBEB;height:58px;font-family:inherit;font-weight:800;
+  font-size:22px;cursor:pointer;color:#94A3B8}
+.bh-pit small{display:block;font-size:10px;color:#64748B}
+.bh-pit[data-lit="1"]{background:#FEF3C7;border-color:#F59E0B;color:#0F172A}
+.bh-ctl{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:9px}
+.bh-kind,.bh-send,.bh-run{border-radius:11px;font-family:inherit;font-weight:800;font-size:clamp(12px,2vw,15px);padding:7px 14px;cursor:pointer}
+.bh-kind{border:2px solid #F9A8D4;background:#fff;color:#9D174D}
+.bh-send{border:2px solid #DB2777;background:#DB2777;color:#fff}
+.bh-run{border:2px solid #92400E;background:#FFFBEB;color:#92400E}
+.bh-help{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(11px,1.9vw,14px);line-height:1.6}
+.bh-help b{color:#BE185D}
+.bh-side2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.bh-tell{border-radius:11px;padding:8px 12px;font-size:clamp(12px,2vw,15px);line-height:1.6;background:#FDF2F8;border-left:4px solid var(--cyan)}
+.bh-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}
+.bh-pk{border:2px solid #FBCFE8;border-radius:10px;background:#fff;padding:8px 7px;font-family:inherit;
+  font-size:clamp(11px,1.8vw,13px);font-weight:700;color:#0F172A;text-align:left;cursor:pointer;line-height:1.4;word-break:keep-all}
+.bh-pk b{color:#BE185D}
+.bh-ask2{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FFFAFD;margin-top:9px;
+  font-size:clamp(12px,2vw,15px);line-height:1.6;word-break:keep-all}
+.bh-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.bh-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:9px 11px;font-family:inherit;
+  font-size:clamp(12px,2vw,15px);font-weight:700;color:#0F172A;text-align:left;line-height:1.45;word-break:keep-all;cursor:pointer}
+.bh-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .bh-board{padding:6px}
+  .bh-row{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
+  .bh-msg{font-size:9.5px;padding:4px 2px}
+  .bh-pit{height:50px;font-size:18px}
+  .bh-picks{grid-template-columns:1fr}
+  .bh-side2{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 모양과 기호 ===== */
+const SVG = {
+  // 교과서 123쪽 — 서찰과 방
+  old:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFBEB"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.2"><rect x="8" y="24" width="66" height="56" rx="6"/><rect x="86" y="24" width="66" height="56" rx="6"/></g>
+    <rect x="98" y="34" width="42" height="26" fill="#FEF3C7" stroke="#92400E" stroke-width="1"/>
+    <g font-size="16" text-anchor="middle"><text x="41" y="58">\u{1F4DC}</text></g>
+    <g font-size="5" fill="#92400E" text-anchor="middle" font-weight="800"><text x="119" y="45">나라의</text><text x="119" y="53">중요한 소식</text></g>
+    <g font-size="5.6" font-weight="800" text-anchor="middle" fill="#334155"><text x="41" y="72">서찰</text><text x="119" y="72">방</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">일상생활과 나라의 소식을 전한 방법</text></svg>`,
+  // 교과서 124쪽 — 신호 연 · 신호 깃발 · 북 · 나발
+  war:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.2"><rect x="5" y="24" width="35" height="52" rx="6"/><rect x="44" y="24" width="35" height="52" rx="6"/><rect x="83" y="24" width="35" height="52" rx="6"/><rect x="122" y="24" width="35" height="52" rx="6"/></g>
+    <g font-size="14" text-anchor="middle"><text x="22" y="50">\u{1FA81}</text><text x="61" y="50">\u{1F6A9}</text><text x="100" y="50">\u{1F941}</text><text x="139" y="50">\u{1F4EF}</text></g>
+    <g font-size="5.2" font-weight="800" text-anchor="middle" fill="#334155"><text x="22" y="66">신호 연</text><text x="61" y="66">신호 깃발</text><text x="100" y="66">북</text><text x="139" y="66">나발</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">나라에 위급한 상황이 생겼을 때</text></svg>`,
+  // 교과서 125쪽 — 봉수와 파발
+  bong:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <path d="M 4 80 L 40 34 L 76 80 Z" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.1"/>
+    <g font-size="10" text-anchor="middle"><text x="34" y="34">\u{1F4A8}</text><text x="46" y="34">\u{1F525}</text></g>
+    <rect x="86" y="24" width="68" height="56" rx="6" fill="#fff" stroke="#DB2777" stroke-width="1.2"/>
+    <g font-size="16" text-anchor="middle"><text x="110" y="56">\u{1F40E}</text><text x="134" y="56">\u{1F4DC}</text></g>
+    <g font-size="5.2" font-weight="800" text-anchor="middle" fill="#334155"><text x="40" y="74">봉수 — 낮엔 연기, 밤엔 불</text><text x="120" y="72">파발 — 문서를 전함</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">위급한 소식을 전한 봉수와 파발</text></svg>`,
+  // 정리 — 옛날 통신수단의 특징
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.3"><rect x="6" y="32" width="44" height="38" rx="6"/><rect x="58" y="32" width="44" height="38" rx="6"/><rect x="110" y="32" width="44" height="38" rx="6"/></g>
+    <g font-size="5.4" font-weight="800" text-anchor="middle" fill="#9D174D"><text x="28" y="49">시간이</text><text x="28" y="57">오래 걸림</text><text x="80" y="49">자세히 전하기</text><text x="80" y="57">어려움</text><text x="132" y="49">날씨의</text><text x="132" y="57">영향</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">옛날 통신수단의 특징</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 봉수를 올려요 판 =====
+   교과서 125쪽 봉수·파발 · 지도서 245쪽(연기나 불의 개수) · 247쪽(안개가 짙으면 파발로 보완)
+   — 봉수대 지기가 되어 차례로 오는 소식 다섯을 봉수나 파발로 전한다.
+   ⭐ 판을 바꾸는 자리 bhNext 단 하나 — state.bhAt += 1 · 되돌리는 자리 0. bhAt = 전한 소식 수.
+   ⭐ 정답 자리표 0 — 소식마다 자기 낮·밤 time · 위급한 정도 n · 안개 fog 를 품는다(BH_MSG[k]).
+   ⭐ 단계는 저장 0 — 판(bhAt)에서 센다(bhAll · bhStage). 굴뚝 수 bhN · 연기/불 bhK 는 손 위치.
+   ================================================================= */
+const BH_MSG = [                                                      // 소식 다섯 — 개수는 지도서 245쪽 · 차례는 판이 꾸민 것
+  {mark:"\u2600\uFE0F", time:0, fog:0, n:1, say:"적이 없는 평상시예요."},
+  {mark:"\u{1F319}", time:1, fog:0, n:2, say:"적이 나타났어요."},
+  {mark:"\u2600\uFE0F", time:0, fog:0, n:3, say:"적이 가까이 왔어요."},
+  {mark:"\u{1F32B}\uFE0F", time:0, fog:1, n:4, say:"안개가 짙게 낀 날, 적이 쳐들어왔어요."},
+  {mark:"\u{1F319}", time:1, fog:0, n:5, say:"적과 싸움이 시작됐어요."}
+];
+const BH_KIND = ["연기", "불"];                                       // 낮에는 연기, 밤에는 불(교과서 125쪽)
+const BH_TIME = ["낮", "밤"];
+const BH_PITS = 5;
+const BH_PICK = [                                                     // 교과서 125쪽 친구와 활동 — 까닭은 지도서 244·245쪽
+  {mark:"가", text:"북", why:"큰 소리로 소식을 전할 수 있기 때문이에요."},
+  {mark:"나", text:"신호 연", why:"멀리서도 신호를 확인할 수 있기 때문이에요."},
+  {mark:"다", text:"신호 깃발", why:"멀리서도 깃발로 명령을 전달할 수 있기 때문이에요."}
+];
+const BH_SAY_FOG = "안개가 짙어 봉수가 보이지 않아요. 다른 방법으로 소식을 전해 봐요.";
+const BH_SAY_EMPTY = "먼저 굴뚝을 눌러 연기나 불을 올려 봐요.";
+const BH_SAY_BAD = "지금이 낮인지 밤인지, 소식이 얼마나 위급한지 다시 살펴봐요.";
+const BH_SAY_ALL = "다섯 소식을 모두 전했어요. 판을 읽어 봐요.";
+const BH_SAY_CLEAR = "봉수가 잘 보이는 날이에요. 봉수를 올려 알려 봐요.";
+const BH_SAY_ORDER_R = "먼저 다섯 소식을 모두 전해 봐요.";
+const BH_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const BH_SAY_ORDER_P = "먼저 판을 읽어 봐요.";
+const BH_SAY_PICKDONE = "이미 골랐어요. 친구가 고른 통신수단과 견주어 봐요.";
+const BH_SAY_ORDER_FIN = "먼저 장군이 되어 이용하고 싶은 통신수단을 골라 봐요.";
+const BH_READQ = [
+  "봉수만 있으면 날씨와 상관없이 많은 내용을 자세하게 전할 수 있었어요",
+  "옛날에는 소식을 전하는 방법이 봉수 하나뿐이었어요",
+  "봉수는 연기나 불의 개수로 위급한 정도를 알렸고, 안개가 짙으면 잘 보이지 않아 날씨의 영향을 받았어요"
+];
+const BH_READ_OK = 2;
+const BH_READ_BAD = "판에서 올린 연기와 불의 개수, 파발을 보낸 날을 다시 떠올려 봐요.";
+const BH_FINQ = [
+  "옛날 사람들은 서찰, 방, 봉수, 파발처럼 다양한 통신수단을 이용해 소식이나 정보를 주고받았어요",
+  "옛날 사람들은 한 번에 많은 정보를 빠르고 정확하게 주고받았어요",
+  "옛날에는 위급한 상황이 생겨도 소식을 전할 방법이 없었어요"
+];
+const BH_FIN_OK = 0;
+const BH_FIN_BAD = "오늘 살펴본 옛날 통신수단들을 다시 떠올려 봐요.";
+
+function bhMsgOf(k){ return BH_MSG[k]; }                                       // BH_MSG 를 읽는 자리는 여기 단 하나
+function bhPickOf(p){ return BH_PICK[p]; }                                     // BH_PICK 을 읽는 자리는 여기 단 하나
+function bhAll(st){ return st.bhAt >= BH_MSG.length; }                                            // ★ 다섯 소식 모두 전함
+function bhNext(){ state.bhAt += 1; }                                          // ⭐ 판을 바꾸는 자리 단 하나
+function bhHow(k){ const M = bhMsgOf(k); return M.fog ? "파발" : `${BH_KIND[M.time]} ${M.n}개`; }
+function bhStage(st){
+  if(!bhAll(st)) return "send";
+  if(st.bhRead == null) return "read";
+  if(st.bhPick == null) return "pick";
+  if(st.bhFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 소식 줄 · 지금 소식 · 굴뚝 다섯 */
+function bhMsgBox(st,k){
+  const M = bhMsgOf(k), sent = k < st.bhAt, now = k === st.bhAt;
+  const body = sent ? `${M.say}<br>\u2705 ${bhHow(k)}` : now ? M.say : '\u2026';
+  return `<div class="bh-msg" data-k="${k}" data-sent="${sent ? 1 : 0}" data-now="${now ? 1 : 0}"><b>${sent || now ? M.mark : '\u2709\uFE0F'} 소식 ${k+1}</b>${body}</div>`;
+}
+function bhPit(st,j){
+  const lit = j < st.bhN;
+  return `<button class="bh-pit" data-j="${j}" data-lit="${lit ? 1 : 0}" onclick="bhLight(${j})">${lit ? (st.bhK ? '\u{1F525}' : '\u{1F4A8}') : '\u25CB'}<small>굴뚝 ${j+1}</small></button>`;
+}
+function bhTower(st){
+  const M = bhMsgOf(st.bhAt);
+  return `<div class="bh-now" data-fog="${M.fog}">${M.mark} 지금 소식 — ${BH_TIME[M.time]} · ${M.say}</div>
+    <div class="bh-tower">${[...Array(BH_PITS).keys()].map(j => bhPit(st,j)).join('')}</div>
+    <div class="bh-ctl"><button class="bh-kind" data-k="${st.bhK}" onclick="bhSwap()">지금 올릴 것: ${BH_KIND[st.bhK]} \u2194 바꾸기</button>
+    <button class="bh-send" onclick="bhSend()">\u{1F525} 봉수 올리기</button>
+    <button class="bh-run" onclick="bhRun()">\u{1F40E} 파발 보내기</button></div>`;
+}
+function bhBoard(st){
+  return `<div class="bh-board" data-at="${st.bhAt}" data-n="${st.bhN}" data-k="${st.bhK}">
+    <div class="bh-title">봉수대 지기가 되어 차례로 오는 소식을 전해요</div>
+    <div class="bh-row">${BH_MSG.map((M,k) => bhMsgBox(st,k)).join('')}</div>
+    ${bhAll(st) ? '' : bhTower(st)}</div>`;
+}
+function bhPicks(st){
+  return `<div class="bh-picks">${[0,1,2].map(p=>`<button class="bh-pk" data-p="${p}" onclick="bhPick(${p})"><b>${bhPickOf(p).mark}</b> ${bhPickOf(p).text}</button>`).join('')}</div>`;
+}
+function bhHelp(st){
+  return `<div class="bh-help">① <b>굴뚝</b>을 눌러 위급한 정도만큼 올려요.<br>
+    ② 낮이면 <b>연기</b>, 밤이면 <b>불</b>로 바꿔요.<br>
+    ③ <b>봉수 올리기</b>를 눌러요. 봉수가 보이지 않는 날은 <b>파발</b>을 보내요.</div>`;
+}
+function bhPanel(st){
+  const stage = bhStage(st);
+  let ask = '';
+  if(stage === "send"){
+    ask = `<div class="bh-ask2" data-step="send"><b>봉수에 올리는 연기나 불의 개수로 위급한 정도를 알려요. 다섯 소식을 차례로 전해 봐요.</b></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="bh-ask2" data-step="read"><b>다섯 소식을 모두 전했어요. 봉수대 지기가 되어 보니 봉수에는 어떤 특징이 있었나요?</b>
+      <div class="bh-opts">${BH_READQ.map((t,i)=>`<button class="bh-opt" onclick="bhRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "pick"){
+    ask = `<div class="bh-ask2" data-step="pick"><b>내가 전쟁 중인 장군이라면 부하에게 명령할 때 어떤 옛날 통신수단을 이용하고 싶나요?</b>${bhPicks(st)}</div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="bh-ask2" data-step="fin"><b>옛날 사람들은 소식이나 정보를 어떻게 주고받았나요?</b>
+      <div class="bh-opts">${BH_FINQ.map((t,i)=>`<button class="bh-opt" onclick="bhFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="bh-ask2" data-fin="1" style="border-color:#F9A8D4;background:#FDF2F8">
+      <b style="color:#9D174D">봉수대 지기가 되어 다섯 소식을 모두 전했어요. 옛날 사람들은 서찰, 방, 신호 연, 신호 깃발, 북, 나발, 파발, 봉수 등 다양한 통신수단을 이용해 소식이나 정보를 주고받았어요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">※ 이용하고 싶은 옛날 통신수단과 <b>까닭을 쓰고</b> 친구들과 <b>이야기하기</b>, 장면을 <b>역할극</b>으로 해 보기는 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`;
+  }
+  const tell = st.bhTell ? `<div class="bh-tell">${st.bhTell}</div>` : '';
+  const warn = st.bhMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.bhMsg}</div>` : '';
+  return `<div class="bh-wrap">
+    <div class="bh-head">전한 소식 <b>${Math.min(st.bhAt, BH_MSG.length)}</b> / ${BH_MSG.length}</div>
+    ${bhBoard(st)}<div class="bh-side2">${bhHelp(st)}${tell}</div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 연기와 불의 개수는 <b>지도서 245쪽</b>을 따랐고, 소식 다섯과 차례는 판이 <b>꾸민 것</b>이에요. 이용하고 싶은 통신수단은 <b>사람마다 달라서</b> 판은 정답을 정하지 않아요.</div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 옛날과 오늘날의 생활 모습 · 주제③ 통신수단의 변화로 달라진 생활 모습";
+const Q = [
+  {stem:"일상생활의 안부나 소식을 글로 적어 사람이 직접 전달했던 옛날 통신수단은 무엇인가요?",
+   opts:["방","서찰","봉수","북"], correct:1, pts:POINTS_BASIC,
+   h1:"혼인 소식을 글로 적어 전하려는 장면을 떠올려 봐요.", h2:"벽에 붙인 것이 아니라 사람이 들고 가서 전했어요.",
+   reason:"서찰은 일상생활의 안부나 소식을 글로 적어 사람이 직접 전달한 통신수단이에요."},
+  {stem:"나라의 중요한 소식이나 정보를 널리 알리려고 사람들이 많이 모이는 곳에 글을 써서 붙인 것은 무엇인가요?",
+   opts:["서찰","신호 연","파발","방"], correct:3, pts:POINTS_BASIC,
+   h1:"길거리나 많이 모이는 곳에 붙였어요.", h2:"나라에서 큰 공사를 한다는 소식을 알렸어요.",
+   reason:"방은 나라의 중요한 소식이나 정보를 널리 알리려고 사람들이 다니는 길거리나 많이 모이는 곳에 붙였어요."},
+  {stem:"낮에는 연기, 밤에는 불을 피워서 위급한 상황을 알렸던 통신수단은 무엇인가요?",
+   opts:["봉수","나발","서찰","신호 깃발"], correct:0, pts:POINTS_BASIC,
+   h1:"판에서 굴뚝에 올린 것을 떠올려 봐요.", h2:"높은 곳에서 연기나 불로 알렸어요.",
+   reason:"봉수는 낮에는 연기, 밤에는 불을 피워서 위급한 상황을 알렸어요."},
+  {stem:"나라의 중요한 일이나 소식을 적은 문서를 말을 타고 가거나 걸어가서 전달했던 통신수단은 무엇인가요?",
+   opts:["북","방","파발","신호 연"], correct:2, pts:POINTS_BASIC,
+   h1:"판에서 안개 낀 날 보낸 것을 떠올려 봐요.", h2:"말을 타고 가서 전하기도 했어요.",
+   reason:"파발은 나라의 중요한 일이나 소식을 적은 문서를 말을 타고 가거나 걸어가서 전달했어요."},
+  {stem:"암호를 적은 연을 띄워서 작전이 시작되거나 바뀐 것을 알린 통신수단은 무엇인가요?",
+   opts:["봉수","방","서찰","신호 연"], correct:3, pts:POINTS_APPLY,
+   h1:"하늘 높이 띄우는 것이에요.", h2:"적들은 연에 표시한 암호를 몰랐어요.",
+   reason:"신호 연은 암호를 적은 연을 띄워서 작전이 시작되거나 바뀐 것을 알렸어요."},
+  {stem:"봉수에서 적이 가까이 왔다는 것을 알릴 때 올린 연기나 불은 몇 개인가요?",
+   opts:["세 개","한 개","다섯 개","두 개"], correct:0, pts:POINTS_APPLY,
+   h1:"판에서 셋째 소식을 떠올려 봐요.", h2:"평상시는 한 개, 적이 나타나면 두 개였어요.",
+   reason:"봉수는 평상시에 한 개, 적이 나타나면 두 개, 적이 가까이 오면 세 개, 쳐들어오면 네 개, 싸움이 시작되면 다섯 개를 올렸어요."},
+  {stem:"옛날 통신수단의 특징으로 알맞지 않은 것은 무엇인가요?",
+   opts:["소식을 전하는 데 시간이 오래 걸렸어요","한 번에 많은 정보를 빠르고 정확하게 주고받았어요","날씨의 영향을 많이 받았어요","많은 내용을 자세하게 전하기 어려웠어요"], correct:1, pts:POINTS_APPLY,
+   h1:"알맞지 않은 것을 찾아요.", h2:"봉수는 개수로만 알렸고, 파발은 가는 데 시간이 걸렸어요.",
+   reason:"옛날 통신수단은 시간이 오래 걸리고, 많은 내용을 자세하고 정확하게 전하기 어려웠으며, 날씨의 영향을 많이 받았어요."},
+  {stem:"판에서 봉수대 지기가 되어 보며 알게 된 봉수의 특징은 무엇인가요?",
+   opts:["봉수만 있으면 날씨와 상관없이 많은 내용을 자세하게 전할 수 있었어요","옛날에는 소식을 전하는 방법이 봉수 하나뿐이었어요","봉수는 연기나 불의 개수로 위급한 정도를 알렸고, 안개가 짙으면 잘 보이지 않아 날씨의 영향을 받았어요","봉수는 일상생활의 안부를 전할 때 주로 이용했어요"], correct:2, pts:POINTS_APPLY,
+   h1:"판에서 굴뚝에 올린 개수와 안개 낀 날을 떠올려 봐요.", h2:"안개 낀 날에는 봉수 대신 무엇을 보냈나요?",
+   reason:"봉수는 연기나 불의 개수로 위급한 정도를 알렸고, 안개가 짙거나 구름이 많은 날에는 소식을 전하기 어려웠어요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 옛날 사람들이 소식을 전했던 방법
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛날 사람들은 소식이나 정보를 주고받을 때 어떤 통신수단을 이용했을까요?</h2>
+  <div class="ka-bub">전화도 스마트폰도 없던 때, <span class="ka-emph">소식을 전한 방법</span>을 떠올려 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('old','교과서 123쪽')}</div>
+  <div class="note">옛날 사람들은 소식을 전하려고 직접 가거나 편지를 보냈어요. 널리 알려야 하는 정보는 어떻게 했을지 자유롭게 말해 봐요.</div></div>`});
+// 2 서찰과 방 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 일상생활의 통신수단</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">교과서 123쪽의 두 그림은 어떤 장면인가요?</h2>
+  <div class="ka-bub">첫 번째 그림과 두 번째 그림을 <span class="ka-emph">차례로</span> 살펴봐요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 첫 번째 그림: 혼인 소식을 글로 적어 사람이 직접 전달하려는 장면이에요.<br>· 두 번째 그림: 나라에서 큰 공사를 한다는 소식을 알리는 방 앞에 사람들이 모여 있는 장면이에요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 서찰과 방의 쓰임
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 서찰과 방</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">서찰과 방은 언제 이용했을까요?</h2>
+  <div class="ka-bub">옛날 사람들이 <span class="ka-emph">일상생활</span>에서 소식을 주고받은 모습이에요.</div>
+  <div class="ka-grp"><div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>서찰</b>은 일상생활의 안부나 소식을 글로 적어 사람이 직접 전달했어요. 혼인과 같은 집안의 중요한 행사를 전할 때도 이용했어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>방</b>은 나라의 중요한 소식이나 정보를 널리 알리려고 사람들이 다니는 길거리나 많이 모이는 곳에 글을 써서 붙였어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>큰 공사처럼 나라의 소식을 <b>많은 사람</b>에게 알릴 때 방을 붙였어요.</div></div>
+  </div></div>`});
+// 4 위급한 상황의 통신수단 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 스스로 활동</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">나라에 위급한 상황이 생겼을 때 옛날 사람들은 어떤 통신수단을 이용했나요?</h2>
+  <div class="ka-bub">교과서 124쪽 그림을 보며 <span class="ka-emph">이용한 까닭</span>도 생각해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('war','교과서 124쪽')}</div>
+  ${st.revealed?`<div class="answer-box">· 신호 연: 암호를 적은 연을 띄워서 작전이 시작되거나 바뀐 것을 알렸어요.<br>· 신호 깃발: 깃발을 이용해 명령을 전달하거나 소식을 전했어요.<br>· 북: 북을 쳐서 큰 소리를 내어 소식이나 작전을 알렸어요.<br>· 나발: 나발로 소리를 내어 신호를 보냈어요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 봉수와 파발
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 봉수와 파발</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">봉수와 파발로 어떻게 소식을 전했을까요?</h2>
+  <div class="ka-bub">위급한 소식은 <span class="ka-emph">빨리</span> 알려야 했어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('bong','교과서 125쪽')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div><b>봉수</b>는 낮에는 연기, 밤에는 불을 피워서 위급한 상황을 알렸어요. 연기나 불의 <b>개수</b>로 위급한 정도를 알렸어요. 적이 없는 평상시에는 한 개, 적이 나타나면 두 개, 가까이 오면 세 개, 쳐들어오면 네 개, 싸움이 시작되면 다섯 개를 올렸어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>파발</b>은 나라의 중요한 일이나 소식을 적은 문서를 말을 타고 가거나 걸어가서 전달했어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>봉수는 안개가 짙거나 구름이 많이 낀 날, 비가 많이 오는 날에는 소식을 전하기 어려웠어요.</div></div>
+  </div></div>`});
+// 6 옛날 통신수단의 특징 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 옛날 통신수단의 특징</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛날 사람들이 이용했던 통신수단에는 어떤 특징이 있었을까요?</h2>
+  <div class="ka-bub">그때는 사람들이 <span class="ka-emph">널리 이용하던</span> 통신수단이었어요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 소식을 전하는 데 시간이 오래 걸렸어요.<br>· 많은 내용을 자세하고 정확하게 전하기 어려웠어요.<br>· 날씨의 영향을 많이 받았어요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 봉수대 지기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">봉수를 올려요</h2>
+  <div class="ka-grp" style="align-items:stretch">${bhPanel(st)}</div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛날 사람들이 통신수단을 이용했던 모습을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','옛날 통신수단의 특징')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>옛날 사람들은 <b>서찰, 방, 신호 연, 신호 깃발, 북, 나발, 파발, 봉수</b> 등을 이용해 소식이나 정보를 주고받았어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>파발</b>은 옛날에 나라의 중요한 일이나 소식을 적은 문서를 말을 타고 가거나 걸어가서 전달했던 통신수단이에요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>옛날 통신수단은 소식을 전하는 데 시간이 오래 걸렸고, 많은 정보를 <b>자세하고 정확하게 전하기 어려웠어요</b>.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#DB2777">오늘날 사람들</b>이 통신수단을 이용하는 모습을 알아봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"옛날 사람들이 이용했던 통신수단의 이름을 말할 수 있어요",st)}
+    ${selfCheck(1,"옛날 사람들이 통신수단을 이용했던 모습을 설명할 수 있어요",st)}
+    ${selfCheck(2,"옛날 통신수단의 특징을 말할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">옛날 사람들이 통신수단을 이용했던 모습을 알아봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">내가 장군이라면 이용하고 싶은 <b style="color:#DB2777">옛날 통신수단</b>과 그 까닭을 쓰고 친구들과 이야기해 봐요. 이건 교실 몫이에요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g3_2_social_u2_l16";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  bhAt:0, bhN:0, bhK:0, bhRead:null, bhPick:null, bhFin:null, bhMsg:"", bhTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function bhDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 굴뚝 누르기 — 손 위치일 뿐 판은 그대로(맨 위 굴뚝을 다시 누르면 하나 내림) */
+function bhLight(j){
+  if(state.bhFin!=null) return;                                                            // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(j) || j<0 || j>=BH_PITS) return;                                    // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(bhAll(state)){ state.bhMsg = BH_SAY_ALL; bhDraw(); return; }                          // 가드⑥: 다 전한 뒤 — 판 불변
+  state.bhN = (state.bhN === j + 1) ? j : j + 1; state.bhMsg = ""; playBlip(); bhDraw();
+}
+/* 연기 ↔ 불 — 손 위치일 뿐 판은 그대로 */
+function bhSwap(){
+  if(state.bhFin!=null) return;                                                            // 가드①
+  if(bhAll(state)){ state.bhMsg = BH_SAY_ALL; bhDraw(); return; }                          // 가드⑥
+  state.bhK = 1 - state.bhK; state.bhMsg = ""; playBlip(); bhDraw();
+}
+/* 소식을 전하면 — 판 한 칸 · 손 비움 · 알림 */
+function bhDone(how){
+  const k = state.bhAt, M = bhMsgOf(k);
+  bhNext();
+  state.bhN = 0; state.bhK = 0; state.bhMsg = "";
+  state.bhTell = `소식 ${k+1} — ${M.say} ${how}` + (bhAll(state) ? ` 다섯 소식을 모두 전했어요.` : '');
+  if(bhAll(state)) playChime(); else playBlip(); bhDraw();
+}
+/* 봉수 올리기 */
+function bhSend(){
+  if(state.bhFin!=null) return;                                                            // 가드①
+  if(bhAll(state)){ state.bhMsg = BH_SAY_ALL; bhDraw(); return; }                          // 가드⑥
+  const M = bhMsgOf(state.bhAt);
+  if(M.fog){ state.bhMsg = BH_SAY_FOG; playThud(); bhDraw(); return; }                     // 가드③: 안개 낀 날 — 판 불변
+  if(state.bhN === 0){ state.bhMsg = BH_SAY_EMPTY; playThud(); bhDraw(); return; }         // 가드④: 굴뚝이 빔 — 판 불변
+  if(state.bhN !== M.n || state.bhK !== M.time){ state.bhMsg = BH_SAY_BAD; playThud(); bhDraw(); return; }   // 가드⑤: 개수·연기/불 어긋남 — 판 불변
+  bhDone(`${BH_TIME[M.time]}이라 ${BH_KIND[M.time]} ${M.n}개를 올렸어요.`);
+}
+/* 파발 보내기 */
+function bhRun(){
+  if(state.bhFin!=null) return;                                                            // 가드①
+  if(bhAll(state)){ state.bhMsg = BH_SAY_ALL; bhDraw(); return; }                          // 가드⑥
+  if(!bhMsgOf(state.bhAt).fog){ state.bhMsg = BH_SAY_CLEAR; playThud(); bhDraw(); return; } // 가드⑦: 맑은 날 파발 — 판 불변
+  bhDone(`안개 때문에 봉수가 보이지 않아 파발로 소식을 적은 문서를 말을 타고 가서 전했어요.`);
+}
+/* 판 읽기 */
+function bhRead(i){
+  if(state.bhFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=BH_READQ.length) return;                           // 가드②
+  if(!bhAll(state)){ state.bhMsg = BH_SAY_ORDER_R; playThud(); bhDraw(); return; }         // 가드⑧: 다 전하기 전 — 판 불변
+  if(state.bhRead!=null){ state.bhMsg = BH_SAY_READDONE; bhDraw(); return; }               // 가드⑨: 이미 정한 자리 — 판 불변
+  if(i!==BH_READ_OK){ state.bhMsg = BH_READ_BAD; playThud(); bhDraw(); return; }           // 가드⑩: 어긋난 답 — 판 불변
+  state.bhRead = i; state.bhMsg = ""; state.bhTell = `옛날 통신수단은 소식을 전하는 데 시간이 오래 걸리고, 많은 내용을 자세하고 정확하게 전하기 어려웠으며, 날씨의 영향을 많이 받았어요. 그래도 그때는 사람들이 널리 이용하던 통신수단이었어요.`; playBlip(); bhDraw();
+}
+/* 장군이라면 이용하고 싶은 통신수단 고르기 — 정답 없음 */
+function bhPick(p){
+  if(state.bhFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(p) || p<0 || p>=BH_PICK.length) return;                             // 가드②
+  if(state.bhRead==null){ state.bhMsg = BH_SAY_ORDER_P; playThud(); bhDraw(); return; }    // 가드⑪: 판을 읽기 전 — 판 불변
+  if(state.bhPick!=null){ state.bhMsg = BH_SAY_PICKDONE; bhDraw(); return; }               // 가드⑫: 이미 고른 자리 — 판 불변
+  state.bhPick = p; state.bhMsg = ""; state.bhTell = `${bhPickOf(p).mark}를 골랐어요. ${bhPickOf(p).text} — ${bhPickOf(p).why}`; playBlip(); bhDraw();
+}
+/* 마무리 */
+function bhFin(i){
+  if(state.bhFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=BH_FINQ.length) return;                             // 가드②
+  if(state.bhPick==null){ state.bhMsg = BH_SAY_ORDER_FIN; playThud(); bhDraw(); return; }  // 가드⑬: 고르기 전 — 판 불변
+  if(i!==BH_FIN_OK){ state.bhMsg = BH_FIN_BAD; playThud(); bhDraw(); return; }             // 가드⑭: 어긋난 답 — 판 불변
+  state.bhFin = i; state.bhMsg = ""; playChime(); bhDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
