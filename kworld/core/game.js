@@ -238,7 +238,7 @@ export class Game {
     if (this.ui.isOpen()) return;
     const t = this.target; if (!t) { this.ui.say('가까이 가서 바라보면 할 수 있는 일이 보여.'); return; }
     const def = this.defFor(t); if (!def) return;
-    if (t.type === 'npc') { this.flag(def.flag); this.flag('talk:' + t.id); return this.talk(t); }
+    if (t.type === 'npc') { this.flag(def.flag); this.flag('talk:' + t.id); if (this.ui.isOpen()) return; /* 깃발이 상황 카드를 열었으면 사람 말은 그 뒤에(카드 위에 덮지 않는다) */ return this.talk(t); }
     if (t.type === 'gate') return this.enterGate();
     const rule = def.states ? def.states[t.state || 'unlit'] : def;
     if (rule.once && this.flags.has(rule.flag)) { this.ui.say(rule.say); return; }

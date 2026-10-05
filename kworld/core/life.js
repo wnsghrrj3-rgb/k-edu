@@ -115,8 +115,9 @@ export class Life {
   hit(c) { if (c.done && !this.g.cond(c.done)) return false; if (c.count && this.g.count(c.count[0]) < c.count[1]) return false; if (!c.done && !c.count) return false; return true; }
   finish(s, c) {
     const g = this.g; this.done.add(s.id);
+    if (c.status) this.setStatusTo(c.status);   // 신분이 먼저 바뀌고 벼슬이 오른다(역관이 되면서 받는 벼슬은 새 신분의 천장으로 잰다)
     const deltas = []; if (c.craft) { this.add('craft', c.craft); deltas.push(`✋ 솜씨 ${c.craft > 0 ? '+' : ''}${c.craft}`); } if (c.heart) { this.add('heart', c.heart); deltas.push(`🤝 인심 ${c.heart > 0 ? '+' : ''}${c.heart}`); } if (c.grain && this.d.grain?.open) { this.add('grain', c.grain); deltas.push(`🌾 곡식 ${c.grain > 0 ? '+' : ''}${c.grain}`); } if (c.rank) { const l = this.rise(c.rank); if (l) deltas.push(l); }
-    for (const a of [].concat(c.gain || [])) this.gain(a, 1); if (c.hurt) this.injure(c.hurt); if (c.status) this.setStatusTo(c.status); if (c.flag) for (const f of [].concat(c.flag)) g.flags.add(f);   // 결과가 바로 세우는 깃발(then 은 카드 뒤, 이건 즉시)
+    for (const a of [].concat(c.gain || [])) this.gain(a, 1); if (c.hurt) this.injure(c.hurt); if (c.flag) for (const f of [].concat(c.flag)) g.flags.add(f);   // 결과가 바로 세우는 깃발(then 은 카드 뒤, 이건 즉시)
     this.log.push({ sit: s.id, choice: c.id, t: Date.now() }); g.telemetry && ((g.telemetry.life ??= []).push({ sit: s.id, choice: c.id }));
     this.queue.push({ kind: 'result', s, c, deltas }); if (c.then) this.queue.push({ kind: 'then', list: c.then });
     g.flag(['sit:' + s.id + ':done', 'sit:' + s.id + ':' + c.id]);   // 결과 카드를 먼저 줄 세운 뒤 깃발(깃발이 여는 다음 상황은 그 뒤에)
