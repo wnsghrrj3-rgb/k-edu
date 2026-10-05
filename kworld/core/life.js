@@ -4,6 +4,7 @@
 //  · 값: 솜씨 ✋ · 인심 🤝 · 곡식 🌾(잠김 — 다음 시대에서 열린다). 능력 다섯(눈·손·발·배·몸) 1~3, 하면 오른다.
 //  · 굴림(roll): 능력 단계 vs 어려움. 실패해도 막히지 않는다 — 「왜 안 됐는지」 한 줄, 다시 할 수 있다.
 //  · 흔적(hurt): 다치면 절뚝이고(느려짐) 어떤 선택지는 회색이 된다. 끝까지 남는다.
+//  · 천장(cap): d.rank.open 이면 값 🎖 벼슬이 열린다. 신분 규칙의 cap 이 오를 수 있는 높이 — 아무리 해도 그 위로는 못 오른다(통일신라 골품). 막히면 깃발 rank:capped.
 //  · 꼭 나오는 상황은 전부, 섞여 나오는 상황은 판마다 몇 개만(태어남 때 정한 씨앗).
 const ABIL = ['눈', '손', '발', '배', '몸'];
 const DOTS = (lv) => ({ 3: '●●●', 2: '●●○', 1: '●○○' })[Math.max(1, Math.min(3, lv))] || '●●○';
@@ -12,7 +13,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<'
 
 export class Life {
   constructor(g, data) {
-    this.g = g; this.d = data; this.values = { craft: 0, heart: 0, grain: 0 }; this.abil = {}; this.xp = {}; this.hurt = new Set(); this.opened = new Set(); this.done = new Set(); this.queue = []; this.log = []; this.tries = {}; this.seed = 0; this.mixed = null; this.busy = false;
+    this.g = g; this.d = data; this.values = { craft: 0, heart: 0, grain: 0, rank: 0 }; this.abil = {}; this.xp = {}; this.hurt = new Set(); this.opened = new Set(); this.done = new Set(); this.queue = []; this.log = []; this.tries = {}; this.seed = 0; this.mixed = null; this.busy = false;
   }
   /** 태어남 뒤(캐릭터가 정해진 뒤) 부른다 — 능력 단계·섞여 나오는 상황 뽑기 */
   begin() {
@@ -26,8 +27,8 @@ export class Life {
   carryIn() {
     const c = this.d.carry; if (!c || this.carried || typeof localStorage === 'undefined') return; this.carried = true;
     let v = null; try { v = JSON.parse(localStorage.getItem('kworld_carry:' + c.from) || 'null'); } catch { } if (!v) return;
-    if (v.branch) this.g.flags.add('from:' + v.branch); if (v.status) this.g.flags.add('fromstatus:' + v.status); if (v.nation) this.g.flags.add('fromnation:' + v.nation);   // 지난 시대의 갈림·신분을 깃발로(신분 규칙 if 에서 from:<branch> 로 읽는다)
-    const got = []; for (const k of c.keep || ['craft', 'heart']) { const n = Math.round((v[k] || 0) * (c.ratios?.[k] ?? c.ratio ?? 0.5)); if (n > 0) { this.values[k] = (this.values[k] || 0) + n; got.push(`${{ craft: '✋ 솜씨', heart: '🤝 인심', grain: '🌾 곡식' }[k] || k} ${n}`); } }
+    if (v.branch) this.g.flags.add('from:' + v.branch); if (v.rank) this.g.flags.add('fromrank:' + v.rank); if (v.status) this.g.flags.add('fromstatus:' + v.status); if (v.nation) this.g.flags.add('fromnation:' + v.nation);   // 지난 시대의 갈림·신분을 깃발로(신분 규칙 if 에서 from:<branch> 로 읽는다)
+    const got = []; for (const k of c.keep || ['craft', 'heart']) { const n = Math.round((v[k] || 0) * (c.ratios?.[k] ?? c.ratio ?? 0.5)); if (n > 0) { this.values[k] = (this.values[k] || 0) + n; got.push(`${{ craft: '✋ 솜씨', heart: '🤝 인심', grain: '🌾 곡식', rank: '🎖 벼슬' }[k] || k} ${n}`); } }
     if (got.length) setTimeout(() => this.g.ui.say(`${c.say || '조상에게서 넘어온 것'} — ${got.join(' · ')}`, 5200), 1800);
   }
   /** 나라 — d.nation = { rules:[{id,name,if,say}] }: 지난 시대 끝 갈림(from:<branch>)으로 어느 나라 사람으로 태어나는지 정해진다. 깃발 nation:<id> */
@@ -46,6 +47,15 @@ export class Life {
   setStatusTo(id) {
     const st = this.d.status; const r = st?.rules?.find((x) => x.id === id); if (!r) return; if (this.status) this.g.flags.delete('status:' + this.status);
     this.status = r.id; this.statusName = r.name; this.g.flags.add('status:' + r.id); this.g.ui.say(`🏠 ${r.name}`, 3600); this.render(); this.g.save?.touch();
+  }
+  /** 천장 — 지금 신분이 오를 수 있는 벼슬 높이(status 규칙의 cap). null 이면 천장 없음 */
+  cap() { const r = this.d.status?.rules?.find((x) => x.id === this.status); return (r && typeof r.cap === 'number') ? r.cap : null; }
+  /** 벼슬이 오른다 — 천장에 닿으면 거기서 멈춘다(깃발 rank:capped, 한 줄). 대본이 아니라 숫자가 막는다 */
+  rise(n) {
+    if (!n || !this.d.rank?.open) return null; const before = this.values.rank || 0; const cap = this.cap(); let after = Math.max(0, before + n); let line = `🎖 벼슬 ${n > 0 ? '+' : ''}${n}`;
+    if (n > 0 && cap != null && after >= cap) { after = Math.max(before, cap); this.g.flags.add('rank:capped'); line = after > before ? `🎖 벼슬 +${after - before} · 천장 ${cap} — 여기까지` : `🎖 벼슬 — 천장 ${cap}. 더는 못 오른다`; }
+    if (after !== before) this.add('rank', after - before); else this.render();
+    return line;
   }
   /** 씨앗으로 섞여 나오는 상황을 n개 뽑는다(판마다 다르게, 저장하면 같은 판) */
   pickMixed(seed) {
@@ -105,7 +115,7 @@ export class Life {
   hit(c) { if (c.done && !this.g.cond(c.done)) return false; if (c.count && this.g.count(c.count[0]) < c.count[1]) return false; if (!c.done && !c.count) return false; return true; }
   finish(s, c) {
     const g = this.g; this.done.add(s.id);
-    const deltas = []; if (c.craft) { this.add('craft', c.craft); deltas.push(`✋ 솜씨 ${c.craft > 0 ? '+' : ''}${c.craft}`); } if (c.heart) { this.add('heart', c.heart); deltas.push(`🤝 인심 ${c.heart > 0 ? '+' : ''}${c.heart}`); } if (c.grain && this.d.grain?.open) { this.add('grain', c.grain); deltas.push(`🌾 곡식 ${c.grain > 0 ? '+' : ''}${c.grain}`); }
+    const deltas = []; if (c.craft) { this.add('craft', c.craft); deltas.push(`✋ 솜씨 ${c.craft > 0 ? '+' : ''}${c.craft}`); } if (c.heart) { this.add('heart', c.heart); deltas.push(`🤝 인심 ${c.heart > 0 ? '+' : ''}${c.heart}`); } if (c.grain && this.d.grain?.open) { this.add('grain', c.grain); deltas.push(`🌾 곡식 ${c.grain > 0 ? '+' : ''}${c.grain}`); } if (c.rank) { const l = this.rise(c.rank); if (l) deltas.push(l); }
     for (const a of [].concat(c.gain || [])) this.gain(a, 1); if (c.hurt) this.injure(c.hurt); if (c.status) this.setStatusTo(c.status); if (c.flag) for (const f of [].concat(c.flag)) g.flags.add(f);   // 결과가 바로 세우는 깃발(then 은 카드 뒤, 이건 즉시)
     this.log.push({ sit: s.id, choice: c.id, t: Date.now() }); g.telemetry && ((g.telemetry.life ??= []).push({ sit: s.id, choice: c.id }));
     this.queue.push({ kind: 'result', s, c, deltas }); if (c.then) this.queue.push({ kind: 'then', list: c.then });
@@ -151,8 +161,8 @@ export class Life {
     const g = this.g; g.p.enabled = false; const v = this.values; const branch = (e.branches || []).find((b) => this.cond(b.if)) || (e.branches || []).slice(-1)[0] || {};
     g.flag(['life:end', 'life:' + (branch.id || 'end')]); g.results = [...(g.results || []), { id: 'life:end', concept: 'hist.life', ok: true, open: JSON.stringify({ craft: v.craft, heart: v.heart, hurt: [...this.hurt], log: this.log, branch: branch.id }) }];
     const marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h);
-    try { localStorage.setItem('kworld_carry:' + g.era, JSON.stringify({ craft: v.craft, heart: v.heart, grain: v.grain || 0, branch: branch.id, status: this.status || null, nation: this.nation || null, hurt: [...this.hurt], t: Date.now() })); } catch { }
-    const html = `<div class="chk life end"><div class="tag">${esc(e.tag || '이번 삶')}</div><h3>${esc(branch.title || e.title || '')}</h3>${(branch.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}<ul class="mlist"><li>✋ 솜씨 <b>${v.craft}</b> · 🤝 인심 <b>${v.heart}</b> · 🌾 곡식 ${this.d.grain?.open ? `<b>${v.grain || 0}</b>` : '🔒'}</li><li>능력 ${ABIL.map((a) => `${a} ${DOTS(this.abil[a])}`).join(' · ')}</li>${marks.length ? `<li>흔적 — ${esc(marks.join(', '))}</li>` : ''}${this.nationName || this.statusName ? `<li>${this.nationName ? `🏳️ ${esc(this.nationName)} · ` : ''}${this.statusName ? `🏠 ${esc(this.statusName)}` : ''}</li>` : ''}<li>겪은 상황 ${this.log.length}가지</li></ul>${e.fact ? `<div class="facts"><div>📜 <b>실제</b> ${esc(e.fact)}</div></div>` : ''}${e.next ? `<p class="sub">${esc(e.next)}</p>` : ''}</div>`;
+    try { localStorage.setItem('kworld_carry:' + g.era, JSON.stringify({ craft: v.craft, heart: v.heart, grain: v.grain || 0, rank: v.rank || 0, branch: branch.id, status: this.status || null, nation: this.nation || null, hurt: [...this.hurt], t: Date.now() })); } catch { }
+    const html = `<div class="chk life end"><div class="tag">${esc(e.tag || '이번 삶')}</div><h3>${esc(branch.title || e.title || '')}</h3>${(branch.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}<ul class="mlist"><li>✋ 솜씨 <b>${v.craft}</b> · 🤝 인심 <b>${v.heart}</b> · 🌾 곡식 ${this.d.grain?.open ? `<b>${v.grain || 0}</b>` : '🔒'}${this.d.rank?.open ? ` · 🎖 벼슬 <b>${v.rank || 0}</b>${this.cap() != null ? ` / 천장 ${this.cap()}` : ''}` : ''}</li><li>능력 ${ABIL.map((a) => `${a} ${DOTS(this.abil[a])}`).join(' · ')}</li>${marks.length ? `<li>흔적 — ${esc(marks.join(', '))}</li>` : ''}${this.nationName || this.statusName ? `<li>${this.nationName ? `🏳️ ${esc(this.nationName)} · ` : ''}${this.statusName ? `🏠 ${esc(this.statusName)}` : ''}</li>` : ''}<li>겪은 상황 ${this.log.length}가지</li></ul>${e.fact ? `<div class="facts"><div>📜 <b>실제</b> ${esc(e.fact)}</div></div>` : ''}${e.next ? `<p class="sub">${esc(e.next)}</p>` : ''}</div>`;
     const btns = [{ label: e.again || '다시 태어난다', primary: true, onClick: () => { g.save?.clear(); const u = new URL(location.href); u.searchParams.set('resume', '0'); location.href = u.toString(); } }];
     if (g.world.gate) btns.push({ label: g.world.gate.ready ? `${g.world.gate.nextName}로 가기` : `${g.world.gate.nextName}로 (준비 중)`, onClick: () => { const gt = g.world.gate; if (gt.ready) { const u = new URL(location.href); u.searchParams.set('era', gt.next); location.href = u.toString(); } else g.ui.say(`${gt.nextName}는 다음에 열려. 솜씨·인심은 그때 넘어간다.`, 4000); } });
     btns.push({ label: '더 둘러보기', onClick: () => { g.ui.close(); g.p.enabled = true; } });
@@ -170,7 +180,7 @@ export class Life {
   render() {
     if (!this.el) return; const v = this.values; const prev = this.el.dataset.v || '';
     const marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h).join(' · ');
-    this.el.innerHTML = `<div class="v"><span>✋ 솜씨</span><b>${v.craft}</b></div><div class="v"><span>🤝 인심</span><b>${v.heart}</b></div>${this.d.grain?.open ? `<div class="v" title="${esc(this.d.grain.note || '')}"><span>🌾 곡식</span><b>${v.grain || 0}</b></div>` : `<div class="v lock" title="${esc(this.d.grainLocked || '들고 다닐 수도, 쌓아 둘 수도 없다.')}"><span>🌾 곡식</span><b>🔒</b></div>`}<div class="ab">${ABIL.map((a) => `<span>${a} <i>${DOTS(this.abil[a] ?? 2)}</i></span>`).join('')}</div>${this.nationName ? `<div class="hurt" style="color:#9fc4e9">🏳️ ${esc(this.nationName)}</div>` : ''}${this.statusName ? `<div class="hurt" style="color:#e9b65b">🏠 ${esc(this.statusName)}</div>` : ''}${marks ? `<div class="hurt">흔적 · ${esc(marks)}</div>` : ''}`;
-    const now = `${v.craft}/${v.heart}/${v.grain || 0}/${ABIL.map((a) => this.abil[a]).join('')}`; if (prev && prev !== now) { this.el.classList.remove('up'); void this.el.offsetWidth; this.el.classList.add('up'); } this.el.dataset.v = now;
+    this.el.innerHTML = `<div class="v"><span>✋ 솜씨</span><b>${v.craft}</b></div><div class="v"><span>🤝 인심</span><b>${v.heart}</b></div>${this.d.grain?.open ? `<div class="v" title="${esc(this.d.grain.note || '')}"><span>🌾 곡식</span><b>${v.grain || 0}</b></div>` : `<div class="v lock" title="${esc(this.d.grainLocked || '들고 다닐 수도, 쌓아 둘 수도 없다.')}"><span>🌾 곡식</span><b>🔒</b></div>`}${this.d.rank?.open ? `<div class="v" title="${esc(this.d.rank.note || '')}"><span>🎖 벼슬</span><b>${v.rank || 0}${this.cap() != null ? `<small style="opacity:.7;font-size:10px"> /${this.cap()}</small>` : ''}</b></div>` : ''}<div class="ab">${ABIL.map((a) => `<span>${a} <i>${DOTS(this.abil[a] ?? 2)}</i></span>`).join('')}</div>${this.nationName ? `<div class="hurt" style="color:#9fc4e9">🏳️ ${esc(this.nationName)}</div>` : ''}${this.statusName ? `<div class="hurt" style="color:#e9b65b">🏠 ${esc(this.statusName)}</div>` : ''}${marks ? `<div class="hurt">흔적 · ${esc(marks)}</div>` : ''}`;
+    const now = `${v.craft}/${v.heart}/${v.grain || 0}/${v.rank || 0}/${ABIL.map((a) => this.abil[a]).join('')}`; if (prev && prev !== now) { this.el.classList.remove('up'); void this.el.offsetWidth; this.el.classList.add('up'); } this.el.dataset.v = now;
   }
 }

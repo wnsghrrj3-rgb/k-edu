@@ -270,6 +270,7 @@ export class Game {
     if (rule.hunger) { this.hunger = Math.max(0, Math.min(100, this.hunger + rule.hunger)); }
     if (rule.flee && this.story) this.story.flee(t, rule);
     if (rule.journal && this.story) setTimeout(() => this.story.journal(rule.journal), 1200);
+    if (rule.rank && this.life) { const l = this.life.rise(rule.rank); if (l) setTimeout(() => this.ui.say(l, 4200), 700); }   // 벼슬이 오른다 — 천장(통일신라 골품)에 닿으면 숫자가 막는다
   }
   /** 회색 선택지 — c.if(깃발·hurt:·val: 조건)가 거짓이면 못 누른다, 이유 한 줄(c.gray). 「안 되는 게 아니라 조금 더 어렵게」는 roll 로, 진짜 막힘만 여기 */
   grayOf(c) { if (!c.if) return {}; const ok = this.life ? this.life.cond(c.if) : this.cond(c.if); return ok ? {} : { disabled: true, reason: c.gray || '지금은 할 수 없다.' }; }

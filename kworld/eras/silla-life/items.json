@@ -1,0 +1,912 @@
+{
+ "items": {
+  "grain": {
+   "name": "곡식",
+   "icon": "🌾",
+   "desc": "논에서 거둔 곡식. 세금도 빚도 이것으로",
+   "eat": 8
+  },
+  "mulb": {
+   "name": "뽕잎",
+   "icon": "🍃",
+   "desc": "뽕나무 잎 한 줌. 나무 수를 센 표시"
+  },
+  "stone": {
+   "name": "돌",
+   "icon": "🪨",
+   "desc": "모난 돌. 절 돌 더미에 나른다"
+  },
+  "fish": {
+   "name": "물고기",
+   "icon": "🐟",
+   "desc": "여울 물고기",
+   "eat": 10
+  },
+  "silk": {
+   "name": "자주 옷감",
+   "icon": "👘",
+   "desc": "자주색. 진골만 입는다",
+   "bag": true
+  },
+  "redcloth": {
+   "name": "붉은 옷감",
+   "icon": "🟥",
+   "desc": "붉은색. 6두품까지",
+   "bag": true
+  },
+  "bluecloth": {
+   "name": "푸른 옷감",
+   "icon": "🟦",
+   "desc": "푸른색. 5두품까지",
+   "bag": true
+  },
+  "yellowcloth": {
+   "name": "노란 옷감",
+   "icon": "🟨",
+   "desc": "노란색. 평민의 색",
+   "bag": true
+  },
+  "mirror": {
+   "name": "당 거울",
+   "icon": "🪞",
+   "desc": "청동 거울. 뒷면에 당 글자",
+   "bag": true
+  },
+  "chisel": {
+   "name": "정",
+   "icon": "🔨",
+   "desc": "돌 쪼는 쇠 정. 석공이 줬다",
+   "bag": true
+  },
+  "deed": {
+   "name": "땅문서",
+   "icon": "📜",
+   "desc": "내 논의 문서. 빚에 잡혔다"
+  },
+  "book": {
+   "name": "책",
+   "icon": "📖",
+   "desc": "국학의 책. 상·중·하 셋 중 하나",
+   "bag": true
+  },
+  "fur": {
+   "name": "담비 가죽",
+   "icon": "🧥",
+   "desc": "발해 숲의 담비 가죽. 당 장사꾼이 비싸게 산다"
+  }
+ },
+ "recipes": [],
+ "targets": {
+  "npc": {
+   "name": "사람",
+   "verb": "말 걸기",
+   "info": "이 마을 사람이다.",
+   "flag": "talk:any"
+  },
+  "stone": {
+   "name": "돌",
+   "verb": "줍기",
+   "gives": "stone",
+   "remove": true,
+   "info": "모난 돌. 절 돌 더미에 나른다."
+  },
+  "fish": {
+   "name": "물고기",
+   "verb": "잡기",
+   "gives": "fish",
+   "remove": true,
+   "info": "여울의 물고기."
+  },
+  "log": {
+   "name": "쓰러진 나무",
+   "verb": "살펴보기",
+   "say": "쓰러진 통나무. 떠난 사람들이 불을 땐 자리가 옆에 있다.",
+   "flag": "seen:log",
+   "info": "쓰러진 나무."
+  },
+  "well": {
+   "name": "우물",
+   "verb": "살펴보기",
+   "say": "마을 우물. 아침마다 집집의 여자가 온다. 노비 집 여자는 맨 나중에.",
+   "flag": "seen:well",
+   "once": true,
+   "info": "우물."
+  },
+  "slavehut": {
+   "name": "노비 집 말뚝",
+   "verb": "살펴보기",
+   "say": "담 밖 작은 집 둘. 말뚝에 밧줄. 촌락문서엔 소 옆에 적힌다.",
+   "flag": "seen:slavehut",
+   "once": true,
+   "info": "노비 집."
+  },
+  "mulberry": {
+   "name": "뽕나무",
+   "verb": "살펴보기",
+   "say": "뽕나무. 누에를 먹인다. 나라가 그루 수를 센다 — 3년마다.",
+   "flag": "seen:mulberry",
+   "info": "뽕나무.",
+   "rename": [
+    {
+     "if": "sit:census:open && !sit:census:done && status:farmer",
+     "name": "뽕나무",
+     "verb": "잎을 따 수를 센다",
+     "once": false,
+     "uses": 1,
+     "empty": "이 나무는 셌다. 다른 나무로.",
+     "gives": "mulb",
+     "flag": "mulb:one",
+     "say": "🍃 한 그루. 셋을 세면 두루마리에 적힌다."
+    },
+    {
+     "if": "sit:census:open && !sit:census:done && status:retainer",
+     "name": "뽕나무",
+     "verb": "잎을 따 수를 센다",
+     "once": false,
+     "uses": 1,
+     "empty": "이 나무는 셌다.",
+     "gives": "mulb",
+     "flag": "mulb:one",
+     "say": "🍃 한 그루."
+    }
+   ]
+  },
+  "census": {
+   "name": "촌락문서 자리",
+   "verb": "살펴보기",
+   "say": "돗자리에 두루마리. 「사람 넷, 소 하나, 뽕나무 셋.」 나라 사람이 3년마다 적는다. 그 숫자가 세금이다.",
+   "flag": "seen:census",
+   "journal": "census",
+   "info": "나라가 마을을 세는 자리.",
+   "rename": [
+    {
+     "if": "sit:census:done",
+     "name": "촌락문서 자리",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "적혔다. 다음은 3년 뒤."
+    }
+   ]
+  },
+  "ox": {
+   "name": "소",
+   "verb": "살펴보기",
+   "say": "마을 소. 논을 간다. 촌락문서에 「소 하나」. 흉년엔 판다.",
+   "flag": "seen:ox",
+   "info": "소.",
+   "rename": [
+    {
+     "if": "sit:famine:open && !sit:famine:done && status:farmer",
+     "name": "소",
+     "verb": "판다 — 당 장사꾼에게",
+     "once": false,
+     "remove": true,
+     "gives": [
+      "grain",
+      "grain"
+     ],
+     "flag": "famine:ox",
+     "say": "🌾🌾 두 단. 소가 끌려갔다. 내년 논은 사람이 끈다."
+    },
+    {
+     "if": "sit:famine:open && !sit:famine:done && status:low",
+     "name": "소",
+     "verb": "판다 — 당 장사꾼에게",
+     "once": false,
+     "remove": true,
+     "gives": [
+      "grain",
+      "grain"
+     ],
+     "flag": "famine:ox",
+     "say": "🌾🌾 두 단. 소가 끌려갔다."
+    },
+    {
+     "if": "sit:famine:open && !sit:famine:done && status:bal_folk",
+     "name": "소",
+     "verb": "판다 — 당 장사꾼에게",
+     "once": false,
+     "remove": true,
+     "gives": [
+      "grain",
+      "grain"
+     ],
+     "flag": "famine:ox",
+     "say": "🌾🌾 두 단."
+    }
+   ]
+  },
+  "jingolgate": {
+   "name": "진골 집 대문",
+   "verb": "살펴보기",
+   "say": "솟을대문. 담장에 기와. 24자 집. 노비 넷이 담 밖에 산다. 마을 셋이 이 집 녹읍이다.",
+   "flag": "seen:jingolgate",
+   "info": "진골 집 대문.",
+   "rename": [
+    {
+     "if": "sit:famine:open && !sit:famine:done && status:slave",
+     "name": "진골 집 대문",
+     "verb": "지키며 잔다",
+     "once": false,
+     "flag": "famine:guard",
+     "say": "대문 앞 바닥. 굶은 사람들이 담을 봤다. 주인이 밥 한 그릇을 더 줬다."
+    },
+    {
+     "if": "sit:house:open && !sit:house:done && status:jingol",
+     "name": "집터",
+     "verb": "24자로 넓힌다",
+     "once": false,
+     "consumes": [
+      "grain",
+      "grain",
+      "grain"
+     ],
+     "failNoGrain": "곡식 세 단이 손에 있어야.",
+     "flag": "house:24",
+     "say": "🏠 스물네 자. 담장에 기와."
+    },
+    {
+     "if": "sit:house:open && !sit:house:done && status:six",
+     "name": "집터",
+     "verb": "넓힌다 — 21자까지",
+     "once": false,
+     "consumes": [
+      "grain",
+      "grain"
+     ],
+     "failNoGrain": "곡식 두 단이 손에 있어야.",
+     "flag": "house:21",
+     "say": "🏠 스물한 자. 「세 자 더」 하니 목수가 손을 저었다. 「법이 막습니다.」"
+    },
+    {
+     "if": "sit:house:open && !sit:house:done && status:low",
+     "name": "집터",
+     "verb": "넓힌다 — 18자까지",
+     "once": false,
+     "consumes": [
+      "grain",
+      "grain"
+     ],
+     "failNoGrain": "곡식 두 단이 손에 있어야.",
+     "flag": "house:18",
+     "say": "🏠 열여덟 자. 「스물한 자는요?」 「두품은 여기까지.」"
+    },
+    {
+     "if": "sit:house:open && !sit:house:done && status:slave",
+     "name": "집터",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "house:no",
+     "say": "노비 집은 넓히는 게 아니다. 주인이 정한다."
+    },
+    {
+     "if": "sit:house:open && !sit:house:done",
+     "name": "집터",
+     "verb": "넓힌다 — 15자까지",
+     "once": false,
+     "consumes": [
+      "grain"
+     ],
+     "failNoGrain": "곡식 한 단이 손에 있어야.",
+     "flag": "house:15",
+     "say": "🏠 열다섯 자. 그 위는 안 된다. 옆집도 열다섯 자."
+    }
+   ]
+  },
+  "dyestall": {
+   "name": "옷감 좌판",
+   "verb": "살펴보기",
+   "say": "자주·붉은·푸른·노란 옷감. 장사꾼이 「뼈를 보고 판다」.",
+   "flag": "seen:dyestall",
+   "info": "옷감 좌판 — 색은 뼈로.",
+   "rename": [
+    {
+     "if": "sit:robe:open && !sit:robe:done && status:jingol",
+     "name": "옷감 좌판",
+     "verb": "자주 옷감을 산다",
+     "once": false,
+     "consumes": [
+      "grain",
+      "grain"
+     ],
+     "failNoGrain": "곡식 두 단이 손에 있어야.",
+     "gives": "silk",
+     "flag": "robe:purple",
+     "journal": "golpum",
+     "say": "👘 자주색. 길이 비었다."
+    },
+    {
+     "if": "sit:robe:open && !sit:robe:done && status:six",
+     "name": "옷감 좌판",
+     "verb": "붉은 옷감을 산다 — 자주는 안 판다",
+     "once": false,
+     "consumes": [
+      "grain",
+      "grain"
+     ],
+     "failNoGrain": "곡식 두 단이 손에 있어야.",
+     "gives": "redcloth",
+     "flag": "robe:red",
+     "journal": "golpum",
+     "say": "🟥 붉은색. 「자주색은요?」 「벌 받습니다.」"
+    },
+    {
+     "if": "sit:robe:open && !sit:robe:done && status:low",
+     "name": "옷감 좌판",
+     "verb": "푸른 옷감을 산다",
+     "once": false,
+     "consumes": [
+      "grain"
+     ],
+     "failNoGrain": "곡식 한 단이 손에 있어야.",
+     "gives": "bluecloth",
+     "flag": "robe:blue",
+     "say": "🟦 푸른색. 붉은색은 안 판다고 했다."
+    },
+    {
+     "if": "sit:robe:open && !sit:robe:done && status:slave",
+     "name": "옷감 좌판",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "robe:watch",
+     "say": "노비는 옷감을 안 산다. 주인이 준다. 자주색이 지나갔다 — 비켰다."
+    },
+    {
+     "if": "sit:robe:open && !sit:robe:done",
+     "name": "옷감 좌판",
+     "verb": "노란 옷감을 산다",
+     "once": false,
+     "consumes": [
+      "grain"
+     ],
+     "failNoGrain": "곡식 한 단이 손에 있어야.",
+     "gives": "yellowcloth",
+     "flag": "robe:yellow",
+     "journal": "golpum",
+     "say": "🟨 노란색. 평민은 노란색까지."
+    }
+   ]
+  },
+  "tangstall": {
+   "name": "당 물건 좌판",
+   "verb": "살펴보기",
+   "say": "청동 거울·유리그릇·향. 바다 건너온 것. 비싸다.",
+   "flag": "seen:tangstall",
+   "info": "당 물건.",
+   "rename": [
+    {
+     "if": "sit:sea:open && !sit:sea:done",
+     "name": "당 물건 좌판",
+     "verb": "당 거울을 산다 — 곡식 둘",
+     "once": false,
+     "consumes": [
+      "grain",
+      "grain"
+     ],
+     "failNoGrain": "곡식 두 단이 손에 있어야.",
+     "gives": "mirror",
+     "flag": "sea:buy",
+     "say": "🪞 청동 거울. 뒷면에 당 글자."
+    }
+   ]
+  },
+  "stall": {
+   "name": "그릇 좌판",
+   "verb": "살펴보기",
+   "say": "토기와 기와. 장터는 뼈 없이 돈다 — 겉으로는.",
+   "flag": "seen:stall",
+   "info": "장터 좌판."
+  },
+  "exam": {
+   "name": "시험 자리",
+   "verb": "살펴보기",
+   "say": "책 셋. 상·중·하. 박사가 「읽어 보라」 한다. 그런데 문은 뼈 있는 집만.",
+   "flag": "seen:exam",
+   "info": "독서삼품과 — 책 읽는 자리.",
+   "rename": [
+    {
+     "if": "sit:exam:open && !sit:exam:done && status:six && !exam:top && !exam:low && sex:m",
+     "name": "시험 자리",
+     "verb": "책을 읽는다 — 독서삼품과",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 2,
+      "why": "글자가 빽빽하다. 눈이 익어야 한다.",
+      "fail": "…절반만 읽었다. 「하품.」"
+     },
+     "rollFailFlag": "exam:low",
+     "gives": "book",
+     "flag": "exam:top",
+     "journal": "exam",
+     "say": "📖 「상품.」 관아 언덕 계단으로."
+    },
+    {
+     "if": "sit:exam:open && !sit:exam:done && status:low && !exam:top && !exam:low && sex:m",
+     "name": "시험 자리",
+     "verb": "책을 읽는다 — 독서삼품과",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 2,
+      "why": "글자가 빽빽하다.",
+      "fail": "…절반만 읽었다. 「하품.」"
+     },
+     "rollFailFlag": "exam:low",
+     "gives": "book",
+     "flag": "exam:top",
+     "journal": "exam",
+     "say": "📖 「상품.」 관아 언덕 계단으로."
+    },
+    {
+     "if": "sit:exam:open && !sit:exam:done && sex:f && !status:slave",
+     "name": "시험 자리",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "박사가 「딸은 국학에 안 온다」. 계단은 남자의 것. 집안 어른에게 — 땅문서."
+    },
+    {
+     "if": "sit:exam:open && !sit:exam:done && status:jingol",
+     "name": "시험 자리",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "박사가 「진골께서 시험을요?」 한다. 계단은 그냥 오른다."
+    },
+    {
+     "if": "sit:exam:open && !sit:exam:done",
+     "name": "시험 자리",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "박사가 문 앞에 섰다. 「뼈가 있어야 들어온다.」 박사에게 물어보자."
+    }
+   ]
+  },
+  "stair": {
+   "name": "벼슬 계단",
+   "verb": "살펴보기",
+   "say": "언덕을 오르는 돌 계단 여섯 단. 맨 위에 자주 깃발. 단마다 오를 수 있는 뼈가 정해져 있다.",
+   "flag": "seen:stair",
+   "journal": "golpum",
+   "info": "벼슬 계단 — 천장이 보이는 곳.",
+   "rename": [
+    {
+     "if": "sit:exam:open && !sit:exam:done && status:jingol && sex:m",
+     "name": "벼슬 계단",
+     "verb": "오른다 — 시험 없이",
+     "once": false,
+     "flag": "exam:bone",
+     "say": "🎖 세 단. 군사가 비켰다."
+    },
+    {
+     "if": "sit:exam:open && !sit:exam:done && status:slave",
+     "name": "벼슬 계단",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "exam:blocked",
+     "say": "군사가 「노비는 돌아가라」. 주인 두루마리만 전했다."
+    },
+    {
+     "if": "sit:exam:open && !sit:exam:done && sex:f",
+     "name": "벼슬 계단",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "군사가 비키지 않았다. 「계단은 남자가 오른다.」 집안 땅문서는 딸이 쥔다 — 어른에게."
+    },
+    {
+     "if": "sit:exam:done && !rank:capped && !status:slave && !status:farmer && !status:drifter && sex:m",
+     "name": "벼슬 계단",
+     "verb": "한 단 더 오른다",
+     "once": false,
+     "rank": 1,
+     "say": "🎖 한 단."
+    },
+    {
+     "if": "sit:exam:done && rank:capped",
+     "name": "벼슬 계단",
+     "verb": "살펴보기 — 여기까지",
+     "once": false,
+     "say": "발이 안 올라간다. 위 단엔 다른 뼈가 서 있다. 「여기까지다.」"
+    },
+    {
+     "if": "sit:exam:done",
+     "name": "벼슬 계단",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "뼈 없는 사람은 계단 앞에 선다. 위 단은 남의 것이다."
+    }
+   ]
+  },
+  "pagoda": {
+   "name": "석탑",
+   "verb": "살펴보기",
+   "say": "돌 탑. 하나는 단순하고(석가탑) 하나는 꾸몄다(다보탑). 석가탑엔 그림자가 없다고 한다 — 백제 석공 아사달 이야기.",
+   "flag": "seen:pagoda",
+   "once": true,
+   "journal": "bulguksa",
+   "info": "불국사 석탑."
+  },
+  "grotto": {
+   "name": "석굴",
+   "hidden": [
+    "grotto_buddha"
+   ],
+   "verb": "살펴보기",
+   "say": "돌 둥근 천장. 안에 아직 안 새긴 돌 한 덩이. 석공이 「손 좋은 사람」을 찾는다.",
+   "flag": "seen:grotto",
+   "info": "석굴 — 부처를 새길 돌.",
+   "rename": [
+    {
+     "if": "sit:bulguksa:open && !sit:bulguksa:done && craft:mason",
+     "name": "석굴 안 돌",
+     "verb": "부처를 새긴다",
+     "once": false,
+     "requires": "chisel",
+     "failNoTool": "정이 있어야. 석공에게.",
+     "roll": {
+      "ab": "손",
+      "hard": 3,
+      "why": "화강암은 한 번 잘못 치면 끝이다. 손이 돌을 알아야 한다.",
+      "fail": "…귀가 떨어졌다. 다시 다듬는다."
+     },
+     "reveal": [
+      "grotto_buddha"
+     ],
+     "flag": "temple:carve",
+     "journal": "bulguksa",
+     "say": "🗿 눈을 감은 부처. 백 일. 석공이 「네 손이 돌을 알았다」."
+    },
+    {
+     "if": "temple:carve",
+     "name": "석굴 부처",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "내 손이 새긴 부처. 이름은 안 남는다."
+    }
+   ]
+  },
+  "stonepile": {
+   "name": "절 돌 더미",
+   "verb": "살펴보기",
+   "say": "탑에 쓸 돌 더미. 지게. 마을 돌을 여기 나른다 — 평민의 몸 세금.",
+   "flag": "seen:stonepile",
+   "info": "절 돌 더미.",
+   "rename": [
+    {
+     "if": "sit:bulguksa:open && !sit:bulguksa:done && !status:jingol && !status:six && !status:low",
+     "name": "절 돌 더미",
+     "verb": "돌을 나른다",
+     "once": false,
+     "requires": "stone",
+     "consumes": [
+      "stone"
+     ],
+     "failNoTool": "돌이 있어야. 마을 바닥의 모난 돌.",
+     "roll": {
+      "ab": "몸",
+      "hard": 2,
+      "why": "돌 지게는 몸이다. 산길이다.",
+      "fail": "…허리가 꺾였다. 반만 날랐다. 내일 또."
+     },
+     "flag": "temple:carry",
+     "say": "🪨 열흘. 다보탑 아래 돌 하나가 내 돌이다."
+    },
+    {
+     "if": "sit:bulguksa:open && !sit:bulguksa:done",
+     "name": "절 돌 더미",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "돌을 지는 건 평민의 일이다. 뼈 있는 집은 스님에게."
+    }
+   ]
+  },
+  "offering": {
+   "name": "공양 자리",
+   "verb": "살펴보기",
+   "say": "부처 앞 돌 상. 곡식 한 단을 올리면 스님이 이름을 적는다.",
+   "flag": "seen:offering",
+   "info": "공양 자리.",
+   "rename": [
+    {
+     "if": "sit:bulguksa:open && !sit:bulguksa:done && !temple:no",
+     "name": "공양 자리",
+     "verb": "곡식을 올린다",
+     "once": false,
+     "requires": "grain",
+     "consumes": [
+      "grain"
+     ],
+     "failNoTool": "곡식 한 단이 손에 있어야.",
+     "flag": "temple:offer",
+     "say": "🌾 한 단. 「다음 생엔 진골로.」"
+    }
+   ]
+  },
+  "bigpaddy": {
+   "name": "녹읍 논",
+   "verb": "살펴보기",
+   "say": "넓다. 진골 집 녹읍. 마을째 세금이 이 집으로 간다.",
+   "flag": "seen:bigpaddy",
+   "journal": "nogeup",
+   "info": "진골의 녹읍 논."
+  },
+  "smallpaddy": {
+   "name": "정전 논",
+   "verb": "살펴보기",
+   "say": "나라에서 받은 논(정전). 한 뙈기. 곡식·베·몸 셋으로 세금.",
+   "flag": "seen:smallpaddy",
+   "journal": "nogeup",
+   "info": "평민의 정전."
+  },
+  "hojokgranary": {
+   "name": "호족 곳간",
+   "verb": "살펴보기",
+   "say": "담 안 곳간. 나라 곳간보다 차 있다. 흉년엔 여기서 빌린다 — 땅문서를 두고.",
+   "flag": "seen:hojokgranary",
+   "once": true,
+   "journal": "hojok",
+   "info": "호족의 곳간."
+  },
+  "hojokgate": {
+   "name": "호족 집 대문",
+   "verb": "살펴보기",
+   "say": "담·망루·창 든 사람 둘. 벼슬 없이 칼이 있다. 「성주」라 부른다.",
+   "flag": "seen:hojokgate",
+   "journal": "hojok",
+   "info": "호족 집 — 담 안의 나라.",
+   "rename": [
+    {
+     "if": "sit:unrest:open && !sit:unrest:done && status:hojok",
+     "name": "내 집 대문",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "내 담. 내 망루. 내 사람들."
+    }
+   ]
+  },
+  "ship": {
+   "name": "큰 배",
+   "verb": "살펴보기",
+   "say": "돛 단 큰 배. 청해진 깃발. 당·일본을 오간다. 옆 배는 붉은 기 — 발해 사신선.",
+   "flag": "seen:ship",
+   "info": "청해진 배·발해 사신선.",
+   "rename": [
+    {
+     "if": "sit:sea:open && !sit:sea:done && status:slave",
+     "name": "큰 배",
+     "verb": "몰래 탄다",
+     "once": false,
+     "roll": {
+      "ab": "발",
+      "hard": 3,
+      "why": "나루는 트여 있다. 발이 빨라야 한다.",
+      "fail": "…돛 밑에서 끌려 나왔다. 주인 집 사람이 나루에."
+     },
+     "rollFailFlag": "sea:caught",
+     "rollHurt": "leg",
+     "flag": "sea:stow",
+     "journal": "chenghae",
+     "say": "🚢 바다 한가운데서 들켰다. 「청해진엔 뼈가 없다. 노를 저어라.」"
+    },
+    {
+     "if": "sit:sea:open && !sit:sea:done && status:six && !tang:studied",
+     "name": "사신선",
+     "verb": "당으로 간다 — 유학",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 2,
+      "why": "당 글은 다르다. 눈이 익어야.",
+      "fail": "…장안에서 3년. 빈공과에 못 붙었다. 돌아왔다."
+     },
+     "rollFailFlag": "sea:no",
+     "flag": "sea:tang",
+     "journal": "choe",
+     "say": "📖 장안. 빈공과에 붙었다. 돌아왔다 — 계단 앞에서 또 멈췄다."
+    },
+    {
+     "if": "sit:sea:open && !sit:sea:done && status:low && !tang:studied",
+     "name": "사신선",
+     "verb": "당으로 간다 — 유학",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 2,
+      "why": "당 글은 다르다.",
+      "fail": "…빈공과에 못 붙었다. 돌아왔다."
+     },
+     "rollFailFlag": "sea:no",
+     "flag": "sea:tang",
+     "journal": "choe",
+     "say": "📖 장안. 빈공과에 붙었다. 돌아왔다."
+    },
+    {
+     "if": "sit:sea:open && !sit:sea:done && status:bal_ruler",
+     "name": "사신선",
+     "verb": "일본으로 간다 — 사신",
+     "once": false,
+     "flag": "sea:japan",
+     "journal": "balhae",
+     "say": "🚢 동해를 건넜다. 담비 가죽·꿀·인삼. 비단을 받았다."
+    },
+    {
+     "if": "sit:sea:open && !sit:sea:done && status:bal_folk",
+     "name": "사신선",
+     "verb": "노를 젓는다 — 일본까지",
+     "once": false,
+     "flag": "sea:japan",
+     "journal": "balhae",
+     "say": "🚢 동해. 노 한 달. 비단 한 필."
+    },
+    {
+     "if": "sit:exam:open && !sit:exam:done && status:bal_ruler",
+     "name": "사신선",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "당 가는 길은 북쪽 고개다. 고개 지키는 사람에게."
+    }
+   ]
+  },
+  "tradepile": {
+   "name": "무역품 더미",
+   "verb": "살펴보기",
+   "say": "비단·도자기·유리·쇠. 당에서 일본으로, 일본에서 당으로. 가운데 청해진.",
+   "flag": "seen:tradepile",
+   "once": true,
+   "journal": "chenghae",
+   "info": "청해진 무역품."
+  },
+  "redcamp": {
+   "name": "산채",
+   "hidden": [
+    "red_cloth"
+   ],
+   "verb": "살펴보기",
+   "say": "강 건너 산. 움막 셋. 불 자리. 세금에 쫓긴 사람들이 올라왔다고 한다.",
+   "flag": "seen:redcamp",
+   "info": "산채 — 붉은 바지.",
+   "rename": [
+    {
+     "if": "sit:unrest:open && !sit:unrest:done && !status:jingol && !status:six && !status:hojok && !status:bal_ruler && !status:bal_folk",
+     "name": "산채 깃발",
+     "verb": "들고일어난다 ⚠",
+     "once": false,
+     "roll": {
+      "ab": "몸",
+      "hard": 2,
+      "why": "창은 몸이다. 들은 트여 있다.",
+      "fail": "…창이 팔을 지나갔다. 산채로 끌려 올라왔다."
+     },
+     "rollFailFlag": "unrest:hurt",
+     "rollHurt": "wound",
+     "flag": "unrest:rise",
+     "journal": "wonjong",
+     "say": "🏴 깃발. 나라 군사가 왔다가 돌아갔다 — 못 이겼다."
+    },
+    {
+     "if": "sit:unrest:open && !sit:unrest:done",
+     "name": "산채",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "붉은 바지가 널렸다. 뼈 있는 집 사람은 여기 안 올라온다."
+    }
+   ]
+  },
+  "mound": {
+   "name": "왕릉",
+   "verb": "살펴보기",
+   "say": "큰 봉분. 둘레돌에 열두 동물. 앞에 돌 사람·돌 사자.",
+   "flag": "seen:mound",
+   "info": "왕릉."
+  },
+  "stoneman": {
+   "name": "무인석",
+   "verb": "살펴보기",
+   "say": "돌 사람. 깊은 눈, 굽은 코, 곱슬 수염. 신라 얼굴이 아니다.",
+   "flag": "seen:stoneman",
+   "info": "왕릉 무인석 — 서역 사람.",
+   "rename": [
+    {
+     "if": "sit:westerner:open && !sit:westerner:done",
+     "name": "무인석",
+     "verb": "얼굴을 살펴본다",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 2,
+      "why": "돌 얼굴은 멀리선 다 같다. 가까이.",
+      "fail": "…그냥 돌 사람 같다. 능지기에게 물어보자."
+     },
+     "rollFailFlag": "tomb:watch",
+     "flag": "tomb:west",
+     "say": "👁 서역 사람이다. 능지기가 「장보고 배로 온 사람들」."
+    }
+   ]
+  },
+  "hollow": {
+   "name": "바위 밑 불 자리",
+   "verb": "살펴보기",
+   "say": "깊은 숲 바위 밑. 불 자리. 세금에 쫓겨 떠난 사람이 산다.",
+   "flag": "seen:hollow",
+   "info": "떠난 사람의 자리.",
+   "rename": [
+    {
+     "if": "sit:famine:open && !sit:famine:done && status:farmer",
+     "name": "바위 밑",
+     "verb": "밤에 떠난다 — 떠돌이",
+     "once": false,
+     "flag": "famine:leave",
+     "journal": "wonjong",
+     "say": "🌙 땅문서를 두고 숲으로. 아침에 나라 사람이 빈집을 적었다."
+    },
+    {
+     "if": "sit:escape:open && !sit:escape:done && status:slave",
+     "name": "바위 밑",
+     "verb": "달아난다 — 호족 집으로",
+     "once": false,
+     "roll": {
+      "ab": "발",
+      "hard": 3,
+      "why": "숲길은 하나다. 발이 빨라야.",
+      "fail": "…숲 어귀. 주인 집 사람. 다리."
+     },
+     "rollFailFlag": "escape:caught",
+     "rollHurt": "leg",
+     "flag": "escape:free",
+     "journal": "hojok",
+     "say": "🏃 이틀. 호족 집 담 안. 「노비였나?」 「아닙니다.」"
+    }
+   ]
+  },
+  "pass": {
+   "name": "고개 돌무더기",
+   "verb": "살펴보기",
+   "say": "북쪽 고개. 돌무더기와 흰 천. 당 가는 길, 발해 가는 길.",
+   "flag": "seen:pass",
+   "info": "북쪽 고개."
+  },
+  "flags": {
+   "name": "깃발 셋",
+   "hidden": [
+    "flag_gyeon",
+    "flag_gung",
+    "flag_wang"
+   ],
+   "verb": "살펴보기",
+   "say": "빈 깃대 셋. 아직 깃발이 없다.",
+   "flag": "seen:flags",
+   "info": "고개 위 깃대 셋.",
+   "rename": [
+    {
+     "if": "sit:fall:open && !sit:fall:done && !nation:balhae",
+     "name": "깃발 셋",
+     "verb": "깃발을 고른다",
+     "once": false,
+     "choices": [
+      {
+       "label": "노란 깃발 — 견훤, 후백제",
+       "flag": "fall:gyeon",
+       "say": "🟡 노란 깃발 아래 섰다. 「옛 백제를 잇는다.」"
+      },
+      {
+       "label": "검은 깃발 — 궁예, 후고구려",
+       "flag": "fall:gung",
+       "say": "⚫ 검은 깃발 아래 섰다. 「미륵이다.」"
+      },
+      {
+       "label": "푸른 깃발 — 왕건, 고려",
+       "flag": "fall:wang",
+       "say": "🔵 푸른 깃발 아래 섰다. 「호족을 모은다.」"
+      }
+     ]
+    },
+    {
+     "if": "sit:fall:open && !sit:fall:done",
+     "name": "깃발 셋",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "남쪽 깃발 셋. 발해 사람의 깃발은 없다. 고개 지키는 사람에게."
+    }
+   ]
+  }
+ }
+}
