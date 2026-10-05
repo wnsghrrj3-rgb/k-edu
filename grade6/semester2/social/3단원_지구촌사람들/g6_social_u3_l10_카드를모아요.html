@@ -1,0 +1,908 @@
+<!--
+K-edu 사회 6-2 · 3단원 지구촌 사람들 · 단원 마무리 · 10차시(u3 l10)
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [6사12-01]·[6사12-02] · 교과서 p.158~161 · 지도서(대단원3 **14차시** 「단원 마무리 — 생각 그물을 완성해요 · 교실 놀이를 함께해요」, 지도서 p.348~349) 근거.
+학습 목표: '지구촌 사람들'에서 공부한 내용을 생각 그물과 교실 놀이로 정리할 수 있다.
+수업 기법 및 전략: 돌아가며 말하기 · 교실 놀이 하기
+META = "3단원 지구촌 사람들 · 단원 마무리"
+⚠️ 엔진은 u3 l09(→ u3 l08 → … 6-1 사회 엔진)에서 100% 승계 · 엔진 무수정 · 3단원 색 #7C3AED.
+⚠️ 회수 키 `g6_s2_social_u3_l10_v1` · 맵 키 `g6_social_u3_l10` · 파일명 `카드를모아요` — 조작 이름(선례 승계 · 6-2 u1 l12 · u2 l14 단원 마무리 선례).
+⚠️ 6-2 사회 마지막 차시 — goNextLesson 은 허브로.
+
+직접조작: 「카드를 모아요」 판 (교과서 158~159쪽 생각 그물 · 160~161쪽 교실 놀이 「카드 모으기」)
+  ⭐ 씨앗은 교과서 158~159쪽 생각 그물의 빈칸 여덟(세계의 인구 분포 넷 · 지구촌의 문제와 지속가능한 미래 넷)과
+     160~161쪽 놀이 규칙 — 낱말이 보이지 않게 카드를 뒤집어 쌓고, 카드 더미 맨 위에서 한 장씩 꺼내며, 얻은 카드는 더미 맨 아래에 넣는다.
+  ⭐ 카드 더미는 맨 위 카드 한 장만 보인다. 맨 위 카드를 생각 그물의 알맞은 빈칸에 놓거나(kdSlot), 더미 맨 아래에 넣는다(kdDown).
+  ⭐ ★ 채운 빈칸은 `state.kdPut` 한 비트 수(0~255)가 정한다 — 빈칸별 낱말 배열 0 · 카드 더미 순서 배열 0.
+  ⭐ ★ 맨 위 카드는 더미 자리 하나 `state.kdTop` — 더미 순서는 한 줄 표 `KD_PILE` = [5,2,7,0,6,3,4,1](더미 자리 → 빈칸) ·
+     맨 위를 바꾸는 자리는 `kdTurn` 단 하나(남은 카드를 따라 한 바퀴 도는 `kdNext`).
+  ⭐ ★ 맨 위 카드가 그 빈칸에 들어가는지는 `kdFit` 한 줄 · 채우는 자리(`state.kdPut |=`)는 코드에 단 하나.
+     ★★ 핵심 신규성 = **카드 더미(맨 위만 보임 · 맨 아래로 돌림)** — 지금 쥔 카드만 놓을 수 있고, 어울리지 않으면 더미 맨 아래로 돌린다.
+        어울리지 않는 빈칸 안내에는 그 카드가 들어갈 빈칸이 드러나지 않는다.
+  ⭐ 판 읽기는 여덟 빈칸이 다 찬 뒤에만(정답 자리 2) → 생각 그물 빈칸 3택(교과서 159쪽 「태도」 · 정답 자리 0)
+     → 마무리 3택 = 지도서 14차시 학습 목표·학습 내용 정리(정답 자리 1).
+
+⚠️ 전량 고정 리터럴 — 난수 0.
+⚠️ 가드 11종:
+     ① 마무리 확정 후 전체 잠금
+     ② 무효 번호(`Number.isInteger`·범위) — 안내조차 띄우지 않음
+     ③ 여덟 빈칸이 다 찬 뒤 빈칸 누르기·맨 아래로 넣기 무시(`KD_LOCK`) — 판 불변
+     ④ 다 채우기 전 판 읽기 무시 · 읽은 뒤 다시 무시 · 알맞지 않은 읽기 무시(자리별 안내)
+     ⑤ 판을 읽기 전 빈칸 무시 · 고른 뒤 다시 무시 · 알맞지 않은 빈칸 무시
+     ⑥ 빈칸 전 마무리 무시(순서)
+     ⑦ 알맞지 않은 마무리 무시
+     ⑧ 안내 표시 중 재클릭 무시(`kdBusy`)
+     ⑨ 이미 채운 빈칸 다시 무시(`KD_FILLED`) — 판 불변
+     ⑩ 맨 위 카드와 어울리지 않는 빈칸 무시(`KD_NOFIT`) — 판 불변 · 안내에 그 카드의 빈칸 0
+     ⑪ 남은 카드가 한 장일 때 맨 아래로 넣기 무시(`KD_ONE`) — 판 불변.
+   재시도 허용(감점 없음), 조작에 점수 0. 발문은 `.kd-q`로 떼어 전 단계 상시 노출.
+
+⚠️ 정직 원칙 네 곳
+  ㉠ **판의 생각 그물과 카드는 도식이다** — 교과서 생각 그물에서 고른 빈칸 여덟이고, 실제 놀이 카드의 낱말은 모둠이 직접 쓴다(캡션 상시).
+  ㉡ **판의 더미 순서는 정해 둔 예**이다 — 실제 놀이에서는 친구와 만나 카드를 얻고 잃으며 더미가 바뀐다.
+  ㉢ **판에 사람 형상 0** — 카드·그물·지구 도형과 번호만.
+  ㉣ **카드에 주요 낱말 쓰기 · 가위바위보 · 문제 내고 맞히기 · 카드 모으기 놀이 · 돌아가며 말하기 ·
+     새로 알게 된 점이나 느낀 점 쓰기는 교실 몫**이다(완료 카드 명시).
+
+⚠️ 설계 원칙
+  **뒤 차시 침범 0** — 6-2 사회 마지막 차시.
+  **새 사실 0** — 교과서 158~161쪽 · 지도서 14차시 · 앞 차시 본문까지만.
+  수치 0 · 연도 0 · 금액 0 · 쪽수 0 · 누리집 주소 0 · 사람 형상 0.
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g6_s2_social_u3_l10_v1">
+<title>3단원 마무리 — 생각 그물을 완성해요 · 교실 놀이를 함께해요 · 지구촌 사람들 · 사회 6-2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#7C3AED; --green-d:#5B21B6; --cyan:#8B5CF6;
+  --bg:#F5F3FF; --bub:#EDE9FE; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#B45309; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0}
+.ka-lb{background:#F1F5F9;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  font-weight:700;color:var(--muted);font-size:clamp(11px,1.9vw,13px);display:flex;align-items:center;gap:6px}
+.ka-lb svg{width:14px;height:14px}
+.ka-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.ka-bar>div{height:100%;background:var(--green);border-radius:99px;transition:width .35s ease;width:5%}
+.ka-pg{font-size:clamp(11px,1.9vw,13px);color:var(--muted);font-weight:700;min-width:46px;text-align:right}
+.ka-sc{display:flex;align-items:center;gap:3px;background:var(--amber-bg);border-radius:99px;padding:5px 11px}
+.ka-sc svg{width:15px;height:15px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;color:var(--amber);font-size:clamp(14px,2.4vw,17px)}
+.ka-sc-u{font-size:11px;color:var(--amber);font-weight:700}
+
+/* 메인 */
+.ka-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:4px 2px}
+.ka-tags{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ka-bg{display:inline-flex;align-items:center;gap:5px;background:var(--bub);color:var(--green-d);
+  border-radius:99px;padding:5px 12px;font-size:clamp(11px,1.9vw,13px);font-weight:700}
+.ka-bg svg{width:13px;height:13px}
+.ka-bg.s2{background:#EDE9FE;color:#5B21B6}
+.ka-bg.s3{background:#DCFCE7;color:#166534}
+.ka-bg.s4{background:#FEF3C7;color:#92400E}
+.ka-bg.s5{background:#F3E8FF;color:#6B21A8}
+.ka-meta{font-size:clamp(10px,1.7vw,12px);color:#94A3B8;font-weight:600}
+.ka-t{font-size:clamp(19px,3.4vw,27px);font-weight:700;line-height:1.4;margin-bottom:10px}
+.ka-bub{background:var(--bub);border-radius:14px;padding:13px 18px;font-size:clamp(14px,2.4vw,18px);
+  line-height:1.7;margin-bottom:12px}
+.ka-emph{color:var(--green-d);font-weight:700}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.scene.wide{width:clamp(240px,44vw,420px)}
+.scene.wide svg{height:clamp(120px,20vw,200px)}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(15px,2.6vw,20px);font-weight:700;line-height:1.6;margin-bottom:12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.opt{background:#fff;border:2px solid var(--line);border-radius:13px;padding:13px 15px;cursor:pointer;
+  font-family:inherit;font-size:clamp(13px,2.2vw,16.5px);font-weight:500;text-align:left;line-height:1.5;transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:#16A34A;background:#DCFCE7;font-weight:700}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:11px;border-radius:12px;padding:12px 16px;font-size:clamp(13px,2.2vw,16px);line-height:1.6;animation:fadeUp .3s ease both}
+.fb.ok{background:#DCFCE7;color:#166534;font-weight:700}
+.hint{margin-top:9px;background:var(--amber-bg);border-radius:11px;padding:10px 14px;
+  font-size:clamp(12.5px,2.1vw,15px);color:var(--amber);line-height:1.55}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:660px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border-radius:12px;padding:11px 15px;
+  font-size:clamp(13px,2.2vw,16.5px);line-height:1.6}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'\2713';color:#fff;font-weight:800;font-size:14px}
+
+/* 직접조작 — 카드 더미 맨 위 카드를 생각 그물 빈칸에 놓아 단원을 정리하는 판 */
+.dw-wrap{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dw-body{display:grid;grid-template-columns:1.05fr 1fr;gap:10px;align-items:start}
+.dw-canvas{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.dw-canvas svg{width:100%;height:auto;display:block}
+.dw-canvas .cvcap{padding:5px 6px;text-align:center;font-size:clamp(9.5px,1.6vw,11.5px);
+  color:var(--muted);font-weight:700;background:#F8FAFC}
+.dw-right{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dw-step{font-size:clamp(10.5px,1.75vw,13px);font-weight:800;color:var(--green)}
+.dw-msg{background:#F8FAFC;border:2px solid var(--line);border-left:4px solid var(--green);border-radius:10px;
+  padding:8px 12px;font-size:clamp(11.4px,1.93vw,13.8px);line-height:1.55;color:#334155;animation:fadeUp .3s ease both}
+.dw-msg.warn{border-left-color:var(--amber)}
+.dw-msg b{color:var(--green)}
+.dw-card{background:#fff;border:2px solid var(--amber);border-radius:12px;padding:10px 12px;
+  font-size:clamp(12px,2.05vw,14.5px);line-height:1.55;animation:pop .35s ease both}
+.dw-card .pt{font-weight:800;color:var(--amber);margin-bottom:4px;font-size:clamp(12.5px,2.15vw,15px)}
+.paper{background:#FFFDF5;border:2px solid #E7D9A8;border-radius:12px;padding:12px 16px;
+  font-size:clamp(12.5px,2.1vw,15px);line-height:1.65;color:#3F3A2C;max-width:660px;
+  animation:fadeUp .4s ease both}
+.paper .ph{font-weight:800;color:#8A6D3B;margin-bottom:6px;font-size:clamp(13px,2.2vw,16px)}
+.tipbox{background:#EDE9FE;border-radius:12px;padding:11px 16px;font-size:clamp(12.5px,2.1vw,15px);
+  line-height:1.6;color:#5B21B6;max-width:660px}
+.kd-q{font-size:clamp(11.6px,1.97vw,14px);font-weight:800;color:var(--green);
+  background:#F5F3FF;border-left:4px solid var(--green);border-radius:0 8px 8px 0;padding:6px 9px;line-height:1.45}
+.kd-board{display:flex;flex-direction:column;gap:6px;padding:8px}
+.kd-head{background:#EDE9FE;border-radius:7px;padding:4px 8px;text-align:center;font-weight:800;color:#5B21B6;
+  font-size:clamp(10px,1.7vw,12.4px)}
+.kd-web{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.kd-br{border:2px solid #C4B5FD;background:#fff;border-radius:10px;padding:5px;display:flex;flex-direction:column;gap:4px}
+.kd-br .kd-bt{font-weight:900;color:#4C1D95;text-align:center;font-size:clamp(9px,1.52vw,10.8px)}
+.kd-s{border:2px solid #CBD5E0;background:#F8FAFC;color:#334155;border-radius:8px;padding:4px 5px;cursor:pointer;font-family:inherit;
+  display:flex;flex-direction:column;align-items:stretch;gap:1px;text-align:left;min-height:44px;font-size:clamp(8.2px,1.4vw,10px);line-height:1.34}
+.kd-s:hover{border-color:#7C3AED}
+.kd-s[data-put="1"]{border-color:#7C3AED;background:#F5F3FF}
+.kd-s .kd-no{align-self:flex-start;border-radius:5px;padding:0 5px;background:#7C3AED;color:#fff;font-weight:900;font-size:clamp(8px,1.36vw,9.8px)}
+.kd-s .kd-lb{font-weight:900;color:#5B21B6}
+.kd-s .kd-x{font-weight:700;color:#475569}
+.kd-s .kd-w{display:inline-block;border-radius:5px;padding:0 4px;background:#EDE9FE;color:#4C1D95;font-weight:900}
+.kd-s .kd-w.kd-blank{background:#fff;border:1px dashed #94A3B8;color:#94A3B8;min-width:3em;text-align:center}
+.kd-pile{display:flex;align-items:center;gap:8px;border:2px dashed #A78BFA;border-radius:10px;padding:6px 8px;background:#FAF5FF}
+.kd-stack{position:relative;width:62px;height:44px;flex:none}
+.kd-stack i{position:absolute;width:52px;height:34px;border-radius:6px;background:#7C3AED;border:2px solid #fff;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.kd-top{flex:1;font-weight:800;color:#334155;font-size:clamp(9.4px,1.6vw,11.4px);line-height:1.4}
+.kd-top .kd-card{display:inline-block;border:2px solid #7C3AED;background:#fff;border-radius:7px;padding:2px 9px;color:#4C1D95;font-weight:900;
+  font-size:clamp(11px,1.86vw,13.4px)}
+.kd-down{border:2px solid #7C3AED;background:#fff;color:#5B21B6;border-radius:9px;padding:6px 9px;cursor:pointer;font-family:inherit;font-weight:900;
+  font-size:clamp(9.4px,1.6vw,11.4px);min-height:44px;flex:none}
+.kd-down:hover{background:#F5F3FF}
+.kd-tally{font-weight:800;color:#5B21B6;font-size:clamp(9.2px,1.56vw,11.2px);text-align:center}
+.kd-read,.kd-mean,.kd-fin{display:flex;flex-direction:column;gap:5px}
+.kd-read button,.kd-mean button,.kd-fin button{border:2px solid var(--cyan);background:#fff;color:var(--green-d);border-radius:10px;
+  padding:7px 10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:clamp(10.5px,1.8vw,13px);text-align:left;line-height:1.45}
+.kd-read button:hover,.kd-mean button:hover,.kd-fin button:hover{background:var(--bub)}
+.kd-read button.no,.kd-mean button.no,.kd-fin button.no{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.kd-hint{background:#F8FAFC;border:2px dashed #CBD5E0;border-radius:10px;padding:7px 10px;
+  font-size:clamp(10.4px,1.76vw,12.4px);line-height:1.5;color:#64748B}
+@media(max-width:520px){ .kd-web{grid-template-columns:1fr} }
+@media(max-width:380px){ .kd-s{font-size:8.2px} .kd-stack{width:48px} }
+@media(max-width:620px){ .dw-body{grid-template-columns:1fr} }
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(3,105,161,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style><script src="/kedu_gate.js"></script>
+</head>
+
+
+
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#B45309"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식 =====
+   ⚠️ 정직 원칙 ㉠·㉢: 모든 그림은 내용을 나타낸 도식이며 실제 사진이 아니다.
+   ⚠️ 사람 형상 대신 도형으로만 그린다. 수치를 그림에 적지 않는다. */
+const SVG = {
+  // 1 들어가기 — 단원에서 공부한 내용 떠올리기(지도서 348쪽 동기 유발 · 도식)
+  recall:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    <rect x="22" y="22" width="124" height="98" rx="12" fill="#fff" stroke="#7C3AED" stroke-width="1.6"/>
+    <text x="84" y="70" font-size="28" text-anchor="middle">\uD83C\uDF0F</text>
+    ${[[50,48],[118,46],[60,92],[110,94],[40,70],[128,72]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#A78BFA"/>`).join('')}
+    <text x="84" y="110" font-size="7" fill="#4C1D95" text-anchor="middle" font-weight="900">세계의 인구 분포</text>
+    <rect x="174" y="22" width="124" height="98" rx="12" fill="#fff" stroke="#047857" stroke-width="1.6"/>
+    <text x="216" y="70" font-size="24" text-anchor="middle">\uD83C\uDF21\uFE0F</text>
+    <text x="256" y="70" font-size="24" text-anchor="middle">\u267B\uFE0F</text>
+    <text x="236" y="110" font-size="6.6" fill="#065F46" text-anchor="middle" font-weight="900">지구촌의 문제와 지속가능한 미래</text>
+    <text x="160" y="150" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">「지구촌 사람들」에서 공부한 두 주제(도식)</text></svg>`,
+  // 2 살펴보기 — 생각 그물 ① 세계의 인구 분포(교과서 158쪽 · 도식)
+  web1:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    ${[[60,36,'인구 분포'],[260,36,'인구수'],[60,112,'인구 밀도'],[260,112,'인구 구조']].map(p=>`<line x1="160" y1="74" x2="${p[0]}" y2="${p[1]}" stroke="#A78BFA" stroke-width="2"/>
+      <rect x="${p[0]-44}" y="${p[1]-14}" width="88" height="28" rx="14" fill="#fff" stroke="#7C3AED" stroke-width="1.6"/>
+      <text x="${p[0]}" y="${p[1]+3}" font-size="8" fill="#4C1D95" text-anchor="middle" font-weight="900">${p[2]}</text>`).join('')}
+    <circle cx="160" cy="74" r="30" fill="#7C3AED"/>
+    <text x="160" y="71" font-size="7.4" fill="#fff" text-anchor="middle" font-weight="900">세계의</text>
+    <text x="160" y="82" font-size="7.4" fill="#fff" text-anchor="middle" font-weight="900">인구 분포</text>
+    <text x="160" y="152" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">생각 그물 \u2460 세계의 인구 분포(도식)</text></svg>`,
+  // 3 살펴보기 — 생각 그물 ② 지구촌의 문제와 지속가능한 미래(교과서 159쪽 · 도식)
+  web2:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#ECFDF5"/>
+    ${[[64,40,'지구촌 문제'],[256,40,'미래를 위한 노력'],[160,128,'우리가 실천할 일']].map(p=>`<line x1="160" y1="74" x2="${p[0]}" y2="${p[1]}" stroke="#6EE7B7" stroke-width="2"/>
+      <rect x="${p[0]-50}" y="${p[1]-14}" width="100" height="28" rx="14" fill="#fff" stroke="#047857" stroke-width="1.6"/>
+      <text x="${p[0]}" y="${p[1]+3}" font-size="7.6" fill="#065F46" text-anchor="middle" font-weight="900">${p[2]}</text>`).join('')}
+    <circle cx="160" cy="74" r="30" fill="#047857"/>
+    <text x="160" y="71" font-size="7" fill="#fff" text-anchor="middle" font-weight="900">지구촌의 문제와</text>
+    <text x="160" y="82" font-size="7" fill="#fff" text-anchor="middle" font-weight="900">지속가능한 미래</text>
+    <text x="160" y="160" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">생각 그물 \u2461 지구촌의 문제와 지속가능한 미래(도식)</text></svg>`,
+  // 4 살펴보기 — 놀이 준비: 카드를 뒤집어 쌓아요(교과서 160쪽 · 도식)
+  ready:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FAF5FF"/>
+    ${[0,1,2,3,4,5].map(i=>`<rect x="${120+i*3}" y="${40-i*4}" width="74" height="50" rx="7" fill="#7C3AED" stroke="#fff" stroke-width="2"/>`).join('')}
+    <text x="172" y="22" font-size="14" text-anchor="middle">\u2753</text>
+    <rect x="30" y="104" width="62" height="40" rx="7" fill="#fff" stroke="#7C3AED" stroke-width="1.6"/>
+    <line x1="40" y1="120" x2="82" y2="120" stroke="#CBD5E0" stroke-width="2"/><line x1="40" y1="130" x2="72" y2="130" stroke="#CBD5E0" stroke-width="2"/>
+    <path d="M96 122 L114 104" stroke="#7C3AED" stroke-width="2" marker-end="url(#ar)"/>
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#7C3AED"/></marker></defs>
+    <text x="160" y="158" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">낱말을 쓴 카드를 뒤집어 쌓아요(도식)</text></svg>`,
+  // 5 살펴보기 — 놀이 방법: 문제를 내고 맞히면 카드를 얻어요(교과서 161쪽 · 도식)
+  play:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#EFF6FF"/>
+    ${[[70,'\u3131'],[250,'\u3134']].map(p=>`<circle cx="${p[0]}" cy="78" r="22" fill="#DBEAFE" stroke="#0369A1" stroke-width="1.8"/>
+      <text x="${p[0]}" y="84" font-size="15" fill="#0C4A6E" text-anchor="middle" font-weight="900">${p[1]}</text>`).join('')}
+    <text x="112" y="44" font-size="20" text-anchor="middle">\uD83D\uDCAC</text>
+    <text x="208" y="44" font-size="20" text-anchor="middle">\u2754</text>
+    <rect x="140" y="62" width="40" height="30" rx="6" fill="#fff" stroke="#7C3AED" stroke-width="1.8"/>
+    <path d="M120 112 Q160 136 200 112" fill="none" stroke="#7C3AED" stroke-width="2" stroke-dasharray="4 3"/>
+    <text x="160" y="156" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">문제를 맞히면 친구의 카드를 얻어요(도식)</text></svg>`,
+  // 7 살펴보기 — 돌아가며 말하기 · 학습 내용 정리(지도서 349쪽 · 도식)
+  talk:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#FFF7ED"/>
+    <circle cx="160" cy="80" r="48" fill="none" stroke="#FDBA74" stroke-width="2" stroke-dasharray="5 4"/>
+    ${[[160,32],[208,80],[160,128],[112,80]].map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="13" fill="#fff" stroke="#C2410C" stroke-width="1.6"/>
+      <text x="${p[0]}" y="${p[1]+4}" font-size="9" fill="#9A3412" text-anchor="middle" font-weight="900">${['\u3131','\u3134','\u3137','\u3139'][i]}</text>`).join('')}
+    <text x="160" y="86" font-size="20" text-anchor="middle">\uD83D\uDCAC</text>
+    <text x="160" y="160" font-size="7.2" fill="#334155" text-anchor="middle" font-weight="800">공부한 내용을 돌아가며 말해요(도식)</text></svg>`,
+  // 16 정리
+  sum:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#1E1B4B"/>
+    ${[0,1,2,3,4,5,6,7].map(i=>`<rect x="${22+i*36}" y="48" width="30" height="40" rx="6" fill="#EDE9FE" stroke="#A78BFA" stroke-width="2"/>
+      <text x="${37+i*36}" y="73" font-size="11" fill="#4C1D95" text-anchor="middle" font-weight="900">${i+1}</text>`).join('')}
+    <text x="160" y="124" font-size="8.6" fill="#DDD6FE" text-anchor="middle" font-weight="800">주요 낱말을 모으면 단원이 한눈에 보여요</text></svg>`,
+  // 18 종료
+  done:`<svg viewBox="0 0 320 170"><rect width="320" height="170" fill="#F5F3FF"/>
+    <circle cx="160" cy="76" r="40" fill="#fff" stroke="#7C3AED" stroke-width="2.4"/>
+    <path d="M142 76 L156 90 L180 62" fill="none" stroke="#7C3AED" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="160" y="142" font-size="11" fill="#5B21B6" text-anchor="middle" font-weight="800">오늘 공부를 마쳤어요</text></svg>`
+};
+function sceneCard(key,cap,extra){ return `<div class="scene ${extra||''}">${SVG[key]||''}${cap?`<div class="cap">${cap}</div>`:''}</div>`; }
+
+/* ===== 직접조작 — 카드를 모아요 판 =====
+   ★ 채운 빈칸은 state.kdPut 한 비트 수(0~255)가 정한다 — 빈칸별 낱말 배열 0 · 더미 순서 배열 0.
+   ★ 맨 위 카드는 더미 자리 하나(state.kdTop) · 더미 순서는 표 KD_PILE 한 줄 · 맨 위를 바꾸는 자리는 kdTurn 하나.
+   ★ 맨 위 카드가 빈칸에 들어가는지는 kdFit 한 줄 · 채우는 자리는 단 하나(state.kdPut |=).
+   ★★ 지금 쥔 카드(맨 위)만 놓을 수 있다 — 어울리지 않으면 더미 맨 아래로 돌린다. 안내에는 그 카드의 빈칸이 드러나지 않는다.
+   ⚠️ 전량 고정 리터럴 — 난수 0. 조작에 점수 0. 생각 그물과 카드는 도식이다. */
+const KD_N = 8;
+const KD_ALL = 255;
+/* 생각 그물 빈칸 여덟 — 교과서 158~159쪽(가지 · 빈칸 앞 글 · 빈칸 뒤 글) */
+const KD_LB = ['인구수', '인구 밀도', '인구 구조', '인구 구조', '지구촌 문제', '미래를 위한 노력', '미래를 위한 노력', '미래를 위한 노력'];
+const KD_SENT = [
+  ['대체로 ', '에 있는 나라들이 인구수가 많고, 오세아니아에 있는 나라들이 인구수가 적어요.'],
+  ['나라별 인구 밀도는 ', '과/와 인구수에 따라 다르게 나타나요.'],
+  ['출생률과 사망률이 낮고 평균 수명이 긴 나라는 ', '의 비율이 높아요.'],
+  ['출생률과 사망률이 높고 평균 수명이 짧은 나라는 ', '의 비율이 높아요.'],
+  ['자원과 에너지 고갈, ', ' 파괴, 기후변화, 난민'],
+  ['', ' \u2014 국제 연합, 국제 연합 아동 기금, 국제 연합 난민 기구 등'],
+  ['', ' \u2014 그린피스, 국경 없는 의사회, 세계 자연 기금 등'],
+  ['', ' \u2014 지구촌의 지속가능한 미래를 위해 협력하며 책임 있게 행동하는 사람']
+];
+/* 카드 낱말 여덟 — 빈칸 번호 순 */
+const KD_WORD = ['아시아', '면적', '노년층', '유소년층', '생태계', '국제기구', '비정부 기구', '세계시민'];
+/* 빈칸이 담은 단원 주제 — 0 세계의 인구 분포 · 1 지구촌의 문제와 지속가능한 미래 */
+const KD_PART = [0, 0, 0, 0, 1, 1, 1, 1];
+const KD_PNAME = ['세계의 인구 분포', '지구촌의 문제와 지속가능한 미래'];
+/* ★ 카드 더미 — 더미 자리(맨 위부터) → 빈칸 · 한 줄 표 */
+const KD_PILE = [5, 2, 7, 0, 6, 3, 4, 1];
+
+/* ② 판 읽기 */
+const KD_READ = [
+  '생각 그물의 빈칸에는 어느 카드를 넣어도 내용이 이어져요',
+  '생각 그물에는 지구촌의 문제와 노력만 정리되어 있어요',
+  '생각 그물은 단원에서 공부한 두 주제를 주요 낱말로 묶어 정리해요. 세계의 인구 분포에서는 인구수·인구 밀도·인구 구조를, 지구촌의 문제와 지속가능한 미래에서는 지구촌 문제와 미래를 위한 노력을 한눈에 볼 수 있어요'
+];
+const KD_READ_OK = 2;
+const KD_READ_NO = [
+  '판의 <b>빈칸 앞뒤 글</b>을 다시 봐요. 카드는 내용이 이어지는 빈칸에만 들어갔어요. 판을 다시 읽어 봐요.',
+  '판의 <b>셈 줄</b>을 다시 봐요. 세계의 인구 분포에 들어간 카드도 있어요. 판을 다시 읽어 봐요.',
+  null
+];
+/* ③ 생각 그물 빈칸 — 교과서 159쪽 */
+const KD_MEAN = ['태도', '장소', '기계'];
+const KD_MEAN_OK = 0;
+const KD_MEAN_NO = [
+  null,
+  '빈칸에는 어떤 곳이 아니라 <b>문제를 대하는 마음가짐</b>을 가리키는 말이 들어가요. 판은 그대로예요.',
+  '빈칸에는 물건이 아니라 <b>문제를 대하는 마음가짐</b>을 가리키는 말이 들어가요. 판은 그대로예요.'
+];
+/* ④ 마무리 — 지도서 14차시 학습 목표·학습 내용 정리 */
+const KD_FIN = [
+  '단원 마무리에서는 처음 보는 나라의 인구를 새로 조사해 외워요',
+  '생각 그물의 빈칸을 채우고 카드 모으기 놀이를 하며, 세계 인구 분포의 특징과 지구촌을 위협하는 문제, 지속가능한 미래를 위한 다양한 노력을 정리해요',
+  '카드 모으기 놀이는 혼자 낱말을 외우는 놀이라서 친구에게 문제를 내지 않아요'
+];
+const KD_FIN_OK = 1;
+const KD_FIN_NO = [
+  '단원 마무리에서는 <b>단원에서 공부한 내용</b>을 떠올려 정리해요. 오늘의 정리를 다시 골라 봐요.',
+  null,
+  '카드 모으기 놀이에서는 <b>친구와 만나 문제를 내고 맞혀요</b>. 오늘의 정리를 다시 골라 봐요.'
+];
+/* 안내 */
+const KD_LOCK = '생각 그물의 빈칸을 <b>이미 모두 채웠어요</b>. 판을 읽어 봐요. 판은 그대로예요.';
+const KD_FILLED = '그 빈칸에는 <b>이미 카드가 있어요</b>. 아직 빈 곳을 골라 봐요. 판은 그대로예요.';
+const KD_ONE = '더미에 남은 카드가 <b>한 장뿐</b>이라 맨 아래에 넣어도 그대로예요. 빈칸에 놓아 봐요. 판은 그대로예요.';
+const KD_ORDER_R = '아직 <b>여덟 빈칸을 다 채우지 않았어요</b>. 모든 빈칸에 카드가 들어간 뒤에 읽을 수 있어요. 판은 그대로예요.';
+const KD_READ_AGAIN = '<b>이미 판을 읽었어요.</b> 판은 그대로예요.';
+const KD_ORDER_K = '아직 <b>판을 읽지 않았어요.</b> 판을 먼저 읽어 봐요. 판은 그대로예요.';
+const KD_MEAN_AGAIN = '생각 그물 빈칸은 <b>이미 채웠어요</b>. 판은 그대로예요.';
+const KD_ORDER_F = '아직 <b>생각 그물 빈칸</b>을 채우지 않았어요. 먼저 골라 봐요. 판은 그대로예요.';
+const KD_END_MSG = '여덟 장을 모두 모았어요. <b>생각 그물이 완성됐어요</b>. 판을 읽어 봐요.';
+function KD_NOFIT(b){ return `맨 위 카드는 <b>${b+1}번 빈칸</b>과 어울리지 않아요. 빈칸 앞뒤 글을 다시 읽거나, 카드를 더미 맨 아래에 넣고 다음 카드를 봐요. 판은 그대로예요.`; }
+
+/* ★ 채운 빈칸 — 비트 하나 · 맨 위 카드가 빈칸에 들어가는지 — 한 줄 */
+function kdHas(m,b){ return ((m>>b)&1)===1; }
+function kdFit(b,p){ return KD_PILE[p]===b; }
+function kdCount(st){ return [0,1,2,3,4,5,6,7].filter(b=>kdHas(st.kdPut,b)).length; }
+function kdPartN(st,p){ return [0,1,2,3,4,5,6,7].filter(b=>KD_PART[b]===p && kdHas(st.kdPut,b)).length; }
+/* ★ 다음 맨 위 — 더미를 한 바퀴 돌며 아직 남은 카드의 자리(남은 카드가 없으면 null) */
+function kdNext(m,p){ for(let k=1;k<=KD_N;k++){ const q=(p+k)%KD_N; if(!kdHas(m,KD_PILE[q])) return q; } return null; }
+/* ★★ 여덟 빈칸을 다 채우는 자리 — 단 하나 */
+function kdDone(st){ return st.kdPut===KD_ALL; }
+
+function kdSlots(st,p){
+  return `<div class="kd-br" data-part="${p}"><div class="kd-bt">${p===0?'\u2460':'\u2461'} ${KD_PNAME[p]}</div>${[0,1,2,3,4,5,6,7].filter(b=>KD_PART[b]===p).map(b=>{ const put=kdHas(st.kdPut,b);
+    return `<button class="kd-s" data-b="${b}" data-put="${put?1:0}" onclick="kdSlot(${b})"><span class="kd-no">${b+1}</span><span class="kd-lb">${KD_LB[b]}</span><span class="kd-x">${KD_SENT[b][0]}${put?`<b class="kd-w">${KD_WORD[b]}</b>`:'<b class="kd-w kd-blank">(\u00a0\u00a0\u00a0)</b>'}${KD_SENT[b][1]}</span></button>`; }).join('')}</div>`;
+}
+function kdPile(st){
+  const left = KD_N - kdCount(st);
+  if(kdDone(st)) return `<div class="kd-pile" data-left="0"><div class="kd-top">더미가 비었어요. 여덟 장을 모두 모았어요.</div></div>`;
+  return `<div class="kd-pile" data-left="${left}"><div class="kd-stack">${Array.from({length:Math.min(left,4)},(_,i)=>`<i style="left:${i*3}px;top:${8-i*3}px"></i>`).join('')}</div>
+    <div class="kd-top">맨 위 카드 <span class="kd-card">${KD_WORD[KD_PILE[st.kdTop]]}</span><br>더미에 남은 카드 ${left}장</div>
+    <button class="kd-down" onclick="kdDown()">맨 아래로 넣기</button></div>`;
+}
+
+function kdBoard(st){
+  const fin = st.kdFin!=null, done = kdDone(st), n = kdCount(st);
+  const head = fin ? '카드를 모아 생각 그물을 완성했어요'
+    : st.kdMean!=null ? '생각 그물 빈칸까지 채웠어요 \u2014 이제 정리해요'
+    : st.kdRead!=null ? '생각 그물 빈칸을 채워 봐요'
+    : done ? '생각 그물의 빈칸이 모두 채워졌어요 \u2014 판을 읽어 봐요'
+    : n>0 ? '맨 위 카드가 들어갈 빈칸을 찾아 이어 가요'
+    : '더미 맨 위 카드를 생각 그물의 알맞은 빈칸에 놓아요';
+  return `<div class="kd-board" data-put="${st.kdPut}" data-n="${n}" data-top="${st.kdTop==null?-1:st.kdTop}" data-done="${done?1:0}" data-read="${st.kdRead==null?-1:st.kdRead}" data-mean="${st.kdMean==null?-1:st.kdMean}" data-fin="${fin?1:0}">
+    <div class="kd-head">${head}</div>
+    <div class="kd-web">${kdSlots(st,0)}${kdSlots(st,1)}</div>
+    ${kdPile(st)}
+    <div class="kd-tally">모은 카드 ${n} / 8 \u00b7 ${KD_PNAME[0]} ${kdPartN(st,0)} / 4 \u00b7 ${KD_PNAME[1]} ${kdPartN(st,1)} / 4</div>
+  </div>`;
+}
+
+function kdPanel(st){
+  const fin = st.kdFin!=null, done = kdDone(st);
+  const q = fin ? '카드를 모아 생각 그물을 완성하며 「지구촌 사람들」에서 공부한 내용을 정리했어요.'
+    : st.kdMean!=null ? '오늘 공부한 내용을 정리해요. 단원 마무리에서는 무엇을 했나요?'
+    : st.kdRead!=null ? '생각 그물 \u2014 「지구촌 문제가 우리 모두의 문제라는 생각을 갖고 이를 해결하려 노력하는 (  )이/가 필요해요」의 빈칸에 알맞은 말은 무엇일까요?'
+    : done ? '생각 그물의 빈칸이 모두 채워졌어요. 판에서 무엇을 알 수 있나요?'
+    : kdCount(st)>0 ? '남은 카드도 알맞은 빈칸에 놓아 가요. 빈칸 앞뒤 글과 이어지나요?'
+    : '「지구촌 사람들」에서 공부한 내용을 떠올리며 생각 그물을 완성해 봐요. 맨 위 카드는 어느 빈칸에 들어갈까요?';
+  let right = `<div class="kd-q">${q}</div>`;
+
+  if(fin){
+    right += `<div class="dw-card"><div class="pt">\uD83C\uDCCF 카드를 모아 정리했어요</div>
+      <b>생각 그물</b>로 단원에서 공부한 두 주제를 정리했어요. <b>세계의 인구 분포</b>에서는 인구수, 인구 밀도, 인구 구조를,
+      <b>지구촌의 문제와 지속가능한 미래</b>에서는 지구촌 문제와 미래를 위한 노력, 세계시민의 태도를 떠올렸어요.<br>
+      <span style="color:#64748B">판의 생각 그물과 카드는 교과서 생각 그물에서 고른 빈칸을 나타낸 도식이고, 더미 순서는 정해 둔 예예요.
+      <b>카드에 주요 낱말 쓰기</b>, <b>가위바위보</b>, <b>문제 내고 맞히기</b>, <b>카드 모으기 놀이</b>, <b>돌아가며 말하기</b>, <b>새로 알게 된 점이나 느낀 점 쓰기</b>는 교실에서 직접 해요.</span></div>`;
+  } else if(st.kdMean!=null){
+    right += `<div class="dw-step">\uD83D\uDCDA 오늘의 정리</div>`;
+    right += `<div class="kd-fin">${KD_FIN.map((t,k)=>`<button class="${st.kdWrongF===k?'no':''}" onclick="kdFinish(${k})">${t}</button>`).join('')}</div>`;
+  } else if(st.kdRead!=null){
+    right += `<div class="dw-step">\uD83D\uDCCC 생각 그물 빈칸</div>`;
+    right += `<div class="kd-mean">${KD_MEAN.map((t,k)=>`<button class="${st.kdWrongK===k?'no':''}" onclick="kdMeanPick(${k})">${t}</button>`).join('')}</div>`;
+    right += `<div class="kd-hint">초성 힌트 \u2014 ㅌ ㄷ. 지구촌 문제를 해결하려는 마음가짐을 나타내는 말이에요.</div>`;
+  } else if(done){
+    right += `<div class="dw-step">\uD83D\uDD0E 판을 읽어요</div>`;
+    right += `<div class="kd-read">${KD_READ.map((t,k)=>`<button class="${st.kdWrongR===k?'no':''}" onclick="kdReadPick(${k})">${t}</button>`).join('')}</div>`;
+  } else {
+    right += `<div class="dw-step">\uD83C\uDCCF 카드를 모아요</div>`;
+    right += `<div class="kd-hint">카드 더미는 <b>맨 위 카드</b> 한 장만 보여요.<br>
+      \u2460 맨 위 카드의 낱말을 읽고, 생각 그물에서 앞뒤 글이 이어지는 <b>빈칸</b>을 눌러 놓아요.<br>
+      \u2461 지금 놓기 어려우면 <b>맨 아래로 넣기</b>를 눌러 다음 카드를 봐요.<br>
+      \u2462 여덟 장을 모두 모으면 생각 그물이 완성돼요. 감점은 없어요.</div>`;
+  }
+  if(st.kdMsg) right += `<div class="dw-msg${st.kdWarn?' warn':''}">${st.kdMsg}</div>`;
+
+  return `<div class="dw-wrap">
+    <div style="text-align:center"><b style="color:var(--green)">\uD83C\uDCCF 카드를 모아요</b></div>
+    <div class="dw-body">
+      <div class="dw-canvas">${kdBoard(st)}<div class="cvcap">판의 생각 그물과 카드는 <b>도식</b>이에요. 교과서 생각 그물에서 빈칸 여덟을 골랐고, 더미 순서는 정해 둔 예예요. 실제 놀이에서는 카드의 낱말을 모둠이 직접 쓰고, 친구와 만나 카드를 주고받아요.</div></div>
+      <div class="dw-right">${right}</div>
+    </div>
+  </div>`;
+}
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "3단원 지구촌 사람들 · 단원 마무리";
+
+// 확인 4 + 적용 4 — 정답 다양화 [1,3,0,2,3,1,2,0](각 자리 2회)
+// ⚠️ 새 사실 0(교과서 158~161쪽 · 지도서 14차시 · 단원 평가까지만) · 뒤 차시 0(6-2 사회 마지막 차시).
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"다음 중 <b>인구가 많이 사는 지역</b>으로 알맞지 <b>않은</b> 것은 무엇인가요?",
+   opts:["해안 지역","강수량이 매우 적은 지역","교통이 편리한 지역","산업이 발달한 지역"],
+   correct:1, pts:POINTS_BASIC, scene:"web1",
+   reason:"사람들은 기온이 온화하고 강수량이 알맞은 곳, 토양이 비옥한 곳, 교통이 편리하고 산업이 발달한 곳에 많이 모여 살아요. 강수량이 매우 적은 지역에는 인구가 적어요.",
+   h1:"자연환경이 농사에 유리한 곳을 떠올려 봐요.", h2:"물이 부족한 곳에서는 살기 어려워요."},
+  {stem:"세계의 인구 분포 지도를 읽고 알 수 있는 사실로 <b>알맞은</b> 것은 무엇인가요?",
+   opts:["세계의 인구는 지구상에 고르게 분포해요","세계 인구의 대부분은 남반구에 살고 있어요","같은 나라 안에서는 인구가 고르게 분포해요","인구가 가장 많은 대륙은 아시아예요"],
+   correct:3, pts:POINTS_BASIC, scene:"web1",
+   reason:"세계의 인구는 특정한 지역에 모여 있고, 대륙 가운데 아시아에 인구가 가장 많아요.",
+   h1:"판의 생각 그물 첫 빈칸에 넣은 카드를 떠올려 봐요.", h2:"중국, 인도가 있는 대륙이에요."},
+  {stem:"빈칸에 <b>공통으로</b> 들어갈 말은 무엇인가요?<br>「세계 여러 나라의 (  )은/는 다르게 나타나요. 인구수가 많고, 면적이 작을수록 (  )은/는 높게 나타나요.」",
+   opts:["인구 밀도","인구 구조","평균 수명","출생률"],
+   correct:0, pts:POINTS_BASIC, scene:"web1",
+   reason:"인구 밀도는 면적과 인구수에 따라 다르게 나타나요. 인구수가 많고 면적이 작을수록 인구 밀도가 높아요.",
+   h1:"면적과 인구수를 함께 생각하는 말이에요.", h2:"판의 생각 그물 「인구 밀도」 가지를 떠올려 봐요."},
+  {stem:"과학 기술과 교통\u00b7통신의 발달로 지구가 <b>하나의 마을처럼 가까워진 것</b>을 무엇이라고 하나요?",
+   opts:["인구 분포","국제기구","지구촌","생태계"],
+   correct:2, pts:POINTS_BASIC, scene:"web2",
+   reason:"과학 기술과 교통·통신의 발달로 지구가 하나의 마을처럼 가까워진 것을 지구촌이라고 해요.",
+   h1:"「마을」을 뜻하는 글자가 들어가요.", h2:"단원 이름 「지구촌 사람들」을 떠올려 봐요."},
+  // 4단계 적용 (+15)
+  {stem:"<b>방글라데시</b>의 인구 밀도가 높은 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["나라의 면적이 매우 넓기 때문이에요","냉대 기후가 넓게 나타나기 때문이에요","국토 대부분이 산지 지형이기 때문이에요","벼농사가 발달했기 때문이에요"],
+   correct:3, pts:POINTS_APPLY, scene:"web1",
+   reason:"방글라데시는 강수량이 많고 비옥한 평야가 있어 벼농사가 발달했고, 면적에 비해 인구가 많아 인구 밀도가 높아요.",
+   h1:"농사에 유리한 자연환경을 떠올려 봐요.", h2:"비옥한 평야와 많은 강수량이 있어요."},
+  {stem:"「전쟁 때문에 이곳 사람들이 고향을 떠난 지 오래되었어요. 가족과 헤어져 살던 곳을 떠나는 사람이 늘고 있어요.」 이 지구촌 문제와 관련하여 <b>바르게</b> 이야기한 친구는 누구인가요?",
+   opts:["민경: 지구의 온도가 점점 올라가고 있다고 해","주현: 이들을 돕기 위해 국제 연합 난민 기구가 활동하고 있어","기현: 무분별한 개발로 생태계가 파괴되고 있어","은경: 플라스틱 쓰레기로 해양 동물들의 삶이 위협받고 있대"],
+   correct:1, pts:POINTS_APPLY, scene:"web2",
+   reason:"전쟁 등으로 살던 곳을 떠나는 사람들은 난민이에요. 국제 연합 난민 기구는 난민을 돕기 위해 활동하는 국제기구예요.",
+   h1:"살던 곳을 떠난 사람들을 무엇이라고 하나요?", h2:"판의 생각 그물 「국제기구」 빈칸 옆 글을 떠올려 봐요."},
+  {stem:"지속가능한 미래를 위해 <b>국가</b>가 하는 노력으로 알맞은 것은 무엇인가요?",
+   opts:["양치나 세수를 할 때 물을 받아 사용해요","탄소 배출을 줄일 수 있는 제품을 개발해요","생태계를 보호하기 위한 법을 만들어요","가위바위보에서 이긴 뒤 카드를 가져가요"],
+   correct:2, pts:POINTS_APPLY, scene:"web2",
+   reason:"국가는 법을 만들고 기후변화 협약에 가입하는 등의 노력을 해요. 물을 받아 쓰는 것은 개인, 제품 개발은 기업의 노력이에요.",
+   h1:"법을 만들 수 있는 주체는 누구인가요?", h2:"개인·기업·국가의 노력을 나누어 떠올려 봐요."},
+  {stem:"굶주림과 병에 시달리는 <b>어린이들을 돕기 위해</b> 만들어져 질병 예방, 교육, 어린이 보호 등의 활동을 하는 국제기구는 무엇인가요?",
+   opts:["국제 연합 아동 기금","그린피스","국경 없는 의사회","국제 연합 난민 기구"],
+   correct:0, pts:POINTS_APPLY, scene:"web2",
+   reason:"국제 연합 아동 기금은 어린이의 권리 향상을 위해 다양한 활동을 하는 국제기구예요. 그린피스와 국경 없는 의사회는 비정부 기구예요.",
+   h1:"이름에 「아동」이 들어가요.", h2:"비정부 기구와 국제기구를 구별해 봐요."}
+];
+
+/* ===== 슬라이드 18매 ===== */
+const slides=[];
+// 1 들어가기 — 단원에서 공부한 내용 떠올리기(지도서 14차시 동기 유발)
+slides.push({stage:1,badge:"들어가기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s1">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">「지구촌 사람들」에서 무엇을 공부했나요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('recall','단원에서 공부한 두 주제(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDF10 단원 돌아보기</div>
+      이번 단원 「지구촌 사람들」에서 공부한 내용은 무엇인가요? 충분한 시간을 두고 차례대로 떠올려 봐요.</div>
+    ${st.revealed?`<div class="answer-box">\u2014 세계의 <b>인구 분포</b> 특징과 세계 여러 나라의 <b>인구수</b>, <b>인구 밀도</b>, <b>인구 구조</b>를 알아봤어요.<br>
+      \u2014 세계 여러 나라의 인구 구조를 살펴보고 인구 변화를 예상해 봤어요.<br>
+      \u2014 <b>지구촌을 위협하는 여러 가지 문제</b>와 그 원인을 조사해 봤어요.<br>
+      \u2014 지구촌의 <b>지속가능한 미래를 위한 노력</b>을 살펴보고, 우리가 할 수 있는 일을 실천해 봤어요.</div>`
+      :`<div class="note">세계의 인구 분포와 지구촌의 문제를 함께 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">오늘은 단원에서 공부한 내용을 <b>생각 그물</b>과 <b>교실 놀이</b>로 정리해요.</div></div>`});
+// 2 살펴보기 — reveal: 생각 그물 ① 세계의 인구 분포(교과서 158쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">생각 그물 \u2460 세계의 인구 분포</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('web1','생각 그물 \u2460(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDD78\uFE0F 세계의 인구 분포</div>
+      생각 그물의 가운데에 「세계의 인구 분포」가 있고, <b>인구 분포</b>, <b>인구수</b>, <b>인구 밀도</b>, <b>인구 구조</b> 네 가지가 뻗어 나가요. 세계의 인구 분포 모습은 어떠한가요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 세계의 인구는 <b>특정한 지역에 모여</b> 있어요. 기온, 강수량, 지형 등 <b>자연환경</b>과 산업, 교통, 문화 등 <b>인문환경</b>이 영향을 줘요.<br>
+      \u2014 나라별 인구수는 대체로 <b>아시아</b>에 있는 나라들이 많고, 오세아니아에 있는 나라들이 적어요.<br>
+      \u2014 나라별 인구 밀도는 <b>면적</b>과 인구수에 따라 다르게 나타나요.<br>
+      \u2014 출생률과 사망률이 낮고 평균 수명이 긴 나라는 <b>노년층</b>, 높고 짧은 나라는 <b>유소년층</b>의 비율이 높아요.</div>`
+      :`<div class="note">생각 그물의 네 가지를 하나씩 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 3 살펴보기 — reveal: 생각 그물 ② 지구촌의 문제와 지속가능한 미래(교과서 159쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">생각 그물 \u2461 지구촌의 문제와 지속가능한 미래</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('web2','생각 그물 \u2461(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDF0D 지구촌의 문제와 지속가능한 미래</div>
+      생각 그물의 가운데에 「지구촌의 문제와 지속가능한 미래」가 있고, <b>지구촌 문제</b>, <b>지속가능한 미래를 위한 노력</b>, <b>우리가 실천할 일</b>이 뻗어 나가요. 어떤 내용이 들어갈까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 지구촌 문제: 자원과 에너지 고갈, <b>생태계</b> 파괴, 기후변화, 난민<br>
+      \u2014 노력: 개인·기업·국가·<b>국제기구</b>(국제 연합, 국제 연합 아동 기금, 국제 연합 난민 기구 등)·<b>비정부 기구</b>(그린피스, 국경 없는 의사회, 세계 자연 기금 등)<br>
+      \u2014 <b>세계시민</b>: 지구촌의 지속가능한 미래를 위해 협력하며 책임 있게 행동하는 사람<br>
+      \u2014 지구촌 문제가 우리 모두의 문제라는 생각을 갖고 이를 해결하려 노력하는 <b>태도</b>가 필요해요.</div>`
+      :`<div class="note">문제와 노력, 우리가 실천할 일을 나누어 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">이 단원을 공부하며 <b>새로 알게 된 점이나 느낀 점</b>은 교실에서 글로 써 봐요.</div></div>`});
+// 4 살펴보기 — reveal: 놀이 준비(교과서 160쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">교실 놀이를 준비해요 \u2014 카드 모으기</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('ready','카드를 뒤집어 쌓아요(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDCCF 이렇게 해 봐요 \u2460</div>
+      \u2460 각 모둠원은 카드를 여러 장 준비해요. \u2461 칠판에 적힌 주제를 살펴보고, 단원에서 공부한 내용을 떠올리며 <b>주요 낱말</b>을 카드에 써요.
+      \u2462 낱말이 보이지 않도록 카드를 <b>뒤집어</b> 책상 가운데에 쌓아 놓아요. \u2463 각자 카드를 한 장씩 들고 「시작」 신호에 맞춰 교실을 돌아다니며 다른 모둠 친구를 만나요.<br>
+      카드에는 어떤 낱말을 쓰면 좋을까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 칠판의 주제와 관련 있는 <b>주요 낱말</b>을 써요. 예를 들어 「아시아」, 「면적」, 「국제기구」, 「세계시민」처럼요.<br>
+      \u2014 친구들과 함께 협의하거나 <b>교과서를 다시 살펴보며</b> 카드에 알맞은 내용을 써요.</div>`
+      :`<div class="note">생각 그물에서 본 낱말들을 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+  </div>`});
+// 5 살펴보기 — reveal: 놀이 방법(교과서 161쪽)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">문제를 내고 맞히며 카드를 모아요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('play','문제를 맞히면 카드를 얻어요(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83C\uDCCF 이렇게 해 봐요 \u2461</div>
+      \u2464 마주친 친구와 <b>가위바위보</b>를 한 뒤 진 사람은 자기 카드에 적힌 주요 낱말과 관련 있는 문제를 내고, 상대방은 문제를 맞혀요.
+      \u2465 문제를 맞히면 친구의 카드를 갖고, 맞히지 못하면 카드를 얻지 못하고 다른 친구를 만나러 가요.<br>
+      카드를 얻거나 잃으면 어떻게 할까요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 카드를 <b>얻은</b> 친구는 자기 모둠의 카드 더미 <b>맨 아래</b>에 획득한 카드를 넣어요.<br>
+      \u2014 카드를 <b>뺏긴</b> 친구는 자기 모둠의 카드 더미 <b>맨 위</b>에서 카드를 한 장 꺼내 다른 친구를 만나러 가요.<br>
+      \u2014 정한 시간이 끝나고 가장 많은 카드를 모은 모둠이 이겨요.</div>`
+      :`<div class="note">더미의 맨 위와 맨 아래를 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">다음 판에서 더미 <b>맨 위 카드</b>를 생각 그물의 알맞은 빈칸에 놓아 봐요.</div></div>`});
+// 6 살펴보기 — 직접조작(카드를 모아요)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">카드를 모아 생각 그물을 완성해요</h2>
+  ${kdPanel(st)}`});
+// 7 살펴보기 — reveal: 돌아가며 말하기 · 학습 내용 정리(지도서 14차시)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">돌아가며 말하며 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('talk','공부한 내용을 돌아가며 말해요(도식)','wide')}</div>
+    <div class="paper"><div class="ph">\uD83D\uDCAC 놀이 속 한 장면</div>
+      「지구촌 문제를 해결하려고 세계 여러 나라가 모여 만든 것으로 국제 연합 등이 있어.」 \u2014 「<b>국제기구!</b>」 \u2014 「정답이야. 이 카드를 받아.」<br>
+      놀이가 끝나면 세계 인구 분포의 특징과, 지구촌을 위협하는 문제와 지속가능한 미래를 위한 노력을 돌아가며 이야기해요. 이 단원을 공부하며 새로 알게 된 점이나 느낀 점은 무엇인가요?</div>
+    ${st.revealed?`<div class="answer-box">\u2014 세계의 인구는 특정한 지역에 모여 있고, 나라마다 인구수·인구 밀도·인구 구조가 달라요.<br>
+      \u2014 지구촌을 위협하는 문제를 해결하려고 개인, 기업, 국가, 국제기구, 비정부 기구가 노력하고 있어요.<br>
+      \u2014 느낀 점(예): 세계의 인구 분포와 지속가능한 미래를 위한 다양한 노력을 알게 됐어요.</div>`
+      :`<div class="note">판의 생각 그물 두 주제를 떠올려 봐요.</div><button class="reveal-btn" onclick="reveal()">생각 보기</button>`}
+    <div class="tipbox">돌아가며 말하기와 카드 모으기 놀이는 <b>교실</b>에서 친구들과 직접 해요.</div></div>`});
+// 8~15 문항
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 요약 — 지도서 14차시 학습 목표·학습 내용 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 공부한 내용을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sum','오늘의 정리','wide')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">\u2460</span><div><b>세계의 인구 분포</b> \u2014 인구는 특정한 지역에 모여 있고, 나라마다 인구수·인구 밀도·인구 구조가 달라요.</div></div>
+    <div class="sum-item"><span class="n">\u2461</span><div><b>지구촌의 문제와 지속가능한 미래</b> \u2014 자원과 에너지 고갈, 생태계 파괴, 기후변화, 난민 문제를 해결하려고 개인·기업·국가·국제기구·비정부 기구가 노력해요.</div></div>
+    <div class="sum-item"><span class="n">\u2462</span><div><b>세계시민</b> \u2014 지구촌 문제가 우리 모두의 문제라는 생각을 갖고 협력하며 책임 있게 행동해요.</div></div>
+    <div class="sum-item"><span class="n">\u2605</span><div><b>오늘의 조작</b> \u2014 더미 맨 위 카드를 생각 그물의 알맞은 빈칸에 놓아, 단원의 두 주제를 주요 낱말로 정리했어요.</div></div>
+  </div>
+  <div class="note">교실에서는 카드 모으기 놀이로 친구에게 문제를 내고 맞혀 봐요.</div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 활동을 되돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"세계 인구 분포의 특징을 주요 낱말로 정리할 수 있어요",st)}
+    ${selfCheck(1,"지구촌을 위협하는 문제와 지속가능한 미래를 위한 노력을 설명할 수 있어요",st)}
+    ${selfCheck(2,"친구에게 문제를 내고 맞히며 공부한 내용을 돌아가며 말할 수 있어요",st)}
+  </div><div class="note">별이 적게 채워진 곳은 앞 슬라이드를 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료 — 6-2 사회 마지막 차시
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">3단원 공부를 모두 마쳤어요!</h2>
+  <div class="ka-grp">
+    <div class="scene-row">${sceneCard('done','','wide')}</div>
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note"><b style="color:var(--amber)">「지구촌 사람들」</b> 단원을 끝까지 공부했어요. 사회 6-2의 모든 차시를 마쳤어요!</div>
+  </div>`;
+}});
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">\u2B55 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">\uD83D\uDCA1 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g6_2_social_u3_l10";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  kdPut:0, kdTop:0,
+  kdRead:null, kdMean:null, kdFin:null,
+  kdWrongR:null, kdWrongK:null, kdWrongF:null,
+  kdMsg:null, kdWarn:false, kdBusy:false,
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 \u2192';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+
+
+function kdRender(){ main.innerHTML = slides[state.idx].render(state); }
+function kdHold(msg){
+  state.kdWarn=true; state.kdBusy=true; state.kdMsg=msg;
+  playThud(); kdRender();
+  setTimeout(()=>{ state.kdBusy=false; state.kdWarn=false; state.kdMsg=null;
+    state.kdWrongR=null; state.kdWrongK=null; state.kdWrongF=null; kdRender(); },1600);
+}
+/* ★ 맨 위를 바꾸는 자리 — 단 하나 */
+function kdTurn(){ state.kdTop = kdNext(state.kdPut, state.kdTop); }
+
+/* ① 빈칸에 놓기 — 맨 위 카드가 들어가는 빈칸에만(가드③·⑨·⑩) */
+function kdSlot(b){
+  if(state.kdFin!=null) return;                                        // 가드①
+  if(state.kdBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(b) || b<0 || b>=KD_N) return;                   // 가드②
+  if(kdDone(state)){ kdHold(KD_LOCK); return; }                        // 가드③ 판 불변
+  if(kdHas(state.kdPut,b)){ kdHold(KD_FILLED); return; }               // 가드⑨ 이미 채운 빈칸 — 판 불변
+  if(!kdFit(b,state.kdTop)){ kdHold(KD_NOFIT(b)); return; }            // 가드⑩ 맨 위 카드와 어울리지 않음 — 판 불변 · 그 카드의 빈칸 0
+  state.kdPut |= (1<<b);                                               // ★ 빈칸을 채우는 자리 단 하나
+  kdTurn();
+  state.kdWarn=false;
+  if(kdDone(state)){ state.kdMsg = KD_END_MSG; playChime(); }
+  else { state.kdMsg = `<b>${b+1}번 빈칸</b>에 <b>${KD_WORD[b]}</b> 카드를 놓았어요. 이 빈칸은 <b>${KD_PNAME[KD_PART[b]]}</b>에 들어가요.`; playBlip(); }
+  kdRender();
+}
+
+/* ② 맨 아래로 넣기 — 남은 카드가 둘 이상일 때만(가드③·⑪) */
+function kdDown(){
+  if(state.kdFin!=null) return;                                        // 가드①
+  if(state.kdBusy) return;                                             // 가드⑧
+  if(kdDone(state)){ kdHold(KD_LOCK); return; }                        // 가드③ 판 불변
+  if(kdCount(state)>=KD_N-1){ kdHold(KD_ONE); return; }                // 가드⑪ 한 장뿐 — 판 불변
+  kdTurn();
+  state.kdWarn=false;
+  state.kdMsg = `카드를 더미 <b>맨 아래</b>에 넣었어요. 이제 맨 위 카드는 <b>${KD_WORD[KD_PILE[state.kdTop]]}</b>예요.`;
+  playBlip(); kdRender();
+}
+
+/* ③ 판 읽기 — 다 채운 뒤에만(가드④) */
+function kdReadPick(k){
+  if(state.kdFin!=null) return;                                        // 가드①
+  if(state.kdBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=KD_READ.length) return;         // 가드②
+  if(!kdDone(state)){ kdHold(KD_ORDER_R); return; }                    // 가드④ 순서 — 판 불변
+  if(state.kdRead!=null){ kdHold(KD_READ_AGAIN); return; }             // 가드④ 판 불변
+  if(k===KD_READ_OK){
+    state.kdRead=k; state.kdWrongR=null; state.kdWarn=false;
+    state.kdMsg = '판을 잘 읽었어요. 생각 그물은 단원의 <b>두 주제</b>를 주요 낱말로 묶어 한눈에 보여 줘요.';
+    playChime(); kdRender(); return;
+  }
+  state.kdWrongR=k;
+  kdHold(KD_READ_NO[k]);
+}
+
+/* ④ 생각 그물 빈칸 — 판을 읽은 뒤에만(가드⑤). */
+function kdMeanPick(k){
+  if(state.kdFin!=null) return;                                        // 가드①
+  if(state.kdBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=KD_MEAN.length) return;         // 가드②
+  if(state.kdRead==null){ kdHold(KD_ORDER_K); return; }                // 가드⑤ 순서 — 판 불변
+  if(state.kdMean!=null){ kdHold(KD_MEAN_AGAIN); return; }             // 가드⑤ 판 불변
+  if(k!==KD_MEAN_OK){ state.kdWrongK=k; kdHold(KD_MEAN_NO[k]); return; } // 가드⑤ 판 불변
+  state.kdMean = k;                                                    // ★ 빈칸을 고르는 자리 단 하나
+  state.kdWarn=false;
+  state.kdMsg = '지구촌 문제가 우리 모두의 문제라는 생각을 갖고 이를 해결하려 노력하는 <b>태도</b>가 필요해요.';
+  playChime(); kdRender();
+}
+
+/* ⑤ 마무리 — 지도서 14차시 학습 목표·학습 내용 정리 */
+function kdFinish(k){
+  if(state.kdFin!=null) return;                                        // 가드①
+  if(state.kdBusy) return;                                             // 가드⑧
+  if(!Number.isInteger(k) || k<0 || k>=KD_FIN.length) return;          // 가드②
+  if(state.kdMean==null){ kdHold(KD_ORDER_F); return; }                // 가드⑥ 순서 — 판 불변
+  if(k===KD_FIN_OK){
+    state.kdFin=k; state.kdWrongF=null; state.kdMsg=null; state.kdWarn=false;
+    playChime(); kdRender(); return;
+  }
+  state.kdWrongF=k;
+  kdHold(KD_FIN_NO[k]);                                                // 가드⑦ 판 불변
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2;
+    if(qs.hint>=2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">\uD83D\uDCD8 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 \u2192</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; } // 6-2 사회 마지막 차시 — 허브로
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
