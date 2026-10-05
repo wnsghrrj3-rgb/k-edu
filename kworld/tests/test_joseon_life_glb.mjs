@@ -1,8 +1,8 @@
-// 고려 넓은 터 GLB 구조 검증 — NPC 18·구역 13·spawn·미션·숨김 재질(목화 솜·새긴 경판·몽골 천막·깃발)이 json 과 맞는지 (WebGL 없이 GLB JSON 청크만)
+// 조선 전기 인생 층 GLB 구조 검증 — 조선 마을 터(494c978) 그대로 + 인생 층 자리. NPC 18·구역 19·spawn·미션 7·숨김 재질(왜선·청 진영)이 json 과 맞는지 (WebGL 없이 GLB JSON 청크만)
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-const base = new URL('../eras/goryeo-life/', import.meta.url);
-const buffer = fs.readFileSync(new URL('goryeo.glb', base));
+const base = new URL('../eras/joseon-life/', import.meta.url);
+const buffer = fs.readFileSync(new URL('joseon.glb', base));
 const data = JSON.parse(buffer.subarray(20, 20 + buffer.readUInt32LE(12)).toString());
 const read = (f) => JSON.parse(fs.readFileSync(new URL(f, base)));
 const world = read('world.json'), items = read('items.json'), npcDefs = read('npcs.json'), missions = read('missions.json'), scene = read('scene.json'), life = read('life.json');
@@ -14,33 +14,36 @@ for (const t of types) assert.ok(items.targets[t], `대상 ${t} 가 items.json �
 for (const t of Object.keys(items.targets)) assert.ok(types.has(t) || sceneTypes.has(t), `items.json 대상 ${t} 가 GLB·scene 에 없음`);
 const areas = names.filter((n) => n.startsWith('area_')).map((n) => n.slice(5));
 for (const a of Object.keys(world.areas)) assert.ok(areas.includes(a), `구역 ${a} 없음`);
-assert.equal(Object.keys(world.areas).length, 13, '구역 13');
+assert.equal(Object.keys(world.areas).length, 19, '구역 19(조선 마을 터 그대로)');
 assert.ok(areas.includes(world.face), `시작 시선 구역 ${world.face}`);
 assert.ok(names.includes('spawn'), 'spawn');
 const npcs = ix.filter((n) => n.startsWith('ix_npc_')).map((n) => n.slice(7));
 for (const id of Object.keys(npcDefs)) assert.ok(npcs.includes(id), `NPC ${id} 가 GLB 에 없음`);
 for (const id of npcs) assert.ok(npcDefs[id], `GLB NPC ${id} 가 npcs.json 에 없음`);
-assert.equal(npcs.length, 18, 'NPC 18');
+assert.equal(npcs.length, 18, 'NPC 18(마을 11 + 인생 층 7)');
 const mats = new Set((data.materials || []).map((m) => m.name));
-for (const t of ['cotton_white', 'carved_block', 'mongol_tent', 'mongol_flag']) assert.ok(mats.has(t), `숨김 재질 ${t}`);
+for (const t of ['wae_hull', 'wae_sail', 'wae_flag', 'qing_tent', 'qing_flag']) assert.ok(mats.has(t), `숨김 재질 ${t}`);
 for (const [t, h] of Object.entries(items.targets)) for (const m of h.hidden || []) assert.ok(mats.has(m), `숨김 재질 ${m}(${t}) 가 GLB 에 없음`);
-assert.ok(ix.filter((n) => n.startsWith('ix_stone_')).length === 6 && ix.filter((n) => n.startsWith('ix_bigpaddy_')).length === 2 && ix.filter((n) => n.startsWith('ix_songship_')).length === 1 && ix.filter((n) => n.startsWith('ix_ganghwaship_')).length === 1 && ix.includes('ix_sogate_1') && ix.includes('ix_eumseogate_1') && ix.includes('ix_ledger_1') && ix.includes('ix_firepit_1'), '돌 6·문벌 논 2·송 배·강화 배·소 어귀·음서 문·명부·불 자리');
+assert.ok(ix.includes('ix_hopae_1') && ix.includes('ix_examhall_1') && ix.includes('ix_jagyeokru_1') && ix.includes('ix_hwangok_1') && ix.includes('ix_hangeul_1') && ix.includes('ix_seoan_1') && ix.includes('ix_sewing_1') && ix.includes('ix_stonepile_1') && ix.includes('ix_bestall_1') && ix.includes('ix_hideout_1') && ix.includes('ix_boat_1') && ix.includes('ix_waeship_1') && ix.includes('ix_qingcamp_1') && ix.includes('ix_pass_1') && ix.includes('ix_rack_1') && ix.includes('ix_homepaddy_1') && ix.filter((n) => n.startsWith('ix_bigpaddy_')).length === 2, '호패·시험 자리·물시계·환곡·한글판·서안·바느질·돌 더미·베 좌판·숨는 자리·배·왜선·청 진영·고개·가죽 걸이·마을 논·양반 논 2');
 const list = missions.missions;
 assert.equal(list.length, 7, '꼭 나오는 상황 7 = 미션 7');
 const must = life.situations.filter((x) => x.must); assert.equal(must.length, 7, '꼭 나오는 상황 7'); assert.ok(life.situations.length - must.length >= life.mixedCount, '섞여 나오는 상황 ≥ mixedCount');
 for (const m of list) assert.ok(must.some((x) => 'sit:' + x.id + ':done' === m.done), `미션 ${m.id} 가 상황과 안 맞음`);
 for (const sit of life.situations) { if (sit.place) assert.ok(world.areas[sit.place], `상황 ${sit.id} 장소 ${sit.place}`); for (const c of sit.choices) assert.ok(c.done || c.count, `상황 ${sit.id} 선택 ${c.id} 에 done/count 없음`); }
-// 모든 done 깃발이 어딘가(items·npcs·life flag)에서 세워지는지
 const blob = JSON.stringify(items) + JSON.stringify(npcDefs) + JSON.stringify(life.situations.map((s) => s.choices.map((c) => c.flag)));
 for (const sit of life.situations) for (const c of sit.choices) if (c.done) for (const f of c.done.split('&&').map((x) => x.trim()).filter((x) => !x.startsWith('!'))) assert.ok(blob.includes(`"${f}"`), `상황 ${sit.id} 선택 ${c.id} 의 done 깃발 ${f} 를 세우는 곳이 없음`);
 for (const sit of life.situations) for (const c of sit.choices) if (c.status) assert.ok(life.status.rules.some((r) => r.id === c.status), `상황 ${sit.id} 선택 ${c.id} 의 신분 ${c.status} 없음`);
 for (const s of life.situations) if (s.onOpen) for (const a of s.onOpen) if (a.show) assert.ok(ix.includes('ix_' + a.show.name), `onOpen show ${a.show.name}`);
-assert.ok(life.grain?.open && life.rank?.open && life.carry?.from === 'silla-life', '곡식 칸 + 벼슬 칸 + 통일신라에서 넘겨받음');
-const st = life.status.rules; assert.ok(new Set(st.map((r) => r.id)).size === 12 && st.find((r) => r.id === 'munbeol').cap === 6 && st.find((r) => r.id === 'hyangni').cap === 4 && st.find((r) => r.id === 'yangmin').cap === 3 && st.find((r) => r.id === 'bugok').cap === 0 && st.find((r) => r.id === 'solgeo').cap === 0 && st.find((r) => r.id === 'monk').cap === undefined, '신분 12 + 벼슬 높이(문벌 6·향리 4·양민 3·부곡·노비 0·스님 없음)');
-assert.ok(new Set(life.nation?.rules.map((r) => r.id)).size === 1, '나라 하나(고려)');
-assert.ok(life.hurts?.wound && world.danger?.safe?.length === 4, '흔적 「창이 지나간 몸」 + 마을·농장·산성·군영 밤 안전 자리');
+const last = life.situations.find((s) => s.id === 'horan'); for (const c of last.choices) assert.ok(c.then?.some((a) => a.end), `horan 선택 ${c.id} 에 끝 카드 없음`);
+assert.ok(life.grain?.open && life.rank?.open && life.carry?.from === 'goryeo-life', '곡식 칸 + 벼슬 칸 + 고려에서 넘겨받음');
+const st = life.status.rules; const cap = (id) => st.find((r) => r.id === id).cap;
+assert.ok(new Set(st.map((r) => r.id)).size === 12 && cap('yangban') === 6 && cap('mollak') === 6 && cap('seoeol') === 4 && cap('jungin') === 3 && cap('sangmin') === 3 && cap('jangin') === 2 && cap('solgeo') === 0 && cap('oegeo') === 0 && cap('baekjeong') === 0 && cap('gisul') === 4, '신분 12(양반·몰락·서얼·중인·상민·장인·외거·솔거·백정 아홉 + 기술·산채·이름 없는 사람) + 천장');
+assert.ok(st.findIndex((r) => r.id === 'seoeol') < st.findIndex((r) => r.id === 'yangban'), '서얼 규칙이 양반보다 앞(char:belly 로 갈림)');
+assert.ok(new Set(life.nation?.rules.map((r) => r.id)).size === 1, '나라 하나(조선)');
+assert.ok(life.hurts?.wound && life.hurts?.leg && world.danger?.safe?.length === 5, '흔적 둘 + 밤 안전 자리 5');
 assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');
-assert.ok(world.gate?.next === 'joseon-life' && world.gate.ready, '문 → 조선 전기(열림)');
-const prev = JSON.parse(fs.readFileSync(new URL('../eras/silla-life/world.json', import.meta.url))); assert.ok(prev.gate?.next === 'goryeo-life' && prev.gate.ready, '통일신라 끝 카드 → 고려 문(열림)');
+assert.ok(world.gate?.next === 'joseon-late-life' && !world.gate.ready, '문 → 조선 후기(준비 중)');
+const prev = JSON.parse(fs.readFileSync(new URL('../eras/goryeo-life/world.json', import.meta.url))); assert.ok(prev.gate?.next === 'joseon-life' && prev.gate.ready, '고려 끝 카드 → 조선 문(열림)');
+const old = JSON.parse(fs.readFileSync(new URL('../eras/joseon/world.json', import.meta.url))); for (const a of Object.keys(old.areas)) assert.ok(world.areas[a], `조선 마을 터 구역 ${a} 유지`);
 const h = read('height.json'); assert.ok(h && typeof h === 'object', 'height.json');
-console.log(`goryeo.glb: ix ${ix.length} (${[...types].join(',')}) · areas ${areas.length} · npc ${npcs.length} · ${(buffer.length / 1e6).toFixed(2)}MB`);
+console.log(`joseon.glb(life): ix ${ix.length} (${[...types].join(',')}) · areas ${areas.length} · npc ${npcs.length} · ${(buffer.length / 1e6).toFixed(2)}MB`);

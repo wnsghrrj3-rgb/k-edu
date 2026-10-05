@@ -163,8 +163,9 @@ export class Game {
     if (d.rename) { const r = d.rename.find((x) => this.cond(x.if)); if (r) d = { ...d, ...r }; }
     return d;
   }
-  cond(expr) { // "a && !b" 정도의 간단 조건
+  cond(expr) { // "a && !b" 정도의 간단 조건 — 인생 층이 있으면 val:·hurt:·sex:·status: 도 같은 규칙으로(조선 전기 「곡식 셋이면 문과」가 defFor 에서 막히던 것)
     if (!expr) return true;
+    if (this.life) return this.life.cond(expr);
     return expr.split('&&').every((t) => { t = t.trim(); const neg = t.startsWith('!'); const f = neg ? t.slice(1) : t; return neg ? !this.flags.has(f) : this.flags.has(f); });
   }
   renderInv() { this.ui.renderInventory(this.inventory, this.items.items, (k) => this.tapItem(k)); }
