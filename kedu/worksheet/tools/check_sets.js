@@ -87,7 +87,10 @@ const ASSETS = {
   speech:         ['turns'],
   scene:          ['icon'],
   /* v1.0 — 국어 「그림일기를 써요」 (2026-10-06): 그림일기 틀 — 필수 칸 없음(비운 자리를 보여 주는 에셋이라), 규격은 checkAsset 에서 */
-  diary:          []
+  diary:          [],
+  /* v1.1 — 1학년 1학기 「여러 가지 모양」 (2026-10-06): 입체 모양 줄 · 입체로 만든 것 */
+  solid_row:      ['items'],
+  solid_art:      ['parts']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -265,6 +268,29 @@ function checkAsset(where, a) {
     if (a.picture && String(a.picture).length > 12) bad(where, 'diary picture 는 그림 글자 몇 개까지(12자)');
     if (a.hi !== undefined) { if (!Array.isArray(a.hi)) bad(where, 'diary hi 는 배열'); else a.hi.forEach(h => { const pool = [a.date, a.weather].concat(Array.isArray(a.lines) ? a.lines : []).filter(Boolean).map(String); if (!pool.some(t => t.indexOf(String(h)) >= 0)) bad(where, 'diary hi 에 틀에 없는 말 ' + h); }); }
   }
+  if (a.type === 'solid_row') {
+    const SOL = ['box', 'cyl', 'cyl_lay', 'ball'];
+    if (!Array.isArray(a.items) || !a.items.length) bad(where, 'solid_row items 비었음');
+    else {
+      if (a.items.length > 8) bad(where, 'solid_row 는 8개까지');
+      a.items.forEach((x, i) => {
+        if (typeof x === 'string') { if (SOL.indexOf(x) < 0) bad(where, `solid_row items[${i}] 는 box·cyl·cyl_lay·ball 또는 {icon,name}·{solid,peek}`); }
+        else if (!x || typeof x !== 'object') bad(where, `solid_row items[${i}] 이 비었음`);
+        else if (x.solid !== undefined) { if (SOL.indexOf(x.solid) < 0) bad(where, `solid_row items[${i}].solid 모르는 모양 ${x.solid}`); }
+        else if (!x.icon || !x.name) bad(where, `solid_row items[${i}] 물건 카드에 icon·name 둘 다 있어야`);
+      });
+      if (a.mark !== undefined && !(a.mark >= 1 && a.mark <= a.items.length)) bad(where, 'solid_row mark 가 줄 밖: ' + a.mark);
+    }
+  }
+  if (a.type === 'solid_art') {
+    if (!Array.isArray(a.parts) || !a.parts.length) bad(where, 'solid_art parts 비었음');
+    else {
+      let tot = 0;
+      a.parts.forEach((pp, i) => { if (['box', 'cyl', 'ball'].indexOf(pp.solid) < 0) bad(where, `solid_art parts[${i}] solid 는 box·cyl·ball`); if (!(pp.n >= 0 && pp.n <= 8)) bad(where, `solid_art parts[${i}] n 은 0~8`); tot += Number(pp.n) || 0; });
+      const kinds = a.parts.map(pp => pp.solid); if (new Set(kinds).size !== kinds.length) bad(where, 'solid_art 에 같은 모양이 두 줄');
+      if (tot < 3 || tot > 15) bad(where, 'solid_art 전체 모양 수는 3~15 (실제 ' + tot + ')');
+    }
+  }
   if (a.type === 'group_row') {
     if (!Array.isArray(a.groups) || a.groups.length < 2) bad(where, 'group_row groups 가 2무리 미만');
     else a.groups.forEach((g, i) => { if (!g.item || !(Number(g.n) >= 0)) bad(where, `group_row groups[${i}] item/n 없음`); });
@@ -414,6 +440,11 @@ function checkSet(file) {
     if (q.variant_rule.chartrule && at !== 'hundred_chart') bad(where, 'chartrule 변형은 hundred_chart 그림이 있어야 한다');
     if (q.variant_rule.twodigit && at && ['vert', 'bundle_pair', 'compare_groups'].indexOf(at) < 0) bad(where, 'twodigit 변형은 그림 없음·vert·bundle_pair·compare_groups 만');
     if (q.variant_rule.twodigit && (q.variant_rule.twodigit.ask === 'story' || q.variant_rule.twodigit.ask === 'expr') && at && at !== 'compare_groups') bad(where, "twodigit ask:'story'|'expr' 는 그림 없음·compare_groups 만");
+    /* v1.1 갈래 — 입체 모양 */
+    if (q.variant_rule.solids && at !== 'solid_row') bad(where, 'solids 변형은 solid_row 그림이 있어야 한다');
+    if (q.variant_rule.solidart && at !== 'solid_art') bad(where, 'solidart 변형은 solid_art 그림이 있어야 한다');
+    if (q.variant_rule.trait && at) bad(where, 'trait 변형은 그림 없는 문항 전용(설명 글만 바꾼다)');
+    if ((q.variant_rule.solids || q.variant_rule.trait) && q.kind === 'ox' && !(q.reason_options || []).some(o => !o.correct && o.mis)) bad(where, 'solids·trait OX 는 오답 까닭에 mis 가 있어야 변형이 물려받는다');
     /* play.html 과 같은 순서·같은 난수 씀씀이: 틀린 문항들이 난수 하나를 이어 쓰고, prep 은 변형 뒤에 온다.
        (덧: 씨앗을 1씩 늘리면 LCG 특성상 첫 값이 거의 안 변해 「안 변한다」는 가짜 실패가 난다 — 씨앗을 넓게 흩는다) */
     const face = x => JSON.stringify([x.stem, x.asset || null, x.options || null, x.answer || null, x.pairs || null]);

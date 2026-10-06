@@ -228,6 +228,18 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .shart .bd{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;justify-items:center}
 .shart .s{width:34px;height:34px}
 .shart em{display:block;margin-top:6px;font-style:normal;font-size:13px;color:var(--muted);text-align:center}
+/* v1.1 — 1학년 1학기 「여러 가지 모양」(입체: 상자·기둥·공) 2026-10-06 */
+.solrow{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:flex-end}
+.solrow .it{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:64px}
+.solrow .it.mk{outline:3px dashed var(--accent);outline-offset:4px;border-radius:10px}
+.solrow .sv{width:64px;height:64px;display:block}
+.solrow .ob{font-size:44px;line-height:1.1}
+.solrow em{font-style:normal;font-size:14px;color:var(--ink-soft)}
+.solrow .no{font-size:13px;color:var(--muted);font-family:'Gowun Batang',serif}
+.solart{display:inline-block;padding:10px 12px;border:2px solid var(--rule-strong);border-radius:12px;background:var(--tint)}
+.solart .bd{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;justify-items:center;align-items:end}
+.solart .sv{width:44px;height:44px;display:block}
+.solart em{display:block;margin-top:6px;font-style:normal;font-size:13px;color:var(--muted);text-align:center}
 .shp-sq{fill:#F0C36A;stroke:var(--rule-strong);stroke-width:2}
 .shp-tri{fill:#8FC7A8;stroke:var(--rule-strong);stroke-width:2}
 .shp-cir{fill:#9FBEE8;stroke:var(--rule-strong);stroke-width:2}
@@ -369,6 +381,14 @@ body.paper{background:#fff}
 .pq .pshrow em{font-style:normal;font-size:11px;letter-spacing:0;color:#666;margin-left:12px}
 .pq .pshart{margin:10px 0 8px 30px;font-size:20px;letter-spacing:6px;max-width:420px;line-height:1.7}
 .pq .pshart em{font-style:normal;font-size:11px;letter-spacing:0;color:#666;display:block;margin-top:2px}
+.pq .psolrow{margin:10px 0 8px 30px;display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+.pq .psolrow span{display:inline-flex;flex-direction:column;align-items:center;font-size:12px;color:#333}
+.pq .psolrow span.mk{outline:2px dashed #555;outline-offset:3px}
+.pq .psolrow svg{width:40px;height:40px}
+.pq .psolrow b{font-size:26px;font-weight:400;line-height:1.1}
+.pq .psolart{margin:10px 0 8px 30px;max-width:420px}
+.pq .psolart svg{width:28px;height:28px;margin:2px}
+.pq .psolart em{font-style:normal;font-size:11px;color:#666;display:block;margin-top:2px}
 .pq .picto-p{border-collapse:collapse;margin:12px 0 4px 30px;font-size:14px}.pq .picto-p td{border:1px solid #999;padding:6px 12px}.pq .picto-p td:last-child{font-size:20px;letter-spacing:6px}
 .pfoot{position:absolute;bottom:9mm;left:17mm;right:17mm;display:flex;justify-content:space-between;font-size:10px;color:#999}
 .key{width:100%;border-collapse:collapse;font-size:12px}.key th,.key td{border:1px solid #999;padding:6px 8px;text-align:left;vertical-align:top}.key th{background:#F2F0EC;font-weight:400}
@@ -467,6 +487,45 @@ function shapeSVG(kind, cls){
             : '<circle cx="24" cy="24" r="19" class="shp-cir"/>';
   return `<svg class="s${cls ? ' ' + cls : ''}" viewBox="0 0 48 48" role="img" aria-label="${SHAPE_NAME[k]}">${body}</svg>`;
 }
+/* ---------- 입체 모양(상자·기둥·공) 그림 조각 (v1.1, 1학년 1학기 2단원) ----------
+   교과서 말 그대로 「상자 모양·기둥 모양·공 모양」. 색은 그림 안에 박아 종이에서도 같게 나온다. */
+const SOLID_NAME = {box:'상자', cyl:'기둥', cyl_lay:'기둥', ball:'공'};
+const SOLID_KIND = k => (k === 'cyl_lay' ? 'cyl' : k);
+function solidSVG(kind, peek){
+  const k = SOLID_NAME[kind] ? kind : 'box'; const st = 'stroke="#6B6253" stroke-width="1.6" stroke-linejoin="round"';
+  let body = '';
+  if (k === 'box') body = `<polygon points="8,24 20,13 52,13 40,24" fill="#F6D98C" ${st}/><polygon points="40,24 52,13 52,43 40,54" fill="#D9AE52" ${st}/><rect x="8" y="24" width="32" height="30" fill="#EFC56A" ${st}/>`;
+  else if (k === 'cyl') body = `<path d="M14 15 L14 47 A16 5 0 0 0 46 47 L46 15 Z" fill="#E78F8F" ${st}/><path d="M18 20 L18 44" stroke="#F4B9B9" stroke-width="3" stroke-linecap="round"/><ellipse cx="30" cy="15" rx="16" ry="5" fill="#F4B3B3" ${st}/>`;
+  else if (k === 'cyl_lay') body = `<path d="M15 18 L47 18 A5 12 0 0 1 47 42 L15 42 Z" fill="#E78F8F" ${st}/><path d="M20 22 L44 22" stroke="#F4B9B9" stroke-width="3" stroke-linecap="round"/><ellipse cx="15" cy="30" rx="5" ry="12" fill="#F4B3B3" ${st}/>`;
+  else body = `<circle cx="30" cy="31" r="20" fill="#86BFD9" ${st}/><path d="M11 33 Q30 42 49 33" fill="none" stroke="#5E9AB6" stroke-width="1.4" stroke-dasharray="3 3"/><circle cx="23" cy="23" r="5" fill="#D3ECF6"/>`;
+  const bag = peek ? `<path d="M3 30 Q30 24 57 30 L57 58 L3 58 Z" fill="#B8AE9C" stroke="#6B6253" stroke-width="1.6"/><text x="30" y="50" text-anchor="middle" font-size="14" fill="#fff" font-weight="700">?</text>` : '';
+  return `<svg class="sv" viewBox="0 0 60 60" role="img" aria-label="${peek ? '일부가 가려진 모양' : SOLID_NAME[k] + ' 모양'}">${body}${bag}</svg>`;
+}
+/* 받침 있는 낱말인가(조사용) */
+const BAT = w => { const c = String(w).trim().slice(-1).charCodeAt(0); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0; };
+const WEUN = w => (BAT(w) ? '은' : '는');
+/* 엔진이 아는 물건 — 모양이 하나로만 읽히는 것만 넣는다(필통·쓰레기통처럼 둘 다 있는 것은 뺐다) */
+const SOLID_OBJ = [
+  {s:'box', icon:'🎲', name:'주사위'}, {s:'box', icon:'🎁', name:'선물 상자'}, {s:'box', icon:'📦', name:'택배 상자'},
+  {s:'box', icon:'🍱', name:'도시락'}, {s:'box', icon:'🧊', name:'얼음'}, {s:'box', icon:'🧱', name:'벽돌'},
+  {s:'cyl', icon:'🥫', name:'통조림'}, {s:'cyl', icon:'🧻', name:'두루마리 휴지'}, {s:'cyl', icon:'🥁', name:'북'},
+  {s:'cyl', icon:'🔋', name:'건전지'}, {s:'cyl', icon:'🪵', name:'통나무'},
+  {s:'ball', icon:'⚽', name:'축구공'}, {s:'ball', icon:'🏀', name:'농구공'}, {s:'ball', icon:'🎾', name:'테니스공'},
+  {s:'ball', icon:'🔮', name:'구슬'}, {s:'ball', icon:'🎱', name:'당구공'}, {s:'ball', icon:'🏐', name:'배구공'}
+];
+/* 모양의 특징 — 참·거짓 표와 까닭(그 모양에 대해 맞는 말) */
+const SOLID_ATTR = {
+  flat:   {no:'평평한 부분이 없어요', t:'평평한 부분이 있어요', v:{box:1, cyl:1, ball:0}, why:{box:'평평한 부분으로 둘러싸여 있으니까', cyl:'위와 아래가 평평하니까', ball:'어디를 만져도 둥글기만 하니까'}},
+  corner: {no:'뾰족한 부분이 없어요', t:'뾰족한 부분이 있어요', v:{box:1, cyl:0, ball:0}, why:{box:'모서리 끝이 뾰족하니까', cyl:'평평한 부분과 둥근 부분만 있으니까', ball:'어디를 만져도 둥글기만 하니까'}},
+  round:  {no:'둥근 부분이 없어요', t:'둥근 부분이 있어요', v:{box:0, cyl:1, ball:1}, why:{box:'평평한 부분과 뾰족한 부분만 있으니까', cyl:'옆이 둥그니까', ball:'전체가 둥그니까'}},
+  rollall:{no:'여러 방향으로 굴러가지 않아요', t:'여러 방향으로 잘 굴러가요', v:{box:0, cyl:0, ball:1}, why:{box:'평평해서 굴러가지 않으니까', cyl:'눕히면 한 방향으로만 굴러가니까', ball:'어느 쪽으로 밀어도 둥근 부분이 바닥에 닿으니까'}},
+  stack:  {no:'쌓을 수 없어요', t:'쌓을 수 있어요', v:{box:1, cyl:1, ball:0}, why:{box:'평평한 부분끼리 맞닿으니까', cyl:'세우면 평평한 부분끼리 맞닿으니까', ball:'평평한 부분이 없어 굴러떨어지니까'}}
+};
+const SOLID_DESC = {
+  box:  [['뾰족한 부분이 있어요.', '잘 쌓을 수 있어요.'], ['평평한 부분만 있어요.', '굴러가지 않아요.'], ['뾰족한 부분과 평평한 부분이 있어요.', '어느 쪽으로 놓아도 굴러가지 않아요.']],
+  cyl:  [['평평한 부분과 둥근 부분이 있어요.', '눕히면 한 방향으로 굴러가요.'], ['위와 아래가 평평해요.', '옆이 둥글어요.'], ['세우면 쌓을 수 있어요.', '눕히면 굴러가요.']],
+  ball: [['둥근 부분만 있어요.', '여러 방향으로 잘 굴러가요.'], ['평평한 부분이 없어요.', '쌓을 수 없어요.'], ['뾰족한 부분도 평평한 부분도 없어요.', '어느 쪽으로든 잘 굴러가요.']]
+};
 /* 시각 → 두 바늘 각도. m 은 0 또는 30 만 쓴다(1학년 과정) */
 function clockSVG(h, m, opt){
   const hh = ((Number(h) || 12) % 12), mm = (Number(m) === 30 ? 30 : 0);
@@ -585,6 +644,19 @@ function drawAsset(a, r){
         (a.picture === undefined ? '' : `<div class="dp">${slot(a.picture, 'pic')}</div>`) +
         `<div class="dt">${lines === null ? '<div><i class="blank"></i></div>' : lines.map(ln => `<div>${mark(ln)}</div>`).join('')}</div>` +
         (a.name ? `<div class="dn">${esc(a.name)}의 그림일기</div>` : '') + `</div>`; }
+    /* v1.1 — 입체 모양 줄: items 는 'box'|'cyl'|'cyl_lay'|'ball' 그림, {icon,name} 물건 카드, {solid,peek:true} 가려진 모양. mark 1부터, num 이면 번호 */
+    case 'solid_row': { const it = a.items || [];
+      return `<div class="solrow">${it.map((x, i) => { let inner = '';
+        if (typeof x === 'string') inner = solidSVG(x);
+        else if (x && x.solid) inner = solidSVG(x.solid, !!x.peek);
+        else if (x) inner = `<span class="ob">${esc(x.icon || '')}</span>${x.name ? `<em>${esc(x.name)}</em>` : ''}`;
+        return `<div class="it${a.mark === i + 1 ? ' mk' : ''}">${a.num ? `<span class="no">${'①②③④⑤⑥⑦⑧'[i]}</span>` : ''}${inner}</div>`; }).join('')}</div>`; }
+    /* v1.1 — 입체 모양으로 만든 것: parts [{solid,n}] 를 섞어 늘어놓는다. lay 면 기둥 절반을 눕혀 그린다 */
+    case 'solid_art': { const P = a.parts || []; const bag = [];
+      P.forEach(p => { for (let i = 0; i < Math.max(0, Number(p.n) || 0); i++) bag.push(p.solid); });
+      const rr = rng(bag.length * 137 + (P[0] ? String(P[0].solid).charCodeAt(0) : 7) * 19 + SEED);
+      const mixed = shuffle(bag, rr); let c = 0;
+      return `<div class="solart"><div class="bd">${mixed.map(k => solidSVG(k === 'cyl' && a.lay && (c++ % 2) ? 'cyl_lay' : k)).join('')}</div>${a.name ? `<em>${esc(a.name)}</em>` : ''}</div>`; }
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
@@ -1379,6 +1451,95 @@ function makeVariant(q, r){
                      `모두 ${ans}개예요.`, '센 모양에 하나씩 표시하면 빠뜨리지 않아요.'];
     return v;
   }
+  /* --- v1.1: 1학년 1학기 「여러 가지 모양」(입체) 3갈래 — 오개념 코드는 원본에서 물려받는다 --- */
+  const SK = ['box', 'cyl', 'ball'];
+  const SN = k => SOLID_NAME[k] + ' 모양';
+  const objsOf = k => SOLID_OBJ.filter(o => o.s === k);
+  const card = o => ({icon:o.icon, name:o.name});
+  // 물건 줄 — 어떤 모양인가(which) · 모양이 다른 하나(odd) · 몇 개(count)
+  if (a && a.type === 'solid_row' && rule.solids){
+    const S = rule.solids; const ask = S.ask || 'which'; const want = Math.max(1, nOptsOf(q) - 1);
+    delete a.mark; delete a.num;
+    if (ask === 'which'){
+      const k = pick(S.kinds || SK, r); const o = pick(objsOf(k), r); a.items = [card(o)];
+      if (q.kind === 'ox'){
+        const truth = r() < 0.5; const said = truth ? k : pick(SK.filter(x => x !== k), r);
+        v.stem = `${o.name}${WEUN(o.name)} ${SN(said)}이에요.`; v.answer = truth ? 'O' : 'X';
+        const why = {box:'평평한 부분과 뾰족한 부분이 있는 상자 모양이니까', cyl:'평평한 부분과 둥근 부분이 있는 기둥 모양이니까', ball:'둥근 부분만 있는 공 모양이니까'};
+        v.reason_options = [{t:why[k], correct:true}, {t:'크기와 색깔을 보면 모양을 알 수 있으니까', mis:misOf(q.reason_options, 0, null)}];
+        v.explanation = [`${o.name}${WEUN(o.name)} ${SN(k)}이에요.`, truth ? '생김새를 보고 바르게 말했어요.' : `${SN(said)}이 아니에요 — 크기·색깔이 아니라 생김새로 봐요.`, '평평한 곳·뾰족한 곳·둥근 곳이 있는지 차례로 살펴요.'];
+        return v;
+      }
+      v.stem = `${o.name}${WEUN(o.name)} 어떤 모양인가요?`;
+      if (q.kind === 'sa') v.answer = [SN(k), SOLID_NAME[k]];
+      else v.options = asOpts(SN(k), distinct(SN(k), SK.filter(x => x !== k).map(SN), want), q.options, null);
+      v.explanation = [`${o.name}${WEUN(o.name)} ${SN(k)}이에요.`, {box:'평평한 부분과 뾰족한 부분이 있어요.', cyl:'위·아래는 평평하고 옆은 둥글어요.', ball:'어디를 보아도 둥글어요.'}[k], '물건 이름이 아니라 생김새를 보고 나눠요.'];
+      return v;
+    }
+    if (ask === 'odd'){
+      const k = pick(S.kinds || SK, r); const k2 = pick(SK.filter(x => x !== k), r);
+      const same = shuffle(objsOf(k), r).slice(0, 3); const odd = pick(objsOf(k2), r);
+      const pos = rint(0, 3, r); const row = same.slice(); row.splice(pos, 0, odd); a.items = row.map(card); a.num = true;
+      v.stem = '모양이 다른 하나는 무엇인가요?';
+      if (q.kind === 'sa') v.answer = [odd.name];
+      else v.options = asOpts(odd.name, distinct(odd.name, same.map(o => o.name), want), q.options, null);
+      v.explanation = [`${same.map(o => o.name).join('·')}${WEUN(same[2].name)} ${SN(k)}이에요.`, `${odd.name}만 ${SN(k2)}이에요.`, '크기나 쓰임이 아니라 생김새를 견주어요.'];
+      return v;
+    }
+    // count
+    const L = S.len || [5, 7]; const len = rint(L[0], L[1], r); const k = pick(S.kinds || SK, r);
+    let row = shuffle(SOLID_OBJ, r).slice(0, len); if (!row.some(o => o.s === k)) row[rint(0, len - 1, r)] = pick(objsOf(k), r);
+    a.items = row.map(card); const ans = row.filter(o => o.s === k).length;
+    v.stem = `${SN(k)}인 물건은 몇 개인가요?`;
+    if (q.kind === 'sa') v.answer = [String(ans)];
+    else v.options = asOpts(ans, distinct(ans, [ans + 1, ans - 1, len, ans + 2], want), q.options, null);
+    v.explanation = [`${SN(k)}인 물건을 하나씩 짚어 세어요.`, `${row.filter(o => o.s === k).map(o => o.name).join('·')} — 모두 ${ans}개예요.`, '센 물건에 표시하면 두 번 세지 않아요.'];
+    return v;
+  }
+  // 만든 것 — 쓴 모양 세기 · 가장 많이 쓴 모양
+  if (a && a.type === 'solid_art' && rule.solidart){
+    const A = rule.solidart; const N = A.n || [1, 5]; const want = Math.max(1, nOptsOf(q) - 1);
+    const ask = A.ask === 'total' || A.ask === 'most' ? A.ask : (SK.indexOf(A.ask) >= 0 ? A.ask : pick(SK, r));
+    let parts, tries = 0;
+    do { parts = SK.map(k => ({solid:k, n:rint(N[0], N[1], r)})); tries++; }
+    while (ask === 'most' && tries < 50 && parts.filter(p => p.n === Math.max.apply(null, parts.map(x => x.n))).length > 1);
+    if (ask === 'most' && parts.filter(p => p.n === Math.max.apply(null, parts.map(x => x.n))).length > 1) parts[0].n = Math.max.apply(null, parts.map(x => x.n)) + 1;
+    while (parts.reduce((t, p) => t + p.n, 0) > 15){ const big = parts.slice().sort((x, y) => y.n - x.n)[ask === 'most' ? 1 : 0]; big.n--; }   /* 한 화면에 셀 수 있는 만큼(15개) */
+    a.parts = parts; const total = parts.reduce((t, p) => t + p.n, 0);
+    if (ask === 'most'){
+      const top = parts.slice().sort((x, y) => y.n - x.n)[0].solid;
+      v.stem = '가장 많이 쓴 모양은 무엇인가요?';
+      if (q.kind === 'sa') v.answer = [SN(top), SOLID_NAME[top]];
+      else v.options = asOpts(SN(top), distinct(SN(top), SK.filter(x => x !== top).map(SN), want), q.options, null);
+      v.explanation = [`상자 ${parts[0].n}개, 기둥 ${parts[1].n}개, 공 ${parts[2].n}개예요.`, `가장 많은 것은 ${SN(top)}이에요.`, '모양마다 따로 세어 수를 견주어요.'];
+      return v;
+    }
+    const ans = ask === 'total' ? total : parts[SK.indexOf(ask)].n;
+    v.stem = ask === 'total' ? '만드는 데 쓴 모양은 모두 몇 개인가요?' : `만드는 데 쓴 ${SN(ask)}은 몇 개인가요?`;
+    if (q.kind === 'sa') v.answer = [String(ans)];
+    else v.options = asOpts(ans, distinct(ans, [ans + 1, ans - 1, total, ans + 2], want), q.options, null);
+    v.explanation = [ask === 'total' ? '모양을 종류별로 세어 모두 더해요.' : `${SN(ask)}만 골라 세어요${ask === 'cyl' && a.lay ? ' — 누운 기둥도 기둥 모양이에요' : ''}.`, `모두 ${ans}개예요.`, '센 모양에 하나씩 표시하면 빠뜨리지 않아요.'];
+    return v;
+  }
+  // 특징 — 설명 듣고 모양 찾기(name) · 참·거짓(ox)
+  if (!a && rule.trait){
+    const T = rule.trait; const want = Math.max(1, nOptsOf(q) - 1);
+    const k = pick(T.kinds || SK, r);
+    if (q.kind === 'ox'){
+      const keys = T.attrs || Object.keys(SOLID_ATTR); const at = SOLID_ATTR[pick(keys, r)];
+      const truth = !!at.v[k]; const k2 = pick(SK.filter(x => !!at.v[x] !== truth), r);
+      v.stem = `${SN(k)}${WEUN('양')} ${at.t}.`; v.answer = truth ? 'O' : 'X';
+      v.reason_options = [{t:at.why[k], correct:true}, {t:at.why[k2], mis:misOf(q.reason_options, 0, null)}];
+      v.explanation = [`${SN(k)}${WEUN('양')} ${truth ? at.t : at.no}.`, truth ? `「${at.t}」는 맞는 말이에요.` : `「${at.t}」는 ${SN(k2)}에 맞는 말이에요.`, '세 모양을 하나씩 떠올려 견주어 보세요.'];
+      return v;
+    }
+    const d = pick(SOLID_DESC[k], r);
+    v.stem = `다음 설명에 알맞은 모양은 무엇인가요?\n· ${d[0]}\n· ${d[1]}`;
+    if (q.kind === 'sa') v.answer = [SN(k), SOLID_NAME[k]];
+    else v.options = asOpts(SN(k), distinct(SN(k), SK.filter(x => x !== k).map(SN), want), q.options, null);
+    v.explanation = [`두 설명을 모두 만족하는 것은 ${SN(k)}이에요.`, '한 줄만 보고 고르면 다른 모양과 헷갈려요.', '두 줄을 하나씩 세 모양에 대 보세요.'];
+    return v;
+  }
   return v;
 }
 
@@ -1667,6 +1828,16 @@ function paperAsset(a){
         (a.picture === undefined ? '' : `<div class="pdp">${slot(a.picture)}</div>`) +
         `<div class="pdt">${lines === null ? '<div class="pblank"></div>' : lines.map(ln => `<div>${mark(ln)}</div>`).join('')}</div>` +
         (a.name ? `<div style="text-align:right;color:#555;padding:0 8px 4px">${esc(a.name)}의 그림일기</div>` : '') + `</div>`; }
+    case 'solid_row': { const it = a.items || [];
+      return `<div class="psolrow">${it.map((x, i) => { let inner = '';
+        if (typeof x === 'string') inner = solidSVG(x);
+        else if (x && x.solid) inner = solidSVG(x.solid, !!x.peek);
+        else if (x) inner = `<b>${esc(x.icon || '')}</b>${esc(x.name || '')}`;
+        return `<span class="${a.mark === i + 1 ? 'mk' : ''}">${a.num ? '①②③④⑤⑥⑦⑧'[i] : ''}${inner}</span>`; }).join('')}</div>`; }
+    case 'solid_art': { const P = a.parts || []; const bag = [];
+      P.forEach(p => { for (let i = 0; i < Math.max(0, Number(p.n) || 0); i++) bag.push(p.solid); });
+      const mixed = shuffle(bag, rng(bag.length * 137 + 5)); let c = 0;
+      return `<div class="psolart">${mixed.map(k => solidSVG(k === 'cyl' && a.lay && (c++ % 2) ? 'cyl_lay' : k)).join('')}<em>${a.name ? esc(a.name) + ' — ' : ''}상자·기둥·공 모양으로 만들었어요</em></div>`; }
     case 'plate': return `<div class="pplate">${a.n === 0 ? '(비어 있음)' : a.item.repeat(a.n)}</div>`;
   } return '';
 }
