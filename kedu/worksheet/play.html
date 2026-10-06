@@ -674,7 +674,16 @@ function optLabel(t){ return (typeof t === 'object') ? drawAsset(t) : esc(t); }
 function optText(t){ if (typeof t !== 'object') return String(t); if (t.type === 'dots') return `점 ${NUMWORD[t.n]}개`; if (t.type === 'count_group') return `${NUMWORD[t.n]} 개`; return ''; }
 
 /* ---------- 변형 엔진 (오답 「다시 해볼까?」용) — 같은 문제 재탕 금지 ---------- */
+/* 재탕 막이 (2026-10-07) — 갈래가 고를 수 있는 수가 적으면(0이 있는 식 등) 난수가 원본과 똑같은 문제를 다시 뽑을 수 있다.
+   jsdom 실브라우저 스모크에서 「4 + 0」 → 「4 + 0」 이 잡혔다. 원본과 얼굴이 같으면 몇 번 더 굴린다(모든 갈래 공통). */
 function makeVariant(q, r){
+  /* 얼굴 = 아이 눈에 보이는 것(prep 뒤 발문·그림·보기·답·짝). 까닭 보기 글만 바뀐 OX 는 같은 문제다. */
+  const face = x => { const p = prep(x); return JSON.stringify([p.stem, p.asset || null, p.options || null, p.answer || null, p.pairs || null]); };
+  const origin = face(q); let v;
+  for (let t = 0; t < 12; t++){ v = makeVariantOnce(q, r); if (!q.variant_rule || face(v) !== origin) return v; }
+  return v;
+}
+function makeVariantOnce(q, r){
   const v = JSON.parse(JSON.stringify(q)); const rule = q.variant_rule; if (!rule) return v; v.variant = true;
   /* v0.9 — alt 갈래: 글로 된 문항(국어)은 수를 바꿀 수 없다. 사람이 미리 써 둔 다른 문항 가운데 하나를 낸다.
      alt 하나하나는 stem·asset·options·answer·pairs·reason_options·explanation 을 통째로 갈아 끼우는 조각.

@@ -465,7 +465,7 @@ function checkSet(file) {
        (덧: 씨앗을 1씩 늘리면 LCG 특성상 첫 값이 거의 안 변해 「안 변한다」는 가짜 실패가 난다 — 씨앗을 넓게 흩는다) */
     const face = x => JSON.stringify([x.stem, x.asset || null, x.options || null, x.answer || null, x.pairs || null]);
     const origin = face(ENG.prep(q));
-    let varied = false;
+    let varied = false, same = 0;
     for (let i = 0; i < FUZZ; i++) {
       let v;
       const r = ENG.rng((q.seq * 2654435761 + (i + 1) * 40503) >>> 0);
@@ -473,7 +473,7 @@ function checkSet(file) {
       try { v = ENG.prep(ENG.makeVariant(q, r)); }
       catch (e) { bad(where, `변형 ${i} 예외: ` + e.message); break; }
       checkQ(where + ` 변형${i}`, v, { variant: true });
-      if (face(v) !== origin) varied = true;
+      if (face(v) !== origin) varied = true; else same++;
       try { ENG.drawAsset(v.asset, r); }
       catch (e) { bad(where + ` 변형${i}`, '화면 그리기 예외: ' + e.message); }
       try { if (v.asset && !ENG.paperAsset(v.asset)) bad(where + ` 변형${i}`, '종이 문제지에서 에셋이 빈칸으로 나옴'); }
@@ -481,6 +481,8 @@ function checkSet(file) {
       fuzzed++;
     }
     /* 한 번도 안 변했다 = 변형 규칙이 있는데 엔진에 그 갈래가 없다 → 「다시 해볼까?」가 같은 문제 재탕 */
+    /* 재탕 막이(2026-10-07) 뒤로는 원본과 같은 변형이 한 번도 나오면 안 된다 — 나오면 그 갈래가 낼 수 있는 문제가 원본 하나뿐이다 */
+    if (varied && same) bad(where, `변형 ${FUZZ}회 중 ${same}회가 원본과 같음 — 재탕 막이를 넘었다(갈래의 고를 거리가 너무 적다)`);
     if (!varied) { stale.push(q.seq); bad(where, `variant_rule(${Object.keys(q.variant_rule).join(',')}) 이 있는데 ${FUZZ}회 모두 원본과 같음 — 재탕`); }
   });
   return { name, n: d.questions.length, fuzzed, stale };
