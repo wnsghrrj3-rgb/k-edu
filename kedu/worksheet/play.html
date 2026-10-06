@@ -221,6 +221,11 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .clockw .hh{stroke:var(--ink);stroke-width:7;stroke-linecap:round}
 .clockw .mh{stroke:var(--accent);stroke-width:4;stroke-linecap:round}
 .clockw .pin{fill:var(--ink)}
+.cmpw{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:100%;overflow-x:auto}
+.cmpw svg{max-width:100%;height:auto;display:block}
+.pq .pcmpw{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 6px 30px}
+.pq .pcmpw svg{max-width:92%;height:auto;transform-origin:left top}
+.pq .pcmpw .balsv{width:150px;height:auto}
 .shrow{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center}
 .shrow .s{width:42px;height:42px}
 .shrow .s.mk{outline:3px dashed var(--accent);outline-offset:3px;border-radius:6px}
@@ -510,6 +515,90 @@ function solidSVG(kind, peek){
 /* 받침 있는 낱말인가(조사용) */
 const BAT = w => { const c = String(w).trim().slice(-1).charCodeAt(0); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0; };
 const WEUN = w => (BAT(w) ? '은' : '는');
+/* ===== v1.3 — 1학년 1학기 「비교하기」 그림 4종 (2026-10-07) =====
+   len_bars   길이 막대: rows [{label, len 1~12, off 0~4, bend?, thick?}] · line(기준선, 기본 off 가 모두 0 이면 켬) · grid(칸 눈금)
+              bend = 구부러진 줄 — 마디 하나의 실제 길이가 칸 하나(U)와 같게 그린다(펴면 len 칸, 「구부러지면 짧다」 함정이 거짓말이 안 되게)
+   balance    양팔저울: scales [{l:{icon,name}, r:{icon,name}, down:'l'|'r'|'eq'}] 1~3개
+   area_shapes 넓이: mode 'overlap'|'grid'|'side' · shapes [{label, w,h} | {label, cells:[[행,열]…]}]
+   cups       그릇: items [{label, w 1~5, h 1~6, fill 0~1}] · same(같은 그릇) · pour {from, to} — 결과(넘침·남음)는 크기로 엔진이 정한다
+   화면·종이 같은 SVG(흑백 인쇄에도 보이게 굵은 선 + 옅은 채움). */
+const CMP_FILL = ['#F4B6A6', '#A9CCE3', '#F7DC6F', '#A8D5BA'];
+const CMP_INK = '#2E3338';
+function svgEsc(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function lenSVG(a){
+  const R = a.rows || []; const U = 22, LW = 92, RH = 34; const allZero = R.every(rw => !(Number(rw.off) > 0));
+  const line = a.line === undefined ? allZero : !!a.line; const maxEnd = Math.max(...R.map(rw => (Number(rw.off) || 0) + (rw.bend ? Math.ceil(rw.len * 0.62) : rw.len)), 6);
+  const W = LW + 10 + maxEnd * U + 16, H = R.length * RH + 14; const x0 = LW + 10; let s = '';
+  if (a.grid) for (let i = 0; i <= maxEnd; i++) s += `<line x1="${x0 + i * U}" y1="6" x2="${x0 + i * U}" y2="${H - 6}" stroke="#D9D4CA" stroke-width="1"/>`;
+  if (line) s += `<line x1="${x0}" y1="2" x2="${x0}" y2="${H - 2}" stroke="#C0392B" stroke-width="2.5" stroke-dasharray="5 3"/>`;
+  R.forEach((rw, i) => { const y = 10 + i * RH + RH / 2 - 4, col = CMP_FILL[i % 4], sx = x0 + (Number(rw.off) || 0) * U; const sw = rw.thick ? 18 : 10;
+    s += `<text x="${LW}" y="${y + 5}" text-anchor="end" font-size="15" fill="${CMP_INK}">${svgEsc(rw.label)}</text>`;
+    if (rw.bend){ const step = U * 0.62, pts = []; for (let k = 0; k <= rw.len; k++) pts.push(`${(sx + k * step).toFixed(1)},${(y + (k % 2 ? -8.6 : 8.6)).toFixed(1)}`);
+      s += `<polyline points="${pts.join(' ')}" fill="none" stroke="${CMP_INK}" stroke-width="${sw + 3}" stroke-linecap="round" stroke-linejoin="round"/><polyline points="${pts.join(' ')}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>`; }
+    else { s += `<rect x="${sx}" y="${y - sw / 2}" width="${rw.len * U}" height="${sw}" rx="${sw / 2}" fill="${col}" stroke="${CMP_INK}" stroke-width="1.6"/>`;
+      if (a.grid) for (let k = 1; k < rw.len; k++) s += `<line x1="${sx + k * U}" y1="${y - sw / 2}" x2="${sx + k * U}" y2="${y + sw / 2}" stroke="${CMP_INK}" stroke-width="1"/>`; }
+  });
+  return `<svg class="cmpsv" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="길이 막대 ${R.length}개">${s}</svg>`;
+}
+function balSVG(sc){
+  const d = sc.down === 'l' ? 1 : sc.down === 'r' ? -1 : 0; const dy = 13 * d; const L = {x:38, y:46 + dy}, Rr = {x:162, y:46 - dy};
+  const pan = (p, it) => `<line x1="${p.x}" y1="${p.y}" x2="${p.x - 20}" y2="${p.y + 26}" stroke="${CMP_INK}" stroke-width="1.4"/><line x1="${p.x}" y1="${p.y}" x2="${p.x + 20}" y2="${p.y + 26}" stroke="${CMP_INK}" stroke-width="1.4"/>` +
+    `<path d="M${p.x - 26} ${p.y + 26} Q${p.x} ${p.y + 40} ${p.x + 26} ${p.y + 26} Z" fill="#E9E4DA" stroke="${CMP_INK}" stroke-width="1.6"/>` +
+    `<text x="${p.x}" y="${p.y + 22}" text-anchor="middle" font-size="22">${svgEsc(it.icon || '')}</text>`;
+  return `<svg class="balsv" viewBox="0 0 200 150" width="200" height="150" role="img" aria-label="양팔저울">` +
+    `<polygon points="100,46 84,118 116,118" fill="#D9D4CA" stroke="${CMP_INK}" stroke-width="1.6"/><rect x="70" y="118" width="60" height="6" fill="${CMP_INK}"/>` +
+    `<line x1="${L.x}" y1="${L.y}" x2="${Rr.x}" y2="${Rr.y}" stroke="${CMP_INK}" stroke-width="5" stroke-linecap="round"/><circle cx="100" cy="46" r="4" fill="${CMP_INK}"/>` +
+    pan(L, sc.l || {}) + pan(Rr, sc.r || {}) +
+    `<text x="38" y="143" text-anchor="middle" font-size="14" fill="${CMP_INK}">${svgEsc((sc.l || {}).name || '')}</text><text x="162" y="143" text-anchor="middle" font-size="14" fill="${CMP_INK}">${svgEsc((sc.r || {}).name || '')}</text></svg>`;
+}
+function areaCells(sh){ return sh.cells ? sh.cells.length : (Number(sh.w) || 0) * (Number(sh.h) || 0); }
+function areaSVG(a){
+  const S = a.shapes || [], U = 20, mode = a.mode || 'grid';
+  if (mode === 'overlap'){ const W = Math.max(...S.map(s => s.w)) * U + 20, H = Math.max(...S.map(s => s.h)) * U + 40; let s = '';
+    S.forEach((sh, i) => { s += `<rect x="10" y="10" width="${sh.w * U}" height="${sh.h * U}" fill="${CMP_FILL[i % 4]}" fill-opacity="${i ? 0.85 : 1}" stroke="${CMP_INK}" stroke-width="${i ? 2 : 1.6}" ${i ? 'stroke-dasharray="6 3"' : ''}/>`; });
+    s += S.map((sh, i) => `<rect x="${10 + i * 90}" y="${H - 22}" width="14" height="14" fill="${CMP_FILL[i % 4]}" stroke="${CMP_INK}"/><text x="${30 + i * 90}" y="${H - 10}" font-size="14" fill="${CMP_INK}">${svgEsc(sh.label)}</text>`).join('');
+    return `<svg class="cmpsv" viewBox="0 0 ${Math.max(W, 200)} ${H}" width="${Math.max(W, 200)}" height="${H}" role="img" aria-label="겹쳐 놓은 두 모양">${s}</svg>`; }
+  let x = 10, s = ''; const maxH = Math.max(...S.map(sh => sh.cells ? Math.max(...sh.cells.map(c => c[0])) + 1 : sh.h));
+  S.forEach((sh, i) => { const cells = sh.cells || (() => { const o = []; for (let r = 0; r < sh.h; r++) for (let c = 0; c < sh.w; c++) o.push([r, c]); return o; })();
+    const cw = Math.max(...cells.map(c => c[1])) + 1, top = 10 + (maxH - (Math.max(...cells.map(c => c[0])) + 1)) * U * (mode === 'side' ? 1 : 0);
+    if (mode === 'grid') for (let r = 0; r < maxH; r++) for (let c = 0; c < cw; c++) s += `<rect x="${x + c * U}" y="${10 + r * U}" width="${U}" height="${U}" fill="none" stroke="#D9D4CA"/>`;
+    if (mode === 'side' && !sh.cells) s += `<rect x="${x}" y="${top}" width="${sh.w * U}" height="${sh.h * U}" fill="${CMP_FILL[i % 4]}" stroke="${CMP_INK}" stroke-width="1.6"/>`;
+    else cells.forEach(c => { s += `<rect x="${x + c[1] * U}" y="${top + c[0] * U}" width="${U}" height="${U}" fill="${CMP_FILL[i % 4]}" stroke="${CMP_INK}" stroke-width="1.2"/>`; });
+    s += `<text x="${x + cw * U / 2}" y="${10 + maxH * U + 18}" text-anchor="middle" font-size="15" fill="${CMP_INK}">${svgEsc(sh.label)}</text>`;
+    x += cw * U + 28; });
+  const W = x, H = maxH * U + 36;
+  return `<svg class="cmpsv" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="넓이를 견줄 모양 ${S.length}개">${s}</svg>`;
+}
+function cupCap(c){ return (Number(c.w) || 0) * (Number(c.h) || 0); }
+function pourResult(a){ if (!a.pour) return null; const f = a.items[a.pour.from], t = a.items[a.pour.to]; return cupCap(f) > cupCap(t) ? 'over' : 'room'; }
+function cupsSVG(a){
+  const I = a.items || [], U = 15; const maxH = Math.max(...I.map(c => c.h)); let x = 14, s = ''; const base = 14 + maxH * U;
+  I.forEach((c, i) => { const W = c.w * U, H = c.h * U, y = base - H; const f = Math.max(0, Math.min(1, Number(c.fill) || 0));
+    if (f > 0) s += `<rect x="${x}" y="${base - H * f}" width="${W}" height="${H * f}" fill="#9CC9E8"/>`;
+    s += `<path d="M${x} ${y} L${x} ${base} L${x + W} ${base} L${x + W} ${y}" fill="none" stroke="${CMP_INK}" stroke-width="2.4" stroke-linejoin="round"/>`;
+    s += `<text x="${x + W / 2}" y="${base + 20}" text-anchor="middle" font-size="15" fill="${CMP_INK}">${svgEsc(c.label)}</text>`; c._x = x + W / 2; x += W + 30; });
+  let H = base + 30;
+  if (a.pour){ const res = pourResult(a), f = I[a.pour.from], t = I[a.pour.to];
+    s += `<text x="14" y="${H + 8}" font-size="14" fill="${CMP_INK}">${svgEsc(f.label)}에 가득 담은 물을 ${svgEsc(t.label)}에 부었더니 ${res === 'over' ? '넘쳤어요' : '빈 곳이 남았어요'}.</text>`; H += 20; }
+  I.forEach(c => delete c._x);
+  const W = Math.max(x, a.pour ? 330 : 0);
+  return `<svg class="cmpsv" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="그릇 ${I.length}개">${s}</svg>`;
+}
+/* 이름 바꿔 끼우기 — 발문·해설·보기 글에서 이름 A 를 B 로, 뒤 조사(이/가·은/는·을/를·과/와·이에요/예요)는 새 이름의 받침에 맞춘다 */
+function hasBat(w){ const ch = String(w).trim().slice(-1); const c = ch.charCodeAt(0);
+  if (c >= 0x326E && c <= 0x327B) return false;               /* ㉮~㉻ = 가~하, 받침 없음 */
+  return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0; }
+function swapNames(text, map){
+  if (typeof text !== 'string') return text; const keys = Object.keys(map).filter(k => k !== map[k]).sort((a, b) => b.length - a.length); if (!keys.length) return text;
+  const PART = [['이에요', '예요'], ['이', '가'], ['은', '는'], ['을', '를'], ['과', '와']];
+  const toks = []; let out = text;
+  keys.forEach((k, i) => { out = out.split(k).join('\u0001' + i + '\u0002'); toks.push(k); });
+  return out.replace(/\u0001(\d+)\u0002(이에요|예요|이|가|은|는|을|를|과|와)?/g, (m, i, p) => {
+    const nw = map[toks[Number(i)]]; if (!p) return nw; const b = hasBat(nw);
+    for (const [withB, noB] of PART){ if (p === withB || p === noB){
+      return nw + (b ? withB : noB); } }
+    return nw + p; });
+}
 /* 엔진이 아는 물건 — 모양이 하나로만 읽히는 것만 넣는다(필통·쓰레기통처럼 둘 다 있는 것은 뺐다) */
 const SOLID_OBJ = [
   {s:'box', icon:'🎲', name:'주사위'}, {s:'box', icon:'🎁', name:'선물 상자'}, {s:'box', icon:'📦', name:'택배 상자'},
@@ -666,6 +755,11 @@ function drawAsset(a, r){
     /* v1.2 — 덜어 내기 줄: n 개 가운데 뒤쪽 cross 개에 빗금(덜어 낸 것) */
     case 'take_row': { const n = Math.max(0, Number(a.n) || 0), x = Math.max(0, Math.min(n, Number(a.cross) || 0));
       return `<div class="take${n ? '' : ' empty'}">${Array.from({length:n}, (_, i) => `<span class="${i >= n - x ? 'x' : ''}">${a.item}</span>`).join('')}</div>`; }
+    /* v1.3 — 「비교하기」 그림 4종 */
+    case 'len_bars': return `<div class="cmpw">${lenSVG(a)}</div>`;
+    case 'balance': return `<div class="cmpw bal">${(a.scales || []).map(balSVG).join('')}</div>`;
+    case 'area_shapes': return `<div class="cmpw">${areaSVG(a)}</div>`;
+    case 'cups': return `<div class="cmpw">${cupsSVG(a)}</div>`;
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
@@ -1558,6 +1652,50 @@ function makeVariantOnce(q, r){
     v.explanation = [`두 설명을 모두 만족하는 것은 ${SN(k)}이에요.`, '한 줄만 보고 고르면 다른 모양과 헷갈려요.', '두 줄을 하나씩 세 모양에 대 보세요.'];
     return v;
   }
+  /* --- v1.3: 1학년 1학기 「비교하기」 — cmp4 갈래 (2026-10-07)
+         그림(len_bars·cups·area_shapes·balance)의 줄 순서를 섞고 이름표를 바꿔 단다. 생김새(길이·크기·저울 기울기)는 그대로 —
+         그래서 「어느 것이 답인가」의 관계와 함정(끝 안 맞춤·높이만 큰 컵·한 변만 긴 모양)은 살아 있고, 답의 자리와 이름만 바뀐다.
+         발문·해설·보기 글의 이름은 swapNames 로 함께 바꾼다(조사는 새 이름 받침에 맞춤). 오개념 코드는 보기에 붙은 그대로 따라간다.
+         rule.cmp4 = {ask:'most'|'least'(검사기 정답 확인용), names:[[이름표 묶음]…](없으면 원래 이름표끼리 섞음)} --- */
+  if (rule.cmp4 && a && typeof a === 'object' && ['len_bars', 'cups', 'area_shapes', 'balance'].indexOf(a.type) >= 0){
+    const S = rule.cmp4; const map = {};
+    const key = {len_bars:'rows', cups:'items', area_shapes:'shapes'}[a.type];
+    if (key){
+      /* 줄 순서를 섞되(같은 순서면 한 칸 돌림) 이름표는 보이는 순서대로 다시 단다 — 아이 눈엔 늘 ㉮㉯㉰ 차례 */
+      const rows = a[key]; const labels = rows.map(x => x.label);
+      const sets = (S.names || []).filter(ns => ns.length >= labels.length);
+      const fromSet = sets.length && r() < 0.75;
+      const overlap = a.type === 'area_shapes' && a.mode === 'overlap';
+      let perm = rows.map((_, i) => i);
+      if (!overlap && rows.length > 1){ perm = shuffle(perm, r); if (perm.every((x, i) => x === i)) perm = perm.slice(1).concat(perm[0]); }
+      const moved = perm.map(i => rows[i]);
+      let fresh = fromSet ? shuffle(pick(sets, r).slice(0, labels.length), r) : labels.slice();
+      if (overlap && !fromSet && fresh.length > 1) fresh = fresh.slice(1).concat(fresh[0]);
+      moved.forEach((x, j) => { map[x.label] = fresh[j]; });
+      moved.forEach((x, j) => { x.label = fresh[j]; });
+      a[key] = moved;
+      if (a.pour){ a.pour = {from: perm.indexOf(a.pour.from), to: perm.indexOf(a.pour.to)}; }
+    } else {
+      const names = []; a.scales.forEach(sc => [sc.l, sc.r].forEach(it => { if (it && names.indexOf(it.name) < 0) names.push(it.name); }));
+      const sets = (S.names || []).filter(ns => ns.length >= names.length);
+      if (sets.length){ const fresh = shuffle(pick(sets, r).slice(0, names.length), r); names.forEach((n, i) => { map[n] = fresh[i]; });
+        a.scales.forEach(sc => [sc.l, sc.r].forEach(it => { if (it) it.name = map[it.name]; })); }
+      /* 이름 묶음이 없으면(수박·참외처럼 실제 물건) 이름은 그대로 — 바꿔 끼우면 저울이 거짓을 말한다. 접시 좌우만 섞는다 */
+      const before = JSON.stringify(a.scales);
+      const flip = sc => { const t = sc.l; sc.l = sc.r; sc.r = t; sc.down = sc.down === 'l' ? 'r' : sc.down === 'r' ? 'l' : 'eq'; };
+      a.scales.forEach(sc => { if (r() < 0.5) flip(sc); });   /* 저울 차례는 그대로 — 해설의 「첫째 저울」이 거짓이 되지 않게 */
+      if (JSON.stringify(a.scales) === before) flip(a.scales[0]);
+    }
+    const sw = t => swapNames(t, map);
+    v.stem = sw(v.stem);
+    if (Array.isArray(v.explanation)) v.explanation = v.explanation.map(sw);
+    if (Array.isArray(v.options)) v.options.forEach(o => { if (typeof o.t === 'string') o.t = sw(o.t); });
+    if (Array.isArray(v.reason_options)) v.reason_options.forEach(o => { o.t = sw(o.t); });
+    if (Array.isArray(v.answer)) v.answer = v.answer.map(sw);
+    if (Array.isArray(v.pairs)) v.pairs.forEach(p => { if (typeof p.l === 'string') p.l = sw(p.l); if (typeof p.r === 'string') p.r = sw(p.r); });
+    return v;
+  }
+
   /* --- v1.2: 1학년 1학기 「덧셈과 뺄셈」(9까지) — addsub 갈래 (2026-10-06)
          그림: 없음 · group_row(두 무리, 모으기·더하기) · take_row(덜어 내기) · compare_groups(두 줄 견주기)
          ask: value(답) · missing(□) · check(OX) · story(이야기 문제) · expr(알맞은 식 고르기)
@@ -1929,6 +2067,11 @@ function paperAsset(a){
     case 'number_bond': { const P = a.parts || [null, null];
       const t = x => (x === null || x === undefined || x === '?') ? '<span>&nbsp;</span>' : `<span>${esc(x)}</span>`;
       return `<div class="pbond">전체 ${t(a.whole)} &nbsp;=&nbsp; ${t(P[0])} 와 ${t(P[1])}</div>`; }
+    /* v1.3 — 「비교하기」 그림은 화면과 같은 SVG(흑백에도 보이게 굵은 선) */
+    case 'len_bars': return `<div class="pcmpw">${lenSVG(a)}</div>`;
+    case 'balance': return `<div class="pcmpw">${(a.scales || []).map(balSVG).join('')}</div>`;
+    case 'area_shapes': return `<div class="pcmpw">${areaSVG(a)}</div>`;
+    case 'cups': return `<div class="pcmpw">${cupsSVG(a)}</div>`;
     case 'take_row': { const n = Math.max(0, Number(a.n) || 0), x = Math.max(0, Math.min(n, Number(a.cross) || 0));
       return `<div class="pgrow">${n ? String(a.item).repeat(n - x) + '⊘'.repeat(x) : '(빈 접시)'}${x ? '<em style="font-style:normal;font-size:11px;color:#666"> (⊘ = 덜어 낸 것)</em>' : ''}</div>`; }
     case 'group_row': { const op = a.op === '-' ? ' − ' : ' + ';

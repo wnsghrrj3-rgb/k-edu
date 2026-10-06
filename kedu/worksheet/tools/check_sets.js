@@ -92,7 +92,12 @@ const ASSETS = {
   solid_row:      ['items'],
   solid_art:      ['parts'],
   /* v1.2 — 1학년 1학기 「덧셈과 뺄셈」 (2026-10-06): 덜어 내기 줄 */
-  take_row:       ['item', 'n', 'cross']
+  take_row:       ['item', 'n', 'cross'],
+  /* v1.3 — 1학년 1학기 「비교하기」 (2026-10-07): 길이 막대 · 양팔저울 · 넓이 모양 · 그릇 */
+  len_bars:       ['rows'],
+  balance:        ['scales'],
+  area_shapes:    ['shapes'],
+  cups:           ['items']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -297,11 +302,104 @@ function checkAsset(where, a) {
       if (tot < 3 || tot > 15) bad(where, 'solid_art 전체 모양 수는 3~15 (실제 ' + tot + ')');
     }
   }
+  if (a.type === 'len_bars') {
+    if (!Array.isArray(a.rows) || a.rows.length < 2 || a.rows.length > 4) bad(where, 'len_bars rows 는 2~4줄');
+    else {
+      a.rows.forEach((rw, i) => {
+        if (!rw.label) bad(where, `len_bars rows[${i}] label 없음`);
+        if (!(Number.isInteger(rw.len) && rw.len >= 1 && rw.len <= 12)) bad(where, `len_bars rows[${i}] len 은 1~12 정수`);
+        if (rw.off !== undefined && !(Number.isInteger(rw.off) && rw.off >= 0 && rw.off <= 4)) bad(where, `len_bars rows[${i}] off 는 0~4 정수`);
+      });
+      const L = a.rows.map(rw => rw.label); if (new Set(L).size !== L.length) bad(where, 'len_bars 이름표 중복');
+      if (a.line && a.rows.some(rw => Number(rw.off) > 0)) bad(where, 'len_bars 기준선(line)을 켰는데 끝이 안 맞은 줄이 있다 — 그림이 거짓말');
+    }
+  }
+  if (a.type === 'balance') {
+    if (!Array.isArray(a.scales) || !a.scales.length || a.scales.length > 3) bad(where, 'balance scales 는 1~3개');
+    else a.scales.forEach((sc, i) => {
+      if (!sc.l || !sc.r || !sc.l.name || !sc.r.name) bad(where, `balance scales[${i}] l·r 에 name 이 있어야`);
+      else if (sc.l.name === sc.r.name) bad(where, `balance scales[${i}] 양쪽이 같은 물건`);
+      if (['l', 'r', 'eq'].indexOf(sc.down) < 0) bad(where, `balance scales[${i}] down 은 l·r·eq`);
+    });
+  }
+  if (a.type === 'area_shapes') {
+    if (['overlap', 'grid', 'side'].indexOf(a.mode || 'grid') < 0) bad(where, 'area_shapes mode 는 overlap·grid·side');
+    if (!Array.isArray(a.shapes) || a.shapes.length < 2 || a.shapes.length > 3) bad(where, 'area_shapes shapes 는 2~3개');
+    else {
+      a.shapes.forEach((sh, i) => {
+        if (!sh.label) bad(where, `area_shapes shapes[${i}] label 없음`);
+        if (sh.cells) { if (!Array.isArray(sh.cells) || !sh.cells.length || sh.cells.length > 30) bad(where, `area_shapes shapes[${i}] cells 1~30칸`);
+          else { const k = sh.cells.map(c => c.join(',')); if (new Set(k).size !== k.length) bad(where, `area_shapes shapes[${i}] 같은 칸 두 번`);
+            if (sh.cells.some(c => !(c[0] >= 0 && c[0] <= 7 && c[1] >= 0 && c[1] <= 7))) bad(where, `area_shapes shapes[${i}] 칸 자리는 0~7`); } }
+        else if (!(Number.isInteger(sh.w) && Number.isInteger(sh.h) && sh.w >= 1 && sh.h >= 1 && sh.w <= 8 && sh.h <= 8)) bad(where, `area_shapes shapes[${i}] w·h 는 1~8 정수`);
+      });
+      if (a.mode === 'overlap') {
+        if (a.shapes.length !== 2 || a.shapes.some(sh => sh.cells)) bad(where, 'area_shapes overlap 은 w·h 모양 둘');
+        else { const [p, q] = a.shapes; if (!(p.w >= q.w && p.h >= q.h) || (p.w === q.w && p.h === q.h)) bad(where, 'area_shapes overlap — 아래(첫째) 모양이 위(둘째) 모양을 다 덮어야 한다(아니면 겹쳐 보기로 못 가린다)'); }
+      }
+      if (a.mode === 'side' && a.shapes.some(sh => sh.cells)) bad(where, 'area_shapes side 는 w·h 모양만(칸 모양은 grid)');
+    }
+  }
+  if (a.type === 'cups') {
+    if (!Array.isArray(a.items) || a.items.length < 2 || a.items.length > 4) bad(where, 'cups items 는 2~4개');
+    else {
+      a.items.forEach((c, i) => {
+        if (!c.label) bad(where, `cups items[${i}] label 없음`);
+        if (!(Number.isInteger(c.w) && c.w >= 1 && c.w <= 5)) bad(where, `cups items[${i}] w 는 1~5`);
+        if (!(Number.isInteger(c.h) && c.h >= 1 && c.h <= 6)) bad(where, `cups items[${i}] h 는 1~6`);
+        if (c.fill !== undefined && !(c.fill >= 0 && c.fill <= 1)) bad(where, `cups items[${i}] fill 은 0~1`);
+      });
+      if (a.same && a.items.some(c => c.w !== a.items[0].w || c.h !== a.items[0].h)) bad(where, 'cups same 인데 그릇 크기가 다르다');
+      if (a.pour) { const n = a.items.length; if (!(a.pour.from >= 0 && a.pour.from < n && a.pour.to >= 0 && a.pour.to < n && a.pour.from !== a.pour.to)) bad(where, 'cups pour from/to 가 그릇 밖이거나 같다');
+        else if (a.items[a.pour.from].w * a.items[a.pour.from].h === a.items[a.pour.to].w * a.items[a.pour.to].h) bad(where, 'cups pour 두 그릇 크기가 같다 — 넘침/남음을 말할 수 없다'); }
+    }
+  }
   if (a.type === 'group_row') {
     if (!Array.isArray(a.groups) || a.groups.length < 2) bad(where, 'group_row groups 가 2무리 미만');
     else a.groups.forEach((g, i) => { if (!g.item || !(Number(g.n) >= 0)) bad(where, `group_row groups[${i}] item/n 없음`); });
     if (a.op !== undefined && a.op !== '+' && a.op !== '-') bad(where, "group_row op 는 '+' 또는 '-'");
   }
+}
+
+/* v1.3 cmp4 — 그림에서 정답을 다시 계산해 보기·답과 맞는지 (원본·변형 모두)
+   ask most|least|mid · by len|weight|area|cap|fill (없으면 그림 종류로) */
+function cmp4Truth(a, by) {
+  if (!a || typeof a !== 'object') return null;
+  if (a.type === 'balance') {
+    const names = []; a.scales.forEach(sc => [sc.l, sc.r].forEach(it => { if (names.indexOf(it.name) < 0) names.push(it.name); }));
+    const gt = {}; names.forEach(n => { gt[n] = new Set(); });
+    a.scales.forEach(sc => { if (sc.down === 'l') gt[sc.l.name].add(sc.r.name); else if (sc.down === 'r') gt[sc.r.name].add(sc.l.name); });
+    for (let k = 0; k < names.length; k++) names.forEach(x => [...gt[x]].forEach(y => gt[y].forEach(z => gt[x].add(z))));
+    if (names.some(n => gt[n].has(n))) return { err: '저울끼리 서로 어긋난다(순환)' };
+    return { names, rank: n => gt[n].size, lt: n => names.filter(m => gt[m].has(n)).length, total: names.length, kind: 'order' };
+  }
+  const key = { len_bars: 'rows', cups: 'items', area_shapes: 'shapes' }[a.type]; if (!key) return null;
+  const rows = a[key];
+  const val = x => a.type === 'len_bars' ? x.len : a.type === 'area_shapes' ? (x.cells ? x.cells.length : x.w * x.h)
+    : (by === 'fill' ? x.w * x.h * (x.fill || 0) : x.w * x.h);
+  return { names: rows.map(x => x.label), v: rows.map(val), kind: 'value' };
+}
+function checkCmp4(where, q) {
+  const S = (q.variant_rule || {}).cmp4; if (!S || !S.ask) return;
+  const T = cmp4Truth(q.asset, S.by); if (!T) return;
+  if (T.err) return bad(where, 'cmp4 ' + T.err);
+  let ans = null;
+  if (T.kind === 'value') {
+    const sorted = T.v.slice().sort((x, y) => x - y); const want = S.ask === 'most' ? sorted[sorted.length - 1] : S.ask === 'least' ? sorted[0] : sorted[1];
+    if (S.ask === 'mid' && T.v.length !== 3) return bad(where, "cmp4 ask:'mid' 는 셋일 때만");
+    if (T.v.filter(x => x === want).length !== 1) return bad(where, `cmp4 ${S.ask} 정답이 하나로 안 정해진다 (${T.v.join(',')})`);
+    ans = T.names[T.v.indexOf(want)];
+  } else {
+    const pickN = T.names.filter(n => S.ask === 'most' ? T.rank(n) === T.total - 1 : S.ask === 'least' ? T.lt(n) === T.total - 1 : (T.rank(n) === 1 && T.lt(n) === 1));
+    if (pickN.length !== 1) return bad(where, `cmp4 저울로 ${S.ask} 가 하나로 안 정해진다`);
+    ans = pickN[0];
+  }
+  if (q.kind === 'sa') { if (!Array.isArray(q.answer) || String(q.answer[0]).trim() !== ans) bad(where, `cmp4 단답 정답 ${q.answer} ≠ 그림이 말하는 ${ans}`); return; }
+  if (!Array.isArray(q.options)) return;
+  const cor = q.options.find(o => o.correct); if (!cor || typeof cor.t !== 'string') return;
+  const has = t => String(t).split(/[\s,·]+/).some(w => w.replace(/(이에요|예요|이|가|은|는|을|를|과|와|에|의)$/, '') === ans) || String(t) === ans;
+  if (!has(cor.t)) bad(where, `cmp4 정답 보기 「${cor.t}」 에 그림이 말하는 ${ans} 가 없다`);
+  q.options.filter(o => !o.correct).forEach(o => { if (typeof o.t === 'string' && has(o.t)) bad(where, `cmp4 오답 보기 「${o.t}」 가 그림의 정답 ${ans} 를 가리킨다`); });
 }
 
 /* 한 문항(원본이든 변형본이든) 공통 검사 */
@@ -322,6 +420,7 @@ function checkQ(where, q, opt) {
   /* 선긋기·OX 의 「O/X 자체 오답」은 보기가 없어 오개념을 못 단다 — 새 단원(국어부터)은 문항에 mis 를 직접 단다 */
   if (!opt.variant && (q.kind === 'match' || q.kind === 'ox') && !q.mis && opt.requireMis) bad(where, q.kind + ' 문항에 기본 오개념(mis) 없음 — 틀렸을 때 리포트가 읽을 코드가 없다');
   checkAsset(where, q.asset);
+  checkCmp4(where, q);
   if (q.asset && typeof q.asset === 'object' && ASSETS[q.asset.type]) {
     try { if (!ENG.drawAsset(q.asset, ENG.rng(7))) bad(where, '화면에서 에셋이 빈칸으로 나옴'); }
     catch (e) { bad(where, '화면 그리기 예외: ' + e.message); }
@@ -461,6 +560,14 @@ function checkSet(file) {
       if (q.kind === 'ox' && !(q.reason_options || []).some(o => !o.correct && o.mis)) bad(where, 'addsub OX 는 오답 까닭에 mis 가 있어야 변형이 물려받는다');
     }
     if ((q.variant_rule.solids || q.variant_rule.trait) && q.kind === 'ox' && !(q.reason_options || []).some(o => !o.correct && o.mis)) bad(where, 'solids·trait OX 는 오답 까닭에 mis 가 있어야 변형이 물려받는다');
+    /* v1.3 갈래 — 비교하기 */
+    if (q.variant_rule.cmp4) {
+      if (['len_bars', 'balance', 'area_shapes', 'cups'].indexOf(at) < 0) bad(where, 'cmp4 변형은 len_bars·balance·area_shapes·cups 그림이 있어야 한다');
+      const C4 = q.variant_rule.cmp4;
+      if (C4.ask !== undefined && ['most', 'least', 'mid'].indexOf(C4.ask) < 0) bad(where, "cmp4 ask 는 most·least·mid");
+      if (C4.by !== undefined && ['cap', 'fill'].indexOf(C4.by) < 0) bad(where, "cmp4 by 는 cap·fill(그릇만)");
+      if (at === 'cups' && C4.ask && !C4.by) bad(where, 'cups 의 cmp4 ask 는 by(cap 담을 수 있는 양 | fill 담긴 양)를 밝혀야 한다');
+    }
     /* play.html 과 같은 순서·같은 난수 씀씀이: 틀린 문항들이 난수 하나를 이어 쓰고, prep 은 변형 뒤에 온다.
        (덧: 씨앗을 1씩 늘리면 LCG 특성상 첫 값이 거의 안 변해 「안 변한다」는 가짜 실패가 난다 — 씨앗을 넓게 흩는다) */
     const face = x => JSON.stringify([x.stem, x.asset || null, x.options || null, x.answer || null, x.pairs || null]);
