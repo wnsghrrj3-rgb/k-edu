@@ -136,7 +136,7 @@
     if (o.text) return '<div>' + md(o.text) + '</div>';
     return '';
   }
-  function dataFig(f) { return !!f && (['bar', 'pgraph', 'ptable', 'ngrid', 'eqs', 'eqc', 'bal', 'shapes', 'lines', 'pdist', 'quad', 'quads', 'circ2', 'dgrid', 'dline', 'dpv', 'dvert'].indexOf(f.k) >= 0 || (f.k === 'panels' && (f.items || []).some(i => dataFig(i.fig)))); } // 63차 · 65차 관계·규칙 부품 · 82차 사각형 부품 · 83차 소수 부품
+  function dataFig(f) { return !!f && (['bar', 'pgraph', 'ptable', 'ngrid', 'eqs', 'eqc', 'bal', 'shapes', 'lines', 'pdist', 'quad', 'quads', 'circ2', 'dgrid', 'dline', 'dpv', 'dvert'].indexOf(f.k) >= 0 || (f.k === 'rtab' && (f.rows || []).length > 1) || (f.k === 'panels' && (f.items || []).some(i => dataFig(i.fig)))); } // 63차 · 65차 관계·규칙 부품 · 82차 사각형 부품 · 83차 소수 부품(기록표는 두 줄 이상일 때만 두 칸 — 한 줄 표는 넓게 위아래)
   function options(opts, multi, revealed) {
     if (!opts || !opts.length) return '';
     const M = ['A', 'B', 'C', 'D', 'E', 'F'];
