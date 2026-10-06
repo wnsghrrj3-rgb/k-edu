@@ -44,10 +44,12 @@
     Q.stage = stage || Q.stage; const h = ensureHost();
     // 종이를 새로 갈아 끼운다 — 앞 활동이 걸어 둔 클릭 리스너가 남지 않게(한 판에 한 활동)
     const old = doc.getElementById('kq-paper'); const paper = old.cloneNode(false); paper.innerHTML = ''; old.parentNode.replaceChild(paper, old); paper.className = 'kq-paper kq-' + act.id;
-    h.querySelector('.kq-h-t').textContent = act.icon + ' ' + act.name; h.querySelector('.kq-h-line').textContent = '';
-    h.classList.add('on'); doc.body.classList.add('kact-open'); Q.open = true; Q.cur = { act, cfg, at: Date.now(), summary: null }; fit();
+    const solo = !!cfg.solo && act.solo !== false;             // D59: 혼자 꼴 — 교사 진행형 4종(bingo·roulette·wordchain·dictation)은 solo 없음
+    h.querySelector('.kq-h-t').textContent = act.icon + ' ' + act.name + (solo ? ' · 혼자' : ''); h.querySelector('.kq-h-line').textContent = '';
+    h.classList.add('on'); doc.body.classList.add('kact-open'); h.classList.toggle('solo', solo); Q.open = true; Q.cur = { act, cfg, at: Date.now(), summary: null, result: null, solo }; fit();
     const api = {
-      paper, cfg, rng: rnd(cfg.seed), stage: Q.stage,
+      paper, cfg, rng: rnd(cfg.seed), stage: Q.stage, solo,
+      result: r => { if (Q.cur) Q.cur.result = r; },       // D59: 혼자 꼴의 채점 결과 {score,total} — 투영이 받는다
       status: t => { const el = h.querySelector('.kq-h-line'); if (el) el.textContent = t || ''; },
       pop: () => { const s = Q.stage; if (s && s.sound && s.pop) s.pop(); },
       good: () => { const s = Q.stage; if (s && s.sound && s.tone) { s.tone(660, 0.08, 0.05, 'triangle'); setTimeout(() => s.tone(880, 0.12, 0.05, 'triangle'), 90); } },
@@ -63,8 +65,20 @@
     h.classList.remove('on'); doc.body.classList.remove('kact-open'); doc.getElementById('kq-paper').innerHTML = '';
     if (global.speechSynthesis) { try { global.speechSynthesis.cancel(); } catch (e) { } }
     const line = c && c.summary; const st = Q.stage;
-    if (c) { const arr = lsGet('kt2_quick_log', []); arr.push({ at: new Date().toISOString().slice(0, 16), slug: st ? st.slug : '', key: st ? st.key : '', id: c.act.id, line: line || '', sec: Math.round((Date.now() - c.at) / 1000) }); lsSet('kt2_quick_log', arr.slice(-60)); }
+    if (c && !c.solo) { const arr = lsGet('kt2_quick_log', []); arr.push({ at: new Date().toISOString().slice(0, 16), slug: st ? st.slug : '', key: st ? st.key : '', id: c.act.id, line: line || '', sec: Math.round((Date.now() - c.at) / 1000) }); lsSet('kt2_quick_log', arr.slice(-60)); }
     if (st && st.toast) st.toast(line ? c.act.icon + ' ' + line : '활동을 닫았어요');
+    // D59: 혼자 꼴은 기기에 기록을 남기지 않고(동의 원칙 — 투영이 자기 기록 자리에 쓴다) 결과를 돌려준다
+    const out = c && c.solo ? { id: c.act.id, ended: !!ended, line: line || '', result: c.result || null } : null;
+    if (out && typeof Q.onSoloClose === 'function') { try { Q.onSoloClose(out); } catch (e) { } }
+    return out;
+  };
+  // D59 — 혼자 꼴 진입문(투영·학생 화면용). id 는 solo 를 가진 8종만, cfg 는 교사 준비 화면과 같은 필드.
+  Q.soloable = id => { const a = Q.list.find(x => x.id === id); return !!a && a.solo !== false; };
+  Q.startSolo = function (id, cfg, stage) {
+    const act = Q.list.find(x => x.id === id); if (!act || act.solo === false) return null;
+    cfg = Object.assign({ seed: 1 + Math.floor(Math.random() * 999999) }, cfg || {}, { solo: true });
+    const err = act.check ? act.check(cfg) : null; if (err) return { error: err };
+    return Q.start(act, cfg, stage);
   };
 
   // ───────────────────────── 런처 타일 + 준비 화면 ─────────────────────────
@@ -102,7 +116,7 @@
 
   // ───────────────────────── 1. 빙고 ─────────────────────────
   Q.list.push({
-    id: 'bingo', icon: '🎯', name: '빙고', desc: '낱말을 부르면 우리 반 판에 표시, 줄이 되면 빙고', minutes: 6, needs: '낱말 9개↑', help: '학생은 종이에 자기 빙고판을 그려요. TV 는 부른 낱말과 「우리 반 판」을 보여 줘요.',
+    id: 'bingo', solo: false, icon: '🎯', name: '빙고', desc: '낱말을 부르면 우리 반 판에 표시, 줄이 되면 빙고', minutes: 6, needs: '낱말 9개↑', help: '학생은 종이에 자기 빙고판을 그려요. TV 는 부른 낱말과 「우리 반 판」을 보여 줘요.',
     setup: (st, sv) => [wordsField(st, sv), { type: 'chips', key: 'size', label: '판 크기', value: sv.size || 3, options: [{ v: 3, l: '3×3' }, { v: 4, l: '4×4' }, { v: 5, l: '5×5' }] }],
     check: c => { const n = lines(c.words).length, s = +c.size || 3; return n < s * s ? '낱말이 ' + s * s + '개는 있어야 해요 (지금 ' + n + '개)' : null; },
     run(root, cfg, api) {
@@ -125,8 +139,15 @@
     setup: (st, sv) => [wordsField(st, sv)], check: c => lines(c.words).length < 3 ? '낱말이 3개는 있어야 해요' : null,
     run(root, cfg, api) {
       const words = shuffle(lines(cfg.words), api.rng); let i = 0, hint = 0, open = false, got = 0;
-      const paint = () => { const w = words[i]; const shown = open ? w : Array.from(w).map((c, k) => k < hint ? c : chosung(c)).join(''); root.innerHTML = ctr(i + 1, words.length) + big(shown, open ? 'ans' : 'cho') + btnrow([{ k: 'hint', l: '💡 힌트 한 글자', dis: open || hint >= w.length - 1 }, { k: 'open', l: '✅ 정답 공개', main: !open, dis: open }, { k: 'got', l: '👍 맞혔어요', dis: !open }, { k: 'next', l: '다음 ▶', dis: i >= words.length - 1 }]); api.status((i + 1) + '/' + words.length + ' · 맞힘 ' + got); api.finish('초성 퀴즈 — ' + words.length + '문제 중 ' + got + '개 맞힘'); };
-      bind(root, k => { if (k === 'hint') { hint++; api.pop(); } else if (k === 'open') { open = true; api.pop(); } else if (k === 'got') { got++; api.good(); k = 'next'; } if (k === 'next' && i < words.length - 1) { i++; hint = 0; open = false; } paint(); });
+      // D59 혼자 꼴: 보기 4(정답 + 다른 낱말 3)를 골라 채점 — 「정답 공개」 버튼 대신 아이가 답한다. 힌트는 그대로.
+      const solo = !!api.solo; let picked = null; const choices = solo ? words.map((w, k) => shuffle([w].concat(shuffle(words.filter((_, j) => j !== k), api.rng).slice(0, 3)), api.rng)) : null;
+      const paint = () => { const w = words[i]; const shown = open ? w : Array.from(w).map((c, k) => k < hint ? c : chosung(c)).join('');
+        root.innerHTML = ctr(i + 1, words.length) + big(shown, open ? 'ans' : 'cho') + (solo ? '<div class="kq-pool big">' + choices[i].map(c => '<button class="kq-word' + (open ? (c === w ? ' ok' : (c === picked ? ' ng' : '')) : '') + '" data-b="a:' + esc(c) + '">' + esc(c) + '</button>').join('') + '</div>' : '')
+          + btnrow(solo ? [{ k: 'hint', l: '💡 힌트 한 글자', dis: open || hint >= w.length - 1 }, { k: 'next', l: i >= words.length - 1 ? '🏁 끝' : '다음 ▶', main: open, dis: !open }] : [{ k: 'hint', l: '💡 힌트 한 글자', dis: open || hint >= w.length - 1 }, { k: 'open', l: '✅ 정답 공개', main: !open, dis: open }, { k: 'got', l: '👍 맞혔어요', dis: !open }, { k: 'next', l: '다음 ▶', dis: i >= words.length - 1 }]);
+        api.status((i + 1) + '/' + words.length + ' · 맞힘 ' + got); api.finish('초성 퀴즈 — ' + words.length + '문제 중 ' + got + '개 맞힘'); if (solo) api.result({ score: got, total: words.length, done: i >= words.length - 1 && open }); };
+      bind(root, k => { if (k === 'hint') { hint++; api.pop(); } else if (k === 'open') { open = true; api.pop(); } else if (k === 'got') { got++; api.good(); k = 'next'; }
+        else if (k.indexOf('a:') === 0 && solo && !open) { picked = k.slice(2); open = true; if (picked === words[i]) { got++; api.good(); } else api.bad(); }
+        if (k === 'next') { if (i < words.length - 1) { i++; hint = 0; open = false; picked = null; } else if (solo) { Q.close(true); return; } } paint(); });
       paint();
     }
   });
@@ -139,8 +160,14 @@
     run(root, cfg, api) {
       const items = lines(cfg.items).map(l => l.split('|').map(s => s.trim())).filter(p => p.length >= 2 && /^[OXox○×]$/.test(p[1])).map(p => ({ q: p[0], a: /^[Oo○]$/.test(p[1]) ? 'O' : 'X', why: p[2] || '' }));
       let i = 0, open = false, oc = 0, xc = 0;
-      const paint = () => { const it = items[i]; root.innerHTML = ctr(i + 1, items.length) + big(it.q, 'q') + '<div class="kq-ox">' + (open ? '<div class="kq-ox-ans ' + it.a + '">' + it.a + '</div>' + (it.why ? '<div class="kq-why">' + esc(it.why) + '</div>' : '') : '<div class="kq-ox-hold">O ? X</div><div class="kq-why dim">손으로 O 나 X 를 만들어요</div>') + '</div>' + btnrow([{ k: 'open', l: '✅ 정답 공개', main: !open, dis: open }, { k: 'next', l: '다음 ▶', dis: i >= items.length - 1 }]); api.status((i + 1) + '/' + items.length); api.finish('OX 골든벨 — ' + items.length + '문항 (O ' + oc + ' · X ' + xc + ')'); };
-      bind(root, k => { if (k === 'open' && !open) { open = true; if (items[i].a === 'O') oc++; else xc++; api.good(); } else if (k === 'next' && i < items.length - 1) { i++; open = false; } paint(); });
+      // D59 혼자 꼴: 아이가 O·X 를 누르면 그 자리에서 채점 — 정답·해설은 누른 뒤에만.
+      const solo = !!api.solo; let got = 0, picked = null;
+      const paint = () => { const it = items[i]; root.innerHTML = ctr(i + 1, items.length) + big(it.q, 'q') + '<div class="kq-ox">' + (open ? '<div class="kq-ox-ans ' + it.a + '">' + it.a + '</div>' + (solo ? '<div class="kq-why ' + (picked === it.a ? 'ok' : 'ng') + '">' + (picked === it.a ? '👍 맞았어요' : '다시 생각해 봐요 — 답은 ' + it.a) + '</div>' : '') + (it.why ? '<div class="kq-why">' + esc(it.why) + '</div>' : '') : (solo ? '<div class="kq-ox-pick"><button class="kq-word O" data-b="a:O">O</button><button class="kq-word X" data-b="a:X">X</button></div>' : '<div class="kq-ox-hold">O ? X</div><div class="kq-why dim">손으로 O 나 X 를 만들어요</div>')) + '</div>'
+          + btnrow(solo ? [{ k: 'next', l: i >= items.length - 1 ? '🏁 끝' : '다음 ▶', main: open, dis: !open }] : [{ k: 'open', l: '✅ 정답 공개', main: !open, dis: open }, { k: 'next', l: '다음 ▶', dis: i >= items.length - 1 }]);
+        api.status((i + 1) + '/' + items.length + (solo ? ' · 맞힘 ' + got : '')); api.finish(solo ? 'OX — ' + items.length + '문항 중 ' + got + '개 맞힘' : 'OX 골든벨 — ' + items.length + '문항 (O ' + oc + ' · X ' + xc + ')'); if (solo) api.result({ score: got, total: items.length, done: i >= items.length - 1 && open }); };
+      bind(root, k => { if (k === 'open' && !open && !solo) { open = true; if (items[i].a === 'O') oc++; else xc++; api.good(); }
+        else if (k.indexOf('a:') === 0 && solo && !open) { picked = k.slice(2); open = true; if (picked === items[i].a) { got++; api.good(); } else api.bad(); }
+        else if (k === 'next') { if (i < items.length - 1) { i++; open = false; picked = null; } else if (solo) { Q.close(true); return; } } paint(); });
       paint();
     }
   });
@@ -151,10 +178,10 @@
     setup: (st, sv) => [pairsField(st, sv), { type: 'chips', key: 'teams', label: '팀', value: sv.teams || 2, options: [{ v: 1, l: '반 전체' }, { v: 2, l: '두 팀' }] }],
     check: c => { const n = parsePairs(c.pairs).length; return n < 3 ? '짝이 3쌍은 있어야 해요' : n > 10 ? '짝은 10쌍까지만' : null; },
     run(root, cfg, api) {
-      const pairs = parsePairs(cfg.pairs).slice(0, 10); const teams = +cfg.teams === 1 ? 1 : 2; const names = global.KT2_ACTIVITY ? global.KT2_ACTIVITY.teamNames() : ['케이팀', '듀팀'];
+      const pairs = parsePairs(cfg.pairs).slice(0, 10); const teams = (api.solo || +cfg.teams === 1) ? 1 : 2; /* D59 혼자는 팀 없음 */ const names = global.KT2_ACTIVITY ? global.KT2_ACTIVITY.teamNames() : ['케이팀', '듀팀'];
       const cards = shuffle(pairs.flatMap((p, k) => [{ k, t: p.a }, { k, t: p.b }]), api.rng); const st = { up: [], done: {}, turn: 0, score: [0, 0], tries: 0, lock: false };
       const cols = cards.length <= 8 ? 4 : cards.length <= 12 ? 4 : 5;
-      const paint = () => { const left = pairs.length - Object.keys(st.done).length; root.innerHTML = (teams === 2 ? '<div class="kq-teams">' + names.map((n, k) => '<span class="' + (st.turn === k ? 'on' : '') + '">' + esc(n) + ' <b>' + st.score[k] + '</b></span>').join('<i>:</i>') + '</div>' : '<div class="kq-cap">시도 <b>' + st.tries + '</b>번</div>') + '<div class="kq-cards c' + cols + '">' + cards.map((c, i) => { const on = st.up.indexOf(i) >= 0 || st.done[c.k]; return '<button class="kq-card' + (on ? ' on' : '') + (st.done[c.k] ? ' done' : '') + '" data-b="c:' + i + '"><span class="f">?</span><span class="b">' + esc(c.t) + '</span></button>'; }).join('') + '</div>'; api.status('남은 짝 ' + left); api.finish('카드 짝짓기 — ' + pairs.length + '쌍 · 시도 ' + st.tries + '번' + (teams === 2 ? ' · ' + names[0] + ' ' + st.score[0] + ' : ' + st.score[1] + ' ' + names[1] : '')); if (!left) { root.innerHTML += '<div class="kq-done">🎉 짝을 다 찾았어요</div>'; api.good(); } };
+      const paint = () => { const left = pairs.length - Object.keys(st.done).length; root.innerHTML = (teams === 2 ? '<div class="kq-teams">' + names.map((n, k) => '<span class="' + (st.turn === k ? 'on' : '') + '">' + esc(n) + ' <b>' + st.score[k] + '</b></span>').join('<i>:</i>') + '</div>' : '<div class="kq-cap">시도 <b>' + st.tries + '</b>번</div>') + '<div class="kq-cards c' + cols + '">' + cards.map((c, i) => { const on = st.up.indexOf(i) >= 0 || st.done[c.k]; return '<button class="kq-card' + (on ? ' on' : '') + (st.done[c.k] ? ' done' : '') + '" data-b="c:' + i + '"><span class="f">?</span><span class="b">' + esc(c.t) + '</span></button>'; }).join('') + '</div>'; api.status('남은 짝 ' + left); api.finish('카드 짝짓기 — ' + pairs.length + '쌍 · 시도 ' + st.tries + '번' + (teams === 2 ? ' · ' + names[0] + ' ' + st.score[0] + ' : ' + st.score[1] + ' ' + names[1] : '')); if (api.solo) api.result({ score: pairs.length - left, total: pairs.length, done: !left, tries: st.tries }); if (!left) { root.innerHTML += '<div class="kq-done">🎉 짝을 다 찾았어요</div>'; api.good(); } };
       bind(root, k => { if (k.indexOf('c:') !== 0 || st.lock) return; const i = +k.slice(2); const c = cards[i]; if (st.done[c.k] || st.up.indexOf(i) >= 0 || st.up.length >= 2) return; st.up.push(i); api.pop(); paint(); if (st.up.length === 2) { st.tries++; const [a, b] = st.up.map(x => cards[x]); if (a.k === b.k) { st.done[a.k] = true; st.score[st.turn]++; st.up = []; api.good(); paint(); } else { st.lock = true; setTimeout(() => { st.up = []; st.lock = false; if (teams === 2) st.turn = 1 - st.turn; paint(); }, 900); } } });
       paint();
     }
@@ -162,7 +189,7 @@
 
   // ───────────────────────── 5. 룰렛 뽑기 ─────────────────────────
   Q.list.push({
-    id: 'roulette', icon: '🎡', name: '룰렛 뽑기', desc: '돌려서 발표자·문제·모둠 뽑기', minutes: 3, needs: '이름·항목', help: '비워 두면 우리 반 명단으로 돌아요. 뽑힌 것은 빠져요.',
+    id: 'roulette', solo: false, icon: '🎡', name: '룰렛 뽑기', desc: '돌려서 발표자·문제·모둠 뽑기', minutes: 3, needs: '이름·항목', help: '비워 두면 우리 반 명단으로 돌아요. 뽑힌 것은 빠져요.',
     setup: (st, sv) => [{ type: 'text', key: 'items', label: '항목 (비우면 학급 명단)', rows: 6, value: sv.items != null ? sv.items : '', ph: roster(st).slice(0, 5).join('\n') + '\n…' }, { type: 'chips', key: 'remove', label: '뽑힌 것', value: sv.remove || 1, options: [{ v: 1, l: '빼기' }, { v: 0, l: '남기기' }] }],
     run(root, cfg, api) {
       let items = lines(cfg.items); if (!items.length) items = roster(api.stage); const remove = String(cfg.remove) !== '0'; const picked = []; let angle = 0, spinning = false;
@@ -178,7 +205,7 @@
 
   // ───────────────────────── 6. 끝말잇기 ─────────────────────────
   Q.list.push({
-    id: 'wordchain', icon: '🔗', name: '끝말잇기', desc: '아이들이 말한 낱말을 적으면 이어졌는지 판정', minutes: 5, needs: '시작 낱말', help: '학생이 말한 낱말을 교사가 적어요. 끝글자↔첫글자·중복을 판정해요.',
+    id: 'wordchain', solo: false, icon: '🔗', name: '끝말잇기', desc: '아이들이 말한 낱말을 적으면 이어졌는지 판정', minutes: 5, needs: '시작 낱말', help: '학생이 말한 낱말을 교사가 적어요. 끝글자↔첫글자·중복을 판정해요.',
     setup: (st, sv) => [{ type: 'text', key: 'start', label: '시작 낱말', rows: 1, value: sv.start || (harvest(st)[0] || '학교') }, { type: 'chips', key: 'dueum', label: '두음법칙', value: sv.dueum || 1, options: [{ v: 1, l: '허용 (리→이)' }, { v: 0, l: '엄격' }] }, { type: 'chips', key: 'sec', label: '한 사람 시간', value: sv.sec || 0, options: [{ v: 0, l: '없음' }, { v: 10, l: '10초' }, { v: 20, l: '20초' }] }],
     check: c => !lines(c.start)[0] ? '시작 낱말을 적어요' : null,
     run(root, cfg, api) {
@@ -200,7 +227,7 @@
     run(root, cfg, api) {
       const groups = lines(cfg.groups).map(l => { const i = l.indexOf(':'); return { name: l.slice(0, i).trim(), items: l.slice(i + 1).split(/[,、·]/).map(s => s.trim()).filter(Boolean) }; }).filter(g => g.name && g.items.length).slice(0, 4);
       const all = shuffle(groups.flatMap((g, gi) => g.items.map(t => ({ t, gi }))), api.rng); const put = {}; let sel = null, checked = false;
-      const paint = () => { const pool = all.filter((x, i) => put[i] == null); root.innerHTML = '<div class="kq-pool big">' + pool.map(x => { const i = all.indexOf(x); return '<button class="kq-word' + (sel === i ? ' sel' : '') + '" data-b="p:' + i + '">' + esc(x.t) + '</button>'; }).join('') + (pool.length ? '' : '<span class="dim">다 넣었어요 — 채점해 봐요</span>') + '</div><div class="kq-bins n' + groups.length + '">' + groups.map((g, gi) => '<div class="kq-bin" data-b="g:' + gi + '"><div class="kq-bin-h">' + esc(g.name) + '</div>' + all.map((x, i) => put[i] === gi ? '<button class="kq-word' + (checked ? (x.gi === gi ? ' ok' : ' ng') : '') + '" data-b="u:' + i + '">' + esc(x.t) + '</button>' : '').join('') + '</div>').join('') + '</div>' + btnrow([{ k: 'check', l: '✅ 채점', main: true, dis: checked || pool.length > 0 }, { k: 'reset', l: '다시' }]); const right = all.filter((x, i) => put[i] === x.gi).length; api.status(checked ? '맞음 ' + right + '/' + all.length : '남은 ' + pool.length); api.finish('분류하기 — ' + all.length + '개 중 ' + right + '개 맞음' + (checked ? '' : ' (채점 전)')); };
+      const paint = () => { const pool = all.filter((x, i) => put[i] == null); root.innerHTML = '<div class="kq-pool big">' + pool.map(x => { const i = all.indexOf(x); return '<button class="kq-word' + (sel === i ? ' sel' : '') + '" data-b="p:' + i + '">' + esc(x.t) + '</button>'; }).join('') + (pool.length ? '' : '<span class="dim">다 넣었어요 — 채점해 봐요</span>') + '</div><div class="kq-bins n' + groups.length + '">' + groups.map((g, gi) => '<div class="kq-bin" data-b="g:' + gi + '"><div class="kq-bin-h">' + esc(g.name) + '</div>' + all.map((x, i) => put[i] === gi ? '<button class="kq-word' + (checked ? (x.gi === gi ? ' ok' : ' ng') : '') + '" data-b="u:' + i + '">' + esc(x.t) + '</button>' : '').join('') + '</div>').join('') + '</div>' + btnrow([{ k: 'check', l: '✅ 채점', main: true, dis: checked || pool.length > 0 }, { k: 'reset', l: '다시' }]); const right = all.filter((x, i) => put[i] === x.gi).length; api.status(checked ? '맞음 ' + right + '/' + all.length : '남은 ' + pool.length); api.finish('분류하기 — ' + all.length + '개 중 ' + right + '개 맞음' + (checked ? '' : ' (채점 전)')); if (api.solo) api.result({ score: checked ? right : 0, total: all.length, done: checked }); };
       bind(root, k => { if (k.indexOf('p:') === 0) { sel = sel === +k.slice(2) ? null : +k.slice(2); api.pop(); } else if (k.indexOf('g:') === 0 && sel != null) { put[sel] = +k.slice(2); sel = null; api.pop(); } else if (k.indexOf('u:') === 0 && !checked) { delete put[+k.slice(2)]; } else if (k === 'check') { checked = true; const right = all.filter((x, i) => put[i] === x.gi).length; if (right === all.length) api.good(); else api.bad(); } else if (k === 'reset') { Object.keys(put).forEach(i => delete put[i]); checked = false; sel = null; } paint(); });
       paint();
     }
@@ -214,7 +241,7 @@
       const pairs = parsePairs(cfg.pairs).slice(0, 8); const order = shuffle(pairs.map((_, i) => i), api.rng); const link = {}; let sel = null, checked = false; const n = pairs.length; const rowH = Math.min(96, 640 / n);
       const paint = () => { const y = i => 120 + i * rowH + rowH / 2; const svg = '<svg class="kq-lines" viewBox="0 0 1600 900">' + Object.keys(link).map(l => { const r = order.indexOf(link[l]); const ok = pairs[+l] && link[l] === +l; return '<line x1="560" y1="' + y(+l) + '" x2="1040" y2="' + y(r) + '" class="' + (checked ? (ok ? 'ok' : 'ng') : '') + '"/>'; }).join('') + '</svg>';
         root.innerHTML = svg + '<div class="kq-col l">' + pairs.map((p, i) => '<button class="kq-word' + (sel === i ? ' sel' : '') + (link[i] != null ? ' linked' : '') + '" style="height:' + (rowH - 14) + 'px" data-b="l:' + i + '">' + esc(p.a) + '</button>').join('') + '</div><div class="kq-col r">' + order.map(j => '<button class="kq-word' + (Object.values(link).indexOf(j) >= 0 ? ' linked' : '') + '" style="height:' + (rowH - 14) + 'px" data-b="r:' + j + '">' + esc(pairs[j].b) + '</button>').join('') + '</div>' + btnrow([{ k: 'check', l: '✅ 채점', main: true, dis: checked || Object.keys(link).length < n }, { k: 'reset', l: '다시' }]);
-        const right = Object.keys(link).filter(l => link[l] === +l).length; api.status(checked ? '맞음 ' + right + '/' + n : '이은 선 ' + Object.keys(link).length + '/' + n); api.finish('선 잇기 — ' + n + '쌍 중 ' + right + '쌍 맞음' + (checked ? '' : ' (채점 전)')); };
+        const right = Object.keys(link).filter(l => link[l] === +l).length; api.status(checked ? '맞음 ' + right + '/' + n : '이은 선 ' + Object.keys(link).length + '/' + n); api.finish('선 잇기 — ' + n + '쌍 중 ' + right + '쌍 맞음' + (checked ? '' : ' (채점 전)')); if (api.solo) api.result({ score: checked ? right : 0, total: n, done: checked }); };
       bind(root, k => { if (checked && k !== 'reset') return; if (k.indexOf('l:') === 0) { const i = +k.slice(2); if (link[i] != null) delete link[i]; sel = sel === i ? null : i; api.pop(); } else if (k.indexOf('r:') === 0 && sel != null) { const j = +k.slice(2); Object.keys(link).forEach(l => { if (link[l] === j) delete link[l]; }); link[sel] = j; sel = null; api.pop(); } else if (k === 'check') { checked = true; const right = Object.keys(link).filter(l => link[l] === +l).length; if (right === n) api.good(); else api.bad(); } else if (k === 'reset') { Object.keys(link).forEach(l => delete link[l]); sel = null; checked = false; } paint(); });
       paint();
     }
@@ -227,7 +254,7 @@
     check: c => lines(c.items).filter(l => l.indexOf('|') > 0 && l.indexOf('___') >= 0).length < 2 ? '「___ 가 있는 문장 | 답」이 2줄은 있어야 해요' : null,
     run(root, cfg, api) {
       const items = lines(cfg.items).map(l => l.split('|')).filter(p => p.length >= 2 && p[0].indexOf('___') >= 0).map(p => ({ q: p[0].trim(), a: p[1].trim() })); const pool = shuffle(items.map(x => x.a), api.rng); const fill = {}; let sel = null, checked = false;
-      const paint = () => { const used = Object.values(fill); root.innerHTML = '<div class="kq-sents">' + items.map((it, i) => '<div class="kq-sent">' + esc(it.q).split('___').map((seg, k, arr) => seg + (k < arr.length - 1 ? '<button class="kq-blank' + (sel === i ? ' sel' : '') + (fill[i] != null ? ' filled' : '') + (checked ? (fill[i] === it.a ? ' ok' : ' ng') : '') + '" data-b="s:' + i + '">' + (fill[i] != null ? esc(fill[i]) : '　　') + '</button>' : '')).join('') + '</div>').join('') + '</div><div class="kq-pool big">' + pool.map((w, k) => '<button class="kq-word' + (used.indexOf(w) >= 0 ? ' used' : '') + '" data-b="w:' + k + '">' + esc(w) + '</button>').join('') + '</div>' + btnrow([{ k: 'check', l: '✅ 채점', main: true, dis: checked || Object.keys(fill).length < items.length }, { k: 'reset', l: '다시' }]); const right = items.filter((it, i) => fill[i] === it.a).length; api.status(checked ? '맞음 ' + right + '/' + items.length : '채운 칸 ' + Object.keys(fill).length + '/' + items.length); api.finish('빈칸 채우기 — ' + items.length + '칸 중 ' + right + '칸 맞음' + (checked ? '' : ' (채점 전)')); };
+      const paint = () => { const used = Object.values(fill); root.innerHTML = '<div class="kq-sents">' + items.map((it, i) => '<div class="kq-sent">' + esc(it.q).split('___').map((seg, k, arr) => seg + (k < arr.length - 1 ? '<button class="kq-blank' + (sel === i ? ' sel' : '') + (fill[i] != null ? ' filled' : '') + (checked ? (fill[i] === it.a ? ' ok' : ' ng') : '') + '" data-b="s:' + i + '">' + (fill[i] != null ? esc(fill[i]) : '　　') + '</button>' : '')).join('') + '</div>').join('') + '</div><div class="kq-pool big">' + pool.map((w, k) => '<button class="kq-word' + (used.indexOf(w) >= 0 ? ' used' : '') + '" data-b="w:' + k + '">' + esc(w) + '</button>').join('') + '</div>' + btnrow([{ k: 'check', l: '✅ 채점', main: true, dis: checked || Object.keys(fill).length < items.length }, { k: 'reset', l: '다시' }]); const right = items.filter((it, i) => fill[i] === it.a).length; api.status(checked ? '맞음 ' + right + '/' + items.length : '채운 칸 ' + Object.keys(fill).length + '/' + items.length); api.finish('빈칸 채우기 — ' + items.length + '칸 중 ' + right + '칸 맞음' + (checked ? '' : ' (채점 전)')); if (api.solo) api.result({ score: checked ? right : 0, total: items.length, done: checked }); };
       bind(root, k => { if (checked && k !== 'reset') return; if (k.indexOf('s:') === 0) { const i = +k.slice(2); if (fill[i] != null) delete fill[i]; sel = sel === i ? null : i; api.pop(); } else if (k.indexOf('w:') === 0 && sel != null) { fill[sel] = pool[+k.slice(2)]; sel = null; api.pop(); } else if (k === 'check') { checked = true; const right = items.filter((it, i) => fill[i] === it.a).length; if (right === items.length) api.good(); else api.bad(); } else if (k === 'reset') { Object.keys(fill).forEach(i => delete fill[i]); sel = null; checked = false; } paint(); });
       paint();
     }
@@ -235,7 +262,7 @@
 
   // ───────────────────────── 10. 받아쓰기 ─────────────────────────
   Q.list.push({
-    id: 'dictation', icon: '🔊', name: '받아쓰기', desc: '들려주고 → 글자 수 힌트 → 정답 공개', minutes: 6, needs: '문장 3개↑', help: '교사가 읽어 주거나 🔊 로 기기가 읽어요(브라우저 음성). 정답은 공개 전까지 안 보여요.',
+    id: 'dictation', solo: false, icon: '🔊', name: '받아쓰기', desc: '들려주고 → 글자 수 힌트 → 정답 공개', minutes: 6, needs: '문장 3개↑', help: '교사가 읽어 주거나 🔊 로 기기가 읽어요(브라우저 음성). 정답은 공개 전까지 안 보여요.',
     setup: (st, sv) => [{ type: 'text', key: 'items', label: '문장 (한 줄에 하나)', rows: 8, value: sv.items != null ? sv.items : harvest(st).slice(0, 5).join('\n') }, { type: 'chips', key: 'lang', label: '읽기', value: sv.lang || 'ko-KR', options: [{ v: 'ko-KR', l: '한국어' }, { v: 'en-US', l: '영어' }] }],
     check: c => lines(c.items).length < 2 ? '문장이 2개는 있어야 해요' : null,
     run(root, cfg, api) {
@@ -261,7 +288,7 @@
         const useOk = p || r() < 0.22; const src = useOk ? okw : ngw; cell.push({ x: xx, y: yy, ok: useOk, t: src[Math.floor(r() * src.length)] }); }
       let cur = [0, 0]; const stepped = { '0,0': true }; let fell = 0, done = false;
       const adj = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) === 1;
-      const paint = () => { root.innerHTML = '<div class="kq-rule">' + esc(cfg.rule || '') + '</div><div class="kq-maze">' + cell.map(c => { const here = cur[0] === c.x && cur[1] === c.y; const st = stepped[c.x + ',' + c.y]; return '<button class="kq-cell' + (here ? ' here' : '') + (st ? ' step' : '') + (c.x === 0 && c.y === 0 ? ' s' : '') + (c.x === N - 1 && c.y === N - 1 ? ' e' : '') + '" data-b="m:' + c.x + ',' + c.y + '">' + (c.x === 0 && c.y === 0 ? '🚩 ' : c.x === N - 1 && c.y === N - 1 ? '🏁 ' : '') + esc(c.t) + '</button>'; }).join('') + '</div>' + (done ? '<div class="kq-done">🎉 도착!</div>' : '') + btnrow([{ k: 'reset', l: '처음부터' }]); api.status('걸음 ' + (Object.keys(stepped).length - 1) + ' · 헛디딤 ' + fell); api.finish('미로 찾기 — ' + (done ? '도착' : '진행 중') + ' · 걸음 ' + (Object.keys(stepped).length - 1) + ' · 헛디딤 ' + fell); };
+      const paint = () => { root.innerHTML = '<div class="kq-rule">' + esc(cfg.rule || '') + '</div><div class="kq-maze">' + cell.map(c => { const here = cur[0] === c.x && cur[1] === c.y; const st = stepped[c.x + ',' + c.y]; return '<button class="kq-cell' + (here ? ' here' : '') + (st ? ' step' : '') + (c.x === 0 && c.y === 0 ? ' s' : '') + (c.x === N - 1 && c.y === N - 1 ? ' e' : '') + '" data-b="m:' + c.x + ',' + c.y + '">' + (c.x === 0 && c.y === 0 ? '🚩 ' : c.x === N - 1 && c.y === N - 1 ? '🏁 ' : '') + esc(c.t) + '</button>'; }).join('') + '</div>' + (done ? '<div class="kq-done">🎉 도착!</div>' : '') + btnrow([{ k: 'reset', l: '처음부터' }]); api.status('걸음 ' + (Object.keys(stepped).length - 1) + ' · 헛디딤 ' + fell); api.finish('미로 찾기 — ' + (done ? '도착' : '진행 중') + ' · 걸음 ' + (Object.keys(stepped).length - 1) + ' · 헛디딤 ' + fell); if (api.solo) api.result({ score: done ? 1 : 0, total: 1, done, fell }); };
       bind(root, k => { if (k === 'reset') { cur = [0, 0]; Object.keys(stepped).forEach(s => delete stepped[s]); stepped['0,0'] = true; fell = 0; done = false; paint(); return; } if (k.indexOf('m:') !== 0 || done) return; const [a, b] = k.slice(2).split(',').map(Number); if (!adj(cur, [a, b])) { api.stage && api.stage.toast && api.stage.toast('바로 옆 칸만 갈 수 있어요'); return; } const c = cell[b * N + a]; if (!c.ok) { fell++; api.bad(); const el = root.querySelector('[data-b="m:' + a + ',' + b + '"]'); if (el) el.classList.add('bad'); return; } cur = [a, b]; stepped[a + ',' + b] = true; api.pop(); if (a === N - 1 && b === N - 1) { done = true; api.good(); } paint(); });
       paint();
     }
@@ -274,7 +301,7 @@
     check: c => { const n = lines(c.items).length; return n < 3 ? '항목이 3개는 있어야 해요' : n > 8 ? '항목은 8개까지' : null; },
     run(root, cfg, api) {
       const items = lines(cfg.items).slice(0, 8); const idx = shuffle(items.map((_, i) => i), api.rng); const slots = []; let checked = false;
-      const paint = () => { const left = idx.filter(i => slots.indexOf(i) < 0); root.innerHTML = '<div class="kq-slots">' + items.map((_, k) => '<button class="kq-slot' + (slots[k] != null ? ' on' : '') + (checked ? (slots[k] === k ? ' ok' : ' ng') : '') + '" data-b="s:' + k + '"><b>' + (k + 1) + '</b>' + (slots[k] != null ? esc(items[slots[k]]) : '') + '</button>').join('') + '</div><div class="kq-pool big">' + left.map(i => '<button class="kq-word" data-b="w:' + i + '">' + esc(items[i]) + '</button>').join('') + '</div>' + btnrow([{ k: 'check', l: '✅ 채점', main: true, dis: checked || left.length > 0 }, { k: 'reset', l: '다시' }]); const right = slots.filter((v, k) => v === k).length; api.status(checked ? '맞음 ' + right + '/' + items.length : '놓은 카드 ' + slots.filter(v => v != null).length + '/' + items.length); api.finish('순서 맞추기 — ' + items.length + '장 중 ' + right + '장 제자리' + (checked ? '' : ' (채점 전)')); };
+      const paint = () => { const left = idx.filter(i => slots.indexOf(i) < 0); root.innerHTML = '<div class="kq-slots">' + items.map((_, k) => '<button class="kq-slot' + (slots[k] != null ? ' on' : '') + (checked ? (slots[k] === k ? ' ok' : ' ng') : '') + '" data-b="s:' + k + '"><b>' + (k + 1) + '</b>' + (slots[k] != null ? esc(items[slots[k]]) : '') + '</button>').join('') + '</div><div class="kq-pool big">' + left.map(i => '<button class="kq-word" data-b="w:' + i + '">' + esc(items[i]) + '</button>').join('') + '</div>' + btnrow([{ k: 'check', l: '✅ 채점', main: true, dis: checked || left.length > 0 }, { k: 'reset', l: '다시' }]); const right = slots.filter((v, k) => v === k).length; api.status(checked ? '맞음 ' + right + '/' + items.length : '놓은 카드 ' + slots.filter(v => v != null).length + '/' + items.length); api.finish('순서 맞추기 — ' + items.length + '장 중 ' + right + '장 제자리' + (checked ? '' : ' (채점 전)')); if (api.solo) api.result({ score: checked ? right : 0, total: items.length, done: checked }); };
       bind(root, k => { if (checked && k !== 'reset') return; if (k.indexOf('w:') === 0) { let k2 = 0; while (slots[k2] != null) k2++; if (k2 < items.length) { slots[k2] = +k.slice(2); api.pop(); } } else if (k.indexOf('s:') === 0) { const s = +k.slice(2); if (slots[s] != null) { slots[s] = null; api.pop(); } } else if (k === 'check') { checked = true; const right = slots.filter((v, k2) => v === k2).length; if (right === items.length) api.good(); else api.bad(); } else if (k === 'reset') { slots.length = 0; checked = false; } paint(); });
       paint();
     }

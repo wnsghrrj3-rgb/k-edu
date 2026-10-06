@@ -213,6 +213,57 @@ const tick = ms => new Promise(r => setTimeout(r, ms || 0));
     await startQ('ox', { items: 'a | O\nb | X' }); d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await tick(); ok(!Q.open, 'ESC → 빠른 활동 닫힘');
   }
 
+  // ── ⑥-b ⚡ 혼자 꼴 (D59 — 준호 09-28 「활동은 1인도 가능하게」·10-06 위임) ──
+  {
+    const { w, d, st, Q } = boot(1, 'math', 1, 'u1_l06'); await tick();
+    const q = (sel) => d.querySelector('#kq-paper ' + sel); const qa = (sel) => Array.from(d.querySelectorAll('#kq-paper ' + sel)); const txt = () => d.querySelector('#kq-paper').textContent;
+    const clickB = (sel) => { const b = d.querySelector('#kq-paper ' + sel); if (!b) return false; b.click(); return true; };
+    ok(['bingo', 'roulette', 'wordchain', 'dictation'].every(id => !Q.soloable(id)) && ['chosung', 'ox', 'memory', 'classify', 'linematch', 'blank', 'maze', 'order'].every(id => Q.soloable(id)), '혼자 꼴 8종 · 교사 진행형 4종은 없음');
+    ok(Q.startSolo('bingo', { words: 'a\nb' }, st) === null && !Q.open, 'bingo 혼자 진입 거절');
+    ok(Q.startSolo('ox', { items: 'x' }, st).error && !Q.open, '혼자도 준비 검사는 같다(잘못된 입력 → 시작 안 됨)');
+    let closed = null; Q.onSoloClose = o => { closed = o; };
+    // OX 혼자: O·X 버튼 → 채점, 공개 버튼 없음
+    Q.startSolo('ox', { items: '삼각형은 변이 세 개다 | O | 변 셋\n원은 꼭짓점이 있다 | X', seed: 3 }, st); await tick();
+    ok(Q.open && /혼자/.test(d.querySelector('#kq-host .kq-h-t').textContent) && d.querySelector('#kq-host.solo'), 'OX 혼자 열림 · HUD 「혼자」');
+    ok(qa('.kq-ox-pick .kq-word').length === 2 && !q('[data-b="open"]') && !q('.kq-ox-ans') && !/변 셋/.test(txt()), 'O·X 버튼 2 · 공개 버튼 없음 · 정답·해설 미노출');
+    ok(q('[data-b="next"]').classList.contains('dis'), '답하기 전엔 다음 못 감');
+    clickB('[data-b="a:O"]'); ok(q('.kq-ox-ans.O') && /맞았어요/.test(txt()) && /변 셋/.test(txt()), 'O → 맞음 + 해설'); clickB('[data-b="next"]');
+    clickB('[data-b="a:O"]'); ok(q('.kq-ox-ans.X') && /다시 생각/.test(txt()), '2문항 O → 틀림(답 X)');
+    ok(/🏁/.test(q('[data-b="next"]').textContent), '마지막은 🏁 끝'); clickB('[data-b="next"]'); await tick();
+    ok(!Q.open && closed && closed.id === 'ox' && closed.ended && closed.result && closed.result.score === 1 && closed.result.total === 2 && closed.result.done, '끝 → onSoloClose 결과 1/2');
+    ok(!w.localStorage.getItem('kt2_quick_log'), '★ 혼자 꼴은 기기 기록(kt2_quick_log) 없음 — 동의 원칙');
+    // 초성 혼자: 보기 4 → 고르기
+    closed = null; Q.startSolo('chosung', { words: '학교\n연필\n지우개\n책상\n의자', seed: 5 }, st); await tick();
+    ok(qa('.kq-pool .kq-word').length === 4 && !q('[data-b="open"]') && !q('[data-b="got"]'), '보기 4 · 공개/맞혔어요 버튼 없음');
+    const cho = q('.kq-big.cho').textContent; const opts = qa('.kq-pool .kq-word').map(b => b.textContent); const ans = opts.find(o => Q.chosung(o) === cho);
+    ok(!!ans && !/학교|연필|지우개|책상|의자/.test(q('.kq-big').textContent), '보기 중 정답 하나 · 큰 글자엔 초성만');
+    clickB('[data-b="hint"]'); ok(q('.kq-big').textContent.charAt(0) === ans.charAt(0), '힌트 한 글자는 그대로');
+    qa('.kq-pool .kq-word').find(b => b.textContent === ans).click(); ok(q('.kq-word.ok') && q('.kq-big.ans').textContent === ans, '정답 고름 → 초록 · 낱말 공개');
+    clickB('[data-b="next"]'); const wrong = qa('.kq-pool .kq-word').find(b => Q.chosung(b.textContent) !== q('.kq-big.cho').textContent); wrong.click(); ok(q('.kq-word.ng') && q('.kq-word.ok'), '오답 → 빨강 + 정답 초록');
+    for (let k = 0; k < 4; k++) { clickB('[data-b="next"]'); if (Q.open) { const a2 = qa('.kq-pool .kq-word').find(b => Q.chosung(b.textContent) === q('.kq-big.cho').textContent); if (a2) a2.click(); } } await tick();
+    ok(!Q.open && closed && closed.result.total === 5 && closed.result.score === 4 && closed.result.done, '5문제 끝 → 4/5');
+    // 짝짓기 혼자: 팀 없음
+    closed = null; Q.startSolo('memory', { pairs: '3+4 = 7\n2+2 = 4\n5+1 = 6', teams: 2, seed: 2 }, st); await tick();
+    ok(qa('.kq-teams').length === 0 && /시도/.test(txt()), '혼자는 teams=2 를 줘도 팀 없음');
+    { const cards = qa('.kq-card'); const t = c => c.querySelector('.b').textContent; const i7 = cards.findIndex(c => t(c) === '7'), i34 = cards.findIndex(c => t(c) === '3+4'); clickB('[data-b="c:' + i34 + '"]'); clickB('[data-b="c:' + i7 + '"]'); }
+    Q.close(true); ok(closed && closed.result.score === 1 && closed.result.total === 3 && !closed.result.done, '중간 닫기 → 1/3 · done 아님');
+    // 분류 혼자: 채점 전 0, 채점 후 점수
+    closed = null; Q.startSolo('classify', { groups: '동물: 개, 고양이\n식물: 소나무, 장미', seed: 2 }, st); await tick();
+    { const put = (word, bin) => { qa('.kq-pool .kq-word').find(x => x.textContent === word).click(); qa('.kq-bin')[bin].click(); }; put('개', 0); put('고양이', 0); put('소나무', 1); put('장미', 0); }
+    Q.close(false); ok(closed && closed.result.score === 0 && !closed.result.done && !closed.ended, '채점 전 닫음 → 0 · done 아님');
+    closed = null; Q.startSolo('classify', { groups: '동물: 개, 고양이\n식물: 소나무, 장미', seed: 2 }, st); await tick();
+    { const put = (word, bin) => { qa('.kq-pool .kq-word').find(x => x.textContent === word).click(); qa('.kq-bin')[bin].click(); }; put('개', 0); put('고양이', 0); put('소나무', 1); put('장미', 0); clickB('[data-b="check"]'); }
+    Q.close(true); ok(closed && closed.result.score === 3 && closed.result.total === 4 && closed.result.done, '채점 뒤 → 3/4');
+    // 선잇기·빈칸·순서·미로 — 결과 있음
+    closed = null; Q.startSolo('linematch', { pairs: '사과 = 🍎\n바나나 = 🍌\n포도 = 🍇', seed: 2 }, st); await tick(); [0, 1, 2].forEach(i => { clickB('[data-b="l:' + i + '"]'); clickB('[data-b="r:' + i + '"]'); }); clickB('[data-b="check"]'); Q.close(true); ok(closed && closed.result.total === 3 && closed.result.score === 3, '선 잇기 혼자 3/3');
+    closed = null; Q.startSolo('blank', { items: '삼각형은 변이 ___ 개다 | 3\n사각형은 변이 ___ 개다 | 4', seed: 2 }, st); await tick(); clickB('[data-b="s:0"]'); qa('.kq-pool .kq-word').find(x => x.textContent === '4').click(); clickB('[data-b="s:1"]'); qa('.kq-pool .kq-word').find(x => x.textContent === '3').click(); clickB('[data-b="check"]'); Q.close(true); ok(closed && closed.result.total === 2 && closed.result.score === 0, '빈칸 혼자 0/2(바꿔 넣음)');
+    closed = null; Q.startSolo('order', { items: '씨앗\n싹\n잎\n꽃', seed: 2 }, st); await tick(); ['씨앗', '싹', '잎', '꽃'].forEach(t => qa('.kq-pool .kq-word').find(x => x.textContent === t).click()); clickB('[data-b="check"]'); Q.close(true); ok(closed && closed.result.score === 4 && closed.result.total === 4, '순서 혼자 4/4');
+    closed = null; Q.startSolo('maze', { rule: '홀수만', ok: '1\n3\n5\n7\n9', ng: '2\n4\n6\n8', seed: 9 }, st); await tick(); clickB('[data-b="m:1,0"]'); Q.close(false); ok(closed && closed.result.total === 1 && closed.result.score === 0 && typeof closed.result.fell === 'number', '미로 혼자 — 도착 전 0/1 · 헛디딤 수');
+    // 역검증: 교사 꼴은 그대로(solo 없이 열면 공개 버튼·팀·기록)
+    Q.onSoloClose = null; Q.start(Q.list.find(a => a.id === 'ox'), { items: 'a | O\nb | X', seed: 1 }, st); await tick();
+    ok(q('[data-b="open"]') && !q('.kq-ox-pick') && !d.querySelector('#kq-host.solo'), '★ 역검증: 교사 꼴 OX 는 공개 버튼 그대로·O·X 버튼 없음'); const r0 = Q.close(true); ok(r0 === null && JSON.parse(w.localStorage.getItem('kt2_quick_log')).length === 1, '교사 꼴은 기록 남고 결과 반환 없음');
+  }
+
   // ── ⑦ 역검증 ──
   {
     // (a) 활동 층을 빼도 무대는 선다 · 목차에 ＋활동 없음 · activity 데이터는 교실 활동으로
