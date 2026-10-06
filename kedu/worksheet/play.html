@@ -228,6 +228,12 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .shart .bd{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;justify-items:center}
 .shart .s{width:34px;height:34px}
 .shart em{display:block;margin-top:6px;font-style:normal;font-size:13px;color:var(--muted);text-align:center}
+/* v1.2 — 1학년 1학기 「덧셈과 뺄셈」 덜어 내기 줄 2026-10-06 */
+.take{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:8px 12px;border:1px solid var(--rule-strong);border-radius:12px;background:var(--tint)}
+.take span{position:relative;font-size:32px;line-height:1.1}
+.take span.x{opacity:.45}
+.take span.x::after{content:'';position:absolute;left:-2px;right:-2px;top:50%;border-top:3px solid var(--accent);transform:rotate(-35deg)}
+.take.empty::before{content:'아무것도 없어요';font-size:15px;color:var(--muted)}
 /* v1.1 — 1학년 1학기 「여러 가지 모양」(입체: 상자·기둥·공) 2026-10-06 */
 .solrow{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:flex-end}
 .solrow .it{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:64px}
@@ -657,6 +663,9 @@ function drawAsset(a, r){
       const rr = rng(bag.length * 137 + (P[0] ? String(P[0].solid).charCodeAt(0) : 7) * 19 + SEED);
       const mixed = shuffle(bag, rr); let c = 0;
       return `<div class="solart"><div class="bd">${mixed.map(k => solidSVG(k === 'cyl' && a.lay && (c++ % 2) ? 'cyl_lay' : k)).join('')}</div>${a.name ? `<em>${esc(a.name)}</em>` : ''}</div>`; }
+    /* v1.2 — 덜어 내기 줄: n 개 가운데 뒤쪽 cross 개에 빗금(덜어 낸 것) */
+    case 'take_row': { const n = Math.max(0, Number(a.n) || 0), x = Math.max(0, Math.min(n, Number(a.cross) || 0));
+      return `<div class="take${n ? '' : ' empty'}">${Array.from({length:n}, (_, i) => `<span class="${i >= n - x ? 'x' : ''}">${a.item}</span>`).join('')}</div>`; }
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
@@ -1540,6 +1549,127 @@ function makeVariant(q, r){
     v.explanation = [`두 설명을 모두 만족하는 것은 ${SN(k)}이에요.`, '한 줄만 보고 고르면 다른 모양과 헷갈려요.', '두 줄을 하나씩 세 모양에 대 보세요.'];
     return v;
   }
+  /* --- v1.2: 1학년 1학기 「덧셈과 뺄셈」(9까지) — addsub 갈래 (2026-10-06)
+         그림: 없음 · group_row(두 무리, 모으기·더하기) · take_row(덜어 내기) · compare_groups(두 줄 견주기)
+         ask: value(답) · missing(□) · check(OX) · story(이야기 문제) · expr(알맞은 식 고르기)
+         zero: 'no'(0 없음) · 'yes'(섞임) · 'only'(늘 0이 있는 식) · max: 합의 상한(기본 9)
+         오개념 코드는 원본 문항에서 물려받는다. --- */
+  if (rule.addsub && (!a || typeof a === 'string' || (a.type === 'group_row' && (a.groups || []).length === 2) || a.type === 'take_row' || (a.type === 'compare_groups' && (a.rows || []).length === 2))){
+    const S = rule.addsub; const want = Math.max(1, nOptsOf(q) - 1); const MAX = S.max || 9;
+    const pic = a && typeof a === 'object' ? a.type : null;
+    let op = pic === 'group_row' ? 'add' : ((pic === 'take_row' || pic === 'compare_groups') ? 'sub' : (S.op === 'mix' ? (r() < 0.5 ? 'add' : 'sub') : (S.op || 'add')));
+    const cmpMode = pic === 'compare_groups' || (op === 'sub' && !pic && (S.story === 'compare' || (S.story === 'mix' && r() < 0.5)));
+    const zr = S.zero || 'no'; const useZero = zr === 'only' || (zr === 'yes' && r() < 0.35);
+    let x, y;
+    if (op === 'add'){
+      if (useZero && !pic){ const z = rint(1, MAX, r); if (r() < 0.5){ x = z; y = 0; } else { x = 0; y = z; } }
+      else { x = rint(1, MAX - 1, r); y = rint(1, MAX - x, r); }
+    } else {
+      if (useZero && !pic && !cmpMode){ x = rint(1, MAX, r); y = r() < 0.5 ? 0 : x; }
+      else if (useZero && pic === 'take_row'){ x = rint(2, MAX, r); y = r() < 0.5 ? 0 : x; }
+      else { x = rint(2, MAX, r); y = rint(1, x - 1, r); }
+    }
+    const ans = op === 'add' ? x + y : x - y; const sg = op === 'add' ? '+' : '−';
+    const dflt = misOf((q.options && q.options.length) ? q.options : q.reason_options, 0, null);
+    const ITEMS = S.items || ['🍓', '🐝', '🦋', '🍎', '🐤', '🌸', '🥚', '🐟'];
+    if (pic === 'group_row'){ const it = pick(ITEMS, r); a.groups = [{item:it, n:x}, {item:it, n:y}]; a.op = '+'; }
+    if (pic === 'take_row'){ a.item = pick(ITEMS, r); a.n = x; a.cross = y; }
+    if (pic === 'compare_groups'){ a.rows[0].n = x; a.rows[1].n = y; }
+    const L0 = pic === 'compare_groups' ? a.rows[0].label : '', L1 = pic === 'compare_groups' ? a.rows[1].label : '';
+    /* 이야기 — 합치기·더 오기 / 덜어 내기·견주기 */
+    const NAMES = ['지우', '서아', '하루', '유나', '도이'];
+    const ST = {
+      add: [ (p, q2) => `${pick(NAMES, r)}는 빨간 구슬 ${p}개와 파란 구슬 ${q2}개를 가지고 있어요. 구슬은 모두 몇 개인가요?`,
+             (p, q2) => `나뭇가지에 참새가 ${p}마리 앉아 있었어요. ${q2}마리가 더 날아왔어요. 참새는 모두 몇 마리인가요?`,
+             (p, q2) => `꽃밭에 노란 꽃이 ${p}송이, 빨간 꽃이 ${q2}송이 피었어요. 꽃은 모두 몇 송이인가요?`,
+             (p, q2) => `버스에 ${p}명이 타고 있었어요. 정류장에서 ${q2}명이 더 탔어요. 버스에 탄 사람은 모두 몇 명인가요?` ],
+      take: [ (p, q2) => `접시에 쿠키가 ${p}개 있었어요. ${q2}개를 먹었어요. 남은 쿠키는 몇 개인가요?`,
+              (p, q2) => `연못에 개구리가 ${p}마리 있었어요. ${q2}마리가 뛰어 나갔어요. 연못에 남은 개구리는 몇 마리인가요?`,
+              (p, q2) => `풍선이 ${p}개 있었어요. ${q2}개가 터졌어요. 남은 풍선은 몇 개인가요?` ],
+      cmp:  [ (p, q2) => `사과가 ${p}개, 배가 ${q2}개 있어요. 사과는 배보다 몇 개 더 많은가요?`,
+              (p, q2) => `강아지가 ${p}마리, 고양이가 ${q2}마리 있어요. 강아지는 고양이보다 몇 마리 더 많은가요?`,
+              (p, q2) => `줄넘기를 지우는 ${p}번, 서아는 ${q2}번 넘었어요. 지우는 서아보다 몇 번 더 넘었나요?` ] };
+    const kindKey = op === 'add' ? 'add' : (cmpMode ? 'cmp' : 'take');
+    const story = pick(ST[kindKey], r)(x, y);
+    const picStem = pic === 'group_row' ? '그림을 보고 덧셈을 해요. 두 무리를 모으면 모두 몇 개인가요?'
+                  : pic === 'take_row' ? '그림을 보고 뺄셈을 해요. 빗금 친 것을 덜어 내면 남는 것은 몇 개인가요?'
+                  : pic === 'compare_groups' ? `그림을 보세요. ${L0}${WEUN(L0)} ${L1}보다 몇 개 더 많은가요?` : null;
+    const ask = S.ask || 'value';
+    const expl = op === 'add'
+      ? [`${x}${GW(x)} ${y}${EUL(y)} 모아요${y === 0 || x === 0 ? ' — 0을 더하면 처음 수 그대로예요' : ''}.`, `${x} + ${y} = ${ans}${IEYO(ans)}.`, x === 0 || y === 0 ? '0은 아무것도 없다는 뜻이에요.' : '큰 수에서 이어 세면 빨라요.']
+      : cmpMode ? [`하나씩 짝을 지으면 ${y}개씩 짝이 되고 ${ans}개가 남아요.`, `${x} − ${y} = ${ans}${IEYO(ans)}.`, '「몇 개 더 많은가」도 뺄셈으로 구해요.']
+      : [`${x}에서 ${y}${EUL(y)} 덜어 내요${y === 0 ? ' — 0을 빼면 그대로예요' : (y === x ? ' — 모두 빼면 0이에요' : '')}.`, `${x} − ${y} = ${ans}${IEYO(ans)}.`, y === 0 || y === x ? '0을 빼기와 모두 빼기를 헷갈리지 않아요.' : '덜어 낸 것은 세지 않고 남은 것만 세요.'];
+    /* 오답은 「종류」로 물려받는다 — 원본 오답이 어떤 실수였는지(연산 바꿈·뺀 수·한 수만·0·1 차이)를 원본 수로 가려내고,
+       새 문제에서 같은 종류의 오답을 만들어 원본의 오개념 코드를 그대로 단다. 자리 순서로 물려받으면 코드가 뜻과 어긋난다. */
+    const NUMS = t => (String(t).match(/\d+/g) || []).map(Number);
+    const orig = (() => { const oa = q.asset && typeof q.asset === 'object' ? q.asset : null;
+      if (oa && oa.type === 'group_row') return {x:oa.groups[0].n, y:oa.groups[1].n, op:'add'};
+      if (oa && oa.type === 'take_row') return {x:oa.n, y:oa.cross, op:'sub'};
+      if (oa && oa.type === 'compare_groups') return {x:oa.rows[0].n, y:oa.rows[1].n, op:'sub'};
+      const m = String(q.stem).match(/(\d+|□)\s*([+−])\s*(\d+|□)(?:\s*=\s*(\d+|□))?/);
+      if (m){ const cor = (q.options || []).find(o => o.correct); const hv = cor ? Number(cor.t) : (q.answer ? Number(q.answer[0]) : null);
+        const val = t => t === '□' ? hv : Number(t);
+        return {x:val(m[1]), y:val(m[3]), op:m[2] === '+' ? 'add' : 'sub', res:m[4] !== undefined ? val(m[4]) : null, front:m[1] === '□', miss:/□/.test(m[0])}; }
+      const ns = NUMS(q.stem); return {x:ns[0], y:ns[1], op:(S.op === 'sub' ? 'sub' : 'add')}; })();
+    const candMap = (cx, cy, cop, miss, front) => { const an = cop === 'add' ? cx + cy : cx - cy;
+      if (miss){ const hid = front ? cx : cy, known = front ? cy : cx;
+        return {ans:hid, m:{whole:an, swap:cop === 'add' ? an + known : (front ? Math.abs(an - cy) : cx + an), one:known, off1:hid + 1, off2:hid - 1}}; }
+      const zero = cx === 0 || cy === 0 || (cop === 'sub' && cx === cy);
+      return {ans:an, zero, m:{zero:zero ? 0 : null, swap:cop === 'add' ? Math.abs(cx - cy) : cx + cy, took:cop === 'sub' ? cy : null, one:cop === 'add' ? Math.max(cx, cy) : cx, off1:an + 1, off2:an - 1}}; };
+    const ORDER = ['zero', 'swap', 'took', 'one', 'whole', 'off1', 'off2'];
+    const inherit = (newMap, newAns) => {
+      const om = candMap(orig.x, orig.y, orig.op, !!orig.miss, !!orig.front);
+      const wrongs = (q.options || []).filter(o => !o.correct); const used = [String(newAns)]; const out = [];
+      wrongs.slice(0, want).forEach(o => { const w = Number(o.t); let kind = null;
+        for (const k of ORDER){ if (om.m[k] !== null && om.m[k] !== undefined && om.m[k] === w && w !== om.ans){ kind = k; break; } }
+        const tries = [kind ? newMap[kind] : null, newMap.off1, newMap.off2, newAns + 2, newAns + 3];
+        for (const c of tries){ if (c === null || c === undefined || c < 0 || c > 18) continue; if (used.indexOf(String(c)) >= 0) continue; used.push(String(c)); out.push({t:String(c), mis:o.mis || o.mis_target || dflt}); break; } });
+      return [{t:String(newAns), correct:true}].concat(out); };
+    if (ask === 'missing'){
+      const front = !pic && r() < 0.3;
+      const hid = front ? x : y;
+      const IGA2 = n => VOWEL_END(n) ? '가' : '이';
+      v.stem = front ? `□ ${sg} ${y} = ${ans} 에서 □에 알맞은 수는 무엇인가요?` : `${x} ${sg} □ = ${ans} 에서 □에 알맞은 수는 무엇인가요?`;
+      if (q.kind === 'sa') v.answer = [String(hid)];
+      else v.options = inherit(candMap(x, y, op, true, front).m, hid);
+      v.explanation = [op === 'add' ? `${front ? y : x}에 무엇을 더해야 ${ans}${IGA2(ans)} 될까요?` : (front ? `어떤 수에서 ${y}${EUL(y)} 빼야 ${ans}${IGA2(ans)} 될까요?` : `${x}에서 얼마를 빼야 ${ans}${IGA2(ans)} 될까요?`),
+                       `${x} ${sg} ${y} = ${ans} — □는 ${hid}${IEYO(hid)}.`, '□에 답을 넣어 식이 맞는지 다시 계산해 보세요.'];
+      return v;
+    }
+    if (ask === 'check' || q.kind === 'ox'){
+      const hasZero = x === 0 || y === 0 || (op === 'sub' && x === y);
+      const truth = r() < 0.5; const wrong = hasZero ? (ans === 0 ? x : 0) : (op === 'add' ? (Math.abs(x - y) !== ans ? Math.abs(x - y) : ans + 1) : (y > 0 ? x + y : ans + 1));
+      const said = truth ? ans : wrong;
+      v.stem = pic ? `그림을 식으로 나타내면 ${x} ${sg} ${y} = ${said} 입니다.` : `${x} ${sg} ${y} = ${said} 입니다.`;
+      v.answer = truth ? 'O' : 'X';
+      const IGA = n => VOWEL_END(n) ? '가' : '이';
+      v.reason_options = [{t: op === 'add' ? `${x}${GW(x)} ${y}${EUL(y)} 모으면 ${ans}${IGA(ans)} 되니까` : `${x}에서 ${y}${EUL(y)} 빼면 ${ans}${IGA(ans)} 되니까`, correct:true},
+                          {t: hasZero ? (ans === 0 ? '빼도 처음 수 그대로 남으니까' : '0이 있는 식은 답이 늘 0이니까') : (op === 'add' ? '두 수 가운데 큰 수가 답이니까' : '뺄셈도 두 수를 모으는 것이니까'), mis:dflt}];
+      v.explanation = [expl[0], truth ? `${said}${IEYO(said)} — 맞아요.` : `${said}${EUN(said)} 틀렸어요. 바른 답은 ${ans}${IEYO(ans)}.`, expl[2]];
+      return v;
+    }
+    if (ask === 'expr'){
+      const ok = `${x} ${sg} ${y} = ${ans}`;
+      const NEW = {swap: op === 'add' ? `${Math.max(x, y)} − ${Math.min(x, y)} = ${Math.max(x, y) - Math.min(x, y)}` : `${x} + ${y} = ${x + y}`,
+                   off: `${x} ${sg} ${y} = ${ans + 1}`,
+                   num: op === 'add' ? `${x} + ${y + 1} = ${ans + 1}` : `${x} − ${y} = ${ans >= 1 ? ans - 1 : ans + 2}`};
+      const okSign = (q.options || []).find(o => o.correct); const oSign = okSign && /−/.test(okSign.t) ? '−' : '+';
+      const kindOf = t => { const sgn = /−/.test(t) ? '−' : '+'; if (sgn !== oSign) return 'swap'; const cn = NUMS(okSign.t), tn = NUMS(t); return (cn[0] === tn[0] && cn[1] === tn[1]) ? 'off' : 'num'; };
+      v.stem = pic ? `그림에 알맞은 식은 어느 것인가요?` : `다음 이야기에 알맞은 식은 어느 것인가요?\n${story}`;
+      const used = [ok]; const out = [];
+      (q.options || []).filter(o => !o.correct).slice(0, want).forEach(o => { const k = kindOf(o.t);
+        for (const c of [NEW[k], NEW.off, NEW.num, NEW.swap]){ if (used.indexOf(c) < 0){ used.push(c); out.push({t:c, mis:o.mis || dflt}); break; } } });
+      v.options = [{t:ok, correct:true}].concat(out);
+      v.explanation = [op === 'add' ? '모으거나 더 오는 이야기는 덧셈이에요.' : (cmpMode ? '두 수를 견주는 이야기도 뺄셈이에요.' : '덜어 내거나 없어지는 이야기는 뺄셈이에요.'), `알맞은 식은 ${ok}${IEYO(ans)}.`, '식의 두 수가 이야기의 어느 수인지 짚어 보세요.'];
+      return v;
+    }
+    /* value · story */
+    v.stem = ask === 'story' && !pic ? story : (picStem || `${x} ${sg} ${y}${EUN(y)} 얼마인가요?`);
+    if (q.kind === 'sa') v.answer = [String(ans)];
+    else v.options = inherit(candMap(x, y, op, false, false).m, ans);
+    v.explanation = expl;
+    return v;
+  }
   return v;
 }
 
@@ -1790,6 +1920,8 @@ function paperAsset(a){
     case 'number_bond': { const P = a.parts || [null, null];
       const t = x => (x === null || x === undefined || x === '?') ? '<span>&nbsp;</span>' : `<span>${esc(x)}</span>`;
       return `<div class="pbond">전체 ${t(a.whole)} &nbsp;=&nbsp; ${t(P[0])} 와 ${t(P[1])}</div>`; }
+    case 'take_row': { const n = Math.max(0, Number(a.n) || 0), x = Math.max(0, Math.min(n, Number(a.cross) || 0));
+      return `<div class="pgrow">${n ? String(a.item).repeat(n - x) + '⊘'.repeat(x) : '(빈 접시)'}${x ? '<em style="font-style:normal;font-size:11px;color:#666"> (⊘ = 덜어 낸 것)</em>' : ''}</div>`; }
     case 'group_row': { const op = a.op === '-' ? ' − ' : ' + ';
       return `<div class="pgrow">${(a.groups || []).map(g => String(g.item).repeat(Math.max(0, Number(g.n) || 0))).join(op)}</div>`; }
     case 'count_on': { const st = Number(a.start) || 0, k = Math.max(1, Number(a.steps) || 1), up = a.dir !== 'down'; const out = [`<span>${st}</span>`];

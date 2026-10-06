@@ -90,7 +90,9 @@ const ASSETS = {
   diary:          [],
   /* v1.1 — 1학년 1학기 「여러 가지 모양」 (2026-10-06): 입체 모양 줄 · 입체로 만든 것 */
   solid_row:      ['items'],
-  solid_art:      ['parts']
+  solid_art:      ['parts'],
+  /* v1.2 — 1학년 1학기 「덧셈과 뺄셈」 (2026-10-06): 덜어 내기 줄 */
+  take_row:       ['item', 'n', 'cross']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -282,6 +284,10 @@ function checkAsset(where, a) {
       if (a.mark !== undefined && !(a.mark >= 1 && a.mark <= a.items.length)) bad(where, 'solid_row mark 가 줄 밖: ' + a.mark);
     }
   }
+  if (a.type === 'take_row') {
+    if (!(a.n >= 1 && a.n <= 9)) bad(where, 'take_row n 은 1~9: ' + a.n);
+    if (!(a.cross >= 0 && a.cross <= a.n)) bad(where, 'take_row cross 는 0~n: ' + a.cross);
+  }
   if (a.type === 'solid_art') {
     if (!Array.isArray(a.parts) || !a.parts.length) bad(where, 'solid_art parts 비었음');
     else {
@@ -444,6 +450,16 @@ function checkSet(file) {
     if (q.variant_rule.solids && at !== 'solid_row') bad(where, 'solids 변형은 solid_row 그림이 있어야 한다');
     if (q.variant_rule.solidart && at !== 'solid_art') bad(where, 'solidart 변형은 solid_art 그림이 있어야 한다');
     if (q.variant_rule.trait && at) bad(where, 'trait 변형은 그림 없는 문항 전용(설명 글만 바꾼다)');
+    /* v1.2 갈래 — 9까지 덧셈·뺄셈 */
+    if (q.variant_rule.addsub) {
+      const AS = q.variant_rule.addsub;
+      if (at && ['group_row', 'take_row', 'compare_groups'].indexOf(at) < 0) bad(where, 'addsub 변형은 그림 없음·group_row(두 무리)·take_row·compare_groups 만');
+      if (at === 'group_row' && (q.asset.groups || []).length !== 2) bad(where, 'addsub 의 group_row 는 두 무리여야 한다');
+      if (at === 'compare_groups' && (q.asset.rows || []).length !== 2) bad(where, 'addsub 의 compare_groups 는 두 줄이어야 한다');
+      if ((AS.ask === 'missing' || AS.ask === 'story') && at) bad(where, "addsub ask:'missing'|'story' 는 그림 없는 문항 전용");
+      if (AS.ask === 'expr' && q.kind !== 'mc') bad(where, "addsub ask:'expr' 는 mc 만");
+      if (q.kind === 'ox' && !(q.reason_options || []).some(o => !o.correct && o.mis)) bad(where, 'addsub OX 는 오답 까닭에 mis 가 있어야 변형이 물려받는다');
+    }
     if ((q.variant_rule.solids || q.variant_rule.trait) && q.kind === 'ox' && !(q.reason_options || []).some(o => !o.correct && o.mis)) bad(where, 'solids·trait OX 는 오답 까닭에 mis 가 있어야 변형이 물려받는다');
     /* play.html 과 같은 순서·같은 난수 씀씀이: 틀린 문항들이 난수 하나를 이어 쓰고, prep 은 변형 뒤에 온다.
        (덧: 씨앗을 1씩 늘리면 LCG 특성상 첫 값이 거의 안 변해 「안 변한다」는 가짜 실패가 난다 — 씨앗을 넓게 흩는다) */
