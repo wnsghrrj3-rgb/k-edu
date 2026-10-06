@@ -1,4 +1,4 @@
-// 구석기 넓은 터 GLB 구조 검증 — NPC 6·구역 12·spawn·미션 대상이 json 과 맞는지 (WebGL 없이 GLB JSON 청크만)
+// 구석기 넓은 터 GLB 구조 검증 — NPC 6·구역 20·spawn·미션 대상이 json 과 맞는지 (WebGL 없이 GLB JSON 청크만)
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const base = new URL('../eras/life/', import.meta.url);
@@ -14,7 +14,7 @@ for (const t of types) assert.ok(items.targets[t], `대상 ${t} 가 items.json �
 for (const t of Object.keys(items.targets)) assert.ok(types.has(t) || sceneTypes.has(t), `items.json 대상 ${t} 가 GLB·scene 에 없음`);
 const areas = names.filter((n) => n.startsWith('area_')).map((n) => n.slice(5));
 for (const a of Object.keys(world.areas)) assert.ok(areas.includes(a), `구역 ${a} 없음`);
-assert.equal(Object.keys(world.areas).length, 12, '구역 12');
+assert.equal(Object.keys(world.areas).length, 20, '구역 20(10-06 넓히기: 사는·버는·모이는·만나는·바깥·숨는·바뀌는 곳)');
 assert.ok(areas.includes(world.face), `시작 시선 구역 ${world.face}`);
 assert.ok(names.includes('spawn'), 'spawn');
 const npcs = ix.filter((n) => n.startsWith('ix_npc_')).map((n) => n.slice(7));
