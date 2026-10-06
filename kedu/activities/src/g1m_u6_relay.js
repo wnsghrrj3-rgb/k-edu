@@ -1,5 +1,5 @@
 /* src/g1m_u6_relay.js — 수학 보물 탐험 릴레이 (1학년 수학 6단원 「두근두근 수학 보물 탐험」)
- * 장르: relay(class 전용) · 생성기: treasure_mix — 1학기 5단원 부품 7종에 위임 (문제를 새로 만들지 않는다)
+ * 장르: relay(class + solo — D58 혼자 릴레이: 바통 10개 기본, 시간·반 기록 없음) · 생성기: treasure_mix — 1학기 5단원 부품 7종에 위임 (문제를 새로 만들지 않는다)
  * 한 바퀴 = 1단원 → 2단원 → 3단원 → 4단원 → 5단원 순환. 반 전체가 바통을 이어 1학기를 되짚는다.
  * byType = 단원 키 5개 (D31): 수첩은 "어느 단원을 되짚을까"를 답한다.
  * D6: 개인 번호별 시간은 어디에도 없다. 기록은 반의 것.
@@ -14,8 +14,7 @@
     subtitle: '1학기에 배운 다섯 보물 — 한 명씩 바통을 이어 찾아요',
     defaults: { runners: 20, shuffle: 0 },
     settings: [
-      { key: 'runners', label: '주자 수', options: [{ v: 15, label: '15명' }, { v: 20, label: '20명' }, { v: 25, label: '25명' }, { v: 30, label: '30명' }] },
-      { key: 'shuffle', label: '주자 순서', options: [{ v: 0, label: '번호순' }, { v: 1, label: '무작위' }] }
+      { key: 'runners', label: '바통 수', options: [{ v: 5, label: '5개' }, { v: 10, label: '10개' }, { v: 15, label: '15개' }, { v: 20, label: '20개' }] },   // 설정 칩은 solo 에만 보인다(§3-2) — 혼자 기준 이름표
     ],
     stageHtml:
       '<div id="relay">' +
@@ -36,6 +35,7 @@
         '</div>' +
         '<div id="relay-result"></div>' +
       '</div>',
+    onConfig: function (app, cfg) { Relay.soloDefault(app, cfg); },   // D58 혼자 기본 10 바통
     onStart: function (app) {
       var MIX = GENS['treasure_mix'];
       var SHAPE = GENS['shape3d'].shapes;
