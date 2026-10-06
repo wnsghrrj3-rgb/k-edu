@@ -85,7 +85,9 @@ const ASSETS = {
   /* v0.9 — 국어 (2026-09-29): 짧은 글 · 말풍선 · 장면 */
   passage:        ['lines'],
   speech:         ['turns'],
-  scene:          ['icon']
+  scene:          ['icon'],
+  /* v1.0 — 국어 「그림일기를 써요」 (2026-10-06): 그림일기 틀 — 필수 칸 없음(비운 자리를 보여 주는 에셋이라), 규격은 checkAsset 에서 */
+  diary:          []
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -250,6 +252,18 @@ function checkAsset(where, a) {
   if (a.type === 'scene') {
     if (!a.icon || !String(a.icon).trim()) bad(where, 'scene icon 비었음');
     if (a.text !== undefined && String(a.text).length > 80) bad(where, 'scene text 80자 초과');
+  }
+  if (a.type === 'diary') {
+    const filled = ['date', 'weather', 'picture', 'lines'].filter(k => a[k] !== null && a[k] !== undefined && a[k] !== '' && !(Array.isArray(a[k]) && !a[k].length));
+    if (filled.length < 2) bad(where, 'diary 는 date·weather·picture·lines 가운데 둘 이상 채워야(전부 빈 틀은 문항이 안 된다)');
+    if (a.lines !== null && a.lines !== undefined) {
+      if (!Array.isArray(a.lines)) bad(where, 'diary lines 는 배열 또는 null');
+      else { if (a.lines.length > 5) bad(where, 'diary lines 는 5줄까지'); a.lines.forEach((ln, i) => { if (!ln || !String(ln).trim()) bad(where, `diary lines[${i}] 비었음`); if (String(ln).length > 40) bad(where, `diary lines[${i}] 40자 초과`); }); }
+    }
+    if (a.date && String(a.date).length > 20) bad(where, 'diary date 20자 초과');
+    if (a.weather && String(a.weather).length > 20) bad(where, 'diary weather 20자 초과');
+    if (a.picture && String(a.picture).length > 12) bad(where, 'diary picture 는 그림 글자 몇 개까지(12자)');
+    if (a.hi !== undefined) { if (!Array.isArray(a.hi)) bad(where, 'diary hi 는 배열'); else a.hi.forEach(h => { const pool = [a.date, a.weather].concat(Array.isArray(a.lines) ? a.lines : []).filter(Boolean).map(String); if (!pool.some(t => t.indexOf(String(h)) >= 0)) bad(where, 'diary hi 에 틀에 없는 말 ' + h); }); }
   }
   if (a.type === 'group_row') {
     if (!Array.isArray(a.groups) || a.groups.length < 2) bad(where, 'group_row groups 가 2무리 미만');

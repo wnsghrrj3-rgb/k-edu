@@ -104,6 +104,25 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .pq .pspeech{margin:8px 0 8px 30px;font-size:13px;line-height:1.8}
 .pq .pspeech b{display:inline-block;min-width:40px;font-weight:400;color:#555}
 .pq .pscene{margin:6px 0 6px 30px;font-size:13px;line-height:1.6}
+/* v1.0 — 국어 에셋: 그림일기 틀 (2026-10-06) — 날짜·날씨 줄 / 그림 칸 / 글 칸, 비운 자리는 점선 빈칸 */
+.diary{width:100%;max-width:520px;border:2px solid var(--rule-strong);border-radius:14px;background:var(--card);overflow:hidden}
+.diary .dh{display:flex;justify-content:space-between;gap:10px;padding:8px 14px;border-bottom:1px dashed var(--rule-strong);font-size:17px;background:var(--tint)}
+.diary .dh span{flex:1 1 auto}
+.diary .dh .wx{flex:0 0 auto;text-align:right}
+.diary .dp{min-height:88px;display:flex;align-items:center;justify-content:center;font-size:46px;letter-spacing:.08em;border-bottom:1px dashed var(--rule-strong);padding:10px 14px}
+.diary .dt{padding:10px 16px;font-size:19px;line-height:1.8;background:repeating-linear-gradient(transparent 0 33px,var(--rule) 33px 34px)}
+.diary .dt div{min-height:34px}
+.diary .dt b{background:#FFF3B0;border-radius:4px;padding:0 3px;font-weight:700}
+.diary .blank{color:var(--muted);font-size:15px;font-style:normal}
+.diary .blank::before{content:'( 비어 있어요 )'}
+.diary .dn{font-size:13px;color:var(--muted);text-align:right;padding:0 12px 6px}
+.pq .pdiary{margin:8px 0 8px 30px;border:1px solid #888;border-radius:8px;font-size:13px;line-height:1.7;max-width:420px}
+.pq .pdiary .pdh{display:flex;justify-content:space-between;padding:4px 10px;border-bottom:1px dashed #888}
+.pq .pdiary .pdp{min-height:40px;display:flex;align-items:center;justify-content:center;font-size:22px;border-bottom:1px dashed #888;padding:4px}
+.pq .pdiary .pdt{padding:6px 10px}
+.pq .pdiary .pdt b{text-decoration:underline;font-weight:400}
+.pq .pdiary .pblank{color:#777}
+.pq .pdiary .pblank::before{content:'(      )'}
 .pq .pscene span{font-size:20px;margin-right:8px}
 /* v0.3 — 1학년 2학기 「100까지의 수」 에셋 3종 */
 .bund{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center}
@@ -558,6 +577,14 @@ function drawAsset(a, r){
       return `<div class="passage">${a.title ? `<h4>${esc(a.title)}</h4>` : ''}${(a.lines || []).map((ln, i) => `<div class="ln">${a.numbered === false ? '' : `<i>${i + 1}</i>`}<span>${mark(ln)}</span></div>`).join('')}</div>`; }
     case 'speech': return `<div class="speech">${(a.turns || []).map(t => `<div class="tn${t.who === '나' ? ' me' : ''}"><span class="who">${esc(t.who || '')}</span><div class="bub">${esc(t.text || '')}</div></div>`).join('')}</div>`;
     case 'scene': return `<div class="scene"><div class="ic">${esc(a.icon || '')}</div>${a.text ? `<div class="cap">${esc(a.text)}</div>` : ''}</div>`;
+    /* v1.0 — 그림일기 틀 (2026-10-06): date·weather·picture·lines 네 자리. null 은 「비어 있어요」 빈칸(빠진 것 찾기용), lines 는 글줄 배열 */
+    case 'diary': { const hi = (a.hi || []).map(String); const mark = t => { let out = esc(t); hi.forEach(h => { if (h) out = out.split(esc(h)).join('<b>' + esc(h) + '</b>'); }); return out; };
+      const slot = (v, cls) => (v === null || v === undefined || v === '') ? `<i class="blank"></i>` : (cls === 'pic' ? esc(v) : mark(v));
+      const lines = a.lines === null ? null : (a.lines || []);
+      return `<div class="diary"><div class="dh"><span>${slot(a.date)}</span><span class="wx">${slot(a.weather)}</span></div>` +
+        (a.picture === undefined ? '' : `<div class="dp">${slot(a.picture, 'pic')}</div>`) +
+        `<div class="dt">${lines === null ? '<div><i class="blank"></i></div>' : lines.map(ln => `<div>${mark(ln)}</div>`).join('')}</div>` +
+        (a.name ? `<div class="dn">${esc(a.name)}의 그림일기</div>` : '') + `</div>`; }
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
@@ -1633,6 +1660,13 @@ function paperAsset(a){
       return `<div class="ppass">${a.title ? `<h4>${esc(a.title)}</h4>` : ''}${(a.lines || []).map((ln, i) => `<div>${a.numbered === false ? '' : (i + 1) + '. '}${mark(ln)}</div>`).join('')}</div>`; }
     case 'speech': return `<div class="pspeech">${(a.turns || []).map(t => `<div><b>${esc(t.who || '')}</b> ${esc(t.text || '')}</div>`).join('')}</div>`;
     case 'scene': return `<div class="pscene"><span>${esc(a.icon || '')}</span>${esc(a.text || '')}</div>`;
+    case 'diary': { const hi = (a.hi || []).map(String); const mark = t => { let out = esc(t); hi.forEach(h => { if (h) out = out.split(esc(h)).join('<b>' + esc(h) + '</b>'); }); return out; };
+      const slot = v => (v === null || v === undefined || v === '') ? '<span class="pblank"></span>' : mark(v);
+      const lines = a.lines === null ? null : (a.lines || []);
+      return `<div class="pdiary"><div class="pdh"><span>${slot(a.date)}</span><span>${slot(a.weather)}</span></div>` +
+        (a.picture === undefined ? '' : `<div class="pdp">${slot(a.picture)}</div>`) +
+        `<div class="pdt">${lines === null ? '<div class="pblank"></div>' : lines.map(ln => `<div>${mark(ln)}</div>`).join('')}</div>` +
+        (a.name ? `<div style="text-align:right;color:#555;padding:0 8px 4px">${esc(a.name)}의 그림일기</div>` : '') + `</div>`; }
     case 'plate': return `<div class="pplate">${a.n === 0 ? '(비어 있음)' : a.item.repeat(a.n)}</div>`;
   } return '';
 }
