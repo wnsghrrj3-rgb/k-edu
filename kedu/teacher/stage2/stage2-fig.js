@@ -14,6 +14,7 @@
    · 60차(2026-10-01) vmul parts:false(answer:false 와 함께 — 부분 곱 줄까지 비움, 문제 장용)
    · 59차(2026-10-01) 4학년 1학기 각도 부품: ang(각 하나 — 호·도·직각 ㄱ자·단위 각 칸·어림 기준선·예각/직각/둔각) · prot(각도기 — 안쪽·바깥쪽 눈금, 밑금 방향에 따라 읽는 눈금) · asum(각도의 합·차·한 점에 모으기) · polyang(삼각형·사각형 안쪽 각 — 크기대로 그림·대각선)
    · 64차(2026-10-02) 4학년 1학기 관계와 규칙 부품: bal(저울 — 식을 셈해 기울기) · shapes(모양의 배열 — 변하는/변하지 않는 부분) · ngrid(수 배열표·수열) · eqs(계산식의 배열) · eqc(등호 카드 — 옳음은 부품이 셈)
+   · 81차(2026-10-06) 4학년 2학기 사각형 부품: lines(직선 여러 개 — 수직 ㄱ자·평행 꺾쇠는 좌표로 셈해 맞을 때만) · pdist(평행선 사이의 거리) · quad(사각형 하나 — 평행 꺾쇠·같은 변 눈금·직각·대각선·변/각 글자) · quads(사각형 여러 개 가르기) · circ2(두 원으로 그린 사각형)
    · 80차(2026-10-06) 4학년 2학기 분수의 덧셈과 뺄셈 부품: fop(같은 분모 분수의 덧셈·뺄셈 띠 — 파랑 앞의 수·초록 더하는 수·주황 빗금 덜어 낸 칸 · 대분수 자연수는 통 칸)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
    ============================================================================ */
@@ -1520,6 +1521,114 @@
     return svgWrap(s, 'fig-fop', '0 0 460 ' + (ly + (show !== false ? 92 : 22))).replace('<svg ', '<svg data-n="' + n + '" data-a="' + A + '" data-b="' + B + '" data-op="' + (op === '+' ? 'add' : 'sub') + '" data-r="' + R + '" data-u="' + units + '" ');
   }
   PARTS.fop = fop;
+  { // 81차 사각형 부품 — 이름이 겹치지 않게 블록 안에 둔다
+  // ══ 81차(2026-10-06) 4학년 2학기 사각형 부품 — lines(직선 여러 개 · 수직·평행 표시) · pdist(평행선 사이의 거리) · quad(사각형 하나) · quads(사각형 여러 개 가르기) · circ2(크기가 같은/다른 두 원으로 그린 사각형) ══
+  // 그림 문법: 주황 ㄱ자 = 직각(수직) · 초록 꺾쇠 > · >> = 서로 평행한 변(같은 쌍은 같은 수) · 빨강 눈금 | · || = 길이가 같은 변 · 주황 선분 = 평행선 사이의 거리 · 빨강 직선 = 기준 직선
+  // 수직·평행·길이·각은 부품이 좌표로 셈한다 — 데이터가 「수직」이라고 적어도 실제로 수직이 아니면 ㄱ자를 그리지 않는다(게이트가 data-* 로 다시 잰다).
+  const DR = Math.PI / 180, f1 = (n) => (+n).toFixed(1), f3 = (n) => (Math.round(n * 1000) / 1000).toString();
+  const KOV = 'ㄱㄴㄷㄹ';
+  function fitMap(pts, box) { // 59차와 같은 꼴(블록 밖이라 다시 둔다)
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]); const mnx = Math.min(...xs), mxx = Math.max(...xs), mny = Math.min(...ys), mxy = Math.max(...ys);
+    const sc = Math.min((box[2] - box[0]) / Math.max(1e-6, mxx - mnx), (box[3] - box[1]) / Math.max(1e-6, mxy - mny), 260); const ox = (box[0] + box[2]) / 2 - sc * (mnx + mxx) / 2, oy = (box[1] + box[3]) / 2 - sc * (mny + mxy) / 2;
+    const f = (p) => [ox + sc * p[0], oy + sc * p[1]]; f.sc = sc; return f;
+  }
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1]], crs = (a, b) => a[0] * b[1] - a[1] * b[0], dot = (a, b) => a[0] * b[0] + a[1] * b[1], vlen = (a) => Math.hypot(a[0], a[1]);
+  function quadPts(o) { // 수학 좌표(y 위가 +, cm) — 차례 [ㄱ 왼위, ㄴ 왼아래, ㄷ 오아래, ㄹ 오위]
+    if (o.pts) return o.pts.map(p => [+p[0], +p[1]]);
+    if (o.rect) return [[0, +o.rect[1]], [0, 0], [+o.rect[0], 0], [+o.rect[0], +o.rect[1]]];
+    if (o.sq != null) { const s = +o.sq; return [[0, s], [0, 0], [s, 0], [s, s]]; }
+    const pg = (a, b, g) => { const dx = b * Math.cos(g * DR), dy = b * Math.sin(g * DR); return [[dx, dy], [0, 0], [a, 0], [a + dx, dy]]; };
+    if (o.para) return pg(+o.para[0], +o.para[1], +o.para[2]);
+    if (o.rhom) return pg(+o.rhom[0], +o.rhom[0], +o.rhom[1]);
+    if (o.trap) { const [a, h, la, ra] = o.trap.map(Number); const lx = la === 90 ? 0 : h / Math.tan(la * DR), rx = ra === 90 ? 0 : h / Math.tan(ra * DR); return [[lx, h], [0, 0], [a, 0], [a - rx, h]]; }
+    if (o.kite) { const [w, t, b] = o.kite.map(Number); return [[0, 0], [w / 2, -b], [w, 0], [w / 2, t]].map(p => [p[0], p[1]]); } // 연 모양(평행한 변 없음) — 차례는 왼·아래·오른·위
+    return [[0.6, 2], [0, 0], [4, 0], [3.2, 2.6]];
+  }
+  function quadInfo(P) {
+    const S = [0, 1, 2, 3].map(i => sub(P[(i + 1) % 4], P[i])), L = S.map(vlen);
+    const par = (i, j) => Math.abs(crs(S[i], S[j])) / (L[i] * L[j]) < 1e-6;
+    const pairs = [[0, 2], [1, 3]].filter(([i, j]) => par(i, j));
+    const ang = [0, 1, 2, 3].map(i => { const a = sub(P[(i + 3) % 4], P[i]), b = sub(P[(i + 1) % 4], P[i]); return Math.acos(Math.max(-1, Math.min(1, dot(a, b) / (vlen(a) * vlen(b))))) / DR; });
+    const eq4 = L.every(x => Math.abs(x - L[0]) < 1e-6), r4 = ang.every(a => Math.abs(a - 90) < 1e-6);
+    const kinds = []; if (pairs.length) kinds.push('사다리꼴'); if (pairs.length === 2) kinds.push('평행사변형'); if (eq4) kinds.push('마름모'); if (r4) kinds.push('직사각형'); if (eq4 && r4) kinds.push('정사각형');
+    return { S, L, pairs, ang, kinds };
+  }
+  const chev = (m, u, k, col) => { let s = ''; for (let i = 0; i < k; i++) { const c = [m[0] + u[0] * (i - (k - 1) / 2) * 12, m[1] + u[1] * (i - (k - 1) / 2) * 12], nx = -u[1], ny = u[0]; s += '<path class="o-par" d="M' + f1(c[0] - u[0] * 9 + nx * 9) + ' ' + f1(c[1] - u[1] * 9 + ny * 9) + ' L' + f1(c[0]) + ' ' + f1(c[1]) + ' L' + f1(c[0] - u[0] * 9 - nx * 9) + ' ' + f1(c[1] - u[1] * 9 - ny * 9) + '" fill="none" stroke="' + (col || GRN) + '" stroke-width="4" stroke-linecap="round"/>'; } return s; };
+  const ticks = (m, u, k) => { let s = ''; const nx = -u[1], ny = u[0]; for (let i = 0; i < k; i++) { const c = [m[0] + u[0] * (i - (k - 1) / 2) * 9, m[1] + u[1] * (i - (k - 1) / 2) * 9]; s += '<line class="o-tick" x1="' + f1(c[0] - nx * 10) + '" y1="' + f1(c[1] - ny * 10) + '" x2="' + f1(c[0] + nx * 10) + '" y2="' + f1(c[1] + ny * 10) + '" stroke="' + RED + '" stroke-width="4"/>'; } return s; };
+  const rmark = (v, a, b, sz) => { const ua = sub(a, v), ub = sub(b, v), la = vlen(ua), lb = vlen(ub); const p1 = [v[0] + ua[0] / la * sz, v[1] + ua[1] / la * sz], p2 = [v[0] + ub[0] / lb * sz, v[1] + ub[1] / lb * sz]; return '<path class="o-right" d="M' + f1(p1[0]) + ' ' + f1(p1[1]) + ' L' + f1(p1[0] + p2[0] - v[0]) + ' ' + f1(p1[1] + p2[1] - v[1]) + ' L' + f1(p2[0]) + ' ' + f1(p2[1]) + '" fill="none" stroke="' + ORANGE + '" stroke-width="4.5" stroke-linejoin="round"/>'; };
+  const lenT = (v) => (v == null || v === '' ? '' : /^[\d.]+$/.test(String(v)) ? v + ' cm' : String(v));
+  const angT = (v) => (v == null || v === '' ? '' : /^[\d.]+$/.test(String(v)) ? v + '°' : String(v));
+  function quadDraw(o, box, small) { // box [x0,y0,x1,y1] 안에 그린다 · 반환 [svg 조각, info, 화면 점]
+    const P = quadPts(o), I = quadInfo(P);
+    const extra = []; if (o.diag) { extra.push([(P[0][0] + P[2][0]) / 2, (P[0][1] + P[2][1]) / 2]); }
+    const F = fitMap(P.map(p => [p[0], -p[1]]).concat(extra), box); const Q = P.map(p => F([p[0], -p[1]]));
+    const cx = Q.reduce((a, p) => a + p[0], 0) / 4, cy = Q.reduce((a, p) => a + p[1], 0) / 4;
+    let s = '<polygon class="o-quad" points="' + Q.map(p => f1(p[0]) + ',' + f1(p[1])).join(' ') + '" fill="' + (o.color || '#DCE8FB') + '" stroke="' + INK + '" stroke-width="' + (small ? 3.5 : 4.5) + '" stroke-linejoin="round"/>';
+    [].concat(o.hiSides || []).forEach(i => { const a = Q[i], b = Q[(i + 1) % 4]; s += '<line class="o-hi" x1="' + f1(a[0]) + '" y1="' + f1(a[1]) + '" x2="' + f1(b[0]) + '" y2="' + f1(b[1]) + '" stroke="' + ORANGE + '" stroke-width="7" stroke-linecap="round"/>'; });
+    if (o.diag) { s += '<line class="o-diag" x1="' + f1(Q[0][0]) + '" y1="' + f1(Q[0][1]) + '" x2="' + f1(Q[2][0]) + '" y2="' + f1(Q[2][1]) + '" stroke="' + BLUE2 + '" stroke-width="3.5" stroke-dasharray="10 7"/><line class="o-diag" x1="' + f1(Q[1][0]) + '" y1="' + f1(Q[1][1]) + '" x2="' + f1(Q[3][0]) + '" y2="' + f1(Q[3][1]) + '" stroke="' + BLUE2 + '" stroke-width="3.5" stroke-dasharray="10 7"/>';
+      const d1 = sub(P[2], P[0]), d2 = sub(P[3], P[1]); const den = crs(d1, d2); if (Math.abs(den) > 1e-9) { const t = crs(sub(P[1], P[0]), d2) / den; const X = [P[0][0] + d1[0] * t, P[0][1] + d1[1] * t]; const XS = F([X[0], -X[1]]); if (Math.abs(dot(d1, d2)) / (vlen(d1) * vlen(d2)) < 1e-6) s += rmark(XS, Q[0], Q[1], 16); s += '<circle cx="' + f1(XS[0]) + '" cy="' + f1(XS[1]) + '" r="5" fill="' + BLUE2 + '"/>'; } }
+    if (o.right !== false) I.ang.forEach((a, i) => { if (Math.abs(a - 90) < 1e-6) s += rmark(Q[i], Q[(i + 3) % 4], Q[(i + 1) % 4], small ? 14 : 20); });
+    if (o.par) I.pairs.forEach(([i, j], k) => [i, j].forEach(si => { const a = Q[si], b = Q[(si + 1) % 4]; const pa = P[si], pb = P[(si + 1) % 4]; const dir = (Math.abs(pb[0] - pa[0]) > 1e-9 ? pb[0] - pa[0] : pb[1] - pa[1]) >= 0 ? 1 : -1; const u = [(b[0] - a[0]) / vlen(sub(b, a)) * dir, (b[1] - a[1]) / vlen(sub(b, a)) * dir]; const sl = vlen(sub(b, a)); s += chev([(a[0] + b[0]) / 2 + u[0] * Math.min(30, sl * 0.22), (a[1] + b[1]) / 2 + u[1] * Math.min(30, sl * 0.22)], u, k + 1); }));
+    if (o.eq) { const grp = []; I.L.forEach((l, i) => { let g = grp.find(x => Math.abs(x.l - l) < 1e-6); if (!g) { g = { l, s: [] }; grp.push(g); } g.s.push(i); }); grp.filter(g => g.s.length > 1).forEach((g, k) => g.s.forEach(si => { const a = Q[si], b = Q[(si + 1) % 4]; const u = sub(b, a), l = vlen(u); s += ticks([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], [u[0] / l, u[1] / l], k + 1); })); }
+    if (o.lens) o.lens.forEach((t, i) => { const tt = lenT(t); if (!tt) return; const a = Q[i], b = Q[(i + 1) % 4]; const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; const v = sub(m, [cx, cy]), l = vlen(v) || 1; s += txt(f1(m[0] + v[0] / l * (small ? 22 : 30)), f1(m[1] + v[1] / l * (small ? 22 : 30) + 8), tt, small ? 18 : 24, t === '?' ? RED : BLUE2); });
+    if (o.angs) o.angs.forEach((t, i) => { const tt = angT(t); if (!tt) return; const v = sub([cx, cy], Q[i]), l = vlen(v) || 1; s += txt(f1(Q[i][0] + v[0] / l * (small ? 30 : 46)), f1(Q[i][1] + v[1] / l * (small ? 30 : 46) + 8), tt, small ? 18 : 24, t === '?' || t === '㉠' ? RED : ORANGE); });
+    if (o.lab) { const LB = typeof o.lab === 'string' ? o.lab : KOV; Q.forEach((p, i) => { const v = sub(p, [cx, cy]), l = vlen(v) || 1; s += txt(f1(p[0] + v[0] / l * 22), f1(p[1] + v[1] / l * 22 + 9), LB[i], small ? 20 : 26, INK); }); }
+    return [s, I, Q, P];
+  }
+  const qAttr = (I, P) => ' data-pts="' + P.map(p => f3(p[0]) + ' ' + f3(p[1])).join(',') + '" data-par="' + I.pairs.length + '" data-kinds="' + I.kinds.join(',') + '" data-angs="' + I.ang.map(a => f3(a)).join(',') + '" data-lens="' + I.L.map(l => f3(l)).join(',') + '"';
+  function quad(o) {
+    const [s, I, , P] = quadDraw(o, [70, o.name ? 34 : 30, 390, o.name ? 214 : 248], false);
+    return svgWrap(s + (o.name ? txt(230, 262, o.name, 24, BLUE2) : ''), 'fig-quad').replace('<svg class="fig-svg fig-quad"', '<svg class="fig-svg fig-quad"' + qAttr(I, P));
+  }
+  function quads(o) {
+    const items = o.items || [], n = items.length, cols = o.cols || (n <= 3 ? n : n === 4 ? 4 : 3), rows = Math.ceil(n / cols), cw = 460 / cols, rh = rows > 1 ? 136 : 230, Hh = rows * rh + 8;
+    let s = '';
+    items.forEach((it, i) => { const c = i % cols, r = Math.floor(i / cols), x0 = c * cw, y0 = r * rh + 4; const [g, I, , P] = quadDraw(Object.assign({ right: false }, it), [x0 + 18, y0 + 34, x0 + cw - 18, y0 + rh - 10], true);
+      s += '<g class="o-qi" data-name="' + esc(it.name || '') + '"' + qAttr(I, P) + '>' + (it.on ? '<rect x="' + f1(x0 + 4) + '" y="' + f1(y0 + 2) + '" width="' + f1(cw - 8) + '" height="' + (rh - 6) + '" rx="14" fill="#FFF3E6" stroke="' + ORANGE + '" stroke-width="3"/>' : '') + g + txt(f1(x0 + 20), y0 + 26, it.name || '', 22, BLUE2, 800, 'start') + '</g>'; });
+    return svgWrap(s, 'fig-quads', '0 0 460 ' + Hh).replace('<svg class="fig-svg fig-quads"', '<svg class="fig-svg fig-quads" data-n="' + n + '"');
+  }
+  function lines(o) { // items [{name, ang(도, 수학 방향), at:[x,y] 화면}] · right [[가,나]…] · par [[나,다]…] · hi [이름] = 빨강 기준 직선
+    const box = [22, 18, 438, 262], items = o.items || []; let s = ''; const seg = {};
+    const clip = (it) => { const u = [Math.cos(it.ang * DR), -Math.sin(it.ang * DR)], p = it.at; let t0 = -1e9, t1 = 1e9; [[0, box[0], box[2]], [1, box[1], box[3]]].forEach(([k, lo, hi]) => { if (Math.abs(u[k]) < 1e-9) return; let a = (lo - p[k]) / u[k], b = (hi - p[k]) / u[k]; if (a > b) [a, b] = [b, a]; t0 = Math.max(t0, a); t1 = Math.min(t1, b); }); return [[p[0] + u[0] * t0, p[1] + u[1] * t0], [p[0] + u[0] * t1, p[1] + u[1] * t1], u]; };
+    items.forEach(it => { seg[it.name] = clip(it); });
+    const meet = (a, b) => { const A = seg[a], B = seg[b]; const d1 = sub(A[1], A[0]), d2 = sub(B[1], B[0]); const den = crs(d1, d2); if (Math.abs(den) < 1e-9) return null; const t = crs(sub(B[0], A[0]), d2) / den; return [A[0][0] + d1[0] * t, A[0][1] + d1[1] * t]; };
+    const isPerp = (a, b) => { const A = items.find(x => x.name === a), B = items.find(x => x.name === b); if (!A || !B) return false; const d = ((A.ang - B.ang) % 180 + 180) % 180; return Math.abs(d - 90) < 1e-6; };
+    const isPar = (a, b) => { const A = items.find(x => x.name === a), B = items.find(x => x.name === b); if (!A || !B || a === b) return false; const d = ((A.ang - B.ang) % 180 + 180) % 180; return d < 1e-6 || d > 180 - 1e-6; };
+    items.forEach(it => { const [a, b] = seg[it.name]; const hi = (o.hi || []).indexOf(it.name) >= 0; s += '<line class="o-line" data-name="' + esc(it.name) + '" x1="' + f1(a[0]) + '" y1="' + f1(a[1]) + '" x2="' + f1(b[0]) + '" y2="' + f1(b[1]) + '" stroke="' + (hi ? RED : INK) + '" stroke-width="5" stroke-linecap="round"/>'; });
+    (o.right || []).forEach(([a, b]) => { if (!isPerp(a, b)) return; const X = meet(a, b); if (!X) return; s += rmark(X, [X[0] + seg[a][2][0] * 40, X[1] + seg[a][2][1] * 40], [X[0] + seg[b][2][0] * 40, X[1] + seg[b][2][1] * 40], 22); });
+    (o.par || []).forEach((pr, k) => pr.forEach(nm => { if (!isPar(pr[0], pr[1])) return; const [a, b, u] = seg[nm]; const m = [(a[0] + b[0]) / 2 + u[0] * 60, (a[1] + b[1]) / 2 + u[1] * 60]; s += chev(m, u, k + 1); }));
+    items.forEach(it => { const [a, b] = seg[it.name]; const end = (o.labAt === 'start') ? a : (b[0] > a[0] + 1 || (Math.abs(b[0] - a[0]) <= 1 && b[1] < a[1]) ? b : a); const v = sub(end, [230, 140]), l = vlen(v) || 1; s += '<circle cx="' + f1(end[0] - v[0] / l * 2) + '" cy="' + f1(end[1] - v[1] / l * 2) + '" r="0"/>' + txt(f1(Math.max(30, Math.min(430, end[0] - v[0] / l * 18 + (Math.abs(v[0] / l) < 0.5 ? 24 : 0)))), f1(Math.max(30, Math.min(258, end[1] - v[1] / l * 18 + 8))), '직선 ' + it.name, 22, (o.hi || []).indexOf(it.name) >= 0 ? RED : BLUE2); });
+    return svgWrap(s, 'fig-lines').replace('<svg class="fig-svg fig-lines"', '<svg class="fig-svg fig-lines" data-lines="' + items.map(it => esc(it.name) + ':' + it.ang).join(',') + '"');
+  }
+  function pdist(o) { // d 평행선 사이의 거리(cm) · segs 점 ㄱ 에서 아래 직선까지 선분 길이들(cm, d 와 같은 것이 수직) · show 길이 글자 · q 수직 선분 「?」 · two 다른 자리 수직 선분 하나 더 · plain 문제 장(수직 선분도 회색·ㄱ자 없음)
+    const d = +o.d, segs = [].concat(o.segs || [d]).map(Number), sc = Math.min(44, 150 / d), yT = 64, yB = yT + d * sc, x0 = o.x0 || 150; let s = '';
+    s += '<line class="o-pl" x1="24" y1="' + yT + '" x2="436" y2="' + yT + '" stroke="' + INK + '" stroke-width="5" stroke-linecap="round"/><line class="o-pl" x1="24" y1="' + f1(yB) + '" x2="436" y2="' + f1(yB) + '" stroke="' + INK + '" stroke-width="5" stroke-linecap="round"/>';
+    s += chev([400, yT], [1, 0], 1) + chev([400, yB], [1, 0], 1);
+    let side = 1, step = 0; const lab = []; segs.forEach((L, i) => { const off = L > d + 1e-9 ? Math.sqrt(L * L - d * d) * sc : 0; let xb; if (off === 0) xb = x0; else { step++; xb = x0 + side * off; side = -side; } const perp = off === 0, em = perp && !o.plain; const col = em ? ORANGE : '#8A97A8';
+      s += '<line class="o-seg' + (perp ? ' perp' : '') + '" data-l="' + L + '" x1="' + x0 + '" y1="' + yT + '" x2="' + f1(xb) + '" y2="' + f1(yB) + '" stroke="' + col + '" stroke-width="' + (em ? 6 : 4) + '" stroke-linecap="round"/>';
+      if (em) s += rmark([xb, yB], [xb, yT], [xb + 40, yB], 18);
+      if (o.show !== false) lab.push(perp ? [x0 + (segs.length > 1 ? 0 : -12), (yT + yB) / 2 + (segs.length > 1 ? -2 : 8), perp && o.q ? '?' : L + ' cm', em ? ORANGE : '#6B7C93', segs.length > 1 ? 'middle' : 'end', true] : [x0 + (xb - x0) * 0.78 + (xb > x0 ? 12 : -12), yT + (yB - yT) * 0.78 + 8, L + ' cm', '#6B7C93', xb > x0 ? 'start' : 'end']); });
+    if (o.two) { const x2 = o.two === true ? 360 : +o.two; s += '<line class="o-seg perp two" data-l="' + d + '" x1="' + x2 + '" y1="' + yT + '" x2="' + x2 + '" y2="' + f1(yB) + '" stroke="' + ORANGE + '" stroke-width="6" stroke-linecap="round"/>' + rmark([x2, yB], [x2, yT], [x2 + 40, yB], 18); if (o.show !== false) lab.push([x2 + 12, (yT + yB) / 2 + 8, o.q ? '?' : d + ' cm', ORANGE, 'start']); }
+    lab.forEach(([x, y, t, c, a, bg]) => { if (bg) s += '<rect x="' + f1(x - 34) + '" y="' + f1(y - 22) + '" width="68" height="30" rx="8" fill="#fff" fill-opacity=".92"/>'; s += txt(f1(x), f1(y), t, 22, c, 800, a); });
+    if (o.pt !== false) s += '<circle cx="' + x0 + '" cy="' + yT + '" r="7" fill="' + INK + '"/>' + txt(x0, yT - 16, 'ㄱ', 24);
+    if (o.label) s += txt(230, f1(yB + 40), o.label, 22, '#3B4252');
+    return svgWrap(s, 'fig-pdist', '0 0 460 ' + Math.ceil(yB + (o.label ? 56 : 24))).replace('<svg class="fig-svg fig-pdist"', '<svg class="fig-svg fig-pdist" data-d="' + d + '" data-segs="' + segs.join(',') + '"');
+  }
+  function circ2(o) { // r1·r2 두 원의 반지름(cm) · c 두 중심 사이(cm) · show 변 글자 · q 「?」 · quad false 면 원만
+    const r1 = +o.r1, r2 = +(o.r2 != null ? o.r2 : o.r1), c = +(o.c != null ? o.c : Math.max(r1, r2) * 1.1);
+    const x = (c * c + r1 * r1 - r2 * r2) / (2 * c), h = Math.sqrt(Math.max(0, r1 * r1 - x * x));
+    const P = [[0, 0], [x, h], [c, 0], [x, -h]];
+    const F = fitMap([[-r1, -r1], [r1, r1], [c - r2, -r2], [c + r2, r2]], [40, 24, 420, 256]); const Q = P.map(p => F([p[0], -p[1]])), sc = F.sc;
+    let s = '<circle class="o-c" cx="' + f1(Q[0][0]) + '" cy="' + f1(Q[0][1]) + '" r="' + f1(r1 * sc) + '" fill="#EAF3FF" fill-opacity=".55" stroke="#8FB4E8" stroke-width="3"/><circle class="o-c" cx="' + f1(Q[2][0]) + '" cy="' + f1(Q[2][1]) + '" r="' + f1(r2 * sc) + '" fill="#EAF7EF" fill-opacity=".55" stroke="#8CCFA6" stroke-width="3"/>';
+    if (o.quad !== false) { s += '<polygon class="o-quad" points="' + Q.map(p => f1(p[0]) + ',' + f1(p[1])).join(' ') + '" fill="#FFF3E6" fill-opacity=".8" stroke="' + INK + '" stroke-width="4.5" stroke-linejoin="round"/>';
+      const R = [r1, r2, r2, r1]; [0, 1, 2, 3].forEach(i => { const a = Q[i], b = Q[(i + 1) % 4]; s += '<line class="o-side" data-l="' + f3(vlen(sub(P[(i + 1) % 4], P[i]))) + '" x1="' + f1(a[0]) + '" y1="' + f1(a[1]) + '" x2="' + f1(b[0]) + '" y2="' + f1(b[1]) + '" stroke="' + (R[i] === r1 ? BLUE2 : '#2E8B57') + '" stroke-width="5" stroke-linecap="round"/>';
+        if (o.show !== false) { const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], cx = (Q[0][0] + Q[2][0]) / 2, cy = Q[0][1]; const v = sub(m, [cx, cy]), l = vlen(v) || 1; s += txt(f1(m[0] + v[0] / l * 30), f1(m[1] + v[1] / l * 30 + 8), o.q ? '?' : R[i] + ' cm', 22, o.q ? RED : (R[i] === r1 ? BLUE2 : '#2E8B57')); } }); }
+    [0, 2].forEach(i => { s += '<circle cx="' + f1(Q[i][0]) + '" cy="' + f1(Q[i][1]) + '" r="6" fill="' + INK + '"/>'; }); [1, 3].forEach(i => { s += '<circle cx="' + f1(Q[i][0]) + '" cy="' + f1(Q[i][1]) + '" r="6" fill="' + ORANGE + '"/>'; });
+    const L = [0, 1, 2, 3].map(i => vlen(sub(P[(i + 1) % 4], P[i])));
+    return svgWrap(s, 'fig-circ2').replace('<svg class="fig-svg fig-circ2"', '<svg class="fig-svg fig-circ2" data-r1="' + r1 + '" data-r2="' + r2 + '" data-c="' + c + '" data-lens="' + L.map(f3).join(',') + '"');
+  }
+  Object.assign(PARTS, { lines, pdist, quad, quads, circ2 });
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
