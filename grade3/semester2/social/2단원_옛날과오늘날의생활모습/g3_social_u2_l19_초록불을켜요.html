@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 3-2 · 2단원 옛날과 오늘날의 생활 모습
+  주제③ 통신수단의 변화로 달라진 생활 모습 · l19 (주제 다섯째 시간)
+  「통신수단을 올바르게 이용하는 방법을 알아볼까요」
+  교과서 p.136~138 · 지도서 27차시(p.272~277) · [4사04-02]
+  수업 기법 = 돌아가며 말하기 · 문제 해결하기
+=========================================================================
+
+  ■ 직접조작 = 초록불을 켜요 판 (사회 3-2 서른한째 판 · 2단원 열아홉째 판)
+  ⭐ 씨앗은 지도서 273쪽 핵심 질문(통신수단을 올바르게 이용하지 않는 사례)과
+     지도서 274쪽(통신수단을 올바르게 이용하려면 어떻게 해야 하나요?) · 교과서 138쪽 친구와 활동.
+     빨간불이 켜진 통신 생활 장면 다섯이 차례로 나온다. 약속 카드를 하나 들고 초록불 켜기를 누르면
+     그 장면이 초록불로 바뀐다.
+  ⭐ 장면마다 자기에게 맞는 약속 카드 need 를 품는다(YK_STAGE[k].need) — 정답 자리표 0.
+     맞는지는 든 카드 = 지금 장면이 품은 need, 한 자리 견주기(ykFit).
+  ⭐ 켠 초록불 수가 판 — ykAt 한 숫자 · 단계는 저장 0(ykAll · ykStage).
+  ⭐ 판을 바꾸는 자리 ykNext 단 하나(state.ykAt += 1) · 되돌리는 자리 0 · 난수 0.
+     든 카드(ykHand)는 판이 아닌 손 위치 — 초록불을 켜면 비운다.
+
+  ■ 이 차시의 뼈대
+   통신수단의 발달로 생활이 편리해졌지만, 통신수단을 올바르게 이용하지 않으면 몸과 마음의 건강을 해치고
+   다른 사람에게 피해를 주기도 한다. 통신 예절을 지키며 때와 장소에 맞게 통신수단을 안전하고 올바르게 사용해야 한다.
+
+  ■ 5단계
+   ① 카드 들기 → 초록불 켜기 (장면 다섯 · 바르지 않은 카드 둘은 초록불을 켜지 못함) → ② 판 읽기 3택(정답 자리 0)
+   ③ 슬기로운 통신 생활 약속 가·나·다 고르기(정답 없음 · 교과서 138쪽)
+   ④ 마무리 3택(정답 자리 1) → 완료
+      — 스마트폰을 사용하는 나의 모습 확인하기 · 내가 겪은 문제점 쓰기 · 약속 글 쓰기는 교실 몫
+
+  ■ 가드 14종
+   ① 마무리 확정 후 처리기 전체 잠금          ② 무효 번호(안내조차 0)
+   ③ 다섯 장면을 다 바꾼 뒤 들기·켜기 — 판 불변
+   ④ 이미 쓴 카드 들기 — 판 불변              ⑤ 빈손으로 켜기 — 판 불변
+   ⑥ 아직 차례가 아닌 장면의 카드 — 판·손 불변 ⑦ 바르지 않은 행동 카드 — 판·손 불변
+   ⑧ 다 바꾸기 전 판 읽기 — 판 불변           ⑨ 이미 읽은 자리 — 판 불변
+   ⑩ 판 읽기 어긋난 답 — 판 불변              ⑪ 판을 읽기 전 고르기 — 판 불변
+   ⑫ 이미 고른 자리 — 판 불변                 ⑬ 고르기 전 마무리 — 판 불변
+   ⑭ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 장면과 약속은 교과서 136~138쪽·지도서 272~274쪽을 따랐고, 카드 이름과 장면 차례는 판이 꾸민 것(캡션 상시).
+   ㉡ 지키고 싶은 약속은 사람마다 달라 판은 정답을 정하지 않는다(캡션 상시).
+   ㉢ 나의 모습 확인하기, 문제점 쓰기, 약속 글 쓰기는 교실 몫(완료 카드 명시).
+
+  ■ 설계 원칙
+   · 신문 기사 출처의 기관·날짜·누리집 주소는 넣지 않는다 — 조사 결과의 뜻만
+   · 뒤 차시 용어는 차시 예고 한 자리뿐
+   · 새 사실 0 — 교과서 136~138쪽 · 지도서 272~277쪽에서만
+   · 「틀렸」 0 · 사람 형상 0 · 지어낸 학생 이름 0 · 누리집 주소 0 · 네 자리 연도 0 · 지역·나라 이름 0
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>통신수단을 올바르게 이용하는 방법을 알아볼까요 · 사회 3-2</title>
+<meta name="kedu-lesson-id" content="g3_social_u2_l19_v1"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#DB2777; --green-d:#BE185D; --cyan:#C026D3;
+  --bg:#FDF2F8; --bub:#FCE7F3; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#FCE7F3;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#FCE7F3;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(219,39,119,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 초록불을 켜요 판 */
+.yk-wrap{max-width:820px;width:100%;margin:0 auto}
+.yk-head{background:#FCE7F3;color:#9D174D;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.yk-board{border-radius:14px;border:3px solid #CBD5E1;background:#F8FAFC;padding:8px}
+.yk-title{text-align:center;font-weight:800;color:#334155;font-size:clamp(12px,2vw,14px);word-break:keep-all;margin:2px 0 6px}
+.yk-scene{border:2px solid #FCA5A5;border-radius:12px;background:#fff;padding:9px 10px;text-align:center;word-break:keep-all}
+.yk-scene[data-at="5"]{border-color:#16A34A;background:#F0FDF4}
+.yk-sname{font-weight:800;color:#0F172A;font-size:clamp(14px,2.3vw,18px)}
+.yk-smark{font-size:30px;line-height:1.2;margin:2px 0}
+.yk-look,.yk-life{font-size:clamp(11px,1.8vw,13px);line-height:1.5;color:#475569;font-weight:700}
+.yk-look b,.yk-life b{color:#BE185D}
+.yk-slots{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-top:6px}
+.yk-slot{border:2px dashed #FCA5A5;border-radius:9px;padding:4px 4px;font-size:10.5px;font-weight:800;color:#B91C1C;background:#FEF2F2;line-height:1.3;word-break:keep-all}
+.yk-slot[data-in="1"]{border-style:solid;border-color:#16A34A;background:#F0FDF4;color:#15803D}
+.yk-tray{border:2px solid #FBCFE8;border-radius:12px;background:#FFFBEB;padding:7px;margin-top:8px}
+.yk-tray-t{font-size:11px;font-weight:800;color:#92400E;text-align:center;margin-bottom:5px}
+.yk-parts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.yk-part{border:2px solid #E2E8F0;border-radius:10px;background:#fff;padding:6px 3px;font-family:inherit;font-weight:800;
+  font-size:clamp(10px,1.6vw,12px);color:#334155;cursor:pointer;line-height:1.3;word-break:keep-all}
+.yk-part span{display:block;font-size:20px}
+.yk-part[data-up="1"]{border-color:#DB2777;background:#FDF2F8;color:#0F172A;box-shadow:0 0 0 2px #FBCFE8;transform:translateY(-3px)}
+.yk-part[data-used="1"]{opacity:.45;background:#F1F5F9;cursor:default}
+.yk-ctl{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:9px}
+.yk-hand{border:2px solid #F9A8D4;border-radius:11px;background:#fff;color:#9D174D;font-weight:800;font-size:clamp(12px,2vw,15px);padding:7px 14px}
+.yk-fit{border:2px solid #16A34A;background:#16A34A;color:#fff;border-radius:11px;font-family:inherit;font-weight:800;font-size:clamp(12px,2vw,15px);padding:7px 14px;cursor:pointer}
+.yk-help{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(11px,1.9vw,14px);line-height:1.6}
+.yk-help b{color:#BE185D}
+.yk-side2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.yk-tell{border-radius:11px;padding:8px 12px;font-size:clamp(12px,2vw,15px);line-height:1.6;background:#FDF2F8;border-left:4px solid var(--cyan)}
+.yk-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}
+.yk-pk{border:2px solid #FBCFE8;border-radius:10px;background:#fff;padding:8px 7px;font-family:inherit;
+  font-size:clamp(11px,1.8vw,13px);font-weight:700;color:#0F172A;text-align:left;cursor:pointer;line-height:1.4;word-break:keep-all}
+.yk-pk b{color:#BE185D}
+.yk-ask2{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FFFAFD;margin-top:9px;
+  font-size:clamp(12px,2vw,15px);line-height:1.6;word-break:keep-all}
+.yk-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.yk-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:9px 11px;font-family:inherit;
+  font-size:clamp(12px,2vw,15px);font-weight:700;color:#0F172A;text-align:left;line-height:1.45;word-break:keep-all;cursor:pointer}
+.yk-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .yk-board{padding:6px}
+  .yk-parts{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+  .yk-part{font-size:10px;padding:5px 2px}
+  .yk-slots{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .yk-slot{font-size:9.5px}
+  .yk-picks{grid-template-columns:1fr}
+  .yk-side2{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 모양과 기호 ===== */
+const SVG = {
+  // 지도서 272쪽 — 통신수단을 이용하면서 편리하거나 좋은 점
+  good:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.2"><rect x="5" y="24" width="35" height="54" rx="6"/><rect x="44" y="24" width="35" height="54" rx="6"/><rect x="83" y="24" width="35" height="54" rx="6"/><rect x="122" y="24" width="35" height="54" rx="6"/></g>
+    <g font-size="14" text-anchor="middle"><text x="22" y="48">\u{1F4AC}</text><text x="61" y="48">\u{1F5FA}\uFE0F</text><text x="100" y="48">\u{1F39F}\uFE0F</text><text x="139" y="48">\u{1F6D2}</text></g>
+    <g font-size="4.8" font-weight="800" text-anchor="middle" fill="#334155"><text x="22" y="62">실시간</text><text x="22" y="69">대화</text><text x="61" y="62">길 도우미로</text><text x="61" y="69">길 찾기</text><text x="100" y="62">기차표</text><text x="100" y="69">예매</text><text x="139" y="62">인터넷으로</text><text x="139" y="69">물건 사기</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">통신수단의 편리한 점</text></svg>`,
+  // 지도서 273쪽 — 통신수단을 올바르게 이용하지 않는 사례
+  bad:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FEF2F2"/>
+    <g fill="#fff" stroke="#DC2626" stroke-width="1.2"><rect x="5" y="24" width="35" height="54" rx="6"/><rect x="44" y="24" width="35" height="54" rx="6"/><rect x="83" y="24" width="35" height="54" rx="6"/><rect x="122" y="24" width="35" height="54" rx="6"/></g>
+    <g font-size="14" text-anchor="middle"><text x="22" y="48">\u{1F4BB}</text><text x="61" y="48">\u{1F512}</text><text x="100" y="48">\u{1F4E2}</text><text x="139" y="48">\u{1F4F7}</text></g>
+    <g font-size="4.8" font-weight="800" text-anchor="middle" fill="#334155"><text x="22" y="62">상처 주는</text><text x="22" y="69">댓글</text><text x="61" y="62">개인 정보</text><text x="61" y="69">함부로 알림</text><text x="100" y="62">큰 소리로</text><text x="100" y="69">통화</text><text x="139" y="62">허락 없이</text><text x="139" y="69">사진 촬영</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#B91C1C" text-anchor="middle" font-weight="800">올바르지 않은 이용</text></svg>`,
+  // 교과서 137쪽 — 스마트폰을 사용하는 나의 모습 확인하기
+  check:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFBEB"/>
+    <g stroke-width="1.3"><rect x="6" y="28" width="44" height="46" rx="6" fill="#F0FDF4" stroke="#16A34A"/><rect x="58" y="28" width="44" height="46" rx="6" fill="#FEFCE8" stroke="#CA8A04"/><rect x="110" y="28" width="44" height="46" rx="6" fill="#FEF2F2" stroke="#DC2626"/></g>
+    <g font-size="7" font-weight="800" text-anchor="middle" fill="#0F172A"><text x="28" y="44">0~2개</text><text x="80" y="44">3~4개</text><text x="132" y="44">5~8개</text></g>
+    <g font-size="5" font-weight="800" text-anchor="middle" fill="#475569"><text x="28" y="58">괜찮아요</text><text x="80" y="58">주의가</text><text x="80" y="65">필요해요</text><text x="132" y="58">전문적인 검사와</text><text x="132" y="65">치료가 필요해요</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#92400E" text-anchor="middle" font-weight="800">'예'라고 표시한 개수</text></svg>`,
+  // 정리 — 슬기로운 통신 생활
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.3"><rect x="6" y="32" width="44" height="38" rx="6"/><rect x="58" y="32" width="44" height="38" rx="6"/><rect x="110" y="32" width="44" height="38" rx="6"/></g>
+    <g font-size="5.4" font-weight="800" text-anchor="middle" fill="#9D174D"><text x="28" y="49">몸과 마음의</text><text x="28" y="57">건강</text><text x="80" y="49">통신 예절</text><text x="80" y="57">지키기</text><text x="132" y="49">때와 장소에</text><text x="132" y="57">맞게</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">슬기로운 통신 생활</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 초록불을 켜요 판 =====
+   지도서 273쪽(통신수단을 올바르게 이용하지 않는 사례) · 지도서 274쪽(올바르게 이용하는 방법) · 교과서 138쪽
+   — 빨간불이 켜진 통신 생활 장면 다섯이 차례로 나온다. 약속 카드를 하나 들고 초록불을 켠다.
+   ⭐ 판을 바꾸는 자리 ykNext 단 하나 — state.ykAt += 1 · 되돌리는 자리 0. ykAt = 켠 초록불 수.
+   ⭐ 정답 자리표 0 — 장면마다 자기에게 맞는 약속 카드 need 를 품는다(YK_STAGE[k].need).
+   ⭐ 단계는 저장 0 — 판(ykAt)에서 센다(ykAll · ykStage). 든 카드 ykHand 는 손 위치.
+   ================================================================= */
+const YK_PART = [                                                     // 약속 카드 일곱 — 카드 이름은 판이 꾸민 것(뜻은 지도서 274쪽)
+  {mark:"\u{1F509}", name:"작은 소리로 짧게 통화하기", back:0},
+  {mark:"\u{1F4E2}", name:"더 큰 소리로 통화하기", back:1},
+  {mark:"\u{1F440}", name:"길에서는 휴대 전화 보지 않기", back:0},
+  {mark:"\u{1F4AC}", name:"바른 표현으로 글쓰기", back:0},
+  {mark:"\u{1F6AB}", name:"허락 없이 사진 찍지 않기", back:0},
+  {mark:"\u{1F4F2}", name:"아무 때나 계속 확인하기", back:1},
+  {mark:"\u23F0", name:"정한 시간에만 사용하기", back:0}
+];
+const YK_STAGE = [                                                    // 빨간불 장면 다섯 — 지도서 272~273쪽 · 교과서 136쪽
+  {mark:"\u{1F6A6}", name:"길에서", need:2,
+   look:"이어폰을 끼고 스마트폰으로 동영상을 보면서 길을 걸어요.",
+   life:"차가 가까이 다가와도 알아차리기 어려워 위험해요."},
+  {mark:"\u{1F68C}", name:"공공장소에서", need:0,
+   look:"여러 사람이 있는 곳에서 큰 소리로 통화해요.",
+   life:"주변 사람들에게 피해를 줘요."},
+  {mark:"\u{1F4BB}", name:"인터넷에서", need:3,
+   look:"다른 사람에게 상처 주는 댓글을 써요.",
+   life:"다른 사람의 마음을 아프게 해요."},
+  {mark:"\u{1F4F7}", name:"사진을 찍을 때", need:4,
+   look:"다른 사람의 모습을 허락 없이 사진으로 찍어요.",
+   life:"찍힌 사람에게 피해를 줘요."},
+  {mark:"\u{1F3AE}", name:"집에서", need:6,
+   look:"나쁜 자세로 컴퓨터 게임을 오래 해요.",
+   life:"몸이 아프고 건강을 해쳐요."},
+  {mark:"\u{1F7E2}", name:"슬기로운 통신 생활", need:null,
+   look:"다섯 장면 모두 초록불이 켜졌어요.",
+   life:"우리 모두의 몸과 마음의 건강을 지키고, 다른 사람에게 피해를 주지 않아요."}
+];
+const YK_N = 5;                                                       // 바꾸는 장면 다섯
+const YK_PICK = [                                                     // 교과서 138쪽 친구와 활동 — 슬기로운 통신 생활 약속
+  {mark:"가", text:"걸어 다니면서 휴대 전화를 보지 않겠습니다", why:"길에서는 안전에 유의하면서 통신수단을 사용해요."},
+  {mark:"나", text:"꼭 필요한 시간에만 사용하겠습니다", why:"통신수단을 정해진 시간에만 사용하면 몸과 마음의 건강을 지킬 수 있어요."},
+  {mark:"다", text:"사용 규칙을 정해 꼭 지키겠습니다", why:"통신 예절과 사용 규칙을 지키면 다른 사람에게 피해를 주지 않아요."}
+];
+const YK_SAY_ALL = "다섯 장면 모두 초록불이에요. 판을 읽어 봐요.";
+const YK_SAY_USED = "이미 쓴 약속 카드예요. 남은 카드를 들어 봐요.";
+const YK_SAY_EMPTY = "먼저 약속 카드를 하나 들어 봐요.";
+const YK_SAY_EARLY = "아직 그 장면 차례가 아니에요. 지금 장면에서 무엇이 문제인지 먼저 살펴봐요.";
+const YK_SAY_BACK = "그 카드로는 빨간불이 꺼지지 않아요. 올바르게 이용하는 약속을 찾아봐요.";
+const YK_SAY_ORDER_R = "먼저 다섯 장면을 모두 초록불로 바꿔 봐요.";
+const YK_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const YK_SAY_ORDER_P = "먼저 판을 읽어 봐요.";
+const YK_SAY_PICKDONE = "이미 골랐어요. 친구가 고른 약속과 견주어 봐요.";
+const YK_SAY_ORDER_FIN = "먼저 지키고 싶은 약속을 골라 봐요.";
+const YK_READQ = [
+  "통신수단을 올바르게 이용하지 않으면 몸과 마음의 건강을 해치고, 다른 사람에게 피해를 주기도 해요",
+  "통신수단은 언제 어디서 어떻게 이용해도 아무 문제가 없어요",
+  "통신수단을 잘못 이용해도 문제는 나 혼자에게만 생겨요"
+];
+const YK_READ_OK = 0;
+const YK_READ_BAD = "판에서 빨간불 장면마다 누구에게 어떤 일이 생겼는지 다시 떠올려 봐요.";
+const YK_FINQ = [
+  "통신수단은 편리하니까 아무 때나 마음껏 이용해도 돼요",
+  "통신 예절을 지키며 때와 장소에 맞게 통신수단을 안전하고 올바르게 이용해요",
+  "통신수단을 이용할 때는 지켜야 할 예절이 따로 없어요"
+];
+const YK_FIN_OK = 1;
+const YK_FIN_BAD = "오늘 바꾼 다섯 장면과 통신 예절을 다시 떠올려 봐요.";
+
+function ykPartOf(p){ return YK_PART[p]; }                                     // YK_PART 를 읽는 자리는 여기 단 하나
+function ykStageOf(k){ return YK_STAGE[k]; }                                   // YK_STAGE 를 읽는 자리는 여기 단 하나
+function ykPickOf(p){ return YK_PICK[p]; }                                     // YK_PICK 을 읽는 자리는 여기 단 하나
+function ykAll(st){ return st.ykAt >= YK_N; }                                  // ★ 다섯 장면 모두 초록불
+function ykNext(){ state.ykAt += 1; }                                          // ⭐ 판을 바꾸는 자리 단 하나
+function ykUsed(st,p){ for(let k=0;k<st.ykAt;k++) if(ykStageOf(k).need===p) return true; return false; }   // 이미 쓴 카드인가
+function ykStage(st){
+  if(!ykAll(st)) return "fit";
+  if(st.ykRead == null) return "read";
+  if(st.ykPick == null) return "pick";
+  if(st.ykFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 장면 · 신호등 다섯 · 약속 카드 */
+function ykScene(st){
+  const G = ykStageOf(st.ykAt);
+  const slots = [...Array(YK_N).keys()].map(i => i < st.ykAt
+    ? `<div class="yk-slot" data-i="${i}" data-in="1">${ykPartOf(ykStageOf(i).need).mark} ${ykPartOf(ykStageOf(i).need).name}</div>`
+    : `<div class="yk-slot" data-i="${i}" data-in="0">빨간불 ${i+1}</div>`).join('');
+  return `<div class="yk-scene" data-at="${st.ykAt}"><div class="yk-sname">${G.name}</div><div class="yk-smark">${G.mark}</div>
+    <div class="yk-look"><b>장면</b> ${G.look}</div><div class="yk-life"><b>그러면</b> ${G.life}</div>
+    <div class="yk-slots">${slots}</div></div>`;
+}
+function ykPartBtn(st,p){
+  const P = ykPartOf(p), up = st.ykHand === p, used = ykUsed(st,p);
+  return `<button class="yk-part" data-p="${p}" data-up="${up ? 1 : 0}" data-used="${used ? 1 : 0}" onclick="ykTake(${p})"><span>${P.mark}</span>${P.name}</button>`;
+}
+function ykTray(st){
+  const hand = st.ykHand == null ? '\u2014 빈손' : `${ykPartOf(st.ykHand).mark} ${ykPartOf(st.ykHand).name}`;
+  return `<div class="yk-tray"><div class="yk-tray-t">\u{1F0CF} 약속 카드</div>
+    <div class="yk-parts">${YK_PART.map((P,p) => ykPartBtn(st,p)).join('')}</div></div>
+    <div class="yk-ctl"><div class="yk-hand">든 카드: ${hand}</div><button class="yk-fit" onclick="ykFit()">\u{1F6A6} 초록불 켜기</button></div>`;
+}
+function ykBoard(st){
+  return `<div class="yk-board" data-at="${st.ykAt}" data-hand="${st.ykHand == null ? '' : st.ykHand}">
+    <div class="yk-title">약속 카드로 빨간불 장면을 하나씩 초록불로 바꿔요</div>
+    ${ykScene(st)}${ykAll(st) ? '' : ykTray(st)}</div>`;
+}
+function ykPicks(st){
+  return `<div class="yk-picks">${[0,1,2].map(p=>`<button class="yk-pk" data-p="${p}" onclick="ykPick(${p})"><b>${ykPickOf(p).mark}</b> ${ykPickOf(p).text}</button>`).join('')}</div>`;
+}
+function ykHelp(st){
+  return `<div class="yk-help">① 장면을 읽고 무엇이 <b>문제</b>인지 살펴봐요.<br>
+    ② 약속 카드에서 <b>올바르게 이용하는 약속</b>을 하나 들어요.<br>
+    ③ <b>초록불 켜기</b>를 눌러요. 맞는 약속이면 초록불이 켜지고 다음 장면이 나와요.</div>`;
+}
+function ykPanel(st){
+  const stage = ykStage(st);
+  let ask = '';
+  if(stage === "fit"){
+    ask = `<div class="yk-ask2" data-step="fit"><b>통신수단을 올바르게 이용하지 않으면 어떤 문제가 생길까요? 장면마다 알맞은 약속을 찾아 초록불을 켜 봐요.</b></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="yk-ask2" data-step="read"><b>다섯 장면을 모두 초록불로 바꿨어요. 빨간불 장면에서 알 수 있는 것은 무엇인가요?</b>
+      <div class="yk-opts">${YK_READQ.map((t,i)=>`<button class="yk-opt" onclick="ykRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "pick"){
+    ask = `<div class="yk-ask2" data-step="pick"><b>우리의 슬기로운 통신 생활을 약속한다면, 내가 먼저 지키고 싶은 약속은 무엇인가요?</b>${ykPicks(st)}</div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="yk-ask2" data-step="fin"><b>통신수단을 올바르게 이용하려면 어떻게 해야 하나요?</b>
+      <div class="yk-opts">${YK_FINQ.map((t,i)=>`<button class="yk-opt" onclick="ykFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="yk-ask2" data-fin="1" style="border-color:#F9A8D4;background:#FDF2F8">
+      <b style="color:#9D174D">약속 카드 다섯 장으로 빨간불 장면을 모두 초록불로 바꿨어요. 통신 예절을 지키며 때와 장소에 맞게 통신수단을 안전하고 올바르게 이용하면 우리 모두의 몸과 마음의 건강을 지킬 수 있어요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">※ 스마트폰을 사용하는 <b>나의 모습 확인하기</b>, 내가 겪은 <b>문제점 쓰기</b>, 우리의 슬기로운 통신 생활을 약속하는 <b>글 쓰기</b>는 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`;
+  }
+  const tell = st.ykTell ? `<div class="yk-tell">${st.ykTell}</div>` : '';
+  const warn = st.ykMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.ykMsg}</div>` : '';
+  return `<div class="yk-wrap">
+    <div class="yk-head">켠 초록불 <b>${Math.min(st.ykAt, YK_N)}</b> / ${YK_N}</div>
+    ${ykBoard(st)}<div class="yk-side2">${ykHelp(st)}${tell}</div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 장면과 약속은 <b>교과서 136~138쪽</b>을 따랐고, 카드 이름과 장면 차례는 판이 <b>꾸민 것</b>이에요. 지키고 싶은 약속은 <b>사람마다 달라서</b> 판은 정답을 정하지 않아요.</div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 옛날과 오늘날의 생활 모습 · 주제③ 통신수단의 변화로 달라진 생활 모습";
+const Q = [
+  {stem:"일상생활에 문제가 생길 정도로 스마트폰을 지나치게 사용하는 것을 무엇이라고 하나요?",
+   opts:["스마트폰 예절","화상 회의","스마트폰 과의존","인터넷 검색"], correct:2, pts:POINTS_BASIC,
+   h1:"스마트폰에 지나치게 기대는 모습이에요.", h2:"교과서 137쪽 신문 기사의 제목을 떠올려 봐요.",
+   reason:"스마트폰 과의존은 일상생활에 문제가 생길 정도로 스마트폰을 지나치게 사용하는 것을 말해요."},
+  {stem:"통신수단을 안전하고 올바르게 사용해야 하는 까닭으로 알맞은 것은 무엇인가요?",
+   opts:["우리 모두의 몸과 마음의 건강을 위해서","통신수단을 더 오래 쓰기 위해서","새로운 통신수단을 빨리 사기 위해서","다른 사람의 사진을 많이 찍기 위해서"], correct:0, pts:POINTS_BASIC,
+   h1:"꼭 기억해요 1번을 떠올려 봐요.", h2:"올바르게 이용하지 않으면 무엇을 해칠까요?",
+   reason:"통신수단을 올바르게 이용하지 않으면 몸과 마음의 건강을 해치고, 다른 사람에게 피해를 주기도 해요."},
+  {stem:"통신수단을 올바르게 이용하지 않는 사례는 무엇인가요?",
+   opts:["인터넷 예절을 지켜요","정한 시간에만 사용해요","공공장소에서 작은 소리로 통화해요","개인 정보를 본인의 허락 없이 알려요"], correct:3, pts:POINTS_BASIC,
+   h1:"다른 사람에게 피해를 주는 모습을 찾아봐요.", h2:"본인의 허락이 필요한 것이에요.",
+   reason:"개인 정보를 본인의 허락 없이 알리는 것은 통신수단을 올바르게 이용하지 않는 사례예요."},
+  {stem:"공공장소에서 휴대 전화를 이용하는 바른 모습은 무엇인가요?",
+   opts:["큰 소리로 오래 통화해요","휴대 전화 소리를 진동으로 바꾸고, 작은 소리로 짧게 통화해요","걸어 다니면서 동영상을 봐요","다른 사람의 모습을 허락 없이 찍어요"], correct:1, pts:POINTS_BASIC,
+   h1:"주변 사람들에게 피해를 주지 않는 모습이에요.", h2:"판의 「공공장소에서」 장면을 떠올려 봐요.",
+   reason:"공공장소에서는 휴대 전화 소리를 진동으로 바꾸고, 통화할 때는 작은 소리로 짧게 통화해요."},
+  {stem:"길에서 이어폰을 끼고 스마트폰으로 동영상을 보면서 걸으면 어떤 문제가 생길 수 있나요?",
+   opts:["정보를 더 빨리 얻을 수 있어요","공부에 더 집중할 수 있어요","차가 가까이 다가와도 알아차리기 어려워요","친구와 더 가까워질 수 있어요"], correct:2, pts:POINTS_APPLY,
+   h1:"판의 첫 장면을 떠올려 봐요.", h2:"길에서는 안전에 유의해야 해요.",
+   reason:"길에서 이어폰을 끼고 동영상을 보면 차가 가까이 다가온 것을 알아차리기 어려워 위험해요. 길에서는 안전에 유의하면서 통신수단을 사용해요."},
+  {stem:"교과서 137쪽 표에서 '예'라고 표시한 개수가 3~4개라면 어떤 뜻인가요?",
+   opts:["괜찮아요","전문적인 검사와 치료가 필요해요","스마트폰을 더 많이 사용해도 돼요","주의가 필요해요"], correct:3, pts:POINTS_APPLY,
+   h1:"0~2개, 3~4개, 5~8개로 나뉘어요.", h2:"가운데 칸이에요.",
+   reason:"'예'라고 표시한 개수가 0~2개이면 괜찮아요, 3~4개이면 주의가 필요해요, 5~8개이면 전문적인 검사와 치료가 필요해요."},
+  {stem:"인터넷상에서 글을 쓸 때 지켜야 할 약속으로 알맞은 것은 무엇인가요?",
+   opts:["확인되지 않은 정보를 바로 올려요","바른 표현을 사용하고, 확인되지 않은 정보는 올리지 않아요","다른 사람에게 상처 주는 댓글을 써요","다른 사람의 개인 정보를 올려요"], correct:1, pts:POINTS_APPLY,
+   h1:"인터넷 예절을 떠올려 봐요.", h2:"판의 「인터넷에서」 장면에 켠 약속 카드를 떠올려 봐요.",
+   reason:"인터넷상에서 글을 쓸 때는 바른 표현을 사용하고, 확인되지 않은 정보는 올리지 않아요."},
+  {stem:"판에서 빨간불 장면을 모두 초록불로 바꿔 보니 무엇을 알 수 있나요?",
+   opts:["통신수단을 올바르게 이용하지 않으면 몸과 마음의 건강을 해치고, 다른 사람에게 피해를 주기도 해요","통신수단은 언제 어디서 어떻게 이용해도 아무 문제가 없어요","통신수단을 잘못 이용해도 문제는 나 혼자에게만 생겨요","통신수단을 올바르게 이용하려면 통신수단을 아예 쓰지 않아야 해요"], correct:0, pts:POINTS_APPLY,
+   h1:"빨간불 장면마다 누구에게 어떤 일이 생겼나요?", h2:"내 몸과 마음, 그리고 다른 사람을 함께 떠올려 봐요.",
+   reason:"통신수단을 올바르게 이용하지 않으면 몸과 마음의 건강을 해치고, 다른 사람에게 피해를 주기도 해요. 그래서 통신 예절을 지키며 올바르게 사용해야 해요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 통신수단의 편리한 점
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">통신수단을 이용하면서 편리하거나 좋은 점은 무엇인가요?</h2>
+  <div class="ka-bub">지난 시간에는 <span class="ka-emph">통신수단의 변화로 달라진 사람들의 생활 모습</span>을 살펴봤어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('good','지도서 272쪽')}</div>
+  <div class="note">모바일 메신저로 친구와 실시간으로 대화하고, 원하는 정보를 쉽게 얻고, 은행이나 기차역에 직접 가지 않아도 일을 볼 수 있어요. 그런데 통신수단의 발달이 우리 생활에 <b>좋은 영향만</b> 주는 것은 아니에요.</div></div>`});
+// 2 내가 겪은 문제점 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 스스로 활동</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">통신수단을 이용하면서 경험한 문제점이 있나요?</h2>
+  <div class="ka-bub">통신수단이 발달하면서 생활이 편리해졌지만, 통신수단을 이용하면서 <span class="ka-emph">문제점</span>이 나타나기도 해요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 스마트폰으로 동영상을 오래 봐서 눈이 침침한 적이 있어요.<br>· 길에서 스마트폰을 보면서 걷다가 위험했던 적이 있어요.<br>· 나쁜 자세로 컴퓨터 게임을 오래 해서 몸이 아팠던 적이 있어요.<br>· 공부하는데 복도에서 큰 소리로 통화하는 사람 때문에 방해받은 적이 있어요.</div>`
+    :`<div class="note">내가 겪은 일을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 올바르게 이용하지 않는 사례
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 올바르지 않은 이용</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">통신수단을 올바르게 이용하지 않는 사례에는 어떤 것이 있나요?</h2>
+  <div class="ka-bub">통신수단을 올바르게 이용하지 않으면 <span class="ka-emph">다른 사람에게 피해</span>를 주기도 해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('bad','지도서 273쪽')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>인터넷에서 다른 사람에게 <b>상처 주는 댓글</b>을 써요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>개인 정보</b>를 본인의 허락 없이 알려요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b>공공장소</b>에서 큰 소리로 통화를 해요.</div></div>
+    <div class="sum-item"><span class="n">4</span><div>다른 사람의 모습을 <b>허락 없이</b> 사진으로 찍어요.</div></div>
+  </div></div>`});
+// 4 스마트폰 과의존 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 스마트폰 과의존</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스마트폰 과의존이란 무엇일까요?</h2>
+  <div class="ka-bub">스마트폰과 컴퓨터 등을 <span class="ka-emph">지나치게</span> 사용하여 일상생활에 문제가 되는 경우도 있어요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 스마트폰 과의존은 일상생활에 문제가 생길 정도로 스마트폰을 지나치게 사용하는 것을 말해요.<br>· 교과서 137쪽 신문 기사의 조사에서 청소년은 100명 중 40명이 과의존 위험군이었고, 그 비율이 계속 높아지고 있어요.<br>· 스마트폰의 배터리가 부족해지면 초조함을 느끼거나, 스마트폰을 주기적으로 확인하지 못하면 불안하다고 답한 사람이 많았어요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 스마트폰을 사용하는 나의 모습 확인하기
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 나의 모습 확인하기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스마트폰을 사용하는 나의 모습을 확인해 봐요</h2>
+  <div class="ka-bub">교과서 137쪽 표의 여덟 가지 물음에 <span class="ka-emph">'예'</span>나 <span class="ka-emph">'아니요'</span>로 답해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('check','교과서 137쪽')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>스마트폰 이용 시간을 <b>조절하기 어려운지</b>, 스마트폰이 옆에 있으면 <b>다른 일에 집중하기 어려운지</b> 살펴봐요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>스마트폰 이용 때문에 <b>건강</b>에 문제가 생기거나, <b>가족·친구</b>와 다투거나, <b>공부</b>에 어려움이 있었는지 살펴봐요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>'예'라고 표시한 개수가 0~2개이면 괜찮아요, 3~4개이면 주의가 필요해요, 5~8개이면 전문적인 검사와 치료가 필요해요.</div></div>
+  </div>
+  <div class="note">표에 직접 답해 보는 활동은 <b>교실 몫</b>이에요.</div></div>`});
+// 6 올바르게 이용하는 방법 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 올바른 이용</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">통신수단을 올바르게 이용하려면 어떻게 해야 하나요?</h2>
+  <div class="ka-bub">학교나 가정에서 지켜야 하는 예절이 있듯이 통신수단을 이용할 때도 지켜야 하는 <span class="ka-emph">예절</span>이 있어요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 개인 정보가 새어 나가지 않도록 보안에 유의해요.<br>· 통신수단을 정해진 시간에만 사용해요.<br>· 때와 장소에 맞게 필요한 통신수단을 적절히 사용해요.<br>· 길에서는 안전에 유의하면서 통신수단을 사용해요.<br>· 인터넷 예절을 지켜요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 장면 바꾸기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">초록불을 켜요</h2>
+  <div class="ka-grp" style="align-items:stretch">${ykPanel(st)}</div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">통신수단을 올바르게 이용하는 방법을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('done','슬기로운 통신 생활')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>통신수단을 올바르게 이용하지 않으면 몸과 마음의 <b>건강</b>을 해치고, 다른 사람에게 <b>피해</b>를 주기도 해요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>통신 예절</b>을 지키며 공공장소나 인터넷상 등 <b>때와 장소</b>에 맞게 통신수단을 올바르게 사용해야 해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>스마트폰이나 인터넷을 <b>꼭 필요한 시간</b>에만 사용하고, 사용 규칙을 정해 꼭 지켜요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 통신수단의 변화로 달라진 생활 모습에서 공부한 내용을 <b style="color:#DB2777">정리</b>해 봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"통신수단을 이용하면서 생기는 문제점을 말할 수 있어요",st)}
+    ${selfCheck(1,"통신수단을 올바르게 이용해야 하는 까닭을 말할 수 있어요",st)}
+    ${selfCheck(2,"통신수단을 올바르게 이용하는 방법을 말할 수 있어요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">통신수단을 올바르게 이용하는 방법을 알아봤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">우리의 <b style="color:#DB2777">슬기로운 통신 생활</b>을 약속하는 글을 쓰고, 친구들과 이야기해 봐요. 이건 교실 몫이에요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g3_2_social_u2_l19";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  ykAt:0, ykHand:null, ykRead:null, ykPick:null, ykFin:null, ykMsg:"", ykTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function ykDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 카드 들기 — 손 위치일 뿐 판은 그대로(든 카드를 다시 누르면 내려놓음) */
+function ykTake(p){
+  if(state.ykFin!=null) return;                                                            // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(p) || p<0 || p>=YK_PART.length) return;                             // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(ykAll(state)){ state.ykMsg = YK_SAY_ALL; ykDraw(); return; }                          // 가드③: 다 바꾼 뒤 — 판·손 불변
+  if(ykUsed(state,p)){ state.ykMsg = YK_SAY_USED; playThud(); ykDraw(); return; }          // 가드④: 이미 쓴 카드 — 판·손 불변
+  state.ykHand = (state.ykHand === p) ? null : p; state.ykMsg = ""; playBlip(); ykDraw();
+}
+/* 초록불이 켜지면 — 판 한 칸 · 손 비움 · 알림 */
+function ykDone(){
+  const k = state.ykAt, P = ykPartOf(ykStageOf(k).need);
+  ykNext();
+  const G = ykStageOf(state.ykAt);
+  state.ykHand = null; state.ykMsg = "";
+  state.ykTell = `${P.name}, 초록불이 켜졌어요.` + (ykAll(state) ? ` 다섯 장면 모두 초록불이에요.` : ` 다음은 「${G.name}」 장면이에요.`);
+  if(ykAll(state)) playChime(); else playBlip(); ykDraw();
+}
+/* 초록불 켜기 */
+function ykFit(){
+  if(state.ykFin!=null) return;                                                            // 가드①
+  if(ykAll(state)){ state.ykMsg = YK_SAY_ALL; ykDraw(); return; }                          // 가드③: 다 바꾼 뒤 — 판 불변
+  if(state.ykHand == null){ state.ykMsg = YK_SAY_EMPTY; playThud(); ykDraw(); return; }    // 가드⑤: 빈손 — 판 불변
+  if(state.ykHand !== ykStageOf(state.ykAt).need){                                         // ★ 맞음 판정 한 자리(든 카드 = 지금 장면이 품은 need)
+    state.ykMsg = ykPartOf(state.ykHand).back ? YK_SAY_BACK : YK_SAY_EARLY;                // 가드⑦: 바르지 않은 카드 · 가드⑥: 아직 차례 아님 — 판·손 불변
+    playThud(); ykDraw(); return; }
+  ykDone();
+}
+/* 판 읽기 */
+function ykRead(i){
+  if(state.ykFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=YK_READQ.length) return;                           // 가드②
+  if(!ykAll(state)){ state.ykMsg = YK_SAY_ORDER_R; playThud(); ykDraw(); return; }         // 가드⑧: 다 바꾸기 전 — 판 불변
+  if(state.ykRead!=null){ state.ykMsg = YK_SAY_READDONE; ykDraw(); return; }               // 가드⑨: 이미 정한 자리 — 판 불변
+  if(i!==YK_READ_OK){ state.ykMsg = YK_READ_BAD; playThud(); ykDraw(); return; }           // 가드⑩: 어긋난 답 — 판 불변
+  state.ykRead = i; state.ykMsg = ""; state.ykTell = `학교나 가정에서 지켜야 하는 예절이 있듯이 통신수단을 이용할 때도 지켜야 하는 예절이 있어요. 우리 모두의 몸과 마음의 건강을 위해 통신수단을 안전하고 올바르게 사용하도록 노력해야 해요.`; playBlip(); ykDraw();
+}
+/* 지키고 싶은 약속 고르기 — 정답 없음 */
+function ykPick(p){
+  if(state.ykFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(p) || p<0 || p>=YK_PICK.length) return;                             // 가드②
+  if(state.ykRead==null){ state.ykMsg = YK_SAY_ORDER_P; playThud(); ykDraw(); return; }    // 가드⑪: 판을 읽기 전 — 판 불변
+  if(state.ykPick!=null){ state.ykMsg = YK_SAY_PICKDONE; ykDraw(); return; }               // 가드⑫: 이미 고른 자리 — 판 불변
+  state.ykPick = p; state.ykMsg = ""; state.ykTell = `${ykPickOf(p).mark}를 골랐어요. ${ykPickOf(p).text} — ${ykPickOf(p).why}`; playBlip(); ykDraw();
+}
+/* 마무리 */
+function ykFin(i){
+  if(state.ykFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=YK_FINQ.length) return;                             // 가드②
+  if(state.ykPick==null){ state.ykMsg = YK_SAY_ORDER_FIN; playThud(); ykDraw(); return; }  // 가드⑬: 고르기 전 — 판 불변
+  if(i!==YK_FIN_OK){ state.ykMsg = YK_FIN_BAD; playThud(); ykDraw(); return; }             // 가드⑭: 어긋난 답 — 판 불변
+  state.ykFin = i; state.ykMsg = ""; playChime(); ykDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>
