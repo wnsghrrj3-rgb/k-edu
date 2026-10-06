@@ -39,10 +39,13 @@
   };
   KA.setCatalog = function (arr) { KA.catalog = Array.isArray(arr) ? arr : []; KA.byId = {}; KA.catalog.forEach(a => { if (a && a.id) KA.byId[a.id] = a; }); KA.failed = false; };
   // 이 차시 = map.lessons 에 lNN 포함 · 이 단원 = 같은 학년·과목·단원 · 나머지 = 학년별
+  // 13회차: 학기도 본다 — map.semester 없으면 1학기(카탈로그 34종 전부 1학기). 전엔 3-2 수학 u1(곱셈)에 3-1 u1(덧셈과 뺄셈) 활동이 「이 차시」로 떴다.
+  const semOf = (a) => (+a.map.semester > 1 ? +a.map.semester : 1);
   KA.groups = function (stage) {
-    const all = KA.catalog || []; const g = stage.g, s = stage.s, u = stage.u, lns = lessonNos(stage.key);
-    const rec = all.filter(a => a.map && a.map.grade === g && a.map.subject === s && a.map.unit === u && lns.some(ln => (a.map.lessons || []).indexOf(ln) >= 0));
-    const unit = all.filter(a => a.map && a.map.grade === g && a.map.subject === s && a.map.unit === u && rec.indexOf(a) < 0);
+    const all = KA.catalog || []; const g = stage.g, s = stage.s, u = stage.u, t = +stage.t > 1 ? +stage.t : 1, lns = lessonNos(stage.key);
+    const same = (a) => a.map && a.map.grade === g && semOf(a) === t && a.map.subject === s && a.map.unit === u;
+    const rec = all.filter(a => same(a) && lns.some(ln => (a.map.lessons || []).indexOf(ln) >= 0));
+    const unit = all.filter(a => same(a) && rec.indexOf(a) < 0);
     const rest = all.filter(a => rec.indexOf(a) < 0 && unit.indexOf(a) < 0);
     return { rec, unit, rest };
   };
@@ -196,7 +199,7 @@
   KA.openNotebook = function (a, res, s) {
     KA.ensureDom(); const st = KA.stage; const rows = KA.rowsOf(a, res); const top = rows.slice(0, 3);
     const allClear = rows.length > 0 && rows.every(r => r.miss === 0);
-    const score = res.score != null ? res.score : null, max = res.max != null ? res.max : null;
+    const score = res.score != null ? res.score : null, max = res.max != null ? res.max : (res.total != null ? res.total : null); // 13회차: 브리지 RESULT 는 total — 전엔 수첩에 점수가 안 떴다
     const team = (res.teams && res.teams.length === 2) ? '<div class="kn-team"><span>' + esc(res.teams[0].name) + ' <b>' + (res.teams[0].score | 0) + '</b></span><span class="kn-vs">:</span><span><b>' + (res.teams[1].score | 0) + '</b> ' + esc(res.teams[1].name) + '</span></div>' : '';
     const bar = r => { const n = r.ok + r.miss; if (!n) return ''; const okw = Math.round(100 * r.ok / n); return '<div class="kn-bar"><i style="width:' + okw + '%"></i></div>'; };
     const body = allClear ? '<div class="kn-clear">🎉 이번 판은 모든 유형을 맞혔어요</div>' : (top.length ? top.map(r => '<div class="kn-row"><div class="kn-lbl">' + esc(r.label) + '</div>' + bar(r) + '<div class="kn-miss">' + (r.miss ? '놓침 <b>' + r.miss + '</b>' : '<span class="ok">전부 맞힘</span>') + '<small>/ ' + (r.ok + r.miss) + '</small></div></div>').join('') : '<div class="kn-empty">유형별 기록이 없는 활동이에요</div>');

@@ -29,6 +29,8 @@
     self.q = o.params; self.key = o.params.l; self.g = +o.params.g; self.s = o.params.s; self.slug = K().slugOf(o.params);
     self.src = o.lesson; self.unitTitle = o.unitTitle || '';
     const pj = P().project(o.lesson); self.meta = pj.meta; self.slides = pj.slides; self.scoredIds = pj.scored;
+    // 활동 13회차(D60) — 「🎲 혼자 해 보는 활동」 장(stage2-learn-act.js). 층이 없으면 실행 파일 모르는 활동 장은 뺀다. 점수(scored)는 무개변.
+    self.slides = global.KT2_LEARN_ACT ? global.KT2_LEARN_ACT.inject(self.slides, o.params) : self.slides.filter(x => !(x.act && !x.act.src));
     self.guide = K().guideOf(o.lesson);
     self.map = (global.KT2_PROJMAP || {})[self.slug + ':' + self.key] || null;
     // 이어서 하기 발자국 — 원문 차시와 같은 자리·같은 꼴(kedu_tracker footprint): 목록·홈의 「▶ 이어서 하기」가 이어지게
@@ -134,6 +136,7 @@
     return h;
   }
   function widget(s, st, lvKey) {
+    if (s.act) return global.KT2_LEARN_ACT && s.act.src ? global.KT2_LEARN_ACT.widget(s, st) : ''; // D60 활동 장
     if (s.lv) { const cur = lvKey || lvCur(s, null); return lvWidget(s, st, cur); }
     const L = s.learn; if (!L) return '';
     st = Object.assign({ mp: {}, pl: {}, seq: [], vals: [], wrong: [], sel: [], pick: null }, st); // 그리기만 — 빈 칸 기본값
@@ -182,7 +185,7 @@
   };
   Learn.prototype.doneCard = function () {
     const n = this.scoredIds.length;
-    return '<div class="lw-done"><div class="big">🎉 오늘 공부를 다 했어요!</div><div class="sc">⭐ <b>' + this.score + '</b> / 100</div>' + (n ? '<div class="sub">문제 ' + n + '개 · 한 번에 맞히면 만점, 두 번째에 맞히면 절반이에요.</div>' : '') + (this.lvWins ? '<div class="sub">🏅 수준별 도전 ' + this.lvWins + '개 성공</div>' : '') + '<div class="lw-row"><a class="btn main" href="' + esc(this.hubUrl()) + '">목록으로</a><button class="btn ghost" data-lact="again">처음부터 다시</button></div></div>';
+    return '<div class="lw-done"><div class="big">🎉 오늘 공부를 다 했어요!</div><div class="sc">⭐ <b>' + this.score + '</b> / 100</div>' + (n ? '<div class="sub">문제 ' + n + '개 · 한 번에 맞히면 만점, 두 번째에 맞히면 절반이에요.</div>' : '') + (this.lvWins ? '<div class="sub">🏅 수준별 도전 ' + this.lvWins + '개 성공</div>' : '') + (global.KT2_LEARN_ACT && global.KT2_LEARN_ACT.count() ? '<div class="sub">🎲 혼자 해 보는 활동 ' + global.KT2_LEARN_ACT.count() + '개 했어요</div>' : '') + '<div class="lw-row"><a class="btn main" href="' + esc(this.hubUrl()) + '">목록으로</a><button class="btn ghost" data-lact="again">처음부터 다시</button></div></div>';
   };
   Learn.prototype.paintBar = function () {
     const s = this.cur(); const el = doc.getElementById('lb-steps'); if (!el) return;
@@ -252,6 +255,9 @@
   Learn.prototype.lact = function (b) {
     if (!b) return;
     const s = this.cur(), a = b.getAttribute('data-lact');
+    if (a === 'act-go') { if (global.KT2_LEARN_ACT) global.KT2_LEARN_ACT.launch(this, s); return; } // D60 — 혼자 해 보는 활동
+    // 13회차: 「처음부터 다시」는 끝 카드(다음 차시 장 — 채점 층 없음)에 있어 아래 `if (!L) return` 에 걸려 한 번도 안 돌았다 → 맨 앞으로
+    if (a === 'again') { this.IS = {}; this.rev = {}; this.L = {}; this.score = 0; this.lvWins = 0; if (global.KT2_LEARN_ACT) global.KT2_LEARN_ACT.reset(); return this.go(0, -1); }
     if (s.lv && a !== 'again') {
       const cur = lvCur(s, this.state(s.id)), st = this.ls(s.id + '|' + cur); if (!st.t0) st.t0 = Date.now();
       if (a === 'check' && !LV_BODY.has(s.lv.levels[cur].kind)) { const v = []; doc.querySelectorAll('.lw-lv .lw-in').forEach(el => { v[+el.getAttribute('data-p')] = el.value; st.vals[+el.getAttribute('data-p')] = el.value; }); return this.answerLv(s, v); }
@@ -280,7 +286,6 @@
       const inp = doc.getElementById('lw-in'); return this.answer(s, inp ? inp.value : st.val); }
     if (a === 'giveup') { st.gaveUp = true; st.got = 0; try { if (global.kedu && global.kedu.recordAnswer && st.tries === 0) global.kedu.recordAnswer(this.qid(s), false, null, null, { src: 'kt2-learn', gaveUp: true }); } catch (e) { } return this.paint(0, true); }
     if (a === 'show') { st.shown = true; this.pop(); return this.paint(0, true); }
-    if (a === 'again') { this.IS = {}; this.rev = {}; this.L = {}; this.score = 0; this.lvWins = 0; return this.go(0, -1); }
   };
 
   // ── 끝 — 원문과 같은 자리에 기록 ─────────────────────────────
@@ -305,6 +310,7 @@
     doc.getElementById('lb-next').addEventListener('click', () => self.next());
     doc.addEventListener('keydown', e => {
       if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+      if (global.KT2_LEARN_ACT && global.KT2_LEARN_ACT.isOpen()) return; // 활동이 열려 있는 동안 화살표로 장을 넘기지 않는다
       if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); self.next(); }
       else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); self.prev(); }
     });
@@ -318,7 +324,10 @@
     const slug = K().slugOf(q); global.LESSONS = global.LESSONS || {};
     let unitTitle = ''; const man = global.KT2_MANIFEST; if (man) { const sj = man.subjects.find(x => x.slug === slug); const un = sj && sj.units.find(x => x.unit === +q.u); if (un) unitTitle = un.title; }
     const s = doc.createElement('script'); s.src = '../data/' + slug + '_u' + q.u + '.js';
-    s.onload = () => { const L = global.LESSONS[q.l]; if (!L) { box.innerHTML = '<div class="lmsg">차시를 찾지 못했어요: ' + esc(q.l) + '</div>'; return; } global.KT2L = new Learn({ params: q, lesson: L, unitTitle }); };
+    s.onload = () => { const L = global.LESSONS[q.l]; if (!L) { box.innerHTML = '<div class="lmsg">차시를 찾지 못했어요: ' + esc(q.l) + '</div>'; return; }
+      const go = () => { if (!global.KT2L) global.KT2L = new Learn({ params: q, lesson: L, unitTitle }); };
+      // D60 — 활동 카탈로그를 잠깐(최대 2.5초) 기다린다. 실패·지연이면 활동 없이 바로 선다.
+      if (global.KT2_LEARN_ACT) global.KT2_LEARN_ACT.ready().then(go, go); else go(); };
     s.onerror = () => { box.innerHTML = '<div class="lmsg">차시 자료를 못 읽었어요.</div>'; };
     doc.head.appendChild(s);
   }

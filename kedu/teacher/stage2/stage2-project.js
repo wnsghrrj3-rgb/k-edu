@@ -72,7 +72,14 @@
         if ((isStr(d.challenge) && PAIRISH.test(d.challenge)) || (isStr(d.context) && PAIRISH.test(d.context))) s.solo = SOLO_FALLBACK;
         break;
       }
-      case 'activity': return null; // 카탈로그 활동 — 1인 모드는 활동 트랙(STATUS-kedu-activity) 과제
+      case 'activity': {
+        // 활동 13회차(D60): 카탈로그 활동(activityId)은 「혼자 해 보는 활동」 장으로 남긴다 — 실행 파일(src)은 카탈로그가 아는 것이라
+        //   withActivities() 가 카탈로그로 채운다(못 채우면 그때 뺀다). activityId 없는 1세대 교실 활동 꼴은 종전대로 건너뛴다.
+        if (!d.activityId) return null;
+        s.act = { id: d.activityId, params: clone(d.params || {}) };
+        s.data = { title: d.title, desc: d.desc };
+        break;
+      }
     }
     return s;
   }
@@ -241,6 +248,55 @@
     return { meta: clone(L.meta || {}), slides, scored };
   }
 
+  // ── 활동 13회차(D60) — 투영 접점: 카탈로그 활동을 학생 화면에 「🎲 혼자 해 보는 활동」 장으로 ─────────────
+  //   · actsFor(catalog, q, opt): 이 차시(map.lessons 에 lNN) · 같은 학년·학기(map.semester 없으면 1)·과목·단원 · modes 에 solo ·
+  //     status live 만(opt.all = 검수 전 draft 도 — 준호 미리보기 ?act=all). phase 차례(도입→연습→정리)로 둘까지.
+  //   · withActivities(slides, acts, catalog): 정본에 이미 박힌 활동 장(act.id)은 카탈로그로 채우고(없거나 solo 아님 → 뺀다),
+  //     자리 없는 추천 활동은 phase 자리에 넣는다 — intro: 도입 끝 · practice: 기본문제 끝(없으면 응용문제/정리 앞) · wrapup: 정리 앞.
+  //   · 점수(100)에는 안 넣는다(scored 무개변) · 넘김을 막지 않는다(건너뛰어도 된다 — 활동은 덤).
+  const PHASE_AT = { intro: 0, practice: 1, wrapup: 2 };
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function actsFor(catalog, q, opt) {
+    opt = opt || {}; const g = +q.g, t = +q.t > 1 ? +q.t : 1, u = +q.u, sj = q.s;
+    const lns = []; String(q.l || '').replace(/l(\d+)/g, (_, n) => { lns.push('l' + pad2(+n)); });
+    return (Array.isArray(catalog) ? catalog : []).filter(a => a && a.map && a.src && +a.map.grade === g && (+a.map.semester > 1 ? +a.map.semester : 1) === t
+      && a.map.subject === sj && +a.map.unit === u && lns.some(ln => (a.map.lessons || []).indexOf(ln) >= 0)
+      && (a.modes || []).indexOf('solo') >= 0 && (opt.all || a.status === 'live'))
+      .sort((x, y) => (PHASE_AT[x.phase] == null ? 1 : PHASE_AT[x.phase]) - (PHASE_AT[y.phase] == null ? 1 : PHASE_AT[y.phase])).slice(0, 2);
+  }
+  function actDefaults(a, params) { const m = {}; Object.keys(a.paramsSchema || {}).forEach(k => { m[k] = a.paramsSchema[k].default; }); Object.keys(params || {}).forEach(k => { if (params[k] !== undefined && params[k] !== null && params[k] !== '') m[k] = params[k]; }); return m; }
+  function actSlide(a, params, id, stage) {
+    return { id: id || ('act_' + a.id), stage, block: 'activity', data: { title: a.title, desc: a.short || '', icon: '🎲', tag: '🎲 혼자 해 보는 활동' },
+      act: { id: a.id, src: a.src, title: a.title, genre: a.genre, phase: a.phase, params: actDefaults(a, params), status: a.status || 'draft' } };
+  }
+  function withActivities(slides0, acts, catalog) {
+    const by = {}; (Array.isArray(catalog) ? catalog : []).concat(acts || []).forEach(a => { if (a && a.id) by[a.id] = a; });
+    // ① 정본에 박힌 활동 장 — 카탈로그로 채우거나 뺀다
+    let slides = (slides0 || []).map(s => {
+      if (!s || !s.act || s.act.src) return s;
+      const a = by[s.act.id]; if (!a || !a.src || (a.modes || []).indexOf('solo') < 0) return null;
+      const n = actSlide(a, s.act.params, s.id, s.stage); if (s.data && s.data.title) n.data.title = s.data.title; if (s.data && s.data.desc) n.data.desc = s.data.desc; return n;
+    }).filter(Boolean);
+    const have = new Set(slides.filter(s => s.act).map(s => s.act.id));
+    // ② 추천 활동 — phase 자리에
+    (acts || []).forEach(a => {
+      if (!a || have.has(a.id)) return; have.add(a.id);
+      const lastOf = (st) => { let k = -1; slides.forEach((s, i) => { if (s.stage === st) k = i; }); return k; };
+      const firstOf = (st) => slides.findIndex(s => s.stage === st);
+      let at, stage;
+      if (a.phase === 'intro' && lastOf('도입') >= 0) { at = lastOf('도입') + 1; stage = '도입'; }
+      else if (a.phase === 'wrapup' && firstOf('정리') >= 0) { at = firstOf('정리'); stage = '정리'; }
+      else if (lastOf('기본문제') >= 0) { at = lastOf('기본문제') + 1; stage = '기본문제'; }
+      else if (firstOf('응용문제') >= 0) { at = firstOf('응용문제'); stage = '응용문제'; }
+      else if (firstOf('정리') >= 0) { at = firstOf('정리'); stage = '정리'; }
+      else { at = slides.length; stage = (slides[slides.length - 1] || {}).stage || '정리'; }
+      // 마지막 장(다음 차시 예고·끝 카드)보다 뒤로는 안 간다
+      if (at >= slides.length && slides.length) at = slides.length - 1;
+      slides.splice(at, 0, actSlide(a, null, null, stage));
+    });
+    return slides;
+  }
+
   // 채점 — 학생 답을 정본 정답과 맞대 본다
   function check(learn, ans) {
     if (!learn) return false;
@@ -255,7 +311,7 @@
   // 몇 번째에 맞혔나 → 얻는 점수
   function gained(learn, tries, gaveUp) { if (!learn || !learn.pts || gaveUp) return 0; return tries <= 1 ? learn.pts : tries === 2 ? Math.ceil(learn.pts / 2) : 0; }
 
-  const API = { project, projectSlide, check, gained, parseLevelAnswer, inlineChoices, structured, unitAnswer, lvStructured, SCORED, SOLO_FALLBACK };
+  const API = { project, projectSlide, actsFor, withActivities, actDefaults, check, gained, parseLevelAnswer, inlineChoices, structured, unitAnswer, lvStructured, SCORED, SOLO_FALLBACK };
   global.KT2_PROJECT = API;
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
 })(typeof window !== 'undefined' ? window : globalThis);

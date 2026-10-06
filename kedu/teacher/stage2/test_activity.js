@@ -264,6 +264,124 @@ const tick = ms => new Promise(r => setTimeout(r, ms || 0));
     ok(q('[data-b="open"]') && !q('.kq-ox-pick') && !d.querySelector('#kq-host.solo'), '★ 역검증: 교사 꼴 OX 는 공개 버튼 그대로·O·X 버튼 없음'); const r0 = Q.close(true); ok(r0 === null && JSON.parse(w.localStorage.getItem('kt2_quick_log')).length === 1, '교사 꼴은 기록 남고 결과 반환 없음');
   }
 
+  // ── ⑧ 투영 접점 (D60 — 13회차): 자기주도 학생 화면(learn.html)의 「🎲 혼자 해 보는 활동」 ──
+  {
+    const PJ = require(path.join(__dirname, 'stage2-project.js'));
+    const ids = (arr) => arr.map(a => a.id).join(',');
+    // (a) 고르기 — 학기·solo·live·phase 차례·둘까지
+    ok(PJ.actsFor(CATALOG, { g: 3, t: 2, s: 'math', u: 1, l: 'u1_l03' }, { all: true }).length === 0, '3-2 수학 u1 에 3-1 활동이 끼지 않는다(학기)');
+    ok(ids(PJ.actsFor(CATALOG, { g: 3, s: 'math', u: 1, l: 'u1_l03' }, { all: true })) === 'g3m_u1_addsub', '3-1 수학 u1_l03 → g3m_u1_addsub (t 없음 = 1학기)');
+    ok(PJ.actsFor(CATALOG, { g: 3, s: 'math', u: 1, l: 'u1_l03' }).length === CATALOG.filter(a => a.status === 'live' && a.map.grade === 3 && a.map.unit === 1 && a.map.subject === 'math').length, '기본은 live 만(지금 live 0 → 학생 화면에 검수 전 활동 0)');
+    ok(ids(PJ.actsFor(CATALOG, { g: 1, s: 'math', u: 3, l: 'u3_l09' }, { all: true })) === 'g1m_u3_explore,g1m_u3_duel_sg', 'phase 차례 — 도입(explore) 먼저, 연습(duel_sg) 다음');
+    ok(PJ.actsFor(CATALOG, { g: 1, s: 'math', u: 1, l: 'u1_l02_03' }, { all: true }).some(a => a.id === 'g1m_u1_count9'), '두 차시 묶음 키(u1_l02_03)도 매칭');
+    const noSolo = CATALOG.filter(a => a.id === 'g3m_u1_addsub').map(a => Object.assign({}, a, { modes: ['class'] }));
+    ok(PJ.actsFor(noSolo, { g: 3, s: 'math', u: 1, l: 'u1_l03' }, { all: true }).length === 0, 'solo 없는 활동은 학생 화면에 안 간다');
+    const many = [1, 2, 3].map(i => Object.assign({}, CATALOG.find(a => a.id === 'g3m_u1_addsub'), { id: 'x' + i }));
+    ok(PJ.actsFor(many, { g: 3, s: 'math', u: 1, l: 'u1_l03' }, { all: true }).length === 2, '한 차시에 둘까지');
+    // (b) 끼우기 — 실제 3-1 수학 u3_l04 정본
+    const c3 = { window: {} }; c3.window.LESSONS = {}; vm.createContext(c3); vm.runInContext('var window=this.window;' + fs.readFileSync(path.join(DATA, 'g3_math_u3.js'), 'utf8'), c3);
+    const L34 = c3.window.LESSONS.u3_l04; const pj = PJ.project(L34); const acts = PJ.actsFor(CATALOG, { g: 3, s: 'math', u: 3, l: 'u3_l04' }, { all: true });
+    ok(ids(acts) === 'g3m_u3_quotient', '3-1 수학 u3_l04 → g3m_u3_quotient');
+    const sl = PJ.withActivities(pj.slides, acts, CATALOG); const ai = sl.findIndex(x => x.act);
+    const lastBasic = (() => { let k = -1; pj.slides.forEach((x, i) => { if (x.stage === '기본문제') k = i; }); return k; })();
+    ok(sl.length === pj.slides.length + 1 && ai === lastBasic + 1 && sl[ai].stage === '기본문제', 'practice → 기본문제 끝 바로 뒤에 한 장');
+    ok(sl[ai].act.src === 'activities/g3m_u3_quotient.html' && sl[ai].block === 'activity' && sl[ai].data.tag === '🎲 혼자 해 보는 활동', '활동 장 꼴(src·block·꼬리표)');
+    ok(!sl[ai].learn && pj.scored.indexOf(sl[ai].id) < 0, '활동 장은 채점 문항이 아니다(100점 무개변)');
+    ok(sl[sl.length - 1].id === pj.slides[pj.slides.length - 1].id, '마지막 장(다음 차시)은 그대로 마지막');
+    ok(PJ.withActivities(pj.slides, [], CATALOG).length === pj.slides.length, '활동 없으면 장 수 그대로');
+    const wrap = PJ.withActivities(pj.slides, [CATALOG.find(a => a.phase === 'wrapup')], CATALOG); const wi = wrap.findIndex(x => x.act);
+    ok(wrap[wi].stage === '정리' && wrap[wi - 1].stage !== '정리', 'wrapup → 정리 첫 장 앞');
+    const intro = PJ.withActivities(pj.slides, [CATALOG.find(a => a.phase === 'intro')], CATALOG); const ii = intro.findIndex(x => x.act);
+    ok(intro[ii].stage === '도입' && intro[ii + 1].stage !== '도입', 'intro → 도입 끝');
+    // (c) 정본에 박힌 활동 장(activityId) — 카탈로그로 채우거나 뺀다 · 1세대 교실 활동 꼴은 종전대로 건너뜀
+    ok(PJ.projectSlide({ id: 'a', stage: '전개', block: 'activity', data: { title: '모둠 놀이', steps: ['x'] } }) === null, '1세대 activity(activityId 없음) → 투영에서 건너뜀(종전)');
+    const emb = PJ.projectSlide({ id: 'e1', stage: '기본문제', block: 'activity', data: { activityId: 'g1m_u1_count9', title: '우리 반 세기', params: { n: 5 }, note: '👉 교사 쪽지' } });
+    ok(emb && emb.act && emb.act.id === 'g1m_u1_count9' && !emb.act.src && !emb.data.note, '박힌 활동 장 → act(교사 쪽지 뺌)');
+    const filled = PJ.withActivities([emb, { id: 'z', stage: '정리', block: 'summary', data: {} }], [], CATALOG);
+    ok(filled.length === 2 && filled[0].act.src === 'activities/g1m_u1_count9.html' && filled[0].data.title === '우리 반 세기' && filled[0].act.params.n === 5, '박힌 활동 장 — src 채움 · 제목·설정 값은 정본 것');
+    ok(PJ.withActivities([Object.assign({}, emb, { act: { id: 'nope' } })], [], CATALOG).length === 0, '카탈로그에 없는 박힌 활동 장 → 뺀다');
+    ok(PJ.withActivities([emb], [CATALOG.find(a => a.id === 'g1m_u1_count9')], CATALOG).filter(x => x.act).length === 1, '박힌 활동과 추천이 같으면 한 번만');
+    // (d) 교사 무대 KA.groups 학기 수리
+    const KAc = { window: { document: null, location: { hostname: 'keduclass.com', origin: 'https://keduclass.com' } } }; vm.createContext(KAc); vm.runInContext('var window=this.window;' + fs.readFileSync(path.join(__dirname, 'stage2-activity.js'), 'utf8'), KAc);
+    const KA2 = KAc.window.KT2_ACTIVITY; KA2.setCatalog(CATALOG);
+    ok(KA2.groups({ g: 3, s: 'math', u: 1, t: 2, key: 'u1_l03' }).rec.length === 0 && KA2.groups({ g: 3, s: 'math', u: 1, t: 2, key: 'u1_l03' }).unit.length === 0, '교사 무대 — 3-2 수학 u1 에 3-1 활동 추천 0(학기)');
+    ok(ids(KA2.groups({ g: 3, s: 'math', u: 1, t: 1, key: 'u1_l03' }).rec) === 'g3m_u1_addsub', '교사 무대 — 3-1 수학 u1_l03 추천 그대로');
+
+    // (e) 학생 화면 jsdom — learn.html 실물 순서로 싣고 활동 장을 끝까지 걷는다
+    const LH = fs.readFileSync(path.join(__dirname, 'learn.html'), 'utf8');
+    ok(LH.indexOf('stage2-learn-act.js') > LH.indexOf('stage2-project.js') && LH.indexOf('stage2-learn-act.js') < LH.indexOf('stage2-learn.js"'), 'learn.html — 투영기 뒤·learn 무대 앞에 활동 층');
+    const bootLearn = (search, opt) => {
+      opt = opt || {};
+      const dom = new JSDOM('<!doctype html><html><head></head><body class="learn"><div id="kt2-stage"></div><div id="lbar" class="lbar"></div><div id="toast"></div></body></html>', { url: 'https://keduclass.com/kedu/teacher/stage2/learn.html' + search, pretendToBeVisual: true, runScripts: 'outside-only' });
+      const w = dom.window, d = w.document; w.KT2_NO_BOOT = true; w.KT2_LEARN_NO_BOOT = true; w.setInterval = () => 0; w.HTMLCanvasElement.prototype.getContext = () => null; w.requestAnimationFrame = fn => setTimeout(fn, 0);
+      if (!opt.noCatalog) w.KT2_CATALOG = CATALOG; w.LESSONS = {};
+      const rec = []; w.kedu = { recordAnswer: function () { rec.push([].slice.call(arguments)); } };
+      const ctx = dom.getInternalVMContext(); const run = p => vm.runInContext(fs.readFileSync(p, 'utf8'), ctx, { filename: path.basename(p) });
+      ['manifest.js', 'stage2-art.js', 'stage2-fig.js', 'stage2.js', 'stage2-project.js'].concat(opt.noLayer ? [] : ['stage2-learn-act.js']).concat(['stage2-learn.js']).forEach(f => run(path.join(__dirname, f)));
+      run(path.join(DATA, 'g3_math_u3.js'));
+      return { w, d, rec, ctx };
+    };
+    const mk = async (search, opt) => { const B = bootLearn(search, opt); if (B.w.KT2_LEARN_ACT) await B.w.KT2_LEARN_ACT.ready(); const q = { g: '3', s: 'math', u: '3', l: 'u3_l04' }; const Lr = new B.w.KT2_LEARN.Learn({ params: q, lesson: B.w.LESSONS.u3_l04, unitTitle: '' }); return Object.assign(B, { Lr, LA: B.w.KT2_LEARN_ACT }); };
+    {
+      const { w, d, rec, Lr, LA } = await mk('?g=3&s=math&u=3&l=u3_l04&act=all');
+      const i = Lr.slides.findIndex(x => x.act); ok(i > 0 && Lr.slides.length === pj.slides.length + 1, '학생 화면 — 활동 장 하나 끼워짐(?act=all)');
+      ok(Lr.scoredIds.length === pj.scored.length && Lr.slides.filter(x => x.learn && x.learn.pts).reduce((t, x) => t + x.learn.pts, 0) === 100, '학생 화면 — 채점 문항·100점 합 무개변');
+      Lr.go(i, 1); const btn = d.querySelector('[data-lact="act-go"]');
+      ok(!!btn && /혼자 해 보기/.test(btn.textContent) && !Lr.locked(), '활동 장 — 「▶ 혼자 해 보기」 · 넘김 막지 않음');
+      ok(!!d.querySelector('.la-draft'), '검수 전 활동은 미리보기 표시');
+      ok(!d.querySelector('#kt2-paper [data-act="timer"]'), '활동 장에 타이머 단추 없음');
+      Lr.lact(btn); const host = d.getElementById('la-host'); const f = host && host.querySelector('iframe');
+      ok(host && host.classList.contains('on') && f && /^\/kedu\/activities\/g3m_u3_quotient\.html\?mode=solo&seed=\d+$/.test(f.getAttribute('src')), '누르면 전체 화면 호스트 · src = 활동?mode=solo&seed=');
+      const sent = []; f.contentWindow.postMessage = (m) => sent.push(m);
+      const idx0 = Lr.idx; d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })); ok(Lr.idx === idx0, '활동이 열린 동안 → 키로 장이 안 넘어간다');
+      w.dispatchEvent(new w.MessageEvent('message', { data: { t: 'ACTIVITY_READY', v: 1 }, origin: 'https://evil.example', source: f.contentWindow })); ok(sent.length === 0, '다른 origin READY 무시');
+      w.dispatchEvent(new w.MessageEvent('message', { data: { t: 'ACTIVITY_READY', v: 1 }, origin: 'https://keduclass.com', source: f.contentWindow }));
+      ok(sent.length === 1 && sent[0].t === 'ACTIVITY_CONFIG' && sent[0].mode === 'solo' && sent[0].params && sent[0].meta && sent[0].meta.roster === null && sent[0].meta.teamNames === null, 'READY → CONFIG mode solo · 명단·팀 없음');
+      ok(Object.keys(sent[0].params).length === Object.keys(CATALOG.find(a => a.id === 'g3m_u3_quotient').paramsSchema || {}).length, 'CONFIG params = 카탈로그 기본값');
+      w.dispatchEvent(new w.MessageEvent('message', { data: { t: 'ACTIVITY_RESULT', v: 1, mode: 'solo', score: 8, total: 10, durationSec: 95, byType: { a: { ok: 8, miss: 2 } } }, origin: 'https://keduclass.com', source: f.contentWindow }));
+      ok(!host.classList.contains('on') && !host.querySelector('iframe') && !d.body.classList.contains('la-open'), 'RESULT → 호스트 닫힘');
+      ok(/8<\/b> \/ 10/.test(d.querySelector('.la-res') ? d.querySelector('.la-res').innerHTML : '') && /한 번 더/.test(d.querySelector('[data-lact="act-go"]').textContent), '카드에 결과 한 줄 · 「한 번 더」');
+      const r0 = rec[rec.length - 1]; ok(rec.length === 1 && r0[0] === 'u3_l04_' + Lr.slides[i].id && r0[1] === true && r0[2] === 95 && r0[4].src === 'kt2-learn-act' && r0[4].activityId === 'g3m_u3_quotient' && r0[4].score === 8 && r0[4].total === 10, '기록 — 트래커 recordAnswer(키_장, 8할 이상 = 맞음, 걸린 초, src·활동·점수)');
+      ok(Lr.score === 0, '활동 결과는 ⭐ 점수에 안 들어간다');
+      // 한 번 더 → EXIT 는 기록 없이 닫힘 · 결과 줄은 앞 판 그대로
+      Lr.lact(d.querySelector('[data-lact="act-go"]')); const f2 = host.querySelector('iframe'); w.dispatchEvent(new w.MessageEvent('message', { data: { t: 'ACTIVITY_EXIT', v: 1, reason: 'user' }, origin: 'https://keduclass.com', source: f2.contentWindow }));
+      ok(!host.classList.contains('on') && rec.length === 1 && !!d.querySelector('.la-res'), 'EXIT → 기록 없이 닫힘(앞 판 결과 줄 유지)');
+      // 낮은 점수 = 맞음 아님
+      Lr.lact(d.querySelector('[data-lact="act-go"]')); const f3 = host.querySelector('iframe'); w.dispatchEvent(new w.MessageEvent('message', { data: { t: 'ACTIVITY_RESULT', v: 1, score: 3, total: 10 }, origin: 'https://keduclass.com', source: f3.contentWindow }));
+      ok(rec.length === 2 && rec[1][1] === false && rec[1][4].run === 2, '3/10 → 맞음 아님 · 몇 번째 판(run 2)');
+      // Esc · 닫기 단추 → CLOSE 보내고 800ms 뒤 닫힘
+      Lr.lact(d.querySelector('[data-lact="act-go"]')); const f4 = host.querySelector('iframe'); const sent4 = []; f4.contentWindow.postMessage = (m) => sent4.push(m);
+      d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); ok(sent4.length === 1 && sent4[0].t === 'ACTIVITY_CLOSE' && host.classList.contains('on'), 'Esc → CLOSE 보냄(바로 안 닫음 — 활동이 RESULT 낼 틈)');
+      await tick(900); ok(!host.classList.contains('on') && rec.length === 2, '800ms 뒤 닫힘 · 기록 없음');
+      // 끝 카드 · 처음부터 다시
+      Lr.go(Lr.slides.length - 1, 1); ok(/혼자 해 보는 활동 1개/.test(d.querySelector('.lw-done') ? d.querySelector('.lw-done').textContent : ''), '끝 카드에 「🎲 혼자 해 보는 활동 1개 했어요」');
+      Lr.lact(d.querySelector('[data-lact="again"]')); ok(LA.count() === 0, '처음부터 다시 → 활동 결과도 비움');
+    }
+    {
+      const A = await mk('?g=3&s=math&u=3&l=u3_l04'); ok(!A.Lr.slides.some(x => x.act), '기본(live 만) — 검수 전 활동은 학생 화면에 0');
+      const B = await mk('?g=3&s=math&u=3&l=u3_l04&act=off'); ok(!B.Lr.slides.some(x => x.act), '?act=off → 활동 0');
+      const C = await mk('?g=3&s=math&u=3&l=u3_l04&act=all', { noLayer: true }); ok(!C.LA && C.Lr.slides.length === pj.slides.length, '★ 역검증: 활동 층을 빼면 learn 은 종전 그대로(장 수 같음)');
+      // live 하나 승격 가정 → 기본 모드에서도 뜬다(승격 = 카탈로그 한 줄의 효력이 학생 화면까지 닿는가)
+      const liveCat = CATALOG.map(a => a.id === 'g3m_u3_quotient' ? Object.assign({}, a, { status: 'live' }) : a);
+      const Bl = bootLearn('?g=3&s=math&u=3&l=u3_l04'); Bl.w.KT2_CATALOG = liveCat; await Bl.w.KT2_LEARN_ACT.ready(); const Ll = new Bl.w.KT2_LEARN.Learn({ params: { g: '3', s: 'math', u: '3', l: 'u3_l04' }, lesson: Bl.w.LESSONS.u3_l04, unitTitle: '' });
+      const li = Ll.slides.findIndex(x => x.act); Ll.go(li, 1); ok(li > 0 && !Bl.d.querySelector('.la-draft'), 'live 승격 → 기본 모드에서도 활동 장 · 미리보기 표시 없음');
+      // 카탈로그를 못 읽어도 차시는 선다(늦는 fetch 를 2.5초 뒤 포기)
+      const N = bootLearn('?g=3&s=math&u=3&l=u3_l04&act=all', { noCatalog: true }); N.w.fetch = () => new Promise(() => { }); const t0 = Date.now(); await N.w.KT2_LEARN_ACT.ready(); const waited = Date.now() - t0;
+      const Ln = new N.w.KT2_LEARN.Learn({ params: { g: '3', s: 'math', u: '3', l: 'u3_l04' }, lesson: N.w.LESSONS.u3_l04, unitTitle: '' });
+      ok(waited >= 2400 && waited < 4000 && Ln.slides.length === pj.slides.length, '카탈로그가 안 오면 2.5초 뒤 활동 없이 선다');
+      const F = bootLearn('?g=3&s=math&u=3&l=u3_l04&act=all', { noCatalog: true }); F.w.fetch = () => Promise.reject(new Error('x')); await F.w.KT2_LEARN_ACT.ready(); ok(F.w.KT2_LEARN_ACT.failed === true, '카탈로그 실패 → failed · 활동 없이');
+      // 박힌 활동 장이 있는 정본을 층 없이 열면 그 장은 빠진다(실행 파일을 모르므로)
+      const E = bootLearn('?g=3&s=math&u=3&l=u3_l04', { noLayer: true }); const les = JSON.parse(JSON.stringify(E.w.LESSONS.u3_l04)); les.slides.splice(3, 0, { id: 'emb', stage: '전개', block: 'activity', data: { activityId: 'g3m_u3_quotient' } });
+      const Le = new E.w.KT2_LEARN.Learn({ params: { g: '3', s: 'math', u: '3', l: 'u3_l04' }, lesson: les, unitTitle: '' }); ok(!Le.slides.some(x => x.act), '층 없이 박힌 활동 장 → 빠짐(빈 카드 없음)');
+    }
+    // (f) 교사 무대 수첩 — 브리지 RESULT 는 total 로 온다
+    {
+      const { d, st, KA } = boot(1, 'math', 1, 'u1_l04_05'); await tick(); KA.launch(CATALOG[0], {}); await tick(); const f = d.querySelector('#kact-host iframe');
+      KA.onMessage({ source: f.contentWindow, origin: 'https://keduclass.com', data: { t: 'ACTIVITY_RESULT', v: 1, score: 7, total: 9, byType: {} } });
+      ok(/7<\/b> \/ 9/.test(d.querySelector('#ov-note .kn-score').innerHTML), '교사 수첩 — RESULT total 로 「7 / 9」');
+    }
+  }
+
   // ── ⑦ 역검증 ──
   {
     // (a) 활동 층을 빼도 무대는 선다 · 목차에 ＋활동 없음 · activity 데이터는 교실 활동으로
