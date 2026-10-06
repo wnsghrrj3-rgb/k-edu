@@ -50,6 +50,12 @@
     return { rec, unit, rest };
   };
   KA.defaults = function (a, params) { const m = {}; Object.keys(a.paramsSchema || {}).forEach(k => { m[k] = a.paramsSchema[k].default; }); Object.keys(params || {}).forEach(k => { if (params[k] !== undefined && params[k] !== null && params[k] !== '') m[k] = params[k]; }); return m; };
+  // 14회차 · 차시별 기본 설정 — 카탈로그 map.paramsByLesson[lNN] 이 있으면 그 차시의 칩 기본값으로 (도구는 차시를 모른다 — 호스트가 알려 준다)
+  KA.lessonParams = function (a, key) {
+    const pbl = a && a.map && a.map.paramsByLesson; if (!pbl) return {};
+    const k = key != null ? key : (KA.stage && KA.stage.key); const hit = lessonNos(k).find(ln => pbl[ln]);
+    return hit ? Object.assign({}, pbl[hit]) : {};
+  };
   KA.genId = function (a) { const m = /([A-Za-z0-9_]+)\.js$/.exec(a.gen || ''); return m ? m[1] : null; };
 
   // ───────────────────────── 무대 접점 ─────────────────────────
@@ -116,7 +122,7 @@
   };
   KA.closeLauncher = function () { const o = doc.getElementById('ov-act'); if (o) o.classList.remove('on'); };
   KA.cardHtml = function (a) {
-    const p = KA.defaults(a, {});
+    const p = KA.defaults(a, KA.lessonParams(a));
     const chips = Object.keys(a.paramsSchema || {}).map(k => { const ps = a.paramsSchema[k]; return '<div class="kact-prow" data-k="' + esc(k) + '"><span class="kact-plbl">' + esc(ps.label || k) + '</span>' + (ps.options || [ps.default]).map(o => '<button class="kact-chip' + (String(o) === String(p[k]) ? ' on' : '') + '" data-v="' + esc(o) + '">' + esc(ps.optionLabels && ps.optionLabels[o] != null ? ps.optionLabels[o] : (k === 'why' ? (o ? '켬' : '끔') : o)) + '</button>').join('') + '</div>'; }).join('');
     const modes = (a.modes || []).map(m => ({ class: '수업', solo: '혼자', assign: '과제' })[m] || m).join('·');
     return '<div class="kact-card" data-id="' + esc(a.id) + '"><div class="kact-c-top"><span class="kact-c-t">' + esc(a.title) + '</span>' + (a.status === 'live' ? '<span class="kact-tag ok">검수 완료</span>' : '<span class="kact-tag">검수 전</span>') + '</div><div class="kact-c-s">' + esc(a.short || '') + '</div><div class="kact-c-m"><span class="kact-tag">' + esc(GENRE_KO[a.genre] || a.genre) + '</span><span class="kact-tag">' + esc(PHASE_KO[a.phase] || '') + '</span>' + (a.minutesClass ? '<span class="kact-tag">⏱ ' + a.minutesClass + '분</span>' : '') + '<span class="kact-tag">' + esc(modes) + '</span>' + (a.pages ? '<span class="kact-tag">📖 ' + esc(a.pages) + '</span>' : '') + '</div>' + (chips ? '<div class="kact-params">' + chips + '</div>' : '') + '<div class="kact-c-b">' + (KA._insert ? '<button class="btn main" data-c="insert">＋ 이 자리에 슬라이드로</button>' : '<button class="btn main" data-c="start">▶ 시작</button><button class="btn" data-c="insert" title="이 슬라이드 뒤에 활동 슬라이드를 넣어요 — 이 기기에만 저장">＋ 슬라이드로</button>' + (KA.genId(a) ? '<button class="btn" data-c="ws" title="같은 문제로 A4 활동지를 새 창에">🖨 활동지</button>' : '')) + '</div></div>';

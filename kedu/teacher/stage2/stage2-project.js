@@ -269,7 +269,13 @@
     return { id: id || ('act_' + a.id), stage, block: 'activity', data: { title: a.title, desc: a.short || '', icon: '🎲', tag: '🎲 혼자 해 보는 활동' },
       act: { id: a.id, src: a.src, title: a.title, genre: a.genre, phase: a.phase, params: actDefaults(a, params), status: a.status || 'draft' } };
   }
-  function withActivities(slides0, acts, catalog) {
+  // 14회차 · 차시별 기본 설정 — map.paramsByLesson[lNN] (예: 3-1 과학 u1 「친구 말 판정」 = 그 차시까지 배운 말만)
+  function lessonParams(a, l) {
+    const pbl = a && a.map && a.map.paramsByLesson; if (!pbl) return null;
+    const lns = []; String(l || '').replace(/l(\d+)/g, (_, n) => { lns.push('l' + pad2(+n)); });
+    const hit = lns.find(ln => pbl[ln]); return hit ? Object.assign({}, pbl[hit]) : null;
+  }
+  function withActivities(slides0, acts, catalog, q) {
     const by = {}; (Array.isArray(catalog) ? catalog : []).concat(acts || []).forEach(a => { if (a && a.id) by[a.id] = a; });
     // ① 정본에 박힌 활동 장 — 카탈로그로 채우거나 뺀다
     let slides = (slides0 || []).map(s => {
@@ -292,7 +298,7 @@
       else { at = slides.length; stage = (slides[slides.length - 1] || {}).stage || '정리'; }
       // 마지막 장(다음 차시 예고·끝 카드)보다 뒤로는 안 간다
       if (at >= slides.length && slides.length) at = slides.length - 1;
-      slides.splice(at, 0, actSlide(a, null, null, stage));
+      slides.splice(at, 0, actSlide(a, lessonParams(a, q && q.l), null, stage));
     });
     return slides;
   }
@@ -311,7 +317,7 @@
   // 몇 번째에 맞혔나 → 얻는 점수
   function gained(learn, tries, gaveUp) { if (!learn || !learn.pts || gaveUp) return 0; return tries <= 1 ? learn.pts : tries === 2 ? Math.ceil(learn.pts / 2) : 0; }
 
-  const API = { project, projectSlide, actsFor, withActivities, actDefaults, check, gained, parseLevelAnswer, inlineChoices, structured, unitAnswer, lvStructured, SCORED, SOLO_FALLBACK };
+  const API = { project, projectSlide, actsFor, withActivities, lessonParams, actDefaults, check, gained, parseLevelAnswer, inlineChoices, structured, unitAnswer, lvStructured, SCORED, SOLO_FALLBACK };
   global.KT2_PROJECT = API;
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
 })(typeof window !== 'undefined' ? window : globalThis);

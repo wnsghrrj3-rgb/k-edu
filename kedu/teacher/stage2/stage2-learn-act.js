@@ -36,7 +36,7 @@
   LA.inject = function (slides, q) {
     if (LA.mode() === 'off' || !P() || !P().withActivities) return (slides || []).filter(s => !(s && s.act && !s.act.src));
     const acts = LA.catalog ? P().actsFor(LA.catalog, q, { all: LA.mode() === 'all' }) : [];
-    return P().withActivities(slides, acts, LA.catalog || []);
+    return P().withActivities(slides, acts, LA.catalog || [], q);
   };
 
   // 카드 아래 학생 층 — 시작 단추 · 끝낸 뒤 결과 한 줄 + 한 번 더
