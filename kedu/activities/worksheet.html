@@ -64,6 +64,7 @@
   <button class="btn ghost" id="reseed">다른 판 만들기</button>
   <div class="grp"><span class="lb">문제 수</span><span id="chips-n"></span></div>
   <div class="grp" id="grp-range"><span class="lb">수 범위</span><span id="chips-range"></span></div>
+  <span id="grp-extra" style="display:contents"></span>
   <span class="warn" id="err"></span>
 </div>
 
@@ -99,6 +100,23 @@
     title: q.get('title') || ''
   };
   var schema = {};      // 카탈로그의 paramsSchema — 어떤 칩을 보일지는 이게 정한다
+  // 그 밖의 설정(upto 처럼 range·max·qmode 가 아닌 키) — 카탈로그 paramsSchema 에 있는 키만, 값도 그 options 안에서만 받는다.
+  //  · URL 에 실려 온 값(케이티처 런처 KA.openWorksheet 가 고른 칩 · 차시별 기본 map.paramsByLesson)은 생성기에 그대로 넘긴다.
+  //  · 칩·기본값은 차시가 정하는 키(map.paramsByLesson 에 나오는 키 — 예: 범위 upto)만 — 주자 수 같은 교실용 칩은 종이에 안 띄운다.
+  var LEGACY = { n: 1, range: 1, max: 1, qmode: 1 };
+  var lessonKeys = {};
+  state.extra = {};
+  function takeExtra(item) {
+    var pbl = (item.map && item.map.paramsByLesson) || {};
+    Object.keys(pbl).forEach(function (l) { Object.keys(pbl[l] || {}).forEach(function (k) { lessonKeys[k] = 1; }); });
+    Object.keys(schema).forEach(function (k) {
+      if (LEGACY[k]) return;
+      var opts = schema[k].options || [], v = q.get(k), num = opts.length && typeof opts[0] === 'number';
+      if (v != null && opts.map(String).indexOf(v) >= 0) state.extra[k] = num ? +v : v;
+      else if (lessonKeys[k] && schema[k].default != null) state.extra[k] = schema[k].default;
+    });
+  }
+  function extraLabel(k, v) { var s = schema[k] || {}; return (s.optionLabels && s.optionLabels[v]) || String(v); }
 
   function mulberry32(a) {
     return function () {
@@ -129,6 +147,7 @@
     if (!item) throw new Error('카탈로그에 생성기가 없어요: ' + genId);
     if (!state.title) state.title = item.title;
     schema = item.paramsSchema || {};
+    takeExtra(item);
     document.getElementById('ws-meta').textContent =
       (item.map ? item.map.grade + '학년 ' + item.map.unit + '단원' : '') + (item.pages ? ' · ' + item.pages : '');
     // §6-10 5항 — 조사 부품이 생성기보다 먼저 와야 한다 (없으면 생성기가 소리 내어 죽는다)
@@ -144,7 +163,9 @@
   function render() {
     var G = (window.GENS || {})[genId];
     if (!G) { document.getElementById('err').textContent = '생성기를 찾을 수 없어요'; return; }
-    var gen = G.create({ range: state.range, max: state.max, qmode: state.qmode }, mulberry32(state.seed));
+    var params = { range: state.range, max: state.max, qmode: state.qmode };
+    Object.keys(state.extra).forEach(function (k) { params[k] = state.extra[k]; });
+    var gen = G.create(params, mulberry32(state.seed));
 
     document.body.classList.toggle('answers', state.answers);
     document.getElementById('ws-title').textContent = state.title;
@@ -179,9 +200,16 @@
     } else {
       document.getElementById('grp-range').style.display = 'none';
     }
+    // 그 밖의 설정 칩 — 이름표는 카탈로그 optionLabels
+    document.getElementById('grp-extra').innerHTML = Object.keys(state.extra).filter(function (k) { return lessonKeys[k]; }).map(function (k) {
+      return '<div class="grp"><span class="lb">' + esc(schema[k].label || k) + '</span><span>' + (schema[k].options || []).map(function (v) {
+        return '<button class="chip' + (state.extra[k] === v ? ' on' : '') + '" data-x="' + esc(k) + '" data-v="' + esc(v) + '">' + esc(extraLabel(k, v)) + '</button>';
+      }).join('') + '</span></div>';
+    }).join('');
     [].forEach.call(document.querySelectorAll('.chip'), function (c) {
       c.addEventListener('click', function () {
-        state[c.dataset.k] = +c.dataset.v;
+        if (c.dataset.x) { var k = c.dataset.x, opts = schema[k].options || []; state.extra[k] = typeof opts[0] === 'number' ? +c.dataset.v : c.dataset.v; }
+        else state[c.dataset.k] = +c.dataset.v;
         render();
       });
     });
