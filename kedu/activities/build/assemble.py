@@ -34,6 +34,7 @@ GENRE_ENGINE = {
     'claim_judge': 'claim_judge',  # v4 신설 · 진술 판정 + 까닭 한 줄 (14회차 — 첫 실물 3-1 과학 u1)
     'observe_pick': 'observe_pick',  # v4 신설 · 그림 두 장 관찰 고르기 + 알 수 없어요 (16회차 — 첫 실물 3-1 과학 u3, D62)
     'fill_dialog': 'fill_dialog',    # v4 신설 · 빈 말풍선에 알맞은 말 고르기 (18회차 — 첫 실물 1-1 국어 u5 인사말, D64)
+    'order_story': 'order_story',    # v4 신설 · 카드를 알맞은 차례로 놓기 (19회차 — 첫 실물 1-1 국어 u7, D65)
     # catch_fall(v4 D57) — 떨어지는 수를 잡아 모으는 실시간 무대. 활동 자체 루프(엔진 없음)
     # bundle · sort · explore는 활동 자체 루프 — 엔진 없이 core만 쓴다
 }
