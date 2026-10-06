@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<!--
+=========================================================================
+  사회 3-2 · 2단원 옛날과 오늘날의 생활 모습
+  주제③ 통신수단의 변화로 달라진 생활 모습 · l20 (주제 마무리)
+  「[생각을 펼쳐요] 통신수단의 변화로 달라진 생활 모습 정리」
+  교과서 p.139~141 · 지도서 28차시(p.278~279) · [4사04-02]
+  수업 기법 = 돌아가며 말하기
+=========================================================================
+
+  ■ 직접조작 = 잠금을 풀어요 판 (사회 3-2 서른두째 판 · 2단원 스무째 판)
+  ⭐ 씨앗은 교과서 141쪽 「재미있게 확인해요」 — 단서를 풀어 휴대 전화의 비밀번호 찾기.
+     단서 다섯을 하나씩 읽고 「옳아요」나 「옳지 않아요」를 누른다. 다 살피면 키패드가 열리고,
+     규칙 넷을 차례로 따라 옳은 단서의 번호를 눌러 비밀번호 칸 넷을 채우면 잠금이 풀린다.
+  ⭐ 단서마다 자기가 옳은지 ok 를 품는다(ZM_CLUE[k].ok) — 정답 자리표 0.
+     규칙마다 칸 자리 at 과 고르는 방법 kind(min·max)만 품는다 — 쓸 숫자는 남은 옳은 번호에서 그때그때 센다(zmWant).
+  ⭐ 판 = 살핀 단서 비트 zmSeen 하나 + 쓴 숫자 수 zmPin 하나 · 단계는 저장 0(zmAllSeen · zmOpen · zmStage).
+  ⭐ 판을 바꾸는 자리 둘뿐 — zmSee(state.zmSeen |= 1 << k) · zmWrite(state.zmPin += 1) · 되돌리는 자리 0 · 난수 0.
+     칸에 쓴 숫자는 저장 0 — 규칙을 차례로 다시 따라 센다(zmWritten).
+
+  ■ 이 차시의 뼈대
+   통신수단이 발달하면서 옛날보다 많은 정보를 실시간으로 주고받게 되었고, 새로운 시설과 직업이 생겨났다.
+   몸과 마음의 건강을 위해 통신수단을 안전하고 올바르게 사용해야 한다.
+
+  ■ 5단계
+   ① 단서 다섯 살피기 → 비밀번호 네 자리 누르기(규칙 넷) → ② 판 읽기 3택(정답 자리 1)
+   ③ 미래의 통신수단으로 편리해졌으면 하는 일 가·나·다 고르기(정답 없음 · 교과서 139쪽)
+   ④ 마무리 3택(정답 자리 2) → 완료
+      — 그림일기 쓰기 · 이모티콘 그리기는 교실 몫
+
+  ■ 가드 17종
+   ① 마무리 확정 후 처리기 전체 잠금          ② 무효 번호(안내조차 0)
+   ③ 이미 살핀 단서 — 판 불변                 ④ 단서와 어긋난 판단 — 판 불변
+   ⑤ 단서를 다 살피기 전 키패드 — 판 불변     ⑥ 잠금이 풀린 뒤 키패드 — 판 불변
+   ⑦ 옳지 않은 단서의 번호 — 판 불변          ⑧ 단서에 없는 번호 — 판 불변
+   ⑨ 이미 칸에 쓴 숫자 — 판 불변              ⑩ 지금 칸의 규칙과 다른 숫자 — 판 불변
+   ⑪ 잠금을 풀기 전 판 읽기 — 판 불변         ⑫ 이미 읽은 자리 — 판 불변
+   ⑬ 판 읽기 어긋난 답 — 판 불변              ⑭ 판을 읽기 전 고르기 — 판 불변
+   ⑮ 이미 고른 자리 — 판 불변                 ⑯ 고르기 전 마무리 — 판 불변
+   ⑰ 마무리 어긋난 답 — 판 불변
+
+  ■ 정직 3곳
+   ㉠ 단서와 규칙은 교과서 141쪽을 따랐고, 휴대 전화 화면과 키패드는 판이 꾸민 것(캡션 상시).
+   ㉡ 미래의 통신수단은 사람마다 상상이 달라 판은 정답을 정하지 않는다(캡션 상시).
+   ㉢ 그림일기 쓰기, 이모티콘 그리기는 교실 몫(완료 카드 명시).
+
+  ■ 설계 원칙
+   · 교과서 말풍선의 이름과 반려동물 이름은 넣지 않는다 · 지역·나라 이름 0
+   · 뒤 차시 용어는 차시 예고 한 자리뿐
+   · 새 사실 0 — 교과서 139~141쪽 · 지도서 278~279쪽과 주제③ 앞 차시에서만
+   · 「틀렸」 0 · 사람 형상 0 · 지어낸 학생 이름 0 · 누리집 주소 0 · 네 자리 연도 0
+-->
+<script src="/kedu_scope.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>통신수단의 변화로 달라진 생활 모습 정리 · 사회 3-2</title>
+<meta name="kedu-lesson-id" content="g3_social_u2_l20_v1"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#DB2777; --green-d:#BE185D; --cyan:#C026D3;
+  --bg:#FDF2F8; --bub:#FCE7F3; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#FCE7F3;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:640px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:640px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#FCE7F3;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:640px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:620px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FAFF;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(219,39,119,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+/* 조작 판 — 잠금을 풀어요 판 */
+.zm-wrap{max-width:820px;width:100%;margin:0 auto}
+.zm-head{background:#FCE7F3;color:#9D174D;font-weight:800;text-align:center;border-radius:10px;padding:7px 10px;
+  font-size:clamp(13px,2.1vw,16px);margin-bottom:8px;word-break:keep-all}
+.zm-board{border-radius:14px;border:3px solid #CBD5E1;background:#F8FAFC;padding:8px}
+.zm-title{text-align:center;font-weight:800;color:#334155;font-size:clamp(12px,2vw,14px);word-break:keep-all;margin:2px 0 6px}
+.zm-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:8px;align-items:start}
+.zm-clues{display:grid;grid-template-columns:1fr;gap:5px}
+.zm-clue{border:2px solid #FBCFE8;border-radius:10px;background:#fff;padding:6px 8px;font-size:clamp(11px,1.8vw,13px);
+  line-height:1.45;font-weight:700;color:#0F172A;word-break:keep-all}
+.zm-clue b.no{display:inline-block;min-width:20px;text-align:center;border-radius:6px;background:#DB2777;color:#fff;margin-right:4px}
+.zm-clue[data-seen="1"]{background:#F8FAFC;border-color:#E2E8F0}
+.zm-yn{display:flex;gap:5px;justify-content:flex-end;margin-top:4px}
+.zm-yn button{border:2px solid #F9A8D4;border-radius:9px;background:#fff;font-family:inherit;font-weight:800;
+  font-size:clamp(11px,1.8vw,13px);padding:3px 9px;cursor:pointer;color:#9D174D}
+.zm-res{display:block;text-align:right;margin-top:3px;font-weight:800;font-size:clamp(11px,1.8vw,13px)}
+.zm-res[data-ok="1"]{color:#15803D}
+.zm-res[data-ok="0"]{color:#B91C1C}
+.zm-phone{border:3px solid #334155;border-radius:20px;background:#0F172A;padding:10px 8px 12px;color:#fff;text-align:center}
+.zm-screen{border-radius:12px;background:#1E293B;padding:8px 6px}
+.zm-screen[data-open="1"]{background:#FDF2F8;color:#9D174D}
+.zm-lock{font-size:26px;line-height:1.2}
+.zm-cells{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:6px 0}
+.zm-cell{border:2px solid #64748B;border-radius:8px;background:#0F172A;color:#F8FAFC;font-weight:800;font-size:clamp(16px,2.6vw,20px);padding:4px 0;min-height:28px}
+.zm-cell[data-now="1"]{border-color:#F472B6;box-shadow:0 0 0 2px #F9A8D4}
+.zm-cell[data-in="1"]{border-color:#16A34A;background:#F0FDF4;color:#15803D}
+.zm-rule{font-size:clamp(11px,1.8vw,13px);line-height:1.45;font-weight:700;color:#FBCFE8;word-break:keep-all;min-height:20px}
+.zm-screen[data-open="1"] .zm-rule{color:#9D174D}
+.zm-keys{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:8px}
+.zm-key{border:2px solid #475569;border-radius:50%;aspect-ratio:1/1;background:#1E293B;color:#fff;font-family:inherit;font-weight:800;
+  font-size:clamp(14px,2.4vw,18px);cursor:pointer;max-width:54px;width:100%;margin:0 auto}
+.zm-key[data-used="1"]{opacity:.45;cursor:default}
+.zm-help{border:2px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;font-size:clamp(11px,1.9vw,14px);line-height:1.6}
+.zm-help b{color:#BE185D}
+.zm-side2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.zm-tell{border-radius:11px;padding:8px 12px;font-size:clamp(12px,2vw,15px);line-height:1.6;background:#FDF2F8;border-left:4px solid var(--cyan)}
+.zm-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}
+.zm-pk{border:2px solid #FBCFE8;border-radius:10px;background:#fff;padding:8px 7px;font-family:inherit;
+  font-size:clamp(11px,1.8vw,13px);font-weight:700;color:#0F172A;text-align:left;cursor:pointer;line-height:1.4;word-break:keep-all}
+.zm-pk b{color:#BE185D}
+.zm-ask2{border:2px solid var(--line);border-radius:12px;padding:10px 14px;background:#FFFAFD;margin-top:9px;
+  font-size:clamp(12px,2vw,15px);line-height:1.6;word-break:keep-all}
+.zm-opts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:9px}
+.zm-opt{background:#F8FAFC;border:2px solid var(--line);border-radius:11px;padding:9px 11px;font-family:inherit;
+  font-size:clamp(12px,2vw,15px);font-weight:700;color:#0F172A;text-align:left;line-height:1.45;word-break:keep-all;cursor:pointer}
+.zm-opt:hover{border-color:var(--green);background:var(--bub)}
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+  .zm-board{padding:6px}
+  .zm-grid{grid-template-columns:1fr}
+  .zm-clue{font-size:10.5px}
+  .zm-picks{grid-template-columns:1fr}
+  .zm-side2{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 사람 형상 대신 모양과 기호 ===== */
+const SVG = {
+  // 지도서 278쪽 — 주제에서 공부한 내용 떠올리기
+  topic:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FDF2F8"/>
+    <g fill="#fff" stroke="#DB2777" stroke-width="1.2"><rect x="4" y="28" width="28" height="44" rx="5"/><rect x="35" y="28" width="28" height="44" rx="5"/><rect x="66" y="28" width="28" height="44" rx="5"/><rect x="97" y="28" width="28" height="44" rx="5"/><rect x="128" y="28" width="28" height="44" rx="5"/></g>
+    <g font-size="4.4" font-weight="800" text-anchor="middle" fill="#334155"><text x="18" y="46">통신수단의</text><text x="18" y="53">뜻과 종류</text><text x="49" y="46">옛날과</text><text x="49" y="53">오늘날 이용</text><text x="80" y="46">통신수단의</text><text x="80" y="53">변화</text><text x="111" y="46">달라진</text><text x="111" y="53">생활 모습</text><text x="142" y="46">올바른</text><text x="142" y="53">이용 방법</text></g>
+    <g fill="#DB2777" font-size="6" font-weight="800" text-anchor="middle"><text x="18" y="66">1</text><text x="49" y="66">2</text><text x="80" y="66">3</text><text x="111" y="66">4</text><text x="142" y="66">5</text></g>
+    <text x="80" y="15" font-size="7.5" fill="#9D174D" text-anchor="middle" font-weight="800">주제③에서 공부한 내용</text></svg>`,
+  // 교과서 139쪽 — 그림일기 칸
+  diary:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFBEB"/>
+    <rect x="20" y="22" width="120" height="66" rx="5" fill="#fff" stroke="#CA8A04" stroke-width="1.3"/>
+    <rect x="26" y="28" width="108" height="30" rx="3" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1"/>
+    <text x="80" y="46" font-size="6" fill="#92400E" text-anchor="middle" font-weight="800">미래의 통신수단 그림</text>
+    <g stroke="#CBD5E1" stroke-width="1"><line x1="28" y1="66" x2="132" y2="66"/><line x1="28" y1="74" x2="132" y2="74"/><line x1="28" y1="82" x2="132" y2="82"/></g>
+    <text x="80" y="15" font-size="7.5" fill="#92400E" text-anchor="middle" font-weight="800">그림일기</text></svg>`,
+  // 교과서 140쪽 — 대화 속 이모티콘 자리
+  emoji:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0F9FF"/>
+    <rect x="10" y="24" width="78" height="16" rx="7" fill="#fff" stroke="#0EA5E9" stroke-width="1.2"/>
+    <rect x="72" y="46" width="78" height="16" rx="7" fill="#FCE7F3" stroke="#DB2777" stroke-width="1.2"/>
+    <rect x="114" y="66" width="36" height="24" rx="5" fill="#fff" stroke="#DB2777" stroke-width="1.4" stroke-dasharray="3 2"/>
+    <g font-size="5" font-weight="800" fill="#334155"><text x="16" y="34">대화 속 상황</text><text x="78" y="56">어울리는 말</text></g>
+    <text x="132" y="81" font-size="9" fill="#DB2777" text-anchor="middle" font-weight="800">?</text>
+    <text x="80" y="15" font-size="7.5" fill="#0369A1" text-anchor="middle" font-weight="800">나만의 이모티콘</text></svg>`,
+  // 교과서 141쪽 — 비밀번호 칸 넷
+  lock:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F8FAFC"/>
+    <rect x="44" y="20" width="72" height="72" rx="10" fill="#0F172A"/>
+    <g fill="#1E293B" stroke="#64748B" stroke-width="1"><rect x="50" y="44" width="14" height="16" rx="3"/><rect x="66" y="44" width="14" height="16" rx="3"/><rect x="82" y="44" width="14" height="16" rx="3"/><rect x="98" y="44" width="14" height="16" rx="3"/></g>
+    <g font-size="7" font-weight="800" text-anchor="middle" fill="#F8FAFC"><text x="57" y="55">?</text><text x="73" y="55">?</text><text x="89" y="55">?</text><text x="105" y="55">?</text></g>
+    <text x="80" y="36" font-size="6" fill="#FBCFE8" text-anchor="middle" font-weight="800">비밀번호 네 자리</text>
+    <text x="80" y="76" font-size="4.6" fill="#CBD5E1" text-anchor="middle" font-weight="700">옳은 단서의 번호로</text>
+    <text x="80" y="13" font-size="7.5" fill="#334155" text-anchor="middle" font-weight="800">휴대 전화 잠금</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* ===== 직접 조작: 잠금을 풀어요 판 =====
+   교과서 141쪽 「재미있게 확인해요」 — 단서를 풀어 휴대 전화의 비밀번호 찾기
+   — 단서 다섯을 하나씩 살핀 뒤, 규칙 넷을 차례로 따라 옳은 단서의 번호를 눌러 칸 넷을 채운다.
+   ⭐ 판을 바꾸는 자리 둘뿐 — zmSee(state.zmSeen |= 1 << k) · zmWrite(state.zmPin += 1) · 되돌리는 자리 0.
+   ⭐ 정답 자리표 0 — 단서마다 옳은지 ok 를 품고, 규칙은 칸 자리 at 과 고르는 방법 kind 만 품는다.
+   ⭐ 단계·칸에 쓴 숫자는 저장 0 — 판(zmSeen · zmPin)에서 센다(zmAllSeen · zmOpen · zmWritten · zmWant).
+   ================================================================= */
+const ZM_CLUE = [                                                     // 단서 다섯 — 교과서 141쪽
+  {no:1, ok:1, text:"옛날 통신수단은 자세한 정보를 전달하기 어렵고, 소식을 전하는 데 시간이 오래 걸렸습니다."},
+  {no:2, ok:0, text:"오늘날 사람들은 주로 서찰, 방, 파발 등의 통신수단을 사용합니다.",
+   fix:"서찰, 방, 파발은 옛날 사람들이 소식을 전할 때 쓰던 통신수단이에요."},
+  {no:3, ok:1, text:"통신수단이 발달하면서 오늘날에는 한 번에 많은 정보를 실시간으로 주고받을 수 있습니다."},
+  {no:4, ok:1, text:"통신수단의 변화로 새로운 시설과 직업이 생겨났습니다."},
+  {no:5, ok:1, text:"몸과 마음의 건강을 위해 통신수단을 안전하고 올바르게 사용해야 합니다."}
+];
+const ZM_N = 5;                                                       // 단서 다섯
+const ZM_RULE = [                                                     // 규칙 넷 — 교과서 141쪽(칸 자리 at · 고르는 방법 kind 만)
+  {at:1, kind:"min", say:"제일 작은 숫자를 두 번째 칸에 써요."},
+  {at:3, kind:"max", say:"제일 큰 숫자를 네 번째 칸에 써요."},
+  {at:2, kind:"min", say:"남은 두 숫자 중 작은 숫자를 뒤 칸인 세 번째 칸에 써요."},
+  {at:0, kind:"min", say:"마지막 남은 숫자를 첫 번째 칸에 써요."}
+];
+const ZM_CELL = ["첫 번째","두 번째","세 번째","네 번째"];
+const ZM_PICK = [                                                     // 교과서 139쪽 생각을 펼쳐요 — 미래의 통신수단 상상
+  {mark:"가", text:"멀리 있는 반려동물과 영상 통화를 하면 짖는 소리가 우리말로 화면에 나와요", why:"말이 통하지 않던 상대와도 마음을 나눌 수 있어요."},
+  {mark:"나", text:"영상 전화로 이야기하다가 멀리 사는 가족에게 물건을 바로 보내 줘요", why:"멀리 떨어져 있어도 마음을 바로 전할 수 있어요."},
+  {mark:"다", text:"통신수단을 이용하면서 불편했던 일을 떠올려 나만의 통신수단을 상상해요", why:"불편했거나 아쉬웠던 경험을 해결하는 통신수단을 생각해 볼 수 있어요."}
+];
+const ZM_SAY_SEEN = "이미 살핀 단서예요. 다른 단서를 살펴봐요.";
+const ZM_SAY_MARK = "단서를 다시 읽고, 공부한 내용과 견주어 봐요.";
+const ZM_SAY_ORDER_K = "먼저 단서 다섯을 모두 살펴봐요.";
+const ZM_SAY_OPEN = "잠금이 풀렸어요. 판을 읽어 봐요.";
+const ZM_SAY_FALSE = "그 번호의 단서는 옳은 설명이 아니었어요. 옳은 단서의 번호만 써요.";
+const ZM_SAY_NOCLUE = "그 번호의 단서는 없어요. 단서의 번호를 살펴봐요.";
+const ZM_SAY_USED = "이미 칸에 쓴 숫자예요.";
+const ZM_SAY_RULE = "지금 칸의 규칙을 다시 읽어 봐요.";
+const ZM_SAY_ORDER_R = "먼저 비밀번호 네 자리를 모두 써서 잠금을 풀어 봐요.";
+const ZM_SAY_READDONE = "이미 정한 자리예요. 판은 그대로예요.";
+const ZM_SAY_ORDER_P = "먼저 판을 읽어 봐요.";
+const ZM_SAY_PICKDONE = "이미 골랐어요. 친구가 상상한 통신수단과 견주어 봐요.";
+const ZM_SAY_ORDER_FIN = "먼저 미래의 통신수단을 골라 봐요.";
+const ZM_READQ = [
+  "통신수단은 옛날부터 오늘날까지 하나도 달라지지 않았어요",
+  "통신수단이 발달하면서 정보를 주고받는 방법과 사람들의 생활 모습이 달라졌어요",
+  "오늘날 사람들은 주로 서찰, 방, 파발로 소식을 전해요"
+];
+const ZM_READ_OK = 1;
+const ZM_READ_BAD = "옳은 단서 넷이 옛날과 오늘날을 어떻게 견주는지 다시 읽어 봐요.";
+const ZM_FINQ = [
+  "통신수단이 발달해도 사람들의 생활 모습은 그대로예요",
+  "오늘날에는 옛날보다 소식을 전하는 데 시간이 더 오래 걸려요",
+  "통신수단이 발달하면서 많은 정보를 빠르게 주고받게 되었고, 통신수단을 올바르게 이용해야 해요"
+];
+const ZM_FIN_OK = 2;
+const ZM_FIN_BAD = "오늘 푼 단서 다섯과 주제③에서 공부한 내용을 다시 떠올려 봐요.";
+
+function zmClueOf(k){ return ZM_CLUE[k]; }                                     // ZM_CLUE 를 읽는 자리는 여기 단 하나
+function zmRuleOf(s){ return ZM_RULE[s]; }                                     // ZM_RULE 을 읽는 자리는 여기 단 하나
+function zmPickOf(p){ return ZM_PICK[p]; }                                     // ZM_PICK 을 읽는 자리는 여기 단 하나
+function zmIsSeen(st,k){ return (st.zmSeen >> k & 1) === 1; }                  // 살핀 단서인가
+function zmSeenN(st){ let c=0; for(let k=0;k<ZM_N;k++) if(zmIsSeen(st,k)) c++; return c; }
+function zmAllSeen(st){ return zmSeenN(st) === ZM_N; }                         // ★ 단서 다섯 모두 살핌
+function zmOpen(st){ return st.zmPin >= ZM_RULE.length; }                      // ★ 비밀번호 네 자리를 모두 씀
+function zmSee(k){ state.zmSeen |= 1 << k; }                                   // ⭐ 판을 바꾸는 자리 ① 단서 살피기
+function zmWrite(){ state.zmPin += 1; }                                        // ⭐ 판을 바꾸는 자리 ② 숫자 쓰기
+function zmTrueNos(){ const a=[]; for(let k=0;k<ZM_N;k++) if(zmClueOf(k).ok) a.push(zmClueOf(k).no); return a; }   // 옳은 단서의 번호
+function zmChoose(left,kind){ return kind === "max" ? Math.max(...left) : Math.min(...left); }
+function zmWritten(st){                                                          // 지금까지 칸에 쓴 숫자 — 규칙을 차례로 다시 따라 센다
+  const left = zmTrueNos(), out = [];
+  for(let s=0;s<st.zmPin && s<ZM_RULE.length;s++){ const v = zmChoose(left, zmRuleOf(s).kind); out.push(v); left.splice(left.indexOf(v),1); }
+  return out;
+}
+function zmWant(st){                                                             // 지금 칸에 쓸 숫자 — 남은 옳은 번호에서 규칙대로
+  const used = zmWritten(st), left = zmTrueNos().filter(n => !used.includes(n));
+  return zmChoose(left, zmRuleOf(st.zmPin).kind);
+}
+function zmCellOf(st,i){ const w = zmWritten(st); for(let s=0;s<w.length;s++) if(zmRuleOf(s).at===i) return w[s]; return null; }
+function zmStage(st){
+  if(!zmAllSeen(st)) return "mark";
+  if(!zmOpen(st)) return "key";
+  if(st.zmRead == null) return "read";
+  if(st.zmPick == null) return "pick";
+  if(st.zmFin == null) return "fin";
+  return "end";
+}
+
+/* 판 — 단서 다섯 · 휴대 전화(칸 넷 · 규칙 · 키패드) */
+function zmClueRow(st,k){
+  const C = zmClueOf(k), seen = zmIsSeen(st,k);
+  const tail = seen
+    ? `<span class="zm-res" data-ok="${C.ok}">${C.ok ? '\u2B55 옳아요' : '\u274C 옳지 않아요'}</span>`
+    : `<div class="zm-yn"><button data-v="1" onclick="zmMark(${k},1)">\u2B55 옳아요</button><button data-v="0" onclick="zmMark(${k},0)">\u274C 옳지 않아요</button></div>`;
+  return `<div class="zm-clue" data-k="${k}" data-seen="${seen ? 1 : 0}"><b class="no">${C.no}</b>${C.text}${tail}</div>`;
+}
+function zmPhone(st){
+  const open = zmOpen(st), now = open ? -1 : zmRuleOf(st.zmPin).at;
+  const cells = [0,1,2,3].map(i => { const v = zmCellOf(st,i);
+    return `<div class="zm-cell" data-i="${i}" data-in="${v == null ? 0 : 1}" data-now="${i === now ? 1 : 0}">${v == null ? '' : v}</div>`; }).join('');
+  const rule = open ? '잠금이 풀렸어요.' : (zmAllSeen(st) ? zmRuleOf(st.zmPin).say : '단서 다섯을 먼저 살펴봐요.');
+  const used = zmWritten(st);
+  const keys = (zmAllSeen(st) && !open)
+    ? `<div class="zm-keys">${[1,2,3,4,5,6,7,8,9].map(n => `<button class="zm-key" data-n="${n}" data-used="${used.includes(n) ? 1 : 0}" onclick="zmKey(${n})">${n}</button>`).join('')}</div>` : '';
+  return `<div class="zm-phone"><div class="zm-screen" data-open="${open ? 1 : 0}"><div class="zm-lock">${open ? '\u{1F513}' : '\u{1F512}'}</div>
+    <div class="zm-cells">${cells}</div><div class="zm-rule">${rule}</div></div>${keys}</div>`;
+}
+function zmBoard(st){
+  return `<div class="zm-board" data-seen="${st.zmSeen}" data-pin="${st.zmPin}">
+    <div class="zm-title">단서를 풀어 휴대 전화의 잠금을 풀어요</div>
+    <div class="zm-grid"><div class="zm-clues">${[0,1,2,3,4].map(k => zmClueRow(st,k)).join('')}</div>${zmPhone(st)}</div></div>`;
+}
+function zmPicks(st){
+  return `<div class="zm-picks">${[0,1,2].map(p=>`<button class="zm-pk" data-p="${p}" onclick="zmPick(${p})"><b>${zmPickOf(p).mark}</b> ${zmPickOf(p).text}</button>`).join('')}</div>`;
+}
+function zmHelp(st){
+  return `<div class="zm-help">① 단서를 읽고 <b>옳아요</b>나 <b>옳지 않아요</b>를 눌러요.<br>
+    ② 단서를 다 살피면 <b>키패드</b>가 열려요.<br>
+    ③ 화면의 <b>규칙</b>을 따라 옳은 단서의 번호를 눌러 칸 넷을 채워요.</div>`;
+}
+function zmPanel(st){
+  const stage = zmStage(st);
+  let ask = '';
+  if(stage === "mark"){
+    ask = `<div class="zm-ask2" data-step="mark"><b>단서를 하나씩 읽고, 주제③에서 공부한 내용과 맞는지 살펴봐요.</b></div>`;
+  } else if(stage === "key"){
+    ask = `<div class="zm-ask2" data-step="key"><b>규칙을 차례로 따라 옳은 단서의 번호를 눌러 비밀번호를 찾아봐요.</b></div>`;
+  } else if(stage === "read"){
+    ask = `<div class="zm-ask2" data-step="read"><b>옳은 단서 넷으로 잠금을 풀었어요. 옳은 단서에서 알 수 있는 것은 무엇인가요?</b>
+      <div class="zm-opts">${ZM_READQ.map((t,i)=>`<button class="zm-opt" onclick="zmRead(${i})">${t}</button>`).join('')}</div></div>`;
+  } else if(stage === "pick"){
+    ask = `<div class="zm-ask2" data-step="pick"><b>미래의 통신수단으로 어떤 모습이 편리해지면 좋을까요? 그림일기로 나타내고 싶은 모습을 골라 봐요.</b>${zmPicks(st)}</div>`;
+  } else if(stage === "fin"){
+    ask = `<div class="zm-ask2" data-step="fin"><b>통신수단의 변화로 달라진 생활 모습을 정리하면 무엇인가요?</b>
+      <div class="zm-opts">${ZM_FINQ.map((t,i)=>`<button class="zm-opt" onclick="zmFin(${i})">${t}</button>`).join('')}</div></div>`;
+  } else {
+    ask = `<div class="zm-ask2" data-fin="1" style="border-color:#F9A8D4;background:#FDF2F8">
+      <b style="color:#9D174D">옳은 단서 넷으로 휴대 전화의 잠금을 풀었어요. 통신수단이 발달하면서 많은 정보를 빠르게 주고받게 되었고, 새로운 시설과 직업이 생겨났어요. 우리는 통신수단을 안전하고 올바르게 이용해야 해요.</b>
+      <div class="note" style="text-align:left;margin-top:5px">※ 미래의 통신수단을 상상한 <b>그림일기 쓰기</b>와 대화 속 상황에 알맞은 <b>이모티콘 그리기</b>는 <b>교실 몫</b>이에요. 판은 대신 해 주지 않아요.</div></div>`;
+  }
+  const tell = st.zmTell ? `<div class="zm-tell">${st.zmTell}</div>` : '';
+  const warn = st.zmMsg ? `<div class="fb" style="color:#DC2626;font-weight:700">${st.zmMsg}</div>` : '';
+  return `<div class="zm-wrap">
+    <div class="zm-head">살핀 단서 <b>${zmSeenN(st)}</b> / ${ZM_N} · 쓴 숫자 <b>${Math.min(st.zmPin, ZM_RULE.length)}</b> / ${ZM_RULE.length}</div>
+    ${zmBoard(st)}<div class="zm-side2">${zmHelp(st)}${tell}</div>${ask}${warn}
+    <div class="note" style="margin-top:8px">※ 단서와 규칙은 <b>교과서 141쪽</b>을 따랐고, 휴대 전화 화면과 키패드는 판이 <b>꾸민 것</b>이에요. 미래의 통신수단은 <b>사람마다 상상이 달라서</b> 판은 정답을 정하지 않아요.</div>
+  </div>`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "2단원 옛날과 오늘날의 생활 모습 · 주제③ 통신수단의 변화로 달라진 생활 모습";
+const Q = [
+  {stem:"옛날 통신수단의 특징으로 알맞은 것은 무엇인가요?",
+   opts:["한 번에 많은 정보를 실시간으로 주고받아요","자세한 정보를 전달하기 어렵고, 소식을 전하는 데 시간이 오래 걸렸어요","얼굴을 보면서 영상으로 이야기해요","인터넷으로 원하는 정보를 바로 찾아요"], correct:1, pts:POINTS_BASIC,
+   h1:"판의 1번 단서를 떠올려 봐요.", h2:"서찰이나 파발로 소식을 전하던 때를 떠올려 봐요.",
+   reason:"옛날 통신수단은 자세한 정보를 전달하기 어렵고, 소식을 전하는 데 시간이 오래 걸렸어요."},
+  {stem:"옛날 사람들이 소식을 전할 때 쓰던 통신수단이 아닌 것은 무엇인가요?",
+   opts:["서찰","방","파발","모바일 메신저"], correct:3, pts:POINTS_BASIC,
+   h1:"오늘날 많이 쓰는 통신수단을 찾아봐요.", h2:"판의 2번 단서가 옳지 않은 까닭을 떠올려 봐요.",
+   reason:"서찰, 방, 파발은 옛날 통신수단이고, 모바일 메신저는 오늘날 사람들이 많이 쓰는 통신수단이에요."},
+  {stem:"통신수단이 발달하면서 오늘날 할 수 있게 된 일은 무엇인가요?",
+   opts:["한 번에 많은 정보를 실시간으로 주고받아요","봉수를 올려 위급한 소식을 알려요","소식을 전하려고 며칠씩 길을 걸어가요","나라의 소식을 방으로 붙여 알려요"], correct:0, pts:POINTS_BASIC,
+   h1:"판의 3번 단서를 떠올려 봐요.", h2:"「오늘날」과 「실시간」을 찾아봐요.",
+   reason:"통신수단이 발달하면서 오늘날에는 한 번에 많은 정보를 실시간으로 주고받을 수 있어요."},
+  {stem:"통신수단을 안전하고 올바르게 이용하는 모습은 무엇인가요?",
+   opts:["길에서 동영상을 보면서 걸어요","다른 사람의 모습을 허락 없이 찍어요","공공장소에서 작은 소리로 짧게 통화해요","다른 사람에게 상처 주는 댓글을 써요"], correct:2, pts:POINTS_BASIC,
+   h1:"판의 5번 단서를 떠올려 봐요.", h2:"다른 사람에게 피해를 주지 않는 모습이에요.",
+   reason:"공공장소에서는 작은 소리로 짧게 통화해요. 몸과 마음의 건강을 위해 통신수단을 안전하고 올바르게 사용해야 해요."},
+  {stem:"판의 2번 단서가 옳은 설명이 아닌 까닭은 무엇인가요?",
+   opts:["오늘날 사람들은 통신수단을 쓰지 않아서","서찰, 방, 파발은 교통수단이라서","서찰, 방, 파발은 옛날 사람들이 쓰던 통신수단이라서","서찰, 방, 파발은 오늘날 새로 생긴 통신수단이라서"], correct:2, pts:POINTS_APPLY,
+   h1:"서찰, 방, 파발은 언제 쓰던 통신수단인가요?", h2:"단서는 「오늘날」이라고 말하고 있어요.",
+   reason:"서찰, 방, 파발은 옛날 사람들이 소식을 전할 때 쓰던 통신수단이에요. 그래서 오늘날 주로 쓴다는 설명은 옳지 않아요."},
+  {stem:"옳은 단서의 번호 1, 3, 4, 5로 비밀번호를 만들 때, 「제일 작은 숫자를 두 번째 칸에」 쓰면 두 번째 칸의 숫자는 무엇인가요?",
+   opts:["1","3","4","5"], correct:0, pts:POINTS_APPLY,
+   h1:"네 숫자 가운데 가장 작은 숫자를 찾아봐요.", h2:"판에서 맨 먼저 쓴 숫자예요.",
+   reason:"1, 3, 4, 5 가운데 제일 작은 숫자는 1이에요. 그래서 두 번째 칸에 1을 써요."},
+  {stem:"교과서 139쪽처럼 미래의 통신수단을 상상하여 그림일기를 쓸 때 맨 먼저 할 일은 무엇인가요?",
+   opts:["통신수단의 이름을 외워요","옛날 통신수단만 떠올려요","친구의 일기를 그대로 따라 써요","통신수단을 이용하면서 불편했거나 아쉬웠던 경험을 떠올려요"], correct:3, pts:POINTS_APPLY,
+   h1:"「이렇게 해 봐요」의 첫째 순서를 떠올려 봐요.", h2:"불편한 점을 알아야 해결할 통신수단을 생각할 수 있어요.",
+   reason:"먼저 통신수단을 이용하면서 불편했거나 아쉬웠던 경험을 떠올리고, 이를 해결할 미래의 통신수단을 생각한 뒤 일기와 그림으로 나타내요."},
+  {stem:"판에서 옳은 단서 넷으로 잠금을 풀어 보니 무엇을 알 수 있나요?",
+   opts:["통신수단은 옛날부터 오늘날까지 하나도 달라지지 않았어요","통신수단이 발달하면서 정보를 주고받는 방법과 사람들의 생활 모습이 달라졌어요","오늘날 사람들은 주로 서찰, 방, 파발로 소식을 전해요","통신수단이 발달해도 새로운 직업은 하나도 생기지 않았어요"], correct:1, pts:POINTS_APPLY,
+   h1:"옳은 단서 넷은 옛날과 오늘날을 견주고 있어요.", h2:"정보를 주고받는 방법이 어떻게 바뀌었나요?",
+   reason:"통신수단이 발달하면서 많은 정보를 실시간으로 주고받게 되었고, 새로운 시설과 직업이 생겨나는 등 사람들의 생활 모습이 달라졌어요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 들어가기 — 주제에서 공부한 내용 떠올리기
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">‘통신수단의 변화로 달라진 생활 모습’에서 공부한 내용은 무엇인가요?</h2>
+  <div class="ka-bub">지난 시간까지 <span class="ka-emph">통신수단의 변화로 달라진 생활 모습</span>을 다섯 시간 동안 공부했어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('topic','지도서 278쪽')}</div>
+  <div class="note">오늘은 주제에서 공부한 내용을 <b>다양한 방법</b>으로 정리해 봐요.</div></div>`});
+// 2 공부한 내용 떠올리기 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 떠올리기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">주제에서 공부한 내용을 차례로 말해 봐요</h2>
+  <div class="ka-bub">친구와 <span class="ka-emph">돌아가며 말하기</span>로 공부한 내용을 하나씩 떠올려 봐요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 통신수단의 뜻과 종류를 알아봤어요.<br>· 옛날과 오늘날의 통신수단 이용 모습을 살펴봤어요.<br>· 옛날과 오늘날 통신수단의 변화를 알아봤어요.<br>· 통신수단의 변화에 따라 달라진 사람들의 생활 모습을 알아봤어요.<br>· 통신수단을 올바르게 이용하는 방법을 알아봤어요.</div>`
+    :`<div class="note">내가 기억나는 것을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 3 생각을 펼쳐요 — 선택 활동 1 그림일기
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 생각을 펼쳐요 ①</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">미래에 통신수단을 이용하는 모습을 그림일기로 나타내 봐요</h2>
+  <div class="ka-bub">지금의 통신수단으로 <span class="ka-emph">불편했던 점</span>을 해결하는 미래의 통신수단을 상상해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('diary','교과서 139쪽')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>통신수단을 이용하면서 <b>불편했거나 아쉬웠던 경험</b>을 떠올려요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>이를 해결할 수 있는 <b>미래의 통신수단</b>을 생각해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>미래의 통신수단으로 <b>편리해질 모습</b>을 상상하여 일기를 써요.</div></div>
+    <div class="sum-item"><span class="n">4</span><div>일기의 내용을 잘 표현할 수 있는 장면을 <b>그림</b>으로 나타내요.</div></div>
+  </div>
+  <div class="note">교과서 예시에서는 멀리 떨어진 반려동물과 영상 통화를 하는데, 짖는 소리가 화면에 우리말로 나와요. 일기를 쓰고 그리는 일은 <b>교실 몫</b>이에요.</div></div>`});
+// 4 생각을 펼쳐요 — 선택 활동 2 이모티콘 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 생각을 펼쳐요 ②</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">대화 속 상황에 알맞은 나만의 이모티콘을 만들어 봐요</h2>
+  <div class="ka-bub">길고 복잡한 글보다 <span class="ka-emph">이모티콘</span>으로 감정이나 하고 싶은 말을 금방 전할 수 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('emoji','교과서 140쪽')}</div>
+  ${st.revealed?`<div class="answer-box">· 먼저 대화 속 상황에 들어갈 알맞은 말을 생각해요.<br>· 생각한 말을 사람이나 동물, 물건, 글자, 숫자 등 어떤 모습으로 나타낼지 정해요.<br>· 내가 생각한 모습으로 스케치한 뒤 어울리는 색을 칠해 이모티콘을 완성해요.</div>`
+    :`<div class="note">생일 이야기, 태권도 띠 이야기에 어떤 말이 어울릴지 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 5 재미있게 확인해요 — 방법
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 재미있게 확인해요</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">단서를 풀어 휴대 전화의 비밀번호를 찾아봐요</h2>
+  <div class="ka-bub">단서를 읽고 <span class="ka-emph">옳은 설명</span>의 번호로 비밀번호를 만들어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('lock','교과서 141쪽')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>단서를 읽고 <b>옳은 설명</b>과 <b>옳지 않은 설명</b>을 가려요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>제일 작은 숫자</b>는 두 번째 칸에, <b>제일 큰 숫자</b>는 네 번째 칸에 써요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>남은 두 숫자 중 <b>작은 숫자</b>를 뒤 칸에 쓰고, 마지막 숫자를 남은 칸에 써요.</div></div>
+  </div></div>`});
+// 6 옛날과 오늘날의 통신수단 (reveal)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 옛날과 오늘날</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">옛날과 오늘날의 통신수단은 어떻게 다른가요?</h2>
+  <div class="ka-bub">통신수단이 바뀌면서 <span class="ka-emph">사람들의 생활 모습</span>도 달라졌어요.</div>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box">· 옛날에는 서찰, 방, 파발, 봉수 등으로 소식을 전했고, 자세한 정보를 전달하기 어렵고 시간이 오래 걸렸어요.<br>· 오늘날에는 휴대 전화, 인터넷 등으로 한 번에 많은 정보를 실시간으로 주고받을 수 있어요.<br>· 통신수단의 변화로 새로운 시설과 직업이 생겨났어요.</div>`
+    :`<div class="note">내 생각을 먼저 떠올려 본 뒤 답을 확인해 봐요.</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 직접 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 비밀번호 찾기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">잠금을 풀어요</h2>
+  <div class="ka-grp" style="align-items:stretch">${zmPanel(st)}</div>`});
+// 8~15 문제
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">통신수단의 변화로 달라진 생활 모습을 정리해요</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('topic','주제③ 정리')}</div>
+  <div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>옛날 통신수단은 자세한 정보를 전달하기 어렵고, 소식을 전하는 데 <b>시간이 오래</b> 걸렸어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>통신수단이 발달하면서 한 번에 많은 정보를 <b>실시간</b>으로 주고받게 되었고, 새로운 <b>시설과 직업</b>이 생겨났어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>몸과 마음의 건강을 위해 통신수단을 <b>안전하고 올바르게</b> 사용해야 해요.</div></div>
+  </div>
+  <div class="note">다음 시간에는 <b style="color:#DB2777">옛날과 오늘날의 생활 모습</b>에서 공부한 내용을 정리해 봐요.</div></div>`});
+// 17 스스로 돌아보기
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"통신수단의 변화로 달라진 사람들의 생활 모습을 다양한 방법으로 표현할 수 있어요",st)}
+    ${selfCheck(1,"옛날과 오늘날의 통신수단을 비교하고, 생활 모습에 끼친 영향을 설명할 수 있어요",st)}
+    ${selfCheck(2,"통신수단을 이용하며 나타나는 문제점을 알고, 올바르게 이용하려고 해요",st)}
+  </div><div class="note">체크가 잘 안 되는 곳은 <b>다시 살펴봐도</b> 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">통신수단의 변화로 달라진 생활 모습을 정리했어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">미래의 통신수단을 상상한 <b style="color:#DB2777">그림일기</b>나 나만의 <b style="color:#DB2777">이모티콘</b>을 만들어 친구들과 나눠 봐요. 이건 교실 몫이에요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const optHTML = q.opts.map((o,k)=>{
+    let cls='opt';
+    if(qs.done && k===q.correct) cls+=' correct';
+    if(qs.wrongPick===k) cls+=' wrong';
+    return `<button class="${cls}" onclick="pick(${i},${k})" ${qs.done?'disabled':''}>${o}</button>`;
+  }).join('');
+  const hint = qs.hint>0 ? `<div class="hint">💡 ${qs.hint===1?q.h1:q.h2}</div>` : '';
+  const fb = qs.done ? `<div class="fb ok">✓ ${q.reason}</div>` : '';
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용':'확인'} (+${q.pts})</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    <div class="opts" style="margin:0 auto">${optHTML}</div>
+    ${hint}${fb}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g3_2_social_u2_l20";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  zmSeen:0, zmPin:0, zmRead:null, zmPick:null, zmFin:null, zmMsg:"", zmTell:"",
+  startTs: Date.now(),
+  attempt: 1
+};
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false;
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+
+/* 효과음 (브라우저에서만 · jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playThud(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='square'; o.frequency.value=170; g.gain.value=.05; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.16); o.stop(t+.18);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+function zmDraw(){ main.innerHTML = slides[state.idx].render(state); }
+
+/* 단서 살피기 — 옳아요(1) · 옳지 않아요(0) */
+function zmMark(k,v){
+  if(state.zmFin!=null) return;                                                            // 가드①: 마무리 확정 후 전체 잠금
+  if(!Number.isInteger(k) || k<0 || k>=ZM_N || (v!==0 && v!==1)) return;                   // 가드②: 무효 번호 — 안내조차 띄우지 않음
+  if(zmIsSeen(state,k)){ state.zmMsg = ZM_SAY_SEEN; zmThud(); return; }                    // 가드③: 이미 살핀 단서 — 판 불변
+  if(v !== zmClueOf(k).ok){ state.zmMsg = ZM_SAY_MARK; zmThud(); return; }                 // 가드④: 단서와 어긋난 판단 — 판 불변
+  zmSee(k);
+  const C = zmClueOf(k);
+  state.zmMsg = "";
+  state.zmTell = C.ok ? `${C.no}번 단서는 옳은 설명이에요.` : `${C.no}번 단서는 옳지 않은 설명이에요. ${C.fix}`;
+  if(zmAllSeen(state)) state.zmTell += ` 단서 다섯을 모두 살폈어요. 이제 규칙을 따라 비밀번호를 눌러 봐요.`;
+  playBlip(); zmDraw();
+}
+/* 키패드 — 규칙을 따라 칸 하나씩 */
+function zmKey(n){
+  if(state.zmFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(n) || n<1 || n>9) return;                                           // 가드②
+  if(!zmAllSeen(state)){ state.zmMsg = ZM_SAY_ORDER_K; zmThud(); return; }                 // 가드⑤: 단서를 다 살피기 전 — 판 불변
+  if(zmOpen(state)){ state.zmMsg = ZM_SAY_OPEN; zmDraw(); return; }                        // 가드⑥: 잠금이 풀린 뒤 — 판 불변
+  const C = n <= ZM_N ? zmClueOf(n-1) : null;
+  if(C == null){ state.zmMsg = ZM_SAY_NOCLUE; zmThud(); return; }                          // 가드⑧: 단서에 없는 번호 — 판 불변
+  if(!C.ok){ state.zmMsg = ZM_SAY_FALSE; zmThud(); return; }                               // 가드⑦: 옳지 않은 단서의 번호 — 판 불변
+  if(zmWritten(state).includes(n)){ state.zmMsg = ZM_SAY_USED; zmThud(); return; }         // 가드⑨: 이미 칸에 쓴 숫자 — 판 불변
+  if(n !== zmWant(state)){ state.zmMsg = ZM_SAY_RULE; zmThud(); return; }                  // 가드⑩: 지금 칸의 규칙과 다른 숫자 — 판 불변
+  const at = zmRuleOf(state.zmPin).at;
+  zmWrite();
+  state.zmMsg = "";
+  state.zmTell = `숫자 ${n}, ${ZM_CELL[at]} 칸에 썼어요.` + (zmOpen(state) ? ` 비밀번호 네 자리를 모두 써서 잠금이 풀렸어요.` : ` 다음 규칙을 읽어 봐요.`);
+  if(zmOpen(state)) playChime(); else playBlip(); zmDraw();
+}
+function zmThud(){ playThud(); zmDraw(); }
+/* 판 읽기 */
+function zmRead(i){
+  if(state.zmFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=ZM_READQ.length) return;                           // 가드②
+  if(!zmOpen(state)){ state.zmMsg = ZM_SAY_ORDER_R; playThud(); zmDraw(); return; }        // 가드⑪: 잠금을 풀기 전 — 판 불변
+  if(state.zmRead!=null){ state.zmMsg = ZM_SAY_READDONE; zmDraw(); return; }               // 가드⑫: 이미 정한 자리 — 판 불변
+  if(i!==ZM_READ_OK){ state.zmMsg = ZM_READ_BAD; playThud(); zmDraw(); return; }           // 가드⑬: 어긋난 답 — 판 불변
+  state.zmRead = i; state.zmMsg = ""; state.zmTell = `옛날에는 소식을 전하는 데 시간이 오래 걸렸지만, 오늘날에는 한 번에 많은 정보를 실시간으로 주고받을 수 있어요. 통신수단의 변화로 새로운 시설과 직업이 생겨났고, 몸과 마음의 건강을 위해 통신수단을 올바르게 사용해야 해요.`; playBlip(); zmDraw();
+}
+/* 미래의 통신수단 고르기 — 정답 없음 */
+function zmPick(p){
+  if(state.zmFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(p) || p<0 || p>=ZM_PICK.length) return;                             // 가드②
+  if(state.zmRead==null){ state.zmMsg = ZM_SAY_ORDER_P; playThud(); zmDraw(); return; }    // 가드⑭: 판을 읽기 전 — 판 불변
+  if(state.zmPick!=null){ state.zmMsg = ZM_SAY_PICKDONE; zmDraw(); return; }               // 가드⑮: 이미 고른 자리 — 판 불변
+  state.zmPick = p; state.zmMsg = ""; state.zmTell = `${zmPickOf(p).mark}를 골랐어요. ${zmPickOf(p).text} — ${zmPickOf(p).why}`; playBlip(); zmDraw();
+}
+/* 마무리 */
+function zmFin(i){
+  if(state.zmFin!=null) return;                                                            // 가드①
+  if(!Number.isInteger(i) || i<0 || i>=ZM_FINQ.length) return;                             // 가드②
+  if(state.zmPick==null){ state.zmMsg = ZM_SAY_ORDER_FIN; playThud(); zmDraw(); return; }  // 가드⑯: 고르기 전 — 판 불변
+  if(i!==ZM_FIN_OK){ state.zmMsg = ZM_FIN_BAD; playThud(); zmDraw(); return; }             // 가드⑰: 어긋난 답 — 판 불변
+  state.zmFin = i; state.zmMsg = ""; playChime(); zmDraw();
+}
+
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='../index.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+<script src="/kedu_back.js"></script>
+<script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
+</body>
+</html>

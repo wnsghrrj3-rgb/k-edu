@@ -331,14 +331,14 @@ window.KEDU_MAP["g3_2_social"] = {
      "ready": true
     },
     {
-     "key": null,
-     "lessonId": null,
+     "key": "g3_social_u2_l20",
+     "lessonId": "g3_social_u2_l20_v1",
      "n": "6",
      "title": "[생각을 펼쳐요] 통신수단의 변화로 달라진 생활 모습 정리",
      "sub": "③ 통신수단의 변화로 달라진 생활 모습",
-     "url": null,
-     "track": "soon",
-     "ready": false
+     "url": "/grade3/semester2/social/2단원_옛날과오늘날의생활모습/g3_social_u2_l20_잠금을풀어요.html",
+     "track": "tb",
+     "ready": true
     },
     {
      "key": null,
