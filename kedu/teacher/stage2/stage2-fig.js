@@ -1629,6 +1629,123 @@
   }
   Object.assign(PARTS, { lines, pdist, quad, quads, circ2 });
   }
+  // ══ 83차(2026-10-06) 4학년 2학기 소수의 덧셈과 뺄셈 부품 — dgrid(모눈종이) · dline(소수 수직선) · dpv(소수 자릿값판) · dvert(소수 세로셈) · rtab(기록표) ══
+  // 그림 문법: 파랑 = 앞의 수 · 초록 = 더하는 수 · 빨강 ✕ = 덜어 낸 칸 · 주황 = 짚는 자리·받아올림·받아내림 · 소수점은 세로셈에서 한 줄, 자릿값판에서 한 칸에 선다.
+  // 수는 늘 글자로 받아 정수로 바꾸어 셈한다(0.1 + 0.2 같은 부동소수 어긋남 0).
+  {
+    const DPL = ['일', '십', '백', '천'], DFR = ['소수 첫째', '소수 둘째', '소수 셋째'];
+    const dSplit = (v) => { const m = String(v).trim().match(/^(\d*)(?:\.(\d*))?$/); return m ? { i: (m[1] || '0').replace(/^0+(?=\d)/, ''), f: m[2] || '' } : { i: '0', f: '' }; };
+    const dInt = (v, k) => { const p = dSplit(v); return Number(p.i + p.f.padEnd(k, '0').slice(0, k)); }; // v × 10^k (정수)
+    const dStr = (n, k, keep) => { const neg = n < 0; let s = String(Math.abs(n)).padStart(k + 1, '0'); s = k ? s.slice(0, -k) + '.' + s.slice(-k) : s; if (!keep && k) s = s.replace(/0+$/, '').replace(/\.$/, ''); return (neg ? '-' : '') + s; };
+    const UNITK = (u) => (+u === 0.1 ? 1 : +u === 0.001 ? 3 : 2);
+    const josa = (v, a, b) => ('013678'.indexOf(String(v).replace(/\D/g, '').slice(-1)) >= 0 ? a : b);
+    // dgrid: unit 0.1(10칸 띠)·0.01(100칸 판)·0.001(100칸 판의 칸마다 가는 줄 10) · v 파랑 · b 초록(더하는 수) · x 빨강 ✕(덜어 낸 수, 색칠한 칸 끝에서부터)
+    //        sheets 판 수 · show:false 캡션 없음 · q 캡션 결과 「?」 · keep 끝자리 0 남김(0.50)
+    function dgrid(o) {
+      const k = UNITK(o.unit || 0.01), per = Math.pow(10, k), ustr = dStr(1, k);
+      const a = dInt(o.v || 0, k), b = o.b != null ? dInt(o.b, k) : 0, x = o.x != null ? dInt(o.x, k) : 0, tot = a + b;
+      const sheets = Math.max(1, o.sheets || Math.ceil(tot / per) || 1); let s = ''; const top = o.title ? 52 : 22;
+      const cellAt = (u) => { const sh = Math.floor(u / per), r = u % per; return { sh, r }; };
+      const colOf = (u) => (u < a ? 'a' : 'b'); const crossFrom = tot - x;
+      let H;
+      if (k === 1) { // 띠: 판마다 한 줄 10칸
+        const bw = 400, bh = 44, x0 = 30, gap = 14;
+        for (let sh = 0; sh < sheets; sh++) { const y0 = top + sh * (bh + gap);
+          for (let i = 0; i < 10; i++) { const u = sh * 10 + i, on = u < tot, cx = x0 + i * bw / 10;
+            s += '<rect class="o-dc' + (on ? (colOf(u) === 'a' ? ' on' : ' on b') : '') + (on && u >= crossFrom ? ' x' : '') + '" x="' + cx.toFixed(1) + '" y="' + y0 + '" width="' + (bw / 10).toFixed(1) + '" height="' + bh + '" fill="' + (on ? (colOf(u) === 'a' ? BLUE : GRN) : REST) + '" stroke="#fff" stroke-width="3"/>';
+            if (on && u >= crossFrom) s += '<path class="o-dx" d="M' + (cx + 8).toFixed(1) + ' ' + (y0 + 8) + ' l' + (bw / 10 - 16).toFixed(1) + ' ' + (bh - 16) + ' M' + (cx + bw / 10 - 8).toFixed(1) + ' ' + (y0 + 8) + ' l-' + (bw / 10 - 16).toFixed(1) + ' ' + (bh - 16) + '" stroke="' + RED + '" stroke-width="4" stroke-linecap="round"/>'; }
+          s += '<rect x="' + x0 + '" y="' + y0 + '" width="' + bw + '" height="' + bh + '" fill="none" stroke="' + INK + '" stroke-width="3" rx="3"/>'; }
+        H = top + sheets * (bh + gap);
+      } else { // 판: 10 × 10 (0.001 은 칸마다 가는 줄 10)
+        const S = Math.min(200, (420 - (sheets - 1) * 18) / sheets), c = S / 10, x00 = 230 - (sheets * S + (sheets - 1) * 18) / 2;
+        for (let sh = 0; sh < sheets; sh++) { const X0 = x00 + sh * (S + 18), Y0 = top;
+          for (let r = 0; r < 10; r++) for (let i = 0; i < 10; i++) {
+            const cx = X0 + i * c, cy = Y0 + r * c;
+            if (k === 2) { const u = sh * 100 + r * 10 + i, on = u < tot, xx = on && u >= crossFrom;
+              s += '<rect class="o-dc' + (on ? (colOf(u) === 'a' ? ' on' : ' on b') : '') + (xx ? ' x' : '') + '" x="' + cx.toFixed(1) + '" y="' + cy.toFixed(1) + '" width="' + c.toFixed(1) + '" height="' + c.toFixed(1) + '" fill="' + (on ? (colOf(u) === 'a' ? BLUE : GRN) : REST) + '" stroke="#fff" stroke-width="' + (c < 14 ? 1 : 1.6) + '"/>';
+              if (xx) s += '<path class="o-dx" d="M' + (cx + 2.5).toFixed(1) + ' ' + (cy + 2.5).toFixed(1) + ' l' + (c - 5).toFixed(1) + ' ' + (c - 5).toFixed(1) + ' M' + (cx + c - 2.5).toFixed(1) + ' ' + (cy + 2.5).toFixed(1) + ' l-' + (c - 5).toFixed(1) + ' ' + (c - 5).toFixed(1) + '" stroke="' + RED + '" stroke-width="2.2" stroke-linecap="round"/>';
+            } else { const u0 = sh * 1000 + (r * 10 + i) * 10, fill = Math.max(0, Math.min(10, tot - u0));
+              s += '<rect x="' + cx.toFixed(1) + '" y="' + cy.toFixed(1) + '" width="' + c.toFixed(1) + '" height="' + c.toFixed(1) + '" fill="' + REST + '" stroke="#fff" stroke-width="1"/>';
+              if (fill) s += '<rect class="o-dc on' + (fill < 10 ? ' part' : '') + '" data-s="' + fill + '" x="' + cx.toFixed(1) + '" y="' + (cy + c * (10 - fill) / 10).toFixed(1) + '" width="' + c.toFixed(1) + '" height="' + (c * fill / 10).toFixed(2) + '" fill="' + BLUE + '"/>';
+              if (fill && fill < 10) for (let t = 1; t < 10; t++) s += '<line x1="' + cx.toFixed(1) + '" y1="' + (cy + c * t / 10).toFixed(2) + '" x2="' + (cx + c).toFixed(1) + '" y2="' + (cy + c * t / 10).toFixed(2) + '" stroke="#fff" stroke-width=".8"/>'; } }
+          s += '<rect x="' + X0.toFixed(1) + '" y="' + Y0 + '" width="' + S.toFixed(1) + '" height="' + S.toFixed(1) + '" fill="none" stroke="' + INK + '" stroke-width="3"/>'; }
+        H = top + S + 14;
+      }
+      if (o.title) s += txt(230, 34, o.title, 22, '#6B7C93', 700);
+      const rest = tot - x, val = dStr(rest, k, o.keep);
+      if (o.show !== false) { const lead = ustr + josa(ustr, '이', '가') + ' ';
+        const line = b ? lead + (a + ' + ' + b + ' = ') + (o.q ? '?' : tot) + '개' + (o.q ? '' : ' → ' + dStr(tot, k, o.keep)) : x ? lead + (tot + ' − ' + x + ' = ') + (o.q ? '?' : rest) + '개' + (o.q ? '' : ' → ' + val) : lead + (o.q ? '?' : a) + '개' + (o.q ? '' : ' → ' + val);
+        s += txt(230, H + 30, line, 25, BLUE2); H += 46; }
+      return svgWrap(s, 'fig-dgrid', '0 0 460 ' + Math.round(H + 8)).replace('<svg ', '<svg data-unit="' + ustr + '" data-a="' + a + '" data-b="' + b + '" data-x="' + x + '" data-sheets="' + sheets + '" ');
+    }
+    // dline: lo~hi 를 n 칸으로 나눈 소수 수직선 · 글자 = lo·hi·정수 · marks [{at,label,q}] · hop {from,to,label} 위로 뛰는 화살
+    function dline(o) {
+      const k = Math.max(dSplit(o.lo).f.length, dSplit(o.hi).f.length, 0) + Math.round(Math.log10(o.n || 10)); const LO = dInt(o.lo, k), HI = dInt(o.hi, k), n = Math.max(1, o.n || 10), st = (HI - LO) / n;
+      const x0 = 40, x1 = 420, y = (o.marks && o.marks.length) || o.hop ? 170 : 130, X = (u) => x0 + (x1 - x0) * (u - LO) / (HI - LO); let s = '';
+      s += '<line x1="' + (x0 - 18) + '" y1="' + y + '" x2="' + (x1 + 22) + '" y2="' + y + '" stroke="' + INK + '" stroke-width="4"/><path d="M' + (x1 + 22) + ' ' + y + ' l-12 -8 v16 Z" fill="' + INK + '"/>';
+      for (let i = 0; i <= n; i++) { const u = LO + st * i, xx = X(u), lab = i === 0 || i === n || u % Math.pow(10, k) === 0 || (o.every && i % o.every === 0), mid = !lab && n % 2 === 0 && i === n / 2;
+        s += '<line class="o-tk" x1="' + xx.toFixed(1) + '" y1="' + (y - (lab ? 18 : mid ? 14 : 9)) + '" x2="' + xx.toFixed(1) + '" y2="' + (y + (lab ? 18 : mid ? 14 : 9)) + '" stroke="' + INK + '" stroke-width="' + (lab ? 4 : 2.5) + '"/>';
+        if (lab) s += txt(xx.toFixed(1), y + 50, dStr(u, k), 24); }
+      const at = []; (o.marks || []).forEach((mk, j) => { const u = dInt(mk.at, k); at.push(dStr(u, k)); const xx = X(u), col = j === 0 ? ORANGE : j === 1 ? GRN : PURP;
+        s += '<circle class="o-mark" cx="' + xx.toFixed(1) + '" cy="' + y + '" r="10" fill="' + col + '" stroke="#fff" stroke-width="3"/>';
+        const lab = mk.q ? '?' : mk.label != null ? mk.label : dStr(u, k); s += txt(xx.toFixed(1), y - 30 - (j % 2 ? 40 : 0), lab, mk.q ? 32 : 24, col === ORANGE ? '#C2551A' : col === GRN ? '#2E7D4F' : '#7A52B3', 900); });
+      if (o.hop) { const a = X(dInt(o.hop.from, k)), b = X(dInt(o.hop.to, k)); s += '<path class="o-hop" d="M' + a.toFixed(1) + ' ' + (y - 14) + ' Q' + ((a + b) / 2).toFixed(1) + ' ' + (y - 96) + ' ' + b.toFixed(1) + ' ' + (y - 14) + '" fill="none" stroke="' + ORANGE + '" stroke-width="4"/><path d="M' + b.toFixed(1) + ' ' + (y - 12) + ' l-12 -12 l14 -2 Z" fill="' + ORANGE + '"/>' + txt(((a + b) / 2).toFixed(1), y - 64, o.hop.label || '', 24, '#C2551A', 900); }
+      if (o.title) s += txt(230, 30, o.title, 22, '#3B4252');
+      return svgWrap(s, 'fig-dline').replace('<svg ', '<svg data-lo="' + dStr(LO, k) + '" data-hi="' + dStr(HI, k) + '" data-n="' + n + '" data-at="' + at.join(',') + '"' + (o.hop ? ' data-hop="' + esc(o.hop.from + '>' + o.hop.to) + '"' : '') + ' ');
+    }
+    // dpv: 소수 자릿값판 — rows [{v,label}] · hi 짚는 자리(이름) · q 「?」 자리 · pad 끝자리 0 흐리게 · expand 풀어 쓴 식 · cnt '0.01' 몇 개 · cmp 견주기 · shift 두 줄(10배·10분의 1)
+    function dpv(o) {
+      const rows = (o.rows || [{ v: o.v }]).map(r => (typeof r === 'object' ? r : { v: r })).map(r => Object.assign({}, r, { p: dSplit(r.v) }));
+      const ni = Math.max(1, o.ints || 0, ...rows.map(r => r.p.i.length)), nf = Math.max(1, o.decs || 0, ...rows.map(r => r.p.f.length));
+      const names = []; for (let i = ni - 1; i >= 0; i--) names.push(DPL[i]); for (let j = 0; j < nf; j++) names.push(DFR[j]);
+      const cellsOf = (r) => { const out = []; for (let i = ni - 1; i >= 0; i--) out.push(i < r.p.i.length ? r.p.i[r.p.i.length - 1 - i] : ''); for (let j = 0; j < nf; j++) out.push(j < r.p.f.length ? r.p.f[j] : (o.pad ? '0' : '')); return out; };
+      const C = rows.map(cellsOf), his = [].concat(o.hi == null ? [] : o.hi);
+      let diff = -1; if (o.cmp && rows.length === 2) { for (let c = 0; c < names.length; c++) { const a = C[0][c] || '0', b = C[1][c] || '0'; if (a !== b) { diff = c; break; } } }
+      const lab = rows.some(r => r.label); const cls = (c) => (his.indexOf(names[c]) >= 0 ? ' hi' : '') + (c === diff ? ' df' : '');
+      let h = '<table class="pv dpv"><tr class="pv-head">' + (lab ? '<th></th>' : ''); names.forEach((nm, c) => { if (c === ni) h += '<th class="dp"></th>'; h += '<th class="' + cls(c).trim() + '">' + esc(nm).replace(' ', '<br>') + '</th>'; }); h += '</tr>';
+      rows.forEach((r, ri) => { h += '<tr class="pv-row">' + (lab ? '<th class="pv-lab">' + esc(r.label || '') + '</th>' : ''); C[ri].forEach((ch, c) => { if (c === ni) h += '<td class="dp">.</td>'; const qq = o.q != null && names[c] === o.q && ri === (o.qrow || 0); const padded = c >= ni && (c - ni) >= r.p.f.length && ch === '0';
+        h += '<td class="' + (cls(c) + (qq ? ' q' : '') + (padded ? ' pz' : '')).trim() + '">' + (qq ? '?' : ch) + '</td>'; }); h += '</tr>'; });
+      h += '</table>';
+      let foot = ''; const r0 = rows[0];
+      if (o.expand) { const parts = []; C[0].forEach((ch, c) => { if (+ch) { const place = c < ni ? ni - 1 - c : -(c - ni + 1); parts.push(place >= 0 ? ch + '0'.repeat(place) : '0.' + '0'.repeat(-place - 1) + ch); } }); foot += '<div class="pv-eq">' + esc(r0.v) + ' = ' + parts.join(' + ') + '</div>'; }
+      if (o.cnt) { const k = UNITK(o.cnt), u = dStr(1, k); foot += '<div class="pv-read">' + esc(r0.v) + josa(r0.v, '은', '는') + ' <b>' + u + josa(u, '이', '가') + ' ' + dInt(r0.v, k) + '개</b>인 수</div>'; }
+      if (o.cmp && rows.length === 2) { const a = dInt(rows[0].v, nf), b = dInt(rows[1].v, nf); foot += '<div class="pv-eq">' + esc(rows[0].v) + ' ' + esc(a > b ? '>' : a < b ? '<' : '=') + ' ' + esc(rows[1].v) + '</div>'; }
+      let sh = '';
+      if (o.shift !== false && rows.length === 2) { const K = nf + 3, a = dInt(rows[0].v, K), b = dInt(rows[1].v, K); let t = 0; if (a && b) { let r = b / a; while (r >= 10 - 1e-9 && t < 4) { r /= 10; t++; } while (r <= 0.1 + 1e-9 && t > -4) { r *= 10; t--; } if (Math.abs(r - 1) > 1e-9) t = 0; }
+        if (t) { sh = String(t); foot += '<div class="pv-shift">' + (t > 0 ? '×' + Math.pow(10, t) + ' → 숫자가 왼쪽으로 ' + ['', '한', '두', '세'][t] + ' 자리' : Math.pow(10, -t) + '분의 1 → 숫자가 오른쪽으로 ' + ['', '한', '두', '세'][-t] + ' 자리') + '</div>'; } }
+      return '<div class="fig-vert fig-pvt fig-dpv" data-vals="' + rows.map(r => r.v).join(',') + '" data-cols="' + names.join(',') + '"' + (diff >= 0 ? ' data-diff="' + names[diff] + '"' : '') + (sh ? ' data-shift="' + sh + '"' : '') + '>' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + '<div class="pv-wrap">' + h + '</div>' + foot + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
+    }
+    // dvert: 소수 세로셈 — a op b · 소수점을 한 줄에 · 빈 끝자리는 흐린 0(pad:false 면 빈칸) · 받아올림 1 · 받아내림 = 그 자리에서 실제로 빼는 수(주황)
+    //        answer:false 답·받아 표시 숨김 · bad:'right' 오른쪽 끝 맞춤(잘못 쓴 꼴 — 빨강 답)
+    function dvert(o) {
+      const op = o.op === '-' || o.op === '−' ? '−' : '+'; const A = dSplit(o.a), B = dSplit(o.b);
+      if (o.bad === 'right') { const ra = String(o.a), rb = String(o.b), w = Math.max(ra.length, rb.length) + 1, sum = Number(ra.replace('.', '')) + (op === '+' ? 1 : -1) * Number(rb.replace('.', '')), kk = B.f.length, wr = dStr(sum, kk, true);
+        const row = (t, cl, sign) => '<div class="dv-row ' + cl + '" style="grid-template-columns:repeat(' + w + ',46px)">' + (sign ? '<em>' + sign + '</em>' : '') + t.padStart(w, ' ').split('').map(ch => '<span' + (ch === '.' ? ' class="dp"' : '') + '>' + esc(ch.trim()) + '</span>').join('') + '</div>';
+        return '<div class="fig-vert fig-dvert bad" data-r="' + wr + '" data-bad="right"><div class="dv bad">' + row(ra, 'dv-a') + row(rb, 'dv-b', op) + '<div class="dv-line"></div>' + row(wr, 'dv-r') + '</div>' + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>'; }
+      const nf = Math.max(A.f.length, B.f.length, 1), ai = dInt(o.a, nf), bi = dInt(o.b, nf), ri = op === '+' ? ai + bi : ai - bi;
+      const R = dSplit(dStr(ri, nf, true)); const ni = Math.max(A.i.length, B.i.length, R.i.length);
+      const digs = (p) => { const d = []; for (let i = ni - 1; i >= 0; i--) d.push(i < p.i.length ? p.i[p.i.length - 1 - i] : ''); for (let j = 0; j < nf; j++) d.push(j < p.f.length ? p.f[j] : null); return d; };
+      const da = digs(A), db = digs(B), dr = digs(R); const N = ni + nf, num = (x) => (x == null || x === '' ? 0 : +x);
+      const mark = new Array(N).fill(''); let nMark = 0;
+      if (op === '+') { let c = 0; for (let i = N - 1; i >= 0; i--) { const t = num(da[i]) + num(db[i]) + c; c = t >= 10 ? 1 : 0; if (c && i > 0) { mark[i - 1] = '1'; nMark++; } } }
+      else { let lend = 0; for (let i = N - 1; i >= 0; i--) { let w0 = num(da[i]) - lend; lend = 0; if (w0 < num(db[i])) { w0 += 10; lend = 1; } if (w0 !== num(da[i])) { mark[i] = String(w0); nMark++; } } }
+      const show = o.answer !== false; const pad = o.pad !== false;
+      const cols = 'repeat(' + ni + ',54px) 20px repeat(' + nf + ',54px)';
+      const row = (d, cl, sign) => '<div class="dv-row ' + cl + '" style="grid-template-columns:' + cols + '">' + (sign ? '<em>' + sign + '</em>' : '') + d.map((ch, i) => (i === ni ? '<span class="dp">' + (cl === 'dv-carry' ? '' : '.') + '</span>' : '') + (ch == null ? '<span class="pz">' + (pad && cl !== 'dv-carry' ? '0' : '') + '</span>' : '<span>' + esc(ch) + '</span>')).join('') + '</div>';
+      const carry = row(mark.map(m => (m ? (op === '+' ? m : '<i>' + m + '</i>') : '')), 'dv-carry').replace(/&lt;i&gt;(\d+)&lt;\/i&gt;/g, '<i>$1</i>');
+      const dR = dr.map((x, i) => (x == null ? '0' : x));
+      return '<div class="fig-vert fig-dvert" data-op="' + op + '" data-a="' + esc(o.a) + '" data-b="' + esc(o.b) + '" data-r="' + (show ? dStr(ri, nf) : '') + '" data-marks="' + (show ? nMark : '') + '"><div class="dv">' + (show ? carry : '') + row(da, 'dv-a') + row(db, 'dv-b', op) + '<div class="dv-line"></div>' + (show ? row(dR, 'dv-r') : '') + '</div>' + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
+    }
+    // rtab: 기록표 — head(열 이름) · rows [{name, v:[…]}] · sum true 면 합 칸(부품이 셈) · hi [[줄,칸]] 주황 · q [[줄,칸]] 「?」 · unit
+    function rtab(o) {
+      const head = o.head || [], rows = o.rows || []; const nf = Math.max(1, ...rows.map(r => Math.max(...r.v.map(x => dSplit(x).f.length)))); const isHi = (ri, ci) => (o.hi || []).some(p => p[0] === ri && p[1] === ci), isQ = (ri, ci) => (o.q || []).some(p => p[0] === ri && p[1] === ci);
+      let h = '<table class="pt rtab"><tr><th>' + esc(o.corner || '') + '</th>' + head.map(t => '<th>' + esc(t) + '</th>').join('') + (o.sum ? '<th class="sum">합</th>' : '') + '</tr>';
+      const sums = []; rows.forEach((r, ri) => { const sm = r.v.reduce((a, x) => a + dInt(x, nf), 0); sums.push(dStr(sm, nf)); h += '<tr><th>' + esc(r.name) + '</th>' + r.v.map((x, ci) => '<td class="n' + (isHi(ri, ci) ? ' hi' : '') + (isQ(ri, ci) ? ' q' : '') + '">' + (isQ(ri, ci) ? '?' : esc(x)) + '</td>').join('') + (o.sum ? '<td class="n sum' + (o.sumQ ? ' q' : '') + '">' + (o.sumQ ? '?' : esc(dStr(sm, nf, true))) + '</td>' : '') + '</tr>'; });
+      h += '</table>';
+      return '<div class="fig-vert fig-ptable fig-rtab" data-sums="' + (o.sum && !o.sumQ ? sums.join(',') : '') + '">' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + h + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
+    }
+    Object.assign(PARTS, { dgrid, dline }); Object.assign(HTML_PARTS, { dpv, dvert, rtab });
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
