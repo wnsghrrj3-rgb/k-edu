@@ -1,0 +1,1546 @@
+{
+ "items": {
+  "grain": {
+   "name": "쌀",
+   "icon": "🌾",
+   "desc": "이 시대의 값. 개항 뒤 쌀이 배를 타고 값이 뛴다. 공출로 뺏긴다",
+   "eat": 8
+  },
+  "coin": {
+   "name": "엔 지폐",
+   "icon": "💴",
+   "desc": "일본 돈. 1905년부터 조선 돈 대신",
+   "bag": true
+  },
+  "deed": {
+   "name": "땅문서(지권)",
+   "icon": "📜",
+   "desc": "토지 조사 뒤 총독부가 준 문서. 이게 없으면 내 땅이 아니다",
+   "bag": true
+  },
+  "paper": {
+   "name": "한글 신문",
+   "icon": "📰",
+   "desc": "독립신문. 띄어쓰기. 누구나 읽게",
+   "bag": true
+  },
+  "flag": {
+   "name": "태극기",
+   "icon": "🇰🇷",
+   "desc": "광목에 먹으로. 밤에 몰래. 들키면 옥",
+   "bag": true
+  },
+  "book": {
+   "name": "교과서",
+   "icon": "📖",
+   "desc": "산수·지리·국어 — 그런데 「국어」가 일본어가 됐다",
+   "bag": true
+  },
+  "ticket": {
+   "name": "기차표",
+   "icon": "🎫",
+   "desc": "간도·부산·일본. 떠나는 사람의 표",
+   "bag": true
+  },
+  "ration": {
+   "name": "배급표",
+   "icon": "🎟",
+   "desc": "1940년대. 이름을 안 바꾸면 안 준다",
+   "bag": true
+  }
+ },
+ "recipes": [],
+ "targets": {
+  "npc": {
+   "name": "사람",
+   "verb": "말 걸기",
+   "info": "이 마을 사람이다.",
+   "flag": "talk:any"
+  },
+  "segwan": {
+   "name": "세관 앞 쌀가마니",
+   "verb": "살펴보기",
+   "say": "쌀가마니가 산이다. 일본 상인이 값을 부른다 — 마을 값의 세 배. 세관원이 도장. 「쌀이 배를 탄다.」 마을 쌀값도 같이 뛰었다.",
+   "flag": "seen:segwan",
+   "journal": "gaehang",
+   "info": "세관 — 개항, 쌀이 빠져나간다.",
+   "rename": [
+    {
+     "if": "sit:gaehang:open && !sit:gaehang:done && status:jiju && !gh:sell && !gh:local && !gh:import && !gh:importfail && !gh:ricedeal && !gh:farmsell && !gh:keep && !gh:barley && !gh:dock && !gh:machine && !gh:machinefail && !gh:hand && !gh:leather && !gh:millf",
+     "name": "세관 앞 쌀가마니",
+     "verb": "일본 상인에게 판다 — 세 배 / 마을에 판다",
+     "once": false,
+     "choices": [
+      {
+       "label": "일본 상인에게 판다 — 세 배",
+       "gives": "coin",
+       "flag": "gh:sell",
+       "journal": "gaehang",
+       "say": "💴 세 배. 곳간이 비고 엔 지폐가 찼다. 「마을 쌀값이 뛰었다 — 소작들이 보리를 먹는다.」 네 단."
+      },
+      {
+       "label": "마을에 판다 — 제값",
+       "flag": "gh:local",
+       "journal": "gaehang",
+       "say": "🌾 한 단. 「저 집은 마을에 판다.」 소작들이 고개를 숙였다. 옆 지주는 세 배를 받았다."
+      }
+     ]
+    },
+    {
+     "if": "sit:gaehang:open && !sit:gaehang:done && status:sangin && !gh:ricedeal && !gh:import && !gh:importfail",
+     "name": "세관 앞 쌀가마니",
+     "verb": "쌀을 사 모아 세관에 넘긴다(눈 1)",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 1,
+      "why": "일본 배가 들어오는 날. 눈.",
+      "fail": "…배가 안 왔다. 쌀이 썩었다."
+     },
+     "rollFailFlag": "gh:importfail",
+     "gives": "coin",
+     "flag": "gh:ricedeal",
+     "journal": "gaehang",
+     "say": "💴 마을 쌀을 모아 세 배에 넘겼다. 세 단. 「조선 상인이 중개.」 마을 사람은 보리."
+    },
+    {
+     "if": "sit:gaehang:open && !sit:gaehang:done && status:yetbaekjeong && !gh:leather",
+     "name": "세관 앞 쌀가마니",
+     "verb": "가죽을 일본 상인에게 판다",
+     "once": false,
+     "gives": "coin",
+     "flag": "gh:leather",
+     "journal": "gaehang",
+     "say": "💴 「가죽은 일본에서 비싸다.」 세 단. 일본 상인은 내가 백정인지 안 물었다 — 처음이다."
+    },
+    {
+     "if": "sit:gaehang:open && !sit:gaehang:done && (status:nongmin || status:gisulja) && !gh:sell && !gh:local && !gh:import && !gh:importfail && !gh:ricedeal && !gh:farmsell && !gh:keep && !gh:barley && !gh:dock && !gh:machine && !gh:machinefail && !gh:hand && !gh:leather && !gh:millf",
+     "name": "세관 앞 쌀가마니",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "내 쌀은 정미소에서 산다. 정미소로."
+    },
+    {
+     "if": "sit:gaehang:done",
+     "name": "세관 앞 쌀가마니",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "가마니가 매일 배를 탄다. 「조선 쌀, 일본 밥.」"
+    }
+   ]
+  },
+  "mill": {
+   "name": "정미소",
+   "verb": "살펴보기",
+   "say": "기계가 돈다. 벼를 넣으면 쌀이 나온다 — 사람 열이 하던 일을 하루에. 일본 사람 주인, 조선 사람 일꾼. 뒤쪽에 여공 자리.",
+   "flag": "seen:mill",
+   "journal": "gaehang",
+   "info": "정미소 — 쌀을 팔거나, 일하거나.",
+   "rename": [
+    {
+     "if": "sit:gaehang:open && !sit:gaehang:done && status:nongmin && !gh:sell && !gh:local && !gh:import && !gh:importfail && !gh:ricedeal && !gh:farmsell && !gh:keep && !gh:barley && !gh:dock && !gh:machine && !gh:machinefail && !gh:hand && !gh:leather && !gh:millf",
+     "name": "정미소",
+     "verb": "쌀을 판다 / 팔지 않고 둔다",
+     "once": false,
+     "choices": [
+      {
+       "label": "쌀을 세관에 판다 — 값이 뛰었다",
+       "gives": "coin",
+       "flag": "gh:farmsell",
+       "journal": "gaehang",
+       "say": "💴 두 단. 「값이 좋다.」 그런데 보리값도 뛰었다 — 먹을 쌀을 다시 사야 했다."
+      },
+      {
+       "label": "팔지 않는다 — 먹을 것은 남긴다",
+       "flag": "gh:keep",
+       "say": "🌾 한 단. 「쌀값이 뛸 때 판 집이 부자 됐다더라.」 그래도 겨울은 넘겼다."
+      }
+     ]
+    },
+    {
+     "if": "sit:gaehang:open && !sit:gaehang:done && (status:sojak || status:yetnobi || status:hwajeon || status:nodongja) && sex:m && !gh:sell && !gh:local && !gh:import && !gh:importfail && !gh:ricedeal && !gh:farmsell && !gh:keep && !gh:barley && !gh:dock && !gh:machine && !gh:machinefail && !gh:hand && !gh:leather && !gh:millf",
+     "name": "정미소",
+     "verb": "쌀값이 뛰었다 — 보리로 버틴다(배 1) / 부두 하역",
+     "once": false,
+     "choices": [
+      {
+       "label": "보리로 버틴다(배 1)",
+       "roll": {
+        "ab": "배",
+        "hard": 1,
+        "why": "보리밥 한 해. 배.",
+        "fail": "…봄에 쓰러졌다. 한 단 빚."
+       },
+       "rollFailFlag": "gh:barleyfail",
+       "flag": "gh:barley",
+       "journal": "gaehang",
+       "say": "「쌀은 배를 타고 우리는 보리.」 버텼다."
+      },
+      {
+       "label": "부두로 — 하역 일",
+       "say": "부두로."
+      }
+     ]
+    },
+    {
+     "if": "sit:gaehang:open && !sit:gaehang:done && status:gisulja && !gh:sell && !gh:local && !gh:import && !gh:importfail && !gh:ricedeal && !gh:farmsell && !gh:keep && !gh:barley && !gh:dock && !gh:machine && !gh:machinefail && !gh:hand && !gh:leather && !gh:millf",
+     "name": "정미소",
+     "verb": "기계를 익힌다(손 2) / 손으로 한다",
+     "once": false,
+     "choices": [
+      {
+       "label": "기계를 익힌다(손 2) — 기술자",
+       "roll": {
+        "ab": "손",
+        "hard": 2,
+        "why": "벨트·톱니. 손.",
+        "fail": "…벨트에 손가락. 「조선 사람은 안 돼」 소리."
+       },
+       "rollFailFlag": "gh:machinefail",
+       "rollHurt": "wound",
+       "gives": "coin",
+       "flag": "gh:machine",
+       "journal": "gaehang",
+       "say": "🔨 기계. 「조선 사람이 정미기를 돌린다.」 두 단. 일본 주인이 월급을 반만 줬다."
+      },
+      {
+       "label": "하던 대로 손으로",
+       "flag": "gh:hand",
+       "say": "🔨 백자·놋그릇. 「일본 그릇이 싸다.」 한 단 줄었다."
+      }
+     ]
+    },
+    {
+     "if": "sit:gaehang:open && !sit:gaehang:done && sex:f && !gh:millf && !gh:sell && !gh:local && !gh:ricedeal && !gh:leather",
+     "name": "정미소",
+     "verb": "정미소 여공(손 1)",
+     "once": false,
+     "roll": {
+      "ab": "손",
+      "hard": 1,
+      "why": "쌀 고르기 열두 시간. 손.",
+      "fail": "…졸았다. 반나절 삯."
+     },
+     "gives": "coin",
+     "flag": "gh:millf",
+     "journal": "gaehang",
+     "say": "💴 한 단. 「여자가 삯을 받는다.」 처음이다. 일본 여공의 반."
+    },
+    {
+     "if": "sit:gaehang:done",
+     "name": "정미소",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "기계가 밤에도 돈다. 쌀은 세관으로."
+    }
+   ]
+  },
+  "jpshop": {
+   "name": "일본 가게(전당포·잡화)",
+   "verb": "살펴보기",
+   "say": "유리창. 석유 램프·성냥·광목·설탕. 그리고 전당포 — 땅문서를 맡기면 엔을 빌려준다. 이자가 높다. 노렌에 일본 글자.",
+   "flag": "seen:jpshop",
+   "journal": "gaehang",
+   "info": "일본 가게 — 새 물건, 전당포.",
+   "rename": [
+    {
+     "if": "sit:gaehang:open && !sit:gaehang:done && status:sangin && !gh:import && !gh:importfail && !gh:ricedeal",
+     "name": "일본 가게",
+     "verb": "석유·성냥·광목을 들여와 판다 ⚠(눈 2)",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 2,
+      "why": "무엇이 팔릴지 먼저 보는 눈. 성냥.",
+      "fail": "…일본 가게가 더 싸게 팔았다. 밑천이 갔다."
+     },
+     "rollFailFlag": "gh:importfail",
+     "gives": "coin",
+     "flag": "gh:import",
+     "journal": "gaehang",
+     "say": "💴 성냥·석유. 「부싯돌 대신.」 네 단. 「조선 상인도 되네」 — 일본 가게 옆에서."
+    },
+    {
+     "if": "sit:toji:open && !sit:toji:done && (status:sojak || status:yetnobi || status:hwajeon || status:nodongja || status:nongmin) && !tj:pawn && !tj:report && !tj:lost && !tj:none && !tj:forest",
+     "name": "일본 가게(전당포)",
+     "verb": "땅문서를 맡기고 엔을 빌린다 ⚠",
+     "once": false,
+     "gives": "coin",
+     "flag": "tj:pawn",
+     "journal": "toji",
+     "say": "💴 두 단. 이자 「달에 한 푼」 — 해가 가면 땅이 전당포 것. 「그렇게 넘어간 땅이 반.」"
+    },
+    {
+     "if": "sit:gaehang:done",
+     "name": "일본 가게",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "가게가 셋에서 아홉이 됐다. 간판이 다 일본 글자."
+    }
+   ]
+  },
+  "bank": {
+   "name": "은행(식산은행)",
+   "verb": "살펴보기",
+   "say": "벽돌 2층. 유리창. 지주는 돈을 빌리고 농민은 못 빌린다. 「담보 — 땅문서.」",
+   "flag": "seen:bank",
+   "journal": "toji",
+   "info": "은행 — 땅문서가 있는 집만.",
+   "rename": [
+    {
+     "if": "sit:toji:open && !sit:toji:done && (status:jiju || status:chinil) && tj:report && !tj:loan",
+     "name": "은행",
+     "verb": "땅문서로 돈을 빌려 땅을 더 산다",
+     "once": false,
+     "flag": "tj:loan",
+     "journal": "toji",
+     "say": "💴 「쫓겨난 집 땅을 싸게.」 논이 둘 늘었다. 소작이 셋 늘었다. 두 단."
+    }
+   ]
+  },
+  "pier": {
+   "name": "부두 잔교",
+   "verb": "살펴보기",
+   "say": "나무 잔교. 쌀가마니·석탄·광목. 지게꾼 열. 「하루 열두 시간, 삯은 일본 사람 반.」 저 끝에 기선.",
+   "flag": "seen:pier",
+   "journal": "gaehang",
+   "info": "부두 — 하역, 떠나는 배.",
+   "rename": [
+    {
+     "if": "sit:gaehang:open && !sit:gaehang:done && (status:sojak || status:yetnobi || status:hwajeon || status:nodongja || status:gisulja) && sex:m && !gh:dock && !gh:barley && !gh:barleyfail && !gh:machine && !gh:machinefail && !gh:hand",
+     "name": "부두 잔교",
+     "verb": "하역 일(몸 1)",
+     "once": false,
+     "roll": {
+      "ab": "몸",
+      "hard": 1,
+      "why": "가마니 하루 이백. 몸.",
+      "fail": "…허리. 삯은 반."
+     },
+     "rollFailFlag": "gh:dockfail",
+     "gives": "coin",
+     "flag": "gh:dock",
+     "journal": "gaehang",
+     "say": "💴 한 단. 「조선 쌀을 조선 등으로 일본 배에.」 하루 벌어 하루."
+    },
+    {
+     "if": "sit:gando:open && !sit:gando:done && !gd:gando && !gd:hawaii && !gd:japan && !gd:stay && !gd:none",
+     "name": "부두 잔교",
+     "verb": "배를 탄다 — 하와이 사탕수수밭 ⚠ / 일본 공장 ⚠",
+     "once": false,
+     "choices": [
+      {
+       "label": "하와이 사탕수수밭 ⚠ — 「사진 신부」 배",
+       "gives": "ticket",
+       "flag": "gd:hawaii",
+       "journal": "gando",
+       "say": "🚢 제물포에서 석 달. 사탕수수. 「돌아갈 수 없다.」 가문이 바다 건너로 갈라졌다. 거기서 독립 자금을 보냈다."
+      },
+      {
+       "label": "일본 공장·광산 ⚠",
+       "gives": "ticket",
+       "flag": "gd:japan",
+       "journal": "gando",
+       "say": "🚢 오사카. 하루 열네 시간. 「조선인 사절」 방. 1923년 지진 — 살았다. 돌아온 사람도, 못 온 사람도."
+      },
+      {
+       "label": "…고개로 — 간도",
+       "say": "고개로."
+      }
+     ]
+    },
+    {
+     "if": "sit:paeop:open && !sit:paeop:done && status:nodongja && sex:m && !po:join && !po:work && !po:lost",
+     "name": "부두 잔교",
+     "verb": "파업에 든다 ⚠(몸 1) / 일한다",
+     "once": false,
+     "choices": [
+      {
+       "label": "파업 ⚠ — 「조선 노동자를 때리지 마라」(몸 1)",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "넉 달. 배고픔. 몸.",
+        "fail": "…경찰. 해고. 어깨."
+       },
+       "rollFailFlag": "po:lost",
+       "rollHurt": "wound",
+       "flag": "po:join",
+       "journal": "paeop",
+       "say": "✊ 넉 달. 전국에서 쌀이 왔다. 「원산.」 삯은 조금 올랐다. 감독은 바뀌었다."
+      },
+      {
+       "label": "일한다",
+       "flag": "po:work",
+       "say": "🌾 파업한 사람 자리에 섰다. 삯은 그대로. 눈을 못 맞췄다."
+      }
+     ]
+    },
+    {
+     "if": "sit:jingyong:open && !sit:jingyong:done && sex:m && !jy:go && !jy:hide && !jy:caught && !jy:gongchul && !jy:volunteer && !jy:kwangbok && !jy:none",
+     "name": "부두 잔교",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "징용 배가 섰다. 「규슈 탄광.」 영장 든 사람 서른. 공장 쪽 — 영장이 거기 있다."
+    }
+   ]
+  },
+  "ship": {
+   "name": "기선",
+   "verb": "살펴보기",
+   "say": "돛이 없다. 굴뚝. 쇠로 된 배. 「저 배가 쌀을 싣고 가고 광목·석유를 싣고 온다.」 1876년 — 강화도에 먼저 왔던 배.",
+   "flag": "seen:ship",
+   "journal": "gaehang",
+   "info": "기선 — 개항."
+  },
+  "yeondan": {
+   "name": "장터 연단",
+   "verb": "살펴보기",
+   "say": "광장 가운데 나무 연단. 사람이 올라 말한다 — 전엔 없던 자리. 오늘은 동학 접주 전봉준.",
+   "flag": "seen:yeondan",
+   "journal": "donghak94",
+   "info": "연단 — 동학·만민 공동회·만세.",
+   "rename": [
+    {
+     "if": "sit:gabo:open && !sit:gabo:done && (status:nongmin || status:sojak || status:yetnobi || status:hwajeon || status:nodongja || status:yetbaekjeong || status:gisulja) && sex:m && !gb:join && !gb:lost && !gb:stay && !gb:open && !gb:minbo && !gb:hide && !gb:food && !gb:price && !gb:bae",
+     "name": "장터 연단",
+     "verb": "동학군에 든다 ⚠(몸 2) / 안 든다",
+     "once": false,
+     "choices": [
+      {
+       "label": "동학군에 든다 ⚠ — 전주성으로(몸 2)",
+       "roll": {
+        "ab": "몸",
+        "hard": 2,
+        "why": "죽창. 전주성, 그리고 우금치 기관총. 몸.",
+        "fail": "…우금치. 기관총. 어깨. 살아 내려왔다 — 반은 못 왔다."
+       },
+       "rollFailFlag": "gb:lost",
+       "rollHurt": "wound",
+       "flag": "gb:join",
+       "journal": "donghak94",
+       "say": "🔥 전주성. 집강소 — 「노비 문서를 태우고 탐관오리를 벌한다.」 몇 달. 우금치 전에 돌아왔다."
+      },
+      {
+       "label": "안 든다",
+       "flag": "gb:stay",
+       "say": "횃불이 남쪽으로 갔다. 돌아온 사람은 반. — 그런데 같은 해 나라가 신분을 없앴다. 그들이 외친 것이."
+      }
+     ]
+    },
+    {
+     "if": "sit:gabo:open && !sit:gabo:done && sex:f && !gb:join && !gb:lost && !gb:stay && !gb:open && !gb:minbo && !gb:hide && !gb:food && !gb:price && !gb:bae",
+     "name": "장터 연단",
+     "verb": "주먹밥을 만든다 / 본다",
+     "once": false,
+     "choices": [
+      {
+       "label": "동학군에 주먹밥",
+       "flag": "gb:bae",
+       "journal": "donghak94",
+       "say": "🍙 「여자도 한울님.」 동학은 여자를 같은 자리에 앉혔다. 밥을 먹였다."
+      },
+      {
+       "label": "본다",
+       "flag": "gb:stay",
+       "say": "횃불이 남쪽으로."
+      }
+     ]
+    },
+    {
+     "if": "sit:gabo:open && !sit:gabo:done && (status:jiju || status:sangin || status:yetnobi) && !gb:stay && !gb:join && !gb:lost && !gb:stay && !gb:open && !gb:minbo && !gb:hide && !gb:food && !gb:price && !gb:bae",
+     "name": "장터 연단",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "지주는 대문에서, 상인은 객주집에서 정한다. 옛 노비 집 — 남자면 여기서 든다."
+    },
+    {
+     "if": "sit:manmin:open && !sit:manmin:done && !mm:speak && !mm:speakfail && !mm:listen && !mm:paper",
+     "name": "장터 연단",
+     "verb": "만민 공동회 — 연단에 선다 ⚠(눈 2) / 듣는다",
+     "once": false,
+     "choices": [
+      {
+       "label": "연단에 선다 ⚠ — 「나는 천하지만 나라 걱정은 같다」(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "무슨 말을 먼저 할지 보는 눈.",
+        "fail": "…말이 막혔다. 내려왔다. 그래도 섰다."
+       },
+       "rollFailFlag": "mm:speakfail",
+       "flag": "mm:speak",
+       "journal": "manmin",
+       "say": "🎤 장터가 조용했다. 「백정도 상인도 같은 자리.」 박성춘이 손을 잡았다. 두 단 인심."
+      },
+      {
+       "label": "듣는다",
+       "flag": "mm:listen",
+       "journal": "manmin",
+       "say": "📣 백정 박성춘이 첫 연사. 양반이 뒤에 앉았다. 「누구나 선다.」 — 정부가 해산시켰다."
+      }
+     ]
+    },
+    {
+     "if": "sit:eulsa:open && !sit:eulsa:done && !es:gukchae && !es:binyeo && !es:uibyeong && !es:uilost && !es:school && !es:chinil && !es:watch",
+     "name": "장터 연단",
+     "verb": "국채 보상 — 담배를 끊고 낸다(🌾1) / 은비녀를 낸다",
+     "once": false,
+     "choices": [
+      {
+       "label": "담배를 끊고 낸다 — 쌀 한 단",
+       "if": "val:grain>=1",
+       "gray": "낼 쌀이 없다.",
+       "flag": "es:gukchae",
+       "journal": "gukchae",
+       "say": "🌾 「나라 빚 1,300만 원.」 장부에 이름. 통감부가 뒤져 돈을 뺏었다 — 그래도 이름은 남았다."
+      },
+      {
+       "label": "은비녀·가락지를 낸다",
+       "if": "sex:f",
+       "gray": "여자가 내던 것.",
+       "flag": "es:binyeo",
+       "journal": "gukchae",
+       "say": "💍 「여자 손에서 나온 돈.」 장부에 이름. 처음으로 이름이 적혔다."
+      },
+      {
+       "label": "본다",
+       "flag": "es:watch",
+       "say": "「빚을 백성이 갚는다고 나라가 돌아오나.」 산에서는 총소리."
+      }
+     ]
+    },
+    {
+     "if": "sit:samil:open && !sit:samil:done && samil:morning && !status:chinil && !sm:manse && !sm:hurt && !sm:home && !sm:report",
+     "name": "장터 연단",
+     "verb": "만세 ⚠(몸 1) / 집에 있는다",
+     "once": false,
+     "choices": [
+      {
+       "label": "만세 ⚠ — 태극기를 든다(몸 1)",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "칼·총 앞에서 손을 안 내리는 몸.",
+        "fail": "…헌병. 칼. 어깨. 끌려갔다."
+       },
+       "rollFailFlag": "sm:hurt",
+       "rollHurt": "wound",
+       "flag": "sm:manse",
+       "journal": "samil",
+       "say": "🇰🇷 「대한 독립 만세!」 장터가 울었다. 헌병이 쏘았다. 셋이 쓰러졌다. 나는 골목으로. — 전국 200만."
+      },
+      {
+       "label": "집에 있는다",
+       "flag": "sm:home",
+       "say": "문을 닫았다. 밖에서 만세, 총소리. 밤에 누가 문을 두드렸다 — 다친 사람. 들였다."
+      }
+     ]
+    },
+    {
+     "if": "sit:samil:open && !sit:samil:done && samil:morning && status:chinil && !sm:report && !sm:manse && !sm:home",
+     "name": "장터 연단",
+     "verb": "주재소에 알린다 / 집에 있는다",
+     "once": false,
+     "choices": [
+      {
+       "label": "앞장선 사람을 주재소에 알린다",
+       "flag": "sm:report",
+       "journal": "samil",
+       "say": "📜 셋이 잡혀갔다. 두 단. 마을이 등을 돌렸다. 족보에 적혔다."
+      },
+      {
+       "label": "집에 있는다",
+       "flag": "sm:home",
+       "say": "문을 닫았다."
+      }
+     ]
+    }
+   ]
+  },
+  "gaekju": {
+   "name": "객주집 상",
+   "verb": "살펴보기",
+   "say": "객주집 상에 한글 신문 — 독립신문. 띄어쓰기. 「누구나 읽게.」 뒷방에 광목·먹.",
+   "flag": "seen:gaekju",
+   "journal": "sinmun",
+   "info": "객주집 — 한글 신문, 밤에 태극기.",
+   "rename": [
+    {
+     "if": "sit:taegeukgi:open && !sit:taegeukgi:done && !sm:flag && !sm:flagfail && !sm:noflag",
+     "name": "객주집 뒷방",
+     "verb": "태극기를 만든다 ⚠(눈 2) / 안 만든다",
+     "once": false,
+     "choices": [
+      {
+       "label": "태극기를 만든다 ⚠ — 광목에 먹(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "순사가 어느 골목으로 도는지. 등불을 언제 끌지. 눈.",
+        "fail": "…창에 그림자. 순사. 광목째 끌려갔다. 옥 석 달."
+       },
+       "rollFailFlag": "sm:flagfail",
+       "rollHurt": "jail",
+       "gives": "flag",
+       "flag": "sm:flag",
+       "journal": "samil",
+       "say": "🇰🇷 서른 장. 먹이 마르기 전 새벽. 「내일 장터.」"
+      },
+      {
+       "label": "안 만든다",
+       "flag": "sm:noflag",
+       "say": "등불을 껐다. 옆방에서 가위 소리가 밤새."
+      }
+     ]
+    },
+    {
+     "if": "sit:sinmun:open && !sit:sinmun:done && !sn:read && !sn:readfail && !sn:listen",
+     "name": "객주집 상",
+     "verb": "한글 신문을 읽는다(눈 1) / 읽어 달라 한다",
+     "once": false,
+     "choices": [
+      {
+       "label": "한글 신문을 읽는다(눈 1)",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "한글. 띄어쓰기. 눈.",
+        "fail": "…글자가 섞였다. 옆 사람이 읽어 줬다."
+       },
+       "rollFailFlag": "sn:readfail",
+       "gives": "paper",
+       "flag": "sn:read",
+       "journal": "sinmun",
+       "say": "📰 「만민 공동회」 「러시아가 절영도를 달라 한다」. 세상이 종이 한 장에. 한 단 인심 — 마을에 읽어 줬다."
+      },
+      {
+       "label": "읽어 달라 한다",
+       "flag": "sn:listen",
+       "journal": "sinmun",
+       "say": "📰 객주 아주머니가 읽었다. 「여자가 신문을.」 내일부터 글을 배우기로."
+      }
+     ]
+    },
+    {
+     "if": "sit:gabo:open && !sit:gabo:done && status:sangin && !gb:join && !gb:lost && !gb:stay && !gb:open && !gb:minbo && !gb:hide && !gb:food && !gb:price && !gb:bae",
+     "name": "객주집 상",
+     "verb": "동학군이 온다 — 쌀을 푼다 / 값을 올린다",
+     "once": false,
+     "choices": [
+      {
+       "label": "쌀을 푼다 — 두 단",
+       "if": "val:grain>=2",
+       "gray": "쌀 두 단.",
+       "flag": "gb:food",
+       "journal": "donghak94",
+       "say": "🌾 동학군이 밥을 먹고 갔다. 「저 집은 안 턴다.」 집강소가 이름을 적어 뒀다."
+      },
+      {
+       "label": "값을 올린다 ⚠ — 세 배",
+       "flag": "gb:price",
+       "say": "💴 세 배. — 동학군이 제일 먼저 왔다. 곳간이 비었다. 그 뒤 관군이 왔는데 「동학에 쌀 댄 집」이라 했다."
+      }
+     ]
+    }
+   ]
+  },
+  "jijugate": {
+   "name": "지주 집 솟을대문",
+   "verb": "살펴보기",
+   "say": "옛 양반집. 솟을대문은 그대로인데 문패가 두 개 — 한글과 한자. 깃대가 섰다. 「지주 — 1894년 뒤엔 양반이 아니라 땅이 양반.」",
+   "flag": "seen:jijugate",
+   "journal": "gabo",
+   "info": "지주 집 — 곳간을 열거나 협력하거나.",
+   "rename": [
+    {
+     "if": "sit:gabo:open && !sit:gabo:done && status:jiju && !gb:join && !gb:lost && !gb:stay && !gb:open && !gb:minbo && !gb:hide && !gb:food && !gb:price && !gb:bae",
+     "name": "지주 집 솟을대문",
+     "verb": "곳간을 연다 / 민보군 ⚠ / 숨는다",
+     "once": false,
+     "choices": [
+      {
+       "label": "곳간을 연다 — 쌀 셋",
+       "if": "val:grain>=3",
+       "gray": "쌀 세 단.",
+       "flag": "gb:open",
+       "journal": "donghak94",
+       "say": "🌾 「저 집은 안 턴다.」 동학군이 대문 앞에서 절하고 갔다. 세 단 인심."
+      },
+      {
+       "label": "민보군 ⚠ — 관군 편에서 동학을 막는다",
+       "flag": "gb:minbo",
+       "journal": "donghak94",
+       "say": "🔥 총 든 사람 스물. 동학군 셋을 잡아 넘겼다. 땅은 지켰다. 마을이 나를 봤다. — 족보에 적혔다."
+      },
+      {
+       "label": "숨는다 — 산으로",
+       "flag": "gb:hide",
+       "say": "곳간이 털렸다. 땅문서는 챙겼다. 돌아오니 집강소가 서 있었다."
+      }
+     ]
+    },
+    {
+     "if": "sit:eulsa:open && !sit:eulsa:done && status:jiju && !es:chinil && !es:school && !es:uibyeong && !es:uilost && !es:gukchae && !es:watch",
+     "name": "지주 집 솟을대문",
+     "verb": "통감부에 협력 — 땅을 지킨다 ⚠ / 학교를 세운다 / 가만히",
+     "once": false,
+     "choices": [
+      {
+       "label": "통감부 관리와 손잡는다 ⚠ — 땅을 지킨다",
+       "flag": "es:chinil",
+       "journal": "eulsa",
+       "say": "💴 「협력하는 집은 땅을 건드리지 않는다.」 세 단. 면장 자리 이야기. — 족보에 적혔다. 게임은 판단하지 않는다."
+      },
+      {
+       "label": "사립 학교를 세운다 — 쌀 넷",
+       "if": "val:grain>=4",
+       "gray": "쌀 네 단.",
+       "flag": "es:school",
+       "journal": "eulsa",
+       "say": "🏫 「배워야 산다.」 마을 아이 서른. 세 단 인심. 통감부가 학교를 「불온」이라 적었다."
+      },
+      {
+       "label": "가만히 있는다",
+       "flag": "es:watch",
+       "say": "대문을 닫았다. 산에서 총소리. 「누구 집 아들이 의병에.」"
+      }
+     ]
+    },
+    {
+     "if": "sit:dongnipgun:open && !sit:dongnipgun:done && (status:jiju || status:sangin || status:chinil) && !dg:fund && !dg:fundfail && !dg:join && !dg:joinlost && !dg:no",
+     "name": "지주 집 솟을대문",
+     "verb": "독립군 자금을 댄다 ⚠(눈 2) / 안 한다",
+     "once": false,
+     "choices": [
+      {
+       "label": "독립군 자금 ⚠ — 쌀 셋(눈 2)",
+       "if": "val:grain>=3",
+       "gray": "쌀 세 단.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "누구 손에 쥐어 줄지. 밀정을 보는 눈.",
+        "fail": "…밀정. 주재소. 옥 두 해. 땅 반이 갔다."
+       },
+       "rollFailFlag": "dg:fundfail",
+       "rollHurt": "jail",
+       "flag": "dg:fund",
+       "journal": "dongnipgun",
+       "say": "💴 고개 너머 사람에게. 「청산리.」 이름은 안 적었다 — 족보에만. 세 단 인심."
+      },
+      {
+       "label": "안 한다",
+       "flag": "dg:no",
+       "say": "「들키면 땅이 다 간다.」 대문을 닫았다. 옆 집이 댔다는 말."
+      }
+     ]
+    },
+    {
+     "if": "sit:jingyong:open && !sit:jingyong:done && (status:jiju || status:chinil) && !jy:gongchul && !jy:volunteer && !jy:go && !jy:hide && !jy:caught && !jy:kwangbok && !jy:none",
+     "name": "지주 집 솟을대문",
+     "verb": "공출 — 쌀 넷 / 아들을 지원병으로 ⚠",
+     "once": false,
+     "choices": [
+      {
+       "label": "징용 대신 공출 — 쌀 넷",
+       "if": "val:grain>=4",
+       "gray": "쌀 네 단.",
+       "flag": "jy:gongchul",
+       "journal": "jingyong",
+       "say": "🌾 「지주 집 아들은 안 끌려간다 — 쌀로.」 놋그릇까지 갔다. 소작 아들은 갔다."
+      },
+      {
+       "label": "아들을 지원병으로 보낸다 ⚠",
+       "if": "status:chinil",
+       "gray": "협력한 집이 하던 일.",
+       "flag": "jy:volunteer",
+       "journal": "jingyong",
+       "say": "📜 신문에 났다. 「모범.」 두 단. — 아들은 남쪽 섬에서 못 돌아왔다. 족보에 적혔다."
+      }
+     ]
+    },
+    {
+     "if": "sit:hyeong:open && !sit:hyeong:done && !status:yetbaekjeong && !hp:with && !hp:turn && !hp:found && !hp:foundfail",
+     "name": "지주 집 솟을대문",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "「백정과 같이 앉냐.」 지주 집에서 형평사 반대 벽보를 붙였다. 옛 백정 집으로 가면 정한다."
+    }
+   ]
+  },
+  "sojakjip": {
+   "name": "소작 집 마루",
+   "verb": "살펴보기",
+   "say": "단 아래 초가. 「수확의 반은 지주.」 토지 조사 뒤엔 「반에서 여섯」. 마루에 빚 장부.",
+   "flag": "seen:sojakjip",
+   "journal": "toji",
+   "info": "소작 집 — 빚, 떠남."
+  },
+  "bigpaddy": {
+   "name": "지주 논",
+   "verb": "살펴보기",
+   "say": "넓다. 소작 열이 모를 꽂는다. 지주는 정미소에 쌀을 판다. 「쌀은 배를 타고 소작은 보리.」",
+   "flag": "seen:bigpaddy",
+   "journal": "gaehang",
+   "info": "지주 논.",
+   "rename": [
+    {
+     "if": "sit:toji:open && !sit:toji:done && (status:jiju || status:chinil) && !tj:report && !tj:grab",
+     "name": "지주 논",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "면사무소에서 신고한다. 「소작인이 부치는 논도 신고하는 사람 이름으로.」"
+    }
+   ]
+  },
+  "smallpaddy": {
+   "name": "작은 논",
+   "verb": "살펴보기",
+   "say": "뙈기 논. 「우리 논」 — 그런데 문서가 없다. 할아버지 때부터 지었을 뿐.",
+   "flag": "seen:smallpaddy",
+   "journal": "toji",
+   "info": "작은 논 — 문서 없는 땅."
+  },
+  "gyohoe": {
+   "name": "교회 문",
+   "verb": "살펴보기",
+   "say": "벽돌 예배당. 첨탑. 안에서 한글 성경 읽는 소리 — 「하나님 앞에 다 같다.」 옛 백정 박성춘이 장로. 선교사가 학교와 병원을 세웠다.",
+   "flag": "seen:gyohoe",
+   "journal": "manmin",
+   "info": "교회 — 한글, 같은 자리.",
+   "rename": [
+    {
+     "if": "sit:manmin:open && !sit:manmin:done && status:yetbaekjeong && !mm:speak && !mm:speakfail && !mm:listen && !mm:paper",
+     "name": "교회 문",
+     "verb": "박성춘처럼 — 연단에 선다 ⚠",
+     "once": false,
+     "say": "박성춘이 말했다. 「장터 연단으로. 백정이 먼저 선다.」"
+    },
+    {
+     "if": "sit:hyeong:open && !sit:hyeong:done && !status:yetbaekjeong && !hp:with && !hp:turn",
+     "name": "교회 문",
+     "verb": "형평사와 같이 선다 / 돌아선다",
+     "once": false,
+     "choices": [
+      {
+       "label": "형평사와 같이 선다 — 「같은 자리」",
+       "flag": "hp:with",
+       "journal": "hyeong",
+       "say": "⚖ 교회에서 같은 자리에 앉았다. 「학교에 같이.」 마을 반이 등을 돌렸다. 두 단 인심."
+      },
+      {
+       "label": "돌아선다",
+       "flag": "hp:turn",
+       "say": "「법으로 풀렸으면 됐지.」 돌아섰다. 옛 백정 아이는 학교 담 밖에 서 있었다."
+      }
+     ]
+    }
+   ]
+  },
+  "hakgyo": {
+   "name": "학교 운동장",
+   "verb": "살펴보기",
+   "say": "목조 학교. 종탑. 산수·지리·체조. 여학생이 책을 들고 간다. 게시판: 「단발」 「입학」. 1910년 뒤엔 「국어 = 일본어」.",
+   "flag": "seen:hakgyo",
+   "journal": "hakgyo",
+   "info": "학교 — 새 배움, 단발, 만세.",
+   "rename": [
+    {
+     "if": "sit:hakgyo:open && !sit:hakgyo:done && !status:yetbaekjeong && !hk:in && !hk:infail && !hk:cut && !hk:keep && !hk:girl && !hk:out && !hk:send",
+     "name": "학교 운동장",
+     "verb": "학교에 들어간다(눈 1) / 상투를 자른다 ⚠ / 보낸다",
+     "once": false,
+     "choices": [
+      {
+       "label": "내가 학교에 들어간다(눈 1) — 학생",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "산수·지리. 눈.",
+        "fail": "…낙제. 다음 해."
+       },
+       "rollFailFlag": "hk:infail",
+       "gives": "book",
+       "flag": "hk:in",
+       "journal": "hakgyo",
+       "say": "📖 「학생.」 산수·지리·영어. 교사·기자·의사로 가는 길. 상투는 — 잘랐다."
+      },
+      {
+       "label": "여학교에 들어간다 — 신여성",
+       "if": "sex:f",
+       "gray": "이화학당은 여학교.",
+       "gives": "book",
+       "flag": "hk:girl",
+       "journal": "hakgyo",
+       "say": "📖 「여자가 책을 들고 길을.」 어머니가 울었다. 교사가 된다는 말. 두 단 솜씨."
+      },
+      {
+       "label": "상투를 자른다 ⚠ — 단발",
+       "if": "sex:m",
+       "gray": "남자의 상투.",
+       "flag": "hk:cut",
+       "journal": "hakgyo",
+       "say": "✂ 「머리털은 못 자른다」던 사람이 울었다. 신작로에서 순검이 자른 사람도. 모자를 샀다."
+      },
+      {
+       "label": "아이를 보낸다 — 쌀 하나",
+       "if": "val:grain>=1",
+       "gray": "학비 쌀 한 단.",
+       "flag": "hk:send",
+       "journal": "hakgyo",
+       "say": "📖 아이가 책을 들었다. 「서당 대신 학교.」"
+      }
+     ]
+    },
+    {
+     "if": "sit:hakgyo:open && !sit:hakgyo:done && status:yetbaekjeong && !hk:out",
+     "name": "학교 운동장",
+     "verb": "아이를 학교에 — 1894년에 법으로 풀렸으니",
+     "once": false,
+     "flag": "hk:out",
+     "journal": "hyeong",
+     "say": "📖 아이가 책을 들고 갔다. — 사흘 뒤 쫓겨났다. 「백정 아이와 같이 앉을 수 없다」고 학부모들이. 법은 1894년, 사람은 아직."
+    },
+    {
+     "if": "sit:eulsa:open && !sit:eulsa:done && status:sangin && !es:school && !es:chinil && !es:uibyeong && !es:uilost && !es:gukchae && !es:watch",
+     "name": "학교 운동장",
+     "verb": "사립 학교를 세운다 — 쌀 넷",
+     "once": false,
+     "flag": "es:school",
+     "journal": "eulsa",
+     "say": "🏫 「배워야 산다.」 아이 서른. 세 단 인심. 통감부가 「불온」이라 적었다."
+    },
+    {
+     "if": "sit:samil:open && !sit:samil:done && samil:morning && (status:haksaeng || status:gyosa) && !sm:studentgo && !sm:manse && !sm:hurt && !sm:home",
+     "name": "학교 운동장",
+     "verb": "유관순과 함께 — 학교에서 나간다 ⚠",
+     "once": false,
+     "flag": "sm:studentgo",
+     "journal": "samil",
+     "say": "🇰🇷 교문을 나섰다. 장터로. 「독립선언서.」 연단에서 정한다."
+    },
+    {
+     "if": "sit:malmoi:open && !sit:malmoi:done && (status:haksaeng || status:gyosa) && !ml:teach && !ml:teachfail && !ml:send && !ml:sendfail && !ml:japanese",
+     "name": "학교 운동장",
+     "verb": "우리말로 가르친다 ⚠ / 「국어 상용」",
+     "once": false,
+     "choices": [
+      {
+       "label": "우리말로 가르친다 ⚠(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "장학관이 오는 날을 보는 눈.",
+        "fail": "…창밖에 순사. 「조선어 사용.」 옥. 교사 자격 박탈."
+       },
+       "rollFailFlag": "ml:teachfail",
+       "rollHurt": "jail",
+       "flag": "ml:teach",
+       "journal": "malmoi",
+       "say": "📖 문 닫고 「ㄱㄴㄷ」. 아이들이 집에서는 안 썼다 — 들키니까. 한 단 솜씨. 윤동주가 시를 두고 갔다."
+      },
+      {
+       "label": "「국어 상용」 — 일본어로",
+       "flag": "ml:japanese",
+       "say": "📖 조선어 시간이 없어졌다. 아이가 우리말을 쓰면 벌표. 자리는 지켰다."
+      }
+     ]
+    }
+   ]
+  },
+  "malmoi": {
+   "name": "말모이 상자",
+   "verb": "살펴보기",
+   "say": "운동장 구석 나무 상자. 「낱말을 보내 주세요 — 우리말 사전.」 주시경 선생의 제자들이 모은다. 1942년 — 순사가 이 상자를 가져간다.",
+   "flag": "seen:malmoi",
+   "journal": "malmoi",
+   "info": "말모이 — 조선어 학회.",
+   "rename": [
+    {
+     "if": "sit:malmoi:open && !sit:malmoi:done && !ml:send && !ml:sendfail && !ml:teach && !ml:teachfail && !ml:japanese",
+     "name": "말모이 상자",
+     "verb": "낱말을 적어 넣는다 ⚠(눈 1) / 안 넣는다",
+     "once": false,
+     "choices": [
+      {
+       "label": "우리 마을 말을 적어 넣는다 ⚠(눈 1)",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "순사가 상자를 뒤지는 날. 눈.",
+        "fail": "…상자째 주재소로. 이름이 적힌 종이. 옥 넉 달."
+       },
+       "rollFailFlag": "ml:sendfail",
+       "rollHurt": "jail",
+       "flag": "ml:send",
+       "journal": "malmoi",
+       "say": "✍ 「고샅」「두렁」「갈퀴」. 1945년 서울역 창고에서 원고가 나왔다. 사전에 우리 마을 말."
+      },
+      {
+       "label": "안 넣는다",
+       "flag": "ml:japanese",
+       "say": "「이름 적히면 끝.」 지나쳤다. 33명이 잡혔다는 말."
+      }
+     ]
+    }
+   ]
+  },
+  "jusaeso": {
+   "name": "주재소 벽보",
+   "hidden": [
+    "sunred"
+   ],
+   "verb": "살펴보기",
+   "say": "주재소. 벽보: 「도박 금지」 「납세」. 순사가 칼을 찼다. 아직 깃대엔 깃발이 없다.",
+   "flag": "seen:jusaeso",
+   "journal": "hapbang",
+   "info": "주재소 — 창씨개명·영장.",
+   "rename": [
+    {
+     "if": "sit:changssi:open && !sit:changssi:done && status:chinil && !cs:change && !cs:keep && !cs:half && !cs:lead && !cs:none",
+     "name": "주재소 벽보",
+     "verb": "앞장서 바꾼다 — 「마을 모범」",
+     "once": false,
+     "flag": "cs:lead",
+     "journal": "changssi",
+     "say": "📜 「金本」. 신문에 났다. 배급표 두 장. 마을에서 제일 먼저. 족보에 적혔다."
+    },
+    {
+     "if": "sit:changssi:open && !sit:changssi:done && status:dongnip && !cs:change && !cs:keep && !cs:half && !cs:lead && !cs:none",
+     "name": "주재소 벽보",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "cs:none",
+     "journal": "changssi",
+     "say": "쫓기는 몸. 호적에 이미 없다. 바꿀 이름도 없다. 담 밖에서 봤다."
+    },
+    {
+     "if": "sit:changssi:open && !sit:changssi:done && !cs:change && !cs:keep && !cs:half && !cs:lead && !cs:none",
+     "name": "주재소 벽보",
+     "verb": "이름을 바꾼다 / 성만 남긴다 / 버틴다 ⚠",
+     "once": false,
+     "choices": [
+      {
+       "label": "일본식으로 바꾼다 — 배급·학교",
+       "gives": "ration",
+       "flag": "cs:change",
+       "journal": "changssi",
+       "say": "📜 「山田.」 배급표. 아이가 학교에 들어갔다. 80%가 그랬다. 족보 한 줄이 흐려졌다."
+      },
+      {
+       "label": "성은 남긴다 — 「金本」",
+       "gives": "ration",
+       "flag": "cs:half",
+       "journal": "changssi",
+       "say": "📜 「김」 자를 남겼다. 「金本.」 배급표. 할아버지 이름은 지켰다고 했다 — 반은."
+      },
+      {
+       "label": "버틴다 ⚠ — 배급 없음, 아이 학교 못 감",
+       "flag": "cs:keep",
+       "journal": "changssi",
+       "say": "📜 「불령.」 배급표 없음. 아이는 학교에 못 갔다. 두 단 줄었다. 족보는 그대로다."
+      }
+     ]
+    },
+    {
+     "if": "sit:jingyong:open && !sit:jingyong:done && status:dongnip && !jy:kwangbok && !jy:none",
+     "name": "주재소 벽보",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "jy:none",
+     "say": "수배 벽보에 내 얼굴. 산속 빈터로 — 광복군."
+    },
+    {
+     "if": "toji:on",
+     "name": "주재소 일장기",
+     "verb": "살펴보기",
+     "once": false,
+     "journal": "hapbang",
+     "say": "깃대에 일장기. 헌병이 재판 없이 태형. 「조선인은 때려도 된다」는 법. 1910년."
+    }
+   ]
+  },
+  "myeon": {
+   "name": "면사무소 신고대",
+   "verb": "살펴보기",
+   "say": "신고대. 「토지 신고서 — 기한 안에.」 글자가 어렵다. 면서기가 조선 사람인데 일본 말로 묻는다. 뒤에 동양척식회사 사람.",
+   "flag": "seen:myeon",
+   "journal": "toji",
+   "info": "면사무소 — 토지 조사, 회사령.",
+   "rename": [
+    {
+     "if": "sit:toji:open && !sit:toji:done && (status:jiju || status:chinil) && !tj:report && !tj:grab && !tj:lost && !tj:none && !tj:forest && !tj:hoesa && !tj:hoesafail && !tj:under && !tj:alone && !tj:factory && !tj:dohan && !tj:namef && !tj:pawn",
+     "name": "면사무소 신고대",
+     "verb": "신고한다(눈 1) / 소작 땅도 내 이름으로 ⚠",
+     "once": false,
+     "choices": [
+      {
+       "label": "내 땅을 신고한다(눈 1)",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "신고서. 글. 기한.",
+        "fail": "…기한. 논 하나가 「주인 없음」. 총독부 것."
+       },
+       "rollFailFlag": "tj:lost",
+       "gives": "deed",
+       "flag": "tj:report",
+       "journal": "toji",
+       "say": "📜 지권. 「총독부가 보증하는 내 땅.」 두 단. 은행이 돈을 빌려준다고."
+      },
+      {
+       "label": "소작인 논도 내 이름으로 ⚠",
+       "gives": "deed",
+       "flag": "tj:grab",
+       "journal": "toji",
+       "say": "📜 「문서 없는 땅은 신고하는 사람 것.」 소작 다섯의 논이 내 지권에. 네 단. 소작들이 간도로 갔다. 족보에 적혔다."
+      }
+     ]
+    },
+    {
+     "if": "sit:toji:open && !sit:toji:done && status:nongmin && !tj:report && !tj:grab && !tj:lost && !tj:none && !tj:forest && !tj:hoesa && !tj:hoesafail && !tj:under && !tj:alone && !tj:factory && !tj:dohan && !tj:namef && !tj:pawn",
+     "name": "면사무소 신고대",
+     "verb": "신고한다(눈 2) / 몰라서 못 한다",
+     "once": false,
+     "choices": [
+      {
+       "label": "신고서를 쓴다(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "일본 글자 신고서. 기한. 측량 날짜. 눈.",
+        "fail": "…기한을 놓쳤다. 할아버지 논이 「동양척식회사」 것. 소작."
+       },
+       "rollFailFlag": "tj:lost",
+       "gives": "deed",
+       "flag": "tj:report",
+       "journal": "toji",
+       "say": "📜 지권. 「내 논이 처음 종이에.」 세금이 늘었다 — 그래도 내 땅."
+      },
+      {
+       "label": "글을 몰라 못 한다",
+       "flag": "tj:lost",
+       "journal": "toji",
+       "say": "📜 「주인 없는 땅.」 할아버지 논이 동양척식회사 것. 같은 논에서 소작. 「반에서 여섯.」"
+      }
+     ]
+    },
+    {
+     "if": "sit:toji:open && !sit:toji:done && (status:sojak || status:yetnobi) && !tj:report && !tj:grab && !tj:lost && !tj:none && !tj:forest && !tj:hoesa && !tj:hoesafail && !tj:under && !tj:alone && !tj:factory && !tj:dohan && !tj:namef && !tj:pawn",
+     "name": "면사무소 신고대",
+     "verb": "신고할 땅이 없다",
+     "once": false,
+     "flag": "tj:none",
+     "journal": "toji",
+     "say": "신고할 땅이 없다. 지주가 소작 논까지 신고했다. 도지가 「반에서 여섯」으로. 한 단 줄었다. — 전당포, 공장, 간도."
+    },
+    {
+     "if": "sit:toji:open && !sit:toji:done && status:hwajeon && !tj:report && !tj:grab && !tj:lost && !tj:none && !tj:forest && !tj:hoesa && !tj:hoesafail && !tj:under && !tj:alone && !tj:factory && !tj:dohan && !tj:namef && !tj:pawn",
+     "name": "면사무소 신고대",
+     "verb": "산은 나라 땅이 됐다",
+     "once": false,
+     "flag": "tj:forest",
+     "journal": "toji",
+     "say": "「신고 안 된 산은 총독부 것.」 화전이 「불법」. 쫓겨났다. 노동자 — 아니면 간도."
+    },
+    {
+     "if": "sit:toji:open && !sit:toji:done && status:sangin && !tj:report && !tj:grab && !tj:lost && !tj:none && !tj:forest && !tj:hoesa && !tj:hoesafail && !tj:under && !tj:alone && !tj:factory && !tj:dohan && !tj:namef && !tj:pawn",
+     "name": "면사무소 신고대",
+     "verb": "회사 허가를 받는다(눈 2) / 가게만",
+     "once": false,
+     "choices": [
+      {
+       "label": "회사령 — 허가를 받는다(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "총독부가 허가하는 사람을 보는 눈. 일본인 동업.",
+        "fail": "…「조선인 회사 불허.」 밑천이 묶였다."
+       },
+       "rollFailFlag": "tj:hoesafail",
+       "gives": "coin",
+       "flag": "tj:hoesa",
+       "journal": "hoesa",
+       "say": "💴 「○○상회.」 조선 사람 회사 둘 중 하나. 세 단. 1920년 회사령이 풀렸다."
+      },
+      {
+       "label": "가게만 한다",
+       "flag": "tj:alone",
+       "say": "💴 허가는 안 받았다. 한 단. 일본 가게가 옆에 둘 더 생겼다."
+      }
+     ]
+    },
+    {
+     "if": "sit:toji:open && !sit:toji:done && status:gisulja && !tj:report && !tj:grab && !tj:lost && !tj:none && !tj:forest && !tj:hoesa && !tj:hoesafail && !tj:under && !tj:alone && !tj:factory && !tj:dohan && !tj:namef && !tj:pawn",
+     "name": "면사무소 신고대",
+     "verb": "일본 회사 밑으로 / 혼자 버틴다",
+     "once": false,
+     "choices": [
+      {
+       "label": "일본 회사 밑으로 — 월급",
+       "gives": "coin",
+       "flag": "tj:under",
+       "journal": "hoesa",
+       "say": "💴 두 단. 「조선인 기술자 — 일본인의 반.」 윗자리는 없다. 천장."
+      },
+      {
+       "label": "혼자 버틴다 — 내 가게",
+       "flag": "tj:alone",
+       "journal": "hoesa",
+       "say": "🔨 한 단. 「회사는 못 세우고 가게는 된다.」 손으로."
+      }
+     ]
+    },
+    {
+     "if": "sit:toji:open && !sit:toji:done && status:nodongja && !tj:report && !tj:grab && !tj:lost && !tj:none && !tj:forest && !tj:hoesa && !tj:hoesafail && !tj:under && !tj:alone && !tj:factory && !tj:dohan && !tj:namef && !tj:pawn",
+     "name": "면사무소 신고대",
+     "verb": "공장으로",
+     "once": false,
+     "flag": "tj:factory",
+     "journal": "toji",
+     "say": "「땅 없는 사람은 공장.」 방직·정미. 하루 열두 시간."
+    },
+    {
+     "if": "sit:toji:open && !sit:toji:done && status:dongnip && !tj:report && !tj:grab && !tj:lost && !tj:none && !tj:forest && !tj:hoesa && !tj:hoesafail && !tj:under && !tj:alone && !tj:factory && !tj:dohan && !tj:namef && !tj:pawn",
+     "name": "면사무소 신고대",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "tj:hiding",
+     "journal": "toji",
+     "say": "수배 중. 신고대 앞에 설 수 없다. 집 땅은 「주인 없음」 — 아버지 이름이 역적 명부에."
+    },
+    {
+     "if": "sit:toji:open && !sit:toji:done && (status:haksaeng || status:gyosa) && !tj:report && !tj:grab && !tj:lost && !tj:none && !tj:forest && !tj:hoesa && !tj:hoesafail && !tj:under && !tj:alone && !tj:factory && !tj:dohan && !tj:namef && !tj:pawn",
+     "name": "면사무소 신고대",
+     "verb": "아버지 땅을 신고한다(눈 1)",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 1,
+      "why": "학교에서 배운 글. 신고서.",
+      "fail": "…측량 날짜를 놓쳤다. 논 하나가 갔다."
+     },
+     "rollFailFlag": "tj:lost",
+     "gives": "deed",
+     "flag": "tj:report",
+     "journal": "toji",
+     "say": "📜 「학교 다닌 아들이 신고서를 썼다.」 마을 사람 셋 것도 대신 써 줬다. 두 단 인심."
+    },
+    {
+     "if": "sit:toji:open && !sit:toji:done && status:yetbaekjeong && !tj:report && !tj:grab && !tj:lost && !tj:none && !tj:forest && !tj:hoesa && !tj:hoesafail && !tj:under && !tj:alone && !tj:factory && !tj:dohan && !tj:namef && !tj:pawn",
+     "name": "면사무소 신고대",
+     "verb": "호적을 본다",
+     "once": false,
+     "flag": "tj:dohan",
+     "journal": "hyeong",
+     "say": "📜 호적에 「도한(屠漢)」. 1894년에 법으로 풀렸는데 표시가 남았다. 면서기가 눈을 안 맞췄다. 1923년 — 형평."
+    },
+    {
+     "if": "sit:toji:open && !sit:toji:done && sex:f && !tj:report && !tj:grab && !tj:lost && !tj:none && !tj:forest && !tj:hoesa && !tj:hoesafail && !tj:under && !tj:alone && !tj:factory && !tj:dohan && !tj:namef && !tj:pawn",
+     "name": "면사무소 신고대",
+     "verb": "호적을 본다 — 내 이름",
+     "once": false,
+     "flag": "tj:namef",
+     "journal": "toji",
+     "say": "📜 호적에 내 이름. 「누구의 딸」이 아니라 이름. 처음이다. — 땅은 남편·아버지 이름."
+    },
+    {
+     "if": "sit:toji:done",
+     "name": "면사무소 신고대",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "「신고 안 된 땅 — 총독부.」 동양척식회사가 마을 논 반을 쥐었다."
+    }
+   ]
+  },
+  "gongjang": {
+   "name": "공장 문",
+   "verb": "살펴보기",
+   "say": "방직 공장. 굴뚝. 여공 이백, 열두 시간. 「일본 여공의 반.」 1944년 — 군수 공장이 됐다.",
+   "flag": "seen:gongjang",
+   "journal": "paeop",
+   "info": "공장 — 노동, 파업, 징용.",
+   "rename": [
+    {
+     "if": "sit:paeop:open && !sit:paeop:done && (status:nodongja || status:yetnobi || status:hwajeon || status:sojak) && sex:f && !po:join && !po:work && !po:lost",
+     "name": "공장 문",
+     "verb": "여공 파업 ⚠(배 1) / 일한다",
+     "once": false,
+     "choices": [
+      {
+       "label": "파업 ⚠ — 「열두 시간을 열로」(배 1)",
+       "roll": {
+        "ab": "배",
+        "hard": 1,
+        "why": "넉 달. 배.",
+        "fail": "…해고. 경찰."
+       },
+       "rollFailFlag": "po:lost",
+       "flag": "po:join",
+       "journal": "paeop",
+       "say": "✊ 여공 이백. 「원산처럼.」 열한 시간이 됐다. 한 단 인심."
+      },
+      {
+       "label": "일한다",
+       "flag": "po:work",
+       "say": "🌾 열두 시간. 삯은 그대로."
+      }
+     ]
+    },
+    {
+     "if": "sit:jingyong:open && !sit:jingyong:done && sex:m && !status:jiju && !status:chinil && !status:dongnip && !jy:go && !jy:hide && !jy:caught && !jy:gongchul && !jy:volunteer && !jy:kwangbok && !jy:none",
+     "name": "공장 문 — 영장",
+     "verb": "징용 — 끌려간다 / 산으로 숨는다 ⚠(발 2)",
+     "once": false,
+     "choices": [
+      {
+       "label": "영장대로 간다 — 규슈 탄광",
+       "flag": "jy:go",
+       "journal": "jingyong",
+       "say": "⛏ 배. 탄광. 하루 열네 시간. 1945년 8월 — 돌아왔다. 폐에 남았다. 못 돌아온 사람 서른."
+      },
+      {
+       "label": "산으로 숨는다 ⚠(발 2)",
+       "roll": {
+        "ab": "발",
+        "hard": 2,
+        "why": "영장 돌리는 날 밤. 발.",
+        "fail": "…순사. 개. 잡혀서 헌병대. 옥, 그리고 탄광."
+       },
+       "rollFailFlag": "jy:caught",
+       "rollHurt": "jail",
+       "flag": "jy:hide",
+       "journal": "jingyong",
+       "say": "🌲 산속 빈터. 1년. 해방까지. 「숨은 집 아들은 살았다.」"
+      }
+     ]
+    },
+    {
+     "if": "sit:jingyong:open && !sit:jingyong:done && sex:f && !jy:factory && !jy:hidef && !jy:caught && !jy:kwangbok && !jy:none",
+     "name": "공장 문 — 영장",
+     "verb": "근로 정신대 영장 ⚠ — 간다 / 숨는다(발 2)",
+     "once": false,
+     "choices": [
+      {
+       "label": "군수 공장으로 간다",
+       "flag": "jy:factory",
+       "journal": "jingyong",
+       "say": "🏭 도야마 비행기 공장. 열네 시간. 「돌아왔다.」 돌아온 걸 말 안 했다."
+      },
+      {
+       "label": "숨는다 — 시골 친척 집(발 2)",
+       "roll": {
+        "ab": "발",
+        "hard": 2,
+        "why": "영장 전에. 발.",
+        "fail": "…순사가 집을 뒤졌다. 아버지가 대신 옥."
+       },
+       "rollFailFlag": "jy:caught",
+       "flag": "jy:hidef",
+       "journal": "jingyong",
+       "say": "🌲 친척 집 1년. 「시집갔다」고 둘러댔다. 해방."
+      }
+     ]
+    },
+    {
+     "if": "sit:jingyong:open && !sit:jingyong:done && status:dongnip && !jy:kwangbok && !jy:none",
+     "name": "공장 문",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "영장이 내 이름을 모른다. 산속 빈터 — 광복군."
+    }
+   ]
+  },
+  "hyeong": {
+   "name": "옛 백정 집",
+   "verb": "살펴보기",
+   "say": "개울 건너 끝. 1894년에 법으로 풀렸다. 그런데 아이가 학교에서 쫓겨났고 호적에 「도한」. 깃발 하나 — 「형평(衡平)」. 저울처럼 평평하게.",
+   "flag": "seen:hyeong",
+   "journal": "hyeong",
+   "info": "옛 백정 집 — 형평 운동.",
+   "rename": [
+    {
+     "if": "sit:hyeong:open && !sit:hyeong:done && status:yetbaekjeong && !hp:found && !hp:foundfail && !hp:turn",
+     "name": "옛 백정 집",
+     "verb": "형평사를 세운다 ⚠(눈 2) / 조용히 산다",
+     "once": false,
+     "choices": [
+      {
+       "label": "형평사를 세운다 ⚠(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "누가 같이 설지 보는 눈. 교회.",
+        "fail": "…「백정이 감히.」 돌. 집 창이 깨졌다. 그래도 지부는 섰다."
+       },
+       "rollFailFlag": "hp:foundfail",
+       "rollHurt": "wound",
+       "flag": "hp:found",
+       "journal": "hyeong",
+       "say": "⚖ 「진주 형평사.」 전국 수백 지부. 아이가 학교에 돌아갔다 — 뒷자리지만. 두 단 인심."
+      },
+      {
+       "label": "조용히 산다",
+       "flag": "hp:turn",
+       "say": "가죽을 팔았다. 돈은 모였다. 아이는 서당 뒤에서 글을 배웠다."
+      }
+     ]
+    },
+    {
+     "if": "sit:hyeong:open && !sit:hyeong:done && !status:yetbaekjeong && !hp:with && !hp:turn",
+     "name": "옛 백정 집",
+     "verb": "같이 선다 / 돌아선다",
+     "once": false,
+     "choices": [
+      {
+       "label": "형평사와 같이 선다",
+       "flag": "hp:with",
+       "journal": "hyeong",
+       "say": "⚖ 같이 섰다. 「저 집은 백정이랑.」 마을 반이 등을 돌렸다. 두 단 인심."
+      },
+      {
+       "label": "돌아선다",
+       "flag": "hp:turn",
+       "say": "「법으로 풀렸으면 됐지.」 돌아섰다."
+      }
+     ]
+    }
+   ]
+  },
+  "yeok": {
+   "name": "정거장",
+   "verb": "살펴보기",
+   "say": "기관차. 연기. 「경의선 — 신의주, 거기서 압록강.」 표 파는 창. 짐 싼 집 둘이 섰다.",
+   "flag": "seen:yeok",
+   "journal": "gando",
+   "info": "정거장 — 간도행, 징용 열차.",
+   "rename": [
+    {
+     "if": "sit:gando:open && !sit:gando:done && !gd:gando && !gd:hawaii && !gd:japan && !gd:stay && !gd:none",
+     "name": "정거장",
+     "verb": "간도행 표를 산다 ⚠ / 남는다",
+     "once": false,
+     "choices": [
+      {
+       "label": "간도로 ⚠ — 압록강을 건넌다",
+       "gives": "ticket",
+       "flag": "gd:gando",
+       "journal": "gando",
+       "say": "🚂 신의주. 얼음 강. 「땅은 있다 — 중국 땅.」 밭을 일궜다. 독립군이 밤에 와서 밥을 먹고 갔다. 가문이 강 건너로 갈라졌다."
+      },
+      {
+       "label": "남는다",
+       "flag": "gd:stay",
+       "say": "표를 안 샀다. 옆 집은 갔다. 「거기서도 조선 사람은 조선 사람.」"
+      }
+     ]
+    },
+    {
+     "if": "sit:jingyong:open && !sit:jingyong:done && (jy:go || jy:caught)",
+     "name": "정거장",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "징용 열차. 창에 얼굴. 부산 — 배."
+    }
+   ]
+  },
+  "gando": {
+   "name": "고개 서낭당",
+   "verb": "살펴보기",
+   "say": "고개. 북쪽 길. 「압록강까지 열흘.」 돌무더기에 돌 하나. 짐 싼 집이 쉬어 간다. 고개 너머에서 온 사람이 돈을 받아 간다 — 독립군.",
+   "flag": "seen:gando",
+   "journal": "gando",
+   "info": "고개 — 간도 길, 독립군 연락.",
+   "rename": [
+    {
+     "if": "sit:gando:open && !sit:gando:done && !gd:gando && !gd:hawaii && !gd:japan && !gd:stay && !gd:none",
+     "name": "고개 서낭당",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "정거장에서 표. 아니면 부두에서 배. 여기선 걸어서 — 열흘."
+    }
+   ]
+  },
+  "sangil": {
+   "name": "산속 빈터",
+   "verb": "살펴보기",
+   "say": "산속 빈터. 모닥불 자리. 총 든 사람 — 안중근. 「의병 참모중장.」 1907년 군대 해산 뒤 군인들이 왔다.",
+   "flag": "seen:sangil",
+   "journal": "uibyeong",
+   "info": "산속 빈터 — 의병·독립군·광복군.",
+   "rename": [
+    {
+     "if": "sit:eulsa:open && !sit:eulsa:done && sex:m && !status:chinil && !es:uibyeong && !es:uilost && !es:school && !es:chinil && !es:gukchae && !es:watch",
+     "name": "산속 빈터",
+     "verb": "의병에 든다 ⚠(몸 2) / 내려간다",
+     "once": false,
+     "choices": [
+      {
+       "label": "의병에 든다 ⚠(몸 2)",
+       "roll": {
+        "ab": "몸",
+        "hard": 2,
+        "why": "산. 겨울. 일본군 총. 몸.",
+        "fail": "…일본군. 총상. 어깨. 내려왔다 — 이름은 바꿨다."
+       },
+       "rollFailFlag": "es:uilost",
+       "rollHurt": "wound",
+       "flag": "es:uibyeong",
+       "journal": "uibyeong",
+       "say": "🔫 13도 창의군. 서울 앞까지 갔다 막혔다. 「남한 대토벌.」 산을 넘었다. 쫓기는 몸."
+      },
+      {
+       "label": "내려간다",
+       "flag": "es:watch",
+       "say": "내려왔다. 총소리가 겨우내."
+      }
+     ]
+    },
+    {
+     "if": "sit:dongnipgun:open && !sit:dongnipgun:done && sex:m && !status:chinil && !dg:join && !dg:joinlost && !dg:fund && !dg:fundfail && !dg:no",
+     "name": "산속 빈터",
+     "verb": "독립군에 든다 ⚠(발 2) / 안 든다",
+     "once": false,
+     "choices": [
+      {
+       "label": "독립군에 든다 ⚠ — 간도로(발 2)",
+       "roll": {
+        "ab": "발",
+        "hard": 2,
+        "why": "국경. 밀정. 발.",
+        "fail": "…국경에서 헌병. 옥 세 해."
+       },
+       "rollFailFlag": "dg:joinlost",
+       "rollHurt": "jail",
+       "flag": "dg:join",
+       "journal": "dongnipgun",
+       "say": "🔫 봉오동. 청산리. 「이겼다.」 그 뒤 간도 참변 — 마을이 탔다. 쫓기는 몸. 호적에서 지워졌다."
+      },
+      {
+       "label": "안 든다",
+       "flag": "dg:no",
+       "say": "내려왔다. 고개 너머 사람이 돈을 받아 갔다는 말."
+      }
+     ]
+    },
+    {
+     "if": "sit:jingyong:open && !sit:jingyong:done && status:dongnip && !jy:kwangbok",
+     "name": "산속 빈터",
+     "verb": "광복군에 든다",
+     "once": false,
+     "flag": "jy:kwangbok",
+     "journal": "dongnipgun",
+     "say": "🔫 1940년 충칭. 광복군. 「국내 진입 작전」 — 훈련 중에 해방이 왔다. 돌아왔다."
+    },
+    {
+     "if": "sit:jingyong:open && !sit:jingyong:done && jy:hide",
+     "name": "산속 빈터",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "숨은 자리. 1년. 라디오 소리 — 「항복.」"
+    }
+   ]
+  }
+ }
+}

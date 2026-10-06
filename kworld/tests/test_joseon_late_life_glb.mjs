@@ -45,6 +45,6 @@ assert.ok(st.find((r) => r.id === 'gwanno').if === 'from:kk_caught' && st.some((
 assert.ok(JSON.stringify(items).includes(' || '), '|| 묶음 조건 사용');
 assert.ok(life.hurts?.wound && life.hurts?.leg && life.hurts?.jail && world.danger?.safe?.length === 6, '흔적 셋 + 밤 안전 자리 6(외딴 집 추가)');
 assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');
-assert.ok(world.gate?.next === 'gaehang-life' && !world.gate.ready, '문 → 개항(준비 중)');
+assert.ok(world.gate?.next === 'gaehang-life' && world.gate.ready, '문 → 개항(열림)');
 const prev = JSON.parse(fs.readFileSync(new URL('../eras/joseon-life/world.json', import.meta.url))); assert.ok(prev.gate?.next === 'joseon-late-life' && prev.gate.ready, '조선 전기 끝 카드 → 조선 후기 문(열림)');
 console.log(`joseon-late-life: ix ${ix.length} + scene ${scene.add.length} · areas ${areas.length} · npc ${npcs.length} · 상황 ${life.situations.length} · 신분 ${ids.size} · 끝 갈림 ${last.choices[0].then[0].end.branches.length}`);
