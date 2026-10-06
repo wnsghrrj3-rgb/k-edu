@@ -14,6 +14,7 @@
    · 60차(2026-10-01) vmul parts:false(answer:false 와 함께 — 부분 곱 줄까지 비움, 문제 장용)
    · 59차(2026-10-01) 4학년 1학기 각도 부품: ang(각 하나 — 호·도·직각 ㄱ자·단위 각 칸·어림 기준선·예각/직각/둔각) · prot(각도기 — 안쪽·바깥쪽 눈금, 밑금 방향에 따라 읽는 눈금) · asum(각도의 합·차·한 점에 모으기) · polyang(삼각형·사각형 안쪽 각 — 크기대로 그림·대각선)
    · 64차(2026-10-02) 4학년 1학기 관계와 규칙 부품: bal(저울 — 식을 셈해 기울기) · shapes(모양의 배열 — 변하는/변하지 않는 부분) · ngrid(수 배열표·수열) · eqs(계산식의 배열) · eqc(등호 카드 — 옳음은 부품이 셈)
+   · 80차(2026-10-06) 4학년 2학기 분수의 덧셈과 뺄셈 부품: fop(같은 분모 분수의 덧셈·뺄셈 띠 — 파랑 앞의 수·초록 더하는 수·주황 빗금 덜어 낸 칸 · 대분수 자연수는 통 칸)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
    ============================================================================ */
 (function (global) {
@@ -1487,6 +1488,38 @@
   Object.assign(HTML_PARTS, { ngrid, eqs, eqc });
   global.KT2_CALC6 = calc6;
   }
+  // ══ 80차(2026-10-06) 4학년 2학기 분수의 덧셈과 뺄셈 부품 — fop(분모가 같은 분수의 덧셈·뺄셈 띠) ══
+  // o: { n, a, b, op:'+'|'−', solid, show, label, units, key } · key:false 면 색 설명 줄 없이(양 하나만 보일 때 — b '0') · a·b = '2·1/4'(대분수) | '9/4' | '3'(자연수) — 모두 단위분수 1/n 의 칸 수로 센다.
+  // 그림 문법: 파랑 = 앞의 수 · 초록 = 더하는 수 · 주황 점선 빗금 = 덜어 낸 칸 · 굵은 검정 선 = 1(전체 하나)의 경계
+  // solid: true 면 앞의 수 자연수 부분을 나누지 않은 통 칸으로(대분수 그림 — 「자연수 1은 통 사각형」) · 뺄셈에서 덜어 내는 칸이 걸친 1은 쪼갠 채로(1만큼 가분수로 바꿈).
+  // show: 아래 식 글자(토큰 배열) — 없으면 부품이 셈해 「a ○ b = 결과」 · false 면 식 없음. 결과 자리에 '?' 를 두면 문제 장(답을 그리지 않음).
+  const fcnt = (v, n) => { const t = String(v).trim(); let m; if ((m = t.match(/^(\d+)·(\d+)\/(\d+)$/))) return +m[3] === n ? +m[1] * n + +m[2] : NaN; if ((m = t.match(/^(\d+)\/(\d+)$/))) return +m[2] === n ? +m[1] : NaN; if (/^\d+$/.test(t)) return +t * n; return NaN; };
+  const fshow = (c, n, mixed) => { if (c % n === 0) return String(c / n); if (c < n) return c + '/' + n; return mixed ? Math.floor(c / n) + '·' + (c % n) + '/' + n : c + '/' + n; };
+  function fop(o) {
+    const n = Math.max(1, o.n | 0), op = o.op === '+' ? '+' : '−', A = fcnt(o.a, n), B = fcnt(o.b, n);
+    if (!(A >= 0) || !(B >= 0) || (op === '−' && B > A)) return '';
+    const R = op === '+' ? A + B : A - B, top = A + (op === '+' ? B : 0), units = Math.max(1, o.units | 0, Math.ceil(top / n)), x0 = 30, bw = 400, bh = 60, t0 = o.label ? 50 : 26, y0 = t0 + 36, uw = bw / units, cw = uw / n;
+    const solidN = op === '+' ? (o.solid ? Math.floor(A / n) : 0) : (o.solid ? Math.min(Math.floor(A / n), Math.floor(R / n)) : 0);
+    let s = '';
+    for (let u = 0; u < units; u++) {
+      if (u < solidN) { s += '<rect class="o-slice on solid" data-c="' + n + '" x="' + (x0 + u * uw).toFixed(1) + '" y="' + y0 + '" width="' + uw.toFixed(1) + '" height="' + bh + '" fill="' + BLUE + '" stroke="#fff" stroke-width="3"/>'; continue; }
+      for (let i = 0; i < n; i++) { const k = u * n + i, x = (x0 + k * cw).toFixed(1), sw = cw < 12 ? 1.5 : 3;
+        if (op === '+' ? k < A : k < R) s += '<rect class="o-slice on" x="' + x + '" y="' + y0 + '" width="' + cw.toFixed(1) + '" height="' + bh + '" fill="' + BLUE + '" stroke="#fff" stroke-width="' + sw + '"/>';
+        else if (op === '+' && k < A + B) s += '<rect class="o-slice on2" x="' + x + '" y="' + y0 + '" width="' + cw.toFixed(1) + '" height="' + bh + '" fill="' + GRN + '" stroke="#fff" stroke-width="' + sw + '"/>';
+        else if (op === '−' && k < A) s += '<g class="o-slice cut"><rect x="' + x + '" y="' + y0 + '" width="' + cw.toFixed(1) + '" height="' + bh + '" fill="#FFE9DA" stroke="#fff" stroke-width="' + sw + '"/><line x1="' + x + '" y1="' + (y0 + bh) + '" x2="' + (+x + cw).toFixed(1) + '" y2="' + y0 + '" stroke="' + ORANGE + '" stroke-width="3"/></g>';
+        else s += '<rect class="o-slice" x="' + x + '" y="' + y0 + '" width="' + cw.toFixed(1) + '" height="' + bh + '" fill="' + REST + '" stroke="#fff" stroke-width="' + sw + '"/>'; } }
+    if (op === '−' && B) { const xa = x0 + R * cw, xb = x0 + A * cw; s += '<rect x="' + xa.toFixed(1) + '" y="' + (y0 - 3) + '" width="' + (xb - xa).toFixed(1) + '" height="' + (bh + 6) + '" fill="none" stroke="' + ORANGE + '" stroke-width="3" stroke-dasharray="8 5" rx="4"/>'; }
+    for (let u = 0; u <= units; u++) { const x = x0 + u * uw; s += '<line x1="' + x.toFixed(1) + '" y1="' + (y0 - 6) + '" x2="' + x.toFixed(1) + '" y2="' + (y0 + bh + 6) + '" stroke="' + INK + '" stroke-width="4"/>' + (o.ticks !== false ? txt(x.toFixed(1), y0 - 14, String(u), 20, '#6B7C93', 800) : ''); }
+    s += '<rect x="' + x0 + '" y="' + y0 + '" width="' + bw + '" height="' + bh + '" fill="none" stroke="' + INK + '" stroke-width="4" rx="4"/>';
+    const ly = y0 + bh + 30, key = (x, col, t, cut) => '<rect x="' + x + '" y="' + (ly - 14) + '" width="22" height="18" rx="3" fill="' + col + '"' + (cut ? ' stroke="' + ORANGE + '" stroke-width="2" stroke-dasharray="5 3"' : '') + '/>' + txt(x + 30, ly, t, 19, '#3B4252', 700, 'start');
+    if (o.key !== false) s += op === '+' ? key(70, BLUE, '앞의 수', 0) + key(250, GRN, '더하는 수', 0) : key(70, BLUE, '남은 것', 0) + key(250, '#FFE9DA', '덜어 낸 것', 1);
+    const mixed = /·/.test(String(o.a) + String(o.b));
+    const show = o.show != null ? o.show : [String(o.a), op, String(o.b), '='].concat(R % n && R > n && !mixed ? [fshow(R, n, false), '=', fshow(R, n, true)] : [fshow(R, n, mixed || R % n === 0)]);
+    if (show !== false) s += seqText(230, ly + 50, [].concat(show), 28, BLUE2);
+    if (o.label) s += txt(230, 30, o.label, 22, '#3B4252');
+    return svgWrap(s, 'fig-fop', '0 0 460 ' + (ly + (show !== false ? 92 : 22))).replace('<svg ', '<svg data-n="' + n + '" data-a="' + A + '" data-b="' + B + '" data-op="' + (op === '+' ? 'add' : 'sub') + '" data-r="' + R + '" data-u="' + units + '" ');
+  }
+  PARTS.fop = fop;
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
