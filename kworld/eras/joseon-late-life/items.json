@@ -1,0 +1,1400 @@
+{
+ "items": {
+  "grain": {
+   "name": "곡식",
+   "icon": "🌾",
+   "desc": "논에서 거둔 곡식. 동전으로도 바꾼다. 세금도 공명첩도 속량도 이것으로",
+   "eat": 8
+  },
+  "coin": {
+   "name": "엽전 꾸러미",
+   "icon": "🪙",
+   "desc": "상평통보. 1678년부터 전국에 돈다",
+   "bag": true
+  },
+  "cloth": {
+   "name": "베",
+   "icon": "🧵",
+   "desc": "베 한 필. 군포 — 이제 한 필",
+   "bag": true
+  },
+  "deed": {
+   "name": "공명첩",
+   "icon": "📜",
+   "desc": "이름 칸이 빈 벼슬 임명장. 사면 양반 행세",
+   "bag": true
+  },
+  "book": {
+   "name": "책",
+   "icon": "📖",
+   "desc": "한글 소설, 또는 실학 책",
+   "bag": true
+  },
+  "leather": {
+   "name": "가죽",
+   "icon": "🟫",
+   "desc": "백정 집에서 나온 가죽",
+   "bag": true
+  },
+  "ginseng": {
+   "name": "인삼",
+   "icon": "🌿",
+   "desc": "청에서 비단·은으로 바뀐다. 몰래 가져가면 ⚠",
+   "bag": true
+  },
+  "rice": {
+   "name": "모",
+   "icon": "🌱",
+   "desc": "못자리에서 기른 모. 줄지어 꽂는다",
+   "bag": true
+  }
+ },
+ "recipes": [],
+ "targets": {
+  "npc": {
+   "name": "사람",
+   "verb": "말 걸기",
+   "info": "이 마을 사람이다.",
+   "flag": "talk:any"
+  },
+  "bigpaddy": {
+   "name": "양반 논",
+   "verb": "살펴보기",
+   "say": "넓다. 양반집 논. 소작 농부 여섯이 줄지어 모를 꽂는다. 「모내기로 하면 두 배.」",
+   "flag": "seen:bigpaddy",
+   "journal": "monaegi",
+   "info": "양반 논 — 모내기.",
+   "rename": [
+    {
+     "if": "sit:monaegi:open && !sit:monaegi:done && (status:yangban || status:sinyang) && !mon:try && !mon:dry && !mon:old && !mon:order && !mon:hoe && !mon:slave && !mon:none",
+     "name": "양반 논",
+     "verb": "소작에게 모내기를 시킨다 / 하던 대로",
+     "once": false,
+     "choices": [
+      {
+       "label": "모내기로 — 가뭄이면 소작이 망한다 ⚠",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "하늘을 보는 눈. 저수지가 찼나.",
+        "fail": "…가뭄. 모가 말랐다. 소작이 울었다. 땅은 그대로."
+       },
+       "rollFailFlag": "mon:dryrich",
+       "flag": "mon:order",
+       "journal": "monaegi",
+       "say": "🌾 두 배. 거둔 것의 반이 내 것. 「광작 — 소작 둘이 떠났다. 사람이 덜 든다.」"
+      },
+      {
+       "label": "하던 대로 뿌린다",
+       "flag": "mon:old",
+       "say": "🌾 한 해치. 「옆 집은 두 배 거뒀다더라.」"
+      }
+     ]
+    },
+    {
+     "if": "sit:monaegi:open && !sit:monaegi:done && (status:seoeol || status:jungin) && !mon:try && !mon:dry && !mon:old && !mon:order && !mon:hoe && !mon:slave && !mon:none",
+     "name": "양반 논",
+     "verb": "집 논 — 소작에게 모내기를 시킨다",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 1,
+      "why": "하늘을 보는 눈.",
+      "fail": "…가뭄. 소작이 망했다."
+     },
+     "rollFailFlag": "mon:dryrich",
+     "flag": "mon:order",
+     "journal": "monaegi",
+     "say": "🌾 「우리 집도 논은 있다.」 소작 셋. 두 배. 사람이 덜 든다."
+    },
+    {
+     "if": "sit:monaegi:open && !sit:monaegi:done && (status:sojak || status:solgeo || status:oegeo || status:pumpali || status:gwanno) && !mon:try && !mon:dry && !mon:old && !mon:order && !mon:hoe && !mon:slave && !mon:none",
+     "name": "양반 논",
+     "verb": "주인 논 모내기 — 줄지어 꽂는다",
+     "once": false,
+     "roll": {
+      "ab": "몸",
+      "hard": 1,
+      "why": "허리. 하루 종일 꽂는다. 몸.",
+      "fail": "…허리가 나갔다. 품삯은 반."
+     },
+     "rollFailFlag": "mon:slave",
+     "flag": "mon:slave",
+     "journal": "monaegi",
+     "say": "🌱 줄. 하루에 논 하나. 「반은 주인 것.」 소작은 반, 노비는 없음."
+    }
+   ]
+  },
+  "smallpaddy": {
+   "name": "상민 논",
+   "verb": "살펴보기",
+   "say": "작은 뙈기. 못자리에 모가 자랐다. 「옮겨 심으면 두 배 — 가뭄이면 다 죽는다.」",
+   "flag": "seen:smallpaddy",
+   "journal": "monaegi",
+   "info": "상민 논 — 모내기.",
+   "rename": [
+    {
+     "if": "sit:monaegi:open && !sit:monaegi:done && (status:sangmin || status:jangin || status:hwajeon) && !mon:try && !mon:dry && !mon:old && !mon:order && !mon:hoe && !mon:slave && !mon:none",
+     "name": "상민 논",
+     "verb": "모내기로 짓는다 ⚠ / 하던 대로",
+     "once": false,
+     "choices": [
+      {
+       "label": "모내기 — 두 배, 가뭄이면 망한다 ⚠",
+       "roll": {
+        "ab": "배",
+        "hard": 2,
+        "why": "비 올 때를 기다려 한꺼번에 꽂는다. 보름을 버티는 배.",
+        "fail": "…가뭄. 모가 노랗게 말랐다. 올해 농사가 없다."
+       },
+       "rollFailFlag": "mon:dry",
+       "flag": "mon:try",
+       "journal": "monaegi",
+       "say": "🌾🌾 두 배. 김매기는 반. 벼 뒤에 보리까지. 「이렇게 짓는 집이 부농.」"
+      },
+      {
+       "label": "하던 대로 뿌린다",
+       "flag": "mon:old",
+       "say": "🌾 한 해치. 「옆 집은 두 배 거뒀다더라.」"
+      }
+     ]
+    },
+    {
+     "if": "sit:monaegi:open && !sit:monaegi:done && status:mollak && !mon:try && !mon:dry && !mon:old && !mon:order && !mon:hoe && !mon:slave && !mon:none",
+     "name": "상민 논",
+     "verb": "양반이 호미를 든다 — 직접 모내기",
+     "once": false,
+     "roll": {
+      "ab": "배",
+      "hard": 2,
+      "why": "체면을 버리고 보름. 배.",
+      "fail": "…가뭄. 「양반이 농사를 지어도 하늘은 안 봐준다.」"
+     },
+     "rollFailFlag": "mon:dry",
+     "flag": "mon:hoe",
+     "journal": "monaegi",
+     "say": "🌾🌾 두 배. 마을이 수군댔다. 「저 집 양반이 논에.」 먹고는 산다."
+    },
+    {
+     "if": "sit:monaegi:open && !sit:monaegi:done && status:baekjeong && !mon:none",
+     "name": "상민 논",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "mon:none",
+     "journal": "baekjeong",
+     "say": "백정은 논이 없다. 「가죽이나.」 장터로."
+    }
+   ]
+  },
+  "homepaddy": {
+   "name": "마을 논",
+   "verb": "살펴보기",
+   "say": "마을 남쪽 논. 저수지 물길. 가을이면 세금 먼저 — 이젠 동전으로. 빚이 있으면 여기서 갚거나 넘긴다.",
+   "flag": "seen:homepaddy",
+   "journal": "monaegi",
+   "info": "마을 논 — 모내기.",
+   "rename": [
+    {
+     "if": "sit:debtday:open && !sit:debtday:done && debt:on && !debt:pay && !debt:sojak && !debt:run && val:grain>=3",
+     "name": "마을 논",
+     "verb": "빚을 갚는다 — 곡식 셋",
+     "once": false,
+     "flag": "debt:pay",
+     "journal": "sedo",
+     "say": "🌾🌾🌾 세 단. 장부에서 이름이 지워졌다 — 이번엔."
+    },
+    {
+     "if": "sit:debtday:open && !sit:debtday:done && debt:on && !debt:pay && !debt:sojak && !debt:run",
+     "name": "마을 논",
+     "verb": "땅문서를 넘긴다 — 소작",
+     "once": false,
+     "flag": "debt:sojak",
+     "journal": "sedo",
+     "say": "📜 논 문서가 양반집으로. 같은 논, 반은 남의 것."
+    }
+   ]
+  },
+  "bestall": {
+   "name": "동전 좌판",
+   "verb": "살펴보기",
+   "say": "베 좌판이 동전 좌판이 됐다. 상평통보. 「곡식 한 단에 엽전 한 꾸러미.」 보부상이 세고 있다.",
+   "flag": "seen:bestall",
+   "journal": "daedong",
+   "info": "동전 좌판 — 상평통보.",
+   "rename": [
+    {
+     "if": "sit:jangsi:open && !sit:jangsi:done && !status:yangban && !status:mollak && !status:seoeol && !status:sinyang && !status:jungin && !status:dogo && !status:solgeo && !status:gwanno && !status:baekjeong && !jang:sell && !jang:dogo && !jang:dogofail && !jang:steal && !jang:watch && !jang:woman",
+     "name": "동전 좌판",
+     "verb": "장시에서 판다 / 몽땅 사들인다 ⚠",
+     "once": false,
+     "choices": [
+      {
+       "label": "거둔 것을 장시에 판다",
+       "gives": "coin",
+       "flag": "jang:sell",
+       "journal": "jangsi",
+       "say": "🪙 곡식 → 엽전. 「세금도 엽전으로.」 두 단."
+      },
+      {
+       "label": "소금·쌀을 몽땅 사들인다(도고) ⚠ — 곡식 넷 밑천",
+       "if": "val:grain>=4",
+       "gray": "밑천 곡식 넷이 있어야 사들인다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "값이 오를지 내릴지 먼저 보는 눈. 다음 장날.",
+        "fail": "…값이 떨어졌다. 셋이 갔다."
+       },
+       "rollFailFlag": "jang:dogofail",
+       "gives": "coin",
+       "flag": "jang:dogo",
+       "journal": "jangsi",
+       "say": "🪙🪙 다음 장날 두 배. 「도고.」 양반보다 돈은 많다 — 신분은 그대로."
+      }
+     ]
+    },
+    {
+     "if": "sit:jangsi:open && !sit:jangsi:done && (status:jungin || status:seoeol) && !jang:sell && !jang:dogo && !jang:dogofail && !jang:watch",
+     "name": "동전 좌판",
+     "verb": "몽땅 사들인다 ⚠ / 판다",
+     "once": false,
+     "choices": [
+      {
+       "label": "청 비단·약을 몽땅 사들인다(도고) ⚠ — 곡식 넷 밑천",
+       "if": "val:grain>=4",
+       "gray": "밑천 곡식 넷.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "값을 보는 눈.",
+        "fail": "…값이 떨어졌다."
+       },
+       "rollFailFlag": "jang:dogofail",
+       "gives": "coin",
+       "flag": "jang:dogo",
+       "journal": "jangsi",
+       "say": "🪙🪙 「중인 집이 제일 부자.」"
+      },
+      {
+       "label": "그냥 판다",
+       "gives": "coin",
+       "flag": "jang:sell",
+       "say": "🪙 두 단."
+      }
+     ]
+    },
+    {
+     "if": "sit:jangsi:open && !sit:jangsi:done && sex:f && !status:solgeo && !jang:woman && !jang:sell && !jang:dogo && !jang:dogofail",
+     "name": "동전 좌판",
+     "verb": "베를 장시에 판다 — 여자도 장시",
+     "once": false,
+     "roll": {
+      "ab": "손",
+      "hard": 1,
+      "why": "베틀. 손.",
+      "fail": "…실이 끊겼다."
+     },
+     "gives": "coin",
+     "flag": "jang:woman",
+     "journal": "kimmandeok",
+     "say": "🪙 베 두 필 → 엽전. 객주 김만덕이 봤다. 「여자도 장사한다.」"
+    },
+    {
+     "if": "sit:jangsi:open && !sit:jangsi:done && status:yangban && !jang:watch && !jang:bynobi",
+     "name": "동전 좌판",
+     "verb": "장사는 체면 — 노비를 시켜 판다 / 본다",
+     "once": false,
+     "choices": [
+      {
+       "label": "노비를 시켜 곡식을 판다",
+       "gives": "coin",
+       "flag": "jang:bynobi",
+       "say": "🪙 「양반이 장터에 서면 안 된다.」 노비가 섰다. 두 단은 내 것."
+      },
+      {
+       "label": "본다",
+       "flag": "jang:watch",
+       "say": "엽전이 쌀을 산다. 「상것들이 돈을 모은다.」"
+      }
+     ]
+    },
+    {
+     "if": "sit:jangsi:open && !sit:jangsi:done && (status:solgeo || status:gwanno) && !jang:steal && !jang:errand && !jang:caught",
+     "name": "동전 좌판",
+     "verb": "주인 심부름 / 주인 곡식을 몰래 판다 ⚠",
+     "once": false,
+     "choices": [
+      {
+       "label": "주인 심부름",
+       "flag": "jang:errand",
+       "say": "🪙 주인 곡식 → 엽전. 내 것은 없다."
+      },
+      {
+       "label": "한 단 몰래 판다 ⚠ — 속량 밑천",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "청지기가 안 볼 때. 눈.",
+        "fail": "…청지기. 「도둑.」 곤장. 등에 남았다."
+       },
+       "rollFailFlag": "jang:caught",
+       "rollHurt": "wound",
+       "gives": "coin",
+       "flag": "jang:steal",
+       "say": "🪙 한 꾸러미. 숨겼다. 「속량값을 모은다.」"
+      }
+     ]
+    },
+    {
+     "if": "sit:jangsi:open && !sit:jangsi:done && status:baekjeong && !jang:leather",
+     "name": "동전 좌판",
+     "verb": "가죽·쇠고기를 판다",
+     "once": false,
+     "gives": "coin",
+     "flag": "jang:leather",
+     "journal": "baekjeong",
+     "say": "🪙🪙 「백정 고기는 잘 팔린다.」 엽전 두 꾸러미. 갓은 못 쓴다."
+    }
+   ]
+  },
+  "jeongisu": {
+   "name": "전기수 자리",
+   "verb": "살펴보기",
+   "say": "객주집 앞 돗자리. 전기수 — 소설을 읽어 주는 사람. 「심청이가 인당수에 —」 하고 멈춘다. 돈을 내야 다음.",
+   "flag": "seen:jeongisu",
+   "journal": "kimhongdo",
+   "info": "전기수 — 한글 소설.",
+   "rename": [
+    {
+     "if": "sit:story:open && !sit:story:done && !story:listen && !story:sneer && !story:copy && !story:paint && !status:yangban",
+     "name": "전기수 자리",
+     "verb": "홍길동전을 듣는다 — 엽전 하나",
+     "once": false,
+     "flag": "story:listen",
+     "journal": "kimhongdo",
+     "say": "📖 「아버지를 아버지라 부르지 못하고 —」 장터가 조용했다. 서얼 이야기. 누가 울었다."
+    },
+    {
+     "if": "sit:story:open && !sit:story:done && status:yangban && !story:sneer && !story:paint && !story:listen",
+     "name": "전기수 자리",
+     "verb": "「언문 소설 — 상것들」 / 김홍도 그림을 산다",
+     "once": false,
+     "choices": [
+      {
+       "label": "「상것들이나 듣는 것」",
+       "flag": "story:sneer",
+       "say": "지나쳤다. 집에 와 보니 안채에서 소설을 베끼고 있다."
+      },
+      {
+       "label": "김홍도 그림을 산다 — 곡식 하나",
+       "if": "val:grain>=1",
+       "gray": "곡식 한 단.",
+       "flag": "story:paint",
+       "journal": "kimhongdo",
+       "say": "🎨 씨름. 상민 아이들. 「양반이 상민 그림을.」 좋았다."
+      }
+     ]
+    }
+   ]
+  },
+  "hopae": {
+   "name": "공명첩 상",
+   "verb": "살펴보기",
+   "say": "호패 상에 종이 뭉치. 이름 칸이 비었다. 「곡식 다섯 단 — 양반 행세, 군역 없음.」 아전이 「요즘은 다 삽니다」.",
+   "flag": "seen:hopae",
+   "journal": "gongmyeong",
+   "info": "공명첩 상 — 돈으로 사는 신분.",
+   "rename": [
+    {
+     "if": "sit:gongmyeong:open && !sit:gongmyeong:done && sex:m && (status:sangmin || status:dogo || status:jangin || status:sojak) && !gong:buy && !gong:gyun && !gong:sell && !gong:keep && !gong:out && !gong:in && !gong:soknyang && !gong:nosell && !gong:nobaek && !gong:tong && !gong:tongfail && !gong:daughter && !gong:watch",
+     "name": "공명첩 상",
+     "verb": "공명첩을 산다 — 곡식 다섯 / 안 산다(군포 한 필)",
+     "once": false,
+     "choices": [
+      {
+       "label": "공명첩을 산다 — 곡식 다섯. 양반 행세",
+       "if": "val:grain>=5",
+       "gray": "곡식 다섯 단이 있어야 산다.",
+       "gives": "deed",
+       "flag": "gong:buy",
+       "journal": "gongmyeong",
+       "say": "📜 이름 칸에 내 이름. 「통정대부.」 군역이 빠졌다. 기와집을 올렸다. 그런데 — 향안엔 못 올랐다."
+      },
+      {
+       "label": "안 산다 — 군포 한 필(균역법)",
+       "flag": "gong:gyun",
+       "journal": "gyunyeok",
+       "say": "🧵 「두 필이 한 필로.」 그래도 양반은 안 낸다. 한 단."
+      }
+     ]
+    },
+    {
+     "if": "sit:gongmyeong:open && !sit:gongmyeong:done && sex:m && status:mollak && !gong:buy && !gong:gyun && !gong:sell && !gong:keep && !gong:out && !gong:in && !gong:soknyang && !gong:nosell && !gong:nobaek && !gong:tong && !gong:tongfail && !gong:daughter && !gong:watch",
+     "name": "공명첩 상",
+     "verb": "족보를 판다 ⚠ / 체면을 지킨다",
+     "once": false,
+     "choices": [
+      {
+       "label": "족보 한 장을 판다 ⚠ — 곡식 넷",
+       "flag": "gong:sell",
+       "journal": "gongmyeong",
+       "say": "📜 「우리 집 몇 대손 자리.」 부농이 사 갔다. 곡식 넷. 마을 양반들이 돌아앉았다."
+      },
+      {
+       "label": "체면을 지킨다 — 굶어도 양반",
+       "flag": "gong:keep",
+       "say": "「양반은 굶어도 족보를 안 판다.」 환곡을 빌렸다."
+      }
+     ]
+    },
+    {
+     "if": "sit:gongmyeong:open && !sit:gongmyeong:done && status:yangban && !gong:buy && !gong:gyun && !gong:sell && !gong:keep && !gong:out && !gong:in && !gong:soknyang && !gong:nosell && !gong:nobaek && !gong:tong && !gong:tongfail && !gong:daughter && !gong:watch",
+     "name": "공명첩 상",
+     "verb": "향안 — 족보 산 집을 뺀다 / 끼워 준다",
+     "once": false,
+     "choices": [
+      {
+       "label": "향안에서 뺀다 — 「가짜 양반」",
+       "flag": "gong:out",
+       "journal": "gongmyeong",
+       "say": "📜 「공명첩은 벼슬이 아니다.」 그 집은 기와집에 살아도 양반 모임에 못 온다. 담이 더 높아졌다."
+      },
+      {
+       "label": "끼워 준다 — 곡식 둘 받고",
+       "flag": "gong:in",
+       "say": "🌾🌾 「요즘 양반이 어디 있나.」 곡식 둘. 마을 양반 셋이 나를 안 본다."
+      }
+     ]
+    },
+    {
+     "if": "sit:gongmyeong:open && !sit:gongmyeong:done && status:oegeo && !gong:buy && !gong:gyun && !gong:sell && !gong:keep && !gong:out && !gong:in && !gong:soknyang && !gong:nosell && !gong:nobaek && !gong:tong && !gong:tongfail && !gong:daughter && !gong:watch",
+     "name": "공명첩 상",
+     "verb": "속량 — 곡식 다섯 치르고 양인 / 더 모은다",
+     "once": false,
+     "choices": [
+      {
+       "label": "속량 — 곡식 다섯 치르고 양인",
+       "if": "val:grain>=5",
+       "gray": "속량값 곡식 다섯.",
+       "flag": "gong:soknyang",
+       "journal": "gongnobi",
+       "say": "📜 주인이 문서를 내줬다. 「양인.」 호패에서 주인 이름이 지워졌다. 밭은 내 것."
+      },
+      {
+       "label": "더 모은다",
+       "flag": "gong:watch",
+       "say": "「다섯 단이면 된대.」 몫을 바치고 남은 걸 묻었다."
+      }
+     ]
+    },
+    {
+     "if": "sit:gongmyeong:open && !sit:gongmyeong:done && status:solgeo && !gong:nosell",
+     "name": "공명첩 상",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "gong:nosell",
+     "journal": "gongnobi",
+     "say": "아전이 「속량은 주인이 팔아 줘야」. 주인이 안 판다. 「요즘은 도망이 쉽다」고 행랑 노비가 속삭였다."
+    },
+    {
+     "if": "sit:gongmyeong:open && !sit:gongmyeong:done && status:gwanno && !gong:nosell",
+     "name": "공명첩 상",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "gong:nosell",
+     "journal": "gongnobi",
+     "say": "관노는 나라 것. 「속량값은 관아에.」 돈이 없다. — 그런데 한양에서 이상한 말이 돈다. 「나라 노비 문서를 태운대.」"
+    },
+    {
+     "if": "sit:gongmyeong:open && !sit:gongmyeong:done && status:baekjeong && !gong:nobaek",
+     "name": "공명첩 상",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "gong:nobaek",
+     "journal": "baekjeong",
+     "say": "엽전 두 꾸러미를 꺼냈다. 아전이 「백정에겐 안 판다」. 돈이 있어도 백정."
+    },
+    {
+     "if": "sit:gongmyeong:open && !sit:gongmyeong:done && sex:m && status:seoeol && !gong:buy && !gong:gyun && !gong:sell && !gong:keep && !gong:out && !gong:in && !gong:soknyang && !gong:nosell && !gong:nobaek && !gong:tong && !gong:tongfail && !gong:daughter && !gong:watch",
+     "name": "공명첩 상",
+     "verb": "통청 상소에 이름을 올린다 ⚠ / 본다",
+     "once": false,
+     "choices": [
+      {
+       "label": "통청 상소 ⚠ — 「서얼도 문과를」",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "임금이 듣는 때를 보는 눈. 정조.",
+        "fail": "…「서얼이 떼로.」 이름 올린 사람 벌. 한 단 떨어졌다."
+       },
+       "rollFailFlag": "gong:tongfail",
+       "flag": "gong:tong",
+       "journal": "tongcheong",
+       "say": "🖋 수백 명. 「서얼허통절목.」 문이 조금 열렸다. 한 단."
+      },
+      {
+       "label": "본다",
+       "flag": "gong:watch",
+       "say": "「아버지 집은 양반, 나는 공명첩도 소용없다.」"
+      }
+     ]
+    },
+    {
+     "if": "sit:gongmyeong:open && !sit:gongmyeong:done && (status:hwajeon || status:pumpali) && !gong:watch",
+     "name": "공명첩 상",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "gong:watch",
+     "say": "호적이 없다. 「호적에 없는 사람은 공명첩도 없다.」"
+    },
+    {
+     "if": "sit:gongmyeong:open && !sit:gongmyeong:done && sex:f && !gong:daughter",
+     "name": "공명첩 상",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "gong:daughter",
+     "journal": "women",
+     "say": "아전이 「공명첩은 남자」. 안채로 — 그런데 요즘 딸 몫이 줄었다고 한다."
+    },
+    {
+     "if": "sit:gongmyeong:done",
+     "name": "공명첩 상",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "종이가 반으로 줄었다. 다들 샀다. 「이 마을 양반 집이 열둘.」"
+    }
+   ]
+  },
+  "samun": {
+   "name": "관아 삼문",
+   "verb": "살펴보기",
+   "say": "문 셋. 가운데는 닫혔다. 수령이 자주 바뀐다 — 「벼슬을 사서 왔으니 본전을 뽑는다.」",
+   "flag": "seen:samun",
+   "info": "관아 삼문.",
+   "rename": [
+    {
+     "if": "sit:samjeong:open && !sit:samjeong:done && !status:yangban && !status:jungin && !status:baekjeong && !status:solgeo && !status:oegeo && !status:gwanno && !sam:pay && !sam:bribe && !sam:bribefail && !sam:land && !sam:letter && !sam:letterfail && !sam:fake && !sam:nobi",
+     "name": "관아 삼문",
+     "verb": "암행어사에게 소장을 올린다(눈 3)",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 3,
+      "why": "어사가 언제 어느 길로 오는지 보는 눈. 아전이 먼저 알면 끝.",
+      "fail": "…아전이 먼저 봤다. 소장은 찢어졌다. 곤장."
+     },
+     "rollFailFlag": "sam:letterfail",
+     "rollHurt": "wound",
+     "flag": "sam:letter",
+     "journal": "sedo",
+     "say": "✉️ 「죽은 아버지 군포가 적혔습니다.」 어사 출두. 수령이 쫓겨났다. 그 뒤 수령도 벼슬을 사서 왔다."
+    },
+    {
+     "if": "sit:uprising:open && !sit:uprising:done && !status:yangban && !status:sinyang && !status:dogo && !status:jungin && sex:m && !up:go && !up:win && !up:lost && !up:donghak && !up:watch && !up:report && !up:open && !up:run && !up:price && !up:jongju && !up:hong && !up:food && !up:bae",
+     "name": "관아 삼문",
+     "verb": "관아로 간다 ⚠ — 봉기",
+     "once": false,
+     "roll": {
+      "ab": "몸",
+      "hard": 2,
+      "why": "횃불·몽둥이. 포졸 서른. 몸.",
+      "fail": "…포졸. 앞줄이 쓰러졌다. 흩어졌다."
+     },
+     "rollFailFlag": "up:lost",
+     "rollHurt": "wound",
+     "flag": "up:win",
+     "journal": "imsul",
+     "say": "🔥 삼문이 열렸다. 수령이 뒷문으로 달아났다. 아전 집이 탔다. 환곡 장부를 마당에서 태웠다. — 보름 뒤 안핵사."
+    }
+   ]
+  },
+  "examhall": {
+   "name": "동헌 시험 자리",
+   "verb": "살펴보기",
+   "say": "동헌 마당 돗자리. 「과거」라 적혔는데 — 답안지가 미리 돈다. 세도가 집 아들은 붙고, 시골 양반은 돈을 들고 온다.",
+   "flag": "seen:examhall",
+   "journal": "sedo",
+   "info": "과거 — 후기엔 돈이 붙는다.",
+   "rename": [
+    {
+     "if": "sit:samjeong:open && !sit:samjeong:done && status:yangban && sex:m && !sam:buyrank && !sam:norank && !sam:line",
+     "name": "동헌 시험 자리",
+     "verb": "벼슬을 산다 ⚠ — 곡식 넷 / 안 산다",
+     "once": false,
+     "choices": [
+      {
+       "label": "수령 자리를 산다 ⚠ — 곡식 넷",
+       "if": "val:grain>=4",
+       "gray": "곡식 넷.",
+       "flag": "sam:buyrank",
+       "journal": "sedo",
+       "say": "🖋 「안동 김씨 댁에 넣었다.」 두 단. 가서 본전을 뽑아야 한다 — 백성에게서."
+      },
+      {
+       "label": "안 산다 — 벼슬이 끊긴다",
+       "flag": "sam:norank",
+       "journal": "sedo",
+       "say": "「세도가 집이 아니면 과거에 붙어도 벼슬이 없다.」 사랑채에서 글만 읽었다. 다음 대는 몰락."
+      }
+     ]
+    },
+    {
+     "if": "sit:samjeong:open && !sit:samjeong:done && status:sinyang && sex:m && !sam:fake && !sam:line",
+     "name": "동헌 시험 자리",
+     "verb": "과거를 본다 — 공명첩 양반",
+     "once": false,
+     "flag": "sam:fake",
+     "journal": "gongmyeong",
+     "say": "시험관이 공명첩을 봤다. 「이건 벼슬이 아니라 이름이다.」 붓을 못 들었다. 양반 행세는 여기까지."
+    }
+   ]
+  },
+  "hwangok": {
+   "name": "환곡 곳간",
+   "verb": "살펴보기",
+   "say": "관아 곳간. 「안 빌려도 빌린 것으로 적는다.」 이자만 받는다. 곳간은 비었는데 장부는 가득.",
+   "flag": "seen:hwangok",
+   "journal": "sedo",
+   "info": "환곡 곳간 — 강제 환곡, 그리고 1801년 노비 문서 불.",
+   "rename": [
+    {
+     "if": "sit:year1801:open && !sit:year1801:done && status:gwanno && !y1:freed",
+     "name": "노비 문서 태우는 불",
+     "verb": "문서가 탄다 — 관노는 양인",
+     "once": false,
+     "flag": "y1:freed",
+     "journal": "gongnobi",
+     "say": "🔥 「내수사·궁방 노비 6만 6천.」 내 이름이 적힌 종이가 탔다. 「양인.」 — 행랑채 노비가 멀리서 봤다. 그 집은 아니다."
+    },
+    {
+     "if": "sit:year1801:open && !sit:year1801:done && (status:solgeo || status:oegeo) && !y1:notme",
+     "name": "노비 문서 태우는 불",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "y1:notme",
+     "journal": "gongnobi",
+     "say": "🔥 나라 노비 문서가 탄다. 관노가 울면서 웃는다. 아전이 「양반집 노비는 아니다」. 내 문서는 사랑채 서랍에 그대로."
+    },
+    {
+     "if": "sit:samjeong:open && !sit:samjeong:done && (status:sangmin || status:sojak || status:jangin || status:sinyang || status:hwajeon || status:pumpali || status:seoeol || status:mollak || status:dogo) && !sam:pay && !sam:bribe && !sam:land && !sam:letter && !sam:letterfail && !sam:nobi && !sam:go",
+     "name": "환곡 곳간",
+     "verb": "낸다(곡식 셋) / 아전에게 뇌물 / 못 낸다",
+     "once": false,
+     "choices": [
+      {
+       "label": "낸다 — 죽은 아버지 몫까지 곡식 셋",
+       "if": "val:grain>=3",
+       "gray": "곡식 셋이 없다.",
+       "flag": "sam:pay",
+       "journal": "sedo",
+       "say": "🌾🌾🌾 「백골징포.」 죽은 사람 군포. 냈다. 곳간이 비었다."
+      },
+      {
+       "label": "아전에게 뇌물 — 곡식 하나",
+       "if": "val:grain>=1",
+       "gray": "곡식 한 단.",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "아전이 받을 때를 보는 눈.",
+        "fail": "…아전이 받고도 적었다."
+       },
+       "rollFailFlag": "sam:bribefail",
+       "flag": "sam:bribe",
+       "journal": "sedo",
+       "say": "🌾 「장부에서 뺐다.」 한 단으로 셋을 막았다 — 이웃 집에 얹혔다(인징)."
+      },
+      {
+       "label": "못 낸다 — 땅문서 / 땅이 없으면 떠난다",
+       "flag": "sam:land",
+       "journal": "sedo",
+       "say": "📜 땅문서가 아전 손에. 땅이 없는 집은 — 밤에 떠났다. 광산으로."
+      }
+     ]
+    },
+    {
+     "if": "sit:samjeong:open && !sit:samjeong:done && (status:solgeo || status:oegeo || status:gwanno) && !sam:nobi",
+     "name": "환곡 곳간",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "sam:nobi",
+     "say": "「노비는 주인 몫.」 주인집도 짜인다. 주인이 노비를 판다는 말."
+    },
+    {
+     "if": "sit:samjeong:open && !sit:samjeong:done && status:baekjeong && !sam:nobi",
+     "name": "환곡 곳간",
+     "verb": "백정에게도 군포",
+     "once": false,
+     "flag": "sam:nobi",
+     "journal": "baekjeong",
+     "say": "🌾 「백정 집도 호적에 넣었다 — 군포.」 가죽 넷이 갔다. 호적에 들어도 백정."
+    }
+   ]
+  },
+  "hangeul": {
+   "name": "서당 글판",
+   "verb": "살펴보기",
+   "say": "서당 벽에 새 글판. 「신분보다 능력」. 「청에서 배우자.」 「땅은 농사짓는 사람에게.」 실학. 훈장이 정약용 책을 베끼고 있다.",
+   "flag": "seen:hangeul",
+   "journal": "silhak",
+   "info": "서당 글판 — 실학·규장각.",
+   "rename": [
+    {
+     "if": "sit:silhak:open && !sit:silhak:done && sex:m && status:seoeol && val:craft>=3 && !sil:geomseo && !sil:geomfail && !sil:noron && !sil:namin && !sil:exiled && !sil:write && !sil:wihang && !sil:send && !sil:teach && !sil:read && !sil:copy && !sil:outside && !sil:watch",
+     "name": "서당 글판",
+     "verb": "규장각 검서관 — 글로 뽑힌다(눈 2)",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 2,
+      "why": "정조가 읽는 글. 눈.",
+      "fail": "…뽑히지 않았다. 「서얼 넷뿐.」"
+     },
+     "rollFailFlag": "sil:geomfail",
+     "gives": "book",
+     "flag": "sil:geomseo",
+     "journal": "tongcheong",
+     "say": "📖 「검서관.」 박제가·유득공 옆자리. 서얼이 궁에 들었다. 세 단 — 천장까지."
+    },
+    {
+     "if": "sit:silhak:open && !sit:silhak:done && sex:m && status:seoeol && !sil:geomseo && !sil:geomfail && !sil:noron && !sil:namin && !sil:exiled && !sil:write && !sil:wihang && !sil:send && !sil:teach && !sil:read && !sil:copy && !sil:outside && !sil:watch",
+     "name": "서당 글판",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "sil:watch",
+     "journal": "tongcheong",
+     "say": "「규장각 검서관에 서얼 넷.」 글이 있어야 뽑힌다 — 솜씨 셋. 내 글은 아직."
+    },
+    {
+     "if": "sit:silhak:open && !sit:silhak:done && (status:sangmin || status:sinyang || status:dogo || status:jangin || status:sojak) && !sil:geomseo && !sil:geomfail && !sil:noron && !sil:namin && !sil:exiled && !sil:write && !sil:wihang && !sil:send && !sil:teach && !sil:read && !sil:copy && !sil:outside && !sil:watch",
+     "name": "서당 글판",
+     "verb": "아이를 서당에 보낸다 — 곡식 하나 / 글판을 본다",
+     "once": false,
+     "choices": [
+      {
+       "label": "아이를 서당에 보낸다 — 곡식 하나",
+       "if": "val:grain>=1",
+       "gray": "훈장 쌀값 곡식 한 단.",
+       "flag": "sil:send",
+       "journal": "silhak",
+       "say": "📖 「상민 아이가 서당에.」 훈장이 받았다. 후기 서당엔 상민 아이가 반."
+      },
+      {
+       "label": "글판을 본다",
+       "flag": "sil:watch",
+       "say": "「신분보다 능력」 — 글은 좋은데 공명첩 값은 그대로다."
+      }
+     ]
+    },
+    {
+     "if": "sit:silhak:open && !sit:silhak:done && (status:solgeo || status:oegeo || status:gwanno || status:hwajeon || status:pumpali) && !sil:geomseo && !sil:geomfail && !sil:noron && !sil:namin && !sil:exiled && !sil:write && !sil:wihang && !sil:send && !sil:teach && !sil:read && !sil:copy && !sil:outside && !sil:watch",
+     "name": "서당 글판",
+     "verb": "담 밖에서 한글 소설을 읽는다(눈 1)",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 1,
+      "why": "한글. 소리대로.",
+      "fail": "…글자가 섞였다."
+     },
+     "gives": "book",
+     "flag": "sil:read",
+     "journal": "kimhongdo",
+     "say": "📖 춘향전. 「노비가 소설을.」 훈장이 못 본 척했다."
+    },
+    {
+     "if": "sit:silhak:open && !sit:silhak:done && status:baekjeong && !sil:outside",
+     "name": "서당 글판",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "sil:outside",
+     "journal": "baekjeong",
+     "say": "훈장이 「백정 아이는 안 된다」. 담 밖에서 들었다. 「신분보다 능력」이라 쓰인 글판 아래서."
+    },
+    {
+     "if": "sit:silhak:open && !sit:silhak:done && status:mollak && !sil:geomseo && !sil:geomfail && !sil:noron && !sil:namin && !sil:exiled && !sil:write && !sil:wihang && !sil:send && !sil:teach && !sil:read && !sil:copy && !sil:outside && !sil:watch",
+     "name": "서당 글판",
+     "verb": "훈장이 된다 — 쌀 몇 되",
+     "once": false,
+     "flag": "sil:teach",
+     "journal": "silhak",
+     "say": "📖 상민 아이 여섯. 쌀 한 단. 「양반이 상민 아이를.」 먹고는 산다."
+    },
+    {
+     "if": "sit:silhak:open && !sit:silhak:done && status:jungin && !sil:geomseo && !sil:geomfail && !sil:noron && !sil:namin && !sil:exiled && !sil:write && !sil:wihang && !sil:send && !sil:teach && !sil:read && !sil:copy && !sil:outside && !sil:watch",
+     "name": "서당 글판",
+     "verb": "중인 시 모임(위항) — 글을 낸다",
+     "once": false,
+     "flag": "sil:wihang",
+     "journal": "silhak",
+     "say": "📖 역관·의관·아전이 시를 모아 책을 냈다. 「양반 글보다 낫다」는 말. 벼슬은 그대로."
+    }
+   ]
+  },
+  "seoan": {
+   "name": "사랑채 서안",
+   "verb": "살펴보기",
+   "say": "서안에 붓. 「노론·남인」. 붕당. 그리고 열하일기 베낀 종이.",
+   "flag": "seen:seoan",
+   "journal": "silhak",
+   "info": "사랑채 서안 — 붕당·실학.",
+   "rename": [
+    {
+     "if": "sit:silhak:open && !sit:silhak:done && status:yangban && sex:m && !sil:geomseo && !sil:geomfail && !sil:noron && !sil:namin && !sil:exiled && !sil:write && !sil:wihang && !sil:send && !sil:teach && !sil:read && !sil:copy && !sil:outside && !sil:watch",
+     "name": "사랑채 서안",
+     "verb": "노론 ⚠ / 남인 ⚠ / 실학 글을 쓴다",
+     "once": false,
+     "choices": [
+      {
+       "label": "노론 편 ⚠",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "어느 편이 큰지 보는 눈. 영조·정조 뒤 노론.",
+        "fail": "…탕평. 이번엔 남인. 한 단 떨어졌다."
+       },
+       "rollFailFlag": "sil:exiled",
+       "flag": "sil:noron",
+       "say": "🖋 노론. 두 단. 「안동 김씨가 노론이다.」"
+      },
+      {
+       "label": "남인 편 ⚠",
+       "roll": {
+        "ab": "눈",
+        "hard": 3,
+        "why": "정조가 남인을 쓰는 짧은 때. 눈이 아주 밝아야.",
+        "fail": "…정조가 죽었다. 남인은 천주교 일로 귀양. 먼 섬."
+       },
+       "rollFailFlag": "sil:exiled",
+       "flag": "sil:namin",
+       "say": "🖋 남인. 정약용 옆. 두 단 — 정조 살아 있는 동안."
+      },
+      {
+       "label": "실학 글을 쓴다 — 「신분보다 능력」",
+       "flag": "sil:write",
+       "journal": "silhak",
+       "say": "📖 「땅은 농사짓는 사람에게.」 벼슬은 안 올랐다. 마을 상민이 글을 베껴 갔다."
+      }
+     ]
+    },
+    {
+     "if": "sit:seoeol:open && !sit:seoeol:done && status:seoeol && !seo:mukwa && !seo:leave && !seo:write",
+     "name": "사랑채 서안",
+     "verb": "허균처럼 글을 쓴다 / 집을 나간다",
+     "once": false,
+     "choices": [
+      {
+       "label": "홍길동전 같은 글을 쓴다",
+       "flag": "seo:write",
+       "journal": "kimhongdo",
+       "say": "📖 「아버지를 아버지라 —」 전기수가 장터에서 읽었다. 이름은 안 적었다."
+      },
+      {
+       "label": "집을 나간다 — 장시로",
+       "flag": "seo:leave",
+       "say": "🪙 보부상 따라. 「서얼이 장사를.」 돈은 모인다."
+      }
+     ]
+    }
+   ]
+  },
+  "sewing": {
+   "name": "안채 바느질 자리",
+   "verb": "살펴보기",
+   "say": "돗자리·베틀. 그리고 세책방에서 빌린 한글 소설. 베껴서 판다.",
+   "flag": "seen:sewing",
+   "journal": "women",
+   "info": "안채 — 길쌈·세책.",
+   "rename": [
+    {
+     "if": "sit:silhak:open && !sit:silhak:done && sex:f && !status:solgeo && !sil:geomseo && !sil:geomfail && !sil:noron && !sil:namin && !sil:exiled && !sil:write && !sil:wihang && !sil:send && !sil:teach && !sil:read && !sil:copy && !sil:outside && !sil:watch",
+     "name": "안채 바느질 자리",
+     "verb": "한글 소설을 베껴 판다(손 1)",
+     "once": false,
+     "roll": {
+      "ab": "손",
+      "hard": 1,
+      "why": "붓. 손.",
+      "fail": "…한 장 틀렸다."
+     },
+     "gives": "book",
+     "flag": "sil:copy",
+     "journal": "kimhongdo",
+     "say": "📖 춘향전 한 권 → 엽전. 「세책방이 여자 글씨를 제일 쳐준다.」"
+    },
+    {
+     "if": "sit:women:open && !sit:women:done && sex:f && !wom:less && !wom:ok && !wom:objoo && !wom:widow",
+     "name": "안채 바느질 자리",
+     "verb": "딸 몫 — 안방마님에게 / 객주가 된다(눈 2)",
+     "once": false,
+     "choices": [
+      {
+       "label": "객주가 된다 — 김만덕처럼(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "물건 값. 눈.",
+        "fail": "…밑천이 갔다."
+       },
+       "rollFailFlag": "wom:objoofail",
+       "gives": "coin",
+       "flag": "wom:objoo",
+       "journal": "kimmandeok",
+       "say": "🪙🪙 객주. 보부상 물건을 맡고 셈을 했다. 「여자 객주.」 세 단."
+      },
+      {
+       "label": "…안방마님에게",
+       "say": "안채로."
+      }
+     ]
+    }
+   ]
+  },
+  "slavehut": {
+   "name": "행랑채 노비 자리",
+   "verb": "살펴보기",
+   "say": "행랑채. 멍석. 솔거 노비 — 그런데 빈자리가 둘. 「도망. 요즘은 못 잡는다.」",
+   "flag": "seen:slavehut",
+   "journal": "gongnobi",
+   "info": "행랑채 — 노비 자리."
+  },
+  "ybgate": {
+   "name": "양반집 솟을대문",
+   "verb": "살펴보기",
+   "say": "솟을대문이 셋이 됐다. 하나는 족보를 산 집. 「진짜 양반 모임엔 못 온다.」",
+   "flag": "seen:ybgate",
+   "journal": "gongmyeong",
+   "info": "양반집 대문 — 향안.",
+   "rename": [
+    {
+     "if": "sit:janggilsan:open && !sit:janggilsan:done && status:yangban && !jgs:report && !jgs:bar",
+     "name": "양반집 솟을대문",
+     "verb": "빗장을 건다 — 장길산",
+     "once": false,
+     "flag": "jgs:bar",
+     "say": "🚪 빗장. 「산채 사람들이 양반집만 턴다.」 밤새 지켰다."
+    },
+    {
+     "if": "sit:uprising:open && !sit:uprising:done && (status:yangban || status:sinyang) && !up:open && !up:report && !up:price && !up:watch",
+     "name": "양반집 솟을대문",
+     "verb": "곳간을 연다 — 백성을 살린다 / 관아에 알린다",
+     "once": false,
+     "choices": [
+      {
+       "label": "곳간을 연다 — 곡식 넷",
+       "if": "val:grain>=4",
+       "gray": "곡식 넷.",
+       "flag": "up:open",
+       "journal": "kimmandeok",
+       "say": "🌾 김만덕처럼. 「저 집은 안 턴다.」 봉기 무리가 대문 앞에서 돌아갔다."
+      },
+      {
+       "label": "관아에 알린다",
+       "flag": "up:report",
+       "say": "📜 포졸이 왔다. 앞장선 사람 둘이 잡혔다. 마을이 나를 봤다."
+      }
+     ]
+    }
+   ]
+  },
+  "rack": {
+   "name": "가죽 걸이",
+   "verb": "살펴보기",
+   "say": "강가 외딴 집. 가죽 걸이에 가죽 여섯 — 전보다 늘었다. 「백정 집이 돈을 번다.」 그래도 마을 밖.",
+   "flag": "seen:rack",
+   "journal": "baekjeong",
+   "info": "백정 집 가죽 걸이 — 밤엔 천주교 모임.",
+   "rename": [
+    {
+     "if": "sit:year1801:open && !sit:year1801:done && !y1:in && !y1:caught && !y1:hid && !y1:out && !y1:report && !y1:freed && !y1:notme",
+     "name": "강가 외딴 집 모임",
+     "verb": "모임에 든다 ⚠ — 「하늘 아래 모두 같다」 / 안 든다",
+     "once": false,
+     "choices": [
+      {
+       "label": "모임에 든다 ⚠",
+       "flag": "y1:in",
+       "journal": "catholic",
+       "say": "🕯 양반·상민·노비·백정·여자가 한 방에. 처음으로 이름으로 불렸다. — 포졸 발소리. 1801년."
+      },
+      {
+       "label": "안 든다",
+       "flag": "y1:out",
+       "say": "등불을 보고 돌아섰다. 「포졸이 온다더라.」"
+      }
+     ]
+    },
+    {
+     "if": "sit:year1801:open && !sit:year1801:done && y1:in && !y1:caught && !y1:hid",
+     "name": "강가 외딴 집 모임",
+     "verb": "박해 — 숨는다(눈 2)",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 2,
+      "why": "포졸이 어느 길로 오는지. 뒷문.",
+      "fail": "…잡혔다. 옥. 「배교하라.」 안 했다. 몸에 남았다."
+     },
+     "rollFailFlag": "y1:caught",
+     "rollHurt": "jail",
+     "flag": "y1:hid",
+     "journal": "catholic",
+     "say": "🌙 뒷문. 갈대밭. 수백이 죽었다. 나는 살았다 — 이름은 안 바꿨다."
+    },
+    {
+     "if": "sit:baekjeong:open && !sit:baekjeong:done && status:baekjeong && !bj:sell && !bj:gat && !bj:money",
+     "name": "가죽 걸이",
+     "verb": "가죽·고기 장사를 키운다(손 1) / 갓을 쓴다 ⚠",
+     "once": false,
+     "choices": [
+      {
+       "label": "가죽·고기 장사(손 1)",
+       "roll": {
+        "ab": "손",
+        "hard": 1,
+        "why": "무두질.",
+        "fail": "…찢어졌다."
+       },
+       "gives": "coin",
+       "flag": "bj:sell",
+       "journal": "baekjeong",
+       "say": "🪙🪙🪙 「백정 집이 기와를 올렸다.」 세 단. 마을 안엔 못 산다."
+      },
+      {
+       "label": "갓을 쓰고 장터에 ⚠",
+       "flag": "bj:gat",
+       "say": "⚠ 「백정이 갓을!」 곤장. 돈이 있어도 갓은 안 됐다."
+      }
+     ]
+    },
+    {
+     "if": "sit:baekjeong:open && !sit:baekjeong:done && !status:baekjeong && !bj:buy && val:grain>=1",
+     "name": "가죽 걸이",
+     "verb": "쇠고기를 산다 — 곡식 하나",
+     "once": false,
+     "gives": "leather",
+     "flag": "bj:buy",
+     "say": "🟫 「백정 집이 우리보다 잘산다」고 농부가 말했다. 그래도 문 안엔 안 들어갔다."
+    }
+   ]
+  },
+  "mine": {
+   "name": "광산 굴",
+   "verb": "살펴보기",
+   "say": "숯가마 옆에 굴. 「은광 — 잠채.」 덕대가 밑천을 대고 광군이 판다. 땅 잃은 사람이 모였다.",
+   "flag": "seen:mine",
+   "journal": "mine",
+   "info": "광산 굴 — 품팔이.",
+   "rename": [
+    {
+     "if": "sit:mine:open && !sit:mine:done && (status:sojak || status:pumpali || status:hwajeon || status:sangmin || status:jangin) && sex:m && !mine:dig && !mine:fall && !mine:jam && !mine:jamfail && !mine:watch",
+     "name": "광산 굴",
+     "verb": "덕대 밑에서 판다(몸 2) / 몰래 캔다 ⚠(눈 2)",
+     "once": false,
+     "choices": [
+      {
+       "label": "광군 — 덕대 밑에서 판다(몸 2)",
+       "roll": {
+        "ab": "몸",
+        "hard": 2,
+        "why": "굴. 하루 열두 시간. 몸.",
+        "fail": "…굴이 무너졌다. 어깨. 품삯은 반."
+       },
+       "rollFailFlag": "mine:fall",
+       "rollHurt": "wound",
+       "gives": "coin",
+       "flag": "mine:dig",
+       "journal": "mine",
+       "say": "🪙🪙 은. 품삯 세 단. 「땅 없는 사람이 여기선 밥을 먹는다.」 — 하루 벌어 하루."
+      },
+      {
+       "label": "잠채 ⚠ — 몰래 캔다(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "포졸이 안 오는 밤. 눈.",
+        "fail": "…들켰다. 곤장. 캔 건 뺏겼다."
+       },
+       "rollFailFlag": "mine:jamfail",
+       "rollHurt": "wound",
+       "gives": "coin",
+       "flag": "mine:jam",
+       "journal": "mine",
+       "say": "🪙🪙🪙 은 다섯 단. 「나라 몰래.」 다음은 홍경래가 사람을 모은다는 말."
+      }
+     ]
+    },
+    {
+     "if": "sit:mine:open && !sit:mine:done && !mine:watch && !mine:dig && !mine:fall && !mine:jam && !mine:jamfail",
+     "name": "광산 굴",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "mine:watch",
+     "say": "광군 서른. 땅 잃은 농민, 도망 노비. 「여긴 호패를 안 본다.」"
+    }
+   ]
+  },
+  "hideout": {
+   "name": "숯가마 옆 숨는 자리",
+   "verb": "살펴보기",
+   "say": "산속 빈터. 숯가마 옆 움푹한 자리. 도망친 사람들 자리 — 요즘은 더 많다. 장길산 무리도 여기서.",
+   "flag": "seen:hideout",
+   "journal": "janggilsan",
+   "info": "산속 숨는 자리.",
+   "rename": [
+    {
+     "if": "sit:escape:open && !sit:escape:done && status:solgeo && escape:run && !escape:free && !escape:caught",
+     "name": "숯가마 옆 숨는 자리",
+     "verb": "숨는다 — 광산으로(발 1)",
+     "once": false,
+     "roll": {
+      "ab": "발",
+      "hard": 1,
+      "why": "요즘은 나라가 다 못 잡는다. 발만 있으면.",
+      "fail": "…주인집 사람. 「돌아와.」 다리."
+     },
+     "rollFailFlag": "escape:caught",
+     "rollHurt": "leg",
+     "flag": "escape:free",
+     "journal": "gongnobi",
+     "say": "🪪 호패를 던졌다. 광산 굴. 「여긴 호패를 안 본다.」 품팔이."
+    },
+    {
+     "if": "sit:debtday:open && !sit:debtday:done && debt:on && !debt:pay && !debt:sojak && !debt:run",
+     "name": "숯가마 옆 숨는 자리",
+     "verb": "야반도주 — 화전으로(발 2)",
+     "once": false,
+     "roll": {
+      "ab": "발",
+      "hard": 2,
+      "why": "밤. 아전이 모르게. 발.",
+      "fail": "…아전. 「빚은 몸으로.」 다리."
+     },
+     "rollFailFlag": "debt:caught",
+     "rollHurt": "leg",
+     "flag": "debt:run",
+     "journal": "sedo",
+     "say": "🌲 산속. 불 질러 밭. 호적에서 지워졌다. 「도망한 집은 이웃이 대신 냈다(족징).」"
+    },
+    {
+     "if": "sit:uprising:open && !sit:uprising:done && (status:solgeo || status:oegeo) && !up:run && !up:runfail && !up:watch",
+     "name": "숯가마 옆 숨는 자리",
+     "verb": "난리에 도망 — 지금은 못 잡는다(발 1)",
+     "once": false,
+     "roll": {
+      "ab": "발",
+      "hard": 1,
+      "why": "봉기 통. 포졸이 관아에 매였다. 발.",
+      "fail": "…주인집 사람. 다리."
+     },
+     "rollFailFlag": "up:runfail",
+     "rollHurt": "leg",
+     "flag": "up:run",
+     "journal": "gongnobi",
+     "say": "🪪 산으로. 「돌아온 노비가 없다.」 먼 고을에서 상민 호적에 이름을 끼웠다."
+    },
+    {
+     "if": "sit:uprising:open && !sit:uprising:done && status:hwajeon && !up:watch && !up:go && !up:win && !up:lost",
+     "name": "숯가마 옆 숨는 자리",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "up:watch",
+     "say": "화전민은 호적이 없다. 「관아에 갈 이유도 없고 갈 수도 없다.」 산에서 봤다."
+    }
+   ]
+  },
+  "donghak": {
+   "name": "동학 모임 자리",
+   "verb": "살펴보기",
+   "say": "서낭당 옆 빈터. 「한울님을 모신 사람은 다 같다.」 양반·상민·노비·여자가 둘러앉았다. 1860년 경주에서 시작했다고.",
+   "flag": "seen:donghak",
+   "journal": "donghak",
+   "info": "동학 모임 자리.",
+   "rename": [
+    {
+     "if": "sit:uprising:open && !sit:uprising:done && !up:donghak && !up:go && !up:win && !up:lost && !up:open && !up:report && !up:price && !up:jongju && !up:hong && !up:run && !up:runfail && !up:food && !up:bae",
+     "name": "동학 모임 자리",
+     "verb": "동학에 든다 — 「사람이 곧 하늘」",
+     "once": false,
+     "flag": "up:donghak",
+     "journal": "donghak",
+     "say": "☀ 같은 자리. 노비가 양반 옆에 앉았다. 여자도. 「교조 신원.」 최제우는 1864년 처형됐다. 모임은 남았다."
+    }
+   ]
+  },
+  "pass": {
+   "name": "고개 돌무더기",
+   "verb": "살펴보기",
+   "say": "서쪽 고개. 서낭당. 북쪽 평안도 길. 「서북 사람은 벼슬에 안 쓴다」고 한다.",
+   "flag": "seen:pass",
+   "journal": "honggyeongnae",
+   "info": "고개 — 봉기.",
+   "rename": [
+    {
+     "if": "sit:uprising:open && !sit:uprising:done && status:mollak && sex:m && !up:hong && !up:hongfail && !up:go && !up:win && !up:lost && !up:donghak && !up:watch",
+     "name": "고개 돌무더기",
+     "verb": "홍경래처럼 앞장선다 ⚠(눈 2)",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 2,
+      "why": "관군이 오기 전 정주성에 드는 때. 눈.",
+      "fail": "…정주성. 넉 달. 성이 무너졌다. 2천이 죽었다. 나도."
+     },
+     "rollFailFlag": "up:hongfail",
+     "flag": "up:hong",
+     "journal": "honggyeongnae",
+     "say": "🔥 광산 일꾼·상인·농민 천. 「몰락 양반이 앞에.」 정주성 넉 달 — 성이 무너지기 전에 빠져나왔다. 이름은 바꿨다."
+    },
+    {
+     "if": "sit:uprising:open && !sit:uprising:done && (status:pumpali || status:hwajeon) && sex:m && !up:hong && !up:hongfail && !up:go && !up:win && !up:lost && !up:donghak && !up:watch",
+     "name": "고개 돌무더기",
+     "verb": "광산 사람들과 홍경래에게 ⚠(몸 2)",
+     "once": false,
+     "roll": {
+      "ab": "몸",
+      "hard": 2,
+      "why": "정주성. 넉 달. 몸.",
+      "fail": "…성이 무너졌다. 창. 어깨."
+     },
+     "rollFailFlag": "up:hongfail",
+     "rollHurt": "wound",
+     "flag": "up:hong",
+     "journal": "honggyeongnae",
+     "say": "🔥 「광군이 반.」 정주성 넉 달. 무너지기 전 밤에 성벽을 넘었다."
+    }
+   ]
+  },
+  "qingcamp": {
+   "name": "고개 너머 벌판",
+   "hidden": [
+    "qing_tent",
+    "qing_flag"
+   ],
+   "verb": "살펴보기",
+   "say": "고개 너머 빈 벌판. 아직 아무것도 없다.",
+   "flag": "seen:qingcamp",
+   "info": "관군 진영(봉기 때 보인다).",
+   "rename": [
+    {
+     "if": "uprising:on",
+     "name": "관군 진영",
+     "verb": "살펴보기",
+     "once": false,
+     "journal": "imsul",
+     "say": "천막, 노란 깃발. 안핵사. 「앞장선 사람을 내놓아라.」 마을이 서로 봤다."
+    }
+   ]
+  },
+  "boat": {
+   "name": "사신 짐배",
+   "verb": "살펴보기",
+   "say": "나루 배. 「연행 — 청에 가는 사신단 짐.」 인삼 상자. 역관이 센다.",
+   "flag": "seen:boat",
+   "journal": "yeonhaeng",
+   "info": "사신 짐배 — 연행.",
+   "rename": [
+    {
+     "if": "sit:yeonhaeng:open && !sit:yeonhaeng:done && status:jungin && sex:m && !yeon:smuggle && !yeon:caught && !yeon:legal && !yeon:porter && !yeon:book && !yeon:watch",
+     "name": "사신 짐배",
+     "verb": "인삼을 몰래 싣는다 ⚠(눈 2) / 정한 만큼만",
+     "once": false,
+     "choices": [
+      {
+       "label": "인삼을 몰래 싣는다 ⚠(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "의주에서 짐을 뒤지는 날을 피하는 눈.",
+        "fail": "…의주. 「역관이 인삼을.」 벼슬 둘, 곡식 넷이 갔다."
+       },
+       "rollFailFlag": "yeon:caught",
+       "gives": "ginseng",
+       "flag": "yeon:smuggle",
+       "journal": "yeonhaeng",
+       "say": "🌿 연경. 인삼 → 비단·은. 여섯 단. 「역관 집이 양반보다 부자.」"
+      },
+      {
+       "label": "정한 만큼만",
+       "gives": "ginseng",
+       "flag": "yeon:legal",
+       "journal": "yeonhaeng",
+       "say": "🌿 두 단. 「팔포 — 역관에게 허락된 몫.」"
+      }
+     ]
+    },
+    {
+     "if": "sit:yeonhaeng:open && !sit:yeonhaeng:done && status:yangban && sex:m && !yeon:book && !yeon:watch",
+     "name": "사신 짐배",
+     "verb": "사신단을 따라간다 — 열하일기",
+     "once": false,
+     "flag": "yeon:book",
+     "journal": "silhak",
+     "say": "📖 연경·열하. 수레·벽돌·시장. 「청에서 배워야 한다.」 박지원 옆에서 썼다."
+    },
+    {
+     "if": "sit:yeonhaeng:open && !sit:yeonhaeng:done && (status:sangmin || status:sojak || status:pumpali || status:dogo) && sex:m && !yeon:porter && !yeon:watch",
+     "name": "사신 짐배",
+     "verb": "짐꾼으로 따라간다(몸 1)",
+     "once": false,
+     "roll": {
+      "ab": "몸",
+      "hard": 1,
+      "why": "의주까지 짐. 몸.",
+      "fail": "…짐에 눌렸다."
+     },
+     "gives": "coin",
+     "flag": "yeon:porter",
+     "journal": "yeonhaeng",
+     "say": "🪙 의주까지. 한 단. 「역관은 여섯 단을 번다더라.」"
+    },
+    {
+     "if": "sit:yeonhaeng:open && !sit:yeonhaeng:done && !yeon:watch && !yeon:book && !yeon:porter && !yeon:smuggle && !yeon:legal && !yeon:caught",
+     "name": "사신 짐배",
+     "verb": "살펴보기",
+     "once": false,
+     "flag": "yeon:watch",
+     "say": "인삼 상자. 역관이 센다. 「우리 집 몫이 아니다.」"
+    }
+   ]
+  },
+  "waeship": {
+   "name": "강 위",
+   "hidden": [
+    "wae_hull",
+    "wae_sail",
+    "wae_flag"
+   ],
+   "verb": "살펴보기",
+   "say": "강 아래. 아무것도 없다.",
+   "flag": "seen:waeship",
+   "info": "이양선(끝 무렵 보인다).",
+   "rename": [
+    {
+     "if": "uprising:on",
+     "name": "강 위 이양선",
+     "verb": "살펴보기",
+     "once": false,
+     "journal": "yangseon",
+     "say": "돛이 다르다. 「모양이 다른 배 — 이양선.」 바다 건너에서. 다음 시대가 강 위에 떠 있다."
+    }
+   ]
+  },
+  "jagyeokru": {
+   "name": "물시계 자리",
+   "verb": "살펴보기",
+   "say": "동헌 물시계. 물이 떨어진다. 정약용이 거중기를 만들었다는 말 — 수원 화성.",
+   "flag": "seen:jagyeokru",
+   "journal": "silhak",
+   "info": "물시계 자리."
+  },
+  "stonepile": {
+   "name": "어귀 돌 더미",
+   "verb": "살펴보기",
+   "say": "어귀 돌 더미. 「장승 앞에 돌 하나.」 보부상이 쉬어 간다.",
+   "flag": "seen:stonepile",
+   "info": "어귀 돌 더미."
+  }
+ }
+}

@@ -88,7 +88,9 @@ export class Life {
   injure(kind) { if (this.hurt.has(kind)) return; this.hurt.add(kind); this.g.flags.add('hurt:' + kind); /* 깃발로도 — items.json rename if 에서 hurt:leg 로 읽는다 */ const t = (this.d.hurts || {})[kind]; this.g.ui.say(t?.say || '…다쳤다. 흔적이 남는다.', 4800); this.render(); this.g.save?.touch(); }
   get speedMul() { return this.hurt.has('leg') ? (this.d.hurts?.leg?.speed ?? 0.7) : 1; }
   /** 선택지 회색 — c.if 조건이 거짓이면 못 누른다(이유 한 줄). hurt:leg 같은 흔적도 깃발처럼 본다 */
-  cond(expr) { if (!expr) return true; return expr.split('&&').every((t) => { t = t.trim(); const neg = t.startsWith('!'); const f = neg ? t.slice(1) : t; const v = f.startsWith('hurt:') ? this.hurt.has(f.slice(5)) : f.startsWith('sex:') ? (this.g.sex?.id === f.slice(4)) : f.startsWith('status:') ? (this.status === f.slice(7)) : (f.startsWith('val:') ? this.valCond(f.slice(4)) : this.g.flags.has(f)); return neg ? !v : v; }); }
+  /** 조건 — "a && !b" 에 더해 "(a || b)" / "!(a || b)" 묶음(조선 후기부터: 여러 신분이 같은 자리를 쓸 때) */
+  one(t) { t = t.trim(); const neg = t.startsWith('!'); const f = neg ? t.slice(1) : t; const v = f.startsWith('hurt:') ? this.hurt.has(f.slice(5)) : f.startsWith('sex:') ? (this.g.sex?.id === f.slice(4)) : f.startsWith('status:') ? (this.status === f.slice(7)) : (f.startsWith('val:') ? this.valCond(f.slice(4)) : this.g.flags.has(f)); return neg ? !v : v; }
+  cond(expr) { if (!expr) return true; return expr.split('&&').every((t) => { t = t.trim(); const neg = t.startsWith('!('); if (neg || t.startsWith('(')) t = t.slice(neg ? 2 : 1, t.lastIndexOf(')')); if (!t.includes('||')) return neg ? !this.one(t) : this.one(t); const v = t.split('||').some((x) => this.one(x)); return neg ? !v : v; }); }
   valCond(s) { const m = s.match(/^(\w+)(>=|<=|>|<|=)(\d+)$/); if (!m) return false; const v = this.values[m[1]] || 0, n = Number(m[3]); return { '>=': v >= n, '<=': v <= n, '>': v > n, '<': v < n, '=': v === n }[m[2]]; }
   // ---------- 상황 ----------
   tick(dt) {

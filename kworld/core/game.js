@@ -278,6 +278,7 @@ export class Game {
   /** 대상 앞 선택(먹는다 / 그냥 둔다 / 가져간다 …) — 정답 없음, 고른 것은 깃발로 남는다 */
   choose(t, rule) {
     this.p.enabled = false; this.flag(rule.flag);   // 살펴본 것 자체가 깃발(선택 전에)
+    if (this.ui.isOpen()) { this.p.enabled = true; return; }   // 깃발이 상황 카드를 열었으면 선택 판을 그 위에 덮지 않는다(카드 콜백이 끊겨 큐가 멈추던 것 — 조선 후기 시험에서 드러남) — 다시 누르면 선택 판
     this.ui.open(`<div class="npc"><b>${rule.name || ''}</b><p>${rule.text || ''}</p></div>`, rule.choices.filter((c) => !c.showIf || this.cond(c.showIf)).map((c) => ({ label: c.label, primary: true, ...this.grayOf(c), onClick: () => {
       this.ui.close(); this.p.enabled = true;
       if (c.roll && this.life && !this.life.roll(c)) return;

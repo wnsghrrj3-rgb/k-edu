@@ -42,7 +42,7 @@ assert.ok(st.findIndex((r) => r.id === 'seoeol') < st.findIndex((r) => r.id === 
 assert.ok(new Set(life.nation?.rules.map((r) => r.id)).size === 1, '나라 하나(조선)');
 assert.ok(life.hurts?.wound && life.hurts?.leg && world.danger?.safe?.length === 5, '흔적 둘 + 밤 안전 자리 5');
 assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');
-assert.ok(world.gate?.next === 'joseon-late-life' && !world.gate.ready, '문 → 조선 후기(준비 중)');
+assert.ok(world.gate?.next === 'joseon-late-life' && world.gate.ready, '문 → 조선 후기(열림)');
 const prev = JSON.parse(fs.readFileSync(new URL('../eras/goryeo-life/world.json', import.meta.url))); assert.ok(prev.gate?.next === 'joseon-life' && prev.gate.ready, '고려 끝 카드 → 조선 문(열림)');
 const old = JSON.parse(fs.readFileSync(new URL('../eras/joseon/world.json', import.meta.url))); for (const a of Object.keys(old.areas)) assert.ok(world.areas[a], `조선 마을 터 구역 ${a} 유지`);
 const h = read('height.json'); assert.ok(h && typeof h === 'object', 'height.json');
