@@ -61,7 +61,8 @@ def parse(path):
             left = {k: clean(t) for k, p, t in L[:len(L) // 2]}; right = {k: clean(t) for k, p, t in L[len(L) // 2:]}
             s['kind'] = 'match'; s['heads'] = heads; s['pairs'] = [[left[k], right[p]] for k, p, t in L[:len(L) // 2]]
         elif 'read-line' in h:
-            s['kind'] = 'read'; s['lines'] = [clean(re.sub(r'<span class="rl-num">\d+</span>', '', t)) for t in re.findall(r'class="read-line">(.*?)</div>', h, re.S)]
+            # 74차: 글 판 줄 번호가 숫자가 아닌 「제목」 글자여도 뗀다(u5 l07 감상문 제목 줄 — ㉮㉯ 꼴 글자 번호는 3-2 국어가 본문으로 쓰므로 그대로 둠 · u1~u4·3-2 u1~u6 재추출 바이트 동일)
+            s['kind'] = 'read'; s['lines'] = [clean(re.sub(r'<span class="rl-num">(?:\d+|제목)</span>', '', t)) for t in re.findall(r'class="read-line">(.*?)</div>', h, re.S)]
         elif 'recap' in h:
             s['kind'] = 'recap'; s['items'] = [clean(re.sub(r'<span class="recap-ic">(.*?)</span>', r'\1 ', t)) for t in re.findall(r'class="recap-item"[^>]*>(.*?)</div>', h, re.S)]
         elif 'class="sentence"' in h:
