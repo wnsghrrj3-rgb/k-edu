@@ -198,7 +198,7 @@ KEYS.forEach(k => T(k + ' extras 22 · id 유일 · 추천 연결 전부 존재'
 console.log('═══ K. 발문 ═══');
 T('발문(tnote) 차시마다 6장↑ · ask 2 · watch · min', () => KEYS.forEach(k => { const tn = L[k].slides.filter(s => s.data.tnote); ok(tn.length >= 6, k + ' ' + tn.length); tn.forEach(s => ok(s.data.tnote.ask.length === 2 && s.data.tnote.watch && s.data.tnote.min > 0, k + ' ' + s.id)); }));
 T('발문 분 합계 30~45분', () => KEYS.forEach(k => { const m = L[k].slides.reduce((a, s) => a + (s.data.tnote ? s.data.tnote.min : 0), 0); ok(m >= 30 && m <= 45, k + ' ' + m + '분'); }));
-T('마지막 차시 「다음 단원엔」 = 2단원 삼각형 · 차단 어휘 0', () => { const nx = L.u1_l10.slides[18].data; ok(nx.title === '다음 단원엔' && /삼각형/.test(nx.preview), '다음 단원'); const all = JSON.stringify(L); ['박음', '빵꾸', '갈아엎', '결로'].forEach(b => ok(all.indexOf(b) < 0, '차단 어휘 ' + b)); });
+T('마지막 차시 「다음 단원엔」 = 2단원 사각형 · 차단 어휘 0', () => { const nx = L.u1_l10.slides[18].data; ok(nx.title === '다음 단원엔' && /사각형/.test(nx.preview) && !/삼각형/.test(nx.preview), '다음 단원'); const all = JSON.stringify(L); ['박음', '빵꾸', '갈아엎', '결로'].forEach(b => ok(all.indexOf(b) < 0, '차단 어휘 ' + b)); });
 
 console.log('═══ L. 선행 용어 ═══');
 const stud = (k) => L[k].slides.filter(s => s.block !== 'next_lesson').map(s => { const d = Object.assign({}, s.data); delete d.tnote; return JSON.stringify(d); }).join(' ');
