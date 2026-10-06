@@ -569,6 +569,8 @@ function problemData(p, title, body, fig) {
   return d;
 }
 
+/* 83차 준호 「글씨가 너무 작다」 — s07 개념 장은 원문 다섯 줄 + 그림이라 칠판에서 0.6~0.8배로 줄었다. 원문 문장 가운데 줄만 골라 싣는다(새 글 없음 · 게이트 H 는 원문 문장 순서 부분열로 대조). */
+const KEEP = { u3_l01: [0, 2, 3], u3_l03: [0, 1, 3], u3_l04: [0, 1, 4], u3_l06: [0, 2, 4], u3_l07: [0, 3, 4], u3_l08: [1, 2, 4], u3_l09: [0, 1, 4], u3_l10: [1, 2, 4] };
 const LESSONS = {};
 const keys = Object.keys(T);
 keys.forEach((key, idx) => {
@@ -581,7 +583,7 @@ keys.forEach((key, idx) => {
   add('review', '도입', { title: idx === 0 ? '지난 단원 마지막 시간엔 무엇을 했나요?' : '지난 시간엔 무엇을 했나요?', content: t.review, items: prevExit.map(x => ({ q: x.q, a: x.a })), from: idx === 0 ? PREV_KEY : keys[idx - 1] }, [id('q', 1)]);
   add('motivate', '도입', { scene_title: t.mot.t, kids: t.mot.kids.map(([face, label]) => ({ face, label })), question: t.mot.q, img: 'assets/photo/math/' + t.mot.img + '.jpg' }, [id('q', 2), id('real', 1)], t.mot.tn);
   const csug = [[id('e', 1)], [id('tip', 1)], [id('e', 2), id('tip', 2)], [id('q', 3)]];
-  t.con.forEach(([si, fig, tn, title, content], i) => { const src = s.slides[si]; add('concept', '전개', { fig, title: title || src.title, content: content || lines(src.text) }, csug[i], tn); });
+  t.con.forEach(([si, fig, tn, title, content], i) => { const src = s.slides[si]; let tx = content || lines(src.text); if (i === 3 && KEEP[key]) tx = tx.split('\n').filter((_, j) => KEEP[key].includes(j)).join('\n'); add('concept', '전개', { fig, title: title || src.title, content: tx }, csug[i], tn); });
   add('misconception', '전개', { title: '이런 생각을 조심해요', label: '자주 하는 생각', wrong: t.mis[0], right: t.mis[1], hint: t.mis[2] }, [id('x', 1), id('x', 2)], t.mis[3]);
   const bsug = [[id('tip', 3)], [id('e', 3)], [id('q', 4)]];
   t.basic.forEach(([pi, body, fig], i) => add('basic_problem', '기본문제', problemData(s.problems[pi], '기본 문제 ' + '①②③'[i], body, fig), bsug[i]));
