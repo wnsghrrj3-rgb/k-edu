@@ -688,8 +688,9 @@
   function led(o) {
     const cells = (o.cells || []).filter(Boolean), W = Math.max(1, o.cols | 0 || 8), K = (o.kinds || []).length; if (!cells.length) return '';
     const on = (c) => c.k != null && c.k >= 0 && c.k < K; const rows = []; for (let i = 0; i < cells.length; i += W) rows.push(cells.slice(i, i + W).map(c => on(c) ? '#' : '.').join(''));
-    return '<div class="so-led" data-lit="' + cells.filter(on).length + '" data-shape="' + rows.join('|') + '"><div class="so-ledg" style="grid-template-columns:repeat(' + W + ',1fr)">' + cells.map(c => '<span class="so-lc ' + (on(c) ? 'on k' + c.k : 'off') + '">' + esc(c.name || '') + '</span>').join('') + '</div>'
-      + (K ? '<div class="so-ledk">' + o.kinds.map((n, i) => '<span><i class="k' + i + '"></i>' + esc(n) + '</span>').join('') + '<span><i class="off"></i>꺼진 칸</span></div>' : '') + (o.caption ? '<div class="so-lnote">' + md(o.caption) + '</div>' : '') + '</div>';
+    const CO = o.colors || [], bg = (k) => CO[k] ? ' style="background:' + esc(CO[k]) + ';color:#fff;box-shadow:0 0 14px ' + esc(CO[k]) + '"' : ''; // 76차: colors[] = 갈래마다 원문 색(픽셀 지도 범례) — 없으면 k0~k2 기본 색
+    return '<div class="so-led' + (CO.length ? ' px' : '') + '" data-lit="' + cells.filter(on).length + '" data-shape="' + rows.join('|') + '"><div class="so-ledg" style="grid-template-columns:repeat(' + W + ',1fr)">' + cells.map(c => '<span class="so-lc ' + (on(c) ? 'on k' + c.k : 'off') + '"' + (on(c) ? bg(c.k) : '') + '>' + esc(c.name || '') + '</span>').join('') + '</div>'
+      + (K ? '<div class="so-ledk">' + o.kinds.map((n, i) => '<span><i class="k' + i + '"' + (CO[i] ? ' style="background:' + esc(CO[i]) + '"' : '') + '></i>' + esc(n) + '</span>').join('') + '<span><i class="off"></i>' + esc(o.offName || '꺼진 칸') + '</span></div>' : '') + (o.caption ? '<div class="so-lnote">' + md(o.caption) + '</div>' : '') + '</div>';
   }
   const SO_PARTS = { tline, map, link, then, groups, pcard, news, post, exhibit, sbars, dots, led };
 
