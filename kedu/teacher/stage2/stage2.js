@@ -127,6 +127,27 @@
   function guideOf(lesson) { const A = global.KT2_ART, out = []; if (!A || !A.character || !lesson) return out; (lesson.slides || []).forEach(s => ((s.data || {}).kids || []).forEach(k => { if (k && k.face && A.character(k.face) && (!A.isMain || A.isMain(k.face)) && out.indexOf(k.face) < 0) out.push(k.face); })); return out.slice(0, 2); }
   function guideSay(face, inner, side) { const A = global.KT2_ART; const chr = A && A.character ? A.character(face) : ''; if (!chr) return inner; return '<div class="guide-say ' + (side || 'l') + '"><div class="g-chr">' + chr + '</div><div class="g-bub">' + inner + '</div></div>'; }
   function scenarioG(sc, g) { const f = g && (g[1] || g[0]); if (!f) return scenario(sc); return guideSay(f, '<div class="sc-body">' + (sc.icon ? '<span class="sc-ic">' + esc(sc.icon) + '</span>' : '') + md(sc.body || '') + '</div>', 'r q'); }
+  // 92차 — 새 문제 장(pv3): 읽을 글이 있는 보기 문제. 글은 원문 그대로 장면 ①②③으로 끊어 왼쪽 띠 · 오른쪽은 큰 물음 + 세로 보기 · 풀이
+  function pv3Ok(d) { return !!(d.scenario && d.scenario.body && d.options && d.options.length && d.question && !d.fig && !d.questions && !d.challenge && !d.context && !d.items && !d.sequence && !d.cards && d.ten_frame === undefined && d.ten_frame_anchor === undefined && d.linking_cube === undefined && d.card === undefined && !(d.emoji && d.count !== undefined) && !d.options.some(o => o && (o.emoji || o.ten_frame !== undefined))); }
+  function pv3Scenes(t) {
+    const ss = (String(t).match(/[^.!?…]+(?:[.!?…]+["'」』”’)]*|$)\s*/g) || [String(t)]).map(x => x.trim()).filter(Boolean);
+    if (ss.length < 3) return [ss.join(' ')];
+    const g = ss.map(x => [x]); while (g.length > 3) { let k = 0, m = 1e9; for (let i = 0; i < g.length - 1; i++) { const L = g[i].join(' ').length + g[i + 1].join(' ').length; if (L < m) { m = L; k = i; } } g.splice(k, 2, g[k].concat(g[k + 1])); }
+    return g.map(x => x.join(' '));
+  }
+  function pv3(d, rev) {
+    const sc = pv3Scenes(d.scenario.body); const one = sc.length === 1;
+    const src = '<aside class="pv3-src"><div class="pv3-lab">' + (d.scenario.icon ? '<span class="pv3-ic">' + esc(d.scenario.icon) + '</span>' : '') + '<span class="pv3-lt"></span></div>'
+      + sc.map((t, i) => (i ? '<div class="pv3-cut"></div>' : '') + '<div class="pv3-sc' + (one ? ' one' : '') + '">' + (one ? '' : '<b>' + (i + 1) + '</b>') + '<span>' + md(t) + '</span></div>').join('') + '</aside>';
+    let note = ''; if (d.note && rev) { let t = String(d.note); if (!d.multi) { const o = d.options.find(x => x && x.correct); const ot = o == null ? '' : String(o.label != null ? o.label : o.text != null ? o.text : o).replace(/\*\*/g, '').trim();
+        const m = t.match(/\s*(?:→|=>)\s*\*\*([^*]+)\*\*\s*\.?\s*$/); if (m && ot && m[1].trim() === ot) t = t.slice(0, m.index); } // 정답 보기가 이미 빛나므로 풀이 끝 정답 글은 뺌
+      note = '<div class="pv3-note">' + md(t.replace(/^풀이\s*[:：]\s*/, '')) + '</div>'; }
+    const bl = String(d.scenario.body).length; const cls = (bl < 90 ? ' narrow' : '') + (d.options.length >= 4 ? ' many' : '');
+    const nl = bl < 100; // 읽을 글이 짧으면 풀이·안내를 왼쪽 띠 아래로, 길면 오른쪽 보기 아래로
+    const hint = d.multi ? '<div class="pv3-multi">☑ 여러 개를 고를 수 있어요</div>' : '';
+    const side = '<div class="pv3-side">' + src + (nl ? hint + note : '') + '</div>'; // 풀이·여러 개 안내는 왼쪽 띠 아래(오른쪽은 물음·보기만)
+    return '<div class="pv3' + cls + '">' + side + '<div class="pv3-main"><div class="pv3-q">' + md(d.question) + '</div>' + options(d.options, !!d.multi, rev).replace('class="options', 'class="options pv3-opts') + (nl ? '' : hint + note) + '</div></div>';
+  }
   function symCards(list) { return '<div class="sym-cards">' + list.map(m => '<div class="sym"><b>' + md(String(m.symbol || '')) + '</b><span>' + md(String(m.meaning || '')) + '</span></div>').join('') + '</div>'; }
   function optionBody(o) {
     if (o.emoji && o.count !== undefined) return '<div class="em">' + Array.from({ length: o.count }, () => esc(o.emoji)).join('') + '</div>';
@@ -237,6 +258,7 @@
         break;
       }
       case 'basic_problem': case 'advanced_problem': {
+        if (pv3Ok(d)) { push(pv3(d, rev)); answerable = answerable || d.options.some(o => o.correct); break; } // 92차 — 새 문제 장(읽을 글 왼쪽 띠 · 장면 나눔 · 물음 크게 · 보기 세로)
         const b0 = b.length; let figH = ''; // 60차 — 그림 붙은 문제 장은 좌(그림)·우(글·물음·답) 두 칸
         if (d.context) push('<div class="context-text">' + md(d.context) + '</div>');
         if (d.ten_frame_anchor !== undefined) push('<div class="tf-item anchor">' + tenFrame(d.ten_frame_anchor, 56) + '<div class="tf-num">' + esc(d.ten_frame_anchor) + '</div></div>');
