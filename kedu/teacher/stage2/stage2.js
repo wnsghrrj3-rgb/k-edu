@@ -700,18 +700,47 @@
     paper.querySelectorAll(ZOOMABLE).forEach(el => el.classList.add('zoomable'));
   };
   // 화면 넘침 방지 — 본문이 종이 안 자리보다 크면 통째로 줄인다(학년 등급 배율 위에 곱한다). 어떤 슬라이드도 종이 밖으로 못 나간다.
-  Stage.prototype.fitBody = function () {
-    const paper = doc.getElementById('kt2-paper'); const body = paper && paper.querySelector('.kt2-body'); if (!body) return;
-    const base = this.g <= 2 ? 1.06 : this.g <= 4 ? 1 : 0.95; body.style.zoom = '';
+  // 85차 준호 「어떤 장도 줄지 않게(1.0배)」 — 넘치면 먼저 자리를 바꿔 본다: 말풍선 + 바로 뒤 그림을 옆으로(fit-split).
+  //   두 꼴을 다 재어 덜 줄어드는 쪽을 남기고, 그래도 넘치면 통째로 줄인다(check.html 도 이 함수로 잰다).
+  function zoomLoop(body, base) {
+    body.style.zoom = ''; let z = base;
     for (let i = 0; i < 8; i++) {
       const avail = body.clientHeight, need = body.scrollHeight, availW = body.clientWidth, needW = body.scrollWidth;
-      if (!avail || !need) return;
-      if (need <= avail + 2 && needW <= availW + 2) return;
-      const cur = parseFloat(body.style.zoom) || base;
-      const z = Math.max(0.35, cur * Math.min(avail / need, availW / needW) * 0.97);
-      body.style.zoom = z; body.classList.add('shrunk');
-      if (z <= 0.351) return;
+      if (!avail || !need) break;
+      if (need <= avail + 2 && needW <= availW + 2) break;
+      z = Math.max(0.35, z * Math.min(avail / need, availW / needW) * 0.97);
+      body.style.zoom = z; if (z <= 0.351) break;
     }
+    return z;
+  }
+  function splitPair(body) {
+    const kids = Array.from(body.children); const i = kids.findIndex(k => k.classList.contains('guide-say'));
+    if (i < 0 || kids.some(k => k.classList.contains('concept-split') || k.classList.contains('prob-split'))) return null;
+    const nx = kids[i + 1]; if (!nx || nx.matches('.small-text,.center-text,.guide-say,.big-text,.options,.answer-box,.q-list,.multi-hint')) return null;
+    return nx;
+  }
+  // fit-side: 첫 그림(말풍선·그림·십칸 등)은 왼쪽, 나머지(물음·보기·답)는 오른쪽 한 줄로
+  function sideOk(body) {
+    const kids = Array.from(body.children); if (kids.length < 3 || kids.length > 9) return false;
+    if (kids.some(k => k.classList.contains('concept-split') || k.classList.contains('prob-split'))) return false;
+    return !kids[0].matches('.big-q,.small-text,.center-text,.big-text,.options,.q-list,.context-text,.multi-hint');
+  }
+  const LAYOUTS = ['fit-split', 'fit-side'];
+  function fitZoom(body, base) {
+    LAYOUTS.forEach(c => body.classList.remove(c)); let best = zoomLoop(body, base), bestC = '';
+    if (best >= base - 0.001) return best;
+    [['fit-split', splitPair(body)], ['fit-side', sideOk(body)]].forEach(([c, ok]) => {
+      if (!ok || best >= base - 0.001) return;
+      body.classList.add(c); const z = zoomLoop(body, base); body.classList.remove(c);
+      if (z > best + 0.02) { best = z; bestC = c; }
+    });
+    if (bestC) body.classList.add(bestC);
+    return zoomLoop(body, base);
+  }
+  Stage.prototype.fitBody = function () {
+    const paper = doc.getElementById('kt2-paper'); const body = paper && paper.querySelector('.kt2-body'); if (!body) return;
+    const base = this.g <= 2 ? 1.06 : this.g <= 4 ? 1 : 0.95; const z = fitZoom(body, base);
+    body.classList.toggle('shrunk', z < base - 0.001);
   };
   // 17차 — 글꼴이 늦게 오거나 창 크기가 바뀌면 다시 맞춘다(첫 측정이 대체 글꼴 기준이라 뒤늦게 넘치던 것).
   Stage.prototype.refitLater = function () {
@@ -998,6 +1027,6 @@
       global.KT2 = global.KT2 || {}; global.KT2.stage = new Stage({ params: q, lessons: global.LESSONS, unitTitle });
     })();
   }
-  global.KT2 = { renderSlide, Stage, md, esc, STAGES, STAGE_MIN, BLOCK_LABEL, boot, imgFallback, guideOf, slugOf };
+  global.KT2 = { renderSlide, fitZoom, Stage, md, esc, STAGES, STAGE_MIN, BLOCK_LABEL, boot, imgFallback, guideOf, slugOf };
   if (doc && doc.getElementById && doc.getElementById('kt2-stage') && !global.KT2_NO_BOOT) { if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot); else boot(); }
 })(typeof window !== 'undefined' ? window : globalThis);
