@@ -932,6 +932,12 @@ function makeVariantOnce(q, r){
   const takeOne = (used, cands) => { for (let i = 0; i < cands.length; i++){ const x = cands[i]; if (x === null || x === undefined) continue; if (used.indexOf(x) < 0){ used.push(x); return x; } } return null; };
   const asOpts = (ans, ds, src, dflt) => [{t:String(ans), correct:true}].concat(ds.filter(x => x !== null && x !== undefined).map((x, i) => ({t:String(x), mis:misOf(src, i, dflt)})));
   const nOptsOf = q2 => ((q2.options || []).length || 3);
+  /* 단원 접두사(M1-1-u5-) — 개념 코드에서 떼어 온다. kindOpts: 오답마다 [값, 오개념 꼬리] — 꼬리가 없으면 원본에서 물려받는다 */
+  const PFX = String(q.concept || '').replace(/C\d+$/, '');
+  const kindOpts = (ans, pairs, want, src) => { const used = [String(ans)], out = [{t:String(ans), correct:true}];
+    for (const [x, code] of pairs){ if (out.length > want) break; if (x === null || x === undefined || x === '' || (typeof x === 'number' && x < 0)) continue; const k = String(x); if (used.indexOf(k) >= 0) continue; used.push(k);
+      out.push({t:k, mis: code ? PFX + code : misOf(src, out.length - 1, PFX + 'X10')}); }
+    return out; };
 
   // 묶음과 낱개 — C1·C2·C3
   if (a && a.type === 'bundle_ones' && rule.bundle){
@@ -1046,19 +1052,29 @@ function makeVariantOnce(q, r){
     const t = Math.floor(n / 10), o = n % 10; const want = Math.max(1, nOptsOf(q) - 1);
     const way = R2.way === 'both' ? (r() < 0.5 ? 'sino' : 'nat') : (R2.way || 'sino');
     const rd = way === 'nat' ? natR(n) : sinoR(n);
-    const sw = (o && o <= 5 && o !== t) ? o * 10 + t : (n + 10 <= 50 ? n + 10 : n - 10);   /* 자리 바꿈 — 넘치면 묶음 하나 차이 */
+    const canSw = !!(o && o <= 5 && o !== t);   /* 자리를 바꿔도 다른 수가 되고 너무 크지 않을 때만 「자리 바꿈」 오답 */
+    const sw = canSw ? o * 10 + t : (n + 10 <= 50 ? n + 10 : n - 10);   /* 몇십(step10) 은 묶음 하나 차이 */
     if ((R2.ask || 'read') === 'num'){
       v.stem = `「${rd}」${BAT(rd) ? '을' : '를'} 수로 쓰면 무엇인가요?`;
       if (q.kind === 'sa') v.answer = [String(n)];
       else { const z = o ? Number(String(t * 10) + String(o)) : t;   /* 이십삼 → 203 · 삼십 → 3 */
-        v.options = asOpts(n, distinct(n, [sw, z, n + 1], want), q.options, 'M1-1-u5-X04'); }
+        v.options = R2.step10 ? asOpts(n, distinct(n, [sw, z, n + 1], want), q.options, PFX + 'X04')
+          : kindOpts(n, [canSw ? [sw, 'X04'] : [t + o, 'X05'], [z, 'X07'], [n + 1, null]], want, q.options); }
       v.explanation = [`「${rd}」${WEUN(rd)} 10개씩 묶음 ${t}개${o ? `와 낱개 ${o}개` : ''}예요.`, `수로 쓰면 ${n}${IEYO(n)}.`, o ? '묶음 수를 앞에, 낱개 수를 뒤에 붙여 써요.' : '낱개가 없으면 뒤에 0을 써요.'];
     } else {
       v.stem = `${n}${EUL(n)} 바르게 읽은 것은 어느 것인가요?`;
       const mx = o ? mixR(n, way === 'sino' ? 1 : 0) : NAT1_[t] + '십';   /* 셋십 */
       const other = way === 'sino' ? sinoR(sw) : natR(sw);
-      const ds = [mx, other, way === 'sino' ? sinoR(n + (n < 50 ? 1 : -1)) : natR(n + (n < 50 ? 1 : -1))].filter((x, i, A) => x !== rd && A.indexOf(x) === i).slice(0, want);
-      v.options = [{t:rd, correct:true}].concat(ds.map((x, i) => ({t:x, mis:misOf(q.options, i, 'M1-1-u5-X02')})));
+      const nb = way === 'sino' ? sinoR(n + (n < 50 ? 1 : -1)) : natR(n + (n < 50 ? 1 : -1));
+      if (R2.step10){
+        const ds = [mx, other, nb].filter((x, i, A) => x !== rd && A.indexOf(x) === i).slice(0, want);
+        v.options = [{t:rd, correct:true}].concat(ds.map((x, i) => ({t:x, mis:misOf(q.options, i, PFX + 'X02')})));
+      } else {
+        /* 오답은 종류로 코드를 단다 (2026-10-07 눈검사: 29 를 「서른아홉」 으로 내고 「자리 바꿈」 이라 적었다) —
+           자리 바꿈이 되면 그 수의 읽기(X04), 안 되면 반대쪽 섞어 읽기(X02) */
+        const mx2 = mixR(n, way === 'sino' ? 0 : 1);
+        v.options = kindOpts(rd, [[mx, 'X02'], canSw ? [other, 'X04'] : [mx2, 'X02'], [nb, null]], want, q.options);
+      }
       v.explanation = [`${n}${EUN(n)} 10개씩 묶음 ${t}개${o ? `와 낱개 ${o}개` : ''}예요.`, `「${sinoR(n)}」 또는 「${natR(n)}」${BAT(natR(n)) ? '이라고' : '라고'} 읽어요.`, '한 수를 읽을 때 두 가지 읽기를 섞지 않아요.'];
     }
     return v;
@@ -1071,20 +1087,20 @@ function makeVariantOnce(q, r){
       const up = ask === 'plus1'; do { n = rint(lo, hi, r); } while (up ? n % 10 === 9 : n % 10 === 0);
       ans = up ? n + 1 : n - 1;
       v.stem = `${n}보다 1만큼 더 ${up ? '큰' : '작은'} 수는 무엇인가요?`;
-      ds = [up ? n - 1 : n + 1, up ? n + 10 : n - 10, n];
+      ds = [[up ? n - 1 : n + 1, 'X10'], [up ? n + 10 : n - 10, 'X12'], [n, null]];
       ex = [`1만큼 더 ${up ? '큰' : '작은'} 수는 바로 ${up ? '뒤' : '앞'}의 수예요.`, `${n} 바로 ${up ? '뒤' : '앞'}의 수는 ${ans}${IEYO(ans)}.`, '1만큼은 낱개 하나 — 묶음 수는 그대로예요.'];
     } else if (ask === 'between'){
       n = rint(Math.max(lo, 2), Math.min(hi, 49), r);
       ans = n; v.stem = `${n - 1}${GW(n - 1)} ${n + 1} 사이에 있는 수는 무엇인가요?`;
-      ds = [n + 1, n - 1, n + 10];
+      ds = [[n + 1, 'X13'], [n - 1, 'X13'], [n + 10, 'X12']];
       ex = [`${n - 1} 바로 뒤의 수를 찾아요.`, `${n - 1}, ${n}, ${n + 1} — 사이에 있는 수는 ${n}${IEYO(n)}.`, '사이의 수에는 양쪽 끝 수가 들어가지 않아요.'];
     } else if (ask === 'cross_up' || ask === 'cross_down'){
       const T = rint(Math.max(1, Math.ceil((lo - 9) / 10)), Math.min(4, Math.floor(hi / 10)), r);
       if (ask === 'cross_up'){ n = T * 10 + 9; ans = n + 1; v.stem = `${n} 바로 뒤의 수는 무엇인가요?`;
-        ds = [T * 10, Number(String(T) + '10'), n - 1];
+        ds = [[T * 10, 'X11'], [Number(String(T) + '10'), 'X11'], [n - 1, 'X10']];
         ex = [`${n}${EUN(n)} 묶음 ${T}개와 낱개 9개예요.`, `낱개 하나가 더 오면 10이 되어 묶음이 ${T + 1}개 — ${ans}${IEYO(ans)}.`, '낱개 9 다음에는 묶음이 하나 늘어나요.'];
       } else { n = (T + 1) * 10; ans = n - 1; v.stem = `${n} 바로 앞의 수는 무엇인가요?`;
-        ds = [n + 9, n - 10, n + 1];
+        ds = [[n + 9, 'X11'], [n - 10, 'X12'], [n + 1, 'X10']];
         ex = [`${n}${EUN(n)} 묶음 ${T + 1}개예요.`, `바로 앞의 수는 묶음 ${T}개와 낱개 9개 — ${ans}${IEYO(ans)}.`, '몇십 바로 앞은 낱개가 9인 수예요.'];
       }
     } else {   /* down | up — 수 배열표(10칸씩)에서 아래·위 칸 */
@@ -1094,12 +1110,12 @@ function makeVariantOnce(q, r){
       const cells = []; for (let i = 0; i < 30; i++){ const x = start + i; cells.push(x === ans ? null : x); }
       v.asset = {type:'hundred_chart', cells, cols:10, mark:m};
       v.stem = `수 배열표에서 ${m}의 바로 ${dn ? '아래' : '위'} 칸에 알맞은 수는 무엇인가요?`;
-      ds = [dn ? m + 1 : m - 1, dn ? m - 10 : m + 10, dn ? m + 11 : m - 11];
+      ds = [[dn ? m + 1 : m - 1, 'X12'], [dn ? m - 10 : m + 10, 'X10'], [dn ? m + 11 : m - 11, null]];
       ex = [`수 배열표는 한 줄에 10칸이에요.`, `${dn ? '아래로 한 칸 내려가면 10만큼 커져서' : '위로 한 칸 올라가면 10만큼 작아져서'} ${ans}${IEYO(ans)}.`, '옆 칸은 1씩, 위아래 칸은 10씩 차이가 나요.'];
       n = m;
     }
     if (q.kind === 'sa') v.answer = [String(ans)];
-    else v.options = asOpts(ans, distinct(ans, ds.filter(x => x >= 0 && x <= 99), want), q.options, 'M1-1-u5-X10');
+    else v.options = kindOpts(ans, ds.filter(d => d[0] >= 0 && d[0] <= 999), want, q.options);   /* 「210」(29 다음) 같은 자리 붙임 오답을 살린다 — 10-07 눈검사 */
     v.explanation = ex;
     return v;
   }

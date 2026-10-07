@@ -422,6 +422,9 @@ function checkNum50(where, q) {
     }
     if ((m = st.match(/「([^」]+)」/))) { for (let n = 1; n <= 50; n++) if (sinoOf(n) === m[1] || natOf(n) === m[1]) want = n; }
     if (want === null) return bad(where, 'read2 발문에서 수를 못 읽었다: ' + st);
+    /* 종류 검사 (2026-10-07 눈검사) — 「자리 바꿈」(X04) 꼬리를 단 오답은 정말 묶음·낱개를 바꾼 수여야 한다 (29 → 39 를 X04 로 달던 것) */
+    const swp = String(want % 10) + String(Math.floor(want / 10));
+    (q.options || []).filter(o => !o.correct && /-X04$/.test(o.mis || '')).forEach(o => { if (String(o.t) !== swp) bad(where, `read2 오답 ${o.t} 에 「자리 바꿈」 코드 — ${want} 를 바꾸면 ${swp}`); });
   } else if (vr.seq50) {
     if ((m = st.match(/(\d+)보다 1만큼 더 (큰|작은)/))) want = +m[1] + (m[2] === '큰' ? 1 : -1);
     else if ((m = st.match(/(\d+)[과와] (\d+) 사이/))) { if (+m[2] - +m[1] !== 2) bad(where, 'seq50 사이 문항의 두 수가 2 차이가 아니다'); want = +m[1] + 1; }
