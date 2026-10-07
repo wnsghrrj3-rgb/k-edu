@@ -779,7 +779,7 @@
     if (body.querySelector('.lv-body > .lv-a')) tries.push(['fit-lv'], ['fit-lv', 'fit-tight'], ['fit-lv2'], ['fit-lv2', 'fit-tight']);
     body.style.zoom = ''; const wr = wrapOk(body), co = colsTargets(body).length > 0;
     if (wr) { tries.push(['fit-wrap'], ['fit-wrap', 'fit-tight']); if (sp) tries.push(['fit-wrap', 'fit-split', 'fit-tight']); }
-    if (body.querySelector(':scope > .points > :nth-child(5)')) tries.push(['fit-pts'], ['fit-pts', 'fit-tight']);
+    if (body.querySelector(':scope > .points > :nth-child(4)')) tries.push(['fit-pts'], ['fit-pts', 'fit-tight']); // 91차 — 넷부터
     if (body.querySelector(':scope > .big-q') && body.querySelector(':scope > .multi-hint')) tries.push(['fit-qh', 'fit-tight']);
     if (body.querySelector('.ans-key')) { tries.push(['fit-ans', 'fit-tight']); if (sp) tries.push(['fit-ans', 'fit-split', 'fit-tight']); if (sd) tries.push(['fit-ans', 'fit-side', 'fit-tight']); }
     if (co) { tries.push(['fit-cols'], ['fit-cols', 'fit-tight']); if (wr) tries.push(['fit-cols', 'fit-wrap', 'fit-tight']); if (sd) tries.push(['fit-cols', 'fit-side', 'fit-tight']); }
