@@ -402,6 +402,47 @@ function checkCmp4(where, q) {
   q.options.filter(o => !o.correct).forEach(o => { if (typeof o.t === 'string' && has(o.t)) bad(where, `cmp4 오답 보기 「${o.t}」 가 그림의 정답 ${ans} 를 가리킨다`); });
 }
 
+
+/* v1.4 — 50까지의 수: 발문(과 그림)에서 정답을 다시 계산해 정답 보기·단답과 대조한다 */
+const SN = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'], NA1 = ['', '하나', '둘', '셋', '넷', '다섯', '여섯', '일곱', '여덟', '아홉'], NA10 = ['', '열', '스물', '서른', '마흔', '쉰'];
+const sinoOf = n => { const t = Math.floor(n / 10), o = n % 10; return (t > 1 ? SN[t] : '') + (t ? '십' : '') + SN[o]; };
+const natOf = n => NA10[Math.floor(n / 10)] + NA1[n % 10];
+function checkNum50(where, q) {
+  const vr = q.variant_rule || {};
+  if (!vr.read2 && !vr.seq50 && !vr.cmp3) return;
+  const cor = q.kind === 'sa' ? String((q.answer || [])[0]) : String(((q.options || []).find(o => o.correct) || {}).t);
+  const wr = (q.options || []).filter(o => !o.correct).map(o => String(o.t));
+  const st = String(q.stem); let want = null, m;
+  if (vr.read2) {
+    if ((m = st.match(/^(\d+)[을를] 바르게 읽은/))) {
+      const n = +m[1]; const ok = [sinoOf(n), natOf(n)];
+      if (ok.indexOf(cor) < 0) bad(where, `read2 정답 「${cor}」 이 ${n} 의 읽기(${ok.join('/')})가 아니다`);
+      wr.forEach(w => { if (ok.indexOf(w) >= 0) bad(where, `read2 오답 「${w}」 도 ${n} 의 바른 읽기다`); });
+      return;
+    }
+    if ((m = st.match(/「([^」]+)」/))) { for (let n = 1; n <= 50; n++) if (sinoOf(n) === m[1] || natOf(n) === m[1]) want = n; }
+    if (want === null) return bad(where, 'read2 발문에서 수를 못 읽었다: ' + st);
+  } else if (vr.seq50) {
+    if ((m = st.match(/(\d+)보다 1만큼 더 (큰|작은)/))) want = +m[1] + (m[2] === '큰' ? 1 : -1);
+    else if ((m = st.match(/(\d+)[과와] (\d+) 사이/))) { if (+m[2] - +m[1] !== 2) bad(where, 'seq50 사이 문항의 두 수가 2 차이가 아니다'); want = +m[1] + 1; }
+    else if ((m = st.match(/(\d+) 바로 (뒤|앞)의 수/))) want = +m[1] + (m[2] === '뒤' ? 1 : -1);
+    else if ((m = st.match(/(\d+)의 바로 (아래|위) 칸/))) {
+      want = +m[1] + (m[2] === '아래' ? 10 : -10);
+      const a = q.asset || {}; const cs = a.cells || []; const cols = a.cols || 10;
+      const i = cs.findIndex(c => Number(c) === +m[1]); const j = i + (m[2] === '아래' ? cols : -cols);
+      if (i < 0 || j < 0 || j >= cs.length || (cs[j] !== null && cs[j] !== '?')) bad(where, 'seq50 배열표에서 물은 칸이 빈칸이 아니다');
+      else { const k = cs.findIndex(c => c !== null && c !== '?'); const base = Number(cs[k]) - k; if (base + j !== want) bad(where, 'seq50 배열표 칸 수가 이어지지 않는다'); }
+    }
+    else return bad(where, 'seq50 발문 꼴을 모른다: ' + st);
+  } else if (vr.cmp3) {
+    if (!(m = st.match(/^([\d, ]+) 가운데 가장 (큰|작은)/))) return bad(where, 'cmp3 발문 꼴을 모른다: ' + st);
+    const ns = m[1].split(',').map(x => +x.trim());
+    if (new Set(ns).size !== 3) bad(where, 'cmp3 세 수가 서로 다르지 않다');
+    want = m[2] === '큰' ? Math.max(...ns) : Math.min(...ns);
+  }
+  if (String(want) !== cor) bad(where, `${Object.keys(vr)[0]} 정답 ${cor} ≠ 다시 계산한 ${want}`);
+  if (wr.indexOf(String(want)) >= 0) bad(where, `${Object.keys(vr)[0]} 오답 보기에 정답 ${want} 가 섞였다`);
+}
 /* 한 문항(원본이든 변형본이든) 공통 검사 */
 function checkQ(where, q, opt) {
   opt = opt || {};
@@ -421,6 +462,7 @@ function checkQ(where, q, opt) {
   if (!opt.variant && (q.kind === 'match' || q.kind === 'ox') && !q.mis && opt.requireMis) bad(where, q.kind + ' 문항에 기본 오개념(mis) 없음 — 틀렸을 때 리포트가 읽을 코드가 없다');
   checkAsset(where, q.asset);
   checkCmp4(where, q);
+  checkNum50(where, q);
   if (q.asset && typeof q.asset === 'object' && ASSETS[q.asset.type]) {
     try { if (!ENG.drawAsset(q.asset, ENG.rng(7))) bad(where, '화면에서 에셋이 빈칸으로 나옴'); }
     catch (e) { bad(where, '화면 그리기 예외: ' + e.message); }
@@ -568,6 +610,16 @@ function checkSet(file) {
       if (C4.by !== undefined && ['cap', 'fill'].indexOf(C4.by) < 0) bad(where, "cmp4 by 는 cap·fill(그릇만)");
       if (at === 'cups' && C4.ask && !C4.by) bad(where, 'cups 의 cmp4 ask 는 by(cap 담을 수 있는 양 | fill 담긴 양)를 밝혀야 한다');
     }
+    /* v1.4 갈래 — 50까지의 수 */
+    if (q.variant_rule.read2 && at) bad(where, 'read2 변형은 그림 없는 문항 전용(읽기 글만 바꾼다)');
+    if (q.variant_rule.cmp3 && at) bad(where, 'cmp3 변형은 그림 없는 문항 전용');
+    if (q.variant_rule.seq50) {
+      const sk = q.variant_rule.seq50.ask || 'plus1';
+      if (['plus1', 'minus1', 'between', 'cross_up', 'cross_down', 'down', 'up'].indexOf(sk) < 0) bad(where, 'seq50 ask 를 모른다: ' + sk);
+      if ((sk === 'down' || sk === 'up') && at !== 'hundred_chart') bad(where, 'seq50 down|up 은 hundred_chart 그림이 있어야 한다');
+      if (!(sk === 'down' || sk === 'up') && at) bad(where, 'seq50 ' + sk + ' 는 그림 없는 문항 전용');
+    }
+    if (q.variant_rule.bond && q.variant_rule.bond.part_max && at !== 'number_bond') bad(where, 'bond 는 number_bond 그림이 있어야 한다');
     /* play.html 과 같은 순서·같은 난수 씀씀이: 틀린 문항들이 난수 하나를 이어 쓰고, prep 은 변형 뒤에 온다.
        (덧: 씨앗을 1씩 늘리면 LCG 특성상 첫 값이 거의 안 변해 「안 변한다」는 가짜 실패가 난다 — 씨앗을 넓게 흩는다) */
     const face = x => JSON.stringify([x.stem, x.asset || null, x.options || null, x.answer || null, x.pairs || null]);
