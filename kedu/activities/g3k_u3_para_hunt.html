@@ -108,17 +108,24 @@ h1 { font-size:clamp(30px,6vw,58px); color:var(--deep); margin:0; text-align:cen
 }
 
 /* ── 무대 스타일 ── */
-/* 무대 — 글 속 찾기(문장 토큰) · 문단이 한 줄씩 쌓인다. 판정 전엔 모든 줄이 같은 모습(답 미노출) */
-#hunt { display:flex; flex-direction:column; align-items:center; gap:clamp(10px,2vh,22px); width:100%; }
-#hunt-prompt { font-size:clamp(19px,2.6vw,32px); color:var(--amber-d); background:#fef3c7; border-radius:12px; padding:8px 22px; text-align:center; word-break:keep-all; }
+/* 무대 — 글 속 찾기(문장 토큰) · 문단이 한 줄씩 쌓여 무대 높이를 채운다(빈 여백 0). 판정 전엔 모든 줄이 같은 모습(답 미노출) */
+#a-root { align-self:stretch; width:100%; }   /* 이 활동만 — 무대가 화면 높이를 다 쓰게(core 무개변) */
+#stage { align-items:stretch; }
+#hunt { display:flex; flex-direction:column; align-items:center; gap:clamp(10px,1.8vh,22px); width:100%; height:100%;
+        padding:clamp(6px,1.4vh,18px) 0 clamp(10px,2.4vh,30px); box-sizing:border-box; }
+#hunt-prompt { flex:none; font-size:clamp(20px,min(3.4vw,3.6vh),42px); color:var(--amber-d); background:#fef3c7; border-radius:14px;
+               padding:clamp(8px,1.2vh,14px) clamp(16px,2vw,28px); text-align:center; word-break:keep-all; }
 #hunt-prompt.turn { color:#fff; } #hunt-prompt.turn.t0 { background:var(--teamA); } #hunt-prompt.turn.t1 { background:var(--teamB); }
-#hunt-text { display:flex; flex-direction:column; align-items:stretch; gap:clamp(6px,1.2vh,14px); width:min(94vw,1100px); }
-.tok { font-family:'Jua',sans-serif; font-size:clamp(19px,2.5vw,34px); line-height:1.35; text-align:left; word-break:keep-all;
-       background:#fff; color:var(--deep); border:3px solid var(--amber); border-radius:16px;
-       padding:clamp(10px,1.4vh,16px) clamp(14px,1.8vw,24px); min-height:48px; cursor:pointer; box-shadow:0 4px 0 #e7c890; }
+#hunt-text { flex:1; min-height:0; display:flex; flex-direction:column; align-items:stretch; justify-content:center;
+             gap:clamp(8px,1.6vh,18px); width:min(95vw,1500px); }
+.tok { flex:1 0 auto; min-height:56px; max-height:clamp(120px,22vh,230px); display:flex; align-items:center;
+       font-family:'Jua',sans-serif; font-size:clamp(22px,min(6.6vw,4.6vh),58px); line-height:1.3; text-align:left; word-break:keep-all;
+       background:#fff; color:var(--deep); border:4px solid var(--amber); border-radius:18px;
+       padding:clamp(10px,1.4vh,18px) clamp(16px,2.2vw,32px); cursor:pointer; box-shadow:0 5px 0 #e7c890; }
 .tok:active { transform:translateY(3px); box-shadow:none; }
 .tok.got { background:#dcfce7; border-color:var(--good); color:#166534; }
 .tok.bad, .tok.shake { border-color:var(--bad); animation:shake .42s; }
+@media (max-width:600px) { #hunt { padding-top:clamp(56px,8vh,72px); } .tok { max-height:none; } }   /* 폰 세로 — 물음 줄이 우상단 HUD 밑으로 숨지 않게 */
 </style>
 </head>
 <body>
