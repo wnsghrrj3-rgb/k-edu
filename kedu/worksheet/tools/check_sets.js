@@ -100,7 +100,10 @@ const ASSETS = {
   cups:           ['items'],
   /* v1.5 — 1학년 1학기 국어 「글자를 만들어요」 (2026-10-07): 글자 짜임 상자 · 음절표 */
   jamo:           [],
-  syl_table:      ['cons', 'vows']
+  syl_table:      ['cons', 'vows'],
+  /* v1.6 — 1학년 1학기 국어 「받침이 있는 글자를 읽어요」 (2026-10-07): 받침 글자 상자 · 그림 낱말 */
+  bat:            [],
+  bat_word:       ['w', 'at']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -114,6 +117,12 @@ const HC = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ', HV = '�
 const hj = (c, v) => (HC.indexOf(c) < 0 || HV.indexOf(v) < 0 || !c || !v || c.length !== 1 || v.length !== 1) ? null : String.fromCharCode(0xAC00 + (HC.indexOf(c) * 21 + HV.indexOf(v)) * 28);
 const hs = s => { s = String(s || ''); if (s.length !== 1) return null; const k = s.charCodeAt(0) - 0xAC00; if (!(k >= 0 && k < 11172) || k % 28) return null; return { c: HC[Math.floor(k / 588)], v: HV[Math.floor((k % 588) / 28)] }; };
 const hl = v => 'ㅏㅐㅑㅒㅓㅔㅕㅖㅣ'.indexOf(v) >= 0 ? 'side' : 'ㅗㅛㅜㅠㅡ'.indexOf(v) >= 0 ? 'stack' : 'mix';
+/* v1.6 받침 — 종성 표를 엔진과 따로 들고 서로 검산 */
+const HB = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const hj3 = (c, v, b) => (HC.indexOf(c) < 0 || HV.indexOf(v) < 0 || HB.indexOf(b || '') < 0 || !c || !v || c.length !== 1 || v.length !== 1) ? null : String.fromCharCode(0xAC00 + (HC.indexOf(c) * 21 + HV.indexOf(v)) * 28 + HB.indexOf(b || ''));
+const hs3 = s => { s = String(s || ''); if (s.length !== 1) return null; const k = s.charCodeAt(0) - 0xAC00; if (!(k >= 0 && k < 11172)) return null; return { c: HC[Math.floor(k / 588)], v: HV[Math.floor((k % 588) / 28)], b: HB[k % 28] }; };
+/* 정답으로 나와도 되는 받침 글자(엔진 BAT_BANK 와 같은 생각, 따로 적음) */
+const BAT_FAMILIAR = '각국낙막박북떡목약죽책학악속먹벽간눈문산손안신돈반전천한만논연곧돋닫믿받묻걷달별물발말길굴실일날불칼살줄곰감잠봄밤몸섬꿈힘땀김남솜점밥집입법컵탑십삽답겁강콩공빵방상장병종창양성동용빗옷맛붓낫곳';
 
 let fails = [];
 function bad(where, msg) { fails.push(where + ' — ' + msg); }
@@ -374,6 +383,29 @@ function checkAsset(where, a) {
     if (a.lay !== undefined && [true, 'blank', 'c', 'v'].indexOf(a.lay) < 0) bad(where, "jamo lay 는 true·'blank'·'c'·'v'");
     if (a.lay && !(a.v || (a.s && hs(a.s)))) bad(where, 'jamo lay 를 그리려면 모음자(v 또는 s)가 있어야 짜임을 안다');
   }
+  if (a.type === 'bat') {
+    const isC = x => typeof x === 'string' && x.length === 1 && HC.indexOf(x) >= 0, isV = x => typeof x === 'string' && x.length === 1 && HV.indexOf(x) >= 0;
+    const isB = x => typeof x === 'string' && x.length === 1 && HB.indexOf(x) > 0;
+    if (a.base !== undefined && a.base !== null && !hs(a.base)) bad(where, 'bat base 는 받침 없는 한 글자여야 한다: ' + a.base);
+    if (a.c !== undefined && a.c !== null && !isC(a.c)) bad(where, 'bat c 가 자음자가 아니다: ' + a.c);
+    if (a.v !== undefined && a.v !== null && !isV(a.v)) bad(where, 'bat v 가 모음자가 아니다: ' + a.v);
+    if (a.b !== undefined && a.b !== null && !isB(a.b)) bad(where, 'bat b 가 받침이 아니다: ' + a.b);
+    const s3 = a.s ? hs3(a.s) : null;
+    if (a.s !== undefined && a.s !== null && !(s3 && s3.b)) bad(where, 'bat s 는 받침 있는 한 글자여야 한다: ' + a.s);
+    if (a.base && a.b && a.s) { const p = hs(a.base); if (p && hj3(p.c, p.v, a.b) !== a.s) bad(where, `bat ${a.base}+${a.b} 는 ${hj3(p.c, p.v, a.b)} 인데 s 가 ${a.s}`); }
+    if (a.c && a.v && a.b && a.s && hj3(a.c, a.v, a.b) !== a.s) bad(where, `bat ${a.c}+${a.v}+${a.b} 는 ${hj3(a.c, a.v, a.b)} 인데 s 가 ${a.s}`);
+    if (a.base !== undefined && (a.c !== undefined || a.v !== undefined)) bad(where, 'bat 은 base 와 c·v 를 함께 쓰지 않는다');
+    if (a.eq === false && !a.s) bad(where, 'bat eq:false 면 글자 s 가 있어야 한다(아니면 그림이 빈다)');
+    if (a.eq !== false && a.base === undefined && a.c === undefined) bad(where, 'bat 식 줄에 base 나 c 가 없다');
+    if (a.lay !== undefined && [true, 'blank', 'b', 'c', 'v'].indexOf(a.lay) < 0) bad(where, "bat lay 는 true·'blank'·'b'·'c'·'v'");
+    if (a.lay && !(a.v || s3 || (a.base && hs(a.base)))) bad(where, 'bat lay 를 그리려면 모음자를 알아야 한다');
+  }
+  if (a.type === 'bat_word') {
+    const ws = [...String(a.w || '')];
+    if (!ws.length || ws.some(x => !hs3(x))) bad(where, 'bat_word w 는 한글 글자로만: ' + a.w);
+    if (!(Number.isInteger(a.at) && a.at >= 0 && a.at < ws.length)) bad(where, 'bat_word at 이 낱말 밖');
+    else if (!(hs3(ws[a.at]) || {}).b) bad(where, `bat_word ${a.w} 의 ${a.at} 번째 글자에 받침이 없다`);
+  }
   if (a.type === 'syl_table') {
     const C2 = a.cons || [], V2 = a.vows || [];
     if (!(C2.length >= 2 && C2.length <= 5)) bad(where, 'syl_table cons 는 2~5줄');
@@ -503,6 +535,46 @@ function checkJamo(where, q) {
   if (ask === 'table' && hj(a.cons[a.q[0]], a.vows[a.q[1]]) && a.q[0] < 0) bad(where, 'jamo table ? 칸이 없다');
   if ((ask === 'cons' || ask === 'vow') && a.lay && a.lay !== 'blank') bad(where, 'jamo ' + ask + ' 인데 짜임 칸에 답이 보인다(lay 는 blank 만)');
 }
+/* v1.6 — 받침이 있는 글자: 그림·발문에서 정답을 다시 셈해 정답 보기·단답과 대조 (원본·변형 모두)
+   add: base+b · find: s 의 받침 · has: 받침 있는(neg 면 없는) 보기가 하나뿐 · swap: 발문의 바꿀 받침 · word: 낱말 at 글자의 받침 */
+/* 「낱말」 뒤 조사 — 받침 따라 은/는·이/가·을/를·과/와·이에요/예요·이라고/라고·으로/로 (2026-10-07, 1-1 국어 u2 눈검사에서 80곳) */
+const JO_RE = /「([^」]*)」(이에요|예요|이라고|라고|으로|로|은|는|이|가|을|를|과|와)(?![가-힣])/g;
+const JO_PAIR = {'이에요':['이에요','예요'],'예요':['이에요','예요'],'이라고':['이라고','라고'],'라고':['이라고','라고'],'은':['은','는'],'는':['은','는'],'이':['이','가'],'가':['이','가'],'을':['을','를'],'를':['을','를'],'과':['과','와'],'와':['과','와']};
+function joWant(w, j){ const last = [...w.replace(/[.!?…\s]+$/, '')].pop() || ''; if (!(last >= '가' && last <= '힣')) return null;   /* 숫자·괄호로 끝나면 읽는 소리를 몰라 건너뜀 */
+  const t = (last.charCodeAt(0) - 0xAC00) % 28;
+  if (j === '으로' || j === '로') return (t === 0 || t === 8) ? '로' : '으로';
+  return JO_PAIR[j][t ? 0 : 1]; }
+function checkJosa(where, q){
+  const texts = [q.stem].concat(q.explanation || [], (q.options || []).map(o => typeof o.t === 'string' ? o.t : ''));
+  texts.forEach(s => { if (typeof s !== 'string') return; let m; JO_RE.lastIndex = 0;
+    while ((m = JO_RE.exec(s))){ const want = joWant(m[1], m[2]); if (want && want !== m[2]) bad(where, `조사 「${m[1]}」${m[2]} → ${want}`); } });
+}
+function checkBat(where, q) {
+  const R = (q.variant_rule || {}).bat; if (!R) return;
+  const a = q.asset || {}; const ask = R.ask || 'add'; let ans = null;
+  if (ask === 'add') { if (a.type !== 'bat') return bad(where, 'bat add 는 bat 그림이 있어야');
+    const p = a.base ? hs(a.base) : (a.c && a.v ? { c: a.c, v: a.v } : null); if (!p || !a.b) return bad(where, 'bat add 그림에 base(또는 c·v)와 b 가 있어야');
+    ans = hj3(p.c, p.v, a.b); if (a.s) bad(where, 'bat add 인데 그림에 답 글자 s 가 보인다'); }
+  else if (ask === 'find') { const p = hs3(a.s); if (a.type !== 'bat' || !p || !p.b) return bad(where, 'bat find 는 받침 있는 글자(s)가 있는 bat 그림이 있어야');
+    ans = p.b; if (a.b) bad(where, 'bat find 인데 그림에 받침 b 가 보인다'); if (a.lay && a.lay !== 'blank' && a.lay !== 'b') bad(where, "bat find 인데 짜임 칸에 받침이 보인다(lay 는 'blank'·'b' 만)"); }
+  else if (ask === 'has') { if (q.asset) bad(where, 'bat has 는 그림 없는 문항 전용');
+    const os = (q.options || []).filter(o => { const p = hs3(o.t); return R.neg ? (p && !p.b) : (p && p.b); });
+    if (os.length !== 1) return bad(where, `bat has 보기 가운데 받침이 ${R.neg ? '없는' : '있는'} 글자가 ${os.length}개(하나여야)`); ans = String(os[0].t);
+    if ((q.options || []).some(o => !hs3(o.t))) bad(where, 'bat has 보기는 한 글자씩'); }
+  else if (ask === 'swap') { const p = hs3(a.s); const m = String(q.stem).match(/받침 (\S)을 (\S)(?:으로|로) (?:바꾸면|바꾼)/);
+    if (a.type !== 'bat' || !p || !p.b || !m) return bad(where, 'bat swap 은 받침 있는 s 그림과 「받침 ㄱ을 ㄴ으로 바꾸면」 발문이 있어야');
+    if (m[1] !== p.b) bad(where, `bat swap 발문의 받침 ${m[1]} ≠ 그림 글자의 받침 ${p.b}`);
+    if (m[2] === p.b) bad(where, 'bat swap 바꿀 받침이 원래와 같다'); ans = hj3(p.c, p.v, m[2]);
+    if (!/^[ㄹ]$/.test(m[2]) && !/으로 바(?:꾸면|꾼)/.test(q.stem)) bad(where, 'bat swap 조사 — ㄹ 아니면 「으로」'); if (m[2] === 'ㄹ' && !/ㄹ로 바(?:꾸면|꾼)/.test(q.stem)) bad(where, 'bat swap 조사 — ㄹ 은 「로」'); }
+  else if (ask === 'word') { if (a.type !== 'bat_word') return bad(where, 'bat word 는 bat_word 그림이 있어야'); const p = hs3([...String(a.w)][a.at]); if (!p || !p.b) return; ans = p.b; }
+  else return bad(where, 'bat ask 를 모른다: ' + ask);
+  if (!ans) return bad(where, 'bat 정답을 그림에서 못 셈했다');
+  if ((ask === 'add' || ask === 'swap') && BAT_FAMILIAR.indexOf(ans) < 0) bad(where, `bat 낯선 정답 글자 「${ans}」 — 1학년 눈에 익은 글자만 정답으로`);
+  if (q.kind === 'sa') { if (!Array.isArray(q.answer) || String(q.answer[0]) !== ans) bad(where, `bat 단답 정답 ${q.answer} ≠ 그림이 말하는 ${ans}`); return; }
+  const cor = (q.options || []).find(o => o.correct);
+  if (!cor || String(cor.t) !== ans) bad(where, `bat 정답 보기 「${cor && cor.t}」 ≠ 그림이 말하는 ${ans}`);
+  (q.options || []).filter(o => !o.correct).forEach(o => { if (String(o.t) === ans) bad(where, `bat 오답 보기에 정답 ${ans} 가 섞였다`); });
+}
 /* 한 문항(원본이든 변형본이든) 공통 검사 */
 function checkQ(where, q, opt) {
   opt = opt || {};
@@ -524,6 +596,8 @@ function checkQ(where, q, opt) {
   checkCmp4(where, q);
   checkNum50(where, q);
   checkJamo(where, q);
+  checkBat(where, q);
+  checkJosa(where, q);
   if (q.asset && typeof q.asset === 'object' && ASSETS[q.asset.type]) {
     try { if (!ENG.drawAsset(q.asset, ENG.rng(7))) bad(where, '화면에서 에셋이 빈칸으로 나옴'); }
     catch (e) { bad(where, '화면 그리기 예외: ' + e.message); }
@@ -691,6 +765,17 @@ function checkSet(file) {
       (J.cons || []).forEach(x => { if (HC.indexOf(x) < 0) bad(where, 'jamo cons 후보에 자음자 아닌 것 ' + x); });
       (J.vows || []).forEach(x => { if (HV.indexOf(x) < 0) bad(where, 'jamo vows 후보에 모음자 아닌 것 ' + x); });
       if (ask === 'place' && (J.vows || []).some(x => hl(x) === 'mix')) bad(where, 'jamo place 의 vows 후보에 둘러싸는 모음자');
+    }
+    /* v1.6 갈래 — 받침이 있는 글자 */
+    if (q.variant_rule.bat) {
+      const R = q.variant_rule.bat; const ask = R.ask || 'add';
+      if (['add', 'find', 'has', 'swap', 'word'].indexOf(ask) < 0) bad(where, 'bat ask 를 모른다: ' + ask);
+      if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'bat 변형은 mc·blank·sa 만');
+      if (ask === 'has' && q.kind === 'sa') bad(where, 'bat has 는 보기 문항만');
+      const want = ask === 'has' ? null : ask === 'word' ? 'bat_word' : 'bat'; if (want ? at !== want : at) bad(where, 'bat ' + ask + ' 변형 그림 종류가 맞지 않다');
+      const KEYS = ['drop', 'near', 'side', 'flip', 'cons', 'role', 'vow', 'none', 'keep', 'any'];
+      Object.keys(R.mis || {}).forEach(k => { if (KEYS.indexOf(k) < 0) bad(where, 'bat mis 갈래를 모른다: ' + k); else if (!MIS.has(String(q.concept).replace(/C\d+$/, '') + R.mis[k])) bad(where, `bat mis.${k} 꼬리 ${R.mis[k]} 가 사전에 없다`); });
+      (R.bats || []).forEach(x => { if (['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅇ','ㅅ'].indexOf(x) < 0) bad(where, 'bat bats 후보는 ㄱㄴㄷㄹㅁㅂㅇㅅ 만: ' + x); });
     }
     if (q.variant_rule.bond && q.variant_rule.bond.part_max && at !== 'number_bond') bad(where, 'bond 는 number_bond 그림이 있어야 한다');
     /* play.html 과 같은 순서·같은 난수 씀씀이: 틀린 문항들이 난수 하나를 이어 쓰고, prep 은 변형 뒤에 온다.

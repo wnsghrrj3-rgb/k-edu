@@ -127,6 +127,29 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .jamo .lay.mix i.v{grid-column:1 / 3;grid-row:2;border-top:2px dashed var(--rule-strong)}
 .jamo .lay.mix i.v2{grid-column:2;grid-row:1;border-left:2px dashed var(--rule-strong);background:#FFF4E8}
 .jamo em{font-style:normal;font-size:15px;color:var(--muted)}
+/* v1.6 — 받침 글자 (2026-10-07) — 자음자 파랑 · 모음자 주황 · 받침 초록 */
+.jamo .cd.b{color:#2E7D32;border-color:#8BC48F;background:#EDF7EE}
+.jamo .lay3{display:grid;width:150px;border:3px solid var(--rule-strong);border-radius:12px;overflow:hidden;background:var(--card)}
+.jamo .lay3 i{display:flex;align-items:center;justify-content:center;font-style:normal;font-size:40px;font-weight:700;height:62px}
+.jamo .lay3 i.c{background:#EEF4FD;color:#1D5FBF}
+.jamo .lay3 i.v,.jamo .lay3 i.v2{background:#FFF4E8;color:#C25A00}
+.jamo .lay3 i.b{background:#EDF7EE;color:#2E7D32;border-top:2px dashed var(--rule-strong)}
+.jamo .lay3 i.q{color:var(--muted)}
+.jamo .lay3.side{grid-template-columns:1fr 1fr}
+.jamo .lay3.side i.v{border-left:2px dashed var(--rule-strong)}
+.jamo .lay3.side i.b,.jamo .lay3.mix i.b{grid-column:1 / 3}
+.jamo .lay3.stack i.v{border-top:2px dashed var(--rule-strong)}
+.jamo .lay3.mix{grid-template-columns:1fr 1fr}
+.jamo .lay3.mix i.v2{border-left:2px dashed var(--rule-strong)}
+.jamo .lay3.mix i.v{grid-column:1 / 3;border-top:2px dashed var(--rule-strong)}
+.batw{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap}
+.batw .pic{font-size:64px;line-height:1}
+.batw .w{display:flex;gap:6px}
+.batw .sy{display:flex;flex-direction:column;align-items:center;min-width:72px;padding:6px 8px;border:3px solid var(--rule-strong);border-radius:14px;background:var(--card);font-size:48px;font-weight:700;line-height:1.1}
+.batw .sy i{font-style:normal;margin-top:4px;width:44px;height:30px;border:3px dashed #8BC48F;border-radius:8px;background:#EDF7EE;color:#2E7D32;font-size:22px;display:flex;align-items:center;justify-content:center}
+.pq .pbatw{margin:8px 0 8px 30px;font-size:20px;letter-spacing:.08em}
+.pq .pbatw .ppic{font-size:26px;margin-right:12px}
+.pq .pbatw sub{font-size:13px;border:1px dashed #555;padding:0 4px;margin-left:1px}
 .syl{border-collapse:collapse;font-size:30px;margin:0 auto}
 .syl th,.syl td{width:62px;height:58px;text-align:center;border:2px solid var(--rule-strong)}
 .syl thead th{background:#FFF4E8;color:#C25A00}
@@ -529,6 +552,14 @@ function hgLay(v){ return HG_SIDE.indexOf(v) >= 0 ? 'side' : HG_STACK.indexOf(v)
 /* 1학년 눈에 낯선 글자는 정답으로 내지 않는다(눈검사 10-07: 즤·뵤·뫄·녜 류) — 모음자마다 함께 쓰는 자음자를 좁힌다. 오답 보기는 낯설어도 된다 */
 const HG_OK = {'ㅑ':'ㄱㄴㅅㅇ','ㅕ':'ㄱㄴㄹㅁㅂㅅㅇㅈㅊㅍㅎ','ㅛ':'ㄱㄴㄹㅁㅅㅇㅈㅊㅍㅎ','ㅠ':'ㄱㄴㄹㅁㅂㅅㅇㅈㅊㅍㅎ','ㅒ':'ㅇㄱㅈ','ㅖ':'ㅇㄱㅎ','ㅘ':'ㄱㄴㅇㅈㅎ','ㅙ':'ㄱㄷㅅㅇ','ㅝ':'ㄱㅁㅇㅈㅎ','ㅞ':'ㄱㅇㅎ','ㅢ':'ㅇㅎ'};
 function hgOdd(c, v){ return !!HG_OK[v] && HG_OK[v].indexOf(c) < 0; }
+/* v1.6 — 받침이 있는 글자: 받침(종성) 표. '' 는 받침 없음 */
+const HG_B = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+function hgJoin3(c, v, b){ const i = HG_C.indexOf(c), j = HG_V.indexOf(v), k = HG_B.indexOf(b || ''); return (i < 0 || j < 0 || k < 0) ? null : String.fromCharCode(0xAC00 + (i * 21 + j) * 28 + k); }
+function hgSplit3(s){ const k = String(s || '').charCodeAt(0) - 0xAC00; if (!(k >= 0 && k < 11172) || String(s).length !== 1) return null; return {c: HG_C[Math.floor(k / 588)], v: HG_V[Math.floor((k % 588) / 28)], b: HG_B[k % 28]}; }
+/* 1학년 눈에 익은 받침 글자 — 변형이 「뱍·숩」 같은 낯선 글자를 정답으로 내지 않게(오답 보기는 낯설어도 된다) */
+const BAT_BANK = {'ㄱ':'각국낙막박북떡목약죽책학악속먹벽','ㄴ':'간눈문산손안신돈반전천한만논연','ㄷ':'곧돋닫믿받묻걷','ㄹ':'달별물발말길굴실일날불칼살줄','ㅁ':'곰감잠봄밤몸섬꿈힘땀김남솜점','ㅂ':'밥집입법컵탑십삽답겁','ㅇ':'강콩공빵방상장병종창양성동용','ㅅ':'빗옷맛붓낫곳'};
+/* 그림 낱말 — at 번째 글자의 받침이 빠진다. 그림이 낱말 하나로만 읽히는 것만 */
+const BAT_WORDS = [{w:'곰',at:0,pic:'🐻'},{w:'산',at:0,pic:'⛰️'},{w:'집',at:0,pic:'🏠'},{w:'별',at:0,pic:'⭐'},{w:'빵',at:0,pic:'🍞'},{w:'달',at:0,pic:'🌙'},{w:'밥',at:0,pic:'🍚'},{w:'공',at:0,pic:'⚽'},{w:'손',at:0,pic:'✋'},{w:'문',at:0,pic:'🚪'},{w:'책',at:0,pic:'📕'},{w:'약',at:0,pic:'💊'},{w:'기린',at:1,pic:'🦒'},{w:'수박',at:1,pic:'🍉'},{w:'사탕',at:1,pic:'🍬'},{w:'우산',at:1,pic:'☂️'},{w:'거북',at:1,pic:'🐢'},{w:'가방',at:1,pic:'🎒'},{w:'낙타',at:0,pic:'🐫'},{w:'딸기',at:0,pic:'🍓'},{w:'사슴',at:1,pic:'🦌'},{w:'호랑이',at:1,pic:'🐯'},{w:'풍선',at:1,pic:'🎈'},{w:'옷',at:0,pic:'👕'}];
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 /* ---------- 읽어주기 ---------- */
@@ -795,6 +826,20 @@ function drawAsset(a, r){
         const lc = a.lay === 'blank' ? null : (a.lay === 'v' ? null : C_), lv = a.lay === 'blank' ? null : (a.lay === 'c' ? null : V_);
         lay = `<div class="lay ${L}">${cell(lc, 'c')}${cell(lv, 'v')}${L === 'mix' ? '<i class="v2"></i>' : ''}</div>`; }
       return `<div class="jamo">${eq}${lay}${a.cap ? `<em>${esc(a.cap)}</em>` : ''}</div>`; }
+    /* v1.6 — 받침 글자 상자: base(받침 없는 글자)+b(받침)=s, 또는 c+v+b=s. null 은 「?」. eq:false 면 식 줄 숨김,
+       lay 면 짜임 칸(위: 자음자·모음자, 아래: 받침) — true·'blank'·'b'·'c'·'v' 는 「?」로 가릴 칸 */
+    case 'bat': { const sp = a.s ? hgSplit3(a.s) : null; const bs = a.base ? hgSplit3(a.base) : null;
+      const C_ = a.c || (sp && sp.c) || (bs && bs.c), V_ = a.v || (sp && sp.v) || (bs && bs.v), B_ = a.b !== undefined ? a.b : (sp && sp.b);
+      const card = (x, cls) => x ? `<span class="cd ${cls}">${esc(x)}</span>` : `<span class="cd q">?</span>`;
+      const eq = a.eq === false ? (a.s ? `<div class="eq">${card(a.s, 's')}</div>` : '') :
+        (a.base !== undefined ? `<div class="eq">${card(a.base, 's')}<b>+</b>${card(a.b, 'b')}<b>=</b>${card(a.s, 's')}</div>` : `<div class="eq">${card(a.c, 'c')}<b>+</b>${card(a.v, 'v')}<b>+</b>${card(a.b, 'b')}<b>=</b>${card(a.s, 's')}</div>`);
+      let lay = '';
+      if (a.lay){ const L = hgLay(V_ || ''); const hide = k => a.lay === 'blank' || a.lay === k; const cell = (x, cls, k) => (x && !hide(k)) ? `<i class="${cls}">${esc(x)}</i>` : `<i class="${cls} q">?</i>`;
+        lay = `<div class="lay3 ${L}">${cell(C_, 'c', 'c')}${L === 'mix' ? '<i class="v2"></i>' : ''}${cell(V_, 'v', 'v')}${cell(B_, 'b', 'b')}</div>`; }
+      return `<div class="jamo">${eq}${lay}${a.cap ? `<em>${esc(a.cap)}</em>` : ''}</div>`; }
+    /* v1.6 — 그림 낱말: pic + w 의 at 번째 글자를 받침 뺀 모양으로, 그 아래 받침 칸 「?」 */
+    case 'bat_word': { const ws = [...String(a.w || '')];
+      return `<div class="batw">${a.pic ? `<span class="pic">${esc(a.pic)}</span>` : ''}<div class="w">${ws.map((x, i) => { if (i !== a.at) return `<span class="sy">${esc(x)}</span>`; const p = hgSplit3(x); return `<span class="sy">${esc(hgJoin(p.c, p.v))}<i>?</i></span>`; }).join('')}</div></div>`; }
     /* v1.5 — 음절표: cons(왼쪽 줄) × vows(위쪽 칸), 만나는 칸에 글자. q:[줄,칸] 은 「?」 */
     case 'syl_table': { const C2 = a.cons || [], V2 = a.vows || [], Q2 = a.q || [-1, -1];
       return `<table class="syl"><thead><tr><th></th>${V2.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${C2.map((c, i) => `<tr><th>${esc(c)}</th>${V2.map((v, j) => (i === Q2[0] && j === Q2[1]) ? '<td class="q">?</td>' : `<td>${esc(hgJoin(c, v) || '')}</td>`).join('')}</tr>`).join('')}</tbody></table>`; }
@@ -1157,6 +1202,71 @@ function makeVariantOnce(q, r){
       v.explanation = [`? 칸은 자음자 ${c} 줄과 모음자 ${vv} 칸이 만나는 곳이에요.`, `${c}과 ${vv}가 만나면 「${S}」예요.`, '왼쪽 자음자 줄을 따라가다 위쪽 모음자 칸에서 멈춰요.'];
     }
     if (q.kind === 'sa') v.answer = [String(ans)]; else if (q.kind === 'ox'){ /* ox 는 이 갈래가 다루지 않는다 */ } else v.options = opts;
+    return v;
+  }
+  /* --- v1.6: 1학년 1학기 국어 「받침이 있는 글자를 읽어요」 (2026-10-07) ---
+     bat {ask:'add'|'find'|'has'|'swap'|'word', bats:[받침 후보], lay, neg(has), stem:'sum'(add), mis:{갈래: 오개념 꼬리}}
+     정답 글자는 BAT_BANK(눈에 익은 받침 글자)에서만, 그림 낱말은 BAT_WORDS 에서만 고른다. 오답은 「종류」로 —
+     받침 빼고 읽기(drop)·소리 비슷한 받침(near)·받침을 옆에(side)·모음자/첫 자음자까지 바꿈(flip·cons)·첫 자음자와 받침 혼동(role)·
+     모음자를 받침으로(vow)·받침 없는 글자(none)·받침 대신 첫 자음자를 바꿈(role, swap)·그대로(keep)·뜻 없이 아무 받침(any).
+     코드는 작성자가 rule.mis 에 단 꼬리만 쓰고 단원 접두사는 개념 코드에서 붙인다. */
+  if (rule.bat){
+    const B = rule.bat, M = B.mis || {}; const ask = B.ask || 'add'; const want = Math.max(1, nOptsOf(q) - 1);
+    const bats = (B.bats && B.bats.length) ? B.bats : ['ㄱ','ㄴ','ㄹ','ㅁ','ㅂ','ㅇ'];
+    const NEAR = {'ㄱ':'ㅇ','ㄴ':'ㅇ','ㄷ':'ㅅ','ㄹ':'ㄴ','ㅁ':'ㅂ','ㅂ':'ㅁ','ㅇ':'ㄴ','ㅅ':'ㄷ'};
+    const FLIP = {'ㅏ':'ㅓ','ㅓ':'ㅏ','ㅑ':'ㅕ','ㅕ':'ㅑ','ㅗ':'ㅜ','ㅜ':'ㅗ','ㅛ':'ㅠ','ㅠ':'ㅛ'};
+    const SIMC = {'ㄱ':'ㅋ','ㅋ':'ㄱ','ㄷ':'ㅌ','ㅌ':'ㄷ','ㅂ':'ㅍ','ㅍ':'ㅂ','ㅈ':'ㅊ','ㅊ':'ㅈ','ㅇ':'ㅎ','ㅎ':'ㅇ','ㄴ':'ㄷ','ㅁ':'ㅂ','ㅅ':'ㅈ','ㄹ':'ㄷ'};
+    const mk = (ans, pairs) => { const used = [String(ans)], out = [{t:String(ans), correct:true}];
+      for (const [x, k] of pairs){ if (out.length > want) break; if (!x) continue; const t = String(x); if (used.indexOf(t) >= 0 || !M[k]) continue; used.push(t); out.push({t, mis:PFX + M[k]}); }
+      return out; };
+    const bank = []; bats.forEach(b => [...(BAT_BANK[b] || '')].forEach(x => bank.push(x)));
+    const ieyo = w => (hgSplit3([...w].pop()) || {}).b ? '이에요' : '예요';
+    const eun = w => (hgSplit3([...w].pop()) || {}).b ? '은' : '는';
+    let S, sp, base, opts, ans, g = 0;
+    if (ask === 'add' || ask === 'find'){
+      do { S = pick(bank, r); sp = hgSplit3(S); base = hgJoin(sp.c, sp.v);
+        opts = ask === 'add'
+          ? mk(S, [[base, 'drop'], [NEAR[sp.b] && hgJoin3(sp.c, sp.v, NEAR[sp.b]), 'near'], [base + sp.b, 'side'], [FLIP[sp.v] && hgJoin3(sp.c, FLIP[sp.v], sp.b), 'flip'], [SIMC[sp.c] && hgJoin3(SIMC[sp.c], sp.v, sp.b), 'cons']])
+          : mk(sp.b, [[sp.c, 'role'], [NEAR[sp.b], 'near'], [sp.v, 'vow']]);
+      } while (++g < 60 && opts.length < want + 1);
+      if (ask === 'add'){ ans = S;
+        v.stem = q.kind === 'sa' ? `「${base}」에 받침 ${sp.b}을 더한 글자를 쓰세요.` : B.stem === 'sum' ? `${base} + 받침 ${sp.b} 는 어떤 글자가 되나요?` : `「${base}」에 받침 ${sp.b}을 더하면 어떤 글자가 되나요?`;
+        v.asset = {type:'bat', base, b:sp.b, s:null}; if (B.lay) v.asset.lay = true;
+        v.explanation = [`「${base}」 아래쪽에 받침 ${sp.b}을 더하면 「${S}」${ieyo(S)}.`, '받침은 글자 아래쪽에 들어가요 — 옆에 따로 쓰지 않아요.', `「${S}」${eun(S)} 받침 ${sp.b} 소리까지 끝까지 읽어요.`];
+      } else { ans = sp.b;
+        v.stem = q.kind === 'sa' ? `「${S}」의 받침을 쓰세요.` : `「${S}」의 받침은 어느 것인가요?`;
+        v.asset = {type:'bat', s:S, eq:false}; if (B.lay) v.asset.lay = 'blank';
+        v.explanation = [`「${S}」${eun(S)} ${sp.c} + ${sp.v} + 받침 ${sp.b}이에요.`, '받침은 글자 아래쪽에 있는 자음자예요.', `맨 앞 자음자 ${sp.c}은 첫소리, 받침 ${sp.b}은 끝소리예요.`]; }
+    } else if (ask === 'has'){
+      let S2, b1, b2;
+      do { S = pick(bank, r); S2 = pick(bank, r); sp = hgSplit3(S); const sp2 = hgSplit3(S2); base = hgJoin(sp.c, sp.v); b2 = hgJoin(sp2.c, sp2.v);
+        opts = B.neg ? mk(base, [[S, 'none'], [S2, 'none']]) : mk(S, [[base, 'none'], [b2, 'none']]);
+      } while (++g < 60 && (opts.length < want + 1 || S2 === S || b2 === base || hgOdd(sp.c, sp.v)));
+      delete v.asset; ans = B.neg ? base : S;
+      v.stem = B.neg ? '받침이 없는 글자는 어느 것인가요?' : '받침이 있는 글자는 어느 것인가요?';
+      v.explanation = B.neg ? [`「${base}」${eun(base)} 아래쪽이 비어 있어요.`, `「${S}」·「${S2}」${eun(S2)} 아래쪽에 받침이 있어요.`, '글자 아래쪽에 자음자가 있는지 살펴봐요.']
+                            : [`「${S}」${eun(S)} 아래쪽에 받침 ${sp.b}이 있어요.`, `「${base}」·「${b2}」${eun(b2)} 아래쪽이 비어 있어요.`, '글자 아래쪽에 자음자가 있는지 살펴봐요.'];
+    } else if (ask === 'swap'){
+      const PAIRS = []; bank.forEach(x => { const p = hgSplit3(x); bats.forEach(nb => { if (nb !== p.b && bank.indexOf(hgJoin3(p.c, p.v, nb)) >= 0) PAIRS.push([x, nb]); }); });
+      let nb, T;
+      do { [S, nb] = pick(PAIRS, r); sp = hgSplit3(S); base = hgJoin(sp.c, sp.v); T = hgJoin3(sp.c, sp.v, nb);
+        opts = mk(T, [[hgJoin3(nb, sp.v, sp.b), 'role'], [S, 'keep'], [base, 'drop'], [NEAR[nb] !== sp.b && NEAR[nb] && hgJoin3(sp.c, sp.v, NEAR[nb]), 'near']]);
+      } while (++g < 60 && opts.length < want + 1);
+      ans = T;
+      v.stem = `「${S}」의 받침 ${sp.b}을 ${nb}${nb === 'ㄹ' ? '로' : '으로'} ${q.kind === 'sa' ? '바꾼 글자를 쓰세요.' : '바꾸면 어떤 글자가 되나요?'}`;
+      v.asset = {type:'bat', s:S, eq:false};
+      v.explanation = [`「${S}」에서 받침 ${sp.b} 자리에 ${nb}을 넣으면 「${T}」${ieyo(T)}.`, `맨 앞 자음자 ${sp.c}과 모음자 ${sp.v}는 그대로예요.`, '받침이 바뀌면 글자도 소리도 뜻도 달라져요.'];
+    } else {   /* word — 그림을 보고 빠진 받침 */
+      const W = BAT_WORDS.filter(x => bats.indexOf(hgSplit3([...x.w][x.at]).b) >= 0); let wd;
+      do { wd = pick(W, r); const sy = [...wd.w][wd.at]; sp = hgSplit3(sy); base = hgJoin(sp.c, sp.v);
+        opts = mk(sp.b, [[NEAR[sp.b], 'near'], [sp.c !== sp.b && sp.c, 'role']].concat(shuffle(bats.filter(x => x !== sp.b && x !== NEAR[sp.b] && x !== sp.c), r).map(x => [x, 'any'])));
+      } while (++g < 60 && opts.length < want + 1);
+      ans = sp.b; const sy = [...wd.w][wd.at];
+      v.stem = q.kind === 'sa' ? '그림을 보고 받침 칸에 들어갈 자음자를 쓰세요.' : '그림을 보고 받침 칸에 들어갈 자음자를 고르세요.';
+      v.asset = {type:'bat_word', w:wd.w, at:wd.at, pic:wd.pic};
+      v.explanation = [`그림은 「${wd.w}」${ieyo(wd.w)}.`, `「${base}」에 받침 ${sp.b}을 넣어야 「${sy}」이 돼요.`, '그림이 뜻하는 낱말이 되는 받침을 골라요.'];
+    }
+    if (q.kind === 'sa') v.answer = [String(ans)]; else v.options = opts;
     return v;
   }
   // 두 가지 읽기 — read2 {range, step10, ask:'read'|'num', way:'sino'|'nat'|'both'}
@@ -2336,6 +2446,16 @@ function paperAsset(a){
       let lay = ''; if (a.lay){ const L = hgLay(V_ || ''); const lc = (a.lay === 'blank' || a.lay === 'v') ? null : C_, lv = (a.lay === 'blank' || a.lay === 'c') ? null : V_; const cl = x => `<span>${x ? esc(x) : '?'}</span>`;
         lay = L === 'mix' ? `<span class="pl" style="grid-template-columns:26px 26px"><span>${lc ? esc(lc) : '?'}</span><span style="border-left:1px dashed #555"></span><span style="grid-column:1/3;border-top:1px dashed #555">${lv ? esc(lv) : '?'}</span></span>` : `<span class="pl ${L}">${cl(lc)}${cl(lv)}</span>`; }
       return `<div class="pjamo">${eq}${lay}${a.cap ? ` <small>${esc(a.cap)}</small>` : ''}</div>`; }
+    case 'bat': { const sp = a.s ? hgSplit3(a.s) : null; const bs = a.base ? hgSplit3(a.base) : null; const b_ = x => x ? esc(x) : '(    )';
+      const C_ = a.c || (sp && sp.c) || (bs && bs.c), V_ = a.v || (sp && sp.v) || (bs && bs.v), B_ = a.b !== undefined ? a.b : (sp && sp.b);
+      const eq = a.eq === false ? (a.s ? `<b style="font-size:26px">${esc(a.s)}</b>` : '') : (a.base !== undefined ? `${b_(a.base)} + 받침 ${b_(a.b)} = ${b_(a.s)}` : `${b_(a.c)} + ${b_(a.v)} + 받침 ${b_(a.b)} = ${b_(a.s)}`);
+      let lay = ''; if (a.lay){ const L = hgLay(V_ || ''); const hide = k => a.lay === 'blank' || a.lay === k; const cl = (x, k, st) => `<span style="${st || ''}">${(x && !hide(k)) ? esc(x) : '?'}</span>`;
+        lay = L === 'side' ? `<span class="pl" style="grid-template-columns:26px 26px">${cl(C_, 'c')}${cl(V_, 'v', 'border-left:1px dashed #555')}${cl(B_, 'b', 'grid-column:1/3;border-top:1px dashed #555')}</span>`
+          : L === 'stack' ? `<span class="pl" style="grid-template-columns:26px">${cl(C_, 'c')}${cl(V_, 'v', 'border-top:1px dashed #555')}${cl(B_, 'b', 'border-top:1px dashed #555')}</span>`
+          : `<span class="pl" style="grid-template-columns:26px 26px">${cl(C_, 'c')}<span style="border-left:1px dashed #555"></span>${cl(V_, 'v', 'grid-column:1/3;border-top:1px dashed #555')}${cl(B_, 'b', 'grid-column:1/3;border-top:1px dashed #555')}</span>`; }
+      return `<div class="pjamo">${eq}${lay}${a.cap ? ` <small>${esc(a.cap)}</small>` : ''}</div>`; }
+    case 'bat_word': { const ws = [...String(a.w || '')];
+      return `<div class="pbatw">${a.pic ? `<span class="ppic">${esc(a.pic)}</span>` : ''}${ws.map((x, i) => { if (i !== a.at) return esc(x); const p = hgSplit3(x); return esc(hgJoin(p.c, p.v)) + '<sub>받침 □</sub>'; }).join(' ')}</div>`; }
     case 'syl_table': { const C2 = a.cons || [], V2 = a.vows || [], Q2 = a.q || [-1, -1];
       return `<table class="psyl"><tr><th></th>${V2.map(x => `<th>${esc(x)}</th>`).join('')}</tr>${C2.map((c, i) => `<tr><th>${esc(c)}</th>${V2.map((v, j) => `<td>${(i === Q2[0] && j === Q2[1]) ? '?' : esc(hgJoin(c, v) || '')}</td>`).join('')}</tr>`).join('')}</table>`; }
     case 'solid_row': { const it = a.items || [];
