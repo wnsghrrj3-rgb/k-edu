@@ -136,17 +136,16 @@
     return g.map(x => x.join(' '));
   }
   function pv3(d, rev) {
-    const sc = pv3Scenes(d.scenario.body); const one = sc.length === 1;
+    const sc = String(d.scenario.body).length >= 100 ? pv3Scenes(d.scenario.body) : [String(d.scenario.body)]; const one = sc.length === 1; // 짧은 글(안내·상황)은 장면으로 안 끊음
     const src = '<aside class="pv3-src"><div class="pv3-lab">' + (d.scenario.icon ? '<span class="pv3-ic">' + esc(d.scenario.icon) + '</span>' : '') + '<span class="pv3-lt"></span></div>'
       + sc.map((t, i) => (i ? '<div class="pv3-cut"></div>' : '') + '<div class="pv3-sc' + (one ? ' one' : '') + '">' + (one ? '' : '<b>' + (i + 1) + '</b>') + '<span>' + md(t) + '</span></div>').join('') + '</aside>';
     let note = ''; if (d.note && rev) { let t = String(d.note); if (!d.multi) { const o = d.options.find(x => x && x.correct); const ot = o == null ? '' : String(o.label != null ? o.label : o.text != null ? o.text : o).replace(/\*\*/g, '').trim();
         const m = t.match(/\s*(?:→|=>)\s*\*\*([^*]+)\*\*\s*\.?\s*$/); if (m && ot && m[1].trim() === ot) t = t.slice(0, m.index); } // 정답 보기가 이미 빛나므로 풀이 끝 정답 글은 뺌
       note = '<div class="pv3-note">' + md(t.replace(/^풀이\s*[:：]\s*/, '')) + '</div>'; }
-    const bl = String(d.scenario.body).length; const cls = (bl < 90 ? ' narrow' : '') + (d.options.length >= 4 ? ' many' : '');
-    const nl = bl < 100; // 읽을 글이 짧으면 풀이·안내를 왼쪽 띠 아래로, 길면 오른쪽 보기 아래로
+    const bl = String(d.scenario.body).length; const cls = (bl < 90 && sc.length === 1 ? ' narrow' : '') + (d.options.length >= 4 ? ' many' : '') + (bl < 100 && sc.length === 1 ? ' nl' : '');
     const hint = d.multi ? '<div class="pv3-multi">☑ 여러 개를 고를 수 있어요</div>' : '';
-    const side = '<div class="pv3-side">' + src + (nl ? hint + note : '') + '</div>'; // 풀이·여러 개 안내는 왼쪽 띠 아래(오른쪽은 물음·보기만)
-    return '<div class="pv3' + cls + '">' + side + '<div class="pv3-main"><div class="pv3-q">' + md(d.question) + '</div>' + options(d.options, !!d.multi, rev).replace('class="options', 'class="options pv3-opts') + (nl ? '' : hint + note) + '</div></div>';
+    const side = '<div class="pv3-side">' + src + '<div class="pv3-L">' + hint + note + '</div></div>'; // 풀이·안내는 양쪽에 두고 CSS 로 한쪽만(넘치면 fit-pvx 로 반대쪽) // 풀이·여러 개 안내는 왼쪽 띠 아래(오른쪽은 물음·보기만)
+    return '<div class="pv3' + cls + '">' + side + '<div class="pv3-main"><div class="pv3-q">' + md(d.question) + '</div>' + options(d.options, !!d.multi, rev).replace('class="options', 'class="options pv3-opts') + '<div class="pv3-R">' + hint + note + '</div></div></div>';
   }
   function symCards(list) { return '<div class="sym-cards">' + list.map(m => '<div class="sym"><b>' + md(String(m.symbol || '')) + '</b><span>' + md(String(m.meaning || '')) + '</span></div>').join('') + '</div>'; }
   function optionBody(o) {
@@ -754,7 +753,7 @@
   // 87차 — fit-tight: 넘칠 때만 종이 여백·덩이 사이·말풍선 아래를 좁힌다(글자 크기는 그대로). 자리 바꾸기와 겹쳐 쓸 수 있다.
   // 88차 — fit-lv: 수준별 문제 정답 펼침 때 물음 왼쪽 · 정답·풀이 차례 오른쪽 / fit-lv2: 물음 위 · 정답 왼쪽 · 풀이 차례 오른쪽(넘칠 때만)
   // 89차 — fit-pts: 요약 요점 다섯 줄 이상을 두 단(위→아래 차례) / fit-wrap: 옆으로 이어진 카드(차례·도구)가 종이 폭을 넘으면 두 줄로 / fit-cols: 말풍선 안 짧은 줄 넷 이상(「어제 — 과거」 같은 목록)을 두 단으로(넘칠 때만 · 글자 크기 무변)
-  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans'];
+  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq'];
   // 90차 — fit-qh: 「여러 개를 고를 수 있어요」를 물음 옆 같은 줄로(넘칠 때만)
   // 90차 — fit-head: 넘칠 때만 제목을 머리(단계 칩·차시 이름)와 한 줄에 — 제목 줄 하나만큼 본문 자리가 생긴다 · 글자 크기 무변 · 차시 이름이 말줄임되면 안 씀
   function headBad(body) { const p = body.parentElement; if (!p) return true; const k = p.querySelector(':scope > .kt2-head .kt2-kicker'), t = p.querySelector(':scope > .kt2-title');
@@ -804,6 +803,7 @@
     if (body.querySelector(':scope > .points > :nth-child(4)')) tries.push(['fit-pts'], ['fit-pts', 'fit-tight']); // 91차 — 넷부터
     if (body.querySelector(':scope > .big-q') && body.querySelector(':scope > .multi-hint')) tries.push(['fit-qh', 'fit-tight']);
     if (body.querySelector('.ans-key')) { tries.push(['fit-ans', 'fit-tight']); if (sp) tries.push(['fit-ans', 'fit-split', 'fit-tight']); if (sd) tries.push(['fit-ans', 'fit-side', 'fit-tight']); }
+    if (body.querySelector(':scope > .pv3')) tries.push(['fit-pvx'], ['fit-pvx', 'fit-tight'], ['fit-pvq', 'fit-tight'], ['fit-pvq', 'fit-pvx', 'fit-tight']); // 92차 — 새 문제 장: 풀이·안내를 반대쪽으로
     if (co) { tries.push(['fit-cols'], ['fit-cols', 'fit-tight']); if (wr) tries.push(['fit-cols', 'fit-wrap', 'fit-tight']); if (sd) tries.push(['fit-cols', 'fit-side', 'fit-tight']); }
     const trial = cs => {
       if (best >= base - 0.001) return;
