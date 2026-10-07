@@ -104,6 +104,44 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .pq .pspeech{margin:8px 0 8px 30px;font-size:13px;line-height:1.8}
 .pq .pspeech b{display:inline-block;min-width:40px;font-weight:400;color:#555}
 .pq .pscene{margin:6px 0 6px 30px;font-size:13px;line-height:1.6}
+/* v1.5 — 국어 에셋: 글자 짜임 상자 · 음절표 (2026-10-07) — 자음자 파랑 · 모음자 주황(자기주도 차시와 같은 색 약속) */
+.jamo{display:flex;flex-direction:column;align-items:center;gap:12px}
+.jamo .eq{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+.jamo .eq b{font-size:30px;color:var(--muted);font-weight:400}
+.jamo .cd{min-width:74px;height:84px;padding:0 10px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:52px;line-height:1;font-weight:700;border:3px solid var(--rule-strong);background:var(--card)}
+.jamo .cd.c{color:#1D5FBF;border-color:#7FA8E6;background:#EEF4FD}
+.jamo .cd.v{color:#C25A00;border-color:#F0B37A;background:#FFF4E8}
+.jamo .cd.s{color:var(--ink);min-width:90px}
+.jamo .cd.q{color:var(--muted);border-style:dashed;background:transparent}
+.jamo .lay{display:grid;width:150px;height:150px;border:3px solid var(--rule-strong);border-radius:12px;overflow:hidden;background:var(--card)}
+.jamo .lay i{display:flex;align-items:center;justify-content:center;font-style:normal;font-size:46px;font-weight:700}
+.jamo .lay i.c{background:#EEF4FD;color:#1D5FBF}
+.jamo .lay i.v{background:#FFF4E8;color:#C25A00}
+.jamo .lay i.q{color:var(--muted)}
+.jamo .lay.side{grid-template-columns:1fr 1fr}
+.jamo .lay.side i+i{border-left:2px dashed var(--rule-strong)}
+.jamo .lay.stack{grid-template-rows:1fr 1fr}
+.jamo .lay.stack i+i{border-top:2px dashed var(--rule-strong)}
+.jamo .lay.mix{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.jamo .lay.mix i.c{grid-column:1;grid-row:1}
+.jamo .lay.mix i.v{grid-column:1 / 3;grid-row:2;border-top:2px dashed var(--rule-strong)}
+.jamo .lay.mix i.v2{grid-column:2;grid-row:1;border-left:2px dashed var(--rule-strong);background:#FFF4E8}
+.jamo em{font-style:normal;font-size:15px;color:var(--muted)}
+.syl{border-collapse:collapse;font-size:30px;margin:0 auto}
+.syl th,.syl td{width:62px;height:58px;text-align:center;border:2px solid var(--rule-strong)}
+.syl thead th{background:#FFF4E8;color:#C25A00}
+.syl tbody th{background:#EEF4FD;color:#1D5FBF}
+.syl thead th:first-child{background:var(--tint)}
+.syl td.q{background:#FFF3B0;font-weight:700}
+.pq .pjamo{margin:8px 0 8px 30px;font-size:20px;letter-spacing:.06em}
+.pq .pjamo .pl{display:inline-grid;margin-left:14px;border:1px solid #555;vertical-align:middle;font-size:14px}
+.pq .pjamo .pl span{display:flex;align-items:center;justify-content:center;width:26px;height:26px}
+.pq .pjamo .pl.side{grid-template-columns:26px 26px}
+.pq .pjamo .pl.side span+span{border-left:1px dashed #555}
+.pq .pjamo .pl.stack span+span{border-top:1px dashed #555}
+.pq .psyl{border-collapse:collapse;margin:8px 0 8px 30px;font-size:15px}
+.pq .psyl th,.pq .psyl td{border:1px solid #555;width:30px;height:26px;text-align:center}
+.pq .psyl th{font-weight:400;color:#444}
 /* v1.0 — 국어 에셋: 그림일기 틀 (2026-10-06) — 날짜·날씨 줄 / 그림 칸 / 글 칸, 비운 자리는 점선 빈칸 */
 .diary{width:100%;max-width:520px;border:2px solid var(--rule-strong);border-radius:14px;background:var(--card);overflow:hidden}
 .diary .dh{display:flex;justify-content:space-between;gap:10px;padding:8px 14px;border-bottom:1px dashed var(--rule-strong);font-size:17px;background:var(--tint)}
@@ -482,6 +520,15 @@ function rng(seed){ let s = seed >>> 0 || 1; return () => { s = (s * 1664525 + 1
 function shuffle(arr, r){ const a = arr.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function pick(arr, r){ return arr[Math.floor(r() * arr.length)]; }
 function rint(lo, hi, r){ return lo + Math.floor(r() * (hi - lo + 1)); }
+/* v1.5 — 한글 자모 (2026-10-07): 받침 없는 글자 = 자음자 + 모음자. 화면·종이·변형·검사기가 같은 표를 쓴다. */
+const HG_C = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ', HG_V = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
+const HG_SIDE = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅣ', HG_STACK = 'ㅗㅛㅜㅠㅡ';   /* 나머지(ㅘㅙㅚㅝㅞㅟㅢ)는 둘러싸는 짜임(mix) */
+function hgJoin(c, v){ const i = HG_C.indexOf(c), j = HG_V.indexOf(v); return (i < 0 || j < 0) ? null : String.fromCharCode(0xAC00 + (i * 21 + j) * 28); }
+function hgSplit(s){ const k = String(s || '').charCodeAt(0) - 0xAC00; if (!(k >= 0 && k < 11172) || k % 28) return null; return {c: HG_C[Math.floor(k / 588)], v: HG_V[Math.floor((k % 588) / 28)]}; }
+function hgLay(v){ return HG_SIDE.indexOf(v) >= 0 ? 'side' : HG_STACK.indexOf(v) >= 0 ? 'stack' : 'mix'; }
+/* 1학년 눈에 낯선 글자는 정답으로 내지 않는다(눈검사 10-07: 즤·뵤·뫄·녜 류) — 모음자마다 함께 쓰는 자음자를 좁힌다. 오답 보기는 낯설어도 된다 */
+const HG_OK = {'ㅑ':'ㄱㄴㅅㅇ','ㅕ':'ㄱㄴㄹㅁㅂㅅㅇㅈㅊㅍㅎ','ㅛ':'ㄱㄴㄹㅁㅅㅇㅈㅊㅍㅎ','ㅠ':'ㄱㄴㄹㅁㅂㅅㅇㅈㅊㅍㅎ','ㅒ':'ㅇㄱㅈ','ㅖ':'ㅇㄱㅎ','ㅘ':'ㄱㄴㅇㅈㅎ','ㅙ':'ㄱㄷㅅㅇ','ㅝ':'ㄱㅁㅇㅈㅎ','ㅞ':'ㄱㅇㅎ','ㅢ':'ㅇㅎ'};
+function hgOdd(c, v){ return !!HG_OK[v] && HG_OK[v].indexOf(c) < 0; }
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 /* ---------- 읽어주기 ---------- */
@@ -739,6 +786,18 @@ function drawAsset(a, r){
         (a.picture === undefined ? '' : `<div class="dp">${slot(a.picture, 'pic')}</div>`) +
         `<div class="dt">${lines === null ? '<div><i class="blank"></i></div>' : lines.map(ln => `<div>${mark(ln)}</div>`).join('')}</div>` +
         (a.name ? `<div class="dn">${esc(a.name)}의 그림일기</div>` : '') + `</div>`; }
+    /* v1.5 — 글자 짜임 상자: c(자음자)·v(모음자)·s(글자), null 은 「?」. eq:false 면 식 줄을 숨기고, lay 면 짜임 칸(옆으로·위아래로·둘러싸기)을 그린다 */
+    case 'jamo': { const sp = a.s ? hgSplit(a.s) : null; const C_ = a.c !== undefined ? a.c : (sp && sp.c), V_ = a.v !== undefined ? a.v : (sp && sp.v);
+      const card = (x, cls) => x ? `<span class="cd ${cls}">${esc(x)}</span>` : `<span class="cd q">?</span>`;
+      const eq = a.eq === false ? (a.s ? `<div class="eq">${card(a.s, 's')}</div>` : '') : `<div class="eq">${card(a.c, 'c')}<b>+</b>${card(a.v, 'v')}<b>=</b>${card(a.s, 's')}</div>`;
+      let lay = '';
+      if (a.lay){ const L = hgLay(V_ || (sp && sp.v) || ''); const cell = (x, cls) => x ? `<i class="${cls}">${esc(x)}</i>` : `<i class="${cls} q">?</i>`;
+        const lc = a.lay === 'blank' ? null : (a.lay === 'v' ? null : C_), lv = a.lay === 'blank' ? null : (a.lay === 'c' ? null : V_);
+        lay = `<div class="lay ${L}">${cell(lc, 'c')}${cell(lv, 'v')}${L === 'mix' ? '<i class="v2"></i>' : ''}</div>`; }
+      return `<div class="jamo">${eq}${lay}${a.cap ? `<em>${esc(a.cap)}</em>` : ''}</div>`; }
+    /* v1.5 — 음절표: cons(왼쪽 줄) × vows(위쪽 칸), 만나는 칸에 글자. q:[줄,칸] 은 「?」 */
+    case 'syl_table': { const C2 = a.cons || [], V2 = a.vows || [], Q2 = a.q || [-1, -1];
+      return `<table class="syl"><thead><tr><th></th>${V2.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${C2.map((c, i) => `<tr><th>${esc(c)}</th>${V2.map((v, j) => (i === Q2[0] && j === Q2[1]) ? '<td class="q">?</td>' : `<td>${esc(hgJoin(c, v) || '')}</td>`).join('')}</tr>`).join('')}</tbody></table>`; }
     /* v1.1 — 입체 모양 줄: items 는 'box'|'cyl'|'cyl_lay'|'ball' 그림, {icon,name} 물건 카드, {solid,peek:true} 가려진 모양. mark 1부터, num 이면 번호 */
     case 'solid_row': { const it = a.items || [];
       return `<div class="solrow">${it.map((x, i) => { let inner = '';
@@ -1045,6 +1104,61 @@ function makeVariantOnce(q, r){
   const natR = n => NAT10_[Math.floor(n / 10)] + NAT1_[n % 10];
   const mixR = (n, k) => { const t = Math.floor(n / 10), o = n % 10;   /* 섞어 읽기: 스물삼 / 이십셋 — 낱개 없으면 몇십을 거꾸로(스물십·이십) 대신 다른 수 */
     return k ? NAT10_[t] + SINO_[o] : (t > 1 ? SINO_[t] : '') + '십' + NAT1_[o]; };
+  /* --- v1.5: 1학년 1학기 국어 「글자를 만들어요」 (2026-10-07) — 받침 없는 글자 만들기·나누기·자리·음절표 ---
+     jamo {ask:'build'|'cons'|'vow'|'place'|'table', cons:[자음자 후보], vows:[모음자 후보], role:'c'|'v'(place), lay, mis:{갈래: 오개념 코드}}
+     오답은 「종류」로 만든다 — 모음자 방향 바꿈(flip)·짧은 획 하나(stroke)·돌림(rot)·ㅐㅔㅒㅖ(ae)·합친 모음자 한쪽만(comb)·닮은 자음자(cons)·
+     자음자↔모음자 역할(role)·자리(place)·음절표 옆 칸(grid). 코드는 문항 작성자가 rule.mis 에 단 꼬리(X02)만 쓰고 단원 접두사는 개념 코드에서 붙인다(엔진이 지어내지 않는다). */
+  if (rule.jamo){
+    const J = rule.jamo, M = J.mis || {}; const ask = J.ask || 'build'; const want = Math.max(1, nOptsOf(q) - 1);
+    const FLIP = {'ㅏ':'ㅓ','ㅓ':'ㅏ','ㅑ':'ㅕ','ㅕ':'ㅑ','ㅗ':'ㅜ','ㅜ':'ㅗ','ㅛ':'ㅠ','ㅠ':'ㅛ'}, STROKE = {'ㅏ':'ㅑ','ㅑ':'ㅏ','ㅓ':'ㅕ','ㅕ':'ㅓ','ㅗ':'ㅛ','ㅛ':'ㅗ','ㅜ':'ㅠ','ㅠ':'ㅜ'},
+          ROT = {'ㅏ':'ㅗ','ㅗ':'ㅏ','ㅓ':'ㅜ','ㅜ':'ㅓ','ㅑ':'ㅛ','ㅛ':'ㅑ','ㅕ':'ㅠ','ㅠ':'ㅕ','ㅡ':'ㅣ','ㅣ':'ㅡ'},
+          AE = {'ㅐ':['ㅔ','ㅒ'],'ㅔ':['ㅐ','ㅖ'],'ㅒ':['ㅖ','ㅐ'],'ㅖ':['ㅒ','ㅔ']}, COMB = {'ㅘ':['ㅗ','ㅏ'],'ㅙ':['ㅗ','ㅐ'],'ㅚ':['ㅗ','ㅣ'],'ㅝ':['ㅜ','ㅓ'],'ㅞ':['ㅜ','ㅔ'],'ㅟ':['ㅜ','ㅣ'],'ㅢ':['ㅡ','ㅣ']},
+          SIMC = {'ㄱ':'ㅋ','ㅋ':'ㄱ','ㄷ':'ㅌ','ㅌ':'ㄷ','ㅂ':'ㅍ','ㅍ':'ㅂ','ㅈ':'ㅊ','ㅊ':'ㅈ','ㅇ':'ㅎ','ㅎ':'ㅇ','ㄴ':'ㄷ','ㅁ':'ㅂ','ㅅ':'ㅈ','ㄹ':'ㄷ'};
+    const cons = (J.cons && J.cons.length) ? J.cons : ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅈ'], vows = (J.vows && J.vows.length) ? J.vows : ['ㅏ','ㅓ','ㅗ','ㅜ','ㅣ'];
+    /* 모음자 헷갈림 후보 — [바꾼 모음자, 갈래] (작성자가 코드를 단 갈래만) */
+    const vConf = v0 => { const out = []; const add = (x, k) => { if (x && M[k]) out.push([x, k]); };
+      add(FLIP[v0], 'flip'); add(STROKE[v0], 'stroke'); add(ROT[v0], 'rot'); (AE[v0] || []).forEach(x => add(x, 'ae')); (COMB[v0] || []).forEach(x => add(x, 'comb')); return out; };
+    const mk = (ans, pairs) => { const used = [String(ans)], out = [{t:String(ans), correct:true}];
+      for (const [x, k] of pairs){ if (out.length > want) break; if (!x) continue; const t = String(x); if (used.indexOf(t) >= 0 || !M[k]) continue; used.push(t); out.push({t, mis:PFX + M[k]}); }
+      return out; };
+    let c, vv, g = 0;
+    do { c = pick(cons, r); vv = pick(vows, r); g++; }
+    while (g < 60 && (hgOdd(c, vv) || (ask === 'place' && hgLay(vv) === 'mix') || (ask === 'cons' && !SIMC[c] && !M.role) || ((ask === 'build' || ask === 'table' || ask === 'vow') && vConf(vv).length + (SIMC[c] && M.cons ? 1 : 0) + (M.role ? 1 : 0) < want)));
+    const S = hgJoin(c, vv); const L = hgLay(vv); const POS = {side:{c:'왼쪽', v:'오른쪽'}, stack:{c:'위쪽', v:'아래쪽'}};
+    const layWord = L === 'side' ? `${vv}는 세로로 길어서 자음자 오른쪽에 나란히 서요` : L === 'stack' ? `${vv}는 가로로 길어서 자음자 아래에 쌓여요` : `${vv}는 자음자의 아래와 오른쪽을 함께 감싸요`;
+    let ans, opts;
+    if (ask === 'build'){
+      v.stem = J.stem === 'sum' ? `${c} + ${vv} 는 어떤 글자가 되나요?` : `자음자 ${c}과 모음자 ${vv}가 만나면 어떤 글자가 되나요?`;
+      v.asset = {type:'jamo', c, v:vv, s:null}; if (J.lay) v.asset.lay = true;
+      ans = S; opts = mk(S, vConf(vv).map(([x, k]) => [hgJoin(c, x), k]).concat([[SIMC[c] && hgJoin(SIMC[c], vv), 'cons']]));
+      v.explanation = [`자음자 ${c}과 모음자 ${vv}가 만나면 「${S}」예요.`, layWord + '.', '자음자 소리와 모음자 소리를 이어서 천천히 읽어 봐요.'];
+    } else if (ask === 'cons' || ask === 'vow'){
+      const isC = ask === 'cons';
+      v.stem = `「${S}」에서 ${isC ? '자음자' : '모음자'}는 어느 것인가요?`;
+      v.asset = {type:'jamo', s:S, eq:false, lay:'blank'};
+      ans = isC ? c : vv;
+      const pairs = isC ? [[vv, 'role'], [SIMC[c], 'cons']] : [[c, 'role']].concat(vConf(vv));
+      opts = mk(ans, pairs);
+      v.explanation = [`「${S}」는 자음자 ${c}과 모음자 ${vv}가 만난 글자예요.`, isC ? `자음자는 ${c}이에요 — ${L === 'stack' ? '위쪽' : '왼쪽'}에 있어요.` : `모음자는 ${vv}예요 — ${L === 'side' ? '오른쪽' : L === 'stack' ? '아래쪽' : '아래와 오른쪽'}에 있어요.`, '글자를 둘로 나누어 자음자와 모음자를 찾아요.'];
+    } else if (ask === 'place'){
+      const role = J.role === 'v' ? 'v' : 'c'; const other = L === 'side' ? 'stack' : 'side';
+      v.stem = role === 'c' ? `「${S}」에서 자음자 ${c}은 어디에 있나요?` : `「${S}」에서 모음자 ${vv}는 어디에 있나요?`;
+      v.asset = {type:'jamo', s:S, eq:false};
+      ans = POS[L][role]; opts = mk(ans, [[POS[other][role], 'place'], [POS[L][role === 'c' ? 'v' : 'c'], 'role'], [POS[other][role === 'c' ? 'v' : 'c'], 'place']]);
+      v.explanation = [`「${S}」는 ${L === 'side' ? '옆으로 나란히' : '위아래로 쌓아서'} 만든 글자예요.`, layWord + '.', `그래서 ${role === 'c' ? '자음자 ' + c + '은' : '모음자 ' + vv + '는'} ${ans}에 있어요.`];
+    } else {   /* table — 음절표 ? 칸 */
+      const cs = shuffle(cons.filter(x => x !== c), r).slice(0, 2).concat([c]), vs = shuffle(vows.filter(x => x !== vv && hgLay(x) !== 'mix'), r).slice(0, 2).concat([vv]);
+      const CS = shuffle(cs, r), VS = shuffle(vs, r); const qi = CS.indexOf(c), qj = VS.indexOf(vv);
+      v.asset = {type:'syl_table', cons:CS, vows:VS, q:[qi, qj]};
+      v.stem = `음절표에서 ? 칸에 들어갈 글자는 무엇인가요?`;
+      ans = S; const nb = [];
+      VS.forEach((x, j) => { if (j !== qj) nb.push([hgJoin(c, x), 'grid']); }); CS.forEach((x, i) => { if (i !== qi) nb.push([hgJoin(x, vv), 'grid']); });
+      opts = mk(S, vConf(vv).map(([x, k]) => [hgJoin(c, x), k]).concat(shuffle(nb, r)));
+      v.explanation = [`? 칸은 자음자 ${c} 줄과 모음자 ${vv} 칸이 만나는 곳이에요.`, `${c}과 ${vv}가 만나면 「${S}」예요.`, '왼쪽 자음자 줄을 따라가다 위쪽 모음자 칸에서 멈춰요.'];
+    }
+    if (q.kind === 'sa') v.answer = [String(ans)]; else if (q.kind === 'ox'){ /* ox 는 이 갈래가 다루지 않는다 */ } else v.options = opts;
+    return v;
+  }
   // 두 가지 읽기 — read2 {range, step10, ask:'read'|'num', way:'sino'|'nat'|'both'}
   if (rule.read2 && (!a || typeof a === 'string')){
     const R2 = rule.read2; const [lo, hi] = R2.range || [11, 50];
@@ -2217,6 +2331,13 @@ function paperAsset(a){
         (a.picture === undefined ? '' : `<div class="pdp">${slot(a.picture)}</div>`) +
         `<div class="pdt">${lines === null ? '<div class="pblank"></div>' : lines.map(ln => `<div>${mark(ln)}</div>`).join('')}</div>` +
         (a.name ? `<div style="text-align:right;color:#555;padding:0 8px 4px">${esc(a.name)}의 그림일기</div>` : '') + `</div>`; }
+    case 'jamo': { const sp = a.s ? hgSplit(a.s) : null; const C_ = a.c !== undefined ? a.c : (sp && sp.c), V_ = a.v !== undefined ? a.v : (sp && sp.v); const b = x => x ? esc(x) : '(    )';
+      const eq = a.eq === false ? (a.s ? `<b style="font-size:26px">${esc(a.s)}</b>` : '') : `${b(a.c)} + ${b(a.v)} = ${b(a.s)}`;
+      let lay = ''; if (a.lay){ const L = hgLay(V_ || ''); const lc = (a.lay === 'blank' || a.lay === 'v') ? null : C_, lv = (a.lay === 'blank' || a.lay === 'c') ? null : V_; const cl = x => `<span>${x ? esc(x) : '?'}</span>`;
+        lay = L === 'mix' ? `<span class="pl" style="grid-template-columns:26px 26px"><span>${lc ? esc(lc) : '?'}</span><span style="border-left:1px dashed #555"></span><span style="grid-column:1/3;border-top:1px dashed #555">${lv ? esc(lv) : '?'}</span></span>` : `<span class="pl ${L}">${cl(lc)}${cl(lv)}</span>`; }
+      return `<div class="pjamo">${eq}${lay}${a.cap ? ` <small>${esc(a.cap)}</small>` : ''}</div>`; }
+    case 'syl_table': { const C2 = a.cons || [], V2 = a.vows || [], Q2 = a.q || [-1, -1];
+      return `<table class="psyl"><tr><th></th>${V2.map(x => `<th>${esc(x)}</th>`).join('')}</tr>${C2.map((c, i) => `<tr><th>${esc(c)}</th>${V2.map((v, j) => `<td>${(i === Q2[0] && j === Q2[1]) ? '?' : esc(hgJoin(c, v) || '')}</td>`).join('')}</tr>`).join('')}</table>`; }
     case 'solid_row': { const it = a.items || [];
       return `<div class="psolrow">${it.map((x, i) => { let inner = '';
         if (typeof x === 'string') inner = solidSVG(x);

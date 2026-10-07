@@ -97,7 +97,10 @@ const ASSETS = {
   len_bars:       ['rows'],
   balance:        ['scales'],
   area_shapes:    ['shapes'],
-  cups:           ['items']
+  cups:           ['items'],
+  /* v1.5 — 1학년 1학기 국어 「글자를 만들어요」 (2026-10-07): 글자 짜임 상자 · 음절표 */
+  jamo:           [],
+  syl_table:      ['cons', 'vows']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -105,6 +108,12 @@ const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 const CONCEPTS = JSON.parse(fs.readFileSync(path.join(DATA, '_concepts.json'), 'utf8'));
 const CODES = new Set(Object.keys(CONCEPTS.concepts || {}));
 const MIS   = new Set(Object.keys(CONCEPTS.misconceptions || {}));
+
+/* v1.5 한글 자모 — 엔진(play.html hgJoin)과 따로 셈해 서로 검산한다 */
+const HC = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ', HV = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
+const hj = (c, v) => (HC.indexOf(c) < 0 || HV.indexOf(v) < 0 || !c || !v || c.length !== 1 || v.length !== 1) ? null : String.fromCharCode(0xAC00 + (HC.indexOf(c) * 21 + HV.indexOf(v)) * 28);
+const hs = s => { s = String(s || ''); if (s.length !== 1) return null; const k = s.charCodeAt(0) - 0xAC00; if (!(k >= 0 && k < 11172) || k % 28) return null; return { c: HC[Math.floor(k / 588)], v: HV[Math.floor((k % 588) / 28)] }; };
+const hl = v => 'ㅏㅐㅑㅒㅓㅔㅕㅖㅣ'.indexOf(v) >= 0 ? 'side' : 'ㅗㅛㅜㅠㅡ'.indexOf(v) >= 0 ? 'stack' : 'mix';
 
 let fails = [];
 function bad(where, msg) { fails.push(where + ' — ' + msg); }
@@ -354,6 +363,26 @@ function checkAsset(where, a) {
         else if (a.items[a.pour.from].w * a.items[a.pour.from].h === a.items[a.pour.to].w * a.items[a.pour.to].h) bad(where, 'cups pour 두 그릇 크기가 같다 — 넘침/남음을 말할 수 없다'); }
     }
   }
+  if (a.type === 'jamo') {
+    const isC = x => typeof x === 'string' && x.length === 1 && HC.indexOf(x) >= 0, isV = x => typeof x === 'string' && x.length === 1 && HV.indexOf(x) >= 0;
+    if (a.c !== undefined && a.c !== null && !isC(a.c)) bad(where, 'jamo c 가 자음자가 아니다: ' + a.c);
+    if (a.v !== undefined && a.v !== null && !isV(a.v)) bad(where, 'jamo v 가 모음자가 아니다: ' + a.v);
+    if (a.s !== undefined && a.s !== null && !hs(a.s)) bad(where, 'jamo s 는 받침 없는 한 글자여야 한다: ' + a.s);
+    if (a.c && a.v && a.s && hj(a.c, a.v) !== a.s) bad(where, `jamo ${a.c}+${a.v} 는 ${hj(a.c, a.v)} 인데 s 가 ${a.s}`);
+    if (a.eq === false && !a.s) bad(where, 'jamo eq:false 면 글자 s 가 있어야 한다(아니면 그림이 빈다)');
+    if (a.eq !== false && a.c === undefined && a.v === undefined) bad(where, 'jamo 식 줄에 c·v 가 없다');
+    if (a.lay !== undefined && [true, 'blank', 'c', 'v'].indexOf(a.lay) < 0) bad(where, "jamo lay 는 true·'blank'·'c'·'v'");
+    if (a.lay && !(a.v || (a.s && hs(a.s)))) bad(where, 'jamo lay 를 그리려면 모음자(v 또는 s)가 있어야 짜임을 안다');
+  }
+  if (a.type === 'syl_table') {
+    const C2 = a.cons || [], V2 = a.vows || [];
+    if (!(C2.length >= 2 && C2.length <= 5)) bad(where, 'syl_table cons 는 2~5줄');
+    if (!(V2.length >= 2 && V2.length <= 5)) bad(where, 'syl_table vows 는 2~5칸');
+    C2.forEach(x => { if (HC.indexOf(x) < 0 || String(x).length !== 1) bad(where, 'syl_table cons 에 자음자 아닌 것 ' + x); });
+    V2.forEach(x => { if (HV.indexOf(x) < 0 || String(x).length !== 1) bad(where, 'syl_table vows 에 모음자 아닌 것 ' + x); });
+    if (new Set(C2).size !== C2.length || new Set(V2).size !== V2.length) bad(where, 'syl_table 줄·칸 이름 중복');
+    if (a.q !== undefined && !(Array.isArray(a.q) && a.q[0] >= 0 && a.q[0] < C2.length && a.q[1] >= 0 && a.q[1] < V2.length)) bad(where, 'syl_table q 가 표 밖');
+  }
   if (a.type === 'group_row') {
     if (!Array.isArray(a.groups) || a.groups.length < 2) bad(where, 'group_row groups 가 2무리 미만');
     else a.groups.forEach((g, i) => { if (!g.item || !(Number(g.n) >= 0)) bad(where, `group_row groups[${i}] item/n 없음`); });
@@ -446,6 +475,34 @@ function checkNum50(where, q) {
   if (String(want) !== cor) bad(where, `${Object.keys(vr)[0]} 정답 ${cor} ≠ 다시 계산한 ${want}`);
   if (wr.indexOf(String(want)) >= 0) bad(where, `${Object.keys(vr)[0]} 오답 보기에 정답 ${want} 가 섞였다`);
 }
+/* v1.5 — 글자를 만들어요: 그림에서 정답을 다시 계산해 정답 보기·단답과 대조 (원본·변형 모두)
+   build: c+v · cons/vow: s 를 나눈 것 · place: 짜임 자리 · table: ? 칸 */
+function checkJamo(where, q) {
+  const J = (q.variant_rule || {}).jamo; if (!J) return;
+  const a = q.asset || {}; const ask = J.ask || 'build'; let ans = null;
+  if (ask === 'build') { if (a.type !== 'jamo') return bad(where, 'jamo build 는 jamo 그림이 있어야'); ans = hj(a.c, a.v); }
+  else if (ask === 'cons' || ask === 'vow' || ask === 'place') {
+    if (a.type !== 'jamo' || !hs(a.s)) return bad(where, 'jamo ' + ask + ' 는 글자(s)가 있는 jamo 그림이 있어야');
+    const sp = hs(a.s);
+    if (ask === 'cons') ans = sp.c; else if (ask === 'vow') ans = sp.v;
+    else { const L = hl(sp.v); if (L === 'mix') return bad(where, 'jamo place 는 옆으로·위아래로 짜임만(둘러싸는 모음자 제외)');
+      const role = J.role === 'v' ? 'v' : 'c'; ans = L === 'side' ? (role === 'c' ? '왼쪽' : '오른쪽') : (role === 'c' ? '위쪽' : '아래쪽'); }
+  } else if (ask === 'table') {
+    if (a.type !== 'syl_table' || !a.q) return bad(where, 'jamo table 은 ? 칸이 있는 syl_table 그림이 있어야');
+    ans = hj(a.cons[a.q[0]], a.vows[a.q[1]]);
+  } else return bad(where, 'jamo ask 를 모른다: ' + ask);
+  if (!ans) return bad(where, 'jamo 정답을 그림에서 못 셈했다');
+  { const OK = {'ㅑ':'ㄱㄴㅅㅇ','ㅕ':'ㄱㄴㄹㅁㅂㅅㅇㅈㅊㅍㅎ','ㅛ':'ㄱㄴㄹㅁㅅㅇㅈㅊㅍㅎ','ㅠ':'ㄱㄴㄹㅁㅂㅅㅇㅈㅊㅍㅎ','ㅒ':'ㅇㄱㅈ','ㅖ':'ㅇㄱㅎ','ㅘ':'ㄱㄴㅇㅈㅎ','ㅙ':'ㄱㄷㅅㅇ','ㅝ':'ㄱㅁㅇㅈㅎ','ㅞ':'ㄱㅇㅎ','ㅢ':'ㅇㅎ'};
+    const sp = hs(ask === 'table' || ask === 'build' ? ans : a.s); if (sp && OK[sp.v] && OK[sp.v].indexOf(sp.c) < 0) bad(where, `jamo 낯선 글자 「${hj(sp.c, sp.v)}」 — 1학년 눈에 익은 짝만 정답으로`); }
+  if (q.kind === 'sa') { if (!Array.isArray(q.answer) || String(q.answer[0]) !== ans) bad(where, `jamo 단답 정답 ${q.answer} ≠ 그림이 말하는 ${ans}`); return; }
+  const cor = (q.options || []).find(o => o.correct);
+  if (!cor || String(cor.t) !== ans) bad(where, `jamo 정답 보기 「${cor && cor.t}」 ≠ 그림이 말하는 ${ans}`);
+  (q.options || []).filter(o => !o.correct).forEach(o => { if (String(o.t) === ans) bad(where, `jamo 오답 보기에 정답 ${ans} 가 섞였다`); });
+  /* 그림이 정답을 그대로 보여 주면 문제가 아니다 */
+  if (ask === 'build' && a.s) bad(where, 'jamo build 인데 그림에 답 글자 s 가 보인다');
+  if (ask === 'table' && hj(a.cons[a.q[0]], a.vows[a.q[1]]) && a.q[0] < 0) bad(where, 'jamo table ? 칸이 없다');
+  if ((ask === 'cons' || ask === 'vow') && a.lay && a.lay !== 'blank') bad(where, 'jamo ' + ask + ' 인데 짜임 칸에 답이 보인다(lay 는 blank 만)');
+}
 /* 한 문항(원본이든 변형본이든) 공통 검사 */
 function checkQ(where, q, opt) {
   opt = opt || {};
@@ -466,6 +523,7 @@ function checkQ(where, q, opt) {
   checkAsset(where, q.asset);
   checkCmp4(where, q);
   checkNum50(where, q);
+  checkJamo(where, q);
   if (q.asset && typeof q.asset === 'object' && ASSETS[q.asset.type]) {
     try { if (!ENG.drawAsset(q.asset, ENG.rng(7))) bad(where, '화면에서 에셋이 빈칸으로 나옴'); }
     catch (e) { bad(where, '화면 그리기 예외: ' + e.message); }
@@ -621,6 +679,18 @@ function checkSet(file) {
       if (['plus1', 'minus1', 'between', 'cross_up', 'cross_down', 'down', 'up'].indexOf(sk) < 0) bad(where, 'seq50 ask 를 모른다: ' + sk);
       if ((sk === 'down' || sk === 'up') && at !== 'hundred_chart') bad(where, 'seq50 down|up 은 hundred_chart 그림이 있어야 한다');
       if (!(sk === 'down' || sk === 'up') && at) bad(where, 'seq50 ' + sk + ' 는 그림 없는 문항 전용');
+    }
+    /* v1.5 갈래 — 글자를 만들어요 */
+    if (q.variant_rule.jamo) {
+      const J = q.variant_rule.jamo; const ask = J.ask || 'build';
+      if (['build', 'cons', 'vow', 'place', 'table'].indexOf(ask) < 0) bad(where, 'jamo ask 를 모른다: ' + ask);
+      if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'jamo 변형은 mc·blank·sa 만(보기에 mis_target 을 다는 error·OX 는 엔진이 다루지 않는다)');
+      if (ask === 'table' ? at !== 'syl_table' : at !== 'jamo') bad(where, 'jamo ' + ask + ' 변형 그림 종류가 맞지 않다');
+      const KEYS = ['flip', 'stroke', 'rot', 'ae', 'comb', 'cons', 'role', 'place', 'grid'];
+      Object.keys(J.mis || {}).forEach(k => { if (KEYS.indexOf(k) < 0) bad(where, 'jamo mis 갈래를 모른다: ' + k); else if (!MIS.has(String(q.concept).replace(/C\d+$/, '') + J.mis[k])) bad(where, `jamo mis.${k} 꼬리 ${J.mis[k]} 가 사전에 없다`); });
+      (J.cons || []).forEach(x => { if (HC.indexOf(x) < 0) bad(where, 'jamo cons 후보에 자음자 아닌 것 ' + x); });
+      (J.vows || []).forEach(x => { if (HV.indexOf(x) < 0) bad(where, 'jamo vows 후보에 모음자 아닌 것 ' + x); });
+      if (ask === 'place' && (J.vows || []).some(x => hl(x) === 'mix')) bad(where, 'jamo place 의 vows 후보에 둘러싸는 모음자');
     }
     if (q.variant_rule.bond && q.variant_rule.bond.part_max && at !== 'number_bond') bad(where, 'bond 는 number_bond 그림이 있어야 한다');
     /* play.html 과 같은 순서·같은 난수 씀씀이: 틀린 문항들이 난수 하나를 이어 쓰고, prep 은 변형 뒤에 온다.
