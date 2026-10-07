@@ -255,7 +255,11 @@
         if (d.challenge) push('<div class="big-q">' + md(d.challenge) + '</div>');
         if (d.options) { push(options(d.options, !!d.multi, rev)); answerable = answerable || d.options.some(o => o.correct); if (d.multi) push('<div class="multi-hint">☑ 여러 개를 고를 수 있어요</div>'); } // 35차: 국어 「모두 고르기」
         const ab = answerBox(d, rev); if (ab) { push(ab); answerable = true; }
-        if (d.note) push('<div class="small-text">' + md(d.note) + '</div>');
+        if (d.note) { let nh = md(d.note); // 90차 — 풀이 끝 「→ 정답 글」이 위에 밝혀진 보기와 같으면, 넘칠 때만(fit-ans) 「→ 정답 B」로 짧게
+          if (rev && d.options && !d.multi) { const ci = d.options.findIndex(o => o && o.correct); const o = d.options[ci]; const t = o == null ? '' : String(o.label != null ? o.label : o.text != null ? o.text : o);
+            const inner = t && md(t.replace(/\*\*/g, '')); const k = inner ? nh.lastIndexOf('<strong>' + inner + '</strong>') : -1;
+            if (k >= 0 && inner.replace(/<[^>]*>/g, '').length > 12) nh = nh.slice(0, k) + '<span class="ans-full">' + nh.slice(k, k + inner.length + 17) + '</span><span class="ans-key">정답 <strong>' + 'ABCDEF'[ci] + '</strong></span>' + nh.slice(k + inner.length + 17); }
+          push('<div class="small-text">' + nh + '</div>'); }
         if (figH) { const rest = b.splice(b0).filter(h => h !== figH); b.push('<div class="prob-split"><div class="ps-fig">' + figH + '</div><div class="ps-main">' + rest.join('') + '</div></div>'); }
         break;
       }
@@ -728,7 +732,12 @@
   // 87차 — fit-tight: 넘칠 때만 종이 여백·덩이 사이·말풍선 아래를 좁힌다(글자 크기는 그대로). 자리 바꾸기와 겹쳐 쓸 수 있다.
   // 88차 — fit-lv: 수준별 문제 정답 펼침 때 물음 왼쪽 · 정답·풀이 차례 오른쪽 / fit-lv2: 물음 위 · 정답 왼쪽 · 풀이 차례 오른쪽(넘칠 때만)
   // 89차 — fit-pts: 요약 요점 다섯 줄 이상을 두 단(위→아래 차례) / fit-wrap: 옆으로 이어진 카드(차례·도구)가 종이 폭을 넘으면 두 줄로 / fit-cols: 말풍선 안 짧은 줄 넷 이상(「어제 — 과거」 같은 목록)을 두 단으로(넘칠 때만 · 글자 크기 무변)
-  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts'];
+  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans'];
+  // 90차 — fit-qh: 「여러 개를 고를 수 있어요」를 물음 옆 같은 줄로(넘칠 때만)
+  // 90차 — fit-head: 넘칠 때만 제목을 머리(단계 칩·차시 이름)와 한 줄에 — 제목 줄 하나만큼 본문 자리가 생긴다 · 글자 크기 무변 · 차시 이름이 말줄임되면 안 씀
+  function headBad(body) { const p = body.parentElement; if (!p) return true; const k = p.querySelector(':scope > .kt2-head .kt2-kicker'), t = p.querySelector(':scope > .kt2-title');
+    if (k && k.textContent.trim() && k.scrollWidth > k.clientWidth + 2) return true; if (t && t.scrollWidth > t.clientWidth + 2) return true;
+    return false; }
   const BR = /<br\s*\/?>/i;
   function lineLen(h) { return String(h).replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, 'x').trim().length; }
   function colsRun(bt) {
@@ -771,12 +780,16 @@
     body.style.zoom = ''; const wr = wrapOk(body), co = colsTargets(body).length > 0;
     if (wr) { tries.push(['fit-wrap'], ['fit-wrap', 'fit-tight']); if (sp) tries.push(['fit-wrap', 'fit-split', 'fit-tight']); }
     if (body.querySelector(':scope > .points > :nth-child(5)')) tries.push(['fit-pts'], ['fit-pts', 'fit-tight']);
+    if (body.querySelector(':scope > .big-q') && body.querySelector(':scope > .multi-hint')) tries.push(['fit-qh', 'fit-tight']);
+    if (body.querySelector('.ans-key')) { tries.push(['fit-ans', 'fit-tight']); if (sp) tries.push(['fit-ans', 'fit-split', 'fit-tight']); if (sd) tries.push(['fit-ans', 'fit-side', 'fit-tight']); }
     if (co) { tries.push(['fit-cols'], ['fit-cols', 'fit-tight']); if (wr) tries.push(['fit-cols', 'fit-wrap', 'fit-tight']); if (sd) tries.push(['fit-cols', 'fit-side', 'fit-tight']); }
-    for (const cs of tries) {
-      if (best >= base - 0.001) break;
-      setC(body, cs, true); const z = zoomLoop(body, base); setC(body, cs, false);
+    const trial = cs => {
+      if (best >= base - 0.001) return;
+      setC(body, cs, true); let z = zoomLoop(body, base); if (cs.includes('fit-head') && headBad(body)) z = 0; setC(body, cs, false);
       if (z > best + 0.02 || (z >= base - 0.001 && best < base - 0.001)) { best = z; bestC = cs; }
-    }
+    };
+    tries.forEach(trial);
+    if (best < base - 0.001 && body.parentElement && body.parentElement.querySelector(':scope > .kt2-title')) [['fit-tight']].concat(tries).forEach(cs => trial(cs.concat(cs.includes('fit-tight') ? ['fit-head'] : ['fit-head', 'fit-tight'])));
     setC(body, bestC, true);
     if (best < base - 0.001) figShrink(body, base);
     return zoomLoop(body, base);
