@@ -726,7 +726,8 @@
     return !kids[0].matches('.big-q,.small-text,.center-text,.big-text,.options,.q-list,.context-text,.multi-hint');
   }
   // 87차 — fit-tight: 넘칠 때만 종이 여백·덩이 사이·말풍선 아래를 좁힌다(글자 크기는 그대로). 자리 바꾸기와 겹쳐 쓸 수 있다.
-  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight'];
+  // 88차 — fit-lv: 수준별 문제 정답 펼침 때 물음 왼쪽 · 정답·풀이 차례 오른쪽 / fit-lv2: 물음 위 · 정답 왼쪽 · 풀이 차례 오른쪽(넘칠 때만)
+  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2'];
   function fitZoom(body, base) {
     LAYOUTS.forEach(c => body.classList.remove(c)); let best = zoomLoop(body, base), bestC = [];
     if (best >= base - 0.001) return best;
@@ -734,6 +735,7 @@
     const tries = [['fit-tight']];
     if (sp) tries.push(['fit-split'], ['fit-split', 'fit-tight']);
     if (sd) tries.push(['fit-side'], ['fit-side', 'fit-tight']);
+    if (body.querySelector('.lv-body > .lv-a')) tries.push(['fit-lv'], ['fit-lv', 'fit-tight'], ['fit-lv2'], ['fit-lv2', 'fit-tight']);
     for (const cs of tries) {
       if (best >= base - 0.001) break;
       cs.forEach(c => body.classList.add(c)); const z = zoomLoop(body, base); cs.forEach(c => body.classList.remove(c));
