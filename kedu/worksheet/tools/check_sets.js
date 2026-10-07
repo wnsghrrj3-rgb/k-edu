@@ -549,6 +549,31 @@ function checkJosa(where, q){
   texts.forEach(s => { if (typeof s !== 'string') return; let m; JO_RE.lastIndex = 0;
     while ((m = JO_RE.exec(s))){ const want = joWant(m[1], m[2]); if (want && want !== m[2]) bad(where, `조사 「${m[1]}」${m[2]} → ${want}`); } });
 }
+/* v1.7 된소리 — 엔진 TW_* 표와 따로 들고 정답을 발문·그림에서 다시 셈한다 (2026-10-07) */
+const TW_P = {'ㄲ':'ㄱ','ㄸ':'ㄷ','ㅃ':'ㅂ','ㅆ':'ㅅ','ㅉ':'ㅈ'}; const TW_U = {'ㄱ':'ㄲ','ㄷ':'ㄸ','ㅂ':'ㅃ','ㅅ':'ㅆ','ㅈ':'ㅉ'};
+const TW_FAMILIAR = ['굴','꿀','달','딸','살','쌀','방','빵','불','뿔','담','땀','개','깨','시','씨'];
+const TW_PIC = {'🍓':'딸기','🍯':'꿀','🍞':'빵','🍡':'떡','🐦':'까치','🐘':'코끼리','🦏':'코뿔소','🥜':'땅콩','📿':'팔찌','🐰':'토끼','🍚':'쌀','🌱':'씨앗','🛷':'썰매'};
+const twFirsts = w => [...String(w)].map(ch => (hs3(ch) || {}).c).filter(Boolean);
+function checkTwin(where, q) {
+  const R = (q.variant_rule || {}).twin; if (!R) return;
+  const ask = R.ask || 'shape'; let ans = null; const st = String(q.stem || '');
+  if (ask === 'shape') { let m;
+    if (R.dir === 'split') { m = st.match(/^(ㄲ|ㄸ|ㅃ|ㅆ|ㅉ)은 어떤 자음자를 두 번 쓴/); if (!m) return bad(where, 'twin shape split 발문은 「ㄲ은 어떤 자음자를 두 번 쓴…」 꼴'); ans = TW_P[m[1]]; }
+    else { m = st.match(/^(ㄱ|ㄷ|ㅂ|ㅅ|ㅈ)을 두 번 나란히 쓰/); if (!m) return bad(where, 'twin shape make 발문은 「ㄱ을 두 번 나란히 쓰…」 꼴'); ans = TW_U[m[1]]; } }
+  else if (ask === 'swap') { const m = st.match(/^「(.)」의 (.)을 (.)으로 바/); if (!m) return bad(where, 'twin swap 발문은 「「방」의 ㅂ을 ㅃ으로 바…」 꼴');
+    const p = hs3(m[1]); if (!p || p.c !== m[2]) return bad(where, `twin swap 발문의 ${m[2]} ≠ 「${m[1]}」의 첫 자음자`);
+    if (!(TW_P[m[3]] === m[2] || TW_U[m[3]] === m[2])) bad(where, `twin swap ${m[2]}→${m[3]} 는 예사소리·된소리 짝이 아니다`);
+    ans = hj3(m[3], p.v, p.b); if (TW_FAMILIAR.indexOf(m[1]) < 0 || TW_FAMILIAR.indexOf(ans) < 0) bad(where, `twin swap 낯선 글자 「${m[1]}」→「${ans}」`); }
+  else if (ask === 'pick') { const m = st.match(/^된소리 (ㄲ|ㄸ|ㅃ|ㅆ|ㅉ)이 들어간 낱말/); if (!m) return bad(where, 'twin pick 발문은 「된소리 ㄲ이 들어간 낱말…」 꼴');
+    const os = (q.options || []).filter(o => twFirsts(o.t).indexOf(m[1]) >= 0); if (os.length !== 1) return bad(where, `twin pick 보기 가운데 ${m[1]} 낱말이 ${os.length}개(하나여야)`); ans = String(os[0].t); }
+  else if (ask === 'word') { const a = q.asset || {}; if (a.type !== 'scene' || !TW_PIC[a.icon]) return bad(where, 'twin word 는 된소리 그림 낱말 scene 그림이 있어야: ' + a.icon); ans = TW_PIC[a.icon]; }
+  else return bad(where, 'twin ask 를 모른다: ' + ask);
+  if (!ans) return bad(where, 'twin 정답을 발문·그림에서 못 셈했다');
+  if (q.kind === 'sa') { if (!Array.isArray(q.answer) || String(q.answer[0]) !== ans) bad(where, `twin 단답 정답 ${q.answer} ≠ ${ans}`); return; }
+  const cor = (q.options || []).find(o => o.correct);
+  if (!cor || String(cor.t) !== ans) bad(where, `twin 정답 보기 「${cor && cor.t}」 ≠ 발문·그림이 말하는 ${ans}`);
+  (q.options || []).filter(o => !o.correct).forEach(o => { if (String(o.t) === ans) bad(where, `twin 오답 보기에 정답 ${ans} 가 섞였다`); });
+}
 function checkBat(where, q) {
   const R = (q.variant_rule || {}).bat; if (!R) return;
   const a = q.asset || {}; const ask = R.ask || 'add'; let ans = null;
@@ -597,6 +622,7 @@ function checkQ(where, q, opt) {
   checkNum50(where, q);
   checkJamo(where, q);
   checkBat(where, q);
+  checkTwin(where, q);
   checkJosa(where, q);
   if (q.asset && typeof q.asset === 'object' && ASSETS[q.asset.type]) {
     try { if (!ENG.drawAsset(q.asset, ENG.rng(7))) bad(where, '화면에서 에셋이 빈칸으로 나옴'); }
@@ -776,6 +802,18 @@ function checkSet(file) {
       const KEYS = ['drop', 'near', 'side', 'flip', 'cons', 'role', 'vow', 'none', 'keep', 'any'];
       Object.keys(R.mis || {}).forEach(k => { if (KEYS.indexOf(k) < 0) bad(where, 'bat mis 갈래를 모른다: ' + k); else if (!MIS.has(String(q.concept).replace(/C\d+$/, '') + R.mis[k])) bad(where, `bat mis.${k} 꼬리 ${R.mis[k]} 가 사전에 없다`); });
       (R.bats || []).forEach(x => { if (['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅇ','ㅅ'].indexOf(x) < 0) bad(where, 'bat bats 후보는 ㄱㄴㄷㄹㅁㅂㅇㅅ 만: ' + x); });
+    }
+    /* v1.7 갈래 — 된소리 */
+    if (q.variant_rule.twin) {
+      const R = q.variant_rule.twin; const ask = R.ask || 'shape';
+      if (['shape', 'swap', 'pick', 'word'].indexOf(ask) < 0) bad(where, 'twin ask 를 모른다: ' + ask);
+      if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'twin 변형은 mc·blank·sa 만');
+      if ((ask === 'pick' || ask === 'word') && q.kind === 'sa') bad(where, 'twin ' + ask + ' 는 보기 문항만');
+      if (ask === 'word' ? at !== 'scene' : at) bad(where, 'twin ' + ask + ' 변형 그림 종류가 맞지 않다(word 는 scene, 나머지는 그림 없음)');
+      const KEYS = ['asp', 'one', 'other', 'keep', 'plain', 'soft'];
+      Object.keys(R.mis || {}).forEach(k => { if (KEYS.indexOf(k) < 0) bad(where, 'twin mis 갈래를 모른다: ' + k); else if (!MIS.has(String(q.concept).replace(/C\d+$/, '') + R.mis[k])) bad(where, `twin mis.${k} 꼬리 ${R.mis[k]} 가 사전에 없다`); });
+      (R.tw || []).forEach(x => { if (!TW_P[x]) bad(where, 'twin tw 후보는 ㄲㄸㅃㅆㅉ 만: ' + x); });
+      if (R.dir !== undefined && ['make', 'split', 'up', 'down'].indexOf(R.dir) < 0) bad(where, 'twin dir 는 make·split·up·down');
     }
     if (q.variant_rule.bond && q.variant_rule.bond.part_max && at !== 'number_bond') bad(where, 'bond 는 number_bond 그림이 있어야 한다');
     /* play.html 과 같은 순서·같은 난수 씀씀이: 틀린 문항들이 난수 하나를 이어 쓰고, prep 은 변형 뒤에 온다.

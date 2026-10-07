@@ -560,6 +560,16 @@ function hgSplit3(s){ const k = String(s || '').charCodeAt(0) - 0xAC00; if (!(k 
 const BAT_BANK = {'ㄱ':'각국낙막박북떡목약죽책학악속먹벽','ㄴ':'간눈문산손안신돈반전천한만논연','ㄷ':'곧돋닫믿받묻걷','ㄹ':'달별물발말길굴실일날불칼살줄','ㅁ':'곰감잠봄밤몸섬꿈힘땀김남솜점','ㅂ':'밥집입법컵탑십삽답겁','ㅇ':'강콩공빵방상장병종창양성동용','ㅅ':'빗옷맛붓낫곳'};
 /* 그림 낱말 — at 번째 글자의 받침이 빠진다. 그림이 낱말 하나로만 읽히는 것만 */
 const BAT_WORDS = [{w:'곰',at:0,pic:'🐻'},{w:'산',at:0,pic:'⛰️'},{w:'집',at:0,pic:'🏠'},{w:'별',at:0,pic:'⭐'},{w:'빵',at:0,pic:'🍞'},{w:'달',at:0,pic:'🌙'},{w:'밥',at:0,pic:'🍚'},{w:'공',at:0,pic:'⚽'},{w:'손',at:0,pic:'✋'},{w:'문',at:0,pic:'🚪'},{w:'책',at:0,pic:'📕'},{w:'약',at:0,pic:'💊'},{w:'기린',at:1,pic:'🦒'},{w:'수박',at:1,pic:'🍉'},{w:'사탕',at:1,pic:'🍬'},{w:'우산',at:1,pic:'☂️'},{w:'거북',at:1,pic:'🐢'},{w:'가방',at:1,pic:'🎒'},{w:'낙타',at:0,pic:'🐫'},{w:'딸기',at:0,pic:'🍓'},{w:'사슴',at:1,pic:'🦌'},{w:'호랑이',at:1,pic:'🐯'},{w:'풍선',at:1,pic:'🎈'},{w:'옷',at:0,pic:'👕'}];
+/* v1.7 — 낱말과 친해져요: 된소리 자음자(ㄲㄸㅃㅆㅉ). 예사소리 짝·거센소리 짝(ㅆ 은 거센소리 짝 없음) */
+const TW_UP = {'ㄱ':'ㄲ','ㄷ':'ㄸ','ㅂ':'ㅃ','ㅅ':'ㅆ','ㅈ':'ㅉ'};
+const TW_PLAIN = {'ㄲ':'ㄱ','ㄸ':'ㄷ','ㅃ':'ㅂ','ㅆ':'ㅅ','ㅉ':'ㅈ'};
+const TW_ASP = {'ㄲ':'ㅋ','ㄸ':'ㅌ','ㅃ':'ㅍ','ㅉ':'ㅊ','ㄱ':'ㅋ','ㄷ':'ㅌ','ㅂ':'ㅍ','ㅈ':'ㅊ'};
+/* 예사소리·된소리 짝이 둘 다 1학년이 아는 한 글자 낱말인 것만 — 바꾸기(swap) 정답으로 낯선 글자가 나오지 않게 */
+const TW_PAIRS = [['굴','꿀'],['달','딸'],['살','쌀'],['방','빵'],['불','뿔'],['담','땀'],['개','깨'],['시','씨']];
+/* 된소리가 든 그림 낱말 — 그림이 낱말 하나로만 읽히는 것만 */
+const TW_WORDS = [{w:'딸기',pic:'🍓'},{w:'꿀',pic:'🍯'},{w:'빵',pic:'🍞'},{w:'떡',pic:'🍡'},{w:'까치',pic:'🐦'},{w:'코끼리',pic:'🐘'},{w:'코뿔소',pic:'🦏'},{w:'땅콩',pic:'🥜'},{w:'팔찌',pic:'📿'},{w:'토끼',pic:'🐰'},{w:'쌀',pic:'🍚'},{w:'씨앗',pic:'🌱'},{w:'썰매',pic:'🛷'}];
+/* 된소리가 하나도 없는 낱말 — 예사소리(ㄱㄷㅂㅅㅈ)·거센소리(ㅋㅌㅍㅊ)를 견줄 때 */
+const TW_SOFT = ['가방','고래','거북','구름','다리','두부','바다','바지','비누','사자','시소','소라','자두','지도','제비','코','키','코알라','타조','토마토','포도','파도','피자','치마','기차','고추'];
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 /* ---------- 읽어주기 ---------- */
@@ -1265,6 +1275,67 @@ function makeVariantOnce(q, r){
       v.stem = q.kind === 'sa' ? '그림을 보고 받침 칸에 들어갈 자음자를 쓰세요.' : '그림을 보고 받침 칸에 들어갈 자음자를 고르세요.';
       v.asset = {type:'bat_word', w:wd.w, at:wd.at, pic:wd.pic};
       v.explanation = [`그림은 「${wd.w}」${ieyo(wd.w)}.`, `「${base}」에 받침 ${sp.b}을 넣어야 「${sy}」이 돼요.`, '그림이 뜻하는 낱말이 되는 받침을 골라요.'];
+    }
+    if (q.kind === 'sa') v.answer = [String(ans)]; else v.options = opts;
+    return v;
+  }
+  /* --- v1.7: 1학년 1학기 국어 「낱말과 친해져요」 (2026-10-07) ---
+     twin {ask:'shape'|'swap'|'pick'|'word', dir:'make'|'split'(shape) · 'up'|'down'(swap), tw:[된소리 후보], mis:{갈래: 오개념 꼬리}}
+     shape 「ㄱ을 두 번 나란히 쓰면?」/「ㄸ은 어떤 자음자를 두 번?」 · swap 「「방」의 ㅂ을 ㅃ으로 바꾸면?」(TW_PAIRS 만) ·
+     pick 「된소리 ㄲ이 들어간 낱말은?」 · word 그림을 보고 바르게 쓴 낱말(TW_WORDS 만).
+     오답은 「종류」로 — 거센소리와 헷갈림(asp)·한 번만 씀(one)·다른 된소리(other)·그대로(keep)·예사소리로 씀(plain)·예사소리 낱말(soft). */
+  if (rule.twin){
+    const TB = rule.twin, M = TB.mis || {}; const ask = TB.ask || 'shape'; const want = Math.max(1, nOptsOf(q) - 1);
+    const tws = (TB.tw && TB.tw.length) ? TB.tw : ['ㄲ','ㄸ','ㅃ','ㅆ','ㅉ'];
+    const mk = (ans, pairs) => { const used = [String(ans)], out = [{t:String(ans), correct:true}];
+      for (const [x, k] of pairs){ if (out.length > want) break; if (!x) continue; const t = String(x); if (used.indexOf(t) >= 0 || !M[k]) continue; used.push(t); out.push({t, mis:PFX + M[k]}); }
+      return out; };
+    const sub = (w, from, to) => [...w].map(ch => { const p = hgSplit3(ch); return p && p.c === from ? hgJoin3(to, p.v, p.b) : ch; }).join('');
+    const firsts = w => [...w].map(ch => (hgSplit3(ch) || {}).c).filter(Boolean);
+    const hasTw = w => firsts(w).some(c => TW_PLAIN[c]);
+    const eun = w => (hgSplit3([...w].pop()) || {}).b ? '은' : '는';
+    let opts, ans, g = 0;
+    if (ask === 'shape'){
+      let t, p;
+      do { t = pick(tws, r); p = TW_PLAIN[t]; const o = pick(tws.filter(x => x !== t).length ? tws.filter(x => x !== t) : ['ㄲ','ㄸ','ㅃ','ㅆ','ㅉ'].filter(x => x !== t), r);
+        opts = TB.dir === 'split' ? mk(p, [[TW_ASP[t], 'asp'], [TW_PLAIN[o], 'other'], [t, 'one']]) : mk(t, [[TW_ASP[t], 'asp'], [p, 'one'], [o, 'other']]);
+      } while (++g < 60 && opts.length < want + 1);
+      if (TB.dir === 'split'){ ans = p;
+        v.stem = q.kind === 'sa' ? `${t}은 어떤 자음자를 두 번 쓴 것인지 쓰세요.` : `${t}은 어떤 자음자를 두 번 쓴 것인가요?`;
+        v.explanation = [`${t}은 ${p}을 두 번 나란히 쓴 자음자예요.`, TW_ASP[t] ? `${TW_ASP[t]}은 ${p}에 획을 하나 더한 자음자라 달라요.` : '같은 자음자를 두 번 쓴 모양을 잘 봐요.', `${t}은 ${p}보다 더 센 소리를 내요.`];
+      } else { ans = t;
+        v.stem = q.kind === 'sa' ? `${p}을 두 번 나란히 쓴 자음자를 쓰세요.` : `${p}을 두 번 나란히 쓰면 어떤 자음자가 되나요?`;
+        v.explanation = [`${p}을 두 번 나란히 쓰면 ${t}이에요.`, TW_ASP[t] ? `${TW_ASP[t]}은 ${p}에 획을 하나 더한 것이라 달라요.` : `한 번만 쓰면 그대로 ${p}이에요.`, `${t}은 ${p}보다 더 센 소리를 내요.`]; }
+      delete v.asset;
+    } else if (ask === 'swap'){
+      const PR = TW_PAIRS.filter(x => tws.indexOf(hgSplit3(x[1]).c) >= 0); let pr, A, B, ca, cb;
+      do { pr = pick(PR, r); [A, B] = TB.dir === 'down' ? [pr[1], pr[0]] : pr; ca = hgSplit3(A).c; cb = hgSplit3(B).c;
+        const sp = hgSplit3(A); const o = pick(['ㄲ','ㄸ','ㅃ','ㅆ','ㅉ'].filter(x => x !== cb && x !== ca), r);
+        opts = mk(B, [[A, 'keep'], [TW_ASP[cb] && hgJoin3(TW_ASP[cb], sp.v, sp.b), 'asp'], [hgJoin3(o, sp.v, sp.b), 'other']]);
+      } while (++g < 60 && opts.length < want + 1);
+      ans = B; delete v.asset;
+      v.stem = `「${A}」의 ${ca}을 ${cb}으로 ${q.kind === 'sa' ? '바꾼 글자를 쓰세요.' : '바꾸면 어떤 글자가 되나요?'}`;
+      v.explanation = [`「${A}」에서 ${ca} 자리에 ${cb}을 넣으면 「${B}」${hgSplit3(B).b ? '이에요' : '예요'}.`, `모음자${hgSplit3(A).b ? '와 받침은' : '는'} 그대로예요.`, `${TW_PLAIN[cb] ? cb + '은 ' + TW_PLAIN[cb] + '보다 센 소리' : cb + '은 ' + ca + '보다 여린 소리'} — 자음자가 바뀌면 뜻도 달라져요.`];
+    } else if (ask === 'pick'){
+      let t, A;
+      do { t = pick(tws, r); const W = TW_WORDS.filter(x => firsts(x.w).indexOf(t) >= 0); A = pick(W, r).w;
+        const soft = TW_SOFT.filter(w => firsts(w).indexOf(TW_PLAIN[t]) >= 0); const asp = TW_SOFT.filter(w => TW_ASP[t] && firsts(w).indexOf(TW_ASP[t]) >= 0);
+        const oth = TW_WORDS.filter(x => firsts(x.w).indexOf(t) < 0).map(x => x.w);
+        opts = mk(A, [[soft.length && pick(soft, r), 'soft'], [asp.length && pick(asp, r), 'asp'], [pick(oth, r), 'other']]);
+      } while (++g < 60 && opts.length < want + 1);
+      ans = A; delete v.asset;
+      v.stem = `된소리 ${t}이 들어간 낱말은 어느 것인가요?`;
+      v.explanation = [`「${A}」에는 ${t}이 들어 있어요.`, TW_ASP[t] ? `${TW_PLAIN[t]}·${TW_ASP[t]}이 든 낱말과 견주어 읽어 봐요.` : `${TW_PLAIN[t]}이 든 낱말과 견주어 읽어 봐요.`, '소리 내어 읽고, 글자에서 같은 자음자를 두 번 쓴 곳을 찾아요.'];
+    } else {   /* word — 그림을 보고 바르게 쓴 낱말 */
+      const W = TW_WORDS.filter(x => firsts(x.w).some(c => tws.indexOf(c) >= 0)); let wd, t;
+      do { wd = pick(W, r); t = firsts(wd.w).find(c => TW_PLAIN[c]);
+        const o = pick(['ㄲ','ㄸ','ㅃ','ㅆ','ㅉ'].filter(x => x !== t), r);
+        opts = mk(wd.w, [[sub(wd.w, t, TW_PLAIN[t]), 'plain'], [TW_ASP[t] && sub(wd.w, t, TW_ASP[t]), 'asp'], [sub(wd.w, t, o), 'other']]);
+      } while (++g < 60 && opts.length < want + 1);
+      ans = wd.w;
+      v.stem = '그림을 보고 바르게 쓴 낱말을 고르세요.';
+      v.asset = {type:'scene', icon:wd.pic};
+      v.explanation = [`그림은 「${wd.w}」${(hgSplit3([...wd.w].pop()) || {}).b ? '이에요' : '예요'}.`, `${t}을 ${TW_PLAIN[t]} 하나로 쓰면 다른 말이 돼요.`, '소리 내어 읽으며 센 소리가 나는 자음자를 확인해요.'];
     }
     if (q.kind === 'sa') v.answer = [String(ans)]; else v.options = opts;
     return v;
