@@ -727,21 +727,58 @@
   }
   // 87차 — fit-tight: 넘칠 때만 종이 여백·덩이 사이·말풍선 아래를 좁힌다(글자 크기는 그대로). 자리 바꾸기와 겹쳐 쓸 수 있다.
   // 88차 — fit-lv: 수준별 문제 정답 펼침 때 물음 왼쪽 · 정답·풀이 차례 오른쪽 / fit-lv2: 물음 위 · 정답 왼쪽 · 풀이 차례 오른쪽(넘칠 때만)
-  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2'];
+  // 89차 — fit-pts: 요약 요점 다섯 줄 이상을 두 단(위→아래 차례) / fit-wrap: 옆으로 이어진 카드(차례·도구)가 종이 폭을 넘으면 두 줄로 / fit-cols: 말풍선 안 짧은 줄 넷 이상(「어제 — 과거」 같은 목록)을 두 단으로(넘칠 때만 · 글자 크기 무변)
+  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts'];
+  const BR = /<br\s*\/?>/i;
+  function lineLen(h) { return String(h).replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, 'x').trim().length; }
+  function colsRun(bt) {
+    const parts = bt.innerHTML.split(BR); if (parts.length < 4) return null;
+    const lens = parts.map(lineLen); const srt = lens.slice().sort((a, b) => a - b); const med = srt[Math.floor(srt.length / 2)];
+    const lim = Math.max(16, Math.round(med * 1.4)); let bs = -1, be = -1;
+    for (let i = 0; i < parts.length;) { if (lens[i] && lens[i] <= lim) { let j = i; while (j < parts.length && lens[j] && lens[j] <= lim) j++; if (j - i > be - bs) { bs = i; be = j; } i = j; } else i++; }
+    return be - bs >= 4 ? { parts, bs, be } : null;
+  }
+  function colsTargets(body) { return Array.from(body.querySelectorAll(':scope > .guide-say .g-bub > .big-text')).filter(bt => bt._kt2cols || colsRun(bt)); }
+  function colsOn(body) {
+    colsTargets(body).forEach(bt => { if (bt._kt2cols) return; const r = colsRun(bt); if (!r) return; bt._kt2cols = bt.innerHTML; const p = r.parts;
+      const pre = p.slice(0, r.bs), post = p.slice(r.be);
+      bt.innerHTML = (pre.length ? pre.join('<br>') : '') + '<span class="bt-cols">' + p.slice(r.bs, r.be).map(x => '<span class="bt-ln">' + x + '</span>').join('') + '</span>' + (post.length ? post.join('<br>') : ''); });
+  }
+  function colsOff(body) { body.querySelectorAll('.big-text').forEach(bt => { if (bt._kt2cols != null) { bt.innerHTML = bt._kt2cols; bt._kt2cols = null; } }); }
+  function wrapOk(body) { return Array.from(body.querySelectorAll('.fig-cards:not(.wrap)')).some(c => c.scrollWidth > c.clientWidth + 2 || c.getBoundingClientRect().width > body.clientWidth + 2); }
+  function setC(body, cs, on) { cs.forEach(c => body.classList.toggle(c, on)); if (cs.includes('fit-cols')) (on ? colsOn : colsOff)(body); }
+  // 89차 — 자리를 다 바꿔도 넘치면 장 전체(말풍선·물음 글까지)를 줄이기 전에 그림 덩이 하나만 먼저 줄인다(0.7배까지) · 말풍선·물음·보기 글은 1.0 그대로
+  const FIGSEL = '.fig,.tf-row,.sym-cards,.concept-split,.emoji-row,.img-frame,.fig-cards';
+  function figOff(body) { body.querySelectorAll('[data-figz]').forEach(e => { e.style.zoom = ''; e.removeAttribute('data-figz'); }); }
+  function figShrink(body, base) {
+    body.style.zoom = base === 1 ? '' : base;
+    const kids = Array.from(body.children).filter(k => k.matches(FIGSEL) && !k.classList.contains('hidden'));
+    if (!kids.length) return;
+    let t = kids[0]; kids.forEach(k => { if (k.getBoundingClientRect().height > t.getBoundingClientRect().height) t = k; });
+    const fits = z => { t.style.zoom = z; return body.scrollHeight - body.clientHeight <= 2 && body.scrollWidth - body.clientWidth <= 2; };
+    let lo = 0.7, hi = 1;
+    if (!fits(lo)) hi = lo; else for (let i = 0; i < 7; i++) { const m = (lo + hi) / 2; if (fits(m)) lo = m; else hi = m; }
+    const z = Math.min(lo, hi); t.style.zoom = z; t.setAttribute('data-figz', z.toFixed(3));
+  }
   function fitZoom(body, base) {
-    LAYOUTS.forEach(c => body.classList.remove(c)); let best = zoomLoop(body, base), bestC = [];
+    colsOff(body); figOff(body); LAYOUTS.forEach(c => body.classList.remove(c)); let best = zoomLoop(body, base), bestC = [];
     if (best >= base - 0.001) return best;
     const sp = splitPair(body), sd = sideOk(body);
     const tries = [['fit-tight']];
     if (sp) tries.push(['fit-split'], ['fit-split', 'fit-tight']);
     if (sd) tries.push(['fit-side'], ['fit-side', 'fit-tight']);
     if (body.querySelector('.lv-body > .lv-a')) tries.push(['fit-lv'], ['fit-lv', 'fit-tight'], ['fit-lv2'], ['fit-lv2', 'fit-tight']);
+    body.style.zoom = ''; const wr = wrapOk(body), co = colsTargets(body).length > 0;
+    if (wr) { tries.push(['fit-wrap'], ['fit-wrap', 'fit-tight']); if (sp) tries.push(['fit-wrap', 'fit-split', 'fit-tight']); }
+    if (body.querySelector(':scope > .points > :nth-child(5)')) tries.push(['fit-pts'], ['fit-pts', 'fit-tight']);
+    if (co) { tries.push(['fit-cols'], ['fit-cols', 'fit-tight']); if (wr) tries.push(['fit-cols', 'fit-wrap', 'fit-tight']); if (sd) tries.push(['fit-cols', 'fit-side', 'fit-tight']); }
     for (const cs of tries) {
       if (best >= base - 0.001) break;
-      cs.forEach(c => body.classList.add(c)); const z = zoomLoop(body, base); cs.forEach(c => body.classList.remove(c));
+      setC(body, cs, true); const z = zoomLoop(body, base); setC(body, cs, false);
       if (z > best + 0.02 || (z >= base - 0.001 && best < base - 0.001)) { best = z; bestC = cs; }
     }
-    bestC.forEach(c => body.classList.add(c));
+    setC(body, bestC, true);
+    if (best < base - 0.001) figShrink(body, base);
     return zoomLoop(body, base);
   }
   Stage.prototype.fitBody = function () {
