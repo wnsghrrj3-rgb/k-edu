@@ -725,16 +725,21 @@
     if (kids.some(k => k.classList.contains('concept-split') || k.classList.contains('prob-split'))) return false;
     return !kids[0].matches('.big-q,.small-text,.center-text,.big-text,.options,.q-list,.context-text,.multi-hint');
   }
-  const LAYOUTS = ['fit-split', 'fit-side'];
+  // 87차 — fit-tight: 넘칠 때만 종이 여백·덩이 사이·말풍선 아래를 좁힌다(글자 크기는 그대로). 자리 바꾸기와 겹쳐 쓸 수 있다.
+  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight'];
   function fitZoom(body, base) {
-    LAYOUTS.forEach(c => body.classList.remove(c)); let best = zoomLoop(body, base), bestC = '';
+    LAYOUTS.forEach(c => body.classList.remove(c)); let best = zoomLoop(body, base), bestC = [];
     if (best >= base - 0.001) return best;
-    [['fit-split', splitPair(body)], ['fit-side', sideOk(body)]].forEach(([c, ok]) => {
-      if (!ok || best >= base - 0.001) return;
-      body.classList.add(c); const z = zoomLoop(body, base); body.classList.remove(c);
-      if (z > best + 0.02) { best = z; bestC = c; }
-    });
-    if (bestC) body.classList.add(bestC);
+    const sp = splitPair(body), sd = sideOk(body);
+    const tries = [['fit-tight']];
+    if (sp) tries.push(['fit-split'], ['fit-split', 'fit-tight']);
+    if (sd) tries.push(['fit-side'], ['fit-side', 'fit-tight']);
+    for (const cs of tries) {
+      if (best >= base - 0.001) break;
+      cs.forEach(c => body.classList.add(c)); const z = zoomLoop(body, base); cs.forEach(c => body.classList.remove(c));
+      if (z > best + 0.02 || (z >= base - 0.001 && best < base - 0.001)) { best = z; bestC = cs; }
+    }
+    bestC.forEach(c => body.classList.add(c));
     return zoomLoop(body, base);
   }
   Stage.prototype.fitBody = function () {
