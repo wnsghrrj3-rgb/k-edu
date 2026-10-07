@@ -1,4 +1,4 @@
-/* genre/text_hunt.js — 글 속 찾기 장르 엔진 v1.0.0 (설계 v4 §4, 전과목 · 무대형)
+/* genre/text_hunt.js — 글 속 찾기 장르 엔진 v1.1.0 (설계 v4 §4, 전과목 · 무대형)
  * 짧은 글에서 조건에 맞는 글자·낱말·문장을 탭한다. 무대가 곧 답이다 — 답 버튼 없음.
  *
  * 규칙(헌법):
@@ -8,7 +8,8 @@
  *  class = 팀 교대(홀수 문항 A, 짝수 B). 오탭 2회면 상대 팀 차례
  *  답 미노출 — 찾기 전엔 어떤 토큰도 다르게 그리지 않는다 (v4 §5 원칙을 카탈로그 활동에도 적용)
  *
- * gen.next() → { prompt, tokens:[{t, hit:bool} | {t:' ', sep:true}], type, explain }
+ * gen.next() → { prompt, tokens:[{t, hit:bool} | {t:' ', sep:true} | {t, fixed:true}], type, explain }
+ *   fixed(v1.1.0) = 누를 수 없는 글 조각 — 자리 토큰(낱말 사이 · 24회차 쐐기표)만 누르게 할 때. fixed 없는 생성기는 그대로.
  * spec = { tokenLabel(tok) (선택) · waits:{correct} }
  */
 (function () {
@@ -25,6 +26,7 @@
       app.el('#hunt-prompt').className = app.mode === 'class' ? ('turn t' + S.turn) : '';
       app.el('#hunt-text').innerHTML = S.q.tokens.map(function (tok, k) {
         if (tok.sep) return '<span class="tsep"></span>';
+        if (tok.fixed) return '<span class="tfix">' + tok.t + '</span>';
         return '<button class="tok" data-k="' + k + '">' + (spec.tokenLabel ? spec.tokenLabel(tok) : tok.t) + '</button>';
       }).join('');
       app.els('#hunt-text .tok').forEach(function (b) {
@@ -83,5 +85,5 @@
     next();
   }
 
-  window.TextHunt = { run: run, version: '1.0.0' };
+  window.TextHunt = { run: run, version: '1.1.0' };
 })();

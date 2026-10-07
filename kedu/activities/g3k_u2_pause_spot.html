@@ -4,10 +4,10 @@
 <script src="/kedu_scope.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>문단 속 문장 찾기 — K✦edu</title>
+<title>쐐기표 자리 찾기 — K✦edu</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <!-- 이 파일은 build/assemble.py가 조립했습니다. 직접 수정하지 마세요.
-     원본: src/g3k_u3_para_hunt.js (+ src/g3k_u3_para_hunt.css) · core/activity-core.* · core/ko.js · core/genre/text_hunt.js · gens/korean/para_hunt.js -->
+     원본: src/g3k_u2_pause_spot.js (+ src/g3k_u2_pause_spot.css) · core/activity-core.* · core/ko.js · core/genre/text_hunt.js · gens/korean/pause_spot.js -->
 <style>
 /* activity-core.css — 케이티처 활동 표준 셸 (Phase 3)
  * 헌법: 설계 §6 현장 헌장이 여기 박혀 있다. 도구는 이 스타일을 다시 쓰지 않는다.
@@ -108,24 +108,28 @@ h1 { font-size:clamp(30px,6vw,58px); color:var(--deep); margin:0; text-align:cen
 }
 
 /* ── 무대 스타일 ── */
-/* 무대 — 글 속 찾기(문장 토큰) · 문단이 한 줄씩 쌓여 무대 높이를 채운다(빈 여백 0). 판정 전엔 모든 줄이 같은 모습(답 미노출) */
+/* 무대 — 자리 찾기(낱말 사이 · 낱말 속) · 문장 글자는 누를 수 없고(tfix) 자리만 누른다. 판정 전엔 모든 자리가 같은 모습(답 미노출) */
 #a-root { align-self:stretch; width:100%; }   /* 이 활동만 — 무대가 화면 높이를 다 쓰게(core 무개변) */
 #stage { align-items:stretch; }
-#hunt { display:flex; flex-direction:column; align-items:center; gap:clamp(10px,1.8vh,22px); width:100%; height:100%;
+#hunt { display:flex; flex-direction:column; align-items:center; gap:clamp(10px,2vh,26px); width:100%; height:100%;
         padding:clamp(6px,1.4vh,18px) 0 clamp(10px,2.4vh,30px); box-sizing:border-box; }
 #hunt-prompt { flex:none; font-size:clamp(20px,min(3.4vw,3.6vh),42px); color:var(--amber-d); background:#fef3c7; border-radius:14px;
                padding:clamp(8px,1.2vh,14px) clamp(16px,2vw,28px); text-align:center; word-break:keep-all; }
 #hunt-prompt.turn { color:#fff; } #hunt-prompt.turn.t0 { background:var(--teamA); } #hunt-prompt.turn.t1 { background:var(--teamB); }
-#hunt-text { flex:1; min-height:0; display:flex; flex-direction:column; align-items:stretch; justify-content:center;
-             gap:clamp(8px,1.6vh,18px); width:min(95vw,1500px); }
-.tok { flex:1 0 auto; min-height:56px; max-height:clamp(120px,22vh,230px); display:flex; align-items:center;
-       font-family:'Jua',sans-serif; font-size:clamp(22px,min(6.6vw,4.6vh),58px); line-height:1.3; text-align:left; word-break:keep-all;
-       background:#fff; color:var(--deep); border:4px solid var(--amber); border-radius:18px;
-       padding:clamp(10px,1.4vh,18px) clamp(16px,2.2vw,32px); cursor:pointer; box-shadow:0 5px 0 #e7c890; }
-.tok:active { transform:translateY(3px); box-shadow:none; }
-.tok.got { background:#dcfce7; border-color:var(--good); color:#166534; }
-.tok.bad, .tok.shake { border-color:var(--bad); animation:shake .42s; }
-@media (max-width:600px) { #hunt { padding-top:clamp(56px,8vh,72px); } .tok { max-height:none; } }   /* 폰 세로 — 물음 줄이 우상단 HUD 밑으로 숨지 않게 */
+#hunt-text { flex:1; min-height:0; display:flex; flex-wrap:wrap; align-items:center; align-content:center; justify-content:center;
+             row-gap:clamp(14px,3vh,40px); width:min(95vw,1600px); background:#fff; border:4px solid var(--amber); border-radius:22px;
+             padding:clamp(14px,3vh,48px) clamp(12px,2.4vw,40px); box-sizing:border-box; box-shadow:0 6px 0 #e7c890; }
+.tfix { font-family:'Jua',sans-serif; font-size:clamp(28px,min(7.4vw,8vh),96px); line-height:1.2; color:var(--deep); white-space:nowrap; }
+.tok { position:relative; flex:none; width:clamp(34px,4.4vw,72px); height:clamp(64px,11vh,140px); margin:0 clamp(2px,.4vw,6px);
+       padding:0; background:transparent; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.tok .slot { display:block; width:clamp(12px,1.5vw,22px); height:72%; border:3px dashed #d6b06a; border-radius:10px; background:#fffbeb; }
+.tok .mk { position:absolute; top:-0.15em; left:50%; transform:translateX(-50%); font-family:'Nunito',sans-serif; font-size:clamp(28px,min(5vw,6vh),70px);
+           color:var(--good); display:none; white-space:nowrap; line-height:1; }
+.tok:active .slot { background:#fde68a; }
+.tok.got .slot { border-style:solid; border-color:var(--good); background:#dcfce7; }
+.tok.got .mk { display:block; }
+.tok.bad .slot, .tok.shake .slot { border-color:var(--bad); background:#fee2e2; animation:shake .42s; }
+@media (max-width:600px) { #hunt { padding-top:clamp(56px,8vh,72px); } #hunt-text { width:96vw; } .tok { width:30px; margin:0 1px; } }   /* 폰 세로 — 물음 줄이 우상단 HUD 밑으로 숨지 않게 */
 </style>
 </head>
 <body>
@@ -1091,226 +1095,229 @@ h1 { font-size:clamp(30px,6vw,58px); color:var(--deep); margin:0; text-align:cen
 })();
 </script>
 <script>
-/* gens/korean/para_hunt.js — 문단 속 문장 찾기 (3학년 1학기 국어 3단원 「짜임새 있는 글, 재미와 감동이 있는 글」 l02~l11)
- * 순수 함수·DOM 무관 (§9-3). 장르 text_hunt(글 속 찾기)가 쓴다 — 토큰 하나 = 문장 하나, 정답 문장은 늘 하나.
- * params: { upto: 'l02'|'l04'|'l08'|'l11'|'all' }  단원 처음부터 그 차시까지 누적 · 이번 차시 틀이 덱 앞머리
- * next() → { prompt, icon, tokens:[{t, hit}], answer, type, explain, l }
+/* gens/korean/pause_spot.js — 쐐기표 자리 찾기 (3학년 1학기 국어 2단원 「분명하고 유창하게」 l05·l14)
+ * 순수 함수·DOM 무관 (§9-3). 장르 text_hunt(글 속 찾기 · 자리 토큰)가 쓴다 — 글 조각은 fixed(누를 수 없음), 누르는 것은 자리뿐.
+ * params: { upto: 'l05'|'all' }  단원 처음부터 그 차시까지 누적 · 이번 차시 문장이 덱 앞머리
+ * next() → { prompt, icon, tokens:[{t, fixed:true} | {t:'', gap:true, m:'v1'|'v2', hit}], hit(토큰 번호), answer, type, explain, l }
  *
- * type(문항 단위 · 진단 축 — 무엇을 보고 고르는가):
- *   main_front  중심 문장 찾기 — 맨 앞에 있는 문단 (l02)
- *   main_end    중심 문장 찾기 — 끝에 있는 문단 (l02 「중심 문장은 늘 맨 앞」 오개념 축 · 정본 동물 문단 계열)
- *   odd_one     어울리지 않는 뒷받침 문장 찾기 (l04 · 「재미있는 문장이면 어디든」 오개념 축 — 같은 학교 이야기라 헷갈리는 판 하나)
- *   feel_main   감상 문단의 중심 문장 = 느낀 부분 (l08 · 덫 = 「왜냐하면」 까닭 문장 · 일어난 일만 말한 문장)
- *   me_odd      '나' 설명서에서 한 가지 생각을 벗어난 문장 (l11 · 「모든 것을 한 문단에」 오개념 축)
- * 뒷받침 문장끼리는 차례가 정해져 있지 않다 → 섞는다(자리 쏠림 없이). feel_main 만 글의 차례 그대로(까닭은 느낀 부분 뒤).
- * 제재 = 정본 자체 창작(「나무가 주는 것」·「할머니의 단추 상자」·「발소리」 일부 사실) + 자체 구성. 회피 제재 0(정본 머리말).
- * 용어는 정본 그 차시까지(문단·중심 문장·뒷받침 문장·느낀 부분) — 교사 몫 용어 0.
+ * 정본 l05: 쐐기표 ∨ = 누가/무엇이 다음에 조금 쉬기 · 겹쐐기표 ∨∨ = 문장이 끝나는 곳에서 조금 더 쉬기.
+ * 오개념 두 축(정본 l05 s08·s15)이 곧 덫이다:
+ *   ① ∨를 아무 곳에나 → 낱말 가운데 가르기(사람 ∨ 들은 · 명절 ∨ 입니다 · 둥급 ∨ 니다) = 낱말 속 자리
+ *   ② ∨를 많이 둘수록 → 뒷부분 낱말 사이 자리
+ * type(문항 단위 · 진단 축):
+ *   pause_short  ∨ 자리 — 두 낱말 문장 (덫 = 낱말 속 자리만 · 축 ①)
+ *   pause_long   ∨ 자리 — 뒷부분이 두 낱말 이상 (덫 = 뒷부분 사이 · 축 ②)
+ *   pause_who2   ∨ 자리 — 앞부분이 두 낱말 (덫 = 앞부분 가운데 「우리 ∨ 엄마는」)
+ *   end_pause    ∨∨ 자리 — 두 문장을 이어 놓고 문장이 끝나는 곳 (덫 = 각 문장의 ∨ 자리 · ∨와 ∨∨ 혼동)
+ * 정답 자리는 늘 하나. 자리 토큰은 모두 같은 모습(판정 전 표지 0) — hit 은 생성기 안에만.
+ * 문장 = 정본 l02·l05(단오)·l14 그대로 + 같은 꼴 자체 구성. 앞/뒷부분은 「/」, 낱말 속 가를 자리는 「|」(정본 오답 꼴 그대로: 명사|조사 · 줄기|끝).
  */
 (function (root, factory) {
   var g = factory();
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
-  root.GENS['para_hunt'] = g;
+  root.GENS['pause_spot'] = g;
 }(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var ORDER = ['l02', 'l04', 'l08', 'l11'];
+  var ORDER = ['l05', 'l14'];
   var PROMPT = {
-    main_front: '이 문단의 중심 문장을 찾아 눌러요',
-    main_end: '이 문단의 중심 문장을 찾아 눌러요',
-    odd_one: '중심 문장과 어울리지 않는 문장을 찾아 눌러요',
-    feel_main: '느낀 부분을 밝힌 중심 문장을 찾아 눌러요',
-    me_odd: '\'나\' 설명서에서 한 가지 생각을 벗어난 문장을 찾아 눌러요'
+    v1: '∨(조금 쉬기)를 둘 곳을 눌러요',
+    v2: '∨∨(조금 더 쉬기)를 둘 곳을 눌러요'
   };
 
-  /* 틀 — main 중심 문장 · subs 뒷받침 문장 · odd 어울리지 않는 문장(odd 유형) · why 풀이 끝말
-   * feel_main 은 seq(글의 차례 그대로) + hit(중심 문장 자리) */
-  var T = [
-    // ── l02 중심 문장 — 맨 앞
-    { l: 'l02', type: 'main_front', icon: '🌳', main: '나무는 우리에게 여러 가지 도움을 줍니다.',
-      subs: ['더운 날에는 시원한 그늘을 만들어 줍니다.', '맑은 공기를 내뿜어 숨 쉬기 좋게 해 줍니다.', '맛있는 열매를 맺어 먹을거리도 줍니다.'],
-      why: '그늘·공기·열매가 모두 나무가 주는 도움이에요.' },
-    { l: 'l02', type: 'main_front', icon: '🐠', main: '바다에는 여러 가지 생물이 삽니다.',
-      subs: ['물고기는 지느러미로 헤엄칩니다.', '게는 집게발로 먹이를 집습니다.', '해파리는 바닷물을 따라 둥둥 떠다닙니다.'],
-      why: '물고기·게·해파리가 모두 바다에 사는 생물이에요.' },
-    { l: 'l02', type: 'main_front', icon: '☔', main: '비 오는 날에는 챙길 것이 많습니다.',
-      subs: ['우산을 펴서 비를 막습니다.', '장화를 신어 발이 젖지 않게 합니다.', '비옷을 입어 옷이 젖지 않게 합니다.'],
-      why: '우산·장화·비옷이 모두 비 오는 날 챙길 것이에요.' },
-    { l: 'l02', type: 'main_front', icon: '🙌', main: '우리 반 친구들은 저마다 잘하는 것이 다릅니다.',
-      subs: ['민호는 달리기가 빠릅니다.', '서연이는 노래를 잘 부릅니다.', '지우는 그림을 멋지게 그립니다.'],
-      why: '민호·서연이·지우가 잘하는 것이 모두 달라요.' },
-    { l: 'l02', type: 'main_front', icon: '🏪', main: '시장에는 여러 가지 가게가 있습니다.',
-      subs: ['생선 가게에는 고등어와 오징어가 있습니다.', '과일 가게에는 사과와 배가 있습니다.', '떡집에는 알록달록한 떡이 있습니다.'],
-      why: '생선 가게·과일 가게·떡집이 모두 시장의 가게예요.' },
-    { l: 'l02', type: 'main_front', icon: '🧹', main: '우리 반은 교실 청소를 나누어 합니다.',
-      subs: ['한 모둠은 바닥을 씁니다.', '다른 모둠은 책상을 닦습니다.', '나머지 모둠은 쓰레기통을 비웁니다.'],
-      why: '바닥 쓸기·책상 닦기·쓰레기통 비우기가 모두 나누어 하는 청소예요.' },
-
-    // ── l02 중심 문장 — 끝 (「늘 맨 앞」 오개념 축)
-    { l: 'l02', type: 'main_end', icon: '🦒', main: '이처럼 동물마다 길게 자란 부분이 다릅니다.',
-      subs: ['토끼는 귀가 깁니다.', '기린은 목이 깁니다.', '코끼리는 코가 깁니다.'],
-      why: '앞의 세 문장이 모두 이 생각의 예예요.' },
-    { l: 'l02', type: 'main_end', icon: '🌼', main: '이렇게 계절마다 피는 꽃이 다릅니다.',
-      subs: ['봄에는 개나리가 핍니다.', '여름에는 해바라기가 핍니다.', '가을에는 코스모스가 핍니다.'],
-      why: '개나리·해바라기·코스모스가 피는 때가 모두 달라요.' },
-    { l: 'l02', type: 'main_end', icon: '🪴', main: '이처럼 우리 가족은 함께 화분을 돌봅니다.',
-      subs: ['아빠는 아침마다 화분에 물을 줍니다.', '엄마는 저녁마다 마른 잎을 떼어 줍니다.', '나는 주말마다 화분을 창가에 내놓습니다.'],
-      why: '아빠·엄마·나가 하는 일이 모두 화분 돌보기예요.' },
-    { l: 'l02', type: 'main_end', icon: '✏️', main: '이처럼 학용품은 저마다 쓰임이 있습니다.',
-      subs: ['연필로는 글씨를 씁니다.', '지우개로는 틀린 글자를 지웁니다.', '자로는 곧은 줄을 긋습니다.'],
-      why: '연필·지우개·자의 쓰임을 하나로 묶은 문장이에요.' },
-    { l: 'l02', type: 'main_end', icon: '🚒', main: '이렇게 우리 둘레에는 고마운 일을 하는 분이 많습니다.',
-      subs: ['소방관은 불을 끕니다.', '경찰관은 마을을 안전하게 지킵니다.', '의사는 아픈 사람을 치료합니다.'],
-      why: '소방관·경찰관·의사가 하는 일을 하나로 묶은 문장이에요.' },
-
-    // ── l04 어울리지 않는 뒷받침 문장
-    { l: 'l04', type: 'odd_one', icon: '🏫', main: '우리 학교에는 다양한 장소가 있습니다.',
-      subs: ['학생들이 공부하는 교실이 있습니다.', '책을 빌릴 수 있는 도서관이 있습니다.', '밥을 먹는 급식실이 있습니다.'],
-      odd: '저는 피구를 가장 좋아합니다.', why: '학교 장소가 아니라 내가 좋아하는 운동을 말해요.' },
-    { l: 'l04', type: 'odd_one', icon: '🏃', main: '우리 학교 운동장은 넓습니다.',
-      subs: ['달리기를 마음껏 할 수 있습니다.', '여러 반이 함께 공놀이를 해도 자리가 넉넉합니다.'],
-      odd: '어제 비가 많이 왔습니다.', why: '운동장이 넓다는 것이 아니라 날씨를 말해요.' },
-    { l: 'l04', type: 'odd_one', icon: '📚', main: '우리 학교 도서관은 좋습니다.',
-      subs: ['읽고 싶은 책이 가득합니다.', '푹신한 의자가 있어 편하게 읽을 수 있습니다.'],
-      odd: '제 동생은 두 살입니다.', why: '도서관이 아니라 동생 이야기예요.' },
-    { l: 'l04', type: 'odd_one', icon: '🪟', main: '우리 교실에는 좋은 점이 많습니다.',
-      subs: ['창문이 커서 밝습니다.', '책꽂이에 책이 많습니다.', '사물함이 있어 짐을 넣어 둘 수 있습니다.'],
-      odd: '나는 떡볶이를 좋아합니다.', why: '교실의 좋은 점이 아니라 내가 좋아하는 음식이에요.' },
-    { l: 'l04', type: 'odd_one', icon: '🎉', main: '우리 학교에는 행사가 많습니다.',
-      subs: ['봄에는 운동회가 열립니다.', '가을에는 발표회가 열립니다.', '겨울에는 학예회가 열립니다.'],
-      odd: '강당은 아주 넓습니다.', why: '학교 이야기이긴 하지만 행사가 아니라 장소를 말해요.' },
-    { l: 'l04', type: 'odd_one', icon: '🌳', main: '나무는 우리에게 여러 가지 도움을 줍니다.',
-      subs: ['더운 날에는 시원한 그늘을 만들어 줍니다.', '맑은 공기를 내뿜어 숨 쉬기 좋게 해 줍니다.', '맛있는 열매를 맺어 먹을거리도 줍니다.'],
-      odd: '나무에 올라가면 정말 신이 납니다.', why: '재미있는 문장이지만 나무가 주는 도움이 아니라 내 기분을 말해요.' },
-
-    // ── l08 감상 문단 — 느낀 부분이 중심 문장 (글의 차례 그대로)
-    { l: 'l08', type: 'feel_main', icon: '🧵', hit: 1, seq: [
-      '수아는 할머니 댁 서랍에서 낡은 단추 상자를 찾았다.',
-      '나는 할머니가 단추마다 담긴 이야기를 들려주는 부분에서 감동을 느꼈다.',
-      '왜냐하면 낡은 단추에도 가족의 소중한 추억이 담겨 있다는 것을 알았기 때문이다.'] },
-    { l: 'l08', type: 'feel_main', icon: '🔴', hit: 1, seq: [
-      '할머니는 빨간 단추가 처음 산 외투에 달려 있었다고 말씀하셨다.',
-      '나는 이 부분에서 할머니의 마음이 느껴져 뭉클했다.',
-      '왜냐하면 오래된 단추를 지금까지 소중히 간직하셨기 때문이다.'] },
-    { l: 'l08', type: 'feel_main', icon: '📦', hit: 0, seq: [
-      '나는 수아가 단추 상자를 여는 장면이 가장 재미있었다.',
-      '왜냐하면 상자 안에 무엇이 들었을지 나도 궁금했기 때문이다.'] },
-    { l: 'l08', type: 'feel_main', icon: '👣', hit: 1, seq: [
-      '시 「발소리」에는 여러 사람의 발소리가 나온다.',
-      '나는 할아버지의 느린 발소리가 나오는 부분이 좋았다.',
-      '왜냐하면 천천히 걸으시는 우리 할아버지가 떠올랐기 때문이다.'] },
-    { l: 'l08', type: 'feel_main', icon: '🧸', hit: 0, seq: [
-      '나는 수아가 물건을 아껴 쓰기로 마음먹는 부분에서 감동을 느꼈다.',
-      '왜냐하면 나도 낡은 인형을 버리려다 그만둔 적이 있기 때문이다.'] },
-
-    // ── l11 '나' 설명서 — 한 가지 생각
-    { l: 'l11', type: 'me_odd', icon: '🎨', main: '나는 그림 그리기를 좋아합니다.',
-      subs: ['쉬는 시간에 공책에 만화를 그립니다.', '가족의 모습을 그려 선물하기도 합니다.', '색칠할 때가 가장 즐겁습니다.'],
-      odd: '우리 집은 학교 앞 아파트입니다.', why: '그림 그리기가 아니라 사는 곳을 말해요. 다른 문단에 쓰면 돼요.' },
-    { l: 'l11', type: 'me_odd', icon: '⚽', main: '나는 축구를 좋아합니다.',
-      subs: ['점심시간마다 운동장에서 공을 찹니다.', '골을 넣으면 친구들과 손뼉을 마주칩니다.'],
-      odd: '나에게는 형이 한 명 있습니다.', why: '축구가 아니라 형제를 말해요. 다른 문단에 쓰면 돼요.' },
-    { l: 'l11', type: 'me_odd', icon: '📖', main: '나는 책 읽기를 좋아합니다.',
-      subs: ['잠자기 전에 꼭 한 권씩 읽습니다.', '재미있는 책은 친구에게 알려 줍니다.'],
-      odd: '내 생일은 오월입니다.', why: '책 읽기가 아니라 생일을 말해요. 다른 문단에 쓰면 돼요.' },
-    { l: 'l11', type: 'me_odd', icon: '🐶', main: '나는 강아지를 좋아합니다.',
-      subs: ['길에서 강아지를 만나면 꼭 인사합니다.', '강아지가 나오는 그림책을 여러 번 읽었습니다.', '강아지를 쓰다듬을 때가 가장 행복합니다.'],
-      odd: '나는 아침마다 우유를 마십니다.', why: '강아지가 아니라 아침에 마시는 것을 말해요. 다른 문단에 쓰면 돼요.' },
-    { l: 'l11', type: 'me_odd', icon: '🍳', main: '나는 요리하기를 좋아합니다.',
-      subs: ['주말에 엄마와 함께 김밥을 맙니다.', '내가 만든 달걀말이를 가족이 맛있게 먹습니다.'],
-      odd: '나는 피아노 학원에 다닙니다.', why: '요리가 아니라 다니는 학원을 말해요. 다른 문단에 쓰면 돼요.' }
+  /* [차시, 문장] — l05 = 정본 l05 단오 문장 + 정본 l02 문장(l05 에서 처음 ∨ 를 두므로 l05 에 묶음) */
+  var S = [
+    ['l05', '사람|들은/그네|를 탑|니다.'], ['l05', '아이|들이/씨름|을 합|니다.'], ['l05', '누나|가/창포물|에 머리|를 감습|니다.'],
+    ['l05', '수리취떡|은/둥급|니다.'], ['l05', '창포물|이/향기롭|습니다.'], ['l05', '단오|는/명절|입니다.'],
+    ['l05', '단오|는/즐거운 명절|입니다.'], ['l05', '아이|들이/그네|를 탑|니다.'], ['l05', '수리취떡|은/단오 떡|입니다.'],
+    ['l05', '사람|들은/씨름|을 합|니다.'], ['l05', '나|는/그네|를 탑|니다.'],
+    ['l05', '콩이|가/짖습|니다.'], ['l05', '콩이|는/귀엽습|니다.'], ['l05', '꽃|이/예쁩|니다.'], ['l05', '바다|가/넓습|니다.'],
+    ['l05', '얼음|이/차갑습|니다.'], ['l05', '교실|이/조용합|니다.'],
+    ['l05', '동생|이/우유|를 마십|니다.'], ['l05', '강아지|가/꼬리|를 흔듭|니다.'], ['l05', '민주|는/3학년 학생|입니다.'],
+    ['l05', '고래|는/바다 동물|입니다.'], ['l05', '고양이|가/잠|을 잡|니다.'], ['l05', '민주|가/책|을 읽습|니다.'],
+    ['l05', '우리 엄마|는/선생님|입니다.'], ['l05', '단오 잔치|는/즐겁습|니다.'], ['l05', '우리 누나|는/창포물|에 머리|를 감습|니다.'],
+    ['l05', '마을 사람|들은/그네|를 탑|니다.'], ['l05', '옆집 콩이|는/귀엽습|니다.'], ['l05', '우리 동생|이/우유|를 마십|니다.'],
+    // l14 단원 마무리(정본 l14 s09·s11)
+    ['l14', '새|가/노래합|니다.'], ['l14', '하늘|이/맑습|니다.'], ['l14', '그|는/화가|입니다.'], ['l14', '그|는/농부|입니다.']
   ];
 
   function shuffle(rng, a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rng() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
-  function q(s) { return '「' + s.replace(/\.$/, '') + '」'; }
 
-  function build(t, k, rng) {
-    var lines, hit, ex;
-    if (t.type === 'feel_main') {
-      lines = t.seq.slice(); hit = t.hit;
-      ex = q(lines[hit]) + ' — 느낀 부분을 밝힌 이 문장이 중심 문장이에요. 「왜냐하면」으로 시작하는 문장은 그 까닭을 덧붙이는 뒷받침 문장이에요.' +
-        (hit > 0 ? ' 일어난 일만 말한 문장은 느낀 점이 아니에요.' : '');
-    } else if (t.type === 'main_front' || t.type === 'main_end') {
-      var s = shuffle(rng, t.subs);
-      lines = t.type === 'main_front' ? [t.main].concat(s) : s.concat([t.main]);
-      hit = t.type === 'main_front' ? 0 : lines.length - 1;
-      ex = q(t.main) + ' — ' + t.why + ' 그래서 중심 문장이에요. 이 문단에서는 ' +
-        (t.type === 'main_front' ? '맨 앞에 있어요.' : '끝에 있어요. 중심 문장이 늘 맨 앞에 오는 것은 아니에요.');
-    } else {                                   // odd_one · me_odd — 중심 문장은 맨 앞, 어긋난 문장은 뒷받침 사이 아무 자리
-      var body = shuffle(rng, t.subs.concat([t.odd]));
-      lines = [t.main].concat(body);
-      hit = lines.indexOf(t.odd);
-      ex = '중심 문장은 ' + q(t.main) + '예요. ' + q(t.odd) + '는 ' + t.why;
-    }
-    return { id: 'ph' + k, l: t.l, type: t.type, icon: t.icon, prompt: PROMPT[t.type],
-             tokens: lines.map(function (s, j) { return { t: s, hit: j === hit }; }),
-             hit: hit, answer: lines[hit], explain: ex };
+  /* 문장 → { who:[낱말…], tail:[낱말…] } · 낱말 = ['사람','들은'] 처럼 가를 자리로 나눈 조각 */
+  function parse(s) {
+    var p = s.split('/');
+    function words(x) { return x.split(' ').map(function (w) { return w.split('|'); }); }
+    return { who: words(p[0]), tail: words(p[1]) };
+  }
+  function plain(w) { return w.join(''); }
+  function sentText(P) { return P.who.concat(P.tail).map(plain).join(' '); }
+  function whoText(P) { return P.who.map(plain).join(' '); }
+  function typeOf(P) { return P.who.length > 1 ? 'pause_who2' : (P.tail.length > 1 ? 'pause_long' : 'pause_short'); }
+  function marked(P) { return whoText(P) + ' ∨ ' + P.tail.map(plain).join(' '); }
+
+  /* 한 문장의 자리 토큰 — 낱말 사이 자리는 전부, 낱말 속 자리는 k 개(무작위) */
+  function sentTokens(P, kIn, rng) {
+    var W = P.who.concat(P.tail), nWho = P.who.length;
+    var inner = [];
+    W.forEach(function (w, wi) { if (w.length > 1) inner.push(wi); });
+    var pick = shuffle(rng, inner).slice(0, kIn);
+    var out = [];
+    W.forEach(function (w, wi) {
+      if (pick.indexOf(wi) >= 0) { out.push({ t: w[0], fixed: true }); out.push({ gap: true, why: 'in' }); out.push({ t: w.slice(1).join(''), fixed: true }); }
+      else out.push({ t: plain(w), fixed: true });
+      if (wi < W.length - 1) out.push({ gap: true, why: wi === nWho - 1 ? 'who' : (wi < nWho - 1 ? 'whoin' : 'tail') });
+    });
+    return out;
+  }
+  function merge(toks) {   // 이웃한 글 조각을 하나로(자리 없는 곳은 띄어쓰기 그대로)
+    var out = [];
+    toks.forEach(function (t) {
+      var prev = out[out.length - 1];
+      if (t.fixed && prev && prev.fixed) prev.t += t.sp ? ' ' + t.t : t.t;
+      else out.push(t);
+    });
+    return out;
   }
 
-  var MARK = ['㉠', '㉡', '㉢', '㉣', '㉤'];
+  function finish(q, toks, m) {
+    var hit = -1;
+    q.tokens = toks.map(function (t, k) {
+      if (t.fixed) return { t: t.t, fixed: true };
+      if (t.hitMe) hit = k;
+      return { t: '', gap: true, m: m, hit: !!t.hitMe };
+    });
+    q.hit = hit;
+    return q;
+  }
+
+  function buildSingle(k, rng, id) {
+    var P = parse(S[k][1]), type = typeOf(P);
+    var kIn = type === 'pause_short' ? 2 : 1;
+    var toks = sentTokens(P, kIn, rng);
+    toks.forEach(function (t) { if (t.gap && t.why === 'who') t.hitMe = true; });
+    var w = whoText(P), tip;
+    if (type === 'pause_short') tip = '낱말 가운데를 가르면 뜻이 무너져요.';
+    else if (type === 'pause_long') tip = '뒷부분 안에서 자꾸 끊으면 뜻이 이어지지 않아요.';
+    else tip = '「' + w + '」까지가 한 덩이예요. 「' + plain(P.who[0]) + '」에서 끊지 않아요.';
+    var q = { id: id, l: S[k][0], type: type, icon: '⏸️', prompt: PROMPT.v1, sent: sentText(P),
+              answer: marked(P),
+              explain: '「' + w + '」(누가/무엇이) 다음에 ∨ — ' + marked(P) + ' ' + tip };
+    return finish(q, toks, 'v1');
+  }
+
+  function buildEnd(a, b, rng, id) {
+    var A = parse(S[a][1]), B = parse(S[b][1]);
+    // 자리 = A 의 ∨ 자리 · A 끝(정답) · B 의 ∨ 자리 · 낱말 속 하나(A 나 B 뒷부분) — 나머지 낱말 사이는 띄어쓰기 그대로
+    function part(P, inWord) {
+      var W = P.who.concat(P.tail), nWho = P.who.length, out = [];
+      W.forEach(function (w, wi) {
+        if (wi === inWord) { out.push({ t: w[0], fixed: true, sp: wi > 0 && wi !== nWho }); out.push({ gap: true }); out.push({ t: w.slice(1).join(''), fixed: true }); }
+        else out.push({ t: plain(w), fixed: true, sp: wi > 0 && wi !== nWho });
+        if (wi === nWho - 1) out.push({ gap: true });
+      });
+      return out;
+    }
+    function innerOf(P) { var r = []; P.tail.forEach(function (w, j) { if (w.length > 1) r.push(P.who.length + j); }); return r; }
+    var useA = rng() < 0.5, PA = innerOf(A), PB = innerOf(B);
+    if (!PA.length) useA = false; if (!PB.length) useA = true;
+    var src = useA ? PA : PB, iw = src[Math.floor(rng() * src.length)];
+    var ta = part(A, useA ? iw : -1), tb = part(B, useA ? -1 : iw);
+    var toks = merge(ta.concat([{ gap: true, hitMe: true }], tb));
+    var sa = sentText(A), sb = sentText(B);
+    var q = { id: id, l: ORDER.indexOf(S[a][0]) >= ORDER.indexOf(S[b][0]) ? S[a][0] : S[b][0], type: 'end_pause', icon: '⏹️',
+              prompt: PROMPT.v2, sent: sa + ' ' + sb, answer: sa + ' ∨∨ ' + sb,
+              explain: '첫 문장이 끝나는 곳(「' + plain(A.tail[A.tail.length - 1]) + '」 뒤)에 ∨∨ — ' + marked(A) + ' ∨∨ ' + marked(B) + ' ∨∨ ' +
+                       '누가/무엇이 다음은 ∨(조금 쉬기), 문장 끝은 ∨∨(조금 더 쉬기)예요.' };
+    return finish(q, toks, 'v2');
+  }
+
+  var MARK = '㉠㉡㉢㉣㉤㉥㉦'.split('');
 
   return {
-    id: 'para_hunt',
-    title: '문단 속 문장 찾기',
-    T: T,
+    id: 'pause_spot',
+    title: '쐐기표 자리 찾기',
+    S: S,
     ORDER: ORDER,
     PROMPT: PROMPT,
+    parse: parse,
+    typeOf: typeOf,
     create: function (params, rng) {
       var p = params || {};
       var upto = ORDER.indexOf(p.upto) >= 0 ? p.upto : 'all';
       var lim = upto === 'all' ? ORDER.length - 1 : ORDER.indexOf(upto);
       var idx = [];
-      T.forEach(function (t, k) { if (ORDER.indexOf(t.l) <= lim) idx.push(k); });
-      var focus = upto === 'all' ? [] : idx.filter(function (k) { return T[k].l === upto; });
+      S.forEach(function (s, k) { if (ORDER.indexOf(s[0]) <= lim) idx.push(k); });
+      var focus = upto === 'all' ? [] : idx.filter(function (k) { return S[k][0] === upto; });
       var deck = shuffle(rng, focus).concat(shuffle(rng, idx.filter(function (k) { return focus.indexOf(k) < 0; })));
-      var last = -1, n = 0;
+      var last = -1, lastType = '', run = 0, n = 0;
+      function take() {
+        if (!deck.length) { deck = shuffle(rng, idx); if (deck.length > 1 && deck[0] === last) deck.push(deck.shift()); }
+        // 같은 유형 세 번 넘게 잇따름 0(규칙성이 답을 주지 않게)
+        for (var pass = 0; pass < 2; pass++) {
+          for (var t = 0; t < deck.length; t++) {
+            var ty = typeOf(parse(S[deck[t]][1]));
+            if (deck[t] !== last && !(run >= 2 && ty === lastType)) return deck.splice(t, 1)[0];
+          }
+          deck = deck.concat(shuffle(rng, idx));   // 남은 덱이 한 유형뿐이면 다음 바퀴를 미리 붙여 고른다
+        }
+        return deck.shift();
+      }
       return {
         size: idx.length,
         next: function () {
-          if (!deck.length) {
-            deck = shuffle(rng, idx);
-            if (deck.length > 1 && deck[0] === last) deck.push(deck.shift());   // 같은 틀이 연달아 나오지 않게
+          var id = 'ps' + (n++), q;
+          if (n > 1 && lastType !== 'end_pause' && rng() < 0.25) {
+            var a = take(), b = take(); if (b === a) b = take();
+            q = buildEnd(a, b, rng, id); last = b;
+          } else {
+            var k = take(); q = buildSingle(k, rng, id); last = k;
           }
-          var k = deck.shift(); last = k;
-          return build(T[k], k + '_' + (n++), rng);
+          run = q.type === lastType ? run + 1 : 1; lastType = q.type;
+          return q;
         },
-        check: function (pick, q2) { return String(pick) === String(q2.answer); }
+        check: function (pick, q2) { return Number(pick) === q2.hit; }
       };
     },
     printRender: function (q2) {
-      return q2.icon + ' ' + q2.prompt + '<br>' + q2.tokens.map(function (tok, k) { return MARK[k] + ' ' + tok.t; }).join('<br>');
+      var m = 0;
+      return q2.icon + ' ' + q2.prompt + '<br>' + q2.tokens.map(function (t) { return t.gap ? ' ' + MARK[m++] + ' ' : t.t; }).join('');
     },
-    printAnswer: function (q2) { return MARK[q2.hit] + ' ' + q2.answer; },
-    printHead: '문단을 읽고 알맞은 문장의 기호에 ○를 하세요.'
+    printAnswer: function (q2) {
+      var m = 0, a = '';
+      q2.tokens.forEach(function (t) { if (t.gap) { if (t.hit) a = MARK[m]; m++; } });
+      return a + ' ' + q2.answer;
+    },
+    printHead: '알맞은 곳의 기호에 ○를 하세요. ∨는 조금 쉬기, ∨∨는 조금 더 쉬기예요.'
   };
 }));
 </script>
 <script>
-/* src/g3k_u3_para_hunt.js — 문단 속 문장 찾기 (3학년 1학기 국어 3단원 「짜임새 있는 글, 재미와 감동이 있는 글」)
- * 장르: text_hunt(글 속 찾기 · 문장 토큰) · 생성기: para_hunt
- * 문단 하나가 문장 줄로 놓이고, 물음에 맞는 문장 하나를 누른다(중심 문장 · 어울리지 않는 문장 · 느낀 부분).
+/* src/g3k_u2_pause_spot.js — 쐐기표 자리 찾기 (3학년 1학기 국어 2단원 「분명하고 유창하게」 l05·l14)
+ * 장르: text_hunt(글 속 찾기 · 자리 토큰 — 엔진 v1.1.0 fixed) · 생성기: pause_spot
+ * 문장 글자는 누를 수 없고, 낱말 사이·낱말 속의 빈 자리만 누른다. 맞히면 그 자리에 ∨(또는 ∨∨)가 선다.
+ * 덫 = 정본 l05 오개념 둘 — 낱말 가운데 가르기 · 너무 자주 끊기. 자리는 판정 전 모두 같은 모습(답 미노출).
  * 범위(upto)는 단원 처음부터 그 차시까지 — 케이티처가 차시마다 알맞은 범위를 넣어 준다(map.paramsByLesson).
  */
 (function () {
   'use strict';
   ACore.create({
-    activityId: 'g3k_u3_para_hunt',
-    title: '🔎 문단 속 문장 찾기',
-    subtitle: '문단을 읽고 중심 문장, 어울리지 않는 문장을 찾아 눌러요!',
+    activityId: 'g3k_u2_pause_spot',
+    title: '⏸️ 쐐기표 자리 찾기',
+    subtitle: '문장을 읽고 조금 쉬어 읽을 곳(∨), 조금 더 쉬어 읽을 곳(∨∨)을 눌러요!',
     defaults: { n: 6, upto: 'all' },
     settings: [
       { key: 'upto', label: '범위', options: [
-        { v: 'l02', label: '3차시까지' },
-        { v: 'l04', label: '5차시까지' },
-        { v: 'l08', label: '10차시까지' },
-        { v: 'l11', label: '12차시까지' },
+        { v: 'l05', label: '6차시까지' },
         { v: 'all', label: '단원 전체' }] },
       { key: 'n', label: '문제 수', options: [{ v: 4, label: '4' }, { v: 6, label: '6' }, { v: 8, label: '8' }] }
     ],
-    stageHtml: '<div id="hunt" class="para"><div id="hunt-prompt"></div><div id="hunt-text"></div></div>',
+    stageHtml: '<div id="hunt" class="pause"><div id="hunt-prompt"></div><div id="hunt-text"></div></div>',
     onStart: function (app) {
-      var gen = GENS['para_hunt'].create({ upto: app.settings.upto }, app.rng);
-      TextHunt.run(app, gen, {});
+      var gen = GENS['pause_spot'].create({ upto: app.settings.upto }, app.rng);
+      TextHunt.run(app, gen, {
+        tokenLabel: function (tok) { return '<i class="slot"></i><b class="mk">' + (tok.m === 'v2' ? '∨∨' : '∨') + '</b>'; }
+      });
     }
   });
 })();
