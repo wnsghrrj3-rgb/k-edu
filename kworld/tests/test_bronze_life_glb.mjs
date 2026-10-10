@@ -14,13 +14,18 @@ for (const t of types) assert.ok(items.targets[t], `대상 ${t} 가 items.json �
 for (const t of Object.keys(items.targets)) assert.ok(types.has(t) || sceneTypes.has(t), `items.json 대상 ${t} 가 GLB·scene 에 없음`);
 const areas = names.filter((n) => n.startsWith('area_')).map((n) => n.slice(5));
 for (const a of Object.keys(world.areas)) assert.ok(areas.includes(a), `구역 ${a} 없음`);
-assert.equal(Object.keys(world.areas).length, 13, '구역 13');
+assert.equal(Object.keys(world.areas).length, 20, '구역 20');
+for (const a of ['cliff', 'moat', 'refuge', 'lower', 'border', 'mill', 'spring']) assert.ok(world.areas[a] && areas.includes(a), `새 구역 ${a}`);
+for (const t of ['ix_rockart_1', 'ix_cliffaltar_1', 'ix_moat_1', 'ix_refuge_1', 'ix_lowerfire_1', 'ix_border_1', 'ix_mortar_1', 'ix_spring_1']) assert.ok(names.includes(t), `새 대상 ${t}`);
+const setters = JSON.stringify(items.targets) + JSON.stringify(npcDefs);
+for (const sit of life.situations.filter((x) => ['rockart', 'moat', 'raid', 'lower', 'border', 'mortar', 'spring'].includes(x.id))) { assert.ok(world.areas[sit.place], `새 상황 ${sit.id} 장소`); for (const c of sit.choices) assert.ok(setters.includes(`"${c.done}"`), `새 상황 ${sit.id} 선택 ${c.id} done 깃발 ${c.done} 을 세우는 곳이 없음`); }
+assert.ok(life.situations.filter((x) => !x.must).length >= 12 && life.mixedCount === 6, '섞여 12 · 판마다 6');
 assert.ok(areas.includes(world.face), `시작 시선 구역 ${world.face}`);
 assert.ok(names.includes('spawn'), 'spawn');
 const npcs = ix.filter((n) => n.startsWith('ix_npc_')).map((n) => n.slice(7));
 for (const id of Object.keys(npcDefs)) assert.ok(npcs.includes(id), `NPC ${id} 가 GLB 에 없음`);
 for (const id of npcs) assert.ok(npcDefs[id], `GLB NPC ${id} 가 npcs.json 에 없음`);
-assert.equal(npcs.length, 10, 'NPC 10');
+assert.equal(npcs.length, 15, 'NPC 15');
 const mats = new Set((data.materials || []).map((m) => m.name));
 for (const t of ['grain_full', 'dolmen_cap', 'dolmen_lying']) assert.ok(mats.has(t), `숨김 재질 ${t}`);
 assert.ok(ix.filter((n) => n.startsWith('ix_bigpaddy_')).length === 2 && ix.filter((n) => n.startsWith('ix_smallpaddy_')).length === 2, '큰 논 2·작은 논 2');

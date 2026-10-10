@@ -63,5 +63,5 @@ g.flags.add('sit:hut:done'); g.life.onFlag();
 goTo('village'); ok(opened('tiger'), '호랑이 밤'); closeCard(); use('isle_1'); if (!btn('아이들을') && panel?.b.length === 1) { closeCard(); use('isle_1'); } pick('아이들을 데리고'); closeCard(); ok(done('tiger') && g.flags.has('tiger:isle'), '갈대섬 — 아이들과 숨음');
 const J2 = g.world.journal; ok(['grave', 'drifter', 'sea', 'tiger', 'slash', 'layers', 'spindle'].every((k) => J2[k]?.note), '새 기록 일곱');
 // 실패 굴림 길: 불 놓기 눈 굴림 실패 → rollFailFlag burn:spread 가 bad 결과 선택지의 done 과 맞는다
-const slash = g.life.situations.find((x) => x.id === 'slash'); const burnT = g.items.targets.burn.rename[0].choices[0]; ok(burnT.roll.rollFailFlag === 'burn:spread' && slash.choices.some((c) => c.done === 'burn:spread' && c.bad), '실패 굴림 → 불이 숲으로(bad 결과)');
+const slash = g.life.situations.find((x) => x.id === 'slash'); const burnT = g.items.targets.burn.rename[0].choices[0]; ok(burnT.rollFailFlag === 'burn:spread' && slash.choices.some((c) => c.done === 'burn:spread' && c.bad), '실패 굴림 → 불이 숲으로(bad 결과)');
 console.log(`neo 고리 2(새 장소 7): ${pass} 통과 / ${fail} 실패`); if (fail) process.exit(1);
