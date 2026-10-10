@@ -15,7 +15,7 @@
   // 차시_밀도_표준_v2 §1: 도입 5~8 · 전개 25 · 정리 7~10 → 40분
   const STAGE_MIN = { '도입': 7, '전개': 12, '기본문제': 7, '응용문제': 6, '정리': 8 };
   const SEVEN = ['①복습 문항', '②실사 장면', '③차시 서사', '④교실 활동', '⑤수준별 문제', '⑥출구 확인', '⑦발문 6슬↑'];
-  const EDITABLE = '.kt2-title, .big-text, .center-text, .small-text, .big-q, .objective-card, .point > div, .steps li, .kid .bub, .kid .lbl, .flip .q, .flip .a, .mis-card, .offline .body, .offline .goal, .opt > div:not(.mk), .scenario > div:not(.ic), .lv-q, .ra-quote, .context-text, .bidirect, .tf-cap, .examples .ex, .areas div, .sa .lb, .light .lb, .cq .cl, .cq .nm, .legacy .t, .legacy .d, .kt2-cover-title, .kt2-sub';
+  const EDITABLE = '.kt2-title, .big-text, .center-text, .small-text, .big-q, .objective-card, .point > div, .steps li, .kid .bub, .kid .lbl, .flip .q, .flip .a, .mis-card, .mv2-t, .mv2-h, .offline .body, .offline .goal, .opt > div:not(.mk), .scenario > div:not(.ic), .lv-q, .ra-quote, .context-text, .bidirect, .tf-cap, .examples .ex, .areas div, .sa .lb, .light .lb, .cq .cl, .cq .nm, .legacy .t, .legacy .d, .kt2-cover-title, .kt2-sub';
   const STAGE_COLOR = { '도입': '#FF8A3D', '전개': '#4F8DF7', '기본문제': '#12B886', '응용문제': '#7C5CFF', '정리': '#2CB1D6' };
   const SUBJ_KO = { math: '수학', korean: '국어', science: '과학', social: '사회', english: '영어' };
   const NO_FRAG = new Set(['cover', 'objective', 'question', 'next_lesson', 'interactive_ten_frame', 'interactive_cube_stairs', 'interactive_number_line', 'klab', 'math_tool', 'quiz_gen', 'activity', 'card_arrange', 'card_quiz', 'chosung_quiz', 'present', 'read_aloud', 'leveled_problem', 'exit_ticket', 'trace', 'number_line_demo']);
@@ -342,10 +342,19 @@
         if (d.sub) { push('<div class="small-text">' + md(d.sub) + '</div>'); sub = ''; }
         break;
       }
-      case 'misconception': cls = 'row'; push('<div class="mis-card w"><div class="h"><i>✗</i>' + esc(d.label || '이렇게 생각하기 쉬워요') + '</div>' + md(d.wrong) + '</div>'); push('<div class="mis-card r"><div class="h"><i>✓</i>바르게 알기</div>' + md(d.right) + '</div>'); if (d.hint) push('<div class="mis-hint">' + md(d.hint) + '</div>'); break;
+      case 'misconception': cls = 'mv2 mv2-a'; // 97차 — 새 오개념 장(준호 A 「둘로 가르기」): 왼쪽 틀린 생각(흐린 글) → 오른쪽 바르게 알기 큰 면 · 교사 도움말 아래
+        push('<div class="mv2-w"><div class="mv2-k"><i>✗</i>' + esc(d.label || '이렇게 생각하기 쉬워요') + '</div><div class="mv2-t">' + md(d.wrong) + '</div></div>');
+        push('<div class="mv2-r"><div class="mv2-k"><i>✓</i>바르게 알기</div><div class="mv2-t">' + md(d.right) + '</div></div>');
+        if (d.hint) push('<div class="mv2-h">' + md(d.hint) + '</div>'); break;
       case 'number_line_demo': push(numLine(d.nl.range, d.nl.anchor)); if (d.caption) push('<div class="center-text">' + md(d.caption) + '</div>'); break;
       case 'leveled_problem': {
         const levels = d.levels || {}; const keys = Object.keys(levels); const cur = levels[S.level] ? S.level : (keys[0] || ''); const lv = levels[cur] || {};
+        if (window.KT2_LVV) { const v = window.KT2_LVV; cls = 'lv2 lv2-' + v; answerable = true; // 97차 시안
+          const ansOf = (x, full) => { if (!rev) return ''; let a = x.open ? '<div class="lv2-a open"><b>💡 여러 답</b>' + (x.a ? md(String(x.a).replace(/^여러 답\s*/, '')) : '') + '</div>' : '<div class="lv2-a"><b>정답</b>' + md(String(x.a !== undefined ? x.a : '')) + '</div>'; if (full && x.steps && x.steps.length) a += '<ol class="lv2-st">' + x.steps.map(s => '<li>' + md(s) + '</li>').join('') + '</ol>'; return a; };
+          if (v === 'b') push('<div class="lv2-cols n' + keys.length + '">' + keys.map(k => '<div class="lv2-col ' + esc(k) + '"><div class="lv2-tag">' + esc(k) + '</div><div class="lv2-q">' + md(levels[k].q || '') + '</div>' + ansOf(levels[k], false) + '</div>').join('') + '</div>');
+          else { const tabs = '<div class="lv2-tabs">' + keys.map((k, i) => '<button class="' + esc(k) + (k === cur ? ' on' : '') + '" data-act="lv" data-k="' + esc(k) + '"><i>' + (i + 1) + '</i>' + esc(k) + '</button>').join('') + '</div>';
+            push(tabs + '<div class="lv2-main ' + esc(cur) + '"><div class="lv2-q">' + md(lv.q || '') + '</div>' + ansOf(lv, true) + '</div>'); }
+          push('<div class="ctrls"><button class="btn main" data-act="reveal">' + (rev ? '🙈 정답 숨기기' : '정답 보기 ✨') + '</button></div>'); break; }
         push('<div class="lv-tabs">' + keys.map(k => '<button class="' + (k === cur ? 'on ' + esc(k) : '') + '" data-act="lv" data-k="' + esc(k) + '">' + esc(k) + '</button>').join('') + '</div>');
         let ans = '';
         if (rev) { ans = lv.open ? '<div class="lv-a open">💡 여러 답이 가능해요' + (lv.a ? ' — ' + md(String(lv.a)) : '') + '</div>' : '<div class="lv-a">✅ ' + md(String(lv.a !== undefined ? lv.a : '')) + '</div>'; if (lv.steps && lv.steps.length) ans += '<div class="lv-steps">' + lv.steps.map(s => '<span>' + md(s) + '</span>').join('<i>→</i>') + '</div>'; }
@@ -729,7 +738,7 @@
 
   // ───────────────────────── 연출·소리·확대 ─────────────────────────
   const STAGGER = ['.base-ten', '.ca-chip', '.ca-bin', '.tenframe .chip', '.picture .kid', 'svg.tenframe .cell.on', '.emoji-row span', '.stack .cube', '.seq > *', '.opt', '.point', '.steps li', '.examples .ex', '.ordinals .ord', '.tf-row .tf-item', '.tf-strip .tfs', '.flipgrid .flip', '.cq-grid .cq', '.scene .kid', '.arrow-flow > *', '.pairs > *', '.areas div', '.sa .row', '.signal .light', '.teams .team', '.trace-row .trace', '.num-table tr', '.num-cards span', '.number-panel span', '.numline .dot', '.dots i', '.i-tf div'];
-  const ZOOMABLE = '.tf-item, .opt, .img-frame, .scenario, .kid, .mis-card, .point, .bidirect, .num-table, .flip, .ex, .cz, .big-q, .steps li, .offline, .pr-card';
+  const ZOOMABLE = '.tf-item, .opt, .img-frame, .scenario, .kid, .mis-card, .mv2-w, .mv2-r, .point, .bidirect, .num-table, .flip, .ex, .cz, .big-q, .steps li, .offline, .pr-card';
   Stage.prototype.decorate = function (paper, r) {
     // 목록 부품에 순번(--i) — 등장 연출이 차례로 흐르게
     STAGGER.forEach(sel => { const groups = new Map(); paper.querySelectorAll(sel).forEach(el => { const p = el.parentNode; const n = groups.get(p) || 0; el.style.setProperty('--i', n); groups.set(p, n + 1); }); });
