@@ -1,4 +1,4 @@
-// 고조선 넓은 터 GLB 구조 검증 — NPC 11·구역 13·spawn·미션·숨김 재질(한나라 천막)이 json 과 맞는지 (WebGL 없이 GLB JSON 청크만)
+// 고조선 넓은 터 GLB 구조 검증(10-10 넓히기: 구역 20·NPC 18·새 장소 일곱) — NPC 18·구역 20·spawn·미션·숨김 재질(한나라 천막)이 json 과 맞는지 (WebGL 없이 GLB JSON 청크만)
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const base = new URL('../eras/gojoseon-life/', import.meta.url);
@@ -14,15 +14,22 @@ for (const t of types) assert.ok(items.targets[t], `대상 ${t} 가 items.json �
 for (const t of Object.keys(items.targets)) assert.ok(types.has(t) || sceneTypes.has(t), `items.json 대상 ${t} 가 GLB·scene 에 없음`);
 const areas = names.filter((n) => n.startsWith('area_')).map((n) => n.slice(5));
 for (const a of Object.keys(world.areas)) assert.ok(areas.includes(a), `구역 ${a} 없음`);
-assert.equal(Object.keys(world.areas).length, 13, '구역 13');
+assert.equal(Object.keys(world.areas).length, 20, '구역 20');
+for (const a of ['outer', 'ore', 'tomb', 'rest', 'northpass', 'marsh', 'county']) assert.ok(world.areas[a] && areas.includes(a), `새 구역 ${a}`);
+for (const t of ['ix_outerwell_1', 'ix_taxpile_1', 'ix_ore_1', 'ix_charkiln_1', 'ix_cist_1', 'ix_dagger_1', 'ix_restfire_1', 'ix_southgoods_1', 'ix_northcairn_1', 'ix_wimancamp_1', 'ix_raft_1', 'ix_marshtrack_1', 'ix_countysite_1']) assert.ok(names.includes(t), `새 대상 ${t}`);
+const setters = JSON.stringify(items.targets) + JSON.stringify(npcDefs);
+for (const sit of life.situations.filter((x) => ['tax', 'ore', 'tomb', 'south', 'wiman', 'marsh', 'county'].includes(x.id))) { assert.ok(world.areas[sit.place], `새 상황 ${sit.id} 장소`); for (const c of sit.choices) assert.ok(setters.includes(`"${c.done}"`), `새 상황 ${sit.id} 선택 ${c.id} done 깃발 ${c.done} 을 세우는 곳이 없음`); }
+assert.ok(life.situations.filter((x) => !x.must).length >= 13 && life.mixedCount === 6, '섞여 13 · 판마다 6');
+const fallEnds = life.situations.find((x) => x.id === 'fall').choices.flatMap((c) => (c.then || []).map((t) => t.end).filter(Boolean));
+for (const e of fallEnds) assert.ok(e.branches.some((b) => b.id === 'county_collab') && e.branches.some((b) => b.id === 'tomb_enslaved'), '끝 갈림에 군현 벼슬·무덤 도둑');
 assert.ok(areas.includes(world.face), `시작 시선 구역 ${world.face}`);
 assert.ok(names.includes('spawn'), 'spawn');
 const npcs = ix.filter((n) => n.startsWith('ix_npc_')).map((n) => n.slice(7));
 for (const id of Object.keys(npcDefs)) assert.ok(npcs.includes(id), `NPC ${id} 가 GLB 에 없음`);
 for (const id of npcs) assert.ok(npcDefs[id], `GLB NPC ${id} 가 npcs.json 에 없음`);
-assert.equal(npcs.length, 11, 'NPC 11');
+assert.equal(npcs.length, 18, 'NPC 18');
 const mats = new Set((data.materials || []).map((m) => m.name));
-for (const t of ['grain_full', 'han_tent', 'han_flag']) assert.ok(mats.has(t), `숨김 재질 ${t}`);
+for (const t of ['grain_full', 'han_tent', 'han_flag', 'han_office', 'han_roof', 'han_sign']) assert.ok(mats.has(t), `숨김 재질 ${t}`);
 assert.ok(ix.filter((n) => n.startsWith('ix_bigpaddy_')).length === 2 && ix.filter((n) => n.startsWith('ix_smallpaddy_')).length === 2 && ix.filter((n) => n.startsWith('ix_masterfield_')).length === 2 && ix.filter((n) => n.startsWith('ix_granary_')).length === 3, '군장 논 2·작은 논 2·주인 밭 2·곳간 3');
 const list = missions.missions;
 assert.equal(list.length, 7, '꼭 나오는 상황 7 = 미션 7');

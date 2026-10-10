@@ -633,6 +633,266 @@
     "fail": "…놓쳤다."
    },
    "info": "강가 얕은 물."
+  },
+  "outerwell": {
+   "name": "공동 우물",
+   "verb": "살펴보기",
+   "say": "돌로 두른 우물. 토기 하나. 성 안엔 집마다 샘이 있고 여긴 하나다.",
+   "flag": "seen:outerwell",
+   "once": true,
+   "info": "성 밖 농민 마을 — 우물 하나."
+  },
+  "taxpile": {
+   "name": "성 안으로 나를 볏단",
+   "verb": "살펴보기",
+   "say": "볏단 일곱, 지게 둘. 거둔 것 넷 중 하나. 성 안으로 간다.",
+   "flag": "seen:taxpile",
+   "once": true,
+   "info": "바치는 곡식 더미.",
+   "rename": [
+    {
+     "if": "sit:tax:open && !sit:tax:done && status:farmer",
+     "name": "볏단 더미",
+     "verb": "한 단을 숨긴다 — 눈",
+     "once": false,
+     "flag": "seen:taxpile2",
+     "roll": {
+      "ab": "눈",
+      "hard": 2,
+      "why": "세는 사람의 눈을 피해 볏단 수를 속이는 눈.",
+      "fail": "…세는 사람이 두 번 셌다. 숨긴 단까지 빼앗겼다."
+     },
+     "rollFailFlag": "tax:caught",
+     "say": "🌾 볏단 하나를 움집 바닥에. 세는 사람이 못 봤다."
+    }
+   ]
+  },
+  "ore": {
+   "name": "붉은 쇠돌",
+   "verb": "살펴보기",
+   "say": "붉은 바위. 깨 낸 돌 조각, 돌망치, 쐐기. 쇠가 나는 돌이다.",
+   "flag": "seen:ore",
+   "once": true,
+   "info": "쇠돌 골 — 쇠돌을 캔다.",
+   "rename": [
+    {
+     "if": "sit:ore:open && !sit:ore:done && !status:slave",
+     "name": "붉은 쇠돌",
+     "verb": "캔다 / 녹인다",
+     "once": false,
+     "flag": "seen:ore2",
+     "choices": [
+      {
+       "label": "캐서 녹인다 — 손 (쇠 집)",
+       "if": "status:smith",
+       "gray": "녹이는 건 쇠 다루는 집의 손이다.",
+       "roll": {
+        "ab": "손",
+        "hard": 2,
+        "why": "숯불 온도를 맞춰 쇳물을 세우는 손.",
+        "fail": "…쇳물이 안 섰다. 숯만 태웠다."
+       },
+       "rollFailFlag": "ore:fail",
+       "flag": "ore:smelt",
+       "say": "⚒ 쇳덩이 하나. 사 온 게 아니라 내가 만든 쇠."
+      },
+      {
+       "label": "캐서 쇠 다루는 사람에게 판다 — 몸",
+       "roll": {
+        "ab": "몸",
+        "hard": 2,
+        "why": "돌망치로 바위를 깨는 몸.",
+        "fail": "…손만 까졌다. 돌 둘."
+       },
+       "rollFailFlag": "ore:fail",
+       "flag": "ore:sell",
+       "say": "🪨 돌 한 짐. 대장간에서 곡식 한 단."
+      }
+     ]
+    }
+   ]
+  },
+  "charkiln": {
+   "name": "숯가마",
+   "verb": "살펴보기",
+   "say": "흙 가마. 숯 묶음. 쇠를 녹이려면 숯이 산처럼 든다.",
+   "flag": "seen:charkiln",
+   "once": true,
+   "info": "숯가마.",
+   "rename": [
+    {
+     "if": "sit:ore:open && !sit:ore:done",
+     "name": "숯가마",
+     "verb": "숯을 굽는다 — 배",
+     "once": false,
+     "flag": "ore:char",
+     "roll": {
+      "ab": "배",
+      "hard": 1,
+      "why": "사흘 밤 가마를 지키는 배.",
+      "fail": "…잠들었다. 반은 재."
+     },
+     "say": "🔥 숯 열 묶음. 쇠 다루는 사람이 받아 갔다."
+    }
+   ]
+  },
+  "cist": {
+   "name": "열린 돌널",
+   "verb": "살펴보기",
+   "say": "판돌 네 장을 세운 돌널. 안에 동검과 거울. 덮개돌은 옆에 누워 있다.",
+   "flag": "seen:cist",
+   "once": true,
+   "info": "돌널무덤 — 가진 집 조상의 자리.",
+   "rename": [
+    {
+     "if": "sit:tomb:open && !sit:tomb:done",
+     "name": "돌널",
+     "verb": "덮개돌을 나른다 / 동검을 꺼낸다 ⚠",
+     "once": false,
+     "flag": "seen:cist2",
+     "choices": [
+      {
+       "label": "덮개돌을 나른다 — 몸",
+       "roll": {
+        "ab": "몸",
+        "hard": 2,
+        "why": "덮개돌을 통나무 위로 미는 몸.",
+        "fail": "…손이 미끄러졌다. 돌이 내려앉았다. 남들이 들었다."
+       },
+       "flag": "tomb:carry",
+       "say": "🪨 덮개돌이 올라갔다. 어른이 「고맙다」 했다."
+      },
+      {
+       "label": "해 지면 동검을 꺼낸다 ⚠ — 눈 (법: 도둑)",
+       "roll": {
+        "ab": "눈",
+        "hard": 3,
+        "why": "어둠 속에서 덮개돌 틈을 찾고 사람 눈을 피하는 눈.",
+        "fail": "…횃불. 상 치르는 어른이 서 있었다. 「도둑이다.」"
+       },
+       "rollFailFlag": "tomb:caught",
+       "flag": "tomb:rob",
+       "say": "🗡 동검 하나. 거울 하나. 아무도 못 봤다. …아직은."
+      }
+     ]
+    }
+   ]
+  },
+  "dagger": {
+   "name": "돌 위 비파형 동검",
+   "verb": "살펴보기",
+   "say": "비파 모양 동검. 거친무늬거울. 묻을 것이다 — 누구 곁에.",
+   "flag": "seen:dagger",
+   "once": true,
+   "info": "비파형 동검.",
+   "rename": [
+    {
+     "if": "sit:tomb:open && !sit:tomb:done",
+     "name": "비파형 동검",
+     "verb": "함께 묻는다 (군장 곁)",
+     "once": false,
+     "flag": "tomb:bury",
+     "requiresFlags": [
+      "status:noble"
+     ],
+     "failNoFlag": "조상 무덤에 동검을 묻는 건 군장 곁의 집이다.",
+     "say": "🗡 동검을 돌널에. 「이 집 조상이다.」 사람들이 내 자리를 봤다."
+    }
+   ]
+  },
+  "restfire": {
+   "name": "쉼터 불 자리",
+   "verb": "살펴보기",
+   "say": "재가 식지 않았다. 남쪽 사람들이 쉬어 간 자리. 쇠를 사러 온다.",
+   "flag": "seen:restfire",
+   "once": true,
+   "info": "남쪽 길 쉼터."
+  },
+  "southgoods": {
+   "name": "남쪽 사람의 짐",
+   "verb": "살펴보기",
+   "say": "가죽 짐. 쇠 괭이 날 셋, 토기, 조개 꿰미. 쇠는 여기서 샀고 조개는 남쪽 바다 것.",
+   "flag": "seen:southgoods",
+   "once": true,
+   "info": "남쪽 사람의 짐 — 쇠와 조개."
+  },
+  "northcairn": {
+   "name": "북쪽 고개 돌무더기",
+   "verb": "살펴보기",
+   "say": "돌무더기, 푸른 천. 북쪽 연나라로 가는 길. 요즘 북에서 넘어오는 사람이 많다.",
+   "flag": "seen:northcairn",
+   "once": true,
+   "info": "북쪽 고개 — 연나라 길."
+  },
+  "wimancamp": {
+   "name": "망명 온 무리의 천막",
+   "verb": "살펴보기",
+   "say": "가죽 천막 둘, 짐, 쇠. 상투 튼 사람들. 조선 옷. …말은 연나라 말이 섞였다.",
+   "flag": "seen:wimancamp",
+   "once": true,
+   "info": "위만의 무리."
+  },
+  "raft": {
+   "name": "갈대 속 뗏목",
+   "verb": "살펴보기",
+   "say": "통나무 다섯을 묶었다. 삿대. 갈대에 가려 길에선 안 보인다.",
+   "flag": "seen:raft",
+   "once": true,
+   "info": "갈대 늪 — 뗏목.",
+   "rename": [
+    {
+     "if": "sit:marsh:open && !sit:marsh:done && status:slave && !hurt:leg",
+     "name": "뗏목",
+     "verb": "늪을 건넌다 — 도망·발",
+     "once": false,
+     "flag": "marsh:free",
+     "roll": {
+      "ab": "발",
+      "hard": 2,
+      "why": "진흙에 발이 빠지기 전에 뗏목까지 닿는 발.",
+      "fail": "…진흙에 다리가 박혔다. 개가 먼저 왔다. 끌려갔다."
+     },
+     "rollFailFlag": "marsh:caught",
+     "rollHurt": "leg",
+     "say": "🛶 삿대. 갈대 너머. 개 짖는 소리가 멀어졌다."
+    }
+   ]
+  },
+  "marshtrack": {
+   "name": "젖은 발자국",
+   "verb": "살펴보기",
+   "say": "맨발. 갈대 쪽으로. 하나뿐이다. 돌아온 자국은 없다.",
+   "flag": "seen:marshtrack",
+   "once": true,
+   "info": "누가 늪으로 들어갔다."
+  },
+  "countysite": {
+   "name": "다진 땅",
+   "hidden": [
+    "han_office",
+    "han_roof",
+    "han_sign"
+   ],
+   "verb": "살펴보기",
+   "say": "네 귀에 말뚝. 다진 단. 누가 집을 세우려는 자리다. …누가.",
+   "flag": "seen:countysite",
+   "once": true,
+   "info": "군현 관청 터.",
+   "rename": [
+    {
+     "if": "sit:county:open",
+     "name": "한나라 관청",
+     "verb": "살펴보기",
+     "once": true,
+     "flag": "seen:countysite2",
+     "reveal": [
+      "han_office",
+      "han_roof",
+      "han_sign"
+     ],
+     "say": "기와. 붉은 깃발. 목간 위에 이름이 적힌다. 성은 그대로인데 세는 사람이 바뀌었다."
+    }
+   ]
   }
  }
 }
