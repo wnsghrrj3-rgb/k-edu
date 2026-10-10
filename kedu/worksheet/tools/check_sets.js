@@ -712,6 +712,48 @@ function checkGreet(where, q) {
     os.filter(o => !o.correct).forEach(o => { const row = GRX.find(x => x[1] === String(o.t)); if (!row) return bad(where, `greet 오답 때 「${o.t}」 표 밖`); if (row === s0 || grApart(row[0], s0[0])) bad(where, `greet 오답 때 「${o.t}」 도 맞을 수 있다`); });
   } else bad(where, 'greet 발문 꼴을 모른다');
 }
+/* v2.0 문장 부호 — 엔진 PN 표와 따로 들고 정답을 발문에서 다시 셈한다 (2026-10-10) */
+const PN_Q = ["너는 어디에 가니", "이 꽃 이름이 뭐예요", "누가 창문을 열었어", "언제 우리 집에 올래", "무슨 노래를 좋아하니", "점심에 뭐 먹었어", "몇 시에 일어났니", "왜 울고 있어", "어떤 색을 제일 좋아해", "공원에 누구랑 갔어"];
+const PN_EX = ["우아, 정말 크구나", "와, 별이 참 많구나", "야호, 우리 반이 이겼다", "어머나, 꽃이 활짝 피었구나", "아이고, 깜짝이야", "와, 바다가 정말 넓구나", "만세, 드디어 다 만들었다", "우아, 진짜 맛있다"];
+const PN_ST = ["나는 아침마다 이를 닦아요", "우리 집 강아지는 하얀색이에요", "동생은 그림을 그려요", "오늘은 수요일이에요", "형이 공을 차요", "고양이가 소파에서 자요", "나는 학교에 걸어가요", "할머니 댁은 시골에 있어요", "교실에 꽃병이 있어요", "아빠가 설거지를 해요"];
+const PN_CALL = [["민지야", "이리 와."], ["선생님", "책을 다 읽었어요."], ["엄마", "물 좀 주세요."], ["하람아", "같이 놀자."], ["아빠", "저 왔어요."], ["누나", "이것 좀 봐."], ["서아야", "밥 먹자."], ["할아버지", "감사합니다."]];
+const PNX_NAME = {',':'쉼표', '.':'마침표', '?':'물음표', '!':'느낌표'};
+const PNX_LAB = m => `${PNX_NAME[m]}( ${m} )`;
+const PNX_TYPE = {q:'묻는 문장', ex:'느낌을 나타내는 문장', st:'설명하는 문장'};
+const PNX_READ = {q:'끝을 살짝 올려 묻듯이 읽어요', ex:'느낌을 살려 힘 있게 읽어요', st:'끝을 내려 차분하게 읽어요'};
+const PNX_MARK = {q:'?', ex:'!', st:'.'};
+const pnxType = s => (PN_Q.indexOf(s) >= 0 ? 'q' : PN_EX.indexOf(s) >= 0 ? 'ex' : PN_ST.indexOf(s) >= 0 ? 'st' : null);
+/* 쉬어 읽기 표시 정답 — 엔진 pnPause 를 베끼지 않고 부호 하나씩 따로 센다 */
+function pnxPause(line){ let out = ''; const a = [...String(line)];
+  a.forEach((ch, i) => { out += ch; if (',.?!'.indexOf(ch) >= 0 && a[i + 1] === ' ') out += ch === ',' ? '∨' : '≫'; });
+  return out; }
+function checkPunct(where, q) {
+  const R = (q.variant_rule || {}).punct; if (!R) return;
+  [PN_Q, PN_EX, PN_ST].forEach((B, bi) => B.forEach(s => { if (/[.?!]$/.test(s)) bad(where, `punct 표 「${s}」 끝에 부호가 붙어 있다`); if (bi !== 1 && s.indexOf(',') >= 0) bad(where, `punct 표 「${s}」 묻는·설명 문장에 쉼표`); }));
+  PN_EX.forEach(s => { if (s.indexOf(', ') < 0) bad(where, `punct 느낌 문장 「${s}」 은 감탄하는 말 + 쉼표로 시작해야`); });
+  PN_CALL.forEach(c => { if (!/[.?!]$/.test(c[1])) bad(where, `punct 부르는 말 뒤 「${c[1]}」 끝 부호 없음`); });
+  const st = String(q.stem), os = q.options || []; let m, ans = null;
+  const cor = os.filter(o => o.correct); if (cor.length !== 1) return bad(where, 'punct 정답 보기가 하나가 아니다');
+  if ((m = st.match(/^다음 문장의 ◯에 알맞은 문장 부호는 어느 것인가요\?\n「(.+)」$/))) {
+    const body = m[1];
+    if (/◯$/.test(body)) { const ty = pnxType(body.slice(0, -1)); if (!ty) return bad(where, `punct 문장 「${body}」 표 밖`); ans = PNX_LAB(PNX_MARK[ty]); }
+    else { const k = body.indexOf('◯ '); const c = PN_CALL.find(x => x[0] === body.slice(0, k) && x[1] === body.slice(k + 2)); if (!c) return bad(where, `punct 부르는 말 「${body}」 표 밖`); ans = PNX_LAB(','); }
+    os.forEach(o => { if (!Object.keys(PNX_NAME).some(x => PNX_LAB(x) === String(o.t))) bad(where, `punct 보기 「${o.t}」 는 부호 이름표가 아니다`); });
+  } else if ((m = st.match(/^「(.+)([.?!])」(?:은|는|을|를) (어떤 문장인가요|어떻게 읽으면 좋을까요)\?$/))) {
+    const ty = pnxType(m[1]); if (!ty) return bad(where, `punct 문장 「${m[1]}」 표 밖`);
+    if (PNX_MARK[ty] !== m[2]) bad(where, `punct 「${m[1]}」 은 ${PNX_MARK[ty]} 로 끝나야`);
+    const T = m[3] === '어떤 문장인가요' ? PNX_TYPE : PNX_READ; ans = T[ty];
+    os.forEach(o => { if (Object.values(T).indexOf(String(o.t)) < 0) bad(where, `punct 보기 「${o.t}」 표 밖`); });
+  } else if ((m = st.match(/^「(.+)」에 쉬어 읽기 표시를 알맞게 한 것은 어느 것인가요\?$/))) {
+    ans = pnxPause(m[1]);
+    os.forEach(o => { if (String(o.t).replace(/[∨≫]/g, '') !== m[1]) bad(where, `punct 쉬어 읽기 보기 「${o.t}」 가 원래 문장과 글자가 다르다`); });
+  } else if ((m = st.match(/^「([.,?!])」의 이름은 무엇인가요\?$/))) {
+    ans = PNX_NAME[m[1]];
+    os.forEach(o => { if (Object.values(PNX_NAME).indexOf(String(o.t)) < 0) bad(where, `punct 보기 「${o.t}」 는 부호 이름이 아니다`); });
+  } else return bad(where, 'punct 발문 꼴을 모른다');
+  if (String(cor[0].t) !== ans) bad(where, `punct 정답 「${cor[0].t}」 ≠ ${ans}`);
+  os.filter(o => !o.correct).forEach(o => { if (String(o.t) === ans) bad(where, 'punct 오답 보기에 정답이 섞였다'); });
+}
 /* 한 문항(원본이든 변형본이든) 공통 검사 */
 function checkQ(where, q, opt) {
   opt = opt || {};
@@ -740,6 +782,7 @@ function checkQ(where, q, opt) {
   checkGrid(where, q);
   checkYeon(where, q);
   checkGreet(where, q);
+  checkPunct(where, q);
   checkJosa(where, q);
   if (q.asset && typeof q.asset === 'object' && ASSETS[q.asset.type]) {
     try { if (!ENG.drawAsset(q.asset, ENG.rng(7))) bad(where, '화면에서 에셋이 빈칸으로 나옴'); }
@@ -949,6 +992,20 @@ function checkSet(file) {
       if (['mc', 'blank'].indexOf(q.kind) < 0) bad(where, 'wlink 변형은 mc·blank 만');
       if (at) bad(where, 'wlink 은 그림 없는 문항 전용');
       Object.keys(R.mis || {}).forEach(k => { if (k !== 'link') bad(where, 'wlink mis 갈래는 link 뿐: ' + k); else if (!MIS.has(String(q.concept).replace(/C\d+$/, '') + R.mis[k])) bad(where, `wlink mis.link 꼬리 ${R.mis[k]} 가 사전에 없다`); });
+    }
+    if (q.variant_rule.punct) {
+      const R = q.variant_rule.punct; const ask = R.ask || 'mark';
+      if (['mark', 'type', 'read', 'pause', 'name'].indexOf(ask) < 0) bad(where, 'punct ask 를 모른다: ' + ask);
+      if (q.kind !== 'mc') bad(where, 'punct 변형은 mc 만');
+      if (at) bad(where, 'punct 는 그림 없는 문항 전용');
+      const KEYS = ['mark', 'call', 'type', 'read', 'up', 'name', 'swap', 'same', 'split'];
+      Object.keys(R.mis || {}).forEach(k => { if (KEYS.indexOf(k) < 0) bad(where, 'punct mis 갈래를 모른다: ' + k); else if (!MIS.has(String(q.concept).replace(/C\d+$/, '') + R.mis[k])) bad(where, `punct mis.${k} 꼬리 ${R.mis[k]} 가 사전에 없다`); });
+      (R.types || []).forEach(t => { if (['q', 'ex', 'st', 'call'].indexOf(t) < 0) bad(where, 'punct types 는 q·ex·st·call: ' + t); });
+      const need = {mark:(R.types || ['q']).indexOf('call') >= 0 ? ['call'] : ['mark'], type:['type'], read:['read'], pause:['swap', 'same', 'split'], name:['name']}[ask] || [];
+      const have = need.filter(k => (R.mis || {})[k]).length;
+      if (ask === 'pause' ? have < (q.options || []).length - 1 : !have) bad(where, `punct ${ask} 오답을 만들 mis 가 모자란다(${need.join('·')})`);
+      if (ask === 'mark' && (R.types || []).indexOf('call') >= 0 && (R.types || []).some(t => t !== 'call') && !(R.mis || {}).mark) bad(where, 'punct mark 에 문장 종류가 섞이면 mis.mark 도 있어야');
+      if (ask === 'read' && (R.types || []).indexOf('ex') < 0 && !(R.mis || {}).read && (R.types || ['q','ex','st']).length) {}
     }
     if (q.variant_rule.bond && q.variant_rule.bond.part_max && at !== 'number_bond') bad(where, 'bond 는 number_bond 그림이 있어야 한다');
     /* play.html 과 같은 순서·같은 난수 씀씀이: 틀린 문항들이 난수 하나를 이어 쓰고, prep 은 변형 뒤에 온다.

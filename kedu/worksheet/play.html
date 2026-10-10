@@ -614,6 +614,23 @@ function WEUNH(w){ const h = [...String(w)].filter(c => c >= '가' && c <= '힣'
 /* 서로 자주 헷갈리는 때 — 오답이 이 짝이면 더 좁은 오개념 꼬리(mis 열쇠)로 단다 */
 const GR_PAIR = [['out','home','inout'],['thank','sorry','ts']];
 const GR_APART = [['meet','morn'],['meet','bye'],['meet','home'],['thank','eatb'],['thank','eata'],['bye','out']];
+/* v2.0 — 또박또박 읽어요 (2026-10-10): 문장 부호(punct). 묻는(Q)·느낌(EX)·설명(ST) 문장과 부르는 말(CALL).
+   느낌 문장은 감탄하는 말로 시작해 느낌표 말고는 읽히지 않는 것만, 묻는 문장은 묻는 말(어디·누가·뭐…)이 든 것만 넣는다. */
+const PN_Q = ["너는 어디에 가니", "이 꽃 이름이 뭐예요", "누가 창문을 열었어", "언제 우리 집에 올래", "무슨 노래를 좋아하니", "점심에 뭐 먹었어", "몇 시에 일어났니", "왜 울고 있어", "어떤 색을 제일 좋아해", "공원에 누구랑 갔어"];
+const PN_EX = ["우아, 정말 크구나", "와, 별이 참 많구나", "야호, 우리 반이 이겼다", "어머나, 꽃이 활짝 피었구나", "아이고, 깜짝이야", "와, 바다가 정말 넓구나", "만세, 드디어 다 만들었다", "우아, 진짜 맛있다"];
+const PN_ST = ["나는 아침마다 이를 닦아요", "우리 집 강아지는 하얀색이에요", "동생은 그림을 그려요", "오늘은 수요일이에요", "형이 공을 차요", "고양이가 소파에서 자요", "나는 학교에 걸어가요", "할머니 댁은 시골에 있어요", "교실에 꽃병이 있어요", "아빠가 설거지를 해요"];
+const PN_CALL = [["민지야", "이리 와."], ["선생님", "책을 다 읽었어요."], ["엄마", "물 좀 주세요."], ["하람아", "같이 놀자."], ["아빠", "저 왔어요."], ["누나", "이것 좀 봐."], ["서아야", "밥 먹자."], ["할아버지", "감사합니다."]];
+const PN_MARK = {q:'?', ex:'!', st:'.'};
+const PN_NAME = {',':'쉼표', '.':'마침표', '?':'물음표', '!':'느낌표'};
+const PN_LAB = m => `${PN_NAME[m]}( ${m} )`;
+const PN_TYPE = {q:'묻는 문장', ex:'느낌을 나타내는 문장', st:'설명하는 문장'};
+const PN_READ = {q:'끝을 살짝 올려 묻듯이 읽어요', ex:'느낌을 살려 힘 있게 읽어요', st:'끝을 내려 차분하게 읽어요'};
+const PN_USE = {'.':'설명하는 문장이 끝날 때 써요.', ',':'부르는 말 뒤나 낱말을 늘어놓을 때 써요.', '?':'묻는 문장 끝에 써요.', '!':'느낌을 나타내는 문장 끝에 써요.'};
+/* 쉬어 읽기 표시 — 쉼표 뒤 ∨(조금 쉬어), 마침표·물음표·느낌표 뒤 ≫(조금 더 쉬어). 줄 끝 부호 뒤에는 붙이지 않는다.
+   how 'swap' 은 둘을 바꾼 것, 'same' 은 모두 ∨ — 오답 만들기용 */
+function pnPause(line, how){ return String(line).replace(/([,.?!]) /g, (m0, p) => p + (how === 'swap' ? (p === ',' ? '≫' : '∨') : how === 'same' ? '∨' : (p === ',' ? '∨' : '≫')) + ' '); }
+/* 끝 글자가 문장부호여도 마지막 한글 글자로 을/를 */
+function EULH(w){ const h = [...String(w)].filter(c => c >= '가' && c <= '힣').pop(); return h && (h.charCodeAt(0) - 0xAC00) % 28 ? '을' : '를'; }
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 /* ---------- 읽어주기 ---------- */
@@ -1489,6 +1506,62 @@ function makeVariantOnce(q, r){
       delete v.asset;
       v.explanation = [`「${form}」${WEUNH(form)} ${s0[1]} 하는 인사말이에요.`, '다른 때에는 그때에 맞는 인사말이 따로 있어요.', '인사말을 들으면 어떤 때인지 장면을 떠올려 봐요.'];
       v.options = out;
+    }
+    return v;
+  }
+  /* --- v2.0: 1학년 1학기 국어 「또박또박 읽어요」 (2026-10-10) ---
+     punct {ask:'mark'|'type'|'read'|'pause'|'name', types:['q','ex','st','call'], mis:{mark·call·type·read·up·name·swap·same·split}}
+       mark  「…◯」 ◯에 알맞은 부호 — 문장 종류(q·ex·st)의 끝 부호(mark), 부르는 말 뒤 쉼표(call)
+       type  「…?」는 어떤 문장인가요(type) · read 어떻게 읽을까요(read, 묻는↔설명 끝 올림·내림 바꿈은 up)
+       pause 쉬어 읽기 표시를 알맞게 한 것 — 오답 ∨≫ 바꿈(swap)·모두 ∨(same)·낱말 가운데 ∨(split)
+       name  부호 이름(name) */
+  if (rule.punct){
+    const P = rule.punct, M = P.mis || {}; const ask = P.ask || 'mark'; const want = Math.max(1, nOptsOf(q) - 1);
+    const BANK = {q:PN_Q, ex:PN_EX, st:PN_ST};
+    const tys = (P.types || ['q', 'ex', 'st']).filter(t => (t === 'call' ? ask === 'mark' : !!BANK[t]));
+    const mk = (ans, pairs) => { const used = [String(ans)], out = [{t:String(ans), correct:true}];
+      for (const [x, k] of pairs){ if (out.length > want) break; if (!x || !M[k]) continue; const t = String(x); if (used.indexOf(t) >= 0) continue; used.push(t); out.push({t, mis:PFX + M[k]}); }
+      return out; };
+    delete v.asset;
+    if (ask === 'mark'){
+      const ty = pick(tys, r);
+      if (ty === 'call'){ const c = pick(PN_CALL, r);
+        v.stem = `다음 문장의 ◯에 알맞은 문장 부호는 어느 것인가요?\n「${c[0]}◯ ${c[1]}」`;
+        v.options = mk(PN_LAB(','), shuffle(['.', '?', '!'], r).map(m => [PN_LAB(m), 'call']));
+        v.explanation = [`「${c[0]}」처럼 부르는 말 뒤에는 쉼표( , )를 써요.`, '마침표·물음표·느낌표는 문장이 끝날 때 써요.', '누구를 부르는 말인지 찾아 그 뒤에 쉼표를 써요.'];
+      } else { const s = pick(BANK[ty], r), m = PN_MARK[ty]; const oth = shuffle(['.', '?', '!'].filter(x => x !== m), r);
+        v.stem = `다음 문장의 ◯에 알맞은 문장 부호는 어느 것인가요?\n「${s}◯」`;
+        v.options = mk(PN_LAB(m), oth.map(x => [PN_LAB(x), 'mark']));
+        v.explanation = [`${PN_TYPE[ty]}이라 끝에 ${PN_LAB(m)}를 써요.`, `${oth.map(x => PN_NAME[x]).join('·')}는 이 문장의 뜻과 맞지 않아요.`, '묻는지, 느낌을 나타내는지, 설명하는지 먼저 살펴요.'];
+      }
+    } else if (ask === 'type' || ask === 'read'){
+      const ty = pick(tys, r), s = pick(BANK[ty], r) + PN_MARK[ty]; const oth = shuffle(['q', 'ex', 'st'].filter(x => x !== ty), r);
+      if (ask === 'type'){
+        v.stem = `「${s}」${WEUNH(s)} 어떤 문장인가요?`;
+        v.options = mk(PN_TYPE[ty], oth.map(x => [PN_TYPE[x], 'type']));
+        v.explanation = [`끝에 ${PN_LAB(PN_MARK[ty])}가 있는 ${PN_TYPE[ty]}이에요.`, '물음표는 묻는 문장, 느낌표는 느낌을 나타내는 문장, 마침표는 설명하는 문장 끝에 써요.', '문장 끝 부호와 문장의 뜻을 함께 살펴요.'];
+      } else {
+        v.stem = `「${s}」${EULH(s)} 어떻게 읽으면 좋을까요?`;
+        v.options = mk(PN_READ[ty], oth.map(x => [PN_READ[x], (((ty === 'q' && x === 'st') || (ty === 'st' && x === 'q')) && M.up) ? 'up' : 'read']));
+        v.explanation = ty === 'q' ? ['묻는 문장은 끝을 살짝 올려 읽어요.', '끝을 내리거나 힘주어 외치면 묻는 느낌이 나지 않아요.', '물음표( ? )를 보면 끝을 올려 읽어요.']
+          : ty === 'ex' ? ['느낌을 나타내는 문장은 느낌을 살려 힘 있게 읽어요.', '밋밋하게 읽으면 놀람이나 기쁨이 전해지지 않아요.', '느낌표( ! )를 보면 느낌을 살려 읽어요.']
+          : ['설명하는 문장은 끝을 내려 차분하게 읽어요.', '끝을 올리면 묻는 말처럼 들려요.', '마침표( . )를 보면 차분하게 끝맺어요.'];
+      }
+    } else if (ask === 'pause'){
+      let A, B, g = 0;
+      do { A = r() < 0.5 ? (c => c[0] + ', ' + c[1])(pick(PN_CALL, r)) : pick(PN_EX, r) + '!';
+           const tb = r() < 0.5 ? 'q' : 'st'; B = pick(BANK[tb], r) + PN_MARK[tb]; } while (++g < 30 && (A + ' ' + B).length > 30);
+      const line = A + ' ' + B;
+      const ws = B.split(' '); const wi = ws.findIndex(w => [...w].filter(ch => ch >= '가' && ch <= '힣').length >= 2);
+      let sp = null; if (wi >= 0){ const w2 = ws.slice(), ch = [...w2[wi]]; w2[wi] = ch[0] + '∨' + ch.slice(1).join(''); sp = pnPause(A + ' ' + w2.join(' ')); }
+      v.stem = `「${line}」에 쉬어 읽기 표시를 알맞게 한 것은 어느 것인가요?`;
+      v.options = mk(pnPause(line), shuffle([[pnPause(line, 'swap'), 'swap'], [pnPause(line, 'same'), 'same'], [sp, 'split']], r));
+      v.explanation = ['쉼표( , ) 뒤에는 ∨(조금 쉬어), 마침표·물음표·느낌표 뒤에는 ≫(조금 더 쉬어)를 해요.', '쉬는 길이를 바꾸거나 낱말 가운데서 쉬면 뜻이 잘 전해지지 않아요.', '부호를 찾아 그 뒤에 알맞은 표시를 해요.'];
+    } else {
+      const m = pick(['.', ',', '?', '!'], r); const oth = shuffle(['.', ',', '?', '!'].filter(x => x !== m), r);
+      v.stem = `「${m}」의 이름은 무엇인가요?`;
+      v.options = mk(PN_NAME[m], oth.map(x => [PN_NAME[x], 'name']));
+      v.explanation = [`이 부호는 ${PN_NAME[m]}예요.`, `${PN_NAME[m]}는 ${PN_USE[m]}`, '모양과 쓰임을 함께 떠올리며 이름을 익혀요.'];
     }
     return v;
   }
