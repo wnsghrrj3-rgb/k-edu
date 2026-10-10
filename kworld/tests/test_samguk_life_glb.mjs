@@ -1,4 +1,4 @@
-// 삼국·가야 넓은 터 GLB 구조 검증 — NPC 15·구역 13·spawn·미션·숨김 재질(적군 진영·금부처)이 json 과 맞는지 (WebGL 없이 GLB JSON 청크만)
+// 삼국·가야 넓은 터 GLB 구조 검증(10-10 넓히기: 구역 20·NPC 21·새 장소 일곱) — NPC 21·구역 20·spawn·미션·숨김 재질(적군 진영·금부처)이 json 과 맞는지 (WebGL 없이 GLB JSON 청크만)
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const base = new URL('../eras/samguk-life/', import.meta.url);
@@ -14,15 +14,20 @@ for (const t of types) assert.ok(items.targets[t], `대상 ${t} 가 items.json �
 for (const t of Object.keys(items.targets)) assert.ok(types.has(t) || sceneTypes.has(t), `items.json 대상 ${t} 가 GLB·scene 에 없음`);
 const areas = names.filter((n) => n.startsWith('area_')).map((n) => n.slice(5));
 for (const a of Object.keys(world.areas)) assert.ok(areas.includes(a), `구역 ${a} 없음`);
-assert.equal(Object.keys(world.areas).length, 13, '구역 13');
+assert.equal(Object.keys(world.areas).length, 20, '구역 20');
+for (const a of ['hamlet', 'ironworks', 'school', 'shrine', 'cave', 'burnt', 'beacon']) assert.ok(world.areas[a] && areas.includes(a), `새 구역 ${a}`);
+for (const t of ['ix_tally_1', 'ix_clothrack_1', 'ix_ironkiln_1', 'ix_ingotpile_1', 'ix_books_1', 'ix_shrine_1', 'ix_shrinedrum_1', 'ix_cave_1', 'ix_rebuild_1', 'ix_beacon_1']) assert.ok(names.includes(t), `새 대상 ${t}`);
+const setters = JSON.stringify(items.targets) + JSON.stringify(npcDefs);
+for (const sit of life.situations.filter((x) => ['tally', 'ingot', 'school', 'shrine', 'cave', 'rebuild', 'beacon'].includes(x.id))) { assert.ok(world.areas[sit.place], `새 상황 ${sit.id} 장소`); for (const c of sit.choices) assert.ok(setters.includes(`"${c.done}"`), `새 상황 ${sit.id} 선택 ${c.id} done 깃발 ${c.done} 을 세우는 곳이 없음`); }
+assert.ok(life.situations.filter((x) => !x.must).length >= 14 && life.mixedCount === 6, '섞여 14 · 판마다 6');
 assert.ok(areas.includes(world.face), `시작 시선 구역 ${world.face}`);
 assert.ok(names.includes('spawn'), 'spawn');
 const npcs = ix.filter((n) => n.startsWith('ix_npc_')).map((n) => n.slice(7));
 for (const id of Object.keys(npcDefs)) assert.ok(npcs.includes(id), `NPC ${id} 가 GLB 에 없음`);
 for (const id of npcs) assert.ok(npcDefs[id], `GLB NPC ${id} 가 npcs.json 에 없음`);
-assert.equal(npcs.length, 15, 'NPC 15');
+assert.equal(npcs.length, 21, 'NPC 21');
 const mats = new Set((data.materials || []).map((m) => m.name));
-for (const t of ['grain_full', 'foe_tent', 'foe_flag', 'buddha_gold']) assert.ok(mats.has(t), `숨김 재질 ${t}`);
+for (const t of ['grain_full', 'foe_tent', 'foe_flag', 'buddha_gold', 'new_thatch', 'beacon_fire']) assert.ok(mats.has(t), `숨김 재질 ${t}`);
 assert.ok(ix.filter((n) => n.startsWith('ix_bigpaddy_')).length === 2 && ix.filter((n) => n.startsWith('ix_smallpaddy_')).length === 2 && ix.filter((n) => n.startsWith('ix_lordfield_')).length === 1 && ix.filter((n) => n.startsWith('ix_granary_')).length === 2 && ix.filter((n) => n.startsWith('ix_mound_')).length === 2, '귀족 논 2·소작 논 2·주인 논 1·곳간 2·고분 2');
 const list = missions.missions;
 assert.equal(list.length, 7, '꼭 나오는 상황 7 = 미션 7');
@@ -30,7 +35,7 @@ const must = life.situations.filter((x) => x.must); assert.equal(must.length, 7,
 for (const m of list) assert.ok(must.some((x) => 'sit:' + x.id + ':done' === m.done), `미션 ${m.id} 가 상황과 안 맞음`);
 for (const sit of life.situations) { if (sit.place) assert.ok(world.areas[sit.place], `상황 ${sit.id} 장소 ${sit.place}`); for (const c of sit.choices) assert.ok(c.done || c.count, `상황 ${sit.id} 선택 ${c.id} 에 done/count 없음`); }
 assert.ok(life.grain?.open && life.carry?.from === 'gojoseon-life' && new Set(life.status?.rules.map((r) => r.id)).size === 5 && new Set(life.nation?.rules.map((r) => r.id)).size === 4, '곡식 칸 + 고조선에서 넘겨받음 + 신분 다섯 + 나라 넷');
-assert.ok(life.hurts?.wound && world.danger?.safe?.length === 2, '흔적 「다친 몸」 + 마을·산성 밤 안전 자리');
+assert.ok(life.hurts?.wound && world.danger?.safe?.length === 3, '흔적 「다친 몸」 + 마을·산성 밤 안전 자리');
 assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');
 const prev = JSON.parse(fs.readFileSync(new URL('../eras/gojoseon-life/world.json', import.meta.url))); assert.ok(prev.gate?.next === 'samguk-life' && prev.gate.ready, '고조선 끝 카드 → 삼국·가야 문(열림)');
 const h = read('height.json'); assert.ok(h && typeof h === 'object', 'height.json');

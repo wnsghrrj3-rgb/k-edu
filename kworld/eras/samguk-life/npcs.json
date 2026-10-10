@@ -900,5 +900,443 @@
     "text": "같은 강을 두고 저쪽도 농민이 창을 들었다."
    }
   ]
+ },
+ "villagechief": {
+  "name": "촌주",
+  "lines": [
+   {
+    "if": "sit:tally:open && !sit:tally:done",
+    "text": "세금은 내가 셈해서 성주에게 올려. 열 집에서 한 단씩, 베 한 필씩. 목간에 적지. …덜 적을까, 더 걷을까, 네가 촌주라면.",
+    "choices": [
+     {
+      "label": "덜 적는다 — 마을 편 (촌주)",
+      "if": "status:chief",
+      "gray": "셈하는 건 촌주다.",
+      "flag": "tally:less",
+      "say": "📜 열 집을 여덟로 적었다. 마을이 고개를 숙였다. 성주가 알면 내 몫이 없어진다."
+     },
+     {
+      "label": "더 걷는다 — 내 몫 (촌주)",
+      "if": "status:chief",
+      "gray": "셈하는 건 촌주다.",
+      "flag": "tally:more",
+      "say": "🌾 한 집에 한 단 반. 반은 내 곳간. 소작 집 아이가 봤다."
+     },
+     {
+      "label": "촌주에게 더 걷으라 한다 — 귀족",
+      "if": "status:noble",
+      "gray": "촌주에게 명하는 건 귀족이다.",
+      "flag": "tally:press",
+      "say": "🌾 「성주 몫이 모자란다.」 촌주가 목간을 다시 썼다. 내 논 세금은 그대로다."
+     },
+     {
+      "label": "베 한 필을 더 바친다 — 평민",
+      "if": "status:farmer",
+      "gray": "베를 바치는 건 평민이다.",
+      "flag": "tally:extra",
+      "say": "🧵 「적게 적어 주십시오.」 베 한 필. 촌주가 목간을 긁었다."
+     },
+     {
+      "label": "목간 모르는 척 한 단 빼돌린다 — 눈",
+      "if": "status:farmer",
+      "gray": "빼돌릴 논이 없다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "촌주가 세는 눈을 피해 볏단을 숨기는 눈.",
+       "fail": "…촌주가 두 번 셌다. 「네 집은 두 단.」"
+      },
+      "rollFailFlag": "tally:caught",
+      "flag": "tally:hide",
+      "say": "🌾 볏단 하나를 초가 뒤에. 목간엔 한 단."
+     },
+     {
+      "label": "촌주 집 일을 한다 — 노비",
+      "if": "status:slave",
+      "gray": "노비가 하는 일이다.",
+      "flag": "tally:serve",
+      "say": "🏋 베 말리는 대, 곳간. 촌주가 「저 집 노비는 셈이 빠르다」 했다."
+     },
+     {
+      "label": "낫을 고쳐 주고 베를 받는다 — 장인",
+      "if": "status:artisan",
+      "gray": "낫을 고치는 건 장인의 손이다.",
+      "flag": "tally:fix",
+      "say": "⚒ 낫 셋. 베 한 필. 촌주 마을은 장인이 없다."
+     }
+    ]
+   },
+   {
+    "text": "촌주는 나라 편도 마을 편도 아니야. 그 사이야."
+   }
+  ]
+ },
+ "ironmaster": {
+  "name": "덩이쇠 장인",
+  "lines": [
+   {
+    "if": "sit:ingot:open && !sit:ingot:done && nation:gaya",
+    "text": "가야 쇠다. 가마 셋, 하루 덩이쇠 열 장. 왜 배가 이걸 사러 온다. 돈이지. …실을 거냐, 가마를 맡을 거냐.",
+    "choices": [
+     {
+      "label": "덩이쇠 열 장 — 왜 배에 실어 보낸다",
+      "if": "!status:slave",
+      "gray": "노비는 실을 쇠가 없다.",
+      "flag": "ingot:export",
+      "say": "🌾 열 장. 한 달 뒤 곡식 세 단·구슬. 가야는 이렇게 산다."
+     },
+     {
+      "label": "가마를 맡는다 — 손 (장인)",
+      "if": "status:artisan",
+      "gray": "가마 불은 장인의 손이다.",
+      "roll": {
+       "ab": "손",
+       "hard": 2,
+       "why": "숯불과 풀무로 쇳물 온도를 맞추는 손.",
+       "fail": "…쇠똥만 나왔다. 숯 한 짐을 버렸다."
+      },
+      "rollFailFlag": "ingot:fail",
+      "flag": "ingot:smelt",
+      "say": "⚒ 덩이쇠 열 장. 「네 가마다.」"
+     },
+     {
+      "label": "숯을 나른다 — 배",
+      "roll": {
+       "ab": "배",
+       "hard": 1,
+       "why": "숯 한 짐을 종일 나르는 배.",
+       "fail": "…반나절에 주저앉았다. 품삯 반."
+      },
+      "flag": "ingot:carry",
+      "say": "🔥 숯 스무 짐. 곡식 한 단."
+     },
+     {
+      "label": "풀무를 밟는다 — 노비·몸",
+      "if": "status:slave",
+      "gray": "풀무는 노비가 밟았다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 1,
+       "why": "종일 풀무를 밟는 몸.",
+       "fail": "…다리가 풀렸다. 그래도 밟았다."
+      },
+      "flag": "ingot:bellows",
+      "say": "🏋 해 질 때까지. 가마가 울었다. 쇠는 주인 것."
+     }
+    ]
+   },
+   {
+    "if": "sit:ingot:open && !sit:ingot:done",
+    "text": "가야 쇠다. 우리 나라도 가마를 세웠지. 나라가 가져가. …나라 것으로 할 거냐, 손을 댈 거냐.",
+    "choices": [
+     {
+      "label": "가마를 나라 것으로 거둔다 — 귀족",
+      "if": "status:noble",
+      "gray": "가마를 거두는 건 귀족이다.",
+      "flag": "ingot:seize",
+      "say": "🌾 「이 가마는 성주의 것.」 장인이 입을 다물었다. 덩이쇠 두 장이 내 곳간으로."
+     },
+     {
+      "label": "가마를 맡는다 — 손 (장인)",
+      "if": "status:artisan",
+      "gray": "가마 불은 장인의 손이다.",
+      "roll": {
+       "ab": "손",
+       "hard": 2,
+       "why": "숯불과 풀무로 쇳물 온도를 맞추는 손.",
+       "fail": "…쇠똥만 나왔다. 숯 한 짐을 버렸다."
+      },
+      "rollFailFlag": "ingot:fail",
+      "flag": "ingot:smelt",
+      "say": "⚒ 덩이쇠 열 장. 나라가 아홉 장을 가져갔다."
+     },
+     {
+      "label": "숯을 나른다 — 배",
+      "roll": {
+       "ab": "배",
+       "hard": 1,
+       "why": "숯 한 짐을 종일 나르는 배.",
+       "fail": "…반나절에 주저앉았다. 품삯 반."
+      },
+      "flag": "ingot:carry",
+      "say": "🔥 숯 스무 짐. 곡식 한 단."
+     },
+     {
+      "label": "풀무를 밟는다 — 노비·몸",
+      "if": "status:slave",
+      "gray": "풀무는 노비가 밟았다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 1,
+       "why": "종일 풀무를 밟는 몸.",
+       "fail": "…다리가 풀렸다. 그래도 밟았다."
+      },
+      "flag": "ingot:bellows",
+      "say": "🏋 해 질 때까지. 가마가 울었다. 쇠는 주인 것."
+     }
+    ]
+   },
+   {
+    "text": "쇠가 많으면 부자지. 나라가 하나가 아니면 — 하나씩 먹혀."
+   }
+  ]
+ },
+ "teacher": {
+  "name": "글 스승",
+  "lines": [
+   {
+    "if": "sit:school:open && !sit:school:done && nation:goguryeo",
+    "text": "경당이다. 귀족 아들도, 평민 아들도 앉는다. 글과 활. …앉을 거냐.",
+    "choices": [
+     {
+      "label": "글을 배운다 — 눈 (남자)",
+      "if": "sex:m && !status:slave",
+      "gray": "경당에 앉는 건 남자 아이였다. 노비는 못 앉는다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "죽간의 글자를 눈에 담는 눈.",
+       "fail": "…글자가 춤췄다. 활만 쐈다."
+      },
+      "rollFailFlag": "school:fail",
+      "flag": "school:read",
+      "say": "📜 「天」. 하늘. 내 이름도 적을 수 있게 됐다."
+     },
+     {
+      "label": "담 밖에서 듣는다 — 여자",
+      "if": "sex:f",
+      "gray": "담 밖은 여자 아이의 자리였다.",
+      "flag": "school:listen",
+      "say": "📜 담 너머로 「天」. 흙바닥에 그렸다. 아무도 안 봤다."
+     },
+     {
+      "label": "마당을 쓸고 듣는다 — 노비",
+      "if": "status:slave",
+      "gray": "마당을 쓰는 건 노비다.",
+      "flag": "school:sweep",
+      "say": "🧹 글자 소리를 들으며 쓸었다. 몇 자는 외웠다."
+     },
+     {
+      "label": "본다",
+      "flag": "school:watch",
+      "say": "아이들이 죽간을 읽는다. 평민 아이도. 고구려만 그렇다고 한다."
+     }
+    ]
+   },
+   {
+    "if": "sit:school:open && !sit:school:done",
+    "text": "박사다. 글은 귀족 자제가 배운다. 백제는 오경박사, 신라는 화랑 곁에서. 평민 — 고구려 경당이라면 몰라도. …누구 집 아이냐.",
+    "choices": [
+     {
+      "label": "글을 배운다 — 눈 (귀족 남자)",
+      "if": "status:noble && sex:m",
+      "gray": "글은 귀족 남자 아이가 배웠다 — 평민 아이는 고구려 경당뿐이다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "죽간의 글자를 눈에 담는 눈.",
+       "fail": "…글자가 춤췄다. 박사가 회초리를 들었다."
+      },
+      "rollFailFlag": "school:fail",
+      "flag": "school:read",
+      "say": "📜 「天」. 하늘. 상소를 쓸 수 있는 집이 됐다."
+     },
+     {
+      "label": "담 밖에서 듣는다 — 여자",
+      "if": "sex:f",
+      "gray": "담 밖은 여자 아이의 자리였다.",
+      "flag": "school:listen",
+      "say": "📜 담 너머로 「天」. 흙바닥에 그렸다. 아무도 안 봤다."
+     },
+     {
+      "label": "마당을 쓸고 듣는다 — 노비",
+      "if": "status:slave",
+      "gray": "마당을 쓰는 건 노비다.",
+      "flag": "school:sweep",
+      "say": "🧹 글자 소리를 들으며 쓸었다. 몇 자는 외웠다."
+     },
+     {
+      "label": "본다",
+      "flag": "school:watch",
+      "say": "귀족 아이들이 죽간을 읽는다. 내 아이는 밖에 섰다."
+     }
+    ]
+   },
+   {
+    "text": "글을 아는 집이 벼슬을 한다. 그래서 안 가르쳐."
+   }
+  ]
+ },
+ "shrinekeeper": {
+  "name": "사당 지키는 어른",
+  "lines": [
+   {
+    "if": "sit:shrine:open && !sit:shrine:done",
+    "text": "나라를 세운 이에게 제사 올리는 날이다. 온 마을이 모여. 귀족은 단에 서고, 사람들은 술과 춤. …너는 어디 서나.",
+    "choices": [
+     {
+      "label": "제사 자리에 선다 — 귀족",
+      "if": "status:noble",
+      "gray": "단에 서는 건 귀족이다.",
+      "flag": "shrine:stand",
+      "say": "🔔 단 위. 성주 곁. 사람들이 올려다봤다."
+     },
+     {
+      "label": "마을 몫을 올린다 — 촌주",
+      "if": "status:chief",
+      "gray": "마을 몫은 촌주가 올린다.",
+      "flag": "shrine:offer",
+      "say": "🌾 곡식 한 단을 제상에. 「우리 마을 것입니다.」"
+     },
+     {
+      "label": "술과 춤 — 북 곁에서",
+      "if": "!status:slave",
+      "gray": "노비는 땔감이다.",
+      "flag": "shrine:dance",
+      "say": "🥁 밤새 북. 나라 사람이라는 게 이런 거라고 느꼈다."
+     },
+     {
+      "label": "제사 음식을 짓는다 — 여자·손",
+      "if": "sex:f",
+      "gray": "제사 음식은 여자가 지었다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "떡과 술을 제시간에 내는 손.",
+       "fail": "…떡이 눌었다. 그래도 올라갔다."
+      },
+      "flag": "shrine:cook",
+      "say": "🍶 떡 한 시루, 술 한 동이. 제상이 찼다."
+     },
+     {
+      "label": "땔감을 댄다 — 노비",
+      "if": "status:slave",
+      "gray": "땔감은 노비 일이다.",
+      "flag": "shrine:wood",
+      "say": "🪵 밤새 불을 댔다. 춤은 못 췄다. 노래는 들었다."
+     },
+     {
+      "label": "본다",
+      "flag": "shrine:watch",
+      "say": "나라 사람이 다 모였다. 자리는 다 달랐다."
+     }
+    ]
+   },
+   {
+    "text": "제사는 나라가 하나라는 걸 보이는 날이야. 자리가 다른 채로."
+   }
+  ]
+ },
+ "rebuilder": {
+  "name": "집 세우는 사람",
+  "lines": [
+   {
+    "if": "sit:rebuild:open && !sit:rebuild:done",
+    "text": "지난 싸움에 탔어. 기둥은 세웠고 지붕이 남았어. 귀족은 사람을 시키고, 우린 손으로. …너는?",
+    "choices": [
+     {
+      "label": "노비를 시켜 세운다 — 귀족",
+      "if": "status:noble",
+      "gray": "시킬 노비가 있는 건 귀족이다.",
+      "flag": "rebuild:order",
+      "say": "🏠 노비 둘. 사흘. 「우리 집 먼저.」 그 집은 열흘 뒤."
+     },
+     {
+      "label": "마을이 같이 — 품앗이 (촌주)",
+      "if": "status:chief",
+      "gray": "사람을 모으는 건 촌주다.",
+      "flag": "rebuild:together",
+      "say": "🤝 열 집이 하루씩. 탄 집 둘이 열흘 만에 섰다."
+     },
+     {
+      "label": "내 손으로 지붕을 올린다 — 몸",
+      "if": "!status:noble && !status:artisan",
+      "gray": "귀족은 시키고 장인은 기와를 올린다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 2,
+       "why": "볏짚 단을 지고 지붕에 오르는 몸.",
+       "fail": "…지붕에서 미끄러졌다. 반만 덮었다. 비가 왔다."
+      },
+      "rollFailFlag": "rebuild:fail",
+      "flag": "rebuild:hand",
+      "say": "🏠 볏짚 지붕. 내 손으로."
+     },
+     {
+      "label": "기와를 올린다 — 손 (장인)",
+      "if": "status:artisan",
+      "gray": "기와는 장인의 손이다.",
+      "roll": {
+       "ab": "손",
+       "hard": 2,
+       "why": "기와를 굽고 줄 맞춰 얹는 손.",
+       "fail": "…기와가 갈라졌다. 볏짚으로."
+      },
+      "rollFailFlag": "rebuild:fail",
+      "flag": "rebuild:tile",
+      "say": "🧱 기와 지붕. 불에 안 탄다. 곡식 한 단."
+     },
+     {
+      "label": "주인 집 먼저 — 노비",
+      "if": "status:slave",
+      "gray": "노비는 주인 집부터 세운다.",
+      "flag": "rebuild:master",
+      "say": "🏠 주인 집 사흘, 우리 집은 — 우리 집이 없다."
+     }
+    ]
+   },
+   {
+    "text": "탄 집은 다시 서. 사람이 남았으면."
+   }
+  ]
+ },
+ "beaconman": {
+  "name": "봉화 지키는 군졸",
+  "lines": [
+   {
+    "if": "sit:beacon:open && !sit:beacon:done",
+    "text": "강 건너 천막이 늘었다. 봉화를 올려야 산성이 안다. 내가 올리면 — 아니, 네가 봤다. …올릴 거냐.",
+    "choices": [
+     {
+      "label": "봉화를 올린다 — 눈",
+      "roll": {
+       "ab": "눈",
+       "hard": 1,
+       "why": "천막 수를 세어 연기 가닥을 정하는 눈.",
+       "fail": "…가닥을 잘못 올렸다. 산성이 늦게 알았다. 그래도 알았다."
+      },
+      "flag": "beacon:light",
+      "say": "🔥 연기 두 가닥. 산성에서 북. 마을이 움직였다."
+     },
+     {
+      "label": "올리지 않는다 — 우리 마을만 피한다",
+      "flag": "beacon:skip",
+      "say": "…연기 없이 내려갔다. 산성은 다음 날 알았다. 마을 하나가 늦었다."
+     },
+     {
+      "label": "망대 사람을 보낸다 — 귀족",
+      "if": "status:noble",
+      "gray": "사람을 보내는 건 귀족이다.",
+      "flag": "beacon:send",
+      "say": "🏇 말 한 필. 산성이 봉화보다 먼저 알았다."
+     },
+     {
+      "label": "횃불 가지를 모은다 — 여자·손",
+      "if": "sex:f",
+      "gray": "가지를 모으는 건 여자 아이가 했다.",
+      "flag": "beacon:gather",
+      "say": "🪵 마른 가지 한 짐. 군졸이 「고맙다」 했다."
+     },
+     {
+      "label": "본다",
+      "flag": "beacon:watch",
+      "say": "강 건너 천막. 연기. 산성. 전쟁은 이렇게 온다."
+     }
+    ]
+   },
+   {
+    "text": "봉화 하나가 늦으면 성 하나가 넘어가."
+   }
+  ]
  }
 }
