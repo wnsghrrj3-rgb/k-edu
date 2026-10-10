@@ -311,6 +311,7 @@
       case 'real_world': if (d.scenario) push(scenarioG(d.scenario, ctx.guide)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); if (d.content) push('<div class="center-text">' + md(d.content) + '</div>'); if (d.question) push('<div class="big-q">' + md(d.question) + '</div>'); break;
       case 'game': push('<ol class="steps">' + (d.steps || []).map(s => '<li>' + md(lbl(s)) + '</li>').join('') + '</ol>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
       case 'summary': {
+        if (d.points && !d.table && !d.ten_frame_strip && !d.bidirect && !d.linking_cube_staircase && !d.sequence && !d.sequence_asc && !d.sequence_desc && !d.ordinals) cls = 'sv2'; // 95차 — 새 요약 장 sv2(흐름 큰 알약 + 요점 큰 글씨)
         if (d.table) push(table(d.table)); if (d.ten_frame_strip) push(tfStrip(d.ten_frame_strip));
         if (d.bidirect) push('<div class="bidirect">' + d.bidirect.map(l => l === '=' ? '<span class="eq">=</span>' : md(l)).join('<br>') + '</div>');
         if (d.linking_cube_staircase) push(staircase(d.linking_cube_staircase.range[0], d.linking_cube_staircase.range[1]));
@@ -448,7 +449,7 @@
         if (Array.isArray(d.materials) && d.materials.length) h += '<div class="mats"><span class="lb">준비물</span>' + d.materials.map(m => '<span>' + md(m) + '</span>').join('') + '</div>';
         else if (isStr(d.materials) && d.materials) h += '<div class="mats"><span class="lb">준비물</span><span>' + md(d.materials) + '</span></div>';
         if (d.minutes) h += '<div class="ctrls" style="justify-content:flex-start"><button class="btn main" data-act="timer" data-min="' + (+d.minutes) + '">⏱ ' + esc(d.minutes) + '분 타이머 켜기</button></div>';
-        push(h + '</div>'); break;
+        cls = 'av2'; push(h + '</div>'); break; // 95차 — 새 활동 장 av2(상자 없이 목표 한 줄 크게 + 큰 번호 차례 길)
       }
       case 'klab': case 'math_tool': push('<div class="klab-frame" data-klab="' + esc(d.tool || '') + '" data-config="' + esc(JSON.stringify(d.config || {})) + '"></div>'); break;
       case 'quiz_gen': push('<div class="legacy"><div class="t">🧩 케이퀴즈 — 즉석 문제 생성</div><div class="d">이 슬라이드는 아직 1세대 무대에서만 돌아가요. 2세대 옮김은 다음 사이클.</div>' + (d.lesson ? '<div class="small-text">' + esc(d.lesson) + '</div>' : '') + '</div>'); break;
