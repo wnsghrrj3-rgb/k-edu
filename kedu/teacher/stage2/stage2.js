@@ -66,6 +66,16 @@
   function emojiCount(e, n, big) { if ((+n || 0) > 20 || (/^(➕|➖|🟰|✅|✖️|✖|➗|❓|⭕|❌)$/.test(String(e || '').trim()) && (+n || 0) > 0)) return baseTen(n, e);
     const N = Math.max(0, +n || 0); if (N > 5) { let g = ''; for (let k = 0; k < N; k += 10) g += '<div class="eg">' + Array.from({ length: Math.min(10, N - k) }, () => '<span>' + esc(e) + '</span>').join('') + '</div>'; return '<div class="emoji-row count grid' + (big ? ' big' : '') + '">' + g + '</div>'; }
     return '<div class="emoji-row count' + (big ? ' big' : '') + '">' + Array.from({ length: Math.max(0, +n || 0) }, () => '<span>' + esc(e) + '</span>').join('') + '</div>'; }
+  // 98차 시안 — 복습·확인 장(review · exit_ticket) 새 꼴 rv2 · KT2_RVV = 'a' 한 장씩 크게 · 'b' 번호 줄 · 'c' 칠판
+  function rv2(v, items, f, S, self, cnt, exit) {
+    const A = it => String(it.a !== undefined ? it.a : ''); const L = ['🟢', '🟡', '🔴'];
+    const lights = self && self.length ? '<div class="rv2-sig">' + self.map((s, i) => '<div class="light" data-act="light" data-i="' + i + '"><span class="dot">' + (L[i] || '⚪') + '</span><span class="lb">' + md(s) + '</span><span class="cnt">' + (cnt[i] || 0) + '</span></div>').join('') + '</div>' : '';
+    if (v === 'a') { const k = Math.max(0, Math.min(S.idx || 0, items.length - 1)); const it = items[k] || {};
+      return '<div class="rv2-nav">' + items.map((x, i) => '<button class="' + (i === k ? 'on' : '') + (f[i] ? ' done' : '') + '" data-act="rv-go" data-i="' + i + '">' + (i + 1) + '</button>').join('') + '</div>'
+        + '<div class="rv2-one"><div class="rv2-q">' + md(it.q || '') + '</div>' + (f[k] ? '<div class="rv2-a on">' + md(A(it)) + '</div>' : '<div class="rv2-a" data-act="flip" data-i="' + k + '">눌러서 답 보기</div>') + '</div>' + lights; }
+    if (v === 'b') return '<ol class="rv2-rows">' + items.map((it, i) => '<li class="rv2-it' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><i>' + (i + 1) + '</i><div class="q">' + md(it.q || '') + '</div><div class="a">' + (f[i] ? md(A(it)) : '?') + '</div></li>').join('') + '</ol>' + lights;
+    return '<div class="rv2-board">' + items.map((it, i) => '<div class="rv2-it' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><div class="q"><i>' + (i + 1) + '.</i>' + md(it.q || '') + '</div><div class="a">' + (f[i] ? md(A(it)) : '') + '</div></div>').join('') + '</div>' + lights;
+  }
   function dots(n) { return '<div class="dots">' + Array.from({ length: +n || 0 }, () => '<i></i>').join('') + '</div>'; }
   function stack(n, cls, hero) { return '<div class="stack ' + (cls || '') + '">' + Array.from({ length: +n || 0 }, () => '<div class="cube"></div>').join('') + (hero ? '<div class="cb-hero">' + hero + '</div>' : '') + '<div class="lbl">' + n + '</div></div>'; }
   function dodo() { const A = global.KT2_ART; return A && A.character ? A.character('🐿️') : ''; }
@@ -216,7 +226,8 @@
       case 'review': {
         if (d.content) push('<div class="center-text">' + md(d.content) + '</div>');
         if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>');
-        if (d.items) { const f = S.flipped || []; push('<div class="flipgrid n' + Math.min(4, d.items.length) + '">' + d.items.map((it, i) => '<div class="flip' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><div class="q">' + md(it.q) + '</div><div class="a">' + (f[i] ? md(String(it.a !== undefined ? it.a : '')) : '❓ 눌러서 확인') + '</div></div>').join('') + '</div>'); answerable = true; }
+        if (d.items && global.KT2_RVV && !ctx.learn) { const f = global.KT2_RVOPEN ? d.items.map(() => true) : (S.flipped || []); cls = 'rv2 rv2-' + global.KT2_RVV; push(rv2(global.KT2_RVV, d.items, f, S, null, [], false)); answerable = true; }
+        else if (d.items) { const f = S.flipped || []; push('<div class="flipgrid n' + Math.min(4, d.items.length) + '">' + d.items.map((it, i) => '<div class="flip' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><div class="q">' + md(it.q) + '</div><div class="a">' + (f[i] ? md(String(it.a !== undefined ? it.a : '')) : '❓ 눌러서 확인') + '</div></div>').join('') + '</div>'); answerable = true; }
         if (d.table) push(table(d.table)); if (d.sequence) push(sequence(d.sequence)); if (d.ten_frame_strip) push(tfStrip(d.ten_frame_strip));
         if (d.areas) push('<div class="areas">' + d.areas.map(a => '<div>' + md(a) + '</div>').join('') + '</div>');
         if (d.note) push('<div class="small-text">' + md(d.note) + '</div>');
@@ -367,6 +378,7 @@
       }
       case 'exit_ticket': {
         title = d.title || '오늘 확인해요'; const items = d.items || []; const f = S.flipped || []; const cnt = S.lights || [];
+        if (global.KT2_RVV && !ctx.learn) { const ff = global.KT2_RVOPEN ? items.map(() => true) : f; cls = 'rv2 rv2-' + global.KT2_RVV + ' rv2-x'; push(rv2(global.KT2_RVV, items, ff, S, d.self || [], cnt, true)); answerable = true; break; }
         push('<div class="flipgrid n' + Math.min(4, Math.max(2, items.length)) + '">' + items.map((it, i) => '<div class="flip' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><div class="q">' + md(it.q) + '</div><div class="a">' + (f[i] ? '✅ ' + md(String(it.a !== undefined ? it.a : '')) : '❓ 눌러서 확인') + '</div></div>').join('') + '</div>');
         const self = d.self || []; const L = ['🟢', '🟡', '🔴'];
         if (self.length) push('<div class="signal">' + self.map((s, i) => '<div class="light" data-act="light" data-i="' + i + '" title="손 든 수를 세요"><span class="dot">' + (L[i] || '⚪') + '</span><span class="lb">' + md(s) + '</span><span class="cnt">' + (cnt[i] || 0) + '</span></div>').join('') + '</div>');
@@ -713,6 +725,7 @@
       case 'lv': S.level = btn.getAttribute('data-k'); this.rev[s.id] = false; rp(); break;
       case 'cz-reveal': S.on = !S.on; rp(); if (S.on) this.celebrate(); break;
       case 'cz-prev': S.idx = Math.max(0, (S.idx || 0) - 1); S.on = false; rp(); break;
+      case 'rv-go': S.idx = i; rp(); break;
       case 'cz-next': S.idx = Math.min((d.items || []).length - 1, (S.idx || 0) + 1); S.on = false; rp(); break;
       case 'pr-next': { const count = +btn.getAttribute('data-count'); S.picked = S.picked || []; const pool = []; for (let k = 0; k < count; k++) if (!S.picked.includes(k)) pool.push(k); if (!pool.length) break; const pick = pool[Math.floor(Math.random() * pool.length)]; S.picked.push(pick); S.current = pick; rp(); this.chime(1); break; }
       case 'pr-reset': S.picked = []; S.current = null; rp(); break;
