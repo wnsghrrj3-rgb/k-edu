@@ -15,7 +15,7 @@
   // 차시_밀도_표준_v2 §1: 도입 5~8 · 전개 25 · 정리 7~10 → 40분
   const STAGE_MIN = { '도입': 7, '전개': 12, '기본문제': 7, '응용문제': 6, '정리': 8 };
   const SEVEN = ['①복습 문항', '②실사 장면', '③차시 서사', '④교실 활동', '⑤수준별 문제', '⑥출구 확인', '⑦발문 6슬↑'];
-  const EDITABLE = '.kt2-title, .big-text, .center-text, .small-text, .big-q, .objective-card, .point > div, .steps li, .kid .bub, .kid .lbl, .flip .q, .flip .a, .mis-card, .mv2-t, .mv2-h, .offline .body, .offline .goal, .opt > div:not(.mk), .scenario > div:not(.ic), .lv-q, .ra-quote, .context-text, .bidirect, .tf-cap, .examples .ex, .areas div, .sa .lb, .light .lb, .cq .cl, .cq .nm, .legacy .t, .legacy .d, .kt2-cover-title, .kt2-sub';
+  const EDITABLE = '.kt2-title, .big-text, .center-text, .small-text, .big-q, .objective-card, .point > div, .steps li, .kid .bub, .kid .lbl, .flip .q, .flip .a, .mis-card, .mv2-t, .mv2-h, .lv2-q, .lv2-ch span, .offline .body, .offline .goal, .opt > div:not(.mk), .scenario > div:not(.ic), .lv-q, .ra-quote, .context-text, .bidirect, .tf-cap, .examples .ex, .areas div, .sa .lb, .light .lb, .cq .cl, .cq .nm, .legacy .t, .legacy .d, .kt2-cover-title, .kt2-sub';
   const STAGE_COLOR = { '도입': '#FF8A3D', '전개': '#4F8DF7', '기본문제': '#12B886', '응용문제': '#7C5CFF', '정리': '#2CB1D6' };
   const SUBJ_KO = { math: '수학', korean: '국어', science: '과학', social: '사회', english: '영어' };
   const NO_FRAG = new Set(['cover', 'objective', 'question', 'next_lesson', 'interactive_ten_frame', 'interactive_cube_stairs', 'interactive_number_line', 'klab', 'math_tool', 'quiz_gen', 'activity', 'card_arrange', 'card_quiz', 'chosung_quiz', 'present', 'read_aloud', 'leveled_problem', 'exit_ticket', 'trace', 'number_line_demo']);
@@ -349,11 +349,13 @@
       case 'number_line_demo': push(numLine(d.nl.range, d.nl.anchor)); if (d.caption) push('<div class="center-text">' + md(d.caption) + '</div>'); break;
       case 'leveled_problem': {
         const levels = d.levels || {}; const keys = Object.keys(levels); const cur = levels[S.level] ? S.level : (keys[0] || ''); const lv = levels[cur] || {};
-        if (window.KT2_LVV) { const v = window.KT2_LVV; cls = 'lv2 lv2-' + v; answerable = true; // 97차 시안
+        if (!ctx.learn) { const v = 'a'; cls = 'lv2 lv2-' + v; answerable = true; // 97차 — 새 수준별 장(준호 A 「세 계단」) · 학생 화면(learn)은 1세대 꼴 + 위젯 그대로
           const ansOf = (x, full) => { if (!rev) return ''; let a = x.open ? '<div class="lv2-a open"><b>💡 여러 답</b>' + (x.a ? md(String(x.a).replace(/^여러 답\s*/, '')) : '') + '</div>' : '<div class="lv2-a"><b>정답</b>' + md(String(x.a !== undefined ? x.a : '')) + '</div>'; if (full && x.steps && x.steps.length) a += '<ol class="lv2-st">' + x.steps.map(s => '<li>' + md(s) + '</li>').join('') + '</ol>'; return a; };
           if (v === 'b') push('<div class="lv2-cols n' + keys.length + '">' + keys.map(k => '<div class="lv2-col ' + esc(k) + '"><div class="lv2-tag">' + esc(k) + '</div><div class="lv2-q">' + md(levels[k].q || '') + '</div>' + ansOf(levels[k], false) + '</div>').join('') + '</div>');
-          else { const tabs = '<div class="lv2-tabs">' + keys.map((k, i) => '<button class="' + esc(k) + (k === cur ? ' on' : '') + '" data-act="lv" data-k="' + esc(k) + '"><i>' + (i + 1) + '</i>' + esc(k) + '</button>').join('') + '</div>';
-            push(tabs + '<div class="lv2-main ' + esc(cur) + '"><div class="lv2-q">' + md(lv.q || '') + '</div>' + ansOf(lv, true) + '</div>'); }
+          else { const tabs = '<div class="lv-tabs lv2-tabs">' + keys.map((k, i) => '<button class="' + esc(k) + (k === cur ? ' on' : '') + '" data-act="lv" data-k="' + esc(k) + '"><i>' + (i + 1) + '</i>' + esc(k) + '</button>').join('') + '</div>';
+            const ql = String(lv.q || '').split('\n'), ch = ql.filter(x => /^\s*[①-⑳]/.test(x)), qh = ql.filter(x => !/^\s*[①-⑳]/.test(x)).join('\n'); // 보기 줄(①~)은 두 칸 칩으로
+            const qHtml = ch.length >= 3 && qh.trim() ? '<div class="lv2-q">' + md(qh) + '</div><div class="lv2-ch">' + ch.map(x => '<span>' + md(x.trim()) + '</span>').join('') + '</div>' : '<div class="lv2-q">' + md(lv.q || '') + '</div>';
+            push(tabs + '<div class="lv2-main ' + esc(cur) + '">' + qHtml + ansOf(lv, true) + '</div>'); }
           push('<div class="ctrls"><button class="btn main" data-act="reveal">' + (rev ? '🙈 정답 숨기기' : '정답 보기 ✨') + '</button></div>'); break; }
         push('<div class="lv-tabs">' + keys.map(k => '<button class="' + (k === cur ? 'on ' + esc(k) : '') + '" data-act="lv" data-k="' + esc(k) + '">' + esc(k) + '</button>').join('') + '</div>');
         let ans = '';
@@ -778,7 +780,7 @@
   // 87차 — fit-tight: 넘칠 때만 종이 여백·덩이 사이·말풍선 아래를 좁힌다(글자 크기는 그대로). 자리 바꾸기와 겹쳐 쓸 수 있다.
   // 88차 — fit-lv: 수준별 문제 정답 펼침 때 물음 왼쪽 · 정답·풀이 차례 오른쪽 / fit-lv2: 물음 위 · 정답 왼쪽 · 풀이 차례 오른쪽(넘칠 때만)
   // 89차 — fit-pts: 요약 요점 다섯 줄 이상을 두 단(위→아래 차례) / fit-wrap: 옆으로 이어진 카드(차례·도구)가 종이 폭을 넘으면 두 줄로 / fit-cols: 말풍선 안 짧은 줄 넷 이상(「어제 — 과거」 같은 목록)을 두 단으로(넘칠 때만 · 글자 크기 무변)
-  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s', 'fit-cv2w'];
+  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s', 'fit-cv2w', 'fit-lvw', 'fit-lvs'];
   // 90차 — fit-qh: 「여러 개를 고를 수 있어요」를 물음 옆 같은 줄로(넘칠 때만)
   // 90차 — fit-head: 넘칠 때만 제목을 머리(단계 칩·차시 이름)와 한 줄에 — 제목 줄 하나만큼 본문 자리가 생긴다 · 글자 크기 무변 · 차시 이름이 말줄임되면 안 씀
   function headBad(body) { const p = body.parentElement; if (!p) return true; const k = p.querySelector(':scope > .kt2-head .kt2-kicker'), t = p.querySelector(':scope > .kt2-title');
@@ -830,6 +832,7 @@
     const tries = [['fit-tight']];
     if (sp) tries.push(['fit-split'], ['fit-split', 'fit-tight']);
     if (sd) tries.push(['fit-side'], ['fit-side', 'fit-tight']);
+    if (body.querySelector('.lv2-main > .lv2-a')) tries.push(['fit-lvw'], ['fit-lvw', 'fit-tight'], ['fit-lvs'], ['fit-lvs', 'fit-tight'], ['fit-lvw', 'fit-lvs'], ['fit-lvw', 'fit-lvs', 'fit-tight']); // 97차 — 수준 계단을 위 한 줄로(본문 폭 넓힘)
     if (body.querySelector('.lv-body > .lv-a')) tries.push(['fit-lv'], ['fit-lv', 'fit-tight'], ['fit-lv2'], ['fit-lv2', 'fit-tight']);
     body.style.zoom = ''; const wr = wrapOk(body), co = colsTargets(body).length > 0;
     if (wr) { tries.push(['fit-wrap'], ['fit-wrap', 'fit-tight']); if (sp) tries.push(['fit-wrap', 'fit-split', 'fit-tight']); }

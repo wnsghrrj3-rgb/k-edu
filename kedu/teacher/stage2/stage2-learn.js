@@ -155,7 +155,7 @@
   Learn.prototype.paint = function (dir, quiet) { // quiet: 답을 고른 뒤 다시 그릴 때 — 등장 연출을 다시 틀지 않는다
     const s = this.cur(); if (!s) return;
     const paper = doc.getElementById('kt2-paper');
-    const r = K().renderSlide(s, { revealed: !!this.rev[s.id], state: this.state(s.id), meta: this.meta, unitTitle: this.unitTitle, classNames: [], guide: this.guide });
+    const r = K().renderSlide(s, { revealed: !!this.rev[s.id], state: this.state(s.id), meta: this.meta, unitTitle: this.unitTitle, classNames: [], guide: this.guide, learn: true });
     const n = this.idx + 1, N = this.slides.length;
     const pos = this.slides.slice(0, n).filter(x => x.stage === s.stage).length, tot = this.slides.filter(x => x.stage === s.stage).length;
     const lk = s.lv ? lvCur(s, this.state(s.id)) : ''; const wst = this.ls(s.lv ? s.id + '|' + lk : s.id);
