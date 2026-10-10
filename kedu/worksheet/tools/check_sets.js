@@ -668,6 +668,50 @@ function checkGrid(where, q) {
   if (hit.length !== 1) return bad(where, `word_grid 보기 가운데 ${neg ? '숨어 있지 않은' : '숨어 있는'} 낱말이 ${hit.length}개(하나여야)`);
   if (!hit[0].correct) bad(where, `word_grid 정답 보기가 글자판이 말하는 「${hit[0].t}」 가 아니다`);
 }
+/* v1.9 인사말·글자와 소리 — 엔진 GR·YN 표와 따로 들고 정답을 발문에서 다시 셈한다 (2026-10-10) */
+const YNX_WORDS = ['악어','걸음','국어','목요일','먹이','울음','월요일','금요일','일요일','음악','발음','웃음','얼음','놀이','낙엽','길이','목욕','연어','문어','할아버지','놀이터','나들이'];
+const YNX_SAME = ['우산','가방','바다','나무','다리미','토끼','사과','기차','강아지','고양이','포도','모자','구름','오이','우유','사자','거미','자동차'];
+function ynx(w) { const a = [...String(w)].map(hs3); if (a.some(x => !x)) return null;
+  for (let i = 0; i < a.length - 1; i++) if (a[i].b && a[i].b !== 'ㅇ' && a[i].b !== 'ㅎ' && a[i + 1].c === 'ㅇ') { a[i + 1].c = a[i].b; a[i].b = ''; }
+  return a.map(x => hj3(x.c, x.v, x.b)).join(''); }
+function checkYeon(where, q) {
+  const R = (q.variant_rule || {}).yeon; if (!R) return;
+  YNX_WORDS.forEach(w => { if (ynx(w) === w) bad(where, `yeon 표 「${w}」 가 소리가 안 바뀐다`); });
+  YNX_SAME.forEach(w => { if (ynx(w) !== w) bad(where, `yeon 같은 소리 표 「${w}」 가 바뀐다`); });
+  const st = String(q.stem), os = q.options || []; let m;
+  if ((m = st.match(/^「(.+)」(?:은|는) 어떻게 소리 나나요\?$/))) {
+    const p = '[' + ynx(m[1]) + ']'; if (YNX_WORDS.indexOf(m[1]) < 0) bad(where, `yeon 「${m[1]}」 은 표 밖 낱말`);
+    const c = os.filter(o => o.correct); if (c.length !== 1 || String(c[0].t) !== p) bad(where, `yeon 정답 ≠ ${p}`);
+    os.filter(o => !o.correct).forEach(o => { if (String(o.t) === p) bad(where, 'yeon 오답에 정답 소리'); });
+  } else if ((m = st.match(/^글자와 소리가 (다른|같은) 낱말은 어느 것인가요\?$/))) {
+    const diff = m[1] === '다른'; const hit = os.filter(o => { const t = String(o.t); if (YNX_WORDS.indexOf(t) < 0 && YNX_SAME.indexOf(t) < 0) bad(where, `yeon 보기 「${t}」 는 표 밖`); return diff ? ynx(t) !== t : ynx(t) === t; });
+    if (hit.length !== 1) return bad(where, `yeon 보기 가운데 ${m[1]} 낱말이 ${hit.length}개(하나여야)`);
+    if (!hit[0].correct) bad(where, `yeon 정답 보기가 「${hit[0].t}」 가 아니다`);
+  } else bad(where, 'yeon 발문 꼴을 모른다');
+}
+const GRX = [['meet','만났을 때','안녕?','안녕하세요?'],['bye','헤어질 때','잘 가.','안녕히 가세요.'],['thank','도움을 받았을 때','고마워.','고맙습니다.'],
+  ['sorry','잘못했을 때','미안해.','죄송합니다.'],['congr','좋은 일을 축하할 때','축하해.','축하드립니다.'],['out','집을 나설 때',null,'다녀오겠습니다.'],
+  ['home','집에 돌아왔을 때',null,'다녀왔습니다.'],['eatb','밥을 먹기 전에',null,'잘 먹겠습니다.'],['eata','밥을 다 먹은 뒤에',null,'잘 먹었습니다.'],
+  ['night','잠자기 전에','잘 자.','안녕히 주무세요.'],['morn','아침에 일어났을 때','잘 잤어?','안녕히 주무셨어요?']];
+const GRX_APART = [['meet','morn'],['meet','bye'],['meet','home'],['thank','eatb'],['thank','eata'],['bye','out']];
+const grApart = (x, y) => GRX_APART.some(([a, b]) => (a === x && b === y) || (a === y && b === x));
+function checkGreet(where, q) {
+  const R = (q.variant_rule || {}).greet; if (!R) return;
+  const st = String(q.stem), os = q.options || []; let m;
+  if ((m = st.match(/^(.+) (친구에게|웃어른께) 하는 인사말로 알맞은 것은 어느 것인가요\?$/))) {
+    const s0 = GRX.find(x => x[1] === m[1]); if (!s0) return bad(where, `greet 때 「${m[1]}」 가 표에 없다`);
+    const col = m[2] === '친구에게' ? 2 : 3; if (!s0[col]) return bad(where, 'greet 그 상대에게 하는 인사말이 표에 없다');
+    const c = os.filter(o => o.correct); if (c.length !== 1 || String(c[0].t) !== s0[col]) bad(where, `greet 정답 ≠ ${s0[col]}`);
+    os.filter(o => !o.correct).forEach(o => { const t = String(o.t); const row = GRX.find(x => x[2] === t || x[3] === t);
+      if (!row) return bad(where, `greet 오답 「${t}」 표 밖`); if (row === s0 && col === 2) bad(where, 'greet 친구에게 묻는데 같은 때 웃어른 말이 오답');
+      if (row !== s0 && grApart(row[0], s0[0])) bad(where, `greet 「${t}」 는 ${m[1]}에도 맞을 수 있다`); });
+  } else if ((m = st.match(/^「(.+)」(?:은|는) 언제 하는 인사말인가요\?$/))) {
+    const s0 = GRX.find(x => x[2] === m[1] || x[3] === m[1]); if (!s0) return bad(where, `greet 인사말 「${m[1]}」 표 밖`);
+    if (m[1] === '안녕?') bad(where, 'greet 「안녕?」 은 만날 때·헤어질 때 다 써서 때를 물을 수 없다');
+    const c = os.filter(o => o.correct); if (c.length !== 1 || String(c[0].t) !== s0[1]) bad(where, `greet 정답 ≠ ${s0[1]}`);
+    os.filter(o => !o.correct).forEach(o => { const row = GRX.find(x => x[1] === String(o.t)); if (!row) return bad(where, `greet 오답 때 「${o.t}」 표 밖`); if (row === s0 || grApart(row[0], s0[0])) bad(where, `greet 오답 때 「${o.t}」 도 맞을 수 있다`); });
+  } else bad(where, 'greet 발문 꼴을 모른다');
+}
 /* 한 문항(원본이든 변형본이든) 공통 검사 */
 function checkQ(where, q, opt) {
   opt = opt || {};
@@ -694,6 +738,8 @@ function checkQ(where, q, opt) {
   checkWcat(where, q);
   checkWlink(where, q);
   checkGrid(where, q);
+  checkYeon(where, q);
+  checkGreet(where, q);
   checkJosa(where, q);
   if (q.asset && typeof q.asset === 'object' && ASSETS[q.asset.type]) {
     try { if (!ENG.drawAsset(q.asset, ENG.rng(7))) bad(where, '화면에서 에셋이 빈칸으로 나옴'); }

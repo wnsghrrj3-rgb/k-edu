@@ -595,6 +595,25 @@ const WC_NEAR = {body:['옷','모자','양말','장갑','신발'], family:['친�
 const WL_BODY = [['눈','보다'],['귀','듣다'],['코','냄새를 맡다'],['입','먹다'],['손','잡다'],['발','걷다']];
 const WL_PLACE = [['병원','아픈 곳을 치료받아요'],['치과','이를 치료받아요'],['우체국','편지를 보내요'],['도서관','책을 빌려요'],['빵집','빵을 사요'],['소방서','불을 끄러 출동해요'],['은행','돈을 맡겨요'],['꽃집','꽃을 사요'],['급식실','점심을 먹어요'],['약국','약을 사요']];
 const WL_APART = [['병원','치과'],['병원','약국'],['치과','약국']];
+/* v1.9 — 반갑게 인사해요 (2026-10-10): 인사말(greet) · 글자와 소리(yeon).
+   YN_WORDS 는 앞 받침이 뒤 ㅇ 자리로 넘어가는 낱말만(겹받침·ㅎ받침·ㄷㅌ+이·된소리 바뀜 없는 것), YN_SAME 은 글자대로 소리 나는 낱말(받침 없음·ㅇ받침+ㅇ 포함). */
+const YN_WORDS = ['악어','걸음','국어','목요일','먹이','울음','월요일','금요일','일요일','음악','발음','웃음','얼음','놀이','낙엽','길이','목욕','연어','문어','할아버지','놀이터','나들이'];
+const YN_SAME = ['우산','가방','바다','나무','다리미','토끼','사과','기차','강아지','고양이','포도','모자','구름','오이','우유','사자','거미','자동차'];
+function yeonOf(w, how){ const a = [...String(w)].map(ch => hgSplit3(ch)); if (a.some(x => !x)) return null; let done = false;
+  for (let i = 0; i < a.length - 1; i++){ const x = a[i], y = a[i + 1];
+    if (x.b && x.b !== 'ㅇ' && x.b !== 'ㅎ' && y.c === 'ㅇ' && !(how && done)){
+      if (how === 'double'){ y.c = x.b; } else if (how === 'drop'){ x.b = ''; } else { y.c = x.b; x.b = ''; } done = true; } }
+  return done || !how ? a.map(x => hgJoin3(x.c, x.v, x.b)).join('') : null; }
+/* 인사말 표 — [이름, 때, 친구에게, 웃어른께, 그림]. 때가 겹쳐 둘 다 맞을 수 있는 짝(GR_APART)은 한 문항에 섞지 않는다 */
+const GR = [['meet','만났을 때','안녕?','안녕하세요?','👋'],['bye','헤어질 때','잘 가.','안녕히 가세요.','🚶'],['thank','도움을 받았을 때','고마워.','고맙습니다.','🤝'],
+  ['sorry','잘못했을 때','미안해.','죄송합니다.','💥'],['congr','좋은 일을 축하할 때','축하해.','축하드립니다.','🏆'],['out','집을 나설 때',null,'다녀오겠습니다.','🎒'],
+  ['home','집에 돌아왔을 때',null,'다녀왔습니다.','🏠'],['eatb','밥을 먹기 전에',null,'잘 먹겠습니다.','🍚'],['eata','밥을 다 먹은 뒤에',null,'잘 먹었습니다.','🍽️'],
+  ['night','잠자기 전에','잘 자.','안녕히 주무세요.','🌙'],['morn','아침에 일어났을 때','잘 잤어?','안녕히 주무셨어요?','🌅']];
+/* 끝 글자가 문장부호여도 마지막 한글 글자로 은/는 */
+function WEUNH(w){ const h = [...String(w)].filter(c => c >= '가' && c <= '힣').pop(); return h && (h.charCodeAt(0) - 0xAC00) % 28 ? '은' : '는'; }
+/* 서로 자주 헷갈리는 때 — 오답이 이 짝이면 더 좁은 오개념 꼬리(mis 열쇠)로 단다 */
+const GR_PAIR = [['out','home','inout'],['thank','sorry','ts']];
+const GR_APART = [['meet','morn'],['meet','bye'],['meet','home'],['thank','eatb'],['thank','eata'],['bye','out']];
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 /* ---------- 읽어주기 ---------- */
@@ -1416,6 +1435,61 @@ function makeVariantOnce(q, r){
     else { v.stem = `「${pr[1]}」 — 이 일을 하는 곳은 어디인가요?`;
       v.explanation = [`「${pr[0]}」에서 ${pr[1]}.`, `「${wr.join('」·「')}」${eun(wr[wr.length - 1])} 하는 일이 달라요.`, '그 일을 하러 어디에 가는지 떠올려요.']; }
     v.options = opts;
+    return v;
+  }
+  /* --- v1.9: 1학년 1학기 국어 「반갑게 인사해요」 (2026-10-10) ---
+     yeon  {ask:'read'|'diff'|'same', mis:{keep·double·drop·same·diff}} — 받침이 뒤 ㅇ 자리로 넘어가는 소리
+       read 「「악어」는 어떻게 소리 나나요?」 정답 [아거] · 오답 글자대로(keep) · 받침 두 번(double) · 받침 빠뜨림(drop)
+       diff 「글자와 소리가 다른 낱말은?」 오답은 YN_SAME(same) · same 「같은 낱말은?」 오답은 YN_WORDS(diff)
+     greet {ask:'say'|'when', to:'friend'|'elder'|'both', mis:{sit·reg}} — 때·상대에 알맞은 인사말(GR) */
+  if (rule.yeon){
+    const YR = rule.yeon, M = YR.mis || {}; const ask = YR.ask || 'read'; const want = Math.max(1, nOptsOf(q) - 1);
+    const mk = (ans, pairs) => { const used = [String(ans)], out = [{t:String(ans), correct:true}];
+      for (const [x, k] of pairs){ if (out.length > want) break; if (!x) continue; const t = String(x); if (used.indexOf(t) >= 0 || !M[k]) continue; used.push(t); out.push({t, mis:PFX + M[k]}); }
+      return out; };
+    delete v.asset;
+    if (ask === 'read'){
+      let w, opts, g = 0;
+      do { w = pick(YN_WORDS, r); opts = mk('[' + yeonOf(w) + ']', [['[' + w + ']', 'keep'], ['[' + yeonOf(w, 'double') + ']', 'double'], ['[' + yeonOf(w, 'drop') + ']', 'drop']]); } while (++g < 40 && opts.length < want + 1);
+      const b = [...w].map(ch => hgSplit3(ch)).find((x, i, A) => x.b && x.b !== 'ㅇ' && A[i + 1] && A[i + 1].c === 'ㅇ').b;
+      v.stem = `「${w}」${WEUNH(w)} 어떻게 소리 나나요?`;
+      v.explanation = [`「${w}」${WEUNH(w)} 소리 내면 [${yeonOf(w)}] — 받침 ${b}이 뒤 글자 ㅇ 자리로 넘어가요.`, `[${w}]처럼 글자대로 읽거나 [${yeonOf(w, 'double')}]처럼 받침을 두 번 읽으면 안 돼요.`, '앞 글자 받침 뒤에 ㅇ이 오면 받침을 뒤로 옮겨 이어 읽어요.'];
+      v.options = opts;
+    } else {
+      const diff = ask === 'diff'; const ans = pick(diff ? YN_WORDS : YN_SAME, r);
+      const opts = mk(ans, shuffle(diff ? YN_SAME : YN_WORDS, r).map(x => [x, diff ? 'same' : 'diff']));
+      const ws = opts.slice(1).map(o => o.t), last = ws[ws.length - 1];
+      v.stem = `글자와 소리가 ${diff ? '다른' : '같은'} 낱말은 어느 것인가요?`;
+      v.explanation = diff
+        ? [`「${ans}」${WEUNH(ans)} [${yeonOf(ans)}] 하고 소리 나서 글자와 달라요.`, `「${ws.join('」·「')}」${WEUNH(last)} 글자대로 소리 나요.`, '앞 글자 받침 뒤에 ㅇ이 오면 소리가 달라져요 — 받침이 없거나 ㅇ 받침이면 그대로예요.']
+        : [`「${ans}」${WEUNH(ans)} 글자대로 소리 나요.`, `「${ws.join('」·「')}」${WEUNH(last)} 받침이 뒤 ㅇ 자리로 넘어가 소리가 달라요.`, '받침이 없거나 ㅇ 받침이면 글자와 소리가 같아요.'];
+      v.options = opts;
+    }
+    return v;
+  }
+  if (rule.greet){
+    const GRR = rule.greet, M = GRR.mis || {}; const ask = GRR.ask || 'say'; const want = Math.max(1, nOptsOf(q) - 1);
+    const apart = (x, y) => GR_APART.some(([p1, p2]) => (p1 === x && p2 === y) || (p1 === y && p2 === x));
+    const grPairKey = (x, y) => { const p = GR_PAIR.find(([a, b]) => (a === x && b === y) || (a === y && b === x)); return p ? p[2] : ''; };
+    let to = GRR.to || 'both'; if (to === 'both') to = r() < 0.5 ? 'friend' : 'elder';
+    const col = to === 'friend' ? 2 : 3;
+    if (ask === 'say'){
+      const s0 = pick(GR.filter(x => x[col]), r); const out = [{t:s0[col], correct:true}];
+      if (col === 3 && s0[2] && M.reg && out.length <= want) out.push({t:s0[2], mis:PFX + M.reg});
+      for (const x of shuffle(GR.filter(x => x !== s0 && x[col] && !apart(x[0], s0[0])), r)){ if (out.length > want) break; if (!M.sit) break; out.push({t:x[col], mis:PFX + (M[grPairKey(x[0], s0[0])] || M.sit)}); }
+      v.stem = `${s0[1]} ${to === 'friend' ? '친구에게' : '웃어른께'} 하는 인사말로 알맞은 것은 어느 것인가요?`;
+      v.asset = {type:'scene', icon:s0[4]};
+      v.explanation = [`${s0[1]} ${to === 'friend' ? '친구에게는' : '웃어른께는'} 「${s0[col]}」 하고 인사해요.`, col === 3 && s0[2] ? `「${s0[2]}」${WEUNH(s0[2])} 친구에게 하는 말이고, 다른 인사말은 때가 달라요.` : '다른 인사말은 하는 때가 달라요.', '언제인지, 누구에게 하는지 두 가지를 함께 살펴요.'];
+      v.options = out;
+    } else {
+      const s0 = pick(GR.filter(x => x[col] && !(x[0] === 'meet' && col === 2)), r); const form = s0[col];
+      const out = [{t:s0[1], correct:true}];
+      for (const x of shuffle(GR.filter(x => x !== s0 && !apart(x[0], s0[0])), r)){ if (out.length > want) break; if (!M.sit) break; out.push({t:x[1], mis:PFX + (M[grPairKey(x[0], s0[0])] || M.sit)}); }
+      v.stem = `「${form}」${WEUNH(form)} 언제 하는 인사말인가요?`;
+      delete v.asset;
+      v.explanation = [`「${form}」${WEUNH(form)} ${s0[1]} 하는 인사말이에요.`, '다른 때에는 그때에 맞는 인사말이 따로 있어요.', '인사말을 들으면 어떤 때인지 장면을 떠올려 봐요.'];
+      v.options = out;
+    }
     return v;
   }
   // 두 가지 읽기 — read2 {range, step10, ask:'read'|'num', way:'sino'|'nat'|'both'}
