@@ -187,11 +187,12 @@
   // 94차 — 개념 장 글 중 그림 카드 이름을 그대로 되풀이하는 줄(① 관찰 ② 특징 …)은 뺀다 · 남는 줄이 있을 때만 · 글은 원문 그대로
   function cv2Lead(content, fig) {
     const norm = t => String(t || '').replace(/\*\*|<\/?b>|[\u2460-\u2473]|\s/g, '').replace(/[.,·]/g, '');
-    const names = ((fig && fig.items) || []).map(i => norm(i.name || i.label)).filter(n => n.length >= 2);
+    const its = ((fig && fig.items) || []).concat(...((fig && fig.bins) || []).map(b => [b].concat(b.items || []))); // 95차 — 갈래 그림(bins)의 갈래 이름·물건 이름도
+    const names = its.map(i => norm(i.name || i.label)).filter(n => n.length >= 2);
     const prs = ((fig && fig.pairs) || []).filter(Array.isArray).map(p => p.map(norm)); // 그림 짝(갈게·갈께)을 다시 적은 줄도
     const lines = String(content).split(/\n|<br\s*\/?>/i);
     if ((names.length < 2 && !prs.length) || lines.length < 2) return content;
-    const keep = lines.filter(l => { const n = norm(l); if (names.filter(x => n.indexOf(x) >= 0).length >= 2) return false; if (prs.length && /^[^\s↔]+\s*↔\s*[^\s↔]+$/.test(String(l).replace(/\*\*/g, '').trim())) return false; return !prs.some(p => p.length >= 2 && p.every(x => x && n.indexOf(x) >= 0)); });
+    const keep = lines.filter(l => { const n = norm(l); if (fig.ox && /왼쪽/.test(l) && /오른쪽/.test(l)) return false; /* 95차 — ○ ✗ 가 그림에 있으면 「왼쪽이 바른…」 줄은 뺀다 */ if (names.filter(x => n.indexOf(x) >= 0).length >= 2) return false; if (prs.length && /^[^\s↔]+\s*↔\s*[^\s↔]+$/.test(String(l).replace(/\*\*/g, '').trim())) return false; return !prs.some(p => p.length >= 2 && p.every(x => x && n.indexOf(x) >= 0)); });
     return keep.length ? keep.join('\n') : content;
   }
   function renderSlide(slide, ctx) {
@@ -767,7 +768,7 @@
   // 87차 — fit-tight: 넘칠 때만 종이 여백·덩이 사이·말풍선 아래를 좁힌다(글자 크기는 그대로). 자리 바꾸기와 겹쳐 쓸 수 있다.
   // 88차 — fit-lv: 수준별 문제 정답 펼침 때 물음 왼쪽 · 정답·풀이 차례 오른쪽 / fit-lv2: 물음 위 · 정답 왼쪽 · 풀이 차례 오른쪽(넘칠 때만)
   // 89차 — fit-pts: 요약 요점 다섯 줄 이상을 두 단(위→아래 차례) / fit-wrap: 옆으로 이어진 카드(차례·도구)가 종이 폭을 넘으면 두 줄로 / fit-cols: 말풍선 안 짧은 줄 넷 이상(「어제 — 과거」 같은 목록)을 두 단으로(넘칠 때만 · 글자 크기 무변)
-  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s'];
+  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s', 'fit-cv2w'];
   // 90차 — fit-qh: 「여러 개를 고를 수 있어요」를 물음 옆 같은 줄로(넘칠 때만)
   // 90차 — fit-head: 넘칠 때만 제목을 머리(단계 칩·차시 이름)와 한 줄에 — 제목 줄 하나만큼 본문 자리가 생긴다 · 글자 크기 무변 · 차시 이름이 말줄임되면 안 씀
   function headBad(body) { const p = body.parentElement; if (!p) return true; const k = p.querySelector(':scope > .kt2-head .kt2-kicker'), t = p.querySelector(':scope > .kt2-title');
@@ -805,10 +806,12 @@
     const z = Math.min(lo, hi); t.style.zoom = z; t.setAttribute('data-figz', z.toFixed(3));
   }
   function fitZoom(body, base) { // 94차 — 새 개념 장은 다 들어가면 그림을 키운다(측정기도 같은 함수)
-    const g = body.querySelector(':scope > .cv2-fig'); if (g) { g.style.zoom = ''; g.removeAttribute('data-figg'); }
+    const g = body.querySelector(':scope > .cv2-fig'); if (g) { g.style.zoom = ''; g.removeAttribute('data-figg'); } body.classList.remove('fit-cv2w');
     let z = fitZoom0(body, base);
+    if (g && body.scrollWidth > body.clientWidth + 2 && g.querySelector('.so-shelf,.fig-cards')) { body.classList.add('fit-cv2w'); const z2 = zoomLoop(body, base); if (z2 >= base - 0.001 && body.scrollWidth <= body.clientWidth + 2) z = z2; else { body.classList.remove('fit-cv2w'); z = zoomLoop(body, base); } } // 95차 — 넓은 그림은 줄이기 전에 두 줄로 꺾어 본다
     if (g && body.scrollWidth > body.clientWidth + 2) { const cz = parseFloat(g.style.zoom) || 1; const nz = Math.max(0.5, cz * Math.min(1, body.clientWidth / (body.scrollWidth + 4))); g.style.zoom = nz; g.setAttribute('data-figz', nz.toFixed(3)); body.style.zoom = ''; z = zoomLoop(body, base); } // 넓은 그림은 그림만 폭에 맞춰 줄인다
-    if (g && z >= base - 0.001 && !g.hasAttribute('data-figz')) figGrow(body); return z;
+    if (g && z >= base - 0.001 && !g.hasAttribute('data-figz')) figGrow(body);
+    return z;
   }
   function fitZoom0(body, base) {
     colsOff(body); figOff(body); LAYOUTS.forEach(c => body.classList.remove(c)); let best = zoomLoop(body, base), bestC = [];
