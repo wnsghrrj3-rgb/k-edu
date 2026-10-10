@@ -112,7 +112,7 @@
         const list = cur === 'rec' ? G.rec : cur === 'unit' ? G.unit : (KA.catalog || []);
         if (!list.length) { body.innerHTML = '<div class="kact-empty">' + (cur === 'rec' ? '이 차시에 맞춘 활동이 아직 없어요 — 「이 단원」이나 「⚡ 빠른 활동」을 열어 보세요.' : '활동이 없어요') + '</div>'; return; }
         if (cur === 'all') {
-          const by = {}; list.forEach(a => { const k = (a.map ? a.map.grade + '학년 ' + (SUBJ_KO[a.map.subject] || a.map.subject) + ' ' + a.map.unit + '단원' : '기타'); (by[k] = by[k] || []).push(a); });
+          const by = {}; list.forEach(a => { const k = (a.map ? a.map.grade + '학년 ' + (semOf(a) > 1 ? semOf(a) + '학기 ' : '') + (SUBJ_KO[a.map.subject] || a.map.subject) + ' ' + a.map.unit + '단원' : '기타'); (by[k] = by[k] || []).push(a); });   // D66 — 2학기는 이름표에 「2학기」
           body.innerHTML = Object.keys(by).sort().map(k => '<div class="kact-grp">' + esc(k) + '</div><div class="kact-grid">' + by[k].map(KA.cardHtml).join('') + '</div>').join('');
         } else body.innerHTML = '<div class="kact-grid">' + list.map(KA.cardHtml).join('') + '</div>';
         KA.bindCards(body);

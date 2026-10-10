@@ -430,6 +430,7 @@
     }
     var all = Object.keys(catalog).map(function (k) { return catalog[k]; }).filter(function (a) {
       if (a.status === 'retired') return false;
+      if (+a.map.semester > 1) return false;   // D66 — 1세대 페이지는 1학기 정본뿐(2학기 활동은 stage2 에서만)
       if (ctx.grade && a.map.grade !== ctx.grade) return false;
       if (ctx.subject && a.map.subject !== ctx.subject) return false;
       return true;
@@ -500,7 +501,7 @@
   function recsForContext() {
     if (!catalog) return { rec: [], unit: [] };
     var all = Object.keys(catalog).map(function (k) { return catalog[k]; }).filter(function (a) {
-      return a.status !== 'retired' &&
+      return a.status !== 'retired' && !(+a.map.semester > 1) &&   // D66 — 2학기 활동은 1세대에 안 뜬다
         (!ctx.grade || a.map.grade === ctx.grade) &&
         (!ctx.subject || a.map.subject === ctx.subject);
     });
