@@ -105,7 +105,11 @@ const ASSETS = {
   bat:            [],
   bat_word:       ['w', 'at'],
   /* v1.8 — 1학년 1학기 국어 「여러 가지 낱말을 익혀요」 (2026-10-10): 글자판 */
-  word_grid:      ['rows']
+  word_grid:      ['rows'],
+  /* v2.2 — 2학년 1학기 수학 「세 자리 수」 (2026-10-10): 수 모형·동전 · 자릿값 표 · 뛰어 세기 줄 */
+  blocks3:        ['h', 't', 'o'],
+  place_table:    ['digits'],
+  jump_row:       ['cells']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -140,6 +144,24 @@ function checkAsset(where, a) {
   }
   if (a.type === 'number_line' && (!Array.isArray(a.cells) || a.cells.length < 3)) bad(where, 'number_line cells 3칸 미만');
   if (a.type === 'hidden_group' && a.total !== undefined && a.visible >= a.total) bad(where, 'hidden_group visible ≥ total');
+  if (a.type === 'blocks3') {
+    if (!(a.h >= 0 && a.h <= 9)) bad(where, 'blocks3 h 는 0~9: ' + a.h);
+    ['t', 'o'].forEach(k => { if (!(a[k] >= 0 && a[k] <= 19)) bad(where, `blocks3 ${k} 는 0~19: ` + a[k]); });
+    if (a.h + a.t + a.o === 0) bad(where, 'blocks3 가 비었다');
+    if (a.unit !== undefined && a.unit !== 'coin') bad(where, "blocks3 unit 은 'coin' 만");
+  }
+  if (a.type === 'place_table') {
+    if (!Array.isArray(a.digits) || a.digits.length !== 3) bad(where, 'place_table digits 는 [백,십,일] 셋');
+    if (a.values !== undefined && (!Array.isArray(a.values) || a.values.length !== 3)) bad(where, 'place_table values 는 셋');
+    if (Array.isArray(a.digits) && Array.isArray(a.values)) [100, 10, 1].forEach((u, i) => { const d = a.digits[i], v = a.values[i]; if (d !== null && v !== null && d !== undefined && v !== undefined && Number(d) * u !== Number(v)) bad(where, `place_table ${i}번째 자리 값 ${v} ≠ ${d}×${u}`); });
+  }
+  if (a.type === 'jump_row') {
+    const cs = a.cells || []; if (cs.length < 3 || cs.length > 6) bad(where, 'jump_row 칸은 3~6');
+    const st = a.step; if (st !== null && st !== undefined && [1, 10, 100].indexOf(Number(st)) < 0) bad(where, 'jump_row step 은 1·10·100');
+    const sg = a.dir === 'down' ? -1 : 1; const k = cs.findIndex(c => c !== null && c !== '?');
+    if (st !== null && st !== undefined && k >= 0) cs.forEach((c, i) => { if (c !== null && c !== '?' && Number(c) !== Number(cs[k]) + sg * st * (i - k)) bad(where, `jump_row ${i}번째 칸 ${c} 가 ${sg > 0 ? '+' : '−'}${st} 규칙에 안 맞다`); });
+    cs.forEach(c => { if (c !== null && c !== '?' && !(Number(c) >= 100 && Number(c) <= 1000)) bad(where, 'jump_row 칸 수가 100~1000 밖: ' + c); });
+  }
   if (a.type === 'bundle_ones') {
     if (!(a.tens >= 0 && a.tens <= 10)) bad(where, 'bundle_ones tens 가 0~10 밖: ' + a.tens);
     if (!(a.ones >= 0 && a.ones <= 9)) bad(where, 'bundle_ones ones 는 0~9 여야 한다(10이면 묶어야 함): ' + a.ones);
@@ -784,6 +806,54 @@ function checkColloc(where, q) {
     wrong.forEach(x => { const [o, w] = sp(x.t); if (clxFits(o, w) !== true) bad(where, `colloc 오답 「${x.t}」 이 표의 어울리는 짝이 아니다`); });
   } else return bad(where, 'colloc 발문 꼴을 모른다');
 }
+/* v2.2 — 세 자리 수: 엔진과 따로 셈해 정답·오답을 다시 확인 (원본·변형 모두) */
+const S3X = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+const read3x = n => { if (n === 1000) return '천'; const h = Math.floor(n / 100), t = Math.floor(n / 10) % 10, o = n % 10; return (h ? (h > 1 ? S3X[h] : '') + '백' : '') + (t ? (t > 1 ? S3X[t] : '') + '십' : '') + S3X[o]; };
+function check3(where, q) {
+  const vr = q.variant_rule || {}; const key = ['n3', 'pv3', 'skip3', 'cmp3d', 'cards3'].find(k => vr[k]); if (!key) return;
+  const cor = q.kind === 'sa' ? String((q.answer || [])[0]) : String(((q.options || []).find(o => o.correct) || {}).t);
+  const wr = (q.options || []).filter(o => !o.correct).map(o => String(o.t));
+  const st = String(q.stem).replace(/^이번에는 다른 보기예요\. /, ''); const a = q.asset && typeof q.asset === 'object' ? q.asset : null; let want = null, m;
+  if (key === 'n3') {
+    if (/^수 모형이 나타내는 수는/.test(st) || /^동전은 모두 얼마/.test(st)) { if (!a || a.type !== 'blocks3') return bad(where, 'n3 그림 문항인데 blocks3 가 없다'); want = String(a.h * 100 + a.t * 10 + a.o) + (/^동전/.test(st) ? '원' : ''); if (/^동전/.test(st) !== (a.unit === 'coin')) bad(where, 'n3 동전 발문과 그림 unit 이 어긋난다'); }
+    else if ((m = st.match(/^((?:(?:100|10|1)이 \d+개(?:, )?)+)인 수는/))) { let n = 0; m[1].split(', ').forEach(p => { const z = p.match(/^(\d+)이 (\d+)개$/); n += Number(z[1]) * Number(z[2]); }); want = String(n); }
+    else if ((m = st.match(/^(\d+)[을를] 바르게 읽은/))) { want = read3x(+m[1]); wr.forEach(w => { if (w === want) bad(where, 'n3 오답이 바른 읽기와 같다'); }); }
+    else if ((m = st.match(/^「([^」]+)」[을를] 수로 쓰면/))) { for (let n = 100; n <= 1000; n++) if (read3x(n) === m[1]) want = String(n); if (want === null) return bad(where, 'n3 읽기를 수로 못 돌렸다: ' + m[1]); }
+    else if ((m = st.match(/^100이 (\d+)개이면 얼마/))) want = String(100 * m[1]);
+    else if ((m = st.match(/^(\d+)[은는] 100이 (?:몇 개|\(\s*\)개)/))) { if (+m[1] % 100) bad(where, 'n3 hcount 수가 몇백이 아니다'); want = String(+m[1] / 100); }
+    else if ((m = st.match(/^10이 (\d+)개인 수는/))) want = String(10 * m[1]);
+    else if ((m = st.match(/^(\d+)[은는] 10이 몇 개/))) { if (+m[1] % 10) bad(where, 'n3 tcount 수가 몇십이 아니다'); want = String(+m[1] / 10); }
+    else return bad(where, 'n3 발문 꼴을 모른다: ' + st);
+  } else if (key === 'pv3') {
+    const PV = {'백': [0, 100], '십': [1, 10], '일': [2, 1]};
+    if ((m = st.match(/^(\d+)에서 (백|십|일)의 자리 숫자는/))) want = String(m[1]).padStart(3, '0')[PV[m[2]][0]];
+    else if ((m = st.match(/^(\d+)에서 숫자 (\d)[이가] 나타내는 값/))) { const ds = String(m[1]).split(''); if (ds.filter(x => x === m[2]).length !== 1) return bad(where, 'pv3 숫자가 한 번만 나오지 않는다: ' + st); want = String(+m[2] * Math.pow(10, ds.length - 1 - ds.indexOf(m[2]))); }
+    else if ((m = st.match(/^(\d+)[을를] 각 자리의 값의 합으로/))) { const d = String(m[1]).split('').map(Number); want = `${d[0] * 100} + ${d[1] * 10} + ${d[2]}`; wr.forEach(w => { const sum = w.split(' + ').reduce((x, y) => x + Number(y), 0); if (sum === +m[1] && w.split(' + ').every((y, i) => +y % [100, 10, 1][i] === 0)) bad(where, 'pv3 펼친 식 오답이 바른 식이다: ' + w); }); }
+    else if ((m = st.match(/^숫자 (\d)[이가] (\d+)[을를] 나타내는 수는/))) { const dd = m[1], val = +m[2]; const ok = x => { const s3 = String(x); const i = s3.length - 1 - Math.round(Math.log10(val / +dd)); return s3[i] === dd && s3.split('').filter(c => c === dd).length === 1; };
+      if (!ok(cor)) bad(where, `pv3 which 정답 ${cor} 에서 ${dd} 가 ${val} 를 나타내지 않는다`); wr.forEach(w => { if (ok(w)) bad(where, `pv3 which 오답 ${w} 도 맞다`); }); return; }
+    else if ((m = st.match(/^(\d+)의 자릿값 표예요/))) { if (!a || a.type !== 'place_table') return bad(where, 'pv3 table 인데 place_table 이 없다'); const d = String(m[1]).split('').map(Number); if (a.digits.join() !== d.join()) bad(where, 'pv3 표 숫자와 발문 수가 다르다'); const i = (a.values || []).findIndex(x => x === null || x === '?'); if (i < 0) return bad(where, 'pv3 표에 빈칸이 없다'); want = String(d[i] * [100, 10, 1][i]); }
+    else return bad(where, 'pv3 발문 꼴을 모른다: ' + st);
+  } else if (key === 'skip3') {
+    if (!a || a.type !== 'jump_row') return bad(where, 'skip3 은 jump_row 그림이 있어야 한다');
+    const cs = a.cells; const down = /거꾸로/.test(st);
+    if (/^얼마씩/.test(st)) { if (cs.some(c => c === null)) bad(where, 'skip3 step 문항에 빈칸이 있다'); if (a.step !== null && a.step !== undefined) bad(where, 'skip3 step 문항인데 화살표에 뛴 수가 보인다'); const d = cs[1] - cs[0]; if (cs.some((c, i) => i && c - cs[i - 1] !== d)) bad(where, 'skip3 칸이 일정하게 뛰지 않는다'); if ((d < 0) !== down) bad(where, 'skip3 거꾸로 발문과 칸 방향이 다르다'); want = Math.abs(d) + '씩'; }
+    else if ((m = st.match(/^(\d+)씩 (거꾸로 )?뛰어 세었어요\. 빈칸/))) { const s2 = +m[1]; if (+a.step !== s2) bad(where, 'skip3 발문과 화살표 뛴 수가 다르다'); if ((a.dir === 'down') !== down) bad(where, 'skip3 거꾸로 발문과 그림 dir 이 다르다');
+      const i = cs.findIndex(c => c === null); const k = cs.findIndex(c => c !== null); if (i < 0) return bad(where, 'skip3 빈칸이 없다'); want = String(cs[k] + (down ? -1 : 1) * s2 * (i - k)); }
+    else return bad(where, 'skip3 발문 꼴을 모른다: ' + st);
+  } else if (key === 'cmp3d') {
+    if ((m = st.match(/^(\d+)[과와] (\d+) 중에서 더 (큰|작은)/))) want = String(m[3] === '큰' ? Math.max(+m[1], +m[2]) : Math.min(+m[1], +m[2]));
+    else if (/^두 수의 크기를 바르게 비교한/.test(st)) { const tr = x => { const z = String(x).match(/^(\d+) ([<>]) (\d+)$/); return z && (z[2] === '>' ? +z[1] > +z[3] : +z[1] < +z[3]); }; if (!tr(cor)) bad(where, 'cmp3d sign 정답 식이 거짓: ' + cor); wr.forEach(w => { if (tr(w)) bad(where, 'cmp3d sign 오답 식이 참: ' + w); }); return; }
+    else if ((m = st.match(/^([\d, ]+) 가운데 가장 (큰|작은)/))) { const ns = m[1].split(',').map(x => +x.trim()); if (new Set(ns).size !== ns.length) bad(where, 'cmp3d 수가 겹친다'); want = String(m[2] === '큰' ? Math.max(...ns) : Math.min(...ns)); }
+    else return bad(where, 'cmp3d 발문 꼴을 모른다: ' + st);
+  } else {
+    if (!(m = st.match(/^수 카드 (\d), (\d), (\d)[을를] 한 번씩 모두 써서 만들 수 있는 가장 (큰|작은) 세 자리 수/))) return bad(where, 'cards3 발문 꼴을 모른다: ' + st);
+    const c = [+m[1], +m[2], +m[3]]; if (new Set(c).size !== 3) bad(where, 'cards3 카드가 겹친다'); const all = [];
+    [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]].forEach(p => { if (c[p[0]]) all.push(100 * c[p[0]] + 10 * c[p[1]] + c[p[2]]); });
+    want = String(m[4] === '큰' ? Math.max(...all) : Math.min(...all));
+  }
+  if (String(want) !== cor && !(q.kind === 'sa' && (q.answer || []).map(String).indexOf(String(want)) >= 0)) bad(where, `${key} 정답 ${cor} ≠ 다시 계산한 ${want}`);
+  if (wr.indexOf(String(want)) >= 0) bad(where, `${key} 오답 보기에 정답 ${want} 가 섞였다`);
+}
 /* 한 문항(원본이든 변형본이든) 공통 검사 */
 function checkQ(where, q, opt) {
   opt = opt || {};
@@ -804,6 +874,7 @@ function checkQ(where, q, opt) {
   checkAsset(where, q.asset);
   checkCmp4(where, q);
   checkNum50(where, q);
+  check3(where, q);
   checkJamo(where, q);
   checkBat(where, q);
   checkTwin(where, q);
@@ -971,6 +1042,27 @@ function checkSet(file) {
       if ((sk === 'down' || sk === 'up') && at !== 'hundred_chart') bad(where, 'seq50 down|up 은 hundred_chart 그림이 있어야 한다');
       if (!(sk === 'down' || sk === 'up') && at) bad(where, 'seq50 ' + sk + ' 는 그림 없는 문항 전용');
     }
+    /* v2.2 갈래 — 세 자리 수 */
+    if (q.variant_rule.n3) { const N = q.variant_rule.n3; const ask = N.ask || 'build';
+      if (['build', 'read', 'write', 'hund', 'hcount', 'tens', 'tcount'].indexOf(ask) < 0) bad(where, 'n3 ask 를 모른다: ' + ask);
+      if (at && !(ask === 'build' && at === 'blocks3')) bad(where, 'n3 그림은 build 의 blocks3 만');
+      if (N.carry && at !== 'blocks3') bad(where, 'n3 carry 는 blocks3 그림이 있어야 한다');
+      if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'n3 변형은 mc·blank·sa 만'); }
+    if (q.variant_rule.pv3) { const ask = q.variant_rule.pv3.ask || 'digit';
+      if (['digit', 'value', 'expand', 'which', 'table'].indexOf(ask) < 0) bad(where, 'pv3 ask 를 모른다: ' + ask);
+      if (ask === 'table' ? at !== 'place_table' : at) bad(where, 'pv3 ' + ask + ' 그림 종류가 맞지 않다(table 만 place_table)');
+      if ((ask === 'expand' || ask === 'which') && q.kind === 'sa') bad(where, 'pv3 ' + ask + ' 는 보기 문항만');
+      if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'pv3 변형은 mc·blank·sa 만'); }
+    if (q.variant_rule.skip3) { const K = q.variant_rule.skip3;
+      if (at !== 'jump_row') bad(where, 'skip3 은 jump_row 그림이 있어야 한다');
+      if (['next', 'blank', 'step'].indexOf(K.ask || 'next') < 0) bad(where, 'skip3 ask 를 모른다');
+      [].concat(K.step || []).forEach(x => { if ([1, 10, 100].indexOf(x) < 0) bad(where, 'skip3 step 은 1·10·100'); });
+      if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'skip3 변형은 mc·blank·sa 만'); }
+    if (q.variant_rule.cmp3d) { const ask = q.variant_rule.cmp3d.ask || 'big';
+      if (['big', 'small', 'sign', 'max3', 'min3'].indexOf(ask) < 0) bad(where, 'cmp3d ask 를 모른다: ' + ask);
+      if (at) bad(where, 'cmp3d 는 그림 없는 문항 전용'); if (ask === 'sign' && q.kind !== 'mc') bad(where, 'cmp3d sign 은 mc 만');
+      if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'cmp3d 변형은 mc·blank·sa 만'); }
+    if (q.variant_rule.cards3) { if (at) bad(where, 'cards3 는 그림 없는 문항 전용'); if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'cards3 변형은 mc·blank·sa 만'); }
     /* v1.5 갈래 — 글자를 만들어요 */
     if (q.variant_rule.jamo) {
       const J = q.variant_rule.jamo; const ask = J.ask || 'build';

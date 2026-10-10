@@ -246,6 +246,18 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .patgrid .i{width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:28px;line-height:1;border-radius:9px;background:var(--card);border:1px solid var(--rule-strong)}
 .patgrid .i.blank{border:2px dashed var(--rule-strong);color:var(--muted);font-size:20px;background:var(--tint)}
 .chart .c.hi{background:var(--accent-soft);border-color:var(--accent);font-weight:700}
+/* v2.2 — 2학년 1학기 「세 자리 수」 */
+.pv3{border-collapse:collapse;margin:0 auto;font-family:'Gowun Batang',serif}
+.pv3 th,.pv3 td{border:1px solid var(--rule-strong);padding:6px 12px;text-align:center}
+.pv3 th{font-size:14px;color:var(--muted);font-weight:400;background:var(--tint)}
+.pv3 td{font-size:24px;min-width:64px;background:var(--card)}
+.pv3 td.blank{border-style:dashed;color:var(--muted);background:var(--tint)}
+.pv3 td.mk{outline:2px solid var(--accent);outline-offset:-2px}
+.jump{display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:center}
+.jump .c{min-width:56px;height:46px;display:flex;align-items:center;justify-content:center;border:2px solid var(--rule-strong);border-radius:10px;background:var(--card);font-size:22px;font-family:'Gowun Batang',serif}
+.jump .c.blank{border-style:dashed;color:var(--muted);background:var(--tint)}
+.jump .ar{display:flex;flex-direction:column;align-items:center;color:var(--accent);font-size:16px;line-height:1}
+.jump .ar em{font-style:normal;font-size:12px;font-weight:700}
 /* v0.6 — 1학년 2학기 「덧셈과 뺄셈(2)」 */
 .counton{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
 .counton .c{min-width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:2px solid var(--rule-strong);border-radius:10px;background:var(--card);font-size:20px;font-family:'Gowun Batang',serif}
@@ -419,6 +431,18 @@ body.paper{background:#fff}
 .pq .pplate{margin:10px 0 8px 30px;border:1px solid #1A1A1A;border-radius:8px;display:inline-block;padding:8px 18px;font-size:20px;letter-spacing:8px;min-width:120px;text-align:center}
 .pq .pbund{margin:10px 0 8px 30px;font-size:19px;letter-spacing:3px}
 .pq .pbund em{font-style:normal;font-size:11px;letter-spacing:0;color:#666;margin-left:12px}
+.pq .pb3{display:block;font-style:normal;font-size:10px;color:#555;margin-top:2px}
+.pq .ppv3{border-collapse:collapse;margin:10px 0 8px 30px;font-size:13px}
+.pq .ppv3 th,.pq .ppv3 td{border:1px solid #1A1A1A;padding:3px 9px;text-align:center}
+.pq .ppv3 th{font-weight:400;font-size:10px;color:#444}
+.pq .ppv3 td{font-size:16px;min-width:40px}
+.pq .ppv3 td.blank{border-style:dashed}
+.pq .ppv3 td.mk{border-width:2px}
+.pq .pjump{margin:10px 0 8px 30px;display:flex;align-items:center;gap:3px;flex-wrap:wrap}
+.pq .pjump .c{min-width:38px;height:26px;border:1px solid #1A1A1A;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:15px}
+.pq .pjump .c.blank{border-style:dashed;color:#888}
+.pq .pjump .ar{display:inline-flex;flex-direction:column;align-items:center;font-size:11px;line-height:1}
+.pq .pjump .ar em{font-style:normal;font-size:9px}
 .pq .pchart{margin:10px 0 8px 30px;display:inline-grid;gap:3px}
 .pq .pchart span{min-width:25px;height:27px;border:1px solid #1A1A1A;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:13px}
 .pq .pchart span.blank{border-style:dashed}
@@ -747,6 +771,50 @@ function cupsSVG(a){
   return `<svg class="cmpsv" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="그릇 ${I.length}개">${s}</svg>`;
 }
 /* 이름 바꿔 끼우기 — 발문·해설·보기 글에서 이름 A 를 B 로, 뒤 조사(이/가·은/는·을/를·과/와·이에요/예요)는 새 이름의 받침에 맞춘다 */
+/* v2.2 — 2학년 1학기 「세 자리 수」 (2026-10-10): 수 모형(백·십·일) 또는 동전(100·10·1원). 화면·종이 같은 SVG.
+   h 0~9 · t·o 0~19 (10 넘으면 「바꾸기」 문항 — 그림은 그대로 늘어놓는다). 이름표·수는 그리지 않는다(답이 보이면 안 된다). */
+const B3_FILL = {h:'#F4B6A6', t:'#A9CCE3', o:'#F7DC6F'};
+function blocksSVG(a){
+  const n = k => Math.max(0, Math.min(19, Math.floor(Number(a[k]) || 0)));
+  const H = Math.min(9, n('h')), T = n('t'), O = n('o'); let s = '', x = 6, hmax = 20; const top = 6, GAP = 18;
+  if (a.unit === 'coin'){
+    const R = 17, G = 5, per = 5;
+    const grp = (k, lab, fill, fs) => { if (!k) return; for (let i = 0; i < k; i++){ const cx = x + R + (i % per) * (2 * R + G), cy = top + R + Math.floor(i / per) * (2 * R + G);
+        s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="${fill}" stroke="${CMP_INK}" stroke-width="1.6"/><circle cx="${cx}" cy="${cy}" r="${R - 4}" fill="none" stroke="${CMP_INK}" stroke-width=".7" opacity=".5"/>` +
+             `<text x="${cx}" y="${cy + fs / 3}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${CMP_INK}">${lab}</text>`; }
+      hmax = Math.max(hmax, Math.ceil(k / per) * (2 * R + G)); x += Math.min(k, per) * (2 * R + G) + GAP; };
+    grp(H, '100', '#D5D8DC', 11); grp(T, '10', '#E8B98A', 12); grp(O, '1', '#F5EFE0', 13);
+  } else {
+    const F = 54, FG = 6, FP = 5, RW = 9, RG = 4, RP = 10, U = 9, UG = 3, UP = 5;
+    if (H){ for (let i = 0; i < H; i++){ const x0 = x + (i % FP) * (F + FG), y0 = top + Math.floor(i / FP) * (F + FG); let g = '';
+        for (let k = 1; k < 10; k++) g += `<line x1="${x0 + k * F / 10}" y1="${y0}" x2="${x0 + k * F / 10}" y2="${y0 + F}" stroke="${CMP_INK}" stroke-width=".5" opacity=".55"/><line x1="${x0}" y1="${y0 + k * F / 10}" x2="${x0 + F}" y2="${y0 + k * F / 10}" stroke="${CMP_INK}" stroke-width=".5" opacity=".55"/>`;
+        s += `<rect x="${x0}" y="${y0}" width="${F}" height="${F}" fill="${B3_FILL.h}" stroke="${CMP_INK}" stroke-width="1.6"/>${g}`; }
+      hmax = Math.max(hmax, Math.ceil(H / FP) * (F + FG)); x += Math.min(H, FP) * (F + FG) + GAP; }
+    if (T){ for (let i = 0; i < T; i++){ const x0 = x + (i % RP) * (RW + RG), y0 = top + Math.floor(i / RP) * (F + FG); let g = '';
+        for (let k = 1; k < 10; k++) g += `<line x1="${x0}" y1="${y0 + k * F / 10}" x2="${x0 + RW}" y2="${y0 + k * F / 10}" stroke="${CMP_INK}" stroke-width=".6" opacity=".6"/>`;
+        s += `<rect x="${x0}" y="${y0}" width="${RW}" height="${F}" fill="${B3_FILL.t}" stroke="${CMP_INK}" stroke-width="1.4"/>${g}`; }
+      hmax = Math.max(hmax, Math.ceil(T / RP) * (F + FG)); x += Math.min(T, RP) * (RW + RG) + GAP; }
+    if (O){ for (let i = 0; i < O; i++){ const x0 = x + (i % UP) * (U + UG), y0 = top + F - U - Math.floor(i / UP) * (U + UG);
+        s += `<rect x="${x0}" y="${y0 > 0 ? y0 : top + Math.floor(i / UP) * (U + UG)}" width="${U}" height="${U}" fill="${B3_FILL.o}" stroke="${CMP_INK}" stroke-width="1.3"/>`; }
+      x += Math.min(O, UP) * (U + UG) + GAP; }
+  }
+  const W = Math.max(40, x - GAP + 6), Ht = top + hmax + 4;
+  return `<svg class="b3sv" viewBox="0 0 ${W} ${Ht}" width="${W}" height="${Ht}" role="img" aria-label="${a.unit === 'coin' ? '동전' : '수 모형'}">${s}</svg>`;
+}
+/* 자릿값 표: digits [백,십,일] (null 은 ?), values 줄은 있을 때만(null 은 ?), mark 'h'|'t'|'o' 칸 강조 */
+function placeTableHTML(a, paper){
+  const P = ['h', 't', 'o'], D = a.digits || [null, null, null], V = a.values;
+  const bl = x => x === null || x === undefined || x === '?';
+  const td = (x, i) => `<td class="${bl(x) ? 'blank' : ''}${a.mark === P[i] ? ' mk' : ''}">${bl(x) ? '?' : esc(x)}</td>`;
+  return `<table class="${paper ? 'ppv3' : 'pv3'}"><tr><th></th><th>백의 자리</th><th>십의 자리</th><th>일의 자리</th></tr>` +
+    `<tr><th>숫자</th>${D.map(td).join('')}</tr>` + (V ? `<tr><th>나타내는 값</th>${V.map(td).join('')}</tr>` : '') + `</table>`;
+}
+/* 뛰어 세기 줄: cells (null 은 ?), step (null 이면 화살표에 ?), dir 'down' 이면 거꾸로 */
+function jumpRowHTML(a, paper){
+  const cs = a.cells || []; const bl = x => x === null || x === undefined || x === '?';
+  const lab = (a.step === null || a.step === undefined) ? '?' : (a.dir === 'down' ? '−' : '+') + a.step;
+  return `<div class="${paper ? 'pjump' : 'jump'}">${cs.map((c, i) => (i ? `<span class="ar"><em>${esc(lab)}</em>→</span>` : '') + (bl(c) ? '<span class="c blank">?</span>' : `<span class="c">${esc(c)}</span>`)).join('')}</div>`;
+}
 function hasBat(w){ const ch = String(w).trim().slice(-1); const c = ch.charCodeAt(0);
   if (c >= 0x326E && c <= 0x327B) return false;               /* ㉮~㉻ = 가~하, 받침 없음 */
   return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0; }
@@ -951,6 +1019,10 @@ function drawAsset(a, r){
     case 'balance': return `<div class="cmpw bal">${(a.scales || []).map(balSVG).join('')}</div>`;
     case 'area_shapes': return `<div class="cmpw">${areaSVG(a)}</div>`;
     case 'cups': return `<div class="cmpw">${cupsSVG(a)}</div>`;
+    /* v2.2 — 2학년 1학기 「세 자리 수」 */
+    case 'blocks3': return `<div class="cmpw b3">${blocksSVG(a)}</div>`;
+    case 'place_table': return placeTableHTML(a, false);
+    case 'jump_row': return jumpRowHTML(a, false);
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
@@ -1699,6 +1771,214 @@ function makeVariantOnce(q, r){
     const tn = x => Math.floor(x / 10);
     v.explanation = [`묶음(앞자리)을 먼저 봐요 — ${show.map(x => `${x}${EUN(x)} ${tn(x)}`).join(', ')}.`, big ? `묶음이 가장 많은 ${ans}${IEYO(ans)}.` : `묶음이 같으면 낱개를 봐요 — 가장 작은 수는 ${ans}${IEYO(ans)}.`, '낱개가 크다고 큰 수가 아니에요 — 묶음이 먼저예요.'];
     if (!big) v.explanation[0] = `묶음(앞자리)을 먼저 봐요 — ${tn(ans)}개인 ${ans}${EUN(ans)} 묶음이 가장 적어요.`;
+    return v;
+  }
+
+  /* --- v2.2: 2학년 1학기 「세 자리 수」 (2026-10-10) — 엔진이 오개념 코드를 지어내지 않는다: 꼬리(X..)는 이 단원 사전, 접두사는 개념 코드에서.
+     n3   {ask:'build'|'read'|'write'|'hund'|'hcount'|'tens'|'tcount', zero:true|false, carry:true(build 그림), coin:true(그림 동전)}
+     pv3  {ask:'digit'|'value'|'expand'|'which'|'table', place:'h'|'t'|'o'(없으면 아무 자리)}
+     skip3 {step:[1,10,100], dir:'up'|'down'|'both', ask:'next'|'blank'|'step', cross:true}   — jump_row 그림 필수
+     cmp3d {ask:'big'|'small'|'sign'|'max3'|'min3', same:'h'|'ht'|'none'}
+     cards3 {ask:'max'|'min', zero:true} */
+  const R3 = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+  const rd3 = n => { if (n === 1000) return '천'; const h = Math.floor(n / 100), t = Math.floor(n / 10) % 10, o = n % 10;
+    return (h ? (h > 1 ? R3[h] : '') + '백' : '') + (t ? (t > 1 ? R3[t] : '') + '십' : '') + R3[o]; };
+  const dg3 = n => [Math.floor(n / 100), Math.floor(n / 10) % 10, n % 10];
+  const PLN = {h:'백', t:'십', o:'일'}, PLV = {h:100, t:10, o:1}, PLI = {h:0, t:1, o:2};
+  const pick3 = (r, zero, distinctDigits) => { for (let g = 0; g < 80; g++){ const h = rint(1, 9, r);
+      let t = rint(zero ? 0 : 1, 9, r), o = rint(zero ? 0 : 1, 9, r);
+      if (zero === true && t && o){ if (r() < 0.5) t = 0; else o = 0; }
+      if (zero === true && !t && !o) o = rint(1, 9, r);
+      if (distinctDigits && (h === t || h === o || t === o)) continue;
+      return 100 * h + 10 * t + o; } return 100 * rint(1, 9, r) + 10 * rint(1, 4, r) + rint(5, 9, r); };
+  const UNIT3 = (x, coin) => coin ? x + '원' : x;
+
+  if (rule.n3 && (!a || typeof a === 'string' || a.type === 'blocks3')){
+    const N = rule.n3; const ask = N.ask || 'build'; const want = Math.max(1, nOptsOf(q) - 1); let ans, ds, ex;
+    if (ask === 'build'){
+      let h, t, o; const coin = !!(a && a.unit === 'coin');
+      if (N.carry){ h = rint(1, 7, r); if (r() < 0.5){ t = rint(11, 16, r); o = rint(1, 9, r); } else { t = rint(1, 7, r); o = rint(11, 15, r); } }
+      else { const n0 = pick3(r, N.zero); [h, t, o] = dg3(n0); }
+      ans = 100 * h + 10 * t + o;
+      if (a && a.type === 'blocks3'){ a.h = h; a.t = t; a.o = o; }
+      const cat = String(h) + String(t) + String(o);   /* 개수를 그대로 이어 씀 — 2134 · 5 0 3 → 503 은 정답과 같아 걸러진다 */
+      if (N.carry){
+        ds = [[cat, 'X10'], [100 * h + 10 * (t % 10) + (o % 10), 'X10'], [ans + (t > 9 ? -100 : -10), null]];
+        ex = t > 9 ? [`10이 ${t}개면 ${t * 10}${IEYO(t * 10)} — 100이 1개, 10이 ${t - 10}개로 바꿔요.`, `100이 ${h + 1}개, 10이 ${t - 10}개, 1이 ${o}개 — ${ans}${IEYO(ans)}.`, '한 자리에 10개가 모이면 바로 윗자리 1개로 바꿔요.']
+                   : [`1이 ${o}개면 10이 1개, 1이 ${o - 10}개로 바꿔요.`, `100이 ${h}개, 10이 ${t + 1}개, 1이 ${o - 10}개 — ${ans}${IEYO(ans)}.`, '한 자리에 10개가 모이면 바로 윗자리 1개로 바꿔요.'];
+      } else {
+        const rv = 100 * o + 10 * t + h, drop = Number([h, t, o].filter(x => x).join(''));
+        ds = [[N.zero ? drop : (rv !== ans ? rv : null), N.zero ? 'X04' : 'X06'], [rv !== ans && o ? rv : null, 'X06'], [[h * 100, t * 10, o].filter(x => x).join(''), 'X05'], [ans + 10, null], [ans + 100 <= 999 ? ans + 100 : ans - 100, null]];
+        const parts = [h ? `100이 ${h}개` : '', t ? `10이 ${t}개` : '', o ? `1이 ${o}개` : ''].filter(Boolean).join(', ');
+        ex = [`${parts}예요.`, `백의 자리 ${h}, 십의 자리 ${t}, 일의 자리 ${o} — ${ans}${IEYO(ans)}.`, (!t || !o) ? '없는 자리에는 0을 써서 자리를 지켜요.' : '백·십·일 차례로 숫자를 써요.'];
+      }
+      if (coin && !N.carry) ds = [[100 * o + 10 * t + h !== ans && o ? 100 * o + 10 * t + h : null, 'X06'], [ans + 10, null], [ans - 10, null]];
+      if (a && a.type === 'blocks3') v.stem = coin ? '동전은 모두 얼마인가요?' : '수 모형이 나타내는 수는 얼마인가요?';
+      else v.stem = `${[h ? `100이 ${h}개` : '', t ? `10이 ${t}개` : '', o ? `1이 ${o}개` : ''].filter(Boolean).join(', ')}인 수는 무엇인가요?`;
+      if (coin){ if (q.kind === 'sa') v.answer = [ans + '원', String(ans)]; else v.options = kindOpts(UNIT3(ans, 1), ds.map(d => [d[0] === null ? null : UNIT3(d[0], 1), d[1]]), want, q.options);
+        v.explanation = ex.map(x => x.replace(/(\d+)이 (\d+)개/g, '$1원짜리가 $2개').split(ans + IEYO(ans)).join(ans + '원이에요')); return v; }
+    } else if (ask === 'read' || ask === 'write'){
+      const n = pick3(r, N.zero); const [h, t, o] = dg3(n); const rd = rd3(n);
+      if (ask === 'read'){
+        v.stem = `${n}${EUL(n)} 바르게 읽은 것은 어느 것인가요?`;
+        const only = [h, t, o].map(d => d ? R3[d] : '영').join('');
+        const zr = (h > 1 ? R3[h] : '') + '백' + (t ? (t > 1 ? R3[t] : '') + '십' : '영') + (o ? R3[o] : '영');
+        const dropT = (h > 1 ? R3[h] : '') + '백' + (t ? R3[t] : '') + R3[o];
+        const rv = 100 * o + 10 * t + h;
+        ds = [[only, 'X07'], [(!t || !o) ? zr : dropT, 'X07'], [o && rv !== n ? rd3(rv) : null, 'X06'], [rd3(n + 10 <= 999 ? n + 10 : n - 10), null]];
+        if (q.kind === 'sa') v.answer = [rd]; else v.options = kindOpts(rd, ds, want, q.options);
+        v.explanation = [`${n}${EUN(n)} 백의 자리 ${h}, 십의 자리 ${t}, 일의 자리 ${o}${IEYO(o)}.`, `「${rd}」${BAT(rd) ? '이라고' : '라고'} 읽어요.`, (!t || !o) ? '0이 있는 자리는 읽지 않아요.' : '숫자 뒤에 자리 이름(백·십)을 붙여 읽어요.'];
+        return v;
+      }
+      v.stem = `「${rd}」${BAT(rd) ? '을' : '를'} 수로 쓰면 무엇인가요?`; ans = n;
+      const cat = [h * 100, t * 10, o].filter(x => x).join(''), drop = Number([h, t, o].filter(x => x).join(''));
+      ds = [[cat, 'X05'], [(!t || !o) ? drop : (o ? 100 * o + 10 * t + h : null), (!t || !o) ? 'X04' : 'X06'], [n + 10 <= 999 ? n + 10 : n - 10, null]];
+      ex = [`「${rd}」${WEUNH(rd)} 100이 ${h}개, 10이 ${t}개, 1이 ${o}개예요.`, `수로 쓰면 ${n}${IEYO(n)}.`, (!t || !o) ? '읽지 않은 자리에는 0을 써요.' : '읽은 소리를 그대로 이어 쓰지 않아요 — 세 자리에 숫자 하나씩.'];
+    } else if (ask === 'hund' || ask === 'hcount'){
+      const k = rint(2, 9, r);
+      if (ask === 'hund'){ ans = 100 * k; v.stem = `100이 ${k}개이면 얼마인가요?`; ds = [[100 + k, 'X03'], [10 * k, 'X03'], [100 * (k + 1), null]];
+        ex = [`100이 ${k}개이면 ${ans}${IEYO(ans)}.`, `「${rd3(ans)}」${BAT(rd3(ans)) ? '이라고' : '라고'} 읽어요.`, '개수는 백의 자리에 쓰고, 십·일의 자리는 0이에요.']; }
+      else { ans = k; v.stem = `${100 * k}${EUN(100 * k)} 100이 몇 개인가요?`; ds = [[10 * k, 'X03'], [100 * k, 'X09'], [k + 1, null]];
+        ex = [`${100 * k}${EUN(100 * k)} 백의 자리 숫자가 ${k}${IEYO(k)}.`, `100이 ${k}개예요.`, '백의 자리 숫자가 100의 개수예요.']; }
+    } else if (ask === 'tens'){
+      const k = rint(11, 39, r); ans = 10 * k; v.stem = `10이 ${k}개인 수는 얼마인가요?`;
+      ds = [['10' + k, 'X02'], [k, 'X10'], [10 * k + 100 <= 999 ? 10 * k + 100 : 10 * k - 100, null]];
+      ex = [`10이 10개면 100이에요.`, `10이 ${k}개는 100이 ${Math.floor(k / 10)}개, 10이 ${k % 10}개 — ${ans}${IEYO(ans)}.`, '10이 10개 넘게 모이면 100으로 바꿔 세요.'];
+    } else {   /* tcount — 몇백몇십은 10이 몇 개 */
+      const h = rint(1, 6, r), t = rint(1, 9, r); const n = 100 * h + 10 * t; ans = 10 * h + t; v.stem = `${n}${EUN(n)} 10이 몇 개인가요?`;
+      ds = [[t, 'X10'], [h, 'X03'], [ans + 10, null]];
+      ex = [`${n}${EUN(n)} 100이 ${h}개, 10이 ${t}개예요.`, `100 하나는 10이 10개 — 10이 ${10 * h}개와 ${t}개, 모두 ${ans}개예요.`, '100 속에도 10이 10개 들어 있어요.'];
+    }
+    if (q.kind === 'sa') v.answer = [String(ans)]; else v.options = kindOpts(ans, ds, want, q.options);
+    v.explanation = ex; return v;
+  }
+  if (rule.pv3 && (!a || typeof a === 'string' || a.type === 'place_table')){
+    const P = rule.pv3; const ask = P.ask || 'digit'; const want = Math.max(1, nOptsOf(q) - 1);
+    const pl = P.place || pick(['h', 't', 'o'], r); let n, ans, ds, ex;
+    if (ask === 'digit'){
+      n = pick3(r, P.zero, true); const d = dg3(n); const i = PLI[pl]; ans = d[i];
+      v.stem = `${n}에서 ${PLN[pl]}의 자리 숫자는 무엇인가요?`;
+      ds = [[d[2 - i] !== ans ? d[2 - i] : d[(i + 1) % 3], 'X08'], [ans * PLV[pl] !== ans ? ans * PLV[pl] : null, 'X09'], [d[(i + 1) % 3], 'X08'], [d[(i + 2) % 3], 'X08']];
+      ex = [`${n}${EUN(n)} 백의 자리 ${d[0]}, 십의 자리 ${d[1]}, 일의 자리 ${d[2]}${IEYO(d[2])}.`, `${PLN[pl]}의 자리 숫자는 ${ans}${IEYO(ans)}.`, '자리는 왼쪽부터 백·십·일 — 숫자를 물으면 값이 아니라 숫자 하나로 답해요.'];
+    } else if (ask === 'value'){
+      n = pick3(r, false, true); const d = dg3(n); const i = PLI[pl]; const dd = d[i]; ans = dd * PLV[pl];
+      v.stem = `${n}에서 숫자 ${dd}${GW(dd) === '와' ? '가' : '이'} 나타내는 값은 얼마인가요?`;
+      const others = ['h', 't', 'o'].filter(x => x !== pl).map(x => dd * PLV[x]);
+      ds = [[pl !== 'o' ? dd : null, 'X09'], [others[0], 'X08'], [others[1], 'X08']];
+      ex = [`숫자 ${dd}${EUN(dd)} ${PLN[pl]}의 자리에 있어요.`, `${PLN[pl]}의 자리 ${dd}${EUN(dd)} ${ans}${EUL(ans)} 나타내요.`, '같은 숫자라도 어느 자리에 있느냐에 따라 값이 달라요.'];
+    } else if (ask === 'expand'){
+      n = pick3(r, false, true); const [h, t, o] = dg3(n); ans = `${h * 100} + ${t * 10} + ${o}`;
+      v.stem = `${n}${EUL(n)} 각 자리의 값의 합으로 바르게 나타낸 것은 어느 것인가요?`;
+      ds = [[`${h} + ${t} + ${o}`, 'X09'], [`${h * 100} + ${o * 10} + ${t}`, 'X08'], [`${h * 10} + ${t * 10} + ${o}`, 'X09']];
+      ex = [`${n}${EUN(n)} 백의 자리 ${h}, 십의 자리 ${t}, 일의 자리 ${o}${IEYO(o)}.`, `각 자리의 값은 ${h * 100}, ${t * 10}, ${o} — ${n} = ${ans}.`, '숫자 하나하나에 자리 값을 붙여야 해요.'];
+    } else if (ask === 'which'){
+      const dd = rint(2, 9, r); const i = PLI[pl]; ans = null; const val = dd * PLV[pl];
+      const mk = pos => { for (let g = 0; g < 60; g++){ const d = [rint(1, 9, r), rint(0, 9, r), rint(0, 9, r)]; d[pos] = dd; if (d.filter(x => x === dd).length === 1 && d[0]) return 100 * d[0] + 10 * d[1] + d[2]; } return null; };
+      ans = mk(i); const w1 = mk((i + 1) % 3), w2 = mk((i + 2) % 3);
+      v.stem = `숫자 ${dd}${GW(dd) === '와' ? '가' : '이'} ${val}${EUL(val)} 나타내는 수는 어느 것인가요?`;
+      ds = [[w1, 'X08'], [w2, 'X08']];
+      ex = [`${val}${EUN(val)} ${PLN[pl]}의 자리 값이에요.`, `숫자 ${dd}${GW(dd) === '와' ? '가' : '이'} ${PLN[pl]}의 자리에 있는 수는 ${ans}${IEYO(ans)}.`, '숫자가 어느 자리에 있는지 먼저 찾아요.'];
+    } else {   /* table — 자릿값 표 「나타내는 값」 줄의 빈칸 */
+      n = pick3(r, false, true); const d = dg3(n); const i = PLI[pl]; ans = d[i] * PLV[pl];
+      if (a && a.type === 'place_table'){ a.digits = d.slice(); a.values = [d[0] * 100, d[1] * 10, d[2]]; a.values[i] = null; a.mark = pl; }
+      v.stem = `${n}의 자릿값 표예요. 빈칸에 알맞은 값은 얼마인가요?`;
+      ds = [[d[i] !== ans ? d[i] : null, 'X09'], [d[i] * PLV[pl === 'h' ? 't' : 'h'], 'X08'], [d[i] * PLV[pl === 'o' ? 't' : 'o'], 'X08']];
+      ex = [`빈칸은 ${PLN[pl]}의 자리예요.`, `${PLN[pl]}의 자리 숫자 ${d[i]}${EUN(d[i])} ${ans}${EUL(ans)} 나타내요.`, '나타내는 값 = 숫자 × 자리(100·10·1).'];
+    }
+    if (q.kind === 'sa') v.answer = [String(ans)]; else v.options = kindOpts(ans, ds, want, q.options);
+    v.explanation = ex; return v;
+  }
+  if (rule.skip3 && a && a.type === 'jump_row'){
+    const K = rule.skip3; const ask = K.ask || 'next'; const want = Math.max(1, nOptsOf(q) - 1);
+    const steps = [].concat(K.step || [1, 10, 100]); const s = pick(steps, r);
+    const dir = K.dir === 'both' ? (r() < 0.5 ? 'up' : 'down') : (K.dir || 'up'); const up = dir === 'up';
+    const len = (a.cells || []).length || 5; const bi = ask === 'next' ? len - 1 : (ask === 'blank' ? rint(1, len - 2, r) : -1);
+    let start = 0, okGen = false;
+    const cross = !!K.cross && bi >= 0 && !(s === 100 && !up);
+    for (let g = 0; g < 120 && !okGen; g++){
+      if (cross){ /* 빈칸 수가 윗자리가 바뀌는 문턱이 되게 — 올라갈 땐 349→350·390→400·900→1000, 내려갈 땐 350→349·400→390 */
+        const b = up ? (s === 1 ? 10 * rint(11, 99, r) : s === 10 ? 100 * rint(2, 10, r) : 1000) : (s === 1 ? 10 * rint(11, 99, r) - 1 : 100 * rint(2, 9, r) - 10);
+        start = up ? b - bi * s : b + bi * s;
+      } else start = up ? rint(100, 999 - (len - 1) * s, r) : rint(100 + (len - 1) * s, 999, r);
+      const last = up ? start + (len - 1) * s : start - (len - 1) * s;
+      okGen = Math.min(start, last) >= 100 && Math.max(start, last) <= (cross ? 1000 : 999);
+    }
+    const cells = []; for (let i = 0; i < len; i++) cells.push(up ? start + i * s : start - i * s);
+    a.cells = cells.map((c, i) => i === bi ? null : c); a.step = ask === 'step' ? null : s; a.dir = up ? 'up' : 'down';
+    if (ask === 'step'){
+      v.stem = up ? '얼마씩 뛰어 세었나요?' : '얼마씩 거꾸로 뛰어 세었나요?';
+      const sAns = s + '씩'; const sDs = [1, 10, 100].filter(x => x !== s).map(x => [x + '씩', 'X12']);
+      const pn = s === 100 ? '백' : s === 10 ? '십' : '일';
+      const ex = [`${cells[0]}, ${cells[1]}, ${cells[2]} … 하고 ${pn}의 자리 숫자만 1씩 ${up ? '커져요' : '작아져요'}.`, `그래서 ${s}씩 ${up ? '' : '거꾸로 '}뛰어 세었어요.`, '어느 자리 숫자가 바뀌는지 보면 몇씩 뛰었는지 알 수 있어요.'];
+      if (q.kind === 'sa') v.answer = [String(s), s + '씩']; else v.options = kindOpts(sAns, sDs, want, q.options);
+      v.explanation = ex; return v;
+    }
+    const ans = cells[bi], prev = cells[bi - 1];
+    v.stem = `${s}씩 ${up ? '' : '거꾸로 '}뛰어 세었어요. 빈칸에 알맞은 수는 무엇인가요?`;
+    const other = s === 10 ? [1, 100] : s === 1 ? [10, 100] : [10, 1];
+    const crossed = Math.floor(ans / (s * 10)) !== Math.floor(prev / (s * 10));
+    let cat = null; if (crossed && up && s < 100){ cat = String(Math.floor(prev / (s * 10))) + String((Math.floor(prev / s) % 10) + 1) + (s === 10 ? '0' : ''); if (/^0/.test(cat)) cat = null; }
+    if (crossed && !up) cat = ans + s * 10 <= 999 ? ans + s * 10 : null;
+    const ds2 = [[cat, 'X01'], [up ? prev + other[0] : prev - other[0], 'X11'], [up ? prev + other[1] : prev - other[1], 'X11'], [up ? ans + s : ans - s, null]];
+    const pn = s === 100 ? '백' : s === 10 ? '십' : '일';
+    const ex2 = [`${s}씩 ${up ? '뛰면' : '거꾸로 뛰면'} ${pn}의 자리 숫자가 1씩 ${up ? '커져요' : '작아져요'}.`, `${prev}에서 ${s}만큼 ${up ? '뛰면' : '거꾸로 뛰면'} ${ans}${IEYO(ans)}.`, crossed ? (up ? `${pn}의 자리가 10이 되면 바로 윗자리가 1 커지고 ${pn}의 자리는 0이 돼요.` : `${pn}의 자리가 0에서 더 작아지면 바로 윗자리에서 1을 빌려 와요.`) : '다른 자리 숫자는 그대로예요.'];
+    if (q.kind === 'sa') v.answer = [String(ans)]; else v.options = kindOpts(ans, ds2.filter(d => d[0] === null || (Number(d[0]) >= 0 && Number(d[0]) <= 9999)), want, q.options);
+    v.explanation = ex2; return v;
+  }
+  if (rule.cmp3d && (!a || typeof a === 'string')){
+    const C3 = rule.cmp3d; const ask = C3.ask || 'big'; const same = C3.same || 'none'; const want = Math.max(1, nOptsOf(q) - 1);
+    /* 큰 수 x 와 작은 수 y — 낮은 자리는 일부러 y 쪽이 크게(함정) */
+    const pair = () => { let x, y;
+      for (let g = 0; g < 60; g++){
+        if (same === 'ht'){ const h = rint(1, 9, r), t = rint(0, 9, r), o1 = rint(1, 9, r), o2 = rint(0, o1 - 1, r); x = 100 * h + 10 * t + o1; y = 100 * h + 10 * t + o2; }
+        else if (same === 'h'){ const h = rint(1, 9, r), t1 = rint(1, 9, r), t2 = rint(0, t1 - 1, r); x = 100 * h + 10 * t1 + rint(0, 4, r); y = 100 * h + 10 * t2 + rint(5, 9, r); }
+        else { const h1 = rint(2, 9, r), h2 = rint(1, h1 - 1, r); x = 100 * h1 + 10 * rint(0, 4, r) + rint(0, 4, r); y = 100 * h2 + 10 * rint(5, 9, r) + rint(5, 9, r); }
+        if (x !== y) break; }
+      return [x, y]; };
+    const why = (x, y) => { const dx = dg3(x), dy = dg3(y); const i = dx.findIndex((d, k) => d !== dy[k]); return [i, ['백', '십', '일'][i], dx[i], dy[i]]; };
+    let ans, ds, ex;
+    if (ask === 'max3' || ask === 'min3'){
+      const big = ask === 'max3'; let ns;
+      for (let g = 0; g < 60; g++){ const [x, y] = pair(); const z = big ? y - 10 * rint(1, 3, r) : x + 10 * rint(1, 3, r);
+        if (z >= 100 && z <= 999 && z !== x && z !== y){ ns = [x, y, z]; break; } }
+      if (!ns) ns = [523, 498, 476];
+      ans = big ? Math.max(...ns) : Math.min(...ns); const trap = big ? ns[1] : ns[0]; const third = ns.find(z => z !== ans && z !== trap);
+      const show = shuffle(ns, r);
+      v.stem = `${show.join(', ')} 가운데 가장 ${big ? '큰' : '작은'} 수는 무엇인가요?`;
+      ds = [[trap, 'X13'], [big ? Math.min(...ns) : Math.max(...ns), 'X15'], [third, null]];
+      ex = ['높은 자리(백의 자리)부터 차례로 견주어요.', `가장 ${big ? '큰' : '작은'} 수는 ${ans}${IEYO(ans)}.`, '일의 자리가 크다고 큰 수가 아니에요 — 높은 자리가 먼저예요.'];
+      if (q.kind === 'sa') v.answer = [String(ans)]; else v.options = kindOpts(ans, ds, want, q.options);
+      v.explanation = ex; return v;
+    }
+    const [x, y] = pair(); const [i, pn, dx, dy] = why(x, y); const sw = r() < 0.5; const L = sw ? y : x, Rr = sw ? x : y;
+    if (ask === 'sign'){
+      v.stem = '두 수의 크기를 바르게 비교한 것은 어느 것인가요?';
+      ans = `${L} ${L > Rr ? '>' : '<'} ${Rr}`; ds = [[`${L} ${L > Rr ? '<' : '>'} ${Rr}`, 'X14']];
+      ex = [`${pn}의 자리에서 처음으로 달라요 — ${dx}${EUN(dx)} ${dy}보다 커요.`, `그래서 ${x}${EUN(x)} ${y}보다 커요 — ${ans}.`, '> 와 < 는 벌어진 쪽이 큰 수를 향해요.'];
+    } else {
+      const big = ask === 'big'; ans = big ? x : y;
+      v.stem = `${L}${GW(L)} ${Rr} 중에서 더 ${big ? '큰' : '작은'} 수는 무엇인가요?`;
+      ds = [[big ? y : x, 'X13']];
+      ex = [`${i ? (i === 2 ? '백의 자리와 십의 자리가 같아요.' : '백의 자리가 같아요.') : '백의 자리부터 견주어요.'}`, `${pn}의 자리를 보면 ${dx}${EUN(dx)} ${dy}보다 커요 — 더 ${big ? '큰' : '작은'} 수는 ${ans}${IEYO(ans)}.`, '높은 자리가 다르면 낮은 자리는 보지 않아도 돼요.'];
+    }
+    if (q.kind === 'sa') v.answer = [String(ans)]; else v.options = kindOpts(ans, ds, want, q.options);
+    v.explanation = ex; return v;
+  }
+  if (rule.cards3 && (!a || typeof a === 'string')){
+    const K = rule.cards3; const big = (K.ask || 'max') === 'max'; const want = Math.max(1, nOptsOf(q) - 1);
+    let c; for (let g = 0; g < 60; g++){ c = [K.zero ? 0 : rint(1, 9, r), rint(1, 9, r), rint(1, 9, r)]; if (new Set(c).size === 3) break; }
+    const show = shuffle(c, r); const up = c.slice().sort((p, s2) => p - s2), dn = up.slice().reverse();
+    const num = d => 100 * d[0] + 10 * d[1] + d[2];
+    const mx = num(dn); let mn = num(up); if (up[0] === 0) mn = num([up[1], 0, up[2]]);
+    const ans = big ? mx : mn;
+    v.stem = `수 카드 ${show.join(', ')}${EUL(show[2])} 한 번씩 모두 써서 만들 수 있는 가장 ${big ? '큰' : '작은'} 세 자리 수는 무엇인가요?`;
+    const second = big ? num([dn[0], dn[2], dn[1]]) : (up[0] === 0 ? num([up[1], up[2], 0]) : num([up[0], up[2], up[1]]));
+    const ds = big ? [[mn, 'X15'], [second, 'X16'], [up[0] ? num(up) : null, 'X16']]
+                   : (up[0] === 0 ? [[Number(String(up[1]) + String(up[2])), 'X16'], [mx, 'X15'], [second, 'X16']] : [[second, 'X16'], [mx, 'X15'], [num(dn.slice(0, 1).concat(up.slice(0, 2))), 'X16']]);
+    v.explanation = big ? [`가장 큰 ${dn[0]}${EUL(dn[0])} 백의 자리에 놓아요.`, `남은 카드도 큰 수부터 — ${mx}${IEYO(mx)}.`, '높은 자리일수록 큰 숫자를 놓아요.']
+                        : (up[0] === 0 ? ['0은 백의 자리에 놓을 수 없어요(그러면 두 자리 수).', `백의 자리에 ${up[1]}, 십의 자리에 0, 일의 자리에 ${up[2]} — ${mn}${IEYO(mn)}.`, '0이 있으면 백의 자리 다음 자리에 놓아요.']
+                                       : [`가장 작은 ${up[0]}${EUL(up[0])} 백의 자리에 놓아요.`, `남은 카드도 작은 수부터 — ${mn}${IEYO(mn)}.`, '높은 자리일수록 작은 숫자를 놓아요.']);
+    if (q.kind === 'sa') v.answer = [String(ans)]; else v.options = kindOpts(ans, ds, want, q.options);
     return v;
   }
 
@@ -2813,6 +3093,9 @@ function paperAsset(a){
       P.forEach(p => { for (let i = 0; i < Math.max(0, Number(p.n) || 0); i++) bag.push(p.solid); });
       const mixed = shuffle(bag, rng(bag.length * 137 + 5)); let c = 0;
       return `<div class="psolart">${mixed.map(k => solidSVG(k === 'cyl' && a.lay && (c++ % 2) ? 'cyl_lay' : k)).join('')}<em>${a.name ? esc(a.name) + ' — ' : ''}상자·기둥·공 모양으로 만들었어요</em></div>`; }
+    case 'blocks3': return `<div class="pcmpw">${blocksSVG(a)}<em class="pb3">${a.unit === 'coin' ? '(동전)' : '(큰 네모 = 백 모형, 막대 = 십 모형, 작은 네모 = 일 모형)'}</em></div>`;
+    case 'place_table': return placeTableHTML(a, true);
+    case 'jump_row': return jumpRowHTML(a, true);
     case 'plate': return `<div class="pplate">${a.n === 0 ? '(비어 있음)' : a.item.repeat(a.n)}</div>`;
   } return '';
 }
