@@ -548,5 +548,520 @@
     "text": "글은 남고 벼슬은 간다."
    }
   ]
+ },
+ "jwasu": {
+  "name": "좌수 — 향청",
+  "lines": [
+   {
+    "if": "sit:hyangcheong:open && !sit:hyangcheong:done",
+    "text": "향청이오. 이 책이 향안 — 고을 양반 이름이 다 여기 있소. 요즘 공명첩 산 집들이 이름을 올려 달라고 줄을 서오. 옛 집들은 「족보를 보자」 하고. …당신 이름은 어느 줄에 있소.",
+    "choices": [
+     {
+      "label": "향안에 이름을 올려 달라 ⚠ — 눈 (신향·곡식 둘)",
+      "if": "status:sinyang && val:grain>=2",
+      "gray": "이름을 올려 달라는 건 돈으로 양반이 된 집이다 — 곡식 둘.",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "구향이 들이미는 족보 앞에서 물러서지 않는 눈.",
+       "fail": "…「족보에 없는 이름」. 지워졌다."
+      },
+      "rollFailFlag": "hc:struck",
+      "flag": "hc:list",
+      "say": "📜 향안 끝줄에 내 이름. 붉은 끈. 구향 셋이 자리를 떴다."
+     },
+     {
+      "label": "수령에게 쌀을 보낸다 ⚠ — 신향·도고 (곡식 셋)",
+      "if": "(status:sinyang || status:dogo) && val:grain>=3",
+      "gray": "수령 편을 사는 건 돈 있는 새 집이다 — 곡식 셋.",
+      "flag": "hc:bribe",
+      "say": "🌾 쌀 세 섬이 동헌으로. 다음 날 수령이 「신향도 앉히라」."
+     },
+     {
+      "label": "족보를 보자며 막는다 — 구향 (양반·몰락 양반)",
+      "if": "(status:yangban || status:mollak)",
+      "gray": "막는 건 원래 향안에 있던 집이다.",
+      "flag": "hc:block",
+      "say": "📜 「돈으로 산 첩은 족보가 아니오.」 신향이 물러갔다 — 올해는."
+     },
+     {
+      "label": "서얼도 향안에 — 통문을 돌린다 (서얼)",
+      "if": "status:seoeol",
+      "gray": "서얼의 향안 통문은 서얼이 돌린다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 1,
+       "why": "고을 서얼 이름을 한 장에 모으는 눈.",
+       "fail": "…셋밖에 안 붙었다."
+      },
+      "flag": "hc:seoeol",
+      "say": "📜 「서얼도 고을 사람이다.」 이름 열둘. 향안은 아직."
+     },
+     {
+      "label": "말을 옮긴다 — 아전 (중인)",
+      "if": "status:jungin",
+      "gray": "수령과 향청 사이 말은 아전이 옮긴다.",
+      "flag": "hc:ajeon",
+      "say": "🧾 「수령이 신향 편이오.」 양쪽에서 쌀이 왔다."
+     },
+     {
+      "label": "향안 궤를 나른다 — 노비·관노",
+      "if": "(status:solgeo || status:oegeo || status:gwanno)",
+      "gray": "궤를 나르는 건 노비다.",
+      "flag": "hc:errand",
+      "say": "🏋 향안 궤를 동헌까지. 내 이름은 거기 없다."
+     },
+     {
+      "label": "마당 밖에서 본다",
+      "flag": "hc:watch",
+      "say": "같은 고을, 두 줄 돗자리. 서쪽은 앉았고 동쪽은 비었다."
+     }
+    ]
+   },
+   {
+    "if": "hc:list || hc:bribe",
+    "text": "끝줄 붉은 끈. 구향은 이제 향청에 안 오오."
+   },
+   {
+    "text": "향안에 이름이 있어야 고을 양반이오. 요즘은 그게 제일 비싸오."
+   }
+  ]
+ },
+ "nanjeon": {
+  "name": "난전 장사꾼",
+  "lines": [
+   {
+    "if": "sit:nanjeon:open && !sit:nanjeon:done",
+    "text": "시전 사람들이 좌판 엎으러 와도 이제 못 엎소. 신해년에 나라가 풀었으니. 짚신, 엿, 놋숟가락 — 아무나 팔아도 되오. …자리 하나 비었소. 펴 보겠소?",
+    "choices": [
+     {
+      "label": "빈 자리에 좌판을 편다 — 손",
+      "if": "!(status:yangban || status:sinyang || status:mollak || status:solgeo || status:gwanno)",
+      "gray": "양반은 장사하면 양반 대접을 못 받았다. 노비는 제 물건이 없다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "짚신 열 켤레를 하루에 삼는 손.",
+       "fail": "…반만 팔았다."
+      },
+      "flag": "nj:stall",
+      "say": "🧺 짚신 열 켤레, 엿 한 판. 상평통보 서른 닢."
+     },
+     {
+      "label": "갓을 벗고 좌판을 편다 ⚠ — 몰락 양반",
+      "if": "status:mollak",
+      "gray": "갓을 벗는 건 이름만 양반인 집이다.",
+      "flag": "nj:mollak",
+      "say": "🧺 갓을 벗었다. 「양반이 장사를?」 엽전은 들어온다."
+     },
+     {
+      "label": "창고에 몰아 산다 ⚠ — 눈 (도고·곡식 둘)",
+      "if": "status:dogo && val:grain>=2",
+      "gray": "몰아 사는 건 밑천 있는 도고다 — 곡식 둘.",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "값이 오르기 전 날을 먼저 읽는 눈.",
+       "fail": "…값이 먼저 떨어졌다."
+      },
+      "rollFailFlag": "nj:hoardfail",
+      "flag": "nj:hoard",
+      "say": "🔒 소금 백 섬, 자물쇠. 사흘 뒤 값이 두 배."
+     },
+     {
+      "label": "떡·술을 판다 — 여자 (손)",
+      "if": "sex:f && !(status:yangban || status:sinyang || status:solgeo || status:gwanno)",
+      "gray": "장터 떡·술은 작은 집 여자가 판다. 양반집 여자는 담 밖에 안 나온다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "새벽에 떡 한 시루를 찌는 손.",
+       "fail": "…떡이 설었다."
+      },
+      "flag": "nj:food",
+      "say": "🍶 떡 한 시루, 막걸리 한 독. 다 팔렸다."
+     },
+     {
+      "label": "노비를 시켜 판다 — 양반·신향",
+      "if": "(status:yangban || status:sinyang)",
+      "gray": "대신 앉힐 노비가 있는 집이다.",
+      "flag": "nj:proxy",
+      "say": "🧺 행랑 노비가 대신 앉았다. 갓은 담 안에."
+     },
+     {
+      "label": "짐을 나른다 — 노비",
+      "if": "(status:solgeo || status:oegeo || status:gwanno)",
+      "gray": "짐은 노비가 나른다.",
+      "flag": "nj:errand",
+      "say": "🏋 소금 짐을 도고 창고로. 값은 남이 올린다."
+     },
+     {
+      "label": "본다",
+      "flag": "nj:watch",
+      "say": "장터 밖까지 좌판. 쫓는 사람이 없다."
+     }
+    ]
+   },
+   {
+    "if": "nj:stall || nj:mollak",
+    "text": "파란 천 그 자리 — 이제 당신 자리요."
+   },
+   {
+    "text": "시전 사람이 이제 우릴 못 쫓소. 신해년부터."
+   }
+  ]
+ },
+ "gwangdae": {
+  "name": "광대 — 소리꾼",
+  "lines": [
+   {
+    "if": "sit:nori:open && !sit:nori:done",
+    "text": "오늘 판은 양반 놀리는 마당이오. 탈 쓰고 나가면 아무도 얼굴을 몰라. 북 칠 사람, 엽전 던질 사람, 뒤에서 몰래 볼 사람. …당신은 어디 서겠소.",
+    "choices": [
+     {
+      "label": "탈을 쓰고 마당에 나간다 — 몸",
+      "if": "!(status:yangban || status:sinyang || status:mollak)",
+      "gray": "양반이 양반 탈을 쓰고 나오진 않았다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 1,
+       "why": "탈 쓰고 한삼을 휘두르며 마당을 도는 몸.",
+       "fail": "…넘어졌다. 웃음은 났다."
+      },
+      "flag": "nr:mask",
+      "say": "🎭 「양반 나오신다!」 마당이 뒤집어졌다. 갓 쓴 사람도 웃었다."
+     },
+     {
+      "label": "북을 친다 — 고수 (손)",
+      "if": "!(status:yangban || status:sinyang)",
+      "gray": "북은 광대 패가 친다 — 양반은 앉아서 듣는다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "소리꾼 숨에 맞춰 「얼씨구」를 넣는 손.",
+       "fail": "…박자를 놓쳤다."
+      },
+      "flag": "nr:drum",
+      "say": "🥁 둥. 「얼씨구.」 흥보가 한 대목이 끝났다."
+     },
+     {
+      "label": "엽전을 던진다 (곡식 하나)",
+      "if": "val:grain>=1 && !(status:solgeo || status:oegeo || status:gwanno)",
+      "gray": "던질 엽전이 있는 사람이다.",
+      "flag": "nr:coin",
+      "say": "🪙 엽전 한 꿰미. 「잘한다!」"
+     },
+     {
+      "label": "소리꾼을 집으로 부른다 — 양반·신향·도고 (곡식 둘)",
+      "if": "(status:yangban || status:sinyang || status:dogo) && val:grain>=2",
+      "gray": "소리꾼을 부르는 건 마당 있는 큰 집이다 — 곡식 둘.",
+      "flag": "nr:invite",
+      "say": "🪭 사랑채 마당에 소리판. 「춘향가 한 대목.」 이웃이 부러워했다."
+     },
+     {
+      "label": "갓 쓰고 맨 뒤에서 본다 — 양반",
+      "if": "(status:yangban || status:sinyang || status:mollak)",
+      "gray": "맨 뒤에 숨는 건 갓 쓴 사람이다.",
+      "flag": "nr:back",
+      "say": "😶 맨 뒤. 탈이 양반을 놀릴 때 같이 웃었다. 아무도 못 봤다 — 아마."
+     },
+     {
+      "label": "담 너머로 본다 — 양반집 여자",
+      "if": "sex:f && (status:yangban || status:sinyang || status:mollak || status:seoeol)",
+      "gray": "양반집 여자는 마당에 못 나왔다 — 작은 집 여자는 그냥 와서 본다.",
+      "flag": "nr:wall",
+      "say": "👀 담 위로 갓 끝과 탈 끝만. 소리는 다 들렸다."
+     },
+     {
+      "label": "본다",
+      "flag": "nr:watch",
+      "say": "탈 하나에 마당 전체가 웃는다."
+     }
+    ]
+   },
+   {
+    "text": "탈 쓰면 아무도 몰라. 그러니까 하는 말이 있지."
+   }
+  ]
+ },
+ "gasam": {
+  "name": "삼포 주인 — 개성 상인",
+  "lines": [
+   {
+    "if": "sit:crops:open && !sit:crops:done",
+    "text": "논 한 마지기보다 담배 밭이 낫소. 인삼은 여섯 해를 기다려야 하지만, 쪄서 홍삼으로 만들면 청에서 금값이오. 대신 값이 떨어지는 해엔 쌀도 없소. …심겠소, 품을 팔겠소.",
+    "choices": [
+     {
+      "label": "논 한쪽에 담배를 심는다 ⚠ — 눈 (상민·소작·장인·중인)",
+      "if": "(status:sangmin || status:sojak || status:jangin || status:jungin)",
+      "gray": "제 논을 바꿔 심는 건 땅 부치는 집이다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "올해 담뱃값이 오를지 먼저 읽는 눈.",
+       "fail": "…다들 담배를 심은 해였다. 값이 떨어졌다."
+      },
+      "rollFailFlag": "cr:fall",
+      "flag": "cr:tobacco",
+      "say": "🍂 잎을 따서 시렁에 걸었다. 장날 세 배."
+     },
+     {
+      "label": "삼포를 사서 홍삼으로 — 도고·신향·양반·중인 (곡식 셋)",
+      "if": "(status:dogo || status:sinyang || status:yangban || status:jungin) && val:grain>=3",
+      "gray": "삼포는 밑천 있는 집이 산다 — 곡식 셋.",
+      "flag": "cr:ginseng",
+      "say": "🌱 삼포 다섯 고랑. 쪄서 홍삼 — 연행 짐에 실었다."
+     },
+     {
+      "label": "잎을 딴다 — 품 (배)",
+      "if": "(status:pumpali || status:sojak || status:oegeo || status:hwajeon || status:sangmin)",
+      "gray": "품은 땅 없는 사람이 판다.",
+      "roll": {
+       "ab": "배",
+       "hard": 1,
+       "why": "허리 굽혀 하루 종일 잎을 따는 배.",
+       "fail": "…반나절. 품삯 반."
+      },
+      "flag": "cr:hire",
+      "say": "🍂 잎 백 장. 품삯 엽전 열 닢."
+     },
+     {
+      "label": "목화를 따서 무명을 짠다 — 여자 (손)",
+      "if": "sex:f && !(status:solgeo || status:oegeo || status:gwanno)",
+      "gray": "무명은 집안 여자가 짜서 판다. 노비 여자는 주인 몫이다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "한 필을 고르게 짜는 손.",
+       "fail": "…올이 성겼다."
+      },
+      "flag": "cr:cotton",
+      "say": "🧵 무명 두 필. 장에서 쌀 한 말."
+     },
+     {
+      "label": "소작 땅을 담배 밭으로 돌린다 ⚠ — 양반·신향",
+      "if": "(status:yangban || status:sinyang)",
+      "gray": "땅을 돌리는 건 땅 주인이다.",
+      "flag": "cr:evict",
+      "say": "🍂 소작 셋이 나갔다. 담배는 품을 사서 기른다."
+     },
+     {
+      "label": "본다",
+      "flag": "cr:watch",
+      "say": "논 옆에 담배, 짚 지붕 밑에 인삼. 쌀이 아니라 돈을 심는다."
+     }
+    ]
+   },
+   {
+    "text": "홍삼 한 근이 쌀 몇 섬인지 아시오? 청에 가면 알게 되오."
+   }
+  ]
+ },
+ "munjeong": {
+  "name": "문정관",
+  "lines": [
+   {
+    "if": "sit:isyang:open && !sit:isyang:done",
+    "text": "바다 건너 「영길리」 배라 하오. 장사를 하자는데 나라는 안 된다 하오. 물과 쌀은 주고 돌려보내라는 명이오. 말이 안 통해 글로 묻소. …누가 무엇을 하겠소.",
+    "choices": [
+     {
+      "label": "물과 땔감을 나른다 — 몸",
+      "if": "!(status:yangban || status:sinyang)",
+      "gray": "물과 땔감은 아랫사람이 나른다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 1,
+       "why": "물동이를 지고 거룻배까지 걷는 몸.",
+       "fail": "…물을 반쯤 쏟았다."
+      },
+      "flag": "is:water",
+      "say": "🪣 물 열 동이. 배 사람이 반짝이는 단추 하나를 줬다."
+     },
+     {
+      "label": "배에 올라 글로 묻는다 ⚠ — 역관 (중인)",
+      "if": "status:jungin",
+      "gray": "배에 올라 묻는 건 역관·문정관이다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "말이 안 통하면 한자로 써서 묻는 눈.",
+       "fail": "…글자도 안 통했다."
+      },
+      "rollFailFlag": "is:askfail",
+      "flag": "is:ask",
+      "say": "📜 「영길리. 장사.」 붓으로 썼다. 장계에 내 이름."
+     },
+     {
+      "label": "씨감자를 얻는다 — 화전·소작·품팔이·상민",
+      "if": "(status:hwajeon || status:sojak || status:pumpali || status:sangmin)",
+      "gray": "씨감자를 얻는 건 심을 땅이 있는 작은 집이다.",
+      "flag": "is:potato",
+      "say": "🥔 「이렇게 심으라」 손짓. 씨감자 한 자루."
+     },
+     {
+      "label": "책 한 권을 받아 숨긴다 ⚠",
+      "if": "!(status:solgeo || status:oegeo || status:gwanno)",
+      "gray": "노비는 받아 둘 데가 없다.",
+      "flag": "is:book",
+      "say": "📕 서양 글자. 아무도 못 읽는다. 1801년 뒤라 — 독 밑에 숨겼다."
+     },
+     {
+      "label": "「교역은 안 된다」를 전한다 — 양반·신향",
+      "if": "(status:yangban || status:sinyang)",
+      "gray": "나라의 말은 벼슬 집이 전한다.",
+      "flag": "is:refuse",
+      "say": "📜 「물과 쌀은 주되 교역은 안 된다.」 배가 돌아갔다."
+     },
+     {
+      "label": "본다",
+      "flag": "is:watch",
+      "say": "돛대 둘, 네모 돛. 우리 배보다 크다."
+     }
+    ]
+   },
+   {
+    "text": "또 올 거요. 이번엔 돌아갔지만."
+   }
+  ]
+ },
+ "gyou": {
+  "name": "옹기장이 — 교우",
+  "lines": [
+   {
+    "if": "sit:gyouchon:open && !sit:gyouchon:done",
+    "text": "여긴 지도에 없는 골이오. 다들 옹기를 굽고 감자를 심소. 여기선 아무도 「상놈」 「종」 하지 않소 — 다 「교우」요. …쉬어 가시오. 아니면 굽는 걸 거들든지.",
+    "choices": [
+     {
+      "label": "옹기 굽기를 거든다 — 손",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "흙을 쳐서 고르게 쌓아 올리는 손.",
+       "fail": "…독이 주저앉았다."
+      },
+      "flag": "gy:kiln",
+      "say": "🏺 독 셋. 불구멍에 장작을 넣었다."
+     },
+     {
+      "label": "「교우」 소리를 듣는다 — 노비·백정·관노",
+      "if": "(status:solgeo || status:oegeo || status:gwanno || status:baekjeong)",
+      "gray": "처음 듣는 사람이 따로 있다 — 늘 아랫말만 듣던 사람.",
+      "flag": "gy:brother",
+      "say": "🤝 「교우님.」 태어나 처음 들은 말."
+     },
+     {
+      "label": "옹기를 지고 장에 판다 — 발",
+      "if": "!(status:yangban || status:sinyang)",
+      "gray": "옹기 짐은 아랫사람이 진다.",
+      "roll": {
+       "ab": "발",
+       "hard": 1,
+       "why": "독 넷을 지고 산길을 내려가는 발.",
+       "fail": "…하나 깨졌다."
+      },
+      "flag": "gy:sell",
+      "say": "🏺 독 넷, 장에서 쌀 한 말. 어디서 왔냐 묻는 사람은 없었다."
+     },
+     {
+      "label": "여기 남아 산다 ⚠ — 숨는다",
+      "flag": "gy:stay",
+      "say": "🏺 골 안 셋째 집. 지도에 없는 사람이 됐다."
+     },
+     {
+      "label": "관아에 알린다 ⚠ — 상을 받는다 (양반·신향·중인·도고)",
+      "if": "(status:yangban || status:sinyang || status:jungin || status:dogo)",
+      "gray": "고발해서 상을 받는 건 관아와 가까운 집이다.",
+      "flag": "gy:report",
+      "say": "📜 「산골 옹기촌.」 쌀 두 섬. 다음 달 포졸이 올라갔다."
+     },
+     {
+      "label": "본다",
+      "flag": "gy:watch",
+      "say": "양반 옷 입은 사람이 백정 옆에서 흙을 친다."
+     }
+    ]
+   },
+   {
+    "if": "gy:stay",
+    "text": "셋째 집 교우님, 불 좀 보시오."
+   },
+   {
+    "text": "아래 사람들한텐 이 골 말 마시오."
+   }
+  ]
+ },
+ "hwajeonmin": {
+  "name": "화전민",
+  "lines": [
+   {
+    "if": "sit:hwajeon:open && !sit:hwajeon:done",
+    "text": "아래서는 군포다, 환곡이다, 죽은 아비 몫까지 내라 해서 올라왔소. 여긴 불 놓으면 밭이오. 세 해면 땅이 지쳐 다른 비탈로 가오. …당신도 올라왔소?",
+    "choices": [
+     {
+      "label": "비탈에 불을 놓는다 ⚠ — 몸 (상민·소작·품팔이·외거·화전·도적)",
+      "if": "(status:sangmin || status:sojak || status:pumpali || status:oegeo || status:hwajeon || status:bandit) && !hurt:wound",
+      "gray": "불을 놓는 건 아래서 쫓겨 올라온 사람, 몸 성한 사람이다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 2,
+       "why": "바람을 보고 불을 놓고, 번지기 전에 끄는 몸.",
+       "fail": "…불이 번졌다. 팔."
+      },
+      "rollFailFlag": "hj:fire",
+      "rollHurt": "wound",
+      "flag": "hj:burn",
+      "say": "🔥 재 위에 조. 「여긴 군포 안 오오.」 — 아직은."
+     },
+     {
+      "label": "씨감자를 심는다 — 이양선에서 얻은 것",
+      "if": "is:potato",
+      "gray": "씨감자가 있어야 심는다 — 강어귀 서양 배에서 얻은 사람.",
+      "flag": "hj:potato2",
+      "say": "🥔 한 자루가 열 자루. 「북쪽 토란」이라 했다."
+     },
+     {
+      "label": "감자·조를 심는다 — 손 (화전민)",
+      "if": "status:hwajeon",
+      "gray": "여기 사는 화전민이 심는다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "돌 많은 비탈에 고랑을 내는 손.",
+       "fail": "…반은 비에 쓸려 갔다."
+      },
+      "flag": "hj:potato",
+      "say": "🥔 조 두 고랑, 감자 한 고랑."
+     },
+     {
+      "label": "화전세를 걷는다 — 아전·양반 (중인·양반·신향)",
+      "if": "(status:jungin || status:yangban || status:sinyang)",
+      "gray": "걷는 건 관아·고을 집이다.",
+      "flag": "hj:tax",
+      "say": "🧾 「불 놓은 밭도 밭이다.」 조 한 섬."
+     },
+     {
+      "label": "나물·약초를 캔다 — 여자 (눈)",
+      "if": "sex:f",
+      "gray": "나물은 여자가 캔다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 1,
+       "why": "먹는 풀과 못 먹는 풀을 가리는 눈.",
+       "fail": "…반은 버렸다."
+      },
+      "flag": "hj:herb",
+      "say": "🌿 더덕 한 줌, 고사리 한 단."
+     },
+     {
+      "label": "본다",
+      "flag": "hj:watch",
+      "say": "검은 비탈, 그루터기, 연기. 위로 갈수록 집이 늘었다."
+     }
+    ]
+   },
+   {
+    "text": "세 해면 다른 비탈. 우린 산을 따라 옮겨 다니오."
+   }
+  ]
  }
 }
