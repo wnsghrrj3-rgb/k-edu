@@ -184,6 +184,16 @@
   // ───────────────────────── 슬라이드 렌더 ─────────────────────────
   // 반환 { title, sub, body(HTML), cls, frag(순차 공개 여부), answerable }
   function isClassify(cards, target) { return !!(cards && target) && (target.length !== cards.length || !target.every(t => cards.indexOf(t) >= 0) || !cards.every(c => target.indexOf(c) >= 0)); }
+  // 94차 — 개념 장 글 중 그림 카드 이름을 그대로 되풀이하는 줄(① 관찰 ② 특징 …)은 뺀다 · 남는 줄이 있을 때만 · 글은 원문 그대로
+  function cv2Lead(content, fig) {
+    const norm = t => String(t || '').replace(/\*\*|<\/?b>|[\u2460-\u2473]|\s/g, '').replace(/[.,·]/g, '');
+    const names = ((fig && fig.items) || []).map(i => norm(i.name || i.label)).filter(n => n.length >= 2);
+    const prs = ((fig && fig.pairs) || []).filter(Array.isArray).map(p => p.map(norm)); // 그림 짝(갈게·갈께)을 다시 적은 줄도
+    const lines = String(content).split(/\n|<br\s*\/?>/i);
+    if ((names.length < 2 && !prs.length) || lines.length < 2) return content;
+    const keep = lines.filter(l => { const n = norm(l); if (names.filter(x => n.indexOf(x) >= 0).length >= 2) return false; if (prs.length && /^[^\s↔]+\s*↔\s*[^\s↔]+$/.test(String(l).replace(/\*\*/g, '').trim())) return false; return !prs.some(p => p.length >= 2 && p.every(x => x && n.indexOf(x) >= 0)); });
+    return keep.length ? keep.join('\n') : content;
+  }
   function renderSlide(slide, ctx) {
     let d = slide.data || {}; const rev = !!ctx.revealed; const S = ctx.state; const seed = hashSeed(slide.id || '');
     // 👉 로 시작하는 note 는 교사에게 주는 말이라 학생 화면(TV)에 안 띄우고 발문 띠(N)로 보낸다
@@ -224,6 +234,10 @@
         break;
       }
       case 'concept': {
+        { const fg = d.content && !d.img && !d.kids_after && d.fig && global.KT2_FIG ? global.KT2_FIG.render(d.fig) : ''; // 94차 — 새 개념 장 cv2: 말풍선·안내 인물 없이 한 문장 + 큰 그림
+          if (fg) { cls = 'cv2' + (d.fig.k === 'chain' ? ' cv2-chain' : dataFig(d.fig) ? ' cv2-side' : ''); push('<div class="cv2-lead">' + md(cv2Lead(d.content, d.fig)) + '</div>'); push('<div class="cv2-fig">' + fg + '</div>');
+            if (Array.isArray(d.symbol_meanings) && d.symbol_meanings.length) push(symCards(d.symbol_meanings)); if (d.items) push(tfRow(d.items)); if (d.examples) push('<div class="examples">' + d.examples.map(e => '<div class="ex">' + md(lbl(e)) + '</div>').join('') + '</div>'); if (d.pairs) { push(pairs(d.pairs, rev, seed)); answerable = true; } if (d.expression) push('<div class="big-q">' + md(d.expression) + '</div>');
+            if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break; } }
         push(image(d.img, title + ' ' + (d.content || ''))); if (d.content) { const bt = '<div class="big-text">' + md(d.content) + '</div>'; push(ctx.guide && ctx.guide[0] && !d.kids_after ? guideSay(ctx.guide[0], bt, 'l') : bt); }
         if (d.fig && global.KT2_FIG) { const fg = global.KT2_FIG.render(d.fig); if (fg) { // 63차 — 자료 그래프(막대·그림그래프·표) 개념 장은 말풍선 옆에 그림(세로로 쌓으면 0.72~0.84)
           if (d.content && dataFig(d.fig)) { const tx = b.pop(); push('<div class="concept-split"><div class="cs-text">' + tx + '</div><div class="cs-fig">' + fg + '</div></div>'); } else push(fg); } } // 21차 개념 그림 층
@@ -753,7 +767,7 @@
   // 87차 — fit-tight: 넘칠 때만 종이 여백·덩이 사이·말풍선 아래를 좁힌다(글자 크기는 그대로). 자리 바꾸기와 겹쳐 쓸 수 있다.
   // 88차 — fit-lv: 수준별 문제 정답 펼침 때 물음 왼쪽 · 정답·풀이 차례 오른쪽 / fit-lv2: 물음 위 · 정답 왼쪽 · 풀이 차례 오른쪽(넘칠 때만)
   // 89차 — fit-pts: 요약 요점 다섯 줄 이상을 두 단(위→아래 차례) / fit-wrap: 옆으로 이어진 카드(차례·도구)가 종이 폭을 넘으면 두 줄로 / fit-cols: 말풍선 안 짧은 줄 넷 이상(「어제 — 과거」 같은 목록)을 두 단으로(넘칠 때만 · 글자 크기 무변)
-  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq'];
+  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s'];
   // 90차 — fit-qh: 「여러 개를 고를 수 있어요」를 물음 옆 같은 줄로(넘칠 때만)
   // 90차 — fit-head: 넘칠 때만 제목을 머리(단계 칩·차시 이름)와 한 줄에 — 제목 줄 하나만큼 본문 자리가 생긴다 · 글자 크기 무변 · 차시 이름이 말줄임되면 안 씀
   function headBad(body) { const p = body.parentElement; if (!p) return true; const k = p.querySelector(':scope > .kt2-head .kt2-kicker'), t = p.querySelector(':scope > .kt2-title');
@@ -778,7 +792,7 @@
   function wrapOk(body) { return Array.from(body.querySelectorAll('.fig-cards:not(.wrap)')).some(c => c.scrollWidth > c.clientWidth + 2 || c.getBoundingClientRect().width > body.clientWidth + 2); }
   function setC(body, cs, on) { cs.forEach(c => body.classList.toggle(c, on)); if (cs.includes('fit-cols')) (on ? colsOn : colsOff)(body); }
   // 89차 — 자리를 다 바꿔도 넘치면 장 전체(말풍선·물음 글까지)를 줄이기 전에 그림 덩이 하나만 먼저 줄인다(0.7배까지) · 말풍선·물음·보기 글은 1.0 그대로
-  const FIGSEL = '.fig,.tf-row,.sym-cards,.concept-split,.emoji-row,.img-frame,.fig-cards';
+  const FIGSEL = '.cv2-fig,.fig,.tf-row,.sym-cards,.concept-split,.emoji-row,.img-frame,.fig-cards';
   function figOff(body) { body.querySelectorAll('[data-figz]').forEach(e => { e.style.zoom = ''; e.removeAttribute('data-figz'); }); }
   function figShrink(body, base) {
     body.style.zoom = base === 1 ? '' : base;
@@ -790,7 +804,13 @@
     if (!fits(lo)) hi = lo; else for (let i = 0; i < 7; i++) { const m = (lo + hi) / 2; if (fits(m)) lo = m; else hi = m; }
     const z = Math.min(lo, hi); t.style.zoom = z; t.setAttribute('data-figz', z.toFixed(3));
   }
-  function fitZoom(body, base) {
+  function fitZoom(body, base) { // 94차 — 새 개념 장은 다 들어가면 그림을 키운다(측정기도 같은 함수)
+    const g = body.querySelector(':scope > .cv2-fig'); if (g) { g.style.zoom = ''; g.removeAttribute('data-figg'); }
+    let z = fitZoom0(body, base);
+    if (g && body.scrollWidth > body.clientWidth + 2) { const cz = parseFloat(g.style.zoom) || 1; const nz = Math.max(0.5, cz * Math.min(1, body.clientWidth / (body.scrollWidth + 4))); g.style.zoom = nz; g.setAttribute('data-figz', nz.toFixed(3)); body.style.zoom = ''; z = zoomLoop(body, base); } // 넓은 그림은 그림만 폭에 맞춰 줄인다
+    if (g && z >= base - 0.001 && !g.hasAttribute('data-figz')) figGrow(body); return z;
+  }
+  function fitZoom0(body, base) {
     colsOff(body); figOff(body); LAYOUTS.forEach(c => body.classList.remove(c)); let best = zoomLoop(body, base), bestC = [];
     if (best >= base - 0.001) return best;
     const sp = splitPair(body), sd = sideOk(body);
@@ -804,6 +824,7 @@
     if (body.querySelector(':scope > .big-q') && body.querySelector(':scope > .multi-hint')) tries.push(['fit-qh', 'fit-tight']);
     if (body.querySelector('.ans-key')) { tries.push(['fit-ans', 'fit-tight']); if (sp) tries.push(['fit-ans', 'fit-split', 'fit-tight']); if (sd) tries.push(['fit-ans', 'fit-side', 'fit-tight']); }
     if (body.querySelector(':scope > .pv3')) tries.push(['fit-pvx'], ['fit-pvx', 'fit-tight'], ['fit-pvq', 'fit-tight'], ['fit-pvq', 'fit-pvx', 'fit-tight']); // 92차 — 새 문제 장: 풀이·안내를 반대쪽으로
+    if (body.classList.contains('cv2-side')) tries.push(['fit-cv2s'], ['fit-cv2s', 'fit-tight']); // 94차 — 옆 배치가 안 들어가면 위아래로
     if (co) { tries.push(['fit-cols'], ['fit-cols', 'fit-tight']); if (wr) tries.push(['fit-cols', 'fit-wrap', 'fit-tight']); if (sd) tries.push(['fit-cols', 'fit-side', 'fit-tight']); }
     const trial = cs => {
       if (best >= base - 0.001) return;
@@ -815,6 +836,14 @@
     setC(body, bestC, true);
     if (best < base - 0.001) figShrink(body, base);
     return zoomLoop(body, base);
+  }
+  // 94차 — 새 개념 장(cv2): 다 들어가면 그림 덩이를 남는 자리만큼 키운다(1.8배까지) · 글은 그대로
+  function figGrow(body) {
+    const t = body.querySelector(':scope > .cv2-fig'); if (!t) return; t.style.zoom = ''; t.removeAttribute('data-figg');
+    const fits = z => { t.style.zoom = z; return body.scrollHeight - body.clientHeight <= 2 && body.scrollWidth - body.clientWidth <= 2 && t.scrollWidth <= t.clientWidth + 2; };
+    if (!fits(1.05)) { t.style.zoom = ''; return; }
+    let lo = 1.05, hi = 1.8; if (fits(hi)) lo = hi; else for (let i = 0; i < 7; i++) { const m = (lo + hi) / 2; if (fits(m)) lo = m; else hi = m; }
+    t.style.zoom = lo; t.setAttribute('data-figg', lo.toFixed(3));
   }
   Stage.prototype.fitBody = function () {
     const paper = doc.getElementById('kt2-paper'); const body = paper && paper.querySelector('.kt2-body'); if (!body) return;
