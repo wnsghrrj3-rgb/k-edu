@@ -119,7 +119,7 @@ const tick = ms => new Promise(r => setTimeout(r, ms || 0));
     // attach 는 생성자에서 이미 돌았으므로 다시 한 번 적용(저장소를 뒤늦게 넣었으니)
     const n0 = B.st.slides.length; const applied = B.KA.applyPendingReview(B.st);
     ok(applied && B.st.slides.length === n0 + 1 && B.st.slides[1].block === 'review' && B.st.slides[1]._added && B.st.slides[1].data.items.length === 2 && /십의 자리/.test(B.st.slides[1].data.items[0].q), '다음 차시: 표지 뒤 ①복습 슬라이드(놓친 유형 2개) 삽입');
-    B.st.go(1, 1); ok(B.d.querySelector('#kt2-paper .flipgrid') && !/헷갈렸어요/.test(B.d.querySelector('#kt2-paper').textContent), '복습 슬라이드 = 뒤집기 카드 · 답 미노출');
+    B.st.go(1, 1); ok(B.d.querySelector('#kt2-paper .rv2-board') && !/헷갈렸어요/.test(B.d.querySelector('#kt2-paper').textContent), '복습 슬라이드 = 칠판(rv2) · 답 미노출');
     B.st.act(B.d.querySelector('#kt2-paper [data-act="flip"]')); ok(/헷갈렸어요/.test(B.d.querySelector('#kt2-paper').textContent), '카드 뒤집으면 열림');
     ok(!JSON.parse(B.w.localStorage.getItem('kt2_act_review_g1_math'))['u1_l08'], '적용한 복습은 대기열에서 삭제');
     ok(!B.KA.applyPendingReview(B.st), '두 번 넣지 않는다');

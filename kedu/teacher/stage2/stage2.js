@@ -15,7 +15,7 @@
   // 차시_밀도_표준_v2 §1: 도입 5~8 · 전개 25 · 정리 7~10 → 40분
   const STAGE_MIN = { '도입': 7, '전개': 12, '기본문제': 7, '응용문제': 6, '정리': 8 };
   const SEVEN = ['①복습 문항', '②실사 장면', '③차시 서사', '④교실 활동', '⑤수준별 문제', '⑥출구 확인', '⑦발문 6슬↑'];
-  const EDITABLE = '.kt2-title, .big-text, .center-text, .small-text, .big-q, .objective-card, .point > div, .steps li, .kid .bub, .kid .lbl, .flip .q, .flip .a, .mis-card, .mv2-t, .mv2-h, .lv2-q, .lv2-ch span, .offline .body, .offline .goal, .opt > div:not(.mk), .scenario > div:not(.ic), .lv-q, .ra-quote, .context-text, .bidirect, .tf-cap, .examples .ex, .areas div, .sa .lb, .light .lb, .cq .cl, .cq .nm, .legacy .t, .legacy .d, .kt2-cover-title, .kt2-sub';
+  const EDITABLE = '.kt2-title, .big-text, .center-text, .small-text, .big-q, .objective-card, .point > div, .steps li, .kid .bub, .kid .lbl, .flip .q, .flip .a, .rv2-it .q, .rv2-it .a, .mis-card, .mv2-t, .mv2-h, .lv2-q, .lv2-ch span, .offline .body, .offline .goal, .opt > div:not(.mk), .scenario > div:not(.ic), .lv-q, .ra-quote, .context-text, .bidirect, .tf-cap, .examples .ex, .areas div, .sa .lb, .light .lb, .cq .cl, .cq .nm, .legacy .t, .legacy .d, .kt2-cover-title, .kt2-sub';
   const STAGE_COLOR = { '도입': '#FF8A3D', '전개': '#4F8DF7', '기본문제': '#12B886', '응용문제': '#7C5CFF', '정리': '#2CB1D6' };
   const SUBJ_KO = { math: '수학', korean: '국어', science: '과학', social: '사회', english: '영어' };
   const NO_FRAG = new Set(['cover', 'objective', 'question', 'next_lesson', 'interactive_ten_frame', 'interactive_cube_stairs', 'interactive_number_line', 'klab', 'math_tool', 'quiz_gen', 'activity', 'card_arrange', 'card_quiz', 'chosung_quiz', 'present', 'read_aloud', 'leveled_problem', 'exit_ticket', 'trace', 'number_line_demo']);
@@ -66,14 +66,10 @@
   function emojiCount(e, n, big) { if ((+n || 0) > 20 || (/^(➕|➖|🟰|✅|✖️|✖|➗|❓|⭕|❌)$/.test(String(e || '').trim()) && (+n || 0) > 0)) return baseTen(n, e);
     const N = Math.max(0, +n || 0); if (N > 5) { let g = ''; for (let k = 0; k < N; k += 10) g += '<div class="eg">' + Array.from({ length: Math.min(10, N - k) }, () => '<span>' + esc(e) + '</span>').join('') + '</div>'; return '<div class="emoji-row count grid' + (big ? ' big' : '') + '">' + g + '</div>'; }
     return '<div class="emoji-row count' + (big ? ' big' : '') + '">' + Array.from({ length: Math.max(0, +n || 0) }, () => '<span>' + esc(e) + '</span>').join('') + '</div>'; }
-  // 98차 시안 — 복습·확인 장(review · exit_ticket) 새 꼴 rv2 · KT2_RVV = 'a' 한 장씩 크게 · 'b' 번호 줄 · 'c' 칠판
-  function rv2(v, items, f, S, self, cnt, exit) {
+  // 98차 — 새 복습·확인 장 rv2 「칠판」(준호 C) · review · exit_ticket 교사 무대만(learn 은 1세대 카드 그대로)
+  function rv2(items, f, self, cnt) {
     const A = it => String(it.a !== undefined ? it.a : ''); const L = ['🟢', '🟡', '🔴'];
     const lights = self && self.length ? '<div class="rv2-sig">' + self.map((s, i) => '<div class="light" data-act="light" data-i="' + i + '"><span class="dot">' + (L[i] || '⚪') + '</span><span class="lb">' + md(s) + '</span><span class="cnt">' + (cnt[i] || 0) + '</span></div>').join('') + '</div>' : '';
-    if (v === 'a') { const k = Math.max(0, Math.min(S.idx || 0, items.length - 1)); const it = items[k] || {};
-      return '<div class="rv2-nav">' + items.map((x, i) => '<button class="' + (i === k ? 'on' : '') + (f[i] ? ' done' : '') + '" data-act="rv-go" data-i="' + i + '">' + (i + 1) + '</button>').join('') + '</div>'
-        + '<div class="rv2-one"><div class="rv2-q">' + md(it.q || '') + '</div>' + (f[k] ? '<div class="rv2-a on">' + md(A(it)) + '</div>' : '<div class="rv2-a" data-act="flip" data-i="' + k + '">눌러서 답 보기</div>') + '</div>' + lights; }
-    if (v === 'b') return '<ol class="rv2-rows">' + items.map((it, i) => '<li class="rv2-it' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><i>' + (i + 1) + '</i><div class="q">' + md(it.q || '') + '</div><div class="a">' + (f[i] ? md(A(it)) : '?') + '</div></li>').join('') + '</ol>' + lights;
     return '<div class="rv2-board">' + items.map((it, i) => '<div class="rv2-it' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><div class="q"><i>' + (i + 1) + '.</i>' + md(it.q || '') + '</div><div class="a">' + (f[i] ? md(A(it)) : '') + '</div></div>').join('') + '</div>' + lights;
   }
   function dots(n) { return '<div class="dots">' + Array.from({ length: +n || 0 }, () => '<i></i>').join('') + '</div>'; }
@@ -226,7 +222,7 @@
       case 'review': {
         if (d.content) push('<div class="center-text">' + md(d.content) + '</div>');
         if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>');
-        if (d.items && global.KT2_RVV && !ctx.learn) { const f = global.KT2_RVOPEN ? d.items.map(() => true) : (S.flipped || []); cls = 'rv2 rv2-' + global.KT2_RVV; push(rv2(global.KT2_RVV, d.items, f, S, null, [], false)); answerable = true; }
+        if (d.items && d.items.length && !ctx.learn) { const f = S.flipped && S.flipped.length ? S.flipped : d.items.map(() => rev); cls = 'rv2'; push(rv2(d.items, f, null, [])); answerable = true; }
         else if (d.items) { const f = S.flipped || []; push('<div class="flipgrid n' + Math.min(4, d.items.length) + '">' + d.items.map((it, i) => '<div class="flip' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><div class="q">' + md(it.q) + '</div><div class="a">' + (f[i] ? md(String(it.a !== undefined ? it.a : '')) : '❓ 눌러서 확인') + '</div></div>').join('') + '</div>'); answerable = true; }
         if (d.table) push(table(d.table)); if (d.sequence) push(sequence(d.sequence)); if (d.ten_frame_strip) push(tfStrip(d.ten_frame_strip));
         if (d.areas) push('<div class="areas">' + d.areas.map(a => '<div>' + md(a) + '</div>').join('') + '</div>');
@@ -378,7 +374,7 @@
       }
       case 'exit_ticket': {
         title = d.title || '오늘 확인해요'; const items = d.items || []; const f = S.flipped || []; const cnt = S.lights || [];
-        if (global.KT2_RVV && !ctx.learn) { const ff = global.KT2_RVOPEN ? items.map(() => true) : f; cls = 'rv2 rv2-' + global.KT2_RVV + ' rv2-x'; push(rv2(global.KT2_RVV, items, ff, S, d.self || [], cnt, true)); answerable = true; break; }
+        if (!ctx.learn) { const ff = f.length ? f : items.map(() => rev); cls = 'rv2 rv2-x'; push(rv2(items, ff, d.self || [], cnt)); answerable = true; break; }
         push('<div class="flipgrid n' + Math.min(4, Math.max(2, items.length)) + '">' + items.map((it, i) => '<div class="flip' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><div class="q">' + md(it.q) + '</div><div class="a">' + (f[i] ? '✅ ' + md(String(it.a !== undefined ? it.a : '')) : '❓ 눌러서 확인') + '</div></div>').join('') + '</div>');
         const self = d.self || []; const L = ['🟢', '🟡', '🔴'];
         if (self.length) push('<div class="signal">' + self.map((s, i) => '<div class="light" data-act="light" data-i="' + i + '" title="손 든 수를 세요"><span class="dot">' + (L[i] || '⚪') + '</span><span class="lb">' + md(s) + '</span><span class="cnt">' + (cnt[i] || 0) + '</span></div>').join('') + '</div>');
@@ -725,7 +721,6 @@
       case 'lv': S.level = btn.getAttribute('data-k'); this.rev[s.id] = false; rp(); break;
       case 'cz-reveal': S.on = !S.on; rp(); if (S.on) this.celebrate(); break;
       case 'cz-prev': S.idx = Math.max(0, (S.idx || 0) - 1); S.on = false; rp(); break;
-      case 'rv-go': S.idx = i; rp(); break;
       case 'cz-next': S.idx = Math.min((d.items || []).length - 1, (S.idx || 0) + 1); S.on = false; rp(); break;
       case 'pr-next': { const count = +btn.getAttribute('data-count'); S.picked = S.picked || []; const pool = []; for (let k = 0; k < count; k++) if (!S.picked.includes(k)) pool.push(k); if (!pool.length) break; const pick = pool[Math.floor(Math.random() * pool.length)]; S.picked.push(pick); S.current = pick; rp(); this.chime(1); break; }
       case 'pr-reset': S.picked = []; S.current = null; rp(); break;
@@ -793,7 +788,7 @@
   // 87차 — fit-tight: 넘칠 때만 종이 여백·덩이 사이·말풍선 아래를 좁힌다(글자 크기는 그대로). 자리 바꾸기와 겹쳐 쓸 수 있다.
   // 88차 — fit-lv: 수준별 문제 정답 펼침 때 물음 왼쪽 · 정답·풀이 차례 오른쪽 / fit-lv2: 물음 위 · 정답 왼쪽 · 풀이 차례 오른쪽(넘칠 때만)
   // 89차 — fit-pts: 요약 요점 다섯 줄 이상을 두 단(위→아래 차례) / fit-wrap: 옆으로 이어진 카드(차례·도구)가 종이 폭을 넘으면 두 줄로 / fit-cols: 말풍선 안 짧은 줄 넷 이상(「어제 — 과거」 같은 목록)을 두 단으로(넘칠 때만 · 글자 크기 무변)
-  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s', 'fit-cv2w', 'fit-lvw', 'fit-lvs'];
+  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s', 'fit-cv2w', 'fit-lvw', 'fit-lvs', 'fit-rvw', 'fit-rvs'];
   // 90차 — fit-qh: 「여러 개를 고를 수 있어요」를 물음 옆 같은 줄로(넘칠 때만)
   // 90차 — fit-head: 넘칠 때만 제목을 머리(단계 칩·차시 이름)와 한 줄에 — 제목 줄 하나만큼 본문 자리가 생긴다 · 글자 크기 무변 · 차시 이름이 말줄임되면 안 씀
   function headBad(body) { const p = body.parentElement; if (!p) return true; const k = p.querySelector(':scope > .kt2-head .kt2-kicker'), t = p.querySelector(':scope > .kt2-title');
@@ -845,6 +840,7 @@
     const tries = [['fit-tight']];
     if (sp) tries.push(['fit-split'], ['fit-split', 'fit-tight']);
     if (sd) tries.push(['fit-side'], ['fit-side', 'fit-tight']);
+    if (body.querySelector('.rv2-board')) tries.push(['fit-rvw'], ['fit-rvw', 'fit-tight'], ['fit-rvw', 'fit-rvs'], ['fit-rvw', 'fit-rvs', 'fit-tight']); // 98차 — 칠판 답 칸 넓힘 · 줄 간격 좁힘
     if (body.querySelector('.lv2-main > .lv2-a')) tries.push(['fit-lvw'], ['fit-lvw', 'fit-tight'], ['fit-lvs'], ['fit-lvs', 'fit-tight'], ['fit-lvw', 'fit-lvs'], ['fit-lvw', 'fit-lvs', 'fit-tight']); // 97차 — 수준 계단을 위 한 줄로(본문 폭 넓힘)
     if (body.querySelector('.lv-body > .lv-a')) tries.push(['fit-lv'], ['fit-lv', 'fit-tight'], ['fit-lv2'], ['fit-lv2', 'fit-tight']);
     body.style.zoom = ''; const wr = wrapOk(body), co = colsTargets(body).length > 0;
