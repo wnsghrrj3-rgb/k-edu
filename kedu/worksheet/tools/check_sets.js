@@ -40,7 +40,7 @@ function loadEngine() {
   sandbox.window.speechSynthesis = undefined;
   vm.createContext(sandbox);
   vm.runInContext('const SEED = 1;\n' + head + body + paper +
-    '\nthis.API = { makeVariant, prep, drawAsset, paperAsset, rng };', sandbox);
+    '\nthis.API = { makeVariant, prep, drawAsset, paperAsset, rng, FIG, TAN7, CUTS, CUBE_LIB, cubeFaces, cubeOrder };', sandbox);
   return sandbox.API;
 }
 const ENG = loadEngine();
@@ -108,6 +108,10 @@ const ASSETS = {
   word_grid:      ['rows'],
   /* v2.2 — 2학년 1학기 수학 「세 자리 수」 (2026-10-10): 수 모형·동전 · 자릿값 표 · 뛰어 세기 줄 */
   blocks3:        ['h', 't', 'o'],
+  /* v2.3 — 2학년 1학기 「여러 가지 도형」 */
+  figs:           ['items'],
+  tiles:          ['pieces'],
+  cubes:          [],
   place_table:    ['digits'],
   jump_row:       ['cells']
 };
@@ -144,6 +148,18 @@ function checkAsset(where, a) {
   }
   if (a.type === 'number_line' && (!Array.isArray(a.cells) || a.cells.length < 3)) bad(where, 'number_line cells 3칸 미만');
   if (a.type === 'hidden_group' && a.total !== undefined && a.visible >= a.total) bad(where, 'hidden_group visible ≥ total');
+  if (a.type === 'figs') {
+    if (!Array.isArray(a.items) || !a.items.length || a.items.length > 8) bad(where, 'figs items 는 1~8개');
+    else a.items.forEach(k => { const f = ENG.FIG[k]; if (!f) bad(where, 'figs 도감에 없는 도형 ' + k); else { const c = figClass(f); const dk = f.k === 'tri' || f.k === 'quad' || f.k === 'circle' ? f.k : 'other'; if (c !== dk) bad(where, `figs ${k} 의 이름(${f.k})과 모양(${c})이 다르다`); } });
+    if (new Set(a.items || []).size !== (a.items || []).length) bad(where, 'figs 같은 도형이 둘');
+  }
+  if (a.type === 'tiles') {
+    (a.pieces || []).forEach((pc, i) => { if (!Array.isArray(pc.p) || pc.p.length < 3) bad(where, `tiles 조각 ${i + 1} 꼭짓점이 3개 미만`); else if (corners(pc.p) !== pc.p.length) bad(where, `tiles 조각 ${i + 1} 에 한 줄 위 점이 있다(꼭짓점만 적을 것)`); });
+  }
+  if (a.type === 'cubes') {
+    if (Array.isArray(a.rows)) { if (a.rows.length < 2 || a.rows.length > 4) bad(where, 'cubes rows 는 2~4개'); a.rows.forEach((cs, i) => checkCubeCells(where + ' ' + '㉮㉯㉰㉱'[i], cs)); }
+    else checkCubeCells(where, a.cells);
+  }
   if (a.type === 'blocks3') {
     if (!(a.h >= 0 && a.h <= 9)) bad(where, 'blocks3 h 는 0~9: ' + a.h);
     ['t', 'o'].forEach(k => { if (!(a[k] >= 0 && a[k] <= 19)) bad(where, `blocks3 ${k} 는 0~19: ` + a[k]); });
@@ -854,6 +870,83 @@ function check3(where, q) {
   if (String(want) !== cor && !(q.kind === 'sa' && (q.answer || []).map(String).indexOf(String(want)) >= 0)) bad(where, `${key} 정답 ${cor} ≠ 다시 계산한 ${want}`);
   if (wr.indexOf(String(want)) >= 0) bad(where, `${key} 오답 보기에 정답 ${want} 가 섞였다`);
 }
+/* v2.3 — 여러 가지 도형: 꼭짓점·열림·굽음으로 도형을 다시 가르고, 칠교·자른 도형·쌓기나무 답을 엔진과 따로 셈 (원본·변형 모두) */
+const SHP_NM = {tri:'삼각형', quad:'사각형', circle:'원'}, SHP_OF = {'삼각형':'tri', '사각형':'quad', '원':'circle'};
+const corners = pts => { const n = pts.length; let c = 0; for (let i = 0; i < n; i++){ const a = pts[(i + n - 1) % n], b = pts[i], d = pts[(i + 1) % n];
+  if ((b[0] - a[0]) * (d[1] - b[1]) - (b[1] - a[1]) * (d[0] - b[0]) !== 0) c++; } return c; };
+const polyArea = pts => Math.abs(pts.reduce((t, p, i) => { const q2 = pts[(i + 1) % pts.length]; return t + p[0] * q2[1] - q2[0] * p[1]; }, 0)) / 2;
+function figClass(f){
+  if (!f) return null; if (f.c) return 'circle'; if (f.e) return f.e[0] === f.e[1] ? 'circle' : 'other'; if (f.semi || f.open || f.bend !== undefined) return 'other';
+  const c = corners(f.p); return c === 3 ? 'tri' : c === 4 ? 'quad' : 'other'; }
+const pieceClass = pc => { const c = corners(pc.p); return c === 3 ? 'tri' : c === 4 ? 'quad' : 'other'; };
+function hullArea(P){ const pts = P.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]); const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = []; pts.forEach(p => { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); });
+  pts.slice().reverse().forEach(p => { while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); });
+  return polyArea(lo.slice(0, -1).concat(up.slice(0, -1))); }
+/* 쌓기나무 — 받침·겹침 + 그림에서 보이는 몫(래스터로 칠해 본다): 종이에선 돌려 볼 수 없으니 다 가려진 쌓기나무가 있으면 안 된다 */
+function cubeVis(cells){
+  const ord = ENG.cubeOrder(cells); const polys = []; ord.forEach(({c, i}) => { const F = ENG.cubeFaces(c[0], c[1], c[2]); ['left', 'front', 'top'].forEach(k => polys.push([F[k], i])); });
+  const all = [].concat(...polys.map(p => p[0])); const mnx = Math.min(...all.map(p => p[0])), mxx = Math.max(...all.map(p => p[0])), mny = Math.min(...all.map(p => p[1])), mxy = Math.max(...all.map(p => p[1]));
+  const inside = (pt, poly) => { let o = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++){ const a = poly[i], b = poly[j]; if ((a[1] > pt[1]) !== (b[1] > pt[1]) && pt[0] < (b[0] - a[0]) * (pt[1] - a[1]) / (b[1] - a[1]) + a[0]) o = !o; } return o; };
+  const own = {}, tot = {}; const h = 0.04;
+  for (let x = mnx + h / 2; x < mxx; x += h) for (let y = mny + h / 2; y < mxy; y += h){ let who = -1; polys.forEach(([pp, i]) => { if (inside([x, y], pp)){ who = i; tot[i] = (tot[i] || 0) + 1; } }); if (who >= 0) own[who] = (own[who] || 0) + 1; }
+  /* tot 는 겹칠 때 여러 번 셀 수 있어 면 셋의 넓이 합으로 다시 잡는다 */
+  return cells.map((c, i) => { const F = ENG.cubeFaces(c[0], c[1], c[2]); const area = ['left', 'front', 'top'].reduce((t, k) => t + polyArea(F[k]), 0); return (own[i] || 0) * h * h / area; });
+}
+function checkCubeCells(where, cells){
+  if (!Array.isArray(cells) || !cells.length) return bad(where, 'cubes 칸이 비었다');
+  const key = c => c.slice(0, 3).join(','); const S = new Set(cells.map(key)); if (S.size !== cells.length) bad(where, 'cubes 같은 자리에 쌓기나무가 둘');
+  cells.forEach(c => { if (c.slice(0, 3).some(v => !Number.isInteger(v) || v < 0 || v > 5)) bad(where, 'cubes 좌표는 0~5 정수: ' + c);
+    if (c[3] !== undefined && c[3] !== 0 && ['r', 'y', 'b', 'g'].indexOf(c[3]) < 0) bad(where, 'cubes 색은 r·y·b·g·0: ' + c[3]);
+    if (c[2] > 0 && !S.has([c[0], c[1], c[2] - 1].join(','))) bad(where, 'cubes 공중에 뜬 쌓기나무: ' + c); });
+  const vis = cubeVis(cells); vis.forEach((v, i) => { if (v < 0.2) bad(where, `cubes ${cells[i]} 가 그림에서 거의 가려진다(${Math.round(v * 100)}%) — 종이에선 셀 수 없다`); });
+  const cols = cells.map(c => c[3]).filter(x => x && x !== 0); if (new Set(cols).size !== cols.length) bad(where, 'cubes 같은 색이 둘 — 색으로 가리킬 수 없다');
+}
+function checkShape(where, q){
+  const vr = q.variant_rule || {}; const key = ['fig', 'fnum', 'tan', 'cut', 'cube'].find(k => vr[k]); if (!key) return;
+  const opts = q.options || []; const cor = q.kind === 'sa' ? String((q.answer || [])[0]) : String((opts.find(o => o.correct) || {}).t);
+  const wr = opts.filter(o => !o.correct).map(o => String(o.t)); const st = String(q.stem).replace(/^이번에는 다른 보기예요\. /, '');
+  const a = q.asset && typeof q.asset === 'object' ? q.asset : null; let want = null, m;
+  if (key === 'fig' || (key === 'fnum' && a)){
+    if (!a || a.type !== 'figs') return bad(where, key + ' 는 figs 그림이 있어야 한다');
+    const cls = a.items.map(k => figClass(ENG.FIG[k]));
+    if ((m = st.match(/^(삼각형|사각형|원)은 어느 것인가요/))){ const t = SHP_OF[m[1]]; const hits = cls.map((c, i) => c === t ? i : -1).filter(i => i >= 0);
+      if (hits.length !== 1) return bad(where, `fig which 에 ${m[1]}이 ${hits.length}개`); want = '㉮㉯㉰㉱㉲㉳'[hits[0]];
+      if (opts.length !== a.items.length) bad(where, 'fig which 보기 수와 그림 수가 다르다'); }
+    else if ((m = st.match(/^(삼각형|사각형|원)이 아닌 것은 어느 것인가요/))){ const t = SHP_OF[m[1]]; const hits = cls.map((c, i) => c !== t ? i : -1).filter(i => i >= 0);
+      if (hits.length !== 1) return bad(where, `fig not 에 ${m[1]} 아닌 것이 ${hits.length}개`); want = '㉮㉯㉰㉱㉲㉳'[hits[0]]; }
+    else if ((m = st.match(/^그림에서 (삼각형|사각형|원)은 모두 몇 개/))) want = String(cls.filter(c => c === SHP_OF[m[1]]).length);
+    else if ((m = st.match(/^이 도형의 (변|꼭짓점)은 모두 몇 개/))){ if (a.items.length !== 1) return bad(where, 'fnum 그림은 도형 하나'); want = cls[0] === 'tri' ? '3' : cls[0] === 'quad' ? '4' : null; if (!want) return bad(where, 'fnum 도형이 삼각형·사각형이 아니다'); }
+    else return bad(where, key + ' 발문 꼴을 모른다: ' + st);
+  } else if (key === 'fnum'){
+    if (!(m = st.match(/^삼각형 (\d)개와 사각형 (\d)개가 있어요\. (변|꼭짓점)은 모두 몇 개/))) return bad(where, 'fnum 발문 꼴을 모른다: ' + st);
+    want = String(3 * m[1] + 4 * m[2]);
+  } else if (key === 'tan' || key === 'cut'){
+    if (!a || a.type !== 'tiles') return bad(where, key + ' 는 tiles 그림이 있어야 한다');
+    if ((m = st.match(/^([①②③④⑤⑥⑦])번 조각은 어떤 도형인가요/))){ const pc = a.pieces.find(p => p.n === m[1]); if (!pc) return bad(where, 'tan 조각 번호가 그림에 없다'); want = SHP_NM[pieceClass(pc)]; }
+    else if ((m = st.match(/^색칠한 조각 가운데 (삼각형|사각형)은 모두 몇 개/))){ const hi = a.pieces.filter(p => p.hi); if (!hi.length) return bad(where, 'tan 색칠한 조각이 없다'); want = String(hi.filter(p => pieceClass(p) === SHP_OF[m[1]]).length); }
+    else if ((m = st.match(/^선을 따라 모두 자르면 (삼각형|사각형)은 몇 개 생기나요/))){ if (!a.cut) bad(where, 'cut 그림에 cut:true 가 없다');
+      const sum = a.pieces.reduce((t, p) => t + polyArea(p.p), 0), hull = hullArea([].concat(...a.pieces.map(p => p.p))); if (Math.abs(sum - hull) > 1e-9) bad(where, `cut 조각 넓이 합 ${sum} ≠ 전체 ${hull} — 조각이 겹치거나 빈다`);
+      want = String(a.pieces.filter(p => pieceClass(p) === SHP_OF[m[1]]).length); }
+    else return bad(where, key + ' 발문 꼴을 모른다: ' + st);
+    if (key === 'tan'){ const T7 = ENG.TAN7; if (a.pieces.length !== 7 || a.pieces.some((p, i) => JSON.stringify(p.p) !== JSON.stringify(T7[i].p))) bad(where, 'tan 그림이 칠교판 7조각과 다르다'); }
+  } else {
+    if (!a || a.type !== 'cubes' || !a.cells) return bad(where, 'cube 는 cubes(cells) 그림이 있어야 한다'); const C = a.cells;
+    const CN = {r:'빨간색', y:'노란색', b:'파란색', g:'초록색'}, NC = {'빨간색':'r', '노란색':'y', '파란색':'b', '초록색':'g'};
+    const D = {'오른쪽':[1,0,0], '왼쪽':[-1,0,0], '앞':[0,-1,0], '뒤':[0,1,0], '위':[0,0,1], '아래':[0,0,-1]};
+    if (/^쌓기나무는 모두 몇 개/.test(st)) want = String(C.length);
+    else if (/^몇 층으로 쌓은 모양/.test(st)) want = (1 + Math.max(...C.map(c => c[2]))) + '층';
+    else if (/^1층에 놓인 쌓기나무는 몇 개/.test(st)) want = String(C.filter(c => c[2] === 0).length);
+    else if ((m = st.match(/^빨간색 쌓기나무의 (오른쪽|왼쪽|앞|뒤|위)에 있는 쌓기나무는 무슨 색/))){ const red = C.find(c => c[3] === 'r'); if (!red) return bad(where, 'cube 빨간색이 없다'); const d = D[m[1]];
+      const nb = C.find(c => c[0] === red[0] + d[0] && c[1] === red[1] + d[1] && c[2] === red[2] + d[2]); if (!nb || !CN[nb[3]]) return bad(where, `cube 빨간색 ${m[1]}에 색 쌓기나무가 없다`); want = CN[nb[3]]; }
+    else if ((m = st.match(/^(노란색|파란색|초록색) 쌓기나무는 빨간색 쌓기나무의 어느 쪽/))){ const red = C.find(c => c[3] === 'r'), x = C.find(c => c[3] === NC[m[1]]); if (!red || !x) return bad(where, 'cube 가리킨 색이 그림에 없다');
+      const dd = [x[0] - red[0], x[1] - red[1], x[2] - red[2]].join(','); want = Object.keys(D).find(k => D[k].join(',') === dd) || null; if (!want) return bad(where, 'cube 두 쌓기나무가 맞닿아 있지 않다'); }
+    else return bad(where, 'cube 발문 꼴을 모른다: ' + st);
+  }
+  const okSa = q.kind === 'sa' && (q.answer || []).map(String).some(x => x === want || x === want + '개');
+  if (String(want) !== cor && !okSa) bad(where, `${key} 정답 ${cor} ≠ 다시 계산한 ${want}`);
+  if (wr.indexOf(String(want)) >= 0) bad(where, `${key} 오답 보기에 정답 ${want} 가 섞였다`);
+}
 /* 한 문항(원본이든 변형본이든) 공통 검사 */
 function checkQ(where, q, opt) {
   opt = opt || {};
@@ -875,6 +968,7 @@ function checkQ(where, q, opt) {
   checkCmp4(where, q);
   checkNum50(where, q);
   check3(where, q);
+  checkShape(where, q);
   checkJamo(where, q);
   checkBat(where, q);
   checkTwin(where, q);
@@ -1063,6 +1157,21 @@ function checkSet(file) {
       if (at) bad(where, 'cmp3d 는 그림 없는 문항 전용'); if (ask === 'sign' && q.kind !== 'mc') bad(where, 'cmp3d sign 은 mc 만');
       if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'cmp3d 변형은 mc·blank·sa 만'); }
     if (q.variant_rule.cards3) { if (at) bad(where, 'cards3 는 그림 없는 문항 전용'); if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'cards3 변형은 mc·blank·sa 만'); }
+    /* v2.3 갈래 — 여러 가지 도형 */
+    if (q.variant_rule.fig) { const F = q.variant_rule.fig; if (['which', 'not', 'count'].indexOf(F.ask || 'which') < 0) bad(where, 'fig ask 를 모른다');
+      if (['tri', 'quad', 'circle'].indexOf(F.target || 'tri') < 0) bad(where, 'fig target 은 tri·quad·circle'); if (at !== 'figs') bad(where, 'fig 는 figs 그림이 있어야 한다');
+      Object.keys(F.mis || {}).forEach(k => { if (['open', 'curve', 'near', 'ellipse', 'atyp'].indexOf(k) < 0) bad(where, 'fig mis 갈래를 모른다: ' + k); else if (!MIS.has(String(q.concept).replace(/C\d+$/, '') + F.mis[k])) bad(where, `fig mis.${k} 꼬리가 사전에 없다`); });
+      if ((F.ask || 'which') === 'not' && !(F.mis || {}).atyp) bad(where, 'fig not 은 mis.atyp 가 있어야');
+      if ((F.ask || 'which') !== 'count' && ['mc', 'blank'].indexOf(q.kind) < 0) bad(where, 'fig which·not 은 mc·blank 만'); }
+    if (q.variant_rule.fnum) { const F = q.variant_rule.fnum; const ask = F.ask || 'side'; if (['side', 'vertex', 'sum'].indexOf(ask) < 0) bad(where, 'fnum ask 를 모른다');
+      if (ask === 'sum' ? at : at !== 'figs') bad(where, 'fnum 그림 종류가 맞지 않다(sum 은 그림 없음, 나머지는 figs)'); if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'fnum 은 mc·blank·sa 만'); }
+    if (q.variant_rule.tan) { const T = q.variant_rule.tan; if (['kind', 'hicount'].indexOf(T.ask || 'kind') < 0) bad(where, 'tan ask 를 모른다'); if (at !== 'tiles') bad(where, 'tan 은 tiles 그림이 있어야');
+      if ((T.ask || 'kind') === 'kind' && q.kind !== 'mc') bad(where, 'tan kind 는 mc 만'); if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'tan 은 mc·blank·sa 만'); }
+    if (q.variant_rule.cut) { if (at !== 'tiles') bad(where, 'cut 은 tiles 그림이 있어야'); if (['tri', 'quad'].indexOf(q.variant_rule.cut.target || 'tri') < 0) bad(where, 'cut target 은 tri·quad'); if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'cut 은 mc·blank·sa 만'); }
+    if (q.variant_rule.cube) { const K = q.variant_rule.cube; const ask = K.ask || 'count'; if (['count', 'layer', 'floor', 'color', 'dir'].indexOf(ask) < 0) bad(where, 'cube ask 를 모른다');
+      if (at !== 'cubes' || (q.asset && q.asset.rows)) bad(where, 'cube 는 cubes(cells) 그림이 있어야'); if ((ask === 'layer' || ask === 'color' || ask === 'dir') && q.kind !== 'mc') bad(where, 'cube ' + ask + ' 는 mc 만');
+      if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'cube 는 mc·blank·sa 만');
+      Object.keys(K.mis || {}).forEach(k => { if (['count', 'layer', 'lr', 'fb'].indexOf(k) < 0) bad(where, 'cube mis 갈래를 모른다: ' + k); else if (!MIS.has(String(q.concept).replace(/C\d+$/, '') + K.mis[k])) bad(where, `cube mis.${k} 꼬리가 사전에 없다`); }); }
     /* v1.5 갈래 — 글자를 만들어요 */
     if (q.variant_rule.jamo) {
       const J = q.variant_rule.jamo; const ask = J.ask || 'build';

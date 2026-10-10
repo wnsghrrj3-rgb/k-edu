@@ -304,6 +304,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .clockw .pin{fill:var(--ink)}
 .cmpw{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:100%;overflow-x:auto}
 .cmpw svg{max-width:100%;height:auto;display:block}
+.figs{gap:14px}.figc{display:flex;flex-direction:column;align-items:center;gap:2px}.figc b{font-size:17px;color:#2E3338}
 .pq .pcmpw{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 6px 30px}
 .pq .pcmpw svg{max-width:92%;height:auto;transform-origin:left top}
 .pq .pcmpw .balsv{width:150px;height:auto}
@@ -1023,10 +1024,113 @@ function drawAsset(a, r){
     case 'blocks3': return `<div class="cmpw b3">${blocksSVG(a)}</div>`;
     case 'place_table': return placeTableHTML(a, false);
     case 'jump_row': return jumpRowHTML(a, false);
+    /* v2.3 — 2학년 1학기 「여러 가지 도형」 */
+    case 'figs': return figsHTML(a, false);
+    case 'tiles': return `<div class="cmpw">${tilesSVG(a)}</div>`;
+    case 'cubes': return cubesHTML(a, false);
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
 }
+/* ---------- v2.3 — 2학년 1학기 「여러 가지 도형」 그림 3종 (2026-10-10, 오푸스 5.5) ----------
+   figs  {items:['t1','o3',…], tag:true}  도형 도감 열쇠로 그린다 — 이름표 ㉮㉯㉰ (tag:false 면 이름표 없이 하나만)
+   tiles {pieces:[{p:[[x,y],…], n:'①', hi:true}], u:칸 크기, cut:true}  칠교 조각·자른 도형 (좌표는 칸 단위)
+   cubes {cells:[[x,y,z,'r'|'y'|'b'|'g'|0],…]} 또는 {rows:[cells,cells,…]}  쌓기나무 — 오른쪽 ↗ · 앞 ↘ · 위 ↑ (차시 방향 약속 그대로)
+   도형의 이름(k)은 그리는 사람 몫일 뿐 — 검사기는 꼭짓점·열림·굽음으로 다시 가른다. */
+const FTAG = ['㉮', '㉯', '㉰', '㉱', '㉲', '㉳', '㉴', '㉵'];
+const FIG = {
+  t1:{k:'tri', p:[[30,6],[55,52],[5,52]]},  t2:{k:'tri', p:[[8,6],[8,54],[52,54]]},   t3:{k:'tri', p:[[3,46],[57,46],[16,16]]},
+  t4:{k:'tri', p:[[6,10],[54,10],[30,54]]}, t5:{k:'tri', p:[[26,3],[40,57],[14,48]]}, t6:{k:'tri', p:[[6,24],[54,6],[36,56]]},
+  q1:{k:'quad', p:[[10,10],[50,10],[50,50],[10,50]]}, q2:{k:'quad', p:[[3,18],[57,18],[57,44],[3,44]]}, q3:{k:'quad', p:[[30,3],[57,30],[30,57],[3,30]]},
+  q4:{k:'quad', p:[[18,12],[42,12],[56,48],[4,48]]},  q5:{k:'quad', p:[[8,14],[48,5],[55,50],[14,42]]}, q6:{k:'quad', p:[[18,12],[57,12],[42,48],[3,48]]},
+  q7:{k:'quad', p:[[19,3],[41,3],[41,57],[19,57]]},
+  c1:{k:'circle', c:25}, c2:{k:'circle', c:13}, c3:{k:'circle', c:19},
+  e1:{k:'ellipse', e:[27,14]}, e2:{k:'ellipse', e:[14,27]},
+  o3:{k:'open', p:[[30,6],[55,52],[5,52]], open:true}, o4:{k:'open', p:[[10,10],[50,10],[50,50],[10,50]], open:true},
+  o5:{k:'open', p:[[8,6],[8,54],[52,54]], open:true},
+  v3:{k:'curve', p:[[30,6],[55,52],[5,52]], bend:1}, v4:{k:'curve', p:[[10,10],[50,10],[50,50],[10,50]], bend:1},
+  v5:{k:'curve', p:[[3,18],[57,18],[57,44],[3,44]], bend:0}, d1:{k:'curve', semi:25},
+  p5:{k:'poly5', p:[[30,4],[56,23],[46,54],[14,54],[4,23]]}, h6:{k:'poly6', p:[[17,6],[43,6],[56,30],[43,54],[17,54],[4,30]]}
+};
+const FIG_FILL = '#F6EBD3';
+function figSVG(key){
+  const f = FIG[key]; if (!f) return ''; const st = `stroke="${CMP_INK}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"`; let body = '';
+  if (f.c) body = `<circle cx="30" cy="30" r="${f.c}" fill="${FIG_FILL}" ${st}/>`;
+  else if (f.e) body = `<ellipse cx="30" cy="30" rx="${f.e[0]}" ry="${f.e[1]}" fill="${FIG_FILL}" ${st}/>`;
+  else if (f.semi) body = `<path d="M${30 - f.semi} 42 A${f.semi} ${f.semi} 0 0 1 ${30 + f.semi} 42 Z" fill="${FIG_FILL}" ${st}/>`;
+  else if (f.open){ const P = f.p, a = P[P.length - 1], b = P[0]; const m1 = [a[0] + (b[0] - a[0]) * .32, a[1] + (b[1] - a[1]) * .32], m2 = [a[0] + (b[0] - a[0]) * .68, a[1] + (b[1] - a[1]) * .68];
+    body = `<polyline points="${[m2].concat(P).concat([m1]).map(p => p.join(',')).join(' ')}" fill="none" ${st}/>`; }
+  else if (f.bend !== undefined){ const P = f.p, n = P.length; let d = `M${P[0].join(' ')}`;
+    for (let i = 0; i < n; i++){ const a = P[i], b = P[(i + 1) % n];
+      if (i === f.bend){ const cx = 30, cy = 30, mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2; const qx = mx + (mx - cx) * .9, qy = my + (my - cy) * .9; d += ` Q${qx.toFixed(1)} ${qy.toFixed(1)} ${b.join(' ')}`; }
+      else d += ` L${b.join(' ')}`; }
+    body = `<path d="${d} Z" fill="${FIG_FILL}" ${st}/>`; }
+  else body = `<polygon points="${f.p.map(p => p.join(',')).join(' ')}" fill="${FIG_FILL}" ${st}/>`;
+  return `<svg class="figsv" viewBox="-4 -4 68 68" width="68" height="68" role="img" aria-label="도형">${body}</svg>`;
+}
+function figsHTML(a, paper){
+  const it = a.items || []; const tag = a.tag !== false && it.length > 1;
+  return `<div class="${paper ? 'pcmpw' : 'cmpw'} figs">${it.map((k, i) => `<div class="figc">${figSVG(k)}${tag ? `<b>${FTAG[i]}</b>` : ''}</div>`).join('')}</div>`;
+}
+const TILE_PAL = ['#F7C6B5', '#BFD9EE', '#F8E3A1', '#C9E4C5', '#E3CDEB', '#F5D0A9', '#CFE3E8'];
+function tilesSVG(a){
+  const P = a.pieces || []; const U = a.u || 38; const all = [].concat(...P.map(x => x.p));
+  const x0 = Math.min(...all.map(p => p[0])), y0 = Math.min(...all.map(p => p[1])), x1 = Math.max(...all.map(p => p[0])), y1 = Math.max(...all.map(p => p[1]));
+  const X = v => 4 + (v - x0) * U, Y = v => 4 + (v - y0) * U; const anyHi = P.some(x => x.hi);
+  const s = P.map((pc, i) => { const fill = a.cut ? FIG_FILL : anyHi ? (pc.hi ? '#F2A48F' : '#F1EDE4') : TILE_PAL[i % TILE_PAL.length];
+    const pts = pc.p.map(p => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ');
+    const cx = pc.p.reduce((t, p) => t + p[0], 0) / pc.p.length, cy = pc.p.reduce((t, p) => t + p[1], 0) / pc.p.length;
+    return `<polygon points="${pts}" fill="${fill}" stroke="${CMP_INK}" stroke-width="${a.cut ? 2 : 1.8}" stroke-linejoin="round"${a.cut ? ' stroke-dasharray="0"' : ''}/>` +
+      (pc.n ? `<text x="${X(cx).toFixed(1)}" y="${(Y(cy) + 6).toFixed(1)}" text-anchor="middle" font-size="16" font-weight="700" fill="${CMP_INK}">${pc.n}</text>` : ''); }).join('');
+  const W = 8 + (x1 - x0) * U, H = 8 + (y1 - y0) * U;
+  return `<svg class="tilesv" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${a.cut ? '선을 그은 도형' : '칠교 조각'}">${s}</svg>`;
+}
+const CUBE_COL = {r:['#F28B82', '#E06666', '#C94F4F'], y:['#FFE38A', '#F6C944', '#D9A92A'], b:['#9CCFF7', '#5FA8E8', '#3F86C8'], g:['#ADDBAE', '#77BB7A', '#559A58'], 0:['#F3DCAB', '#E2BE7E', '#C9A060']};
+const CUBE_C = 0.866, CUBE_S = 0.5;
+function cubeProj(x, y, z){ return [CUBE_C * (x - y), -CUBE_S * (x + y) - z]; }
+function cubeFaces(x, y, z){ const P = cubeProj;
+  return {top:[P(x, y, z + 1), P(x + 1, y, z + 1), P(x + 1, y + 1, z + 1), P(x, y + 1, z + 1)],
+          front:[P(x, y, z), P(x + 1, y, z), P(x + 1, y, z + 1), P(x, y, z + 1)],
+          left:[P(x, y, z), P(x, y + 1, z), P(x, y + 1, z + 1), P(x, y, z + 1)]}; }
+function cubeOrder(cells){ return cells.map((c, i) => ({c, i})).sort((p, q) => ((-p.c[0] - p.c[1] + p.c[2]) - (-q.c[0] - q.c[1] + q.c[2])) || (p.c[2] - q.c[2]) || (p.i - q.i)); }
+function cubesSVG(cells, S){
+  S = S || 26; const ord = cubeOrder(cells || []); let s = '', mnx = 1e9, mny = 1e9, mxx = -1e9, mxy = -1e9;
+  const polys = [];
+  ord.forEach(({c}) => { const F = cubeFaces(c[0], c[1], c[2]); const col = CUBE_COL[c[3]] || CUBE_COL[0];
+    [['left', col[2]], ['front', col[1]], ['top', col[0]]].forEach(([k, fill]) => { polys.push([F[k], fill]); F[k].forEach(p => { mnx = Math.min(mnx, p[0]); mny = Math.min(mny, p[1]); mxx = Math.max(mxx, p[0]); mxy = Math.max(mxy, p[1]); }); }); });
+  const X = v => 3 + (v - mnx) * S, Y = v => 3 + (v - mny) * S;
+  polys.forEach(([pp, fill]) => { s += `<polygon points="${pp.map(p => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ')}" fill="${fill}" stroke="${CMP_INK}" stroke-width="1.3" stroke-linejoin="round"/>`; });
+  const W = Math.round(6 + (mxx - mnx) * S), H = Math.round(6 + (mxy - mny) * S);
+  return `<svg class="cubesv" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="쌓기나무">${s}</svg>`;
+}
+function cubesHTML(a, paper){
+  const box = paper ? 'pcmpw' : 'cmpw';
+  if (Array.isArray(a.rows)) return `<div class="${box} figs">${a.rows.map((cells, i) => `<div class="figc">${cubesSVG(cells, 22)}<b>${FTAG[i]}</b></div>`).join('')}</div>`;
+  return `<div class="${box}">${cubesSVG(a.cells, 28)}</div>`;
+}
+/* v2.3 도감 — 칠교판(교과서 번호: 삼각형 ①②③⑤⑦ · 사각형 ④ 정사각형 ⑥ 평행사변형) · 자른 도형 · 쌓기나무 모양 */
+const TAN7 = [
+  {n:'①', p:[[0,0],[4,0],[2,2]]}, {n:'②', p:[[0,0],[2,2],[0,4]]}, {n:'③', p:[[4,2],[4,4],[2,4]]},
+  {n:'④', p:[[2,2],[3,3],[2,4],[1,3]]}, {n:'⑤', p:[[2,2],[3,1],[3,3]]}, {n:'⑥', p:[[4,0],[4,2],[3,3],[3,1]]}, {n:'⑦', p:[[1,3],[2,4],[0,4]]}];
+const CUTS = {
+  cA:[[[0,0],[4,0],[4,4]], [[0,0],[4,4],[0,4]]],
+  cB:[[[0,0],[4,0],[2,2]], [[4,0],[4,4],[2,2]], [[4,4],[0,4],[2,2]], [[0,4],[0,0],[2,2]]],
+  cC:[[[0,0],[2,0],[2,2],[0,2]], [[2,0],[4,0],[4,2],[2,2]]],
+  cD:[[[0,0],[2,0],[0,2]], [[2,0],[2,2],[0,2]], [[2,0],[4,0],[4,2],[2,2]]],
+  cE:[[[0,0],[2,0],[2,2],[0,2]], [[2,0],[4,0],[4,2],[2,2]], [[0,2],[2,2],[2,4],[0,4]], [[2,2],[4,2],[4,4],[2,4]]],
+  cF:[[[0,0],[2,0],[0,2]], [[2,0],[4,0],[4,2],[0,2]]],
+  cG:[[[0,0],[4,0],[0,2]], [[4,0],[4,2],[0,2]], [[0,2],[2,2],[2,4],[0,4]], [[2,2],[4,2],[4,4],[2,4]]],
+  cH:[[[2,0],[3,2],[1,2]], [[1,2],[3,2],[4,4],[0,4]]],
+  cI:[[[0,0],[2,0],[2,2],[0,2]], [[2,0],[4,0],[2,2]], [[4,0],[4,2],[2,2]], [[4,0],[6,0],[6,2],[4,2]]],
+  cJ:[[[0,0],[2,0],[0,4]], [[2,0],[2,4],[0,4]], [[2,0],[4,0],[4,4],[2,4]]],
+  cK:[[[0,0],[2,0],[0,2]], [[2,0],[2,2],[0,2]], [[2,0],[4,0],[4,2],[2,2]], [[4,0],[6,0],[6,2]], [[4,0],[6,2],[4,2]]]};
+const CUBE_LIB = [
+  [[0,0,0],[1,0,0],[2,0,0]], [[0,0,0],[1,0,0],[0,0,1]], [[0,0,0],[0,0,1],[0,0,2]], [[0,0,0],[1,0,0],[1,0,1]], [[0,0,0],[1,0,0],[0,1,0]],
+  [[0,0,0],[1,0,0],[2,0,0],[1,0,1]], [[0,0,0],[1,0,0],[0,1,0],[1,1,0]], [[0,0,0],[1,0,0],[2,0,0],[0,0,1]], [[0,0,0],[0,0,1],[0,0,2],[1,0,0]],
+  [[0,0,0],[1,0,0],[1,0,1],[1,0,2]], [[0,0,0],[1,0,0],[2,0,0],[2,0,1]], [[0,0,0],[1,0,0],[2,0,0],[3,0,0]],
+  [[0,0,0],[1,0,0],[2,0,0],[1,0,1],[1,0,2]], [[0,0,0],[1,0,0],[2,0,0],[0,0,1],[2,0,1]], [[0,0,0],[1,0,0],[1,0,1],[2,0,0],[2,0,1]],
+  [[0,0,0],[1,0,0],[2,0,0],[3,0,0],[3,0,1]], [[0,0,0],[1,0,0],[2,0,0],[0,1,0],[0,1,1]], [[0,0,0],[1,0,0],[0,1,0],[0,1,1],[0,1,2]],
+  [[0,0,0],[1,0,0],[2,0,0],[1,0,1],[2,0,1],[2,0,2]], [[0,0,0],[1,0,0],[2,0,0],[0,0,1],[1,0,1],[0,0,2]]];
 function optLabel(t){ return (typeof t === 'object') ? drawAsset(t) : esc(t); }
 function optText(t){ if (typeof t !== 'object') return String(t); if (t.type === 'dots') return `점 ${NUMWORD[t.n]}개`; if (t.type === 'count_group') return `${NUMWORD[t.n]} 개`; return ''; }
 
@@ -1979,6 +2083,146 @@ function makeVariantOnce(q, r){
                         : (up[0] === 0 ? ['0은 백의 자리에 놓을 수 없어요(그러면 두 자리 수).', `백의 자리에 ${up[1]}, 십의 자리에 0, 일의 자리에 ${up[2]} — ${mn}${IEYO(mn)}.`, '0이 있으면 백의 자리 다음 자리에 놓아요.']
                                        : [`가장 작은 ${up[0]}${EUL(up[0])} 백의 자리에 놓아요.`, `남은 카드도 작은 수부터 — ${mn}${IEYO(mn)}.`, '높은 자리일수록 작은 숫자를 놓아요.']);
     if (q.kind === 'sa') v.answer = [String(ans)]; else v.options = kindOpts(ans, ds, want, q.options);
+    return v;
+  }
+
+  /* --- v2.3: 2학년 1학기 「여러 가지 도형」 (2026-10-10) — 오개념 꼬리는 rule.mis 가 준다(엔진이 지어내지 않는다)
+     fig  {ask:'which'|'not'|'count', target:'tri'|'quad'|'circle', n, mis:{open, curve, near, ellipse, atyp}}   — figs 그림
+     fnum {ask:'side'|'vertex'|'sum', mis:{count, swap, shapes}}                                                  — side·vertex 는 figs 한 개, sum 은 그림 없음
+     tan  {ask:'kind'|'hicount', target, mis:{kind, count, all}}                                                   — tiles 칠교판
+     cut  {target:'tri'|'quad', mis:{other, all, near}}                                                            — tiles cut
+     cube {ask:'count'|'layer'|'floor'|'color'|'dir', size:[lo,hi], mis:{count, layer, lr, fb}}                    — cubes */
+  const FNM = {tri:'삼각형', quad:'사각형', circle:'원'};
+  const FK = k => FIG[k].k; const FKEYS = t => Object.keys(FIG).filter(k => FK(k) === t);
+  const FMIS = (M, k) => PFX + (M[k] || M.near || 'X01');
+  const FDIS = {tri:{open:['o3', 'o5'], curve:['v3'], near:['q1', 'q4', 'q6', 'p5']}, quad:{open:['o4'], curve:['v4', 'v5'], near:['t1', 't3', 'p5', 'h6']},
+                circle:{ellipse:['e1', 'e2'], curve:['d1'], near:['q3', 'h6', 'p5']}};
+  const FWHY = {tri:'곧은 선 3개로 둘러싸인 도형', quad:'곧은 선 4개로 둘러싸인 도형', circle:'어느 쪽에서 보아도 똑같이 둥근 도형'};
+  const FNOT = {tri:'끊어진 곳이 있거나 굽은 선이 있으면 삼각형이 아니에요.', quad:'끊어진 곳이 있거나 굽은 선이 있으면 사각형이 아니에요.', circle:'길쭉하거나 곧은 선이 있으면 원이 아니에요.'};
+  if (rule.fig && a && a.type === 'figs'){
+    const F = rule.fig; const ask = F.ask || 'which'; const tg = F.target || 'tri'; const nm = FNM[tg]; const M = F.mis || {}; const D = FDIS[tg];
+    const cats = Object.keys(D).filter(c => M[c] || (c === 'near' && M.near));
+    if (ask === 'which'){
+      const n = Math.max(2, nOptsOf(q)); const tgt = pick(FKEYS(tg), r); const ds = shuffle(cats, r).slice(0, n - 1).map(c => [pick(D[c], r), c]);
+      while (ds.length < n - 1){ const c = pick(cats, r); const k = pick(D[c], r); if (!ds.some(x => x[0] === k)) ds.push([k, c]); }
+      const items = shuffle([[tgt, 'ok']].concat(ds), r); a.items = items.map(x => x[0]); a.tag = true;
+      v.stem = `${nm}은 어느 것인가요?`;
+      v.options = items.map((x, i) => x[1] === 'ok' ? {t:FTAG[i], correct:true} : {t:FTAG[i], mis:FMIS(M, x[1])});
+      const ti = items.findIndex(x => x[1] === 'ok');
+      v.explanation = [`${nm}은 ${FWHY[tg]}이에요.`, `${FTAG[ti]}가 ${nm}이에요.`, FNOT[tg]];
+    } else if (ask === 'not'){
+      const n = Math.max(2, nOptsOf(q)); const ts = shuffle(FKEYS(tg), r).slice(0, n - 1); const c = pick(cats, r); const odd = pick(D[c], r);
+      const items = shuffle(ts.map(k => [k, 'ok']).concat([[odd, c]]), r); a.items = items.map(x => x[0]); a.tag = true;
+      v.stem = `${nm}이 아닌 것은 어느 것인가요?`;
+      v.options = items.map((x, i) => x[1] !== 'ok' ? {t:FTAG[i], correct:true} : {t:FTAG[i], mis:PFX + (M.atyp || 'X04')});
+      const oi = items.findIndex(x => x[1] !== 'ok');
+      v.explanation = [`${nm}은 ${FWHY[tg]}이에요.`, `${FTAG[oi]}는 ${c === 'open' ? '끊어진 곳이 있어서' : c === 'curve' ? '굽은 선이 있어서' : c === 'ellipse' ? '한쪽으로 길쭉해서' : '변의 수가 달라서'} ${nm}이 아니에요.`,
+                       tg === 'circle' ? '크기가 달라도 둥근 모양이 같으면 모두 원이에요.' : '기울어지거나 길쭉해도 곧은 선의 수가 같으면 모두 ' + nm + '이에요.'];
+    } else {
+      const n = F.n || (a.items || []).length || 6; const k = rint(2, Math.min(4, n - 2, FKEYS(tg).length), r); const ts = shuffle(FKEYS(tg), r).slice(0, k);
+      const pool = []; cats.forEach(c => D[c].forEach(x => pool.push([x, c]))); const ds = shuffle(pool, r).slice(0, n - k);
+      const items = shuffle(ts.map(x => [x, 'ok']).concat(ds), r); a.items = items.map(x => x[0]); a.tag = true;
+      const trap = ds.find(x => x[1] !== 'near') || ds[0];
+      v.stem = `그림에서 ${nm}은 모두 몇 개인가요?`;
+      if (q.kind === 'sa') v.answer = [String(k), k + '개'];
+      else v.options = kindOpts(k, [[k + 1, M[trap[1]] || M.near], [k - 1, M.atyp || 'X04'], [k + 2, M[trap[1]] || M.near]], Math.max(1, nOptsOf(q) - 1), q.options);
+      v.explanation = [`${nm}은 ${FWHY[tg]}이에요.`, `${items.map((x, i) => x[1] === 'ok' ? FTAG[i] : null).filter(Boolean).join(', ')} — 모두 ${k}개예요.`, FNOT[tg]];
+    }
+    return v;
+  }
+  if (rule.fnum){
+    const F = rule.fnum; const ask = F.ask || 'side'; const M = F.mis || {}; const want = Math.max(1, nOptsOf(q) - 1);
+    if (ask === 'sum'){
+      const x = rint(1, 4, r), y = rint(1, 4, r); const what = pick(['변', '꼭짓점'], r); const ans = 3 * x + 4 * y;
+      v.stem = `삼각형 ${x}개와 사각형 ${y}개가 있어요. ${what}${what === '변' ? '은' : '은'} 모두 몇 개인가요?`; delete v.asset;
+      if (q.kind === 'sa') v.answer = [String(ans), ans + '개'];
+      else v.options = kindOpts(ans, [[4 * x + 3 * y, M.swap || 'X06'], [x + y, M.shapes || 'X16'], [3 * (x + y), M.swap || 'X06'], [ans + 1, M.swap || 'X06']], want, q.options);
+      v.explanation = [`삼각형 하나에 ${what}${what === '변' ? '이' : '이'} 3개, 사각형 하나에 4개예요.`, `3씩 ${x}번은 ${3 * x}, 4씩 ${y}번은 ${4 * y} — 모두 ${ans}개예요.`, '도형의 수가 아니라 ' + what + '의 수를 세요.'];
+      return v;
+    }
+    if (!a || a.type !== 'figs') return v;
+    const tk = pick(FKEYS('tri').concat(FKEYS('quad')), r); a.items = [tk]; a.tag = false; const n = FK(tk) === 'tri' ? 3 : 4; const nm = FNM[FK(tk)];
+    const what = ask === 'vertex' ? '꼭짓점' : '변';
+    v.stem = `이 도형의 ${what}은 모두 몇 개인가요?`;
+    if (q.kind === 'sa') v.answer = [String(n), n + '개'];
+    else v.options = kindOpts(n, [[n === 3 ? 4 : 3, M.count || 'X06'], [n + 2, M.count || 'X06'], [n - 1 === 3 ? 2 : n - 1, M.count || 'X06']], want, q.options);
+    v.explanation = [ask === 'vertex' ? '곧은 선 2개가 만나는 점이 꼭짓점이에요.' : '도형을 둘러싼 곧은 선 하나하나가 변이에요.', `이 도형은 ${nm}이라 ${what}이 ${n}개예요.`, '한 곳에 손가락을 대고 한 바퀴 돌며 빠짐없이 세어요.'];
+    return v;
+  }
+  const TKIND = pc => pc.p.length === 3 ? 'tri' : 'quad';
+  if (rule.tan && a && a.type === 'tiles'){
+    const T = rule.tan; const ask = T.ask || 'kind'; const M = T.mis || {}; const want = Math.max(1, nOptsOf(q) - 1);
+    if (ask === 'kind'){
+      const i = rint(0, 6, r); a.pieces = TAN7.map((pc, k) => Object.assign({}, pc, k === i ? {hi:true} : {})); const nm = FNM[TKIND(TAN7[i])];
+      v.stem = `${TAN7[i].n}번 조각은 어떤 도형인가요?`;
+      v.options = kindOpts(nm, [[nm === '삼각형' ? '사각형' : '삼각형', M.kind || 'X10'], ['원', M.kind || 'X10']], want, q.options);
+      v.explanation = [`${TAN7[i].n}번 조각의 곧은 선(변)을 세어 보세요.`, `변이 ${nm === '삼각형' ? 3 : 4}개라서 ${nm}이에요.`, '칠교 조각은 삼각형 5개, 사각형 2개예요.'];
+    } else {
+      const tg = T.target || 'tri'; const nm = FNM[tg]; const k = rint(3, 5, r); const hi = shuffle([0, 1, 2, 3, 4, 5, 6], r).slice(0, k);
+      a.pieces = TAN7.map((pc, j) => Object.assign({}, pc, hi.indexOf(j) >= 0 ? {hi:true} : {}));
+      const ans = hi.filter(j => TKIND(TAN7[j]) === tg).length; const oth = k - ans;
+      v.stem = `색칠한 조각 가운데 ${nm}은 모두 몇 개인가요?`;
+      if (q.kind === 'sa') v.answer = [String(ans), ans + '개'];
+      else v.options = kindOpts(ans, [[k, M.all || 'X16'], [oth, M.count || 'X10'], [ans + 1, M.count || 'X10'], [ans ? ans - 1 : 2, M.count || 'X10']], want, q.options);
+      v.explanation = [`색칠한 조각은 ${hi.map(j => TAN7[j].n).sort().join(' ')} — ${k}개예요.`, `그 가운데 ${nm}은 ${hi.filter(j => TKIND(TAN7[j]) === tg).map(j => TAN7[j].n).sort().join(' ') || '없'}${ans ? '' : '어요'}${ans ? ` — ${ans}개예요.` : ''}`, `변이 ${tg === 'tri' ? 3 : 4}개인 조각만 세어요.`];
+      if (!ans) v.explanation[1] = `그 가운데 ${nm}은 하나도 없어요 — 0개예요.`;
+    }
+    return v;
+  }
+  if (rule.cut && a && a.type === 'tiles'){
+    const T = rule.cut; const tg = T.target || 'tri'; const nm = FNM[tg]; const M = T.mis || {}; const want = Math.max(1, nOptsOf(q) - 1);
+    const keys = Object.keys(CUTS).filter(k => CUTS[k].some(p => (p.length === 3) === (tg === 'tri')));
+    const key = pick(keys, r); a.pieces = CUTS[key].map(p => ({p})); a.cut = true;
+    const ans = CUTS[key].filter(p => (p.length === 3) === (tg === 'tri')).length, all = CUTS[key].length;
+    v.stem = `선을 따라 모두 자르면 ${nm}은 몇 개 생기나요?`;
+    if (q.kind === 'sa') v.answer = [String(ans), ans + '개'];
+    else v.options = kindOpts(ans, [[all, M.all || 'X16'], [all - ans, M.other || 'X06'], [ans + 1, M.near || 'X11'], [ans - 1, M.near || 'X11'], [ans + 2, M.near || 'X11']].filter(x => x[0] !== 0), want, q.options);
+    v.explanation = [`잘라서 생기는 조각은 모두 ${all}개예요.`, `그 가운데 변이 ${tg === 'tri' ? 3 : 4}개인 ${nm}은 ${ans}개예요.`, '조각 하나하나의 곧은 선을 세어 이름을 정해요.'];
+    return v;
+  }
+  if (rule.cube && a && a.type === 'cubes' && !a.rows){
+    const K = rule.cube; const ask = K.ask || 'count'; const M = K.mis || {}; const want = Math.max(1, nOptsOf(q) - 1);
+    const CNM = {r:'빨간색', y:'노란색', b:'파란색', g:'초록색'};
+    const DIR = {'오른쪽':[1,0,0], '왼쪽':[-1,0,0], '앞':[0,-1,0], '뒤':[0,1,0], '위':[0,0,1]};
+    const OPP = {'오른쪽':'왼쪽', '왼쪽':'오른쪽', '앞':'뒤', '뒤':'앞', '위':'아래'};
+    const DM = d => (d === '오른쪽' || d === '왼쪽') ? (M.lr || 'X13') : (M.fb || 'X14');
+    if (ask === 'color' || ask === 'dir'){
+      const LAY = [['오른쪽', '왼쪽', '위'], ['오른쪽', '왼쪽', '앞'], ['오른쪽', '왼쪽'], ['앞', '뒤', '오른쪽'], ['위', '오른쪽', '앞'], ['왼쪽', '오른쪽', '뒤'], ['앞', '오른쪽'], ['위', '왼쪽']];
+      const lay = pick(LAY, r); const cols = shuffle(['y', 'b', 'g'], r);
+      a.cells = [[1, 1, 0, 'r']].concat(lay.map((d, i) => [1 + DIR[d][0], 1 + DIR[d][1], DIR[d][2], cols[i]]));
+      const tgt = pick(lay, r); const ti = lay.indexOf(tgt); const tc = CNM[cols[ti]];
+      if (ask === 'color'){
+        v.stem = `빨간색 쌓기나무의 ${tgt}에 있는 쌓기나무는 무슨 색인가요?`;
+        const ws = lay.filter(d => d !== tgt).map(d => [CNM[cols[lay.indexOf(d)]], d === OPP[tgt] ? DM(tgt) : DM(d)]);
+        v.options = kindOpts(tc, ws.concat([['빨간색', M.fb || 'X14']]), want, q.options);
+        v.explanation = [`빨간색 쌓기나무를 기준으로 봐요 — 오른쪽은 ↗, 앞은 ↘, 위는 ↑ 쪽이에요.`, `빨간색의 ${tgt}에는 ${tc} 쌓기나무가 있어요.`, '오른쪽·왼쪽, 앞·뒤는 내가 보는 쪽을 앞으로 정해요.'];
+      } else {
+        v.stem = `${tc} 쌓기나무는 빨간색 쌓기나무의 어느 쪽에 있나요?`;
+        const ws = [[OPP[tgt], DM(tgt)]].concat(shuffle(Object.keys(DIR).filter(d => d !== tgt && d !== OPP[tgt]), r).map(d => [d, DM(d)]));
+        v.options = kindOpts(tgt, ws, want, q.options);
+        v.explanation = [`빨간색 쌓기나무에서 ${tc} 쌓기나무로 가는 쪽을 봐요.`, `${tc} 쌓기나무는 빨간색의 ${tgt}에 있어요.`,
+                         tgt === '위' ? '위와 아래를 헷갈리지 않게 손으로 짚어 봐요.' : `${tgt}${tgt === '뒤' ? '와' : '과'} ${OPP[tgt]}${EULH(OPP[tgt])} 헷갈리지 않게 손으로 짚어 봐요 — 내가 보는 쪽이 앞이에요.`];
+      }
+      return v;
+    }
+    const [lo, hi] = K.size || [3, 5]; const cand = CUBE_LIB.filter(s => s.length >= lo && s.length <= hi && (ask !== 'layer' || true));
+    const sh = pick(cand, r); a.cells = sh.map(c => c.slice(0, 3).concat([0]));
+    const n = sh.length, L = 1 + Math.max(...sh.map(c => c[2])), f = sh.filter(c => c[2] === 0).length;
+    if (ask === 'count'){
+      v.stem = '쌓기나무는 모두 몇 개인가요?';
+      if (q.kind === 'sa') v.answer = [String(n), n + '개'];
+      else v.options = kindOpts(n, [[n - 1, M.count || 'X12'], [n + 1, M.count || 'X12'], [L !== n ? L : null, M.layer || 'X15'], [f !== n ? f : null, M.count || 'X12']], want, q.options);
+      v.explanation = [`1층부터 차례로 세어요 — 1층에 ${f}개${L > 1 ? `, 그 위에 ${n - f}개` : ''}.`, `쌓기나무는 모두 ${n}개예요.`, '보이는 면이 아니라 쌓기나무 하나하나를 세어요.'];
+    } else if (ask === 'layer'){
+      v.stem = '몇 층으로 쌓은 모양인가요?';
+      v.options = kindOpts(L + '층', [[n !== L ? n + '층' : null, M.layer || 'X15'], [(L === 1 ? 2 : L - 1) + '층', M.layer || 'X15'], [(L === 3 ? 2 : L + 1) + '층', M.layer || 'X15'], ['4층', M.layer || 'X15']], want, q.options);
+      v.explanation = ['맨 아래가 1층, 그 위가 2층이에요.', `가장 높은 곳이 ${L}층이라 ${L}층으로 쌓은 모양이에요.`, '쌓기나무의 개수와 층의 수는 달라요.'];
+    } else {
+      v.stem = '1층에 놓인 쌓기나무는 몇 개인가요?';
+      if (q.kind === 'sa') v.answer = [String(f), f + '개'];
+      else v.options = kindOpts(f, [[n !== f ? n : null, M.layer || 'X15'], [f + 1, M.count || 'X12'], [f - 1 || null, M.count || 'X12'], [n - f || null, M.layer || 'X15']], want, q.options);
+      v.explanation = ['바닥에 닿아 있는 쌓기나무가 1층이에요.', `1층에는 ${f}개가 있어요.`, '위에 올린 쌓기나무는 1층에 세지 않아요.'];
+    }
     return v;
   }
 
@@ -3096,6 +3340,9 @@ function paperAsset(a){
     case 'blocks3': return `<div class="pcmpw">${blocksSVG(a)}<em class="pb3">${a.unit === 'coin' ? '(동전)' : '(큰 네모 = 백 모형, 막대 = 십 모형, 작은 네모 = 일 모형)'}</em></div>`;
     case 'place_table': return placeTableHTML(a, true);
     case 'jump_row': return jumpRowHTML(a, true);
+    case 'figs': return figsHTML(a, true);
+    case 'tiles': return `<div class="pcmpw">${tilesSVG(a)}</div>`;
+    case 'cubes': return cubesHTML(a, true);
     case 'plate': return `<div class="pplate">${a.n === 0 ? '(비어 있음)' : a.item.repeat(a.n)}</div>`;
   } return '';
 }
