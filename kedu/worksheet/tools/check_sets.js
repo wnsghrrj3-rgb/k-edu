@@ -103,7 +103,9 @@ const ASSETS = {
   syl_table:      ['cons', 'vows'],
   /* v1.6 — 1학년 1학기 국어 「받침이 있는 글자를 읽어요」 (2026-10-07): 받침 글자 상자 · 그림 낱말 */
   bat:            [],
-  bat_word:       ['w', 'at']
+  bat_word:       ['w', 'at'],
+  /* v1.8 — 1학년 1학기 국어 「여러 가지 낱말을 익혀요」 (2026-10-10): 글자판 */
+  word_grid:      ['rows']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -406,6 +408,13 @@ function checkAsset(where, a) {
     if (!(Number.isInteger(a.at) && a.at >= 0 && a.at < ws.length)) bad(where, 'bat_word at 이 낱말 밖');
     else if (!(hs3(ws[a.at]) || {}).b) bad(where, `bat_word ${a.w} 의 ${a.at} 번째 글자에 받침이 없다`);
   }
+  if (a.type === 'word_grid') {
+    const R = Array.isArray(a.rows) ? a.rows.map(x => [...String(x)]) : [];
+    if (!(R.length >= 2 && R.length <= 5)) bad(where, 'word_grid rows 는 2~5줄');
+    else { const L = R[0].length; if (!(L >= 2 && L <= 5)) bad(where, 'word_grid 한 줄은 2~5글자');
+      R.forEach((rw, i) => { if (rw.length !== L) bad(where, `word_grid rows[${i}] 길이가 다르다`); if (rw.some(ch => !hs3(ch))) bad(where, `word_grid rows[${i}] 에 한글 글자 아닌 것`); }); }
+    if (a.ask !== undefined && a.ask !== 'find') bad(where, "word_grid ask 는 'find' 만");
+  }
   if (a.type === 'syl_table') {
     const C2 = a.cons || [], V2 = a.vows || [];
     if (!(C2.length >= 2 && C2.length <= 5)) bad(where, 'syl_table cons 는 2~5줄');
@@ -600,6 +609,65 @@ function checkBat(where, q) {
   if (!cor || String(cor.t) !== ans) bad(where, `bat 정답 보기 「${cor && cor.t}」 ≠ 그림이 말하는 ${ans}`);
   (q.options || []).filter(o => !o.correct).forEach(o => { if (String(o.t) === ans) bad(where, `bat 오답 보기에 정답 ${ans} 가 섞였다`); });
 }
+/* v1.8 낱말 묶음·짝·글자판 — 엔진 WC·WL 표와 따로 들고 정답을 발문·그림에서 다시 셈한다 (2026-10-10) */
+const WCX = {
+  body:['눈','코','입','귀','손','발','머리','팔','다리','어깨','무릎','이마','목'],
+  family:['엄마','아빠','할머니','할아버지','언니','오빠','누나','형','동생','이모','삼촌','고모'],
+  food:['국수','김치','김밥','피자','사과','떡','빵','우유','라면','두부','감자','수박'],
+  school:['칠판','교실','급식실','사물함','교과서','보건실','교문','강당','교탁'],
+  town:['빵집','은행','소방서','병원','우체국','꽃집','치과','시장','약국','경찰서','가구점','미용실']};
+const WCX_NEAR = ['옷','모자','양말','장갑','신발','친구','선생님','의사','이웃','경찰관','접시','숟가락','젓가락','냄비','컵','침대','소파','냉장고','이불','거실','부엌','안방','욕실'];
+const WCX_STEM = {'몸을 나타내는':'body','가족을 부르는':'family','음식을 나타내는':'food','학교에서 볼 수 있는':'school','동네에서 볼 수 있는':'town'};
+const WCX_ALL = new Set([].concat(...Object.values(WCX), WCX_NEAR));
+function checkWcat(where, q) {
+  const R = (q.variant_rule || {}).wcat; if (!R) return;
+  const m = String(q.stem).match(/^(몸을 나타내는|가족을 부르는|음식을 나타내는|학교에서 볼 수 있는|동네에서 볼 수 있는) 낱말(이 아닌 것)?은 어느 것인가요\?$/);
+  if (!m) return bad(where, 'wcat 발문은 「몸을 나타내는 낱말은(이 아닌 것은) 어느 것인가요?」 꼴');
+  const cat = WCX[WCX_STEM[m[1]]], neg = !!m[2]; const os = q.options || [];
+  os.forEach(o => { if (!WCX_ALL.has(String(o.t))) bad(where, `wcat 보기 「${o.t}」 는 묶음 표에 없는 낱말 — 맞고 틀림을 검사기가 셀 수 없다`); });
+  const hit = os.filter(o => neg ? cat.indexOf(String(o.t)) < 0 : cat.indexOf(String(o.t)) >= 0);
+  if (hit.length !== 1) return bad(where, `wcat 보기 가운데 ${neg ? '묶음 밖' : '묶음 안'} 낱말이 ${hit.length}개(하나여야)`);
+  if (!hit[0].correct) bad(where, `wcat 정답 보기가 발문이 말하는 「${hit[0].t}」 가 아니다`);
+  /* 학교·동네 묶음은 사람·음식·몸 낱말을 「아닌 것」으로 쓰면 답이 둘이 된다(그 사람도 학교에서 볼 수 있다) — 곁 낱말·맞은편 장소 묶음만 */
+  const cat0 = WCX_STEM[m[1]];
+  if (cat0 === 'school' || cat0 === 'town') os.forEach(o => { const t = String(o.t); if (cat.indexOf(t) < 0 && WCX[cat0 === 'school' ? 'town' : 'school'].indexOf(t) < 0 && WCX_NEAR.indexOf(t) < 0) bad(where, `wcat ${cat0} 묶음 보기 「${t}」 — 사람·음식·몸 낱말은 학교·동네에서도 볼 수 있어 답이 흐려진다`);
+    else if (cat.indexOf(t) < 0 && ['친구','선생님','의사','이웃','경찰관','접시','숟가락','젓가락','냄비','컵','옷','모자','양말','장갑','신발'].indexOf(t) >= 0) bad(where, `wcat ${cat0} 묶음 보기 「${t}」 — 학교·동네에서도 볼 수 있는 곁 낱말`); });
+}
+const WLX_BODY = {'눈':'보다','귀':'듣다','코':'냄새를 맡다','입':'먹다','손':'잡다','발':'걷다'};
+const WLX_PLACE = {'병원':'아픈 곳을 치료받아요','치과':'이를 치료받아요','우체국':'편지를 보내요','도서관':'책을 빌려요','빵집':'빵을 사요','소방서':'불을 끄러 출동해요','은행':'돈을 맡겨요','꽃집':'꽃을 사요','급식실':'점심을 먹어요','약국':'약을 사요'};
+const WLX_APART = [['병원','치과'],['병원','약국'],['치과','약국']];
+const inv = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [v, k]));
+function checkWlink(where, q) {
+  const R = (q.variant_rule || {}).wlink; if (!R) return;
+  const st = String(q.stem); let m, ans, T, back;
+  if ((m = st.match(/^「(.+)」(?:으로|로) 하는 일을 나타내는 말은/))) { ans = WLX_BODY[m[1]]; T = WLX_BODY; back = false; }
+  else if ((m = st.match(/^「(.+)」는 몸의 어느 곳으로 하는 일인가요/))) { ans = inv(WLX_BODY)[m[1]]; T = WLX_BODY; back = true; }
+  else if ((m = st.match(/^「(.+)」에서 하는 일은/))) { ans = WLX_PLACE[m[1]]; T = WLX_PLACE; back = false; }
+  else if ((m = st.match(/^「(.+)」 — 이 일을 하는 곳은/))) { ans = inv(WLX_PLACE)[m[1]]; T = WLX_PLACE; back = true; }
+  else return bad(where, 'wlink 발문 꼴을 모른다');
+  if (!ans) return bad(where, `wlink 발문의 「${m[1]}」 이 짝 표에 없다`);
+  const os = q.options || []; const keys = os.map(o => back ? String(o.t) : inv(T)[String(o.t)]);
+  if (keys.some(k => !k || !T[k])) bad(where, 'wlink 보기에 짝 표 밖 말이 섞였다');
+  const cor = os.find(o => o.correct); if (!cor || String(cor.t) !== ans) bad(where, `wlink 정답 보기 「${cor && cor.t}」 ≠ ${ans}`);
+  const places = back ? keys : keys.concat(T === WLX_PLACE ? [m[1]] : []);
+  if (T === WLX_PLACE) WLX_APART.forEach(([x, y]) => { if (places.indexOf(x) >= 0 && places.indexOf(y) >= 0) bad(where, `wlink 한 문항에 「${x}」·「${y}」 가 함께 — 헷갈리는 짝`); });
+}
+function gridFind(rows, w) {
+  const R = rows.map(x => [...String(x)]); const W = String(w);
+  for (const rw of R) if (rw.join('').indexOf(W) >= 0) return true;
+  for (let j = 0; j < R[0].length; j++) if (R.map(rw => rw[j]).join('').indexOf(W) >= 0) return true;
+  return false;
+}
+function checkGrid(where, q) {
+  const a = q.asset; if (!a || a.type !== 'word_grid' || !Array.isArray(a.rows)) return;
+  const st = String(q.stem);
+  if (q.kind === 'sa') { if (/숨어 있는 낱말/.test(st) && Array.isArray(q.answer)) q.answer.forEach(x => { if (!gridFind(a.rows, x)) bad(where, `word_grid 단답 정답 「${x}」 이 글자판에 없다`); }); return; }
+  const os = q.options || []; if (!os.length) return;
+  const neg = /숨어 있지 않은/.test(st); if (!neg && !/숨어 있는/.test(st)) return;
+  const hit = os.filter(o => neg ? !gridFind(a.rows, o.t) : gridFind(a.rows, o.t));
+  if (hit.length !== 1) return bad(where, `word_grid 보기 가운데 ${neg ? '숨어 있지 않은' : '숨어 있는'} 낱말이 ${hit.length}개(하나여야)`);
+  if (!hit[0].correct) bad(where, `word_grid 정답 보기가 글자판이 말하는 「${hit[0].t}」 가 아니다`);
+}
 /* 한 문항(원본이든 변형본이든) 공통 검사 */
 function checkQ(where, q, opt) {
   opt = opt || {};
@@ -623,6 +691,9 @@ function checkQ(where, q, opt) {
   checkJamo(where, q);
   checkBat(where, q);
   checkTwin(where, q);
+  checkWcat(where, q);
+  checkWlink(where, q);
+  checkGrid(where, q);
   checkJosa(where, q);
   if (q.asset && typeof q.asset === 'object' && ASSETS[q.asset.type]) {
     try { if (!ENG.drawAsset(q.asset, ENG.rng(7))) bad(where, '화면에서 에셋이 빈칸으로 나옴'); }
@@ -814,6 +885,24 @@ function checkSet(file) {
       Object.keys(R.mis || {}).forEach(k => { if (KEYS.indexOf(k) < 0) bad(where, 'twin mis 갈래를 모른다: ' + k); else if (!MIS.has(String(q.concept).replace(/C\d+$/, '') + R.mis[k])) bad(where, `twin mis.${k} 꼬리 ${R.mis[k]} 가 사전에 없다`); });
       (R.tw || []).forEach(x => { if (!TW_P[x]) bad(where, 'twin tw 후보는 ㄲㄸㅃㅆㅉ 만: ' + x); });
       if (R.dir !== undefined && ['make', 'split', 'up', 'down'].indexOf(R.dir) < 0) bad(where, 'twin dir 는 make·split·up·down');
+    }
+    /* v1.8 갈래 — 낱말 묶음·짝 */
+    if (q.variant_rule.wcat) {
+      const R = q.variant_rule.wcat; const ask = R.ask || 'pick';
+      if (['pick', 'odd'].indexOf(ask) < 0) bad(where, 'wcat ask 를 모른다: ' + ask);
+      if (['mc', 'blank'].indexOf(q.kind) < 0) bad(where, 'wcat 변형은 mc·blank 만');
+      if (at) bad(where, 'wcat 은 그림 없는 문항 전용');
+      Object.keys(R.mis || {}).forEach(k => { if (['other', 'near', 'in'].indexOf(k) < 0) bad(where, 'wcat mis 갈래를 모른다: ' + k); else if (!MIS.has(String(q.concept).replace(/C\d+$/, '') + R.mis[k])) bad(where, `wcat mis.${k} 꼬리 ${R.mis[k]} 가 사전에 없다`); });
+      if (ask === 'pick' && !(R.mis || {}).other) bad(where, 'wcat pick 은 mis.other 가 있어야(오답이 모자란다)');
+      if (ask === 'odd' && !(R.mis || {}).in) bad(where, 'wcat odd 는 mis.in 이 있어야');
+      (R.cats || []).forEach(c => { if (!WCX[c]) bad(where, 'wcat cats 후보는 body·family·food·school·town 만: ' + c); });
+    }
+    if (q.variant_rule.wlink) {
+      const R = q.variant_rule.wlink; const ask = R.ask || 'body';
+      if (['body', 'bodyr', 'place', 'placer'].indexOf(ask) < 0) bad(where, 'wlink ask 를 모른다: ' + ask);
+      if (['mc', 'blank'].indexOf(q.kind) < 0) bad(where, 'wlink 변형은 mc·blank 만');
+      if (at) bad(where, 'wlink 은 그림 없는 문항 전용');
+      Object.keys(R.mis || {}).forEach(k => { if (k !== 'link') bad(where, 'wlink mis 갈래는 link 뿐: ' + k); else if (!MIS.has(String(q.concept).replace(/C\d+$/, '') + R.mis[k])) bad(where, `wlink mis.link 꼬리 ${R.mis[k]} 가 사전에 없다`); });
     }
     if (q.variant_rule.bond && q.variant_rule.bond.part_max && at !== 'number_bond') bad(where, 'bond 는 number_bond 그림이 있어야 한다');
     /* play.html 과 같은 순서·같은 난수 씀씀이: 틀린 문항들이 난수 하나를 이어 쓰고, prep 은 변형 뒤에 온다.

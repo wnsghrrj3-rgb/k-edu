@@ -150,6 +150,14 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .pq .pbatw{margin:8px 0 8px 30px;font-size:20px;letter-spacing:.08em}
 .pq .pbatw .ppic{font-size:26px;margin-right:12px}
 .pq .pbatw sub{font-size:13px;border:1px dashed #555;padding:0 4px;margin-left:1px}
+.wgridw{text-align:center}
+.wgrid{border-collapse:collapse;font-size:32px;margin:0 auto;font-weight:700}
+.wgrid td{width:58px;height:58px;text-align:center;border:2px solid var(--rule-strong);background:var(--card)}
+.wgcap{margin-top:6px;font-size:15px;color:#6B6253}
+.pq .pwgridw{margin:8px 0 8px 30px}
+.pq .pwgrid{border-collapse:collapse;font-size:17px;display:inline-table;vertical-align:middle}
+.pq .pwgrid td{border:1px solid #555;width:30px;height:28px;text-align:center}
+.pq .pwgridw small{margin-left:10px;font-size:12px;color:#555}
 .syl{border-collapse:collapse;font-size:30px;margin:0 auto}
 .syl th,.syl td{width:62px;height:58px;text-align:center;border:2px solid var(--rule-strong)}
 .syl thead th{background:#FFF4E8;color:#C25A00}
@@ -570,6 +578,23 @@ const TW_PAIRS = [['굴','꿀'],['달','딸'],['살','쌀'],['방','빵'],['불'
 const TW_WORDS = [{w:'딸기',pic:'🍓'},{w:'꿀',pic:'🍯'},{w:'빵',pic:'🍞'},{w:'떡',pic:'🍡'},{w:'까치',pic:'🐦'},{w:'코끼리',pic:'🐘'},{w:'코뿔소',pic:'🦏'},{w:'땅콩',pic:'🥜'},{w:'팔찌',pic:'📿'},{w:'토끼',pic:'🐰'},{w:'쌀',pic:'🍚'},{w:'씨앗',pic:'🌱'},{w:'썰매',pic:'🛷'}];
 /* 된소리가 하나도 없는 낱말 — 예사소리(ㄱㄷㅂㅅㅈ)·거센소리(ㅋㅌㅍㅊ)를 견줄 때 */
 const TW_SOFT = ['가방','고래','거북','구름','다리','두부','바다','바지','비누','사자','시소','소라','자두','지도','제비','코','키','코알라','타조','토마토','포도','파도','피자','치마','기차','고추'];
+/* v1.8 — 여러 가지 낱말을 익혀요 (2026-10-10): 주제 묶음(wcat) · 짝 잇기(wlink) · 글자판(word_grid).
+   묶음끼리 겹치지 않게 — 도서관·연필·시소·운동장처럼 두 곳에 다 있을 수 있는 낱말, 배·눈처럼 뜻이 둘인 낱말 가운데 헷갈릴 것은 넣지 않는다. */
+const WC = {
+  body:['눈','코','입','귀','손','발','머리','팔','다리','어깨','무릎','이마','목'],
+  family:['엄마','아빠','할머니','할아버지','언니','오빠','누나','형','동생','이모','삼촌','고모'],
+  food:['국수','김치','김밥','피자','사과','떡','빵','우유','라면','두부','감자','수박'],
+  school:['칠판','교실','급식실','사물함','교과서','보건실','교문','강당','교탁'],
+  town:['빵집','은행','소방서','병원','우체국','꽃집','치과','시장','약국','경찰서','가구점','미용실']};
+/* 다른 묶음에서 오답을 가져올 때 — 학교·동네는 서로만(사람·음식·몸은 학교·동네에서도 「볼 수 있어」 답이 둘이 된다) */
+const WC_OTHER = {body:['family','food','school','town'], family:['body','food','school','town'], food:['body','family','school','town'], school:['town'], town:['school']};
+const WC_NAME = {body:'몸을 나타내는', family:'가족을 부르는', food:'음식을 나타내는', school:'학교에서 볼 수 있는', town:'동네에서 볼 수 있는'};
+/* 묶음 「곁」 낱말 — 묶음에 들 것 같지만 아니다(near): 몸에 걸치는 것 · 가족 밖 사람 · 음식 담는 것 · 집 안 물건 · 우리 집 안 */
+const WC_NEAR = {body:['옷','모자','양말','장갑','신발'], family:['친구','선생님','의사','이웃','경찰관'], food:['접시','숟가락','젓가락','냄비','컵'], school:['침대','소파','냉장고','이불'], town:['거실','부엌','안방','욕실']};
+/* 몸 ↔ 하는 일, 장소 ↔ 하는 일 — 짝이 하나로만 읽히는 것만. WL_APART 는 같은 보기에 섞지 않는다(병원·치과·약국) */
+const WL_BODY = [['눈','보다'],['귀','듣다'],['코','냄새를 맡다'],['입','먹다'],['손','잡다'],['발','걷다']];
+const WL_PLACE = [['병원','아픈 곳을 치료받아요'],['치과','이를 치료받아요'],['우체국','편지를 보내요'],['도서관','책을 빌려요'],['빵집','빵을 사요'],['소방서','불을 끄러 출동해요'],['은행','돈을 맡겨요'],['꽃집','꽃을 사요'],['급식실','점심을 먹어요'],['약국','약을 사요']];
+const WL_APART = [['병원','치과'],['병원','약국'],['치과','약국']];
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 /* ---------- 읽어주기 ---------- */
@@ -818,6 +843,9 @@ function drawAsset(a, r){
     case 'passage': { const hi = (a.hi || []).map(String); const mark = t => { let out = esc(t); hi.forEach(h => { if (h) out = out.split(esc(h)).join('<b>' + esc(h) + '</b>'); }); return out; };
       return `<div class="passage">${a.title ? `<h4>${esc(a.title)}</h4>` : ''}${(a.lines || []).map((ln, i) => `<div class="ln">${a.numbered === false ? '' : `<i>${i + 1}</i>`}<span>${mark(ln)}</span></div>`).join('')}</div>`; }
     case 'speech': return `<div class="speech">${(a.turns || []).map(t => `<div class="tn${t.who === '나' ? ' me' : ''}"><span class="who">${esc(t.who || '')}</span><div class="bub">${esc(t.text || '')}</div></div>`).join('')}</div>`;
+    /* v1.8 — 글자판: rows 는 같은 길이 글자줄. 가로(→)·세로(↓)로 숨은 낱말 찾기 */
+    case 'word_grid': { const R = (a.rows || []).map(x => [...String(x)]);
+      return `<div class="wgridw"><table class="wgrid">${R.map(rw => `<tr>${rw.map(ch => `<td>${esc(ch)}</td>`).join('')}</tr>`).join('')}</table><div class="wgcap">가로 → · 세로 ↓</div></div>`; }
     case 'scene': return `<div class="scene"><div class="ic">${esc(a.icon || '')}</div>${a.text ? `<div class="cap">${esc(a.text)}</div>` : ''}</div>`;
     /* v1.0 — 그림일기 틀 (2026-10-06): date·weather·picture·lines 네 자리. null 은 「비어 있어요」 빈칸(빠진 것 찾기용), lines 는 글줄 배열 */
     case 'diary': { const hi = (a.hi || []).map(String); const mark = t => { let out = esc(t); hi.forEach(h => { if (h) out = out.split(esc(h)).join('<b>' + esc(h) + '</b>'); }); return out; };
@@ -1338,6 +1366,56 @@ function makeVariantOnce(q, r){
       v.explanation = [`그림은 「${wd.w}」${(hgSplit3([...wd.w].pop()) || {}).b ? '이에요' : '예요'}.`, `${t}을 ${TW_PLAIN[t]} 하나로 쓰면 다른 말이 돼요.`, '소리 내어 읽으며 센 소리가 나는 자음자를 확인해요.'];
     }
     if (q.kind === 'sa') v.answer = [String(ans)]; else v.options = opts;
+    return v;
+  }
+  /* --- v1.8: 1학년 1학기 국어 「여러 가지 낱말을 익혀요」 (2026-10-10) ---
+     wcat {ask:'pick'|'odd', cats:[묶음 후보], mis:{other·near·in: 오개념 꼬리}}
+       pick 「몸을 나타내는 낱말은 어느 것인가요?」 — 오답은 곁 낱말(near)·다른 묶음 낱말(other)
+       odd  「…낱말이 아닌 것은 어느 것인가요?」 — 정답은 곁 낱말 또는 다른 묶음, 오답은 묶음 안 낱말(in)
+     wlink {ask:'body'|'bodyr'|'place'|'placer', mis:{link}} — 몸↔하는 일, 장소↔하는 일(WL_APART 는 한 문항에 안 섞음) */
+  if (rule.wcat){
+    const WR = rule.wcat, M = WR.mis || {}; const ask = WR.ask || 'pick'; const want = Math.max(1, nOptsOf(q) - 1);
+    const cats = (WR.cats && WR.cats.length) ? WR.cats : ['body','family','food','school','town'];
+    const mk = (ans, pairs) => { const used = [String(ans)], out = [{t:String(ans), correct:true}];
+      for (const [x, k] of pairs){ if (out.length > want) break; if (!x) continue; const t = String(x); if (used.indexOf(t) >= 0 || !M[k]) continue; used.push(t); out.push({t, mis:PFX + M[k]}); }
+      return out; };
+    const eun = w => (BAT(w) ? '은' : '는');
+    let c, opts, ans, g = 0;
+    do { c = pick(cats, r); const others = shuffle(WC_OTHER[c].reduce((x, k) => x.concat(WC[k]), []), r);
+      const near = shuffle(WC_NEAR[c], r); const ins = shuffle(WC[c], r);
+      if (ask === 'odd'){ const pool = (M.near ? near.slice(0, 2) : []).concat(others.slice(0, 2)); ans = pick(pool, r); opts = mk(ans, ins.map(x => [x, 'in'])); }
+      else { ans = ins[0]; const pr = []; if (M.near) pr.push([near[0], 'near']); others.forEach(x => pr.push([x, 'other'])); opts = mk(ans, M.near ? [pr[0], pr[1]].concat(pr.slice(2)) : pr); }
+    } while (++g < 60 && opts.length < want + 1);
+    ans = opts[0].t; const wr = opts.slice(1).map(o => o.t); delete v.asset;
+    if (ask === 'odd'){
+      v.stem = `${WC_NAME[c]} 낱말이 아닌 것은 어느 것인가요?`;
+      v.explanation = [`「${ans}」${eun(ans)} ${WC_NAME[c]} 낱말이 아니에요.`, `「${wr.join('」·「')}」${eun(wr[wr.length - 1])} ${WC_NAME[c]} 낱말이에요.`, '묶음마다 무엇을 모았는지 먼저 떠올리고 하나씩 견주어요.'];
+    } else {
+      v.stem = `${WC_NAME[c]} 낱말은 어느 것인가요?`;
+      v.explanation = [`「${ans}」${eun(ans)} ${WC_NAME[c]} 낱말이에요.`, `「${wr.join('」·「')}」${eun(wr[wr.length - 1])} ${WC_NAME[c]} 낱말이 아니에요.`, '낱말이 무엇을 나타내는지 떠올려 묶음을 정해요.'];
+    }
+    v.options = opts;
+    return v;
+  }
+  if (rule.wlink){
+    const WR = rule.wlink, M = WR.mis || {}; const ask = WR.ask || 'body'; const want = Math.max(1, nOptsOf(q) - 1);
+    const eun = w => (BAT(w) ? '은' : '는'); const ro = w => { const c = String(w).slice(-1).charCodeAt(0) - 0xAC00; return (c >= 0 && c < 11172 && c % 28 && c % 28 !== 8) ? '으로' : '로'; };
+    const apart = (x, y) => WL_APART.some(([p1, p2]) => (p1 === x && p2 === y) || (p1 === y && p2 === x));
+    const T = (ask === 'body' || ask === 'bodyr') ? WL_BODY : WL_PLACE;
+    const pr = pick(T, r); const rest = shuffle(T.filter(x => x !== pr && !apart(x[0], pr[0])), r);
+    const chosen = []; for (const x of rest){ if (chosen.length >= want) break; if (chosen.some(y => apart(y[0], x[0]))) continue; chosen.push(x); }
+    const back = ask === 'bodyr' || ask === 'placer'; const ans = back ? pr[0] : pr[1];
+    const opts = [{t:ans, correct:true}].concat(chosen.map(x => ({t: back ? x[0] : x[1], mis: M.link ? PFX + M.link : misOf(q.options, 0, PFX + 'X10')})));
+    const wr = opts.slice(1).map(o => o.t); delete v.asset;
+    if (ask === 'body'){ v.stem = `「${pr[0]}」${ro(pr[0])} 하는 일을 나타내는 말은 어느 것인가요?`;
+      v.explanation = [`「${pr[0]}」${ro(pr[0])} 하는 일은 「${pr[1]}」예요.`, `「${wr.join('」·「')}」${eun(wr[wr.length - 1])} 몸의 다른 곳으로 하는 일이에요.`, '몸의 그곳을 직접 움직여 보며 무엇을 하는지 떠올려요.']; }
+    else if (ask === 'bodyr'){ v.stem = `「${pr[1]}」는 몸의 어느 곳으로 하는 일인가요?`;
+      v.explanation = [`「${pr[1]}」는 「${pr[0]}」${ro(pr[0])} 하는 일이에요.`, `「${wr.join('」·「')}」${eun(wr[wr.length - 1])} 다른 일을 해요.`, '그 일을 할 때 몸의 어디가 바빠지는지 떠올려요.']; }
+    else if (ask === 'place'){ v.stem = `「${pr[0]}」에서 하는 일은 어느 것인가요?`;
+      v.explanation = [`「${pr[0]}」에서는 ${pr[1]}.`, `「${wr.join('」·「')}」${eun(wr[wr.length - 1])} 다른 곳에서 하는 일이에요.`, '장소 이름과 그곳에서 하는 일을 짝 지어 떠올려요.']; }
+    else { v.stem = `「${pr[1]}」 — 이 일을 하는 곳은 어디인가요?`;
+      v.explanation = [`「${pr[0]}」에서 ${pr[1]}.`, `「${wr.join('」·「')}」${eun(wr[wr.length - 1])} 하는 일이 달라요.`, '그 일을 하러 어디에 가는지 떠올려요.']; }
+    v.options = opts;
     return v;
   }
   // 두 가지 읽기 — read2 {range, step10, ask:'read'|'num', way:'sino'|'nat'|'both'}
@@ -2504,6 +2582,8 @@ function paperAsset(a){
     case 'passage': { const hi = (a.hi || []).map(String); const mark = t => { let out = esc(t); hi.forEach(h => { if (h) out = out.split(esc(h)).join('<b>' + esc(h) + '</b>'); }); return out; };
       return `<div class="ppass">${a.title ? `<h4>${esc(a.title)}</h4>` : ''}${(a.lines || []).map((ln, i) => `<div>${a.numbered === false ? '' : (i + 1) + '. '}${mark(ln)}</div>`).join('')}</div>`; }
     case 'speech': return `<div class="pspeech">${(a.turns || []).map(t => `<div><b>${esc(t.who || '')}</b> ${esc(t.text || '')}</div>`).join('')}</div>`;
+    case 'word_grid': { const R = (a.rows || []).map(x => [...String(x)]);
+      return `<div class="pwgridw"><table class="pwgrid">${R.map(rw => `<tr>${rw.map(ch => `<td>${esc(ch)}</td>`).join('')}</tr>`).join('')}</table><small>(가로 → · 세로 ↓)</small></div>`; }
     case 'scene': return `<div class="pscene"><span>${esc(a.icon || '')}</span>${esc(a.text || '')}</div>`;
     case 'diary': { const hi = (a.hi || []).map(String); const mark = t => { let out = esc(t); hi.forEach(h => { if (h) out = out.split(esc(h)).join('<b>' + esc(h) + '</b>'); }); return out; };
       const slot = v => (v === null || v === undefined || v === '') ? '<span class="pblank"></span>' : mark(v);
