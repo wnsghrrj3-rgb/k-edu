@@ -754,6 +754,36 @@ function checkPunct(where, q) {
   if (String(cor[0].t) !== ans) bad(where, `punct 정답 「${cor[0].t}」 ≠ ${ans}`);
   os.filter(o => !o.correct).forEach(o => { if (String(o.t) === ans) bad(where, 'punct 오답 보기에 정답이 섞였다'); });
 }
+/* v2.1 무엇을↔어찌하다 짝 — 엔진 CL_PAIRS 와 따로 들고 정답을 발문에서 다시 셈한다 (2026-10-10) */
+const CLX = [
+  ["모자를", "쓰다", "wear", ["입다", "신다", "끼다"]], ["옷을", "입다", "wear", ["신다", "끼다", "차다"]], ["바지를", "입다", "wear", ["쓰다", "신다", "끼다"]],
+  ["양말을", "신다", "wear", ["입다", "쓰다", "끼다"]], ["신발을", "신다", "wear", ["입다", "쓰다", "끼다"]], ["장화를", "신다", "wear", ["입다", "쓰다", "끼다"]],
+  ["장갑을", "끼다", "wear", ["신다", "입다", "차다"]], ["반지를", "끼다", "wear", ["신다", "입다", "차다"]], ["시계를", "차다", "wear", ["신다", "입다", "쓰다"]],
+  ["연을", "날리다", "do", ["마시다", "부르다", "깎다"]], ["물을", "마시다", "do", ["날리다", "부르다", "깎다"]], ["노래를", "부르다", "do", ["마시다", "깎다", "날리다"]],
+  ["피아노를", "치다", "do", ["마시다", "깎다", "날리다"]], ["피리를", "불다", "do", ["마시다", "깎다", "날리다"]], ["이를", "닦다", "do", ["마시다", "날리다", "부르다"]],
+  ["손톱을", "깎다", "do", ["마시다", "부르다", "날리다"]], ["책을", "읽다", "do", ["마시다", "깎다", "부르다"]], ["신발 끈을", "묶다", "do", ["마시다", "부르다", "깎다"]],
+  ["그림을", "그리다", "do", ["마시다", "깎다", "부르다"]], ["차를", "마시다", "do", ["부르다", "깎다", "날리다"]]
+];
+/* 「무엇을 + 말」이 어울리나: 표의 짝이면 true, 표의 「어울리지 않는 말」이면 false, 그 밖은 null(판단 못 함 = 표 밖) */
+function clxFits(o, w) { const row = CLX.find(x => x[0] === o); if (!row) return null; if (row[1] === w) return true; if (row[3].indexOf(w) >= 0) return false; return null; }
+function checkColloc(where, q) {
+  const R = (q.variant_rule || {}).colloc; if (!R) return;
+  CLX.forEach(x => { if (x[3].indexOf(x[1]) >= 0) bad(where, `colloc 표 「${x[0]}」 의 짝이 오답 칸에도 있다`); if (!/[을를]$/.test(x[0])) bad(where, `colloc 표 「${x[0]}」 은 을·를로 끝나야`); });
+  const st = String(q.stem), os = q.options || []; let m;
+  const cor = os.filter(o => o.correct); if (cor.length !== 1) return bad(where, 'colloc 정답 보기가 하나가 아니다');
+  const wrong = os.filter(o => !o.correct);
+  if ((m = st.match(/^「(.+) \(     \)」에 들어갈 알맞은 말은 어느 것인가요\?$/))) {
+    const o = m[1]; if (clxFits(o, String(cor[0].t)) !== true) bad(where, `colloc 「${o} ${cor[0].t}」 는 표의 짝이 아니다`);
+    wrong.forEach(w => { if (clxFits(o, String(w.t)) !== false) bad(where, `colloc 오답 「${o} ${w.t}」 가 표의 「어울리지 않는 말」이 아니다(맞을 수도 있다)`); });
+  } else if ((m = st.match(/^「\(     \) (.+)」에 들어갈 알맞은 말은 어느 것인가요\?$/))) {
+    const vb = m[1]; if (clxFits(String(cor[0].t), vb) !== true) bad(where, `colloc 「${cor[0].t} ${vb}」 는 표의 짝이 아니다`);
+    wrong.forEach(w => { if (clxFits(String(w.t), vb) !== false) bad(where, `colloc 오답 「${w.t} ${vb}」 가 표의 「어울리지 않는 말」이 아니다(맞을 수도 있다)`); });
+  } else if (st === '「무엇을」과 「어찌하다」가 어울리지 않는 것은 어느 것인가요?') {
+    const sp = t => { const s = String(t); const k = s.lastIndexOf(' '); return [s.slice(0, k), s.slice(k + 1)]; };
+    { const [o, w] = sp(cor[0].t); if (clxFits(o, w) !== false) bad(where, `colloc 정답 「${cor[0].t}」 이 어울리지 않는 짝이 아니다`); }
+    wrong.forEach(x => { const [o, w] = sp(x.t); if (clxFits(o, w) !== true) bad(where, `colloc 오답 「${x.t}」 이 표의 어울리는 짝이 아니다`); });
+  } else return bad(where, 'colloc 발문 꼴을 모른다');
+}
 /* 한 문항(원본이든 변형본이든) 공통 검사 */
 function checkQ(where, q, opt) {
   opt = opt || {};
@@ -783,6 +813,7 @@ function checkQ(where, q, opt) {
   checkYeon(where, q);
   checkGreet(where, q);
   checkPunct(where, q);
+  checkColloc(where, q);
   checkJosa(where, q);
   if (q.asset && typeof q.asset === 'object' && ASSETS[q.asset.type]) {
     try { if (!ENG.drawAsset(q.asset, ENG.rng(7))) bad(where, '화면에서 에셋이 빈칸으로 나옴'); }
@@ -1006,6 +1037,15 @@ function checkSet(file) {
       if (ask === 'pause' ? have < (q.options || []).length - 1 : !have) bad(where, `punct ${ask} 오답을 만들 mis 가 모자란다(${need.join('·')})`);
       if (ask === 'mark' && (R.types || []).indexOf('call') >= 0 && (R.types || []).some(t => t !== 'call') && !(R.mis || {}).mark) bad(where, 'punct mark 에 문장 종류가 섞이면 mis.mark 도 있어야');
       if (ask === 'read' && (R.types || []).indexOf('ex') < 0 && !(R.mis || {}).read && (R.types || ['q','ex','st']).length) {}
+    }
+    if (q.variant_rule.colloc) {
+      const R = q.variant_rule.colloc; const ask = R.ask || 'fill';
+      if (['fill', 'back', 'odd'].indexOf(ask) < 0) bad(where, 'colloc ask 를 모른다: ' + ask);
+      if (['mc', 'blank'].indexOf(q.kind) < 0) bad(where, 'colloc 변형은 mc·blank 만');
+      if (at) bad(where, 'colloc 은 그림 없는 문항 전용');
+      (R.kinds || []).forEach(k => { if (['wear', 'do'].indexOf(k) < 0) bad(where, 'colloc kinds 는 wear·do: ' + k); });
+      Object.keys(R.mis || {}).forEach(k => { if (['wear', 'do'].indexOf(k) < 0) bad(where, 'colloc mis 갈래는 wear·do: ' + k); else if (!MIS.has(String(q.concept).replace(/C\d+$/, '') + R.mis[k])) bad(where, `colloc mis.${k} 꼬리 ${R.mis[k]} 가 사전에 없다`); });
+      (R.kinds || ['wear', 'do']).forEach(k => { if (!(R.mis || {})[k]) bad(where, `colloc kinds ${k} 에 mis 꼬리가 없다`); });
     }
     if (q.variant_rule.bond && q.variant_rule.bond.part_max && at !== 'number_bond') bad(where, 'bond 는 number_bond 그림이 있어야 한다');
     /* play.html 과 같은 순서·같은 난수 씀씀이: 틀린 문항들이 난수 하나를 이어 쓰고, prep 은 변형 뒤에 온다.

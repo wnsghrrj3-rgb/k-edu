@@ -631,6 +631,19 @@ const PN_USE = {'.':'설명하는 문장이 끝날 때 써요.', ',':'부르는 
 function pnPause(line, how){ return String(line).replace(/([,.?!]) /g, (m0, p) => p + (how === 'swap' ? (p === ',' ? '≫' : '∨') : how === 'same' ? '∨' : (p === ',' ? '∨' : '≫')) + ' '); }
 /* 끝 글자가 문장부호여도 마지막 한글 글자로 을/를 */
 function EULH(w){ const h = [...String(w)].filter(c => c >= '가' && c <= '힣').pop(); return h && (h.charCodeAt(0) - 0xAC00) % 28 ? '을' : '를'; }
+/* v2.1 — 알맞은 낱말을 찾아요 (2026-10-10): 「무엇을」과 어울리는 「어찌하다」 짝(colloc).
+   [무엇을, 어찌하다, 갈래(wear 몸에 걸치기 · do 하는 일), 이 「무엇을」과 절대 어울리지 않는 말(오답 후보)]
+   오답 후보는 표에 적힌 것만 쓴다 — 「공을 던지다」·「물을 먹다」·「피리를 닦다」·「신발을 차다」처럼 말이 되는 짝이 끼지 않게. */
+const CL_PAIRS = [
+  ["모자를", "쓰다", "wear", ["입다", "신다", "끼다"]], ["옷을", "입다", "wear", ["신다", "끼다", "차다"]], ["바지를", "입다", "wear", ["쓰다", "신다", "끼다"]],
+  ["양말을", "신다", "wear", ["입다", "쓰다", "끼다"]], ["신발을", "신다", "wear", ["입다", "쓰다", "끼다"]], ["장화를", "신다", "wear", ["입다", "쓰다", "끼다"]],
+  ["장갑을", "끼다", "wear", ["신다", "입다", "차다"]], ["반지를", "끼다", "wear", ["신다", "입다", "차다"]], ["시계를", "차다", "wear", ["신다", "입다", "쓰다"]],
+  ["연을", "날리다", "do", ["마시다", "부르다", "깎다"]], ["물을", "마시다", "do", ["날리다", "부르다", "깎다"]], ["노래를", "부르다", "do", ["마시다", "깎다", "날리다"]],
+  ["피아노를", "치다", "do", ["마시다", "깎다", "날리다"]], ["피리를", "불다", "do", ["마시다", "깎다", "날리다"]], ["이를", "닦다", "do", ["마시다", "날리다", "부르다"]],
+  ["손톱을", "깎다", "do", ["마시다", "부르다", "날리다"]], ["책을", "읽다", "do", ["마시다", "깎다", "부르다"]], ["신발 끈을", "묶다", "do", ["마시다", "부르다", "깎다"]],
+  ["그림을", "그리다", "do", ["마시다", "깎다", "부르다"]], ["차를", "마시다", "do", ["부르다", "깎다", "날리다"]]
+];
+const CL_HINT = {wear:'몸의 어디에 어떻게 걸치는지 떠올리며 짝을 지어요.', do:'「무엇을」과 이어 소리 내어 읽어 보고 어색한지 살펴요.'};
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 /* ---------- 읽어주기 ---------- */
@@ -1562,6 +1575,40 @@ function makeVariantOnce(q, r){
       v.stem = `「${m}」의 이름은 무엇인가요?`;
       v.options = mk(PN_NAME[m], oth.map(x => [PN_NAME[x], 'name']));
       v.explanation = [`이 부호는 ${PN_NAME[m]}예요.`, `${PN_NAME[m]}는 ${PN_USE[m]}`, '모양과 쓰임을 함께 떠올리며 이름을 익혀요.'];
+    }
+    return v;
+  }
+  /* --- v2.1: 1학년 1학기 국어 「알맞은 낱말을 찾아요」 (2026-10-10) ---
+     colloc {ask:'fill'|'back'|'odd', kinds:['wear','do'], mis:{wear·do: 오개념 꼬리}}
+       fill 「반지를 (     )」 — 어울리는 어찌하다 · back 「(     ) 끼다」 — 어울리는 무엇을 · odd 어울리지 않는 짝 고르기
+       오답·짝은 CL_PAIRS 의 「어울리지 않는 말」 칸에서만 — 갈래(wear·do)마다 mis 꼬리가 다르다 */
+  if (rule.colloc){
+    const CO = rule.colloc, M = CO.mis || {}; const ask = CO.ask || 'fill'; const want = Math.max(1, nOptsOf(q) - 1);
+    const kinds = (CO.kinds && CO.kinds.length) ? CO.kinds : ['wear', 'do'];
+    const rows = CL_PAIRS.filter(x => kinds.indexOf(x[2]) >= 0 && M[x[2]]);
+    const jo = (w, a, b) => (BAT(w) ? a : b);
+    delete v.asset;
+    if (ask === 'fill'){
+      const pr = pick(rows, r); const wr = shuffle(pr[3].slice(), r).slice(0, want);
+      v.stem = `「${pr[0]} (     )」에 들어갈 알맞은 말은 어느 것인가요?`;
+      v.options = [{t:pr[1], correct:true}].concat(wr.map(w => ({t:w, mis:PFX + M[pr[2]]})));
+      v.explanation = [`「${pr[0]} ${pr[1]}」${jo(pr[1], '이', '가')} 어울리는 짝이에요.`, `「${wr.join('」·「')}」${jo(wr[wr.length - 1], '은', '는')} 「${pr[0]}」${jo(pr[0], '과', '와')} 어울리지 않아요.`, CL_HINT[pr[2]]];
+    } else if (ask === 'back'){
+      let pr, wr, g = 0;
+      do { pr = pick(rows, r); const vb = pr[1];
+           wr = shuffle(CL_PAIRS.filter(x => x[2] === pr[2] && x[1] !== vb && x[3].indexOf(vb) >= 0).map(x => x[0]), r).slice(0, want);
+      } while (++g < 40 && wr.length < want);
+      v.stem = `「(     ) ${pr[1]}」에 들어갈 알맞은 말은 어느 것인가요?`;
+      v.options = [{t:pr[0], correct:true}].concat(wr.map(w => ({t:w, mis:PFX + M[pr[2]]})));
+      v.explanation = [`「${pr[0]} ${pr[1]}」${jo(pr[1], '이', '가')} 어울리는 짝이에요.`, `「${wr.join('」·「')}」${jo(wr[wr.length - 1], '은', '는')} 「${pr[1]}」${jo(pr[1], '과', '와')} 어울리지 않아요.`, CL_HINT[pr[2]]];
+    } else {
+      const ks = kinds.filter(k => M[k] && rows.some(x => x[2] === k)); const kd = pick(ks, r);
+      const pool = shuffle(rows.filter(x => x[2] === kd), r); const odd = pool[0]; const ok = [];
+      for (const x of pool.slice(1)){ if (ok.length >= want) break; if (x[1] === odd[1] || ok.some(y => y[1] === x[1])) continue; ok.push(x); }
+      const bw = pick(odd[3], r); const ans = `${odd[0]} ${bw}`;
+      v.stem = '「무엇을」과 「어찌하다」가 어울리지 않는 것은 어느 것인가요?';
+      v.options = [{t:ans, correct:true}].concat(ok.map(x => ({t:`${x[0]} ${x[1]}`, mis:PFX + M[kd]})));
+      v.explanation = [`「${odd[0]}」${jo(odd[0], '은', '는')} 「${bw}」${jo(bw, '이', '가')} 아니라 「${odd[1]}」${jo(odd[1], '과', '와')} 어울려요.`, `「${ok.map(x => x[0] + ' ' + x[1]).join('」·「')}」${jo(ok[ok.length - 1][1], '은', '는')} 어울리는 짝이에요.`, CL_HINT[kd]];
     }
     return v;
   }
