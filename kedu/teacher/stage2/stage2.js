@@ -72,6 +72,17 @@
     const lights = self && self.length ? '<div class="rv2-sig">' + self.map((s, i) => '<div class="light" data-act="light" data-i="' + i + '"><span class="dot">' + (L[i] || '⚪') + '</span><span class="lb">' + md(s) + '</span><span class="cnt">' + (cnt[i] || 0) + '</span></div>').join('') + '</div>' : '';
     return '<div class="rv2-board">' + items.map((it, i) => '<div class="rv2-it' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><div class="q"><i>' + (i + 1) + '.</i>' + md(it.q || '') + '</div><div class="a">' + (f[i] ? md(A(it)) : '') + '</div></div>').join('') + '</div>' + lights;
   }
+  // 99차 시안 — 동기 장(motivate) mo2 · 실생활 장(real_world) rw2 · KT2_MOV / KT2_RWV = 'a' · 'b' · 'c' 때만
+  function kidSay(k) { const A = global.KT2_ART, chr = A && A.character ? A.character(k.face) : ''; const label = String(k.label || ''); const m = label.match(/^\s*([^"“「]{1,8})\s*[\n\s]*["“「](.+)["”」]\s*$/s); return { face: chr || esc(k.face || '🙂'), chr: !!chr, who: m ? m[1].trim() : '', say: m ? m[2] : label.replace(/^["“「]|["”」]$/g, '') }; }
+  function mo2(v, d) { const ks = (d.kids || []).map(kidSay), q = d.question ? md(d.question) : '';
+    const kid = (k, i) => '<div class="mo2-k' + (i % 2 ? ' r' : '') + '"><div class="mo2-f' + (k.chr ? ' chr' : '') + '">' + k.face + (k.who ? '<span class="mo2-w">' + md(k.who) + '</span>' : '') + '</div><div class="mo2-bub">' + md(k.say) + '</div></div>';
+    if (v === 'a') return (q ? '<div class="mo2-q">' + q + '</div>' : '') + '<div class="mo2-talk">' + ks.map(kid).join('') + '</div>';
+    if (v === 'b') { const A = global.KT2_ART, kd = A ? A.kindOf((d.scene_title || '') + ' ' + (d.question || '')) : ''; return '<div class="mo2-panel picture ' + kd + '">' + (A ? A.backdrop(kd) : '') + '<div class="mo2-cast">' + ks.map(kid).join('') + '</div>' + (q ? '<div class="mo2-cap">' + q + '</div>' : '') + '</div>'; }
+    return '<div class="mo2-two"><div class="mo2-chat">' + ks.map(kid).join('') + '</div><div class="mo2-qc">' + (d.visual ? '<span class="mo2-v">' + esc(d.visual) + '</span>' : '<span class="mo2-v qm">?</span>') + '<div class="mo2-q">' + q + '</div></div></div>'; }
+  function rw2(v, d) { const sc = d.scenario || {}, ic = esc(sc.icon || '🌍'), body = md(sc.body || ''), ct = d.content ? md(d.content) : '', q = d.question ? md(d.question) : '';
+    if (v === 'a') return '<div class="rw2-row"><div class="rw2-ic">' + ic + '</div><div class="rw2-sc">' + body + '</div></div>' + (ct ? '<div class="rw2-ct">' + ct + '</div>' : '') + (q ? '<div class="rw2-q">' + q + '</div>' : '');
+    if (v === 'b') return '<div class="rw2-hero"><span class="rw2-bg">' + ic + '</span><div class="rw2-sc">' + body + '</div></div>' + (ct ? '<div class="rw2-ct">' + ct + '</div>' : '') + (q ? '<div class="rw2-q">' + q + '</div>' : '');
+    return '<div class="rw2-bridge"><div class="rw2-p l"><div class="rw2-tag">' + ic + ' 생활 속에서</div><div class="rw2-sc">' + body + '</div></div><div class="rw2-ar">→</div><div class="rw2-p r"><div class="rw2-tag">📘 ' + (q ? '생각해 봐요' : '오늘 배운 것') + '</div><div class="rw2-ct">' + (q || ct) + '</div></div></div>' + (q && ct ? '<div class="rw2-ct">' + ct + '</div>' : ''); }
   function dots(n) { return '<div class="dots">' + Array.from({ length: +n || 0 }, () => '<i></i>').join('') + '</div>'; }
   function stack(n, cls, hero) { return '<div class="stack ' + (cls || '') + '">' + Array.from({ length: +n || 0 }, () => '<div class="cube"></div>').join('') + (hero ? '<div class="cb-hero">' + hero + '</div>' : '') + '<div class="lbl">' + n + '</div></div>'; }
   function dodo() { const A = global.KT2_ART; return A && A.character ? A.character('🐿️') : ''; }
@@ -231,6 +242,7 @@
       }
       case 'motivate': {
         title = d.scene_title || d.title || '';
+        if (global.KT2_MOV && !ctx.learn && d.kids && d.kids.length) { cls = 'mo2 mo2-' + global.KT2_MOV; push(mo2(global.KT2_MOV, d)); break; }
         push(image(d.img, title + ' ' + (d.desc || ''))); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>');
         if (d.emojis) push('<div class="emoji-row">' + d.emojis.map(e => '<span>' + esc(e) + '</span>').join('') + '</div>');
         if (d.emoji && d.count !== undefined) push(emojiCount(d.emoji, d.count, true));
@@ -315,7 +327,7 @@
         break;
       }
       case 'multi': push(options(d.options || [], true, rev)); answerable = true; push('<div class="multi-hint">정답을 모두 골라요' + (d.expectedCount ? ' <b>' + esc(d.expectedCount) + '개</b>' : '') + '</div>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
-      case 'real_world': if (d.scenario) push(scenarioG(d.scenario, ctx.guide)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); if (d.content) push('<div class="center-text">' + md(d.content) + '</div>'); if (d.question) push('<div class="big-q">' + md(d.question) + '</div>'); break;
+      case 'real_world': if (global.KT2_RWV && !ctx.learn && d.scenario) { cls = 'rw2 rw2-' + global.KT2_RWV; push(rw2(global.KT2_RWV, d)); break; } if (d.scenario) push(scenarioG(d.scenario, ctx.guide)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); if (d.content) push('<div class="center-text">' + md(d.content) + '</div>'); if (d.question) push('<div class="big-q">' + md(d.question) + '</div>'); break;
       case 'game': push('<ol class="steps">' + (d.steps || []).map(s => '<li>' + md(lbl(s)) + '</li>').join('') + '</ol>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
       case 'summary': {
         if (d.points && !d.table && !d.ten_frame_strip && !d.bidirect && !d.linking_cube_staircase && !d.sequence && !d.sequence_asc && !d.sequence_desc && !d.ordinals) cls = 'sv2'; // 95차 — 새 요약 장 sv2(흐름 큰 알약 + 요점 큰 글씨)
