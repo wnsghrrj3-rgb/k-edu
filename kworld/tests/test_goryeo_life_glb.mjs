@@ -1,4 +1,4 @@
-// 고려 넓은 터 GLB 구조 검증 — NPC 18·구역 13·spawn·미션·숨김 재질(목화 솜·새긴 경판·몽골 천막·깃발)이 json 과 맞는지 (WebGL 없이 GLB JSON 청크만)
+// 고려 넓은 터 GLB 구조 검증 — NPC 25·구역 20(10-10 넓히기: 부곡·시전·역참·화통도감·암자·팔관회·불탄 포구)·spawn·미션·숨김 재질(목화 솜·새긴 경판·몽골 천막·깃발)이 json 과 맞는지 (WebGL 없이 GLB JSON 청크만)
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const base = new URL('../eras/goryeo-life/', import.meta.url);
@@ -14,15 +14,15 @@ for (const t of types) assert.ok(items.targets[t], `대상 ${t} 가 items.json �
 for (const t of Object.keys(items.targets)) assert.ok(types.has(t) || sceneTypes.has(t), `items.json 대상 ${t} 가 GLB·scene 에 없음`);
 const areas = names.filter((n) => n.startsWith('area_')).map((n) => n.slice(5));
 for (const a of Object.keys(world.areas)) assert.ok(areas.includes(a), `구역 ${a} 없음`);
-assert.equal(Object.keys(world.areas).length, 13, '구역 13');
+assert.equal(Object.keys(world.areas).length, 20, '구역 20');
 assert.ok(areas.includes(world.face), `시작 시선 구역 ${world.face}`);
 assert.ok(names.includes('spawn'), 'spawn');
 const npcs = ix.filter((n) => n.startsWith('ix_npc_')).map((n) => n.slice(7));
 for (const id of Object.keys(npcDefs)) assert.ok(npcs.includes(id), `NPC ${id} 가 GLB 에 없음`);
 for (const id of npcs) assert.ok(npcDefs[id], `GLB NPC ${id} 가 npcs.json 에 없음`);
-assert.equal(npcs.length, 18, 'NPC 18');
+assert.equal(npcs.length, 25, 'NPC 25');
 const mats = new Set((data.materials || []).map((m) => m.name));
-for (const t of ['cotton_white', 'carved_block', 'mongol_tent', 'mongol_flag']) assert.ok(mats.has(t), `숨김 재질 ${t}`);
+for (const t of ['cotton_white', 'carved_block', 'mongol_tent', 'mongol_flag', 'cannon_bronze', 'lantern_fire', 'new_thatch']) assert.ok(mats.has(t), `숨김 재질 ${t}`);
 for (const [t, h] of Object.entries(items.targets)) for (const m of h.hidden || []) assert.ok(mats.has(m), `숨김 재질 ${m}(${t}) 가 GLB 에 없음`);
 assert.ok(ix.filter((n) => n.startsWith('ix_stone_')).length === 6 && ix.filter((n) => n.startsWith('ix_bigpaddy_')).length === 2 && ix.filter((n) => n.startsWith('ix_songship_')).length === 1 && ix.filter((n) => n.startsWith('ix_ganghwaship_')).length === 1 && ix.includes('ix_sogate_1') && ix.includes('ix_eumseogate_1') && ix.includes('ix_ledger_1') && ix.includes('ix_firepit_1'), '돌 6·문벌 논 2·송 배·강화 배·소 어귀·음서 문·명부·불 자리');
 const list = missions.missions;
@@ -38,7 +38,14 @@ for (const s of life.situations) if (s.onOpen) for (const a of s.onOpen) if (a.s
 assert.ok(life.grain?.open && life.rank?.open && life.carry?.from === 'silla-life', '곡식 칸 + 벼슬 칸 + 통일신라에서 넘겨받음');
 const st = life.status.rules; assert.ok(new Set(st.map((r) => r.id)).size === 12 && st.find((r) => r.id === 'munbeol').cap === 6 && st.find((r) => r.id === 'hyangni').cap === 4 && st.find((r) => r.id === 'yangmin').cap === 3 && st.find((r) => r.id === 'bugok').cap === 0 && st.find((r) => r.id === 'solgeo').cap === 0 && st.find((r) => r.id === 'monk').cap === undefined, '신분 12 + 벼슬 높이(문벌 6·향리 4·양민 3·부곡·노비 0·스님 없음)');
 assert.ok(new Set(life.nation?.rules.map((r) => r.id)).size === 1, '나라 하나(고려)');
-assert.ok(life.hurts?.wound && world.danger?.safe?.length === 4, '흔적 「창이 지나간 몸」 + 마을·농장·산성·군영 밤 안전 자리');
+assert.ok(life.hurts?.wound && world.danger?.safe?.length === 7, '흔적 「창이 지나간 몸」 + 마을·농장·산성·군영·부곡·역참·암자 밤 안전 자리');
+// 넓히기(10-10) — 새 대상 17·새 상황 7·끝 갈림 둘(네 사본)
+for (const t of ['taxpile_1', 'bugoksign_1', 'silverstall_1', 'coinstall_1', 'clothstall_1', 'posthorse_1', 'dispatch_1', 'cart_1', 'saltpeterkiln_1', 'powdermix_1', 'cannon_1', 'moktak_1', 'hermitspring_1', 'bundle_1', 'chaebung_1', 'lanterns_1', 'tributestall_1', 'rebuild_1', 'burntboat_1']) assert.ok(ix.includes('ix_' + t), `새 대상 ${t}`);
+for (const id of ['bugok', 'market', 'palgwan', 'hermit', 'station', 'gunpowder', 'burnt']) assert.ok(life.situations.some((x) => x.id === id && !x.must && x.place === id), `새 상황 ${id}`);
+assert.equal(life.mixedCount, 6, '판마다 섞여 6');
+const ends = []; (function walk(o) { if (Array.isArray(o)) o.forEach(walk); else if (o && typeof o === 'object') { if (o.branches) ends.push(o.branches); Object.values(o).forEach(walk); } })(life.situations.find((x) => x.id === 'land'));
+assert.ok(ends.length === 4 && ends.every((b) => b[0].id === 'gongnyeo' && b.some((x) => x.id === 'hwatong') && b.findIndex((x) => x.id === 'hwatong') < b.findIndex((x) => x.id === 'gongsin')), '끝 갈림 「원으로 간 집」 맨 앞 · 「화약을 만든 집」 공신 앞 (네 사본)');
+for (const s of life.situations) for (const c of s.choices) for (const a of c.then || []) if (a.show) assert.ok(ix.includes('ix_' + a.show.name) && a.show.mats.every((m) => mats.has(m)), `then show ${a.show.name}`);
 assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');
 assert.ok(world.gate?.next === 'joseon-life' && world.gate.ready, '문 → 조선 전기(열림)');
 const prev = JSON.parse(fs.readFileSync(new URL('../eras/silla-life/world.json', import.meta.url))); assert.ok(prev.gate?.next === 'goryeo-life' && prev.gate.ready, '통일신라 끝 카드 → 고려 문(열림)');

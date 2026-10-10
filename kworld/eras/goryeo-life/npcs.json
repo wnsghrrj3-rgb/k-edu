@@ -1041,5 +1041,522 @@
     "text": "땅은 넓고 하늘은 멀다."
    }
   ]
+ },
+ "bugokin": {
+  "name": "부곡 사람",
+  "lines": [
+   {
+    "if": "sit:bugok:open && !sit:bugok:done",
+    "text": "우리 마을은 부곡이야. 세금은 양민 두 배, 과거는 못 보고, 목패 너머론 못 나가. 조상이 깃발을 들었대. …너는 어느 집이냐.",
+    "choices": [
+     {
+      "label": "두 배를 낸다 — 부곡",
+      "if": "status:bugok",
+      "gray": "두 배를 내는 건 부곡 사람이다.",
+      "flag": "bg:pay",
+      "say": "🌾 볏단 두 몫. 양민 집은 한 몫. 「조상 때문이다.」"
+     },
+     {
+      "label": "향리에게 묻는다 — 우리는 왜 (눈)",
+      "if": "status:bugok",
+      "gray": "묻는 건 부곡 사람이다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 1,
+       "why": "장부에서 우리 마을 글자를 찾아내는 눈.",
+       "fail": "…글자가 안 보였다. 「법이다.」"
+      },
+      "flag": "bg:ask",
+      "say": "📜 「네 조상이 깃발을 들었다. 마을째 내렸다.」 처음 들었다."
+     },
+     {
+      "label": "밤에 목패를 넘는다 ⚠ — 발 (부곡)",
+      "if": "status:bugok && !hurt:leg",
+      "gray": "떠나는 건 부곡 사람, 다리 성한 사람이다.",
+      "roll": {
+       "ab": "발",
+       "hard": 2,
+       "why": "감독의 횃불보다 먼저 고개를 넘는 발.",
+       "fail": "…고개에서 잡혔다. 다리."
+      },
+      "rollFailFlag": "bg:caught",
+      "rollHurt": "leg",
+      "flag": "bg:flee",
+      "say": "🏃 고개 너머. 문서 밖 사람. 두 배 세금도 없고, 집도 없다."
+     },
+     {
+      "label": "덜 걷는다 — 관아·고을 집",
+      "if": "status:munbeol || status:hyangni || status:gwonmun || status:sadaebu",
+      "gray": "걷는 건 관아·고을 집이다.",
+      "flag": "bg:less",
+      "say": "🤝 「올해는 한 몫만.」 부곡 사람이 절했다. 장부엔 내가 채웠다."
+     },
+     {
+      "label": "더 걷는다 — 관아·고을 집",
+      "if": "status:munbeol || status:hyangni || status:gwonmun || status:sadaebu",
+      "gray": "걷는 건 관아·고을 집이다.",
+      "flag": "bg:more",
+      "say": "🌾 볏단 두 몫에 한 단 더. 「부곡이니까.」 아무도 못 말린다."
+     },
+     {
+      "label": "주인 몫을 나른다 — 노비 (배)",
+      "if": "status:solgeo || status:oegeo",
+      "gray": "주인 몫은 노비가 나른다.",
+      "roll": {
+       "ab": "배",
+       "hard": 1,
+       "why": "볏단 지게를 고을까지 지는 배.",
+       "fail": "…반나절에 주저앉았다."
+      },
+      "flag": "bg:carry",
+      "say": "🏋 부곡 볏단을 내가 졌다. 「노비도 부곡도 밑이다」 했다."
+     },
+     {
+      "label": "본다",
+      "flag": "bg:watch",
+      "say": "같은 논, 두 배 볏단. 목패 하나가 마을을 가둔다."
+     }
+    ]
+   },
+   {
+    "text": "목패 너머론 못 가. 조상 때문이래."
+   }
+  ]
+ },
+ "sijeon": {
+  "name": "시전 상인",
+  "lines": [
+   {
+    "if": "sit:market:open && !sit:market:done",
+    "text": "은병 하나가 쌀 백 섬이오. 해동통보? 그건 아무도 안 받소. 쌀과 베면 되오. …사겠소, 팔겠소, 자리를 내겠소.",
+    "choices": [
+     {
+      "label": "시전에 자리를 낸다 — 높은 집·곡식 둘",
+      "if": "status:munbeol || status:gwonmun || status:sadaebu || status:yeokgwan && val:grain>=2",
+      "gray": "시전 자리는 개경 높은 집이 낸다 — 곡식 둘.",
+      "flag": "mk:open",
+      "say": "🏮 행랑 한 칸. 사람을 앉혔다. 은병이 들어온다."
+     },
+     {
+      "label": "베를 판다 — 여자 (손)",
+      "if": "sex:f && !status:solgeo",
+      "gray": "베는 집안 여자가 짜서 판다. 노비 여자는 주인 몫이다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "시전에 내놓을 만큼 고른 베.",
+       "fail": "…올이 성겨서 반값."
+      },
+      "flag": "mk:cloth",
+      "say": "🧵 베 두 필. 쌀 한 단. 은병은 구경만."
+     },
+     {
+      "label": "해동통보로 사 본다",
+      "if": "!status:solgeo",
+      "gray": "노비는 돈을 못 쥔다.",
+      "flag": "mk:coin",
+      "say": "🪙 동전 열 닢. 「안 받소. 쌀로.」 돈이 있는데 돈이 아니다."
+     },
+     {
+      "label": "은병 하나를 빌린다 ⚠ — 양민·부곡·외거",
+      "if": "status:yangmin || status:bugok || status:oegeo",
+      "gray": "빌리는 건 작은 집이다 — 높은 집은 빌려준다.",
+      "flag": "mk:borrow",
+      "say": "🌾 은병 하나 — 쌀 세 단. 「다음 해 둘로.」 적힌 이름은 내 것."
+     },
+     {
+      "label": "심부름 — 노비",
+      "if": "status:solgeo",
+      "gray": "노비가 하는 일이다.",
+      "flag": "mk:errand",
+      "say": "🏋 비단 한 짐을 문벌 집으로. 은병은 내 손을 지나 남의 손에."
+     },
+     {
+      "label": "본다",
+      "flag": "mk:watch",
+      "say": "개경 시전엔 은병, 시골엔 쌀과 베. 돈은 높은 데서만 돈다."
+     }
+    ]
+   },
+   {
+    "text": "은병? 그건 개경 것이오. 시골은 쌀이오."
+   }
+  ]
+ },
+ "palgwan": {
+  "name": "팔관회 맡은 사람",
+  "lines": [
+   {
+    "if": "sit:palgwan:open && !sit:palgwan:done",
+    "text": "11월 15일. 왕이 채붕 앞에 앉고, 윤등에 불이 들어가고, 송·여진·탐라 사람이 공물을 올리지. 온 나라가 여기 있어. …너는 어디 서나.",
+    "choices": [
+     {
+      "label": "왕 곁 자리에 선다 — 높은 집·곡식 하나",
+      "if": "status:munbeol || status:sadaebu || status:musin || status:gwonmun && val:grain>=1",
+      "gray": "왕 곁 자리는 벼슬 집이다 — 곡식 하나.",
+      "flag": "pg:seat",
+      "say": "🎖 채붕 왼쪽 셋째 자리. 왕이 한 번 봤다. 공물 한 단."
+     },
+     {
+      "label": "고을 공물을 올린다 — 향리",
+      "if": "status:hyangni",
+      "gray": "고을 공물은 향리가 올린다.",
+      "flag": "pg:tribute",
+      "say": "🤝 우리 고을 베 열 필, 꿀 한 단지. 「○○고을.」 이름이 불렸다."
+     },
+     {
+      "label": "채붕을 세운다 — 몸",
+      "if": "status:yangmin || status:oegeo || status:drifter",
+      "gray": "채붕은 양민이 세운다. 부곡·소 사람은 어귀를 못 나가고, 높은 집은 안 세운다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 1,
+       "why": "기둥을 세워 붉은 천을 거는 몸.",
+       "fail": "…기둥이 기울었다. 품삯 반."
+      },
+      "flag": "pg:build",
+      "say": "🪵 기둥 넷, 붉은 천. 왕이 앉을 자리를 내가 세웠다. 쌀 한 단."
+     },
+     {
+      "label": "향연 음식을 맡는다 — 여자 (손)",
+      "if": "sex:f && !status:solgeo && !status:bugok",
+      "gray": "향연 음식은 집안 여자가 맡는다. 노비·부곡은 안 부른다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "백 상을 한 날에 차리는 손.",
+       "fail": "…국이 식었다. 꾸중."
+      },
+      "flag": "pg:cook",
+      "say": "🍲 백 상. 송 상인이 「고려 음식」을 적어 갔다."
+     },
+     {
+      "label": "송 상인과 흥정한다 — 눈",
+      "if": "!status:solgeo && !status:bugok",
+      "gray": "흥정은 제 물건 있는 사람이 한다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 1,
+       "why": "값을 부르기 전에 상대 얼굴을 읽는 눈.",
+       "fail": "…비싸게 샀다."
+      },
+      "flag": "pg:trade",
+      "say": "🧾 인삼 한 짐에 비단 두 필. 「팔관회가 장이다.」"
+     },
+     {
+      "label": "본다",
+      "flag": "pg:watch",
+      "say": "왕·사신·상인·백성. 한 날에 다 보인다."
+     }
+    ]
+   },
+   {
+    "text": "팔관회 날엔 온 나라가 한자리야. 자리는 다르지만."
+   }
+  ]
+ },
+ "sindon": {
+  "name": "편조 — 스님",
+  "lines": [
+   {
+    "if": "sit:hermit:open && !sit:hermit:done",
+    "text": "바위 밑 암자다. 왕이 날 부른다 — 빼앗긴 땅을 되돌리고 억울한 노비를 풀라고. 권문세족이 벌써 미워한다. …너는 왜 산에 왔나.",
+    "choices": [
+     {
+      "label": "사정을 말한다 — 눈 (노비·부곡)",
+      "if": "status:solgeo || status:oegeo || status:bugok",
+      "gray": "도감에 사정을 올리는 건 빼앗긴 사람이다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 1,
+       "why": "언제 누구에게 빼앗겼는지 한 줄로 말하는 눈.",
+       "fail": "…말이 꼬였다. 「다음에.」"
+      },
+      "flag": "hm:plea",
+      "say": "📜 「적어 두마.」 1366년, 도감. 내 이름이 종이에."
+     },
+     {
+      "label": "머리를 깎는다 ⚠ — 발 (노비)",
+      "if": "status:solgeo || status:oegeo && !hurt:leg",
+      "gray": "암자로 달아나는 건 노비, 다리 성한 사람이다.",
+      "roll": {
+       "ab": "발",
+       "hard": 2,
+       "why": "주인의 사람보다 먼저 바위를 도는 발.",
+       "fail": "…바위 밑에서 잡혔다. 다리."
+      },
+      "rollFailFlag": "hm:caught",
+      "rollHurt": "leg",
+      "flag": "hm:shave",
+      "say": "🪷 머리를 깎았다. 신분 밖. 주인도 세금도 없다 — 절 밖도 없다."
+     },
+     {
+      "label": "책 보따리를 푼다 — 눈 (문벌·사대부·향리)",
+      "if": "status:munbeol || status:sadaebu || status:hyangni",
+      "gray": "산에서 책을 읽는 건 글 하는 집이다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 1,
+       "why": "산바람 속에서 경전 한 권을 끝내는 눈.",
+       "fail": "…졸았다. 반 권."
+      },
+      "flag": "hm:read",
+      "say": "📖 한 권. 스님이 「성리학은 왜 사람을 밝히나」 물었다."
+     },
+     {
+      "label": "스님을 헐뜯는 글 ⚠ — 눈 (권문세족)",
+      "if": "status:gwonmun",
+      "gray": "헐뜯는 글은 땅을 빼앗긴 권문세족이 썼다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "왕이 믿을 만한 말을 꾸미는 눈.",
+       "fail": "…왕이 안 믿었다. 글이 돌아왔다."
+      },
+      "rollFailFlag": "hm:slanderfail",
+      "flag": "hm:slander",
+      "say": "📜 「요승이 역모를.」 1371년. 땅문서가 돌아왔다. 백성이 침을 뱉었다."
+     },
+     {
+      "label": "암자를 지킨다 — 무신",
+      "if": "status:musin",
+      "gray": "지키는 건 무신이다.",
+      "flag": "hm:guard",
+      "say": "🗡 바위 길에 창 둘. 왕이 「수고했다」. 한 단."
+     },
+     {
+      "label": "시주 쌀 한 단 — 양민·향리",
+      "if": "status:yangmin || status:hyangni && val:grain>=1",
+      "gray": "시주는 쌀 있는 집이 한다.",
+      "flag": "hm:rice",
+      "say": "🌾 쌀 한 단. 「네 논도 되돌아올 거다.」"
+     },
+     {
+      "label": "본다",
+      "flag": "hm:watch",
+      "say": "머리 깎은 사람이 왕 곁으로. 산에서 개경으로."
+     }
+    ]
+   },
+   {
+    "text": "땅을 되돌리면 누군가는 미워해."
+   }
+  ]
+ },
+ "yeokjol": {
+  "name": "역졸",
+  "lines": [
+   {
+    "if": "sit:station:open && !sit:station:done",
+    "text": "원 사신 패자다. 역말 셋 내놓고 — 그리고 수레. 명단이 왔어. 처녀 셋. …너희 집은.",
+    "choices": [
+     {
+      "label": "명단에서 한 이름을 뺀다 ⚠ — 눈 (향리)",
+      "if": "status:hyangni",
+      "gray": "명단은 향리가 적는다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "사신이 못 알아보게 한 줄을 고치는 눈.",
+       "fail": "…들켰다. 세 단을 물었다."
+      },
+      "rollFailFlag": "st:erasefail",
+      "flag": "st:erase",
+      "say": "📜 셋이 둘. 그 집이 밤에 쌀을 두고 갔다."
+     },
+     {
+      "label": "혼인을 서두른다 — 여자",
+      "if": "sex:f && !status:solgeo",
+      "gray": "조혼은 명단에 오를 집의 딸이 했다. 노비는 명단 밖.",
+      "flag": "st:marry",
+      "say": "💍 열셋. 수레가 오기 전에. 「딸을 지켰다」 했다."
+     },
+     {
+      "label": "딸을 절에 숨긴다 — 높은 집",
+      "if": "status:munbeol || status:gwonmun || status:sadaebu",
+      "gray": "절에 맡길 연줄은 높은 집에 있다.",
+      "flag": "st:hide",
+      "say": "🪷 서북 절. 「행자다.」 사신이 못 찾았다."
+     },
+     {
+      "label": "수레에 탄다 ⚠ — 원으로 (여자)",
+      "if": "sex:f && !status:munbeol && !status:gwonmun && !status:sadaebu",
+      "gray": "높은 집은 숨기고, 작은 집 딸이 탔다.",
+      "flag": "st:go",
+      "say": "🛒 연경. 돌아오지 못했다 — 황후가 된 사람도, 안 된 사람도. 자손은 거기서."
+     },
+     {
+      "label": "원 사신에게 패자를 받는다 ⚠ — 권문세족",
+      "if": "status:gwonmun",
+      "gray": "패자는 원에 줄 댄 집이 받는다.",
+      "flag": "st:paiza",
+      "say": "🏅 금패. 역말을 마음대로. 역졸이 고개를 안 들었다."
+     },
+     {
+      "label": "역말을 끈다 — 발 (남자)",
+      "if": "sex:m && !status:munbeol && !status:gwonmun",
+      "gray": "역말은 아랫집 남자가 끈다.",
+      "roll": {
+       "ab": "발",
+       "hard": 1,
+       "why": "고개까지 말과 같이 뛰는 발.",
+       "fail": "…뒤처졌다. 품삯 반."
+      },
+      "flag": "st:lead",
+      "say": "🐎 고개까지. 쌀 한 단. 수레 안에서 우는 소리를 들었다."
+     },
+     {
+      "label": "본다",
+      "flag": "st:watch",
+      "say": "패자 하나에 말 셋, 수레 하나. 원의 길이 고려를 지난다."
+     }
+    ]
+   },
+   {
+    "text": "패자 있는 사람은 말을 마음대로 타. 우리는 끌고."
+   }
+  ]
+ },
+ "choemuseon": {
+  "name": "최무선",
+  "lines": [
+   {
+    "if": "sit:gunpowder:open && !sit:gunpowder:done",
+    "text": "원 상인에게 배웠다 — 오줌 밴 흙을 긁어 끓이면 염초. 유황과 숯을 섞으면 불 붙는 가루. 왜구 배를 태울 수 있어. …손이 있나, 사람이 있나.",
+    "choices": [
+     {
+      "label": "염초를 굽는다 — 손 (솜씨 셋)",
+      "if": "val:craft>=3",
+      "gray": "염초는 솜씨 셋은 돼야 굽는다 — 한 번 틀리면 터진다.",
+      "roll": {
+       "ab": "손",
+       "hard": 2,
+       "why": "솥을 끓이되 끓어 넘치기 전에 불을 빼는 손.",
+       "fail": "…터졌다. 어깨."
+      },
+      "rollFailFlag": "gp:burst",
+      "rollHurt": "wound",
+      "flag": "gp:make",
+      "say": "🧪 흰 가루 한 줌. 숯·유황. 화포가 섰다. 1377년 화통도감."
+     },
+     {
+      "label": "화통도감을 세우게 한다 — 벼슬 집·곡식 하나",
+      "if": "status:sadaebu || status:musin || status:munbeol && val:grain>=1",
+      "gray": "도감을 세우는 건 벼슬 집이다 — 곡식 하나.",
+      "flag": "gp:found",
+      "say": "📜 「화통도감.」 내 이름이 상소에. 한 단."
+     },
+     {
+      "label": "흙을 긁어 모은다 — 배",
+      "if": "status:yangmin || status:bugok || status:solgeo || status:oegeo || status:drifter",
+      "gray": "흙은 아랫집이 긁는다.",
+      "roll": {
+       "ab": "배",
+       "hard": 1,
+       "why": "마루 밑 흙을 종일 긁는 배.",
+       "fail": "…반 짐."
+      },
+      "flag": "gp:dig",
+      "say": "🪣 흙 스무 짐. 쌀 한 단. 「이게 불이 된다고?」"
+     },
+     {
+      "label": "진포로 간다 ⚠ — 몸 (남자)",
+      "if": "sex:m && !hurt:leg && !hurt:wound",
+      "gray": "진포 배엔 몸 성한 남자가 탔다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 2,
+       "why": "흔들리는 배에서 화포 심지를 잡는 몸.",
+       "fail": "…불이 되돌아왔다. 어깨."
+      },
+      "rollFailFlag": "gp:jinpofail",
+      "rollHurt": "wound",
+      "flag": "gp:jinpo",
+      "say": "🔥 1380년 진포. 왜선 5백 척. 「처음 본 불.」 한 단."
+     },
+     {
+      "label": "숯을 빻는다 — 손 (여자)",
+      "if": "sex:f",
+      "gray": "숯 빻는 일은 여자가 맡았다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "숯을 고운 가루로 내는 손.",
+       "fail": "…거칠었다. 다시."
+      },
+      "flag": "gp:char",
+      "say": "🖤 숯 가루 한 말. 화약 셋 중 하나는 내 손."
+     },
+     {
+      "label": "본다",
+      "flag": "gp:watch",
+      "say": "흙·유황·숯. 세 가지가 불이 된다."
+     }
+    ]
+   },
+   {
+    "text": "염초는 흙에서 나와. 아무도 안 믿었지."
+   }
+  ]
+ },
+ "fisher": {
+  "name": "포구 사람",
+  "lines": [
+   {
+    "if": "sit:burnt:open && !sit:burnt:done",
+    "text": "왜구가 왔다 갔어. 배도 집도 재야. 안으로 떠난 집이 반이다. …다시 세울 거냐, 떠날 거냐.",
+    "choices": [
+     {
+      "label": "내 손으로 세운다 — 몸 (양민·부곡·외거·떠돌이)",
+      "if": "status:yangmin || status:bugok || status:oegeo || status:drifter",
+      "gray": "제 손으로 세우는 건 제 집이 탄 사람이다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 2,
+       "why": "재를 치우고 기둥 넷을 세우는 몸.",
+       "fail": "…기둥 하나. 허리."
+      },
+      "flag": "bt:rebuild",
+      "say": "🏠 기둥 넷, 새 지붕. 「또 오면 또 세운다.」"
+     },
+     {
+      "label": "노비를 보내 세운다 — 높은 집·곡식 하나",
+      "if": "status:munbeol || status:gwonmun && val:grain>=1",
+      "gray": "노비를 보내는 건 높은 집이다 — 곡식 하나.",
+      "flag": "bt:send",
+      "say": "🏠 노비 넷. 이레 만에 지붕. 포구 사람이 절했다."
+     },
+     {
+      "label": "고을 사람을 모은다 — 품앗이 (향리·사대부)",
+      "if": "status:hyangni || status:sadaebu",
+      "gray": "품앗이를 모으는 건 고을을 아는 집이다.",
+      "flag": "bt:gather",
+      "say": "🤝 열두 집. 사흘. 「우리 포구다.」"
+     },
+     {
+      "label": "수군을 둔다 — 무신",
+      "if": "status:musin",
+      "gray": "수군은 무신이 둔다.",
+      "flag": "bt:guard",
+      "say": "⚓ 배 둘, 창 스물. 왜구가 다음엔 안 왔다."
+     },
+     {
+      "label": "주인 집 먼저 — 노비",
+      "if": "status:solgeo",
+      "gray": "노비는 주인 집부터.",
+      "flag": "bt:master",
+      "say": "🏋 주인 집 지붕이 먼저. 포구는 나중."
+     },
+     {
+      "label": "본다",
+      "flag": "bt:watch",
+      "say": "재 위에 기둥. 떠난 집과 남은 집."
+     }
+    ]
+   },
+   {
+    "text": "배가 없으면 포구가 아니야."
+   }
+  ]
  }
 }
