@@ -169,8 +169,11 @@ export class Life {
     g.save?.recordEnd?.(rec);   // 서버 족보(정식 좌석만, 조용히)
     const html = `<div class="chk life end"><div class="tag">${esc(e.tag || '이번 삶')}</div><h3>${esc(branch.title || e.title || '')}</h3>${(branch.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}<ul class="mlist"><li>✋ 솜씨 <b>${v.craft}</b> · 🤝 인심 <b>${v.heart}</b> · 🌾 곡식 ${this.d.grain?.open ? `<b>${v.grain || 0}</b>` : '🔒'}${this.d.rank?.open ? ` · 🎖 벼슬 <b>${v.rank || 0}</b>${this.cap() != null ? ` / 천장 ${this.cap()}` : ''}` : ''}</li><li>능력 ${ABIL.map((a) => `${a} ${DOTS(this.abil[a])}`).join(' · ')}</li>${marks.length ? `<li>흔적 — ${esc(marks.join(', '))}</li>` : ''}${this.nationName || this.statusName ? `<li>${this.nationName ? `🏳️ ${esc(this.nationName)} · ` : ''}${this.statusName ? `🏠 ${esc(this.statusName)}` : ''}</li>` : ''}<li>겪은 상황 ${this.log.length}가지</li></ul>${e.fact ? `<div class="facts"><div>📜 <b>실제</b> ${esc(e.fact)}</div></div>` : ''}${e.next ? `<p class="sub">${esc(e.next)}</p>` : ''}</div>`;
     const btns = [{ label: e.again || '다시 태어난다', primary: true, onClick: () => { g.save?.clear(); const u = new URL(location.href); u.searchParams.set('resume', '0'); location.href = u.toString(); } }];
-    if (g.world.gate) btns.push({ label: g.world.gate.ready ? `${g.world.gate.nextName}로 가기` : `${g.world.gate.nextName}로 (준비 중)`, onClick: () => { const gt = g.world.gate; if (gt.ready) { const u = new URL(location.href); u.searchParams.set('era', gt.next); location.href = u.toString(); } else g.ui.say(`${gt.nextName}는 다음에 열려. 솜씨·인심은 그때 넘어간다.`, 4000); } });
     const show = () => g.ui.open(html, btns);
+    if (g.world.gate) btns.push({ label: g.world.gate.ready ? `${g.world.gate.nextName}로 가기` : `${g.world.gate.nextName}로 (준비 중)`, onClick: () => { const gt = g.world.gate; if (!gt.ready) { g.ui.say(`${gt.nextName}는 다음에 열려. 솜씨·인심은 그때 넘어간다.`, 4000); return; }
+      const go = () => { const u = new URL(location.href); u.searchParams.set('era', gt.next); location.href = u.toString(); };
+      openJokbo(g, show, { tag: '족보 · 다음 대로', go: { label: `${gt.nextName}로 →`, onClick: go } });   // 시대 사이 — 족보가 먼저 펼쳐지고(이번 대 한 줄이 방금 적혔다) 다음 시대로
+    } });
     btns.push({ label: '📜 족보', onClick: () => openJokbo(g, show) });
     btns.push({ label: '더 둘러보기', onClick: () => { g.ui.close(); g.p.enabled = true; } });
     show(); g.save?.touch();

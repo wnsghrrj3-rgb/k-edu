@@ -46,4 +46,10 @@ globalThis.fetch = async (u) => { ok(u === './eras/chain.json', 'chain.json 경�
 const before = panels.length; await endPanel.b.find((x) => x.label === '📜 족보').onClick(); await new Promise((r) => setTimeout(r, 20));
 const jk = panels[panels.length - 1]; ok(panels.length === before + 1 && jk.h.includes('jokbo') && jk.h.includes('2대 / 11대') === false && jk.h.includes('1대 / 11대'), '족보 한 장(1대)');
 jk.b[0].onClick(); ok(panels.length === before + 2 && panels[panels.length - 1].h.includes('이번 삶'), '닫으면 끝 카드 다시');
+// 시대 사이 — 「청동기로 가기」를 누르면 족보가 먼저(「청동기로 →」 단추 + 돌아가기), 돌아가면 끝 카드
+globalThis.location = { href: 'https://keduclass.com/kworld/?era=neo' }; let went = null; Object.defineProperty(globalThis.location, 'href', { get: () => 'https://keduclass.com/kworld/?era=neo', set: (v) => { went = v; } });
+const b2 = panels.length; await endPanel.b.find((x) => x.label.startsWith('청동기로 가기')).onClick(); await new Promise((r) => setTimeout(r, 20));
+const jk2 = panels[panels.length - 1]; ok(panels.length === b2 + 1 && jk2.h.includes('jokbo') && jk2.h.includes('다음 대로') && jk2.b[0].label === '청동기로 →' && jk2.b[1].label === '돌아가기' && went === null, '시대 사이 족보 먼저 ' + jk2.b.map((x) => x.label).join('/'));
+jk2.b[1].onClick(); ok(panels[panels.length - 1].h.includes('이번 삶'), '돌아가기 → 끝 카드');
+await endPanel.b.find((x) => x.label.startsWith('청동기로 가기')).onClick(); await new Promise((r) => setTimeout(r, 20)); panels[panels.length - 1].b[0].onClick(); ok(went && went.includes('era=bronze-life'), '「청동기로 →」 가 실제로 간다 ' + went);
 console.log(`jokbo ${pass}/${pass + fail}`); if (fail) process.exit(1);

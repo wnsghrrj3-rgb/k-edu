@@ -47,11 +47,14 @@ export function jokboHtml(chain, rows, opts = {}) {
 export const JOKBO_CSS = `.jokbo .jsum{font-weight:700;margin:4px 0 10px}.jlist{list-style:none;padding:0;margin:0;border-left:2px solid #d9caa6;margin-left:14px}.jrow{display:flex;gap:12px;padding:8px 0 8px 16px;position:relative;line-height:1.5}.jrow::before{content:"";position:absolute;left:-7px;top:16px;width:12px;height:12px;border-radius:50%;background:#dfa53f;border:2px solid #fbf6ea;box-shadow:0 0 0 1px #c9a45c}.jrow.none::before{background:#e8dfca}.jrow.old::before{background:#bfb49a}.jrow.now::before{background:#e86a4a;box-shadow:0 0 0 3px rgba(232,106,74,.3)}.jrow .jn{flex:none;width:34px;font-size:12px;color:#9a6a1c;font-weight:700;padding-top:3px}.jrow .je{font-family:var(--serif);font-size:16px}.jrow .jy{font-size:11px;opacity:.6;margin-left:6px}.jrow .jw{font-size:13px;color:#8a5a12}.jrow .jt{font-size:15px;font-weight:700;margin-top:1px}.jrow .jv{font-size:12.5px;opacity:.85;font-variant-numeric:tabular-nums}.jrow .jh{color:#b7492b}.jrow .jd{opacity:.5;font-size:11px}.jrow .jc{font-size:12px;color:#5a4a2a;margin-top:3px;background:rgba(255,255,255,.55);border-radius:8px;padding:4px 8px}.jrow.none{opacity:.45}.jrow.none .jt{font-weight:400;font-size:13px}.jrow.old{opacity:.55}`;
 
 /** 게임 안에서 열기 — 끝 카드·HUD·J 키. chain.json 은 base 의 한 단계 위(eras/) */
-export async function openJokbo(g, onClose = null) {
+export async function openJokbo(g, onClose = null, opts = {}) {
   let chain = null; try { chain = await fetch(g.base.replace(/[^/]+\/$/, '') + 'chain.json').then((r) => r.json()); } catch { }
   if (!chain) { g.ui.say('족보를 못 찾았다.', 3000); return; }
   if (typeof document !== 'undefined' && !document.getElementById('jokbo-css')) { const st = document.createElement('style'); st.id = 'jokbo-css'; st.textContent = JOKBO_CSS; document.head.appendChild(st); }
   const rows = collect(chain, g); const history = read('kworld_jokbo') || [];
   const wasOpen = g.ui.isOpen?.(); g.p.enabled = false;
-  g.ui.open(jokboHtml(chain, rows, { history }), [{ label: '닫기', primary: true, onClick: () => { g.ui.close(); if (onClose) onClose(); else if (!wasOpen) g.p.enabled = true; } }]);
+  const btns = [];
+  if (opts.go) btns.push({ label: opts.go.label, primary: true, onClick: () => { g.ui.close(); opts.go.onClick(); } });   // 시대 사이 — 족보 한 장이 먼저 펼쳐지고 다음 시대로
+  btns.push({ label: opts.go ? '돌아가기' : '닫기', primary: !opts.go, onClick: () => { g.ui.close(); if (onClose) onClose(); else if (!wasOpen) g.p.enabled = true; } });
+  g.ui.open(jokboHtml(chain, rows, { history, tag: opts.tag }), btns);
 }
