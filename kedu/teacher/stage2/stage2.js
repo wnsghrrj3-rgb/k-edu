@@ -79,7 +79,7 @@
     return (q ? '<div class="mo2-q">' + (d.visual ? '<span class="mo2-v">' + esc(d.visual) + '</span>' : '') + '<span class="mo2-qt">' + q + '</span></div>' : '') + '<div class="mo2-talk picture ' + kd + '">' + (A ? A.backdrop(kd) : '') + '<div class="mo2-cast">' + ks.map(kid).join('') + '</div></div>'; }
   function rw2(d) { const sc = d.scenario || {}, ct = d.content ? md(d.content) : '', q = d.question ? md(d.question) : '';
     return '<div class="rw2-row"><div class="rw2-ic">' + esc(sc.icon || '🌍') + '</div><div class="rw2-sc">' + md(sc.body || '') + '</div></div>' + (ct ? '<div class="rw2-ct">' + ct + '</div>' : '') + (q ? '<div class="rw2-q">' + q + '</div>' : ''); }
-  // 100차 — 자기 점검 장(self_assessment) sa2 「칠판」 · 다음 시간 장(next_lesson) nl2 「예고 그림 띠」 · 교사 무대만(learn 은 1세대)
+  // 100차 — 자기 점검 장(self_assessment) sa2 「칠판」 · 다음 시간 장(next_lesson) nl2 「예고 그림 띠」 · 교사 무대만(learn 은 1세대) → 103차 sa2 는 learn 도
   function saSplit(it) { const t = String(lbl(it)); const m = t.match(/^\s*(\p{Extended_Pictographic}\uFE0F?)?\s*([^—–]{1,12}?)\s*[—–]\s*(.+)$/su); return m ? { ic: m[1] || '⭐', tag: m[2].trim(), q: m[3] } : { ic: '⭐', tag: '', q: t }; }
   function saStars(i, n, st) { return '<div class="sa2-st">' + Array.from({ length: n }, (_, k) => '<button data-act="star" data-i="' + i + '" data-k="' + k + '" class="' + ((st[i] || 0) > k ? 'on' : '') + '">★</button>').join('') + '</div>'; }
   function guideChr(g, i) { const A = global.KT2_ART, f = (g && g[i]) || (i ? '🐧' : '🐻'); return A && A.character ? A.character(f) : esc(f); }
@@ -354,7 +354,7 @@
       }
       case 'self_assessment': {
         const items = d.items || d.dimensions || []; const stars = d.starsPerDimension || d.stars || 3; const st = S.stars || {};
-        if (!ctx.learn && items.length) { cls = 'sa2 sa2-c'; push(sa2(d, st, stars, ctx.guide)); if (d.question) push('<div class="big-q">' + md(d.question) + '</div>'); break; }
+        if (items.length) { cls = 'sa2 sa2-c'; /* 103차 — 학생 화면(learn)도 칠판 · 별은 1세대와 같이 장 안 state(S.stars)만, 저장 없음 */ push(sa2(d, st, stars, ctx.guide)); if (d.question) push('<div class="big-q">' + md(d.question) + '</div>'); break; }
         push('<div class="sa">' + items.map((it, i) => '<div class="row"><div class="lb">' + md(lbl(it)) + '</div><div class="st">' + Array.from({ length: stars }, (_, k) => '<button data-act="star" data-i="' + i + '" data-k="' + k + '" class="' + ((st[i] || 0) > k ? 'on' : '') + '">★</button>').join('') + '</div></div>').join('') + '</div>');
         if (d.prompts) push('<div class="sa-prompts">' + d.prompts.map(p => '<div>' + md(p) + '</div>').join('') + '</div>');
         if (d.question) push('<div class="big-q">' + md(d.question) + '</div>'); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>');
