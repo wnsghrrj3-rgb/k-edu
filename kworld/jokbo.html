@@ -24,14 +24,20 @@
 <body>
 <div id="top"><span class="k">KEDU WORLD · HISTORY</span><span><a href="./">← 시대로 돌아가기</a> &nbsp;·&nbsp; <a href="#" id="print">인쇄</a></span></div>
 <div id="paper">불러오는 중…</div>
+<script src="/kedu_scope.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_config.js"></script>
+<script src="/kedu_tier.js"></script>
 <script type="module">
 import { collect, jokboHtml, JOKBO_CSS } from './core/jokbo.js';
+import { syncJokbo } from './core/save.js';
 const st = document.createElement('style'); st.textContent = JOKBO_CSS; document.head.appendChild(st);
 document.getElementById('print').onclick = (e) => { e.preventDefault(); print(); };
 try {
   const chain = await fetch('./eras/chain.json').then((r) => r.json());
+  const fromServer = await syncJokbo();   // 정식 좌석이면 서버 족보를 이 기기에 먼저 채운다
   let history = []; try { history = JSON.parse(localStorage.getItem('kworld_jokbo') || '[]'); } catch { }
-  document.getElementById('paper').innerHTML = jokboHtml(chain, collect(chain), { history, tag: '족보 · 이 기기의 기록' });
+  document.getElementById('paper').innerHTML = jokboHtml(chain, collect(chain), { history, tag: fromServer ? '족보 · 우리 집 기록' : '족보 · 이 기기의 기록' });
 } catch (e) { document.getElementById('paper').textContent = '족보를 못 불러왔어: ' + e; }
 </script>
 </body>

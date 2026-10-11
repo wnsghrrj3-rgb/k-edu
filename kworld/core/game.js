@@ -71,11 +71,11 @@ export class Game {
     this.e.start();
     // 저장·재개 — 저장이 있으면 프롤로그 대신 「이어서 / 처음부터」
     if (this.world.danger) this.danger = new Danger(this, this.world.danger);
-    this.save = new Save(this, this.era || new URLSearchParams(location.search).get('era') || 'world'); const qs2 = new URLSearchParams(location.search); const saved = qs2.get('resume') === '0' || qs2.get('peek') === '1' ? null : this.save.load();   // peek 은 항상 시작 지점
+    this.save = new Save(this, this.era || new URLSearchParams(location.search).get('era') || 'world'); const qs2 = new URLSearchParams(location.search); const saved = qs2.get('resume') === '0' || qs2.get('peek') === '1' ? null : await this.save.loadMerged();   // 이 기기 + 서버(정식 좌석) 중 새것, 서버 족보도 같이   // peek 은 항상 시작 지점
     if (saved && this.story) {
       const pick = await new Promise((res) => this.ui.open(`<div class="chk"><div class="tag">저장된 이야기</div><h3>이어서 할까?</h3><p>깃발 ${saved.flags.length}개 · ${new Date(saved.t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</p></div>`, [{ label: '이어서 하기', primary: true, onClick: () => { this.ui.close(); res(true); } }, { label: '처음부터', onClick: () => { this.ui.close(); res(false); } }]));
       if (pick) this.save.apply(saved); else this.save.clear();
-      if (this.world.characters) await this.chooseCharacter(this.world.characters, pick ? saved.char : null);
+      if (this.world.characters) await this.chooseCharacter(this.world.characters, pick ? saved : null);
       if (this.life) { this.life.begin(); if (pick) this.life.restore(saved.life); }
       if (!pick && this.world.prologue) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; }
     } else { if (this.world.characters) await this.chooseCharacter(this.world.characters, null); if (this.life) this.life.begin(); if (this.world.prologue && this.story) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; } }
@@ -108,7 +108,7 @@ export class Game {
   fumble(key) { const c = this.stats.craft || 1; if (c <= 1 || !key) return false; this.fumbled ??= new Set(); if (this.fumbled.has(key)) return false; if (Math.random() < 1 - 1 / c) { this.fumbled.add(key); return true; } this.fumbled.add(key); return false; }
   async chooseCharacter(chars, saved) {
     if (this.world.birth) return this.chooseBirth(chars, saved);
-    if (saved) { const c = chars.find((x) => x.id === saved); if (c) { this.setCharacter(c); return; } }
+    if (saved) { const c = chars.find((x) => x.id === (typeof saved === 'string' ? saved : saved.char)); if (c) { this.setCharacter(c); return; } }
     let remembered = null; try { remembered = localStorage.getItem('kworld_char:' + this.era); } catch { }
     const c = await new Promise((res) => this.ui.open(`<div class="chk"><div class="tag">누구로 살까</div><h3>강가의 사람 넷</h3><p class="sub">누구를 골라도 같은 것을 겪는다. 편한 것과 힘든 것이 다를 뿐.</p><ul class="mlist">${chars.map((x) => `<li><b>${x.name}</b><div class="mhint">👍 ${x.plus}<br>👎 ${x.minus}</div></li>`).join('')}</ul></div>`, chars.map((x) => ({ label: x.name, primary: x.id === remembered, onClick: () => { this.ui.close(); res(x); } }))));
     this.setCharacter(c);
@@ -118,7 +118,7 @@ export class Game {
     const b = this.world.birth; const sexes = b.sexes || [{ id: 'f', name: '여자' }, { id: 'm', name: '남자' }]; const key = 'kworld_birth:' + this.era;
     let last = null; try { last = JSON.parse(localStorage.getItem(key) || 'null'); } catch { }
     const apply = (c, sx) => { this.sex = sx; this.setCharacter(c); try { localStorage.setItem(key, JSON.stringify({ char: c.id, sex: sx.id, n: (last?.n || 0) + 1 })); } catch { } };
-    if (saved && last) { const c = chars.find((x) => x.id === (saved.char || last.char)); const sx = sexes.find((x) => x.id === last.sex) || sexes[0]; if (c) { apply(c, sx); return; } }
+    if (saved && (last || saved.sex)) { const c = chars.find((x) => x.id === (saved.char || last?.char)); const sx = sexes.find((x) => x.id === (saved.sex || last?.sex)) || sexes[0]; if (c) { apply(c, sx); return; } }   // 서버 저장(다른 기기)엔 이 기기 태어남 기록이 없어 저장본의 성별로
     const draw = () => [chars[Math.floor(Math.random() * chars.length)], sexes[Math.floor(Math.random() * sexes.length)]];
     const dots = (lv) => ({ 3: '●●●', 2: '●●○', 1: '●○○' })[lv] || '●●○';
     const card = (c, sx, again) => `<div class="chk"><div class="tag">${again ? '다시 태어난다' : '너는 이렇게 태어났다'}</div><h3>${sx.name}아이, ${c.name}</h3><p class="sub">${b.sub || '태어남은 고를 수 없다. 그다음부터는 전부 네 선택이다.'}</p><ul class="mlist">${Object.entries(c.levels || {}).map(([k, v]) => `<li><b>${k}</b> <span class="mhint">${dots(v)}</span></li>`).join('')}</ul><div class="mhint">👍 ${c.plus}<br>👎 ${c.minus}</div></div>`;
