@@ -79,18 +79,14 @@
     return (q ? '<div class="mo2-q">' + (d.visual ? '<span class="mo2-v">' + esc(d.visual) + '</span>' : '') + '<span class="mo2-qt">' + q + '</span></div>' : '') + '<div class="mo2-talk picture ' + kd + '">' + (A ? A.backdrop(kd) : '') + '<div class="mo2-cast">' + ks.map(kid).join('') + '</div></div>'; }
   function rw2(d) { const sc = d.scenario || {}, ct = d.content ? md(d.content) : '', q = d.question ? md(d.question) : '';
     return '<div class="rw2-row"><div class="rw2-ic">' + esc(sc.icon || '🌍') + '</div><div class="rw2-sc">' + md(sc.body || '') + '</div></div>' + (ct ? '<div class="rw2-ct">' + ct + '</div>' : '') + (q ? '<div class="rw2-q">' + q + '</div>' : ''); }
-  // 100차 시안 — 자기 점검 장(self_assessment) sa2 · 다음 시간 장(next_lesson) nl2 · KT2_SAV / KT2_NLV = 'a' · 'b' · 'c' 때만(교사 무대)
+  // 100차 — 자기 점검 장(self_assessment) sa2 「칠판」 · 다음 시간 장(next_lesson) nl2 「예고 그림 띠」 · 교사 무대만(learn 은 1세대)
   function saSplit(it) { const t = String(lbl(it)); const m = t.match(/^\s*(\p{Extended_Pictographic}\uFE0F?)?\s*([^—–]{1,12}?)\s*[—–]\s*(.+)$/su); return m ? { ic: m[1] || '⭐', tag: m[2].trim(), q: m[3] } : { ic: '⭐', tag: '', q: t }; }
   function saStars(i, n, st) { return '<div class="sa2-st">' + Array.from({ length: n }, (_, k) => '<button data-act="star" data-i="' + i + '" data-k="' + k + '" class="' + ((st[i] || 0) > k ? 'on' : '') + '">★</button>').join('') + '</div>'; }
   function guideChr(g, i) { const A = global.KT2_ART, f = (g && g[i]) || (i ? '🐧' : '🐻'); return A && A.character ? A.character(f) : esc(f); }
-  function sa2(v, d, st, n, g) { const its = (d.items || d.dimensions || []).map(saSplit), pr = (d.prompts || []).map(md);
-    if (v === 'a') return '<div class="sa2-cards">' + its.map((x, i) => '<div class="sa2-c"><div class="sa2-ic">' + esc(x.ic) + '</div>' + (x.tag ? '<div class="sa2-tag">' + md(x.tag) + '</div>' : '') + '<div class="sa2-q">' + md(x.q) + '</div>' + saStars(i, n, st) + '</div>').join('') + '</div>' + (pr.length ? '<div class="sa2-pr">💬 ' + pr.join(' · ') + '</div>' : '');
-    if (v === 'b') { const A = global.KT2_ART; return '<div class="sa2-two"><div class="sa2-pic picture hill">' + (A ? A.backdrop('hill') : '') + '<div class="sa2-g">' + guideChr(g, 0) + '</div>' + (pr.length ? '<div class="sa2-bub">' + pr.join('<br>') + '</div>' : '') + '</div><div class="sa2-rows">' + its.map((x, i) => '<div class="sa2-r"><span class="sa2-ic">' + esc(x.ic) + '</span><div class="sa2-t">' + (x.tag ? '<b>' + md(x.tag) + '</b>' : '') + '<span>' + md(x.q) + '</span></div>' + saStars(i, n, st) + '</div>').join('') + '</div></div>'; }
-    return  '<div class="sa2-board">' + its.map((x, i) => '<div class="sa2-r"><span class="sa2-ic">' + esc(x.ic) + '</span><div class="sa2-t">' + (x.tag ? '<b>' + md(x.tag) + '</b>' : '') + '<span>' + md(x.q) + '</span></div>' + saStars(i, n, st) + '</div>').join('') + '</div>' + (pr.length ? '<div class="sa2-pr2"><span class="sa2-gm">' + guideChr(g, 0) + '</span><div class="sa2-bub">' + pr.join('<br>') + '</div></div>' : ''); }
-  function nl2(v, d, g) { const A = global.KT2_ART, pv = md(d.preview || ''), em = esc(d.emoji || '📖'), kd = A ? A.kindOf(d.preview || '') : 'hill';
-    if (v === 'a') return '<div class="nl2-door"><div class="nl2-arch"><span class="nl2-em">' + em + '</span></div><div class="nl2-txt"><div class="nl2-tag">🚪 다음 시간엔</div><div class="nl2-pv">' + pv + '</div></div></div>';
-    if (v === 'b') return '<div class="nl2-band picture ' + kd + '">' + (A ? A.backdrop(kd) : '') + '<div class="nl2-cast"><span class="nl2-ch">' + guideChr(g, 0) + '</span><span class="nl2-big">' + em + '</span><span class="nl2-ch r">' + guideChr(g, 1) + '</span></div><div class="nl2-cap">' + pv + '</div></div>';
-    return '<div class="nl2-cal"><div class="nl2-page"><div class="nl2-ring"><i></i><i></i></div><div class="nl2-day">다음 시간</div><div class="nl2-em">' + em + '</div></div><div class="nl2-side"><div class="nl2-pv">' + pv + '</div><div class="nl2-wave"><span class="nl2-ch">' + guideChr(g, 0) + '</span><span class="nl2-bye">다음 시간에 또 만나요!</span></div></div></div>'; }
+  function sa2(d, st, n, g) { const its = (d.items || d.dimensions || []).map(saSplit), pr = (d.prompts || []).map(md);
+    return '<div class="sa2-board">' + its.map((x, i) => '<div class="sa2-r"><span class="sa2-ic">' + esc(x.ic) + '</span><div class="sa2-t">' + (x.tag ? '<b>' + md(x.tag) + '</b>' : '') + '<span>' + md(x.q) + '</span></div>' + saStars(i, n, st) + '</div>').join('') + '</div>' + (pr.length ? '<div class="sa2-pr2"><span class="sa2-gm">' + guideChr(g, 0) + '</span><div class="sa2-bub">' + pr.join('<br>') + '</div></div>' : ''); }
+  function nl2(d, g) { const A = global.KT2_ART, kd = A ? A.kindOf(d.preview || '') : 'hill';
+    return '<div class="nl2-band picture ' + kd + '">' + (A ? A.backdrop(kd) : '') + '<div class="nl2-cast"><span class="nl2-ch">' + guideChr(g, 0) + '</span><span class="nl2-big">' + esc(d.emoji || '📖') + '</span><span class="nl2-ch r">' + guideChr(g, 1) + '</span></div><div class="nl2-cap">' + md(d.preview || '') + '</div></div>'; }
   function dots(n) { return '<div class="dots">' + Array.from({ length: +n || 0 }, () => '<i></i>').join('') + '</div>'; }
   function stack(n, cls, hero) { return '<div class="stack ' + (cls || '') + '">' + Array.from({ length: +n || 0 }, () => '<div class="cube"></div>').join('') + (hero ? '<div class="cb-hero">' + hero + '</div>' : '') + '<div class="lbl">' + n + '</div></div>'; }
   function dodo() { const A = global.KT2_ART; return A && A.character ? A.character('🐿️') : ''; }
@@ -237,7 +233,7 @@
       }
       case 'objective': push('<div class="objective-card">' + md(d.content || d.desc || '') + (Array.isArray(d.bullets) && d.bullets.length ? '<ol class="obj-list">' + d.bullets.map(b => '<li>' + md(String(b)) + '</li>').join('') + '</ol>' : '') + '</div>'); break;
       case 'question': push('<div class="big-q">' + md(d.content || d.question || '') + '</div>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
-      case 'next_lesson': if (global.KT2_NLV && !ctx.learn) { cls = 'nl2 nl2-' + global.KT2_NLV; push(nl2(global.KT2_NLV, d, ctx.guide)); break; } push('<div class="big-q soft">' + md(d.preview || '') + '</div>'); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); break;
+      case 'next_lesson': if (!ctx.learn && d.preview) { cls = 'nl2 nl2-b'; push(nl2(d, ctx.guide)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); break; } push('<div class="big-q soft">' + md(d.preview || '') + '</div>'); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); break;
       case 'review': {
         if (d.content) push('<div class="center-text">' + md(d.content) + '</div>');
         if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>');
@@ -355,7 +351,7 @@
       }
       case 'self_assessment': {
         const items = d.items || d.dimensions || []; const stars = d.starsPerDimension || d.stars || 3; const st = S.stars || {};
-        if (global.KT2_SAV && !ctx.learn && items.length) { cls = 'sa2 sa2-' + global.KT2_SAV; push(sa2(global.KT2_SAV, d, st, stars, ctx.guide)); if (d.question) push('<div class="big-q">' + md(d.question) + '</div>'); break; }
+        if (!ctx.learn && items.length) { cls = 'sa2 sa2-c'; push(sa2(d, st, stars, ctx.guide)); if (d.question) push('<div class="big-q">' + md(d.question) + '</div>'); break; }
         push('<div class="sa">' + items.map((it, i) => '<div class="row"><div class="lb">' + md(lbl(it)) + '</div><div class="st">' + Array.from({ length: stars }, (_, k) => '<button data-act="star" data-i="' + i + '" data-k="' + k + '" class="' + ((st[i] || 0) > k ? 'on' : '') + '">★</button>').join('') + '</div></div>').join('') + '</div>');
         if (d.prompts) push('<div class="sa-prompts">' + d.prompts.map(p => '<div>' + md(p) + '</div>').join('') + '</div>');
         if (d.question) push('<div class="big-q">' + md(d.question) + '</div>'); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>');

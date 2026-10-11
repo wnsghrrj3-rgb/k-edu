@@ -60,6 +60,15 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   ok(/numline hero/.test(r2.body) && /class="nl-hero" style="left:40%"/.test(r2.body) && (r2.body.match(/data-act="nl"/g) || []).length === 11, '징검다리: 지금 수(4) 돌 위에 도토 · 돌 11개 조작 그대로');
   const r3 = KT2.renderSlide({ id: 'z', block: 'interactive_number_line', data: { range: [0, 10], start: 4 } }, { revealed: false, state: { position: 7 }, meta: {}, unitTitle: 'U', classNames: [] });
   ok(/class="nl-hero" style="left:70%"/.test(r3.body), '징검다리: 움직이면 도토도 옮겨 선다 (7)'); }
+// ── 100차: 자기 점검 sa2 칠판 · 다음 시간 nl2 예고 그림 띠 (교사 무대만) ──
+{ const C = { revealed: false, state: { stars: { 1: 2 } }, meta: {}, unitTitle: 'U', classNames: [], guide: ['🐻', '🐧'] };
+  const a = KT2.renderSlide({ id: 'sa', block: 'self_assessment', data: { title: 't', items: ['📚 지식·이해 — 알았나요?', '🔧 과정·기능 — 할 수 있나요?'], prompts: ['궁금한 것은?'] } }, C);
+  ok(a.cls === 'sa2 sa2-c' && /class="sa2-board"/.test(a.body) && (a.body.match(/data-act="star"/g) || []).length === 6 && (a.body.match(/data-i="1" data-k="\d" class="on"/g) || []).length === 2 && /<b>지식·이해<\/b>/.test(a.body) && /sa2-bub">궁금한 것은\?/.test(a.body), '100차 자기 점검 sa2 칠판: 영역·물음·별(조작 그대로)·안내 인물 말풍선');
+  const al = KT2.renderSlide({ id: 'sa', block: 'self_assessment', data: { title: 't', items: ['📚 지식·이해 — 알았나요?'] } }, Object.assign({}, C, { learn: true }));
+  ok(!/sa2-/.test(al.body) && /class="sa"/.test(al.body), '100차 자기 점검: learn 은 1세대 그대로');
+  const n = KT2.renderSlide({ id: 'nl', block: 'next_lesson', data: { title: 't', preview: '달라진 생활을 봐요', emoji: '👵' } }, C);
+  ok(n.cls === 'nl2 nl2-b' && /nl2-band picture hill/.test(n.body) && /nl2-big">👵/.test(n.body) && /c-bear/.test(n.body) && /c-penguin/.test(n.body) && /nl2-cap">달라진 생활을 봐요/.test(n.body), '100차 다음 시간 nl2 예고 그림 띠: 인물 둘 + 큰 그림 + 예고 띠 · 「달라진」은 밤 배경 아님'); }
+
 // ── 15차: 안내 인물 · 빠진 내용 되살리기 · 큐브 계단 ──
 { const C = { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] };
   const g = Object.assign({}, C, { guide: ['🐻', '🐧'] });
