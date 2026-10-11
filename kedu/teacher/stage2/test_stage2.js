@@ -52,8 +52,10 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   ['🐻', '🐧', '👧', '👦', '🐿️'].forEach(f => ok(A.isMain(f) && !/ cast"/.test(A.character(f)), '조연 층: 주인공 ' + f + ' 은 cast 아님'));
   ok(/class="wing wl"/.test(A.character('🐝')) && /class="wing wr"/.test(A.character('🦋')), '조연 층: 벌·나비는 날개(wing) 좌우');
   { const fs2 = ['🙂','😀','😋','🤔','😮','😟','😐'].map(f => A.character(f).replace(/aria-label="[^"]*"/, '').replace(/c-friend-[a-z]+/, '')); ok(new Set(fs2).size === 7, '조연 층: 기분 얼굴 일곱은 서로 다른 얼굴'); }
-  const r1 = KT2.renderSlide({ id: 'x', block: 'motivate', data: { title: '공원', kids: [{ face: '👧', label: '하나 "같이 놀자!"' }, { face: '🐰', label: '토끼' }, { face: '🧺', label: '바구니' }] } }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] });
-  ok((r1.body.match(/class="face chr"/g) || []).length === 2 && /c-rabbit cast/.test(r1.body) && /<div class="face">🧺<\/div>/.test(r1.body), '인물 층: 주인공·조연은 그림, 모르는 얼굴은 이모지 (kidCard)'); }
+  const r1 = KT2.renderSlide({ id: 'x', block: 'motivate', data: { title: '공원', kids: [{ face: '👧', label: '하나 "같이 놀자!"' }, { face: '🐰', label: '토끼' }, { face: '🧺', label: '바구니' }] } }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [], learn: true });
+  ok((r1.body.match(/class="face chr"/g) || []).length === 2 && /c-rabbit cast/.test(r1.body) && /<div class="face">🧺<\/div>/.test(r1.body), '인물 층: 주인공·조연은 그림, 모르는 얼굴은 이모지 (kidCard)');
+  const r2 = KT2.renderSlide({ id: 'x', block: 'motivate', data: { title: '공원', question: '무엇을 할까요?', kids: [{ face: '👧', label: '하나 "같이 놀자!"' }, { face: '🧺', label: '바구니' }] } }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] });
+  ok(/class="mo2-q"/.test(r2.body) && /mo2-talk picture/.test(r2.body) && /class="mo2-f chr"/.test(r2.body) && /<div class="mo2-f">🧺/.test(r2.body) && /class="mo2-w">하나/.test(r2.body), '99차 동기 장 mo2: 큰 물음 + 그림 띠 인물 말'); }
 { const r2 = KT2.renderSlide({ id: 'y', block: 'interactive_number_line', data: { range: [0, 10], start: 4 } }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] });
   ok(/numline hero/.test(r2.body) && /class="nl-hero" style="left:40%"/.test(r2.body) && (r2.body.match(/data-act="nl"/g) || []).length === 11, '징검다리: 지금 수(4) 돌 위에 도토 · 돌 11개 조작 그대로');
   const r3 = KT2.renderSlide({ id: 'z', block: 'interactive_number_line', data: { range: [0, 10], start: 4 } }, { revealed: false, state: { position: 7 }, meta: {}, unitTitle: 'U', classNames: [] });
@@ -67,8 +69,9 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   ok(!/guide-say/.test(a0.body) && /<div class="big-text">열이 하나<\/div>/.test(a0.body), '안내 인물: 인물 없는 차시는 종전 그대로');
   const b = KT2.renderSlide({ id: 'b', block: 'basic_problem', data: { title: 't', scenario: { icon: '🍬', body: '사탕이 5개' }, question: '몇 개?' } }, g);
   ok(/class="guide-say r q"/.test(b.body) && /c-penguin/.test(b.body) && /class="sc-ic">🍬/.test(b.body), '안내 인물: 문제 상황 = 짝 인물(펭이)이 오른쪽에서 마주 보고');
-  const b1 = KT2.renderSlide({ id: 'b', block: 'real_world', data: { title: 't', scenario: { body: 'x' } } }, Object.assign({}, C, { guide: ['👧'] }));
+  const b1 = KT2.renderSlide({ id: 'b', block: 'basic_problem', data: { title: 't', scenario: { body: 'x' }, question: 'y' } }, Object.assign({}, C, { guide: ['👧'] }));
   ok(/guide-say r q/.test(b1.body) && /c-girl/.test(b1.body), '안내 인물: 짝이 없으면 첫 인물이 문제도 들려준다');
+  { const rw = KT2.renderSlide({ id: 'r', block: 'real_world', data: { title: 't', scenario: { icon: '🏫', body: 'x' }, content: 'y' } }, C); ok(/class="rw2-ic">🏫/.test(rw.body) && /class="rw2-ct">/.test(rw.body), '99차 실생활 장 rw2: 큰 아이콘 + 장면 + 배움 줄'); }
   const kx = KT2.renderSlide({ id: 'k', block: 'concept', data: { title: 't', content: 'x', kids_after: [{ face: '👧', label: '하나' }] } }, g);
   ok(!/guide-say/.test(kx.body), '안내 인물: 인물 장면(kids_after)이 있는 개념엔 겹쳐 세우지 않는다');
   ok(JSON.stringify(KT2.guideOf({ slides: [{ data: { kids: [{ face: '🐰' }, { face: '👦' }] } }, { data: { kids: [{ face: '👦' }, { face: '🐿️' }, { face: '🐻' }] } }] })) === JSON.stringify(['👦', '🐿️']), '안내 인물: 차시의 kids 에서 그림 인물 둘(모르는 얼굴 건너뜀·중복 없음)');

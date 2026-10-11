@@ -15,7 +15,7 @@
   // 차시_밀도_표준_v2 §1: 도입 5~8 · 전개 25 · 정리 7~10 → 40분
   const STAGE_MIN = { '도입': 7, '전개': 12, '기본문제': 7, '응용문제': 6, '정리': 8 };
   const SEVEN = ['①복습 문항', '②실사 장면', '③차시 서사', '④교실 활동', '⑤수준별 문제', '⑥출구 확인', '⑦발문 6슬↑'];
-  const EDITABLE = '.kt2-title, .big-text, .center-text, .small-text, .big-q, .objective-card, .point > div, .steps li, .kid .bub, .kid .lbl, .flip .q, .flip .a, .rv2-it .q, .rv2-it .a, .mis-card, .mv2-t, .mv2-h, .lv2-q, .lv2-ch span, .offline .body, .offline .goal, .opt > div:not(.mk), .scenario > div:not(.ic), .lv-q, .ra-quote, .context-text, .bidirect, .tf-cap, .examples .ex, .areas div, .sa .lb, .light .lb, .cq .cl, .cq .nm, .legacy .t, .legacy .d, .kt2-cover-title, .kt2-sub';
+  const EDITABLE = '.kt2-title, .mo2-qt, .mo2-bub, .rw2-sc, .rw2-ct, .rw2-q, .big-text, .center-text, .small-text, .big-q, .objective-card, .point > div, .steps li, .kid .bub, .kid .lbl, .flip .q, .flip .a, .rv2-it .q, .rv2-it .a, .mis-card, .mv2-t, .mv2-h, .lv2-q, .lv2-ch span, .offline .body, .offline .goal, .opt > div:not(.mk), .scenario > div:not(.ic), .lv-q, .ra-quote, .context-text, .bidirect, .tf-cap, .examples .ex, .areas div, .sa .lb, .light .lb, .cq .cl, .cq .nm, .legacy .t, .legacy .d, .kt2-cover-title, .kt2-sub';
   const STAGE_COLOR = { '도입': '#FF8A3D', '전개': '#4F8DF7', '기본문제': '#12B886', '응용문제': '#7C5CFF', '정리': '#2CB1D6' };
   const SUBJ_KO = { math: '수학', korean: '국어', science: '과학', social: '사회', english: '영어' };
   const NO_FRAG = new Set(['cover', 'objective', 'question', 'next_lesson', 'interactive_ten_frame', 'interactive_cube_stairs', 'interactive_number_line', 'klab', 'math_tool', 'quiz_gen', 'activity', 'card_arrange', 'card_quiz', 'chosung_quiz', 'present', 'read_aloud', 'leveled_problem', 'exit_ticket', 'trace', 'number_line_demo']);
@@ -72,17 +72,13 @@
     const lights = self && self.length ? '<div class="rv2-sig">' + self.map((s, i) => '<div class="light" data-act="light" data-i="' + i + '"><span class="dot">' + (L[i] || '⚪') + '</span><span class="lb">' + md(s) + '</span><span class="cnt">' + (cnt[i] || 0) + '</span></div>').join('') + '</div>' : '';
     return '<div class="rv2-board">' + items.map((it, i) => '<div class="rv2-it' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><div class="q"><i>' + (i + 1) + '.</i>' + md(it.q || '') + '</div><div class="a">' + (f[i] ? md(A(it)) : '') + '</div></div>').join('') + '</div>' + lights;
   }
-  // 99차 시안 — 동기 장(motivate) mo2 · 실생활 장(real_world) rw2 · KT2_MOV / KT2_RWV = 'a' · 'b' · 'c' 때만
+  // 99차 — 새 동기 장 mo2 「큰 물음」 + 그림 띠(준호 A · 그림 없으면 심심) · 새 실생활 장 rw2 「큰 아이콘」(준호 A) · 교사 무대만
   function kidSay(k) { const A = global.KT2_ART, chr = A && A.character ? A.character(k.face) : ''; const label = String(k.label || ''); const m = label.match(/^\s*([^"“「]{1,8})\s*[\n\s]*["“「](.+)["”」]\s*$/s); return { face: chr || esc(k.face || '🙂'), chr: !!chr, who: m ? m[1].trim() : '', say: m ? m[2] : label.replace(/^["“「]|["”」]$/g, '') }; }
-  function mo2(v, d) { const ks = (d.kids || []).map(kidSay), q = d.question ? md(d.question) : '';
+  function mo2(d) { const A = global.KT2_ART, ks = (d.kids || []).map(kidSay), q = d.question ? md(d.question) : '', kd = A ? A.kindOf((d.scene_title || d.title || '') + ' ' + (d.question || '')) : '';
     const kid = (k, i) => '<div class="mo2-k' + (i % 2 ? ' r' : '') + '"><div class="mo2-f' + (k.chr ? ' chr' : '') + '">' + k.face + (k.who ? '<span class="mo2-w">' + md(k.who) + '</span>' : '') + '</div><div class="mo2-bub">' + md(k.say) + '</div></div>';
-    if (v === 'a') return (q ? '<div class="mo2-q">' + q + '</div>' : '') + '<div class="mo2-talk">' + ks.map(kid).join('') + '</div>';
-    if (v === 'b') { const A = global.KT2_ART, kd = A ? A.kindOf((d.scene_title || '') + ' ' + (d.question || '')) : ''; return '<div class="mo2-panel picture ' + kd + '">' + (A ? A.backdrop(kd) : '') + '<div class="mo2-cast">' + ks.map(kid).join('') + '</div>' + (q ? '<div class="mo2-cap">' + q + '</div>' : '') + '</div>'; }
-    return '<div class="mo2-two"><div class="mo2-chat">' + ks.map(kid).join('') + '</div><div class="mo2-qc">' + (d.visual ? '<span class="mo2-v">' + esc(d.visual) + '</span>' : '<span class="mo2-v qm">?</span>') + '<div class="mo2-q">' + q + '</div></div></div>'; }
-  function rw2(v, d) { const sc = d.scenario || {}, ic = esc(sc.icon || '🌍'), body = md(sc.body || ''), ct = d.content ? md(d.content) : '', q = d.question ? md(d.question) : '';
-    if (v === 'a') return '<div class="rw2-row"><div class="rw2-ic">' + ic + '</div><div class="rw2-sc">' + body + '</div></div>' + (ct ? '<div class="rw2-ct">' + ct + '</div>' : '') + (q ? '<div class="rw2-q">' + q + '</div>' : '');
-    if (v === 'b') return '<div class="rw2-hero"><span class="rw2-bg">' + ic + '</span><div class="rw2-sc">' + body + '</div></div>' + (ct ? '<div class="rw2-ct">' + ct + '</div>' : '') + (q ? '<div class="rw2-q">' + q + '</div>' : '');
-    return '<div class="rw2-bridge"><div class="rw2-p l"><div class="rw2-tag">' + ic + ' 생활 속에서</div><div class="rw2-sc">' + body + '</div></div><div class="rw2-ar">→</div><div class="rw2-p r"><div class="rw2-tag">📘 ' + (q ? '생각해 봐요' : '오늘 배운 것') + '</div><div class="rw2-ct">' + (q || ct) + '</div></div></div>' + (q && ct ? '<div class="rw2-ct">' + ct + '</div>' : ''); }
+    return (q ? '<div class="mo2-q">' + (d.visual ? '<span class="mo2-v">' + esc(d.visual) + '</span>' : '') + '<span class="mo2-qt">' + q + '</span></div>' : '') + '<div class="mo2-talk picture ' + kd + '">' + (A ? A.backdrop(kd) : '') + '<div class="mo2-cast">' + ks.map(kid).join('') + '</div></div>'; }
+  function rw2(d) { const sc = d.scenario || {}, ct = d.content ? md(d.content) : '', q = d.question ? md(d.question) : '';
+    return '<div class="rw2-row"><div class="rw2-ic">' + esc(sc.icon || '🌍') + '</div><div class="rw2-sc">' + md(sc.body || '') + '</div></div>' + (ct ? '<div class="rw2-ct">' + ct + '</div>' : '') + (q ? '<div class="rw2-q">' + q + '</div>' : ''); }
   function dots(n) { return '<div class="dots">' + Array.from({ length: +n || 0 }, () => '<i></i>').join('') + '</div>'; }
   function stack(n, cls, hero) { return '<div class="stack ' + (cls || '') + '">' + Array.from({ length: +n || 0 }, () => '<div class="cube"></div>').join('') + (hero ? '<div class="cb-hero">' + hero + '</div>' : '') + '<div class="lbl">' + n + '</div></div>'; }
   function dodo() { const A = global.KT2_ART; return A && A.character ? A.character('🐿️') : ''; }
@@ -242,7 +238,7 @@
       }
       case 'motivate': {
         title = d.scene_title || d.title || '';
-        if (global.KT2_MOV && !ctx.learn && d.kids && d.kids.length) { cls = 'mo2 mo2-' + global.KT2_MOV; push(mo2(global.KT2_MOV, d)); break; }
+        if (!ctx.learn && d.kids && d.kids.length && !d.teams && !d.number_panel && !d.emojis && d.emoji === undefined) { cls = 'mo2'; push(mo2(d)); break; }
         push(image(d.img, title + ' ' + (d.desc || ''))); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>');
         if (d.emojis) push('<div class="emoji-row">' + d.emojis.map(e => '<span>' + esc(e) + '</span>').join('') + '</div>');
         if (d.emoji && d.count !== undefined) push(emojiCount(d.emoji, d.count, true));
@@ -327,7 +323,7 @@
         break;
       }
       case 'multi': push(options(d.options || [], true, rev)); answerable = true; push('<div class="multi-hint">정답을 모두 골라요' + (d.expectedCount ? ' <b>' + esc(d.expectedCount) + '개</b>' : '') + '</div>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
-      case 'real_world': if (global.KT2_RWV && !ctx.learn && d.scenario) { cls = 'rw2 rw2-' + global.KT2_RWV; push(rw2(global.KT2_RWV, d)); break; } if (d.scenario) push(scenarioG(d.scenario, ctx.guide)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); if (d.content) push('<div class="center-text">' + md(d.content) + '</div>'); if (d.question) push('<div class="big-q">' + md(d.question) + '</div>'); break;
+      case 'real_world': if (!ctx.learn && d.scenario) { cls = 'rw2'; push(rw2(d)); break; } if (d.scenario) push(scenarioG(d.scenario, ctx.guide)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); if (d.content) push('<div class="center-text">' + md(d.content) + '</div>'); if (d.question) push('<div class="big-q">' + md(d.question) + '</div>'); break;
       case 'game': push('<ol class="steps">' + (d.steps || []).map(s => '<li>' + md(lbl(s)) + '</li>').join('') + '</ol>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
       case 'summary': {
         if (d.points && !d.table && !d.ten_frame_strip && !d.bidirect && !d.linking_cube_staircase && !d.sequence && !d.sequence_asc && !d.sequence_desc && !d.ordinals) cls = 'sv2'; // 95차 — 새 요약 장 sv2(흐름 큰 알약 + 요점 큰 글씨)
@@ -800,7 +796,7 @@
   // 87차 — fit-tight: 넘칠 때만 종이 여백·덩이 사이·말풍선 아래를 좁힌다(글자 크기는 그대로). 자리 바꾸기와 겹쳐 쓸 수 있다.
   // 88차 — fit-lv: 수준별 문제 정답 펼침 때 물음 왼쪽 · 정답·풀이 차례 오른쪽 / fit-lv2: 물음 위 · 정답 왼쪽 · 풀이 차례 오른쪽(넘칠 때만)
   // 89차 — fit-pts: 요약 요점 다섯 줄 이상을 두 단(위→아래 차례) / fit-wrap: 옆으로 이어진 카드(차례·도구)가 종이 폭을 넘으면 두 줄로 / fit-cols: 말풍선 안 짧은 줄 넷 이상(「어제 — 과거」 같은 목록)을 두 단으로(넘칠 때만 · 글자 크기 무변)
-  const LAYOUTS = ['fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s', 'fit-cv2w', 'fit-lvw', 'fit-lvs', 'fit-rvw', 'fit-rvs'];
+  const LAYOUTS = ['fit-mo2', 'fit-rw2', 'fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s', 'fit-cv2w', 'fit-lvw', 'fit-lvs', 'fit-rvw', 'fit-rvs'];
   // 90차 — fit-qh: 「여러 개를 고를 수 있어요」를 물음 옆 같은 줄로(넘칠 때만)
   // 90차 — fit-head: 넘칠 때만 제목을 머리(단계 칩·차시 이름)와 한 줄에 — 제목 줄 하나만큼 본문 자리가 생긴다 · 글자 크기 무변 · 차시 이름이 말줄임되면 안 씀
   function headBad(body) { const p = body.parentElement; if (!p) return true; const k = p.querySelector(':scope > .kt2-head .kt2-kicker'), t = p.querySelector(':scope > .kt2-title');
@@ -852,6 +848,8 @@
     const tries = [['fit-tight']];
     if (sp) tries.push(['fit-split'], ['fit-split', 'fit-tight']);
     if (sd) tries.push(['fit-side'], ['fit-side', 'fit-tight']);
+    if (body.querySelector('.mo2-talk')) tries.push(['fit-mo2'], ['fit-mo2', 'fit-tight']); // 99차 — 그림 띠 낮춤
+    if (body.querySelector('.rw2-row')) tries.push(['fit-rw2'], ['fit-rw2', 'fit-tight']); // 99차 — 아이콘 작게
     if (body.querySelector('.rv2-board')) tries.push(['fit-rvw'], ['fit-rvw', 'fit-tight'], ['fit-rvw', 'fit-rvs'], ['fit-rvw', 'fit-rvs', 'fit-tight']); // 98차 — 칠판 답 칸 넓힘 · 줄 간격 좁힘
     if (body.querySelector('.lv2-main > .lv2-a')) tries.push(['fit-lvw'], ['fit-lvw', 'fit-tight'], ['fit-lvs'], ['fit-lvs', 'fit-tight'], ['fit-lvw', 'fit-lvs'], ['fit-lvw', 'fit-lvs', 'fit-tight']); // 97차 — 수준 계단을 위 한 줄로(본문 폭 넓힘)
     if (body.querySelector('.lv-body > .lv-a')) tries.push(['fit-lv'], ['fit-lv', 'fit-tight'], ['fit-lv2'], ['fit-lv2', 'fit-tight']);
