@@ -10,6 +10,7 @@ import { addScenery } from './scenery.js';
 import { applySplat } from './terrain.js';
 import { Sound } from './sound.js';
 import { Save } from './save.js';
+import { Friends } from './friends.js';
 import { Danger } from './danger.js';
 import { Story } from './story.js';
 import { Life } from './life.js';
@@ -80,6 +81,7 @@ export class Game {
       if (!pick && this.world.prologue) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; }
     } else { if (this.world.characters) await this.chooseCharacter(this.world.characters, null); if (this.life) this.life.begin(); if (this.world.prologue && this.story) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; } }
     if (new URLSearchParams(location.search).get('peek') === '1' && this.story) this.story.peek();
+    this.friends = new Friends(this); this.friends.start();   // 반 멀티 0단계 — 같은 학급·같은 시대 친구가 보인다(정식 좌석만, 조용히)
     this.ui.intro(this.world.title, this.world.question);
     setTimeout(() => this.ui.say(this.world.intro, 5000), 400);
     if (this.world.intro2) setTimeout(() => { this.ui.say(this.world.intro2, 5000); if (this.world.goal2) this.ui.setGoal(this.world.goal2); }, 5800);

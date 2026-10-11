@@ -8,8 +8,9 @@ const LS = () => (typeof localStorage !== 'undefined' ? localStorage : null);
 const rd = (k) => { try { return JSON.parse(LS()?.getItem(k) || 'null'); } catch { return null; } };
 const wr = (k, v) => { try { LS()?.setItem(k, JSON.stringify(v)); } catch { } };
 
-/** 케이에듀 좌석 — 한 페이지에 한 번만 묻는다. {db, sid} 또는 null(방문자·게스트·교사·미연결) */
+/** 케이에듀 좌석 — 한 페이지에 한 번만 묻는다. {db, sid, nick, classId} 또는 null(방문자·게스트·교사·미연결) */
 let _seat = null;
+export function resetSeat() { _seat = null; }   // 시험용
 export function seat() {
   if (_seat) return _seat;
   _seat = (async () => {
@@ -17,7 +18,7 @@ export function seat() {
       if (typeof window === 'undefined' || typeof getKeduDb !== 'function' || !window.KeduTier?.resolve) return null;
       const db = getKeduDb(); const t = await window.KeduTier.resolve(db);
       if (!window.KeduTier.canSave(t)) return null;
-      const sid = t.profile?.profile_id; return sid ? { db, sid } : null;
+      const sid = t.profile?.profile_id; return sid ? { db, sid, nick: t.profile?.nickname || '', classId: t.profile?.class_code_id || null } : null;
     } catch { return null; }
   })();
   return _seat;
