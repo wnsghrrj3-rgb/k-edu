@@ -56,6 +56,16 @@ create policy p_kworld_jokbo_teacher_read on kworld_jokbo
   for select to authenticated
   using (student_id in (select id from student_profiles where class_code_id in (select id from class_codes where teacher_id = auth.uid())));
 
+-- 학부모(검증 자녀) 읽기 — 학부모 성장 리포트 「우리 집 족보」. 검증 전 링크는 못 본다.
+drop policy if exists p_kworld_progress_parent_read on kworld_progress;
+create policy p_kworld_progress_parent_read on kworld_progress
+  for select to authenticated
+  using (student_id in (select psl.student_id from parent_student_links psl where psl.parent_id = auth.uid() and psl.verified_at is not null));
+drop policy if exists p_kworld_jokbo_parent_read on kworld_jokbo;
+create policy p_kworld_jokbo_parent_read on kworld_jokbo
+  for select to authenticated
+  using (student_id in (select psl.student_id from parent_student_links psl where psl.parent_id = auth.uid() and psl.verified_at is not null));
+
 -- 리포트 ① 학생×시대 지금 상태 — 값(솜씨·인심·곡식·벼슬)·신분·나라·겪은 상황 수·끝났나
 drop view if exists report_kworld;
 create view report_kworld with (security_invoker = true) as

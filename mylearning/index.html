@@ -175,6 +175,8 @@ async function init(){
   const writes = await db.from('report_write').select('run_id,type,title,attempt,levels,memo,ask_rewrite,graded_at,is_last').eq('student_id', p.id).eq('is_last', true).order('graded_at',{ascending:false}).limit(12).then(r => r.data || []).catch(() => []);
   let wcrit = WCRIT_FALLBACK;
   if(writes.length){ try{ const rb = await fetch('/kedu/write/data/rubric.json').then(r=>r.json()); if(rb && rb.criteria) wcrit = rb.criteria.map(c=>c.name); }catch(e){} }
+  // 케이히스토리 족보(SQL #38 v2) — 내 집이 몇 대까지 살았나. 뷰가 없으면 조용히 빈 목록
+  const jokboHtml = await kworldJokboHtml(db, p.id, 'student');
   await KR.loadCatalog((mastery||[]).map(m=>m.lesson_id).concat((scores||[]).map(r=>r.lesson_id), (wrongs||[]).map(w=>w.lesson_id)));
   const cls = KR.classify(mastery||[], wrongs||[]);
   const wk = KR.buildWeeks(scores||[], morning||[], 1)[0];
@@ -277,6 +279,7 @@ function render(p, wk, cls, steps, units, streak, cmap, writes, wcrit){
         return `<a class="wr" href="/kedu/write/task.html?run=${encodeURIComponent(w.run_id)}"><div class="t">${esc(w.title||'글쓰기')}<small>${esc(WTYPE[w.type]||w.type||'')}${w.attempt>1?' · '+w.attempt+'번째 글':''} · ${new Date(w.graded_at).toLocaleDateString('ko-KR')} 돌려받음</small></div>${chips?`<div class="lv">${chips}</div>`:''}${w.memo?`<div class="m">${esc(w.memo)}</div>`:''}${w.ask_rewrite?`<div class="again">✍️ 선생님이 고쳐서 다시 써 보자고 했어요</div>`:''}</a>`; }).join('')}
       ${writes.length>6?`<div class="note">그리고 ${writes.length-6}편 더 있어요.</div>`:''}
     </div>` : ''}
+    ${jokboHtml}
     <div class="card"><h2><span class="ico">👟</span>다음 걸음</h2>
       ${steps.length ? steps.map(st=>goCard(st, stepIcon[st.kind]||'👉', stepCta[st.kind]||'가 보기')).join('') : '<div class="empty">첫 차시를 열어 보면 여기에 다음 걸음이 생겨요!</div>'}
     </div>

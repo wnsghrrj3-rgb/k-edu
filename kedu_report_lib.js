@@ -1,5 +1,5 @@
 // =============================================
-// 케이학습리포트 공용 라이브러리 (kedu_report_lib.js v3.1 — 2026-09-02)
+// 케이학습리포트 공용 라이브러리 (kedu_report_lib.js v3.3 — 2026-09-02)
 // v3.1: 학습지(ws:)·쪽지(quiz:) 기록을 차시 집계(도달 지도·단원 진도·하다 만 차시·반복 오답 차시)에서 제외 — isLessonId()
 // v3.2 (2026-09-30 케이티처 2세대 56차): 차시 열기 주소 투영 — 페이지가 projmap.js·proj_switch.js 를 먼저 실었으면
 //   켠 단원 차시의 url 을 투영 무대(learn.html)로 돌린다(info.srcUrl = 원문). 안 실었거나 끈 단원이면 원문 그대로.
@@ -495,7 +495,42 @@
   const WATCHING_NOTE = '아직 지켜보는 중이에요 (기록이 더 쌓이면 알려 드려요)';
   const STATUS_KO = { solid:'탄탄', edge:'경계', weak:'취약', watching:'관찰 중', touched:'풀어봄', none:'아직' };
 
+  // =============================================
+  // 케이히스토리 족보 (v3.3 — 2026-10-12 케이월드 저장·report_kworld)
+  //   학생(/mylearning)·학부모(/parent/growth) 화면 공용 — 역사 인생게임에서 몇 대까지 살았나·끝 갈림.
+  //   점수 0·비교 0: 끝 갈림은 「선택의 결과」다. 시대 이름은 /kworld/eras/chain.json 만 읽는다. 뷰(SQL #38 v2) 없으면 ''.
+  // =============================================
+  let _kwChain = null;
+  async function kworldJokboHtml(db, studentId, who){
+    if(!db || !studentId) return '';
+    const [rows, now] = await Promise.all([
+      db.from('kworld_jokbo').select('era,title,status_name,nation_name,record,ended_at').eq('student_id', studentId).order('ended_at',{ascending:false}).limit(120).then(r => r.data || []).catch(() => []),
+      db.from('report_kworld').select('era,status_name,nation_name,craft,heart,grain,rank,sit_n,ended,updated_at').eq('student_id', studentId).then(r => (r.data || []).filter(x => !x.ended)).catch(() => [])
+    ]);
+    if(!rows.length && !now.length) return '';
+    if(!_kwChain){ try{ _kwChain = await fetch('/kworld/eras/chain.json').then(r => r.json()); }catch(e){ _kwChain = { eras: [] }; } }
+    const E = _kwChain.eras || []; const e = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const name = (era) => { const x = E.find(y => y.era === era); return x ? x.short : era; };
+    const last = {}; rows.forEach(r => { if(!last[r.era]) last[r.era] = r; });
+    const living = {}; now.forEach(n => living[n.era] = n);
+    const order = E.length ? E.map(x => x.era) : Object.keys(last);
+    const total = E.length || 11; const eraN = Object.keys(last).length;
+    const vals = (v) => { const o = ['✋ 솜씨 ' + (v.craft ?? 0), '🤝 인심 ' + (v.heart ?? 0)]; if(v.grain) o.push('🌾 곡식 ' + v.grain); if(v.rank) o.push('🎖 벼슬 ' + v.rank); return o.join(' · '); };
+    const lines = order.map((era, i) => { const r = last[era], n = living[era];
+      if(n && !r) return `<div class="kw-row now"><b>${i+1}대 ${e(name(era))}</b> <span class="kw-tag">지금 사는 중</span><div class="kw-sub">${n.status_name ? '🏠 ' + e(n.status_name) + ' · ' : ''}${n.nation_name ? '🏳️ ' + e(n.nation_name) + ' · ' : ''}${vals(n)} · 겪은 상황 ${n.sit_n || 0}</div></div>`;
+      if(!r) return `<div class="kw-row none"><b>${i+1}대 ${e(name(era))}</b> <span class="kw-sub">아직 가 보지 않은 시대</span></div>`;
+      const rec = r.record || {}; const marks = (rec.marks || []).join(', ');
+      return `<div class="kw-row"><b>${i+1}대 ${e(name(era))}</b> — ${e(r.title || '')}${n ? ' <span class="kw-tag">다시 사는 중</span>' : ''}<div class="kw-sub">${r.status_name ? '🏠 ' + e(r.status_name) + ' · ' : ''}${r.nation_name ? '🏳️ ' + e(r.nation_name) + ' · ' : ''}${vals(rec)}${marks ? ' · 흔적 ' + e(marks) : ''} · ${new Date(r.ended_at).toLocaleDateString('ko-KR')}</div></div>`; }).join('');
+    const css = `<style>.kw-row{padding:8px 0;border-bottom:1px dashed rgba(0,0,0,.08);font-size:14px;line-height:1.5}.kw-row:last-child{border-bottom:0}.kw-row.none{opacity:.45}.kw-row.now{border-left:3px solid #e9b65b;padding-left:10px}.kw-sub{font-size:12px;opacity:.75}.kw-tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;background:rgba(233,182,91,.18);color:#8a5a0c;margin-left:4px}.kw-foot{font-size:12px;opacity:.7;margin-top:8px}</style>`;
+    const head = who === 'parent'
+      ? `<div class="sec"><h2>🏛 우리 집 족보</h2><div class="sub">케이히스토리(역사 인생게임)에서 아이가 ${eraN}대까지 살았습니다(전체 ${total}대). 시대마다 역사 속 선택을 하고, 그 선택과 쌓인 것(솜씨·인심·곡식·벼슬)으로 끝 갈림이 정해집니다. 점수가 아니고 맞고 틀림이 없습니다 — 「왜 그 길을 골랐어?」 하고 물어 봐 주세요.</div>`
+      : `<div class="card"><h2><span class="ico">🏛</span>우리 집 족보</h2><div class="note" style="margin-bottom:6px">케이히스토리에서 ${eraN}대 / ${total}대까지 살았어요. 끝 갈림은 네가 고른 길의 결과야 — 다른 길도 살아 볼 수 있어. <a href="/kworld/jokbo.html">족보 한 장 보기 →</a></div>`;
+    return css + head + lines + `<div class="kw-foot">끝낸 삶 ${rows.length}번 · 시대마다 가장 최근에 끝낸 삶만 보입니다.</div></div>`;
+  }
+  window.kworldJokboHtml = kworldJokboHtml;
+
   window.KeduReport = {
+    kworldJokboHtml,
     // 카탈로그
     loadCatalog, lesson, prettyLesson, lessonUrl, projUrl, cmpLesson, parseId,
     // 날짜
