@@ -95,6 +95,8 @@ const ASSETS = {
   take_row:       ['item', 'n', 'cross'],
   /* v1.3 — 1학년 1학기 「비교하기」 (2026-10-07): 길이 막대 · 양팔저울 · 넓이 모양 · 그릇 */
   len_bars:       ['rows'],
+  /* v2.5 — 2학년 1학기 「길이 재기」 (2026-10-11): 자·1 cm 칸·단위 몇 번 */
+  ruler:          ['len', 'label'],
   balance:        ['scales'],
   area_shapes:    ['shapes'],
   cups:           ['items'],
@@ -168,6 +170,18 @@ function checkAsset(where, a) {
     if (a.op !== '+' && a.op !== '-') bad(where, "vert2 op 는 '+'|'-'");
     if (a.op === '-' && a.bottom >= a.top) bad(where, 'vert2 빼는 수가 더 크다');
     if (a.ans !== null && a.ans !== undefined && a.ans !== 'hide' && !(a.ans >= 0 && a.ans <= 1999)) bad(where, 'vert2 ans 는 null·hide·수');
+  }
+  if (a.type === 'ruler') {
+    const s = Number(a.s) || 0, len = Number(a.len), mode = a.mode || 'ruler';
+    if (['ruler', 'cells', 'unit'].indexOf(mode) < 0) bad(where, "ruler mode 는 ruler·cells·unit");
+    if (!(len > 0 && len <= 14)) bad(where, 'ruler len 은 0~14: ' + a.len);
+    if (!Number.isInteger(s) || s < 0 || s > 10) bad(where, 'ruler s 는 0~10 정수');
+    const n = Number(a.n) || Math.ceil(s + len) + 1; if (n > 15) bad(where, 'ruler 자가 15 cm 를 넘는다');
+    if (s + len > n) bad(where, 'ruler 물건 끝이 자 밖');
+    const fr = Math.round((len - Math.floor(len)) * 10) / 10;
+    if (mode !== 'ruler' && fr) bad(where, 'ruler ' + mode + ' 는 정수 길이만');
+    if (fr && (fr < 0.15 || fr > 0.85 || (fr > 0.35 && fr < 0.65))) bad(where, 'ruler 눈금 사이 길이가 애매하다(가까운 눈금이 눈에 안 갈린다): ' + len);
+    if (mode === 'unit') { const sz = Number(a.size) || 1; if (!a.unit) bad(where, 'ruler unit 그림 없음'); if (Math.abs(len / sz - Math.round(len / sz)) > 1e-9) bad(where, 'ruler unit — 길이가 단위의 몇 배가 아니다(빈틈이 생긴다)'); if (len / sz > 12) bad(where, 'ruler unit 12번 넘음'); }
   }
   if (a.type === 'bar2') {
     const p = a.parts || []; const nul = [a.whole, p[0], p[1]].filter(x => x === null || x === undefined).length;
@@ -888,6 +902,28 @@ function check3(where, q) {
 /* v2.4 — 덧셈과 뺄셈: 발문에서 식을 다시 읽어 엔진과 따로 셈한다 (원본·변형 모두) */
 const AR_EV = (x, s, y) => s === '+' ? x + y : x - y;
 const AR_EQ = t => { const z = String(t).match(/^(\d+) ([+−]) (\d+) = (\d+)$/); return z ? { x: +z[1], s: z[2], y: +z[3], z: +z[4], ok: AR_EV(+z[1], z[2] === '+' ? '+' : '-', +z[3]) === +z[4] } : null; };
+/* v2.5 — cm 갈래: 그림(ruler)이 말하는 길이와 정답이 같은가, 오답에 정답이 섞이지 않았나 */
+function checkCm(where, q) {
+  const vr = q.variant_rule || {}; const a = q.asset; const CM = vr.cm;
+  if (!a || a.type !== 'ruler') { if (CM) bad(where, 'cm 갈래인데 ruler 그림이 없다'); return; }
+  const mode = a.mode || 'ruler', len = Number(a.len), s = Number(a.s) || 0, fr = len - Math.floor(len);
+  let want, approx = false;
+  if (mode === 'unit') want = String(Math.round(len / (Number(a.size) || 1)));
+  else { want = String(Math.round(len)); approx = Math.abs(fr) > 1e-9; }
+  const st = String(q.stem);
+  if (approx && !/약/.test(st) && q.kind !== 'error') bad(where, 'ruler 길이가 눈금 사이인데 발문에 「약」이 없다');
+  if (!approx && mode === 'ruler' && /약 몇/.test(st)) bad(where, 'ruler 길이가 눈금에 딱 맞는데 「약 몇 cm」를 묻는다');
+  if (!CM) return;   /* 손 문항은 그림 규격만 */
+  const norm = x => String(x).replace(/\s/g, '').replace(/cm$|번$/, '');
+  if (q.kind === 'sa') { if (norm((q.answer || [])[0]) !== want) bad(where, `cm 단답 정답 ${q.answer} ≠ 그림이 말하는 ${want}`); return; }
+  const cor = (q.options || []).find(o => o.correct); if (!cor) return bad(where, 'cm 정답 보기 없음');
+  const ct = String(cor.t).replace(/\s/g, '');
+  if (norm(ct.replace(/^약/, '')) !== want) bad(where, `cm 정답 보기 「${cor.t}」 ≠ 그림이 말하는 ${want}`);
+  if (approx && !/^약/.test(ct)) bad(where, 'cm 눈금 사이인데 정답에 「약」이 없다');
+  (q.options || []).filter(o => !o.correct).forEach(o => { const t2 = String(o.t).replace(/\s/g, ''); if (t2 === ct) bad(where, `cm 오답 보기에 정답 「${o.t}」가 섞였다`); });
+  if (s === 0 && CM.ask === 'off') bad(where, 'cm off 인데 물건이 0에 있다');
+  if (s !== 0 && CM.ask === 'read') bad(where, 'cm read 인데 물건이 0에서 시작하지 않는다(해설 「0에 맞춰져 있어요」가 거짓)');
+}
 function checkAr2(where, q) {
   const vr = q.variant_rule || {}; if (!vr.ar2) return;
   const cor = q.kind === 'sa' ? String((q.answer || [])[0]) : String(((q.options || []).find(o => o.correct) || {}).t);
@@ -1047,6 +1083,7 @@ function checkQ(where, q, opt) {
   checkNum50(where, q);
   check3(where, q);
   checkAr2(where, q);
+  checkCm(where, q);
   checkShape(where, q);
   checkJamo(where, q);
   checkBat(where, q);

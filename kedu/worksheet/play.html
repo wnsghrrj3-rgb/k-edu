@@ -703,6 +703,7 @@ function solidSVG(kind, peek){
 const BAT = w => { const c = String(w).trim().slice(-1).charCodeAt(0); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0; };
 const WEUN = w => (BAT(w) ? '은' : '는');
 /* ===== v1.3 — 1학년 1학기 「비교하기」 그림 4종 (2026-10-07) =====
+   (v2.5 ruler 는 rulerSVG 머리말 참고 — 자·1 cm 칸·단위 몇 번)
    len_bars   길이 막대: rows [{label, len 1~12, off 0~4, bend?, thick?}] · line(기준선, 기본 off 가 모두 0 이면 켬) · grid(칸 눈금)
               bend = 구부러진 줄 — 마디 하나의 실제 길이가 칸 하나(U)와 같게 그린다(펴면 len 칸, 「구부러지면 짧다」 함정이 거짓말이 안 되게)
    balance    양팔저울: scales [{l:{icon,name}, r:{icon,name}, down:'l'|'r'|'eq'}] 1~3개
@@ -903,6 +904,29 @@ function vert2SVG(a){
   const w = col(2) + W + 8, h = ay + H;
   return `<svg class="cmpsv" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="세로셈">${s}</svg>`;
 }
+/* ===== v2.5 — 2학년 1학기 「길이 재기」 자·cm 그림 (2026-10-11, 오푸스 5.5) =====
+   ruler  {len, s?, n?, label, mode?, unit?, size?}
+          len  물건 길이(cm, 소수 가능 — 「약 몇 cm」용) · s 물건 왼쪽 끝이 놓인 눈금(정수, 기본 0)
+          n    자의 끝 숫자(기본 = 물건 끝 올림 + 1, 15까지) · label 물건 이름
+          mode 'ruler'(기본, 자 위에 물건) · 'cells'(1 cm 칸으로 나눈 막대, 자 없음) · 'unit'(단위 그림 unit 을 size cm 마다 빈틈없이 — 몇 번)
+   화면·종이 같은 SVG. 물건 양 끝에서 자까지 점선 — 끝이 어느 눈금에 닿는지 눈으로 따라갈 수 있게. */
+function rulerSVG(a){
+  const U = 26, X0 = 24, mode = a.mode || 'ruler', s = Number(a.s) || 0, len = Number(a.len) || 1;
+  const n = Math.min(15, Number(a.n) || Math.ceil(s + len) + 1); const W = X0 * 2 + n * U, xs = X0 + s * U, xe = X0 + (s + len) * U;
+  let t = `<text x="${X0}" y="16" font-size="14" fill="${CMP_INK}">${svgEsc(a.label || '')}</text>`;
+  t += `<rect x="${xs}" y="24" width="${(xe - xs).toFixed(1)}" height="16" rx="${mode === 'cells' ? 3 : 8}" fill="${CMP_FILL[0]}" stroke="${CMP_INK}" stroke-width="1.6"/>`;
+  if (mode === 'cells'){ for (let k = 1; k < len; k++) t += `<line x1="${xs + k * U}" y1="24" x2="${xs + k * U}" y2="40" stroke="${CMP_INK}" stroke-width="1.2"/>`;
+    return `<svg class="cmpsv" viewBox="0 0 ${Math.max(W, xe + X0)} 50" width="${Math.max(W, xe + X0)}" height="50" role="img" aria-label="1 cm 칸으로 나눈 막대">${t}</svg>`; }
+  if (mode === 'unit'){ const sz = Number(a.size) || 1, k = Math.round(len / sz); let u = '';
+    for (let i = 0; i < k; i++){ const x = xs + i * sz * U; u += `<rect x="${x + 1}" y="50" width="${sz * U - 2}" height="22" rx="5" fill="#E9E4DA" stroke="${CMP_INK}" stroke-width="1.2"/><text x="${x + sz * U / 2}" y="66" text-anchor="middle" font-size="13">${svgEsc(a.unit || '▭')}</text>`; }
+    return `<svg class="cmpsv" viewBox="0 0 ${xe + X0} 80" width="${xe + X0}" height="80" role="img" aria-label="단위로 잰 길이">${t}${u}</svg>`; }
+  const ry = 56; t += `<line x1="${xs}" y1="40" x2="${xs}" y2="${ry}" stroke="#C0392B" stroke-width="1.4" stroke-dasharray="3 3"/><line x1="${xe}" y1="40" x2="${xe}" y2="${ry}" stroke="#C0392B" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+  t += `<rect x="${X0 - 12}" y="${ry}" width="${n * U + 24}" height="44" rx="4" fill="#FFF3C4" stroke="#B9A77A" stroke-width="1.6"/>`;
+  for (let i = 0; i <= n; i++){ const x = X0 + i * U; t += `<line x1="${x}" y1="${ry}" x2="${x}" y2="${ry + 16}" stroke="${CMP_INK}" stroke-width="1.6"/><text x="${x}" y="${ry + 34}" text-anchor="middle" font-size="13" fill="${CMP_INK}">${i}</text>`;
+    if (i < n) t += `<line x1="${x + U / 2}" y1="${ry}" x2="${x + U / 2}" y2="${ry + 9}" stroke="${CMP_INK}" stroke-width="1"/>`; }
+  t += `<text x="${X0 + n * U + 6}" y="${ry + 42}" text-anchor="end" font-size="10" fill="#8A8172">cm</text>`;
+  return `<svg class="cmpsv" viewBox="0 0 ${W} ${ry + 48}" width="${W}" height="${ry + 48}" role="img" aria-label="자 위에 놓인 ${svgEsc(a.label || '물건')}">${t}</svg>`;
+}
 function bar2SVG(a){
   const p = a.parts || [null, null]; const W0 = a.whole === null || a.whole === undefined ? null : Number(a.whole);
   const A = p[0] === null || p[0] === undefined ? null : Number(p[0]), Bq = p[1] === null || p[1] === undefined ? null : Number(p[1]);
@@ -1074,6 +1098,7 @@ function drawAsset(a, r){
     /* v2.4 — 2학년 1학기 「덧셈과 뺄셈」 */
     case 'vert2': return `<div class="cmpw">${vert2SVG(a)}</div>`;
     case 'bar2': return `<div class="cmpw">${bar2SVG(a)}</div>`;
+    case 'ruler': return `<div class="cmpw">${rulerSVG(a)}</div>`;
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
@@ -2269,6 +2294,48 @@ function makeVariantOnce(q, r){
       else v.options = kindOpts(f, [[n !== f ? n : null, M.layer || 'X15'], [f + 1, M.count || 'X12'], [f - 1 || null, M.count || 'X12'], [n - f || null, M.layer || 'X15']], want, q.options);
       v.explanation = ['바닥에 닿아 있는 쌓기나무가 1층이에요.', `1층에는 ${f}개가 있어요.`, '위에 올린 쌓기나무는 1층에 세지 않아요.'];
     }
+    return v;
+  }
+
+  /* --- v2.5: 2학년 1학기 「길이 재기」 (2026-10-11, 오푸스 5.5) — 자·cm 그림 ruler
+     cm {ask, ...}   ask  read(0 맞춤·몇 cm) · off(0 아님 — 칸 세기) · approx(눈금 사이 — 약 몇 cm, off:true 면 0 아님) · cells(1 cm 칸 세기) · unit(단위 몇 번)
+     오개념 꼬리: X08 끝 숫자 그대로 · X09 눈금(선) 수 · X10 1부터 셈 · X11 먼 눈금 · X12 「약」 뺌 · X03 빈틈·겹침(횟수 ±1)
+     원본을 만들 때만 q._fix = [len, s(, 이름)] 로 못박는다(fill.js 전용). */
+  if (rule.cm && (!a || a.type === 'ruler')){
+    const CM = rule.cm, ask = CM.ask || 'read', FIX = v._fix; delete v._fix; delete v._form; const want = Math.max(1, nOptsOf(q) - 1);
+    const POOL = [['색연필', 6, 10], ['크레파스', 5, 8], ['지우개', 2, 5], ['종이띠', 3, 12], ['막대', 3, 12], ['붓', 8, 13], ['연필', 7, 12], ['리본', 4, 11], ['못', 2, 6], ['열쇠', 3, 6], ['클립', 2, 4], ['풀', 5, 9]];
+    const IGA = w => (BAT(w) ? '이' : '가'), EUL = w => (BAT(w) ? '을' : '를'), EURO = w => (BAT(w) && !/[ㄹ]$/.test(w) ? '으로' : '로');
+    let len, s = 0, name;
+    const lo = CM.min || 2, hi = CM.max || 11;
+    if (FIX){ len = FIX[0]; s = FIX[1] || 0; name = FIX[2]; }
+    else { len = rint(lo, hi, r); if (ask === 'off' || (ask === 'approx' && CM.off)) s = rint(1, Math.max(1, Math.min(4, 12 - len)), r);
+      if (ask === 'approx'){ const d = pick([0.2, 0.3, -0.2, -0.3], r); len = Math.max(1.2, len + d); } }
+    if (!name){ const fit = POOL.filter(p => Math.round(len) >= p[1] && Math.round(len) <= p[2]); name = pick(fit.length ? fit : POOL, r)[0]; }
+    const k = Math.round(len), end = s + len;
+    const A = {type:'ruler', len: Math.round(len * 10) / 10, label: name}; if (s) A.s = s; v.asset = A;
+    const isSA = q.kind === 'sa';
+    const opt = (x, pre) => (pre || '') + x + ' cm';
+    const mk = (ans, ds, pre) => { if (isSA){ v.answer = [String(ans)]; return; }
+      v.options = kindOpts(opt(ans, pre), ds.map(([x, c, p]) => [x === null ? null : opt(x, p === undefined ? pre : p), c]), want, q.options); };
+    if (ask === 'read'){ v.stem = `${name}의 길이는 몇 cm일까요?` + (isSA ? ' 숫자로 쓰세요.' : '');
+      mk(k, [[k + 1, 'X09'], [k - 1 >= 1 ? k - 1 : k + 2, 'X10']]);
+      v.explanation = [`${name}의 한쪽 끝이 눈금 0에 맞춰져 있어요.`, `다른 쪽 끝의 눈금이 ${k}이니 ${k} cm예요.`, '자의 숫자는 1 cm가 몇 번인지를 나타내요.']; }
+    else if (ask === 'off'){ v.stem = `${name}${IGA(name)} 자의 눈금 0에 놓여 있지 않아요. ${name}의 길이는 몇 cm일까요?` + (isSA ? ' 숫자로 쓰세요.' : '');
+      mk(k, [[s + k, 'X08'], [k + 1, 'X09']]);
+      v.explanation = [`${s}부터 ${s + k}까지 1 cm 칸을 세어요.`, `1 cm가 ${k}번이니 ${k} cm예요.`, `끝 눈금 숫자 ${s + k}${VOWEL_END(s + k) ? '를' : '을'} 그대로 읽으면 안 돼요.`]; }
+    else if (ask === 'approx'){ const near = k, far = len > k ? k + 1 : k - 1;
+      v.stem = `${name}의 길이는 약 몇 cm일까요?` + (isSA ? ' 숫자로 쓰세요.' : '');
+      const ds = [[far, 'X11', '약 ']]; if (s) ds.unshift([s + near, 'X08', '약 ']); ds.push([near, 'X12', '']);
+      mk(near, ds, '약 ');
+      v.explanation = [s ? `${s}부터 세면 끝이 ${near}칸과 ${far}칸 사이에 있어요.` : `끝이 눈금 ${Math.min(near, far)}${VOWEL_END(Math.min(near, far)) ? '와' : '과'} ${Math.max(near, far)} 사이에 있어요.`, `${near}에 더 가까우니 약 ${near} cm예요.`, '눈금 사이에 있으면 가까운 쪽 숫자를 읽고 「약」을 붙여요.']; }
+    else if (ask === 'cells'){ A.mode = 'cells'; v.stem = `1 cm가 몇 번일까요? ${name}의 길이는 몇 cm일까요?` + (isSA ? ' 숫자로 쓰세요.' : '');
+      mk(k, [[k + 1, 'X09'], [k - 1 >= 1 ? k - 1 : k + 2, 'X03']]);
+      v.explanation = [`1 cm 칸을 하나씩 세면 ${k}칸이에요.`, `1 cm가 ${k}번이면 ${k} cm예요.`, '칸 사이의 선이 아니라 칸을 세어요.']; }
+    else if (ask === 'unit'){ const U2 = CM.units || [['📎', '클립', 2], ['🟫', '지우개', 3], ['🧩', '블록', 1]]; const uu = FIX && FIX[3] ? U2.find(x => x[1] === FIX[3]) || U2[0] : pick(U2, r);
+      const cnt = FIX ? Math.round(len / uu[2]) : rint(2, Math.max(2, Math.floor(12 / uu[2])), r); A.len = cnt * uu[2]; A.mode = 'unit'; A.unit = uu[0]; A.size = uu[2]; delete A.s;
+      v.stem = `${name}의 길이는 ${uu[1]}${EURO(uu[1])} 몇 번일까요?` + (isSA ? ' 숫자로 쓰세요.' : '');
+      if (isSA) v.answer = [String(cnt)]; else v.options = kindOpts(cnt + '번', [[(cnt + 1) + '번', 'X03'], [(cnt - 1 >= 1 ? cnt - 1 : cnt + 2) + '번', 'X03']], want, q.options);
+      v.explanation = [`${uu[1]}${EUL(uu[1])} 빈틈없이 이어 놓은 것을 세어요.`, `${uu[1]}${EURO(uu[1])} ${cnt}번이에요.`, '겹치거나 띄우지 않고 이어서 세어요.']; }
     return v;
   }
 
@@ -3563,6 +3630,7 @@ function paperAsset(a){
     case 'jump_row': return jumpRowHTML(a, true);
     case 'vert2': return `<div class="pcmpw">${vert2SVG(a)}</div>`;
     case 'bar2': return `<div class="pcmpw">${bar2SVG(a)}</div>`;
+    case 'ruler': return `<div class="pcmpw">${rulerSVG(a)}</div>`;
     case 'figs': return figsHTML(a, true);
     case 'tiles': return `<div class="pcmpw">${tilesSVG(a)}</div>`;
     case 'cubes': return cubesHTML(a, true);
