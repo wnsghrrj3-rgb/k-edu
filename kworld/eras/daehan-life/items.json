@@ -1,0 +1,1146 @@
+{
+ "targets": {
+  "npc": {
+   "name": "사람",
+   "verb": "말 걸기",
+   "info": "이 읍내 사람이다.",
+   "flag": "talk:any"
+  },
+  "radio": {
+   "name": "정자나무 밑 라디오",
+   "verb": "살펴보기",
+   "say": "낡은 라디오. 1945년 8월 15일 정오 — 「…항복…」 마을이 조용하다가 누가 울고 누가 뛰었다. 깃대에 태극기.",
+   "flag": "seen:radio",
+   "journal": "gwangbok",
+   "info": "라디오 — 광복.",
+   "rename": [
+    {
+     "if": "sit:gwangbok:open && !sit:gwangbok:done && (status:doraon) && !gw:street && !gw:home && !gw:return && !gw:stay && !gw:name && !gw:close",
+     "name": "라디오",
+     "verb": "돌아온다 — 고향(발 1) / 거기 남는다 ⚠",
+     "once": false,
+     "choices": [
+      {
+       "label": "돌아온다 — 간도·일본·하와이에서 고향으로(발 1)",
+       "roll": {
+        "ab": "발",
+        "hard": 1,
+        "why": "배표·기차표. 국경. 발.",
+        "fail": "…배를 놓쳤다. 겨울에야 왔다. 집은 남이 살고 있었다."
+       },
+       "rollFailFlag": "gw:returnlate",
+       "flag": "gw:return",
+       "journal": "gwangbok",
+       "say": "🚢 보따리 하나. 신작로를 올라왔다. 옛 집에 남이 살고 있었다 — 「돌아올 줄 몰랐다.」 그래도 고향."
+      },
+      {
+       "label": "거기 남는다 ⚠ — 가문이 바다 건너",
+       "flag": "gw:stay",
+       "journal": "gwangbok",
+       "say": "🔀 오사카, 또는 연길, 또는 호놀룰루. 「다음에 가지.」 다음이 없었다. 족보 한쪽이 바다 건너."
+      }
+     ]
+    },
+    {
+     "if": "sit:gwangbok:open && !sit:gwangbok:done && status:dongnip && !gw:street && !gw:home && !gw:return && !gw:stay && !gw:name && !gw:close",
+     "name": "라디오",
+     "verb": "호적에 이름을 다시 올린다",
+     "once": false,
+     "flag": "gw:name",
+     "journal": "gwangbok",
+     "say": "📜 읍사무소에서 종이 한 장. 35년 만에 내 이름. 집은 없었다. 땅도. 「보훈」은 수십 년 뒤."
+    },
+    {
+     "if": "sit:gwangbok:open && !sit:gwangbok:done && !status:doraon && !status:dongnip && !gw:street && !gw:home && !gw:return && !gw:stay && !gw:name && !gw:close",
+     "name": "라디오",
+     "verb": "거리로 나간다 — 태극기 / 집에서 듣는다",
+     "once": false,
+     "choices": [
+      {
+       "label": "거리로 나간다 — 태극기",
+       "flag": "gw:street",
+       "journal": "gwangbok",
+       "say": "🇰🇷 장롱 밑에서 꺼낸 태극기. 신작로에 사람이 찼다. 「만세」가 이번엔 끝까지 갔다. 한 단 인심."
+      },
+      {
+       "label": "집에서 듣는다",
+       "flag": "gw:home",
+       "journal": "gwangbok",
+       "say": "📻 「…항복.」 문을 열었다. 옆집에서 징 소리. 밤에 깃대에 누가 태극기를 올렸다."
+      },
+      {
+       "label": "대문을 닫는다 — 협력했던 집",
+       "if": "status:jiju",
+       "gray": "땅 가진 집만.",
+       "flag": "gw:close",
+       "journal": "banmin",
+       "say": "📜 대문을 닫았다. 마을이 돌을 던졌다. 1949년 반민특위 — 조사받고 풀려났다. 족보에 적힌 줄은 남았다."
+      }
+     ]
+    },
+    {
+     "if": "sit:gwangbok:done",
+     "name": "라디오",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "라디오가 매일 켜진다. 「38선」이란 말이 자꾸 나온다."
+    }
+   ]
+  },
+  "jijugate": {
+   "name": "지주 집 솟을대문",
+   "verb": "살펴보기",
+   "say": "옛 양반집. 솟을대문. 깃대에 태극기. 1950년 벽보: 「3정보 넘는 땅은 나라가 사서 소작에게.」",
+   "flag": "seen:jijugate",
+   "journal": "nongji",
+   "info": "지주 집 — 땅을 내놓거나 미리 팔거나.",
+   "rename": [
+    {
+     "if": "sit:nongji:open && !sit:nongji:done && status:jiju && !nj:give && !nj:sell && !nj:sellfail && !nj:get && !nj:debt && !nj:report && !nj:watch",
+     "name": "지주 집 솟을대문",
+     "verb": "땅을 내놓는다 — 지가증권 / 미리 판다 ⚠(눈 2)",
+     "once": false,
+     "choices": [
+      {
+       "label": "땅을 내놓는다 — 지가증권",
+       "flag": "nj:give",
+       "journal": "nongji",
+       "say": "📜 「3정보만 남긴다.」 논 열이 셋으로. 지가증권 한 뭉치 — 전쟁 뒤 종잇값. 소작들이 처음으로 고개를 안 숙였다. 두 단."
+      },
+      {
+       "label": "미리 판다 ⚠ — 소작에게 싸게, 전쟁 전에(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "법이 언제 시행될지 먼저 보는 눈.",
+        "fail": "…늦었다. 나라가 먼저 샀다. 증권만."
+       },
+       "rollFailFlag": "nj:sellfail",
+       "flag": "nj:sell",
+       "journal": "nongji",
+       "say": "💴 소작에게 직접 팔았다 — 나라 값보다 비싸게. 세 단. 「저 집은 끝까지 지주였다.」 인심 한 단이 갔다."
+      }
+     ]
+    },
+    {
+     "if": "sit:apt:open && !sit:apt:done && (status:jiju || status:sangin || status:hoesawon) && !ap:buy && !ap:no && !ap:rent",
+     "name": "지주 집 솟을대문",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "아파트 터 안내판에서 정한다 — 집을 팔고 갈지."
+    },
+    {
+     "if": "sit:nongji:done",
+     "name": "지주 집 솟을대문",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "솟을대문은 그대로인데 담 너머 논이 셋뿐이다. 「땅이 양반」이던 때가 끝났다."
+    }
+   ]
+  },
+  "sojakjip": {
+   "name": "소작 집 마루",
+   "verb": "살펴보기",
+   "say": "단 아래 초가. 마루에 빚 장부 — 「수확의 여섯.」 1950년 벽보가 붙었다: 「분배 신청.」",
+   "flag": "seen:sojakjip",
+   "journal": "nongji",
+   "info": "소작 집 — 분배 신청.",
+   "rename": [
+    {
+     "if": "sit:nongji:open && !sit:nongji:done && status:sojak && !nj:give && !nj:sell && !nj:sellfail && !nj:get && !nj:debt && !nj:report && !nj:watch",
+     "name": "소작 집 마루",
+     "verb": "분배를 신청한다 — 처음으로 내 땅 / 못 한다(빚)",
+     "once": false,
+     "choices": [
+      {
+       "label": "분배를 신청한다 — 5년 갚는다",
+       "gives": "deed",
+       "flag": "nj:get",
+       "journal": "nongji",
+       "say": "📜 말뚝에 내 이름. 구석기부터 처음 — 「내 땅.」 5년 동안 수확의 30%. 할아버지가 이름표를 만졌다. 두 단 인심."
+      },
+      {
+       "label": "못 한다 — 빚이 먼저",
+       "flag": "nj:debt",
+       "journal": "nongji",
+       "say": "🌾 「갚을 게 먼저다.」 신청서를 못 냈다. 옆집은 냈다. 들에서 품을 팔았다."
+      }
+     ]
+    },
+    {
+     "if": "sit:nongji:open && !sit:nongji:done && status:nongmin && !nj:give && !nj:sell && !nj:sellfail && !nj:get && !nj:debt && !nj:report && !nj:watch",
+     "name": "소작 집 마루",
+     "verb": "내 땅을 신고한다",
+     "once": false,
+     "flag": "nj:report",
+     "journal": "nongji",
+     "say": "📜 「3정보 안.」 그대로 내 땅. 옆집 소작이 처음으로 이름표를 받는 걸 봤다."
+    },
+    {
+     "if": "sit:nongji:open && !sit:nongji:done && !status:sojak && !status:nongmin && !status:jiju && !nj:give && !nj:sell && !nj:sellfail && !nj:get && !nj:debt && !nj:report && !nj:watch",
+     "name": "소작 집 마루",
+     "verb": "본다",
+     "once": false,
+     "flag": "nj:watch",
+     "journal": "nongji",
+     "say": "📜 땅이 없는 집이라 분배도 없다. 말뚝 박는 소리를 들었다. 「땅은 농사짓는 사람에게」 — 우리 집은 아니었다."
+    }
+   ]
+  },
+  "so": {
+   "name": "외양간 소",
+   "verb": "살펴보기",
+   "say": "누렁소 한 마리. 집에서 제일 비싼 것. 아이가 국민학교를 마쳤다 — 중학교는 돈이다.",
+   "flag": "seen:so",
+   "journal": "gongbu",
+   "info": "소 — 팔면 등록금.",
+   "rename": [
+    {
+     "if": "sit:gongbu:open && !sit:gongbu:done && (status:jiju || status:nongmin || status:sojak || status:sangin || status:gisulja) && !gb:sellcow && !gb:work && !gb:night && !gb:nightfail && !gb:teach && !gb:brother",
+     "name": "외양간 소",
+     "verb": "소를 판다 — 아이를 중학교에(🌾3) / 일을 시킨다 / 오빠만",
+     "once": false,
+     "choices": [
+      {
+       "label": "소를 판다 — 아이를 중학교에(쌀 3)",
+       "if": "val:grain>=3",
+       "gray": "소값이 모자란다 — 쌀 세 단.",
+       "gives": "book",
+       "flag": "gb:sellcow",
+       "journal": "gongbu",
+       "say": "📖 「우골탑.」 외양간이 비었다. 아이가 교복을 입고 신작로를 내려갔다. 쟁기는 내가 끌었다."
+      },
+      {
+       "label": "일을 시킨다 — 중학교는 다음에",
+       "flag": "gb:work",
+       "journal": "gongbu",
+       "say": "🌾 아이가 들에 섰다. 「다음 해에.」 다음 해가 없었다. 한 단은 남았다."
+      },
+      {
+       "label": "오빠만 보낸다 — 딸은 집",
+       "if": "sex:m",
+       "gray": "아들 있는 집이 하던 일.",
+       "flag": "gb:brother",
+       "journal": "gongbu",
+       "say": "📖 아들만. 딸은 동생을 업었다. 「오빠 먼저.」 — 딸이 밤에 책을 폈다."
+      }
+     ]
+    },
+    {
+     "if": "sit:gongbu:open && !sit:gongbu:done && !(status:jiju || status:nongmin || status:sojak || status:sangin || status:gisulja) && !gb:sellcow && !gb:work && !gb:night && !gb:nightfail && !gb:teach && !gb:brother",
+     "name": "외양간 소",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "팔 소가 없다. 학교 운동장으로 — 야간 중학."
+    },
+    {
+     "if": "sit:gongbu:done",
+     "name": "외양간 소",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "외양간이 비었거나, 소가 늙었거나. 교복 입은 아이가 많아졌다."
+    }
+   ]
+  },
+  "jangteo": {
+   "name": "장터 쌀가게",
+   "verb": "살펴보기",
+   "say": "5일장. 쌀값이 오르고 내린다. 구호 밀가루가 섞여 나온다. 「미제 분유.」",
+   "flag": "seen:jangteo",
+   "journal": "guho",
+   "info": "장터 — 쌀값.",
+   "rename": [
+    {
+     "if": "sit:oehwan:open && !sit:oehwan:done && status:sangin && !oh:gold && !oh:keep && !oh:lost && !oh:restart && !oh:restartfail && !oh:hold",
+     "name": "장터 쌀가게",
+     "verb": "가게를 지킨다(눈 1) / 문을 닫는다",
+     "once": false,
+     "choices": [
+      {
+       "label": "값을 내려 버틴다(눈 1)",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "어디까지 내려야 손님이 오는지 보는 눈.",
+        "fail": "…외상이 쌓였다. 문을 닫았다."
+       },
+       "rollFailFlag": "oh:lost",
+       "flag": "oh:hold",
+       "journal": "oehwan",
+       "say": "🌾 「IMF 세일.」 손님이 왔다. 한 단 줄었지만 가게는 남았다."
+      },
+      {
+       "label": "문을 닫는다 — 다시 시작",
+       "flag": "oh:lost",
+       "journal": "oehwan",
+       "say": "🔀 간판을 내렸다. 두 단이 갔다. 다음 봄에 노점부터."
+      }
+     ]
+    }
+   ]
+  },
+  "tv": {
+   "name": "전파사 TV",
+   "verb": "살펴보기",
+   "say": "유리창 안 TV. 저녁이면 사람이 모인다. 1983년 — 「누가 이 사람을 모르시나요.」 138일 생방송.",
+   "flag": "seen:tv",
+   "journal": "isan",
+   "info": "전파사 — TV, 이산가족 찾기.",
+   "rename": [
+    {
+     "if": "sit:isan:open && !sit:isan:done && !is:find && !is:nofind && !is:watch",
+     "name": "전파사 TV",
+     "verb": "방송국에 간다 — 가족을 찾는다 ⚠(눈 2) / 본다",
+     "once": false,
+     "choices": [
+      {
+       "label": "방송국에 간다 — 종이에 이름을 쓴다 ⚠(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "1950년 이름, 나이, 헤어진 자리. 눈.",
+        "fail": "…138일. 못 찾았다. 종이는 벽에 남았다."
+       },
+       "rollFailFlag": "is:nofind",
+       "flag": "is:find",
+       "journal": "isan",
+       "say": "📺 38일째. 「…그 사람 맞습니까.」 33년 만에. 울었다. 족보 「소식 모름」 줄이 지워졌다. 세 단 인심."
+      },
+      {
+       "label": "본다",
+       "flag": "is:watch",
+       "journal": "isan",
+       "say": "📺 밤마다 전파사 앞. 남의 가족이 만나는 걸 보고 울었다. 우리 집 종이는 안 냈다."
+      }
+     ]
+    },
+    {
+     "if": "sit:tv:open && !sit:tv:done && !tv:buy && !tv:no",
+     "name": "전파사 TV",
+     "verb": "컬러 TV를 산다(🌾2) / 안 산다",
+     "once": false,
+     "choices": [
+      {
+       "label": "컬러 TV를 산다 — 쌀 두 단",
+       "if": "val:grain>=2",
+       "gray": "쌀 두 단.",
+       "flag": "tv:buy",
+       "journal": "apt",
+       "say": "📺 1980년 컬러 방송. 동네가 우리 집에 모였다. 88올림픽을 거기서 봤다. 두 단."
+      },
+      {
+       "label": "안 산다 — 전파사 앞에서",
+       "flag": "tv:no",
+       "say": "📺 유리창 너머로. 올림픽 개막식을 서서 봤다."
+      }
+     ]
+    }
+   ]
+  },
+  "yeondan": {
+   "name": "광장 연단",
+   "verb": "살펴보기",
+   "say": "읍내 광장. 확성기 전봇대, 기념비. 사람이 모이는 자리 — 1960년 4월, 1980년 5월, 1987년 6월.",
+   "flag": "seen:yeondan",
+   "journal": "geori",
+   "info": "광장 — 거리로 나갈까.",
+   "rename": [
+    {
+     "if": "sit:geori:open && !sit:geori:done && !gr:go && !gr:gohurt && !gr:gojail && !gr:home && !gr:open",
+     "name": "광장 연단",
+     "verb": "거리로 나간다 ⚠(발 1) / 집에 있는다 / 문을 열어 둔다",
+     "once": false,
+     "choices": [
+      {
+       "label": "거리로 나간다 ⚠(발 1)",
+       "roll": {
+        "ab": "발",
+        "hard": 1,
+        "why": "최루탄, 곤봉, 그리고 골목. 발.",
+        "fail": "…넘어졌다. 어깨. 끌려갔다 — 며칠."
+       },
+       "rollFailFlag": "gr:gohurt",
+       "rollHurt": "wound",
+       "flag": "gr:go",
+       "journal": "geori",
+       "say": "📜 광장이 찼다. 확성기 대신 사람 소리. 골목으로 빠져나왔다. 족보에 한 줄 — 「거리에 있었다.」 두 단 인심."
+      },
+      {
+       "label": "집에 있는다",
+       "flag": "gr:home",
+       "journal": "geori",
+       "say": "📜 문을 닫았다. 밖에서 함성, 최루탄 냄새. 라디오는 다른 말을 했다."
+      },
+      {
+       "label": "문을 열어 둔다 — 다친 사람을 들인다",
+       "flag": "gr:open",
+       "journal": "geori",
+       "say": "📜 밤에 누가 문을 두드렸다. 다친 학생. 들였다. 아침에 갔다. 한 단 인심."
+      }
+     ]
+    },
+    {
+     "if": "sit:oneul:open && !sit:oneul:done && !on:arrive",
+     "name": "광장 연단",
+     "verb": "도착 — 족보를 편다",
+     "once": false,
+     "flag": "on:arrive",
+     "journal": "oneul",
+     "say": "📜 구석기 강가에서 돌을 주운 집이 여기까지. 족보를 폈다 — 다 적혀 있다."
+    },
+    {
+     "if": "sit:geori:done",
+     "name": "광장 연단",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "기념비에 이름이 늘었다. 광장은 다시 조용하다."
+    }
+   ]
+  },
+  "eup": {
+   "name": "읍사무소 벽보",
+   "verb": "살펴보기",
+   "say": "벽보: 「조선 성명 복구」 「북행 열차 마지막 날」 「분배 신청」 「징집」 「투표」. 읍장은 옛 면서기.",
+   "flag": "seen:eup",
+   "journal": "bundan",
+   "info": "읍사무소 — 벽보, 투표소.",
+   "rename": [
+    {
+     "if": "sit:bundan:open && !sit:bundan:done && !bd:go && !bd:lost && !bd:letter && !bd:goods && !bd:goodslost",
+     "name": "읍사무소 벽보",
+     "verb": "북쪽 친척을 데리러 간다 ⚠(발 2) / 편지만 / 장사 물건(상인)",
+     "once": false,
+     "choices": [
+      {
+       "label": "38선 너머 — 친척을 데리러 간다 ⚠(발 2)",
+       "roll": {
+        "ab": "발",
+        "hard": 2,
+        "why": "밤에 선을 넘는 길. 발.",
+        "fail": "…선이 닫혔다. 못 돌아왔다. 족보 한쪽이 「소식 모름」."
+       },
+       "rollFailFlag": "bd:lost",
+       "flag": "bd:go",
+       "journal": "bundan",
+       "say": "📜 밤에 넘었다. 숙모와 사촌 둘. 다시 넘었다. 마지막 열차. 두 단 인심."
+      },
+      {
+       "label": "편지만 보낸다",
+       "flag": "bd:letter",
+       "journal": "bundan",
+       "say": "📜 편지가 돌아왔다. 「배달 불능.」 그 뒤 50년 — 소식 모름."
+      },
+      {
+       "label": "개성에 두고 온 장사 물건 — 가지러 간다 ⚠(눈 2)",
+       "if": "status:sangin",
+       "gray": "상인 집만.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "어느 길이 아직 열렸는지 보는 눈.",
+        "fail": "…물건도 사람도. 못 돌아왔다."
+       },
+       "rollFailFlag": "bd:goodslost",
+       "flag": "bd:goods",
+       "journal": "bundan",
+       "say": "💴 수레 하나. 선이 닫히기 전날. 세 단."
+      }
+     ]
+    },
+    {
+     "if": "sit:gundae:open && !sit:gundae:done && sex:m && !gd:serve && !gd:servehurt",
+     "name": "읍사무소 벽보",
+     "verb": "영장 — 정거장으로",
+     "once": false,
+     "say": "영장이 붙었다. 정거장 입영 열차로."
+    },
+    {
+     "if": "sit:bundan:done",
+     "name": "읍사무소 벽보",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "벽보가 자꾸 바뀐다. 읍장은 그대로다."
+    }
+   ]
+  },
+  "tupyo": {
+   "name": "투표함",
+   "verb": "살펴보기",
+   "say": "나무 상자. 커튼. 1948년 5월 10일 첫 선거 — 여자도 한 장. 1987년 12월 — 16년 만에 대통령을 직접.",
+   "flag": "seen:tupyo",
+   "journal": "seongeo",
+   "info": "투표함 — 한 사람 한 표.",
+   "rename": [
+    {
+     "if": "sit:seongeo:open && !sit:seongeo:done && !sg:vote && !sg:no",
+     "name": "투표함",
+     "verb": "투표한다 — 한 장 / 안 간다",
+     "once": false,
+     "choices": [
+      {
+       "label": "투표한다 — 한 장",
+       "gives": "ballot",
+       "flag": "sg:vote",
+       "journal": "seongeo",
+       "say": "🗳 커튼 뒤에서 도장. 옛 양반 집 박씨도, 옛 노비 집 김씨도, 지주도 소작도 — 똑같이 한 장. 구석기부터 처음."
+      },
+      {
+       "label": "안 간다",
+       "flag": "sg:no",
+       "journal": "seongeo",
+       "say": "🗳 「누가 되든.」 집에 있었다. 투표율 89%였다."
+      }
+     ]
+    }
+   ]
+  },
+  "eunhaeng": {
+   "name": "은행 창구",
+   "verb": "살펴보기",
+   "say": "벽돌 2층. 1998년 창구에 쟁반 — 돌반지·결혼반지. 「금 모으기.」 밖에 「정리 해고」 벽보.",
+   "flag": "seen:eunhaeng",
+   "journal": "oehwan",
+   "info": "은행 — 금 모으기, 일자리.",
+   "rename": [
+    {
+     "if": "sit:oehwan:open && !sit:oehwan:done && !status:sangin && !(status:nodongja || status:gisulja || status:hoesawon || status:haeoe) && !oh:gold && !oh:keep && !oh:lost && !oh:restart && !oh:restartfail && !oh:hold",
+     "name": "은행 창구",
+     "verb": "금반지를 낸다 / 안 낸다",
+     "once": false,
+     "choices": [
+      {
+       "label": "금반지를 낸다",
+       "flag": "oh:gold",
+       "journal": "oehwan",
+       "say": "💍 돌반지 둘, 결혼반지 하나. 「227톤.」 받은 건 종이 한 장. 한 단 인심."
+      },
+      {
+       "label": "안 낸다 — 집에 둔다",
+       "flag": "oh:keep",
+       "journal": "oehwan",
+       "say": "💍 장롱 안에. 「우리 집 먼저.」 옆집은 냈다."
+      }
+     ]
+    },
+    {
+     "if": "sit:oehwan:open && !sit:oehwan:done && (status:nodongja || status:gisulja || status:hoesawon || status:haeoe) && !oh:gold && !oh:keep && !oh:lost && !oh:restart && !oh:restartfail && !oh:hold",
+     "name": "은행 창구",
+     "verb": "일자리를 잃었다 — 다시 시작(손 1) / 금반지를 낸다",
+     "once": false,
+     "choices": [
+      {
+       "label": "정리 해고 — 다시 시작한다(손 1)",
+       "roll": {
+        "ab": "손",
+        "hard": 1,
+        "why": "배운 손으로 다른 일. 손.",
+        "fail": "…1년. 집이 작아졌다."
+       },
+       "rollFailFlag": "oh:restartfail",
+       "flag": "oh:restart",
+       "journal": "oehwan",
+       "say": "🔨 공장이 닫혔다. 작은 가게, 또는 트럭. 두 단이 갔다가 한 단 돌아왔다."
+      },
+      {
+       "label": "금반지를 낸다 — 그래도",
+       "flag": "oh:gold",
+       "journal": "oehwan",
+       "say": "💍 해고 통지서 받은 날 반지를 냈다. 한 단 인심."
+      }
+     ]
+    }
+   ]
+  },
+  "bogeonso": {
+   "name": "보건소 벽보",
+   "verb": "살펴보기",
+   "say": "흰 벽돌. 벽보: 「파독 간호사 모집 — 3년 계약.」 「예방 접종.」",
+   "flag": "seen:bogeonso",
+   "journal": "sanupwha",
+   "info": "보건소 — 파독 간호사.",
+   "rename": [
+    {
+     "if": "sit:sanupwha:open && !sit:sanupwha:done && sex:f && !su:stay && !su:stayfail && !su:seoul && !su:miner && !su:minerhurt && !su:nurse && !su:nursefail && !su:mideast && !su:mideasthurt && !su:office && !su:factory",
+     "name": "보건소 벽보",
+     "verb": "파독 간호사 ⚠(손 2)",
+     "once": false,
+     "roll": {
+      "ab": "손",
+      "hard": 2,
+      "why": "주사·독일어·3교대. 손.",
+      "fail": "…시험에서 떨어졌다. 다음 해."
+     },
+     "rollFailFlag": "su:nursefail",
+     "gives": "ticket",
+     "flag": "su:nurse",
+     "journal": "sanupwha",
+     "say": "✈ 김포에서 프랑크푸르트. 「코리아 간호사.」 월급의 반을 집에 보냈다. 동생이 그 돈으로 대학. 세 단."
+    },
+    {
+     "if": "sit:sanupwha:done",
+     "name": "보건소 벽보",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "벽보가 「의료 보험」으로 바뀌었다."
+    }
+   ]
+  },
+  "guho": {
+   "name": "구호물자 상자",
+   "verb": "살펴보기",
+   "say": "교회 천막. 「미국 밀가루」 「분유」 「헌 옷」. 줄이 길다.",
+   "flag": "seen:guho",
+   "journal": "guho",
+   "info": "구호물자 — 줄.",
+   "rename": [
+    {
+     "if": "sit:guho:open && !sit:guho:done && !gh:line && !gh:give && !gh:skip",
+     "name": "구호물자 상자",
+     "verb": "줄을 선다 / 내 것을 나눈다(🌾1) / 안 선다",
+     "once": false,
+     "choices": [
+      {
+       "label": "줄을 선다 — 밀가루 한 포대",
+       "gives": "flour",
+       "flag": "gh:line",
+       "journal": "guho",
+       "say": "🥖 두 시간. 밀가루 한 포대, 분유 한 통. 수제비로 겨울을 넘겼다."
+      },
+      {
+       "label": "내 것을 나눈다 — 쌀 한 단",
+       "if": "val:grain>=1",
+       "gray": "쌀 한 단.",
+       "flag": "gh:give",
+       "journal": "guho",
+       "say": "🌾 천막에 쌀 한 단. 목사가 이름을 안 적었다. 두 단 인심."
+      },
+      {
+       "label": "안 선다",
+       "flag": "gh:skip",
+       "say": "「남의 것은.」 집에서 보리."
+      }
+     ]
+    }
+   ]
+  },
+  "hakgyo": {
+   "name": "학교 운동장",
+   "verb": "살펴보기",
+   "say": "국민학교. 태극기. 「의무 교육.」 저녁엔 야간 중학 — 공장 다니는 아이들이 온다.",
+   "flag": "seen:hakgyo",
+   "journal": "gongbu",
+   "info": "학교 — 야간 중학, 교사.",
+   "rename": [
+    {
+     "if": "sit:gongbu:open && !sit:gongbu:done && status:gyosa && !gb:sellcow && !gb:work && !gb:night && !gb:nightfail && !gb:teach && !gb:brother",
+     "name": "학교 운동장",
+     "verb": "야간 중학을 연다(눈 1)",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 1,
+      "why": "교실을 밤에 쓰게 하는 길. 눈.",
+      "fail": "…교육청이 막았다. 다음 해."
+     },
+     "rollFailFlag": "gb:nightfail",
+     "flag": "gb:teach",
+     "journal": "gongbu",
+     "say": "📖 밤 7시. 공장 아이 스물. 「ㄱㄴㄷ」 대신 「영어·수학」. 두 단 인심."
+    },
+    {
+     "if": "sit:gongbu:open && !sit:gongbu:done && !status:gyosa && !(status:jiju || status:nongmin || status:sojak || status:sangin || status:gisulja) && !gb:sellcow && !gb:work && !gb:night && !gb:nightfail && !gb:teach && !gb:brother",
+     "name": "학교 운동장",
+     "verb": "야간 중학에 간다(손 1) / 안 간다",
+     "once": false,
+     "choices": [
+      {
+       "label": "야간 중학 — 낮엔 일, 밤엔 책(손 1)",
+       "roll": {
+        "ab": "손",
+        "hard": 1,
+        "why": "낮 열 시간 뒤의 연필. 손.",
+        "fail": "…졸았다. 반년."
+       },
+       "rollFailFlag": "gb:nightfail",
+       "gives": "book",
+       "flag": "gb:night",
+       "journal": "gongbu",
+       "say": "📖 밤 7시 교실. 검정고시. 「공장 다니면서 졸업.」 한 단 솜씨."
+      },
+      {
+       "label": "안 간다 — 일만",
+       "flag": "gb:work",
+       "journal": "gongbu",
+       "say": "🌾 「배워서 뭐 하게.」 손이 빨라졌다. 한 단."
+      }
+     ]
+    },
+    {
+     "if": "sit:jeontaeil:open && !sit:jeontaeil:done && (status:nodongja || status:haksaeng) && !jt:union && !jt:unionlost && !jt:yahak && !jt:work",
+     "name": "학교 운동장",
+     "verb": "야학 — 공장 아이들을 가르친다(눈 1)",
+     "once": false,
+     "roll": {
+      "ab": "눈",
+      "hard": 1,
+      "why": "근로기준법을 쉬운 말로. 눈.",
+      "fail": "…경찰이 야학 문을 닫았다."
+     },
+     "rollFailFlag": "jt:unionlost",
+     "flag": "jt:yahak",
+     "journal": "jeontaeil",
+     "say": "📖 「하루 8시간, 일요일은 쉰다.」 책을 읽어 줬다. 여공 셋이 울었다. 두 단 인심."
+    }
+   ]
+  },
+  "malttuk": {
+   "name": "분배 논 말뚝",
+   "verb": "살펴보기",
+   "say": "논마다 말뚝에 이름표. 1950년 봄. 「땅은 농사짓는 사람에게.」",
+   "flag": "seen:malttuk",
+   "journal": "nongji",
+   "info": "분배 논 — 이름표."
+  },
+  "vinyl": {
+   "name": "비닐하우스",
+   "verb": "살펴보기",
+   "say": "들에 비닐 터널. 겨울에도 토마토·오이. 「농촌에 남은 사람의 길.」",
+   "flag": "seen:vinyl",
+   "journal": "sanupwha",
+   "info": "비닐하우스 — 농촌에 남는다.",
+   "rename": [
+    {
+     "if": "sit:sanupwha:open && !sit:sanupwha:done && (status:jiju || status:nongmin || status:sojak) && !su:stay && !su:stayfail && !su:seoul && !su:miner && !su:minerhurt && !su:nurse && !su:nursefail && !su:mideast && !su:mideasthurt && !su:office && !su:factory",
+     "name": "비닐하우스",
+     "verb": "농촌에 남는다 — 비닐하우스(손 1)",
+     "once": false,
+     "roll": {
+      "ab": "손",
+      "hard": 1,
+      "why": "비닐 치고 물 대고 온도 맞추기. 손.",
+      "fail": "…서리. 첫 해는 날렸다."
+     },
+     "rollFailFlag": "su:stayfail",
+     "flag": "su:stay",
+     "journal": "sanupwha",
+     "say": "🍅 겨울 토마토. 서울 값. 트럭을 샀다. 두 단. 「떠난 집보다 남은 집이 잘됐다」는 말도, 반대 말도."
+    }
+   ]
+  },
+  "saemaeul": {
+   "name": "새마을 집 표지",
+   "hidden": [
+    "slate_blue"
+   ],
+   "verb": "살펴보기",
+   "say": "초가 셋. 1970년 벽보: 「지붕 개량 — 시멘트는 나라가, 일은 마을이.」 녹색 모자.",
+   "flag": "seen:saemaeul",
+   "journal": "sanupwha",
+   "info": "새마을 — 지붕.",
+   "rename": [
+    {
+     "if": "sit:saemaeul:open && !sit:saemaeul:done && !sm:roof && !sm:no && !sm:lead",
+     "name": "새마을 집 표지",
+     "verb": "지붕을 바꾼다 — 품을 낸다 / 앞장선다(눈 1) / 안 한다",
+     "once": false,
+     "choices": [
+      {
+       "label": "품을 낸다 — 우리 집 지붕도",
+       "flag": "sm:roof",
+       "journal": "sanupwha",
+       "say": "🏠 마을이 같이 올렸다. 초가가 파란 슬레이트로. 「새벽종이 울렸네.」 한 단 인심."
+      },
+      {
+       "label": "앞장선다 — 새마을 지도자(눈 1)",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "시멘트 배정 서류, 마을 회의. 눈.",
+        "fail": "…마을이 「누구 좋으라고」 했다. 지붕은 바꿨다."
+       },
+       "rollFailFlag": "sm:roof",
+       "flag": "sm:lead",
+       "journal": "sanupwha",
+       "say": "🏠 녹색 모자. 길을 넓히고 다리를 놓고 지붕을 올렸다. 읍에서 상을 줬다. 두 단."
+      },
+      {
+       "label": "안 한다 — 초가 그대로",
+       "flag": "sm:no",
+       "journal": "sanupwha",
+       "say": "🏠 「초가가 따뜻하다.」 마을에서 우리 집만. 지붕 위로 전깃줄이 지나갔다."
+      }
+     ]
+    }
+   ]
+  },
+  "gongjang": {
+   "name": "봉제 공장 문",
+   "verb": "살펴보기",
+   "say": "벽돌 공장. 재봉틀 소리. 「시다 모집 — 열세 살부터.」 하루 열네 시간. 야학 간판.",
+   "flag": "seen:gongjang",
+   "journal": "jeontaeil",
+   "info": "공장 — 일, 전태일.",
+   "rename": [
+    {
+     "if": "sit:sanupwha:open && !sit:sanupwha:done && !su:stay && !su:stayfail && !su:seoul && !su:miner && !su:minerhurt && !su:nurse && !su:nursefail && !su:mideast && !su:mideasthurt && !su:office && !su:factory",
+     "name": "봉제 공장 문",
+     "verb": "공장에 들어간다 — 노동자",
+     "once": false,
+     "flag": "su:factory",
+     "journal": "sanupwha",
+     "say": "🧵 재봉틀. 하루 열네 시간. 월급을 집에 부쳤다. 동생이 그 돈으로 학교. 한 단."
+    },
+    {
+     "if": "sit:jeontaeil:open && !sit:jeontaeil:done && status:nodongja && !jt:union && !jt:unionlost && !jt:yahak && !jt:work",
+     "name": "봉제 공장 문",
+     "verb": "노동조합 ⚠(몸 1) / 일한다",
+     "once": false,
+     "choices": [
+      {
+       "label": "노동조합에 든다 ⚠(몸 1)",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "해고 위협, 경찰. 몸.",
+        "fail": "…해고. 블랙리스트."
+       },
+       "rollFailFlag": "jt:unionlost",
+       "flag": "jt:union",
+       "journal": "jeontaeil",
+       "say": "✊ 「우리는 기계가 아니다.」 열네 시간이 열 시간으로. 일요일. 두 단 인심."
+      },
+      {
+       "label": "일한다",
+       "flag": "jt:work",
+       "journal": "jeontaeil",
+       "say": "🧵 재봉틀. 옆자리가 비었다. 월급은 그대로."
+      }
+     ]
+    }
+   ]
+  },
+  "apateu": {
+   "name": "아파트 공사 안내판",
+   "hidden": [
+    "apt_concrete"
+   ],
+   "verb": "살펴보기",
+   "say": "남동 언덕. 안내판: 「○○아파트 5층 2개 동 — 청약 접수.」 크레인.",
+   "flag": "seen:apateu",
+   "journal": "apt",
+   "info": "아파트 — 청약.",
+   "rename": [
+    {
+     "if": "sit:apt:open && !sit:apt:done && !ap:buy && !ap:no && !ap:rent",
+     "name": "아파트 공사 안내판",
+     "verb": "집을 팔고 간다(🌾3) / 전세로 / 안 간다",
+     "once": false,
+     "choices": [
+      {
+       "label": "집을 팔고 아파트로 — 쌀 세 단",
+       "if": "val:grain>=3",
+       "gray": "쌀 세 단.",
+       "gives": "passbook",
+       "flag": "ap:buy",
+       "journal": "apt",
+       "say": "🏢 청약 통장. 13층. 수세식. 「우리 집 몇 동 몇 호.」 집값이 올랐다. 세 단 → 다섯 단."
+      },
+      {
+       "label": "전세로 들어간다",
+       "flag": "ap:rent",
+       "journal": "apt",
+       "say": "🏢 전세. 2년마다 이사. 「내 집」은 아직."
+      },
+      {
+       "label": "안 간다 — 마을에",
+       "flag": "ap:no",
+       "journal": "apt",
+       "say": "🏠 「흙이 좋다.」 마을에 남았다. 아파트 사람들이 주말에 왔다."
+      }
+     ]
+    }
+   ]
+  },
+  "yeok": {
+   "name": "정거장 개찰구",
+   "verb": "살펴보기",
+   "say": "철길 남쪽. 벽보: 「입영 열차」 「파독 광부 모집」 「중동 건설」. 역무원이 깃발을 든다.",
+   "flag": "seen:yeok",
+   "journal": "sanupwha",
+   "info": "정거장 — 떠나는 자리.",
+   "rename": [
+    {
+     "if": "sit:sanupwha:open && !sit:sanupwha:done && sex:m && !su:stay && !su:stayfail && !su:seoul && !su:miner && !su:minerhurt && !su:nurse && !su:nursefail && !su:mideast && !su:mideasthurt && !su:office && !su:factory",
+     "name": "정거장 개찰구",
+     "verb": "파독 광부 ⚠(몸 2) / 중동 건설 ⚠(몸 1)",
+     "once": false,
+     "choices": [
+      {
+       "label": "파독 광부 ⚠ — 지하 1,000m(몸 2)",
+       "roll": {
+        "ab": "몸",
+        "hard": 2,
+        "why": "막장. 3년. 몸.",
+        "fail": "…갱이 무너졌다. 다리. 돌아왔다."
+       },
+       "rollFailFlag": "su:minerhurt",
+       "rollHurt": "leg",
+       "gives": "ticket",
+       "flag": "su:miner",
+       "journal": "sanupwha",
+       "say": "⛏ 함보른. 「글뤽 아우프.」 월급의 반을 집에. 3년 뒤 돌아왔다 — 또는 안 돌아왔다. 세 단."
+      },
+      {
+       "label": "중동 건설 ⚠ — 사막(몸 1)",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "50도. 2년. 몸.",
+        "fail": "…더위. 돌아왔다. 반년 삯."
+       },
+       "rollFailFlag": "su:mideasthurt",
+       "gives": "ticket",
+       "flag": "su:mideast",
+       "journal": "sanupwha",
+       "say": "🏗 주베일. 「달러.」 2년. 집을 샀다. 두 단."
+      }
+     ]
+    },
+    {
+     "if": "sit:gundae:open && !sit:gundae:done && sex:m && !gd:serve && !gd:servehurt",
+     "name": "정거장 개찰구",
+     "verb": "입영 열차를 탄다(몸 1)",
+     "once": false,
+     "roll": {
+      "ab": "몸",
+      "hard": 1,
+      "why": "3년. 철조망 앞. 몸.",
+      "fail": "…훈련 중 다쳤다. 어깨."
+     },
+     "rollFailFlag": "gd:servehurt",
+     "rollHurt": "wound",
+     "flag": "gd:serve",
+     "journal": "gundae",
+     "say": "🎖 어머니가 손을 흔들었다. 휴전선 초소. 3년. 「전역.」"
+    },
+    {
+     "if": "sit:sanupwha:done",
+     "name": "정거장 개찰구",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "벽보가 「새마을호」로 바뀌었다."
+    }
+   ]
+  },
+  "train": {
+   "name": "기차 옆 짐",
+   "verb": "살펴보기",
+   "say": "입영 가방, 독일 가는 트렁크, 피란 보따리. 다 이 정거장에서 떠났다.",
+   "flag": "seen:train",
+   "journal": "sanupwha",
+   "info": "정거장 — 짐."
+  },
+  "bus": {
+   "name": "버스 정류장",
+   "verb": "살펴보기",
+   "say": "서울 가는 신작로. 하루 세 번. 「구로 공장 모집」 「식모 구함」. 가방 든 아이들.",
+   "flag": "seen:bus",
+   "journal": "sanupwha",
+   "info": "버스 — 상경.",
+   "rename": [
+    {
+     "if": "sit:sanupwha:open && !sit:sanupwha:done && !su:stay && !su:stayfail && !su:seoul && !su:miner && !su:minerhurt && !su:nurse && !su:nursefail && !su:mideast && !su:mideasthurt && !su:office && !su:factory",
+     "name": "버스 정류장",
+     "verb": "서울로 간다 — 회사원(눈 2) / 공장",
+     "once": false,
+     "choices": [
+      {
+       "label": "서울 — 시험을 쳐서 회사원(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "입사 시험. 눈.",
+        "fail": "…떨어졌다. 공장부터."
+       },
+       "rollFailFlag": "su:factory",
+       "gives": "ticket",
+       "flag": "su:office",
+       "journal": "sanupwha",
+       "say": "🏢 넥타이. 월급날. 「서울 사람.」 두 단. 명절에 버스로 내려왔다."
+      },
+      {
+       "label": "서울 — 공장",
+       "gives": "ticket",
+       "flag": "su:seoul",
+       "journal": "sanupwha",
+       "say": "🧵 구로. 하루 열네 시간. 월급을 집에 부쳤다. 한 단."
+      }
+     ]
+    }
+   ]
+  },
+  "dari": {
+   "name": "끊긴 다리 표지",
+   "hidden": [
+    "bridge_new"
+   ],
+   "verb": "살펴보기",
+   "say": "강 가운데 상판이 물에 처박혔다. 1950년 6월 28일. 「다리를 끊었다.」 표지: 「복구 공사」.",
+   "flag": "seen:dari",
+   "journal": "jeonjaeng",
+   "info": "끊긴 다리 — 전쟁."
+  },
+  "boat": {
+   "name": "나루 — 피란 배",
+   "verb": "살펴보기",
+   "say": "배 한 척. 보따리. 아이 업은 사람들. 「남으로.」",
+   "flag": "seen:boat",
+   "journal": "jeonjaeng",
+   "info": "나루 — 피란.",
+   "rename": [
+    {
+     "if": "sit:jeonjaeng:open && !sit:jeonjaeng:done && !jj:soldier && !jj:soldierhurt && !jj:boat && !jj:boatlost && !jj:bunker && !jj:bunkerfail && !jj:stay && !jj:north",
+     "name": "나루 — 피란 배",
+     "verb": "피란 ⚠(발 1) / 남는다",
+     "once": false,
+     "choices": [
+      {
+       "label": "피란 — 배를 탄다 ⚠(발 1)",
+       "roll": {
+        "ab": "발",
+        "hard": 1,
+        "why": "배가 떠나기 전. 발.",
+        "fail": "…배를 놓쳤다. 걸어서 남쪽. 아이 하나를 잃어버렸다 — 「소식 모름」."
+       },
+       "rollFailFlag": "jj:boatlost",
+       "flag": "jj:boat",
+       "journal": "jeonjaeng",
+       "say": "🚢 부산. 판잣집. 국제시장. 3년. 돌아오니 집이 탔다 — 그래도 살았다."
+      },
+      {
+       "label": "남는다 — 집을 지킨다",
+       "flag": "jj:stay",
+       "journal": "jeonjaeng",
+       "say": "📜 인공기, 태극기, 다시 인공기, 태극기. 아홉 달. 「누구 편이었냐」는 물음이 전쟁보다 무서웠다. 살았다."
+      }
+     ]
+    }
+   ]
+  },
+  "bangongho": {
+   "name": "방공호",
+   "verb": "살펴보기",
+   "say": "산속 흙 굴. 모래 부대. 통나무 들보. 「비행기 소리가 나면 여기로.」",
+   "flag": "seen:bangongho",
+   "journal": "jeonjaeng",
+   "info": "방공호 — 숨는다.",
+   "rename": [
+    {
+     "if": "sit:jeonjaeng:open && !sit:jeonjaeng:done && !jj:soldier && !jj:soldierhurt && !jj:boat && !jj:boatlost && !jj:bunker && !jj:bunkerfail && !jj:stay && !jj:north",
+     "name": "방공호",
+     "verb": "숨는다(배 1)",
+     "once": false,
+     "roll": {
+      "ab": "배",
+      "hard": 1,
+      "why": "굴 속 아홉 달. 배.",
+      "fail": "…굴이 들켰다. 끌려갔다. 돌아왔다 — 어깨."
+     },
+     "rollFailFlag": "jj:bunkerfail",
+     "rollHurt": "wound",
+     "flag": "jj:bunker",
+     "journal": "jeonjaeng",
+     "say": "🕳 아홉 달. 도토리. 비행기. 내려오니 마을 반이 없었다."
+    }
+   ]
+  },
+  "cheoljomang": {
+   "name": "철조망 표지",
+   "hidden": [
+    "barbed"
+   ],
+   "verb": "살펴보기",
+   "say": "북쪽 고개. 말뚝만 섰다. 표지: 「접근 금지.」 — 1953년 뒤 철선이 걸린다.",
+   "flag": "seen:cheoljomang",
+   "journal": "bundan",
+   "info": "철조망 — 휴전선.",
+   "rename": [
+    {
+     "if": "sit:jeonjaeng:open && !sit:jeonjaeng:done && sex:m && !jj:soldier && !jj:soldierhurt && !jj:boat && !jj:boatlost && !jj:bunker && !jj:bunkerfail && !jj:stay && !jj:north",
+     "name": "철조망 표지",
+     "verb": "군대에 간다 ⚠(몸 2)",
+     "once": false,
+     "roll": {
+      "ab": "몸",
+      "hard": 2,
+      "why": "3년. 낙동강, 압록강, 1·4 후퇴. 몸.",
+      "fail": "…다리. 야전병원. 돌아왔다."
+     },
+     "rollFailFlag": "jj:soldierhurt",
+     "rollHurt": "leg",
+     "flag": "jj:soldier",
+     "journal": "jeonjaeng",
+     "say": "🎖 낙동강에서 압록강까지, 다시 38선. 3년. 돌아왔다. 같이 간 열 중 여섯. 두 단 인심."
+    },
+    {
+     "if": "sit:jeonjaeng:done",
+     "name": "철조망 표지",
+     "verb": "살펴보기",
+     "once": false,
+     "say": "철선 네 줄. 저 너머에 같은 말을 쓰는 사람이 산다. 초병이 섰다."
+    }
+   ]
+  }
+ },
+ "items": {
+  "grain": {
+   "name": "쌀·돈",
+   "icon": "🌾",
+   "desc": "이 시대의 값. 쌀이 돈이 되고 돈이 집이 된다",
+   "eat": 8
+  },
+  "deed": {
+   "name": "분배 농지 이름표",
+   "icon": "📜",
+   "desc": "1950년 농지 개혁. 처음으로 내 이름이 적힌 땅. 5년 갚는다",
+   "bag": true
+  },
+  "ballot": {
+   "name": "투표용지",
+   "icon": "🗳",
+   "desc": "한 사람 한 장. 옛 양반도 옛 노비도 똑같이",
+   "bag": true
+  },
+  "gold": {
+   "name": "금반지",
+   "icon": "💍",
+   "desc": "돌반지·결혼반지. 1998년 금 모으기",
+   "bag": true
+  },
+  "ticket": {
+   "name": "차표",
+   "icon": "🎫",
+   "desc": "서울행 버스, 입영 열차, 독일 가는 비행기",
+   "bag": true
+  },
+  "book": {
+   "name": "교과서",
+   "icon": "📖",
+   "desc": "중학교. 소 한 마리 값",
+   "bag": true
+  },
+  "flour": {
+   "name": "밀가루 포대",
+   "icon": "🥖",
+   "desc": "구호물자. 교회 천막에서",
+   "eat": 6
+  },
+  "passbook": {
+   "name": "청약 통장",
+   "icon": "🏢",
+   "desc": "아파트. 어디 사느냐가 새 자리",
+   "bag": true
+  }
+ },
+ "recipes": []
+}

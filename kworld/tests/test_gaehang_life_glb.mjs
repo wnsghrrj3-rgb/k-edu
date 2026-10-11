@@ -44,6 +44,6 @@ assert.ok(st.findIndex((r) => r.id === 'chinil') < st.findIndex((r) => r.id === 
 assert.ok(st.some((r) => r.id === 'yetbaekjeong' && r.if === 'fromstatus:baekjeong') && st.some((r) => r.id === 'yetnobi' && r.if === 'fromstatus:solgeo') && st.some((r) => r.id === 'jiju' && r.if === 'fromstatus:sinyang'), '백정→옛 백정 / 솔거→옛 노비 / 공명첩 집→지주');
 assert.ok(life.hurts?.wound && life.hurts?.leg && life.hurts?.jail && world.danger?.safe?.length === 8, '흔적 셋 + 밤 안전 자리 8');
 assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');
-assert.ok(world.gate?.next === 'daehan-life' && !world.gate.ready, '문 → 대한민국(준비 중)');
+assert.ok(world.gate?.next === 'daehan-life' && world.gate.ready, '문 → 대한민국(열림)');
 const prev = JSON.parse(fs.readFileSync(new URL('../eras/joseon-late-life/world.json', import.meta.url))); assert.ok(prev.gate?.next === 'gaehang-life' && prev.gate.ready, '조선 후기 끝 카드 → 개항 문(열림)');
 console.log(`gaehang-life: ix ${ix.length} · areas ${areas.length} · npc ${npcs.length} · 상황 ${life.situations.length} · 직업 ${ids.size} · 끝 갈림 ${last.choices[0].then[0].end.branches.length} · glb ${(buffer.length / 1048576).toFixed(1)}MB · 노드 ${names.length}`);
