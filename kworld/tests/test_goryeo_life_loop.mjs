@@ -113,4 +113,15 @@ store['kworld_carry:silla-life'] = JSON.stringify({ craft: 4, heart: 6, grain: 9
   await settle(420); closeCard(); goTo('power'); ok(g.promptFor(ix.get('firepit_1')).verb === '살펴보기', '권문은 안 태운다'); ok(g.promptFor(ix.get('deedpile_1')).verb.includes('지킨다'), '더미 → 지킨다'); use('deedpile_1'); ok(done('land') && g.flags.has('land:keep') && g.life.values.grain === 10, '지켰다 → 더미째 갔다, 곡식 -4'); closeCard(); await settle();
   ok(g.flags.has('life:end') && g.flags.has('life:gwonmun_fall'), '끝: 권문세족 — 땅과 함께 무너진 집');
 }
+// ===== 판 5: 양민 남자(통일신라 「성씨 없는 집」, 눈 밝은) — 곡식 넷 → 시험장 「곡식 셋」 길 → 급제 = 사대부, 🌾 HUD 가 3 줄고 주머니 곡식은 안 쓴다(consumes 정리) · 공양 자리·아라비아 좌판도 HUD 값으로
+store['kworld_carry:silla-life'] = JSON.stringify({ craft: 2, heart: 2, grain: 4, rank: 0, branch: 'nameless', status: 'farmer', nation: 'silla' });
+{
+  const { g, ix, S, use, pick, closeCard, goTo, btn, opened, done } = mkGame('m', ['inherit', 'celadon', 'cotton', 'manjeok'], 'eye');
+  ok(g.life.status === 'yangmin' && g.life.values.grain === 4 && !g.has('grain'), '양민, 곡식 4 — 주머니엔 곡식 없음');
+  goTo('village'); closeCard(); use('ledger_1'); ok(done('angeom'), '양민은 본다'); closeCard();
+  await settle(260); closeCard(); goTo('office'); ok(g.promptFor(ix.get('examhall_1')).verb.includes('곡식 셋'), '곡식 넷 → 「곡식 셋」 시험 길이 열린다(주머니 없이 HUD 값으로)');
+  use('examhall_1'); ok(done('exam') && g.flags.has('exam:passy') && g.life.status === 'sadaebu' && g.life.cap() === 6 && g.life.values.grain === 1, '급제 → 사대부 천장 6 · 🌾 4→1');
+  closeCard();
+  await settle(260); closeCard(); goTo('port'); ok(g.promptFor(ix.get('arabstall_1')).verb === '살펴보기' || !g.promptFor(ix.get('arabstall_1')).verb.includes('향료를 산다'), '곡식 1 → 향료는 못 산다(val:grain>=2)');
+}
 console.log(`goryeo-life 고리: ${pass} 통과 / ${fail} 실패`); if (fail) process.exit(1);
