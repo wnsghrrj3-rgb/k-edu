@@ -871,6 +871,49 @@ function clockSVG(h, m, opt){
 }
 
 /* ---------- 에셋 그리기(화면) ---------- */
+/* v2.4 — 2학년 1학기 「덧셈과 뺄셈」 (2026-10-10, 오푸스 5.5): 세로셈 판(백·십·일) · 전체-부분 막대. 화면·종이 같은 SVG.
+   vert2 {top, bottom, op:'+'|'-', ans:null(물음 칸)|'hide'(빈칸 없음)|수(써 놓은 답 — 틀린 풀이 보이기), mark:true(받아올림 1 · 받아내림 줄긋기와 10을 빨갛게)}
+   bar2  {whole, parts:[a, b]} — null 하나가 □. 길이는 수에 맞춘다(작은 부분도 칸이 보이게 최소 폭). */
+function vert2SVG(a){
+  const T = Math.max(0, Math.floor(Number(a.top) || 0)), B = Math.max(0, Math.floor(Number(a.bottom) || 0)); const add = a.op !== '-';
+  const real = add ? T + B : T - B; const W = 46, H = 46, X0 = 8, CY = 22; const col = i => X0 + 34 + i * W;   /* i: 0 백 · 1 십 · 2 일 */
+  const dg = n => [Math.floor(n / 100) % 10, Math.floor(n / 10) % 10, n % 10];
+  const [, t1, o1] = dg(T), [, t2, o2] = dg(B); const RED = '#C62828';
+  let s = ['백', '십', '일'].map((h, i) => `<text x="${col(i) + W / 2}" y="14" text-anchor="middle" font-size="12" fill="#8A8172">${h}</text>`).join('');
+  const num = (n, row, strike) => { const d = dg(n); const len = String(n).length; let o = '';
+    for (let i = 3 - len; i < 3; i++){ const x = col(i) + W / 2, y = CY + 14 + row * H + 31;
+      o += `<text x="${x}" y="${y}" text-anchor="middle" font-size="30" font-weight="700" fill="${CMP_INK}">${d[i]}</text>`;
+      if (strike && i === 1) o += `<line x1="${x - 11}" y1="${y - 2}" x2="${x + 11}" y2="${y - 22}" stroke="${RED}" stroke-width="2.4"/>`; }
+    return o; };
+  const borrow = !add && o1 < o2;
+  if (a.mark){
+    if (add){ const c1 = o1 + o2 >= 10, c2 = t1 + t2 + (c1 ? 1 : 0) >= 10;
+      if (c1) s += `<text x="${col(1) + W / 2}" y="${CY + 10}" text-anchor="middle" font-size="16" font-weight="700" fill="${RED}">1</text>`;
+      if (c2) s += `<text x="${col(0) + W / 2}" y="${CY + 10}" text-anchor="middle" font-size="16" font-weight="700" fill="${RED}">1</text>`; }
+    else if (borrow){ s += `<text x="${col(1) + W / 2}" y="${CY + 10}" text-anchor="middle" font-size="16" font-weight="700" fill="${RED}">${t1 - 1}</text>` +
+      `<text x="${col(2) + W / 2}" y="${CY + 10}" text-anchor="middle" font-size="16" font-weight="700" fill="${RED}">10</text>`; } }
+  s += num(T, 0, a.mark && borrow) + num(B, 1, false);
+  s += `<text x="${X0 + 12}" y="${CY + 14 + H + 31}" text-anchor="middle" font-size="28" font-weight="700" fill="${CMP_INK}">${add ? '+' : '−'}</text>`;
+  const ly = CY + 14 + 2 * H + 4; s += `<line x1="${X0}" y1="${ly}" x2="${col(2) + W}" y2="${ly}" stroke="${CMP_INK}" stroke-width="2.4"/>`;
+  const ay = ly + 6;
+  if (a.ans === null || a.ans === undefined){ const len = String(Math.max(0, real)).length;
+    for (let i = 3 - len; i < 3; i++) s += `<rect x="${col(i) + 5}" y="${ay}" width="${W - 10}" height="${H - 8}" rx="6" fill="#FFF8E1" stroke="#B9A77A" stroke-width="1.6" stroke-dasharray="5 4"/><text x="${col(i) + W / 2}" y="${ay + 27}" text-anchor="middle" font-size="18" fill="#B9A77A">?</text>`; }
+  else if (a.ans !== 'hide'){ const n = Math.max(0, Math.floor(Number(a.ans) || 0)); const d = dg(n); const len = String(n).length;
+    for (let i = Math.max(0, 3 - len); i < 3; i++) s += `<text x="${col(i) + W / 2}" y="${ay + 31}" text-anchor="middle" font-size="30" font-weight="700" fill="#1F5FA8">${d[i]}</text>`; }
+  const w = col(2) + W + 8, h = ay + H;
+  return `<svg class="cmpsv" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="세로셈">${s}</svg>`;
+}
+function bar2SVG(a){
+  const p = a.parts || [null, null]; const W0 = a.whole === null || a.whole === undefined ? null : Number(a.whole);
+  const A = p[0] === null || p[0] === undefined ? null : Number(p[0]), Bq = p[1] === null || p[1] === undefined ? null : Number(p[1]);
+  const whole = W0 !== null ? W0 : (A || 0) + (Bq || 0), va = A !== null ? A : whole - (Bq || 0), vb = Bq !== null ? Bq : whole - va;
+  const L = 300, X = 10, MIN = 64; let wa = Math.round(L * va / Math.max(1, whole)); wa = Math.max(MIN, Math.min(L - MIN, wa));
+  const lab = v => v === null ? '□' : String(v);
+  const box = (x, y, w, fill, t) => `<rect x="${x}" y="${y}" width="${w}" height="36" rx="5" fill="${fill}" stroke="${CMP_INK}" stroke-width="1.6"/><text x="${x + w / 2}" y="${y + 25}" text-anchor="middle" font-size="${t === '□' ? 24 : 20}" font-weight="700" fill="${CMP_INK}">${t}</text>`;
+  const s = `<text x="${X + L + 8}" y="34" font-size="12" fill="#8A8172">전체</text><text x="${X + L + 8}" y="80" font-size="12" fill="#8A8172">부분</text>` +
+    box(X, 10, L, '#D6E9F8', lab(W0)) + box(X, 56, wa, '#FCE3C8', lab(A)) + box(X + wa, 56, L - wa, '#DCEFD9', lab(Bq));
+  return `<svg class="cmpsv" viewBox="0 0 ${X + L + 40} 100" width="${X + L + 40}" height="100" role="img" aria-label="전체와 부분 막대">${s}</svg>`;
+}
 function drawAsset(a, r){
   if (!a) return '';
   if (typeof a === 'string') return esc(a);
@@ -1028,6 +1071,9 @@ function drawAsset(a, r){
     case 'figs': return figsHTML(a, false);
     case 'tiles': return `<div class="cmpw">${tilesSVG(a)}</div>`;
     case 'cubes': return cubesHTML(a, false);
+    /* v2.4 — 2학년 1학기 「덧셈과 뺄셈」 */
+    case 'vert2': return `<div class="cmpw">${vert2SVG(a)}</div>`;
+    case 'bar2': return `<div class="cmpw">${bar2SVG(a)}</div>`;
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
@@ -2226,6 +2272,181 @@ function makeVariantOnce(q, r){
     return v;
   }
 
+  /* --- v2.4: 2학년 1학기 「덧셈과 뺄셈」 (2026-10-10, 오푸스 5.5) — 받아올림·받아내림 · 세 수 · 덧셈과 뺄셈의 관계 · □
+     ar2 {ask, kind, ...}  — 오개념 꼬리(X..)는 이 단원 사전, 접두사는 개념 코드에서(PFX).
+       kind  a21 (두)+(한)·a22 (두)+(두)·a22h 합이 100 넘음·s21 (두)−(한)·s22 (두)−(두)·s0 몇십−몇십몇 · mixa·mixs·mix  (모두 받아올림/받아내림 있음)
+       ask   value · vert(세로셈 판) · carry(십의 자리 식, 덧셈) · borrow(일의 자리 식) · btens(십의 자리 식, 뺄셈) · fill(몇을 더해/빼서 몇십) · split(가르기 □)
+             three {form:'aas'|'sas'|'mix3'} · first(먼저 계산할 것) · rel {to:'sub'|'add', size:'small'|'big'} · verify(뺄셈을 덧셈으로 확인)
+             box {forms:['a□','□b','c−□','□−'], size} · boxmake(이야기 → □ 식) · story {story:'join'|'left'|'diff'}
+     원본을 만들 때만 q._fix = [x, y(, z)] 로 수를 못박는다(생성기 채우기 전용 — 변형에선 없다). */
+  if (rule.ar2 && (!a || typeof a === 'string' || a.type === 'vert2' || a.type === 'bar2')){
+    const A2 = rule.ar2; const ask = A2.ask || 'value'; const want = Math.max(1, nOptsOf(q) - 1); const FIX = v._fix, FORM = v._form; delete v._fix; delete v._form;
+    const NIGA = n => VOWEL_END(n) ? '가' : '이';
+    const T10 = n => Math.floor(n / 10), O10 = n => n % 10;
+    const gen = kind => { for (let g = 0; g < 200; g++){ let x, y;
+        if (kind === 'a21'){ const t1 = rint(1, 8, r), o1 = rint(2, 9, r); y = rint(Math.max(2, 10 - o1 + (A2.over ? 1 : 0)), 9, r); x = 10 * t1 + o1; }
+        else if (kind === 'a22'){ const t1 = rint(1, 7, r), t2 = rint(1, 8 - t1, r), o1 = rint(1, 9, r), o2 = rint(Math.max(1, 10 - o1 + (A2.over ? 1 : 0)), 9, r); x = 10 * t1 + o1; y = 10 * t2 + o2; }
+        else if (kind === 'a22h'){ const c = r() < 0.6; const t1 = rint(2, 9, r), t2 = rint(Math.max(1, (c ? 9 : 10) - t1), 9, r); const o1 = rint(c ? 1 : 0, 9, r), o2 = c ? rint(Math.max(1, 10 - o1), 9, r) : rint(0, 9 - o1, r); x = 10 * t1 + o1; y = 10 * t2 + o2; }
+        else if (kind === 's21'){ const t1 = rint(2, 9, r), o1 = rint(A2.over ? 1 : 0, 8, r); y = rint(o1 + 1, 9, r); x = 10 * t1 + o1; }
+        else if (kind === 's22'){ const t1 = rint(2, 9, r), t2 = rint(1, t1 - 1, r), o1 = rint(0, 8, r), o2 = rint(o1 + 1, 9, r); x = 10 * t1 + o1; y = 10 * t2 + o2; }
+        else { const t1 = rint(3, 9, r), t2 = rint(1, t1 - 1, r); x = 10 * t1; y = 10 * t2 + rint(1, 9, r); }
+        const isAdd = kind[0] === 'a'; const res = isAdd ? x + y : x - y;
+        if (isAdd ? (kind === 'a22h' ? res >= 100 && res <= 198 : res <= 99 && O10(x) + O10(y) >= 10) : (res >= 1 && O10(x) < O10(y))) return [x, y]; }
+      return kind[0] === 'a' ? (kind === 'a22h' ? [68, 57] : (kind === 'a21' ? [27, 6] : [28, 19])) : (kind === 's0' ? [50, 27] : (kind === 's21' ? [42, 7] : [62, 28])); };
+    const pickKind = k => k === 'mixa' ? pick(['a21', 'a22'], r) : k === 'mixs' ? pick(['s21', 's22', 's0'], r) : k === 'mix' ? pick(['a21', 'a22', 's21', 's22'], r) : (k || 'a22');
+    const OXQ = (stem, truth, okWhy, badWhy, badCode) => { v.stem = stem; v.answer = truth ? 'O' : 'X';
+      v.reason_options = [{t: okWhy, correct: true}, {t: badWhy, mis: PFX + badCode}]; };
+    const fin = (ans, ds, ex, unit) => { if (q.kind === 'sa') v.answer = unit ? [String(ans), ans + unit] : [String(ans)]; else v.options = kindOpts(ans, ds, want, q.options); v.explanation = ex; return v; };
+    const ITEMS = [['사탕', '개'], ['구슬', '개'], ['도토리', '개'], ['색종이', '장'], ['딱지', '장'], ['연필', '자루'], ['스티커', '장'], ['쿠키', '개']];
+    const NAMES = ['곰이', '펭이', '지우', '서아', '하루', '다예'];
+    const BT_ = w => { const c = String(w).charCodeAt(String(w).length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0; };
+    const JS = (w, y2, n2) => BT_(w) ? y2 : n2;
+
+    if (['value', 'vert', 'carry', 'borrow', 'btens', 'fill', 'split', 'story'].indexOf(ask) >= 0){
+      let kind = pickKind(A2.kind);
+      if (ask === 'carry' && (kind === 'a21' || kind === 'a22h' || kind[0] === 's')) kind = 'a22';
+      if ((ask === 'borrow' || ask === 'btens') && kind[0] === 'a') kind = 's22';
+      if (ask === 'btens' && kind === 's21') kind = 's22';
+      let [x, y] = FIX ? FIX.slice(0, 2) : gen(kind);
+      if (!FIX && (ask === 'fill' || ask === 'split')){ let g = 0;   /* 가르기는 한쪽이 0 이 되지 않게 */
+        while (g++ < 60 && (kind[0] === 'a' ? (O10(x) + (kind === 'a21' ? y : O10(y)) <= 10) : (O10(x) === 0 || (kind === 's21' ? y : O10(y)) <= O10(x)))) [x, y] = gen(kind); }
+      const add = kind[0] === 'a'; const S = add ? '+' : '−'; const ans = add ? x + y : x - y;
+      const t1 = T10(x) % 10, o1 = O10(x), t2 = T10(y), o2 = O10(y); const c1 = o1 + o2 >= 10;
+      if (a && a.type === 'vert2'){ a.top = x; a.bottom = y; a.op = add ? '+' : '-'; if (ask !== 'value' || a.ans === null || a.ans === undefined) a.ans = null; }
+      const E = `${x} ${S} ${y}`;
+      let ds, ex;
+      if (add){
+        const concat = Number(String(T10(x) + t2) + String(o1 + o2));
+        ds = [[c1 ? ans - 10 : null, 'X01'], [kind === 'a22h' ? ans - 100 : null, 'X05'], [kind === 'a22h' && !c1 ? ans - 10 : null, 'X05'], [c1 && y < 10 ? x + 10 * y : null, 'X03'], [c1 ? concat : null, 'X02'], [ans + 10, 'X06'], [ans + 1, null], [ans - 1, null]];
+        ex = [c1 ? `일의 자리 ${o1} + ${o2} = ${o1 + o2} — ${o1 + o2 - 10}${EUL(o1 + o2 - 10)} 쓰고 10은 십의 자리로 받아올려요.` : `일의 자리 ${o1} + ${o2} = ${o1 + o2}${IEYO(o1 + o2)}.`,
+              `십의 자리 ${y < 10 ? t1 : `${t1} + ${t2}`}${c1 ? ' + 1' : ''} = ${t1 + t2 + (c1 ? 1 : 0)}${ans >= 100 ? ' — 10이 넘어 백의 자리로 올려요' : ''}. 그래서 ${E} = ${ans}${IEYO(ans)}.`,
+              ans >= 100 ? '십의 자리 합이 10을 넘으면 백의 자리에 1을 써요.' : '받아올림한 1은 십의 자리에서 꼭 더해요 — 빠뜨리면 10이 작아져요.'];
+      } else {
+        const rev = (T10(x) - t2) * 10 + (o2 - o1);
+        ds = [[rev, 'X07'], [ans + 10, 'X08'], [x + y <= 199 ? x + y : null, 'X10'], [ans + 1, null], [ans - 1 > 0 ? ans - 1 : null, null]];
+        ex = [`일의 자리 ${o1}에서 ${o2}${EUL(o2)} 뺄 수 없어 십의 자리에서 10을 받아내려요 — ${10 + o1} − ${o2} = ${10 + o1 - o2}.`,
+              `십의 자리는 ${T10(x)}에서 1을 내려 주어 ${T10(x) - 1}${t2 ? `, ${T10(x) - 1} − ${t2} = ${T10(x) - 1 - t2}` : ''}. 그래서 ${E} = ${ans}${IEYO(ans)}.`,
+              `${o2} − ${o1}처럼 거꾸로 빼지 않아요 — 위의 수에서 아래 수를 빼요.`];
+      }
+      if (ask === 'value' || ask === 'vert'){
+        if (q.kind === 'ox'){ const truth = FORM ? FORM === 'O' : r() < 0.5; const w0 = ds.find(d => d[0] !== null && d[0] !== ans && d[0] >= 0); const said = truth ? ans : w0[0];
+          OXQ(`${E} = ${said} 입니다.`, truth, truth ? (add ? '받아올림한 1을 십의 자리에 더해 계산했으니까' : '십의 자리에서 받아내린 10을 더해 일의 자리를 뺐으니까') : `바르게 계산하면 ${ans}${NIGA(ans)} 되니까`,
+              add ? '일의 자리끼리, 십의 자리끼리 더하기만 하면 되니까' : '일의 자리는 큰 수에서 작은 수를 빼면 되니까', add ? 'X01' : 'X07');
+          v.explanation = ex; return v; }
+        v.stem = ask === 'vert' ? `${E}${EUL(y)} 세로셈으로 계산하면 얼마인가요?` : `${E}${EUN(y)} 얼마인가요?`;
+        return fin(ans, ds, ex);
+      }
+      if (ask === 'carry'){
+        v.stem = `${E}${EUL(y)} 세로셈으로 계산할 때, 십의 자리에서 계산할 식은 어느 것인가요?`;
+        return fin(`${t1} + ${t2} + 1`, [[`${t1} + ${t2}`, 'X01'], [`${t1} + ${t2} + 10`, 'X06'], [`${t1} + ${t2} + ${o1 + o2}`, 'X02']],
+          [`일의 자리 ${o1} + ${o2} = ${o1 + o2} — 10을 십의 자리로 받아올려요.`, `받아올림한 10은 십의 자리에서는 1이에요. 그래서 십의 자리 식은 ${t1} + ${t2} + 1이에요.`, '받아올린 수는 십의 자리에서 「1」로 더해요 — 10을 더하지 않아요.']);
+      }
+      if (ask === 'borrow'){
+        v.stem = `${E}${EUL(y)} 세로셈으로 계산할 때, 일의 자리에서 계산할 식은 어느 것인가요?`;
+        return fin(`${10 + o1} − ${o2}`, [[`${o2} − ${o1}`, 'X07'], [o1 + 1 !== o2 ? `${o1 + 1} − ${o2}` : null, 'X09'], [`${10 + o1} + ${o2}`, 'X10']],
+          [`일의 자리 ${o1}에서 ${o2}${EUL(o2)} 뺄 수 없어요.`, `십의 자리에서 10을 받아내리면 일의 자리는 ${10 + o1} — ${10 + o1} − ${o2}${EUL(o2)} 계산해요.`, `${o2} − ${o1}처럼 아래 수에서 위의 수를 빼지 않아요.`]);
+      }
+      if (ask === 'btens'){
+        v.stem = `${E}${EUL(y)} 세로셈으로 계산할 때, 십의 자리에서 계산할 식은 어느 것인가요?`;
+        return fin(`${t1 - 1} − ${t2}`, [[`${t1} − ${t2}`, 'X08'], [`${t1 - 1} + ${t2}`, 'X10'], [`${t1 + 1} − ${t2}`, 'X08']],
+          [`일의 자리를 계산하려고 십의 자리에서 10을 받아내렸어요.`, `그래서 십의 자리는 ${t1}에서 1이 줄어 ${t1 - 1} — ${t1 - 1} − ${t2}${EUL(t2)} 계산해요.`, '받아내려 준 자리는 1을 줄이는 것을 잊지 않아요.']);
+      }
+      if (ask === 'fill'){
+        if (add){ const C = 10 * T10(x) + 10, f = C - x;
+          v.stem = `${E}${EUL(y)} 계산할 때, ${x}에 얼마를 더하면 ${C}이 되나요?`;
+          return fin(f, [[y - f !== f ? y - f : null, 'X04'], [o1, 'X04'], [10 - y !== f && 10 - y > 0 ? 10 - y : null, 'X04'], [f + 1, 'X04']],
+            [`${x}에서 ${C}까지는 ${f}만큼 더 가야 해요.`, `${x} + ${f} = ${C} — 먼저 몇십을 만들어요.`, `남은 ${y - f}${EUL(y - f)} 더하면 ${C} + ${y - f} = ${ans}${IEYO(ans)}.`]); }
+        const F = 10 * T10(x);
+        v.stem = `${E}${EUL(y)} 계산할 때, ${x}에서 얼마를 빼면 ${F}이 되나요?`;
+        return fin(o1, [[y - o1 !== o1 ? y - o1 : null, 'X09'], [10 - o1 !== o1 ? 10 - o1 : null, 'X09'], [o1 + 1, 'X09']],
+          [`${x}에서 일의 자리 ${o1}${EUL(o1)} 빼면 ${F}이 돼요.`, `${x} − ${o1} = ${F} — 먼저 몇십을 만들어요.`, `남은 ${y - o1}${EUL(y - o1)} 더 빼면 ${F} − ${y - o1} = ${ans}${IEYO(ans)}.`]);
+      }
+      if (ask === 'split'){
+        const base = add ? 10 * T10(x) + 10 - x : o1; const target = y < 10 ? y : o2; const rest = target - base;
+        v.stem = `${E}${EUL(y)} 계산하려고 ${target}${EUL(target)} ${base}${GW(base)} □로 갈랐어요. □에 알맞은 수는 얼마인가요?`;
+        const why = add ? `${x}에 ${base}${EUL(base)} 더하면 ${10 * T10(x) + 10}이 돼요.` : `${x}에서 ${base}${EUL(base)} 빼면 ${10 * T10(x)}이 돼요.`;
+        return fin(rest, [[base !== rest ? base : null, add ? 'X04' : 'X09'], [10 - base !== rest && 10 - base > 0 ? 10 - base : null, add ? 'X04' : 'X09'], [target + base, add ? 'X04' : 'X09'], [rest + 1, add ? 'X04' : 'X09']],
+          [why, `${target}${EUN(target)} ${base}${GW(base)} ${rest} — □는 ${rest}${IEYO(rest)}.`, add ? (y < 10 ? `${10 * T10(x) + 10} + ${rest} = ${ans}, 그래서 ${E} = ${ans}${IEYO(ans)}.` : `${10 * T10(x) + 10} + ${rest} + ${10 * t2} = ${ans} — 몇십을 먼저 만들면 더하기 쉬워요.`) : (y < 10 ? `${10 * T10(x)} − ${rest} = ${ans}, 그래서 ${E} = ${ans}${IEYO(ans)}.` : `${10 * T10(x)} − ${rest} − ${10 * t2} = ${ans} — 몇십을 먼저 만들면 빼기 쉬워요.`)]);
+      }
+      /* story */
+      const st = FORM || A2.story || (add ? 'join' : pick(['left', 'diff'], r)); const [I, U] = pick(ITEMS, r); const N1 = pick(NAMES, r); let N2 = pick(NAMES, r); if (N2 === N1) N2 = NAMES[(NAMES.indexOf(N1) + 1) % NAMES.length];
+      const UL = JS(U, '을', '를');
+      if (st === 'join'){ v.stem = `${N1}${JS(N1, '이', '가')} ${I} ${x}${U}${UL} 가지고 있었는데 ${y}${U}${UL} 더 받았어요. ${I}${JS(I, '은', '는')} 모두 몇 ${U}인가요?`; ex[2] = `「모두」는 모으는 이야기라 덧셈이에요 — ${ans}${U}${JS(U, '이에요', '예요')}.`; }
+      else if (st === 'left'){ v.stem = `${N1}${JS(N1, '이', '가')} ${I} ${x}${U}${UL} 가지고 있었는데 ${y}${U}${UL} 친구에게 주었어요. 남은 ${I}${JS(I, '은', '는')} 몇 ${U}인가요?`; ex[2] = `「남은」은 덜어 내는 이야기라 뺄셈이에요 — ${ans}${U}${JS(U, '이에요', '예요')}.`; }
+      else { v.stem = `${N1}${JS(N1, '은', '는')} ${I} ${x}${U}${UL}, ${N2}${JS(N2, '은', '는')} ${y}${U}${UL} 모았어요. ${N1}${JS(N1, '이', '가')} ${N2}보다 몇 ${U} 더 많이 모았나요?`; ex[2] = `「몇 ${U} 더 많이」는 두 수를 견주는 이야기라 뺄셈이에요 — ${ans}${U}${JS(U, '이에요', '예요')}.`; }
+      if (!add && st === 'join'){ /* 뺄셈 kind 에 join 을 달면 덧셈 이야기가 된다 — 쓰지 않는다 */ }
+      return fin(ans, ds, ex, U);
+    }
+
+    if (ask === 'three' || ask === 'first'){
+      const form = FORM || (A2.form === 'mix3' || !A2.form ? pick(['aas', 'sas'], r) : A2.form); let x, y, z;
+      if (FIX) [x, y, z] = FIX;
+      else for (let g = 0; g < 200; g++){
+        if (form === 'aas'){ x = rint(11, 49, r); y = rint(11, 49, r); if (x + y > 99){ x = null; continue; } z = rint(11, Math.min(59, x + y - 4), r); }
+        else { x = rint(30, 89, r); y = rint(11, x - 8, r); z = rint(11, Math.min(59, 99 - (x - y)), r); }
+        if ((O10(x) + O10(y) >= 10 || O10(x) < O10(y)) && x !== y && y !== z && x !== z) break; x = null; }
+      if (x === null || x === undefined){ if (form === 'aas'){ x = 24; y = 17; z = 19; } else { x = 42; y = 15; z = 27; } }
+      const s1 = form === 'aas' ? '+' : '−', s2 = form === 'aas' ? '−' : '+'; const m = form === 'aas' ? x + y : x - y; const ans = form === 'aas' ? m - z : m + z;
+      const E = `${x} ${s1} ${y} ${s2} ${z}`;
+      if (ask === 'first'){
+        v.stem = `${E}에서 먼저 계산할 것은 어느 것인가요?`;
+        return fin(`${x} ${s1} ${y}`, [[`${y} ${s2} ${z}`, 'X11'], [`${x} ${s2} ${z}`, 'X11']],
+          ['세 수의 계산은 앞에서부터 차례로 해요.', `먼저 ${x} ${s1} ${y} = ${m}, 그다음 ${m} ${s2} ${z} = ${ans}${IEYO(ans)}.`, form === 'sas' ? `${y} + ${z}${EUL(z)} 먼저 하면 답이 달라져요.` : '순서를 바꾸지 않고 왼쪽부터 두 수씩 계산해요.']);
+      }
+      v.stem = `${E}${EUL(z)} 앞에서부터 차례로 계산하면 얼마인가요?`;
+      const ds = form === 'aas' ? [[m, 'X12'], [x + y + z, 'X12'], [ans + 10, 'X01'], [ans - 10 > 0 ? ans - 10 : null, 'X08']]
+                                : [[x - y - z >= 0 && x - y - z !== ans ? x - y - z : null, 'X11'], [m, 'X12'], [x + y + z <= 199 ? x + y + z : null, 'X12'], [ans + 10, 'X08'], [ans - 10 > 0 ? ans - 10 : null, 'X01']];
+      return fin(ans, ds, [`① 앞의 두 수부터 — ${x} ${s1} ${y} = ${m}.`, `② ${m} ${s2} ${z} = ${ans}${IEYO(ans)}.`, form === 'sas' ? `${y} + ${z}${EUL(z)} 먼저 계산하면 안 돼요 — 앞에서부터 차례로.` : `${m}에서 멈추지 않고 남은 계산까지 해요.`]);
+    }
+
+    /* 관계 · □ — 부분 a, b 와 전체 c */
+    const size = A2.size || 'small'; let pa, pb;
+    if (FIX) [pa, pb] = FIX;
+    else for (let g = 0; g < 200; g++){
+      if (size === 'small'){ pa = rint(3, 9, r); pb = rint(3, 9, r); } else { pa = rint(11, 59, r); pb = rint(6, 39, r); }
+      if (pa !== pb && pa + pb <= 99 && (size === 'big' || pa + pb >= 11)) break; }
+    const c = pa + pb;
+    if (ask === 'rel'){
+      const to = A2.to || 'sub';
+      if (to === 'sub'){ const left = FORM ? FORM === 'left' : r() < 0.5; const cor = left ? `${c} − ${pa} = ${pb}` : `${c} − ${pb} = ${pa}`;
+        v.stem = `덧셈식 ${pa} + ${pb} = ${c}${EUL(c)} 뺄셈식으로 바르게 나타낸 것은 어느 것인가요?`;
+        return fin(cor, [[`${Math.max(pa, pb)} − ${Math.min(pa, pb)} = ${c}`, 'X13'], [left ? `${pb} − ${c} = ${pa}` : `${pa} − ${c} = ${pb}`, 'X14'], [`${c} − ${pa} = ${c + pa}`, 'X10']],
+          [`${c}${EUN(c)} 전체, ${pa}${GW(pa)} ${pb}${EUN(pb)} 부분이에요.`, `전체에서 한 부분을 빼면 다른 부분 — ${c} − ${pa} = ${pb}, ${c} − ${pb} = ${pa}.`, '뺄셈식은 늘 전체에서 빼요 — 부분끼리 빼지 않아요.']); }
+      const left = FORM ? FORM === 'left' : r() < 0.5; const cor = left ? `${pa} + ${pb} = ${c}` : `${pb} + ${pa} = ${c}`;
+      v.stem = `뺄셈식 ${c} − ${pa} = ${pb}${EUL(pb)} 덧셈식으로 바르게 나타낸 것은 어느 것인가요?`;
+      return fin(cor, [[`${c} + ${pa} = ${pb}`, 'X14'], [`${c} + ${pb} = ${pa}`, 'X14'], [`${c} − ${pb} = ${pa}`, 'X13']],
+        [`${c}${EUN(c)} 전체, ${pa}${GW(pa)} ${pb}${EUN(pb)} 부분이에요.`, `두 부분을 모으면 전체 — ${pa} + ${pb} = ${c}.`, '덧셈식에서 전체는 = 오른쪽에 와요.']);
+    }
+    if (ask === 'verify'){
+      let x, y; if (FIX) [x, y] = FIX; else { let g = 0; do { [x, y] = gen(A2.kind && A2.kind[0] === 's' ? A2.kind : 's22'); } while (g++ < 40 && x - y === y); } const d = x - y;
+      v.stem = `${x} − ${y} = ${d}${EUL(d)} 덧셈으로 확인하는 식은 어느 것인가요?`;
+      return fin(`${d} + ${y} = ${x}`, [[`${d} + ${x} = ${d + x}`, 'X16'], [`${x} + ${y} = ${x + y}`, 'X10'], [`${d} + ${y} = ${x + 10}`, 'X01']],
+        ['뺄셈의 답에 뺀 수를 더하면 처음 수가 돼요.', `${d} + ${y} = ${x} — 처음 수 ${x}${NIGA(x)} 나오니 바르게 뺐어요.`, '처음 수를 더하면 확인이 되지 않아요.']);
+    }
+    if (ask === 'box'){
+      const forms = A2.forms || ['a□', '□b', 'c−□', '□−']; const f = FORM || pick(forms, r); let eq, ans, ds, ex;
+      const bw = (u, w) => u % 10 < w % 10;   /* 받아내림이 있는 뺄셈인가 — 있으면 십의 자리를 안 줄인 값(+10)이 오답 */
+      if (f === 'a□'){ eq = `${pa} + □ = ${c}`; ans = pb; ds = [[c + pa, 'X15'], [bw(c, pa) ? pb + 10 : null, 'X08'], [pa, 'X15'], [pb + 1, null]]; ex = [`전체 ${c}, 한 부분 ${pa}${IEYO(pa)}.`, `다른 부분 □는 ${c} − ${pa} = ${pb}${IEYO(pb)}.`, `확인 — ${pa} + ${pb} = ${c}.`]; }
+      else if (f === '□b'){ eq = `□ + ${pb} = ${c}`; ans = pa; ds = [[c + pb, 'X15'], [bw(c, pb) ? pa + 10 : null, 'X08'], [pb, 'X15'], [pa + 1, null]]; ex = [`전체 ${c}, 한 부분 ${pb}${IEYO(pb)}.`, `다른 부분 □는 ${c} − ${pb} = ${pa}${IEYO(pa)}.`, `확인 — ${pa} + ${pb} = ${c}.`]; }
+      else if (f === 'c−□'){ eq = `${c} − □ = ${pb}`; ans = pa; ds = [[c + pb, 'X15'], [bw(c, pb) ? pa + 10 : null, 'X08'], [pb, 'X15'], [pa + 1, null]]; ex = [`${c}에서 □만큼 빼서 ${pb}${NIGA(pb)} 남았어요.`, `빼는 수 □는 ${c} − ${pb} = ${pa}${IEYO(pa)}.`, `확인 — ${c} − ${pa} = ${pb}.`]; }
+      else { eq = `□ − ${pb} = ${pa}`; ans = c; ds = [[Math.abs(pa - pb) || null, 'X15'], [pa % 10 + pb % 10 >= 10 ? c - 10 : null, 'X01'], [pa, 'X15'], [c + 1, null]]; ex = [`□에서 ${pb}${EUL(pb)} 뺐더니 ${pa}${NIGA(pa)} 남았어요.`, `처음 수 □는 ${pa} + ${pb} = ${c}${IEYO(c)}.`, `확인 — ${c} − ${pb} = ${pa}.`]; }
+      if (a && a.type === 'bar2'){ a.whole = f === '□−' ? null : c; a.parts = f === 'a□' ? [pa, null] : f === '□b' ? [null, pb] : f === 'c−□' ? [null, pb] : [pa, pb]; }
+      v.stem = `${eq}에서 □에 알맞은 수는 얼마인가요?`;
+      return fin(ans, ds, ex);
+    }
+    if (ask === 'boxmake'){
+      const [I, U] = pick(ITEMS, r); const N1 = pick(NAMES, r); const UL = JS(U, '을', '를');
+      const ty = FORM || A2.story || pick(['more', 'give'], r);
+      if (ty === 'more'){ v.stem = `${N1}${JS(N1, '이', '가')} ${I} ${pa}${U}${UL} 가지고 있었는데 몇 ${U}${UL} 더 받았더니 ${c}${U}${JS(U, '이', '가')} 되었어요. 더 받은 ${I}의 수를 □로 하여 식을 바르게 나타낸 것은 어느 것인가요?`;
+        return fin(`${pa} + □ = ${c}`, [[`${c} + □ = ${pa}`, 'X15'], [`${pa} + ${c} = □`, 'X15'], [`${pa} − □ = ${c}`, 'X10']],
+          [`처음 ${pa}${U}에 □${U}${UL} 더 받아 ${c}${U}${JS(U, '이', '가')} 되었어요.`, `그래서 식은 ${pa} + □ = ${c} — □는 ${c} − ${pa} = ${pb}${IEYO(pb)}.`, '처음 수와 결과의 수가 식에서 제자리에 있는지 살펴요.']); }
+      v.stem = `${N1}${JS(N1, '이', '가')} ${I} 몇 ${U}${UL} 가지고 있었는데 ${pb}${U}${UL} 친구에게 주었더니 ${pa}${U}${JS(U, '이', '가')} 남았어요. 처음에 있던 ${I}의 수를 □로 하여 식을 바르게 나타낸 것은 어느 것인가요?`;
+      return fin(`□ − ${pb} = ${pa}`, [[`${pb} − □ = ${pa}`, 'X14'], [`□ + ${pb} = ${pa}`, 'X10'], [`${pa} − ${pb} = □`, 'X15']],
+        [`처음 □${U}에서 ${pb}${U}${UL} 주고 ${pa}${U}${JS(U, '이', '가')} 남았어요.`, `그래서 식은 □ − ${pb} = ${pa} — □는 ${pa} + ${pb} = ${c}${IEYO(c)}.`, '처음 수 □가 빼는 식의 맨 앞에 와요.']);
+    }
+    return v;
+  }
+
   // 십 배열판 — 10이 되는 더하기 / 10에서 빼기
   if (a && a.type === 'ten_frame' && rule.frame){
     const F = rule.frame; const ask = F.ask || 'rest';
@@ -3340,6 +3561,8 @@ function paperAsset(a){
     case 'blocks3': return `<div class="pcmpw">${blocksSVG(a)}<em class="pb3">${a.unit === 'coin' ? '(동전)' : '(큰 네모 = 백 모형, 막대 = 십 모형, 작은 네모 = 일 모형)'}</em></div>`;
     case 'place_table': return placeTableHTML(a, true);
     case 'jump_row': return jumpRowHTML(a, true);
+    case 'vert2': return `<div class="pcmpw">${vert2SVG(a)}</div>`;
+    case 'bar2': return `<div class="pcmpw">${bar2SVG(a)}</div>`;
     case 'figs': return figsHTML(a, true);
     case 'tiles': return `<div class="pcmpw">${tilesSVG(a)}</div>`;
     case 'cubes': return cubesHTML(a, true);

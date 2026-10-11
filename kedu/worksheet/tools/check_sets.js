@@ -113,7 +113,10 @@ const ASSETS = {
   tiles:          ['pieces'],
   cubes:          [],
   place_table:    ['digits'],
-  jump_row:       ['cells']
+  jump_row:       ['cells'],
+  /* v2.4 — 2학년 1학기 「덧셈과 뺄셈」: 세로셈 판 · 전체-부분 막대 */
+  vert2:          ['top', 'bottom', 'op'],
+  bar2:           ['parts']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -159,6 +162,18 @@ function checkAsset(where, a) {
   if (a.type === 'cubes') {
     if (Array.isArray(a.rows)) { if (a.rows.length < 2 || a.rows.length > 4) bad(where, 'cubes rows 는 2~4개'); a.rows.forEach((cs, i) => checkCubeCells(where + ' ' + '㉮㉯㉰㉱'[i], cs)); }
     else checkCubeCells(where, a.cells);
+  }
+  if (a.type === 'vert2') {
+    if (!(a.top >= 10 && a.top <= 99) || !(a.bottom >= 1 && a.bottom <= 99)) bad(where, 'vert2 top 은 두 자리·bottom 은 1~99');
+    if (a.op !== '+' && a.op !== '-') bad(where, "vert2 op 는 '+'|'-'");
+    if (a.op === '-' && a.bottom >= a.top) bad(where, 'vert2 빼는 수가 더 크다');
+    if (a.ans !== null && a.ans !== undefined && a.ans !== 'hide' && !(a.ans >= 0 && a.ans <= 1999)) bad(where, 'vert2 ans 는 null·hide·수');
+  }
+  if (a.type === 'bar2') {
+    const p = a.parts || []; const nul = [a.whole, p[0], p[1]].filter(x => x === null || x === undefined).length;
+    if (p.length !== 2) bad(where, 'bar2 parts 는 둘'); if (nul > 1) bad(where, 'bar2 빈칸(□)이 둘 이상');
+    if (nul === 0 && a.whole !== p[0] + p[1]) bad(where, 'bar2 전체 ≠ 부분의 합');
+    [a.whole, p[0], p[1]].forEach(x => { if (x !== null && x !== undefined && !(x > 0)) bad(where, 'bar2 수는 양수'); });
   }
   if (a.type === 'blocks3') {
     if (!(a.h >= 0 && a.h <= 9)) bad(where, 'blocks3 h 는 0~9: ' + a.h);
@@ -870,6 +885,69 @@ function check3(where, q) {
   if (String(want) !== cor && !(q.kind === 'sa' && (q.answer || []).map(String).indexOf(String(want)) >= 0)) bad(where, `${key} 정답 ${cor} ≠ 다시 계산한 ${want}`);
   if (wr.indexOf(String(want)) >= 0) bad(where, `${key} 오답 보기에 정답 ${want} 가 섞였다`);
 }
+/* v2.4 — 덧셈과 뺄셈: 발문에서 식을 다시 읽어 엔진과 따로 셈한다 (원본·변형 모두) */
+const AR_EV = (x, s, y) => s === '+' ? x + y : x - y;
+const AR_EQ = t => { const z = String(t).match(/^(\d+) ([+−]) (\d+) = (\d+)$/); return z ? { x: +z[1], s: z[2], y: +z[3], z: +z[4], ok: AR_EV(+z[1], z[2] === '+' ? '+' : '-', +z[3]) === +z[4] } : null; };
+function checkAr2(where, q) {
+  const vr = q.variant_rule || {}; if (!vr.ar2) return;
+  const cor = q.kind === 'sa' ? String((q.answer || [])[0]) : String(((q.options || []).find(o => o.correct) || {}).t);
+  const wr = (q.options || []).filter(o => !o.correct).map(o => String(o.t));
+  const st = String(q.stem).replace(/^이번에는 다른 보기예요\. /, ''); const a = q.asset && typeof q.asset === 'object' ? q.asset : null; let want = null, m;
+  const sg = c => c === '+' ? '+' : '-';
+  const vertOk = (x, s, y) => { if (a && a.type === 'vert2' && (a.top !== x || a.bottom !== y || a.op !== sg(s))) bad(where, `ar2 세로셈 판(${a.top} ${a.op} ${a.bottom})이 발문 식과 다르다`); };
+  const carryOf = (x, s, y) => s === '+' ? (x % 10 + y % 10 >= 10 || Math.floor(x / 10) + Math.floor(y / 10) >= 10) : (x % 10 < y % 10);
+  if ((m = st.match(/^(\d+) ([+−]) (\d+)(?: ([+−]) (\d+))? = (\d+) 입니다\.$/))) {
+    let v = AR_EV(+m[1], sg(m[2]), +m[3]); if (m[4]) v = AR_EV(v, sg(m[4]), +m[5]); vertOk(+m[1], m[2], +m[3]);
+    if ((v === +m[6] ? 'O' : 'X') !== q.answer) bad(where, `ar2 OX 답 ${q.answer} — 실제 ${v} 와 ${m[6]}`); return; }
+  if ((m = st.match(/^(\d+) ([+−]) (\d+)(?: ([+−]) (\d+))?[은는을를] (?:얼마인가요|세로셈으로 계산하면 얼마|앞에서부터 차례로 계산하면 얼마)/))) {
+    let v = AR_EV(+m[1], sg(m[2]), +m[3]); if (m[4]) { const mid = v; if (mid < 0) bad(where, 'ar2 세 수 중간값이 음수'); v = AR_EV(v, sg(m[4]), +m[5]); } else if (!carryOf(+m[1], m[2], +m[3])) bad(where, 'ar2 받아올림·받아내림이 없는 식: ' + st);
+    if (v < 0) bad(where, 'ar2 답이 음수'); vertOk(+m[1], m[2], +m[3]); want = String(v); }
+  else if ((m = st.match(/^(\d+) ([+−]) (\d+)[을를] 세로셈으로 계산할 때, (십|일)의 자리에서 계산할 식은/))) {
+    const x = +m[1], y = +m[3], t1 = Math.floor(x / 10) % 10, o1 = x % 10, t2 = Math.floor(y / 10), o2 = y % 10; vertOk(x, m[2], y);
+    if (m[2] === '+') { if (m[4] !== '십' || o1 + o2 < 10) return bad(where, 'ar2 carry 꼴이 어긋난다'); want = `${t1} + ${t2} + 1`; }
+    else if (m[4] === '일') { if (o1 >= o2) return bad(where, 'ar2 borrow 인데 받아내림이 없다'); want = `${10 + o1} − ${o2}`; }
+    else { if (o1 >= o2 || !t2) return bad(where, 'ar2 btens 꼴이 어긋난다'); want = `${t1 - 1} − ${t2}`; } }
+  else if ((m = st.match(/^(\d+) ([+−]) (\d+)[을를] 계산할 때, (\d+)에(서)? 얼마를 (더하|빼)면 (\d+)이 되나요/))) {
+    const x = +m[1], tg = +m[7]; if (+m[4] !== x) bad(where, 'ar2 fill 수가 어긋난다'); if (tg % 10) bad(where, 'ar2 fill 목표가 몇십이 아니다');
+    if ((m[2] === '+') !== (m[6] === '더하')) bad(where, 'ar2 fill 더하기/빼기가 식과 다르다'); if (Math.abs(tg - x) >= 10 || tg === x) bad(where, 'ar2 fill 목표가 이웃 몇십이 아니다');
+    want = String(Math.abs(tg - x)); }
+  else if ((m = st.match(/^(\d+) ([+−]) (\d+)[을를] 계산하려고 (\d+)[을를] (\d+)[과와] □로 갈랐어요/))) {
+    const x = +m[1], y = +m[3], tg = +m[4], b = +m[5]; if (tg !== (y < 10 ? y : y % 10)) bad(where, 'ar2 split 가르는 수가 더하는/빼는 수의 일의 자리가 아니다');
+    if (m[2] === '+' ? (x + b) % 10 : (x - b) % 10) bad(where, `ar2 split ${b} 로 몇십이 되지 않는다`); want = String(tg - b); if (tg - b <= 0) bad(where, 'ar2 split □ 가 0 이하'); }
+  else if ((m = st.match(/^([\d□]+) ([+−]) ([\d□]+) = ([\d□]+)에서 □에 알맞은/))) {
+    const p = [m[1], m[3], m[4]]; const k = p.indexOf('□'); if (p.filter(x => x === '□').length !== 1) return bad(where, 'ar2 □ 가 하나가 아니다');
+    const n = p.map(Number); let v; if (m[2] === '+') v = k === 2 ? n[0] + n[1] : n[2] - n[1 - k]; else v = k === 0 ? n[1] + n[2] : k === 1 ? n[0] - n[2] : n[0] - n[1];
+    if (!(v > 0)) bad(where, 'ar2 □ 값이 0 이하'); want = String(v);
+    if (a && a.type === 'bar2') { const W = m[2] === '+' ? p[2] : p[0], P = m[2] === '+' ? [p[0], p[1]] : [p[1], p[2]]; const S = x => x === '□' ? null : +x;
+      const ws = S(W), ps = P.map(S), ap = (a.parts || []).map(x => x === undefined ? null : x);
+      const okP = (ap[0] === ps[0] && ap[1] === ps[1]) || (ap[0] === ps[1] && ap[1] === ps[0]);
+      if ((a.whole === undefined ? null : a.whole) !== ws || !okP) bad(where, 'ar2 막대 그림이 식과 다르다'); } }
+  else if ((m = st.match(/^덧셈식 (\d+) \+ (\d+) = (\d+)[을를] 뺄셈식으로/)) || (m = st.match(/^뺄셈식 (\d+) − (\d+) = (\d+)[을를] 덧셈식으로/))) {
+    const sub = /^덧셈식/.test(st); const fam = sub ? [+m[1], +m[2], +m[3]] : [+m[2], +m[3], +m[1]]; if (fam[0] + fam[1] !== fam[2]) return bad(where, 'ar2 rel 주어진 식이 거짓');
+    const good = t => { const e = AR_EQ(t); if (!e || !e.ok) return false; if (sub) return e.s === '−' && e.x === fam[2] && [e.y, e.z].sort().join() === [fam[0], fam[1]].sort().join();
+      return e.s === '+' && e.z === fam[2] && [e.x, e.y].sort().join() === [fam[0], fam[1]].sort().join(); };
+    if (!good(cor)) bad(where, 'ar2 rel 정답이 같은 식 가족이 아니다: ' + cor); wr.forEach(w => { if (good(w)) bad(where, 'ar2 rel 오답도 맞다: ' + w); }); return; }
+  else if ((m = st.match(/^(\d+) − (\d+) = (\d+)[을를] 덧셈으로 확인하는 식/))) {
+    if (+m[1] - +m[2] !== +m[3]) return bad(where, 'ar2 verify 뺄셈식이 거짓'); const good = t => { const e = AR_EQ(t); return e && e.ok && e.s === '+' && e.z === +m[1] && [e.x, e.y].sort().join() === [+m[2], +m[3]].sort().join(); };
+    if (!good(cor)) bad(where, 'ar2 verify 정답이 틀렸다: ' + cor); wr.forEach(w => { if (good(w)) bad(where, 'ar2 verify 오답도 맞다: ' + w); }); return; }
+  else if ((m = st.match(/^(\d+) ([+−]) (\d+) ([+−]) (\d+)에서 먼저 계산할 것은/))) { want = `${m[1]} ${m[2]} ${m[3]}`; }
+  else if (/로 하여 식을 바르게 나타낸/.test(st)) {
+    const ns = (st.match(/(\d+)(?=개|장|자루)/g) || []).map(Number); if (ns.length !== 2) return bad(where, 'ar2 boxmake 수가 둘이 아니다');
+    let truth; if (/더 받았더니/.test(st)) truth = ns[1] - ns[0]; else if (/주었더니/.test(st)) truth = ns[0] + ns[1]; else return bad(where, 'ar2 boxmake 이야기 꼴을 모른다');
+    const solve = t => { const z = String(t).match(/^([\d□]+) ([+−]) ([\d□]+) = ([\d□]+)$/); if (!z) return null; const p = [z[1], z[3], z[4]]; const k = p.indexOf('□'); if (k < 0) return null; const n = p.map(Number);
+      const v = z[2] === '+' ? (k === 2 ? n[0] + n[1] : n[2] - n[1 - k]) : (k === 0 ? n[1] + n[2] : k === 1 ? n[0] - n[2] : n[0] - n[1]); return v; };
+    const nums = t => (String(t).match(/\d+/g) || []).map(Number).sort().join();
+    if (solve(cor) !== truth || nums(cor) !== ns.slice().sort().join()) bad(where, 'ar2 boxmake 정답 식이 이야기와 맞지 않는다: ' + cor);
+    wr.forEach(w => { if (solve(w) === truth && nums(w) === ns.slice().sort().join()) bad(where, 'ar2 boxmake 오답도 맞다: ' + w); }); return; }
+  else if (/(개|장|자루)/.test(st) && /(모두 몇|남은 .*몇|더 많이 모았나요)/.test(st)) {
+    const ns = (st.match(/(\d+)(?=개|장|자루)/g) || []).map(Number); if (ns.length !== 2) return bad(where, 'ar2 story 수가 둘이 아니다');
+    if (/모두 몇/.test(st)) want = String(ns[0] + ns[1]); else { if (ns[0] <= ns[1]) bad(where, 'ar2 story 큰 수에서 빼지 않는다'); want = String(ns[0] - ns[1]); }
+    if (!carryOf(ns[0], /모두 몇/.test(st) ? '+' : '−', ns[1])) bad(where, 'ar2 story 받아올림·받아내림이 없다'); }
+  else return bad(where, 'ar2 발문 꼴을 모른다: ' + st);
+  if (q.kind === 'sa') { if ((q.answer || []).map(String).indexOf(String(want)) < 0) bad(where, `ar2 단답 ${q.answer} ≠ 다시 계산한 ${want}`); }
+  else if (String(want) !== cor) bad(where, `ar2 정답 ${cor} ≠ 다시 계산한 ${want}`);
+  if (wr.indexOf(String(want)) >= 0) bad(where, `ar2 오답 보기에 정답 ${want} 가 섞였다`);
+}
 /* v2.3 — 여러 가지 도형: 꼭짓점·열림·굽음으로 도형을 다시 가르고, 칠교·자른 도형·쌓기나무 답을 엔진과 따로 셈 (원본·변형 모두) */
 const SHP_NM = {tri:'삼각형', quad:'사각형', circle:'원'}, SHP_OF = {'삼각형':'tri', '사각형':'quad', '원':'circle'};
 const corners = pts => { const n = pts.length; let c = 0; for (let i = 0; i < n; i++){ const a = pts[(i + n - 1) % n], b = pts[i], d = pts[(i + 1) % n];
@@ -968,6 +1046,7 @@ function checkQ(where, q, opt) {
   checkCmp4(where, q);
   checkNum50(where, q);
   check3(where, q);
+  checkAr2(where, q);
   checkShape(where, q);
   checkJamo(where, q);
   checkBat(where, q);
@@ -1093,6 +1172,8 @@ function checkSet(file) {
     });
     /* v0.6 갈래 — 그림은 갈래가 고쳐 주는 종류만 허용(그 밖의 그림은 변형 뒤 수와 어긋난다) */
     const at = q.asset && typeof q.asset === 'object' ? q.asset.type : null;
+    if (q.variant_rule.ar2 && at && ['vert2', 'bar2'].indexOf(at) < 0) bad(where, 'ar2 변형은 그림 없음·vert2·bar2 만');
+    if (q.variant_rule.ar2 && at === 'bar2' && q.variant_rule.ar2.ask !== 'box') bad(where, 'ar2 bar2 그림은 box 문항만');
     if (q.variant_rule.counton && at !== 'count_on') bad(where, 'counton 변형은 count_on 그림이 있어야 한다');
     if (q.variant_rule.maketen2 && at && ['split_tree', 'ten_frames2'].indexOf(at) < 0) bad(where, 'maketen2 변형은 그림 없음·split_tree·ten_frames2 만');
     if (q.variant_rule.takeaway && at && ['split_tree', 'ten_frames2', 'compare_groups'].indexOf(at) < 0) bad(where, 'takeaway 변형은 그림 없음·split_tree·ten_frames2·compare_groups 만');
