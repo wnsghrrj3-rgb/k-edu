@@ -229,14 +229,14 @@
       case 'cover': {
         const lines = String(d.title || '').split('\n').filter(Boolean);
         const first = lines.shift() || '';
-        if (!ctx.learn) { const A = global.KT2_ART, kd = A ? A.kindOf(lines.concat(first, ctx.unitTitle || '').join(' ')) : 'hill', g = ctx.guide || []; // 101차 — 새 표지 co2 「그림책 표지」: 왼쪽 그림 판(배경 + 큰 그림 + 안내 인물) · 오른쪽 단원·제목·부제·시간
+        { const A = global.KT2_ART, kd = A ? A.kindOf(lines.concat(first, ctx.unitTitle || '').join(' ')) : 'hill', g = ctx.guide || []; // 101차 — 새 표지 co2 「그림책 표지」: 왼쪽 그림 판(배경 + 큰 그림 + 안내 인물) · 오른쪽 단원·제목·부제·시간
           return { cover: true, body: '<div class="co2"><div class="co2-pic picture ' + kd + '">' + (A ? A.backdrop(kd) : '') + '<div class="co2-cast"><span class="co2-ch">' + guideChr(g, 0) + '</span><span class="co2-em">' + esc(d.emoji || '') + '</span><span class="co2-ch r">' + guideChr(g, 1) + '</span></div></div><div class="co2-txt"><div class="co2-unit">' + esc(ctx.unitTitle || '') + '</div><div class="co2-title">' + md(first) + '</div>' + (lines.length ? '<div class="co2-l2">' + lines.map(md).join('<br>') + '</div>' : '') + '<div class="co2-meta"><span>⏱ ' + (ctx.meta.duration || ctx.meta.duration_min || 40) + '분</span>' + (ctx.meta.std ? '<span>' + esc(ctx.meta.std) + '</span>' : '') + '</div></div></div>' }; }
         return { cover: true, body: (d.emoji ? '<div class="kt2-cover-emoji">' + esc(d.emoji) + '</div>' : '') + '<div class="kt2-cover-unit">' + esc(ctx.unitTitle || '') + '</div><div class="kt2-cover-title">' + md(first) + (lines.length ? '<span class="l2">' + lines.map(md).join('<br>') + '</span>' : '') + '</div>' + '<div class="kt2-cover-meta"><span>' + esc(ctx.meta.subtitle || ctx.meta.title || '') + '</span><span>⏱ ' + (ctx.meta.duration || ctx.meta.duration_min || 40) + '분</span>' + (ctx.meta.std ? '<span>' + esc(ctx.meta.std) + '</span>' : '') + '</div>' };
       }
-      case 'objective': if (!ctx.learn) { const bl = Array.isArray(d.bullets) ? d.bullets : []; cls = 'ob2'; push('<div class="ob2-wrap"><div class="ob2-g"><div class="ob2-ch">' + guideChr(ctx.guide, 0) + '</div><div class="ob2-say">오늘은<br>이걸 해요!</div></div><div class="ob2-card"><div class="ob2-tag">🎯 오늘의 목표</div>' + (d.content || d.desc ? '<div class="ob2-c">' + md(d.content || d.desc) + '</div>' : '') + (bl.length ? '<ol class="ob2-list">' + bl.map((b, i) => '<li><b>' + (i + 1) + '</b><span>' + md(String(b)) + '</span></li>').join('') + '</ol>' : '') + '</div></div>'); break; } // 101차 — 새 목표 장 ob2: 안내 인물 + 「오늘은 이걸 해요!」 · 큰 목표 카드(글 줄지 않게)
+      case 'objective': { const bl = Array.isArray(d.bullets) ? d.bullets : []; cls = 'ob2'; push('<div class="ob2-wrap"><div class="ob2-g"><div class="ob2-ch">' + guideChr(ctx.guide, 0) + '</div><div class="ob2-say">오늘은<br>이걸 해요!</div></div><div class="ob2-card"><div class="ob2-tag">🎯 오늘의 목표</div>' + (d.content || d.desc ? '<div class="ob2-c">' + md(d.content || d.desc) + '</div>' : '') + (bl.length ? '<ol class="ob2-list">' + bl.map((b, i) => '<li><b>' + (i + 1) + '</b><span>' + md(String(b)) + '</span></li>').join('') + '</ol>' : '') + '</div></div>'); break; } // 101차 — 새 목표 장 ob2: 안내 인물 + 「오늘은 이걸 해요!」 · 큰 목표 카드(글 줄지 않게)
         push('<div class="objective-card">' + md(d.content || d.desc || '') + (Array.isArray(d.bullets) && d.bullets.length ? '<ol class="obj-list">' + d.bullets.map(b => '<li>' + md(String(b)) + '</li>').join('') + '</ol>' : '') + '</div>'); break;
       case 'question': push('<div class="big-q">' + md(d.content || d.question || '') + '</div>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
-      case 'next_lesson': if (!ctx.learn && d.preview) { cls = 'nl2 nl2-b'; push(nl2(d, ctx.guide)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); break; } push('<div class="big-q soft">' + md(d.preview || '') + '</div>'); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); break;
+      case 'next_lesson': if (d.preview) { cls = 'nl2 nl2-b'; push(nl2(d, ctx.guide)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); break; } push('<div class="big-q soft">' + md(d.preview || '') + '</div>'); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); break;
       case 'review': {
         if (d.content) push('<div class="center-text">' + md(d.content) + '</div>');
         if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>');
@@ -249,7 +249,7 @@
       }
       case 'motivate': {
         title = d.scene_title || d.title || '';
-        if (!ctx.learn && d.kids && d.kids.length && !d.teams && !d.number_panel && !d.emojis && d.emoji === undefined) { cls = 'mo2'; push(mo2(d)); break; }
+        if (d.kids && d.kids.length && !d.teams && !d.number_panel && !d.emojis && d.emoji === undefined) { cls = 'mo2'; push(mo2(d)); break; }
         push(image(d.img, title + ' ' + (d.desc || ''))); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>');
         if (d.emojis) push('<div class="emoji-row">' + d.emojis.map(e => '<span>' + esc(e) + '</span>').join('') + '</div>');
         if (d.emoji && d.count !== undefined) push(emojiCount(d.emoji, d.count, true));
@@ -334,7 +334,7 @@
         break;
       }
       case 'multi': push(options(d.options || [], true, rev)); answerable = true; push('<div class="multi-hint">정답을 모두 골라요' + (d.expectedCount ? ' <b>' + esc(d.expectedCount) + '개</b>' : '') + '</div>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
-      case 'real_world': if (!ctx.learn && d.scenario) { cls = 'rw2'; push(rw2(d)); break; } if (d.scenario) push(scenarioG(d.scenario, ctx.guide)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); if (d.content) push('<div class="center-text">' + md(d.content) + '</div>'); if (d.question) push('<div class="big-q">' + md(d.question) + '</div>'); break;
+      case 'real_world': if (d.scenario) { cls = 'rw2'; push(rw2(d)); break; } if (d.scenario) push(scenarioG(d.scenario, ctx.guide)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); if (d.content) push('<div class="center-text">' + md(d.content) + '</div>'); if (d.question) push('<div class="big-q">' + md(d.question) + '</div>'); break;
       case 'game': push('<ol class="steps">' + (d.steps || []).map(s => '<li>' + md(lbl(s)) + '</li>').join('') + '</ol>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
       case 'summary': {
         if (d.points && !d.table && !d.ten_frame_strip && !d.bidirect && !d.linking_cube_staircase && !d.sequence && !d.sequence_asc && !d.sequence_desc && !d.ordinals) cls = 'sv2'; // 95차 — 새 요약 장 sv2(흐름 큰 알약 + 요점 큰 글씨)

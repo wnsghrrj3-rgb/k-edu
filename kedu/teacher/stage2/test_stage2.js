@@ -53,7 +53,7 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   ok(/class="wing wl"/.test(A.character('🐝')) && /class="wing wr"/.test(A.character('🦋')), '조연 층: 벌·나비는 날개(wing) 좌우');
   { const fs2 = ['🙂','😀','😋','🤔','😮','😟','😐'].map(f => A.character(f).replace(/aria-label="[^"]*"/, '').replace(/c-friend-[a-z]+/, '')); ok(new Set(fs2).size === 7, '조연 층: 기분 얼굴 일곱은 서로 다른 얼굴'); }
   const r1 = KT2.renderSlide({ id: 'x', block: 'motivate', data: { title: '공원', kids: [{ face: '👧', label: '하나 "같이 놀자!"' }, { face: '🐰', label: '토끼' }, { face: '🧺', label: '바구니' }] } }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [], learn: true });
-  ok((r1.body.match(/class="face chr"/g) || []).length === 2 && /c-rabbit cast/.test(r1.body) && /<div class="face">🧺<\/div>/.test(r1.body), '인물 층: 주인공·조연은 그림, 모르는 얼굴은 이모지 (kidCard)');
+  ok((r1.body.match(/class="mo2-f chr"/g) || []).length === 2 && /c-rabbit cast/.test(r1.body) && /<div class="mo2-f">🧺/.test(r1.body) && r1.cls === 'mo2', '인물 층: 주인공·조연은 그림, 모르는 얼굴은 이모지 (102차 learn 도 동기 장 mo2)');
   const r2 = KT2.renderSlide({ id: 'x', block: 'motivate', data: { title: '공원', question: '무엇을 할까요?', kids: [{ face: '👧', label: '하나 "같이 놀자!"' }, { face: '🧺', label: '바구니' }] } }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] });
   ok(/class="mo2-q"/.test(r2.body) && /mo2-talk picture/.test(r2.body) && /class="mo2-f chr"/.test(r2.body) && /<div class="mo2-f">🧺/.test(r2.body) && /class="mo2-w">하나/.test(r2.body), '99차 동기 장 mo2: 큰 물음 + 그림 띠 인물 말'); }
 { const r2 = KT2.renderSlide({ id: 'y', block: 'interactive_number_line', data: { range: [0, 10], start: 4 } }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] });
@@ -86,9 +86,9 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   ok(JSON.stringify(KT2.guideOf({ slides: [{ data: { kids: [{ face: '🐰' }, { face: '👦' }] } }, { data: { kids: [{ face: '👦' }, { face: '🐿️' }, { face: '🐻' }] } }] })) === JSON.stringify(['👦', '🐿️']), '안내 인물: 차시의 kids 에서 그림 인물 둘(모르는 얼굴 건너뜀·중복 없음)');
   const o = KT2.renderSlide({ id: 'o', block: 'objective', data: { title: 't', bullets: ['가', '나', '다'] } }, C);
   ok((o.body.match(/<li>/g) || []).length === 3 && /ob2-list/.test(o.body) && o.cls === 'ob2' && /ob2-ch"><svg class="chr/.test(o.body), '되살림: 목표 bullets → 번호 목록 (101차 새 목표 장 ob2 · 안내 인물)');
-  { const ol = KT2.renderSlide({ id: 'o', block: 'objective', data: { title: 't', bullets: ['가', '나'] } }, Object.assign({}, C, { learn: true })); ok(/obj-list/.test(ol.body) && !/ob2/.test(ol.body), '101차 목표 장: learn 은 1세대 그대로'); }
+  { const ol = KT2.renderSlide({ id: 'o', block: 'objective', data: { title: 't', bullets: ['가', '나'] } }, Object.assign({}, C, { learn: true })); ok(/ob2-list/.test(ol.body) && ol.cls === 'ob2', '102차 목표 장: learn(학생 화면)도 새 꼴 ob2'); }
   { const cv = KT2.renderSlide({ id: 'cv', block: 'cover', data: { title: '덧셈\n부제', emoji: '🧮' } }, Object.assign({}, C, { meta: { std: '[4수01-01]' }, unitTitle: '단원' })); ok(cv.cover && /class="co2"/.test(cv.body) && /co2-em">🧮/.test(cv.body) && /co2-title">덧셈/.test(cv.body) && /co2-l2">부제/.test(cv.body) && /c-bear/.test(cv.body) && /co2-unit">단원/.test(cv.body), '101차 새 표지 co2 그림책 표지: 그림 판(배경·큰 그림·인물 둘) + 단원·제목·부제');
-    const cl = KT2.renderSlide({ id: 'cv', block: 'cover', data: { title: '덧셈' } }, Object.assign({}, C, { meta: {}, learn: true })); ok(cl.cover && /kt2-cover-title/.test(cl.body) && !/co2/.test(cl.body), '101차 표지: learn 은 1세대 그대로'); }
+    const cl = KT2.renderSlide({ id: 'cv', block: 'cover', data: { title: '덧셈' } }, Object.assign({}, C, { meta: {}, learn: true })); ok(cl.cover && /class="co2"/.test(cl.body), '102차 표지: learn(학생 화면)도 새 꼴 co2'); }
   const sm = KT2.renderSlide({ id: 's', block: 'concept', data: { title: 't', content: 'x', symbol_meanings: [{ symbol: '자음자', meaning: 'ㄱ ㄴ' }, { symbol: '모음자', meaning: 'ㅏ ㅓ' }] } }, C);
   ok((sm.body.match(/class="sym"/g) || []).length === 2 && /<b>자음자<\/b><span>ㄱ ㄴ<\/span>/.test(sm.body), '되살림: 개념 symbol_meanings → 낱말 카드');
   const vd = KT2.renderSlide({ id: 'v', block: 'visual_demo', data: { title: 't', sub_text: '두 가지로 읽어요' } }, C);
