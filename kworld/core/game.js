@@ -227,7 +227,7 @@ export class Game {
     return { action: true, name: def.name, verb };
   }
   bindButtons() {
-    addEventListener('keydown', (ev) => { if (/^(TEXTAREA|INPUT)$/.test(ev.target.tagName)) return; if (ev.code === 'KeyE' || ev.code === 'Space') this.act(); if (ev.code === 'KeyC') this.openCraft(); if (ev.code === 'KeyV') this.p.setView(this.p.viewMode === 'fp' ? 'tp' : 'fp'); if (ev.code === 'KeyH') this.showHint(); if (ev.code === 'KeyM') this.missionList(); });
+    addEventListener('keydown', (ev) => { if (/^(TEXTAREA|INPUT)$/.test(ev.target.tagName)) return; if (ev.code === 'KeyE' || ev.code === 'Space') this.act(); if (ev.code === 'KeyC') this.openCraft(); if (ev.code === 'KeyV') this.p.setView(this.p.viewMode === 'fp' ? 'tp' : 'fp'); if (ev.code === 'KeyH') this.showHint(); if (ev.code === 'KeyM') this.missionList(); if (ev.code === 'KeyJ') this.life?.jokbo(); });
     document.getElementById('actbtn').onclick = () => this.act();
     document.getElementById('craftbtn').onclick = () => this.openCraft();
     document.getElementById('viewbtn').onclick = () => this.p.setView(this.p.viewMode === 'fp' ? 'tp' : 'fp');

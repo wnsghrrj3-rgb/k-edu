@@ -6,6 +6,7 @@
 //  · 흔적(hurt): 다치면 절뚝이고(느려짐) 어떤 선택지는 회색이 된다. 끝까지 남는다.
 //  · 천장(cap): d.rank.open 이면 값 🎖 벼슬이 열린다. 신분 규칙의 cap 이 오를 수 있는 높이 — 아무리 해도 그 위로는 못 오른다(통일신라 골품). 막히면 깃발 rank:capped.
 //  · 꼭 나오는 상황은 전부, 섞여 나오는 상황은 판마다 몇 개만(태어남 때 정한 씨앗).
+import { carryRecord, openJokbo } from './jokbo.js';
 const ABIL = ['눈', '손', '발', '배', '몸'];
 const DOTS = (lv) => ({ 3: '●●●', 2: '●●○', 1: '●○○' })[Math.max(1, Math.min(3, lv))] || '●●○';
 const LV = ['', '낮음', '보통', '높음'];
@@ -164,12 +165,14 @@ export class Life {
     const g = this.g; g.p.enabled = false; const v = this.values; const branch = (e.branches || []).find((b) => this.cond(b.if)) || (e.branches || []).slice(-1)[0] || {};
     g.flag(['life:end', 'life:' + (branch.id || 'end')]); g.results = [...(g.results || []), { id: 'life:end', concept: 'hist.life', ok: true, open: JSON.stringify({ craft: v.craft, heart: v.heart, hurt: [...this.hurt], log: this.log, branch: branch.id }) }];
     const marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h);
-    try { localStorage.setItem('kworld_carry:' + g.era, JSON.stringify({ craft: v.craft, heart: v.heart, grain: v.grain || 0, rank: v.rank || 0, branch: branch.id, status: this.status || null, nation: this.nation || null, hurt: [...this.hurt], t: Date.now() })); } catch { }
+    const rec = carryRecord(this, branch); try { localStorage.setItem('kworld_carry:' + g.era, JSON.stringify(rec)); const hist = JSON.parse(localStorage.getItem('kworld_jokbo') || '[]'); hist.push({ era: g.era, branch: rec.branch, title: rec.title, status: rec.statusName, t: rec.t }); localStorage.setItem('kworld_jokbo', JSON.stringify(hist.slice(-300))); } catch { }   // 넘겨줄 것 + 족보 기록(지난 집까지)
     const html = `<div class="chk life end"><div class="tag">${esc(e.tag || '이번 삶')}</div><h3>${esc(branch.title || e.title || '')}</h3>${(branch.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}<ul class="mlist"><li>✋ 솜씨 <b>${v.craft}</b> · 🤝 인심 <b>${v.heart}</b> · 🌾 곡식 ${this.d.grain?.open ? `<b>${v.grain || 0}</b>` : '🔒'}${this.d.rank?.open ? ` · 🎖 벼슬 <b>${v.rank || 0}</b>${this.cap() != null ? ` / 천장 ${this.cap()}` : ''}` : ''}</li><li>능력 ${ABIL.map((a) => `${a} ${DOTS(this.abil[a])}`).join(' · ')}</li>${marks.length ? `<li>흔적 — ${esc(marks.join(', '))}</li>` : ''}${this.nationName || this.statusName ? `<li>${this.nationName ? `🏳️ ${esc(this.nationName)} · ` : ''}${this.statusName ? `🏠 ${esc(this.statusName)}` : ''}</li>` : ''}<li>겪은 상황 ${this.log.length}가지</li></ul>${e.fact ? `<div class="facts"><div>📜 <b>실제</b> ${esc(e.fact)}</div></div>` : ''}${e.next ? `<p class="sub">${esc(e.next)}</p>` : ''}</div>`;
     const btns = [{ label: e.again || '다시 태어난다', primary: true, onClick: () => { g.save?.clear(); const u = new URL(location.href); u.searchParams.set('resume', '0'); location.href = u.toString(); } }];
     if (g.world.gate) btns.push({ label: g.world.gate.ready ? `${g.world.gate.nextName}로 가기` : `${g.world.gate.nextName}로 (준비 중)`, onClick: () => { const gt = g.world.gate; if (gt.ready) { const u = new URL(location.href); u.searchParams.set('era', gt.next); location.href = u.toString(); } else g.ui.say(`${gt.nextName}는 다음에 열려. 솜씨·인심은 그때 넘어간다.`, 4000); } });
+    const show = () => g.ui.open(html, btns);
+    btns.push({ label: '📜 족보', onClick: () => openJokbo(g, show) });
     btns.push({ label: '더 둘러보기', onClick: () => { g.ui.close(); g.p.enabled = true; } });
-    g.ui.open(html, btns); g.save?.touch();
+    show(); g.save?.touch();
   }
   // ---------- 저장 ----------
   snapshot() { return { nation: this.nation, nationName: this.nationName, status: this.status, statusName: this.statusName, values: this.values, abil: this.abil, xp: this.xp, hurt: [...this.hurt], opened: [...this.opened], done: [...this.done], log: this.log, seed: this.seed, mixed: this.mixed, tries: this.tries }; }
@@ -177,9 +180,12 @@ export class Life {
   // ---------- 화면 ----------
   hud() {
     if (typeof document === 'undefined' || typeof document.createElement !== 'function' || document.getElementById('life')) return;
-    const st = document.createElement('style'); st.textContent = `#life{position:fixed;top:199px;right:22px;width:150px;background:var(--panel);border:1px solid var(--line);padding:10px 13px;border-radius:14px;font-size:12px;backdrop-filter:blur(10px);line-height:1.55}#life .v{display:flex;justify-content:space-between}#life .v b{font-variant-numeric:tabular-nums}#life .lock{opacity:.55}#life .ab{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:0 8px;font-size:11px;letter-spacing:.5px}#life .ab span i{font-style:normal;color:var(--accent2);letter-spacing:1px;text-shadow:0 0 6px rgba(233,182,91,.35)}#life .v b{color:#fff;font-size:13px}#life .v span{opacity:.85}#life .hurt{margin-top:5px;color:#f3a05a;font-size:11px}#life .up{animation:lifeup .9s ease}@keyframes lifeup{0%{transform:scale(1.25);color:#ffe08a}100%{transform:none}}.chk.life .why{background:rgba(255,220,138,.12);border-left:3px solid #ffe08a;padding:8px 10px;border-radius:8px}.chk.life .delta{font-weight:700;letter-spacing:.3px}.chk.life.bad .tag{color:#f3a05a}.pbtns button.gray{opacity:.45;cursor:not-allowed;text-decoration:line-through}@media(max-width:760px){#life{right:10px;top:10px;width:118px;padding:7px 9px;font-size:11px}#life .ab{display:none}}`;
-    document.head.appendChild(st); const el = document.createElement('div'); el.id = 'life'; document.body.appendChild(el); this.el = el;
+    const st = document.createElement('style'); st.textContent = `#life{position:fixed;top:199px;right:22px;width:150px;background:var(--panel);border:1px solid var(--line);padding:10px 13px;border-radius:14px;font-size:12px;backdrop-filter:blur(10px);line-height:1.55}#life .v{display:flex;justify-content:space-between}#life .v b{font-variant-numeric:tabular-nums}#life .lock{opacity:.55}#life .ab{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:0 8px;font-size:11px;letter-spacing:.5px}#life .ab span i{font-style:normal;color:var(--accent2);letter-spacing:1px;text-shadow:0 0 6px rgba(233,182,91,.35)}#life .v b{color:#fff;font-size:13px}#life .v span{opacity:.85}#life .hurt{margin-top:5px;color:#f3a05a;font-size:11px}#life .up{animation:lifeup .9s ease}@keyframes lifeup{0%{transform:scale(1.25);color:#ffe08a}100%{transform:none}}.chk.life .why{background:rgba(255,220,138,.12);border-left:3px solid #ffe08a;padding:8px 10px;border-radius:8px}.chk.life .delta{font-weight:700;letter-spacing:.3px}.chk.life.bad .tag{color:#f3a05a}.pbtns button.gray{opacity:.45;cursor:not-allowed;text-decoration:line-through}@media(max-width:760px){#life{right:10px;top:10px;width:118px;padding:7px 9px;font-size:11px}#life .ab{display:none}}#jokbobtn{margin-top:8px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:#f2dfb2;border-radius:999px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:.3px}#jokbobtn:hover{border-color:var(--accent)}`;
+    document.head.appendChild(st); const el = document.createElement('div'); el.id = 'life'; document.body.appendChild(el); const body = document.createElement('div'); el.appendChild(body); this.el = body;   // 값은 body 에, 족보 단추는 그 밑에 남는다
+    const jb = document.createElement('button'); jb.id = 'jokbobtn'; jb.textContent = '📜 족보'; jb.title = '우리 집 족보 (J)'; jb.onclick = () => this.jokbo(); (document.getElementById('hud') || el).appendChild(jb);   // 왼쪽 여정 카드 밑(오른쪽 값판을 키우면 행동 단추를 덮는다)
   }
+  /** 족보 한 장 — 카드가 열려 있지 않을 때만(상황 카드 도중엔 안 끼어든다) */
+  jokbo() { if (this.g.ui.isOpen?.() || this.g.story?.cutsceneOn) return; openJokbo(this.g); }
   render() {
     if (!this.el) return; const v = this.values; const prev = this.el.dataset.v || '';
     const marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h).join(' · ');
