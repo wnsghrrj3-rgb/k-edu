@@ -988,6 +988,81 @@ function rulerSVG(a){
   t += `<text x="${X0 + n * U + 6}" y="${ry + 42}" text-anchor="end" font-size="10" fill="#8A8172">cm</text>`;
   return `<svg class="cmpsv" viewBox="0 0 ${W} ${ry + 48}" width="${W}" height="${ry + 48}" role="img" aria-label="자 위에 놓인 ${svgEsc(a.label || '물건')}">${t}</svg>`;
 }
+/* ===== v3.0 — 2학년 2학기 「길이 재기」 m·cm 그림 4종 (2026-10-12, 오푸스 5.5) =====
+   tape     {len, label, s?}   줄자 — 왼쪽은 눈금 0~4, 물결로 끊고, 오른쪽은 물건 끝 둘레 눈금 다섯(끝−3 ~ 끝+1). len·s 는 cm 정수(len 100~999, s 0~3)
+   mcm_calc {a:[m,cm], b:[m,cm], op:'+'|'-', ask?:'both'|'m'|'cm'|'show', said?:[m,cm]}
+            m·cm 세로셈 — 답 줄은 엔진이 셈한다(데이터에 답을 적지 않는다). ask 는 ?로 비울 칸(show 면 다 보임). said 는 「어떤 친구가 쓴 답」(잘못 찾기 — 빨간 글씨)
+   mbar     {parts:[[m,cm],[m,cm]], op:'+'|'-', label?}   이어 붙인 두 띠(+, 아래 괄호 ?) · 잘라 쓴 띠(−, 쓴 부분 빗금, 남은 부분 ?)
+   est_row  {seg, n, people?}  어림 간격 — 「약 seg m」 칸 n 개(전체 ?) · people 이면 사람 n 명과 사이 n−1 칸(맨 앞~맨 뒤 ?)
+   화면·종이 같은 SVG. */
+const MCM = (m, c) => { m = Number(m) || 0; c = Number(c) || 0; return (m && c) ? `${m} m ${c} cm` : m ? `${m} m` : `${c} cm`; };
+function tapeSVG(a){
+  const len = Math.max(1, Math.round(Number(a.len) || 100)), s = Math.max(0, Math.min(3, Math.round(Number(a.s) || 0))), e = s + len;
+  const UL = 22, UR = 30, X0 = 22, BRK = X0 + 5 * UL - 4, XR = BRK + 40, TY = 58;
+  const xl = i => X0 + i * UL, xr = v => XR + (v - (e - 3)) * UR, W = xr(e + 1) + 44;
+  const tick = (x, v) => `<line x1="${x}" y1="${TY}" x2="${x}" y2="${TY + 16}" stroke="${CMP_INK}" stroke-width="1.6"/><text x="${x}" y="${TY + 34}" text-anchor="middle" font-size="13" fill="${CMP_INK}">${v}</text>`;
+  let t = `<text x="${X0}" y="16" font-size="14" fill="${CMP_INK}">${svgEsc(a.label || '')}</text>`;
+  t += `<rect x="${X0 - 12}" y="${TY}" width="${BRK - X0 + 12}" height="42" rx="4" fill="#FFF3C4" stroke="#B9A77A" stroke-width="1.6"/>`;
+  t += `<rect x="${BRK + 18}" y="${TY}" width="${W - 10 - BRK - 18}" height="42" rx="4" fill="#FFF3C4" stroke="#B9A77A" stroke-width="1.6"/>`;
+  const zig = x => `<path d="M${x} ${TY - 2} l5 11 l-5 11 l5 11 l-5 11" fill="none" stroke="#8A8172" stroke-width="1.4"/>`;
+  t += zig(BRK + 2) + zig(BRK + 14);
+  for (let i = 0; i <= 4; i++){ t += tick(xl(i), i); if (i < 4) t += `<line x1="${xl(i) + UL / 2}" y1="${TY}" x2="${xl(i) + UL / 2}" y2="${TY + 8}" stroke="${CMP_INK}" stroke-width="1"/>`; }
+  for (let v = e - 3; v <= e + 1; v++){ t += tick(xr(v), v); if (v <= e) t += `<line x1="${xr(v) - UR / 2}" y1="${TY}" x2="${xr(v) - UR / 2}" y2="${TY + 8}" stroke="${CMP_INK}" stroke-width="1"/>`; }
+  t += `<text x="${W - 14}" y="${TY + 34}" text-anchor="end" font-size="11" fill="#8A8172">cm</text>`;
+  const xs = xl(s), xe = xr(e);
+  t += `<rect x="${xs}" y="24" width="${BRK - 2 - xs}" height="16" fill="${CMP_FILL[1]}" stroke="${CMP_INK}" stroke-width="1.6"/><rect x="${BRK + 18}" y="24" width="${xe - BRK - 18}" height="16" fill="${CMP_FILL[1]}" stroke="${CMP_INK}" stroke-width="1.6"/>`;
+  t += `<line x1="${xs}" y1="40" x2="${xs}" y2="${TY}" stroke="#C0392B" stroke-width="1.4" stroke-dasharray="3 3"/><line x1="${xe}" y1="40" x2="${xe}" y2="${TY}" stroke="#C0392B" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+  return `<svg class="cmpsv" viewBox="0 0 ${W} ${TY + 50}" width="${W}" height="${TY + 50}" role="img" aria-label="줄자 위에 놓인 ${svgEsc(a.label || '물건')}">${t}</svg>`;
+}
+function mcmCalcRes(a){ const A = a.a || [0, 0], B = a.b || [0, 0], add = a.op !== '-';
+  return add ? [A[0] + B[0], A[1] + B[1]] : [A[0] - B[0], A[1] - B[1]]; }
+function mcmCalcSVG(a){
+  const A = a.a || [0, 0], B = a.b || [0, 0], add = a.op !== '-', R = mcmCalcRes(a), ask = a.ask || 'both', said = Array.isArray(a.said) ? a.said : null;
+  const X0 = 8, CM = 70, CU = 100, CC = 160, CU2 = 192, RH = 40, Y0 = 34, RED = '#C62828';
+  const num = (x, cx, y, fill) => `<text x="${cx}" y="${y}" text-anchor="end" font-size="28" font-weight="700" fill="${fill || CMP_INK}">${x}</text>`;
+  const unit = (u, x, y) => `<text x="${x}" y="${y}" font-size="17" fill="#8A8172">${u}</text>`;
+  const box = (cx, y) => `<rect x="${cx - 44}" y="${y - 28}" width="46" height="36" rx="6" fill="#FFF8E1" stroke="#B9A77A" stroke-width="1.6" stroke-dasharray="5 4"/><text x="${cx - 21}" y="${y - 3}" text-anchor="middle" font-size="18" fill="#B9A77A">?</text>`;
+  let s = '';
+  [A, B].forEach((p, i) => { const y = Y0 + i * RH; s += num(p[0], CM, y) + unit('m', CM + 6, y) + num(p[1], CC, y) + unit('cm', CC + 6, y); });
+  s += `<text x="${X0 + 6}" y="${Y0 + RH}" font-size="26" font-weight="700" fill="${CMP_INK}">${add ? '+' : '−'}</text>`;
+  const ly = Y0 + RH + 12; s += `<line x1="${X0}" y1="${ly}" x2="${CU2 + 22}" y2="${ly}" stroke="${CMP_INK}" stroke-width="2.4"/>`;
+  const ay = ly + 38;
+  if (said){ s += num(said[0], CM, ay, RED) + unit('m', CM + 6, ay) + num(said[1], CC, ay, RED) + unit('cm', CC + 6, ay); }
+  else { s += (ask === 'both' || ask === 'm' ? box(CM, ay) : num(R[0], CM, ay, '#1F5FA8')) + unit('m', CM + 6, ay);
+         s += (ask === 'both' || ask === 'cm' ? box(CC, ay) : num(R[1], CC, ay, '#1F5FA8')) + unit('cm', CC + 6, ay); }
+  const w = CU2 + 30, h = ay + 14;
+  return `<svg class="cmpsv" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="m와 cm 세로셈">${s}</svg>`;
+}
+function mbarSVG(a){
+  const P = a.parts || [[1, 0], [1, 0]], cm = p => (Number(p[0]) || 0) * 100 + (Number(p[1]) || 0), add = a.op !== '-';
+  const L = 320, X = 10, MIN = 92; const lab = p => MCM(p[0], p[1]);
+  const t1 = cm(P[0]), t2 = cm(P[1]);
+  const bx = (x, y, w, fill, txt, hatch) => `<rect x="${x}" y="${y}" width="${w}" height="30" rx="4" fill="${fill}" stroke="${CMP_INK}" stroke-width="1.6"/>` + (hatch ? `<path d="${Array.from({length: Math.floor(w / 10)}, (_, i) => `M${x + 4 + i * 10} ${y + 30} l8 -30`).join(' ')}" stroke="#8A8172" stroke-width="1"/>` : '') +
+    `<text x="${x + w / 2}" y="${y + 20}" text-anchor="middle" font-size="14" font-weight="700" fill="${CMP_INK}"${hatch ? ' paint-order="stroke" stroke="#FFFFFF" stroke-width="4"' : ''}>${svgEsc(txt)}</text>`;
+  const brace = (x1, x2, y, txt) => `<path d="M${x1} ${y} v8 h${x2 - x1} v-8" fill="none" stroke="${CMP_INK}" stroke-width="1.6"/><text x="${(x1 + x2) / 2}" y="${y + 28}" text-anchor="middle" font-size="18" font-weight="700" fill="#1F5FA8">${svgEsc(txt)}</text>`;
+  let s = a.label ? `<text x="${X}" y="14" font-size="13" fill="#8A8172">${svgEsc(a.label)}</text>` : '';
+  if (add){ let wa = Math.round(L * t1 / Math.max(1, t1 + t2)); wa = Math.max(MIN, Math.min(L - MIN, wa));
+    s += bx(X, 22, wa, CMP_FILL[0], lab(P[0])) + bx(X + wa, 22, L - wa, CMP_FILL[2], lab(P[1])) + brace(X, X + L, 56, '?'); }
+  else { let wu = Math.round(L * t2 / Math.max(1, t1)); wu = Math.max(MIN, Math.min(L - MIN, wu));
+    s += `<path d="M${X} 30 v-8 h${L} v8" fill="none" stroke="${CMP_INK}" stroke-width="1.6"/><text x="${X + L / 2}" y="16" text-anchor="middle" font-size="14" font-weight="700" fill="${CMP_INK}">${svgEsc(lab(P[0]))}</text>`;
+    s += bx(X, 32, wu, '#E9E4DA', lab(P[1]), true) + bx(X + wu, 32, L - wu, CMP_FILL[3], '') + brace(X + wu, X + L, 66, '?'); }
+  const h = add ? 92 : 102;
+  return `<svg class="cmpsv" viewBox="0 0 ${X * 2 + L} ${h}" width="${X * 2 + L}" height="${h}" role="img" aria-label="${add ? '이어 붙인 두 띠' : '잘라 쓴 띠'}">${s}</svg>`;
+}
+function estRowSVG(a){
+  const n = Math.max(1, Math.round(Number(a.n) || 1)), seg = Number(a.seg) || 1, ppl = !!a.people, X = 12, G = ppl ? 62 : 68;
+  const cells = ppl ? n - 1 : n, W = X * 2 + cells * G + (ppl ? 0 : 0); let s = '';
+  const person = x => `<circle cx="${x}" cy="16" r="7" fill="${CMP_FILL[0]}" stroke="${CMP_INK}" stroke-width="1.4"/><path d="M${x - 8} 44 l3 -18 h10 l3 18 z" fill="${CMP_FILL[1]}" stroke="${CMP_INK}" stroke-width="1.4"/>`;
+  if (ppl){ for (let i = 0; i < n; i++) s += person(X + i * G);
+    for (let i = 0; i < n - 1; i++){ const x1 = X + i * G + 10, x2 = X + (i + 1) * G - 10;
+      s += `<path d="M${x1} 54 H${x2} M${x1 + 5} 50 l-5 4 l5 4 M${x2 - 5} 50 l5 4 l-5 4" fill="none" stroke="#8A8172" stroke-width="1.3"/><text x="${(x1 + x2) / 2}" y="70" text-anchor="middle" font-size="11" fill="${CMP_INK}">약 ${seg} m</text>`; }
+    s += `<path d="M${X} 80 v8 h${(n - 1) * G} v-8" fill="none" stroke="${CMP_INK}" stroke-width="1.6"/><text x="${X + (n - 1) * G / 2}" y="108" text-anchor="middle" font-size="18" font-weight="700" fill="#1F5FA8">?</text>`; }
+  else { for (let i = 0; i < n; i++){ const x = X + i * G;
+      s += `<rect x="${x}" y="14" width="${G}" height="30" fill="${i % 2 ? CMP_FILL[2] : CMP_FILL[3]}" stroke="${CMP_INK}" stroke-width="1.4"/><text x="${x + G / 2}" y="34" text-anchor="middle" font-size="12" fill="${CMP_INK}">약 ${seg} m</text>`; }
+    s += `<path d="M${X} 52 v8 h${n * G} v-8" fill="none" stroke="${CMP_INK}" stroke-width="1.6"/><text x="${X + n * G / 2}" y="80" text-anchor="middle" font-size="18" font-weight="700" fill="#1F5FA8">?</text>`; }
+  const w = Math.max(W, 120), h = ppl ? 116 : 88;
+  return `<svg class="cmpsv" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${ppl ? '간격을 두고 선 사람들' : '어림한 간격'}">${s}</svg>`;
+}
 function bar2SVG(a){
   const p = a.parts || [null, null]; const W0 = a.whole === null || a.whole === undefined ? null : Number(a.whole);
   const A = p[0] === null || p[0] === undefined ? null : Number(p[0]), Bq = p[1] === null || p[1] === undefined ? null : Number(p[1]);
@@ -1274,6 +1349,11 @@ function drawAsset(a, r){
     case 'mul_groups': return mulHTML(a, false);
     case 'times_bars': return `<div class="cmpw">${timesSVG(a)}</div>`;
     case 'gugu_table': return guguHTML(a, false);   /* v2.9 — 2학년 2학기 「곱셈구구」 */
+    /* v3.0 — 2학년 2학기 「길이 재기」 */
+    case 'tape': return `<div class="cmpw">${tapeSVG(a)}</div>`;
+    case 'mcm_calc': return `<div class="cmpw">${mcmCalcSVG(a)}</div>`;
+    case 'mbar': return `<div class="cmpw">${mbarSVG(a)}</div>`;
+    case 'est_row': return `<div class="cmpw">${estRowSVG(a)}</div>`;
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
@@ -2871,6 +2951,126 @@ function makeVariantOnce(q, r){
     return v;
   }
 
+  /* --- v3.0: 2학년 2학기 「길이 재기」 (2026-10-12, 오푸스 5.5) — 그림 tape·mcm_calc·mbar·est_row + 갈래 mcm
+     mcm {ask, form?, ...}
+       ask  m100(몇백 cm ↔ 몇 m, form tom|tocm) · tocm(몇 m 몇 cm → 몇 cm) · tomcm(몇 cm → 몇 m 몇 cm)
+            read(줄자 — form cm|mcm) · off(줄자, 한끝이 0에 있지 않음 — 몇 cm)
+            add · sub(form expr|calc|tape|roll|join · cut|two|diff — calc 는 mcm_calc, calc:'both'|'m'|'cm') · cmp(두 길이 견주기 >·<·=)
+            est(est_row — 간격 n 개, people 이면 사람 n 명 사이) · pace(1 m가 약 몇 걸음 → 약 몇 m 는 몇 걸음)
+     받아올림·받아내림 없는 범위만(2학년 성취기준) — cm 끼리 더해 100 미만, 빼는 쪽 cm 가 크거나 같다.
+     오개념 꼬리(이 단원 사전): X01 1 m 와 100 cm 관계 · X02 이어 붙여 0 빠뜨림·자리 뒤바꿈 · X03 몇 cm 를 가를 때 자리 잘못 · X04 m 수와 cm 수를 더함
+                  X06 줄자 끝 숫자 그대로 · X07 이웃 눈금 · X08 한 자리 셈 실수 · X09 cm 한 자리 수를 몇십으로 · X10 덧셈↔뺄셈 · X11 끝 0 떼기
+                  X13 몸 단위 크기와 횟수 · X14 기준 배수·더해 어림 실수 · X15 사람 수 = 간격 수 · X18 단위가 다른데 수만 견줌
+     원본을 만들 때만 q._fix 로 못박는다(fill.js 전용). */
+  if (rule.mcm && (!a || typeof a !== 'object' || ['tape', 'mcm_calc', 'mbar', 'est_row'].indexOf(a.type) >= 0)){
+    const G = rule.mcm, ask = G.ask || 'tocm', FX = v._fix || {}; delete v._fix; delete v._form; delete v.asset;
+    const want = Math.max(1, nOptsOf(q) - 1), isSA = q.kind === 'sa', L = MCM, NEUL = n => VOWEL_END(n) ? '를' : '을', NIEYO = n => VOWEL_END(n) ? '예요' : '이에요';
+    const fin = (sa, mc, ds) => { if (isSA) v.answer = [String(sa)]; else v.options = kindOpts(mc, ds, want, q.options); };
+    const SA = isSA ? ' 숫자로 쓰세요.' : '';
+    if (ask === 'm100'){
+      const form = FX.form || G.form || pick(['tom', 'tocm'], r), N = FX.n !== undefined ? FX.n : rint(G.nmin || 2, G.nmax || 9, r);
+      if (form === 'tom'){ v.stem = `${N * 100} cm는 몇 m인가요?` + SA;
+        fin(N, N + ' m', [[N * 10 + ' m', 'X01'], [N * 100 + ' m', 'X01'], [(N + 1) + ' m', 'X08']]);
+        v.explanation = ['100 cm는 1 m예요.', N === 1 ? '1 cm가 100번 모이면 100 cm — 이 길이를 1 m라고 해요.' : `${N * 100} cm는 100 cm가 ${N}번이에요.`, `그래서 ${N * 100} cm = ${N} m예요.`]; }
+      else { v.stem = `${N} m는 몇 cm인가요?` + SA;
+        fin(N * 100, N * 100 + ' cm', [[N * 10 + ' cm', 'X01'], [N * 1000 + ' cm', 'X01'], [N + ' cm', 'X01']]);
+        v.explanation = ['1 m는 100 cm예요.', N === 1 ? '1 m는 1 cm가 100번 모인 길이예요.' : `${N} m는 100 cm가 ${N}번이에요.`, `그래서 ${N} m = ${N * 100} cm예요.`]; }
+      return v; }
+    if (ask === 'tocm'){
+      const m = FX.m !== undefined ? FX.m : rint(1, G.mmax || 9, r), c = FX.c !== undefined ? FX.c : (r() < (G.small || 0.3) ? rint(1, 9, r) : rint(11, 99, r)), T = m * 100 + c;
+      v.stem = `${L(m, c)}는 몇 cm인가요?` + SA;
+      const ds = c < 10 ? [[m + '' + c + ' cm', 'X02'], [(m * 100 + c * 10) + ' cm', 'X09'], [(m + c) + ' cm', 'X04']]
+                        : [[(m * 10 + c) + ' cm', 'X01'], [(m + c) + ' cm', 'X04'], [(T + 100) + ' cm', 'X08']];
+      fin(T, T + ' cm', ds);
+      v.explanation = [`${m} m는 ${m * 100} cm예요.`, `${m * 100} cm와 ${c} cm를 모으면 ${T} cm예요.`, c < 10 ? `cm가 한 자리 수라 십의 자리에 0을 써서 ${T}${NIEYO(T)} — ${m}${c}${VOWEL_END(c) ? '가' : '이'} 아니에요.` : 'm를 100 cm씩으로 바꾸어 cm와 모아요.'];
+      return v; }
+    if (ask === 'tomcm'){
+      let N = FX.n; if (N === undefined){ const m0 = rint(1, G.mmax || 9, r), c0 = r() < (G.small || 0.3) ? rint(1, 9, r) : rint(11, 99, r); N = m0 * 100 + c0; }
+      const m = Math.floor(N / 100), c = N % 100;
+      v.stem = `${N} cm를 몇 m 몇 cm로 나타내면 얼마인가요?`;
+      v.options = kindOpts(L(m, c), [[L(Math.floor(N / 10), N % 10), 'X03'], [c < 10 ? L(m, c * 10) : L(m, Math.floor(c / 10)), c < 10 ? 'X09' : 'X11'], [L(c, m), 'X02']], want, q.options);
+      v.explanation = [`${N} cm는 ${m * 100} cm와 ${c} cm예요.`, `${m * 100} cm는 ${m} m예요.`, `그래서 ${N} cm = ${L(m, c)}예요.`];
+      return v; }
+    if (ask === 'read' || ask === 'off'){
+      const POOL = [['책상', 101, 160], ['탁자', 101, 180], ['책장', 120, 200], ['매트', 150, 260], ['소파', 150, 250], ['칠판', 250, 450], ['사물함', 300, 599], ['현수막', 200, 599], ['평균대', 200, 400], ['밧줄', 150, 599], ['커튼', 150, 300], ['줄넘기 줄', 180, 280]];
+      const off = ask === 'off', s = off ? (FX.s !== undefined ? FX.s : rint(2, 3, r)) : 0;
+      let len = FX.len, name = FX.name;
+      if (len === undefined){ const p = name ? (POOL.find(x => x[0] === name) || pick(POOL, r)) : pick(POOL, r); len = rint(Math.max(p[1], G.min || 101), Math.min(p[2], G.max || 599), r); if (!name) name = p[0]; }
+      if (!name){ const fit = POOL.filter(p => len >= p[1] && len <= p[2]); name = pick(fit.length ? fit : POOL, r)[0]; }
+      if (len % 100 === 0) len += 1;
+      const A = {type:'tape', len, label:name}; if (s) A.s = s; v.asset = A;
+      const m = Math.floor(len / 100), c = len % 100, e = s + len, EUI = name;
+      const form = off ? 'cm' : (FX.form || G.form || 'cm');
+      if (off){ v.stem = `${name}의 한끝을 줄자의 눈금 0에 맞추지 않고 재었어요. ${name}의 길이는 몇 cm인가요?` + SA;
+        fin(len, len + ' cm', [[e + ' cm', 'X06'], [(len + 1) + ' cm', 'X07'], [(len - 1) + ' cm', 'X07']]);
+        v.explanation = [`${EUI}의 한끝은 눈금 ${s}, 다른 끝은 눈금 ${e}에 있어요.`, `${e} − ${s} = ${len}이니 ${len} cm예요.`, `끝 눈금 ${e}${NEUL(e)} 그대로 읽으면 안 돼요 — 한끝을 0에 맞추어 재요.`]; }
+      else if (form === 'mcm'){ v.stem = `${name}의 길이를 몇 m 몇 cm로 나타내면 얼마인가요?`;
+        v.options = kindOpts(L(m, c), [[L(Math.floor(len / 10), len % 10), 'X03'], [L(Math.floor((len + 1) / 100), (len + 1) % 100), 'X07'], [c < 10 ? L(m, c * 10) : L(m, Math.floor(c / 10)), c < 10 ? 'X09' : 'X11']], want, q.options);
+        v.explanation = [`${EUI}의 한끝이 줄자의 눈금 0에 맞춰져 있어요.`, `다른 끝이 닿은 눈금이 ${len}이니 ${len} cm예요.`, `${len} cm = ${m * 100} cm + ${c} cm = ${L(m, c)}예요.`]; }
+      else { v.stem = `${name}의 길이는 몇 cm인가요?` + SA;
+        fin(len, len + ' cm', [[(len + 1) + ' cm', 'X07'], [(len - 1) + ' cm', 'X07'], [(len + 10) + ' cm', 'X07']]);
+        v.explanation = [`${EUI}의 한끝이 줄자의 눈금 0에 맞춰져 있어요.`, `다른 끝이 닿은 눈금이 ${len}이니 ${len} cm예요.`, `${len} cm는 ${L(m, c)}라고도 나타내요.`]; }
+      return v; }
+    if (ask === 'add' || ask === 'sub'){
+      const add = ask === 'add', OP = add ? '+' : '−';
+      let A = FX.a, B = FX.b;
+      if (!A){ for (let g = 0; g < 300; g++){
+          const m1 = rint(add ? 1 : 2, G.mmax || 9, r), m2 = rint(1, add ? (G.mmax || 9) : m1 - 1, r);
+          const sm = r() < (G.small || 0.3);
+          let c1 = rint(11, 89, r), c2 = sm ? rint(1, 9, r) : rint(10, 88, r);
+          if (add){ if (c1 + c2 > 99) continue; } else { if (c2 >= c1) continue; }
+          if ((c1 + c2) % 10 === 0 && add && r() < 0.5) continue;
+          A = [m1, c1]; B = [m2, c2]; break; } }
+      const R = add ? [A[0] + B[0], A[1] + B[1]] : [A[0] - B[0], A[1] - B[1]];
+      const form = FX.form || G.form || 'expr', calc = FX.calc || G.calc || 'both';
+      const sw = add ? (A[0] !== B[0] && A[1] !== B[1] ? [Math.abs(A[0] - B[0]), Math.abs(A[1] - B[1])] : null) : (A[1] + B[1] < 100 ? [A[0] + B[0], A[1] + B[1]] : null);
+      const sm9 = add ? (B[1] < 10 && A[1] + B[1] * 10 < 100 ? A[1] + B[1] * 10 : A[1] < 10 && A[1] * 10 + B[1] < 100 ? A[1] * 10 + B[1] : null)
+                      : (B[1] < 10 && A[1] - B[1] * 10 >= 0 ? A[1] - B[1] * 10 : null);
+      const DO = add ? '더해요' : '빼요';
+      v.explanation = [`m는 m끼리 ${DO} — ${A[0]} ${OP} ${B[0]} = ${R[0]}.`, `cm는 cm끼리 ${DO} — ${A[1]} ${OP} ${B[1]} = ${R[1]}.`, `그래서 ${L(A[0], A[1])} ${OP} ${L(B[0], B[1])} = ${L(R[0], R[1])}예요.`];
+      if (form === 'calc'){ v.asset = {type:'mcm_calc', a:A, b:B, op: add ? '+' : '-', ask: calc};
+        if (calc === 'm'){ v.stem = '세로셈에서 m 자리의 ?에 알맞은 수는 얼마인가요?' + SA; fin(R[0], String(R[0]), [[sw ? sw[0] : null, 'X10'], [R[0] + 1, 'X08'], [R[0] - 1 || null, 'X08']]); return v; }
+        if (calc === 'cm'){ v.stem = '세로셈에서 cm 자리의 ?에 알맞은 수는 얼마인가요?' + SA;
+          fin(R[1], String(R[1]), [[sm9, 'X09'], [R[1] % 10 === 0 && R[1] ? R[1] / 10 : null, 'X11'], [sw ? sw[1] : null, 'X10'], [R[1] + 10 < 100 ? R[1] + 10 : R[1] - 10, 'X08']]); return v; }
+        v.stem = '세로셈을 계산하면 얼마인가요?'; }
+      else if (form === 'tape'){ v.asset = {type:'mbar', parts:[A, B], op:'+'}; v.stem = '색 테이프 두 장을 겹치지 않게 이어 붙였어요. 이은 색 테이프의 길이는 얼마인가요?'; }
+      else if (form === 'cut'){ v.asset = {type:'mbar', parts:[A, B], op:'-'}; v.stem = `${L(A[0], A[1])}인 색 테이프에서 ${L(B[0], B[1])}를 잘라 썼어요. 남은 색 테이프의 길이는 얼마인가요?`; }
+      else if (form === 'roll') v.stem = `굴렁쇠가 ${L(A[0], A[1])}를 굴러간 뒤 ${L(B[0], B[1])}를 더 굴러갔어요. 굴렁쇠가 굴러간 거리는 모두 얼마인가요?`;
+      else if (form === 'join') v.stem = `${L(A[0], A[1])}인 나무와 ${L(B[0], B[1])}인 나무를 겹치지 않게 이었어요. 이은 나무의 길이는 얼마인가요?`;
+      else if (form === 'two') v.stem = `길이가 ${L(A[0], A[1])}인 막대를 두 도막으로 잘랐어요. 한 도막이 ${L(B[0], B[1])}일 때 다른 도막의 길이는 얼마인가요?`;
+      else if (form === 'diff') v.stem = `두 막대의 길이는 ${L(A[0], A[1])}와 ${L(B[0], B[1])}예요. 두 막대의 길이의 차는 얼마인가요?`;
+      else v.stem = `${L(A[0], A[1])} ${OP} ${L(B[0], B[1])}는 얼마인가요?`;
+      v.options = kindOpts(L(R[0], R[1]), [[sw ? L(sw[0], sw[1]) : null, 'X10'], [sm9 !== null ? L(R[0], sm9) : null, 'X09'], [R[1] % 10 === 0 && R[1] ? L(R[0], R[1] / 10) : null, 'X11'], [L(R[0] + 1, R[1]), 'X08'], [R[1] + 10 < 100 ? L(R[0], R[1] + 10) : null, 'X08']], want, q.options);
+      return v; }
+    if (ask === 'cmp'){
+      let T1 = FX.t1, T2 = FX.t2, cmLeft = FX.left;
+      if (T1 === undefined){ T1 = rint(141, 899, r); if (T1 % 100 === 0) T1 += 7; const d = r() < 0.15 ? 0 : (r() < 0.5 ? -1 : 1) * rint(1, 40, r); T2 = T1 + d; if (T2 % 100 === 0) T2 += 3; cmLeft = r() < 0.5; }
+      const sL = cmLeft ? T1 + ' cm' : L(Math.floor(T1 / 100), T1 % 100), sR = cmLeft ? L(Math.floor(T2 / 100), T2 % 100) : T2 + ' cm';
+      const ans = T1 > T2 ? '>' : T1 < T2 ? '<' : '=';
+      v.stem = `두 길이를 견주어 ○ 안에 알맞은 것을 고르세요.\n${sL} ○ ${sR}`;
+      v.options = kindOpts(ans, ['>', '<', '='].filter(x => x !== ans).map(x => [x, 'X18']), want, q.options);
+      const mside = cmLeft ? sR : sL, mval = cmLeft ? T2 : T1;
+      v.explanation = [`${mside}를 cm로 바꾸면 ${mval} cm예요.`, `${T1} cm와 ${T2} cm를 견주면 ${T1} ${ans} ${T2}예요.`, '단위가 다르면 같은 단위로 바꾼 뒤 견주어요 — 보이는 수만 보면 안 돼요.'];
+      return v; }
+    if (ask === 'est'){
+      const ppl = FX.people !== undefined ? FX.people : !!G.people, seg = FX.seg !== undefined ? FX.seg : pick(G.segs || [1, 2, 5], r), n = FX.n !== undefined ? FX.n : rint(G.nmin || 3, G.nmax || 6, r);
+      const tot = ppl ? seg * (n - 1) : seg * n; const A = {type:'est_row', seg, n}; if (ppl) A.people = true; v.asset = A;
+      if (ppl){ v.stem = `학생 ${n}명이 앞 사람과 약 ${seg} m씩 간격을 두고 줄을 섰어요. 맨 앞 학생과 맨 뒤 학생 사이의 거리는 약 몇 m인가요?` + SA;
+        fin(tot, `약 ${tot} m`, [[`약 ${seg * n} m`, 'X15'], [`약 ${seg * (n + 1)} m`, 'X15'], [seg > 1 ? `약 ${n} m` : null, 'X15'], [`약 ${tot + 1} m`, 'X14']]);
+        v.explanation = [`학생이 ${n}명이면 사이 간격은 ${n - 1}개예요.`, `약 ${seg} m씩 ${n - 1}번이니 약 ${tot} m예요.`, `사람 수만큼 ${n}번 더하면 안 돼요 — 간격을 세어요.`]; }
+      else { v.stem = `한 칸이 약 ${seg} m인 간격이 ${n}개 있어요. 모두 약 몇 m인가요?` + SA;
+        fin(tot, `약 ${tot} m`, [[`약 ${seg + n} m`, 'X14'], [`약 ${seg * (n - 1)} m`, 'X15'], [`약 ${seg * (n + 1)} m`, 'X14']]);
+        v.explanation = [`약 ${seg} m가 ${n}번 있어요.`, `${Array(n).fill(seg).join(' + ')} = ${tot}이에요.`.replace(/이에요\.$/, NIEYO(tot) + '.'), `그래서 모두 약 ${tot} m예요.`]; }
+      return v; }
+    if (ask === 'pace'){
+      const st = FX.st !== undefined ? FX.st : rint(2, 3, r), d = FX.d !== undefined ? FX.d : rint(2, 6, r), ans = st * d;
+      v.stem = `1 m가 약 ${st}걸음인 친구가 있어요. 이 친구가 약 ${d} m를 걸으면 몇 걸음쯤일까요?` + SA;
+      fin(ans, `약 ${ans}걸음`, [[`약 ${st + d}걸음`, 'X14'], [`약 ${d}걸음`, 'X13'], [`약 ${ans + st}걸음`, 'X14']]);
+      v.explanation = [`1 m가 약 ${st}걸음이에요.`, `약 ${d} m는 1 m가 ${d}번이니 ${st}걸음씩 ${d}번 — ${Array(d).fill(st).join(' + ')} = ${ans}${NIEYO(ans)}.`, `그래서 약 ${ans}걸음쯤이에요.`];
+      return v; }
+    return v;
+  }
+
   /* --- v2.9: 2학년 2학기 「곱셈구구」 (2026-10-12, 오푸스 5.5) — 그림 gugu_table + 갈래 gugu (곱셈 그림·식은 v2.7 mul 을 kmin·kmax·pmax·per 로 단에 묶어 쓴다)
      gugu {ask, ks?:[단 후보], nmin?, nmax?, side?, forms?}
        ask  cell(곱셈표의 ? 칸, gugu_table) · step(색칠한 단의 곱은 얼마씩 커지나, gugu_table) · next(k × n 은 k × (n−1)보다 얼마 더)
@@ -4416,6 +4616,10 @@ function paperAsset(a){
     case 'mul_groups': return mulHTML(a, true);
     case 'times_bars': return `<div class="pcmpw">${timesSVG(a)}</div>`;
     case 'gugu_table': return guguHTML(a, true);
+    case 'tape': return `<div class="pcmpw">${tapeSVG(a)}</div>`;
+    case 'mcm_calc': return `<div class="pcmpw">${mcmCalcSVG(a)}</div>`;
+    case 'mbar': return `<div class="pcmpw">${mbarSVG(a)}</div>`;
+    case 'est_row': return `<div class="pcmpw">${estRowSVG(a)}</div>`;
     case 'figs': return figsHTML(a, true);
     case 'tiles': return `<div class="pcmpw">${tilesSVG(a)}</div>`;
     case 'cubes': return cubesHTML(a, true);

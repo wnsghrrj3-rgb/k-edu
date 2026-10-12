@@ -129,7 +129,12 @@ const ASSETS = {
   /* v2.8 — 2학년 2학기 「네 자리 수」: 천 모형·천 원 지폐가 더해진 수 모형·돈 */
   blocks4:        ['th', 'h', 't', 'o'],
   /* v2.9 — 2학년 2학기 「곱셈구구」: 곱셈표 */
-  gugu_table:     ['rows', 'cols']
+  gugu_table:     ['rows', 'cols'],
+  /* v3.0 — 2학년 2학기 「길이 재기」: 줄자 · m·cm 세로셈 · 이은/자른 띠 · 어림 간격 */
+  tape:           ['len', 'label'],
+  mcm_calc:       ['a', 'b', 'op'],
+  mbar:           ['parts', 'op'],
+  est_row:        ['seg', 'n']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -228,6 +233,26 @@ function checkAsset(where, a) {
     if (st !== null && st !== undefined && k >= 0) cs.forEach((c, i) => { if (c !== null && c !== '?' && Number(c) !== Number(cs[k]) + sg * st * (i - k)) bad(where, `jump_row ${i}번째 칸 ${c} 가 ${sg > 0 ? '+' : '−'}${st} 규칙에 안 맞다`); });
     const big4 = cs.some(c => c !== null && c !== '?' && Number(c) > 1000) || Number(st) === 1000;   /* v2.8 — 네 자리 수 줄은 1000~9999 */
     cs.forEach(c => { if (c !== null && c !== '?' && !(mulJ ? Number(c) >= 1 && Number(c) <= 100 : big4 ? Number(c) >= 1000 && Number(c) <= 9999 : Number(c) >= 100 && Number(c) <= 1000)) bad(where, 'jump_row 칸 수가 범위 밖: ' + c); });
+  }
+  if (a.type === 'tape') {   /* v3.0 — 줄자: 물건 끝 둘레 눈금 다섯을 그리므로 len 은 cm 정수 100~999, 한끝 s 는 0~3 */
+    const len = Number(a.len), s0 = a.s === undefined ? 0 : Number(a.s);
+    if (!Number.isInteger(len) || len < 100 || len > 999) bad(where, 'tape len 은 100~999 정수: ' + a.len);
+    if (!Number.isInteger(s0) || s0 < 0 || s0 > 3) bad(where, 'tape s 는 0~3 정수');
+    if (len % 100 === 0) bad(where, 'tape len 이 몇 m 로 딱 떨어진다(몇 m 몇 cm 꼴이 아님)');
+  }
+  if (a.type === 'mcm_calc' || a.type === 'mbar') {   /* v3.0 — m·cm 두 길이: 받아올림·받아내림 없는 범위 */
+    const P = a.type === 'mcm_calc' ? [a.a, a.b] : a.parts, okp = p => Array.isArray(p) && p.length === 2 && p.every(x => Number.isInteger(x) && x >= 0) && p[1] < 100 && (p[0] > 0 || p[1] > 0);
+    if (!Array.isArray(P) || P.length !== 2 || !P.every(okp)) return bad(where, a.type + ' 두 길이는 [m, cm] 정수(cm 0~99)');
+    if (['+', '-'].indexOf(a.op) < 0) bad(where, a.type + ' op 는 + 또는 -');
+    if (a.op === '+' && P[0][1] + P[1][1] > 99) bad(where, a.type + ' cm 끼리 더해 100 이 넘는다(받아올림은 2학년 범위 밖)');
+    if (a.op === '-' && (P[0][1] < P[1][1] || P[0][0] < P[1][0] || P[0][0] * 100 + P[0][1] <= P[1][0] * 100 + P[1][1])) bad(where, a.type + ' 빼는 길이가 더 길거나 cm 받아내림이 필요하다');
+    if (a.type === 'mcm_calc' && a.ask !== undefined && ['both', 'm', 'cm', 'show'].indexOf(a.ask) < 0) bad(where, 'mcm_calc ask 는 both·m·cm·show');
+    if (a.type === 'mcm_calc' && a.said !== undefined && !okp(a.said)) bad(where, 'mcm_calc said 는 [m, cm]');
+  }
+  if (a.type === 'est_row') {
+    const seg = Number(a.seg), n = Number(a.n);
+    if (!Number.isInteger(seg) || seg < 1 || seg > 10) bad(where, 'est_row seg 는 1~10 정수');
+    if (!Number.isInteger(n) || n < 2 || n > 8) bad(where, 'est_row n 은 2~8');
   }
   if (a.type === 'gugu_table') {   /* v2.9 — 곱셈표: 칸 값은 엔진이 r×c 로 셈하므로 줄·칸 머리 수와 ?·빈칸 자리만 본다 */
     const R = a.rows || [], C = a.cols || [], ok = x => Number.isInteger(x) && x >= 0 && x <= 9;
@@ -1135,6 +1160,56 @@ function checkCm(where, q) {
   if (s === 0 && CM.ask === 'off') bad(where, 'cm off 인데 물건이 0에 있다');
   if (s !== 0 && CM.ask === 'read') bad(where, 'cm read 인데 물건이 0에서 시작하지 않는다(해설 「0에 맞춰져 있어요」가 거짓)');
 }
+/* v3.0 — 길이 재기(m·cm): 발문·그림이 말하는 답을 엔진과 따로 다시 셈한다 */
+const MCMf = T => { const m = Math.floor(T / 100), c = T % 100; return (m && c) ? `${m} m ${c} cm` : m ? `${m} m` : `${c} cm`; };
+const MCMtoks = s => [...String(s).matchAll(/(\d+) m(?: (\d+) cm)?(?![a-z])|(\d+) cm/g)].map(m => m[3] !== undefined ? +m[3] : +m[1] * 100 + (m[2] ? +m[2] : 0));
+function checkMcm(where, q) {
+  const G = (q.variant_rule || {}).mcm; if (!G) return;
+  const ask = G.ask || 'tocm', a = q.asset && typeof q.asset === 'object' ? q.asset : null, st = String(q.stem || '').replace(/^이번에는 다른 보기예요\. /, '');
+  const cor = q.kind === 'sa' ? String((q.answer || [])[0]) : String(((q.options || []).find(o => o.correct) || {}).t);
+  const wr = (q.options || []).filter(o => !o.correct).map(o => String(o.t)), sa = q.kind === 'sa';
+  let want = null, m;
+  if (ask === 'm100') {
+    if ((m = st.match(/^(\d+) cm는 몇 m인가요/))) { if (+m[1] % 100) return bad(where, 'mcm m100 몇백 cm 가 아니다'); want = sa ? String(+m[1] / 100) : `${+m[1] / 100} m`; }
+    else if ((m = st.match(/^(\d+) m는 몇 cm인가요/))) want = sa ? String(+m[1] * 100) : `${+m[1] * 100} cm`;
+    else return bad(where, 'mcm m100 발문 꼴: ' + st); }
+  else if (ask === 'tocm') { m = st.match(/^(\d+) m (\d+) cm는 몇 cm인가요/); if (!m) return bad(where, 'mcm tocm 발문 꼴: ' + st);
+    if (+m[2] < 1 || +m[2] > 99) bad(where, 'mcm tocm cm 는 1~99'); const T = +m[1] * 100 + +m[2]; want = sa ? String(T) : T + ' cm'; }
+  else if (ask === 'tomcm') { m = st.match(/^(\d+) cm를 몇 m 몇 cm로 나타내면/); if (!m) return bad(where, 'mcm tomcm 발문 꼴: ' + st);
+    if (+m[1] % 100 === 0 || +m[1] < 101) bad(where, 'mcm tomcm 몇 m 몇 cm 꼴이 아니다'); want = MCMf(+m[1]); }
+  else if (ask === 'read' || ask === 'off') { if (!a || a.type !== 'tape') return bad(where, 'mcm ' + ask + ' 은 tape 그림이 있어야');
+    const s0 = Number(a.s) || 0, len = Number(a.len);
+    if (ask === 'off' && (!s0 || !/맞추지 않고/.test(st))) bad(where, 'mcm off — 한끝이 0 이 아니어야 하고 발문이 그 사실을 말해야');
+    if (ask === 'read' && s0) bad(where, 'mcm read 인데 한끝이 0 이 아니다(해설 「0에 맞춰져 있어요」가 거짓)');
+    if (/몇 m 몇 cm로/.test(st)) want = MCMf(len); else if (/몇 cm인가요/.test(st)) want = sa ? String(len) : len + ' cm'; else return bad(where, 'mcm read 발문 꼴: ' + st);
+    if (!st.startsWith(String(a.label))) bad(where, 'mcm read 발문의 물건과 그림 이름표가 다르다'); }
+  else if (ask === 'add' || ask === 'sub') { const add = ask === 'add'; let T1, T2;
+    if (a && a.type === 'mcm_calc') { if ((a.op === '+') !== add) bad(where, 'mcm 세로셈 기호가 갈래와 다르다'); T1 = a.a[0] * 100 + a.a[1]; T2 = a.b[0] * 100 + a.b[1]; }
+    else if (a && a.type === 'mbar') { if ((a.op === '+') !== add) bad(where, 'mcm 띠 그림 op 가 갈래와 다르다'); T1 = a.parts[0][0] * 100 + a.parts[0][1]; T2 = a.parts[1][0] * 100 + a.parts[1][1];
+      const tk = MCMtoks(st); if (tk.length && (tk[0] !== T1 || (tk.length > 1 && tk[1] !== T2))) bad(where, 'mcm 발문의 길이와 띠 그림이 다르다'); }
+    else { const tk = MCMtoks(st); if (tk.length !== 2) return bad(where, `mcm ${ask} 발문에서 길이 둘을 못 찾았다: ` + st); T1 = tk[0]; T2 = tk[1]; }
+    if (add && (T1 % 100) + (T2 % 100) > 99) bad(where, 'mcm add 받아올림이 생긴다');
+    if (!add && (T1 <= T2 || T1 % 100 < T2 % 100)) bad(where, 'mcm sub 빼는 길이가 더 길거나 받아내림이 생긴다');
+    if (/더해|이어|모두|합/.test(st) && !add && !/잘라/.test(st)) bad(where, 'mcm sub 발문이 합을 묻는 꼴');
+    if (/차는|남은|다른 도막/.test(st) && add) bad(where, 'mcm add 발문이 차를 묻는 꼴');
+    const R = add ? T1 + T2 : T1 - T2, Rm = add ? Math.floor(T1 / 100) + Math.floor(T2 / 100) : Math.floor(T1 / 100) - Math.floor(T2 / 100), Rc = add ? T1 % 100 + T2 % 100 : T1 % 100 - T2 % 100;
+    if (a && a.type === 'mcm_calc' && (a.ask === 'm' || a.ask === 'cm')) { if (!new RegExp(`세로셈에서 ${a.ask} 자리의 \\?`).test(st)) bad(where, 'mcm 세로셈 발문 자리와 ? 칸이 다르다'); want = String(a.ask === 'm' ? Rm : Rc); }
+    else want = MCMf(R); }
+  else if (ask === 'cmp') { m = st.match(/\n(.+) ○ (.+)$/); if (!m) return bad(where, 'mcm cmp 발문 꼴: ' + st);
+    const l = MCMtoks(m[1]), r2 = MCMtoks(m[2]); if (l.length !== 1 || r2.length !== 1) return bad(where, 'mcm cmp 양쪽 길이를 못 읽었다');
+    if (/ m/.test(m[1]) === / m/.test(m[2])) bad(where, 'mcm cmp 두 쪽 단위가 같다(m·cm 바꾸기 문제가 아니다)');
+    want = l[0] > r2[0] ? '>' : l[0] < r2[0] ? '<' : '='; }
+  else if (ask === 'est') { if (!a || a.type !== 'est_row') return bad(where, 'mcm est 는 est_row 그림'); const ppl = !!a.people, tot = ppl ? a.seg * (a.n - 1) : a.seg * a.n;
+    if (ppl) { m = st.match(/^학생 (\d+)명이 앞 사람과 약 (\d+) m씩/); if (!m || +m[1] !== a.n || +m[2] !== a.seg) bad(where, 'mcm est 발문의 사람 수·간격이 그림과 다르다'); }
+    else { m = st.match(/^한 칸이 약 (\d+) m인 간격이 (\d+)개/); if (!m || +m[1] !== a.seg || +m[2] !== a.n) bad(where, 'mcm est 발문의 칸 수·간격이 그림과 다르다'); }
+    want = sa ? String(tot) : `약 ${tot} m`; }
+  else if (ask === 'pace') { m = st.match(/^1 m가 약 (\d+)걸음인 친구가 있어요\. 이 친구가 약 (\d+) m를 걸으면/); if (!m) return bad(where, 'mcm pace 발문 꼴: ' + st);
+    want = sa ? String(+m[1] * +m[2]) : `약 ${+m[1] * +m[2]}걸음`; }
+  else return bad(where, 'mcm ask 를 모른다: ' + ask);
+  if (cor !== String(want)) bad(where, `mcm ${ask} 정답 「${cor}」 ≠ 다시 셈한 ${want}`);
+  if (wr.some(w => w === String(want))) bad(where, `mcm ${ask} 오답에 정답 ${want} 이 섞였다`);
+  if (!sa && ['read', 'off', 'add', 'sub', 'tocm', 'tomcm', 'm100'].indexOf(ask) >= 0) { const cv = MCMtoks(cor); if (cv.length === 1) wr.forEach(w => { const wv = MCMtoks(w); if (wv.length === 1 && wv[0] === cv[0] && /cm|m$/.test(w)) bad(where, `mcm ${ask} 오답 「${w}」 이 정답과 같은 길이`); }); }
+}
 /* v2.9 — 곱셈구구: 곱셈표·발문이 말하는 답을 엔진과 따로 다시 셈한다 */
 function checkGugu(where, q) {
   const G = (q.variant_rule || {}).gugu; if (!G) return;
@@ -1388,6 +1463,7 @@ function checkQ(where, q, opt) {
   checkCls(where, q);
   checkMul(where, q);
   checkGugu(where, q);
+  checkMcm(where, q);
   checkShape(where, q);
   checkJamo(where, q);
   checkBat(where, q);
