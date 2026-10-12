@@ -125,7 +125,9 @@ const ASSETS = {
   sort_table:     ['crit', 'cols', 'counts'],
   /* v2.7 — 2학년 1학기 「곱셈」: 묶음 그림 · 몇 배 막대(그림 줄) */
   mul_groups:     ['item'],
-  times_bars:     ['base', 'times', 'a', 'b']
+  times_bars:     ['base', 'times', 'a', 'b'],
+  /* v2.8 — 2학년 2학기 「네 자리 수」: 천 모형·천 원 지폐가 더해진 수 모형·돈 */
+  blocks4:        ['th', 'h', 't', 'o']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -202,18 +204,28 @@ function checkAsset(where, a) {
     if (a.h + a.t + a.o === 0) bad(where, 'blocks3 가 비었다');
     if (a.unit !== undefined && a.unit !== 'coin') bad(where, "blocks3 unit 은 'coin' 만");
   }
+  if (a.type === 'blocks4') {
+    if (!(a.th >= 0 && a.th <= 9)) bad(where, 'blocks4 th 는 0~9: ' + a.th);
+    if (a.th + a.h + a.t + a.o === 0) bad(where, 'blocks4 가 비었다');
+    ['h', 't', 'o'].forEach(k => { if (!(a[k] >= 0 && a[k] <= 19)) bad(where, `blocks4 ${k} 는 0~19: ` + a[k]); });
+    if (a.unit !== undefined && a.unit !== 'coin') bad(where, "blocks4 unit 은 'coin' 만");
+    if (a.unit === 'coin' && a.o > 9) bad(where, 'blocks4 돈 그림에 1원짜리가 10개 넘다(바꾸기는 100원·10원만)');
+  }
   if (a.type === 'place_table') {
-    if (!Array.isArray(a.digits) || a.digits.length !== 3) bad(where, 'place_table digits 는 [백,십,일] 셋');
-    if (a.values !== undefined && (!Array.isArray(a.values) || a.values.length !== 3)) bad(where, 'place_table values 는 셋');
-    if (Array.isArray(a.digits) && Array.isArray(a.values)) [100, 10, 1].forEach((u, i) => { const d = a.digits[i], v = a.values[i]; if (d !== null && v !== null && d !== undefined && v !== undefined && Number(d) * u !== Number(v)) bad(where, `place_table ${i}번째 자리 값 ${v} ≠ ${d}×${u}`); });
+    const nd = Array.isArray(a.digits) ? a.digits.length : 0;   /* v2.8 — [천,백,십,일] 넷도 된다 */
+    if (nd !== 3 && nd !== 4) bad(where, 'place_table digits 는 [백,십,일] 셋 또는 [천,백,십,일] 넷');
+    if (a.values !== undefined && (!Array.isArray(a.values) || a.values.length !== nd)) bad(where, 'place_table values 는 digits 와 같은 수');
+    if (a.mark !== undefined && (nd === 4 ? ['th', 'h', 't', 'o'] : ['h', 't', 'o']).indexOf(a.mark) < 0) bad(where, 'place_table mark 가 자리 밖: ' + a.mark);
+    if (Array.isArray(a.digits) && Array.isArray(a.values)) (nd === 4 ? [1000, 100, 10, 1] : [100, 10, 1]).forEach((u, i) => { const d = a.digits[i], v = a.values[i]; if (d !== null && v !== null && d !== undefined && v !== undefined && Number(d) * u !== Number(v)) bad(where, `place_table ${i}번째 자리 값 ${v} ≠ ${d}×${u}`); });
   }
   if (a.type === 'jump_row') {
     const cs = a.cells || []; if (cs.length < 3 || cs.length > 6) bad(where, 'jump_row 칸은 3~6');
     const st = a.step; const mulJ = Number(st) >= 2 && Number(st) <= 9;   /* v2.7 곱셈 — 2~9씩 뛰어 세기(0에서 출발, 칸 수 1~100) */
-    if (st !== null && st !== undefined && [1, 10, 100].indexOf(Number(st)) < 0 && !mulJ) bad(where, 'jump_row step 은 1·10·100 (곱셈은 2~9)');
+    if (st !== null && st !== undefined && [1, 10, 100, 1000].indexOf(Number(st)) < 0 && !mulJ) bad(where, 'jump_row step 은 1·10·100·1000 (곱셈은 2~9)');
     const sg = a.dir === 'down' ? -1 : 1; const k = cs.findIndex(c => c !== null && c !== '?');
     if (st !== null && st !== undefined && k >= 0) cs.forEach((c, i) => { if (c !== null && c !== '?' && Number(c) !== Number(cs[k]) + sg * st * (i - k)) bad(where, `jump_row ${i}번째 칸 ${c} 가 ${sg > 0 ? '+' : '−'}${st} 규칙에 안 맞다`); });
-    cs.forEach(c => { if (c !== null && c !== '?' && !(mulJ ? Number(c) >= 1 && Number(c) <= 100 : Number(c) >= 100 && Number(c) <= 1000)) bad(where, 'jump_row 칸 수가 범위 밖: ' + c); });
+    const big4 = cs.some(c => c !== null && c !== '?' && Number(c) > 1000) || Number(st) === 1000;   /* v2.8 — 네 자리 수 줄은 1000~9999 */
+    cs.forEach(c => { if (c !== null && c !== '?' && !(mulJ ? Number(c) >= 1 && Number(c) <= 100 : big4 ? Number(c) >= 1000 && Number(c) <= 9999 : Number(c) >= 100 && Number(c) <= 1000)) bad(where, 'jump_row 칸 수가 범위 밖: ' + c); });
   }
   if (a.type === 'mul_groups') {
     const look = a.look || 'groups'; if (['groups', 'rows', 'loose'].indexOf(look) < 0) bad(where, 'mul_groups look 은 groups·rows·loose');
@@ -917,6 +929,55 @@ function check3(where, q) {
   if (String(want) !== cor && !(q.kind === 'sa' && (q.answer || []).map(String).indexOf(String(want)) >= 0)) bad(where, `${key} 정답 ${cor} ≠ 다시 계산한 ${want}`);
   if (wr.indexOf(String(want)) >= 0) bad(where, `${key} 오답 보기에 정답 ${want} 가 섞였다`);
 }
+
+/* v2.8 — 네 자리 수: 엔진과 따로 셈해 정답·오답을 다시 확인 (원본·변형 모두) */
+const read4x = n => { const d = [Math.floor(n / 1000), Math.floor(n / 100) % 10, Math.floor(n / 10) % 10, n % 10]; return ['천', '백', '십', ''].map((u, i) => d[i] ? ((d[i] > 1 || !u) ? S3X[d[i]] : '') + u : '').join(''); };
+function check4(where, q) {
+  const vr = q.variant_rule || {}; const key = ['n4', 'pv4', 'skip4', 'cmp4d', 'cards4'].find(k => vr[k]); if (!key) return;
+  const cor = q.kind === 'sa' ? String((q.answer || [])[0]) : String(((q.options || []).find(o => o.correct) || {}).t);
+  const wr = (q.options || []).filter(o => !o.correct).map(o => String(o.t));
+  const st = String(q.stem).replace(/^이번에는 다른 보기예요\. /, ''); const a = q.asset && typeof q.asset === 'object' ? q.asset : null; let want = null, m;
+  const PL = {'천': 0, '백': 1, '십': 2, '일': 3}, UV = [1000, 100, 10, 1];
+  if (key === 'n4') {
+    if (/^수 모형이 나타내는 수는/.test(st) || /^돈은 모두 얼마/.test(st)) { if (!a || a.type !== 'blocks4') return bad(where, 'n4 그림 문항인데 blocks4 가 없다'); want = String(a.th * 1000 + a.h * 100 + a.t * 10 + a.o) + (/^돈/.test(st) ? '원' : ''); if (/^돈/.test(st) !== (a.unit === 'coin')) bad(where, 'n4 돈 발문과 그림 unit 이 어긋난다'); }
+    else if ((m = st.match(/^((?:(?:1000|100|10|1)이 \d+개(?:, )?)+)인 수는/))) { let n = 0; m[1].split(', ').forEach(p => { const z = p.match(/^(\d+)이 (\d+)개$/); n += Number(z[1]) * Number(z[2]); }); want = String(n); }
+    else if ((m = st.match(/^(\d+)[을를] 바르게 읽은/))) { want = read4x(+m[1]); }
+    else if ((m = st.match(/^「([^」]+)」[을를] 수로 쓰면/))) { for (let n = 1000; n <= 9999; n++) if (read4x(n) === m[1]) want = String(n); if (want === null) return bad(where, 'n4 읽기를 수로 못 돌렸다: ' + m[1]); }
+    else if ((m = st.match(/^1000이 (\d+)개이면 얼마/))) want = String(1000 * m[1]);
+    else if ((m = st.match(/^(\d+)[은는] 1000이 (?:몇 개|\(\s*\)개)/))) { if (+m[1] % 1000) bad(where, 'n4 tcount 수가 몇천이 아니다'); want = String(+m[1] / 1000); }
+    else if ((m = st.match(/^100이 (\d+)개인 수는/))) want = String(100 * m[1]);
+    else if ((m = st.match(/^(\d+)[은는] 100이 몇 개/))) { if (+m[1] % 100) bad(where, 'n4 hcount 수가 몇천몇백이 아니다'); want = String(+m[1] / 100); }
+    else return bad(where, 'n4 발문 꼴을 모른다: ' + st);
+  } else if (key === 'pv4') {
+    if ((m = st.match(/^(\d{4})에서 (천|백|십|일)의 자리 숫자는/))) want = String(m[1])[PL[m[2]]];
+    else if ((m = st.match(/^(\d{4})에서 숫자 (\d)[이가] 나타내는 값/))) { const ds = String(m[1]).split(''); if (ds.filter(x => x === m[2]).length !== 1) return bad(where, 'pv4 숫자가 한 번만 나오지 않는다: ' + st); want = String(+m[2] * UV[ds.indexOf(m[2])]); }
+    else if ((m = st.match(/^(\d{4})[을를] 각 자리의 값의 합으로/))) { const d = String(m[1]).split('').map(Number); want = d.map((x, i) => x * UV[i]).join(' + '); wr.forEach(w => { const ps = w.split(' + '); const sum = ps.reduce((x, y) => x + Number(y), 0); if (sum === +m[1] && ps.length === 4 && ps.every((y, i) => +y % UV[i] === 0 && +y < UV[i] * 10)) bad(where, 'pv4 펼친 식 오답이 바른 식이다: ' + w); }); }
+    else if ((m = st.match(/^숫자 (\d)[이가] (\d+)[을를] 나타내는 수는/))) { const dd = m[1], val = +m[2]; const i = 3 - Math.round(Math.log10(val / +dd)); const ok = x => { const s4 = String(x); return s4.length === 4 && s4[i] === dd && s4.split('').filter(c => c === dd).length === 1; };
+      if (!ok(cor)) bad(where, `pv4 which 정답 ${cor} 에서 ${dd} 가 ${val} 를 나타내지 않는다`); wr.forEach(w => { if (ok(w)) bad(where, `pv4 which 오답 ${w} 도 맞다`); }); return; }
+    else if ((m = st.match(/^(\d{4})의 자릿값 표예요/))) { if (!a || a.type !== 'place_table') return bad(where, 'pv4 table 인데 place_table 이 없다'); const d = String(m[1]).split('').map(Number); if (a.digits.join() !== d.join()) bad(where, 'pv4 표 숫자와 발문 수가 다르다'); const i = (a.values || []).findIndex(x => x === null || x === '?'); if (i < 0) return bad(where, 'pv4 표에 빈칸이 없다'); want = String(d[i] * UV[i]); }
+    else return bad(where, 'pv4 발문 꼴을 모른다: ' + st);
+  } else if (key === 'skip4') {
+    if (!a || a.type !== 'jump_row') return bad(where, 'skip4 는 jump_row 그림이 있어야 한다');
+    const cs = a.cells; const down = /거꾸로/.test(st);
+    if (cs.some(c => c !== null && (c < 1000 || c > 9999))) bad(where, 'skip4 칸이 네 자리 수 밖');
+    if (/^얼마씩/.test(st)) { if (cs.some(c => c === null)) bad(where, 'skip4 step 문항에 빈칸이 있다'); if (a.step !== null && a.step !== undefined) bad(where, 'skip4 step 문항인데 화살표에 뛴 수가 보인다'); const d = cs[1] - cs[0]; if (cs.some((c, i) => i && c - cs[i - 1] !== d)) bad(where, 'skip4 칸이 일정하게 뛰지 않는다'); if ((d < 0) !== down) bad(where, 'skip4 거꾸로 발문과 칸 방향이 다르다'); want = Math.abs(d) + '씩'; }
+    else if ((m = st.match(/^(\d+)씩 (거꾸로 )?뛰어 세었어요\. 빈칸/))) { const s2 = +m[1]; if (+a.step !== s2) bad(where, 'skip4 발문과 화살표 뛴 수가 다르다'); if ((a.dir === 'down') !== down) bad(where, 'skip4 거꾸로 발문과 그림 dir 이 다르다');
+      const i = cs.findIndex(c => c === null); const k = cs.findIndex(c => c !== null); if (i < 0) return bad(where, 'skip4 빈칸이 없다'); want = String(cs[k] + (down ? -1 : 1) * s2 * (i - k)); }
+    else return bad(where, 'skip4 발문 꼴을 모른다: ' + st);
+  } else if (key === 'cmp4d') {
+    if ((m = st.match(/^(\d+)[과와] (\d+) 중에서 더 (큰|작은)/))) want = String(m[3] === '큰' ? Math.max(+m[1], +m[2]) : Math.min(+m[1], +m[2]));
+    else if (/^두 수의 크기를 바르게 비교한/.test(st)) { const tr = x => { const z = String(x).match(/^(\d+) ([<>]) (\d+)$/); return z && (z[2] === '>' ? +z[1] > +z[3] : +z[1] < +z[3]); }; if (!tr(cor)) bad(where, 'cmp4d sign 정답 식이 거짓: ' + cor); wr.forEach(w => { if (tr(w)) bad(where, 'cmp4d sign 오답 식이 참: ' + w); }); return; }
+    else if ((m = st.match(/^([\d, ]+) 가운데 가장 (큰|작은)/))) { const ns = m[1].split(',').map(x => +x.trim()); if (new Set(ns).size !== ns.length) bad(where, 'cmp4d 수가 겹친다'); if (ns.some(x => x < 1000 || x > 9999)) bad(where, 'cmp4d 네 자리 수가 아니다'); want = String(m[2] === '큰' ? Math.max(...ns) : Math.min(...ns)); }
+    else return bad(where, 'cmp4d 발문 꼴을 모른다: ' + st);
+  } else {
+    if (!(m = st.match(/^수 카드 (\d), (\d), (\d), (\d)[을를] 한 번씩 모두 써서 만들 수 있는 가장 (큰|작은) 네 자리 수/))) return bad(where, 'cards4 발문 꼴을 모른다: ' + st);
+    const c = [+m[1], +m[2], +m[3], +m[4]]; if (new Set(c).size !== 4) bad(where, 'cards4 카드가 겹친다'); const all = [];
+    const perm = (arr, pre) => { if (!arr.length) { if (pre[0]) all.push(+pre.join('')); return; } arr.forEach((x, i) => perm(arr.filter((_, j) => j !== i), pre.concat(x))); };
+    perm(c, []); want = String(m[5] === '큰' ? Math.max(...all) : Math.min(...all));
+  }
+  if (String(want) !== cor && !(q.kind === 'sa' && (q.answer || []).map(String).indexOf(String(want)) >= 0)) bad(where, `${key} 정답 ${cor} ≠ 다시 계산한 ${want}`);
+  if (wr.indexOf(String(want)) >= 0) bad(where, `${key} 오답 보기에 정답 ${want} 가 섞였다`);
+}
 /* v2.4 — 덧셈과 뺄셈: 발문에서 식을 다시 읽어 엔진과 따로 셈한다 (원본·변형 모두) */
 const AR_EV = (x, s, y) => s === '+' ? x + y : x - y;
 const AR_EQ = t => { const z = String(t).match(/^(\d+) ([+−]) (\d+) = (\d+)$/); return z ? { x: +z[1], s: z[2], y: +z[3], z: +z[4], ok: AR_EV(+z[1], z[2] === '+' ? '+' : '-', +z[3]) === +z[4] } : null; };
@@ -1275,6 +1336,7 @@ function checkQ(where, q, opt) {
   checkCmp4(where, q);
   checkNum50(where, q);
   check3(where, q);
+  check4(where, q);
   checkAr2(where, q);
   checkCm(where, q);
   checkCls(where, q);
@@ -1470,6 +1532,30 @@ function checkSet(file) {
       if (at) bad(where, 'cmp3d 는 그림 없는 문항 전용'); if (ask === 'sign' && q.kind !== 'mc') bad(where, 'cmp3d sign 은 mc 만');
       if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'cmp3d 변형은 mc·blank·sa 만'); }
     if (q.variant_rule.cards3) { if (at) bad(where, 'cards3 는 그림 없는 문항 전용'); if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'cards3 변형은 mc·blank·sa 만'); }
+    /* v2.8 갈래 — 네 자리 수 */
+    if (q.variant_rule.n4) { const N = q.variant_rule.n4; const ask = N.ask || 'build';
+      if (['build', 'read', 'write', 'thou', 'tcount', 'hund', 'hcount'].indexOf(ask) < 0) bad(where, 'n4 ask 를 모른다: ' + ask);
+      if (at && !(ask === 'build' && at === 'blocks4')) bad(where, 'n4 그림은 build 의 blocks4 만');
+      if (N.carry && at !== 'blocks4') bad(where, 'n4 carry 는 blocks4 그림이 있어야 한다');
+      if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'n4 변형은 mc·blank·sa 만'); }
+    if (q.variant_rule.pv4) { const P = q.variant_rule.pv4; const ask = P.ask || 'digit';
+      if (['digit', 'value', 'expand', 'which', 'table'].indexOf(ask) < 0) bad(where, 'pv4 ask 를 모른다: ' + ask);
+      if (ask === 'table' ? at !== 'place_table' : at) bad(where, 'pv4 ' + ask + ' 그림 종류가 맞지 않다(table 만 place_table)');
+      if (P.zero && (ask !== 'digit' || P.place === 'th' || !P.place)) bad(where, 'pv4 zero 는 digit 의 백·십·일 자리만');
+      if ((ask === 'expand' || ask === 'which') && q.kind === 'sa') bad(where, 'pv4 ' + ask + ' 는 보기 문항만');
+      if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'pv4 변형은 mc·blank·sa 만'); }
+    if (q.variant_rule.skip4) { const K = q.variant_rule.skip4;
+      if (at !== 'jump_row') bad(where, 'skip4 는 jump_row 그림이 있어야 한다');
+      if (['next', 'blank', 'step'].indexOf(K.ask || 'next') < 0) bad(where, 'skip4 ask 를 모른다');
+      [].concat(K.step || []).forEach(x => { if ([1, 10, 100, 1000].indexOf(x) < 0) bad(where, 'skip4 step 은 1·10·100·1000'); });
+      if (K.cross && [].concat(K.step || []).indexOf(1000) >= 0) bad(where, 'skip4 cross 에 1000씩은 못 쓴다(10000 은 범위 밖)');
+      if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'skip4 변형은 mc·blank·sa 만'); }
+    if (q.variant_rule.cmp4d) { const ask = q.variant_rule.cmp4d.ask || 'big';
+      if (['big', 'small', 'sign', 'max3', 'min3'].indexOf(ask) < 0) bad(where, 'cmp4d ask 를 모른다: ' + ask);
+      if (['th', 'thh', 'thht', 'none', undefined].indexOf(q.variant_rule.cmp4d.same) < 0) bad(where, 'cmp4d same 은 th·thh·thht·none');
+      if (at) bad(where, 'cmp4d 는 그림 없는 문항 전용'); if (ask === 'sign' && q.kind !== 'mc') bad(where, 'cmp4d sign 은 mc 만');
+      if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'cmp4d 변형은 mc·blank·sa 만'); }
+    if (q.variant_rule.cards4) { if (at) bad(where, 'cards4 는 그림 없는 문항 전용'); if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'cards4 변형은 mc·blank·sa 만'); }
     /* v2.3 갈래 — 여러 가지 도형 */
     if (q.variant_rule.fig) { const F = q.variant_rule.fig; if (['which', 'not', 'count'].indexOf(F.ask || 'which') < 0) bad(where, 'fig ask 를 모른다');
       if (['tri', 'quad', 'circle'].indexOf(F.target || 'tri') < 0) bad(where, 'fig target 은 tri·quad·circle'); if (at !== 'figs') bad(where, 'fig 는 figs 그림이 있어야 한다');
