@@ -15,7 +15,7 @@
   // 차시_밀도_표준_v2 §1: 도입 5~8 · 전개 25 · 정리 7~10 → 40분
   const STAGE_MIN = { '도입': 7, '전개': 12, '기본문제': 7, '응용문제': 6, '정리': 8 };
   const SEVEN = ['①복습 문항', '②실사 장면', '③차시 서사', '④교실 활동', '⑤수준별 문제', '⑥출구 확인', '⑦발문 6슬↑'];
-  const EDITABLE = '.kt2-title, .mo2-qt, .mo2-bub, .rw2-sc, .rw2-ct, .rw2-q, .big-text, .center-text, .small-text, .big-q, .objective-card, .point > div, .steps li, .kid .bub, .kid .lbl, .flip .q, .flip .a, .rv2-it .q, .rv2-it .a, .mis-card, .mv2-t, .mv2-h, .lv2-q, .lv2-ch span, .offline .body, .offline .goal, .opt > div:not(.mk), .scenario > div:not(.ic), .lv-q, .ra-quote, .context-text, .bidirect, .tf-cap, .examples .ex, .areas div, .sa .lb, .light .lb, .cq .cl, .cq .nm, .legacy .t, .legacy .d, .kt2-cover-title, .kt2-sub';
+  const EDITABLE = '.kt2-title, .mo2-qt, .mo2-bub, .rw2-sc, .rw2-ct, .rw2-q, .qv2-qt, .qv2-its span, .big-text, .center-text, .small-text, .big-q, .objective-card, .point > div, .steps li, .kid .bub, .kid .lbl, .flip .q, .flip .a, .rv2-it .q, .rv2-it .a, .mis-card, .mv2-t, .mv2-h, .lv2-q, .lv2-ch span, .offline .body, .offline .goal, .opt > div:not(.mk), .scenario > div:not(.ic), .lv-q, .ra-quote, .context-text, .bidirect, .tf-cap, .examples .ex, .areas div, .sa .lb, .light .lb, .cq .cl, .cq .nm, .legacy .t, .legacy .d, .kt2-cover-title, .kt2-sub';
   const STAGE_COLOR = { '도입': '#FF8A3D', '전개': '#4F8DF7', '기본문제': '#12B886', '응용문제': '#7C5CFF', '정리': '#2CB1D6' };
   const SUBJ_KO = { math: '수학', korean: '국어', science: '과학', social: '사회', english: '영어' };
   const NO_FRAG = new Set(['cover', 'objective', 'question', 'next_lesson', 'interactive_ten_frame', 'interactive_cube_stairs', 'interactive_number_line', 'klab', 'math_tool', 'quiz_gen', 'activity', 'card_arrange', 'card_quiz', 'chosung_quiz', 'present', 'read_aloud', 'leveled_problem', 'exit_ticket', 'trace', 'number_line_demo']);
@@ -82,6 +82,10 @@
   // 100차 — 자기 점검 장(self_assessment) sa2 「칠판」 · 다음 시간 장(next_lesson) nl2 「예고 그림 띠」 · 교사 무대만(learn 은 1세대) → 103차 sa2 는 learn 도
   function saSplit(it) { const t = String(lbl(it)); const m = t.match(/^\s*(\p{Extended_Pictographic}\uFE0F?)?\s*([^—–]{1,12}?)\s*[—–]\s*(.+)$/su); return m ? { ic: m[1] || '⭐', tag: m[2].trim(), q: m[3] } : { ic: '⭐', tag: '', q: t }; }
   function saStars(i, n, st) { return '<div class="sa2-st">' + Array.from({ length: n }, (_, k) => '<button data-act="star" data-i="' + i + '" data-k="' + k + '" class="' + ((st[i] || 0) > k ? 'on' : '') + '">★</button>').join('') + '</div>'; }
+  // 108차 — 새 물음 장 qv2: 큰 물음 + 그림 판(안내 인물 둘) + 생각 거리 번호 카드 · 교사 무대만
+  function qv2(d, g) { const A = global.KT2_ART, q = md(d.content || d.question || ''), its = (Array.isArray(d.items) ? d.items : []).filter(isStr).slice(0, 4), kd = A ? A.kindOf((d.title || '') + ' ' + (d.content || d.question || '')) : 'hill';
+    const pic = '<div class="qv2-pic picture ' + kd + '">' + (A ? A.backdrop(kd) : '') + '<div class="qv2-cast"><span class="qv2-ch">' + guideChr(g, 0) + '</span><span class="qv2-ch r">' + guideChr(g, 1) + '</span></div></div>';
+    return '<div class="qv2-q"><span class="qv2-m">💬</span><span class="qv2-qt">' + q + '</span></div>' + (its.length ? '<div class="qv2-row">' + pic + '<ol class="qv2-its">' + its.map((t, i) => '<li><b>' + (i + 1) + '</b><span>' + md(t) + '</span></li>').join('') + '</ol></div>' : '<div class="qv2-row solo">' + pic + '</div>') + (d.note ? '<div class="qv2-note">' + md(d.note) + '</div>' : ''); }
   function guideChr(g, i) { const A = global.KT2_ART, f = (g && g[i]) || (i ? '🐧' : '🐻'); return A && A.character ? A.character(f) : esc(f); }
   function sa2(d, st, n, g) { const its = (d.items || d.dimensions || []).map(saSplit), pr = (d.prompts || []).map(md);
     return '<div class="sa2-board">' + its.map((x, i) => '<div class="sa2-r"><span class="sa2-ic">' + esc(x.ic) + '</span><div class="sa2-t">' + (x.tag ? '<b>' + md(x.tag) + '</b>' : '') + '<span>' + md(x.q) + '</span></div>' + saStars(i, n, st) + '</div>').join('') + '</div>' + (pr.length ? '<div class="sa2-pr2"><span class="sa2-gm">' + guideChr(g, 0) + '</span><div class="sa2-bub">' + pr.join('<br>') + '</div></div>' : ''); }
@@ -235,7 +239,7 @@
       }
       case 'objective': { const bl = Array.isArray(d.bullets) ? d.bullets : []; cls = 'ob2'; push('<div class="ob2-wrap"><div class="ob2-g"><div class="ob2-ch">' + guideChr(ctx.guide, 0) + '</div><div class="ob2-say">오늘은<br>이걸 해요!</div></div><div class="ob2-card"><div class="ob2-tag">🎯 오늘의 목표</div>' + (d.content || d.desc ? '<div class="ob2-c">' + md(d.content || d.desc) + '</div>' : '') + (bl.length ? '<ol class="ob2-list">' + bl.map((b, i) => '<li><b>' + (i + 1) + '</b><span>' + md(String(b)) + '</span></li>').join('') + '</ol>' : '') + '</div></div>'); break; } // 101차 — 새 목표 장 ob2: 안내 인물 + 「오늘은 이걸 해요!」 · 큰 목표 카드(글 줄지 않게)
         push('<div class="objective-card">' + md(d.content || d.desc || '') + (Array.isArray(d.bullets) && d.bullets.length ? '<ol class="obj-list">' + d.bullets.map(b => '<li>' + md(String(b)) + '</li>').join('') + '</ol>' : '') + '</div>'); break;
-      case 'question': push('<div class="big-q">' + md(d.content || d.question || '') + '</div>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
+      case 'question': if (!ctx.learn && (d.content || d.question)) { cls = 'qv2'; push(qv2(d, ctx.guide)); break; } push('<div class="big-q">' + md(d.content || d.question || '') + '</div>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
       case 'next_lesson': if (d.preview) { cls = 'nl2 nl2-b'; push(nl2(d, ctx.guide)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); break; } push('<div class="big-q soft">' + md(d.preview || '') + '</div>'); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); break;
       case 'review': {
         if (d.content) push('<div class="center-text">' + md(d.content) + '</div>');
@@ -395,7 +399,8 @@
       }
       case 'card_quiz': {
         const cards = d.cards || []; const f = S.flipped || [];
-        push('<div class="cq-grid n' + Math.min(6, cards.length) + '">' + cards.map((c, i) => '<div class="cq' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><div class="in"><div class="f front"><div class="qm">?</div><div class="cl">' + md(c.clue || '') + '</div></div><div class="f back"><div class="em">' + esc(c.emoji || '') + '</div><div class="nm">' + md(c.name || '') + '</div></div></div></div>').join('') + '</div>');
+        if (!ctx.learn) cls = 'cq2'; // 108차 — 새 카드 퀴즈 꼴(번호 · 큰 단서 · 큰 정답) · 교사 무대만
+        push('<div class="cq-grid n' + Math.min(6, cards.length) + '">' + cards.map((c, i) => '<div class="cq' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><div class="in"><div class="f front"><span class="no">' + (i + 1) + '</span><div class="qm">?</div><div class="cl">' + md(c.clue || '') + '</div></div><div class="f back"><div class="em">' + esc(c.emoji || '') + '</div><div class="nm' + (String(c.name || '').length > 16 ? ' xl' : String(c.name || '').length > 8 ? ' l' : '') + '">' + md(c.name || '') + '</div></div></div></div>').join('') + '</div>');
         if (d.outro) push('<div class="outro">' + md(d.outro) + '</div>'); answerable = true; break;
       }
       case 'chosung_quiz': {
@@ -801,7 +806,7 @@
   // 87차 — fit-tight: 넘칠 때만 종이 여백·덩이 사이·말풍선 아래를 좁힌다(글자 크기는 그대로). 자리 바꾸기와 겹쳐 쓸 수 있다.
   // 88차 — fit-lv: 수준별 문제 정답 펼침 때 물음 왼쪽 · 정답·풀이 차례 오른쪽 / fit-lv2: 물음 위 · 정답 왼쪽 · 풀이 차례 오른쪽(넘칠 때만)
   // 89차 — fit-pts: 요약 요점 다섯 줄 이상을 두 단(위→아래 차례) / fit-wrap: 옆으로 이어진 카드(차례·도구)가 종이 폭을 넘으면 두 줄로 / fit-cols: 말풍선 안 짧은 줄 넷 이상(「어제 — 과거」 같은 목록)을 두 단으로(넘칠 때만 · 글자 크기 무변)
-  const LAYOUTS = ['fit-mo2', 'fit-rw2', 'fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s', 'fit-cv2w', 'fit-lvw', 'fit-lvs', 'fit-rvw', 'fit-rvs'];
+  const LAYOUTS = ['fit-mo2', 'fit-qv2', 'fit-qv2n', 'fit-rw2', 'fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s', 'fit-cv2w', 'fit-lvw', 'fit-lvs', 'fit-rvw', 'fit-rvs'];
   // 90차 — fit-qh: 「여러 개를 고를 수 있어요」를 물음 옆 같은 줄로(넘칠 때만)
   // 90차 — fit-head: 넘칠 때만 제목을 머리(단계 칩·차시 이름)와 한 줄에 — 제목 줄 하나만큼 본문 자리가 생긴다 · 글자 크기 무변 · 차시 이름이 말줄임되면 안 씀
   function headBad(body) { const p = body.parentElement; if (!p) return true; const k = p.querySelector(':scope > .kt2-head .kt2-kicker'), t = p.querySelector(':scope > .kt2-title');
@@ -853,7 +858,8 @@
     const tries = [['fit-tight']];
     if (sp) tries.push(['fit-split'], ['fit-split', 'fit-tight']);
     if (sd) tries.push(['fit-side'], ['fit-side', 'fit-tight']);
-    if (body.querySelector('.mo2-talk')) tries.push(['fit-mo2'], ['fit-mo2', 'fit-tight']); // 99차 — 그림 띠 낮춤
+    if (body.querySelector('.mo2-talk')) tries.push(['fit-mo2'], ['fit-mo2', 'fit-tight']);
+    if (body.querySelector('.qv2-row')) tries.push(['fit-qv2'], ['fit-qv2', 'fit-tight'], ['fit-qv2', 'fit-qv2n'], ['fit-qv2', 'fit-qv2n', 'fit-tight']); /* 109차 — 그림 판 좁혀 카드 한 줄 */ // 108차 — 물음 장 그림 판 낮춤·카드 촘촘 // 99차 — 그림 띠 낮춤
     if (body.querySelector('.rw2-row')) tries.push(['fit-rw2'], ['fit-rw2', 'fit-tight']); // 99차 — 아이콘 작게
     if (body.querySelector('.rv2-board')) tries.push(['fit-rvw'], ['fit-rvw', 'fit-tight'], ['fit-rvw', 'fit-rvs'], ['fit-rvw', 'fit-rvs', 'fit-tight']); // 98차 — 칠판 답 칸 넓힘 · 줄 간격 좁힘
     if (body.querySelector('.lv2-main > .lv2-a')) tries.push(['fit-lvw'], ['fit-lvw', 'fit-tight'], ['fit-lvs'], ['fit-lvs', 'fit-tight'], ['fit-lvw', 'fit-lvs'], ['fit-lvw', 'fit-lvs', 'fit-tight']); // 97차 — 수준 계단을 위 한 줄로(본문 폭 넓힘)
