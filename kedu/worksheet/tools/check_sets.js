@@ -122,7 +122,10 @@ const ASSETS = {
   /* v2.6 — 2학년 1학기 「분류하기」: 섞인 바구니 · 나누어 담은 칸 · 분류한 결과 표 */
   sort_pile:      ['items'],
   sort_bins:      ['bins'],
-  sort_table:     ['crit', 'cols', 'counts']
+  sort_table:     ['crit', 'cols', 'counts'],
+  /* v2.7 — 2학년 1학기 「곱셈」: 묶음 그림 · 몇 배 막대(그림 줄) */
+  mul_groups:     ['item'],
+  times_bars:     ['base', 'times', 'a', 'b']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -206,10 +209,21 @@ function checkAsset(where, a) {
   }
   if (a.type === 'jump_row') {
     const cs = a.cells || []; if (cs.length < 3 || cs.length > 6) bad(where, 'jump_row 칸은 3~6');
-    const st = a.step; if (st !== null && st !== undefined && [1, 10, 100].indexOf(Number(st)) < 0) bad(where, 'jump_row step 은 1·10·100');
+    const st = a.step; const mulJ = Number(st) >= 2 && Number(st) <= 9;   /* v2.7 곱셈 — 2~9씩 뛰어 세기(0에서 출발, 칸 수 1~100) */
+    if (st !== null && st !== undefined && [1, 10, 100].indexOf(Number(st)) < 0 && !mulJ) bad(where, 'jump_row step 은 1·10·100 (곱셈은 2~9)');
     const sg = a.dir === 'down' ? -1 : 1; const k = cs.findIndex(c => c !== null && c !== '?');
     if (st !== null && st !== undefined && k >= 0) cs.forEach((c, i) => { if (c !== null && c !== '?' && Number(c) !== Number(cs[k]) + sg * st * (i - k)) bad(where, `jump_row ${i}번째 칸 ${c} 가 ${sg > 0 ? '+' : '−'}${st} 규칙에 안 맞다`); });
-    cs.forEach(c => { if (c !== null && c !== '?' && !(Number(c) >= 100 && Number(c) <= 1000)) bad(where, 'jump_row 칸 수가 100~1000 밖: ' + c); });
+    cs.forEach(c => { if (c !== null && c !== '?' && !(mulJ ? Number(c) >= 1 && Number(c) <= 100 : Number(c) >= 100 && Number(c) <= 1000)) bad(where, 'jump_row 칸 수가 범위 밖: ' + c); });
+  }
+  if (a.type === 'mul_groups') {
+    const look = a.look || 'groups'; if (['groups', 'rows', 'loose'].indexOf(look) < 0) bad(where, 'mul_groups look 은 groups·rows·loose');
+    if (look === 'loose') { const t = Number(a.total); if (!(t >= 2 && t <= 40)) bad(where, 'mul_groups loose total 2~40 밖: ' + a.total); if (a.k !== undefined || a.n !== undefined) bad(where, 'mul_groups loose 에 k·n 이 있다(묶기 전 그림)'); }
+    else { const k = Number(a.k), n = Number(a.n); if (!(k >= 1 && k <= 9 && n >= 1 && n <= 9)) bad(where, `mul_groups k·n 1~9 밖: ${a.k}·${a.n}`); if (k * n > 45) bad(where, 'mul_groups 모두 45개 넘음'); }
+  }
+  if (a.type === 'times_bars') {
+    const b = Number(a.base), t = Number(a.times); if (!(b >= 1 && b <= 6 && t >= 1 && t <= 9)) bad(where, `times_bars base·times 범위 밖: ${a.base}·${a.times}`);
+    if (b * t > (a.item ? 24 : 18)) bad(where, 'times_bars 견줄 것이 너무 길다'); if (a.a === a.b) bad(where, 'times_bars 두 이름이 같다');
+    if (a.grid && a.item) bad(where, 'times_bars grid 는 색 막대만');
   }
   if (a.type === 'bundle_ones') {
     if (!(a.tens >= 0 && a.tens <= 10)) bad(where, 'bundle_ones tens 가 0~10 밖: ' + a.tens);
@@ -1048,6 +1062,61 @@ function checkCm(where, q) {
   if (s === 0 && CM.ask === 'off') bad(where, 'cm off 인데 물건이 0에 있다');
   if (s !== 0 && CM.ask === 'read') bad(where, 'cm read 인데 물건이 0에서 시작하지 않는다(해설 「0에 맞춰져 있어요」가 거짓)');
 }
+/* v2.7 — 곱셈: 그림(mul_groups·times_bars·jump_row)·발문이 말하는 답을 엔진과 따로 다시 센다 */
+function checkMul(where, q) {
+  const M = (q.variant_rule || {}).mul; if (!M) return;
+  const ask = M.ask || 'total', a = q.asset && typeof q.asset === 'object' ? q.asset : null, st = String(q.stem || '').replace(/^이번에는 다른 보기예요\. /, '');
+  const cor = q.kind === 'sa' ? String((q.answer || [])[0]) : q.kind === 'ox' ? q.answer : String(((q.options || []).find(o => o.correct) || {}).t);
+  const wr = (q.options || []).filter(o => !o.correct).map(o => String(o.t));
+  const num = x => { const m = String(x).match(/^(\d+)/); return m ? +m[1] : NaN; };
+  const prodOf = x => { const m = String(x).match(/^(\d+) × (\d+)$/); return m ? +m[1] * +m[2] : null; };
+  let want = null, m;
+  const need = (t, f) => { if (!a || a.type !== t) { bad(where, `mul ${ask} 은 ${t} 그림이 있어야`); return false; } return f ? f() : true; };
+  const KN = () => { const k = +a.k, n = +a.n; if (!(k >= 1 && n >= 1)) { bad(where, 'mul_groups k·n 없음'); return null; } return [k, n]; };
+  const oxSaid = re => { const mm = st.match(re); if (!mm) { bad(where, `mul ${ask} OX 발문 꼴을 모른다: ` + st); return; } return mm; };
+  if (ask === 'total') { if (!need('mul_groups') || a.look === 'loose') return bad(where, 'mul total 은 묶음·줄 그림'); const kn = KN(); if (!kn) return; want = kn[0] * kn[1];
+    if (!/모두 몇/.test(st)) bad(where, 'mul total 발문에 「모두 몇」이 없다'); }
+  else if (ask === 'groups') { if (!need('mul_groups') || a.look !== 'loose') return bad(where, 'mul groups 는 loose 그림');
+    m = st.match(/(\d+)\S*씩 묶으면 몇 묶음/); if (!m) return bad(where, 'mul groups 발문 꼴: ' + st); const k = +m[1], T = +a.total;
+    if (T % k) return bad(where, `mul groups ${T}개를 ${k}씩 묶으면 남는다`); want = T / k; if (want < 2) bad(where, 'mul groups 묶음이 1개'); }
+  else if (ask === 'name' || ask === 'times' || ask === 'expr') { if (!need('mul_groups') || a.look === 'loose') return bad(where, `mul ${ask} 은 묶음·줄 그림`); const kn = KN(); if (!kn) return;
+    want = ask === 'name' ? `${kn[0]}씩 ${kn[1]}묶음` : ask === 'times' ? `${kn[0]}의 ${kn[1]}배` : `${kn[0]} × ${kn[1]}`;
+    if (ask === 'name' && a.look === 'rows') bad(where, 'mul name 은 묶음 그림(줄 그림은 「몇씩 몇 줄」)');
+    if (ask === 'expr') wr.forEach(w => { if (prodOf(w) === kn[0] * kn[1] && /×/.test(w)) bad(where, `mul expr 오답 「${w}」의 곱이 정답과 같다(뒤바꾼 식은 오답으로 쓰지 않는다)`); }); }
+  else if (ask === 'skip') { if (!need('jump_row')) return; const cs = a.cells || [], s = +a.step;
+    if (cs[cs.length - 1] !== null) return bad(where, 'mul skip 은 마지막 칸이 ?'); m = st.match(/^(\d+)씩 뛰어 세었어요/); if (!m || +m[1] !== s) bad(where, 'mul skip 발문의 수와 step 이 다르다');
+    if (cs[0] !== s) bad(where, 'mul skip 첫 칸은 step(0에서 한 번 뛴 수)'); want = Number(cs[cs.length - 2]) + s; }
+  else if (ask === 'tval') { if (q.kind === 'ox') { const mm = oxSaid(/^(\d+)의 (\d+)배는 (\d+)입니다\.$/); if (!mm) return; const t = +mm[1] * +mm[2] === +mm[3];
+      if ((t ? 'O' : 'X') !== cor) bad(where, `mul tval OX 답 ${cor} — ${mm[1]}의 ${mm[2]}배 = ${+mm[1] * +mm[2]}`); return; }
+    m = st.match(/^(\d+)의 (\d+)배는 얼마/); if (!m) return bad(where, 'mul tval 발문 꼴: ' + st); want = +m[1] * +m[2]; if (a) bad(where, 'mul tval 은 그림 없음'); }
+  else if (ask === 'regroup') { if (!need('mul_groups') || a.look !== 'loose') return bad(where, 'mul regroup 은 loose 그림');
+    m = st.match(/ (\d+)\S+ (\d+)\S*씩 묶으면 (\d+)의 (\d+)배예요\. 같은 \S+ (\d+)\S*씩 묶으면 (\d+)의 몇 배/); if (!m) return bad(where, 'mul regroup 발문 꼴: ' + st);
+    const T = +m[1], k1 = +m[2], n1 = +m[4], k2 = +m[5]; if (T !== +a.total) bad(where, 'mul regroup 발문 수와 그림 수가 다르다'); if (+m[3] !== k1 || +m[6] !== k2) bad(where, 'mul regroup 몇의 「몇」이 묶는 수와 다르다');
+    if (k1 * n1 !== T) bad(where, `mul regroup ${k1}의 ${n1}배 ≠ ${T}`); if (T % k2) return bad(where, 'mul regroup 두 번째 묶음이 남는다'); if (k1 === k2) bad(where, 'mul regroup 두 묶는 수가 같다'); want = T / k2; }
+  else if (ask === 'bars' || ask === 'cmp') { if (!need('times_bars')) return; want = +a.times;
+    if (ask === 'cmp') { if (!a.item) bad(where, 'mul cmp 는 그림 줄(item)'); m = st.match(/ (\d+)개, \S+ (\d+)개예요/); if (!m || +m[1] !== +a.base || +m[2] !== +a.base * +a.times) bad(where, 'mul cmp 발문 수가 그림과 다르다'); }
+    else { if (a.item) bad(where, 'mul bars 는 색 막대'); if (!!M.grid !== !!a.grid) bad(where, 'mul bars grid 가 규칙과 다르다'); if (want < 2) bad(where, 'mul bars 1배'); } }
+  else if (ask === 'add') { m = st.match(/^((?:\d+ \+ )+\d+)(?:[을를] 곱셈식으로| = (\d+) × (\d+)입니다\.$)/); if (!m) return bad(where, 'mul add 발문 꼴: ' + st);
+    const ps = m[1].split(' + ').map(Number); if (ps.some(x => x !== ps[0])) return bad(where, 'mul add 같은 수의 덧셈이 아니다'); if (ps.length < 3) bad(where, 'mul add 는 세 번 이상 더한 식');
+    if (q.kind === 'ox') { const t = +m[2] === ps[0] && +m[3] === ps.length; if ((t ? 'O' : 'X') !== cor) bad(where, `mul add OX 답 ${cor} — 실제 ${ps[0]} × ${ps.length}`); return; }
+    want = `${ps[0]} × ${ps.length}`; wr.forEach(w => { if (w === `${ps.length} × ${ps[0]}`) bad(where, 'mul add 오답에 뒤바꾼 식'); }); }
+  else if (ask === 'value' || ask === 'prod') { if (q.kind === 'ox') { const mm = oxSaid(/^(\d+) × (\d+) = (\d+)입니다\.$/); if (!mm) return;
+      if (((+mm[1] * +mm[2] === +mm[3]) ? 'O' : 'X') !== cor) bad(where, `mul value OX 답 ${cor} 이 어긋난다`); return; }
+    m = ask === 'prod' ? st.match(/^(\d+)[와과] (\d+)의 곱은 얼마/) : st.match(/^(\d+) × (\d+)[은는] 얼마/); if (!m) return bad(where, `mul ${ask} 발문 꼴: ` + st); want = +m[1] * +m[2]; }
+  else if (ask === 'read') { m = st.match(/^(\d+) × (\d+)[을를] 바르게 읽은/); if (!m) return bad(where, 'mul read 발문 꼴: ' + st); want = `${m[1]} 곱하기 ${m[2]}`; }
+  else if (ask === 'story' || ask === 'sexpr') { m = st.match(/한 \S+에 \S+ (\d+)\S+씩 있어요\. \S+ (\d+)\S+의 /); if (!m) return bad(where, `mul ${ask} 발문 꼴: ` + st);
+    want = ask === 'story' ? +m[1] * +m[2] : `${m[1]} × ${m[2]}`; if (ask === 'sexpr') wr.forEach(w => { if (prodOf(w) === +m[1] * +m[2]) bad(where, `mul sexpr 오답 「${w}」의 곱이 정답과 같다`); }); }
+  else if (ask === 'notx') { m = st.match(/^곱이 (\d+)인 곱셈식이 아닌 것/); if (!m) return bad(where, 'mul notx 발문 꼴: ' + st); const T = +m[1];
+    if (prodOf(cor) === null || prodOf(cor) === T) bad(where, `mul notx 정답 「${cor}」의 곱이 ${T}`); wr.forEach(w => { if (prodOf(w) !== T) bad(where, `mul notx 오답 「${w}」의 곱이 ${T} 가 아니다`); }); return; }
+  else if (ask === 'same') { m = st.match(/^(\d+) × (\d+)[와과] 곱이 같은/); if (!m) return bad(where, 'mul same 발문 꼴: ' + st); const P = +m[1] * +m[2];
+    if (prodOf(cor) !== P || cor === `${m[1]} × ${m[2]}`) bad(where, `mul same 정답 「${cor}」`); wr.forEach(w => { const pw = prodOf(w); const sw = (w.match(/^(\d+) \+ (\d+)$/) || []); if (pw === P || (sw.length && +sw[1] + +sw[2] === P)) bad(where, `mul same 오답 「${w}」 값이 ${P}`); }); return; }
+  else return bad(where, 'mul ask 를 모른다: ' + ask);
+  if (q.kind === 'ox') return;
+  const W = String(want);
+  if (typeof want === 'number') { const ok = q.kind === 'sa' ? (q.answer || []).map(String).indexOf(W) >= 0 : num(cor) === want && String(cor).replace(/^\d+/, '').length <= 3;
+    if (!ok) bad(where, `mul ${ask} 정답 ${cor} ≠ 다시 센 ${W}`); wr.forEach(w => { if (num(w) === want) bad(where, `mul ${ask} 오답 「${w}」에 정답 수가 섞였다`); }); }
+  else { if (cor !== W) bad(where, `mul ${ask} 정답 「${cor}」 ≠ 「${W}」`); if (wr.indexOf(W) >= 0) bad(where, `mul ${ask} 오답에 정답이 섞였다`); }
+}
 function checkAr2(where, q) {
   const vr = q.variant_rule || {}; if (!vr.ar2) return;
   const cor = q.kind === 'sa' ? String((q.answer || [])[0]) : String(((q.options || []).find(o => o.correct) || {}).t);
@@ -1209,6 +1278,7 @@ function checkQ(where, q, opt) {
   checkAr2(where, q);
   checkCm(where, q);
   checkCls(where, q);
+  checkMul(where, q);
   checkShape(where, q);
   checkJamo(where, q);
   checkBat(where, q);
@@ -1415,6 +1485,14 @@ function checkSet(file) {
       if (at !== 'cubes' || (q.asset && q.asset.rows)) bad(where, 'cube 는 cubes(cells) 그림이 있어야'); if ((ask === 'layer' || ask === 'color' || ask === 'dir') && q.kind !== 'mc') bad(where, 'cube ' + ask + ' 는 mc 만');
       if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'cube 는 mc·blank·sa 만');
       Object.keys(K.mis || {}).forEach(k => { if (['count', 'layer', 'lr', 'fb'].indexOf(k) < 0) bad(where, 'cube mis 갈래를 모른다: ' + k); else if (!MIS.has(String(q.concept).replace(/C\d+$/, '') + K.mis[k])) bad(where, `cube mis.${k} 꼬리가 사전에 없다`); }); }
+    /* v2.7 갈래 — 곱셈 */
+    if (q.variant_rule.mul) { const M = q.variant_rule.mul, ask = M.ask || 'total';
+      const PIC = {total:'mul_groups', groups:'mul_groups', name:'mul_groups', times:'mul_groups', expr:'mul_groups', regroup:'mul_groups', skip:'jump_row', bars:'times_bars', cmp:'times_bars'};
+      if (['total', 'groups', 'name', 'skip', 'times', 'tval', 'regroup', 'bars', 'cmp', 'expr', 'add', 'value', 'prod', 'read', 'story', 'sexpr', 'notx', 'same'].indexOf(ask) < 0) bad(where, 'mul ask 를 모른다: ' + ask);
+      if (PIC[ask] ? at !== PIC[ask] : at) bad(where, `mul ${ask} 그림 종류가 맞지 않다(${PIC[ask] || '그림 없음'})`);
+      if (q.kind === 'ox' && ['tval', 'add', 'value'].indexOf(ask) < 0) bad(where, 'mul OX 는 tval·add·value 만');
+      if (q.kind === 'sa' && ['name', 'times', 'expr', 'add', 'read', 'sexpr', 'notx', 'same'].indexOf(ask) >= 0) bad(where, 'mul ' + ask + ' 는 보기 문항만');
+      if (['mc', 'blank', 'sa', 'ox'].indexOf(q.kind) < 0) bad(where, 'mul 변형은 mc·blank·sa·ox 만'); }
     /* v1.5 갈래 — 글자를 만들어요 */
     if (q.variant_rule.jamo) {
       const J = q.variant_rule.jamo; const ask = J.ask || 'build';
