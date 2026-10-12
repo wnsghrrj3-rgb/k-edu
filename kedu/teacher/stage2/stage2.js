@@ -806,7 +806,7 @@
   // 87차 — fit-tight: 넘칠 때만 종이 여백·덩이 사이·말풍선 아래를 좁힌다(글자 크기는 그대로). 자리 바꾸기와 겹쳐 쓸 수 있다.
   // 88차 — fit-lv: 수준별 문제 정답 펼침 때 물음 왼쪽 · 정답·풀이 차례 오른쪽 / fit-lv2: 물음 위 · 정답 왼쪽 · 풀이 차례 오른쪽(넘칠 때만)
   // 89차 — fit-pts: 요약 요점 다섯 줄 이상을 두 단(위→아래 차례) / fit-wrap: 옆으로 이어진 카드(차례·도구)가 종이 폭을 넘으면 두 줄로 / fit-cols: 말풍선 안 짧은 줄 넷 이상(「어제 — 과거」 같은 목록)을 두 단으로(넘칠 때만 · 글자 크기 무변)
-  const LAYOUTS = ['fit-mo2', 'fit-qv2', 'fit-rw2', 'fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s', 'fit-cv2w', 'fit-lvw', 'fit-lvs', 'fit-rvw', 'fit-rvs'];
+  const LAYOUTS = ['fit-mo2', 'fit-qv2', 'fit-qv2n', 'fit-rw2', 'fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s', 'fit-cv2w', 'fit-lvw', 'fit-lvs', 'fit-rvw', 'fit-rvs'];
   // 90차 — fit-qh: 「여러 개를 고를 수 있어요」를 물음 옆 같은 줄로(넘칠 때만)
   // 90차 — fit-head: 넘칠 때만 제목을 머리(단계 칩·차시 이름)와 한 줄에 — 제목 줄 하나만큼 본문 자리가 생긴다 · 글자 크기 무변 · 차시 이름이 말줄임되면 안 씀
   function headBad(body) { const p = body.parentElement; if (!p) return true; const k = p.querySelector(':scope > .kt2-head .kt2-kicker'), t = p.querySelector(':scope > .kt2-title');
@@ -859,7 +859,7 @@
     if (sp) tries.push(['fit-split'], ['fit-split', 'fit-tight']);
     if (sd) tries.push(['fit-side'], ['fit-side', 'fit-tight']);
     if (body.querySelector('.mo2-talk')) tries.push(['fit-mo2'], ['fit-mo2', 'fit-tight']);
-    if (body.querySelector('.qv2-row')) tries.push(['fit-qv2'], ['fit-qv2', 'fit-tight']); // 108차 — 물음 장 그림 판 낮춤·카드 촘촘 // 99차 — 그림 띠 낮춤
+    if (body.querySelector('.qv2-row')) tries.push(['fit-qv2'], ['fit-qv2', 'fit-tight'], ['fit-qv2', 'fit-qv2n'], ['fit-qv2', 'fit-qv2n', 'fit-tight']); /* 109차 — 그림 판 좁혀 카드 한 줄 */ // 108차 — 물음 장 그림 판 낮춤·카드 촘촘 // 99차 — 그림 띠 낮춤
     if (body.querySelector('.rw2-row')) tries.push(['fit-rw2'], ['fit-rw2', 'fit-tight']); // 99차 — 아이콘 작게
     if (body.querySelector('.rv2-board')) tries.push(['fit-rvw'], ['fit-rvw', 'fit-tight'], ['fit-rvw', 'fit-rvs'], ['fit-rvw', 'fit-rvs', 'fit-tight']); // 98차 — 칠판 답 칸 넓힘 · 줄 간격 좁힘
     if (body.querySelector('.lv2-main > .lv2-a')) tries.push(['fit-lvw'], ['fit-lvw', 'fit-tight'], ['fit-lvs'], ['fit-lvs', 'fit-tight'], ['fit-lvw', 'fit-lvs'], ['fit-lvw', 'fit-lvs', 'fit-tight']); // 97차 — 수준 계단을 위 한 줄로(본문 폭 넓힘)
