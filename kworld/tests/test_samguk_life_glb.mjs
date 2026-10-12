@@ -22,6 +22,7 @@ for (const sit of life.situations.filter((x) => ['tally', 'ingot', 'school', 'sh
 assert.ok(life.situations.filter((x) => !x.must).length >= 14 && life.mixedCount === 6, '섞여 14 · 판마다 6');
 assert.ok(areas.includes(world.face), `시작 시선 구역 ${world.face}`);
 assert.ok(names.includes('spawn'), 'spawn');
+{ const w = JSON.parse(fs.readFileSync(new URL('../eras/samguk-life/world.json', import.meta.url), 'utf8')); assert.ok(Array.isArray(w.spawn) && w.spawn.length === 2 && w.spawn[0] === 0 && w.spawn[1] === 8, 'world.spawn [0, 8] — 장터 좌판 사이가 아니라 마을 길(㉞)'); }
 const npcs = ix.filter((n) => n.startsWith('ix_npc_')).map((n) => n.slice(7));
 for (const id of Object.keys(npcDefs)) assert.ok(npcs.includes(id), `NPC ${id} 가 GLB 에 없음`);
 for (const id of npcs) assert.ok(npcDefs[id], `GLB NPC ${id} 가 npcs.json 에 없음`);
