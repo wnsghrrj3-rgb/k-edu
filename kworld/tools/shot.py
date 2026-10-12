@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """헤드리스 크로미움으로 케이월드 한 시대 화면 한 장 찍기.
 사용: python3 -m http.server 8787 (k-edu 루트) 를 먼저 띄우고
-  python3 kworld/tools/shot.py <era> [out.png] [--mini out_mini.png] [--info]
+  python3 kworld/tools/shot.py <era> [out.png] [--mini out_mini.png] [--info] [--at <area_id|x,z>] [--yaw <rad>] [--pitch <rad>]
+  --at: 세상에 들어간 뒤 플레이어를 그 구역(`area_*` 이름에서 area_ 뺀 id)이나 엔진 좌표(x,z — z = -블렌더 y)로 옮겨 찍는다(마을 밖 자리 확인용).
+       --yaw 없으면 그 구역의 안쪽(가장 가까운 ix_ 소품 쪽)을 본다. 열린 카드는 닫는다.
 요령: 20초 기다린 뒤 rAF·setTimeout 을 끊고 찍는다(안 끊으면 스크린샷이 30초 넘겨 죽음).
 """
 import sys, json, time
@@ -10,6 +12,9 @@ from playwright.sync_api import sync_playwright
 era = sys.argv[1]; out = sys.argv[2] if len(sys.argv) > 2 and not sys.argv[2].startswith('--') else f'/tmp/shot_{era}.png'
 mini = sys.argv[sys.argv.index('--mini') + 1] if '--mini' in sys.argv else None
 info = '--info' in sys.argv
+at = sys.argv[sys.argv.index('--at') + 1] if '--at' in sys.argv else None
+yaw = float(sys.argv[sys.argv.index('--yaw') + 1]) if '--yaw' in sys.argv else None
+pitch = float(sys.argv[sys.argv.index('--pitch') + 1]) if '--pitch' in sys.argv else None
 url = f'http://127.0.0.1:8787/kworld/?era={era}&resume=0&friends=0'
 
 with sync_playwright() as p:
@@ -21,7 +26,24 @@ with sync_playwright() as p:
         time.sleep(3)
         n = pg.evaluate("() => { const b = document.querySelector('#panel.open .pbtns button.primary'); if (!b) return 0; b.click(); return 1; }")
         if n: time.sleep(1.5)
-    time.sleep(14)
+    time.sleep(6)
+    if at:
+        pg.evaluate("""([at, yaw, pitch]) => { const g = window.kworld; const e = g.e, p = g.p; if (!e || !p) return;
+          let x, z; const m = /^(-?[\\d.]+),(-?[\\d.]+)$/.exec(at);
+          if (m) { x = +m[1]; z = +m[2]; } else { const a = e.areas.get(at); if (!a) throw new Error('no area ' + at); x = a.x; z = a.z; }
+          p.pos.set(x, e.groundY(x, z) + p.eye, z);
+          if (yaw != null) p.yaw = yaw; else {
+            let best = null, bd = 1e9;
+            for (const it of e.interactables.values()) { const v = it.center; const d = Math.hypot(v.x - x, v.z - z); if (d > 1 && d < bd) { bd = d; best = v; } }
+            if (best) p.yaw = Math.atan2(-(best.x - x), -(best.z - z)); }
+          if (pitch != null) p.pitch = pitch;
+          if (p.ground !== undefined) p.ground = true; }""", [at, yaw, pitch])
+        time.sleep(1)
+        for _ in range(4):   # 옮긴 자리에서 열린 카드는 닫는다(사진은 세상만)
+            n = pg.evaluate("() => { const b = document.querySelector('#panel.open .pbtns button'); if (!b) return 0; b.click(); return 1; }")
+            if not n: break
+            time.sleep(1)
+    time.sleep(8)
     meta = pg.evaluate("""() => { const g = window.kworld; const e = g?.e; const p = g?.p;
       return { hm: !!e?.hm, spawn: e?.spawn && [e.spawn.x, e.spawn.y, e.spawn.z], pos: p?.pos && [p.pos.x, p.pos.y, p.pos.z],
         ground: (e && p) ? e.groundY(p.pos.x, p.pos.z) : null, deep: g?.world?.deepWater ?? null, areas: e?.areas?.size ?? null, fps: g?.fps ?? null }; }""")
