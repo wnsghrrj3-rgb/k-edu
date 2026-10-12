@@ -77,4 +77,8 @@ ok(fY.friends.get('stu-1')?.pick?.sit === '좁은 골짜기', '새로 들어온 
 const fs = await import('fs'); const items = JSON.parse(fs.readFileSync(path.join(root, 'eras/life/items.json'), 'utf8')); const life = JSON.parse(fs.readFileSync(path.join(root, 'eras/life/life.json'), 'utf8'));
 const gc = items.targets.gully.rename[0].choices.find((c) => c.flag === 'gully:friend'); const sc = life.situations.find((s) => s.id === 'drive').choices.find((c) => c.id === 'friend');
 ok(gc && gc.if === 'near:1' && gc.gray && sc && sc.done === 'gully:friend' && sc.with === true, '구석기 몰이 골짜기 「반 친구와 함께」 길 json');
+// 같이 하기 자리 넓히기 — 신석기 그물·청동기 도랑·고조선 토성·삼국 성벽
+const J = (f) => JSON.parse(fs.readFileSync(path.join(root, f), 'utf8'));
+const chk = [['neo', 'nettear', 'mend_with', 'net:mend_with', J('eras/neo/npcs.json').fisher.lines[1].choices], ['bronze-life', 'moat', 'dig_with', 'moat:dig_with', J('eras/bronze-life/npcs.json').digger.lines[0].choices], ['gojoseon-life', 'war', 'build_with', 'war:build_with', J('eras/gojoseon-life/items.json').targets.rampart.rename], ['samguk-life', 'corvee', 'carry_with', 'wall:carry_with', J('eras/samguk-life/items.json').targets.wall.rename]];
+for (const [era, sid, cid, flag, rules] of chk) { const sc = J(`eras/${era}/life.json`).situations.find((s) => s.id === sid).choices.find((c) => c.id === cid); const r = rules.find((x) => x.flag === flag); ok(sc && sc.done === flag && sc.with === true && r && /near:1/.test(r.if) && r.roll?.hard === 1 && (!r.verb || rules.indexOf(r) < rules.findIndex((x) => x.flag === flag.replace('_with', ''))), `${era} 「반 친구와 함께」 길 json(near:1·hard 1·with·rename 이면 원 길보다 앞)`); }
 console.log(`friends ${pass}/${fail}`); process.exit(fail ? 1 : 0);
