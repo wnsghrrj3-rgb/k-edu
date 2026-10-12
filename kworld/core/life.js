@@ -90,7 +90,7 @@ export class Life {
   get speedMul() { return this.hurt.has('leg') ? (this.d.hurts?.leg?.speed ?? 0.7) : 1; }
   /** 선택지 회색 — c.if 조건이 거짓이면 못 누른다(이유 한 줄). hurt:leg 같은 흔적도 깃발처럼 본다 */
   /** 조건 — "a && !b" 에 더해 "(a || b)" / "!(a || b)" 묶음(조선 후기부터: 여러 신분이 같은 자리를 쓸 때) */
-  one(t) { t = t.trim(); const neg = t.startsWith('!'); const f = neg ? t.slice(1) : t; const v = f.startsWith('hurt:') ? this.hurt.has(f.slice(5)) : f.startsWith('sex:') ? (this.g.sex?.id === f.slice(4)) : f.startsWith('status:') ? (this.status === f.slice(7)) : (f.startsWith('val:') ? this.valCond(f.slice(4)) : this.g.flags.has(f)); return neg ? !v : v; }
+  one(t) { t = t.trim(); const neg = t.startsWith('!'); const f = neg ? t.slice(1) : t; const v = f.startsWith('hurt:') ? this.hurt.has(f.slice(5)) : f.startsWith('sex:') ? (this.g.sex?.id === f.slice(4)) : f.startsWith('status:') ? (this.status === f.slice(7)) : f.startsWith('near:') ? ((this.g.friends?.near?.() || 0) >= Number(f.slice(5))) : (f.startsWith('val:') ? this.valCond(f.slice(4)) : this.g.flags.has(f)); return neg ? !v : v; }
   cond(expr) { if (!expr) return true; return expr.split('&&').every((t) => { t = t.trim(); const neg = t.startsWith('!('); if (neg || t.startsWith('(')) t = t.slice(neg ? 2 : 1, t.lastIndexOf(')')); if (!t.includes('||')) return neg ? !this.one(t) : this.one(t); const v = t.split('||').some((x) => this.one(x)); return neg ? !v : v; }); }
   valCond(s) { const m = s.match(/^(\w+)(>=|<=|>|<|=)(\d+)$/); if (!m) return false; const v = this.values[m[1]] || 0, n = Number(m[3]); return { '>=': v >= n, '<=': v <= n, '>': v > n, '<': v < n, '=': v === n }[m[2]]; }
   // ---------- 상황 ----------
@@ -121,7 +121,7 @@ export class Life {
     if (c.status) this.setStatusTo(c.status);   // 신분이 먼저 바뀌고 벼슬이 오른다(역관이 되면서 받는 벼슬은 새 신분의 천장으로 잰다)
     const deltas = []; if (c.craft) { this.add('craft', c.craft); deltas.push(`✋ 솜씨 ${c.craft > 0 ? '+' : ''}${c.craft}`); } if (c.heart) { this.add('heart', c.heart); deltas.push(`🤝 인심 ${c.heart > 0 ? '+' : ''}${c.heart}`); } if (c.grain && this.d.grain?.open) { this.add('grain', c.grain); deltas.push(`🌾 곡식 ${c.grain > 0 ? '+' : ''}${c.grain}`); } if (c.rank) { const l = this.rise(c.rank); if (l) deltas.push(l); }
     for (const a of [].concat(c.gain || [])) this.gain(a, 1); if (c.hurt) this.injure(c.hurt); if (c.flag) for (const f of [].concat(c.flag)) g.flags.add(f);   // 결과가 바로 세우는 깃발(then 은 카드 뒤, 이건 즉시)
-    this.log.push({ sit: s.id, choice: c.id, t: Date.now() }); g.telemetry && ((g.telemetry.life ??= []).push({ sit: s.id, choice: c.id }));
+    this.log.push({ sit: s.id, choice: c.id, t: Date.now() }); g.friends?.picked?.(s, c);   // 반 친구에게 「무엇을 골랐는지」 한 줄(값 없음) g.telemetry && ((g.telemetry.life ??= []).push({ sit: s.id, choice: c.id }));
     this.queue.push({ kind: 'result', s, c, deltas }); if (c.then) this.queue.push({ kind: 'then', list: c.then });
     g.flag(['sit:' + s.id + ':done', 'sit:' + s.id + ':' + c.id]);   // 결과 카드를 먼저 줄 세운 뒤 깃발(깃발이 여는 다음 상황은 그 뒤에)
     if (c.retry) { this.done.delete(s.id); g.flags.delete('sit:' + s.id + ':done'); g.flags.delete('sit:' + s.id + ':' + c.id); if (c.done) for (const f of c.done.split('&&')) if (!f.trim().startsWith('!')) g.flags.delete(f.trim()); }   // 쓰러짐: 그 상황 앞으로 — 다른 선택을 해 본다

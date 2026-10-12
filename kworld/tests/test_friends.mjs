@@ -1,4 +1,4 @@
-// 반 멀티 0단계 시험 — 가짜 Realtime 버스 위에 두 학생: 자리가 오가고 친구 몸이 scene 에 서며 따라 움직인다 · 20초 소식 없으면 사라짐 · 좌석 없으면 아무것도 안 함 · 자기 것은 안 그림
+// 반 멀티 0·1단계 시험 — 가짜 Realtime 버스 위에 두 학생: 자리가 오가고 친구 몸이 scene 에 서며 따라 움직인다 · 20초 소식 없으면 사라짐 · 좌석 없으면 아무것도 안 함 · 자기 것은 안 그림
 import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url)); const root = path.join(here, '..');
 let pass = 0, fail = 0; const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m); } };
@@ -22,7 +22,7 @@ globalThis.window.KeduTier.resolve = async () => seatB; resetSeat();
 const FriendsB = Friends;
 const gB = mkG('neo'); const fB = new FriendsB(gB); await fB.start(); await tick();
 ok(fA.count() === 1 && gA.e.scene.kids.length === 1 && fA.friends.get('stu-2').body.userData.nick === '7 박솔', 'B 가 들어오면 A 화면에 B 몸 + 이름 ' + fA.count());
-ok(fB.count() === 0, 'B 는 A 의 첫 자리를 아직 못 받음(A 는 B 보다 먼저 보냈다)');
+ok(fB.count() === 1, 'B 도 A 가 바로 보인다(A 가 새 친구를 보면 제 자리를 다시 보낸다 — 1단계)');
 // A 가 걷는다 → B 화면의 A 가 따라간다
 gA.p.pos.x = 5; gA.p.pos.z = -3; gA.p.moving = true; fA.lastSend = -1e9; fA.tick(0.016); await tick();
 ok(fB.count() === 1 && fB.friends.get('stu-1').tx === 5 && fB.friends.get('stu-1').tz === -3, 'A 자리가 B 에게 ' + JSON.stringify(fB.friends.get('stu-1') && [fB.friends.get('stu-1').tx, fB.friends.get('stu-1').tz]));
@@ -42,4 +42,39 @@ globalThis.window.KeduTier.resolve = async () => ({ tier: 'guest' }); resetSeat(
 ok(!fD.on && !fD.ch && gD.e.onFrame.length === 0, '게스트·방문자: 채널 없음');
 // world.friends === false 면 끔
 globalThis.window.KeduTier.resolve = async () => seatB; resetSeat(); const FriendsE = Friends; const gE = mkG('neo'); gE.world.friends = false; const fE = new FriendsE(gE); await fE.start(); await tick(); ok(!fE.on, 'world.friends=false 면 끔');
+// ---------- 1단계: 손 흔들기 · 무엇을 골랐는지 · near:n ----------
+globalThis.window.KeduTier.resolve = async () => ({ tier: 'student', profile: { profile_id: 'stu-1', nickname: '3 김하늘', class_code_id: 'c2' } }); resetSeat();
+const gW = mkG('life'); gW.ui = { said: [], say(t) { this.said.push(t); }, isOpen: () => false }; gW.p.body = { userData: { arms: [{ rotation: { x: 0 } }, { rotation: { x: 0 } }] } };
+const fW = new Friends(gW); await fW.start(); await tick();
+globalThis.window.KeduTier.resolve = async () => ({ tier: 'student', profile: { profile_id: 'stu-2', nickname: '7 박솔', class_code_id: 'c2' } }); resetSeat();
+const gX = mkG('life'); gX.ui = { said: [], say(t) { this.said.push(t); }, isOpen: () => false }; gX.p.body = { userData: { arms: [{ rotation: { x: 0 } }, { rotation: { x: 0 } }] } };
+const fX = new Friends(gX); await fX.start(); await tick(); fW.lastSend = -1e9; fW.send(true); await tick();
+ok(fW.count() === 1 && fX.count() === 1, '둘이 서로 보인다');
+// 👋 W 가 흔들면 X 화면의 W 가 오른팔을 들고 토스트
+fW.wave(); await tick(); const wf = fX.friends.get('stu-1'); ok(wf.waveUntil > performance.now() && gX.ui.said.some((t) => t.includes('👋') && t.includes('김하늘')), '손 흔들기 → 상대 화면 토스트 ' + gX.ui.said.at(-1));
+wf.body.userData.arms = [{ rotation: { x: 0 } }, { rotation: { x: 0 } }]; fX.tick(0.016); ok(wf.body.userData.arms[1].rotation.x < -2, '친구 오른팔이 올라감 ' + wf.body.userData.arms[1].rotation.x);
+fW.tick(0.016); ok(gW.p.body.userData.arms[1].rotation.x < -2, '내 몸(3인칭)도 팔을 든다');
+gW.ui.isOpen = () => true; const before = fW.myWaveUntil; fW.myWaveUntil = 0; fW.wave(); ok(fW.myWaveUntil === 0, '카드 열린 중엔 안 흔든다'); gW.ui.isOpen = () => false;
+// 무엇을 골랐는지 — 멀면 안 뜨고, 곁(3.5m)에 가면 한 줄, 값은 없음
+gW.p.pos.x = 30; gW.p.pos.z = 0; fW.lastSend = -1e9; fW.send(true); await tick();
+fW.picked({ title: '좁은 골짜기' }, { id: 'alone', title: '혼자 몰았다', heart: 1 }); await tick();
+const xf = fX.friends.get('stu-1'); ok(xf.pick && xf.pick.sit === '좁은 골짜기' && !xf.pick.shown && !gX.ui.said.some((t) => t.includes('골짜기')), '멀면 받아 두기만');
+gX.p.pos.x = 28; for (let i = 0; i < 80; i++) fX.tick(0.05);
+ok(xf.pick.shown && gX.ui.said.some((t) => t.includes('「좁은 골짜기」') && t.includes('혼자 몰았다') && !t.includes('인심')), '곁에 가면 한 줄(값 없음) ' + gX.ui.said.at(-1));
+// near:n — 5m 안 친구 수
+ok(fX.near() === 1 && fW.near() === 0, 'near: X 곁엔 W(28↔30) 하나, W 는 X 자리를 아직 모름 ' + fX.near() + '/' + fW.near());
+fX.lastSend = -1e9; fX.send(true); await tick(); ok(fW.near() === 1, 'X 자리가 오면 W 도 1');
+const { Life } = await import(path.join(root, 'core/life.js'));
+const one = Life.prototype.one; ok(one.call({ g: { friends: fW, flags: new Set() }, hurt: new Set() }, 'near:1') && !one.call({ g: { friends: fW, flags: new Set() }, hurt: new Set() }, 'near:2') && !one.call({ g: { flags: new Set() }, hurt: new Set() }, 'near:1'), 'life.cond near:1 참·near:2 거짓·friends 없으면 거짓');
+// with — 「함께」는 곁 친구에게 바로 토스트
+gX.ui.said.length = 0; fW.picked({ title: '좁은 골짜기' }, { id: 'friend', title: '반 친구와 몰았다', with: true }); await tick();
+ok(gX.ui.said.some((t) => t.includes('너와 함께') && t.includes('골짜기')), '함께 → 곁 친구 토스트 ' + gX.ui.said.at(-1));
+// 새로 온 친구에게 내 마지막 선택 한 줄
+globalThis.window.KeduTier.resolve = async () => ({ tier: 'student', profile: { profile_id: 'stu-3', nickname: '9 이준', class_code_id: 'c2' } }); resetSeat();
+const gY = mkG('life'); gY.ui = { said: [], say(t) { this.said.push(t); }, isOpen: () => false }; const fY = new Friends(gY); await fY.start(); await tick(); await tick();
+ok(fY.friends.get('stu-1')?.pick?.sit === '좁은 골짜기', '새로 들어온 친구도 W 의 마지막 선택을 안다');
+// 구석기 몰이 골짜기 json — 반 친구 길
+const fs = await import('fs'); const items = JSON.parse(fs.readFileSync(path.join(root, 'eras/life/items.json'), 'utf8')); const life = JSON.parse(fs.readFileSync(path.join(root, 'eras/life/life.json'), 'utf8'));
+const gc = items.targets.gully.rename[0].choices.find((c) => c.flag === 'gully:friend'); const sc = life.situations.find((s) => s.id === 'drive').choices.find((c) => c.id === 'friend');
+ok(gc && gc.if === 'near:1' && gc.gray && sc && sc.done === 'gully:friend' && sc.with === true, '구석기 몰이 골짜기 「반 친구와 함께」 길 json');
 console.log(`friends ${pass}/${fail}`); process.exit(fail ? 1 : 0);

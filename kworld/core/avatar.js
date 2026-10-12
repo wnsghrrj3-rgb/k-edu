@@ -34,6 +34,7 @@ export function createAvatar(elder = false) {
     shape(rig,new THREE.CylinderGeometry(.085,.085,.43,12),trim,0,1.3,.22).rotation.z=Math.PI/2;
     for(const side of [-1,1]) shape(rig,new THREE.BoxGeometry(.038,.48,.034),leather,side*.17,1.08,-.155);
   }
+  rig.userData.arms=arms;   // 손 흔들기(반 멀티) 가 오른팔을 들 수 있게
   rig.userData.animate=(time,moving)=>{
     const stride=moving?Math.sin(time*9)*.5:Math.sin(time*1.5)*.025;
     arms[0].rotation.x=stride;arms[1].rotation.x=-stride;
