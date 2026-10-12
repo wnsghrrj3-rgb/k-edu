@@ -316,6 +316,20 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .stab th{background:var(--tint);font-weight:600}
 .stab td.sq{color:var(--ink-soft);font-weight:700}
 .stab td.stl{font-size:15px;letter-spacing:1px;white-space:nowrap}
+/* v3.2 표와 그래프 */
+.tgw{display:flex;flex-direction:column;align-items:center;gap:8px}
+.tgt{font-size:16px;font-weight:700;color:var(--ink)}
+.tgtab th:first-child{white-space:nowrap}
+.gph{border-collapse:collapse;font-size:17px;background:var(--card)}
+.gph th,.gph td{border:1px solid var(--rule-strong);text-align:center;min-width:46px;height:34px;padding:0 6px}
+.gph th{background:var(--tint);font-weight:600;font-size:15px}
+.gph td.m{font-size:22px;line-height:1;color:var(--accent);font-weight:700}
+.gph th.cn{position:relative;min-width:96px;background:linear-gradient(to top right,var(--tint) 49%,var(--rule-strong) 49.5%,var(--rule-strong) 50.5%,var(--tint) 51%)}
+.gph th.cn span{display:block;font-size:12px;line-height:1.1}
+.gph th.cn span:first-child{text-align:left}.gph th.cn span:last-child{text-align:right}
+.tgcards{display:grid;grid-template-columns:repeat(5,82px);gap:6px}
+.tgcard{border:2px solid var(--rule-strong);border-radius:10px;background:var(--card);padding:6px 4px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tgcard b{font-size:12px;color:var(--accent);line-height:1.15;text-align:center}.tgcard span{font-size:15px}
 /* v2.7 곱셈 그림 */
 .mulw{display:flex;justify-content:center;max-width:100%;overflow-x:auto}
 .mulw .mgroups{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:560px}
@@ -341,6 +355,11 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .pq .psortw .sbin>b{display:block;text-align:center;border-bottom:1px solid #999;font-size:12px;padding:2px 6px}
 .pq .psortw .sbin>div{padding:4px;display:flex;flex-wrap:wrap;gap:2px}
 .pq .psortw .stab{border-collapse:collapse;font-size:13px}.pq .psortw .stab th,.pq .psortw .stab td{border:1px solid #999;padding:4px 10px;text-align:center}
+.pq .psortw .tgw{display:flex;flex-direction:column;align-items:flex-start;gap:4px}.pq .psortw .ptgt{font-size:12px;font-weight:700}
+.pq .psortw .gph{border-collapse:collapse;font-size:12px}.pq .psortw .gph th,.pq .psortw .gph td{border:1px solid #999;min-width:30px;height:22px;padding:0 4px;text-align:center}
+.pq .psortw .gph td.m{font-size:15px;line-height:1}.pq .psortw .gph th.cn{min-width:70px}.pq .psortw .gph th.cn span{display:block;font-size:9px;line-height:1.1}
+.pq .psortw .tgcards{display:grid;grid-template-columns:repeat(5,66px);gap:3px}.pq .psortw .tgcard{border:1px solid #999;border-radius:6px;padding:2px;display:flex;flex-direction:column;align-items:center}
+.pq .psortw .tgcard b{font-size:9px;line-height:1.1;text-align:center}.pq .psortw .tgcard span{font-size:11px}
 .pq .pmulw{margin:8px 0 6px 30px}
 .pq .pmulw .mgroups{display:flex;flex-wrap:wrap;gap:6px;max-width:440px}
 .pq .pmulw .mg{display:grid;gap:1px;padding:3px 5px;border:1px dashed #666;border-radius:8px}
@@ -1207,6 +1226,84 @@ function sortHTML(a, paper){
   t += `<tr><th>수(${esc(a.unit || '개')})</th>${cols.map((c, i) => cell(cn[i])).join('')}${has ? cell(a.total) : ''}</tr>`;
   return `<div class="${P}sortw"><table class="stab">${t}</table></div>`;
 }
+/* ===== v3.2 — 2학년 2학기 「표와 그래프」 그림 3종 (2026-10-12, 오푸스 5.5) =====
+   ftable {topic?, title?, head, cols:[항목…], counts:[수|null], total?:수|null, tally?:[수…], unit, vh?}
+          — 조사한 자료를 정리한 표: 제목 · 첫 줄 항목 이름(head) · 둘째 줄 수(null = 빈칸 ?) · total 이 null 이면 합계 칸 ? · tally 가 있으면 ／ 세기 줄(5개씩 띄움)
+   pgraph {topic?, title?, head, cols, counts, unit, vh?, mark?:'◯'|'×'|'／', dir?:'v'|'h', rows?, table?:true, blank?:[칸 번호…], drawn?:[수…], bad?:{col, how:'top'|'skip'|'mix'}}
+          — ◯·×·／ 그래프: 한 칸에 하나씩 맨 아래(가로꼴이면 왼쪽)부터 빠짐없이. rows 는 칸 수(기본 가장 큰 수) · table:true 면 같은 자료의 표를 위에 같이 그린다
+            blank 칸은 비워 둔다(완성하기) · drawn 이 있으면 그 수대로 그린다(표와 다르게 옮긴 곳 찾기) · bad 는 한 칸을 잘못 그린다(위에서부터·건너뛰기·기호 섞기)
+   cards {topic?, items:[[이름, 고른 것]…]} — 조사한 낱장 자료(이름표 20장까지, 한 줄 5장)
+   TG_LIB — 조사 주제: head(항목 이름)·unit(명·일·개·회)·vh(수 머리말)·title·cols·vp(항목 → 「~한 학생」 말)·most(「가장 {M}」 틀)·all(전체를 부르는 말)·noun(항목을 부르는 말)·totalQ(합계 묻는 말)
+   검사기(check_sets.js)는 TG_A 를 따로 들고 다시 센다(vp·most 틀은 글자 그대로 대조). 화면·종이 같은 꼴(종이는 흑백 표). */
+const TG_LIB = {
+  act:     {head:'활동', title:'2학년 때 즐거웠던 활동별 학생 수', cols:['현장체험학습', '안전 체험', '놀이 한마당', '신나는 무용', '텃밭 가꾸기'],
+            vp:{'현장체험학습':'현장체험학습이 즐거웠던 학생', '안전 체험':'안전 체험이 즐거웠던 학생', '놀이 한마당':'놀이 한마당이 즐거웠던 학생', '신나는 무용':'신나는 무용이 즐거웠던 학생', '텃밭 가꾸기':'텃밭 가꾸기가 즐거웠던 학생'},
+            most:'가장 {M} 학생이 즐거워한 활동', all:'슬기네 반 학생', noun:'활동'},
+  season:  {head:'계절', title:'우리 반 친구들이 태어난 계절별 학생 수', cols:['봄', '여름', '가을', '겨울'],
+            vp:{'봄':'봄에 태어난 학생', '여름':'여름에 태어난 학생', '가을':'가을에 태어난 학생', '겨울':'겨울에 태어난 학생'}, most:'가장 {M} 학생이 태어난 계절', all:'우리 반 학생', noun:'계절'},
+  animal:  {head:'동물', title:'수찬이네 반 학생들이 좋아하는 동물별 학생 수', cols:['개', '앵무새', '고양이', '토끼', '금붕어'],
+            vp:{'개':'개를 좋아하는 학생', '앵무새':'앵무새를 좋아하는 학생', '고양이':'고양이를 좋아하는 학생', '토끼':'토끼를 좋아하는 학생', '금붕어':'금붕어를 좋아하는 학생'}, most:'가장 {M} 학생이 좋아하는 동물', all:'수찬이네 반 학생', noun:'동물'},
+  play:    {head:'전통 놀이', title:'동호네 반 학생들이 좋아하는 전통 놀이별 학생 수', cols:['비사치기', '투호 놀이', '제기차기', '공기놀이'],
+            vp:{'비사치기':'비사치기를 좋아하는 학생', '투호 놀이':'투호 놀이를 좋아하는 학생', '제기차기':'제기차기를 좋아하는 학생', '공기놀이':'공기놀이를 좋아하는 학생'}, most:'가장 {M} 학생이 좋아하는 전통 놀이', all:'동호네 반 학생', noun:'전통 놀이'},
+  snack:   {head:'간식', title:'우리 반 학생들이 좋아하는 간식별 학생 수', cols:['햄버거', '떡볶이', '김밥', '라면', '만두'],
+            vp:{'햄버거':'햄버거를 좋아하는 학생', '떡볶이':'떡볶이를 좋아하는 학생', '김밥':'김밥을 좋아하는 학생', '라면':'라면을 좋아하는 학생', '만두':'만두를 좋아하는 학생'}, most:'가장 {M} 학생이 좋아하는 간식', all:'우리 반 학생', noun:'간식'},
+  game:    {head:'교실 놀이', title:'우리 반 학생들이 원하는 교실 놀이별 학생 수', cols:['땅따먹기', '공기놀이', '보드게임', '딱지치기'],
+            vp:{'땅따먹기':'땅따먹기를 원하는 학생', '공기놀이':'공기놀이를 원하는 학생', '보드게임':'보드게임을 원하는 학생', '딱지치기':'딱지치기를 원하는 학생'}, most:'가장 {M} 학생이 원하는 교실 놀이', all:'우리 반 학생', noun:'교실 놀이'},
+  gift:    {head:'선물', title:'받고 싶은 생일 선물별 학생 수', cols:['로봇', '인형', '모자', '신발', '그림책'],
+            vp:{'로봇':'로봇을 받고 싶은 학생', '인형':'인형을 받고 싶은 학생', '모자':'모자를 받고 싶은 학생', '신발':'신발을 받고 싶은 학생', '그림책':'그림책을 받고 싶은 학생'}, most:'가장 {M} 학생이 받고 싶은 선물', all:'조사한 학생', noun:'선물'},
+  fruit:   {head:'과일', title:'우리 반 학생들이 좋아하는 과일별 학생 수', cols:['자두', '포도', '키위', '감', '복숭아'],
+            vp:{'자두':'자두를 좋아하는 학생', '포도':'포도를 좋아하는 학생', '키위':'키위를 좋아하는 학생', '감':'감을 좋아하는 학생', '복숭아':'복숭아를 좋아하는 학생'}, most:'가장 {M} 학생이 좋아하는 과일', all:'우리 반 학생', noun:'과일'},
+  bread:   {head:'종류', title:'재우네 반 학생들이 좋아하는 붕어빵의 종류별 학생 수', cols:['팥', '슈크림', '고구마', '치즈', '초코'],
+            vp:{'팥':'팥 붕어빵을 좋아하는 학생', '슈크림':'슈크림 붕어빵을 좋아하는 학생', '고구마':'고구마 붕어빵을 좋아하는 학생', '치즈':'치즈 붕어빵을 좋아하는 학생', '초코':'초코 붕어빵을 좋아하는 학생'}, most:'가장 {M} 학생이 좋아하는 붕어빵', all:'재우네 반 학생', noun:'붕어빵'},
+  sport:   {head:'운동', title:'우리 반 학생들이 좋아하는 운동별 학생 수', cols:['축구', '줄넘기', '달리기', '피구', '수영'],
+            vp:{'축구':'축구를 좋아하는 학생', '줄넘기':'줄넘기를 좋아하는 학생', '달리기':'달리기를 좋아하는 학생', '피구':'피구를 좋아하는 학생', '수영':'수영을 좋아하는 학생'}, most:'가장 {M} 학생이 좋아하는 운동', all:'우리 반 학생', noun:'운동'},
+  weather: {head:'날씨', unit:'일', vh:'일수', title:'12월 날씨별 일수', cols:['맑음', '흐림', '비', '눈'], lo:3, hi:12,
+            vp:{'맑음':'맑은 날', '흐림':'흐린 날', '비':'비가 온 날', '눈':'눈이 온 날'}, most:'12월에 날수가 가장 {M} 날씨', all:'12월', noun:'날씨', totalQ:'12월은 모두 며칠인가요?'},
+  block:   {head:'색깔', unit:'개', vh:'연결 모형 수', title:'슬기네 모둠이 가지고 있는 연결 모형의 색깔별 개수', cols:['주황색', '파란색', '노란색', '초록색'], lo:4, hi:12,
+            vp:{'주황색':'주황색 연결 모형', '파란색':'파란색 연결 모형', '노란색':'노란색 연결 모형', '초록색':'초록색 연결 모형'}, most:'연결 모형이 가장 {M} 색깔', all:'연결 모형', noun:'색깔', totalQ:'슬기네 모둠의 연결 모형은 모두 몇 개인가요?'},
+  jegi:    {head:'모둠', unit:'회', vh:'횟수', title:'지수네 반 모둠별 제기차기 횟수', cols:['1모둠', '2모둠', '3모둠', '4모둠', '5모둠'], lo:3, hi:13,
+            vp:{'1모둠':'1모둠의 제기차기 횟수', '2모둠':'2모둠의 제기차기 횟수', '3모둠':'3모둠의 제기차기 횟수', '4모둠':'4모둠의 제기차기 횟수', '5모둠':'5모둠의 제기차기 횟수'}, most:'제기차기를 가장 {M2} 한 모둠', all:'제기차기 횟수', noun:'모둠', totalQ:'지수네 반 모둠들의 제기차기 횟수는 모두 몇 회인가요?'},
+};
+const TG_NAMES = ['서준', '채원', '지은', '호진', '상혁', '소희', '시후', '세미', '재이', '다윤', '정우', '효주', '슬기', '우영', '수찬', '도현', '소민', '지아', '연우', '민하'];
+function tgTitle(a, paper){ return a.title ? `<div class="${paper ? 'ptgt' : 'tgt'}">${esc(a.title)}</div>` : ''; }
+function tgTableHTML(a, paper){
+  const cols = a.cols || [], cn = a.counts || [], has = a.total !== undefined, vh = a.vh || '학생 수', U = a.unit || '명';
+  const cell = x => x === null || x === undefined || x === '?' ? '<td class="sq">?</td>' : `<td>${esc(x)}</td>`;
+  let t = `<tr><th>${esc(a.head || '')}</th>${cols.map(c => `<th>${esc(c)}</th>`).join('')}${has ? '<th>합계</th>' : ''}</tr>`;
+  if (Array.isArray(a.tally)) t += `<tr><th>세면서 표시하기</th>${a.tally.map(n => `<td class="stl">${sortTally(n)}</td>`).join('')}${has ? '<td></td>' : ''}</tr>`;
+  t += `<tr><th>${esc(vh)}(${esc(U)})</th>${cols.map((c, i) => cell(cn[i])).join('')}${has ? cell(a.total) : ''}</tr>`;
+  return `<table class="stab tgtab">${t}</table>`;
+}
+/* 칸 i 에 실제로 그릴 자리 목록(1부터) — bad 는 한 칸을 일부러 잘못 그린다 */
+function tgCells(a, i, n, R){
+  const bad = a.bad && a.bad.col === i ? a.bad.how : null;
+  if (bad === 'top') return Array.from({length:n}, (_, j) => R - j);                       /* 위에서부터 */
+  if (bad === 'skip' && n >= 2){ const out = []; for (let j = 1; j <= n + 1; j++) if (j !== Math.max(2, Math.ceil(n / 2))) out.push(j); return out; }   /* 가운데 한 칸 건너뜀 */
+  return Array.from({length:n}, (_, j) => j + 1);
+}
+function tgGraphHTML(a, paper){
+  const cols = a.cols || [], cn = a.counts || [], mark = a.mark || '◯', other = mark === '◯' ? '×' : '◯', dir = a.dir || 'v', vh = a.vh || '학생 수', U = a.unit || '명';
+  const draw = Array.isArray(a.drawn) ? a.drawn : cn, blank = a.blank || [], R = a.rows || Math.max(1, ...draw.map(x => Number(x) || 0));
+  const mk = (i, j, got) => { if (!got) return '<td></td>'; const m = a.bad && a.bad.col === i && a.bad.how === 'mix' && j === Math.max(1, Math.ceil(got.n / 2)) ? other : mark; return `<td class="m" data-c="${i}">${m}</td>`; };
+  const setOf = i => { if (blank.indexOf(i) >= 0) return null; const s = new Set(tgCells(a, i, Number(draw[i]) || 0, R)); return {s, n: Number(draw[i]) || 0}; };
+  let t = '';
+  if (dir === 'v'){
+    const sets = cols.map((_, i) => setOf(i));
+    for (let j = R; j >= 1; j--) t += `<tr><th>${j}</th>${cols.map((_, i) => mk(i, j, sets[i] && sets[i].s.has(j) ? sets[i] : null)).join('')}</tr>`;
+    t += `<tr><th class="cn"><span>${esc(vh)}(${esc(U)})</span><span>${esc(a.head || '')}</span></th>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr>`;
+  } else {
+    cols.forEach((c, i) => { const S = setOf(i); t += `<tr><th>${esc(c)}</th>${Array.from({length:R}, (_, j) => mk(i, j + 1, S && S.s.has(j + 1) ? S : null)).join('')}</tr>`; });
+    t += `<tr><th class="cn"><span>${esc(a.head || '')}</span><span>${esc(vh)}(${esc(U)})</span></th>${Array.from({length:R}, (_, j) => `<th>${j + 1}</th>`).join('')}</tr>`;
+  }
+  return `<table class="gph ${dir === 'v' ? 'gv' : 'gh'}" aria-label="그래프">${t}</table>`;
+}
+function tgHTML(a, paper){
+  const P = paper ? 'p' : '';
+  if (a.type === 'cards') return `<div class="${P}sortw"><div class="tgcards">${(a.items || []).map(it => `<div class="tgcard"><b>${esc(it[1])}</b><span>${esc(it[0])}</span></div>`).join('')}</div></div>`;
+  if (a.type === 'ftable') return `<div class="${P}sortw"><div class="tgw">${tgTitle(a, paper)}${tgTableHTML(a, paper)}</div></div>`;
+  const tab = a.table ? tgTableHTML(Object.assign({}, a, {total: a.counts.reduce((s, x) => s + (Number(x) || 0), 0)}), paper) : '';
+  return `<div class="${P}sortw"><div class="tgw">${tgTitle(a, paper)}${tab}${tgGraphHTML(a, paper)}</div></div>`;
+}
 /* ===== v2.9 — 2학년 2학기 「곱셈구구」 그림 (2026-10-12, 오푸스 5.5) =====
    gugu_table {rows:[세로줄 왼쪽 수…], cols:[가로줄 맨 위 수…], q?:[r,c], blank?:[[r,c]…], hrow?:r, diag?:true}
      곱셈표 — 칸은 언제나 r × c 를 엔진이 셈한다(데이터에 곱을 적지 않는다).
@@ -1430,6 +1527,7 @@ function drawAsset(a, r){
     case 'bar2': return `<div class="cmpw">${bar2SVG(a)}</div>`;
     case 'ruler': return `<div class="cmpw">${rulerSVG(a)}</div>`;
     case 'sort_pile': case 'sort_bins': case 'sort_table': return sortHTML(a, false);
+    case 'ftable': case 'pgraph': case 'cards': return tgHTML(a, false);
     /* v2.7 — 2학년 1학기 「곱셈」 */
     case 'mul_groups': return mulHTML(a, false);
     case 'times_bars': return `<div class="cmpw">${timesSVG(a)}</div>`;
@@ -3547,6 +3645,128 @@ function makeVariantOnce(q, r){
      cm {ask, ...}   ask  read(0 맞춤·몇 cm) · off(0 아님 — 칸 세기) · approx(눈금 사이 — 약 몇 cm, off:true 면 0 아님) · cells(1 cm 칸 세기) · unit(단위 몇 번)
      오개념 꼬리: X08 끝 숫자 그대로 · X09 눈금(선) 수 · X10 1부터 셈 · X11 먼 눈금 · X12 「약」 뺌 · X03 빈틈·겹침(횟수 ±1)
      원본을 만들 때만 q._fix = [len, s(, 이름)] 로 못박는다(fill.js 전용). */
+  /* v3.2 — 표와 그래프 (2학년 2학기 5단원): 갈래 tg {ask, topics?, src:'table'|'graph'|'cards', k?, lo?, hi?, mark?, dir?}
+     ask count(한 칸 읽기) · total(합계) · blank(빈칸 — 합계에서) · tally(／ 세기) · most · least · diff(차이) · sum2(두 칸 합)
+         · rows(그래프 칸 수) · gblank(그래프 완성 — 몇 개) · wrong(표와 다르게 옮긴 곳) · bad(잘못 그린 까닭) · more(「n보다 많은」 몇 가지)
+     _fix {topic, cols, counts, t, t2, src, mark, dir, how, n, over} 로 원본을 고정한다(fill.js). 오개념은 작성자 단원 사전 X01~X16 꼬리. */
+  if (rule.tg && (!a || typeof a !== 'object' || ['ftable', 'pgraph', 'cards'].indexOf(a.type) >= 0)){
+    const G = rule.tg, ask = G.ask || 'count', FX = v._fix || {}; delete v._fix; delete v._form; delete v.asset;
+    const want = Math.max(1, nOptsOf(q) - 1), isSA = q.kind === 'sa', SA = isSA ? ' 숫자로 쓰세요.' : '', J = tmJ;
+    let src = FX.src || G.src || 'table'; if (src === 'cards' && ask !== 'count' && ask !== 'total') src = 'table';
+    const STU = x => ['weather', 'block', 'jegi'].indexOf(x) < 0;
+    const keys = FX.topic ? [FX.topic] : (G.topics || Object.keys(TG_LIB).filter(x => (src !== 'cards' || STU(x)) && (ask !== 'more' || x !== 'jegi')));
+    const key = pick(keys, r), T = TG_LIB[key], U = T.unit || '명', VH = T.vh || '학생 수';
+    const graph = src === 'graph' || ['gblank', 'wrong', 'bad', 'more'].indexOf(ask) >= 0;
+    const kMax = T.cols.length, k = FX.counts ? FX.counts.length : Math.min(kMax, FX.k || G.k || (kMax >= 5 ? (r() < 0.5 ? 4 : 5) : kMax));
+    const cols = FX.cols ? FX.cols.slice() : (k === kMax || FX.counts ? T.cols.slice(0, k) : shuffle(T.cols.map((_, i) => i), r).slice(0, k).sort((x, y) => x - y).map(i => T.cols[i]));
+    const lo = FX.lo || G.lo || T.lo || (ask === 'tally' ? 3 : 1), hi = FX.hi || G.hi || (src === 'cards' ? Math.min(7, T.hi || 7) : (T.hi || 9));
+    const uniq = arr => { const mx = Math.max(...arr), mn = Math.min(...arr); return arr.filter(x => x === mx).length === 1 && arr.filter(x => x === mn).length === 1; };
+    let counts = FX.counts ? FX.counts.slice() : null;
+    if (!counts){ for (let g = 0; g < 400; g++){ counts = cols.map(() => rint(lo, hi, r));
+        const tot = counts.reduce((s, x) => s + x, 0);
+        if (src === 'cards' && tot > 20) continue;
+        if (key === 'weather' && tot !== 31) continue;
+        if ((ask === 'most' || ask === 'least' || ask === 'rows') && !uniq(counts)) continue;
+        if (ask === 'diff' && new Set(counts).size < counts.length) continue;
+        if (ask === 'tally' && !counts.some(x => x >= 5)) continue;
+        if (ask === 'more' && (new Set(counts).size < 3)) continue;
+        if ((ask === 'bad' || ask === 'wrong') && Math.min(...counts) < 3) continue;
+        break; } }
+    const tot = counts.reduce((s, x) => s + x, 0), mxI = counts.indexOf(Math.max(...counts)), mnI = counts.indexOf(Math.min(...counts));
+    const vp = c => T.vp[c] || c, EUN = w => J(w, '은', '는'), EUL = w => J(w, '을', '를'), GWA = w => J(w, '과', '와'), IEYO = w => J(w, '이에요', '예요'), NY = n => n + J(String(n), '이에요', '예요');
+    const mark = FX.mark || G.mark || pick(['◯', '◯', '×', '／'], r), dir = FX.dir || G.dir || (r() < 0.75 ? 'v' : 'h');
+    const MJ = {'◯':['를', '와', '는', '가'], '×':['를', '와', '는', '가'], '／':['을', '과', '은', '이']}[mark] || ['를', '와', '는', '가'], mEUL = MJ[0], mGWA = MJ[1], mEUN = MJ[2], mIGA = MJ[3];
+    const base = () => ({topic:key, title:T.title, head:T.head, cols:cols.slice(), counts:counts.slice(), unit:U, vh:VH});
+    const tab = extra => { v.asset = Object.assign({type:'ftable'}, base(), extra || {}); };
+    const gph = extra => { v.asset = Object.assign({type:'pgraph', mark, dir}, base(), extra || {}); };
+    const cardsA = () => { const items = []; cols.forEach((c, i) => { for (let j = 0; j < counts[i]; j++) items.push(c); });
+      const nm = shuffle(TG_NAMES, r).slice(0, items.length); v.asset = {type:'cards', topic:key, items: shuffle(items, r).map((c, i) => [nm[i], c])}; };
+    const show = () => { if (src === 'cards') cardsA(); else if (graph) gph(); else tab(); };
+    const ti = FX.t !== undefined ? FX.t : rint(0, cols.length - 1, r);
+    const listed = () => cols.map((c, i) => `${c} ${counts[i]}${U}`).join(', ') + IEYO(U);
+    const fin = (ans, ds, ex, uw) => { if (isSA) v.answer = uw ? [String(ans), ans + uw] : [String(ans)];
+      else v.options = kindOpts(uw ? ans + uw : ans, ds.map(([x, c]) => [x === null || x === undefined || (typeof x === 'number' && x < 0) ? null : (uw ? x + uw : x), c]), want, q.options);
+      v.explanation = ex; return v; };
+    const where = src === 'cards' ? '자료' : graph ? '그래프' : '표';
+    const howRead = (i) => src === 'cards' ? `자료에서 「${cols[i]}」${EUL(cols[i])} 고른 이름표만 ／ 표시를 하며 세어요.` : graph ? `그래프에서 「${cols[i]}」 칸에 ${mark}${mIGA} 몇 개 쌓였는지 세어요.` : `표에서 「${cols[i]}」 칸 아래의 수를 읽어요.`;
+    if (ask === 'count'){
+      show(); const n = counts[ti], oth = counts.find((x, i) => i !== ti && x !== n), P = vp(cols[ti]);
+      v.stem = (src === 'cards' ? '자료를 보세요. ' : '') + `${P}${EUN(P)} 몇 ${U}인가요?` + SA;
+      return fin(n, [[n + 1, 'X01'], [n - 1, 'X01'], [oth, 'X02'], [n + 2, 'X01']],
+        [howRead(ti), `${P}${EUN(P)} ${n}${U}${IEYO(U)}.`, src === 'cards' ? '빠뜨리거나 두 번 세지 않게 표시하며 세요.' : graph ? '한 칸에 하나씩 — 쌓인 수가 곧 그 항목의 수예요.' : '항목 이름과 그 아래 수를 짝지어 읽어요.'], U);
+    }
+    if (ask === 'total'){
+      if (src === 'cards') cardsA(); else if (graph) gph(); else tab({total: null});
+      v.stem = (src === 'cards' ? '자료를 보세요. ' : '') + (T.totalQ || `${T.all}${EUN(T.all)} 모두 몇 ${U}인가요?`) + SA;
+      return fin(tot, [[Math.max(...counts), 'X03'], [cols.length, 'X04'], [tot + 1, 'X01'], [tot - 1, 'X01']],
+        [src === 'cards' ? `${T.head}별로 세면 ${listed()}.` : `${where}의 각 ${T.head}별 수는 ${listed()}.`, `${counts.join(' + ')} = ${tot}이니 모두 ${tot}${U}${IEYO(U)}.`, '항목별 수를 모두 더한 것이 합계 — 전체 수예요.'], U);
+    }
+    if (ask === 'most' || ask === 'least'){
+      show(); const ai = ask === 'most' ? mxI : mnI, oi = ask === 'most' ? mnI : mxI, M = ask === 'most' ? '많은' : '적은', M2 = ask === 'most' ? '많이' : '적게';
+      v.stem = T.most.replace('{M}', M).replace('{M2}', M2) + `${EUN(T.noun)} 무엇인가요?`;
+      const ds = [[cols[oi], 'X09']]; cols.forEach((c, i) => { if (i !== ai && i !== oi) ds.push([c, 'X07']); });
+      return fin(cols[ai], ds, [graph ? `그래프에서 ${mark}${mIGA} 가장 ${ask === 'most' ? '높이(길게)' : '낮게(짧게)'} 쌓인 칸을 찾아요.` : `표에서 수가 가장 ${ask === 'most' ? '큰' : '작은'} 칸을 찾아요.`,
+        `${listed()} — 가장 ${M} 것은 ${cols[ai]}(${counts[ai]}${U})${IEYO(cols[ai])}.`, `「가장 ${M}」을 묻는지 다시 읽어요. 앞 칸이라고 많은 게 아니에요.`]);
+    }
+    if (ask === 'diff'){
+      show(); let i1 = ti, i2 = FX.t2 !== undefined ? FX.t2 : (ti + 1 + rint(0, cols.length - 2, r)) % cols.length;
+      if (counts[i1] < counts[i2]) [i1, i2] = [i2, i1]; const p1 = vp(cols[i1]), p2 = vp(cols[i2]), d = counts[i1] - counts[i2];
+      v.stem = `${p1}${EUN(p1)} ${p2}보다 몇 ${U} 더 많은가요?` + SA;
+      return fin(d, [[counts[i1] + counts[i2], 'X08'], [counts[i1], 'X08'], [d + 1, 'X01'], [d - 1, 'X01']],
+        [`${p1}${EUN(p1)} ${counts[i1]}${U}, ${p2}${EUN(p2)} ${counts[i2]}${U}${IEYO(U)}.`, `${counts[i1]} − ${counts[i2]} = ${d}이니 ${d}${U} 더 많아요.`, '「더 많은」 수는 두 수의 차이예요 — 더하지 않아요.'], U);
+    }
+    if (ask === 'sum2'){
+      show(); const i1 = ti, i2 = FX.t2 !== undefined ? FX.t2 : (ti + 1 + rint(0, cols.length - 2, r)) % cols.length, p1 = vp(cols[i1]), p2 = vp(cols[i2]), s2 = counts[i1] + counts[i2];
+      v.stem = `${p1}${GWA(p1)} ${p2}${EUN(p2)} 모두 몇 ${U}인가요?` + SA;
+      return fin(s2, [[Math.abs(counts[i1] - counts[i2]), 'X08'], [tot, 'X03'], [s2 + 1, 'X01'], [s2 - 1, 'X01']],
+        [`${p1}${EUN(p1)} ${counts[i1]}${U}, ${p2}${EUN(p2)} ${counts[i2]}${U}${IEYO(U)}.`, `${counts[i1]} + ${counts[i2]} = ${s2}이니 모두 ${s2}${U}${IEYO(U)}.`, '두 칸의 수를 더해요 — 전체 합계가 아니에요.'], U);
+    }
+    if (ask === 'blank' || ask === 'tally'){
+      const c = counts[ti], shown = counts.slice(); shown[ti] = null;
+      if (ask === 'tally') tab({counts: shown, tally: counts.slice()}); else tab({counts: shown, total: tot});
+      const rest = counts.filter((x, i) => i !== ti), so = rest.reduce((s, x) => s + x, 0);
+      v.stem = (ask === 'tally' ? '／ 표시를 세어 보세요. ' : '') + '표의 빈칸에 알맞은 수는 얼마인가요?' + SA;
+      if (ask === 'tally') return fin(c, [[c >= 5 ? c - 1 : c + 2, 'X06'], [c + 1, 'X01'], [c - 1, 'X01']],
+        [`「${cols[ti]}」 칸의 ／ 표시를 세어요.`, c >= 5 ? `다섯 개 묶음 하나는 5예요. ${sortTally(c)} → ${c}` : `／ 표시가 ${c}개예요.`, `그래서 빈칸은 ${NY(c)}.`]);
+      return fin(c, [[tot, 'X03'], [so, 'X05'], [c + 1, 'X01'], [c - 1, 'X01']],
+        [`나머지 칸을 더하면 ${rest.join(' + ')} = ${NY(so)}.`, `${so} + □ = ${tot}이니 □ = ${NY(c)}.`, '합계에서 나머지 칸의 수를 빼면 빈칸의 수예요.']);
+    }
+    if (ask === 'rows'){
+      tab(); const mx = counts[mxI], axis = dir === 'v' ? '세로' : '가로';
+      v.stem = `표를 보고 그래프로 나타내려고 해요. ${axis}는 적어도 몇 칸으로 나누어야 하나요?` + SA;
+      return fin(mx, [[tot, 'X12'], [cols.length, 'X12'], [mx + 1, 'X01'], [counts[mnI], 'X12']],
+        [`가장 큰 수는 ${cols[mxI]} ${mx}${U}${IEYO(U)}.`, `${mark}${mEUL} ${mx}개까지 쌓아야 하니 ${axis}는 ${mx}칸이면 돼요.`, '칸이 모자라면 다 그릴 수 없고, 너무 많으면 빈 칸이 남아요.'], '칸');
+    }
+    if (ask === 'gblank'){
+      gph({table:true, blank:[ti]}); const c = counts[ti];
+      v.stem = `표를 보고 그래프를 완성하려고 해요. ${cols[ti]} 칸에는 ${mark}${mEUL} 몇 개 그려야 하나요?` + SA;
+      return fin(c, [[c + 1, 'X11'], [c - 1, 'X11'], [tot, 'X03'], [counts[mxI] !== c ? counts[mxI] : null, 'X11']],
+        [`표에서 ${cols[ti]}${EUN(cols[ti])} ${c}${U}${IEYO(U)}.`, `그래프의 수는 표의 수와 같아야 해요 — ${mark}${mEUL} ${c}개 그려요.`, `맨 ${dir === 'v' ? '아래' : '왼쪽'} 칸부터 빠짐없이 한 칸에 하나씩 그려요.`], '개');
+    }
+    if (ask === 'wrong'){
+      const drawn = counts.slice(); const dd = FX.over !== undefined ? FX.over : (r() < 0.5 ? 1 : -1); drawn[ti] = counts[ti] + dd; gph({table:true, drawn});
+      v.stem = '표를 보고 그래프로 나타냈어요. 잘못 옮긴 곳은 어디인가요?';
+      const line = (i, m) => `${cols[i]} — 표는 ${counts[i]}${U}인데 ${mark}${mEUL} ${m}개 그렸다`;
+      const ds = cols.map((c, i) => i === ti ? null : [line(i, counts[i] + (i % 2 ? 1 : -1)), 'X11']).filter(Boolean); ds.push(['모두 바르게 옮겼다', 'X11']);
+      return fin(line(ti, drawn[ti]), ds, [`표에서 ${cols[ti]}${EUN(cols[ti])} ${counts[ti]}${U}인데 그래프에는 ${mark}${mIGA} ${drawn[ti]}개예요.`, '표와 그래프의 수는 반드시 같아야 해요.', '다른 칸은 표의 수와 그래프의 수가 같아요.']);
+    }
+    if (ask === 'bad'){
+      const how = FX.how || pick(['top', 'skip', 'mix'], r), MX = Math.max(...counts); gph({bad:{col:ti, how}, rows: MX + (how === 'skip' || (how === 'top' && counts[ti] === MX) ? 1 : 0)});
+      v.stem = '그래프를 보세요. 잘못 그린 까닭은 무엇인가요?';
+      const TXT = {top: `맨 ${dir === 'v' ? '아래' : '왼쪽'} 칸부터 채우지 않고 ${dir === 'v' ? '위' : '오른쪽'}에서부터 그렸다`, skip: '중간 칸을 건너뛰고 그렸다', mix: '기호를 섞어서 그렸다'};
+      const ds = Object.keys(TXT).filter(x => x !== how).map(x => [TXT[x], x === 'mix' ? 'X13' : 'X10']); ds.push(['칸 수가 모자란다', 'X12']);
+      return fin(TXT[how], ds, [`「${cols[ti]}」 칸을 보세요.`, how === 'top' ? `${mark}${mIGA} ${dir === 'v' ? '위' : '오른쪽'}에서부터 채워져 있어요.` : how === 'skip' ? `${mark}${mIGA} 중간 한 칸을 비우고 그 다음 칸에 그려져 있어요.` : `${mark}${mGWA} 다른 기호가 섞여 있어요.`,
+        `${mark}${mEUN} 언제나 맨 ${dir === 'v' ? '아래' : '왼쪽'}부터 빠짐없이, 한 가지 기호로 그려요.`]);
+    }
+    if (ask === 'more'){
+      gph(); const vals = [...new Set(counts)].sort((x, y) => x - y); const n = FX.n !== undefined ? FX.n : vals[rint(0, vals.length - 2, r)];
+      const over = cols.filter((c, i) => counts[i] > n), ge = counts.filter(x => x >= n).length;
+      v.stem = `${n}${U}보다 많은 ${T.noun}${EUN(T.noun)} 모두 몇 가지인가요?` + SA;
+      return fin(over.length, [[ge, 'X14'], [tot - counts.filter(x => x <= n).reduce((s, x) => s + x, 0), 'X04'], [cols.length - over.length, 'X09'], [over.length + 1, 'X01']],
+        [`${n}${U}인 칸 위에 선을 긋고 그 ${dir === 'v' ? '위' : '오른쪽'}에 ${mark}${mIGA} 있는 ${T.noun}${EUL(T.noun)} 찾아요.`, `${over.join(', ')} — ${over.length}가지예요.`, `「${n}${U}보다 많은」에 딱 ${n}${U}인 것은 들어가지 않아요.`], '가지');
+    }
+    return v;
+  }
   if (rule.cm && (!a || a.type === 'ruler')){
     const CM = rule.cm, ask = CM.ask || 'read', FIX = v._fix; delete v._fix; delete v._form; const want = Math.max(1, nOptsOf(q) - 1);
     const POOL = [['색연필', 6, 10], ['크레파스', 5, 8], ['지우개', 2, 5], ['종이띠', 3, 12], ['막대', 3, 12], ['붓', 8, 13], ['연필', 7, 12], ['리본', 4, 11], ['못', 2, 6], ['열쇠', 3, 6], ['클립', 2, 4], ['풀', 5, 9]];
@@ -4879,6 +5099,7 @@ function paperAsset(a){
     case 'bar2': return `<div class="pcmpw">${bar2SVG(a)}</div>`;
     case 'ruler': return `<div class="pcmpw">${rulerSVG(a)}</div>`;
     case 'sort_pile': case 'sort_bins': case 'sort_table': return sortHTML(a, true);
+    case 'ftable': case 'pgraph': case 'cards': return tgHTML(a, true);
     case 'mul_groups': return mulHTML(a, true);
     case 'times_bars': return `<div class="pcmpw">${timesSVG(a)}</div>`;
     case 'gugu_table': return guguHTML(a, true);

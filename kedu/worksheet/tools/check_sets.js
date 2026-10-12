@@ -141,7 +141,11 @@ const ASSETS = {
   dpair:          ['a', 'b'],
   tbar:           ['from', 'to'],
   dbar:           ['acts'],
-  cal:            ['mon', 'start', 'days']
+  cal:            ['mon', 'start', 'days'],
+  /* v3.2 — 2학년 2학기 「표와 그래프」: 조사 표 · ◯×／ 그래프 · 낱장 자료 */
+  ftable:         ['head', 'cols', 'counts'],
+  pgraph:         ['head', 'cols', 'counts'],
+  cards:          ['items']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -170,6 +174,7 @@ function checkAsset(where, a) {
   if (typeof a === 'string') return;                     /* 글자 에셋은 그대로 그린다 */
   if (!ASSETS[a.type]) return bad(where, '모르는 에셋 종류 ' + a.type + ' (play.html drawAsset 에 없다)');
   for (const f of ASSETS[a.type]) if (a[f] === undefined || a[f] === null) bad(where, `에셋 ${a.type} 에 ${f} 없음`);
+  if (a.type === 'ftable' || a.type === 'pgraph' || a.type === 'cards') checkTgAsset(where, a);
   if (a.type === 'picto_table' || a.type === 'compare_groups') {
     if (!Array.isArray(a.rows) || !a.rows.length) bad(where, `${a.type} rows 비었음`);
     else a.rows.forEach((rw, i) => { if (rw.n === undefined || !rw.item) bad(where, `${a.type} rows[${i}] item/n 없음`); });
@@ -1172,6 +1177,118 @@ function checkCls(where, q) {
   if (cor !== W && cor !== W + unit && !okSa) bad(where, `cls 정답 ${cor} ≠ 다시 센 ${W}${unit}`);
   if (wr.indexOf(W) >= 0 || wr.indexOf(W + unit) >= 0) bad(where, `cls 오답 보기에 정답 ${W}${unit} 가 섞였다`);
 }
+/* v3.2 — 표와 그래프: 그림 3종 규격(ftable·pgraph·cards) + tg 갈래 정답 다시 세기. 주제 표 TG_A 는 play.html TG_LIB 와 따로 적어 서로 검산한다. */
+const TG_A = {
+  act:     {unit:'명', noun:'활동', vp:{'현장체험학습':'현장체험학습이 즐거웠던 학생', '안전 체험':'안전 체험이 즐거웠던 학생', '놀이 한마당':'놀이 한마당이 즐거웠던 학생', '신나는 무용':'신나는 무용이 즐거웠던 학생', '텃밭 가꾸기':'텃밭 가꾸기가 즐거웠던 학생'}, most:'가장 {M} 학생이 즐거워한 활동', total:'슬기네 반 학생은 모두 몇 명인가요?'},
+  season:  {unit:'명', noun:'계절', vp:{'봄':'봄에 태어난 학생', '여름':'여름에 태어난 학생', '가을':'가을에 태어난 학생', '겨울':'겨울에 태어난 학생'}, most:'가장 {M} 학생이 태어난 계절', total:'우리 반 학생은 모두 몇 명인가요?'},
+  animal:  {unit:'명', noun:'동물', vp:{'개':'개를 좋아하는 학생', '앵무새':'앵무새를 좋아하는 학생', '고양이':'고양이를 좋아하는 학생', '토끼':'토끼를 좋아하는 학생', '금붕어':'금붕어를 좋아하는 학생'}, most:'가장 {M} 학생이 좋아하는 동물', total:'수찬이네 반 학생은 모두 몇 명인가요?'},
+  play:    {unit:'명', noun:'전통 놀이', vp:{'비사치기':'비사치기를 좋아하는 학생', '투호 놀이':'투호 놀이를 좋아하는 학생', '제기차기':'제기차기를 좋아하는 학생', '공기놀이':'공기놀이를 좋아하는 학생'}, most:'가장 {M} 학생이 좋아하는 전통 놀이', total:'동호네 반 학생은 모두 몇 명인가요?'},
+  snack:   {unit:'명', noun:'간식', vp:{'햄버거':'햄버거를 좋아하는 학생', '떡볶이':'떡볶이를 좋아하는 학생', '김밥':'김밥을 좋아하는 학생', '라면':'라면을 좋아하는 학생', '만두':'만두를 좋아하는 학생'}, most:'가장 {M} 학생이 좋아하는 간식', total:'우리 반 학생은 모두 몇 명인가요?'},
+  game:    {unit:'명', noun:'교실 놀이', vp:{'땅따먹기':'땅따먹기를 원하는 학생', '공기놀이':'공기놀이를 원하는 학생', '보드게임':'보드게임을 원하는 학생', '딱지치기':'딱지치기를 원하는 학생'}, most:'가장 {M} 학생이 원하는 교실 놀이', total:'우리 반 학생은 모두 몇 명인가요?'},
+  gift:    {unit:'명', noun:'선물', vp:{'로봇':'로봇을 받고 싶은 학생', '인형':'인형을 받고 싶은 학생', '모자':'모자를 받고 싶은 학생', '신발':'신발을 받고 싶은 학생', '그림책':'그림책을 받고 싶은 학생'}, most:'가장 {M} 학생이 받고 싶은 선물', total:'조사한 학생은 모두 몇 명인가요?'},
+  fruit:   {unit:'명', noun:'과일', vp:{'자두':'자두를 좋아하는 학생', '포도':'포도를 좋아하는 학생', '키위':'키위를 좋아하는 학생', '감':'감을 좋아하는 학생', '복숭아':'복숭아를 좋아하는 학생'}, most:'가장 {M} 학생이 좋아하는 과일', total:'우리 반 학생은 모두 몇 명인가요?'},
+  bread:   {unit:'명', noun:'붕어빵', vp:{'팥':'팥 붕어빵을 좋아하는 학생', '슈크림':'슈크림 붕어빵을 좋아하는 학생', '고구마':'고구마 붕어빵을 좋아하는 학생', '치즈':'치즈 붕어빵을 좋아하는 학생', '초코':'초코 붕어빵을 좋아하는 학생'}, most:'가장 {M} 학생이 좋아하는 붕어빵', total:'재우네 반 학생은 모두 몇 명인가요?'},
+  sport:   {unit:'명', noun:'운동', vp:{'축구':'축구를 좋아하는 학생', '줄넘기':'줄넘기를 좋아하는 학생', '달리기':'달리기를 좋아하는 학생', '피구':'피구를 좋아하는 학생', '수영':'수영을 좋아하는 학생'}, most:'가장 {M} 학생이 좋아하는 운동', total:'우리 반 학생은 모두 몇 명인가요?'},
+  weather: {unit:'일', noun:'날씨', vp:{'맑음':'맑은 날', '흐림':'흐린 날', '비':'비가 온 날', '눈':'눈이 온 날'}, most:'12월에 날수가 가장 {M} 날씨', total:'12월은 모두 며칠인가요?', sum:31},
+  block:   {unit:'개', noun:'색깔', vp:{'주황색':'주황색 연결 모형', '파란색':'파란색 연결 모형', '노란색':'노란색 연결 모형', '초록색':'초록색 연결 모형'}, most:'연결 모형이 가장 {M} 색깔', total:'슬기네 모둠의 연결 모형은 모두 몇 개인가요?'},
+  jegi:    {unit:'회', noun:'모둠', vp:{'1모둠':'1모둠의 제기차기 횟수', '2모둠':'2모둠의 제기차기 횟수', '3모둠':'3모둠의 제기차기 횟수', '4모둠':'4모둠의 제기차기 횟수', '5모둠':'5모둠의 제기차기 횟수'}, most:'제기차기를 가장 {M2} 한 모둠', total:'지수네 반 모둠들의 제기차기 횟수는 모두 몇 회인가요?'},
+};
+const TG_MARKS = ['◯', '×', '／'];
+function tgTopicOf(where, a) {
+  const key = a.topic || Object.keys(TG_A).find(k => (a.cols || a.items.map(x => x[1])).every(c => TG_A[k].vp[c]));
+  if (!key || !TG_A[key]) { bad(where, `${a.type} 주제를 모른다 ${a.topic || ''}`); return null; }
+  const T = TG_A[key]; const cs = a.cols || [...new Set(a.items.map(x => x[1]))];
+  cs.forEach(c => { if (!T.vp[c]) bad(where, `${a.type} 항목 「${c}」${a.topic ? ` 이 주제 ${key} 에 없다` : ''}`); });
+  if (a.unit && a.unit !== T.unit) bad(where, `${a.type} 단위 ${a.unit} ≠ 주제 단위 ${T.unit}`);
+  return T;
+}
+function checkTgAsset(where, a) {
+  if (a.type === 'cards') {
+    if (!Array.isArray(a.items) || a.items.length < 2 || a.items.length > 20) return bad(where, 'cards 는 2~20장');
+    a.items.forEach(it => { if (!Array.isArray(it) || it.length !== 2 || !it[0] || !it[1]) bad(where, 'cards 낱장은 [이름, 고른 것]'); });
+    if (new Set(a.items.map(x => x[0])).size !== a.items.length) bad(where, 'cards 이름이 겹친다');
+    tgTopicOf(where, a); return;
+  }
+  if (!Array.isArray(a.cols) || a.cols.length < 2 || a.cols.length > 5) return bad(where, a.type + ' 항목은 2~5개');
+  if (!Array.isArray(a.counts) || a.counts.length !== a.cols.length) return bad(where, a.type + ' counts 수가 항목 수와 다르다');
+  if (new Set(a.cols).size !== a.cols.length) bad(where, a.type + ' 항목 이름이 겹친다');
+  if (!a.head) bad(where, a.type + ' 항목 머리말(head)이 없다');
+  const T = tgTopicOf(where, a);
+  if (a.type === 'ftable') {
+    a.counts.forEach(x => { if (x !== null && !(Number.isInteger(x) && x >= 0 && x <= 20)) bad(where, 'ftable 수는 0~20 정수·null'); });
+    const nulls = a.counts.filter(x => x === null).length; if (nulls > 1) bad(where, 'ftable 빈칸이 둘 넘다');
+    if (nulls && (a.total === undefined || a.total === null) && !Array.isArray(a.tally)) bad(where, 'ftable 빈칸인데 합계도 ／ 표시도 없다(구할 길이 없다)');
+    if (Array.isArray(a.tally)) { if (a.tally.length !== a.cols.length) bad(where, 'ftable tally 수가 항목 수와 다르다'); a.counts.forEach((x, i) => { if (x !== null && x !== a.tally[i]) bad(where, `ftable ／ 표시 ${a.tally[i]} 와 수 ${x} 가 다르다`); }); }
+    if (typeof a.total === 'number' && nulls === 0 && a.total !== a.counts.reduce((s, x) => s + x, 0)) bad(where, 'ftable 합계가 칸의 합과 다르다');
+    if (typeof a.total === 'number' && nulls === 1 && a.total - a.counts.reduce((s, x) => s + (x || 0), 0) < 0) bad(where, 'ftable 빈칸이 음수가 된다');
+    if (T && T.sum && nulls === 0 && a.counts.reduce((s, x) => s + x, 0) !== T.sum) bad(where, `ftable 이 주제의 합계는 ${T.sum}(12월 날수)`);
+    if (T && T.sum && typeof a.total === 'number' && a.total !== T.sum) bad(where, `ftable 합계 ${a.total} ≠ ${T.sum}`);
+    return;
+  }
+  /* pgraph */
+  a.counts.forEach(x => { if (!(Number.isInteger(x) && x >= 1 && x <= 15)) bad(where, 'pgraph 수는 1~15 정수(그래프는 빈칸 없음)'); });
+  if (a.mark !== undefined && TG_MARKS.indexOf(a.mark) < 0) bad(where, 'pgraph 기호는 ◯·×·／');
+  if (a.dir !== undefined && a.dir !== 'v' && a.dir !== 'h') bad(where, 'pgraph dir 는 v|h');
+  const drawn = Array.isArray(a.drawn) ? a.drawn : a.counts;
+  if (Array.isArray(a.drawn)) { if (a.drawn.length !== a.cols.length) bad(where, 'pgraph drawn 수가 항목 수와 다르다'); a.drawn.forEach(x => { if (!(Number.isInteger(x) && x >= 1 && x <= 15)) bad(where, 'pgraph drawn 은 1~15 정수'); });
+    if (a.drawn.filter((x, i) => x !== a.counts[i]).length !== 1) bad(where, 'pgraph drawn 은 딱 한 칸만 표와 달라야'); if (!a.table) bad(where, 'pgraph drawn 은 표를 같이 보여야 찾을 수 있다'); }
+  const mx = Math.max(...drawn, ...(a.bad && a.bad.how === 'skip' ? [a.counts[a.bad.col] + 1] : []));
+  if (a.rows !== undefined && !(Number.isInteger(a.rows) && a.rows >= mx && a.rows <= 15)) bad(where, `pgraph rows ${a.rows} 는 가장 큰 수(${mx}) 이상 15 이하`);
+  if (Array.isArray(a.blank)) { if (!a.blank.length || a.blank.some(i => !(Number.isInteger(i) && i >= 0 && i < a.cols.length))) bad(where, 'pgraph blank 칸 번호가 범위 밖'); if (!a.table) bad(where, 'pgraph blank 는 표를 같이 보여야 채울 수 있다'); }
+  if (a.bad) { if (!(Number.isInteger(a.bad.col) && a.bad.col >= 0 && a.bad.col < a.cols.length)) bad(where, 'pgraph bad.col 범위 밖');
+    if (['top', 'skip', 'mix'].indexOf(a.bad.how) < 0) bad(where, 'pgraph bad.how 는 top|skip|mix');
+    if (a.counts[a.bad.col] < 3) bad(where, 'pgraph 잘못 그린 칸은 3개 이상이어야 눈에 보인다');
+    if (a.bad.how === 'top' && !(a.rows > a.counts[a.bad.col])) bad(where, 'pgraph 위에서부터 그린 칸은 rows 가 그 수보다 커야 보인다');
+    if (a.bad.how === 'skip' && !(a.rows >= a.counts[a.bad.col] + 1)) bad(where, 'pgraph 건너뛴 칸은 rows 가 그 수 + 1 이상이어야');
+    if (Array.isArray(a.drawn) || Array.isArray(a.blank)) bad(where, 'pgraph bad 는 drawn·blank 와 같이 못 쓴다'); }
+  if (T && T.sum && a.table && a.counts.reduce((s, x) => s + x, 0) !== T.sum) bad(where, `pgraph 표를 같이 보이는 이 주제의 합계는 ${T.sum}`);
+}
+function tgCols(a) { return a.type === 'cards' ? [...new Set(a.items.map(x => x[1]))] : a.cols; }
+function tgCount(a, c) { return a.type === 'cards' ? a.items.filter(x => x[1] === c).length : a.counts[a.cols.indexOf(c)]; }
+function checkTg(where, q) {
+  const vr = q.variant_rule || {}, a = q.asset;
+  if (!a || typeof a !== 'object' || ['ftable', 'pgraph', 'cards'].indexOf(a.type) < 0) { if (vr.tg) bad(where, 'tg 갈래인데 표·그래프·자료 그림이 없다'); return; }
+  if (!vr.tg) return;   /* 손 문항은 그림 규격만(checkAsset 에서) */
+  const T = tgTopicOf(where, a); if (!T) return;
+  const st = String(q.stem).replace(/^이번에는 다른 보기예요\. /, '').replace(/ 숫자로 쓰세요\.$/, '').replace(/^자료를 보세요\. /, '');
+  const cor = q.kind === 'sa' ? String((q.answer || [])[0]) : String(((q.options || []).find(o => o.correct) || {}).t);
+  const wr = (q.options || []).filter(o => !o.correct).map(o => String(o.t));
+  const cols = tgCols(a), U = T.unit, cnt = c => tgCount(a, c), tot = cols.reduce((s, c) => s + cnt(c), 0);
+  const inStem = cols.filter(c => st.indexOf(T.vp[c]) >= 0).sort((x, y) => st.indexOf(T.vp[x]) - st.indexOf(T.vp[y]));
+  const dirNm = a.type === 'pgraph' && a.dir === 'h' ? '가로' : '세로';
+  let want = null, unit = '', m;
+  if ((m = st.match(/^(.+?)[은는] 몇 (명|일|개|회)인가요\?$/)) && inStem.length === 1 && !/모두/.test(st)) { if (m[2] !== U) bad(where, 'tg 단위 다름'); if (a.type === 'ftable' && a.counts[cols.indexOf(inStem[0])] === null) bad(where, 'tg 묻는 칸이 빈칸'); want = cnt(inStem[0]); unit = U; }
+  else if (st === T.total && inStem.length === 0) { if (a.type === 'ftable' && a.counts.some(x => x === null)) bad(where, 'tg 합계 묻는데 빈칸 있음'); if (a.type === 'ftable' && typeof a.total === 'number') bad(where, 'tg 합계가 표에 이미 보인다'); want = tot; unit = U; }
+  else if ((m = st.match(/^(.+?)[과와] (.+?)[은는] 모두 몇 (명|일|개|회)인가요\?$/)) && inStem.length === 2) { if (m[3] !== U) bad(where, 'tg 단위 다름'); want = cnt(inStem[0]) + cnt(inStem[1]); unit = U; }
+  else if ((m = st.match(/^(.+?)[은는] (.+?)보다 몇 (명|일|개|회) 더 많은가요\?$/)) && inStem.length === 2) { if (m[3] !== U) bad(where, 'tg 단위 다름');
+    const i1 = cols.indexOf(inStem[0]), i2 = cols.indexOf(inStem[1]); if (cnt(cols[i1]) <= cnt(cols[i2])) return bad(where, 'tg 「더 많은」 앞 항목이 더 많지 않다'); want = cnt(cols[i1]) - cnt(cols[i2]); unit = U; }
+  else if ((m = st.match(/^(.+?)[은는] 무엇인가요\?$/)) && /가장 (많은|적은|많이|적게)/.test(st)) {
+    const mm = st.match(/가장 (많은|적은|많이|적게)/)[1], big = mm === '많은' || mm === '많이';
+    if (m[1] !== T.most.replace('{M}', mm).replace('{M2}', mm)) return bad(where, 'tg 「가장」 발문 틀이 주제와 다르다: ' + st);
+    const vs = cols.map(cnt), t = big ? Math.max(...vs) : Math.min(...vs); if (vs.filter(x => x === t).length !== 1) return bad(where, `tg 가장 ${mm} 것이 둘 이상`); want = cols[vs.indexOf(t)]; }
+  else if ((m = st.match(/^(／ 표시를 세어 보세요\. )?표의 빈칸에 알맞은 수는 얼마인가요\?$/))) {
+    if (a.type !== 'ftable') return bad(where, 'tg 빈칸인데 표가 아니다'); const i = a.counts.indexOf(null); if (i < 0) return bad(where, 'tg 표에 빈칸이 없다');
+    if (m[1]) { if (!Array.isArray(a.tally)) return bad(where, 'tg ／ 표시로 구하라는데 세기 줄이 없다'); want = a.tally[i]; }
+    else { if (typeof a.total !== 'number') return bad(where, 'tg 합계 없이 빈칸'); want = a.total - a.counts.reduce((s, x) => s + (x || 0), 0); } }
+  else if ((m = st.match(/^표를 보고 그래프로 나타내려고 해요\. (세로|가로)는 적어도 몇 칸으로 나누어야 하나요\?$/))) { if (a.type !== 'ftable') return bad(where, 'tg rows 는 표 그림'); want = Math.max(...a.counts); unit = '칸'; }
+  else if ((m = st.match(/^표를 보고 그래프를 완성하려고 해요\. (.+?) 칸에는 (◯|×|／)[을를] 몇 개 그려야 하나요\?$/))) {
+    if (a.type !== 'pgraph' || !Array.isArray(a.blank) || !a.table) return bad(where, 'tg gblank 는 표 붙은 그래프에 빈 칸'); const i = cols.indexOf(m[1]); if (i < 0 || a.blank.indexOf(i) < 0) return bad(where, 'tg 묻는 칸이 빈 칸이 아니다'); if (m[2] !== (a.mark || '◯')) bad(where, 'tg 발문 기호가 그래프 기호와 다르다'); want = a.counts[i]; unit = '개'; }
+  else if (st === '표를 보고 그래프로 나타냈어요. 잘못 옮긴 곳은 어디인가요?') {
+    if (a.type !== 'pgraph' || !Array.isArray(a.drawn)) return bad(where, 'tg wrong 은 drawn 그래프'); const i = a.drawn.findIndex((x, j) => x !== a.counts[j]); const mk = a.mark || '◯';
+    want = `${cols[i]} — 표는 ${a.counts[i]}${U}인데 ${mk}${mk === '／' ? '을' : '를'} ${a.drawn[i]}개 그렸다`;
+    wr.forEach(t => { const w = t.match(/^(.+?) — 표는 (\d+)(?:명|일|개|회)인데 .+? (\d+)개 그렸다$/); if (w) { const j = cols.indexOf(w[1]); if (j < 0) bad(where, 'tg 오답 항목 모름 ' + t); else if (+w[2] === a.counts[j] && +w[3] === a.drawn[j]) bad(where, 'tg 오답 보기가 참말이다 ' + t); } }); }
+  else if (st === '그래프를 보세요. 잘못 그린 까닭은 무엇인가요?') {
+    if (a.type !== 'pgraph' || !a.bad) return bad(where, 'tg bad 는 bad 그래프'); const V = a.dir !== 'h';
+    want = {top: `맨 ${V ? '아래' : '왼쪽'} 칸부터 채우지 않고 ${V ? '위' : '오른쪽'}에서부터 그렸다`, skip: '중간 칸을 건너뛰고 그렸다', mix: '기호를 섞어서 그렸다'}[a.bad.how]; }
+  else if ((m = st.match(/^(\d+)(명|일|개|회)보다 많은 (.+?)[은는] 모두 몇 가지인가요\?$/))) {
+    if (a.type !== 'pgraph') return bad(where, 'tg more 는 그래프 그림'); if (m[2] !== U || m[3] !== T.noun) bad(where, 'tg more 단위·이름이 주제와 다르다'); const n = +m[1];
+    if (a.counts.indexOf(n) < 0) bad(where, 'tg more 경곗값이 그래프에 없다(딱 n 인 칸이 있어야 함정이 선다)'); want = a.counts.filter(x => x > n).length; unit = '가지'; }
+  else return bad(where, 'tg 발문 꼴을 모른다: ' + st);
+  if (want === null || want === undefined) return bad(where, 'tg 답을 다시 셀 수 없다');
+  const W = String(want); const okSa = q.kind === 'sa' && (q.answer || []).map(String).some(x => x === W || x === W + unit);
+  if (cor !== W && cor !== W + unit && !okSa) bad(where, `tg 정답 ${cor} ≠ 다시 센 ${W}${unit}`);
+  if (wr.indexOf(W) >= 0 || wr.indexOf(W + unit) >= 0) bad(where, `tg 오답 보기에 정답 ${W}${unit} 가 섞였다`);
+}
 /* v2.5 — cm 갈래: 그림(ruler)이 말하는 길이와 정답이 같은가, 오답에 정답이 섞이지 않았나 */
 function checkCm(where, q) {
   const vr = q.variant_rule || {}; const a = q.asset; const CM = vr.cm;
@@ -1566,6 +1683,7 @@ function checkQ(where, q, opt) {
   checkGugu(where, q);
   checkMcm(where, q);
   checkTm(where, q);
+  checkTg(where, q);
   checkShape(where, q);
   checkJamo(where, q);
   checkBat(where, q);
