@@ -46,6 +46,13 @@ files.forEach(f => {
   });
 });
 ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + ': ' + emptyBodies.slice(0, 8).join(' | '));
+{ const d = { scenario: { icon: '🐤', body: '병아리 6마리가 있어요. 한 마리가 더 왔어요.' }, question: '모두 몇 마리?', answer: 7, note: '풀이: 6 다음 7' };
+  const t = KT2.renderSlide({ id: 'x', block: 'basic_problem', data: d }, { revealed: true, state: {}, meta: {}, unitTitle: 'U', classNames: [], guide: ['🐻', '🐧'] });
+  ok(t.cls === 'pa2' && /class="pa2-pic picture/.test(t.body) && (t.body.match(/class="pa2-ch/g) || []).length === 2 && /pa2-ans on/.test(t.body) && /pa2-box">7</.test(t.body) && /class="pa2-note"/.test(t.body) && t.answerable, '111차 — 답 쓰는 문제 장 pa2: 그림 판 + 인물 둘 + 답 카드 + 풀이(교사 무대)');
+  const l = KT2.renderSlide({ id: 'x', block: 'basic_problem', data: d }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [], learn: true });
+  ok(l.cls !== 'pa2' && !/pa2-row/.test(l.body), '111차 — pa2 는 학생 화면(learn)에선 안 씀');
+  const f = KT2.renderSlide({ id: 'x', block: 'basic_problem', data: Object.assign({}, d, { fig: { k: 'ang', deg: 80, unit: 20, q: true } }) }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] });
+  ok(f.cls === 'pa2' && /pa2-row has-fig/.test(f.body) && !/pa2-pic/.test(f.body), '111차 — pa2: 그림(fig) 있으면 그림 판 대신 그 그림'); }
 { const r = KT2.md('가<br>나 <b>다</b> <script>x</script>'); ok(r === '가<br>나 <strong>다</strong> &lt;script&gt;x&lt;/script&gt;', 'md: <br>·<b> 만 살리고 다른 태그는 글자로 (' + r + ')'); }
 { const A = g0.KT2_ART; ['🐻', '🐧', '👧', '👦', '🐿️', '🐿'].forEach(f => ok(/^<svg class="chr c-/.test(A.character(f)) && /class="eyes"/.test(A.character(f)) && /class="m-open" opacity="0"/.test(A.character(f)), '인물 층: ' + f + ' → 그림 인물(눈·입 포함, 입은 기본 닫힘)')); ['🧺', '📦', '❓', '', undefined].forEach(f => ok(A.character(f) === '', '인물 층: ' + f + ' → 이모지 그대로'));
   ['🐰', '🦉', '🐱', '🐯', '🦆', '🐦', '🐝', '🦋', '🙂', '😊', '😀', '🤩', '😋', '🤔', '😮', '😟', '😐', '🙆'].forEach(f => { const c = A.character(f); ok(/^<svg class="chr c-[a-z-]+ cast"/.test(c) && /class="eyes"/.test(c) && /class="bodyg"/.test(c) && /class="head"/.test(c) && /class="m-open" opacity="0"/.test(c) && !A.isMain(f), '조연 층: ' + f + ' → 그림 조연(눈·몸·고개·입, 안내 인물 아님)'); });

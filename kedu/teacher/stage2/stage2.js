@@ -15,7 +15,7 @@
   // 차시_밀도_표준_v2 §1: 도입 5~8 · 전개 25 · 정리 7~10 → 40분
   const STAGE_MIN = { '도입': 7, '전개': 12, '기본문제': 7, '응용문제': 6, '정리': 8 };
   const SEVEN = ['①복습 문항', '②실사 장면', '③차시 서사', '④교실 활동', '⑤수준별 문제', '⑥출구 확인', '⑦발문 6슬↑'];
-  const EDITABLE = '.kt2-title, .mo2-qt, .mo2-bub, .rw2-sc, .rw2-ct, .rw2-q, .qv2-qt, .qv2-its span, .big-text, .center-text, .small-text, .big-q, .objective-card, .point > div, .steps li, .kid .bub, .kid .lbl, .flip .q, .flip .a, .rv2-it .q, .rv2-it .a, .mis-card, .mv2-t, .mv2-h, .lv2-q, .lv2-ch span, .offline .body, .offline .goal, .opt > div:not(.mk), .scenario > div:not(.ic), .lv-q, .ra-quote, .context-text, .bidirect, .tf-cap, .examples .ex, .areas div, .sa .lb, .light .lb, .cq .cl, .cq .nm, .legacy .t, .legacy .d, .kt2-cover-title, .kt2-sub';
+  const EDITABLE = '.kt2-title, .pa2-q, .pa2-say, .mo2-qt, .mo2-bub, .rw2-sc, .rw2-ct, .rw2-q, .qv2-qt, .qv2-its span, .big-text, .center-text, .small-text, .big-q, .objective-card, .point > div, .steps li, .kid .bub, .kid .lbl, .flip .q, .flip .a, .rv2-it .q, .rv2-it .a, .mis-card, .mv2-t, .mv2-h, .lv2-q, .lv2-ch span, .offline .body, .offline .goal, .opt > div:not(.mk), .scenario > div:not(.ic), .lv-q, .ra-quote, .context-text, .bidirect, .tf-cap, .examples .ex, .areas div, .sa .lb, .light .lb, .cq .cl, .cq .nm, .legacy .t, .legacy .d, .kt2-cover-title, .kt2-sub';
   const STAGE_COLOR = { '도입': '#FF8A3D', '전개': '#4F8DF7', '기본문제': '#12B886', '응용문제': '#7C5CFF', '정리': '#2CB1D6' };
   const SUBJ_KO = { math: '수학', korean: '국어', science: '과학', social: '사회', english: '영어' };
   const NO_FRAG = new Set(['cover', 'objective', 'question', 'next_lesson', 'interactive_ten_frame', 'interactive_cube_stairs', 'interactive_number_line', 'klab', 'math_tool', 'quiz_gen', 'activity', 'card_arrange', 'card_quiz', 'chosung_quiz', 'present', 'read_aloud', 'leveled_problem', 'exit_ticket', 'trace', 'number_line_demo']);
@@ -152,6 +152,27 @@
   function guideOf(lesson) { const A = global.KT2_ART, out = []; if (!A || !A.character || !lesson) return out; (lesson.slides || []).forEach(s => ((s.data || {}).kids || []).forEach(k => { if (k && k.face && A.character(k.face) && (!A.isMain || A.isMain(k.face)) && out.indexOf(k.face) < 0) out.push(k.face); })); return out.slice(0, 2); }
   function guideSay(face, inner, side) { const A = global.KT2_ART; const chr = A && A.character ? A.character(face) : ''; if (!chr) return inner; return '<div class="guide-say ' + (side || 'l') + '"><div class="g-chr">' + chr + '</div><div class="g-bub">' + inner + '</div></div>'; }
   function scenarioG(sc, g) { const f = g && (g[1] || g[0]); if (!f) return scenario(sc); return guideSay(f, '<div class="sc-body">' + (sc.icon ? '<span class="sc-ic">' + esc(sc.icon) + '</span>' : '') + md(sc.body || '') + '</div>', 'r q'); }
+  // 111차 — 답 쓰는 문제 장 pa2(보기 없이 답 칸만 · 1세대 말풍선+펭귄 대신 장면 그림 판): 왼쪽 = 배경 + 안내 인물 둘 + 상황 말풍선(그림 fig 가 있으면 그 그림) · 오른쪽 = 큰 물음 + 답 카드 + 풀이. 교사 무대만.
+  function pa2Ok(d) { const body = d.scenario && d.scenario.body ? d.scenario.body : d.context; return !!(body && d.question && (d.answer !== undefined || (Array.isArray(d.answers) && d.answers.length)) && !d.options && !d.questions && !d.challenge && !d.items && !d.sequence && !d.cards && d.ten_frame === undefined && d.ten_frame_anchor === undefined && d.linking_cube === undefined && d.card === undefined && !(d.emoji && d.count !== undefined)); }
+  function pa2(d, g, rev) {
+    const A = global.KT2_ART; const sc = d.scenario && d.scenario.body ? d.scenario : { body: d.context }; const body = String(sc.body || ''); const ic = sc.icon ? String(sc.icon) : '';
+    const ans = d.answer !== undefined ? [d.answer] : d.answers; const at = ans.map(a => md(String(a))).join(' <i>·</i> ');
+    const fg = d.fig && global.KT2_FIG ? global.KT2_FIG.render(d.fig) : '';
+    let left;
+    if (fg) left = '<div class="pa2-fig"><div class="pa2-fs">' + (ic ? '<span class="pa2-fic">' + esc(ic) + '</span>' : '') + '<span class="pa2-say">' + md(body) + '</span></div>' + fg + '</div>';
+    else { const kd = A ? A.kindOf((d.title || '') + ' ' + body + ' ' + d.question) : 'hill';
+      left = '<div class="pa2-pic picture ' + kd + '">' + (A ? A.backdrop(kd) : '') + '<div class="pa2-bub"><span class="pa2-say">' + md(body) + '</span></div>' + (ic ? '<div class="pa2-ic">' + esc(ic) + '</div>' : '') + '<div class="pa2-cast"><span class="pa2-ch">' + guideChr(g, 0) + '</span><span class="pa2-ch r">' + guideChr(g, 1) + '</span></div></div>'; }
+    const note = rev && d.note ? '<div class="pa2-note">' + md(String(d.note).replace(/^풀이\s*[:：]\s*/, '')) + '</div>' : '';
+    const al = ans.map(a => String(a).replace(/\*\*/g, '')).join(' · ').length; const bc = al > 40 ? ' xl' : al > 14 ? ' l' : ''; // 긴 답(문장)은 cq2 처럼 글자를 단계로
+    let qh; const qs = String(d.question || ''); const parts = qs.split(/(?=[①-⑩])/).map(x => x.trim()).filter(Boolean); // 「① … ② … — 물음」 꼴은 번호 줄 목록 + 물음
+    if (parts.length >= 2 && /^[①-⑩]/.test(parts[0])) { const last = parts[parts.length - 1]; const m = last.match(/^([①-⑩][^—–]*?)\s*(?:—|–|\n)\s*(.+)$/); let q = parts.length && !/^[①-⑩]/.test(parts[0]) ? parts.shift() : '';
+      if (m) { parts[parts.length - 1] = m[1].trim(); q = m[2].trim(); }
+      qh = '<ul class="pa2-ql">' + parts.map(x => '<li>' + md(x) + '</li>').join('') + '</ul>' + (q ? '<div class="pa2-q sm">' + md(q) + '</div>' : ''); }
+    else { const dm = qs.match(/^(.+?)\s+(?:—|–)\s*(.+)$/); const its = dm ? dm[1].split(/\s+·\s+/).map(x => x.trim()).filter(Boolean) : []; // 「가 · 나 · 다 — 물음」 꼴도 줄 목록
+      if (its.length >= 3) qh = '<ul class="pa2-ql sep">' + its.map(x => '<li>' + md(x) + '</li>').join('') + '</ul><div class="pa2-q sm">' + md(dm[2].trim()) + '</div>';
+      else qh = '<div class="pa2-q">' + md(qs) + '</div>'; }
+    return '<div class="pa2-row' + (fg ? ' has-fig' : '') + '"><div class="pa2-side">' + left + '<div class="pa2-L">' + note + '</div></div><div class="pa2-main">' + qh + '<div class="pa2-ans' + (rev ? ' on' : '') + '"><span class="pa2-lab">답</span><div class="pa2-box' + bc + '">' + (rev ? at : '?') + '</div></div><div class="pa2-R">' + note + '</div></div></div>'; // 풀이는 양쪽에 두고 CSS 로 한쪽만(fit-pa2n 이면 그림 판 아래)
+  }
   // 92차 — 새 문제 장(pv3): 읽을 글이 있는 보기 문제. 글은 원문 그대로 장면 ①②③으로 끊어 왼쪽 띠 · 오른쪽은 큰 물음 + 세로 보기 · 풀이
   function pv3Ok(d) { return !!(d.scenario && d.scenario.body && d.options && d.options.length && d.question && !d.fig && !d.questions && !d.challenge && !d.context && !d.items && !d.sequence && !d.cards && d.ten_frame === undefined && d.ten_frame_anchor === undefined && d.linking_cube === undefined && d.card === undefined && !(d.emoji && d.count !== undefined) && !d.options.some(o => o && (o.emoji || o.ten_frame !== undefined))); }
   function pv3Scenes(t) {
@@ -302,6 +323,7 @@
         break;
       }
       case 'basic_problem': case 'advanced_problem': {
+        if (!ctx.learn && pa2Ok(d)) { cls = 'pa2'; push(pa2(d, ctx.guide, rev)); answerable = true; break; } // 111차 — 답 쓰는 문제 장
         if (pv3Ok(d)) { push(pv3(d, rev)); answerable = answerable || d.options.some(o => o.correct); break; } // 92차 — 새 문제 장(읽을 글 왼쪽 띠 · 장면 나눔 · 물음 크게 · 보기 세로)
         const b0 = b.length; let figH = ''; // 60차 — 그림 붙은 문제 장은 좌(그림)·우(글·물음·답) 두 칸
         if (d.context) push('<div class="context-text">' + md(d.context) + '</div>');
@@ -806,7 +828,7 @@
   // 87차 — fit-tight: 넘칠 때만 종이 여백·덩이 사이·말풍선 아래를 좁힌다(글자 크기는 그대로). 자리 바꾸기와 겹쳐 쓸 수 있다.
   // 88차 — fit-lv: 수준별 문제 정답 펼침 때 물음 왼쪽 · 정답·풀이 차례 오른쪽 / fit-lv2: 물음 위 · 정답 왼쪽 · 풀이 차례 오른쪽(넘칠 때만)
   // 89차 — fit-pts: 요약 요점 다섯 줄 이상을 두 단(위→아래 차례) / fit-wrap: 옆으로 이어진 카드(차례·도구)가 종이 폭을 넘으면 두 줄로 / fit-cols: 말풍선 안 짧은 줄 넷 이상(「어제 — 과거」 같은 목록)을 두 단으로(넘칠 때만 · 글자 크기 무변)
-  const LAYOUTS = ['fit-mo2', 'fit-qv2', 'fit-qv2n', 'fit-rw2', 'fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s', 'fit-cv2w', 'fit-lvw', 'fit-lvs', 'fit-rvw', 'fit-rvs'];
+  const LAYOUTS = ['fit-mo2', 'fit-qv2', 'fit-qv2n', 'fit-rw2', 'fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s', 'fit-cv2w', 'fit-lvw', 'fit-lvs', 'fit-rvw', 'fit-rvs', 'fit-pa2', 'fit-pa2n', 'fit-pa2s'];
   // 90차 — fit-qh: 「여러 개를 고를 수 있어요」를 물음 옆 같은 줄로(넘칠 때만)
   // 90차 — fit-head: 넘칠 때만 제목을 머리(단계 칩·차시 이름)와 한 줄에 — 제목 줄 하나만큼 본문 자리가 생긴다 · 글자 크기 무변 · 차시 이름이 말줄임되면 안 씀
   function headBad(body) { const p = body.parentElement; if (!p) return true; const k = p.querySelector(':scope > .kt2-head .kt2-kicker'), t = p.querySelector(':scope > .kt2-title');
@@ -869,6 +891,7 @@
     if (body.querySelector(':scope > .points > :nth-child(4)')) tries.push(['fit-pts'], ['fit-pts', 'fit-tight']); // 91차 — 넷부터
     if (body.querySelector(':scope > .big-q') && body.querySelector(':scope > .multi-hint')) tries.push(['fit-qh', 'fit-tight']);
     if (body.querySelector('.ans-key')) { tries.push(['fit-ans', 'fit-tight']); if (sp) tries.push(['fit-ans', 'fit-split', 'fit-tight']); if (sd) tries.push(['fit-ans', 'fit-side', 'fit-tight']); }
+    if (body.querySelector('.pa2-row')) tries.push(['fit-pa2'], ['fit-pa2', 'fit-tight'], ['fit-pa2', 'fit-pa2n'], ['fit-pa2', 'fit-pa2n', 'fit-tight'], ['fit-pa2', 'fit-pa2n', 'fit-pa2s', 'fit-tight']); // 111차 — 그림 판 좁힘 · 인물 작게 · 풀이를 그림 판 아래로
     if (body.querySelector(':scope > .pv3')) tries.push(['fit-pvx'], ['fit-pvx', 'fit-tight'], ['fit-pvq', 'fit-tight'], ['fit-pvq', 'fit-pvx', 'fit-tight']); // 92차 — 새 문제 장: 풀이·안내를 반대쪽으로
     if (body.classList.contains('cv2-side')) tries.push(['fit-cv2s'], ['fit-cv2s', 'fit-tight']); // 94차 — 옆 배치가 안 들어가면 위아래로
     if (co) { tries.push(['fit-cols'], ['fit-cols', 'fit-tight']); if (wr) tries.push(['fit-cols', 'fit-wrap', 'fit-tight']); if (sd) tries.push(['fit-cols', 'fit-side', 'fit-tight']); }
