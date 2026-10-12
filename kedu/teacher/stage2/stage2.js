@@ -376,7 +376,7 @@
       case 'number_line_demo': push(numLine(d.nl.range, d.nl.anchor)); if (d.caption) push('<div class="center-text">' + md(d.caption) + '</div>'); break;
       case 'leveled_problem': {
         const levels = d.levels || {}; const keys = Object.keys(levels); const cur = levels[S.level] ? S.level : (keys[0] || ''); const lv = levels[cur] || {};
-        if (true) { const v = 'a'; cls = 'lv2 lv2-' + v; answerable = true; // 97차 — 새 수준별 장(준호 A 「세 계단」) · 105차 learn 도 새 꼴(채점 위젯 .lw-lv 는 learn 이 오른쪽 칸에 붙임)
+        { const v = 'a'; cls = 'lv2 lv2-' + v; answerable = true; // 97차 — 새 수준별 장(준호 A 「세 계단」) · 105차 learn 도 새 꼴(채점 위젯 .lw-lv 는 learn 이 오른쪽 칸에 붙임) · 106차 1세대 갈래 걷음
           const ansOf = (x, full) => { if (!rev) return ''; let a = x.open ? '<div class="lv2-a open"><b>💡 여러 답</b>' + (x.a ? md(String(x.a).replace(/^여러 답\s*/, '')) : '') + '</div>' : '<div class="lv2-a"><b>정답</b>' + md(String(x.a !== undefined ? x.a : '')) + '</div>'; if (full && x.steps && x.steps.length) a += '<ol class="lv2-st">' + x.steps.map(s => '<li>' + md(s) + '</li>').join('') + '</ol>'; return a; };
           if (v === 'b') push('<div class="lv2-cols n' + keys.length + '">' + keys.map(k => '<div class="lv2-col ' + esc(k) + '"><div class="lv2-tag">' + esc(k) + '</div><div class="lv2-q">' + md(levels[k].q || '') + '</div>' + ansOf(levels[k], false) + '</div>').join('') + '</div>');
           else { const tabs = '<div class="lv-tabs lv2-tabs">' + keys.map((k, i) => '<button class="' + esc(k) + (k === cur ? ' on' : '') + '" data-act="lv" data-k="' + esc(k) + '"><i>' + (i + 1) + '</i>' + esc(k) + '</button>').join('') + '</div>';
@@ -384,13 +384,6 @@
             const qHtml = ch.length >= 3 && qh.trim() ? '<div class="lv2-q">' + md(qh) + '</div><div class="lv2-ch">' + ch.map(x => '<span>' + md(x.trim()) + '</span>').join('') + '</div>' : '<div class="lv2-q">' + md(lv.q || '') + '</div>';
             push(tabs + '<div class="lv2-main ' + esc(cur) + '">' + qHtml + ansOf(lv, true) + '</div>'); }
           push('<div class="ctrls"><button class="btn main" data-act="reveal">' + (rev ? '🙈 정답 숨기기' : '정답 보기 ✨') + '</button></div>'); break; }
-        push('<div class="lv-tabs">' + keys.map(k => '<button class="' + (k === cur ? 'on ' + esc(k) : '') + '" data-act="lv" data-k="' + esc(k) + '">' + esc(k) + '</button>').join('') + '</div>');
-        let ans = '';
-        if (rev) { ans = lv.open ? '<div class="lv-a open">💡 여러 답이 가능해요' + (lv.a ? ' — ' + md(String(lv.a)) : '') + '</div>' : '<div class="lv-a">✅ ' + md(String(lv.a !== undefined ? lv.a : '')) + '</div>'; if (lv.steps && lv.steps.length) ans += '<div class="lv-steps">' + lv.steps.map(s => '<span>' + md(s) + '</span>').join('<i>→</i>') + '</div>'; }
-        push('<div class="lv-body ' + esc(cur) + '"><div class="lv-q">' + md(lv.q || '') + '</div>' + ans + '</div>');
-        push('<div class="ctrls"><button class="btn main" data-act="reveal">' + (rev ? '🙈 정답 숨기기' : '정답 보기 ✨') + '</button></div>');
-        if (d.note) push('<div class="small-text">' + md(d.note) + '</div>');
-        answerable = true; break;
       }
       case 'exit_ticket': {
         title = d.title || '오늘 확인해요'; const items = d.items || []; const f = S.flipped || []; const cnt = S.lights || [];
