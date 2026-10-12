@@ -3,7 +3,7 @@
 사용: python3 -m http.server 8787 (k-edu 루트) 를 먼저 띄우고
   python3 kworld/tools/shot.py <era> [out.png] [--mini out_mini.png] [--info] [--at <area_id|x,z>] [--yaw <rad>] [--pitch <rad>]
   --at: 세상에 들어간 뒤 플레이어를 그 구역(`area_*` 이름에서 area_ 뺀 id)이나 엔진 좌표(x,z — z = -블렌더 y)로 옮겨 찍는다(마을 밖 자리 확인용).
-       --yaw 없으면 가장 가까운 ix_ 소품에서 7m 물러나 그쪽을 본다(소품 속에 서지 않게). 열린 카드는 닫는다.
+       --yaw 없으면 가장 가까운 ix_ 소품에서 7m 물러나 그쪽을 본다(소품 속에 서지 않게; 선 자리와 3인칭 카메라 자리가 col_ 상자에서 2m 이상 떨어진 곳 우선). 열린 카드는 닫는다.
 요령: 20초 기다린 뒤 rAF·setTimeout 을 끊고 찍는다(안 끊으면 스크린샷이 30초 넘겨 죽음).
 """
 import sys, json, time
@@ -40,14 +40,21 @@ with sync_playwright() as p:
               const a0 = Math.atan2(L > 0.5 ? dz / L : 1, L > 0.5 ? dx / L : 0);
               const deep = g.world?.deepWater ?? -1;
               let found = null;
-              // 소품에서 7m 떨어진 자리를 8방향으로 돌며 col_ 상자·깊은 물이 아닌 첫 자리에 선다
-              for (const R of [7, 5, 9]) for (let k = 0; k < 8 && !found; k++) {
+              // 소품에서 7m 떨어진 자리를 8방향으로 돌며 col_ 상자·깊은 물이 아닌 자리에 선다.
+              // 3인칭 카메라(어깨 뒤 3.5m)까지 지붕·담에 안 묻히게 — 선 자리와 카메라 자리 둘 다 col_ 상자에서 2m 이상 떨어진 곳을 먼저 찾고, 없으면 예전처럼 안 겹치는 첫 자리
+              const clear = (x, z) => { let m = 1e9; for (const b of e.colliders) { const dx = Math.max(b.min.x - x, 0, x - b.max.x), dz = Math.max(b.min.z - z, 0, z - b.max.z); m = Math.min(m, Math.hypot(dx, dz)); } return m; };
+              const cands = [];
+              for (const R of [7, 5, 9, 11]) for (let k = 0; k < 8; k++) {
                 const a = a0 + Math.PI + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * Math.PI / 4;
                 const cx = best.x + Math.cos(a) * R, cz = best.z + Math.sin(a) * R;
                 if (e.collides({ x: cx, z: cz }, p.eye)) continue;
                 if (e.groundY(cx, cz) < deep) continue;
-                found = [cx, cz];
+                const yw = Math.atan2(-(best.x - cx), -(best.z - cz));
+                const kx = cx + Math.sin(yw) * 3.5, kz = cz + Math.cos(yw) * 3.5;
+                if (e.groundY(kx, kz) < deep) continue;
+                cands.push([cx, cz, Math.min(clear(cx, cz), clear(kx, kz))]);
               }
+              found = cands.find(c => c[2] >= 2.0) || cands[0] || null;
               if (found) { x = found[0]; z = found[1]; }
               p.yaw = Math.atan2(-(best.x - x), -(best.z - z));
             }
