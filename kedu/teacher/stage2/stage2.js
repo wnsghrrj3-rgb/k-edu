@@ -239,7 +239,7 @@
       }
       case 'objective': { const bl = Array.isArray(d.bullets) ? d.bullets : []; cls = 'ob2'; push('<div class="ob2-wrap"><div class="ob2-g"><div class="ob2-ch">' + guideChr(ctx.guide, 0) + '</div><div class="ob2-say">오늘은<br>이걸 해요!</div></div><div class="ob2-card"><div class="ob2-tag">🎯 오늘의 목표</div>' + (d.content || d.desc ? '<div class="ob2-c">' + md(d.content || d.desc) + '</div>' : '') + (bl.length ? '<ol class="ob2-list">' + bl.map((b, i) => '<li><b>' + (i + 1) + '</b><span>' + md(String(b)) + '</span></li>').join('') + '</ol>' : '') + '</div></div>'); break; } // 101차 — 새 목표 장 ob2: 안내 인물 + 「오늘은 이걸 해요!」 · 큰 목표 카드(글 줄지 않게)
         push('<div class="objective-card">' + md(d.content || d.desc || '') + (Array.isArray(d.bullets) && d.bullets.length ? '<ol class="obj-list">' + d.bullets.map(b => '<li>' + md(String(b)) + '</li>').join('') + '</ol>' : '') + '</div>'); break;
-      case 'question': if (!ctx.learn && (d.content || d.question)) { cls = 'qv2'; push(qv2(d, ctx.guide)); break; } push('<div class="big-q">' + md(d.content || d.question || '') + '</div>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
+      case 'question': if (d.content || d.question) { cls = 'qv2'; push(qv2(d, ctx.guide)); break; } push('<div class="big-q">' + md(d.content || d.question || '') + '</div>'); if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break;
       case 'next_lesson': if (d.preview) { cls = 'nl2 nl2-b'; push(nl2(d, ctx.guide)); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); break; } push('<div class="big-q soft">' + md(d.preview || '') + '</div>'); if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>'); break;
       case 'review': {
         if (d.content) push('<div class="center-text">' + md(d.content) + '</div>');
@@ -399,7 +399,7 @@
       }
       case 'card_quiz': {
         const cards = d.cards || []; const f = S.flipped || [];
-        if (!ctx.learn) cls = 'cq2'; // 108차 — 새 카드 퀴즈 꼴(번호 · 큰 단서 · 큰 정답) · 교사 무대만
+        cls = 'cq2'; // 110차 learn 도 · 108차 — 새 카드 퀴즈 꼴(번호 · 큰 단서 · 큰 정답) · 교사 무대만
         push('<div class="cq-grid n' + Math.min(6, cards.length) + '">' + cards.map((c, i) => '<div class="cq' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><div class="in"><div class="f front"><span class="no">' + (i + 1) + '</span><div class="qm">?</div><div class="cl">' + md(c.clue || '') + '</div></div><div class="f back"><div class="em">' + esc(c.emoji || '') + '</div><div class="nm' + (String(c.name || '').length > 16 ? ' xl' : String(c.name || '').length > 8 ? ' l' : '') + '">' + md(c.name || '') + '</div></div></div></div>').join('') + '</div>');
         if (d.outro) push('<div class="outro">' + md(d.outro) + '</div>'); answerable = true; break;
       }
