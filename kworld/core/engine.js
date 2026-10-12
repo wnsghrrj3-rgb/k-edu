@@ -101,7 +101,10 @@ export class Engine {
           // 여러 재질이면 GLTFLoader 가 Group + 자식 메시로 준다 → 하나의 대상으로 묶는다
           const [, type, ...rest] = o.name.split('_'); const id = rest.join('_') || type;
           const grp = new THREE.Group(); const parts = o.isMesh ? [o] : o.children.filter((c) => c.isMesh);
-          for (const c of parts) { c.userData.taken = true; const m = new THREE.Mesh(c.geometry, c.material); m.applyMatrix4(c.matrixWorld); m.castShadow = true; m.receiveShadow = true; m.material.side = THREE.DoubleSide; grp.add(m); }
+          for (const c of parts) { c.userData.taken = true;
+            // 같은 재질이 합쳐진 정적 메시에도 쓰이면 아래에서 vertexColors=true 가 되는데, 이 대상 기하에 color 가 없으면 검게 나온다 → 흰 정점색을 채워 둔다(㉞ 헤드리스에서 발견: 사람·막집 검은 실루엣)
+            if (!c.geometry.attributes.color) c.geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(c.geometry.attributes.position.count * 4).fill(1), 4));
+            const m = new THREE.Mesh(c.geometry, c.material); m.applyMatrix4(c.matrixWorld); m.castShadow = true; m.receiveShadow = true; m.material.side = THREE.DoubleSide; grp.add(m); }
           this.scene.add(grp);
           const box = new THREE.Box3().setFromObject(grp);
           this.interactables.set(o.name.slice(3), { type, id, obj: grp, box, center: box.getCenter(new THREE.Vector3()), uses: 0, state: null, name: o.name.slice(3) });
