@@ -127,7 +127,9 @@ const ASSETS = {
   mul_groups:     ['item'],
   times_bars:     ['base', 'times', 'a', 'b'],
   /* v2.8 — 2학년 2학기 「네 자리 수」: 천 모형·천 원 지폐가 더해진 수 모형·돈 */
-  blocks4:        ['th', 'h', 't', 'o']
+  blocks4:        ['th', 'h', 't', 'o'],
+  /* v2.9 — 2학년 2학기 「곱셈구구」: 곱셈표 */
+  gugu_table:     ['rows', 'cols']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -226,6 +228,16 @@ function checkAsset(where, a) {
     if (st !== null && st !== undefined && k >= 0) cs.forEach((c, i) => { if (c !== null && c !== '?' && Number(c) !== Number(cs[k]) + sg * st * (i - k)) bad(where, `jump_row ${i}번째 칸 ${c} 가 ${sg > 0 ? '+' : '−'}${st} 규칙에 안 맞다`); });
     const big4 = cs.some(c => c !== null && c !== '?' && Number(c) > 1000) || Number(st) === 1000;   /* v2.8 — 네 자리 수 줄은 1000~9999 */
     cs.forEach(c => { if (c !== null && c !== '?' && !(mulJ ? Number(c) >= 1 && Number(c) <= 100 : big4 ? Number(c) >= 1000 && Number(c) <= 9999 : Number(c) >= 100 && Number(c) <= 1000)) bad(where, 'jump_row 칸 수가 범위 밖: ' + c); });
+  }
+  if (a.type === 'gugu_table') {   /* v2.9 — 곱셈표: 칸 값은 엔진이 r×c 로 셈하므로 줄·칸 머리 수와 ?·빈칸 자리만 본다 */
+    const R = a.rows || [], C = a.cols || [], ok = x => Number.isInteger(x) && x >= 0 && x <= 9;
+    if (!Array.isArray(R) || R.length < 1 || R.length > 9 || !R.every(ok)) bad(where, 'gugu_table rows 는 0~9 정수 1~9개');
+    if (!Array.isArray(C) || C.length < 2 || C.length > 10 || !C.every(ok)) bad(where, 'gugu_table cols 는 0~9 정수 2~10개');
+    if (new Set(R).size !== R.length || new Set(C).size !== C.length) bad(where, 'gugu_table 줄·칸 머리 수가 겹친다');
+    const inT = x => Array.isArray(x) && x.length === 2 && R.indexOf(x[0]) >= 0 && C.indexOf(x[1]) >= 0;
+    if (a.q !== undefined && !inT(a.q)) bad(where, 'gugu_table q 칸이 표 밖');
+    (a.blank || []).forEach(x => { if (!inT(x)) bad(where, 'gugu_table blank 칸이 표 밖'); if (a.q && x[0] === a.q[0] && x[1] === a.q[1]) bad(where, 'gugu_table blank 가 q 칸과 겹친다'); });
+    if (a.hrow !== undefined && R.indexOf(a.hrow) < 0) bad(where, 'gugu_table hrow 가 줄 머리에 없다');
   }
   if (a.type === 'mul_groups') {
     const look = a.look || 'groups'; if (['groups', 'rows', 'loose'].indexOf(look) < 0) bad(where, 'mul_groups look 은 groups·rows·loose');
@@ -1123,6 +1135,40 @@ function checkCm(where, q) {
   if (s === 0 && CM.ask === 'off') bad(where, 'cm off 인데 물건이 0에 있다');
   if (s !== 0 && CM.ask === 'read') bad(where, 'cm read 인데 물건이 0에서 시작하지 않는다(해설 「0에 맞춰져 있어요」가 거짓)');
 }
+/* v2.9 — 곱셈구구: 곱셈표·발문이 말하는 답을 엔진과 따로 다시 셈한다 */
+function checkGugu(where, q) {
+  const G = (q.variant_rule || {}).gugu; if (!G) return;
+  const ask = G.ask || 'cell', a = q.asset && typeof q.asset === 'object' ? q.asset : null, st = String(q.stem || '').replace(/^이번에는 다른 보기예요\. /, '');
+  const cor = q.kind === 'sa' ? String((q.answer || [])[0]) : q.kind === 'ox' ? q.answer : String(((q.options || []).find(o => o.correct) || {}).t);
+  const wr = (q.options || []).filter(o => !o.correct).map(o => String(o.t));
+  let want = null, m;
+  if (ask === 'cell') { if (!a || a.type !== 'gugu_table' || !a.q) return bad(where, 'gugu cell 은 ? 칸이 있는 곱셈표'); if (!/곱셈표의 \?에 알맞은 수/.test(st)) bad(where, 'gugu cell 발문 꼴: ' + st);
+    want = a.q[0] * a.q[1]; if (a.q[1] < 2) bad(where, 'gugu cell ? 칸이 1의 칸(해설 「한 칸 앞에 더하기」가 0을 말한다)'); }
+  else if (ask === 'step') { if (!a || a.type !== 'gugu_table' || a.hrow === undefined) return bad(where, 'gugu step 은 색칠한 줄이 있는 곱셈표');
+    m = st.match(/색칠한 (\d)단 곱셈구구의 곱은/); if (!m || +m[1] !== a.hrow) return bad(where, 'gugu step 발문의 단이 색칠한 줄과 다르다');
+    const c = a.cols; for (let i = 1; i < c.length; i++) if (c[i] !== c[i - 1] + 1) bad(where, 'gugu step 칸 머리가 1씩 이어지지 않는다'); want = a.hrow; }
+  else if (ask === 'next') { m = st.match(/^(\d) × (\d)[은는] (\d) × (\d)보다 얼마 더 큰가요/); if (!m) return bad(where, 'gugu next 발문 꼴: ' + st);
+    if (+m[1] !== +m[3] || +m[2] !== +m[4] + 1) bad(where, 'gugu next 두 곱셈식이 한 단·이웃이 아니다'); want = +m[1] * +m[2] - +m[3] * +m[4]; }
+  else if (ask === 'build') { m = st.match(/^(\d) × (\d) = (\d+)(?:이에요|예요)\. 이것을 이용하면 (\d) × (\d)[은는] 얼마/); if (!m) return bad(where, 'gugu build 발문 꼴: ' + st);
+    if (+m[1] * +m[2] !== +m[3]) bad(where, `gugu build 주어진 식 ${m[1]} × ${m[2]} ≠ ${m[3]}`); if (+m[4] !== +m[1] || +m[5] !== +m[2] + 1) bad(where, 'gugu build 이웃 곱셈식이 아니다'); want = +m[4] * +m[5]; }
+  else if (ask === 'miss') { m = st.match(/^(\d|□) × (\d|□) = (\d+)에서 □/); if (!m || (m[1] === '□') === (m[2] === '□')) return bad(where, 'gugu miss 발문 꼴: ' + st);
+    const kn = +m[3], kk = m[1] === '□' ? +m[2] : +m[1]; if (kn % kk) return bad(where, 'gugu miss 나누어떨어지지 않는다'); want = kn / kk; if (want < 1 || want > 9) bad(where, 'gugu miss □ 가 한 자리 수가 아니다');
+    wr.forEach(w => { if (+w * kk === kn) bad(where, `gugu miss 오답 ${w} 도 맞다`); }); }
+  else if (ask === 'cmpx') { m = st.match(/\n(\d) × (\d) ○ (\d) × (\d)$/); if (!m) return bad(where, 'gugu cmpx 발문 꼴: ' + st);
+    const p1 = +m[1] * +m[2], p2 = +m[3] * +m[4]; want = p1 > p2 ? '>' : p1 < p2 ? '<' : '=';
+    if ((q.options || []).length !== 3 || !['>', '<', '='].every(x => (q.options || []).some(o => o.t === x))) bad(where, 'gugu cmpx 보기는 >·<·= 셋'); }
+  else if (ask === 'zero') { const okF = x => /^[01]$/.test(x);
+    if (q.kind === 'ox') { m = st.match(/^(\d) × (\d) = (\d+)입니다\.$/); if (!m) return bad(where, 'gugu zero OX 발문 꼴: ' + st); if (!okF(m[1]) && !okF(m[2])) bad(where, 'gugu zero 에 0·1 이 없다');
+      if (((+m[1] * +m[2] === +m[3]) ? 'O' : 'X') !== cor) bad(where, `gugu zero OX 답 ${cor} 이 어긋난다`); return; }
+    m = st.match(/^(\d) × (\d)[은는] 얼마/); if (!m) return bad(where, 'gugu zero 발문 꼴: ' + st); if (!okF(m[1]) && !okF(m[2])) bad(where, 'gugu zero 에 0·1 이 없다'); want = +m[1] * +m[2]; }
+  else if (ask === 'tfind') { m = st.match(/곱이 (\d+)인 것은 모두 몇 개/); if (!m) return bad(where, 'gugu tfind 발문 꼴: ' + st); const T = +m[1]; want = 0;
+    for (let x = 1; x <= 9; x++) for (let y = 1; y <= 9; y++) if (x * y === T) want++; }
+  else return bad(where, 'gugu ask 를 모른다: ' + ask);
+  if (q.kind === 'ox') return;
+  if (String(cor) !== String(want)) bad(where, `gugu ${ask} 정답 「${cor}」 ≠ 다시 셈한 ${want}`);
+  if (wr.some(w => w === String(want))) bad(where, `gugu ${ask} 오답에 정답 ${want} 이 섞였다`);
+  if (ask === 'cell' && a) wr.forEach(w => { if (w === String(a.q[0] * a.q[1])) bad(where, 'gugu cell 오답이 정답'); });
+}
 /* v2.7 — 곱셈: 그림(mul_groups·times_bars·jump_row)·발문이 말하는 답을 엔진과 따로 다시 센다 */
 function checkMul(where, q) {
   const M = (q.variant_rule || {}).mul; if (!M) return;
@@ -1341,6 +1387,7 @@ function checkQ(where, q, opt) {
   checkCm(where, q);
   checkCls(where, q);
   checkMul(where, q);
+  checkGugu(where, q);
   checkShape(where, q);
   checkJamo(where, q);
   checkBat(where, q);
@@ -1571,6 +1618,14 @@ function checkSet(file) {
       if (at !== 'cubes' || (q.asset && q.asset.rows)) bad(where, 'cube 는 cubes(cells) 그림이 있어야'); if ((ask === 'layer' || ask === 'color' || ask === 'dir') && q.kind !== 'mc') bad(where, 'cube ' + ask + ' 는 mc 만');
       if (['mc', 'blank', 'sa'].indexOf(q.kind) < 0) bad(where, 'cube 는 mc·blank·sa 만');
       Object.keys(K.mis || {}).forEach(k => { if (['count', 'layer', 'lr', 'fb'].indexOf(k) < 0) bad(where, 'cube mis 갈래를 모른다: ' + k); else if (!MIS.has(String(q.concept).replace(/C\d+$/, '') + K.mis[k])) bad(where, `cube mis.${k} 꼬리가 사전에 없다`); }); }
+    /* v2.9 갈래 — 곱셈구구 */
+    if (q.variant_rule.gugu) { const G = q.variant_rule.gugu, ask = G.ask || 'cell';
+      if (['cell', 'step', 'next', 'build', 'miss', 'cmpx', 'zero', 'tfind'].indexOf(ask) < 0) bad(where, 'gugu ask 를 모른다: ' + ask);
+      if (['cell', 'step'].indexOf(ask) >= 0 ? at !== 'gugu_table' : at) bad(where, `gugu ${ask} 그림 종류가 맞지 않다(${['cell', 'step'].indexOf(ask) >= 0 ? 'gugu_table' : '그림 없음'})`);
+      if (q.kind === 'ox' && ask !== 'zero') bad(where, 'gugu OX 는 zero 만');
+      if (ask === 'cmpx' && q.kind !== 'mc') bad(where, 'gugu cmpx 는 mc 만');
+      (G.ks || []).forEach(x => { if (!(Number.isInteger(x) && x >= 1 && x <= 9)) bad(where, 'gugu ks 는 1~9'); });
+      if (['mc', 'blank', 'sa', 'ox'].indexOf(q.kind) < 0) bad(where, 'gugu 변형은 mc·blank·sa·ox 만'); }
     /* v2.7 갈래 — 곱셈 */
     if (q.variant_rule.mul) { const M = q.variant_rule.mul, ask = M.ask || 'total';
       const PIC = {total:'mul_groups', groups:'mul_groups', name:'mul_groups', times:'mul_groups', expr:'mul_groups', regroup:'mul_groups', skip:'jump_row', bars:'times_bars', cmp:'times_bars'};

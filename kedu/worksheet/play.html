@@ -322,6 +322,13 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mulw .mg{display:grid;gap:2px;padding:6px 8px;border:2px dashed var(--accent);border-radius:14px;background:var(--card)}
 .mulw .mrows,.mulw .mloose{display:grid;gap:4px;padding:10px;border:1px solid var(--rule-strong);border-radius:12px;background:var(--card)}
 .mulw span{font-size:28px;line-height:34px;text-align:center}
+/* v2.9 곱셈표 (2학년 2학기 「곱셈구구」) */
+.gugw{display:flex;justify-content:center;max-width:100%;overflow-x:auto}
+.gtab{border-collapse:collapse;background:var(--card);font-size:18px;font-family:'Gowun Batang',serif}
+.gtab th,.gtab td{border:1px solid var(--rule-strong);min-width:36px;height:34px;padding:2px 4px;text-align:center}
+.gtab th{background:var(--tint);font-weight:700}.gtab th.gx{color:var(--accent)}
+.gtab td.hr{background:rgba(244,211,94,.35)}.gtab td.dg{background:rgba(92,143,214,.2)}
+.gtab td.bl{background:var(--tint)}.gtab td.q{outline:3px solid var(--accent);outline-offset:-3px;font-weight:700;color:var(--accent)}
 .cmpw{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:100%;overflow-x:auto}
 .cmpw svg{max-width:100%;height:auto;display:block}
 .figs{gap:14px}.figc{display:flex;flex-direction:column;align-items:center;gap:2px}.figc b{font-size:17px;color:#2E3338}
@@ -339,6 +346,9 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .pq .pmulw .mg{display:grid;gap:1px;padding:3px 5px;border:1px dashed #666;border-radius:8px}
 .pq .pmulw .mrows,.pq .pmulw .mloose{display:inline-grid;gap:2px;padding:5px;border:1px solid #999;border-radius:6px}
 .pq .pmulw span{font-size:18px;line-height:22px;text-align:center}
+.pq .pgugw{margin:8px 0 6px 30px}.pq .pgugw .gtab{border-collapse:collapse;font-size:12px}
+.pq .pgugw .gtab th,.pq .pgugw .gtab td{border:1px solid #888;min-width:22px;height:19px;padding:1px 3px;text-align:center}
+.pq .pgugw .gtab th{background:#eee}.pq .pgugw .gtab td.hr{background:#ddd}.pq .pgugw .gtab td.dg{background:#eef}.pq .pgugw .gtab td.q{outline:2px solid #000;font-weight:700}
 .pq .pcmpw{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 6px 30px}
 .pq .pcmpw svg{max-width:92%;height:auto;transform-origin:left top}
 .pq .pcmpw .balsv{width:150px;height:auto}
@@ -740,6 +750,7 @@ const WEUN = w => (BAT(w) ? '은' : '는');
    (v2.5 ruler 는 rulerSVG 머리말 참고 — 자·1 cm 칸·단위 몇 번)
    (v2.6 sort_pile·sort_bins·sort_table 은 SORT_LIB 머리말 참고 — 분류하기)
    (v2.7 mul_groups·times_bars 는 MUL_ITEMS 머리말 참고 — 곱셈)
+   (v2.9 gugu_table 은 guguHTML 머리말 참고 — 곱셈구구)
    len_bars   길이 막대: rows [{label, len 1~12, off 0~4, bend?, thick?}] · line(기준선, 기본 off 가 모두 0 이면 켬) · grid(칸 눈금)
               bend = 구부러진 줄 — 마디 하나의 실제 길이가 칸 하나(U)와 같게 그린다(펴면 len 칸, 「구부러지면 짧다」 함정이 거짓말이 안 되게)
    balance    양팔저울: scales [{l:{icon,name}, r:{icon,name}, down:'l'|'r'|'eq'}] 1~3개
@@ -1036,6 +1047,20 @@ function sortHTML(a, paper){
   t += `<tr><th>수(${esc(a.unit || '개')})</th>${cols.map((c, i) => cell(cn[i])).join('')}${has ? cell(a.total) : ''}</tr>`;
   return `<div class="${P}sortw"><table class="stab">${t}</table></div>`;
 }
+/* ===== v2.9 — 2학년 2학기 「곱셈구구」 그림 (2026-10-12, 오푸스 5.5) =====
+   gugu_table {rows:[세로줄 왼쪽 수…], cols:[가로줄 맨 위 수…], q?:[r,c], blank?:[[r,c]…], hrow?:r, diag?:true}
+     곱셈표 — 칸은 언제나 r × c 를 엔진이 셈한다(데이터에 곱을 적지 않는다).
+     q 칸은 「?」(묻는 칸) · blank 칸은 비움 · hrow 줄 색칠(그 단) · diag 는 같은 수끼리 만나는 칸 색칠(접는 선).
+   화면·종이 같은 표(종이는 흑백 음영). */
+function guguHTML(a, paper){
+  const R = a.rows || [], C = a.cols || [], key = (r, c) => r + ',' + c;
+  const B = new Set((a.blank || []).map(x => key(x[0], x[1]))), Q = a.q ? key(a.q[0], a.q[1]) : null;
+  let h = `<tr><th class="gx">×</th>${C.map(c => `<th>${esc(c)}</th>`).join('')}</tr>`;
+  R.forEach(r => { h += `<tr><th>${esc(r)}</th>` + C.map(c => { const k = key(r, c);
+      const cl = [k === Q ? 'q' : B.has(k) ? 'bl' : '', a.hrow === r ? 'hr' : '', a.diag && r === c ? 'dg' : ''].filter(Boolean).join(' ');
+      return `<td${cl ? ` class="${cl}"` : ''}>${k === Q ? '?' : B.has(k) ? '' : r * c}</td>`; }).join('') + '</tr>'; });
+  return `<div class="${paper ? 'pgugw' : 'gugw'}"><table class="gtab" aria-label="곱셈표">${h}</table></div>`;
+}
 /* ===== v2.7 — 2학년 1학기 「곱셈」 그림 2종 (2026-10-12, 오푸스 5.5) =====
    mul_groups {item, k, n, look?, total?, cols?}
      look 'groups'(기본) — 점선 묶음 n개에 k개씩(몇씩 몇 묶음) · 'rows' — 한 줄에 k개씩 n줄(테두리 없음, 가로·세로로 묶어 보기)
@@ -1248,6 +1273,7 @@ function drawAsset(a, r){
     /* v2.7 — 2학년 1학기 「곱셈」 */
     case 'mul_groups': return mulHTML(a, false);
     case 'times_bars': return `<div class="cmpw">${timesSVG(a)}</div>`;
+    case 'gugu_table': return guguHTML(a, false);   /* v2.9 — 2학년 2학기 「곱셈구구」 */
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
@@ -2678,6 +2704,7 @@ function makeVariantOnce(q, r){
             expr(그림 → 곱셈식) · add(같은 수 덧셈 → 곱셈식, OX 가능) · value(k × n, OX 가능) · prod(k와 n의 곱) · read(읽기)
             story(생활 속 모두 몇) · sexpr(생활 속 곱셈식) · notx(곱이 T 가 아닌 식) · same(곱이 같은 식)
        look 'groups'|'rows' (total·expr 그림) · kmax·nmax·pmax(곱 상한, 기본 40)
+       v2.9: ks:[단 후보](kmin·kmax 대신) · per:[한 묶음 수 후보](story·sexpr 장면 고르기) — 곱셈구구 단원이 단에 묶어 쓴다
      오개념 꼬리: X02 뛰어 세기 어긋남 · X03 묶음 수 ±1·같은 수로 안 묶음 · X04 몇씩↔몇 묶음 · X05 묶음 수·전체를 답으로 · X06 두 수를 더함
                   X07 몇의 몇 배 뒤바꿈 · X08 단위 바꿔도 배 같다 · X09 기준·차이·칸 수로 배 · X10 이어 붙인 횟수 ±1 · X11 × ↔ + · 읽기
                   X12 덧셈 → 곱셈 횟수 · X13 순서 바꾸면 곱 다름 · X14 상황의 한 묶음·묶음 수 · X15 묻는 말 거꾸로
@@ -2689,7 +2716,7 @@ function makeVariantOnce(q, r){
     const nEUN = n => NV(n) ? '는' : '은', nEUL = n => NV(n) ? '를' : '을', nGW = n => NV(n) ? '와' : '과', nIGA = n => NV(n) ? '가' : '이', nIEYO = n => NV(n) ? '예요' : '이에요';
     const wEUN = w => BAT(w) ? '은' : '는', wEUL = w => BAT(w) ? '을' : '를', wIGA = w => BAT(w) ? '이' : '가', wIEYO = w => BAT(w) ? '이에요' : '예요';
     const PMAX = M.pmax || 40;
-    const pickKN = (klo, khi, nlo, nhi, ok) => { for (let g = 0; g < 300; g++){ const k = rint(klo, khi, r), n = rint(nlo, nhi, r);
+    const pickKN = (klo, khi, nlo, nhi, ok) => { for (let g = 0; g < 300; g++){ const k = M.ks ? pick(M.ks, r) : rint(klo, khi, r), n = rint(nlo, nhi, r);   /* v2.9 ks — 단 후보(3·6단처럼 띄엄띄엄) */
         if (k * n <= PMAX && (!ok || ok(k, n))) return [k, n]; } return [klo, nlo]; };
     const OXQ = (stem, truth, okWhy, badWhy, badCode) => { v.stem = stem; v.answer = truth ? 'O' : 'X';
       v.reason_options = [{t: okWhy, correct: true}, {t: badWhy, mis: PFX + badCode}]; };
@@ -2812,7 +2839,9 @@ function makeVariantOnce(q, r){
       const ST = [['자전거', '대', '바퀴', 2, '개'], ['세발자전거', '대', '바퀴', 3, '개'], ['자동차', '대', '바퀴', 4, '개'], ['사자', '마리', '다리', 4, '개'],
                   ['닭', '마리', '다리', 2, '개'], ['개미', '마리', '다리', 6, '개'], ['문어', '마리', '다리', 8, '개'], ['오리', '마리', '다리', 2, '개'],
                   ['꽃', '송이', '꽃잎', 5, '장'], ['네잎클로버', '개', '잎', 4, '장'], ['강아지', '마리', '다리', 4, '개'], ['접시', '개', '쿠키', 3, '개'], ['봉지', '개', '사탕', 5, '개']];
-      const S0 = FX.it ? ST.find(x => x[0] === FX.it) : pick(ST.filter(x => x[3] * 2 <= PMAX), r); const per = S0[3];
+      ST.push(['로봇', '대', '바퀴', 2, '개'], ['쟁반', '개', '딸기', 5, '개'], ['어항', '개', '물고기', 3, '마리'], ['필통', '개', '연필', 6, '자루'],
+              ['주머니', '개', '구슬', 7, '개'], ['상자', '개', '야구공', 9, '개'], ['거미', '마리', '다리', 8, '개'], ['봉투', '개', '색종이', 4, '장']);   /* v2.9 곱셈구구 장면 */
+      const S0 = FX.it ? ST.find(x => x[0] === FX.it) : pick(ST.filter(x => x[3] * 2 <= PMAX && (!M.per || M.per.indexOf(x[3]) >= 0)), r); const per = S0[3];
       const cnt = FX.n || rint(2, Math.max(2, Math.min(9, Math.floor(PMAX / per))), r), tot = per * cnt;
       const head = `${S0[0]} 한 ${S0[1]}에 ${S0[2]}${wIGA(S0[2])} ${per}${S0[4]}씩 있어요.`;
       if (ask === 'story'){
@@ -2838,6 +2867,94 @@ function makeVariantOnce(q, r){
       v.stem = `${k} × ${n}${nGW(n)} 곱이 같은 곱셈식은 어느 것인가요?`;
       v.options = kindOpts(`${n} × ${k}`, [[`${k} × ${k}`, 'X13'], [`${n} × ${n}`, 'X13'], [`${k} + ${n}`, 'X11']], want, q.options);
       v.explanation = [`${k} × ${n}${nEUN(n)} ${k}씩 ${n}묶음, ${n} × ${k}${nEUN(k)} ${n}씩 ${k}묶음이에요.`, `같은 ${kn}개를 가로로 묶느냐 세로로 묶느냐의 차이예요.`, `그래서 ${k} × ${n}${nGW(n)} ${n} × ${k}의 곱은 ${kn}${[1, 7, 8].indexOf(kn % 10) >= 0 || NV(kn) ? '로' : '으로'} 같아요.`];
+      return v; }
+    return v;
+  }
+
+  /* --- v2.9: 2학년 2학기 「곱셈구구」 (2026-10-12, 오푸스 5.5) — 그림 gugu_table + 갈래 gugu (곱셈 그림·식은 v2.7 mul 을 kmin·kmax·pmax·per 로 단에 묶어 쓴다)
+     gugu {ask, ks?:[단 후보], nmin?, nmax?, side?, forms?}
+       ask  cell(곱셈표의 ? 칸, gugu_table) · step(색칠한 단의 곱은 얼마씩 커지나, gugu_table) · next(k × n 은 k × (n−1)보다 얼마 더)
+            build(k × (n−1) = P 를 보고 k × n) · miss(k × □ = P · □ × n = P, side 'b'|'a') · cmpx(두 곱 견주기 >·<·=)
+            zero(0·1의 곱 — forms z0·n0·o1·n1, OX 가능) · tfind(1단~9단에서 곱이 T 인 곱셈구구 개수)
+     오개념 꼬리: X01 곱하는 수가 1 커지면 곱도 1 · X02 이웃 곱(한 번 더·덜) · X05 곱을 답으로 · X06 두 수를 더함·뺌 · X08 0·1의 곱
+                  X09 곱셈표 줄·칸 잘못 짚음 · X11 × ↔ + · X13 순서 바꾼 곱셈구구 빠뜨림 · X17 한 번 더 더하기에서 곱하는 수를 더함 · X19 곱하지 않고 한 수만 보고 견줌
+     원본을 만들 때만 q._fix = {k, n, r, c, T, k2, n2, f, st} 로 못박는다(fill.js 전용). */
+  if (rule.gugu && (!a || typeof a !== 'object' || a.type === 'gugu_table')){
+    const G = rule.gugu, ask = G.ask || 'cell', FX = v._fix || {}; delete v._fix; delete v._form; const want = Math.max(1, nOptsOf(q) - 1);
+    const isSA = q.kind === 'sa', isOX = q.kind === 'ox';
+    const NV = n => VOWEL_END(n), nEUN = n => NV(n) ? '는' : '은', nEUL = n => NV(n) ? '를' : '을', nIGA = n => NV(n) ? '가' : '이', nIEYO = n => NV(n) ? '예요' : '이에요', nGW = n => NV(n) ? '와' : '과';
+    const KS = G.ks || [2, 3, 4, 5, 6, 7, 8, 9];
+    const k = FX.k !== undefined ? FX.k : pick(KS, r), n = FX.n !== undefined ? FX.n : rint(G.nmin || 2, G.nmax || 9, r), kn = k * n;
+    const fin = (ans, ds) => { if (isSA) v.answer = [String(ans)]; else v.options = kindOpts(ans, ds, want, q.options); };
+    const win = (lo, hi, len, must) => { const s0 = Math.max(lo, Math.min(must - Math.floor(r() * len), hi - len + 1)); const out = []; for (let i = s0; i < s0 + len; i++) out.push(i); return out; };
+    if (ask === 'cell'){
+      const rr = FX.r !== undefined ? FX.r : pick(KS, r), cc = FX.c !== undefined ? FX.c : rint(3, 9, r), P = rr * cc;
+      const rows = FX.rows || win(1, 9, 4, rr), cols = FX.cols || win(1, 9, 5, cc);
+      const others = []; rows.forEach(x => cols.forEach(y => { if ((x !== rr || y !== cc) && (x === rr || y === cc)) others.push([x, y]); }));
+      const bl = FX.blank || shuffle(others, r).slice(0, 2);
+      v.asset = {type:'gugu_table', rows, cols, q:[rr, cc], blank: bl};
+      v.stem = '곱셈표의 ?에 알맞은 수는 얼마인가요?' + (isSA ? ' 숫자로 쓰세요.' : '');
+      fin(P, [[cc < 9 ? rr * (cc + 1) : null, 'X09'], [rr * (cc - 1), 'X09'], [rr < 9 ? (rr + 1) * cc : null, 'X09'], [rr + cc, 'X11'], [(rr - 1) * cc || null, 'X09']]);
+      v.explanation = [`?는 왼쪽 ${rr}${nGW(rr)} 위쪽 ${cc}${nIGA(cc)} 만나는 칸이에요.`, `그래서 ${rr} × ${cc}의 곱을 써요 — ${rr} × ${cc - 1} = ${rr * (cc - 1)}에 ${rr}${nEUL(rr)} 더해도 돼요.`, `${rr} × ${cc} = ${P}${nIEYO(P)}.`];
+      return v; }
+    if (ask === 'step'){
+      const rows = FX.rows || win(1, 9, 3, k), cols = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+      v.asset = {type:'gugu_table', rows, cols, hrow: k};
+      v.stem = `곱셈표에서 색칠한 ${k}단 곱셈구구의 곱은 오른쪽으로 한 칸 갈 때마다 얼마씩 커지나요?` + (isSA ? ' 숫자로 쓰세요.' : '');
+      fin(k, [[1, 'X01'], [k + 1, 'X09'], [k - 1 > 1 ? k - 1 : null, 'X09'], [k * 2, 'X02']]);
+      v.explanation = [`${k}단의 곱은 ${k}, ${k * 2}, ${k * 3}, …예요.`, `곱하는 수가 1 커질 때마다 ${k}씩 커져요.`, `그래서 ${k}단 곱셈구구의 곱은 ${k}씩 커져요 — 1씩이 아니에요.`];
+      return v; }
+    if (ask === 'next'){
+      v.stem = `${k} × ${n}${nEUN(n)} ${k} × ${n - 1}보다 얼마 더 큰가요?` + (isSA ? ' 숫자로 쓰세요.' : '');
+      fin(k, [[1, 'X01'], [n !== k ? n : null, 'X17'], [kn, 'X05'], [k + 1, 'X02']]);
+      v.explanation = [`${k} × ${n - 1}${nEUN(n - 1)} ${k}${nEUL(k)} ${n - 1}번, ${k} × ${n}${nEUN(n)} ${k}${nEUL(k)} ${n}번 더한 것이에요.`, `${k}${nEUL(k)} 한 번 더 더했으니 ${k}만큼 더 커요 — ${k * (n - 1)}에서 ${kn}.`, `곱하는 수가 1 커지면 곱은 ${k}만큼 커져요.`];
+      return v; }
+    if (ask === 'build'){
+      const P1 = k * (n - 1);
+      v.stem = `${k} × ${n - 1} = ${P1}${nIEYO(P1)}. 이것을 이용하면 ${k} × ${n}${nEUN(n)} 얼마인가요?` + (isSA ? ' 숫자로 쓰세요.' : '');
+      fin(kn, [[P1 + 1, 'X01'], [P1 + n !== kn ? P1 + n : null, 'X17'], [kn + k, 'X02'], [k + n, 'X11']]);
+      v.explanation = [`${k} × ${n}${nEUN(n)} ${k} × ${n - 1}보다 ${k}만큼 더 커요.`, `${P1} + ${k} = ${kn}${nIEYO(kn)}.`, n === k ? `곱하는 수가 1 커지면 곱은 ${k}만큼 커져요.` : `한 번 더 더할 때는 곱하는 수 ${n}${nIGA(n)} 아니라 ${k}${nEUL(k)} 더해요.`];
+      return v; }
+    if (ask === 'miss'){
+      const side = FX.side || G.side || (r() < 0.5 ? 'b' : 'a');
+      if (side === 'b'){ v.stem = `${k} × □ = ${kn}에서 □ 안에 알맞은 수는 얼마인가요?` + (isSA ? ' 숫자로 쓰세요.' : '');
+        fin(n, [[n + 1, 'X02'], [n - 1 || null, 'X02'], [kn - k > 9 ? kn - k : null, 'X06'], [kn - k <= 9 && kn - k !== n ? kn - k : null, 'X06']]);
+        v.explanation = [`${k}단 곱셈구구에서 곱이 ${kn}인 것을 찾아요.`, `${k}씩 뛰어 세면 ${Array.from({length: n}, (x, i) => k * (i + 1)).join(', ')} — ${n}번이에요.`, `${k} × ${n} = ${kn}${NV(kn) ? '라' : '이라'} □는 ${n}${nIEYO(n)}.`]; }
+      else { v.stem = `□ × ${n} = ${kn}에서 □ 안에 알맞은 수는 얼마인가요?` + (isSA ? ' 숫자로 쓰세요.' : '');
+        fin(k, [[k < 9 ? k + 1 : k - 2, 'X02'], [k - 1 || null, 'X02'], [kn - n > 9 ? kn - n : null, 'X06'], [kn - n <= 9 && kn - n !== k ? kn - n : null, 'X06']]);
+        v.explanation = [`몇 단 곱셈구구에서 ${n}번째 곱이 ${kn}인지 찾아요.`, `${k} × ${n} = ${kn}${nIEYO(kn)} — ${k < 9 ? k + 1 : k - 1} × ${n} = ${(k < 9 ? k + 1 : k - 1) * n}${nIEYO((k < 9 ? k + 1 : k - 1) * n)}.`, `그래서 □는 ${k}${nIEYO(k)}.`]; }
+      return v; }
+    if (ask === 'cmpx'){
+      let a1 = FX.k, b1 = FX.n, a2 = FX.k2, b2 = FX.n2;
+      if (a1 === undefined){ for (let g = 0; g < 200; g++){ a1 = rint(2, 9, r); b1 = rint(2, 9, r); a2 = rint(2, 9, r); b2 = rint(2, 9, r);
+          if (a1 === a2 || b1 === b2 || (a1 === b2 && b1 === a2)) continue; const d = a1 * b1 - a2 * b2;
+          if (Math.abs(d) <= 8 && (a1 - a2) * d <= 0 && d !== 0) break; } }
+      const p1 = a1 * b1, p2 = a2 * b2, ans = p1 > p2 ? '>' : p1 < p2 ? '<' : '=';
+      v.stem = `두 곱의 크기를 견주어 ○ 안에 알맞은 것을 고르세요.\n${a1} × ${b1} ○ ${a2} × ${b2}`;
+      v.options = kindOpts(ans, ['>', '<', '='].filter(x => x !== ans).map(x => [x, 'X19']), want, q.options);
+      v.explanation = [`${a1} × ${b1} = ${p1}${nIEYO(p1)}.`, `${a2} × ${b2} = ${p2}${nIEYO(p2)}.`, `곱을 먼저 구해 견주면 ${a1} × ${b1} ${ans} ${a2} × ${b2} — 앞의 수만 보면 안 돼요.`];
+      return v; }
+    if (ask === 'zero'){
+      const f = FX.f || pick(G.forms || ['z0', 'n0', 'o1', 'n1'], r), m = FX.n !== undefined ? FX.n : rint(2, 9, r);
+      const x = f === 'z0' ? 0 : f === 'o1' ? 1 : m, y = f === 'n0' ? 0 : f === 'n1' ? 1 : m, P = x * y, zr = f === 'z0' || f === 'n0';
+      const why = zr ? (f === 'z0' ? `0을 ${m}번 더해도 0이니까` : `${m}${nEUL(m)} 한 번도 더하지 않으면 0이니까`) : (f === 'o1' ? `1을 ${m}번 더하면 ${m}${nIGA(m)} 되니까` : `${m}${nEUL(m)} 한 번 더한 것은 ${m}${nIGA(m)}니까`);
+      const ex = zr ? [f === 'z0' ? `0 × ${m}${nEUN(m)} 0을 ${m}번 더한 것이에요.` : `${m} × 0은 ${m}${nEUL(m)} 0번 더한 것 — 하나도 없어요.`, '0과 어떤 수의 곱, 어떤 수와 0의 곱은 늘 0이에요.', `그래서 ${x} × ${y} = 0이에요.`]
+                    : [f === 'o1' ? `1 × ${m}${nEUN(m)} 1을 ${m}번 더한 것이에요.` : `${m} × 1은 ${m}${nEUL(m)} 한 번 더한 것이에요.`, '1과 어떤 수의 곱, 어떤 수와 1의 곱은 늘 그 수예요.', `그래서 ${x} × ${y} = ${m}${nIEYO(m)}.`];
+      if (isOX){ const truth = FX.st === undefined ? r() < 0.5 : FX.st; const said = truth ? P : (zr ? m : 1);
+        v.stem = `${x} × ${y} = ${said}입니다.`; v.answer = truth ? 'O' : 'X';
+        v.reason_options = [{t: truth ? why : `${x} × ${y}${nEUN(y)} ${said}${nIGA(said)} 아니라 ${P}${nIGA(P)} 되니까`, correct: true},
+                            {t: truth ? (zr ? `0을 곱하면 그 수가 그대로 남으니까` : '1을 곱하면 1이 되니까') : (zr ? '0을 곱하면 그 수가 그대로 남으니까' : '1을 곱하면 1이 되니까'), mis: PFX + 'X08'}];
+        v.explanation = ex; return v; }
+      v.stem = `${x} × ${y}${nEUN(y)} 얼마인가요?` + (isSA ? ' 숫자로 쓰세요.' : '');
+      fin(P, zr ? [[m, 'X08'], [1, 'X08'], [m + 1, 'X06']] : [[1, 'X08'], [m + 1, 'X06'], [0, 'X08']]);
+      v.explanation = ex; return v; }
+    if (ask === 'tfind'){
+      const TT = [4, 6, 8, 9, 12, 16, 18, 24, 36], T = FX.T || pick(TT, r);
+      const ps = []; for (let x = 1; x <= 9; x++) for (let y = 1; y <= 9; y++) if (x * y === T) ps.push(`${x} × ${y}`);
+      const c = ps.length;
+      v.stem = `1단부터 9단까지의 곱셈구구 가운데 곱이 ${T}인 것은 모두 몇 개인가요?` + (isSA ? ' 숫자로 쓰세요.' : '');
+      fin(c, [[c - 1, 'X13'], [c + 1, 'X09'], [Math.ceil(c / 2) !== c - 1 ? Math.ceil(c / 2) : null, 'X13'], [c - 2 > 0 ? c - 2 : null, 'X13']]);
+      v.explanation = [`곱이 ${T}인 곱셈구구는 ${ps.join(', ')}${nIEYO(ps[ps.length - 1].slice(-1))}.`, '두 수를 바꾸어 곱한 것도 따로 세어요.', `그래서 모두 ${c}개예요.`];
       return v; }
     return v;
   }
@@ -4298,6 +4415,7 @@ function paperAsset(a){
     case 'sort_pile': case 'sort_bins': case 'sort_table': return sortHTML(a, true);
     case 'mul_groups': return mulHTML(a, true);
     case 'times_bars': return `<div class="pcmpw">${timesSVG(a)}</div>`;
+    case 'gugu_table': return guguHTML(a, true);
     case 'figs': return figsHTML(a, true);
     case 'tiles': return `<div class="pcmpw">${tilesSVG(a)}</div>`;
     case 'cubes': return cubesHTML(a, true);
