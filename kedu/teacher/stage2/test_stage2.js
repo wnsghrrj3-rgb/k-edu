@@ -66,6 +66,10 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   ok(a.cls === 'sa2 sa2-c' && /class="sa2-board"/.test(a.body) && (a.body.match(/data-act="star"/g) || []).length === 6 && (a.body.match(/data-i="1" data-k="\d" class="on"/g) || []).length === 2 && /<b>지식·이해<\/b>/.test(a.body) && /sa2-bub">궁금한 것은\?/.test(a.body), '100차 자기 점검 sa2 칠판: 영역·물음·별(조작 그대로)·안내 인물 말풍선');
   const al = KT2.renderSlide({ id: 'sa', block: 'self_assessment', data: { title: 't', items: ['📚 지식·이해 — 알았나요?'] } }, Object.assign({}, C, { learn: true }));
   ok(al.cls === 'sa2 sa2-c' && /class="sa2-board"/.test(al.body) && (al.body.match(/data-act="star"/g) || []).length === 3, '103차 자기 점검: learn(학생 화면)도 칠판 sa2 · 별 조작 그대로');
+  const rl = KT2.renderSlide({ id: 'rv', block: 'review', data: { items: [{ q: '가?', a: '나' }, { q: '다?', a: '라' }] } }, Object.assign({}, C, { learn: true, state: { flipped: [false, true] } }));
+  ok(rl.cls === 'rv2' && /class="rv2-board"/.test(rl.body) && (rl.body.match(/data-act="flip"/g) || []).length === 2 && /rv2-it on/.test(rl.body) && !/flipgrid/.test(rl.body), '104차 복습: learn(학생 화면)도 칠판 rv2 · 눌러 확인 그대로');
+  const xl = KT2.renderSlide({ id: 'ex', block: 'exit_ticket', data: { items: [{ q: '가?', a: '나' }], self: ['잘 알아요', '조금', '어려워요'] } }, Object.assign({}, C, { learn: true }));
+  ok(xl.cls === 'rv2 rv2-x' && /class="rv2-board"/.test(xl.body) && (xl.body.match(/data-act="light"/g) || []).length === 3 && !/flipgrid/.test(xl.body), '104차 확인: learn(학생 화면)도 칠판 rv2 · 신호등 그대로');
   const n = KT2.renderSlide({ id: 'nl', block: 'next_lesson', data: { title: 't', preview: '달라진 생활을 봐요', emoji: '👵' } }, C);
   ok(n.cls === 'nl2 nl2-b' && /nl2-band picture hill/.test(n.body) && /nl2-big">👵/.test(n.body) && /c-bear/.test(n.body) && /c-penguin/.test(n.body) && /nl2-cap">달라진 생활을 봐요/.test(n.body), '100차 다음 시간 nl2 예고 그림 띠: 인물 둘 + 큰 그림 + 예고 띠 · 「달라진」은 밤 배경 아님'); }
 

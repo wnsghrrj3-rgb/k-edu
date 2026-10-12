@@ -66,7 +66,7 @@
   function emojiCount(e, n, big) { if ((+n || 0) > 20 || (/^(➕|➖|🟰|✅|✖️|✖|➗|❓|⭕|❌)$/.test(String(e || '').trim()) && (+n || 0) > 0)) return baseTen(n, e);
     const N = Math.max(0, +n || 0); if (N > 5) { let g = ''; for (let k = 0; k < N; k += 10) g += '<div class="eg">' + Array.from({ length: Math.min(10, N - k) }, () => '<span>' + esc(e) + '</span>').join('') + '</div>'; return '<div class="emoji-row count grid' + (big ? ' big' : '') + '">' + g + '</div>'; }
     return '<div class="emoji-row count' + (big ? ' big' : '') + '">' + Array.from({ length: Math.max(0, +n || 0) }, () => '<span>' + esc(e) + '</span>').join('') + '</div>'; }
-  // 98차 — 새 복습·확인 장 rv2 「칠판」(준호 C) · review · exit_ticket 교사 무대만(learn 은 1세대 카드 그대로)
+  // 98차 — 새 복습·확인 장 rv2 「칠판」(준호 C) · review · exit_ticket · 104차 learn 에도(학생 혼자 눌러 확인)
   function rv2(items, f, self, cnt) {
     const A = it => String(it.a !== undefined ? it.a : ''); const L = ['🟢', '🟡', '🔴'];
     const lights = self && self.length ? '<div class="rv2-sig">' + self.map((s, i) => '<div class="light" data-act="light" data-i="' + i + '"><span class="dot">' + (L[i] || '⚪') + '</span><span class="lb">' + md(s) + '</span><span class="cnt">' + (cnt[i] || 0) + '</span></div>').join('') + '</div>' : '';
@@ -240,7 +240,7 @@
       case 'review': {
         if (d.content) push('<div class="center-text">' + md(d.content) + '</div>');
         if (d.desc) push('<div class="center-text">' + md(d.desc) + '</div>');
-        if (d.items && d.items.length && !ctx.learn) { const f = S.flipped && S.flipped.length ? S.flipped : d.items.map(() => rev); cls = 'rv2'; push(rv2(d.items, f, null, [])); answerable = true; }
+        if (d.items && d.items.length) { const f = S.flipped && S.flipped.length ? S.flipped : d.items.map(() => rev); cls = 'rv2'; push(rv2(d.items, f, null, [])); answerable = true; }
         else if (d.items) { const f = S.flipped || []; push('<div class="flipgrid n' + Math.min(4, d.items.length) + '">' + d.items.map((it, i) => '<div class="flip' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><div class="q">' + md(it.q) + '</div><div class="a">' + (f[i] ? md(String(it.a !== undefined ? it.a : '')) : '❓ 눌러서 확인') + '</div></div>').join('') + '</div>'); answerable = true; }
         if (d.table) push(table(d.table)); if (d.sequence) push(sequence(d.sequence)); if (d.ten_frame_strip) push(tfStrip(d.ten_frame_strip));
         if (d.areas) push('<div class="areas">' + d.areas.map(a => '<div>' + md(a) + '</div>').join('') + '</div>');
@@ -394,7 +394,7 @@
       }
       case 'exit_ticket': {
         title = d.title || '오늘 확인해요'; const items = d.items || []; const f = S.flipped || []; const cnt = S.lights || [];
-        if (!ctx.learn) { const ff = f.length ? f : items.map(() => rev); cls = 'rv2 rv2-x'; push(rv2(items, ff, d.self || [], cnt)); answerable = true; break; }
+        { const ff = f.length ? f : items.map(() => rev); cls = 'rv2 rv2-x'; push(rv2(items, ff, d.self || [], cnt)); answerable = true; break; }
         push('<div class="flipgrid n' + Math.min(4, Math.max(2, items.length)) + '">' + items.map((it, i) => '<div class="flip' + (f[i] ? ' on' : '') + '" data-act="flip" data-i="' + i + '"><div class="q">' + md(it.q) + '</div><div class="a">' + (f[i] ? '✅ ' + md(String(it.a !== undefined ? it.a : '')) : '❓ 눌러서 확인') + '</div></div>').join('') + '</div>');
         const self = d.self || []; const L = ['🟢', '🟡', '🔴'];
         if (self.length) push('<div class="signal">' + self.map((s, i) => '<div class="light" data-act="light" data-i="' + i + '" title="손 든 수를 세요"><span class="dot">' + (L[i] || '⚪') + '</span><span class="lb">' + md(s) + '</span><span class="cnt">' + (cnt[i] || 0) + '</span></div>').join('') + '</div>');
