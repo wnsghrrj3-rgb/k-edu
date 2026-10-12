@@ -153,11 +153,14 @@ export function boxProjectUV(geo, tile) {
   }
   geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
 }
-/** surfaces: { 재질이름: { set: 'rock', tile: 2.5, tint: 0.2 } } — tint 는 원래 색을 얼마나 남길지(0=텍스처 그대로) */
+/** surfaces: { 재질이름: { set: 'rock', tile: 2.5, tint: 0.2 } } — tint 는 원래 색을 얼마나 남길지(0=텍스처 그대로)
+ *  set 없이 { shade: 0.7 } 만 주면 사진 질감 없이 그 재질 색만 0.7배로 어둡게(밝은 평면색이 해에 날아가는 것을 재질 하나씩 잡을 때 — 전역 보정이 아니라 이름 단위) */
 export function applySurfaces(e, surfaces) {
   e.scene.traverse((o) => {
     if (!o.isMesh || !o.material?.name) return; const cfg = surfaces[o.material.name]; if (!cfg) return;
     const m = o.material; if (m.userData.surfaced) return; m.userData.surfaced = true;
+    if (cfg.shade != null) m.color.multiplyScalar(cfg.shade);
+    if (!cfg.set) { m.needsUpdate = true; return; }
     const s = loadSet(cfg.set, cfg.tile ?? 2.5);
     m.map = s.map; m.normalMap = s.normalMap; m.roughnessMap = s.roughnessMap; m.roughness = 1; m.metalness = 0;
     m.normalScale = new THREE.Vector2(cfg.normal ?? 0.9, cfg.normal ?? 0.9);

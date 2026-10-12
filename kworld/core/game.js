@@ -30,7 +30,8 @@ export class Game {
     this.e = new Engine(document.getElementById('c'), this.world.atmosphere);
     if (this.world.sky) this.e.loadSky(this.world.sky);
     if (this.world.height) await this.e.loadHeight(this.base + this.world.height);
-    this.e.skipDecor = !!this.world.landscape;   // 시대별 landscape.js 가 있을 때만 GLB 장식(나무·언덕)을 건너뜀
+    this.e.skipDecor = !!this.world.landscape;
+    this.e.hideNodes = this.world.hideNodes || null;   // 그리지 않을 col_ 이름(앞부분) — 충돌은 그대로   // 시대별 landscape.js 가 있을 때만 GLB 장식(나무·언덕)을 건너뜀
     await this.e.loadWorld(this.base + this.world.glb, this.world.eye);
     // world.json `spawn: [x, z]`(엔진 좌표, z = -블렌더 y)가 있으면 GLB 의 spawn 을 덮어쓴다 — bpy 재생성 없이 시작 자리만 옮길 때(㉞ 삼국 spawn 이 장터 좌판 사이)
     if (Array.isArray(this.world.spawn) && this.world.spawn.length === 2) this.e.spawn.set(this.world.spawn[0], this.e.spawn.y, this.world.spawn[1]);

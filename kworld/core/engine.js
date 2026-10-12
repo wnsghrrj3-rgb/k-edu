@@ -113,7 +113,9 @@ export class Engine {
         if (!o.isMesh) return;
         this.materials.set(o.material.name, o.material);
         if (this.skipDecor && /^(hill|col_cave_rock|moss|cave_mouth|hut_pole|col_trunk|root|branch|canopy|leaf|grassblade|grasscard|blades|flower)/.test(o.name)) return;
-        if (o.name.startsWith('col_')) { const b = new THREE.Box3().setFromObject(o); b.expandByScalar(0.3); this.colliders.push(b); }
+        if (o.name.startsWith('col_')) { const b = new THREE.Box3().setFromObject(o); b.expandByScalar(0.3); this.colliders.push(b);
+          // world.json hideNodes: 충돌 상자만 남기고 그리지 않는다(생성기에서 col_ 어두운 통이 겉으로 삐져나온 것을 bpy 재생성 없이 숨길 때 — 이름 앞부분 일치)
+          if (this.hideNodes?.some((h) => o.name.startsWith(h))) return; }
         let geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
         geo.applyMatrix4(o.matrixWorld);
         for (const k of Object.keys(geo.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(k)) geo.deleteAttribute(k);
