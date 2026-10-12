@@ -155,7 +155,11 @@
   Learn.prototype.paint = function (dir, quiet) { // quiet: 답을 고른 뒤 다시 그릴 때 — 등장 연출을 다시 틀지 않는다
     const s = this.cur(); if (!s) return;
     const paper = doc.getElementById('kt2-paper');
-    const r = K().renderSlide(s, { revealed: !!this.rev[s.id], state: this.state(s.id), meta: this.meta, unitTitle: this.unitTitle, classNames: [], guide: this.guide, learn: true });
+    // 107차 — 학생 화면 문제 장도 새 꼴 pv3(읽을 글 띠 · 큰 물음 · 세로 보기): 투영이 뺀 보기를 그릴 때만 돌려 넣고, 보기 자리는 채점 위젯(.lw)이 차지
+    let sd = s; const lk0 = s.learn && (s.learn.kind === 'pick' || s.learn.kind === 'multi');
+    if (lk0 && s.block === 'basic_problem' && K().pv3Ok) { const d2 = Object.assign({}, s.data, { options: s.learn.options, multi: s.learn.kind === 'multi' }); if (K().pv3Ok(d2)) sd = Object.assign({}, s, { data: d2 }); }
+    const pvL = sd !== s;
+    const r = K().renderSlide(sd, { revealed: pvL ? false : !!this.rev[s.id], state: this.state(s.id), meta: this.meta, unitTitle: this.unitTitle, classNames: [], guide: this.guide, learn: true });
     const n = this.idx + 1, N = this.slides.length;
     const pos = this.slides.slice(0, n).filter(x => x.stage === s.stage).length, tot = this.slides.filter(x => x.stage === s.stage).length;
     const lk = s.lv ? lvCur(s, this.state(s.id)) : ''; const wst = this.ls(s.lv ? s.id + '|' + lk : s.id);
@@ -174,6 +178,9 @@
     }
     // 교사 무대 전용 단추는 학생 화면에서 뺀다(수준별 문제의 「정답 보기」는 남긴다 — 스스로 확인)
     paper.querySelectorAll(STRIP).forEach(b => b.remove());
+    if (pvL) { const pm = paper.querySelector('.pv3-main'), po = pm && pm.querySelector('.pv3-opts'), lw = paper.querySelector('.kt2-body > .lw'); // 107차 — 위젯을 보기 자리로
+      if (pm && po && lw) { po.replaceWith(lw); lw.classList.add('lw-pv3'); const op = lw.querySelector('.options'); if (op) op.classList.add('pv3-opts'); paper.querySelectorAll('.pv3-multi,.pv3-note').forEach(x => x.remove()); } }
+    { const w = paper.querySelector('.pv3t-w'), lw = paper.querySelector('.kt2-body > .lw'); if (w && lw) { w.appendChild(lw); lw.classList.add('lw-pv3t'); } } // 107차 — 구조형 문제 장: 위젯을 물음 아래 자리로
     if (s.lv) paper.querySelectorAll('.lv-tabs button').forEach(b => { const st = this.L[s.id + '|' + b.getAttribute('data-k')]; if (st && st.done) b.classList.add('won'); });
     this.decorate(paper, r); if (quiet) paper.querySelectorAll('.anim').forEach(el => el.classList.remove('anim')); this.fitBody(); this.refitLater(); { const self = this; setTimeout(() => self.fitBody(), 400); }
     paper.querySelectorAll('.img-frame img').forEach(im => { im.addEventListener('error', () => { try { K().imgFallback(im); } catch (e) { } setTimeout(() => this.fitBody(), 0); }); im.addEventListener('load', () => this.fitBody()); });

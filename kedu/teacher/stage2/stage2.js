@@ -168,6 +168,10 @@
     const side = '<div class="pv3-side">' + src + '<div class="pv3-L">' + hint + note + '</div></div>'; // 풀이·안내는 양쪽에 두고 CSS 로 한쪽만(넘치면 fit-pvx 로 반대쪽) // 풀이·여러 개 안내는 왼쪽 띠 아래(오른쪽은 물음·보기만)
     return '<div class="pv3' + cls + '">' + side + '<div class="pv3-main"><div class="pv3-q">' + md(d.question) + '</div>' + options(d.options, !!d.multi, rev).replace('class="options', 'class="options pv3-opts') + '<div class="pv3-R">' + hint + note + '</div></div></div>';
   }
+  // 107차 — 학생 화면(learn) 짝 잇기·나눠 담기·차례 놓기 문제 장 pv3t: 위 상황 한 줄(위젯과 겹치는 「나눌 것:·통:·왼쪽:·오른쪽:」 줄은 뺌) → 큰 물음 → 채점 위젯 자리(.pv3t-w) · 말풍선·안내 인물 없음
+  function pv3tLead(sc, q) { const keep = []; for (const l of String(sc.body || '').split('\n')) { if (/^\s*(나눌\s*것|통|왼쪽|오른쪽|놓을\s*것)\s*[:：]/.test(l)) break; keep.push(l.trim()); } const t = keep.join(' ').trim(); const n = (x) => String(x || '').replace(/[\s.!?…]/g, ''); return n(t) === n(q) ? '' : t; }
+  function pv3t(d) { const lead = d.scenario ? pv3tLead(d.scenario, d.question) : '';
+    return '<div class="pv3t">' + (lead ? '<div class="pv3t-sc">' + (d.scenario.icon ? '<span class="pv3-ic">' + esc(d.scenario.icon) + '</span>' : '') + '<span>' + md(lead) + '</span></div>' : '') + '<div class="pv3-q">' + md(d.question) + '</div><div class="pv3t-w"></div></div>'; }
   function symCards(list) { return '<div class="sym-cards">' + list.map(m => '<div class="sym"><b>' + md(String(m.symbol || '')) + '</b><span>' + md(String(m.meaning || '')) + '</span></div>').join('') + '</div>'; }
   function optionBody(o) {
     if (o.emoji && o.count !== undefined) return '<div class="em">' + Array.from({ length: o.count }, () => esc(o.emoji)).join('') + '</div>';
@@ -298,6 +302,7 @@
         break;
       }
       case 'basic_problem': case 'advanced_problem': {
+        if (ctx.learn && slide.learn && /^(sort|match|order)$/.test(slide.learn.kind) && d.question && !d.fig && !d.context && !d.items && !d.sequence && !d.cards && !d.questions) { push(pv3t(d)); break; } // 107차 — 학생 화면 구조형 문제 장
         if (pv3Ok(d)) { push(pv3(d, rev)); answerable = answerable || d.options.some(o => o.correct); break; } // 92차 — 새 문제 장(읽을 글 왼쪽 띠 · 장면 나눔 · 물음 크게 · 보기 세로)
         const b0 = b.length; let figH = ''; // 60차 — 그림 붙은 문제 장은 좌(그림)·우(글·물음·답) 두 칸
         if (d.context) push('<div class="context-text">' + md(d.context) + '</div>');
@@ -1175,6 +1180,6 @@
       global.KT2 = global.KT2 || {}; global.KT2.stage = new Stage({ params: q, lessons: global.LESSONS, unitTitle });
     })();
   }
-  global.KT2 = { renderSlide, fitZoom, Stage, md, esc, STAGES, STAGE_MIN, BLOCK_LABEL, boot, imgFallback, guideOf, slugOf };
+  global.KT2 = { renderSlide, fitZoom, Stage, md, esc, STAGES, STAGE_MIN, BLOCK_LABEL, boot, imgFallback, guideOf, slugOf, pv3Ok };
   if (doc && doc.getElementById && doc.getElementById('kt2-stage') && !global.KT2_NO_BOOT) { if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot); else boot(); }
 })(typeof window !== 'undefined' ? window : globalThis);
