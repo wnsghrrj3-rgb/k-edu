@@ -19,6 +19,10 @@ ok(texts().includes('마을') && !texts().includes('고개') && texts().includes
 ok(texts().includes('김'), '친구 점 위에 이름 첫 글자(번호 뗌)');
 player.pos = { x: 20, z: -16 }; calls.length = 0; frame(1.2); frame(0.2);
 ok(mm.seen.has('market') && texts().includes('장터'), '14m 안에 들어오면 아는 곳이 된다');
+// 가 본 곳은 깃발 mm:<id> 로 — 저장본에서 되살아난다
+const flagged = []; const engineF = { areas, onFrame: [] }; const mmF = bindMinimap(engineF, { pos: { x: -58, z: 38 }, yaw: 0 }, canvas, { world, flags: new Set(['mm:market']), flag: (f) => flagged.push(f) });
+engineF.onFrame.forEach((f) => f(1.2));
+ok(mmF.seen.has('market') && mmF.seen.has('temple') && flagged.includes('mm:temple') && !flagged.includes('mm:market'), '저장된 mm: 깃발은 아는 곳, 새로 간 곳은 깃발을 세운다');
 friends.friends.get('a').waveUntil = performance.now() + 1000; calls.length = 0; frame(0.2);
 const arcs = calls.filter((c) => c[0] === 'arc').map((c) => c[1][2]);
 ok(arcs.some((r) => r !== 2.6 && r !== 2.5 && r !== 1.6 && r !== 81) && arcs.length >= 5, '손 흔드는 친구 점은 크기가 바뀐다');

@@ -1,5 +1,6 @@
 // 미니맵 — 조용한 길잡이. 아는 곳(가 본 장소)과 내 방향만. 반 멀티 2단계(10-12): 같은 시대에 들어온 반 친구가 점으로, 손 흔들면 그 점이 커졌다 작아진다.
 //  · 장소는 세상의 area_* 에서(story-p1 처럼 area 가 없으면 옛 세 곳). 가 본 곳(14m 안에 들어온 적)만 이름이 붙고, 아직 못 가 본 곳은 희미한 점.
+//  · 가 본 곳은 깃발 mm:<id> 로 남는다(저장본과 같이 이 기기·서버에 — 다음에 들어와도 아는 곳은 그대로).
 //  · 축척은 world.bounds(기본 116)로 맞춘다 — 넓은 터가 원 안에 다 들어온다.
 // 땅 한 장 — 높이맵(engine.hm)에서 강·개울(파랑, 깊은 물은 짙게)·들(초록)·산(높을수록 밝은 흙빛)을 한 번만 그려 둔다. 없으면 옛 민무늬.
 function paintLand(engine, canvas, scale, mid, size, deepWater) {
@@ -33,7 +34,7 @@ export function bindMinimap(engine, player, canvas, game = null) {
   const point=(x,z)=>[mid+x*scale,mid+z*scale];
   engine.onFrame.push(dt=>{
     elapsed+=dt;check+=dt;if(elapsed<.15)return;elapsed=0;
-    if(check>1){check=0;for(const s of spots)if(!seen.has(s.id)&&Math.hypot(s.x-player.pos.x,s.z-player.pos.z)<14)seen.add(s.id);}
+    if(check>1){check=0;if(game?.flags)for(const f of game.flags)if(f.startsWith('mm:'))seen.add(f.slice(3));for(const s of spots)if(!seen.has(s.id)&&Math.hypot(s.x-player.pos.x,s.z-player.pos.z)<14){seen.add(s.id);game?.flag?.('mm:'+s.id);}}
     ctx.clearRect(0,0,size,size);ctx.save();ctx.beginPath();ctx.arc(mid,mid,mid-3,0,Math.PI*2);ctx.clip();
     if(!land&&engine.hm)land=paintLand(engine,canvas,scale,mid,size,game?.world?.deepWater);
     if(land){ctx.drawImage(land,0,0);}
