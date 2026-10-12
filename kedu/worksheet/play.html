@@ -302,9 +302,31 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .clockw .hh{stroke:var(--ink);stroke-width:7;stroke-linecap:round}
 .clockw .mh{stroke:var(--accent);stroke-width:4;stroke-linecap:round}
 .clockw .pin{fill:var(--ink)}
+/* v2.6 분류 그림 */
+.sortw{display:flex;justify-content:center;max-width:100%;overflow-x:auto}
+.spile{display:grid;grid-template-columns:repeat(8,44px);gap:6px;padding:12px;border:2px dashed var(--rule-strong);border-radius:14px;background:var(--card)}
+.spile .si,.sbin .si{font-size:30px;line-height:40px;text-align:center;display:inline-block;min-width:40px}
+.sbins{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.sbin{border:2px solid var(--rule-strong);border-radius:12px;background:var(--card);min-width:120px;max-width:220px}
+.sbin>b{display:block;text-align:center;background:var(--tint);border-bottom:1px solid var(--rule);padding:6px 10px;font-size:16px}
+.sbin>div{padding:8px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+.stab{border-collapse:collapse;font-size:17px;background:var(--card)}
+.stab th,.stab td{border:1px solid var(--rule-strong);padding:8px 12px;text-align:center;min-width:54px}
+.stab th{background:var(--tint);font-weight:600}
+.stab td.sq{color:var(--ink-soft);font-weight:700}
+.stab td.stl{font-size:15px;letter-spacing:1px;white-space:nowrap}
 .cmpw{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:100%;overflow-x:auto}
 .cmpw svg{max-width:100%;height:auto;display:block}
 .figs{gap:14px}.figc{display:flex;flex-direction:column;align-items:center;gap:2px}.figc b{font-size:17px;color:#2E3338}
+.pq .psortw{margin:8px 0 6px 30px}
+.pq .psortw .spile{display:flex;flex-wrap:wrap;gap:4px;max-width:420px;border:1px dashed #999;padding:6px;border-radius:8px}
+.pq .psortw .si{font-size:20px;display:inline-flex;flex-direction:column;align-items:center;min-width:28px}
+.pq .psortw .si small{font-size:9px;line-height:1}
+.pq .psortw .sbins{display:flex;flex-wrap:wrap;gap:6px}
+.pq .psortw .sbin{border:1px solid #999;border-radius:6px;min-width:90px}
+.pq .psortw .sbin>b{display:block;text-align:center;border-bottom:1px solid #999;font-size:12px;padding:2px 6px}
+.pq .psortw .sbin>div{padding:4px;display:flex;flex-wrap:wrap;gap:2px}
+.pq .psortw .stab{border-collapse:collapse;font-size:13px}.pq .psortw .stab th,.pq .psortw .stab td{border:1px solid #999;padding:4px 10px;text-align:center}
 .pq .pcmpw{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 6px 30px}
 .pq .pcmpw svg{max-width:92%;height:auto;transform-origin:left top}
 .pq .pcmpw .balsv{width:150px;height:auto}
@@ -704,6 +726,7 @@ const BAT = w => { const c = String(w).trim().slice(-1).charCodeAt(0); return c 
 const WEUN = w => (BAT(w) ? '은' : '는');
 /* ===== v1.3 — 1학년 1학기 「비교하기」 그림 4종 (2026-10-07) =====
    (v2.5 ruler 는 rulerSVG 머리말 참고 — 자·1 cm 칸·단위 몇 번)
+   (v2.6 sort_pile·sort_bins·sort_table 은 SORT_LIB 머리말 참고 — 분류하기)
    len_bars   길이 막대: rows [{label, len 1~12, off 0~4, bend?, thick?}] · line(기준선, 기본 off 가 모두 0 이면 켬) · grid(칸 눈금)
               bend = 구부러진 줄 — 마디 하나의 실제 길이가 칸 하나(U)와 같게 그린다(펴면 len 칸, 「구부러지면 짧다」 함정이 거짓말이 안 되게)
    balance    양팔저울: scales [{l:{icon,name}, r:{icon,name}, down:'l'|'r'|'eq'}] 1~3개
@@ -938,6 +961,54 @@ function bar2SVG(a){
     box(X, 10, L, '#D6E9F8', lab(W0)) + box(X, 56, wa, '#FCE3C8', lab(A)) + box(X + wa, 56, L - wa, '#DCEFD9', lab(Bq));
   return `<svg class="cmpsv" viewBox="0 0 ${X + L + 40} 100" width="${X + L + 40}" height="100" role="img" aria-label="전체와 부분 막대">${s}</svg>`;
 }
+/* ===== v2.6 — 2학년 1학기 「분류하기」 분류 그림 3종 (2026-10-12, 오푸스 5.5) =====
+   sort_pile  {items:[그림 열쇠…]}                        — 여러 물건이 섞여 있는 바구니(한 줄 8개, 16개까지)
+   sort_bins  {crit?, bins:[{label, items:[열쇠…]}]}       — 칸에 나누어 담은 모습(2~4칸). label 가·나·다 면 기준을 숨긴 것
+   sort_table {crit, cols:[칸 이름], counts:[수|null], total?, tally?:[수…], unit?}
+              — 분류한 결과 표: 첫 줄 기준과 칸 이름 · 둘째 줄 수(null = 빈칸 ?) · total 이 있으면 「합계」 칸 · tally 가 있으면 ／ 표시 줄(5개씩 띄움)
+   열쇠 = SORT_LIB 의 그림 문자. 물건마다 이름(n)·무리(f)·특징(색깔·모양·다리 수·움직이는 곳·바퀴 수·종류·옷)을 엔진이 들고 있다.
+   검사기(check_sets.js)는 특징 표를 따로 적어 들고 서로 검산한다. 흑백 종이에서도 색깔 문제가 풀리게 색 있는 무리(tok·book)는 종이에 색 이름을 작게 붙인다. */
+const SORT_LIB = {
+  '🔴':{n:'빨간 동그라미',f:'tok',color:'빨간색',shape:'동그라미'}, '🔵':{n:'파란 동그라미',f:'tok',color:'파란색',shape:'동그라미'},
+  '🟡':{n:'노란 동그라미',f:'tok',color:'노란색',shape:'동그라미'}, '🟢':{n:'초록 동그라미',f:'tok',color:'초록색',shape:'동그라미'},
+  '🟥':{n:'빨간 네모',f:'tok',color:'빨간색',shape:'네모'}, '🟦':{n:'파란 네모',f:'tok',color:'파란색',shape:'네모'},
+  '🟨':{n:'노란 네모',f:'tok',color:'노란색',shape:'네모'}, '🟩':{n:'초록 네모',f:'tok',color:'초록색',shape:'네모'},
+  '❤️':{n:'빨간 하트',f:'tok',color:'빨간색',shape:'하트'}, '💙':{n:'파란 하트',f:'tok',color:'파란색',shape:'하트'},
+  '💛':{n:'노란 하트',f:'tok',color:'노란색',shape:'하트'}, '💚':{n:'초록 하트',f:'tok',color:'초록색',shape:'하트'},
+  '🐶':{n:'강아지',f:'ani',legs:'4개'}, '🐱':{n:'고양이',f:'ani',legs:'4개'}, '🐷':{n:'돼지',f:'ani',legs:'4개'}, '🐮':{n:'소',f:'ani',legs:'4개'},
+  '🐔':{n:'닭',f:'ani',legs:'2개'}, '🐦':{n:'새',f:'ani',legs:'2개'}, '🦆':{n:'오리',f:'ani',legs:'2개'}, '🐧':{n:'펭귄',f:'ani',legs:'2개'},
+  '🐟':{n:'물고기',f:'ani',legs:'0개'}, '🐍':{n:'뱀',f:'ani',legs:'0개'}, '🐬':{n:'돌고래',f:'ani',legs:'0개'},
+  '🚗':{n:'자동차',f:'veh',where:'땅',wheels:'4개'}, '🚌':{n:'버스',f:'veh',where:'땅',wheels:'4개'}, '🚕':{n:'택시',f:'veh',where:'땅',wheels:'4개'},
+  '🚲':{n:'자전거',f:'veh',where:'땅',wheels:'2개'}, '🛵':{n:'오토바이',f:'veh',where:'땅',wheels:'2개'},
+  '✈️':{n:'비행기',f:'veh',where:'하늘'}, '🚁':{n:'헬리콥터',f:'veh',where:'하늘'},
+  '⛵':{n:'돛단배',f:'veh',where:'물'}, '🚢':{n:'배',f:'veh',where:'물'}, '🚤':{n:'모터보트',f:'veh',where:'물'},
+  '🍎':{n:'사과',f:'fruit',kind:'사과'}, '🍌':{n:'바나나',f:'fruit',kind:'바나나'}, '🍇':{n:'포도',f:'fruit',kind:'포도'}, '🍊':{n:'귤',f:'fruit',kind:'귤'}, '🍓':{n:'딸기',f:'fruit',kind:'딸기'},
+  '✏️':{n:'연필',f:'sup',kind:'연필'}, '📏':{n:'자',f:'sup',kind:'자'}, '📓':{n:'공책',f:'sup',kind:'공책'}, '✂️':{n:'가위',f:'sup',kind:'가위'}, '🖍️':{n:'크레파스',f:'sup',kind:'크레파스'},
+  '👕':{n:'티셔츠',f:'cloth',part:'윗옷'}, '🧥':{n:'외투',f:'cloth',part:'윗옷'}, '👚':{n:'블라우스',f:'cloth',part:'윗옷'}, '👖':{n:'바지',f:'cloth',part:'아래옷'}, '🩳':{n:'반바지',f:'cloth',part:'아래옷'},
+  '📕':{n:'빨간 책',f:'book',color:'빨간색'}, '📗':{n:'초록 책',f:'book',color:'초록색'}, '📘':{n:'파란 책',f:'book',color:'파란색'},
+  '🥫':{n:'캔',f:'recy',kind:'캔'}, '🧴':{n:'플라스틱 통',f:'recy',kind:'플라스틱'}, '🥤':{n:'플라스틱 컵',f:'recy',kind:'플라스틱'}, '📰':{n:'신문지',f:'recy',kind:'종이'}, '📦':{n:'종이 상자',f:'recy',kind:'종이'}
+};
+/* 기준 이름 · 무리 이름(조사 포함은 쓰는 쪽에서) · 세는 말 */
+const SORT_CRIT = {color:'색깔', shape:'모양', legs:'다리 수', where:'움직이는 곳', wheels:'바퀴 수', kind:'종류', part:'윗옷과 아래옷'};
+const SORT_FAM = {tok:['단추','개'], ani:['동물','마리'], veh:['탈것','대'], fruit:['과일','개'], sup:['학용품','개'], cloth:['옷','벌'], book:['책','권'], recy:['분리배출한 물건','개']};
+/* 표·보기에 쓰는 칸 이름 · 「몇 개」 발문에 쓰는 말 */
+const SORT_LAB = (c, v) => c === 'legs' ? '다리 ' + v : c === 'wheels' ? '바퀴 ' + v : v;
+const SORT_VP = (c, v, f) => c === 'color' ? v + '인 ' + (f === 'book' ? '책' : '것') : c === 'shape' ? v + ' 모양인 것' : c === 'legs' ? '다리가 ' + v + '인 동물'
+  : c === 'where' ? v + '에서 움직이는 탈것' : c === 'wheels' ? '바퀴가 ' + v + '인 탈것' : v;
+function sortTally(n){ n = Math.max(0, Number(n) || 0); const g = []; for (let i = 0; i < n; i += 5) g.push('／'.repeat(Math.min(5, n - i))); return g.join(' '); }
+function sortItemHTML(k, paper){ const L = SORT_LIB[k] || {}; const cap = paper && (L.f === 'tok' || L.f === 'book') ? `<small>${esc(L.color.replace('색', ''))}</small>` : '';
+  return `<span class="si" title="${esc(L.n || '')}">${k}${cap}</span>`; }
+function sortHTML(a, paper){
+  const P = paper ? 'p' : '';
+  if (a.type === 'sort_pile') return `<div class="${P}sortw"><div class="spile">${(a.items || []).map(k => sortItemHTML(k, paper)).join('')}</div></div>`;
+  if (a.type === 'sort_bins') return `<div class="${P}sortw"><div class="sbins">${(a.bins || []).map(b => `<div class="sbin"><b>${esc(b.label)}</b><div>${(b.items || []).map(k => sortItemHTML(k, paper)).join('')}</div></div>`).join('')}</div></div>`;
+  const cols = a.cols || [], cn = a.counts || [], has = a.total !== undefined && a.total !== null;
+  const cell = x => x === null || x === undefined || x === '?' ? '<td class="sq">?</td>' : `<td>${esc(x)}</td>`;
+  let t = `<tr><th>${esc(SORT_CRIT[a.crit] || a.crit || '')}</th>${cols.map(c => `<th>${esc(c)}</th>`).join('')}${has ? '<th>합계</th>' : ''}</tr>`;
+  if (Array.isArray(a.tally)) t += `<tr><th>세기</th>${a.tally.map(n => `<td class="stl">${sortTally(n)}</td>`).join('')}${has ? '<td></td>' : ''}</tr>`;
+  t += `<tr><th>수(${esc(a.unit || '개')})</th>${cols.map((c, i) => cell(cn[i])).join('')}${has ? cell(a.total) : ''}</tr>`;
+  return `<div class="${P}sortw"><table class="stab">${t}</table></div>`;
+}
 function drawAsset(a, r){
   if (!a) return '';
   if (typeof a === 'string') return esc(a);
@@ -1099,6 +1170,7 @@ function drawAsset(a, r){
     case 'vert2': return `<div class="cmpw">${vert2SVG(a)}</div>`;
     case 'bar2': return `<div class="cmpw">${bar2SVG(a)}</div>`;
     case 'ruler': return `<div class="cmpw">${rulerSVG(a)}</div>`;
+    case 'sort_pile': case 'sort_bins': case 'sort_table': return sortHTML(a, false);
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
@@ -2293,6 +2365,124 @@ function makeVariantOnce(q, r){
       if (q.kind === 'sa') v.answer = [String(f), f + '개'];
       else v.options = kindOpts(f, [[n !== f ? n : null, M.layer || 'X15'], [f + 1, M.count || 'X12'], [f - 1 || null, M.count || 'X12'], [n - f || null, M.layer || 'X15']], want, q.options);
       v.explanation = ['바닥에 닿아 있는 쌓기나무가 1층이에요.', `1층에는 ${f}개가 있어요.`, '위에 올린 쌓기나무는 1층에 세지 않아요.'];
+    }
+    return v;
+  }
+
+  /* --- v2.6: 2학년 1학기 「분류하기」 (2026-10-12, 오푸스 5.5) — 분류 그림 sort_pile·sort_bins·sort_table
+     cls {ask, fams:[무리…], crits:[기준…], src?:'pile'|'table', k?, lo?, hi?}
+       ask  count(○○은 몇 개) · total(모두 몇 개) · most·least(가장 많은/적은 것) · groups(몇 가지로) · diff(○○은 △△보다 몇 개 더)
+            blank(표 — 합계로 빈칸) · tally(표 — ／ 표시로 빈칸) · odd(칸 — 잘못 분류된 것) · crit(칸 가·나·다 — 어떤 기준)
+     오개념 꼬리: X02 사람마다 다른 기준 · X03 가짓수 ±1 · X05 다른 칸 수·특징 잘못 봄 · X06 빠뜨림·두 번 셈 · X07 합계↔칸 수
+                  X08 가짓수↔개수 · X10 칸 자리로 판단 · X11 차이↔합 · X12 많은↔적은 거꾸로 · X13 ／ 다섯 묶음 잘못 셈
+     원본을 만들 때만 q._fix = {fam, crit, vals, counts, t, t2} 로 못박는다(fill.js 전용). */
+  if (rule.cls && (!a || ['sort_pile', 'sort_bins', 'sort_table'].indexOf(a.type) >= 0)){
+    const S = rule.cls, ask = S.ask || 'count', FIX = v._fix || null; delete v._fix; delete v._form; const want = Math.max(1, nOptsOf(q) - 1);
+    const keysOf = (f, c) => Object.keys(SORT_LIB).filter(k => SORT_LIB[k].f === f && SORT_LIB[k][c] !== undefined);
+    const valsOf = (f, c) => { const out = []; keysOf(f, c).forEach(k => { const x = SORT_LIB[k][c]; if (out.indexOf(x) < 0) out.push(x); }); return out; };
+    const fams = FIX && FIX.fam ? [FIX.fam] : (S.fams || ['tok']);
+    let fam = fams[0], crit = 'color';
+    for (let g = 0; g < 40; g++){ fam = pick(fams, r);
+      const cs = (FIX && FIX.crit ? [FIX.crit] : (S.crits || Object.keys(SORT_CRIT))).filter(c => valsOf(fam, c).length >= 2);
+      if (cs.length){ crit = pick(cs, r); break; } }
+    const U = SORT_FAM[fam][1], NOUN = SORT_FAM[fam][0], CN = SORT_CRIT[crit];
+    const NY = n => (VOWEL_END(n) ? '예요' : '이에요');
+    const IGA = w => (BAT(w) ? '이' : '가'), EUN = w => (BAT(w) ? '은' : '는'), EUL = w => (BAT(w) ? '을' : '를'), IEYO = w => (BAT(w) ? '이에요' : '예요');
+    const allV = valsOf(fam, crit);
+    const kk = FIX && FIX.vals ? FIX.vals.length : Math.min(allV.length, S.k || (ask === 'crit' || ask === 'odd' ? Math.min(3, allV.length) : 4));
+    const vals = FIX && FIX.vals ? FIX.vals.slice() : shuffle(allV, r).slice(0, kk);
+    const tl = ask === 'tally';
+    const lo = S.lo || (tl ? 3 : (ask === 'odd' || ask === 'crit' ? 2 : 1));
+    const hi = S.hi || (tl ? 9 : (ask === 'odd' || ask === 'crit' ? 4 : (S.src === 'table' ? 9 : Math.max(2, Math.min(7, Math.floor(16 / kk))))));
+    const uniq = arr => { const mx = Math.max(...arr), mn = Math.min(...arr); return arr.filter(x => x === mx).length === 1 && arr.filter(x => x === mn).length === 1; };
+    let counts = FIX && FIX.counts ? FIX.counts.slice() : null;
+    if (!counts){ for (let g = 0; g < 300; g++){ counts = vals.map(() => rint(lo, hi, r));
+        if ((ask === 'most' || ask === 'least') && !uniq(counts)) continue;
+        if (ask === 'diff' && new Set(counts).size < counts.length) continue;
+        if (tl && !counts.some(x => x >= 5)) continue;
+        break; } }
+    const labs = vals.map(x => SORT_LAB(crit, x)), tot = counts.reduce((s, x) => s + x, 0);
+    const itemsFor = (vv, n) => { const ks = keysOf(fam, crit).filter(k => SORT_LIB[k][crit] === vv); return Array.from({length:n}, () => pick(ks, r)); };
+    const fin = (ans, ds, ex, uw) => { if (q.kind === 'sa') v.answer = uw ? [String(ans), ans + uw] : [String(ans)];
+      else v.options = kindOpts(uw ? ans + uw : ans, ds.map(([x, c]) => [x === null || x === undefined || (typeof x === 'number' && x < 1) ? null : (uw ? x + uw : x), c]), want, q.options);
+      v.explanation = ex; return v; };
+    const src = S.src || 'pile';
+    const pileAsset = () => { const items = []; vals.forEach((x, i) => items.push(...itemsFor(x, counts[i]))); v.asset = {type:'sort_pile', items: shuffle(items, r)}; };
+    const tableAsset = extra => { v.asset = Object.assign({type:'sort_table', crit, cols: labs.slice(), counts: counts.slice(), unit: U}, extra || {}); };
+    const ti = FIX && FIX.t !== undefined ? FIX.t : rint(0, vals.length - 1, r);
+    const listed = () => labs.map((l, i) => l + ' ' + counts[i] + U).join(', ') + IEYO(U);
+    const SA_ = q.kind === 'sa' ? ' 숫자로 쓰세요.' : '';
+    if (ask === 'count'){
+      if (src === 'table') tableAsset(); else pileAsset();
+      const vp = SORT_VP(crit, vals[ti], fam), n = counts[ti]; const oth = counts.find((x, i) => i !== ti && x !== n);
+      v.stem = `${vp}${EUN(vp)} 몇 ${U}일까요?` + SA_;
+      return fin(n, [[n + 1, 'X06'], [n - 1, 'X06'], [oth, 'X05'], [n + 2, 'X06']],
+        [src === 'table' ? `표에서 「${labs[ti]}」 칸의 수를 읽어요.` : `${vp}만 골라 하나씩 ／ 표시를 하며 세어요.`, `${vp}${EUN(vp)} ${n}${U}${IEYO(U)}.`,
+         src === 'table' ? '칸 이름과 그 아래 수를 짝지어 읽어요.' : '빠뜨리거나 두 번 세지 않게 표시하며 세요.'], U);
+    }
+    if (ask === 'total'){
+      if (src === 'table') tableAsset(); else pileAsset();
+      v.stem = (src === 'table' ? `표를 보세요. 분류한 ${NOUN}${EUN(NOUN)} 모두 몇 ${U}일까요?` : `그림의 ${NOUN}${EUN(NOUN)} 모두 몇 ${U}일까요?`) + SA_;
+      const ds = src === 'table' ? [[Math.max(...counts), 'X07'], [vals.length, 'X08'], [tot + 1, 'X06']] : [[tot + 1, 'X06'], [tot - 1, 'X06'], [vals.length, 'X08']];
+      return fin(tot, ds, [src === 'table' ? `각 칸의 수는 ${listed()}.` : `${CN}에 따라 나누어 세면 ${listed()}.`,
+        `${counts.join(' + ')} = ${tot}이니 모두 ${tot}${U}${IEYO(U)}.`, '각 칸의 수를 모두 더하면 전체 수와 같아요.'], U);
+    }
+    if (ask === 'most' || ask === 'least'){
+      if (src === 'table') tableAsset(); else pileAsset();
+      const mx = counts.indexOf(Math.max(...counts)), mn = counts.indexOf(Math.min(...counts)); const ai = ask === 'most' ? mx : mn, oi = ask === 'most' ? mn : mx;
+      v.stem = `${CN}에 따라 분류했을 때 가장 ${ask === 'most' ? '많은' : '적은'} 것은 무엇일까요?`;
+      const ds = [[labs[oi], 'X12']]; labs.forEach((l, i) => { if (i !== ai && i !== oi) ds.push([l, 'X10']); });
+      return fin(labs[ai], ds, [`${CN}에 따라 세면 ${listed()}.`, `수가 가장 ${ask === 'most' ? '큰' : '작은'} 칸은 ${labs[ai]}(${counts[ai]}${U})${IEYO(labs[ai])}.`,
+        `「가장 ${ask === 'most' ? '많은' : '적은'}」을 묻는지 다시 읽어요.`]);
+    }
+    if (ask === 'groups'){
+      pileAsset();
+      v.stem = `그림의 ${NOUN}${EUL(NOUN)} ${CN}에 따라 분류하면 몇 가지로 나눌 수 있을까요?`;
+      return fin(kk, [[tot, 'X08'], [kk + 1, 'X03'], [kk - 1, 'X03']], [`${CN}${EUL(CN)} 살펴보면 ${labs.join(', ')}${IGA(labs[labs.length - 1])} 있어요.`,
+        `그래서 ${kk}가지로 나눌 수 있어요.`, `물건의 수(${tot}${U})가 아니라 칸이 몇 가지인지 세어요.`], '가지');
+    }
+    if (ask === 'diff'){
+      if (src === 'table') tableAsset(); else pileAsset();
+      let i1 = ti, i2 = FIX && FIX.t2 !== undefined ? FIX.t2 : (ti + 1) % vals.length;
+      if (counts[i1] < counts[i2]) [i1, i2] = [i2, i1];
+      const p1 = SORT_VP(crit, vals[i1], fam), p2 = SORT_VP(crit, vals[i2], fam), d = counts[i1] - counts[i2];
+      v.stem = `${p1}${EUN(p1)} ${p2}보다 몇 ${U} 더 많을까요?` + SA_;
+      return fin(d, [[counts[i1] + counts[i2], 'X11'], [counts[i1], 'X11'], [d + 1, 'X06']],
+        [`${p1}${EUN(p1)} ${counts[i1]}${U}, ${p2}${EUN(p2)} ${counts[i2]}${U}${IEYO(U)}.`, `${counts[i1]} − ${counts[i2]} = ${d}이니 ${d}${U} 더 많아요.`, '「더 많은」 수는 두 수의 차이예요. 더하지 않아요.'], U);
+    }
+    if (ask === 'blank' || tl){
+      const c = counts[ti]; const shown = counts.slice(); shown[ti] = null;
+      if (tl) tableAsset({counts: shown, tally: counts.slice()}); else tableAsset({counts: shown, total: tot});
+      const rest = counts.filter((x, i) => i !== ti), so = rest.reduce((s, x) => s + x, 0);
+      v.stem = (tl ? '／ 표시를 세어 보세요. ' : '') + '표의 빈칸에 알맞은 수는 얼마일까요?' + SA_;
+      if (tl) return fin(c, [[c >= 5 ? c - 1 : c + 2, 'X13'], [c + 1, 'X06'], [c - 1, 'X06']],
+        [`「${labs[ti]}」 칸의 ／ 표시를 세어요.`, c >= 5 ? `다섯 개 묶음 하나는 5예요. ${sortTally(c)} → ${c}` : `／ 표시가 ${c}개예요.`, `그래서 빈칸은 ${c}${NY(c)}.`]);
+      return fin(c, [[tot, 'X07'], [c + 1, 'X06'], [c - 1, 'X06']],
+        [`나머지 칸을 더하면 ${rest.join(' + ')} = ${so}${NY(so)}.`, `${so} + □ = ${tot}이니 □ = ${c}${NY(c)}.`, '각 칸의 수를 모두 더하면 합계와 같아요.']);
+    }
+    if (ask === 'odd'){
+      const bins = vals.map((x, i) => ({label: labs[i], items: itemsFor(x, counts[i])}));
+      const fi = ti, toI = (ti + 1 + rint(0, vals.length - 2, r)) % vals.length;
+      const mk = bins[fi].items.pop(); bins[toI].items.splice(rint(0, bins[toI].items.length, r), 0, mk);
+      if (!bins[fi].items.length) bins[fi].items.push(...itemsFor(vals[fi], 1));
+      v.asset = {type:'sort_bins', crit, bins};
+      v.stem = `${CN}에 따라 분류했어요. 잘못 분류된 것은 어느 것인가요?`;
+      const nm = k => k + ' ' + SORT_LIB[k].n;
+      const goods = []; bins.forEach((b, bi) => b.items.forEach(k => { if (k !== mk && SORT_LIB[k][crit] === vals[bi] && goods.indexOf(k) < 0) goods.push(k); }));
+      const vp = SORT_VP(crit, vals[fi], fam), nmk = SORT_LIB[mk].n;
+      return fin(nm(mk), shuffle(goods, r).map(k => [nm(k), 'X05']), [`${nmk}${EUN(nmk)} ${vp}${IEYO(vp)}.`,
+        `그래서 「${labs[fi]}」 칸에 있어야 하는데 「${labs[toI]}」 칸에 들어가 있어요.`, '칸의 이름과 물건의 특징을 하나씩 맞춰 봐요.']);
+    }
+    if (ask === 'crit'){
+      const SUBJ = {tok:['예쁜 것과 안 예쁜 것', '좋아하는 것과 싫어하는 것'], veh:['멋진 것과 멋지지 않은 것', '빨라 보이는 것과 느려 보이는 것']};
+      const other = fam === 'tok' ? (crit === 'color' ? 'shape' : 'color') : 'wheels';
+      let bins = null;
+      for (let g = 0; g < 100; g++){ bins = vals.map((x, i) => ({label: '가나다라'[i], items: itemsFor(x, Math.max(2, counts[i]))}));
+        if (other !== 'wheels' && bins.some(b => new Set(b.items.map(k => SORT_LIB[k][other])).size < 2)) continue; break; }
+      v.asset = {type:'sort_bins', bins};
+      v.stem = '물건을 칸에 나누어 담았어요. 어떤 기준으로 분류했을까요?';
+      return fin(CN, [[SORT_CRIT[other], 'X05'], [pick(SUBJ[fam] || SUBJ.tok, r), 'X02']],
+        [`칸마다 ${CN}${IGA(CN)} 같아요: ${bins.map((b, i) => b.label + ' ' + labs[i]).join(', ')}.`, `${SORT_CRIT[other]}${EUN(SORT_CRIT[other])} 한 칸 안에서도 서로 달라요.`, '칸 안의 물건이 모두 같은 특징을 찾으면 그것이 기준이에요.']);
     }
     return v;
   }
@@ -3631,6 +3821,7 @@ function paperAsset(a){
     case 'vert2': return `<div class="pcmpw">${vert2SVG(a)}</div>`;
     case 'bar2': return `<div class="pcmpw">${bar2SVG(a)}</div>`;
     case 'ruler': return `<div class="pcmpw">${rulerSVG(a)}</div>`;
+    case 'sort_pile': case 'sort_bins': case 'sort_table': return sortHTML(a, true);
     case 'figs': return figsHTML(a, true);
     case 'tiles': return `<div class="pcmpw">${tilesSVG(a)}</div>`;
     case 'cubes': return cubesHTML(a, true);

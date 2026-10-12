@@ -118,7 +118,11 @@ const ASSETS = {
   jump_row:       ['cells'],
   /* v2.4 — 2학년 1학기 「덧셈과 뺄셈」: 세로셈 판 · 전체-부분 막대 */
   vert2:          ['top', 'bottom', 'op'],
-  bar2:           ['parts']
+  bar2:           ['parts'],
+  /* v2.6 — 2학년 1학기 「분류하기」: 섞인 바구니 · 나누어 담은 칸 · 분류한 결과 표 */
+  sort_pile:      ['items'],
+  sort_bins:      ['bins'],
+  sort_table:     ['crit', 'cols', 'counts']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -902,6 +906,126 @@ function check3(where, q) {
 /* v2.4 — 덧셈과 뺄셈: 발문에서 식을 다시 읽어 엔진과 따로 셈한다 (원본·변형 모두) */
 const AR_EV = (x, s, y) => s === '+' ? x + y : x - y;
 const AR_EQ = t => { const z = String(t).match(/^(\d+) ([+−]) (\d+) = (\d+)$/); return z ? { x: +z[1], s: z[2], y: +z[3], z: +z[4], ok: AR_EV(+z[1], z[2] === '+' ? '+' : '-', +z[3]) === +z[4] } : null; };
+/* v2.6 — 분류하기: 물건 특징 표를 엔진(SORT_LIB)과 따로 적어 들고, 그림이 말하는 답과 정답이 같은지 다시 센다 */
+const CL_A = {   /* 열쇠: [이름, 무리, {특징}] — 엔진 표와 서로 검산 */
+  '🔴':['빨간 동그라미','tok',{color:'빨간색',shape:'동그라미'}], '🔵':['파란 동그라미','tok',{color:'파란색',shape:'동그라미'}], '🟡':['노란 동그라미','tok',{color:'노란색',shape:'동그라미'}], '🟢':['초록 동그라미','tok',{color:'초록색',shape:'동그라미'}],
+  '🟥':['빨간 네모','tok',{color:'빨간색',shape:'네모'}], '🟦':['파란 네모','tok',{color:'파란색',shape:'네모'}], '🟨':['노란 네모','tok',{color:'노란색',shape:'네모'}], '🟩':['초록 네모','tok',{color:'초록색',shape:'네모'}],
+  '❤️':['빨간 하트','tok',{color:'빨간색',shape:'하트'}], '💙':['파란 하트','tok',{color:'파란색',shape:'하트'}], '💛':['노란 하트','tok',{color:'노란색',shape:'하트'}], '💚':['초록 하트','tok',{color:'초록색',shape:'하트'}],
+  '🐶':['강아지','ani',{legs:'4개'}], '🐱':['고양이','ani',{legs:'4개'}], '🐷':['돼지','ani',{legs:'4개'}], '🐮':['소','ani',{legs:'4개'}], '🐔':['닭','ani',{legs:'2개'}], '🐦':['새','ani',{legs:'2개'}],
+  '🦆':['오리','ani',{legs:'2개'}], '🐧':['펭귄','ani',{legs:'2개'}], '🐟':['물고기','ani',{legs:'0개'}], '🐍':['뱀','ani',{legs:'0개'}], '🐬':['돌고래','ani',{legs:'0개'}],
+  '🚗':['자동차','veh',{where:'땅',wheels:'4개'}], '🚌':['버스','veh',{where:'땅',wheels:'4개'}], '🚕':['택시','veh',{where:'땅',wheels:'4개'}], '🚲':['자전거','veh',{where:'땅',wheels:'2개'}], '🛵':['오토바이','veh',{where:'땅',wheels:'2개'}],
+  '✈️':['비행기','veh',{where:'하늘'}], '🚁':['헬리콥터','veh',{where:'하늘'}], '⛵':['돛단배','veh',{where:'물'}], '🚢':['배','veh',{where:'물'}], '🚤':['모터보트','veh',{where:'물'}],
+  '🍎':['사과','fruit',{kind:'사과'}], '🍌':['바나나','fruit',{kind:'바나나'}], '🍇':['포도','fruit',{kind:'포도'}], '🍊':['귤','fruit',{kind:'귤'}], '🍓':['딸기','fruit',{kind:'딸기'}],
+  '✏️':['연필','sup',{kind:'연필'}], '📏':['자','sup',{kind:'자'}], '📓':['공책','sup',{kind:'공책'}], '✂️':['가위','sup',{kind:'가위'}], '🖍️':['크레파스','sup',{kind:'크레파스'}],
+  '👕':['티셔츠','cloth',{part:'윗옷'}], '🧥':['외투','cloth',{part:'윗옷'}], '👚':['블라우스','cloth',{part:'윗옷'}], '👖':['바지','cloth',{part:'아래옷'}], '🩳':['반바지','cloth',{part:'아래옷'}],
+  '📕':['빨간 책','book',{color:'빨간색'}], '📗':['초록 책','book',{color:'초록색'}], '📘':['파란 책','book',{color:'파란색'}],
+  '🥫':['캔','recy',{kind:'캔'}], '🧴':['플라스틱 통','recy',{kind:'플라스틱'}], '🥤':['플라스틱 컵','recy',{kind:'플라스틱'}], '📰':['신문지','recy',{kind:'종이'}], '📦':['종이 상자','recy',{kind:'종이'}]
+};
+const CL_CN = {'색깔':'color', '모양':'shape', '다리 수':'legs', '움직이는 곳':'where', '바퀴 수':'wheels', '종류':'kind', '윗옷과 아래옷':'part'};
+const CL_KEY = Object.fromEntries(Object.entries(CL_CN).map(([k, v]) => [v, k]));
+const CL_UNIT = {tok:'개', ani:'마리', veh:'대', fruit:'개', sup:'개', cloth:'벌', book:'권', recy:'개'};
+const CL_SUBJ = /예쁜|좋아하는|싫어하는|멋진|빨라 보이는|느려 보이는|맛있는|재미있는|갖고 싶은|귀여운/;
+const clLab = (c, v) => c === 'legs' ? '다리 ' + v : c === 'wheels' ? '바퀴 ' + v : v;
+/* 「○○은 몇 개」의 ○○ → [기준, 값] (무리 안에서) */
+function clPhrase(ph, fam) {
+  const m = ph.match(/^(빨간색|파란색|노란색|초록색)인 (것|책)$/); if (m) return ['color', m[1]];
+  let x; if ((x = ph.match(/^(동그라미|네모|하트) 모양인 것$/))) return ['shape', x[1]];
+  if ((x = ph.match(/^다리가 (\d)개인 동물$/))) return ['legs', x[1] + '개'];
+  if ((x = ph.match(/^(땅|하늘|물)에서 움직이는 탈것$/))) return ['where', x[1]];
+  if ((x = ph.match(/^바퀴가 (\d)개인 탈것$/))) return ['wheels', x[1] + '개'];
+  if (fam === 'cloth' && (ph === '윗옷' || ph === '아래옷')) return ['part', ph];
+  return ['kind', ph];
+}
+/* 그림 → {fam, cnt(기준, 값), labs(기준) → {칸이름: 수}} */
+function clFacts(a) {
+  if (a.type === 'sort_pile') { const fam = (CL_A[a.items[0]] || [])[1];
+    return {fam, cnt: (c, v) => a.items.filter(k => CL_A[k] && CL_A[k][2][c] === v).length,
+      by: c => { const o = {}; a.items.forEach(k => { const x = CL_A[k][2][c]; if (x === undefined) return; const l = clLab(c, x); o[l] = (o[l] || 0) + 1; }); return o; }, total: a.items.length}; }
+  if (a.type === 'sort_table') { const vals = a.cols.map((c, i) => a.counts[i] === null || a.counts[i] === undefined ? (Array.isArray(a.tally) ? a.tally[i] : null) : a.counts[i]);
+    const o = {}; a.cols.forEach((c, i) => { o[c] = vals[i]; });
+    return {fam: null, table: true, cnt: (c, v) => o[clLab(c, v)], by: c => (c === a.crit ? o : null), total: vals.every(x => x !== null) ? vals.reduce((s, x) => s + x, 0) : null}; }
+  return null;
+}
+function checkSortAsset(where, a) {
+  if (a.type === 'sort_pile') {
+    if (!Array.isArray(a.items) || a.items.length < 2 || a.items.length > 16) return bad(where, 'sort_pile items 는 2~16개');
+    a.items.forEach(k => { if (!CL_A[k]) bad(where, 'sort_pile 표에 없는 그림 ' + k); });
+    if (new Set(a.items.map(k => (CL_A[k] || [])[1])).size > 1) bad(where, 'sort_pile 무리가 섞였다(한 바구니엔 한 무리)');
+  }
+  if (a.type === 'sort_bins') {
+    if (!Array.isArray(a.bins) || a.bins.length < 2 || a.bins.length > 4) return bad(where, 'sort_bins 칸은 2~4개');
+    a.bins.forEach((b, i) => { if (!b.label) bad(where, `sort_bins 칸 ${i + 1} 이름 없음`); if (!Array.isArray(b.items) || !b.items.length || b.items.length > 6) bad(where, `sort_bins 칸 ${i + 1} 물건은 1~6개`);
+      (b.items || []).forEach(k => { if (!CL_A[k]) bad(where, 'sort_bins 표에 없는 그림 ' + k); }); });
+    if (a.crit && !CL_KEY[a.crit]) bad(where, 'sort_bins crit 모름 ' + a.crit);
+  }
+  if (a.type === 'sort_table') {
+    if (!CL_KEY[a.crit]) bad(where, 'sort_table crit 모름 ' + a.crit);
+    if (!Array.isArray(a.cols) || a.cols.length < 2 || a.cols.length > 5) return bad(where, 'sort_table 칸은 2~5개');
+    if (!Array.isArray(a.counts) || a.counts.length !== a.cols.length) return bad(where, 'sort_table counts 수가 칸 수와 다르다');
+    a.counts.forEach(x => { if (x !== null && !(Number.isInteger(x) && x >= 0 && x <= 20)) bad(where, 'sort_table 수는 0~20 정수·null'); });
+    const nulls = a.counts.filter(x => x === null).length; if (nulls > 1) bad(where, 'sort_table 빈칸이 둘 넘다');
+    if (nulls && a.total === undefined && !Array.isArray(a.tally)) bad(where, 'sort_table 빈칸인데 합계도 ／ 표시도 없다(구할 길이 없다)');
+    if (Array.isArray(a.tally)) { if (a.tally.length !== a.cols.length) bad(where, 'sort_table tally 수가 칸 수와 다르다'); a.counts.forEach((x, i) => { if (x !== null && x !== a.tally[i]) bad(where, `sort_table ／ 표시 ${a.tally[i]} 와 수 ${x} 가 다르다`); }); }
+    if (a.total !== undefined && a.total !== null && nulls === 0 && a.total !== a.counts.reduce((s, x) => s + x, 0)) bad(where, 'sort_table 합계가 칸의 합과 다르다');
+    if (a.total !== undefined && a.total !== null && nulls === 1 && a.total - a.counts.reduce((s, x) => s + (x || 0), 0) < 0) bad(where, 'sort_table 빈칸이 음수가 된다');
+    if (new Set(a.cols).size !== a.cols.length) bad(where, 'sort_table 칸 이름이 겹친다');
+  }
+}
+function checkCls(where, q) {
+  const a = q.asset; const vr = q.variant_rule || {};
+  if (!a || typeof a !== 'object' || ['sort_pile', 'sort_bins', 'sort_table'].indexOf(a.type) < 0) { if (vr.cls) bad(where, 'cls 갈래인데 분류 그림이 없다'); return; }
+  checkSortAsset(where, a);
+  if (!vr.cls) return;   /* 손 문항은 그림 규격만 */
+  const st = String(q.stem).replace(/^이번에는 다른 보기예요\. /, '').replace(/ 숫자로 쓰세요\.$/, ''); let want = null, m, unit = '';
+  const cor = q.kind === 'sa' ? String((q.answer || [])[0]) : String(((q.options || []).find(o => o.correct) || {}).t);
+  const wr = (q.options || []).filter(o => !o.correct).map(o => String(o.t));
+  const F = clFacts(a);
+  const famOf = F && F.fam ? F.fam : null;
+  if ((m = st.match(/^표의 빈칸에 알맞은 수는 얼마일까요\?$/)) || (m = st.match(/^／ 표시를 세어 보세요\. 표의 빈칸에 알맞은 수는 얼마일까요\?$/))) {
+    if (a.type !== 'sort_table') return bad(where, 'cls 빈칸인데 표가 아니다'); const i = a.counts.indexOf(null); if (i < 0) return bad(where, 'cls 표에 빈칸이 없다');
+    if (/／/.test(st)) { if (!Array.isArray(a.tally)) return bad(where, 'cls ／ 표시로 구하라는데 세기 줄이 없다'); want = a.tally[i]; }
+    else { if (a.total === undefined) return bad(where, 'cls 합계 없이 빈칸'); want = a.total - a.counts.reduce((s, x) => s + (x || 0), 0); }
+  }
+  else if ((m = st.match(/^(?:표를 보세요\. 분류한 |그림의 )(.+?)[은는] 모두 몇 (개|마리|대|벌|권)일까요\?$/))) { want = F.total; unit = m[2]; }
+  else if ((m = st.match(/^(.+?)에 따라 분류했을 때 가장 (많은|적은) 것은 무엇일까요\?$/))) {
+    const c = CL_CN[m[1]]; if (!c) return bad(where, 'cls 기준 이름 모름 ' + m[1]); const o = F.by(c); if (!o) return bad(where, 'cls 표의 기준과 발문 기준이 다르다');
+    const ks = Object.keys(o), vs = ks.map(k => o[k]); const t = m[2] === '많은' ? Math.max(...vs) : Math.min(...vs);
+    if (vs.filter(x => x === t).length !== 1) return bad(where, `cls 가장 ${m[2]} 것이 둘 이상`); want = ks[vs.indexOf(t)];
+  }
+  else if ((m = st.match(/^그림의 (.+?)[을를] (.+?)에 따라 분류하면 몇 가지로 나눌 수 있을까요\?$/))) { const c = CL_CN[m[2]]; if (!c) return bad(where, 'cls 기준 이름 모름 ' + m[2]); want = Object.keys(F.by(c)).length; unit = '가지'; }
+  else if ((m = st.match(/^(.+?)[은는] (.+?)보다 몇 (개|마리|대|벌|권) 더 많을까요\?$/))) {
+    const famT = famOf; const [c1, v1] = clPhrase(m[1], famT || (a.type === 'sort_table' && a.crit === 'part' ? 'cloth' : null)), [c2, v2] = clPhrase(m[2], famT || (a.type === 'sort_table' && a.crit === 'part' ? 'cloth' : null));
+    const n1 = F.cnt(c1, v1), n2 = F.cnt(c2, v2); if (n1 === undefined || n2 === undefined || n1 === null || n2 === null) return bad(where, 'cls 두 칸을 그림에서 못 찾았다');
+    if (n1 <= n2) bad(where, 'cls 「더 많을까요」인데 앞의 것이 더 많지 않다'); want = n1 - n2; unit = m[3];
+  }
+  else if ((m = st.match(/^(.+?)[은는] 몇 (개|마리|대|벌|권)일까요\?$/))) {
+    const famT = famOf || (a.type === 'sort_table' && a.crit === 'part' ? 'cloth' : null); const [c, v] = clPhrase(m[1], famT);
+    if (a.type === 'sort_table' && c !== a.crit) return bad(where, `cls 발문 기준(${c})과 표 기준(${a.crit})이 다르다`);
+    want = F.cnt(c, v); if (want === undefined || want === null) return bad(where, 'cls 묻는 칸이 그림에 없다: ' + m[1]); unit = m[2];
+    if (famOf && CL_UNIT[famOf] !== m[2]) bad(where, `cls 세는 말 ${m[2]} 가 무리(${famOf})와 다르다`);
+  }
+  else if ((m = st.match(/^(.+?)에 따라 분류했어요\. 잘못 분류된 것은 어느 것인가요\?$/))) {
+    if (a.type !== 'sort_bins') return bad(where, 'cls 잘못 분류인데 칸 그림이 아니다'); const c = CL_CN[m[1]]; if (!c) return bad(where, 'cls 기준 모름');
+    const wrongs = []; a.bins.forEach(b => b.items.forEach(k => { if (clLab(c, CL_A[k][2][c]) !== b.label) wrongs.push(k); }));
+    if (wrongs.length !== 1) return bad(where, `cls 잘못 놓인 물건이 ${wrongs.length}개 (1개여야 함)`);
+    const vals = new Set(a.bins.map(b => b.label)); a.bins.forEach(b => { if (!b.items.some(k => clLab(c, CL_A[k][2][c]) === b.label)) bad(where, 'cls 칸 「' + b.label + '」에 제대로 든 물건이 없다'); });
+    if (vals.size !== a.bins.length) bad(where, 'cls 칸 이름이 겹친다');
+    want = wrongs[0] + ' ' + CL_A[wrongs[0]][0];
+    wr.forEach(t => { const k = t.split(' ')[0]; if (!CL_A[k]) bad(where, 'cls 오답 보기 그림 모름 ' + t); else if (t !== k + ' ' + CL_A[k][0]) bad(where, 'cls 보기 이름이 그림과 다르다 ' + t); });
+  }
+  else if (/^물건을 칸에 나누어 담았어요\. 어떤 기준으로 분류했을까요\?$/.test(st)) {
+    if (a.type !== 'sort_bins') return bad(where, 'cls 기준 찾기인데 칸 그림이 아니다');
+    const fits = c => { const per = a.bins.map(b => new Set(b.items.map(k => CL_A[k][2][c]))); if (per.some(s => s.size !== 1 || s.has(undefined))) return false; const all = per.map(s => [...s][0]); return new Set(all).size === all.length; };
+    const ok = Object.keys(CL_KEY).filter(fits); if (ok.length !== 1) return bad(where, `cls 들어맞는 기준이 ${ok.length}개 (1개여야 함): ${ok.join(',')}`);
+    want = CL_KEY[ok[0]];
+    wr.forEach(t => { if (CL_CN[t]) { if (fits(CL_CN[t])) bad(where, 'cls 오답 기준도 들어맞는다 ' + t); } else if (!CL_SUBJ.test(t)) bad(where, 'cls 오답 기준이 사람마다 다른 기준도 아니고 아는 기준도 아니다 ' + t); });
+  }
+  else return bad(where, 'cls 발문 꼴을 모른다: ' + st);
+  if (want === null || want === undefined) return bad(where, 'cls 답을 다시 셀 수 없다');
+  const W = String(want); const okSa = q.kind === 'sa' && (q.answer || []).map(String).some(x => x === W || x === W + unit);
+  if (cor !== W && cor !== W + unit && !okSa) bad(where, `cls 정답 ${cor} ≠ 다시 센 ${W}${unit}`);
+  if (wr.indexOf(W) >= 0 || wr.indexOf(W + unit) >= 0) bad(where, `cls 오답 보기에 정답 ${W}${unit} 가 섞였다`);
+}
 /* v2.5 — cm 갈래: 그림(ruler)이 말하는 길이와 정답이 같은가, 오답에 정답이 섞이지 않았나 */
 function checkCm(where, q) {
   const vr = q.variant_rule || {}; const a = q.asset; const CM = vr.cm;
@@ -1084,6 +1208,7 @@ function checkQ(where, q, opt) {
   check3(where, q);
   checkAr2(where, q);
   checkCm(where, q);
+  checkCls(where, q);
   checkShape(where, q);
   checkJamo(where, q);
   checkBat(where, q);
