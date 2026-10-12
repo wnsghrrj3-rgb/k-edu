@@ -24,4 +24,14 @@ const arcs = calls.filter((c) => c[0] === 'arc').map((c) => c[1][2]);
 ok(arcs.some((r) => r !== 2.6 && r !== 2.5 && r !== 1.6 && r !== 81) && arcs.length >= 5, '손 흔드는 친구 점은 크기가 바뀐다');
 const engine2 = { areas: new Map(), onFrame: [] }; const mm2 = bindMinimap(engine2, player, canvas, null);
 ok(mm2.spots.length === 3 && mm2.spots[0].name === '야영지', 'area 없는 세상(story-p1)은 옛 세 곳');
+// 땅 한 장 — 높이맵이 있으면 강(파랑)·들·산을 그려 둔다(가짜 offscreen canvas)
+let imgData = null; const offCtx = { createImageData: (w, h) => (imgData = { data: new Uint8ClampedArray(w * h * 4) }), putImageData: () => {}, strokeRect: () => {}, set globalAlpha(v) {}, set strokeStyle(v) {}, set lineWidth(v) {} };
+const canvas3 = { getContext: () => ctx, ownerDocument: { createElement: () => ({ getContext: () => offCtx }) } };
+const hm = { ext: 130, n: 3, h: [[-1.5, -1.5, -1.5], [10, 10, 10], [30, 30, 30]] };
+const engine3 = { areas, onFrame: [], hm, groundY: (x, z) => (z < -60 ? -1.5 : z < 20 ? -0.5 : z < 70 ? 10 : 30) };
+calls.length = 0; bindMinimap(engine3, player, canvas3, { world }); engine3.onFrame.forEach((f) => f(1.2));
+ok(calls.some((c) => c[0] === 'drawImage') && imgData, '높이맵이 있으면 땅 한 장을 그려 겹친다');
+const px = (x, z) => { const scale = (84 - 8) / 116, i = ((Math.round(84 + z * scale)) * 168 + Math.round(84 + x * scale)) * 4; return [imgData.data[i], imgData.data[i + 1], imgData.data[i + 2]]; };
+ok(px(0, -100)[2] > px(0, -100)[0] && px(0, 0)[2] > px(0, 0)[0] && px(0, -100)[2] < px(0, 0)[2], '깊은 물은 짙은 파랑, 개울은 옅은 파랑');
+ok(px(0, 40)[1] > px(0, 40)[2] && px(0, 100)[0] > px(0, 40)[0], '들은 초록, 산은 높을수록 밝은 흙빛');
 console.log(`minimap ${pass}/${fail}`); process.exit(fail ? 1 : 0);
