@@ -1063,6 +1063,91 @@ function estRowSVG(a){
   const w = Math.max(W, 120), h = ppl ? 116 : 88;
   return `<svg class="cmpsv" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${ppl ? '간격을 두고 선 사람들' : '어림한 간격'}">${s}</svg>`;
 }
+/* ===== v3.1 — 2학년 2학기 「시각과 시간」 그림 6종 (2026-10-12, 오푸스 5.5) =====
+   clock2  {h 1~12, m 0~59}            분 눈금 60 · 숫자 12개 바늘 시계 — 짧은바늘은 분만큼 다음 숫자 쪽으로 간다
+   digital {h, m, ampm?:'오전'|'오후'}  디지털시계 「h : mm」
+   dpair   {a:[h,m], b:[h,m], la?, lb?, ampm?:[앞, 뒤]}  디지털시계 둘(시작 → 끝)
+   tbar    {from:[h,m], to:[h,m], label?}  시간 띠 — 한 칸 10분, 시작~끝 칸을 칠한다(분은 10의 배수, 3시간 안)
+   dbar    {acts:[[이름, 시작 시, 끝 시, 그림]]}  하루 생활 계획표 띠 0~24시(오전·오후)
+   cal     {mon, start 0~6(1일의 요일, 0=일), days, marks?:{날:그림}, hi?:[날]}  한 달 달력
+   화면·종이 같은 SVG. */
+const TM_WD = ['일', '월', '화', '수', '목', '금', '토'];
+const TM_HM = (h, m) => (Number(m) ? `${h}시 ${m}분` : `${h}시`);
+const TM_DUR = n => { const q = Math.floor(n / 60), r2 = n % 60; return q && r2 ? `${q}시간 ${r2}분` : q ? `${q}시간` : `${r2}분`; };
+function clock2SVG(a){
+  const h = ((Number(a.h) || 12) % 12), m = Math.max(0, Math.min(59, Math.round(Number(a.m) || 0)));
+  const C = 60, R = 56, P = (ang, len) => { const t = (ang - 90) * Math.PI / 180; return [(C + Math.cos(t) * len).toFixed(1), (C + Math.sin(t) * len).toFixed(1)]; };
+  let s = `<circle cx="${C}" cy="${C}" r="${R}" fill="#FFFDF7" stroke="${CMP_INK}" stroke-width="2.4"/>`;
+  for (let i = 0; i < 60; i++){ const big = i % 5 === 0, p1 = P(i * 6, big ? R - 8 : R - 4), p2 = P(i * 6, R - 1);
+    s += `<line x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}" stroke="${CMP_INK}" stroke-width="${big ? 2 : 0.9}"/>`; }
+  for (let n = 1; n <= 12; n++){ const p = P(n * 30, R - 17); s += `<text x="${p[0]}" y="${(+p[1] + 4.5).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="700" fill="${CMP_INK}">${n}</text>`; }
+  const ph = P((h + m / 60) * 30, 27), pm = P(m * 6, 44);
+  s += `<line class="hh2" x1="${C}" y1="${C}" x2="${ph[0]}" y2="${ph[1]}" stroke="${CMP_INK}" stroke-width="5.5" stroke-linecap="round"/>`;
+  s += `<line class="mh2" x1="${C}" y1="${C}" x2="${pm[0]}" y2="${pm[1]}" stroke="#C0392B" stroke-width="3" stroke-linecap="round"/><circle cx="${C}" cy="${C}" r="3.6" fill="${CMP_INK}"/>`;
+  return `<svg class="cmpsv" viewBox="0 0 120 120" width="170" height="170" role="img" aria-label="바늘 시계">${s}</svg>`;
+}
+function digBox(x, y, h, m, ampm){
+  const mm = String(Math.max(0, Math.round(Number(m) || 0))).padStart(2, '0');
+  return `<rect x="${x}" y="${y}" width="128" height="50" rx="8" fill="#26323A" stroke="${CMP_INK}" stroke-width="2"/>` +
+    (ampm ? `<text x="${x + 10}" y="${y + 18}" font-size="11" fill="#9FE3B5">${svgEsc(ampm)}</text>` : '') +
+    `<text x="${x + 72}" y="${y + 36}" text-anchor="middle" font-size="25" font-weight="700" font-family="'Courier New',monospace" fill="#9FE3B5">${Number(h)} : ${mm}</text>`;
+}
+function digitalSVG(a){ return `<svg class="cmpsv" viewBox="0 0 136 58" width="136" height="58" role="img" aria-label="디지털시계">${digBox(4, 4, a.h, a.m, a.ampm)}</svg>`; }
+function dpairSVG(a){
+  const A = a.a || [1, 0], B = a.b || [1, 0], am = Array.isArray(a.ampm) ? a.ampm : [];
+  let s = `<text x="68" y="14" text-anchor="middle" font-size="13" fill="${CMP_INK}">${svgEsc(a.la || '시작한 시각')}</text><text x="232" y="14" text-anchor="middle" font-size="13" fill="${CMP_INK}">${svgEsc(a.lb || '끝난 시각')}</text>`;
+  s += digBox(4, 22, A[0], A[1], am[0]) + digBox(168, 22, B[0], B[1], am[1]);
+  s += `<path d="M138 47 h24 m-7 -6 l7 6 l-7 6" fill="none" stroke="#8A8172" stroke-width="2"/>`;
+  return `<svg class="cmpsv" viewBox="0 0 300 78" width="300" height="78" role="img" aria-label="시작한 시각과 끝난 시각">${s}</svg>`;
+}
+function tbarSVG(a){
+  const F = a.from || [1, 0], T = a.to || [2, 0], f = F[0] * 60 + F[1], t2 = T[0] * 60 + T[1];
+  const H0 = F[0], H1 = T[1] ? T[0] + 1 : T[0], nh = Math.max(1, H1 - H0), CW = 17, X = 14, Y = 34, W = X * 2 + nh * 6 * CW;
+  const hl = hh => { const v = ((hh - 1) % 12) + 1; return v; };
+  let s = a.label ? `<text x="${X}" y="12" font-size="13" fill="${CMP_INK}">${svgEsc(a.label)}</text>` : '';
+  for (let i = 0; i < nh * 6; i++){ const st = H0 * 60 + i * 10, on = st >= f && st < t2;
+    s += `<rect class="${on ? 'tbon' : 'tboff'}" x="${X + i * CW}" y="${Y}" width="${CW}" height="22" fill="${on ? CMP_FILL[1] : '#FFFFFF'}" stroke="${CMP_INK}" stroke-width="${i % 6 === 0 ? 1.8 : 0.9}"/>`; }
+  s += `<rect x="${X}" y="${Y}" width="${nh * 6 * CW}" height="22" fill="none" stroke="${CMP_INK}" stroke-width="1.8"/>`;
+  for (let i = 0; i <= nh * 6; i++){ const x = X + i * CW;
+    if (i % 6 === 0) s += `<text x="${x}" y="${Y - 6}" text-anchor="middle" font-size="12" font-weight="700" fill="${CMP_INK}">${hl(H0 + i / 6)}시</text>`;
+    else s += `<text x="${x}" y="${Y + 36}" text-anchor="middle" font-size="9" fill="#8A8172">${(i % 6) * 10}</text>`; }
+  return `<svg class="cmpsv" viewBox="0 0 ${W} ${Y + 44}" width="${W}" height="${Y + 44}" role="img" aria-label="시간 띠">${s}</svg>`;
+}
+function dbarSVG(a){
+  const acts = a.acts || [], CW = 15, X = 12, Y = 30, W = X * 2 + 24 * CW;
+  let s = `<text x="${X + 6 * CW}" y="12" text-anchor="middle" font-size="12" font-weight="700" fill="${CMP_INK}">오전</text><text x="${X + 18 * CW}" y="12" text-anchor="middle" font-size="12" font-weight="700" fill="${CMP_INK}">오후</text>`;
+  s += `<path d="M${X} 16 h${12 * CW - 4} M${X + 12 * CW + 4} 16 h${12 * CW - 4}" stroke="#8A8172" stroke-width="1.2"/>`;
+  s += `<rect x="${X}" y="${Y}" width="${24 * CW}" height="26" fill="#FFFFFF" stroke="${CMP_INK}" stroke-width="1.6"/>`;
+  acts.forEach((ac, i) => { const x1 = X + ac[1] * CW, w = (ac[2] - ac[1]) * CW;
+    s += `<rect x="${x1}" y="${Y}" width="${w}" height="26" fill="${CMP_FILL[i % 4]}" stroke="${CMP_INK}" stroke-width="1.2"/>`;
+    if (ac[3]) s += `<text x="${x1 + w / 2}" y="${Y + 18}" text-anchor="middle" font-size="12">${svgEsc(ac[3])}</text>`; });
+  for (let i = 0; i <= 24; i++){ const x = X + i * CW, v = i % 12 === 0 ? 12 : i % 12;
+    s += `<line x1="${x}" y1="${Y + 26}" x2="${x}" y2="${Y + 31}" stroke="${CMP_INK}" stroke-width="1"/><text x="${x}" y="${Y + 42}" text-anchor="middle" font-size="8.5" fill="${CMP_INK}">${v}</text>`; }
+  return `<svg class="cmpsv" viewBox="0 0 ${W} ${Y + 48}" width="${W}" height="${Y + 48}" role="img" aria-label="하루 생활 계획표">${s}</svg>`;
+}
+function dbarHTML(a, paper){
+  const leg = (a.acts || []).map(ac => `${ac[3] ? ac[3] + ' ' : ''}${esc(ac[0])}`).join(' · ');
+  return `<div class="${paper ? 'pcmpw' : 'cmpw'}">${dbarSVG(a)}<div class="dleg" style="font-size:13px;color:#5B5348;margin-top:2px">${leg}</div></div>`;
+}
+function calSVG(a){
+  const st = Math.max(0, Math.min(6, Number(a.start) || 0)), n = Math.max(28, Math.min(31, Number(a.days) || 30)), mk = a.marks || {}, hi = a.hi || [];
+  const CW = 40, CH = 32, X = 6, Y = 44, rows = Math.ceil((st + n) / 7), W = X * 2 + 7 * CW, H = Y + rows * CH + 6;
+  let s = `<text x="${W / 2}" y="17" text-anchor="middle" font-size="15" font-weight="700" fill="${CMP_INK}">${a.y ? Number(a.y) + '년 ' : ''}${Number(a.mon)}월</text>`;
+  TM_WD.forEach((w, i) => { s += `<text x="${X + i * CW + CW / 2}" y="${Y - 8}" text-anchor="middle" font-size="12" font-weight="700" fill="${i === 0 ? '#C0392B' : i === 6 ? '#1F5FA8' : CMP_INK}">${w}</text>`; });
+  for (let r2 = 0; r2 < rows; r2++) for (let c = 0; c < 7; c++){ const d = r2 * 7 + c - st + 1, x = X + c * CW, y = Y + r2 * CH;
+    s += `<rect x="${x}" y="${y}" width="${CW}" height="${CH}" fill="${d >= 1 && d <= n ? '#FFFFFF' : '#F3EFE6'}" stroke="#B9A77A" stroke-width="0.8"/>`;
+    if (d >= 1 && d <= n){ s += `<text class="cd" x="${x + 4}" y="${y + 13}" font-size="11" fill="${c === 0 ? '#C0392B' : c === 6 ? '#1F5FA8' : CMP_INK}">${d}</text>`;
+      if (hi.indexOf(d) >= 0) s += `<circle cx="${x + CW / 2}" cy="${y + CH / 2}" r="14" fill="none" stroke="#C0392B" stroke-width="1.6"/>`;
+      if (mk[d]) s += `<text x="${x + CW - 4}" y="${y + CH - 6}" text-anchor="end" font-size="13">${svgEsc(mk[d])}</text>`; } }
+  return `<svg class="cmpsv" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${Number(a.mon)}월 달력">${s}</svg>`;
+}
+const TM_HOURW = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열', '열한', '열두'];
+function tmSino(n){ const D = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'], t = Math.floor(n / 10), o = n % 10; return (t > 1 ? D[t] : '') + (t ? '십' : '') + D[o]; }
+function tmWords(h, m){ return `${TM_HOURW[h]} 시${m ? ` ${tmSino(m)} 분` : ''}`; }
+/* 받침 있으면 a, 없으면 b (숫자로 끝나면 숫자 읽는 소리) */
+function tmJ(s, a, b){ s = String(s); const c = s.charCodeAt(s.length - 1);
+  if (c >= 0xAC00 && c <= 0xD7A3) return (c - 0xAC00) % 28 ? a : b;
+  if (c >= 48 && c <= 57) return VOWEL_END(Number(s[s.length - 1])) ? b : a; return a; }
 function bar2SVG(a){
   const p = a.parts || [null, null]; const W0 = a.whole === null || a.whole === undefined ? null : Number(a.whole);
   const A = p[0] === null || p[0] === undefined ? null : Number(p[0]), Bq = p[1] === null || p[1] === undefined ? null : Number(p[1]);
@@ -1354,6 +1439,13 @@ function drawAsset(a, r){
     case 'mcm_calc': return `<div class="cmpw">${mcmCalcSVG(a)}</div>`;
     case 'mbar': return `<div class="cmpw">${mbarSVG(a)}</div>`;
     case 'est_row': return `<div class="cmpw">${estRowSVG(a)}</div>`;
+    /* v3.1 — 2학년 2학기 「시각과 시간」 */
+    case 'clock2': return `<div class="cmpw">${clock2SVG(a)}</div>`;
+    case 'digital': return `<div class="cmpw">${digitalSVG(a)}</div>`;
+    case 'dpair': return `<div class="cmpw">${dpairSVG(a)}</div>`;
+    case 'tbar': return `<div class="cmpw">${tbarSVG(a)}</div>`;
+    case 'dbar': return dbarHTML(a, false);
+    case 'cal': return `<div class="cmpw">${calSVG(a)}</div>`;
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
@@ -2947,6 +3039,180 @@ function makeVariantOnce(q, r){
       v.stem = `${k} × ${n}${nGW(n)} 곱이 같은 곱셈식은 어느 것인가요?`;
       v.options = kindOpts(`${n} × ${k}`, [[`${k} × ${k}`, 'X13'], [`${n} × ${n}`, 'X13'], [`${k} + ${n}`, 'X11']], want, q.options);
       v.explanation = [`${k} × ${n}${nEUN(n)} ${k}씩 ${n}묶음, ${n} × ${k}${nEUN(k)} ${n}씩 ${k}묶음이에요.`, `같은 ${kn}개를 가로로 묶느냐 세로로 묶느냐의 차이예요.`, `그래서 ${k} × ${n}${nGW(n)} ${n} × ${k}의 곱은 ${kn}${[1, 7, 8].indexOf(kn % 10) >= 0 || NV(kn) ? '로' : '으로'} 같아요.`];
+      return v; }
+    return v;
+  }
+
+  /* --- v3.1: 2학년 2학기 「시각과 시간」 (2026-10-12, 오푸스 5.5) — 그림 clock2·digital·dpair·tbar·dbar·cal + 갈래 tm
+     tm {ask, form?, unit?, step?, ...}
+       ask  read(clock2 — step 5|1, sa 면 분만) · numm(긴바늘 숫자 → 몇 분) · dig(digital — 읽는 말)
+            before(몇 시 몇 분 → 몇 시 몇 분 전, form clock|text, sa 면 분만) · beforer(몇 시 몇 분 전 → 몇 시 몇 분)
+            h60(form tomin|tohm — 몇 시간 몇 분 ↔ 몇 분) · laps(긴바늘 몇 바퀴)
+            elapsed(걸린 시간, form bar|pair|text · unit min|hm) · after(시작 시각 + 걸린 시간 → 끝난 시각)
+            ampm(오전 몇 시 + 몇 시간 → 오후 몇 시) · day(form toh|tod — 며칠 몇 시간 ↔ 몇 시간)
+            cal(cal 그림 — form wday|nth|after|before|count) · units(form wk2d|wkd|d2wk|y2m|m2y|mdays)
+     오개념 꼬리(이 단원 사전): X01 두 바늘 바꿔 읽기 · X02 숫자를 분으로 그대로 · X03 다음 시로 · X04 이웃 눈금·숫자 실수 · X05 더 간 칸↔덜 간 칸
+                  X06 디지털 읽는 말 · X07 「전」의 시를 지금 시로 · X08 남은 분 대신 지난 분·「전」 무시 · X09 1시간=100분 · X10 셈·칸 실수 · X11 시각↔시간
+                  X12 오전·오후 · X13 하루=12시간 · X15 1주일·1년 단위 · X17 달력 세기·요일 밀림 · X18 달의 날수
+     원본을 만들 때만 q._fix 로 못박는다(fill.js 전용). */
+  if (rule.tm && (!a || typeof a !== 'object' || ['clock2', 'digital', 'dpair', 'tbar', 'dbar', 'cal'].indexOf(a.type) >= 0)){
+    const G = rule.tm, ask = G.ask || 'read', FX = v._fix || {}; delete v._fix; delete v._form; delete v.asset;
+    const want = Math.max(1, nOptsOf(q) - 1), isSA = q.kind === 'sa', SA = isSA ? ' 숫자로 쓰세요.' : '';
+    const fin = (sa, mc, ds) => { if (isSA) v.answer = [String(sa)]; else v.options = kindOpts(mc, ds, want, q.options); };
+    const HM = TM_HM, DUR = TM_DUR, J = tmJ, nx = h => h === 12 ? 1 : h + 1, pv = h => h === 1 ? 12 : h - 1, YE = s => s + J(s, '이에요', '예요');
+    const ACTS = ['등산', '줄넘기', '책 읽기', '수영', '피아노 연습', '자전거 타기', '숙제', '그림 그리기', '축구', '청소'];
+    const act = FX.act || G.act || pick(ACTS, r), AO = act + J(act, '을', '를');
+    if (ask === 'read'){
+      const step = G.step || 5; const h = FX.h !== undefined ? FX.h : rint(1, 12, r); let m = FX.m;
+      if (m === undefined){ m = step === 1 ? rint(1, 59, r) : rint(1, 11, r) * 5; if (step === 1 && m % 5 === 0) m += m === 55 ? -1 : 2; }
+      v.asset = {type:'clock2', h, m}; const ans = HM(h, m), b = Math.floor(m / 5), d = m - b * 5, k = b === 0 ? 12 : b;
+      v.stem = isSA ? `시계가 나타내는 시각은 ${h}시 몇 분인가요?` + SA : '시계를 보고 몇 시 몇 분인지 고르세요.';
+      const sw = HM(k, (h % 12) * 5), mir = d ? 2 * (b * 5 + 5) - m : null;
+      const ds = step === 1 ? [[HM(h, m + 1 < 60 ? m + 1 : m - 2), 'X04'], [mir !== null && mir < 60 ? HM(h, mir) : null, 'X05'], [HM(nx(h), m), 'X03'], [HM(h, b * 5 + 5 < 60 ? b * 5 + 5 : b * 5 - 5), 'X04'], [sw, 'X01']]
+                            : [[HM(h, b), 'X02'], [sw, 'X01'], [HM(nx(h), m), 'X03'], [HM(h, m + 5 < 60 ? m + 5 : m - 10), 'X04']];
+      fin(m, ans, ds);
+      v.explanation = [`짧은바늘이 ${h}${J(String(h), '과', '와')} ${nx(h)} 사이에 있으니 ${h}시예요.`,
+        step === 1 ? (b ? `긴바늘이 숫자 ${b}(${b * 5}분)에서 작은 눈금 ${d}칸 더 간 곳이니 ${b * 5} + ${d} = ${m}분이에요.` : `긴바늘이 12에서 작은 눈금 ${d}칸 간 곳이니 ${m}분이에요.`)
+                   : `긴바늘이 숫자 ${b}${J(String(b), '을', '를')} 가리키니 ${b} × 5 = ${m}분이에요.`, `그래서 ${YE(ans)}.`];
+      return v; }
+    if (ask === 'numm'){
+      const k = FX.k !== undefined ? FX.k : rint(1, 11, r), M = k * 5;
+      v.stem = `긴바늘이 숫자 ${k}${J(String(k), '을', '를')} 가리키면 몇 분인가요?` + SA;
+      fin(M, M + '분', [[k + '분', 'X02'], [k * 10 + '분', 'X02'], [(M + 5) + '분', 'X04'], [(M - 5 || null) && (M - 5) + '분', 'X04']]);
+      v.explanation = ['숫자와 숫자 사이는 작은 눈금 5칸 — 5분이에요.', `숫자 ${k}까지 5분씩 ${k}번이니 ${k} × 5 = ${M}${J(String(M), '이에요', '예요')}.`, `그래서 ${M}분이에요 — 숫자 그대로 ${k}분이 아니에요.`];
+      return v; }
+    if (ask === 'dig'){
+      const h = FX.h !== undefined ? FX.h : rint(1, 12, r), m = FX.m !== undefined ? FX.m : rint(1, 59, r);
+      v.asset = {type:'digital', h, m}; const W = tmWords(h, m);
+      v.stem = '디지털시계의 시각을 바르게 읽은 것은 어느 것인가요?';
+      v.options = kindOpts(W, [[`${tmSino(m)} 시 ${TM_HOURW[h] || tmSino(h)} 분`, 'X06'], [`${tmSino(h)} 시 ${tmSino(m)} 분`, 'X06'], [tmWords(h, m % 10 ? m - m % 10 : (m + 5 < 60 ? m + 5 : m - 5)), 'X04'], [tmWords(nx(h), m), 'X03']], want, q.options);
+      v.explanation = ['「:」 왼쪽은 시, 오른쪽은 분이에요.', `${h} : ${String(m).padStart(2, '0')}${J(String(m), '은', '는')} ${YE(HM(h, m))}.`, `시는 「${TM_HOURW[h]} 시」, 분은 「${tmSino(m)} 분」으로 읽어요.`];
+      return v; }
+    if (ask === 'before'){
+      const h = FX.h !== undefined ? FX.h : rint(1, 12, r), m = FX.m !== undefined ? FX.m : pick(G.ms || [50, 55, 45], r), k = 60 - m, H = nx(h), t = HM(h, m), ans = `${H}시 ${k}분 전`;
+      const form = FX.form || G.form || 'text'; if (form === 'clock') v.asset = {type:'clock2', h, m};
+      if (isSA) v.stem = `${form === 'clock' ? '시계가 나타내는 시각' : t}${form === 'clock' ? '은' : J(t, '은', '는')} ${H}시 몇 분 전인가요?` + SA;
+      else v.stem = form === 'clock' ? '시계가 나타내는 시각은 몇 시 몇 분 전인가요?' : `${t}${J(t, '은', '는')} 몇 시 몇 분 전인가요?`;
+      fin(k, ans, [[`${h}시 ${k}분 전`, 'X07'], [`${H}시 ${m}분 전`, 'X08'], [`${H}시 ${k + 5}분 전`, 'X04'], [`${pv(h)}시 ${k}분 전`, 'X07']]);
+      v.explanation = [`${t}에서 ${k}분이 지나면 ${H}시가 돼요.`, `그래서 ${t}${J(t, '을', '를')} ${ans}이라고도 해요.`, `「몇 시 전」의 시는 곧 될 정각 ${H}시예요 — 지금 시 ${h}시가 아니에요.`];
+      return v; }
+    if (ask === 'beforer'){
+      const H = FX.h !== undefined ? FX.h : rint(1, 12, r), k = FX.k !== undefined ? FX.k : pick(G.ks || [5, 10, 15], r), P = pv(H), ans = HM(P, 60 - k);
+      v.stem = `${H}시 ${k}분 전은 몇 시 몇 분인가요?`;
+      v.options = kindOpts(ans, [[HM(H, 60 - k), 'X07'], [HM(H, k), 'X08'], [HM(P, k), 'X08'], [HM(P, 55 - k), 'X04']], want, q.options);
+      v.explanation = [`${H}시 ${k}분 전은 ${H}시가 되기 ${k}분 전이에요.`, `${H}시에서 긴바늘을 ${k}분만큼 거꾸로 돌리면 ${YE(ans)}.`, `짧은바늘은 아직 ${P}${J(String(P), '과', '와')} ${H} 사이에 있어서 ${P}시예요.`];
+      return v; }
+    if (ask === 'h60'){
+      const form = FX.form || G.form || 'tomin';
+      if (form === 'tomin'){ const A = FX.a !== undefined ? FX.a : rint(1, 2, r), B = FX.b !== undefined ? FX.b : rint(1, 10, r) * 5, N = A * 60 + B, S = DUR(N);
+        v.stem = `${S}${J(S, '은', '는')} 몇 분인가요?` + SA;
+        fin(N, N + '분', [[(A * 100 + B) + '분', 'X09'], [(N + 10) + '분', 'X10'], [(N - 10) + '분', 'X10'], [(A + B) + '분', 'X09']]);
+        v.explanation = ['1시간은 60분이에요.', A === 1 ? (B ? `${S} = 60분 + ${B}분이에요.` : '긴바늘이 한 바퀴 도는 데 60분이 걸려요.') : `${A}시간은 60분이 ${A}번 — ${A * 60}분이에요.`, `그래서 ${N}분이에요 — 1시간을 100분으로 보면 안 돼요.`]; }
+      else { let N = FX.n; if (N === undefined){ N = rint(13, 35, r) * 5; if (N % 60 === 0) N += 10; } const q2 = Math.floor(N / 60), r2 = N % 60, S = DUR(N);
+        v.stem = `${N}분은 몇 시간 몇 분인가요?`;
+        v.options = kindOpts(S, [[N >= 100 ? DUR(Math.floor(N / 100) * 60 + N % 100) : null, 'X09'], [`${Math.floor(N / 10)}시간 ${N % 10}분`.replace(/ 0분$/, ''), 'X09'], [DUR(N + 10), 'X10'], [DUR(N - 10), 'X10'], [DUR(N + 60), 'X10']], want, q.options);
+        v.explanation = ['60분은 1시간이에요.', `${N}분 = ${q2 * 60}분 + ${r2}분이에요.`, `${q2 * 60}분은 ${q2}시간이니 ${YE(S)}.`]; }
+      return v; }
+    if (ask === 'laps'){
+      const h1 = FX.h1 !== undefined ? FX.h1 : rint(1, 9, r), n = FX.n !== undefined ? FX.n : rint(2, 3, r), m = FX.m !== undefined ? FX.m : pick([0, 30, 0, 20], r), h2 = h1 + n, T1 = HM(h1, m), T2 = HM(h2, m);
+      v.stem = `${T1}에서 ${T2}${J(T2, '이', '가')} 될 때까지 긴바늘은 몇 바퀴 돌았나요?` + SA;
+      fin(n, n + '바퀴', [[h2 + '바퀴', 'X11'], [(n + 1) + '바퀴', 'X10'], [(n - 1) + '바퀴', 'X10'], [(n * 60) + '바퀴', 'X09']]);
+      v.explanation = ['긴바늘이 한 바퀴 돌면 60분 — 1시간이 지나요.', `${T1}부터 ${T2}까지 ${n}시간이 지났어요.`, `그래서 긴바늘은 ${n}바퀴 돌았어요.`];
+      return v; }
+    if (ask === 'elapsed' || ask === 'after'){
+      const form = FX.form || G.form || 'text', unit = FX.unit || G.unit || 'min', bar = ask === 'elapsed' && form === 'bar';
+      let F = FX.f, D = FX.d;
+      if (!F || D === undefined){ for (let g = 0; g < 400; g++){
+          const h1 = rint(1, 10, r), m1 = bar ? rint(0, 5, r) * 10 : rint(0, 11, r) * 5;
+          let d = bar ? rint(G.dmin ? G.dmin / 10 : 4, G.dmax ? G.dmax / 10 : 17, r) * 10 : rint(G.dmin ? G.dmin / 5 : 5, G.dmax ? G.dmax / 5 : 34, r) * 5;
+          const e = h1 * 60 + m1 + d; if (e > 12 * 60 + 50) continue;
+          if (bar && (Math.ceil(e / 60) - h1) > 3) continue;
+          if (unit === 'hm' && (d < 65 || d % 60 === 0)) continue;
+          if (ask === 'after' && e % 60 === 0) continue;
+          F = [h1, m1]; D = d; break; } }
+      const s0 = F[0] * 60 + F[1], e0 = s0 + D, T = [Math.floor(e0 / 60), e0 % 60], T1 = HM(F[0], F[1]), T2 = HM(T[0], T[1]);
+      if (ask === 'after'){
+        const Dh = Math.floor(D / 60), Dm = D % 60, S = DUR(D);
+        v.stem = `${T1}에 ${AO} 시작해서 ${S} 동안 했어요. 끝난 시각은 몇 시 몇 분인가요?`;
+        v.options = kindOpts(T2, [[F[1] + Dm >= 60 ? `${F[0] + Dh}시 ${F[1] + Dm}분` : null, 'X09'], [HM(Math.floor((e0 + 10) / 60), (e0 + 10) % 60), 'X10'], [HM(Math.floor((e0 - 10) / 60), (e0 - 10) % 60), 'X10'], [HM(T[0] + 1, T[1]), 'X10'], [Dh ? HM(Dh, Dm) : null, 'X11']], want, q.options);
+        v.explanation = [`시작한 시각 ${T1}에서 ${S}${J(S, '이', '가')} 지난 시각을 찾아요.`, Dh && Dm ? `${Dh}시간 뒤는 ${HM(F[0] + Dh, F[1])}, 거기서 ${Dm}분 더 지나면 ${YE(T2)}.` : `${S} 뒤는 ${YE(T2)}.`, '분이 60분이 되면 시가 하나 커져요.'];
+        return v; }
+      const U = unit === 'hm' ? '몇 시간 몇 분' : '몇 분';
+      if (form === 'bar'){ v.asset = {type:'tbar', from:F.slice(), to:T, label:`${AO} 한 시간`}; v.stem = `${AO} 한 시간을 시간 띠에 나타냈어요. ${AO} 하는 데 걸린 시간은 ${U}인가요?`; }
+      else if (form === 'pair'){ v.asset = {type:'dpair', a:F.slice(), b:T}; v.stem = `${AO} 시작한 시각과 끝난 시각이에요. ${AO} 하는 데 걸린 시간은 ${U}인가요?`; }
+      else v.stem = `${T1}에 ${AO} 시작해서 ${T2}에 끝냈어요. 걸린 시간은 ${U}인가요?`;
+      v.stem += isSA ? ' 숫자로 쓰세요.' : '';
+      const D100 = (T[0] * 100 + T[1]) - (F[0] * 100 + F[1]);
+      if (unit === 'hm') v.options = kindOpts(DUR(D), [[`${T[0]}시간${T[1] ? ` ${T[1]}분` : ''}`, 'X11'], [D100 !== D && D100 % 100 < 60 ? DUR(Math.floor(D100 / 100) * 60 + D100 % 100) : null, 'X09'], [DUR(D + 10), 'X10'], [DUR(D - 10), 'X10'], [DUR(D + 60), 'X10']], want, q.options);
+      else fin(D, D + '분', [[D100 !== D ? D100 + '분' : null, 'X09'], [(D + 10) + '분', 'X10'], [(D - 10) + '분', 'X10'], [Math.abs(T[1] - F[1]) ? Math.abs(T[1] - F[1]) + '분' : null, 'X11'], [(D + 20) + '분', 'X10']]);
+      v.explanation = [`시작한 시각은 ${T1}, 끝난 시각은 ${YE(T2)}.`,
+        bar ? `칠한 칸이 ${D / 10}칸 — 한 칸이 10분이니 ${D}분이에요.` : D >= 60 && D % 60 === 0 ? `${T1}에서 긴바늘이 ${D / 60}바퀴 돌면 ${YE(T2)} — ${YE(DUR(D))}.` : D >= 60 ? `${T1}에서 1시간 뒤인 ${HM(F[0] + 1, F[1])}${J(HM(F[0] + 1, F[1]), '을', '를')} 먼저 찾고 남은 만큼 더 세면 ${YE(DUR(D))}.` : `${T1}부터 ${T2}까지 긴바늘이 움직인 만큼 세면 ${D}분이에요.`,
+        unit === 'min' && D >= 60 ? (D % 60 ? `${DUR(D)}${J(DUR(D), '은', '는')} ${D - D % 60}분 + ${D % 60}분 = ${D}분이에요.` : (D === 60 ? '1시간은 60분이에요.' : `${DUR(D)}${J(DUR(D), '은', '는')} 60분씩 ${D / 60}번 — ${D}분이에요.`)) : (unit === 'hm' ? `${D}분 = ${YE(DUR(D))}.` : '시각과 시각 사이의 길이가 걸린 시간이에요.')];
+      return v; }
+    if (ask === 'ampm'){
+      const h = FX.h !== undefined ? FX.h : rint(8, 11, r); let n = FX.n; if (n === undefined) n = rint(13 - h, 16 - h, r);
+      const e = h + n, ans = `오후 ${e - 12}시`;
+      v.stem = `오전 ${h}시에 ${AO} 시작해서 ${n}시간 동안 했어요. 끝난 시각은 언제인가요?`;
+      v.options = kindOpts(ans, [[`오전 ${e - 12}시`, 'X12'], [`오후 ${e}시`, 'X12'], [`오전 ${e}시`, 'X12'], [`오후 ${e - 11}시`, 'X10']], want, q.options);
+      v.explanation = ['낮 12시부터 밤 12시까지가 오후예요.', `오전 ${h}시에서 ${12 - h}시간 뒤가 낮 12시, 거기서 ${e - 12}시간 더 가면 ${YE(ans)}.`, '낮 12시를 지나면 오전이 오후로 바뀌어요.'];
+      return v; }
+    if (ask === 'day'){
+      const form = FX.form || G.form || 'toh';
+      if (form === 'toh'){ const d = FX.d !== undefined ? FX.d : 1, n = FX.n !== undefined ? FX.n : rint(1, 12, r), N = 24 * d + n, S = `${d}일${n ? ` ${n}시간` : ''}`;
+        v.stem = `${S}${J(S, '은', '는')} 몇 시간인가요?` + SA;
+        fin(N, N + '시간', [[(12 * d + n) + '시간', 'X13'], [(10 * d + n) + '시간', 'X13'], [(N + 1) + '시간', 'X10'], [(N - 1) + '시간', 'X10']]);
+        v.explanation = ['하루는 24시간이에요 — 짧은바늘이 두 바퀴 돌아요.', d === 1 ? (n ? `${S} = 24시간 + ${n}시간이에요.` : '하루 동안 짧은바늘이 두 바퀴 — 12시간씩 두 번이에요.') : `${d}일은 24시간이 ${d}번 — ${24 * d}시간이에요.`, `그래서 ${N}시간이에요.`]; }
+      else { let N = FX.n; if (N === undefined){ N = rint(25, 47, r); } const q2 = Math.floor(N / 24), r2 = N % 24, S = `${q2}일 ${r2}시간`;
+        v.stem = `${N}시간은 며칠 몇 시간인가요?`;
+        v.options = kindOpts(S, [[`${Math.floor(N / 12)}일 ${N % 12}시간`.replace(/ 0시간$/, ''), 'X13'], [`${Math.floor(N / 10)}일 ${N % 10}시간`.replace(/ 0시간$/, ''), 'X13'], [`${q2}일 ${r2 + 1}시간`, 'X10'], [`${q2 + 1}일 ${r2}시간`, 'X10']], want, q.options);
+        v.explanation = ['24시간은 1일이에요.', `${N}시간 = 24시간 + ${r2}시간이에요.`, `그래서 ${S}이에요.`]; }
+      return v; }
+    if (ask === 'cal'){
+      const MD = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+      const mon = FX.mon !== undefined ? FX.mon : rint(1, 12, r), days = MD[mon], st = FX.start !== undefined ? FX.start : rint(0, 6, r);
+      v.asset = {type:'cal', mon, start:st, days}; const wdOf = d => (st + d - 1) % 7, form = FX.form || G.form || 'wday', ORDK = ['', '첫째', '둘째', '셋째', '넷째'];
+      if (form === 'wday'){ const d = FX.d !== undefined ? FX.d : rint(1, days, r), w = wdOf(d), WN = i => TM_WD[(i + 7) % 7] + '요일';
+        v.stem = `${mon}월 ${d}일은 무슨 요일인가요?`;
+        v.options = kindOpts(WN(w), [[WN(w + 1), 'X17'], [WN(w - 1), 'X17'], [WN(w + 2), 'X17'], [WN(w - 2), 'X17']], want, q.options);
+        v.explanation = [`달력에서 ${d}일을 찾아요.`, `${d}일이 있는 칸의 위를 따라 올라가면 ${YE(WN(w))}.`, '같은 세로줄은 모두 같은 요일이에요.']; return v; }
+      if (form === 'nth'){ const w = FX.wd !== undefined ? FX.wd : rint(0, 6, r), n = FX.n !== undefined ? FX.n : rint(2, 4, r), first = 1 + ((w - st + 7) % 7), D = first + 7 * (n - 1);
+        v.stem = `${mon}월의 ${ORDK[n]} ${TM_WD[w]}요일은 며칠인가요?` + SA;
+        fin(D, D + '일', [[D + 7 <= days ? (D + 7) + '일' : null, 'X17'], [(D - 7) + '일', 'X17'], [D + 1 <= days ? (D + 1) + '일' : null, 'X17'], [(D - 1) + '일', 'X17']]);
+        v.explanation = [`${mon}월의 첫째 ${TM_WD[w]}요일은 ${first}일이에요.`, `한 주에 7일씩 — ${Array.from({length: n}, (_, i) => first + 7 * i).join(', ')}${J(String(D), '이에요', '예요')}.`, `그래서 ${ORDK[n]} ${TM_WD[w]}요일은 ${D}일이에요.`]; return v; }
+      if (form === 'after' || form === 'before'){
+        const wk = FX.w !== undefined ? FX.w : (FX.k !== undefined ? 0 : (G.weeks ? rint(1, 2, r) : 0)), k = wk ? 7 * wk : (FX.k !== undefined ? FX.k : rint(3, 10, r)), af = form === 'after';
+        let d = FX.d; if (d === undefined) d = af ? rint(1, days - k, r) : rint(k + 1, days, r); const D = af ? d + k : d - k, L = wk ? `${wk}주일` : `${k}일`;
+        v.stem = `${mon}월 ${d}일에서 ${L} ${af ? '후는' : '전은'} 며칠인가요?` + SA;
+        const sg = af ? 1 : -1, ok = x => x >= 1 && x <= days;
+        fin(D, D + '일', [[wk ? (ok(d + sg * wk) ? (d + sg * wk) + '일' : null) : (ok(D - sg) ? (D - sg) + '일' : null), wk ? 'X15' : 'X17'], [ok(D + sg) ? (D + sg) + '일' : null, 'X17'], [ok(D - sg) ? (D - sg) + '일' : null, 'X17'], [ok(D + sg * 7) ? (D + sg * 7) + '일' : null, 'X17'], [ok(D - sg * 2) ? (D - sg * 2) + '일' : null, 'X17'], [ok(D - sg * 3) ? (D - sg * 3) + '일' : null, 'X17']]);
+        v.explanation = [wk ? (wk === 1 ? '1주일은 7일이에요.' : `1주일은 7일 — ${L}${J(L, '은', '는')} ${k}일이에요.`) : `${d}일은 빼고 ${af ? '다음 날' : '전날'}부터 하루씩 세어요.`, `${d} ${af ? '+' : '−'} ${k} = ${D}이에요.`.replace(/이에요\.$/, J(String(D), '이에요', '예요') + '.'), wk ? `달력에서 ${wk === 1 ? '바로 ' : ''}${af ? '아랫' : '윗'}줄로 ${wk}칸 ${af ? '내려가면' : '올라가면'} 같은 요일이에요.` : `그래서 ${mon}월 ${D}일이에요.`]; return v; }
+      if (form === 'count'){ const w = FX.wd !== undefined ? FX.wd : rint(0, 6, r); let c = 0; for (let d = 1; d <= days; d++) if (wdOf(d) === w) c++;
+        v.stem = `${mon}월에 ${TM_WD[w]}요일은 모두 몇 번 있나요?` + SA;
+        fin(c, c + '번', [[(c + 1) + '번', 'X17'], [(c - 1) + '번', 'X17'], ['7번', 'X15'], [(c - 2) + '번', 'X17']]);
+        const first = 1 + ((w - st + 7) % 7); v.explanation = [`${TM_WD[w]}요일 세로줄을 따라 날짜를 세어요.`, `${Array.from({length: c}, (_, i) => first + 7 * i).join(', ')}일 — ${c}번이에요.`, '빈칸은 세지 않아요.']; return v; }
+      return v; }
+    if (ask === 'units'){
+      const form = FX.form || G.form || 'wk2d', MD = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+      if (form === 'wk2d'){ const w = FX.w !== undefined ? FX.w : rint(2, 4, r), N = 7 * w; v.stem = `${w}주일은 며칠인가요?` + SA;
+        fin(N, N + '일', [[(5 * w) + '일', 'X15'], [(10 * w) + '일', 'X15'], [(N + 1) + '일', 'X10'], [(N - 1) + '일', 'X10']]);
+        v.explanation = ['1주일은 7일이에요.', `${w}주일은 7일이 ${w}번이에요.`, `${Array(w).fill(7).join(' + ')} = ${N} — ${N}일이에요.`]; return v; }
+      if (form === 'wkd'){ const w = FX.w !== undefined ? FX.w : rint(1, 3, r), d = FX.d !== undefined ? FX.d : rint(1, 6, r), N = 7 * w + d; v.stem = `${w}주일 ${d}일은 며칠인가요?` + SA;
+        fin(N, N + '일', [[(10 * w + d) + '일', 'X15'], [(w + d) + '일', 'X15'], [(N + 1) + '일', 'X10'], [(N - 1) + '일', 'X10']]);
+        v.explanation = ['1주일은 7일이에요.', w === 1 ? `1주일 ${d}일은 7일과 ${d}일이에요.` : `${w}주일은 7일이 ${w}번 — ${7 * w}일이에요.`, `${7 * w}일과 ${d}일을 모으면 ${N}일이에요.`]; return v; }
+      if (form === 'd2wk'){ const w = FX.w !== undefined ? FX.w : rint(2, 4, r), N = 7 * w; v.stem = `${N}일은 몇 주일인가요?` + SA;
+        fin(w, w + '주일', [[(w + 1) + '주일', 'X10'], [(w - 1) + '주일', 'X10'], [Math.floor(N / 5) + '주일', 'X15'], [N + '주일', 'X15']]);
+        v.explanation = ['7일이 1주일이에요.', `${N}일은 7일이 ${w}번이에요.`, `그래서 ${w}주일이에요.`]; return v; }
+      if (form === 'y2m'){ const y = FX.y !== undefined ? FX.y : rint(1, 2, r), m = FX.m !== undefined ? FX.m : rint(1, 11, r), N = 12 * y + m, S = `${y}년${m ? ` ${m}개월` : ''}`;
+        v.stem = `${S}${J(S, '은', '는')} 몇 개월인가요?` + SA;
+        fin(N, N + '개월', [[(10 * y + m) + '개월', 'X15'], [(y + m) + '개월', 'X15'], [(N + 1) + '개월', 'X10'], [(N - 1) + '개월', 'X10']]);
+        v.explanation = ['1년은 12개월이에요.', y === 1 ? `${S} = 12개월 + ${m}개월이에요.` : `${y}년은 12개월이 ${y}번 — ${12 * y}개월이에요.`, `그래서 ${N}개월이에요.`]; return v; }
+      if (form === 'm2y'){ let N = FX.n; if (N === undefined){ N = rint(13, 35, r); if (N % 12 === 0) N += 1; } const y = Math.floor(N / 12), m = N % 12, S = `${y}년 ${m}개월`;
+        v.stem = `${N}개월은 몇 년 몇 개월인가요?`;
+        v.options = kindOpts(S, [[`${Math.floor(N / 10)}년 ${N % 10}개월`.replace(/ 0개월$/, ''), 'X15'], [`${y}년 ${m + 1}개월`, 'X10'], [`${y + 1}년 ${m}개월`, 'X10'], [m > 1 ? `${y}년 ${m - 1}개월` : null, 'X10']], want, q.options);
+        v.explanation = ['12개월은 1년이에요.', `${N}개월 = ${12 * y}개월 + ${m}개월이에요.`, `${12 * y}개월은 ${y}년이니 ${S}이에요.`]; return v; }
+      if (form === 'mdays'){ let mon = FX.mon; if (mon === undefined){ mon = rint(1, 11, r); if (mon >= 2) mon += 1; } const N = MD[mon]; v.stem = `${mon}월은 며칠까지 있나요?` + SA;
+        fin(N, N + '일', [[(N === 31 ? 30 : 31) + '일', 'X18'], ['28일', 'X18'], ['32일', 'X18'], [N === 31 ? '29일' : '29일', 'X18']]);
+        v.explanation = ['달마다 날수가 달라요.', `${mon}월은 ${N}일까지 있어요.`, '주먹을 쥐고 손등의 튀어나온 곳을 31일, 들어간 곳을 30일로 세면 쉬워요(2월은 28일 또는 29일).']; return v; }
       return v; }
     return v;
   }
@@ -4620,6 +4886,12 @@ function paperAsset(a){
     case 'mcm_calc': return `<div class="pcmpw">${mcmCalcSVG(a)}</div>`;
     case 'mbar': return `<div class="pcmpw">${mbarSVG(a)}</div>`;
     case 'est_row': return `<div class="pcmpw">${estRowSVG(a)}</div>`;
+    case 'clock2': return `<div class="pcmpw">${clock2SVG(a)}</div>`;
+    case 'digital': return `<div class="pcmpw">${digitalSVG(a)}</div>`;
+    case 'dpair': return `<div class="pcmpw">${dpairSVG(a)}</div>`;
+    case 'tbar': return `<div class="pcmpw">${tbarSVG(a)}</div>`;
+    case 'dbar': return dbarHTML(a, true);
+    case 'cal': return `<div class="pcmpw">${calSVG(a)}</div>`;
     case 'figs': return figsHTML(a, true);
     case 'tiles': return `<div class="pcmpw">${tilesSVG(a)}</div>`;
     case 'cubes': return cubesHTML(a, true);

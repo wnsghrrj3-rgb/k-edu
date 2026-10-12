@@ -134,7 +134,14 @@ const ASSETS = {
   tape:           ['len', 'label'],
   mcm_calc:       ['a', 'b', 'op'],
   mbar:           ['parts', 'op'],
-  est_row:        ['seg', 'n']
+  est_row:        ['seg', 'n'],
+  /* v3.1 — 2학년 2학기 「시각과 시간」: 바늘 시계(분 눈금) · 디지털시계 · 시작·끝 디지털시계 · 시간 띠 · 하루 계획표 · 달력 */
+  clock2:         ['h', 'm'],
+  digital:        ['h', 'm'],
+  dpair:          ['a', 'b'],
+  tbar:           ['from', 'to'],
+  dbar:           ['acts'],
+  cal:            ['mon', 'start', 'days']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -248,6 +255,33 @@ function checkAsset(where, a) {
     if (a.op === '-' && (P[0][1] < P[1][1] || P[0][0] < P[1][0] || P[0][0] * 100 + P[0][1] <= P[1][0] * 100 + P[1][1])) bad(where, a.type + ' 빼는 길이가 더 길거나 cm 받아내림이 필요하다');
     if (a.type === 'mcm_calc' && a.ask !== undefined && ['both', 'm', 'cm', 'show'].indexOf(a.ask) < 0) bad(where, 'mcm_calc ask 는 both·m·cm·show');
     if (a.type === 'mcm_calc' && a.said !== undefined && !okp(a.said)) bad(where, 'mcm_calc said 는 [m, cm]');
+  }
+  if (a.type === 'clock2' || a.type === 'digital') {   /* v3.1 — 시각: h 1~12 · m 0~59 정수 */
+    if (!(Number.isInteger(a.h) && a.h >= 1 && a.h <= 12)) bad(where, a.type + ' h 는 1~12 정수: ' + a.h);
+    if (!(Number.isInteger(a.m) && a.m >= 0 && a.m <= 59)) bad(where, a.type + ' m 은 0~59 정수: ' + a.m);
+    if (a.ampm !== undefined && ['오전', '오후'].indexOf(a.ampm) < 0) bad(where, 'digital ampm 은 오전·오후');
+  }
+  const TMok = p => Array.isArray(p) && p.length === 2 && Number.isInteger(p[0]) && p[0] >= 1 && p[0] <= 12 && Number.isInteger(p[1]) && p[1] >= 0 && p[1] <= 59;
+  if (a.type === 'dpair') {
+    if (!TMok(a.a) || !TMok(a.b)) bad(where, 'dpair a·b 는 [시 1~12, 분 0~59]');
+    else if (a.b[0] * 60 + a.b[1] <= a.a[0] * 60 + a.a[1]) bad(where, 'dpair 끝난 시각이 시작한 시각보다 앞선다');
+  }
+  if (a.type === 'tbar') {   /* 시간 띠: 한 칸 10분 · 3시간 안 */
+    if (!TMok(a.from) || !TMok(a.to)) bad(where, 'tbar from·to 는 [시 1~12, 분 0~59]');
+    else { if (a.from[1] % 10 || a.to[1] % 10) bad(where, 'tbar 분은 10의 배수(한 칸 10분)');
+      if (a.to[0] * 60 + a.to[1] <= a.from[0] * 60 + a.from[1]) bad(where, 'tbar 끝이 시작보다 앞선다');
+      if ((a.to[1] ? a.to[0] + 1 : a.to[0]) - a.from[0] > 3) bad(where, 'tbar 는 3시간 안'); }
+  }
+  if (a.type === 'dbar') {   /* 하루 계획표: [이름, 시작 시, 끝 시, 그림] 0~24 겹치지 않게 */
+    const A = a.acts; if (!Array.isArray(A) || !A.length) bad(where, 'dbar acts 비었음');
+    else { let last = 0; A.forEach(x => { if (!Array.isArray(x) || typeof x[0] !== 'string' || !Number.isInteger(x[1]) || !Number.isInteger(x[2]) || x[1] < last || x[2] <= x[1] || x[2] > 24) bad(where, 'dbar 칸이 0~24 안에서 차례로 겹치지 않아야: ' + JSON.stringify(x)); else last = x[2]; }); }
+  }
+  if (a.type === 'cal') {   /* 달력: 달마다 날수 · 1일 요일 */
+    const MD = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    if (!(Number.isInteger(a.mon) && a.mon >= 1 && a.mon <= 12)) bad(where, 'cal mon 은 1~12');
+    else if (!(a.days === MD[a.mon] || (a.mon === 2 && a.days === 29))) bad(where, `cal ${a.mon}월 날수 ${a.days} 가 틀림`);
+    if (!(Number.isInteger(a.start) && a.start >= 0 && a.start <= 6)) bad(where, 'cal start 는 0~6');
+    Object.keys(a.marks || {}).concat((a.hi || []).map(String)).forEach(k => { if (!(+k >= 1 && +k <= a.days)) bad(where, 'cal 표시 날짜가 달 밖: ' + k); });
   }
   if (a.type === 'est_row') {
     const seg = Number(a.seg), n = Number(a.n);
@@ -1210,6 +1244,73 @@ function checkMcm(where, q) {
   if (wr.some(w => w === String(want))) bad(where, `mcm ${ask} 오답에 정답 ${want} 이 섞였다`);
   if (!sa && ['read', 'off', 'add', 'sub', 'tocm', 'tomcm', 'm100'].indexOf(ask) >= 0) { const cv = MCMtoks(cor); if (cv.length === 1) wr.forEach(w => { const wv = MCMtoks(w); if (wv.length === 1 && wv[0] === cv[0] && /cm|m$/.test(w)) bad(where, `mcm ${ask} 오답 「${w}」 이 정답과 같은 길이`); }); }
 }
+/* v3.1 — 시각과 시간: 그림·발문이 말하는 답을 엔진과 따로 다시 셈한다 */
+const TMf = (h, m) => (m ? `${h}시 ${m}분` : `${h}시`);
+const TMd = n => { const q = Math.floor(n / 60), r = n % 60; return q && r ? `${q}시간 ${r}분` : q ? `${q}시간` : `${r}분`; };
+const TMwd = ['일', '월', '화', '수', '목', '금', '토'];
+const TMsino = n => { const D = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구']; return (Math.floor(n / 10) > 1 ? D[Math.floor(n / 10)] : '') + (n >= 10 ? '십' : '') + D[n % 10]; };
+const TMnat = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열', '열한', '열두'];
+const TMdur = s => { const m = String(s).match(/^(?:(\d+)시간)? ?(?:(\d+)분)?$/); return m && (m[1] || m[2]) ? (+(m[1] || 0)) * 60 + (+(m[2] || 0)) : null; };
+function checkTm(where, q) {
+  const G = (q.variant_rule || {}).tm; if (!G) return;
+  const ask = G.ask || 'read', a = q.asset && typeof q.asset === 'object' ? q.asset : null, st = String(q.stem || '').replace(/^이번에는 다른 보기예요\. /, '');
+  const sa = q.kind === 'sa', cor = sa ? String((q.answer || [])[0]) : String(((q.options || []).find(o => o.correct) || {}).t);
+  const wr = (q.options || []).filter(o => !o.correct).map(o => String(o.t));
+  const nx = h => h === 12 ? 1 : h + 1, pv = h => h === 1 ? 12 : h - 1;
+  let want = null, m;
+  if (ask === 'read') { if (!a || a.type !== 'clock2') return bad(where, 'tm read 는 clock2 그림');
+    if ((G.step || 5) === 5 && a.m % 5) bad(where, 'tm read 5분 단위인데 분이 5의 배수가 아니다');
+    if (sa) { if (!st.startsWith(`시계가 나타내는 시각은 ${a.h}시 몇 분`)) bad(where, 'tm read 단답 발문의 시가 그림과 다르다'); want = String(a.m); }
+    else want = TMf(a.h, a.m); }
+  else if (ask === 'numm') { m = st.match(/^긴바늘이 숫자 (\d+)[을를] 가리키면 몇 분/); if (!m || +m[1] < 1 || +m[1] > 11) return bad(where, 'tm numm 발문 꼴: ' + st); want = sa ? String(+m[1] * 5) : `${+m[1] * 5}분`; }
+  else if (ask === 'dig') { if (!a || a.type !== 'digital') return bad(where, 'tm dig 는 digital 그림'); want = `${TMnat[a.h]} 시${a.m ? ` ${TMsino(a.m)} 분` : ''}`; }
+  else if (ask === 'before') { let h, mm;
+    if (a && a.type === 'clock2') { h = a.h; mm = a.m; } else { m = st.match(/^(\d+)시 (\d+)분[은는] /); if (!m) return bad(where, 'tm before 발문 꼴: ' + st); h = +m[1]; mm = +m[2]; }
+    if (mm < 30 || mm % 5) bad(where, 'tm before 는 30분 넘고 5분 단위');
+    if (sa) { if (!new RegExp(` ${nx(h)}시 몇 분 전인가요`).test(st)) bad(where, 'tm before 단답 발문의 정각이 틀림'); want = String(60 - mm); } else want = `${nx(h)}시 ${60 - mm}분 전`; }
+  else if (ask === 'beforer') { m = st.match(/^(\d+)시 (\d+)분 전은 몇 시 몇 분/); if (!m) return bad(where, 'tm beforer 발문 꼴: ' + st); want = TMf(pv(+m[1]), 60 - +m[2]); }
+  else if (ask === 'h60') {
+    if ((m = st.match(/^(\d+)분은 몇 시간 몇 분/))) { if (+m[1] % 60 === 0 || +m[1] < 61) bad(where, 'tm h60 몇 시간 몇 분 꼴이 아니다'); want = TMd(+m[1]); }
+    else if ((m = st.match(/^((?:\d+시간)(?: \d+분)?)[은는] 몇 분인가요/))) { const N = TMdur(m[1]); want = sa ? String(N) : N + '분'; }
+    else return bad(where, 'tm h60 발문 꼴: ' + st); }
+  else if (ask === 'laps') { m = st.match(/^(\d+)시(?: (\d+)분)?에서 (\d+)시(?: (\d+)분)?[이가] 될 때까지 긴바늘은 몇 바퀴/); if (!m) return bad(where, 'tm laps 발문 꼴: ' + st);
+    if ((m[2] || '0') !== (m[4] || '0') || +m[3] <= +m[1]) bad(where, 'tm laps 분이 같고 뒤 시가 커야'); const n = +m[3] - +m[1]; want = sa ? String(n) : n + '바퀴'; }
+  else if (ask === 'elapsed') { let F, T;
+    if (a && a.type === 'tbar') { F = a.from; T = a.to; if (!st.startsWith(String(a.label))) bad(where, 'tm 시간 띠 이름표와 발문이 다르다'); }
+    else if (a && a.type === 'dpair') { F = a.a; T = a.b; }
+    else { m = st.match(/^(\d+)시(?: (\d+)분)?에 .+ 시작해서 (\d+)시(?: (\d+)분)?에 끝냈어요/); if (!m) return bad(where, 'tm elapsed 발문 꼴: ' + st); F = [+m[1], +(m[2] || 0)]; T = [+m[3], +(m[4] || 0)]; }
+    const D = T[0] * 60 + T[1] - F[0] * 60 - F[1]; if (D <= 0) return bad(where, 'tm elapsed 걸린 시간이 0 이하');
+    if (/몇 시간 몇 분인가요/.test(st)) { if (sa) bad(where, 'tm elapsed 몇 시간 몇 분은 단답으로 못 받는다'); want = TMd(D); }
+    else if (/몇 분인가요/.test(st)) want = sa ? String(D) : D + '분'; else return bad(where, 'tm elapsed 묻는 단위를 못 찾았다'); }
+  else if (ask === 'after') { m = st.match(/^(\d+)시(?: (\d+)분)?에 .+ 시작해서 ((?:\d+시간)?(?: ?\d+분)?) 동안 했어요\. 끝난 시각은 몇 시 몇 분/); if (!m) return bad(where, 'tm after 발문 꼴: ' + st);
+    const e = +m[1] * 60 + +(m[2] || 0) + TMdur(m[3].trim()); if (e >= 13 * 60) bad(where, 'tm after 끝난 시각이 12시 59분을 넘는다'); want = TMf(Math.floor(e / 60), e % 60); }
+  else if (ask === 'ampm') { m = st.match(/^오전 (\d+)시에 .+ 시작해서 (\d+)시간 동안 했어요/); if (!m) return bad(where, 'tm ampm 발문 꼴: ' + st);
+    const e = +m[1] + +m[2]; if (e === 12 || e >= 24) return bad(where, 'tm ampm 끝이 낮 12시이거나 하루를 넘는다'); want = e > 12 ? `오후 ${e - 12}시` : `오전 ${e}시`; }
+  else if (ask === 'day') {
+    if ((m = st.match(/^(\d+)시간은 며칠 몇 시간/))) { const N = +m[1]; if (N % 24 === 0 || N < 25) bad(where, 'tm day 며칠 몇 시간 꼴이 아니다'); want = `${Math.floor(N / 24)}일 ${N % 24}시간`; }
+    else if ((m = st.match(/^(\d+)일(?: (\d+)시간)?[은는] 몇 시간/))) { const N = 24 * +m[1] + +(m[2] || 0); want = sa ? String(N) : N + '시간'; }
+    else return bad(where, 'tm day 발문 꼴: ' + st); }
+  else if (ask === 'cal') { if (!a || a.type !== 'cal') return bad(where, 'tm cal 은 cal 그림'); const wd = d => (a.start + d - 1) % 7;
+    if ((m = st.match(/^(\d+)월 (\d+)일은 무슨 요일/))) { if (+m[1] !== a.mon || +m[2] > a.days) bad(where, 'tm cal 달·날짜가 그림과 다르다'); want = TMwd[wd(+m[2])] + '요일'; }
+    else if ((m = st.match(/^(\d+)월의 (첫째|둘째|셋째|넷째) (.)요일은 며칠/))) { const w = TMwd.indexOf(m[3]), n = ['첫째', '둘째', '셋째', '넷째'].indexOf(m[2]) + 1; let D = 0, c = 0; for (let d = 1; d <= a.days; d++) if (wd(d) === w && ++c === n) { D = d; break; }
+      if (+m[1] !== a.mon || !D) bad(where, 'tm cal nth 날짜를 못 찾았다'); want = sa ? String(D) : D + '일'; }
+    else if ((m = st.match(/^(\d+)월 (\d+)일에서 (?:(\d+)주일|(\d+)일) (후는|전은) 며칠/))) { const k = m[3] ? 7 * +m[3] : +m[4], D = m[5] === '후는' ? +m[2] + k : +m[2] - k;
+      if (+m[1] !== a.mon || D < 1 || D > a.days) bad(where, 'tm cal 날짜 셈이 달 밖으로 나간다'); want = sa ? String(D) : D + '일'; }
+    else if ((m = st.match(/^(\d+)월에 (.)요일은 모두 몇 번/))) { const w = TMwd.indexOf(m[2]); let c = 0; for (let d = 1; d <= a.days; d++) if (wd(d) === w) c++; want = sa ? String(c) : c + '번'; }
+    else return bad(where, 'tm cal 발문 꼴: ' + st); }
+  else if (ask === 'units') {
+    if ((m = st.match(/^(\d+)주일 (\d+)일은 며칠/))) { const N = 7 * +m[1] + +m[2]; want = sa ? String(N) : N + '일'; }
+    else if ((m = st.match(/^(\d+)주일은 며칠/))) { const N = 7 * +m[1]; want = sa ? String(N) : N + '일'; }
+    else if ((m = st.match(/^(\d+)일은 몇 주일/))) { if (+m[1] % 7) bad(where, 'tm units 7의 배수가 아니다'); want = sa ? String(+m[1] / 7) : `${+m[1] / 7}주일`; }
+    else if ((m = st.match(/^(\d+)년(?: (\d+)개월)?[은는] 몇 개월/))) { const N = 12 * +m[1] + +(m[2] || 0); want = sa ? String(N) : N + '개월'; }
+    else if ((m = st.match(/^(\d+)개월은 몇 년 몇 개월/))) { const N = +m[1]; if (N % 12 === 0 || N < 13) bad(where, 'tm units 몇 년 몇 개월 꼴이 아니다'); want = `${Math.floor(N / 12)}년 ${N % 12}개월`; }
+    else if ((m = st.match(/^(\d+)월은 며칠까지/))) { const N = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][+m[1]]; if (+m[1] === 2) bad(where, 'tm units 2월은 28일·29일 두 가지라 묻지 않는다'); want = sa ? String(N) : N + '일'; }
+    else return bad(where, 'tm units 발문 꼴: ' + st); }
+  else return bad(where, 'tm ask 를 모른다: ' + ask);
+  if (cor !== String(want)) bad(where, `tm ${ask} 정답 「${cor}」 ≠ 다시 셈한 ${want}`);
+  if (wr.some(w => w === String(want))) bad(where, `tm ${ask} 오답에 정답 ${want} 이 섞였다`);
+  if (['elapsed', 'h60'].indexOf(ask) >= 0 && !sa) { const cv = TMdur(cor); if (cv !== null) wr.forEach(w => { if (TMdur(w) === cv) bad(where, `tm ${ask} 오답 「${w}」 이 정답과 같은 시간`); }); }
+}
 /* v2.9 — 곱셈구구: 곱셈표·발문이 말하는 답을 엔진과 따로 다시 셈한다 */
 function checkGugu(where, q) {
   const G = (q.variant_rule || {}).gugu; if (!G) return;
@@ -1464,6 +1565,7 @@ function checkQ(where, q, opt) {
   checkMul(where, q);
   checkGugu(where, q);
   checkMcm(where, q);
+  checkTm(where, q);
   checkShape(where, q);
   checkJamo(where, q);
   checkBat(where, q);
