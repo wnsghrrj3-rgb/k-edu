@@ -144,9 +144,14 @@ function loadSet(name, tile) {
   _texCache.set(key, set); return set;
 }
 export function boxProjectUV(geo, tile) {
-  const p = geo.attributes.position, n = geo.attributes.normal; const uv = new Float32Array(p.count * 2);
+  // 면 방향은 꼭짓점 normal 이 아니라 세 점의 외적으로 — bpy 상자는 8꼭짓점 normal 이 대각(±.58)으로 뭉개져 나와
+  // 얇은 판(청동기 바위그림 carved)도 위에서 투영돼 세로 줄무늬가 됐다.
+  const p = geo.attributes.position; const uv = new Float32Array(p.count * 2);
   for (let i = 0; i < p.count; i += 3) {
-    let ax = 0, ay = 0, az = 0; for (let k = 0; k < 3; k++) { ax += Math.abs(n.getX(i + k)); ay += Math.abs(n.getY(i + k)); az += Math.abs(n.getZ(i + k)); }
+    const x0 = p.getX(i), y0 = p.getY(i), z0 = p.getZ(i);
+    const e1x = p.getX(i + 1) - x0, e1y = p.getY(i + 1) - y0, e1z = p.getZ(i + 1) - z0;
+    const e2x = p.getX(i + 2) - x0, e2y = p.getY(i + 2) - y0, e2z = p.getZ(i + 2) - z0;
+    const ax = Math.abs(e1y * e2z - e1z * e2y), ay = Math.abs(e1z * e2x - e1x * e2z), az = Math.abs(e1x * e2y - e1y * e2x);
     for (let k = 0; k < 3; k++) { const x = p.getX(i + k), y = p.getY(i + k), z = p.getZ(i + k); let u, v;
       if (ay >= ax && ay >= az) { u = x; v = z; } else if (ax >= az) { u = z; v = y; } else { u = x; v = y; }
       uv[(i + k) * 2] = u / tile; uv[(i + k) * 2 + 1] = v / tile; }
