@@ -1,0 +1,27 @@
+// 미니맵 — 장소는 world.areas 에서, 가 본 곳만 이름, 반 친구 점. jsdom 없이 가짜 canvas 로.
+import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
+import { bindMinimap } from '../core/minimap.js';
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+let pass = 0, fail = 0; const ok = (c, m) => { c ? pass++ : fail++; console.log((c ? '  ✓ ' : '  ✗ ') + m); };
+const calls = []; const ctx = new Proxy({}, { get: (_, k) => (k === 'measureText' ? () => ({ width: 10 }) : (...a) => { calls.push([k, a]); }), set: () => true });
+const canvas = { getContext: () => ctx };
+const world = JSON.parse(fs.readFileSync(path.join(root, 'eras/silla-life/world.json'), 'utf8'));
+const areas = new Map([['village', { x: 0, z: 0 }], ['market', { x: 20, z: -16 }], ['temple', { x: -58, z: 38 }], ['pass', { x: 2, z: 106 }]]);
+const engine = { areas, onFrame: [] }; const player = { pos: { x: 0, z: 0 }, yaw: 0 };
+globalThis.performance ??= { now: () => Date.now() };
+const friends = { friends: new Map([['a', { x: 10, z: 5, waveUntil: 0, body: { userData: { nick: '3 김하나' } } }]]) };
+const mm = bindMinimap(engine, player, canvas, { world, friends });
+ok(mm.spots.length === 4 && mm.spots.find((s) => s.id === 'temple').name === '절(불국사)', '장소 넷이 world.areas 이름으로');
+ok(mm.seen.has('village') && !mm.seen.has('pass'), '시작 자리만 아는 곳');
+const frame = (dt) => engine.onFrame.forEach((f) => f(dt));
+frame(1.2); const texts = () => calls.filter((c) => c[0] === 'fillText').map((c) => c[1][0]);
+ok(texts().includes('마을') && !texts().includes('고개') && texts().includes('N'), '가 본 마을만 이름, 못 가 본 고개는 점만');
+ok(texts().includes('김'), '친구 점 위에 이름 첫 글자(번호 뗌)');
+player.pos = { x: 20, z: -16 }; calls.length = 0; frame(1.2); frame(0.2);
+ok(mm.seen.has('market') && texts().includes('장터'), '14m 안에 들어오면 아는 곳이 된다');
+friends.friends.get('a').waveUntil = performance.now() + 1000; calls.length = 0; frame(0.2);
+const arcs = calls.filter((c) => c[0] === 'arc').map((c) => c[1][2]);
+ok(arcs.some((r) => r !== 2.6 && r !== 2.5 && r !== 1.6 && r !== 81) && arcs.length >= 5, '손 흔드는 친구 점은 크기가 바뀐다');
+const engine2 = { areas: new Map(), onFrame: [] }; const mm2 = bindMinimap(engine2, player, canvas, null);
+ok(mm2.spots.length === 3 && mm2.spots[0].name === '야영지', 'area 없는 세상(story-p1)은 옛 세 곳');
+console.log(`minimap ${pass}/${fail}`); process.exit(fail ? 1 : 0);

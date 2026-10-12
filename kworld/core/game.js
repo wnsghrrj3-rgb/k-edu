@@ -63,7 +63,7 @@ export class Game {
     if (this.world.hideHunger) { const h = document.getElementById('hunger'); if (h) h.style.display = 'none'; }
     this.ui.setTitle(this.world.title, this.world.question, this.world.short); this.ui.setGoal(this.world.goal);
     this.renderInv(); this.updateMission(true);
-    bindMinimap(this.e, this.p, document.getElementById('minimap'));
+    this.minimap = bindMinimap(this.e, this.p, document.getElementById('minimap'), this);
     this.addFire();
     for (const t of this.e.interactables.values()) if (t.type === 'fire' && t.state === 'lit') this.setFire(true);
     this.bindButtons();
