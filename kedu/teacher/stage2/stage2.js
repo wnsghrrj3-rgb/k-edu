@@ -376,7 +376,7 @@
       case 'number_line_demo': push(numLine(d.nl.range, d.nl.anchor)); if (d.caption) push('<div class="center-text">' + md(d.caption) + '</div>'); break;
       case 'leveled_problem': {
         const levels = d.levels || {}; const keys = Object.keys(levels); const cur = levels[S.level] ? S.level : (keys[0] || ''); const lv = levels[cur] || {};
-        if (!ctx.learn) { const v = 'a'; cls = 'lv2 lv2-' + v; answerable = true; // 97차 — 새 수준별 장(준호 A 「세 계단」) · 학생 화면(learn)은 1세대 꼴 + 위젯 그대로
+        if (true) { const v = 'a'; cls = 'lv2 lv2-' + v; answerable = true; // 97차 — 새 수준별 장(준호 A 「세 계단」) · 105차 learn 도 새 꼴(채점 위젯 .lw-lv 는 learn 이 오른쪽 칸에 붙임)
           const ansOf = (x, full) => { if (!rev) return ''; let a = x.open ? '<div class="lv2-a open"><b>💡 여러 답</b>' + (x.a ? md(String(x.a).replace(/^여러 답\s*/, '')) : '') + '</div>' : '<div class="lv2-a"><b>정답</b>' + md(String(x.a !== undefined ? x.a : '')) + '</div>'; if (full && x.steps && x.steps.length) a += '<ol class="lv2-st">' + x.steps.map(s => '<li>' + md(s) + '</li>').join('') + '</ol>'; return a; };
           if (v === 'b') push('<div class="lv2-cols n' + keys.length + '">' + keys.map(k => '<div class="lv2-col ' + esc(k) + '"><div class="lv2-tag">' + esc(k) + '</div><div class="lv2-q">' + md(levels[k].q || '') + '</div>' + ansOf(levels[k], false) + '</div>').join('') + '</div>');
           else { const tabs = '<div class="lv-tabs lv2-tabs">' + keys.map((k, i) => '<button class="' + esc(k) + (k === cur ? ' on' : '') + '" data-act="lv" data-k="' + esc(k) + '"><i>' + (i + 1) + '</i>' + esc(k) + '</button>').join('') + '</div>';
