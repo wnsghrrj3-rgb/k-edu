@@ -35,13 +35,13 @@ const settle = (ms = 160) => new Promise((r) => setTimeout(r, ms));
 const opened = (id) => g.flags.has('sit:' + id + ':open'), done = (id) => g.flags.has('sit:' + id + ':done');
 Math.random = () => 0.01;   // 굴림은 항상 성공(실패 갈래는 따로 강제)
 g.life.forceReview = true; g.flags.delete('life:review:done');
-// --- 데이터 전수: 열한 시대 must 상황마다 q(물음·답 셋·revisit), 자리(place)가 그 시대 구역에 있음, review 설정
+// --- 데이터 전수: 열한 시대 must·섞여 나오는 상황마다 q(물음·답 셋·revisit), 자리(place)가 그 시대 구역에 있음, review 설정
 const eras = ['life', 'neo', 'bronze-life', 'gojoseon-life', 'samguk-life', 'silla-life', 'goryeo-life', 'joseon-life', 'joseon-late-life', 'gaehang-life', 'daehan-life'];
-let nq = 0, bad = [];
+let nq = 0, nmix = 0, bad = [];
 for (const e of eras) { const d = JSON.parse(fs.readFileSync(`${base}/../${e}/life.json`, 'utf8')); const w = JSON.parse(fs.readFileSync(`${base}/../${e}/world.json`, 'utf8')); const ids = Array.isArray(w.areas) ? w.areas.map((x) => x.id) : Object.keys(w.areas || {});
   if (!d.review) bad.push(e + ':review');
-  for (const s of d.situations) { if (!s.must) continue; const q = s.q; if (!q || !q.q || !Array.isArray(q.a) || q.a.length !== 3 || !q.revisit) { bad.push(e + ':' + s.id); continue; } nq++; if (s.place && !ids.includes(s.place)) bad.push(e + ':' + s.id + ':place'); if (new Set(q.a).size !== 3) bad.push(e + ':' + s.id + ':dup'); } }
-ok(!bad.length, '열한 시대 must 상황 전부 q 셋·revisit·자리 OK ' + bad.join(' ')); ok(nq >= 78, `물음 수 ${nq}`);
+  for (const s of d.situations) { const q = s.q; if (!s.must) { if (!q || !q.q || !Array.isArray(q.a) || q.a.length !== 3 || new Set(q.a).size !== 3 || !q.revisit) bad.push(e + ':mix:' + s.id); else nmix++; continue; } if (!q || !q.q || !Array.isArray(q.a) || q.a.length !== 3 || !q.revisit) { bad.push(e + ':' + s.id); continue; } nq++; if (s.place && !ids.includes(s.place)) bad.push(e + ':' + s.id + ':place'); if (new Set(q.a).size !== 3) bad.push(e + ':' + s.id + ':dup'); } }
+ok(!bad.length, '열한 시대 must 상황 전부 q 셋·revisit·자리 OK ' + bad.join(' ')); ok(nq >= 78, `물음 수 ${nq}`); ok(nmix >= 143, `섞여 나오는 상황 물음 수 ${nmix}`);
 // --- 고리: 겪은 상황 넷을 흉내(log) → end → 복습 카드
 g.life.log = [{ sit: 'hunger', choice: 'gather' }, { sit: 'stone', choice: 'make' }, { sit: 'fire', choice: 'keep' }, { sit: 'hunt', choice: 'back' }, { sit: 'share', choice: 'equal' }, { sit: 'rain', choice: 'shelter' }];
 g.life.seed = 7; const E = J('life').situations.find((s) => s.id === 'gone').choices.find((c) => c.then?.some((t) => t.end))?.then.find((t) => t.end).end || { branches: [] };
