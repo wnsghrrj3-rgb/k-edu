@@ -22,6 +22,13 @@ export class Sound {
     layer('wind', 'lowpass', 380); layer('fire', 'bandpass', 900, 0.5); layer('rain', 'highpass', 1800); layer('river', 'bandpass', 600, 0.4);
     // 바람 숨결(느린 흔들림)
     const lfo = ctx.createOscillator(); lfo.frequency.value = 0.13; const lg = ctx.createGain(); lg.gain.value = 0.12; lfo.connect(lg); lg.connect(this.layers.wind.gain.gain); lfo.start();
+    // 시대 분위기 층(world.json ambience) — 바다(느린 파도)·사람 소리(장터·마을)·벌레(밤)·기계(공장·정거장)
+    const slowLfo = (gainNode, hz, depth) => { const o = ctx.createOscillator(); o.frequency.value = hz; const gg = ctx.createGain(); gg.gain.value = depth; o.connect(gg); gg.connect(gainNode.gain); o.start(); };
+    layer('sea', 'lowpass', 520, 0.3); slowLfo(this.layers.sea.gain, 0.09, 0.16);
+    layer('crowd', 'bandpass', 480, 0.9); slowLfo(this.layers.crowd.gain, 0.7, 0.05);
+    layer('insects', 'bandpass', 4200, 6); slowLfo(this.layers.insects.gain, 24, 0.5);
+    layer('machines', 'lowpass', 160, 2); slowLfo(this.layers.machines.gain, 1.6, 0.6);
+    for (const k of ['sea', 'crowd', 'insects', 'machines']) this.level[k] = 0;
     for (const k of ['wind', 'fire', 'rain', 'river']) this.set(k, this.level[k]);
     this.g.e.onFrame.push((dt) => this.tick(dt));
   }
@@ -48,6 +55,14 @@ export class Sound {
     if (name === 'good') { osc('triangle', 523, 0, 0.18, 0.12); setTimeout(() => osc('triangle', 784, 0, 0.26, 0.12), 140); return true; }
     if (name === 'bad') { this.thump(0.28 * gain); osc('triangle', 196, 150, 0.5, 0.1); return true; }
     if (/drum/.test(name)) { this.thump(0.5 * gain); setTimeout(() => this.thump(0.4 * gain), 420); return true; }
+    if (name === 'bird') { const f = 1800 + Math.random() * 1400; osc('sine', f, f * 1.4, 0.12, 0.05); setTimeout(() => osc('sine', f * 1.2, f * 0.9, 0.14, 0.04), 160); return true; }
+    if (name === 'owl') { osc('sine', 420, 400, 0.35, 0.07); setTimeout(() => osc('sine', 380, 340, 0.5, 0.06), 420); return true; }
+    if (name === 'dog') { for (let i = 0; i < 2; i++) setTimeout(() => { osc('sawtooth', 320, 220, 0.14, 0.05); this.blip(900, 0.08, 0.08 * gain, 'bandpass'); }, i * 260); return true; }
+    if (name === 'rooster') { osc('sawtooth', 500, 900, 0.3, 0.05); setTimeout(() => osc('sawtooth', 800, 450, 0.7, 0.05), 320); return true; }
+    if (name === 'hammer') { for (let i = 0; i < 3; i++) setTimeout(() => this.blip(2600, 0.04, 0.18 * gain, 'bandpass'), i * 480); return true; }
+    if (name === 'horse') { for (let i = 0; i < 4; i++) setTimeout(() => this.thump(0.12 * gain), i * 160); return true; }
+    if (name === 'train') { osc('sawtooth', 220, 215, 1.4, 0.07); osc('sawtooth', 277, 270, 1.4, 0.06); return true; }
+    if (name === 'car') { this.blip(300, 1.6, 0.14 * gain, 'lowpass'); return true; }
     if (/bell/.test(name)) { osc('sine', 660, 640, 2.2, 0.16); osc('sine', 1320, 1300, 1.2, 0.05); return true; }
     return false;
   }
@@ -64,6 +79,11 @@ export class Sound {
     if (!this.ctx || !this.on) return; const g = this.g;
     // 강물: 높이맵이 있으면 둘레 24칸(반지름 4·10·18 × 8방향) 중 물(h<0) 비율로 — 열두 시대 공통 · 없으면 'river' 구역과의 거리
     if (g.p?.pos) { this.waterT = (this.waterT || 0) + dt; if (this.waterT > 0.5) { this.waterT = 0; const v = Sound.waterLevel(g.e, g.p.pos.x, g.p.pos.z); if (v != null && Math.abs(v - this.level.river) > 0.01) this.set('river', v); } }
+    // 시대 분위기 — world.json ambience: {base:{sea,crowd,insects,machines,wind}, near:{<area>:<layer>}, day:[...], night:[...], gap}
+    const amb = g.world?.ambience; if (amb && g.p?.pos) { this.ambT = (this.ambT || 0) + dt; if (this.ambT > 0.6) { this.ambT = 0; const night = !!g.story?.isNight; const base = amb.base || {}; const want = { sea: base.sea || 0, crowd: night ? 0 : base.crowd || 0, insects: night ? base.insects ?? 0.3 : 0, machines: base.machines || 0 };
+      for (const [id, lay] of Object.entries(amb.near || {})) { const a = g.e.areas?.get(id); if (!a) continue; const d = Math.hypot(a.x - g.p.pos.x, a.z - g.p.pos.z); const v = Math.max(0, 1 - d / (amb.nearRadius || 36)); if (lay === 'crowd' && night) continue; want[lay] = Math.max(want[lay] || 0, v * (amb.nearLevel?.[lay] ?? { sea: 0.3, crowd: 0.22, machines: 0.2, insects: 0.3 }[lay] ?? 0.2)); }
+      for (const k of ['sea', 'crowd', 'insects', 'machines']) if (Math.abs((want[k] || 0) - (this.level[k] || 0)) > 0.01) this.set(k, want[k] || 0);
+      const list = night ? amb.night : amb.day; if (list?.length && !g.ui?.isOpen?.()) { this.oneT = (this.oneT || 0) + 0.6; const gap = amb.gap || 14; if (this.oneT > gap * (0.6 + Math.random() * 0.8)) { this.oneT = 0; this.play(list[Math.floor(Math.random() * list.length)], 0.5); } } } }
     // 발소리
     if (g.p?.moving) { this.stepT += dt * (g.p.keys.ShiftLeft || g.p.keys.ShiftRight ? 3.4 : 2.0); if (this.stepT >= 1) { this.stepT = 0; this.blip(g.p.inWater ? 700 : 260, g.p.inWater ? 0.12 : 0.07, g.p.inWater ? 0.18 : 0.14, g.p.inWater ? 'bandpass' : 'lowpass'); } }
     // 심장: 배가 너무 고플 때

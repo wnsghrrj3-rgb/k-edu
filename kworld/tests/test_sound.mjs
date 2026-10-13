@@ -28,4 +28,18 @@ made.length = 0; g.p.moving = true; g.p.keys = {}; snd.tick(0.6); ok(made.includ
 // life.js 가 카드·결과 소리를 부름
 const life = fs.readFileSync(path.join(root, 'core/life.js'), 'utf8');
 ok(life.includes("play?.('card'") && life.includes("c.bad ? 'bad' : 'good'"), 'life.js: 상황 카드=card · 결과=good/bad');
+// 시대 분위기 — world.json ambience 가 열한 시대에 서로 다르게, tick 이 장소·밤낮에 따라 층을 올린다
+const eras = ['life','neo','bronze-life','gojoseon-life','samguk-life','silla-life','goryeo-life','joseon-life','joseon-late-life','gaehang-life','daehan-life'];
+const ambs = eras.map((e) => JSON.parse(fs.readFileSync(path.join(root, `eras/${e}/world.json`), 'utf8')).ambience);
+ok(ambs.every((a) => a && a.near && a.day?.length && a.night?.length), '열한 시대 전부 ambience(near·day·night)');
+ok(new Set(ambs.map((a) => JSON.stringify([a.base, Object.values(a.near).sort(), a.day]))).size === eras.length, '열한 시대 분위기가 전부 다르다');
+ok(!ambs[0].day.includes('dog') && ambs[0].night.includes('wolf') && ambs[10].day.includes('car') && !ambs[10].night.includes('wolf'), '구석기 낮엔 개 없음·밤 늑대 / 대한민국 낮 자동차·밤 늑대 없음');
+for (const [i, a] of ambs.entries()) for (const id of Object.keys(a.near)) { const w = JSON.parse(fs.readFileSync(path.join(root, `eras/${eras[i]}/world.json`), 'utf8')); const ids = Array.isArray(w.areas) ? w.areas.map((x) => x.id) : Object.keys(w.areas || {}); if (!ids.includes(id)) ok(false, `${eras[i]} near ${id} 구역 없음`); }
+ok(true, 'near 구역 이름이 전부 그 시대 구역에 있다');
+const set = []; const S2 = new Sound({ e: { hm: null, areas: new Map([['jangteo', { x: 0, z: 0 }], ['hang', { x: 200, z: 0 }]]), onFrame: [] }, p: { pos: { x: 0, z: 0 }, keys: {} }, world: { ambience: ambs[9] }, story: { isNight: false }, ui: { isOpen: () => true } }); S2.init(); S2.set = (k, v) => { S2.level[k] = v; set.push([k, +v.toFixed(2)]); };
+S2.tick(0.7); ok(set.some(([k, v]) => k === 'crowd' && v > 0.1) && !set.some(([k, v]) => k === 'sea' && v > 0), '개항 장터 곁 낮: 사람 소리 켜짐·바다 안 켜짐');
+S2.g.story.isNight = true; set.length = 0; S2.tick(0.7); ok(set.some(([k, v]) => k === 'crowd' && v === 0) && set.some(([k, v]) => k === 'insects' && v > 0), `밤: 사람 소리 꺼지고 벌레 소리 (${JSON.stringify(set)})`);
+S2.g.p.pos = { x: 200, z: 0 }; set.length = 0; S2.tick(0.7); ok(set.some(([k, v]) => k === 'sea' && v > 0.1), '부두 곁: 바다 소리');
+for (const n of ['bird', 'owl', 'dog', 'rooster', 'hammer', 'horse', 'train', 'car']) { made.length = 0; snd.synth(n); if (!made.length) ok(false, `${n} 합성 없음`); }
+ok(true, '한 번 소리 여덟 가지 전부 합성됨');
 console.log(`sound ${pass}/${fail}`); if (fail) process.exit(1);
