@@ -92,6 +92,7 @@ export class Save {
       if (g.life) {   // 인생 층: 하늘·불은 상황 깃발로 되짚는다(사건은 지나간 것으로)
         if (F('gone:1') || F('sit:rain:done')) st.transition('day', 0.5); else if (F('rain:on')) { st.transition('rainy', 0.5); st.rain(true); } else if (F('sit:share:done')) st.transition('night', 0.5); else if (F('day:2') || F('fire:kept')) st.transition('day', 0.5);
         if (F('fire:kept')) g.setFire(true); else if (F('night:1')) g.setFire(true, true);
+        if (snap.life?.sky) st.setSky?.(snap.life.sky);   // 계절·날씨 하늘(10-13): 저장본의 하늘 한 줄로 되짚는다 — 위 깃발 규칙(구석기)보다 뒤라 이것이 이긴다
       }
     }
     if (snap.pos && g.p) { g.p.pos.x = snap.pos[0]; g.p.pos.z = snap.pos[1]; g.p.yaw = snap.pos[2] || 0; if (g.e.groundY) g.p.pos.y = g.e.groundY(snap.pos[0], snap.pos[1]) + (g.world.eye || 1.55); }

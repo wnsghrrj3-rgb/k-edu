@@ -94,28 +94,59 @@ export class Story {
     this.day = { sun: e.sun.intensity, sunC: e.sun.color.clone(), fogC: e.scene.fog ? e.scene.fog.color.clone() : null, fogN: e.scene.fog?.near, fogF: e.scene.fog?.far, exp: e.renderer.toneMappingExposure };
     const hemi = e.scene.children.find((o) => o.isHemisphereLight); if (hemi) this.day.hemi = hemi.intensity;
     if (e.skyDome) { const u = e.skyDome.material.uniforms; this.day.sky = { z: u.uZenith.value.clone(), h: u.uHorizon.value.clone(), a: u.uHaze.value.clone(), s: u.uSunColor.value.clone(), c: u.uCloud.value }; }
+    // 계절·날씨 층: 풀(scenery meadow-grass uBase·uTip)과 원경 산 눈(uSnow)도 팔레트에 든다 — 없는 세상이면 그냥 건너뜀
+    const grass = this.grassMesh(); if (grass) { const u = grass.material.uniforms; this.day.grass = { b: u.uBase.value.clone(), t: u.uTip.value.clone() }; }
+    this.day.snow = this.mountSnow() ?? 0;
     this.cur = this.pal('day');
   }
+  grassMesh() { const e = this.g.e; if (!e.scene?.children) return null; return e.scene.children.find((o) => o.name === 'meadow-grass' && o.material?.uniforms?.uBase) || null; }
+  mountSnow() { const e = this.g.e; const g = e.scene?.children?.find?.((o) => o.name === 'far-mountains'); const u = g?.children?.[0]?.material?.uniforms?.uSnow; return u ? u.value : null; }
+  mountSnowSet(v) { const e = this.g.e; const g = e.scene?.children?.find?.((o) => o.name === 'far-mountains'); if (!g) return; for (const m of g.children) if (m.material?.uniforms?.uSnow) m.material.uniforms.uSnow.value = v; }
+  /** 이름이 하늘 팔레트인가(사건 sky: 검사용) */
+  static SKIES = ['day', 'night', 'dull', 'rainy', 'drought', 'storm', 'autumn', 'winter', 'dawn', 'smoke'];
   pal(name) {
     const C = (x) => new THREE.Color(x); const d = this.day;
     if (name === 'night') return { sun: 0.12, sunC: C(0x6f86b8), hemi: 0.16, fogC: C(0x0b0f18), fogN: 6, fogF: 34, exp: 0.62, sky: { z: C(0x05070f), h: C(0x141a2a), a: C(0x1b1f33), s: C(0x2a3350), c: 0.15 } };
     if (name === 'dull') return { sun: 0.9, sunC: C(0xc9cdd6), hemi: 0.42, fogC: C(0x9aa2a8), fogN: 16, fogF: 70, exp: 0.86, sky: { z: C(0x6f7d8c), h: C(0xb5bcc1), a: C(0xb9bec4), s: C(0xd8dce0), c: 0.9 } };
-    if (name === 'rainy') return { sun: 0.5, sunC: C(0x9aa4b8), hemi: 0.3, fogC: C(0x6b7480), fogN: 10, fogF: 50, exp: 0.75, sky: { z: C(0x3c4756), h: C(0x7d8791), a: C(0x848d97), s: C(0x9aa2ab), c: 1.0 } };
-    return d ? { sun: d.sun, sunC: d.sunC.clone(), hemi: d.hemi, fogC: d.fogC ? d.fogC.clone() : null, fogN: d.fogN, fogF: d.fogF, exp: d.exp, sky: d.sky && { z: d.sky.z.clone(), h: d.sky.h.clone(), a: d.sky.a.clone(), s: d.sky.s.clone(), c: d.sky.c } } : null;
+    if (name === 'rainy') return { sun: 0.5, sunC: C(0x9aa4b8), hemi: 0.3, fogC: C(0x6b7480), fogN: 10, fogF: 50, exp: 0.75, sky: { z: C(0x3c4756), h: C(0x7d8791), a: C(0x848d97), s: C(0x9aa2ab), c: 1.0 }, grass: { b: C(0x3f5a30), t: C(0x6d8a4a) } };
+    // ---- 계절·날씨(10-13): 흉년·홍수·겨울이 카드보다 먼저 하늘 색으로 온다. 풀 색·산 눈까지 한 벌 ----
+    if (name === 'drought') return { sun: 2.7, sunC: C(0xfff0cc), hemi: 0.52, fogC: C(0xe6dcb6), fogN: 22, fogF: 115, exp: 1.1, sky: { z: C(0x8aa3bb), h: C(0xe6d6ad), a: C(0xece0b8), s: C(0xfff4da), c: 0.1 }, grass: { b: C(0xa38e4a), t: C(0xd1bb6c) }, snow: 0 };   // 뜨겁고 희뿌연 여름 — 논이 갈라진다
+    if (name === 'storm') return { sun: 0.32, sunC: C(0x8590a4), hemi: 0.24, fogC: C(0x58626c), fogN: 8, fogF: 42, exp: 0.68, sky: { z: C(0x262e3a), h: C(0x5b666f), a: C(0x66707a), s: C(0x7a838c), c: 1.0 }, grass: { b: C(0x37502b), t: C(0x5f7d42) } };   // 비 오기 전 먹구름 — 홍수가 온다
+    if (name === 'autumn') return { sun: 2.05, sunC: C(0xffc37c), hemi: 0.5, fogC: C(0xe3d6bd), fogN: 30, fogF: 140, exp: 1.0, sky: { z: C(0x5b86ad), h: C(0xead4b0), a: C(0xe9d9bc), s: C(0xffd9a2), c: 0.42 }, grass: { b: C(0x8c7c3c), t: C(0xcaa95c) }, snow: 0 };   // 가을 — 낮은 금빛 해, 누런 들
+    if (name === 'winter') return { sun: 1.35, sunC: C(0xe8efff), hemi: 0.58, fogC: C(0xd8dee6), fogN: 18, fogF: 90, exp: 0.94, sky: { z: C(0x87a1be), h: C(0xd8dfe7), a: C(0xdde3ea), s: C(0xf3f6fb), c: 0.75 }, grass: { b: C(0x8e8a73), t: C(0xb8b09a) }, snow: 1 };   // 겨울 — 차고 옅은 하늘, 산에 눈
+    if (name === 'dawn') return { sun: 0.95, sunC: C(0xffa472), hemi: 0.3, fogC: C(0xd4b8b0), fogN: 14, fogF: 80, exp: 0.86, sky: { z: C(0x2d3e6c), h: C(0xe19b6e), a: C(0xdaa08c), s: C(0xffb284), c: 0.4 } };   // 새벽 — 붉은 지평선
+    if (name === 'smoke') return { sun: 1.2, sunC: C(0xe2a272), hemi: 0.34, fogC: C(0x9c8674), fogN: 10, fogF: 60, exp: 0.8, sky: { z: C(0x6a6865), h: C(0xaa917d), a: C(0xae9680), s: C(0xdaa985), c: 0.85 } };   // 전쟁·불 — 연기 낀 하늘
+    return d ? { sun: d.sun, sunC: d.sunC.clone(), hemi: d.hemi, fogC: d.fogC ? d.fogC.clone() : null, fogN: d.fogN, fogF: d.fogF, exp: d.exp, sky: d.sky && { z: d.sky.z.clone(), h: d.sky.h.clone(), a: d.sky.a.clone(), s: d.sky.s.clone(), c: d.sky.c }, grass: d.grass && { b: d.grass.b.clone(), t: d.grass.t.clone() }, snow: d.snow ?? 0 } : null;
   }
   transition(name, sec = 9) {
     this.captureDay(); if (!this.day) return;
+    if (!Story.SKIES.includes(name)) return;   // 모르는 이름은 조용히(day 는 처음 값)
+    if (!this.day.grass) { const gm = this.grassMesh(); if (gm && !this.grassTinted) { const u = gm.material.uniforms; this.day.grass = { b: u.uBase.value.clone(), t: u.uTip.value.clone() }; } }   // 풍경층이 첫 전환보다 늦게 왔으면 그때 낮 풀 색을 잡는다
+    if (this.pal(name)?.grass && this.grassMesh()) this.grassTinted = true;
     this.from = this.snapshot(); this.to = this.pal(name); this.trT = 0; this.trSec = sec; this.skyName = name; this.isNight = name === 'night';   // 위험층이 보는 밤(사건 sky:night 로 오는 둘째 밤 포함)
-    this.g.sound?.set('wind', { night: 0.42, dull: 0.5, rainy: 0.55 }[name] ?? 0.35);
+    if (!this.to.grass && this.day.grass) this.to.grass = { b: this.day.grass.b.clone(), t: this.day.grass.t.clone() };   // 풀 색이 없는 팔레트는 낮 풀 색으로 돌아간다(밤·흐림은 셰이더가 햇빛으로 가라앉힘)
+    if (this.to.snow == null) this.to.snow = name === 'night' || name === 'dull' || name === 'rainy' || name === 'storm' || name === 'smoke' || name === 'dawn' ? (this.from.snow ?? 0) : (this.day.snow ?? 0);   // 밤·비는 산 눈을 그대로, 낮·계절은 자기 값
+    this.g.sound?.set('wind', { night: 0.42, dull: 0.5, rainy: 0.55, storm: 0.72, drought: 0.4, winter: 0.5, autumn: 0.38, dawn: 0.3, smoke: 0.4 }[name] ?? 0.35);
   }
-  snapshot() { const e = this.g.e; const hemi = e.scene.children.find((o) => o.isHemisphereLight); const u = e.skyDome && e.skyDome.material.uniforms;
-    return { sun: e.sun.intensity, sunC: e.sun.color.clone(), hemi: hemi ? hemi.intensity : 0.3, fogC: e.scene.fog ? e.scene.fog.color.clone() : null, fogN: e.scene.fog?.near, fogF: e.scene.fog?.far, exp: e.renderer.toneMappingExposure, sky: u && { z: u.uZenith.value.clone(), h: u.uHorizon.value.clone(), a: u.uHaze.value.clone(), s: u.uSunColor.value.clone(), c: u.uCloud.value } }; }
+  /** 지금 하늘 한 줄(저장용): 낮·맑음이면 null */
+  skyState() { const n = this.skyName || 'day'; if (n === 'day' && !this.rainOn && !this.snowOn) return null; return { n, rain: !!this.rainOn && !this.snowOn, snow: !!this.snowOn }; }
+  /** 저장본의 하늘을 한 번에 되짚는다(재개) */
+  setSky(st) { if (!st) return; this.transition(st.n || 'day', 0.5); if (st.snow) this.snow(true); else this.rain(!!st.rain); }
+  snapshot() { const e = this.g.e; const hemi = e.scene.children.find((o) => o.isHemisphereLight); const u = e.skyDome && e.skyDome.material.uniforms; const gm = this.grassMesh();
+    return { sun: e.sun.intensity, sunC: e.sun.color.clone(), hemi: hemi ? hemi.intensity : 0.3, fogC: e.scene.fog ? e.scene.fog.color.clone() : null, fogN: e.scene.fog?.near, fogF: e.scene.fog?.far, exp: e.renderer.toneMappingExposure, sky: u && { z: u.uZenith.value.clone(), h: u.uHorizon.value.clone(), a: u.uHaze.value.clone(), s: u.uSunColor.value.clone(), c: u.uCloud.value }, grass: gm && { b: gm.material.uniforms.uBase.value.clone(), t: gm.material.uniforms.uTip.value.clone() }, snow: this.mountSnow() ?? 0 }; }
   /** 비 — 플레이어 주변에 떨어지는 점들 */
   rain(on) {
     const e = this.g.e; if (!e.scene.add || !this.g.p?.pos) { this.rainOn = on; return; }
     if (on && !this.rainPts) { const n = 1600; const arr = new Float32Array(n * 3); for (let i = 0; i < n; i++) { arr[i * 3] = (Math.random() - .5) * 44; arr[i * 3 + 1] = Math.random() * 18; arr[i * 3 + 2] = (Math.random() - .5) * 44; }
       const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(arr, 3)); this.rainPts = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xbfd0e6, size: 0.06, transparent: true, opacity: 0.7, depthWrite: false })); this.rainPts.frustumCulled = false; e.scene.add(this.rainPts); }
-    if (this.rainPts) this.rainPts.visible = on; this.rainOn = on; this.g.sound?.set('rain', on ? 0.4 : 0);
+    if (this.rainPts && !this.tl?.snow) { this.rainPts.material.color.set(0xbfd0e6); this.rainPts.material.size = 0.06; }
+    if (this.rainPts) this.rainPts.visible = on; this.rainOn = on; this.snowOn = false; this.g.sound?.set('rain', on ? 0.4 : 0);
+  }
+  /** 눈 — 비 점을 희고 굵게, 천천히 흩날리게(겨울 사건 snow:true) */
+  snow(on) {
+    if (!on) { if (this.snowOn) this.rain(false); return; }
+    this.rain(true); this.g.sound?.set('rain', 0); this.snowOn = true; this.rainOn = false;
+    if (this.rainPts) { this.rainPts.material.color.set(0xffffff); this.rainPts.material.size = 0.2; this.rainPts.material.opacity = 0.9; this.rainPts.visible = true; }
   }
   /** 사건: world.events — on(조건) 이 참이 되는 순간 한 번, do 를 순서대로 */
   runEvents() {
@@ -130,6 +161,7 @@ export class Story {
       if (a.goal != null) g.ui.setGoal(a.goal);
       if (a.sky) this.transition(a.sky, a.sec);
       if (a.rain != null) this.rain(a.rain);
+      if (a.snow != null) this.snow(a.snow);
       if (a.fire != null) g.setFire(a.fire, a.small);
       if (a.cold != null) g.hungerMul = a.cold;
       if (a.lines) await this.overlay(a);
@@ -230,9 +262,11 @@ export class Story {
       if (e.scene.fog && f.fogC && t.fogC) { e.scene.fog.color.copy(f.fogC).lerp(t.fogC, k); e.scene.fog.near = L(f.fogN, t.fogN); e.scene.fog.far = L(f.fogF, t.fogF); }
       e.renderer.toneMappingExposure = L(f.exp, t.exp);
       if (e.skyDome && f.sky && t.sky) { const u = e.skyDome.material.uniforms; u.uZenith.value.copy(f.sky.z).lerp(t.sky.z, k); u.uHorizon.value.copy(f.sky.h).lerp(t.sky.h, k); u.uHaze.value.copy(f.sky.a).lerp(t.sky.a, k); u.uSunColor.value.copy(f.sky.s).lerp(t.sky.s, k); u.uCloud.value = L(f.sky.c, t.sky.c); }
+      if (f.grass && t.grass) { const gm = this.grassMesh(); if (gm) { const u = gm.material.uniforms; u.uBase.value.copy(f.grass.b).lerp(t.grass.b, k); u.uTip.value.copy(f.grass.t).lerp(t.grass.t, k); } }
+      if (f.snow != null && t.snow != null && f.snow !== t.snow) this.mountSnowSet(L(f.snow, t.snow));
     }
     if (this.tl?.disc && this.tl.disc.position.y < this.tl.discTo) this.tl.disc.position.y = Math.min(this.tl.discTo, this.tl.disc.position.y + dt * 0.7);
-    if (this.rainPts && this.rainPts.visible) { const p = this.rainPts.geometry.attributes.position; const a = p.array; const c = this.g.p.pos; for (let i = 0; i < a.length; i += 3) { a[i + 1] -= dt * 14; if (a[i + 1] < -1) { a[i + 1] = 18; a[i] = c.x + (Math.random() - .5) * 44; a[i + 2] = c.z + (Math.random() - .5) * 44; } } p.needsUpdate = true; }
+    if (this.rainPts && this.rainPts.visible) { const p = this.rainPts.geometry.attributes.position; const a = p.array; const c = this.g.p.pos; const sn = this.snowOn || this.tl?.snow; const v = sn ? 2.2 : 14; this.snowT = (this.snowT || 0) + dt; const sw = sn ? Math.sin(this.snowT * 0.9) * dt * 0.8 : 0; for (let i = 0; i < a.length; i += 3) { a[i + 1] -= dt * v; if (sn) a[i] += sw + Math.sin(a[i + 2] + this.snowT * 1.7) * dt * 0.35; if (a[i + 1] < -1) { a[i + 1] = 18; a[i] = c.x + (Math.random() - .5) * 44; a[i + 2] = c.z + (Math.random() - .5) * 44; } } p.needsUpdate = true; }
     for (const k in this.actors || {}) { const ac = this.actors[k]; if (ac.obj.visible) ac.tick(dt); }
     for (const o of this.animals || []) { const an = o.userData.animal; if (!an || !o.visible) continue; an.graze += dt; const moving = this.movers.some((m) => m.it.obj === o);
       const down = moving ? 0 : (Math.sin(an.graze * 0.35 + an.phase) > 0.2 ? 0.75 : 0);   // 풀 뜯기: 한동안 고개 숙였다가 든다

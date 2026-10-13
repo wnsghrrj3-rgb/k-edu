@@ -222,7 +222,7 @@ export class Life {
     show(); g.save?.touch();
   }
   // ---------- 저장 ----------
-  snapshot() { return { nation: this.nation, nationName: this.nationName, status: this.status, statusName: this.statusName, values: this.values, abil: this.abil, xp: this.xp, hurt: [...this.hurt], opened: [...this.opened], done: [...this.done], log: this.log, seed: this.seed, mixed: this.mixed, tries: this.tries, luckSeen: this.luckSeen || [], luckSlots: this.luckSlots || null }; }
+  snapshot() { return { nation: this.nation, nationName: this.nationName, status: this.status, statusName: this.statusName, values: this.values, abil: this.abil, xp: this.xp, hurt: [...this.hurt], opened: [...this.opened], done: [...this.done], log: this.log, seed: this.seed, mixed: this.mixed, tries: this.tries, luckSeen: this.luckSeen || [], luckSlots: this.luckSlots || null, sky: this.g.story?.skyState?.() || null }; }
   restore(s) { if (!s) return; this.carried = true; if (s.nation) { this.nation = s.nation; this.nationName = s.nationName; this.g.flags.add('nation:' + s.nation); } if (this.g.sex?.id) this.g.flags.add('sex:' + this.g.sex.id); if (s.status) { this.status = s.status; this.statusName = s.statusName; this.g.flags.add('status:' + s.status); } Object.assign(this.values, s.values || {}); Object.assign(this.abil, s.abil || {}); Object.assign(this.xp, s.xp || {}); this.hurt = new Set(s.hurt || []); this.opened = new Set(s.opened || []); this.done = new Set(s.done || []); this.log = s.log || []; this.seed = s.seed || this.seed; this.mixed = s.mixed || this.mixed; this.tries = s.tries || {}; this.luckSeen = s.luckSeen || []; this.luckSlots = s.luckSlots || null; this.render(); }
   // ---------- 화면 ----------
   hud() {

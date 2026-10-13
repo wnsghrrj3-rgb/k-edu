@@ -86,6 +86,7 @@ export class Game {
       if (!pick && this.world.prologue) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; }
     } else { if (this.world.characters) await this.chooseCharacter(this.world.characters, null); if (this.life) this.life.begin(); if (this.world.prologue && this.story) { this.p.enabled = false; await this.story.prologue(this.world.prologue); this.p.enabled = true; } }
     if (new URLSearchParams(location.search).get('peek') === '1' && this.story) this.story.peek();
+    { const sk = new URLSearchParams(location.search).get('sky'); if (sk && this.story) { this.story.transition(sk.replace(/\+snow$/, ''), 1.5); if (/\+snow$/.test(sk)) this.story.snow(true); } }   // 계절·날씨 확인용: ?sky=drought · ?sky=winter+snow (shot.py --q sky=…)
     this.friends = new Friends(this); this.friends.start();   // 반 멀티 0단계 — 같은 학급·같은 시대 친구가 보인다(정식 좌석만, 조용히)
     this.ui.intro(this.world.title, this.world.question);
     setTimeout(() => this.ui.say(this.world.intro, 5000), 400);
