@@ -3,6 +3,44 @@
   "name": "성주(귀족)",
   "lines": [
    {
+    "if": "sit:law:open && !sit:law:done",
+    "text": "법을 돌에 적었다. 옷 색은 벼슬대로, 죄는 벌대로. 마을 어른 말이 아니라 나라의 글이다.",
+    "choices": [
+     {
+      "label": "옷 색을 받는다 — 귀족",
+      "if": "status:noble",
+      "gray": "공복은 벼슬 있는 귀족이 받는다.",
+      "flag": "lw2:robe",
+      "say": "👘 자줏빛. 「네 자리.」"
+     },
+     {
+      "label": "법을 외운다 — 눈",
+      "if": "!status:slave",
+      "gray": "노비는 법 앞에 서지 않는다 — 주인이 선다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 1,
+       "why": "돌에 새긴 글자를 끝까지 읽는 눈.",
+       "fail": "…반만 외웠다."
+      },
+      "flag": "lw2:learn",
+      "say": "📜 도둑은 열 배. 외웠다."
+     },
+     {
+      "label": "⚠ 옛 법대로 한다 — 촌주",
+      "if": "status:chief",
+      "gray": "마을 다툼을 어른 말로 끝내는 건 촌주다.",
+      "flag": "lw2:oldway",
+      "say": "⚖ 성주가 불렀다. 「나라 법이 먼저다.」 곡식 한 섬."
+     },
+     {
+      "label": "본다",
+      "flag": "lw2:watch",
+      "say": "돌에 적힌 법. 어른의 말보다 위."
+     }
+    ]
+   },
+   {
     "if": "sit:debt:open && !sit:debt:done",
     "text": "가을이다. 두 단 빌렸으니 세 단. 땅문서가 여기 있다 — 갚겠나.",
     "choices": [
@@ -579,6 +617,57 @@
   "name": "소작 농민",
   "lines": [
    {
+    "if": "sit:oxplow:open && !sit:oxplow:done",
+    "text": "소로 간다는 명이 왔어. 소 한 마리가 다섯 몫. 소가 있어야지 — 너희 집은.",
+    "choices": [
+     {
+      "label": "소를 산다 — 귀족·촌주, 곡식 둘",
+      "if": "status:noble || status:chief && val:grain>=2",
+      "gray": "소를 사는 건 곡식 둘 있는 집이다.",
+      "flag": "ox:buyox",
+      "say": "🐂 곡식 두 섬 → 소. 논이 배로 갈렸다."
+     },
+     {
+      "label": "소를 빌린다 — 평민",
+      "if": "status:farmer",
+      "gray": "빌리는 건 소 없는 평민이다.",
+      "flag": "ox:borrow",
+      "say": "🤝 하루 빌리고 이틀 일했다. 그래도 빨랐다."
+     },
+     {
+      "label": "쟁기를 만든다 — 장인 (손)",
+      "if": "status:artisan",
+      "gray": "쇠 보습은 장인이 만든다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "소 힘을 받아도 안 휘는 보습을 벼리는 손.",
+       "fail": "…휘었다. 다시."
+      },
+      "flag": "ox:plow",
+      "say": "🔧 쇠 보습. 집집이 찾았다."
+     },
+     {
+      "label": "소 대신 끈다 — 노비 (몸)",
+      "if": "status:slave",
+      "gray": "사람이 쟁기를 끄는 건 소 없는 집의 노비다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 1,
+       "why": "쟁기를 어깨에 걸고 논을 가르는 몸.",
+       "fail": "…주저앉았다."
+      },
+      "flag": "ox:pull",
+      "say": "🏋 사람이 쟁기를 끈다."
+     },
+     {
+      "label": "본다",
+      "flag": "ox:watch",
+      "say": "소 한 마리가 논을 가른다 — 있는 집과 없는 집."
+     }
+    ]
+   },
+   {
     "if": "sit:tax:open && !sit:tax:done && status:artisan && !cut:smith",
     "text": "쇠 보습 있나? 곡식 두 단 주지. 올해는 깊이 갈겠다.",
     "choices": [
@@ -706,6 +795,59 @@
  "sailor": {
   "name": "뱃사람",
   "lines": [
+   {
+    "if": "sit:waboat:open && !sit:waboat:done",
+    "text": "왜로 가는 배요. 덩이쇠·베·토기. 바다는 돈이고 목숨이오. …탈 거요, 실을 거요.",
+    "choices": [
+     {
+      "label": "⚠ 배에 탄다 — 몸 (백제·가야)",
+      "if": "nation:baekje || nation:gaya && !hurt:wound && !status:slave",
+      "gray": "왜 가는 배는 백제·가야 포구에서 뜬다 — 몸 성한 사람이 탄다. 노비는 노를 젓는다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 2,
+       "why": "사흘 파도에 버티는 몸.",
+       "fail": "…배가 뒤집혔다. 어깨."
+      },
+      "rollFailFlag": "wb:wreck",
+      "rollHurt": "wound",
+      "flag": "wb:board",
+      "say": "⛵ 왜의 포구. 덩이쇠 → 곡식 세 섬. 돌아왔다."
+     },
+     {
+      "label": "짐을 싣는다 — 귀족·촌주",
+      "if": "status:noble || status:chief",
+      "gray": "배에 실을 덩이쇠는 귀족·촌주 집에 있다.",
+      "flag": "wb:load",
+      "say": "📦 덩이쇠 스물. 돌아온 배에 곡식 두 섬."
+     },
+     {
+      "label": "노를 젓는다 — 노비",
+      "if": "status:slave",
+      "gray": "노는 노비가 젓는다.",
+      "flag": "wb:row",
+      "say": "🚣 주인 짐을 싣고 사흘. 밥."
+     },
+     {
+      "label": "베를 싣는다 — 여자 (손)",
+      "if": "sex:f && !status:slave",
+      "gray": "베는 집안 여자가 짜서 싣는다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "배에 실을 만큼 고른 베.",
+       "fail": "…올이 성겨서 반값."
+      },
+      "flag": "wb:cloth",
+      "say": "🧵 베 세 필. 곡식 한 섬."
+     },
+     {
+      "label": "본다",
+      "flag": "wb:watch",
+      "say": "쇠와 베가 바다를 건넌다."
+     }
+    ]
+   },
    {
     "if": "sit:boat:open && !sit:boat:done",
     "text": "왜로 간다. 덩이쇠·비단·사람. 한 달에 한 번. 몰래 타는 사람도 있지 — 들키면.",
@@ -855,6 +997,59 @@
  "rebel": {
   "name": "산속 사람",
   "lines": [
+   {
+    "if": "sit:deepwoods:open && !sit:deepwoods:done",
+    "text": "여기선 안 센다. 세금도 성 쌓기도 없다 — 곡식도 없지. …너는 어느 쪽이냐.",
+    "choices": [
+     {
+      "label": "⚠ 숲에 숨는다 — 발 (평민)",
+      "if": "status:farmer && !hurt:leg",
+      "gray": "숲으로 드는 건 세금에 쫓기는 평민, 다리 성한 사람이다.",
+      "roll": {
+       "ab": "발",
+       "hard": 1,
+       "why": "군졸보다 먼저 골짜기를 오르는 발.",
+       "fail": "…뒤처졌다. 돌아갔다."
+      },
+      "flag": "dw:hidein",
+      "say": "🌲 한 철. 호적 없음, 곡식 없음. 봄에 내려왔다."
+     },
+     {
+      "label": "잡으러 보낸다 — 귀족·촌주",
+      "if": "status:noble || status:chief",
+      "gray": "군졸을 보내는 건 귀족·촌주다.",
+      "flag": "dw:hunt",
+      "say": "🪖 둘을 잡아 성 쌓는 데. 「호적이 는다.」"
+     },
+     {
+      "label": "⚠ 주인에게서 달아난다 — 발 (노비)",
+      "if": "status:slave && !hurt:leg",
+      "gray": "달아나는 건 노비, 다리 성한 사람이다.",
+      "roll": {
+       "ab": "발",
+       "hard": 2,
+       "why": "주인의 사람보다 먼저 산 어귀를 넘는 발.",
+       "fail": "…어귀에서 잡혔다. 다리."
+      },
+      "rollFailFlag": "dw:caught",
+      "rollHurt": "leg",
+      "flag": "dw:flee",
+      "say": "🏃 산속 사람 틈. 이름 없이 산다."
+     },
+     {
+      "label": "먹을 것을 나른다 — 곡식 하나",
+      "if": "val:grain>=1 && !status:slave",
+      "gray": "나를 곡식이 있어야 한다.",
+      "flag": "dw:feed",
+      "say": "🌾 보리 한 자루. 「고맙다.」"
+     },
+     {
+      "label": "본다",
+      "flag": "dw:watch",
+      "say": "호적 밖에도 사람이 산다."
+     }
+    ]
+   },
    {
     "if": "sit:fall:open && !sit:fall:done && !nation:silla",
     "text": "나라를 다시 세운다. 깃발은 저기. 솔직히 말하마 — 질 거다. 그래도 서는 사람이 있다."

@@ -505,6 +505,51 @@
   "name": "재상(진골)",
   "lines": [
    {
+    "if": "sit:ministerdoor:open && !sit:ministerdoor:done",
+    "text": "문 앞에 6두품이 서 있군. 들어오는 건 진골뿐이다. 글은 받아 주지. …너는.",
+    "choices": [
+     {
+      "label": "문 안에서 말한다 — 진골",
+      "if": "status:jingol",
+      "gray": "관아 문 안은 진골만 든다.",
+      "flag": "md:inside",
+      "say": "🚪 「그렇게 하지.」 한 마디. 뼈가 문을 열었다."
+     },
+     {
+      "label": "문 밖에서 글을 올린다 — 눈 (6두품)",
+      "if": "status:six",
+      "gray": "글을 올려 뜻을 전하는 건 6두품이다 — 안으로는 못 든다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "열 가지를 한 장에 담는 눈.",
+       "fail": "…글이 길었다. 「다음에.」"
+      },
+      "flag": "md:letter",
+      "say": "📜 「옳다.」 그리고 문은 안 열렸다."
+     },
+     {
+      "label": "마당을 쓴다 — 노비·평민",
+      "if": "status:slave || status:low || status:farmer || status:drifter",
+      "gray": "마당을 쓰는 건 아랫집이다.",
+      "flag": "md:sweep",
+      "say": "🧹 문 안 소리를 들었다. 밥 한 그릇."
+     },
+     {
+      "label": "발해 사신으로 선다 — 발해 다스리는 집",
+      "if": "status:bal_ruler",
+      "gray": "사신은 발해 다스리는 집이 선다.",
+      "flag": "md:envoy",
+      "say": "🎌 「북국 사신.」 신라 사신 뒤. 돌아가 아뢰었다."
+     },
+     {
+      "label": "본다",
+      "flag": "md:watch",
+      "say": "문 하나. 뼈가 연다."
+     }
+    ]
+   },
+   {
     "if": "sit:unrest:open && !sit:unrest:done && status:jingol && !unrest:win && !unrest:lose",
     "text": "서울에 두 편이 섰다. 왕위. 어느 편이냐. 이기면 재상, 지면 섬이다.",
     "choices": [
@@ -567,6 +612,104 @@
   "name": "농부(평민)",
   "lines": [
    {
+    "if": "sit:northford:open && !sit:northford:done",
+    "text": "여울 건너는 북국이야. 발해. 건너가 장사하는 사람도, 막는 사람도 있지.",
+    "choices": [
+     {
+      "label": "북국으로 건너 장사한다 — 눈",
+      "if": "!status:slave && !status:jingol",
+      "gray": "건너가 장사하는 건 작은 집이다. 진골은 안 건너고 노비는 못 건넌다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 1,
+       "why": "말이 통하는 상인을 가려내는 눈.",
+       "fail": "…속았다. 베만 잃었다."
+      },
+      "flag": "nf:cross",
+      "say": "🧳 베 → 담비 가죽. 말이 통했다. 나라는 달랐다."
+     },
+     {
+      "label": "여울을 지킨다 — 진골·호족",
+      "if": "status:jingol || status:hojok || status:retainer",
+      "gray": "여울을 막는 건 군사 있는 집이다.",
+      "flag": "nf:guardford",
+      "say": "🛡 「북국 사람은 못 건넌다.」 창 둘."
+     },
+     {
+      "label": "사신 길을 안내한다 — 발해",
+      "if": "status:bal_ruler || status:bal_folk",
+      "gray": "발해 사신 길은 발해 사람이 안다.",
+      "flag": "nf:guide",
+      "say": "🎌 「자리는 우리가 위다.」"
+     },
+     {
+      "label": "담비 가죽을 산다 — 곡식 하나",
+      "if": "val:grain>=1 && !status:slave",
+      "gray": "곡식 하나가 있어야 산다.",
+      "flag": "nf:buyfur",
+      "say": "🪙 곡식 한 섬 → 가죽 둘. 경주에서 세 배."
+     },
+     {
+      "label": "본다",
+      "flag": "nf:watch",
+      "say": "여울 하나가 두 나라."
+     }
+    ]
+   },
+   {
+    "if": "sit:bigpaddy:open && !sit:bigpaddy:done",
+    "text": "촌락문서야. 소 몇, 뽕나무 몇, 사람 몇 — 적힌 대로 내. 흉년이어도.",
+    "choices": [
+     {
+      "label": "녹읍으로 거둔다 — 진골",
+      "if": "status:jingol",
+      "gray": "녹읍은 진골 집에 내린다.",
+      "flag": "bp:collect",
+      "say": "🌾 마을째 베 열 필. 「녹읍.」"
+     },
+     {
+      "label": "적힌 대로 낸다 — 평민",
+      "if": "status:farmer || status:low || status:bal_folk",
+      "gray": "적힌 대로 내는 건 문서에 든 집이다.",
+      "flag": "bp:pay",
+      "say": "🧾 베 두 필, 곡식 한 섬. 흉년이어도."
+     },
+     {
+      "label": "⚠ 소 한 마리를 숨긴다 — 눈",
+      "if": "status:farmer || status:low && !status:slave",
+      "gray": "숨길 소가 제 것이어야 한다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "나라 사람이 외양간을 세기 전에 소를 산으로 돌리는 눈.",
+       "fail": "…들켰다. 「문서와 다르다.」"
+      },
+      "rollFailFlag": "bp:oxfound",
+      "flag": "bp:hideox",
+      "say": "🐂 문서엔 「소 없음」. 다음 해가 가벼웠다."
+     },
+     {
+      "label": "주인 몫을 낸다 — 노비",
+      "if": "status:slave",
+      "gray": "주인 몫을 지는 건 노비다.",
+      "flag": "bp:formaster",
+      "say": "🏋 주인 집 베를 내가 졌다."
+     },
+     {
+      "label": "촌으로 수령을 보낸다 — 발해 다스리는 집",
+      "if": "status:bal_ruler",
+      "gray": "수령은 발해 다스리는 집이 보낸다.",
+      "flag": "bp:balhae",
+      "say": "🎖 말갈 촌에 수령. 담비 가죽이 올라왔다."
+     },
+     {
+      "label": "본다",
+      "flag": "bp:watch",
+      "say": "소 몇, 뽕나무 몇. 다 적혔다."
+     }
+    ]
+   },
+   {
     "if": "sit:famine:open && !sit:famine:done && !famine:endure && !status:jingol && !status:slave",
     "text": "논이 갈라졌는데 또 걷는대. 빌리면 땅이 가고, 소를 팔면 내년이 가고 — 굶고 버티든가.",
     "choices": [
@@ -621,6 +764,51 @@
  "hojok": {
   "name": "호족(성주)",
   "lines": [
+   {
+    "if": "sit:hojokgate:open && !sit:hojokgate:done",
+    "text": "성주다. 내 성, 내 군사, 내 곳간. 경주는 멀어. 곡식은 여기로 — 내가 지켜 준다.",
+    "choices": [
+     {
+      "label": "호족에게 곡식을 낸다 — 평민",
+      "if": "status:farmer || status:low && val:grain>=1",
+      "gray": "내는 건 곡식 있는 평민이다.",
+      "flag": "hg:paylord",
+      "say": "🌾 곡식 한 섬. 「나라 것은 안 낸다.」"
+     },
+     {
+      "label": "군사가 된다 — 몸",
+      "if": "status:farmer || status:low || status:drifter && !hurt:leg",
+      "gray": "호족의 군사는 다리 성한 아랫집 사람이다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 1,
+       "why": "창을 들고 성벽을 뛰는 몸.",
+       "fail": "…창이 무거웠다. 다음에."
+      },
+      "flag": "hg:soldier",
+      "say": "🗡 창 하나, 밥 세 끼. 성주의 사람."
+     },
+     {
+      "label": "경주에 알린다 — 진골",
+      "if": "status:jingol",
+      "gray": "경주에 글을 보내는 건 진골이다.",
+      "flag": "hg:report",
+      "say": "📜 경주는 멀었다. 답이 없었다."
+     },
+     {
+      "label": "성주로 거둔다 — 호족",
+      "if": "status:hojok",
+      "gray": "거두는 건 호족이다.",
+      "flag": "hg:rule",
+      "say": "🏯 마을 열둘. 경주에서 온 사람을 돌려보냈다."
+     },
+     {
+      "label": "본다",
+      "flag": "hg:watch",
+      "say": "나라보다 가까운 문."
+     }
+    ]
+   },
    {
     "if": "sit:famine:open && !sit:famine:done && !famine:borrow && !status:jingol && !status:slave && !status:bal_ruler && !status:bal_folk && !status:hojok",
     "text": "나라 곳간은 비었다. 내 곳간은 찼다. 두 단 내주지 — 가을에 세 단. 땅문서를 두고 가라.",

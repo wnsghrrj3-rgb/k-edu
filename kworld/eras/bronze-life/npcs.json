@@ -81,6 +81,88 @@
   "name": "쇠 다루는 사람",
   "lines": [
    {
+    "if": "sit:charcoal:open && !sit:charcoal:done",
+    "text": "숯이 산처럼 들어. 굽든지, 나무를 대든지 — 숲을 제 것으로 하는 집도 있지.",
+    "choices": [
+     {
+      "label": "숯을 굽는다 — 손",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "흙을 덮고 사흘 동안 불을 재우는 손.",
+       "fail": "…다 타서 재가 됐다."
+      },
+      "flag": "cc:burn",
+      "say": "🖤 검고 가벼운 숯. 거울 하나 몫."
+     },
+     {
+      "label": "나무를 베어 판다 — 몸",
+      "roll": {
+       "ab": "몸",
+       "hard": 1,
+       "why": "나무 한 짐을 지고 내려오는 몸.",
+       "fail": "…반 짐."
+      },
+      "flag": "cc:wood",
+      "say": "🪵 한 짐에 곡식 한 줌."
+     },
+     {
+      "label": "숲을 내 것으로 — 곳간 집",
+      "if": "status:rich",
+      "gray": "숲을 제 것으로 하는 건 곳간이 있는 집이다.",
+      "flag": "cc:own",
+      "say": "🌲 「이 숲은 우리 집 것.」 나무 값이 올랐다. 마을이 쑥덕였다."
+     },
+     {
+      "label": "본다",
+      "flag": "cc:watch",
+      "say": "숯 없이는 청동도 없다."
+     }
+    ]
+   },
+   {
+    "if": "sit:tin:open && !sit:tin:done",
+    "text": "구리는 있는데 주석이 없어. 주석은 멀리서 와. 사 오든지, 찾든지, 지든지.",
+    "choices": [
+     {
+      "label": "주석을 사 온다 — 곳간 집, 곡식 둘",
+      "if": "status:rich && val:grain>=2",
+      "gray": "주석을 사 오는 건 곳간이 있는 집이다 — 곡식 둘.",
+      "flag": "tn:buy",
+      "say": "🪙 곡식 두 섬 → 주석 한 덩이. 청동 칼 한 자루 몫."
+     },
+     {
+      "label": "골짜기에서 돌을 찾는다 — 눈",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "돌 속에 섞인 구리 빛을 가려내는 눈.",
+       "fail": "…다 그냥 돌이었다."
+      },
+      "flag": "tn:search",
+      "say": "🔎 주석은 없었다. 구리 돌은 모았다."
+     },
+     {
+      "label": "짐을 진다 — 배",
+      "if": "!status:rich",
+      "gray": "짐은 곳간 없는 집이 진다.",
+      "roll": {
+       "ab": "배",
+       "hard": 1,
+       "why": "돌 한 짐을 강가까지 지는 배.",
+       "fail": "…반 짐."
+      },
+      "flag": "tn:carry",
+      "say": "🏋 돌 한 짐. 밥 두 그릇."
+     },
+     {
+      "label": "본다",
+      "flag": "tn:watch",
+      "say": "구리는 있고 주석은 없다. 그래서 청동이 귀하다."
+     }
+    ]
+   },
+   {
     "if": "sit:sword:open && !sit:sword:done && !smith:ask",
     "text": "구리돌 둘, 주석돌 하나, 숯. 동쪽 골짜기·깊은 골·북서 숯 숲. 녹여서 거푸집에 부어. 한 번에. …비법을 알고 싶나?",
     "choices": [
@@ -223,6 +305,38 @@
   "name": "문 지키는 사람",
   "lines": [
    {
+    "if": "sit:gatewatch:open && !sit:gatewatch:done",
+    "text": "강 건너 사람이오. 하룻밤만 재워 달라는데 — 곳간이 있으니 함부로 못 들이오. 어쩌겠소.",
+    "choices": [
+     {
+      "label": "들인다",
+      "flag": "gw:let",
+      "say": "🤝 곡식 한 줌과 잠자리. 다음 해 강 건너에서 소금이 왔다."
+     },
+     {
+      "label": "쫓는다",
+      "flag": "gw:turn",
+      "say": "🚪 「곳간 있는 집이 무서워한다.」 어둠 속으로."
+     },
+     {
+      "label": "당번을 선다 — 몸",
+      "roll": {
+       "ab": "몸",
+       "hard": 1,
+       "why": "밤새 문 앞에 서는 몸.",
+       "fail": "…졸았다. 아침에 꾸중."
+      },
+      "flag": "gw:duty",
+      "say": "🛡 밤새. 아무도 안 왔다. 밥 한 그릇."
+     },
+     {
+      "label": "본다",
+      "flag": "gw:watch",
+      "say": "도랑, 목책, 문 하나. 마을이 닫힌다."
+     }
+    ]
+   },
+   {
     "if": "sit:raid:open && !sit:raid:done",
     "text": "강 건너다! 창 잡아! …아니면 아이들 데리고 서쪽으로 가. 둘 다 사람이 필요해.",
     "choices": [
@@ -321,6 +435,42 @@
  "tenant": {
   "name": "작은 논 사람",
   "lines": [
+   {
+    "if": "sit:plot:open && !sit:plot:done",
+    "text": "논이 없으면 밭이지. 조·수수·콩. 반달 돌칼로 딴다. …너는 밭을 갈 거냐, 살 거냐.",
+    "choices": [
+     {
+      "label": "조와 콩을 심는다 — 배",
+      "roll": {
+       "ab": "배",
+       "hard": 1,
+       "why": "돌괭이로 밭 한 뙈기를 가는 배.",
+       "fail": "…반 뙈기."
+      },
+      "flag": "pl:sow",
+      "say": "🌱 가을에 조 한 섬. 밭이 집을 먹인다."
+     },
+     {
+      "label": "밭도 더 간다 — 논 집",
+      "if": "status:farmer",
+      "gray": "논 옆 밭까지 가는 건 논이 있는 집이다.",
+      "flag": "pl:more",
+      "say": "🌾 논에 벼, 밭에 콩. 두 곳간."
+     },
+     {
+      "label": "밭을 사들인다 — 곳간 집, 곡식 둘",
+      "if": "status:rich && val:grain>=2",
+      "gray": "밭을 사들이는 건 곳간이 있는 집이다 — 곡식 둘.",
+      "flag": "pl:buyplot",
+      "say": "🪙 곡식 두 섬 → 밭 셋. 밭 주인은 우리 집 일꾼이 됐다."
+     },
+     {
+      "label": "본다",
+      "flag": "pl:watch",
+      "say": "논이 있는 집, 밭뙈기 집. 곳간이 다르다."
+     }
+    ]
+   },
    {
     "if": "!talk:tenant",
     "flag": "talk:tenant",

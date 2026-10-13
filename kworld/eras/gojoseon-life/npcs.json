@@ -265,6 +265,57 @@
   "name": "성문 지키는 사람",
   "lines": [
    {
+    "if": "sit:tributeroad:open && !sit:tributeroad:done",
+    "text": "바칠 것 가져왔나. 곡식·가죽·소금. 고개 넘어 온 사람은 여기 놓고.",
+    "choices": [
+     {
+      "label": "짐을 진다 — 배",
+      "if": "status:farmer",
+      "gray": "제 집 곡식을 지는 건 농민이다.",
+      "roll": {
+       "ab": "배",
+       "hard": 1,
+       "why": "고개 셋을 짐 지고 넘는 배.",
+       "fail": "…둘째 고개에서 쉬었다. 해가 졌다."
+      },
+      "flag": "tr:carry",
+      "say": "🏋 곡식 한 섬, 가죽 둘. 「됐다.」"
+     },
+     {
+      "label": "가마로 간다 — 군장 곁 집",
+      "if": "status:noble",
+      "gray": "가마는 군장 곁 집이 탄다.",
+      "flag": "tr:palanquin",
+      "say": "🪑 종 넷이 들었다. 소금 한 섬. 군장 곁자리."
+     },
+     {
+      "label": "주인 짐을 진다 — 종",
+      "if": "status:slave",
+      "gray": "주인 몫을 지는 건 종이다.",
+      "flag": "tr:formaster",
+      "say": "🏋 주인 몫. 고개에서 쓰러질 뻔."
+     },
+     {
+      "label": "쇠를 바친다 — 쇠 집 (손)",
+      "if": "status:smith",
+      "gray": "쇠를 바치는 건 쇠 집이다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "낫 열 자루를 고르게 벼리는 손.",
+       "fail": "…셋이 무뎠다. 돌려받았다."
+      },
+      "flag": "tr:iron",
+      "say": "⚒ 쇠 낫 열. 「쇠 집.」"
+     },
+     {
+      "label": "본다",
+      "flag": "tr:watch",
+      "say": "고개 너머 다른 나라. 이쪽엔 바치는 길."
+     }
+    ]
+   },
+   {
     "if": "sit:fall:open && !sit:fall:done",
     "text": "한나라 벼슬아치가 성에 앉았다. 남을 거면 이름을 적어라. 가려면 — 고개든 강이든.",
     "choices": [
@@ -409,6 +460,57 @@
   "name": "논 사람",
   "lines": [
    {
+    "if": "sit:hanplain:open && !sit:hanplain:done",
+    "text": "강 건너 벌판. 쇠 괭이면 갈려. 아직 누구 땅도 아니야 — 적는 사람이 임자지.",
+    "choices": [
+     {
+      "label": "개간한다 — 몸",
+      "if": "status:farmer || status:smith",
+      "gray": "벌판을 가는 건 농민·쇠 집이다. 종은 주인 땅을, 군장 곁 집은 적는다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 2,
+       "why": "봄 내내 돌을 골라 내는 몸.",
+       "fail": "…허리. 반만."
+      },
+      "flag": "hp:clear",
+      "say": "🪨 돌을 골라 냈다. 가을에 조 두 섬."
+     },
+     {
+      "label": "내 땅으로 적는다 — 군장 곁 집",
+      "if": "status:noble",
+      "gray": "군장 앞에서 땅을 적는 건 군장 곁 집이다.",
+      "flag": "hp:claim",
+      "say": "📜 「강 건너는 우리 집 것.」 갈던 사람은 소작."
+     },
+     {
+      "label": "주인 땅을 간다 — 종",
+      "if": "status:slave",
+      "gray": "주인 땅을 가는 건 종이다.",
+      "flag": "hp:formaster",
+      "say": "🏋 강 건너까지 괭이를 졌다. 곡식은 주인 곳간으로."
+     },
+     {
+      "label": "쇠 괭이를 판다 — 쇠 집 (손)",
+      "if": "status:smith",
+      "gray": "괭이는 쇠 집이 만든다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "괭이 날을 넷 벼리는 손.",
+       "fail": "…둘."
+      },
+      "flag": "hp:sellhoe",
+      "say": "🔧 괭이 넷. 곡식 두 됫박."
+     },
+     {
+      "label": "본다",
+      "flag": "hp:watch",
+      "say": "땅을 넓힌 사람과 적은 사람이 다르다."
+     }
+    ]
+   },
+   {
     "if": "sit:harvest:open && !sit:harvest:done && made:hoe && status:smith",
     "text": "쇠 괭이? 벼 두 단 낸다. 줘.",
     "choices": [
@@ -445,6 +547,65 @@
  "overseer": {
   "name": "밭 감독",
   "lines": [
+   {
+    "if": "sit:fieldeye:open && !sit:fieldeye:done",
+    "text": "이삭 수를 센다. 한 줌도 못 가져가. 가져가면 — 8조법. …너는 뭘 하러 왔나.",
+    "choices": [
+     {
+      "label": "품을 판다 — 배",
+      "if": "!status:noble",
+      "gray": "품은 군장 곁 집이 안 판다.",
+      "roll": {
+       "ab": "배",
+       "hard": 1,
+       "why": "해 질 때까지 허리를 펴지 않는 배.",
+       "fail": "…반나절."
+      },
+      "flag": "fe:labor",
+      "say": "🌾 곡식 한 됫박."
+     },
+     {
+      "label": "감독을 세운다 — 군장 곁 집",
+      "if": "status:noble",
+      "gray": "감독을 세우는 건 밭 가진 집이다.",
+      "flag": "fe:setover",
+      "say": "👁 「한 줌도 세라.」 이삭이 다 들어왔다."
+     },
+     {
+      "label": "낫을 고친다 — 쇠 집 (손)",
+      "if": "status:smith",
+      "gray": "낫은 쇠 다루는 집이 고친다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "무뎌진 날을 다시 세우는 손.",
+       "fail": "…날이 휘었다."
+      },
+      "flag": "fe:fixsickle",
+      "say": "🔧 쇠 낫 셋. 곡식 한 됫박."
+     },
+     {
+      "label": "⚠ 몰래 한 줌 — 종 (눈)",
+      "if": "status:slave && !hurt:thief",
+      "gray": "한 줌을 훔치는 건 배고픈 종이다 — 벌써 자국 있는 사람은 못 한다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "감독이 돌아선 순간을 읽는 눈.",
+       "fail": "…감독이 봤다. 「8조법.」"
+      },
+      "rollFailFlag": "fe:caught",
+      "rollHurt": "thief",
+      "flag": "fe:steal",
+      "say": "🤫 저녁 죽 한 그릇. 법 밖에서 하루."
+     },
+     {
+      "label": "본다",
+      "flag": "fe:watch",
+      "say": "이삭 한 줌에 종이 될 수 있는 법."
+     }
+    ]
+   },
    {
     "if": "sit:harvest:open && !sit:harvest:done && status:slave",
     "text": "거둬라. 넷 중 셋은 주인 것. 하나가 네 것. 셈은 내가 한다."
@@ -904,6 +1065,55 @@
  "reedcutter": {
   "name": "갈대 베는 사람",
   "lines": [
+   {
+    "if": "sit:towerduty:open && !sit:towerduty:done",
+    "text": "망대 당번이 돌아왔어. 농민 차례지. 설 거냐, 사람을 세울 거냐.",
+    "choices": [
+     {
+      "label": "망대에 선다 — 눈",
+      "if": "status:farmer || status:smith",
+      "gray": "망대는 농민·쇠 집이 번갈아 선다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 1,
+       "why": "벌판 끝 수레가 누구 것인지 가리는 눈.",
+       "fail": "…북을 쳤다. 장사꾼이었다. 꾸중."
+      },
+      "flag": "td:stand",
+      "say": "🗼 수레 셋. 장사꾼. 북을 안 쳤다. 아침 죽 한 그릇."
+     },
+     {
+      "label": "사람을 대신 세운다 — 군장 곁 집, 곡식 하나",
+      "if": "status:noble && val:grain>=1",
+      "gray": "대신 세우는 건 곡식 있는 집이다.",
+      "flag": "td:hire",
+      "say": "🪙 곡식 한 됫박. 우리 집은 안 섰다."
+     },
+     {
+      "label": "주인 대신 선다 — 종",
+      "if": "status:slave",
+      "gray": "주인 차례를 대신 서는 건 종이다.",
+      "flag": "td:formaster",
+      "say": "🌙 주인 집 차례를 종이 선다. 밤새."
+     },
+     {
+      "label": "갈대를 벤다 — 배",
+      "roll": {
+       "ab": "배",
+       "hard": 1,
+       "why": "갈대 한 짐을 베어 지는 배.",
+       "fail": "…반 짐."
+      },
+      "flag": "td:cut",
+      "say": "🌾 갈대 한 짐. 지붕감."
+     },
+     {
+      "label": "본다",
+      "flag": "td:watch",
+      "say": "성을 쌓은 것도, 지키는 것도 농민."
+     }
+    ]
+   },
    {
     "if": "sit:marsh:open && !sit:marsh:done && status:slave",
     "text": "…너 그 집 종이지. 갈대 속에 뗏목이 있어. 늪 건너면 개도 못 따라와. 발이 빨라야 해.",

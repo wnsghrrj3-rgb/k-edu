@@ -114,6 +114,53 @@
   "name": "향리(호장)",
   "lines": [
    {
+    "if": "sit:hyangdo:open && !sit:hyangdo:done",
+    "text": "향도 모임이오. 둑도 쌓고, 향나무도 묻고. 신분이 달라도 한 줄이오. …드시겠소.",
+    "choices": [
+     {
+      "label": "향도에 든다",
+      "flag": "hd:join",
+      "say": "🤝 양민 옆에 노비, 향리 옆에 부곡. 한 줄."
+     },
+     {
+      "label": "둑 쌓기에 앞장선다 — 몸",
+      "if": "!hurt:leg",
+      "gray": "둑 쌓기는 다리 성한 사람이 앞장선다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 1,
+       "why": "사흘 동안 흙을 지고 둑을 올리는 몸.",
+       "fail": "…이틀째 허리."
+      },
+      "flag": "hd:dike",
+      "say": "🪨 둑 백 보. 이름이 불렸다."
+     },
+     {
+      "label": "비석에 이름을 새긴다 — 높은 집, 곡식 하나",
+      "if": "status:munbeol || status:gwonmun || status:sadaebu || status:hyangni && val:grain>=1",
+      "gray": "비석 값은 높은 집이 낸다.",
+      "flag": "hd:stele",
+      "say": "🪦 「○○ 향도.」 천 년 남는다."
+     },
+     {
+      "label": "향나무를 묻는다 — 손",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "갯벌 깊이 향나무를 묻는 손.",
+       "fail": "…얕았다. 다시."
+      },
+      "flag": "hd:bury",
+      "say": "🌳 「천 년 뒤.」"
+     },
+     {
+      "label": "본다",
+      "flag": "hd:watch",
+      "say": "신분이 달라도 한 모임."
+     }
+    ]
+   },
+   {
     "if": "sit:inherit:open && !sit:inherit:done && sex:f && !inherit:share && !inherit:remarry && !inherit:none && status:hyangni",
     "text": "땅을 나눈다. 아들과 딸, 같은 몫. 재혼해도 네 것이다.",
     "choices": [
@@ -194,6 +241,57 @@
  "yangmin": {
   "name": "양민 농부",
   "lines": [
+   {
+    "if": "sit:fordwork:open && !sit:fordwork:done",
+    "text": "여울에 다리를 놓으래. 열여섯에서 예순까지 부역이야. 높은 집은 사람을 보내고.",
+    "choices": [
+     {
+      "label": "부역에 간다 — 몸",
+      "if": "status:yangmin || status:bugok || status:oegeo || status:drifter && !hurt:leg",
+      "gray": "부역은 양민·부곡·외거 집 사람이 간다 — 다리 성해야.",
+      "roll": {
+       "ab": "몸",
+       "hard": 1,
+       "why": "스무 날 돌을 나르는 몸.",
+       "fail": "…열흘에 쓰러졌다. 다시 불렸다."
+      },
+      "flag": "fw:go",
+      "say": "🪨 스무 날. 다리 하나. 밥은 내 것."
+     },
+     {
+      "label": "사람을 대신 보낸다 — 높은 집, 곡식 하나",
+      "if": "status:munbeol || status:gwonmun || status:sadaebu || status:musin || status:yeokgwan && val:grain>=1",
+      "gray": "대신 보내는 건 노비 있는 높은 집이다.",
+      "flag": "fw:send",
+      "say": "🪙 노비를 보냈다. 우리 집은 안 갔다."
+     },
+     {
+      "label": "명단을 적는다 — 향리",
+      "if": "status:hyangni",
+      "gray": "부역 명단은 향리가 적는다.",
+      "flag": "fw:list",
+      "say": "📜 쉰 집. 한 집은 빼 줬다 — 쌀 한 섬."
+     },
+     {
+      "label": "돌을 다듬는다 — 손",
+      "if": "!status:solgeo",
+      "gray": "돌 다듬는 품은 제 손으로 받는 사람이다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "다리 돌을 네모반듯하게 쪼는 손.",
+       "fail": "…깨졌다."
+      },
+      "flag": "fw:stone",
+      "say": "🔨 돌 스물. 「솜씨 있다.」"
+     },
+     {
+      "label": "본다",
+      "flag": "fw:watch",
+      "say": "다리는 양민의 몸으로 섰다."
+     }
+    ]
+   },
    {
     "if": "sit:inherit:open && !sit:inherit:done && sex:f && !inherit:share && !inherit:remarry && !inherit:none && status:yangmin",
     "text": "땅을 나눈다. 아들과 딸, 같은 몫. 재혼해도 네 것이다.",
@@ -347,6 +445,51 @@
  "oegeo": {
   "name": "외거 노비 어른",
   "lines": [
+   {
+    "if": "sit:charwoods:open && !sit:charwoods:done",
+    "text": "숯을 굽지. 몸값 내고 남으면 모은다. 열 가마면 — 양인 문서야. …너는.",
+    "choices": [
+     {
+      "label": "숯을 굽는다 — 손",
+      "if": "status:oegeo || status:yangmin || status:bugok || status:drifter",
+      "gray": "숯가마는 숲에 사는 작은 집이 굽는다.",
+      "roll": {
+       "ab": "손",
+       "hard": 1,
+       "why": "흙을 덮고 사흘 불을 재우는 손.",
+       "fail": "…재가 됐다."
+      },
+      "flag": "cw:char",
+      "say": "🖤 가마 둘. 몸값 내고 두 섬이 남았다."
+     },
+     {
+      "label": "⚠ 양인 문서를 산다 — 외거, 곡식 셋",
+      "if": "status:oegeo && val:grain>=3",
+      "gray": "문서를 사는 건 재산 모은 외거 노비다 — 곡식 셋.",
+      "flag": "cw:buyfree",
+      "say": "📜 「양인.」 몸값이 끝났다."
+     },
+     {
+      "label": "몸값을 받는다 — 주인 집",
+      "if": "status:munbeol || status:gwonmun || status:hyangni || status:sadaebu",
+      "gray": "몸값은 외거 노비를 둔 집이 받는다.",
+      "flag": "cw:collectfee",
+      "say": "🧾 베 여섯 필."
+     },
+     {
+      "label": "숲을 막는다 — 권문세족",
+      "if": "status:gwonmun",
+      "gray": "숲을 제 것으로 하는 건 권문세족이다.",
+      "flag": "cw:blockwoods",
+      "say": "🌲 「우리 집 것.」 숯가마가 꺼졌다."
+     },
+     {
+      "label": "본다",
+      "flag": "cw:watch",
+      "say": "숯 한 가마가 몸값, 열 가마가 이름."
+     }
+    ]
+   },
    {
     "if": "sit:pyeongryang:open && !sit:pyeongryang:done && status:oegeo && !pyeong:free && !pyeong:pay",
     "text": "모은 곡식이 여섯이면 양인 문서를 산다 — 평량. 몇 대를 모았나.",
@@ -589,6 +732,45 @@
  "monk": {
   "name": "스님",
   "lines": [
+   {
+    "if": "sit:templeland:open && !sit:templeland:done",
+    "text": "절 땅이오, 절 노비요, 절 기름이오. 흉년엔 쌀을 푸오. …시주하러 왔소, 받으러 왔소.",
+    "choices": [
+     {
+      "label": "땅을 시주한다 — 높은 집, 곡식 둘",
+      "if": "status:munbeol || status:gwonmun || status:sadaebu || status:musin || status:yeokgwan && val:grain>=2",
+      "gray": "땅을 시주하는 건 땅 있는 높은 집이다 — 곡식 둘.",
+      "flag": "tl:donate",
+      "say": "🪷 논 한 뙈기. 절이 집 이름으로 등을 켰다."
+     },
+     {
+      "label": "절 땅 소작을 받는다 — 양민·부곡",
+      "if": "status:yangmin || status:bugok || status:drifter",
+      "gray": "절 땅 소작은 땅 없는 작은 집이 받는다.",
+      "flag": "tl:tenant",
+      "say": "🌾 나라 세금 대신 절에. 조금 가벼웠다."
+     },
+     {
+      "label": "⚠ 절에 몸을 맡긴다 — 노비",
+      "if": "status:solgeo || status:oegeo",
+      "gray": "절 노비로 가는 건 노비다.",
+      "flag": "tl:tempeslave",
+      "say": "🛕 주인이 절로. 절은 팔지 않는다."
+     },
+     {
+      "label": "흉년 쌀을 받는다 — 곡식 없을 때",
+      "if": "val:grain<=0",
+      "gray": "곡식이 하나도 없는 집이 받는다.",
+      "flag": "tl:rice",
+      "say": "🍚 한 되. 「부처 것이다.」"
+     },
+     {
+      "label": "본다",
+      "flag": "tl:watch",
+      "say": "절이 땅도 사람도 가진다."
+     }
+    ]
+   },
    {
     "if": "sit:coup:open && !sit:coup:done && !status:monk && !coup:monk && !status:solgeo",
     "text": "칼의 밤입니다. 머리를 깎으면 — 문벌도 양민도 묻지 않습니다. 절은 신분 밖.",

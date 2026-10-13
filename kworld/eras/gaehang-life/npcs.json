@@ -41,6 +41,53 @@
   "name": "소작농",
   "lines": [
    {
+    "if": "sit:tenantfight:open && !sit:tenantfight:done",
+    "text": "소작료가 절반 넘어. 모였어 — 깎자고. 설 거야, 알릴 거야, 떠날 거야.",
+    "choices": [
+     {
+      "label": "⚠ 쟁의에 선다 — 몸",
+      "if": "status:sojak || status:nongmin || status:hwajeon || status:yetnobi && !hurt:jail",
+      "gray": "쟁의는 소작·자작 농민이 선다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 2,
+       "why": "한 달 동안 논에 안 나가고 버티는 몸.",
+       "fail": "…주재소."
+      },
+      "rollFailFlag": "tf:jailed",
+      "rollHurt": "jail",
+      "flag": "tf:strike",
+      "say": "✊ 「절반에서 넷으로.」 이겼다."
+     },
+     {
+      "label": "소작료를 깎아 준다 — 지주",
+      "if": "status:jiju",
+      "gray": "깎아 주는 건 지주다.",
+      "flag": "tf:lower",
+      "say": "🤝 「넷으로.」"
+     },
+     {
+      "label": "주재소에 알린다 — 협력한 집",
+      "if": "status:chinil",
+      "gray": "주재소에 알리는 건 협력한 집이다.",
+      "flag": "tf:inform",
+      "say": "📞 주동자 셋. 엔 한 장."
+     },
+     {
+      "label": "떠날 짐을 싼다",
+      "if": "status:sojak || status:yetnobi || status:hwajeon",
+      "gray": "떠나는 건 땅 없는 집이다.",
+      "flag": "tf:leave",
+      "say": "🧳 간도로."
+     },
+     {
+      "label": "본다",
+      "flag": "tf:watch",
+      "say": "절반 넘는 소작료."
+     }
+    ]
+   },
+   {
     "if": "sit:gaehang:open && !sit:gaehang:done && (status:sojak || status:yetnobi || status:hwajeon || status:nodongja)",
     "text": "쌀값이 뛰었어. 우리 쌀은 지주 거라 보리. 정미소에서 버티든가 부두에서 지든가."
    },
@@ -145,6 +192,64 @@
   "name": "일본 상인(전당포)",
   "lines": [
    {
+    "if": "sit:ricemill:open && !sit:ricemill:done",
+    "text": "정미소. 쌀을 찧어 배에 싣는다. 열두 시간, 품삯은 — 조선 사람은 반. 쌀을 댈 건가, 일할 건가.",
+    "choices": [
+     {
+      "label": "정미소에서 일한다 — 몸",
+      "if": "status:nodongja || status:sojak || status:yetnobi || status:yetbaekjeong || status:hwajeon || status:nongmin",
+      "gray": "정미소 일은 품 파는 집이 한다.",
+      "roll": {
+       "ab": "몸",
+       "hard": 1,
+       "why": "열두 시간 쌀가마를 지는 몸.",
+       "fail": "…쓰러졌다. 반 삯."
+      },
+      "flag": "rm:work",
+      "say": "🏭 열두 시간. 엔 반 장."
+     },
+     {
+      "label": "쌀을 댄다 — 지주",
+      "if": "status:jiju || status:chinil",
+      "gray": "백 섬을 대는 건 지주다.",
+      "flag": "rm:supply",
+      "say": "🌾 소작미 백 섬. 엔으로."
+     },
+     {
+      "label": "기계를 고친다 — 기술자 (손)",
+      "if": "status:gisulja",
+      "gray": "기계는 기술자가 고친다.",
+      "roll": {
+       "ab": "손",
+       "hard": 2,
+       "why": "벨트와 톱니를 맞추는 손.",
+       "fail": "…멈췄다. 일본 기사가 왔다."
+      },
+      "flag": "rm:fix",
+      "say": "🔧 「조선 사람도 고치나.」 엔 한 장."
+     },
+     {
+      "label": "⚠ 삯을 올려 달라 한다 — 노동자",
+      "if": "status:nodongja || status:sojak || status:yetnobi && !hurt:jail",
+      "gray": "삯을 올려 달라 서는 건 일하는 사람이다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "스물이 한날 서게 말을 맞추는 눈.",
+       "fail": "…혼자 섰다. 「주동자.」"
+      },
+      "rollFailFlag": "rm:fired",
+      "flag": "rm:demand",
+      "say": "✊ 사흘 뒤 「조금」. 이름은 적혔다."
+     },
+     {
+      "label": "본다",
+      "flag": "rm:watch",
+      "say": "조선 쌀이 일본으로."
+     }
+    ]
+   },
+   {
     "if": "sit:gaehang:open && !sit:gaehang:done",
     "text": "쌀, 삽니다. 세 배. 성냥·석유·광목, 팝니다. 조선 법은 저한테 안 통합니다 — 치외법권."
    },
@@ -166,6 +271,51 @@
  "segwanwon": {
   "name": "세관원",
   "lines": [
+   {
+    "if": "sit:jpstreet:open && !sit:jpstreet:done",
+    "text": "앞길은 일본인 거리. 조선 사람은 뒷골목. 조선 물건 가게는 손님이 없어.",
+    "choices": [
+     {
+      "label": "조선 물산만 산다 — 쌀 하나",
+      "if": "val:grain>=1",
+      "gray": "사려면 쌀 하나.",
+      "flag": "js:local",
+      "say": "🧵 무명 한 필. 비쌌다."
+     },
+     {
+      "label": "앞길에 가게를 낸다 — 협력한 집·상인, 엔 둘",
+      "if": "status:chinil || status:sangin || status:jiju && val:grain>=2",
+      "gray": "앞길 가게는 일본 상인과 줄 댄 집이 낸다.",
+      "flag": "js:openshop",
+      "say": "🏪 엔이 들어왔다. 뒷골목이 등을 돌렸다."
+     },
+     {
+      "label": "⚠ 전당포에 맡긴다",
+      "if": "val:grain<=1",
+      "gray": "전당포는 돈 없는 집이 찾는다.",
+      "flag": "js:pawn",
+      "say": "🏦 놋그릇 → 엔 한 장. 달마다 이자."
+     },
+     {
+      "label": "순사를 피한다 — 발",
+      "if": "status:dongnip || status:nodongja || status:yetnobi || status:haksaeng",
+      "gray": "순사를 피하는 건 쫓기는 사람이다.",
+      "roll": {
+       "ab": "발",
+       "hard": 1,
+       "why": "뒷골목 모퉁이를 먼저 도는 발.",
+       "fail": "…붙잡혔다. 호패 검사. 놓아줬다."
+      },
+      "flag": "js:dodge",
+      "say": "🏃 뒷골목으로."
+     },
+     {
+      "label": "본다",
+      "flag": "js:watch",
+      "say": "앞길과 뒷골목."
+     }
+    ]
+   },
    {
     "if": "sit:gaehang:open && !sit:gaehang:done",
     "text": "쌀 수출 도장. 일본 상인은 세금이 싸다. 조약이 그렇다."
@@ -236,6 +386,47 @@
  "seongyosa": {
   "name": "선교사",
   "lines": [
+   {
+    "if": "sit:church:open && !sit:church:done",
+    "text": "학교와 병원입니다. 누구나. 백정 집 아이도, 여자아이도. 한글 성경을 읽어요.",
+    "choices": [
+     {
+      "label": "한글을 배운다 — 눈",
+      "roll": {
+       "ab": "눈",
+       "hard": 1,
+       "why": "석 달 만에 신문을 더듬어 읽는 눈.",
+       "fail": "…자음만."
+      },
+      "flag": "chu:learn",
+      "say": "📖 석 달. 신문을 읽었다."
+     },
+     {
+      "label": "딸을 보낸다",
+      "if": "!status:jiju && !status:chinil",
+      "gray": "옛 양반·협력한 집은 딸을 교회 학교에 안 보냈다.",
+      "flag": "chu:daughter",
+      "say": "👧 「이름을 쓴다.」"
+     },
+     {
+      "label": "병원에서 치료받는다",
+      "flag": "chu:heal",
+      "say": "🏥 「다 나았다.」"
+     },
+     {
+      "label": "「백정 옆에 못 앉는다」 — 옛 양반",
+      "if": "status:jiju || status:chinil",
+      "gray": "옆자리를 가리는 건 옛 양반 집이다.",
+      "flag": "chu:refuse",
+      "say": "🚶 나갔다. 백정의 아들은 남아 의사가 됐다."
+     },
+     {
+      "label": "본다",
+      "flag": "chu:watch",
+      "say": "신분이 없는 자리."
+     }
+    ]
+   },
    {
     "if": "sit:hakgyo:open && !sit:hakgyo:done",
     "text": "학교. 여학교도. 배재·이화. 산수·지리·영어. 운동장에서 정하세요."

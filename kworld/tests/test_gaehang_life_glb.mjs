@@ -25,7 +25,7 @@ const mats = new Set((data.materials || []).map((m) => m.name));
 for (const [t, h] of Object.entries(items.targets)) for (const m of h.hidden || []) assert.ok(mats.has(m), `숨김 재질 ${m}(${t}) 가 GLB 에 없음`);
 assert.deepEqual(items.targets.jusaeso.hidden, ['sunred'], '일장기 숨김');
 const list = missions.missions; assert.equal(list.length, 8, '미션 8');
-const must = life.situations.filter((x) => x.must); assert.equal(must.length, 8, '꼭 나오는 상황 8(3·1 은 밤·아침 둘)'); assert.ok(life.situations.length - must.length >= life.mixedCount && life.situations.length === 16, '섞여 8 ≥ mixedCount 4');
+const must = life.situations.filter((x) => x.must); assert.equal(must.length, 8, '꼭 나오는 상황 8(3·1 은 밤·아침 둘)'); assert.ok(life.situations.length - must.length >= life.mixedCount && life.situations.length >= 20, '섞여 8 ≥ mixedCount 4');
 for (const m of list) assert.ok(must.some((x) => 'sit:' + x.id + ':done' === m.done), `미션 ${m.id} 가 상황과 안 맞음`);
 for (const sit of life.situations) { if (sit.place) assert.ok(world.areas[sit.place], `상황 ${sit.id} 장소 ${sit.place}`); for (const c of sit.choices) assert.ok(c.done || c.count, `상황 ${sit.id} 선택 ${c.id} 에 done 없음`); }
 const blob = JSON.stringify(items) + JSON.stringify(npcDefs) + JSON.stringify(life.situations.map((s) => s.choices.map((c) => c.flag)));

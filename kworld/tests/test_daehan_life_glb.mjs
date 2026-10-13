@@ -34,7 +34,7 @@ for (const [t, h] of Object.entries(items.targets)) for (const m of h.hidden || 
 }
 const list = missions.missions; assert.equal(list.length, 10, '미션 10');
 const must = life.situations.filter((x) => x.must); assert.equal(must.length, 10, '꼭 나오는 상황 10');
-assert.ok(life.situations.length - must.length >= life.mixedCount && life.situations.length === 17, '섞여 7 ≥ mixedCount 4');
+assert.ok(life.situations.length - must.length >= life.mixedCount && life.situations.length >= 21, '섞여 11 ≥ mixedCount 4');
 for (const m of list) assert.ok(must.some((x) => 'sit:' + x.id + ':done' === m.done), `미션 ${m.id} 가 상황과 안 맞음`);
 for (const sit of life.situations) { if (sit.place) assert.ok(world.areas[sit.place], `상황 ${sit.id} 장소 ${sit.place}`); for (const c of sit.choices) assert.ok(c.done || c.count, `상황 ${sit.id} 선택 ${c.id} 에 done 없음`); }
 const blob = JSON.stringify(items) + JSON.stringify(npcDefs) + JSON.stringify(life.situations.map((s) => s.choices.map((c) => c.flag)));

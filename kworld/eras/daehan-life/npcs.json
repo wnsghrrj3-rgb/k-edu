@@ -177,6 +177,47 @@
   "name": "간호사(파독 모집 앞)",
   "lines": [
    {
+    "if": "sit:clinic:open && !sit:clinic:done",
+    "text": "예방접종 줄 서세요. 벽보 보셨어요? 독일 간호사 모집 — 저도 갑니다.",
+    "choices": [
+     {
+      "label": "예방접종을 받는다",
+      "flag": "cl:shot",
+      "say": "💉 「다음 해에 또.」"
+     },
+     {
+      "label": "⚠ 독일 간호사에 지원한다 — 여자",
+      "if": "sex:f && !status:jiju",
+      "gray": "파독 간호사 모집은 여자 — 땅 가진 집은 안 갔다.",
+      "roll": {
+       "ab": "눈",
+       "hard": 1,
+       "why": "독일어 쉰 단어를 외우는 눈.",
+       "fail": "…시험에 떨어졌다. 다음 해."
+      },
+      "flag": "cl:germany",
+      "say": "✈ 프랑크푸르트. 월급 절반을 집으로."
+     },
+     {
+      "label": "가족계획 상담",
+      "flag": "cl:plan",
+      "say": "📋 「둘만.」"
+     },
+     {
+      "label": "벽보를 떼라 한다 — 땅 가진 집",
+      "if": "status:jiju",
+      "gray": "벽보를 떼라 하는 건 식모 둔 집이다.",
+      "flag": "cl:tear",
+      "say": "📰 벽보는 남았다."
+     },
+     {
+      "label": "본다",
+      "flag": "cl:watch",
+      "say": "벽보 하나가 바다를 건너게 했다."
+     }
+    ]
+   },
+   {
     "if": "sit:sanupwha:open && !sit:sanupwha:done && sex:f",
     "text": "독일. 3년 계약. 월급이 여기 다섯 배. 밤 근무, 독일어. — 벽보 앞에서 정해요. 저도 갑니다."
    },
@@ -220,6 +261,45 @@
  "gyosa": {
   "name": "교사",
   "lines": [
+   {
+    "if": "sit:school2:open && !sit:school2:done",
+    "text": "한 반 70명. 오전반 오후반. 교과서는 둘이 한 권. …아이를 보내시겠어요.",
+    "choices": [
+     {
+      "label": "아이를 보낸다",
+      "if": "!status:gyosa",
+      "gray": "교사는 가르친다.",
+      "flag": "sc2:send",
+      "say": "🍞 옥수수빵 하나. 글을 아는 아이."
+     },
+     {
+      "label": "⚠ 일 시키려 안 보낸다",
+      "if": "status:sojak || status:nongmin || status:jiju",
+      "gray": "논일 시키려 안 보내는 건 농사짓는 집이다.",
+      "flag": "sc2:keep",
+      "say": "🌾 아이가 학교 담 너머를 봤다."
+     },
+     {
+      "label": "가르친다 — 교사",
+      "if": "status:gyosa",
+      "gray": "가르치는 건 교사다.",
+      "flag": "sc2:teach",
+      "say": "📚 70명. 칠판 하나."
+     },
+     {
+      "label": "교과서를 기부한다 — 쌀 하나",
+      "if": "val:grain>=1",
+      "gray": "기부는 쌀 있는 집이 한다.",
+      "flag": "sc2:donate",
+      "say": "📖 스무 권."
+     },
+     {
+      "label": "본다",
+      "flag": "sc2:watch",
+      "say": "오전반, 오후반. 그래도 학교."
+     }
+    ]
+   },
    {
     "if": "sit:gongbu:open && !sit:gongbu:done && status:gyosa",
     "text": "밤에 교실을 쓰면 공장 아이들이 올 겁니다. 교육청이 뭐라 하겠지만. 운동장에서."
@@ -415,6 +495,51 @@
   "name": "버스 차장",
   "lines": [
    {
+    "if": "sit:busroad:open && !sit:busroad:done",
+    "text": "서울! 서울! 오라이 — 탈 거예요, 말 거예요.",
+    "choices": [
+     {
+      "label": "⚠ 서울행에 오른다 — 발",
+      "if": "status:sojak || status:nongmin || status:haksaeng || status:nodongja && !hurt:leg",
+      "gray": "서울로 가는 건 농촌 젊은이다.",
+      "roll": {
+       "ab": "발",
+       "hard": 1,
+       "why": "짐 하나 들고 새벽 버스를 잡는 발.",
+       "fail": "…놓쳤다. 다음 차."
+      },
+      "flag": "br:ride",
+      "say": "🚌 청계천 공장. 월급 봉투."
+     },
+     {
+      "label": "동생을 보낸다 — 쌀 하나",
+      "if": "val:grain>=1",
+      "gray": "차비는 쌀 하나.",
+      "flag": "br:sendsib",
+      "say": "💌 「잘 있다.」"
+     },
+     {
+      "label": "남아서 논을 간다",
+      "if": "status:sojak || status:nongmin || status:jiju",
+      "gray": "남아 논을 가는 건 농사짓는 집이다.",
+      "flag": "br:stay",
+      "say": "🌾 젊은이가 셋 남았다."
+     },
+     {
+      "label": "차비를 깎아 달라 한다 — 학생",
+      "if": "status:haksaeng",
+      "gray": "반값은 학생이다.",
+      "flag": "br:haggle",
+      "say": "🎒 「학생이면 반.」"
+     },
+     {
+      "label": "본다",
+      "flag": "br:watch",
+      "say": "버스 한 대가 마을을 비운다."
+     }
+    ]
+   },
+   {
     "if": "sit:sanupwha:open && !sit:sanupwha:done",
     "text": "서울행! 구로 공장, 회사 시험, 식모 — 다 이 버스. 오라이!"
    },
@@ -432,6 +557,36 @@
  "chobyeong": {
   "name": "초병(휴전선)",
   "lines": [
+   {
+    "if": "sit:dmz:open && !sit:dmz:done",
+    "text": "여기서부터 못 갑니다. 1953년부터. …고개 너머에 누가 있습니까.",
+    "choices": [
+     {
+      "label": "군복무를 한다 — 남자",
+      "if": "sex:m && !hurt:leg",
+      "gray": "철책 근무는 몸 성한 남자가 섰다.",
+      "flag": "dz:serve",
+      "say": "🪖 두 해. 「이상 무.」"
+     },
+     {
+      "label": "이산가족 방송에 이름을 올린다",
+      "if": "status:doraon || status:dongnip || status:nongmin || status:sojak",
+      "gray": "북에 가족을 둔 집이 올렸다.",
+      "flag": "dz:kbs",
+      "say": "📺 138일째 — 형을 만났다."
+     },
+     {
+      "label": "편지를 쓴다 — 눈",
+      "flag": "dz:letter",
+      "say": "✉ 부칠 데가 없다. 서랍에."
+     },
+     {
+      "label": "본다",
+      "flag": "dz:watch",
+      "say": "고개 하나, 철조망 하나."
+     }
+    ]
+   },
    {
     "if": "sit:jeonjaeng:open && !sit:jeonjaeng:done && sex:m",
     "text": "전쟁이다. 군대 갈 거면 표지 앞에서. 낙동강까지 밀렸다가 압록강까지 갔다가."

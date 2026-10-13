@@ -341,7 +341,45 @@
    ],
    "uses": 2,
    "empty": "발밑에 더는 없다. 다람쥐가 먼저 왔다.",
-   "info": "참나무 밑에 도토리가 떨어져 있다."
+   "info": "참나무 밑에 도토리가 떨어져 있다.",
+   "rename": [
+    {
+     "if": "sit:acornfall:open && !sit:acornfall:done",
+     "name": "도토리나무",
+     "verb": "어떻게 할까",
+     "once": false,
+     "text": "떨어진 도토리. 많이 주울까, 우릴까, 남길까.",
+     "choices": [
+      {
+       "label": "많이 줍는다 — 배",
+       "roll": {
+        "ab": "배",
+        "hard": 1,
+        "why": "허리를 굽히고 한 바구니를 채우는 배.",
+        "fail": "…반 바구니."
+       },
+       "flag": "ac:gather",
+       "say": "🌰 한 바구니. 곳간이 찼다."
+      },
+      {
+       "label": "물에 우린다 — 손",
+       "roll": {
+        "ab": "손",
+        "hard": 1,
+        "why": "사흘 동안 물을 갈아 떫은 맛을 빼는 손.",
+        "fail": "…덜 우렸다. 떫다."
+       },
+       "flag": "ac:soak",
+       "say": "💧 사흘. 떫은 맛이 빠졌다. 갈돌에 갈았다."
+      },
+      {
+       "label": "몫을 남긴다",
+       "flag": "ac:leave",
+       "say": "🐿 반만. 이웃 아이가 나머지를. 「다음 해도 나무가 준다.」"
+      }
+     ]
+    }
+   ]
   },
   "millet": {
    "name": "야생 조",
@@ -430,7 +468,49 @@
    "failNoTool": "손으로는 안 꺾인다. 간돌도끼가 있어야.",
    "gives": "reed",
    "remove": true,
-   "info": "키 큰 갈대. 지붕감."
+   "info": "키 큰 갈대. 지붕감.",
+   "rename": [
+    {
+     "if": "sit:reedroof:open && !sit:reedroof:done",
+     "name": "갈대밭",
+     "verb": "지붕감을 벤다",
+     "once": false,
+     "text": "지붕이 샌다. 얼마나 벨까.",
+     "choices": [
+      {
+       "label": "내 지붕 몫만 — 손",
+       "requires": "axe",
+       "failNoTool": "간돌도끼가 있어야 벤다.",
+       "roll": {
+        "ab": "손",
+        "hard": 1,
+        "why": "갈대를 묶어 지붕 결대로 잇는 손.",
+        "fail": "…엉성하다. 또 샌다."
+       },
+       "flag": "rr:mine",
+       "say": "🌾 한 짐. 비가 와도 마르다."
+      },
+      {
+       "label": "이웃 지붕까지 — 손",
+       "requires": "axe",
+       "failNoTool": "간돌도끼가 있어야 벤다.",
+       "roll": {
+        "ab": "손",
+        "hard": 1,
+        "why": "두 집 지붕을 하루에 잇는 손.",
+        "fail": "…해가 졌다. 한 집만."
+       },
+       "flag": "rr:both",
+       "say": "🤝 두 집. 이웃이 도토리 한 바구니를 놓고 갔다."
+      },
+      {
+       "label": "미룬다",
+       "flag": "rr:later",
+       "say": "⏳ 다음 비에 화덕이 꺼졌다. 밤이 추웠다."
+      }
+     ]
+    }
+   ]
   },
   "clay": {
    "name": "진흙",
@@ -551,7 +631,39 @@
    "say": "젖은 진흙 띠, 걸린 나뭇가지. 물이 여기까지 왔었다. 낮은 땅.",
    "flag": "seen:mark",
    "once": true,
-   "info": "지난번 물이 올라왔던 자국."
+   "info": "지난번 물이 올라왔던 자국.",
+   "rename": [
+    {
+     "if": "sit:lowland:open && !sit:lowland:done",
+     "name": "물 자국",
+     "verb": "어떻게 쓸까",
+     "once": false,
+     "text": "흙은 좋다. 물 자국이 여기까지.",
+     "choices": [
+      {
+       "label": "자국을 읽고 밭만 간다 — 눈",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "물이 어디까지 올라왔는지 띠를 읽는 눈.",
+        "fail": "…띠가 안 보였다. 그래도 밭만."
+       },
+       "flag": "lw:fieldonly",
+       "say": "🔎 밭만. 조가 잘 됐다. 큰물에 밭은 잠겼다 — 집은 아니다."
+      },
+      {
+       "label": "⚠ 낮은 땅에 집을 짓는다",
+       "flag": "lw:house",
+       "say": "🏠 흙이 좋았다. 가을 큰물에 집이 떠내려갔다."
+      },
+      {
+       "label": "비워 둔다",
+       "flag": "lw:empty",
+       "say": "🚫 안전했다. 얻은 것도 없다."
+      }
+     ]
+    }
+   ]
   },
   "view": {
    "name": "돌무더기",
@@ -559,7 +671,39 @@
    "say": "강이 남북으로. 마을 연기. 밭. 강 건너 다른 마을의 연기. …머문 곳들이 보인다.",
    "flag": "seen:view",
    "once": true,
-   "info": "높은 언덕. 사방이 보인다."
+   "info": "높은 언덕. 사방이 보인다.",
+   "rename": [
+    {
+     "if": "sit:farvillage:open && !sit:farvillage:done",
+     "name": "돌무더기",
+     "verb": "강 건너를 본다",
+     "once": false,
+     "text": "강 건너 마을 연기. 갈까, 볼까, 표시할까.",
+     "choices": [
+      {
+       "label": "그릇을 들고 강 건너 마을로 — 발",
+       "roll": {
+        "ab": "발",
+        "hard": 1,
+        "why": "그릇을 안고 여울을 건너는 발.",
+        "fail": "…그릇이 깨졌다. 빈손으로 갔다. 그래도 받아 줬다."
+       },
+       "flag": "fv:visit",
+       "say": "🏺 그릇 하나 → 조개 팔찌, 검은 돌. 말이 달라도 그릇은 통했다."
+      },
+      {
+       "label": "지켜본다",
+       "flag": "fv:watch",
+       "say": "👀 연기가 매일 오른다. 그들도 머문다."
+      },
+      {
+       "label": "돌무더기를 더 쌓는다 — 몸",
+       "flag": "fv:cairn",
+       "say": "🪨 멀리서도 보인다. 「저기가 우리 마을.」"
+      }
+     ]
+    }
+   ]
   },
   "deer": {
    "name": "사슴",

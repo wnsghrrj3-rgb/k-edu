@@ -174,6 +174,36 @@
    "info": "불 자리. 밤을 지키는 곳.",
    "rename": [
     {
+     "if": "sit:longnight:open && !sit:longnight:done",
+     "name": "불가",
+     "verb": "이야기를 듣는다",
+     "once": false,
+     "text": "어른이 옛 사냥 이야기를 한다. 손짓, 흉내.",
+     "choices": [
+      {
+       "label": "끝까지 듣는다 — 눈",
+       "flag": "ln:listen",
+       "say": "👂 큰 짐승은 물가로 몰아라. 바람을 등지지 마라."
+      },
+      {
+       "label": "손짓을 따라 해 본다 — 손",
+       "roll": {
+        "ab": "손",
+        "hard": 1,
+        "why": "창 쥐는 손, 던지는 팔을 그대로 옮기는 손.",
+        "fail": "…창을 놓쳤다. 어른이 웃었다. 다시."
+       },
+       "flag": "ln:mimic",
+       "say": "🤲 어른이 팔꿈치를 고쳐 줬다. 몸이 먼저 외웠다."
+      },
+      {
+       "label": "잠든다",
+       "flag": "ln:sleep",
+       "say": "😴 이야기는 다른 아이에게 갔다."
+      }
+     ]
+    },
+    {
      "if": "night:1 && !fire:kept && !fire:slept",
      "name": "사그라드는 불",
      "verb": "마른 가지를 넣는다",
@@ -346,6 +376,47 @@
    "info": "땅에 깊게 찍힌 커다란 발자국.",
    "rename": [
     {
+     "if": "sit:bigtrack:open && !sit:bigtrack:done",
+     "name": "큰 발자국",
+     "verb": "어떻게 할까",
+     "once": false,
+     "text": "깊게 파인 발자국. 긁힌 나무. 돌아갈까, 따라갈까.",
+     "choices": [
+      {
+       "label": "자국을 읽고 조용히 돌아간다 — 눈",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "앞발과 뒷발, 언제 지나갔는지 읽는 눈.",
+        "fail": "…어느 쪽으로 갔는지 몰랐다. 그래도 돌아왔다."
+       },
+       "flag": "bt:read",
+       "say": "🔎 어제 지나갔다. 아직 근처다. 무리에게 말했다."
+      },
+      {
+       "label": "⚠ 자국을 따라 굴까지 간다 — 몸",
+       "if": "!hurt:leg",
+       "gray": "절뚝이는 다리로는 큰 것의 굴에 못 간다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 2,
+        "why": "숨소리를 듣고 돌아서서 끝까지 뛰는 몸.",
+        "fail": "…뒤에서 왔다. 다리."
+       },
+       "rollFailFlag": "bt:denfail",
+       "rollHurt": "leg",
+       "rollFailHunger": -20,
+       "flag": "bt:den",
+       "say": "🐾 굴 앞. 뼈. 숨소리. 뛰었다. 살았다."
+      },
+      {
+       "label": "본다",
+       "flag": "bt:watch",
+       "say": "큰 발자국. 여기는 그것의 자리."
+      }
+     ]
+    },
+    {
      "if": "sit:nohunt:open && !sit:nohunt:done",
      "name": "큰 발자국",
      "verb": "따라간다 — 더 멀리",
@@ -460,6 +531,42 @@
    "once": true,
    "info": "바위 그늘 바닥의 검은 돌들.",
    "rename": [
+    {
+     "if": "sit:oldfire:open && !sit:oldfire:done",
+     "name": "먼저 살던 자리",
+     "verb": "살핀다",
+     "once": false,
+     "text": "탄 돌 둘레에 깨진 돌 조각. 어떻게 할까.",
+     "choices": [
+      {
+       "label": "깨진 돌을 읽는다 — 눈",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "깨진 면이 어느 쪽으로 났는지 보는 눈.",
+        "fail": "…그냥 돌로 보였다."
+       },
+       "flag": "of:learn",
+       "say": "🔎 한쪽 날. 돌로 돌을 쳤다. 우리와 같다."
+      },
+      {
+       "label": "같은 자리에 불을 놓는다 — 손",
+       "roll": {
+        "ab": "손",
+        "hard": 1,
+        "why": "탄 돌 사이에 가지를 쌓아 불을 살리는 손.",
+        "fail": "…연기만 났다."
+       },
+       "flag": "of:samefire",
+       "say": "🔥 연기가 바위를 타고 빠진다. 자리는 이유가 있다."
+      },
+      {
+       "label": "본다",
+       "flag": "of:watch",
+       "say": "탄 돌, 깨진 돌. 사람이 살았던 자국."
+      }
+     ]
+    },
     {
      "if": "rain:on && !sit:rain:done",
      "name": "바위 그늘",
@@ -600,7 +707,39 @@
    "say": "사방이 다 보인다. 강, 우리 막집, 남쪽 풀밭, 서쪽 산. 그리고 북쪽 멀리… 연기가 하나 더 오른다.",
    "flag": "seen:view",
    "once": true,
-   "info": "언덕 꼭대기의 돌무더기."
+   "info": "언덕 꼭대기의 돌무더기.",
+   "rename": [
+    {
+     "if": "sit:smoke_far:open && !sit:smoke_far:done",
+     "name": "돌무더기",
+     "verb": "연기 쪽을 본다",
+     "once": false,
+     "text": "북쪽 연기 한 줄. 답할까, 숨을까.",
+     "choices": [
+      {
+       "label": "가지를 태워 연기로 답한다 — 손",
+       "roll": {
+        "ab": "손",
+        "hard": 1,
+        "why": "젖은 풀을 얹어 연기를 두껍게 올리는 손.",
+        "fail": "…연기가 흩어졌다."
+       },
+       "flag": "sf:signal",
+       "say": "🔥 저쪽 연기가 두 번 끊겼다 이어졌다. 봤다는 뜻."
+      },
+      {
+       "label": "몸을 낮추고 지켜본다 — 눈",
+       "flag": "sf:hide",
+       "say": "👀 사흘 뒤 연기가 사라졌다. 떠났다."
+      },
+      {
+       "label": "본다",
+       "flag": "sf:watch",
+       "say": "연기 한 줄. 우리 말고도 사람이 산다."
+      }
+     ]
+    }
+   ]
   },
   "carcass": {
    "name": "쓰러진 사슴",

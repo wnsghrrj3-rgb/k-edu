@@ -29,9 +29,10 @@ const U = (c) => ({ value: new THREE.Color(c) });
 const grass = { name: 'meadow-grass', material: { uniforms: { uBase: U(0x4a7a3a), uTip: U(0x8ab85a) } } };
 const mount = { name: 'far-mountains', children: [0, 1, 2].map(() => ({ material: { uniforms: { uSnow: { value: 0 } } } })) };
 const hemi = { isHemisphereLight: true, intensity: 0.6 };
+const leaf = { isMesh: true, material: { name: 'leaf', color: new THREE.Color(0x3f7a2e) } }, pine = { isMesh: true, material: { name: 'pine', color: new THREE.Color(0x2f5a2a) } }, photoTree = { isMesh: true, material: { name: 'bush', color: new THREE.Color(0xffffff) } };
 const added = [];
 const e = { interactables: new Map(), areas: new Map(), onFrame: [], groundY: () => 0, spawn: new THREE.Vector3(), sun: { intensity: 2.35, color: new THREE.Color(0xffd9a0) }, renderer: { toneMappingExposure: 1.02 },
-  scene: { children: [hemi, grass, mount], add: (o) => added.push(o), remove() {}, traverse() {}, fog: { color: new THREE.Color(0xdfe3d6), near: 38, far: 150 } },
+  scene: { children: [hemi, grass, mount, leaf, pine, photoTree], add: (o) => added.push(o), remove() {}, traverse(f) { for (const o of [hemi, grass, mount, leaf, pine, photoTree]) f(o); }, fog: { color: new THREE.Color(0xdfe3d6), near: 38, far: 150 } },
   skyDome: { material: { uniforms: { uZenith: U(0x427da8), uHorizon: U(0xd9e1de), uHaze: U(0xe5dfca), uSunColor: U(0xffd9a0), uCloud: { value: 0.5 } } } } };
 const winds = []; const g = { e, p: { pos: new THREE.Vector3(0, 0, 0), enabled: true }, flags: new Set(), world: {}, ui: { say() {}, setGoal() {} }, cond: () => false, sound: { set: (k, v) => winds.push([k, v]), play() {} } };
 const st = new Story(g, {}); st.apply();
@@ -44,10 +45,14 @@ ok(winds.some(([k, v]) => k === 'wind' && v === 0.4), '흉년 바람 0.4');
 st.transition('winter', 1); run(1.2);
 ok(Math.abs(mount.children[0].material.uniforms.uSnow.value - 1) < 0.01 && mount.children.every((m) => m.material.uniforms.uSnow.value > 0.99), '겨울: 원경 산 셋 전부 눈');
 ok(e.sun.color.getHex() === 0xe8efff && e.scene.fog.near === 18, '겨울: 차가운 햇빛·옅은 안개');
+{ const c = leaf.material.color; ok(c.r > c.g && c.g > c.b && c.getHex() !== 0x3f7a2e, `겨울: 잎이 갈색으로 (${c.getHexString()})`); ok(pine.material.color.getHex() === 0x2f5a2a, '겨울: 소나무는 그대로'); ok(photoTree.material.color.getHex() !== 0xffffff && photoTree.material.color.r > photoTree.material.color.b, '겨울: 사진 질감 나무도 바랜다(color 곱)'); }
 st.transition('night', 1); run(1.2);
 ok(Math.abs(mount.children[0].material.uniforms.uSnow.value - 1) < 0.01 && st.isNight, '밤: 산 눈은 그대로, isNight');
+ok(leaf.material.color.r > leaf.material.color.b, '밤: 잎 색 그대로(갈색)');
 st.transition('day', 1); run(1.2);
 ok(mount.children[0].material.uniforms.uSnow.value < 0.01, '낮으로 돌아오면 눈 사라짐(낮 값 0)');
+ok(leaf.material.color.getHex() === 0x3f7a2e && photoTree.material.color.getHex() === 0xffffff, '낮: 잎이 원래 초록으로 돌아온다');
+st.transition('autumn', 1); run(1.2); ok(leaf.material.color.r > leaf.material.color.g && leaf.material.color.getHex() !== 0x3f7a2e, '가을: 잎이 주황으로'); st.transition('day', 1); run(1.2);
 ok(Math.abs(grass.material.uniforms.uBase.value.r - new THREE.Color(0x4a7a3a).r) < 0.01, '낮: 풀 색 원래대로');
 ok(e.sun.intensity > 2.3 && !st.isNight, '낮: 해 원래대로');
 // ---- 눈 입자 ----
