@@ -34,7 +34,7 @@ export async function syncJokbo() {
     for (const row of data) {
       const rec = row.record || {}; const t = rec.t || Date.parse(row.ended_at) || 0;
       const cur = rd('kworld_carry:' + row.era); if (!cur || (cur.t || 0) < t) wr('kworld_carry:' + row.era, { ...rec, t });
-      if (!have.has(row.era + ':' + t)) { hist.push({ era: row.era, branch: rec.branch, title: rec.title, status: rec.statusName, t }); have.add(row.era + ':' + t); }
+      if (!have.has(row.era + ':' + t)) { hist.push({ era: row.era, branch: rec.branch, title: rec.title, status: rec.statusName, statusId: rec.status || null, t }); have.add(row.era + ':' + t); }
     }
     hist.sort((a, b) => (a.t || 0) - (b.t || 0)); wr('kworld_jokbo', hist.slice(-300)); return true;
   } catch { return false; }

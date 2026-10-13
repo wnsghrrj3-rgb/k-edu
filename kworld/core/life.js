@@ -7,6 +7,7 @@
 //  · 천장(cap): d.rank.open 이면 값 🎖 벼슬이 열린다. 신분 규칙의 cap 이 오를 수 있는 높이 — 아무리 해도 그 위로는 못 오른다(통일신라 골품). 막히면 깃발 rank:capped.
 //  · 꼭 나오는 상황은 전부, 섞여 나오는 상황은 판마다 몇 개만(태어남 때 정한 씨앗).
 import { carryRecord, openJokbo } from './jokbo.js';
+import { recordStatus, openDogam } from './dogam.js';
 const ABIL = ['눈', '손', '발', '배', '몸'];
 const DOTS = (lv) => ({ 3: '●●●', 2: '●●○', 1: '●○○' })[Math.max(1, Math.min(3, lv))] || '●●○';
 const LV = ['', '낮음', '보통', '높음'];
@@ -41,13 +42,13 @@ export class Life {
   /** 신분 — d.status = { rules:[{id,name,if,say}] }: 넘겨받은 값(곡식 등)으로 태어날 때 정해진다. 대본이 아니라 수치. 깃발 status:<id> */
   setStatus() {
     const st = this.d.status; if (!st?.rules?.length) return;
-    const r = st.rules.find((x) => this.cond(x.if)) || st.rules[st.rules.length - 1]; this.status = r.id; this.statusName = r.name; this.g.flags.add('status:' + r.id);
+    const r = st.rules.find((x) => this.cond(x.if)) || st.rules[st.rules.length - 1]; this.status = r.id; this.statusName = r.name; this.g.flags.add('status:' + r.id); if (typeof localStorage !== 'undefined') recordStatus(this.g.era, r.id, r.name);   // 신분 도감 — 살아 본 집
     if (r.say) setTimeout(() => this.g.ui.say(`🏠 ${r.name} — ${r.say}`, 6200), this.nation ? 9600 : 4200);
   }
   /** 신분이 삶 중간에 바뀐다(법으로 종이 되거나, 값을 치르고 풀려나거나) — 선택지 c.status = '<id>' */
   setStatusTo(id) {
     const st = this.d.status; const r = st?.rules?.find((x) => x.id === id); if (!r) return; if (this.status) this.g.flags.delete('status:' + this.status);
-    this.status = r.id; this.statusName = r.name; this.g.flags.add('status:' + r.id); this.g.ui.say(`🏠 ${r.name}`, 3600); this.render(); this.g.save?.touch();
+    this.status = r.id; this.statusName = r.name; this.g.flags.add('status:' + r.id); if (typeof localStorage !== 'undefined') recordStatus(this.g.era, r.id, r.name); this.g.ui.say(`🏠 ${r.name}`, 3600); this.render(); this.g.save?.touch();
   }
   /** 천장 — 지금 신분이 오를 수 있는 벼슬 높이(status 규칙의 cap). null 이면 천장 없음 */
   cap() { const r = this.d.status?.rules?.find((x) => x.id === this.status); return (r && typeof r.cap === 'number') ? r.cap : null; }
@@ -205,7 +206,7 @@ export class Life {
     const g = this.g; g.p.enabled = false; const v = this.values; const branch = (e.branches || []).find((b) => this.cond(b.if)) || (e.branches || []).slice(-1)[0] || {};
     g.flag(['life:end', 'life:' + (branch.id || 'end')]); g.results = [...(g.results || []), { id: 'life:end', concept: 'hist.life', ok: true, open: JSON.stringify({ craft: v.craft, heart: v.heart, hurt: [...this.hurt], log: this.log, branch: branch.id }) }];
     const marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h);
-    const rec = carryRecord(this, branch); try { localStorage.setItem('kworld_carry:' + g.era, JSON.stringify(rec)); const hist = JSON.parse(localStorage.getItem('kworld_jokbo') || '[]'); hist.push({ era: g.era, branch: rec.branch, title: rec.title, status: rec.statusName, t: rec.t }); localStorage.setItem('kworld_jokbo', JSON.stringify(hist.slice(-300))); } catch { }   // 넘겨줄 것 + 족보 기록(지난 집까지)
+    const rec = carryRecord(this, branch); try { localStorage.setItem('kworld_carry:' + g.era, JSON.stringify(rec)); const hist = JSON.parse(localStorage.getItem('kworld_jokbo') || '[]'); hist.push({ era: g.era, branch: rec.branch, title: rec.title, status: rec.statusName, statusId: rec.status || null, t: rec.t }); localStorage.setItem('kworld_jokbo', JSON.stringify(hist.slice(-300))); } catch { }   // 넘겨줄 것 + 족보 기록(지난 집까지)
     g.save?.recordEnd?.(rec);   // 서버 족보(정식 좌석만, 조용히)
     const html = `<div class="chk life end"><div class="tag">${esc(e.tag || '이번 삶')}</div><h3>${esc(branch.title || e.title || '')}</h3>${(branch.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}<ul class="mlist"><li>✋ 솜씨 <b>${v.craft}</b> · 🤝 인심 <b>${v.heart}</b> · 🌾 곡식 ${this.d.grain?.open ? `<b>${v.grain || 0}</b>` : '🔒'}${this.d.rank?.open ? ` · 🎖 벼슬 <b>${v.rank || 0}</b>${this.cap() != null ? ` / 천장 ${this.cap()}` : ''}` : ''}</li><li>능력 ${ABIL.map((a) => `${a} ${DOTS(this.abil[a])}`).join(' · ')}</li>${marks.length ? `<li>흔적 — ${esc(marks.join(', '))}</li>` : ''}${this.nationName || this.statusName ? `<li>${this.nationName ? `🏳️ ${esc(this.nationName)} · ` : ''}${this.statusName ? `🏠 ${esc(this.statusName)}` : ''}</li>` : ''}<li>겪은 상황 ${this.log.length}가지</li></ul>${e.fact ? `<div class="facts"><div>📜 <b>실제</b> ${esc(e.fact)}</div></div>` : ''}${e.next ? `<p class="sub">${esc(e.next)}</p>` : ''}</div>`;
     const btns = [{ label: e.again || '다시 태어난다', primary: true, onClick: () => { g.save?.clear(); const u = new URL(location.href); u.searchParams.set('resume', '0'); location.href = u.toString(); } }];
@@ -224,12 +225,14 @@ export class Life {
   // ---------- 화면 ----------
   hud() {
     if (typeof document === 'undefined' || typeof document.createElement !== 'function' || document.getElementById('life')) return;
-    const st = document.createElement('style'); st.textContent = `#life{position:fixed;top:199px;right:22px;width:150px;background:var(--panel);border:1px solid var(--line);padding:10px 13px;border-radius:14px;font-size:12px;backdrop-filter:blur(10px);line-height:1.55}#life .v{display:flex;justify-content:space-between}#life .v b{font-variant-numeric:tabular-nums}#life .lock{opacity:.55}#life .ab{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:0 8px;font-size:11px;letter-spacing:.5px}#life .ab span i{font-style:normal;color:var(--accent2);letter-spacing:1px;text-shadow:0 0 6px rgba(233,182,91,.35)}#life .v b{color:#fff;font-size:13px}#life .v span{opacity:.85}#life .hurt{margin-top:5px;color:#f3a05a;font-size:11px}#life .up{animation:lifeup .9s ease}@keyframes lifeup{0%{transform:scale(1.25);color:#ffe08a}100%{transform:none}}.chk.life .why{background:rgba(255,220,138,.12);border-left:3px solid #ffe08a;padding:8px 10px;border-radius:8px}.chk.life .delta{font-weight:700;letter-spacing:.3px}.chk.life.bad .tag{color:#f3a05a}.pbtns button.gray{opacity:.45;cursor:not-allowed;text-decoration:line-through}@media(max-width:760px){#life{right:10px;top:10px;width:118px;padding:7px 9px;font-size:11px}#life .ab{display:none}}#jokbobtn{margin-top:8px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:#f2dfb2;border-radius:999px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:.3px}#jokbobtn:hover{border-color:var(--accent)} .chk.life.review .mlist li{font-size:12.5px;line-height:1.45;margin:7px 0;text-align:left} .chk.life.review .mlist li b{color:#e9b65b}`;
+    const st = document.createElement('style'); st.textContent = `#life{position:fixed;top:199px;right:22px;width:150px;background:var(--panel);border:1px solid var(--line);padding:10px 13px;border-radius:14px;font-size:12px;backdrop-filter:blur(10px);line-height:1.55}#life .v{display:flex;justify-content:space-between}#life .v b{font-variant-numeric:tabular-nums}#life .lock{opacity:.55}#life .ab{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:0 8px;font-size:11px;letter-spacing:.5px}#life .ab span i{font-style:normal;color:var(--accent2);letter-spacing:1px;text-shadow:0 0 6px rgba(233,182,91,.35)}#life .v b{color:#fff;font-size:13px}#life .v span{opacity:.85}#life .hurt{margin-top:5px;color:#f3a05a;font-size:11px}#life .up{animation:lifeup .9s ease}@keyframes lifeup{0%{transform:scale(1.25);color:#ffe08a}100%{transform:none}}.chk.life .why{background:rgba(255,220,138,.12);border-left:3px solid #ffe08a;padding:8px 10px;border-radius:8px}.chk.life .delta{font-weight:700;letter-spacing:.3px}.chk.life.bad .tag{color:#f3a05a}.pbtns button.gray{opacity:.45;cursor:not-allowed;text-decoration:line-through}@media(max-width:760px){#life{right:10px;top:10px;width:118px;padding:7px 9px;font-size:11px}#life .ab{display:none}}#jokbobtn,#dogambtn{margin-top:8px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:#f2dfb2;border-radius:999px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:.3px}#jokbobtn:hover,#dogambtn:hover{border-color:var(--accent)}#dogambtn{margin-left:6px} .chk.life.review .mlist li{font-size:12.5px;line-height:1.45;margin:7px 0;text-align:left} .chk.life.review .mlist li b{color:#e9b65b}`;
     document.head.appendChild(st); const el = document.createElement('div'); el.id = 'life'; document.body.appendChild(el); const body = document.createElement('div'); el.appendChild(body); this.el = body;   // 값은 body 에, 족보 단추는 그 밑에 남는다
-    const jb = document.createElement('button'); jb.id = 'jokbobtn'; jb.textContent = '📜 족보'; jb.title = '우리 집 족보 (J)'; jb.onclick = () => this.jokbo(); (document.getElementById('hud') || el).appendChild(jb);   // 왼쪽 여정 카드 밑(오른쪽 값판을 키우면 행동 단추를 덮는다)
+    const jb = document.createElement('button'); jb.id = 'jokbobtn'; jb.textContent = '📜 족보'; jb.title = '우리 집 족보 (J)'; jb.onclick = () => this.jokbo(); (document.getElementById('hud') || el).appendChild(jb);
+    const db = document.createElement('button'); db.id = 'dogambtn'; db.textContent = '📖 도감'; db.title = '신분 도감 — 살아 본 집 (B)'; db.onclick = () => this.dogam(); (document.getElementById('hud') || el).appendChild(db);   // 왼쪽 여정 카드 밑(오른쪽 값판을 키우면 행동 단추를 덮는다)
   }
   /** 족보 한 장 — 카드가 열려 있지 않을 때만(상황 카드 도중엔 안 끼어든다) */
   jokbo() { if (this.g.ui.isOpen?.() || this.g.story?.cutsceneOn) return; openJokbo(this.g); }
+  dogam() { if (this.g.ui.isOpen?.() || this.g.story?.cutsceneOn) return; openDogam(this.g); }
   render() {
     if (!this.el) return; const v = this.values; const prev = this.el.dataset.v || '';
     const marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h).join(' · ');

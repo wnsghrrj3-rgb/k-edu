@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<title>케이히스토리 — 신분 도감</title>
+<style>
+  :root{--ink:#1d2430;--accent:#e9b65b;--line:rgba(236,208,150,.22);--serif:"Gowun Batang","Nanum Myeongjo",serif;--sans:"Gowun Dodum",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+  html,body{margin:0;background:#0e1214;font-family:var(--sans);color:#fff;min-height:100%}
+  body{background:radial-gradient(ellipse at 50% 20%,#2a3a3f 0%,#121a1d 55%,#0b0f11 100%);padding:28px 14px 60px}
+  #paper{position:relative;max-width:860px;margin:0 auto;background:linear-gradient(180deg,#fbf6ea,#f3ecdb);color:var(--ink);border-radius:20px;padding:26px 28px;box-shadow:0 30px 80px rgba(0,0,0,.5),inset 0 0 0 1px rgba(150,120,70,.18)}
+  #paper::before{content:"";position:absolute;top:0;left:28px;right:28px;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+  #paper h3{margin:8px 0 6px;font-size:26px;font-family:var(--serif);letter-spacing:-.3px}
+  #paper .tag{display:inline-block;font-size:11px;letter-spacing:2px;color:#9a6a1c;font-weight:700;padding:4px 10px;border:1px solid rgba(154,106,28,.35);border-radius:999px;background:rgba(154,106,28,.06)}
+  #paper p{margin:6px 0;line-height:1.7;font-size:15px}#paper .sub{font-size:13px;opacity:.7}
+  #top{max-width:640px;margin:0 auto 14px;display:flex;justify-content:space-between;align-items:center;font-size:12px;opacity:.85}
+  #top a{color:#f2dfb2;text-decoration:none}#top a:hover{color:var(--accent)}
+  #top .k{letter-spacing:4px;font-size:10px;color:var(--accent)}
+  @media print{body{background:#fff;padding:0}#paper{box-shadow:none;border-radius:0}#top{display:none}}
+</style>
+</head>
+<body>
+<div id="top"><span class="k">KEDU WORLD · HISTORY</span><span><a href="./">← 시대로 돌아가기</a> &nbsp;·&nbsp; <a href="./jokbo.html">📜 족보</a> &nbsp;·&nbsp; <a href="#" id="print">인쇄</a></span></div>
+<div id="paper">불러오는 중…</div>
+<script src="/kedu_scope.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_config.js"></script>
+<script src="/kedu_tier.js"></script>
+<script type="module">
+import { livedMap, dogamHtml, DOGAM_CSS } from './core/dogam.js';
+import { syncJokbo } from './core/save.js';
+const st = document.createElement('style'); st.textContent = DOGAM_CSS; document.head.appendChild(st);
+document.getElementById('print').onclick = (e) => { e.preventDefault(); print(); };
+try {
+  const data = await fetch('./eras/dogam.json').then((r) => r.json());
+  const fromServer = await syncJokbo();   // 정식 좌석이면 서버 족보(끝 신분)를 이 기기에 먼저 채운다 — 삶 중간 신분은 이 기기 기록만
+  document.getElementById('paper').innerHTML = dogamHtml(data, livedMap(data), { tag: fromServer ? '신분 도감 · 우리 집 기록' : '신분 도감 · 이 기기의 기록' });
+} catch (e) { document.getElementById('paper').textContent = '도감을 못 불러왔어: ' + e; }
+</script>
+</body>
+</html>

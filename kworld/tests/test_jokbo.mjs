@@ -34,7 +34,7 @@ ok(jokboHtml(chain, collect(chain, null, () => null)).includes('0대 / 11대'), 
 globalThis.document = { getElementById: () => null, createElement: () => ({ style: {}, appendChild() {}, classList: { add() {}, remove() {} } }), head: { appendChild() {} }, body: { appendChild() {} } };
 const ls = {}; globalThis.localStorage = { getItem: (k) => ls[k] ?? null, setItem(k, v) { ls[k] = v; }, removeItem(k) { delete ls[k]; } };
 const { Life } = await import('../core/life.js');
-const panels = []; const g = { era: 'neo', base: './eras/neo/', flags: new Set(), results: [], inventory: [], world: { gate: { next: 'bronze-life', nextName: '청동기', ready: true } }, p: { enabled: true }, e: { onFrame: [] }, ui: { say() {}, open: (h, b) => panels.push({ h, b }), close() {}, isOpen: () => false }, flag(f) { for (const x of [].concat(f)) this.flags.add(x); }, save: { touch() {}, clear() {} } };
+const panels = []; const g = { era: 'neo', base: './eras/neo/', flags: new Set(), results: [], inventory: [], world: { gate: { next: 'bronze-life', nextName: '청동기', ready: true } }, p: { enabled: true }, e: { onFrame: [] }, story: { fast: true }, ui: { say() {}, open: (h, b) => panels.push({ h, b }), close() {}, isOpen: () => false }, flag(f) { for (const x of [].concat(f)) this.flags.add(x); }, save: { touch() {}, clear() {} } };
 const life = new Life(g, J(path.join(root, 'eras/neo/life.json'))); life.values = { craft: 4, heart: 1, grain: 0, rank: 0 }; life.abil = { 눈: 2, 손: 2, 발: 2, 배: 2, 몸: 2 }; life.hurt.add('leg'); life.log.push({ sit: 'x', choice: 'y' });
 const endDef = (() => { for (const s of life.d.situations) for (const c of s.choices || []) for (const a of c.then || []) if (a.end) return a.end; })();
 life.end(endDef);
