@@ -138,12 +138,12 @@ export class Life {
     else done();
   }
   showSituation(s, cb) {
-    const g = this.g; g.p.enabled = false; g.sound?.play?.('night_rustle', 0.2);
+    const g = this.g; g.p.enabled = false; g.sound?.play?.('card', 0.6);
     const ways = (s.ways || []).map((w) => `<li>${esc(w)}</li>`).join('');
     g.ui.open(`<div class="chk life"><div class="tag">${esc(s.tag || '상황')}${s.must ? '' : ' · 이번 판'}</div><h3>${esc(s.title)}</h3>${(s.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}${ways ? `<p class="sub">할 수 있는 것 — 말이 아니라 몸으로:</p><ul class="mlist">${ways}</ul>` : ''}</div>`, [{ label: s.button || '…해 보자', primary: true, onClick: () => { g.ui.close(); cb(); } }]);
   }
   showResult(s, c, deltas, cb) {
-    const g = this.g; g.p.enabled = false; g.sound?.play?.(c.bad ? 'growl' : 'night_rustle', 0.15);
+    const g = this.g; g.p.enabled = false; g.sound?.play?.(c.bad ? 'bad' : 'good', 0.5);
     const why = c.why ? `<p class="why">🧭 <b>왜?</b> ${esc(c.why)}</p>` : '';
     const fact = (c.fact || s.fact) ? `<div class="facts"><div>📜 <b>실제</b> ${esc(c.fact || s.fact)}</div></div>` : '';
     g.ui.open(`<div class="chk life ${c.bad ? 'bad' : ''}"><div class="tag">${c.bad ? '결과 — 안 됐다' : '결과'}</div><h3>${esc(c.title || c.label || '')}</h3>${(c.result || []).map((b) => `<p>${esc(b)}</p>`).join('')}${why}${deltas.length ? `<p class="delta">${deltas.join(' · ')}</p>` : ''}${fact}</div>`, [{ label: c.button || '알겠어', primary: true, onClick: () => { g.ui.close(); cb(); } }]);
