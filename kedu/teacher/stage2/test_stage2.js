@@ -116,6 +116,23 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
     ok(/sm2-rows grp/.test(sg.body) && (sg.body.match(/class="sm2-grp"/g) || []).length === 2 && /class="op">=/.test(sg.body) && /class="op">➜/.test(sg.body), '113차 sm2: 뜻이 겹치면 뜻 알약 아래로 묶음 · 식 기호(= + →) 흐리게');
     const sl = KT2.renderSlide({ id: 's', block: 'concept', data: { title: 't', content: 'x', symbol_meanings: [{ symbol: '자음자', meaning: 'ㄱ ㄴ' }, { symbol: '모음자', meaning: 'ㅏ ㅓ' }] } }, Object.assign({}, C, { learn: true }));
     ok((sl.body.match(/class="sym"/g) || []).length === 2 && /<b>자음자<\/b><span>ㄱ ㄴ<\/span>/.test(sl.body), '되살림: learn 개념 symbol_meanings → 낱말 카드(1세대 그대로)'); }
+  { const it = (e, c, l) => ({ emoji: e, count: c, label: l }); // 114차 — 수학 묶음 개념 장 mg2(수 가지)
+    const sp = KT2.renderSlide({ id: 'm', block: 'concept', data: { title: 't', content: 'x', items: [it('🍅', 5, '5개를'), it('🍅', 3, '3개와'), it('🍅', 2, '2개로!')], note: '👉 5는 3과 2로 가르기 할 수 있어요.' } }, C);
+    ok(sp.cls === 'mg2 mg2-split' && (sp.body.match(/<i class="a">/g) || []).length === 6 && (sp.body.match(/<i class="b">/g) || []).length === 4 && /mg2-br/.test(sp.body) && !/mg2-note/.test(sp.body) && /mg2-card p1/.test(sp.body), '114차 mg2 가르기: 전체 묶음 안 두 색(3 파랑·2 주황) + 가지 + 부분 카드 · 👉 note 는 발문 띠로(화면 없음)');
+    const sn = KT2.renderSlide({ id: 'm', block: 'concept', data: { title: 't', content: 'x', items: [it('🍅', 5, '5개를'), it('🍅', 3, '3개와'), it('🍅', 2, '2개로!')], note: '5는 3과 2로 가르기 할 수 있어요.' } }, C);
+    ok(/<b class="c1">3<\/b>과 <b class="c2">2<\/b>로/.test(sn.body), '114차 mg2: 화면 note 의 부분 수에 색(3 파랑·2 주황)');
+    const jo = KT2.renderSlide({ id: 'm', block: 'concept', data: { title: 't', content: 'x', items: [it('🍅', 4, '4개'), it('🍅', 3, '3개'), it('🍅', 7, '모으면 7개')] } }, C);
+    ok(jo.cls === 'mg2 mg2-join' && /mg2-st join/.test(jo.body) && /mg2-n">7</.test(jo.body), '114차 mg2 모으기: 마지막 = 앞의 합 → join(가지 위로)');
+    const tw = KT2.renderSlide({ id: 'm', block: 'concept', data: { title: 't', content: 'x', items: [it('🔴', 3, '3'), it('🔴', 2, '+ 2')] } }, C);
+    ok(tw.cls === 'mg2 mg2-two' && /mg2-op">\+/.test(tw.body), '114차 mg2 두 묶음: 「+ 2」 이름표면 + 기호');
+    const ic = KT2.renderSlide({ id: 'm', block: 'concept', data: { title: 't', content: 'x', items: [it('📏', 1, '길이'), it('⚖️', 1, '무게'), it('🟦', 1, '넓이'), it('🥛', 1, '들이')] } }, C);
+    ok(ic.cls === 'mg2 mg2-icon' && (ic.body.match(/mg2-big/g) || []).length === 4, '114차 mg2 그림 카드: count 전부 1 → 큰 그림 카드');
+    const rw = KT2.renderSlide({ id: 'm', block: 'concept', data: { title: 't', content: 'x', items: [it('🍬', 2, '2와 3'), it('🍬', 3, '3과 2')] } }, C);
+    ok(rw.cls === 'mg2 mg2-two' || (rw.body.match(/<i class="b">/g) || []).length >= 1, '114차 mg2: 두 묶음 갈래');
+    const bt = KT2.renderSlide({ id: 'm', block: 'concept', data: { title: 't', content: 'x', items: [it('🔟', 30, '20+10'), it('1️⃣', 17, '8+9')] } }, C);
+    ok(bt.cls !== 'mg2 mg2-two' && /base-ten/.test(bt.body), '114차 mg2: 20 넘는 묶음(십 막대)은 1세대 그대로');
+    const ln = KT2.renderSlide({ id: 'm', block: 'concept', data: { title: 't', content: 'x', items: [it('🍅', 5, '5개를'), it('🍅', 3, '3개와'), it('🍅', 2, '2개로!')] } }, Object.assign({}, C, { learn: true }));
+    ok(!/mg2/.test(ln.cls || '') && /tf-row/.test(ln.body), '되살림: learn 개념 items → 1세대 묶음 줄 그대로'); }
   const vd = KT2.renderSlide({ id: 'v', block: 'visual_demo', data: { title: 't', sub_text: '두 가지로 읽어요' } }, C);
   ok(/두 가지로 읽어요/.test(vd.body), '되살림: visual_demo sub_text');
   const tp = KT2.renderSlide({ id: 'p', block: 'interactive_ten_frame', data: { title: 't', start_count: 3, prompt: '4개를 더 눌러요' } }, C);
