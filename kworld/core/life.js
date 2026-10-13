@@ -66,7 +66,7 @@ export class Life {
     return pool.slice(0, n);
   }
   get situations() { return (this.d.situations || []).filter((x) => x.must || (this.mixed || []).includes(x.id)); }
-  sit(id) { return (this.d.situations || []).find((x) => x.id === id); }
+  sit(id) { return (this.d.situations || []).find((x) => x.id === id) || (this.d.luck?.cards || []).find((x) => x.id === id); }
   // ---------- 값·능력 ----------
   add(key, n) { if (!n) return; this.values[key] = Math.max(0, (this.values[key] || 0) + n); this.render(); this.g.save?.touch(); }
   gain(ab, n = 1) {
@@ -123,11 +123,22 @@ export class Life {
     const deltas = []; if (c.craft) { this.add('craft', c.craft); deltas.push(`✋ 솜씨 ${c.craft > 0 ? '+' : ''}${c.craft}`); } if (c.heart) { this.add('heart', c.heart); deltas.push(`🤝 인심 ${c.heart > 0 ? '+' : ''}${c.heart}`); } if (c.grain && this.d.grain?.open) { this.add('grain', c.grain); deltas.push(`🌾 곡식 ${c.grain > 0 ? '+' : ''}${c.grain}`); } if (c.rank) { const l = this.rise(c.rank); if (l) deltas.push(l); }
     for (const a of [].concat(c.gain || [])) this.gain(a, 1); if (c.hurt) this.injure(c.hurt); if (c.flag) for (const f of [].concat(c.flag)) g.flags.add(f);   // 결과가 바로 세우는 깃발(then 은 카드 뒤, 이건 즉시)
     this.log.push({ sit: s.id, choice: c.id, t: Date.now() }); g.friends?.picked?.(s, c);   // 반 친구에게 「무엇을 골랐는지」 한 줄(값 없음) g.telemetry && ((g.telemetry.life ??= []).push({ sit: s.id, choice: c.id }));
-    this.queue.push({ kind: 'result', s, c, deltas }); if (c.then) this.queue.push({ kind: 'then', list: c.then });
+    const items = [{ kind: 'result', s, c, deltas }]; if (c.then) items.push({ kind: 'then', list: c.then }); if (s.luck) this.queue.unshift(...items); else this.queue.push(...items);   // 운 카드 결과는 줄 맨 앞(다음 상황 카드보다 먼저)
     g.flag(['sit:' + s.id + ':done', 'sit:' + s.id + ':' + c.id]);   // 결과 카드를 먼저 줄 세운 뒤 깃발(깃발이 여는 다음 상황은 그 뒤에)
     if (c.retry) { this.done.delete(s.id); g.flags.delete('sit:' + s.id + ':done'); g.flags.delete('sit:' + s.id + ':' + c.id); if (c.done) for (const f of c.done.split('&&')) if (!f.trim().startsWith('!')) g.flags.delete(f.trim()); }   // 쓰러짐: 그 상황 앞으로 — 다른 선택을 해 본다
-    this.flush(); g.save?.touch();
+    this.flush(); g.save?.touch(); if (s.must) this.luckTick();
   }
+  /** 운 카드 — 꼭 나오는 상황이 끝날 때마다 보는 자리(판마다 다른 자리·다른 카드, 씨앗으로). 선택은 없다: 결과는 앞에서 쌓은 값이 정한다 — 「운으로 바로 죽지 않고, 앞에서 쌓은 사람만 버틴다」 */
+  luckTick() {
+    const L = this.d.luck; if (!L?.cards?.length) return; const g = this.g; if (g.story?.fast && !this.forceLuck) return;   /* 고리 시험은 건너뜀(test_luck 이 forceLuck 으로 켬) */ const mustN = (this.d.situations || []).filter((x) => x.must).length; const n = this.log.filter((l) => this.sit(l.sit)?.must).length;
+    if (!this.luckSlots) { const per = Math.min(L.perRun || 2, Math.max(0, mustN - 2)); const cand = []; for (let k = 2; k < mustN; k++) cand.push(k); let seed = (this.seed || 1) * 104729; this.luckSlots = []; while (this.luckSlots.length < per && cand.length) { seed = (seed * 1103515245 + 12345) % 2147483648; this.luckSlots.push(cand.splice(seed % cand.length, 1)[0]); } this.luckSlots.sort((a, b) => a - b); }
+    if (!this.luckSlots.includes(n) || g.flags.has('luck:slot:' + n)) return; g.flags.add('luck:slot:' + n);
+    const seen = new Set(this.luckSeen || []); let pool = L.cards.filter((c) => !seen.has(c.id) && this.cond(c.if)); if (!pool.length) pool = L.cards.filter((c) => this.cond(c.if)); if (!pool.length) return;
+    let seed = (this.seed || 1) * 7 + n * 131; seed = (seed * 1103515245 + 12345) % 2147483648; const card = pool[seed % pool.length]; (this.luckSeen ??= []).push(card.id);
+    const s = { ...card, luck: true, tag: card.tag || '운', button: card.button || '…', ways: [] }; this.opened.add(s.id); g.flags.add('sit:' + s.id + ':open'); let at = this.queue.findIndex((q) => q.kind === 'result'); at = at < 0 ? 0 : at + 1; if (this.queue[at]?.kind === 'then') at++; this.queue.splice(at, 0, { kind: 'sit', s }); this.flush();   // 방금 끝난 상황의 결과 카드 바로 뒤
+  }
+  /** 운 카드의 결과 = outcomes 중 값 조건에 처음 맞는 것(마지막은 조건 없음) */
+  luckResolve(s) { const c = (s.outcomes || []).find((o) => this.cond(o.if)) || (s.outcomes || []).slice(-1)[0]; if (c) this.finish(s, { id: c.id || 'luck', ...c }); }
   /** 카드는 한 번에 하나 — 다른 판이 열려 있으면 기다린다 */
   flush() {
     const g = this.g; if (this.busy || !this.queue.length || g.ui.isOpen?.() || g.story?.cutsceneOn) return;
@@ -141,7 +152,7 @@ export class Life {
   showSituation(s, cb) {
     const g = this.g; g.p.enabled = false; g.sound?.play?.('card', 0.6);
     const ways = (s.ways || []).map((w) => `<li>${esc(w)}</li>`).join('');
-    g.ui.open(`<div class="chk life"><div class="tag">${esc(s.tag || '상황')}${s.must ? '' : ' · 이번 판'}</div><h3>${esc(s.title)}</h3>${(s.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}${ways ? `<p class="sub">할 수 있는 것 — 말이 아니라 몸으로:</p><ul class="mlist">${ways}</ul>` : ''}</div>`, [{ label: s.button || '…해 보자', primary: true, onClick: () => { g.ui.close(); cb(); } }]);
+    g.ui.open(`<div class="chk life"><div class="tag">${esc(s.tag || '상황')}${s.must ? '' : ' · 이번 판'}</div><h3>${esc(s.title)}</h3>${(s.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}${ways ? `<p class="sub">할 수 있는 것 — 말이 아니라 몸으로:</p><ul class="mlist">${ways}</ul>` : ''}</div>`, [{ label: s.button || '…해 보자', primary: true, onClick: () => { g.ui.close(); cb(); if (s.luck) this.luckResolve(s); } }]);
   }
   showResult(s, c, deltas, cb) {
     const g = this.g; g.p.enabled = false; g.sound?.play?.(c.bad ? 'bad' : 'good', 0.5);
@@ -208,8 +219,8 @@ export class Life {
     show(); g.save?.touch();
   }
   // ---------- 저장 ----------
-  snapshot() { return { nation: this.nation, nationName: this.nationName, status: this.status, statusName: this.statusName, values: this.values, abil: this.abil, xp: this.xp, hurt: [...this.hurt], opened: [...this.opened], done: [...this.done], log: this.log, seed: this.seed, mixed: this.mixed, tries: this.tries }; }
-  restore(s) { if (!s) return; this.carried = true; if (s.nation) { this.nation = s.nation; this.nationName = s.nationName; this.g.flags.add('nation:' + s.nation); } if (this.g.sex?.id) this.g.flags.add('sex:' + this.g.sex.id); if (s.status) { this.status = s.status; this.statusName = s.statusName; this.g.flags.add('status:' + s.status); } Object.assign(this.values, s.values || {}); Object.assign(this.abil, s.abil || {}); Object.assign(this.xp, s.xp || {}); this.hurt = new Set(s.hurt || []); this.opened = new Set(s.opened || []); this.done = new Set(s.done || []); this.log = s.log || []; this.seed = s.seed || this.seed; this.mixed = s.mixed || this.mixed; this.tries = s.tries || {}; this.render(); }
+  snapshot() { return { nation: this.nation, nationName: this.nationName, status: this.status, statusName: this.statusName, values: this.values, abil: this.abil, xp: this.xp, hurt: [...this.hurt], opened: [...this.opened], done: [...this.done], log: this.log, seed: this.seed, mixed: this.mixed, tries: this.tries, luckSeen: this.luckSeen || [], luckSlots: this.luckSlots || null }; }
+  restore(s) { if (!s) return; this.carried = true; if (s.nation) { this.nation = s.nation; this.nationName = s.nationName; this.g.flags.add('nation:' + s.nation); } if (this.g.sex?.id) this.g.flags.add('sex:' + this.g.sex.id); if (s.status) { this.status = s.status; this.statusName = s.statusName; this.g.flags.add('status:' + s.status); } Object.assign(this.values, s.values || {}); Object.assign(this.abil, s.abil || {}); Object.assign(this.xp, s.xp || {}); this.hurt = new Set(s.hurt || []); this.opened = new Set(s.opened || []); this.done = new Set(s.done || []); this.log = s.log || []; this.seed = s.seed || this.seed; this.mixed = s.mixed || this.mixed; this.tries = s.tries || {}; this.luckSeen = s.luckSeen || []; this.luckSlots = s.luckSlots || null; this.render(); }
   // ---------- 화면 ----------
   hud() {
     if (typeof document === 'undefined' || typeof document.createElement !== 'function' || document.getElementById('life')) return;
