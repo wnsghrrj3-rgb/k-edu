@@ -14,7 +14,7 @@ for (const t of types) assert.ok(items.targets[t], `대상 ${t} 가 items.json �
 for (const t of Object.keys(items.targets)) assert.ok(types.has(t) || sceneTypes.has(t), `items.json 대상 ${t} 가 GLB·scene 에 없음`);
 const areas = names.filter((n) => n.startsWith('area_')).map((n) => n.slice(5));
 for (const a of Object.keys(world.areas)) assert.ok(areas.includes(a), `구역 ${a} 없음`);
-assert.equal(Object.keys(world.areas).length, 20, '구역 20(10-06 넓히기: 사는·버는·모이는·만나는·바깥·숨는·바뀌는 곳)');
+assert.equal(Object.keys(world.areas).length, 23, '구역 23(10-06 넓히기 20 + 10-14 넓히기 2: 불탄 들·바람막이 바위·뼈 들판)');
 assert.ok(areas.includes(world.face), `시작 시선 구역 ${world.face}`);
 assert.ok(names.includes('spawn'), 'spawn');
 const npcs = ix.filter((n) => n.startsWith('ix_npc_')).map((n) => n.slice(7));
