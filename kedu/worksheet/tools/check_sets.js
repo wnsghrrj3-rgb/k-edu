@@ -151,7 +151,8 @@ const ASSETS = {
   spin:           ['n', 'boards'],
   stack:          ['stages'],
   optab:          ['op', 'rows', 'cols'],
-  numgrid:        ['rows']
+  numgrid:        ['rows'],
+  fbar:           ['bars']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -182,6 +183,7 @@ function checkAsset(where, a) {
   for (const f of ASSETS[a.type]) if (a[f] === undefined || a[f] === null) bad(where, `에셋 ${a.type} 에 ${f} 없음`);
   if (a.type === 'ftable' || a.type === 'pgraph' || a.type === 'cards') checkTgAsset(where, a);
   if (['ptile', 'spin', 'stack', 'optab', 'numgrid', 'cal'].indexOf(a.type) >= 0) checkKrAsset(where, a);
+  if (a.type === 'fbar') checkFdAsset(where, a);
   if (a.type === 'picto_table' || a.type === 'compare_groups') {
     if (!Array.isArray(a.rows) || !a.rows.length) bad(where, `${a.type} rows 비었음`);
     else a.rows.forEach((rw, i) => { if (rw.n === undefined || !rw.item) bad(where, `${a.type} rows[${i}] item/n 없음`); });
@@ -1447,6 +1449,68 @@ function krcPer(arr){ for (let p = 1; p * 2 <= arr.length; p++){ let ok = true;
     for (let i = 0; i < arr.length && ok; i++) if (arr[i] !== null) for (let j = i + p; j < arr.length; j += p) if (arr[j] !== null && String(arr[j]) !== String(arr[i])){ ok = false; break; }
     if (ok) return p; } return 0; }
 function krcFill(arr, i, p){ for (let j = i % p; j < arr.length; j += p) if (arr[j] !== null) return arr[j]; return undefined; }
+/* v3.4 분수의 나눗셈 (6학년 2학기 1단원, 2026-10-13) — 엔진과 따로 셈한다.
+   글 속 분수 ⟨a/b⟩·⟨n a/b⟩ 를 발문에서 읽어 나누는 식을 다시 세우고, 정답(단답·정답 보기)이 그 값과 같은지 · 오답 보기가 정답과 값이 다른지 · 정답 꼴이 약분한 대분수(또는 발문이 가분수를 물으면 가분수)인지 본다. */
+const fdG = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b){ const t = a % b; a = b; b = t; } return a || 1; };
+const fdRe = /⟨(?:(\d+) )?(\d+)\/(\d+)⟩|(\d+)(?![\d\/])/g;
+function fdToks(s){ const out = []; let m; const re = new RegExp(fdRe.source, 'g'); const t = String(s).replace(/⟨□\/\d+⟩|□/g, ' ');
+  while ((m = re.exec(t))){ if (m[4] !== undefined) out.push({n: Number(m[4]), d: 1, raw: m[0], i: m.index}); else out.push({n: Number(m[1] || 0) * Number(m[3]) + Number(m[2]), d: Number(m[3]), w: m[1] !== undefined, raw: m[0], i: m.index}); } return out; }
+const fdVal = s => { const p = fdParse1(s); return p ? p.n / p.d : NaN; };
+function fdParse1(s){ s = String(s).trim().replace(/\s*(개|컵|병|장|명|배|kg|m²|m|L|cm|km)\s*$/, ''); const m = s.match(/^⟨(?:(\d+) )?(\d+)\/(\d+)⟩$/); if (m) return {n: Number(m[1] || 0) * Number(m[3]) + Number(m[2]), d: Number(m[3]), w: m[1] !== undefined, pn: Number(m[2]), pd: Number(m[3])}; if (/^\d+$/.test(s)) return {n: Number(s), d: 1}; return null; }
+function fdExprVal(s){ /* 「A × B」·「A ÷ B」·「A ÷ b × c」 */ const parts = String(s).split(/\s*([×÷])\s*/); let v = fdVal(parts[0]); if (isNaN(v)) return NaN;
+  for (let i = 1; i < parts.length; i += 2){ const x = fdVal(parts[i + 1]); if (isNaN(x)) return NaN; v = parts[i] === '×' ? v * x : v / x; } return v; }
+function checkFdAsset(where, a){ if (!Array.isArray(a.bars) || !a.bars.length || a.bars.length > 3) return bad(where, 'fbar bars 는 1~3개');
+  a.bars.forEach((b, i) => { if (!(b.den >= 2 && b.den <= 24)) bad(where, `fbar ${i + 1} den 2~24`); if (!(b.num >= 0 && b.num <= b.den)) bad(where, `fbar ${i + 1} num 0~den`); if (b.grp && !(b.grp >= 1 && b.grp <= b.den)) bad(where, `fbar ${i + 1} grp 범위`); }); }
+function checkFd(where, q){
+  const K = (q.variant_rule || {}).fd; if (!K) return;
+  const ask = K.ask, st = String(q.stem || '').replace(/^이번에는 다른 보기예요\. /, ''), B = m => bad(where, 'fd ' + ask + ' ' + m);
+  const cor = q.kind === 'sa' ? String((q.answer || [])[0]) : String(((q.options || []).find(o => o.correct) || {}).t), wr = (q.options || []).filter(o => !o.correct).map(o => String(o.t));
+  const near = (x, y) => Math.abs(x - y) < 1e-9; let want = null, exprMode = false, tongMode = false;
+  const toks = fdToks(st.replace(/(\d+)\s*(개|번|시간|줄|m²|kg|km|cm|m|L)(?![가-힣])/g, (mm, n, u) => (u === '시간' || u === 'm²' || u === 'kg' || u === 'km' || u === 'cm' || u === 'm' || u === 'L') ? mm : n + ' ' + u));
+  const frs = toks.filter(t => t.d > 1), ints = toks.filter(t => t.d === 1), first2 = toks.slice(0, 2);
+  const divOf = (x, y) => x.n * y.d / (x.d * y.n);
+  if (ask === 'same' || ask === 'diff' || ask === 'mul' || (ask === 'mixed' && !/가분수로 (고칠|바르게 고친)/.test(st))){
+    if (/곱셈으로 바르게/.test(st)){ const [x, y] = frs; if (!x || !y) return B('식 없음'); const val = divOf(x, y);
+      if (!near(fdExprVal(cor), val)) B(`곱셈 식 정답 값 ${cor} ≠ ${val}`); wr.forEach(w => { if (near(fdExprVal(w), val)) B('오답 식 값이 정답과 같다: ' + w); }); return; }
+    if (/통분한 것은/.test(st)){ tongMode = true; if (frs.length < 2) return B('분수 둘이 없다'); const [x, y] = frs; const cp = String(cor).split(/\s*÷\s*/); if (cp.length !== 2) return B('통분 정답 꼴');
+      const p1 = fdParse1(cp[0]), p2 = fdParse1(cp[1]); if (!p1 || !p2) return B('통분 정답 파싱'); if (p1.pd !== p2.pd) B('통분 정답 분모가 다르다'); if (!near(p1.n / p1.d, x.n / x.d) || !near(p2.n / p2.d, y.n / y.d)) B('통분 정답 값이 원래와 다르다');
+      wr.forEach(w => { const wp = w.split(/\s*÷\s*/).map(fdParse1); if (wp.length === 2 && wp[0] && wp[1] && wp[0].pd === wp[1].pd && near(wp[0].n / wp[0].d, x.n / x.d) && near(wp[1].n / wp[1].d, y.n / y.d)) B('오답 보기가 바른 통분이다: ' + w); }); return; }
+    if (ask === 'same' && /□는 어느/.test(st)){ const x = frs[0]; if (!x) return B('분수 없음'); const c = Number(cor); if (!(x.n % c === 0 && c >= 1)) B(`□=${c} 가 ${x.n}의 약수가 아니다`); wr.forEach(w => { if (x.n % Number(w) === 0) B('오답 □ 도 약수: ' + w); }); return; }
+    if (/배인가요/.test(st) || /몫은 얼마|몫을 (가분수|기약분수)로|분자에 오는 수|나누어 (담|쓰)|무게는 몇|필요한가요|세로는 몇|가로는 몇|1 m의 무게|1 kg은 몇 m/.test(st)){
+      let x, y;
+      if (/무게가 .* kg인 천/.test(st)){ y = frs.find(t => /m/.test(st.slice(t.i + t.raw.length, t.i + t.raw.length + 3))); x = frs.find(t => t !== y); }
+      else if (/넓이는/.test(st)){ x = frs[0]; y = frs[1]; }
+      else { x = frs.length >= 2 ? frs[0] : null; y = frs.length >= 2 ? frs[1] : null; }
+      if (!x || !y) return B('나누는 식을 못 세웠다');
+      let val = divOf(x, y);
+      if (/분자에 오는 수/.test(st)){ const m = st.match(/⟨□\/(\d+)⟩/); if (m){ want = val * Number(m[1]); if (!near(want, Math.round(want))) B('몫 분자가 정수가 아니다'); } else { const g = fdG(x.n * y.d, x.d * y.n); want = x.n * y.d / g; } }
+      else if (/분자와 분모의 합/.test(st)){ const g = fdG(x.n * y.d, x.d * y.n); want = x.n * y.d / g + x.d * y.n / g; }
+      else if (/때 분모[은는]/.test(st)){ const g = fdG(x.n * y.d, x.d * y.n); want = x.d * y.n / g; }
+      else if (/때 분자[은는]/.test(st)){ const g = fdG(x.n * y.d, x.d * y.n); want = x.n * y.d / g; }
+      else want = val; }
+  }
+  else if (ask === 'mixed'){ const x = frs[0]; if (!x) return B('대분수 없음'); if (q.kind === 'sa') want = x.n; else { const p = fdParse1(cor); if (!p || p.w || p.pn !== x.n || p.pd !== x.d) B(`가분수 정답 ${cor} ≠ ⟨${x.n}/${x.d}⟩`); wr.forEach(w => { if (near(fdVal(w), x.n / x.d)) B('오답이 같은 값: ' + w); }); return; } }
+  else if (ask === 'nunit' || ask === 'nfrac'){
+    if (/곱셈으로 바르게/.test(st)){ exprMode = true; const n = ints[0], f = frs[0]; if (!n || !f) return B('식 없음'); const val = n.n * f.d / f.n;
+      if (!near(fdExprVal(cor), val)) B(`곱셈 식 정답 값 ${cor} ≠ ${val}`); wr.forEach(w => { if (near(fdExprVal(w), val)) B('오답 식 값이 정답과 같다: ' + w); }); return; }
+    const n = ints.find(t => t.i < (frs[0] || {i: 1e9}).i), f = frs[0]; if (!n || !f) return B('자연수·분수를 못 찾았다'); want = n.n * f.d / f.n; }
+  else if (ask === 'tile'){
+    if (/몇 개를 붙일 수/.test(st)){ const f = frs[0], L = toks.find(t => f && t.i > f.i); if (!f || !L) return B('타일 식 없음'); want = (L.n / L.d) * f.d / f.n; }
+    else if (/모두 몇 개 필요/.test(st)){ const [p, qn] = ints; want = p.n * qn.n; }
+    else { const [p, qn, have] = ints; const need = p.n * qn.n; const ok = have.n >= need; if (!(new RegExp(`^${need}개`).test(cor)) || (ok ? !/붙일 수 있어요/.test(cor) : !/모자라요/.test(cor))) B(`fit 정답 ${cor} (필요 ${need}, 가진 ${have.n})`); return; } }
+  else if (ask === 'cmp'){ const big = /가장 큰/.test(st); const all = [cor].concat(wr).map(t => [t, fdExprVal(t)]); if (all.some(([t, v]) => isNaN(v))) return B('식 값 파싱 실패');
+    const best = all.slice().sort((a, b) => big ? b[1] - a[1] : a[1] - b[1])[0]; if (best[0] !== cor) B(`가장 ${big ? '큰' : '작은'} 것은 ${best[0]} 인데 정답이 ${cor}`); if (new Set(all.map(x => x[1].toFixed(6))).size !== all.length) B('몫이 같은 식이 둘'); return; }
+  else if (ask === 'maxmin'){ if (frs.length < 2) return B('분수 묶음 없음'); const mx = frs.reduce((a, b) => a.n / a.d > b.n / b.d ? a : b), mn = frs.reduce((a, b) => a.n / a.d < b.n / b.d ? a : b); want = divOf(mx, mn); }
+  else if (ask === 'back'){ const d = frs[0], p = toks.find(t => d && t.i > d.i); if (!d || !p) return B('어떤 수 식 없음'); const x = p.n * d.d / (p.d * d.n); want = /바르게 계산한 값/.test(st) ? x * d.d / d.n : x; }
+  else return B('모르는 ask');
+  if (want === null) return B('정답을 발문에서 못 셈했다: ' + st);
+  const cv = fdVal(cor); if (isNaN(cv)) return B('정답을 수로 못 읽었다: ' + cor);
+  if (!near(cv, want)) B(`정답 ${cor}(${cv}) ≠ ${want}`);
+  if (q.kind === 'sa'){ if (!/^\d+$/.test(String(q.answer[0]))) B('단답 정답은 숫자'); if (Number(q.answer[0]) >= 100) B('단답 숫자판은 두 자리까지'); }
+  else { const p = fdParse1(cor); const impAsk = /가분수로 나타낼/.test(st);
+    if (p && p.d > 1){ const g = fdG(p.pn, p.pd); if (g !== 1) B('정답 분수가 약분되지 않았다: ' + cor); if (!impAsk && !p.w && p.pn > p.pd) B('정답이 가분수 꼴(대분수로): ' + cor); }
+    wr.forEach(w => { const wv = fdVal(w); if (!isNaN(wv) && near(wv, want)) B('오답 보기가 정답과 같은 값: ' + w); }); }
+}
 function checkKrAsset(where, a){
   const B = m => bad(where, a.type + ' ' + m);
   if (a.type === 'ptile'){ if (!Array.isArray(a.rows) || !a.rows.length || a.rows.length > 3) return B('rows 는 1~3줄'); let nul = 0;
@@ -1799,6 +1863,7 @@ function checkQ(where, q, opt) {
   checkMul(where, q);
   checkGugu(where, q);
   checkKr(where, q);
+  checkFd(where, q);
   checkMcm(where, q);
   checkTm(where, q);
   checkTg(where, q);

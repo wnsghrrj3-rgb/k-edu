@@ -50,6 +50,12 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .q{background:var(--card);border:1px solid var(--rule-strong);border-radius:14px;box-shadow:var(--shadow);padding:26px 24px 22px}
 .q .num{display:block;font-size:13px;letter-spacing:.1em;color:var(--muted);margin-bottom:12px}
 .stem{font-size:22px;line-height:1.6;white-space:pre-line}
+/* v3.4 세로 분수 — 글 속 ⟨a/b⟩·⟨n a/b⟩ 표기를 esc 가 그린다 (6학년) */
+.fr{display:inline-flex;align-items:center;gap:3px;vertical-align:middle;margin:0 2px;line-height:1}
+.fr b{font-weight:600}.fr .fs{display:inline-flex;flex-direction:column;align-items:center;line-height:1.15;font-size:.78em}
+.fr .fs sup,.fr .fs sub{font-size:1em;vertical-align:baseline;position:static;line-height:1.15;padding:0 3px}.fr .fs sup{border-bottom:1.5px solid currentColor}
+.fbarw{display:flex;flex-direction:column;gap:6px;align-items:center;max-width:100%;overflow-x:auto}.fbarw svg{max-width:100%;height:auto}
+.pfbarw{margin:4px 0}.pfbarw svg{max-width:100%;height:auto}
 .asset{margin:22px 0 4px;display:flex;justify-content:center}
 .count{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;max-width:400px;font-size:42px;line-height:1}
 .scatter{position:relative;width:100%;max-width:400px;height:180px;border:1px solid var(--rule);border-radius:10px;background:var(--tint)}
@@ -645,6 +651,17 @@ function rng(seed){ let s = seed >>> 0 || 1; return () => { s = (s * 1664525 + 1
 function shuffle(arr, r){ const a = arr.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function pick(arr, r){ return arr[Math.floor(r() * arr.length)]; }
 function rint(lo, hi, r){ return lo + Math.floor(r() * (hi - lo + 1)); }
+/* v3.4 — 분수 셈·표기 (6학년 2학기 1단원 「분수의 나눗셈」, 2026-10-13). 글 속 표기 ⟨a/b⟩(진·가분수) · ⟨n a/b⟩(대분수). */
+function frGcd(a, b){ a = Math.abs(a); b = Math.abs(b); while (b){ const t = a % b; a = b; b = t; } return a || 1; }
+function frRed(n, d){ const g = frGcd(n, d); return [n / g, d / g]; }
+function FR(n, d){ [n, d] = frRed(n, d); if (d === 1) return String(n); const w = Math.floor(n / d), rr = n % d; return w ? `⟨${w} ${rr}/${d}⟩` : `⟨${rr}/${d}⟩`; }   /* 약분·대분수 */
+function FRI(n, d){ [n, d] = frRed(n, d); return d === 1 ? String(n) : `⟨${n}/${d}⟩`; }   /* 약분·가분수 */
+function FRX(n, d){ return `⟨${n}/${d}⟩`; }   /* 그대로(통분한 꼴) */
+function frParse(s){ s = String(s).trim(); const m = s.match(/^⟨(?:(\d+) )?(\d+)\/(\d+)⟩$/); if (m) return [Number(m[1] || 0) * Number(m[3]) + Number(m[2]), Number(m[3])]; return /^\d+$/.test(s) ? [Number(s), 1] : null; }
+function frVal(s){ const p = frParse(s); return p ? p[0] / p[1] : NaN; }
+function frRead(s){ return String(s).replace(/⟨(?:(\d+) )?(\d+|[□△○])\/(\d+|[□△○])⟩/g, (m, w, a, b) => (w ? w + '과 ' : '') + b + '분의 ' + a); }
+function frJ(s, a, b){ const m = String(s).match(/⟨(?:(\d+) )?(\d+)\/(\d+)⟩\s*$/); return tmJ(m ? m[2] : String(s), a, b); }   /* 분수는 분자를 읽는다 */
+function frLcm(a, b){ return a / frGcd(a, b) * b; }
 /* v1.5 — 한글 자모 (2026-10-07): 받침 없는 글자 = 자음자 + 모음자. 화면·종이·변형·검사기가 같은 표를 쓴다. */
 const HG_C = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ', HG_V = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
 const HG_SIDE = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅣ', HG_STACK = 'ㅗㅛㅜㅠㅡ';   /* 나머지(ㅘㅙㅚㅝㅞㅟㅢ)는 둘러싸는 짜임(mix) */
@@ -738,11 +755,13 @@ const CL_PAIRS = [
   ["그림을", "그리다", "do", ["마시다", "깎다", "부르다"]], ["차를", "마시다", "do", ["부르다", "깎다", "날리다"]]
 ];
 const CL_HINT = {wear:'몸의 어디에 어떻게 걸치는지 떠올리며 짝을 지어요.', do:'「무엇을」과 이어 소리 내어 읽어 보고 어색한지 살펴요.'};
-function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function esc(s){ return frHTML(String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))); }
+/* v3.4 — ⟨a/b⟩·⟨n a/b⟩ → 세로 분수 (esc 뒤에만 쓴다; 분자·분모 자리의 □·△·○ 도 그린다) */
+function frHTML(s){ return s.replace(/⟨(?:(\d+) )?(\d+|[□△○])\/(\d+|[□△○])⟩/g, (m, w, a, b) => `<span class="fr">${w ? `<b>${w}</b>` : ''}<span class="fs"><sup>${a}</sup><sub>${b}</sub></span></span>`); }
 
 /* ---------- 읽어주기 ---------- */
 const TTS = { on: true, speak(text){ if (!this.on || !('speechSynthesis' in window)) return; speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(String(text).replace(/[●○□▷🍎🐤🚗🦋🐟🌼🍬⭐🍓🍌🍉🧁🎈⚽✏️🍪🍩🐞🍁🐘🐜]/g,' ').replace(/\s+/g,' ')); u.lang = 'ko-KR'; u.rate = 0.9; speechSynthesis.speak(u); } };
+  const u = new SpeechSynthesisUtterance(frRead(String(text)).replace(/[●○□▷🍎🐤🚗🦋🐟🌼🍬⭐🍓🍌🍉🧁🎈⚽✏️🍪🍩🐞🍁🐘🐜]/g,' ').replace(/\s+/g,' ')); u.lang = 'ko-KR'; u.rate = 0.9; speechSynthesis.speak(u); } };
 
 /* ---------- 모양·시계 그림 조각 (v0.5) ---------- */
 const SHAPE_NAME = {sq:'네모', tri:'세모', cir:'동그라미'};
@@ -1386,6 +1405,18 @@ const KR_SH = ['원', '삼각형', '사각형', '별', '마름모', '칸'];
 const KR_ORD = ['', '첫째', '둘째', '셋째', '넷째', '다섯째', '여섯째', '일곱째', '여덟째', '아홉째', '열째'];
 const KR_POS4 = ['위', '오른쪽', '아래', '왼쪽'];
 const KR_TYPES = ['ptile', 'spin', 'stack', 'optab', 'numgrid', 'cal'];
+/* v3.4 분수 막대 fbar {bars:[{den, num, grp?, label?, q?}]} — den 칸 가운데 num 칸 색칠, grp 는 색칠 칸을 grp 칸씩 묶어 ⌒ 로 표시(덜어 내기), q 면 색칠 수 대신 ? */
+function fbarSVG(a, paper){
+  const bars = (a.bars || []).slice(0, 3), W = 320, H1 = 34, GAP = 30; let s = '', y = 4;
+  bars.forEach(b => { const den = Math.max(2, Math.min(24, Number(b.den) || 2)), num = Math.max(0, Math.min(den, Number(b.num) || 0)), cw = (W - 8) / den;
+    for (let i = 0; i < den; i++){ const x = 4 + i * cw, on = i < num;
+      s += `<rect x="${x.toFixed(1)}" y="${y}" width="${cw.toFixed(1)}" height="${H1}" fill="${on ? (paper ? '#BDBDBD' : '#7FB3D5') : '#FFFFFF'}" stroke="${CMP_INK}" stroke-width="1.3"/>`; }
+    if (b.grp && num){ const g = Math.max(1, Number(b.grp)); for (let i = 0; i < num; i += g){ const x0 = 4 + i * cw, x1 = 4 + Math.min(num, i + g) * cw, full = i + g <= num;
+        s += `<path d="M${x0.toFixed(1)} ${y + H1 + 4} Q${((x0 + x1) / 2).toFixed(1)} ${y + H1 + 18} ${x1.toFixed(1)} ${y + H1 + 4}" fill="none" stroke="${full ? '#C0392B' : '#8B9199'}" stroke-width="1.6" stroke-dasharray="${full ? '' : '4 3'}"/>`; } }
+    if (b.label) s += `<text x="${W / 2}" y="${y + H1 + (b.grp ? 32 : 18)}" text-anchor="middle" font-size="13" fill="${CMP_INK}">${esc(frRead(b.label))}</text>`;
+    y += H1 + GAP + (b.grp ? 14 : 0); });
+  return `<svg class="cmpsv" viewBox="0 0 ${W} ${y}" width="${W}" height="${y}" role="img" aria-label="분수 막대 ${bars.length}개">${s}</svg>`;
+}
 function krSplit(it){ if (it === null || it === undefined || it === '?') return null; if (typeof it === 'number') return {n:it}; const p = String(it).split(':'); return {c:p[0], s:p[1] || '칸'}; }
 function krName(it){ const x = krSplit(it); if (!x) return '?'; if (x.n !== undefined) return String(x.n); return x.s === '칸' ? KR_CN[x.c] : KR_CN[x.c] + ' ' + x.s; }
 function krShapeSVG(x, ox, oy, S, paper){
@@ -1628,6 +1659,7 @@ function drawAsset(a, r){
     case 'cal': return `<div class="cmpw">${calSVG(a)}</div>`;
     /* v3.3 — 2학년 2학기 「규칙 찾기」 */
     case 'ptile': return `<div class="cmpw">${ptileSVG(a, false)}</div>`;
+    case 'fbar': return `<div class="fbarw">${fbarSVG(a, false)}</div>`;
     case 'spin': return `<div class="cmpw">${spinSVG(a)}</div>`;
     case 'stack': return stackHTML(a, false);
     case 'optab': return optabHTML(a, false);
@@ -3733,6 +3765,230 @@ function makeVariantOnce(q, r){
      cm {ask, ...}   ask  read(0 맞춤·몇 cm) · off(0 아님 — 칸 세기) · approx(눈금 사이 — 약 몇 cm, off:true 면 0 아님) · cells(1 cm 칸 세기) · unit(단위 몇 번)
      오개념 꼬리: X08 끝 숫자 그대로 · X09 눈금(선) 수 · X10 1부터 셈 · X11 먼 눈금 · X12 「약」 뺌 · X03 빈틈·겹침(횟수 ±1)
      원본을 만들 때만 q._fix = [len, s(, 이름)] 로 못박는다(fill.js 전용). */
+  /* v3.4 — 분수의 나눗셈 (6학년 2학기 1단원, 2026-10-13): 갈래 fd {ask, form?, …}
+     ask same(분모 같은 ÷ — form exact·frac·num·sum·story·blank) · diff(분모 다른 — form tong·ans·num·story) · nunit(자연수÷단위분수 — ans·story)
+         · nfrac(자연수÷진분수 — ans·expr·story) · mul(분수÷분수 곱셈으로 — expr·ans·den·story) · mixed(대분수 — imp·ans·story)
+         · tile(타일 — row·total·fit) · cmp(몫 비교) · maxmin(가장 큰 ÷ 가장 작은) · back(어떤 수 — x·right)
+     글 속 분수는 ⟨a/b⟩·⟨n a/b⟩ 로 적고 esc 가 세로 분수로 그린다. 정답은 약분한 대분수 꼴(FR), 오답은 값이 정답과 다른 것만.
+     _fix 로 원본을 고정한다(fill.js). 오개념 꼬리는 단원 사전 X01~X20. */
+  if (rule.fd && (!a || typeof a !== 'object' || a.type === 'fbar')){
+    const G = rule.fd, ask = G.ask, FX = v._fix || {}; delete v._fix; delete v._form; delete v.asset;
+    const want = Math.max(1, nOptsOf(q) - 1), isSA = q.kind === 'sa', SA = isSA ? ' 숫자로 쓰세요.' : '';
+    const fin = (ans, ds, ex, uw) => { if (isSA) v.answer = uw ? [String(ans), ans + uw] : [String(ans)];
+      else { const av = frVal(ans); v.options = kindOpts(uw ? ans + uw : ans, ds.map(([x, c]) => [x === null || x === undefined || (typeof x === 'number' && x < 0) || (typeof x === 'string' && Math.abs(frVal(x) - av) < 1e-9 && !/[×÷]/.test(x)) ? null : (uw ? x + uw : x), c]), want, q.options); }
+      v.explanation = ex; return v; };
+    const form = FX.form || G.form || (G.forms ? pick(G.forms, r) : null);
+    const EUL = x => frJ(x, '을', '를'), EUN = x => frJ(x, '은', '는'), IGA = x => frJ(x, '이', '가'), NY = x => x + frJ(x, '이에요', '예요');
+    const UNIT_J = {kg:'을', m:'를', L:'를', cm:'를', km:'를', 'm²':'를', 시간:'을'}, UNIT_Y = {kg:'이에요', m:'예요', L:'예요', cm:'예요', km:'예요', 'm²':'예요'};
+    const RO = x => { const m = String(x).match(/⟨(?:(\d+) )?(\d+)\/(\d+)⟩\s*$/), t = m ? m[2] : String(x); return /[178]$/.test(t) ? '로' : frJ(t, '으로', '로'); };
+    const IRA = x => x + frJ(x, '이라', '라'), FLIP = (n, d) => n === 1 ? String(d) : FRX(d, n);
+    const DEN = FX.n || G.n || pick([5, 6, 7, 8, 9, 10, 11, 12, 13, 15], r);
+    const red = (n, d) => frRed(n, d);
+    /* 분모 같은 나눗셈 — C1·C2·C3 */
+    if (ask === 'same'){
+      const n = DEN; let aN, bN;
+      if (form === 'exact' || form === 'story' || form === 'blank'){ for (let g = 0; g < 200; g++){ bN = FX.b || rint(1, Math.max(1, Math.floor((n - 1) / 2)), r); aN = FX.a || bN * rint(2, Math.floor((n - 1) / bN) || 2, r); if (aN < n && aN % bN === 0 && aN / bN >= 2) break; } if (aN >= n || aN % bN) { bN = 1; aN = n - 1; } }
+      else { for (let g = 0; g < 200; g++){ aN = FX.a || rint(1, n - 1, r); bN = FX.b || rint(2, n - 1, r); if (aN !== bN && aN % bN !== 0 && bN % aN !== 0) break; } if (aN === bN) { aN = 1; bN = 2; } }
+      const A = FRX(aN, n), B = FRX(bN, n), qv = FR(aN, bN), [rn, rd] = red(aN, bN);
+      if (G.pic !== false && n <= 12 && (form === 'exact' || form === 'frac')) v.asset = {type:'fbar', bars:[{den:n, num:aN, grp:bN, label:`${A}에서 ${B}씩 덜어 내기`}]};
+      if (form === 'exact'){ const ans = aN / bN;
+        v.stem = `${A} ÷ ${B}의 몫은 얼마인가요?` + SA;
+        return fin(ans, [[FRX(ans, n), 'X02'], [FR(bN, aN), 'X05'], [aN - bN, 'X03'], [aN + bN, 'X03']],
+          [`${A}${EUN(A)} ⟨1/${n}⟩이 ${aN}개, ${B}${EUN(B)} ⟨1/${n}⟩이 ${bN}개예요.`, `같은 크기의 조각이라 개수끼리 나눠요 — ${aN} ÷ ${bN} = ${ans}.`, `분모 ${n}${EUN(n)} 답에 남지 않아요. 몫은 ${NY(ans)}.`]); }
+      if (form === 'frac'){
+        v.stem = `${A} ÷ ${B}의 몫은 얼마인가요?`;
+        return fin(qv, [[FR(bN, aN), 'X05'], [FRX(aN > bN ? aN - bN : bN - aN, n), 'X03'], [FRX(aN, n * bN), 'X02'], [FRI(aN * bN, n), 'X02']],
+          [`분모가 같으니 분자끼리 나눠요 — ${aN} ÷ ${bN}.`, `나누어떨어지지 않으면 몫을 분수로 적어요 — ${aN} ÷ ${bN} = ${FRI(aN, bN)}${rn > rd ? ' = ' + qv : ''}.`, `몫 ${qv}${EUN(qv)} 남은 양이 아니라 한 몫의 얼마만큼인지를 뜻해요.`]); }
+      if (form === 'num' || form === 'den' || form === 'sum'){ const ans = form === 'num' ? rn : form === 'den' ? rd : rn + rd, what = form === 'num' ? '분자' : form === 'den' ? '분모' : '분자와 분모의 합';
+        v.stem = `${A} ÷ ${B}의 몫을 가분수로 나타낼 때 ${what}${EUN(what)} 얼마인가요?` + SA;
+        return fin(ans, [[form === 'num' ? rd : rn, 'X05'], [form === 'sum' ? n + rn : n, 'X02'], [form === 'num' ? aN - bN : bN, 'X03']],
+          [`분자끼리 나누면 ${aN} ÷ ${bN} = ${NY(FRI(aN, bN))}.`, rn !== aN ? `약분하면 ${NY(FRI(rn, rd))}.` : `더 약분할 수 없어요.`, `${what}${EUN(what)} ${NY(ans)}.`]); }
+      if (form === 'blank'){ const divs = []; for (let d = 2; d < aN; d++) if (aN % d === 0) divs.push(d); if (!divs.length) divs.push(1);
+        const ans = pick(divs, r), nots = []; for (let d = 2; d < n; d++) if (aN % d && nots.indexOf(d) < 0) nots.push(d);
+        const no = shuffle(nots, r);
+        v.stem = `${A} ÷ ⟨□/${n}⟩의 몫이 자연수가 되는 □는 어느 것인가요?`;
+        return fin(ans, [[no[0], 'X02'], [no[1], 'X02'], [no[2], 'X02']],
+          [`분모가 같으니 몫은 ${aN} ÷ □예요.`, `${aN}${EUL(aN)} 나누어떨어지게 하는 수를 찾아요.`, `${aN} ÷ ${ans} = ${IRA(aN / ans)} □는 ${NY(ans)}.`]); }
+      /* story */
+      const SC = FX.sc || pick([['잼', 'kg', '유리병', '병'], ['끈', 'm', '편지', '장'], ['색 모래', 'kg', '친구', '명'], ['비료', 'L', '컵', '컵'], ['주스', 'L', '컵', '컵'], ['리본', 'm', '선물 상자', '개']], r);
+      const [thing, unit, each, cnt] = SC, ans = aN / bN;
+      v.stem = `${thing} ${A} ${unit}${UNIT_J[unit]} ${each} 하나에 ${B} ${unit}씩 나누어 ${unit === 'm' ? '쓰려고' : '담으려고'} 해요. ${each}${EUN(each)} 몇 ${cnt} ${unit === 'm' ? '꾸밀 수 있나요' : '필요한가요'}?` + SA;
+      return fin(ans, [[FRX(ans, n), 'X02'], [aN - bN, 'X03'], [FR(bN, aN), 'X05'], [aN, 'X18']],
+        [`${A}${EUL(A)} ${B}씩 나누는 식은 ${A} ÷ ${NY(B)}.`, `분모가 같으니 분자끼리 나눠요 — ${aN} ÷ ${bN} = ${ans}.`, `${each}${EUN(each)} ${ans}${cnt} ${unit === 'm' ? '꾸밀 수 있어요' : '필요해요'}.`], cnt);
+    }
+    /* 분모 다른 나눗셈 — C4 */
+    if (ask === 'diff'){
+      let aN, bD, cN, dD;
+      for (let g = 0; g < 300; g++){ bD = FX.b || pick([2, 3, 4, 5, 6, 7, 8, 9, 10, 12], r); dD = FX.d || pick([2, 3, 4, 5, 6, 7, 8, 9, 10, 12], r); if (bD === dD) continue;
+        aN = FX.a || rint(1, bD - 1, r); cN = FX.c || rint(1, dD - 1, r); const L = frLcm(bD, dD), A = aN * L / bD, Cc = cN * L / dD;
+        if (form === 'num' && (A >= 100 || frGcd(A, Cc) !== 1)) continue; if (form === 'story' && A % Cc) continue; if (A === Cc) continue; if (L > 60) continue; break; }
+      const L = frLcm(bD, dD), A = aN * L / bD, Cc = cN * L / dD, Af = FRX(aN, bD), Cf = FRX(cN, dD), qv = FR(A, Cc), [rn, rd] = red(A, Cc);
+      if (form === 'tong'){ const ans = `${FRX(A, L)} ÷ ${FRX(Cc, L)}`;
+        v.stem = `${Af} ÷ ${Cf}${EUL(Cf)} 통분한 것은 어느 것인가요?`;
+        return fin(ans, [[`${FRX(aN, L)} ÷ ${FRX(cN, L)}`, 'X07'], [`${FRX(A, L)} ÷ ${Cf}`, 'X07'], [`${Af} ÷ ${FRX(Cc, L)}`, 'X07'], [`${FRX(aN * dD, L)} ÷ ${FRX(cN * bD, L)}`, 'X07']],
+          [`${bD}${GW(bD)} ${dD}의 최소공배수 ${L}${EUL(L)} 공통분모로 해요.`, `${Af}${EUN(Af)} ${FRX(A, L)}, ${Cf}${EUN(Cf)} ${FRX(Cc, L)}${IGA(FRX(Cc, L))} 돼요 — 분모를 바꾼 만큼 분자도 바꿔요.`, `통분하면 ${NY(ans)}.`]); }
+      if (form === 'ans'){
+        v.stem = `${Af} ÷ ${Cf}의 몫은 얼마인가요?`;
+        return fin(qv, [[FR(aN, cN), 'X06'], [FR(Cc, A), 'X05'], [FR(aN * cN, bD * dD), 'X12'], [FR(aN * dD, bD * cN) === qv ? aN + cN : aN * dD, 'X07']],
+          [`분모가 다르니 먼저 통분해요 — ${FRX(A, L)} ÷ ${FRX(Cc, L)}.`, `분자끼리 나누면 ${A} ÷ ${Cc} = ${FRI(A, Cc)}${FRI(A, Cc) !== qv ? ' = ' + qv : ''}${frJ(qv, '이에요', '예요')}.`, `그래서 몫은 ${NY(qv)}.`]); }
+      if (form === 'num'){
+        v.stem = `${Af} ÷ ${Cf}${EUL(Cf)} 통분해 계산할 때 몫 ⟨□/${Cc}⟩의 분자에 오는 수는 얼마인가요?` + SA;
+        return fin(A, [[aN, 'X06'], [Cc, 'X05'], [aN * dD, 'X07']],
+          [`공통분모 ${L}${RO(L)} 통분하면 ${FRX(A, L)} ÷ ${NY(FRX(Cc, L))}.`, `분자끼리 나누면 ${A} ÷ ${Cc} = ${NY(`⟨${A}/${Cc}⟩`)}.`, `분자에 오는 수는 ${NY(A)}.`]); }
+      /* story — 몇 배 */
+      const SC = FX.sc || pick([['대파', '부추', 'm', '길이'], ['종이 팩', '우유 팩', 'kg', '무게'], ['물', '주스', 'L', '양'], ['빨간 끈', '파란 끈', 'm', '길이'], ['모래', '자갈', 'kg', '무게']], r);
+      const [t1, t2, unit, what] = SC;
+      v.stem = `${t1} ${what}${EUN(what)} ${Af} ${unit}, ${t2} ${what}${EUN(what)} ${Cf} ${unit}${UNIT_Y[unit]}. ${t1} ${what}${EUN(what)} ${t2} ${what}의 몇 배인가요?`;
+      return fin(qv, [[FR(aN, cN), 'X06'], [FR(Cc, A), 'X05'], [FR(aN * cN, bD * dD), 'X12']],
+        [`몇 배인지는 ${Af} ÷ ${Cf}${RO(Cf)} 구해요.`, `통분하면 ${FRX(A, L)} ÷ ${FRX(Cc, L)} = ${A} ÷ ${NY(Cc)}.`, `그래서 ${qv}배예요.`], '배');
+    }
+    /* 자연수 ÷ 단위분수 — C5 */
+    if (ask === 'nunit'){
+      let n, k; for (let g = 0; g < 200; g++){ n = FX.n || rint(2, 12, r); k = FX.k || rint(2, 9, r); if (n * k < 100) break; }
+      const K = FRX(1, k), ans = n * k;
+      if (form === 'story'){ const SC = FX.sc || pick([['로봇이 주스', 'L', '만드는 데', '시간', '1시간 동안에는 몇 L를 만들 수 있나요'], ['물', 'L', '한 컵에', 'L씩', '컵은 몇 개 필요한가요'], ['걸어서', 'km', '가는 데', '시간', '1시간 동안에는 몇 km를 갈 수 있나요']], r);
+        const [t, u, mid, u2, qq] = SC;
+        v.stem = u2 === 'L씩' ? `${t} ${n} ${u}${UNIT_J[u]} ${mid} ${K} ${u2} 나누어 담으면 ${qq}?` + SA : `${t} ${n} ${u}${UNIT_J[u]} ${mid} ${K}${u2}이 걸렸어요. ${qq}?` + SA;
+        return fin(ans, [[FR(n, k), 'X08'], [n + k, 'X03'], [k, 'X08'], [n * k + n, 'X09']],
+          [u2 === 'L씩' ? `${n} ${u}${UNIT_J[u]} ${K} ${u}씩 나누는 식은 ${n} ÷ ${NY(K)}.` : `1시간은 ${K}시간의 ${k}배예요.`, `${n} ÷ ${K} = ${n} × ${k} = ${NY(ans)}.`, u2 === 'L씩' ? `컵은 ${ans}개 필요해요.` : `그래서 1시간 동안에는 ${ans} ${u}${UNIT_Y[u]}.`], u2 === 'L씩' ? '개' : u); }
+      v.stem = `${n} ÷ ${K}의 몫은 얼마인가요?` + SA;
+      return fin(ans, [[FR(n, k), 'X08'], [n + k, 'X03'], [n === k ? n + 1 : k, 'X08'], [FR(k, n), 'X08']],
+        [`${K}${EUN(K)} 1 안에 ${k}번 들어가요.`, `${n} 안에는 ${k}번씩 ${n}개 — ${n} × ${NY(k)}.`, `(자연수)÷(단위분수)는 분모를 곱해요. 몫은 ${NY(ans)}.`]);
+    }
+    /* 자연수 ÷ 진분수 — C6 */
+    if (ask === 'nfrac'){
+      let n, aN, bD; for (let g = 0; g < 300; g++){ bD = FX.b || pick([3, 4, 5, 6, 7, 8, 9, 10], r); aN = FX.a || rint(2, bD - 1, r); if (frGcd(aN, bD) !== 1) continue;
+        n = FX.n || (G.exact === false ? rint(2, 11, r) : aN * rint(1, Math.max(1, Math.floor(12 / aN)), r)); if (form === 'story' && n % aN) continue; if (n * bD / aN >= 100) continue; break; }
+      const F = FRX(aN, bD), FL = FRX(bD, aN), qv = FR(n * bD, aN), exact = n % aN === 0;
+      if (form === 'expr'){ const ans = `${n} × ${FL}`;
+        v.stem = `${n} ÷ ${F}${EUL(F)} 곱셈으로 바르게 나타낸 것은 어느 것인가요?`;
+        return fin(ans, [[`${n} × ${F}`, 'X10'], [`${n} ÷ ${bD} × ${aN}`, 'X11'], [`${FL} ÷ ${n}`, 'X01']],
+          [`${n} ÷ ${F}${EUN(F)} ${n}${EUL(n)} ${aN}${RO(aN)} 나누고 ${bD}${EUL(bD)} 곱하는 두 걸음이에요.`, `두 걸음을 한 번에 적으면 ${FL}${EUL(FL)} 곱하는 것과 같아요.`, `나누는 분수의 분모와 분자를 바꾸어 곱해요 — ${ans}.`]); }
+      if (form === 'story'){ const SC = FX.sc || pick([['자전거를 타고', 'km', '가는 데', '같은 빠르기로 1시간 동안 갈 수 있는 거리는 몇 km인가요'], ['걸어서', 'km', '가는 데', '같은 빠르기로 1시간 동안 걸을 수 있는 거리는 몇 km인가요'], ['수도꼭지에서 물', 'L', '받는 데', '같은 빠르기로 1시간 동안 받을 수 있는 물은 몇 L인가요']], r);
+        const [t, u, mid, qq] = SC, ans = n * bD / aN;
+        v.stem = `${t} ${n} ${u}${UNIT_J[u]} ${mid} ${F}시간이 걸렸어요. ${qq}?` + SA;
+        return fin(ans, [[FR(n * aN, bD), 'X10'], [n * aN, 'X11'], [FR(n, aN), 'X11'], [n + bD, 'X03']],
+          [`${FRX(1, bD)}시간 동안에는 ${n} ÷ ${aN} = ${n / aN} ${u}${u === 'L' ? '를 받아요' : '를 가요'}.`, `1시간은 ${FRX(1, bD)}시간의 ${bD}배라 ${n / aN} × ${bD} = ${NY(ans)}.`, `${n} ÷ ${F} = ${n} × ${FL} = ${ans} — ${ans} ${u}${UNIT_Y[u]}.`], u); }
+      v.stem = `${n} ÷ ${F}의 몫은 얼마인가요?` + (exact ? SA : '');
+      return fin(exact ? n * bD / aN : qv, [[FR(n * aN, bD), 'X10'], [FR(n, aN * bD), 'X11'], [FR(n * aN, 1) === qv ? n + bD : n * aN, 'X11'], [FR(aN, n * bD), 'X01']],
+        [`나누는 분수의 분모와 분자를 바꾸어 곱해요 — ${n} × ${FL}.`, `${n} × ${bD} = ${n * bD}, ${n * bD} ÷ ${aN} = ${FRI(n * bD, aN)}${FRI(n * bD, aN) !== qv ? ' = ' + qv : ''}${frJ(qv, '이에요', '예요')}.`, `그래서 몫은 ${NY(qv)}.`]);
+    }
+    /* 분수 ÷ 분수를 곱셈으로 — C7 */
+    if (ask === 'mul'){
+      let aN, bD, cN, dD; for (let g = 0; g < 300; g++){ bD = FX.b || pick([3, 4, 5, 6, 7, 8, 9, 10, 12], r); dD = FX.d || pick([3, 4, 5, 6, 7, 8, 9, 10, 12], r); aN = FX.a || rint(1, bD - 1, r); cN = FX.c || rint(1, dD - 1, r);
+        if (frGcd(aN, bD) !== 1 || frGcd(cN, dD) !== 1 || cN < 2 || (form === 'expr' && aN < 2)) continue; if (aN * dD === bD * cN) continue; if (form === 'den' && red(aN * dD, bD * cN)[1] === 1) continue; break; }
+      const Af = FRX(aN, bD), Cf = FRX(cN, dD), Cflip = FLIP(cN, dD), Aflip = FLIP(aN, bD), qv = FR(aN * dD, bD * cN), [rn, rd] = red(aN * dD, bD * cN);
+      if (form === 'expr'){ const ans = `${Af} × ${Cflip}`;
+        v.stem = `${Af} ÷ ${Cf}${EUL(Cf)} 곱셈으로 바르게 나타낸 것은 어느 것인가요?`;
+        return fin(ans, [[`${Af} × ${Cf}`, 'X12'], [`${Aflip} × ${Cflip}`, 'X12'], [`${Aflip} × ${Cf}`, 'X12']],
+          [`나누는 분수 ${Cf}만 분모와 분자를 바꿔요.`, `나누어지는 분수 ${Af}${EUN(Af)} 그대로 두어야 양이 바뀌지 않아요.`, `그래서 ${NY(ans)}.`]); }
+      if (form === 'ans'){
+        v.stem = `${Af} ÷ ${Cf}의 몫은 얼마인가요?`;
+        return fin(qv, [[FR(aN * cN, bD * dD), 'X12'], [FR(bD * cN, aN * dD), 'X05'], [FR(bD * dD, aN * cN), 'X12'], [FR(aN * dD, bD * cN) === FRI(aN * dD, bD * cN) ? FR(aN, cN) : FRI(aN * dD, bD * cN), 'X15']],
+          [`나누는 분수의 분모와 분자를 바꾸어 곱해요 — ${Af} × ${Cflip}.`, `분자끼리, 분모끼리 곱하면 ⟨${aN * dD}/${bD * cN}⟩${rn !== aN * dD ? ' = ' + FRI(rn, rd) : ''}${rn > rd ? ' = ' + qv : ''}${frJ(qv, '이에요', '예요')}.`, `그래서 몫은 ${NY(qv)}.`]); }
+      if (form === 'den' || form === 'numr'){ const ans = form === 'den' ? rd : rn, what = form === 'den' ? '분모' : '분자';
+        v.stem = `${Af} ÷ ${Cf}의 몫을 기약분수로 나타낼 때 ${what}${EUN(what)} 얼마인가요?` + SA;
+        return fin(ans, [[form === 'den' ? rn : rd, 'X05'], [form === 'den' ? bD * cN : aN * dD, 'X15'], [form === 'den' ? bD * dD : aN * cN, 'X12']],
+          [`${Af} ÷ ${Cf} = ${Af} × ${NY(Cflip)}.`, `곱하면 ⟨${aN * dD}/${bD * cN}⟩${rn !== aN * dD ? ', 약분하면 ' + FRI(rn, rd) : ''}${frJ(FRI(rn, rd), '이에요', '예요')}.`, `${what}${EUN(what)} ${NY(ans)}.`]); }
+      /* story */
+      const SC = FX.sc || pick([['굵기가 일정한 나무 막대', 'm', 'kg', '막대 1 kg은 몇 m인가요', 'wpl'], ['쌀', 'kg', '통', '한 통을 가득 채우려면 쌀이 몇 kg 필요한가요', 'fill'], ['페인트', 'L', '벽', '벽 전체를 칠하려면 페인트가 몇 L 필요한가요', 'fill']], r);
+      const [t, u1, u2, qq, kind] = SC;
+      if (kind === 'wpl'){ v.stem = `${t} ${Af} ${u1}의 무게가 ${Cf} ${u2}${UNIT_Y[u2]}. 이 ${qq}?`; }
+      else { v.stem = `${t} ${Af} ${u1}${UNIT_J[u1]} ${u2 === '통' ? '빈 통에 담아 보니 통의' : '벽에 칠해 보니 벽 전체의'} ${Cf}${IGA(Cf)} ${u2 === '통' ? '찼어요' : '칠해졌어요'}. ${qq}?`; }
+      return fin(qv, [[FR(aN * cN, bD * dD), 'X12'], [FR(bD * cN, aN * dD), 'X05'], [FR(bD * dD, aN * cN), 'X12']],
+        [kind === 'wpl' ? `1 kg의 길이는 ${Af} ÷ ${Cf}${RO(Cf)} 구해요.` : `${Cf}에 해당하는 양이 ${Af} ${u1}${u1 === 'kg' ? '이니' : '니'} 1에 해당하는 양은 ${Af} ÷ ${NY(Cf)}.`, `${Af} ÷ ${Cf} = ${Af} × ${Cflip} = ⟨${aN * dD}/${bD * cN}⟩${rn !== aN * dD || rn > rd ? ' = ' + qv : ''}${frJ(qv, '이에요', '예요')}.`, `그래서 ${qv} ${u1}${UNIT_Y[u1]}.`], ' ' + u1);
+    }
+    /* 대분수 — C8 */
+    if (ask === 'mixed'){
+      let w, aN, bD, m, cN, dD; const divMixed = form === 'ans2' || (form === 'story' && (FX.m !== undefined ? FX.m > 0 : r() < 0.5)) || (form === 'ans' && FX.m);
+      for (let g = 0; g < 300; g++){ bD = FX.b || pick([2, 3, 4, 5, 6, 8], r); aN = FX.a || rint(1, bD - 1, r); w = FX.w || rint(1, 4, r); dD = FX.d || pick([2, 3, 4, 5, 6, 7, 8], r); cN = FX.c || rint(1, dD - 1, r); m = divMixed ? (FX.m || rint(1, 3, r)) : 0;
+        if (frGcd(aN, bD) !== 1 || frGcd(cN, dD) !== 1 || (!m && cN < 2)) continue; if (form === 'imp') break; const N1 = w * bD + aN, N2 = m * dD + cN; if (N1 * dD === bD * N2) continue; if (form === 'story' && !(N1 * dD % (bD * N2) === 0 || red(N1 * dD, bD * N2)[1] <= 12)) continue; break; }
+      const N1 = w * bD + aN, Mf = `⟨${w} ${aN}/${bD}⟩`, Imp = FRX(N1, bD);
+      if (form === 'imp'){ const ans = form && isSA ? N1 : Imp;
+        v.stem = isSA ? `${Mf}${EUL(Mf)} 가분수로 고칠 때 분자에 오는 수는 얼마인가요?` + SA : `${Mf}${EUL(Mf)} 가분수로 바르게 고친 것은 어느 것인가요?`;
+        return fin(ans, [[isSA ? w + aN : FRX(w + aN, bD), 'X14'], [isSA ? w * aN + bD : FRX(w * aN + bD, bD), 'X14'], [isSA ? w * bD : FRX(w * bD, bD), 'X14']],
+          [`${Mf}${EUN(Mf)} ${w}${GW(w)} ${FRX(aN, bD)}${EUL(FRX(aN, bD))} 더한 수예요.`, `${w}${EUN(w)} ⟨${w * bD}/${bD}⟩${frJ(`⟨${w * bD}/${bD}⟩`, '이니', '니')} ${w} × ${bD} + ${aN} = ${N1}${IGA(N1)} 분자예요.`, `가분수로 고치면 ${NY(Imp)}.`]); }
+      const N2 = m * dD + cN, Df = m ? `⟨${m} ${cN}/${dD}⟩` : FRX(cN, dD), DI = FRX(N2, dD), qv = FR(N1 * dD, bD * N2), [rn, rd] = red(N1 * dD, bD * N2);
+      const sep = m ? (() => { const [p1, p2] = red(w, m), [q1, q2] = red(aN * dD, bD * cN); return FR(p1 * q2 + q1 * p2, p2 * q2); })() : FR(w * bD * cN + aN * dD, bD * cN);   /* 자연수·분수 따로 나눔(X13) */
+      const asis = m ? FR(N1 * (m * cN + dD), bD * cN) : FR(N1 * cN, bD * dD);   /* 대분수 그대로 뒤집기·안 뒤집기 */
+      if (form === 'ans' || form === 'ans2'){
+        v.stem = `${Mf} ÷ ${Df}의 몫은 얼마인가요?`;
+        return fin(qv, [[sep, 'X13'], [asis, m ? 'X13' : 'X12'], [FR(bD * N2, N1 * dD), 'X05'], [FR(N1 * dD, bD * N2) === FRI(N1 * dD, bD * N2) ? FR(w, 1) : FRI(N1 * dD, bD * N2), 'X15']],
+          [`대분수는 먼저 가분수로 고쳐요 — ${Imp} ÷ ${DI}.`, `${Imp} × ${FRX(dD, N2)} = ⟨${N1 * dD}/${bD * N2}⟩${rn !== N1 * dD ? ' = ' + FRI(rn, rd) : ''}${rn > rd ? ' = ' + qv : ''}${frJ(qv, '이에요', '예요')}.`, `그래서 몫은 ${NY(qv)}.`]); }
+      /* story */
+      const SC = FX.sc || (m ? pick([['직사각형 모양 천의 넓이는', 'm²', '가로는', 'm', '세로는 몇 m인가요', 'area'], ['직사각형 모양 꽃밭의 넓이는', 'm²', '세로는', 'm', '가로는 몇 m인가요', 'area']], r)
+                            : pick([['직사각형 모양 천의 넓이는', 'm²', '가로는', 'm', '세로는 몇 m인가요', 'area'], ['천', 'm', 'kg', '천 1 m의 무게는 몇 kg인가요', 'wpl']], r));
+      if (SC[5] === 'area' || SC[4] === 'area'){ const [t, u1, t2, u2, qq] = SC;
+        v.stem = `${t} ${Mf} ${u1}, ${t2} ${Df} ${u2}${UNIT_Y[u2]}. ${qq}?`;
+        return fin(qv, [[sep, 'X13'], [asis, m ? 'X13' : 'X12'], [FR(bD * N2, N1 * dD), 'X05']],
+          [`직사각형의 넓이는 가로 × 세로이니 ${qq.slice(0, 2)}${EUN(qq.slice(0, 2))} 넓이 ÷ ${t2.slice(0, 2)}로 구해요.`, `가분수로 고쳐 ${Imp} ÷ ${DI} = ${Imp} × ${FRX(dD, N2)} = ${NY(`⟨${N1 * dD}/${bD * N2}⟩`)}.`, `약분·대분수로 고치면 ${qv} — ${qq.slice(0, 2)}${EUN(qq.slice(0, 2))} ${qv} m예요.`], ' m'); }
+      /* wpl: 무게 ÷ 길이(대분수) */
+      const qw = FR(cN * bD, dD * N1), [wn, wd] = red(cN * bD, dD * N1);
+      v.stem = `무게가 ${Df} kg인 천 ${Mf} m가 있어요. 이 천 1 m의 무게는 몇 kg인가요?`;
+      return fin(qw, [[FR(cN * N1, dD * bD), 'X12'], [FR(dD * N1, cN * bD), 'X05'], [FR(cN * w + aN, dD), 'X13']],
+        [`1 m의 무게는 ${Df} ÷ ${Mf}${RO(Mf)} 구해요.`, `대분수를 가분수로 고쳐 ${Df} ÷ ${Imp} = ${Df} × ${FRX(bD, N1)} = ⟨${cN * bD}/${dD * N1}⟩${wn !== cN * bD ? ' = ' + FRI(wn, wd) : ''}${frJ(FRI(wn, wd), '이에요', '예요')}.`, `그래서 1 m의 무게는 ${qw} kg이에요.`], ' kg');
+    }
+    /* 타일 — C9 */
+    if (ask === 'tile'){
+      let s, hb, hn, Lc; for (let g = 0; g < 300; g++){ hb = FX.b || pick([2, 4, 5], r); hn = FX.a || rint(1, hb - 1, r); if (frGcd(hn, hb) !== 1) continue; s = FX.s || rint(5, 12, r); const side = s * hb + hn; const cnt = FX.cnt || rint(4, 12, r); Lc = cnt * side / hb; if (Lc % 1 === 0 && Lc < 200 && cnt < 100) break; }
+      const side = s * hb + hn, Sf = `⟨${s} ${hn}/${hb}⟩`, cnt = Math.round(Lc * hb / side), LcS = Lc % 1 ? FR(cnt * side, hb) : String(Lc);
+      if (form === 'row'){
+        v.stem = `한 변이 ${Sf} cm인 정사각형 타일을 ${FX.where || pick(['벽', '게시판', '사물함 문'], r)}의 ${FX.dir || pick(['가로', '세로'], r)} ${LcS} cm에 빈틈없이 붙이려고 해요. 몇 개를 붙일 수 있나요?` + SA;
+        return fin(cnt, [[Math.floor(Lc / s), 'X13'], [cnt * hb, 'X11'], [Math.round(Lc * side / hb) < 100 ? Math.round(Lc * side / hb) : cnt + 1, 'X10'], [cnt + 1, 'X18']],
+          [`붙일 수 있는 개수는 ${LcS} ÷ ${Sf}${RO(Sf)} 구해요.`, `${Sf} = ${FRX(side, hb)}${frJ(FRX(side, hb), '이니', '니')} ${LcS} ÷ ${FRX(side, hb)} = ${Lc % 1 ? FRX(cnt * side, hb) : Lc} × ${FRX(hb, side)} = ${NY(cnt)}.`, `그래서 ${cnt}개를 붙일 수 있어요.`], '개'); }
+      if (form === 'total'){ const p = FX.p || rint(4, 12, r), qn = FX.q || rint(4, 12, r), ans = p * qn;
+        v.stem = `가로에 타일 ${p}개, 세로에 타일 ${qn}개가 들어가요. ${FX.where || pick(['벽', '게시판', '바닥'], r)}${EUL(FX.where || '벽')} 가득 채우려면 타일은 모두 몇 개 필요한가요?` + SA;
+        return fin(ans, [[p + qn, 'X17'], [2 * (p + qn), 'X17'], [p * qn - p, 'X17'], [(p + 1) * qn, 'X17']],
+          [`가로 ${p}개짜리 줄이 세로로 ${qn}줄 늘어선 거예요.`, `${p} + ${qn}${EUN(qn)} 테두리 한 줄의 개수일 뿐이에요.`, `${p} × ${qn} = ${ans} — 타일은 ${ans}개 필요해요.`], '개'); }
+      /* fit */
+      const p = FX.p || rint(4, 10, r), qn = FX.q || rint(4, 10, r), need = p * qn, have = FX.have || (r() < 0.5 ? need + rint(1, 15, r) : Math.max(p + qn + 1, need - rint(1, 15, r)));
+      const ans = have >= need ? `${need}개면 되니 붙일 수 있어요` : `${need}개가 필요해 ${need - have}개 모자라요`;
+      v.stem = `가로에 ${p}개, 세로에 ${qn}개가 들어가는 벽을 타일 ${have}개로 겹치지 않게 가득 붙일 수 있나요?`;
+      return fin(ans, [[have >= need ? `${need}개가 필요해 ${need - have > 0 ? need - have : have - need}개 모자라요` : `${need}개면 되니 붙일 수 있어요`, 'X20'], [`${p + qn}개면 되니 붙일 수 있어요`, 'X17'], [`벽의 넓이를 알아야 해요`, 'X17']],
+        [`필요한 타일은 ${p} × ${qn} = ${need}개예요.`, have >= need ? `${have}개는 ${need}개보다 많아요.` : `${have}개는 ${need}개보다 적어요.`, ans + '.']);
+    }
+    /* 몫 비교 — C2~C7 */
+    if (ask === 'cmp'){
+      const kind = FX.kind || G.kind || pick(['same', 'nunit', 'nfrac', 'mul', 'diff'], r), big = FX.big !== undefined ? FX.big : (G.big !== undefined ? G.big : r() < 0.6);
+      const nE = Math.min(4, want + 1); let items;
+      for (let g = 0; g < 400; g++){ items = [];
+        for (let i = 0; i < nE; i++){
+          if (kind === 'same'){ const n = pick([6, 7, 9, 10, 11, 13], r), bN = rint(1, n - 2, r), aN = rint(bN + 1, n - 1, r); items.push({t:`${FRX(aN, n)} ÷ ${FRX(bN, n)}`, val:aN / bN}); }
+          else if (kind === 'nunit'){ const n = rint(2, 9, r), k = rint(2, 9, r); items.push({t:`${n} ÷ ${FRX(1, k)}`, val:n * k}); }
+          else if (kind === 'nfrac'){ const bD = pick([3, 4, 5, 6, 7, 8], r), aN = rint(1, bD - 1, r), n = rint(2, 9, r); if (frGcd(aN, bD) !== 1) { i--; continue; } items.push({t:`${n} ÷ ${FRX(aN, bD)}`, val:n * bD / aN}); }
+          else { const bD = pick([3, 4, 5, 6, 7, 8, 9], r), dD = pick([3, 4, 5, 6, 7, 8, 9], r), aN = rint(1, bD - 1, r), cN = rint(1, dD - 1, r); if (frGcd(aN, bD) !== 1 || frGcd(cN, dD) !== 1) { i--; continue; } items.push({t:`${FRX(aN, bD)} ÷ ${FRX(cN, dD)}`, val:aN * dD / (bD * cN)}); } }
+        const vals = items.map(x => x.val); if (new Set(vals.map(x => x.toFixed(6))).size !== vals.length || new Set(items.map(x => x.t)).size !== items.length) continue; break; }
+      if (FX.items) items = FX.items;
+      const sorted = items.slice().sort((x, y) => big ? y.val - x.val : x.val - y.val), ans = sorted[0];
+      v.stem = `몫이 가장 ${big ? '큰' : '작은'} 것은 어느 것인가요?`;
+      const ex2 = items.map(x => `${x.t} = ${FR(Math.round(x.val * 10080), 10080)}`).join(', '), last = FR(Math.round(items[items.length - 1].val * 10080), 10080);
+      return fin(ans.t, sorted.slice(1).map(x => [x.t, 'X16']),
+        [kind === 'same' ? '분모가 같으니 분자끼리 나누어 몫을 구해요.' : kind === 'nunit' ? '(자연수)÷(단위분수)는 분모를 곱해요 — 분모가 클수록 몫이 커요.' : kind === 'diff' ? '분모가 다르니 통분한 뒤 분자끼리 나누어 몫을 구해요.' : '나누는 분수의 분모와 분자를 바꾸어 곱해 몫을 구해요.', ex2 + frJ(last, '이에요', '예요') + '.', `가장 ${big ? '큰' : '작은'} 몫은 ${NY(ans.t)}.`]);
+    }
+    /* 가장 큰 분수 ÷ 가장 작은 분수 */
+    if (ask === 'maxmin'){
+      const n = FX.n || pick([11, 13, 15, 17, 19], r), k = FX.k || 3; let set;
+      for (let g = 0; g < 200; g++){ set = shuffle(Array.from({length: n - 2}, (_, i) => i + 2), r).slice(0, k); if (new Set(set).size === k) break; }
+      if (FX.set) set = FX.set.slice();
+      const mx = Math.max(...set), mn = Math.min(...set), qv = FR(mx, mn), list = set.map(x => FRX(x, n)).join(' · ');
+      v.stem = `분모가 모두 ${n}인 분수 ${list} 가운데 가장 큰 분수를 가장 작은 분수로 나눈 몫은 얼마인가요?`;
+      return fin(qv, [[FR(mn, mx), 'X05'], [FRX(mx - mn, n), 'X03'], [FRX(mx, n * mn), 'X02'], [FR(mx, set.filter(x => x !== mn && x !== mx)[0] || mn + 1), 'X20']],
+        [`가장 큰 분수는 ${FRX(mx, n)}, 가장 작은 분수는 ${NY(FRX(mn, n))}.`, `분모가 같으니 분자끼리 나눠요 — ${mx} ÷ ${mn} = ${FRI(mx, mn)}${mx % mn && mx > mn ? ' = ' + qv : ''}.`, `그래서 몫은 ${NY(qv)}.`]);
+    }
+    /* 어떤 수 */
+    if (ask === 'back'){
+      let w, cN, dD, x1, x2; for (let g = 0; g < 400; g++){ dD = FX.d || pick([2, 3, 4, 5, 6], r); cN = FX.c || rint(1, dD - 1, r); w = FX.w !== undefined ? FX.w : rint(0, 5, r); if (frGcd(cN, dD) !== 1 || (!w && cN < 2)) continue;
+        x1 = FX.x1 || rint(1, 11, r); x2 = FX.x2 || pick([2, 3, 4, 5, 6, 8], r); if (frGcd(x1, x2) !== 1 || x1 >= 4 * x2) continue; break; }
+      const Dn = w * dD + cN, Df = w ? `⟨${w} ${cN}/${dD}⟩` : FRX(cN, dD), Xf = FR(x1, x2);
+      const [pn, pd] = red(x1 * Dn, x2 * dD), Pf = FR(pn, pd);   /* 잘못 곱한 결과 */
+      const [rn, rd] = red(x1 * dD, x2 * Dn), Rf = FR(rn, rd);   /* 바르게 나눈 값 */
+      v.stem = `어떤 수를 ${Df}${RO(Df)} 나누어야 할 것을 잘못하여 곱했더니 ${Pf}${IGA(Pf)} 되었어요. ${form === 'right' ? '바르게 계산한 값은 얼마인가요' : '어떤 수는 얼마인가요'}?`;
+      const ans = form === 'right' ? Rf : Xf;
+      return fin(ans, [[form === 'right' ? Xf : Rf, 'X19'], [FR(pn * Dn, pd * dD), 'X19'], [Pf, 'X19'], [FR(pn * dD * dD, pd * Dn * Dn), 'X19']],
+        [`어떤 수를 □라 하면 □ × ${Df} = ${NY(Pf)}.`, `□ = ${Pf} ÷ ${Df} = ${Pf} × ${FRX(dD, Dn)} = ${NY(Xf)}.`, form === 'right' ? `바르게 계산하면 ${Xf} ÷ ${Df} = ${Xf} × ${FRX(dD, Dn)} = ${NY(Rf)}.` : `그래서 어떤 수는 ${NY(Xf)}.`]);
+    }
+    return v;
+  }
   /* v3.3 — 규칙 찾기 (2학년 2학기 6단원): 갈래 kr {ask, form?, …}
      ask rnext(무늬의 ? — mode color·shape·num·combo) · runit(묶음 — form cells 몇 칸·kinds 몇 가지) · rnum(모양을 수로 바꾼 줄의 ?)
          · spin(돌아가는 판 — form next·dir·step) · grow(늘어나는 묶음 — form next·total, style pair·sep)
@@ -5431,6 +5687,7 @@ function paperAsset(a){
     case 'dbar': return dbarHTML(a, true);
     case 'cal': return `<div class="pcmpw">${calSVG(a)}</div>`;
     case 'ptile': return `<div class="pcmpw">${ptileSVG(a, true)}</div>`;
+    case 'fbar': return `<div class="pfbarw">${fbarSVG(a, true)}</div>`;
     case 'spin': return `<div class="pcmpw">${spinSVG(a)}</div>`;
     case 'stack': return stackHTML(a, true);
     case 'optab': return optabHTML(a, true);
@@ -5458,7 +5715,7 @@ function renderPaper(){
   // 교사용 정답표
   const key = `<div class="sheet key-sheet"><div class="ph"><div><h1>${esc(title)} — 교사용</h1><div class="meta">정답 · 개념 · 오답 선택지의 오개념</div></div></div>
    <table class="key"><tr><th>번호</th><th>난이도</th><th>유형</th><th>정답</th><th>개념</th><th>오답 → 오개념</th></tr>${shuffled.map((x, i) => { const q = x.q; let ans = '';
-     if (q.kind === 'sa') ans = q.answer.join(' / '); else if (q.kind === 'essay') ans = typeof q.answer_guide === 'string' ? q.answer_guide : (q.answer_guide.answer + ' (채점: ' + (q.answer_guide.scoring_points || []).join(' · ') + ')'); else if (q.kind === 'match') ans = q.pairs.map(p => `${paperOptText(p.l)}–${paperOptText(p.r)}`).join(', ');
+     if (q.kind === 'sa') ans = esc(q.answer.join(' / ')); else if (q.kind === 'essay') ans = esc(typeof q.answer_guide === 'string' ? q.answer_guide : (q.answer_guide.answer + ' (채점: ' + (q.answer_guide.scoring_points || []).join(' · ') + ')')); else if (q.kind === 'match') ans = q.pairs.map(p => `${paperOptText(p.l)}–${paperOptText(p.r)}`).join(', ');
      else if (q.kind === 'ox') ans = q.answer + ' / ' + circ[q.reason_options.findIndex(o => o.correct)]; else ans = circ[x.opts.findIndex(o => o.correct)] + ' ' + paperOptText(x.opts.find(o => o.correct).t);
      const mis = q.options ? x.opts.map((o, k) => o.mis ? `${circ[k]}→${o.mis}` : '').filter(Boolean).join(' ') : (q.reason_options ? q.reason_options.filter(o => o.mis).map(o => o.mis).join(' ') : '');
      return `<tr><td>${i + 1}</td><td>D${q.difficulty}</td><td>${q.kind}</td><td>${ans}</td><td>${q.concept}</td><td>${mis}</td></tr>`; }).join('')}</table>
