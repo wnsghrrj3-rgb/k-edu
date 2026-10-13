@@ -15,7 +15,7 @@
   // 차시_밀도_표준_v2 §1: 도입 5~8 · 전개 25 · 정리 7~10 → 40분
   const STAGE_MIN = { '도입': 7, '전개': 12, '기본문제': 7, '응용문제': 6, '정리': 8 };
   const SEVEN = ['①복습 문항', '②실사 장면', '③차시 서사', '④교실 활동', '⑤수준별 문제', '⑥출구 확인', '⑦발문 6슬↑'];
-  const EDITABLE = '.kt2-title, .ch2-q, .ch2-say, .ch2-its li, .pa2-q, .pa2-say, .mo2-qt, .mo2-bub, .rw2-sc, .rw2-ct, .rw2-q, .qv2-qt, .qv2-its span, .big-text, .center-text, .small-text, .big-q, .objective-card, .point > div, .steps li, .kid .bub, .kid .lbl, .flip .q, .flip .a, .rv2-it .q, .rv2-it .a, .mis-card, .mv2-t, .mv2-h, .lv2-q, .lv2-ch span, .offline .body, .offline .goal, .opt > div:not(.mk), .scenario > div:not(.ic), .lv-q, .ra-quote, .context-text, .bidirect, .tf-cap, .examples .ex, .areas div, .sa .lb, .light .lb, .cq .cl, .cq .nm, .legacy .t, .legacy .d, .kt2-cover-title, .kt2-sub';
+  const EDITABLE = '.kt2-title, .sm2-say, .sm2-t, .sm2-m, .ch2-q, .ch2-say, .ch2-its li, .pa2-q, .pa2-say, .mo2-qt, .mo2-bub, .rw2-sc, .rw2-ct, .rw2-q, .qv2-qt, .qv2-its span, .big-text, .center-text, .small-text, .big-q, .objective-card, .point > div, .steps li, .kid .bub, .kid .lbl, .flip .q, .flip .a, .rv2-it .q, .rv2-it .a, .mis-card, .mv2-t, .mv2-h, .lv2-q, .lv2-ch span, .offline .body, .offline .goal, .opt > div:not(.mk), .scenario > div:not(.ic), .lv-q, .ra-quote, .context-text, .bidirect, .tf-cap, .examples .ex, .areas div, .sa .lb, .light .lb, .cq .cl, .cq .nm, .legacy .t, .legacy .d, .kt2-cover-title, .kt2-sub';
   const STAGE_COLOR = { '도입': '#FF8A3D', '전개': '#4F8DF7', '기본문제': '#12B886', '응용문제': '#7C5CFF', '정리': '#2CB1D6' };
   const SUBJ_KO = { math: '수학', korean: '국어', science: '과학', social: '사회', english: '영어' };
   const NO_FRAG = new Set(['cover', 'objective', 'question', 'next_lesson', 'interactive_ten_frame', 'interactive_cube_stairs', 'interactive_number_line', 'klab', 'math_tool', 'quiz_gen', 'activity', 'card_arrange', 'card_quiz', 'chosung_quiz', 'present', 'read_aloud', 'leveled_problem', 'exit_ticket', 'trace', 'number_line_demo']);
@@ -152,6 +152,19 @@
   function guideOf(lesson) { const A = global.KT2_ART, out = []; if (!A || !A.character || !lesson) return out; (lesson.slides || []).forEach(s => ((s.data || {}).kids || []).forEach(k => { if (k && k.face && A.character(k.face) && (!A.isMain || A.isMain(k.face)) && out.indexOf(k.face) < 0) out.push(k.face); })); return out.slice(0, 2); }
   function guideSay(face, inner, side) { const A = global.KT2_ART; const chr = A && A.character ? A.character(face) : ''; if (!chr) return inner; return '<div class="guide-say ' + (side || 'l') + '"><div class="g-chr">' + chr + '</div><div class="g-bub">' + inner + '</div></div>'; }
   function scenarioG(sc, g) { const f = g && (g[1] || g[0]); if (!f) return scenario(sc); return guideSay(f, '<div class="sc-body">' + (sc.icon ? '<span class="sc-ic">' + esc(sc.icon) + '</span>' : '') + md(sc.body || '') + '</div>', 'r q'); }
+  // 113차 — 기호·뜻 개념 장 sm2(짝 줄 + 그림 판): 왼쪽 = 배경 + 설명 말풍선 + 안내 인물 둘 · 오른쪽 = 기호 칩 ▶ 뜻 줄(뜻이 겹치면 뜻 알약 아래로 묶음). 교사 무대만.
+  function sm2Ok(d) { return !!(d.content && Array.isArray(d.symbol_meanings) && d.symbol_meanings.length >= 2 && d.symbol_meanings.length <= 6 && !d.fig && !d.img && !d.items && !d.kids_after && !d.examples && !d.pairs && !d.bidirect && !d.expression && !d.note); }
+  function smSym(x) { x = String(x || ''); let e = ''; const m = x.match(/(\p{Extended_Pictographic}\uFE0F?)/u); if (m) { e = m[1]; x = x.replace(m[1], '').trim(); }
+    const t = x.split(/(\s*[=+→]\s*)/).map(y => /^\s*[=+→]\s*$/.test(y) ? '<span class="op">' + (y.trim() === '→' ? '➜' : y.trim()) + '</span>' : md(y)).join('');
+    return '<span class="sm2-chip">' + (e ? '<span class="em">' + esc(e) + '</span>' : '') + '<span class="sm2-s">' + t + '</span></span>'; }
+  function sm2(d, g, title) {
+    const A = global.KT2_ART; const kd = A ? A.kindOf((title || '') + ' ' + d.content) : 'hill'; const list = d.symbol_meanings;
+    const groups = []; list.forEach(it => { const m = String(it.meaning || ''); let x = groups.find(y => y.m === m); if (!x) { x = { m, s: [] }; groups.push(x); } x.s.push(it.symbol); });
+    const grouped = groups.length < list.length;
+    const rows = grouped ? groups.map(x => '<div class="sm2-grp"><span class="sm2-m">' + md(x.m) + '</span><div class="sm2-ss">' + x.s.map(smSym).join('') + '</div></div>').join('')
+      : list.map(it => '<div class="sm2-r">' + smSym(it.symbol) + '<span class="sm2-ar">▶</span><span class="sm2-t">' + md(String(it.meaning || '')) + '</span></div>').join('');
+    const cl = String(d.content).replace(/\*\*/g, '').length; const sz = cl > 110 ? ' xl' : cl > 70 ? ' l' : ''; // 긴 설명은 그림 판을 넓히고 인물을 낮춤
+    return '<div class="sm2-row' + sz + '"><div class="sm2-pic picture ' + kd + '">' + (A ? A.backdrop(kd) : '') + '<div class="sm2-bub"><span class="sm2-say">' + md(d.content) + '</span></div><div class="sm2-cast"><span class="sm2-ch">' + guideChr(g, 0) + '</span><span class="sm2-ch r">' + guideChr(g, 1) + '</span></div></div><div class="sm2-rows' + (grouped ? ' grp' : '') + (Math.max.apply(null, list.map(it => String(it.symbol || '').replace(/\*\*/g, '').length)) > 7 ? ' long' : '') + '">' + rows + '</div></div>'; }
   // 111차 — 답 쓰는 문제 장 pa2(보기 없이 답 칸만 · 1세대 말풍선+펭귄 대신 장면 그림 판): 왼쪽 = 배경 + 안내 인물 둘 + 상황 말풍선(그림 fig 가 있으면 그 그림) · 오른쪽 = 큰 물음 + 답 카드 + 풀이. 교사 무대만.
   function pa2Ok(d) { const body = d.scenario && d.scenario.body ? d.scenario.body : d.context; return !!(body && d.question && (d.answer !== undefined || (Array.isArray(d.answers) && d.answers.length)) && !d.options && !d.questions && !d.challenge && !d.items && !d.sequence && !d.cards && d.ten_frame === undefined && d.ten_frame_anchor === undefined && d.linking_cube === undefined && d.card === undefined && !(d.emoji && d.count !== undefined)); }
   function pa2(d, g, rev) {
@@ -301,6 +314,7 @@
         break;
       }
       case 'concept': {
+        if (!ctx.learn && sm2Ok(d)) { cls = 'sm2'; push(sm2(d, ctx.guide, title)); break; } // 113차 — 기호·뜻 개념 장
         { const fg = d.content && !d.img && !d.kids_after && d.fig && global.KT2_FIG ? global.KT2_FIG.render(d.fig) : ''; // 94차 — 새 개념 장 cv2: 말풍선·안내 인물 없이 한 문장 + 큰 그림
           if (fg) { cls = 'cv2' + (d.fig.k === 'chain' ? ' cv2-chain' : dataFig(d.fig) ? ' cv2-side' : ''); push('<div class="cv2-lead">' + md(cv2Lead(d.content, d.fig)) + '</div>'); push('<div class="cv2-fig">' + fg + '</div>');
             if (Array.isArray(d.symbol_meanings) && d.symbol_meanings.length) push(symCards(d.symbol_meanings)); if (d.items) push(tfRow(d.items)); if (d.examples) push('<div class="examples">' + d.examples.map(e => '<div class="ex">' + md(lbl(e)) + '</div>').join('') + '</div>'); if (d.pairs) { push(pairs(d.pairs, rev, seed)); answerable = true; } if (d.expression) push('<div class="big-q">' + md(d.expression) + '</div>');
@@ -844,7 +858,7 @@
   // 87차 — fit-tight: 넘칠 때만 종이 여백·덩이 사이·말풍선 아래를 좁힌다(글자 크기는 그대로). 자리 바꾸기와 겹쳐 쓸 수 있다.
   // 88차 — fit-lv: 수준별 문제 정답 펼침 때 물음 왼쪽 · 정답·풀이 차례 오른쪽 / fit-lv2: 물음 위 · 정답 왼쪽 · 풀이 차례 오른쪽(넘칠 때만)
   // 89차 — fit-pts: 요약 요점 다섯 줄 이상을 두 단(위→아래 차례) / fit-wrap: 옆으로 이어진 카드(차례·도구)가 종이 폭을 넘으면 두 줄로 / fit-cols: 말풍선 안 짧은 줄 넷 이상(「어제 — 과거」 같은 목록)을 두 단으로(넘칠 때만 · 글자 크기 무변)
-  const LAYOUTS = ['fit-mo2', 'fit-qv2', 'fit-qv2n', 'fit-rw2', 'fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s', 'fit-cv2w', 'fit-lvw', 'fit-lvs', 'fit-rvw', 'fit-rvs', 'fit-pa2', 'fit-pa2n', 'fit-pa2s', 'fit-ch2', 'fit-ch2w', 'fit-ch2s'];
+  const LAYOUTS = ['fit-mo2', 'fit-qv2', 'fit-qv2n', 'fit-rw2', 'fit-split', 'fit-side', 'fit-tight', 'fit-lv', 'fit-lv2', 'fit-wrap', 'fit-cols', 'fit-pts', 'fit-head', 'fit-qh', 'fit-ans', 'fit-pvx', 'fit-pvq', 'fit-cv2s', 'fit-cv2w', 'fit-lvw', 'fit-lvs', 'fit-rvw', 'fit-rvs', 'fit-pa2', 'fit-pa2n', 'fit-pa2s', 'fit-ch2', 'fit-ch2w', 'fit-ch2s', 'fit-sm2', 'fit-sm2s'];
   // 90차 — fit-qh: 「여러 개를 고를 수 있어요」를 물음 옆 같은 줄로(넘칠 때만)
   // 90차 — fit-head: 넘칠 때만 제목을 머리(단계 칩·차시 이름)와 한 줄에 — 제목 줄 하나만큼 본문 자리가 생긴다 · 글자 크기 무변 · 차시 이름이 말줄임되면 안 씀
   function headBad(body) { const p = body.parentElement; if (!p) return true; const k = p.querySelector(':scope > .kt2-head .kt2-kicker'), t = p.querySelector(':scope > .kt2-title');
@@ -907,6 +921,7 @@
     if (body.querySelector(':scope > .points > :nth-child(4)')) tries.push(['fit-pts'], ['fit-pts', 'fit-tight']); // 91차 — 넷부터
     if (body.querySelector(':scope > .big-q') && body.querySelector(':scope > .multi-hint')) tries.push(['fit-qh', 'fit-tight']);
     if (body.querySelector('.ans-key')) { tries.push(['fit-ans', 'fit-tight']); if (sp) tries.push(['fit-ans', 'fit-split', 'fit-tight']); if (sd) tries.push(['fit-ans', 'fit-side', 'fit-tight']); }
+    if (body.querySelector('.sm2-row')) tries.push(['fit-sm2'], ['fit-sm2', 'fit-sm2s'], ['fit-sm2', 'fit-sm2s', 'fit-tight']); // 113차 — 그림 판 좁힘 · 칩 촘촘
     if (body.querySelector('.pa2-row')) tries.push(['fit-pa2'], ['fit-pa2', 'fit-tight'], ['fit-pa2', 'fit-pa2n'], ['fit-pa2', 'fit-pa2n', 'fit-tight'], ['fit-pa2', 'fit-pa2n', 'fit-pa2s', 'fit-tight']); // 111차 — 그림 판 좁힘 · 인물 작게 · 풀이를 그림 판 아래로
     if (body.querySelector('.ch2-row')) tries.push(['fit-ch2'], ['fit-ch2', 'fit-tight'], ['fit-ch2w'], ['fit-ch2w', 'fit-tight'], ['fit-ch2w', 'fit-ch2s', 'fit-tight']); // 112차 — 인물 칸 좁힘 · 인물을 칠판 위 띠로 · 칠판 촘촘
     if (body.querySelector(':scope > .pv3')) tries.push(['fit-pvx'], ['fit-pvx', 'fit-tight'], ['fit-pvq', 'fit-tight'], ['fit-pvq', 'fit-pvx', 'fit-tight']); // 92차 — 새 문제 장: 풀이·안내를 반대쪽으로

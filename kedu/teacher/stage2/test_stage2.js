@@ -111,7 +111,11 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   { const cv = KT2.renderSlide({ id: 'cv', block: 'cover', data: { title: '덧셈\n부제', emoji: '🧮' } }, Object.assign({}, C, { meta: { std: '[4수01-01]' }, unitTitle: '단원' })); ok(cv.cover && /class="co2"/.test(cv.body) && /co2-em">🧮/.test(cv.body) && /co2-title">덧셈/.test(cv.body) && /co2-l2">부제/.test(cv.body) && /c-bear/.test(cv.body) && /co2-unit">단원/.test(cv.body), '101차 새 표지 co2 그림책 표지: 그림 판(배경·큰 그림·인물 둘) + 단원·제목·부제');
     const cl = KT2.renderSlide({ id: 'cv', block: 'cover', data: { title: '덧셈' } }, Object.assign({}, C, { meta: {}, learn: true })); ok(cl.cover && /class="co2"/.test(cl.body), '102차 표지: learn(학생 화면)도 새 꼴 co2'); }
   const sm = KT2.renderSlide({ id: 's', block: 'concept', data: { title: 't', content: 'x', symbol_meanings: [{ symbol: '자음자', meaning: 'ㄱ ㄴ' }, { symbol: '모음자', meaning: 'ㅏ ㅓ' }] } }, C);
-  ok((sm.body.match(/class="sym"/g) || []).length === 2 && /<b>자음자<\/b><span>ㄱ ㄴ<\/span>/.test(sm.body), '되살림: 개념 symbol_meanings → 낱말 카드');
+  ok(sm.cls === 'sm2' && (sm.body.match(/class="sm2-r"/g) || []).length === 2 && /sm2-s">자음자/.test(sm.body) && /sm2-t">ㄱ ㄴ/.test(sm.body) && /sm2-pic picture/.test(sm.body) && /sm2-say">x/.test(sm.body), '113차 기호·뜻 개념 장 sm2: 그림 판 + 칩 ▶ 뜻 줄');
+  { const sg = KT2.renderSlide({ id: 's', block: 'concept', data: { title: 't', content: 'x', symbol_meanings: [{ symbol: '가 = ㄱ + ㅏ', meaning: '옆' }, { symbol: '지', meaning: '옆' }, { symbol: '오 → [오]', meaning: '위아래' }] } }, C);
+    ok(/sm2-rows grp/.test(sg.body) && (sg.body.match(/class="sm2-grp"/g) || []).length === 2 && /class="op">=/.test(sg.body) && /class="op">➜/.test(sg.body), '113차 sm2: 뜻이 겹치면 뜻 알약 아래로 묶음 · 식 기호(= + →) 흐리게');
+    const sl = KT2.renderSlide({ id: 's', block: 'concept', data: { title: 't', content: 'x', symbol_meanings: [{ symbol: '자음자', meaning: 'ㄱ ㄴ' }, { symbol: '모음자', meaning: 'ㅏ ㅓ' }] } }, Object.assign({}, C, { learn: true }));
+    ok((sl.body.match(/class="sym"/g) || []).length === 2 && /<b>자음자<\/b><span>ㄱ ㄴ<\/span>/.test(sl.body), '되살림: learn 개념 symbol_meanings → 낱말 카드(1세대 그대로)'); }
   const vd = KT2.renderSlide({ id: 'v', block: 'visual_demo', data: { title: 't', sub_text: '두 가지로 읽어요' } }, C);
   ok(/두 가지로 읽어요/.test(vd.body), '되살림: visual_demo sub_text');
   const tp = KT2.renderSlide({ id: 'p', block: 'interactive_ten_frame', data: { title: 't', start_count: 3, prompt: '4개를 더 눌러요' } }, C);
