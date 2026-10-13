@@ -316,6 +316,12 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .stab th{background:var(--tint);font-weight:600}
 .stab td.sq{color:var(--ink-soft);font-weight:700}
 .stab td.stl{font-size:15px;letter-spacing:1px;white-space:nowrap}
+/* v3.3 규칙 찾기 */
+.krstk{align-items:flex-end}.krstk .figc{display:flex;flex-direction:column;align-items:center;gap:4px}
+.krq{width:58px;height:58px;border:2px dashed var(--rule-strong);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#C0392B;background:var(--tint)}
+.krng{flex-direction:column;align-items:center;gap:6px}.krtop{font-size:14px;font-weight:700;color:var(--ink-soft)}
+.pq .krq{width:40px;height:40px;border:1.5px dashed #000;display:flex;align-items:center;justify-content:center;font-weight:700}
+.pq .krng{display:flex;flex-direction:column;align-items:flex-start}.pq .krtop{font-size:11px;font-weight:700}
 /* v3.2 표와 그래프 */
 .tgw{display:flex;flex-direction:column;align-items:center;gap:8px}
 .tgt{font-size:16px;font-weight:700;color:var(--ink)}
@@ -1155,7 +1161,7 @@ function calSVG(a){
   TM_WD.forEach((w, i) => { s += `<text x="${X + i * CW + CW / 2}" y="${Y - 8}" text-anchor="middle" font-size="12" font-weight="700" fill="${i === 0 ? '#C0392B' : i === 6 ? '#1F5FA8' : CMP_INK}">${w}</text>`; });
   for (let r2 = 0; r2 < rows; r2++) for (let c = 0; c < 7; c++){ const d = r2 * 7 + c - st + 1, x = X + c * CW, y = Y + r2 * CH;
     s += `<rect x="${x}" y="${y}" width="${CW}" height="${CH}" fill="${d >= 1 && d <= n ? '#FFFFFF' : '#F3EFE6'}" stroke="#B9A77A" stroke-width="0.8"/>`;
-    if (d >= 1 && d <= n){ s += `<text class="cd" x="${x + 4}" y="${y + 13}" font-size="11" fill="${c === 0 ? '#C0392B' : c === 6 ? '#1F5FA8' : CMP_INK}">${d}</text>`;
+    if (d >= 1 && d <= n){ s += `<text class="cd" x="${x + 4}" y="${y + 13}" font-size="11" fill="${c === 0 ? '#C0392B' : c === 6 ? '#1F5FA8' : CMP_INK}">${Number(a.q) === d ? '?' : d}</text>`;
       if (hi.indexOf(d) >= 0) s += `<circle cx="${x + CW / 2}" cy="${y + CH / 2}" r="14" fill="none" stroke="#C0392B" stroke-width="1.6"/>`;
       if (mk[d]) s += `<text x="${x + CW - 4}" y="${y + CH - 6}" text-anchor="end" font-size="13">${svgEsc(mk[d])}</text>`; } }
   return `<svg class="cmpsv" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${Number(a.mon)}월 달력">${s}</svg>`;
@@ -1364,6 +1370,82 @@ function timesSVG(a){
   const w = X + tot * U + 10;
   return `<svg class="cmpsv" viewBox="0 0 ${w} 102" width="${w}" height="102" role="img" aria-label="${svgEsc(a.a)} 막대와 ${svgEsc(a.b)} 막대">${s}</svg>`;
 }
+/* ===== v3.3 — 2학년 2학기 「규칙 찾기」 그림 5종 (2026-10-13, 오푸스 5.5) =====
+   ptile   {rows:[[칸…]…], grp?:n, runs?:true}  무늬 줄 — 칸은 '색:모양'(모양 원·삼각형·사각형·별·마름모·칸) · 수 · null(?)
+           grp = 첫 줄 앞 n칸에 점선 묶음(되풀이되는 한 묶음) · runs = 같은 칸끼리 붙이고 바뀌는 곳을 띄움(늘어나는 묶음)
+           종이는 흑백이라 모양 안에 색 이름 첫 글자를 적는다.
+   spin    {n:4~8, boards:[칸 번호|[번호…]|null…]}  돌아가는 판 — 칸 0이 맨 위, 시계 방향으로 1, 2, … · null 은 ? 판
+   stack   {stages:[cells|null…]}  쌓은 모양 단계 — cells 는 cubes 와 같은 [x,y,z,색] · null 은 ? 자리 · 아래에 단계 번호
+   optab   {op:'+'|'×', rows:[왼쪽 수…], cols:[위쪽 수…], q?:[i,j], blank?:[[i,j]…], hi?:[[i,j]…], hrow?:i, hcol?:j}
+           덧셈표·곱셈표 — 칸 값은 언제나 엔진이 셈한다(데이터에 적지 않는다). i·j 는 줄·칸의 자리(0부터).
+   numgrid {rows:[[수|null…]…], q?:[i,j], head?:[…], top?:글, name?:글}  생활 속 수 배열(승강기 단추·의자 번호·신발장)
+   (cal 에 q:날짜 — 그 날짜를 ? 로 가린다) */
+const KR_COL = {'빨강':'#E46A5E', '주황':'#F2A65A', '노랑':'#F4D35E', '연두':'#B5D99C', '초록':'#5BAE6B', '하늘':'#9FD3EE', '파랑':'#5C8FD6', '보라':'#9B7BC8', '분홍':'#F2A1B8', '회색':'#A7A9AC'};
+const KR_CN = {'빨강':'빨간색', '주황':'주황색', '노랑':'노란색', '연두':'연두색', '초록':'초록색', '하늘':'하늘색', '파랑':'파란색', '보라':'보라색', '분홍':'분홍색', '회색':'회색'};
+const KR_SH = ['원', '삼각형', '사각형', '별', '마름모', '칸'];
+const KR_ORD = ['', '첫째', '둘째', '셋째', '넷째', '다섯째', '여섯째', '일곱째', '여덟째', '아홉째', '열째'];
+const KR_POS4 = ['위', '오른쪽', '아래', '왼쪽'];
+const KR_TYPES = ['ptile', 'spin', 'stack', 'optab', 'numgrid', 'cal'];
+function krSplit(it){ if (it === null || it === undefined || it === '?') return null; if (typeof it === 'number') return {n:it}; const p = String(it).split(':'); return {c:p[0], s:p[1] || '칸'}; }
+function krName(it){ const x = krSplit(it); if (!x) return '?'; if (x.n !== undefined) return String(x.n); return x.s === '칸' ? KR_CN[x.c] : KR_CN[x.c] + ' ' + x.s; }
+function krShapeSVG(x, ox, oy, S, paper){
+  if (!x) return `<rect x="${ox + 1}" y="${oy + 1}" width="${S - 2}" height="${S - 2}" rx="6" fill="#FFFFFF" stroke="${CMP_INK}" stroke-width="1.6" stroke-dasharray="4 3"/><text x="${ox + S / 2}" y="${oy + S / 2 + 7}" text-anchor="middle" font-size="20" font-weight="700" fill="#C0392B">?</text>`;
+  if (x.n !== undefined) return `<rect x="${ox + 1}" y="${oy + 1}" width="${S - 2}" height="${S - 2}" rx="6" fill="#FFFFFF" stroke="${CMP_INK}" stroke-width="1.6"/><text x="${ox + S / 2}" y="${oy + S / 2 + 7}" text-anchor="middle" font-size="20" font-weight="700" fill="${CMP_INK}">${svgEsc(x.n)}</text>`;
+  const f = KR_COL[x.c] || '#CCCCCC', st = `fill="${f}" stroke="${CMP_INK}" stroke-width="1.5" stroke-linejoin="round"`, cx = ox + S / 2, cy = oy + S / 2, R = S * 0.4;
+  let b;
+  if (x.s === '원') b = `<circle cx="${cx}" cy="${cy}" r="${R}" ${st}/>`;
+  else if (x.s === '삼각형') b = `<polygon points="${cx},${(cy - R).toFixed(1)} ${(cx + R * 0.95).toFixed(1)},${(cy + R * 0.8).toFixed(1)} ${(cx - R * 0.95).toFixed(1)},${(cy + R * 0.8).toFixed(1)}" ${st}/>`;
+  else if (x.s === '사각형') b = `<rect x="${(cx - R * 0.85).toFixed(1)}" y="${(cy - R * 0.85).toFixed(1)}" width="${(R * 1.7).toFixed(1)}" height="${(R * 1.7).toFixed(1)}" ${st}/>`;
+  else if (x.s === '마름모') b = `<polygon points="${cx},${(cy - R).toFixed(1)} ${(cx + R).toFixed(1)},${cy} ${cx},${(cy + R).toFixed(1)} ${(cx - R).toFixed(1)},${cy}" ${st}/>`;
+  else if (x.s === '별'){ const pts = []; for (let k = 0; k < 10; k++){ const rr = k % 2 ? R * 0.45 : R * 1.05, an = (-90 + k * 36) * Math.PI / 180; pts.push(`${(cx + Math.cos(an) * rr).toFixed(1)},${(cy + 1 + Math.sin(an) * rr).toFixed(1)}`); } b = `<polygon points="${pts.join(' ')}" ${st}/>`; }
+  else b = `<rect x="${ox + 1}" y="${oy + 1}" width="${S - 2}" height="${S - 2}" rx="3" ${st}/>`;
+  if (paper) b += `<text x="${cx}" y="${cy + (x.s === '삼각형' ? 8 : 5)}" text-anchor="middle" font-size="11" font-weight="700" fill="#000">${svgEsc(String(x.c).slice(0, 1))}</text>`;
+  return b;
+}
+function ptileSVG(a, paper){
+  const S = 38, G = 6, RG = 16, rows = a.rows || []; let s = '', W = 0, y = 6, gx0 = null, gx1 = null;
+  rows.forEach((row, ri) => { let x = 6;
+    row.forEach((it, i) => { if (a.runs && i > 0 && it !== null && row[i - 1] !== null && String(row[i - 1]) !== String(it)) x += RG;
+      if (ri === 0 && a.grp && i === 0) gx0 = x; if (ri === 0 && a.grp && i === a.grp - 1) gx1 = x + S;
+      s += krShapeSVG(krSplit(it), x, y, S, paper); x += S + G; });
+    W = Math.max(W, x); y += S + G + 4; });
+  if (gx0 !== null && gx1 !== null) s = `<rect x="${gx0 - 4}" y="2" width="${gx1 - gx0 + 8}" height="${S + 8}" rx="8" fill="none" stroke="#C0392B" stroke-width="1.6" stroke-dasharray="5 3"/>` + s;
+  const H = y; W += 2;
+  return `<svg class="cmpsv" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="무늬 ${rows.length}줄">${s}</svg>`;
+}
+function spinSVG(a){
+  const n = Math.max(3, Math.min(8, Number(a.n) || 4)), B = a.boards || [], R = 28, BW = 78; let s = '';
+  B.forEach((b, k) => { const cx = 8 + k * BW + R + 4, cy = 8 + R;
+    if (b === null || b === undefined){ s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="#FFFFFF" stroke="${CMP_INK}" stroke-width="1.6" stroke-dasharray="4 3"/><text x="${cx}" y="${cy + 8}" text-anchor="middle" font-size="22" font-weight="700" fill="#C0392B">?</text>`; }
+    else { const on = [].concat(b).map(Number);
+      for (let i = 0; i < n; i++){ const a0 = (-90 + i * 360 / n) * Math.PI / 180, a1 = (-90 + (i + 1) * 360 / n) * Math.PI / 180;
+        const p0 = [cx + Math.cos(a0) * R, cy + Math.sin(a0) * R], p1 = [cx + Math.cos(a1) * R, cy + Math.sin(a1) * R];
+        s += `<path class="${on.indexOf(i) >= 0 ? 'spon' : 'spoff'}" d="M${cx} ${cy} L${p0[0].toFixed(1)} ${p0[1].toFixed(1)} A${R} ${R} 0 0 1 ${p1[0].toFixed(1)} ${p1[1].toFixed(1)} Z" fill="${on.indexOf(i) >= 0 ? '#F2A65A' : '#FFFFFF'}" stroke="${CMP_INK}" stroke-width="1.4" stroke-linejoin="round"/>`; } }
+    s += `<text x="${cx}" y="${cy + R + 18}" text-anchor="middle" font-size="13" fill="${CMP_INK}">${KR_ORD[k + 1]}</text>`; });
+  const W = 16 + B.length * BW, H = 2 * R + 34;
+  return `<svg class="cmpsv" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="돌아가는 판 ${B.length}개">${s}</svg>`;
+}
+function stackHTML(a, paper){
+  const box = paper ? 'pcmpw' : 'cmpw';
+  return `<div class="${box} figs krstk">${(a.stages || []).map((cells, i) => `<div class="figc">${cells ? cubesSVG(cells, paper ? 16 : 20) : '<div class="krq">?</div>'}<b>${i + 1}</b></div>`).join('')}</div>`;
+}
+function krVal(op, r, c){ return op === '×' ? r * c : r + c; }
+function optabHTML(a, paper){
+  const R = a.rows || [], C = a.cols || [], op = a.op === '×' ? '×' : '+', key = (i, j) => i + ',' + j;
+  const B = new Set((a.blank || []).map(x => key(x[0], x[1]))), Q = a.q ? key(a.q[0], a.q[1]) : null, H = new Set((a.hi || []).map(x => key(x[0], x[1])));
+  let h = `<tr><th class="gx">${op}</th>${C.map(c => `<th>${esc(c)}</th>`).join('')}</tr>`;
+  R.forEach((r, i) => { h += `<tr><th>${esc(r)}</th>` + C.map((c, j) => { const k = key(i, j);
+      const cl = [k === Q ? 'q' : B.has(k) ? 'bl' : '', (a.hrow === i || a.hcol === j || H.has(k)) ? 'hr' : ''].filter(Boolean).join(' ');
+      return `<td${cl ? ` class="${cl}"` : ''}>${k === Q ? '?' : B.has(k) ? '' : krVal(op, r, c)}</td>`; }).join('') + '</tr>'; });
+  return `<div class="${paper ? 'pgugw' : 'gugw'} kropt"><table class="gtab" aria-label="${op === '×' ? '곱셈표' : '덧셈표'}">${h}</table></div>`;
+}
+function numgridHTML(a, paper){
+  const key = (i, j) => i + ',' + j, Q = a.q ? key(a.q[0], a.q[1]) : null;
+  let h = a.head ? `<tr>${a.head.map(x => `<th>${esc(x)}</th>`).join('')}</tr>` : '';
+  (a.rows || []).forEach((row, i) => { h += '<tr>' + row.map((x, j) => { const k = key(i, j); if (k === Q) return '<td class="q">?</td>';
+      return x === null || x === undefined ? '<td class="bl"></td>' : `<td>${esc(x)}</td>`; }).join('') + '</tr>'; });
+  return `<div class="${paper ? 'pgugw' : 'gugw'} krng">${a.top ? `<div class="krtop">${esc(a.top)}</div>` : ''}<table class="gtab" aria-label="${esc(a.name || '수 배열')}">${h}</table></div>`;
+}
 function drawAsset(a, r){
   if (!a) return '';
   if (typeof a === 'string') return esc(a);
@@ -1544,6 +1626,12 @@ function drawAsset(a, r){
     case 'tbar': return `<div class="cmpw">${tbarSVG(a)}</div>`;
     case 'dbar': return dbarHTML(a, false);
     case 'cal': return `<div class="cmpw">${calSVG(a)}</div>`;
+    /* v3.3 — 2학년 2학기 「규칙 찾기」 */
+    case 'ptile': return `<div class="cmpw">${ptileSVG(a, false)}</div>`;
+    case 'spin': return `<div class="cmpw">${spinSVG(a)}</div>`;
+    case 'stack': return stackHTML(a, false);
+    case 'optab': return optabHTML(a, false);
+    case 'numgrid': return numgridHTML(a, false);
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
   }
   return '';
@@ -3645,6 +3733,235 @@ function makeVariantOnce(q, r){
      cm {ask, ...}   ask  read(0 맞춤·몇 cm) · off(0 아님 — 칸 세기) · approx(눈금 사이 — 약 몇 cm, off:true 면 0 아님) · cells(1 cm 칸 세기) · unit(단위 몇 번)
      오개념 꼬리: X08 끝 숫자 그대로 · X09 눈금(선) 수 · X10 1부터 셈 · X11 먼 눈금 · X12 「약」 뺌 · X03 빈틈·겹침(횟수 ±1)
      원본을 만들 때만 q._fix = [len, s(, 이름)] 로 못박는다(fill.js 전용). */
+  /* v3.3 — 규칙 찾기 (2학년 2학기 6단원): 갈래 kr {ask, form?, …}
+     ask rnext(무늬의 ? — mode color·shape·num·combo) · runit(묶음 — form cells 몇 칸·kinds 몇 가지) · rnum(모양을 수로 바꾼 줄의 ?)
+         · spin(돌아가는 판 — form next·dir·step) · grow(늘어나는 묶음 — form next·total, style pair·sep)
+         · stk(쌓은 모양 — kind tower·col2·lcol·L·stair, form next·nth·diff) · addt(덧셈표 — form cell·dir) · mult(곱셈표 — form cell·step·par)
+         · calr(달력 — form q·step·wk) · grid(수 배열 — kind lift·seat·shoe)
+     _fix 로 원본을 고정한다(fill.js). 오개념 꼬리는 단원 사전 X01~X19. */
+  if (rule.kr && (!a || typeof a !== 'object' || KR_TYPES.indexOf(a.type) >= 0)){
+    const G = rule.kr, ask = G.ask, FX = v._fix || {}; delete v._fix; delete v._form; delete v.asset;
+    const want = Math.max(1, nOptsOf(q) - 1), isSA = q.kind === 'sa', SA = isSA ? ' 숫자로 쓰세요.' : '', J = tmJ;
+    const NY = x => x + J(String(x), '이에요', '예요'), IGA = x => J(String(x), '이', '가'), EUN = x => J(String(x), '은', '는'), GWA = x => J(String(x), '과', '와');
+    const fin = (ans, ds, ex, uw) => { if (isSA) v.answer = uw ? [String(ans), ans + uw] : [String(ans)];
+      else v.options = kindOpts(uw ? ans + uw : ans, ds.map(([x, c]) => [x === null || x === undefined || (typeof x === 'number' && x < 0) ? null : (uw ? x + uw : x), c]), want, q.options);
+      v.explanation = ex; return v; };
+    const form = FX.form || G.form || (G.forms ? pick(G.forms, r) : null);
+    const TPL = {2:['AB'], 3:['ABC', 'AAB', 'ABB', 'ABA'], 4:['ABCB', 'AABB', 'ABCD', 'AABC', 'ABBC', 'ABAC', 'ABCC']};
+    const PAL = ['빨강', '노랑', '파랑', '초록', '주황', '보라', '하늘', '연두', '분홍'], SHP = ['원', '삼각형', '사각형', '별', '마름모'];
+    const unitOf = (tpl, vals) => tpl.split('').map(ch => vals['ABCD'.indexOf(ch)]);
+    const per = arr => { for (let p = 1; p * 2 <= arr.length; p++){ let ok = true; for (let i = 0; i < arr.length && ok; i++) for (let j = i % p; j < arr.length; j += p) if (arr[i] !== null && arr[j] !== null && String(arr[i]) !== String(arr[j])){ ok = false; break; } if (ok) return p; } return 0; };
+    const RO = x => { const t = String(x), c = t.charCodeAt(t.length - 1); if ((c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 === 8) || /[178]$/.test(t)) return '로'; return J(t, '으로', '로'); };
+    if (ask === 'rnext' || ask === 'runit'){
+      const mode = FX.mode || G.mode || pick(G.modes || ['color', 'shape', 'num'], r);
+      if (mode === 'combo'){
+        const sh = FX.shapes || shuffle(SHP.slice(0, 3), r), ctpl = FX.ctpl || pick(['AABB', 'AB'], r), cols2 = FX.colors || shuffle(PAL, r).slice(0, 2), cu = unitOf(ctpl, cols2);
+        const len = FX.len || rint(8, 10, r), qi = FX.qi !== undefined ? FX.qi : (r() < 0.6 ? len - 1 : rint(5, len - 2, r));
+        const full = Array.from({length: len}, (_, i) => cu[i % cu.length] + ':' + sh[i % 3]); const row = full.slice(); row[qi] = null;
+        v.asset = {type:'ptile', rows:[row]}; const ans = krName(full[qi]), S0 = sh[qi % 3], C0 = cu[qi % cu.length];
+        const oc = cols2.find(c => c !== C0), os = sh.find(s => s !== S0);
+        v.stem = '모양과 색이 함께 규칙에 따라 되풀이돼요. ?에 알맞은 것은 무엇인가요?';
+        return fin(ans, [[krName(oc + ':' + S0), 'X03'], [krName(C0 + ':' + os), 'X03'], [krName(full[qi - 1]), 'X02'], [krName(oc + ':' + os), 'X03']],
+          [`모양은 ${sh.join(', ')}${IGA(sh[2])} 차례로 되풀이돼요.`, `색은 ${cu.map(c => KR_CN[c]).join(', ')}${IGA('색')} 차례로 되풀이돼요.`, `?의 모양은 ${S0}, 색은 ${KR_CN[C0]} — 둘을 함께 보면 ${NY(ans)}.`]);
+      }
+      let p, tpl, row, full, unit, qi = -1, vals;
+      for (let g = 0; g < 40; g++){
+        p = FX.p || G.p || pick([3, 4], r);
+        const pool = TPL[p].filter(t => ask !== 'runit' || (FX.form || G.form || form) !== 'kinds' || new Set(t).size < p || g > 30);
+        tpl = FX.tpl || pick(pool, r); const kinds = new Set(tpl).size;
+        if (mode === 'num') vals = FX.vals || shuffle([1, 2, 3, 4, 5, 6], r).slice(0, kinds);
+        else if (mode === 'shape'){ const c0 = FX.c0 || pick(PAL, r); vals = (FX.shapes || shuffle(SHP, r).slice(0, kinds)).map(s => c0 + ':' + s); }
+        else { const s0 = FX.sh || G.sh || '칸'; vals = (FX.colors || shuffle(PAL, r).slice(0, kinds)).map(c => c + ':' + s0); }
+        unit = unitOf(tpl, vals);
+        const len = FX.len || (ask === 'rnext' ? 2 * p + rint(1, p, r) : 2 * p + rint(1, p, r));
+        full = Array.from({length: len}, (_, i) => unit[i % p]); row = full.slice();
+        if (ask === 'rnext'){ qi = FX.qi !== undefined ? FX.qi : (r() < 0.55 ? len - 1 : rint(p, len - 2, r)); row[qi] = null; }
+        if (per(row) === p || FX.tpl) break; }
+      v.asset = {type:'ptile', rows:[row]};
+      const what = mode === 'num' ? '수' : '무늬', uText = unit.map(krName).join(', ');
+      if (ask === 'rnext'){
+        const ans = krName(full[qi]), uw = null;
+        v.stem = `규칙에 따라 ${what}${J(what, '을', '를')} 늘어놓았어요. ?에 알맞은 ${mode === 'num' ? '수는 얼마' : '것은 무엇'}인가요?` + (mode === 'num' ? SA : '');
+        const other = mode === 'num' ? [1, 2, 3, 4, 5, 6, 7].find(x => vals.indexOf(x) < 0) : mode === 'shape' ? krSplit(vals[0]).c + ':' + SHP.find(s => vals.every(x => krSplit(x).s !== s)) : PAL.find(c => vals.every(x => krSplit(x).c !== c)) + ':' + krSplit(vals[0]).s;
+        return fin(mode === 'num' ? full[qi] : ans, [[krName(unit[(qi + 1) % p]), 'X02'], [krName(unit[(qi + p - 1) % p]), 'X02'], [qi - (p - 1) >= 0 ? krName(full[qi - (p - 1)]) : null, 'X01'], [mode === 'num' ? other : krName(other), 'X02']].map(([x, c]) => [mode === 'num' && x !== null ? Number(x) : x, c]),
+          [`${uText}${IGA(krName(unit[p - 1]))} 되풀이돼요 — 한 묶음은 ${p}칸이에요.`, `?는 ${qi + 1}번째 자리라 묶음의 ${KR_ORD[qi % p + 1]} 자리와 같아요.`, `그래서 ?에는 ${ans}${IGA(ans)} 와요.`], uw);
+      }
+      const f2 = form || 'cells', kinds = new Set(unit.map(String)).size;
+      if (f2 === 'kinds'){
+        const nm = mode === 'num' ? '수' : mode === 'shape' ? '모양' : '색';
+        v.stem = `규칙에 따라 ${what}${J(what, '을', '를')} 늘어놓았어요. 되풀이되는 한 묶음 안에는 몇 가지 ${nm}${IGA(nm)} 있나요?` + SA;
+        return fin(kinds, [[p !== kinds ? p : null, 'X01'], [kinds + 1, 'X01'], [kinds - 1 >= 1 ? kinds - 1 : null, 'X01'], [p + 1, 'X01']],
+          [`되풀이되는 한 묶음은 ${uText} — ${p}칸이에요.`, `그 안에서 서로 다른 ${nm}만 세면 ${kinds}가지예요.`, p !== kinds ? `칸 수(${p})와 가짓수(${kinds})는 달라요 — 같은 ${nm}${IGA(nm)} 두 번 나오니까요.` : `한 묶음 안에 같은 ${nm}${IGA(nm)} 없어서 ${p}칸, ${kinds}가지예요.`], '가지');
+      }
+      v.stem = `규칙에 따라 ${what}${J(what, '을', '를')} 늘어놓았어요. 되풀이되는 한 묶음은 몇 칸인가요?` + SA;
+      return fin(p, [[p - 1, 'X01'], [p + 1, 'X01'], [kinds !== p ? kinds : 2 * p, 'X01'], [2 * p, 'X01']],
+        [`처음 ${krName(unit[0])}부터 같은 차례가 다시 시작되는 곳까지 세어요.`, `${uText} 다음에 다시 ${krName(unit[0])}${IGA(krName(unit[0]))} 나와요.`, `그래서 한 묶음은 ${p}칸이에요 — 좁게 잡으면 규칙이 어긋나요.`], '칸');
+    }
+    if (ask === 'rnum'){
+      let p, tpl, unit, row0, row1, qi, mp, shp;
+      for (let g = 0; g < 40; g++){
+        p = FX.p || pick([3, 4], r); tpl = FX.tpl || pick(TPL[p].filter(t => new Set(t).size === 3), r);
+        shp = FX.shapes || shuffle(SHP, r).slice(0, 3); const cs = FX.colors || shuffle(PAL, r).slice(0, 3); mp = FX.nums || shuffle([1, 2, 3, 4, 5], r).slice(0, 3);
+        unit = unitOf(tpl, [0, 1, 2]); const len = FX.len || 2 * p + rint(1, p, r);
+        row0 = Array.from({length: len}, (_, i) => cs[unit[i % p]] + ':' + shp[unit[i % p]]); row1 = row0.map((_, i) => mp[unit[i % p]]);
+        qi = FX.qi !== undefined ? FX.qi : rint(p, len - 1, r);
+        const r1 = row1.slice(); r1[qi] = null; if (per(r1) === p || FX.tpl){ row1 = r1; break; } }
+      v.asset = {type:'ptile', rows:[row0, row1]}; const ans = mp[unit[qi % p]], mapT = shp.map((s, i) => `${s}${EUN(s)} ${mp[i]}`).join(', ');
+      v.stem = `${mapT}${RO(mp[2])} 바꾸어 나타냈어요. ?에 알맞은 수는 얼마인가요?` + SA;
+      const ws = mp.filter(x => x !== ans);
+      return fin(ans, [[ws[0], 'X04'], [ws[1], 'X04'], [mp[unit[(qi + 1) % p]] !== ans ? mp[unit[(qi + 1) % p]] : null, 'X02'], [ans + 1 <= 9 && mp.indexOf(ans + 1) < 0 ? ans + 1 : null, 'X04']],
+        [`?의 위에는 ${krName(row0[qi])}${IGA(krName(row0[qi]))} 있어요.`, `${shp[unit[qi % p]]}${EUN(shp[unit[qi % p]])} ${ans}${RO(ans)} 바꾸기로 했어요.`, `그래서 ?는 ${NY(ans)} — 같은 모양에는 늘 같은 수를 써요.`]);
+    }
+    if (ask === 'spin'){
+      const f2 = form || 'next', n = FX.n || G.n || (f2 === 'next' ? 4 : pick([4, 5, 6, 8], r));
+      const s = FX.s || (f2 === 'step' && n >= 5 ? pick([1, 2], r) : (f2 === 'dir' && n >= 6 && r() < 0.3 ? 2 : 1)), cw = FX.cw !== undefined ? FX.cw : r() < 0.6;
+      const d = cw ? s : n - s, b0 = FX.b0 !== undefined ? FX.b0 : rint(0, n - 1, r), B = [0, 1, 2, 3].map(k => (b0 + k * d) % n);
+      const way = cw ? '시계 방향' : '시계 반대 방향', other = cw ? '시계 반대 방향' : '시계 방향';
+      if (f2 === 'next'){ v.asset = {type:'spin', n, boards:[B[0], B[1], B[2], null]};
+        const P = i => KR_POS4[(i + 4) % 4] + ' 칸', ans = P(B[3]);
+        v.stem = '색칠된 칸이 규칙에 따라 움직여요. ?에 올 판에서 색칠될 칸은 어디인가요?';
+        return fin(ans, [[P(B[1]), 'X05'], [P(B[2]), 'X06'], [P(B[0]), 'X06']],
+          [`첫째 판은 ${P(B[0])}, 둘째 판은 ${P(B[1])}, 셋째 판은 ${P(B[2])}이에요.`, `색칠된 칸이 ${way}으로 한 칸씩 돌아가요.`, `그래서 ?에는 ${ans}${IGA(ans)} 색칠돼요.`]); }
+      v.asset = {type:'spin', n, boards:B};
+      if (f2 === 'dir'){
+        v.stem = '색칠된 칸은 어느 쪽으로 돌아가나요?';
+        return fin(way, [[other, 'X05'], ['돌지 않고 그대로예요', 'X18']],
+          [`첫째 판에서 색칠된 칸을 찾고 둘째 판과 견주어요.`, `색칠된 칸이 시계 바늘이 ${cw ? '도는 쪽' : '도는 쪽의 반대쪽'}으로 한 칸씩 옮겨 가요.`, `그래서 ${way}으로 돌아가요.`]); }
+      v.stem = `색칠된 칸은 한 판마다 몇 칸씩 돌아가나요?` + SA;
+      return fin(s, [[s + 1, 'X06'], [s - 1 >= 1 ? s - 1 : null, 'X06'], [n - s !== s ? n - s : null, 'X05'], [s + 2, 'X06']],
+        [`판은 ${n}칸으로 나뉘어 있어요.`, `첫째 판에서 둘째 판으로 갈 때 색칠된 칸이 ${way}으로 ${s}칸 옮겨 가요.`, `다음 판도 똑같이 ${s}칸씩 — ${s === 1 ? '바로 옆 칸이에요' : '한 칸을 건너뛰어요'}.`], '칸');
+    }
+    if (ask === 'grow'){
+      const f2 = form || 'next', style = FX.style || G.style || pick(['pair', 'sep'], r), d = FX.d || (style === 'sep' ? pick([1, 2], r) : 1), a0 = FX.a0 || 1, k = 3;
+      const cs = FX.colors || shuffle(PAL, r).slice(0, 2), A = cs[0], Bc = cs[1], sh = FX.sh || pick(['원', '칸'], r), itA = A + ':' + sh, itB = Bc + ':' + sh;
+      const row = []; for (let i = 0; i < k; i++){ for (let j = 0; j < a0 + i * d; j++) row.push(itA); for (let j = 0; j < (style === 'pair' ? a0 + i * d : 1); j++) row.push(itB); }
+      const cnA = KR_CN[A], cnB = KR_CN[Bc], seq = [0, 1, 2].map(i => a0 + i * d), nxt = a0 + k * d, bead = sh === '원' ? '구슬' : '조각';
+      const how = style === 'pair' ? `${cnA} 묶음과 ${cnB} 묶음이 번갈아 나오며 ${d}개씩 늘어나요` : `${cnB} ${bead}${J(bead, '은', '는')} 하나씩 그대로이고 ${cnA} 묶음만 ${d}개씩 늘어나요`;
+      if (f2 === 'next'){ row.push(null); v.asset = {type:'ptile', rows:[row], runs:true};
+        v.stem = `규칙에 따라 ${cnA}${GWA(cnA)} ${cnB} ${bead}${J(bead, '을', '를')} 늘어놓았어요. ?에 올 ${cnA} 묶음은 몇 개인가요?` + SA;
+        return fin(nxt, [[seq[2], 'X07'], [seq[2] + 1 !== nxt ? seq[2] + 1 : seq[2] + 2, 'X07'], [nxt + 1, 'X07'], [nxt + d, 'X07']],
+          [`${cnA} 묶음만 차례로 세면 ${seq.join('개, ')}개예요.`, how + '.', `그래서 다음 ${cnA} 묶음은 ${seq[2]} + ${d} = ${nxt}개예요.`], '개'); }
+      v.asset = {type:'ptile', rows:[row], runs:true}; const m = FX.m || 4, tot = Array.from({length: m}, (_, i) => a0 + i * d).reduce((x, y) => x + y, 0), lastM = a0 + (m - 1) * d;
+      v.stem = `규칙에 따라 계속 늘어놓아요. ${cnA} 묶음을 ${KR_ORD[m]} 묶음까지 놓으면 ${cnA} ${bead}${J(bead, '은', '는')} 모두 몇 개인가요?` + SA;
+      return fin(tot, [[lastM, 'X08'], [seq.reduce((x, y) => x + y, 0), 'X08'], [tot + 1, 'X08'], [tot - 1, 'X08']],
+        [`${cnA} 묶음은 ${Array.from({length: m}, (_, i) => a0 + i * d).join('개, ')}개로 늘어나요.`, `${KR_ORD[m]} 묶음까지 모두 더해요 — ${Array.from({length: m}, (_, i) => a0 + i * d).join(' + ')}.`, `그래서 ${cnA} ${bead}${J(bead, '은', '는')} 모두 ${tot}개예요 — 마지막 묶음만 세면 안 돼요.`], '개');
+    }
+    if (ask === 'stk'){
+      const f2 = form || 'next', kind = FX.kind || G.kind || pick(f2 === 'diff' ? ['tower', 'col2', 'lcol', 'L'] : ['tower', 'col2', 'lcol', 'L', 'stair'], r), h0 = FX.h0 || (kind === 'tower' ? pick([1, 2], r) : 1);
+      const build = t => { const c = [];
+        if (kind === 'tower') for (let z = 0; z < t + h0 - 1; z++) c.push([0, 0, z, 0]);
+        else if (kind === 'col2') for (let x = 0; x < 2; x++) for (let z = 0; z < t; z++) c.push([x, 0, z, 0]);
+        else if (kind === 'lcol'){ for (let x = 0; x < 3; x++) c.push([x, 0, 0, 0]); for (let z = 1; z < t; z++) c.push([0, 0, z, 0]); }
+        else if (kind === 'L'){ for (let x = 0; x < t; x++) c.push([x, 0, 0, 0]); for (let z = 1; z < t; z++) c.push([0, 0, z, 0]); }
+        else for (let x = 0; x < t; x++) for (let z = 0; z <= x; z++) c.push([x, 0, z, 0]);
+        return c; };
+      const cnt = t => build(t).length, c3 = [1, 2, 3].map(cnt), nx = cnt(4), d = c3[1] - c3[0];
+      const desc = {tower:'위로 한 개씩 높아져요', col2:'두 줄이 함께 한 층씩 높아져서 2개씩 늘어나요', lcol:'맨 왼쪽 위에 한 개씩 더 쌓여요', L:'오른쪽과 위로 한 개씩 함께 늘어나서 2개씩 늘어나요', stair:'오른쪽에 한 층 더 높은 줄이 생겨요'}[kind];
+      if (f2 === 'next'){ v.asset = {type:'stack', stages:[build(1), build(2), build(3), null]};
+        v.stem = '규칙에 따라 쌓기나무를 쌓았어요. ?에 쌓을 모양의 쌓기나무는 몇 개인가요?' + SA;
+        return fin(nx, [[c3[2], 'X09'], [c3[2] + d !== nx ? c3[2] + d : c3[2] + 1, 'X07'], [nx + 1, 'X09'], [kind === 'stair' ? 4 : nx - 1, 'X09']],
+          [`쌓기나무는 ${c3.join('개, ')}개예요.`, `단계마다 ${desc}${kind === 'stair' ? ` — ${c3[1] - c3[0]}개, ${c3[2] - c3[1]}개 늘었으니 다음엔 ${nx - c3[2]}개` : ''}.`, `그래서 ?에는 ${nx}개를 쌓아요.`], '개'); }
+      v.asset = {type:'stack', stages:[build(1), build(2), build(3)]};
+      if (f2 === 'nth'){ const m = FX.m || 5, nm = cnt(m);
+        v.stem = `규칙에 따라 계속 쌓을 때, ${KR_ORD[m]} 모양의 쌓기나무는 몇 개인가요?` + SA;
+        return fin(nm, [[nx, 'X09'], [nm - 1, 'X09'], [nm + 1, 'X09'], [nm + 2, 'X09'], [nm - 2, 'X09']],
+          [`쌓기나무는 ${c3.join('개, ')}개예요 — ${desc}.`, `넷째 모양은 ${nx}개${m === 5 ? '' : `, 다섯째 모양은 ${cnt(5)}개`}예요.`, `그래서 ${KR_ORD[m]} 모양은 ${nm}개예요.`], '개'); }
+      v.stem = '쌓기나무는 한 단계마다 몇 개씩 늘어나나요?' + SA;
+      return fin(d, [[d === 1 ? 2 : 1, 'X07'], [c3[2], 'X09'], [d + 2, 'X07'], [3, 'X09']],
+        [`단계마다 쌓기나무를 세면 ${c3.join('개, ')}개예요.`, `${c3[0]}개에서 ${c3[1]}개, ${c3[1]}개에서 ${c3[2]}개로 늘었어요.`, `그래서 ${d}개씩 늘어나요 — ${desc}.`], '개');
+    }
+    if (ask === 'addt' || ask === 'mult'){
+      const op = ask === 'mult' ? '×' : '+', f2 = form || 'cell', nmT = op === '×' ? '곱셈표' : '덧셈표';
+      const seqH = (st, step, len) => Array.from({length: len}, (_, i) => st + i * step);
+      if (f2 === 'cell'){
+        let R, C;
+        if (op === '+'){ const st = FX.step || pick([1, 1, 2], r); R = FX.rows || seqH(st === 2 ? pick([1, 2], r) : rint(0, 3, r), st, rint(4, 5, r)); C = FX.cols || seqH(st === 2 ? pick([1, 2], r) : rint(0, 3, r), st, rint(4, 5, r)); }
+        else { const sty = FX.sty || pick(['win', 'win', 'odd', 'even'], r);
+          R = FX.rows || (sty === 'odd' ? [1, 3, 5, 7, 9] : sty === 'even' ? [2, 4, 6, 8] : seqH(rint(1, 5, r), 1, 4)); C = FX.cols || (sty === 'odd' ? [1, 3, 5, 7, 9] : sty === 'even' ? [2, 4, 6, 8] : seqH(rint(1, 5, r), 1, 5)); }
+        const i = FX.i !== undefined ? FX.i : rint(1, R.length - 1, r), j = FX.j !== undefined ? FX.j : rint(1, C.length - 1, r), ans = krVal(op, R[i], C[j]);
+        const others = []; R.forEach((_, x) => C.forEach((_, y) => { if ((x === i) !== (y === j)) others.push([x, y]); }));
+        v.asset = {type:'optab', op, rows:R, cols:C, q:[i, j], blank: FX.blank || shuffle(others, r).slice(0, 2)};
+        v.stem = `${nmT}의 ?에 알맞은 수는 얼마인가요?` + SA;
+        const wrongOp = krVal(op === '×' ? '+' : '×', R[i], C[j]);
+        return fin(ans, [[wrongOp !== ans ? wrongOp : null, 'X10'], [krVal(op, R[i], C[j - 1]), 'X10'], [krVal(op, R[i - 1], C[j]), 'X10'], [ans + 1, 'X10']],
+          [`?는 왼쪽 ${R[i]}${GWA(R[i])} 위쪽 ${C[j]}${IGA(C[j])} 만나는 칸이에요.`, `${nmT}에는 두 수를 ${op === '×' ? '곱한' : '더한'} 수를 써요.`, `${R[i]} ${op} ${C[j]} = ${NY(ans)}.`]);
+      }
+      const T = x => x === 0 ? '모두 같아요' : x > 0 ? `${x}씩 커져요` : `${-x}씩 작아져요`;
+      if (f2 === 'dir'){
+        const dir = FX.dir || pick(['→', '↓', '↘', '↙'], r), sr = FX.sr || (dir === '↙' ? pick([1, 2], r) : pick([1, 1, 2], r)), sc = FX.sc || (dir === '↙' ? sr : pick([1, 1, 2], r));
+        const R = FX.rows || seqH(rint(0, 3, r) + (sr === 2 ? 1 : 0), sr, 5), C = FX.cols || seqH(rint(0, 3, r) + (sc === 2 ? 1 : 0), sc, 5);
+        const vec = {'→':[0, 1], '↓':[1, 0], '↘':[1, 1], '↙':[1, -1]}[dir], L = FX.L || rint(3, 4, r);
+        const i0 = FX.i0 !== undefined ? FX.i0 : (vec[0] ? rint(0, 5 - L, r) : rint(0, 4, r)), j0 = FX.j0 !== undefined ? FX.j0 : (vec[1] === 1 ? rint(0, 5 - L, r) : vec[1] === -1 ? rint(L - 1, 4, r) : rint(0, 4, r));
+        const hi = Array.from({length: L}, (_, k) => [i0 + vec[0] * k, j0 + vec[1] * k]); const vals = hi.map(([x, y]) => R[x] + C[y]);
+        v.asset = {type:'optab', op:'+', rows:R, cols:C, hi};
+        const dl = {'→':sc, '↓':sr, '↘':sr + sc, '↙':sr - sc}[dir], ans = T(dl);
+        v.stem = `덧셈표에서 색칠한 칸의 수는 ${dir} 방향으로 갈수록 어떻게 되나요?`;
+        const why = {'→':`위쪽 수가 ${sc}씩 커지니까 더한 수도 ${sc}씩 커져요`, '↓':`왼쪽 수가 ${sr}씩 커지니까 더한 수도 ${sr}씩 커져요`, '↘':`왼쪽 수가 ${sr}, 위쪽 수가 ${sc} 함께 커져서 ${sr + sc}씩 커져요`, '↙':`아래로 ${sr} 커지고 왼쪽으로 ${sc} 작아져서 그대로예요`}[dir];
+        return fin(ans, [[T(1) !== ans ? T(1) : T(2), 'X11'], [T(0) !== ans ? T(0) : T(sr + sc + 1), 'X12'], [T(sr + sc) !== ans ? T(sr + sc) : T(sr + sc + 2), 'X11'], [T(-sr), 'X11']],
+          [`색칠한 칸의 수를 차례로 읽으면 ${vals.join(', ')}${J(String(vals[vals.length - 1]), '이에요', '예요')}.`, why + '.', dl === 0 ? `그래서 ${dir} 방향의 수는 모두 같아요.` : `그래서 ${dir} 방향으로 ${ans}.`]);
+      }
+      if (f2 === 'step'){
+        const byCol = FX.byCol !== undefined ? FX.byCol : r() < 0.3, k = FX.k || rint(2, 9, r);
+        const w3 = seqH(k >= 9 ? 7 : Math.max(1, k - 1), 1, 3), R = FX.rows || (byCol ? seqH(1, 1, 6) : w3), C = FX.cols || (byCol ? w3 : seqH(1, 1, 6));
+        if (byCol){ const j = C.indexOf(k); v.asset = {type:'optab', op:'×', rows:R, cols:C, hcol:j}; } else { const i = R.indexOf(k); v.asset = {type:'optab', op:'×', rows:R, cols:C, hrow:i}; }
+        const dir = byCol ? '↓' : '→', ans = T(k);
+        v.stem = `곱셈표에서 색칠한 줄의 수는 ${dir} 방향으로 갈수록 얼마씩 커지나요?`;
+        return fin(ans, [[T(1), 'X13'], [T(k + 1), 'X13'], [T(k - 1) !== T(1) ? T(k - 1) : T(k + 2), 'X13']],
+          [`색칠한 줄은 ${k}단 곱셈구구예요 — ${[1, 2, 3].map(x => k * x).join(', ')}, …`, `곱하는 수가 1 커질 때마다 곱은 ${k}만큼 커져요.`, `그래서 ${dir} 방향으로 ${ans}.`]);
+      }
+      /* par */
+      const sty = FX.sty || pick(['odd', 'even', 'mix'], r);
+      const pickN = (pool, n) => shuffle(pool, r).slice(0, n).sort((x, y) => x - y);
+      const R = FX.rows || (sty === 'odd' ? pickN([1, 3, 5, 7, 9], 4) : sty === 'even' ? pickN([2, 4, 6, 8], 3) : seqH(rint(1, 4, r), 1, 4)), C = FX.cols || (sty === 'odd' ? pickN([1, 3, 5, 7, 9], 4) : sty === 'even' ? seqH(rint(1, 4, r), 1, 4) : seqH(rint(1, 4, r), 1, 4));
+      v.asset = {type:'optab', op:'×', rows:R, cols:C};
+      const all = []; R.forEach(x => C.forEach(y => all.push(x * y))); const ev = all.filter(x => x % 2 === 0).length;
+      const ans = ev === 0 ? '모두 홀수예요' : ev === all.length ? '모두 짝수예요' : '짝수와 홀수가 섞여 있어요';
+      v.stem = '곱셈표에 있는 수는 어떤 수인가요?';
+      return fin(ans, [['모두 홀수예요', 'X14'], ['모두 짝수예요', 'X14'], ['짝수와 홀수가 섞여 있어요', 'X14']],
+        [ev === 0 ? `왼쪽 수와 위쪽 수가 모두 홀수예요 — ${R.join(', ')}${GWA(R[R.length - 1])} ${C.join(', ')}.` : ev === all.length ? `왼쪽 수 ${R.join(', ')}${IGA(R[R.length - 1])} 모두 짝수예요.` : `왼쪽 수와 위쪽 수에 짝수와 홀수가 섞여 있어요.`,
+         ev === 0 ? '홀수끼리 곱하면 언제나 홀수가 돼요.' : ev === all.length ? '짝수에 어떤 수를 곱해도 짝수가 돼요.' : '짝수가 하나라도 곱해지면 짝수, 홀수끼리 곱하면 홀수예요.',
+         `그래서 ${ans}.`]);
+    }
+    if (ask === 'calr'){
+      const f2 = form || 'q', mon = FX.mon || pick([3, 5, 7, 8, 10, 12, 4, 6, 9, 11], r), days = [4, 6, 9, 11].indexOf(mon) >= 0 ? 30 : 31, st = FX.start !== undefined ? FX.start : rint(0, 6, r);
+      const pos = dd => [Math.floor((st + dd - 1) / 7), (st + dd - 1) % 7];
+      if (f2 === 'wk'){ const d0 = FX.d !== undefined ? FX.d : rint(1, days - 21, r); v.asset = {type:'cal', mon, start:st, days, hi:[d0]};
+        const L3 = (x, s) => `${x}일, ${x + s}일, ${x + 2 * s}일`, ans = L3(d0, 7);
+        v.stem = '동그라미 친 날과 같은 요일인 날짜를 차례로 쓴 것은 어느 것인가요?';
+        return fin(ans, [[L3(d0, 6), 'X16'], [L3(d0, 8), 'X16'], [L3(d0, 1), 'X16'], [L3(d0, 5), 'X16']],
+          [`달력의 한 줄은 일요일부터 토요일까지 7일이에요.`, `그래서 같은 요일은 바로 아래 칸 — 7일마다 돌아와요.`, `${d0}일과 같은 요일은 ${ans}이에요.`]); }
+      if (f2 === 'step'){ const dir = FX.dir || pick(['↓', '↘', '↙', '→'], r), dl = {'↓':7, '↘':8, '↙':6, '→':1}[dir];
+        let d0 = 1, ok = false; for (let g = 0; g < 80 && !ok; g++){ d0 = FX.d !== undefined ? FX.d : rint(1, days, r); const [rr, cc] = pos(d0);
+          ok = d0 + 2 * dl <= days && (dir === '→' ? cc <= 4 : dir === '↘' ? cc <= 4 : dir === '↙' ? cc >= 2 : true) && rr >= 0; if (FX.d !== undefined) break; }
+        const hi = [d0, d0 + dl, d0 + 2 * dl]; v.asset = {type:'cal', mon, start:st, days, hi};
+        const T = x => `${x}씩 커져요`, ans = T(dl);
+        v.stem = `동그라미 친 날짜는 ${dir} 방향으로 놓여 있어요. 날짜는 얼마씩 커지나요?`;
+        return fin(ans, [[dl !== 1 ? T(1) : T(7), 'X16'], [dl !== 7 ? T(7) : T(8), 'X16'], [dl !== 8 ? T(8) : T(6), 'X16'], [dl !== 6 ? T(6) : T(5), 'X16']],
+          [`동그라미 친 날짜를 차례로 읽으면 ${hi.join('일, ')}일이에요.`, {'↓':'한 줄이 7일이라 바로 아래 칸은 7 커요.', '↘':'아래로 7, 오른쪽으로 1 — 모두 8 커요.', '↙':'아래로 7 커지고 왼쪽으로 1 작아져서 6 커요.', '→':'오른쪽 칸은 다음 날이라 1 커요.'}[dir], `그래서 ${dir} 방향으로 ${ans}.`]); }
+      let d0, base, dir, dl; for (let g = 0; g < 80; g++){ dir = FX.dir || pick(['↓', '↘', '↙'], r); dl = {'↓':7, '↘':8, '↙':6}[dir]; d0 = FX.d !== undefined ? FX.d : rint(9, days, r); base = d0 - dl; const [, cc] = pos(d0);
+        if (base >= 1 && (dir === '↓' || (dir === '↘' && cc >= 1) || (dir === '↙' && cc <= 5))) break; }
+      v.asset = {type:'cal', mon, start:st, days, q:d0, hi:[base]};
+      v.stem = `동그라미 친 ${base}일에서 ${dir} 방향으로 한 칸 간 날짜가 ?로 가려져 있어요. ?는 며칠인가요?` + SA;
+      return fin(d0, [[base + 1, 'X16'], [base + (dl === 7 ? 8 : 7), 'X16'], [base + (dl === 6 ? 8 : 6), 'X16'], [d0 + 1, 'X16']],
+        [`달력은 → 방향으로 1씩, ↓ 방향으로 7씩 커져요.`, {'↓':'바로 아래 칸이라 7 커요.', '↘':'아래로 7, 오른쪽으로 1 — 8 커요.', '↙':'아래로 7 커지고 왼쪽으로 1 작아져 6 커요.'}[dir], `${base} + ${dl} = ${d0} — ?는 ${d0}일이에요.`], '일');
+    }
+    if (ask === 'grid'){
+      const kind = FX.kind || G.kind || pick(['lift', 'seat', 'shoe'], r);
+      let Rn, Cn, val, top = null, name, rule1;
+      if (kind === 'lift'){ Cn = 3; Rn = FX.R || 4; const b = FX.b || pick([0, 0, 3], r); val = (i, j) => b + (Rn - 1 - i) * Cn + j + 1; name = '승강기 단추'; rule1 = `→ 방향으로 1씩 커지고 ↓ 방향으로 ${Cn}씩 작아져요`; }
+      else if (kind === 'seat'){ Cn = FX.C || pick([4, 5, 6], r); Rn = FX.R || 5; val = (i, j) => i * Cn + j + 1; top = '▲ 무대'; name = '의자 번호'; rule1 = `한 줄에 ${Cn}자리라 → 방향으로 1씩, ↓ 방향으로 ${Cn}씩 커져요`; }
+      else { Rn = FX.R || pick([3, 4], r); Cn = FX.C || 5; val = (i, j) => j * Rn + i + 1; name = '신발장 번호'; rule1 = `한 칸에 ${Rn}개씩 위에서 아래로 붙여서 ↓ 방향으로 1씩, → 방향으로 ${Rn}씩 커져요`; }
+      const qi = FX.qi !== undefined ? FX.qi : rint(kind === 'lift' ? 0 : 2, Rn - 1, r), qj = FX.qj !== undefined ? FX.qj : rint(kind === 'shoe' ? 2 : 1, Cn - 1, r);
+      const show = (i, j) => kind === 'lift' ? !((i === qi && j === qj) || (FX.hide || []).some(h => h[0] === i && h[1] === j)) : (kind === 'seat' ? i < 2 || j === 0 : j < 2 || i === 0);
+      const rows = []; for (let i = 0; i < Rn; i++){ const rw = []; for (let j = 0; j < Cn; j++) rw.push(i === qi && j === qj ? null : show(i, j) ? val(i, j) : null); rows.push(rw); }
+      if (kind === 'lift'){ const hide = FX.hide || [[(qi + 1) % Rn, (qj + 1) % Cn]]; hide.forEach(([i, j]) => { if (!(i === qi && j === qj)) rows[i][j] = null; }); }
+      v.asset = Object.assign({type:'numgrid', rows, q:[qi, qj], name}, top ? {top} : {});
+      const ans = val(qi, qj), rc = kind === 'lift' ? -Cn : kind === 'seat' ? Cn : 1, cc = kind === 'shoe' ? Rn : 1;
+      v.stem = `${name}${IGA(name)} 규칙에 따라 붙어 있어요. ?에 알맞은 수는 얼마인가요?` + SA;
+      return fin(ans, [[kind === 'seat' ? ans - Cn + Rn : kind === 'shoe' ? qi * Cn + qj + 1 : ans + 2 * Cn, 'X17'], [ans - rc, 'X17'], [ans + 1, 'X17'], [ans - 1, 'X17'], [ans + 2, 'X17']],
+        [`${name}${EUN(name)} ${rule1}.`, `?는 ${KR_ORD[qi + 1]} 줄, 왼쪽에서 ${KR_ORD[qj + 1]} 자리예요.`, `규칙대로 세면 ?는 ${NY(ans)}.`]);
+    }
+  }
   /* v3.2 — 표와 그래프 (2학년 2학기 5단원): 갈래 tg {ask, topics?, src:'table'|'graph'|'cards', k?, lo?, hi?, mark?, dir?}
      ask count(한 칸 읽기) · total(합계) · blank(빈칸 — 합계에서) · tally(／ 세기) · most · least · diff(차이) · sum2(두 칸 합)
          · rows(그래프 칸 수) · gblank(그래프 완성 — 몇 개) · wrong(표와 다르게 옮긴 곳) · bad(잘못 그린 까닭) · more(「n보다 많은」 몇 가지)
@@ -5113,6 +5430,11 @@ function paperAsset(a){
     case 'tbar': return `<div class="pcmpw">${tbarSVG(a)}</div>`;
     case 'dbar': return dbarHTML(a, true);
     case 'cal': return `<div class="pcmpw">${calSVG(a)}</div>`;
+    case 'ptile': return `<div class="pcmpw">${ptileSVG(a, true)}</div>`;
+    case 'spin': return `<div class="pcmpw">${spinSVG(a)}</div>`;
+    case 'stack': return stackHTML(a, true);
+    case 'optab': return optabHTML(a, true);
+    case 'numgrid': return numgridHTML(a, true);
     case 'figs': return figsHTML(a, true);
     case 'tiles': return `<div class="pcmpw">${tilesSVG(a)}</div>`;
     case 'cubes': return cubesHTML(a, true);

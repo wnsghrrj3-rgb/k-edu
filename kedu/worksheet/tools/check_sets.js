@@ -145,7 +145,13 @@ const ASSETS = {
   /* v3.2 — 2학년 2학기 「표와 그래프」: 조사 표 · ◯×／ 그래프 · 낱장 자료 */
   ftable:         ['head', 'cols', 'counts'],
   pgraph:         ['head', 'cols', 'counts'],
-  cards:          ['items']
+  cards:          ['items'],
+  /* v3.3 — 2학년 2학기 「규칙 찾기」: 무늬 줄 · 돌아가는 판 · 쌓은 모양 단계 · 덧셈표·곱셈표 · 생활 속 수 배열 */
+  ptile:          ['rows'],
+  spin:           ['n', 'boards'],
+  stack:          ['stages'],
+  optab:          ['op', 'rows', 'cols'],
+  numgrid:        ['rows']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -175,6 +181,7 @@ function checkAsset(where, a) {
   if (!ASSETS[a.type]) return bad(where, '모르는 에셋 종류 ' + a.type + ' (play.html drawAsset 에 없다)');
   for (const f of ASSETS[a.type]) if (a[f] === undefined || a[f] === null) bad(where, `에셋 ${a.type} 에 ${f} 없음`);
   if (a.type === 'ftable' || a.type === 'pgraph' || a.type === 'cards') checkTgAsset(where, a);
+  if (['ptile', 'spin', 'stack', 'optab', 'numgrid', 'cal'].indexOf(a.type) >= 0) checkKrAsset(where, a);
   if (a.type === 'picto_table' || a.type === 'compare_groups') {
     if (!Array.isArray(a.rows) || !a.rows.length) bad(where, `${a.type} rows 비었음`);
     else a.rows.forEach((rw, i) => { if (rw.n === undefined || !rw.item) bad(where, `${a.type} rows[${i}] item/n 없음`); });
@@ -1429,6 +1436,116 @@ function checkTm(where, q) {
   if (['elapsed', 'h60'].indexOf(ask) >= 0 && !sa) { const cv = TMdur(cor); if (cv !== null) wr.forEach(w => { if (TMdur(w) === cv) bad(where, `tm ${ask} 오답 「${w}」 이 정답과 같은 시간`); }); }
 }
 /* v2.9 — 곱셈구구: 곱셈표·발문이 말하는 답을 엔진과 따로 다시 셈한다 */
+/* v3.3 — 규칙 찾기: 그림(ptile·spin·stack·optab·numgrid·cal)에서 규칙을 따로 다시 찾아 발문이 묻는 답을 셈한다 */
+const KRC_COL = ['빨강', '주황', '노랑', '연두', '초록', '하늘', '파랑', '보라', '분홍', '회색'];
+const KRC_CN = {'빨강':'빨간색', '주황':'주황색', '노랑':'노란색', '연두':'연두색', '초록':'초록색', '하늘':'하늘색', '파랑':'파란색', '보라':'보라색', '분홍':'분홍색', '회색':'회색'};
+const KRC_SH = ['원', '삼각형', '사각형', '별', '마름모', '칸'];
+const KRC_ORD = ['', '첫째', '둘째', '셋째', '넷째', '다섯째', '여섯째', '일곱째', '여덟째', '아홉째', '열째'];
+function krcItem(it){ if (it === null) return null; if (typeof it === 'number') return {n:it}; const p = String(it).split(':'); return {c:p[0], s:p[1]}; }
+function krcName(it){ const x = krcItem(it); if (!x) return '?'; if (x.n !== undefined) return String(x.n); return x.s === '칸' ? KRC_CN[x.c] : KRC_CN[x.c] + ' ' + x.s; }
+function krcPer(arr){ for (let p = 1; p * 2 <= arr.length; p++){ let ok = true;
+    for (let i = 0; i < arr.length && ok; i++) if (arr[i] !== null) for (let j = i + p; j < arr.length; j += p) if (arr[j] !== null && String(arr[j]) !== String(arr[i])){ ok = false; break; }
+    if (ok) return p; } return 0; }
+function krcFill(arr, i, p){ for (let j = i % p; j < arr.length; j += p) if (arr[j] !== null) return arr[j]; return undefined; }
+function checkKrAsset(where, a){
+  const B = m => bad(where, a.type + ' ' + m);
+  if (a.type === 'ptile'){ if (!Array.isArray(a.rows) || !a.rows.length || a.rows.length > 3) return B('rows 는 1~3줄'); let nul = 0;
+    a.rows.forEach(row => { if (!Array.isArray(row) || row.length < 3 || row.length > 16) B('한 줄은 3~16칸');
+      (row || []).forEach(it => { if (it === null){ nul++; return; } if (typeof it === 'number'){ if (!(Number.isInteger(it) && it >= 0 && it <= 99)) B('수 칸은 0~99'); return; }
+        const x = krcItem(it); if (KRC_COL.indexOf(x.c) < 0 || KRC_SH.indexOf(x.s) < 0) B('모르는 칸 ' + it); }); });
+    if (nul > 1) B('? 칸이 둘 이상'); if (a.grp !== undefined && !(a.grp >= 2 && a.grp <= a.rows[0].length)) B('grp 범위'); }
+  if (a.type === 'spin'){ const n = a.n; if (!(Number.isInteger(n) && n >= 3 && n <= 8)) return B('n 은 3~8'); if (!Array.isArray(a.boards) || a.boards.length < 2 || a.boards.length > 6) return B('판은 2~6개');
+    if (a.boards.filter(b => b === null).length > 1) B('? 판이 둘 이상'); a.boards.forEach(b => { if (b !== null && [].concat(b).some(x => !(Number.isInteger(x) && x >= 0 && x < n))) B('칸 번호 범위'); }); }
+  if (a.type === 'stack'){ if (!Array.isArray(a.stages) || a.stages.length < 2 || a.stages.length > 5) return B('단계는 2~5개'); if (a.stages.filter(s => s === null).length > 1) B('? 단계가 둘 이상');
+    a.stages.forEach((cells, k) => { if (cells === null) return; if (!Array.isArray(cells) || !cells.length) return B(`${k + 1}단계 비었음`);
+      const S = new Set(cells.map(c => c.slice(0, 3).join(','))); if (S.size !== cells.length) B(`${k + 1}단계 같은 자리에 둘`);
+      cells.forEach(c => { if (c.slice(0, 3).some(v => !Number.isInteger(v) || v < 0 || v > 7)) B('좌표 0~7'); if (c[3] !== 0 && ['r', 'y', 'b', 'g'].indexOf(c[3]) < 0) B('색 r·y·b·g·0');
+        if (c[2] > 0 && !S.has([c[0], c[1], c[2] - 1].join(','))) B('공중에 뜬 쌓기나무'); if (c[1] !== 0) B('쌓은 모양은 한 줄(y=0) — 뒤에 가려지는 것이 없게'); }); }); }
+  if (a.type === 'optab'){ if (a.op !== '+' && a.op !== '×') B("op 는 '+'|'×'"); const R = a.rows || [], C = a.cols || [];
+    if (R.length < 2 || R.length > 9 || C.length < 2 || C.length > 9) B('줄·칸 2~9'); if ([...R, ...C].some(x => !(Number.isInteger(x) && x >= 0 && x <= 20))) B('머리 수 0~20');
+    const inr = p => Array.isArray(p) && p[0] >= 0 && p[0] < R.length && p[1] >= 0 && p[1] < C.length;
+    if (a.q && !inr(a.q)) B('q 범위'); (a.blank || []).forEach(p => { if (!inr(p)) B('blank 범위'); if (a.q && p[0] === a.q[0] && p[1] === a.q[1]) B('q 가 blank 에도'); }); (a.hi || []).forEach(p => { if (!inr(p)) B('hi 범위'); });
+    if (a.hrow !== undefined && !(a.hrow >= 0 && a.hrow < R.length)) B('hrow 범위'); if (a.hcol !== undefined && !(a.hcol >= 0 && a.hcol < C.length)) B('hcol 범위'); }
+  if (a.type === 'numgrid'){ const R = a.rows || []; if (R.length < 2 || R.length > 8) return B('줄 2~8'); const w = R[0].length; if (R.some(r => r.length !== w) || w < 2 || w > 8) B('칸 수가 고르지 않다');
+    if (a.q && !(a.q[0] < R.length && a.q[1] < w && R[a.q[0]][a.q[1]] === null)) B('q 칸은 비어 있어야(null)'); }
+  if (a.type === 'cal' && a.q !== undefined && !(a.q >= 1 && a.q <= a.days)) B('q 날짜 범위');
+}
+function checkKr(where, q){
+  const K = (q.variant_rule || {}).kr; if (!K) return;
+  const ask = K.ask, a = q.asset && typeof q.asset === 'object' ? q.asset : null, st = String(q.stem || '').replace(/^이번에는 다른 보기예요\. /, '');
+  const strip = x => String(x).replace(/\s*(칸|가지|개|일)$/, '');
+  const cor = q.kind === 'sa' ? String((q.answer || [])[0]) : String(((q.options || []).find(o => o.correct) || {}).t);
+  const wr = (q.options || []).filter(o => !o.correct).map(o => String(o.t));
+  const B = m => bad(where, 'kr ' + ask + ' ' + m); let want = null, m;
+  const T = x => x === 0 ? '모두 같아요' : x > 0 ? `${x}씩 커져요` : `${-x}씩 작아져요`;
+  if (ask === 'rnext'){ if (!a || a.type !== 'ptile') return B('그림이 ptile 아님'); const row = a.rows[0], qi = row.indexOf(null); if (qi < 0) return B('? 칸 없음');
+    const its = row.map(krcItem), shapes = its.map(x => x && x.s !== undefined ? x.s : x && x.n !== undefined ? '#' : null), cols = its.map(x => x && x.c !== undefined ? x.c : x && x.n !== undefined ? '#' : null);
+    const combo = new Set(shapes.filter(Boolean)).size > 1 && new Set(cols.filter(Boolean)).size > 1;
+    if (combo){ const pS = krcPer(shapes), pC = krcPer(cols); if (!pS || !pC) return B('모양·색 규칙이 두 번 넘게 보이지 않는다');
+      const s = krcFill(shapes, qi, pS), c = krcFill(cols, qi, pC); if (s === undefined || c === undefined) return B('? 자리의 모양·색이 정해지지 않는다'); want = krcName(c + ':' + s);
+      if (!/모양과 색이 함께/.test(st)) B('모양과 색이 함께 바뀌는데 발문이 말하지 않는다'); }
+    else { const p = krcPer(row); if (!p) return B('되풀이가 두 번 넘게 보이지 않는다'); const x = krcFill(row, qi, p); if (x === undefined) return B('? 자리가 정해지지 않는다'); want = krcName(x); }
+    if (!/\?에 알맞은/.test(st)) B('발문 꼴: ' + st); }
+  else if (ask === 'runit'){ if (!a || a.type !== 'ptile') return B('그림이 ptile 아님'); const row = a.rows[0]; if (row.indexOf(null) >= 0) return B('runit 에 ? 칸');
+    const p = krcPer(row); if (!p) return B('되풀이가 두 번 넘게 보이지 않는다');
+    if (/몇 칸인가요/.test(st)) want = p; else if ((m = st.match(/몇 가지 (색|모양|수)/))) { want = new Set(row.slice(0, p).map(String)).size; if (m[1] === '색' && new Set(row.map(x => krcItem(x).s)).size > 1) B('「몇 가지 색」인데 모양도 바뀐다'); }
+    else return B('발문 꼴: ' + st); }
+  else if (ask === 'rnum'){ if (!a || a.type !== 'ptile' || a.rows.length !== 2) return B('두 줄 ptile 아님'); const mp = {}; const re = /(원|삼각형|사각형|별|마름모)[은는] (\d)/g; while ((m = re.exec(st))) mp[m[1]] = +m[2];
+    const r0 = a.rows[0], r1 = a.rows[1]; if (r0.length !== r1.length) return B('두 줄 길이 다름'); const qi = r1.indexOf(null); if (qi < 0) return B('? 칸 없음');
+    r0.forEach((it, i) => { const s = krcItem(it).s; if (mp[s] === undefined) B('발문에 없는 모양 ' + s); else if (i !== qi && r1[i] !== mp[s]) B(`${i + 1}번째 수 ${r1[i]} 가 바꾸는 약속(${mp[s]})과 다르다`); });
+    if (new Set(Object.values(mp)).size !== Object.keys(mp).length) B('다른 모양에 같은 수'); want = mp[krcItem(r0[qi]).s]; }
+  else if (ask === 'spin'){ if (!a || a.type !== 'spin') return B('그림이 spin 아님'); const bs = a.boards, n = a.n; let d = null;
+    for (let i = 1; i < bs.length; i++) if (bs[i] !== null && bs[i - 1] !== null){ const x = ((bs[i] - bs[i - 1]) % n + n) % n; if (d === null) d = x; else if (d !== x) return B('판마다 도는 칸 수가 다르다'); }
+    if (!d || d * 2 === n) return B('돌지 않거나 방향을 알 수 없다(반 바퀴)'); const cw = d * 2 < n;
+    if (/어디인가요/.test(st)){ if (n !== 4 || bs[bs.length - 1] !== null) return B('next 는 4칸 판·마지막이 ?'); want = ['위', '오른쪽', '아래', '왼쪽'][(bs[bs.length - 2] + d) % 4]; }
+    else if (/어느 쪽으로/.test(st)) want = cw ? '시계 방향' : '시계 반대 방향';
+    else if (/몇 칸씩/.test(st)) want = cw ? d : n - d; else return B('발문 꼴: ' + st); }
+  else if (ask === 'grow'){ if (!a || a.type !== 'ptile' || !a.runs) return B('runs ptile 아님'); const row = a.rows[0].slice(); const tail = row[row.length - 1] === null; if (tail) row.pop(); if (row.indexOf(null) >= 0) return B('? 가 끝이 아닌 곳에');
+    const runs = []; row.forEach(it => { if (runs.length && runs[runs.length - 1][0] === it) runs[runs.length - 1][1]++; else runs.push([it, 1]); });
+    const A = runs[0][0], Bi = runs[1] && runs[1][0]; if (runs.some((x, i) => x[0] !== (i % 2 ? Bi : A))) return B('두 가지가 번갈아 나오지 않는다');
+    const ca = runs.filter((_, i) => i % 2 === 0).map(x => x[1]); const d = ca[1] - ca[0]; if (ca.length < 3 || ca.some((x, i) => i && x - ca[i - 1] !== d) || d <= 0) return B('묶음이 고르게 늘지 않는다');
+    const cn = KRC_CN[krcItem(A).c]; if (st.indexOf(cn + ' 묶음') < 0) B('발문의 색이 늘어나는 묶음과 다르다');
+    if (/\?에 올/.test(st)){ if (!tail || runs.length % 2) return B('? 자리가 다음 ' + cn + ' 묶음이 아니다'); want = ca[ca.length - 1] + d; }
+    else if ((m = st.match(/(\S+째) 묶음까지/))){ const k = KRC_ORD.indexOf(m[1]); if (k < 1) return B('서수'); want = 0; for (let i = 0; i < k; i++) want += ca[0] + i * d; }
+    else return B('발문 꼴: ' + st); }
+  else if (ask === 'stk'){ if (!a || a.type !== 'stack') return B('그림이 stack 아님'); const S = a.stages, c = S.filter(x => x !== null).map(x => x.length); if (c.length < 3) return B('보이는 단계가 셋 미만');
+    const d1 = c[1] - c[0], d2 = c[2] - c[1], e = d2 - d1; if (e !== 0 && e !== 1) return B('늘어나는 규칙을 하나로 정할 수 없다');
+    const f = t => { let x = c[0], d = d1; for (let k = 1; k < t; k++){ x += d; if (k >= 1) d += e; } return x; };
+    if (f(2) !== c[1] || f(3) !== c[2]) return B('규칙 재계산 어긋남');
+    if (/\?에 쌓을/.test(st)){ if (S[S.length - 1] !== null) return B('마지막이 ? 가 아니다'); want = f(S.length); }
+    else if ((m = st.match(/(\S+째) 모양/))){ const k = KRC_ORD.indexOf(m[1]); if (k < 4) return B('서수가 보이는 단계 안'); want = f(k); }
+    else if (/몇 개씩 늘어나/.test(st)){ if (e) return B('늘어나는 수가 달라지는데 몇 개씩을 묻는다'); want = d1; } else return B('발문 꼴: ' + st); }
+  else if (ask === 'addt' || ask === 'mult'){ if (!a || a.type !== 'optab') return B('그림이 optab 아님'); const op = a.op, val = (i, j) => op === '×' ? a.rows[i] * a.cols[j] : a.rows[i] + a.cols[j];
+    if ((op === '×') !== /곱셈표/.test(st)) B('표 이름과 셈이 다르다');
+    if (/\?에 알맞은/.test(st)){ if (!a.q) return B('? 칸 없음'); want = val(a.q[0], a.q[1]); }
+    else if ((m = st.match(/색칠한 칸의 수는 (→|↓|↘|↙) 방향/))){ const vec = {'→':[0, 1], '↓':[1, 0], '↘':[1, 1], '↙':[1, -1]}[m[1]], H = a.hi || []; if (H.length < 3) return B('색칠한 칸 셋 미만');
+      for (let k = 1; k < H.length; k++) if (H[k][0] - H[k - 1][0] !== vec[0] || H[k][1] - H[k - 1][1] !== vec[1]) return B('색칠한 칸이 말한 방향으로 놓이지 않았다');
+      const vs = H.map(([i, j]) => val(i, j)), dl = vs[1] - vs[0]; if (vs.some((x, k) => k && x - vs[k - 1] !== dl)) return B('색칠한 칸 수가 고르게 변하지 않는다'); want = T(dl); }
+    else if ((m = st.match(/색칠한 줄의 수는 (→|↓) 방향/))){ let vs; if (m[1] === '→'){ if (a.hrow === undefined) return B('→ 인데 가로줄 색칠 없음'); vs = a.cols.map((_, j) => val(a.hrow, j)); }
+      else { if (a.hcol === undefined) return B('↓ 인데 세로줄 색칠 없음'); vs = a.rows.map((_, i) => val(i, a.hcol)); }
+      const dl = vs[1] - vs[0]; if (vs.some((x, k) => k && x - vs[k - 1] !== dl)) return B('색칠한 줄 수가 고르게 변하지 않는다'); want = T(dl); }
+    else if (/어떤 수인가요/.test(st)){ const all = []; a.rows.forEach((_, i) => a.cols.forEach((_, j) => all.push(val(i, j)))); const ev = all.filter(x => x % 2 === 0).length;
+      want = ev === 0 ? '모두 홀수예요' : ev === all.length ? '모두 짝수예요' : '짝수와 홀수가 섞여 있어요'; }
+    else return B('발문 꼴: ' + st); }
+  else if (ask === 'calr'){ if (!a || a.type !== 'cal') return B('그림이 cal 아님'); const pos = d => [Math.floor((a.start + d - 1) / 7), (a.start + d - 1) % 7];
+    const VEC = {'↓':[1, 0], '↘':[1, 1], '↙':[1, -1], '→':[0, 1]};
+    if ((m = st.match(/동그라미 친 (\d+)일에서 (↓|↘|↙) 방향으로 한 칸/))){ const b = +m[1], v = VEC[m[2]]; if ((a.hi || [])[0] !== b) B('동그라미 날짜가 발문과 다르다'); if (!a.q) return B('? 날짜 없음');
+      const p0 = pos(b), p1 = pos(a.q); if (p1[0] - p0[0] !== v[0] || p1[1] - p0[1] !== v[1]) return B('? 가 말한 방향 한 칸이 아니다'); want = a.q; }
+    else if ((m = st.match(/동그라미 친 날짜는 (↓|↘|↙|→) 방향으로/))){ const H = a.hi || [], v = VEC[m[1]]; if (H.length < 3) return B('동그라미 셋 미만');
+      for (let k = 1; k < H.length; k++){ const p0 = pos(H[k - 1]), p1 = pos(H[k]); if (p1[0] - p0[0] !== v[0] || p1[1] - p0[1] !== v[1]) return B('동그라미가 말한 방향으로 놓이지 않았다'); }
+      if (H.some(x => x < 1 || x > a.days)) B('달력 밖 날짜'); want = `${H[1] - H[0]}씩 커져요`; }
+    else if (/같은 요일인 날짜/.test(st)){ const d0 = (a.hi || [])[0]; const L = t => (String(t).match(/\d+/g) || []).map(Number);
+      const c = L(cor); if (c[0] !== d0 || c.some(x => x > a.days || pos(x)[1] !== pos(d0)[1]) || c.some((x, k) => k && x - c[k - 1] !== 7)) B('같은 요일 정답이 어긋난다: ' + cor);
+      wr.forEach(w => { const x = L(w); if (x.every(y => pos(y)[1] === pos(d0)[1])) B('오답도 같은 요일: ' + w); }); return; }
+    else return B('발문 꼴: ' + st); }
+  else if (ask === 'grid'){ if (!a || a.type !== 'numgrid' || !a.q) return B('? 있는 numgrid 아님'); const K2 = []; a.rows.forEach((row, i) => row.forEach((x, j) => { if (x !== null) K2.push([i, j, x]); }));
+    let di = null, dj = null; for (const p of K2) for (const o of K2){ if (p[1] === o[1] && p[0] !== o[0] && di === null) di = (o[2] - p[2]) / (o[0] - p[0]); if (p[0] === o[0] && p[1] !== o[1] && dj === null) dj = (o[2] - p[2]) / (o[1] - p[1]); }
+    if (di === null || dj === null) return B('규칙을 정할 만큼 수가 보이지 않는다'); const v0 = K2[0][2] - K2[0][0] * di - K2[0][1] * dj;
+    if (K2.some(([i, j, x]) => v0 + i * di + j * dj !== x)) return B('보이는 수가 한 규칙으로 늘어서지 않는다'); want = v0 + a.q[0] * di + a.q[1] * dj; }
+  else return B('ask 를 모른다');
+  if (String(strip(cor)) !== String(want)) bad(where, `kr ${ask} 정답 「${cor}」 ≠ 다시 찾은 ${want}`);
+  if (wr.some(w => strip(w) === String(want))) bad(where, `kr ${ask} 오답에 정답 ${want} 이 섞였다`);
+}
 function checkGugu(where, q) {
   const G = (q.variant_rule || {}).gugu; if (!G) return;
   const ask = G.ask || 'cell', a = q.asset && typeof q.asset === 'object' ? q.asset : null, st = String(q.stem || '').replace(/^이번에는 다른 보기예요\. /, '');
@@ -1681,6 +1798,7 @@ function checkQ(where, q, opt) {
   checkCls(where, q);
   checkMul(where, q);
   checkGugu(where, q);
+  checkKr(where, q);
   checkMcm(where, q);
   checkTm(where, q);
   checkTg(where, q);
