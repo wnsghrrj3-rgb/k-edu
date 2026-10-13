@@ -742,7 +742,7 @@ async function loadStudent(studentId, classCodeId){
 }
 
 // =============================================
-// 케이히스토리(케이월드) — 「n대까지 · 끝 갈림」 (SQL #38 v2: report_kworld_jokbo · report_kworld · kworld_jokbo)
+// 케이히스토리(케이월드) — 「n대까지 · 끝 갈림」 (SQL #38 v3: report_kworld_jokbo · report_kworld · kworld_jokbo)
 //   시대 순서·이름은 /kworld/eras/chain.json 이 정본 — 여기도 그 파일만 읽는다(시대 이름을 여기 적지 않는다)
 // =============================================
 let _kchain = null;
@@ -755,14 +755,17 @@ async function loadKworld(ids, full){
   const out = { jokbo: [], now: [], rows: [] };
   try {
     const q = [ db.from('report_kworld_jokbo').select('*').in('student_id', ids).then(r => r.data || []).catch(() => []),
-                db.from('report_kworld').select('student_id,era,status_name,nation_name,craft,heart,grain,rank,sit_n,hurt_n,ended,updated_at').in('student_id', ids).then(r => r.data || []).catch(() => []) ];
-    if(full) q.push(db.from('kworld_jokbo').select('era,title,status_name,nation_name,record,ended_at').in('student_id', ids).order('ended_at', { ascending: false }).limit(200).then(r => r.data || []).catch(() => []));
+                db.from('report_kworld').select('student_id,era,status,status_name,nation_name,craft,heart,grain,rank,sit_n,hurt_n,ended,why_n,why_ok_n,luck_n,luck_hold_n,hist_results,updated_at').in('student_id', ids).then(r => r.data || []).catch(() => []) ];
+    if(full) q.push(db.from('kworld_jokbo').select('era,title,status,status_name,nation_name,record,ended_at').in('student_id', ids).order('ended_at', { ascending: false }).limit(200).then(r => r.data || []).catch(() => []));
     const r = await Promise.all(q);
-    out.jokbo = r[0]; out.now = r[1].filter(x => !x.ended); out.rows = r[2] || [];
+    out.jokbo = r[0]; out.all = r[1]; out.now = r[1].filter(x => !x.ended); out.rows = r[2] || [];
     if(out.jokbo.length || out.now.length) await kchain();
+    if(full && (out.rows.length || out.all.length)) await kdogam();
   } catch(e){}
   return out;
 }
+let _kdogam = null;   // 신분 도감(열한 시대 신분 카드) — 「살아 본 집 n / 전체」 셈만, 카드 내용은 /kworld/dogam.html
+async function kdogam(){ if(_kdogam) return _kdogam; try { _kdogam = await fetch('/kworld/eras/dogam.json').then(r => r.json()); } catch(e){ _kdogam = { eras: [] }; } return _kdogam; }
 const kEra = (era) => { const e = (_kchain && _kchain.eras || []).find(x => x.era === era); return e ? e.short : era; };
 const kIdx = (era) => { const i = (_kchain && _kchain.eras || []).findIndex(x => x.era === era); return i < 0 ? 99 : i; };
 const kVals = (v) => { const o = ['✋' + (v.craft ?? 0), '🤝' + (v.heart ?? 0)]; if(v.grain) o.push('🌾' + v.grain); if(v.rank) o.push('🎖' + v.rank); return o.join(' '); };
@@ -778,14 +781,15 @@ function kworldClassHtml(C){
       <td class="num">${j ? `<b>${j.era_n}</b><span class="mini">/${total}대</span>` : '<span class="mini">—</span>'}</td>
       <td>${n ? `${esc(kEra(n.era))}${n.status_name ? ' · 🏠 ' + esc(n.status_name) : ''}${n.nation_name ? ' · 🏳️ ' + esc(n.nation_name) : ''} <span class="mini">${kVals(n)} · 상황 ${n.sit_n||0}</span>` : '<span class="mini">—</span>'}</td>
       <td>${j ? `${esc(kEra(j.last_era))} — ${esc(j.last_title||'')}${j.last_status_name ? ' <span class="mini">🏠 ' + esc(j.last_status_name) + '</span>' : ''}` : '<span class="mini">아직 한 시대도 끝내지 않음</span>'}</td>
+      <td class="num">${(() => { const a = (K.all || []).filter(x => x.student_id === s.student_id); const n = a.reduce((p, x) => p + (x.why_n || 0), 0), k = a.reduce((p, x) => p + (x.why_ok_n || 0), 0); return n ? `${k}<span class="mini">/${n}</span>` : '<span class="mini">—</span>'; })()}</td>
       <td class="num">${j ? j.run_n : 0}</td></tr>`; }).join('');
   const lived = C.list.filter(s => jb[s.student_id] || now[s.student_id]).length;
   return `<div class="sec">
     <div class="sec-h">🏛 케이히스토리 — 우리 집 족보</div>
     <div class="sec-sub">역사 인생게임에서 몇 대까지 살았는지와 마지막 끝 갈림. 점수가 아니라 <b>선택의 결과</b>입니다 — 끝 갈림이 다른 것은 틀린 게 아니라 다르게 산 것입니다. 줄을 누르면 학생 족보로. 누적 기준, 참여 ${lived}명.</div>
-    <table class="r-table"><thead><tr><th>학생</th><th class="num">대(代)</th><th>지금 사는 중</th><th>마지막 끝 갈림</th><th class="num">끝낸 판</th></tr></thead>
+    <table class="r-table"><thead><tr><th>학생</th><th class="num">대(代)</th><th>지금 사는 중</th><th>마지막 끝 갈림</th><th class="num">왜 맞힘</th><th class="num">끝낸 판</th></tr></thead>
     <tbody>${rows}</tbody></table>
-    <div class="legend">대 = 끝까지 산 시대 수(지난 판에서 끝낸 시대도 셈) · 끝낸 판 = 끝 카드를 본 횟수(다시 태어난 것 포함) · 서버에 저장되는 건 동의 학생뿐 — 동의 전 학생은 여기 안 보입니다</div>
+    <div class="legend">대 = 끝까지 산 시대 수(지난 판에서 끝낸 시대도 셈) · 왜 맞힘 = 시대 끝 복습 「왜 그랬을까」 3지선다에서 처음에 맞힌 수 / 물음 수(틀린 물음은 학생 카드에 오개념으로 보임) · 끝낸 판 = 끝 카드를 본 횟수(다시 태어난 것 포함) · 서버에 저장되는 건 동의 학생뿐 — 동의 전 학생은 여기 안 보입니다</div>
   </div>`;
 }
 function kworldStudentHtml(K){
@@ -803,6 +807,30 @@ function kworldStudentHtml(K){
     <div class="sec-h">🏛 케이히스토리 — 우리 집 족보 <span class="mini">${eraN}대 / ${total}대 · 끝낸 판 ${K.rows.length}</span></div>
     <div class="sec-sub">시대마다 가장 최근에 끝낸 삶. 끝 갈림은 선택과 쌓인 값(솜씨·인심·곡식·벼슬)으로 정해진 것이고, 맞고 틀림이 없습니다. 상담에선 「왜 그 길을 골랐니」를 물어 주세요.</div>
     <div class="ws-list">${lines}</div>
+  </div>` + kworldWhyHtml(K);
+}
+// 「왜 그랬을까」 오개념 · 운 카드 · 살아 본 집 — 시대별 results(hist.why / hist.luck)와 신분 id 로. 점수 아님: 틀린 물음 = 그 아이가 아직 그렇게 생각하는 자리.
+function kworldWhyHtml(K){
+  const all = K.all || []; if(!all.length && !K.rows.length) return '';
+  const eras = (_kchain && _kchain.eras) || [];
+  const byEra = {}; all.forEach(a => byEra[a.era] = a);
+  const why = [], luck = []; all.forEach(a => (a.hist_results || []).forEach(r => { if(r.concept === 'hist.why') why.push({ era: a.era, ...r }); else if(r.concept === 'hist.luck') luck.push({ era: a.era, ...r }); }));
+  const whyN = why.length, whyOk = why.filter(r => r.ok).length; const wrong = why.filter(r => !r.ok);
+  const luckN = luck.length, luckHold = luck.filter(r => r.ok).length;
+  // 살아 본 집: 족보 줄의 신분 id + 지금 신분 id, 시대별 distinct / 도감 전체 수
+  const lived = {}; K.rows.forEach(r => { if(r.status){ (lived[r.era] ??= new Set()).add(r.status); } }); all.forEach(a => { if(a.status){ (lived[a.era] ??= new Set()).add(a.status); } });
+  const D = (_kdogam && _kdogam.eras) || []; const dTotal = D.reduce((p, e) => p + ((e.statuses || []).length), 0); const livedN = Object.values(lived).reduce((p, s) => p + s.size, 0);
+  const dName = (era, id) => { const e = D.find(x => x.era === era); const s = e && (e.statuses || []).find(x => x.id === id); return s ? s.name : id; };
+  const livedLine = eras.filter(e => lived[e.era]).map(e => `<span class="mini"><b>${esc(e.short)}</b> ${[...lived[e.era]].map(id => esc(dName(e.era, id))).join(', ')}</span>`).join(' · ');
+  const wrongLines = wrong.slice(0, 12).map(r => `<div class="ws-row"><span>${esc(kEra(r.era))} — <b>${esc(r.t || r.id.replace('review:', ''))}</b>${r.pick ? `<br><span class="mini">아이가 고른 답: 「${esc(r.pick)}」</span>` : ''}</span><span class="r mini">오개념</span></div>`).join('');
+  const luckLines = luck.slice(-6).map(r => `<div class="ws-row"><span>${esc(kEra(r.era))} — ${esc(r.t || '')}<br><span class="mini">${esc(r.r || '')}</span></span><span class="r mini">${r.ok ? '버팀' : '못 버팀'}</span></div>`).join('');
+  if(!whyN && !luckN && !livedN) return '';
+  return `<div class="sec">
+    <div class="sec-h">🧭 케이히스토리 — 왜 그랬을까 · 운 · 살아 본 집</div>
+    <div class="sec-sub">시대 끝 복습 「왜 그랬을까」에서 처음에 맞힌 수 <b>${whyOk}/${whyN}</b> · 운 카드 ${luckN}장 중 쌓아 둔 것(곡식·인심·솜씨)으로 버틴 것 <b>${luckHold}</b> · 살아 본 집 <b>${livedN}</b>${dTotal ? ' / ' + dTotal : ''}. 틀린 물음은 벌이 아니라 <b>아이가 아직 그렇게 생각하는 자리</b>입니다 — 그 시대 그 자리로 다시 가 보게 하면 됩니다.</div>
+    ${wrong.length ? `<div class="ws-list"><div class="mini" style="margin:4px 0">처음에 틀린 물음 ${wrong.length}${wrong.length > 12 ? ' (최근 12)' : ''}</div>${wrongLines}</div>` : `<div class="mini">${whyN ? '처음에 틀린 물음이 없습니다.' : '아직 시대 끝 복습을 하지 않았습니다.'}</div>`}
+    ${luckN ? `<div class="ws-list" style="margin-top:8px"><div class="mini" style="margin:4px 0">운 카드(최근 ${Math.min(6, luckN)}) — 「버팀」은 운이 아니라 앞에서 쌓은 것</div>${luckLines}</div>` : ''}
+    ${livedN ? `<div style="margin-top:8px"><div class="mini" style="margin:4px 0">살아 본 집 — 다른 집도 살아 보면 한계와 길이 달라집니다 (<a href="/kworld/dogam.html">도감</a>)</div><div>${livedLine}</div></div>` : ''}
   </div>`;
 }
 

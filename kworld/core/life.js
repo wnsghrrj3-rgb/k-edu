@@ -139,7 +139,9 @@ export class Life {
     const s = { ...card, luck: true, tag: card.tag || '운', button: card.button || '…', ways: [] }; this.opened.add(s.id); g.flags.add('sit:' + s.id + ':open'); let at = this.queue.findIndex((q) => q.kind === 'result'); at = at < 0 ? 0 : at + 1; if (this.queue[at]?.kind === 'then') at++; this.queue.splice(at, 0, { kind: 'sit', s }); this.flush();   // 방금 끝난 상황의 결과 카드 바로 뒤
   }
   /** 운 카드의 결과 = outcomes 중 값 조건에 처음 맞는 것(마지막은 조건 없음) */
-  luckResolve(s) { const c = (s.outcomes || []).find((o) => this.cond(o.if)) || (s.outcomes || []).slice(-1)[0]; if (c) this.finish(s, { id: c.id || 'luck', ...c }); }
+  luckResolve(s) { const outs = s.outcomes || []; const hit = outs.find((o) => this.cond(o.if)); const c = hit || outs.slice(-1)[0]; if (!c) return; const held = !!(hit && hit.if);   // 버팀 = 값 조건이 있는 결과에 맞은 것; 마지막(조건 없음) = 못 버팀
+    if (outs.length > 1) this.g.results = [...(this.g.results || []), { id: 'luck:' + s.id, concept: 'hist.luck', ok: held, t: s.title, r: c.title || '' }];   // 리포트 「운 — 버텼나」(결과가 하나뿐인 선물 카드는 안 셈)
+    this.finish(s, { id: c.id || 'luck', ...c }); }
   /** 카드는 한 번에 하나 — 다른 판이 열려 있으면 기다린다 */
   flush() {
     const g = this.g; if (this.busy || !this.queue.length || g.ui.isOpen?.() || g.story?.cutsceneOn) return;
@@ -188,7 +190,7 @@ export class Life {
   reviewAsk() {
     const g = this.g, rv = this.rv; if (!rv) return; if (rv.i >= rv.qs.length) return this.reviewFinish();
     const s = rv.qs[rv.i], q = s.q; let seed = (this.seed || 1) * 31 + rv.i * 17; const opts = q.a.map((t, k) => ({ t, k })); for (let i = opts.length - 1; i > 0; i--) { seed = (seed * 1103515245 + 12345) % 2147483648; const j = seed % (i + 1); [opts[i], opts[j]] = [opts[j], opts[i]]; }
-    const btns = opts.map((o) => ({ label: o.t, onClick: () => { g.ui.close(); const ok = o.k === 0; rv.results.push({ sit: s.id, ok }); g.results = [...(g.results || []), { id: 'review:' + s.id, concept: 'hist.why', ok }];
+    const btns = opts.map((o) => ({ label: o.t, onClick: () => { g.ui.close(); const ok = o.k === 0; rv.results.push({ sit: s.id, ok }); g.results = [...(g.results || []), { id: 'review:' + s.id, concept: 'hist.why', ok, t: s.title, pick: o.t }];
       if (ok) { g.ui.say('그래 — 네가 겪은 그대로야.', 2600); g.sound?.play?.('good', 0.4); rv.i++; this.reviewAsk(); }
       else { rv.wrong++; g.sound?.play?.('bad', 0.3); g.ui.open(`<div class="chk life bad"><div class="tag">음 — 그건 아니었어</div><h3>${esc(s.title)}</h3><p>${esc(q.revisit || '그 자리로 다시 가 보자.')}</p></div>`, [{ label: '다시 가 보기', primary: true, onClick: () => { g.ui.close(); this.reviewRevisit(s); } }, { label: '여기서 다시 고르기', onClick: () => { g.ui.close(); this.reviewAsk(); } }]); } } }));
     g.ui.open(`<div class="chk life review"><div class="tag">왜 그랬을까 ${rv.i + 1}/${rv.qs.length}</div><h3>${esc(q.q)}</h3><p class="sub">${esc(s.title)}</p></div>`, btns);

@@ -52,12 +52,14 @@ ok(panel && panel.h.includes('운') && L.luckSeen.length === 1 && g.flags.has('l
 const card = L.sit(L.luckSeen[0]); ok(card && panel.h.includes(card.title), '카드 제목이 데이터와 같다');
 const lastOut = card.outcomes.at(-1); pick('…'); await settle(420);
 ok(panel && panel.h.includes(lastOut.title), '값이 없으니 마지막 결과(버티지 못함) ' + panel.h.slice(0, 60)); ok(L.log.at(-1).sit === card.id && L.log.at(-1).choice === lastOut.id, 'log 에 운 카드와 결과');
+const lr = (g.results || []).find((r) => r.id === 'luck:' + card.id); ok(card.outcomes.length > 1 ? (lr && lr.concept === 'hist.luck' && lr.ok === false && lr.t === card.title && lr.r === lastOut.title) : !lr, '리포트용 results 에 운 카드(못 버팀; 결과 하나뿐인 카드는 안 셈) ' + JSON.stringify(lr));
 if (lastOut.then?.some((t) => t.halfFood)) { closeCard(); ok(g.inventory.filter((k) => k === 'berry').length === 2, '먹을 것 절반'); } else closeCard();
 ok(!L.luckSlots.includes(2) || g.flags.has('luck:slot:2'), '같은 자리에 두 번 안 뜬다');
 L.finish(S('fire'), S('fire').choices[0]); closeCard(); ok(L.luckSeen.length === 1, '자리 아닌 must 뒤엔 안 뜸');
 // 값이 있으면 다른 결과
 L.luckSlots = [4]; L.luckSeen = []; L.values.craft = 3; L.values.heart = 4; g.flags.delete('luck:slot:4');
 L.finish(S('hunt'), S('hunt').choices[0]); for (let i = 0; i < 8 && !(panel && panel.h.includes('운')); i++) { if (panel) { const b = panel.b[0]; panel = null; b.onClick(); } await settle(300); } ok(panel && panel.h.includes('운'), '넷째 must 뒤 운 카드 ' + (panel && panel.h.slice(0,60))); const card2 = L.sit(L.luckSeen[0]); pick('…'); await settle(420);
+const lr2 = (g.results || []).find((r) => r.id === 'luck:' + card2.id); ok(card2.outcomes.length > 1 ? (lr2 && lr2.ok === (card2.outcomes.find((o) => o.if && L.cond(o.if)) ? true : false) && lr2.concept === 'hist.luck') : !lr2, '값이 있어 버티면 results ok:true ' + JSON.stringify(lr2));
 const got = card2.outcomes.find((o) => panel.h.includes(o.title)); ok(got && got !== card2.outcomes.at(-1) || card2.outcomes.length === 1, '쌓은 값이 있으니 버티는 결과 ' + (got && got.id)); closeCard();
 // 저장·복원
 const snap = L.snapshot(); ok(snap.luckSeen.length === 1 && Array.isArray(snap.luckSlots), '스냅샷에 운 자리·본 카드'); const L2 = new Life(g, J('life')); L2.restore(snap); ok(L2.luckSeen[0] === L.luckSeen[0] && L2.luckSlots[0] === 4, '복원');

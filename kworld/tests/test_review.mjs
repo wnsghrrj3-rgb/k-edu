@@ -52,7 +52,7 @@ const q1 = g.life.rv.qs[0]; const right = () => panel.b.find((b) => b.label === 
 ok(new Set(panel.b.map((b) => b.label)).size === 3 && right(), '보기 셋이 섞여 있고 정답이 그 안에');
 // 틀림 → 다시 가 보기 → 자리에 닿으면 같은 물음
 { const b = wrong(); panel = null; b.onClick(); }
-ok(panel && panel.h.includes('그건 아니었어') && panel.b[0].label === '다시 가 보기', '오답 → 되짚기 카드'); ok(g.results.at(-1).ok === false && g.results.at(-1).concept === 'hist.why', '오답이 results 에 오개념으로');
+ok(panel && panel.h.includes('그건 아니었어') && panel.b[0].label === '다시 가 보기', '오답 → 되짚기 카드'); ok(g.results.at(-1).ok === false && g.results.at(-1).concept === 'hist.why' && g.results.at(-1).t === q1.title && g.results.at(-1).pick && g.results.at(-1).pick !== q1.q.a[0], '오답이 results 에 오개념으로(상황 제목·고른 답까지 — 리포트용) ' + JSON.stringify(g.results.at(-1)));
 pick('다시 가 보기'); ok(!panel && g.p.enabled && g.life.rv.pending && g._goal.includes('다시 가 보자'), '카드 닫히고 걸을 수 있고 나침반 글');
 g.p.pos.set(500, 0, 500); g.life.t = 1; g.life.tick(0.6); ok(!panel, '멀리 있으면 안 열림');
 const a = areas.get(g.life.rv.pending.place); g.p.pos.set(a.x, 0, a.z); g.life.t = 1; g.life.tick(0.6);

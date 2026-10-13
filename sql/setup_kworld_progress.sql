@@ -1,6 +1,7 @@
--- #38 케이히스토리 저장 v2 (2026-10-12) — 학생×시대 진행 + 인생 층 + 족보. 구조 설계 v1 §9. 재실행 안전.
+-- #38 케이히스토리 저장 v3 (2026-10-13) — 학생×시대 진행 + 인생 층 + 족보. 구조 설계 v1 §9. 재실행 안전.
 -- 미적용이면 케이월드는 조용히 이 기기(localStorage)에만 저장한다(오류 없음). 저장은 정식 좌석(동의)만 — KeduTier.canSave.
 -- v2: life·chr·sex·mi 열(인생 층 스냅샷 — 다른 기기에서 이어서) · kworld_jokbo(끝 갈림 한 줄씩, 족보·넘겨받기가 기기를 안 가림)
+--     · v3(10-13): report_kworld 에 왜 그랬을까(hist.why) 맞힘·운 카드(hist.luck) 버팀·지금 신분 id·hist 결과 목록 — 리포트 「오개념·운·도감」 칸
 --     · 뷰 report_kworld(시대별 지금 상태) · report_kworld_jokbo(학생별 n대·끝 갈림) — 케이학습리포트 「케이히스토리」 칸
 create table if not exists kworld_progress (
   student_id uuid not null references student_profiles(id) on delete cascade,
@@ -83,6 +84,12 @@ create view report_kworld with (security_invoker = true) as
          coalesce(jsonb_array_length(p.life->'log'),0) as sit_n,
          coalesce(jsonb_array_length(p.life->'hurt'),0) as hurt_n,
          (select count(*) from jsonb_array_elements_text(p.flags) f where f = 'life:end') > 0 as ended,
+         p.life->>'status' as status,                                                                          -- 신분 id(도감 「살아 본 집」)
+         (select count(*) from jsonb_array_elements(p.results) r where r->>'concept' = 'hist.why') as why_n,  -- 복습 「왜 그랬을까」 물음 수
+         (select count(*) from jsonb_array_elements(p.results) r where r->>'concept' = 'hist.why' and (r->>'ok')::boolean) as why_ok_n,
+         (select count(*) from jsonb_array_elements(p.results) r where r->>'concept' = 'hist.luck') as luck_n, -- 운 카드 수
+         (select count(*) from jsonb_array_elements(p.results) r where r->>'concept' = 'hist.luck' and (r->>'ok')::boolean) as luck_hold_n,  -- 쌓은 값으로 버틴 수
+         (select coalesce(jsonb_agg(r), '[]'::jsonb) from jsonb_array_elements(p.results) r where r->>'concept' in ('hist.why','hist.luck')) as hist_results,  -- {id,concept,ok,t,pick|r}
          p.updated_at
   from kworld_progress p;
 grant select on report_kworld to authenticated;

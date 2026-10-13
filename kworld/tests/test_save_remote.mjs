@@ -72,6 +72,9 @@ const sql = fs.readFileSync(path.join(root, '../sql/setup_kworld_progress.sql'),
 for (const t of ['add column if not exists life jsonb', 'add column if not exists chr', 'add column if not exists sex', 'add column if not exists mi', 'create table if not exists kworld_jokbo', 'create view report_kworld with (security_invoker = true)', 'create view report_kworld_jokbo with (security_invoker = true)', 'p_kworld_jokbo_teacher_read']) ok(sql.includes(t), 'SQL #38 v2: ' + t);
 ok(src.includes("from('kworld_jokbo').insert") && src.includes("from('kworld_progress').upsert"), 'save.js 표 이름');
 const rep = fs.readFileSync(path.join(root, '../teacher/learning-report.html'), 'utf8');
+for (const s of ['why_n', 'why_ok_n', 'luck_n', 'luck_hold_n', 'hist_results', "p.life->>'status' as status"]) ok(sql.includes(s), 'SQL v3 report_kworld 열 ' + s);
+ok(rep.includes('kworldWhyHtml(K)') && rep.includes('hist_results') && rep.includes('/kworld/eras/dogam.json') && rep.includes('오개념'), '교사 리포트 왜·운·도감 칸');
+const lib = fs.readFileSync(path.join(root, '../kedu_report_lib.js'), 'utf8'); ok(lib.includes('why_ok_n') && lib.includes('luck_hold_n') && lib.includes('살아 본 집') && lib.includes('/kworld/dogam.html'), '학생·학부모 리포트 왜·운·도감 줄');
 ok(rep.includes("from('report_kworld_jokbo')") && rep.includes("from('report_kworld')") && rep.includes('kworldClassHtml(C)') && rep.includes('kworldStudentHtml(kwStu)') && rep.includes('/kworld/eras/chain.json'), '교사 리포트 케이히스토리 칸');
 
 console.log(`save_remote ${pass}/${fail}`); process.exit(fail ? 1 : 0);
