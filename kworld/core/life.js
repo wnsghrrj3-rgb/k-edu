@@ -97,6 +97,7 @@ export class Life {
   tick(dt) {
     const g = this.g; if (!g.p?.pos || g.restoring || g.story?.cutsceneOn) return;
     this.t = (this.t || 0) + dt; if (this.t < 0.5) return; this.t = 0;
+    if (this.rv?.pending) { const pd = this.rv.pending, a = g.e.areas.get(pd.place); if (a && Math.hypot(a.x - g.p.pos.x, a.z - g.p.pos.z) < pd.r) { this.rv.pending = null; g.p.enabled = false; this.reviewAsk(); } return; }
     for (const s of this.situations) {
       if (this.opened.has(s.id) || !this.cond(s.if)) continue;
       if (s.on) { if (this.cond(s.on)) this.open(s); continue; }   // on 이 있으면 장소는 나침반일 뿐, 여는 건 깃발
@@ -161,7 +162,35 @@ export class Life {
     this.render();
   }
   /** 이번 삶 끝 — 값·흔적·다음 대. 갈림은 값과 흔적으로 정해진다(대본이 아니라 실제 수치) */
-  end(e) {
+  end(e) { this.review(e, () => this.endCard(e)); }
+  /** 시대 끝 복습 — 겪은 상황의 📜 사실을 「알게 된 것」으로 되짚고(최대 5), 그중 셋을 「왜 그랬을까」 3지선다로 묻는다(오답=오개념, 틀리면 그 자리로 「다시 가 보기」). 준호 09-17: 「모든 미션이 끝나면 이번 시대에서 알게 된 것을 복습처럼 하나씩 정리」 */
+  review(e, done) {
+    const g = this.g; const r = this.d.review; if (!r || g.flags.has('life:review:done') || (g.story?.fast && !this.forceReview)) return done();
+    g.p.enabled = false; const seen = new Set(); const facts = [];
+    for (const l of this.log) { const s = this.sit(l.sit); if (!s) continue; const c = (s.choices || []).find((x) => x.id === l.choice); const f = c?.fact || s.fact; if (f && !seen.has(f)) { seen.add(f); facts.push({ s, f }); } }
+    const must = facts.filter((x) => x.s.must), rest = facts.filter((x) => !x.s.must); const show = [...must, ...rest].slice(0, r.facts || 5);
+    const qs = facts.filter((x) => x.s.q).map((x) => x.s); const pick = []; let seed = (this.seed || 1) * 7919; while (pick.length < Math.min(r.questions || 3, qs.length)) { seed = (seed * 1103515245 + 12345) % 2147483648; const q = qs[seed % qs.length]; if (!pick.includes(q)) pick.push(q); }
+    this.rv = { e, done, qs: pick, i: 0, results: [], wrong: 0 };
+    g.ui.open(`<div class="chk life review"><div class="tag">${esc(r.title || '이번 시대에서 알게 된 것')}</div><h3>겪어서 알게 된 것 ${show.length}</h3><ul class="mlist">${show.map((x) => `<li>📜 <b>${esc(x.s.title)}</b><br>${esc(x.f)}</li>`).join('')}</ul>${pick.length ? '<p class="sub">이제 셋만 물어볼게 — 왜 그랬을까.</p>' : ''}</div>`, [{ label: pick.length ? '물어봐' : '알겠어', primary: true, onClick: () => { g.ui.close(); this.reviewAsk(); } }]);
+  }
+  reviewAsk() {
+    const g = this.g, rv = this.rv; if (!rv) return; if (rv.i >= rv.qs.length) return this.reviewFinish();
+    const s = rv.qs[rv.i], q = s.q; let seed = (this.seed || 1) * 31 + rv.i * 17; const opts = q.a.map((t, k) => ({ t, k })); for (let i = opts.length - 1; i > 0; i--) { seed = (seed * 1103515245 + 12345) % 2147483648; const j = seed % (i + 1); [opts[i], opts[j]] = [opts[j], opts[i]]; }
+    const btns = opts.map((o) => ({ label: o.t, onClick: () => { g.ui.close(); const ok = o.k === 0; rv.results.push({ sit: s.id, ok }); g.results = [...(g.results || []), { id: 'review:' + s.id, concept: 'hist.why', ok }];
+      if (ok) { g.ui.say('그래 — 네가 겪은 그대로야.', 2600); g.sound?.play?.('good', 0.4); rv.i++; this.reviewAsk(); }
+      else { rv.wrong++; g.sound?.play?.('bad', 0.3); g.ui.open(`<div class="chk life bad"><div class="tag">음 — 그건 아니었어</div><h3>${esc(s.title)}</h3><p>${esc(q.revisit || '그 자리로 다시 가 보자.')}</p></div>`, [{ label: '다시 가 보기', primary: true, onClick: () => { g.ui.close(); this.reviewRevisit(s); } }, { label: '여기서 다시 고르기', onClick: () => { g.ui.close(); this.reviewAsk(); } }]); } } }));
+    g.ui.open(`<div class="chk life review"><div class="tag">왜 그랬을까 ${rv.i + 1}/${rv.qs.length}</div><h3>${esc(q.q)}</h3><p class="sub">${esc(s.title)}</p></div>`, btns);
+  }
+  /** 틀리면 그 상황의 자리로 — 걸어가서 닿으면 같은 물음이 다시 열린다 */
+  reviewRevisit(s) {
+    const g = this.g; const place = s.place || (s.on ? null : null); const a = place ? g.e.areas.get(place) : null;
+    if (!a) { g.ui.say('…다시 떠올려 보자.', 2000); setTimeout(() => this.reviewAsk(), 400); return; }
+    this.rv.pending = { place, r: s.radius || 11 }; g.p.enabled = true; const name = g.world.areas?.[place]?.name || place; g.ui.setGoal(`📜 ${name}(으)로 다시 가 보자 — 그 자리에서 떠올린다.`);
+  }
+  reviewFinish() {
+    const g = this.g, rv = this.rv; this.rv = null; g.flag('life:review:done'); g.ui.say(rv.wrong ? `알게 된 것 ${rv.qs.length} — 다시 가 본 것 ${rv.wrong}.` : `알게 된 것 ${rv.qs.length} — 전부 네 손으로.`, 3200); rv.done();
+  }
+  endCard(e) {
     const g = this.g; g.p.enabled = false; const v = this.values; const branch = (e.branches || []).find((b) => this.cond(b.if)) || (e.branches || []).slice(-1)[0] || {};
     g.flag(['life:end', 'life:' + (branch.id || 'end')]); g.results = [...(g.results || []), { id: 'life:end', concept: 'hist.life', ok: true, open: JSON.stringify({ craft: v.craft, heart: v.heart, hurt: [...this.hurt], log: this.log, branch: branch.id }) }];
     const marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h);
@@ -184,7 +213,7 @@ export class Life {
   // ---------- 화면 ----------
   hud() {
     if (typeof document === 'undefined' || typeof document.createElement !== 'function' || document.getElementById('life')) return;
-    const st = document.createElement('style'); st.textContent = `#life{position:fixed;top:199px;right:22px;width:150px;background:var(--panel);border:1px solid var(--line);padding:10px 13px;border-radius:14px;font-size:12px;backdrop-filter:blur(10px);line-height:1.55}#life .v{display:flex;justify-content:space-between}#life .v b{font-variant-numeric:tabular-nums}#life .lock{opacity:.55}#life .ab{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:0 8px;font-size:11px;letter-spacing:.5px}#life .ab span i{font-style:normal;color:var(--accent2);letter-spacing:1px;text-shadow:0 0 6px rgba(233,182,91,.35)}#life .v b{color:#fff;font-size:13px}#life .v span{opacity:.85}#life .hurt{margin-top:5px;color:#f3a05a;font-size:11px}#life .up{animation:lifeup .9s ease}@keyframes lifeup{0%{transform:scale(1.25);color:#ffe08a}100%{transform:none}}.chk.life .why{background:rgba(255,220,138,.12);border-left:3px solid #ffe08a;padding:8px 10px;border-radius:8px}.chk.life .delta{font-weight:700;letter-spacing:.3px}.chk.life.bad .tag{color:#f3a05a}.pbtns button.gray{opacity:.45;cursor:not-allowed;text-decoration:line-through}@media(max-width:760px){#life{right:10px;top:10px;width:118px;padding:7px 9px;font-size:11px}#life .ab{display:none}}#jokbobtn{margin-top:8px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:#f2dfb2;border-radius:999px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:.3px}#jokbobtn:hover{border-color:var(--accent)}`;
+    const st = document.createElement('style'); st.textContent = `#life{position:fixed;top:199px;right:22px;width:150px;background:var(--panel);border:1px solid var(--line);padding:10px 13px;border-radius:14px;font-size:12px;backdrop-filter:blur(10px);line-height:1.55}#life .v{display:flex;justify-content:space-between}#life .v b{font-variant-numeric:tabular-nums}#life .lock{opacity:.55}#life .ab{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:0 8px;font-size:11px;letter-spacing:.5px}#life .ab span i{font-style:normal;color:var(--accent2);letter-spacing:1px;text-shadow:0 0 6px rgba(233,182,91,.35)}#life .v b{color:#fff;font-size:13px}#life .v span{opacity:.85}#life .hurt{margin-top:5px;color:#f3a05a;font-size:11px}#life .up{animation:lifeup .9s ease}@keyframes lifeup{0%{transform:scale(1.25);color:#ffe08a}100%{transform:none}}.chk.life .why{background:rgba(255,220,138,.12);border-left:3px solid #ffe08a;padding:8px 10px;border-radius:8px}.chk.life .delta{font-weight:700;letter-spacing:.3px}.chk.life.bad .tag{color:#f3a05a}.pbtns button.gray{opacity:.45;cursor:not-allowed;text-decoration:line-through}@media(max-width:760px){#life{right:10px;top:10px;width:118px;padding:7px 9px;font-size:11px}#life .ab{display:none}}#jokbobtn{margin-top:8px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:#f2dfb2;border-radius:999px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:.3px}#jokbobtn:hover{border-color:var(--accent)} .chk.life.review .mlist li{font-size:12.5px;line-height:1.45;margin:7px 0;text-align:left} .chk.life.review .mlist li b{color:#e9b65b}`;
     document.head.appendChild(st); const el = document.createElement('div'); el.id = 'life'; document.body.appendChild(el); const body = document.createElement('div'); el.appendChild(body); this.el = body;   // 값은 body 에, 족보 단추는 그 밑에 남는다
     const jb = document.createElement('button'); jb.id = 'jokbobtn'; jb.textContent = '📜 족보'; jb.title = '우리 집 족보 (J)'; jb.onclick = () => this.jokbo(); (document.getElementById('hud') || el).appendChild(jb);   // 왼쪽 여정 카드 밑(오른쪽 값판을 키우면 행동 단추를 덮는다)
   }
