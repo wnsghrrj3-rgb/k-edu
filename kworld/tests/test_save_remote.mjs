@@ -75,6 +75,7 @@ const rep = fs.readFileSync(path.join(root, '../teacher/learning-report.html'), 
 for (const s of ['why_n', 'why_ok_n', 'luck_n', 'luck_hold_n', 'hist_results', "p.life->>'status' as status"]) ok(sql.includes(s), 'SQL v3 report_kworld 열 ' + s);
 ok(rep.includes('kworldWhyHtml(K)') && rep.includes('hist_results') && rep.includes('/kworld/eras/dogam.json') && rep.includes('오개념'), '교사 리포트 왜·운·도감 칸');
 const lib = fs.readFileSync(path.join(root, '../kedu_report_lib.js'), 'utf8'); ok(lib.includes('why_ok_n') && lib.includes('luck_hold_n') && lib.includes('살아 본 집') && lib.includes('/kworld/dogam.html'), '학생·학부모 리포트 왜·운·도감 줄');
+const tg = fs.readFileSync(path.join(root, '../teacher.html'), 'utf8'); ok(tg.includes('./eras/chain.json') && tg.includes('왜 그랬을까') && tg.includes('판단하지 않는다') && rep.includes('/kworld/teacher.html'), '교사 안내 한 장(teacher.html) + 리포트에서 링크');
 ok(rep.includes("from('report_kworld_jokbo')") && rep.includes("from('report_kworld')") && rep.includes('kworldClassHtml(C)') && rep.includes('kworldStudentHtml(kwStu)') && rep.includes('/kworld/eras/chain.json'), '교사 리포트 케이히스토리 칸');
 
 console.log(`save_remote ${pass}/${fail}`); process.exit(fail ? 1 : 0);
