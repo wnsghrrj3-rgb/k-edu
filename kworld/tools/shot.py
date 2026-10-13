@@ -2,6 +2,7 @@
 """헤드리스 크로미움으로 케이월드 한 시대 화면 한 장 찍기.
 사용: python3 -m http.server 8787 (k-edu 루트) 를 먼저 띄우고
   python3 kworld/tools/shot.py <era> [out.png] [--mini out_mini.png] [--info] [--at <area_id|x,z>] [--yaw <rad>] [--pitch <rad>]
+  --q <k=v&k=v>: URL 에 덧붙일 쿼리(예: --q shade=0.8 — 평면 재질 전역 보정 비교용).
   --at: 세상에 들어간 뒤 플레이어를 그 구역(`area_*` 이름에서 area_ 뺀 id)이나 엔진 좌표(x,z — z = -블렌더 y)로 옮겨 찍는다(마을 밖 자리 확인용).
        --yaw 없으면 가장 가까운 ix_ 소품에서 7m 물러나 그쪽을 본다(소품 속에 서지 않게; 선 자리와 3인칭 카메라 자리가 col_ 상자에서 2m 이상 떨어진 곳 우선). 열린 카드는 닫는다.
 요령: 20초 기다린 뒤 rAF·setTimeout 을 끊고 찍는다(안 끊으면 스크린샷이 30초 넘겨 죽음).
@@ -15,7 +16,8 @@ info = '--info' in sys.argv
 at = sys.argv[sys.argv.index('--at') + 1] if '--at' in sys.argv else None
 yaw = float(sys.argv[sys.argv.index('--yaw') + 1]) if '--yaw' in sys.argv else None
 pitch = float(sys.argv[sys.argv.index('--pitch') + 1]) if '--pitch' in sys.argv else None
-url = f'http://127.0.0.1:8787/kworld/?era={era}&resume=0&friends=0'
+q = sys.argv[sys.argv.index('--q') + 1] if '--q' in sys.argv else ''
+url = f'http://127.0.0.1:8787/kworld/?era={era}&resume=0&friends=0' + (('&' + q) if q else '')
 
 with sync_playwright() as p:
     b = p.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])

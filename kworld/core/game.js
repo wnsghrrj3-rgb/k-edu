@@ -5,7 +5,7 @@ import { Player } from './player.js';
 import { UI } from './ui.js';
 import { createFire } from './fire.js';
 import { bindMinimap } from './minimap.js';
-import { addSkyDome, addMotes, enhanceWater, applySurfaces } from './visuals.js';
+import { addSkyDome, addMotes, enhanceWater, applySurfaces, shadeFlatMaterials } from './visuals.js';
 import { addScenery } from './scenery.js';
 import { applySplat } from './terrain.js';
 import { Sound } from './sound.js';
@@ -51,6 +51,8 @@ export class Game {
       if (post) { addMotes(this.e); this.e.sun.shadow.mapSize.set(4096, 4096); }
     }
     if (post) this.e.enablePost({ ao: qs.get('ao') === '1' });
+    // 평면 재질 하얗게 뜸(㊱④) 비교용: ?shade=0.8 이면 map 없는 재질 색을 0.8배 — 준호가 전후를 보고 기본으로 넣을지 정한다(기본 꺼짐)
+    const shade = parseFloat(qs.get('shade')); if (shade > 0 && shade < 1) shadeFlatMaterials(this.e, shade);
     if (qs.get('fps') === '1') this.fpsMeter();
     this.autoTune();
     this.p = new Player(this.e, { eye: this.world.eye, bounds: this.world.bounds, yaw: 0 });

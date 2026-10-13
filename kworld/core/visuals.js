@@ -160,6 +160,17 @@ export function boxProjectUV(geo, tile) {
 }
 /** surfaces: { 재질이름: { set: 'rock', tile: 2.5, tint: 0.2 } } — tint 는 원래 색을 얼마나 남길지(0=텍스처 그대로)
  *  set 없이 { shade: 0.7 } 만 주면 사진 질감 없이 그 재질 색만 0.7배로 어둡게(밝은 평면색이 해에 날아가는 것을 재질 하나씩 잡을 때 — 전역 보정이 아니라 이름 단위) */
+/** 사진 질감(map) 없는 평면 재질만 전역으로 어둡게(㊱④ 준호 결정용 — 기본은 안 켬). `?shade=0.8` 처럼 URL 로만 켜서 전후를 비교한다.
+ *  물·불·하늘 계열은 뺌. 캐릭터 옷(skin·hide·cloth 등)도 같이 어두워진다 — 그게 이 보정의 장단점. */
+export function shadeFlatMaterials(e, k) {
+  const seen = new Set(); let n = 0;
+  e.scene.traverse((o) => {
+    if (!o.isMesh) return; const m = o.material; if (!m || !m.isMeshStandardMaterial || m.map || seen.has(m)) return; seen.add(m);
+    if (/^(water|sky|fire|lamp_fire|beacon_fire|lantern_fire|glow|light)/.test(m.name || '')) return;
+    m.color.multiplyScalar(k); m.needsUpdate = true; n++;
+  });
+  return n;
+}
 export function applySurfaces(e, surfaces) {
   e.scene.traverse((o) => {
     if (!o.isMesh || !o.material?.name) return; const cfg = surfaces[o.material.name]; if (!cfg) return;
