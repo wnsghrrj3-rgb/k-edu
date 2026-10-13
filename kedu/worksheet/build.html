@@ -140,7 +140,20 @@ th{color:var(--muted);font-weight:400;font-size:12.5px}
 const db = getKeduDb();
 const view = document.getElementById('view');
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const DIFFNAME = {1:'D1 기본', 2:'D2 적용', 3:'D3 도전', 4:'D4 심화'};
+const DIFFNAME = {1:'기본', 2:'적용', 3:'도전', 4:'심화'};
+/* 코드 → 말. 교사 화면에는 u1·L01·M02 같은 코드가 보이지 않게 한다(2026-10-14 준호).
+   단원·차시 이름은 /kedu_map/g{학년}_{학기}_{과목}.js 의 KEDU_MAP 에서 읽고, 오개념 이름은 misconceptions 표에서 읽는다. */
+const SUBJ_MAP = { kor:'korean', korean:'korean', math:'math', sci:'science', science:'science', soc:'social', social:'social' };
+const SUBJ_KO = { kor:'국어', korean:'국어', math:'수학', sci:'과학', science:'과학', soc:'사회', social:'사회' };
+function mapOf(q){ const sem = q.semester || 1; return (window.KEDU_MAP || {})[`g${q.grade}_${sem}_${SUBJ_MAP[q.subject] || q.subject}`] || (window.KEDU_MAP || {})[`g${q.grade}_${sem === 1 ? 2 : 1}_${SUBJ_MAP[q.subject] || q.subject}`]; }
+function unitNo(u){ const m = String(u || '').match(/(\d+)/); return m ? +m[1] : null; }
+function unitName(q){ const n = unitNo(q.unit_code); if (!n) return q.unit_code || ''; const m = mapOf(q); const u = m && (m.units || []).find(x => +x.num === n); return `${n}단원` + (u && u.name ? ' ' + u.name : ''); }
+function lessonLabel(q){ const n = unitNo(q.lesson_code); if (!n) return ''; const m = mapOf(q); const un = unitNo(q.unit_code); const u = m && (m.units || []).find(x => +x.num === un); const l = u && (u.lessons || []).find(x => String(x.n) === String(n)); return `${n}차시` + (l && l.title ? ' ' + l.title : ''); }
+function misName(code){ const m = (MIS_LIST || []).find(x => x.code === code); return m && m.title ? m.title : '오개념'; }
+function loadMaps(bank){
+  const keys = [...new Set(bank.map(q => `g${q.grade}_${q.semester || 1}_${SUBJ_MAP[q.subject] || q.subject}`))];
+  return Promise.all(keys.map(k => new Promise(res => { if ((window.KEDU_MAP || {})[k]) return res(); const sc = document.createElement('script'); sc.src = '/kedu_map/' + k + '.js'; sc.onload = res; sc.onerror = res; document.head.appendChild(sc); })));
+}
 const KINDNAME = {mc:'선택', sa:'단답', ox:'OX', error:'오류찾기', blank:'빈칸', data:'자료읽기', match:'연결', essay:'서술'};
 
 /* 학생 카드 라벨 — 3종 설계 v2 §2·§3-2. 평가 단어 없이, 종류마다 한 낱말.
@@ -174,8 +187,11 @@ function toast(msg){ const t = document.getElementById('toast'); t.textContent =
   if (!qs){ view.innerHTML = `<div class="gate">문항 원장을 읽을 수 없어요.<br>승인된 선생님 계정만 원장을 볼 수 있어요.</div>`; return; }
 
   BANK = qs; CONCEPTS = cs || []; CLASSES = cc || [];
-  db.from('misconceptions').select('code, title').eq('is_active', true).order('code').then(r => { MIS_LIST = r.data || []; }).catch(() => {});
+  const mr = await Promise.resolve(db.from('misconceptions').select('code, title').eq('is_active', true).order('code')).catch(() => ({ data: [] }));
+  MIS_LIST = (mr && mr.data) || [];
   render();
+  // 단원·차시 이름표는 뒤에 오면 그때 다시 그린다 — 지도를 못 읽어도 화면은 선다(N단원·N차시로만 표시).
+  loadMaps(BANK).then(() => { if (TOP === 'quiz' && TAB === 'build' && document.getElementById('qlist')) renderBuild(); });
 })();
 
 document.querySelectorAll('#subTabs button').forEach(b => b.onclick = () => {
@@ -221,8 +237,8 @@ function renderBuild(){
       <h2>문항 원장 <span style="color:var(--muted);font-weight:400">${BANK.length}문항</span></h2>
       <div class="filters">
         <select id="fGrade"><option value="">전체 학년</option>${grades.map(g => `<option>${g}</option>`).join('')}</select>
-        <select id="fUnit"><option value="">전체 단원</option>${units.map(u => `<option>${u}</option>`).join('')}</select>
-        <select id="fLesson"><option value="">전체 차시</option>${lessons.map(l => `<option>${l}</option>`).join('')}</select>
+        <select id="fUnit"><option value="">전체 단원</option>${units.map(u => `<option value="${u}">${unitNo(u) ? unitNo(u) + '단원' : esc(u)}</option>`).join('')}</select>
+        <select id="fLesson"><option value="">전체 차시</option>${lessons.map(l => `<option value="${l}">${unitNo(l) ? unitNo(l) + '차시' : esc(l)}</option>`).join('')}</select>
         <select id="fConcept"><option value="">전체 개념</option>${CONCEPTS.map(c => `<option value="${c.code}">${c.lesson_no ? c.lesson_no + '차시 · ' : ''}${esc(c.name)}</option>`).join('')}</select>
         <select id="fDiff"><option value="">전체 난이도</option>${[1,2,3,4].map(d => `<option value="${d}">${DIFFNAME[d]}</option>`).join('')}</select>
         <select id="fKind"><option value="">전체 유형</option>${kinds.map(k => `<option value="${k}">${KINDNAME[k] || k}</option>`).join('')}</select>
@@ -253,7 +269,7 @@ function renderBuild(){
           <select id="qaMix"><option value="basic">기본 배합</option><option value="challenge">도전 배합</option></select>
         </div>
         <button class="btn ghost" id="qaGo">배합대로 담기</button>
-        <p class="hint">차시를 고르면 그 차시 개념이 자동으로 잡혀요. 기본 = D1·D2 위주, 도전 = D3·D4 위주. 같은 개념 안에서 유형이 겹치지 않도록 골라 담습니다.</p>
+        <p class="hint">차시를 고르면 그 차시 개념이 자동으로 잡혀요. 기본 = 기본·적용 문항 위주, 도전 = 도전·심화 문항 위주. 같은 개념 안에서 유형이 겹치지 않도록 골라 담습니다.</p>
       </div>
       <div class="panel" style="margin-top:16px">
         <h2>내 문항 만들기 <span id="mkCount" style="color:var(--muted);font-weight:400">${BANK.filter(q => q.source === 'teacher').length}개</span></h2>
@@ -304,9 +320,9 @@ function drawList(){
             <div class="tagrow">
               <span class="tag d${q.difficulty}">${DIFFNAME[q.difficulty]}</span>
               <span class="tag">${KINDNAME[q.qkind] || q.qkind}${q.source === 'teacher' ? ' <span class="badge mine">내 문항</span>' : ''}</span>
-              ${q.lesson_code ? `<span class="tag">${esc(q.lesson_code)}</span>` : ''}
+              <span class="tag">${esc(unitName(q))}${q.lesson_code ? ' · ' + esc(lessonLabel(q)) : ''}</span>
               <span class="tag">${esc(cname)}</span>
-              ${(q.misconception_codes || []).map(m => `<span class="tag mis">${esc(m)}</span>`).join('')}
+              ${(q.misconception_codes || []).map(m => `<span class="tag mis" title="이 문항의 오답이 잡아내는 오개념">${esc(misName(m))}</span>`).join('')}
             </div>
           </div></div>`;
       }).join('')
@@ -328,7 +344,7 @@ function drawCart(){
   document.getElementById('mixbar').innerHTML = CART.length
     ? mix.map((n, i) => n ? `<div style="flex:${n};background:${colors[i]}"></div>` : '').join('') : '';
   document.getElementById('mixtext').textContent = CART.length
-    ? mix.map((n, i) => n ? `D${i+1} ${n}` : null).filter(Boolean).join(' · ') : '왼쪽에서 문항을 눌러 담으세요.';
+    ? mix.map((n, i) => n ? `${DIFFNAME[i+1]} ${n}` : null).filter(Boolean).join(' · ') : '왼쪽에서 문항을 눌러 담으세요.';
   document.getElementById('cart').innerHTML = CART.map((q, i) =>
     `<li><span class="n">${i+1}</span><span style="flex:1">${esc(q.stem.slice(0, 46))}${q.stem.length > 46 ? '…' : ''}</span><button class="x" data-i="${i}">✕</button></li>`).join('');
   document.getElementById('cart').querySelectorAll('.x').forEach(b => b.onclick = () => { CART.splice(Number(b.dataset.i), 1); drawList(); drawCart(); });
@@ -411,7 +427,7 @@ function renderUnit(){
       <h2>추천안</h2>
       <div class="filters">
         <select id="uGrade">${grades.map(g => `<option value="${g}">${g}학년</option>`).join('')}</select>
-        <select id="uUnit">${units.map(u => `<option value="${u}">${esc(u)}</option>`).join('')}</select>
+        <select id="uUnit">${units.map(u => `<option value="${u}">${unitNo(u) ? unitNo(u) + '단원' : esc(u)}</option>`).join('')}</select>
         <select id="uN"></select>
         <button class="btn ghost" id="uGo">추천안 만들기</button>
       </div>
@@ -419,7 +435,7 @@ function renderUnit(){
         <select id="uForm"></select>
         <button class="btn ghost" id="uFormGo">동형 검사지로</button>
       </div>
-      <p class="hint">추천안 = 개념 골고루 + 난이도 D1·D2·D3·D4 = 8:8:6:3. 동형 검사지 = 같은 설계도로 수·사물만 다른 A~D형 — 짝 시험·재시험용.</p>
+      <p class="hint">추천안 = 개념 골고루 + 난이도 기본·적용·도전·심화 = 8:8:6:3. 동형 검사지 = 같은 설계도로 수·사물만 다른 A~D형 — 짝 시험·재시험용.</p>
       <div class="mixbar" id="uMixbar"></div>
       <div class="hint" id="uMixtext"></div>
       <ul class="cart ulist" id="ulist" style="max-height:520px"></ul>
@@ -478,7 +494,7 @@ function drawUnit(){
   const colors = ['#8FB09A','#8FA6C0','#C7AE84','#C08F8F'];
   document.getElementById('uMixbar').innerHTML = UCART.length ? cnt.map((c, i) => c ? `<div style="flex:${c};background:${colors[i]}" title="${DIFFNAME[i + 1]} ${c}"></div>` : '').join('') : '';
   document.getElementById('uMixtext').textContent = UCART.length
-    ? `${UCART.length}문항 · ${pts}점 · ` + cnt.map((c, i) => `D${i + 1} ${c}`).join(' · ') + ` · 개념 ${uniq(UCART.map(x => x.q.concept_code)).length}개`
+    ? `${UCART.length}문항 · ${pts}점 · ` + cnt.map((c, i) => `${DIFFNAME[i + 1]} ${c}`).join(' · ') + ` · 개념 ${uniq(UCART.map(x => x.q.concept_code)).length}개`
     : '추천안을 만들거나 동형 검사지를 골라 담으세요.';
   ul.innerHTML = UCART.map((x, i) => `<li>
     <span class="n">${i + 1}</span>
@@ -541,7 +557,7 @@ async function renderPerf(){
   const units = uniq(tasks.map(t => t.grade + '학년 · ' + t.subject + ' · ' + t.unit_code));
   view.innerHTML = `<div class="panel">
     <h2>과제 고르기 <span style="color:var(--muted);font-weight:400">${tasks.length}건</span></h2>
-    <div class="filters"><select id="pfUnit">${units.map(u => `<option>${esc(u)}</option>`).join('')}</select>
+    <div class="filters"><select id="pfUnit">${units.map(u => { const k = u.split(' · '); return `<option value="${esc(u)}">${k[0]} · ${SUBJ_KO[k[1]] || esc(k[1])} · ${unitNo(k[2]) ? unitNo(k[2]) + '단원' : esc(k[2])}</option>`; }).join('')}</select>
       <select id="pfClass">${CLASSES.length ? CLASSES.map(c => `<option value="${c.id}">${esc(c.code)}</option>`).join('') : '<option value="">학급 없음</option>'}</select></div>
     <p class="hint">여섯 영역 중 어느 것이든 한 단원에서 두 건이면 성취기준을 덮어요(카드 07 운영 메모). 학생 화면엔 「학생 라벨」로만 뜨고 평가 낱말은 없어요. <b>사진에 아이 얼굴이 나오지 않게</b> 안내해 주세요.</p>
     <div class="tasks" id="tasks"></div>
@@ -687,7 +703,7 @@ async function showPerfGrade(runId){
 function renderMakeQ(box){
   if (box.innerHTML){ box.innerHTML = ''; return; }
   const concepts = CONCEPTS.map(c => `<option value="${c.code}" data-grade="${c.grade}" data-unit="${c.unit_code}">${c.lesson_no ? c.lesson_no + '차시 · ' : ''}${esc(c.name)}</option>`).join('');
-  const misOpts = (MIS_LIST || []).map(m => `<option value="${esc(m.code)}">${esc(m.code)} ${esc(m.title || '')}</option>`).join('');
+  const misOpts = (MIS_LIST || []).map(m => `<option value="${esc(m.code)}">${esc(m.title || m.code)}</option>`).join('');
   box.innerHTML = `<div class="mk">
     <label>개념 (필수)</label><select id="mkConcept"><option value="">— 개념을 고르세요 —</option>${concepts}</select>
     <div class="filters" style="margin-top:8px">
@@ -752,7 +768,7 @@ function renderMakeTask(box, grade, subject, unit){
   if (box.innerHTML){ box.innerHTML = ''; return; }
   const AREAS = ['조사·탐구', '만들기·표현', '발표·말하기', '문제해결 과정', '글쓰기', '관찰·실험'];
   box.innerHTML = `<div class="mk panel" style="margin-top:12px">
-    <h2>내 과제 만들기 <span style="color:var(--muted);font-weight:400">${grade}학년 · ${esc(subject)} · ${esc(unit)}</span></h2>
+    <h2>내 과제 만들기 <span style="color:var(--muted);font-weight:400">${grade}학년 · ${SUBJ_KO[subject] || esc(subject)} · ${unitNo(unit) ? unitNo(unit) + '단원' : esc(unit)}</span></h2>
     <div class="filters"><select id="mtArea">${AREAS.map(a => `<option>${a}</option>`).join('')}</select><select id="mtKind"><option value="photo">사진 제출</option><option value="text">글 제출</option></select></div>
     <label>과제 이름 (교사용)</label><input type="text" id="mtTitle" placeholder="예: 우리 집 수 찾기">
     <label>학생 라벨 (아이 화면에 뜨는 이름 — 평가 낱말 없이)</label><input type="text" id="mtLabel" placeholder="예: 집 탐험 — 수를 찾아라!">

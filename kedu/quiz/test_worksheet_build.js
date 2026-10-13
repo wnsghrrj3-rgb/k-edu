@@ -136,7 +136,7 @@ ran.then(function () {
   var rows = d.querySelectorAll('#ulist li');
   T(rows.length === 10, '추천안이 고른 문항 수가 요청과 다름: ' + rows.length);
   var mixt = d.getElementById('uMixtext').textContent;
-  T(/D1 3 · D2 4 · D3 2 · D4 1/.test(mixt) || /D1 3 · D2 3 · D3 3 · D4 1/.test(mixt), '추천안 난이도 배분이 8:8:6:3 을 안 따름: ' + mixt);
+  T(/기본 3 · 적용 4 · 도전 2 · 심화 1/.test(mixt) || /기본 3 · 적용 3 · 도전 3 · 심화 1/.test(mixt), '추천안 난이도 배분이 8:8:6:3 을 안 따름: ' + mixt);
   T(/개념 2개/.test(mixt), '추천안이 개념을 균배하지 않음(한 개념만 뽑음): ' + mixt);
   /* 편집: 삭제·순서·배점·교체 */
   var stemOf = function (li) { return li.children[1].textContent; };
