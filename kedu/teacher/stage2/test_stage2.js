@@ -53,6 +53,14 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   ok(l.cls !== 'pa2' && !/pa2-row/.test(l.body), '111차 — pa2 는 학생 화면(learn)에선 안 씀');
   const f = KT2.renderSlide({ id: 'x', block: 'basic_problem', data: Object.assign({}, d, { fig: { k: 'ang', deg: 80, unit: 20, q: true } }) }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] });
   ok(f.cls === 'pa2' && /pa2-row has-fig/.test(f.body) && !/pa2-pic/.test(f.body), '111차 — pa2: 그림(fig) 있으면 그림 판 대신 그 그림'); }
+{ const d = { context: '펭이가 물었어요. 「정말 그럴까?」', challenge: '왜 그런지 짝에게 말해 봐요.', note: '풀이: **까닭** 을 들어 말해요.' };
+  const R = (rev, learn) => KT2.renderSlide({ id: 'x', block: 'advanced_problem', data: d }, { revealed: rev, state: {}, meta: {}, unitTitle: 'U', classNames: [], guide: ['🐻', '🐧'], learn: learn });
+  const c = R(false), o = R(true), l = R(false, true);
+  ok(c.cls === 'ch2' && /class="ch2-board"/.test(c.body) && /class="ch2-w"/.test(c.body) && !/ch2-a/.test(c.body) && /class="ch2-say"/.test(c.body) && c.answerable, '112차 — 심화 문제 장 ch2: 칠판 + 상황 말풍선 + 닫힘 안내');
+  ok(o.cls === 'ch2' && /class="ch2-a"/.test(o.body) && /<strong>까닭<\/strong>/.test(o.body) && !/ch2-w/.test(o.body), '112차 — ch2 펼침: 칠판 줄 아래 풀이');
+  ok(l.cls !== 'ch2' && !/ch2-row/.test(l.body), '112차 — ch2 는 학생 화면(learn)에선 안 씀');
+  const t = KT2.renderSlide({ id: 'x', block: 'advanced_problem', data: { context: '곰이가 쪽지를 가져왔어요.', challenge: '가 · 나 · 다 — 맞는 것을 모두 골라요.' } }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [], guide: ['🐧', '🐻'] });
+  ok(t.cls === 'ch2' && (t.body.match(/<li>/g) || []).length === 3 && !/ch2-line/.test(t.body) && /ch2-q sm/.test(t.body), '112차 — ch2: 「가 · 나 · 다 — 물음」 쪽지 · 풀이 없으면 줄 없음'); }
 { const r = KT2.md('가<br>나 <b>다</b> <script>x</script>'); ok(r === '가<br>나 <strong>다</strong> &lt;script&gt;x&lt;/script&gt;', 'md: <br>·<b> 만 살리고 다른 태그는 글자로 (' + r + ')'); }
 { const A = g0.KT2_ART; ['🐻', '🐧', '👧', '👦', '🐿️', '🐿'].forEach(f => ok(/^<svg class="chr c-/.test(A.character(f)) && /class="eyes"/.test(A.character(f)) && /class="m-open" opacity="0"/.test(A.character(f)), '인물 층: ' + f + ' → 그림 인물(눈·입 포함, 입은 기본 닫힘)')); ['🧺', '📦', '❓', '', undefined].forEach(f => ok(A.character(f) === '', '인물 층: ' + f + ' → 이모지 그대로'));
   ['🐰', '🦉', '🐱', '🐯', '🦆', '🐦', '🐝', '🦋', '🙂', '😊', '😀', '🤩', '😋', '🤔', '😮', '😟', '😐', '🙆'].forEach(f => { const c = A.character(f); ok(/^<svg class="chr c-[a-z-]+ cast"/.test(c) && /class="eyes"/.test(c) && /class="bodyg"/.test(c) && /class="head"/.test(c) && /class="m-open" opacity="0"/.test(c) && !A.isMain(f), '조연 층: ' + f + ' → 그림 조연(눈·몸·고개·입, 안내 인물 아님)'); });
