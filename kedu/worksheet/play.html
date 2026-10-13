@@ -6,14 +6,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>케이학습지</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&family=Jua&display=swap" rel="stylesheet">
 <style>
 :root{
---paper:#FBF9F5;--card:#FFFFFF;--ink:#2E3338;--ink-soft:#5A6169;--muted:#8B9199;
---rule:#D3CABA;--rule-strong:#B6AB96;--tint:#F3F0EA;
---accent:#4A6480;--accent-soft:#E9EEF3;
---ok:#5E7F63;--ok-soft:#EDF2ED;--no:#A8695A;--no-soft:#F6EFEC;--wait:#8A7B57;--wait-soft:#F5F1E6;
---shadow:0 1px 2px rgba(46,51,56,.05)}
+/* v4 화면 새 단장(2026-10-14) — 서류 느낌 대신 놀이 느낌. 학년 띠(html[data-band])로 색·글꼴이 바뀐다:
+   low 1~2학년 하늘+주황+Jua · mid 3~4학년 민트+초록 · high 5~6학년 흰 바탕+파랑 */
+--paper:#F3F7FC;--card:#FFFFFF;--ink:#22304A;--ink-soft:#4E5D78;--muted:#8592A8;
+--rule:#D5DEEB;--rule-strong:#B9C6D9;--tint:#EDF2F9;
+--accent:#2F6BFF;--accent-soft:#E6EEFF;
+--ok:#1E9A62;--ok-soft:#E4F6EC;--no:#E5484D;--no-soft:#FDEBEC;--wait:#D98B0C;--wait-soft:#FFF4DF;
+--shadow:0 2px 0 rgba(34,48,74,.06),0 10px 24px -14px rgba(34,48,74,.25);
+--radius:18px;--bw:2px;--display:'Gowun Batang',serif;--stem:'Gowun Dodum',sans-serif}
+html[data-band="low"]{--paper:#E9F4FF;--ink:#1F3A68;--ink-soft:#3F5A86;--rule:#C9DDF3;--rule-strong:#9FC0E6;--tint:#F3F8FF;
+--accent:#FF7A1A;--accent-soft:#FFEEDF;--radius:24px;--bw:3px;--display:'Jua',sans-serif;--stem:'Jua',sans-serif}
+html[data-band="mid"]{--paper:#E9F7F1;--ink:#1D3B33;--ink-soft:#3F6356;--rule:#C6E3D7;--rule-strong:#9ACDB9;--tint:#F2FAF6;
+--accent:#17A277;--accent-soft:#DDF4EA;--radius:20px;--bw:2.5px;--display:'Jua',sans-serif;--stem:'Gowun Dodum',sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--paper);color:var(--ink);font-family:'Gowun Dodum',sans-serif;min-height:100%;
  -webkit-font-smoothing:antialiased;font-feature-settings:"tnum"}
@@ -576,6 +583,74 @@ body.paper{background:#fff}
 .toolbar button{background:#2E3338;color:#fff;border-radius:8px;padding:9px 15px;font-size:14px}
 @media print{.toolbar{display:none}.sheet{margin:0;box-shadow:none}@page{size:A4;margin:0}}
 @media screen{body.paper{background:#8C8880;padding:22px 0}.sheet{box-shadow:0 2px 16px rgba(0,0,0,.25);margin-bottom:22px}}
+
+/* ---------- v4 새 단장: 공통 부품 ---------- */
+.app{max-width:640px}
+.bar .home,.bar button{border-radius:999px;border:var(--bw) solid var(--rule);font-weight:700}
+.dots{gap:4px}.dots i{height:8px;border-radius:4px;flex:1 1 0;max-width:40px;background:var(--rule)}
+.dots i.now{background:var(--accent)}.dots i.done{background:var(--ok)}.dots i.wrong{background:var(--no)}
+.cover{gap:14px}
+.cover::before{content:'📝';font-size:58px;line-height:1;width:112px;height:112px;border-radius:50%;background:var(--card);border:var(--bw) solid var(--rule);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);margin-bottom:6px}
+html[data-band="low"] .cover::before{content:'✏️'}
+html[data-band="mid"] .cover::before{content:'🔍'}
+.cover .badge{font-family:var(--display);border:0;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:7px 18px;letter-spacing:.04em;font-size:15px}
+.cover h1{font-family:var(--display);font-size:34px;line-height:1.3;letter-spacing:-.3px}
+.cover p{color:var(--ink-soft)}
+.big{background:var(--accent);color:#fff;border-radius:999px;font-size:21px;padding:16px 42px;font-family:var(--display);box-shadow:0 4px 0 rgba(0,0,0,.14);transition:transform .08s,box-shadow .08s,background .12s}
+.big:hover{background:var(--accent);filter:brightness(1.06)}
+.big:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.14)}
+.big.ghost{background:var(--card);color:var(--ink-soft);border:var(--bw) solid var(--rule);box-shadow:none}
+.big.ghost:hover{background:var(--tint);filter:none}
+.alt a{border:0;color:var(--muted)}.alt a:hover{color:var(--accent);border:0}
+
+/* 문항 카드 */
+.q{border:var(--bw) solid var(--rule);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 22px 20px}
+.q .num{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:40px;padding:0 12px;border-radius:999px;background:var(--accent);color:#fff;font-size:16px;letter-spacing:0;font-family:var(--display);margin-bottom:14px;font-weight:700}
+.stem{font-family:var(--stem);font-size:23px;line-height:1.55}
+html[data-band="low"] .stem{font-size:26px;line-height:1.5}
+.asset{background:var(--tint);border-radius:calc(var(--radius) - 6px);padding:16px 12px;margin:16px 0 6px}
+.asset:empty{display:none}
+
+/* 선택지 */
+.opts{gap:10px;margin-top:12px}
+.opt{border:var(--bw) solid var(--rule);border-radius:var(--radius);padding:14px 16px;font-size:21px;min-height:64px;font-family:var(--stem);transition:transform .08s,border-color .12s,background .12s;box-shadow:0 2px 0 var(--rule)}
+.opt:hover:not(:disabled){border-color:var(--accent);background:var(--card);transform:translateY(-1px)}
+.opt:active:not(:disabled){transform:translateY(1px);box-shadow:none}
+.opt .mark{width:34px;height:34px;border:var(--bw) solid var(--rule-strong);font-size:15px;font-weight:700;color:var(--ink-soft);background:var(--tint)}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 2px 0 var(--accent)}
+.opt.sel .mark{background:var(--accent);border-color:var(--accent);color:#fff}
+.opt.ok{border-color:var(--ok);background:var(--ok-soft);box-shadow:0 2px 0 var(--ok)}
+.opt.no{border-color:var(--no);background:var(--no-soft);box-shadow:0 2px 0 var(--no)}
+.opt:disabled{box-shadow:none}
+.oxrow{gap:12px}
+.ox{font-size:44px;padding:18px;border-radius:var(--radius);border:var(--bw) solid var(--rule);box-shadow:0 2px 0 var(--rule);font-weight:700}
+.ox.sel{box-shadow:0 2px 0 var(--accent)}.ox.ok{box-shadow:0 2px 0 var(--ok)}.ox.no{box-shadow:0 2px 0 var(--no)}
+.answer-box{min-width:150px;height:70px;border:var(--bw) solid var(--rule-strong);border-bottom-width:4px;border-radius:14px;background:var(--card);font-size:30px}
+.pad{gap:9px;max-width:400px}
+.pad button{font-size:24px;padding:15px 0;border-radius:14px;border:var(--bw) solid var(--rule);box-shadow:0 2px 0 var(--rule);font-family:var(--display);font-weight:700}
+.pad button:active:not(:disabled){transform:translateY(2px);box-shadow:none}
+.pad button.go{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 0 rgba(0,0,0,.18);font-size:18px}
+textarea{border:var(--bw) solid var(--rule);border-radius:14px;background:var(--card);font-size:20px}
+.match svg line{stroke-width:3}
+
+/* 피드백 */
+.fb{border:var(--bw) solid var(--rule);border-radius:var(--radius);padding:18px 20px 18px 70px;position:relative;animation:fbin .3s ease-out}
+.fb::before{position:absolute;left:18px;top:16px;font-size:34px;line-height:1}
+.fb.ok::before{content:'🎉'}.fb.no::before{content:'🤔'}.fb.wait::before{content:'✉️'}
+.fb.ok{border-color:#9ED9B9}.fb.no{border-color:#F3B3B6}.fb.wait{border-color:#F1D59C}
+.fb h3{font-family:var(--display);font-size:21px;font-weight:700}
+.fb p{color:var(--ink-soft)}
+@keyframes fbin{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+
+/* 마무리 */
+.stamp{width:150px;height:150px;border:var(--bw) solid var(--accent);box-shadow:0 0 0 5px var(--paper),0 0 0 8px var(--accent);background:var(--card);font-family:var(--display);font-size:22px;animation:stampin .45s cubic-bezier(.2,1.4,.5,1)}
+@keyframes stampin{from{transform:rotate(-7deg) scale(.4);opacity:0}to{transform:rotate(-7deg) scale(1);opacity:1}}
+.finish h2{font-family:var(--display);font-size:28px}
+.finish p{color:var(--ink-soft)}
+.weak{border:var(--bw) solid var(--rule);border-left:6px solid var(--accent);border-radius:14px;background:var(--card)}
+.weak b{font-weight:700}
+@media (max-width:480px){.stem{font-size:21px}html[data-band="low"] .stem{font-size:23px}.opt{font-size:19px}.cover h1{font-size:28px}.big{font-size:19px;padding:14px 32px}}
+@media (prefers-reduced-motion:reduce){.fb,.stamp{animation:none}}
 </style>
 </head>
 <body>
@@ -5372,6 +5447,8 @@ if (!QUIZ) fetch('data/_concepts.json').then(r => r.json()).then(d => { window._
 source.then(d => {
   if (!d) throw new Error('no-set');
   DATA = d;
+  // 학년 띠 — 1~2 low · 3~4 mid · 5~6 high(기본). grade 가 없으면 header 의 「N학년」을 읽는다.
+  try { const g = +d.grade || +((String(d.header || '').match(/(\d)학년/) || [])[1]) || 0; document.documentElement.dataset.band = g && g <= 2 ? 'low' : g && g <= 4 ? 'mid' : 'high'; } catch(e){}
   if (QUIZ && !PREVIEW && MODE !== 'paper' && d.closed){
     app.innerHTML = `<div class="cover"><h1>${esc(d.title || '단원 정리')}</h1><p>응시가 마감됐어요.${d.reveal ? ' 결과는 「내 학습」에서 볼 수 있어요.' : ' 선생님이 결과를 열면 볼 수 있어요.'}</p><div class="alt"><a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
     return;
