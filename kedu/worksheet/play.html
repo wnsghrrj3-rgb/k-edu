@@ -502,8 +502,8 @@ body.paper{background:#fff}
 .pq .pans .paren{display:inline-block;border-bottom:1px solid #1A1A1A;min-width:64px;text-align:center;margin:0 2px}
 .pq .pans .paren.wide{min-width:96px}
 .pq .pline.long{height:24px;width:100%;border-bottom:1px solid #999;margin-bottom:20px;box-shadow:0 24px 0 -23px #999,0 48px 0 -47px #999}
-.pq .pmatch{margin:12px 0 2px 30px;display:grid;grid-template-columns:104px 64px 104px;row-gap:14px;font-size:17px;align-items:center}
-.pq .pmatch .lft,.pq .pmatch .rgt{border:1px solid #999;border-radius:6px;text-align:center;padding:7px}
+.pq .pmatch{margin:12px 0 2px 30px;display:grid;grid-template-columns:minmax(104px,max-content) 64px minmax(104px,max-content);max-width:100%;row-gap:14px;font-size:17px;align-items:center}
+.pq .pmatch .lft,.pq .pmatch .rgt{border:1px solid #999;border-radius:6px;text-align:center;padding:7px 12px;max-width:220px;word-break:break-all;overflow-wrap:anywhere;letter-spacing:1px;line-height:1.4}
 .pq .pmatch .mid{text-align:center;color:#AAA}
 .pq .pnum{margin:10px 0 8px 30px;display:flex;gap:5px}
 .pq .pnum span{min-width:26px;height:30px;border:1px solid #1A1A1A;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:15px}
@@ -6001,7 +6001,7 @@ function paperAsset(a){
     case 'plate': return `<div class="pplate">${a.n === 0 ? '(비어 있음)' : a.item.repeat(a.n)}</div>`;
   } return '';
 }
-function paperOptText(t){ return typeof t === 'object' ? (t.type === 'dots' ? '●'.repeat(t.n) : t.item.repeat(t.n)) : esc(t); }
+function paperOptText(t){ if (typeof t !== 'object') return esc(t); const ch = t.type === 'dots' ? '●' : t.item, n = Number(t.n) || 0; return ch.repeat(n).replace(/(.{5})(?=.)/gu, '$1 '); }
 function renderPaper(){
   document.body.classList.add('paper'); const Qp = DATA.questions.map(prep); const r = rng(SEED); const circ = ['①','②','③','④'];
   const shuffled = Qp.map((q, i) => ({q, opts: q.options ? shuffle(q.options.map((o, k) => Object.assign({k}, o)), rng(SEED * 97 + i)) : null}));
