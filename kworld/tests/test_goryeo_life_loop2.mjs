@@ -51,7 +51,7 @@ const drain = async (closeCard, goTo, area) => { for (let i = 0; i < 4; i++) { c
 // ===== 판 1: 향리 남자(손 좋은, 솜씨 6→3) — 덜 걷기 · 해동통보 · 고을 공물 · 책 보따리 · 명단에서 한 이름 빼기 · 염초 → 화포 보임 · 품앗이 → 새 지붕 보임
 {
   const { g, S, useR, pick, closeCard, goTo, btn, on, opened, done, shown } = mkGame('m', MIX, 'hand');
-  ok(g.life.situations.length === 14 && Object.keys(g.world.areas).length === 20, '꼭 7 + 새 7 · 구역 20'); ok(g.life.status === 'hyangni' && g.life.values.craft >= 3, '향리·솜씨 셋');
+  ok(g.life.situations.length === 14 && Object.keys(g.world.areas).length === 23, '꼭 7 + 새 7 · 구역 23'); ok(g.life.status === 'hyangni' && g.life.values.craft >= 3, '향리·솜씨 셋');
   goTo('bugok'); ok(!opened('bugok'), '노비안검 전엔 부곡 안 열림');
   on('sit:angeom:done'); goTo('bugok'); ok(opened('bugok'), '부곡'); closeCard(); ok(verb(g, 'taxpile_1') === '살펴보기', '향리는 두 배를 안 낸다'); useR('npc_bugokin', '덜 걷는다'); ok(!btn('덜 걷는다')?.disabled && !btn('더 걷는다')?.disabled && btn('두 배를')?.disabled && btn('밤에 목패')?.disabled && btn('주인 몫')?.disabled, '향리: 걷기 열림·두 배·목패·주인 몫 회색'); const h0 = g.life.values.heart; pick('덜 걷는다'); closeCard(); ok(done('bugok') && g.flags.has('bg:less') && g.life.values.heart === h0 + 2, '덜 걷기 → 🤝+2');
   on('sit:khitan:done'); goTo('palgwan'); ok(opened('palgwan'), '팔관회'); closeCard(); ok(shown.lantern === false, '윤등은 처음엔 꺼짐'); ok(verb(g, 'chaebung_1') === '살펴보기' && verb(g, 'lanterns_1') === '살펴보기', '향리는 채붕·윤등 손 안 댐'); useR('npc_palgwan', '고을 공물'); ok(!btn('고을 공물')?.disabled && btn('왕 곁')?.disabled && btn('채붕을')?.disabled && btn('향연 음식')?.disabled && !btn('송 상인과')?.disabled, '향리: 공물 열림·왕 곁·채붕·음식 회색·흥정 열림'); pick('고을 공물'); closeCard(); ok(done('palgwan') && g.flags.has('pg:tribute'), '고을 공물');

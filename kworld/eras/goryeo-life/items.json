@@ -1402,6 +1402,449 @@
    "flag": "seen:burntboat",
    "once": true,
    "info": "왜구가 지나간 자리."
+  },
+  "typemold": {
+   "name": "활자 거푸집 — 쇳물",
+   "verb": "살펴보기",
+   "say": "모래를 다진 거푸집 두 짝, 숯불 위 도가니, 부어 낸 쇠 글자 더미. 한 자 한 자 따로다. 목판과 다르다.",
+   "flag": "seen:typemold",
+   "once": true,
+   "info": "금속활자 거푸집 — 모래에 글자 자국을 내고 쇳물을 붓는다.",
+   "rename": [
+    {
+     "if": "sit:press:open && !sit:press:done",
+     "name": "활자 거푸집",
+     "verb": "쇳물을 붓는다",
+     "once": false,
+     "flag": "seen:typemold2",
+     "choices": [
+      {
+       "label": "활자를 붓는다 — 손 (솜씨 셋)",
+       "if": "val:craft>=3",
+       "gray": "쇳물을 글자 자국에 흘려 넣는 손은 솜씨 셋이 있어야 한다.",
+       "roll": {
+        "ab": "손",
+        "hard": 2,
+        "why": "쇳물을 넘치지도 모자라지도 않게 자국마다 붓는 손.",
+        "fail": "…쇳물이 흘렀다. 글자 반이 뭉개졌다. 다시."
+       },
+       "flag": "press:cast",
+       "reveal": [
+        "printed_book"
+       ],
+       "say": "🔤 활자 서른 자. 판에 짜고 먹을 입혔다 — 한 장이 찍혔다."
+      },
+      {
+       "label": "숯을 나르고 먹을 간다 — 몸",
+       "if": "!status:munbeol && !status:gwonmun && !status:sadaebu",
+       "gray": "숯을 지고 먹을 가는 건 글 모르는 집 몫이다 — 큰 집은 시킨다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "숯 열 짐을 지고 먹을 해 지도록 가는 몸.",
+        "fail": "…먹이 묽었다. 반 품."
+       },
+       "flag": "press:ink",
+       "say": "🪵 숯 열 짐, 먹 한 사발."
+      },
+      {
+       "label": "활자 한 줌 몰래 ⚠ — 눈",
+       "if": "!status:munbeol && !status:gwonmun && !status:sadaebu",
+       "gray": "큰 집은 활자를 훔칠 까닭이 없다 — 책을 시킨다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "장인 눈을 피해 쇠 글자 한 줌을 소매에 넣는 눈.",
+        "fail": "…소매에서 쇠 소리. 「활자 도둑.」"
+       },
+       "rollFailFlag": "press:caught",
+       "flag": "press:steal",
+       "say": "🔤 쇠 글자 한 줌. 구리 값 — 곡식 한 단."
+      }
+     ]
+    }
+   ]
+  },
+  "typeset": {
+   "name": "조판 상 — 활자판·먹",
+   "hidden": [
+    "printed_book"
+   ],
+   "verb": "살펴보기",
+   "say": "나무 판에 쇠 글자를 줄 맞춰 박았다. 먹 그릇, 솔. 종이를 얹고 문지르면 한 장. 찍힌 책은 아직 없다.",
+   "flag": "seen:typeset",
+   "once": true,
+   "info": "조판 — 글자를 골라 판을 짜고 먹을 입혀 찍는다(1377 『직지』).",
+   "rename": [
+    {
+     "if": "sit:press:open && !sit:press:done",
+     "name": "조판 상",
+     "verb": "책을 찍는다",
+     "once": false,
+     "flag": "seen:typeset2",
+     "choices": [
+      {
+       "label": "글자본을 쓴다 — 눈 (문벌·사대부·향리·권문·스님)",
+       "if": "status:munbeol || status:sadaebu || status:hyangni || status:gwonmun || status:monk",
+       "gray": "글자본은 글을 아는 집이 쓴다 — 붓는 손과 쓰는 손이 다르다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "거푸집에 거꾸로 새겨도 바로 읽히게 쓰는 눈.",
+        "fail": "…글자가 거꾸로 찍혔다. 한 자 다시."
+       },
+       "flag": "press:script",
+       "reveal": [
+        "printed_book"
+       ],
+       "say": "📜 글자본 스무 자. 찍히면 바로 선다."
+      },
+      {
+       "label": "책을 찍어 달라 — 곡식 2 (문벌·권문·사대부)",
+       "if": "(status:munbeol || status:gwonmun || status:sadaebu) && val:grain>=2",
+       "gray": "책 한 벌을 시키는 건 곡식 둘 있는 글 아는 집이다.",
+       "flag": "press:order",
+       "reveal": [
+        "printed_book"
+       ],
+       "say": "📚 곡식 두 섬. 「다음 달.」"
+      }
+     ]
+    },
+    {
+     "if": "press:cast || press:script || press:order",
+     "name": "찍은 책",
+     "verb": "살펴보기",
+     "once": true,
+     "flag": "seen:typeset3",
+     "say": "먹이 마른 책 두 권. 글자마다 쇠 자국이 같다 — 같은 활자다. 판을 흩으면 다음 책이 된다. 글 모르는 집은 들춰만 본다."
+    }
+   ]
+  },
+  "typescript": {
+   "name": "글자본 자리 — 종이·붓",
+   "verb": "살펴보기",
+   "say": "돗자리 위 종이 조각 셋, 붓 하나. 글자를 써서 장인에게 준다 — 거푸집은 거꾸로 새긴다. 쓰는 사람과 붓는 사람이 다르다.",
+   "flag": "seen:typescript",
+   "once": true,
+   "info": "글자본 — 글 아는 집이 쓰고 장인이 새긴다.",
+   "rename": [
+    {
+     "if": "sit:press:open && !sit:press:done",
+     "name": "글자본 자리",
+     "verb": "글자본을 쓴다",
+     "once": false,
+     "flag": "seen:typescript2",
+     "choices": [
+      {
+       "label": "글자본을 쓴다 — 눈 (문벌·사대부·향리·권문·스님)",
+       "if": "status:munbeol || status:sadaebu || status:hyangni || status:gwonmun || status:monk",
+       "gray": "글자본은 글을 아는 집이 쓴다 — 붓는 손과 쓰는 손이 다르다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "거푸집에 거꾸로 새겨도 바로 읽히게 쓰는 눈.",
+        "fail": "…글자가 거꾸로 찍혔다. 한 자 다시."
+       },
+       "flag": "press:script",
+       "say": "📜 글자본 스무 자."
+      }
+     ]
+    }
+   ]
+  },
+  "uichang": {
+   "name": "의창 곳간 셋",
+   "hidden": [
+    "stored_grain"
+   ],
+   "verb": "살펴보기",
+   "say": "흙담 안 기와 곳간 셋. 문은 닫혔고 안은 비었다 — 봄이다. 가을에 갚은 곡식이 다시 찬다고 한다.",
+   "flag": "seen:uichang",
+   "once": true,
+   "info": "의창 — 986년 성종, 봄에 빌려 주고 가을에 갚게 한 곳간.",
+   "rename": [
+    {
+     "if": "sit:uichang:open && !sit:uichang:done",
+     "name": "의창 곳간",
+     "verb": "곳간을 연다",
+     "once": false,
+     "flag": "seen:uichang2",
+     "choices": [
+      {
+       "label": "봄 곡식을 빌린다 — 배 (양민·부곡·외거·떠돌이)",
+       "if": "status:yangmin || status:bugok || status:oegeo || status:drifter",
+       "gray": "봄 곡식을 빌리는 건 제 논을 가는 작은 집이다 — 노비는 주인 집이 빌리고, 큰 집은 빌릴 일이 없다.",
+       "roll": {
+        "ab": "배",
+        "hard": 1,
+        "why": "빌린 곡식으로 모를 살리고 가을까지 버텨 갚는 배.",
+        "fail": "…가을이 비었다. 못 갚았다. 이자가 쌓였다."
+       },
+       "rollFailFlag": "uichang:owe",
+       "flag": "uichang:borrow",
+       "reveal": [
+        "stored_grain"
+       ],
+       "say": "🌾 두 섬 빌려 모를 살렸다. 가을에 갚았다. 곳간이 다시 찼다."
+      },
+      {
+       "label": "곡식을 낸다 — 곳간을 채운다 — 곡식 2 (문벌·향리·사대부·무신)",
+       "if": "(status:munbeol || status:hyangni || status:sadaebu || status:musin) && val:grain>=2",
+       "gray": "곳간을 채우는 건 곡식 둘 있는 벼슬 집이다.",
+       "flag": "uichang:fill",
+       "reveal": [
+        "stored_grain"
+       ],
+       "say": "🌾 두 섬. 「백성을 살린 집.」"
+      },
+      {
+       "label": "빌려 가고 갚지 않는다 ⚠ (권문세족)",
+       "if": "status:gwonmun",
+       "gray": "빌려 가고 안 갚을 수 있는 건 아전이 말 못 붙이는 권문세족이다.",
+       "flag": "uichang:grab",
+       "say": "🌾 세 섬. 「가을에.」 가을이 지났다. 곳간이 비었다."
+      }
+     ]
+    },
+    {
+     "if": "uichang:borrow || uichang:fill || uichang:carry",
+     "name": "의창 곳간 — 찼다",
+     "verb": "살펴보기",
+     "once": true,
+     "flag": "seen:uichang3",
+     "say": "가을. 볏단이 곳간 안을 채웠다. 장부엔 갚은 집과 채운 집 이름. 내년 봄에 또 연다 — 되는 그대로 아전 손에."
+    }
+   ]
+  },
+  "uichangbook": {
+   "name": "의창 장부 자리 — 되·말",
+   "verb": "살펴보기",
+   "say": "돗자리 위 두루마리와 붓. 곁에 말(斗) 하나, 되 하나, 평미레. 되가 둘이다 — 같은 되인지 보려면 들어 봐야 한다.",
+   "flag": "seen:uichangbook",
+   "once": true,
+   "info": "의창 장부 — 빌려 간 집·갚은 집, 그리고 되.",
+   "rename": [
+    {
+     "if": "sit:uichang:open && !sit:uichang:done",
+     "name": "의창 장부 자리",
+     "verb": "되를 잰다",
+     "once": false,
+     "flag": "seen:uichangbook2",
+     "choices": [
+      {
+       "label": "되를 잰다 — 바르게 — 눈 (향리)",
+       "if": "status:hyangni",
+       "gray": "되를 쥔 건 아전이다 — 향리 집.",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "평미레로 밀어 받을 때나 줄 때나 같은 되를 재는 눈.",
+        "fail": "…한 되 샜다. 다시 쟀다."
+       },
+       "flag": "uichang:fair",
+       "say": "📏 같은 되. 「올해 아전은.」"
+      },
+      {
+       "label": "큰 되로 받고 작은 되로 준다 ⚠ — 눈 (향리)",
+       "if": "status:hyangni",
+       "gray": "되를 속일 수 있는 건 되를 쥔 아전뿐이다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "되 둘을 바꿔 쥐고 아무도 못 보게 하는 눈.",
+        "fail": "…줄 선 사람이 되를 들어 봤다. 「이게 뭐요.」"
+       },
+       "rollFailFlag": "uichang:exposed",
+       "flag": "uichang:cheat",
+       "say": "📏 한 해 두 섬이 남았다. 아무도 모른다 — 아직."
+      }
+     ]
+    }
+   ]
+  },
+  "repaypile": {
+   "name": "갚는 볏단 더미·지게",
+   "verb": "살펴보기",
+   "say": "볏단 다섯, 지게 하나. 가을에 갚으러 온 집이 두고 간 것. 빌린 두 섬에 한 되 더.",
+   "flag": "seen:repaypile",
+   "once": true,
+   "info": "의창에 갚는 볏단 — 이자 조금.",
+   "rename": [
+    {
+     "if": "sit:uichang:open && !sit:uichang:done",
+     "name": "갚는 볏단 더미",
+     "verb": "지게를 진다",
+     "once": false,
+     "flag": "seen:repaypile2",
+     "choices": [
+      {
+       "label": "주인 집 곡식을 지고 온다 — 몸 (노비)",
+       "if": "status:solgeo",
+       "gray": "주인 집 몫을 지는 건 솔거 노비다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "주인 집이 갚을 두 섬을 지고 오는 몸.",
+        "fail": "…지게 끈이 끊어졌다. 한 섬 흘렸다."
+       },
+       "flag": "uichang:carry",
+       "say": "🏋 두 섬. 장부에 주인 집 이름."
+      }
+     ]
+    }
+   ]
+  },
+  "saltpan": {
+   "name": "염전 — 갯벌 물 가두기",
+   "verb": "살펴보기",
+   "say": "갯벌을 네모로 갈라 바닷물을 가두었다. 볕에 말라 짙어진다. 갈퀴 하나, 함수 토기 하나. 짙어진 물을 솥으로 나른다.",
+   "flag": "seen:saltpan",
+   "once": true,
+   "info": "자염 — 갯벌에서 짙게 한 바닷물을 솥에 졸인다.",
+   "rename": [
+    {
+     "if": "sit:salt:open && !sit:salt:done",
+     "name": "염전",
+     "verb": "함수를 나른다",
+     "once": false,
+     "flag": "seen:saltpan2",
+     "choices": [
+      {
+       "label": "소금을 굽는다 — 몸 (양민·부곡·외거·떠돌이)",
+       "if": "status:yangmin || status:bugok || status:oegeo || status:drifter",
+       "gray": "솥 앞에 서는 건 염호 — 작은 집이다. 큰 집은 가마를 가지고, 노비는 주인 가마에 나무를 댄다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 2,
+        "why": "밤새 불을 보며 함수를 졸이고 소금을 긁는 몸.",
+        "fail": "…불이 죽었다. 반 가마."
+       },
+       "flag": "salt:boil",
+       "say": "🧂 한 가마. 베 한 필 값."
+      },
+      {
+       "label": "소금을 산다 — 곡식 1",
+       "if": "val:grain>=1",
+       "gray": "소금 한 말은 곡식 한 단이다.",
+       "flag": "salt:buy",
+       "say": "🧂 한 말. 김치 한 독."
+      }
+     ]
+    }
+   ]
+  },
+  "saltkiln": {
+   "name": "소금 가마 — 가마솥",
+   "verb": "살펴보기",
+   "say": "흙 가마 위 큰 쇠솥. 함수가 끓고 김이 오른다. 곁에 긁어낸 소금 더미, 땔나무 다섯. 소금 한 가마에 나무 한 짐.",
+   "flag": "seen:saltkiln",
+   "once": true,
+   "info": "소금 가마 — 염호가 밤새 졸인다.",
+   "rename": [
+    {
+     "if": "sit:salt:open && !sit:salt:done",
+     "name": "소금 가마",
+     "verb": "불을 본다",
+     "once": false,
+     "flag": "seen:saltkiln2",
+     "choices": [
+      {
+       "label": "소금을 굽는다 — 몸 (양민·부곡·외거·떠돌이)",
+       "if": "status:yangmin || status:bugok || status:oegeo || status:drifter",
+       "gray": "솥 앞에 서는 건 염호 — 작은 집이다. 큰 집은 가마를 가지고, 노비는 주인 가마에 나무를 댄다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 2,
+        "why": "밤새 불을 보며 함수를 졸이고 소금을 긁는 몸.",
+        "fail": "…불이 죽었다. 반 가마."
+       },
+       "flag": "salt:boil",
+       "say": "🧂 한 가마. 땔나무는 다 탔다."
+      },
+      {
+       "label": "땔나무를 댄다 — 손 (노비)",
+       "if": "status:solgeo || status:oegeo",
+       "gray": "주인 가마에 나무를 대는 건 노비다.",
+       "roll": {
+        "ab": "손",
+        "hard": 1,
+        "why": "소금 한 가마 끓일 나무 한 짐을 패는 손.",
+        "fail": "…젖은 나무. 연기만."
+       },
+       "flag": "salt:wood",
+       "say": "🪵 한 짐. 주인 가마에."
+      },
+      {
+       "label": "소금 가마를 사들인다 — 곡식 3 (문벌·권문세족)",
+       "if": "(status:munbeol || status:gwonmun) && val:grain>=3",
+       "gray": "가마째 사들이는 건 곡식 셋 있는 큰 집이다.",
+       "flag": "salt:seize",
+       "say": "🏠 가마 둘, 염호 셋 — 우리 집 것."
+      }
+     ]
+    }
+   ]
+  },
+  "saltstore": {
+   "name": "염창 — 나라 소금 창고",
+   "hidden": [
+    "salt_sack"
+   ],
+   "verb": "살펴보기",
+   "say": "작은 초가 창고, 앞에 장부 돗자리. 「소금은 나라만 판다.」 가마니 자리는 비었다 — 염호가 들이면 찬다.",
+   "flag": "seen:saltstore",
+   "once": true,
+   "info": "염창 — 1309년 각염법, 나라가 소금을 독점해 판 창고.",
+   "rename": [
+    {
+     "if": "sit:salt:open && !sit:salt:done",
+     "name": "염창",
+     "verb": "장부를 편다",
+     "once": false,
+     "flag": "seen:saltstore2",
+     "choices": [
+      {
+       "label": "염창에 들인다 — 각염법 — 눈 (향리)",
+       "if": "status:hyangni",
+       "gray": "나라 창고 장부를 적는 건 아전이다 — 향리 집.",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "가마니 수를 세어 장부에 틀리지 않게 적는 눈.",
+        "fail": "…한 가마니가 비었다. 다시 셌다."
+       },
+       "flag": "salt:store",
+       "reveal": [
+        "salt_sack"
+       ],
+       "say": "📜 가마니 다섯, 염창. 「소금은 나라 것.」"
+      },
+      {
+       "label": "소금을 몰래 판다 ⚠ — 눈",
+       "if": "!status:munbeol && !status:gwonmun && !status:hyangni",
+       "gray": "사염으로 팔 소금이 손에 있는 건 염호와 그 곁 사람이다 — 벼슬 집은 장부를 쥔다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "아전 눈을 피해 한 가마를 장사꾼에게 넘기는 눈.",
+        "fail": "…장사꾼 뒤에 아전. 「사염.」"
+       },
+       "rollFailFlag": "salt:caught",
+       "flag": "salt:smuggle",
+       "say": "🧂 한 가마, 곡식 세 단. 장부엔 「반 가마」."
+      }
+     ]
+    },
+    {
+     "if": "salt:store",
+     "name": "염창 — 가마니가 찼다",
+     "verb": "살펴보기",
+     "once": true,
+     "flag": "seen:saltstore3",
+     "say": "소금 가마니 다섯. 장부에 「염호 ○○, 다섯」. 염호는 베 한 필을 받았다. 소금은 나라 것이 됐다."
+    }
+   ]
   }
  }
 }
