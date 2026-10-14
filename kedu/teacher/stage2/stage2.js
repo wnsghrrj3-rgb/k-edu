@@ -212,16 +212,22 @@
     return '<div class="mg2-lead">' + md(d.content) + '</div>' + st + (note ? '<div class="mg2-note">' + note + '</div>' : '');
   }
   // 111차 — 답 쓰는 문제 장 pa2(보기 없이 답 칸만 · 1세대 말풍선+펭귄 대신 장면 그림 판): 왼쪽 = 배경 + 안내 인물 둘 + 상황 말풍선(그림 fig 가 있으면 그 그림) · 오른쪽 = 큰 물음 + 답 카드 + 풀이. 교사 무대만.
-  function pa2Ok(d) { const body = d.scenario && d.scenario.body ? d.scenario.body : d.context; return !!(body && d.question && (d.answer !== undefined || (Array.isArray(d.answers) && d.answers.length)) && !d.options && !d.questions && !d.challenge && !d.items && !d.sequence && !d.cards && d.ten_frame === undefined && d.ten_frame_anchor === undefined && d.linking_cube === undefined && d.card === undefined && !(d.emoji && d.count !== undefined)); }
+  function pa2Ok(d) { const body = d.scenario && d.scenario.body ? d.scenario.body : d.context; const its = !d.items || (Array.isArray(d.items) && d.items.length && d.items.length <= 4 && d.items.every(i => i && i.emoji && i.count !== undefined)); // 118차 — 상황 글 없는 장·세는 그림(items)·십 배열판(ten_frame_anchor) 장도 받음 · 그림 판 위 흰 판에
+    return !!((body || !d.fig) && d.question && (d.answer !== undefined || (Array.isArray(d.answers) && d.answers.length)) && !d.options && !d.questions && !d.challenge && its && !(body && (d.items || d.ten_frame_anchor !== undefined)) && !d.sequence && !d.cards && d.ten_frame === undefined && d.linking_cube === undefined && d.card === undefined && !(d.emoji && d.count !== undefined)); }
+  // 118차 — 그림 + 보기 문제 장 pf2(4학년 수학 · scenario + fig + options): pv3 는 fig 를 못 받아 1세대 말풍선 꼴에서 그림이 물음을 덮었음 → pa2 의 그림 판(상황 띠 + 큰 그림) 왼쪽 · 오른쪽 큰 물음 + 보기. 교사 무대만.
+  function pf2Ok(d) { return !!(d.scenario && d.scenario.body && d.fig && Array.isArray(d.options) && d.options.length && d.question && !d.questions && !d.challenge && !d.context && !d.items && !d.sequence && !d.cards && d.ten_frame === undefined && d.ten_frame_anchor === undefined && d.linking_cube === undefined && d.card === undefined && !(d.emoji && d.count !== undefined) && !d.options.some(o => o && (o.emoji || o.ten_frame !== undefined))); }
   function pa2(d, g, rev) {
     const A = global.KT2_ART; const sc = d.scenario && d.scenario.body ? d.scenario : { body: d.context }; const body = String(sc.body || ''); const ic = sc.icon ? String(sc.icon) : '';
-    const ans = d.answer !== undefined ? [d.answer] : d.answers; const at = ans.map(a => md(String(a))).join(' <i>·</i> ');
+    const opt = Array.isArray(d.options) && d.options.length; // 118차 pf2
+    const ans = opt ? [''] : d.answer !== undefined ? [d.answer] : d.answers; const at = ans.map(a => md(String(a))).join(' <i>·</i> ');
     const fg = d.fig && global.KT2_FIG ? global.KT2_FIG.render(d.fig) : '';
     let left;
     if (fg) left = '<div class="pa2-fig"><div class="pa2-fs">' + (ic ? '<span class="pa2-fic">' + esc(ic) + '</span>' : '') + '<span class="pa2-say">' + md(body) + '</span></div>' + fg + '</div>';
     else { const kd = A ? A.kindOf((d.title || '') + ' ' + body + ' ' + d.question) : 'hill';
-      left = '<div class="pa2-pic picture ' + kd + '">' + (A ? A.backdrop(kd) : '') + '<div class="pa2-bub"><span class="pa2-say">' + md(body) + '</span></div>' + (ic ? '<div class="pa2-ic">' + esc(ic) + '</div>' : '') + '<div class="pa2-cast"><span class="pa2-ch">' + guideChr(g, 0) + '</span><span class="pa2-ch r">' + guideChr(g, 1) + '</span></div></div>'; }
-    const note = rev && d.note ? '<div class="pa2-note">' + md(String(d.note).replace(/^풀이\s*[:：]\s*/, '')) + '</div>' : '';
+      const vis = d.items ? '<div class="pa2-vis">' + tfRow(d.items) + '</div>' : d.ten_frame_anchor !== undefined ? '<div class="pa2-vis tf">' + tenFrame(d.ten_frame_anchor, 64) + '</div>' : ''; // 118차
+      left = '<div class="pa2-pic picture ' + kd + (body ? '' : vis ? ' pa2-nb has-vis' + (d.items && (d.items.length >= 3 || d.items.reduce((a, i) => a + Math.min(+i.count || 0, 20), 0) > 8) ? ' vis-big' : '') : ' pa2-nb') + '">' + (A ? A.backdrop(kd) : '') + (body ? '<div class="pa2-bub"><span class="pa2-say">' + md(body) + '</span></div>' : vis) + (ic ? '<div class="pa2-ic">' + esc(ic) + '</div>' : '') + '<div class="pa2-cast"><span class="pa2-ch">' + guideChr(g, 0) + '</span><span class="pa2-ch r">' + guideChr(g, 1) + '</span></div></div>'; }
+    let nt = rev && d.note ? String(d.note) : ''; if (nt && opt && !d.multi) { const o = d.options.find(x => x && x.correct); const ot = o == null ? '' : String(o.label != null ? o.label : o.text != null ? o.text : o).replace(/\*\*/g, '').trim(); const m = nt.match(/\s*(?:→|=>)\s*\*\*([^*]+)\*\*\s*\.?\s*$/); if (m && ot && m[1].trim() === ot) nt = nt.slice(0, m.index); } // pv3 처럼 정답 보기가 빛나므로 풀이 끝 정답 글은 뺌
+    nt = nt.replace(/^풀이\s*[:：]\s*/, '').trim(); const note = nt ? '<div class="pa2-note">' + md(nt) + '</div>' : '';
     const al = ans.map(a => String(a).replace(/\*\*/g, '')).join(' · ').length; const bc = al > 40 ? ' xl' : al > 14 ? ' l' : ''; // 긴 답(문장)은 cq2 처럼 글자를 단계로
     let qh; const qs = String(d.question || ''); const parts = qs.split(/(?=[①-⑩])/).map(x => x.trim()).filter(Boolean); // 「① … ② … — 물음」 꼴은 번호 줄 목록 + 물음
     if (parts.length >= 2 && /^[①-⑩]/.test(parts[0])) { const last = parts[parts.length - 1]; const m = last.match(/^([①-⑩][^—–]*?)\s*(?:—|–|\n)\s*(.+)$/); let q = parts.length && !/^[①-⑩]/.test(parts[0]) ? parts.shift() : '';
@@ -230,7 +236,7 @@
     else { const dm = qs.match(/^(.+?)\s+(?:—|–)\s*(.+)$/); const its = dm ? dm[1].split(/\s+·\s+/).map(x => x.trim()).filter(Boolean) : []; // 「가 · 나 · 다 — 물음」 꼴도 줄 목록
       if (its.length >= 3) qh = '<ul class="pa2-ql sep">' + its.map(x => '<li>' + md(x) + '</li>').join('') + '</ul><div class="pa2-q sm">' + md(dm[2].trim()) + '</div>';
       else qh = '<div class="pa2-q">' + md(qs) + '</div>'; }
-    return '<div class="pa2-row' + (fg ? ' has-fig' : '') + '"><div class="pa2-side">' + left + '<div class="pa2-L">' + note + '</div></div><div class="pa2-main">' + qh + '<div class="pa2-ans' + (rev ? ' on' : '') + '"><span class="pa2-lab">답</span><div class="pa2-box' + bc + '">' + (rev ? at : '?') + '</div></div><div class="pa2-R">' + note + '</div></div></div>'; // 풀이는 양쪽에 두고 CSS 로 한쪽만(fit-pa2n 이면 그림 판 아래)
+    return '<div class="pa2-row' + (fg ? ' has-fig' : '') + (opt && d.options.some(o => String(o && (o.text != null ? o.text : o.label != null ? o.label : o) || '').replace(/\*\*/g, '').length > 10) ? ' optl' : '') + '"><div class="pa2-side">' + left + '<div class="pa2-L">' + note + '</div></div><div class="pa2-main">' + qh + (opt ? options(d.options, !!d.multi, rev).replace('class="options', 'class="options pa2-opts') + (d.multi ? '<div class="pv3-multi">☑ 여러 개를 고를 수 있어요</div>' : '') : '<div class="pa2-ans' + (rev ? ' on' : '') + '"><span class="pa2-lab">답</span><div class="pa2-box' + bc + '">' + (rev ? at : '?') + '</div></div>') + '<div class="pa2-R">' + note + '</div></div></div>'; // 풀이는 양쪽에 두고 CSS 로 한쪽만(fit-pa2n 이면 그림 판 아래)
   }
   // 112차 — 심화 문제 장 ch2 「생각을 넓혀요」(challenge · 정답 대신 풀이·예시 답): 칠판에 큰 물음 + 펼치면 칠판 줄 아래 풀이 · 옆에서 상황 속 인물이 상황을 말함. 교사 무대만.
   function ch2Ok(d) { return !!(d.challenge && !d.options && !d.questions && !d.question && !d.items && !d.sequence && !d.cards && !d.fig && !d.scenario && d.ten_frame === undefined && d.ten_frame_anchor === undefined && d.linking_cube === undefined && d.card === undefined && !(d.emoji && d.count !== undefined)); }
@@ -276,6 +282,7 @@
     if (o.text) return '<div>' + md(o.text) + '</div>';
     return '';
   }
+  function pf2Wide(f) { return !!f && (['bar', 'pgraph', 'ptable'].indexOf(f.k) >= 0 || (f.k === 'rtab' && (f.rows || []).length > 1)); } // 119차 — pf2w 는 표·그래프만(도형은 왼쪽 그림 판)
   function dataFig(f) { return !!f && (['bar', 'pgraph', 'ptable', 'ngrid', 'eqs', 'eqc', 'bal', 'shapes', 'lines', 'pdist', 'quad', 'quads', 'circ2', 'dgrid', 'dline', 'dpv', 'dvert'].indexOf(f.k) >= 0 || (f.k === 'rtab' && (f.rows || []).length > 1) || (f.k === 'panels' && (f.items || []).some(i => dataFig(i.fig)))); } // 63차 · 65차 관계·규칙 부품 · 82차 사각형 부품 · 83차 소수 부품(기록표는 두 줄 이상일 때만 두 칸 — 한 줄 표는 넓게 위아래)
   function options(opts, multi, revealed) {
     if (!opts || !opts.length) return '';
@@ -401,6 +408,7 @@
       }
       case 'basic_problem': case 'advanced_problem': {
         if (!ctx.learn && ch2Ok(d)) { cls = 'ch2'; const n0 = (slide.data || {}).note; push(ch2(Object.assign({}, d, { note: n0 }), ctx.guide, rev)); answerable = answerable || !!n0; break; } // 112차 — 심화 문제 장(생각을 넓혀요) 칠판
+        if (!ctx.learn && pf2Ok(d)) { cls = 'pa2 pf2' + (pf2Wide(d.fig) ? ' pf2w' : ''); push(pa2(d, ctx.guide, rev)); answerable = true; break; } // 118차 — 그림 + 보기 문제 장
         if (!ctx.learn && pa2Ok(d)) { cls = 'pa2'; push(pa2(d, ctx.guide, rev)); answerable = true; break; } // 111차 — 답 쓰는 문제 장
         if (pv3Ok(d)) { push(pv3(d, rev)); answerable = answerable || d.options.some(o => o.correct); break; } // 92차 — 새 문제 장(읽을 글 왼쪽 띠 · 장면 나눔 · 물음 크게 · 보기 세로)
         const b0 = b.length; let figH = ''; // 60차 — 그림 붙은 문제 장은 좌(그림)·우(글·물음·답) 두 칸
