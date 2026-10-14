@@ -53,6 +53,16 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   ok(l.cls !== 'pa2' && !/pa2-row/.test(l.body), '111차 — pa2 는 학생 화면(learn)에선 안 씀');
   const f = KT2.renderSlide({ id: 'x', block: 'basic_problem', data: Object.assign({}, d, { fig: { k: 'ang', deg: 80, unit: 20, q: true } }) }, { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] });
   ok(f.cls === 'pa2' && /pa2-row has-fig/.test(f.body) && !/pa2-pic/.test(f.body), '111차 — pa2: 그림(fig) 있으면 그림 판 대신 그 그림'); }
+{ const C = { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [], guide: ['🐻', '🐧'] };
+  const nb = KT2.renderSlide({ id: 'x', block: 'basic_problem', data: { question: '7 + 2 는?', answer: 9 } }, C);
+  ok(nb.cls === 'pa2' && /pa2-nb/.test(nb.body), '118차 — pa2: 상황 글 없으면 그림 판 + 인물 크게');
+  const it = KT2.renderSlide({ id: 'x', block: 'basic_problem', data: { question: '모두 몇 개?', answer: 5, items: [{ emoji: '🍎', count: 3 }, { emoji: '🍎', count: 2 }] } }, C);
+  ok(it.cls === 'pa2' && /pa2-vis/.test(it.body), '118차 — pa2: 세는 그림 items 는 그림 판 위 흰 판');
+  const pf = { scenario: { icon: '📐', body: '두 각을 봐요.' }, question: '어느 쪽이 클까요?', options: [{ text: '가', correct: true }, { text: '나' }] };
+  const p1 = KT2.renderSlide({ id: 'x', block: 'basic_problem', data: Object.assign({}, pf, { fig: { k: 'shapes', items: [] } }) }, C);
+  ok(/pa2 pf2/.test(p1.cls) && !/pf2w/.test(p1.cls), '119차 — pf2: 도형 그림은 왼쪽 그림 판(pf2w 아님)');
+  const p2 = KT2.renderSlide({ id: 'x', block: 'basic_problem', data: Object.assign({}, pf, { fig: { k: 'rtab', head: ['가', '나'], rows: [{ v: ['1', '2'] }, { v: ['3', '4'] }] } }) }, C);
+  ok(/pf2w/.test(p2.cls), '119차 — pf2w: 두 줄 넘는 표는 위 띠'); }
 { const d = { context: '펭이가 물었어요. 「정말 그럴까?」', challenge: '왜 그런지 짝에게 말해 봐요.', note: '풀이: **까닭** 을 들어 말해요.' };
   const R = (rev, learn) => KT2.renderSlide({ id: 'x', block: 'advanced_problem', data: d }, { revealed: rev, state: {}, meta: {}, unitTitle: 'U', classNames: [], guide: ['🐻', '🐧'], learn: learn });
   const c = R(false), o = R(true), l = R(false, true);
@@ -171,7 +181,7 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   ok((c2.body.match(/ca-chip in wrong/g) || []).length === 1 && !/잘했어요/.test(c2.body), '분류형 카드: 틀린 통에 담은 카드 표시');
   const c3 = KT2.renderSlide(cl, Object.assign({}, C0, { revealed: true })); ok((c3.body.match(/ca-chip in"/g) || []).length === 3, '분류형 카드: 정답 공개 = 모두 제 통에');
   { const pq = { id: 'pq', block: 'basic_problem', data: { title: 't', question: '42 - 19 는?', answer: 23, note: '풀이: 12-9=3 → 23.' } };
-    ok(!/풀이/.test(KT2.renderSlide(pq, C0).body) && /풀이/.test(KT2.renderSlide(pq, Object.assign({}, C0, { revealed: true })).body), '풀이 쪽지: 정답 열 때만'); }
+    ok(!/12-9=3/.test(KT2.renderSlide(pq, C0).body) && /12-9=3/.test(KT2.renderSlide(pq, Object.assign({}, C0, { revealed: true })).body), '풀이 쪽지: 정답 열 때만(119차 — pa2 가 「풀이:」 머리를 떼므로 내용으로 봄)'); }
   const c4 = KT2.renderSlide({ id: 'so', block: 'card_arrange', data: { cards: [3, 1, 2] } }, C0); ok(/class="i-cards"/.test(c4.body) && !/ca-bin/.test(c4.body), '순서 카드: 수 정렬은 종전 그대로'); }
 // ── 21차 개념 그림 층(stage2-fig.js) — 데이터 fig 전수 · 수평대 기울기 방향 · 화살표 s<m<l · 범례 · 개념 장에만 ──
 { const FG = g0.KT2_FIG; const C0 = { revealed: false, state: {}, meta: {}, unitTitle: 'U', classNames: [] };
