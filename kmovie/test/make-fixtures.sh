@@ -20,3 +20,6 @@ ffmpeg -hide_banner -loglevel error -y -loop 1 -framerate 30 -t 4 -i fx/still.pn
   -c:v libvpx-vp9 -b:v 1200k -cpu-used 5 -row-mt 1 -g 30 -pix_fmt yuv420p -r 30 fx/shake.mp4
 # ui-hevc.mjs 용: HEVC(hvc1) 3초 — 디먹스가 hvcC 로 description 을 만들고 isConfigSupported 에 맡기는지 (HW 디코더 없는 환경은 새 안내로 거절)
 ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=640x360:rate=30:duration=3" -f lavfi -i "sine=frequency=440:duration=3" -c:v libx265 -tag:v hvc1 -x265-params log-level=none -g 15 -c:a aac -b:a 96k -pix_fmt yuv420p fx/hevc.mp4
+# 62 A/V 싱크: 29.97fps 원본(ntsc.mp4) · 가변 프레임률 원본(vfr.mp4 — 앞 10초만 5프레임마다 하나 빠져 평균 fps 로는 시각이 안 맞음, pts 는 원래 자리)
+ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=320x180:rate=30000/1001:duration=40" -f lavfi -i "sine=frequency=440:duration=40" -c:v libvpx-vp9 -b:v 300k -cpu-used 5 -g 15 -c:a libopus -pix_fmt yuv420p fx/ntsc.mp4
+ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=320x180:rate=30:duration=20" -f lavfi -i "sine=frequency=440:duration=20" -vf "select='gt(mod(n,5),0)+gte(n,300)'" -vsync vfr -c:v libvpx-vp9 -b:v 300k -cpu-used 5 -g 15 -c:a libopus -pix_fmt yuv420p fx/vfr.mp4

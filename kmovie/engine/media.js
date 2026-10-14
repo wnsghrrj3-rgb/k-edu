@@ -589,8 +589,13 @@
       this.frames = pres.length;
       const span = (pres[pres.length - 1].cts + pres[pres.length - 1].dur - pres[0].cts) / ts;
       let fps = pres.length / Math.max(span, 1e-6);
-      this.fps = Math.abs(fps - Math.round(fps)) < 0.06 ? Math.round(fps) : Math.round(fps * 100) / 100;
+      // fps 는 정확히 — 29.97 을 30 으로 반올림하면 영상 축(프레임 번호)과 소리 축(초)이 1000 프레임마다 1 프레임씩 벌어져
+      // 25분이면 1.5초가 어긋난다(2026-10-14 준호 보고 "영상이랑 소리가 안 맞아"). 정수에서 0.004 안쪽일 때만 정수.
+      this.fps = Math.abs(fps - Math.round(fps)) < 0.004 ? Math.round(fps) : Math.round(fps * 1000) / 1000;
       this.durSec = span;
+      // 가변 프레임률(폰 촬영본): 프레임 번호 × 1/fps 가 실제 표시 시각과 어긋나면 cts 표로 시각을 잰다
+      this.us0 = pres[0].us;
+      { const per = 1e6 / fps; let dev = 0; for (let i = 0; i < pres.length; i++) { const d = Math.abs(pres[i].us - this.us0 - i * per); if (d > dev) dev = d; } this.vfr = dev > per * 0.75; this.vfrDevMs = Math.round(dev / 1000); }
       { let by = 0; for (let i = 0; i < dec.length; i++) by += dec[i].size || 0; this.bps = span > 0.2 ? Math.round(by * 8 / span) : 0; }   // 원본 영상 비트레이트 — 내보내기 「원본에 맞게」
       this.cache = new Map();
       // 캐시는 ImageBitmap(RGBA) — 바이트 예산으로 상한 (1080p ≈57장 · 4K ≈20장)
@@ -719,6 +724,12 @@
     }
 
     /* 정확한 프레임. coalesce=true 면 스크럽용: 더 새 요청이 오면 이 요청은 버리고 null */
+    /* 프레임 번호 → 원본 표시 시각(초, 첫 프레임 = 0). cts 표 기준이라 29.97·가변 프레임률에서도 소리 축과 같은 시간이다 */
+    secOf(i) { const p = this.pres; if (!p || !p.length) return i / this.fps; i = Math.max(0, Math.min(p.length - 1, Math.round(i))); return (p[i].us - this.us0) / 1e6; }
+    /* 원본 시각(초) → 가장 가까운 프레임 번호 */
+    idxAtSec(sec) { const p = this.pres, want = this.us0 + sec * 1e6; let lo = 0, hi = p.length - 1; while (lo < hi) { const mid = (lo + hi) >> 1; if (p[mid].us < want) lo = mid + 1; else hi = mid; } if (lo > 0 && want - p[lo - 1].us <= p[lo].us - want) lo--; return lo; }
+    /* 균일 가정으로 고른 프레임 번호(base 에서 idx)를 실제 시각에 맞는 번호로 — 고정 프레임률이면 그대로 */
+    timeIdx(base, idx) { if (!this.vfr) return idx; return this.idxAtSec(this.secOf(base) + (idx - base) / this.fps); }
     getFrame(idx, coalesce) {
       idx = Math.max(0, Math.min(this.frames - 1, idx | 0));
       const hit = this.cached(idx); if (hit) return Promise.resolve(hit);

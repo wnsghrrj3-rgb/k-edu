@@ -104,7 +104,11 @@
     if (c.freeze) return c.in;
     const u = clamp((t - c.at) / c.dur, 0, 0.999999);
     const s = speedMap(c.speed, u, c.ramp);
-    return c.in + Math.min(c.out - 1, Math.floor(s * (c.out - c.in)));
+    const idx = c.in + Math.min(c.out - 1, Math.floor(s * (c.out - c.in)));
+    // 가변 프레임률 원본: 번호 비례가 아니라 실제 표시 시각으로 — 소리(초 축)와 같은 자리의 프레임
+    const src = g.KMV_MEDIA && g.KMV_MEDIA.get(c.media);
+    if (src && src.vfr && src.timeIdx) return clamp(src.timeIdx(c.in, idx), c.in, c.out - 1);
+    return idx;
   }
 
   /* ---------- 불변식 복구 ---------- */

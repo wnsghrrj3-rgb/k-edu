@@ -31,10 +31,12 @@
   function decode(arrayBuffer) { return ctx().decodeAudioData(arrayBuffer); }
 
   /* A1 한 항목 → 재생 구간들 [{tl(프레임), dur(프레임), src(초), rate}] */
+  /* 원본 프레임 번호 → 원본 소리 축의 초: 소스가 있으면 cts 표(secOf) — 29.97·가변 프레임률에서도 영상과 같은 시각 */
+  function frameSec(m, frame) { const S = g.KMV_MEDIA && g.KMV_MEDIA.get(m.id); return S && S.secOf ? S.secOf(frame) : frame / m.fps; }
   function segments(a, c, m) {
     const P = g.KMV_PROJECT, FPS = P.FPS;
-    if (!a.linked) return [{ tl: a.at, dur: a.dur, src: a.in / m.fps, rate: 1 }];
-    const inSec = c.in / m.fps, len = (c.out - c.in) / m.fps;
+    if (!a.linked) return [{ tl: a.at, dur: a.dur, src: frameSec(m, a.in), rate: 1 }];
+    const inSec = frameSec(m, c.in), len = frameSec(m, c.out) - inSec;
     if (c.speed === 'hit') {
       const d = c.dur, d1 = Math.round(d * 0.2 / 2.4), d2 = Math.round(d * 2.0 / 2.4);
       return [
@@ -575,6 +577,6 @@
     return out.filter(s => s.dur >= min);
   }
 
-  g.KMV_AUDIO = { ctx, decode, play, playSource, stop, now, isPlaying, nodeCount: () => (playing ? playing.nodes.length : 0), renderMix, ensureRange, segments, scheduleA1, scheduleA2, scheduleAmb, scheduleSfx, noiseProfile, denoiseBuf, quietWindow, profileFrom: (chs, sr) => ({ sr, ch: chs.map(spectrumOf) }), findRoomTone, ambGaps, ambBuffer, voice, beats, beatsFromEnv, duckSpans, XF, SR, AMB_SEC,
+  g.KMV_AUDIO = { frameSec, ctx, decode, play, playSource, stop, now, isPlaying, nodeCount: () => (playing ? playing.nodes.length : 0), renderMix, ensureRange, segments, scheduleA1, scheduleA2, scheduleAmb, scheduleSfx, noiseProfile, denoiseBuf, quietWindow, profileFrom: (chs, sr) => ({ sr, ch: chs.map(spectrumOf) }), findRoomTone, ambGaps, ambBuffer, voice, beats, beatsFromEnv, duckSpans, XF, SR, AMB_SEC,
     _tune: o => { if (o && o.win > 0) WIN_S = o.win; if (o && o.top > 0) TOP_S = o.top; } };
 })(typeof window !== 'undefined' ? window : globalThis);
