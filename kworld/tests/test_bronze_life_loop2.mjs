@@ -44,7 +44,7 @@ const btn = (S, label) => S.panel?.b.find((x) => x.label.startsWith(label));
 {
   const { g, ix, S, use, pick, closeCard, goTo, opened, done } = mkGame('f', MIX);
   const useR = (name, label) => { use(name); if (!btn(S, label) && S.panel?.b.length === 1) { closeCard(); use(name); } };   // 꼭 나오는 상황 카드가 먼저 뜨면 닫고 한 번 더
-  ok(g.life.situations.length === 14, '꼭 7 + 새 7'); ok(Object.keys(g.world.areas).length === 20, '구역 20'); ok(g.life.status === 'rich', '곳간 집');
+  ok(g.life.situations.length === 14, '꼭 7 + 새 7'); ok(Object.keys(g.world.areas).length === 23, '구역 23'); ok(g.life.status === 'rich', '곳간 집');
   goTo('mill'); ok(!opened('mortar'), '이삭 전엔 찧는 마당 안 열림');
   g.flags.add('sit:rice:done'); g.life.onFlag();
   goTo('mill'); ok(opened('mortar'), '찧는 마당'); closeCard(); useR('npc_pounder', '소작'); ok(!btn(S, '소작 몫을 받는다')?.disabled, '곳간 집은 소작 몫 열림'); pick('소작 몫을 셋 중'); closeCard(); ok(done('mortar') && g.flags.has('mortar:third') && g.life.values.grain === 4, '셋 중 하나 → 🌾+1');
