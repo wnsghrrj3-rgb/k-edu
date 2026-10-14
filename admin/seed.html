@@ -50,10 +50,11 @@ go.onclick = async () => {
       let n = 0;
       for (let i = 0; i < questions.length; i += 200){ r = await db.rpc('admin_seed_rows', { p_concepts: [], p_mis: [], p_questions: questions.slice(i, i + 200) }); if (r.error) throw r.error; n += r.data.questions; row(label, `${n}/${questions.length}`); }
       totalQ += n; row(label, `${n}문항 ✓`, 'ok');
-    } catch (e) { fail++; row(label, '실패', 'bad'); console.error(u, e); }
+    } catch (e) { fail++; row(label, '실패', 'bad'); const r = document.getElementById('r_' + label); if (r) r.innerHTML += `<span class="bad" style="flex:1;font-size:12px">${(e && (e.message || e.details || e.hint)) || String(e)}</span>`; console.error(u, e); }
     sum.textContent = `${totalQ}문항 넣음` + (fail ? ` · 실패 ${fail}` : '');
+    if (fail) break;
   }
-  sum.textContent += fail ? ' — 실패한 단원은 단추를 다시 눌러 주세요.' : ' — 끝났어요. 케이학습지 화면을 새로고침하세요.';
+  sum.textContent += fail ? ' — 빨간 글씨를 그대로 보내 주세요.' : ' — 끝났어요. 케이학습지 화면을 새로고침하세요.';
   go.disabled = false;
 };
 </script></body></html>
