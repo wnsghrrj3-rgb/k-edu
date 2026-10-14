@@ -1,0 +1,87 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>케이학습지 시드 넣기</title>
+<style>
+:root{--bg:#fff;--fg:#1e2430;--muted:#6b7280;--line:#e5e7eb;--ok:#16a34a;--btn:#2563eb}
+@media(prefers-color-scheme:dark){:root{--bg:#111418;--fg:#e8eaee;--muted:#9aa3b2;--line:#2a2f3a}}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Noto Sans KR",sans-serif}
+main{max-width:760px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:22px;margin:0 0 6px} .hint{color:var(--muted);font-size:14px;margin:0 0 18px}
+.hint a{color:var(--btn)}
+li{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+ol{list-style:none;padding:0;margin:0} .n{width:28px;color:var(--muted);font-size:13px;text-align:right}
+.t{flex:1} .sz{color:var(--muted);font-size:12px}
+button{border:0;border-radius:8px;padding:7px 14px;background:var(--btn);color:#fff;font-size:14px;cursor:pointer}
+button.done{background:var(--ok)} button:disabled{opacity:.5}
+.bar{position:sticky;top:0;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--line);margin-bottom:8px;display:flex;gap:10px;align-items:center}
+.bar b{font-size:18px} .bar a{margin-left:auto;font-size:14px}
+</style></head><body><main>
+<h1>케이학습지 시드 넣기</h1>
+<p class="hint">① 「복사」 → ② <a href="https://supabase.com/dashboard/project/fesxtgyhfpucazpenksp/sql/new" target="_blank">수파베이스 SQL 편집기</a>에 Ctrl+V → ③ Run → ④ 다음 줄. 순서 상관없고 두 번 넣어도 괜찮아요. 복사한 줄은 초록으로 남아요.</p>
+<div class="bar"><b id="cnt"></b><span class="hint" style="margin:0">완료</span><a href="#" id="reset">표시 지우기</a></div>
+<ol id="list"></ol>
+</main><script>
+const BASE='https://raw.githubusercontent.com/wnsghrrj3-rgb/k-edu/main/sql/';
+const FILES=[
+  ["seed_worksheet_g1_1_kor_u1.sql","1학년 1학기 국어 1단원"],
+  ["seed_worksheet_g1_1_kor_u2.sql","1학년 1학기 국어 2단원"],
+  ["seed_worksheet_g1_1_kor_u3.sql","1학년 1학기 국어 3단원"],
+  ["seed_worksheet_g1_1_kor_u4.sql","1학년 1학기 국어 4단원"],
+  ["seed_worksheet_g1_1_kor_u5.sql","1학년 1학기 국어 5단원"],
+  ["seed_worksheet_g1_1_kor_u6.sql","1학년 1학기 국어 6단원"],
+  ["seed_worksheet_g1_1_kor_u7.sql","1학년 1학기 국어 7단원"],
+  ["seed_worksheet_g1_1_math_u2.sql","1학년 1학기 수학 2단원"],
+  ["seed_worksheet_g1_1_math_u3.sql","1학년 1학기 수학 3단원"],
+  ["seed_worksheet_g1_1_math_u4.sql","1학년 1학기 수학 4단원"],
+  ["seed_worksheet_g1_1_math_u5.sql","1학년 1학기 수학 5단원"],
+  ["seed_worksheet_g1_2_kor_u1.sql","1학년 2학기 국어 1단원"],
+  ["seed_worksheet_g1_2_kor_u2.sql","1학년 2학기 국어 2단원"],
+  ["seed_worksheet_g1_2_kor_u3.sql","1학년 2학기 국어 3단원"],
+  ["seed_worksheet_g1_2_kor_u4.sql","1학년 2학기 국어 4단원"],
+  ["seed_worksheet_g1_2_kor_u5.sql","1학년 2학기 국어 5단원"],
+  ["seed_worksheet_g1_2_kor_u6.sql","1학년 2학기 국어 6단원"],
+  ["seed_worksheet_g1_2_kor_u7.sql","1학년 2학기 국어 7단원"],
+  ["seed_worksheet_g1_2_math_u1.sql","1학년 2학기 수학 1단원"],
+  ["seed_worksheet_g1_2_math_u2.sql","1학년 2학기 수학 2단원"],
+  ["seed_worksheet_g1_2_math_u3.sql","1학년 2학기 수학 3단원"],
+  ["seed_worksheet_g1_2_math_u4.sql","1학년 2학기 수학 4단원"],
+  ["seed_worksheet_g1_2_math_u5.sql","1학년 2학기 수학 5단원"],
+  ["seed_worksheet_g1_2_math_u6.sql","1학년 2학기 수학 6단원"],
+  ["seed_worksheet_g2_1_kor_u1.sql","2학년 1학기 국어 1단원"],
+  ["seed_worksheet_g2_1_kor_u2.sql","2학년 1학기 국어 2단원"],
+  ["seed_worksheet_g2_1_kor_u3.sql","2학년 1학기 국어 3단원"],
+  ["seed_worksheet_g2_1_kor_u4.sql","2학년 1학기 국어 4단원"],
+  ["seed_worksheet_g2_1_kor_u5.sql","2학년 1학기 국어 5단원"],
+  ["seed_worksheet_g2_1_kor_u6.sql","2학년 1학기 국어 6단원"],
+  ["seed_worksheet_g2_1_kor_u7.sql","2학년 1학기 국어 7단원"],
+  ["seed_worksheet_g2_1_kor_u8.sql","2학년 1학기 국어 8단원"],
+  ["seed_worksheet_g2_1_math_u1.sql","2학년 1학기 수학 1단원"],
+  ["seed_worksheet_g2_1_math_u2.sql","2학년 1학기 수학 2단원"],
+  ["seed_worksheet_g2_1_math_u3.sql","2학년 1학기 수학 3단원"],
+  ["seed_worksheet_g2_1_math_u4.sql","2학년 1학기 수학 4단원"],
+  ["seed_worksheet_g2_1_math_u5.sql","2학년 1학기 수학 5단원"],
+  ["seed_worksheet_g2_1_math_u6.sql","2학년 1학기 수학 6단원"],
+  ["seed_worksheet_g2_2_math_u1.sql","2학년 2학기 수학 1단원"],
+  ["seed_worksheet_g2_2_math_u2.sql","2학년 2학기 수학 2단원"],
+  ["seed_worksheet_g2_2_math_u3.sql","2학년 2학기 수학 3단원"],
+  ["seed_worksheet_g2_2_math_u4.sql","2학년 2학기 수학 4단원"],
+  ["seed_worksheet_g2_2_math_u5.sql","2학년 2학기 수학 5단원"],
+  ["seed_worksheet_g2_2_math_u6.sql","2학년 2학기 수학 6단원"],
+  ["seed_worksheet_g6_2_math_u1.sql","6학년 2학기 수학 1단원"],
+  ["seed_worksheet_g6_2_math_u2.sql","6학년 2학기 수학 2단원"]
+];
+const KEY='kedu_seed_done'; let done={}; try{done=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(done))}catch(e){}};
+const list=document.getElementById('list');
+function draw(){
+  list.innerHTML=FILES.map(([f,l],i)=>`<li><span class="n">${i+1}</span><span class="t">${l}<br><span class="sz">${f}</span></span><button data-f="${f}" class="${done[f]?'done':''}">${done[f]?'복사됨 · 다시':'복사'}</button></li>`).join('');
+  document.getElementById('cnt').textContent=Object.keys(done).length+' / '+FILES.length;
+  list.querySelectorAll('button').forEach(b=>b.onclick=async()=>{
+    const f=b.dataset.f; b.disabled=true; b.textContent='가져오는 중…';
+    try{ const r=await fetch(BASE+f,{cache:'no-store'}); if(!r.ok) throw 0; const t=await r.text();
+      await navigator.clipboard.writeText(t); done[f]=1; save(); draw(); }
+    catch(e){ b.disabled=false; b.textContent='실패 · 다시'; alert('복사하지 못했어요. 한 번 더 눌러 주세요.'); }
+  });
+}
+document.getElementById('reset').onclick=e=>{e.preventDefault(); done={}; save(); draw();};
+draw();
+</script></body></html>
