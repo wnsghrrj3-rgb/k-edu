@@ -1,5 +1,12 @@
 /* 생성물 — scripts/build_projmap.js 가 만든다. 손으로 고치지 말 것. 케이티처 키 → 자기주도 원문 회수 키(id·ls·url) */
-window.KT2_PROJMAP = {"g1s2_math:u1_l01":{"id":"g1_2_math_u1_l01_v1","ls":"kedu_progress_g1_2_math_u1_l01","url":"/grade1/semester2/math/1단원_100까지의수/g1_math_u1_l01_단원도입.html","file":"g1_math_u1_l01_단원도입.html"},
+window.KT2_PROJMAP = {"g1s2_korean:u1_l01":{"id":"g1_2_kor_u1_l01_02_v1","ls":null,"url":"/grade1/semester2/korean/1단원_기분을말해요/g1_kor_u1_l01_02.html","file":"g1_kor_u1_l01_02.html"},
+"g1s2_korean:u1_l03":{"id":"g1_2_kor_u1_l03_04_v1","ls":null,"url":"/grade1/semester2/korean/1단원_기분을말해요/g1_kor_u1_l03_04.html","file":"g1_kor_u1_l03_04.html"},
+"g1s2_korean:u1_l05":{"id":"g1_2_kor_u1_l05_06_v1","ls":null,"url":"/grade1/semester2/korean/1단원_기분을말해요/g1_kor_u1_l05_06.html","file":"g1_kor_u1_l05_06.html"},
+"g1s2_korean:u1_l07":{"id":"g1_2_kor_u1_l07_08_v1","ls":null,"url":"/grade1/semester2/korean/1단원_기분을말해요/g1_kor_u1_l07_08.html","file":"g1_kor_u1_l07_08.html"},
+"g1s2_korean:u1_l09":{"id":"g1_2_kor_u1_l09_10_v1","ls":null,"url":"/grade1/semester2/korean/1단원_기분을말해요/g1_kor_u1_l09_10.html","file":"g1_kor_u1_l09_10.html"},
+"g1s2_korean:u1_l11":{"id":"g1_2_kor_u1_l11_12_v1","ls":null,"url":"/grade1/semester2/korean/1단원_기분을말해요/g1_kor_u1_l11_12.html","file":"g1_kor_u1_l11_12.html"},
+"g1s2_korean:u1_l13":{"id":"g1_2_kor_u1_l13_14_v1","ls":null,"url":"/grade1/semester2/korean/1단원_기분을말해요/g1_kor_u1_l13_14.html","file":"g1_kor_u1_l13_14.html"},
+"g1s2_math:u1_l01":{"id":"g1_2_math_u1_l01_v1","ls":"kedu_progress_g1_2_math_u1_l01","url":"/grade1/semester2/math/1단원_100까지의수/g1_math_u1_l01_단원도입.html","file":"g1_math_u1_l01_단원도입.html"},
 "g1s2_math:u1_l02":{"id":"g1_2_math_u1_l02_v1","ls":"kedu_progress_g1_2_math_u1_l02","url":"/grade1/semester2/math/1단원_100까지의수/g1_math_u1_l02_60708090을알아볼까요.html","file":"g1_math_u1_l02_60708090을알아볼까요.html"},
 "g1s2_math:u1_l03":{"id":"g1_2_math_u1_l03_v1","ls":"kedu_progress_g1_2_math_u1_l03","url":"/grade1/semester2/math/1단원_100까지의수/g1_math_u1_l03_99까지의수를알아볼까요_1.html","file":"g1_math_u1_l03_99까지의수를알아볼까요_1.html"},
 "g1s2_math:u1_l04":{"id":"g1_2_math_u1_l04_v1","ls":"kedu_progress_g1_2_math_u1_l04","url":"/grade1/semester2/math/1단원_100까지의수/g1_math_u1_l04_99까지의수를알아볼까요_2.html","file":"g1_math_u1_l04_99까지의수를알아볼까요_2.html"},

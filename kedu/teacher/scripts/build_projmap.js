@@ -16,6 +16,7 @@ for (const f of fs.readdirSync(SCR).filter(x => /^src_g(\d)s(\d)_(\w+)_u\d+\.jso
   const base = path.join(ROOT, 'grade' + g, 'semester' + t, SUBJ_DIR[s]); if (!fs.existsSync(base)) { miss.push(f + ' (폴더 없음)'); continue; }
   const files = walk(base, []);
   const src = JSON.parse(fs.readFileSync(path.join(SCR, f), 'utf8'));
+  if (!fs.existsSync(path.join(ROOT, 'kedu/teacher/data', f.replace(/^src_/, '').replace(/\.json$/, '.js')))) { miss.push(f + ' (케이티처 데이터 아직 없음)'); continue; } // 124차 — 재료만 있고 차시가 없는 단원은 지도에 넣지 않음
   for (const [key, L] of Object.entries(src)) {
     const hit = files.find(p => path.basename(p) === L.file); if (!hit) { miss.push(key + ' ' + L.file); continue; }
     put('g' + g + 's' + t + '_' + s + ':' + key, hit);
