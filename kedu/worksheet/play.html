@@ -364,6 +364,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .gtab td.bl{background:var(--tint)}.gtab td.q{outline:3px solid var(--accent);outline-offset:-3px;font-weight:700;color:var(--accent)}
 .cmpw{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:100%;overflow-x:auto}
 .cmpw svg{max-width:100%;height:auto;display:block}
+.spv .figc b{font-size:13px;font-weight:600}.spv .krq{width:48px;height:48px}
 .figs{gap:14px}.figc{display:flex;flex-direction:column;align-items:center;gap:2px}.figc b{font-size:17px;color:#2E3338}
 .pq .psortw{margin:8px 0 6px 30px}
 .pq .psortw .spile{display:flex;flex-wrap:wrap;gap:4px;max-width:420px;border:1px dashed #999;padding:6px;border-radius:8px}
@@ -1535,6 +1536,72 @@ function stackHTML(a, paper){
   const box = paper ? 'pcmpw' : 'cmpw';
   return `<div class="${box} figs krstk">${(a.stages || []).map((cells, i) => `<div class="figc">${cells ? cubesSVG(cells, paper ? 16 : 20) : '<div class="krq">?</div>'}<b>${i + 1}</b></div>`).join('')}</div>`;
 }
+/* ---------- v3.5 — 6학년 2학기 「공간과 입체」 (2026-10-13, 페이블 5.1) — 그림 spv ----------
+   spv {cells:[[x,y,z],…], show:['3d','top','num','front','side','layers'], q?:[x,y](수 쓴 그림의 ? 자리), qlayer?:k(k층 ?), cand?:{kind:'front'|'side'|'top', grids:[…4]}, marks?:{'x,y':'가'}}
+   좌표: x 오른쪽, y 뒤쪽(y=0 이 앞줄), z 위. 위에서 본 모양은 앞줄이 아래(「앞」 표시). 옆에서 본 모양은 오른쪽 옆 — 왼쪽 끝이 앞줄.
+   앞·옆에서 본 모양은 줄마다 가장 높은 층. 층별 그림은 1층부터(1층 = 위에서 본 모양). */
+function spCols(cells){
+  const h = {}; (cells || []).forEach(c => { const k = c[0] + ',' + c[1]; h[k] = Math.max(h[k] || 0, c[2] + 1); });
+  const pos = Object.keys(h).map(k => k.split(',').map(Number)).sort((a, b) => (b[1] - a[1]) || (a[0] - b[0]));
+  const nx = cells.length ? 1 + Math.max.apply(null, cells.map(c => c[0])) : 0, ny = cells.length ? 1 + Math.max.apply(null, cells.map(c => c[1])) : 0;
+  return {h, pos, nx, ny, n: cells.length, top: cells.length ? 1 + Math.max.apply(null, cells.map(c => c[2])) : 0};
+}
+function spH(C, x, y){ return C.h[x + ',' + y] || 0; }
+function spFront(C){ const out = []; for (let x = 0; x < C.nx; x++){ let m = 0; for (let y = 0; y < C.ny; y++) m = Math.max(m, spH(C, x, y)); out.push(m); } return out; }
+function spSide(C){ const out = []; for (let y = 0; y < C.ny; y++){ let m = 0; for (let x = 0; x < C.nx; x++) m = Math.max(m, spH(C, x, y)); out.push(m); } return out; }
+function spTopRows(C, k){ const rows = []; for (let y = C.ny - 1; y >= 0; y--){ const row = []; for (let x = 0; x < C.nx; x++) row.push(spH(C, x, y) > (k || 0) ? 1 : 0); rows.push(row); } return rows; }
+function spNumRows(C, a){ const rows = []; for (let y = C.ny - 1; y >= 0; y--){ const row = []; for (let x = 0; x < C.nx; x++){ const hh = spH(C, x, y); let v = hh > 0 ? hh : 0;
+  if (hh > 0 && a && a.marks && a.marks[x + ',' + y] !== undefined) v = a.marks[x + ',' + y]; if (hh > 0 && a && a.q && a.q[0] === x && a.q[1] === y) v = '?'; row.push(v); } rows.push(row); } return rows; }
+function spHeightRows(hs){ const top = Math.max.apply(null, [0].concat(hs)); const rows = []; for (let z = top - 1; z >= 0; z--) rows.push(hs.map(v => v > z ? 1 : 0)); return rows; }
+function spLayerCount(C, k){ return C.pos.filter(p => spH(C, p[0], p[1]) > k).length; }
+/* 세 판(위·앞·옆)으로 될 수 있는 쌓은 모양 — 자리마다 1~top 높이를 모두 넣어 앞·옆 판이 맞는 것을 센다 */
+function spSolutions(C){
+  const F = spFront(C), S = spSide(C), P = C.pos, top = Math.max.apply(null, [1].concat(F)); const sols = [];
+  const rec = (i, hs) => { if (i === P.length){ const t = {h:{}, nx:C.nx, ny:C.ny, pos:P}; P.forEach((p, j) => { t.h[p[0] + ',' + p[1]] = hs[j]; });
+      const f = spFront(t), s = spSide(t); if (f.join() === F.join() && s.join() === S.join()) sols.push(hs.slice()); return; }
+    for (let v = 1; v <= Math.min(top, F[P[i][0]], S[P[i][1]]); v++){ hs.push(v); rec(i + 1, hs); hs.pop(); } };
+  rec(0, []); return sols;
+}
+/* 그림에서 쌓기나무 하나하나가 얼마나 보이는지(0~1) — 앞·오른쪽 기둥에 가려진 자리를 가려낸다(check_sets cubeVis 와 같은 셈) */
+function spPolyArea(p){ let s = 0; for (let i = 0; i < p.length; i++){ const a = p[i], b = p[(i + 1) % p.length]; s += a[0] * b[1] - b[0] * a[1]; } return Math.abs(s) / 2; }
+function spVis(cells){
+  const ord = cubeOrder(cells); const polys = []; ord.forEach(({c, i}) => { const F = cubeFaces(c[0], c[1], c[2]); ['left', 'front', 'top'].forEach(k => polys.push([F[k], i])); });
+  const all = [].concat.apply([], polys.map(p => p[0])); const mnx = Math.min.apply(null, all.map(p => p[0])), mxx = Math.max.apply(null, all.map(p => p[0])), mny = Math.min.apply(null, all.map(p => p[1])), mxy = Math.max.apply(null, all.map(p => p[1]));
+  const inside = (pt, poly) => { let o = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++){ const a = poly[i], b = poly[j]; if ((a[1] > pt[1]) !== (b[1] > pt[1]) && pt[0] < (b[0] - a[0]) * (pt[1] - a[1]) / (b[1] - a[1]) + a[0]) o = !o; } return o; };
+  const own = {}; const h = 0.05;
+  for (let x = mnx + h / 2; x < mxx; x += h) for (let y = mny + h / 2; y < mxy; y += h){ let who = -1; polys.forEach(([pp, i]) => { if (inside([x, y], pp)) who = i; }); if (who >= 0) own[who] = (own[who] || 0) + 1; }
+  return cells.map((c, i) => { const F = cubeFaces(c[0], c[1], c[2]); const area = ['left', 'front', 'top'].reduce((t, k) => t + spPolyArea(F[k]), 0); return (own[i] || 0) * h * h / area; });
+}
+/* 쌓은 모양 그림 — 교과서처럼 앞면이 왼쪽 아래, 오른쪽 옆면이 오른쪽 아래에 오도록 x 를 뒤집어 그리고 그림을 좌우로 되돌린다(cubesSVG 는 왼쪽 옆면을 보여 준다) */
+function spMirror(cells){ const nx = cells.length ? 1 + Math.max.apply(null, cells.map(c => c[0])) : 1; return cells.map(c => [nx - 1 - c[0], c[1], c[2]].concat(c.length > 3 ? [c[3]] : [0])); }
+function spCubesSVG(cells, S){ const svg = cubesSVG(spMirror(cells), S); const W = Number((svg.match(/viewBox="0 0 (\d+)/) || [])[1] || 0);
+  return svg.replace(/aria-label="쌓기나무">/, `aria-label="쌓은 모양"><g transform="translate(${W},0) scale(-1,1)">`).replace(/<\/svg>$/, '</g></svg>'); }
+/* 가려진 자리(맨 위 쌓기나무가 그림에서 20% 미만으로 보이는 자리) — 그리는 모양(x 뒤집힌 것) 기준 */
+function spHidden(cells){ const C = spCols(cells), vis = spVis(spMirror(cells)); return C.pos.filter(p => { const z = spH(C, p[0], p[1]) - 1; const i = cells.findIndex(c => c[0] === p[0] && c[1] === p[1] && c[2] === z); return vis[i] < 0.2; }); }
+function spGridSVG(rows, S, label, aria){
+  const H = rows.length, W = Math.max.apply(null, [1].concat(rows.map(r => r.length))); let s = '';
+  rows.forEach((row, ri) => row.forEach((c, x) => { if (c === null || c === undefined || c === 0 || c === false) return; const X = 3 + x * S, Y = 3 + ri * S;
+    s += `<rect x="${X}" y="${Y}" width="${S}" height="${S}" fill="#F3DCAB" stroke="${CMP_INK}" stroke-width="1.3"/>`;
+    const t = (c === 1 || c === true) ? '' : String(c);
+    if (t) s += `<text x="${X + S / 2}" y="${Y + S * 0.7}" text-anchor="middle" font-size="${Math.round(S * 0.56)}" font-weight="700" fill="${t === '?' ? '#C0392B' : CMP_INK}">${t}</text>`; }));
+  const w = 6 + W * S, h = 6 + H * S + (label ? 17 : 0);
+  if (label) s += `<text x="${w / 2}" y="${h - 4}" text-anchor="middle" font-size="12" fill="${CMP_INK}">${label}</text>`;
+  return `<svg class="cmpsv spg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${aria}">${s}</svg>`;
+}
+const SP_CAP = {'3d':'쌓은 모양', top:'위에서 본 모양', num:'위에서 본 모양', front:'앞에서 본 모양', side:'옆에서 본 모양'};
+function spvHTML(a, paper){
+  const box = paper ? 'pcmpw' : 'cmpw', S = paper ? 18 : 24, C = spCols(a.cells || []); const panels = [];
+  (a.show || ['3d']).forEach(k => {
+    if (k === '3d') panels.push([spCubesSVG(a.cells || [], S), SP_CAP[k]]);
+    else if (k === 'top') panels.push([spGridSVG(spTopRows(C), S, '앞', '위에서 본 모양'), SP_CAP[k]]);
+    else if (k === 'num') panels.push([spGridSVG(spNumRows(C, a), S, '앞', '위에서 본 모양에 수 쓰기'), SP_CAP[k]]);
+    else if (k === 'front') panels.push([spGridSVG(spHeightRows(spFront(C)), S, '', '앞에서 본 모양'), SP_CAP[k]]);
+    else if (k === 'side') panels.push([spGridSVG(spHeightRows(spSide(C)), S, '', '옆에서 본 모양'), SP_CAP[k]]);
+    else if (k === 'layers') for (let z = 0; z < C.top; z++) panels.push([a.qlayer === z ? `<div class="krq">?</div>` : spGridSVG(spTopRows(C, z), S, z === 0 ? '앞' : '', (z + 1) + '층'), (z + 1) + '층']);
+  });
+  (a.cand && a.cand.grids || []).forEach((g, i) => { const rows = a.cand.kind === 'top' ? g : spHeightRows(g); panels.push([spGridSVG(rows, S, a.cand.kind === 'top' ? '앞' : '', '보기 ' + FTAG[i]), FTAG[i]]); });
+  return `<div class="${box} figs spv">${panels.map(([svg, cap]) => `<div class="figc">${svg}<b>${cap}</b></div>`).join('')}</div>`;
+}
 function krVal(op, r, c){ return op === '×' ? r * c : r + c; }
 function optabHTML(a, paper){
   const R = a.rows || [], C = a.cols || [], op = a.op === '×' ? '×' : '+', key = (i, j) => i + ',' + j;
@@ -1737,6 +1804,7 @@ function drawAsset(a, r){
     case 'fbar': return `<div class="fbarw">${fbarSVG(a, false)}</div>`;
     case 'spin': return `<div class="cmpw">${spinSVG(a)}</div>`;
     case 'stack': return stackHTML(a, false);
+    case 'spv': return spvHTML(a, false);
     case 'optab': return optabHTML(a, false);
     case 'numgrid': return numgridHTML(a, false);
     case 'plate': return `<div class="plate"><div class="tray${a.n === 0 ? ' empty' : ''}">${Array.from({length:a.n}, () => `<span>${a.item}</span>`).join('')}</div>${a.label ? `<em>${esc(a.label)}</em>` : ''}</div>`;
@@ -4064,6 +4132,163 @@ function makeVariantOnce(q, r){
     }
     return v;
   }
+  /* v3.5 — 공간과 입체 (6학년 2학기 2단원, 2026-10-13, 페이블 5.1): 갈래 sp {ask, kind?, layer?, row?, show?, …}
+     ask count(쌓은 모양+위에서 본 모양 → 개수, row:true 면 한 줄) · numsum(수 쓴 그림 → 개수) · numq(수 쓴 그림 ? 자리) · lay(층별 그림 → 개수) · layq(가려진 층)
+         · l2(수 쓴 그림 → layer층에 놓이는 수) · view(쌓은 모양 → kind 앞·옆·위에서 본 모양 고르기 ㉮~㉱) · tri(수 쓴 그림 → 앞·옆에서 본 모양 고르기)
+         · cols(앞·옆에서 본 모양 줄마다 몇 층) · cellsv(앞·옆·위에서 본 모양 칸 수) · three(세 판 → 개수, 하나로 정해질 때) · minmax(세 판 → 가장 적을·많을 때) · cases(세 판 → 가짓수)
+     가려진 자리(맨 위가 그림에서 20% 미만)는 위에서 본 모양이 있을 때만 쓰고 늘 1개다(교과서 약속). view·cols·cellsv 는 가려진 자리 없는 모양만.
+     _fix {hs:[[x,y,h],…], kind, q, qlayer, at} 로 원본을 고정한다(fill.js). 오개념 꼬리는 단원 사전 X01~X18. */
+  if (rule.sp && (!a || typeof a !== 'object' || a.type === 'spv')){
+    const G = rule.sp, ask = G.ask, FX = v._fix || {}; delete v._fix; delete v._form; delete v.asset;
+    const want = Math.max(1, nOptsOf(q) - 1), isSA = q.kind === 'sa', SA = isSA ? ' 숫자로 쓰세요.' : '';
+    const fin = (ans, ds, ex, uw) => { if (isSA) v.answer = uw ? [String(ans), ans + uw] : [String(ans)];
+      else v.options = kindOpts(uw ? ans + uw : ans, ds.map(([x, c]) => [x === null || x === undefined || (typeof x === 'number' && (x < 0 || x === ans)) ? null : (uw ? x + uw : x), c]), want, q.options);
+      v.explanation = ex; return v; };
+    const cellsOf = hs => { const cells = []; hs.forEach(p => { for (let z = 0; z < p[2]; z++) cells.push([p[0], p[1], z]); }); return cells; };
+    const hsOf = C => C.pos.map(p => [p[0], p[1], spH(C, p[0], p[1])]);
+    const VN = {front:'앞', side:'옆', top:'위'};
+    /* 모양 뽑기 — o {nx, ny, np:[lo,hi], hmax, hid:'none'|'ok'|'need', ok(C, hid)} */
+    const gen = o => { if (FX.hs){ const cells = cellsOf(FX.hs); return {cells, C: spCols(cells), hid: spHidden(cells)}; }
+      for (let g = 0; g < 300; g++){
+        const nx = o.nx || pick([2, 3, 3], r), ny = o.ny || pick([2, 2, 3], r); const all = []; for (let x = 0; x < nx; x++) for (let y = 0; y < ny; y++) all.push([x, y]);
+        const np = Math.min(all.length, rint(o.np[0], o.np[1], r)); let pos = shuffle(all, r).slice(0, np);
+        const mx = Math.min.apply(null, pos.map(p => p[0])), my = Math.min.apply(null, pos.map(p => p[1])); pos = pos.map(p => [p[0] - mx, p[1] - my]);
+        if (pos.length < 2) continue;
+        /* 자리끼리 면으로 이어져야 한다 — 떨어진 자리가 있으면 한 줄 모양에 빈 칸이 생기고 앞·옆 판에 0층 줄이 나온다(2026-10-14 FUZZ 에서 잡힘) */
+        { const K = p => p[0] + ',' + p[1], S = new Set(pos.map(K)), seen = new Set([K(pos[0])]), st = [pos[0]];
+          while (st.length){ const [x, y] = st.pop(); [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx, dy]) => { const k = (x + dx) + ',' + (y + dy); if (S.has(k) && !seen.has(k)){ seen.add(k); st.push([x + dx, y + dy]); } }); }
+          if (seen.size !== pos.length) continue; }
+        const hs = pos.map(p => [p[0], p[1], rint(1, o.hmax || 3, r)]); if (!hs.some(p => p[2] >= 2)) hs[rint(0, hs.length - 1, r)][2] = 2;
+        const cells = cellsOf(hs), C = spCols(cells); const hid = spHidden(cells);
+        if (o.hid === 'none' && hid.length) continue; if (o.hid === 'need' && !hid.length) continue;
+        if (o.hid !== 'none' && hid.some(p => spH(C, p[0], p[1]) !== 1)) continue;
+        if (o.ok && !o.ok(C, hid)) continue;
+        return {cells, C, hid}; }
+      const cells = cellsOf([[0, 0, 2], [1, 0, 1], [0, 1, 1]]); return {cells, C: spCols(cells), hid: spHidden(cells)}; };
+    const sumOf = arr => arr.reduce((t, x) => t + x, 0), J = arr => arr.join(' + ');
+    const posDesc = C => C.pos.length + '자리';
+    const GAE = n => n + '개';
+    /* 쌓은 모양(+위에서 본 모양) → 개수 — C3 */
+    if (ask === 'count'){
+      const row = FX.row !== undefined ? FX.row : !!G.row;
+      const {cells, C, hid} = gen(row ? {ny:1, nx:pick([3, 4], r), np:[3, 4], hmax:3, hid:'none'} : {np:[3, 6], hmax:3, hid: G.hid || 'ok', ok:(c, h) => c.nx >= 2 && c.ny >= 2 && c.n <= 12});
+      v.asset = {type:'spv', cells, show: row ? ['3d'] : ['3d', 'top']};
+      const n = C.n, P = C.pos.length, hs = hsOf(C); const seen = hs.filter(p => !hid.some(h => h[0] === p[0] && h[1] === p[1]));
+      v.stem = (row ? '한 줄로 쌓은 모양이에요. 쌓기나무는 모두 몇 개인가요?' : '쌓은 모양과 위에서 본 모양이에요. 똑같이 쌓으려면 쌓기나무가 몇 개 필요한가요?') + SA;
+      const ex = row ? ['한 줄로 쌓으면 가려지는 자리가 없어요.', `왼쪽부터 ${hs.sort((a, b) => a[0] - b[0]).map(p => p[2] + '개').join(', ')} — ${J(hs.map(p => p[2]))} = ${n}.`, `쌓기나무는 모두 ${GAE(n)}예요.`]
+        : [`위에서 본 모양을 보면 1층 자리는 ${posDesc(C)}예요.`, hid.length ? `보이는 자리의 높이는 ${J(seen.map(p => p[2]))}이고, 앞 기둥에 가려진 ${hid.length}자리에는 1개씩 있어요.` : `자리마다 높이를 세면 ${J(hs.map(p => p[2]))}이에요.`, `모두 더하면 ${GAE(n)}예요.`];
+      return fin(n, [[hid.length ? n - hid.length : null, 'X01'], [P !== n ? P : null, 'X02'], [n + 1, 'X03'], [n - 1, 'X03'], [sumOf(spFront(C)) + sumOf(spSide(C)), 'X03'], [C.top, 'X08'], [n + 2, 'X03']], ex, '개');
+    }
+    /* 위에서 본 모양에 수 쓰기 — C4 */
+    if (ask === 'numsum' || ask === 'numq' || ask === 'l2'){
+      const L = ask === 'l2' ? (FX.layer || G.layer || 2) : 0;
+      const {cells, C} = gen({np:[4, 7], hmax:3, hid:'ok', ok: c => c.nx >= 2 && c.ny >= 2 && (ask !== 'l2' || (c.pos.some(p => spH(c, p[0], p[1]) === 2) && c.pos.some(p => spH(c, p[0], p[1]) === 3) && c.pos.some(p => spH(c, p[0], p[1]) === 1)))});
+      const n = C.n, P = C.pos.length, hs = hsOf(C), top = C.top;
+      if (ask === 'numsum'){ v.asset = {type:'spv', cells, show:['num']};
+        v.stem = '위에서 본 모양의 각 자리에 쌓인 쌓기나무의 수를 썼어요. 똑같이 쌓을 때 필요한 쌓기나무는 모두 몇 개인가요?' + SA;
+        return fin(n, [[top, 'X08'], [P, 'X02'], [n + 1, 'X03'], [n - 1, 'X03']], ['각 자리에 쓴 수는 그 자리에 쌓인 쌓기나무의 개수예요.', `쓴 수를 모두 더해요 — ${J(hs.map(p => p[2]))} = ${n}.`, `쌓기나무는 모두 ${GAE(n)}예요.`], '개'); }
+      if (ask === 'l2'){ v.asset = {type:'spv', cells, show:['num']}; const k = hs.filter(p => p[2] >= L).length, eq = hs.filter(p => p[2] === L).length;
+        v.stem = `위에서 본 모양에 수를 쓴 그림이에요. 이대로 쌓으면 ${L}층에 놓이는 쌓기나무는 몇 개인가요?` + SA;
+        return fin(k, [[eq !== k ? eq : null, 'X12'], [P, 'X02'], [n, 'X18'], [k + 1, 'X03'], [k - 1, 'X03']],
+          [`${L}층에 쌓기나무가 있는 자리는 쓴 수가 ${L} 이상인 자리예요.`, `${L} 이상인 수가 쓰인 자리는 ${k}자리예요.`, `${L}층에 놓이는 쌓기나무는 ${GAE(k)}예요.`], '개'); }
+      const qp = FX.q || pick(hs, r).slice(0, 2); const qh = spH(C, qp[0], qp[1]); v.asset = {type:'spv', cells, show:['num'], q:[qp[0], qp[1]]};
+      v.stem = `위에서 본 모양에 수를 썼어요. 쌓기나무는 모두 ${n}개예요. ? 자리에 쓸 수는 얼마인가요?` + SA;
+      const rest = n - qh;
+      return fin(qh, [[qh + 1, 'X03'], [qh - 1 > 0 ? qh - 1 : null, 'X03'], [rest, 'X18'], [top !== qh ? top : null, 'X08'], [n, 'X18'], [qh + 2, 'X03']],
+        [`쓴 수를 모두 더하면 ${n}${VOWEL_END(n) ? '가' : '이'} 되어야 해요.`, `? 를 뺀 자리의 수를 더하면 ${rest}${VOWEL_END(rest) ? '예요' : '이에요'}.`, `${n} − ${rest} = ${qh} — ? 자리에는 ${qh}${VOWEL_END(qh) ? '를' : '을'} 써요.`]);
+    }
+    /* 층별로 나타낸 그림 — C5 */
+    if (ask === 'lay' || ask === 'layq'){
+      const {cells, C} = gen({np:[4, 7], hmax:3, hid:'ok', ok: c => c.nx >= 2 && c.ny >= 2 && c.top >= 2 && (ask !== 'layq' || c.top === 3)});
+      const n = C.n, lc = []; for (let z = 0; z < C.top; z++) lc.push(spLayerCount(C, z));
+      if (ask === 'lay'){ v.asset = {type:'spv', cells, show:['layers']};
+        v.stem = '쌓은 모양을 층별로 나누어 그렸어요. 똑같이 쌓을 때 필요한 쌓기나무는 모두 몇 개인가요?' + SA;
+        return fin(n, [[lc[0] !== n ? lc[0] : null, 'X02'], [C.top, 'X08'], [n + 1, 'X03'], [n - 1, 'X03']],
+          [`층마다 세어요 — ${lc.map((c, i) => `${i + 1}층 ${c}개`).join(', ')}.`, `모두 더하면 ${J(lc)} = ${n}.`, '층별 그림에는 가려지는 자리가 없어 빠뜨릴 자리가 없어요. 1층 모양은 위에서 본 모양과 같아요.'], '개'); }
+      const k = FX.qlayer !== undefined ? FX.qlayer : rint(1, C.top - 1, r); const kc = lc[k], rest = n - kc; v.asset = {type:'spv', cells, show:['layers'], qlayer:k};
+      v.stem = `층별로 나누어 그린 그림에서 ${k + 1}층 그림이 가려졌어요. 쌓기나무는 모두 ${n}개예요. ${k + 1}층에는 몇 개가 있나요?` + SA;
+      return fin(kc, [[kc + 1, 'X03'], [kc - 1 > 0 ? kc - 1 : null, 'X03'], [lc[0] !== kc ? lc[0] : null, 'X09'], [rest, 'X18'], [n, 'X18']],
+        [`보이는 층의 개수를 더해요 — ${lc.filter((c, i) => i !== k).map((c) => c).join(' + ')} = ${rest}.`, `전체 ${n}개에서 ${rest}개를 빼요.`, `${k + 1}층에는 ${GAE(kc)}가 있어요.`], '개');
+    }
+    /* 앞·옆·위에서 본 모양 고르기 — C2 (view: 쌓은 모양에서) · C7 (tri: 수 쓴 그림에서) */
+    if (ask === 'view' || ask === 'tri'){
+      const kinds = ask === 'tri' ? ['front', 'side'] : ['front', 'side', 'top']; const kind = FX.kind || G.kind || pick(kinds, r);
+      let got = null;
+      for (let g = 0; g < 60 && !got; g++){
+        const {cells, C} = gen({np:[3, 6], hmax:3, hid: ask === 'tri' ? 'ok' : 'none', ok: c => c.nx >= 2 && c.ny >= 2});
+        const F = spFront(C), S = spSide(C), T = spTopRows(C); let cor, ws = [];
+        const hRows = h => h.slice(); const rev = h => h.slice().reverse(); const bump = (h, i, d) => h.map((x, j) => j === i ? Math.max(1, x + d) : x);
+        if (kind === 'front'){ cor = hRows(F); const y0 = []; for (let x = 0; x < C.nx; x++) y0.push(Math.max(1, spH(C, x, 0)));
+          ws = [[S.length === F.length ? S : S.concat(Array(Math.max(0, F.length - S.length)).fill(1)).slice(0, F.length), 'X04'], [rev(F), 'X17'], [y0, 'X06'], [bump(F, rint(0, F.length - 1, r), F[0] > 1 ? -1 : 1), 'X06'], [bump(F, 0, 1), 'X06']]; }
+        else if (kind === 'side'){ cor = hRows(S); const x0 = []; for (let y = 0; y < C.ny; y++) x0.push(Math.max(1, spH(C, 0, y)));
+          ws = [[rev(S), 'X05'], [F.length === S.length ? F : F.concat(Array(Math.max(0, S.length - F.length)).fill(1)).slice(0, S.length), 'X04'], [x0, 'X06'], [bump(S, rint(0, S.length - 1, r), S[0] > 1 ? -1 : 1), 'X06'], [bump(S, S.length - 1, 1), 'X06']]; }
+        else { cor = T; const fx = T.map(row => row.slice().reverse()), fy = T.slice().reverse(); const tg = T.map(row => row.slice()); const ti = rint(0, C.ny - 1, r), tj = rint(0, C.nx - 1, r); tg[ti][tj] = tg[ti][tj] ? 0 : 1;
+          const fr = spHeightRows(F).map(row => row.slice()); ws = [[fx, 'X07'], [fy, 'X07'], [tg, 'X02'], [fr, 'X04']]; }
+        const key = x => JSON.stringify(x); const seen = [key(cor)]; const wr = [];
+        ws.forEach(([w, c]) => { if (wr.length >= 3) return; const k = key(w); if (seen.indexOf(k) >= 0) return; if (kind === 'top' && !w.some(row => row.some(x => x))) return; seen.push(k); wr.push([w, c]); });
+        if (wr.length < 3) continue;
+        got = {cells, C, cor, wr, F, S};
+      }
+      if (!got){ const cells = cellsOf([[0, 0, 2], [1, 0, 1], [0, 1, 1], [1, 1, 3]]); const C = spCols(cells); got = {cells, C, cor: spFront(C), wr: [[[1, 3], 'X04'], [[3, 2], 'X17'], [[2, 1], 'X06']], F: spFront(C), S: spSide(C)}; }
+      const {cells, C, cor, wr, F, S} = got; const ci = FX.at !== undefined ? FX.at : rint(0, 3, r); const grids = wr.map(w => w[0]); grids.splice(ci, 0, cor);
+      v.asset = {type:'spv', cells, show: ask === 'tri' ? ['num'] : (G.show || ['3d']), cand:{kind, grids}};
+      v.stem = ask === 'tri' ? `위에서 본 모양에 수를 쓴 그림을 보고 ${VN[kind]}에서 본 모양을 그리려고 해요. 바르게 그린 것은 어느 것인가요?` : `쌓은 모양을 ${VN[kind]}에서 본 모양은 어느 것인가요?`;
+      const lab = FTAG[ci]; const wl = wr.map((w, i) => [FTAG[i < ci ? i : i + 1], w[1]]);
+      v.options = kindOpts(lab, wl, want, q.options);
+      v.explanation = kind === 'front' ? [`앞에서 보면 줄마다 가장 높은 층이 보여요 — 왼쪽부터 ${F.map(x => x + '층').join(', ')}.`, `그렇게 그린 것은 ${lab}예요.`, '옆에서 본 모양이나 좌우가 뒤집힌 모양과 헷갈리지 않게 줄의 차례를 확인해요.']
+        : kind === 'side' ? [`옆(오른쪽)에서 보면 앞줄이 가장 왼쪽에 와요 — 왼쪽부터 ${S.map(x => x + '층').join(', ')}.`, `줄마다 가장 높은 층을 그린 것은 ${lab}예요.`, '앞줄과 뒷줄의 차례가 거꾸로 되지 않게 조심해요.']
+        : [`위에서 보면 1층에 놓인 자리가 모두 보여요 — 앞줄이 아래예요.`, `자리가 ${C.pos.length}개, 앞 표시 쪽이 앞줄인 것은 ${lab}예요.`, '앞을 정하지 않으면 모양이 하나로 정해지지 않아요.'];
+      return v;
+    }
+    /* 앞·옆에서 본 모양 — 줄마다 몇 층 · 칸 수 — C2 */
+    if (ask === 'cols' || ask === 'cellsv'){
+      const kind = FX.kind || G.kind || (ask === 'cols' ? pick(['front', 'side'], r) : pick(['front', 'side', 'top'], r));
+      let got = null;
+      for (let g = 0; g < 60 && !got; g++){
+        const {cells, C} = gen({np:[4, 7], hmax:3, hid:'none', ok: c => c.nx >= 2 && c.ny >= 2 && c.top >= 2});
+        const F = spFront(C), S = spSide(C);
+        if (ask === 'cols'){ const H = kind === 'front' ? F : S, O = kind === 'front' ? S : F; const y0 = []; if (kind === 'front') for (let x = 0; x < C.nx; x++) y0.push(Math.max(1, spH(C, x, 0))); else for (let y = 0; y < C.ny; y++) y0.push(Math.max(1, spH(C, 0, y)));
+          const L = h => h.map(x => x + '층').join(', '); const cor = L(H); const ws = [[L(O), 'X04'], [L(H.slice().reverse()), kind === 'front' ? 'X17' : 'X05'], [L(y0), 'X06'], [L(H.map((x, i) => i === 0 ? (x > 1 ? x - 1 : x + 1) : x)), 'X06']];
+          const seen = [cor]; const wr = []; ws.forEach(([w, c]) => { if (wr.length >= 3 || seen.indexOf(w) >= 0) return; seen.push(w); wr.push([w, c]); }); if (wr.length < 3) continue;
+          got = {cells, C, cor, wr, H}; }
+        else { const sF = sumOf(F), sS = sumOf(S), sT = C.pos.length; const cor = kind === 'front' ? sF : kind === 'side' ? sS : sT; const others = {front:sF, side:sS, top:sT};
+          if (Object.keys(others).filter(k => k !== kind).every(k => others[k] === cor)) continue; got = {cells, C, cor, others, F, S}; }
+      }
+      if (!got){ const cells = cellsOf([[0, 0, 2], [1, 0, 1], [0, 1, 1], [1, 1, 3]]); const C = spCols(cells); const F = spFront(C), S = spSide(C); got = ask === 'cols' ? {cells, C, cor:'2층, 3층', wr:[['1층, 3층', 'X04'], ['3층, 2층', 'X17'], ['2층, 1층', 'X06']], H:F} : {cells, C, cor: kind === 'top' ? 4 : 5, others:{front:5, side:5, top:4}, F, S}; }
+      const {cells, C} = got; v.asset = {type:'spv', cells, show:['3d']};
+      if (ask === 'cols'){ v.stem = `쌓은 모양을 ${VN[kind]}에서 본 모양에서 왼쪽부터 각 줄은 몇 층인가요?`; v.options = kindOpts(got.cor, got.wr, want, q.options);
+        v.explanation = [kind === 'front' ? '앞에서 보면 줄마다 가장 높은 층이 보여요.' : '옆(오른쪽)에서 보면 앞줄이 가장 왼쪽에 오고, 줄마다 가장 높은 층이 보여요.', `왼쪽부터 ${got.cor}이에요.`, '맨 앞 자리의 높이가 아니라 그 줄에서 가장 높은 층을 그려요.'];
+        return v; }
+      const oth = got.others; const wrongs = Object.keys(oth).filter(k => k !== kind).map(k => [oth[k], k === 'top' ? 'X02' : 'X04']).concat([[C.n, 'X03'], [got.cor + 1, 'X03'], [got.cor - 1, 'X03'], [got.cor + 2, 'X03'], [got.cor * 2, 'X03']]);
+      v.stem = `쌓은 모양을 ${VN[kind]}에서 본 모양을 그리면 칸은 모두 몇 칸인가요?` + SA;
+      return fin(got.cor, wrongs, [kind === 'top' ? `위에서 보면 1층에 놓인 자리가 보여요 — ${C.pos.length}자리.` : `${VN[kind]}에서 보면 줄마다 가장 높은 층이 보여요 — ${(kind === 'front' ? got.F : got.S).map(x => x + '층').join(', ')}.`, `칸을 모두 세면 ${J(kind === 'top' ? [C.pos.length] : (kind === 'front' ? got.F : got.S))}${kind === 'top' ? '' : ' = ' + got.cor} — ${got.cor}칸이에요.`, '보이는 칸 수는 쌓기나무 전체 개수와 달라요.'], '칸');
+    }
+    /* 세 판(위·앞·옆) → 쌓은 모양 — C6 · C9 */
+    if (ask === 'three' || ask === 'minmax' || ask === 'cases'){
+      const wantMax = ask === 'minmax' ? (FX.max !== undefined ? FX.max : (G.max !== undefined ? G.max : r() < 0.5)) : false;
+      let got = null;
+      for (let g = 0; g < 80 && !got; g++){
+        const {cells, C} = gen({np:[4, 7], hmax:3, hid:'ok', ok: c => c.nx >= 2 && c.ny >= 2 && c.top >= 2});
+        const sols = spSolutions(C); if (ask === 'three' ? sols.length !== 1 : (sols.length < 2 || sols.length > 6)) continue;
+        got = {cells, C, sols};
+      }
+      if (!got){ const cells = cellsOf(ask === 'three' ? [[0, 0, 2], [1, 0, 1], [0, 1, 1]] : [[0, 0, 2], [1, 0, 1], [0, 1, 1], [1, 1, 2]]); const C = spCols(cells); got = {cells, C, sols: spSolutions(C)}; }
+      const {cells, C, sols} = got; const n = C.n, P = C.pos.length, cnt = sols.map(s => sumOf(s)), mn = Math.min.apply(null, cnt), mx = Math.max.apply(null, cnt);
+      v.asset = {type:'spv', cells, show:['top', 'front', 'side']};
+      if (ask === 'three'){ v.stem = '위·앞·옆에서 본 모양이에요. 이렇게 보이도록 쌓으려면 쌓기나무가 몇 개 필요한가요?' + SA;
+        return fin(n, [[P, 'X02'], [sumOf(spFront(C)) + sumOf(spSide(C)), 'X03'], [n + 1, 'X03'], [n - 1, 'X03'], [n + 2, 'X03'], [C.top, 'X08']],
+          [`위에서 본 모양으로 1층 ${P}자리를 깔아요.`, `앞과 옆에서 본 모양은 줄마다 가장 높은 층을 알려 줘요 — 두 판을 겹치면 자리마다 높이가 ${J(sols[0])}로 정해져요.`, `모두 더하면 ${GAE(n)}예요.`], '개'); }
+      if (ask === 'minmax'){ const ans = wantMax ? mx : mn, oth = wantMax ? mn : mx;
+        v.stem = `위·앞·옆에서 본 모양이에요. 이렇게 보이도록 쌓을 때 쌓기나무가 가장 ${wantMax ? '많을' : '적을'} 때는 몇 개인가요?` + SA;
+        return fin(ans, [[oth, 'X16'], [P, 'X02'], [ans + (wantMax ? 1 : -1), 'X03'], [sumOf(spFront(C)) + sumOf(spSide(C)), 'X03'], [ans + (wantMax ? 2 : -2), 'X03'], [C.top, 'X08']],
+          [`위에서 본 모양으로 1층 ${P}자리를 깔고, 앞·옆 판으로 정해지는 자리부터 채워요.`, `정해지지 않는 자리에 ${wantMax ? '가장 많이' : '1개씩만'} 놓으면 ${GAE(ans)}예요.`, `세 판이 같아도 될 수 있는 모양이 ${sols.length}가지라 개수는 ${mn}개부터 ${mx}개까지예요.`], '개'); }
+      v.stem = '위·앞·옆에서 본 모양이에요. 이렇게 보이도록 쌓을 수 있는 모양은 모두 몇 가지인가요?' + SA;
+      return fin(sols.length, [[1, 'X10'], [sols.length + 1, 'X03'], [sols.length - 1 > 0 ? sols.length - 1 : null, 'X03'], [mx - mn + 1 !== sols.length ? mx - mn + 1 : null, 'X16'], [sols.length + 2, 'X03']],
+        [`위에서 본 모양으로 1층 ${P}자리를 깔고, 앞·옆 판으로 정해지는 자리부터 채워요.`, `정해지지 않는 자리의 높이를 바꾸어 가며 세면 ${sols.length}가지예요.`, '앞과 옆은 줄마다 가장 높은 층만 알려 주어 모양이 하나로 정해지지 않을 수 있어요.'], '가지');
+    }
+    return v;
+  }
+
   /* v3.3 — 규칙 찾기 (2학년 2학기 6단원): 갈래 kr {ask, form?, …}
      ask rnext(무늬의 ? — mode color·shape·num·combo) · runit(묶음 — form cells 몇 칸·kinds 몇 가지) · rnum(모양을 수로 바꾼 줄의 ?)
          · spin(돌아가는 판 — form next·dir·step) · grow(늘어나는 묶음 — form next·total, style pair·sep)
@@ -5767,6 +5992,7 @@ function paperAsset(a){
     case 'fbar': return `<div class="pfbarw">${fbarSVG(a, true)}</div>`;
     case 'spin': return `<div class="pcmpw">${spinSVG(a)}</div>`;
     case 'stack': return stackHTML(a, true);
+    case 'spv': return spvHTML(a, true);
     case 'optab': return optabHTML(a, true);
     case 'numgrid': return numgridHTML(a, true);
     case 'figs': return figsHTML(a, true);

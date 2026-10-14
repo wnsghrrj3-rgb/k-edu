@@ -40,7 +40,7 @@ function loadEngine() {
   sandbox.window.speechSynthesis = undefined;
   vm.createContext(sandbox);
   vm.runInContext('const SEED = 1;\n' + head + body + paper +
-    '\nthis.API = { makeVariant, prep, drawAsset, paperAsset, rng, FIG, TAN7, CUTS, CUBE_LIB, cubeFaces, cubeOrder };', sandbox);
+    '\nthis.API = { makeVariant, prep, drawAsset, paperAsset, rng, FIG, TAN7, CUTS, CUBE_LIB, cubeFaces, cubeOrder, FTAG, spCols, spH, spFront, spSide, spTopRows, spLayerCount, spSolutions, spHidden };', sandbox);
   return sandbox.API;
 }
 const ENG = loadEngine();
@@ -152,7 +152,8 @@ const ASSETS = {
   stack:          ['stages'],
   optab:          ['op', 'rows', 'cols'],
   numgrid:        ['rows'],
-  fbar:           ['bars']
+  fbar:           ['bars'],
+  spv:            ['cells']
 };
 const KINDS = ['mc', 'sa', 'ox', 'match', 'essay', 'error', 'blank', 'data'];
 
@@ -184,6 +185,7 @@ function checkAsset(where, a) {
   if (a.type === 'ftable' || a.type === 'pgraph' || a.type === 'cards') checkTgAsset(where, a);
   if (['ptile', 'spin', 'stack', 'optab', 'numgrid', 'cal'].indexOf(a.type) >= 0) checkKrAsset(where, a);
   if (a.type === 'fbar') checkFdAsset(where, a);
+  if (a.type === 'spv') checkSpAsset(where, a);
   if (a.type === 'picto_table' || a.type === 'compare_groups') {
     if (!Array.isArray(a.rows) || !a.rows.length) bad(where, `${a.type} rows 비었음`);
     else a.rows.forEach((rw, i) => { if (rw.n === undefined || !rw.item) bad(where, `${a.type} rows[${i}] item/n 없음`); });
@@ -1511,6 +1513,63 @@ function checkFd(where, q){
     if (p && p.d > 1){ const g = fdG(p.pn, p.pd); if (g !== 1) B('정답 분수가 약분되지 않았다: ' + cor); if (!impAsk && !p.w && p.pn > p.pd) B('정답이 가분수 꼴(대분수로): ' + cor); }
     wr.forEach(w => { const wv = fdVal(w); if (!isNaN(wv) && near(wv, want)) B('오답 보기가 정답과 같은 값: ' + w); }); }
 }
+/* v3.5 — 공간과 입체: 그림 spv 에서 쌓은 모양을 다시 읽어 개수·앞·옆·위 판·층별·세 판의 해를 따로 셈한다 */
+function checkSpAsset(where, a){
+  const B = m => bad(where, 'spv ' + m); const cells = a.cells;
+  if (!Array.isArray(cells) || !cells.length || cells.length > 27) return B('cells 는 1~27개');
+  const key = c => c.slice(0, 3).join(','); const S = new Set(cells.map(key)); if (S.size !== cells.length) B('같은 자리에 쌓기나무가 둘');
+  cells.forEach(c => { if (!Array.isArray(c) || c.length < 3 || c.slice(0, 3).some(v => !Number.isInteger(v) || v < 0 || v > 3)) B('좌표는 0~3 정수: ' + JSON.stringify(c)); if (c[2] > 0 && !S.has([c[0], c[1], c[2] - 1].join(','))) B('공중에 뜬 쌓기나무 ' + c); });
+  const C = ENG.spCols(cells); if (C.top > 3) B('4층 이상');
+  { const ps = C.pos || [], K = p => p[0] + ',' + p[1], S = new Set(ps.map(K)); if (ps.length){ const seen = new Set([K(ps[0])]), st = [ps[0]];
+      while (st.length){ const [x, y] = st.pop(); [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx, dy]) => { const k = (x + dx) + ',' + (y + dy); if (S.has(k) && !seen.has(k)){ seen.add(k); st.push([x + dx, y + dy]); } }); }
+      if (seen.size !== ps.length) B('자리가 면으로 이어지지 않았다(떨어진 자리)'); } }
+  const SHOW = ['3d', 'top', 'num', 'front', 'side', 'layers']; (a.show || []).forEach(k => { if (SHOW.indexOf(k) < 0) B('show 를 모른다: ' + k); });
+  if (!a.show || !a.show.length) { if (!a.cand) B('show 가 비었다'); }
+  if (a.q){ if (!(Array.isArray(a.q) && ENG.spH(C, a.q[0], a.q[1]) > 0)) B('q 자리에 쌓기나무가 없다'); if ((a.show || []).indexOf('num') < 0) B('q 는 num 그림에서만'); }
+  if (a.qlayer !== undefined){ if (!(Number.isInteger(a.qlayer) && a.qlayer >= 1 && a.qlayer < C.top)) B('qlayer 는 1~(꼭대기 층−1)'); if ((a.show || []).indexOf('layers') < 0) B('qlayer 는 layers 그림에서만'); }
+  if (a.marks){ Object.keys(a.marks).forEach(k => { const [x, y] = k.split(',').map(Number); if (!(ENG.spH(C, x, y) > 0)) B('marks 자리에 쌓기나무가 없다: ' + k); }); if ((a.show || []).indexOf('num') < 0) B('marks 는 num 그림에서만'); }
+  if (a.cand){ const g = a.cand.grids; if (['front', 'side', 'top'].indexOf(a.cand.kind) < 0) B('cand kind'); if (!Array.isArray(g) || g.length !== 4) return B('cand 는 4개');
+    const keys = g.map(x => JSON.stringify(x)); if (new Set(keys).size !== 4) B('cand 에 같은 그림이 둘');
+    g.forEach((x, i) => { if (a.cand.kind === 'top'){ if (!Array.isArray(x) || !x.length || x.some(r => !Array.isArray(r) || r.some(v => v !== 0 && v !== 1)) || !x.some(r => r.some(v => v))) B(`cand ${i + 1} top 그림 꼴`); }
+      else if (!Array.isArray(x) || !x.length || x.some(v => !(Number.isInteger(v) && v >= 1 && v <= 4))) B(`cand ${i + 1} 높이 줄 꼴`); }); }
+  /* 가려진 자리는 위에서 본 모양(또는 수·층별)이 같이 있어야 하고 1개뿐이다 */
+  const show = a.show || []; if (show.indexOf('3d') >= 0 && !a.cand){ const hid = ENG.spHidden(cells);
+    if (hid.length && show.indexOf('top') < 0 && show.indexOf('num') < 0 && show.indexOf('layers') < 0) B(`가려진 자리 ${JSON.stringify(hid)}가 있는데 위에서 본 모양이 없다 — 개수가 정해지지 않는다`);
+    hid.forEach(p => { if (ENG.spH(C, p[0], p[1]) !== 1) B(`가려진 자리 ${p} 에 쌓기나무가 ${ENG.spH(C, p[0], p[1])}개 — 가려진 자리는 1개(교과서 약속)`); }); }
+}
+function checkSp(where, q){
+  const K = (q.variant_rule || {}).sp; if (!K) return;
+  const ask = K.ask, st = String(q.stem || '').replace(/^이번에는 다른 보기예요\. /, ''), B = m => bad(where, 'sp ' + ask + ' ' + m);
+  const a = q.asset; if (!a || a.type !== 'spv') return B('그림이 spv 아님');
+  const cells = a.cells, C = ENG.spCols(cells), n = C.n, P = C.pos.length, F = ENG.spFront(C), S = ENG.spSide(C), show = a.show || [];
+  const cor = q.kind === 'sa' ? String((q.answer || [])[0]) : String(((q.options || []).find(o => o.correct) || {}).t), wr = (q.options || []).filter(o => !o.correct).map(o => String(o.t));
+  const num = s => Number(String(s).replace(/[^\d]/g, '')); const sum = arr => arr.reduce((t, x) => t + x, 0);
+  let want = null;
+  if (ask === 'count'){ want = n; const hid = ENG.spHidden(cells); if (show.indexOf('3d') < 0) B('쌓은 모양이 없다'); if (hid.length && show.indexOf('top') < 0) B('가려진 자리가 있는데 위에서 본 모양이 없다'); if (/한 줄로/.test(st) && C.ny !== 1) B('한 줄이라는데 두 줄 이상'); }
+  else if (ask === 'numsum'){ want = n; if (show.indexOf('num') < 0 || a.q) B('num 그림(? 없이)이어야'); }
+  else if (ask === 'numq'){ if (!a.q) return B('? 자리가 없다'); want = ENG.spH(C, a.q[0], a.q[1]); const m = st.match(/모두 (\d+)개/); if (!m || Number(m[1]) !== n) B(`발문의 전체 개수 ${m && m[1]} ≠ ${n}`); }
+  else if (ask === 'lay'){ want = n; if (show.indexOf('layers') < 0 || a.qlayer !== undefined) B('layers 그림(? 없이)이어야'); }
+  else if (ask === 'layq'){ if (a.qlayer === undefined) return B('가려진 층이 없다'); want = ENG.spLayerCount(C, a.qlayer); const m = st.match(/모두 (\d+)개/); if (!m || Number(m[1]) !== n) B('발문의 전체 개수가 다르다'); const l = st.match(/(\d)층 그림이 가려졌/); if (!l || Number(l[1]) !== a.qlayer + 1) B('발문의 층과 qlayer 가 다르다'); }
+  else if (ask === 'l2'){ const l = st.match(/(\d)층에 놓이는/); if (!l) return B('발문에 층이 없다'); const L = Number(l[1]); want = C.pos.filter(p => ENG.spH(C, p[0], p[1]) >= L).length; if (show.indexOf('num') < 0) B('num 그림이어야'); }
+  else if (ask === 'view' || ask === 'tri'){ if (!a.cand) return B('보기 그림이 없다'); const kind = a.cand.kind; const dn = {front:'앞', side:'옆', top:'위'}[kind]; if (st.indexOf(dn + '에서 본 모양') < 0) B('발문의 방향과 cand kind 가 다르다');
+    if (ask === 'view' && show.indexOf('3d') < 0) B('쌓은 모양이 없다'); if (ask === 'tri' && show.indexOf('num') < 0) B('수 쓴 그림이 없다');
+    if (ask === 'view' && ENG.spHidden(cells).length) B('가려진 자리가 있는 모양 — 보고 그릴 수 없다');
+    const right = kind === 'front' ? F : kind === 'side' ? S : ENG.spTopRows(C); const ci = ENG.FTAG.indexOf(cor); if (ci < 0 || ci > 3) return B('정답 보기 이름이 ㉮~㉱ 아님');
+    if (JSON.stringify(a.cand.grids[ci]) !== JSON.stringify(right)) B(`정답 보기 ${cor} 가 실제 ${dn}에서 본 모양(${JSON.stringify(right)})과 다르다: ${JSON.stringify(a.cand.grids[ci])}`);
+    a.cand.grids.forEach((g, i) => { if (i !== ci && JSON.stringify(g) === JSON.stringify(right)) B(`오답 보기 ${ENG.FTAG[i]} 도 바른 모양`); });
+    wr.forEach(w => { if (ENG.FTAG.indexOf(w) < 0) B('오답 보기 이름이 ㉮~㉱ 아님: ' + w); }); return; }
+  else if (ask === 'cols'){ const kind = /앞에서/.test(st) ? 'front' : 'side'; const L = (kind === 'front' ? F : S).map(x => x + '층').join(', '); if (cor !== L) B(`정답 「${cor}」 ≠ 실제 「${L}」`); if (ENG.spHidden(cells).length) B('가려진 자리가 있는 모양'); wr.forEach(w => { if (w === L) B('오답이 정답과 같다'); }); return; }
+  else if (ask === 'cellsv'){ const kind = /앞에서/.test(st) ? 'front' : /옆에서/.test(st) ? 'side' : 'top'; want = kind === 'front' ? sum(F) : kind === 'side' ? sum(S) : P; if (ENG.spHidden(cells).length) B('가려진 자리가 있는 모양'); }
+  else if (ask === 'three' || ask === 'minmax' || ask === 'cases'){ if (['top', 'front', 'side'].some(k => show.indexOf(k) < 0)) B('세 판이 다 있어야'); const sols = ENG.spSolutions(C); const cnt = sols.map(sum);
+    if (ask === 'three'){ if (sols.length !== 1) B(`세 판으로 모양이 ${sols.length}가지 — 하나로 정해지지 않는다`); want = n; }
+    else if (ask === 'cases'){ if (sols.length < 2) B('가짓수 문제인데 하나로 정해진다'); want = sols.length; }
+    else { if (sols.length < 2) B('가장 적을·많을 때 문제인데 하나로 정해진다'); want = /많을/.test(st) ? Math.max.apply(null, cnt) : Math.min.apply(null, cnt); } }
+  else return B('ask 를 모른다');
+  if (want === null) return;
+  if (num(cor) !== want) B(`정답 ${cor} ≠ 그림에서 셈한 ${want}`);
+  wr.forEach(w => { if (num(w) === want) B('오답 보기가 정답과 같은 값: ' + w); });
+  if (q.kind === 'sa' && want > 99) B('단답 정답이 두 자리를 넘는다');
+}
 function checkKrAsset(where, a){
   const B = m => bad(where, a.type + ' ' + m);
   if (a.type === 'ptile'){ if (!Array.isArray(a.rows) || !a.rows.length || a.rows.length > 3) return B('rows 는 1~3줄'); let nul = 0;
@@ -1864,6 +1923,7 @@ function checkQ(where, q, opt) {
   checkGugu(where, q);
   checkKr(where, q);
   checkFd(where, q);
+  checkSp(where, q);
   checkMcm(where, q);
   checkTm(where, q);
   checkTg(where, q);
