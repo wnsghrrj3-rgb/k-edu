@@ -40,7 +40,7 @@ const at = (area, sitId, target, label) => { goTo(area); ok(opened(sitId), `${si
   if (!btn(label)) { console.log('버튼 없음', label, panel?.b.map((x) => x.label)); fail++; return; } pick(label); closeCard(); };
 ok(g.life.situations.length === 14, '꼭 7 + 새 장소 7');
 ok(g.life.values.craft === 1 && g.life.values.heart === 1, '구석기에서 넘겨받기(절반)');
-ok(Object.keys(g.world.areas).length === 20, '구역 20');
+ok(Object.keys(g.world.areas).length === 23, '구역 23');
 // 머묾 전엔 새 상황 안 열림(바다·떠돌이는 sit:stay:done 뒤)
 goTo('bay'); ok(!opened('sea'), '머물기 전엔 바다 상황 안 열림');
 g.flags.add('sit:stay:done'); g.life.onFlag();
