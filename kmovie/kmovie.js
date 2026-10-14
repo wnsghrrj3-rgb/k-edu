@@ -1132,7 +1132,7 @@
     else { if (sel === id && selSet.size === (id ? 1 : 0)) { selAuto = false; return; } selSet.clear(); if (id) selSet.add(id); sel = id; }
     selAuto = false;
     if (id && sideSelPending) setSide('set');
-    dirty = true; draw(); refreshPanel(); refreshMontPanel(); refreshFacePanel();
+    dirty = true; draw(); refreshPanel(); refreshMontPanel(); refreshFacePanel(); refreshStabPanel();
   }
   function selectMarker(id) { if (selM === id) return; selM = id; dirty = true; draw(); refreshMarkerList(); }
   function selectedIds() { return P.data.V.filter(c => selSet.has(c.id)).map(c => c.id); }
@@ -1449,6 +1449,27 @@
       : !on.length ? '클립 ' + all.length + '개 · 아직 가리는 게 없어요' + sc
         : '클립 ' + all.length + '개 중 ' + on.length + '개 가리는 중 (' + (on.every(c => c.face.mode === 'blur') ? '흐리게' : on.every(c => c.face.mode === 'mosaic') ? '모자이크' : '섞임') + ')' + sc;
     $('btnFaceAllOff').disabled = !on.length;
+  }
+  /* 학생 도구상자 「흔들림 잡기」 — 영상 줄 전부(2개 이상 골라 두었으면 고른 것만), undo 1회. 분석이 끝나야 적용되므로 안내문에 분석 중 표시 */
+  const stabAll = level => {
+    const ids = faceAllIds(); stop();
+    const n = P.setStabAll(level, ids);
+    if (!n) { toast(level === 'none' ? '잡아 둔 흔들림이 없어요' : (P.data.V.some(c => !c.gap && !c.freeze) ? '이미 그렇게 돼 있어요' : '먼저 영상을 넣어요'), 2000); return; }
+    renderPreview(); refreshStabPanel();
+    toast(level === 'none' ? '흔들림 잡기를 껐어요 (클립 ' + n + '개) — Ctrl+Z 로 되돌려요' : '클립 ' + n + '개의 흔들림을 ' + (level === 'b' ? '세게 ' : '') + '잡아요 — 원본을 다 훑은 뒤에 펴져요', 3000);
+  };
+  $('btnStabAllA').onclick = () => stabAll('a');
+  $('btnStabAllB').onclick = () => stabAll('b');
+  $('btnStabAllOff').onclick = () => stabAll('none');
+  function refreshStabPanel() {
+    const el = $('stabAllNote'); if (!el) return;
+    const all = P.data.V.filter(c => !c.gap && !c.freeze && (M.get(c.media) || {}).kind === 'video'), on = all.filter(c => c.stab), ids = faceAllIds();
+    const busy = on.filter(c => { const m = M.get(c.media); return !m || !m.shake || !m.analyzed; });
+    const sc = ids ? ' · 지금은 고른 클립 ' + ids.length + '개에만' : '';
+    el.textContent = !all.length ? '영상을 넣으면 여기서 한 번에 잡아요.'
+      : !on.length ? '클립 ' + all.length + '개 · 아직 잡는 게 없어요' + sc
+        : '클립 ' + all.length + '개 중 ' + on.length + '개 잡는 중 (' + (on.every(c => c.stab === 'b') ? '세게' : on.every(c => c.stab === 'a') ? '약하게' : '섞임') + ')' + (busy.length ? ' · ' + busy.length + '개는 분석 중' : '') + sc;
+    $('btnStabAllOff').disabled = !on.length;
   }
   $('tgFaceAuto').onclick = () => { const c = selClip(); if (c && c.face) { stop(); P.setFace(c.id, { auto: c.face.auto === false }); renderPreview(); } };
   $('btnFaceRect').onclick = () => { const c = selClip(); if (!c || c.gap) return; stop(); const i = P.addFaceRect(c.id, { x: 0.4, y: 0.3, w: 0.2, h: 0.3 }); if (i != null) selFaceRect = i; renderPreview(); refreshPanel(); };
@@ -2781,7 +2802,7 @@
       binProg[id] = p;
       const bar = document.querySelector('#bin .bar[data-id="' + id + '"] i'); if (bar) bar.style.width = Math.round(p * 100) + '%';
       const now = performance.now();
-      if (p >= 1 || now - thumbTick > 700) { thumbTick = now; dirty = true; draw(); if (p >= 1) { refreshBin(); refreshStatus(); const amb = ambState(); if (amb.on && !amb.src) { const src = findRoomTone(true); if (src) P.setAmbience({ src }, { commit: false }); } refreshMusicPanel(); } }
+      if (p >= 1 || now - thumbTick > 700) { thumbTick = now; dirty = true; draw(); if (p >= 1) { refreshBin(); refreshStatus(); const amb = ambState(); if (amb.on && !amb.src) { const src = findRoomTone(true); if (src) P.setAmbience({ src }, { commit: false }); } refreshMusicPanel(); refreshStabPanel(); refreshPanel(); renderPreview(); } }
     }).catch(e => console.warn('analyze', e));
   }
   function refreshStatus() {
@@ -2852,7 +2873,7 @@
     if (!drag) {
       refreshLookPanel(); refreshSubPanel(); refreshPartPanel(); refreshMusicPanel();
       if (kind !== 'M') clearAutoPrev();                 // 시각이 밀리면 찾아 둔 자리는 못 믿는다 (마커만 놓은 건 그대로)
-      refreshAutoPanel(); refreshFacePanel();
+      refreshAutoPanel(); refreshFacePanel(); refreshStabPanel();
       if (selS && !P.subtitle(selS)) { selS = null; refreshSubPanel(); }
       if (selP && !P.part(selP)) { selP = null; refreshPartPanel(); }
       if (selA2 && !P.a2(selA2)) { selA2 = null; refreshMusicPanel(); }
@@ -3071,7 +3092,7 @@
 
   /* ---------- 시작 ---------- */
   resize();
-  refreshBin(); refreshPanel(); refreshProject(); refreshLookPanel(); refreshSubPanel(); buildPartGrid(); refreshPartPanel(); refreshMusicPanel(); refreshAutoPanel(); refreshFacePanel(); refreshMarkerList();
+  refreshBin(); refreshPanel(); refreshProject(); refreshLookPanel(); refreshSubPanel(); buildPartGrid(); refreshPartPanel(); refreshMusicPanel(); refreshAutoPanel(); refreshFacePanel(); refreshStabPanel(); refreshMarkerList();
   document.fonts && document.fonts.ready.then(() => { paintPartThumbs(); paintSubTiles(); if (!playing) renderPreview(); });
   LK.ready().then(() => { if (P.total()) renderPreview(); });
   $('zoom').value = Math.round(1000 * Math.log(pxf / MIN_PXF) / Math.log(MAX_PXF / MIN_PXF));

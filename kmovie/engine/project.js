@@ -311,6 +311,17 @@
     emit();
     return jobs.length;
   }
+  /* 여러 클립 한 번에 (학생 도구상자 「흔들림 잡기」) — ids 없으면 영상 줄 전부(빈 자리·프리즈·사진 제외). level 'a'|'b'|'none'. undo 1회. 바뀐 개수. */
+  function setStabAll(level, ids) {
+    const want = ids && ids.length ? new Set(ids) : null;
+    const v = level === 'a' || level === 'b' ? level : undefined;
+    const jobs = P.V.filter(c => !c.gap && !c.freeze && (!want || want.has(c.id)) && (media(c.media) || {}).kind === 'video' && (c.stab || undefined) !== v);
+    if (!jobs.length) return 0;
+    commit();
+    for (const c of jobs) { if (v) c.stab = v; else delete c.stab; }
+    emit();
+    return jobs.length;
+  }
   function setFill(id, v) { const c = clip(id); if (!c) return; const nv = FILLS.indexOf(v) > 0 ? v : undefined; if ((c.fill || undefined) === nv) return; commit(); c.fill = nv; emit(); }
   function setVol(clipId, vol) {
     const a = audioOf(clipId); if (!a) return;
@@ -829,7 +840,7 @@
     get data() { return P; },
     on: fn => listeners.push(fn),
     media, clip, clipIndex, audioOf, clipAt, total, edges, srcFrame, clipDur, speedMap,
-    addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setRamp, setDenoise, setStab, setFace, setFaceAll, addFaceRect, updateFaceRect, removeFaceRect, setVol, audioTrim, relink,
+    addMedia, removeMedia, addClip, removeClip, move, split, trim, trimToPlayhead, freeze, setSpeed, setRamp, setDenoise, setStab, setStabAll, setFace, setFaceAll, addFaceRect, updateFaceRect, removeFaceRect, setVol, audioTrim, relink,
     setLook, setProjectLook, setKenburns, setFade, setTransition, setTheme, setLogo,
     addS, setS, addManyS, subtitle, updateS, removeS, clearS, subtitleAt,
     part, addP, updateP, removeP, clearP, partsAt, partDefault, setSchool, schoolName, schoolShort, schoolize,
