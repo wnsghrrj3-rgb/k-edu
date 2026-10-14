@@ -23,3 +23,7 @@ ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=640x360:rate=3
 # 62 A/V 싱크: 29.97fps 원본(ntsc.mp4) · 가변 프레임률 원본(vfr.mp4 — 앞 10초만 5프레임마다 하나 빠져 평균 fps 로는 시각이 안 맞음, pts 는 원래 자리)
 ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=320x180:rate=30000/1001:duration=40" -f lavfi -i "sine=frequency=440:duration=40" -c:v libvpx-vp9 -b:v 300k -cpu-used 5 -g 15 -c:a libopus -pix_fmt yuv420p fx/ntsc.mp4
 ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=320x180:rate=30:duration=20" -f lavfi -i "sine=frequency=440:duration=20" -vf "select='gt(mod(n,5),0)+gte(n,300)'" -vsync vfr -c:v libvpx-vp9 -b:v 300k -cpu-used 5 -g 15 -c:a libopus -pix_fmt yuv420p fx/vfr.mp4
+# 63-2 A/V 싱크 — 편집 목록(elst): 폰(안드로이드)처럼 영상 트랙이 빈 편집 0.3초만큼 늦게 시작 (소리 1.0초 삐 = 영상 축 0.7초, 영상 프레임 30 흰 화면 = 소리 1.3초)
+ffmpeg -hide_banner -loglevel error -y -f lavfi -i "color=c=black:size=320x180:rate=30:duration=6,drawbox=enable='between(n,30,32)':c=white:t=fill" -f lavfi -i "aevalsrc=between(t\,1.0\,1.1)*0.8*sin(880*2*PI*t):s=48000:d=6" -map 0:v -map 1:a -c:v libvpx-vp9 -b:v 200k -cpu-used 5 -g 15 -c:a libopus -pix_fmt yuv420p -shortest fx/elst_tmp.mp4
+# 영상만 0.3초 늦춰 다시 먹싱 — 영상 트랙에 빈 편집(elst empty edit) 이 들어간다
+ffmpeg -hide_banner -loglevel error -y -itsoffset 0.3 -i fx/elst_tmp.mp4 -i fx/elst_tmp.mp4 -map 0:v -map 1:a -c copy fx/elst.mp4 && rm -f fx/elst_tmp.mp4

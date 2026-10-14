@@ -60,6 +60,24 @@ await page.waitForFunction(() => KMV_PROJECT.data.V.length === 1, null, { timeou
   const ex = await page.evaluate(async () => { const P = KMV_PROJECT; const c = P.data.V[0]; P.trim(c.id, 'out', c.in + 40); try { const r = await KMV_EXPORT.exportMP4({ quality: 'light' }); return { ok: !!r, sec: r && r.seconds, dur: P.data.V[0].dur, blobs: window.__exp.blobs.length }; } catch (e) { return { err: String(e) }; } });
   ok(ex.ok && !ex.err, '가변 프레임률 원본 1.5초 내보내기 완료 (' + (ex.err || ex.sec + 's · ' + ex.dur + '프레임 · 파일 ' + ex.blobs + '개') + ')');
 }
+// ---- 3) 편집 목록(elst) — 폰처럼 영상 트랙이 빈 편집 0.3초만큼 늦게 시작 (63-2) ----
+await page.evaluate(() => { const P = KMV_PROJECT; P.data.V.slice().forEach(c => P.removeClip(c.id)); });
+await page.setInputFiles('#fileIn', [path.join(FX, 'elst.mp4')]);
+await page.waitForFunction(() => KMV_PROJECT.data.V.length === 1, null, { timeout: 90000 });
+{
+  const r = await page.evaluate(async () => { const P = KMV_PROJECT, c = P.data.V[0], m = P.media(c.media), S = KMV_MEDIA.get(m.id), pcm = S.pcm;
+    await pcm.ensure(0, 3);
+    // 소리 삐(880Hz, 소리 축 1.0~1.1초) 가 영상 축으로는 0.7~0.8초에 와야 한다 (영상이 0.3초 늦게 시작하니까)
+    const sr = pcm.sr, win = Math.round(0.05 * sr), e = [];
+    for (let t = 0.0; t < 2.0; t += 0.05) { const r = pcm.read(t, win); let a = 0; for (let i = 0; i < win; i++) a += r.ch[0][i] * r.ch[0][i]; e.push({ t: Math.round(t * 100) / 100, e: Math.sqrt(a / win) }); }
+    const loud = e.filter(x => x.e > 0.1).map(x => x.t);
+    return { shift: S.avShiftMs, sr, loud, first: loud[0], last: loud[loud.length - 1] }; });
+  ok(Math.abs(r.shift - 300) <= 12, '영상 트랙 빈 편집 0.3초 → 소리 축을 ' + r.shift + 'ms 보정 (종전엔 0)');
+  ok(r.first != null && Math.abs(r.first - 0.7) <= 0.051 && Math.abs(r.last - 0.75) <= 0.051, '소리 삐가 영상 축 0.7~0.8초에 (종전엔 1.0초 — 300ms 늦게 들렸음): ' + JSON.stringify(r.loud));
+  // 타임라인 소리 조각(A1)도 같은 축 — 영상 30번 프레임(흰 화면)이 나올 때 소리 원본 초 = 1.0 + 0.3
+  const s = await page.evaluate(() => { const P = KMV_PROJECT, c = P.data.V[0], m = P.media(c.media), a = P.data.A1[0], sg = KMV_AUDIO.segments(a, c, m)[0]; return { src: sg.src, tl: sg.tl }; });
+  ok(Math.abs(s.src) < 0.01 && s.tl === 0, 'A1 조각은 영상 축 0 에서 시작(src ' + s.src.toFixed(3) + ') — 보정은 Pcm 축 하나로');
+}
 ok(errs.length === 0, '콘솔 오류 0' + (errs.length ? ' — ' + errs.slice(0, 3).join(' | ') : ''));
 console.log(`${n - fail}/${n} 통과`);
 await close(); srv.kill(); process.exit(fail ? 1 : 0);

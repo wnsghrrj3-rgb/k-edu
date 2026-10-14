@@ -176,6 +176,35 @@
     try { for (const e of trak.edts.elst.entries) if (e.media_time >= 0) return e.media_time / timescale; } catch (e) {}
     return null;
   }
+  /* 트랙의 편집 목록을 영화 시각으로 — start: 앞의 빈 편집(media_time=-1) 합(영화 축 초, 이 트랙이 그만큼 늦게 시작),
+     media: 첫 실제 편집의 media_time(트랙 축 초, 이 자리가 영화 start 에 온다), has: elst 유무.
+     폰(안드로이드 MediaRecorder)은 소리가 먼저 돌아 영상 트랙에 빈 편집 0.1~0.5초를 넣는다 — 이걸 무시하면
+     영상·소리가 처음부터 일정하게 어긋난다(2026-10-14 준호 "내보내면 아직도 안 맞아"). */
+  function trackTiming(trak, trackTs, movieTs) {
+    const t = { start: 0, media: 0, has: false };
+    try {
+      const ents = trak.edts.elst.entries; if (!ents || !ents.length) return t;
+      t.has = true;
+      for (const e of ents) {
+        if (e.media_time < 0) t.start += e.segment_duration / (movieTs || 1000);
+        else { t.media = e.media_time / trackTs; break; }
+      }
+    } catch (e) {}
+    return t;
+  }
+  /* 소리 축의 0 을 영상 첫 프레임 자리에 맞춘다(소리 cts 초 단위).
+     영상 첫 프레임의 영화 시각 = v.start + (첫 cts/ts − v.media), 소리 샘플의 영화 시각 = a.start + (cts/ts − a.media)
+     → 소리 base = a.media − a.start + 영상 첫 프레임 영화 시각. elst 가 둘 다 없고 cts 가 0 에서 시작하면 0(종전과 동일). */
+  function alignAudio(a, v, vSamples, vTs) {
+    if (!a || !vSamples || !vSamples.length) return;
+    let minCts = Infinity; const n = Math.min(vSamples.length, 256);
+    for (let i = 0; i < n; i++) if (vSamples[i].cts < minCts) minCts = vSamples[i].cts;
+    const vt = v || { start: 0, media: 0 }, at = a.tim || { start: 0, media: 0, has: false };
+    const v0 = vt.start + (minCts / vTs - vt.media);
+    const oldBase = a.edit != null ? a.edit : (a.samples.length ? a.samples[0].cts / a.timescale : 0);   // 62 까지의 축(소리 elst media_time 또는 첫 cts)
+    a.edit = at.media - at.start + v0;
+    a.shiftMs = Math.round((a.edit - oldBase) * 1000);   // 진단: 종전 축 대비 소리를 몇 ms 앞당겼나(+ = 소리가 그만큼 늦게 시작하는 원본이었음)
+  }
 
   /* ---------- 디먹스 ---------- */
   function demux(buffer) {
@@ -183,7 +212,7 @@
       const mp4 = g.MP4Box.createFile();
       const out = { samples: [] };
       let track = null, atrack = null, nb = 0, na = 0, done = false;
-      const check = () => { if (!done && out.samples.length >= nb && (!atrack || out.a.samples.length >= na)) { done = true; resolve(out); } };
+      const check = () => { if (!done && out.samples.length >= nb && (!atrack || out.a.samples.length >= na)) { done = true; if (out.a) alignAudio(out.a, out.vTim, out.samples, out.timescale); resolve(out); } };
       mp4.onError = e => reject(new Error('mp4 를 읽을 수 없어요: ' + e));
       mp4.onReady = info => {
         track = info.videoTracks && info.videoTracks[0];
@@ -196,6 +225,7 @@
         out.w = track.video.width; out.h = track.video.height;
         out.rot = rotationOf(trak);
         out.desc = videoDescription(trak.mdia.minf.stbl.stsd.entries[0], codec);  // vp09·av01 은 description 불필요
+        out.vTim = trackTiming(trak, track.timescale, info.timescale);
         atrack = info.audioTracks && info.audioTracks[0];
         out.hasAudio = !!atrack;
         if (atrack) {
@@ -207,7 +237,7 @@
           if (/^opus/i.test(acodec)) { acodec = 'opus'; if (adesc) achn = adesc[9]; }   // 코덱 소문자·채널은 OpusHead 기준
           out.a = { codec: acodec, timescale: atrack.timescale, samples: [],
                     sr: atrack.audio && atrack.audio.sample_rate, chn: achn,
-                    desc: adesc, edit: editOffsetSec(atrak, atrack.timescale) };
+                    desc: adesc, edit: editOffsetSec(atrak, atrack.timescale), tim: trackTiming(atrak, atrack.timescale, info.timescale) };
           mp4.setExtractionOptions(atrack.id, 'a', { nbSamples: 4000 });
         }
         mp4.setExtractionOptions(track.id, null, { nbSamples: 4000 });
@@ -220,7 +250,7 @@
       };
       buffer.fileStart = 0;
       try { mp4.appendBuffer(buffer); mp4.flush(); } catch (e) { return reject(new Error('mp4 구조를 읽는 중 오류: ' + (e.message || e))); }
-      setTimeout(() => { if (!done) { if (out.samples.length) { done = true; if (out.a && !out.a.samples.length) out.hasAudio = false; resolve(out); } else reject(new Error('영상 샘플을 꺼내지 못했어요 (손상되었거나 스트리밍용 mp4일 수 있어요)')); } }, 1500);
+      setTimeout(() => { if (!done) { if (out.samples.length) { done = true; if (out.a && !out.a.samples.length) out.hasAudio = false; else if (out.a) alignAudio(out.a, out.vTim, out.samples, out.timescale); resolve(out); } else reject(new Error('영상 샘플을 꺼내지 못했어요 (손상되었거나 스트리밍용 mp4일 수 있어요)')); } }, 1500);
     });
   }
 
@@ -260,6 +290,7 @@
             rot: rotationOf(trak),
             desc: videoDescription(trak.mdia.minf.stbl.stsd.entries[0], codec),
             samples: vs.map(s => ({ cts: s.cts, duration: s.duration, is_sync: !!s.is_sync, off: s.offset, size: s.size })),
+            vTim: trackTiming(trak, track.timescale, info.timescale),
           };
           const atrack = info.audioTracks && info.audioTracks[0];
           out.hasAudio = !!atrack;
@@ -273,7 +304,8 @@
               out.a = { lazy: true, blob: file, codec: acodec, timescale: atrack.timescale,
                         samples: as.map(s => ({ cts: s.cts, duration: s.duration, off: s.offset, size: s.size })),
                         sr: atrack.audio && atrack.audio.sample_rate, chn: achn,
-                        desc: adesc, edit: editOffsetSec(atrak, atrack.timescale) };
+                        desc: adesc, edit: editOffsetSec(atrak, atrack.timescale), tim: trackTiming(atrak, atrack.timescale, info.timescale) };
+              alignAudio(out.a, out.vTim, out.samples, out.timescale);
             } else out.hasAudio = false;
           }
           resolve(out);
@@ -861,7 +893,8 @@
       }
     }
     const src = new VideoSource(id, dm, audio);
-    src.pcm = pcm;
+    src.pcm = pcm; src.avShiftMs = dm.a && dm.a.shiftMs || 0;
+    if (src.avShiftMs) console.info('[KMV media] 편집 목록(elst)으로 소리 축 보정 ' + src.avShiftMs + 'ms — ' + name);
     const capSec = dm.lazy ? limits.maxSec : Math.min(limits.maxSec, FULL_MAX_SEC);
     if (src.durSec > capSec) { src.dispose(); throw new Error(Math.round(capSec / 60) + '분 이하 원본만 읽어요' + (dm.lazy ? ' — 더 긴 원본은 잘라서 넣어 주세요' : ' (통으로 읽어야 하는 구조)')); }
     SRC.set(id, src);
