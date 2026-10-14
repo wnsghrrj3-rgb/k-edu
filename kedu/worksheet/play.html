@@ -229,9 +229,8 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .bond{display:flex;flex-direction:column;align-items:center;gap:0}
 .bond .w{min-width:56px;height:46px;display:flex;align-items:center;justify-content:center;border:2px solid var(--rule-strong);border-radius:10px;background:var(--tint);font-size:22px;font-family:'Gowun Batang',serif}
 .bond .legs{width:132px;height:20px;position:relative}
-.bond .legs::before,.bond .legs::after{content:'';position:absolute;top:0;width:52%;height:100%;border-top:0}
-.bond .legs::before{left:14px;border-left:2px solid var(--rule-strong);transform:skewX(24deg)}
-.bond .legs::after{right:14px;border-right:2px solid var(--rule-strong);transform:skewX(-24deg)}
+.bond .legs svg{display:block;width:132px;height:20px}
+.bond .legs line{stroke:var(--rule-strong);stroke-width:2;stroke-linecap:round}
 .bond .ps{display:flex;gap:26px}
 .bond .ps div{min-width:48px;height:42px;display:flex;align-items:center;justify-content:center;border:2px solid var(--rule-strong);border-radius:10px;background:var(--card);font-size:20px;font-family:'Gowun Batang',serif}
 .bond .blank{border-style:dashed;color:var(--muted)}
@@ -288,9 +287,8 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .split .eq .n.sp{background:var(--tint);border-color:var(--accent)}
 .split .eq .op{color:var(--accent);font-weight:700}
 .split .legs{width:132px;height:20px;position:relative}
-.split .legs::before,.split .legs::after{content:'';position:absolute;top:0;width:52%;height:100%}
-.split .legs::before{left:14px;border-left:2px solid var(--accent);transform:skewX(24deg)}
-.split .legs::after{right:14px;border-right:2px solid var(--accent);transform:skewX(-24deg)}
+.split .legs svg{display:block;width:132px;height:20px}
+.split .legs line{stroke:var(--accent);stroke-width:2;stroke-linecap:round}
 .split .ps{display:flex;gap:26px}
 .split .ps div{min-width:48px;height:42px;display:flex;align-items:center;justify-content:center;border:2px solid var(--rule-strong);border-radius:10px;background:var(--card);font-size:20px;font-family:'Gowun Batang',serif}
 .split .ps .blank{border-style:dashed;color:var(--muted)}
@@ -1669,7 +1667,7 @@ function drawAsset(a, r){
     case 'number_bond': { const P = a.parts || [null, null];
       const box = x => (x === null || x === undefined || x === '?') ? '<div class="blank">?</div>' : `<div>${esc(x)}</div>`;
       const wb = (a.whole === null || a.whole === undefined || a.whole === '?') ? '<div class="w blank">?</div>' : `<div class="w">${esc(a.whole)}</div>`;
-      return `<div class="bond">${wb}<div class="legs"></div><div class="ps">${box(P[0])}${box(P[1])}</div></div>`; }
+      return `<div class="bond">${wb}${LEGS}<div class="ps">${box(P[0])}${box(P[1])}</div></div>`; }
     case 'group_row': { const gs = (a.groups || []).map(g => `<div class="g">${Array.from({length:Math.max(0, Number(g.n) || 0)}, () => `<span>${g.item}</span>`).join('')}</div>`);
       const op = a.op === '-' ? '−' : '+';
       return `<div class="grow">${gs.join(`<span class="op">${op}</span>`)}</div>`; }
@@ -1690,7 +1688,7 @@ function drawAsset(a, r){
     case 'split_tree': { const P = a.parts || [null, null]; const sp = a.split === 'left' ? 'left' : 'right'; const op = a.op === '-' ? '−' : '+';
       const box = x => (x === null || x === undefined || x === '?') ? '<div class="blank">?</div>' : `<div>${esc(x)}</div>`;
       const nb = (x, isSp) => `<div class="n${isSp ? ' sp' : ''}">${esc(x)}</div>`;
-      return `<div class="split"><div class="eq">${nb(a.left, sp === 'left')}<span class="op">${op}</span>${nb(a.right, sp === 'right')}</div><div class="row ${sp === 'left' ? 'l' : 'r'}"><div class="legs"></div></div><div class="row ${sp === 'left' ? 'l' : 'r'}"><div class="ps">${box(P[0])}${box(P[1])}</div></div></div>`; }
+      return `<div class="split"><div class="eq">${nb(a.left, sp === 'left')}<span class="op">${op}</span>${nb(a.right, sp === 'right')}</div><div class="row ${sp === 'left' ? 'l' : 'r'}">${LEGS}</div><div class="row ${sp === 'left' ? 'l' : 'r'}"><div class="ps">${box(P[0])}${box(P[1])}</div></div></div>`; }
     case 'beads': { const m = Math.max(0, Math.min(20, Number(a.moved) || 0)); let x = Math.max(0, Math.min(m, Number(a.cross) || 0));
       const row = (from) => { let h = ''; for (let i = from; i < from + 10; i++){ const mv = i < m; const xx = mv && i >= m - x; h += `<span class="${xx ? 'x' : (mv ? 'm' : '')}"></span>`; } return `<div class="row">${h}</div>`; };
       return `<div class="beads">${row(0)}${row(10)}</div>`; }
@@ -6001,6 +5999,8 @@ function paperAsset(a){
     case 'plate': return `<div class="pplate">${a.n === 0 ? '(비어 있음)' : a.item.repeat(a.n)}</div>`;
   } return '';
 }
+/* 가르기·모으기 다리: 위 상자 바닥 가운데에서 아래 두 상자 위 가운데로 */
+const LEGS = '<div class="legs"><svg viewBox="0 0 132 20" aria-hidden="true"><line x1="66" y1="1" x2="29" y2="19"/><line x1="66" y1="1" x2="103" y2="19"/></svg></div>';
 function paperOptText(t){ if (typeof t !== 'object') return esc(t); const ch = t.type === 'dots' ? '●' : t.item, n = Number(t.n) || 0; return ch.repeat(n).replace(/(.{5})(?=.)/gu, '$1 '); }
 function renderPaper(){
   document.body.classList.add('paper'); const Qp = DATA.questions.map(prep); const r = rng(SEED); const circ = ['①','②','③','④'];
