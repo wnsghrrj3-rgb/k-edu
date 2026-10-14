@@ -1089,6 +1089,411 @@
      "say": "🔥 숯 스무 묶음. 곡식 두 단. 서라벌 연기는 내 연기다."
     }
    ]
+  },
+  "icehouse": {
+   "name": "석빙고 — 돌 창고",
+   "hidden": [
+    "ice_block"
+   ],
+   "verb": "살펴보기",
+   "say": "돌로 쌓고 흙을 덮은 둔덕. 돌 계단이 안으로 내려간다. 안은 비었다 — 겨울이 오면 얼음이 찬다. 위에 환기 구멍 돌 셋.",
+   "flag": "seen:icehouse",
+   "once": true,
+   "info": "석빙고 — 505년부터 얼음을 저장한 창고(빙고전).",
+   "rename": [
+    {
+     "if": "sit:ice:open && !sit:ice:done",
+     "name": "석빙고",
+     "verb": "얼음을 들인다",
+     "once": false,
+     "flag": "seen:icehouse2",
+     "choices": [
+      {
+       "label": "얼음을 뜨고 들인다 — 몸",
+       "if": "!status:jingol && !status:slave && !status:bal_ruler && !status:hojok",
+       "gray": "얼음 뜨기는 부역 — 큰 집은 사람을 보내고 노비는 주인 몫으로 뜬다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 2,
+        "why": "얼음 위에서 톱질하고 썰매를 끄는 열흘의 몸.",
+        "fail": "…얼음이 깨져 찬물에 빠졌다. 끌려 나왔다. 그래도 열흘."
+       },
+       "flag": "ice:cut",
+       "reveal": [
+        "ice_block"
+       ],
+       "say": "🧊 얼음 백 덩이. 볏짚에 싸 돌 창고에."
+      },
+      {
+       "label": "주인 몫으로 뜬다 — 몸 (노비)",
+       "if": "status:slave",
+       "gray": "주인 몫으로 뜨는 건 노비다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "주인 집 몫 열흘을 혼자 채우는 몸.",
+        "fail": "…썰매에 발이 깔렸다. 끌려 나왔다."
+       },
+       "flag": "ice:forslave",
+       "reveal": [
+        "ice_block"
+       ],
+       "say": "🧊 열흘. 장부엔 주인 집 표시."
+      },
+      {
+       "label": "사람을 보낸다 (진골·호족·발해 다스리는 집)",
+       "if": "status:jingol || status:hojok || status:bal_ruler",
+       "gray": "사람을 보내는 건 큰 집이다 — 작은 집은 몸으로 온다.",
+       "flag": "ice:send",
+       "reveal": [
+        "ice_block"
+       ],
+       "say": "📜 우리 집 노비 둘. 여름 얼음은 우리 집에 온다."
+      }
+     ]
+    },
+    {
+     "if": "sit:ice:done",
+     "name": "석빙고 — 얼음이 찼다",
+     "verb": "살펴보기",
+     "once": true,
+     "flag": "seen:icehouse3",
+     "say": "볏짚에 싼 얼음이 돌 계단 밑까지 찼다. 문을 닫았다. 여름에 열린다 — 서라벌 큰 집 쪽으로."
+    }
+   ]
+  },
+  "icecut": {
+   "name": "얼음 뜨는 자리 — 썰매·톱",
+   "verb": "살펴보기",
+   "say": "강가. 널빤지 썰매, 긴 쇠톱, 볏짚 묶음 셋. 강이 얼면 여기서 톱으로 켜 썰매에 싣는다.",
+   "flag": "seen:icecut",
+   "once": true,
+   "info": "얼음 뜨는 자리 — 겨울 강에서 얼음을 켠다.",
+   "rename": [
+    {
+     "if": "sit:ice:open && !sit:ice:done",
+     "name": "얼음 뜨는 자리",
+     "verb": "얼음을 뜬다",
+     "once": false,
+     "flag": "seen:icecut2",
+     "choices": [
+      {
+       "label": "얼음을 뜨고 들인다 — 몸",
+       "if": "!status:jingol && !status:slave && !status:bal_ruler && !status:hojok",
+       "gray": "얼음 뜨기는 부역 — 큰 집은 사람을 보내고 노비는 주인 몫으로 뜬다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 2,
+        "why": "얼음 위에서 톱질하고 썰매를 끄는 열흘의 몸.",
+        "fail": "…얼음이 깨져 찬물에 빠졌다. 끌려 나왔다. 그래도 열흘."
+       },
+       "flag": "ice:cut",
+       "say": "🧊 얼음 백 덩이. 썰매로 창고까지."
+      },
+      {
+       "label": "주인 몫으로 뜬다 — 몸 (노비)",
+       "if": "status:slave",
+       "gray": "주인 몫으로 뜨는 건 노비다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "주인 집 몫 열흘을 혼자 채우는 몸.",
+        "fail": "…썰매에 발이 깔렸다. 끌려 나왔다."
+       },
+       "flag": "ice:forslave",
+       "say": "🧊 열흘. 장부엔 주인 집 표시."
+      },
+      {
+       "label": "한 덩이 몰래 ⚠ — 눈",
+       "if": "!status:jingol && !status:hojok && !status:bal_ruler",
+       "gray": "큰 집은 몰래 가져갈 까닭이 없다 — 여름에 받는다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "빙고 지키는 사람 눈을 피해 볏짚 하나를 더 싸는 눈.",
+        "fail": "…볏짚이 열렸다. 「얼음 도둑.」"
+       },
+       "rollFailFlag": "ice:caught",
+       "flag": "ice:steal",
+       "say": "🧊 볏짚 속 한 덩이. 장터에서 곡식 한 단."
+      }
+     ]
+    }
+   ]
+  },
+  "icebook": {
+   "name": "빙고전 장부 자리",
+   "verb": "살펴보기",
+   "say": "돗자리 위 목간 넷. 덩이 수, 들인 집, 여름에 받을 집. 받을 집 줄에 작은 집 이름은 없다.",
+   "flag": "seen:icebook",
+   "once": true,
+   "info": "빙고전 — 얼음 창고를 맡은 관청의 장부.",
+   "rename": [
+    {
+     "if": "sit:ice:open && !sit:ice:done",
+     "name": "빙고전 장부",
+     "verb": "장부를 적는다",
+     "once": false,
+     "flag": "seen:icebook2",
+     "choices": [
+      {
+       "label": "빙고전 장부를 적는다 — 눈 (6두품·두품)",
+       "if": "status:six || status:low",
+       "gray": "장부는 벼슬 있는 두품 집이 적는다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "덩이 수와 집 이름을 틀리지 않게 적는 눈.",
+        "fail": "…덩이가 열이 비었다. 다시 셌다."
+       },
+       "flag": "ice:book",
+       "say": "📜 덩이 수, 집 이름. 여름에 얼음이 갈 집 — 전부 서라벌 큰 집이다."
+      },
+      {
+       "label": "사람을 보낸다 (진골·호족·발해 다스리는 집)",
+       "if": "status:jingol || status:hojok || status:bal_ruler",
+       "gray": "사람을 보내는 건 큰 집이다 — 작은 집은 몸으로 온다.",
+       "flag": "ice:send",
+       "say": "📜 우리 집 노비 둘. 장부 받을 집 줄에 우리 집."
+      }
+     ]
+    }
+   ]
+  },
+  "zen": {
+   "name": "좌선 바위 — 선사",
+   "verb": "살펴보기",
+   "say": "넓적한 바위 위 방석. 선사가 앉아 있다. 곁에 쌓은 돌탑. 경전은 없다.",
+   "flag": "seen:zen",
+   "once": true,
+   "info": "좌선 바위 — 산문의 가르침은 앉는 것이다.",
+   "rename": [
+    {
+     "if": "sit:seon:open && !sit:seon:done",
+     "name": "좌선 바위",
+     "verb": "앉는다",
+     "once": false,
+     "flag": "seen:zen2",
+     "choices": [
+      {
+       "label": "묻는다 — 「글을 모르는데도 됩니까」",
+       "if": "!status:jingol",
+       "gray": "진골은 서라벌 큰 절에 묻는다 — 산문엔 잘 안 온다.",
+       "flag": "seon:ask",
+       "say": "🙏 「마음을 보라. 뼈도 글도 묻지 않는다.」"
+      },
+      {
+       "label": "머리를 깎는다 — 골품 밖으로 ⚠",
+       "if": "!status:slave && !status:monk",
+       "gray": "노비는 주인이 놓아줘야 머리를 깎는다.",
+       "flag": "seon:ordain",
+       "say": "🪒 산문. 「뼈를 안 묻는다.」"
+      }
+     ]
+    }
+   ]
+  },
+  "stupa": {
+   "name": "부도 자리 — 빈 터",
+   "hidden": [
+    "stupa_stone"
+   ],
+   "verb": "살펴보기",
+   "say": "암자 곁 평평한 터. 돌을 다듬은 자국. 「먼저 가신 스님을 모실 자리」라고 한다 — 돌을 댈 집이 아직 없다.",
+   "flag": "seen:stupa",
+   "once": true,
+   "info": "부도(승탑) 자리 — 호족이 돌을 대 세운다(쌍봉사 철감선사탑).",
+   "rename": [
+    {
+     "if": "sit:seon:open && !sit:seon:done",
+     "name": "부도 자리",
+     "verb": "부도를 세운다",
+     "once": false,
+     "flag": "seen:stupa2",
+     "choices": [
+      {
+       "label": "부도를 세워 준다 — 곡식 2 (호족·진골·발해 다스리는 집)",
+       "if": "(status:hojok || status:jingol || status:bal_ruler) && val:grain>=2",
+       "gray": "돌 부도를 세우는 건 곡식 있는 큰 집이다 — 둘.",
+       "flag": "seon:build",
+       "reveal": [
+        "stupa_stone"
+       ],
+       "say": "🪨 팔각 돌 부도. 「시주 ○○.」"
+      },
+      {
+       "label": "산문을 막는다 — 「서라벌 절이 바른 길」 (진골)",
+       "if": "status:jingol",
+       "gray": "산문을 막을 수 있는 건 서라벌 큰 절을 쥔 진골이다.",
+       "flag": "seon:block",
+       "say": "📜 서라벌에 글을 보냈다. 선사는 「산은 넓다」 했다."
+      }
+     ]
+    },
+    {
+     "if": "seon:build",
+     "name": "팔각 부도",
+     "verb": "살펴보기",
+     "once": true,
+     "flag": "seen:stupa3",
+     "say": "팔각 받침, 팔각 몸, 지붕돌, 보주. 「시주」 자리에 큰 집 이름. 산문이 누구 편인지 돌에 새겨졌다."
+    }
+   ]
+  },
+  "seonwood": {
+   "name": "장작 더미·도끼",
+   "verb": "살펴보기",
+   "say": "쌓은 장작 넷, 도끼 하나. 산속 암자는 겨울이 길다. 공덕은 장작으로도 된다고 한다.",
+   "flag": "seen:seonwood",
+   "once": true,
+   "info": "암자 장작 — 산문은 시주가 적다.",
+   "rename": [
+    {
+     "if": "sit:seon:open && !sit:seon:done",
+     "name": "장작 더미",
+     "verb": "장작을 팬다",
+     "once": false,
+     "flag": "seen:seonwood2",
+     "choices": [
+      {
+       "label": "장작을 해다 준다 — 손",
+       "roll": {
+        "ab": "손",
+        "hard": 1,
+        "why": "겨울 암자 열흘 땔 장작을 패는 손.",
+        "fail": "…도끼가 빗나갔다. 장작은 반."
+       },
+       "flag": "seon:wood",
+       "say": "🪵 장작 열 짐. 「공덕은 뼈가 없다.」"
+      }
+     ]
+    }
+   ]
+  },
+  "deed": {
+   "name": "땅문서 자리 — 마름",
+   "verb": "살펴보기",
+   "say": "농장 대문 앞 돗자리. 두루마리, 도장, 문서 상자. 마름이 앉는 자리 — 흉년 뒤면 줄이 선다. 파는 줄.",
+   "flag": "seen:deed",
+   "once": true,
+   "info": "땅문서 자리 — 큰 집이 땅을 사 모으는 자리.",
+   "rename": [
+    {
+     "if": "sit:manor:open && !sit:manor:done",
+     "name": "땅문서 자리",
+     "verb": "문서를 편다",
+     "once": false,
+     "flag": "seen:deed2",
+     "choices": [
+      {
+       "label": "땅을 판다 — 흉년 뒤 (평민·두품·6두품)",
+       "if": "status:farmer || status:low || status:six",
+       "gray": "팔 땅이 있는 집이 판다 — 큰 집은 사고, 노비는 땅이 없다.",
+       "flag": "manor:sell",
+       "reveal": [
+        "new_fence"
+       ],
+       "say": "📜 문서에 도장. 곡식 두 단. 밭에 큰 집 담이 섰다."
+      },
+      {
+       "label": "땅을 산다 — 곡식 3 (진골·호족·발해 다스리는 집)",
+       "if": "(status:jingol || status:hojok || status:bal_ruler) && val:grain>=3",
+       "gray": "땅을 사 모으는 건 곡식 있는 큰 집이다 — 셋.",
+       "flag": "manor:buy",
+       "reveal": [
+        "new_fence"
+       ],
+       "say": "📜 밭 넷이 우리 농장에. 담을 뻗었다."
+      },
+      {
+       "label": "글을 올린다 — 「땅이 큰 집으로만 모입니다」 눈 (6두품)",
+       "if": "status:six",
+       "gray": "글을 올리는 건 6두품이다 — 글은 가장 많이 읽고 자리는 거기까지.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "재상이 끝까지 읽게 쓰는 눈.",
+        "fail": "…글이 돌아왔다. 「알았다」 한 줄."
+       },
+       "flag": "manor:memo",
+       "say": "📜 재상이 읽었다. 농장은 그대로다."
+      },
+      {
+       "label": "땅 없는 사람을 모은다 — 「우리 성으로」 (호족·호족의 사람)",
+       "if": "status:hojok || status:retainer",
+       "gray": "사람을 모으는 건 호족 집과 그 사람들이다.",
+       "flag": "manor:gather",
+       "say": "🏘 땅 판 집·떠돌이에게 「우리 성으로」."
+      }
+     ]
+    }
+   ]
+  },
+  "manorfield": {
+   "name": "농장 곁 밭 — 평민 밭",
+   "verb": "살펴보기",
+   "say": "조 네 고랑. 경계 말뚝 하나. 농장 담이 바로 곁에서 끝난다. 흉년 한 번이면 담 안이 된다.",
+   "flag": "seen:manorfield",
+   "once": true,
+   "info": "평민 밭 — 농장 담 곁 작은 밭.",
+   "rename": [
+    {
+     "if": "sit:manor:open && !sit:manor:done",
+     "name": "농장 곁 밭",
+     "verb": "논을 간다",
+     "once": false,
+     "flag": "seen:manorfield2",
+     "choices": [
+      {
+       "label": "소작을 든다 — 농장 논을 간다 — 배 (평민·두품·떠돌이)",
+       "if": "status:farmer || status:low || status:drifter",
+       "gray": "소작은 땅 없는 집이 든다.",
+       "roll": {
+        "ab": "배",
+        "hard": 1,
+        "why": "남의 논을 내 논처럼 한 해 버티는 배.",
+        "fail": "…모가 말랐다. 큰 집 몫은 그대로."
+       },
+       "flag": "manor:tenant",
+       "say": "🌾 농장 논 한 뙈기. 거둔 것 반은 큰 집."
+      },
+      {
+       "label": "주인 농장 일을 한다 — 몸 (노비)",
+       "if": "status:slave",
+       "gray": "농장 일을 주인 몫으로 하는 건 노비다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "농장 논을 해 지도록 가는 몸.",
+        "fail": "…허리. 마름이 「내일 또」."
+       },
+       "flag": "manor:work",
+       "say": "🏋 농장 논. 마름이 「너는 담 밖 집」."
+      }
+     ]
+    }
+   ]
+  },
+  "fence": {
+   "name": "농장 담 — 끝",
+   "hidden": [
+    "new_fence"
+   ],
+   "verb": "살펴보기",
+   "say": "흙담이 여기서 끝난다. 밭엔 경계 말뚝. 담이 봄마다 뻗는다고 한다.",
+   "flag": "seen:fence",
+   "once": true,
+   "info": "농장 담 — 땅이 넘어가면 담이 뻗는다.",
+   "rename": [
+    {
+     "if": "manor:sell || manor:buy",
+     "name": "새 담 — 「큰 집 땅」",
+     "verb": "살펴보기",
+     "once": true,
+     "flag": "seen:fence2",
+     "say": "담이 밭을 둘렀다. 팻말 「○○ 집 땅」. 어제까지 평민 밭이었다. 담 밖에 서 있는 사람이 그 집 사람이다."
+    }
+   ]
   }
  }
 }

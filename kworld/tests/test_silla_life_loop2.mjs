@@ -49,7 +49,7 @@ const MIX = ['jeongjeon', 'bell', 'lamp', 'newfort', 'poseok', 'malgal', 'charco
 // ===== 판 1: 신라 진골 여자(곡식 9) — 녹읍 되찾기 · 시주(🎖) · 탑 높이기 · 담비 가죽 · 잔치 · 숯 사기 · 나라에 알리기
 {
   const { g, S, useR, pick, closeCard, goTo, btn, on, opened, done, shown } = mkGame('f', MIX);
-  ok(g.life.situations.length === 14 && Object.keys(g.world.areas).length === 20, '꼭 7 + 새 7 · 구역 20'); ok(g.life.status === 'jingol' && g.flags.has('nation:silla'), '신라 진골');
+  ok(g.life.situations.length === 14 && Object.keys(g.world.areas).length === 23, '꼭 7 + 새 7 · 구역 23(넓히기 2 뒤)'); ok(g.life.status === 'jingol' && g.flags.has('nation:silla'), '신라 진골');
   goTo('outer'); ok(!opened('jeongjeon'), '촌락문서 전엔 정전 안 열림');
   on('sit:census:done'); goTo('outer'); ok(opened('jeongjeon'), '정전'); closeCard(); useR('npc_tiller', '녹읍을'); ok(!btn('녹읍을')?.disabled && btn('정전 문서를')?.disabled && btn('관료전')?.disabled, '진골: 녹읍 열림·정전·관료전 회색'); const g0 = g.life.values.grain; pick('녹읍을'); closeCard(); ok(done('jeongjeon') && g.flags.has('jj:nogeup') && g.life.values.grain === g0 + 2, '녹읍 → 🌾+2');
   goTo('malgal'); ok(opened('malgal'), '말갈 마을'); closeCard(); useR('npc_malgalchief', '담비'); ok(!btn('담비')?.disabled && btn('말똥')?.disabled && !btn('수령을'), '신라 진골: 담비 열림·말똥 회색·발해 선택 없음'); pick('담비'); closeCard(); ok(done('malgal') && g.flags.has('mg:sable'), '담비 가죽');
