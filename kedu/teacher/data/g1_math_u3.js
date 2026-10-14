@@ -136,7 +136,7 @@ LESSONS["u3_l01"] =
       "id": "s06",
       "stage": "전개",
       "block": "concept",
-      "data": {
+      "data": {"fig": {"k":"tools","items":[{"emoji":"➕","name":"+","kind":"모으기"},{"emoji":"➖","name":"−","kind":"가르기"},{"emoji":"🟰","name":"=","kind":"같아요"}]}, 
         "title": "이번 단원에서 배울 것 ③",
         "content": "모으기와 가르기를 **식**으로 쓰는 방법도 배워요.",
         "examples": [
@@ -5808,7 +5808,7 @@ LESSONS["u3_l12"] =
       "id": "s06",
       "stage": "전개",
       "block": "concept",
-      "data": {
+      "data": {"fig": {"k":"tools","items":[{"emoji":"➕","name":"+ 이면","kind":"모아요 · 늘어나요"},{"emoji":"➖","name":"- 이면","kind":"덜어내요 · 줄어들어요"}]}, 
         "tnote": {"ask":["식을 풀 때 가장 먼저 볼 것은?"],"watch":"가운데 기호","min":2},
         "title": "덧셈인지 뺄셈인지 먼저 봐요",
         "content": "식을 풀 땐 가운데 **+ 인지 - 인지** 먼저 확인해요.\n+ 면 모으고(늘어남), - 면 덜어내요(줄어듦)."

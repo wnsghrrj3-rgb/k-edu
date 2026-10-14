@@ -319,7 +319,7 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
   { const D1 = FG.render({ k: 'vdiv', a: 307, d: 3, hi: 'q' }), D2 = FG.render({ k: 'vdiv', a: 258, d: 4, check: true }), D3 = FG.render({ k: 'vdiv', a: 45, d: 3, answer: false }), B1 = FG.render({ k: 'brem', total: 25, per: 4 }), B0 = FG.render({ k: 'brem', total: 24, per: 4 });
     ok(/data-q="102" data-rem="1"/.test(D1) && /vd-q vd-hi/.test(D1) && /data-q="64" data-rem="2"/.test(D2) && /4 × 64 \+ 2 = 258/.test(D2) && (D2.match(/class="vd-row vd-p/g) || []).length === 2 && /vd-blank/.test(D3) && !/vd-p/.test(D3), '나눗셈 부품(30차): 세로셈 307÷3 = 102…1(몫 가운데 0) · 258÷4 = 64…2(단계 둘·확인 식) · 답 비움이면 단계 없음');
     ok(/data-g="6" data-r="1"/.test(B1) && /o-rest/.test(B1) && /나머지 1/.test(B1) && /data-g="6" data-r="0"/.test(B0) && !/o-rest/.test(B0), '나눗셈 부품(30차): 묶고 남기 25÷4 = 6묶음·나머지 1(빨강 칸) · 24÷4 는 남는 칸 없음'); }
-  ok(byFile['g3_science_u1.js'] === 29, '개념 그림 층: 3학년 과학 1단원 개념 장 29장에 그림 (' + byFile['g3_science_u1.js'] + ')');
+  ok(byFile['g3_science_u1.js'] === 30, '개념 그림 층: 3학년 과학 1단원 개념 장 30장에(117차 +1) 그림 (' + byFile['g3_science_u1.js'] + ')');
   console.log('   개념 그림 층 데이터', JSON.stringify(byFile));
   const S = FG.sizes; ok(S.s < S.m && S.m < S.l, '개념 그림 층: 화살표 길이 s<m<l');
   const lens = (h) => (h.match(/data-len="(\d+)"/g) || []).map(x => +x.replace(/\D/g, ''));
