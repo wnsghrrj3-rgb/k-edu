@@ -49,7 +49,7 @@ const MIX = ['tally', 'ingot', 'school', 'shrine', 'cave', 'rebuild', 'beacon'];
 // ===== 판 1: 가야 귀족 여자(고조선 「남쪽으로 간 우두머리 집」) — 더 걷으라 · 왜 배에 덩이쇠 · 담 밖에서 듣기 · 단에 서기 · 곡식 굴에 숨기기 · 망대 사람 · 노비 시켜 세우기(새 지붕 보임)
 {
   const { g, S, useR, pick, closeCard, goTo, btn, on, opened, done, shown } = mkGame('f', MIX);
-  ok(g.life.situations.length === 14 && Object.keys(g.world.areas).length === 20, '꼭 7 + 새 7 · 구역 20'); ok(g.life.status === 'noble' && g.flags.has('nation:gaya'), '가야 귀족');
+  ok(g.life.situations.length === 14 && Object.keys(g.world.areas).length === 23, '꼭 7 + 새 7 · 구역 23'); ok(g.life.status === 'noble' && g.flags.has('nation:gaya'), '가야 귀족');
   goTo('hamlet'); ok(!opened('tally'), '세금 전엔 촌주의 셈 안 열림');
   on('sit:tax:done'); goTo('hamlet'); ok(opened('tally'), '촌주의 셈'); closeCard(); useR('npc_villagechief', '촌주에게 더'); ok(!btn('촌주에게 더')?.disabled && btn('덜 적는다')?.disabled && btn('베 한 필')?.disabled, '귀족: 더 걷으라 열림·촌주 몫·평민 베 회색'); pick('촌주에게 더'); closeCard(); ok(done('tally') && g.flags.has('tally:press') && g.life.values.grain === 4, '더 걷으라 → 🌾+1');
   on('sit:iron:done'); goTo('ironworks'); ok(opened('ingot'), '덩이쇠'); closeCard(); useR('npc_ironmaster', '덩이쇠 열 장'); ok(!btn('덩이쇠 열 장')?.disabled && btn('가마를 맡는다')?.disabled && !btn('가마를 나라'), '가야: 왜 배 열림·가마 회색·「나라 것」 없음'); pick('덩이쇠 열 장'); closeCard(); ok(done('ingot') && g.flags.has('ingot:export') && g.life.values.grain === 7, '왜 배 → 🌾+3');

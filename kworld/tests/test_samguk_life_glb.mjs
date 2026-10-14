@@ -1,4 +1,4 @@
-// 삼국·가야 넓은 터 GLB 구조 검증(10-10 넓히기: 구역 20·NPC 21·새 장소 일곱) — NPC 21·구역 20·spawn·미션·숨김 재질(적군 진영·금부처)이 json 과 맞는지 (WebGL 없이 GLB JSON 청크만)
+// 삼국·가야 넓은 터 GLB 구조 검증(10-10 넓히기: 구역 20·NPC 21·새 장소 일곱 / 10-14 넓히기 2: 구역 23·NPC 24·저수지 둑·금 공방·말 목장) — NPC 21·구역 20·spawn·미션·숨김 재질(적군 진영·금부처)이 json 과 맞는지 (WebGL 없이 GLB JSON 청크만)
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const base = new URL('../eras/samguk-life/', import.meta.url);
@@ -14,21 +14,23 @@ for (const t of types) assert.ok(items.targets[t], `대상 ${t} 가 items.json �
 for (const t of Object.keys(items.targets)) assert.ok(types.has(t) || sceneTypes.has(t), `items.json 대상 ${t} 가 GLB·scene 에 없음`);
 const areas = names.filter((n) => n.startsWith('area_')).map((n) => n.slice(5));
 for (const a of Object.keys(world.areas)) assert.ok(areas.includes(a), `구역 ${a} 없음`);
-assert.equal(Object.keys(world.areas).length, 20, '구역 20');
+assert.equal(Object.keys(world.areas).length, 23, '구역 23');
+for (const a of ['reservoir', 'goldsmith', 'pasture']) assert.ok(world.areas[a] && areas.includes(a), `넓히기 2 구역 ${a}`);
+for (const t of ['ix_dam_1', 'ix_sluice_1', 'ix_basket_1', 'ix_crownbench_1', 'ix_goldheap_1', 'ix_horsearmor_1', 'ix_hay_1']) assert.ok(names.includes(t), `넓히기 2 대상 ${t}`);
 for (const a of ['hamlet', 'ironworks', 'school', 'shrine', 'cave', 'burnt', 'beacon']) assert.ok(world.areas[a] && areas.includes(a), `새 구역 ${a}`);
 for (const t of ['ix_tally_1', 'ix_clothrack_1', 'ix_ironkiln_1', 'ix_ingotpile_1', 'ix_books_1', 'ix_shrine_1', 'ix_shrinedrum_1', 'ix_cave_1', 'ix_rebuild_1', 'ix_beacon_1']) assert.ok(names.includes(t), `새 대상 ${t}`);
 const setters = JSON.stringify(items.targets) + JSON.stringify(npcDefs);
-for (const sit of life.situations.filter((x) => ['tally', 'ingot', 'school', 'shrine', 'cave', 'rebuild', 'beacon'].includes(x.id))) { assert.ok(world.areas[sit.place], `새 상황 ${sit.id} 장소`); for (const c of sit.choices) assert.ok(setters.includes(`"${c.done}"`), `새 상황 ${sit.id} 선택 ${c.id} done 깃발 ${c.done} 을 세우는 곳이 없음`); }
-assert.ok(life.situations.filter((x) => !x.must).length >= 14 && life.mixedCount === 6, '섞여 14 · 판마다 6');
+for (const sit of life.situations.filter((x) => ['tally', 'ingot', 'school', 'shrine', 'cave', 'rebuild', 'beacon', 'reservoir', 'goldsmith', 'pasture'].includes(x.id))) { assert.ok(world.areas[sit.place], `새 상황 ${sit.id} 장소`); for (const c of sit.choices) assert.ok(setters.includes(`"${c.done}"`), `새 상황 ${sit.id} 선택 ${c.id} done 깃발 ${c.done} 을 세우는 곳이 없음`); }
+assert.ok(life.situations.filter((x) => !x.must).length >= 21 && life.mixedCount === 6, '섞여 21 · 판마다 6');
 assert.ok(areas.includes(world.face), `시작 시선 구역 ${world.face}`);
 assert.ok(names.includes('spawn'), 'spawn');
 { const w = JSON.parse(fs.readFileSync(new URL('../eras/samguk-life/world.json', import.meta.url), 'utf8')); assert.ok(Array.isArray(w.spawn) && w.spawn.length === 2 && w.spawn[0] === 0 && w.spawn[1] === 8, 'world.spawn [0, 8] — 장터 좌판 사이가 아니라 마을 길(㉞)'); }
 const npcs = ix.filter((n) => n.startsWith('ix_npc_')).map((n) => n.slice(7));
 for (const id of Object.keys(npcDefs)) assert.ok(npcs.includes(id), `NPC ${id} 가 GLB 에 없음`);
 for (const id of npcs) assert.ok(npcDefs[id], `GLB NPC ${id} 가 npcs.json 에 없음`);
-assert.equal(npcs.length, 21, 'NPC 21');
+assert.equal(npcs.length, 24, 'NPC 24');
 const mats = new Set((data.materials || []).map((m) => m.name));
-for (const t of ['grain_full', 'foe_tent', 'foe_flag', 'buddha_gold', 'new_thatch', 'beacon_fire']) assert.ok(mats.has(t), `숨김 재질 ${t}`);
+for (const t of ['grain_full', 'foe_tent', 'foe_flag', 'buddha_gold', 'new_thatch', 'beacon_fire', 'pond_water', 'crown_gold', 'horse_armor']) assert.ok(mats.has(t), `숨김 재질 ${t}`);
 assert.ok(ix.filter((n) => n.startsWith('ix_bigpaddy_')).length === 2 && ix.filter((n) => n.startsWith('ix_smallpaddy_')).length === 2 && ix.filter((n) => n.startsWith('ix_lordfield_')).length === 1 && ix.filter((n) => n.startsWith('ix_granary_')).length === 2 && ix.filter((n) => n.startsWith('ix_mound_')).length === 2, '귀족 논 2·소작 논 2·주인 논 1·곳간 2·고분 2');
 const list = missions.missions;
 assert.equal(list.length, 7, '꼭 나오는 상황 7 = 미션 7');

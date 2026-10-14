@@ -1087,6 +1087,373 @@
      "say": "🔥 연기 두 가닥. 산성에서 북. 마을이 움직였다."
     }
    ]
+  },
+  "dam": {
+   "name": "둑 — 쌓는 중",
+   "hidden": [
+    "pond_water"
+   ],
+   "verb": "살펴보기",
+   "say": "동서로 긴 흙 둑. 가운데가 아직 낮다. 널 두 장 사이에 흙을 넣고 다진다. 둑 뒤는 움푹한 빈 땅 — 물이 찰 자리.",
+   "flag": "seen:dam",
+   "once": true,
+   "info": "저수지 둑 — 벽골제·청제처럼 물을 가두는 둑.",
+   "rename": [
+    {
+     "if": "sit:reservoir:open && !sit:reservoir:done",
+     "name": "둑",
+     "verb": "흙을 다진다",
+     "once": false,
+     "flag": "seen:dam2",
+     "choices": [
+      {
+       "label": "흙을 지고 둑을 다진다 — 몸",
+       "if": "!status:noble && !status:slave",
+       "gray": "귀족 집은 흙을 안 진다 — 사람을 보낸다. 노비는 주인 몫으로 진다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 2,
+        "why": "열흘 흙을 지고 달구를 드는 몸.",
+        "fail": "…둑이 무너져 한 층을 다시 쌓았다. 그래도 열흘을 채웠다."
+       },
+       "flag": "reservoir:carry",
+       "reveal": [
+        "pond_water"
+       ],
+       "say": "🪣 열흘. 둑 가운데가 올라갔다. 물이 고이기 시작했다."
+      },
+      {
+       "label": "주인 몫으로 흙을 진다 — 몸 (노비)",
+       "if": "status:slave",
+       "gray": "주인 몫으로 지는 건 노비다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "주인 집 몫 열흘을 혼자 채우는 몸.",
+        "fail": "…흙더미에 발이 깔렸다. 끌려 나왔다."
+       },
+       "flag": "reservoir:forslave",
+       "reveal": [
+        "pond_water"
+       ],
+       "say": "🪣 열흘. 목간엔 주인 집 표시."
+      },
+      {
+       "label": "사람을 보낸다 (귀족)",
+       "if": "status:noble",
+       "gray": "보낼 사람이 없는 집은 몸으로 온다.",
+       "flag": "reservoir:send",
+       "reveal": [
+        "pond_water"
+       ],
+       "say": "📜 노비 둘을 보냈다. 물은 우리 논에 먼저 닿는다."
+      }
+     ]
+    },
+    {
+     "if": "sit:reservoir:done",
+     "name": "둑 — 물이 찼다",
+     "verb": "살펴보기",
+     "once": true,
+     "flag": "seen:dam3",
+     "say": "둑 뒤에 물이 찼다. 수문 널을 들면 논으로 흐른다 — 귀족 논부터."
+    }
+   ]
+  },
+  "sluice": {
+   "name": "수문 — 돌 틀·나무 널",
+   "verb": "살펴보기",
+   "say": "돌 두 짝 사이에 나무 널. 널을 들면 물이 나간다. 누가 먼저 드는지는 목간에.",
+   "flag": "seen:sluice",
+   "once": true,
+   "info": "수문 — 물꼬를 여닫는 자리.",
+   "rename": [
+    {
+     "if": "sit:reservoir:open && !sit:reservoir:done",
+     "name": "수문",
+     "verb": "차례를 적는다",
+     "once": false,
+     "flag": "seen:sluice2",
+     "choices": [
+      {
+       "label": "물 댈 차례를 적는다 (촌주)",
+       "if": "status:chief",
+       "gray": "물 차례를 적는 건 촌주다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "논마다 물꼬 차례를 목간에 적는 눈.",
+        "fail": "…순서가 꼬여 두 집이 싸웠다. 다시 적었다."
+       },
+       "flag": "reservoir:order",
+       "say": "📜 귀족 논, 그다음 열 집 차례."
+      },
+      {
+       "label": "빠진다 — 산속으로 열흘 ⚠ 눈",
+       "if": "!status:noble && !status:slave",
+       "gray": "노비는 주인이 보내고, 귀족 집은 안 불린다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "목간 적는 사람 눈을 피해 열흘 산에 있는 눈.",
+        "fail": "…열흘째 나루에서 잡혔다. 「빠진 집」."
+       },
+       "rollFailFlag": "reservoir:caught",
+       "flag": "reservoir:skip",
+       "say": "🌲 열흘 산속. 목간에 우리 집 표시가 없다 — 아직."
+      }
+     ]
+    }
+   ]
+  },
+  "basket": {
+   "name": "흙 바구니·달구 공이",
+   "verb": "살펴보기",
+   "say": "새끼로 엮은 흙 바구니 둘, 돌 공이 달구, 나무 삽. 한 바구니에 흙 한 짐.",
+   "flag": "seen:basket",
+   "once": true,
+   "info": "둑 쌓는 연모.",
+   "rename": [
+    {
+     "if": "sit:reservoir:open && !sit:reservoir:done",
+     "name": "흙 바구니",
+     "verb": "밥을 나른다",
+     "once": false,
+     "flag": "seen:basket2",
+     "choices": [
+      {
+       "label": "밥을 나른다 — 손 (여자)",
+       "if": "sex:f",
+       "gray": "둑에서 밥을 나른 건 여자들이었다 — 흙은 남자가 졌다.",
+       "roll": {
+        "ab": "손",
+        "hard": 1,
+        "why": "열흘 백 사람 밥을 때 맞춰 내는 손.",
+        "fail": "…밥이 늦어 둑이 멈췄다. 다음 날은 맞췄다."
+       },
+       "flag": "reservoir:food",
+       "say": "🍚 백 사람 밥. 둑이 안 멈췄다."
+      }
+     ]
+    }
+   ]
+  },
+  "crownbench": {
+   "name": "두드리는 상 — 금관",
+   "hidden": [
+    "crown_gold"
+   ],
+   "verb": "살펴보기",
+   "say": "나무 상 위 모루돌, 작은 망치. 만들다 만 금판. 곁에 다 된 금귀걸이 둘. 관은 아직 — 테도 안 세웠다.",
+   "flag": "seen:crownbench",
+   "once": true,
+   "info": "금 공방 — 금관·금귀걸이를 두드리는 상.",
+   "rename": [
+    {
+     "if": "sit:goldsmith:open && !sit:goldsmith:done",
+     "name": "두드리는 상",
+     "verb": "금을 두드린다",
+     "once": false,
+     "flag": "seen:crownbench2",
+     "choices": [
+      {
+       "label": "금을 두드려 관을 세운다 — 손 (장인·솜씨 4)",
+       "if": "status:artisan || val:craft>=4",
+       "gray": "금은 장인 손만 — 아니면 솜씨가 넷은 되어야 상 앞에 앉힌다.",
+       "roll": {
+        "ab": "손",
+        "hard": 3,
+        "why": "금판이 찢어지지 않게 두드리고 달개 구멍을 뚫는 손.",
+        "fail": "…금판이 찢어졌다. 다시 녹여 폈다."
+       },
+       "flag": "goldsmith:hammer",
+       "reveal": [
+        "crown_gold"
+       ],
+       "say": "👑 세움 장식 셋, 달개 서른. 내 손이 만든 것을 내 머리엔 못 쓴다."
+      },
+      {
+       "label": "관을 맞춘다 — 곡식 3 (귀족)",
+       "if": "status:noble",
+       "gray": "관은 귀족만 맞춘다. 다른 집이 쓰면 벌이다.",
+       "flag": "goldsmith:order",
+       "reveal": [
+        "crown_gold"
+       ],
+       "say": "👑 벼 세 단에 금동관."
+      },
+      {
+       "label": "금귀걸이를 고른다 (귀족 여자)",
+       "if": "status:noble && sex:f",
+       "gray": "금귀걸이는 귀족 집 여자가 했다 — 평민은 흙구슬.",
+       "flag": "goldsmith:earring",
+       "say": "💛 굵은 고리 금귀걸이."
+      }
+     ]
+    },
+    {
+     "if": "sit:goldsmith:done",
+     "name": "금관",
+     "verb": "살펴보기",
+     "once": true,
+     "flag": "seen:crownbench3",
+     "say": "出자 세움 장식 셋, 달개가 흔들린다. 성주 것. 두드린 손은 다른 사람 것."
+    }
+   ]
+  },
+  "goldheap": {
+   "name": "숯불 화덕·금 가루 그릇",
+   "verb": "살펴보기",
+   "say": "숯불 화덕 위 도가니. 곁에 금 가루 그릇 — 두드릴 때 튄 것을 쓸어 모은다. 숯 더미.",
+   "flag": "seen:goldheap",
+   "once": true,
+   "info": "금 녹이는 자리.",
+   "rename": [
+    {
+     "if": "sit:goldsmith:open && !sit:goldsmith:done",
+     "name": "화덕",
+     "verb": "풀무를 민다",
+     "once": false,
+     "flag": "seen:goldheap2",
+     "choices": [
+      {
+       "label": "풀무를 민다 — 몸",
+       "if": "!status:noble",
+       "gray": "귀족은 풀무를 안 민다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "금이 녹을 때까지 풀무를 쉬지 않고 미는 몸.",
+        "fail": "…불이 죽어 금이 굳었다. 다시 피웠다."
+       },
+       "flag": "goldsmith:bellows",
+       "say": "🔥 풀무 반나절. 금이 물처럼 녹았다."
+      },
+      {
+       "label": "금 가루를 쓸어 모은다 — 눈",
+       "if": "!status:noble",
+       "gray": "귀족은 바닥을 안 쓴다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "두드릴 때 튄 금 가루를 바닥에서 찾는 눈.",
+        "fail": "…가루보다 흙이 많았다. 장인이 웃었다."
+       },
+       "flag": "goldsmith:dust",
+       "say": "✨ 손톱만큼 모았다. 「그건 네 품삯」."
+      }
+     ]
+    }
+   ]
+  },
+  "horsearmor": {
+   "name": "큰 말 — 안장",
+   "hidden": [
+    "horse_armor"
+   ],
+   "verb": "살펴보기",
+   "say": "나라 말 중 제일 큰 놈. 안장만 얹었다. 곁에 철판 비늘 더미 — 꿰면 말갑옷. 싸움이 나면 이 말이 앞에 선다.",
+   "flag": "seen:horsearmor",
+   "once": true,
+   "info": "싸움말 — 말갑옷을 입히는 말(함안 마갑총).",
+   "rename": [
+    {
+     "if": "sit:pasture:open && !sit:pasture:done",
+     "name": "큰 말",
+     "verb": "올라탄다",
+     "once": false,
+     "flag": "seen:horsearmor2",
+     "choices": [
+      {
+       "label": "싸움말을 몬다 — 발 (남자)",
+       "if": "sex:m && !status:slave",
+       "gray": "싸움말은 싸움에 나가는 사람이 몰았다 — 이 나라에선 남자였다. 노비는 끈다.",
+       "roll": {
+        "ab": "발",
+        "hard": 2,
+        "why": "안장 없이 달리는 말 위에서 버티는 발.",
+        "fail": "…떨어졌다. 말이 혼자 돌아왔다."
+       },
+       "flag": "pasture:ride",
+       "say": "🏇 들을 한 바퀴. 말이 내 발을 알았다."
+      },
+      {
+       "label": "말갑옷을 입힌다 — 손 (장인)",
+       "if": "status:artisan",
+       "gray": "철판 비늘을 꿰는 건 장인 손이다.",
+       "roll": {
+        "ab": "손",
+        "hard": 2,
+        "why": "철판 수백 장을 가죽끈으로 꿰어 말 몸에 맞추는 손.",
+        "fail": "…끈이 끊어져 비늘이 쏟아졌다. 다시 꿰었다."
+       },
+       "flag": "pasture:armor",
+       "reveal": [
+        "horse_armor"
+       ],
+       "say": "🛡 철판 비늘 사백 장. 말이 쇠로 덮였다."
+      },
+      {
+       "label": "말 한 필을 내 것으로 — 곡식 2 (귀족)",
+       "if": "status:noble",
+       "gray": "말은 나라 것 — 귀족만 한 필을 받는다.",
+       "flag": "pasture:own",
+       "say": "🐎 벼 두 단. 큰 말이 우리 집 것."
+      },
+      {
+       "label": "말을 끈다 — 몸 (노비)",
+       "if": "status:slave",
+       "gray": "고삐를 잡고 끄는 건 노비다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "날뛰는 말을 고삐로 버티는 몸.",
+        "fail": "…발을 밟혔다. 절뚝이다 나았다."
+       },
+       "flag": "pasture:lead",
+       "say": "🐎 주인 말을 끌었다. 타는 건 주인."
+      }
+     ]
+    },
+    {
+     "if": "pasture:armor",
+     "name": "말갑옷 입은 말",
+     "verb": "살펴보기",
+     "once": true,
+     "flag": "seen:horsearmor3",
+     "say": "철판 비늘이 몸을 덮었다. 머리까지. 화살이 안 든다. 이 말을 탄 사람은 앞장선다."
+    }
+   ]
+  },
+  "hay": {
+   "name": "꼴 더미·낫",
+   "verb": "살펴보기",
+   "say": "벤 풀 더미 셋. 낫 하나. 말 다섯이 하루에 열 짐을 먹는다. 기르는 건 마을 일이다.",
+   "flag": "seen:hay",
+   "once": true,
+   "info": "꼴 — 말 먹이는 풀.",
+   "rename": [
+    {
+     "if": "sit:pasture:open && !sit:pasture:done",
+     "name": "꼴 더미",
+     "verb": "꼴을 벤다",
+     "once": false,
+     "flag": "seen:hay2",
+     "choices": [
+      {
+       "label": "꼴을 벤다 — 손",
+       "roll": {
+        "ab": "손",
+        "hard": 1,
+        "why": "말 다섯이 하루 먹을 꼴을 베는 손.",
+        "fail": "…낫에 손을 베였다. 꼴은 반."
+       },
+       "flag": "pasture:hay",
+       "say": "🌾 꼴 열 짐. 말이 살쪘다."
+      }
+     ]
+    }
+   ]
   }
  }
 }
