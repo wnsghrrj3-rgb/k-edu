@@ -71,6 +71,8 @@ h1{font-family:'Gowun Batang',serif;font-size:26px;font-weight:700;margin:0 0 4p
 .panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:18px 20px}
 .panel h2{font-family:'Gowun Batang',serif;font-size:16px;font-weight:700;margin:0 0 14px;color:var(--soft)}
 .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.filters.scope{background:var(--bg,#f6f7fb);border-radius:10px;padding:8px 10px;margin-bottom:10px}
+.filters.scope select{font-weight:700}
 select,input[type=text]{font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--rule);border-radius:8px;background:#fff;color:var(--ink)}
 .qlist{max-height:560px;overflow:auto;border-top:1px solid var(--rule)}
 .q{display:flex;gap:10px;padding:12px 4px;border-bottom:1px solid var(--rule);cursor:pointer;align-items:flex-start}
@@ -180,6 +182,44 @@ function mapOf(q){ const sem = q.semester || 1; return (window.KEDU_MAP || {})[`
 function unitNo(u){ const m = String(u || '').match(/(\d+)/); return m ? +m[1] : null; }
 function unitName(q){ const n = unitNo(q.unit_code); if (!n) return q.unit_code || ''; const m = mapOf(q); const u = m && (m.units || []).find(x => +x.num === n); return `${n}단원` + (u && u.name ? ' ' + u.name : ''); }
 function lessonLabel(q){ const n = unitNo(q.lesson_code); if (!n) return ''; const m = mapOf(q); const un = unitNo(q.unit_code); const u = m && (m.units || []).find(x => +x.num === un); const l = u && (u.lessons || []).find(x => String(x.n) === String(n)); return `${n}차시` + (l && l.title ? ' ' + l.title : ''); }
+/* 범위 = 학년·학기·과목. 원장엔 여러 학년·학기·과목이 섞여 있으니 교사가 범위를 먼저 고른다(2026-10-14 준호: 과목도 없이 단원만 보여 뭘 하라는지 모르겠다).
+   단원·차시 선택지는 범위 안의 것만, 이름은 KEDU_MAP 에서. */
+let SCOPE = null;
+const subjOf = q => SUBJ_MAP[q.subject] || q.subject || '';
+const keyOf = q => `${q.grade}_${q.semester || 1}_${subjOf(q)}`;
+const scopeKey = () => SCOPE ? `${SCOPE.grade}_${SCOPE.sem}_${SCOPE.subj}` : '';
+const inScope = q => keyOf(q) === scopeKey();
+function scopeFix(){
+  const grades = uniq(BANK.map(q => q.grade));
+  if (!grades.length){ SCOPE = SCOPE || { grade: 1, sem: 1, subj: 'math' }; return; }
+  SCOPE = SCOPE || {};
+  if (!grades.includes(SCOPE.grade)) SCOPE.grade = grades[0];
+  const sems = uniq(BANK.filter(q => q.grade === SCOPE.grade).map(q => q.semester || 1));
+  if (!sems.includes(SCOPE.sem)) SCOPE.sem = sems[0];
+  const subjs = uniq(BANK.filter(q => q.grade === SCOPE.grade && (q.semester || 1) === SCOPE.sem).map(subjOf));
+  if (!subjs.includes(SCOPE.subj)) SCOPE.subj = subjs[0];
+}
+function scopeBar(prefix){
+  scopeFix();
+  const grades = uniq(BANK.map(q => q.grade));
+  const sems = uniq(BANK.filter(q => q.grade === SCOPE.grade).map(q => q.semester || 1));
+  const subjs = uniq(BANK.filter(q => q.grade === SCOPE.grade && (q.semester || 1) === SCOPE.sem).map(subjOf));
+  const opt = (arr, cur, lab) => arr.map(v => `<option value="${esc(v)}"${String(v) === String(cur) ? ' selected' : ''}>${lab(v)}</option>`).join('');
+  return `<div class="filters scope">
+    <select id="${prefix}Grade">${opt(grades, SCOPE.grade, g => g + '학년')}</select>
+    <select id="${prefix}Sem">${opt(sems, SCOPE.sem, m => m + '학기')}</select>
+    <select id="${prefix}Subj">${opt(subjs, SCOPE.subj, j => SUBJ_KO[j] || j)}</select>
+    <span class="hint" style="align-self:center">원장 ${BANK.filter(inScope).length}문항</span>
+  </div>`;
+}
+function bindScope(prefix, rerender){
+  const on = () => { SCOPE = { grade: Number(f(prefix + 'Grade')), sem: Number(f(prefix + 'Sem')), subj: f(prefix + 'Subj') }; rerender(); };
+  ['Grade', 'Sem', 'Subj'].forEach(k => { const el = document.getElementById(prefix + k); if (el) el.onchange = on; });
+}
+const scopeMap = () => (window.KEDU_MAP || {})[`g${scopeKey()}`];
+function unitLabel(u){ const n = unitNo(u); if (!n) return u || ''; const m = scopeMap(); const x = m && (m.units || []).find(y => +y.num === n); return `${n}단원` + (x && x.name ? ' ' + x.name : ''); }
+function lessonLabelOf(u, l){ const n = unitNo(l); if (!n) return l || ''; const m = scopeMap(); const x = m && (m.units || []).find(y => +y.num === unitNo(u)); const ls = x && (x.lessons || []).find(y => String(y.n) === String(n)); return `${n}차시` + (ls && ls.title ? ' ' + ls.title : ''); }
+const scopedConcepts = () => CONCEPTS.filter(c => `${c.grade}_${c.semester || 1}_${subjOf(c)}` === scopeKey());
 function misName(code){ const m = (MIS_LIST || []).find(x => x.code === code); return m && m.title ? m.title : '오개념'; }
 function loadMaps(bank){
   const keys = [...new Set(bank.map(q => `g${q.grade}_${q.semester || 1}_${SUBJ_MAP[q.subject] || q.subject}`))];
@@ -206,11 +246,22 @@ function toast(msg){ const t = document.getElementById('toast'); t.textContent =
   if (!t){ view.innerHTML = `<div class="gate">교사 계정이 아니에요.</div>`; return; }
   ME = t;
 
-  const [{ data: qs }, { data: cs }, { data: cc }] = await Promise.all([
-    db.from('question_bank')
-      .select('id, qcode, grade, subject, unit_code, lesson_code, concept_code, difficulty, qkind, stem, misconception_codes, source_kind, source_set, source, teacher_id')
-      .eq('is_active', true).order('grade').order('unit_code').order('lesson_code').order('difficulty').limit(2000),
-    db.from('concepts').select('code, name, lesson_no, unit_code, grade').eq('is_active', true).order('ord'),
+  // 원장은 1만 문항을 넘는다 — 한 번에 1000행씩 끝까지 읽는다(이전 limit(2000)은 1학년만 보이던 원인).
+  const QCOLS = 'id, qcode, grade, semester, subject, unit_code, lesson_code, concept_code, difficulty, qkind, stem, misconception_codes, source_kind, source_set, source, teacher_id';
+  async function loadBank(){
+    const out = [], STEP = 1000;
+    for (let from = 0; from < 60000; from += STEP){
+      const { data, error } = await db.from('question_bank').select(QCOLS).eq('is_active', true)
+        .order('grade').order('semester').order('subject').order('unit_code').order('lesson_code').order('difficulty').order('qcode').range(from, from + STEP - 1);
+      if (error) return from ? out : null;
+      out.push(...(data || []));
+      if (!data || data.length < STEP) break;
+    }
+    return out;
+  }
+  const [qs, { data: cs }, { data: cc }] = await Promise.all([
+    loadBank(),
+    db.from('concepts').select('code, name, lesson_no, unit_code, grade, subject, semester').eq('is_active', true).order('ord'),
     db.from('class_codes').select('id, code, is_active').eq('teacher_id', t.id).eq('is_active', true)
   ]);
 
@@ -222,7 +273,7 @@ function toast(msg){ const t = document.getElementById('toast'); t.textContent =
   MIS_LIST = (mr && mr.data) || [];
   render();
   // 단원·차시 이름표는 뒤에 오면 그때 다시 그린다 — 지도를 못 읽어도 화면은 선다(N단원·N차시로만 표시).
-  loadMaps(BANK).then(() => { if (TOP === 'quiz' && TAB === 'build' && document.getElementById('qlist')) renderBuild(); });
+  loadMaps(BANK).then(() => { if (TAB === 'build' && (TOP === 'quiz' || TOP === 'unit')) render(); });
 })();
 
 document.querySelectorAll('#subTabs button').forEach(b => b.onclick = () => {
@@ -250,9 +301,9 @@ function renderSoon(which){
 
 /* ---------- 조립 화면 ---------- */
 function filtered(){
-  const g = f('fGrade'), u = f('fUnit'), l = f('fLesson'), c = f('fConcept'), d = f('fDiff'), k = f('fKind'), qword = (f('fWord') || '').trim();
-  return BANK.filter(q =>
-    (!g || String(q.grade) === g) && (!u || q.unit_code === u) &&
+  const u = f('fUnit'), l = f('fLesson'), c = f('fConcept'), d = f('fDiff'), k = f('fKind'), qword = (f('fWord') || '').trim();
+  return BANK.filter(q => inScope(q) &&
+    (!u || q.unit_code === u) &&
     (!l || q.lesson_code === l) && (!c || q.concept_code === c) &&
     (!d || String(q.difficulty) === d) && (!k || q.qkind === k) &&
     (!qword || q.stem.includes(qword)));
@@ -261,16 +312,19 @@ function f(id){ const el = document.getElementById(id); return el ? el.value : '
 const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
 
 function renderBuild(){
-  const grades = uniq(BANK.map(q => q.grade)), units = uniq(BANK.map(q => q.unit_code));
-  const lessons = uniq(BANK.map(q => q.lesson_code)), kinds = uniq(BANK.map(q => q.qkind));
+  const bar = scopeBar('f');
+  const pool = BANK.filter(inScope), units = uniq(pool.map(q => q.unit_code)), kinds = uniq(pool.map(q => q.qkind));
+  const CS = scopedConcepts();
+  const lessonOpts = u => uniq(pool.filter(q => !u || q.unit_code === u).map(q => q.lesson_code)).map(l => `<option value="${l}">${esc(lessonLabelOf(u || (pool.find(q => q.lesson_code === l) || {}).unit_code, l))}</option>`).join('');
+  const conceptOpts = u => CS.filter(c => !u || c.unit_code === u).map(c => `<option value="${c.code}">${!u ? esc(unitLabel(c.unit_code)) + ' · ' : ''}${c.lesson_no ? c.lesson_no + '차시 · ' : ''}${esc(c.name)}</option>`).join('');
   view.innerHTML = `<div class="cols">
     <div class="panel">
-      <h2>문항 원장 <span style="color:var(--muted);font-weight:400">${BANK.length}문항</span></h2>
+      <h2>문항 원장 <span style="color:var(--muted);font-weight:400">${pool.length}문항</span></h2>
+      ${bar}
       <div class="filters">
-        <select id="fGrade"><option value="">전체 학년</option>${grades.map(g => `<option>${g}</option>`).join('')}</select>
-        <select id="fUnit"><option value="">전체 단원</option>${units.map(u => `<option value="${u}">${unitNo(u) ? unitNo(u) + '단원' : esc(u)}</option>`).join('')}</select>
-        <select id="fLesson"><option value="">전체 차시</option>${lessons.map(l => `<option value="${l}">${unitNo(l) ? unitNo(l) + '차시' : esc(l)}</option>`).join('')}</select>
-        <select id="fConcept"><option value="">전체 개념</option>${CONCEPTS.map(c => `<option value="${c.code}">${c.lesson_no ? c.lesson_no + '차시 · ' : ''}${esc(c.name)}</option>`).join('')}</select>
+        <select id="fUnit"><option value="">전체 단원</option>${units.map(u => `<option value="${u}">${esc(unitLabel(u))}</option>`).join('')}</select>
+        <select id="fLesson"><option value="">전체 차시</option>${lessonOpts('')}</select>
+        <select id="fConcept"><option value="">전체 개념</option>${conceptOpts('')}</select>
         <select id="fDiff"><option value="">전체 난이도</option>${[1,2,3,4].map(d => `<option value="${d}">${DIFFNAME[d]}</option>`).join('')}</select>
         <select id="fKind"><option value="">전체 유형</option>${kinds.map(k => `<option value="${k}">${KINDNAME[k] || k}</option>`).join('')}</select>
         <input type="text" id="fWord" placeholder="발문 검색" style="width:130px">
@@ -294,8 +348,9 @@ function renderBuild(){
       <div class="panel" style="margin-top:16px">
         <h2>빠른 조립</h2>
         <div class="filters">
-          <select id="qaLesson"><option value="">차시 고르기</option>${uniq(CONCEPTS.map(c => c.lesson_no)).sort((a, b) => a - b).map(l => `<option value="${l}">${l}차시</option>`).join('')}</select>
-          <select id="qaConcept">${CONCEPTS.map(c => `<option value="${c.code}" data-lesson="${c.lesson_no || ''}">${c.lesson_no ? c.lesson_no + '차시 · ' : ''}${esc(c.name)}</option>`).join('')}</select>
+          <select id="qaUnit">${units.map(u => `<option value="${u}">${esc(unitLabel(u))}</option>`).join('')}</select>
+          <select id="qaLesson"><option value="">차시 고르기</option></select>
+          <select id="qaConcept"></select>
           <select id="qaN">${[5,8,10,15].map(n => `<option value="${n}"${n === 5 ? ' selected' : ''}>${n}문항</option>`).join('')}</select>
           <select id="qaMix"><option value="basic">기본 배합</option><option value="challenge">도전 배합</option></select>
         </div>
@@ -311,8 +366,25 @@ function renderBuild(){
     </div>
   </div>`;
 
-  ['fGrade','fUnit','fLesson','fConcept','fDiff','fKind'].forEach(id => document.getElementById(id).onchange = drawList);
+  bindScope('f', renderBuild);
+  ['fLesson','fConcept','fDiff','fKind'].forEach(id => document.getElementById(id).onchange = drawList);
+  // 단원을 고르면 차시·개념 선택지도 그 단원 것만
+  document.getElementById('fUnit').onchange = () => {
+    const u = f('fUnit');
+    document.getElementById('fLesson').innerHTML = `<option value="">전체 차시</option>` + lessonOpts(u);
+    document.getElementById('fConcept').innerHTML = `<option value="">전체 개념</option>` + conceptOpts(u);
+    drawList();
+  };
   document.getElementById('fWord').oninput = drawList;
+  // 빠른 조립 — 단원 → 차시 → 개념 차례로 좁힌다
+  const qaSync = () => {
+    const u = f('qaUnit');
+    const cs = CS.filter(c => c.unit_code === u);
+    const ls = uniq(cs.map(c => c.lesson_no)).sort((a, b) => a - b);
+    document.getElementById('qaLesson').innerHTML = `<option value="">차시 고르기</option>` + ls.map(l => `<option value="${l}">${esc(lessonLabelOf(u, 'L' + l))}</option>`).join('');
+    document.getElementById('qaConcept').innerHTML = cs.map(c => `<option value="${c.code}" data-lesson="${c.lesson_no || ''}">${c.lesson_no ? c.lesson_no + '차시 · ' : ''}${esc(c.name)}</option>`).join('');
+  };
+  document.getElementById('qaUnit').onchange = qaSync; qaSync();
   document.getElementById('clear').onclick = () => { CART = []; drawList(); drawCart(); };
   document.getElementById('save').onclick = saveSet;
   document.getElementById('qaGo').onclick = quickAssemble;
@@ -424,8 +496,8 @@ function unitQuota(n){
   return q;
 }
 /* 추천안 — 개념별 균배(가장 적게 뽑힌 개념부터), 난이도 할당량 안에서, 유형이 쏠리지 않게 */
-function recommend(unit, grade, n){
-  const pool = BANK.filter(q => q.unit_code === unit && String(q.grade) === String(grade));
+function recommend(unit, n){
+  const pool = BANK.filter(q => inScope(q) && q.unit_code === unit);
   const quota = unitQuota(n), picked = [], perConcept = {};
   const concepts = uniq(pool.map(q => q.concept_code));
   concepts.forEach(c => perConcept[c] = 0);
@@ -446,19 +518,20 @@ function recommend(unit, grade, n){
   });
   return picked;
 }
-function equivForms(unit, grade){
-  return uniq(BANK.filter(q => q.unit_code === unit && String(q.grade) === String(grade) && q.source_kind === 'unit_review').map(q => q.source_set));
+function equivForms(unit){
+  return uniq(BANK.filter(q => inScope(q) && q.unit_code === unit && q.source_kind === 'unit_review').map(q => q.source_set));
 }
 function formLabel(ss){ const m = String(ss).match(/review_([a-z])$/i); return m ? m[1].toUpperCase() + '형' : ss; }
 
 function renderUnit(){
-  const units = uniq(BANK.map(q => q.unit_code)), grades = uniq(BANK.map(q => q.grade));
+  const bar = scopeBar('u');
+  const units = uniq(BANK.filter(inScope).map(q => q.unit_code));
   view.innerHTML = `<div class="cols">
     <div class="panel">
       <h2>추천안</h2>
+      ${bar}
       <div class="filters">
-        <select id="uGrade">${grades.map(g => `<option value="${g}">${g}학년</option>`).join('')}</select>
-        <select id="uUnit">${units.map(u => `<option value="${u}">${unitNo(u) ? unitNo(u) + '단원' : esc(u)}</option>`).join('')}</select>
+        <select id="uUnit">${units.map(u => `<option value="${u}">${esc(unitLabel(u))}</option>`).join('')}</select>
         <select id="uN"></select>
         <button class="btn ghost" id="uGo">추천안 만들기</button>
       </div>
@@ -474,7 +547,7 @@ function renderUnit(){
     <div>
       <div class="panel">
         <h2>단원 평가 저장</h2>
-        <input type="text" id="uTitle" placeholder="이름 (예: 1단원 9까지의 수 정리)" style="width:100%">
+        <input type="text" id="uTitle" placeholder="이름 (비우면 단원 이름으로)" style="width:100%">
         <div class="filters" style="margin-top:10px">
           <select id="uShow">
             <option value="after_close" selected>결과 공개 · 마감 후</option>
@@ -492,18 +565,18 @@ function renderUnit(){
     </div>
   </div>`;
   const syncN = () => {
-    const g = Number(f('uGrade')), d = UNIT_DEFAULT(g);
+    const d = UNIT_DEFAULT(SCOPE.grade);
     document.getElementById('uN').innerHTML = [10, 15, 20, 25, 30].map(n => `<option value="${n}"${n === d.n ? ' selected' : ''}>${n}문항</option>`).join('');
     document.getElementById('uMin').value = d.min;
-    const forms = equivForms(f('uUnit'), g);
+    const forms = equivForms(f('uUnit'));
     document.getElementById('uForm').innerHTML = forms.length ? forms.map(ss => `<option value="${esc(ss)}">단원 종합 ${formLabel(ss)}</option>`).join('') : '<option value="">동형 검사지 없음</option>';
     document.getElementById('uFormGo').disabled = !forms.length;
   };
-  document.getElementById('uGrade').onchange = syncN;
+  bindScope('u', renderUnit);
   document.getElementById('uUnit').onchange = syncN;
   syncN();
   document.getElementById('uGo').onclick = () => {
-    const picked = recommend(f('uUnit'), f('uGrade'), Number(f('uN')));
+    const picked = recommend(f('uUnit'), Number(f('uN')));
     if (!picked.length) return toast('그 단원에 문항이 없어요.');
     UCART = picked.map(q => ({ q, points: q.qkind === 'essay' ? 3 : 1 }));
     drawUnit(); toast(`추천안 ${picked.length}문항을 담았어요. 바꾸고 싶은 문항은 「교체」로.`);
@@ -542,7 +615,7 @@ function drawUnit(){
   // 교체 = 같은 개념·같은 난이도의 아직 안 담은 문항으로(없으면 같은 난이도 아무 개념)
   ul.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => {
     const i = Number(b.dataset.sw), cur = UCART[i].q, inUse = UCART.map(x => x.q.id);
-    const same = q => q.unit_code === cur.unit_code && q.grade === cur.grade && q.difficulty === cur.difficulty && !inUse.includes(q.id);
+    const same = q => keyOf(q) === keyOf(cur) && q.unit_code === cur.unit_code && q.difficulty === cur.difficulty && !inUse.includes(q.id);
     const alt = BANK.find(q => same(q) && q.concept_code === cur.concept_code) || BANK.find(same);
     if (!alt) return toast('바꿀 문항이 남아 있지 않아요.');
     UCART[i] = { q: alt, points: alt.qkind === 'essay' ? 3 : UCART[i].points }; drawUnit();
@@ -552,7 +625,7 @@ function drawUnit(){
 async function saveUnit(){
   if (!UCART.length) return;
   const first = UCART[0].q;
-  const title = (document.getElementById('uTitle').value || '').trim() || (first.unit_code + ' 단원 정리');
+  const title = (document.getElementById('uTitle').value || '').trim() || (unitName(first) + ' 정리');
   const show = f('uShow') || 'after_close', min = Number(f('uMin')) || null;
   const { data: set, error } = await db.from('quiz_sets').insert({
     teacher_id: ME.id, title, kind: 'unit_test', subject: first.subject, grade: first.grade, unit_code: first.unit_code,
@@ -733,7 +806,7 @@ async function showPerfGrade(runId){
 ============================================================================ */
 function renderMakeQ(box){
   if (box.innerHTML){ box.innerHTML = ''; return; }
-  const concepts = CONCEPTS.map(c => `<option value="${c.code}" data-grade="${c.grade}" data-unit="${c.unit_code}">${c.lesson_no ? c.lesson_no + '차시 · ' : ''}${esc(c.name)}</option>`).join('');
+  const concepts = scopedConcepts().map(c => `<option value="${c.code}" data-grade="${c.grade}" data-unit="${c.unit_code}">${esc(unitLabel(c.unit_code))} · ${c.lesson_no ? c.lesson_no + '차시 · ' : ''}${esc(c.name)}</option>`).join('');
   const misOpts = (MIS_LIST || []).map(m => `<option value="${esc(m.code)}">${esc(m.title || m.code)}</option>`).join('');
   box.innerHTML = `<div class="mk">
     <label>개념 (필수)</label><select id="mkConcept"><option value="">— 개념을 고르세요 —</option>${concepts}</select>
