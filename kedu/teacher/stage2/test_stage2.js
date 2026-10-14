@@ -491,7 +491,7 @@ manifest.subjects.forEach(sj => {
 Promise.all(rosterChecks).then(() => {
 console.log('② 무대 실주행 —', ran, '차시 부팅 · 슬라이드 안 조작', actsAll, '회 · 조각 공개', fragsAll, '회 · 말풍선', bubAll, '· 장면 무대', picAll, '· 사진 폴백 무대', illusAll, '· 그림 인물', chrAll);
 ok(chrAll > 0, '인물 층: 무대 실주행에서 그림 인물이 선다 (' + chrAll + ')');
-ok(guideAll > 0, '안내 인물: 무대 실주행에서 개념·문제 말풍선 인물이 선다 (' + guideAll + ')'); console.log('   안내 인물(개념·문제 말풍선)', guideAll);
+console.log('   안내 인물(1세대 개념·문제 말풍선)', guideAll, '— 120차: 개념 장이 전부 새 꼴이라 0 이 정상(검사 아님)');
 console.log('결과: PASS', pass, '· FAIL', fail);
 if (fail) { console.log(fails.slice(0, 40).join('\n')); process.exit(1); }
 });

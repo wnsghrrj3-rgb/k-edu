@@ -188,7 +188,7 @@
       return link + '<div class="bd2-nd' + (isEnd ? ' end' : '') + '"><span class="bd2-no">' + badge + '</span>' + body(t) + '</div>'; }).join('') + '</div>';
   }
   // 114차 — 수학 묶음 개념 장 mg2(준호 위임 → 베프 A 「수 가지」): 전체 묶음 안에서 두 부분을 색(파랑·주황)으로 미리 갈라 두고 가지로 두 부분 카드에 잇는다. 가르기(첫 묶음 = 나머지 합) · 모으기(마지막 = 앞의 합, 가지 위로) · 두 묶음(3 + 2) · 한 묶음 · 그림 카드(count 전부 1). 교사 무대만.
-  function mg2Ok(d) { if (!(d.content && Array.isArray(d.items) && d.items.length >= 1 && d.items.length <= 6 && !d.fig && !d.img && !d.symbol_meanings && !d.kids_after && !d.bidirect && !d.pairs && !d.examples && !d.expression && !d.sequence && !d.ordinal_map && !d.linking_cube_staircase)) return false;
+  function mg2Ok(d) { if (!((d.content || d.note) && Array.isArray(d.items) && d.items.length >= 1 && d.items.length <= 6 && !d.fig && !d.symbol_meanings && !d.kids_after && !d.bidirect && !d.pairs && !d.examples && !d.expression && !d.sequence && !d.ordinal_map && !d.linking_cube_staircase)) return false;
     return d.items.every(it => it && it.emoji && it.count !== undefined && +it.count >= 0 && +it.count <= 20 && /^\d+$/.test(String(it.count))); }
   function mg2Kind(items) { const c = items.map(x => +x.count); const sum = a => a.reduce((p, q) => p + q, 0);
     if (c.every(x => x === 1) && c.length >= 2) return 'icon'; if (c.length === 1) return 'one';
@@ -209,7 +209,7 @@
     else { st = '<div class="mg2-st row">' + items.map((it, i) => { const m = String(it.label || '').match(/^(\d+)\s*[와과]\s*(\d+)/); // 「2와 3」 — 한 묶음을 두 색으로 가름
         if (m && (+m[1] + +m[2] === +it.count || +m[1] === +it.count)) return '<div class="mg2-card w"><span class="mg2-n"><b class="c1">' + m[1] + '</b><i>와</i><b class="c2">' + m[2] + '</b></span><span class="mg2-em">' + Array.from({ length: +m[1] }, () => '<i class="a">' + esc(it.emoji) + '</i>').join('') + Array.from({ length: +m[2] }, () => '<i class="b">' + esc(it.emoji) + '</i>').join('') + '</span></div>';
         return card(it, i % 2 ? 'p2' : 'p1', grp(it.emoji, it.count, i % 2 ? 'b' : 'a')); }).join('') + '</div>'; if (note) note = md(note); }
-    return '<div class="mg2-lead">' + md(d.content) + '</div>' + st + (note ? '<div class="mg2-note">' + note + '</div>' : '');
+    return (d.content ? '<div class="mg2-lead">' + md(d.content) + '</div>' : '') + st + (note ? '<div class="mg2-note">' + note + '</div>' : '');
   }
   // 111차 — 답 쓰는 문제 장 pa2(보기 없이 답 칸만 · 1세대 말풍선+펭귄 대신 장면 그림 판): 왼쪽 = 배경 + 안내 인물 둘 + 상황 말풍선(그림 fig 가 있으면 그 그림) · 오른쪽 = 큰 물음 + 답 카드 + 풀이. 교사 무대만.
   function pa2Ok(d) { const body = d.scenario && d.scenario.body ? d.scenario.body : d.context; const its = !d.items || (Array.isArray(d.items) && d.items.length && d.items.length <= 4 && d.items.every(i => i && i.emoji && i.count !== undefined)); // 118차 — 상황 글 없는 장·세는 그림(items)·십 배열판(ten_frame_anchor) 장도 받음 · 그림 판 위 흰 판에
@@ -370,9 +370,9 @@
         if (!ctx.learn && sm2Ok(d)) { cls = 'sm2'; push(sm2(d, ctx.guide, title)); break; } // 113차 — 기호·뜻 개념 장
         if (!ctx.learn && bd2Ok(d)) { cls = 'bd2'; push(bd2(d)); break; } // 115차 — 흐름 개념 장(계단 카드)
         if (!ctx.learn && mg2Ok(d)) { cls = 'mg2 mg2-' + mg2Kind(d.items); push(mg2(d)); break; } // 114차 — 수학 묶음 개념 장(수 가지)
-        { const fg = d.content && !d.img && !d.kids_after && d.fig && global.KT2_FIG ? global.KT2_FIG.render(d.fig) : ''; // 94차 — 새 개념 장 cv2: 말풍선·안내 인물 없이 한 문장 + 큰 그림
+        { const fg = d.content && !d.kids_after && d.fig && global.KT2_FIG ? global.KT2_FIG.render(d.fig) : ''; // 120차 — 사진(img) 자리는 파일이 없어 그림(fig)이 대신 · 94차 — 새 개념 장 cv2: 말풍선·안내 인물 없이 한 문장 + 큰 그림
           if (fg) { cls = 'cv2' + (d.fig.k === 'chain' ? ' cv2-chain' : dataFig(d.fig) ? ' cv2-side' : ''); push('<div class="cv2-lead">' + md(cv2Lead(d.content, d.fig)) + '</div>'); push('<div class="cv2-fig">' + fg + '</div>');
-            if (Array.isArray(d.symbol_meanings) && d.symbol_meanings.length) push(symCards(d.symbol_meanings)); if (d.items) push(tfRow(d.items)); if (d.examples) push('<div class="examples">' + d.examples.map(e => '<div class="ex">' + md(lbl(e)) + '</div>').join('') + '</div>'); if (d.pairs) { push(pairs(d.pairs, rev, seed)); answerable = true; } if (d.expression) push('<div class="big-q">' + md(d.expression) + '</div>');
+            if (Array.isArray(d.symbol_meanings) && d.symbol_meanings.length) push(symCards(d.symbol_meanings)); if (d.items && !d.items.some(i => +i.count > 20)) push(tfRow(d.items)); /* 120차 — 큰 수 이모지 줄은 그림(수 모형·세로셈)이 대신 */ if (d.examples) push('<div class="examples">' + d.examples.map(e => '<div class="ex">' + md(lbl(e)) + '</div>').join('') + '</div>'); if (d.pairs) { push(pairs(d.pairs, rev, seed)); answerable = true; } if (d.expression) push('<div class="big-q">' + md(d.expression) + '</div>');
             if (d.note) push('<div class="small-text">' + md(d.note) + '</div>'); break; } }
         push(image(d.img, title + ' ' + (d.content || ''))); if (d.content) { const bt = '<div class="big-text">' + md(d.content) + '</div>'; push(ctx.guide && ctx.guide[0] && !d.kids_after ? guideSay(ctx.guide[0], bt, 'l') : bt); }
         if (d.fig && global.KT2_FIG) { const fg = global.KT2_FIG.render(d.fig); if (fg) { // 63차 — 자료 그래프(막대·그림그래프·표) 개념 장은 말풍선 옆에 그림(세로로 쌓으면 0.72~0.84)
