@@ -48,7 +48,7 @@ const MIX = ['tax', 'ore', 'tomb', 'south', 'wiman', 'marsh', 'county'];
 // ===== 판 1: 군장 곁의 집(곡식 3) 여자 — 반만 거둔다 · 말뚝 · 동검 묻기 · 길 막기 · 땅 떼어 주자 · 못 본 척 · 관리와 손잡기 → 끝 갈림 「군현 벼슬을 받은 집」
 {
   const { g, S, useR, pick, closeCard, goTo, btn, on, opened, done, shown } = mkGame('f', MIX);
-  ok(g.life.situations.length === 14 && Object.keys(g.world.areas).length === 20, '꼭 7 + 새 7 · 구역 20'); ok(g.life.status === 'noble', '군장 곁의 집');
+  ok(g.life.situations.length === 14 && Object.keys(g.world.areas).length === 23, '꼭 7 + 새 7 · 구역 23'); ok(g.life.status === 'noble', '군장 곁의 집');
   goTo('outer'); ok(!opened('tax'), '거둠 전엔 바치는 날 안 열림');
   on('sit:harvest:done'); goTo('outer'); ok(opened('tax'), '바치는 날'); closeCard(); useR('npc_outer', '한 단씩'); ok(!btn('한 단씩')?.disabled && btn('낸다')?.disabled && btn('주인 몫')?.disabled, '군장 곁: 거두기 열림·내기·나르기 회색'); pick('흉년이니'); closeCard(); ok(done('tax') && g.flags.has('tax:half') && g.life.values.grain === 4, '반만 → 🌾+1 🤝+2');
   on('sit:iron:done'); goTo('ore'); ok(opened('ore'), '쇠돌 골'); closeCard(); useR('npc_miner', '골짜기에'); ok(!btn('골짜기에')?.disabled && btn('캐서 녹인다')?.disabled, '말뚝 열림·녹이기 회색'); pick('골짜기에'); closeCard(); ok(done('ore') && g.flags.has('ore:claim') && g.life.values.grain === 6, '말뚝 → 🌾+2');
