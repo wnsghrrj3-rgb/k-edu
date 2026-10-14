@@ -116,6 +116,19 @@ ok(emptyBodies.length === 0, '본문 빈 슬라이드 ' + emptyBodies.length + '
     ok(/sm2-rows grp/.test(sg.body) && (sg.body.match(/class="sm2-grp"/g) || []).length === 2 && /class="op">=/.test(sg.body) && /class="op">➜/.test(sg.body), '113차 sm2: 뜻이 겹치면 뜻 알약 아래로 묶음 · 식 기호(= + →) 흐리게');
     const sl = KT2.renderSlide({ id: 's', block: 'concept', data: { title: 't', content: 'x', symbol_meanings: [{ symbol: '자음자', meaning: 'ㄱ ㄴ' }, { symbol: '모음자', meaning: 'ㅏ ㅓ' }] } }, Object.assign({}, C, { learn: true }));
     ok((sl.body.match(/class="sym"/g) || []).length === 2 && /<b>자음자<\/b><span>ㄱ ㄴ<\/span>/.test(sl.body), '되살림: learn 개념 symbol_meanings → 낱말 카드(1세대 그대로)'); }
+  { const bd = b => KT2.renderSlide({ id: 'b', block: 'concept', data: { title: 't', bidirect: b } }, C); // 115차 — 흐름 개념 장 bd2(계단 카드)
+    const a = bd(['📦 책 · 필통 · 사물함', '↓', '🥫 휴지 · 딱풀', '↓', '같은 모양끼리 모이는 게 **분류**예요']);
+    ok(a.cls === 'bd2' && (a.body.match(/class="bd2-nd"/g) || []).length === 2 && /bd2-nd end/.test(a.body) && (a.body.match(/bd2-ar/g) || []).length === 2 && /bd2-ic">📦/.test(a.body) && /bd2-chips"><span>책<\/span>/.test(a.body), '115차 bd2: 번호 카드 + ▼ + 끝 줄 ✓ 띠 · 앞 이모지 큰 그림 · 「·」 알약');
+    const n = bd(['9 → 8 → 7 → 6 → 5', '↓', '4 → 3 → 2 → 1', '↓', '**한 칸씩 작아져요**']);
+    ok((n.body.match(/<b>/g) || []).length === 9 && /bd2-tiles/.test(n.body) && /bd2-nd end/.test(n.body), '115차 bd2: 짧은 「→」 줄 → 숫자 타일');
+    const l = bd(['**5칸**이 다 찬 다음', '↓', '**한 칸 더 = 6**', '↓', '**두 칸 더 = 7**', '↓', '**세 칸 더 = 8**']);
+    ok(!/bd2-nd end/.test(l.body) && (l.body.match(/class="bd2-nd"/g) || []).length === 4, '115차 bd2: 같은 꼴 목록의 마지막 항목은 끝 띠 아님');
+    const e = bd(['**6은 4보다 더 큰 수**', '=', '**4는 6보다 더 작은 수**']);
+    ok(/bd2-op">=/.test(e.body), '115차 bd2: = · + 줄은 기호 고리');
+    const s = bd(['32 — 묶음 3개', '21 — 묶음 2개', '→ 32 &gt; 21']);
+    ok(/bd2-nd end/.test(s.body) && (s.body.match(/bd2-gap/g) || []).length === 2, '115차 bd2: 「→」로 시작하는 끝 줄 · ↓ 없는 줄 사이는 틈');
+    const ln = KT2.renderSlide({ id: 'b', block: 'concept', data: { title: 't', bidirect: ['a', '↓', 'b'] } }, Object.assign({}, C, { learn: true }));
+    ok(!/bd2/.test(ln.cls || '') && /class="bidirect"/.test(ln.body), '되살림: learn 흐름 장 → 1세대 그대로'); }
   { const it = (e, c, l) => ({ emoji: e, count: c, label: l }); // 114차 — 수학 묶음 개념 장 mg2(수 가지)
     const sp = KT2.renderSlide({ id: 'm', block: 'concept', data: { title: 't', content: 'x', items: [it('🍅', 5, '5개를'), it('🍅', 3, '3개와'), it('🍅', 2, '2개로!')], note: '👉 5는 3과 2로 가르기 할 수 있어요.' } }, C);
     ok(sp.cls === 'mg2 mg2-split' && (sp.body.match(/<i class="a">/g) || []).length === 6 && (sp.body.match(/<i class="b">/g) || []).length === 4 && /mg2-br/.test(sp.body) && !/mg2-note/.test(sp.body) && /mg2-card p1/.test(sp.body), '114차 mg2 가르기: 전체 묶음 안 두 색(3 파랑·2 주황) + 가지 + 부분 카드 · 👉 note 는 발문 띠로(화면 없음)');
