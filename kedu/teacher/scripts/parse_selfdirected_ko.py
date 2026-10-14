@@ -16,8 +16,9 @@ def clean(s):
     return '\n'.join(x.strip() for x in s.split('\n') if x.strip()).strip()
 
 def field(obj, name):
-    m = re.search(name + r"\s*:\s*'((?:[^'\\]|\\.)*)'", obj)
-    return m.group(1).replace("\\'", "'") if m else ''
+    # 122차: 1-2 국어(2026 새 판)는 tag:"…"·t:"…" 겹따옴표 — 홑·겹 둘 다 받는다(3-2·4-1 재추출 바이트 동일 확인)
+    m = re.search(name + r"\s*:\s*'((?:[^'\\]|\\.)*)'", obj) or re.search(name + r'\s*:\s*"((?:[^"\\]|\\.)*)"', obj)
+    return m.group(1).replace("\\'", "'").replace('\\"', '"') if m else ''
 
 def split_objs(arr):
     out, depth, start, i, q = [], 0, None, 0, None
@@ -39,7 +40,7 @@ def split_objs(arr):
 def parse(path):
     src = open(path, encoding='utf-8').read()
     head = re.search(r'학습 목표:\s*(.*)', src)
-    goal = head.group(1).strip() if head else ''
+    goal = re.sub(r'\s*=+\s*$', '', head.group(1).strip()) if head else ''
     arr = src[src.index('slides=['):]
     res = {'file': os.path.basename(path), 'goal': goal, 'slides': []}
     for o in split_objs(arr[len('slides='):].split('\n];')[0] + '\n]'):

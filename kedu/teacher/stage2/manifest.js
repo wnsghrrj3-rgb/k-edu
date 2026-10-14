@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-14 · 과목 18 · 차시 862 · 슬라이드 14991 */
+   생성: 2026-10-14 · 과목 19 · 차시 869 · 슬라이드 15124 */
 window.KT2_MANIFEST = {
  "built": "2026-10-14",
- "lessons": 862,
- "slides": 14991,
+ "lessons": 869,
+ "slides": 15124,
  "subjects": [
   {
    "slug": "g1_math",
@@ -4033,6 +4033,206 @@ window.KT2_MANIFEST = {
        ],
        "interactive": 4,
        "blocks": 12,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "slug": "g1s2_korean",
+   "grade": 1,
+   "term": 2,
+   "subject": "korean",
+   "subject_ko": "국어",
+   "title": "1학년 2학기 국어",
+   "units": [
+    {
+     "unit": 1,
+     "title": "기분을 말해요",
+     "file": "data/g1s2_korean_u1.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u1_l01",
+       "no": "1",
+       "title": "단원 시작 — 배울 내용 살펴보기",
+       "meta_title": "단원 시작 — 배울 내용 살펴보기",
+       "std": "[2국01-02][2국03-02][2국05-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l03",
+       "no": "3",
+       "title": "흉내 내는 말 알기",
+       "meta_title": "흉내 내는 말 알기",
+       "std": "[2국05-01][2국03-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l05",
+       "no": "5",
+       "title": "흉내 내는 말을 넣어 문장 만들기",
+       "meta_title": "흉내 내는 말을 넣어 문장 만들기",
+       "std": "[2국05-01][2국03-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l07",
+       "no": "7",
+       "title": "기분을 나타내는 말 하기",
+       "meta_title": "기분을 나타내는 말 하기",
+       "std": "[2국01-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l09",
+       "no": "9",
+       "title": "듣는 사람을 생각하며 자신의 기분 말하기",
+       "meta_title": "듣는 사람을 생각하며 자신의 기분 말하기",
+       "std": "[2국01-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l11",
+       "no": "11",
+       "title": "배운 내용 실천하기 (역할놀이)",
+       "meta_title": "배운 내용 실천하기 (역할놀이)",
+       "std": "[2국01-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l13",
+       "no": "13",
+       "title": "단원 마무리하기",
+       "meta_title": "단원 마무리하기",
+       "std": "단원 전체 통합",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
        "seven": [
         1,
         1,
