@@ -316,7 +316,7 @@
   function bt(o) {
     const n = Math.max(0, o.n | 0), h = Math.floor(n / 100), t = Math.floor(n / 10) % 10, u = n % 10; let s = '';
     const need = (k) => h * (90 * k + 8) + (h ? 10 : 0) + t * (9 * k + 6) + (t ? 12 : 0) + (u ? 5 * (9 * k + 3) : 0); let sc = 1.4; while (sc > 0.3 && need(sc) > 424) sc -= 0.05;
-    s += btBlocks(24, 78, h, t, u, sc) + txt(230, 46, String(n), 34);
+    s += btBlocks(Math.max(24, Math.round(230 - need(sc) / 2)), 78, h, t, u, sc) + (o.num === false ? '' : txt(230, 46, String(n), 34)); // 121차 num:false — 문제 그림에 답을 그리지 않음
     if (o.split !== false) s += txt(230, 236, '백 ' + h + ' · 십 ' + t + ' · 일 ' + u, 24, BLUE2);
     if (o.tag) s += txt(230, 264, o.tag, 20, '#6B7C93');
     return svgWrap(s, 'fig-bt');
@@ -1398,6 +1398,37 @@
     return svgWrap(head + s, 'fig-bar', '0 0 ' + W0 + ' ' + H0).replace('<svg class="fig-svg fig-bar"', '<svg class="fig-svg fig-bar" data-v="' + sets.map(st => st.v.join(',')).join('|') + '" data-step="' + step + '" data-max="' + top + '" data-cells="' + cells.join(',') + '" data-horiz="' + (hz ? 1 : 0) + '" data-by="' + by + '" data-hide="' + (hide === 'all' ? 'all' : hide.join(',')) + '"' + (o.title ? ' data-title="' + esc(o.title) + '"' : ''));
   }
   Object.assign(PARTS, { bar });
+  }
+
+  { // 121차 1학년 2학기 「100까지의 수」 부품 — 이름이 겹치지 않게 블록 안에 둔다
+  // ══ gbun(물건 10개씩 묶음 + 낱개 — 자기주도 원문 「goods」 그림) · pairg(둘씩 짝 짓기 — 짝수·홀수) ══
+  // 그림 문법(원문과 같음): 묶음 = 끈으로 묶은 10개(2줄 × 5) · 낱개 = 따로 · 짝 = 위아래 두 개 한 칸 · 짝 없는 하나 = 주황 테.
+  // gbun: emoji · b(묶음 수) · u(낱개 수) · num(true 면 위에 수) · lab(true 면 「10개」 꼬리표) · data-b/u/n
+  function gbun(o) {
+    const b = Math.max(0, Math.min(10, o.b | 0)), u = Math.max(0, Math.min(9, o.u | 0)), e = esc(o.emoji || '🍎'), top = o.num ? 58 : 22;
+    const ew = 22, bw = 2 * ew + 10, bh = 5 * ew + 12, gap = 8, lw = u ? Math.ceil(u / 5) * (ew + 4) + 6 : 0, tot = b * (bw + gap) + (u ? 18 + lw : 0) - gap;
+    const k = Math.min(1.6, 430 / Math.max(1, tot)); let x = 230 - tot * k / 2, s = '';
+    const em = (cx, cy) => '<text x="' + cx.toFixed(1) + '" y="' + (cy + ew * k * 0.36).toFixed(1) + '" text-anchor="middle" font-size="' + (ew * k * 0.92).toFixed(1) + '">' + e + '</text>';
+    for (let i = 0; i < b; i++) { s += '<g class="o-bun"><rect x="' + x.toFixed(1) + '" y="' + top + '" width="' + (bw * k).toFixed(1) + '" height="' + (bh * k).toFixed(1) + '" rx="' + (10 * k).toFixed(1) + '" fill="#FFF6E3" stroke="#D9A441" stroke-width="3"/>';
+      for (let j = 0; j < 10; j++) s += em(x + (5 + ew / 2 + (j % 2) * ew) * k, top + (6 + ew / 2 + Math.floor(j / 2) * ew) * k);
+      s += '<rect x="' + x.toFixed(1) + '" y="' + (top + bh * k / 2 - 4).toFixed(1) + '" width="' + (bw * k).toFixed(1) + '" height="8" fill="#E2574C" opacity=".85"/>';
+      if (o.lab !== false) s += txt((x + bw * k / 2).toFixed(1), (top + bh * k + 26).toFixed(1), '10개', 18, '#9A6A12', 800);
+      s += '</g>'; x += (bw + gap) * k; }
+    if (u) { x += (18 - gap) * k; for (let j = 0; j < u; j++) s += '<g class="o-one">' + em(x + (ew / 2 + Math.floor(j / 5) * (ew + 4)) * k, top + (6 + ew / 2 + (j % 5) * ew) * k) + '</g>'; }
+    if (o.num) s += txt(230, 42, String(b * 10 + u), 34);
+    const H = Math.ceil(top + bh * k + (o.lab !== false && b ? 40 : 14));
+    return svgWrap(s, 'fig-gbun', '0 0 460 ' + Math.max(160, H)).replace('<svg ', '<svg data-b="' + b + '" data-u="' + u + '" data-n="' + (b * 10 + u) + '" ');
+  }
+  // pairg: emoji · n(개수 1~20) · num(true 면 아래에 수) · show(true 면 짝 없는 하나를 주황 테로 — 개념 장) · data-n/odd
+  function pairg(o) {
+    const n = Math.max(1, Math.min(20, o.n | 0)), e = esc(o.emoji || '🟠'), cols = Math.ceil(n / 2), cw = Math.min(54, 420 / cols), x0 = 230 - cols * cw / 2, y0 = 40; let s = '';
+    for (let c = 0; c < cols; c++) { const x = x0 + c * cw, two = 2 * c + 1 < n;
+      s += '<rect class="o-pr' + (two ? '' : ' odd') + '" x="' + (x + 3).toFixed(1) + '" y="' + y0 + '" width="' + (cw - 6).toFixed(1) + '" height="' + (2 * cw - 4).toFixed(1) + '" rx="' + (cw * 0.3).toFixed(1) + '" fill="' + (two || !o.show ? '#F4F8FF' : '#FFF1E6') + '" stroke="' + (two || !o.show ? '#B9C9E6' : ORANGE) + '" stroke-width="' + (two || !o.show ? 2 : 4) + '"/>';
+      for (let r = 0; r < (two ? 2 : 1); r++) s += '<text x="' + (x + cw / 2).toFixed(1) + '" y="' + (y0 + cw * 0.72 + r * (cw - 2)).toFixed(1) + '" text-anchor="middle" font-size="' + (cw * 0.62).toFixed(1) + '">' + e + '</text>'; }
+    const yb = y0 + 2 * cw + 4; if (o.num) s += txt(230, yb + 36, String(n), 30);
+    return svgWrap(s, 'fig-pairg', '0 0 460 ' + Math.ceil(yb + (o.num ? 50 : 12))).replace('<svg ', '<svg data-n="' + n + '" data-odd="' + (n % 2) + '" ');
+  }
+  Object.assign(PARTS, { gbun, pairg });
   }
   const HTML_PARTS = { vert, tvert, vmul, vdiv, ptable, ograph, pgraph, pvt, jump, notes };
   { // 64차 관계와 규칙 부품 — 이름이 겹치지 않게 블록 안에 둔다
