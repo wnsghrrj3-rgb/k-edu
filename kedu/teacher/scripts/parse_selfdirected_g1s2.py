@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""parse_selfdirected_g1s2.py — 1학년 2학기 자기주도 차시 HTML(ka 틀 · 2026 새 판) → 케이티처 재료 JSON (121차, 베프).
+"""parse_selfdirected_g1s2.py — 1학년 2학기 자기주도 차시 HTML(ka 틀 · 2026 새 판) → 케이티처 재료 JSON (121차 · 123차 2단원 그림, 베프).
    사용: python3 parse_selfdirected_g1s2.py <단원 폴더> <out.json>
    원문 꼴: slide-title(제목·물음) · stage 안 p.cap/prompt/speech · tao-row(10개씩 묶음 막대·낱개·큰 수) · goods(이모지 묶음·낱개)
             · q-part data-part = mcq(opts·ok) · pad(answer·unit) · two(a·b) · match(칸·카드) · judge(줄 o/x) · sum-card · next-card.
@@ -42,7 +42,33 @@ def figs(p):
         out.append({'k': 'pair', 'emoji': real[0] if real else '', 'n': len(real), 'num': m.group(2)})
     rws = re.findall(r'class="rw-(?:han|kor)">([^<]*)<', p)
     if rws: out.append({'k': 'read', 'items': rws})
+    out.extend(figs2(p))
     return out
+
+# 123차 — 2단원 「덧셈과 뺄셈(1)」 그림: steps(번호 줄 식) · eqstrip(식 띠: hole=? · res/mark=강조) · chain(색 알 묶음) · cupstack(층 쌓은 컵) · tenframe(십 배열판 a/b 두 색 + tf-lb 꼬리표). 원문 순서대로.
+def eqtok(e):
+    toks = re.findall(r'<span class="eq-tok([^"]*)">([^<]*)</span>', e)
+    return {'toks': [html.unescape(t.strip()) for _, t in toks], 'hi': [i for i, (c, _) in enumerate(toks) if 'res' in c or 'mark' in c], 'q': [i for i, (c, _) in enumerate(toks) if 'hole' in c]}
+def figs2(p):
+    found = []
+    for m in re.finditer(r'<div class="steps">((?:<div class="step-row">.*?</div>\s*</div>\s*)+)</div>', p, re.S):
+        rows = [dict(eqtok(e), no=clean(n)) for n, e in re.findall(r'class="step-no">(.*?)</span><div class="eqstrip">(.*?)</div>', m.group(1), re.S)]
+        found.append((m.start(), m.end(), {'k': 'steps', 'rows': rows}))
+    spans = [(a, b) for a, b, _ in found]
+    inside = lambda i: any(a <= i < b for a, b in spans)
+    for m in re.finditer(r'<div class="eqstrip">(.*?)</div>', p, re.S):
+        if inside(m.start()): continue
+        found.append((m.start(), m.end(), dict(eqtok(m.group(1)), k='eqt')))
+    for m in re.finditer(r'<div class="chain">(.*?)</div>', p, re.S):
+        groups = [len(re.findall(r'<i', seg)) for seg in re.split(r'<i class="gap"></i>', m.group(1))]
+        found.append((m.start(), m.end(), {'k': 'cnt', 'groups': [g for g in groups if g]}))
+    for m in re.finditer(r'<div class="cupstack">((?:<div class="cup-lv">.*?</div>\s*)+)</div>', p, re.S):
+        lv = [len(re.findall(r'<i', x)) for x in re.findall(r'<div class="cup-lv">(.*?)</div>', m.group(1), re.S)]
+        found.append((m.start(), m.end(), {'k': 'cups', 'levels': lv}))
+    for m in re.finditer(r'<div class="tenframe">((?:<div class="tf-cell[^"]*"[^>]*></div>\s*)+)</div>(?:\s*<span class="tf-lb">(.*?)</span>)?', p, re.S):
+        c = m.group(1); a = len(re.findall(r'tf-cell a', c)); b = len(re.findall(r'tf-cell b', c)); plain = len(re.findall(r'tf-cell"', c))
+        found.append((m.start(), m.end(), {'k': 'tf', 'a': a, 'b': b, 'empty': plain, 'label': clean(m.group(2) or '')}))
+    return [f for _, _, f in sorted(found, key=lambda x: x[0])]
 
 def parse(path):
     src = open(path, encoding='utf-8').read()
