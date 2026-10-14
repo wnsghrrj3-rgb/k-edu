@@ -17,6 +17,7 @@
       var i = k.indexOf(':'), slug = k.slice(0, i), key = k.slice(i + 1), unit = key.split('_')[0];
       if (ON.indexOf(slug + ':' + unit) < 0) return;
       var m = slug.match(/^g(\d)(?:s(\d))?_([a-z]+)$/); if (!m) return;
+      if (byUrl[MAP[k].url]) return; // 121차 — 묶음 원문(두 시간 한 파일)은 앞 키로 연다
       byUrl[MAP[k].url] = '/kedu/teacher/stage2/learn.html?g=' + m[1] + '&t=' + (m[2] || 1) + '&s=' + m[3] + '&u=' + unit.slice(1) + '&l=' + key;
     });
   } catch (e) { }

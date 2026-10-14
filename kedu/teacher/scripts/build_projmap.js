@@ -34,6 +34,26 @@ for (const f of fs.readdirSync(DATA).filter(x => /^g3_(korean|math|science|socia
     put(slug + ':' + key, abs);
   }
 }
+
+// 121차 — 1·2학년 1학기(g1_·g2_<과목>)는 live_url·추출 재료가 없어, 원문 단원 목록(index.html)의 file 줄로 잇는다.
+//   원문 이름 gN_<math|kor>_uK_[l]a[_b[_c]]_… 의 번호 범위 안에 케이티처 차시 첫 번호가 들면 그 원문.
+//   국어 원문은 두 시간 묶음(l01_02)이라 케이티처 두 키가 한 원문을 같이 씀 → 기록 자리(id) 같음 · 목록 카드는 앞 키(proj_switch).
+const ABBR = { math: 'math', korean: 'kor' };
+for (const f of fs.readdirSync(DATA).filter(x => /^g[12]_(korean|math)_u\d+\.js$/.test(x)).sort()) {
+  const [, g, s, un] = f.match(/^g(\d)_(korean|math)_u(\d+)\.js$/); const slug = 'g' + g + '_' + s;
+  const idx = path.join(ROOT, 'grade' + g, 'semester1', SUBJ_DIR[s], 'index.html'); if (!fs.existsSync(idx)) { miss.push(f + ' (목록 없음)'); continue; }
+  const list = (fs.readFileSync(idx, 'utf8').match(/file:\s*"[^"]+"/g) || []).map(x => x.replace(/^file:\s*"|"$/g, ''));
+  const re = new RegExp('^g' + g + '_' + ABBR[s] + '_u' + un + '_l?(\\d+)(?:_(\\d+))?(?:_(\\d+))?(?:_|\\.html$)');
+  const cand = list.map(x => { const m = path.basename(x).match(re); return m ? { x, a: +m[1], b: +(m[3] || m[2] || m[1]) } : null; }).filter(Boolean);
+  const Ls = {}; const ctx = { window: { LESSONS: Ls }, LESSONS: Ls }; ctx.window.window = ctx.window;
+  require('vm').createContext(ctx); require('vm').runInContext(fs.readFileSync(path.join(DATA, f), 'utf8'), ctx);
+  for (const key of Object.keys(ctx.window.LESSONS).sort()) {
+    const m = key.match(/^u\d+_l(\d+)/); if (!m) { miss.push(slug + ':' + key + ' 키 꼴'); continue; } const n = +m[1];
+    const c = cand.find(o => n >= o.a && n <= o.b); if (!c) { miss.push(slug + ':' + key + ' 원문 없음'); continue; }
+    const abs = path.join(path.dirname(idx), c.x); if (!fs.existsSync(abs)) { miss.push(slug + ':' + key + ' ' + c.x + ' 파일 없음'); continue; }
+    put(slug + ':' + key, abs);
+  }
+}
 function put(k, hit) {
     const L = { file: path.basename(hit) };
     const h = fs.readFileSync(hit, 'utf8');
