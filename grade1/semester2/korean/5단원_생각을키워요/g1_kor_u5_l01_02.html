@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -135,111 +134,55 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 
 <script>
 const LESSON_ID='g1_2_kor_u5_l01_02_v1';
-const LESSON_MAX=50;
+const LESSON_MAX=70;
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 1~2차시(준비 — 배울 내용 살펴보기) 13슬:
-   ① 만나기 2 → ② 따라가기 3 → ③ 활동·심장 5 → ④ 표현·정리 3 =====
+/* ===== 1~2차시(준비 — 배울 내용 살펴보기) 『국어』 146~149쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 배울 내용을 살펴볼 수 있다.
-   ★ 정답 로깅 5슬(50점). 준비 차시는 1~4단원과 같이 5슬로 낮춘다.
-   ★ 지도서 212쪽: 책 제목을 소리 내어 읽고 「비슷한 글자」를 찾는 활동이다.
-      여기서 비슷한 글자란 자음자 또는 모음자 하나만 다른 글자를 뜻한다(213쪽).
-      비슷한 글자 찾기에 머무르지 말고 한글의 짜임 이해로 이어지게 하라는 지시를 따라
-      ③ 마지막 두 슬을 「달라지면 무엇이 달라지는가」로 세웠다.
-   ★ 책 제목은 자체로 지었다. 실재하지 않는 책이지만 이 활동이 요구하는 것은
-      「글자 짝을 찾는 일」이므로 학습이 그대로 선다(1-2 2단원 「감상 대상은 가공이어도 갈래가 선다」).
-   ★ 저작권: 교과서 146~149쪽 단원 도입 그림(나무와 동물들이 책 읽는 장면),
-      148~149쪽 책 제목 여덟 개와 예시 답안 짝(금·음 / 람·란 / 재·해 / 파·나), 말풍선,
-      지도서 215쪽 놀이 활동(안부영) 전부 미차용. 제목·짝·보기 전부 자체. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      작가 작품 「그래, 책이야!」는 간추림만(대사 미인용). 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 차시 만나기', t:'글자가 모여 책이 돼요',
-   html:`<div class="scene"><div class="scene-pic">🔤📚</div></div>
-    <div class="ka-bub">글자 하나하나가 모여 낱말이 되고,<br>낱말이 모여 <b class="emph">책</b>이 돼요. 🤔</div>`},
+  {tag:'① 146쪽 단원 열기', t:'5단원 「생각을 키워요」',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">🔤</span><span class="pc-name">한글에 관심 가지기</span></div><div class="punct-card"><span class="pc-mark">📚</span><span class="pc-name">책에 관심 가지기</span></div></div><div class="ka-bub">이 단원에서는 <b class="emph">글자와 책에 흥미</b>를 가져 봐요.<br>한글을 살펴보고, 책을 읽고 생각이나 느낌을 나눌 거예요. 🙂</div>`},
 
-  {tag:'① 학습 문제', t:'오늘은 이것을 살펴봐요',
-   html:`<div class="sentence">배울 내용을 살펴봐요.</div>
-    <div class="ka-bub"><b class="emph">한글</b>에 관심을 가지고,<br><b class="emph">책</b>에도 관심을 가져 볼 거예요. 🔍</div>`},
+  {tag:'① 147쪽 생각 열기', t:'책을 펼치면',
+   html:`<div class="scene"><div class="scene-pic">🌳📖🐯🦒🐒</div></div><div class="ka-bub">큰 나무에 꽃처럼 책이 피어 있어요.<br>아이와 동물들이 여기저기에서 <b class="emph">책을 읽고 있어요</b>. 📖</div>`},
 
-  {tag:'② 책 제목 읽기', t:'책 제목을 소리 내어 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>구름 위 도서관</div>
-      <div class="read-line"><span class="rl-num">2</span>모래 마을 이야기</div>
-      <div class="read-line"><span class="rl-num">3</span>바람 부는 언덕</div>
-      <div class="read-line"><span class="rl-num">4</span>얼음 나라 탐험</div>
-    </div><div class="fb" id="readFb">🔊 한 줄씩 또박또박 소리 내어 읽어 봐요.</div>`},
+  {tag:'① 147쪽 생각 열기', t:'그림에서 보이는 것은 무엇인가요?', log:true, okMsg:'맞아요! 아이와 동물들이 나무 곁에서 책을 읽고 있어요. 즐겁게 책을 읽은 경험도 떠올려 봐요. 📚',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🐯📖</div><div class="wc-word">아이와 동물들이 책을 읽고 있는 모습과 나무</div></div><div class="wcard" data-ok="0"><div class="wc-pic">⚽</div><div class="wc-word">친구들이 공을 차는 운동장</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🛒</div><div class="wc-word">물건을 사고파는 시장</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 비슷한 글자', t:'비슷한 글자란 이런 거예요',
-   html:`<div class="build">
-      <div class="syl">모</div><div class="op">↔</div><div class="syl">도</div>
-    </div>
-    <div class="ka-bub">두 글자는 <b class="emph">첫 자음자</b>만 달라요.<br>이렇게 하나만 다른 글자를 <b class="emph">비슷한 글자</b>라고 해요. 👀</div>`},
+  {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>배울 내용을 살펴봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🔤</span><b>한글</b>에 관심을 가져 봐요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">📚</span><b>책</b>에 관심을 가져 봐요.</div></div>`},
 
-  {tag:'② 세 자리', t:'글자에는 세 자리가 있어요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">ㅁ</span><span class="pc-name">첫 자음자</span></div>
-      <div class="punct-card"><span class="pc-mark">ㅗ</span><span class="pc-name">모음자</span></div>
-      <div class="punct-card"><span class="pc-mark">ㄱ</span><span class="pc-name">받침</span></div>
-    </div>
-    <div class="ka-bub">이 셋이 모여 <b>「목」</b> 같은 글자가 돼요. 🧩</div>`},
+  {tag:'② 148~149쪽 1번', t:'책 제목을 소리 내어 읽어 봐요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>재주 많은 다섯 친구</div><div class="read-line"><span class="rl-num">2</span>빨간 부채 파란 부채</div><div class="read-line"><span class="rl-num">3</span>웃음은 힘이 세다</div><div class="read-line"><span class="rl-num">4</span>젊어지는 샘물</div><div class="read-line"><span class="rl-num">5</span>금도끼 은도끼</div><div class="read-line"><span class="rl-num">6</span>요술 항아리</div><div class="read-line"><span class="rl-num">7</span>가나다 글자 놀이</div><div class="read-line"><span class="rl-num">8</span>바람과 해님</div></div><div class="fb" id="readFb">🔊 책 제목을 또박또박 소리 내어 읽어 봐요.</div>`},
 
-  {tag:'③ 첫 자음자 짝', t:'첫 자음자만 다른 짝은 어느 것일까요?', log:true, okMsg:'맞아요! 「마」와 「바」는 첫 자음자만 달라요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">마 ↔ 바</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">마 ↔ 보</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 148쪽 1번', t:'「채」와 「재」 가운데 소리가 더 세게 나는 글자는?', log:true, okMsg:'맞아요! 소리 내어 읽어 보면 「채」가 「재」보다 더 세게 나요. 🗣️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">채</div></div><div class="wcard" data-ok="0"><div class="wc-word">재</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 모음자 짝', t:'모음자만 다른 짝은 어느 것일까요?', log:true, okMsg:'맞아요! 「름」과 「람」은 모음자만 달라요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">름 ↔ 참</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">름 ↔ 람</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 148쪽 2번', t:'「금도끼」의 「금」과 모양이 비슷한 글자는?', log:true, okMsg:'맞아요! 「금」과 「음」은 모양이 비슷해요. 똑같은 글자가 아니라 비슷한 글자를 찾아요. 🔍', hint:'힌트: 똑같은 글자가 아니라, 하나만 다른 글자를 찾아요.',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">웃음의 「음」</div></div><div class="wcard" data-ok="0"><div class="wc-word">금도끼의 「금」</div></div><div class="wcard" data-ok="0"><div class="wc-word">부채의 「부」</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 받침 짝', t:'받침만 다른 짝은 어느 것일까요?', log:true, okMsg:'맞아요! 「언」과 「얼」은 받침만 달라요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">언 ↔ 얼</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">언 ↔ 온</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 148쪽 2번', t:'모양이 비슷한 글자끼리 이어 봐요', log:true, matchMsg:'모두 잘 이었어요! 금·음 · 재·해 · 람·란 · 파·나 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">글자</div><div class="match-card" data-k="a" data-pair="A">금</div><div class="match-card" data-k="b" data-pair="B">재</div><div class="match-card" data-k="c" data-pair="C">람</div><div class="match-card" data-k="d" data-pair="D">파</div></div><div class="match-col"><div class="match-col-h">비슷한 글자</div><div class="match-card" data-k="C" data-pair="c">란</div><div class="match-card" data-k="A" data-pair="a">음</div><div class="match-card" data-k="D" data-pair="d">나</div><div class="match-card" data-k="B" data-pair="b">해</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 달라지는 것', t:'글자를 하나 바꾸면 무엇이 달라질까요?', log:true, okMsg:'맞아요! 소리도 달라지고 뜻도 달라져요. 🔤',
-   hint:'힌트: 「방」과 「밥」을 소리 내어 읽어 보고 뜻을 떠올려 봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">소리와 뜻이 모두 달라진다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">모양만 달라지고 뜻은 같다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 149쪽 3번', t:'「금」과 「음」은 무엇이 다를까요?', log:true, okMsg:'맞아요! 「ㄱ」과 「ㅇ」, 첫 자음자만 다르고 모음자와 받침은 같아요. 👍',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">첫 자음자만 달라요</div></div><div class="wcard" data-ok="0"><div class="wc-word">모음자만 달라요</div></div><div class="wcard" data-ok="0"><div class="wc-word">받침만 달라요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 읽고 싶은 책 고르기', t:'읽고 싶은 책을 고를 때 살펴볼 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 제목과 그림, 관심 있는 것을 살펴봐요. 🎉',
-   hint:'힌트: 책의 무게나 값은 내용과 관계가 없어요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">책 제목</div>
-      <div class="chip" data-hit="0">책의 무게</div>
-      <div class="chip" data-hit="1">겉표지 그림</div>
-      <div class="chip" data-hit="1">내가 궁금해하던 것</div>
-      <div class="chip" data-hit="0">책의 값</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 149쪽 3번', t:'「재」와 「해」는 무엇이 다를까요?', log:true, okMsg:'맞아요! 자음자 「ㅈ」과 「ㅎ」이 달라요. 🔤',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">자음자 「ㅈ」과 「ㅎ」이 달라요</div></div><div class="wcard" data-ok="0"><div class="wc-word">모음자가 달라요</div></div><div class="wcard" data-ok="0"><div class="wc-word">받침이 달라요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 배울 내용 보기', t:'이 단원에서는 두 가지를 배워요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🔤</span><b>한글에 관심 가지기</b> — 글자를 바꾸어 낱말 만들기</div>
-      <div class="recap-item" style="animation-delay:.25s"><span class="recap-ic">📚</span><b>책에 관심 가지기</b> — 읽고 생각이나 느낌 나누기</div>
-    </div>`},
+  {tag:'③ 149쪽 3번', t:'「람」과 「란」은 무엇이 다를까요?', log:true, okMsg:'맞아요! 받침 「ㅁ」과 「ㄴ」이 달라요. 글자가 달라지면 소리와 뜻도 달라져요. ✨',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">받침이 달라요</div></div><div class="wcard" data-ok="0"><div class="wc-word">첫 자음자가 달라요</div></div><div class="wcard" data-ok="0"><div class="wc-word">모음자가 달라요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 골라 보기', t:'읽고 싶은 책을 한 권 골라 말해 봐요',
-   html:`<div class="stage-box">
-      📚 교실 책꽂이나 도서관에서 <b>읽고 싶은 책</b>을 한 권 골라,<br>
-      제목과 고른 까닭을 소리 내어 말해 봐요.<br>
-      <small>(제목이 궁금해서 · 그림이 마음에 들어서 · 좋아하는 것이 나와서)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="까닭까지 말했다면 아주 잘했어요! 👏">📚 골라서 말해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'③ 149쪽 4번', t:'읽고 싶은 책을 골라 봐요',
+   html:`<div class="stage-box">📚 1번의 책 제목 가운데에서 <b>읽고 싶은 책</b>을 하나 골라 보세요.<br><small>책을 고를 때에는 먼저 제목을 살펴보고, 어떤 내용일지 짐작해 봐요.</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 제목을 보고 어떤 이야기일지 친구에게 말해 봐요. 🙂">📖 골랐어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 살펴봤어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🧩</span>글자에는 <b>첫 자음자·모음자·받침</b> 세 자리가 있어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🔤</span>하나만 달라져도 <b>소리와 뜻</b>이 달라져요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">➡️</span>다음 시간에는 <b>한글이 어떻게 만들어졌는지</b> 알아볼 거예요.</div>
-    </div>`},
+  {tag:'③ 마무리', t:'잘했어요! 이만큼 배웠어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>이 단원에서 배울 내용을 살펴보았어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🔍</span>책 제목에서 <b>모양이 비슷한 글자</b>를 찾았어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">✨</span>글자가 하나만 달라져도 <b>소리와 뜻</b>이 달라져요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -408,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

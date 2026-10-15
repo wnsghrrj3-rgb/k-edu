@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,124 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 8~9차시(소단원 2 기본 — 글을 읽고 생각이나 느낌 나누기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
+/* ===== 8~9차시(소단원 2 기본 — 글을 읽고 생각이나 느낌 나누기) 『국어』 168~171쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 글을 읽고 생각이나 느낌을 나눌 수 있다.
-   ★ 정답 로깅 7슬. 제재 읽기·무대·마무리 = 로깅 X.
-   ★ 이 차시의 뼈대는 「글쓴이가 한 일 → 그때 글쓴이의 마음 → 그에 대한 내 생각이나 느낌」이다.
-      앞의 둘은 글에서 확인되므로 채점하고, 마지막 하나는 사람마다 다르므로 채점하지 않는다
-      (1-2 4단원 §5-3 「틀릴 수 있는 것인가, 다를 수 있는 것인가」 그대로).
-      로깅하는 것은 「어떻게 말해야 하는가」라는 방법뿐이다.
-   ★ 지도서 211·238쪽 경계: 「좋다·재미있다·신기했다」처럼 단편적으로 표현하지 않게
-      → ③ 다섯째 슬. 238쪽: 글쓴이의 생각을 그대로 옮겨 말하면 도달로 보기 어렵다 → ③ 일곱째 슬.
-   ★ 지도서 228쪽 오개념: 비슷한 경험은 「행위가 같아야만」 비슷한 것이 아니다.
-      훌라후프 이야기를 읽고 훌라후프 경험만 떠올리려 하는 그 오개념을 ③ 여섯째 슬에서 정면으로 다뤘다.
-   ★ 저작권: 교과서 168~169쪽 「너무너무 어려운 훌라후프 돌리기」 전문과 상황(운동장·훌라후프·
-      선생님의 칭찬), 170쪽 네 장면 배열과 마음 낱말 붙임딱지, 171쪽 말주머니 넷과 예시 답안,
-      지도서 228쪽 단계적 질문 표(김민영 외), 229쪽 감정 단어표(김윤나),
-      239쪽 평가 자료의 일기(서하·돈가스), 240쪽 보정 자료(강아지 전단지) 전부 미차용.
-      제재·인물·문항 전부 자체. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      작가 작품 「그래, 책이야!」는 간추림만(대사 미인용). 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 차시 만나기', t:'글을 읽으면 마음이 움직여요',
-   html:`<div class="scene"><div class="scene-pic">📄💭</div></div>
-    <div class="ka-bub">글에는 글쓴이가 <b class="emph">한 일</b>과<br>그때의 <b class="emph">마음</b>이 담겨 있어요. 🤔</div>`},
+  {tag:'① 동기 유발', t:'덧셈과 뺄셈을 배울 때 어떤 생각이나 느낌이 들었나요?',
+   html:`<div class="scene"><div class="scene-pic">➕➖🤔</div></div><div class="ka-bub">「어려웠어요.」라고만 말하지 말고<br><b class="emph">어떤 점이 왜</b> 어려웠는지 자세히 말해 봐요. 🗣️</div>`},
 
   {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
-   html:`<div class="sentence">글을 읽고 생각이나 느낌을 나누어 봐요.</div>
-    <div class="ka-bub">글쓴이가 한 일을 살펴보고,<br>그에 대한 <b class="emph">내 생각과 느낌</b>을 말해 볼 거예요. 🔍</div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>글을 읽고 생각이나 느낌을 나누어 봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">📖</span>글쓴이에게 <b>있었던 일</b>과 <b>마음</b>을 알아봐요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">💬</span>내 생각이나 느낌을 <b>자세히</b> 말해 봐요.</div></div>`},
 
-  {tag:'② 글 읽기', t:'유안이가 쓴 「우리 반 물고기」를 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>우리 반 어항에 물고기 두 마리가 왔다. 나는 먹이 주는 당번이 되었다.</div>
-      <div class="read-line"><span class="rl-num">2</span>첫날에 먹이를 너무 많이 넣어서 물이 뿌예졌다. 얼굴이 화끈거렸다.</div>
-      <div class="read-line"><span class="rl-num">3</span>선생님께서 먹이는 조금씩 주는 것이라고 알려 주셨다.</div>
-      <div class="read-line"><span class="rl-num">4</span>그다음부터 나는 날마다 조금씩만 주었다. 물이 다시 맑아졌다.</div>
-      <div class="read-line"><span class="rl-num">5</span>물고기가 내 쪽으로 헤엄쳐 올 때마다 마음이 환해졌다.</div>
-    </div><div class="fb" id="readFb">🔊 한 줄씩 또박또박 읽어 봐요. 「나」는 유안이예요.</div>`},
+  {tag:'② 168쪽 1번', t:'「너무너무 어려운 훌라후프 돌리기」 (1)',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>「자, 이제 운동장에 나가 볼까요?」</div><div class="read-line"><span class="rl-num">2</span>선생님의 말씀에 친구들은 모두 「우아!」 하고 소리를 질렀다. 나만 「어휴.」라고 했다.</div><div class="read-line"><span class="rl-num">3</span>왜냐하면 훌라후프로 운동하는 시간이기 때문이다.</div><div class="read-line"><span class="rl-num">4</span>친구들은 훌라후프가 떨어지지 않게 잘 돌린다. 그런데 내가 하면 훌라후프가 금방 뚝 떨어진다.</div></div><div class="fb" id="readFb">🔊 글쓴이에게 어떤 일이 있었는지 생각하며 읽어 봐요.</div>`},
 
-  {tag:'② 살펴볼 두 가지', t:'글에서 이 둘을 찾아봐요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🖐️</span><span class="pc-name">글쓴이가<br>한 일</span></div>
-      <div class="punct-card"><span class="pc-mark">💭</span><span class="pc-name">그때 글쓴이의<br>마음</span></div>
-    </div>
-    <div class="ka-bub">둘을 찾으면 <b class="emph">내 생각과 느낌</b>도 쉽게 떠올라요. 💡</div>`},
+  {tag:'② 169쪽 1번', t:'「너무너무 어려운 훌라후프 돌리기」 (2)',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>친구들처럼 훌라후프를 잘 돌리고 싶어서 나는 훌라후프가 있다고 생각하면서 허리를 이리저리 움직였다.</div><div class="read-line"><span class="rl-num">2</span>선생님은 훌라후프 돌리기를 포기하지 않고 노력하는 모습이 기특하다고 칭찬해 주셨다.</div><div class="read-line"><span class="rl-num">3</span>칭찬을 받아서 기분이 좋았지만 다음에는 친구들처럼 훌라후프를 잘 돌리면 좋겠다.</div></div><div class="fb" id="readFb">🔊 글쓴이의 마음이 드러난 부분을 찾으며 읽어 봐요.</div>`},
 
-  {tag:'③ 글쓴이가 한 일', t:'유안이가 첫날에 한 일은 무엇인가요?', log:true, okMsg:'맞아요! 먹이를 너무 많이 넣었어요. 🐟',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">먹이를 너무 많이 넣었다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">어항의 물을 갈아 주었다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 내용 파악하기', t:'「나」가 「어휴.」라고 한 까닭은?', log:true, okMsg:'맞아요! 훌라후프를 잘 못 돌려서 그 시간이 부담스러웠어요. 😥',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">훌라후프로 운동하는 시간이라서</div></div><div class="wcard" data-ok="0"><div class="wc-word">운동장에 비가 와서</div></div><div class="wcard" data-ok="0"><div class="wc-word">친구와 다투어서</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 한 일 차례 잇기', t:'차례와 유안이가 한 일을 이어요', log:true, matchMsg:'모두 잘 이었어요! 이것이 유안이가 한 일이에요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">차례</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">1️⃣</span>첫째</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">2️⃣</span>둘째</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">3️⃣</span>셋째</div>
-        <div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">4️⃣</span>넷째</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">한 일</div>
-        <div class="match-card" data-k="C" data-pair="c">알맞은 방법을 알게 되었다</div>
-        <div class="match-card" data-k="A" data-pair="a">먹이 당번이 되었다</div>
-        <div class="match-card" data-k="D" data-pair="d">날마다 조금씩만 주었다</div>
-        <div class="match-card" data-k="B" data-pair="b">먹이를 너무 많이 넣었다</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 내용 파악하기', t:'「나」는 훌라후프를 잘 돌리고 싶어서 어떻게 했나요?', log:true, okMsg:'맞아요! 훌라후프 없이도 열심히 허리를 돌리며 연습했어요. 💪',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">훌라후프가 있다고 생각하며 허리를 이리저리 움직였어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">훌라후프를 몰래 숨겼어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">교실로 들어가 버렸어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 글쓴이의 마음', t:'물이 뿌예졌을 때 유안이의 마음은 어땠을까요?', log:true, okMsg:'맞아요! 「얼굴이 화끈거렸다」에서 알 수 있어요. 😳',
-   hint:'힌트: 마음을 알려 주는 말이 글 속에 숨어 있어요. 다시 읽어 봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">즐겁고 신났다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">부끄럽고 미안했다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 170쪽 2번', t:'글쓴이에게 있었던 일의 차례로 알맞은 것은?', log:true, okMsg:'맞아요! 있었던 일을 차례대로 정리하면 내용이 한눈에 보여요. 📋',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">운동장에 나감 → 잘 돌리지 못함 → 잘 돌리려고 노력함 → 칭찬을 받음</div></div><div class="wcard" data-ok="0"><div class="wc-word">칭찬을 받음 → 운동장에 나감 → 노력함 → 잘 돌리지 못함</div></div><div class="wcard" data-ok="0"><div class="wc-word">노력함 → 칭찬을 받음 → 잘 돌리지 못함 → 운동장에 나감</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 마음을 알려 주는 말', t:'마지막 줄에서 알 수 있는 유안이의 마음은?', log:true, okMsg:'맞아요! 「마음이 환해졌다」는 뿌듯한 마음이에요. 😊',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">뿌듯한 마음</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">서운한 마음</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 170쪽 2번', t:'그때 글쓴이가 느낀 마음을 이어 봐요', log:true, matchMsg:'일이 달라지면 마음도 달라져요. 잘 짐작했어요! 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">있었던 일</div><div class="match-card" data-k="a" data-pair="A">운동장에 나가자는 말을 들었을 때</div><div class="match-card" data-k="b" data-pair="B">친구들이 잘 돌리는 것을 볼 때</div><div class="match-card" data-k="c" data-pair="C">선생님께 칭찬을 받았을 때</div></div><div class="match-col"><div class="match-col-h">글쓴이의 마음</div><div class="match-card" data-k="B" data-pair="b">부러운 마음</div><div class="match-card" data-k="C" data-pair="c">뿌듯한 · 기쁜 마음</div><div class="match-card" data-k="A" data-pair="a">하기 싫은 · 두려운 마음</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 구체적으로 말하기', t:'생각이나 느낌을 말한 것으로 더 알맞은 것은?', log:true, okMsg:'맞아요! 글의 어느 부분 때문인지 함께 말해요. 🗣️',
-   hint:'힌트: 「좋았다」 한 마디만으로는 무엇이 왜 좋았는지 알 수 없어요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">“좋았다.”</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">“날마다 조금씩 준 것이 참 꾸준해 보였다.”</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 171쪽 3번', t:'글쓴이가 한 일에 대한 생각이나 느낌으로 알맞은 것은?', log:true, okMsg:'맞아요! 글쓴이가 한 일(노력)에 대해 내 생각을 말했어요. 👍', hint:'힌트: 글쓴이가 한 일과 관련 있는 생각을 골라요.',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">친구들처럼 잘 돌리려고 노력하는 모습이 대단하다고 생각해</div></div><div class="wcard" data-ok="0"><div class="wc-word">훌라후프는 동그랗게 생겼어</div></div><div class="wcard" data-ok="0"><div class="wc-word">나는 어제 떡볶이를 먹었어</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 비슷한 경험 찾기', t:'이 글과 비슷한 경험으로 알맞은 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 하는 일이 달라도 마음이 비슷하면 비슷한 경험이에요. 🎉',
-   hint:'힌트: 꼭 물고기를 기른 일이어야 비슷한 것은 아니에요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">화분에 물을 너무 많이 주었던 일</div>
-      <div class="chip" data-hit="1">처음 맡은 일을 서툴게 해서 부끄러웠던 일</div>
-      <div class="chip" data-hit="0">어제 본 만화 영화의 제목</div>
-      <div class="chip" data-hit="1">다시 해서 잘하게 되어 뿌듯했던 일</div>
-      <div class="chip" data-hit="0">내가 좋아하는 색깔</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 171쪽 3번', t:'「칭찬을 받아서 기분이 좋았지만 다음에는 잘 돌리면 좋겠다는 마음이 ___」', log:true, okMsg:'맞아요! 글쓴이의 마음에 대해 내 느낌을 구체적으로 말했어요. 📣',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">느껴져서 응원해 주고 싶어</div></div><div class="wcard" data-ok="0"><div class="wc-word">훌라후프는 재미없어</div></div><div class="wcard" data-ok="0"><div class="wc-word">나랑은 상관없어</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 내 생각으로 말하기', t:'생각이나 느낌을 말하는 알맞은 방법은?', log:true, okMsg:'맞아요! 글쓴이의 말을 옮기지 말고 내 생각을 말해요. 💭',
-   hint:'힌트: 글에 이미 적혀 있는 말을 그대로 옮기면 내 생각이 아니에요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">글을 읽고 내가 든 생각을 말한다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">글에 적힌 글쓴이의 마음을 그대로 옮겨 말한다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 구체적으로 말하기', t:'생각이나 느낌을 구체적으로 나타낸 말을 모두 골라요', log:true, collectMsg:'글의 어느 부분 때문에 그렇게 느꼈는지까지 말하면 구체적이에요! 🎉', hint:'힌트: 「좋았다.」처럼 짧게 끝난 말이 아니라, 글의 어떤 부분 때문인지 드러난 말을 골라요.',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">혼자만 「어휴.」라고 했을 때 안타까웠어</div><div class="chip" data-hit="1">훌라후프가 있다고 생각하며 허리를 돌린 것이 재치 있어</div><div class="chip" data-hit="1">노력하는 모습이 대단하다고 생각해</div><div class="chip" data-hit="0">좋았다.</div><div class="chip" data-hit="0">재미있었다.</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'④ 나누어 보기', t:'유안이에게 하고 싶은 말을 해 봐요',
-   html:`<div class="stage-box">
-      🗣️ 「유안아, ○○○한 것이 ○○○해 보였어.」<br>
-      이렇게 글의 어느 부분 때문에 그런 생각이 들었는지까지<br>
-      소리 내어 말해 봐요.<br>
-      <small>(무엇을 골라도 좋아요. 정해진 답은 없어요.)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="까닭까지 말했다면 아주 잘했어요! 👏">🗣️ 말해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'④ 나와 관련짓기', t:'나도 비슷한 경험이 있었나요?',
+   html:`<div class="stage-box">🗣️ 다른 친구들은 잘하는데 나만 잘하지 못해서 속상했던 일을 떠올려 말해 보세요.<br><small>꼭 훌라후프가 아니어도 돼요. 줄넘기, 받아쓰기, 젓가락질도 비슷한 경험이에요.</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 내 경험과 이어 보면 글쓴이의 마음이 더 잘 느껴져요. 💚">🗣️ 말해 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🖐️</span>글쓴이가 <b>한 일</b>을 차례대로 찾아봐요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">💭</span>마음을 알려 주는 말에서 <b>글쓴이의 마음</b>을 짐작해요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🗣️</span>내 생각은 <b>어느 부분 때문인지</b>까지 말해요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">➡️</span>다음 시간에는 <b>독서 계획</b>을 세워 볼 거예요.</div>
-    </div>`},
+  {tag:'④ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">📋</span>글쓴이에게 <b>있었던 일</b>을 차례대로 정리했어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">💚</span>일에 따라 달라지는 <b>글쓴이의 마음</b>을 짐작했어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">💬</span>「좋았다.」가 아니라 <b>어느 부분 때문인지</b> 넣어 구체적으로 말해요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -426,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -135,121 +134,55 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 
 <script>
 const LESSON_ID='g1_2_kor_u5_l10_11_v1';
-const LESSON_MAX=70;
+const LESSON_MAX=80;
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 10~11차시(실천 — 독서 계획 세우기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
+/* ===== 10~11차시(실천 — 배운 내용 실천하기, 독서 계획 세우기) 『국어』 172~173쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 배운 내용을 실천할 수 있다.
-   ★ 정답 로깅 7슬. 무대·자기 점검 = 로깅 X.
-   ★ 이 단원의 최종 목적은 지식이 아니라 태도다(지도서 211쪽 ❸ — 자발적으로 책을 읽는 태도).
-      태도는 화면 밖에서만 자라고, 화면은 학생이 책을 읽었는지 확인하지 못한다.
-      그래서 「책이 좋다 · 몇 권 읽었다」는 절대 로깅하지 않고, 로깅은
-      「어떤 책을 골라 · 어떤 차례로 · 어떻게 읽을지」라는 방법 판단에만 걸었다
-      (1-2 4단원 §5-3의 연장 — 다를 수 있는 것에 이어 확인할 수 없는 것도 채점하지 않는다).
-   ★ 지도서 230쪽 경계: 훑어 읽기·뛰어 읽기를 지양하고 한 권을 온전히 읽게 한다 → ③ 넷째 슬.
-      231쪽: 독서에 흥미가 낮은 학생은 읽기 쉽거나 가장 흥미로운 책을 첫 계단에 → ③ 셋째 슬.
-   ★ 종이 계획표는 화면이 회수하지 못하므로 ④를 무대 + 자기 점검으로 두었다
-      (1-2 3단원 §5-7 「모아서 스스로 보상」류는 자기 점검으로 옮긴다 계승).
-   ★ 저작권: 교과서 172~173쪽 독서 계단 그림과 지면, 「우리가 활동을 정해요」 지면,
-      지도서 231쪽 독서 누가 기록 자료, 232~233쪽 책 보물 찾기·책 카페 놀이 지면 전부 미차용.
-      걸음·보기 전부 자체. */
+   ★ 정답 로깅 8슬(LESSON_MAX 80). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      작가 작품 「그래, 책이야!」는 간추림만(대사 미인용). 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 차시 만나기', t:'읽고 싶은 책을 미리 정해 두면 좋아요',
-   html:`<div class="scene"><div class="scene-pic">📚🪜</div></div>
-    <div class="ka-bub">읽을 책을 미리 정해 두면<br>다음에 무엇을 읽을지 <b class="emph">헤매지 않아요</b>. 🤔</div>`},
+  {tag:'① 활동 정하기', t:'배운 내용을 실천해 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>배운 내용을 실천해 봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🪜</span><b>독서 계획표</b>를 짜고 차례대로 읽어 봐요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🏫</span>우리 반에서 하고 싶은 <b>책 활동</b>도 정해 봐요.</div></div>`},
 
-  {tag:'① 학습 문제', t:'오늘은 이것을 해요',
-   html:`<div class="sentence">독서 계획을 세워 봐요.</div>
-    <div class="ka-bub">읽고 싶은 책을 골라<br><b class="emph">읽을 차례</b>를 정해 볼 거예요. 🔍</div>`},
+  {tag:'① 독서 계획', t:'독서 계획을 세우면 좋은 점을 모두 골라요', log:true, collectMsg:'계획을 세우면 읽으려는 마음이 커지고, 얼마나 읽었는지 알 수 있어요! 🎉',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">책을 읽으려는 마음이 더 커진다</div><div class="chip" data-hit="1">책을 얼마나 읽었는지 점검할 수 있다</div><div class="chip" data-hit="0">책을 대충 훑어보게 된다</div><div class="chip" data-hit="0">도서관에 갈 필요가 없어진다</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'② 세 걸음', t:'이렇게 세 걸음으로 해요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">1️⃣</span><span class="pc-name">읽고 싶은 책<br>고르기</span></div>
-      <div class="punct-card"><span class="pc-mark">2️⃣</span><span class="pc-name">읽을 차례<br>정하기</span></div>
-      <div class="punct-card"><span class="pc-mark">3️⃣</span><span class="pc-name">한 권씩<br>끝까지 읽기</span></div>
-    </div>
-    <div class="ka-bub">한 권을 다 읽으면 다음 책으로 올라가요. 🪜</div>`},
+  {tag:'② 172쪽 독서 계획표', t:'독서 계단은 이렇게 짜요',
+   html:`<div class="scene"><div class="scene-pic">🪜📚🐰🥕</div></div><div class="ka-bub">① 도서관에서 읽고 싶은 책을 찾아 <b class="emph">맨 아래쪽 빈칸부터</b> 책 제목을 써요.<br>② 맨 아래쪽 책부터 차례대로 읽고, <b class="emph">다 읽으면 그 계단을 색칠</b>해요. 🖍️</div>`},
 
-  {tag:'② 계획표 모양', t:'계단처럼 만들면 좋아요',
-   html:`<div class="ka-bub">
-      🪜 <b class="emph">맨 아래 칸</b>에 가장 먼저 읽을 책,<br>
-      위로 갈수록 나중에 읽을 책을 적어요.<br>
-      한 권을 다 읽으면 그 칸을 색칠해요.
-    </div>`},
+  {tag:'② 172쪽 독서 계획표', t:'가장 먼저 읽고 싶은 책은 어디에 쓰나요?', log:true, okMsg:'맞아요! 가장 먼저 읽을 책은 첫 번째 계단에, 가장 나중에 읽을 책은 가장 높은 계단에 써요. 🪜',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🪜</div><div class="wc-word">맨 아래 첫 번째 계단</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🔝</div><div class="wc-word">가장 높은 계단</div></div><div class="wcard" data-ok="0"><div class="wc-pic">📄</div><div class="wc-word">아무 칸에나</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 책 고르는 기준', t:'읽을 책을 고를 때 알맞은 기준은?', log:true, okMsg:'맞아요! 내가 궁금하고 읽고 싶은 책을 골라요. 💡',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">내가 궁금해하는 것이 담긴 책</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">겉표지가 가장 두꺼운 책</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 책 고르기', t:'읽고 싶은 책을 고를 때 생각할 것은?', log:true, okMsg:'맞아요! 재미있게 읽은 책, 알고 싶은 내용을 떠올리며 내게 맞는 책을 골라요. 📚',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">나의 흥미와 읽기 수준</div></div><div class="wcard" data-ok="0"><div class="wc-word">가장 두꺼운 책인지</div></div><div class="wcard" data-ok="0"><div class="wc-word">표지 색깔이 무엇인지</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 첫 칸에 놓을 책', t:'맨 아래 첫 칸에는 어떤 책을 놓으면 좋을까요?', log:true, okMsg:'맞아요! 가장 읽고 싶고 읽기 쉬운 책을 먼저 놓아요. 🪜',
-   hint:'힌트: 첫 책을 끝까지 읽으면 다음 책도 읽고 싶어져요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">가장 어렵고 긴 책</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">가장 읽고 싶고 읽기 쉬운 책</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 책 고르기', t:'책 읽기가 아직 어렵다면 첫 번째 계단에는 어떤 책을 쓰면 좋을까요?', log:true, okMsg:'맞아요! 처음에 끝까지 읽어 낸 경험이 있어야 계속 읽고 싶어져요. 🌱',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">읽기 쉽고 가장 흥미 있는 책</div></div><div class="wcard" data-ok="0"><div class="wc-word">글자가 가장 많은 책</div></div><div class="wcard" data-ok="0"><div class="wc-word">친구가 어렵다고 한 책</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 읽는 방법', t:'책을 읽는 알맞은 방법은?', log:true, okMsg:'맞아요! 한 권을 처음부터 끝까지 읽어요. 📖',
-   hint:'힌트: 여기저기 건너뛰며 넘기면 이야기가 이어지지 않아요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">한 권을 처음부터 끝까지 읽는다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">여러 권을 조금씩 건너뛰며 넘겨 본다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 계단 색칠하기', t:'독서 계단은 언제 색칠하나요?', log:true, okMsg:'맞아요! 다 읽고 한 칸씩 색칠하면 계단을 오르는 기쁨을 느낄 수 있어요. 🖍️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">그 책을 다 읽었을 때</div></div><div class="wcard" data-ok="0"><div class="wc-word">책 제목을 썼을 때</div></div><div class="wcard" data-ok="0"><div class="wc-word">책을 빌려 왔을 때</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 계획표에 적을 것', t:'독서 계획표에 적을 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 제목과 차례가 있으면 돼요. 🎉',
-   hint:'힌트: 아직 읽지 않은 책의 느낌은 적을 수 없어요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">읽고 싶은 책의 제목</div>
-      <div class="chip" data-hit="1">읽을 차례</div>
-      <div class="chip" data-hit="0">아직 읽지 않은 책의 느낌</div>
-      <div class="chip" data-hit="1">다 읽으면 칸 색칠하기</div>
-      <div class="chip" data-hit="0">친구가 읽은 책 권수</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'② 책 읽는 방법', t:'독서 계단의 책은 어떻게 읽으면 좋을까요?', log:true, okMsg:'맞아요! 한 권을 끝까지 다 읽고 다음 계단으로 올라가요. 📖',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">한 권을 처음부터 끝까지 온전히 읽어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">앞부분만 훑어 읽어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">재미있는 쪽만 뛰어 읽어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 계획을 세우면', t:'독서 계획을 세우면 좋은 점을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 계획은 읽기를 이어 가게 해 줘요. 🎉',
-   hint:'힌트: 계획은 남과 겨루려고 세우는 것이 아니에요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">다음에 읽을 책을 헤매지 않는다</div>
-      <div class="chip" data-hit="1">내가 얼마나 읽었는지 살펴볼 수 있다</div>
-      <div class="chip" data-hit="0">친구보다 많이 읽었는지 겨룰 수 있다</div>
-      <div class="chip" data-hit="1">한 권을 끝까지 읽게 된다</div>
-      <div class="chip" data-hit="0">책을 빨리 넘길 수 있다</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 활동하기', t:'나의 독서 계단을 짜 봐요',
+   html:`<div class="stage-box">🪜 읽고 싶은 책 일곱 권을 골라 맨 아래 계단부터 제목을 써 보세요.<br><small>읽고 싶은 차례대로 쓰고, 다 읽을 때마다 한 칸씩 색칠해요.</small><br><button class="stage-do" id="stageDo" data-fb="멋져요! 독서 마라톤, 독서 통장처럼 계속 이어 가면 더 좋아요. 🏃">🪜 계획을 세웠어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 계획이 어긋날 때', t:'첫 책이 너무 어려워요. 어떻게 할까요?', log:true, okMsg:'맞아요! 읽을 수 있는 책으로 바꾸어 이어 가면 돼요. 🙂',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">읽을 수 있는 책으로 바꾸어 이어 간다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">읽기를 그만둔다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 우리 반 활동 예시 1', t:'책 보물 찾기',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>선생님이 학급 문고나 서가 두 개 정도의 책 사이에 보물 쪽지를 숨겨 둬요.</div><div class="read-line"><span class="rl-num">2</span>「책 보물 찾기 시작!」 하면 보물 쪽지를 찾아요. 한 사람이 두 개까지만 찾아요.</div><div class="read-line"><span class="rl-num">3</span>쪽지에 쓰인 질문의 답을 책을 읽고 써서 선생님께 내요.</div><div class="read-line"><span class="rl-num">4</span>선생님이 답을 확인하면 쪽지를 작은 선물로 바꿔 줘요.</div></div><div class="fb" id="readFb">🔍 차례를 한 줄씩 읽어 봐요.</div>`},
 
-  {tag:'③ 다 읽은 뒤', t:'책을 다 읽은 뒤에 하면 좋은 것은?', log:true, okMsg:'맞아요! 기억에 남는 부분을 친구와 나누어요. 🗣️',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">읽은 권수만 세어 둔다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">기억에 남는 부분을 친구와 나눈다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 책 보물 찾기', t:'보물 쪽지의 질문에 답하려면 어떻게 해야 하나요?', log:true, okMsg:'맞아요! 보물 찾기의 진짜 보물은 책 속에 있어요. 💎',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">그 책을 읽어야 해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">쪽지를 많이 모아야 해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">제일 빨리 달려야 해요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 세워 보기', t:'독서 계획을 직접 세워 봐요',
-   html:`<div class="stage-box">
-      🪜 종이에 계단을 그리고 <b>읽고 싶은 책 세 권</b>의 제목을 적어 봐요.<br>
-      맨 아래 칸부터 읽을 차례대로 적어요.<br>
-      <small>(한 권을 다 읽으면 그 칸을 색칠해요.)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="계획을 잘 세웠어요! 이제 첫 칸부터 읽어 봐요. 👏">🪜 세워 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'④ 우리 반 활동 예시 2', t:'책 카페 놀이 — 누가 무엇을 할까요?', log:true, matchMsg:'책 카페 놀이 준비 끝! 메뉴판에는 책 제목과 특징을 써요. ☕',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">역할</div><div class="match-card" data-k="a" data-pair="A">카페 주인</div><div class="match-card" data-k="b" data-pair="B">손님</div><div class="match-card" data-k="c" data-pair="C">소감을 들은 주인</div></div><div class="match-col"><div class="match-col-h">하는 일</div><div class="match-card" data-k="B" data-pair="b">관심 가는 책 카페에 앉아 듣고 소감을 말해요</div><div class="match-card" data-k="C" data-pair="c">간식을 주거나 도장을 찍어 줘요</div><div class="match-card" data-k="A" data-pair="a">내 책을 소개하고 읽어 줘요</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'④ 스스로 살펴보기', t:'내 독서 계획을 살펴봐요',
-   html:`<div class="selfcheck">
-      <div class="sc-row"><span class="sc-box">✓</span>읽고 싶은 까닭이 있는 책을 골랐어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>읽을 차례를 정했어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>첫 칸에는 끝까지 읽을 수 있는 책을 놓았어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>한 권을 다 읽으면 칸을 색칠하기로 했어요.</div>
-    </div>
-    <div class="fb">계획은 언제든 고쳐도 좋아요. 이어 가는 것이 더 중요해요. 📚</div>`},
+  {tag:'④ 정리', t:'오늘 한 일을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🪜</span><b>독서 계단</b>에 읽고 싶은 책을 차례대로 썼어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🖍️</span>한 권을 <b>끝까지 읽고</b> 한 칸씩 색칠해요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">📚</span>책 보물 찾기, 책 카페 놀이로 <b>책과 더 친해져요</b>.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -418,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

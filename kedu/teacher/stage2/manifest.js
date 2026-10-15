@@ -6252,7 +6252,7 @@ window.KT2_MANIFEST = {
        "no": "1",
        "title": "단원 시작 — 배울 내용 살펴보기",
        "meta_title": "단원 시작 — 배울 내용 살펴보기",
-       "std": "[2국04-04][2국02-05]",
+       "std": "[2국04-02][2국02-05]",
        "slides": 19,
        "stages": [
         3,
@@ -6276,9 +6276,9 @@ window.KT2_MANIFEST = {
       {
        "key": "u5_l03",
        "no": "3",
-       "title": "한글이 만들어진 까닭 알기",
-       "meta_title": "한글이 만들어진 까닭 알기",
-       "std": "[2국04-04]",
+       "title": "한글을 소중히 여기기",
+       "meta_title": "한글을 소중히 여기기",
+       "std": "[2국04-02]",
        "slides": 19,
        "stages": [
         3,
@@ -6302,9 +6302,9 @@ window.KT2_MANIFEST = {
       {
        "key": "u5_l04",
        "no": "4",
-       "title": "글자를 바꾸어 낱말 만들기",
-       "meta_title": "글자를 바꾸어 낱말 만들기",
-       "std": "[2국04-04]",
+       "title": "글자에 관심 가지기",
+       "meta_title": "글자에 관심 가지기",
+       "std": "[2국04-02]",
        "slides": 19,
        "stages": [
         3,
@@ -6328,8 +6328,8 @@ window.KT2_MANIFEST = {
       {
        "key": "u5_l06",
        "no": "6",
-       "title": "책의 재미 알고 추천하기",
-       "meta_title": "책의 재미 알고 추천하기",
+       "title": "책에 흥미 가지기",
+       "meta_title": "책에 흥미 가지기",
        "std": "[2국02-05]",
        "slides": 19,
        "stages": [
@@ -6356,7 +6356,7 @@ window.KT2_MANIFEST = {
        "no": "8",
        "title": "글을 읽고 생각이나 느낌 나누기",
        "meta_title": "글을 읽고 생각이나 느낌 나누기",
-       "std": "[2국02-05]",
+       "std": "[2국05-02]",
        "slides": 19,
        "stages": [
         3,
@@ -6380,8 +6380,8 @@ window.KT2_MANIFEST = {
       {
        "key": "u5_l10",
        "no": "10",
-       "title": "독서 계획 세우기",
-       "meta_title": "독서 계획 세우기",
+       "title": "배운 내용 실천하기 — 독서 계획 세우기",
+       "meta_title": "배운 내용 실천하기 — 독서 계획 세우기",
        "std": "[2국02-05]",
        "slides": 19,
        "stages": [

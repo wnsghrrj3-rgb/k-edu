@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,117 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 6~7차시(소단원 2 통합 — 책에 흥미 가지기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
+/* ===== 6~7차시(소단원 2 통합 — 책에 흥미 가지기) 『국어』 154~167쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 책에 흥미를 가질 수 있다.
-   ★ 정답 로깅 7슬. 이야기 읽기·무대·마무리 = 로깅 X.
-   ★ 교과서 제재는 그림책 열두 쪽 전재다. 글과 그림이 함께여야 뜻이 서는 갈래여서
-      글만 옮기면 제재가 아니라 대사 목록이 된다. 전면 미인용하고 자체 이야기로 대체했다.
-      지도서 220쪽이 그 제재의 구조(전자 기기에 익숙한 인물이 책 읽는 인물에게 묻는 대화의 되풀이)를
-      제재의 특징으로 명시하므로, 1-2 1단원 §4-3 기준에 따라 구조까지 바꾸었다 —
-      자체 이야기는 대화 되풀이가 아니라 한 아이가 책에 빠져드는 흐름으로 지었다.
-   ★ 지도서 224쪽 경계: 「전자 기기는 옳지 않고 책이 옳다」는 이분법을 피할 것
-      → ③ 여섯째 슬을 그 이분법을 오답 보기로 세워 정면으로 다루었다.
-   ★ 지도서 224쪽: 재미는 웃긴 것만이 아니다(감동·놀라움·새로 안 것도 재미다)
-      → ③ 셋째 슬.
-   ★ 저작권: 교과서 154~165쪽 「그래, 책이야!」 본문·그림·대사 전부와 등장인물(동키·몽키·마우스),
-      스크롤·메일·와이파이·비밀번호·충전 문답, 166쪽 물음 셋과 말풍선 둘, 167쪽 비유 예시와 예시 답안,
-      지도서 221쪽 『책 읽는 도깨비』 소개, 227쪽 책 이야기 활동(게일 톰킨스),
-      국어활동 60~61쪽 「우주」와 문항 전부 미차용. 제재·인물·문항 전부 자체. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      작가 작품 「그래, 책이야!」는 간추림만(대사 미인용). 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 차시 만나기', t:'책은 왜 재미있을까요?',
-   html:`<div class="scene"><div class="scene-pic">📖✨</div></div>
-    <div class="ka-bub">책을 펴면 <b class="emph">가 보지 않은 곳</b>에 갈 수 있고<br><b class="emph">만나 보지 않은 인물</b>을 만날 수 있어요. 🤔</div>`},
+  {tag:'① 동기 유발', t:'책의 표지를 보고 내용을 짐작해 봐요',
+   html:`<div class="scene"><div class="scene-pic">🐒📕 🫏💻</div></div><div class="ka-bub">책의 제목은 「그래, 책이야!」(레인 스미스 글·그림, 김경연 옮김)예요.<br>누가 나오나요? 무엇을 들고 있나요? <b class="emph">어떤 내용일 것 같나요?</b> 🤔</div>`},
 
   {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
-   html:`<div class="sentence">책에 흥미를 가져 봐요.</div>
-    <div class="ka-bub">책이 <b class="emph">어떤 점에서 재미있는지</b> 알아보고,<br>내 생각을 말해 볼 거예요. 🔍</div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>책에 흥미를 가져 봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">📖</span>「그래, 책이야!」를 읽고 <b>내용</b>을 알아봐요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">💬</span><b>재미있는 부분</b>과 내 생각을 친구와 나눠요.</div></div>`},
 
-  {tag:'② 이야기 읽기', t:'「빗소리와 책 한 권」을 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>비가 와서 밖에 나가지 못한 날, 재우는 몹시 심심했다.</div>
-      <div class="read-line"><span class="rl-num">2</span>책꽂이에서 아무 책이나 한 권 꺼내 그냥 넘겨 보았다.</div>
-      <div class="read-line"><span class="rl-num">3</span>그림 속에서 고래가 헤엄치자 재우도 바닷속에 있는 것 같았다.</div>
-      <div class="read-line"><span class="rl-num">4</span>창밖 빗소리가 파도 소리처럼 들렸다.</div>
-      <div class="read-line"><span class="rl-num">5</span>마지막 장을 덮었을 때에는 비가 그쳐 있었다. 시간이 이렇게 빨리 간 줄 몰랐다.</div>
-    </div><div class="fb" id="readFb">🔊 한 줄씩 또박또박 읽어 봐요.</div>`},
+  {tag:'② 154~165쪽 작품 읽기', t:'「그래, 책이야!」 이야기 간추림',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>동키는 노트북을, 몽키는 종이책을 들고 마주 앉아 있어요.</div><div class="read-line"><span class="rl-num">2</span>동키는 책으로 게임을 하거나 메일을 보낼 수 있는지 자꾸 물어요.</div><div class="read-line"><span class="rl-num">3</span>몽키는 책은 한 장씩 넘기며 읽는 것이라고 알려 줘요.</div><div class="read-line"><span class="rl-num">4</span>책을 건네받은 동키는 시간 가는 줄 모르고 책에 푹 빠져요.</div><div class="read-line"><span class="rl-num">5</span>몽키가 책을 돌려 달라고 해도 동키는 돌려주지 않아요.</div><div class="read-line"><span class="rl-num">6</span>동키는 다 읽으면 책을 충전해 놓겠다고 해요.</div></div><div class="fb" id="readFb">📖 교과서에서 글과 그림을 함께 보며 읽어 봐요. 처음엔 선생님과, 다음엔 짝과 번갈아 읽어요.</div>`},
 
-  {tag:'② 책의 힘', t:'책은 이런 것을 할 수 있어요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🐋</span><span class="pc-name">가 보지 않은 곳에<br>데려가요</span></div>
-      <div class="punct-card"><span class="pc-mark">⏳</span><span class="pc-name">시간 가는 줄<br>모르게 해요</span></div>
-      <div class="punct-card"><span class="pc-mark">💡</span><span class="pc-name">몰랐던 것을<br>알려 줘요</span></div>
-    </div>
-    <div class="ka-bub">재우가 느낀 것이 바로 이것이에요. 📚</div>`},
+  {tag:'③ 166쪽 내용 알기 (1)', t:'몽키가 들고 있는 것은 무엇인가요?', log:true, okMsg:'맞아요! 몽키는 책을 들고 있어요. 동키는 노트북을 들고 있지요. 📕',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">📕</div><div class="wc-word">책</div></div><div class="wcard" data-ok="0"><div class="wc-pic">💻</div><div class="wc-word">노트북</div></div><div class="wcard" data-ok="0"><div class="wc-pic">📱</div><div class="wc-word">휴대 전화</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 무슨 일이 있었나', t:'재우에게 무슨 일이 있었나요?', log:true, okMsg:'맞아요! 심심하던 재우가 책에 빠져들었어요. 📖',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">비를 맞으며 밖에서 놀았다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">심심하다가 책에 빠져들었다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 166쪽 내용 알기 (2)', t:'동키가 책으로 할 수 있는지 물어본 것을 모두 골라요', log:true, collectMsg:'스크롤 · 게임 · 메일 · 와이파이 — 노트북처럼 할 수 있는지 물어보았어요! 🎉', hint:'힌트: 동키가 들고 있는 노트북으로 할 수 있는 것들이에요.',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">스크롤</div><div class="chip" data-hit="1">게임</div><div class="chip" data-hit="1">메일 보내기</div><div class="chip" data-hit="1">와이파이</div><div class="chip" data-hit="0">요리하기</div><div class="chip" data-hit="0">줄넘기</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 마음 짐작하기', t:'마지막 장을 덮었을 때 재우의 마음은 어땠을까요?', log:true, okMsg:'맞아요! 시간이 훌쩍 지나 놀라웠을 거예요. ⏳',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">시간이 빨리 지나 놀라웠다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">비가 와서 지루했다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 166쪽 내용 알기 (3)', t:'동키가 책을 돌려주려고 하지 않은 까닭은?', log:true, okMsg:'맞아요! 책에 흥미를 느껴 더 읽고 싶었을 거예요. 📖',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">📖</div><div class="wc-word">책에 흥미를 느껴 더 읽고 싶었기 때문이에요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">😠</div><div class="wc-word">몽키와 싸웠기 때문이에요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🔋</div><div class="wc-word">책의 배터리가 다 닳았기 때문이에요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 재미란 무엇일까', t:'책에서 느끼는 재미로 알맞은 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 재미는 웃긴 것만이 아니에요. 🎉',
-   hint:'힌트: 마음이 뭉클해지거나 새로 알게 되는 것도 재미예요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">웃음이 나는 이야기</div>
-      <div class="chip" data-hit="1">마음이 뭉클해지는 이야기</div>
-      <div class="chip" data-hit="0">글자가 아주 큰 책</div>
-      <div class="chip" data-hit="1">몰랐던 것을 알게 되는 책</div>
-      <div class="chip" data-hit="0">쪽수가 아주 적은 책</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 내용 알기', t:'동키가 책을 충전해 놓겠다고 한 까닭은?', log:true, okMsg:'맞아요! 동키는 아직 책을 잘 몰라서 노트북처럼 충전하겠다고 했어요. 😄',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🫏</div><div class="wc-word">책에 빠졌지만 아직 책을 노트북처럼 생각해서</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🔌</div><div class="wc-word">책에도 충전기가 꼭 필요해서</div></div><div class="wcard" data-ok="0"><div class="wc-pic">😴</div><div class="wc-word">책이 지루해서</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 재미있는 부분 말하기', t:'재미있었던 부분을 말할 때 함께 말할 것은?', log:true, okMsg:'맞아요! 어느 부분이 왜 재미있었는지 함께 말해요. 🗣️',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">그 부분이 재미있었던 까닭</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">그 부분이 몇 쪽인지</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 내용 알기', t:'처음과 비교해 나중에 동키는 어떻게 달라졌나요?', log:true, okMsg:'맞아요! 책을 궁금해하던 동키가 책에 푹 빠지게 되었어요. ⏰',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">⏰</div><div class="wc-word">시간 가는 줄 모르고 책에 몰입해요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">💻</div><div class="wc-word">노트북만 더 열심히 봐요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🚪</div><div class="wc-word">책을 버리고 밖으로 나가요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 서로 다른 부분', t:'친구가 재미있다고 한 부분이 나와 달라요. 어떻게 할까요?', log:true, okMsg:'맞아요! 사람마다 재미있는 부분이 달라요. 💚',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">친구가 잘못 골랐다고 말한다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">왜 그 부분이 재미있었는지 물어본다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 166쪽 책에 흥미 가지기', t:'「그래, 책이야!」에서 재미있었던 부분을 이야기해 봐요',
+   html:`<div class="stage-box">💬 기억에 남는 장면, 공감이 가는 장면, 내 경험과 비슷한 장면을 떠올려 말해 보세요.<br><small>예) 둘이 책과 노트북을 들고 마주 보며 이야기하는 장면 · 책에 흠뻑 빠졌는데 충전하겠다고 하는 장면</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 친구마다 재미있게 느낀 부분이 달라요. 나누면 책이 더 재미있어져요. 👏">💬 이야기해 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 책과 다른 것들', t:'책에 대한 생각으로 알맞은 것은?', log:true, okMsg:'맞아요! 다른 것을 나쁘다고 할 것 없이, 책만의 좋은 점을 찾으면 돼요. 💡',
-   hint:'힌트: 무엇 하나를 나쁘다고 정하는 대신, 책이 무엇을 잘하는지 생각해 봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">책에는 책만의 좋은 점이 있다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">책이 아닌 것은 모두 나쁘다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 책에 흥미 가지기', t:'「재미있는 책」은 어떤 책일까요? 모두 골라요', log:true, collectMsg:'재미는 웃긴 것만이 아니에요. 감동·놀라움·새로운 정보도 재미예요! 🎉',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">웃긴 이야기가 담긴 책</div><div class="chip" data-hit="1">감동적인 이야기가 담긴 책</div><div class="chip" data-hit="1">놀라운 이야기가 담긴 책</div><div class="chip" data-hit="1">새롭게 안 정보가 담긴 책</div><div class="chip" data-hit="0">제목만 보고 읽지 않은 책</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 책 추천하기', t:'친구에게 책을 추천할 때 함께 말할 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 제목과 까닭을 함께 말해요. 🎉',
-   hint:'힌트: 내가 왜 그 책을 골랐는지가 가장 중요해요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">책 제목</div>
-      <div class="chip" data-hit="1">추천하는 까닭</div>
-      <div class="chip" data-hit="0">책의 값</div>
-      <div class="chip" data-hit="1">기억에 남는 부분</div>
-      <div class="chip" data-hit="0">책을 읽은 시간</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'⑤ 167쪽 자신과 관련짓기 (1)', t:'동키는 책을 무엇과 비교하고 있나요?', log:true, okMsg:'맞아요! 동키는 책을 노트북 같은 전자 기기와 비교하고 있어요. 💻',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">💻</div><div class="wc-word">노트북 같은 전자 기기</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🍎</div><div class="wc-word">사과 같은 과일</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🚗</div><div class="wc-word">자동차</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 추천해 보기', t:'친구에게 책 한 권을 추천해 봐요',
-   html:`<div class="stage-box">
-      📚 내가 읽은 책 가운데 한 권을 골라<br>
-      「이 책은 ○○○이야. ○○○ 때문에 재미있어.」<br>
-      이렇게 소리 내어 추천해 봐요.
-      <br><button class="stage-do" id="stageDo" data-fb="까닭까지 말했다면 아주 잘했어요! 👏">📚 추천해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 167쪽 자신과 관련짓기 (2)·(3)', t:'나는 책을 무엇이라고 생각하나요? 동키에게 책도 추천해 봐요',
+   html:`<div class="stage-box">✨ 「저는 책을 ○○(이)라고 생각합니다. 왜냐하면 ~ 때문입니다.」로 말해 보세요.<br><small>예) 마법 — 책을 읽으면 시간이 무척 빨리 지나가니까 · 비행기 — 나를 어디로든 데려다줄 수 있으니까</small><br>📚 그리고 내가 읽은 책 가운데 인상 깊었던 책 한 권을 골라 <b>제목과 고른 까닭</b>을 동키에게 말해 보세요.<br><small>『국어』 붙임 1에 써 보고, 친구들이 추천한 책도 꼭 읽어 봐요.</small><br><button class="stage-do" id="stageDo" data-fb="멋져요! 친구들이 추천한 책을 학급 문고에 모아 함께 읽어 봐요. 📖">✨ 말하고 추천했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">📖</span>책은 <b>가 보지 않은 곳</b>으로 데려다줘요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">😊</span>재미는 <b>웃긴 것만이 아니에요</b> — 뭉클함도 새로 앎도 재미예요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">💚</span>재미있는 부분은 <b>사람마다 달라요</b>.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">➡️</span>다음 시간에는 <b>글을 읽고 생각이나 느낌</b>을 나눌 거예요.</div>
-    </div>`},
+  {tag:'⑤ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">📕</span>동키는 노트북만 알다가 <b>책에 푹 빠지게</b> 되었어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">💬</span>재미있는 부분은 친구마다 달라요. <b>나누면 책이 더 재미있어요</b>.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">✨</span>재미는 웃음만이 아니라 <b>감동·놀라움·새로 안 것</b>에도 있어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -419,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>
