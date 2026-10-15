@@ -874,7 +874,8 @@ function esc(s){ return frHTML(String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','
 function frHTML(s){ return s.replace(/⟨(?:(\d+) )?(\d+|[□△○])\/(\d+|[□△○])⟩/g, (m, w, a, b) => `<span class="fr">${w ? `<b>${w}</b>` : ''}<span class="fs"><sup>${a}</sup><sub>${b}</sub></span></span>`); }
 
 /* ---------- 읽어주기 ---------- */
-const TTS = { on: true, speak(text){ if (!this.on || !('speechSynthesis' in window)) return; speechSynthesis.cancel();
+/* 읽어주기는 기본 꺼짐 — 🔊 버튼으로 켜고, 한 번 고른 건 기기에 남긴다 (2026-10-16 준호: 기본 음성 안 나오게) */
+const TTS = { on: (function(){ try { return localStorage.getItem('kedu_ws_tts') === '1'; } catch(e){ return false; } })(), speak(text){ if (!this.on || !('speechSynthesis' in window)) return; speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(frRead(String(text)).replace(/[●○□▷🍎🐤🚗🦋🐟🌼🍬⭐🍓🍌🍉🧁🎈⚽✏️🍪🍩🐞🍁🐘🐜]/g,' ').replace(/\s+/g,' ')); u.lang = 'ko-KR'; u.rate = 0.9; speechSynthesis.speak(u); } };
 
 /* ---------- 모양·시계 그림 조각 (v0.5) ---------- */
@@ -5894,7 +5895,7 @@ app.addEventListener('click', e => {
   const act = b.dataset.nav;
   if (act === 'next'){ if (idx < Q.length - 1){ idx++; save(); renderQ(); } else renderFinish(); }
   else if (act === 'back'){ if (idx > 0){ idx--; save(); renderQ(); } else renderCover(Object.keys(state.answers).length > 0); }
-  else if (act === 'tts'){ TTS.on = !TTS.on; b.classList.toggle('on', TTS.on); if (TTS.on) TTS.speak(Q[idx] && Q[idx].stem); else if ('speechSynthesis' in window) speechSynthesis.cancel(); }
+  else if (act === 'tts'){ TTS.on = !TTS.on; b.classList.toggle('on', TTS.on); try { localStorage.setItem('kedu_ws_tts', TTS.on ? '1' : '0'); } catch(e){} if (TTS.on) TTS.speak(Q[idx] && Q[idx].stem); else if ('speechSynthesis' in window) speechSynthesis.cancel(); }
   else if (act === 'resume'){ renderQ(); }
   else if (act === 'restart' || act === 'again'){ Q = DATA.questions.map(prep); state.answers = {}; idx = 0; state.retry = false; save(); renderQ(); }
   else if (act === 'retry'){ const wrong = window.__retryFrom || []; if (!wrong.length) return; const r = rng(Date.now() & 0xffff);
