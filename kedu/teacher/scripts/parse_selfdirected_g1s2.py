@@ -45,6 +45,7 @@ def figs(p):
     out.extend(figs2(p))
     out.extend(figs3(p))
     out.extend(figs4(p))
+    out.extend(figs5(p))
     return out
 
 # 123차 — 2단원 「덧셈과 뺄셈(1)」 그림: steps(번호 줄 식) · eqstrip(식 띠: hole=? · res/mark=강조) · chain(색 알 묶음) · cupstack(층 쌓은 컵) · tenframe(십 배열판 a/b 두 색 + tf-lb 꼬리표). 원문 순서대로.
@@ -176,7 +177,9 @@ def parse(path):
                 if kind == 'mcq':
                     opts = re.findall(r'<button class="mcq-opt" data-ok="(\d)" data-miss="(.*?)">(.*?)</button>', p, re.S)
                     q['opts'] = [clean(t) for _, _, t in opts]; q['ci'] = [c for c, _, _ in opts].index('1'); q['miss'] = [html.unescape(m) for _, m, _ in opts]
-                    if any(not clean(t) for _, _, t in opts):  # 125차 — 그림 보기(모양·시계): 글 대신 그림 값
+                    if any('class="pt ' in t for _, _, t in opts):  # 128차 — 규칙 보기(색·모양 토큰): 토큰 줄
+                        q['optpt'] = [pttoks(t)[0] for _, _, t in opts]
+                    elif any(not clean(t) for _, _, t in opts):  # 125차 — 그림 보기(모양·시계): 글 대신 그림 값
                         of = []
                         for _, _, t in opts:
                             sh = first(r'<span class="shp (\w)', t, None); ck = re.search(r'data-h="(\d+)" data-m="(\d+)"', t)
@@ -209,6 +212,67 @@ def parse(path):
             out['next'] = clean(first(r'class="next-msg">(.*?)</p>', p)); out['next_emoji'] = clean(first(r'class="next-emoji">(.*?)</div>', p))
         out['slides'].append({'stage': stage, 'kind': kind, 'title': title, 'text': '\n'.join(t for t in txt if t), 'figs': figs(p)})
     return out
+
+# 128차 — 5단원 「규칙 찾기」 그림: pat(규칙 줄 patrow · 묶음 pu · 토큰 em/shp/tile/num/gl/hole) · seq(수 줄 numseq data-seq·rule · on/hole)
+#          · ntab(수 배열표 numtable data-table 시작|칸|줄 · marks c1/c2 · steps · hole) · pgrid(무늬 판 patgrid data-grid·unit) · floor(로봇 바닥 floorwrap). 원문 순서대로.
+PTSZ = ('sm', 'md', 'lg')
+def ptok(cls, txt):
+    c = cls.split(); txt = html.unescape(clean(txt))
+    if 'hole' in c: return {'h': 1}
+    if 'em' in c:
+        d = {'e': txt}; z = [x for x in c if x in PTSZ]
+        if z: d['z'] = z[0]
+        return d
+    if 'shp' in c: return {'s': txt, 'c': [x for x in c if x not in ('pt', 'shp')][0]}
+    if 'tile' in c: return {'t': [x for x in c if x not in ('pt', 'tile')][0]}
+    if 'num' in c: return {'n': txt}
+    if 'gl' in c: return {'g': txt}
+    return {'x': txt}
+
+def pttoks(body):
+    toks, groups, cur = [], [], None
+    for m in re.finditer(r'<span class="(pu[^"]*|pt [^"]*)"[^>]*>|</span>', body):
+        if m.group(1) and m.group(1).startswith('pu'):
+            cur = 0; continue
+        if m.group(1):
+            end = body.index('</span>', m.end()); toks.append(ptok(m.group(1), body[m.end():end]))
+            if cur is not None: cur += 1
+            continue
+    # pu 묶음 크기: pu 마다 안의 pt 수
+    for g in re.findall(r'<span class="pu[^"]*">((?:<span class="pt [^"]*"[^>]*>[^<]*</span>)+)</span>', body):
+        groups.append(len(re.findall(r'class="pt ', g)))
+    return toks, groups
+
+def figs5(p):
+    found = []
+    for m in re.finditer(r'(?:<span class="pat-lb">(.*?)</span>)?<div class="patrow( sm)?" data-pat="([^"]*)">(.*?)</div>', p, re.S):
+        toks, groups = pttoks(m.group(4)); c = {'k': 'pat', 'toks': toks, 'unit': m.group(3).split('|')[0].split(',')}
+        if m.group(1): c['label'] = clean(m.group(1))
+        if groups: c['pu'] = groups
+        if m.group(2): c['sm'] = True
+        found.append((m.start(), m.end(), c))
+    for m in re.finditer(r'(?:<span class="pat-lb">(.*?)</span>)?<div class="numline numseq" data-seq="([^"]*)" data-rule="([^"]*)">(.*?)</div>', p, re.S):
+        bs = re.findall(r'<b class="([^"]*)">(.*?)</b>', m.group(4))
+        c = {'k': 'seq', 'seq': [int(x) for x in m.group(2).split(',')], 'rule': m.group(3), 'vals': [clean(v) for _, v in bs],
+             'on': [i for i, (k, _) in enumerate(bs) if 'on' in k.split()], 'hole': [i for i, (k, _) in enumerate(bs) if 'hole' in k.split()]}
+        if m.group(1): c['label'] = clean(m.group(1))
+        found.append((m.start(), m.end(), c))
+    for m in re.finditer(r'<div class="numtable( sm)?" style="--nc:(\d+)" data-table="(\d+)\|(\d+)\|(\d+)"(?: data-marks="([^"]*)")?(?: data-steps="([^"]*)")?>(.*?)</div>', p, re.S):
+        bs = re.findall(r'<b class="([^"]*)">(.*?)</b>', m.group(8))
+        c = {'k': 'ntab', 'start': int(m.group(3)), 'nc': int(m.group(4)), 'rows': int(m.group(5)), 'cells': [clean(v) for _, v in bs],
+             'cls': [k for k, _ in bs], 'marks': m.group(6) or '', 'steps': m.group(7) or ''}
+        if m.group(1): c['sm'] = True
+        found.append((m.start(), m.end(), c))
+    for m in re.finditer(r'<div class="floorwrap"><div class="floor-side">(.*?)</div><div class="patgrid floor" style="--nc:(\d+)" data-floor="([^"]*)">(.*?)</div><div class="floor-note">(.*?)</div></div>', p, re.S):
+        toks, _ = pttoks(m.group(4)); fl = m.group(3).split('|')
+        found.append((m.start(), m.end(), {'k': 'floor', 'nc': int(m.group(2)), 'unit': fl[0].split(','), 'toks': toks,
+                                           'side': [clean(x) for x in re.findall(r'<i>(.*?)</i>', m.group(1))], 'note': clean(m.group(5)).replace('\n', ' ')}))
+    for m in re.finditer(r'<div class="patgrid( sm)?" style="--nc:(\d+)" data-grid="([^"]*)"(?: data-unit="([^"]*)")?>(.*?)</div>', p, re.S):
+        toks, _ = pttoks(m.group(5)); c = {'k': 'pgrid', 'nc': int(m.group(2)), 'grid': m.group(3), 'toks': toks}
+        if m.group(4): c['unit'] = m.group(4)
+        if m.group(1): c['sm'] = True
+        found.append((m.start(), m.end(), c))
+    return [f for _, _, f in sorted(found, key=lambda x: x[0])]
 
 if __name__ == '__main__':
     d, outp = sys.argv[1], sys.argv[2]

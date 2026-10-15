@@ -1979,6 +1979,76 @@
   }
   Object.assign(PARTS, { bead1, cpath1, split1, eqtab1, rpath1, bingo1 });
   }
+  { // 128차 1학년 2학기 「규칙 찾기」 부품 — 이름이 겹치지 않게 블록 안에 둔다
+  // ══ pat1(규칙 줄 — 되풀이 묶음 점선) · seq1(수 줄) · ntab1(수 배열표) · pgrid1(무늬 판) · floor1(로봇 바닥) ══
+  // 그림 문법(자기주도 원문과 같음): 토큰 = 이모지·색 모양·색 타일·수·글자 · 주황 점선 「?」 = 구할 자리 · 파랑/분홍 칸 = 규칙 줄(c1/c2) · 진한 칸 = 처음(on).
+  const PC8 = { y: '#F5B800', b: '#3B7BF2', r: '#F2545B', pk: '#F06AA8', k: '#2B3442', o: '#FF8A3D', g: '#3EB36B', w: '#FFFFFF' };
+  const TF8 = { y: '#FFD23F', b: '#4C8DF6', r: '#F2545B', pk: '#F48BC0', k: '#3A4556', o: '#FF9A52', g: '#57C07F', w: '#FFFFFF' };
+  const OR8 = ['#FFF1E6', '#FF7A2F', '#C2551A'], GY8 = '#C9D3E0';
+  const box8 = (x, y, w, h, fill, st, sw, dash, rx) => '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="' + (rx == null ? 12 : rx) + '" fill="' + fill + '" stroke="' + st + '" stroke-width="' + (sw || 3) + '"' + (dash ? ' stroke-dasharray="9 6"' : '') + '/>';
+  // tok8: 토큰 하나를 (x, y) 칸(u×u)에 — 칸 테 없이 그 자리에 그린다
+  function tok8(tk, x, y, u) {
+    const cx = x + u / 2, cy = y + u / 2;
+    if (!tk || tk.h) return box8(x + 3, y + 3, u - 6, u - 6, '#fff', OR8[1], 4, true) + txt(cx, cy + u * 0.2, '?', u * 0.56, OR8[2], 900);
+    if (tk.t) return box8(x + 4, y + 4, u - 8, u - 8, TF8[tk.t] || '#ddd', tk.t === 'w' ? '#9AA6B4' : 'rgba(0,0,0,.18)', 3, false, 8);
+    if (tk.s) return txt(cx, cy + u * 0.24, tk.s, u * 0.72, PC8[tk.c] || INK, 900);
+    if (tk.e) return txt(cx, cy + u * (tk.z === 'sm' ? 0.18 : 0.24), tk.e, u * (tk.z === 'sm' ? 0.52 : tk.z === 'lg' ? 0.78 : 0.68), INK, 400);
+    if (tk.n != null || tk.g != null) return box8(x + 5, y + 5, u - 10, u - 10, '#fff', GY8, 3) + txt(cx, cy + u * 0.19, String(tk.n != null ? tk.n : tk.g), u * 0.5, INK, 900);
+    return txt(cx, cy + u * 0.2, String(tk.x || ''), u * 0.5, INK, 900);
+  }
+  const tkey8 = (tk) => !tk || tk.h ? '?' : tk.t ? 'c:' + tk.t : tk.s ? 's:' + tk.s + ':' + tk.c : tk.e ? 'e:' + tk.e : tk.n != null ? 'n:' + tk.n : tk.g != null ? 'g:' + tk.g : 'x';
+  // pat1: toks · pu(묶음 크기 — 있으면 묶음마다 점선 테) · label(위 꼬리표) · sm · data-toks(토큰 차례) · data-holes
+  function pat1(o) {
+    const tk = (o.toks || []); if (!tk.length) return '';
+    const n = tk.length, u = o.sm ? 60 : n > 10 ? 62 : 72, gp = 8, pd = 10, gs = o.pu && o.pu.reduce((a, g) => a + g, 0) <= n ? o.pu : null;
+    const gw = (g) => g * u + (g - 1) * gp + 2 * pd, rest = n - (gs ? gs.reduce((a, g) => a + g, 0) : 0);
+    const tot = (gs ? gs.reduce((a, g) => a + gw(g) + gp + 4, 0) : 0) + (rest ? rest * (u + gp) : 0) - gp - (gs && !rest ? 4 : 0);
+    const Wd = Math.max(460, tot + 24), x0 = (Wd - tot) / 2, y0 = o.label ? 56 : 14; let s = '', x = x0, i = 0;
+    if (o.label) s += txt(Wd / 2, 34, o.label, 26, '#4E5C70', 800);
+    if (gs) gs.forEach(g => { s += box8(x, y0 - pd, gw(g), u + 2 * pd, '#F6F8FB', '#9AA6B4', 2.5, true, 16); let tx = x + pd;
+      for (let j = 0; j < g; j++, i++) { s += tok8(tk[i], tx, y0, u); tx += u + gp; } x += gw(g) + gp + 4; });
+    for (; i < n; i++) { s += tok8(tk[i], x, y0, u); x += u + gp; }
+    return svgWrap(s, 'fig-pat1', '0 0 ' + Wd + ' ' + (y0 + u + pd + 8)).replace('<svg ', '<svg data-toks="' + esc(tk.map(tkey8).join(',')) + '" data-holes="' + tk.filter(t => t.h).length + '" ');
+  }
+  // seq1: vals(보이는 수 · 「?」) · on(처음 강조) · hole · label · data-seq(보이는 차례)
+  function seq1(o) {
+    const vs = (o.vals || []).map(String); if (!vs.length) return '';
+    const n = vs.length, u = n > 8 ? 70 : 80, aw = n > 8 ? 18 : 24, tot = n * u + (n - 1) * aw, Wd = Math.max(460, tot + 24), x0 = (Wd - tot) / 2, y0 = o.label ? 52 : 12; let s = '';
+    if (o.label) s += txt(Wd / 2, 34, o.label, 26, '#4E5C70', 800);
+    vs.forEach((v, i) => { const x = x0 + i * (u + aw), hole = (o.hole || []).indexOf(i) >= 0, on = (o.on || []).indexOf(i) >= 0;
+      s += box8(x, y0, u, u, hole ? '#fff' : on ? '#EAF1FF' : '#fff', hole ? OR8[1] : on ? BLUE2 : GY8, hole || on ? 4.5 : 3, hole, 16) + txt(x + u / 2, y0 + u / 2 + 14, hole ? '?' : v, v.length > 1 ? 36 : 42, hole ? OR8[2] : INK, 900);
+      if (i < n - 1) s += txt(x + u + aw / 2, y0 + u / 2 + 8, '›', 30, '#9AA6B4', 900); });
+    return svgWrap(s, 'fig-seq1', '0 0 ' + Wd + ' ' + (y0 + u + 12)).replace('<svg ', '<svg data-seq="' + esc(vs.join(',')) + '" ');
+  }
+  // ntab1: start · nc · rows · cells(보이는 값 · 「?」) · cls(c1 파랑 · c2 분홍 · hole) · data-start/nc/rows · data-cells
+  function ntab1(o) {
+    const cs = (o.cells || []).map(String); if (!cs.length) return '';
+    const nc = +o.nc || 10, nr = Math.ceil(cs.length / nc), u = nc > 7 ? 60 : 76, gp = 5, gw = nc * (u + gp) - gp, Wd = Math.max(460, gw + 28), x0 = (Wd - gw) / 2, y0 = 12; let s = '';
+    s += box8(x0 - 10, y0 - 8, gw + 20, nr * (u + gp) - gp + 16, '#F6F8FB', '#DCE3EC', 3, false, 16);
+    cs.forEach((v, i) => { const x = x0 + (i % nc) * (u + gp), y = y0 + Math.floor(i / nc) * (u + gp), c = (o.cls || [])[i] || '', hole = /hole/.test(c), c1 = /c1/.test(c), c2 = /c2/.test(c);
+      s += box8(x, y, u, u, hole ? '#fff' : c1 ? '#DCE9FF' : c2 ? '#FFE0EE' : '#fff', hole ? OR8[1] : c1 ? BLUE2 : c2 ? '#E0559A' : GY8, hole || c1 || c2 ? 3.5 : 2, hole, 10) + txt(x + u / 2, y + u / 2 + (u > 70 ? 12 : 10), hole ? '?' : v, u > 70 ? 34 : v.length > 2 ? 24 : 28, hole ? OR8[2] : INK, 900); });
+    return svgWrap(s, 'fig-ntab1', '0 0 ' + Wd + ' ' + (y0 + nr * (u + gp) + 8)).replace('<svg ', '<svg data-start="' + o.start + '" data-nc="' + nc + '" data-rows="' + nr + '" data-cells="' + esc(cs.join(',')) + '" ');
+  }
+  // pgrid1: nc · toks(줄 차례) · sm · data-nc · data-toks
+  function pgrid1(o) {
+    const tk = o.toks || []; if (!tk.length) return '';
+    const nc = +o.nc || 4, nr = Math.ceil(tk.length / nc), u = o.sm ? 66 : nc > 5 ? 70 : 84, gp = 6, gw = nc * (u + gp) - gp, Wd = Math.max(460, gw + 28), x0 = (Wd - gw) / 2, y0 = 12; let s = '';
+    s += box8(x0 - 10, y0 - 8, gw + 20, nr * (u + gp) - gp + 16, '#F6F8FB', '#DCE3EC', 3, false, 16);
+    tk.forEach((t, i) => { const x = x0 + (i % nc) * (u + gp), y = y0 + Math.floor(i / nc) * (u + gp); if (!t.t) s += box8(x, y, u, u, '#fff', '#E3E8EF', 2, false, 8); s += tok8(t, x, y, u); });
+    return svgWrap(s, 'fig-pgrid1', '0 0 ' + Wd + ' ' + (y0 + nr * (u + gp) + 8)).replace('<svg ', '<svg data-nc="' + nc + '" data-toks="' + esc(tk.map(tkey8).join(',')) + '" ');
+  }
+  // floor1: nc · toks · side[시작, 끝] · note(오른쪽 글) — 로봇이 깐 바닥(줄 끝에서 한 칸 아래로) · data-nc · data-toks
+  function floor1(o) {
+    const tk = o.toks || []; if (!tk.length) return '';
+    const nc = +o.nc || 6, nr = Math.ceil(tk.length / nc), u = 70, gp = 6, gw = nc * (u + gp) - gp, sw = 130, nw = o.note ? 150 : 0, Wd = sw + gw + nw + 40, x0 = sw + 14, y0 = 12; let s = '';
+    s += box8(x0 - 10, y0 - 8, gw + 20, nr * (u + gp) - gp + 16, '#F6F8FB', '#DCE3EC', 3, false, 16);
+    tk.forEach((t, i) => { const x = x0 + (i % nc) * (u + gp), y = y0 + Math.floor(i / nc) * (u + gp); s += box8(x, y, u, u, '#fff', '#E3E8EF', 2, false, 8) + tok8(t, x, y, u); });
+    (o.side || []).forEach((t, j) => { const y = y0 + (j === 0 ? 0 : (nr - 1) * (u + gp)) + u / 2 + 9; s += txt(sw / 2 + 4, y, t, 24, '#3E4A5C', 900); });
+    if (o.note) { const nx = x0 + gw + 22; s += box8(nx, y0 + 4, nw - 8, nr * (u + gp) - gp - 8, OR8[0], OR8[1], 3, false, 14); String(o.note).split(' ').reduce((a, w) => { const l = a[a.length - 1]; if (l && (l + ' ' + w).length <= 5) a[a.length - 1] = l + ' ' + w; else a.push(w); return a; }, []).forEach((l, k, A) => { s += txt(nx + (nw - 8) / 2, y0 + (nr * (u + gp)) / 2 - (A.length - 1) * 15 + k * 30 + 6, l, 24, OR8[2], 900); }); }
+    return svgWrap(s, 'fig-floor1', '0 0 ' + Wd + ' ' + (y0 + nr * (u + gp) + 8)).replace('<svg ', '<svg data-nc="' + nc + '" data-toks="' + esc(tk.map(tkey8).join(',')) + '" ');
+  }
+  Object.assign(PARTS, { pat1, seq1, ntab1, pgrid1, floor1 });
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
