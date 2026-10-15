@@ -9,7 +9,7 @@
      (DB 에 담긴 주소는 원문 그대로 · 켠 단원만 · 끄면 곧바로 원문).                                        */
 (function () {
   'use strict';
-  var ON = ['g3s2_math:u1', 'g1s2_math:u1', 'g1s2_korean:u1']; // 123차 — 1학년 2학기 수학 1단원 켬(우리 반) · 124차 — 국어 1단원 켬
+  var ON = ['g3s2_math:u1', 'g1s2_math:u1', 'g1s2_korean:u1', 'g1s2_math:u2']; // 123차 — 1학년 2학기 수학 1단원 켬(우리 반) · 124차 — 국어 1단원 켬 · 125차 — 수학 2단원 켬
   var byUrl = {};
   try {
     var MAP = window.KT2_PROJMAP;
