@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-15 · 과목 19 · 차시 879 · 슬라이드 15314 */
+   생성: 2026-10-15 · 과목 19 · 차시 888 · 슬라이드 15485 */
 window.KT2_MANIFEST = {
  "built": "2026-10-15",
- "lessons": 879,
- "slides": 15314,
+ "lessons": 888,
+ "slides": 15485,
  "subjects": [
   {
    "slug": "g1_math",
@@ -1807,6 +1807,248 @@ window.KT2_MANIFEST = {
        "title": "수학이랑 만들어요",
        "meta_title": "수학이랑 만들어요",
        "std": "[2수01-04] 하나의 수를 두 수로 분해하고 두 수를 하나의 수로 합성하는 활동을 통하여 수 감각을 기른다 · [2수01-05] 덧셈과 뺄셈이 이루어지는 실생활 상황과 연결하여 덧셈과 뺄셈의 의미를 이해한다 · [2수01-06] 덧셈과 뺄셈의 계산 원리를 이해하고 그 계산을 할 수 있다",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    },
+    {
+     "unit": 3,
+     "title": "모양과 시각",
+     "file": "data/g1s2_math_u3.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u3_l01",
+       "no": "1",
+       "title": "단원 도입",
+       "meta_title": "단원 도입",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l02",
+       "no": "2",
+       "title": "모양을 찾아볼까요",
+       "meta_title": "모양을 찾아볼까요",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l03",
+       "no": "3",
+       "title": "모양을 알아볼까요",
+       "meta_title": "모양을 알아볼까요",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l04",
+       "no": "4",
+       "title": "여러 가지 모양을 만들어 볼까요",
+       "meta_title": "여러 가지 모양을 만들어 볼까요",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l05",
+       "no": "5",
+       "title": "몇 시를 알아볼까요",
+       "meta_title": "몇 시를 알아볼까요",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l06",
+       "no": "6",
+       "title": "몇 시 30분을 알아볼까요 (1)",
+       "meta_title": "몇 시 30분을 알아볼까요 (1)",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l07",
+       "no": "7",
+       "title": "몇 시 30분을 알아볼까요 (2)",
+       "meta_title": "몇 시 30분을 알아볼까요 (2)",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l08",
+       "no": "8",
+       "title": "수학이랑 확인해요 (단원 평가)",
+       "meta_title": "수학이랑 확인해요 (단원 평가)",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l09",
+       "no": "9",
+       "title": "수학이랑 만들어요",
+       "meta_title": "수학이랑 만들어요",
+       "std": "",
        "slides": 19,
        "stages": [
         3,
