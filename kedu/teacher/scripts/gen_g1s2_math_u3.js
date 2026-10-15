@@ -4,7 +4,7 @@
    그림 = 원문 그림을 부품으로: clock → clk1 · tc(+read) → tcard · shp → shp1 · mosaic → mosaic1 · objs → objs1 (125차 부품).
      개념 장만: l03 뾰족한 곳 점(corners) · l04 S3·l08 S5 모양 센 수(cnt). 문제 그림엔 센 수를 그리지 않는다.
      그림 보기 문제: 모양 보기 = 모양 줄 + 보기 이름 꼬리표 · 시계 보기 = 「가·나·다」 그림판 + 보기 글 가/나/다.
-   성취기준 번호는 지도서 확인 전이라 쓰지 않는다(std 빈 값).
+   성취기준 = 지도서(2022 개정) 단원 성취기준 — 준호가 올린 지도서에서 옮김(129차).
    slug = g1s2_math · 주소 stage.html?g=1&s=math&t=2&u=3&l=u3_lNN
    실행: node kedu/teacher/scripts/gen_g1s2_math_u3.js  → kedu/teacher/data/g1s2_math_u3.js */
 'use strict';
@@ -12,7 +12,7 @@ const fs = require('fs'), path = require('path'), vmm = require('vm');
 const SRC = JSON.parse(fs.readFileSync(path.join(__dirname, 'src_g1s2_math_u3.json'), 'utf8'));
 const OUT = path.join(__dirname, '..', 'data', 'g1s2_math_u3.js');
 const DIR = 'grade1/semester2/math/3단원_모양과시각/', LIVE = '../../' + DIR;
-const STD = '';
+const STD = '[2수03-03] 교실 및 생활 주변에서 여러 가지 물건을 관찰하여 삼각형, 사각형, 원의 모양을 찾고, 이를 이용하여 여러 가지 모양을 만들 수 있다 · [2수03-07] 시계를 보고 시각을 ‘몇 시 몇 분’까지 읽을 수 있다';
 const PREV_KEY = 'g1s2_math:u2_l10';
 const PREV_EXIT = (() => { const L = {}; const c = { window: { LESSONS: L }, LESSONS: L }; c.window.window = c.window; vmm.createContext(c); vmm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'data', 'g1s2_math_u2.js'), 'utf8'), c); return L.u2_l10.slides.find(s => s.block === 'exit_ticket').data.items; })();
 const TN = (a1, a2, watch, min) => ({ ask: [a1, a2], watch, min });

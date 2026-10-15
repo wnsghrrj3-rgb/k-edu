@@ -60,7 +60,7 @@ T('A 로드 11차시', () => { ok(KEYS.every(k => L[k]), '키 ' + Object.keys(L)
 KEYS.forEach((k, i) => {
   const les = L[k], src = SRC[k], sl = les.slides;
   const srcFigs = src.slides.flatMap(x => x.figs || []).concat(src.problems.flatMap(p => p.figs || []));
-  T(k + ' B 골격', () => { ok(sl.length === 19, '장 ' + sl.length); sl.forEach((s, j) => { ok(s.block === ORDER[j], 's' + (j + 1) + ' ' + s.block); ok(s.stage === STAGE[j], 's' + (j + 1) + ' 단계'); }); ok(les.meta.grade === 1 && les.meta.term === 2 && les.meta.unit === 4 && les.meta.n === i + 1 && les.meta.std === ''); });
+  T(k + ' B 골격', () => { ok(sl.length === 19, '장 ' + sl.length); sl.forEach((s, j) => { ok(s.block === ORDER[j], 's' + (j + 1) + ' ' + s.block); ok(s.stage === STAGE[j], 's' + (j + 1) + ' 단계'); }); ok(les.meta.grade === 1 && les.meta.term === 2 && les.meta.unit === 4 && les.meta.n === i + 1 && /^\[2수0\d-0\d\] /.test(les.meta.std)); });
   T(k + ' C 복습 계보', () => { const prev = i === 0 ? PREV.u3_l09.slides.find(s => s.block === 'exit_ticket').data.items : L[KEYS[i - 1]].slides[15].data.items; ok(JSON.stringify(sl[1].data.items) === JSON.stringify(prev.map(x => ({ q: x.q, a: x.a })))); ok(sl[1].data.from === (i === 0 ? 'g1s2_math:u3_l09' : KEYS[i - 1])); });
   T(k + ' D 기본 문제 = 원문', () => { sl.slice(8, 11).forEach(s => { const d = s.data; const p = src.problems.find(p => nsp(d.question).replace(/\?$/, '') === nsp(p.q).replace(/\?$/, '') && (d.options ? JSON.stringify(d.options.map(o => o.text)) === JSON.stringify(p.opts) : String(d.answer) === String(p.a))); ok(p, '원문 물음·답 없음: ' + d.question + ' / ' + d.answer);
     if (d.options) ok(d.options.findIndex(o => o.correct) === p.ci, '정답 ' + d.question); ok(['pad', 'mcq'].includes(p.part)); }); });
@@ -92,7 +92,7 @@ KEYS.forEach((k, i) => {
   T(k + ' G 2세대 꼴', () => { sl.slice(3, 7).forEach((s, j) => { const r = KT2.renderSlide(s, { revealed: false, state: {}, meta: les.meta, unitTitle: '덧셈과 뺄셈(2)', classNames: [] }); ok(/cv2|mg2|bd2|sm2/.test(r.cls || ''), 'concept s' + (j + 4) + ' cls ' + r.cls); });
     sl.slice(8, 11).forEach((s, j) => { const r = KT2.renderSlide(s, { revealed: false, state: {}, meta: les.meta, unitTitle: '덧셈과 뺄셈(2)', classNames: [] }); ok(/pa2|pv3|ch2/.test((r.cls || '') + r.body.slice(0, 200)), 'basic s' + (j + 9) + ' cls ' + r.cls); }); });
 });
-const ALL = fs.readFileSync(path.join(TDIR, 'data/g1s2_math_u4.js'), 'utf8');
+const ALL = fs.readFileSync(path.join(TDIR, 'data/g1s2_math_u4.js'), 'utf8').split(L.u4_l01.meta.std).join(''); // 성취기준 원문(「연결하여」)은 교육과정 글 그대로라 빼고 본다(129차)
 T('H 차단 어휘 0 — 박음·빵꾸·갈아엎·결로·결', () => ['박음', '빵꾸', '갈아엎', '결로', '결'].forEach(x => ok(ALL.indexOf(x) < 0, '「' + x + '」')));
 T('E 셈 자체 점검', () => { ok(solve('7 과 몇을 모으면 10 이 될까요?') === '3' && solve('10 에서 3 을 빼면 얼마일까요?') === '7' && solve('9 부터 3 만큼 이어 세면 얼마일까요?') === '12' && solve('12 부터 4 만큼 거꾸로 세면 얼마일까요?') === '8' && solve('16 − 8 은 얼마일까요?') === '8' && solve('9 + 5 = 14 예요. 9 + 6 은 얼마일까요?') === '15', '기본 셈');
   ok(solve('9 + 8 에서 8 을 갈라 10 을 만들려면 8 을 몇과 몇으로 가를까요?') === '1 과 7', '가르기'); ok(solve('친구가 14 − 6 = 12 라고 했어요. 맞을까요?') === '틀려요, 8', '친구 말');

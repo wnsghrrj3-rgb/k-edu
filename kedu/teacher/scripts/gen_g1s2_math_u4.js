@@ -5,7 +5,7 @@
           · 수 구슬 → bead1 · 이어 세기 길 → cpath1 · 가르기 상자 → split1 · 덧셈표·뺄셈표 → eqtab1 · 로봇 길 → rpath1 · 빙고판 → bingo1 (127차 부품).
      문제 그림엔 답을 그리지 않는다: 식 강조·묶음 수 없음 · 덧셈표 고른 칸(pick)·강조 없음 · 구할 칸은 원문대로 「?」.
    글 없는 개념 장(가르기 그림만)은 원문 가르기 상자 글(note)을 개념 글로 쓴다.
-   성취기준 번호는 지도서 확인 전이라 쓰지 않는다(std 빈 값).
+   성취기준 = 지도서(2022 개정) 단원 성취기준 — 준호가 올린 지도서에서 옮김(129차).
    slug = g1s2_math · 주소 stage.html?g=1&s=math&t=2&u=4&l=u4_lNN
    실행: node kedu/teacher/scripts/gen_g1s2_math_u4.js  → kedu/teacher/data/g1s2_math_u4.js */
 'use strict';
@@ -13,7 +13,7 @@ const fs = require('fs'), path = require('path'), vmm = require('vm');
 const SRC = JSON.parse(fs.readFileSync(path.join(__dirname, 'src_g1s2_math_u4.json'), 'utf8'));
 const OUT = path.join(__dirname, '..', 'data', 'g1s2_math_u4.js');
 const DIR = 'grade1/semester2/math/4단원_덧셈과뺄셈2/', LIVE = '../../' + DIR;
-const STD = '';
+const STD = '[2수01-05] 덧셈과 뺄셈이 이루어지는 실생활 상황과 연결하여 덧셈과 뺄셈의 의미를 이해한다 · [2수01-06] 두 자리 수의 범위에서 덧셈과 뺄셈의 계산 원리를 이해하고 그 계산을 할 수 있다';
 const PREV_KEY = 'g1s2_math:u3_l09';
 const PREV_EXIT = (() => { const L = {}; const c = { window: { LESSONS: L }, LESSONS: L }; c.window.window = c.window; vmm.createContext(c); vmm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'data', 'g1s2_math_u3.js'), 'utf8'), c); return L.u3_l09.slides.find(s => s.block === 'exit_ticket').data.items; })();
 const TN = (a1, a2, watch, min) => ({ ask: [a1, a2], watch, min });
