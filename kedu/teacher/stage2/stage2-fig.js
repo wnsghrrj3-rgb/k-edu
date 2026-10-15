@@ -2020,13 +2020,13 @@
       if (i < n - 1) s += txt(x + u + aw / 2, y0 + u / 2 + 8, '›', 30, '#9AA6B4', 900); });
     return svgWrap(s, 'fig-seq1', '0 0 ' + Wd + ' ' + (y0 + u + 12)).replace('<svg ', '<svg data-seq="' + esc(vs.join(',')) + '" ');
   }
-  // ntab1: start · nc · rows · cells(보이는 값 · 「?」) · cls(c1 파랑 · c2 분홍 · hole) · data-start/nc/rows · data-cells
+  // ntab1: start · nc · rows · cells(보이는 값 · 「?」) · cls(c1 파랑 · c2 분홍 · c3 초록 · c4 노랑 · hole) · data-start/nc/rows · data-cells
   function ntab1(o) {
     const cs = (o.cells || []).map(String); if (!cs.length) return '';
     const nc = +o.nc || 10, nr = Math.ceil(cs.length / nc), u = nc > 7 ? 60 : 76, gp = 5, gw = nc * (u + gp) - gp, Wd = Math.max(460, gw + 28), x0 = (Wd - gw) / 2, y0 = 12; let s = '';
     s += box8(x0 - 10, y0 - 8, gw + 20, nr * (u + gp) - gp + 16, '#F6F8FB', '#DCE3EC', 3, false, 16);
-    cs.forEach((v, i) => { const x = x0 + (i % nc) * (u + gp), y = y0 + Math.floor(i / nc) * (u + gp), c = (o.cls || [])[i] || '', hole = /hole/.test(c), c1 = /c1/.test(c), c2 = /c2/.test(c);
-      s += box8(x, y, u, u, hole ? '#fff' : c1 ? '#DCE9FF' : c2 ? '#FFE0EE' : '#fff', hole ? OR8[1] : c1 ? BLUE2 : c2 ? '#E0559A' : GY8, hole || c1 || c2 ? 3.5 : 2, hole, 10) + txt(x + u / 2, y + u / 2 + (u > 70 ? 12 : 10), hole ? '?' : v, u > 70 ? 34 : v.length > 2 ? 24 : 28, hole ? OR8[2] : INK, 900); });
+    cs.forEach((v, i) => { const x = x0 + (i % nc) * (u + gp), y = y0 + Math.floor(i / nc) * (u + gp), c = (o.cls || [])[i] || '', hole = /hole/.test(c), c1 = /c1/.test(c), c2 = /c2/.test(c), c3 = /c3/.test(c), c4 = /c4/.test(c); // 128차: c3 초록 · c4 노랑(비스듬한 줄)
+      s += box8(x, y, u, u, hole ? '#fff' : c1 ? '#DCE9FF' : c2 ? '#FFE0EE' : c3 ? '#DDF5E5' : c4 ? '#FFF3C4' : '#fff', hole ? OR8[1] : c1 ? BLUE2 : c2 ? '#E0559A' : c3 ? '#2E9E5B' : c4 ? '#D9A400' : GY8, hole || c1 || c2 || c3 || c4 ? 3.5 : 2, hole, 10) + txt(x + u / 2, y + u / 2 + (u > 70 ? 12 : 10), hole ? '?' : v, u > 70 ? 34 : v.length > 2 ? 24 : 28, hole ? OR8[2] : INK, 900); });
     return svgWrap(s, 'fig-ntab1', '0 0 ' + Wd + ' ' + (y0 + nr * (u + gp) + 8)).replace('<svg ', '<svg data-start="' + o.start + '" data-nc="' + nc + '" data-rows="' + nr + '" data-cells="' + esc(cs.join(',')) + '" ');
   }
   // pgrid1: nc · toks(줄 차례) · sm · data-nc · data-toks
@@ -2060,7 +2060,7 @@
   function render(f) {
     if (!f || typeof f !== 'object') return '';
     let body = '';
-    if (f.k === 'panels') { const ps = (f.items || []).map(panel).filter(Boolean); if (!ps.length) return ''; body = '<div class="fig-panels n' + ps.length + (f.vs ? ' vs' : '') + '">' + ps.join(f.vs ? '<div class="fig-vs">' + esc(f.vs) + '</div>' : '') + '</div>'; }
+    if (f.k === 'panels') { const ps = (f.items || []).map(panel).filter(Boolean); if (!ps.length) return ''; body = '<div class="fig-panels n' + ps.length + (f.vs ? ' vs' : '') + (f.col ? ' col' : '') + '">' + ps.join(f.vs ? '<div class="fig-vs">' + esc(f.vs) + '</div>' : '') + '</div>'; }
     else if (f.k === 'tools') body = tools(f);
     else if (f.k === 'chain') body = tools(f, '<div class="fig-chain-ar">→</div>').replace('fig-cards', 'fig-cards chain');
     else if (f.k === 'places') body = '<div class="fig-cards places">' + (f.items || []).map(card).join('') + '</div>';
