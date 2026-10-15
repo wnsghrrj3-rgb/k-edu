@@ -1,7 +1,7 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-14 · 과목 19 · 차시 879 · 슬라이드 15314 */
+   생성: 2026-10-15 · 과목 19 · 차시 879 · 슬라이드 15314 */
 window.KT2_MANIFEST = {
- "built": "2026-10-14",
+ "built": "2026-10-15",
  "lessons": 879,
  "slides": 15314,
  "subjects": [
