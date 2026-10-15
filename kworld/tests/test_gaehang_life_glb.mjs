@@ -1,4 +1,4 @@
-// 개항~일제 인생 층 구조 검증 — 새 터 gaehang.glb(bpy gaehang_land.py): ix 22 + NPC 18 · 구역 20 · 미션 8 · 숨김 재질(일장기 sunred, 1910 토지 조사 때 보임) · done 깃발 전수 · 직업 카드 14(천장: 협력 6 / 쫓기는 몸 0 / 나머지 4) · 끝 갈림 45 · 조선 후기에서 넘겨받음 · 문 → 대한민국(준비 중)
+// 개항~일제 인생 층 구조 검증 — 새 터 gaehang.glb(bpy gaehang_land.py): ix 31 + NPC 21 · 구역 23(10-15 넓히기 2: 야학·공장 기숙사·토막 마을) · 미션 8 · 숨김 재질(일장기 sunred, 1910 토지 조사 때 보임 + chalk_hangul·strike_cloth·tomak_new) · done 깃발 전수 · 직업 카드 14(천장: 협력 6 / 쫓기는 몸 0 / 나머지 4) · 끝 갈림 45 · 조선 후기에서 넘겨받음 · 문 → 대한민국(준비 중)
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const base = new URL('../eras/gaehang-life/', import.meta.url);
@@ -15,15 +15,18 @@ for (const t of types) assert.ok(items.targets[t], `대상 ${t} 가 items.json �
 for (const t of Object.keys(items.targets)) assert.ok(types.has(t), `items.json 대상 ${t} 가 GLB 에 없음`);
 const areas = names.filter((n) => n.startsWith('area_')).map((n) => n.slice(5));
 for (const a of Object.keys(world.areas)) assert.ok(areas.includes(a), `구역 ${a} 없음`);
-assert.equal(Object.keys(world.areas).length, 20, '구역 20'); assert.ok(areas.includes(world.face) && names.includes('spawn'), `시작 시선 구역 ${world.face} + spawn`);
+assert.equal(Object.keys(world.areas).length, 23, '구역 23'); assert.ok(areas.includes(world.face) && names.includes('spawn'), `시작 시선 구역 ${world.face} + spawn`);
 const npcs = ix.filter((n) => n.startsWith('ix_npc_')).map((n) => n.slice(7));
 for (const id of Object.keys(npcDefs)) assert.ok(npcs.includes(id), `NPC ${id} 가 GLB 에 없음`);
 for (const id of npcs) assert.ok(npcDefs[id], `GLB NPC ${id} 가 npcs.json 에 없음`);
-assert.equal(npcs.length, 18, 'NPC 18'); assert.equal(ix.length - npcs.length, 22, '상호작용 자리 22');
+assert.equal(npcs.length, 21, 'NPC 21'); assert.equal(ix.length - npcs.length, 31, '상호작용 자리 31');
 for (const k of ['jeonbongjun', 'parkseongchun', 'ahnjunggeun', 'yugwansun', 'jusigyeong', 'kimgu', 'yundongju']) assert.ok(npcDefs[k], `인물 카드 ${k}`);
 const mats = new Set((data.materials || []).map((m) => m.name));
 for (const [t, h] of Object.entries(items.targets)) for (const m of h.hidden || []) assert.ok(mats.has(m), `숨김 재질 ${m}(${t}) 가 GLB 에 없음`);
 assert.deepEqual(items.targets.jusaeso.hidden, ['sunred'], '일장기 숨김');
+for (const [t, m] of [['blackboard', 'chalk_hangul'], ['strike', 'strike_cloth'], ['torn', 'tomak_new']]) { assert.deepEqual(items.targets[t].hidden, [m], `넓히기 2 숨김 ${t}`); const node = data.nodes.find((n) => n.name === 'ix_' + t + '_1'); const meshMats = (ids) => ids.flatMap((i) => (data.meshes[data.nodes[i].mesh]?.primitives || []).map((pr) => data.materials[pr.material]?.name)); const kids = node.mesh !== undefined ? [data.nodes.indexOf(node)] : (node.children || []); assert.ok(meshMats(kids).includes(m), `숨김 재질 ${m} 가 ix_${t}_1 메시에 실제로 있음`); }
+for (const a of ['yahak', 'dorm', 'tomak']) assert.ok(world.areas[a] && world.journal[a]?.note && life.situations.some((x) => x.id === a && x.place === a), `넓히기 2 구역·기록·상황 ${a}`);
+assert.ok(world.danger.safe.length === 9 && world.scenery.grass.avoid.some(([x, z]) => x === 59 && z === 29), '기숙사 밤 안전 + 풀 피하기');
 const list = missions.missions; assert.equal(list.length, 8, '미션 8');
 const must = life.situations.filter((x) => x.must); assert.equal(must.length, 8, '꼭 나오는 상황 8(3·1 은 밤·아침 둘)'); assert.ok(life.situations.length - must.length >= life.mixedCount && life.situations.length >= 20, '섞여 8 ≥ mixedCount 4');
 for (const m of list) assert.ok(must.some((x) => 'sit:' + x.id + ':done' === m.done), `미션 ${m.id} 가 상황과 안 맞음`);
@@ -42,7 +45,7 @@ const st = life.status.rules; const cap = (id) => st.find((r) => r.id === id).ca
 assert.ok(ids.size === 14 && cap('chinil') === 6 && cap('dongnip') === 0 && ['jiju', 'sangin', 'gisulja', 'nongmin', 'sojak', 'nodongja', 'yetnobi', 'yetbaekjeong', 'hwajeon', 'haksaeng', 'gyosa', 'ijumin'].every((k) => cap(k) === 4), '직업 카드 14 — 천장은 누구나 4, 협력 6, 쫓기는 몸 0');
 assert.ok(st.findIndex((r) => r.id === 'chinil') < st.findIndex((r) => r.id === 'jiju') && st.at(-1).id === 'nongmin', '삶 중간 카드가 앞, 자작농이 기본');
 assert.ok(st.some((r) => r.id === 'yetbaekjeong' && r.if === 'fromstatus:baekjeong') && st.some((r) => r.id === 'yetnobi' && r.if === 'fromstatus:solgeo') && st.some((r) => r.id === 'jiju' && r.if === 'fromstatus:sinyang'), '백정→옛 백정 / 솔거→옛 노비 / 공명첩 집→지주');
-assert.ok(life.hurts?.wound && life.hurts?.leg && life.hurts?.jail && world.danger?.safe?.length === 8, '흔적 셋 + 밤 안전 자리 8');
+assert.ok(life.hurts?.wound && life.hurts?.leg && life.hurts?.jail && world.danger?.safe?.length === 9, '흔적 셋 + 밤 안전 자리 9');
 assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');
 assert.ok(world.gate?.next === 'daehan-life' && world.gate.ready, '문 → 대한민국(열림)');
 const prev = JSON.parse(fs.readFileSync(new URL('../eras/joseon-late-life/world.json', import.meta.url))); assert.ok(prev.gate?.next === 'gaehang-life' && prev.gate.ready, '조선 후기 끝 카드 → 개항 문(열림)');
