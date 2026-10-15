@@ -1821,6 +1821,84 @@
   }
   Object.assign(PARTS, { cstack, lcube, tf2 }); Object.assign(HTML_PARTS, { eqt });
   }
+  { // 125차 1학년 2학기 「모양과 시각」 부품 — 이름이 겹치지 않게 블록 안에 둔다
+  // ══ clk1(1학년 시계 — 짧은바늘·긴바늘만) · tcard(시각 카드 쓰기·읽기) · shp1(네모·세모·동그라미 줄) · mosaic1(모양 꾸미기 판) · objs1(물건 카드) ══
+  // 그림 문법(자기주도 원문과 같음): 네모 = 연두 · 세모 = 보라 · 동그라미 = 주황 · 짧은바늘 = 굵고 검은 「시」 · 긴바늘 = 가늘고 파란 「분」 · 주황 띠 = 지금 볼 곳.
+  const SH = { q: ['#8BD17C', '#4E9A3E', '네모'], t: ['#C9A3EC', '#8A5CB8', '세모'], o: ['#FFB066', '#E07A1F', '동그라미'] };
+  const T1 = (x, y, t, sz, col, wt, anc) => '<text x="' + x + '" y="' + y + '" font-size="' + sz + '" font-weight="' + (wt || 800) + '" fill="' + (col || INK) + '" text-anchor="' + (anc || 'middle') + '" font-family="Pretendard Variable, Pretendard, sans-serif">' + esc(t) + '</text>';
+  // 한 모양(가운데 cx·cy · 크기 d) — dim 은 흐리게(속 무늬), corners 는 뾰족한 곳 주황 점
+  function oneShape(k, cx, cy, d, o) {
+    const c = SH[k]; if (!c) return ''; const op = o && o.dim ? ' opacity=".42"' : '', r = d / 2; let g = '';
+    if (k === 'q') g = '<rect class="o-shp q" x="' + (cx - r) + '" y="' + (cy - r) + '" width="' + d + '" height="' + d + '" rx="' + (d * 0.06).toFixed(1) + '" fill="' + c[0] + '" stroke="' + c[1] + '" stroke-width="5"' + op + '/>';
+    if (k === 't') g = '<path class="o-shp t" d="M' + cx + ' ' + (cy - r) + 'L' + (cx + r * 1.08).toFixed(1) + ' ' + (cy + r * 0.86).toFixed(1) + 'H' + (cx - r * 1.08).toFixed(1) + 'Z" fill="' + c[0] + '" stroke="' + c[1] + '" stroke-width="5" stroke-linejoin="round"' + op + '/>';
+    if (k === 'o') g = '<circle class="o-shp o" cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + c[0] + '" stroke="' + c[1] + '" stroke-width="5"' + op + '/>';
+    if (o && o.dim && k === 'q') g += '<path d="M' + cx + ' ' + (cy - r + 6) + 'V' + (cy + r - 6) + 'M' + (cx - r + 6) + ' ' + cy + 'H' + (cx + r - 6) + '" stroke="' + c[1] + '" stroke-width="4" stroke-dasharray="8 6" opacity=".7"/>';
+    if (o && o.corners) { const pts = k === 'q' ? [[cx - r, cy - r], [cx + r, cy - r], [cx + r, cy + r], [cx - r, cy + r]] : k === 't' ? [[cx, cy - r], [cx + r * 1.08, cy + r * 0.86], [cx - r * 1.08, cy + r * 0.86]] : [];
+      pts.forEach(pt => { g += '<circle class="o-corner" cx="' + pt[0].toFixed(1) + '" cy="' + pt[1].toFixed(1) + '" r="11" fill="' + ORANGE + '" stroke="#fff" stroke-width="3"/>'; }); }
+    return g;
+  }
+  // shp1: items [{s:'q'|'t'|'o', tag, dim} | {sym:'→'} | {emo:'📦'}] · corners(뾰족한 곳 점) · data-s(모양 차례)
+  function shp1(o) {
+    const its = (o.items || []).filter(i => i && (SH[i.s] || i.sym || i.emo)); if (!its.length) return '';
+    const big = its.length <= 2 ? 150 : its.length <= 3 ? 124 : its.length <= 4 ? 104 : 84, hasTag = its.some(i => i.tag), cw = (i) => (i.sym ? 70 : big + 34);
+    const tot = its.reduce((a, i) => a + cw(i), 0), Wd = Math.max(460, tot + 20); let x = (Wd - tot) / 2, s = ''; const cy = 18 + big / 2;
+    its.forEach(i => { const w = cw(i), cx = x + w / 2;
+      if (i.s) s += oneShape(i.s, cx, cy, big, { dim: i.dim, corners: o.corners });
+      else if (i.sym) s += T1(cx, cy + 18, i.sym, 52, '#8A97A8', 900);
+      else s += T1(cx, cy + big * 0.3, i.emo, Math.round(big * 0.86), INK, 400);
+      if (i.tag) s += T1(cx, cy + big / 2 + 44, i.tag, i.tag.length > 6 ? 22 : 26, '#3E4A5C', 900);
+      x += w; });
+    return svgWrap(s, 'fig-shp1', '0 0 ' + Wd + ' ' + Math.ceil(36 + big + (hasTag ? 46 : 0))).replace('<svg ', '<svg data-s="' + its.map(i => i.s || (i.sym ? '>' : '*')).join('') + '" ');
+  }
+  // mosaic1: cols · cells('.'=빈칸 · q/t/o) · tag(아래 이름) · cnt(true 면 모양마다 센 수 — 개념 장만) · data-q/t/o(칸에서 셈)
+  function mosaic1(o) {
+    const cells = String(o.cells || ''), cols = Math.max(1, o.cols | 0 || 5), rows = Math.ceil(cells.length / cols); if (!cells.replace(/\./g, '')) return '';
+    const u = rows > 4 ? 58 : 66, gp = 6, gw = cols * (u + gp) - gp, Wd = Math.max(460, gw + 40), x0 = (Wd - gw) / 2, y0 = 14; let s = '';
+    s += '<rect x="' + (x0 - 12) + '" y="' + (y0 - 10) + '" width="' + (gw + 24) + '" height="' + (rows * (u + gp) - gp + 20) + '" rx="16" fill="#F6F8FB" stroke="#DCE3EC" stroke-width="3"/>';
+    const n = { q: 0, t: 0, o: 0 };
+    for (let i = 0; i < cells.length; i++) { const k = cells[i]; if (!SH[k]) continue; n[k]++; const cx = x0 + (i % cols) * (u + gp) + u / 2, cy = y0 + Math.floor(i / cols) * (u + gp) + u / 2; s += oneShape(k, cx, cy, u * 0.8); }
+    let yb = y0 + rows * (u + gp) + 8;
+    if (o.tag) { s += T1(Wd / 2, yb + 30, o.tag, 26, '#3E4A5C', 900); yb += 42; }
+    if (o.cnt) { const ks = ['q', 't', 'o'].filter(k => n[k]), cw2 = 150, tx = Wd / 2 - ks.length * cw2 / 2; ks.forEach((k, j) => { const cx = tx + j * cw2 + 32; s += oneShape(k, cx, yb + 28, 34) + T1(cx + 30, yb + 39, n[k] + '개', 30, SH[k][1], 900, 'start'); }); yb += 58; }
+    return svgWrap(s, 'fig-mosaic1', '0 0 ' + Wd + ' ' + Math.ceil(yb + 6)).replace('<svg ', '<svg data-q="' + n.q + '" data-t="' + n.t + '" data-o="' + n.o + '" ');
+  }
+  // clk1: h·m · hands('hm' 기본 · 'h' · 'm' · '' 바늘 없음) · hl('h' 짧은바늘 · 'm' 긴바늘 주황 띠) · deg{h,m}(잘못 놓은 시계 — 각도 그대로) · tag(아래 이름) · data-h/m/hd/md/hands
+  function clk1(o) {
+    const cx = 150, cy = 150, R = 128, h = +o.h || 0, m = +o.m || 0, hands = o.hands == null ? 'hm' : String(o.hands);
+    const hd = o.deg && o.deg.h != null ? +o.deg.h : (h % 12) * 30 + m * 0.5, md = o.deg && o.deg.m != null ? +o.deg.m : m * 6;
+    const P = (deg, rr) => [cx + rr * Math.sin(deg * Math.PI / 180), cy - rr * Math.cos(deg * Math.PI / 180)];
+    let s = '<circle cx="' + cx + '" cy="' + cy + '" r="' + (R + 8) + '" fill="#fff" stroke="' + INK + '" stroke-width="7"/>';
+    for (let i = 0; i < 60; i++) { const big = i % 5 === 0, a = P(i * 6, R - 2), b = P(i * 6, R - (big ? 16 : 8)); s += '<line x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) + '" stroke="' + (big ? INK : '#9AA6B4') + '" stroke-width="' + (big ? 4 : 2) + '"/>'; }
+    for (let i = 1; i <= 12; i++) { const p = P(i * 30, R - 38); s += T1(p[0].toFixed(1), (+p[1] + 11).toFixed(1), String(i), 32, INK, 900); }
+    const line = (deg, len, wd, col, cls) => { const p = P(deg, len); return '<line class="' + cls + '" x1="' + cx + '" y1="' + cy + '" x2="' + p[0].toFixed(1) + '" y2="' + p[1].toFixed(1) + '" stroke="' + col + '" stroke-width="' + wd + '" stroke-linecap="round"/>'; };
+    if (o.hl === 'h' && hands.indexOf('h') >= 0) s += line(hd, 70, 30, ORANGE, 'o-hl') .replace('/>', ' opacity=".35"/>');
+    if (o.hl === 'm' && hands.indexOf('m') >= 0) s += line(md, 108, 26, ORANGE, 'o-hl').replace('/>', ' opacity=".35"/>');
+    if (hands.indexOf('h') >= 0) s += line(hd, 66, 13, INK, 'o-hand h');
+    if (hands.indexOf('m') >= 0) s += line(md, 104, 7, BLUE2, 'o-hand m');
+    s += '<circle cx="' + cx + '" cy="' + cy + '" r="9" fill="' + INK + '"/>';
+    let Hh = 300; if (o.tag) { s += T1(cx, 334, o.tag, o.tag.length > 7 ? 24 : 28, '#3E4A5C', 900); Hh = 348; }
+    return svgWrap(s, 'fig-clk1', '0 0 300 ' + Hh).replace('<svg ', '<svg data-h="' + h + '" data-m="' + m + '" data-hd="' + hd.toFixed(1) + '" data-md="' + md.toFixed(1) + '" data-hands="' + esc(hands) + '"' + (o.deg ? ' data-bad="1"' : '') + ' ');
+  }
+  // tcard: h · m(없으면 「몇 시」) · read(읽기 글 — 있으면 「쓰기」「읽기」 두 칸) · amber(나타낼 시각 — 주황 테) · data-t
+  function tcard(o) {
+    const h = +o.h, m = o.m == null ? null : +o.m, amber = !!o.amber;
+    const part = (x, y, n, u) => T1(x, y, String(n), 64, amber ? '#C2551A' : INK, 900, 'end') + T1(x + 6, y, u, 36, '#4E5C70', 900, 'start');
+    const w1 = m == null ? 180 : 330, read = o.read ? String(o.read) : '', w2 = read ? Math.max(170, read.length * 34 + 50) : 0, gap = read ? 30 : 0, Wd = Math.max(300, w1 + w2 + gap + 20), x0 = (Wd - w1 - w2 - gap) / 2; let s = '';
+    s += '<rect x="' + x0 + '" y="10" width="' + w1 + '" height="104" rx="18" fill="' + (amber ? '#FFF6EE' : '#fff') + '" stroke="' + (amber ? ORANGE : '#C9D3E0') + '" stroke-width="4"/>';
+    if (m == null) s += part(x0 + w1 / 2 + 6, 86, h, '시'); else { s += part(x0 + 96, 86, h, '시') + part(x0 + 236, 86, m, '분'); }
+    if (read) { const x2 = x0 + w1 + gap; s += '<rect x="' + x2 + '" y="10" width="' + w2 + '" height="104" rx="18" fill="#F1F4F8"/>' + T1(x2 + w2 / 2, 76, read, 36, INK, 900) + T1(x0 + w1 / 2, 150, '쓰기', 24, '#6B7C93', 800) + T1(x2 + w2 / 2, 150, '읽기', 24, '#6B7C93', 800); }
+    return svgWrap(s, 'fig-tcard', '0 0 ' + Wd + ' ' + (read ? 162 : 124)).replace('<svg ', '<svg data-t="' + h + (m == null ? '' : ':' + m) + '" ');
+  }
+  // objs1: items [{emoji, name, s}] — 물건 카드(이모지 · 이름 · s 있으면 그 물건 윗면 모양을 작게)
+  function objs1(o) {
+    const its = (o.items || []).filter(i => i && i.emoji); if (!its.length) return '';
+    const cw = 150, hasS = its.some(i => i.s), Wd = Math.max(460, its.length * cw + 20), x0 = (Wd - its.length * cw) / 2; let s = '';
+    its.forEach((i, j) => { const cx = x0 + j * cw + cw / 2; s += '<rect x="' + (cx - 66) + '" y="8" width="132" height="' + (hasS ? 206 : 160) + '" rx="18" fill="#fff" stroke="#DCE3EC" stroke-width="3"/>' + T1(cx, 86, i.emoji, 62, INK, 400);
+      if (i.s) s += oneShape(i.s, cx, 136, 40); s += T1(cx, hasS ? 196 : 146, i.name, i.name.length > 5 ? 20 : 24, '#3E4A5C', 900); });
+    return svgWrap(s, 'fig-objs1', '0 0 ' + Wd + ' ' + (hasS ? 222 : 176)).replace('<svg ', '<svg data-n="' + its.length + '" ');
+  }
+  Object.assign(PARTS, { clk1, tcard, shp1, mosaic1, objs1 });
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';

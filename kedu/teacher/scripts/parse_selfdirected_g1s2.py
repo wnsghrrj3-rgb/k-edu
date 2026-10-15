@@ -43,6 +43,7 @@ def figs(p):
     rws = re.findall(r'class="rw-(?:han|kor)">([^<]*)<', p)
     if rws: out.append({'k': 'read', 'items': rws})
     out.extend(figs2(p))
+    out.extend(figs3(p))
     return out
 
 # 123차 — 2단원 「덧셈과 뺄셈(1)」 그림: steps(번호 줄 식) · eqstrip(식 띠: hole=? · res/mark=강조) · chain(색 알 묶음) · cupstack(층 쌓은 컵) · tenframe(십 배열판 a/b 두 색 + tf-lb 꼬리표). 원문 순서대로.
@@ -72,6 +73,62 @@ def figs2(p):
         found.append((m.start(), m.end(), tf))
     return [f for _, _, f in sorted(found, key=lambda x: x[0])]
 
+# 125차 — 3단원 「모양과 시각」 그림: clock(시계 h·m·hands·hl·tag) · tc(시각 카드 h·m) · shp(모양 줄/낱개 q·t·o + 꼬리표 · → · 물건 이모지)
+#          · mosaic(모양 꾸미기 판 cols·cells·센 수 q/t/o) · objs(물건 카드). 원문 순서대로. u1·u2 원문엔 이 꼴이 없어 두 json 은 바이트 같음.
+SHN = {'q': '네모', 't': '세모', 'o': '동그라미'}
+def figs3(p):
+    found = []
+    opts = [(m.start(), m.end()) for m in re.finditer(r'<button class="mcq-opt".*?</button>', p, re.S)]
+    inopt = lambda i: any(a <= i < b for a, b in opts)
+    for m in re.finditer(r'<svg class="clock (\w+)"[^>]*data-h="(\d+)" data-m="(\d+)" data-hands="(\w*)"[^>]*>(.*?)</svg>(?:\s*<span class="cl-tag">(.*?)</span>)?', p, re.S):
+        if inopt(m.start()): continue
+        hl = re.findall(r'class="cl-hl"[^>]*r="(\d+)"', m.group(5))
+        c = {'k': 'clock', 'h': int(m.group(2)), 'm': int(m.group(3)), 'hands': m.group(4), 'size': m.group(1)}
+        if 'data-bad="1"' in m.group(0)[:200]:  # 잘못 놓은 시계 — 바늘 각도를 원문 그대로
+            c['bad'] = True; c['deg'] = {k: float(v) for k, v in re.findall(r'data-hand="(\w)" data-deg="([\d.]+)"', m.group(5))}
+        if hl: c['hl'] = 'h' if int(hl[0]) < 60 else 'm'
+        if m.group(6): c['tag'] = clean(m.group(6))
+        found.append((m.start(), m.end(), c))
+    for m in re.finditer(r'<div class="timecard( amber)?">(.*?)</div>', p, re.S):
+        nums = re.findall(r'<b>(\d+)</b>', m.group(2)); c = {'k': 'tc', 'h': int(nums[0])}
+        if len(nums) > 1: c['m'] = int(nums[1])
+        if m.group(1): c['amber'] = True
+        found.append((m.start(), m.end(), c))
+    mos = []
+    for m in re.finditer(r'<div class="mosaic" data-q="(\d+)" data-t="(\d+)" data-o="(\d+)"[^>]*?(?:repeat\((\d+),auto\))?[^>]*>(.*?)</div>(?:\s*<span class="mo-tag">(.*?)</span>)?', p, re.S):
+        cells = ''.join('.' if ' e' in c else c.split()[0] for c in re.findall(r'<span class="shp ([^"]*)"', m.group(5)))
+        c = {'k': 'mosaic', 'cols': int(m.group(4) or 5), 'cells': cells, 'q': int(m.group(1)), 't': int(m.group(2)), 'o': int(m.group(3))}
+        if m.group(6): c['tag'] = clean(m.group(6))
+        found.append((m.start(), m.end(), c)); mos.append((m.start(), m.end()))
+    for m in re.finditer(r'<div class="shprow( plain)?">(.*?)</div>', p, re.S):
+        its = [{'s': a.split()[0], **({'tag': clean(t)} if t else {})} for a, t in re.findall(r'<span class="shp ([^"]*)"></span>(?:<span class="shp-tag">(.*?)</span>)?', m.group(2))]
+        c = {'k': 'shp', 'items': its}
+        if m.group(1): c['plain'] = True
+        found.append((m.start(), m.end(), c)); mos.append((m.start(), m.end()))
+    for m in re.finditer(r'<div class="objs">((?:<div class="obj">.*?</div>)+)</div>', p, re.S): mos.append((m.start(), m.end()))
+    inside = lambda i: any(a <= i < b for a, b in mos) or inopt(i)
+    loose = []
+    for m in re.finditer(r'<span class="shp ([qto]) (sm|md|lg)( dim)?"></span>(?:</?\w+[^>]*>)*?(?:<span class="shp-tag">(.*?)</span>)?|<span class="tao-eq">(.*?)</span>|<span style="font-size:var\(--em-\w+\)">(.*?)</span>', p, re.S):
+        if inside(m.start()): continue
+        if m.group(1):
+            it = {'s': m.group(1)}
+            if m.group(3): it['dim'] = True
+            if m.group(4): it['tag'] = clean(m.group(4))
+        elif m.group(5) is not None: it = {'sym': html.unescape(m.group(5).strip())}
+        else: it = {'emo': m.group(6).strip()}
+        loose.append((m.start(), m.end(), it))
+    # 이웃한 낱개(사이에 그림·글이 아닌 틀만)는 한 줄로 묶는다
+    grp = []
+    for a, b, it in loose:
+        if grp and not re.search(r'<p |class="(?:q-part|clock|timecard|mosaic|objs|shprow|goal|sum)', p[grp[-1][1]:a]): grp[-1][1] = b; grp[-1][2].append(it)
+        else: grp.append([a, b, [it]])
+    for a, b, its in grp:
+        if any('s' in x for x in its): found.append((a, b, {'k': 'shp', 'items': its, 'loose': True}))
+    for m in re.finditer(r'<div class="objs">((?:<div class="obj">.*?</div>)+)</div>', p, re.S):
+        found.append((m.start(), m.end(), {'k': 'objs', 'items': [dict({'emoji': e.strip(), 'name': clean(n)}, **({'s': sh} if sh else {})) for e, sh, n in re.findall(r'<div class="obj"><em>(.*?)</em>(?:<span class="shp (\w)[^"]*"></span>)?<b>(.*?)</b></div>', m.group(1), re.S)]}))
+        mos.append((m.start(), m.end()))
+    return [f for _, _, f in sorted(found, key=lambda x: x[0])]
+
 def parse(path):
     src = open(path, encoding='utf-8').read()
     parts = re.split(r'(?=<div class="slide(?: active)?" data-stage)', src)[1:]
@@ -91,6 +148,12 @@ def parse(path):
                 if kind == 'mcq':
                     opts = re.findall(r'<button class="mcq-opt" data-ok="(\d)" data-miss="(.*?)">(.*?)</button>', p, re.S)
                     q['opts'] = [clean(t) for _, _, t in opts]; q['ci'] = [c for c, _, _ in opts].index('1'); q['miss'] = [html.unescape(m) for _, m, _ in opts]
+                    if any(not clean(t) for _, _, t in opts):  # 125차 — 그림 보기(모양·시계): 글 대신 그림 값
+                        of = []
+                        for _, _, t in opts:
+                            sh = first(r'<span class="shp (\w)', t, None); ck = re.search(r'data-h="(\d+)" data-m="(\d+)"', t)
+                            of.append({'s': sh} if sh else {'h': int(ck.group(1)), 'm': int(ck.group(2))} if ck else {})
+                        q['optfigs'] = of; q['opts'] = [SHN.get(o.get('s'), '') if 's' in o else '' for o in of]
                 elif kind == 'pad':
                     q['a'] = first(r'data-answer="(.*?)"', attrs); q['unit'] = clean(first(r'class="q-unit">(.*?)</span>', p)); q['miss'] = html.unescape(first(r'data-miss="(.*?)"', attrs))
                 elif kind == 'two':
