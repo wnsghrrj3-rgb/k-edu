@@ -977,8 +977,10 @@ async function renderMine(kind){
   // 종이 문제지 = play.html 의 종이 모드에 원장 세트를 그대로(§3-2). 새 탭 — 인쇄 뒤 돌아올 곳은 이 화면.
   view.querySelectorAll('[data-paper]').forEach(b => b.onclick = () => window.open('play.html?quiz=' + b.dataset.paper + '&mode=paper&preview=1', '_blank'));
   view.querySelectorAll('[data-reveal]').forEach(b => b.onclick = async () => {
-    const { data, error } = await db.rpc('quiz_set_open_result', { p_set_id: b.dataset.reveal });
-    if (error || data === false) return toast('결과를 열지 못했어요. SQL v2 가 적용됐는지 확인해 주세요.');
+    // RPC 가 없거나 막히면 직접 UPDATE(자기 세트는 owner 정책으로 열려 있다)
+    let { data, error } = await db.rpc('quiz_set_open_result', { p_set_id: b.dataset.reveal });
+    if (error || data === false) ({ error } = await db.from('quiz_sets').update({ result_opened_at: new Date().toISOString() }).eq('id', b.dataset.reveal));
+    if (error) return toast('결과를 열지 못했어요: ' + error.message);
     toast('학생 화면에 정답·해설이 열렸어요.'); renderMine(kind);
   });
   // 삭제 = 보관(is_archived) — 학생 기록은 남기고 목록·학생 화면에서만 사라진다. 열린 반이 있으면 먼저 닫는다.
@@ -992,8 +994,9 @@ async function renderMine(kind){
   });
   view.querySelectorAll('[data-close]').forEach(b => b.onclick = async () => {
     const closing = b.dataset.closed !== '1';
-    const { data, error } = await db.rpc('quiz_set_close', { p_set_id: b.dataset.close, p_close: closing });
-    if (error || data === false) return toast('바꾸지 못했어요. SQL v2 가 적용됐는지 확인해 주세요.');
+    let { data, error } = await db.rpc('quiz_set_close', { p_set_id: b.dataset.close, p_close: closing });
+    if (error || data === false) ({ error } = await db.from('quiz_sets').update({ closed_at: closing ? new Date().toISOString() : null }).eq('id', b.dataset.close));
+    if (error) return toast('바꾸지 못했어요: ' + error.message);
     toast(closing ? '응시를 마감했어요. 학생은 더 풀 수 없어요.' : '다시 열었어요.'); renderMine(kind);
   });
 }
