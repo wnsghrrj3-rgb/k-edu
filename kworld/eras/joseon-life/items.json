@@ -1325,6 +1325,432 @@
      "say": "돛 셋. 붉은 깃발. 왜선. 「부산이 하루 만에.」"
     }
    ]
+  },
+  "gyosaengbook": {
+   "name": "교생 명부 — 두루마리",
+   "hidden": [
+    "roll_ink"
+   ],
+   "verb": "살펴보기",
+   "say": "명륜당 앞 돗자리, 서안 위 두루마리. 윗줄은 양반 교생, 아랫줄은 상민·서얼 교생 — 아직 빈 줄이 있다. 교생은 군역이 없다.",
+   "flag": "seen:gyosaengbook",
+   "once": true,
+   "info": "교생 명부 — 액내(양반)·액외(상민·서얼) 교생을 적는다.",
+   "rename": [
+    {
+     "if": "sit:hyanggyo:open && !sit:hyanggyo:done",
+     "name": "교생 명부",
+     "verb": "이름을 올린다",
+     "once": false,
+     "flag": "seen:gyosaengbook2",
+     "choices": [
+      {
+       "label": "교생 명부에 이름을 올린다 — 눈 (양반·몰락 양반 남자)",
+       "if": "(status:yangban || status:mollak) && sex:m",
+       "gray": "액내 교생은 양반집 아들이다 — 명부 윗줄.",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "『소학』 한 쪽을 읽어 보이고 이름을 쓰는 눈.",
+        "fail": "…글자를 더듬었다. 「내년에.」"
+       },
+       "flag": "hg:enroll",
+       "reveal": [
+        "roll_ink"
+       ],
+       "say": "📜 명부 윗줄에 내 이름. 동재."
+      },
+      {
+       "label": "액외 교생으로 든다 — 군역을 피하려 ⚠ — 눈 (상민·장인·중인 남자)",
+       "if": "(status:sangmin || status:jangin || status:jungin) && sex:m",
+       "gray": "군역 때문에 교생이 되려는 건 군역을 지는 집이다 — 양반은 군역이 없고 노비·백정은 명부에 못 오른다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "고강에서 『소학』 한 줄을 읽어 넘기는 눈.",
+        "fail": "…못 읽었다. 「낙강. 군포 두 필.」"
+       },
+       "rollFailFlag": "hg:failed",
+       "flag": "hg:extra",
+       "reveal": [
+        "roll_ink"
+       ],
+       "say": "📜 명부 아랫줄에 내 이름. 서재."
+      },
+      {
+       "label": "서재에 앉는다 — 액외 교생 (서얼 남자)",
+       "if": "status:seoeol && sex:m",
+       "gray": "서재는 서얼과 상민 교생 자리다 — 양반 아들은 동재.",
+       "flag": "hg:west",
+       "say": "🏠 서재. 같은 책, 다른 방."
+      }
+     ]
+    },
+    {
+     "if": "hg:enroll || hg:extra",
+     "name": "교생 명부 — 이름이 올랐다",
+     "verb": "살펴보기",
+     "once": true,
+     "flag": "seen:gyosaengbook3",
+     "say": "먹이 마른 내 이름. 윗줄이든 아랫줄이든 — 군역은 없고 고강은 있다. 떨어지면 군역으로 돌아간다(낙강충군)."
+    }
+   ]
+  },
+  "seokjeon": {
+   "name": "석전제 제상 — 대성전 앞",
+   "verb": "살펴보기",
+   "say": "월대 위 붉은 제상. 놋 제기 다섯, 향로, 촛대 둘. 봄·가을 공자에게 올리는 석전제 — 고을 양반이 줄을 선다. 노비는 뒤에서 제기를 닦는다.",
+   "flag": "seen:seokjeon",
+   "once": true,
+   "info": "석전제 — 향교 대성전에서 공자에게 올리는 제사.",
+   "rename": [
+    {
+     "if": "sit:hyanggyo:open && !sit:hyanggyo:done",
+     "name": "석전제 제상",
+     "verb": "제상 앞에 선다",
+     "once": false,
+     "flag": "seen:seokjeon2",
+     "choices": [
+      {
+       "label": "석전제 제물을 바친다 — 곡식 1 (노비·백정 아님)",
+       "if": "val:grain>=1 && !status:solgeo && !status:oegeo && !status:baekjeong",
+       "gray": "제상에 올릴 곡식이 있어야 하고, 노비·백정은 제상 앞에 못 선다.",
+       "flag": "hg:offer",
+       "say": "🌾 한 단, 제상에. 고을이 기억한다."
+      },
+      {
+       "label": "재지기로 뜰을 쓴다 — 몸 (노비·백정)",
+       "if": "status:solgeo || status:oegeo || status:baekjeong",
+       "gray": "향교 뜰을 쓸고 제사를 거드는 건 향교 노비 몫이다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "석전제 전날 대성전 뜰을 쓸고 제기를 닦는 몸.",
+        "fail": "…제기 하나를 떨어뜨렸다. 「조심.」"
+       },
+       "flag": "hg:sweep",
+       "say": "🧹 뜰을 쓸고 제기를 닦았다."
+      }
+     ]
+    }
+   ]
+  },
+  "hgoutside": {
+   "name": "담 밖 디딤돌",
+   "verb": "살펴보기",
+   "say": "향교 동쪽 담 밖, 디딤돌 하나. 떨어진 책장 두 장. 담 안에서 『소학』 읽는 소리가 넘어온다. 여기 서는 사람은 안에 못 드는 사람이다.",
+   "flag": "seen:hgoutside",
+   "once": true,
+   "info": "담 밖 — 향교에 못 드는 여자·노비가 글 소리를 듣던 자리.",
+   "rename": [
+    {
+     "if": "sit:hyanggyo:open && !sit:hyanggyo:done",
+     "name": "담 밖 디딤돌",
+     "verb": "올라선다",
+     "once": false,
+     "flag": "seen:hgoutside2",
+     "choices": [
+      {
+       "label": "담 밖에서 듣는다 (여자)",
+       "if": "sex:f",
+       "gray": "담 밖에서 듣는 건 안에 못 드는 사람이다 — 여자.",
+       "flag": "hg:outside",
+       "say": "👂 글은 담을 넘는데 나는 못 넘는다."
+      }
+     ]
+    }
+   ]
+  },
+  "wheel": {
+   "name": "물레 — 사기장의 자리",
+   "hidden": [
+    "buncheong",
+    "slip_white"
+   ],
+   "verb": "살펴보기",
+   "say": "돌판 둘을 축으로 꿴 물레. 위에 빚다 만 그릇, 곁에 말리는 그릇 셋. 흰 흙 그릇, 긁개. 구운 분청 그릇은 아직 없다.",
+   "flag": "seen:wheel",
+   "once": true,
+   "info": "물레 — 분청사기를 빚는 자리. 공장안에 오른 사기장이 돌린다.",
+   "rename": [
+    {
+     "if": "sit:sagiso:open && !sit:sagiso:done",
+     "name": "물레",
+     "verb": "흙을 올린다",
+     "once": false,
+     "flag": "seen:wheel2",
+     "choices": [
+      {
+       "label": "물레를 돌려 그릇을 빚는다 — 손 (장인·기술 신분, 또는 솜씨 셋)",
+       "if": "status:jangin || status:gisul || val:craft>=3",
+       "gray": "물레를 돌려 그릇을 세우는 손은 장인이거나 솜씨 셋이 있어야 한다.",
+       "roll": {
+        "ab": "손",
+        "hard": 2,
+        "why": "물레 위 흙을 한 번에 세우고 흰 흙을 바르는 손.",
+        "fail": "…그릇이 주저앉았다. 흙을 다시 뭉쳤다."
+       },
+       "flag": "sg:throw",
+       "reveal": [
+        "buncheong",
+        "slip_white"
+       ],
+       "say": "🏺 그릇 스무 개. 바닥에 「장흥고」 — 내 것이 아니다."
+      },
+      {
+       "label": "제기를 시킨다 — 곡식 2 (양반·몰락·서얼)",
+       "if": "(status:yangban || status:mollak || status:seoeol) && val:grain>=2",
+       "gray": "사당 제기를 따로 시키는 건 곡식 둘 있는 양반 쪽 집이다.",
+       "flag": "sg:order",
+       "reveal": [
+        "buncheong",
+        "slip_white"
+       ],
+       "say": "🏺 곡식 두 단. 제기 한 벌, 가을까지."
+      }
+     ]
+    },
+    {
+     "if": "sg:throw || sg:order",
+     "name": "분청 그릇 더미",
+     "verb": "살펴보기",
+     "once": true,
+     "flag": "seen:wheel3",
+     "say": "구워 낸 분청 그릇 다섯. 회청색 몸에 흰 흙, 긁은 물고기 무늬. 바닥마다 「장흥고」. 짚에 싸이면 한양으로 간다 — 빚은 손은 남는다."
+    }
+   ]
+  },
+  "tributecrate": {
+   "name": "공납 자리 — 짚 묶음·장부",
+   "verb": "살펴보기",
+   "say": "짚에 싼 그릇 묶음 넷, 나무 상자, 돗자리 위 공납 장부. 「사기소 ○○, 서른.」 바치는 수는 장부가 정하고, 못 채우면 방납꾼이 온다.",
+   "flag": "seen:tributecrate",
+   "once": true,
+   "info": "공납 — 고을이 나라에 바치는 물건. 장부를 쥔 아전, 대신 바치는 방납꾼.",
+   "rename": [
+    {
+     "if": "sit:sagiso:open && !sit:sagiso:done",
+     "name": "공납 자리",
+     "verb": "장부를 편다",
+     "once": false,
+     "flag": "seen:tributecrate2",
+     "choices": [
+      {
+       "label": "공납 장부를 적는다 — 눈 (중인)",
+       "if": "status:jungin",
+       "gray": "공납 장부를 쥔 건 아전이다 — 중인 집.",
+       "roll": {
+        "ab": "눈",
+        "hard": 1,
+        "why": "바칠 그릇 수를 공장안에 맞춰 틀리지 않게 적는 눈.",
+        "fail": "…한 짐이 빠졌다. 다시 셌다."
+       },
+       "flag": "sg:book",
+       "say": "📜 그릇 서른, 장흥고."
+      },
+      {
+       "label": "장부에 더 적는다 ⚠ — 눈 (중인)",
+       "if": "status:jungin",
+       "gray": "장부를 늘려 적을 수 있는 건 장부를 쥔 아전뿐이다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "서른을 마흔으로 적고 열 개를 장터에 넘기는 눈.",
+        "fail": "…사기장이 수를 세어 봤다. 「마흔이라니.」"
+       },
+       "rollFailFlag": "sg:exposed",
+       "flag": "sg:pad",
+       "say": "📜 「마흔.」 열 개가 장터로."
+      },
+      {
+       "label": "방납꾼에게 베로 대신 낸다 ⚠ (상민·장인)",
+       "if": "status:sangmin || status:jangin",
+       "gray": "방납꾼에게 베를 주고 공납을 떠넘기는 건 바칠 물건을 못 구하는 작은 집이다.",
+       "flag": "sg:bangnap",
+       "say": "🧵 베 두 필. 그릇 값 두 배."
+      }
+     ]
+    }
+   ]
+  },
+  "claypit": {
+   "name": "흙 구덩이 — 백토·점토",
+   "verb": "살펴보기",
+   "say": "파낸 구덩이, 붉은 점토 더미와 흰 흙 더미, 삽. 그릇 한 짐에 흙 열 짐. 지는 사람은 따로 있다.",
+   "flag": "seen:claypit",
+   "once": true,
+   "info": "백토 — 분청 그릇에 바르는 흰 흙.",
+   "rename": [
+    {
+     "if": "sit:sagiso:open && !sit:sagiso:done",
+     "name": "흙 구덩이",
+     "verb": "흙을 판다",
+     "once": false,
+     "flag": "seen:claypit2",
+     "choices": [
+      {
+       "label": "흙을 파고 장작을 댄다 — 몸 (상민·노비·백정)",
+       "if": "status:sangmin || status:solgeo || status:oegeo || status:baekjeong",
+       "gray": "흙을 지고 장작을 대는 건 사기소에 딸린 집이다 — 양반·중인은 시킨다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "백토 열 짐을 지고 가마에 불을 넣는 몸.",
+        "fail": "…불이 죽었다. 한 칸이 설익었다."
+       },
+       "flag": "sg:dig",
+       "say": "🪵 흙 열 짐, 장작 한 가리."
+      }
+     ]
+    }
+   ]
+  },
+  "beacon": {
+   "name": "연대 다섯 — 봉수대",
+   "hidden": [
+    "beacon_fire",
+    "beacon_fire2"
+   ],
+   "verb": "살펴보기",
+   "say": "돌로 쌓은 연대 다섯, 위에 불 그릇. 지금은 다 꺼졌다 — 해 질 녘에 하나를 올린다. 하나는 「아무 일 없음」, 둘이면 적.",
+   "flag": "seen:beacon",
+   "once": true,
+   "info": "연대 — 봉수 불을 올리는 돌 굴뚝. 세종 5거제.",
+   "rename": [
+    {
+     "if": "sit:bongsu:open && !sit:bongsu:done",
+     "name": "연대",
+     "verb": "불을 올린다",
+     "once": false,
+     "flag": "seen:beacon2",
+     "choices": [
+      {
+       "label": "봉수군으로 올라간다 — 몸 (상민·장인 남자)",
+       "if": "(status:sangmin || status:jangin) && sex:m",
+       "gray": "봉수군은 상민 남자가 지는 역이다 — 양반은 안 지고, 노비는 주인 대신 나무만 진다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 2,
+        "why": "찬 바람 속에 밤새 눈을 뜨고 불을 지키는 몸.",
+        "fail": "…깜빡 졸았다. 불이 꺼졌다. 「곤장 서른.」"
+       },
+       "rollFailFlag": "bs:asleep",
+       "flag": "bs:duty",
+       "reveal": [
+        "beacon_fire"
+       ],
+       "say": "🔥 평소 하나. 밤새 올렸다."
+      },
+      {
+       "label": "불을 둘 올린다 — 바다에 배가 보였다 — 눈 (상민·장인 남자)",
+       "if": "(status:sangmin || status:jangin) && sex:m",
+       "gray": "불을 올리는 건 번 서는 봉수군이다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "안개 속 배가 고기잡이배인지 왜선인지 가리는 눈.",
+        "fail": "…고기잡이배였다. 「거짓 불. 곤장.」"
+       },
+       "rollFailFlag": "bs:false",
+       "flag": "bs:two",
+       "reveal": [
+        "beacon_fire",
+        "beacon_fire2"
+       ],
+       "say": "🔥🔥 둘. 하루 만에 한양까지."
+      },
+      {
+       "label": "주인 대신 땔나무를 진다 — 몸 (노비)",
+       "if": "status:solgeo || status:oegeo",
+       "gray": "주인 집 몫 연료를 지고 오르는 건 노비다.",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "싸리 한 짐을 지고 산등성이를 오르는 몸.",
+        "fail": "…짐이 쏟아졌다. 반 짐."
+       },
+       "flag": "bs:fuel",
+       "reveal": [
+        "beacon_fire"
+       ],
+       "say": "🪵 싸리 한 짐. 불은 올랐다 — 내 몫은 없다."
+      }
+     ]
+    },
+    {
+     "if": "bs:duty || bs:fuel || bs:two",
+     "name": "연대 — 불이 올랐다",
+     "verb": "살펴보기",
+     "once": true,
+     "flag": "seen:beacon3",
+     "say": "연대 위 불. 멀리 다음 산등성이에도 같은 수의 불. 밤새 산과 산이 같은 말을 한다 — 그 말을 지키는 건 번 서는 사람이다."
+    }
+   ]
+  },
+  "fuelpile": {
+   "name": "연료 더미 — 말똥·쑥·싸리",
+   "verb": "살펴보기",
+   "say": "말똥 더미, 쑥 다발, 싸리 장작, 횃불 하나. 말똥은 연기가 곧게 올라 낮 봉수에 쓴다. 이 더미를 채우는 집이 따로 있다.",
+   "flag": "seen:fuelpile",
+   "once": true,
+   "info": "봉수 연료 — 말똥·소똥·쑥·싸리.",
+   "rename": [
+    {
+     "if": "sit:bongsu:open && !sit:bongsu:done",
+     "name": "연료 더미",
+     "verb": "더미를 쌓는다",
+     "once": false,
+     "flag": "seen:fuelpile2",
+     "choices": [
+      {
+       "label": "말똥을 모아 판다 (백정)",
+       "if": "status:baekjeong",
+       "gray": "말똥·소똥을 거두어 봉수대에 대는 건 짐승 곁에 사는 집이었다.",
+       "flag": "bs:dung",
+       "say": "💩 말똥 한 섬. 곡식 한 단."
+      },
+      {
+       "label": "봉수군 밥을 나른다 — 손 (여자)",
+       "if": "sex:f",
+       "gray": "산꼭대기 번 서는 사람 밥을 나르는 건 그 집 여자였다.",
+       "roll": {
+        "ab": "손",
+        "hard": 1,
+        "why": "주먹밥 다섯을 싸서 산등성이를 오르는 손.",
+        "fail": "…보자기가 풀렸다. 셋만 남았다."
+       },
+       "flag": "bs:meal",
+       "say": "🍙 주먹밥 다섯."
+      }
+     ]
+    }
+   ]
+  },
+  "lookout": {
+   "name": "망보는 바위",
+   "verb": "살펴보기",
+   "say": "남쪽 벼랑 끝 평평한 바위, 창 하나 꽂혔다. 여기 서면 강과 바다 쪽 하늘이 보인다. 배 한 척이 고기잡이인지 아닌지는 눈이 정한다.",
+   "flag": "seen:lookout",
+   "once": true,
+   "info": "망보는 자리 — 봉수군이 낮에 먼 데를 살핀다.",
+   "rename": [
+    {
+     "if": "sit:bongsu:open && !sit:bongsu:done",
+     "name": "망보는 바위",
+     "verb": "올라선다",
+     "once": false,
+     "flag": "seen:lookout2",
+     "choices": [
+      {
+       "label": "봉수군이 졸았다 — 관아에 알린다 (양반·몰락·중인·서얼)",
+       "if": "status:yangban || status:mollak || status:jungin || status:seoeol",
+       "gray": "관아에 글을 넣어 봉수군을 다스리게 하는 건 글 쓰는 집이다.",
+       "flag": "bs:report",
+       "say": "📜 「○○ 봉수군이 밤에 졸았다.」 곤장."
+      }
+     ]
+    }
+   ]
   }
  }
 }
