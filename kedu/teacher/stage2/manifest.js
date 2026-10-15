@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-15 · 과목 19 · 차시 896 · 슬라이드 15637 */
+   생성: 2026-10-15 · 과목 19 · 차시 907 · 슬라이드 15846 */
 window.KT2_MANIFEST = {
  "built": "2026-10-15",
- "lessons": 896,
- "slides": 15637,
+ "lessons": 907,
+ "slides": 15846,
  "subjects": [
   {
    "slug": "g1_math",
@@ -2046,6 +2046,300 @@ window.KT2_MANIFEST = {
       {
        "key": "u3_l09",
        "no": "9",
+       "title": "수학이랑 만들어요",
+       "meta_title": "수학이랑 만들어요",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    },
+    {
+     "unit": 4,
+     "title": "덧셈과 뺄셈(2)",
+     "file": "data/g1s2_math_u4.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u4_l01",
+       "no": "1",
+       "title": "단원 도입",
+       "meta_title": "단원 도입",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u4_l02",
+       "no": "2",
+       "title": "덧셈을 알아볼까요",
+       "meta_title": "덧셈을 알아볼까요",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u4_l03",
+       "no": "3",
+       "title": "덧셈을 해 볼까요 (1)",
+       "meta_title": "덧셈을 해 볼까요 (1)",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u4_l04",
+       "no": "4",
+       "title": "덧셈을 해 볼까요 (2)",
+       "meta_title": "덧셈을 해 볼까요 (2)",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u4_l05",
+       "no": "5",
+       "title": "여러 가지 덧셈을 해 볼까요",
+       "meta_title": "여러 가지 덧셈을 해 볼까요",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u4_l06",
+       "no": "6",
+       "title": "뺄셈을 알아볼까요",
+       "meta_title": "뺄셈을 알아볼까요",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u4_l07",
+       "no": "7",
+       "title": "뺄셈을 해 볼까요 (1)",
+       "meta_title": "뺄셈을 해 볼까요 (1)",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u4_l08",
+       "no": "8",
+       "title": "뺄셈을 해 볼까요 (2)",
+       "meta_title": "뺄셈을 해 볼까요 (2)",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u4_l09",
+       "no": "9",
+       "title": "여러 가지 뺄셈을 해 볼까요",
+       "meta_title": "여러 가지 뺄셈을 해 볼까요",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u4_l10",
+       "no": "10",
+       "title": "수학이랑 확인해요 (단원 평가)",
+       "meta_title": "수학이랑 확인해요 (단원 평가)",
+       "std": "",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u4_l11",
+       "no": "11",
        "title": "수학이랑 만들어요",
        "meta_title": "수학이랑 만들어요",
        "std": "",
