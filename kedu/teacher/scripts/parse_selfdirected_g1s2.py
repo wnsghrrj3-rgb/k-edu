@@ -46,6 +46,7 @@ def figs(p):
     out.extend(figs3(p))
     out.extend(figs4(p))
     out.extend(figs5(p))
+    out.extend(figs6(p))
     return out
 
 # 123차 — 2단원 「덧셈과 뺄셈(1)」 그림: steps(번호 줄 식) · eqstrip(식 띠: hole=? · res/mark=강조) · chain(색 알 묶음) · cupstack(층 쌓은 컵) · tenframe(십 배열판 a/b 두 색 + tf-lb 꼬리표). 원문 순서대로.
@@ -272,6 +273,46 @@ def figs5(p):
         if m.group(4): c['unit'] = m.group(4)
         if m.group(1): c['sm'] = True
         found.append((m.start(), m.end(), c))
+    return [f for _, _, f in sorted(found, key=lambda x: x[0])]
+
+# 130차 — 6단원 「덧셈과 뺄셈(3)」 그림: nbrow(10개씩 묶음·낱개 블록 식 줄) · vcalc(세로셈 — 칸 글자는 원문 그대로, 일부러 틀린 자리 맞춤(bad) 보존) · pairup(위아래 짝짓기 뺄셈) · board(놀이판 칸) · tops(팽이 식 카드, paint=바른 계산) · cmds(명령어 차례 — hole=지워진 칸). 원문 순서대로.
+def figs6(p):
+    found = []
+    for m in re.finditer(r'<div class="nbrow" data-nbrow="([^"]*)">(.*?)(?=<p class|<div class="q-part|<div class="nbrow|</div>\s*</div>\s*<div class="slide|$)', p, re.S):
+        body = m.group(2); items = []
+        for c in re.finditer(r'<div class="numblock[^"]*" data-nb="(\d+)\|(\d+)\|[^"]*">.*?<div class="nb-ones">.*?</div></div></div>(?:<span class="nb-lb">(.*?)</span>)?', body, re.S):
+            it = {'t': int(c.group(1)), 'o': int(c.group(2))}
+            if c.group(3): it['label'] = clean(c.group(3))
+            items.append(it)
+        ops = re.findall(r'<span class="nb-op">([^<]*)</span>', body)
+        found.append((m.start(), m.end(), {'k': 'nbrow', 'nb': m.group(1).split('|'), 'items': items, 'ops': [html.unescape(o) for o in ops]}))
+    for m in re.finditer(r'<div class="vcalc( [a-z]+)?" data-vc="([^"]*)">(.*?)<span class="vc-line"></span><span class="vc-res">(.*?)</span></div>(?:<span class="vc-tag">(.*?)</span>)?', p, re.S):
+        top = re.findall(r'<span class="vc-c ([to])( hole)? *" data-col="[to]">([^<]*)</span>', m.group(3))
+        res = re.findall(r'<span class="vc-c ([to])( hole)? *" data-col="[to]">([^<]*)</span>', m.group(4))
+        op = [o for o in re.findall(r'<span class="vc-op">([^<]*)</span>', m.group(3)) if o.strip()]
+        rows = [top[i:i + 2] for i in range(0, len(top), 2)] + [res]
+        c = {'k': 'vcalc', 'vc': m.group(2).split('|'), 'op': html.unescape(op[0]) if op else '', 'rows': [[x[2] for x in r] for r in rows],
+             'hole': [[bool(x[1]) for x in r] for r in rows]}
+        if m.group(1): c['mode'] = m.group(1).strip()
+        if m.group(5): c['tag'] = clean(m.group(5))
+        found.append((m.start(), m.end(), c))
+    for m in re.finditer(r'<div class="pairup" data-pair="(\d+)\|(\d+)">(?:<span class="pu-lb">(.*?)</span>)?(.*?)(?=<p class|<div class="q-part|</div>\s*</div>\s*<div class="slide)', p, re.S):
+        cols = re.findall(r'<div class="pu-col( solo)?">(.*?)</div>', m.group(4), re.S)
+        c = {'k': 'pairup', 'a': int(m.group(1)), 'b': int(m.group(2)), 'cols': len(cols), 'solo': sum(1 for x in cols if x[0])}
+        em = re.findall(r'<i(?: class="blank")?>([^<]*)</i>', cols[0][1]) if cols else []
+        if len(em) == 2: c['em'] = em
+        if m.group(3): c['label'] = clean(m.group(3))
+        found.append((m.start(), m.end(), c))
+    for m in re.finditer(r'<div class="board" data-board="([^"]*)">(.*?)</div></div>(?=<p|</div>)', p, re.S):
+        cells = re.findall(r'<span class="bd-c( [a-z]+)?">([^<]*)</span>', m.group(2))
+        rows = [r.split(',') for r in m.group(1).split(';')]
+        found.append((m.start(), m.end(), {'k': 'board', 'rows': rows, 'on': [i for i, x in enumerate(cells) if x[0].strip() == 'on'], 'word': [i for i, x in enumerate(cells) if x[0].strip() == 'word']}))
+    for m in re.finditer(r'<div class="tops">(.*?)</div>(?=<p|</div>)', p, re.S):
+        cs = re.findall(r'<div class="topcard( paint)?" data-top="([^"]*)"><em>([^<]*)</em>', m.group(1))
+        found.append((m.start(), m.end(), {'k': 'tops', 'em': cs[0][2] if cs else '', 'cards': [x[1].split('|') for x in cs], 'paint': [i for i, x in enumerate(cs) if x[0]]}))
+    for m in re.finditer(r'<div class="cmds" data-cmd="([^"]*)">(.*?)</div>', p, re.S):
+        sp = re.findall(r'<span class="cmd( hole)?"><u>\d+</u>([^<]*)</span>', m.group(2))
+        found.append((m.start(), m.end(), {'k': 'cmds', 'cmd': m.group(1).split('|'), 'shown': [clean(x[1]) for x in sp], 'hole': [i for i, x in enumerate(sp) if x[0]]}))
     return [f for _, _, f in sorted(found, key=lambda x: x[0])]
 
 if __name__ == '__main__':
