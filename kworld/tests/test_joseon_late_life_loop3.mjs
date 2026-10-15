@@ -63,7 +63,7 @@ const carry = (key) => JSON.parse(store['kworld_carry:joseon-late-life'] || '{}'
   const blob = JSON.stringify(items) + JSON.stringify(npcs);
   for (const id of MIX) { const s = life.situations.find((x) => x.id === id); ok(!!s && s.q.a.length === 3 && s.q.revisit && world.journal[id]?.note && s.choices.every((c) => c.fact === world.journal[id].note && c.journal === id), `상황 ${id} q·사실·기록`); for (const c of s.choices) ok(blob.includes(`"${c.done}"`), `${id}.${c.id} done 세우는 곳`); }
   const gray = (id) => npcs[id].lines[0].choices.filter((c) => c.if).length; ok(gray('yusaeng') === 8 && gray('yugijang') === 6 && gray('changri') === 8, '회색 조건 8·6·8');
-  ok(['seowon', 'yugi', 'jochang'].every((a) => world.areas[a]) && world.danger.safe.some(([x, z]) => x === -42 && z === 48) && world.scenery.grass.avoid.some(([x, z]) => x === 42 && z === 90), '구역·밤 안전·풀 피하기');
+  ok(['seowon', 'yugi', 'jochang'].every((a) => world.areas[a]) && world.danger.safe.some(([x, z]) => x === -42 && z === 48) && world.scenery.grass.avoid.some(([x, z]) => x === 28 && z === 90), '구역·밤 안전·풀 피하기');
 }
 // ===== 판 1: 양반 남자(눈 밝은, 곡식 6) — 실학 전엔 서원 안 열림 → 사액 글 ⚠ → 현판·금 글씨 보임 🎖+1 🤝+1 · 제기 시키기 → 놋그릇 보임 🌾-2 · 「면세」 ⚠ 🌾+1 🤝-2 — 묵패·품삯·쌀 지기 회색
 {
