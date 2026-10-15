@@ -698,7 +698,9 @@ async function openPerf(taskId, tasks){
   const t = tasks.find(x => x.id === taskId);
   const { data: run, error } = await db.from('performance_runs').insert({ task_id: taskId, class_code_id: classId, teacher_id: ME.id }).select('id').single();
   if (error) return toast('열지 못했어요 — SQL v4 적용 여부를 확인해 주세요.');
-  const { error: e2 } = await db.rpc('open_for_class', { p_class_code_id: classId, p_content_key: 'perf:' + run.id, p_title: t.student_label, p_kind: 'perf', p_url: '/kedu/worksheet/perf.html?run=' + run.id });
+  const purl = '/kedu/worksheet/perf.html?run=' + run.id;
+  const pbid = await boxCard(classId, { kind: 'perf', title: t.student_label, url: purl });
+  const { error: e2 } = await db.rpc('open_for_class', { p_class_code_id: classId, p_content_key: 'perf:' + run.id, p_title: t.student_label, p_kind: 'perf', p_url: purl, p_bundle_id: pbid });
   if (e2) return toast('케이박스 카드를 만들지 못했어요.');
   toast(`「${t.student_label}」을 우리 반에 열었어요.`);
   TAB = 'mine'; document.querySelectorAll('#subTabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === 'mine')); render();
@@ -1006,20 +1008,39 @@ function revealText(s){
   return s.show_result === 'manual' ? '결과 아직 닫힘(내가 열 때)' : '결과 아직 닫힘(마감 후)';
 }
 
+
+/* 케이박스 카드 한 장(sent 박스 + 항목 + 발송) — /kedu_boxbar.js createCard 와 같은 파이프.
+   학생 입구(받은 박스)는 cw_bundles 만 읽으므로, 열기는 늘 원장 한 줄 + 카드 한 장이어야 한다(2026-10-16).
+   실패해도 열기는 진행(bundle 없이). */
+async function boxCard(classId, item){
+  try {
+    const { data: ins, error: e1 } = await db.from('cw_bundles').insert({ teacher_id: ME.id, title: item.title, description: '', status: 'sent', sent_at: new Date().toISOString() }).select('id').single();
+    if (e1 || !ins) return null;
+    const { error: e2 } = await db.from('cw_items').insert({ bundle_id: ins.id, kind: item.kind, title: item.title, url: item.url, config: {}, sort_order: 0 });
+    if (e2) return null;
+    const { error: e3 } = await db.from('cw_sends').upsert({ bundle_id: ins.id, class_code_id: classId }, { onConflict: 'bundle_id,class_code_id' });
+    if (e3) return null;
+    return ins.id;
+  } catch(e){ return null; }
+}
 async function openForClass(setId, sets){
   const sel = view.querySelector(`[data-cls="${setId}"]`);
   const classId = sel && sel.value;
   if (!classId) return toast('학급코드를 먼저 만들어 주세요.');
   const s = sets.find(x => x.id === setId);
+  const title = (CARD_LABEL[s.kind] || CARD_LABEL.quiz) + ' · ' + s.title;
+  const url = '/kedu/worksheet/play.html?quiz=' + setId;
+  const bid = await boxCard(classId, { kind: 'quiz', title, url });
   const { error } = await db.rpc('open_for_class', {
     p_class_code_id: classId,
     p_content_key: 'quiz:' + setId,
-    p_title: (CARD_LABEL[s.kind] || CARD_LABEL.quiz) + ' · ' + s.title,
+    p_title: title,
     p_kind: 'quiz',
-    p_url: '/kedu/worksheet/play.html?quiz=' + setId
+    p_url: url,
+    p_bundle_id: bid
   });
   if (error) return toast('열지 못했어요. 승인된 선생님 계정인지 확인해 주세요.');
-  toast('우리 반에 열었어요.');
+  toast(bid ? '우리 반에 열었어요 — 받은 박스에도 카드가 떴어요.' : '우리 반에 열었어요.');
   renderMine();
 }
 
@@ -1115,7 +1136,9 @@ async function showUnitResult(setId, box, set){
     if (error) return toast('보완 쪽지를 만들지 못했어요(SQL v2 적용 여부 확인).');
     await db.from('quiz_set_items').insert(pool.map((q, i) => ({ set_id: ns.id, ord: i + 1, question_id: q.id, points: 1 })));
     for (const cid of classIds){
-      await db.rpc('open_for_class', { p_class_code_id: cid, p_content_key: 'quiz:' + ns.id, p_title: CARD_LABEL.quiz + ' · 한 번 더 · ' + cname(c), p_kind: 'quiz', p_url: '/kedu/worksheet/play.html?quiz=' + ns.id });
+      const rt = CARD_LABEL.quiz + ' · 한 번 더 · ' + cname(c), ru = '/kedu/worksheet/play.html?quiz=' + ns.id;
+      const rbid = await boxCard(cid, { kind: 'quiz', title: rt, url: ru });
+      await db.rpc('open_for_class', { p_class_code_id: cid, p_content_key: 'quiz:' + ns.id, p_title: rt, p_kind: 'quiz', p_url: ru, p_bundle_id: rbid });
     }
     toast(`「한 번 더 · ${cname(c)}」 쪽지를 ${w.miss.length}명에게만 열었어요.`);
     b.disabled = true;
