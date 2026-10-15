@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -135,128 +134,54 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 
 <script>
 const LESSON_ID='g1_2_kor_u2_l13_v1';
-const LESSON_MAX=70;
+const LESSON_MAX=60;
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 13차시(실천 — 주변에서 겹받침 낱말 찾아보기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
-   학습 목표: 배운 내용을 실천할 수 있다. (겹받침 낱말 카드 만들기)
-   ★ 정답 로깅 7슬. 카드 만들기 무대·마무리 = 로깅 X·완주 ✓.
-   ★ 이 단원 유일한 1차시 단독 묶음이다(15차시 8묶음). 6-1 2단원의 4차시 단독 묶음과 같은 꼴.
-   ★ 지도서 123쪽이 「그림 그리는 데 치중하지 않도록 한다」고 못 박는다.
-      실천 차시는 활동이 목적을 덮기 쉬워서, ③ 마지막 문항을 그 경계로 세웠다.
-   ★ 지도서 122·124쪽 놀이는 둘 다 짝·모둠 활동이라 자기주도에 그대로 못 온다.
-      찾기는 혼자 하는 collect로, 함께 소리 내어 읽는 부분은 ④ 무대로 옮겼다.
-   ★ 저작권: 교과서 74~75쪽 실천 지면·붙임 카드, 지도서 124~125쪽 놀이 두 가지,
-      128쪽 보정 학습 낱말 목록 배열 전부 미차용. 낱말 묶음·문장은 자체 구성. */
+/* ===== 13차시(실천 — 주변에서 겹받침 낱말 찾아보기) 『국어』 74~75쪽 13슬 — v2 교과서 기준 재구성 (2026-10-15)
+   ★ 정답 로깅 6슬(LESSON_MAX 60). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      작가 작품(「대단한 참외씨」·「다니엘의 멋진 날」)은 본문 통째 대신 간추림·몇 줄 인용. */
 const slides=[
-  {tag:'① 차시 만나기', t:'배운 것을 생활에서 써 봐요',
-   html:`<div class="scene"><div class="scene-pic">🃏📚</div></div>
-    <div class="ka-bub">겹받침은 교과서에만 있는 것이 아니에요.<br>책에도, 알림판에도, 우리가 쓰는 말에도 <b class="emph">가득</b> 있어요. 🔍</div>`},
+  {tag:'① 실천 학습 주제', t:'주변에서 겹받침 낱말을 찾아봐요',
+   html:`<div class="scene"><div class="scene-pic">📚🔎</div></div><div class="ka-bub">책이나 교실 둘레에도 겹받침이 있는 낱말이 많아요.<br>오늘은 찾은 낱말로 <b class="emph">겹받침 낱말 카드</b>를 만들어 봐요. 🃏</div>`},
 
-  {tag:'① 학습 문제', t:'오늘은 이것을 해요',
-   html:`<div class="sentence">겹받침이 있는 낱말 카드를 만들어 봐요.</div>
-    <div class="ka-bub">둘레에서 겹받침 낱말을 찾고,<br>카드에 <b class="emph">그림과 낱말</b>을 담아 묶음을 만들 거예요. 🃏</div>`},
+  {tag:'① 활동 정하기', t:'우리 반에서 하고 싶은 활동은?',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">🃏</span><span class="pc-name">낱말 카드 만들기</span></div><div class="punct-card"><span class="pc-mark">📕</span><span class="pc-name">겹받침을 찾아라 놀이</span></div><div class="punct-card"><span class="pc-mark">🗒️</span><span class="pc-name">낱말 모음판 만들기</span></div></div><div class="ka-bub">『국어』 74~75쪽의 「이런 활동 어때요」를 함께 살펴보고 우리 반 활동을 정해요.<br>어떤 활동이든 겹받침 낱말을 찾아 <b class="emph">바르게 읽는 것</b>이 중요해요. 🙂</div>`},
 
-  {tag:'② 만드는 차례', t:'이렇게 만들어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">1️⃣</span>책이나 둘레에서 겹받침이 있는 <b>낱말을 찾아요</b>.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">2️⃣</span>카드마다 <b>그림을 그리고 낱말을 써요</b>.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">3️⃣</span>카드를 모아 <b>낱말 카드 묶음</b>을 만들어요.</div>
-    </div>`},
+  {tag:'② 교과서 낱말 찾기 놀이', t:'펼친 쪽에서 겹받침이 있는 글자를 모두 찾아요', log:true, collectMsg:'닭·흙·밟·넓, 겹받침 글자를 모두 찾았어요! 찾은 글자를 큰 소리로 함께 읽어요. 🎉', hint:'힌트: 「갔」의 받침 ㅆ은 같은 자음자가 겹친 쌍받침이에요.',
+   html:`<div class="sentence">닭이 흙을 밟고 넓은 마당을 지나갔어요.</div><div class="collect" id="collect"><div class="chip" data-hit="1">닭</div><div class="chip" data-hit="0">이</div><div class="chip" data-hit="1">흙</div><div class="chip" data-hit="1">밟</div><div class="chip" data-hit="1">넓</div><div class="chip" data-hit="0">마</div><div class="chip" data-hit="0">당</div><div class="chip" data-hit="0">갔</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'② 카드에 담을 것', t:'카드 한 장에는 무엇을 담을까요?',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🐔</span><span class="pc-name">닭</span></div>
-      <div class="punct-card"><span class="pc-mark">🪙</span><span class="pc-name">값</span></div>
-      <div class="punct-card"><span class="pc-mark">📖</span><span class="pc-name">읽다</span></div>
-    </div>
-    <div class="ka-bub">그림 하나와 낱말 하나면 충분해요.<br>가장 중요한 것은 낱말을 <b class="emph">바르게 쓰는 것</b>이에요. ✍️</div>`},
+  {tag:'② 겹받침을 찾아라', t:'겹받침 글자만 모두 찾아요 (쌍받침은 빼요)', log:true, collectMsg:'굵·짧·끓! 서로 다른 자음자 두 개로 된 받침만 골랐어요. 🎉', hint:'힌트: ㄲ·ㅆ처럼 같은 자음자가 겹친 받침은 쌍받침이에요.',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">굵</div><div class="chip" data-hit="0">낚</div><div class="chip" data-hit="1">짧</div><div class="chip" data-hit="0">있</div><div class="chip" data-hit="1">끓</div><div class="chip" data-hit="0">밖</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 겹받침 고르기', t:'겹받침이 있는 낱말을 모두 찾아 색칠해요', log:true,
-   collectMsg:'모두 찾았어요! 카드에 쓸 낱말을 골랐어요. 🎉',
-   hint:'힌트: 받침 자리에 서로 다른 자음자가 두 개 있는 낱말만 눌러요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">흙</div>
-      <div class="chip" data-hit="0">달</div>
-      <div class="chip" data-hit="1">닭</div>
-      <div class="chip" data-hit="0">별</div>
-      <div class="chip" data-hit="1">여덟</div>
-      <div class="chip" data-hit="0">구름</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'② 겹받침을 찾아라 놀이', t:'교과서를 한 번에 펴서 겹받침을 찾아봐요',
+   html:`<div class="stage-box">📕 교과서의 아무 쪽이나 한 번에 펴요. 정해진 시간 동안 겹받침이 들어간 글자에 동그라미를 해요.<br>더 많이 찾은 사람이 이겨요. 찾은 글자는 소리 내어 읽어요.<br><button class="stage-do" id="stageDo" data-fb="많이 찾았어요! 찾은 글자를 바르게 읽어 봐요. 👏">📕 놀이를 해 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 카드 낱말 고르기', t:'카드에 쓸 낱말로 알맞은 것은?', log:true, okMsg:'맞아요! 「값」에는 겹받침 ㅄ이 있어요. 🪙',
-   html:`<div class="ka-bub">이 단원에서 배운 것을 담을 카드예요. 어떤 낱말이 알맞을까요?</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">구름</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">값</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">바다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 낱말 카드 ① 낱말 떠올리기', t:'그림에 어울리는 겹받침 낱말을 이어 봐요', log:true, matchMsg:'닭·흙·여덟·읽다, 카드에 넣을 낱말을 골랐어요! 🃏',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">그림</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🐓</span>꼬꼬댁 우는 동물</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🪴</span>화분 속</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">8️⃣</span>수</div><div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">📖</span>책을</div></div><div class="match-col"><div class="match-col-h">낱말</div><div class="match-card" data-k="B" data-pair="b">흙</div><div class="match-card" data-k="D" data-pair="d">읽다</div><div class="match-card" data-k="A" data-pair="a">닭</div><div class="match-card" data-k="C" data-pair="c">여덟</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 그림과 잇기', t:'낱말과 어울리는 그림을 이어 봐요', log:true,
-   matchMsg:'모두 잘 이었어요! 카드가 만들어졌어요. 🎉',
-   hint:'힌트: 왼쪽 낱말을 누른 뒤, 어울리는 그림을 눌러요.',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">낱말</div>
-        <div class="match-card" data-k="a" data-pair="A">닭</div>
-        <div class="match-card" data-k="b" data-pair="B">읽다</div>
-        <div class="match-card" data-k="c" data-pair="C">끓다</div>
-        <div class="match-card" data-k="d" data-pair="D">흙</div></div>
-      <div class="match-col"><div class="match-col-h">그림</div>
-        <div class="match-card" data-k="C" data-pair="c"><span class="mc-ic">🍲</span></div>
-        <div class="match-card" data-k="A" data-pair="a"><span class="mc-ic">🐔</span></div>
-        <div class="match-card" data-k="D" data-pair="d"><span class="mc-ic">🪴</span></div>
-        <div class="match-card" data-k="B" data-pair="b"><span class="mc-ic">📖</span></div></div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 낱말 카드 ② 낱말 쓰기', t:'카드에 넣을 낱말을 또박또박 써 봐요 (글자를 눌러요)',
+   html:`<div class="trace-wrap"><div class="trace-row"><span class="trace-pic">🐓</span><div class="trace-word"><span class="trace-cell">닭</span></div></div><div class="trace-row"><span class="trace-pic">🪴</span><div class="trace-word"><span class="trace-cell">흙</span></div></div><div class="trace-row"><span class="trace-pic">8️⃣</span><div class="trace-word"><span class="trace-cell">여</span><span class="trace-cell">덟</span></div></div><div class="trace-row"><span class="trace-pic">📖</span><div class="trace-word"><span class="trace-cell">읽</span><span class="trace-cell">다</span></div></div></div><div class="fb" id="traceFb">또박또박 따라 써 봐요.</div>`},
 
-  {tag:'③ 어울리는 그림', t:'「짧다」 카드에 어울리는 그림은?', log:true, okMsg:'맞아요! 길이가 짧은 것을 그리면 좋아요. ✏️',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-pic">🌊</div><div class="wc-word">넓은 바다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-pic">✏️</div><div class="wc-word">몽당연필</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🌙</div><div class="wc-word">밤하늘</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 낱말 카드', t:'낱말 카드에 꼭 들어가야 하는 것은?', log:true, okMsg:'맞아요! 그림 그리기보다 겹받침 낱말을 바르게 쓰는 것이 더 중요해요. ✏️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🃏</div><div class="wc-word">겹받침이 있는 낱말과 그 낱말을 나타내는 그림</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🎨</div><div class="wc-word">여러 가지 색깔 무늬만</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🔢</div><div class="wc-word">숫자만</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 글에서 찾기', t:'이 글에서 겹받침이 있는 낱말을 모두 찾아요', log:true,
-   collectMsg:'모두 찾았어요! 책에서도 이렇게 찾으면 돼요. 🎉',
-   hint:'힌트: 받침에 자음자가 두 개 있는 낱말만 눌러요.',
-   html:`<div class="ka-bub">마당에 <b>흙</b>을 담고 씨앗을 심었어요. 물이 <b>맑아</b> 보였어요. 며칠 뒤 싹이 <b>굵어</b>졌어요.</div>
-    <div class="collect" id="collect">
-      <div class="chip" data-hit="1">흙</div>
-      <div class="chip" data-hit="0">마당</div>
-      <div class="chip" data-hit="1">맑아</div>
-      <div class="chip" data-hit="0">씨앗</div>
-      <div class="chip" data-hit="1">굵어</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 낱말 카드 ③ 묶음 만들기', t:'낱말 카드를 모아 묶음을 만들어요',
+   html:`<div class="stage-box">🗂️ 완성한 낱말 카드를 모아 낱말 카드 묶음을 만들어요. 앞뒤 표지도 꾸며요.<br>학급 게시판에 전시하고 서로의 카드를 칭찬해 봐요.<br><button class="stage-do" id="stageDo" data-fb="멋진 낱말 카드 묶음이에요! 친구의 카드도 소리 내어 읽어 봐요. 👏">🗂️ 묶음을 만들어 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 함께 하면 좋은 일', t:'낱말을 찾은 다음에 함께 하면 좋은 일은?', log:true, okMsg:'맞아요! 찾은 낱말은 소리 내어 읽어야 바르게 읽는 법도 익혀져요. 🗣️',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">🗣️</div><div class="wc-word">찾은 낱말을 소리 내어 읽어요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">📕</div><div class="wc-word">책을 덮고 그냥 넘어가요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 받침의 종류', t:'「값」의 받침은 무엇일까요?', log:true, okMsg:'맞아요! 「값」의 받침 ㅄ은 서로 다른 자음자 두 개로 된 겹받침이에요. 👍',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">ㄱ ㄴ ㄹ …</span><span class="pc-name">홑받침</span></div><div class="punct-card"><span class="pc-mark">ㄲ ㅆ</span><span class="pc-name">쌍받침</span></div><div class="punct-card"><span class="pc-mark">ㄺ ㄼ ㅀ ㅄ …</span><span class="pc-name">겹받침</span></div></div><div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">홑받침</div></div><div class="wcard" data-ok="0"><div class="wc-word">쌍받침</div></div><div class="wcard" data-ok="1"><div class="wc-word">겹받침</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 경계 — 무엇에 마음을 쓸까', t:'카드를 만들 때 가장 마음 쓸 것은?', log:true,
-   okMsg:'맞아요! 그림은 거들 뿐이에요. 낱말을 바르게 쓰는 것이 이 활동의 목적이에요. ✍️',
-   hint:'힌트: 이 활동은 겹받침을 익히려고 하는 것이에요. 무엇이 목적일까요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">낱말을 바르게 쓰기</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">그림을 오래 예쁘게 꾸미기</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 받침의 종류', t:'「밖」의 받침은 무엇일까요?', log:true, okMsg:'맞아요! 같은 자음자가 겹친 ㄲ은 쌍받침이에요. 👍',
+   html:`<div class="sentence">밖 <span class="punct">( ㄲ )</span></div><div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">겹받침</div></div><div class="wcard" data-ok="1"><div class="wc-word">쌍받침</div></div><div class="wcard" data-ok="0"><div class="wc-word">홑받침</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 카드 만들기', t:'내 낱말 카드를 만들어 봐요',
-   html:`<div class="stage-box">
-      🃏 겹받침이 있는 낱말을 하나 골라 카드를 만들어 봐요.<br>
-      <small>(그림을 그리고 낱말을 쓴 뒤, 소리 내어 한 번 읽어요)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="바르게 쓰고 소리 내어 읽었어요! 👏">🃏 카드를 만들어 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'④ 정리', t:'오늘 한 활동을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🔎</span>책과 교실 둘레에서 <b>겹받침 낱말</b>을 찾았어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🃏</span>낱말과 그림을 넣어 <b>낱말 카드</b>를 만들었어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🗂️</span>카드를 모아 <b>묶음</b>을 만들고 서로 칭찬했어요.</div></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 실천했어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🔍</span>둘레에서 <b>겹받침 낱말</b>을 찾았어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🃏</span>그림과 낱말을 담아 <b>카드</b>를 만들었어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">➡️</span>다음 시간에는 단원을 <b>마무리</b>할 거예요.</div>
-    </div>`},
+  {tag:'④ 마무리', t:'잘했어요! 이만큼 해냈어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>배운 내용을 생활 속에서 실천해 보았어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🔤</span>겹받침과 쌍받침을 구별해 보았어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🗣️</span>찾은 낱말을 바르게 소리 내어 읽었어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -425,6 +350,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

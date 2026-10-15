@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,104 +139,49 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 1~2차시(준비 — 배울 내용 살펴보기) 13슬:
-   ① 만나기 2 → ② 따라가기 3 → ③ 활동·심장 5 → ④ 표현·정리 3 =====
-   학습 목표: 배울 내용을 살펴볼 수 있다.
-   ★ 정답 로깅 5슬(50점). 준비 차시는 1단원과 같이 5슬로 낮춘다.
-   ★ 지도서 96쪽은 이 차시에 두 소단원을 한 화면에서 미리 보게 한다 —
-      겹받침 읽기(소단원 1)와 글쓴이가 하고 싶은 말 찾기(소단원 2)를 한 자료에서 함께 다룬다.
-      그래서 자체 알림판 글 하나로 두 물음을 모두 걸었다.
-   ★ 저작권: 교과서 생각 열기(박물관 게시판)·「해와 달이 된 오누이」 문장·글자판 배열 전부 미차용.
-      알림판 글·낱말 배열은 자체 구성. */
+/* ===== 1~2차시(준비 — 배울 내용 살펴보기) 『국어』 34~37쪽 13슬 — v2 교과서 기준 재구성 (2026-10-15)
+   ★ 정답 로깅 5슬(LESSON_MAX 50). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      작가 작품(「대단한 참외씨」·「다니엘의 멋진 날」)은 본문 통째 대신 간추림·몇 줄 인용. */
 const slides=[
-  {tag:'① 차시 만나기', t:'우리 둘레의 글에는 이런 글자가 있어요',
-   html:`<div class="scene"><div class="scene-pic">📋🏫</div></div>
-    <div class="ka-bub">교실 알림판, 책, 안내문…<br>그 안에는 받침에 <b class="emph">자음자가 두 개</b> 있는 글자가 숨어 있어요. 어떻게 읽을까요? 🤔</div>`},
+  {tag:'① 34쪽 단원 열기', t:'2단원 「낱말을 정확하게 읽어요」',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">🔤</span><span class="pc-name">받침이 있는 낱말</span></div><div class="punct-card"><span class="pc-mark">✉️</span><span class="pc-name">글쓴이가 하고 싶은 말</span></div></div><div class="ka-bub">이 단원에서는 <b class="emph">받침이 있는 낱말을 바르게 읽고 써요</b>.<br>그리고 글을 읽고 <b class="emph">글쓴이가 하고 싶은 말</b>을 찾아봐요. 🙂</div>`},
 
-  {tag:'① 학습 문제', t:'오늘은 이것을 살펴봐요',
-   html:`<div class="sentence">배울 내용을 살펴봐요.</div>
-    <div class="ka-bub">받침이 있는 낱말을 바르게 읽고 쓰는 법,<br>그리고 글쓴이가 <b class="emph">하고 싶은 말</b>을 찾는 법을 배울 거예요. 🔍</div>`},
+  {tag:'① 35쪽 생각 열기', t:'박물관 게시판의 글을 읽어 봐요',
+   html:`<div class="scene"><div class="scene-pic">🏛️📋</div></div><div class="read-lines"><div class="read-line"><span class="rl-num">1</span>사진을 찍지 않습니다.</div><div class="read-line"><span class="rl-num">2</span>뛰어다니거나 큰 소리로 떠들지 않습니다.</div><div class="read-line"><span class="rl-num">3</span>전시된 물건을 만지지 않습니다.</div></div><div class="fb" id="readFb">🔊 한 줄씩 또박또박 따라 읽어 봐요.</div>`},
 
-  {tag:'② 받침 살펴보기', t:'받침이 하나인 글자와 두 개인 글자',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">산</span><span class="pc-name">받침 하나</span></div>
-      <div class="punct-card"><span class="pc-mark">문</span><span class="pc-name">받침 하나</span></div>
-      <div class="punct-card"><span class="pc-mark">값</span><span class="pc-name">받침 두 개</span></div>
-      <div class="punct-card"><span class="pc-mark">읽</span><span class="pc-name">받침 두 개</span></div>
-    </div>
-    <div class="ka-bub">받침 자리에 자음자가 <b class="emph">두 개</b> 들어간 글자가 있어요.<br>이런 글자는 읽는 방법을 따로 알아야 해요. 👀</div>`},
+  {tag:'① 35쪽 생각 열기', t:'그림 속 장소는 어디인가요?', log:true, okMsg:'맞아요! 박물관이에요. 게시판에는 관람할 때 주의할 점이 쓰여 있어요. 🏛️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🏛️</div><div class="wc-word">박물관</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🏊</div><div class="wc-word">수영장</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🛝</div><div class="wc-word">놀이터</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 알림판 글 읽기', t:'도서관 알림판을 함께 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>읽은 책은 제자리에 꽂아 주세요.</div>
-      <div class="read-line"><span class="rl-num">2</span>책상 위에 물건을 두지 않습니다.</div>
-      <div class="read-line"><span class="rl-num">3</span>목소리는 작게, 걸음은 천천히.</div>
-    </div><div class="fb" id="readFb">🔊 한 줄씩 또박또박 따라 읽어 봐요.</div>`},
+  {tag:'① 35쪽 생각 열기', t:'게시판의 글을 쓴 사람이 읽는 사람에게 하고 싶은 말은?', log:true, okMsg:'맞아요! 사진을 찍지 않고, 떠들지 않고, 물건을 만지지 않기를 바라요. 👍', hint:'힌트: 게시판의 세 문장이 모두 「~하지 않습니다」예요. 무엇을 지켜 달라는 걸까요?',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">박물관을 관람할 때 지킬 일을 알려 주고 싶어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">박물관에 사진을 많이 찍으러 오라고 해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">전시된 물건을 사 가라고 해요</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 물음 세우기', t:'두 가지가 궁금해요',
-   html:`<div class="ka-bub">첫째, <b class="emph">「읽은」</b>은 어떻게 읽어야 할까요?<br>
-      둘째, 이 글을 쓴 사람은 우리에게 <b class="emph">무슨 말</b>을 하고 싶었을까요?<br>
-      이 두 가지를 이번 단원에서 알아볼 거예요. 🙋</div>`},
+  {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>배울 내용을 살펴봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">📖</span>이야기를 읽으며 <b>받침이 있는 글자</b>를 살펴봐요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🤔</span>받침에 주의하며 읽어야 하는 <b>까닭</b>을 생각해요.</div></div>`},
 
-  {tag:'③ 두 개인 받침 찾기', t:'받침에 자음자가 두 개인 글자는 어느 것일까요?', log:true, okMsg:'맞아요! ㅂ과 ㅅ, 자음자가 두 개예요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">산</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">값</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">문</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 36쪽 1번', t:'「해와 달이 된 오누이」 이야기를 떠올려 봐요',
+   html:`<div class="scene"><div class="scene-pic">🐯🌞🌙</div></div><div class="ka-bub">오누이는 하늘에서 내려온 동아줄을 타고 올라가 해와 달이 되었어요.<br>호랑이도 동아줄을 잡았는데…… 어떻게 되었을까요? 🤔</div>`},
 
-  {tag:'③ 글에서 찾기', t:'알림판 글에서 받침이 두 개인 글자를 모두 찾아 색칠해요', log:true,
-   collectMsg:'모두 찾았어요! 받침 자리를 잘 봤어요. 🎉',
-   hint:'힌트: 받침 자리에 자음자가 두 개 겹쳐 있는 글자만 눌러요.',
-   html:`<div class="ka-bub"><b>읽</b>은 책은 제자리에 <b>꽂</b>아 주세요. 책상 위에 물건을 두지 <b>않</b>습니다.</div>
-    <div class="collect" id="collect">
-      <div class="chip" data-hit="1">읽</div>
-      <div class="chip" data-hit="0">책</div>
-      <div class="chip" data-hit="1">않</div>
-      <div class="chip" data-hit="0">물</div>
-      <div class="chip" data-hit="0">상</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'② 36쪽 1번', t:'글자의 받침을 살펴보며 글을 읽어 봐요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>호랑이가 잡은 동아줄은 썩은 동아줄이었어요.</div><div class="read-line"><span class="rl-num">2</span>“어흥! 어흥!”</div><div class="read-line"><span class="rl-num">3</span>호랑이는 수수밭으로 뚝 떨어졌어요.</div><div class="read-line"><span class="rl-num">4</span>호랑이가 흘린 피 때문에 수수가 붉게 물들었어요.</div></div><div class="fb" id="readFb">🔊 한 줄씩 또박또박 따라 읽어 봐요.</div>`},
 
-  {tag:'③ 소리 짐작하기', t:'「읽다」는 어떻게 소리 날까요?', log:true, okMsg:'맞아요! 받침이 두 개여도 소리는 하나만 나요. [익따]',
-   html:`<div class="sentence">읽다</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">[익따]</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">[일그다]</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">[읽다]</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 36쪽 1번', t:'글에서 받침에 서로 다른 자음자 두 개가 있는 글자는?', log:true, okMsg:'맞아요! 「붉」의 받침에는 ㄹ과 ㄱ, 서로 다른 자음자 두 개가 있어요. 🔍', hint:'힌트: 받침 자리를 잘 봐요. 자음자가 두 개 나란히 있는 글자를 찾아요.',
+   html:`<div class="sentence">수수가 <b>붉</b>게 물들었어요.</div><div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">붉</div></div><div class="wcard" data-ok="0"><div class="wc-word">썩</div></div><div class="wcard" data-ok="0"><div class="wc-word">밭</div></div><div class="wcard" data-ok="0"><div class="wc-word">흘</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 까닭 생각하기', t:'받침에 주의하며 읽어야 하는 까닭은?', log:true, okMsg:'맞아요! 바르게 읽어야 듣는 사람이 알아들을 수 있어요. 👂',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">👂</div><div class="wc-word">듣는 사람이 정확하게 알아들어요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">⏱️</div><div class="wc-word">글을 더 빨리 읽을 수 있어요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🔢</div><div class="wc-word">글자 수를 셀 수 있어요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 37쪽 2번', t:'두 친구가 궁금해하는 것은 무엇일까요?', log:true, okMsg:'맞아요! 받침에 자음자가 두 개 있는 글자를 어떻게 읽는지 궁금해해요. 이 단원에서 알아봐요. 📖',
+   html:`<div class="ka-bub">🧒 「‘붉게’를 어떻게 읽지?」<br>👧 「서로 다른 두 개의 자음자로 이루어진 받침은 어떻게 읽어야 할까?」</div><div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">받침이 두 개인 글자를 읽는 방법</div></div><div class="wcard" data-ok="0"><div class="wc-word">호랑이가 어디로 떨어졌는지</div></div><div class="wcard" data-ok="0"><div class="wc-word">수수가 무슨 색인지</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 하고 싶은 말', t:'알림판 글을 쓴 사람이 하고 싶은 말은?', log:true, okMsg:'맞아요! 도서관을 조용히 함께 쓰자는 말이에요. 📚',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">도서관을 함께 조용히 쓰자</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">책을 많이 사자</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 37쪽 3번', t:'글을 읽을 때 받침에 주의하며 읽어야 하는 까닭은?', log:true, okMsg:'맞아요! 받침을 바르게 읽어야 내가 하고 싶은 말을 정확하고 분명하게 전할 수 있어요. 👏',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🗣️</div><div class="wc-word">바르게 읽어야 듣는 사람이 낱말을 정확하게 알 수 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">⏩</div><div class="wc-word">빨리 읽을 수 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">✏️</div><div class="wc-word">글씨가 예뻐져요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 배울 내용 보기', t:'이 단원에서는 두 가지를 배워요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🔡</span>받침이 있는 낱말을 <b>바르게 읽고 쓰기</b></div>
-      <div class="recap-item" style="animation-delay:.25s"><span class="recap-ic">💬</span>글을 읽고 <b>글쓴이가 하고 싶은 말 찾기</b></div>
-    </div>`},
+  {tag:'② 주변에서 찾기', t:'둘레에서 받침이 두 개인 글자를 찾아봐요',
+   html:`<div class="stage-box">🔎 교과서나 교실 게시판에서 받침에 자음자가 두 개 있는 글자를 찾아봐요.<br><small>(예: 읽기 · 붉게 · 흙)</small><br><button class="stage-do" id="stageDo" data-fb="잘 찾았어요! 찾은 글자를 친구와 함께 소리 내어 읽어 봐요. 👏">🔎 찾아서 읽어 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 둘레에서 찾기', t:'우리 둘레에서 찾아 말해 봐요',
-   html:`<div class="stage-box">
-      🙋 교실이나 책에서 받침이 두 개인 글자를 하나 찾아 소리 내어 읽어 봐요.<br>
-      <small>(값 · 읽 · 않 · 흙 같은 글자를 찾아보세요)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="둘레의 글에서 잘 찾았어요! 👏">🙋 찾아서 읽어 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'② 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🏛️</span>글을 쓴 사람은 읽는 사람에게 <b>하고 싶은 말</b>이 있어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🔤</span>받침에 <b>서로 다른 자음자 두 개</b>가 있는 글자도 있어요(붉).</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🗣️</span>받침을 바르게 읽어야 듣는 사람이 <b>정확하게</b> 알아들어요.</div></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 살펴봤어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">👀</span>받침에 자음자가 <b>두 개</b>인 글자를 찾아보았어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">👂</span>바르게 읽어야 하는 <b>까닭</b>을 알았어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">➡️</span>다음 시간에는 <b>글자의 짜임</b>을 알아볼 거예요.</div>
-    </div>`},
+  {tag:'② 마무리', t:'잘했어요! 이만큼 배웠어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>이 단원에서 배울 내용을 살펴보았어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">📖</span>받침을 살펴보며 이야기를 읽어 보았어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🤔</span>받침에 주의하며 읽어야 하는 까닭을 생각해 보았어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -406,6 +350,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

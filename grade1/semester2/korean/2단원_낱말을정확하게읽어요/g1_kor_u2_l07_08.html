@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,121 +139,49 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 7~8차시(소단원 1 통합 — 받침이 있는 낱말에 주의하며 글 읽기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
-   학습 목표: 받침이 있는 낱말에 주의하며 글을 읽을 수 있다.
-   ★ 정답 로깅 7슬. 따라 읽기·자신과 관련짓기 무대 = 로깅 X·완주 ✓.
-   ★ 지도서 109쪽이 겹받침 발음을 두 갈래로만 잡아 준다(교과서 61쪽 흙이[흘기] / 흙 속에[흑쏘게]).
-      1학년에게 규칙 열한 개를 다 줄 수 없으므로 이 차시도 두 갈래만 세웠다 —
-      ⑴ 겹받침 뒤에 모음이 오면 두 자음이 다 소리 난다, ⑵ 뒤에 자음이 오거나 낱말이 끝나면 하나만 난다.
-      ㄺ이 ㄱ 앞에서 [ㄹ]이 되는 예외(맑게·굵게)는 이 차시 제재·문항에서 모두 뺐다.
-   ★ 자체 제재 「낡은 우산」 — 교과서 제재 「대단한 참외씨」와 인물·사건·되풀이 형식 전부 무관.
-      회피: 참외씨·먼지 할아버지·철이·팔꿈치·탈출·흙 속·달고 맛있는 참외,
-      낱말 알기 세 낱말(간신히·하마터면·무시무시하다)과 그 예문. */
+/* ===== 7~8차시(소단원 1 통합 — 받침이 있는 낱말에 주의하며 글 읽기) 『국어』 50~61쪽 13슬 — v2 교과서 기준 재구성 (2026-10-15)
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      작가 작품(「대단한 참외씨」·「다니엘의 멋진 날」)은 본문 통째 대신 간추림·몇 줄 인용. */
 const slides=[
-  {tag:'① 차시 만나기', t:'이야기 속에도 겹받침이 숨어 있어요',
-   html:`<div class="scene"><div class="scene-pic">☔📖</div></div>
-    <div class="ka-bub">우리가 읽는 이야기 안에도 겹받침이 있는 낱말이 많아요.<br>오늘은 <b class="emph">글 속에서 찾아 바르게 읽어</b> 볼 거예요. 🔍</div>`},
+  {tag:'① 동기 유발', t:'겹받침 낱말 몸짓 놀이',
+   html:`<div class="stage-box">🙆 한 친구가 겹받침 낱말을 몸짓으로 나타내면 나머지 친구들이 알아맞혀요.<br><small>(읽다 · 흙 · 굵다 · 긁다 · 밝다 · 닭 · 밟다 · 짧다 · 끓다 · 앓다)</small><br><button class="stage-do" id="stageDo" data-fb="잘 알아맞혔어요! 그 낱말의 받침도 말해 봐요. 👏">🙆 몸짓 놀이를 해 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
   {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
-   html:`<div class="sentence">받침이 있는 낱말에 주의하며 글을 읽어 봐요.</div>
-    <div class="ka-bub">이야기를 읽고 내용을 알아본 뒤,<br>겹받침이 있는 낱말을 <b class="emph">바르게 읽어</b> 볼 거예요. 📖</div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>받침이 있는 낱말에 주의하며 글을 읽어 봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🍈</span>제목 「대단한 참외씨」 — 주인공이 하고 싶은 일은 무엇일까요?</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🔊</span>겹받침이 있는 낱말을 <b>바르게 읽어요</b>.</div></div>`},
 
-  {tag:'② 이야기 읽기', t:'「낡은 우산」을 한 줄씩 따라 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>비 오는 날, 유찬이는 창고에서 우산 하나를 찾았어요.</div>
-      <div class="read-line"><span class="rl-num">2</span>우산은 아주 낡은 우산이었어요.</div>
-      <div class="read-line"><span class="rl-num">3</span>손잡이가 닳아 있고 천도 얇았어요.</div>
-      <div class="read-line"><span class="rl-num">4</span>"괜찮아. 아직 쓸 수 있어."</div>
-      <div class="read-line"><span class="rl-num">5</span>우산 속은 생각보다 넓고 포근했어요.</div>
-      <div class="read-line"><span class="rl-num">6</span>집까지 오는 길이 하나도 멀지 않았어요.</div>
-    </div><div class="fb" id="readFb">🔊 한 줄씩 또박또박 따라 읽어 봐요.</div>`},
+  {tag:'② 50~59쪽 작품 읽기', t:'「대단한 참외씨」(임수정 글, 전미화 그림) 이야기 간추림',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>철이가 먹은 참외의 씨 하나가 탈출했어요.</div><div class="read-line"><span class="rl-num">2</span>참외씨는 재빨리 팔꿈치로 도망갔어요.</div><div class="read-line"><span class="rl-num">3</span>먼지 할아버지를 만나 흙이 어디 있는지 물었어요.</div><div class="read-line"><span class="rl-num">4</span>바람에 휘리릭 날아가 고양이 꼬리, 나비 날개에 매달렸어요.</div><div class="read-line"><span class="rl-num">5</span>참외씨는 마침내 흙 속에 들어갔어요.</div></div><div class="fb" id="readFb">📖 교과서에서 이야기 전체를 그림과 함께 읽어 봐요.</div>`},
 
-  {tag:'② 읽는 방법', t:'겹받침은 이렇게 읽어요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">낡은</span><span class="pc-name">[날근]</span></div>
-      <div class="punct-card"><span class="pc-mark">넓고</span><span class="pc-name">[널꼬]</span></div>
-    </div>
-    <div class="ka-bub">뒤에 <b class="emph">모음</b>이 오면 두 자음이 다 소리 나요. 낡은 → [날근]<br>
-      뒤에 <b class="emph">자음</b>이 오거나 낱말이 끝나면 하나만 소리 나요. 넓고 → [널꼬] 👂</div>`},
+  {tag:'② 54쪽 함께 읽기', t:'파란색 글자의 받침에 주의하며 읽어 봐요',
+   html:`<div class="ka-bub">🍈 「그럼, 혹시 <b class="emph">흙</b>이 어디 있는지 아세요? 제 꿈은 <b class="emph">흙</b> 속에 들어가서 달고 맛있는 참외가 되는 거예요.」<br>👴 「세상은 아주 <b class="emph">넓</b>고 위험하거든.」</div>`},
 
-  {tag:'③ 글에서 찾기', t:'글에서 겹받침이 있는 낱말을 모두 찾아 색칠해요', log:true,
-   collectMsg:'모두 찾았어요! 글 속의 겹받침을 잘 봤어요. 🎉',
-   hint:'힌트: 받침 자리에 서로 다른 자음자가 두 개 있는 낱말만 눌러요.',
-   html:`<div class="ka-bub">우산은 아주 <b>낡은</b> 우산이었어요. 손잡이가 <b>닳아</b> 있고 천도 <b>얇았어요</b>. 우산 속은 생각보다 <b>넓고</b> 포근했어요.</div>
-    <div class="collect" id="collect">
-      <div class="chip" data-hit="1">낡은</div>
-      <div class="chip" data-hit="0">우산</div>
-      <div class="chip" data-hit="1">닳아</div>
-      <div class="chip" data-hit="0">손잡이</div>
-      <div class="chip" data-hit="1">넓고</div>
-      <div class="chip" data-hit="0">포근</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 59쪽 내용 알기', t:'참외씨가 흙을 찾아다니는 까닭은 무엇인가요?', log:true, okMsg:'맞아요! 흙 속에 들어가 달고 맛있는 참외가 되는 것이 참외씨의 꿈이에요. 🍈',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🍈</div><div class="wc-word">달고 맛있는 참외가 되려고</div></div><div class="wcard" data-ok="0"><div class="wc-pic">😴</div><div class="wc-word">흙 속에서 잠을 자려고</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🏃</div><div class="wc-word">철이에게서 숨으려고</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 바르게 읽기', t:'「낡은」을 바르게 읽은 것은?', log:true, okMsg:'맞아요! 뒤에 모음이 오니 ㄱ이 넘어가 [날근]이 돼요.',
-   html:`<div class="sentence">낡은 우산</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">[날근]</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">[나근]</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">[낙은]</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 59쪽 내용 알기', t:'먼지 할아버지는 세상을 어떤 곳이라고 했나요?', log:true, okMsg:'맞아요! 「세상은 아주 넓고 위험하거든.」이라고 했어요. 👴',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">아주 넓고 위험한 곳</div></div><div class="wcard" data-ok="0"><div class="wc-word">아주 작고 조용한 곳</div></div><div class="wcard" data-ok="0"><div class="wc-word">달고 맛있는 곳</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 바르게 읽기', t:'「넓고」를 바르게 읽은 것은?', log:true, okMsg:'맞아요! 뒤에 자음이 오니 ㄹ만 소리 나서 [널꼬]예요.',
-   html:`<div class="sentence">우산 속은 넓고 포근했어요.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">[넙꼬]</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">[널꼬]</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 59쪽 내용 알기', t:'참외씨가 마지막으로 도착한 곳은 어디인가요?', log:true, okMsg:'맞아요! 참외씨는 마지막에 흙 속에 들어갔어요. 🌱',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🦋</div><div class="wc-word">나비 날개</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🌱</div><div class="wc-word">흙 속</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🐱</div><div class="wc-word">고양이 꼬리</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 소리와 잇기', t:'글에 나온 낱말과 그 소리를 이어 봐요', log:true,
-   matchMsg:'모두 잘 이었어요! 소리를 정확히 찾았어요. 🎉',
-   hint:'힌트: 왼쪽 낱말을 누른 뒤, 그 낱말의 소리를 눌러요.',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">낱말</div>
-        <div class="match-card" data-k="a" data-pair="A">낡은</div>
-        <div class="match-card" data-k="b" data-pair="B">닳아</div>
-        <div class="match-card" data-k="c" data-pair="C">얇았어요</div>
-        <div class="match-card" data-k="d" data-pair="D">않았어요</div></div>
-      <div class="match-col"><div class="match-col-h">소리</div>
-        <div class="match-card" data-k="C" data-pair="c">[얄바써요]</div>
-        <div class="match-card" data-k="A" data-pair="a">[날근]</div>
-        <div class="match-card" data-k="D" data-pair="d">[아나써요]</div>
-        <div class="match-card" data-k="B" data-pair="b">[다라]</div></div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'④ 60쪽 낱말 알기 (1)', t:'낱말과 그 뜻을 이어 봐요', log:true, matchMsg:'낱말의 뜻을 모두 알았어요! 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">낱말</div><div class="match-card" data-k="a" data-pair="A">간신히</div><div class="match-card" data-k="b" data-pair="B">하마터면</div><div class="match-card" data-k="c" data-pair="C">무시무시하다</div></div><div class="match-col"><div class="match-col-h">뜻</div><div class="match-card" data-k="C" data-pair="c">아주 많이 무섭다.</div><div class="match-card" data-k="A" data-pair="a">겨우. 매우 힘들게.</div><div class="match-card" data-k="B" data-pair="b">조금만 잘못했더라면.</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 내용 알기', t:'유찬이가 창고에서 찾은 것은 무엇인가요?', log:true, okMsg:'맞아요! 낡은 우산 하나를 찾았어요. ☔',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">☔</div><div class="wc-word">우산</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🧢</div><div class="wc-word">모자</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">👟</div><div class="wc-word">신발</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 60쪽 낱말 알기 (2)', t:'낱말이 들어갈 알맞은 문장을 이어 봐요', log:true, matchMsg:'간신히 도착했다, 하마터면 쏟을 뻔했다, 무시무시한 옛날이야기! 🎉', hint:'힌트: 낱말을 빈칸에 넣어 소리 내어 읽어 보면 어울리는지 알 수 있어요.',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">낱말</div><div class="match-card" data-k="a" data-pair="A">간신히</div><div class="match-card" data-k="b" data-pair="B">하마터면</div><div class="match-card" data-k="c" data-pair="C">무시무시한</div></div><div class="match-col"><div class="match-col-h">문장</div><div class="match-card" data-k="C" data-pair="c">할머니께 ___ 옛날이야기를 들었다.</div><div class="match-card" data-k="A" data-pair="a">늦잠을 자서 학교에 ___ 도착했다.</div><div class="match-card" data-k="B" data-pair="b">바닥이 미끄러워서 ___ 우유를 쏟을 뻔했다.</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 내용 알기', t:'그 우산은 어떠했나요?', log:true, okMsg:'맞아요! 손잡이가 닳고 천도 얇은 낡은 우산이었어요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">새것이라 반짝였어요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">손잡이가 닳고 천도 얇았어요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑤ 61쪽 바르게 읽기', t:'「흙이」를 바르게 읽은 것은?', log:true, okMsg:'맞아요! 「흙이」는 [흘기]로 읽어요. 🔊',
+   html:`<div class="sentence"><b>흙이</b> 어디 있는지 아세요?</div><div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">[흐기]</div></div><div class="wcard" data-ok="1"><div class="wc-word">[흘기]</div></div><div class="wcard" data-ok="0"><div class="wc-word">[흑이]</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 낱말 알기', t:'「닳다」는 무슨 뜻일까요?', log:true, okMsg:'맞아요! 오래 써서 조금씩 줄어드는 것이 「닳다」예요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">오래 써서 줄어들다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">물에 잠기다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">아주 무겁다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑤ 61쪽 바르게 읽기', t:'「흙 속에」를 바르게 읽은 것은?', log:true, okMsg:'맞아요! 「흙 속에」는 [흑쏘게]로 읽어요. 🔊',
+   html:`<div class="sentence"><b>흙 속에</b> 들어가서 달고 맛있는 참외가 되는 거예요.</div><div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">[흑쏘게]</div></div><div class="wcard" data-ok="0"><div class="wc-word">[흘쏘게]</div></div><div class="wcard" data-ok="0"><div class="wc-word">[흐쏘게]</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 자신과 관련짓기', t:'나에게도 오래 쓴 물건이 있나요?',
-   html:`<div class="stage-box">
-      🗣️ 오래 써서 조금 낡았지만 아직 좋아하는 물건을 하나 떠올려 말해 봐요.<br>
-      <small>(무엇인지, 왜 좋아하는지 한 문장으로 말해요)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="자기 이야기를 잘 들려주었어요! 👏">🗣️ 말해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 61쪽 자신과 관련짓기', t:'내가 참외씨라면 어디로 가고 싶나요?',
+   html:`<div class="stage-box">🍈 받침에 주의하며 「대단한 참외씨」를 짝과 번갈아 읽어요.<br>그리고 내가 참외씨라면 어디로 가고 싶은지 친구들과 말해 봐요.<br><button class="stage-do" id="stageDo" data-fb="받침을 살려 또박또박 잘 읽고 말했어요! 👏">🗣️ 읽고 말해 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🔍</span>글 속에서 <b>겹받침이 있는 낱말</b>을 찾았어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">👂</span>모음 앞에서는 <b>둘 다</b>, 자음 앞에서는 <b>하나만</b> 소리 나요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">➡️</span>다음 시간에는 <b>글쓴이가 하고 싶은 말</b>을 찾을 거예요.</div>
-    </div>`},
+  {tag:'⑤ 마무리', t:'잘했어요! 이만큼 배웠어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">📖</span>「대단한 참외씨」를 읽고 내용을 알아보았어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">📝</span>간신히·하마터면·무시무시하다의 뜻을 알았어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🔊</span>흙이 [흘기], 흙 속에 [흑쏘게] — 겹받침 낱말을 바르게 읽었어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -423,6 +350,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

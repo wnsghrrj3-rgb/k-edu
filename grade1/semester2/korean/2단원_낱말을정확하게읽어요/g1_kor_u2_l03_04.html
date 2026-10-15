@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,128 +139,49 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 3~4차시(소단원 1 기본 — 글자의 짜임 알기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
-   학습 목표: 글자의 짜임을 안다. (쌍받침 · 겹받침 · 첫소리/가운뎃소리/끝소리)
-   ★ 정답 로깅 7슬. 소리 내어 읽기 무대·마무리 = 로깅 X·완주 ✓.
-   ★ 지도서 98~99쪽은 쌍받침(같은 자음자가 겹친 것)과 겹받침(서로 다른 자음자 두 개)을
-      이름부터 갈라 준다. 그래서 이름 알기를 ②에 두 슬로 세우고,
-      나머지는 모두 찾기·잇기·채우기로 구성했다.
-   ★ 저작권: 교과서 38쪽 글자판 배열, 39쪽 두 낱말(낚다·밟다), 42~43쪽 공통 받침 짝
-      (붉다·읽다 / 짧다·밟다 / 닳다·뚫다 / 약값·없다), 44~45쪽 붙임딱지 문장 8개 전부 미차용.
-      낱말은 겹받침 목록이 언어 자체로 닫혀 있어 회피 대상이 아니나, 짝·배열·문장은 전부 자체. */
+/* ===== 3~4차시(소단원 1 기본 — 글자의 짜임 알기) 『국어』 38~45쪽 13슬 — v2 교과서 기준 재구성 (2026-10-15)
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      작가 작품(「대단한 참외씨」·「다니엘의 멋진 날」)은 본문 통째 대신 간추림·몇 줄 인용. */
 const slides=[
-  {tag:'① 차시 만나기', t:'받침을 넣으면 다른 낱말이 돼요',
-   html:`<div class="build">
-      <div class="syl">가</div><div class="op">→</div><div class="syl">강</div>
-      <div class="op">·</div><div class="syl">감</div><div class="op">·</div><div class="syl">갓</div>
-    </div>
-    <div class="ka-bub">같은 글자도 받침이 바뀌면 <b class="emph">뜻이 달라져요</b>.<br>그런데 받침 자리에 자음자가 두 개 들어가면 어떻게 될까요? 🤔</div>`},
+  {tag:'① 동기 유발', t:'받침을 넣어 낱말을 만들어 봐요',
+   html:`<div class="build"><div class="syl">가</div><div class="op">→</div><div class="syl">강</div><div class="op">·</div><div class="syl">감</div><div class="op">·</div><div class="syl">갓</div></div><div class="ka-bub">「가」에 받침을 넣으면 강, 감, 갓이 돼요. 「채사」에 받침을 넣으면 <b class="emph">책상</b>!<br>받침이 있는 글자와 없는 글자는 무엇이 다를까요? 🤔</div>`},
 
   {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
-   html:`<div class="sentence">글자의 짜임을 알아봐요.</div>
-    <div class="ka-bub">받침에 자음자가 두 개 있는 글자의 <b class="emph">이름</b>과<br><b class="emph">짜임</b>을 알아볼 거예요. 🔍</div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>글자의 짜임을 알아봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🍇</span>받침에 자음자가 <b>두 개</b>인 글자를 찾아요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🧩</span>받침이 있는 글자를 <b>짜임</b>대로 완성해요.</div></div>`},
 
-  {tag:'② 이름 알기', t:'쌍받침과 겹받침',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">ㄲ ㅆ</span><span class="pc-name">쌍받침</span></div>
-      <div class="punct-card"><span class="pc-mark">ㄺ ㄼ ㅀ ㅄ</span><span class="pc-name">겹받침</span></div>
-    </div>
-    <div class="ka-bub">같은 자음자가 겹쳐진 받침은 <b class="emph">쌍받침</b>,<br>서로 다른 자음자 두 개로 된 받침은 <b class="emph">겹받침</b>이에요. 🙂</div>`},
+  {tag:'② 38쪽 1번', t:'받침에 자음자가 두 개인 글자를 모두 찾아 색칠해요', log:true, collectMsg:'밟·싫·없·맑·값·넓·닳·흙, 여덟 글자를 모두 찾았어요! 🎉', hint:'힌트: 받침이 없는 글자(어), 받침에 자음자가 하나인 글자(운·즐)는 빼요.',
+   html:`<div class="scene"><div class="scene-pic">🍇</div></div><div class="collect" id="collect"><div class="chip" data-hit="0">어</div><div class="chip" data-hit="1">밟</div><div class="chip" data-hit="1">싫</div><div class="chip" data-hit="1">없</div><div class="chip" data-hit="1">맑</div><div class="chip" data-hit="1">값</div><div class="chip" data-hit="0">운</div><div class="chip" data-hit="1">넓</div><div class="chip" data-hit="1">닳</div><div class="chip" data-hit="1">흙</div><div class="chip" data-hit="0">즐</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'② 짜임 알기', t:'글자는 세 자리로 나누어져요',
-   html:`<div class="build">
-      <div class="syl">ㅁ</div><div class="op">+</div><div class="syl">ㅏ</div><div class="op">+</div><div class="syl">ㄺ</div><div class="op">=</div><div class="syl">맑</div>
-    </div>
-    <div class="ka-bub">첫소리 <b>ㅁ</b>, 가운뎃소리 <b>ㅏ</b>, 끝소리 <b class="emph">ㄺ</b>이 모여 「맑」이 돼요.<br>끝소리 자리에 자음자가 두 개 올 수 있어요. 🧩</div>`},
+  {tag:'② 39쪽 2번', t:'글자의 받침에 어떤 자음자가 있는지 이어 봐요', log:true, matchMsg:'모두 잘 이었어요! 받침 자리에 서로 다른 자음자 두 개가 있어요. 🎉', hint:'힌트: 글자의 아래쪽 받침 자리를 보고 왼쪽 자음자, 오른쪽 자음자를 차례로 읽어요.',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">글자</div><div class="match-card" data-k="a" data-pair="A">밟</div><div class="match-card" data-k="b" data-pair="B">싫</div><div class="match-card" data-k="c" data-pair="C">값</div><div class="match-card" data-k="d" data-pair="D">흙</div></div><div class="match-col"><div class="match-col-h">받침의 자음자</div><div class="match-card" data-k="C" data-pair="c">ㅂ과 ㅅ</div><div class="match-card" data-k="A" data-pair="a">ㄹ과 ㅂ</div><div class="match-card" data-k="D" data-pair="d">ㄹ과 ㄱ</div><div class="match-card" data-k="B" data-pair="b">ㄹ과 ㅎ</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 두 개인 받침 모으기', t:'받침에 자음자가 두 개인 글자를 모두 찾아 색칠해요', log:true,
-   collectMsg:'모두 찾았어요! 받침 자리를 잘 봤어요. 🎉',
-   hint:'힌트: 받침에 자음자가 두 개 겹쳐 있는 글자만 눌러요. 「강」은 받침이 하나예요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">굵</div>
-      <div class="chip" data-hit="0">강</div>
-      <div class="chip" data-hit="1">밟</div>
-      <div class="chip" data-hit="0">문</div>
-      <div class="chip" data-hit="1">옳</div>
-      <div class="chip" data-hit="0">손</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'② 39쪽 3번', t:'「낚다」와 「밟다」의 받침은 어떻게 다를까요?',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">낚 · ㄲ</span><span class="pc-name">쌍받침</span></div><div class="punct-card"><span class="pc-mark">밟 · ㄼ</span><span class="pc-name">겹받침</span></div></div><div class="ka-bub">같은 자음자가 겹쳐서 된 받침을 <b class="emph">쌍받침</b>이라고 해요.<br>서로 다른 두 개의 자음자로 이루어진 받침을 <b class="emph">겹받침</b>이라고 해요. 🙂</div>`},
 
-  {tag:'③ 이름 고르기', t:'「낚」의 받침은 무엇일까요?', log:true, okMsg:'맞아요! ㄲ은 같은 자음자가 겹쳐진 쌍받침이에요.',
-   html:`<div class="sentence">낚 <span class="punct">( ㄲ )</span></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">쌍받침</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">겹받침</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 39쪽 3번', t:'「낚다」의 받침 ㄲ은 무엇일까요?', log:true, okMsg:'맞아요! ㄲ은 같은 자음자 ㄱ이 겹쳐서 된 쌍받침이에요. 👍',
+   html:`<div class="sentence">낚 <span class="punct">( ㄲ )</span></div><div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">쌍받침</div></div><div class="wcard" data-ok="0"><div class="wc-word">겹받침</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 받침과 잇기', t:'낱말과 그 받침을 이어 봐요', log:true,
-   matchMsg:'모두 잘 이었어요! 겹받침을 정확히 봤어요. 🎉',
-   hint:'힌트: 왼쪽 낱말을 누른 뒤, 그 낱말의 받침을 눌러요.',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">낱말</div>
-        <div class="match-card" data-k="a" data-pair="A">늙다</div>
-        <div class="match-card" data-k="b" data-pair="B">얇다</div>
-        <div class="match-card" data-k="c" data-pair="C">옳다</div>
-        <div class="match-card" data-k="d" data-pair="D">값</div></div>
-      <div class="match-col"><div class="match-col-h">받침</div>
-        <div class="match-card" data-k="C" data-pair="c">ㅀ</div>
-        <div class="match-card" data-k="A" data-pair="a">ㄺ</div>
-        <div class="match-card" data-k="D" data-pair="d">ㅄ</div>
-        <div class="match-card" data-k="B" data-pair="b">ㄼ</div></div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 40~41쪽 4번', t:'「끓」의 짜임 — 빈칸에 알맞은 받침은?', log:true, okMsg:'맞아요! 첫소리 ㄲ, 가운뎃소리 ㅡ, 받침 ㅀ이 모여 「끓」이 돼요. 🧩',
+   html:`<div class="build"><div class="syl">ㄲ</div><div class="op">+</div><div class="syl">ㅡ</div><div class="op">+</div><div class="syl">?</div><div class="op">=</div><div class="syl">끓</div></div><div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">ㅀ</div></div><div class="wcard" data-ok="0"><div class="wc-word">ㄹ</div></div><div class="wcard" data-ok="0"><div class="wc-word">ㅎ</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 받침 채우기', t:'빈칸에 알맞은 받침은 무엇일까요?', log:true, okMsg:'맞아요! 「굵다」의 받침은 ㄺ이에요.',
-   html:`<div class="scene"><div class="scene-pic">🪵</div></div>
-    <div class="sentence">나뭇가지가 구<span class="punct">◯</span>다.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">ㄺ</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">ㅄ</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">ㅀ</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 40~41쪽 4번', t:'글자와 그 받침을 이어 봐요', log:true, matchMsg:'모두 잘 이었어요! 끓-ㅀ, 맑-ㄺ, 넓-ㄼ, 없-ㅄ 🎉', hint:'힌트: 맑다는 ㅁ+ㅏ+ㄺ, 넓다는 ㄴ+ㅓ+ㄼ, 없다는 ㅇ+ㅓ+ㅄ으로 짜여 있어요.',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">글자</div><div class="match-card" data-k="a" data-pair="A">끓다의 「끓」</div><div class="match-card" data-k="b" data-pair="B">맑다의 「맑」</div><div class="match-card" data-k="c" data-pair="C">넓다의 「넓」</div><div class="match-card" data-k="d" data-pair="D">없다의 「없」</div></div><div class="match-col"><div class="match-col-h">받침</div><div class="match-card" data-k="B" data-pair="b">ㄺ</div><div class="match-card" data-k="D" data-pair="d">ㅄ</div><div class="match-card" data-k="A" data-pair="a">ㅀ</div><div class="match-card" data-k="C" data-pair="c">ㄼ</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 공통 받침 찾기', t:'두 낱말에 공통으로 들어갈 받침은?', log:true, okMsg:'맞아요! 「늙다」와 「긁다」에는 모두 ㄺ이 들어가요.',
-   html:`<div class="sentence">느<span class="punct">◯</span>다 &nbsp;·&nbsp; 그<span class="punct">◯</span>다</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">ㄼ</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">ㄺ</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">ㅄ</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 42~43쪽 5번', t:'두 낱말에 공통으로 들어갈 받침을 이어 봐요', log:true, matchMsg:'붉다·읽다(ㄺ), 닳다·뚫다(ㅀ), 짧다·밟다(ㄼ), 약값·없다(ㅄ)! 🎉', hint:'힌트: 보기처럼 「부○다·이○다」에 ㄺ을 넣으면 붉다·읽다가 돼요.',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">두 낱말</div><div class="match-card" data-k="a" data-pair="A">부○다 · 이○다</div><div class="match-card" data-k="b" data-pair="B">다○다 · 뚜○다</div><div class="match-card" data-k="c" data-pair="C">짜○다 · 바○다</div><div class="match-card" data-k="d" data-pair="D">약가○ · 어○다</div></div><div class="match-col"><div class="match-col-h">받침</div><div class="match-card" data-k="C" data-pair="c">ㄼ</div><div class="match-card" data-k="A" data-pair="a">ㄺ</div><div class="match-card" data-k="D" data-pair="d">ㅄ</div><div class="match-card" data-k="B" data-pair="b">ㅀ</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 끝소리 알기', t:'「여덟」의 끝 글자를 만들어 봐요. 빠진 것은?', log:true, okMsg:'맞아요! ㄹ과 ㅂ이 함께 있는 겹받침 ㄼ이에요.',
-   html:`<div class="build">
-      <div class="syl">ㄷ</div><div class="op">+</div><div class="syl">ㅓ</div><div class="op">+</div><div class="syl">?</div>
-    </div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">ㄹ</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">ㄼ</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">ㅂ</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 42~43쪽 5번', t:'완성한 낱말을 선생님을 따라 읽어 봐요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>붉다 [북따] · 읽다 [익따]</div><div class="read-line"><span class="rl-num">2</span>짧다 [짤따] · 밟다 [밥ː따]</div><div class="read-line"><span class="rl-num">3</span>닳다 [달타] · 뚫다 [뚤타]</div><div class="read-line"><span class="rl-num">4</span>약값 [약깝] · 없다 [업ː따]</div></div><div class="fb" id="readFb">🔊 한 줄씩 또박또박 따라 읽어 봐요.</div>`},
 
-  {tag:'③ 문장에서 찾기', t:'문장에서 겹받침이 있는 글자를 모두 찾아요', log:true,
-   collectMsg:'모두 찾았어요! 문장 속 겹받침을 잘 봤어요. 🎉',
-   hint:'힌트: 받침 자리에 서로 다른 자음자가 두 개 있는 글자만 눌러요.',
-   html:`<div class="ka-bub">동생이 그림책을 <b>읽</b>고, 나는 사과 <b>값</b>을 물었어요. 오늘은 바람이 <b>없</b>어요.</div>
-    <div class="collect" id="collect">
-      <div class="chip" data-hit="1">읽</div>
-      <div class="chip" data-hit="0">동</div>
-      <div class="chip" data-hit="1">값</div>
-      <div class="chip" data-hit="0">람</div>
-      <div class="chip" data-hit="1">없</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 44~45쪽 6번', t:'받침에 주의하며 그림에 알맞은 문장을 이어 봐요', log:true, matchMsg:'모두 잘 이었어요! 이제 소리 내어 읽어 봐요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">그림</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">☀️</span>파란 하늘</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🍂</span>빨간 낙엽</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🏞️</span>큰 호수</div><div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">🦋</span>다친 나비</div></div><div class="match-col"><div class="match-col-h">문장</div><div class="match-card" data-k="B" data-pair="b">낙엽이 붉다.</div><div class="match-card" data-k="D" data-pair="d">나비가 가엾다.</div><div class="match-card" data-k="A" data-pair="a">하늘이 맑다.</div><div class="match-card" data-k="C" data-pair="c">호수가 넓다.</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'④ 소리 내어 읽기', t:'겹받침이 있는 낱말을 소리 내어 읽어 봐요',
-   html:`<div class="stage-box">
-      🗣️ 아래 낱말을 한 번씩 또박또박 소리 내어 읽어 봐요.<br>
-      <small>(늙다 · 얇다 · 옳다 · 값)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="또박또박 잘 읽었어요! 👏">🗣️ 소리 내어 읽어 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'④ 45쪽 6번', t:'받침에 주의하며 문장을 소리 내어 읽어 봐요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>흙을 밟다. [흘글 밥ː따]</div><div class="read-line"><span class="rl-num">2</span>무릎을 꿇다. [무르플 꿀타]</div><div class="read-line"><span class="rl-num">3</span>개미가 틀림없다. [개미가 틀리멉따]</div><div class="read-line"><span class="rl-num">4</span>구멍을 뚫다. [구멍을 뚤타]</div></div><div class="fb" id="readFb">낱말의 받침에 자음자가 두 개 있어도 한 개만 발음돼요. 🔊</div>`},
 
   {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🔤</span>같은 자음자가 겹친 것은 <b>쌍받침</b>, 다른 자음자 두 개는 <b>겹받침</b>이에요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🧩</span>글자는 첫소리·가운뎃소리·<b>끝소리</b>로 짜여 있어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">➡️</span>다음 시간에는 받침에 주의하며 <b>문장을 쓸</b> 거예요.</div>
-    </div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🔤</span>같은 자음자가 겹친 받침은 <b>쌍받침</b>, 서로 다른 자음자 두 개는 <b>겹받침</b>이에요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🧩</span>글자는 첫소리·가운뎃소리·<b>받침</b>으로 짜여 있어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🔊</span>받침에 자음자가 두 개 있어도 <b>한 개만</b> 발음돼요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -430,6 +350,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -135,131 +134,54 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 
 <script>
 const LESSON_ID='g1_2_kor_u2_l05_06_v1';
-const LESSON_MAX=70;
+const LESSON_MAX=60;
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 5~6차시(소단원 1 기본 — 받침에 주의하며 문장 쓰기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
-   학습 목표: 받침에 주의하며 문장을 쓸 수 있다.
-   ★ 정답 로깅 7슬. 바로잡기 칸·마무리 = 로깅 X·완주 ✓.
-   ★ 지도서 102쪽이 이 차시에 지식 탐구 학습 모형을 건다.
-      문제 확인(①) → 자료 탐색(②·③ 앞) → 지식 발견(③ 가운데, 소리와 표기가 다르다) →
-      지식 적용(③ 뒤)으로 옮겼다. 놀이(짝과 받침 채우기)는 혼자서도 되는 형태로 축소했다.
-   ★ 이 차시는 틀린 표기를 보여 주어야만 성립한다(교과서 48쪽도 그렇다).
-      교실에는 「이건 일부러 틀린 글자」라고 말해 주는 교사가 있지만 자기주도에는 없다.
-      그래서 ④ 첫 슬에 바로잡기 칸을 두어 나온 틀린 표기를 전부 바른 표기로 되돌린다
-      (6-1 6단원이 세운 기준 — 학습을 위해 심은 거짓은 화면을 닫기 전에 정정한다).
-   ★ 저작권: 교과서 46쪽 네 문장, 47쪽 보기 낱말·문장, 48쪽 틀린 문장 네 개,
-      지도서 103쪽 겹받침 예문 여덟 개 전부 미차용. 문장은 자체 구성. */
+/* ===== 5~6차시(소단원 1 기본 — 받침에 주의하며 문장 쓰기) 『국어』 46~49쪽 13슬 — v2 교과서 기준 재구성 (2026-10-15)
+   ★ 정답 로깅 6슬(LESSON_MAX 60). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      작가 작품(「대단한 참외씨」·「다니엘의 멋진 날」)은 본문 통째 대신 간추림·몇 줄 인용. */
 const slides=[
-  {tag:'① 차시 만나기', t:'읽는 것과 쓰는 것은 달라요',
-   html:`<div class="build">
-      <div class="syl">값</div><div class="op">→</div><div class="syl">[갑]</div>
-    </div>
-    <div class="ka-bub">「값」은 <b class="emph">[갑]</b>이라고 소리 나요.<br>그런데 소리대로 「갑」이라고 쓰면 <b class="emph">뜻이 달라져요</b>. 어떻게 써야 할까요? ✍️</div>`},
+  {tag:'① 전시 학습 상기', t:'지난 시간에 무엇을 배웠나요?',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">ㄺ</span><span class="pc-name">맑다</span></div><div class="punct-card"><span class="pc-mark">ㄼ</span><span class="pc-name">넓다</span></div><div class="punct-card"><span class="pc-mark">ㅀ</span><span class="pc-name">끓다</span></div><div class="punct-card"><span class="pc-mark">ㅄ</span><span class="pc-name">없다</span></div></div><div class="ka-bub">지난 시간에 글자의 받침을 알아보고, 받침이 들어간 문장을 읽어 보았어요.<br>겹받침을 바르게 익히지 않으면 <b class="emph">다른 뜻</b>을 전할 수도 있어요. 🤔</div>`},
 
   {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
-   html:`<div class="sentence">받침에 주의하며 문장을 써 봐요.</div>
-    <div class="ka-bub">그림에 알맞은 낱말을 고르고,<br>잘못 쓴 글자를 <b class="emph">바르게 고쳐</b> 볼 거예요. 🔍</div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>받침에 주의하며 문장을 써 봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">✏️</span>받침이 있는 낱말을 <b>바르게 써요</b>.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🔍</span>잘못 쓴 글자를 <b>바르게 고쳐요</b>.</div></div>`},
 
-  {tag:'② 소리와 글자', t:'소리와 글자가 다를 때가 있어요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">읽다</span><span class="pc-name">[익따]</span></div>
-      <div class="punct-card"><span class="pc-mark">넓다</span><span class="pc-name">[널따]</span></div>
-      <div class="punct-card"><span class="pc-mark">없다</span><span class="pc-name">[업따]</span></div>
-    </div>
-    <div class="ka-bub">겹받침은 소리가 <b class="emph">하나만</b> 나요.<br>그래서 소리만 듣고 쓰면 받침 하나를 빠뜨리기 쉬워요. 👂</div>`},
+  {tag:'② 46쪽 1번', t:'그림에 어울리는 문장을 이어 봐요', log:true, matchMsg:'불빛이 밝다, 들판이 넓다, 감기를 앓다, 물이 없다! 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">그림</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">💡</span>환한 전등</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🌾</span>넓은 들판</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🤒</span>아파서 누운 아이</div><div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">🥛</span>빈 물컵</div></div><div class="match-col"><div class="match-col-h">문장</div><div class="match-card" data-k="B" data-pair="b">들판이 넓다.</div><div class="match-card" data-k="D" data-pair="d">물이 없다.</div><div class="match-card" data-k="A" data-pair="a">불빛이 밝다.</div><div class="match-card" data-k="C" data-pair="c">감기를 앓다.</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'② 쓰는 방법', t:'이렇게 쓰면 틀리지 않아요',
-   html:`<div class="ka-bub">① 낱말의 <b class="emph">뜻</b>을 먼저 떠올려요.<br>
-      ② 그 뜻에 맞는 <b class="emph">받침</b>을 생각해요.<br>
-      ③ 소리대로가 아니라 <b class="emph">낱말대로</b> 써요.<br>
-      「갑」이 아니라 「값」, 「업다」가 아니라 「없다」예요. ✍️</div>`},
+  {tag:'② 46쪽 1번', t:'선생님을 따라 읽어 봐요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>밝다 [박따]</div><div class="read-line"><span class="rl-num">2</span>넓다 [널따]</div><div class="read-line"><span class="rl-num">3</span>앓다 [알타]</div><div class="read-line"><span class="rl-num">4</span>없다 [업ː따]</div></div><div class="fb" id="readFb">네 낱말은 모두 받침이 겹받침이에요. 🔊</div>`},
 
-  {tag:'③ 그림에 맞는 낱말', t:'그림에 어울리는 낱말은 무엇일까요?', log:true, okMsg:'맞아요! 국물이 흐리지 않고 환하니 「맑다」예요. 🍲',
-   html:`<div class="scene"><div class="scene-pic">🍲</div></div>
-    <div class="sentence">국물이 <span class="punct">◯◯</span>.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">맑다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">얇다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">굵다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 46쪽 1번', t:'받침이 있는 낱말을 바르게 써 봐요 (글자를 눌러요)',
+   html:`<div class="trace-wrap"><div class="trace-row"><span class="trace-pic">💡</span><div class="trace-word"><span class="trace-cell">밝</span><span class="trace-cell">다</span></div></div><div class="trace-row"><span class="trace-pic">🌾</span><div class="trace-word"><span class="trace-cell">넓</span><span class="trace-cell">다</span></div></div><div class="trace-row"><span class="trace-pic">🤒</span><div class="trace-word"><span class="trace-cell">앓</span><span class="trace-cell">다</span></div></div><div class="trace-row"><span class="trace-pic">🥛</span><div class="trace-word"><span class="trace-cell">없</span><span class="trace-cell">다</span></div></div></div><div class="fb" id="traceFb">또박또박 따라 써 봐요.</div>`},
 
-  {tag:'③ 문장 완성하기', t:'빈칸에 알맞은 낱말을 골라 봐요', log:true, okMsg:'맞아요! 바람이 불지 않으니 「없다」예요.',
-   html:`<div class="scene"><div class="scene-pic">🍃</div></div>
-    <div class="sentence">오늘은 바람이 <span class="punct">◯◯</span>.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">넓다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">없다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 47쪽 2번', t:'그림에 어울리는 낱말을 보기에서 찾아 문장을 완성해요', log:true, matchMsg:'잃어버렸다·넓다·긁는다·없다, 문장을 모두 완성했어요! 🎉', hint:'힌트: 그림이 어떤 장면인지 먼저 떠올리고 빈칸에 넣어 읽어 봐요.',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">문장</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">☂️</span>연우는 학교에서 우산을 ___.</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🏫</span>학교 운동장이 ___.</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🤔</span>철수가 머리를 ___.</div><div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">🧺</span>바구니에 사과가 ___.</div></div><div class="match-col"><div class="match-col-h">보기</div><div class="match-card" data-k="C" data-pair="c">긁는다</div><div class="match-card" data-k="D" data-pair="d">없다</div><div class="match-card" data-k="A" data-pair="a">잃어버렸다</div><div class="match-card" data-k="B" data-pair="b">넓다</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 바르게 쓴 것 모으기', t:'바르게 쓴 낱말을 모두 찾아 색칠해요', log:true,
-   collectMsg:'모두 찾았어요! 받침을 잘 봤어요. 🎉',
-   hint:'힌트: 소리 나는 대로 적은 것은 틀린 것이에요. 낱말대로 쓴 것만 눌러요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">값을</div>
-      <div class="chip" data-hit="0">갑슬</div>
-      <div class="chip" data-hit="1">넓다</div>
-      <div class="chip" data-hit="0">널따</div>
-      <div class="chip" data-hit="1">옳다</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 48쪽 3번', t:'「닥과 병아리가 모이를 먹는다.」 — 잘못 쓴 글자를 고치면?', log:true, okMsg:'맞아요! 「닭」은 겹받침이 있는 낱말이에요. 받침에 ㄹ을 더해야 해요. 🐓',
+   html:`<div class="scene"><div class="scene-pic">🐓🐥</div></div><div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">닭</div></div><div class="wcard" data-ok="0"><div class="wc-word">닦</div></div><div class="wcard" data-ok="0"><div class="wc-word">닥</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 틀린 글자 고르기', t:'바르게 쓴 문장은 어느 것일까요?', log:true,
-   okMsg:'맞아요! 「갑」이 아니라 「값」이에요. 「값」은 ㅂ과 ㅅ이 함께 있는 겹받침이에요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">사과 갑을 물었다.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">사과 값을 물었다.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 48쪽 3번', t:'「크레파스의 길이가 연필의 길이보다 짭다.」 — 바르게 고치면?', log:true, okMsg:'맞아요! 「짧다」예요. 소리는 [짤따]여도 받침은 ㄼ으로 써요. ✏️',
+   html:`<div class="scene"><div class="scene-pic">🖍️✏️</div></div><div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">짤다</div></div><div class="wcard" data-ok="1"><div class="wc-word">짧다</div></div><div class="wcard" data-ok="0"><div class="wc-word">짭다</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 틀린 글자 고르기', t:'바르게 쓴 문장은 어느 것일까요?', log:true,
-   okMsg:'맞아요! 「달았다」가 아니라 「닳았다」예요. 오래 써서 줄어든 것을 「닳다」라고 해요.',
-   html:`<div class="scene"><div class="scene-pic">✏️</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">지우개가 닳았다.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">지우개가 달았다.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 48쪽 3번', t:'「연필심이 달았다.」 — 바르게 고치면?', log:true, okMsg:'맞아요! 연필심이 「닳았다」예요. 받침은 ㅀ이에요. 👍',
+   html:`<div class="scene"><div class="scene-pic">✏️</div></div><div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">닳았다</div></div><div class="wcard" data-ok="0"><div class="wc-word">달았다</div></div><div class="wcard" data-ok="0"><div class="wc-word">닭았다</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 소리와 잇기', t:'낱말과 그 소리를 이어 봐요', log:true,
-   matchMsg:'모두 잘 이었어요! 소리와 글자가 다른 것을 알았어요. 🎉',
-   hint:'힌트: 왼쪽 낱말을 누른 뒤, 그 낱말의 소리를 눌러요.',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">낱말</div>
-        <div class="match-card" data-k="a" data-pair="A">값</div>
-        <div class="match-card" data-k="b" data-pair="B">읽다</div>
-        <div class="match-card" data-k="c" data-pair="C">넓다</div>
-        <div class="match-card" data-k="d" data-pair="D">옳다</div></div>
-      <div class="match-col"><div class="match-col-h">소리</div>
-        <div class="match-card" data-k="C" data-pair="c">[널따]</div>
-        <div class="match-card" data-k="A" data-pair="a">[갑]</div>
-        <div class="match-card" data-k="D" data-pair="d">[올타]</div>
-        <div class="match-card" data-k="B" data-pair="b">[익따]</div></div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 48쪽 3번', t:'「필통에 연필이 업다.」 — 바르게 고치면?', log:true, okMsg:'맞아요! 필통에 연필이 「없다」. 받침은 ㅄ이에요. 🎉',
+   html:`<div class="scene"><div class="scene-pic">✏️👝</div></div><div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">엎다</div></div><div class="wcard" data-ok="0"><div class="wc-word">업다</div></div><div class="wcard" data-ok="1"><div class="wc-word">없다</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 받침 채우기', t:'빈칸에 알맞은 받침을 골라 문장을 완성해요', log:true, okMsg:'맞아요! 「얇다」의 받침은 ㄼ이에요.',
-   html:`<div class="scene"><div class="scene-pic">📄</div></div>
-    <div class="sentence">종이가 야<span class="punct">◯</span>다.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">ㄼ</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">ㄺ</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">ㅄ</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 49쪽 4번', t:'겹받침이 있는 낱말로 낱말 쓰기 놀이를 해 봐요',
+   html:`<div class="stage-box">🎲 짝과 가위바위보를 해요. 이긴 사람이 글자판의 길을 따라가며 받침을 채워 문장을 완성해요.<br>받침이 틀렸거나 채울 수 없으면 다음 사람이 채워요. 받침을 더 많이 채운 사람이 점수를 얻어요.<br><small>(『국어』 붙임 8 글자판)</small><br><button class="stage-do" id="stageDo" data-fb="받침을 또박또박 잘 채웠어요! 👏">🎲 짝과 놀이해 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 바로잡기', t:'오늘 나온 틀린 글자를 바르게 되돌려요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">❌</span><b>갑</b> → <b class="emph">값</b> · 물건을 살 때 내는 돈이에요. 받침은 ㅄ이에요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">❌</span><b>달았다</b> → <b class="emph">닳았다</b> · 오래 써서 줄어든 것이에요. 받침은 ㅀ이에요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">❌</span><b>갑슬 · 널따</b> → <b class="emph">값을 · 넓다</b> · 소리 나는 대로 적으면 안 돼요.</div>
-    </div>
-    <div class="fb">틀린 글자는 여기서 모두 바르게 되돌렸어요. 바른 글자만 기억해요! ✅</div>`},
+  {tag:'④ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">✏️</span>겹받침이 있는 낱말은 소리와 달라도 <b>낱말대로</b> 써요(없다 [업ː따]).</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🔍</span>닥 → <b>닭</b>, 짭다 → <b>짧다</b>, 달았다 → <b>닳았다</b>, 업다 → <b>없다</b></div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">📝</span>받침에 주의하면 뜻을 <b>정확하게</b> 전할 수 있어요.</div></div>`},
 
   {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">👂</span>겹받침은 <b>소리가 하나만</b> 나요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">✍️</span>소리대로가 아니라 <b>낱말대로</b> 써요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">➡️</span>다음 시간에는 <b>글 속에서</b> 겹받침을 찾아 읽을 거예요.</div>
-    </div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>받침이 있는 낱말을 바르게 써 보았어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🧩</span>그림에 어울리는 낱말로 문장을 완성해 보았어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🎲</span>잘못 쓴 글자를 고치고 낱말 쓰기 놀이를 했어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -428,6 +350,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

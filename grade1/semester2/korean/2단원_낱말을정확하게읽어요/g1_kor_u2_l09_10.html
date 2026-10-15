@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -135,112 +134,54 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 
 <script>
 const LESSON_ID='g1_2_kor_u2_l09_10_v1';
-const LESSON_MAX=70;
+const LESSON_MAX=60;
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 9~10차시(소단원 2 기본 — 글쓴이가 하고 싶은 말 찾기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
-   학습 목표: 글쓴이가 하고 싶은 말을 찾을 수 있다.
-   ★ 정답 로깅 7슬. 따라 읽기·자기 점검 = 로깅 X·완주 ✓.
-   ★ 지도서 95쪽 유의 사항 ❹ — 제재는 학생 주변에서 일어날 수 있는 일로 정하되
-      그 안에서 문제가 되는 상황을 제시한다. 자체 제재 「빌린 책은 제날짜에 돌려주자」를
-      그 조건대로 썼다(주변의 일 + 문제 상황 + 제목에 하고 싶은 말이 드러남).
-   ★ 이 차시의 경계 — 국어활동 35쪽이 「글의 첫 문장만 살펴보면 된다」를 ×로 잡아 둔다.
-      방법을 고르는 문항의 오답 보기에 그 꼴을 반드시 한 개 넣었다.
-      「제목을 본다」만 가르치면 제목만 읽고 넘어가는 아이가 나온다.
-   ★ 저작권: 교과서 62~64쪽 제재(김서연·동생·풀이나 가위)·지도서 115쪽 참고 글 두 편
-      (자전거·차례)·국어활동 「복도에서 걸어 다니자」·평가 예시 「물을 아껴 쓰자」 전부 미차용. */
+/* ===== 9~10차시(소단원 2 기본 — 글쓴이가 하고 싶은 말 찾기) 『국어』 62~64쪽 13슬 — v2 교과서 기준 재구성 (2026-10-15)
+   ★ 정답 로깅 6슬(LESSON_MAX 60). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      작가 작품(「대단한 참외씨」·「다니엘의 멋진 날」)은 본문 통째 대신 간추림·몇 줄 인용. */
 const slides=[
-  {tag:'① 차시 만나기', t:'글에는 하고 싶은 말이 담겨 있어요',
-   html:`<div class="scene"><div class="scene-pic">✍️💬</div></div>
-    <div class="ka-bub">사람이 글을 쓸 때는 <b class="emph">읽는 사람에게 하고 싶은 말</b>이 있어요.<br>그 말을 어떻게 찾을 수 있을까요? 🤔</div>`},
+  {tag:'① 동기 유발', t:'이야기 속 인물에게 하고 싶은 말을 떠올려 봐요',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">🐢🐇</span><span class="pc-name">토끼와 거북</span></div><div class="punct-card"><span class="pc-mark">🦢</span><span class="pc-name">미운 오리 새끼</span></div><div class="punct-card"><span class="pc-mark">🎋</span><span class="pc-name">흥부 놀부</span></div></div><div class="ka-bub">「토끼야, 낮잠 자지 말고 끝까지 달려!」<br>이렇게 누군가에게 <b class="emph">하고 싶은 말</b>이 있지요? 글을 쓴 사람에게도 하고 싶은 말이 있어요. ✉️</div>`},
 
   {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
-   html:`<div class="sentence">글쓴이가 하고 싶은 말을 찾아봐요.</div>
-    <div class="ka-bub">글을 쓴 사람을 <b class="emph">글쓴이</b>라고 해요.<br>글쓴이가 하고 싶은 말을 찾는 방법을 알아볼 거예요. 🔍</div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>글쓴이가 하고 싶은 말을 찾아봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">📖</span>서연이가 쓴 글을 읽고 <b>내용</b>을 알아봐요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🔍</span>글쓴이가 하고 싶은 말을 찾는 <b>방법</b>을 알아봐요.</div></div>`},
 
-  {tag:'② 글 읽기', t:'「빌린 책은 제날짜에 돌려주자」를 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>1학년 하은</div>
-      <div class="read-line"><span class="rl-num">2</span>나는 도서관에서 책을 빌리면 돌려줄 날짜를 적어 둡니다.</div>
-      <div class="read-line"><span class="rl-num">3</span>그러면 잊지 않고 제날짜에 돌려줄 수 있습니다.</div>
-      <div class="read-line"><span class="rl-num">4</span>그런데 며칠씩 늦게 돌려주는 친구들이 있습니다.</div>
-      <div class="read-line"><span class="rl-num">5</span>그러면 그 책을 기다리는 친구가 오래 기다려야 합니다.</div>
-      <div class="read-line"><span class="rl-num">6</span>빌린 책은 제날짜에 돌려줍시다. 그래야 여러 친구가 함께 읽을 수 있습니다.</div>
-    </div><div class="fb" id="readFb">🔊 한 줄씩 또박또박 따라 읽어 봐요.</div>`},
+  {tag:'② 62쪽 1번', t:'서연이가 쓴 「사용한 물건을 제자리에 두자」를 읽어 봐요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>나는 물건을 쓰고 나서 제자리에 둡니다.</div><div class="read-line"><span class="rl-num">2</span>그렇게 하면 다음에 그 물건을 쓰려고 할 때 빨리 찾을 수 있습니다.</div><div class="read-line"><span class="rl-num">3</span>하지만 내 동생은 풀이나 가위와 같은 물건을 쓰고 나서 아무 데나 둡니다.</div><div class="read-line"><span class="rl-num">4</span>그래서 다음에 쓰려면 한참을 찾아야 합니다.</div><div class="read-line"><span class="rl-num">5</span>물건을 쓰고 나서 제자리에 둡시다. 그렇게 해야 물건을 쉽고 빠르게 찾을 수 있습니다.</div></div><div class="fb" id="readFb">📝 1학년 김서연</div>`},
 
-  {tag:'② 찾는 방법', t:'하고 싶은 말은 이렇게 찾아요',
-   html:`<div class="ka-bub">① 글의 <b class="emph">제목</b>을 살펴봐요. 하고 싶은 말이 제목에 담길 때가 많아요.<br>
-      ② 글쓴이가 이 글을 <b class="emph">쓴 까닭</b>을 찾아봐요.<br>
-      ③ 제목과 까닭을 <b class="emph">이어서</b> 생각해요. 🔗</div>`},
+  {tag:'② 63쪽 2번 (1)', t:'이 글을 쓴 사람은 누구인가요?', log:true, okMsg:'맞아요! 김서연이에요. 글을 쓴 사람을 「글쓴이」라고 말해요. ✏️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">김서연</div></div><div class="wcard" data-ok="0"><div class="wc-word">서연이 동생</div></div><div class="wcard" data-ok="0"><div class="wc-word">선생님</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 글쓴이 찾기', t:'이 글을 쓴 사람은 누구인가요?', log:true, okMsg:'맞아요! 글을 쓴 사람을 글쓴이라고 해요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">1학년 하은</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">도서관 선생님</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">늦게 돌려준 친구</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 63쪽 2번 (2)', t:'이 글의 제목은 무엇인가요?', log:true, okMsg:'맞아요! 제목은 「사용한 물건을 제자리에 두자」예요. 📖',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">「풀과 가위」</div></div><div class="wcard" data-ok="1"><div class="wc-word">「사용한 물건을 제자리에 두자」</div></div><div class="wcard" data-ok="0"><div class="wc-word">「내 동생」</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 제목 찾기', t:'이 글의 제목은 무엇인가요?', log:true, okMsg:'맞아요! 제목에 하고 싶은 말이 그대로 담겨 있어요. 📚',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">도서관에 가자</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">빌린 책은 제날짜에 돌려주자</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 63쪽 2번 (3)', t:'서연이와 동생의 습관은 어떻게 다른가요?', log:true, matchMsg:'맞아요! 서연이는 제자리에 두고, 동생은 아무 데나 둬요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">사람</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">👧</span>서연이</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🧒</span>동생</div></div><div class="match-col"><div class="match-col-h">습관</div><div class="match-card" data-k="B" data-pair="b">물건을 쓰고 나서 아무 데나 둡니다.</div><div class="match-card" data-k="A" data-pair="a">물건을 쓰고 나서 제자리에 둡니다.</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 내용 알기', t:'하은이와 늦게 돌려주는 친구는 무엇이 다른가요?', log:true, okMsg:'맞아요! 하은이는 날짜를 적어 두고 제날짜에 돌려줘요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">하은이는 날짜를 적어 두고 제날짜에 돌려줘요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">하은이는 책을 빌리지 않아요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 64쪽 3번', t:'글쓴이가 하고 싶은 말을 찾는 방법을 모두 골라요', log:true, collectMsg:'글쓴이 · 제목 · 글을 쓴 까닭, 세 가지 방법을 모두 찾았어요! 🎉', hint:'힌트: 첫 문장만 보면 글 전체에서 하고 싶은 말을 놓칠 수 있어요.',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">글쓴이가 누구인지 찾아봐요</div><div class="chip" data-hit="1">글의 제목을 살펴봐요</div><div class="chip" data-hit="1">글쓴이가 이 글을 쓴 까닭을 찾아봐요</div><div class="chip" data-hit="0">글의 첫 문장만 살펴봐요</div><div class="chip" data-hit="0">글자 수를 세어 봐요</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 쓴 까닭 찾기', t:'글쓴이가 이 글을 쓴 까닭은 무엇일까요?', log:true, okMsg:'맞아요! 늦게 돌려주면 기다리는 친구가 오래 기다리기 때문이에요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">도서관이 넓다는 것을 알리려고</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">늦게 돌려주면 기다리는 친구가 있어서</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 64쪽 4번', t:'「사용한 물건을 제자리에 두자」의 글쓴이가 하고 싶은 말은?', log:true, okMsg:'맞아요! 제목에도 나타나 있지요? 물건을 쓰고 나서 제자리에 두자는 거예요. 👍',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🧺</div><div class="wc-word">물건을 쓰고 나서 제자리에 두자</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🤝</div><div class="wc-word">동생과 사이좋게 지내자</div></div><div class="wcard" data-ok="0"><div class="wc-pic">✂️</div><div class="wc-word">풀과 가위를 새로 사자</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 하고 싶은 말', t:'글쓴이가 하고 싶은 말은 무엇일까요?', log:true, okMsg:'맞아요! 제목과 쓴 까닭이 한곳으로 모여요. 📚',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">빌린 책은 제날짜에 돌려주자</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">책을 많이 빌리자</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">도서관에서 조용히 하자</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 64쪽 알아 두기', t:'글쓴이의 생각',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">✉️</span><span class="pc-name">글쓴이의 생각</span></div><div class="punct-card"><span class="pc-mark">📌</span><span class="pc-name">제목에 나타나기도 해요</span></div></div><div class="ka-bub">글쓴이가 글에서 전하고 싶은 생각을 <b class="emph">글쓴이의 생각</b>이라고 해요.<br>글쓴이의 생각은 글의 <b class="emph">제목</b>에 나타나기도 해요. 🙂</div>`},
 
-  {tag:'③ 방법 고르기', t:'하고 싶은 말을 찾는 알맞은 방법을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 이 세 가지가 알맞은 방법이에요. 🎉',
-   hint:'힌트: 한 문장만 보고 정하면 글 전체가 무슨 말을 하는지 알 수 없어요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">제목을 살펴본다</div>
-      <div class="chip" data-hit="0">첫 문장만 살펴본다</div>
-      <div class="chip" data-hit="1">글쓴이가 누구인지 안다</div>
-      <div class="chip" data-hit="0">가장 긴 문장만 읽는다</div>
-      <div class="chip" data-hit="1">글을 쓴 까닭을 찾는다</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 더 읽어 보기', t:'「자전거를 안전하게 타자」를 읽어 봐요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>자전거를 타면 몸도 건강해지고 환경 오염도 줄일 수 있습니다.</div><div class="read-line"><span class="rl-num">2</span>하지만 안전하게 타지 않으면 다칠 수 있습니다.</div><div class="read-line"><span class="rl-num">3</span>안전모를 꼭 쓰고, 적당한 속도로 타고, 신호등도 꼭 지켜야 합니다.</div><div class="read-line"><span class="rl-num">4</span>우리 모두 자전거를 안전하게 타서 다치지 않으면 좋겠습니다.</div></div><div class="fb" id="readFb">🚲 제목과 마지막 문장을 함께 살펴봐요.</div>`},
 
-  {tag:'③ 다른 글에서 찾기', t:'이 알림글에서 하고 싶은 말은 무엇일까요?', log:true, okMsg:'맞아요! 제목과 내용이 모두 한 가지를 말하고 있어요. 🌱',
-   html:`<div class="ka-bub"><b>화분에 물을 주고 가요</b><br>우리 반 화분은 사흘에 한 번 물을 줍니다. 물을 주지 않으면 잎이 마릅니다. 당번은 잊지 말고 물을 주고 갑시다.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">당번은 화분에 물을 주자</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">화분을 새로 사자</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 더 읽어 보기', t:'이 글의 글쓴이가 하고 싶은 말은?', log:true, okMsg:'맞아요! 제목 「자전거를 안전하게 타자」에 글쓴이의 생각이 나타나 있어요. 🚲',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🚲</div><div class="wc-word">자전거를 안전하게 타자</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🛒</div><div class="wc-word">새 자전거를 사자</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🏃</div><div class="wc-word">자전거보다 달리기를 하자</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 스스로 점검', t:'오늘 배운 것을 스스로 확인해요 (눌러서 확인해요)',
-   hint:'힌트: 스스로 떠올리며 해당하는 것을 눌러요. 정답은 없어요!',
-   html:`<div class="selfcheck">
-      <div class="sc-row"><span class="sc-box">✓</span>나는 글을 쓴 사람을 <b>글쓴이</b>라고 부르는 것을 알아요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>나는 글의 <b>제목</b>을 먼저 살펴볼 수 있어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>나는 글쓴이가 <b>글을 쓴 까닭</b>을 찾아볼 수 있어요.</div>
-    </div>
-    <div class="fb">스스로 돌아보면 다음이 더 잘돼요. 🌱</div>`},
+  {tag:'④ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">✏️</span>글을 쓴 사람을 <b>글쓴이</b>라고 해요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🔍</span>글쓴이 · <b>제목</b> · 글을 쓴 <b>까닭</b>을 살펴 하고 싶은 말을 찾아요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">📌</span>글쓴이의 생각은 <b>제목</b>에 나타나기도 해요.</div></div>`},
 
   {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🏷️</span>글의 <b>제목</b>에 하고 싶은 말이 담길 때가 많아요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">❓</span>글을 <b>쓴 까닭</b>을 찾으면 하고 싶은 말이 보여요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">➡️</span>다음 시간에는 글 속 <b>인물의 생각</b>을 알아볼 거예요.</div>
-    </div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">📖</span>서연이가 쓴 글을 읽고 내용을 알아보았어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🔍</span>글쓴이가 하고 싶은 말을 찾는 방법을 알았어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">✉️</span>글을 읽고 글쓴이가 하고 싶은 말을 찾아보았어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -409,6 +350,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>
