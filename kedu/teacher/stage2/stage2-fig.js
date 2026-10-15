@@ -2049,6 +2049,92 @@
   }
   Object.assign(PARTS, { pat1, seq1, ntab1, pgrid1, floor1 });
   }
+  { // 130차 1학년 2학기 「덧셈과 뺄셈(3)」 부품 — 이름이 겹치지 않게 블록 안에 둔다
+  // ══ nbrow1(수 모형 식 줄 — 10개씩 막대·낱개) · vcalc1(세로 셈 칸) · pairup1(짝 지어 견주기) · board1(놀이판) · tops1(팽이 식 카드) · cmds1(명령어 차례) ══
+  // 그림 문법(자기주도 원문과 같음): 10개씩 묶음 = 주황 막대 · 낱개 = 파란 칸 · 주황 점선 「?」 = 구할 자리 · 「십의 자리·일의 자리」 말은 쓰지 않음(지도서 — 「10개씩 묶음 자리 · 낱개 자리」).
+  const AM9 = ['#FFD08A', '#F5A623', '#B9741A'], BL9 = ['#8DB6FF', '#3E6FCF', '#1F4A9E'], OR9 = ['#FFF1E6', '#FF7A2F', '#C2551A'], GY9 = '#C9D3E0', GR9 = '#2E9E5B';
+  const box9 = (x, y, w, h, fill, st, sw, dash, rx) => '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="' + (rx == null ? 12 : rx) + '" fill="' + fill + '" stroke="' + st + '" stroke-width="' + (sw || 3) + '"' + (dash ? ' stroke-dasharray="9 6"' : '') + '/>';
+  const op9 = (t) => String(t).replace(/^-$/, '−');
+  const eq9 = (t) => String(t).replace(/\s*-\s*/g, ' − ').replace(/\s*\+\s*/g, ' + ').replace(/\s*=\s*/g, ' = ');
+  // nbrow1: items [{t, o, label}] · ops · hole(true 면 마지막 칸 「?」 — 문제 그림) · data-nb(t|o;…) · data-ops
+  function nbrow1(o) {
+    const its = (o.items || []).slice(0, 3); if (!its.length) return '';
+    const u = 22, rg = 6, og = 4, rh = 10 * u, lab = 54, top = 14, ow = 26 + 10;
+    const capW = (it) => it.label ? it.label.length * (it.label.length > 7 ? 24 : 30) * 0.92 + 16 : 0, wOf = (it, i) => (o.hole && i === its.length - 1) ? 150 : Math.max(96, capW(it), (it.t ? it.t * (u + rg) - rg : 0) + (it.t && it.o ? 16 : 0) + (it.o ? Math.min(it.o, 5) * (u + og) - og : 0) + 24);
+    const ws = its.map(wOf), opw = 64, tot = ws.reduce((a, b) => a + b, 0) + (its.length - 1) * opw, Wd = Math.max(560, tot + 24); let x = (Wd - tot) / 2, s = '';
+    its.forEach((it, i) => { const w = ws[i], hole = o.hole && i === its.length - 1;
+      if (hole) { s += box9(x + 8, top, w - 16, rh, '#fff', OR9[1], 4.5, true, 18) + txt(x + w / 2, top + rh / 2 + 26, '?', 76, OR9[2], 900); }
+      else { const bw = (it.t ? it.t * (u + rg) - rg : 0) + (it.t && it.o ? 16 : 0) + (it.o ? Math.min(it.o, 5) * (u + og) - og : 0); let bx = x + (w - bw) / 2;
+        for (let k = 0; k < it.t; k++) { s += '<rect class="o-ten" x="' + bx.toFixed(1) + '" y="' + top + '" width="' + u + '" height="' + rh + '" rx="5" fill="' + AM9[1] + '" stroke="' + AM9[2] + '" stroke-width="2.5"/>'; for (let j = 1; j < 10; j++) s += '<line x1="' + (bx + 3).toFixed(1) + '" y1="' + (top + j * u) + '" x2="' + (bx + u - 3).toFixed(1) + '" y2="' + (top + j * u) + '" stroke="' + AM9[0] + '" stroke-width="1.6"/>'; bx += u + rg; }
+        if (it.t && it.o) bx += 16 - rg;
+        for (let k = 0; k < it.o; k++) { const cx = bx + (k % 5) * (u + og), cy = top + rh - u - Math.floor(k / 5) * (u + og); s += '<rect class="o-one" x="' + cx.toFixed(1) + '" y="' + cy.toFixed(1) + '" width="' + u + '" height="' + u + '" rx="4" fill="' + BL9[0] + '" stroke="' + BL9[1] + '" stroke-width="2.5"/>'; } }
+      const last = i === its.length - 1, cap = hole ? '' : it.label || (last ? String(it.t * 10 + it.o) : '');
+      if (cap) s += txt(x + w / 2, top + rh + 40, cap, cap.length > 7 ? 24 : 30, last && !it.label ? OR9[2] : '#3E4A5C', 900);
+      x += w; if (i < its.length - 1) { s += txt(x + opw / 2, top + rh / 2 + 18, op9((o.ops || [])[i] || ''), 52, '#6B7C93', 900); x += opw; } });
+    return svgWrap(s, 'fig-nbrow1', '0 0 ' + Wd + ' ' + (top + rh + lab + 4)).replace('<svg ', '<svg data-nb="' + its.map((it, i) => (o.hole && i === its.length - 1 ? '?' : it.t + '|' + it.o)).join(';') + '" data-ops="' + esc((o.ops || []).join(',')) + '" ');
+  }
+  // vcalc1: op · rows [[t, o] × 3] (칸 글자 원문 그대로 — 빈 칸 · 「?」) · hole · mode(res 결과 초록 · bad 자리 틀리게 쓴 셈) · tag · data-rows(줄마다 t,o) · data-op
+  function vcalc1(o) {
+    const rows = (o.rows || []).slice(0, 3); if (rows.length < 3) return '';
+    const cw = 104, ow = 64, gp = 8, ch = 78, hh = 70, gw = ow + 2 * cw + 2 * gp, Wd = Math.max(340, gw + 44), x0 = (Wd - gw) / 2, y0 = 12; let s = '';
+    const xs = [x0 + ow + gp, x0 + ow + gp + cw + gp];
+    s += box9(xs[0], y0, cw, hh, '#FFF4E0', AM9[1], 2.5, false, 12) + box9(xs[1], y0, cw, hh, '#EAF1FF', BL9[1], 2.5, false, 12);
+    s += txt(xs[0] + cw / 2, y0 + 30, '10개씩', 22, AM9[2], 900) + txt(xs[0] + cw / 2, y0 + 56, '묶음 자리', 22, AM9[2], 900) + txt(xs[1] + cw / 2, y0 + 30, '낱개', 22, BL9[2], 900) + txt(xs[1] + cw / 2, y0 + 56, '자리', 22, BL9[2], 900);
+    const yr = (r) => y0 + hh + 14 + r * (ch + gp) + (r === 2 ? 20 : 0);
+    rows.forEach((r, ri) => { const y = yr(ri);
+      if (ri === 1) s += txt(x0 + ow / 2, y + ch / 2 + 20, op9(o.op || '+'), 56, '#6B7C93', 900);
+      [0, 1].forEach(c => { const v = r[c] == null ? '' : String(r[c]), hole = !!((o.hole || [])[ri] || [])[c], res = ri === 2 && o.mode === 'res' && v && !hole;
+        if (hole) s += box9(xs[c] + 6, y + 4, cw - 12, ch - 8, '#fff', OR9[1], 4, true, 12) + txt(xs[c] + cw / 2, y + ch / 2 + 20, '?', 54, OR9[2], 900);
+        else if (v) s += txt(xs[c] + cw / 2, y + ch / 2 + 22, v, 64, res ? GR9 : INK, 900);
+        else s += box9(xs[c] + 10, y + 8, cw - 20, ch - 16, 'none', '#E3E8EF', 2, true, 10); }); });
+    const ly = yr(2) - 14; s += '<line x1="' + x0 + '" y1="' + ly + '" x2="' + (x0 + gw) + '" y2="' + ly + '" stroke="' + INK + '" stroke-width="5" stroke-linecap="round"/>';
+    let Hh = yr(2) + ch + 10; if (o.tag) { s += txt(Wd / 2, Hh + 26, o.tag, 26, '#4E5C70', 800); Hh += 42; }
+    return svgWrap(s, 'fig-vcalc1', '0 0 ' + Wd + ' ' + Hh).replace('<svg ', '<svg data-rows="' + esc(rows.map(r => r.map(v => (v == null ? '' : v)).join(',')).join('|')) + '" data-op="' + esc(o.op || '+') + '" data-mode="' + (o.mode || '') + '" ');
+  }
+  // pairup1: a(위 수) · b(아래 수) · em[위, 아래 색 이모지] · label · 열 10 칸씩 줄을 바꿈 · 짝 없는 위 칸(solo)은 주황 테 · data-ab · data-solo
+  function pairup1(o) {
+    const a = +o.a | 0, b = +o.b | 0; if (!a) return '';
+    const EMC = { '🟦': ['#8DB6FF', '#3E6FCF'], '🟥': ['#F48A8F', '#C93A41'], '🟨': ['#FFD86B', '#C99A00'], '🟩': ['#7ED6A0', '#2E9E5B'] };
+    const ca = EMC[(o.em || [])[0]] || EMC['🟦'], cb = EMC[(o.em || [])[1]] || EMC['🟥'];
+    const per = 10, u = 40, gp = 8, lines = Math.ceil(a / per), gw = per * (u + gp) - gp, Wd = Math.max(560, gw + 40), x0 = (Wd - gw) / 2; let s = '', y = 12;
+    for (let L = 0; L < lines; L++) { const has = L * per < b;
+      for (let i = L * per; i < Math.min(a, (L + 1) * per); i++) { const x = x0 + (i % per) * (u + gp), paired = i < b;
+        s += box9(x, y, u, u, ca[0], paired ? ca[1] : OR9[1], paired ? 2.5 : 4.5, false, 7);
+        if (paired) s += '<line x1="' + (x + u / 2) + '" y1="' + (y + u) + '" x2="' + (x + u / 2) + '" y2="' + (y + u + 14) + '" stroke="#8A97A8" stroke-width="3"/>' + box9(x, y + u + 14, u, u, cb[0], cb[1], 2.5, false, 7); }
+      y += u + (has ? u + 14 : 0) + 16; }
+    let Hh = y - 6; if (o.label) { s += txt(Wd / 2, Hh + 26, o.label, 26, '#4E5C70', 800); Hh += 42; }
+    return svgWrap(s, 'fig-pairup1', '0 0 ' + Wd + ' ' + Hh).replace('<svg ', '<svg data-ab="' + a + '|' + b + '" data-solo="' + Math.max(0, a - b) + '" ');
+  }
+  // board1: rows(칸 글자 줄) · on(고른 칸 — 주황) · word(글자 칸 — 출발·쉬기 등) · data-cells · data-on
+  function board1(o) {
+    const rows = (o.rows || []).filter(r => r && r.length); if (!rows.length) return '';
+    const flat = [].concat(...rows), mc = Math.max(...rows.map(r => r.length)), eq = flat.some(t => /[=]/.test(t)), cw = eq ? 196 : 120, ch = eq ? 84 : 80, gp = 8;
+    const gw = mc * (cw + gp) - gp, Wd = Math.max(460, gw + 40), y0 = 14; let s = box9((Wd - gw) / 2 - 12, y0 - 8, gw + 24, rows.length * (ch + gp) - gp + 16, '#F2FAF4', '#9ED7B1', 3, false, 18), k = 0;
+    rows.forEach((r, ri) => { const rw = r.length * (cw + gp) - gp, x0 = (Wd - rw) / 2;
+      r.forEach((t, ci) => { const x = x0 + ci * (cw + gp), y = y0 + ri * (ch + gp), on = (o.on || []).indexOf(k) >= 0, wd = (o.word || []).indexOf(k) >= 0;
+        s += box9(x, y, cw, ch, on ? OR9[0] : wd ? '#EEF2F7' : '#fff', on ? OR9[1] : GY9, on ? 5 : 2.5, false, 12) + txt(x + cw / 2, y + ch / 2 + (wd ? 10 : eq ? 11 : 15), wd ? t : eq9(t), wd ? 26 : eq ? 30 : 42, on ? OR9[2] : wd ? '#4E5C70' : INK, 900); k++; }); });
+    return svgWrap(s, 'fig-board1', '0 0 ' + Wd + ' ' + (y0 + rows.length * (ch + gp) + 8)).replace('<svg ', '<svg data-cells="' + esc(flat.join(',')) + '" data-on="' + (o.on || []).join(',') + '" ');
+  }
+  // tops1: em · cards [[a, op, b, 결과, 바름1/0]] · paint(색칠한 카드 — 개념 장만) · 다섯씩 줄 · data-cards(a op b=결과;…) · data-paint
+  function tops1(o) {
+    const cs = (o.cards || []).filter(c => c && c.length >= 4); if (!cs.length) return '';
+    const per = Math.min(5, cs.length), cw = 152, ch = 156, gp = 12, nr = Math.ceil(cs.length / per), gw = per * (cw + gp) - gp, Wd = Math.max(460, gw + 30), y0 = 10; let s = '';
+    cs.forEach((c, i) => { const r = Math.floor(i / per), inRow = Math.min(per, cs.length - r * per), rx0 = (Wd - (inRow * (cw + gp) - gp)) / 2, x = rx0 + (i % per) * (cw + gp), y = y0 + r * (ch + gp), on = (o.paint || []).indexOf(i) >= 0;
+      s += box9(x, y, cw, ch, on ? '#FFF3C4' : '#fff', on ? '#D9A400' : GY9, on ? 4.5 : 2.5, false, 18) + txt(x + cw / 2, y + 40, o.em || '🪀', 30, INK, 400) + txt(x + cw / 2, y + 90, c[0] + ' ' + op9(c[1]) + ' ' + c[2], 36, INK, 900) + txt(x + cw / 2, y + 136, '= ' + c[3], 36, INK, 900); });
+    return svgWrap(s, 'fig-tops1', '0 0 ' + Wd + ' ' + (y0 + nr * (ch + gp) + 2)).replace('<svg ', '<svg data-cards="' + esc(cs.map(c => c[0] + c[1] + c[2] + '=' + c[3]).join(';')) + '" data-paint="' + (o.paint || []).join(',') + '" ');
+  }
+  // cmds1: shown(보이는 명령어 — 「?」 = 빈 명령어) · hole · 번호 동그라미 + 명령어 칸 위아래 · data-cmds
+  function cmds1(o) {
+    const sh = (o.shown || o.cmd || []).map(String); if (!sh.length) return '';
+    const cw = 600, ch = 66, gp = 12, Wd = 700, x0 = 70, y0 = 10; let s = '';
+    sh.forEach((t, i) => { const y = y0 + i * (ch + gp), hole = t === '?' || (o.hole || []).indexOf(i) >= 0;
+      s += '<circle cx="' + (x0 - 32) + '" cy="' + (y + ch / 2) + '" r="24" fill="' + INK + '"/>' + txt(x0 - 32, y + ch / 2 + 9, String(i + 1), 26, '#fff', 900);
+      s += box9(x0, y, cw, ch, hole ? '#fff' : '#EAF1FF', hole ? OR9[1] : BL9[1], hole ? 4 : 2.5, hole, 14) + txt(x0 + (hole ? cw / 2 : 22), y + ch / 2 + 10, hole ? '?' : t, hole ? 38 : t.length > 18 ? 26 : 30, hole ? OR9[2] : INK, 900, hole ? 'middle' : 'start');
+      if (i < sh.length - 1) s += txt(x0 - 32, y + ch + gp / 2 + 5, '▼', 14, '#9AA6B4', 900); });
+    return svgWrap(s, 'fig-cmds1', '0 0 ' + Wd + ' ' + (y0 + sh.length * (ch + gp) - gp + 10)).replace('<svg ', '<svg data-cmds="' + esc(sh.join('|')) + '" ');
+  }
+  Object.assign(PARTS, { nbrow1, vcalc1, pairup1, board1, tops1, cmds1 });
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
