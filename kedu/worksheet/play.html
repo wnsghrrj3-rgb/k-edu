@@ -695,7 +695,8 @@ textarea:focus{outline:0;border-color:var(--pencil)}
 <!-- 쪽지 모드(?quiz=)에서만 원장에 붙는다. 파일 학습지는 이 스크립트를 부르지 않는다. -->
 <script>
 if (new URLSearchParams(location.search).get('quiz')){
-  ['/kedu_config.js','https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','/kedu_quiz.js']
+  // 케이박스 카드로 들어온 쪽지(?cwb=&cwi=)는 결과봉투 어댑터도 같이 — 끝내면 cw_submit 으로 「다 했어요」 (2026-10-16 준호 폰: 풀어도 완료가 안 떴다)
+  ['/kedu_config.js','https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','/kedu_quiz.js','/kedu_kbox_adapter.js']
     .forEach(function(src){ document.write('<script src="' + src + '"><\/script>'); });
 }
 </script>
@@ -5850,6 +5851,11 @@ function widgetEssay(q, el, r, prev){
 }
 
 /* ---------- 마무리: 도장 + 막힌 개념 하나 + 다시 해볼까? ---------- */
+/* 케이박스 결과봉투 — 카드에서 들어온 쪽지는 끝낼 때 한 번 제출(어댑터가 이중 제출·밖에서 열림을 알아서 막음) */
+function kboxDone(okN, total){
+  if (!QUIZ || PREVIEW || !window.KBox || !window.KBox.active) return;
+  try { Promise.resolve(window.KBox.submit({ tool: 'quiz', kind: 'auto', score: okN, max: total, detail: { quiz: QUIZ } })).catch(function(){}); } catch(e){}
+}
 function renderFinish(){
   const all = Q.map((q, i) => ({q, a: state.answers[i] || {}})); const wrong = all.filter(x => !x.a.ok && !x.a.pending); const pend = all.filter(x => x.a.pending).length; const okN = all.filter(x => x.a.ok).length;
   if (!canReveal()){
@@ -5858,6 +5864,7 @@ function renderFinish(){
      <p>${Q.length}문제를 모두 적어서 선생님께 보냈어요.<br>선생님이 결과를 열면 맞았는지 볼 수 있어요.</p>
      <div class="alt"><a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
     if (QUIZ && window.keduQuiz && !PREVIEW) try { window.keduQuiz.recordEnd(okN, Q.length, null); } catch(e){}
+    kboxDone(okN, Q.length);
     TTS.speak(`끝까지 했어요. ${Q.length}문제를 모두 적어서 선생님께 보냈어요.`);
     window.__retryFrom = [];
     return;
@@ -5874,6 +5881,7 @@ function renderFinish(){
    <div class="row">${wrong.length ? `<button class="big" data-nav="retry">다시 해볼까? (${wrong.length})</button>` : ''}<button class="big ghost" data-nav="again">처음부터</button></div>
    <div class="alt">${QUIZ ? '' : `<a href="play.html?set=${SET}&mode=paper">시험지(A4)로 풀기</a><span>·</span><a href="./">학습지 목록</a><span>·</span>`}<a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
   if (QUIZ && window.keduQuiz && !PREVIEW) try { window.keduQuiz.recordEnd(okN, Q.length, null); } catch(e){}
+  if (!state.retry) kboxDone(okN, Q.length);
   TTS.speak(`${label}. ${Q.length}문제 중 ${okN}문제를 맞혔어요.` + (topMis ? ` 이번에 연습할 것은 ${MISNAME[topMis[0]] || ''}` : ''));
   // 세트 끝 기록 — 한 판(전체)만 회차로 센다. '다시 해볼까?'(부분 재출제)는 문항 기록만 남는다.
   if (!state.retry && window.kedu && window.kedu.recordLessonEnd) try { window.kedu.recordLessonEnd(okN, Q.length); } catch(e){}
