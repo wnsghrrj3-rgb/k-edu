@@ -1777,6 +1777,50 @@
     }
     Object.assign(PARTS, { dgrid, dline }); Object.assign(HTML_PARTS, { dpv, dvert, rtab });
   }
+  { // 124차 1학년 2학기 「덧셈과 뺄셈(1)」 부품 — 이름이 겹치지 않게 블록 안에 둔다
+  // ══ cstack(층 쌓은 컵) · lcube(연결 모형 색 묶음) · tf2(십 배열판 두 색 + 덜어 낸 칸) · eqt(식 띠 — 한 줄 또는 번호 줄) ══
+  // 그림 문법(자기주도 원문과 같음): 빨강 = 먼저 있던 것 · 파랑 = 더한 것 · 회색 ✕ = 덜어 낸 것 · 흰 칸 = 빈칸 · 주황 = 결과·강조 · 주황 점선 「?」 = 구할 자리.
+  const LV = ['#F2545B', '#5B8DEF', '#5CC08A', '#F5A623'], LV2 = ['#C93A41', '#3E6FCF', '#3E9A6A', '#C9851A'];
+  // cstack: levels [아래층부터 컵 수] · num(true 면 층 옆에 수) · data-levels/n
+  function cstack(o) {
+    const lv = (o.levels || []).map(n => Math.max(0, Math.min(8, n | 0))).filter(n => n > 0); if (!lv.length) return '';
+    const cw = 50, ch = 56, gx = 4, rows = lv.length, mx = Math.max(...lv), tot = mx * (cw + gx), k = Math.min(1.4, 380 / tot), top = 18, Hh = Math.ceil(top + rows * ch * k + 26);
+    let s = '<line x1="30" y1="' + (Hh - 14) + '" x2="430" y2="' + (Hh - 14) + '" stroke="#C9D3E0" stroke-width="4" stroke-linecap="round"/>';
+    lv.forEach((n, r) => { const y = Hh - 14 - (r + 1) * ch * k, x0 = 230 - n * (cw + gx) * k / 2 + gx * k / 2;
+      for (let i = 0; i < n; i++) { const x = x0 + i * (cw + gx) * k, w = cw * k, h = ch * k - 3, c = LV[r % 4], c2 = LV2[r % 4];
+        s += '<path class="o-cup" d="M' + (x + w * 0.16).toFixed(1) + ' ' + y.toFixed(1) + 'H' + (x + w * 0.84).toFixed(1) + 'L' + (x + w).toFixed(1) + ' ' + (y + h).toFixed(1) + 'H' + x.toFixed(1) + 'Z" fill="' + c + '" stroke="' + c2 + '" stroke-width="3" stroke-linejoin="round"/><rect x="' + (x - 1).toFixed(1) + '" y="' + (y + h - 7).toFixed(1) + '" width="' + (w + 2).toFixed(1) + '" height="7" rx="3" fill="' + c2 + '"/>'; }
+      if (o.num) s += txt((x0 + n * (cw + gx) * k + 18).toFixed(1), (y + ch * k * 0.62).toFixed(1), String(n), 28, LV2[r % 4], 900, 'start'); });
+    return svgWrap(s, 'fig-cstack', '0 0 460 ' + Hh).replace('<svg ', '<svg data-levels="' + lv.join(',') + '" data-n="' + lv.reduce((a, b) => a + b, 0) + '" ');
+  }
+  // lcube: groups [색 묶음마다 개수] · num(true 면 묶음 아래 수) · data-groups/n
+  function lcube(o) {
+    const gs = (o.groups || []).map(n => Math.max(0, Math.min(10, n | 0))).filter(n => n > 0); if (!gs.length) return '';
+    const u = 34, gap = 22, tot = gs.reduce((a, n) => a + n * u, 0) + gap * (gs.length - 1), k = Math.min(1.5, 420 / tot), y = 34; let x = 230 - tot * k / 2, s = '';
+    gs.forEach((n, g) => { const x1 = x; for (let i = 0; i < n; i++) { const cx = x + i * u * k; s += '<g class="o-lc"><rect x="' + cx.toFixed(1) + '" y="' + y + '" width="' + (u * k).toFixed(1) + '" height="' + (u * k).toFixed(1) + '" rx="4" fill="' + LV[g % 4] + '" stroke="' + LV2[g % 4] + '" stroke-width="2.5"/><rect x="' + (cx + u * k * 0.3).toFixed(1) + '" y="' + (y - 7) + '" width="' + (u * k * 0.4).toFixed(1) + '" height="8" rx="2" fill="' + LV2[g % 4] + '"/></g>'; }
+      x += n * u * k; if (o.num) s += txt(((x1 + x) / 2).toFixed(1), (y + u * k + 34).toFixed(1), String(n), 28, LV2[g % 4], 900); x += gap * k; });
+    return svgWrap(s, 'fig-lcube', '0 0 460 ' + Math.ceil(y + u * k + (o.num ? 48 : 14))).replace('<svg ', '<svg data-groups="' + gs.join(',') + '" data-n="' + gs.reduce((a, b) => a + b, 0) + '" ');
+  }
+  // tf2: a(빨강 칸) · g(덜어 낸 칸 — 회색 ✕) · b(파랑 칸) · 나머지 빈칸 · label(아래 꼬리표) · data-a/b/g/e
+  function tf2(o) {
+    const a = Math.max(0, o.a | 0), g = Math.max(0, o.g | 0), b = Math.max(0, o.b | 0), e = Math.max(0, 10 - a - g - b), sz = 70, gp = 8, x0 = 230 - (5 * sz + 4 * gp) / 2, y0 = 16; let s = '';
+    s += '<rect x="' + (x0 - 10) + '" y="' + (y0 - 10) + '" width="' + (5 * sz + 4 * gp + 20) + '" height="' + (2 * sz + gp + 20) + '" rx="14" fill="#fff" stroke="' + INK + '" stroke-width="4"/>';
+    for (let i = 0; i < 10; i++) { const x = x0 + (i % 5) * (sz + gp), y = y0 + Math.floor(i / 5) * (sz + gp), kd = i < a ? 'a' : i < a + g ? 'g' : i < a + g + b ? 'b' : 'e';
+      s += '<rect class="o-tf ' + kd + '" x="' + x + '" y="' + y + '" width="' + sz + '" height="' + sz + '" rx="10" fill="' + (kd === 'e' ? '#fff' : kd === 'g' ? '#EEF2F7' : '#FAFCFF') + '" stroke="#C9D3E0" stroke-width="3"/>';
+      if (kd === 'a' || kd === 'b') s += '<circle cx="' + (x + sz / 2) + '" cy="' + (y + sz / 2) + '" r="' + (sz * 0.34) + '" fill="' + (kd === 'a' ? LV[0] : LV[1]) + '" stroke="' + (kd === 'a' ? LV2[0] : LV2[1]) + '" stroke-width="3"/>';
+      if (kd === 'g') s += '<circle cx="' + (x + sz / 2) + '" cy="' + (y + sz / 2) + '" r="' + (sz * 0.34) + '" fill="#C4CDD8"/><path d="M' + (x + 18) + ' ' + (y + 18) + 'L' + (x + sz - 18) + ' ' + (y + sz - 18) + 'M' + (x + sz - 18) + ' ' + (y + 18) + 'L' + (x + 18) + ' ' + (y + sz - 18) + '" stroke="#6B7C93" stroke-width="6" stroke-linecap="round"/>'; }
+    const yb = y0 + 2 * sz + gp + 10; if (o.label) s += txt(230, yb + 36, o.label, 26, '#4E5C70', 800);
+    return svgWrap(s, 'fig-tf2', '0 0 460 ' + (yb + (o.label ? 50 : 8))).replace('<svg ', '<svg data-a="' + a + '" data-b="' + b + '" data-g="' + g + '" data-e="' + e + '" ');
+  }
+  // eqt: rows [{toks:[…], hi:[칸], q:[칸], no}] (또는 toks 하나) · 칸 = 수·기호 · hi 주황 · q 「?」 · no 있으면 번호 동그라미 · data-eq(「?」 그대로)
+  function eqt(o) {
+    const rows = o.rows || (o.toks ? [o] : []); if (!rows.length) return '';
+    const sym = (t) => String(t).replace(/^-$/, '−');
+    const one = (r) => '<div class="eqt-row' + (r.no ? ' step' : '') + '" data-eq="' + esc((r.toks || []).map((t, i) => ((r.q || []).indexOf(i) >= 0 ? '?' : String(t))).join(' ')) + '">' + (r.no ? '<b class="eqt-no">' + esc(r.no) + '</b>' : '') + (r.toks || []).map((t, i) => { const q = (r.q || []).indexOf(i) >= 0, hi = (r.hi || []).indexOf(i) >= 0, op = /^[+\-−=×÷]$/.test(String(t));
+      return op ? '<span class="eqt-op">' + esc(sym(t)) + '</span>' : '<span class="eqt-n' + (q ? ' q' : hi ? ' hi' : '') + '">' + (q ? '?' : esc(t)) + '</span>'; }).join('') + '</div>';
+    return '<div class="fig-vert fig-eqt' + (rows.length > 4 ? ' many' : '') + '">' + rows.map(one).join('') + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
+  }
+  Object.assign(PARTS, { cstack, lcube, tf2 }); Object.assign(HTML_PARTS, { eqt });
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';

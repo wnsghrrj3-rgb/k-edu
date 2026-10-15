@@ -66,8 +66,10 @@ def figs2(p):
         lv = [len(re.findall(r'<i', x)) for x in re.findall(r'<div class="cup-lv">(.*?)</div>', m.group(1), re.S)]
         found.append((m.start(), m.end(), {'k': 'cups', 'levels': lv}))
     for m in re.finditer(r'<div class="tenframe">((?:<div class="tf-cell[^"]*"[^>]*></div>\s*)+)</div>(?:\s*<span class="tf-lb">(.*?)</span>)?', p, re.S):
-        c = m.group(1); a = len(re.findall(r'tf-cell a', c)); b = len(re.findall(r'tf-cell b', c)); plain = len(re.findall(r'tf-cell"', c))
-        found.append((m.start(), m.end(), {'k': 'tf', 'a': a, 'b': b, 'empty': plain, 'label': clean(m.group(2) or '')}))
+        c = m.group(1); a = len(re.findall(r'tf-cell a', c)); b = len(re.findall(r'tf-cell b', c)); g = len(re.findall(r'tf-cell g', c)); plain = len(re.findall(r'tf-cell"', c))
+        tf = {'k': 'tf', 'a': a, 'b': b, 'empty': plain, 'label': clean(m.group(2) or '')}
+        if g: tf['g'] = g  # 124차: 덜어 낸 칸(tf-cell g · 던진·지운 것) — 없으면 키도 없음(123차 json 과 바이트 같게)
+        found.append((m.start(), m.end(), tf))
     return [f for _, _, f in sorted(found, key=lambda x: x[0])]
 
 def parse(path):
