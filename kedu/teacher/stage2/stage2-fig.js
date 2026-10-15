@@ -2134,6 +2134,50 @@
     return svgWrap(s, 'fig-cmds1', '0 0 ' + Wd + ' ' + (y0 + sh.length * (ch + gp) - gp + 10)).replace('<svg ', '<svg data-cmds="' + esc(sh.join('|')) + '" ');
   }
   Object.assign(PARTS, { nbrow1, vcalc1, pairup1, board1, tops1, cmds1 });
+  // ══ 131차(수학) — 7단원 「수학이랑 안전」: sign1(안전 표지판 줄) · tally1(약속 고른 사람 점 줄) · phases1(준비·해 봐요·마무리 단계 띠) ══
+  // sign1: items [{s: o 동그라미 | t 세모 | q 네모, c: blue|red|yellow|green, n 수, t 글, tag}] · 빨강 동그라미에 수 = 흰 바탕 빨간 테(빠르기 표지판) · 글·수 없는 표지판 = 점선 「?」 · data-signs(s|c|n|t;…)
+  const SG9 = { blue: ['#2F6BD8', '#fff'], red: ['#E03A3A', '#fff'], yellow: ['#FFCF33', INK], green: ['#25A05A', '#fff'] };
+  function sgLines(t) { t = String(t || ''); if (t.length <= 5 || t.indexOf(' ') < 0) return [t]; const ws = t.split(' '); let best = [t], bd = 99;
+    for (let i = 1; i < ws.length; i++) { const a = ws.slice(0, i).join(' '), b = ws.slice(i).join(' '), d = Math.abs(a.length - b.length); if (d < bd) { bd = d; best = [a, b]; } } return best; }
+  function sign1(o) {
+    const its = o.items || []; if (!its.length) return '';
+    const one = its.length === 1, sz = one ? 300 : its.length >= 4 ? 190 : 230, gp = one ? 0 : 34, tagH = its.some(i => i.tag) ? 58 : 0;
+    const Wd = Math.max(one ? 420 : 560, its.length * sz + (its.length - 1) * gp + 40), x0 = (Wd - (its.length * sz + (its.length - 1) * gp)) / 2, y0 = 12; let s = '';
+    its.forEach((it, i) => { const x = x0 + i * (sz + gp), cx = x + sz / 2, cy = y0 + sz / 2, col = SG9[it.c] || SG9.blue, empty = !it.t && !it.n;
+      const ring = it.s === 'o' && it.n; let fill = empty ? '#fff' : ring ? '#fff' : col[0], ink = empty ? '#9AA6B4' : ring ? INK : col[1];
+      const st = empty ? col[0] : ring ? col[0] : (it.c === 'yellow' ? INK : col[0]), sw = empty ? 6 : ring ? sz * 0.09 : it.c === 'yellow' ? 8 : 0, dash = empty ? ' stroke-dasharray="14 10"' : '';
+      if (it.s === 't') { const h = sz * 0.9, w = sz, ty = cy + h / 2 - 6; s += '<path d="M' + cx + ' ' + (ty - h + 8) + ' L' + (cx + w / 2 - 6) + ' ' + ty + ' L' + (cx - w / 2 + 6) + ' ' + ty + ' Z" fill="' + fill + '" stroke="' + st + '" stroke-width="' + (sw || 8) + '" stroke-linejoin="round"' + dash + '/>'; }
+      else if (it.s === 'q') s += '<rect x="' + (x + 8) + '" y="' + (y0 + 8) + '" width="' + (sz - 16) + '" height="' + (sz - 16) + '" rx="' + (sz * 0.1) + '" fill="' + fill + '" stroke="' + st + '" stroke-width="' + (sw || 0) + '"' + dash + '/>';
+      else s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (sz / 2 - 6 - (sw ? sw / 2 : 0)) + '" fill="' + fill + '" stroke="' + st + '" stroke-width="' + sw + '"' + dash + '/>';
+      const ty0 = it.s === 't' ? cy + sz * 0.16 : cy;
+      if (empty) s += txt(cx, ty0 + sz * 0.13, '?', sz * 0.36, ink, 900);
+      else if (it.n) s += txt(cx, ty0 + sz * 0.12, String(it.n), sz * (String(it.n).length > 2 ? 0.28 : 0.34), ink, 900);
+      else { const L = sgLines(it.t), fs = Math.min(sz * (it.s === 't' ? 0.12 : 0.15), (sz * (it.s === 't' ? 0.62 : 0.8)) / Math.max(...L.map(l => l.length)));
+        L.forEach((l, k) => { s += txt(cx, ty0 + fs * 0.36 + (k - (L.length - 1) / 2) * fs * 1.2, l, fs, ink, 900); }); }
+      if (it.tag) s += txt(cx, y0 + sz + 40, it.tag, it.tag.length > 9 ? 22 : 26, '#4E5C70', 800); });
+    return svgWrap(s, 'fig-sign1', '0 0 ' + Wd + ' ' + (y0 + sz + tagH + 10)).replace('<svg ', '<svg data-signs="' + esc(its.map(i => [i.s, i.c, i.n || '', i.t || ''].join('|')).join(';')) + '" ');
+  }
+  // tally1: rows [{lab, n, on}] · unit · 고른 사람 하나 = 점 하나(다섯씩 띄움) · on 줄 = 주황 · data-tally(lab:n;…)
+  function tally1(o) {
+    const rs = o.rows || []; if (!rs.length) return '';
+    const lw = 360, r = 12, st = 30, g5 = 12, mx = Math.max(...rs.map(x => x.n)), dw = mx * st + Math.floor((mx - 1) / 5) * g5, nw = 120, rh = 74, Wd = lw + dw + nw + 60, y0 = 10; let s = '';
+    rs.forEach((x, i) => { const y = y0 + i * (rh + 12), cy = y + rh / 2, c = x.on ? ['#FFF1E6', '#FF7A2F'] : ['#EAF1FF', '#3E6FCF'];
+      s += box9(10, y, Wd - 20, rh, c[0], x.on ? '#FFB98A' : '#C7D7F5', 2.5, false, 16);
+      const L = x.lab.length > 9 ? sgLines(x.lab) : [x.lab]; L.forEach((l, k) => { s += txt(30, cy + 10 + (k - (L.length - 1) / 2) * 30, l, L.length > 1 ? 25 : 28, INK, 800, 'start'); });
+      for (let k = 0; k < x.n; k++) s += '<circle cx="' + (lw + 20 + k * st + Math.floor(k / 5) * g5 + r) + '" cy="' + cy + '" r="' + r + '" fill="' + c[1] + '"/>';
+      s += txt(Wd - 30, cy + 12, x.n + (o.unit || ''), 34, x.on ? '#C2551A' : '#1F4A9E', 900, 'end'); });
+    return svgWrap(s, 'fig-tally1', '0 0 ' + Wd + ' ' + (y0 + rs.length * (rh + 12))).replace('<svg ', '<svg data-tally="' + esc(rs.map(x => x.lab + ':' + x.n).join(';')) + '" ');
+  }
+  // phases1: items(단계 이름) · on(1부터) · 지난 단계 = 초록 ✓ · 지금 = 주황 · 남은 = 회색
+  function phases1(o) {
+    const it = o.items || []; if (!it.length) return '';
+    const cw = 250, ch = 64, ar = 30, Wd = it.length * cw + (it.length - 1) * ar + 20; let s = '';
+    it.forEach((t, i) => { const x = 10 + i * (cw + ar), on = i + 1 === o.on, done = i + 1 < o.on;
+      s += box9(x, 10, cw, ch, on ? '#FF7A2F' : done ? '#E6F6EC' : '#F1F4F8', on ? '#FF7A2F' : done ? '#7FCB9B' : GY9, 2.5, false, 32) + txt(x + cw / 2, 10 + ch / 2 + 9, (done ? '✓ ' : '') + t, t.length > 7 ? 22 : 26, on ? '#fff' : done ? GR9 : '#6B7686', 900);
+      if (i < it.length - 1) s += txt(x + cw + ar / 2, 10 + ch / 2 + 9, '›', 34, '#9AA6B4', 900); });
+    return svgWrap(s, 'fig-phases1', '0 0 ' + Wd + ' ' + (ch + 20)).replace('<svg ', '<svg data-phase="' + (o.on || 0) + '" ');
+  }
+  Object.assign(PARTS, { sign1, tally1, phases1 });
   }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {

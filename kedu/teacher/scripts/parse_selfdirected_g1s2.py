@@ -47,6 +47,7 @@ def figs(p):
     out.extend(figs4(p))
     out.extend(figs5(p))
     out.extend(figs6(p))
+    out.extend(figs7(p))
     return out
 
 # 123차 — 2단원 「덧셈과 뺄셈(1)」 그림: steps(번호 줄 식) · eqstrip(식 띠: hole=? · res/mark=강조) · chain(색 알 묶음) · cupstack(층 쌓은 컵) · tenframe(십 배열판 a/b 두 색 + tf-lb 꼬리표). 원문 순서대로.
@@ -313,6 +314,39 @@ def figs6(p):
     for m in re.finditer(r'<div class="cmds" data-cmd="([^"]*)">(.*?)</div>', p, re.S):
         sp = re.findall(r'<span class="cmd( hole)?"><u>\d+</u>([^<]*)</span>', m.group(2))
         found.append((m.start(), m.end(), {'k': 'cmds', 'cmd': m.group(1).split('|'), 'shown': [clean(x[1]) for x in sp], 'hole': [i for i, x in enumerate(sp) if x[0]]}))
+    return [f for _, _, f in sorted(found, key=lambda x: x[0])]
+
+# 131차(수학) — 7단원 「수학이랑 안전」 그림: sign(안전 표지판 — sgrow 한 줄 = 한 그림 · 줄 밖 표지판 하나 = 한 그림 · 모양 o 동그라미/t 세모/q 네모 · 색 · 수 · 글 · tag) · tally(약속 고른 사람 점 줄 · lab·n·on · diff) · phases(준비·해 봐요·마무리 단계 띠 · on). 보기(mcq-opt) 안은 뺌.
+def sgitem(a, body, tag):
+    sh, col, num, txt = (a.split('|') + ['', '', '', ''])[:4]
+    it = {'s': sh, 'c': col}
+    if num: it['n'] = num
+    if txt: it['t'] = clean(txt)
+    if tag: it['tag'] = clean(tag)
+    return it
+
+SGRE = r'<span class="sg ([a-z]+) ([a-z]+) ([a-z]+)" data-sign="([^"]*)">(.*?)</span></span>(?:<span class="sg-tag">(.*?)</span></span>)?'
+def figs7(p):
+    found = []
+    opts = [(m.start(), m.end()) for m in re.finditer(r'<button class="mcq-opt".*?</button>', p, re.S)]
+    rows = []
+    for m in re.finditer(r'<div class="sgrow">(.*?)</div>', p, re.S):
+        rows.append((m.start(), m.end()))
+        its = [sgitem(x.group(4), x.group(5), x.group(6)) for x in re.finditer(SGRE, m.group(1), re.S)]
+        found.append((m.start(), m.end(), {'k': 'sign', 'items': its, 'size': 'sm' if 'sm"' in m.group(1) else 'md'}))
+    for x in re.finditer(SGRE, p, re.S):
+        if any(a <= x.start() < b for a, b in rows + opts): continue
+        found.append((x.start(), x.end(), {'k': 'sign', 'items': [sgitem(x.group(4), x.group(5), x.group(6))], 'size': x.group(3)}))
+    for m in re.finditer(r'<div class="tally" data-tally="([^"]*)">(.*?)(?=<p class|<div class="q-part|</div>\s*</div>\s*<div class="slide)', p, re.S):
+        ons = [bool(r.group(1)) for r in re.finditer(r'<div class="tl-row( on)?" data-tl="\d+">', m.group(2))]
+        rs = [{'lab': clean(x.rsplit(':', 1)[0]), 'n': int(x.rsplit(':', 1)[1])} for x in m.group(1).split(';')]
+        for r, o in zip(rs, ons): r['on'] = o
+        c = {'k': 'tally', 'rows': rs, 'unit': first(r'<span class="tl-n">\d+<em>([^<]*)</em>', m.group(2))}
+        dm = re.search(r'data-diff="([^"]*)">\s*$', p[max(0, m.start() - 80):m.start()])
+        if dm: c['diff'] = dm.group(1)
+        found.append((m.start(), m.end(), c))
+    for m in re.finditer(r'<div class="phases" data-phase="(\d+)">(.*?)</div>', p, re.S):
+        found.append((m.start(), m.end(), {'k': 'phases', 'on': int(m.group(1)), 'items': [clean(x) for x in re.findall(r'<span class="ph[^"]*">([^<]*)</span>', m.group(2))]}))
     return [f for _, _, f in sorted(found, key=lambda x: x[0])]
 
 if __name__ == '__main__':
