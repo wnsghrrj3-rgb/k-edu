@@ -964,6 +964,7 @@ async function renderMine(kind){
         ${s.kind === 'unit_test' && s.show_result && s.show_result !== 'immediate' && !s.result_opened_at ? `<button class="btn ghost" data-reveal="${s.id}">결과 열기</button>` : ''}
         ${s.kind === 'unit_test' ? `<button class="btn ghost" data-close="${s.id}" data-closed="${s.closed_at ? 1 : 0}">${s.closed_at ? '다시 열기' : '마감'}</button>` : ''}
         <button class="btn ghost" data-res="${s.id}">결과 보기</button>
+        <button class="btn ghost" data-del="${s.id}" style="color:#c0392b">삭제</button>
       </div>
       <div id="res-${s.id}"></div>
     </div>`;
@@ -979,6 +980,15 @@ async function renderMine(kind){
     const { data, error } = await db.rpc('quiz_set_open_result', { p_set_id: b.dataset.reveal });
     if (error || data === false) return toast('결과를 열지 못했어요. SQL v2 가 적용됐는지 확인해 주세요.');
     toast('학생 화면에 정답·해설이 열렸어요.'); renderMine(kind);
+  });
+  // 삭제 = 보관(is_archived) — 학생 기록은 남기고 목록·학생 화면에서만 사라진다. 열린 반이 있으면 먼저 닫는다.
+  view.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+    const s = sets.find(x => x.id === b.dataset.del);
+    if (!confirm(`「${s.title}」을(를) 삭제할까요?\n학생이 이미 푼 기록은 남지만, 목록과 학생 화면에서는 사라져요.`)) return;
+    for (const cid of (openMap['quiz:' + s.id] || [])) await db.rpc('close_for_class', { p_class_code_id: cid, p_content_key: 'quiz:' + s.id });
+    const { error } = await db.from('quiz_sets').update({ is_archived: true }).eq('id', s.id);
+    if (error) return toast('삭제하지 못했어요. 승인된 선생님 계정인지 확인해 주세요.');
+    toast('삭제했어요.'); renderMine(kind);
   });
   view.querySelectorAll('[data-close]').forEach(b => b.onclick = async () => {
     const closing = b.dataset.closed !== '1';
