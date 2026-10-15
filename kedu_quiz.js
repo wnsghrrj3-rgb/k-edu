@@ -67,7 +67,8 @@
         set:      setId,
         kind:     d.kind === 'unit_test' ? 'unit_review' : 'quiz',
         title:    d.title || '쪽지',
-        header:   (d.grade ? d.grade + '학년' : '') + ' 쪽지',
+        // 학년·과목·단원을 머리줄에 — 학생이 어느 과목 어느 단원 쪽지인지 알게 (2026-10-16)
+        header:   [(d.grade ? d.grade + '학년' : ''), ({kor:'국어',korean:'국어',math:'수학',sci:'과학',science:'과학',soc:'사회',social:'사회'})[d.subject] || d.subject || '', (function(u){ var m = String(u || '').match(/(\d+)/); return m ? m[1] + '단원' : ''; })(d.unit)].filter(Boolean).join(' ') || '쪽지',
         grade:    d.grade,
         subject:  d.subject,
         unit:     d.unit,

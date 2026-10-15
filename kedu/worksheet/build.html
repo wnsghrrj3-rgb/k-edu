@@ -180,6 +180,9 @@ const SUBJ_MAP = { kor:'korean', korean:'korean', math:'math', sci:'science', sc
 const SUBJ_KO = { kor:'국어', korean:'국어', math:'수학', sci:'과학', science:'과학', soc:'사회', social:'사회' };
 function mapOf(q){ const sem = q.semester || 1; return (window.KEDU_MAP || {})[`g${q.grade}_${sem}_${SUBJ_MAP[q.subject] || q.subject}`] || (window.KEDU_MAP || {})[`g${q.grade}_${sem === 1 ? 2 : 1}_${SUBJ_MAP[q.subject] || q.subject}`]; }
 function unitNo(u){ const m = String(u || '').match(/(\d+)/); return m ? +m[1] : null; }
+/* 학년·과목·단원 한 줄 — 학생 받은 박스 카드·쪽지 제목 앞에 붙여 과목·단원을 구분한다 (2026-10-16 준호: 헷갈린다) */
+function scopeLabel(q){ return `${q.grade}학년 ${SUBJ_KO[q.subject] || q.subject || ''} ${unitName(q)}`.trim(); }
+function withScope(title, q){ return /^\d학년/.test(title || '') ? title : scopeLabel(q) + ' · ' + title; }
 function unitName(q){ const n = unitNo(q.unit_code); if (!n) return q.unit_code || ''; const m = mapOf(q); const u = m && (m.units || []).find(x => +x.num === n); return `${n}단원` + (u && u.name ? ' ' + u.name : ''); }
 function lessonLabel(q){ const n = unitNo(q.lesson_code); if (!n) return ''; const m = mapOf(q); const un = unitNo(q.unit_code); const u = m && (m.units || []).find(x => +x.num === un); const l = u && (u.lessons || []).find(x => String(x.n) === String(n)); return `${n}차시` + (l && l.title ? ' ' + l.title : ''); }
 /* 범위 = 학년·학기·과목. 원장엔 여러 학년·학기·과목이 섞여 있으니 교사가 범위를 먼저 고른다(2026-10-14 준호: 과목도 없이 단원만 보여 뭘 하라는지 모르겠다).
@@ -625,7 +628,7 @@ function drawUnit(){
 async function saveUnit(){
   if (!UCART.length) return;
   const first = UCART[0].q;
-  const title = (document.getElementById('uTitle').value || '').trim() || (unitName(first) + ' 정리');
+  const title = withScope((document.getElementById('uTitle').value || '').trim() || (unitName(first) + ' 정리'), first);
   const show = f('uShow') || 'after_close', min = Number(f('uMin')) || null;
   const { data: set, error } = await db.from('quiz_sets').insert({
     teacher_id: ME.id, title, kind: 'unit_test', subject: first.subject, grade: first.grade, unit_code: first.unit_code,
@@ -907,8 +910,8 @@ function renderMakeTask(box, grade, subject, unit){
 async function saveSet(){
   const first = CART[0];
   const c0 = CONCEPTS.find(c => c.code === first.concept_code);
-  const title = (document.getElementById('title').value || '').trim()
-    || (c0 ? (c0.lesson_no ? c0.lesson_no + '차시 · ' : '') + c0.name : '쪽지');
+  const title = withScope((document.getElementById('title').value || '').trim()
+    || (c0 ? (c0.lesson_no ? c0.lesson_no + '차시 · ' : '') + c0.name : '쪽지'), first);
   const { data: set, error } = await db.from('quiz_sets').insert({
     teacher_id: ME.id, title, kind: 'quiz',
     subject: first.subject, grade: first.grade, unit_code: first.unit_code
@@ -1028,7 +1031,7 @@ async function openForClass(setId, sets){
   const classId = sel && sel.value;
   if (!classId) return toast('학급코드를 먼저 만들어 주세요.');
   const s = sets.find(x => x.id === setId);
-  const title = (CARD_LABEL[s.kind] || CARD_LABEL.quiz) + ' · ' + s.title;
+  const title = (CARD_LABEL[s.kind] || CARD_LABEL.quiz) + ' · ' + withScope(s.title, s);
   const url = '/kedu/worksheet/play.html?quiz=' + setId;
   const bid = await boxCard(classId, { kind: 'quiz', title, url });
   const { error } = await db.rpc('open_for_class', {
@@ -1130,13 +1133,13 @@ async function showUnitResult(setId, box, set){
     const pool = BANK.filter(q => q.concept_code === c && q.difficulty <= 2).slice(0, 5);
     if (pool.length < 3) return toast('그 개념의 기본 문항이 부족해요.');
     const { data: ns, error } = await db.from('quiz_sets').insert({
-      teacher_id: ME.id, title: '한 번 더 · ' + cname(c), kind: 'quiz', subject: pool[0].subject, grade: pool[0].grade, unit_code: pool[0].unit_code,
+      teacher_id: ME.id, title: withScope('한 번 더 · ' + cname(c), pool[0]), kind: 'quiz', subject: pool[0].subject, grade: pool[0].grade, unit_code: pool[0].unit_code,
       show_result: 'immediate', target_student_ids: w.miss.map(sp => sp.id)
     }).select('id').single();
     if (error) return toast('보완 쪽지를 만들지 못했어요(SQL v2 적용 여부 확인).');
     await db.from('quiz_set_items').insert(pool.map((q, i) => ({ set_id: ns.id, ord: i + 1, question_id: q.id, points: 1 })));
     for (const cid of classIds){
-      const rt = CARD_LABEL.quiz + ' · 한 번 더 · ' + cname(c), ru = '/kedu/worksheet/play.html?quiz=' + ns.id;
+      const rt = CARD_LABEL.quiz + ' · ' + withScope('한 번 더 · ' + cname(c), pool[0]), ru = '/kedu/worksheet/play.html?quiz=' + ns.id;
       const rbid = await boxCard(cid, { kind: 'quiz', title: rt, url: ru });
       await db.rpc('open_for_class', { p_class_code_id: cid, p_content_key: 'quiz:' + ns.id, p_title: rt, p_kind: 'quiz', p_url: ru, p_bundle_id: rbid });
     }
