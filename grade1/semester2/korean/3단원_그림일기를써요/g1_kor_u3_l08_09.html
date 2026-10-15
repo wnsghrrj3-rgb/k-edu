@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,129 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 8~9차시(소단원 2 기본 — 그림일기를 쓰는 방법 알기 / 문제 해결 학습 모형) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
+/* ===== 8~9차시(소단원 2 기본 — 그림일기를 쓰는 방법 알기, 문제 해결 학습 모형) 『국어』 96~99쪽 13슬 — v2 교과서 기준 재구성 (2026-10-15)
    학습 목표: 그림일기를 쓰는 방법을 안다.
-   ★ 정답 로깅 7슬. 바로잡기·마무리 = 로깅 X·완주 ✓.
-   ★ 문제 해결 학습 모형(지도서 153~156쪽)을 슬라이드로 옮긴 방법:
-      문제 확인 = ① 두 슬 / 문제 해결 방법 찾기 = ② 두 슬(그림일기 읽기 · 들어갈 내용) /
-      문제 해결하기 = ③ 일곱 슬 / 일반화하기 = ④ 바로잡기 + 마무리.
-      교실에서는 교사가 물음을 던지고 답을 모으지만, 자기주도는 물음만 던지고 끝내면
-      오개념이 남는다. 그래서 물음은 전부 고르기 문항으로 바꾸고 답을 화면에서 확정했다.
-   ★ 이 묶음은 흠 있는 일기를 화면에 올려야만 성립한다(교과서 98쪽도 그렇다).
-      6-1 6단원·1-2 2단원이 세운 기준 — 학습을 위해 심은 흠은 화면을 닫기 전에 반드시 정정한다 —
-      을 그대로 적용해 ④ 첫 슬을 「바로잡기」 칸으로 두었다.
-   ★ 그림일기의 형식(날짜와 요일·날씨·그림·글)은 교과서가 고른 것이 아니라 이 갈래의 전부다.
-      2단원 §4-2 기준에 따라 형식은 그대로 쓰고, 교과서가 지은 일기 두 편은 한 줄도 쓰지 않았다.
-   ★ 저작권: 교과서 96쪽 찬호의 그림일기 전문(과수원·사과), 97쪽 예시 답안 배열,
-      98쪽 고칠 점 일기 전문, 99쪽 보기 네 낱말 배열, 지도서 152쪽 형제 대화,
-      157쪽 잘 쓴 그림일기 두 편과 점검 예시 세 개 전부 미차용. 일기 두 편 모두 자체. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      이 단원 교과서 자료는 모두 교육부 집필(작가 작품 없음). */
 const slides=[
-  {tag:'① 문제 확인', t:'일기는 어떤 글일까요?',
-   html:`<div class="scene"><div class="scene-pic">📔✏️</div></div>
-    <div class="ka-bub">일기는 <b class="emph">그날 내가 겪은 일</b>을 쓰는 글이에요.<br>그림일기는 거기에 <b class="emph">그림</b>이 함께 들어가요. 🤔</div>`},
+  {tag:'① 문제 확인', t:'영우와 형우의 이야기를 들어 봐요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>영우: 「형, 뭐 해?」</div><div class="read-line"><span class="rl-num">2</span>형우: 「응, 일기 써.」</div><div class="read-line"><span class="rl-num">3</span>영우: 「그런데 그림일기가 뭐야? 좀 보여 줘.」</div><div class="read-line"><span class="rl-num">4</span>형우: 「안 돼. 남의 일기는 보는 게 아니야.」</div><div class="read-line"><span class="rl-num">5</span>영우: 「도대체 그림일기가 뭐지? 무엇을 써야 할까?」</div></div><div class="fb" id="readFb">🤔 그림일기는 어떤 글일까요?</div>`},
+
+  {tag:'① 문제 확인', t:'일기는 어떤 글인가요?', log:true, okMsg:'맞아요! 일기는 그날 있었던 중요한 일을 쓰는 글이에요. 📔',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">📔</div><div class="wc-word">그날 있었던 중요한 일을 쓰는 글</div></div><div class="wcard" data-ok="0"><div class="wc-pic">📖</div><div class="wc-word">옛날이야기를 옮겨 쓰는 글</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🛒</div><div class="wc-word">살 물건을 적는 글</div></div></div><div class="fb"></div>`},
 
   {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
-   html:`<div class="sentence">그림일기를 쓰는 방법을 알아봐요.</div>
-    <div class="ka-bub">그림일기에 <b class="emph">무엇이 들어가는지</b>,<br>그리고 <b class="emph">어떻게 쓰는지</b>를 알아볼 거예요. 🔍</div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>그림일기를 쓰는 방법을 알아봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">📔</span>그림일기에 <b>들어갈 내용</b>을 알아봐요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🔍</span>그림일기를 쓸 때 <b>주의할 점</b>을 알아봐요.</div></div>`},
 
-  {tag:'② 그림일기 읽기', t:'단아가 쓴 그림일기를 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>20○○년 6월 12일 금요일 · 날씨: 바람이 시원한 날</div>
-      <div class="read-line"><span class="rl-num">2</span>(그림) 텃밭에서 상추를 뜯는 나와 언니</div>
-      <div class="read-line"><span class="rl-num">3</span>학교 앞 텃밭에서 언니와 상추를 뜯었다.</div>
-      <div class="read-line"><span class="rl-num">4</span>잎이 내 손바닥보다 컸다.</div>
-      <div class="read-line"><span class="rl-num">5</span>저녁에 먹어 보니 아삭아삭했다. 내가 뜯은 것이라 더 맛있게 느껴졌다.</div>
-    </div><div class="fb" id="readFb">🔊 한 줄씩 또박또박 따라 읽어 봐요.</div>`},
+  {tag:'② 96쪽 1번', t:'찬호가 쓴 그림일기를 읽어 봐요',
+   html:`<div class="sentence">📅 20○○년 10월 24일 일요일 · 날씨: 해가 쨍쨍한 날</div><div class="scene"><div class="scene-pic">🍎🌳👵🧒👦</div></div><div class="read-lines"><div class="read-line"><span class="rl-num">1</span>과수원을 하시는 할머니 댁에 놀러 갔다.</div><div class="read-line"><span class="rl-num">2</span>나와 동생은 빨갛게 익은 사과를 땄다.</div><div class="read-line"><span class="rl-num">3</span>사과를 직접 따 보니 정말 재미있었다.</div></div><div class="fb" id="readFb">📔 그림일기를 소리 내어 읽어 봐요.</div>`},
 
-  {tag:'② 들어갈 내용', t:'그림일기는 세 부분으로 되어 있어요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">📅</span><span class="pc-name">날짜와 요일,<br>날씨</span></div>
-      <div class="punct-card"><span class="pc-mark">🖼️</span><span class="pc-name">그림</span></div>
-      <div class="punct-card"><span class="pc-mark">✏️</span><span class="pc-name">글</span></div>
-    </div>
-    <div class="ka-bub">글에는 <b class="emph">있었던 일</b>과 <b class="emph">생각이나 느낌</b>을 함께 써요. 💭</div>`},
+  {tag:'② 96쪽 1번', t:'그림일기의 맨 위에는 무엇이 쓰여 있나요?', log:true, okMsg:'맞아요! 맨 위에 날짜와 요일, 날씨를 쓰고, 그 밑에 그림과 글이 있어요. 📅',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">📅</div><div class="wc-word">날짜와 요일, 날씨</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🖍️</div><div class="wc-word">그림</div></div><div class="wcard" data-ok="0"><div class="wc-pic">✏️</div><div class="wc-word">있었던 일과 느낌</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 맨 위에 쓰는 것', t:'그림일기의 맨 위에는 무엇을 쓸까요?', log:true, okMsg:'맞아요! 날짜와 요일, 날씨를 맨 위에 써요. 📅',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">내 이름과 번호</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">날짜와 요일, 날씨</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 96쪽 1번', t:'찬호는 할머니 댁에서 동생과 무엇을 했나요?', log:true, okMsg:'맞아요! 사과를 직접 따 보니 정말 재미있었대요. 🍎',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🍎</div><div class="wc-word">빨갛게 익은 사과를 땄어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🍇</div><div class="wc-word">포도를 씻었어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🌻</div><div class="wc-word">해바라기를 심었어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 부분과 내용 잇기', t:'그림일기의 부분과 들어갈 내용을 이어요', log:true, matchMsg:'모두 잘 이었어요! 자리마다 들어갈 것이 달라요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">부분</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">📅</span>맨 위</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🖼️</span>가운데</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">✏️</span>아래 앞부분</div>
-        <div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">💭</span>아래 뒷부분</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">들어갈 내용</div>
-        <div class="match-card" data-k="C" data-pair="c">있었던 일</div>
-        <div class="match-card" data-k="A" data-pair="a">날짜와 요일, 날씨</div>
-        <div class="match-card" data-k="D" data-pair="d">생각이나 느낌</div>
-        <div class="match-card" data-k="B" data-pair="b">한 장면 그림</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 97쪽 2번', t:'그림일기의 부분과 들어갈 내용을 이어 봐요', log:true, matchMsg:'모두 잘 이었어요! 날짜와 요일·날씨, 그림, 글이 그림일기의 세 부분이에요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">부분</div><div class="match-card" data-k="a" data-pair="A">날짜와 요일, 날씨</div><div class="match-card" data-k="b" data-pair="B">그림</div><div class="match-card" data-k="c" data-pair="C">글</div></div><div class="match-col"><div class="match-col-h">찬호의 그림일기</div><div class="match-card" data-k="C" data-pair="c">나와 동생은 빨갛게 익은 사과를 땄다.</div><div class="match-card" data-k="A" data-pair="a">20○○년 10월 24일 일요일 · 해가 쨍쨍한 날</div><div class="match-card" data-k="B" data-pair="b">할머니, 동생과 사과를 따는 그림</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 들어가는 것 모으기', t:'그림일기에 들어가는 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 네 가지가 들어가요. 🎉',
-   hint:'힌트: 학교에서 나누어 주는 안내문에 들어가는 것과 헷갈리지 않게 살펴봐요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">날짜와 요일</div>
-      <div class="chip" data-hit="1">날씨</div>
-      <div class="chip" data-hit="0">준비물 목록</div>
-      <div class="chip" data-hit="1">그림</div>
-      <div class="chip" data-hit="1">생각이나 느낌</div>
-      <div class="chip" data-hit="0">차례</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 97쪽 알아 두기', t:'그림일기는 이런 일기예요',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">📅</span><span class="pc-name">날짜·요일·날씨</span></div><div class="punct-card"><span class="pc-mark">🖍️</span><span class="pc-name">경험한 일을 표현한 그림</span></div><div class="punct-card"><span class="pc-mark">✏️</span><span class="pc-name">기억에 남는 일과 생각이나 느낌</span></div></div><div class="ka-bub"><b class="emph">그림일기</b>는 하루에 경험한 일 가운데에서<br>기억에 남는 일을 골라 <b class="emph">글과 그림</b>으로 나타낸 일기예요. 🙂</div>`},
 
-  {tag:'③ 고칠 점 찾기', t:'이 일기에서 빠진 것은 무엇일까요?', log:true, okMsg:'맞아요! 날씨 자리가 비어 있어요. 📅',
-   html:`<div class="ka-bub"><b>20○○년 6월 15일 월요일 · 날씨:</b> <span class="punct">◯◯◯</span><br>오늘도 늘 하던 대로 지냈다. 저녁에 텔레비전을 보았다. 재미있었다.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">날씨</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">요일</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 98쪽 3번', t:'이 그림일기를 보고 고칠 점을 생각해 봐요',
+   html:`<div class="sentence">📅 20○○년 10월 22일 화요일 · 날씨: (비어 있음)</div><div class="scene"><div class="scene-pic">🛏️😴</div></div><div class="read-lines"><div class="read-line"><span class="rl-num">1</span>나는 오늘 아침에 일어나 밥을 먹고 학교에 가서 공부를 했다.</div><div class="read-line"><span class="rl-num">2</span>그리고 집에 와서 숙제를 하고 잤다.</div></div><div class="fb" id="readFb">🔍 그림일기에 들어갈 내용이 잘 들어가 있는지, 기억에 남는 일을 썼는지 확인해 봐요.</div>`},
 
-  {tag:'③ 글감 고르기', t:'그림일기에 쓸 일로 더 알맞은 것은?', log:true, okMsg:'맞아요! 늘 똑같이 하는 일보다 그날 새롭게 느낀 일이 좋아요. 🌱',
-   hint:'힌트: 날마다 똑같이 하는 일은 나중에 읽어도 그날이 떠오르지 않아요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">아침에 일어나 세수를 했다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">교실 창가에서 무당벌레를 처음 보았다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 98쪽 3번', t:'98쪽 그림일기의 고칠 점을 모두 골라요', log:true, collectMsg:'고칠 점 세 가지를 모두 찾았어요! 🎉', hint:'힌트: 날짜와 요일, 그림은 있어요. 무엇이 빠졌는지 찾아봐요.',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">날씨를 쓰지 않았다</div><div class="chip" data-hit="1">늘 하는 일을 나열만 해서 기억에 남는 일이 무엇인지 알 수 없다</div><div class="chip" data-hit="1">생각이나 느낌이 없다</div><div class="chip" data-hit="0">날짜와 요일을 쓰지 않았다</div><div class="chip" data-hit="0">그림이 없다</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 글에 쓸 것', t:'글에 쓰면 좋은 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 이만큼 쓰면 그날이 되살아나요. 🎉',
-   hint:'힌트: 「재미있었다」 한 마디만 쓰면 무엇이 재미있었는지 알 수 없어요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">언제 어디에서 있었던 일인지</div>
-      <div class="chip" data-hit="0">늘 똑같이 하는 일 늘어놓기</div>
-      <div class="chip" data-hit="1">누구와 있었던 일인지</div>
-      <div class="chip" data-hit="1">그때 든 생각이나 느낌</div>
-      <div class="chip" data-hit="0">「재미있었다」만 한 마디</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'⑤ 99쪽 4번', t:'그림일기를 쓸 때 주의할 점을 보기에서 찾아 이어 봐요', log:true, matchMsg:'날씨 · 경험한 일 · 내용 · 생각이나 느낌 — 모두 찾았어요! 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">주의할 점</div><div class="match-card" data-k="a" data-pair="A">날짜와 요일, ___을/를 쓴다.</div><div class="match-card" data-k="b" data-pair="B">___이/가 그림에 잘 드러나게 표현한다.</div><div class="match-card" data-k="c" data-pair="C">경험한 일이 드러나게 ___을/를 자세히 쓴다.</div><div class="match-card" data-k="d" data-pair="D">경험한 일에 대한 ___을/를 쓴다.</div></div><div class="match-col"><div class="match-col-h">보기</div><div class="match-card" data-k="D" data-pair="d">생각이나 느낌</div><div class="match-card" data-k="B" data-pair="b">경험한 일</div><div class="match-card" data-k="A" data-pair="a">날씨</div><div class="match-card" data-k="C" data-pair="c">내용</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 날씨 쓰기', t:'날씨를 더 잘 나타낸 것은 어느 것일까요?', log:true, okMsg:'맞아요! 날씨도 그날 느낌이 드러나게 쓰면 좋아요. ☀️',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">날씨: 그냥 그럼</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">날씨: 바람이 시원한 날</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑤ 기억에 남는 일 고르기', t:'그림일기에 쓰기 좋은 기억에 남는 일은?', log:true, okMsg:'맞아요! 새롭거나 즐거웠던 일, 특별한 느낌이 있었던 일이 기억에 남는 일이에요. 🌟',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🌟</div><div class="wc-word">처음 해 보았거나 무척 즐거웠던 일</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🔁</div><div class="wc-word">날마다 똑같이 하는 일</div></div><div class="wcard" data-ok="0"><div class="wc-pic">😐</div><div class="wc-word">아무 느낌이 없었던 일</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 바로잡기', t:'앞에서 본 일기를 바르게 고쳐요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">1️⃣</span><b>날씨가 비어 있었어요.</b> → 「바람이 시원한 날」처럼 그날 날씨를 써요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">2️⃣</span><b>무슨 일인지 드러나지 않았어요.</b> → 언제 어디에서 누구와 무엇을 했는지 써요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">3️⃣</span><b>느낌이 한 마디뿐이었어요.</b> → 왜 그렇게 느꼈는지까지 이어서 써요.</div>
-    </div>
-    <div class="fb">고쳐 쓰면 나중에 읽어도 그날이 떠올라요. 🌱</div>`},
-
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">📅</span>맨 위에 <b>날짜와 요일, 날씨</b>를 써요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🖼️</span>가운데에 <b>한 장면</b>을 그려요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">💭</span>글에는 <b>있었던 일과 생각·느낌</b>을 함께 써요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">➡️</span>다음 시간에는 <b>직접 그림일기를 써</b> 볼 거예요.</div>
-    </div>`},
+  {tag:'⑤ 마무리', t:'잘했어요! 이만큼 배웠어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">📅</span>그림일기에는 <b>날짜와 요일, 날씨</b>를 써요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🖍️</span>경험한 일이 <b>그림</b>에 잘 드러나게 그려요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">✏️</span>기억에 남는 일을 <b>자세히</b> 쓰고, <b>생각이나 느낌</b>도 써요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -431,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

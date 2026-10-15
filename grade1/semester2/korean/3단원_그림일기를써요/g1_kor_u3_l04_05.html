@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -135,123 +134,55 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 
 <script>
 const LESSON_ID='g1_2_kor_u3_l04_05_v1';
-const LESSON_MAX=70;
+const LESSON_MAX=60;
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 4~5차시(소단원 1 통합 — 자신이 경험한 일이 잘 드러나게 발표하기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
+/* ===== 4~5차시(소단원 1 통합 — 자신이 경험한 일이 잘 드러나게 발표하기) 『국어』 88~91쪽 13슬 — v2 교과서 기준 재구성 (2026-10-15)
    학습 목표: 자신이 경험한 일이 잘 드러나게 발표할 수 있다.
-   ★ 정답 로깅 7슬. 말하기 무대 = 로깅 X·완주 ✓.
-   ★ 지도서 145쪽 — 「사소하고 반복되는 일이라 특별한 일이 아니라고 생각해 선뜻 말하지 못할 수
-      있다」. 그래서 ③ 첫 문항을 「특별한 일이 아니어도 괜찮다」로 세웠다. 이 단원의 경계
-      셋(목소리·그림·글감) 가운데 첫 번째다.
-   ★ 지도서 145쪽 대안 활동의 표(누가·어디에서·무엇을·어떻게)는 육하원칙의 기본 틀이라
-      회피 대상이 아니다(2단원 §4-2 기준 — 교과서의 선택인가, 언어의 전부인가).
-      다만 교과서 89쪽이 지은 물음 문장 셋은 쓰지 않고 자체 물음으로 냈다.
-   ★ 저작권: 교과서 88쪽 아침 그림 네 칸과 문장 셋, 89쪽 물음 셋, 90쪽 발표 문장과 점검표,
-      91쪽 칭찬표, 지도서 146쪽 녹화 기록법·147쪽 기초 문식성 표 전부 미차용. */
+   ★ 정답 로깅 6슬(LESSON_MAX 60). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      이 단원 교과서 자료는 모두 교육부 집필(작가 작품 없음). */
 const slides=[
-  {tag:'① 차시 만나기', t:'오늘 아침에 무슨 일이 있었나요?',
-   html:`<div class="scene"><div class="scene-pic">🌅🥣</div></div>
-    <div class="ka-bub">일어난 때, 먹은 것, 만난 사람, 학교 오는 길에 본 것.<br>모두 <b class="emph">경험한 일</b>이에요. 🤔</div>`},
+  {tag:'① 동기 유발', t:'좋아하는 음식 이름을 넣어 말해 봐요',
+   html:`<div class="stage-box">🍙 「나는 ○○을/를 먹었다.」 빈칸에 오늘 아침에 먹은 음식 이름을 넣어 말해 봐요.<br><small>(예: 나는 김밥을 먹었다.)</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 음식 이름만 바꾸어도 멋진 문장이 돼요. 👏">🍙 말해 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
   {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
-   html:`<div class="sentence">경험한 일이 잘 드러나게 발표해 봐요.</div>
-    <div class="ka-bub">있었던 일을 <b class="emph">자세히 정리</b>해서 말하면<br>듣는 사람이 그 장면을 그릴 수 있어요. 🎨</div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>자신이 경험한 일이 잘 드러나게 발표해 봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🌅</span>오늘 아침에 있었던 일을 <b>떠올려요</b>.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🗣️</span>바른 자세로 <b>발표</b>하고 스스로 확인해요.</div></div>`},
 
-  {tag:'② 정리하는 틀', t:'이 네 가지를 채우면 자세해져요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🕰️</span><span class="pc-name">언제</span></div>
-      <div class="punct-card"><span class="pc-mark">📍</span><span class="pc-name">어디에서</span></div>
-      <div class="punct-card"><span class="pc-mark">🧑‍🤝‍🧑</span><span class="pc-name">누구와</span></div>
-      <div class="punct-card"><span class="pc-mark">❓</span><span class="pc-name">무슨 일이</span></div>
-    </div>
-    <div class="ka-bub">네 칸을 채운 뒤 <b class="emph">한 문장</b>으로 이어 말해요. 🔗</div>`},
+  {tag:'② 88쪽 (1)', t:'오늘 아침에 있었던 일을 떠올려 봐요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>㉮ 일곱 시에 일어났다.</div><div class="read-line"><span class="rl-num">2</span>㉯ 된장찌개를 먹었다.</div><div class="read-line"><span class="rl-num">3</span>㉰ 친구를 만났다.</div><div class="read-line"><span class="rl-num">4</span>㉱ ? — 나는 오늘 아침에 무엇을 했지?</div></div><div class="fb" id="readFb">🌅 아침에 먹은 음식, 한 일, 본 사람, 학교 올 때 있었던 일을 떠올려요.</div>`},
 
-  {tag:'② 한 문장으로', t:'이렇게 이어 말해요',
-   html:`<div class="sentence">오늘 아침에 · 집에서 · 동생과 · 김을 구워 먹었다.</div>
-    <div class="ka-bub">네 칸을 이으면 이런 문장이 돼요.<br>여기에 <b class="emph">그때 든 생각</b>을 덧붙이면 더 좋아요. 💭</div>`},
+  {tag:'② 88쪽 (1)', t:'그림과 어울리는 문장을 이어 봐요', log:true, matchMsg:'모두 잘 이었어요! 아침에 있었던 일을 한 문장으로 말했어요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">그림</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">⏰</span>기지개 켜는 아이</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🍲</span>밥상 앞의 아이</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">👋</span>손을 흔드는 두 아이</div></div><div class="match-col"><div class="match-col-h">문장</div><div class="match-card" data-k="B" data-pair="b">된장찌개를 먹었다.</div><div class="match-card" data-k="C" data-pair="c">친구를 만났다.</div><div class="match-card" data-k="A" data-pair="a">일곱 시에 일어났다.</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 글감 고르기', t:'특별한 일이 없었을 때는 어떻게 할까요?', log:true, okMsg:'맞아요! 늘 있는 일이라도 그때 느낌이 남았다면 좋은 이야깃거리예요. 🙂',
-   hint:'힌트: 큰 일이 있어야만 발표할 수 있는 것은 아니에요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">평소와 다르게 느낀 일을 고른다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">발표하지 않고 그냥 앉아 있는다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">있었던 일을 지어낸다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 89쪽 (2)', t:'발표할 내용을 정할 때 이렇게 물어봐요',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">❓</span><span class="pc-name">무슨 일이 있었지?</span></div><div class="punct-card"><span class="pc-mark">📍</span><span class="pc-name">어디에서 있었던 일이지?</span></div><div class="punct-card"><span class="pc-mark">➡️</span><span class="pc-name">그래서 어떻게 되었지?</span></div></div><div class="ka-bub">아침에 있었던 일 가운데에서 <b class="emph">문장으로 자세히 말하고 싶은 일</b>을 하나 정해요.<br>세 가지 물음에 답해 보면 발표할 내용이 정리돼요. 🙂</div>`},
 
-  {tag:'③ 자세한 문장', t:'경험한 일이 더 잘 드러난 문장은 어느 것일까요?', log:true, okMsg:'맞아요! 언제·어디에서·무엇을 했는지가 들어 있어요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">아침에 먹었다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">오늘 아침에 집에서 동생과 김을 구워 먹었다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 89쪽 (2)', t:'발표할 내용을 정리할 때 생각할 물음이 아닌 것은?', log:true, okMsg:'맞아요! 무슨 일이, 어디에서, 그래서 어떻게 되었는지를 생각해요. 👍',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">친구 옷은 무슨 색이었지?</div></div><div class="wcard" data-ok="0"><div class="wc-word">무슨 일이 있었지?</div></div><div class="wcard" data-ok="0"><div class="wc-word">그래서 어떻게 되었지?</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 물음과 대답 잇기', t:'물음과 알맞은 대답을 이어요', log:true, matchMsg:'모두 잘 이었어요! 네 칸이 다 찼어요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">물음</div>
-        <div class="match-card" data-k="a" data-pair="A">언제</div>
-        <div class="match-card" data-k="b" data-pair="B">어디에서</div>
-        <div class="match-card" data-k="c" data-pair="C">누구와</div>
-        <div class="match-card" data-k="d" data-pair="D">무슨 일이</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">대답</div>
-        <div class="match-card" data-k="C" data-pair="c">동생과</div>
-        <div class="match-card" data-k="A" data-pair="a">오늘 아침에</div>
-        <div class="match-card" data-k="D" data-pair="d">김을 구워 먹었다</div>
-        <div class="match-card" data-k="B" data-pair="b">집에서</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'② 지도서 표', t:'물음에 맞게 내용을 이어 봐요', log:true, matchMsg:'「나는 부엌에서 된장찌개를 맛있게 먹었다.」 — 한 문장이 완성됐어요! 🎉', hint:'힌트: 누가 → 어디에서 → 무엇을 → 어떻게 차례로 이어 읽어 봐요.',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">물음</div><div class="match-card" data-k="a" data-pair="A">누가</div><div class="match-card" data-k="b" data-pair="B">어디에서</div><div class="match-card" data-k="c" data-pair="C">무엇을</div><div class="match-card" data-k="d" data-pair="D">어떻게</div></div><div class="match-col"><div class="match-col-h">대답</div><div class="match-card" data-k="D" data-pair="d">맛있게 먹었다.</div><div class="match-card" data-k="B" data-pair="b">부엌에서</div><div class="match-card" data-k="A" data-pair="a">나는</div><div class="match-card" data-k="C" data-pair="c">된장찌개를</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 넣을 것 모으기', t:'발표할 내용에 넣으면 좋은 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 이만큼 넣으면 장면이 그려져요. 🎉',
-   hint:'힌트: 듣는 사람이 그 장면을 떠올릴 수 있어야 해요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">있었던 때</div>
-      <div class="chip" data-hit="0">내 발 크기</div>
-      <div class="chip" data-hit="1">있었던 곳</div>
-      <div class="chip" data-hit="1">그때 든 생각</div>
-      <div class="chip" data-hit="0">어제 본 만화 제목</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 90쪽 (1)', t:'친구들 앞에서 경험한 일을 발표해 봐요',
+   html:`<div class="ka-bub">🎤 「비가 와서 가방이 흠뻑 젖었습니다.」<br><br>🧍 발표할 때에는 바른 자세로 서서 듣는 사람을 바라보며 말해요.<br>👂 발표를 들을 때에는 말하는 사람을 바라보며 귀 기울여 들어요.</div>`},
 
-  {tag:'③ 첫마디 고르기', t:'발표를 시작할 첫마디로 알맞은 것은?', log:true, okMsg:'맞아요! 언제 있었던 일인지부터 말하면 듣기 좋아요. 🎤',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">오늘 아침에 있었던 일을 말하겠습니다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">음… 그냥 뭐…</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 90쪽 (1)', t:'발표할 때의 바른 자세는?', log:true, okMsg:'맞아요! 바른 자세로 서서 듣는 사람을 바라보며 말해요. 🧍',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🧍</div><div class="wc-word">바른 자세로 서서 듣는 사람을 바라보며 말해요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🙇</div><div class="wc-word">고개를 숙이고 바닥을 보며 말해요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🏃</div><div class="wc-word">왔다 갔다 걸어 다니며 말해요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 스스로 확인할 것', t:'발표한 뒤 확인할 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 스스로 확인하면 다음에 더 잘돼요. 🎉',
-   hint:'힌트: 잘한 사람을 가리는 것이 아니라 내 발표를 되돌아보는 거예요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">알맞은 크기로 말했나</div>
-      <div class="chip" data-hit="1">바른 자세로 섰나</div>
-      <div class="chip" data-hit="0">누가 가장 잘했나</div>
-      <div class="chip" data-hit="1">경험한 일을 자세히 말했나</div>
-      <div class="chip" data-hit="0">몇 초 만에 끝냈나</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 90쪽 (1)', t:'발표를 들을 때의 바른 자세는?', log:true, okMsg:'맞아요! 친구가 발표한 문장을 골라 쓰는 활동도 있으니 집중해서 들어요. 👂',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">👂</div><div class="wc-word">말하는 사람을 바라보며 귀 기울여 들어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">📖</div><div class="wc-word">다른 책을 읽으며 들어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🗨️</div><div class="wc-word">짝과 이야기하며 들어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 친구 발표 듣기', t:'친구 발표에서 인상 깊은 내용으로 알맞은 것은?', log:true, okMsg:'맞아요! 있었던 일과 느낌이 함께 담긴 말이 오래 남아요. 💭',
-   html:`<div class="ka-bub"><b>보윤이의 발표</b><br>어제 저녁에 마당에서 할머니와 강낭콩을 심었습니다. 흙이 아직 따뜻해서 놀랐습니다.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">흙이 따뜻해서 놀랐다는 말</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">발표를 몇 번째로 했는지</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 90쪽 (2)', t:'내가 잘 발표했는지 스스로 확인해 봐요', hint:'힌트: 내 발표를 떠올리며 해당하는 것을 눌러요. 정답은 없어요!',
+   html:`<div class="selfcheck"><div class="sc-row"><span class="sc-box">✓</span><b>알맞은 크기의 목소리</b>로 말했나요?</div><div class="sc-row"><span class="sc-box">✓</span><b>허리를 펴고</b> 바른 자세로 서서 말했나요?</div><div class="sc-row"><span class="sc-box">✓</span><b>듣는 사람을 바라보며</b> 말했나요?</div><div class="sc-row"><span class="sc-box">✓</span>경험한 일을 <b>자세히 정리해서</b> 말했나요?</div></div><div class="fb">매우 잘함 ●●●, 잘함 ●●, 보통임 ● 🌱</div>`},
 
-  {tag:'④ 해 보기', t:'오늘 아침 일을 한 문장으로 말해 봐요',
-   html:`<div class="stage-box">
-      🙋 언제 · 어디에서 · 누구와 · 무슨 일을 넣어 한 문장으로 말해 봐요.<br>
-      <small>「오늘 아침에 ○○에서 ○○와 ○○했습니다.」</small>
-      <br><button class="stage-do" id="stageDo" data-fb="네 칸을 다 넣어 잘 말했어요! 👏">🙋 한 문장으로 말해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'④ 91쪽 (1)', t:'바른 자세로 발표한 친구를 칭찬할 점을 모두 골라요', log:true, collectMsg:'칭찬할 점 네 가지를 모두 찾았어요! 🎉',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">알맞은 크기의 목소리로 말했다.</div><div class="chip" data-hit="1">허리를 펴고 바른 자세로 서서 말했다.</div><div class="chip" data-hit="1">듣는 사람을 바라보며 말했다.</div><div class="chip" data-hit="1">경험한 일을 자세히 정리해서 말했다.</div><div class="chip" data-hit="0">말끝을 흐리며 작게 말했다.</div><div class="chip" data-hit="0">바닥만 보며 말했다.</div></div><div class="fb" id="collectFb"></div>`},
 
   {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🗂️</span><b>언제·어디에서·누구와·무슨 일</b>을 채우면 자세해져요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">💭</span>그때 든 <b>생각</b>까지 덧붙이면 더 좋아요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">➡️</span>다음 시간에는 <b>기억에 남는 일</b>을 문장으로 말해 볼 거예요.</div>
-    </div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🌅</span>오늘 아침에 있었던 일을 <b>한 문장</b>으로 정리했어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🗣️</span>바른 자세로 서서 듣는 사람을 바라보며 <b>발표</b>했어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">✏️</span>친구들이 발표한 내용 가운데 <b>인상 깊은 내용</b>을 문장으로 써 봐요(91쪽 (2)).</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -420,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

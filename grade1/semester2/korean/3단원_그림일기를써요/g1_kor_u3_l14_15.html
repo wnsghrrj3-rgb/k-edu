@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,127 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 14~15차시(마무리 — 정리하기 · 기초 다지기 · 글씨 쓰기) 13슬:
-   ① 만나기 1 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 3 =====
+/* ===== 14~15차시(마무리 — 정리하기 · 기초 다지기 · 글씨 쓰기) 『국어』 106~109쪽 13슬 — v2 교과서 기준 재구성 (2026-10-15)
    학습 목표: 배운 내용을 마무리할 수 있다.
-   ★ 정답 로깅 7슬. 글씨 쓰기·자기 점검·정리 = 로깅 X·완주 ✓.
-   ★ 기초 다지기는 「무엇을」에 해당하는 말(목적어) 넣기다(지도서 167쪽).
-      교과서 108쪽 여섯 문장과 인물 여섯 명을 모두 피하고 자체 문장·자체 인물로 냈다.
-   ★ 교과서 107쪽 4번은 지금까지 쓴 그림일기를 모아 붙임딱지로 스스로 보상하는 활동인데,
-      자기주도 화면은 학생의 종이 일기를 회수하지 못한다. 그 자리를 자기 점검으로 바꾸었다.
-   ★ 저작권: 교과서 106쪽 잇기 네 항목과 세 장면, 107쪽 색칠 낱말 배열과 쟁반 활동,
-      108쪽 기초 다지기 여섯 문장(재현·황새·남규·은혜·현지·영수·승아), 109쪽 글씨 쓰기 넉 줄,
-      지도서 167쪽 대안 낱말 세 줄, 국어활동 36~39쪽 현장 체험 학습 상황과 붙임딱지,
-      40~51쪽 「나는 안내견이야」 전부 미차용. 문장·낱말 전부 자체. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      이 단원 교과서 자료는 모두 교육부 집필(작가 작품 없음). */
 const slides=[
-  {tag:'① 단원 마무리', t:'3단원에서 배운 것을 모아 봐요',
-   html:`<div class="scene"><div class="scene-pic">🏁</div></div>
-    <div class="ka-bub">바른 자세로 발표하고 듣기,<br>경험한 일을 그림일기로 나타내기.<br>두 가지를 <b class="emph">한 번씩 확인</b>해 볼까요? 🙂</div>`},
+  {tag:'① 106쪽 정리하기', t:'3단원에서 배운 것을 확인해요',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">🗣️</span><span class="pc-name">바른 자세로 말하고 듣기</span></div><div class="punct-card"><span class="pc-mark">📔</span><span class="pc-name">그림일기 쓰기</span></div></div><div class="ka-bub">바른 자세로 말하고 듣는 방법, 그림일기에 들어갈 내용을<br>잘 배웠는지 확인해 봐요. 🙂</div>`},
 
-  {tag:'② 첫째 되짚기', t:'바른 자세로 말하고 듣기',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🧍</span><span class="pc-name">허리를 펴고<br>또박또박</span></div>
-      <div class="punct-card"><span class="pc-mark">👀</span><span class="pc-name">서로 바라보며</span></div>
-      <div class="punct-card"><span class="pc-mark">👂</span><span class="pc-name">귀 기울여</span></div>
-    </div>
-    <div class="ka-bub">목소리는 크기보다 <b class="emph">알맞음</b>이 먼저예요. 🔊</div>`},
+  {tag:'① 106쪽 1번', t:'「바른 자세로 말하기」에 알맞은 것을 모두 골라요', log:true, collectMsg:'맞아요! 말할 때에는 듣는 사람을 바라보며 또박또박 말해요. 🗣️',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">듣는 사람을 바라본다.</div><div class="chip" data-hit="1">또박또박 말한다.</div><div class="chip" data-hit="0">말하는 사람을 바라본다.</div><div class="chip" data-hit="0">귀 기울여 듣는다.</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'② 둘째 되짚기', t:'경험한 일을 그림일기로',
-   html:`<div class="ka-bub">① 맨 위에 <b class="emph">날짜와 요일, 날씨</b><br>
-      ② 가운데에 <b class="emph">한 장면 그림</b><br>
-      ③ 아래에 <b class="emph">있었던 일</b>과 <b class="emph">생각·느낌</b> 📔</div>`},
+  {tag:'① 106쪽 1번', t:'「바른 자세로 듣기」에 알맞은 것을 모두 골라요', log:true, collectMsg:'맞아요! 들을 때에는 말하는 사람을 바라보며 귀 기울여 들어요. 👂',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">말하는 사람을 바라본다.</div><div class="chip" data-hit="1">귀 기울여 듣는다.</div><div class="chip" data-hit="0">또박또박 말한다.</div><div class="chip" data-hit="0">듣는 사람을 바라본다.</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 상황과 자세 잇기', t:'상황에 알맞은 자세를 이어요', log:true, matchMsg:'모두 잘 이었어요! 자리마다 할 일이 있어요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">이럴 때</div>
-        <div class="match-card" data-k="a" data-pair="A">내가 발표할 때</div>
-        <div class="match-card" data-k="b" data-pair="B">친구가 발표할 때</div>
-        <div class="match-card" data-k="c" data-pair="C">말끝을 맺을 때</div>
-        <div class="match-card" data-k="d" data-pair="D">잘 알아들었을 때</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">이렇게 해요</div>
-        <div class="match-card" data-k="C" data-pair="c">흐리지 않고 분명하게</div>
-        <div class="match-card" data-k="A" data-pair="a">허리를 펴고 또박또박</div>
-        <div class="match-card" data-k="D" data-pair="d">고개를 끄덕인다</div>
-        <div class="match-card" data-k="B" data-pair="b">바라보며 귀 기울인다</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'① 106쪽 2번', t:'바른 자세로 들어야 할 때를 모두 골라요', log:true, collectMsg:'세 가지를 모두 찾았어요! 누군가 말할 때에는 언제나 바른 자세로 들어요. 🎉',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">수업 시간에 친구가 발표할 때</div><div class="chip" data-hit="1">여럿이 같이 들을 때</div><div class="chip" data-hit="1">부모님이 말씀하실 때</div><div class="chip" data-hit="0">혼자서 노래를 부를 때</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 바르게 들어야 할 때', t:'바른 자세로 들어야 할 때는 언제일까요?', log:true, okMsg:'맞아요! 여럿이 함께 들을 때는 자세가 더 중요해요. 👂',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">🙋</div><div class="wc-word">친구가 앞에서 발표할 때</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">😴</div><div class="wc-word">혼자 책상에 엎드려 있을 때</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 107쪽 3번', t:'그림일기에 들어가야 할 내용을 모두 골라요', log:true, collectMsg:'날짜 · 요일 · 날씨 · 그림 · 기억에 남는 일 · 생각이나 느낌 — 모두 찾았어요! 🎉', hint:'힌트: 이름, 인사, 식단, 시간표는 그림일기에 꼭 들어가는 내용이 아니에요.',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">날짜</div><div class="chip" data-hit="1">요일</div><div class="chip" data-hit="1">날씨</div><div class="chip" data-hit="1">그림</div><div class="chip" data-hit="1">기억에 남는 일</div><div class="chip" data-hit="1">생각이나 느낌</div><div class="chip" data-hit="0">이름</div><div class="chip" data-hit="0">인사</div><div class="chip" data-hit="0">식단</div><div class="chip" data-hit="0">시간표</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 들어갈 내용 색칠', t:'그림일기에 들어가야 할 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 네 가지가 들어가요. 🎉',
-   hint:'힌트: 학급 안내문에나 들어갈 것이 섞여 있어요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">날짜와 요일</div>
-      <div class="chip" data-hit="0">준비물</div>
-      <div class="chip" data-hit="1">날씨</div>
-      <div class="chip" data-hit="1">경험한 일</div>
-      <div class="chip" data-hit="0">차례</div>
-      <div class="chip" data-hit="1">생각이나 느낌</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'② 107쪽 4번', t:'지금까지 쓴 그림일기를 모아 읽어 봐요', hint:'힌트: 내 그림일기들을 떠올리며 해당하는 것을 눌러요.',
+   html:`<div class="selfcheck"><div class="sc-row"><span class="sc-box">✓</span><b>날짜와 요일, 날씨</b>를 썼나요?</div><div class="sc-row"><span class="sc-box">✓</span>자신이 경험한 일을 <b>자세히</b> 썼나요?</div><div class="sc-row"><span class="sc-box">✓</span><b>생각이나 느낌</b>을 잘 드러나게 썼나요?</div></div><div class="fb">잘한 만큼 쟁반에 붙임딱지를 붙여요. 🍪 (『국어』 붙임 7)</div>`},
 
-  {tag:'③ 기초 다지기 (무엇을)', t:'빈칸에 알맞은 말은 무엇일까요?', log:true, okMsg:'맞아요! 「분다」 앞에는 「무엇을」에 해당하는 말이 와요. 🎈',
-   html:`<div class="scene"><div class="scene-pic">🎈</div></div>
-    <div class="sentence">보윤이가 <span class="punct">◯◯◯</span> 붑니다.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">풍선을</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">풍선에</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 108쪽 기초 다지기', t:'「황새가 ___ 먹습니다.」 — 「무엇을」에 알맞은 말은?', log:true, okMsg:'맞아요! 「황새가 물고기를 먹습니다.」 — 무엇을 먹는지 넣었어요. 🐟',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🐟</div><div class="wc-word">물고기를</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🐟</div><div class="wc-word">물고기가</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🌊</div><div class="wc-word">물에서</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 기초 다지기 (무엇을)', t:'빈칸에 알맞은 말은 무엇일까요?', log:true, okMsg:'맞아요! 「던집니다」 앞에 「공을」이 와요. ⚽',
-   html:`<div class="scene"><div class="scene-pic">⚽</div></div>
-    <div class="sentence">세린이가 <span class="punct">◯◯</span> 던집니다.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">공이</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">공을</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 108쪽 기초 다지기', t:'「남규가 은혜에게 ___ 줍니다.」 — 「무엇을」에 알맞은 말은?', log:true, okMsg:'맞아요! 「남규가 은혜에게 선물을 줍니다.」 🎁',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🎁</div><div class="wc-word">선물을</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🎁</div><div class="wc-word">선물이</div></div><div class="wcard" data-ok="0"><div class="wc-pic">👧</div><div class="wc-word">은혜를</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 기초 다지기 (무엇을)', t:'빈칸에 알맞은 말은 무엇일까요?', log:true, okMsg:'맞아요! 「신습니다」 앞에 「신을」이 와요. 👟',
-   html:`<div class="scene"><div class="scene-pic">👟</div></div>
-    <div class="sentence">단아가 <span class="punct">◯◯</span> 신습니다.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">신을</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">신에</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 108쪽 기초 다지기', t:'그림을 보고 「무엇을」에 해당하는 말을 이어 봐요', log:true, matchMsg:'거울을 닦고, 꿈을 꾸고, 그림을 그려요! 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">문장</div><div class="match-card" data-k="a" data-pair="A">현지가 ___ 닦습니다.</div><div class="match-card" data-k="b" data-pair="B">영수가 ___ 꿉니다.</div><div class="match-card" data-k="c" data-pair="C">승아가 ___ 그립니다.</div></div><div class="match-col"><div class="match-col-h">무엇을</div><div class="match-card" data-k="B" data-pair="b">꿈을</div><div class="match-card" data-k="C" data-pair="c">그림을</div><div class="match-card" data-k="A" data-pair="a">거울을</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 정리하기', t:'그림일기의 글감으로 더 알맞은 것은?', log:true, okMsg:'맞아요! 처음 해 본 일이나 새롭게 느낀 일이 오래 남아요. 🌱',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">날마다 똑같이 하는 일</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">처음 해 보거나 새롭게 느낀 일</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 109쪽 글씨 쓰기', t:'글씨를 바르게 써 봐요 (글자를 눌러요)',
+   html:`<div class="trace-wrap"><div class="trace-row"><span class="trace-pic">🧍</span><div class="trace-word"><span class="trace-cell">바</span><span class="trace-cell">른</span></div></div><div class="trace-row"><span class="trace-pic">🧍</span><div class="trace-word"><span class="trace-cell">자</span><span class="trace-cell">세</span></div></div><div class="trace-row"><span class="trace-pic">🎤</span><div class="trace-word"><span class="trace-cell">발</span><span class="trace-cell">표</span></div></div><div class="trace-row"><span class="trace-pic">🍎</span><div class="trace-word"><span class="trace-cell">땄</span><span class="trace-cell">다</span></div></div></div><div class="fb" id="traceFb">또박또박 따라 써 봐요.</div>`},
 
-  {tag:'④ 글씨 쓰기', t:'또박또박 따라 써 봐요 (글자를 눌러요)',
-   html:`<div class="trace-wrap">
-      <div class="trace-row"><span class="trace-pic">📔</span><div class="trace-word">
-        <span class="trace-cell">그</span><span class="trace-cell">림</span><span class="trace-cell">일</span><span class="trace-cell">기</span></div></div>
-      <div class="trace-row"><span class="trace-pic">🎤</span><div class="trace-word">
-        <span class="trace-cell">또</span><span class="trace-cell">박</span><span class="trace-cell">또</span><span class="trace-cell">박</span></div></div>
-      <div class="trace-row"><span class="trace-pic">💭</span><div class="trace-word">
-        <span class="trace-cell">느</span><span class="trace-cell">낌</span></div></div>
-    </div><div class="fb" id="traceFb">또박또박 따라 써 봐요.</div>`},
-
-  {tag:'④ 스스로 점검', t:'이 단원에서 나는 어떠했나요? (눌러서 확인해요)',
-   hint:'힌트: 스스로 떠올리며 해당하는 것을 눌러요. 정답은 없어요!',
-   html:`<div class="selfcheck">
-      <div class="sc-row"><span class="sc-box">✓</span>나는 여러 사람 앞에서 <b>바른 자세</b>로 발표할 수 있어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>나는 다른 사람의 말을 <b>귀 기울여</b> 들을 수 있어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>나는 경험한 일을 <b>그림일기</b>로 쓸 수 있어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>나는 <b>생각이나 느낌</b>까지 이어서 쓸 수 있어요.</div>
-    </div>
-    <div class="fb">스스로 돌아보면 다음이 더 잘돼요. 🌱</div>`},
+  {tag:'④ 스스로 점검', t:'이 단원에서 나는 어떠했나요?', hint:'힌트: 평소 내 모습을 떠올리며 해당하는 것을 눌러요. 정답은 없어요!',
+   html:`<div class="selfcheck"><div class="sc-row"><span class="sc-box">✓</span>여러 사람 앞에서 <b>바른 자세로 발표</b>할 수 있어요.</div><div class="sc-row"><span class="sc-box">✓</span>친구가 말할 때 <b>바른 자세로 들을</b> 수 있어요.</div><div class="sc-row"><span class="sc-box">✓</span>기억에 남는 일을 <b>그림일기</b>로 쓸 수 있어요.</div></div><div class="fb">스스로 확인해요. 매우 잘함 ●●●, 잘함 ●●, 보통임 ● 🌱</div>`},
 
   {tag:'④ 정리', t:'3단원에서 배운 것을 모아 봐요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🧍</span>허리를 펴고 <b>알맞은 크기</b>로 또박또박 말해요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">👂</span>말하는 사람을 바라보며 <b>귀 기울여</b> 들어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">📔</span>그림일기에는 <b>날짜·요일·날씨, 그림, 글</b>이 들어가요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">🎉</span>3단원을 <b>모두 마쳤어요</b>!</div>
-    </div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🗣️</span>바르게 서서 <b>듣는 사람을 바라보며</b> 알맞은 목소리로 말해요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">👂</span><b>말하는 사람을 바라보며</b> 귀 기울여 들어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">📔</span>그림일기에는 <b>날짜와 요일, 날씨 · 그림 · 기억에 남는 일과 느낌</b>을 써요.</div></div>`},
+
+  {tag:'④ 마무리', t:'잘했어요! 3단원을 마쳤어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>경험한 일을 바른 자세로 발표해 보았어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">📔</span>경험한 일을 그림일기로 써 보았어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🌟</span>앞으로도 기억에 남는 일을 그림일기로 남겨 봐요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -429,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

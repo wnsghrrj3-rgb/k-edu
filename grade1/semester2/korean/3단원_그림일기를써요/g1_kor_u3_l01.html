@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,100 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 1차시(준비 — 배울 내용 살펴보기) 13슬:
-   ① 만나기 2 → ② 따라가기 3 → ③ 활동·심장 5 → ④ 표현·정리 3 =====
+/* ===== 1차시(준비 — 배울 내용 살펴보기) 『국어』 80~83쪽 13슬 — v2 교과서 기준 재구성 (2026-10-15)
    학습 목표: 배울 내용을 살펴볼 수 있다.
-   ★ 정답 로깅 5슬(50점). 준비 차시는 1·2단원과 같이 5슬로 낮춘다.
-   ★ 이 단원에서 유일한 1차시 단독 묶음이다(2단원은 l13이 그랬다).
-      슬라이드·로깅은 다른 준비 차시와 같게 맞춘다 — 차시 수가 아니라 학습량으로 맞춘다.
-   ★ 지도서 138쪽은 이 차시에 두 소단원(바른 자세로 발표하기 · 경험한 일을 그림일기로 쓰기)을
-      한 화면에서 미리 보게 한다. 그래서 자체 상황 하나로 두 물음을 함께 걸었다.
-   ★ 저작권: 교과서 80~83쪽 단원 도입 그림(달리기), 82쪽 두 장면 말풍선, 83쪽 주말 대화와
-      표현 방법 세 칸 전부 미차용. 상황·문장·보기 전부 자체. */
+   ★ 정답 로깅 5슬(LESSON_MAX 50). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      이 단원 교과서 자료는 모두 교육부 집필(작가 작품 없음). */
 const slides=[
-  {tag:'① 차시 만나기', t:'있었던 일을 남에게 어떻게 전할까요?',
-   html:`<div class="scene"><div class="scene-pic">🎤📔</div></div>
-    <div class="ka-bub">어제 있었던 일, 오늘 아침에 있었던 일.<br>그 일을 다른 사람에게 <b class="emph">말</b>로도 전하고 <b class="emph">글과 그림</b>으로도 남길 수 있어요. 🤔</div>`},
+  {tag:'① 80쪽 단원 열기', t:'3단원 「그림일기를 써요」',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">🗣️</span><span class="pc-name">경험한 일 발표하기</span></div><div class="punct-card"><span class="pc-mark">🖍️</span><span class="pc-name">그림일기로 표현하기</span></div></div><div class="ka-bub">이 단원에서는 <b class="emph">경험한 일을 바른 자세로 발표하고</b>,<br><b class="emph">그림일기로 표현하는 방법</b>을 배워요. 🙂</div>`},
 
-  {tag:'① 학습 문제', t:'오늘은 이것을 살펴봐요',
-   html:`<div class="sentence">배울 내용을 살펴봐요.</div>
-    <div class="ka-bub">여러 사람 앞에서 <b class="emph">바른 자세로 발표하는 법</b>,<br>그리고 경험한 일을 <b class="emph">그림일기</b>로 쓰는 법을 배울 거예요. 🔍</div>`},
+  {tag:'① 81쪽 생각 열기', t:'여자아이는 무엇을 떠올리고 있을까요?',
+   html:`<div class="scene"><div class="scene-pic">🏃‍♀️🏁</div></div><div class="ka-bub">운동장에서 친구들과 <b class="emph">달리기</b>를 했어요.<br>한 그림에서는 친구들 앞에서 <b class="emph">발표</b>를 하고, 다른 그림에서는 책상에 앉아 <b class="emph">그림일기</b>를 써요. ✏️</div>`},
 
-  {tag:'② 두 장면 견주기', t:'같은 말인데 왜 다를까요?',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🙍</span><span class="pc-name">고개를 숙이고<br>작게 말했어요</span></div>
-      <div class="punct-card"><span class="pc-mark">🧍</span><span class="pc-name">허리를 펴고<br>또박또박 말했어요</span></div>
-    </div>
-    <div class="ka-bub">같은 말을 해도 <b class="emph">자세와 목소리</b>에 따라<br>듣는 사람이 알아듣는 정도가 달라져요. 👂</div>`},
+  {tag:'① 81쪽 생각 열기', t:'여자아이는 어떤 경험을 떠올리고 있나요?', log:true, okMsg:'맞아요! 운동장에서 달리기한 경험을 떠올리고 있어요. 🏃‍♀️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🏃‍♀️</div><div class="wc-word">달리기한 경험</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🏊</div><div class="wc-word">수영한 경험</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🎂</div><div class="wc-word">생일잔치를 한 경험</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 경험 떠올리기', t:'가까운 때부터 떠올려 봐요',
-   html:`<div class="ka-bub">멀리 있는 일보다 <b class="emph">가까운 때</b>가 떠올리기 쉬워요.<br>
-      오늘 아침 · 어제 저녁 · 지난 주말.<br>
-      그때 무엇을 했는지 하나씩 떠올려 봐요. 🕰️</div>`},
+  {tag:'① 81쪽 생각 열기', t:'달리기한 경험을 어떻게 표현하고 있나요?', log:true, okMsg:'맞아요! 친구들 앞에서 발표하거나 그림일기를 써서 표현해요. 👍',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🗣️🖍️</div><div class="wc-word">발표를 하거나 그림일기를 써서 표현해요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🙊</div><div class="wc-word">아무에게도 말하지 않아요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🎵</div><div class="wc-word">노래만 불러요</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 전하는 방법', t:'경험한 일은 이렇게 전할 수 있어요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🎤</span><span class="pc-name">말로 발표하기</span></div>
-      <div class="punct-card"><span class="pc-mark">📔</span><span class="pc-name">그림일기로 쓰기</span></div>
-      <div class="punct-card"><span class="pc-mark">✉️</span><span class="pc-name">편지로 알리기</span></div>
-    </div>
-    <div class="ka-bub">이 단원에서는 <b class="emph">앞의 두 가지</b>를 배울 거예요. 🙋</div>`},
+  {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>배울 내용을 살펴봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🗣️</span>자신의 경험을 <b>바른 자세로 발표</b>해 봐요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🖍️</span>경험한 일을 <b>그림일기</b>로 나타내 봐요.</div></div>`},
 
-  {tag:'③ 알아듣기 쉬운 발표', t:'듣는 사람이 잘 알아듣는 발표는 어느 쪽일까요?', log:true, okMsg:'맞아요! 허리를 펴고 또박또박 말하면 잘 알아들을 수 있어요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-pic">🙍</div><div class="wc-word">고개를 숙이고 작게</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-pic">🧍</div><div class="wc-word">허리를 펴고 또박또박</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 82쪽 1번', t:'두 그림을 비교해 봐요',
+   html:`<div class="ka-bub">㉮ 👧 「제가 좋아하는 색은 파란색…….」<br>&nbsp;&nbsp;&nbsp;&nbsp;🧒 (생각) 「목소리가 작아서 잘 안 들려.」<br><br>㉯ 👧 「제가 좋아하는 색은 파란색입니다.」<br>&nbsp;&nbsp;&nbsp;&nbsp;🧒 (생각) 「파란색을 좋아하는구나.」</div>`},
 
-  {tag:'③ 까닭 생각하기', t:'바른 자세로 발표하면 무엇이 좋을까요?', log:true, okMsg:'맞아요! 하고 싶은 말이 정확하게 전해져요. 🗣️',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">🗣️</div><div class="wc-word">하고 싶은 말이 정확하게 전해져요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">⏱️</div><div class="wc-word">발표가 빨리 끝나요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🔢</div><div class="wc-word">말한 낱말 수를 셀 수 있어요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 82쪽 1번 (1)', t:'그림 ㉮에서 남자아이가 말을 제대로 알아듣지 못한 까닭은?', log:true, okMsg:'맞아요! 목소리가 작아서 잘 들리지 않았고, 말끝을 흐려서 알아듣기 힘들었어요. 🔈',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🔈</div><div class="wc-word">목소리가 작고 말끝을 흐려서</div></div><div class="wcard" data-ok="0"><div class="wc-pic">📢</div><div class="wc-word">목소리가 너무 또렷해서</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🎨</div><div class="wc-word">파란색을 싫어해서</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 지킬 것 모으기', t:'발표할 때 지키면 좋은 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 이 세 가지가 바른 발표 자세예요. 🎉',
-   hint:'힌트: 소리를 크게 지르는 것과 알맞은 크기로 말하는 것은 달라요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">허리를 편다</div>
-      <div class="chip" data-hit="0">소리를 지른다</div>
-      <div class="chip" data-hit="1">알맞은 크기로 말한다</div>
-      <div class="chip" data-hit="0">빠르게 끝낸다</div>
-      <div class="chip" data-hit="1">듣는 사람을 본다</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'② 82쪽 1번 (2)', t:'그림 ㉯의 여자아이처럼 발표하면 좋은 점은?', log:true, okMsg:'맞아요! 말하는 사람은 뜻을 잘 전할 수 있고, 듣는 사람은 알아듣기 쉬워요. 👏',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">👂</div><div class="wc-word">듣는 사람이 뜻을 알아듣기 쉬워요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">⏩</div><div class="wc-word">발표가 빨리 끝나요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🙈</div><div class="wc-word">아무도 나를 보지 않아요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 오래 남기기', t:'있었던 일을 오래 남기려면 어떻게 할까요?', log:true, okMsg:'맞아요! 글과 그림으로 남기면 나중에 다시 볼 수 있어요. 📔',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">📔</div><div class="wc-word">글과 그림으로 남긴다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🤫</div><div class="wc-word">마음속으로만 생각한다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 82쪽 알아 두기', t:'발표할 때에는 이렇게 해요',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">🧍</span><span class="pc-name">바르게 서서</span></div><div class="punct-card"><span class="pc-mark">🗣️</span><span class="pc-name">끝까지 분명하게</span></div></div><div class="ka-bub">발표할 때에는 <b class="emph">바르게 서서</b> 말끝을 흐리지 않고<br><b class="emph">끝까지 분명하게</b> 말해야 듣는 사람이 잘 알아들을 수 있어요. 🙂</div>`},
 
-  {tag:'③ 미리 보기', t:'그림일기에 꼭 들어가는 것은 무엇일까요?', log:true, okMsg:'맞아요! 날짜와 요일, 날씨, 그림, 글이 들어가요. 곧 자세히 배울 거예요. 📅',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">날짜와 요일, 날씨</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">내 키와 몸무게</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 83쪽 2번', t:'주말에 있었던 일을 친구들과 이야기해 봐요',
+   html:`<div class="stage-box">💬 「아빠와 시장에 갔어.」처럼 지난 주말이나 어제 있었던 일을 친구에게 말해 봐요.<br><small>친구가 말할 때에는 친구를 바라보며 들어요.</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 말할 때와 들을 때 내 자세가 어땠는지도 생각해 봐요. 👏">💬 이야기해 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 배울 내용 보기', t:'이 단원에서는 두 가지를 배워요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🎤</span>경험한 일을 <b>바른 자세로 발표하기</b></div>
-      <div class="recap-item" style="animation-delay:.25s"><span class="recap-ic">📔</span>경험한 일을 <b>그림일기로 나타내기</b></div>
-    </div>`},
+  {tag:'③ 83쪽 3번', t:'자신이 경험한 일을 표현하는 방법을 모두 골라요', log:true, collectMsg:'말하기 · 일기 쓰기 · 사진이나 그림으로 발표하기 — 모두 찾았어요! 🎉', hint:'힌트: 내 경험을 다른 사람과 나누거나 기록하는 방법을 골라요.',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">다른 사람에게 자신의 경험을 말한다</div><div class="chip" data-hit="1">그날 경험한 일을 일기에 쓴다</div><div class="chip" data-hit="1">사진이나 그림을 활용해 발표한다</div><div class="chip" data-hit="0">경험한 일을 그냥 잊어버린다</div><div class="chip" data-hit="0">남의 일기를 몰래 읽는다</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'④ 말해 보기', t:'오늘 아침 일을 한 가지 말해 봐요',
-   html:`<div class="stage-box">
-      🙋 오늘 아침에 있었던 일을 한 가지만 소리 내어 말해 봐요.<br>
-      <small>(무엇을 먹었는지 · 누구를 만났는지 · 무엇을 보았는지)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="한 문장으로 잘 말했어요! 👏">🙋 소리 내어 말해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'③ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🔈</span>작은 목소리로 말끝을 흐리면 듣는 사람이 <b>알아듣기 힘들어요</b>.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🧍</span>바르게 서서 <b>끝까지 분명하게</b> 말해요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🖍️</span>경험한 일은 <b>말·일기·사진이나 그림</b>으로 표현할 수 있어요.</div></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 살펴봤어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">👀</span>자세와 목소리에 따라 <b>알아듣는 정도</b>가 달라져요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🕰️</span>경험은 <b>가까운 때</b>부터 떠올리면 쉬워요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">➡️</span>다음 시간에는 <b>발표하는 자세</b>를 알아볼 거예요.</div>
-    </div>`},
+  {tag:'③ 마무리', t:'잘했어요! 이만큼 배웠어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>이 단원에서 배울 내용을 살펴보았어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🗣️</span>바른 자세로 발표하면 좋은 점을 알았어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">💬</span>주말에 있었던 일을 친구와 나누었어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -402,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>
