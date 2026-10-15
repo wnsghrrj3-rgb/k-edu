@@ -88,4 +88,9 @@ st.transition('night', 0.1); run(0.2); await st.doActions([{ sky: 'winter', sec:
 ok(st.skyName === 'night' && st.isNight && st.snowOn, 'ifDay: 밤에는 하늘 그대로, 눈만');
 await st.doActions([{ snow: false }, { sky: 'day', sec: 0.1 }]); await st.doActions([{ sky: 'winter', sec: 0.1, ifDay: true }]);
 ok(st.skyName === 'winter', 'ifDay: 낮이면 겨울로');
+// ---- 운 카드 날씨(10-16): 눈·비·가뭄·장마·불 카드가 뜰 때 하늘, 결과 뒤 비·눈 그침 ----
+let luckSky = 0, luckBad = [];
+for (const era of eras) { const L = JSON.parse(fs.readFileSync(path.join(root, `eras/${era}/life.json`), 'utf8')); for (const c of L.luck?.cards || []) { const oo = c.onOpen || []; const sk = oo.find((a) => a.sky); if (!sk) continue; luckSky++; if (!Story.SKIES.includes(sk.sky) || sk.ifDay !== true) luckBad.push(era + ':' + c.id); const wet = oo.find((a) => a.snow === true || a.rain === true); if (wet && !(c.outcomes || []).every((o) => (o.then || []).some((a) => a.snow === false || a.rain === false))) luckBad.push(era + ':' + c.id + ':wet'); } }
+ok(luckSky >= 9 && !luckBad.length, `운 카드 날씨 ${luckSky}장: 팔레트 이름·ifDay·비/눈은 결과 뒤 그침 ${luckBad.join(',')}`);
+ok(fs.readFileSync(path.join(root, 'core/life.js'), 'utf8').includes("if (card.onOpen) this.doThen(card.onOpen)"), 'luckTick 이 운 카드 onOpen 을 돌린다');
 console.log(`sky ${pass}/${fail}`); if (fail) process.exit(1);

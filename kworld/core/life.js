@@ -136,7 +136,7 @@ export class Life {
     if (!this.luckSlots.includes(n) || g.flags.has('luck:slot:' + n)) return; g.flags.add('luck:slot:' + n);
     const seen = new Set(this.luckSeen || []); let pool = L.cards.filter((c) => !seen.has(c.id) && this.cond(c.if)); if (!pool.length) pool = L.cards.filter((c) => this.cond(c.if)); if (!pool.length) return;
     let seed = (this.seed || 1) * 7 + n * 131; seed = (seed * 1103515245 + 12345) % 2147483648; const card = pool[seed % pool.length]; (this.luckSeen ??= []).push(card.id);
-    const s = { ...card, luck: true, tag: card.tag || '운', button: card.button || '…', ways: [] }; this.opened.add(s.id); g.flags.add('sit:' + s.id + ':open'); let at = this.queue.findIndex((q) => q.kind === 'result'); at = at < 0 ? 0 : at + 1; if (this.queue[at]?.kind === 'then') at++; this.queue.splice(at, 0, { kind: 'sit', s }); this.flush();   // 방금 끝난 상황의 결과 카드 바로 뒤
+    const s = { ...card, luck: true, tag: card.tag || '운', button: card.button || '…', ways: [] }; this.opened.add(s.id); g.flags.add('sit:' + s.id + ':open'); if (card.onOpen) this.doThen(card.onOpen); /* 운 카드도 하늘 연출(장마·가뭄·눈) */ let at = this.queue.findIndex((q) => q.kind === 'result'); at = at < 0 ? 0 : at + 1; if (this.queue[at]?.kind === 'then') at++; this.queue.splice(at, 0, { kind: 'sit', s }); this.flush();   // 방금 끝난 상황의 결과 카드 바로 뒤
   }
   /** 운 카드의 결과 = outcomes 중 값 조건에 처음 맞는 것(마지막은 조건 없음) */
   luckResolve(s) { const outs = s.outcomes || []; const hit = outs.find((o) => this.cond(o.if)); const c = hit || outs.slice(-1)[0]; if (!c) return; const held = !!(hit && hit.if);   // 버팀 = 값 조건이 있는 결과에 맞은 것; 마지막(조건 없음) = 못 버팀
