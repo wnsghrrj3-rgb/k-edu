@@ -259,14 +259,15 @@
   var mount = script && script.getAttribute('data-mount');
 
   window.KEDU_BACK = { el: null, label: label, href: href, fromTeacher: fromTeacher, role: role, go: goBack, goTo: goTo, kbox: KBOX };
-  /* 2-0) 케이박스 「다 했어요」 띠 — 어떤 도구 화면이든(자체 버튼이 있어도) 하단에 한 줄 */
+  /* 2-0) 케이박스 「다 했어요」 띠 — 어떤 도구 화면이든(자체 버튼이 있어도) 하단 왼쪽에 한 줄
+     (2026-10-16 준호 폰 피드백: 오른쪽에 두면 문제 화면 「확인」 버튼과 겹침 → 왼쪽 아래로) */
   function buildKboxBar() {
     if (!KBOX || document.getElementById('kedu-kbox-bar')) return;
     if (!document.getElementById('kedu-kbox-style')) {
       var kst = document.createElement('style'); kst.id = 'kedu-kbox-style';
       kst.textContent = ''
         + '#kedu-kbox-bar{position:fixed;left:0;right:0;bottom:0;z-index:2147483000;display:flex;gap:8px;'
-        + 'justify-content:flex-end;align-items:center;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0));'
+        + 'justify-content:flex-start;align-items:center;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0));'
         + 'pointer-events:none;font-family:inherit}'
         + '#kedu-kbox-bar a{pointer-events:auto;display:inline-flex;align-items:center;gap:6px;padding:11px 16px;'
         + 'border-radius:14px;font-weight:800;font-size:14.5px;line-height:1;text-decoration:none;white-space:nowrap;'
