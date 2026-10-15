@@ -1892,12 +1892,92 @@
   // objs1: items [{emoji, name, s}] — 물건 카드(이모지 · 이름 · s 있으면 그 물건 윗면 모양을 작게)
   function objs1(o) {
     const its = (o.items || []).filter(i => i && i.emoji); if (!its.length) return '';
+    const hasN = its.some(i => i.n != null); // 127차: 4단원 물건 카드 수(n) — 있으면 넓은 카드 · 이모지 아래 큰 수 · 긴 이름은 두 줄
+    if (hasN) { const cw = 214, Wd = Math.max(460, its.length * cw + 20), x0 = (Wd - its.length * cw) / 2; let s = '';
+      const lines = (t) => { if (t.length <= 8) return [t]; const ws = t.split(' '); let a = '', b = ''; ws.forEach(w => { if ((a + ' ' + w).trim().length <= Math.ceil(t.length / 2) + 1 && !b) a = (a + ' ' + w).trim(); else b = (b + ' ' + w).trim(); }); return b ? [a, b] : [t]; };
+      its.forEach((i, j) => { const cx = x0 + j * cw + cw / 2, nm = lines(i.name), fz = Math.max(...nm.map(l => l.length)) > 8 ? 22 : 24;
+        s += '<rect x="' + (cx - 98) + '" y="8" width="196" height="232" rx="18" fill="#fff" stroke="#DCE3EC" stroke-width="3"/>' + T1(cx, 78, i.emoji, 56, INK, 400);
+        if (i.n != null) s += T1(cx, 150, String(i.n), 56, '#C2551A', 900);
+        nm.forEach((l, k) => { s += T1(cx, 196 + k * 28 - (nm.length - 1) * 8, l, fz, '#3E4A5C', 900); }); });
+      return svgWrap(s, 'fig-objs1', '0 0 ' + Wd + ' 248').replace('<svg ', '<svg data-n="' + its.length + '" data-cnt="' + its.map(i => (i.n == null ? '' : i.n)).join(',') + '" '); }
     const cw = 150, hasS = its.some(i => i.s), Wd = Math.max(460, its.length * cw + 20), x0 = (Wd - its.length * cw) / 2; let s = '';
     its.forEach((i, j) => { const cx = x0 + j * cw + cw / 2; s += '<rect x="' + (cx - 66) + '" y="8" width="132" height="' + (hasS ? 206 : 160) + '" rx="18" fill="#fff" stroke="#DCE3EC" stroke-width="3"/>' + T1(cx, 86, i.emoji, 62, INK, 400);
       if (i.s) s += oneShape(i.s, cx, 136, 40); s += T1(cx, hasS ? 196 : 146, i.name, i.name.length > 5 ? 20 : 24, '#3E4A5C', 900); });
     return svgWrap(s, 'fig-objs1', '0 0 ' + Wd + ' ' + (hasS ? 222 : 176)).replace('<svg ', '<svg data-n="' + its.length + '" ');
   }
   Object.assign(PARTS, { clk1, tcard, shp1, mosaic1, objs1 });
+  }
+  { // 127차 1학년 2학기 「덧셈과 뺄셈(2)」 부품 — 이름이 겹치지 않게 블록 안에 둔다
+  // ══ bead1(수 구슬 틀 두 줄) · cpath1(이어 세기·거꾸로 세기 길) · split1(가르기 상자 — 식 + 두 다리) · eqtab1(덧셈표·뺄셈표) · rpath1(로봇 길) · bingo1(수 빙고판) ══
+  // 그림 문법(자기주도 원문과 같음): 빨강·흰 구슬 다섯씩 · 옮긴 구슬만 진하게 · 주황 = 10 을 만드는 다리·도착·강조 · 주황 점선 「?」 = 구할 자리.
+  const R7 = ['#F2545B', '#C93A41'], W7 = ['#FFFFFF', '#8A97A8'], OR7 = ['#FFF1E6', '#FF7A2F', '#C2551A'], GY7 = '#C9D3E0';
+  const box7 = (x, y, w, h, fill, st, sw, dash) => '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="14" fill="' + fill + '" stroke="' + st + '" stroke-width="' + (sw || 4) + '"' + (dash ? ' stroke-dasharray="10 7"' : '') + '/>';
+  const sym7 = (t) => String(t).replace(/^-$/, '−').replace(/(\d)\s*-\s*(\d)/g, '$1 − $2').replace(/(\d)\s*\+\s*(\d)/g, '$1 + $2');
+  // bead1: rows [{r, w}] 줄마다 옮긴(켠) 빨강·흰 구슬 수 · label(아래 꼬리표) · data-rows(r+w 합)
+  function bead1(o) {
+    const rows = (o.rows || []).slice(0, 2); if (!rows.length) return '';
+    const u = 36, gp = 4, mid = 18, rw = 10 * u + 9 * gp + mid, x0 = 230 - rw / 2, y0 = 22, rh = 64; let s = '';
+    rows.forEach((r, ri) => { const y = y0 + ri * rh + u / 2;
+      s += '<line x1="' + (x0 - 18) + '" y1="' + y + '" x2="' + (x0 + rw + 18) + '" y2="' + y + '" stroke="#9AA6B4" stroke-width="4" stroke-linecap="round"/>';
+      for (let i = 0; i < 10; i++) { const red = i < 5, on = red ? i < (r.r | 0) : i - 5 < (r.w | 0), cx = x0 + i * (u + gp) + (i >= 5 ? mid : 0) + u / 2, c = red ? R7 : W7;
+        s += '<circle class="o-bead ' + (red ? 'r' : 'w') + (on ? ' on' : '') + '" cx="' + cx.toFixed(1) + '" cy="' + y + '" r="' + (u / 2 - 1) + '" fill="' + (on ? c[0] : '#F3F5F8') + '" stroke="' + (on ? c[1] : '#D5DCE5') + '" stroke-width="3"' + (on ? '' : ' opacity=".7"') + '/>'; } });
+    let Hh = y0 + rows.length * rh; if (o.label) { s += txt(230, Hh + 22, o.label, 26, '#4E5C70', 800); Hh += 38; }
+    return svgWrap(s, 'fig-bead1', '0 0 460 ' + Hh).replace('<svg ', '<svg data-rows="' + rows.map(r => (r.r | 0) + (r.w | 0)).join(',') + '" ');
+  }
+  // cpath1: from · seq[이어 센 수 — 마지막이 도착] · down(거꾸로) · hole(도착 칸 「?」) · data-from/land
+  function cpath1(o) {
+    const seq = (o.seq || []).map(Number); if (!seq.length) return '';
+    const all = [o.from].concat(seq), n = all.length, cw = 64, aw = 26, tot = n * cw + (n - 1) * aw, Wd = Math.max(460, tot + 20), x0 = (Wd - tot) / 2, y = 14, h = 70; let s = '';
+    all.forEach((v, i) => { const x = x0 + i * (cw + aw), last = i === n - 1, first = i === 0, hole = last && o.hole;
+      s += box7(x, y, cw, h, first ? '#EEF2F7' : last ? (hole ? '#fff' : OR7[0]) : '#fff', first ? '#9AA6B4' : last ? OR7[1] : GY7, last ? 5 : 3, hole);
+      s += txt(x + cw / 2, y + h / 2 + 13, hole ? '?' : String(v), v >= 10 ? 32 : 36, hole || last ? OR7[2] : INK, 900);
+      if (!last) s += txt(x + cw + aw / 2, y + h / 2 + 9, o.down ? '◀' : '▶', 22, '#8A97A8', 900); });
+    return svgWrap(s, 'fig-cpath1', '0 0 ' + Wd + ' ' + (y + h + 12)).replace('<svg ', '<svg data-from="' + o.from + '" data-land="' + (o.hole ? '?' : seq[seq.length - 1]) + '" data-down="' + (o.down ? 1 : 0) + '" ');
+  }
+  // split1: toks(식) · n(가르는 수) · legs[{v, ten, hole}] · partner(10 을 만들 짝 — 있으면 n 은 짝이 아닌 칸) · note(아래 글) · data-split(n|다리|다리)
+  function split1(o) {
+    const toks = (o.toks || []).map(String); if (!toks.length) return '';
+    const legs = (o.legs || []).slice(0, 2), tw = (t) => /^[+\-−=]$/.test(t) ? 54 : t.length > 1 ? 104 : 84, tot = toks.reduce((a, t) => a + tw(t), 0), x00 = 230 - tot / 2, y = 12, h = 86;
+    let s = '', x = x00, si = -1, sx = 0;
+    const nIdx = toks.map((t, i) => (String(t) === String(o.n) ? i : -1)).filter(i => i >= 0), pick = nIdx.length > 1 && o.partner != null ? nIdx.filter(i => i !== toks.indexOf(String(o.partner)))[0] : nIdx[nIdx.length > 1 ? nIdx.length - 1 : 0];
+    toks.forEach((t, i) => { const w = tw(t), op = /^[+\-−=]$/.test(t);
+      if (op) s += txt(x + w / 2, y + h / 2 + 16, sym7(t), 46, '#6B7C93', 900);
+      else { s += box7(x + 4, y, w - 8, h, i === pick ? '#FFF8F2' : '#fff', i === pick ? OR7[1] : GY7, i === pick ? 5 : 3) + txt(x + w / 2, y + h / 2 + 18, t, 50, INK, 900); }
+      if (i === pick) { si = i; sx = x + w / 2; } x += w; });
+    if (si >= 0 && legs.length) { const ly = y + h + 64, lw = 92, lh = 74, xs = [sx - 74, sx + 74].map(v => Math.max(lw / 2 + 6, Math.min(454 - lw / 2, v)));
+      legs.forEach((l, j) => { const lx = xs[j], hole = !!l.hole, ten = !!l.ten;
+        s += '<line x1="' + sx.toFixed(1) + '" y1="' + (y + h + 4) + '" x2="' + lx.toFixed(1) + '" y2="' + (ly - 4) + '" stroke="' + (ten ? OR7[1] : '#9AA6B4') + '" stroke-width="5" stroke-linecap="round"/>';
+        s += box7(lx - lw / 2, ly, lw, lh, hole ? '#fff' : ten ? OR7[0] : '#F6F8FB', hole || ten ? OR7[1] : '#9AA6B4', ten || hole ? 5 : 3, hole) + txt(lx, ly + lh / 2 + 15, hole ? '?' : String(l.v), 42, hole || ten ? OR7[2] : INK, 900); }); }
+    let Hh = y + h + 64 + (legs.length ? 74 : 0) + 10; if (o.note) { s += txt(230, Hh + 30, o.note, 26, '#4E5C70', 800); Hh += 44; }
+    return svgWrap(s, 'fig-split1', '0 0 460 ' + Hh).replace('<svg ', '<svg data-split="' + esc(o.n + '|' + legs.map(l => (l.hole ? '?' : l.v)).join('|')) + '" data-eq="' + esc(toks.join(' ')) + '" ');
+  }
+  // eqtab1: rows [[{e, v, h}]] · h = h1/h2(같은 답 강조 — 개념 장) · pick(고른 칸) · val(true 면 칸 아래 답 — 개념 장만) · data-n(칸 수)
+  function eqtab1(o) {
+    const rows = (o.rows || []).filter(r => r && r.length); if (!rows.length) return '';
+    const mc = Math.max(...rows.map(r => r.length)), cw = mc > 4 ? 98 : 120, gp = 8, ch = o.val ? 84 : 62, Wd = Math.max(460, mc * (cw + gp) + 16), x0 = (Wd - mc * (cw + gp) + gp) / 2, y0 = 10; let s = '';
+    rows.forEach((r, ri) => r.forEach((c, ci) => { const x = x0 + ci * (cw + gp), y = y0 + ri * (ch + gp), hl = c.h === 'h1' ? ['#FFF1E6', OR7[1]] : c.h === 'h2' ? ['#EAF1FF', BLUE2] : c.h === 'pick' ? ['#EAF7EF', '#3E9A6A'] : ['#fff', GY7];
+      s += box7(x, y, cw, ch, hl[0], hl[1], c.h ? 4 : 2.5) + txt(x + cw / 2, y + (o.val ? 38 : ch / 2 + 11), sym7(c.e), mc > 4 ? 26 : 30, INK, 900);
+      if (o.val) s += txt(x + cw / 2, y + 70, String(c.v), 22, hl[1] === GY7 ? '#8A97A8' : hl[1], 900); }));
+    return svgWrap(s, 'fig-eqtab1', '0 0 ' + Wd + ' ' + (y0 + rows.length * (ch + gp) + 4)).replace('<svg ', '<svg data-n="' + rows.reduce((a, r) => a + r.length, 0) + '" ');
+  }
+  // rpath1: steps [{e, v, now, hole}] — 식 칸 + 아래 답 동그라미 · hole 이면 답 「?」(식이 비면 식도 「?」) · data-v(답 차례)
+  function rpath1(o) {
+    const st = (o.steps || []).filter(Boolean); if (!st.length) return '';
+    const n = st.length, cw = n > 4 ? 108 : 124, aw = 26, tot = n * cw + (n - 1) * aw, Wd = Math.max(460, tot + 20), x0 = (Wd - tot) / 2, y = 12, h = 64; let s = '';
+    st.forEach((p, i) => { const x = x0 + i * (cw + aw), hole = !!p.hole, now = !!p.now;
+      s += box7(x, y, cw, h, now ? '#EAF1FF' : '#fff', now ? BLUE2 : hole ? OR7[1] : GY7, now || hole ? 4 : 3, hole && !p.e) + txt(x + cw / 2, y + h / 2 + 11, p.e ? sym7(p.e) : '?', n > 4 ? 26 : 30, p.e ? INK : OR7[2], 900);
+      s += '<circle cx="' + (x + cw / 2) + '" cy="' + (y + h + 42) + '" r="28" fill="' + (hole ? '#fff' : OR7[0]) + '" stroke="' + OR7[1] + '" stroke-width="4"' + (hole ? ' stroke-dasharray="8 6"' : '') + '/>' + txt(x + cw / 2, y + h + 53, hole ? '?' : String(p.v), 30, OR7[2], 900);
+      if (i < n - 1) s += txt(x + cw + aw / 2, y + h / 2 + 9, '▶', 22, '#8A97A8', 900); });
+    return svgWrap(s, 'fig-rpath1', '0 0 ' + Wd + ' ' + (y + h + 82)).replace('<svg ', '<svg data-v="' + st.map(p => (p.hole ? '?' : p.v)).join(',') + '" ');
+  }
+  // bingo1: nums(3×3) · data-nums
+  function bingo1(o) {
+    const ns = (o.nums || []).slice(0, 16); if (!ns.length) return '';
+    const c = Math.ceil(Math.sqrt(ns.length)), u = 84, gp = 8, gw = c * (u + gp) - gp, x0 = 230 - gw / 2, y0 = 12; let s = box7(x0 - 12, y0 - 8, gw + 24, Math.ceil(ns.length / c) * (u + gp) - gp + 16, '#F6F8FB', '#DCE3EC', 3);
+    ns.forEach((v, i) => { const x = x0 + (i % c) * (u + gp), y = y0 + Math.floor(i / c) * (u + gp); s += box7(x, y, u, u, '#fff', GY7, 3) + txt(x + u / 2, y + u / 2 + 14, String(v), 40, INK, 900); });
+    return svgWrap(s, 'fig-bingo1', '0 0 460 ' + (y0 + Math.ceil(ns.length / c) * (u + gp) + 6)).replace('<svg ', '<svg data-nums="' + ns.join(',') + '" ');
+  }
+  Object.assign(PARTS, { bead1, cpath1, split1, eqtab1, rpath1, bingo1 });
   }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {

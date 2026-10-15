@@ -44,6 +44,7 @@ def figs(p):
     if rws: out.append({'k': 'read', 'items': rws})
     out.extend(figs2(p))
     out.extend(figs3(p))
+    out.extend(figs4(p))
     return out
 
 # 123차 — 2단원 「덧셈과 뺄셈(1)」 그림: steps(번호 줄 식) · eqstrip(식 띠: hole=? · res/mark=강조) · chain(색 알 묶음) · cupstack(층 쌓은 컵) · tenframe(십 배열판 a/b 두 색 + tf-lb 꼬리표). 원문 순서대로.
@@ -55,7 +56,7 @@ def figs2(p):
     for m in re.finditer(r'<div class="steps">((?:<div class="step-row">.*?</div>\s*</div>\s*)+)</div>', p, re.S):
         rows = [dict(eqtok(e), no=clean(n)) for n, e in re.findall(r'class="step-no">(.*?)</span><div class="eqstrip">(.*?)</div>', m.group(1), re.S)]
         found.append((m.start(), m.end(), {'k': 'steps', 'rows': rows}))
-    spans = [(a, b) for a, b, _ in found]
+    spans = [(a, b) for a, b, _ in found] + [(m.start(), m.end()) for m in re.finditer(r'<div class="splitbox".*?<div class="sp-legs">', p, re.S)]  # 127차: 가르기 상자 안 식 띠는 figs4 split 이 가짐
     inside = lambda i: any(a <= i < b for a, b in spans)
     for m in re.finditer(r'<div class="eqstrip">(.*?)</div>', p, re.S):
         if inside(m.start()): continue
@@ -125,8 +126,35 @@ def figs3(p):
     for a, b, its in grp:
         if any('s' in x for x in its): found.append((a, b, {'k': 'shp', 'items': its, 'loose': True}))
     for m in re.finditer(r'<div class="objs">((?:<div class="obj">.*?</div>)+)</div>', p, re.S):
-        found.append((m.start(), m.end(), {'k': 'objs', 'items': [dict({'emoji': e.strip(), 'name': clean(n)}, **({'s': sh} if sh else {})) for e, sh, n in re.findall(r'<div class="obj"><em>(.*?)</em>(?:<span class="shp (\w)[^"]*"></span>)?<b>(.*?)</b></div>', m.group(1), re.S)]}))
+        found.append((m.start(), m.end(), {'k': 'objs', 'items': [dict({'emoji': e.strip(), 'name': clean(n)}, **({'s': sh} if sh else {}), **({'n': int(c)} if c else {})) for e, sh, c, n in re.findall(r'<div class="obj"><em>(.*?)</em>(?:<span class="shp (\w)[^"]*"></span>)?(?:<u>(\d+)</u>)?<b>(.*?)</b></div>', m.group(1), re.S)]}))  # 127차: 4단원 물건 카드 수 <u>n</u>
         mos.append((m.start(), m.end()))
+    return [f for _, _, f in sorted(found, key=lambda x: x[0])]
+
+# 127차 — 4단원 「덧셈과 뺄셈(2)」 그림: bead(구슬 틀 두 줄 · 줄마다 켠 알 수 + 꼬리표) · cpath(이어 세기 길 from→steps · down · hole)
+#          · split(가르기 상자 — 식 + 두 다리 ten/hole + partner) · eqtab(덧셈표·뺄셈표 h1/h2/pick) · robot(로봇 길 식·합 · now/hole) · bingo(수 빙고판).
+#          원문 순서대로. u1~u3 원문엔 이 꼴이 없어 세 json 은 바이트 같음.
+def figs4(p):
+    found = []
+    for m in re.finditer(r'<div class="beadset" data-beads="([\d,]+)">(.*?)</span></div>', p, re.S):
+        rows = [{'r': len(re.findall(r'class="r on"', r)), 'w': len(re.findall(r'class="w on"', r))} for r in re.findall(r'<div class="beadrow">(.*?)</div>', m.group(2), re.S)]
+        found.append((m.start(), m.end(), {'k': 'bead', 'rows': rows, 'label': clean(first(r'class="bead-lb">(.*?)$', m.group(2)))}))
+    for m in re.finditer(r'<div class="countpath" data-count="(\d+)\|([\d,]+)\|(\d)">(.*?)</div>', p, re.S):
+        found.append((m.start(), m.end(), {'k': 'cpath', 'from': int(m.group(1)), 'seq': [int(x) for x in m.group(2).split(',')], 'down': m.group(3) == '1', 'hole': 'class="hole"' in m.group(4)}))
+    for m in re.finditer(r'<div class="splitbox" data-split="(\d+)\|(\d+)\|(\d+)"(?: data-partner="(\d+)")?>(.*?)</div>\s*(?:<span class="sp-note">(.*?)</span>\s*)?</div>', p, re.S):
+        body = m.group(5); e = eqtok(first(r'<div class="eqstrip">(.*?)</div>', body))
+        legs = [dict({'v': clean(v)}, **({'ten': True} if 'ten' in c else {}), **({'hole': True} if 'hole' in c else {})) for c, v in re.findall(r'<span class="sp-leg([^"]*)">(.*?)</span>', body)]
+        c = {'k': 'split', 'toks': e['toks'], 'n': int(m.group(1)), 'a': int(m.group(2)), 'b': int(m.group(3)), 'legs': legs}
+        if m.group(4): c['partner'] = int(m.group(4))
+        if m.group(6): c['note'] = clean(m.group(6))
+        found.append((m.start(), m.end(), c))
+    for m in re.finditer(r'<div class="eqtable">((?:<div class="eqt-row">.*?</div>)+)</div>', p, re.S):
+        rows = [[dict({'e': clean(t), 'v': int(v)}, **({'h': c} if c else {})) for c, v, t in re.findall(r'<u(?: class="(\w+)")? data-v="(\d+)">(.*?)</u>', r)] for r in re.findall(r'<div class="eqt-row">(.*?)</div>', m.group(1), re.S)]
+        found.append((m.start(), m.end(), {'k': 'eqtab', 'rows': rows}))
+    for m in re.finditer(r'<div class="robotpath" data-robot="([^"]*)">(.*?)</div>', p, re.S):
+        st = [dict({'e': clean(e), 'v': clean(v)}, **({'now': True} if 'now' in c else {}), **({'hole': True} if 'hole' in c else {})) for c, e, v in re.findall(r'<span class="rp-step([^"]*)">([^<]*)<i>(.*?)</i></span>', m.group(2))]
+        found.append((m.start(), m.end(), {'k': 'robot', 'steps': st}))
+    for m in re.finditer(r'<div class="bingo">(.*?)</div>', p, re.S):
+        found.append((m.start(), m.end(), {'k': 'bingo', 'nums': [int(x) for x in re.findall(r'<b>(\d+)</b>', m.group(1))]}))
     return [f for _, _, f in sorted(found, key=lambda x: x[0])]
 
 def parse(path):
