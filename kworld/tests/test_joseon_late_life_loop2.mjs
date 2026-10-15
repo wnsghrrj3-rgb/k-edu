@@ -58,7 +58,7 @@ const carry = (key) => JSON.parse(store['kworld_carry:joseon-late-life'] || '{}'
 {
   const { g, S, useR, pick, closeCard, goTo, btn, on, opened, done, shown } = mkGame('m', MIX, 'eye');
   g.life.setStatusTo('sinyang'); ok(g.life.status === 'sinyang' && g.life.values.grain >= 6, '신향·곡식 여섯');
-  ok(g.life.situations.length === 14 && Object.keys(g.world.areas).length === 26, '꼭 7 + 새 7 · 구역 26');
+  ok(g.life.situations.length === 14 && Object.keys(g.world.areas).length === 29, '꼭 7 + 새 7 · 구역 29(넓히기 2 뒤)');
   goTo('hyangcheong'); ok(!opened('hyangcheong'), '공명첩 전엔 향청 안 열림');
   on(...ALL); goTo('hyangcheong'); ok(opened('hyangcheong'), '향청'); closeCard(); ok(shown.name === false, '붉은 끈은 처음엔 숨김');
   ok(verb(g, 'hyangan_1').includes('이름을 올린다'), '신향: 향안 이름 올리기 열림'); useR('npc_jwasu', '향안에'); ok(!btn('향안에')?.disabled && !btn('수령에게')?.disabled && btn('족보를')?.disabled && btn('서얼도')?.disabled && btn('향안 궤')?.disabled, '신향: 올리기·쌀 열림·막기·통문·궤 회색'); S.panel = null;

@@ -1,4 +1,4 @@
-// 조선 후기 인생 층 구조 검증 — 10-10 부터 후기 전용 터(joseon_late.glb = 전기 터 + 후기 자기 장소 일곱: 향청·난전 골목·놀이판·담배·인삼 밭·이양선 모래톱·산골 옹기 마을·화전 마을) + scene.add 소품 셋(전기수·광산 굴·동학 모임). NPC 25·구역 26·미션 7·숨김 재질(관군 진영·이양선 = 전기의 청 진영·왜선 재질)·done 깃발 전수·신분 16·|| 조건
+// 조선 후기 인생 층 구조 검증 — 10-10 부터 후기 전용 터(joseon_late.glb = 전기 터 + 후기 자기 장소 일곱: 향청·난전 골목·놀이판·담배·인삼 밭·이양선 모래톱·산골 옹기 마을·화전 마을) + scene.add 소품 셋(전기수·광산 굴·동학 모임) + 넓히기 2(10-15: 서원·유기점·조창, 숨김 재질 사액 현판·금 글씨·놋그릇·쌀가마). NPC 28·구역 29·미션 7·숨김 재질(관군 진영·이양선 = 전기의 청 진영·왜선 재질)·done 깃발 전수·신분 16·|| 조건
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const base = new URL('../eras/joseon-late-life/', import.meta.url);
@@ -17,17 +17,17 @@ for (const t of types) assert.ok(items.targets[t], `대상 ${t} 가 items.json �
 for (const t of Object.keys(items.targets)) assert.ok(types.has(t) || sceneTypes.has(t), `items.json 대상 ${t} 가 GLB·scene 에 없음`);
 const areas = names.filter((n) => n.startsWith('area_')).map((n) => n.slice(5));
 for (const a of Object.keys(world.areas)) assert.ok(areas.includes(a), `구역 ${a} 없음`);
-assert.equal(Object.keys(world.areas).length, 26, '구역 26(전기 19 + 후기 7)');
-for (const a of ['hyangcheong', 'nanjeon', 'nori', 'crops', 'isyang', 'gyouchon', 'hwajeon']) assert.ok(world.areas[a] && life.situations.some((s) => s.place === a && !s.must), `후기 장소 ${a} 에 상황`); assert.ok(areas.includes(world.face), `시작 시선 구역 ${world.face}`);
+assert.equal(Object.keys(world.areas).length, 29, '구역 29(전기 19 + 후기 7 + 넓히기 2 셋)');
+for (const a of ['hyangcheong', 'nanjeon', 'nori', 'crops', 'isyang', 'gyouchon', 'hwajeon', 'seowon', 'yugi', 'jochang']) assert.ok(world.areas[a] && life.situations.some((s) => s.place === a && !s.must), `후기 장소 ${a} 에 상황`); assert.ok(areas.includes(world.face), `시작 시선 구역 ${world.face}`);
 const npcs = ix.filter((n) => n.startsWith('ix_npc_')).map((n) => n.slice(7));
 for (const id of Object.keys(npcDefs)) assert.ok(npcs.includes(id), `NPC ${id} 가 GLB 에 없음`);
 for (const id of npcs) assert.ok(npcDefs[id], `GLB NPC ${id} 가 npcs.json 에 없음`);
-assert.equal(npcs.length, 25, 'NPC 25(전기 18 이름만 바뀜 + 후기 7: 좌수·난전 장사꾼·광대·삼포 주인·문정관·옹기장이·화전민)');
+assert.equal(npcs.length, 28, 'NPC 28(전기 18 이름만 바뀜 + 후기 7 + 넓히기 2: 서원 유생·유기장·조창 아전)');
 assert.ok(npcDefs.jumo.name.includes('김만덕') && npcDefs.sunsin.name.includes('정약용') && npcDefs.uibyeong.name.includes('홍경래') && npcDefs.kkeokjeong.name.includes('장길산'), '인물 카드 넷');
 const mats = new Set((data.materials || []).map((m) => m.name));
 for (const [t, h] of Object.entries(items.targets)) for (const m of h.hidden || []) assert.ok(mats.has(m), `숨김 재질 ${m}(${t}) 가 GLB 에 없음`);
 const list = missions.missions; assert.equal(list.length, 7, '미션 7');
-const must = life.situations.filter((x) => x.must); assert.equal(must.length, 7, '꼭 나오는 상황 7'); assert.ok(life.situations.length - must.length >= life.mixedCount && life.situations.length >= 27 && life.mixedCount === 6, '섞여 20 ≥ mixedCount 6');
+const must = life.situations.filter((x) => x.must); assert.equal(must.length, 7, '꼭 나오는 상황 7'); assert.ok(life.situations.length - must.length >= life.mixedCount && life.situations.length >= 30 && life.mixedCount === 6, '섞여 23 ≥ mixedCount 6');
 for (const m of list) assert.ok(must.some((x) => 'sit:' + x.id + ':done' === m.done), `미션 ${m.id} 가 상황과 안 맞음`);
 for (const sit of life.situations) { if (sit.place) assert.ok(world.areas[sit.place], `상황 ${sit.id} 장소 ${sit.place}`); for (const c of sit.choices) assert.ok(c.done || c.count, `상황 ${sit.id} 선택 ${c.id} 에 done 없음`); }
 const blob = JSON.stringify(items) + JSON.stringify(npcDefs) + JSON.stringify(life.situations.map((s) => s.choices.map((c) => c.flag)));
@@ -45,12 +45,17 @@ assert.ok(ids.size === 16 && cap('yangban') === 6 && cap('mollak') === 6 && cap(
 assert.ok(st.findIndex((r) => r.id === 'seoeol') < st.findIndex((r) => r.id === 'yangban'), '서얼 규칙이 양반보다 앞');
 assert.ok(st.find((r) => r.id === 'gwanno').if === 'from:kk_caught' && st.some((r) => r.id === 'hwajeon' && r.if === 'from:rebel'), '산채로 가다 잡힘 → 관노 / 토벌 → 화전');
 assert.ok(JSON.stringify(items).includes(' || '), '|| 묶음 조건 사용');
-assert.ok(life.hurts?.wound && life.hurts?.leg && life.hurts?.jail && world.danger?.safe?.length === 9 && world.danger.safe.some(([x, z]) => x === 34 && z === -92), '흔적 셋 + 밤 안전 자리 9(옹기 마을·화전·향청 추가, 엔진 좌표 z = -블렌더 y)');
-for (const m of ['new_name', 'new_stall', 'mask_dancer', 'dry_leaf', 'new_millet']) assert.ok(Object.values(items.targets).some((t) => (t.hidden || []).includes(m)) && mats.has(m), `후기 숨김 재질 ${m}`);
+assert.ok(life.hurts?.wound && life.hurts?.leg && life.hurts?.jail && world.danger?.safe?.length === 10 && world.danger.safe.some(([x, z]) => x === 34 && z === -92) && world.danger.safe.some(([x, z]) => x === -42 && z === 48), '흔적 셋 + 밤 안전 자리 10(옹기 마을·화전·향청·서원 추가, 엔진 좌표 z = -블렌더 y)');
+for (const m of ['new_name', 'new_stall', 'mask_dancer', 'dry_leaf', 'new_millet', 'saaek_board', 'saaek_gold', 'brass_ware', 'rice_sack']) assert.ok(Object.values(items.targets).some((t) => (t.hidden || []).includes(m)) && mats.has(m), `후기 숨김 재질 ${m}`);
 const endB = last.choices[0].then[0].end.branches; assert.ok(endB.some((b) => b.key === 'gyouchon' && b.id === 'catholic') && endB.some((b) => b.key === 'hyangan' && b.id === 'sinyang'), '끝 갈림 +2(옹기 마을·향안 — 개항기 넘김 id 는 기존 것)');
 assert.ok(endB.findIndex((b) => b.key === 'gyouchon') < endB.findIndex((b) => b.id === 'catholic_jail') && endB.findIndex((b) => b.key === 'hyangan') < endB.findIndex((b) => b.id === 'sinyang' && !b.key), '끝 갈림 순서');
 assert.ok(life.situations.find((s) => s.id === 'mine').choices.every((c) => c.fact.includes('광') || c.fact.includes('은')), '광산 사실 줄 = 광산 기록');
 assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');
 assert.ok(world.gate?.next === 'gaehang-life' && world.gate.ready, '문 → 개항(열림)');
 const prev = JSON.parse(fs.readFileSync(new URL('../eras/joseon-life/world.json', import.meta.url))); assert.ok(prev.gate?.next === 'joseon-late-life' && prev.gate.ready, '조선 전기 끝 카드 → 조선 후기 문(열림)');
+// 넓히기 2: 새 대상 9 전부 GLB 에 있고, 숨김 재질이 그 ix 자식 메시에 실제로 있는지
+for (const t of ['saaek_1', 'mukpae_1', 'seowonland_1', 'brassforge_1', 'brassware_1', 'wagebook_1', 'jochang_1', 'tollbook_1', 'joseonship_1']) assert.ok(ix.includes('ix_' + t), `넓히기 2 대상 ${t}`);
+const meshMats = (nodeName) => { const ni = names.indexOf(nodeName); const out = new Set(); const walk = (i) => { const n = data.nodes[i]; if (n.mesh != null) for (const p of data.meshes[n.mesh].primitives) if (p.material != null) out.add(data.materials[p.material].name); for (const c of n.children || []) walk(c); }; walk(ni); return out; };
+assert.ok(meshMats('ix_saaek_1').has('saaek_board') && meshMats('ix_saaek_1').has('saaek_gold') && meshMats('ix_brassware_1').has('brass_ware') && meshMats('ix_jochang_1').has('rice_sack') && meshMats('ix_joseonship_1').has('rice_sack'), '숨김 재질이 그 대상 메시에 있음');
+for (const id of ['seowon', 'yugi', 'jochang']) { const sit = life.situations.find((s) => s.id === id); assert.ok(sit && sit.q?.a?.length === 3 && world.journal[id]?.note && sit.choices.length >= 8, `넓히기 2 상황 ${id}`); }
 console.log(`joseon-late-life: ix ${ix.length} + scene ${scene.add.length} · areas ${areas.length} · npc ${npcs.length} · 상황 ${life.situations.length} · 신분 ${ids.size} · 끝 갈림 ${last.choices[0].then[0].end.branches.length}`);
