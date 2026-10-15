@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-15 · 과목 19 · 차시 940 · 슬라이드 16473 */
+   생성: 2026-10-15 · 과목 19 · 차시 947 · 슬라이드 16606 */
 window.KT2_MANIFEST = {
  "built": "2026-10-15",
- "lessons": 940,
- "slides": 16473,
+ "lessons": 947,
+ "slides": 16606,
  "subjects": [
   {
    "slug": "g1_math",
@@ -6130,6 +6130,196 @@ window.KT2_MANIFEST = {
       {
        "key": "u4_l14",
        "no": "14",
+       "title": "단원 마무리하기",
+       "meta_title": "단원 마무리하기",
+       "std": "단원 전체 통합",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    },
+    {
+     "unit": 5,
+     "title": "생각을 키워요",
+     "file": "data/g1s2_korean_u5.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u5_l01",
+       "no": "1",
+       "title": "단원 시작 — 배울 내용 살펴보기",
+       "meta_title": "단원 시작 — 배울 내용 살펴보기",
+       "std": "[2국04-04][2국02-05]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u5_l03",
+       "no": "3",
+       "title": "한글이 만들어진 까닭 알기",
+       "meta_title": "한글이 만들어진 까닭 알기",
+       "std": "[2국04-04]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u5_l04",
+       "no": "4",
+       "title": "글자를 바꾸어 낱말 만들기",
+       "meta_title": "글자를 바꾸어 낱말 만들기",
+       "std": "[2국04-04]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u5_l06",
+       "no": "6",
+       "title": "책의 재미 알고 추천하기",
+       "meta_title": "책의 재미 알고 추천하기",
+       "std": "[2국02-05]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u5_l08",
+       "no": "8",
+       "title": "글을 읽고 생각이나 느낌 나누기",
+       "meta_title": "글을 읽고 생각이나 느낌 나누기",
+       "std": "[2국02-05]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u5_l10",
+       "no": "10",
+       "title": "독서 계획 세우기",
+       "meta_title": "독서 계획 세우기",
+       "std": "[2국02-05]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u5_l12",
+       "no": "12",
        "title": "단원 마무리하기",
        "meta_title": "단원 마무리하기",
        "std": "단원 전체 통합",
