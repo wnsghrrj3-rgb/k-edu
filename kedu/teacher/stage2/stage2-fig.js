@@ -1900,10 +1900,14 @@
         if (i.n != null) s += T1(cx, 150, String(i.n), 56, '#C2551A', 900);
         nm.forEach((l, k) => { s += T1(cx, 196 + k * 28 - (nm.length - 1) * 8, l, fz, '#3E4A5C', 900); }); });
       return svgWrap(s, 'fig-objs1', '0 0 ' + Wd + ' 248').replace('<svg ', '<svg data-n="' + its.length + '" data-cnt="' + its.map(i => (i.n == null ? '' : i.n)).join(',') + '" '); }
-    const cw = 150, hasS = its.some(i => i.s), Wd = Math.max(460, its.length * cw + 20), x0 = (Wd - its.length * cw) / 2; let s = '';
-    its.forEach((i, j) => { const cx = x0 + j * cw + cw / 2; s += '<rect x="' + (cx - 66) + '" y="8" width="132" height="' + (hasS ? 206 : 160) + '" rx="18" fill="#fff" stroke="#DCE3EC" stroke-width="3"/>' + T1(cx, 86, i.emoji, 62, INK, 400);
-      if (i.s) s += oneShape(i.s, cx, 136, 40); s += T1(cx, hasS ? 196 : 146, i.name, i.name.length > 5 ? 20 : 24, '#3E4A5C', 900); });
-    return svgWrap(s, 'fig-objs1', '0 0 ' + Wd + ' ' + (hasS ? 222 : 176)).replace('<svg ', '<svg data-n="' + its.length + '" ');
+    // 132차: 이름이 6자 넘는 카드가 있으면 넓은 카드(196) · 긴 이름은 두 줄(옆 칸으로 넘치지 않게) — 6자 이하만 있는 장은 그대로
+    const hasS = its.some(i => i.s), wide = its.some(i => String(i.name || '').length > 6);
+    const lines2 = (t) => { if (t.length <= 8) return [t]; const ws = t.split(' '); let a = '', b = ''; ws.forEach(w => { if ((a + ' ' + w).trim().length <= Math.ceil(t.length / 2) + 1 && !b) a = (a + ' ' + w).trim(); else b = (b + ' ' + w).trim(); }); return b ? [a, b] : [t]; };
+    const cw = wide ? 214 : 150, rw = wide ? 196 : 132, Wd = Math.max(460, its.length * cw + 20), x0 = (Wd - its.length * cw) / 2, two = wide && its.some(i => lines2(String(i.name)).length > 1), Hc = (hasS ? 206 : 160) + (two ? 26 : 0); let s = '';
+    its.forEach((i, j) => { const cx = x0 + j * cw + cw / 2, nm = wide ? lines2(String(i.name)) : [i.name], fz = wide ? (Math.max(...nm.map(l => l.length)) > 8 ? 22 : 24) : (i.name.length > 5 ? 20 : 24), y0 = hasS ? 196 : 146;
+      s += '<rect x="' + (cx - rw / 2) + '" y="8" width="' + rw + '" height="' + Hc + '" rx="18" fill="#fff" stroke="#DCE3EC" stroke-width="3"/>' + T1(cx, 86, i.emoji, 62, INK, 400);
+      if (i.s) s += oneShape(i.s, cx, 136, 40); nm.forEach((l, k) => { s += T1(cx, y0 + k * 28 + (two && nm.length === 1 ? 13 : 0), l, fz, '#3E4A5C', 900); }); });
+    return svgWrap(s, 'fig-objs1', '0 0 ' + Wd + ' ' + (Hc + 16)).replace('<svg ', '<svg data-n="' + its.length + '" ');
   }
   Object.assign(PARTS, { clk1, tcard, shp1, mosaic1, objs1 });
   }
