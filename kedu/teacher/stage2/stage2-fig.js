@@ -1986,17 +1986,24 @@
   const TF8 = { y: '#FFD23F', b: '#4C8DF6', r: '#F2545B', pk: '#F48BC0', k: '#3A4556', o: '#FF9A52', g: '#57C07F', w: '#FFFFFF' };
   const OR8 = ['#FFF1E6', '#FF7A2F', '#C2551A'], GY8 = '#C9D3E0';
   const box8 = (x, y, w, h, fill, st, sw, dash, rx) => '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="' + (rx == null ? 12 : rx) + '" fill="' + fill + '" stroke="' + st + '" stroke-width="' + (sw || 3) + '"' + (dash ? ' stroke-dasharray="9 6"' : '') + '/>';
+  // shp8(132차): 모양 토큰 — shp1 의 SH 색(네모 연두 · 세모 보라 · 동그라미 주황)
+  const SH8 = { q: ['#8BD17C', '#4E9A3E'], t: ['#C9A3EC', '#8A5CB8'], o: ['#FFB066', '#E07A1F'] };
+  function shp8(k, cx, cy, d) { const c = SH8[k], r = d / 2; if (!c) return '';
+    if (k === 'q') return '<rect x="' + (cx - r).toFixed(1) + '" y="' + (cy - r).toFixed(1) + '" width="' + d.toFixed(1) + '" height="' + d.toFixed(1) + '" rx="4" fill="' + c[0] + '" stroke="' + c[1] + '" stroke-width="4"/>';
+    if (k === 't') return '<path d="M' + cx.toFixed(1) + ' ' + (cy - r * 1.02).toFixed(1) + 'L' + (cx + r * 1.08).toFixed(1) + ' ' + (cy + r * 0.84).toFixed(1) + 'H' + (cx - r * 1.08).toFixed(1) + 'Z" fill="' + c[0] + '" stroke="' + c[1] + '" stroke-width="4" stroke-linejoin="round"/>';
+    return '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="' + c[0] + '" stroke="' + c[1] + '" stroke-width="4"/>'; }
   // tok8: 토큰 하나를 (x, y) 칸(u×u)에 — 칸 테 없이 그 자리에 그린다
   function tok8(tk, x, y, u) {
     const cx = x + u / 2, cy = y + u / 2;
     if (!tk || tk.h) return box8(x + 3, y + 3, u - 6, u - 6, '#fff', OR8[1], 4, true) + txt(cx, cy + u * 0.2, '?', u * 0.56, OR8[2], 900);
     if (tk.t) return box8(x + 4, y + 4, u - 8, u - 8, TF8[tk.t] || '#ddd', tk.t === 'w' ? '#9AA6B4' : 'rgba(0,0,0,.18)', 3, false, 8);
+    if (tk.p) return shp8(tk.p, cx, cy, u * 0.7); // 132차: 7단원 모양 규칙 줄 — 세모·동그라미·네모(3단원 shp1 과 같은 색)
     if (tk.s) return txt(cx, cy + u * 0.24, tk.s, u * 0.72, PC8[tk.c] || INK, 900);
     if (tk.e) return txt(cx, cy + u * (tk.z === 'sm' ? 0.18 : 0.24), tk.e, u * (tk.z === 'sm' ? 0.52 : tk.z === 'lg' ? 0.78 : 0.68), INK, 400);
     if (tk.n != null || tk.g != null) return box8(x + 5, y + 5, u - 10, u - 10, '#fff', GY8, 3) + txt(cx, cy + u * 0.19, String(tk.n != null ? tk.n : tk.g), u * 0.5, INK, 900);
     return txt(cx, cy + u * 0.2, String(tk.x || ''), u * 0.5, INK, 900);
   }
-  const tkey8 = (tk) => !tk || tk.h ? '?' : tk.t ? 'c:' + tk.t : tk.s ? 's:' + tk.s + ':' + tk.c : tk.e ? 'e:' + tk.e : tk.n != null ? 'n:' + tk.n : tk.g != null ? 'g:' + tk.g : 'x';
+  const tkey8 = (tk) => !tk || tk.h ? '?' : tk.p ? 'p:' + tk.p : tk.t ? 'c:' + tk.t : tk.s ? 's:' + tk.s + ':' + tk.c : tk.e ? 'e:' + tk.e : tk.n != null ? 'n:' + tk.n : tk.g != null ? 'g:' + tk.g : 'x';
   // pat1: toks · pu(묶음 크기 — 있으면 묶음마다 점선 테) · label(위 꼬리표) · sm · data-toks(토큰 차례) · data-holes
   function pat1(o) {
     const tk = (o.toks || []); if (!tk.length) return '';
@@ -2141,7 +2148,10 @@
     for (let i = 1; i < ws.length; i++) { const a = ws.slice(0, i).join(' '), b = ws.slice(i).join(' '), d = Math.abs(a.length - b.length); if (d < bd) { bd = d; best = [a, b]; } } return best; }
   function sign1(o) {
     const its = o.items || []; if (!its.length) return '';
-    const one = its.length === 1, sz = one ? 300 : its.length >= 4 ? 190 : 230, gp = one ? 0 : 34, tagH = its.some(i => i.tag) ? 58 : 0;
+    const one = its.length === 1, sz = one ? 300 : its.length >= 4 ? 190 : 230, gp = one ? 0 : 34, tw = one ? 400 : sz + gp - 10;
+    // 132차: 꼬리표는 칸 폭(sz+gp)에 맞춘 크기 — 26px 로 한 줄에 안 들면 두 줄(22px 아래로는 줄이지 않음)
+    const tagL = (t) => { t = String(t || ''); if (t.length * 26 <= tw) return { L: [t], fs: 26 }; const L = sgLines(t); return { L, fs: Math.max(20, Math.min(26, Math.floor(tw / Math.max(...L.map(l => l.length))))) }; };
+    const tags = its.map(i => i.tag ? tagL(i.tag) : null), tagH = tags.some(Boolean) ? 18 + Math.max(...tags.filter(Boolean).map(g => g.L.length * g.fs * 1.25)) : 0;
     const Wd = Math.max(one ? 420 : 560, its.length * sz + (its.length - 1) * gp + 40), x0 = (Wd - (its.length * sz + (its.length - 1) * gp)) / 2, y0 = 12; let s = '';
     its.forEach((it, i) => { const x = x0 + i * (sz + gp), cx = x + sz / 2, cy = y0 + sz / 2, col = SG9[it.c] || SG9.blue, empty = !it.t && !it.n;
       const ring = it.s === 'o' && it.n; let fill = empty ? '#fff' : ring ? '#fff' : col[0], ink = empty ? '#9AA6B4' : ring ? INK : col[1];
@@ -2149,21 +2159,21 @@
       if (it.s === 't') { const h = sz * 0.9, w = sz, ty = cy + h / 2 - 6; s += '<path d="M' + cx + ' ' + (ty - h + 8) + ' L' + (cx + w / 2 - 6) + ' ' + ty + ' L' + (cx - w / 2 + 6) + ' ' + ty + ' Z" fill="' + fill + '" stroke="' + st + '" stroke-width="' + (sw || 8) + '" stroke-linejoin="round"' + dash + '/>'; }
       else if (it.s === 'q') s += '<rect x="' + (x + 8) + '" y="' + (y0 + 8) + '" width="' + (sz - 16) + '" height="' + (sz - 16) + '" rx="' + (sz * 0.1) + '" fill="' + fill + '" stroke="' + st + '" stroke-width="' + (sw || 0) + '"' + dash + '/>';
       else s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (sz / 2 - 6 - (sw ? sw / 2 : 0)) + '" fill="' + fill + '" stroke="' + st + '" stroke-width="' + sw + '"' + dash + '/>';
-      const ty0 = it.s === 't' ? cy + sz * 0.16 : cy;
+      const ty0 = it.s === 't' ? cy + sz * 0.21 : cy; // 132차: 세모 글은 아래쪽 넓은 데로
       if (empty) s += txt(cx, ty0 + sz * 0.13, '?', sz * 0.36, ink, 900);
       else if (it.n) s += txt(cx, ty0 + sz * 0.12, String(it.n), sz * (String(it.n).length > 2 ? 0.28 : 0.34), ink, 900);
-      else { const L = sgLines(it.t), fs = Math.min(sz * (it.s === 't' ? 0.12 : 0.15), (sz * (it.s === 't' ? 0.62 : 0.8)) / Math.max(...L.map(l => l.length)));
+      else { const L = sgLines(it.t), fs = Math.min(sz * (it.s === 't' ? 0.12 : 0.15), (sz * (it.s === 't' ? 0.54 : 0.8)) / Math.max(...L.map(l => l.length)));
         L.forEach((l, k) => { s += txt(cx, ty0 + fs * 0.36 + (k - (L.length - 1) / 2) * fs * 1.2, l, fs, ink, 900); }); }
-      if (it.tag) s += txt(cx, y0 + sz + 40, it.tag, it.tag.length > 9 ? 22 : 26, '#4E5C70', 800); });
+      if (tags[i]) tags[i].L.forEach((l, k) => { s += txt(cx, y0 + sz + 14 + tags[i].fs + k * tags[i].fs * 1.25, l, tags[i].fs, '#4E5C70', 800); }); });
     return svgWrap(s, 'fig-sign1', '0 0 ' + Wd + ' ' + (y0 + sz + tagH + 10)).replace('<svg ', '<svg data-signs="' + esc(its.map(i => [i.s, i.c, i.n || '', i.t || ''].join('|')).join(';')) + '" ');
   }
   // tally1: rows [{lab, n, on}] · unit · 고른 사람 하나 = 점 하나(다섯씩 띄움) · on 줄 = 주황 · data-tally(lab:n;…)
   function tally1(o) {
     const rs = o.rows || []; if (!rs.length) return '';
-    const lw = 360, r = 12, st = 30, g5 = 12, mx = Math.max(...rs.map(x => x.n)), dw = mx * st + Math.floor((mx - 1) / 5) * g5, nw = 120, rh = 74, Wd = lw + dw + nw + 60, y0 = 10; let s = '';
+    const LW = 13, ml = Math.max(...rs.map(x => x.lab.length <= LW ? x.lab.length : Math.max(...sgLines(x.lab).map(l => l.length)))), lw = Math.max(300, Math.min(460, ml * 28 + 50)), r = 12, st = 30, g5 = 12, mx = Math.max(...rs.map(x => x.n)), dw = mx * st + Math.floor((mx - 1) / 5) * g5, nw = 120, rh = 74, Wd = lw + dw + nw + 60, y0 = 10; let s = '';
     rs.forEach((x, i) => { const y = y0 + i * (rh + 12), cy = y + rh / 2, c = x.on ? ['#FFF1E6', '#FF7A2F'] : ['#EAF1FF', '#3E6FCF'];
       s += box9(10, y, Wd - 20, rh, c[0], x.on ? '#FFB98A' : '#C7D7F5', 2.5, false, 16);
-      const L = x.lab.length > 9 ? sgLines(x.lab) : [x.lab]; L.forEach((l, k) => { s += txt(30, cy + 10 + (k - (L.length - 1) / 2) * 30, l, L.length > 1 ? 25 : 28, INK, 800, 'start'); });
+      const L = x.lab.length > LW ? sgLines(x.lab) : [x.lab]; L.forEach((l, k) => { s += txt(30, cy + 10 + (k - (L.length - 1) / 2) * 30, l, L.length > 1 ? 25 : 28, INK, 800, 'start'); });
       for (let k = 0; k < x.n; k++) s += '<circle cx="' + (lw + 20 + k * st + Math.floor(k / 5) * g5 + r) + '" cy="' + cy + '" r="' + r + '" fill="' + c[1] + '"/>';
       s += txt(Wd - 30, cy + 12, x.n + (o.unit || ''), 34, x.on ? '#C2551A' : '#1F4A9E', 900, 'end'); });
     return svgWrap(s, 'fig-tally1', '0 0 ' + Wd + ' ' + (y0 + rs.length * (rh + 12))).replace('<svg ', '<svg data-tally="' + esc(rs.map(x => x.lab + ':' + x.n).join(';')) + '" ');

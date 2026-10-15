@@ -110,6 +110,7 @@ def figs3(p):
         if m.group(1): c['plain'] = True
         found.append((m.start(), m.end(), c)); mos.append((m.start(), m.end()))
     for m in re.finditer(r'<div class="objs">((?:<div class="obj">.*?</div>)+)</div>', p, re.S): mos.append((m.start(), m.end()))
+    for m in re.finditer(r'<div class="patrow[^"]*" data-pat="[^"]*">(?:(?!</div>).)*?class="pt-c', p, re.S): mos.append((m.start(), p.index('</div>', m.end())))  # 132차: 7단원 모양 규칙 줄(pt-c)은 figs5 patc 로
     inside = lambda i: any(a <= i < b for a, b in mos) or inopt(i)
     loose = []
     for m in re.finditer(r'<span class="shp ([qto]) (sm|md|lg)( dim)?"></span>(?:</?\w+[^>]*>)*?(?:<span class="shp-tag">(.*?)</span>)?|<span class="tao-eq">(.*?)</span>|<span style="font-size:var\(--em-\w+\)">(.*?)</span>', p, re.S):
@@ -248,6 +249,12 @@ def pttoks(body):
 def figs5(p):
     found = []
     for m in re.finditer(r'(?:<span class="pat-lb">(.*?)</span>)?<div class="patrow( sm)?" data-pat="([^"]*)">(.*?)</div>', p, re.S):
+        if 'class="pt-c' in m.group(4):  # 132차 — 7단원 모양 규칙 줄: data-pat="차례|묶음 크기|구할 자리" · 칸 pt-c(grp = 묶음 처음 · ask = 「?」)
+            dp = m.group(3).split('|'); cs = re.findall(r'<span class="pt-c([^"]*)">(.*?)</span>(?=<span class="pt-c|$)', m.group(4), re.S)
+            toks = [{'h': 1} if 'ask' in k else {'p': first(r'class="shp (\w)', v)} for k, v in cs]
+            c = {'k': 'patc', 'seq': dp[0], 'n': int(dp[1]), 'toks': toks}
+            if len(dp) > 2 and dp[2] != '': c['ask'] = int(dp[2])
+            found.append((m.start(), m.end(), c)); continue
         toks, groups = pttoks(m.group(4)); c = {'k': 'pat', 'toks': toks, 'unit': m.group(3).split('|')[0].split(',')}
         if m.group(1): c['label'] = clean(m.group(1))
         if groups: c['pu'] = groups
