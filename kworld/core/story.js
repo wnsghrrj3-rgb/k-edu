@@ -163,7 +163,7 @@ export class Story {
       if (a.sound) g.sound?.play(a.sound, a.gain);
       if (a.say) g.ui.say(a.say, a.ms || 4800);
       if (a.goal != null) g.ui.setGoal(a.goal);
-      if (a.sky) this.transition(a.sky, a.sec);
+      if (a.sky && !(a.ifDay && this.isNight)) this.transition(a.sky, a.sec);   // ifDay: 밤이면 하늘을 안 바꾼다(상황이 밤에 열려도 낮으로 튀지 않게)
       if (a.rain != null) this.rain(a.rain);
       if (a.snow != null) this.snow(a.snow);
       if (a.fire != null) g.setFire(a.fire, a.small);

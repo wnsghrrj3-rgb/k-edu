@@ -77,4 +77,15 @@ st.fast = true; await st.doActions([{ sky: 'winter', sec: 0.1 }, { snow: true },
 ok(!st.snowOn && st.skyName === 'day', '사건 snow:true/false 동작');
 const life = fs.readFileSync(path.join(root, 'core/life.js'), 'utf8'), save = fs.readFileSync(path.join(root, 'core/save.js'), 'utf8');
 ok(life.includes('sky: this.g.story?.skyState?.()') && save.includes('snap.life?.sky') && save.includes('setSky'), 'life.snapshot 에 sky · save.restore 가 setSky');
+// ---- 겨울 상황(10-16): 구석기 찬바람·신석기 벼랑 동굴 겨울 — 상황이 열리면 겨울 하늘+눈(낮일 때만 하늘), 고르면 눈 그침 ----
+for (const [era, sid] of [['life', 'coldwind'], ['neo', 'cavewinter']]) {
+  const L = JSON.parse(fs.readFileSync(path.join(root, `eras/${era}/life.json`), 'utf8')); const sit = L.situations.find((x) => x.id === sid);
+  const sky = (sit.onOpen || []).find((a) => a.sky), sn = (sit.onOpen || []).find((a) => a.snow === true);
+  ok(sky && sky.sky === 'winter' && sky.ifDay === true && sn, `${era}/${sid}: onOpen = winter(ifDay)+눈`);
+  ok(sit.choices.every((c) => (c.then || []).some((a) => a.snow === false)), `${era}/${sid}: 모든 선택 뒤 눈 그침`);
+}
+st.transition('night', 0.1); run(0.2); await st.doActions([{ sky: 'winter', sec: 0.1, ifDay: true }, { snow: true }]);
+ok(st.skyName === 'night' && st.isNight && st.snowOn, 'ifDay: 밤에는 하늘 그대로, 눈만');
+await st.doActions([{ snow: false }, { sky: 'day', sec: 0.1 }]); await st.doActions([{ sky: 'winter', sec: 0.1, ifDay: true }]);
+ok(st.skyName === 'winter', 'ifDay: 낮이면 겨울로');
 console.log(`sky ${pass}/${fail}`); if (fail) process.exit(1);
