@@ -20,7 +20,7 @@ for (const t of ['icehouse', 'icecut', 'icebook', 'zen', 'stupa', 'seonwood', 'd
 for (const sit of life.situations.filter((x) => ['ice', 'seon', 'manor'].includes(x.id))) { assert.ok(world.areas[sit.place], `넓히기 2 상황 ${sit.id} 장소`); for (const c of sit.choices) assert.ok((JSON.stringify(items.targets) + JSON.stringify(npcDefs)).includes(`"${c.done}"`), `넓히기 2 상황 ${sit.id} 선택 ${c.id} done 깃발 ${c.done} 을 세우는 곳이 없음`); }
 for (const a of ['outer', 'workshop', 'islet', 'newfort', 'poseok', 'malgal', 'charcoal']) assert.ok(world.areas[a] && areas.includes(a), `새 구역 ${a}`);
 for (const t of ['ix_deedstone_1', 'ix_bellmold_1', 'ix_glasskiln_1', 'ix_lamptower_1', 'ix_fortsite_1', 'ix_poseok_1', 'ix_horses_1', 'ix_sables_1', 'ix_charkiln_1']) assert.ok(names.includes(t), `새 대상 ${t}`);
-const setters = JSON.stringify(items.targets) + JSON.stringify(npcDefs);
+const setters = JSON.stringify(items.targets) + JSON.stringify(npcDefs) + JSON.stringify(world.pulse || {});   // 긴장 층(쫓김·급한 일)이 세우는 깃발도 센다(10-16)
 for (const sit of life.situations.filter((x) => ['jeongjeon', 'bell', 'lamp', 'newfort', 'poseok', 'malgal', 'charcoal'].includes(x.id))) { assert.ok(world.areas[sit.place], `새 상황 ${sit.id} 장소`); for (const c of sit.choices) assert.ok(setters.includes(`"${c.done}"`), `새 상황 ${sit.id} 선택 ${c.id} done 깃발 ${c.done} 을 세우는 곳이 없음`); }
 assert.ok(life.situations.filter((x) => !x.must).length >= 14 && life.mixedCount === 6, '섞여 14 · 판마다 6');
 assert.ok(areas.includes(world.face), `시작 시선 구역 ${world.face}`);

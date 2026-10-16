@@ -31,13 +31,16 @@ export class Pulse {
   startChase(c) {
     const g = this.g; const st = g.story; if (!st) return; const p = g.p?.pos; if (!p) return; g.flags.add('chase:' + c.id);
     let from = this.area(c.from); if (!from) { const dir = new THREE.Vector3(-Math.sin(g.p.yaw), 0, -Math.cos(g.p.yaw)); from = { x: p.x - dir.x * (c.behind || 16), z: p.z - dir.z * (c.behind || 16) }; }
-    const name = 'npc_chaser_' + c.id; const it = st.place({ id: 'chaser_' + c.id, name, prop: 'person', look: c.pursuer?.look || { body: 0x2a2f3a, skin: 0xd7a981 }, x: from.x, z: from.z, noAuto: true });
+    const name = 'npc_chaser_' + c.id; const animal = c.pursuer?.animal;   // animal: 'wolf' 같은 world.animals 키 — 짐승이 쫓아온다(구석기·신석기), 없으면 사람
+    const it = animal ? st.place({ id: 'chaser_' + c.id, name, prop: 'deer', kind: 'big', x: from.x, z: from.z, noAuto: true }) : st.place({ id: 'chaser_' + c.id, name, prop: 'person', look: c.pursuer?.look || { body: 0x2a2f3a, skin: 0xd7a981 }, x: from.x, z: from.z, noAuto: true });
+    if (animal && it) st.loadAnimal?.(it.obj, animal, { name, kind: 'big' })?.then?.(() => { if (c.pursuer.scale) it.obj.scale.multiplyScalar(c.pursuer.scale); }).catch?.(() => { });
     const actor = st.actors?.['chaser_' + c.id] || (it && new Actor(g, 'chaser_' + c.id, it.obj)); if (it) it.disabled = true;   // 말 걸 수 없다 — 쫓아올 뿐
     this.chase = { c, it, actor, t: 0, re: 0, hide: 0, speed: c.speed || 4.6 };
     g.sound?.play?.('drum', 0.5); g.ui.say(c.say || '…뒤에서 발소리. 「거기 서!」', 4200); if (c.goal) g.ui.setGoal(c.goal); this.tension(0.75);
   }
   tickChase(dt) {
     const g = this.g; const ch = this.chase; const c = ch.c; const p = g.p.pos; const o = ch.actor?.obj; if (!o) return this.endChase(null);
+    if (g.ui.isOpen?.()) return;   // 카드를 읽는 동안은 쫓는 사람도 멈춘다(상황이 열리며 바로 시작하는 쫓김 — 읽고 나서 달린다)
     ch.t += dt; const d = this.dist({ x: o.position.x, z: o.position.z }, p);
     ch.re += dt; if (ch.re > 0.35) { ch.re = 0; ch.actor.goTo([p.x, p.z], { anim: 'run', then: 'run', speed: ch.speed * (d > 30 ? 1.35 : 1) }); }   // 너무 멀어지면 따라붙는다(놓치지 않는다)
     ch.actor.tick(dt); this.tension(Math.max(0.35, 1 - d / 14)); if (d < 7 && !ch.near) { ch.near = true; g.sound?.play?.('growl', 0.3); g.ui.say(c.nearSay || '숨이 목에. 바로 뒤다.', 2400); } if (d > 10) ch.near = false;

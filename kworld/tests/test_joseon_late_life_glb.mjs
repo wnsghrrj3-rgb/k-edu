@@ -30,7 +30,7 @@ const list = missions.missions; assert.equal(list.length, 7, '미션 7');
 const must = life.situations.filter((x) => x.must); assert.equal(must.length, 7, '꼭 나오는 상황 7'); assert.ok(life.situations.length - must.length >= life.mixedCount && life.situations.length >= 30 && life.mixedCount === 6, '섞여 23 ≥ mixedCount 6');
 for (const m of list) assert.ok(must.some((x) => 'sit:' + x.id + ':done' === m.done), `미션 ${m.id} 가 상황과 안 맞음`);
 for (const sit of life.situations) { if (sit.place) assert.ok(world.areas[sit.place], `상황 ${sit.id} 장소 ${sit.place}`); for (const c of sit.choices) assert.ok(c.done || c.count, `상황 ${sit.id} 선택 ${c.id} 에 done 없음`); }
-const blob = JSON.stringify(items) + JSON.stringify(npcDefs) + JSON.stringify(life.situations.map((s) => s.choices.map((c) => c.flag)));
+const blob = JSON.stringify(items) + JSON.stringify(npcDefs) + JSON.stringify(life.situations.map((s) => s.choices.map((c) => c.flag))) + JSON.stringify(world.pulse || {});   // 긴장 층(쫓김·급한 일)이 세우는 깃발도 센다(10-16)
 for (const sit of life.situations) for (const c of sit.choices) if (c.done) for (const f of c.done.split('&&').map((x) => x.trim()).filter((x) => !x.startsWith('!'))) assert.ok(blob.includes(`"${f}"`), `상황 ${sit.id} 선택 ${c.id} 의 done 깃발 ${f} 를 세우는 곳이 없음`);
 for (const sit of life.situations) for (const c of sit.choices) if (c.status) assert.ok(life.status.rules.some((r) => r.id === c.status), `상황 ${sit.id} 선택 ${c.id} 의 신분 ${c.status} 없음`);
 for (const s of life.situations) if (s.onOpen) for (const a of s.onOpen) if (a.show) assert.ok(ix.includes('ix_' + a.show.name), `onOpen show ${a.show.name}`);

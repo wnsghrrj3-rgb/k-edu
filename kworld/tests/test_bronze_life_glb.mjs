@@ -20,7 +20,7 @@ for (const t of ['ix_jarcoffin_1', 'ix_cist_1', 'ix_wedge_1', 'ix_rollers_1', 'i
 assert.ok(items.items.bead, '새 물건 대롱옥');
 for (const a of ['cliff', 'moat', 'refuge', 'lower', 'border', 'mill', 'spring']) assert.ok(world.areas[a] && areas.includes(a), `새 구역 ${a}`);
 for (const t of ['ix_rockart_1', 'ix_cliffaltar_1', 'ix_moat_1', 'ix_refuge_1', 'ix_lowerfire_1', 'ix_border_1', 'ix_mortar_1', 'ix_spring_1']) assert.ok(names.includes(t), `새 대상 ${t}`);
-const setters = JSON.stringify(items.targets) + JSON.stringify(npcDefs);
+const setters = JSON.stringify(items.targets) + JSON.stringify(npcDefs) + JSON.stringify(world.pulse || {});   // 긴장 층(쫓김·급한 일)이 세우는 깃발도 센다(10-16)
 for (const sit of life.situations.filter((x) => ['rockart', 'moat', 'raid', 'lower', 'border', 'mortar', 'spring', 'tomb', 'quarry', 'jade'].includes(x.id))) { assert.ok(world.areas[sit.place], `새 상황 ${sit.id} 장소`); for (const c of sit.choices) assert.ok(setters.includes(`"${c.done}"`), `새 상황 ${sit.id} 선택 ${c.id} done 깃발 ${c.done} 을 세우는 곳이 없음`); }
 assert.ok(life.situations.filter((x) => !x.must).length >= 12 && life.mixedCount === 6, '섞여 12 · 판마다 6');
 assert.ok(areas.includes(world.face), `시작 시선 구역 ${world.face}`);
