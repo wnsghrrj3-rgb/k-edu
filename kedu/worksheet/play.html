@@ -5740,7 +5740,7 @@ source.then(d => {
   DATA = d;
   // 학년 띠 — 1~2 low · 3~4 mid · 5~6 high(기본). grade 가 없으면 header 의 「N학년」을 읽는다.
   try { const g = +d.grade || +((String(d.header || '').match(/(\d)학년/) || [])[1]) || 0; document.documentElement.dataset.band = g && g <= 2 ? 'low' : g && g <= 4 ? 'mid' : 'high'; } catch(e){}
-  if (QUIZ && !PREVIEW && MODE !== 'paper' && d.closed){
+  if (QUIZ && !PREVIEW && d.closed){   // 마감된 세트는 종이 인쇄도 학생에게는 닫힌다
     app.innerHTML = `<div class="cover"><h1>${esc(d.title || '단원 정리')}</h1><p>응시가 마감됐어요.${d.reveal ? ' 결과는 「내 학습」에서 볼 수 있어요.' : ' 선생님이 결과를 열면 볼 수 있어요.'}</p><div class="alt"><a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
     return;
   }
@@ -5761,7 +5761,7 @@ function renderCover(resume){
   app.innerHTML = `<div class="cover"><div class="badge">${KINDNAME(DATA.kind)}</div>
    <h1>${esc(DATA.title.replace(/ — .*/, ''))}</h1><p>${esc(DATA.header || '1학년 수학')} · ${Q.length}문제</p>
    ${resume ? `<p>${done}번까지 풀었어요. 이어서 할까요?</p><div class="row"><button class="big" data-nav="resume">이어서 풀기</button><button class="big ghost" data-nav="restart">처음부터</button></div>` : `<button class="big" data-nav="resume">시작</button>`}
-   <div class="alt">${QUIZ ? '' : `<a href="play.html?set=${SET}&mode=paper">시험지(A4)로 풀기</a><span>·</span><a href="./">학습지 목록</a><span>·</span>`}<a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
+   <div class="alt">${QUIZ ? (PREVIEW ? '' : `<a href="play.html?quiz=${QUIZ}&mode=paper">종이로 풀기(인쇄)</a><span>·</span>`) : `<a href="play.html?set=${SET}&mode=paper">시험지(A4)로 풀기</a><span>·</span><a href="./">학습지 목록</a><span>·</span>`}<a href="${BACK.href}">${esc(BACK.label)}</a></div></div>`;
 
 }
 
@@ -6116,7 +6116,9 @@ function renderPaper(){
      const mis = q.options ? x.opts.map((o, k) => o.mis ? `${circ[k]}→${o.mis}` : '').filter(Boolean).join(' ') : (q.reason_options ? q.reason_options.filter(o => o.mis).map(o => o.mis).join(' ') : '');
      return `<tr><td>${i + 1}</td><td>D${q.difficulty}</td><td>${q.kind}</td><td>${ans}</td><td>${q.concept}</td><td>${mis}</td></tr>`; }).join('')}</table>
    <p style="font-size:12px;color:#555;margin-top:14px">오개념 코드의 뜻은 단원마다 다르다 — 정본: handoff/kedu/worksheet/&lt;단원&gt;/개념트리_오개념.md (1학기 1단원 M01~M11 · 2학기부터 M1-2-u1-X01 · 국어 K1-2-u1-X01 꼴)</p></div>`;
-  const toolbar = `<div class="toolbar"><button onclick="window.print()">인쇄 / PDF 저장</button><button onclick="location.href='play.html?set=${SET}'">화면으로 풀기</button><button onclick="location.href='./'">학습지 목록</button><button onclick="location.href='${BACK.href}'">${esc(BACK.label)}</button></div>`;
+  // 학생(배정 세트, 미리보기 아님)은 정답표 없이 문제지만 — 정답·오개념표는 교사용(2026-10-16 준호: 학생도 종이 인쇄 가능하게)
+  const STUDENT_PAPER = QUIZ && !PREVIEW;
+  const toolbar = `<div class="toolbar"><button onclick="window.print()">인쇄 / PDF 저장</button><button onclick="location.href='${QUIZ ? `play.html?quiz=${QUIZ}${PREVIEW ? '&preview=1' : ''}` : `play.html?set=${SET}`}'">화면으로 풀기</button>${QUIZ ? '' : `<button onclick="location.href='./'">학습지 목록</button>`}<button onclick="location.href='${BACK.href}'">${esc(BACK.label)}</button></div>`;
   // 문항 수를 고정으로 자르지 않고, 실제 높이를 재서 A4 한 장 안에 들어가는 만큼만 싣는다.
   // (문항마다 그림·보기·답란 높이가 달라 고정 개수로는 아래로 넘친다)
   const measure = () => {
@@ -6139,7 +6141,7 @@ function renderPaper(){
     if (cur.length) pages.push({items: cur, used});
     return pages.map((pg, n) => page(pg.items.map(i => shuffled[i]), pg.items[0], n + 1, pg.used < avail * 0.6)).join('');
   };
-  const draw = () => { app.innerHTML = toolbar + layout() + key; };
+  const draw = () => { app.innerHTML = toolbar + layout() + (STUDENT_PAPER ? '' : key); };
   draw();
   // 웹폰트가 늦게 오면 글자 높이가 바뀌므로, 폰트가 다 오면 한 번 더 잰다.
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
