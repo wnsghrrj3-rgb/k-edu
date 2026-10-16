@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,113 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 12~13차시(실천 — 감동적인 장면 그리기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
+/* ===== 12~13차시(실천 — 배운 내용 실천하기, 만화 영화를 보고 감동적인 장면 그리기) 『국어』 132~133쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 배운 내용을 실천할 수 있다.
-   ★ 정답 로깅 7슬. 무대·마무리 = 로깅 X.
-   ★ 지도서 196·197쪽 경계: 예쁘게 그리는 데 집중하지 않게, 감동받은 부분이 구체적으로 드러나게.
-      204쪽도 같다 — 만화의 완성도보다 감동을 느낀 부분을 찾아 표현했는지에 중점.
-      1-2 3단원 §5-3이 세운 「더 예쁘게로 가지 않게」 경계를 그대로 잇는다.
-   ★ 화면은 학생이 그린 종이 그림을 회수하지 못한다(1-2 3단원 §5-7).
-      그래서 「그리기」 자체는 로깅하지 않고 ④ 무대로 넘기고,
-      로깅은 「무엇을 골라 어떻게 그릴지」라는 방법 판단에만 걸었다.
-   ★ 동료 평가(지도서 197쪽 칭찬 붙임딱지)는 잘 그린 그림을 고르는 활동이 아니라
-      서로 다른 감동을 견주어 보는 활동이다 — ③ 다섯째·여섯째 슬에서 그 방향으로 세웠다.
-   ★ 저작권: 교과서 132~133쪽 실천 지면과 말풍선, 「우리가 정한 활동」 지면,
-      지도서 197쪽 독후 지도 예 아홉 가지 인용, 198~199쪽 입술책 만들기와 역할놀이 지면
-      전부 미차용. 상황·보기 전부 자체. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      만화 영화 두 편은 간추림만(대사 미인용). 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 차시 만나기', t:'마음에 남은 장면을 그림으로 남겨요',
-   html:`<div class="scene"><div class="scene-pic">🖍️🖼️</div></div>
-    <div class="ka-bub">말로 나눈 감동을 <b class="emph">그림</b>으로도 남길 수 있어요.<br>그림으로 남기면 나중에 다시 볼 수 있지요. 🤔</div>`},
+  {tag:'① 활동 정하기', t:'배운 내용을 실천해 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>배운 내용을 실천해 봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">📺</span>만화 영화에서 <b>감동적인 장면</b>을 이야기해요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🖍️</span>감동적인 장면을 <b>그림으로</b> 나타내고 전시해요.</div></div>`},
 
-  {tag:'① 학습 문제', t:'오늘은 이것을 해요',
-   html:`<div class="sentence">감동적인 장면을 그림으로 나타내 봐요.</div>
-    <div class="ka-bub">내가 본 만화 영화나 읽은 이야기에서<br><b class="emph">마음이 움직인 장면</b>을 골라 그릴 거예요. 🔍</div>`},
+  {tag:'① 활동 순서', t:'만화 영화를 보고 감동적인 장면 그리기', log:true, matchMsg:'이야기하기 → 그리기 → 전시하고 감상하기! 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">차례</div><div class="match-card" data-k="a" data-pair="A">①</div><div class="match-card" data-k="b" data-pair="B">②</div><div class="match-card" data-k="c" data-pair="C">③</div></div><div class="match-col"><div class="match-col-h">할 일</div><div class="match-card" data-k="B" data-pair="b">감동적인 장면을 그림으로 표현하기</div><div class="match-card" data-k="C" data-pair="c">그림을 전시하고 감상하기</div><div class="match-card" data-k="A" data-pair="a">감동적인 장면을 친구들과 이야기하기</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'② 세 걸음', t:'이렇게 세 걸음으로 해요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">1️⃣</span><span class="pc-name">감동적인 장면<br>이야기하기</span></div>
-      <div class="punct-card"><span class="pc-mark">2️⃣</span><span class="pc-name">그림으로<br>나타내기</span></div>
-      <div class="punct-card"><span class="pc-mark">3️⃣</span><span class="pc-name">서로 보고<br>이야기 나누기</span></div>
-    </div>
-    <div class="ka-bub">먼저 말하고, 그리고, 나누어요. 🙋</div>`},
+  {tag:'② 132쪽 ①', t:'감동적인 장면을 이야기해 봐요',
+   html:`<div class="ka-bub">「주인공이 친구들을 도와주는 장면이 감동적이야.」</div><div class="stage-box">💬 내가 본 만화 영화에서 감동을 준 장면을 친구에게 말해 보세요.<br><small>같은 만화 영화라도 감동을 주는 장면은 다를 수 있어요.</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 친구와 다른 장면을 골랐다면 까닭을 서로 물어봐요. 🙂">💬 말했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'② 무엇을 그릴까', t:'그림에는 이런 것이 드러나면 좋아요',
-   html:`<div class="ka-bub">
-      🧍 <b class="emph">누가</b> 나오는 장면인지<br>
-      🖐️ 그 인물이 <b class="emph">무엇을 하는</b> 장면인지<br>
-      💗 그때 내 마음이 <b class="emph">어떻게 움직였는지</b>
-    </div>`},
+  {tag:'② 그릴 장면 고르기', t:'그릴 장면을 정할 때 먼저 생각할 것은?', log:true, okMsg:'맞아요! 인물과 인물이 한 말·행동을 먼저 떠올려요. 🎬',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">그 장면에 누가 나오고 무엇을 했는지</div></div><div class="wcard" data-ok="0"><div class="wc-word">어떤 색 크레파스가 예쁜지</div></div><div class="wcard" data-ok="0"><div class="wc-word">친구보다 더 크게 그릴 수 있는지</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 장면 고르기', t:'그림으로 나타낼 장면으로 알맞은 것은?', log:true, okMsg:'맞아요! 내 마음이 움직인 장면을 골라요. 💗',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">내 마음이 움직인 장면</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">색연필이 가장 적게 드는 장면</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 132쪽 ②', t:'감동적인 장면을 그림으로 표현할 때 알맞은 것은?', log:true, okMsg:'맞아요! 예쁘게 그리기보다 감동받은 부분이 드러나는 것이 중요해요. 🖍️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">감동받은 부분이 잘 드러나게 그리고, 어떤 장면인지 글로 설명해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">예쁘게 그리는 데만 힘을 써요</div></div><div class="wcard" data-ok="0"><div class="wc-word">배경만 가득 그려요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 드러나야 할 것', t:'그림에 드러나면 좋은 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 인물과 그 인물이 한 일이 드러나야 해요. 🎉',
-   hint:'힌트: 테두리 무늬가 아무리 예뻐도 어떤 장면인지는 알 수 없어요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">인물의 모습</div>
-      <div class="chip" data-hit="0">테두리 무늬</div>
-      <div class="chip" data-hit="1">인물이 한 일</div>
-      <div class="chip" data-hit="1">그때의 장면</div>
-      <div class="chip" data-hit="0">내 이름 크게 쓰기</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'② 132쪽 ②', t:'제목과 표현하고 싶은 장면을 써 봐요',
+   html:`<div class="stage-box">🖍️ 붙임 16에 만화 영화 <b>제목</b>과 <b>표현하고 싶은 장면</b>을 쓰고 그림을 그려 보세요.<br><small>예) 「아기 거북이가 숲으로 왔어요!」 — 아기 거북이 다시 가족을 만나는 장면</small><br><button class="stage-do" id="stageDo" data-fb="멋져요! 이제 친구들의 그림과 함께 전시해 봐요. 🖼️">🖍️ 그렸어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 더 중요한 것', t:'그림을 그릴 때 더 중요한 것은 무엇일까요?', log:true, okMsg:'맞아요! 예쁘게보다 감동받은 부분이 드러나는 것이 중요해요. 🖍️',
-   hint:'힌트: 이 시간은 미술 시간이 아니라 감동을 나누는 시간이에요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">누구보다 예쁘게 꾸미기</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">감동받은 부분이 잘 드러나게 그리기</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 132쪽 ③', t:'친구의 그림을 감상할 때 알맞은 태도는?', log:true, okMsg:'맞아요! 서로 다른 감동을 비교하며 존중해요. 🖼️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">친구는 어떤 장면을 감동적이라고 했는지 비교하며 봐요</div></div><div class="wcard" data-ok="0"><div class="wc-word">누가 더 잘 그렸는지 골라요</div></div><div class="wcard" data-ok="0"><div class="wc-word">그림 솜씨를 흉봐요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 옆에 쓸 말', t:'그림 옆 빈 곳에 쓰면 좋은 것은?', log:true, okMsg:'맞아요! 어떤 장면을 왜 그렸는지 적어 두면 좋아요. ✏️',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">어떤 장면을 왜 그렸는지</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">그림을 그린 시간</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 칭찬 붙임딱지', t:'칭찬 붙임딱지를 붙여 줄 작품은?', log:true, okMsg:'맞아요! 인물과 장면이 잘 드러난 작품을 칭찬해요. ⭐',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">인물의 모습과 행동이 잘 나타나고 장면이 구체적인 그림</div></div><div class="wcard" data-ok="0"><div class="wc-word">색이 가장 많은 그림</div></div><div class="wcard" data-ok="0"><div class="wc-word">가장 빨리 다 그린 그림</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 감상할 때 할 일', t:'친구 그림을 볼 때 할 일을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 견주어 보고 존중하며 봐요. 🎉',
-   hint:'힌트: 누가 더 잘 그렸는지 고르는 활동이 아니에요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">어떤 부분이 감동적이라고 했는지 살펴본다</div>
-      <div class="chip" data-hit="0">누가 더 예쁘게 그렸는지 고른다</div>
-      <div class="chip" data-hit="1">내 그림과 다른 점을 견주어 본다</div>
-      <div class="chip" data-hit="1">좋았던 점을 말해 준다</div>
-      <div class="chip" data-hit="0">점수를 매긴다</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 우리 반 활동 예시', t:'입술책 만들기',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>종이를 접고 잘라 입술 모양이 나오는 입술책을 만들어요.</div><div class="read-line"><span class="rl-num">2</span>입술책에 동물이나 사람의 얼굴을 그려요.</div><div class="read-line"><span class="rl-num">3</span>나머지 공간에 내 생각이나 느낌, 만화 영화 속 인물에게 하고 싶은 말을 써요.</div><div class="read-line"><span class="rl-num">4</span>완성된 입술책으로 생각이나 느낌을 발표해요.</div></div><div class="fb" id="readFb">👄 만드는 차례를 한 줄씩 읽어 봐요.</div>`},
 
-  {tag:'③ 다른 장면을 그린 친구', t:'친구가 나와 아주 다른 장면을 그렸어요. 어떻게 할까요?', log:true, okMsg:'맞아요! 왜 그 장면을 골랐는지 물어보면 더 재미있어요. 💚',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">잘못 그렸다고 말해 준다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">왜 그 장면을 골랐는지 물어본다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 입술책', t:'입술책의 빈 곳에 쓸 내용으로 알맞은 것은?', log:true, okMsg:'맞아요! 생각이나 느낌, 인물에게 하고 싶은 말을 써요. 💬',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">만화 영화 속 인물에게 하고 싶은 말</div></div><div class="wcard" data-ok="0"><div class="wc-word">만화 영화를 만든 회사 이름</div></div><div class="wcard" data-ok="0"><div class="wc-word">오늘 날씨</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 소개하는 말', t:'그림을 소개하는 말로 알맞은 것은?', log:true, okMsg:'맞아요! 무엇을 그렸고 왜 감동했는지 함께 말해요. 🗣️',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">“이 장면을 그렸어. ○○해서 마음이 뭉클했어.”</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">“그냥 그렸어.”</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 우리 반 활동 예시', t:'「소금을 만드는 맷돌」 역할놀이',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>「소금을 만드는 맷돌」을 읽고 일이 일어난 차례를 정리해요.</div><div class="read-line"><span class="rl-num">2</span>모둠별로 도둑, 임금님, 백성 역할을 정해요.</div><div class="read-line"><span class="rl-num">3</span>어떤 장면을 역할놀이로 꾸밀지 정해요.</div><div class="read-line"><span class="rl-num">4</span>역할에 어울리는 목소리, 표정, 몸짓으로 발표해요.</div></div><div class="fb" id="readFb">🎭 차례를 한 줄씩 읽어 봐요.</div>`},
 
-  {tag:'④ 해 보기', t:'그리고 나서 소개해 봐요',
-   html:`<div class="stage-box">
-      🖍️ 종이에 감동적인 장면을 그린 뒤,<br>
-      「무엇을 그렸는지 · 왜 감동했는지」를 소리 내어 소개해 봐요.<br>
-      <small>(예쁘게 그리는 것보다 감동받은 부분이 드러나는 것이 더 중요해요.)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="그린 장면을 잘 소개했어요! 👏">🖍️ 그리고 소개해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'④ 역할놀이', t:'역할놀이를 할 때 알맞은 것은?', log:true, okMsg:'맞아요! 인물의 말과 행동을 실감 나게 표현해요. 🎭',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">맡은 역할에 어울리는 목소리, 표정, 몸짓으로 해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">대사를 아무렇게나 바꾸어 말해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">다른 친구 역할까지 혼자 다 해요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 실천했어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">💗</span>마음이 움직인 장면을 골라 그렸어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🧍</span>인물과 <b>그 인물이 한 일</b>이 드러나게 그렸어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">👀</span>서로 다른 그림을 <b>견주어 보고 존중</b>했어요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">➡️</span>다음 시간에는 <b>단원 전체</b>를 정리할 거예요.</div>
-    </div>`},
+  {tag:'④ 정리', t:'오늘 한 일을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">💬</span>만화 영화의 <b>감동적인 장면</b>을 이야기했어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🖍️</span>감동받은 부분이 드러나게 <b>그림</b>으로 나타냈어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🖼️</span>친구들과 <b>서로 다른 감동</b>을 비교하며 감상했어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -415,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

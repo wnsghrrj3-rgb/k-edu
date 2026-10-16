@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -135,141 +134,55 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 
 <script>
 const LESSON_ID='g1_2_kor_u4_l14_15_v1';
-const LESSON_MAX=70;
+const LESSON_MAX=80;
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 14~15차시(마무리 — 정리 · 기초 다지기 · 글씨 쓰기) 13슬:
-   ① 만나기 1 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 3 =====
+/* ===== 14~15차시(실천 — 단원 마무리하기, 정리 · 기초 다지기) 『국어』 134~137쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 배운 내용을 마무리할 수 있다.
-   ★ 정답 로깅 7슬. 글씨 쓰기·자기 점검·마무리 = 로깅 X.
-   ★ 교과서 134쪽 1번은 「인물의 생각을 살펴본다 / 목소리가 큰지 살펴본다」로 갈라지는 길 따라가기다.
-      길 그림은 옮기지 않고 그 갈림만 고르기 문항으로 세웠다(③ 첫째 슬).
-   ★ 교과서 135쪽 3번(느낌을 말하는 알맞은 방법 색칠하기)은 이 단원 학습 내용 그 자체다.
-      네 보기의 방향(있었던 일에 대한 느낌 ○ / 떠오르는 장면에 대한 느낌 ○ /
-      따라 말하기 ✗ / 외워서 말하기 ✗)만 남기고 문장은 자체로 다시 썼다.
-   ★ 기초 다지기는 동작을 나타내는 말 넣어 문장 완성하기다(지도서 201쪽).
-      교과서 여섯 문장의 인물·동작은 전부 바꾸고 형식만 남겼다.
-   ★ 글씨 쓰기 낱말 「차례」·「감동」은 이 단원의 학습 낱말이라 회피 대상이 아니다.
-      교과서가 함께 낸 「까투리」와 문장 넉 줄은 작품에 매인 것이라 쓰지 않았다.
-   ★ 저작권: 교과서 134~137쪽 길 따라가기 그림과 「흥부 놀부」 세 장면, 135쪽 색칠 보기 문장 넷과
-      예시 답안, 136쪽 여섯 문장(인물·동작), 137쪽 글씨 쓰기 넉 줄, 지도서 201쪽 대안 문장 넷,
-      202~205쪽 평가 자료 두 벌(「개미와 비둘기」 포함) 전부 미차용. */
+   ★ 정답 로깅 8슬(LESSON_MAX 80). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      만화 영화 두 편은 간추림만(대사 미인용). 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 마무리 만나기', t:'이 단원에서 배운 것을 모아 봐요',
-   html:`<div class="scene"><div class="scene-pic">📖🎬💗</div></div>
-    <div class="ka-bub">누가 무엇을 했는지 알아보고, 일의 <b class="emph">차례</b>를 정리하고,<br><b class="emph">감동</b>을 나누는 법을 배웠어요. 🤔</div>`},
+  {tag:'① 학습 문제', t:'배운 내용을 마무리해 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>배운 내용을 마무리해 봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">📋</span>누가 무엇을 했는지, <b>일이 일어난 차례</b>를 정리해요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">💬</span>만화 영화를 보고 <b>생각이나 느낌</b>을 말해요.</div></div>`},
 
-  {tag:'② 정리 하나', t:'누가 무엇을 했는지 알아보는 방법',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">💭</span><span class="pc-name">인물의<br>생각</span></div>
-      <div class="punct-card"><span class="pc-mark">🗣️</span><span class="pc-name">인물이<br>한 말</span></div>
-      <div class="punct-card"><span class="pc-mark">🖐️</span><span class="pc-name">인물의<br>행동</span></div>
-    </div>
-    <div class="ka-bub">이 세 가지를 살펴보면 인물이 한 일을 알 수 있어요. 👀</div>`},
+  {tag:'② 134쪽 1번', t:'누가 무엇을 했는지 알아보는 방법을 모두 골라요', log:true, collectMsg:'인물의 생각이나 말, 행동을 살펴보면 누가 무엇을 했는지 알 수 있어요! 🎉',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">인물의 생각을 살펴본다</div><div class="chip" data-hit="1">인물의 행동을 살펴본다</div><div class="chip" data-hit="1">인물의 말을 살펴본다</div><div class="chip" data-hit="0">목소리가 큰지 살펴본다</div><div class="chip" data-hit="0">옷 색깔을 살펴본다</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'② 정리 둘', t:'일이 일어난 차례를 정리하는 방법',
-   html:`<div class="sentence"><span class="wmark">아침에</span> ➡ <span class="wmark">낮에</span> ➡ <span class="wmark">저녁에</span> ➡ <span class="wmark">밤에</span></div>
-    <div class="ka-bub"><b class="emph">시간을 나타내는 말</b>을 찾아 차례대로 늘어놓아요.<br>왜 그런 일이 있었는지도 함께 생각해요. 🕰️</div>`},
+  {tag:'② 134쪽 2번', t:'「흥부 놀부」에서 일이 일어난 차례로 알맞은 것은?', log:true, okMsg:'맞아요! 무슨 일 때문에 다음 일이 일어났는지 생각하면 차례가 보여요. 🎃',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">흥부가 다친 제비 다리를 고쳐 주었다 → 제비가 준 박씨가 자라 박이 열렸다 → 박에서 금은보화가 나왔다</div></div><div class="wcard" data-ok="0"><div class="wc-word">박에서 금은보화가 나왔다 → 흥부가 다친 제비 다리를 고쳐 주었다 → 박이 열렸다</div></div><div class="wcard" data-ok="0"><div class="wc-word">박이 열렸다 → 박에서 금은보화가 나왔다 → 흥부가 다친 제비 다리를 고쳐 주었다</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 알아보는 방법', t:'누가 무엇을 했는지 알려면 무엇을 살펴볼까요?', log:true, okMsg:'맞아요! 인물의 생각과 말, 행동을 살펴봐요. 👀',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">목소리가 큰지 살펴본다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">인물의 생각과 말, 행동을 살펴본다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 135쪽 3번', t:'만화 영화를 보고 생각이나 느낌을 말하는 방법으로 알맞은 것을 모두 골라요', log:true, collectMsg:'내 생각이나 느낌을 내 말로 말해요. 친구를 존중하되 따라 하지는 않아요! 💬',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">만화 영화에서 있었던 일에 대한 생각이나 느낌을 말한다</div><div class="chip" data-hit="1">떠오르는 장면에 대한 느낌을 말한다</div><div class="chip" data-hit="0">친구의 생각이나 느낌을 따라 말한다</div><div class="chip" data-hit="0">인물의 말을 그대로 외워서 말한다</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 시간을 나타내는 말', t:'시간을 나타내는 말을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 때를 알려 주는 말이에요. 🎉',
-   hint:'힌트: 「언제」에 답이 되는 말만 골라요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">어제</div>
-      <div class="chip" data-hit="0">아주</div>
-      <div class="chip" data-hit="1">주말에</div>
-      <div class="chip" data-hit="1">아침에</div>
-      <div class="chip" data-hit="0">천천히</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 135쪽 4번', t:'자신이 본 책이나 만화 영화에 대한 생각이나 느낌을 써 봐요',
+   html:`<div class="stage-box">✍️ 제목과 생각이나 느낌을 써 보세요.<br><small>예) 주인공이 친구들과 술래잡기하는 모습을 보고 나도 술래잡기하고 싶다는 생각이 들었다.</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 어떤 장면 때문에 그런 생각이 들었는지 쓰면 더 잘 전해져요. 🙂">✍️ 썼어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 차례 정리하기', t:'차례와 일어난 일을 이어요', log:true, matchMsg:'모두 잘 이었어요! 씨앗이 자란 차례예요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">차례</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">1️⃣</span>첫째</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">2️⃣</span>둘째</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">3️⃣</span>셋째</div>
-        <div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">4️⃣</span>넷째</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">일어난 일</div>
-        <div class="match-card" data-k="C" data-pair="c">잎이 넓게 퍼졌다</div>
-        <div class="match-card" data-k="A" data-pair="a">화단에 씨앗을 심었다</div>
-        <div class="match-card" data-k="D" data-pair="d">꽃이 활짝 피었다</div>
-        <div class="match-card" data-k="B" data-pair="b">싹이 쏙 올라왔다</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'④ 136쪽 기초 다지기', t:'「현수가 책을 ___.」에 알맞은 동작을 나타내는 말은?', log:true, okMsg:'맞아요! 현수가 책을 읽습니다. 📖',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">📖</div><div class="wc-word">읽습니다</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🍚</div><div class="wc-word">먹습니다</div></div><div class="wcard" data-ok="0"><div class="wc-pic">⚽</div><div class="wc-word">찹니다</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 느낌 말하는 방법', t:'느낌을 말하는 알맞은 방법을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 내 마음을 내 말로 말해요. 🎉',
-   hint:'힌트: 따라 말하기와 외워서 말하기는 내 느낌이 아니에요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">있었던 일에 대한 내 생각을 말한다</div>
-      <div class="chip" data-hit="0">친구 말을 그대로 따라 말한다</div>
-      <div class="chip" data-hit="1">떠오르는 장면에 대한 느낌을 말한다</div>
-      <div class="chip" data-hit="0">인물의 말을 외워서 말한다</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 136쪽 기초 다지기', t:'그림에 알맞은 동작을 나타내는 말을 이어 봐요', log:true, matchMsg:'씻습니다 · 먹습니다 · 닦습니다! 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">누가 무엇을</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🧼</span>명희가 얼굴을</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🍚</span>한나가 밥을</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🪥</span>재현이가 이를</div></div><div class="match-col"><div class="match-col-h">동작을 나타내는 말</div><div class="match-card" data-k="B" data-pair="b">먹습니다</div><div class="match-card" data-k="C" data-pair="c">닦습니다</div><div class="match-card" data-k="A" data-pair="a">씻습니다</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 기초 다지기', t:'빈칸에 알맞은 동작을 나타내는 말은?', log:true, okMsg:'맞아요! 「줄을 넘습니다」가 알맞아요. 🤸',
-   html:`<div class="sentence">주완이가 줄을 <span class="punct">◯◯◯◯</span>.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">넘습니다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">파랗습니다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 136쪽 기초 다지기', t:'그림에 알맞은 동작을 나타내는 말을 이어 봐요 (2)', log:true, matchMsg:'찹니다 · 그립니다! 동작을 나타내는 말로 누가 무엇을 하는지 말할 수 있어요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">누가 무엇을</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">⚽</span>태윤이가 공을</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🖍️</span>진희가 그림을</div></div><div class="match-col"><div class="match-col-h">동작을 나타내는 말</div><div class="match-card" data-k="B" data-pair="b">그립니다</div><div class="match-card" data-k="A" data-pair="a">찹니다</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 기초 다지기', t:'빈칸에 알맞은 동작을 나타내는 말은?', log:true, okMsg:'맞아요! 「창문을 닫습니다」가 알맞아요. 🪟',
-   html:`<div class="sentence">솔미가 창문을 <span class="punct">◯◯◯◯</span>.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">따뜻합니다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">닫습니다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 따옴표 다시 보기', t:'‘다음에도 새로운 음식 먹기에 도전해 봐야지.’는 어떤 말인가요?', log:true, okMsg:'맞아요! 작은따옴표 안의 말은 마음속으로 한 말이에요. 💭',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">마음속으로 한 말</div></div><div class="wcard" data-ok="0"><div class="wc-word">소리 내어 한 말</div></div><div class="wcard" data-ok="0"><div class="wc-word">선생님이 하신 말</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 동작을 나타내는 말', t:'동작을 나타내는 말을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 움직임을 나타내는 말이에요. 🎉',
-   hint:'힌트: 「무엇을 한다」에 쓸 수 있는 말만 골라요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">달립니다</div>
-      <div class="chip" data-hit="0">노랗습니다</div>
-      <div class="chip" data-hit="1">붙입니다</div>
-      <div class="chip" data-hit="1">감습니다</div>
-      <div class="chip" data-hit="0">시원합니다</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 기초 다지기', t:'동작을 나타내는 말이 아닌 것은?', log:true, okMsg:'맞아요! 「책상」은 몸으로 흉내 낼 수 없는 물건의 이름이에요. 🙆', hint:'힌트: 몸으로 해 볼 수 있는지 생각해 봐요.',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">책상</div></div><div class="wcard" data-ok="0"><div class="wc-word">닦습니다</div></div><div class="wcard" data-ok="0"><div class="wc-word">그립니다</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 글씨 쓰기', t:'낱말을 또박또박 따라 써 봐요',
-   html:`<div class="trace-wrap">
-      <div class="trace-row"><div class="trace-pic">🔢</div>
-        <div class="trace-word"><div class="trace-cell">차</div><div class="trace-cell">례</div></div>
-      </div>
-      <div class="trace-row"><div class="trace-pic">💗</div>
-        <div class="trace-word"><div class="trace-cell">감</div><div class="trace-cell">동</div></div>
-      </div>
-      <div class="trace-row"><div class="trace-pic">💭</div>
-        <div class="trace-word"><div class="trace-cell">느</div><div class="trace-cell">낌</div></div>
-      </div>
-    </div><div class="fb" id="traceFb">글자의 짜임을 생각하며 써 봐요.</div>`},
+  {tag:'④ 국어활동 55쪽', t:'시간을 나타내는 말을 넣어 말해 봐요',
+   html:`<div class="stage-box">⏰ 「아침 일찍」, 「이튿날」, 「며칠 뒤」를 넣어 「양치기 소년」 이야기를 차례대로 말해 보세요.<br><small>예) 아침 일찍 양치기 소년은 심심해서 늑대가 나타났다고 거짓말을 했어요.</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 시간을 나타내는 말을 넣으면 차례가 또렷해져요. 📋">⏰ 말해 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 스스로 살펴보기', t:'이만큼 할 수 있게 되었는지 살펴봐요',
-   html:`<div class="selfcheck">
-      <div class="sc-row"><span class="sc-box">✓</span>이야기에서 누가 무엇을 했는지 찾을 수 있어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>일이 일어난 차례를 정리할 수 있어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>만화 영화에서 있었던 일을 정리할 수 있어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>감동적인 장면을 까닭과 함께 말할 수 있어요.</div>
-    </div>
-    <div class="fb">아직 어려운 것이 있으면 그 차시를 다시 열어 봐요. 🙋</div>`},
+  {tag:'⑤ 137쪽 글씨 쓰기', t:'글씨를 바르게 따라 써 봐요 (글자를 눌러요)',
+   html:`<div class="trace-wrap"><div class="trace-row"><span class="trace-pic">📋</span><div class="trace-word"><span class="trace-cell">차</span><span class="trace-cell">례</span></div></div><div class="trace-row"><span class="trace-pic">🐦</span><div class="trace-word"><span class="trace-cell">까</span><span class="trace-cell">투</span><span class="trace-cell">리</span></div></div><div class="trace-row"><span class="trace-pic">💚</span><div class="trace-word"><span class="trace-cell">감</span><span class="trace-cell">동</span></div></div><div class="trace-row"><span class="trace-pic">🌊</span><div class="trace-word"><span class="trace-cell">바</span><span class="trace-cell">닷</span><span class="trace-cell">물</span></div></div></div><div class="fb" id="traceFb">또박또박 따라 써 봐요.</div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 4단원을 마쳤어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">👀</span>인물의 <b>생각·말·행동</b>을 보면 한 일을 알 수 있어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🕰️</span><b>시간을 나타내는 말</b>로 차례를 정리해요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">💚</span>감동은 <b>사람마다 다르고</b>, 까닭을 들어 나누어요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">🎉</span>「감동을 나누어요」를 모두 마쳤어요!</div>
-    </div>`},
+  {tag:'⑤ 스스로 점검', t:'이 단원에서 나는 어떠했나요?', hint:'힌트: 평소 내 모습을 떠올리며 해당하는 것을 눌러요. 정답은 없어요!',
+   html:`<div class="selfcheck"><div class="sc-row"><span class="sc-box">✓</span>인물의 <b>생각이나 말, 행동</b>을 보고 누가 무엇을 했는지 알 수 있어요.</div><div class="sc-row"><span class="sc-box">✓</span><b>시간을 나타내는 말</b>로 일이 일어난 차례를 정리할 수 있어요.</div><div class="sc-row"><span class="sc-box">✓</span>만화 영화를 보고 <b>감동적인 장면</b>을 까닭과 함께 말할 수 있어요.</div></div><div class="fb">스스로 확인해요. 친구의 다른 생각도 존중해요! 🌱</div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -438,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

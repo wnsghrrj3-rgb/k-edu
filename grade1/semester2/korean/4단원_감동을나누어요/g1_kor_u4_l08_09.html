@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,124 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 8~9차시(소단원 2 기본 — 만화 영화를 보고 있었던 일 정리하기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
+/* ===== 8~9차시(소단원 2 기본 — 만화 영화를 보고, 있었던 일 정리하기) 『국어』 124~127쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 만화 영화를 보고, 있었던 일을 정리할 수 있다.
-   ★ 정답 로깅 7슬. 장면 읽기·무대·마무리 = 로깅 X.
-   ★ ★ 새 판단 기준 2 — 화면이 그 매체를 실을 수 없으면 흉내 내지 말고 이름을 바꿔 붙인다.
-      만화 영화는 저작권으로도 실을 수 없고, 정지 그림 넉 장을 올려 놓고 「만화 영화를 봤다」고
-      하면 거짓이 된다. 그래서 화면에는 자체 이야기의 「장면 카드」를 놓고
-      「만화 영화 대신 장면으로 살펴봐요」라고 이름을 바꿔 붙였다.
-      실제 감상은 ④ 무대로 화면 밖에 둔다(1-2 3단원 §5-4 계승).
-   ★ 「있었던 일을 차례대로 정리하기」는 장면 설명만으로도 성립한다 — 정리 대상은 사건이지 영상이 아니다.
-      다만 「인물의 표정·몸짓·말투를 살피기」(지도서 188·189쪽)는 영상이 있어야 하므로
-      ③ 다섯 번째 슬에서 「무엇을 살펴볼지」라는 방법 지식으로만 세우고 무대로 넘겼다.
-   ★ 저작권: 교과서 124~127쪽 「빨간 모자가 된 아이쿠」와 등장인물(아이쿠·비비·카르망 콩드 백작),
-      꽃 선물과 변장 줄거리, 126쪽 물음 넷과 말풍선 셋, 127쪽 네 장면 배열,
-      지도서 188쪽 동기 유발 퀴즈 둘, 189쪽 등장인물 소개표, 190쪽 심화 활동 둘 전부 미차용.
-      자체 만화 영화 「등대 아래 오복이」로 대체. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      만화 영화 두 편은 간추림만(대사 미인용). 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 차시 만나기', t:'만화 영화에도 이야기가 있어요',
-   html:`<div class="scene"><div class="scene-pic">🎬🐕</div></div>
-    <div class="ka-bub">만화 영화는 <b class="emph">움직이는 그림과 소리</b>로 이야기를 전해요.<br>여기서는 <b class="emph">장면 카드</b>로 그 이야기를 살펴볼 거예요. 🤔</div>`},
+  {tag:'① 동기 유발', t:'만화 영화 인물 알아맞히기',
+   html:`<div class="ka-bub">「나는 공룡이에요. 친구와 함께 살아요. 나는 말을 잘 못해요.」<br>누구일까요? 친구들과 돌아가며 문제를 내 봐요. 🦖</div>`},
 
   {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
-   html:`<div class="sentence">만화 영화를 보고 있었던 일을 정리해 봐요.</div>
-    <div class="ka-bub">누가 나오는지 알아보고,<br><b class="emph">있었던 일을 차례대로</b> 정리할 거예요. 🔍</div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>만화 영화를 보고, 있었던 일을 정리해 봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">👥</span>먼저 <b>누가 나오는지</b> 알아봐요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">📺</span>인물의 <b>말, 표정, 몸짓</b>도 살펴요.</div></div>`},
 
-  {tag:'② 나오는 인물', t:'「등대 아래 오복이」에 나오는 인물이에요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🐕</span><span class="pc-name">오복이<br>(등대 강아지)</span></div>
-      <div class="punct-card"><span class="pc-mark">🧓</span><span class="pc-name">등대지기<br>할아버지</span></div>
-      <div class="punct-card"><span class="pc-mark">🧑‍🌾</span><span class="pc-name">어부들</span></div>
-    </div>
-    <div class="ka-bub">누가 나오는지 알면 이야기를 이해하기 쉬워요. 🙋</div>`},
+  {tag:'② 124쪽 1번', t:'「빨간 모자가 된 아이쿠」에 나오는 인물',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">🧢</span><span class="pc-name">아이쿠</span></div><div class="punct-card"><span class="pc-mark">🤖</span><span class="pc-name">비비</span></div><div class="punct-card"><span class="pc-mark">🎩</span><span class="pc-name">카르망 콩드 백작</span></div></div><div class="ka-bub">만화 영화에 <b class="emph">누가 나오는지</b> 알면 이야기를 이해하기 쉬워요.</div>`},
 
-  {tag:'② 장면 살펴보기', t:'네 장면을 차례로 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>🗼 오복이는 할아버지와 등대에 살며 밤마다 등대 불 켜는 일을 돕는다.</div>
-      <div class="read-line"><span class="rl-num">2</span>🌫️ 어느 날 저녁, 안개가 짙어져 등대 불이 잘 보이지 않았다.</div>
-      <div class="read-line"><span class="rl-num">3</span>🔔 오복이는 종을 물고 흔들어 댕그랑 소리를 냈다.</div>
-      <div class="read-line"><span class="rl-num">4</span>⛵ 고깃배가 그 소리를 따라 무사히 들어왔다. 어부들이 오복이를 쓰다듬어 주었다.</div>
-    </div><div class="fb" id="readFb">🔊 한 줄씩 또박또박 읽어 봐요.</div>`},
+  {tag:'② 124쪽 1번', t:'「빨간 모자가 된 아이쿠」에 나오는 인물을 모두 골라요', log:true, collectMsg:'아이쿠 · 비비 · 카르망 콩드 백작이 나와요! 🎉',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">아이쿠</div><div class="chip" data-hit="1">비비</div><div class="chip" data-hit="1">카르망 콩드 백작</div><div class="chip" data-hit="0">주원</div><div class="chip" data-hit="0">도둑</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 나오는 인물', t:'이 이야기에 나오지 않는 인물은 누구일까요?', log:true, okMsg:'맞아요! 오복이와 할아버지, 어부들이 나와요. 🙋',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">등대지기 할아버지</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">우체국 아저씨</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 125쪽 2번', t:'만화 영화 이야기 간추림 (영상은 선생님과 함께 봐요)',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>아이쿠가 할머니 댁에 가기로 했어요.</div><div class="read-line"><span class="rl-num">2</span>아이쿠와 비비는 할머니께 꽃밭에서 꽃을 따 드리기로 했어요.</div><div class="read-line"><span class="rl-num">3</span>할머니 댁에서는 할머니로 변장한 카르망 콩드 백작이 기다리고 있었어요.</div><div class="read-line"><span class="rl-num">4</span>아이쿠는 변장한 백작을 할머니라고 부르며 꽃을 선물했어요.</div><div class="read-line"><span class="rl-num">5</span>꽃을 선물받은 백작은 몸이 가려워지고, 콧물을 흘리며 기침과 재채기를 했어요.</div></div><div class="fb" id="readFb">📺 만화 영화를 볼 때에는 인물의 말과 표정, 몸짓도 자세히 살펴봐요.</div>`},
 
-  {tag:'③ 오복이가 한 일', t:'오복이는 무엇을 했나요?', log:true, okMsg:'맞아요! 종을 흔들어 소리를 냈어요. 🔔',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">종을 흔들어 소리를 냈다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">배를 타고 바다에 나갔다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 126쪽 3번 (1)', t:'아이쿠는 할머니께 무슨 선물을 드리려고 했나요?', log:true, okMsg:'맞아요! 꽃밭에서 딴 꽃을 드리려고 했어요. 🌼',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🌼</div><div class="wc-word">꽃밭에서 딴 꽃</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🍪</div><div class="wc-word">과자</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🧢</div><div class="wc-word">빨간 모자</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 장면과 일 잇기', t:'장면과 그때 있었던 일을 이어요', log:true, matchMsg:'모두 잘 이었어요! 장면마다 있었던 일이 달라요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">장면</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🗼</span>첫째</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🌫️</span>둘째</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🔔</span>셋째</div>
-        <div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">⛵</span>넷째</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">있었던 일</div>
-        <div class="match-card" data-k="C" data-pair="c">종을 흔들어 소리를 냈다</div>
-        <div class="match-card" data-k="A" data-pair="a">등대에서 할아버지를 도왔다</div>
-        <div class="match-card" data-k="D" data-pair="d">고깃배가 무사히 들어왔다</div>
-        <div class="match-card" data-k="B" data-pair="b">안개가 짙어졌다</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 내용 파악', t:'할머니 댁에서 아이쿠를 기다리고 있던 것은 누구인가요?', log:true, okMsg:'맞아요! 백작이 할머니로 변장하고 기다리고 있었어요. 🎩',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🎩</div><div class="wc-word">할머니로 변장한 카르망 콩드 백작</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🤖</div><div class="wc-word">비비</div></div><div class="wcard" data-ok="0"><div class="wc-pic">👵</div><div class="wc-word">진짜 할머니</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 가장 먼저', t:'가장 먼저 있었던 일은 무엇일까요?', log:true, okMsg:'맞아요! 등대에서 할아버지를 돕는 일이 먼저예요. 1️⃣',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">안개가 짙어졌다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">오복이가 등대에서 할아버지를 도왔다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 126쪽 3번 (2)', t:'꽃을 선물받은 카르망 콩드 백작에게 어떤 일이 일어났나요?', log:true, okMsg:'맞아요! 꽃을 받자 이상한 반응이 생겼어요. 🤧',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🤧</div><div class="wc-word">몸이 가렵고 콧물·기침·재채기가 났어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">😄</div><div class="wc-word">아주 기뻐하며 춤을 추었어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">😴</div><div class="wc-word">꽃 냄새를 맡고 잠이 들었어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 살펴볼 것 모으기', t:'만화 영화를 볼 때 살펴볼 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 인물을 살펴보면 있었던 일이 잘 보여요. 🎉',
-   hint:'힌트: 화면의 크기나 글자 수는 이야기와 관계가 없어요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">인물의 표정</div>
-      <div class="chip" data-hit="0">화면의 크기</div>
-      <div class="chip" data-hit="1">인물의 몸짓</div>
-      <div class="chip" data-hit="1">인물이 하는 말</div>
-      <div class="chip" data-hit="0">글자 수</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 126쪽 4번', t:'재미있었던 장면을 바르게 말한 것은?', log:true, okMsg:'맞아요! 어떤 장면인지 말하면 친구도 함께 떠올릴 수 있어요. 📺',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">아이쿠가 백작을 할머니라고 부르는 장면이 기억에 남았어</div></div><div class="wcard" data-ok="0"><div class="wc-word">재미있었어</div></div><div class="wcard" data-ok="0"><div class="wc-word">만화 영화가 길었어</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 마지막에 있었던 일', t:'가장 나중에 있었던 일은 무엇일까요?', log:true, okMsg:'맞아요! 어부들이 오복이를 쓰다듬어 주었어요. 👏',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">어부들이 오복이를 쓰다듬어 주었다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">오복이가 등대 불을 켜는 일을 돕기 시작했다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 126쪽 4번', t:'친구들은 저마다 다른 장면을 골랐어요', log:true, okMsg:'맞아요! 서로 다른 장면에서 재미를 느낀 것을 존중하며 들어요. 👂',
+   html:`<div class="ka-bub">「아이쿠가 간식을 먹는 장면이 재미있었어.」<br>「백작을 할머니라고 부르는 장면이 기억에 남았어.」<br>「백작이 뛰어나가는 장면이 재미있었어.」</div><div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">재미있는 장면은 사람마다 다를 수 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">한 장면만 정답이에요</div></div><div class="wcard" data-ok="0"><div class="wc-word">가장 먼저 말한 친구가 맞아요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 정리에 필요한 것', t:'있었던 일을 정리할 때 넣을 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 언제·누가·무엇을 했는지가 들어가요. 🎉',
-   hint:'힌트: 내 마음대로 정한 것은 이야기에 없던 일이에요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">언제 있었던 일인지</div>
-      <div class="chip" data-hit="1">누가 한 일인지</div>
-      <div class="chip" data-hit="0">내가 좋아하는 색깔</div>
-      <div class="chip" data-hit="1">무엇을 했는지</div>
-      <div class="chip" data-hit="0">이야기에 없던 일 지어내기</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'⑤ 127쪽 5번', t:'있었던 일을 차례대로 이어 봐요', log:true, matchMsg:'있었던 일을 차례대로 정리했어요! 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">차례</div><div class="match-card" data-k="a" data-pair="A">①</div><div class="match-card" data-k="b" data-pair="B">②</div><div class="match-card" data-k="c" data-pair="C">③</div><div class="match-card" data-k="d" data-pair="D">④</div></div><div class="match-col"><div class="match-col-h">있었던 일</div><div class="match-card" data-k="C" data-pair="c">아이쿠가 할머니로 변장한 백작을 만났다.</div><div class="match-card" data-k="A" data-pair="a">아이쿠가 할머니 댁에 가기로 했다.</div><div class="match-card" data-k="D" data-pair="d">꽃을 선물받은 백작에게 이상한 반응이 생겼다.</div><div class="match-card" data-k="B" data-pair="b">아이쿠와 비비가 할머니께 꽃을 따 드리기로 했다.</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'④ 말해 보기', t:'있었던 일을 차례대로 말해 봐요',
-   html:`<div class="stage-box">
-      🙋 「첫째 ○○○, 둘째 ○○○, 셋째 ○○○, 넷째 ○○○」처럼<br>
-      있었던 일을 차례대로 소리 내어 말해 봐요.<br>
-      <small>(집에서 본 만화 영화가 있다면 그것으로 말해 봐도 좋아요.)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="차례를 지켜 잘 말했어요! 👏">🙋 소리 내어 말해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 따라 해 보기', t:'인물의 말과 행동을 따라 해 봐요',
+   html:`<div class="stage-box">🎭 재미있었던 장면에서 인물이 한 말과 행동을 목소리와 몸짓으로 따라 해 보세요.<br><small>목소리의 높낮이, 표정과 몸짓을 살리면 더 실감 나요.</small><br><button class="stage-do" id="stageDo" data-fb="멋져요! 말투와 표정, 몸짓은 만화 영화만의 특징이에요. 📺">🎭 해 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🙋</span>만화 영화도 <b>누가 나오는지</b>부터 살펴봐요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">👀</span>인물의 <b>표정·몸짓·말</b>을 보면 무엇을 했는지 알 수 있어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🔢</span>있었던 일은 <b>차례대로</b> 정리해요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">➡️</span>다음 시간에는 <b>감동적인 장면</b>을 나누어 볼 거예요.</div>
-    </div>`},
+  {tag:'⑤ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">👥</span>만화 영화에 <b>누가 나오는지</b> 먼저 알아봐요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">📺</span>인물의 <b>말·표정·몸짓</b>을 살피며 봐요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">📋</span>있었던 일을 <b>차례대로</b> 정리해요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -426,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

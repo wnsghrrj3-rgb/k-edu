@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,96 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 1~2차시(준비 — 배울 내용 살펴보기) 13슬:
-   ① 만나기 2 → ② 따라가기 3 → ③ 활동·심장 5 → ④ 표현·정리 3 =====
+/* ===== 1~2차시(준비 — 배울 내용 살펴보기) 『국어』 110~113쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 배울 내용을 살펴볼 수 있다.
-   ★ 정답 로깅 5슬(50점). 준비 차시는 1~3단원과 같이 5슬로 낮춘다.
-   ★ 지도서 174쪽: 이 단원의 국어과 역량은 디지털·미디어 역량, 요소는 매체 자료 활용이다.
-      그래서 ③ 세 번째 슬에서 「지금 보고 있는 이 화면도 매체 자료」임을 직접 세웠다.
-   ★ 이 단원의 반응 관련 경계(사람마다 다르다 · 따라 말하지 않는다)를 준비 차시에서 미리 건다.
-   ★ 저작권: 교과서 110~113쪽 단원 도입 그림(밥 먹는 아이들·알에서 깨어나는 아기 거북),
-      112쪽 만화 영화 세 장면, 113쪽 예시 답안과 말풍선 전부 미차용. 상황·보기 전부 자체. */
+   ★ 정답 로깅 5슬(LESSON_MAX 50). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      만화 영화 두 편은 간추림만(대사 미인용). 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 차시 만나기', t:'이야기와 만화 영화에는 무엇이 있을까요?',
-   html:`<div class="scene"><div class="scene-pic">📖🎬</div></div>
-    <div class="ka-bub">이야기에도 만화 영화에도 <b class="emph">인물</b>이 나와요.<br>그 인물이 한 일이 <b class="emph">차례대로</b> 이어지지요. 🤔</div>`},
+  {tag:'① 110쪽 단원 열기', t:'4단원 「감동을 나누어요」',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">📖</span><span class="pc-name">이야기를 듣거나 읽고 일의 차례 정리하기</span></div><div class="punct-card"><span class="pc-mark">📺</span><span class="pc-name">만화 영화를 보고 생각이나 느낌 나누기</span></div></div><div class="ka-bub">이 단원에서는 <b class="emph">일이 일어난 차례</b>를 알고 <b class="emph">느낀 점</b>을 나누어 봐요. 🙂</div>`},
 
-  {tag:'① 학습 문제', t:'오늘은 이것을 살펴봐요',
-   html:`<div class="sentence">배울 내용을 살펴봐요.</div>
-    <div class="ka-bub">일이 일어난 <b class="emph">차례</b>를 알아보고,<br>보고 나서 <b class="emph">느낀 점</b>을 나누는 법을 배울 거예요. 🔍</div>`},
+  {tag:'① 111쪽 생각 열기', t:'그림을 살펴봐요',
+   html:`<div class="scene"><div class="scene-pic">🍱👧👦 · 🧔🪨 · 🧢🌼 · 🐢🥚</div></div><div class="ka-bub">친구들이 급식을 먹는 그림, 맷돌을 들고 달리는 사람,<br>빨간 모자를 쓴 인물, <b class="emph">알에서 깨어나는 아기 거북</b>이 있어요.</div>`},
 
-  {tag:'② 인물 알아보기', t:'이야기에는 인물이 있어요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🙋</span><span class="pc-name">누가<br>나오는지</span></div>
-      <div class="punct-card"><span class="pc-mark">🖐️</span><span class="pc-name">무엇을<br>했는지</span></div>
-    </div>
-    <div class="ka-bub">이 두 가지를 살펴보면 이야기가 훨씬 잘 보여요. 👀</div>`},
+  {tag:'① 111쪽 생각 열기', t:'그림 속에서 아기 거북은 무엇을 하고 있나요?', log:true, okMsg:'맞아요! 아기 거북이 알에서 깨어나고 있어요. 그림 속에서 누가 무엇을 하는지 살펴봐요. 🐢',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🥚</div><div class="wc-word">알에서 깨어나고 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🍱</div><div class="wc-word">밥을 먹고 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🪨</div><div class="wc-word">맷돌을 들고 달리고 있어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 차례 알아보기', t:'일에는 일어난 차례가 있어요',
-   html:`<div class="sentence"><span class="wmark">아침에</span> ➡ <span class="wmark">낮에</span> ➡ <span class="wmark">저녁에</span></div>
-    <div class="ka-bub">이렇게 <b class="emph">때를 알려 주는 말</b>을 따라가면<br>무슨 일이 먼저 있었는지 알 수 있어요. 🕰️</div>`},
+  {tag:'① 111쪽 생각 열기', t:'그림 속 아이들은 무엇을 하고 있나요?', log:true, okMsg:'맞아요! 아이들이 밥을 먹고 있어요. 누가 무엇을 하는지 보면 이야기가 보여요. 🙂',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🍱</div><div class="wc-word">급식을 먹고 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">⚽</div><div class="wc-word">공을 차고 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🛏️</div><div class="wc-word">잠을 자고 있어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 느낌 나누기', t:'같은 것을 보아도 마음은 저마다 달라요',
-   html:`<div class="ka-bub">같은 만화 영화를 보아도<br>
-      <b class="emph">마음이 움직이는 장면</b>은 사람마다 달라요.<br>
-      다른 것은 틀린 것이 아니에요. 💚</div>`},
+  {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>배울 내용을 살펴봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">📖</span>이야기를 듣거나 읽고 <b>일의 차례</b>를 정리해 봐요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">📺</span>만화 영화를 보고 <b>생각이나 느낌</b>을 나누어 봐요.</div></div>`},
 
-  {tag:'③ 이야기 살펴보기', t:'이야기를 알아볼 때 먼저 살펴볼 것은?', log:true, okMsg:'맞아요! 누가 나오고 무엇을 했는지부터 살펴봐요. 🙋',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">🙋</div><div class="wc-word">누가 나오고 무엇을 했는지</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">📏</div><div class="wc-word">책이 몇 쪽인지</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'① 단원 학습 내용', t:'이 단원에서 공부할 내용',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>이야기를 듣거나 읽고 일의 차례를 정리해 봅시다.</div><div class="read-line"><span class="rl-num">2</span>만화 영화를 보고 생각이나 느낌을 나누어 봅시다.</div></div><div class="fb" id="readFb">🔊 공부할 내용을 소리 내어 읽어 봐요.</div>`},
 
-  {tag:'③ 때를 알려 주는 말', t:'일이 일어난 때를 알려 주는 말은 어느 것일까요?', log:true, okMsg:'맞아요! 「아침에」처럼 때를 알려 주는 말이에요. 🕰️',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">아주, 매우</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">아침에, 저녁에</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 112쪽 1번', t:'자신이 본 만화 영화를 떠올려 봐요',
+   html:`<div class="stage-box">📺 재미있게 본 만화 영화를 떠올려 보세요.<br><small>누가 나왔나요? 어떤 일이 있었나요?</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 이제 그 만화 영화에서 기억에 남는 장면을 찾아봐요. 🙂">📺 떠올렸어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 매체 자료 모으기', t:'이야기를 담고 있는 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 지금 보고 있는 이 화면도 이야기를 담은 매체 자료예요. 💻',
-   hint:'힌트: 이야기를 담아 우리에게 보여 주는 것을 찾아요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">이야기책</div>
-      <div class="chip" data-hit="0">책상</div>
-      <div class="chip" data-hit="1">만화 영화</div>
-      <div class="chip" data-hit="1">지금 보는 이 화면</div>
-      <div class="chip" data-hit="0">연필</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'② 113쪽 2번', t:'기억에 남는 장면은 이렇게 써요',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">📺</span><span class="pc-name">제목</span></div><div class="punct-card"><span class="pc-mark">🎬</span><span class="pc-name">기억에 남는 장면</span></div></div><div class="ka-bub">예) 제목 칸에는 만화 영화 이름을, 장면 칸에는<br><b class="emph">누가 무엇을 하는 장면</b>인지 써요. — 「친구들과 간식을 나누어 먹는 장면」</div>`},
 
-  {tag:'③ 느낌 말하기', t:'기억에 남는 장면을 말하는 알맞은 방법은?', log:true, okMsg:'맞아요! 왜 그 장면이 남았는지 까닭을 들어 말해요. 🗣️',
-   hint:'힌트: 친구가 한 말을 그대로 옮기면 내 마음은 전해지지 않아요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">그 장면이 남은 까닭을 들어 말한다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">친구가 말한 것을 그대로 따라 말한다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 113쪽 2번', t:'기억에 남는 장면을 바르게 쓴 것은?', log:true, okMsg:'맞아요! 누가 무엇을 하는 장면인지 쓰면 친구가 바로 떠올릴 수 있어요. 🎬', hint:'힌트: 누가 무엇을 하는지가 들어 있는 것을 골라요.',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">주인공이 친구들과 간식을 나누어 먹는 장면</div></div><div class="wcard" data-ok="0"><div class="wc-word">재미있다</div></div><div class="wcard" data-ok="0"><div class="wc-word">파란색</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 서로 다른 마음', t:'친구와 내가 고른 장면이 달라요. 어떻게 할까요?', log:true, okMsg:'맞아요! 사람마다 마음이 움직이는 곳이 달라요. 💚',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">한 사람은 틀린 것이다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">서로 다를 수 있다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 113쪽 2번', t:'장면이 기억에 남는 까닭을 말할 때 알맞은 것은?', log:true, okMsg:'맞아요! 「누가 무엇을 하는 장면을 볼 때 ~한 생각이 들어서」처럼 말해 봐요. 💬',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">누가 무엇을 하는 장면을 볼 때 어떤 생각이 들어서인지 말해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">그냥 좋았다고만 말해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">만화 영화가 몇 분인지 말해요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 배울 내용 보기', t:'이 단원에서는 두 가지를 배워요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">📖</span>이야기를 듣거나 읽고 <b>일의 차례 정리하기</b></div>
-      <div class="recap-item" style="animation-delay:.25s"><span class="recap-ic">🎬</span>만화 영화를 보고 <b>생각이나 느낌 나누기</b></div>
-    </div>`},
+  {tag:'③ 113쪽 3번', t:'친구와 이야기해 봐요',
+   html:`<div class="ka-bub">「만화 영화 속 주인공이 친구들과 간식을 나누어 먹는 장면이 떠올라.」<br>「주인공이랑 친구들이 재미있게 놀던 장면이 생각나.」</div><div class="stage-box">💬 2에서 쓴 장면을 친구에게 말해 보세요.<br><small>같은 만화 영화를 보아도 기억에 남는 장면은 다를 수 있어요.</small><br><button class="stage-do" id="stageDo" data-fb="멋져요! 친구마다 기억에 남는 장면이 달라요. 서로 존중하며 들어요. 👂">💬 이야기했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 말해 보기', t:'기억에 남는 장면을 한 가지 말해 봐요',
-   html:`<div class="stage-box">
-      🙋 내가 본 만화 영화나 읽은 이야기를 한 편 떠올려,<br>
-      기억에 남는 장면을 소리 내어 말해 봐요.<br>
-      <small>(누가 무엇을 하는 장면인지 · 왜 기억에 남는지)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="까닭까지 말했다면 아주 잘했어요! 👏">🙋 소리 내어 말해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'③ 113쪽 3번', t:'같은 만화 영화를 본 친구가 나와 다른 장면을 골랐어요', log:true, okMsg:'맞아요! 서로 다른 장면을 고른 까닭을 물어보면 더 재미있어요. 🙂',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">사람마다 기억에 남는 장면은 다를 수 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">친구가 틀렸어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">나와 같은 장면만 골라야 해요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 살펴봤어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🙋</span>이야기는 <b>누가 무엇을 했는지</b>부터 살펴봐요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🕰️</span><b>때를 알려 주는 말</b>을 따라가면 차례가 보여요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">➡️</span>다음 시간에는 <b>이야기를 듣고 누가 무엇을 했는지</b> 알아볼 거예요.</div>
-    </div>`},
+  {tag:'③ 마무리', t:'잘했어요! 이만큼 배웠어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>이 단원에서 배울 내용을 살펴보았어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🎬</span>기억에 남는 장면은 <b>누가 무엇을 하는 장면</b>인지 말해요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">👂</span>친구마다 기억에 남는 장면이 <b>다를 수 있어요</b>.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -398,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>
