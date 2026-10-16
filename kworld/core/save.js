@@ -34,6 +34,7 @@ export async function syncJokbo() {
     for (const row of data) {
       const rec = row.record || {}; const t = rec.t || Date.parse(row.ended_at) || 0;
       const cur = rd('kworld_carry:' + row.era); if (!cur || (cur.t || 0) < t) wr('kworld_carry:' + row.era, { ...rec, t });
+      if (Array.isArray(rec.heirlooms) && rec.heirlooms.length) { const hl = rd('kworld_heirlooms') || []; let added = false; for (const h of rec.heirlooms) if (h?.id && !hl.some((x) => x.id === h.id)) { hl.push({ id: h.id, era: row.era, name: h.name, tag: h.tag || null, fact: h.fact || null, t: h.t || t }); added = true; } if (added) wr('kworld_heirlooms', hl.slice(-40)); }   // 물려줄 것도 서버 → 기기
       if (!have.has(row.era + ':' + t)) { hist.push({ era: row.era, branch: rec.branch, title: rec.title, status: rec.statusName, statusId: rec.status || null, t }); have.add(row.era + ':' + t); }
     }
     hist.sort((a, b) => (a.t || 0) - (b.t || 0)); wr('kworld_jokbo', hist.slice(-300)); return true;

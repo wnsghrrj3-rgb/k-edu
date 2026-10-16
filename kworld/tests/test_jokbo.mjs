@@ -30,6 +30,18 @@ rows = collect(chain, { era: 'samguk-life', life: fakeLife }, (k) => store[k] ? 
 ok(rows[4].kind === 'now' && rows[4].statusName === '평민의 집' && rows[4].cap === 3, '지금 사는 대');
 html = jokboHtml(chain, rows); ok(html.includes('지금 사는 중') && html.includes('🎖 1/3') && html.includes('🏳️ 고구려'), '지금 줄 값·천장·나라');
 ok(jokboHtml(chain, collect(chain, null, () => null)).includes('0대 / 11대'), '빈 기록');
+// 물려줄 것 사슬 — chain.relics · carry 에 실린 것 + 이 기기 kworld_heirlooms 합침 · 줄 🎁 · 아래 상자 · 지난 집 것은 상자에 안 들어감
+ok(E.every((e) => e.relics === 3), '시대마다 숨은 것 3(chain.relics)');
+const { heirloomsOf, chestHtml } = await import('../core/jokbo.js');
+const store2 = { ...store, 'kworld_carry:life': rec(100, { heirlooms: [{ id: 'axe', name: '옛날 주먹도끼', fact: '주먹도끼는 구석기 사람의 만능 도구였다.' }] }), 'kworld_heirlooms': JSON.stringify([{ id: 'axe', era: 'life', name: '옛날 주먹도끼' }, { id: 'shell', era: 'life', name: '구멍 뚫린 조개', tag: '강가 자갈밭' }, { id: 'comb', era: 'neo', name: '빗살무늬 조각' }, { id: 'sword', era: 'bronze-life', name: '부러진 동검 날' }, { id: 'tile', era: 'samguk-life', name: '연꽃무늬 수막새' }]) };
+const rd2 = (k) => store2[k] ? JSON.parse(store2[k]) : null;
+ok(heirloomsOf('life', rd2).length === 2 && heirloomsOf(null, rd2).length === 5, '이 기기 물려줄 것 — 시대별/전체');
+rows = collect(chain, null, rd2);
+ok(rows[0].heirlooms.length === 2 && rows[0].heirlooms[0].fact && rows[1].heirlooms.length === 1 && rows[2].kind === 'old' && rows[2].heirlooms.length === 1 && rows[4].kind === 'none' && rows[4].heirlooms.length === 1, '줄마다 물려줄 것(carry+기기 합침, 겹침 1)');
+html = jokboHtml(chain, rows);
+ok(html.includes('🎁 옛날 주먹도끼 · 구멍 뚫린 조개') && html.includes('2/3') && html.includes('집에 내려오는 것 4/33'), '줄 🎁 · 2/3 · 요약 4/33 ' + (html.match(/집에 내려오는 것 [^<]*/) || [])[0]);
+ok(html.includes('jchest') && html.includes('📜 주먹도끼는') && html.includes('1대 구석기 · 강가 자갈밭') && !chestHtml(rows).includes('부러진 동검 날') && chestHtml(rows).includes('연꽃무늬 수막새'), '아래 상자 — 실제 한 줄·자리, 지난 집 것은 빠지고 아직 안 끝낸 시대 것은 들어감');
+ok(chestHtml(collect(chain, null, () => null)) === '', '찾은 게 없으면 상자 없음');
 // 끝 카드 — carry 기록·족보 단추
 globalThis.document = { getElementById: () => null, createElement: () => ({ style: {}, appendChild() {}, classList: { add() {}, remove() {} } }), head: { appendChild() {} }, body: { appendChild() {} } };
 const ls = {}; globalThis.localStorage = { getItem: (k) => ls[k] ?? null, setItem(k, v) { ls[k] = v; }, removeItem(k) { delete ls[k]; } };
@@ -39,7 +51,7 @@ const life = new Life(g, J(path.join(root, 'eras/neo/life.json'))); life.values 
 const endDef = (() => { for (const s of life.d.situations) for (const c of s.choices || []) for (const a of c.then || []) if (a.end) return a.end; })();
 life.end(endDef);
 const saved = JSON.parse(ls['kworld_carry:neo']); ok(saved.title && typeof saved.title === 'string' && Array.isArray(saved.marks) && saved.sits === 1 && saved.craft === 4, '끝 카드 carry 에 제목·흔적 이름·상황 수 ' + saved.title);
-ok(JSON.parse(ls['kworld_jokbo']).length === 1 && JSON.parse(ls['kworld_jokbo'])[0].era === 'neo', '족보 기록 한 줄');
+ok(Array.isArray(saved.heirlooms), '끝 카드 carry 에 heirlooms 배열'); ok(JSON.parse(ls['kworld_jokbo']).length === 1 && JSON.parse(ls['kworld_jokbo'])[0].era === 'neo', '족보 기록 한 줄');
 const endPanel = panels[panels.length - 1]; ok(endPanel.b.some((x) => x.label === '📜 족보') && endPanel.b.some((x) => x.label.startsWith('청동기로 가기')), '끝 카드 단추: 족보·다음 시대');
 // openJokbo — chain.json 을 base 위에서 읽어 한 장을 연다, 닫으면 끝 카드로 돌아온다
 globalThis.fetch = async (u) => { ok(u === './eras/chain.json', 'chain.json 경로 ' + u); return { json: async () => chain }; };
