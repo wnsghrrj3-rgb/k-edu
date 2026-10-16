@@ -242,9 +242,11 @@ function extras(n, t, s) {
   return ex;
 }
 
+/* 원문 물음 제목 ↔ 지시문·답 어긋남 — l04 「…보다 얼마나 더 클까요?」인데 지시문 「6×4의 곱을 구하세요」·답 24 */
+const QOVR = { '6×4는 6×3보다 얼마나 더 클까요?': '6×4는 얼마일까요?' };
 function problemData(p, title, scene) {
   const fig = figOf(p.figs, true);
-  const q = p.q;
+  const q = QOVR[p.q] || p.q; // 원문 물음 제목이 지시문·답과 어긋나는 곳만 지시문 쪽으로
   const d = { title, scenario: { icon: '🔢', body: p.prompt || scene }, question: /[?.!]$/.test(q) || !/(까요|나요)$/.test(q) ? q : q + '?' };
   if (fig) d.fig = fig;
   const hint = (p.hints || []).join(' ');

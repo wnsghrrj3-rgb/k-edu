@@ -954,11 +954,17 @@
   }
   function fitZoom(body, base) { // 94차 — 새 개념 장은 다 들어가면 그림을 키운다(측정기도 같은 함수)
     const g = body.querySelector(':scope > .cv2-fig'); if (g) { g.style.zoom = ''; g.removeAttribute('data-figg'); } body.classList.remove('fit-cv2w');
-    let z = fitZoom0(body, base);
+    let z = fitZoom0(body, base); ngFit(body);
     if (g && body.scrollWidth > body.clientWidth + 2 && g.querySelector('.so-shelf,.fig-cards')) { body.classList.add('fit-cv2w'); const z2 = zoomLoop(body, base); if (z2 >= base - 0.001 && body.scrollWidth <= body.clientWidth + 2) z = z2; else { body.classList.remove('fit-cv2w'); z = zoomLoop(body, base); } } // 95차 — 넓은 그림은 줄이기 전에 두 줄로 꺾어 본다
     if (g && body.scrollWidth > body.clientWidth + 2) { const cz = parseFloat(g.style.zoom) || 1; const nz = Math.max(0.5, cz * Math.min(1, body.clientWidth / (body.scrollWidth + 4))); g.style.zoom = nz; g.setAttribute('data-figz', nz.toFixed(3)); body.style.zoom = ''; z = zoomLoop(body, base); } // 넓은 그림은 그림만 폭에 맞춰 줄인다
     if (g && z >= base - 0.001 && !g.hasAttribute('data-figz')) figGrow(body);
     return z;
+  }
+  // 139차 — 수 배열표(ngrid)가 제 칸보다 넓어 잘리면(ng-wrap overflow hidden 이라 장은 안 넘침) 그 표만 폭에 맞춰 줄인다(0.5배까지) · 글은 그대로
+  function ngFit(body) {
+    body.querySelectorAll('.fig-ngrid').forEach(f => { const w = f.querySelector('.ng-wrap'), t = w && w.querySelector('table'); if (!t || f.hasAttribute('data-figz') || f.closest('[data-figz]')) return;
+      const box = f.parentElement.closest('.fig') || w, cs = getComputedStyle(box), avail = box.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0);
+      const need = Math.max(t.offsetWidth, t.scrollWidth); if (avail > 0 && need > avail + 2) { const z = Math.max(0.5, avail / (need + 4)); f.style.zoom = z; f.setAttribute('data-figz', z.toFixed(3)); } });
   }
   function fitZoom0(body, base) {
     colsOff(body); figOff(body); LAYOUTS.forEach(c => body.classList.remove(c)); let best = zoomLoop(body, base), bestC = [];
