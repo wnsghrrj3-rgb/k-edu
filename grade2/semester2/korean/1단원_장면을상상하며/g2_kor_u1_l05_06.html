@@ -139,132 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 5~6차시(소단원 1 통합 — 시를 읽고 생각이나 느낌 나누기) 13슬 =====
+/* ===== 5~6차시(소단원 1 통합 — 시를 읽고 생각이나 느낌 나누기, 반응 중심) 『국어』 14~17쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 시를 읽고 생각이나 느낌을 나눌 수 있다.
-   ★ 정답 로깅 7슬. 낭송·무대·마무리 = 로깅 X.
-   ★ 반응 중심 학습 모형(지도서 65쪽): 준비 → 형성(낭송·내용) → 명료화(느낌·비슷한 경험) → 심화.
-      슬라이드 차례를 이 네 단계에 그대로 맞췄다.
-   ★ 지도서 67쪽: 생각이나 느낌은 「시의 내용 · 인상 깊은 표현 · 자신의 경험」 셋에서 나온다 →
-      s9에서 그 셋을 갈라 세운다. 3~4차시의 「장면을 떠올리는 세 길」과 같은 셋이지만
-      거기서는 **장면**이 나오고 여기서는 **느낌**이 나온다. 축이 다르다는 것을 흐리지 않는다.
-   ★ 지도서 57쪽 단원 지도 유의 사항 ❹: 공유가 개인 감상에 머무르지 않게 →
-      s11을 「친구 말을 듣고 나면 무엇이 달라지는가」로 놓았다.
-   ★ 저작권: 교과서 14~17쪽 제재 시와 동기 유발 시 전부 미차용.
-      자체 시 「달팽이 손님」 = 학교 화단 옆 계단. 실존 인물·기관 0건. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      시 본문 미인용·이야기는 간추림만(교과서 쪽을 펴게 함). 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 장면 만나기', t:'비가 그친 아침, 계단에 무엇이 있었을까요?',
-   html:`<div class="scene">
-      <div class="scene-pic">🐌</div>
-      <div class="scene-say">느릿느릿</div>
-    </div>
-    <div class="ka-bub">화단 옆 계단에 <b class="emph">작은 손님</b>이 와 있었어요. 🤔</div>`},
+  {tag:'① 반응 준비하기', t:'선생님이 들려주는 시 「우산」(유희윤)에는 누가 나오나요?', log:true, okMsg:'맞아요! 비 오는 날 「나」와 아빠가 우산을 쓰고 걸어가요. ☔',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">👵👦</div><div class="wc-word">할머니와 손자</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🐶🐱</div><div class="wc-word">강아지와 고양이</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🧒👨</div><div class="wc-word">「나」와 아빠</div></div></div><div class="fb"></div>`},
 
-  {tag:'① 학습 문제', t:'오늘 배울 것이에요',
-   html:`<div class="sentence">시를 읽고 생각이나 느낌을 나누어 봐요.</div>
-    <div class="ka-bub">친구와 나누면 시가 <b>더 넓어져요</b>. 💬</div>`},
+  {tag:'① 반응 준비하기', t:'「우산」을 듣고 떠오르는 장면으로 알맞은 것은?', log:true, okMsg:'맞아요! 작은 산과 큰 산처럼, 낮은 우산과 높은 우산이 앞뒤로 걸어가요. ⛰️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🚗</div><div class="wc-word">아빠와 자동차를 타고 가는 모습</div></div><div class="wcard" data-ok="1"><div class="wc-pic">☂️</div><div class="wc-word">내 우산 뒤에 아빠 우산이 따라오는 모습</div></div><div class="wcard" data-ok="0"><div class="wc-pic">☀️</div><div class="wc-word">해가 쨍쨍한 바닷가에서 노는 모습</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 낭송하기', t:'한 줄씩 소리 내어 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>비 그친 아침</div>
-      <div class="read-line"><span class="rl-num">2</span>화단 옆 계단에</div>
-      <div class="read-line"><span class="rl-num">3</span>달팽이 한 마리</div>
-      <div class="read-line"><span class="rl-num">4</span>느릿느릿 제 집을 지고</div>
-      <div class="read-line"><span class="rl-num">5</span>계단을 오른다</div>
-      <div class="read-line"><span class="rl-num">6</span>한 칸 오르는 데 내 걸음 백 개</div>
-      <div class="read-line"><span class="rl-num">7</span>나는 가만히 백 개를 세어 준다</div>
-    </div><div class="fb" id="readFb"></div>`},
+  {tag:'① 학습 문제 · 차례', t:'오늘 배울 것이에요',
+   html:`<div class="sentence">시를 읽고 생각이나 느낌을 나누어 봅시다.</div><div class="read-lines"><div class="read-line"><span class="rl-num">1</span>시 낭송하기</div><div class="read-line"><span class="rl-num">2</span>시의 내용 파악하기</div><div class="read-line"><span class="rl-num">3</span>시에 대한 생각이나 느낌 나누기</div></div><div class="fb" id="readFb">🔊 오늘 공부할 차례를 소리 내어 읽어요.</div>`},
 
-  {tag:'② 어디서 나올까', t:'생각이나 느낌은 여기에서 나와요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">📖</span><span class="pc-name">시의<br>내용</span></div>
-      <div class="punct-card"><span class="pc-mark">✨</span><span class="pc-name">인상 깊은<br>표현</span></div>
-      <div class="punct-card"><span class="pc-mark">🙋</span><span class="pc-name">비슷한<br>내 경험</span></div>
-    </div>
-    <div class="ka-bub">셋 가운데 <b>어디에서 나왔는지</b> 말할 수 있어요.</div>`},
+  {tag:'② 14~15쪽 작품 읽기', t:'「짜장 요일」(방주현 글)을 낭송해 봐요',
+   html:`<div class="scene"><div class="scene-pic">🍜🧒🧒</div></div><div class="stage-box">📖 『국어』 14~15쪽을 펴서 장면을 상상하며 「짜장 요일」을 낭송해 보세요.<br><small>급식 시간에 짜장면을 먹는 아이들을 떠올리며 읽어요.</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 이제 시의 내용을 알아봐요. 🍜">🎵 낭송했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 내용 알기', t:'달팽이는 무엇을 지고 계단을 오르나요?', log:true,
-   okMsg:'맞아요! 제 집을 지고 올라요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">제 집</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">작은 우산</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 15쪽 내용 알기 (1)', t:'짜장면을 한 입 먹고 나면 어떤 일이 생긴다고 했나요?', log:true, okMsg:'맞아요! 콧잔등에 짜장 점이 생긴다고 했어요. 😄',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">콧잔등에 짜장이 점처럼 묻어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">머리카락이 짜장 색이 돼요</div></div><div class="wcard" data-ok="0"><div class="wc-word">배가 아파요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 내용 알기', t:'“한 칸 오르는 데 내 걸음 백 개”는 무슨 뜻일까요?', log:true,
-   okMsg:'맞아요! 달팽이가 그만큼 느리다는 뜻이에요. 👍',
-   hint:'힌트: 달팽이와 나를 견주어 보는 말이에요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">계단이 백 칸이라는<br>뜻이에요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">달팽이가 그만큼<br>느리다는 뜻이에요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 15쪽 내용 알기 (2)', t:'입가에 「짜장 수염」 두 가닥이 생긴 까닭은 무엇일까요?', log:true, okMsg:'맞아요! 양념이 묻은 모습을 수염이라고 재미있게 표현했어요. 🍜',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">진짜 수염이 났기 때문이에요</div></div><div class="wcard" data-ok="0"><div class="wc-word">펜으로 수염을 그렸기 때문이에요</div></div><div class="wcard" data-ok="1"><div class="wc-word">입가에 짜장 양념이 수염처럼 묻었기 때문이에요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 제목 살피기', t:'제목을 「달팽이 손님」이라고 한 까닭은?', log:true,
-   okMsg:'맞아요! 잠깐 찾아온 손님 같아서예요. 👍',
-   hint:'힌트: 손님은 잠깐 왔다가 돌아가는 사람이에요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">잠깐 찾아온<br>손님 같아서</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">달팽이가 계단을<br>만들어서</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 15쪽 내용 알기 (3)', t:'제목을 「짜장 요일」이라고 한 까닭은 무엇일까요?', log:true, okMsg:'맞아요! 짜장면이 나온 신나는 날이라 「짜장 요일」이에요. 🎉',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🏪</div><div class="wc-word">짜장면 가게에 가는 날이기 때문이에요</div></div><div class="wcard" data-ok="1"><div class="wc-pic">📅</div><div class="wc-word">오늘 급식에 짜장면이 나왔기 때문이에요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🗓️</div><div class="wc-word">달력에 「짜장 요일」이 있기 때문이에요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 느낌 모으기', t:'이 시를 읽고 들 수 있는 생각이나 느낌을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 시에서 나온 느낌이에요. 🎉',
-   hint:'힌트: 시에 적힌 말에서 나올 수 있는 느낌만 골라요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">달팽이가 힘들어 보였어요</div>
-      <div class="chip" data-hit="0">시끄러워서 귀가 아팠어요</div>
-      <div class="chip" data-hit="1">기다려 주는 마음이 따뜻했어요</div>
-      <div class="chip" data-hit="0">무서워서 도망가고 싶었어요</div>
-      <div class="chip" data-hit="1">백 개를 세어 주는 게 재미있었어요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'② 16쪽 글과 연결하기', t:'여러 가지 방법으로 시를 낭송해 봐요',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">🔁</span><span class="pc-name">서로 번갈아<br>가며 낭송하기</span></div><div class="punct-card"><span class="pc-mark">🗣️</span><span class="pc-name">흉내 내는 말을<br>함께 낭송하기</span></div></div><div class="stage-box">🎵 짝과 한 줄씩 번갈아 가며, 또 「호로록」 같은 흉내 내는 말은 다 함께 낭송해 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 여러 가지 방법으로 읽으니 장면이 더 생생해요. 🍜">🎵 해 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 어디서 나왔나', t:'친구가 한 말이 어디에서 나왔는지 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 같은 시에서 여러 갈래로 나와요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">친구가 한 말</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">📖</span>“달팽이가 계단을 올라서 대단해.”</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">✨</span>“‘제 집을 지고’가 마음에 들어.”</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🙋</span>“나도 비 온 날 달팽이를 봤어.”</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">어디에서</div>
-        <div class="match-card" data-k="B" data-pair="b">인상 깊은 표현에서</div>
-        <div class="match-card" data-k="C" data-pair="c">비슷한 내 경험에서</div>
-        <div class="match-card" data-k="A" data-pair="a">시의 내용에서</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 17쪽 생각이나 느낌 나누기', t:'「짜장 요일」에 대한 생각이나 느낌으로 알맞은 것을 모두 골라요', log:true, collectMsg:'잘 골랐어요! 시의 장면·표현·내 경험과 이어진 생각이나 느낌이에요. 💬',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="0">😴 나는 어제 늦게 잤어</div><div class="chip" data-hit="0">🔢 이 시는 글자가 아주 많아</div><div class="chip" data-hit="1">😋 점심시간에 짜장면을 먹으며 신난 아이들의 모습이 생생하게 떠올라</div><div class="chip" data-hit="1">😂 친구의 웃는 소리가 「짜장짜장」 들린다는 표현이 재미있어</div><div class="chip" data-hit="1">🍜 지난 주말 짜장면을 먹었을 때 얼굴에 양념이 묻었던 일이 생각나</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 비슷한 경험', t:'이 시와 비슷한 경험을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 이 시와 이어지는 경험이에요. 🎉',
-   hint:'힌트: 작은 것을 가만히 기다리거나 지켜본 일을 떠올려 봐요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">개미가 가는 길을 한참 본 일</div>
-      <div class="chip" data-hit="0">달리기에서 일 등을 한 일</div>
-      <div class="chip" data-hit="1">싹이 트기를 날마다 기다린 일</div>
-      <div class="chip" data-hit="0">숙제를 급하게 끝낸 일</div>
-      <div class="chip" data-hit="1">동생이 신발 신기를 기다려 준 일</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 17쪽 자신과 관련짓기', t:'「짜장 요일」과 비슷한 경험을 말한 친구는?', log:true, okMsg:'맞아요! 음식이 얼굴에 묻은 경험이 시와 비슷해요. 🍚',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">📺</div><div class="wc-word">텔레비전에서 만화를 봤어요</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🍚</div><div class="wc-word">아빠와 비빔밥을 먹었을 때 아빠 턱에 묻은 고추장이 빨간 점처럼 보였어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🚲</div><div class="wc-word">자전거를 타고 공원에 갔어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 나누면 좋은 점', t:'친구의 생각을 듣고 나면 무엇이 좋을까요?', log:true,
-   okMsg:'맞아요! 내가 못 본 것까지 보여서 시가 넓어져요. 👍',
-   hint:'힌트: 친구의 말은 내 생각을 지우는 게 아니라 옆에 하나를 더해 줘요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">내가 못 본 것까지 보여<br>시가 넓어져요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">내 생각을<br>지울 수 있어요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 반응 명료화하기', t:'생각이나 느낌을 잘 표현한 친구를 칭찬해요',
+   html:`<div class="stage-box">👏 시에 대한 생각이나 느낌을 잘 표현한 친구는 누구인가요? 어떤 점을 잘 표현했는지 말해 보세요.<br><small>친구의 생각을 듣고 시를 더 잘 이해할 수 있었는지도 생각해 봐요.</small><br><button class="stage-do" id="stageDo" data-fb="멋져요! 생각이나 느낌은 비슷한 점도 있고 다른 점도 있어요. 🌈">👏 칭찬했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 말해 보기', t:'비슷한 경험을 말해 봐요',
-   html:`<div class="stage-box">
-      🗣️ 작은 것을 가만히 지켜보거나 기다려 준 적이 있나요?<br>
-      <b>언제 / 무엇을 / 그때 마음</b> 차례로 말해 봐요.<br>
-      <small>(달팽이가 아니어도 좋아요. 개미, 싹, 강아지…… 무엇이든요.)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="비슷한 경험을 잘 이어 말했어요! 👏">🗣️ 말해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'④ 반응 심화하기', t:'시를 더 찾아 읽고 생각이나 느낌을 말해요',
+   html:`<div class="stage-box">📗 『국어활동』 6~7쪽 「궁시렁궁시렁 나라」를 읽고 친구들과 생각이나 느낌을 이야기해 보세요.<br><small>도서관에서 새로운 시를 찾아 읽어도 좋아요.</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 시를 더 찾아 읽고 싶어졌지요? 📚">📗 읽고 말했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">📖</span>생각이나 느낌은 <b>시의 내용</b>에서 나와요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">✨</span><b>인상 깊은 표현</b>에서도 나와요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🙋</span><b>비슷한 내 경험</b>에서도 나와요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">➡️</span>다음 시간에는 <b>이야기</b>를 읽고 인물의 마음을 상상해요.</div>
-    </div>`},
+  {tag:'④ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎵</span>여러 가지 방법으로 시를 <b>낭송</b>했어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">💬</span>시의 <b>장면 · 표현 · 나의 경험</b>을 이어 생각이나 느낌을 말했어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🌈</span>친구와 나누면 시를 <b>더 깊이</b> 이해할 수 있어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -433,5 +351,6 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
+<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>
