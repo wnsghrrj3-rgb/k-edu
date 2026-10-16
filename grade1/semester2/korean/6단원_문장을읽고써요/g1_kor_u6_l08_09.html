@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,132 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 8~9차시(소단원 2 기본 — 문장을 자연스럽게 띄어 읽기 / 문제 해결 학습 모형) 13슬:
-   ① 문제 확인 2 → ② 문제 해결 방법 찾기 2 → ③ 문제 해결·일반화 7 → ④ 표현·정리 2 =====
+/* ===== 8~9차시(소단원 2 기본 — 문장을 자연스럽게 띄어 읽기, 문제 해결 학습 모형) 『국어』 191~193쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 문장을 자연스럽게 띄어 읽을 수 있다.
-   ★ 정답 로깅 7슬. 따라 읽기·무대·마무리 = 로깅 X.
-   ★ 문제 해결 학습 모형(지도서 255~257쪽) 변환:
-      문제 확인 = ① 두 슬(붙여 읽은 것과 띄어 읽은 것을 나란히) /
-      문제 해결 방법 찾기 = ② 두 슬 / 문제 해결·일반화 = ③ 일곱 슬 / 정리 = ④ 무대 + 마무리.
-      1-2 3단원에 이은 두 번째 문제 해결 모형 변환이다.
-   ★ ★ 새 판단 기준 — 정답이 하나가 아닌 수행은 「고르기」가 아니라 「견주기」로 올린다.
-      지도서 245쪽 ❺❻·254쪽·272쪽이 네 곳에서 「띄어 읽기에는 하나의 정답이 없다」고 못박는다.
-      한 곳을 정답으로 세우면 화면이 거짓말을 하고, 아무것도 세우지 않으면
-      「아무 데서나 끊어도 된다」는 오개념이 남는다.
-      풀이 = 두 읽기를 나란히 놓고 더 나은 쪽을 고르게 한다(교과서 자체가 쓰는 방식이다).
-      정답 지점은 묻지 않고 **명백히 아닌 것**만 묻는다 — 낱말 안에서 끊기·글자마다 끊기.
-   ★ 지도서 245쪽 ❺ 경계: 띄어 쓰는 곳마다 띄어 읽거나 낱말 끝에서 모두 띄어 읽지 않는다
-      → ③ 셋째·넷째 슬에서 정면으로 세웠다.
-   ★ 저작권: 교과서 191~193쪽 「소방관의 부탁」 듣기 자료 전문과 그림 지면,
-      「불이 나면∨모두의 안전을 위해…」 두 가지 띄어 읽기, 소화전 문장 ㉮㉯,
-      지도서 257쪽 듣기 자료·개·기린·개구리 세 문장, 국어활동 64~65쪽 전부 미차용.
-      자체 제재 「학교를 지키는 분의 부탁」 다섯 줄로 대체했다. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「반짝반짝」 시 본문은 옮기지 않음(교과서 186쪽), 「괜찮아 아저씨」·링링 이야기는 간추림만. 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 문제 확인', t:'두 가지로 읽어 보았어요',
-   html:`<div class="sentence">교문앞에서는뛰지말아주세요.</div>
-    <div class="sentence">교문 앞에서는<span class="vmark">∨</span>뛰지 말아 주세요.</div>
-    <div class="ka-bub">어느 쪽이 <b class="emph">더 잘 들리나요</b>? 🤔</div>`},
+  {tag:'① 문제 확인', t:'선생님께서 두 가지로 읽어 주셨어요',
+   html:`<div class="sentence">㉮ 소화전근처에는주차하면안됩니다.</div><div class="sentence">㉯ 소화전 근처에는<span class="vmark">∨</span>주차하면 안 됩니다.</div><div class="ka-bub">어느 쪽이 <b class="emph">더 자연스럽게</b> 들리나요? 🤔</div>`},
+
+  {tag:'① 문제 확인', t:'㉮와 ㉯ 가운데 더 자연스럽게 들리는 것은?', log:true, okMsg:'맞아요! ㉮는 쉬지 않고 빠르게, ㉯는 알맞게 띄어 읽었어요. 바르게 띄어 읽지 않으면 뜻을 잘못 알 수 있어요. 👍',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">㉮ 소화전근처에는주차하면안됩니다.</div></div><div class="wcard" data-ok="1"><div class="wc-word">㉯ 소화전 근처에는<span class="vmark">∨</span>주차하면 안 됩니다.</div></div></div><div class="fb"></div>`},
 
   {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
-   html:`<div class="sentence">문장을 자연스럽게 띄어 읽어 봐요.</div>
-    <div class="ka-bub">뜻이 잘 통하도록<br><b class="emph">알맞은 곳에서 쉬어</b> 읽을 거예요. 📖</div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>문장을 자연스럽게 띄어 읽어 봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">👂</span>말하는 사람이 <b>어디에서 쉬는지</b> 들어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">📖</span>뜻이 잘 통하게 <b>알맞은 곳에서</b> 쉬어 읽어요.</div></div>`},
 
-  {tag:'② 방법 찾기', t:'자연스럽게 읽으려면 이렇게 해요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">1️⃣</span>글자마다 끊어 읽지 않아요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">2️⃣</span><b>뜻이 이어지는 덩어리</b>로 묶어 읽어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">3️⃣</span>쉬는 곳은 <b>한 군데만</b> 있는 것이 아니에요.</div>
-    </div>`},
+  {tag:'② 191쪽 1번', t:'「소방관의 부탁」을 들어 봐요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>여러분, 안녕하세요. 저는 소방서에서 일하는 소방관입니다.</div><div class="read-line"><span class="rl-num">2</span>첫째, 소방서에 장난 전화를 하면 안 됩니다.</div><div class="read-line"><span class="rl-num">3</span>둘째, 도로에 있는 소화전 근처에는 차를 대면 안 됩니다.</div><div class="read-line"><span class="rl-num">4</span>셋째, 불이 난 곳 근처에서 구경하지 말고 빠르게 대피해야 합니다.</div><div class="read-line"><span class="rl-num">5</span>앞으로도 우리 소방관들은 여러분의 안전을 위해 열심히 일할 것입니다.</div></div><div class="fb" id="readFb">👂 누가 어떤 부탁을 하는지 생각하며 들어 봐요.</div>`},
 
-  {tag:'② 글 읽기', t:'「학교를 지키는 분의 부탁」을 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>안녕하세요. 저는 학교를 지키는 사람이에요.</div>
-      <div class="read-line"><span class="rl-num">2</span>첫째, 교문 앞에서는 뛰지 말아 주세요.</div>
-      <div class="read-line"><span class="rl-num">3</span>둘째, 자전거는 끌고 지나가 주세요.</div>
-      <div class="read-line"><span class="rl-num">4</span>셋째, 우산을 쓸 때에는 앞이 보이게 들어 주세요.</div>
-      <div class="read-line"><span class="rl-num">5</span>여러분이 안전하게 오고 가면 좋겠어요.</div>
-    </div><div class="fb" id="readFb"></div>`},
+  {tag:'② 191쪽 2번', t:'소방관이 우리에게 한 부탁을 모두 골라요', log:true, collectMsg:'세 가지 부탁을 모두 찾았어요! 🚒',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">소방서에 장난 전화를 하지 말아 주세요</div><div class="chip" data-hit="1">소화전 근처에 차를 대지 않도록 말씀드려 주세요</div><div class="chip" data-hit="1">불이 난 곳에서 구경하지 말고 대피해 주세요</div><div class="chip" data-hit="0">소방차를 타 보러 오세요</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 견주기 하나', t:'어느 쪽이 더 자연스럽게 들릴까요?', log:true,
-   okMsg:'맞아요! 뜻이 이어지는 덩어리로 묶어 읽었어요. 👍',
-   hint:'힌트: 쉬지 않고 붙여 읽으면 뜻을 잡기 어려워요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">자전거는끌고<br>지나가주세요.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">자전거는<span class="vmark">∨</span><br>끌고 지나가 주세요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 191쪽 2번 (2)', t:'소방서에 장난 전화를 하면 안 되는 까닭은?', log:true, okMsg:'맞아요! 신고가 들어오면 소방관은 바로 출동해야 하니까요. 📞',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">정말 도움이 필요한 다른 사람들에게 소방관이 갈 수 없게 되어서</div></div><div class="wcard" data-ok="0"><div class="wc-word">전화 요금이 많이 나와서</div></div><div class="wcard" data-ok="0"><div class="wc-word">소방관이 심심해서</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 견주기 둘', t:'어느 쪽이 더 자연스럽게 들릴까요?', log:true,
-   okMsg:'맞아요! 낱말 가운데를 자르면 뜻이 끊어져요. 👍',
-   hint:'힌트: 낱말 가운데에서 쉬면 무슨 말인지 알기 어려워요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">우산을 쓸 때에는<span class="vmark">∨</span><br>앞이 보이게 들어 주세요.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">우산<span class="vmark">∨</span>을 쓸 때<span class="vmark">∨</span>에는<br>앞이 보<span class="vmark">∨</span>이게 들어 주세요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 192쪽 3번 (2)', t:'두 가지 띄어 읽기를 들어 봐요',
+   html:`<div class="sentence">첫 번째: 불이 나면<span class="vmark">∨</span>모두의 안전을 위해<span class="vmark">∨</span>건물에서<span class="vmark">∨</span>멀리 떨어진 곳으로<span class="vmark">∨</span>대피해야 합니다.</div><div class="sentence">두 번째: 불이 나면<span class="vmark">∨</span>모두의 안전을 위해<span class="vmark">∨</span>건물에서 멀리 떨어진 곳으로<span class="vmark">∨</span>대피해야 합니다.</div><div class="ka-bub">두 가지 모두 <b class="emph">뜻이 통해요</b>.<br>띄어 읽는 곳은 하나로 정해져 있지 않아요. 🙂</div>`},
 
-  {tag:'③ 이상한 곳 찾기', t:'여기서 쉬면 이상해요 — 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 낱말을 자르면 뜻이 끊어져요. 🎉',
-   hint:'힌트: 낱말 가운데가 잘린 것만 골라요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">자전<span class="vmark">∨</span>거는</div>
-      <div class="chip" data-hit="0">교문 앞에서는<span class="vmark">∨</span></div>
-      <div class="chip" data-hit="1">교<span class="vmark">∨</span>문 앞에서는</div>
-      <div class="chip" data-hit="0">끌고 지나가 주세요<span class="vmark">∨</span></div>
-      <div class="chip" data-hit="1">지나<span class="vmark">∨</span>가 주세요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 192쪽 도움말', t:'문장을 자연스럽게 읽으려면 어떻게 해야 할까요?', log:true, okMsg:'맞아요! 문장의 내용을 생각하며 뜻이 잘 통하게 띄어 읽어요. 📖',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">글을 쓴 사람이 말하려는 내용을 떠올리며 뜻이 통하게 띄어 읽어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">글자마다 끊어 읽어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">띄어 쓴 곳마다 모두 쉬어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 정답은 하나일까요', t:'띄어 읽기에 대해 바르게 말한 것은?', log:true,
-   okMsg:'맞아요! 뜻이 통하면 쉬는 곳은 여럿일 수 있어요. 👍',
-   hint:'힌트: 친구와 쉬는 곳이 달라도 괜찮을까요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">쉬어 읽을 곳은<br>딱 한 군데뿐이에요.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">뜻이 잘 통하면<br>쉬는 곳은 여럿일 수 있어요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 193쪽 4번', t:'글을 한 문장씩 소리 내어 읽어 봐요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>첫째, 소방서에 장난 전화를 하면 안 됩니다.</div><div class="read-line"><span class="rl-num">2</span>신고가 들어오면 소방관은 바로 출동해야 합니다.</div><div class="read-line"><span class="rl-num">3</span>그런데 만약 그 전화가 장난이라면</div><div class="read-line"><span class="rl-num">4</span>정말 도움이 필요한 다른 사람들에게 소방관이 갈 수 없게 됩니다.</div></div><div class="fb" id="readFb">📖 뜻이 이어지는 곳까지 묶어 읽고, 문장과 문장 사이에서는 조금 더 쉬어요.</div>`},
 
-  {tag:'③ 부탁과 까닭 잇기', t:'부탁과 그 까닭을 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 까닭까지 알고 읽으면 더 잘 통해요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">부탁</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🏃</span>교문 앞에서 뛰지 않기</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🚲</span>자전거는 끌고 가기</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">☂️</span>우산을 앞이 보이게 들기</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">까닭</div>
-        <div class="match-card" data-k="C" data-pair="c">앞을 못 보면 부딪힐 수 있어서</div>
-        <div class="match-card" data-k="A" data-pair="a">차가 오는 것을 못 볼 수 있어서</div>
-        <div class="match-card" data-k="B" data-pair="b">사람이 많은 곳에서는 위험해서</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 193쪽 4번 (2)', t:'자연스럽게 띄어 읽지 않은 것은?', log:true, okMsg:'맞아요! 낱말 가운데에서 끊으면 뜻이 끊어져요. 이런 곳은 피해서 읽어요. ✂️', hint:'힌트: 낱말 한가운데에서 쉰 쪽을 찾아요.',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">신고가 들어오면<span class="vmark">∨</span>소방관은<span class="vmark">∨</span>바로 출동해야 합니다.</div></div><div class="wcard" data-ok="1"><div class="wc-word">신고가 들<span class="vmark">∨</span>어오면 소방<span class="vmark">∨</span>관은 바로 출동해야 합니다.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 쉬는 곳 고르기', t:'뜻이 잘 통하게 쉰 쪽은?', log:true,
-   okMsg:'맞아요! 「누가」와 「어떻게 한다」 사이에서 쉬었어요. 👍',
-   hint:'힌트: 「누가·무엇이」에 해당하는 말 뒤에서 조금 쉬어요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">학교를 지키는 분이<span class="vmark">∨</span><br>부탁을 했어요.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">학교를<span class="vmark">∨</span>지키는<span class="vmark">∨</span><br>분이 부탁을<span class="vmark">∨</span>했어요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 국어활동 64~65쪽', t:'「기린」 문장 — 더 자연스럽게 읽은 것은?', log:true, okMsg:'맞아요! 「청소하기도」처럼 한 덩어리인 말은 가운데에서 끊지 않아요. 🦒',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">기린은<span class="vmark">∨</span>혀로<span class="vmark">∨</span>얼굴에 붙은<span class="vmark">∨</span>벌레를<span class="vmark">∨</span>떼어 냅니다.<span class="vmark">∨</span>귓속을<span class="vmark">∨</span>청소하기도 하지요.</div></div><div class="wcard" data-ok="0"><div class="wc-word">기린은 혀로 얼굴에<span class="vmark">∨</span>붙은 벌레를<span class="vmark">∨</span>떼어 냅니다. 귓속을 청소<span class="vmark">∨</span>하기도 하지요.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 다른 글에 써 보기', t:'이 문장은 어떻게 읽으면 좋을까요?', log:true,
-   okMsg:'맞아요! 덩어리로 묶으니 뜻이 잘 통해요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">비 오는<span class="vmark">∨</span>날<span class="vmark">∨</span>에는<span class="vmark">∨</span><br>천천히<span class="vmark">∨</span>걸어요.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">비 오는 날에는<span class="vmark">∨</span><br>천천히 걸어요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 일반화하기', t:'친구와 띄어 읽은 곳이 달라요', log:true, okMsg:'맞아요! 친구에게 내 띄어 읽기를 들려주고, 친구 것도 귀 기울여 들어요. 👂',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">뜻이 잘 통하면 쉬는 곳이 달라도 괜찮아요</div></div><div class="wcard" data-ok="0"><div class="wc-word">친구가 틀렸으니 고쳐 줘요</div></div><div class="wcard" data-ok="0"><div class="wc-word">나와 같은 곳에서 쉬어야 해요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 읽어 보기', t:'소리 내어 읽어 봐요',
-   html:`<div class="stage-box">
-      📖 「학교를 지키는 분의 부탁」을 <b>한 문장씩</b> 소리 내어 읽어 봐요.<br>
-      쉬어 읽을 곳을 정해 두고 읽어요.<br>
-      <small>(친구와 쉬는 곳이 달라도 괜찮아요. 뜻이 잘 통하는지 서로 들어 봐요.)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="뜻이 잘 통하게 읽었어요! 👏">🗣️ 읽어 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
-
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">📖</span>글자마다 끊지 않고 <b>덩어리로 묶어</b> 읽어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">✂️</span><b>낱말 가운데</b>에서는 쉬지 않아요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🙂</span>쉬는 곳은 <b>여럿일 수 있어요</b>. 친구와 달라도 괜찮아요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">➡️</span>다음 시간에는 <b>이야기</b>를 읽으며 뜻을 생각해 볼 거예요.</div>
-    </div>`},
+  {tag:'④ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🚫</span>글자마다 끊거나 <b>쉬지 않고</b> 빠르게 읽지 않아요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🧩</span>뜻이 이어지는 <b>덩어리</b>로 묶어 읽어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🙂</span>띄어 읽는 곳은 <b>여러 가지</b>일 수 있어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -434,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

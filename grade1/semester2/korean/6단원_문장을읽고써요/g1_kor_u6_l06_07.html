@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,131 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 6~7차시(소단원 2 기본 — 낱말을 바르게 쓰고 읽기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
+/* ===== 6~7차시(소단원 2 기본 — 낱말을 바르게 쓰고 읽기) 『국어』 189~190쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 낱말을 바르게 쓰고 읽을 수 있다.
-   ★ 정답 로깅 7슬. 무대·마무리 = 로깅 X.
-   ★ 1-2 2단원 §4-2 「그 목록이 교과서의 선택인가, 언어의 전부인가」 적용.
-      받침이 대표 소리로 나는 낱말은 국어에 아주 많으므로 「언어의 전부」가 아니다.
-      교과서가 고른 낮·낫·낯 / 못·팥·윷 / 꽃·맡은 전부 피하고 자체 낱말로 세웠다
-      — 소리가 같은 짝 「빗·빛」, 대표 소리 낱말 「숲·옷·무릎·밭」.
-   ★ 지도서 252쪽: 음절 끝소리 규칙을 설명해 줄 필요는 없고 사례를 탐구하게 한다.
-      → 규칙 이름을 한 번도 쓰지 않고 「소리」와 「글자」 두 낱말만으로 세웠다.
-      소리는 1-2 2단원 기준을 이어 `[ ]`로 눈에 보이게 세운다.
-   ★ 오답 보기(「숩」·「옫」)가 실재하지 않는 글자임을 확인했다
-      (1-2 2단원 「오표기를 오답 보기로 쓸 때 실재 낱말인지 반드시 확인할 것」 계승).
-   ★ 지도서 253쪽 경계: 발음과 관련한 부분을 지나치게 강조해 설명하지 않는다
-      → 연음(부엌에·앞으로)은 문항으로 세우지 않고 화면 밖에 두었다.
-   ★ 저작권: 교과서 189~190쪽 낮·낫·낯, 못·팥·윷, 「꽃향기를 맡습니다」, 「같다·갔다」 말풍선,
-      지도서 253쪽 참고 자료의 부엌·앞, 국어활동 64쪽 문장 전부 미차용. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「반짝반짝」 시 본문은 옮기지 않음(교과서 186쪽), 「괜찮아 아저씨」·링링 이야기는 간추림만. 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 두 낱말', t:'소리는 같은데 글자가 달라요',
-   html:`<div class="build">
-      <div class="syl">빗</div><div class="op">·</div><div class="syl">빛</div>
-    </div>
-    <div class="ka-bub">둘 다 <b class="emph">[빋]</b>으로 소리 나요. 그런데 뜻은 아주 달라요. 🤔</div>`},
+  {tag:'① 동기 유발', t:'소리와 글자가 다른 낱말을 본 적이 있나요?',
+   html:`<div class="scene"><div class="scene-pic">🏫📋🪧</div></div><div class="ka-bub">학교 안내판이나 게시판에서<br><b class="emph">소리 나는 대로 쓰지 않은 낱말</b>을 찾아봐요. 🔎</div>`},
 
   {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
-   html:`<div class="sentence">낱말을 바르게 쓰고 읽어 봐요.</div>
-    <div class="ka-bub">소리와 글자가 <b class="emph">다른 낱말</b>을 찾아<br>바르게 써 볼 거예요. ✏️</div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>낱말을 바르게 쓰고 읽어 봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">👂</span><b>소리는 같은데</b> 글자가 다른 낱말을 살펴요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">✍️</span>뜻에 맞게 <b>바르게</b> 써요.</div></div>`},
 
-  {tag:'② 왜 그럴까요', t:'소리 나는 대로만 쓰면 이렇게 돼요',
-   html:`<div class="sentence">머리를 <b class="emph">빋</b>어요.</div>
-    <div class="ka-bub">읽는 사람이 <b>무슨 뜻인지 알기 어려워요</b>.<br>그래서 소리와 글자가 다를 때가 있어요.</div>`},
+  {tag:'② 189쪽 1번 (1)', t:'선생님께서 읽어 주시는 낱말 — 모두 [낟]',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">☀️</span><span class="pc-name">낮</span></div><div class="punct-card"><span class="pc-mark">🌾</span><span class="pc-name">낫</span></div><div class="punct-card"><span class="pc-mark">🙂</span><span class="pc-name">낯</span></div></div><div class="ka-bub">세 낱말은 모두 <b class="emph">[낟]</b>으로 소리 나요.<br>하지만 글자와 뜻은 달라요!</div>`},
 
-  {tag:'② 대표 소리', t:'받침이 이렇게 소리 날 때가 있어요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">숲</span><span class="pc-name">[숩]</span></div>
-      <div class="punct-card"><span class="pc-mark">옷</span><span class="pc-name">[옫]</span></div>
-      <div class="punct-card"><span class="pc-mark">무릎</span><span class="pc-name">[무릅]</span></div>
-    </div>
-    <div class="ka-bub">소리는 이렇게 나도 <b>글자는 그대로</b> 써요. 📖</div>`},
+  {tag:'② 189쪽 1번 (1)', t:'그림에 알맞은 낱말을 이어 봐요', log:true, matchMsg:'낮 · 낫 · 낯! 소리는 같아도 뜻이 달라요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">그림</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">☀️</span>해가 떠 있는 때</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🌾</span>풀을 베는 도구</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🙂</span>얼굴</div></div><div class="match-col"><div class="match-col-h">낱말</div><div class="match-card" data-k="B" data-pair="b">낫</div><div class="match-card" data-k="C" data-pair="c">낯</div><div class="match-card" data-k="A" data-pair="a">낮</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 알맞은 낱말', t:'머리를 가지런히 하는 물건은?', log:true,
-   okMsg:'맞아요! 머리를 빗는 물건은 「빗」이에요. 👍',
-   hint:'힌트: 소리는 같아도 뜻이 달라요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">🪮</div><div class="wc-word">빗</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">💡</div><div class="wc-word">빛</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 189쪽 1번 (2)', t:'자신이 쓴 글자가 모두 같나요?', log:true, okMsg:'맞아요! 받침이 ㅈ, ㅅ, ㅊ으로 모두 달라요. ✍️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">낱말의 글자가 모두 달라요</div></div><div class="wcard" data-ok="0"><div class="wc-word">낱말의 글자가 모두 같아요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 낱말과 소리 잇기', t:'낱말과 소리를 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 글자와 소리가 다르네요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">글자</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🌲</span>숲</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">👕</span>옷</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🦵</span>무릎</div>
-        <div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">🥬</span>밭</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">소리</div>
-        <div class="match-card" data-k="C" data-pair="c">[무릅]</div>
-        <div class="match-card" data-k="A" data-pair="a">[숩]</div>
-        <div class="match-card" data-k="D" data-pair="d">[받]</div>
-        <div class="match-card" data-k="B" data-pair="b">[옫]</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'② 189쪽 1번 (3)', t:'낱말을 소리 내어 읽으면 소리는 어떠한가요?', log:true, okMsg:'맞아요! 모두 [낟]으로 소리 나요. 👂',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">낱말의 소리는 모두 같아요</div></div><div class="wcard" data-ok="0"><div class="wc-word">낱말의 소리는 모두 달라요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 바르게 쓰기', t:'「[숩]」을 바르게 쓴 것은?', log:true,
-   okMsg:'맞아요! 소리는 [숩]이지만 글자는 「숲」이에요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">숲</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">숩</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 190쪽 2번', t:'모든 글자를 소리 나는 대로 쓰면 안 되는 까닭은?', log:true, okMsg:'맞아요! 「같다」와 「갔다」처럼 소리가 같아도 뜻이 다른 낱말을 가려 써야 해요. 💡',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">소리는 같지만 뜻이 다른 낱말을 구별할 수 없어서</div></div><div class="wcard" data-ok="0"><div class="wc-word">글씨가 예쁘지 않아서</div></div><div class="wcard" data-ok="0"><div class="wc-word">글자 수가 많아져서</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 바른 낱말 모으기', t:'바르게 쓴 낱말을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 소리 나는 대로 쓰지 않았어요. 🎉',
-   hint:'힌트: 소리 나는 대로 쓴 것은 바른 글자가 아니에요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">숲</div>
-      <div class="chip" data-hit="0">숩</div>
-      <div class="chip" data-hit="1">옷</div>
-      <div class="chip" data-hit="0">옫</div>
-      <div class="chip" data-hit="1">무릎</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 190쪽 2번 더하기', t:'[입]으로 소리 나는 두 낱말',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">👄</span><span class="pc-name">입</span></div><div class="punct-card"><span class="pc-mark">🍃</span><span class="pc-name">잎</span></div></div><div class="ka-bub">「입」과 「잎」도 소리는 같아요.<br>그림을 떠올리며 <b class="emph">받침</b>을 바르게 써요.</div>`},
 
-  {tag:'③ 문장 채우기', t:'빈칸에 알맞은 낱말은?', log:true,
-   okMsg:'맞아요! 「숲에서 새소리가 들려요.」 👍',
-   html:`<div class="sentence"><span class="punct">◯</span>에서 새소리가 들려요.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">숩</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">숲</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 190쪽 3번', t:'그림에 알맞은 낱말을 바르게 쓴 것을 이어 봐요', log:true, matchMsg:'못 · 팥 · 윷! [몯] [팓] [윧]으로 소리 나지만 글자는 달라요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">그림</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">📌</span>벽에 박는 것</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🫘</span>붉은 곡식</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🎲</span>던지는 놀이 막대</div></div><div class="match-col"><div class="match-col-h">바르게 쓴 낱말</div><div class="match-card" data-k="C" data-pair="c">윷</div><div class="match-card" data-k="A" data-pair="a">못</div><div class="match-card" data-k="B" data-pair="b">팥</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 까닭 알기', t:'소리 나는 대로만 쓰면 안 되는 까닭은?', log:true,
-   okMsg:'맞아요! 읽는 사람이 뜻을 알기 어려워져요. 📖',
-   hint:'힌트: 글자는 뜻을 전하려고 쓰는 거예요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">읽는 사람이<br>뜻을 알기 어려워서</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">글씨 쓰기가<br>힘들어서</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 190쪽 4번', t:'「(  ) 향기를 맡습니다.」 빈칸에 바르게 쓴 낱말은?', log:true, okMsg:'맞아요! [꼳]으로 소리 나도 「꽃」으로 써요. 🌸',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🌸</div><div class="wc-word">꽃</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🌸</div><div class="wc-word">꼳</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🌸</div><div class="wc-word">꼿</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 다른 낱말 찾기', t:'소리와 글자가 다른 낱말을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 받침을 잘 살펴봤어요. 🎉',
-   hint:'힌트: 소리 내어 읽어 보고 글자와 견주어 봐요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">옷</div>
-      <div class="chip" data-hit="0">나무</div>
-      <div class="chip" data-hit="1">밭</div>
-      <div class="chip" data-hit="1">무릎</div>
-      <div class="chip" data-hit="0">바다</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 190쪽 4번', t:'「꽃 향기를 (  )습니다.」 빈칸에 바르게 쓴 글자는?', log:true, okMsg:'맞아요! 냄새는 「맡다」 — 꽃 향기를 맡습니다. 👃',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">👃</div><div class="wc-word">맡</div></div><div class="wcard" data-ok="0"><div class="wc-pic">👃</div><div class="wc-word">맏</div></div><div class="wcard" data-ok="0"><div class="wc-pic">👃</div><div class="wc-word">맛</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 찾아보기', t:'우리 둘레에서 찾아 읽어 봐요',
-   html:`<div class="stage-box">
-      🔎 교실 게시판이나 복도 안내판을 살펴보고<br>
-      <b>소리와 글자가 다른 낱말</b>을 하나 찾아 소리 내어 읽어 봐요.<br>
-      <small>(찾은 낱말을 공책에 바르게 적어 보아도 좋아요.)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="잘 찾아 읽었어요! 👏">🔎 찾아봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'④ 190쪽 4번', t:'완성한 문장을 소리 내어 읽어 봐요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>꽃 향기를 맡습니다.</div></div><div class="fb" id="readFb">🔊 [꼳 향기를 맏씀니다]처럼 소리 나요. 쓸 때는 「꽃」, 「맡」을 바르게 써요.</div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🔤</span>소리는 같아도 <b>글자와 뜻</b>이 다를 때가 있어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🌲</span>받침은 소리가 달라져도 <b>글자는 그대로</b> 써요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">📖</span>바르게 써야 <b>읽는 사람이 뜻을</b> 알 수 있어요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">➡️</span>다음 시간에는 문장을 <b>자연스럽게 띄어</b> 읽어 볼 거예요.</div>
-    </div>`},
+  {tag:'⑤ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">👂</span><b>소리는 같아도</b> 글자가 다른 낱말이 있어요. (낮·낫·낯)</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">✍️</span>뜻을 정확하게 전하려면 <b>바르게</b> 써야 해요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🔎</span>주변에서 소리와 글자가 다른 낱말을 더 찾아봐요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -433,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

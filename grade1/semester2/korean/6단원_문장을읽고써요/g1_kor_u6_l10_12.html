@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,133 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 10~12차시(소단원 2 통합 — 글의 의미를 생각하며 읽기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
+/* ===== 10~12차시(소단원 2 통합 — 글의 의미를 생각하며 읽기) 『국어』 194~207쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 글의 의미를 생각하며 읽을 수 있다.
-   ★ 정답 로깅 7슬. 따라 읽기·무대·마무리 = 로깅 X.
-   ★ 3차시 한 덩이다(지도서 244쪽 「단원의 흐름」이 10~12차시를 한 묶음으로 낸다).
-      1-2 4단원 l03_05에 이은 두 번째 3차시 묶음 — 슬라이드·로깅은 다른 묶음과 같이 13슬·7로깅.
-      차시 수가 아니라 학습량으로 맞춘다.
-   ★ 지도서 258쪽이 이 차시의 띄어 읽기 원칙 셋을 명시한다 —
-      ⑴ 「누가(무엇이)」에 해당하는 말 뒤에서 조금 쉰다 ⑵ 그 말이 길면 한 번 더 쉰다
-      ⑶ 문장과 문장 사이에서는 조금 더 쉰다. 이 셋은 학습 내용 자체이므로 그대로 세웠다
-      (1-2 3단원 「바꾸면 다른 것을 가르치게 되는가」 적용).
-   ★ 8~9차시 §「견주기」 기준을 그대로 이어 간다 — 쉬는 곳을 하나로 못 박지 않고
-      명백히 뜻을 끊는 읽기만 오답으로 세웠다.
-   ★ 지도서 262쪽 경계: 「좋다」로 끝내지 않고 무엇이 어땠는지까지 → ③ 일곱째 슬.
-   ★ 저작권: 교과서 194~207쪽 「괜찮아 아저씨」 본문·그림·되풀이 대사·머리카락 수 세기,
-      207쪽 상상해 그리기 지면, 지도서 262쪽 의태어 목록 전부 미차용.
-      지도서 258·262쪽이 원작의 특징을 「같은 말의 되풀이」로 명시하므로
-      1-2 5단원 §4-4 기준대로 줄거리 골격까지 바꾸었다 — 자체 이야기 「나무 아래 의자」는
-      되풀이 없이 「아무도 앉지 않음 → 한 사람이 닦음 → 모두가 앉음」으로 흐른다.
-      인물은 이름 없이 관계어(아이·할아버지)로만 냈다. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「반짝반짝」 시 본문은 옮기지 않음(교과서 186쪽), 「괜찮아 아저씨」·링링 이야기는 간추림만. 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 이야기 만나기', t:'「나무 아래 의자」를 읽어 볼 거예요',
-   html:`<div class="scene">
-      <div class="scene-pic">🪑</div>
-      <div class="scene-say">공원 한쪽 낡은 의자</div>
-    </div>
-    <div class="ka-bub">이 의자에 <b class="emph">무슨 일</b>이 있었을까요? 🤔</div>`},
+  {tag:'① 동기 유발', t:'「괜찮아」라고 말해 본 적이 있나요?',
+   html:`<div class="scene"><div class="scene-pic">🙂👍</div></div><div class="ka-bub">일이 뜻대로 되지 않았을 때<br>「괜찮아!」 하고 밝게 받아들인 적이 있나요? 🙂</div>`},
 
   {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
-   html:`<div class="sentence">글의 뜻을 생각하며 읽어 봐요.</div>
-    <div class="ka-bub">내용을 떠올리며 읽으면<br><b class="emph">쉬어 읽을 곳</b>이 저절로 보여요. 📖</div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>글의 의미를 생각하며 읽어 봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">💇</span>아저씨의 <b>머리 모양</b>이 어떻게 달라지는지 찾아요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">📖</span>뜻이 잘 통하게 <b>자연스럽게</b> 읽어요.</div></div>`},
 
-  {tag:'② 세 가지 원칙', t:'이렇게 쉬어 읽으면 뜻이 잘 통해요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">1️⃣</span><b>누가·무엇이</b>에 해당하는 말 뒤에서 조금 쉬어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">2️⃣</span>그 말이 <b>길면</b> 한 번 더 쉬어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">3️⃣</span><b>문장과 문장 사이</b>에서는 조금 더 쉬어요.</div>
-    </div>`},
+  {tag:'② 194~205쪽 작품 읽기', t:'「괜찮아 아저씨」(김경희) 간추림 — 교과서로 함께 읽어요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>아저씨는 아침마다 세수를 하고 머리 모양을 만들어요.</div><div class="read-line"><span class="rl-num">2</span>새가, 거미가, 곰과 시소가, 토끼와 달리기가 지나갈 때마다</div><div class="read-line"><span class="rl-num">3</span>머리카락이 한 올씩 쏘옥 빠져요.</div><div class="read-line"><span class="rl-num">4</span>그래도 아저씨는 남은 머리카락으로 새 모양을 만들고 말해요.</div><div class="read-line"><span class="rl-num">5</span>“오, 괜찮은데?”</div></div><div class="fb" id="readFb">📖 그림과 글을 번갈아 보며 아저씨의 머리 모양을 살펴봐요.</div>`},
 
-  {tag:'② 이야기 읽기', t:'한 줄씩 따라 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>공원 한쪽에 낡은 의자가 있었어요.</div>
-      <div class="read-line"><span class="rl-num">2</span>비가 오는 날에는 아무도 앉지 않았어요.</div>
-      <div class="read-line"><span class="rl-num">3</span>어느 날, 지나가던 아이가 의자를 닦아 주었어요.</div>
-      <div class="read-line"><span class="rl-num">4</span>다음 날에는 할아버지가 그 의자에 앉아 책을 읽었어요.</div>
-      <div class="read-line"><span class="rl-num">5</span>이제 그 의자에는 날마다 누군가 앉아요.</div>
-    </div><div class="fb" id="readFb"></div>`},
+  {tag:'③ 206쪽 내용 알기 (1)', t:'머리카락이 빠진 까닭을 이어 봐요', log:true, matchMsg:'장면이 바뀔 때마다 머리카락이 한 올씩 빠졌어요! 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">일어난 일</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🐦</span>낮잠을 잘 때</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🕷️</span>비 오는 날</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🐻</span>놀이터에서</div><div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">🐰</span>들판에서</div></div><div class="match-col"><div class="match-col-h">머리카락이 한 올 빠진 까닭</div><div class="match-card" data-k="C" data-pair="c">곰이랑 시소를 타서</div><div class="match-card" data-k="A" data-pair="a">새들이 포르르 날아와서</div><div class="match-card" data-k="D" data-pair="d">토끼와 달리기 경주를 해서</div><div class="match-card" data-k="B" data-pair="b">거미가 머리에 매달려서</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 누가·무엇이', t:'「할아버지가 그 의자에 앉아 책을 읽었어요.」에서 <b>누가</b>에 해당하는 말은?', log:true,
-   okMsg:'맞아요! 「할아버지가」가 누가에 해당해요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">할아버지가</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">책을</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 197~205쪽', t:'머리카락이 몇 올일 때 어떤 머리 모양을 했나요?', log:true, matchMsg:'열 → 아홉 → 여덟 → 일곱 → 여섯! 한 올씩 줄어들어요. 💇',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">머리카락</div><div class="match-card" data-k="a" data-pair="A">아홉 올</div><div class="match-card" data-k="b" data-pair="B">여덟 올</div><div class="match-card" data-k="c" data-pair="C">일곱 올</div><div class="match-card" data-k="d" data-pair="D">여섯 올</div></div><div class="match-col"><div class="match-col-h">머리 모양</div><div class="match-card" data-k="D" data-pair="d">땋았어요</div><div class="match-card" data-k="B" data-pair="b">가르마를 탔어요</div><div class="match-card" data-k="A" data-pair="a">세 개씩 묶었어요</div><div class="match-card" data-k="C" data-pair="c">꼬불꼬불 말았어요</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 쉬어 읽기', t:'뜻이 잘 통하게 쉰 쪽은?', log:true,
-   okMsg:'맞아요! 「누가」 뒤에서 조금 쉬었어요. 👍',
-   hint:'힌트: 누가에 해당하는 말 뒤에서 쉬어요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">할아버지가<span class="vmark">∨</span><br>그 의자에 앉아 책을 읽었어요.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">할아버지가 그<span class="vmark">∨</span>의자에<br>앉아 책을<span class="vmark">∨</span>읽었어요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 206쪽 내용 알기 (2)', t:'아저씨가 「오, 괜찮은데?」라고 말한 까닭은?', log:true, okMsg:'맞아요! 문제가 생겨도 밝고 재치 있게 받아들이는 마음이에요. 😊',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">남은 머리카락으로 바꾼 자신의 모습이 마음에 들어서</div></div><div class="wcard" data-ok="0"><div class="wc-word">머리카락이 다시 자라서</div></div><div class="wcard" data-ok="0"><div class="wc-word">새들이 머리카락을 돌려줘서</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 차례 잇기', t:'차례와 있었던 일을 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 이야기의 차례를 알았어요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">차례</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">1️⃣</span>처음</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">2️⃣</span>가운데</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">3️⃣</span>끝</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">있었던 일</div>
-        <div class="match-card" data-k="C" data-pair="c">날마다 누군가 의자에 앉아요</div>
-        <div class="match-card" data-k="A" data-pair="a">낡은 의자에 아무도 앉지 않았어요</div>
-        <div class="match-card" data-k="B" data-pair="b">한 아이가 의자를 닦아 주었어요</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 낱말 알기', t:'머리카락을 셀 때 쓰는 말로 가장 알맞은 것은?', log:true, okMsg:'맞아요! 머리카락이나 실은 「올」이나 「가닥」으로 세요. 🧵',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">올</div></div><div class="wcard" data-ok="0"><div class="wc-word">마리</div></div><div class="wcard" data-ok="0"><div class="wc-word">그루</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 내용 알기', t:'아무도 의자에 앉지 않은 때는 언제인가요?', log:true,
-   okMsg:'맞아요! 비가 오는 날에는 앉지 않았어요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">눈이 오는 날</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">비가 오는 날</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 흉내 내는 말', t:'모양이나 움직임을 흉내 내는 말을 모두 골라요', log:true, collectMsg:'흉내 내는 말을 살려 읽으면 장면이 더 생생해져요! 🐰',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">포르르</div><div class="chip" data-hit="1">흔들흔들</div><div class="chip" data-hit="1">오르락내리락</div><div class="chip" data-hit="1">깡충깡충</div><div class="chip" data-hit="0">아저씨</div><div class="chip" data-hit="0">시소</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 문장 사이', t:'문장과 문장 사이는 어떻게 읽나요?', log:true,
-   okMsg:'맞아요! 문장 사이에서는 조금 더 쉬어요. 👍',
-   hint:'힌트: 한 문장이 끝나면 숨을 한 번 고르고 읽어요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">조금 더 쉬어<br>읽어요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">쉬지 않고 바로<br>이어 읽어요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 206쪽 자연스럽게 읽기', t:'글을 자연스럽게 읽어 봐요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>어느 마을에 괜찮아 아저씨가 살고 있었어요.</div><div class="read-line"><span class="rl-num">2</span>아저씨는 아침이면 세수를 하고 머리 모양을 만들었지요.</div><div class="read-line"><span class="rl-num">3</span>그리고 이렇게 말했죠.</div><div class="read-line"><span class="rl-num">4</span>“오, 괜찮은데?”</div></div><div class="fb" id="readFb">📖 모둠 친구와 돌아가며, 짝과 번갈아서, 혼자서 읽어 봐요.</div>`},
 
-  {tag:'③ 자연스러운 읽기', t:'자연스럽게 읽은 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 덩어리로 묶어 읽었어요. 🎉',
-   hint:'힌트: 낱말 가운데가 잘린 것은 자연스럽지 않아요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">비가 오는 날에는<span class="vmark">∨</span>아무도 앉지 않았어요.</div>
-      <div class="chip" data-hit="0">이제<span class="vmark">∨</span>그<span class="vmark">∨</span>의자<span class="vmark">∨</span>에는 날마다 누군가 앉아요.</div>
-      <div class="chip" data-hit="1">어느 날,<span class="vmark">∨</span>지나가던 아이가<span class="vmark">∨</span>의자를 닦아 주었어요.</div>
-      <div class="chip" data-hit="0">공원 한<span class="vmark">∨</span>쪽에 낡은 의<span class="vmark">∨</span>자가 있었어요.</div>
-      <div class="chip" data-hit="1">이제 그 의자에는<span class="vmark">∨</span>날마다 누군가 앉아요.</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 문장 읽기 점검하기', t:'더 자연스럽게 읽은 것은?', log:true, okMsg:'맞아요! 글자마다 끊지 않고 뜻이 통하는 덩어리로 읽었어요. 📖',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">아저씨는<span class="vmark">∨</span>아침이면<span class="vmark">∨</span>세수를 하고<span class="vmark">∨</span>머리 모양을 만들었지요.</div></div><div class="wcard" data-ok="0"><div class="wc-word">아<span class="vmark">∨</span>저<span class="vmark">∨</span>씨<span class="vmark">∨</span>는<span class="vmark">∨</span>아<span class="vmark">∨</span>침<span class="vmark">∨</span>이<span class="vmark">∨</span>면<span class="vmark">∨</span>세<span class="vmark">∨</span>수<span class="vmark">∨</span>를</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 해 주고 싶은 말', t:'의자를 닦아 준 아이에게 해 줄 말로 알맞은 것은?', log:true,
-   okMsg:'맞아요! 무엇이 어떻게 달라졌는지까지 말했어요. 👍',
-   hint:'힌트: 무엇 때문에 무엇이 좋아졌는지 담아 말해요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">잘했어요.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">네가 의자를 닦아 주어서<br>모두 앉을 수 있게 되었어.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑤ 207쪽 글과 연결하기 (1)', t:'머리카락이 다섯 올이면 어떤 모양일까요?',
+   html:`<div class="stage-box">✏️ 머리카락이 다섯 올일 때 아저씨의 머리 모양을 상상해서 그려 보세요.<br><small>친구가 상상한 모습과도 견주어 봐요.</small><br><button class="stage-do" id="stageDo" data-fb="재미있어요! 친구마다 상상한 모습이 달라요. 🎨">✏️ 그려 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 읽어 보기', t:'이야기를 소리 내어 읽어 봐요',
-   html:`<div class="stage-box">
-      📖 「나무 아래 의자」를 처음부터 끝까지 소리 내어 읽어 봐요.<br>
-      <b>누가·무엇이</b> 뒤에서 조금, <b>문장 사이</b>에서는 조금 더 쉬어요.<br>
-      <small>(짝과 한 문장씩 번갈아 읽어 보아도 좋아요.)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="뜻이 잘 통하게 읽었어요! 👏">🗣️ 읽어 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 207쪽 (3)', t:'아저씨께 해 주고 싶은 말로 알맞은 것은?', log:true, okMsg:'맞아요! 머리 모양을 보고 떠오른 생각을 문장으로 말했어요. 💌',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">아저씨, 머리 모양이 정말 멋져요!</div></div><div class="wcard" data-ok="0"><div class="wc-word">아저씨</div></div><div class="wcard" data-ok="0"><div class="wc-word">머리카락</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🔎</span><b>누가·무엇이</b> 뒤에서 조금 쉬어 읽어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">📖</span><b>문장 사이</b>에서는 조금 더 쉬어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">💬</span>생각을 말할 때는 <b>무엇이 어땠는지</b>까지 담아요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">➡️</span>다음 시간에는 <b>목소리 연극</b>을 해 볼 거예요.</div>
-    </div>`},
+  {tag:'⑤ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🖼️</span><b>글과 그림</b>을 함께 보며 내용을 알았어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🗣️</span>흉내 내는 말을 살려 <b>자연스럽게</b> 읽었어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">😊</span>「오, 괜찮은데?」처럼 <b>밝은 마음</b>을 생각했어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -435,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

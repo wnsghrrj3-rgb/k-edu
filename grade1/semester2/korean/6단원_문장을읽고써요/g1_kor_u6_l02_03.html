@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,130 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 2~3차시(소단원 1 기본 — 생각을 문장으로 나타내기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
+/* ===== 2~3차시(소단원 1 기본 — 생각을 문장으로 나타내기) 『국어』 182~185쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 생각을 문장으로 나타낼 수 있다.
-   ★ 정답 로깅 7슬. 무대·마무리 = 로깅 X.
-   ★ 화면이 그 매체를 실을 수 없으면 이름을 바꿔 붙인다(1-2 4단원 §5-3 계승).
-      교과서 182쪽은 광고 영상 시청이 전제인데 화면은 영상을 실을 수 없다.
-      「영상을 봅시다」를 흉내 내지 않고 「그림으로 살펴봐요」라고 정직하게 적었다.
-   ★ 「문제 → 해결 방법 → 자신의 생각」 세 칸 구조는 이 차시가 가르치는 내용 자체이므로
-      형식은 그대로 두고 그 위에 얹힌 소재·문장만 자체로 바꾸었다
-      (1-2 3단원 「바꾸면 다른 것을 가르치게 되는가」 적용).
-   ★ 지도서 245쪽 ❷·248쪽 경계: 맞춤법·띄어쓰기를 지나치게 강조하지 않는다 /
-      느낌 수준에 그치지 말고 의견을 구체적으로 → ③ 넷째·일곱째 슬에서 세웠다.
-   ★ 저작권: 교과서 182~185쪽 「발명보다 위대한 발견」과 발명·발견 그림, 자전거·등·가방 선 잇기,
-      말풍선 두 개, 종이 문제 상황과 예시 답안 전부 미차용. 소재(수도)·문장 전부 자체. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「반짝반짝」 시 본문은 옮기지 않음(교과서 186쪽), 「괜찮아 아저씨」·링링 이야기는 간추림만. 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 장면 만나기', t:'그림으로 살펴봐요',
-   html:`<div class="scene">
-      <div class="scene-pic">🚰</div>
-      <div class="scene-say">물이 계속 흐르고 있어요</div>
-    </div>
-    <div class="ka-bub">손을 씻는 동안 수도를 <b class="emph">잠그지 않았어요</b>. 🤔</div>`},
+  {tag:'① 동기 유발', t:'내 생각을 말로 잘 전하지 못한 적이 있나요?',
+   html:`<div class="stage-box">💭 하고 싶은 말이 있었는데 잘 전하지 못했던 때를 떠올려 보세요.<br><small>그때 어떤 말을 하고 싶었나요?</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 생각을 문장으로 나타내면 더 잘 전할 수 있어요. ✍️">💭 떠올렸어요!</button></div><div class="fb" id="stageFb"></div>`},
 
   {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
-   html:`<div class="sentence">생각을 문장으로 나타내 봐요.</div>
-    <div class="ka-bub">보고 느낀 것에서 그치지 않고<br><b class="emph">무엇을 어떻게</b> 하면 좋을지까지 써 볼 거예요. ✏️</div>`},
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>생각을 문장으로 나타내 봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🔎</span><b>문제</b>를 찾고 <b>해결 방법</b>을 생각해요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">✍️</span><b>까닭</b>을 넣어 내 생각을 문장으로 써요.</div></div>`},
 
-  {tag:'② 찾아내기', t:'없던 것을 만드는 것만 대단할까요?',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">💡</span><span class="pc-name">없던 것을<br>새로 만들기</span></div>
-      <div class="punct-card"><span class="pc-mark">🔎</span><span class="pc-name">이미 있는 것을<br>찾아내기</span></div>
-    </div>
-    <div class="ka-bub">둘 다 대단해요. 오늘은 우리 곁에서 <b>버려지고 있는 것</b>을 찾아볼 거예요.</div>`},
+  {tag:'② 182쪽 1번', t:'「발명보다 위대한 발견」을 봐요 (영상은 선생님과 함께)',
+   html:`<div class="scene"><div class="scene-pic">🚲💡👜</div></div><div class="ka-bub">우리가 일상에서 <b class="emph">낭비하고 있는 것</b>을<br>「발견」하자는 광고 영상이에요.<br>사람들이 무엇을 발견했는지 생각하며 봐요. 👀</div>`},
 
-  {tag:'② 세 칸으로 쓰기', t:'생각은 이렇게 세 칸으로 써요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">❓</span><span class="pc-name">문제</span></div>
-      <div class="punct-card"><span class="pc-mark">🛠️</span><span class="pc-name">해결 방법</span></div>
-      <div class="punct-card"><span class="pc-mark">💬</span><span class="pc-name">자신의 생각</span></div>
-    </div>
-    <div class="ka-bub">세 칸을 이어 붙이면 <b>생각이 잘 드러나는 문장</b>이 돼요.</div>`},
+  {tag:'② 182쪽 2번', t:'발명과 발견',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">🔦</span><span class="pc-name">발명 — 없던 것을 새로 만들어 내요</span></div><div class="punct-card"><span class="pc-mark">🔎</span><span class="pc-name">발견 — 있던 것을 새롭게 찾아내요</span></div></div><div class="ka-bub">「밤에도 책을 편하게 읽고 싶어.」 하고 전등을 만든 것은 <b class="emph">발명</b>,<br>이미 있는 전등을 <b class="emph">아껴 쓸 방법을 찾는 것</b>은 발견이에요.</div>`},
 
-  {tag:'③ 문제 찾기', t:'어떤 문제가 있나요?', log:true,
-   okMsg:'맞아요! 쓰지 않는데도 물이 흐르고 있어요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">쓰지 않는데도<br>물이 흐르고 있어요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">수도가<br>고장 났어요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 182쪽 2번', t:'「발견」의 뜻으로 알맞은 것은?', log:true, okMsg:'맞아요! 발견은 있던 것을 새로 알아차리는 거예요. 🔎',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">이미 있던 것을 새롭게 찾아내는 것</div></div><div class="wcard" data-ok="0"><div class="wc-word">없던 물건을 새로 만들어 내는 것</div></div><div class="wcard" data-ok="0"><div class="wc-word">물건을 버리는 것</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 해결 방법', t:'해결 방법으로 알맞은 것은?', log:true,
-   okMsg:'맞아요! 비누칠하는 동안 잠그면 돼요. 👍',
-   hint:'힌트: 지금 바로 할 수 있는 일을 골라요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">손을 씻지 않아요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">비누칠을 하는 동안<br>수도를 잠가요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 183쪽 3번', t:'영상에서 사람들이 발견한 것으로 나온 물건을 모두 골라요', log:true, collectMsg:'자전거 · 전등 · 천 가방! 가까이 있는 것을 다시 보니 아낄 방법이 보여요. 🌱',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">🚲 자전거</div><div class="chip" data-hit="1">💡 전등</div><div class="chip" data-hit="1">👜 천 가방</div><div class="chip" data-hit="0">📺 텔레비전</div><div class="chip" data-hit="0">🚗 자동차</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 생각 문장 모으기', t:'생각이 잘 드러난 문장을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 무엇을 왜 하자는지가 담겨 있어요. 🎉',
-   hint:'힌트: 무엇을 어떻게 하자는지 알 수 있는 문장만 골라요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">비누칠할 때는 수도를 잠그면 좋겠어요</div>
-      <div class="chip" data-hit="0">그냥 그래요</div>
-      <div class="chip" data-hit="1">물을 아껴 쓰면 좋겠어요</div>
-      <div class="chip" data-hit="0">이상해요</div>
-      <div class="chip" data-hit="1">손을 다 씻고 수도를 꼭 잠그면 좋겠어요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 183쪽 4번', t:'영상을 보고 떠올린 생각을 문장으로 말한 것은?', log:true, okMsg:'맞아요! 느낌에서 한 걸음 더 나아가 무엇을 할지 말했어요. 🚶', hint:'힌트: 무엇을 어떻게 하겠다는 생각이 들어 있는 것을 골라요.',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">가까운 거리는 차를 타지 않고 걸어가야겠다고 생각했어</div></div><div class="wcard" data-ok="0"><div class="wc-word">좋았어</div></div><div class="wcard" data-ok="0"><div class="wc-word">영상이 짧았어</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 한 걸음 더', t:'느낌에서 한 걸음 더 나아간 문장은?', log:true,
-   okMsg:'맞아요! 왜 그런지까지 담아 썼어요. 👍',
-   hint:'힌트: 까닭이 들어 있는 문장을 골라요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">아까워요.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">쓰지 않는 물이 흘러가니까<br>수도를 잠그면 좋겠어요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 184쪽 5번 (1)', t:'그림 속에 어떤 문제가 있나요?', log:true, okMsg:'맞아요! 아직 쓸 수 있는 종이를 버리려고 해요. 📄',
+   html:`<div class="scene"><div class="scene-pic">📄🗑️👦</div></div><div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">종이를 더 쓸 수 있는데 버리려고 해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">종이가 너무 작아요</div></div><div class="wcard" data-ok="0"><div class="wc-word">휴지통이 비어 있어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 문제와 방법 잇기', t:'문제와 해결 방법을 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 문제마다 방법이 달라요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">문제</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">💡</span>빈 교실에 불이 켜져 있어요</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🍚</span>먹지 못할 만큼 많이 받았어요</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">✏️</span>쓸 수 있는 연필을 버려요</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">해결 방법</div>
-        <div class="match-card" data-k="C" data-pair="c">짧아진 연필은 깍지에 끼워 써요</div>
-        <div class="match-card" data-k="A" data-pair="a">마지막에 나가는 사람이 불을 꺼요</div>
-        <div class="match-card" data-k="B" data-pair="b">먹을 만큼만 담아요</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'④ 184쪽 5번 (2)', t:'종이를 버리려는 친구가 어떻게 하면 좋을까요?', log:true, okMsg:'맞아요! 종이의 뒷면이나 빈 부분을 쓰면 아낄 수 있어요. ♻️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">종이의 빈 부분을 더 써요</div></div><div class="wcard" data-ok="0"><div class="wc-word">종이를 아예 쓰지 않아요</div></div><div class="wcard" data-ok="0"><div class="wc-word">종이를 더 많이 꺼내요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 우리 곁에서 찾기', t:'아직 쓸 수 있는데 버려지는 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 잘 살펴보면 곁에 많아요. 🎉',
-   hint:'힌트: 아직 쓸 수 있는 것만 골라요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">한 면만 쓴 도화지</div>
-      <div class="chip" data-hit="0">다 쓴 물감 통</div>
-      <div class="chip" data-hit="1">짧아진 색연필</div>
-      <div class="chip" data-hit="1">한 장 남은 공책</div>
-      <div class="chip" data-hit="0">부러진 가위</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 185쪽 5번 (3) 보기', t:'생각을 문장으로 쓰는 세 칸',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">❓</span><span class="pc-name">문제</span></div><div class="punct-card"><span class="pc-mark">🔧</span><span class="pc-name">해결 방법</span></div><div class="punct-card"><span class="pc-mark">💭</span><span class="pc-name">자신의 생각</span></div></div><div class="read-lines"><div class="read-line"><span class="rl-num">1</span>문제: 더 쓸 수 있는 종이를 버리려고 해요.</div><div class="read-line"><span class="rl-num">2</span>해결 방법: 종이의 뒷면을 써요.</div><div class="read-line"><span class="rl-num">3</span>자신의 생각: 아직 더 쓸 수 있으니까 종이의 뒷면도 쓰면 좋겠어요.</div></div><div class="fb" id="readFb">🔊 세 칸을 차례대로 읽어 봐요.</div>`},
 
-  {tag:'③ 빠뜨리지 않기', t:'생각을 문장으로 쓸 때 꼭 넣어야 하는 것은?', log:true,
-   okMsg:'맞아요! 왜 그렇게 생각했는지가 있어야 잘 통해요. 👍',
-   hint:'힌트: 글씨를 예쁘게 쓰는 일과는 달라요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">왜 그렇게 생각했는지</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">누구보다 긴 문장</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 185쪽 5번 (3)', t:'칸에 알맞은 내용을 이어 봐요', log:true, matchMsg:'문제 → 해결 방법 → 자신의 생각! 까닭이 들어가면 생각이 잘 전해져요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">칸</div><div class="match-card" data-k="a" data-pair="A">문제</div><div class="match-card" data-k="b" data-pair="B">해결 방법</div><div class="match-card" data-k="c" data-pair="C">자신의 생각</div></div><div class="match-col"><div class="match-col-h">쓸 내용</div><div class="match-card" data-k="C" data-pair="c">종이를 버리지 말고 빈 부분을 찾아 더 쓰면 좋겠어요.</div><div class="match-card" data-k="A" data-pair="a">더 쓸 수 있는 종이를 버리려고 해요.</div><div class="match-card" data-k="B" data-pair="b">종이의 빈 부분을 더 써요.</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'④ 써 보기', t:'내 생각을 세 칸으로 말해 봐요',
-   html:`<div class="stage-box">
-      ✏️ 우리 반에서 아직 쓸 수 있는데 버려지는 것을 하나 떠올려<br>
-      <b>문제 → 해결 방법 → 자신의 생각</b> 차례로 말해 봐요.<br>
-      <small>(공책에 세 줄로 적어 보아도 좋아요. 글씨보다 생각이 먼저예요.)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="생각이 잘 드러나게 말했어요! 👏">🗣️ 말해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 185쪽 6번', t:'교실에서 뛰는 친구를 보았어요. 자신의 생각을 알맞게 쓴 것은?', log:true, okMsg:'맞아요! 무엇을 어떻게 하면 좋을지와 까닭이 함께 있어요. 🚶', hint:'힌트: 「~니까 ~면 좋겠어요」 틀을 찾아봐요.',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">부딪혀 다칠 수 있으니까 교실에서는 걸어 다니면 좋겠어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">뛰지 마</div></div><div class="wcard" data-ok="0"><div class="wc-word">교실이 좁아요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🔎</span>곁에서 <b>버려지는 것</b>을 찾아보았어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">✏️</span>생각은 <b>문제·해결 방법·자신의 생각</b> 세 칸으로 써요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">💬</span><b>왜 그렇게 생각했는지</b>까지 넣어요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">➡️</span>다음 시간에는 <b>시</b>를 읽고 생각을 나타내 볼 거예요.</div>
-    </div>`},
+  {tag:'⑤ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">❓</span>먼저 <b>문제</b>를 찾아요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🔧</span>할 수 있는 <b>해결 방법</b>을 생각해요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">💭</span><b>까닭</b>을 넣어 자신의 생각을 문장으로 써요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -432,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

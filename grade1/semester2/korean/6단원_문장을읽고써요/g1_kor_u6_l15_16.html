@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -135,145 +134,55 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 
 <script>
 const LESSON_ID='g1_2_kor_u6_l15_16_v1';
-const LESSON_MAX=70;
+const LESSON_MAX=90;
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 15~16차시(마무리 — 정리하기 · 기초 다지기 · 글씨 쓰기) 13슬:
-   ① 만나기 1 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 3 =====
+/* ===== 15~16차시(실천 — 단원 마무리하기, 정리 · 기초 다지기) 『국어』 210~213쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 배운 내용을 마무리할 수 있다.
-   ★ 정답 로깅 7슬. 글씨 쓰기·자기 점검·마무리 = 로깅 X.
-   ★ 자음자 이름(지읒·티읕 …)은 한글이 정한 것이므로 「언어의 전부」다
-      (1-2 2단원 §4-2 기준). 낱자 자체는 그대로 쓰되 교과서가 고른 묶음(ㅊ·ㅋ·ㅍ·ㅎ)은 피하고
-      ㅈ·ㅌ 두 자로 자체 재구성했다.
-   ★ 지도서 268쪽 경계: 쓰기 분량에 부담을 주지 않고 맞춤법·띄어쓰기를 지나치게 강조하지 않는다
-      → 글씨 쓰기는 로깅하지 않고, ③ 일곱째 슬은 형식이 아니라 내용을 묻는다.
-   ★ 지도서 238·270쪽 경계: 「좋다」 같은 단편적 표현으로 끝내지 않는다 → ③ 일곱째 슬.
-   ★ 저작권: 교과서 210~213쪽 숫·숯 / 잎·입 / 밖·박, 자음자 네 개 배열(ㅊ·ㅋ·ㅍ·ㅎ),
-      211쪽 발표 불안 이야기와 인물, 212쪽 반대말 네 쌍(들어가다·싫다·더럽다·묶다)과
-      보기 낱말 여섯, 낮·밤·토끼·거북 문장, 213쪽 글씨 쓰기 넉 줄, 270~273쪽 평가 자료
-      (공원 그림·「개미」)와 274쪽 스스로 읽기 소개 전부 미차용.
-      반대말·문장·글씨 낱말 전부 자체. */
+   ★ 정답 로깅 9슬(LESSON_MAX 90). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「반짝반짝」 시 본문은 옮기지 않음(교과서 186쪽), 「괜찮아 아저씨」·링링 이야기는 간추림만. 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 돌아보기', t:'이 단원에서 무엇을 배웠나요?',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">✏️</span><span class="pc-name">생각을<br>문장으로</span></div>
-      <div class="punct-card"><span class="pc-mark">🔤</span><span class="pc-name">낱말을<br>바르게</span></div>
-      <div class="punct-card"><span class="pc-mark">📖</span><span class="pc-name">자연스럽게<br>띄어 읽기</span></div>
-    </div>
-    <div class="ka-bub">배운 것을 하나씩 <b class="emph">확인</b>해 볼까요? 🙋</div>`},
+  {tag:'① 학습 문제', t:'배운 내용을 마무리해 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎯</span>배운 내용을 마무리해 봅시다.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">✍️</span>낱말을 <b>바르게</b> 쓰고 읽어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">📖</span>문장을 <b>자연스럽게</b> 띄어 읽어요.</div></div>`},
 
-  {tag:'② 소리와 글자', t:'소리와 글자가 다른 낱말이 있었어요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">끝</span><span class="pc-name">[끋]</span></div>
-      <div class="punct-card"><span class="pc-mark">숲</span><span class="pc-name">[숩]</span></div>
-      <div class="punct-card"><span class="pc-mark">옷</span><span class="pc-name">[옫]</span></div>
-    </div>
-    <div class="ka-bub">소리가 달라져도 <b>글자는 그대로</b> 써요. ✏️</div>`},
+  {tag:'② 210쪽 1번', t:'바르게 쓴 글자를 골라요 — 검은 덩어리 땔감', log:true, okMsg:'맞아요! [숟]으로 소리 나도 「숯」으로 써요. 🪵',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🪵</div><div class="wc-word">숯</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🪵</div><div class="wc-word">숫</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 자음자 이름', t:'자음자 이름도 소리대로 쓰지 않아요',
-   html:`<div class="build">
-      <div class="syl">ㅈ</div><div class="op">→</div><div class="syl">지</div><div class="syl">읒</div>
-    </div>
-    <div class="ka-bub">「지읃」이 아니라 <b class="emph">「지읒」</b>이에요.<br>이름 속에 그 자음자가 숨어 있어요. 🔍</div>`},
+  {tag:'② 210쪽 1번', t:'바르게 쓴 글자를 골라요 — 나뭇잎', log:true, okMsg:'맞아요! 나무의 잎은 「잎」으로 써요. 🍃',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🍃</div><div class="wc-word">잎</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🍃</div><div class="wc-word">입</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 바르게 쓴 글자', t:'바르게 쓴 글자는?', log:true,
-   okMsg:'맞아요! 소리는 [끋]이지만 글자는 「끝」이에요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">끋</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">끝</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 210쪽 1번', t:'바르게 쓴 글자를 골라요 — 창문 바깥', log:true, okMsg:'맞아요! 바깥은 「밖」으로 써요. 🪟',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🪟</div><div class="wc-word">밖</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🪟</div><div class="wc-word">박</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 자음자 이름', t:'「ㅌ」의 이름을 바르게 쓴 것은?', log:true,
-   okMsg:'맞아요! 이름 속에 「ㅌ」이 들어가요. 👍',
-   hint:'힌트: 이름의 받침 자리에 그 자음자를 넣어요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">티읕</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">티읃</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 210쪽 2번', t:'자음자의 이름을 바르게 이어 봐요', log:true, matchMsg:'이름 끝 받침에 그 자음자가 들어가요! ㅋ은 「키윽」이 아니라 「키읔」. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">자음자</div><div class="match-card" data-k="a" data-pair="A">ㅊ</div><div class="match-card" data-k="b" data-pair="B">ㅋ</div><div class="match-card" data-k="c" data-pair="C">ㅍ</div><div class="match-card" data-k="d" data-pair="D">ㅎ</div></div><div class="match-col"><div class="match-col-h">이름</div><div class="match-card" data-k="C" data-pair="c">피읖</div><div class="match-card" data-k="A" data-pair="a">치읓</div><div class="match-card" data-k="D" data-pair="d">히읗</div><div class="match-card" data-k="B" data-pair="b">키읔</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 낱말 모으기', t:'소리와 글자가 다른 낱말을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 받침을 잘 살펴봤어요. 🎉',
-   hint:'힌트: 소리 내어 읽어 보고 글자와 견주어 봐요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">끝</div>
-      <div class="chip" data-hit="0">구름</div>
-      <div class="chip" data-hit="1">숲</div>
-      <div class="chip" data-hit="1">옷</div>
-      <div class="chip" data-hit="0">나비</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 211쪽 3번', t:'링링의 이야기 (간추림)',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>발표 시간, 링링의 심장이 쿵쾅쿵쾅 뛰었어요.</div><div class="read-line"><span class="rl-num">2</span>온몸이 화끈거리고 머릿속이 하얘졌어요.</div><div class="read-line"><span class="rl-num">3</span>‘열심히 준비했는데 왜 입이 안 떨어지지?’</div><div class="read-line"><span class="rl-num">4</span>링링은 눈앞이 캄캄했어요.</div></div><div class="fb" id="readFb">📖 자연스럽게 띄어 읽어 봐요. 링링의 마음도 생각해요.</div>`},
 
-  {tag:'③ 띄어 읽기', t:'자연스럽게 띄어 읽은 쪽은?', log:true,
-   okMsg:'맞아요! 뜻이 이어지는 덩어리로 묶어 읽었어요. 👍',
-   hint:'힌트: 낱말 가운데에서는 쉬지 않아요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">우리 반 친구들이<span class="vmark">∨</span><br>교실을 함께 치웠어요.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">우리 반 친<span class="vmark">∨</span>구들이 교<span class="vmark">∨</span>실을<br>함께 치<span class="vmark">∨</span>웠어요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 211쪽 4번', t:'링링에게 해 주고 싶은 말로 알맞은 것은?', log:true, okMsg:'맞아요! 링링의 마음에 공감하며 응원하는 말을 했어요. 💪',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">링링아, 열심히 준비했으니까 걱정하지 말고 자신 있게 발표해 봐!</div></div><div class="wcard" data-ok="0"><div class="wc-word">빨리 해</div></div><div class="wcard" data-ok="0"><div class="wc-word">왜 말을 못 해?</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 반대말 잇기', t:'낱말과 반대말을 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 반대말을 잘 알았어요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">낱말</div>
-        <div class="match-card" data-k="a" data-pair="A">열다</div>
-        <div class="match-card" data-k="b" data-pair="B">무겁다</div>
-        <div class="match-card" data-k="c" data-pair="C">길다</div>
-        <div class="match-card" data-k="d" data-pair="D">앉다</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">반대말</div>
-        <div class="match-card" data-k="C" data-pair="c">짧다</div>
-        <div class="match-card" data-k="A" data-pair="a">닫다</div>
-        <div class="match-card" data-k="D" data-pair="d">서다</div>
-        <div class="match-card" data-k="B" data-pair="b">가볍다</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'④ 212쪽 기초 다지기 1번', t:'반대말을 이어 봐요', log:true, matchMsg:'들어가다↔나가다 · 싫다↔좋다 · 더럽다↔깨끗하다 · 묶다↔풀다! 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">낱말</div><div class="match-card" data-k="a" data-pair="A">들어가다</div><div class="match-card" data-k="b" data-pair="B">싫다</div><div class="match-card" data-k="c" data-pair="C">더럽다</div><div class="match-card" data-k="d" data-pair="D">묶다</div></div><div class="match-col"><div class="match-col-h">반대말</div><div class="match-card" data-k="C" data-pair="c">깨끗하다</div><div class="match-card" data-k="D" data-pair="d">풀다</div><div class="match-card" data-k="A" data-pair="a">나가다</div><div class="match-card" data-k="B" data-pair="b">좋다</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 문장 채우기', t:'빈칸에 알맞은 말은?', log:true,
-   okMsg:'맞아요! 책이 가득하니 가방이 무거워요. 👍',
-   html:`<div class="sentence">가방에 책이 가득해서 <span class="punct">◯◯◯</span>.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">가볍다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">무겁다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 212쪽 2번', t:'「낮은 밝다. 밤은 (  ).」 빈칸에 알맞은 말은?', log:true, okMsg:'맞아요! 밝다의 반대말은 어둡다. 🌙',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🌙</div><div class="wc-word">어둡다</div></div><div class="wcard" data-ok="0"><div class="wc-pic">☀️</div><div class="wc-word">밝다</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🐢</div><div class="wc-word">느리다</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 생각 나타내기', t:'생각을 문장으로 잘 나타낸 것은?', log:true,
-   okMsg:'맞아요! 무엇이 어땠는지가 잘 드러나요. 👍',
-   hint:'힌트: 무엇 때문에 그렇게 생각했는지 담아요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">친구들이 함께 치워서<br>교실이 금방 깨끗해졌어요.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">좋아요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 212쪽 2번', t:'「토끼는 빠르다. 하지만 거북은 (  ).」', log:true, okMsg:'맞아요! 빠르다의 반대말은 느리다. 🐢',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🐢</div><div class="wc-word">느리다</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🐇</div><div class="wc-word">빠르다</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🧼</div><div class="wc-word">깨끗하다</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 글씨 쓰기', t:'또박또박 따라 써 봐요',
-   html:`<div class="trace-wrap">
-      <div class="trace-row"><div class="trace-pic">✏️</div>
-        <div class="trace-word"><div class="trace-cell">문</div><div class="trace-cell">장</div></div>
-      </div>
-      <div class="trace-row"><div class="trace-pic">💬</div>
-        <div class="trace-word"><div class="trace-cell">생</div><div class="trace-cell">각</div></div>
-      </div>
-      <div class="trace-row"><div class="trace-pic">📖</div>
-        <div class="trace-word"><div class="trace-cell">읽</div><div class="trace-cell">기</div></div>
-      </div>
-    </div><div class="fb" id="traceFb">글자의 모양을 살피며 써 봐요.</div>`},
+  {tag:'④ 기초 다지기', t:'「들어가다」의 반대말로 알맞은 것은?', log:true, okMsg:'맞아요! 「안」을 붙이는 대신 반대말 「나가다」를 써요. 🚪', hint:'힌트: 「안」을 붙인 말은 반대말이 아니에요.',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">나가다</div></div><div class="wcard" data-ok="0"><div class="wc-word">안 들어가다</div></div><div class="wcard" data-ok="0"><div class="wc-word">들어오다가</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 스스로 점검', t:'스스로 확인해 봐요',
-   html:`<div class="selfcheck">
-      <div class="sc-row"><span class="sc-box">✓</span>내 생각을 까닭과 함께 문장으로 쓸 수 있어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>소리와 글자가 다른 낱말을 바르게 쓸 수 있어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>문장을 뜻이 통하게 띄어 읽을 수 있어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>친구와 쉬는 곳이 달라도 괜찮다는 것을 알아요.</div>
-    </div>
-    <div class="fb">아직 어려운 것이 있으면 그 차시를 다시 열어 봐요. 🙋</div>`},
+  {tag:'⑤ 213쪽 3번 글씨 쓰기', t:'글씨를 바르게 따라 써 봐요 (글자를 눌러요)',
+   html:`<div class="trace-wrap"><div class="trace-row"><span class="trace-pic">🔎</span><div class="trace-word"><span class="trace-cell">발</span><span class="trace-cell">견</span></div></div><div class="trace-row"><span class="trace-pic">🔢</span><div class="trace-word"><span class="trace-cell">숫</span><span class="trace-cell">자</span></div></div><div class="trace-row"><span class="trace-pic">👫</span><div class="trace-word"><span class="trace-cell">여</span><span class="trace-cell">럿</span><span class="trace-cell">이</span></div></div><div class="trace-row"><span class="trace-pic">✨</span><div class="trace-word"><span class="trace-cell">별</span><span class="trace-cell">자</span><span class="trace-cell">리</span></div></div></div><div class="fb" id="traceFb">또박또박 따라 써 봐요.</div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 단원을 마쳤어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">✏️</span>생각은 <b>까닭과 함께</b> 문장으로 나타내요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🔤</span>소리가 달라져도 <b>글자는 바르게</b> 써요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">📖</span>뜻이 통하게 <b>덩어리로 묶어</b> 읽어요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">🎉</span>이제 읽고 쓰는 일이 한결 <b>즐거워질</b> 거예요!</div>
-    </div>`},
+  {tag:'⑤ 스스로 점검', t:'이 단원에서 나는 어떠했나요?', hint:'힌트: 평소 내 모습을 떠올리며 해당하는 것을 눌러요. 정답은 없어요!',
+   html:`<div class="selfcheck"><div class="sc-row"><span class="sc-box">✓</span>내 생각을 <b>까닭</b>과 함께 문장으로 쓸 수 있어요.</div><div class="sc-row"><span class="sc-box">✓</span>소리와 글자가 다른 낱말을 <b>바르게</b> 쓸 수 있어요.</div><div class="sc-row"><span class="sc-box">✓</span>뜻이 잘 통하게 <b>자연스럽게 띄어 읽을</b> 수 있어요.</div></div><div class="fb">스스로 확인해요. 친구의 다른 읽기도 존중해요! 🌱</div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -442,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>
