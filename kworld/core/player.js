@@ -56,7 +56,7 @@ export class Player {
     this.moving = L > 0.01;
     if (this.moving) {
       if (L > 1) { mx /= L; mz /= L; }
-      const speed = ((k.ShiftLeft || k.ShiftRight) ? 6.5 : 3.6) * this.speedMul * (this.inWater ? 0.5 : 1);
+      const speed = ((k.ShiftLeft || k.ShiftRight || Math.hypot(this.joy.x, this.joy.y) > 0.93) ? 6.5 : 3.6) * this.speedMul * (this.inWater ? 0.5 : 1);
       const fwd = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw)), right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
       const step = fwd.multiplyScalar(mz * speed * dt).addScaledVector(right, mx * speed * dt);
       const p = this.pos.clone();
