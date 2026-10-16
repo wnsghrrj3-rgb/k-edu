@@ -15,6 +15,7 @@ import { Danger } from './danger.js';
 import { Story } from './story.js';
 import { Life } from './life.js';
 import { Pulse } from './pulse.js';
+import { Spark } from './spark.js';
 
 const J = (u) => fetch(u).then((r) => r.json());
 
@@ -45,6 +46,8 @@ export class Game {
     if (this.world.life) this.life = new Life(this, await J(this.base + this.world.life));
     // 긴장·설렘 층: 쫓김·급한 일·살아 있는 마을·숨은 것 — world.pulse 가 있을 때만(10-16)
     if (this.world.pulse && new URLSearchParams(location.search).get('pulse') !== '0') this.pulse = new Pulse(this, this.world.pulse);
+    // 설렘·반응 층: 마을의 눈·칭호·돌발·밤의 설렘 — world.spark 가 있을 때만(10-16)
+    if (this.world.spark && new URLSearchParams(location.search).get('spark') !== '0') this.spark = new Spark(this, this.world.spark);
     // 시대별 장식 코드는 world.json 이 가리킬 때만(코어는 시대 이름을 모른다)
     if (this.world.landscape) { const { buildLandscape } = await import(new URL(this.base + this.world.landscape, location.href).href); buildLandscape(this.e, this.quality(), { treeModel: this.world.treeModel ? new URL(this.base + this.world.treeModel, location.href).href : null }); }
     // 보이는 것: 절차 하늘·햇빛 먼지·물결. ?fx=0 이면 끔. 후처리(블룸·색보정·SMAA)·그림자 4096·햇빛 먼지는 **?post=1 일 때만**(09-16 준호: 기본이 굼떴음 → 무거운 층은 켜서 보는 것으로), ?ao=1 로 구석 어둠 추가
@@ -167,7 +170,7 @@ export class Game {
   take(k) { const i = this.inventory.indexOf(k); if (i >= 0) this.inventory.splice(i, 1); }
   give(k) { this.inventory.push(k); this.renderInv(); }
   flag(f) { if (Array.isArray(f)) { for (const x of f) this.flag(x); return; } if (!f || this.flags.has(f)) return; this.save?.touch();
-    if (/^act\d+$/.test(f)) this.checkpoint = { act: f, flags: [...this.flags, f], inventory: [...this.inventory] };   /* 체크포인트: ACT 시작마다(쓰러지면 여기로) */ this.flags.add(f); this.checkGate(); if (this.story) this.story.onFlag(); if (this.life) this.life.onFlag(); if (this.pulse) this.pulse.onFlag(); }
+    if (/^act\d+$/.test(f)) this.checkpoint = { act: f, flags: [...this.flags, f], inventory: [...this.inventory] };   /* 체크포인트: ACT 시작마다(쓰러지면 여기로) */ this.flags.add(f); this.checkGate(); if (this.story) this.story.onFlag(); if (this.life) this.life.onFlag(); if (this.pulse) this.pulse.onFlag(); if (this.spark) this.spark.onFlag(); }
   /** 대상 정의: kinds(종류별 덮어쓰기) → rename(깃발에 따라 이름·동사·규칙이 바뀜, 첫 맞는 것) */
   defFor(t) {
     let d = this.items.targets[t.type]; if (!d) return null;
@@ -201,6 +204,7 @@ export class Game {
     this.tickTimers();
     if (this.danger) this.danger.tick(dt);
     if (this.pulse) this.pulse.tick(dt);
+    if (this.spark) this.spark.tick(dt);
     // 미션 나침반 + 힌트 시간
     this.updateMission(false);
     // 불꽃
