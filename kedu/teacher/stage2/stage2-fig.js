@@ -1223,15 +1223,16 @@
     return '<div class="fig-vert fig-pvt" data-vals="' + rows.map(r => r.v).join(',') + '" data-cols="' + cols + '"' + (diff >= 0 ? ' data-diff="' + BN_PLACE[diff] + '"' : '') + '>' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + '<div class="pv-wrap">' + h + '</div>' + foot + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
   }
   function stepLabel(n) { const a = Math.abs(n); const t = a % 1e12 === 0 ? a / 1e12 + '조' : a % 1e8 === 0 ? a / 1e8 + '억' : a % 1e4 === 0 ? a / 1e4 + '만' : String(a); return (n < 0 ? '−' : '+') + t; }
+  // 138차: bare — 문제 그림용(뛰는 크기 글자·자리 강조·알림 줄 없이 화살표만 — 「몇씩 뛰어 세었나요」의 답을 그리지 않게)
   function jump(o) {
     const st = Number(String(o.start).replace(/\D/g, '')), step = Number(o.step), n = Math.max(2, o.n | 0); const seq = Array.from({ length: n }, (_, i) => st + step * i);
     const lead = Math.floor(Math.log10(Math.abs(step)) + 1e-9); const pow = Math.pow(10, lead); const clean = Math.abs(step) % pow === 0 && Math.abs(step) / pow < 10;
     const dAt = (v) => { const d = String(v); return +(d[d.length - 1 - lead] || 0); }; const carry = seq.some((v, i) => i && dAt(v) - dAt(seq[i - 1]) !== step / pow); // 받아올림·내림이 끼면 「씩 커져요」 알림·칸 표시를 안 한다
     const qs = [].concat(o.q == null ? [] : o.q);
-    const box = (v, i) => { if (qs.indexOf(i) >= 0) return '<span class="jp-b q">?</span>'; const d = String(v); if (!clean || carry || o.hiDigit === false) return '<span class="jp-b">' + d + '</span>';
+    const box = (v, i) => { if (qs.indexOf(i) >= 0) return '<span class="jp-b q">?</span>'; const d = String(v); if (!clean || carry || o.hiDigit === false || o.bare) return '<span class="jp-b">' + d + '</span>';
       const at = d.length - 1 - lead; return '<span class="jp-b">' + esc(d.slice(0, at)) + '<i>' + esc(d[at]) + '</i>' + esc(d.slice(at + 1)) + '</span>'; };
-    let h = '<div class="jp">'; seq.forEach((v, i) => { if (i) h += '<span class="jp-a"><em>' + stepLabel(step) + '</em>→</span>'; h += box(v, i); }); h += '</div>';
-    return '<div class="fig-vert fig-jump" data-seq="' + seq.join(',') + '" data-step="' + step + '">' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + h + (clean && !carry && o.hiDigit !== false ? '<div class="jp-key"><i></i>' + BN_PLACE[lead] + '의 자리가 ' + (step > 0 ? '1씩 커져요' : '1씩 작아져요').replace('1씩', (Math.abs(step) / pow) + '씩') + '</div>' : '') + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
+    let h = '<div class="jp">'; seq.forEach((v, i) => { if (i) h += '<span class="jp-a">' + (o.bare ? '' : '<em>' + stepLabel(step) + '</em>') + '→</span>'; h += box(v, i); }); h += '</div>';
+    return '<div class="fig-vert fig-jump" data-seq="' + seq.join(',') + '" data-step="' + step + '">' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + h + (clean && !carry && o.hiDigit !== false && !o.bare ? '<div class="jp-key"><i></i>' + BN_PLACE[lead] + '의 자리가 ' + (step > 0 ? '1씩 커져요' : '1씩 작아져요').replace('1씩', (Math.abs(step) / pow) + '씩') + '</div>' : '') + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
   }
   function notes(o) { // items [{v:1000, n:10}] — 지폐(1000 이상)·동전 · 합계
     const it = o.items || []; const tot = it.reduce((a, r) => a + r.v * r.n, 0);
