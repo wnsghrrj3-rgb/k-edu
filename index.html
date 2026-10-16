@@ -720,6 +720,13 @@ let currentProfile = null; // student_profiles row
   }
   if(savedSemester) semester = +savedSemester;
 
+  // 학급코드 기억(2026-10-16 준호): 한 번 입장한 기기는 다음부터 코드를 안 친다. 코드만 — 이름은 안 남긴다(#42 원칙).
+  try {
+    const savedCode = localStorage.getItem('kedu_class_code');
+    const ci = document.getElementById('entry-class-code');
+    if(savedCode && !ci.value) ci.value = savedCode;
+  } catch(e){}
+
   // 닉네임 유무 → 동의 체크·버튼 라벨 동기화
   document.getElementById('entry-nickname').addEventListener('input', () => { setPinMode(null); updateEntryBtn(); });
   document.getElementById('entry-class-code').addEventListener('input', () => { setPinMode(null); updateEntryBtn(); });
@@ -823,6 +830,7 @@ function showLoggedOutUI(){
   if(g){ showGuestUI(g); return; }
   document.getElementById('guest-area').style.display = 'none';
   document.getElementById('entry-card').classList.add('is-on');
+  try { const ci = document.getElementById('entry-class-code'); const c = localStorage.getItem('kedu_class_code'); if(c && !ci.value) ci.value = c; } catch(e){}
   updateEntryBtn();
 }
 
@@ -874,6 +882,11 @@ function setPinMode(mode){
   }
 }
 
+// 학급코드 기억 — 서버가 코드를 받아들인 뒤에만 이 기기에 남긴다(틀린 코드는 안 남김). 이름·PIN 은 절대 저장하지 않는다.
+function rememberClassCode(code){
+  try { if(code) localStorage.setItem('kedu_class_code', code); } catch(e){}
+}
+
 // =============================================
 // 학생 진입 (학급코드 + 닉네임 + 동의) — 익명 인증 후 claim_seat
 // =============================================
@@ -902,6 +915,7 @@ async function enterStudent(){
     const r = await KeduTier.enterGuest(db, code);
     btn.disabled = false; updateEntryBtn();
     if(r.status === 'ok'){
+      rememberClassCode(code);
       showGuestUI(r.guest);
       showToast((r.guest.label || code) + '에 이름 없이 입장했어요.');
     } else if(r.status === 'not_found'){
@@ -1003,6 +1017,7 @@ async function enterStudent(){
     // 학생별 동의 전(#42) — 서버가 아무것도 만들지 않았다. 익명 세션도 버리고 게스트(구경)로만 들어간다. 이름은 이 기기에도 남기지 않는다.
     if(status === 'guest_seat'){
       setPinMode(null);
+      rememberClassCode(code);
       try { await db.auth.signOut(); } catch(e){}
       currentUser = null;
       if(window.KeduTier && KeduTier.setGuest){
@@ -1014,6 +1029,7 @@ async function enterStudent(){
     }
 
     if(status === 'created' || status === 'reclaim'){
+      rememberClassCode(code);
       // 성공 — 프로필 로드 + UI 전환
       await loadProfile();
       if(currentProfile && currentProfile.profile_id){

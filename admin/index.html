@@ -72,6 +72,8 @@ button,input{font-family:inherit}
 .table-wrap{margin-bottom:0}
 .table-header{display:none}
 .table-scroll{overflow-x:auto}
+#pending-body td:last-child{position:sticky;right:0;background:#fff;box-shadow:-6px 0 8px -6px rgba(0,0,0,.15)}
+@media (max-width:700px){ .apv-btn{padding:9px 14px;font-size:14px} }
 table{width:100%;border-collapse:collapse;min-width:560px}
 th{text-align:left;padding:8px 10px;font-size:12px;font-weight:500;color:var(--sub);border-bottom:1px solid var(--line-strong);white-space:nowrap}
 td{padding:11px 10px;font-size:14px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
@@ -1290,10 +1292,24 @@ async function deleteTeacher(teacherId, btn){
 
 async function setApproval(teacherId, status, btn){
   if(status === 'rejected' && !confirm('이 교사를 반려할까요? 학급 개설·케이박스·아침활동이 잠깁니다.')) return;
-  if(btn) btn.disabled = true;
-  const { error } = await db.rpc('admin_set_teacher_approval', { p_teacher_id: teacherId, p_status: status });
-  if(error){ showToast('처리 실패: ' + (error.message || '')); if(btn) btn.disabled = false; return; }
-  showToast(status === 'approved' ? '승인했어요. 이 교사는 바로 학급을 만들 수 있어요.' : '반려했어요.');
+  if(btn){ btn.disabled = true; btn.dataset.label = btn.textContent; btn.textContent = '처리 중…'; }
+  showToast(status === 'approved' ? '승인하는 중…' : '처리하는 중…');
+  const restore = () => { if(btn){ btn.disabled = false; btn.textContent = btn.dataset.label || btn.textContent; } };
+  let data, error;
+  try { ({ data, error } = await db.rpc('admin_set_teacher_approval', { p_teacher_id: teacherId, p_status: status })); }
+  catch(e){ error = e; }
+  if(error){ showToast('❌ 처리 실패: ' + (error.message || error)); restore(); return; }
+  // v2(#58)면 서버가 결과를 돌려준다. void(#23)면 재조회로 대조 — 「눌렀는데 아무 일도 없음」을 말로 바꾼다.
+  let after = data && typeof data === 'object' ? data.approval : null;
+  let rows  = data && typeof data === 'object' ? data.rows : null;
+  if(after == null){
+    const list = await fetchTeacherRows();
+    const t = (list || []).find(x => x.id === teacherId);
+    after = t ? (t.approval || null) : null; rows = t ? 1 : 0;
+  }
+  if(rows === 0){ showToast('❌ 이 교사 행을 찾지 못했어요(이미 삭제됐거나 id 불일치). 새로고침 뒤 다시 해 보세요.'); restore(); await loadTeachers(); return; }
+  if(after !== status){ showToast(`❌ 서버가 되돌렸어요 (지금 상태: ${APV_LABEL[after] || after || '?'}). 내 계정의 관리자 권한(is_admin)을 확인해 주세요.`); restore(); await loadTeachers(); return; }
+  showToast(status === 'approved' ? '✅ 승인했어요. 이 교사는 바로 학급을 만들 수 있어요.' : '반려했어요.');
   await loadTeachers();
 }
 
