@@ -581,8 +581,35 @@ body.paper{background:#fff}
 .key{width:100%;border-collapse:collapse;font-size:12px}.key th,.key td{border:1px solid #999;padding:6px 8px;text-align:left;vertical-align:top}.key th{background:#F2F0EC;font-weight:400}
 .toolbar{position:fixed;top:14px;right:14px;display:flex;gap:8px;z-index:9}
 .toolbar button{background:#2E3338;color:#fff;border-radius:8px;padding:9px 15px;font-size:14px}
-@media print{.toolbar{display:none}.sheet{margin:0;box-shadow:none}@page{size:A4;margin:0}}
+@media print{.toolbar{display:none}.sheet{margin:0;box-shadow:none;height:296mm;break-after:page}.sheet:last-child{break-after:auto}.sheet.key-sheet{height:auto;min-height:0;overflow:visible}.sheet+.sheet{page-break-before:auto}html,body{margin:0;background:#fff}@page{size:A4;margin:0}}
 @media screen{body.paper{background:#8C8880;padding:22px 0}.sheet{box-shadow:0 2px 16px rgba(0,0,0,.25);margin-bottom:22px}}
+/* ---------- 2026-10-16 종이 모드 정돈 ---------- */
+/* 인쇄가 오른쪽으로 쏠리던 원인: .app 이 620px 상자라 210mm 시험지가 그 안에서 오른쪽으로 넘쳤다 → 종이 모드는 .app 상자를 푼다. */
+body.paper .app{max-width:none;padding:0;margin:0;display:block;min-height:0}
+.pbody{justify-content:flex-start;gap:9mm;padding:6mm 0 8mm}
+.pbody.loose{gap:9mm}
+.ph{align-items:flex-end;padding-bottom:9px;border-bottom:1.5px solid #1A1A1A}
+.ph h1{font-size:19px;letter-spacing:-.01em}
+.ph .meta{font-size:11.5px;color:#777;margin-top:4px}
+.ph .idbox span{border:1px solid #555;border-radius:3px;padding:5px 0;min-width:0;font-size:11px;color:#555}
+.ph .idbox span.w1{width:52px}.ph .idbox span.w2{width:52px}.ph .idbox span.w3{width:92px}
+.pq .pn{width:22px;height:22px;line-height:20px;border-color:#1A1A1A;font-size:12px}
+.pq .pstem{font-size:15.5px}
+.pq .pans{text-align:left;margin:12px 0 0 30px;font-size:14.5px}
+.pq .pans em{color:#555}
+.pq .pans .paren{min-width:72px;border-bottom:1px solid #1A1A1A}
+.pq .pans .paren.wide{min-width:110px}
+.pq .popts{gap:9px 28px}
+.pq .popts span::before{border-color:#555;color:#333}
+.pq .pmatch .lft,.pq .pmatch .rgt{border-color:#777;letter-spacing:0;padding:8px 14px;line-height:1.5;word-break:keep-all}
+.pq .pmatch .lft{min-width:88px}
+.pq .pmatch .mid{color:#999;letter-spacing:4px}
+/* 10개씩 묶음·낱개 — 글꼴마다 깨지던 ▥ 글자 대신 막대·점 그림(SVG) */
+.pq .pbund,.pq .pbpair{letter-spacing:0;font-size:16px;display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px}
+.pq .pbund em,.pq .pbpair em{margin-left:6px;font-size:11px;color:#666;font-style:normal}
+.pq .pbund svg,.pq .pbpair svg{display:block;height:34px}
+.pq .pbpair .opch{font-size:18px;margin:0 2px}
+.pfoot{bottom:9mm;font-size:9.5px;color:#999}
 
 /* ---------- v5 공책: 종이 위에 연필로 ---------- */
 body:not(.paper){background:var(--desk)}
@@ -5916,7 +5943,7 @@ function paperAsset(a){
     case 'ordinal_row': return `<div class="pord">${a.items.map((it, i) => `<span class="${a.mark === i + 1 ? 'mk' : ''}">${it}</span>`).join('')}<span style="font-size:12px;letter-spacing:0"> (왼쪽 → 오른쪽)</span></div>`;
     case 'compare_groups': return `<div class="pcmp">${a.rows.map(rw => `<div><b>${esc(rw.label)}</b> ${rw.item.repeat(rw.n)}</div>`).join('')}</div>`;
     case 'bundle_ones': { const t = Math.max(0, Number(a.tens) || 0), o = Math.max(0, Number(a.ones) || 0);
-      return `<div class="pbund">${'▥'.repeat(t)}${o ? ' ' + '●'.repeat(o) : ''}<em>(▥ = 10개씩 묶음, ● = 낱개)</em></div>`; }
+      return `<div class="pbund">${bundleSVG(t, o)}<em>(막대 = 10개씩 묶음, ● = 낱개)</em></div>`; }
     case 'hundred_chart': { const hi = (a.hi || []).map(Number);
       return `<div class="pchart" style="grid-template-columns:repeat(${a.cols || 10},1fr)">${a.cells.map(c => (c === null || c === '?') ? `<span class="blank">&nbsp;</span>` : `<span class="${hi.indexOf(Number(c)) >= 0 ? 'hi' : ''}">${esc(c)}</span>`).join('')}</div>`; }
     case 'vert': { const T = Number(a.top) || 0, Bt = Number(a.bottom) || 0; const op = a.op === '-' ? '−' : '+';
@@ -5925,8 +5952,8 @@ function paperAsset(a){
       const [t1, o1] = dg(T), [t2, o2] = dg(Bt);
       const ansCells = (a.ans === null || a.ans === undefined) ? [null, null] : (a.ans === 'hide' ? ['', ''] : dg(Number(a.ans)));
       return `<div class="pvert"><span class="none"></span><span class="h none">묶음</span><span class="h none">낱개</span><span class="none"></span>${cell(t1 || '')}${cell(o1)}<span class="none">${op}</span>${cell(t2 || '')}${cell(o2)}<div class="line"></div><span class="none"></span>${cell(ansCells[0] === 0 ? '' : ansCells[0])}${cell(ansCells[1])}</div>`; }
-    case 'bundle_pair': { const one = b => '▥'.repeat(Math.max(0, Number(b.tens) || 0)) + (Number(b.ones) ? ' ' + '●'.repeat(Number(b.ones)) : '');
-      return `<div class="pbpair">${one(a.left || {})} ${a.op === '-' ? '−' : '+'} ${one(a.right || {})}<em> (▥ = 10개씩 묶음, ● = 낱개)</em></div>`; }
+    case 'bundle_pair': { const one = b => bundleSVG(b.tens, b.ones);
+      return `<div class="pbpair">${one(a.left || {})}<span class="opch">${a.op === '-' ? '−' : '+'}</span>${one(a.right || {})}<em>(막대 = 10개씩 묶음, ● = 낱개)</em></div>`; }
     case 'pattern_row': { const bl = x => x === null || x === undefined || x === '?';
       return `<div class="ppat">${(a.items || []).map((it, i) => bl(it) ? '<span class="blank">&nbsp;</span>' : `<span class="${a.mark === i + 1 ? 'mk' : ''}">${esc(it)}</span>`).join('')}</div>`; }
     case 'pattern_grid': { const bl = x => x === null || x === undefined || x === '?'; const rows = a.rows || []; const cols = Math.max.apply(null, rows.map(r2 => r2.length));
@@ -6049,11 +6076,29 @@ function paperAsset(a){
 }
 /* 가르기·모으기 다리: 위 상자 바닥 가운데에서 아래 두 상자 위 가운데로 */
 const LEGS = '<div class="legs"><svg viewBox="0 0 132 20" aria-hidden="true"><line x1="66" y1="1" x2="29" y2="19"/><line x1="66" y1="1" x2="103" y2="19"/></svg></div>';
+/* 10개씩 묶음 막대(10칸) + 낱개 점 — 종이 모드용 작은 그림 */
+function bundleSVG(t, o){
+  t = Math.max(0, Number(t) || 0); o = Math.max(0, Number(o) || 0);
+  const RW = 13, RH = 32, GAP = 5, D = 9, DG = 4;
+  const dotCols = Math.min(o, 5), dotRows = Math.ceil(o / 5);
+  const w = t * (RW + GAP) + (o ? 8 + dotCols * (D + DG) : 0) + 2, h = RH + 2;
+  let g = '';
+  for (let i = 0; i < t; i++){ const x = 1 + i * (RW + GAP);
+    g += `<rect x="${x}" y="1" width="${RW}" height="${RH}" rx="2" fill="#fff" stroke="#1A1A1A" stroke-width="1"/>`;
+    for (let k = 1; k < 10; k++) g += `<line x1="${x}" y1="${1 + RH * k / 10}" x2="${x + RW}" y2="${1 + RH * k / 10}" stroke="#1A1A1A" stroke-width=".7"/>`; }
+  const ox = 1 + t * (RW + GAP) + (t ? 8 : 0), oy = 1 + RH - dotRows * (D + DG) + DG;
+  for (let i = 0; i < o; i++){ const r = Math.floor(i / 5), c = i % 5;
+    g += `<circle cx="${ox + c * (D + DG) + D / 2}" cy="${oy + r * (D + DG) + D / 2}" r="${D / 2}" fill="#1A1A1A"/>`; }
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true">${g}</svg>`;
+}
 function paperOptText(t){ if (typeof t !== 'object') return esc(t); const ch = t.type === 'dots' ? '●' : t.item, n = Number(t.n) || 0; return ch.repeat(n).replace(/(.{5})(?=.)/gu, '$1 '); }
 function renderPaper(){
   document.body.classList.add('paper'); const Qp = DATA.questions.map(prep); const r = rng(SEED); const circ = ['①','②','③','④'];
   const shuffled = Qp.map((q, i) => ({q, opts: q.options ? shuffle(q.options.map((o, k) => Object.assign({k}, o)), rng(mixSeed(SEED * 97 + i))) : null}));
-  const title = DATA.title.replace(/ — .*/, ''); const sub = KINDNAME(DATA.kind) + (DATA.form ? ' ' + DATA.form : '');
+  // 제목 앞에 붙은 「1학년 수학 1단원 100까지의 수 · 」 범위는 머리 작은 글에 넣고, 큰 제목은 쪽지·평가 이름만(같은 말이 두 번 보이던 것)
+  let title = DATA.title.replace(/ — .*/, ''), scopeTxt = '';
+  { const m = title.match(/^(\d학년 [^·]+?) · (.+)$/); if (m){ scopeTxt = m[1].trim(); title = m[2].trim(); } }
+  const sub = [scopeTxt || DATA.header || '1학년 수학', KINDNAME(DATA.kind) + (DATA.form ? ' ' + DATA.form : '')].filter(Boolean).join(' · ');
   const qhtml = (x, i) => { const q = x.q; let body = '';
     const paren = (label, cls) => `<div class="pans"><em>${label}</em>(<span class="paren ${cls || ''}"></span>)</div>`;
     if (q.kind === 'sa') body = paren('답', 'wide');
@@ -6062,7 +6107,7 @@ function renderPaper(){
     else if (q.kind === 'ox') body = `<div class="popts"><span data-n="O">맞아요</span><span data-n="X">틀려요</span></div><div class="popts" style="margin-top:8px">${q.reason_options.map((o, k) => `<span data-n="${circ[k]}">${esc(o.t)}</span>`).join('')}</div><div class="pans"><em>답</em>(<span class="paren"></span>)<em style="margin-left:14px">까닭</em>(<span class="paren"></span>)</div>`;
     else body = `<div class="popts">${x.opts.map((o, k) => `<span data-n="${circ[k]}">${paperOptText(o.t)}</span>`).join('')}</div>` + paren('답');
     return `<div class="pq"><span class="pn">${i + 1}</span><span class="pstem">${esc(q.stem.replace(/\n/g, ' '))}</span>${paperAsset(q.asset)}${body}</div>`; };
-  const page = (items, off, n, loose) => `<div class="sheet"><div class="ph"><div><h1>${esc(title)}</h1><div class="meta">${esc(DATA.header || '1학년 수학')} · ${sub}</div></div><div class="idbox"><span>반</span><span>번호</span></div></div><div class="pbody${loose ? ' loose' : ''}">${items.map((x, i) => qhtml(x, off + i)).join('')}</div><div class="pfoot"><span>케이학습지 · keduclass.com</span><span>${n}</span></div></div>`;
+  const page = (items, off, n, loose) => `<div class="sheet"><div class="ph"><div><h1>${esc(title)}</h1><div class="meta">${esc(sub)}</div></div><div class="idbox"><span class="w1">반</span><span class="w2">번호</span><span class="w3">이름</span></div></div><div class="pbody${loose ? ' loose' : ''}">${items.map((x, i) => qhtml(x, off + i)).join('')}</div><div class="pfoot"><span>케이학습지 · keduclass.com</span><span>${n}</span></div></div>`;
   // 교사용 정답표
   const key = `<div class="sheet key-sheet"><div class="ph"><div><h1>${esc(title)} — 교사용</h1><div class="meta">정답 · 개념 · 오답 선택지의 오개념</div></div></div>
    <table class="key"><tr><th>번호</th><th>난이도</th><th>유형</th><th>정답</th><th>개념</th><th>오답 → 오개념</th></tr>${shuffled.map((x, i) => { const q = x.q; let ans = '';
@@ -6084,7 +6129,7 @@ function renderPaper(){
     document.body.removeChild(m); return {avail, hs};
   };
   const layout = () => {
-    const {avail, hs} = measure(); const GAP = 14; // 문항 사이 최소 간격(px)
+    const {avail, hs} = measure(); const GAP = 34; // 문항 사이 간격(px) = .pbody gap 9mm
     const pages = []; let cur = [], used = 0;
     hs.forEach((h, i) => {
       const need = cur.length ? h + GAP : h;
