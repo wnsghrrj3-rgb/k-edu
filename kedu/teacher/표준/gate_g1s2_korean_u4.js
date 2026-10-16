@@ -1,10 +1,10 @@
-/* gate_g1s2_korean_u4.js — 1학년 2학기 국어 4단원 「감동을 나누어요」 케이티처 2세대 게이트 (131차, 베프 — u3 게이트 복제 + 4단원 맞춤).
+/* gate_g1s2_korean_u4.js — 1학년 2학기 국어 4단원 「감동을 나누어요」 케이티처 2세대 게이트 (131차 → 136차 v2, 베프 — u3 게이트 복제 + 4단원 맞춤).
    2세대 무대(stage2.js renderSlide)로 실렌더한다. 국어라 산수 검산 대신 원문 계승·정답 표시·선행 용어·인물 조사를 전수 본다.
    A 로드·meta(7 묶음 키 = 원문 파일 1:1 · l03 3차시 120분 + 6묶음 80분 = 600분 · grade 1 · term 2 · 학습 목표 = 원문) · B 19장 골격 · C 7요소 · D 복습 계보(g1s2_korean u3_l14 → l01 → … → l14)
    E 정답 표시(하나 고르기 = 원문 정답 · 모두 고르기 = 원문 hit 그대로(보기 3~6) · 짝 잇기 = 원문 짝 전부 · 종류 합 21) · 수준별·출구
-   F 원문 계승(개념 말풍선 = 원문 글(점검 줄 포함) · 글 판 = 원문 줄 · 따라 쓰기 장 2 = 원문 HTML trace 칸 · 기본 문제 = 원문 문항 · 정리 = 원문 정리 줄 · 잇기 그림 = 원문 짝)
+   F 원문 계승(개념 말풍선 = 원문 글(점검 줄 포함) · 글 판 = 원문 줄 · 따라 쓰기 장 1 = 원문 HTML trace 칸 · 기본 문제 = 원문 문항 · 정리 = 원문 정리 줄(l14 는 마지막 장이 점검 장 → 점검 줄) · 잇기 그림 = 원문 짝)
    G 그림 렌더 · H 중복 0 · I 실렌더 + 1인 흐름 + 모두 고르기 표시 · J extras 22 · K 발문 6장↑·분 합 = 차시 분의 0.75~1.1배 · L 선행 용어(원문도 같은 차례) · M 인물 조사 · N 저작권·차단 어휘
-   ⚠ 재료는 지도서 전 v1 — 지도서가 오면 재료·게이트 L·M 을 다시 맞춘다.
+   136차: 재료 = 지도서·교과서 기준 v2(핸드오프 g1_2_u4/v2_slides.py · k-edu 7df750f) — L·M·N 을 v2 원문에 맞춤.
    실행: NODE_PATH=<jsdom 있는 node_modules> node kedu/teacher/표준/gate_g1s2_korean_u4.js */
 'use strict';
 const fs = require('fs');
@@ -35,8 +35,8 @@ const KT2 = w.KT2, FIG = w.KT2_FIG;
 const render = (s, les, rev) => KT2.renderSlide(s, { revealed: rev, state: {}, meta: les.meta, unitTitle: UT, classNames: [] });
 const norm = (t) => String(t).replace(/\s+/g, ' ').trim();
 const nb = (t) => norm(String(t).replace(/\*\*/g, ''));
-/* 따라 쓰기 장 2(l06 s11 따옴표 · l14 s10 낱말)의 칸 — 생성기와 같은 길(trace-row 쪼개기)로 원문 HTML 에서 읽는다 */
-const TRACE_AT = { u4_l06: 11, u4_l14: 10 };
+/* 따라 쓰기 장 1(l14 s11 차례·까투리·감동·바닷물)의 칸 — 생성기와 같은 길(trace-row 쪼개기)로 원문 HTML 에서 읽는다 */
+const TRACE_AT = { u4_l14: 11 };
 const TRACE = {}; Object.keys(TRACE_AT).forEach(k => { const h = fs.readFileSync(path.join(SD, SRC[k].file), 'utf8'); TRACE[k] = h.split('<div class="trace-row">').slice(1).map(row => (row.match(/class="trace-cell">([^<]*)</g) || []).map(c => c.replace(/^class="trace-cell">/, '').replace(/<$/, '')).join('')); });
 
 console.log('═══ A. 로드 ═══');
@@ -48,7 +48,7 @@ T('meta: 1학년 2학기 · unit 4 · unit_title · covers·분 = 원문 파일 
   ok(fs.existsSync(path.join(TDIR, m.live_url)), k + ' live_url ' + m.live_url); }));
 T('l03 3차시 120분 + 묶음 여섯 80분(1·2 / 6·7 / 8·9 / 10·11 / 12·13 / 14·15) · 합 600분', () => { ok(KEYS.every(k => k === 'u4_l03' ? L[k].meta.duration_min === 120 && L[k].meta.covers === '3~5차시' : L[k].meta.duration_min === 80 && L[k].meta.covers === L[k].meta.n + '·' + (L[k].meta.n + 1) + '차시'), '분 묶음'); ok(KEYS.reduce((a, k) => a + L[k].meta.duration_min, 0) === 600, '합'); });
 T('학습 목표 7 = 원문 머리 주석 목표 · 빈 값 0', () => { const G = { u4_l01: '배울 내용을 살펴볼 수 있다.', u4_l03: '누가 무엇을 했는지 생각하며 이야기를 들을 수 있다.', u4_l06: '이야기를 읽고 일이 일어난 차례를 정리할 수 있다.', u4_l08: '만화 영화를 보고, 있었던 일을 정리할 수 있다.', u4_l10: '만화 영화를 보고 감동적인 장면에 대해 이야기 나눌 수 있다.', u4_l12: '배운 내용을 실천할 수 있다.', u4_l14: '배운 내용을 마무리할 수 있다.' }; KEYS.forEach(k => ok(L[k].meta.goal === G[k], k + ' ' + L[k].meta.goal)); });
-T('따라 쓰기 칸(원문 HTML trace) l06 따옴표 2 · l14 낱말 3 실존', () => { ok(TRACE.u4_l06.length === 2 && TRACE.u4_l06.every(Boolean), 'l06 ' + TRACE.u4_l06.join(',')); ok(TRACE.u4_l14.length === 3 && TRACE.u4_l14.every(Boolean), 'l14 ' + TRACE.u4_l14.join(',')); });
+T('따라 쓰기 칸(원문 HTML trace) l14 낱말 4(차례·까투리·감동·바닷물) 실존', () => { ok(TRACE.u4_l14.length === 4 && TRACE.u4_l14.join() === '차례,까투리,감동,바닷물', 'l14 ' + TRACE.u4_l14.join(',')); });
 
 console.log('═══ B. 19장 골격 ═══');
 KEYS.forEach(k => T(k + ' 19장 · 블록 차례 · 단계 · id', () => { const sl = L[k].slides; ok(sl.length === 19, sl.length); sl.forEach((s, i) => { ok(s.block === ORDER[i], s.id + ' ' + s.block); ok(s.stage === STAGE[i], s.id + ' stage'); ok(s.id === 's' + String(i + 1).padStart(2, '0'), s.id); }); }));
@@ -86,7 +86,10 @@ KEYS.forEach(k => T(k + ' 개념 4장 = 원문 장(말풍선·글 판·정리 �
     else if (!srcContent(sl)) { ok(TRACE_AT[k] === s.src && /따라 써/.test(sl.t || ''), s.id + ' 글 없는 원문 장은 따라 쓰기 장뿐'); ok(d.content === '따라 쓰기: ' + TRACE[k].join(' · '), s.id + ' 글씨 쓰기 낱말 ≠ 원문 ' + d.content); ok(d.fig.k === 'tools' && d.fig.items.map(x => x.name).join() === TRACE[k].join(), s.id + ' 글씨 카드 = 원문 낱말'); }
     else { ok(norm(d.content) === norm(srcContent(sl)) && d.content, s.id + ' 말풍선 원문 아님'); } });
   L[k].slides.filter(s => s.block === 'basic_problem').forEach(s => ok(s.data.question === src.slides[s.src].t, s.id + ' 문제 원문 아님'));
-  const sm = L[k].slides[16].data.points; const rc = src.slides.filter(x => x.kind === 'recap'); ok(rc.some(r => r.items.every((it, i) => sm[i] === it)), '정리 줄 원문 아님'); }));
+  const sm = L[k].slides[16].data.points; const rc = src.slides.filter(x => x.kind === 'recap');
+  /* 136차 v2: l14 원문 마지막 장 = 스스로 점검 → 정리 줄 = 원문 점검 장(s12) 줄(✓·** 뗌). 나머지는 원문 마지막 recap 장 줄 */
+  if (k === 'u4_l14') { const c = src.slides[12].extra.map(x => nb(x.replace(/^✓/, ''))); ok(c.length === 3 && c.every((it, i) => sm[i] === it), '정리 줄 ≠ 원문 점검 줄'); }
+  else { const last = src.slides[12]; ok(last.kind === 'recap' && last.items.every((it, i) => sm[i] === it), '정리 줄 ≠ 원문 마지막 정리 장'); ok(rc.length >= 1, 'recap 0'); } }));
 T('잇기 그림(link) 줄 = 같은 차시 원문 짝 잇기 그대로', () => { let n = 0; KEYS.forEach(k => L[k].slides.filter(s => s.data.fig && s.data.fig.k === 'link').forEach(s => { n++; ok(SRC[k].slides.some(x => x.kind === 'match' && JSON.stringify(x.pairs) === JSON.stringify(s.data.fig.rows)), k + ' ' + s.id); })); ok(n >= 2, 'link ' + n); });
 T('원문 문항 전부의 짝이 맞다(짝 잇기 원문 자체 확인 — 2~4짝 · 왼쪽·오른쪽 겹침 0)', () => KEYS.forEach(k => SRC[k].slides.filter(x => x.kind === 'match').forEach(x => { const n = x.pairs.length; ok(n >= 2 && n <= 4, k + ' ' + x.t); ok(new Set(x.pairs.map(p => p[0])).size === n && new Set(x.pairs.map(p => p[1])).size === n, k + ' 겹침'); })));
 T('mood(인물 말풍선) 그림 0 — 원문에 인물 말 줄이 없다', () => KEYS.forEach(k => L[k].slides.forEach(s => ok(!(s.data.fig && s.data.fig.k === 'mood'), k + ' ' + s.id))));
@@ -120,23 +123,26 @@ T('발문 분 합 — 차시 분의 0.75~1.1배(80분 60~88 · 120분 90~132) ·
 
 console.log('═══ L. 선행 용어 ═══');
 const vis = (s) => JSON.stringify(Object.assign({}, s.data, { tnote: undefined }));
-/* 131차 원문 실측 첫 등장(재료 JSON 전수): 주완·솔미·달팽이 l03 · 감나무·따옴표 l06 · 오복이·등대 l08 · 하양이·목도리 l10 · 씨앗 l14 */
-const FIRST = [['주완', 'u4_l03'], ['솔미', 'u4_l03'], ['달팽이', 'u4_l03'], ['감나무', 'u4_l06'], ['따옴표', 'u4_l06'], ['오복이', 'u4_l08'], ['등대', 'u4_l08'], ['하양이', 'u4_l10'], ['목도리', 'u4_l10'], ['씨앗', 'u4_l14']];
+/* 136차 v2 원문 실측 첫 등장(재료 JSON 전수): 주원·서윤·미역 l03 · 도둑·흥부·소금·따옴표 l06 · 아이쿠·백작 l08 · 까투리·꺼병이 l10 · 입술책 l12 · 동작을 나타내는 l14 */
+const FIRST = [['주원', 'u4_l03'], ['서윤', 'u4_l03'], ['미역', 'u4_l03'], ['도둑', 'u4_l06'], ['흥부', 'u4_l06'], ['소금', 'u4_l06'], ['따옴표', 'u4_l06'], ['아이쿠', 'u4_l08'], ['백작', 'u4_l08'], ['까투리', 'u4_l10'], ['꺼병이', 'u4_l10'], ['입술책', 'u4_l12'], ['동작을 나타내는', 'u4_l14']];
 FIRST.forEach(([w0, k0]) => T('「' + w0 + '」 학생 화면 첫 등장 ≥ ' + k0, () => { const i0 = KEYS.indexOf(k0); KEYS.forEach((k, i) => L[k].slides.forEach(s => { if (vis(s).indexOf(w0) < 0) return; ok(!(i < i0), k + ' ' + s.id + ' 에 「' + w0 + '」'); })); ok(KEYS.slice(i0).some(k => L[k].slides.some(s => vis(s).indexOf(w0) >= 0)), '「' + w0 + '」 한 번도 안 나옴'); }));
-T('선행 검사기 자체 확인 — l10 이전 장에 「하양이」를 심으면 잡는다', () => { const s = L.u4_l03.slides[3]; const keep = s.data.content; s.data.content = keep + ' 하양이'; let caught = false; try { KEYS.slice(0, 4).forEach(k => L[k].slides.forEach(x => ok(vis(x).indexOf('하양이') < 0))); } catch (e) { caught = true; } s.data.content = keep; ok(caught, '못 잡음'); });
+T('선행 검사기 자체 확인 — l10 이전 장에 「까투리」를 심으면 잡는다', () => { const s = L.u4_l03.slides[3]; const keep = s.data.content; s.data.content = keep + ' 까투리'; let caught = false; try { KEYS.slice(0, 4).forEach(k => L[k].slides.forEach(x => ok(vis(x).indexOf('까투리') < 0))); } catch (e) { caught = true; } s.data.content = keep; ok(caught, '못 잡음'); });
 T('선행 용어 첫 등장 차시 = 원문도 같은 차례(원문에서 그 앞 차시 0 · 그 차시에 있음)', () => FIRST.forEach(([w0, k0]) => { const i0 = KEYS.indexOf(k0); KEYS.forEach((k, i) => { const has = JSON.stringify(Object.assign({}, SRC[k], { file: undefined })).indexOf(w0) >= 0; if (i < i0) ok(!has, '원문 ' + k + ' 에 「' + w0 + '」'); if (i === i0) ok(has, '원문 ' + k0 + ' 에 「' + w0 + '」 없음'); }); }));
 T('「다음 시간엔」 미리보기에 다음 차시 선행 용어 0', () => KEYS.forEach((k, i) => { if (i === KEYS.length - 1) return; const nx = L[k].slides[18].data.preview; FIRST.filter(f => f[1] === KEYS[i + 1]).forEach(([w]) => ok(nx.indexOf(w) < 0, k + ' 미리보기에 「' + w + '」')); }));
 
 console.log('═══ M. 인물 ═══');
-/* 이야기 인물: 솔미·오복이·하양이·곰이·펭이(받침 없음·「이」 끝 → 이가/이는/이를/아 틀림) · 주완(받침 있음 → 주완이가 맞고 주완가/주완는/주완를/주완야 틀림). 이름 조사 틀림 0 을 학생 화면·발문·extras·재료·원문 HTML 전수 */
-T('이야기 인물 이름 조사 — 솔미·오복이·하양이·곰이·펭이+이가/이는/이를/아 0 · 주완+가/는/를/야 0 · 검사기 자체 확인', () => { const bad = /(솔미|오복이|하양이|곰이|펭이)(이가|이는|이를|아)(?![가-힣])|주완(가|는|를|야)(?![가-힣])/; ok(bad.test('솔미이가 왔다') && bad.test('하양이아!') && bad.test('오복이이는') && bad.test('곰이이가') && bad.test('주완가 왔다'), '검사기 잡기'); ok(!bad.test('솔미가 · 주완이가 · 주완이는 · 오복이는 · 하양이가 · 곰이가 · 펭이야 · 주완아'), '검사기 정상 꼴'); KEYS.forEach(k => ok(!bad.test(JSON.stringify(L[k])), k + ' 이름 조사')); ok(!bad.test(JSON.stringify(SRC)), '재료 이름 조사'); fs.readdirSync(SD).filter(f => /\.html$/.test(f)).forEach(f => ok(!bad.test(fs.readFileSync(path.join(SD, f), 'utf8')), f + ' 원문 이름 조사')); ok(/주완/.test(JSON.stringify(L.u4_l03)) && /오복이/.test(JSON.stringify(L.u4_l08)) && /하양이/.test(JSON.stringify(L.u4_l10)), '이야기 인물 실존'); });
+/* 136차 v2 이야기 인물: 아이쿠·비비·마지·두리·세찌·꽁지·곰이·펭이(받침 없음 → 이가/이는/이를/아 틀림) · 주원·서윤(받침 있음 → 주원이가 맞고 주원가/주원는/주원를/주원야 틀림). 이름 조사 틀림 0 을 학생 화면·발문·extras·재료·원문 HTML 전수 */
+T('이야기 인물 이름 조사 — 아이쿠·비비·마지·두리·세찌·꽁지·곰이·펭이+이가/이는/이를/아 0 · 주원·서윤+가/는/를/야 0 · 검사기 자체 확인', () => { const bad = /(아이쿠|비비|마지|두리|세찌|꽁지|곰이|펭이)(이가|이는|이를|아)(?![가-힣])|(주원|서윤)(가|는|를|야)(?![가-힣])/; ok(bad.test('아이쿠이가 왔다') && bad.test('꽁지아!') && bad.test('곰이이가') && bad.test('주원가 왔다') && bad.test('서윤는'), '검사기 잡기'); ok(!bad.test('아이쿠가 · 꽁지는 · 비비야 · 곰이가 · 펭이야 · 주원이가 · 서윤이는 · 주원아 · 마지막'), '검사기 정상 꼴'); KEYS.forEach(k => ok(!bad.test(JSON.stringify(L[k])), k + ' 이름 조사')); ok(!bad.test(JSON.stringify(SRC)), '재료 이름 조사'); fs.readdirSync(SD).filter(f => /\.html$/.test(f)).forEach(f => ok(!bad.test(fs.readFileSync(path.join(SD, f), 'utf8')), f + ' 원문 이름 조사')); ok(/주원/.test(JSON.stringify(L.u4_l03)) && /아이쿠/.test(JSON.stringify(L.u4_l08)) && /꽁지/.test(JSON.stringify(L.u4_l10)), '이야기 인물 실존'); });
 T('곰이·펭이 서사 = motivate 장에 두 인물', () => KEYS.forEach(k => { const m = L[k].slides[2].data; ok(m.kids.length === 2 && /곰이/.test(m.kids[0].label) && /펭이/.test(m.kids[1].label), k + ' kids'); }));
 
 console.log('═══ N. 저작권 · 차단 어휘 ═══');
-/* 4단원 재료(v1)의 제재 넷은 자기주도가 지은 짧은 글(지은이·옮긴이 0). 글 판 줄은 원문 글 판 줄과 같아야 한다(F). 지도서가 오면 작가 작품 여부를 다시 본다. */
+/* 136차 v2: 제재 「미역도 맛있어」·「소금을 만드는 맷돌」은 교과서 글을 원문 글 판으로 싣고(F 가 줄 단위로 되짚음), 만화 영화 두 편은 원문이 간추림만 싣는다. 재료에 지은이·옮긴이 표시 0. */
 const ALL = JSON.stringify(L);
-T('작가 작품 없음 — 재료에 작품 출처 표시(지은이·옮긴이) 0', () => ok(!/지은이|옮긴이/.test(JSON.stringify(SRC)), '작품 출처'));
+/* 원문 글 판 줄(F 로 원문과 같다고 확인된 줄)만 뺀 나머지 — 교사 층이 직접 쓴 글 */
+const OWN = JSON.stringify(KEYS.map(k => L[k].slides.map(s => (s.data.fig && s.data.fig.k === 'text') ? Object.assign({}, s.data, { fig: undefined }) : s.data).concat(L[k].extras)));
+T('작품 출처 표시 — 재료에 지은이·옮긴이 0', () => ok(!/지은이|옮긴이|옮김/.test(JSON.stringify(SRC)), '작품 출처'));
+T('만화 영화 두 편 = 간추림 글 판만(큰따옴표 대사 줄 0)', () => [['u4_l08', 4], ['u4_l10', 2]].forEach(([k, i]) => { const sl = SRC[k].slides[i]; ok(sl.kind === 'read' && /간추림/.test(sl.t), k + ' 간추림 장'); sl.lines.forEach(l => ok(!/[“”]/.test(l), k + ' 대사 줄 ' + l)); }));
 T('겹낫표『』 는 학생 화면에 0', () => KEYS.forEach(k => L[k].slides.forEach(s => ok(!/[『』]/.test(vis(s)), k + ' ' + s.id))));
-T('차단 어휘 0 — 박음·빵꾸·갈아엎·결로·박수(→손뼉)', () => ['박음', '빵꾸', '갈아엎', '결로', '박수'].forEach(w => ok(ALL.indexOf(w) < 0, '「' + w + '」')));
+T('차단 어휘 0 — 박음·빵꾸·갈아엎·결로(전체) · 박수(→손뼉, 원문 글 판 줄 밖 교사 층)', () => { ['박음', '빵꾸', '갈아엎', '결로'].forEach(w => ok(ALL.indexOf(w) < 0, '「' + w + '」')); ok(OWN.indexOf('박수') < 0, '교사 층 「박수」'); });
 console.log('\n게이트 g1s2 국어 u4: ' + pass + '/' + fail + ' (통과/실패)');
 process.exit(fail ? 1 : 0);
