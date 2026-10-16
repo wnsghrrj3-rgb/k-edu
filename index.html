@@ -721,11 +721,7 @@ let currentProfile = null; // student_profiles row
   if(savedSemester) semester = +savedSemester;
 
   // 학급코드 기억(2026-10-16 준호): 한 번 입장한 기기는 다음부터 코드를 안 친다. 코드만 — 이름은 안 남긴다(#42 원칙).
-  try {
-    const savedCode = localStorage.getItem('kedu_class_code');
-    const ci = document.getElementById('entry-class-code');
-    if(savedCode && !ci.value) ci.value = savedCode;
-  } catch(e){}
+  prefillEntry();
 
   // 닉네임 유무 → 동의 체크·버튼 라벨 동기화
   document.getElementById('entry-nickname').addEventListener('input', () => { setPinMode(null); updateEntryBtn(); });
@@ -830,7 +826,7 @@ function showLoggedOutUI(){
   if(g){ showGuestUI(g); return; }
   document.getElementById('guest-area').style.display = 'none';
   document.getElementById('entry-card').classList.add('is-on');
-  try { const ci = document.getElementById('entry-class-code'); const c = localStorage.getItem('kedu_class_code'); if(c && !ci.value) ci.value = c; } catch(e){}
+  prefillEntry();
   updateEntryBtn();
 }
 
@@ -883,8 +879,20 @@ function setPinMode(mode){
 }
 
 // 학급코드 기억 — 서버가 코드를 받아들인 뒤에만 이 기기에 남긴다(틀린 코드는 안 남김). 이름·PIN 은 절대 저장하지 않는다.
-function rememberClassCode(code){
-  try { if(code) localStorage.setItem('kedu_class_code', code); } catch(e){}
+function rememberClassCode(code, nick){
+  try {
+    if(code) localStorage.setItem('kedu_class_code', code);
+    // 이름은 동의 학생이 실제로 입장한 뒤에만(created/reclaim) — 동의 전·게스트는 이름을 기기에 안 남긴다(2026-09-09 원칙)
+    if(nick) localStorage.setItem('kedu_nickname', nick);
+  } catch(e){}
+}
+function prefillEntry(){
+  try {
+    const ci = document.getElementById('entry-class-code'), ni = document.getElementById('entry-nickname');
+    const c = localStorage.getItem('kedu_class_code'), n = localStorage.getItem('kedu_nickname');
+    if(c && !ci.value) ci.value = c;
+    if(n && !ni.value){ ni.removeAttribute('readonly'); ni.value = n; }
+  } catch(e){}
 }
 
 // =============================================
@@ -1029,7 +1037,7 @@ async function enterStudent(){
     }
 
     if(status === 'created' || status === 'reclaim'){
-      rememberClassCode(code);
+      rememberClassCode(code, nick);
       // 성공 — 프로필 로드 + UI 전환
       await loadProfile();
       if(currentProfile && currentProfile.profile_id){
