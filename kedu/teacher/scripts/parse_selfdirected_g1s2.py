@@ -50,6 +50,7 @@ def figs(p):
     out.extend(figs7(p))
     out.extend(figs8(p))
     out.extend(figs9(p))
+    out.extend(figs10(p))
     return out
 
 # 123차 — 2단원 「덧셈과 뺄셈(1)」 그림: steps(번호 줄 식) · eqstrip(식 띠: hole=? · res/mark=강조) · chain(색 알 묶음) · cupstack(층 쌓은 컵) · tenframe(십 배열판 a/b 두 색 + tf-lb 꼬리표). 원문 순서대로.
@@ -445,6 +446,71 @@ def figs9(p):
         if inopt(m.start()): continue
         a = m.group(1).split('|')
         found.append((m.start(), m.end(), {'k': 'ring', 'dan': int(a[0]), 'seq': ints(a[1].split(','))}))
+    return [f for _, _, f in sorted(found, key=lambda x: x[0])]
+
+# 141차 — 2-2 3단원 「길이 재기」 그림: mbar(길이 막대 — 이어 붙이기 join·잘라 낸 칸 cut·100 cm 눈금) · rul(자·줄자 — 끊긴 줄자 눈금·끝 눈금 on)
+#   · mc(m·cm 세로셈) · mr(m·cm 식 한 줄) · est(어림·잰 길이 표) · body(몸으로 어림 카드) · uc(단위 카드) · ch(부분으로 나누어 어림) · pw(전체·부분 가지). 빈칸 = '?'.
+def figs10(p):
+    found = []
+    opts = [(m.start(), m.end()) for m in re.finditer(r'<button class="mcq-opt".*?</button>', p, re.S)]
+    inopt = lambda a: any(x <= a < y for x, y in opts)
+    hv = lambda c, v: '?' if 'hole' in c else clean(v)
+    bar = lambda a, c: dict({'cm': int(a[0]), 'col': c.strip()}, **({'cut': int(a[1])} if a[1] else {}), **({'m100': True} if a[2] == '1' else {}))
+    joined = []
+    for m in re.finditer(r'<div class="col mb-wrap">(.*?)<b class="mb-lb( hole)?">([^<]*)</b></div>', p, re.S):
+        if inopt(m.start()): continue
+        body = m.group(1); nm = clean(first(r'<span class="mb-nm">(.*?)</span>', body))
+        lb = '?' if m.group(2) else clean(m.group(3))
+        j = re.search(r'<div class="mb-join" data-join="([^"]*)">', body)
+        bars = [bar((a.split('|') + ['', ''])[:3], c) for c, a in re.findall(r'<div class="mbar ?([^"]*)" data-bar="([^"]*)"', body)]
+        f = {'k': 'mbar', 'name': nm, 'bars': bars, 'lb': lb}
+        if j: f['join'] = True; f['pair'] = [hv(c, v) for c, v in re.findall(r'<b class="mb-lb sm([^"]*)">([^<]*)</b>', body)]
+        found.append((m.start(), m.end(), f))
+    for m in re.finditer(r'<div class="col rl-wrap" data-rul="([^"]*)">(.*?)</div></div></div>', p, re.S):
+        if inopt(m.start()): continue
+        a = m.group(1).split('|'); b = m.group(2)
+        x0, x1 = [float(v) for v in re.search(r'data-x0="([^"]*)" data-x1="([^"]*)"', b).groups()]
+        ts = [(c, v, float(x)) for c, v, x in re.findall(r'<span class="rl-t( on)?" data-v="([^"]*)" data-x="([^"]*)"', b)]
+        f = {'k': 'rul', 'name': clean(first(r'<span class="mb-nm">(.*?)</span>', b)), 'len': int(a[0]), 'from': int(a[1]), 'al': a[2] == '1', 'ticks': [int(v) for _, v, _ in ts], 'brk': 'rl-brk' in b}
+        on = [int(v) for c, v, _ in ts if c]
+        if on: f['on'] = on[0]
+        if not f['brk']:  # 곧은자 — 물건 시작·끝 눈금(30 px = 1 cm)
+            t0 = ts[0][2]; f['s0'] = round((x0 - t0) / 30, 1); f['s1'] = round((x1 - t0) / 30, 1)
+        elif x0 > ts[0][2] + 1: f['shift'] = True
+        found.append((m.start(), m.end(), f))
+    for m in re.finditer(r'<div class="mcalc[^"]*" data-mc="([^"]*)">(.*?)<div class="mc-bar"></div>(.*?)</div></div>', p, re.S):
+        if inopt(m.start()): continue
+        a = m.group(1).split('|'); r = dict(re.findall(r'<b class="mc-n (rm|rcm)[^"]*">([^<]*)</b>', m.group(3)))
+        rh = dict((k, 'hole' in c) for k, c in re.findall(r'<b class="mc-n (rm|rcm)([^"]*)">', m.group(3)))
+        found.append((m.start(), m.end(), {'k': 'mc', 'a': [int(a[0]), int(a[1])], 'op': a[2], 'b': [int(a[3]), int(a[4])], 'r': ['?' if rh.get('rm') else int(a[5]), '?' if rh.get('rcm') else int(a[6])]}))
+    for m in re.finditer(r'<div class="mrow" data-mr="([^"]*)">(.*?)</div>', p, re.S):
+        if inopt(m.start()): continue
+        a = m.group(1).split('|'); hole = 'mr-r hole' in m.group(2)
+        found.append((m.start(), m.end(), {'k': 'mr', 'a': [int(a[0]), int(a[1])], 'op': a[2], 'b': [int(a[3]), int(a[4])], 'r': '?' if hole else [int(a[5]), int(a[6])]}))
+    for m in re.finditer(r'<div class="ettab" data-est="([^"]*)"[^>]*>(.*?)</div>', p, re.S):
+        if inopt(m.start()): continue
+        b = m.group(2); hd = [clean(x) for x in re.findall(r'<span class="et-h">(.*?)</span>', b)]
+        cells = re.findall(r'<span class="et-(n|v)([^"]*)">(.*?)</span>', b); rows = []
+        for k, c, v in cells:
+            if k == 'n': rows.append([clean(v)])
+            elif rows: rows[-1].append(hv(c, v))
+        found.append((m.start(), m.end(), {'k': 'est', 'heads': hd, 'rows': rows}))
+    for m in re.finditer(r'<div class="bdset" data-body="([^"]*)">(.*?)</div></div>', p, re.S):
+        if inopt(m.start()): continue
+        its = [{'emoji': html.unescape(e.strip()), 'name': clean(n), 'v': ('약 ' if '약' in pre else '') + hv(c, v) + clean(post)} for e, n, pre, c, v, post in re.findall(r'<div class="bd-c" data-k="\w+"><em>(.*?)</em><span>(.*?)</span><p>([^<]*)<b class="bd-n([^"]*)">([^<]*)</b>([^<]*)</p></div>', m.group(2), re.S)]
+        found.append((m.start(), m.end(), {'k': 'body', 'items': its}))
+    for m in re.finditer(r'<div class="ucset" data-unit="([^"]*)">(.*?)</div></div>', p, re.S):
+        if inopt(m.start()): continue
+        its = [{'emoji': html.unescape(e.strip()), 'name': clean(n), 'v': clean(pre) + ' ' + hv(c, u)} for e, n, pre, c, u in re.findall(r'<div class="uc"><em>(.*?)</em><span>(.*?)</span><p>([^<]*)<b class="uc-u([^"]*)">([^<]*)</b></p></div>', m.group(2), re.S)]
+        found.append((m.start(), m.end(), {'k': 'uc', 'items': its}))
+    for m in re.finditer(r'<div class="col chwrap" data-ch="([^"]*)">(.*?)<b class="ch-tot( hole)?">([^<]*)</b>', p, re.S):
+        if inopt(m.start()): continue
+        segs = [{'name': clean(u), 'lab': clean(b)} for u, b in re.findall(r'<div class="ch-seg"[^>]*><u>(.*?)</u><b>(.*?)</b></div>', m.group(2))]
+        found.append((m.start(), m.end(), {'k': 'ch', 'cm': [int(x) for x in m.group(1).split('|')[0].split(',')], 'segs': segs, 'tot': '?' if m.group(3) else clean(m.group(4))}))
+    for m in re.finditer(r'<div class="pw" data-pw="([^"]*)">(.*?)</div></div>', p, re.S):
+        if inopt(m.start()): continue
+        a = [int(x) for x in m.group(1).split('|')]; c = dict((k, hv(h, v)) for k, h, v in re.findall(r'<b class="pw-c (t|a|b)([^"]*)"[^>]*>([^<]*)</b>', m.group(2)))
+        found.append((m.start(), m.end(), {'k': 'pw', 'cm': a, 't': c.get('t', ''), 'a': c.get('a', ''), 'b': c.get('b', '')}))
     return [f for _, _, f in sorted(found, key=lambda x: x[0])]
 
 if __name__ == '__main__':

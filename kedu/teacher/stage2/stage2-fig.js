@@ -16,6 +16,7 @@
    · 64차(2026-10-02) 4학년 1학기 관계와 규칙 부품: bal(저울 — 식을 셈해 기울기) · shapes(모양의 배열 — 변하는/변하지 않는 부분) · ngrid(수 배열표·수열) · eqs(계산식의 배열) · eqc(등호 카드 — 옳음은 부품이 셈)
    · 81차(2026-10-06) 4학년 2학기 사각형 부품: lines(직선 여러 개 — 수직 ㄱ자·평행 꺾쇠는 좌표로 셈해 맞을 때만) · pdist(평행선 사이의 거리) · quad(사각형 하나 — 평행 꺾쇠·같은 변 눈금·직각·대각선·변/각 글자) · quads(사각형 여러 개 가르기) · circ2(두 원으로 그린 사각형)
    · 80차(2026-10-06) 4학년 2학기 분수의 덧셈과 뺄셈 부품: fop(같은 분모 분수의 덧셈·뺄셈 띠 — 파랑 앞의 수·초록 더하는 수·주황 빗금 덜어 낸 칸 · 대분수 자연수는 통 칸)
+   · 141차(2026-10-16) 2학년 2학기 길이 재기 부품: lbar(길이 막대·이어 붙이기·잘라 낸 칸·100 cm 금) · ltape(자·끊긴 줄자) · lpw(전체·부분 가지) · lcard(몸·물건 어림 카드) · lch(나누어 어림) · tvert q(답 줄 빈칸 「?」)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
    ============================================================================ */
 (function (global) {
@@ -498,7 +499,7 @@
     const lead = (arr) => { let i = 0; while (i < N - 1 && !arr[i]) i++; return i; }; // 앞쪽 0 은 빈칸
     const row = (arr, us, cls, from) => '<div class="tv-row ' + cls + '">' + arr.map((v, i) => '<span' + (i < from || v == null ? ' class="mute"' : '') + '>' + (i < from || v == null ? '' : v + '<u>' + esc(us[i] || '') + '</u>') + '</span>').join('') + '</div>';
     const top = '<div class="tv-row tv-carry">' + A.map((v, i) => '<span>' + (op === '+' && carry[i] ? '1' : op !== '+' && borrow[i + 1] ? '<i>' + (NA[i] - 1) + '</i>' : op !== '+' && borrow[i] ? '<b>+' + BASE + '</b>' : '') + '</span>').join('') + '</div>';
-    const h = '<div class="tv n' + N + (BASE >= 1000 ? ' wide' : '') + '">' + top + row(A, units, 'tv-a', lead(A)) + row(B, units, 'tv-b', lead(B)).replace('<div class="tv-row tv-b">', '<div class="tv-row tv-b"><em>' + (op === '+' ? '+' : '−') + '</em>') + '<div class="tv-line"></div>' + (o.answer === false ? '' : row(R, runits, 'tv-r', lead(R))) + '</div>';
+    const h = '<div class="tv n' + N + (BASE >= 1000 ? ' wide' : '') + '">' + top + row(A, units, 'tv-a', lead(A)) + row(B, units, 'tv-b', lead(B)).replace('<div class="tv-row tv-b">', '<div class="tv-row tv-b"><em>' + (op === '+' ? '+' : '−') + '</em>') + '<div class="tv-line"></div>' + (o.answer === false ? '' : o.q ? row(R, runits, 'tv-r', lead(R)).split('<span').map((seg, i) => i && o.q.indexOf(i - 1) >= 0 ? ' class="tv-q"><b>?</b><u' + seg.slice(seg.indexOf('<u') + 2) : seg).join('<span') : row(R, runits, 'tv-r', lead(R))) + '</div>';
     return '<div class="fig-vert fig-tvert" data-r="' + R.join(',') + '">' + h + (o.label ? '<div class="fig-cap">' + esc(o.label) + '</div>' : '') + '</div>';
   }
 
@@ -2294,6 +2295,82 @@
     return svgWrap(s, 'fig-mring', '0 0 400 400').replace('<svg ', '<svg data-ring="' + (o.dan | 0) + '|' + seq.join(',') + '" ');
   }
   Object.assign(PARTS, { mgrp, mdan, mjump, marr, mring });
+  }
+  { // 141차 2학년 2학기 「길이 재기」 부품 — 이름이 겹치지 않게 블록 안에 둔다
+  // ══ lbar(길이 막대) · ltape(자·줄자) · lpw(전체·부분 가지) · lcard(어림 카드) · lch(나누어 어림) ══
+  // 그림 문법(자기주도 원문과 같음): 파랑·주황·초록 = 막대 색(a·b·g) · 회색 빗금 = 잘라 낸 길이 · 빨강 세로 금 = 100 cm(1 m)마다 · 주황 점선 「?」 = 구할 자리.
+  const LC = { a: ['#DCE8FB', '#5B8DEF', '#1F4A9E'], b: ['#FFE6D3', '#FF9A55', '#C2551A'], g: ['#DDF4E6', '#5CC08A', '#1E7A46'] }, ORL = ['#FFF1E6', '#FF7A2F', '#C2551A'], RL = '#E0413C';
+  const rr = (x, y, w, h, fill, st, sw, dash, r) => '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + Math.max(0, w).toFixed(1) + '" height="' + h.toFixed(1) + '" rx="' + (r == null ? 12 : r) + '" fill="' + fill + '" stroke="' + (st || 'none') + '" stroke-width="' + (sw || 0) + '"' + (dash ? ' stroke-dasharray="9 6"' : '') + '/>';
+  const qBox = (cx, cy, w, h, sz) => rr(cx - w / 2, cy - h / 2, w, h, ORL[0], ORL[1], 3.5, true, 10) + txt(cx.toFixed(1), (cy + sz * 0.36).toFixed(1), '?', sz, ORL[2], 900);
+  const lab = (cx, cy, t, sz, col) => (t === '?' ? qBox(cx, cy - sz * 0.32, 64, sz + 14, sz) : txt(cx.toFixed(1), cy.toFixed(1), t, sz, col || INK, 900));
+  // lbar: rows [{name, cm, col, cut(잘라 낸 cm), m100, lb(오른쪽 글 — '?' 면 빈칸)}] 또는 join 줄 {join:true, name, segs:[{cm, col, lb}], lb(전체)} · max(같은 그림 안 공통 눈금 cm) · data-bars
+  function lbar(o) {
+    const rows = (o.rows || []).filter(Boolean); if (!rows.length) return '';
+    const tot = (r) => r.join ? (r.segs || []).reduce((a, g) => a + (+g.cm || 0), 0) : (+r.cm || 0);
+    const max = Math.max(1, +o.max || 0, ...rows.map(tot)), x0 = 24, BW = 330, bh = 34; let s = '', y = 6;
+    rows.forEach(r => {
+      if (r.name) { s += txt(x0, y + 26, r.name, 24, '#4E5C70', 800, 'start'); y += 36; }
+      const by = y + 6, cy = by + bh / 2;
+      if (r.join) { let x = x0; (r.segs || []).forEach((g, j) => { const w = BW * (+g.cm || 0) / max, c = LC[g.col] || LC[j ? 'b' : 'a'];
+          s += rr(x, by, w, bh, c[1], '#fff', 3, false, j === 0 ? 14 : 4); s += lab(x + w / 2, by + bh + 30, g.lb || '', 22, c[2]); x += w; });
+        const xe = x0 + BW * tot(r) / max; s += '<path d="M' + x0 + ' ' + (by + bh + 46) + 'v8H' + xe.toFixed(1) + 'v-8" fill="none" stroke="' + ORL[1] + '" stroke-width="3"/>';
+        s += lab((x0 + xe) / 2, by + bh + 86, r.lb || '', 28, ORL[2]); y = by + bh + 100; return; }
+      const w = BW * (+r.cm || 0) / max, c = LC[r.col] || LC.a, cut = Math.min(+r.cm || 0, +r.cut || 0), wc = BW * cut / max;
+      s += rr(x0, by, w, bh, c[1], c[2], 2, false, 14);
+      if (cut) { s += '<defs><pattern id="lb-hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="#CFD8DC"/><rect width="5" height="10" fill="#B0BEC5"/></pattern></defs>' + rr(x0, by, wc, bh, 'url(#lb-hatch)', '#90A4AE', 2, false, 14); }
+      if (r.m100) for (let k = 100; k < (+r.cm || 0); k += 100) { const xm = x0 + BW * k / max; s += '<line class="o-m100" x1="' + xm.toFixed(1) + '" y1="' + (by - 6) + '" x2="' + xm.toFixed(1) + '" y2="' + (by + bh + 6) + '" stroke="' + RL + '" stroke-width="4" stroke-linecap="round"/>'; }
+      const lx = x0 + w + 12, room = 460 - lx;
+      if (r.lb && room >= 92) s += (r.lb === '?' ? qBox(lx + 34, cy, 64, 40, 28) : txt(lx.toFixed(1), (cy + 10).toFixed(1), r.lb, 28, c[2], 900, 'start'));
+      else if (r.lb) s += lab(x0 + w / 2, by + bh + 34, r.lb, 26, c[2]);
+      y = by + bh + 14 + (r.lb && room < 92 ? 40 : 0);
+    });
+    return svgWrap(s, 'fig-lbar', '0 0 460 ' + Math.ceil(y + 6)).replace('<svg ', '<svg data-bars="' + esc(rows.map(r => r.join ? (r.segs || []).map(g => g.cm).join('+') : r.cm + (r.cut ? '-' + r.cut : '')).join('|')) + '" ');
+  }
+  // ltape: 자(brk 없음 — 0 부터 1 cm 눈금, 물건 s0~s1) · 줄자(brk — 0 · 끊김 · 몇 눈금) · len(물건 끝 눈금) · on(끝 눈금 빨강) · shift(줄자 위 물건이 0 에서 밀림) · name · data-rul
+  function ltape(o) {
+    const ticks = (o.ticks || []).map(Number); if (!ticks.length) return '';
+    const x0 = 34, y = 86, H = 58; let s = '', X;
+    if (!o.brk) { const n = ticks[ticks.length - 1], pw = Math.min(56, 392 / Math.max(1, n)); X = (v) => x0 + v * pw; }
+    else { const rest = ticks.slice(1), pw = 300 / Math.max(1, rest.length); X = (v) => v === ticks[0] ? x0 : x0 + 92 + (rest.indexOf(v) + 0.5) * pw; }
+    const xe = X(ticks[ticks.length - 1]) + (o.brk ? 300 / Math.max(1, ticks.length - 1) / 2 : 0) + 14;
+    s += rr(x0 - 18, y, xe - x0 + 18, H, '#FFF7DE', '#F5A623', 3, false, 10);
+    if (o.brk) s += '<defs><pattern id="lt-brk" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(25)"><rect width="9" height="9" fill="#FFF7DE"/><rect width="4" height="9" fill="#FFD9A8"/></pattern></defs>' + rr(x0 + 26, y + 3, 40, H - 6, 'url(#lt-brk)', 'none', 0, false, 0);
+    ticks.forEach(v => { const x = X(v), on = o.on != null && v === o.on; s += '<line class="o-tick' + (on ? ' on' : '') + '" x1="' + x.toFixed(1) + '" y1="' + y + '" x2="' + x.toFixed(1) + '" y2="' + (y + (on ? 26 : 18)) + '" stroke="' + (on ? RL : '#8D6E63') + '" stroke-width="' + (on ? 5 : 3) + '"/>' + txt(x.toFixed(1), y + 48, String(v), o.brk ? 22 : 20, on ? RL : '#5D4037', 900); });
+    let a, b; if (!o.brk) { a = X(+o.s0 || 0); b = X(o.s1 != null ? +o.s1 : +o.len || 0); } else { a = o.shift ? x0 + 14 : x0; b = X(+o.len || 0); }
+    s += '<g class="o-obj">' + (o.brk ? rr(a, y - 30, x0 + 26 - a, 24, '#A1887F', '#795548', 2, false, 6) + rr(x0 + 66, y - 30, b - x0 - 66, 24, '#A1887F', '#795548', 2, false, 6) : rr(a, y - 30, b - a, 24, '#A1887F', '#795548', 2, false, 6)) + '</g>';
+    if (o.name) s += txt(x0 - 14, 34, o.name, 24, '#4E5C70', 800, 'start');
+    return svgWrap(s, 'fig-ltape', '0 0 ' + Math.max(460, Math.ceil(xe + 12)) + ' 160').replace('<svg ', '<svg data-rul="' + esc([o.len, o.on == null ? '' : o.on, o.brk ? 1 : 0, o.shift || (!o.brk && +o.s0) ? 1 : 0].join('|')) + '" ');
+  }
+  // lpw: t(전체 글) · a·b(부분 글) — '?' 면 빈칸 · cm [전체, 부분 a, 부분 b](아래 칸 폭 비례) · data-pw
+  function lpw(o) {
+    const cm = (o.cm || []).map(Number), tw = 220, top = 8, bh = 64, by = top + bh + 56;
+    const wa = Math.max(120, 300 * (cm[1] || 1) / (cm[0] || 1)), wb = Math.max(120, 300 * (cm[2] || 1) / (cm[0] || 1)), gap = 54, tot = wa + gap + wb, xa = 230 - tot / 2, xb = xa + wa + gap;
+    const cell = (x, y, w, t, c) => t === '?' ? rr(x, y, w, bh, ORL[0], ORL[1], 4, true, 14) + txt((x + w / 2).toFixed(1), y + 44, '?', 36, ORL[2], 900) : rr(x, y, w, bh, c[1], '#fff', 3, false, 14) + txt((x + w / 2).toFixed(1), y + 43, t, 30, '#fff', 900);
+    let s = cell(230 - tw / 2, top, tw, o.t || '', LC.a);
+    s += '<line x1="230" y1="' + (top + bh + 4) + '" x2="' + (xa + wa / 2).toFixed(1) + '" y2="' + (by - 4) + '" stroke="#9AA6B4" stroke-width="5" stroke-linecap="round"/><line x1="230" y1="' + (top + bh + 4) + '" x2="' + (xb + wb / 2).toFixed(1) + '" y2="' + (by - 4) + '" stroke="#9AA6B4" stroke-width="5" stroke-linecap="round"/>';
+    s += cell(xa, by, wa, o.a || '', LC.g) + txt((xa + wa + gap / 2).toFixed(1), by + 44, '+', 36, '#6B7C93', 900) + cell(xb, by, wb, o.b || '', LC.b);
+    return svgWrap(s, 'fig-lpw', '0 0 460 ' + (by + bh + 8)).replace('<svg ', '<svg data-pw="' + esc([o.t, o.a, o.b].join('|')) + '" ');
+  }
+  // lcard: items [{emoji, name, v}] — 몸·물건 카드(아래 줄 = 어림 횟수·길이 · '?' 가 들어 있으면 그 자리 빈칸) · data-cards
+  function lcard(o) {
+    const its = (o.items || []).slice(0, 6); if (!its.length) return '';
+    const per = its.length <= 3 ? its.length : its.length === 4 ? 2 : 3, nr = Math.ceil(its.length / per), cw = 200, ch = 168, gap = 18, Wd = Math.max(460, per * cw + (per - 1) * gap + 16); let s = '';
+    its.forEach((it, i) => { const r = Math.floor(i / per), c = i % per, inRow = r === nr - 1 ? its.length - per * (nr - 1) : per, x = (Wd - (inRow * cw + (inRow - 1) * gap)) / 2 + c * (cw + gap), y = 8 + r * (ch + gap);
+      s += rr(x, y, cw, ch, '#fff', '#C9D3E0', 3, false, 18) + '<text x="' + (x + cw / 2).toFixed(1) + '" y="' + (y + 56) + '" text-anchor="middle" font-size="46">' + esc(it.emoji || '') + '</text>' + txt((x + cw / 2).toFixed(1), y + 98, it.name || '', it.name && it.name.length > 6 ? 20 : 24, '#4E5C70', 800);
+      const v = String(it.v || ''); if (v.indexOf('?') >= 0) { const pre = v.split('?')[0].trim(), post = v.split('?')[1].trim(); s += txt((x + cw / 2 - 40).toFixed(1), y + 144, pre, 26, LC.a[2], 900, 'end') + qBox(x + cw / 2, y + 134, 56, 38, 26) + txt((x + cw / 2 + 36).toFixed(1), y + 144, post, 26, LC.a[2], 900, 'start'); }
+      else s += txt((x + cw / 2).toFixed(1), y + 144, v, 28, LC.a[2], 900); });
+    return svgWrap(s, 'fig-lcard', '0 0 ' + Wd + ' ' + (nr * ch + (nr - 1) * gap + 16)).replace('<svg ', '<svg data-cards="' + esc(its.map(i => i.name + ':' + i.v).join(',')) + '" ');
+  }
+  // lch: segs [{name, lab}] · cm [부분 cm](폭 비례) · tot(모두 더한 어림 — '?' 면 빈칸) · data-ch
+  function lch(o) {
+    const segs = (o.segs || []).slice(0, 8), cm = (o.cm || []).map(Number); if (!segs.length) return '';
+    const sum = cm.reduce((a, b) => a + b, 0) || segs.length, x0 = 20, W0 = 420, y = 12, h = 84; let s = '', x = x0;
+    segs.forEach((g, i) => { const w = W0 * (cm[i] || sum / segs.length) / sum, c = i % 2 ? LC.b : LC.a; s += rr(x + 2, y, w - 4, h, c[0], c[1], 3, false, 12);
+      if (w >= 60) s += txt((x + w / 2).toFixed(1), y + 34, g.name, w < 90 ? 18 : 22, '#4E5C70', 800) + txt((x + w / 2).toFixed(1), y + 68, g.lab, w < 90 ? 20 : 26, c[2], 900); x += w; });
+    s += '<path d="M' + x0 + ' ' + (y + h + 12) + 'v10h' + W0 + 'v-10" fill="none" stroke="' + ORL[1] + '" stroke-width="3"/>' + lab(230, y + h + 64, o.tot || '', 32, LC.g[2]);
+    return svgWrap(s, 'fig-lch', '0 0 460 ' + (y + h + 82)).replace('<svg ', '<svg data-ch="' + esc(cm.join(',') + '|' + (o.tot || '')) + '" ');
+  }
+  Object.assign(PARTS, { lbar, ltape, lpw, lcard, lch });
   }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
