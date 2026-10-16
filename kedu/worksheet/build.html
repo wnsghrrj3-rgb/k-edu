@@ -138,6 +138,20 @@ select:focus,input[type=text]:focus{outline:2px solid var(--accent);outline-offs
 .mixbar div{height:8px;border-radius:4px}
 .setrow h3{font-size:17px}
 .toast{border-radius:999px;background:var(--accent)}
+
+/* ---------- 2026-10-16 화면 넘침·속도 ---------- */
+/* 그리드 칸이 안 내용(긴 개념 select)에 끌려 넓어지지 않게 — minmax(0,1fr)·min-width:0 */
+.cols{grid-template-columns:minmax(0,1fr) 340px}
+.cols>*,.panel{min-width:0}
+select,input[type=text]{max-width:100%}
+.filters select{flex:0 1 auto;text-overflow:ellipsis}
+.filters #fConcept,.filters #mkConcept{flex:1 1 100%}
+.filters.scope select{flex:0 0 auto}
+.tag{max-width:100%;white-space:normal;word-break:keep-all;overflow-wrap:anywhere}
+.q .stem{word-break:keep-all;overflow-wrap:anywhere}
+.more{margin:4px 0 2px;padding:10px;border:1.5px dashed var(--rule);border-radius:12px;background:transparent;color:var(--soft);font:inherit;font-size:14px;cursor:pointer;width:100%}
+.more:hover{border-color:var(--accent);color:var(--accent)}
+.loading-bar{font-size:12.5px;color:var(--muted);margin:-6px 0 10px}
 </style>
 <script src="/kedu_teacher_gate.js"></script>
 </head>
@@ -233,7 +247,9 @@ const KINDNAME = {mc:'선택', sa:'단답', ox:'OX', error:'오류찾기', blank
 /* 학생 카드 라벨 — 3종 설계 v2 §2·§3-2. 평가 단어 없이, 종류마다 한 낱말.
    ① 차시 쪽지 = 「오늘 확인 · {이름}」 / ② 단원 평가 = 「단원 정리 · {이름}」. */
 const CARD_LABEL = { quiz: '오늘 확인', unit_test: '단원 정리' };
-let ME = null, BANK = [], CONCEPTS = [], CLASSES = [], CART = [], TAB = 'build', TOP = 'quiz';
+let ME = null, BANK = [], CONCEPTS = [], CONCEPT_BY = {}, CLASSES = [], CART = [], TAB = 'build', TOP = 'quiz';
+// 개념 이름 칩은 「— 」 앞 머리만 보이고, 긴 설명은 마우스를 올리면(title) 보인다 — 칩이 한 줄 넘게 늘어져 화면이 밀리던 것(2026-10-16)
+const shortName = s => String(s || '').split(/\s+[—–-]\s+/)[0];
 // ?tab=mine — 미리보기에서 「내 쪽지로」 돌아올 때 그 탭으로 연다(2026-09-04)
 if (new URLSearchParams(location.search).get('tab') === 'mine'){ TAB = 'mine'; document.querySelectorAll('#subTabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === 'mine')); }
 
@@ -251,28 +267,38 @@ function toast(msg){ const t = document.getElementById('toast'); t.textContent =
 
   // 원장은 1만 문항을 넘는다 — 한 번에 1000행씩 끝까지 읽는다(이전 limit(2000)은 1학년만 보이던 원인).
   const QCOLS = 'id, qcode, grade, semester, subject, unit_code, lesson_code, concept_code, difficulty, qkind, stem, misconception_codes, source_kind, source_set, source, teacher_id';
+  // 2026-10-16 속도: 1000행씩 차례로(12번 왕복) → 전체 수를 먼저 세고 모든 쪽을 한꺼번에 요청.
+  //   정렬도 서버 7단 정렬 대신 id 하나로 받아 와서 여기서 한 번만 정렬한다(쪽마다 서버가 1만 행을 7단으로 세우던 비용 제거).
+  const STEP = 1000;
+  const bankSort = (a, b) => (a.grade - b.grade) || ((a.semester || 1) - (b.semester || 1)) || String(a.subject).localeCompare(String(b.subject))
+    || String(a.unit_code).localeCompare(String(b.unit_code), undefined, { numeric: true }) || String(a.lesson_code || '').localeCompare(String(b.lesson_code || ''), undefined, { numeric: true })
+    || (a.difficulty - b.difficulty) || String(a.qcode || '').localeCompare(String(b.qcode || ''), undefined, { numeric: true });
+  const page = from => db.from('question_bank').select(QCOLS).eq('is_active', true).order('id').range(from, from + STEP - 1);
   async function loadBank(){
-    const out = [], STEP = 1000;
-    for (let from = 0; from < 60000; from += STEP){
-      const { data, error } = await db.from('question_bank').select(QCOLS).eq('is_active', true)
-        .order('grade').order('semester').order('subject').order('unit_code').order('lesson_code').order('difficulty').order('qcode').range(from, from + STEP - 1);
-      if (error) return from ? out : null;
-      out.push(...(data || []));
-      if (!data || data.length < STEP) break;
-    }
-    return out;
+    const { count, error: ce } = await db.from('question_bank').select('id', { count: 'exact', head: true }).eq('is_active', true);
+    if (ce) return null;
+    const n = count || 0;
+    const froms = []; for (let from = 0; from < Math.max(n, 1); from += STEP) froms.push(from);
+    const rs = await Promise.all(froms.map(page));
+    if (rs.every(r => r.error)) return null;
+    const out = []; rs.forEach(r => out.push(...(r.data || [])));
+    // 세는 사이 문항이 늘었을 수도 있다 — 마지막 쪽이 꽉 찼으면 뒤를 이어 읽는다.
+    let from = froms.length * STEP; const last = rs[rs.length - 1];
+    if (last.data && last.data.length === STEP){ for (; from < 60000; from += STEP){ const { data } = await page(from); out.push(...(data || [])); if (!data || data.length < STEP) break; } }
+    return out.sort(bankSort);
   }
-  const [qs, { data: cs }, { data: cc }] = await Promise.all([
+  const [qs, { data: cs }, { data: cc }, mr] = await Promise.all([
     loadBank(),
     db.from('concepts').select('code, name, lesson_no, unit_code, grade, subject, semester').eq('is_active', true).order('ord'),
-    db.from('class_codes').select('id, code, is_active').eq('teacher_id', t.id).eq('is_active', true)
+    db.from('class_codes').select('id, code, is_active').eq('teacher_id', t.id).eq('is_active', true),
+    Promise.resolve(db.from('misconceptions').select('code, title').eq('is_active', true).order('code')).catch(() => ({ data: [] }))
   ]);
 
   // 원장이 비어 있으면 승인 대기이거나 시드 미적용 — 둘을 구분해서 말해 준다.
   if (!qs){ view.innerHTML = `<div class="gate">문항 원장을 읽을 수 없어요.<br>승인된 선생님 계정만 원장을 볼 수 있어요.</div>`; return; }
 
   BANK = qs; CONCEPTS = cs || []; CLASSES = cc || [];
-  const mr = await Promise.resolve(db.from('misconceptions').select('code, title').eq('is_active', true).order('code')).catch(() => ({ data: [] }));
+  CONCEPT_BY = {}; CONCEPTS.forEach(c => { CONCEPT_BY[c.code] = c; });
   MIS_LIST = (mr && mr.data) || [];
   render();
   // 단원·차시 이름표는 뒤에 오면 그때 다시 그린다 — 지도를 못 읽어도 화면은 선다(N단원·N차시로만 표시).
@@ -388,7 +414,7 @@ function renderBuild(){
     document.getElementById('qaConcept').innerHTML = cs.map(c => `<option value="${c.code}" data-lesson="${c.lesson_no || ''}">${c.lesson_no ? c.lesson_no + '차시 · ' : ''}${esc(c.name)}</option>`).join('');
   };
   document.getElementById('qaUnit').onchange = qaSync; qaSync();
-  document.getElementById('clear').onclick = () => { CART = []; drawList(); drawCart(); };
+  document.getElementById('clear').onclick = () => { CART = []; document.querySelectorAll('#qlist .q.sel').forEach(el => { el.classList.remove('sel'); el.querySelector('.chk').textContent = ''; }); drawCart(); };
   document.getElementById('save').onclick = saveSet;
   document.getElementById('qaGo').onclick = quickAssemble;
   document.getElementById('mkOpen').onclick = () => renderMakeQ(document.getElementById('mkBox'));
@@ -413,33 +439,52 @@ function renderBuild(){
   } catch (e) {}
 }
 
+/* 목록은 한 번에 1,500장을 다 그리지 않고 80장씩 — 끝까지 내리면 더 붙고, 「더 보기」로도 붙는다(2026-10-16 속도). 담기/빼기는 그 카드 한 장만 바꾼다. */
+const PAGE = 80;
+let LIST = [], SHOWN = 0;
+function qCard(q){
+  const on = CART.some(x => x.id === q.id);
+  const c = CONCEPT_BY[q.concept_code]; const cname = (c && c.name) || q.concept_code || '';
+  return `<div class="q d${q.difficulty} ${on ? 'sel' : ''}" data-id="${q.id}">
+    <div class="chk">${on ? '✓' : ''}</div>
+    <div class="body">
+      <div class="stem">${esc(q.stem)}</div>
+      <div class="tagrow">
+        <span class="tag d${q.difficulty}">${DIFFNAME[q.difficulty]}</span>
+        <span class="tag">${KINDNAME[q.qkind] || q.qkind}${q.source === 'teacher' ? ' <span class="badge mine">내 문항</span>' : ''}</span>
+        <span class="tag">${esc(unitName(q))}${q.lesson_code ? ' · ' + esc(lessonLabel(q)) : ''}</span>
+        <span class="tag" title="${esc(cname)}">${esc(shortName(cname))}</span>
+        ${(q.misconception_codes || []).map(m => `<span class="tag mis" title="이 문항의 오답이 잡아내는 오개념">${esc(misName(m))}</span>`).join('')}
+      </div>
+    </div></div>`;
+}
+function drawMore(){
+  const box = document.getElementById('qlist'); if (!box) return;
+  const btn = box.querySelector('.more'); if (btn) btn.remove();
+  const next = LIST.slice(SHOWN, SHOWN + PAGE);
+  box.insertAdjacentHTML('beforeend', next.map(qCard).join(''));
+  SHOWN += next.length;
+  if (SHOWN < LIST.length) box.insertAdjacentHTML('beforeend', `<button class="more" type="button">더 보기 · 남은 ${LIST.length - SHOWN}문항</button>`);
+  const mb = box.querySelector('.more'); if (mb) mb.onclick = drawMore;
+}
 function drawList(){
-  const list = filtered();
-  document.getElementById('qlist').innerHTML = list.length
-    ? list.map(q => {
-        const on = CART.some(x => x.id === q.id);
-        const cname = (CONCEPTS.find(c => c.code === q.concept_code) || {}).name || q.concept_code || '';
-        return `<div class="q d${q.difficulty} ${on ? 'sel' : ''}" data-id="${q.id}">
-          <div class="chk">${on ? '✓' : ''}</div>
-          <div class="body">
-            <div class="stem">${esc(q.stem)}</div>
-            <div class="tagrow">
-              <span class="tag d${q.difficulty}">${DIFFNAME[q.difficulty]}</span>
-              <span class="tag">${KINDNAME[q.qkind] || q.qkind}${q.source === 'teacher' ? ' <span class="badge mine">내 문항</span>' : ''}</span>
-              <span class="tag">${esc(unitName(q))}${q.lesson_code ? ' · ' + esc(lessonLabel(q)) : ''}</span>
-              <span class="tag">${esc(cname)}</span>
-              ${(q.misconception_codes || []).map(m => `<span class="tag mis" title="이 문항의 오답이 잡아내는 오개념">${esc(misName(m))}</span>`).join('')}
-            </div>
-          </div></div>`;
-      }).join('')
-    : `<div class="hint" style="padding:24px 0;text-align:center">조건에 맞는 문항이 없어요.</div>`;
-
-  document.getElementById('qlist').querySelectorAll('.q').forEach(el => el.onclick = () => {
-    const q = BANK.find(x => x.id === el.dataset.id);
-    const i = CART.findIndex(x => x.id === q.id);
-    i >= 0 ? CART.splice(i, 1) : CART.push(q);
-    drawList(); drawCart();
-  });
+  LIST = filtered(); SHOWN = 0;
+  const box = document.getElementById('qlist');
+  box.innerHTML = LIST.length ? '' : `<div class="hint" style="padding:24px 0;text-align:center">조건에 맞는 문항이 없어요.</div>`;
+  box.scrollTop = 0;
+  drawMore();
+  if (!box.dataset.bound){
+    box.dataset.bound = '1';
+    box.onscroll = () => { if (SHOWN < LIST.length && box.scrollTop + box.clientHeight >= box.scrollHeight - 240) drawMore(); };
+    box.onclick = e => {
+      const el = e.target.closest('.q'); if (!el || !box.contains(el)) return;
+      const q = BANK.find(x => x.id === el.dataset.id); if (!q) return;
+      const i = CART.findIndex(x => x.id === q.id);
+      i >= 0 ? CART.splice(i, 1) : CART.push(q);
+      el.classList.toggle('sel', i < 0); el.querySelector('.chk').textContent = i < 0 ? '✓' : '';
+      drawCart();
+    };
+  }
 }
 
 function drawCart(){
@@ -453,7 +498,7 @@ function drawCart(){
     ? mix.map((n, i) => n ? `${DIFFNAME[i+1]} ${n}` : null).filter(Boolean).join(' · ') : '왼쪽에서 문항을 눌러 담으세요.';
   document.getElementById('cart').innerHTML = CART.map((q, i) =>
     `<li><span class="n">${i+1}</span><span style="flex:1">${esc(q.stem.slice(0, 46))}${q.stem.length > 46 ? '…' : ''}</span><button class="x" data-i="${i}">✕</button></li>`).join('');
-  document.getElementById('cart').querySelectorAll('.x').forEach(b => b.onclick = () => { CART.splice(Number(b.dataset.i), 1); drawList(); drawCart(); });
+  document.getElementById('cart').querySelectorAll('.x').forEach(b => b.onclick = () => { const q = CART.splice(Number(b.dataset.i), 1)[0]; const el = q && document.querySelector(`#qlist .q[data-id="${q.id}"]`); if (el){ el.classList.remove('sel'); el.querySelector('.chk').textContent = ''; } drawCart(); });
 }
 
 /* 빠른 조립 — 개념 하나에서 배합대로. 유형이 한쪽으로 쏠리지 않게 라운드로빈으로 고른다. */
