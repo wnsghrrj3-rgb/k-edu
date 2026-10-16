@@ -1533,7 +1533,7 @@
     return svgWrap(s, 'fig-shapes', '0 0 ' + Math.round(x + 20) + ' ' + Math.round(H6)).replace('<svg ', '<svg data-pat="' + esc(o.pat) + '" data-counts="' + its.map(it => it.c.length).join(',') + '" ');
   }
   Object.assign(PARTS, { bal, shapes });
-  // ngrid: 수 배열표·수열 — rows [[칸]] (칸 = 수·글자 또는 {v, q:true(「?」), hl:'teal'|'gold'|'emph'}) · hl 'row'(첫 줄)|'diag'(↘)|'col'(첫 칸 줄) · head 첫 줄·첫 칸이 머리(덧셈표) · arrow 아래 글자
+  // ngrid: 수 배열표·수열 — rows [[칸]] (칸 = 수·글자 또는 {v, q:true(「?」), hl:'teal'|'gold'|'emph'|'fold'(초록 점선 접는 칸)|'mark'(★·♥ 표시 칸)}) · hl 'row'(첫 줄)|'diag'(↘)|'col'(첫 칸 줄) · head 첫 줄·첫 칸이 머리(덧셈표) · arrow 아래 글자
   function ngrid(o) {
     const rows = o.rows || []; const cell = (c) => (c !== null && typeof c === 'object' ? c : { v: c });
     const hlOf = (c, r, i) => c.hl || (o.hl === 'row' && r === 0 && !(o.head && i === 0) ? 'teal' : o.hl === 'diag' && r === i ? 'gold' : o.hl === 'col' && i === 0 ? 'teal' : '');

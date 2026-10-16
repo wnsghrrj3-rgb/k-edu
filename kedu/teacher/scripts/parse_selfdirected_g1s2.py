@@ -433,6 +433,9 @@ def figs9(p):
         found.append((m.start(), m.end(), {'k': 'mt', 'rows': rs, 'cols': cs, 'cells': [[x['v'] if not ('blank' in x['c'] or 'hole' in x['c']) else '?' for x in cells[i * len(cs):(i + 1) * len(cs)]] for i in range(len(rs))],
                                             'lit': [[('lit' in x['c']) for x in cells[i * len(cs):(i + 1) * len(cs)]] for i in range(len(rs))],
                                             'on_c': [v for k, o, v in hdr if k == 'c' and o], 'on_r': [v for k, o, v in hdr if k == 'r' and o]}))
+        for cls in ('fold', 'mark'):  # 139차: 접는 칸(대각선 점선)·표시 칸(★·♥) — 있을 때만
+            mx = [[(cls in x['c'].split()) for x in cells[i * len(cs):(i + 1) * len(cs)]] for i in range(len(rs))]
+            if any(any(r) for r in mx): found[-1][2][cls] = mx
     for m in re.finditer(r'<div class="sb"[^>]* data-score="([^"]*)">(.*?)</div>', p, re.S):
         if inopt(m.start()): continue
         ns, cn = [x.split(',') for x in m.group(1).split('|')]

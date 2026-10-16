@@ -86,6 +86,13 @@ function figCheck(f, srcFigs, at, prob, txt) {
   if (f.k === 'ngrid') { const rows = f.rows.map(r => r.map(cellV));
     if (rows[0][0] === '×') { const cols = rows[0].slice(1); let want = [];
       ok(srcFigs.some(x => x.k === 'mt' && JSON.stringify(x.cols) === JSON.stringify(cols) && JSON.stringify(x.rows) === JSON.stringify(rows.slice(1).map(r => r[0]))), at + ' 원문 곱셈표');
+      const sfms = srcFigs.filter(x => x.k === 'mt' && JSON.stringify(x.cols) === JSON.stringify(cols) && JSON.stringify(x.rows) === JSON.stringify(rows.slice(1).map(r => r[0])));
+      const sfm = sfms.find(x => !x.cells || JSON.stringify(x.cells) === JSON.stringify(rows.slice(1).map(r => r.slice(1)))) || sfms[0] || {}; // 같은 머리 표가 여럿이면 칸 값까지 같은 것
+      f.rows.slice(1).forEach((r, i) => r.slice(1).forEach((c, j) => { const hl = c && typeof c === 'object' ? c.hl : ''; // 139차: 접는 칸 = 원문 fold 이고 대각선(줄=칸), 표시 칸 = 원문 mark
+        ok((hl === 'fold') === !!(sfm.fold && sfm.fold[i][j]), at + ' 접는 칸 원문 ' + rows[i + 1][0] + '×' + cols[j]);
+        if (hl === 'fold') ok(rows[i + 1][0] === cols[j], at + ' 접는 칸 대각선 아님 ' + rows[i + 1][0] + '×' + cols[j]);
+        ok((hl === 'mark') === !!(sfm.mark && sfm.mark[i][j]), at + ' 표시 칸 원문 ' + rows[i + 1][0] + '×' + cols[j]); }));
+      if (/초록 칸|점선/.test(txt)) ok(f.rows.some(r => r.some(c => c && c.hl === 'fold')), at + ' 「초록 칸(점선)」인데 접는 칸 없음');
       rows.slice(1).forEach(r => r.slice(1).forEach((v, j) => { const p = +r[0] * +cols[j]; if (v === '?') want.push(String(p)); else if (!/^\d+$/.test(v)) { /* ★·♥ 같은 표시 칸 */ } else ok(+v === p, at + ' 곱셈표 ' + r[0] + '×' + cols[j] + ' = ' + v); }));
       if (/★/.test(txt)) want = want.filter((x, i, a) => a.indexOf(x) === i).slice(0, 1).concat([]);
       const star = []; rows.slice(1).forEach(r => r.slice(1).forEach((v, j) => { if (v === '★') star.push(String(+r[0] * +cols[j])); }));
@@ -167,6 +174,8 @@ T('역검증 셈·조사·그림', () => { let e = 0;
   try { figCheck({ k: 'mring', dan: 2, seq: [0, 2, 4, 6, 8, 0] }, [{ k: 'ring', dan: 2, seq: [0, 2, 4, 6, 8, 0] }], 'x', true, ''); } catch (_) { c++; }
   try { figCheck({ k: 'ngrid', head: true, rows: [['×', '3', '4'], ['2', '6', '9']] }, [{ k: 'mt', rows: ['2'], cols: ['3', '4'] }], 'x', false, ''); } catch (_) { c++; }
   try { figCheck({ k: 'eqt', rows: [{ toks: ['6', '×', '3', '=', '19'] }] }, [{ k: 'eqt', toks: ['6', '×', '3', '=', '19'] }], 'x', false, ''); } catch (_) { c++; }
-  ok(c === 5, '그림 역검증 ' + c); });
+  try { figCheck({ k: 'ngrid', head: true, rows: [['×', '2', '3'], ['2', '4', { v: '6', hl: 'fold' }]] }, [{ k: 'mt', rows: ['2'], cols: ['2', '3'], fold: [[false, true]] }], 'x', false, ''); } catch (_) { c++; } // 대각선 아닌 접는 칸
+  try { figCheck({ k: 'ngrid', head: true, rows: [['×', '2', '3'], ['2', '4', '6']] }, [{ k: 'mt', rows: ['2'], cols: ['2', '3'], fold: [[true, false]] }], 'x', false, '초록 칸(점선)을 따라 접으면?'); } catch (_) { c++; } // 접는 칸 빠짐
+  ok(c === 7, '그림 역검증 ' + c); });
 console.log('gate_g2s2_math_u2: PASS ' + pass + ' · FAIL ' + fail);
 process.exit(fail ? 1 : 0);

@@ -32,7 +32,7 @@ const QM = (a, b, c) => a + '×' + b + EUN(b) + ' ' + a + '×' + c + '보다 얼
 /* ── 원문 그림 → 부품 ── prob=true 면 답을 그리지 않는다 */
 function mtGrid(f) {
   const head = ['×'].concat(f.cols.map(c => (f.on_c || []).indexOf(c) >= 0 ? { v: c, hl: 'gold' } : c));
-  return { k: 'ngrid', head: true, rows: [head].concat(f.rows.map((r, i) => [(f.on_r || []).indexOf(r) >= 0 ? { v: r, hl: 'gold' } : r].concat(f.cells[i].map((v, j) => (v === '?' ? { q: true } : (f.lit && f.lit[i] && f.lit[i][j]) ? { v, hl: 'emph' } : v))))) };
+  return { k: 'ngrid', head: true, rows: [head].concat(f.rows.map((r, i) => [(f.on_r || []).indexOf(r) >= 0 ? { v: r, hl: 'gold' } : r].concat(f.cells[i].map((v, j) => (v === '?' ? { q: true } : (f.mark && f.mark[i][j]) ? { v, hl: 'mark' } : (f.fold && f.fold[i][j]) ? { v, hl: 'fold' } : (f.lit && f.lit[i] && f.lit[i][j]) ? { v, hl: 'emph' } : v))))) };
 }
 function partOf(f, prob) {
   if (f.k === 'grp') return Object.assign({ k: 'mgrp', per: f.per, n: f.n }, f.emoji ? { emoji: f.emoji } : {}, f.new ? { new: true } : {}, f.tally && !prob ? { tally: true } : {});
