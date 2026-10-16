@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -135,134 +134,55 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 
 <script>
 const LESSON_ID='g1_2_kor_u7_l05_06_v1';
-const LESSON_MAX=70;
+const LESSON_MAX=80;
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 5~6차시(소단원 1 통합 — 글을 읽고 새롭게 안 점 말하기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
+/* ===== 5~6차시(소단원 1 통합 — 글을 읽고 새롭게 안 점 말하기) 『국어』 220~223쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 글을 읽고 새롭게 안 점을 말할 수 있다.
-   ★ 정답 로깅 7슬. 읽기·무대·마무리 = 로깅 X.
-   ★★ 이 단원의 새 판단 기준(열두째) — 화면이 내주는 쉬운 단서가 곧 오개념이면
-      그 단서를 문항으로 무너뜨린다. 지도서 279쪽 ❶과 282쪽이 두 번 「제목을 설명 대상과
-      동일시하지 않게」라고 못박는데, 자기주도에는 그 말을 해 줄 교사가 없다.
-      풀이 = 3~4차시에서 제목이 곧 대상인 글을 읽히고, 이 차시에서 제목만으로는 안 되는 글을
-      나란히 놓은 뒤 ③ 일곱째 슬에서 「제목만 보고 답한 사람은 어디서 틀리는가」를 직접 묻는다.
-   ★ 지도서 285~286쪽: 문단마다 무엇을 설명하는지 살핀 뒤 글 전체가 무엇을 소개하는지
-      생각하게 한다 → ③ 다섯째(문단별) → 여섯째(전체) 차례를 그대로 따랐다.
-   ★ 저작권: 교과서 220~223쪽 「자연은 발명왕」 전문(문어 빨판·유리창 인형·칫솔걸이 /
-      민들레씨·낙하산 / 도꼬마리·케이블 정리 끈·붕대·신발), 223쪽 물음 셋과 예시 답안,
-      지도서 286쪽 연잎 방수복·우산 예, 287쪽 대체 자료 「비사치기」·「요술쟁이 바다 생물」
-      전부 미인용. 자체 제재 = 「겨울을 나는 방법」 — 생물 모방이라는 골격 자체를 버리고
-      「동물마다 겨울을 나는 방법이 다르다」로 새로 짰다. */
+   ★ 정답 로깅 8슬(LESSON_MAX 80). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「진짜 일 학년 책가방을 지켜라!」 본문은 옮기지 않음(교과서 224~228쪽), 간추림만. 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 장면 만나기', t:'눈이 내린 산속이에요',
-   html:`<div class="scene">
-      <div class="scene-pic">❄️</div>
-      <div class="scene-say">동물들은 다 어디로 갔을까?</div>
-    </div>
-    <div class="ka-bub">추운 겨울에도 동물들은 저마다 <b class="emph">살아갈 방법</b>이 있어요. 🐻</div>`},
+  {tag:'① 동기 유발', t:'앞 시간에 배운, 설명하는 대상을 찾는 방법은?', log:true, okMsg:'맞아요! 오늘은 이 방법으로 글을 읽고 새롭게 안 점을 말해 봐요. 🎯',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">글의 제목과 자주 나오는 낱말을 살펴봐요</div></div><div class="wcard" data-ok="0"><div class="wc-word">글자 수를 세어 봐요</div></div><div class="wcard" data-ok="0"><div class="wc-word">첫 글자만 읽어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
-   html:`<div class="sentence">글을 읽고 새롭게 안 점을 말해 봐요.</div>
-    <div class="ka-bub">먼저 이 글이 <b>무엇을 설명하는지</b>부터 찾아야 해요. 🔎</div>`},
+  {tag:'② 220쪽 작품 읽기', t:'「자연은 발명왕」을 읽어 봐요 (1)',
+   html:`<div class="scene"><div class="scene-pic">🐙🪟🪥</div></div><div class="read-lines"><div class="read-line"><span class="rl-num">1</span>유리창에 붙어 있는 인형을 본 적이 있나요?</div><div class="read-line"><span class="rl-num">2</span>그것을 붙일 때에 사용하는 물건은 문어의 빨판을 본떠 만들었습니다.</div><div class="read-line"><span class="rl-num">3</span>문어는 빨판을 이용해 어디에나 잘 달라붙습니다.</div><div class="read-line"><span class="rl-num">4</span>우리가 흔히 쓰는 칫솔걸이도 이것을 본떠 만든 물건입니다.</div></div><div class="fb" id="readFb">📖 중요한 내용에 밑줄을 긋듯 생각하며 읽어요.</div>`},
 
-  {tag:'② 경계', t:'제목만 보면 될까요?',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🏷️</span><span class="pc-name">「꿀벌」<br>제목에 그대로</span></div>
-      <div class="punct-card"><span class="pc-mark">❔</span><span class="pc-name">오늘 글<br>제목에 없어요</span></div>
-    </div>
-    <div class="ka-bub">제목은 <b>실마리</b>일 뿐이에요.<br>제목에 설명하는 것이 <b class="emph">나오지 않는 글도 많아요</b>.</div>`},
+  {tag:'② 221쪽 작품 읽기', t:'「자연은 발명왕」을 읽어 봐요 (2)',
+   html:`<div class="scene"><div class="scene-pic">🌼🪂</div></div><div class="read-lines"><div class="read-line"><span class="rl-num">1</span>낙하산은 민들레씨를 본떠 만들었습니다.</div><div class="read-line"><span class="rl-num">2</span>민들레씨의 가는 실 끝에는 털이 여러 개 달려 있습니다.</div><div class="read-line"><span class="rl-num">3</span>이 털이 있어서 민들레씨는 둥둥 떠서 멀리까지 날아갈 수 있습니다.</div><div class="read-line"><span class="rl-num">4</span>낙하산을 이용하면 비행기에서 안전하게 땅으로 내려올 수 있습니다.</div></div><div class="fb" id="readFb">📖 사진을 함께 보면 이해하기 쉬워요.</div>`},
 
-  {tag:'② 글 읽기', t:'「겨울을 나는 방법」을 한 줄씩 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>곰은 가을에 먹이를 잔뜩 먹습니다.</div>
-      <div class="read-line"><span class="rl-num">2</span>그리고 굴에 들어가 봄이 올 때까지 깊이 잠을 잡니다.</div>
-      <div class="read-line"><span class="rl-num">3</span>제비는 추워지면 따뜻한 곳으로 날아갑니다.</div>
-      <div class="read-line"><span class="rl-num">4</span>다람쥐는 도토리를 여러 곳에 숨겨 둡니다.</div>
-      <div class="read-line"><span class="rl-num">5</span>눈이 쌓인 날에도 숨겨 둔 먹이를 찾아 먹습니다.</div>
-    </div><div class="fb" id="readFb"></div>`},
+  {tag:'② 222쪽 작품 읽기', t:'「자연은 발명왕」을 읽어 봐요 (3)',
+   html:`<div class="scene"><div class="scene-pic">🌰👟🩹</div></div><div class="read-lines"><div class="read-line"><span class="rl-num">1</span>숲속을 걷다 보면 옷에 열매가 붙어 있는 경우가 있습니다.</div><div class="read-line"><span class="rl-num">2</span>도꼬마리 열매에는 갈고리 모양의 가시가 많이 있습니다.</div><div class="read-line"><span class="rl-num">3</span>그래서 새나 짐승의 털에 잘 붙습니다.</div><div class="read-line"><span class="rl-num">4</span>이것을 보고 단추나 끈보다 더 쉽게 붙였다 떼었다 할 수 있는 물건을 만들었습니다.</div></div><div class="fb" id="readFb">📖 신발·붕대·케이블 정리 끈 사진도 살펴봐요.</div>`},
 
-  {tag:'③ 문단마다 살펴보기', t:'동물과 겨울을 나는 방법을 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 동물마다 방법이 달라요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">동물</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🐻</span>곰</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🐦</span>제비</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🐿️</span>다람쥐</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">겨울을 나는 방법</div>
-        <div class="match-card" data-k="C" data-pair="c">먹이를 숨겨 두었다 찾아 먹어요</div>
-        <div class="match-card" data-k="A" data-pair="a">굴에서 깊이 잠을 자요</div>
-        <div class="match-card" data-k="B" data-pair="b">따뜻한 곳으로 날아가요</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 223쪽 내용 알기 (1)', t:'유리창에 인형을 붙일 때 쓰는 물건은 무엇을 본떠 만들었나요?', log:true, okMsg:'맞아요! 문어의 빨판을 본떠 만들었어요. 🐙',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🐙</div><div class="wc-word">문어의 빨판</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🌼</div><div class="wc-word">민들레씨</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🌰</div><div class="wc-word">도꼬마리 열매</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 전체 살펴보기', t:'이 글 전체가 설명하는 것은?', log:true,
-   okMsg:'맞아요! 세 동물을 합쳐 보면 알 수 있어요. 👍',
-   hint:'힌트: 세 동물 이야기를 하나로 묶으면 무엇이 될까요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">곰</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">동물들이<br>겨울을 나는 방법</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 223쪽 내용 알기 (2)', t:'낙하산은 무엇을 본떠 만들었나요?', log:true, okMsg:'맞아요! 털 덕분에 둥둥 떠서 천천히 내려오는 민들레씨를 본떴어요. 🪂',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🌼</div><div class="wc-word">민들레씨</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🐙</div><div class="wc-word">문어의 빨판</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🦅</div><div class="wc-word">새의 깃털</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 제목만 보면', t:'제목만 보고 “겨울”이라고 답한 친구에게 해 줄 말은?', log:true,
-   okMsg:'맞아요! 제목은 실마리일 뿐, 문단까지 함께 봐야 해요. 👍',
-   hint:'힌트: 이 글은 겨울 날씨를 알려 주는 글이었나요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">문단마다 무엇을 말하는지<br>함께 살펴봐야 해요.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">제목이 곧 답이니까<br>언제나 맞아요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 223쪽 내용 알기 (3)', t:'도꼬마리 열매가 새나 짐승의 털에 잘 붙는 까닭은?', log:true, okMsg:'맞아요! 갈고리 모양 가시가 털에 걸려 잘 붙어요. 🌰',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">열매에 갈고리 모양의 가시가 많이 있기 때문이에요</div></div><div class="wcard" data-ok="0"><div class="wc-word">열매가 끈적끈적하기 때문이에요</div></div><div class="wcard" data-ok="0"><div class="wc-word">열매가 아주 가볍기 때문이에요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 새롭게 안 점', t:'글을 읽고 새롭게 안 점을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 글에 적힌 내용으로만 골랐어요. 🎉',
-   hint:'힌트: 글에 없는 내용은 새롭게 안 점이 아니에요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">곰은 굴에서 겨울잠을 자요</div>
-      <div class="chip" data-hit="0">제비는 겨울에 굴을 파요</div>
-      <div class="chip" data-hit="1">제비는 따뜻한 곳으로 날아가요</div>
-      <div class="chip" data-hit="1">다람쥐는 먹이를 숨겨 둬요</div>
-      <div class="chip" data-hit="0">곰은 도토리를 모아 둬요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 내용 알기 더하기', t:'자연과 그것을 본떠 만든 물건을 이어 봐요', log:true, matchMsg:'문어 → 칫솔걸이 · 민들레씨 → 낙하산 · 도꼬마리 → 신발 끈! 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">자연</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🐙</span>문어의 빨판</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🌼</span>민들레씨</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🌰</span>도꼬마리 열매</div></div><div class="match-col"><div class="match-col-h">본떠 만든 물건</div><div class="match-card" data-k="C" data-pair="c">붙였다 떼었다 하는 신발 끈</div><div class="match-card" data-k="A" data-pair="a">칫솔걸이</div><div class="match-card" data-k="B" data-pair="b">낙하산</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 말하는 방법', t:'새롭게 안 점을 말할 때 알맞은 것은?', log:true,
-   okMsg:'맞아요! 글에서 읽은 내용으로 말해요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">생각나는 대로<br>지어내어 말해요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">글에서 읽은 내용으로<br>말해요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 223쪽 설명하는 대상 찾기 (1)', t:'이 글의 제목은 무엇인가요?', log:true, okMsg:'맞아요! 제목은 「자연은 발명왕」이에요. 🏷️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">자연은 발명왕</div></div><div class="wcard" data-ok="0"><div class="wc-word">문어의 빨판</div></div><div class="wcard" data-ok="0"><div class="wc-word">낙하산</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 문단 셋을 묶기', t:'문단 셋이 모두 말하고 있는 것은?', log:true,
-   okMsg:'맞아요! 셋 다 추운 겨울을 어떻게 지내는지 알려 줘요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">추운 겨울을<br>어떻게 지내는지</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">어디에서<br>태어났는지</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 223쪽 설명하는 대상 찾기 (2)', t:'이 글에서 소개하는 것은 무엇인가요?', log:true, okMsg:'맞아요! 문단마다 자연을 본떠 만든 물건을 하나씩 소개해요. 💡',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">자연을 본떠 만든 물건</div></div><div class="wcard" data-ok="0"><div class="wc-word">바다에 사는 생물</div></div><div class="wcard" data-ok="0"><div class="wc-word">숲에서 노는 방법</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 차례 세우기', t:'설명하는 것을 찾는 차례로 알맞은 것은?', log:true,
-   okMsg:'맞아요! 제목 → 문단 → 합쳐 생각하기예요. 👍',
-   hint:'힌트: 오늘 우리가 한 차례를 떠올려 봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">제목을 보고<br>바로 답하기</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">제목 보기 → 문단 보기<br>→ 합쳐서 생각하기</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 제목의 뜻', t:'제목 「자연은 발명왕」은 무엇을 뜻할까요?', log:true, okMsg:'맞아요! 「독도」와 달리 제목에 물건 이름이 바로 나오지 않아도, 글을 읽으면 무엇을 알려 주려는지 알 수 있어요. 🔎', hint:'힌트: 세 문단에 공통으로 나오는 이야기를 떠올려 봐요.',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">자연을 본떠 여러 가지 물건을 만들 수 있다는 뜻이에요</div></div><div class="wcard" data-ok="0"><div class="wc-word">자연이 상을 받았다는 뜻이에요</div></div><div class="wcard" data-ok="0"><div class="wc-word">발명왕이라는 사람의 이름이에요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 말해 보기', t:'둘레에서 겨울을 나는 모습을 말해 봐요',
-   html:`<div class="stage-box">
-      🗣️ 우리 둘레에서 겨울을 나는 모습을 하나 떠올려 말해 봐요.<br>
-      나무, 새, 강아지, 사람…… 무엇이든 좋아요.<br>
-      <small>(“○○는 겨울에 ○○해요.”처럼 말해 봐요.)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="본 것을 바탕으로 잘 말했어요! 👏">🗣️ 말해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 223쪽 글과 연결하기', t:'이 글을 읽고 새롭게 안 점을 말해 봐요',
+   html:`<div class="stage-box">💬 새롭게 안 점과, 주변에서 자연을 본떠 만든 물건을 말해 보세요.<br><small>예) 낙하산이 민들레씨를 본떠 만든 것이라는 것을 새롭게 알았어요. / 연잎을 본떠 물이 스며들지 않는 우산을 만들었대요.</small><br><button class="stage-do" id="stageDo" data-fb="멋져요! 글과 내 생활을 이어서 생각했어요. 🌱">💬 말해 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">❔</span>제목에 설명하는 것이 <b>없는 글</b>도 있어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🧩</span><b>문단마다</b> 무엇을 말하는지 보고 <b>합쳐서</b> 생각해요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">💬</span>새롭게 안 점은 <b>글에서 읽은 내용</b>으로 말해요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">➡️</span>다음 시간부터는 <b>겪은 일</b>을 정리해 볼 거예요.</div>
-    </div>`},
+  {tag:'⑤ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🏷️</span>제목과 <b>문단마다 소개하는 것</b>을 살펴봐요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">💡</span>「자연은 발명왕」은 <b>자연을 본떠 만든 물건</b>을 설명해요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">💬</span>글을 읽고 <b>새롭게 안 점</b>을 문장으로 말했어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -431,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

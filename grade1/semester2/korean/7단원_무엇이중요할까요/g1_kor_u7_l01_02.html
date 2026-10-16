@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,126 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 1~2차시(준비 — 배울 내용 살펴보기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
+/* ===== 1~2차시(준비 — 배울 내용 살펴보기) 『국어』 214~217쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 배울 내용을 살펴볼 수 있다.
-   ★ 정답 로깅 7슬. 무대·마무리 = 로깅 X.
-   ★ 지도서 280쪽: 단원 학습 내용 예상은 정확한 내용 알기가 아니라 호기심 유발이 목적 →
-      ②에서 「이런 것을 배울 거예요」까지만 세우고 정답을 앞당기지 않는다.
-   ★ 지도서 280쪽: 이 단원은 화제 파악이 핵심이므로 중심 문장·중심 내용 파악 같은
-      상위 학습 내용은 다루지 않는다 → 문항을 「무엇에 대한 글인가」에서 멈춘다.
-   ★ 저작권: 교과서 214~217쪽 장난감 조립 설명서 그림, 색종이 접기 장면 두 컷과 말풍선,
-      설명서 경험 말풍선 두 개(음식 재료 배달 / 청소기 조립) 전부 미차용.
-      자체 소재 = 「우리 반 사물함 쓰는 방법」 안내 쪽지. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「진짜 일 학년 책가방을 지켜라!」 본문은 옮기지 않음(교과서 224~228쪽), 간추림만. 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 장면 만나기', t:'교실 문 옆에 쪽지가 붙어 있어요',
-   html:`<div class="scene">
-      <div class="scene-pic">🗄️</div>
-      <div class="scene-say">우리 반 사물함 쓰는 방법</div>
-    </div>
-    <div class="ka-bub">쪽지에는 <b class="emph">무엇을 어떻게 하라는지</b>가 적혀 있어요. 🤔</div>`},
+  {tag:'① 214쪽 단원 열기', t:'7단원 「무엇이 중요할까요」',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">📖</span><span class="pc-name">무엇을 설명하는지 생각하며 글 읽기</span></div><div class="punct-card"><span class="pc-mark">✍️</span><span class="pc-name">겪은 일을 글로 쓰기</span></div></div><div class="ka-bub">이 단원에서는 글이 <b class="emph">무엇을 설명하는지</b> 찾으며 읽고,<br>내가 <b class="emph">겪은 일</b>을 글로 써 봐요. 🙂</div>`},
 
-  {tag:'① 학습 문제', t:'오늘부터 이것을 배워요',
-   html:`<div class="sentence">무엇을 설명하는지 생각하며 글을 읽어요.</div>
-    <div class="sentence">겪은 일을 글로 써요.</div>
-    <div class="ka-bub">이 단원에서 배울 <b>두 가지</b>예요. 📚</div>`},
+  {tag:'① 215쪽 생각 열기', t:'그림 속 아이를 살펴봐요',
+   html:`<div class="scene"><div class="scene-pic">👧📄🧩🚀</div></div><div class="ka-bub">한 아이가 바닥에 앉아 종이를 펼쳐 보고 있어요.<br>옆에는 <b class="emph">장난감 조각</b>들이 놓여 있어요.</div>`},
 
-  {tag:'② 알아보기', t:'설명하는 글은 무엇을 알려 줄까요?',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">❓</span><span class="pc-name">그것이<br>무엇인지</span></div>
-      <div class="punct-card"><span class="pc-mark">🛠️</span><span class="pc-name">어떻게<br>하는지</span></div>
-    </div>
-    <div class="ka-bub">설명하는 글을 읽으면 <b>몰랐던 것을 알게</b> 돼요.</div>`},
+  {tag:'① 215쪽 생각 열기', t:'그림 속 아이는 무엇을 하고 있을까요?', log:true, okMsg:'맞아요! 종이에 적힌 글을 보며 장난감을 만들고 있어요. 🧩',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🧩</div><div class="wc-word">글을 살펴보며 장난감을 만들고 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">😴</div><div class="wc-word">낮잠을 자고 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🎨</div><div class="wc-word">그림을 그리고 있어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 배울 내용', t:'두 가지를 이렇게 배워요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">📖</span><span class="pc-name">무엇을 설명하는지<br>생각하며 읽기</span></div>
-      <div class="punct-card"><span class="pc-mark">✏️</span><span class="pc-name">겪은 일을<br>글로 쓰기</span></div>
-    </div>
-    <div class="ka-bub">아직 몰라도 괜찮아요. 오늘은 <b>어떤 공부를 할지</b>만 살펴봐요.</div>`},
+  {tag:'① 215쪽 생각 열기', t:'그림 속 아이가 읽고 있는 글은 무엇에 대한 글일까요?', log:true, okMsg:'맞아요! 장난감을 어떻게 만드는지 알려 주는 설명서예요. 📄',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">📄</div><div class="wc-word">장난감 만들기에 대한 설명서</div></div><div class="wcard" data-ok="0"><div class="wc-pic">📕</div><div class="wc-word">옛날이야기 책</div></div><div class="wcard" data-ok="0"><div class="wc-pic">💌</div><div class="wc-word">친구가 보낸 편지</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 쪽지 읽기', t:'이 쪽지는 무엇을 알려 주나요?', log:true,
-   okMsg:'맞아요! 사물함을 쓰는 방법을 알려 줘요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">사물함을<br>쓰는 방법</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">사물함을<br>만든 사람</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'① 215쪽 생각 열기', t:'그림과 비슷한 일을 겪은 적이 있나요?',
+   html:`<div class="stage-box">💭 설명서를 보며 무엇을 만들어 본 적이 있나요?<br><small>예) 설명서를 보며 종이접기를 한 적이 있어요. / 놀이판의 놀이 방법을 읽고 놀이를 해 봤어요.</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 설명하는 글은 우리 가까이에 있어요. 📄">💭 떠올렸어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 왜 중요할까', t:'설명을 대충 읽으면 어떻게 될까요?', log:true,
-   okMsg:'맞아요! 무엇을 어떻게 할지 몰라 헤매게 돼요. 👍',
-   hint:'힌트: 설명서를 안 읽고 만들기를 했던 때를 떠올려 봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">더 빨리<br>끝나요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">무엇을 어떻게 할지<br>몰라 헤매요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 단원 학습 내용', t:'이 단원에서 공부할 내용',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>무엇을 설명하는지 생각하며 글을 읽어 봅시다.</div><div class="read-line"><span class="rl-num">2</span>겪은 일을 써 봅시다.</div></div><div class="fb" id="readFb">🔊 공부할 내용을 소리 내어 읽어 봐요.</div>`},
 
-  {tag:'③ 설명하는 글 찾기', t:'설명하는 글을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 무엇을 어떻게 하는지 알려 주는 글이에요. 🎉',
-   hint:'힌트: 읽으면 무엇을 어떻게 하는지 알게 되는 글만 골라요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">약을 먹는 방법</div>
-      <div class="chip" data-hit="0">친구에게 보낸 편지</div>
-      <div class="chip" data-hit="1">국을 데우는 방법</div>
-      <div class="chip" data-hit="0">어제 있었던 일을 쓴 일기</div>
-      <div class="chip" data-hit="1">자물쇠를 여는 방법</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 216쪽 1번', t:'만들기 시간 — 화면에 나온 설명을 읽어 봐요',
+   html:`<div class="scene"><div class="scene-pic">🖥️🟥✂️</div></div><div class="read-lines"><div class="read-line"><span class="rl-num">1</span>① 색종이를 뒤집어 놓고 반으로 접으세요.</div><div class="read-line"><span class="rl-num">2</span>② 접은 색종이를 가위로 자르세요.</div></div><div class="fb" id="readFb">🔊 선생님 화면에 나온 설명을 차례대로 읽어 봐요.</div>`},
 
-  {tag:'③ 어디서 볼까', t:'설명하는 글과 알려 주는 것을 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 둘레에 설명하는 글이 많아요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">설명하는 글</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🧃</span>음료수 통에 붙은 글</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🍽️</span>급식실에 붙은 차림표</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🧯</span>복도에 걸린 안내문</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">알려 주는 것</div>
-        <div class="match-card" data-k="C" data-pair="c">불이 났을 때 나가는 길</div>
-        <div class="match-card" data-k="A" data-pair="a">무엇이 들어 있는지</div>
-        <div class="match-card" data-k="B" data-pair="b">오늘 어떤 음식이 나오는지</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 217쪽 (1)', t:'두 아이는 무엇을 하고 있나요?', log:true, okMsg:'맞아요! 만들기 시간에 색종이를 접고 있어요. 🟥',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🟥</div><div class="wc-word">색종이를 접고 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">⚽</div><div class="wc-word">공을 차고 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🍙</div><div class="wc-word">밥을 먹고 있어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 읽는 방법', t:'설명하는 글을 읽을 때 가장 먼저 볼 것은?', log:true,
-   okMsg:'맞아요! 무엇에 대한 글인지부터 살펴봐요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">무엇에 대해<br>알려 주는 글인지</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">글자가<br>몇 개인지</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 217쪽 (2)', t:'「무엇을 자르지?」 하고 묻던 아이가 만들기를 잘하려면?', log:true, okMsg:'맞아요! 설명이 무엇을 말하는지 잘 알아들으면 만들기를 잘할 수 있어요. 👂', hint:'힌트: 「아하, 반으로 잘라야 하는구나.」 한 아이는 무엇을 잘했을까요?',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">무엇을 어떻게 하라는 것인지 설명을 듣고 내용을 이해해야 해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">친구보다 빨리 만들어야 해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">설명을 듣지 않고 마음대로 만들어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 겪은 일 찾기', t:'내가 겪은 일을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 이미 있었던 일이 겪은 일이에요. 🎉',
-   hint:'힌트: 아직 하지 않은 일은 겪은 일이 아니에요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">아침에 우유를 쏟은 일</div>
-      <div class="chip" data-hit="0">내일 하고 싶은 일</div>
-      <div class="chip" data-hit="1">체육 시간에 줄넘기를 한 일</div>
-      <div class="chip" data-hit="0">아직 가 보지 못한 곳</div>
-      <div class="chip" data-hit="1">도서관에서 책을 빌린 일</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 217쪽 2번', t:'누가 무엇을 하려고 설명서를 읽었는지 이어 봐요', log:true, matchMsg:'음식 · 청소기 · 장난감! 무엇을 만들 때 설명하는 글을 읽어요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">누가</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">👩</span>엄마</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">👨</span>아빠</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">👧</span>그림 속 아이</div></div><div class="match-col"><div class="match-col-h">설명서를 읽고 한 일</div><div class="match-card" data-k="B" data-pair="b">새로 산 청소기를 조립하셨어요</div><div class="match-card" data-k="C" data-pair="c">장난감을 만들었어요</div><div class="match-card" data-k="A" data-pair="a">배달된 재료로 음식을 만드셨어요</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 함께 쓸 것', t:'겪은 일을 쓸 때 함께 쓰면 좋은 것은?', log:true,
-   okMsg:'맞아요! 그때 내 마음까지 쓰면 잘 통해요. 👍',
-   hint:'힌트: 읽는 사람이 그 일을 함께 느낄 수 있게 해 주는 것이에요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">친구의<br>점수</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">그때<br>내 마음</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 설명하는 글 찾기', t:'무엇을 어떻게 하는지 알려 주는 글을 모두 골라요', log:true, collectMsg:'잘 찾았어요! 무엇을 알려 주는 글을 「설명하는 글」이라고 해요. 📄',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">📄 장난감 조립 설명서</div><div class="chip" data-hit="1">🎲 놀이판의 놀이 방법</div><div class="chip" data-hit="1">🍳 음식 만들기 설명서</div><div class="chip" data-hit="0">📔 내가 쓴 그림일기</div><div class="chip" data-hit="0">💌 할머니께 쓴 편지</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'④ 말해 보기', t:'설명하는 글을 읽어 본 이야기를 해 봐요',
-   html:`<div class="stage-box">
-      🗣️ 설명하는 글을 보고 무언가를 해 본 적이 있나요?<br>
-      <b>무엇을 읽었는지 → 무엇을 했는지</b> 차례로 말해 봐요.<br>
-      <small>(약 봉지, 안내판, 만들기 방법…… 무엇이든 좋아요.)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="설명하는 글이 언제 필요한지 잘 말했어요! 👏">🗣️ 말해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'④ 생각 모으기', t:'설명하는 글을 읽을 때 중요한 것은?', log:true, okMsg:'맞아요! 글이 무엇을 설명하는지 찾는 것이 이 단원에서 가장 중요해요. 🔎',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">무엇을 설명하는지 생각하며 읽어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">그림만 보고 넘어가요</div></div><div class="wcard" data-ok="0"><div class="wc-word">가장 빨리 읽어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 살펴봤어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">📖</span>설명하는 글은 <b>무엇을 어떻게 하는지</b> 알려 줘요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🔎</span>읽을 때는 <b>무엇에 대한 글인지</b>부터 살펴봐요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">✏️</span>겪은 일은 <b>그때 마음</b>까지 함께 써요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">➡️</span>다음 시간에는 설명하는 글을 <b>직접 읽어</b> 볼 거예요.</div>
-    </div>`},
+  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">📄</span><b>설명서</b>를 읽고 무엇을 만든 경험을 떠올렸어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">👂</span>설명을 잘 이해하면 만들기를 잘할 수 있어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🔎</span>앞으로 글이 <b>무엇을 설명하는지</b> 찾으며 읽어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -428,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>

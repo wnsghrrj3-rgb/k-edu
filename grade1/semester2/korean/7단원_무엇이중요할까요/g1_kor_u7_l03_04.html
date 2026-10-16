@@ -114,7 +114,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
 </style>
-<script src="/kedu_gate.js"></script>
 </head>
 <body>
 <div class="ka">
@@ -140,128 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 3~4차시(소단원 1 기본 — 무엇을 설명하는지 생각하며 글 읽기) 13슬:
-   ① 만나기 2 → ② 따라가기 2 → ③ 활동·심장 7 → ④ 표현·정리 2 =====
+/* ===== 3~4차시(소단원 1 기본 — 무엇을 설명하는지 생각하며 글 읽기) 『국어』 218~219쪽 13슬 — v2 교과서 기준 재구성 (2026-10-16)
    학습 목표: 무엇을 설명하는지 생각하며 글을 읽을 수 있다.
-   ★ 정답 로깅 7슬. 읽기·무대·마무리 = 로깅 X.
-   ★ 지도서 282쪽: 글 내용을 모두 기억하기보다 「이 글이 설명하려는 것」을 기억하며 읽게 한다
-      → 세부 사실 암기 문항을 넣지 않고 대상·되풀이 낱말·문단 요지만 묻는다.
-   ★ 지도서 282쪽 활동의 유의점: 제목을 설명 대상과 동일시하지 않도록 지도한다
-      → ③ 열한째 슬에서 「제목만으로 알 수 있는 글」과 아닌 글을 갈라 두고,
-         5~6차시에서 제목만으로는 안 되는 글을 실제로 읽게 이어 붙였다.
-   ★ 저작권: 교과서 218~219쪽 「독도」 전문(위치·큰 섬 두 개와 바위섬 89개·동도·서도·
-      대한봉·우산봉·등대·경비대·숙소·독도관리사무소·물), 지도서 283쪽 KWL 표 전면 미인용.
-      자체 제재 = 「꿀벌」 넉 줄. 골격도 교체 — 위치·구성·부분별 시설이 아니라
-      「어떤 것인가 → 무엇을 하는가 → 우리에게 무엇을 주는가」로 짰다. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「진짜 일 학년 책가방을 지켜라!」 본문은 옮기지 않음(교과서 224~228쪽), 간추림만. 그 밖의 자료는 교육부 집필이라 그대로. */
 const slides=[
-  {tag:'① 장면 만나기', t:'꽃밭에 무엇이 날아왔어요',
-   html:`<div class="scene">
-      <div class="scene-pic">🐝</div>
-      <div class="scene-say">붕— 꽃 위를 맴돌아요</div>
-    </div>
-    <div class="ka-bub">이 작은 곤충에 대한 글을 읽어 볼 거예요. 🌼</div>`},
+  {tag:'① 동기 유발', t:'독도에 대해 궁금했던 점이 있나요?',
+   html:`<div class="stage-box">🏝️ 독도에 대해 알고 있는 노래가 있나요? 뉴스나 영상을 본 적이 있나요?<br><small>오늘의 공부: 무엇을 설명하는지 생각하며 글을 읽어 봅시다.</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 궁금한 점을 떠올리며 「독도」를 읽어 봐요. 📖">🏝️ 떠올렸어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'① 학습 문제', t:'오늘은 이것을 배워요',
-   html:`<div class="sentence">무엇을 설명하는지 생각하며 글을 읽어요.</div>
-    <div class="ka-bub">글을 다 외우지 않아도 괜찮아요.<br><b class="emph">이 글이 무엇에 대한 글인지</b>만 꼭 잡아요. 🔎</div>`},
+  {tag:'② 218쪽 1번', t:'「독도」를 읽어 봐요 (1)',
+   html:`<div class="scene"><div class="scene-pic">🏝️🌊🏝️</div></div><div class="read-lines"><div class="read-line"><span class="rl-num">1</span>독도는 우리나라 동쪽 끝에 위치한 섬입니다.</div><div class="read-line"><span class="rl-num">2</span>독도는 큰 섬 두 개와 작은 바위섬 89개로 이루어져 있습니다.</div><div class="read-line"><span class="rl-num">3</span>큰 섬 두 개를 각각 동도와 서도라고 부릅니다.</div><div class="read-line"><span class="rl-num">4</span>독도는 동도와 서도를 모두 합쳐 부르는 이름입니다.</div></div><div class="fb" id="readFb">📖 무엇을 설명하는지 생각하며 읽어 봐요.</div>`},
 
-  {tag:'② 방법 알기', t:'설명하는 것을 찾는 두 가지 방법',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🏷️</span><span class="pc-name">제목을<br>살펴보기</span></div>
-      <div class="punct-card"><span class="pc-mark">🔁</span><span class="pc-name">되풀이 나오는<br>낱말 찾기</span></div>
-    </div>
-    <div class="ka-bub">두 가지를 <b>함께</b> 살펴보면 더 잘 찾을 수 있어요.</div>`},
+  {tag:'② 219쪽', t:'「독도」를 읽어 봐요 (2) — 동도',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>동도에는 등대와, 배가 드나들 수 있도록 만든 시설이 있습니다.</div><div class="read-line"><span class="rl-num">2</span>동도에 있는 등대는 밤에도 불을 밝혀 독도 주변을 지키는 데 도움을 줍니다.</div><div class="read-line"><span class="rl-num">3</span>독도를 지키는 경비대도 이곳에 있습니다.</div></div><div class="fb" id="readFb">📖 동도에 무엇이 있는지 생각하며 읽어요.</div>`},
 
-  {tag:'② 글 읽기', t:'「꿀벌」을 한 줄씩 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>꿀벌은 꽃을 찾아다니는 작은 곤충입니다.</div>
-      <div class="read-line"><span class="rl-num">2</span>꿀벌은 꽃에서 꿀을 모아 벌집으로 옮깁니다.</div>
-      <div class="read-line"><span class="rl-num">3</span>꿀벌은 춤을 추어 꽃이 어디에 있는지 알려 줍니다.</div>
-      <div class="read-line"><span class="rl-num">4</span>꿀벌이 꽃을 오가는 동안 열매가 잘 열립니다.</div>
-    </div><div class="fb" id="readFb"></div>`},
+  {tag:'② 219쪽', t:'「독도」를 읽어 봐요 (3) — 서도',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>서도에는 주민을 위한 숙소가 있습니다.</div><div class="read-line"><span class="rl-num">2</span>독도관리사무소 직원도 독도에 올 때에는 이곳을 이용합니다.</div><div class="read-line"><span class="rl-num">3</span>또 서도에는 땅에 스며든 물이 땅 밖으로 모이는 곳이 있습니다.</div><div class="read-line"><span class="rl-num">4</span>요즘은 바닷물을 우리가 먹을 수 있게 바꾼 뒤 그 물을 사용합니다.</div></div><div class="fb" id="readFb">📖 서도에 무엇이 있는지 생각하며 읽어요.</div>`},
 
-  {tag:'③ 설명 대상 찾기', t:'이 글은 무엇을 설명하나요?', log:true,
-   okMsg:'맞아요! 처음부터 끝까지 꿀벌에 대해 알려 줘요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">꿀벌</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">열매</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 글의 내용 파악하기', t:'독도는 어디에 있나요?', log:true, okMsg:'맞아요! 독도는 우리나라 동쪽 끝에 있는 섬이에요. 🏝️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">➡️</div><div class="wc-word">우리나라 동쪽 끝</div></div><div class="wcard" data-ok="0"><div class="wc-pic">⬅️</div><div class="wc-word">우리나라 서쪽 끝</div></div><div class="wcard" data-ok="0"><div class="wc-pic">⬇️</div><div class="wc-word">우리나라 남쪽 끝</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 되풀이 낱말', t:'글에서 되풀이해 나오는 낱말은?', log:true,
-   okMsg:'맞아요! 네 줄에 모두 나와요. 되풀이 낱말이 실마리예요. 👍',
-   hint:'힌트: 줄마다 빠지지 않고 나오는 낱말을 찾아요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">벌집</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">꿀벌</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 글의 내용 파악하기', t:'독도는 무엇으로 이루어져 있나요?', log:true, okMsg:'맞아요! 큰 섬 둘(동도·서도)과 작은 바위섬 89개예요. 🪨',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">큰 섬 두 개와 작은 바위섬 89개</div></div><div class="wcard" data-ok="0"><div class="wc-word">큰 섬 한 개</div></div><div class="wcard" data-ok="0"><div class="wc-word">작은 바위섬 두 개</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 알려 준 것 모으기', t:'글이 꿀벌에 대해 알려 준 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 글에 적힌 것만 잘 골랐어요. 🎉',
-   hint:'힌트: 글에 적혀 있는 것만 골라요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">꽃을 찾아다녀요</div>
-      <div class="chip" data-hit="0">물속에서 헤엄쳐요</div>
-      <div class="chip" data-hit="1">꿀을 벌집으로 옮겨요</div>
-      <div class="chip" data-hit="1">춤을 추어 알려 줘요</div>
-      <div class="chip" data-hit="0">밤에 노래를 불러요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 글의 내용 파악하기', t:'동도에 있는 것을 모두 골라요', log:true, collectMsg:'맞아요! 숙소와 물이 모이는 곳은 서도에 있어요. 🗼',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">🗼 등대</div><div class="chip" data-hit="1">⛴️ 배가 드나드는 시설</div><div class="chip" data-hit="1">👮 독도를 지키는 경비대</div><div class="chip" data-hit="0">🏠 주민을 위한 숙소</div><div class="chip" data-hit="0">💧 땅에서 물이 모이는 곳</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 줄마다 살펴보기', t:'줄과 그 줄이 알려 주는 것을 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 줄마다 알려 주는 것이 달라요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">글의 줄</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">1️⃣</span>꽃을 찾아다니는 작은 곤충</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">2️⃣</span>꿀을 모아 벌집으로 옮김</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">4️⃣</span>꽃을 오가는 동안 열매가 열림</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">알려 주는 것</div>
-        <div class="match-card" data-k="B" data-pair="b">하는 일</div>
-        <div class="match-card" data-k="C" data-pair="c">우리에게 주는 도움</div>
-        <div class="match-card" data-k="A" data-pair="a">어떤 것인지</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 글의 내용 파악하기', t:'요즘 독도에서는 어떤 물을 사용하나요?', log:true, okMsg:'맞아요! 옛날에는 땅에서 모인 물을 썼지만, 요즘은 바닷물을 바꾸어 써요. 💧',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🌊</div><div class="wc-word">바닷물을 먹을 수 있게 바꾼 물</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🧃</div><div class="wc-word">육지에서 매일 가져온 주스</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🌧️</div><div class="wc-word">빗물을 그대로 마신 물</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 새롭게 안 점', t:'새롭게 안 점을 바르게 말한 것은?', log:true,
-   okMsg:'맞아요! 글에서 읽은 내용으로 말했어요. 👍',
-   hint:'힌트: 글에 적혀 있지 않은 것은 새롭게 안 점이 아니에요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">꿀벌이 춤으로 꽃이 있는 곳을<br>알린다는 것을 새로 알았어요.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">꿀벌이 겨울에 바다로<br>간다는 것을 새로 알았어요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 219쪽 2번 (1)', t:'이 글의 제목은 무엇인가요?', log:true, okMsg:'맞아요! 제목은 「독도」예요. 제목을 보면 무엇을 설명할지 짐작할 수 있어요. 🏷️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">독도</div></div><div class="wcard" data-ok="0"><div class="wc-word">동도</div></div><div class="wcard" data-ok="0"><div class="wc-word">등대</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 방법 되짚기', t:'설명하는 것을 찾을 때 살펴볼 것은?', log:true,
-   okMsg:'맞아요! 제목과 되풀이 낱말을 함께 봐요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">글이 몇 줄인지</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">제목과 되풀이 나오는 낱말</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 219쪽 2번 (2)', t:'이 글은 무엇을 소개하고 있나요?', log:true, okMsg:'맞아요! 이 글은 「독도」를 설명하는 글이에요. 🏝️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">독도의 위치, 동도와 서도에 대한 내용</div></div><div class="wcard" data-ok="0"><div class="wc-word">독도에 가는 배 시간표</div></div><div class="wcard" data-ok="0"><div class="wc-word">바다에 사는 물고기</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 제목 살펴보기', t:'제목만 보고도 무엇을 설명하는지 알 수 있는 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 제목에 그것이 그대로 들어 있어요. 🎉',
-   hint:'힌트: 제목 안에 설명하는 것이 낱말로 들어 있는지 봐요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">「비누」</div>
-      <div class="chip" data-hit="0">「참 이상한 하루」</div>
-      <div class="chip" data-hit="1">「지렁이」</div>
-      <div class="chip" data-hit="0">「작아도 대단해」</div>
-      <div class="chip" data-hit="1">「우리 학교 도서관」</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 설명하는 대상 찾기', t:'글에서 설명하는 대상을 찾는 방법으로 알맞은 것은?', log:true, okMsg:'맞아요! 「독도」라는 낱말이 계속 나와요. 다만 제목에 대상이 늘 나오는 것은 아니니 글 내용도 꼭 살펴봐요. 🔎',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">제목을 살펴보고, 글에 되풀이해 나오는 낱말을 찾아요</div></div><div class="wcard" data-ok="0"><div class="wc-word">글의 마지막 낱말만 봐요</div></div><div class="wcard" data-ok="0"><div class="wc-word">그림의 색깔만 봐요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 말해 보기', t:'소리 내어 읽고 새로 안 점을 말해 봐요',
-   html:`<div class="stage-box">
-      🗣️ 「꿀벌」을 처음부터 끝까지 소리 내어 읽어 봐요.<br>
-      그리고 <b>새롭게 알게 된 것</b>을 한 가지 말해 봐요.<br>
-      <small>(“나는 ○○을 새로 알았어요.”처럼 말하면 좋아요.)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="글에서 찾은 내용으로 잘 말했어요! 👏">🗣️ 말해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 219쪽 3번', t:'「독도」를 다시 읽고 새롭게 안 점에 밑줄을 그어요',
+   html:`<div class="stage-box">✏️ 교과서 219쪽에서 새롭게 안 점에 밑줄을 긋고 발표해 보세요.<br><small>예) 독도가 큰 섬 두 개와 작은 바위섬 89개로 이루어져 있다는 것을 새롭게 알았어요.</small><br><button class="stage-do" id="stageDo" data-fb="멋져요! 새롭게 안 점을 문장으로 말했어요. 🌟">✏️ 밑줄 긋고 말해 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🏷️</span><b>제목</b>을 살펴보면 실마리를 얻어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🔁</span><b>되풀이 나오는 낱말</b>도 함께 살펴봐요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🐝</span>이 글이 설명하는 것은 <b>꿀벌</b>이었어요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">➡️</span>다음 시간에는 <b>제목만 봐서는 알 수 없는 글</b>을 읽어요.</div>
-    </div>`},
+  {tag:'⑤ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🏷️</span><b>제목</b>을 보고 무엇을 설명할지 짐작해요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🔁</span>글에 <b>되풀이해 나오는 낱말</b>을 찾아요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🏝️</span>「독도」는 <b>독도</b>를 설명하는 글이에요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
@@ -430,6 +351,5 @@ render();
 <script src="/kedu_lesson_bridge.js"></script>
 <script src="/kedu_back.js"></script>
 <script src="/kedu_fit_main.js"></script>
-<script src="/kedu_practice.js"></script><!-- 오늘 확인 — 차시 문제 풀기 문 (2026-09-07) -->
 </body>
 </html>
