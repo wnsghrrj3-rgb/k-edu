@@ -1,11 +1,11 @@
-/* gate_g1s2_korean_u7.js — 1학년 2학기 국어 7단원 「무엇이 중요할까요」 케이티처 2세대 게이트 (135차, 베프 — u6 게이트 복제 + 7단원 맞춤).
+/* gate_g1s2_korean_u7.js — 1학년 2학기 국어 7단원 「무엇이 중요할까요」 케이티처 2세대 게이트 (135차 → 141차 v2, 베프 — u6 v2 게이트 복제 + 7단원 맞춤).
    2세대 무대(stage2.js renderSlide)로 실렌더한다. 국어라 산수 검산 대신 원문 계승·정답 표시·선행 용어·인물 조사를 전수 본다.
    A 로드·meta(7 묶음 키 = 원문 파일 1:1 · l07 세 차시 120분 + 6묶음 80분 = 600분 · grade 1 · term 2 · 학습 목표 = 원문) · B 19장 골격 · C 7요소 · D 복습 계보(g1s2_korean u6_l15 → l01 → … → l14)
    E 정답 표시(하나 고르기 = 원문 정답 · 모두 고르기 = 원문 hit 그대로(보기 3~6) · 짝 잇기 = 원문 짝 전부 · 종류 합 21) · 수준별·출구
-   F 원문 계승(개념 말풍선 = 원문 글 · 글 판 = 원문 줄 · 따라 쓰기 장 1 = 원문 HTML trace 칸 · 기본 문제 = 원문 문항 · 정리 = 원문 정리 줄 · 잇기 그림 = 원문 짝)
-   G 그림 렌더 · H 중복 0 · I 실렌더 + 1인 흐름 + 모두 고르기 표시 · J extras 22 · K 발문 6장↑·분 합 = 차시 분의 0.75~1.1배 · L 선행 용어(원문도 같은 차례) · M 곰이·펭이·서우 조사 · N 저작권·차단 어휘
+   F 원문 계승(개념 말풍선 = 원문 글(점검 줄 포함) · 글 판 = 원문 줄 · 따라 쓰기 장 1 = 원문 HTML trace 칸 · 기본 문제 = 원문 문항 · 정리 = 원문 정리 줄(l14 는 마지막 장이 점검 장 → 점검 줄) · 잇기 그림 = 원문 짝)
+   G 그림 렌더 · H 중복 0 · I 실렌더 + 1인 흐름 + 모두 고르기 표시 · J extras 22 · K 발문 6장↑·분 합 = 차시 분의 0.75~1.1배 · L 선행 용어(원문도 같은 차례) · M 곰이·펭이·준수·철수·영미·지영 조사 · N 저작권·차단 어휘
    + 학기 끝: 마지막 차시 next_lesson 제목 「2학기 국어를 마쳐요」.
-   ⚠ 재료는 지도서 전 v1 — 지도서가 오면 재료·게이트 L·M 을 다시 맞춘다.
+   141차: 재료 = 교과서 214~239쪽 기준 v2(자기주도 k-edu 7dcdc31) — F·L·M·N 을 v2 원문에 맞춤.
    실행: NODE_PATH=<jsdom 있는 node_modules> node kedu/teacher/표준/gate_g1s2_korean_u7.js */
 'use strict';
 const fs = require('fs');
@@ -36,7 +36,7 @@ const KT2 = w.KT2, FIG = w.KT2_FIG;
 const render = (s, les, rev) => KT2.renderSlide(s, { revealed: rev, state: {}, meta: les.meta, unitTitle: UT, classNames: [] });
 const norm = (t) => String(t).replace(/\s+/g, ' ').trim();
 const nb = (t) => norm(String(t).replace(/\*\*/g, ''));
-/* 따라 쓰기 장 1(l14 s11 무엇·설명·겪은일)의 칸 — 생성기와 같은 길(trace-row 쪼개기)로 원문 HTML 에서 읽는다 */
+/* 따라 쓰기 장 1(l14 s11 끝·붙이기·술래잡기·알림장)의 칸 — 생성기와 같은 길(trace-row 쪼개기)로 원문 HTML 에서 읽는다 */
 const TRACE_AT = { u7_l14: 11 };
 const TRACE = {}; Object.keys(TRACE_AT).forEach(k => { const h = fs.readFileSync(path.join(SD, SRC[k].file), 'utf8'); TRACE[k] = h.split('<div class="trace-row">').slice(1).map(row => (row.match(/class="trace-cell">([^<]*)</g) || []).map(c => c.replace(/^class="trace-cell">/, '').replace(/<$/, '')).join('')); });
 
@@ -49,7 +49,7 @@ T('meta: 1학년 2학기 · unit 4 · unit_title · covers·분 = 원문 파일 
   ok(fs.existsSync(path.join(TDIR, m.live_url)), k + ' live_url ' + m.live_url); }));
 T('l07 세 차시 120분(7~9) + 묶음 여섯 80분(1·2 / 3·4 / 5·6 / 10·11 / 12·13 / 14·15) · 합 600분', () => { ok(KEYS.every(k => k === 'u7_l07' ? L[k].meta.duration_min === 120 && L[k].meta.covers === '7~9차시' : L[k].meta.duration_min === 80 && L[k].meta.covers === L[k].meta.n + '·' + (L[k].meta.n + 1) + '차시'), '분 묶음'); ok(KEYS.reduce((a, k) => a + L[k].meta.duration_min, 0) === 600, '합'); });
 T('학습 목표 7 = 원문 머리 주석 목표 · 빈 값 0', () => { const G = { u7_l01: '배울 내용을 살펴볼 수 있다.', u7_l03: '무엇을 설명하는지 생각하며 글을 읽을 수 있다.', u7_l05: '글을 읽고 새롭게 안 점을 말할 수 있다.', u7_l07: '겪은 일을 정리하는 방법을 안다.', u7_l10: '겪은 일이 잘 드러나는 글을 쓸 수 있다.', u7_l12: '배운 내용을 실천할 수 있다.', u7_l14: '배운 내용을 마무리할 수 있다.' }; KEYS.forEach(k => ok(L[k].meta.goal === G[k], k + ' ' + L[k].meta.goal)); });
-T('따라 쓰기 칸(원문 HTML trace) l14 낱말 3(무엇·설명·겪은일) 실존', () => { ok(TRACE.u7_l14.length === 3 && TRACE.u7_l14.join() === '무엇,설명,겪은일', 'l14 ' + TRACE.u7_l14.join(',')); });
+T('따라 쓰기 칸(원문 HTML trace) l14 낱말 4(끝·붙이기·술래잡기·알림장) 실존', () => { ok(TRACE.u7_l14.length === 4 && TRACE.u7_l14.join() === '끝,붙이기,술래잡기,알림장', 'l14 ' + TRACE.u7_l14.join(',')); });
 
 console.log('═══ B. 19장 골격 ═══');
 KEYS.forEach(k => T(k + ' 19장 · 블록 차례 · 단계 · id', () => { const sl = L[k].slides; ok(sl.length === 19, sl.length); sl.forEach((s, i) => { ok(s.block === ORDER[i], s.id + ' ' + s.block); ok(s.stage === STAGE[i], s.id + ' stage'); ok(s.id === 's' + String(i + 1).padStart(2, '0'), s.id); }); }));
@@ -88,10 +88,12 @@ KEYS.forEach(k => T(k + ' 개념 4장 = 원문 장(말풍선·글 판·정리 �
     else { ok(norm(d.content) === norm(srcContent(sl)) && d.content, s.id + ' 말풍선 원문 아님'); } });
   L[k].slides.filter(s => s.block === 'basic_problem').forEach(s => ok(s.data.question === src.slides[s.src].t, s.id + ' 문제 원문 아님'));
   const sm = L[k].slides[16].data.points; const rc = src.slides.filter(x => x.kind === 'recap');
-  /* u7: 7묶음 모두 원문 recap 장 = s12 하나 */
-  ok(rc.length && src.slides[12].kind === 'recap' && src.slides[12].items.every((it, i) => sm[i] === it), '정리 줄 ≠ 원문 마지막 정리 줄'); }));
+  /* 141차 v2: l14 원문 마지막 장 = 스스로 점검 → 정리 줄 = 원문 점검 장(s12) 줄(✓·** 뗌). 나머지는 원문 마지막 recap 장(s12) 줄 */
+  if (k === 'u7_l14') { const c = src.slides[12].extra.map(x => nb(x.replace(/^✓/, ''))); ok(c.length === 3 && c.every((it, i) => sm[i] === it), '정리 줄 ≠ 원문 점검 줄'); }
+  else { const last = src.slides[12]; ok(last.kind === 'recap' && last.items.every((it, i) => sm[i] === it), '정리 줄 ≠ 원문 마지막 정리 장'); ok(rc.length >= 1, 'recap 0'); } }));
 T('잇기 그림(link) 줄 = 같은 차시 원문 짝 잇기 그대로', () => { let n = 0; KEYS.forEach(k => L[k].slides.filter(s => s.data.fig && s.data.fig.k === 'link').forEach(s => { n++; ok(SRC[k].slides.some(x => x.kind === 'match' && JSON.stringify(x.pairs) === JSON.stringify(s.data.fig.rows)), k + ' ' + s.id); })); ok(n >= 1, 'link ' + n); });
 T('원문 문항 전부의 짝이 맞다(짝 잇기 원문 자체 확인 — 2~4짝 · 왼쪽·오른쪽 겹침 0)', () => KEYS.forEach(k => SRC[k].slides.filter(x => x.kind === 'match').forEach(x => { const n = x.pairs.length; ok(n >= 2 && n <= 4, k + ' ' + x.t); ok(new Set(x.pairs.map(p => p[0])).size === n && new Set(x.pairs.map(p => p[1])).size === n, k + ' 겹침'); })));
+T('mood(인물 말풍선) 그림 0 — 원문에 인물 말 줄이 없다', () => KEYS.forEach(k => L[k].slides.forEach(s => ok(!(s.data.fig && s.data.fig.k === 'mood'), k + ' ' + s.id))));
 T('마지막 차시 next_lesson = 「2학기 국어를 마쳐요」(1-2 국어 마지막 단원) · 다른 차시 = 「다음 시간엔」', () => KEYS.forEach((k, i) => ok(L[k].slides[18].data.title === (i === KEYS.length - 1 ? '2학기 국어를 마쳐요' : '다음 시간엔'), k + ' ' + L[k].slides[18].data.title)));
 
 console.log('═══ G. 그림 ═══');
@@ -119,27 +121,27 @@ KEYS.forEach(k => T(k + ' extras 22 · id 유일 · 추천 연결 전부 존재'
 
 console.log('═══ K. 발문 ═══');
 T('발문 차시마다 6장↑ · ask 2 · watch · min', () => KEYS.forEach(k => { const tn = L[k].slides.filter(s => s.data.tnote); ok(tn.length >= 6, k); tn.forEach(s => ok(s.data.tnote.ask.length === 2 && s.data.tnote.watch !== undefined && s.data.tnote.min > 0, k + ' ' + s.id)); }));
-T('발문 분 합 — 차시 분의 0.75~1.1배(80분 60~88 · 40분 30~44) · 교실 활동 분 = 발문 분', () => KEYS.forEach(k => { const m = L[k].slides.reduce((a, s) => a + (s.data.tnote ? s.data.tnote.min : 0), 0); const D = L[k].meta.duration_min; ok(m >= D * 0.75 && m <= D * 1.1, k + ' ' + m + '분/' + D); const act = L[k].slides[12].data; ok(act.minutes === act.tnote.min, k + ' 활동 분'); }));
+T('발문 분 합 — 차시 분의 0.75~1.1배(80분 60~88 · 40분 30~44 · 120분 90~132) · 교실 활동 분 = 발문 분', () => KEYS.forEach(k => { const m = L[k].slides.reduce((a, s) => a + (s.data.tnote ? s.data.tnote.min : 0), 0); const D = L[k].meta.duration_min; ok(m >= D * 0.75 && m <= D * 1.1, k + ' ' + m + '분/' + D); const act = L[k].slides[12].data; ok(act.minutes === act.tnote.min, k + ' 활동 분'); }));
 
 console.log('═══ L. 선행 용어 ═══');
 const vis = (s) => JSON.stringify(Object.assign({}, s.data, { tnote: undefined }));
-/* 135차 원문 실측 첫 등장(재료 JSON 전수): 꿀벌·곤충·되풀이 l03 · 제비·다람쥐·문단 l05 · 화분·서우·글감·마음말 l07 · 사서·칭찬 l10 · 지우개·홀가분 l12 · 책 병원 l14 */
-const FIRST = [['꿀벌', 'u7_l03'], ['곤충', 'u7_l03'], ['되풀이', 'u7_l03'], ['제비', 'u7_l05'], ['다람쥐', 'u7_l05'], ['문단', 'u7_l05'], ['화분', 'u7_l07'], ['서우', 'u7_l07'], ['글감', 'u7_l07'], ['마음말', 'u7_l07'], ['사서', 'u7_l10'], ['칭찬', 'u7_l10'], ['지우개', 'u7_l12'], ['홀가분', 'u7_l12'], ['책 병원', 'u7_l14']];
+/* 141차 v2 원문 실측 첫 등장(재료 JSON 전수): 독도·등대·되풀이 l03 · 발명왕·빨판·낙하산·문단 l05 · 준수·필통·책가방 l07 · 글감·수목원·조마조마 l10 · 무지개·생각그물·지영 l12 · 아나바다 l14 */
+const FIRST = [['독도', 'u7_l03'], ['등대', 'u7_l03'], ['되풀이', 'u7_l03'], ['발명왕', 'u7_l05'], ['빨판', 'u7_l05'], ['낙하산', 'u7_l05'], ['문단', 'u7_l05'], ['준수', 'u7_l07'], ['필통', 'u7_l07'], ['책가방', 'u7_l07'], ['글감', 'u7_l10'], ['수목원', 'u7_l10'], ['조마조마', 'u7_l10'], ['무지개', 'u7_l12'], ['생각그물', 'u7_l12'], ['지영', 'u7_l12'], ['아나바다', 'u7_l14']];
 FIRST.forEach(([w0, k0]) => T('「' + w0 + '」 학생 화면 첫 등장 ≥ ' + k0, () => { const i0 = KEYS.indexOf(k0); KEYS.forEach((k, i) => L[k].slides.forEach(s => { if (vis(s).indexOf(w0) < 0) return; ok(!(i < i0), k + ' ' + s.id + ' 에 「' + w0 + '」'); })); ok(KEYS.slice(i0).some(k => L[k].slides.some(s => vis(s).indexOf(w0) >= 0)), '「' + w0 + '」 한 번도 안 나옴'); }));
-T('선행 검사기 자체 확인 — l14 이전 장에 「책 병원」을 심으면 잡는다', () => { const s = L.u7_l03.slides[3]; const keep = s.data.content; s.data.content = keep + ' 책 병원'; let caught = false; try { KEYS.slice(0, 6).forEach(k => L[k].slides.forEach(x => ok(vis(x).indexOf('책 병원') < 0))); } catch (e) { caught = true; } s.data.content = keep; ok(caught, '못 잡음'); });
+T('선행 검사기 자체 확인 — l14 이전 장에 「아나바다」를 심으면 잡는다', () => { const s = L.u7_l03.slides[3]; const keep = s.data.content; s.data.content = keep + ' 아나바다'; let caught = false; try { KEYS.slice(0, 6).forEach(k => L[k].slides.forEach(x => ok(vis(x).indexOf('아나바다') < 0))); } catch (e) { caught = true; } s.data.content = keep; ok(caught, '못 잡음'); });
 T('선행 용어 첫 등장 차시 = 원문도 같은 차례(원문에서 그 앞 차시 0 · 그 차시에 있음)', () => FIRST.forEach(([w0, k0]) => { const i0 = KEYS.indexOf(k0); KEYS.forEach((k, i) => { const has = JSON.stringify(Object.assign({}, SRC[k], { file: undefined })).indexOf(w0) >= 0; if (i < i0) ok(!has, '원문 ' + k + ' 에 「' + w0 + '」'); if (i === i0) ok(has, '원문 ' + k0 + ' 에 「' + w0 + '」 없음'); }); }));
 T('「다음 시간엔」 미리보기에 다음 차시 선행 용어 0', () => KEYS.forEach((k, i) => { if (i === KEYS.length - 1) return; const nx = L[k].slides[18].data.preview; FIRST.filter(f => f[1] === KEYS[i + 1]).forEach(([w]) => ok(nx.indexOf(w) < 0, k + ' 미리보기에 「' + w + '」')); }));
 
 console.log('═══ M. 인물 ═══');
-/* 7단원 재료의 이름 있는 이야기 인물 = 서우(l07 「빈 화분」). 곰이·펭이·서우 모두 받침 없음 → +이가/이는/이를/아 · 서우+은/을/과 틀림 — 학생 화면·발문·extras·재료·원문 HTML 전수 */
-T('곰이·펭이·서우 이름 조사 — +이가/이는/이를/아 · 서우은/을/과 0 · 검사기 자체 확인', () => { const bad = /(곰이|펭이|서우)(이가|이는|이를|아)(?![가-힣])|서우(은|을|과)(?![가-힣])/; ok(bad.test('곰이이가 왔다') && bad.test('펭이아!') && bad.test('서우은 웃었다'), '검사기 잡기'); ok(!bad.test('곰이가 · 곰이는 · 펭이야 · 펭이에게 · 서우가 · 서우는 · 서우의 · 서우에게'), '검사기 정상 꼴'); KEYS.forEach(k => ok(!bad.test(JSON.stringify(L[k])), k + ' 이름 조사')); ok(!bad.test(JSON.stringify(SRC)), '재료 이름 조사'); fs.readdirSync(SD).filter(f => /\.html$/.test(f)).forEach(f => ok(!bad.test(fs.readFileSync(path.join(SD, f), 'utf8')), f + ' 원문 이름 조사')); });
-T('서우 = l07 에만(원문 「빈 화분」 차시) · 그 앞 차시 학생 화면 0', () => KEYS.forEach((k, i) => { const has = L[k].slides.some(s => vis(s).indexOf('서우') >= 0); if (k === 'u7_l07') ok(has, 'l07 서우 없음'); else if (i < KEYS.indexOf('u7_l07')) ok(!has, k + ' 서우'); }));
+/* 141차 v2 이야기 인물: 곰이·펭이·준수·철수·영미(받침 없음 → +이가/이는/이를/아 틀림) · 지영(받침 있음 → 지영이가 맞고 지영가/지영는/지영를/지영야 틀림). 이름 조사 틀림 0 을 학생 화면·발문·extras·재료·원문 HTML 전수 */
+T('이야기 인물 이름 조사 — 곰이·펭이·준수·철수·영미+이가/이는/이를/아 0 · 지영+가/는/를/야 0 · 검사기 자체 확인', () => { const bad = /(곰이|펭이|준수|철수|영미)(이가|이는|이를|아)(?![가-힣])|(지영)(가|는|를|야)(?![가-힣])/; ok(bad.test('곰이이가 왔다') && bad.test('준수아!') && bad.test('지영가 왔다') && bad.test('지영는'), '검사기 잡기'); ok(!bad.test('곰이가 · 곰이는 · 펭이야 · 준수는 · 준수에게 · 철수의 · 영미와 · 지영이가 · 지영은 · 지영아'), '검사기 정상 꼴'); KEYS.forEach(k => ok(!bad.test(JSON.stringify(L[k])), k + ' 이름 조사')); ok(!bad.test(JSON.stringify(SRC)), '재료 이름 조사'); fs.readdirSync(SD).filter(f => /\.html$/.test(f)).forEach(f => ok(!bad.test(fs.readFileSync(path.join(SD, f), 'utf8')), f + ' 원문 이름 조사')); ok(/준수/.test(JSON.stringify(L.u7_l07)) && /지영/.test(JSON.stringify(L.u7_l12)), '이야기 인물 실존'); });
 T('곰이·펭이 서사 = motivate 장에 두 인물', () => KEYS.forEach(k => { const m = L[k].slides[2].data; ok(m.kids.length === 2 && /곰이/.test(m.kids[0].label) && /펭이/.test(m.kids[1].label), k + ' kids'); }));
 
 console.log('═══ N. 저작권 · 차단 어휘 ═══');
-/* 7단원 재료(v1)의 제재(사물함 쪽지·「꿀벌」·「겨울을 나는 방법」·「빈 화분」·도서관 두 글·칭찬 보기 글·「책 병원」 대화)는 자기주도가 지은 짧은 글(지은이·옮긴이 0). 글 판 줄은 원문 글 판 줄과 같아야 한다(F). 지도서가 오면 작가 작품 여부를 다시 본다. */
+/* 141차 v2: 작가 작품 「진짜 일 학년 책가방을 지켜라!」(신순재)는 교과서 펴기 장(두 줄 머리) + 간추림 글 판만 — 본문 옮김 0 · 재료에 지은이·옮긴이 표시 0. 「독도」·「자연은 발명왕」은 교과서 설명 글(자기주도 v2 글 판 그대로). 글 판 줄은 원문 글 판 줄과 같아야 한다(F). */
 const ALL = JSON.stringify(L);
-T('작가 작품 없음 — 재료에 작품 출처 표시(지은이·옮긴이) 0', () => ok(!/지은이|옮긴이/.test(JSON.stringify(SRC)), '작품 출처'));
+T('작품 출처 표시 — 재료에 지은이·옮긴이 0', () => ok(!/지은이|옮긴이|옮김/.test(JSON.stringify(SRC)), '작품 출처'));
+T('「진짜 일 학년 책가방을 지켜라!」 = 글 판 둘(교과서 펴기 장 2줄 + 간추림 4줄 이하) · 다른 차시에 그 작품 글 판 0', () => { const r = SRC.u7_l07.slides.filter(x => x.kind === 'read'); ok(r.length === 2 && /교과서를 펴서/.test(r[0].t) && r[0].lines.length <= 2 && /간추림/.test(r[1].tag) && r[1].lines.length <= 4, 'l07 글 판'); KEYS.filter(k => k !== 'u7_l07').forEach(k => ok(!SRC[k].slides.some(x => x.kind === 'read' && /책가방/.test(x.t)), k)); });
 T('겹낫표『』 는 학생 화면에 0', () => KEYS.forEach(k => L[k].slides.forEach(s => ok(!/[『』]/.test(vis(s)), k + ' ' + s.id))));
 T('차단 어휘 0 — 박음·빵꾸·갈아엎·결로·박수(→손뼉)', () => ['박음', '빵꾸', '갈아엎', '결로', '박수'].forEach(w => ok(ALL.indexOf(w) < 0, '「' + w + '」')));
 console.log('\n게이트 g1s2 국어 u7: ' + pass + '/' + fail + ' (통과/실패)');

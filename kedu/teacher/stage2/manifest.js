@@ -6658,7 +6658,7 @@ window.KT2_MANIFEST = {
        "no": "1",
        "title": "단원 시작 — 배울 내용 살펴보기",
        "meta_title": "단원 시작 — 배울 내용 살펴보기",
-       "std": "[2국02-02][2국03-03]",
+       "std": "[2국01-01]",
        "slides": 19,
        "stages": [
         3,
@@ -6684,7 +6684,7 @@ window.KT2_MANIFEST = {
        "no": "3",
        "title": "무엇을 설명하는지 생각하며 읽기",
        "meta_title": "무엇을 설명하는지 생각하며 읽기",
-       "std": "[2국02-02]",
+       "std": "[2국02-03]",
        "slides": 19,
        "stages": [
         3,
@@ -6710,7 +6710,7 @@ window.KT2_MANIFEST = {
        "no": "5",
        "title": "글을 읽고 새롭게 안 점 말하기",
        "meta_title": "글을 읽고 새롭게 안 점 말하기",
-       "std": "[2국02-02]",
+       "std": "[2국02-03]",
        "slides": 19,
        "stages": [
         3,
@@ -6736,7 +6736,7 @@ window.KT2_MANIFEST = {
        "no": "7",
        "title": "겪은 일을 정리하는 방법 알기",
        "meta_title": "겪은 일을 정리하는 방법 알기",
-       "std": "[2국03-03]",
+       "std": "[2국03-04]",
        "slides": 19,
        "stages": [
         3,
@@ -6762,7 +6762,7 @@ window.KT2_MANIFEST = {
        "no": "10",
        "title": "겪은 일이 잘 드러나는 글쓰기",
        "meta_title": "겪은 일이 잘 드러나는 글쓰기",
-       "std": "[2국03-03]",
+       "std": "[2국03-04]",
        "slides": 19,
        "stages": [
         3,
