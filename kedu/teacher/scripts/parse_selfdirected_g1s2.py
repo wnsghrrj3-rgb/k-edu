@@ -48,6 +48,7 @@ def figs(p):
     out.extend(figs5(p))
     out.extend(figs6(p))
     out.extend(figs7(p))
+    out.extend(figs8(p))
     return out
 
 # 123차 — 2단원 「덧셈과 뺄셈(1)」 그림: steps(번호 줄 식) · eqstrip(식 띠: hole=? · res/mark=강조) · chain(색 알 묶음) · cupstack(층 쌓은 컵) · tenframe(십 배열판 a/b 두 색 + tf-lb 꼬리표). 원문 순서대로.
@@ -356,11 +357,50 @@ def figs7(p):
         found.append((m.start(), m.end(), {'k': 'phases', 'on': int(m.group(1)), 'items': [clean(x) for x in re.findall(r'<span class="ph[^"]*">([^<]*)</span>', m.group(2))]}))
     return [f for _, _, f in sorted(found, key=lambda x: x[0])]
 
+# 138차 — 2학년 2학기 수학 그림(네 자리 수): pvb(수 모형 천·백·십·일 개수) · money(돈 pvt money: 천원·백원·십원·일원 개수) · tiles(pvt 자리 타일)
+#   · jl(뛰어 세기 줄 data-jump 시작|간격|개수 · hole 칸 · on 칸 · line=수직선) · plt(자리값 표 data-place 수|자리수 · vl 값 줄 / cmpb 비교 표 data-cmp 수들)
+#   · vcards(몇천·몇백·몇십·몇 카드 겹치기) · vstack(자리 색 숫자 줄) · story(이야기 조각 차례). 보기(mcq-opt) 안은 뺌. 1학년 원문에는 없는 꼴이라 1-2 재료 무개변.
+def figs8(p):
+    found = []
+    opts = [(m.start(), m.end()) for m in re.finditer(r'<button class="mcq-opt".*?</button>', p, re.S)]
+    inopt = lambda a: any(x <= a < y for x, y in opts)
+    for m in re.finditer(r'<div class="pvb( sm)?" data-pv="([^"]*)">', p):
+        v = (m.group(2).split('|') + ['0'] * 4)[:4]
+        found.append((m.start(), m.end(), {'k': 'pvb', 'th': int(v[0] or 0), 'h': int(v[1] or 0), 't': int(v[2] or 0), 'o': int(v[3] or 0)}))
+    for m in re.finditer(r'<div class="pvt( money)?" data-tiles="([^"]*)">', p):
+        v = [int(x or 0) for x in (m.group(2).split('|') + ['0'] * 4)[:4]]
+        found.append((m.start(), m.end(), {'k': 'money' if m.group(1) else 'tiles', 'th': v[0], 'h': v[1], 't': v[2], 'o': v[3]}))
+    for m in re.finditer(r'<div class="jl( line)?" data-jump="([^"]*)">(.*?)(?=<p class|<div class="q-part|</div>\s*</div>\s*<div class="slide|</div></div><div)', p, re.S):
+        a = (m.group(2).split('|') + ['', '', ''])[:3]
+        cls = re.findall(r'<b class="([^"]*)">([^<]*)</b>', m.group(3))
+        found.append((m.start(), m.end(), {'k': 'jl', 'start': int(a[0] or 0), 'step': int(a[1] or 0), 'n': int(a[2] or len(cls)), 'line': bool(m.group(1)),
+                                            'hole': [i for i, (c, _) in enumerate(cls) if 'hole' in c], 'on': [i for i, (c, _) in enumerate(cls) if 'on' in c]}))
+    for m in re.finditer(r'<div class="plt( cmpb)?"(?: style="[^"]*")? data-(place|cmp)="([^"]*)">(.*?)</div>', p, re.S):
+        a = m.group(3).split('|')
+        hd = re.findall(r'<span class="hd ([a-z]+)">', m.group(4))
+        if m.group(2) == 'place':
+            c = {'k': 'plt', 'v': a[0], 'cols': len(hd) or len(a[0]), 'vals': bool(re.search(r'class="vl"', m.group(4)))}
+            hi = re.findall(r'<span class="dg [a-z]+ hi"', m.group(4))
+            if len(a) > 2 and a[2]: c['hi'] = a[2]
+        else:
+            c = {'k': 'pltcmp', 'vs': a[0].split(','), 'cols': len(hd), 'labels': [clean(x) for x in re.findall(r'<span class="rl">([^<]+)</span>', m.group(4))]}
+            if len(a) > 1 and a[1] != '': c['at'] = a[1]
+        found.append((m.start(), m.end(), c))
+    for m in re.finditer(r'<div class="vcards" data-vcard="([^"]*)">(.*?)</div>', p, re.S):
+        found.append((m.start(), m.end(), {'k': 'vcards', 'v': m.group(1).split('|')[0], 'parts': re.findall(r'data-v="(\d+)"', m.group(2))}))
+    for m in re.finditer(r'<div class="vstack"(?: data-vcard="[^"]*")?>(.*?)</div>', p, re.S):
+        if inopt(m.start()): continue
+        found.append((m.start(), m.end(), {'k': 'vstack', 'v': ''.join(re.findall(r'<b class="[a-z]+">([^<]*)</b>', m.group(1)))}))
+    for m in re.finditer(r'<div class="story" data-story="([^"]*)">(.*?)</div>\s*(?=<p|</div>)', p, re.S):
+        its = [{'no': a, 'y': b, 't': clean(c)} for a, b, c in re.findall(r'<div class="story-pg"><em>(.*?)</em><u>(.*?)</u><span>(.*?)</span></div>', m.group(2), re.S)]
+        found.append((m.start(), m.end(), {'k': 'story', 'order': m.group(1).split('|')[-1], 'items': its}))
+    return [f for _, _, f in sorted(found, key=lambda x: x[0])]
+
 if __name__ == '__main__':
     d, outp = sys.argv[1], sys.argv[2]
     res = {}
     for f in sorted(os.listdir(d)):
-        m = re.match(r'g1_math_u(\d+)_l(\d+)_', f) or re.match(r'g1_kor_u(\d+)_l(\d+)', f)
+        m = re.match(r'g\d_math_u(\d+)_l(\d+)_', f) or re.match(r'g1_kor_u(\d+)_l(\d+)', f)
         if not m or not f.endswith('.html'): continue
         res['u%d_l%02d' % (int(m.group(1)), int(m.group(2)))] = parse(os.path.join(d, f))
     json.dump(res, open(outp, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)

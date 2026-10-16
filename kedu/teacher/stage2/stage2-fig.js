@@ -321,6 +321,42 @@
     if (o.tag) s += txt(230, 264, o.tag, 20, '#6B7C93');
     return svgWrap(s, 'fig-bt');
   }
+  // ── bt4: 수 모형 천·백·십·일(138차, 2학년 2학기 네 자리 수) — {th,h,t,o} 개수 그대로(백 모형 10개도 10개로) · 모형 이름 아래 · 개수는 쓰지 않음(문제 그림에 답을 그리지 않게) ──
+  function bt4(o) {
+    const N = { th: Math.max(0, o.th | 0), h: Math.max(0, o.h | 0), t: Math.max(0, o.t | 0), o: Math.max(0, o.o | 0) };
+    const LB = { th: '천 모형', h: '백 모형', t: '십 모형', o: '일 모형' }, KS = ['th', 'h', 't', 'o'].filter(k => N[k] > 0);
+    if (!KS.length) return '';
+    let c, fT, fH; // 칸 크기 · 천 모형 겹침 간격 · 백 모형 겹침 간격(칸 배수)
+    const gw = (k) => { const n = N[k]; if (k === 'th') return 14 * c + (n - 1) * fT * c; if (k === 'h') return 11 * c + (n - 1) * fH * c; if (k === 't') return n * (c + 4); return Math.min(n, 5) * (c + 3); };
+    const GAP = 20, wl = (k) => Math.max(gw(k), 86), need = (ks) => ks.reduce((a, k) => a + wl(k), 0) + GAP * (ks.length - 1);
+    const fit = (rows, c0) => { c = c0; fT = 8.4; fH = N.h > 5 ? 2.6 : 4.2; let guard = 400; const mx = () => Math.max(...rows.map(need));
+      while (mx() > 436 && guard--) { if (c > c0 - 2.5) c -= 0.25; else if (fT > 3.4) fT -= 0.2; else if (fH > 1.8) fH -= 0.2; else if (c > 4) c -= 0.25; else break; } return c; };
+    // 한 줄에 다 놓으면 칸이 작아질 때(모형 셋 이상) — 천·백 위 줄, 십·일 아래 줄
+    let rows = [KS]; fit(rows, 10);
+    const two = KS.length >= 3 && c < 7.5 && KS.some(k => k === 'th' || k === 'h') && KS.some(k => k === 't' || k === 'o');
+    if (two) { rows = [KS.filter(k => k === 'th' || k === 'h'), KS.filter(k => k === 't' || k === 'o')]; fit(rows, 7.5); }
+    let s = '';
+    const grid = (x0, y0, w, h, nx, ny) => { let g = ''; for (let i = 1; i < nx; i++) g += 'M' + (x0 + i * w / nx) + ' ' + y0 + 'v' + h; for (let j = 1; j < ny; j++) g += 'M' + x0 + ' ' + (y0 + j * h / ny) + 'h' + w; return '<path d="' + g + '" stroke="rgba(0,0,0,.22)" stroke-width="1"/>'; };
+    const bases = two ? [116, 226] : [214];
+    rows.forEach((ks, ri) => { const base = bases[ri]; let x = Math.round(230 - need(ks) / 2);
+      ks.forEach(k => {
+        const n = N[k], W0 = wl(k), w = gw(k), cx = x + W0 / 2; x += (W0 - w) / 2;
+        if (k === 'th') { const S = 10 * c, D = 4 * c; for (let i = 0; i < n; i++) { const x0 = x + i * fT * c, y0 = base - S;
+          s += '<g class="o-thou"><path d="M' + x0 + ' ' + y0 + 'l' + D + ' ' + (-D) + 'h' + S + 'l' + (-D) + ' ' + D + 'z" fill="#8FC1FF" stroke="' + INK + '" stroke-width="2"/>'
+            + '<path d="M' + (x0 + S) + ' ' + y0 + 'l' + D + ' ' + (-D) + 'v' + S + 'l' + (-D) + ' ' + D + 'z" fill="#4E8FE0" stroke="' + INK + '" stroke-width="2"/>'
+            + '<rect x="' + x0 + '" y="' + y0 + '" width="' + S + '" height="' + S + '" fill="#B9D8FF" stroke="' + INK + '" stroke-width="2"/>' + grid(x0, y0, S, S, 10, 10) + '</g>'; } }
+        else if (k === 'h') { const S = 10 * c; for (let i = 0; i < n; i++) { const x0 = x + i * fH * c, y0 = base - S;
+          s += '<g class="o-hund"><rect x="' + (x0 + c) + '" y="' + (y0 - c) + '" width="' + S + '" height="' + S + '" fill="#E58E7A" stroke="' + INK + '" stroke-width="2"/><rect x="' + x0 + '" y="' + y0 + '" width="' + S + '" height="' + S + '" fill="#FFB8A6" stroke="' + INK + '" stroke-width="2"/>' + grid(x0, y0, S, S, 10, 10) + '</g>'; } }
+        else if (k === 't') { for (let i = 0; i < n; i++) { const x0 = x + i * (c + 4), y0 = base - 10 * c;
+          s += '<g class="o-ten"><rect x="' + x0 + '" y="' + y0 + '" width="' + c + '" height="' + (10 * c) + '" fill="#8ED08A" stroke="' + INK + '" stroke-width="2"/>' + grid(x0, y0, c, 10 * c, 1, 10) + '</g>'; } }
+        else { for (let i = 0; i < n; i++) { const col = i % 5, row = Math.floor(i / 5); s += '<rect class="o-one" x="' + (x + col * (c + 3)) + '" y="' + (base - c - row * (c + 3)) + '" width="' + c + '" height="' + c + '" fill="' + YEL + '" stroke="' + INK + '" stroke-width="2"/>'; } }
+        if (o.names !== false) s += txt(cx, base + (two ? 20 : 32), LB[k], two ? 17 : 20, '#4A5A70', 800);
+        x += w + (W0 - w) / 2 + GAP;
+      }); });
+    if (!two && o.num != null && o.num !== false) s += txt(230, 34, String(o.num), 30);
+    if (!two && o.tag) s += txt(230, 272, o.tag, 18, '#6B7C93');
+    return svgWrap(s, 'fig-bt4' + (two ? ' two' : '')).replace('<svg ', '<svg data-n="' + [N.th, N.h, N.t, N.o].join('|') + '" ');
+  }
   // ── regroup: 낱개 10개 → 십 막대 1개 / 십 막대 1개 → 낱개 10개 ──
   function regroup(o) {
     let s = ''; const down = o.dir === 'down';
@@ -1154,7 +1190,7 @@
   }
   const SC_PARTS = { ask, habitat, trait, anat, cycle, cond, need, bins, mimic };
 
-  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock, grid, range, brem, circ, compass, cgrid, crow, fgroup, fmix, nline, beaker, dial, tilt, cups, tubs, area2 };
+  const PARTS = { force, balance, lever, slope, scale, hand, robot, frac, fracs, numline, tenbox, geo, bt, bt4, regroup, share, bundle, arr, mulrows, eq, ruler, joins, road, clock, grid, range, brem, circ, compass, cgrid, crow, fgroup, fmix, nline, beaker, dial, tilt, cups, tubs, area2 };
 
   // ══ 57차(2026-09-30) 4학년 1학기 큰 수 부품 — pvt(자릿값판) · jump(뛰어 세기 띠) · notes(지폐·동전 묶음) ══
   // 그림 문법: 여덟 자리까지는 자리 이름 한 줄(천만~일) · 아홉 자리부터 네 자리마다 띠(일·만·억·조) + 천·백·십·일 · 주황 = 짚는 자리 · 초록 = 견줄 때 처음 달라지는 자리 · 파랑 = 풀어 쓴 식·읽는 말.
