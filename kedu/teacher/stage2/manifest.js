@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-16 · 과목 19 · 차시 958 · 슬라이드 16815 */
+   생성: 2026-10-16 · 과목 19 · 차시 965 · 슬라이드 16948 */
 window.KT2_MANIFEST = {
  "built": "2026-10-16",
- "lessons": 958,
- "slides": 16815,
+ "lessons": 965,
+ "slides": 16948,
  "subjects": [
   {
    "slug": "g1_math",
@@ -6622,6 +6622,196 @@ window.KT2_MANIFEST = {
       {
        "key": "u6_l15",
        "no": "15",
+       "title": "단원 마무리하기",
+       "meta_title": "단원 마무리하기",
+       "std": "단원 전체 통합",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    },
+    {
+     "unit": 7,
+     "title": "무엇이 중요할까요",
+     "file": "data/g1s2_korean_u7.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u7_l01",
+       "no": "1",
+       "title": "단원 시작 — 배울 내용 살펴보기",
+       "meta_title": "단원 시작 — 배울 내용 살펴보기",
+       "std": "[2국02-02][2국03-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u7_l03",
+       "no": "3",
+       "title": "무엇을 설명하는지 생각하며 읽기",
+       "meta_title": "무엇을 설명하는지 생각하며 읽기",
+       "std": "[2국02-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u7_l05",
+       "no": "5",
+       "title": "글을 읽고 새롭게 안 점 말하기",
+       "meta_title": "글을 읽고 새롭게 안 점 말하기",
+       "std": "[2국02-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u7_l07",
+       "no": "7",
+       "title": "겪은 일을 정리하는 방법 알기",
+       "meta_title": "겪은 일을 정리하는 방법 알기",
+       "std": "[2국03-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u7_l10",
+       "no": "10",
+       "title": "겪은 일이 잘 드러나는 글쓰기",
+       "meta_title": "겪은 일이 잘 드러나는 글쓰기",
+       "std": "[2국03-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u7_l12",
+       "no": "12",
+       "title": "겪은 일을 떠올려 칭찬하는 글쓰기",
+       "meta_title": "겪은 일을 떠올려 칭찬하는 글쓰기",
+       "std": "[2국03-04]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u7_l14",
+       "no": "14",
        "title": "단원 마무리하기",
        "meta_title": "단원 마무리하기",
        "std": "단원 전체 통합",
