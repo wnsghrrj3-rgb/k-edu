@@ -49,6 +49,7 @@ def figs(p):
     out.extend(figs6(p))
     out.extend(figs7(p))
     out.extend(figs8(p))
+    out.extend(figs9(p))
     return out
 
 # 123차 — 2단원 「덧셈과 뺄셈(1)」 그림: steps(번호 줄 식) · eqstrip(식 띠: hole=? · res/mark=강조) · chain(색 알 묶음) · cupstack(층 쌓은 컵) · tenframe(십 배열판 a/b 두 색 + tf-lb 꼬리표). 원문 순서대로.
@@ -394,6 +395,53 @@ def figs8(p):
     for m in re.finditer(r'<div class="story" data-story="([^"]*)">(.*?)</div>\s*(?=<p|</div>)', p, re.S):
         its = [{'no': a, 'y': b, 't': clean(c)} for a, b, c in re.findall(r'<div class="story-pg"><em>(.*?)</em><u>(.*?)</u><span>(.*?)</span></div>', m.group(2), re.S)]
         found.append((m.start(), m.end(), {'k': 'story', 'order': m.group(1).split('|')[-1], 'items': its}))
+    return [f for _, _, f in sorted(found, key=lambda x: x[0])]
+
+# 139차 — 2학년 2학기 수학 2단원 「곱셈구구」 그림: grp(묶음 data-grp 한 묶음|묶음 수|새 묶음|누적 · 이모지 ge / 점 gd) · dan(단 줄 data-dan 단|부터|까지|빈칸 · hi 줄)
+#   · mj(수직선 뛰기 data-mj 간격|번) · arr(배열 data-arr 줄|칸|줄 나눔|칸 나눔|빈 자리 r.c;… · 이모지) · mt(곱셈표 data-mt 줄들|칸들 · 칸마다 값·blank·lit · 머리 on)
+#   · score(점수판 data-score 수들|개수들 · 식 줄) · ring(무늬 data-ring 단|차례). 보기(mcq-opt) 안은 뺌. 앞 단원 원문에는 없는 꼴이라 1-2·2-2 u1 재료 무개변.
+def figs9(p):
+    found = []
+    opts = [(m.start(), m.end()) for m in re.finditer(r'<button class="mcq-opt".*?</button>', p, re.S)]
+    inopt = lambda a: any(x <= a < y for x, y in opts)
+    ints = lambda xs: [int(x) for x in xs if x.strip() != '']
+    for m in re.finditer(r'<div class="grp[^"]*" data-grp="([^"]*)"[^>]*>(.*?)</div>\s*</div>\s*</div>', p, re.S):
+        if inopt(m.start()): continue
+        a = (m.group(1).split('|') + ['0'] * 4)[:4]
+        em = first(r'<span class="ge">([^<]*)</span>', m.group(2), '')
+        found.append((m.start(), m.end(), {'k': 'grp', 'per': int(a[0] or 0), 'n': int(a[1] or 0), 'new': a[2] == '1', 'tally': a[3] == '1', 'emoji': html.unescape(em)}))
+    for m in re.finditer(r'<div class="dan[^"]*" data-dan="([^"]*)">(.*?)</div>\s*(?=<p|<div class="q-part|</div>)', p, re.S):
+        if inopt(m.start()): continue
+        a = (m.group(1).split('|') + [''] * 4)[:4]
+        rows = re.findall(r'<div class="dn-row( hi)?"><span class="dn-e">\s*\d+\s*×\s*(\d+)\s*=\s*</span><b( class="hole")?>', m.group(2))
+        found.append((m.start(), m.end(), {'k': 'dan', 'dan': int(a[0]), 'from': int(a[1] or 1), 'to': int(a[2] or 9), 'q': ints(a[3].split(',')), 'hi': [int(b) for h, b, _ in rows if h]}))
+    for m in re.finditer(r'<div class="mj"[^>]* data-mj="([^"]*)">', p):
+        if inopt(m.start()): continue
+        a = m.group(1).split('|')
+        found.append((m.start(), m.end(), {'k': 'mj', 'step': int(a[0]), 'n': int(a[1])}))
+    for m in re.finditer(r'<div class="arr([^"]*)"[^>]* data-arr="([^"]*)">(.*?)</div>', p, re.S):
+        if inopt(m.start()): continue
+        a = (m.group(2).split('|') + [''] * 5)[:5]
+        em = first(r'<i class="ad[^"]*"[^>]*>([^<]+)</i>', m.group(3), '')
+        miss = [[int(y) for y in x.split('.')] for x in a[4].split(';') if x.strip()]
+        found.append((m.start(), m.end(), {'k': 'arr', 'r': int(a[0]), 'c': int(a[1]), 'rs': ints(a[2].split(',')), 'cs': ints(a[3].split(',')), 'miss': miss, 'emoji': html.unescape(em.strip())}))
+    for m in re.finditer(r'<div class="mt[^"]*"[^>]* data-mt="([^"]*)">(.*?)</div>', p, re.S):
+        if inopt(m.start()): continue
+        rs, cs = [x.split(',') for x in m.group(1).split('|')]
+        cells = [{'v': clean(v), 'c': c.strip()} for c, v in re.findall(r'<span class="mt-v([^"]*)">([^<]*)</span>', m.group(2))]
+        hdr = re.findall(r'<span class="mt-h mt-([cr])( on)?">([^<]*)</span>', m.group(2))
+        found.append((m.start(), m.end(), {'k': 'mt', 'rows': rs, 'cols': cs, 'cells': [[x['v'] if not ('blank' in x['c'] or 'hole' in x['c']) else '?' for x in cells[i * len(cs):(i + 1) * len(cs)]] for i in range(len(rs))],
+                                            'lit': [[('lit' in x['c']) for x in cells[i * len(cs):(i + 1) * len(cs)]] for i in range(len(rs))],
+                                            'on_c': [v for k, o, v in hdr if k == 'c' and o], 'on_r': [v for k, o, v in hdr if k == 'r' and o]}))
+    for m in re.finditer(r'<div class="sb"[^>]* data-score="([^"]*)">(.*?)</div>', p, re.S):
+        if inopt(m.start()): continue
+        ns, cn = [x.split(',') for x in m.group(1).split('|')]
+        hd = [clean(x) for x in re.findall(r'<span class="sb-h">(.*?)</span>', m.group(2))]
+        found.append((m.start(), m.end(), {'k': 'score', 'heads': hd, 'nums': ns, 'cnt': cn, 'eqs': [clean(x) for x in re.findall(r'<span class="sb-s">(.*?)</span>', m.group(2))]}))
+    for m in re.finditer(r'<svg class="ring"[^>]* data-ring="([^"]*)"', p):
+        if inopt(m.start()): continue
+        a = m.group(1).split('|')
+        found.append((m.start(), m.end(), {'k': 'ring', 'dan': int(a[0]), 'seq': ints(a[1].split(','))}))
     return [f for _, _, f in sorted(found, key=lambda x: x[0])]
 
 if __name__ == '__main__':

@@ -2230,6 +2230,71 @@
   }
   Object.assign(PARTS, { sign1, tally1, phases1 });
   }
+  { // 139차 2학년 2학기 「곱셈구구」 부품 — 이름이 겹치지 않게 블록 안에 둔다
+  // ══ mgrp(묶음) · mdan(단 줄) · mjump(수직선 뛰기) · marr(배열) · mring(곱셈구구 무늬) ══
+  // 그림 문법(자기주도 원문과 같음): 파랑 = 묶음·첫 덩이 · 주황 = 새로 늘어난 묶음·둘째 덩이 · 주황 점선 「?」 = 구할 자리.
+  const BLM = ['#EAF1FF', '#3E6FCF', '#1F4A9E'], ORM = ['#FFF1E6', '#FF7A2F', '#C2551A'], GYM = '#C9D3E0';
+  const boxM = (x, y, w, h, fill, st, sw, dash, rx) => '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="' + (rx == null ? 14 : rx) + '" fill="' + fill + '" stroke="' + st + '" stroke-width="' + (sw || 3) + '"' + (dash ? ' stroke-dasharray="10 6"' : '') + '/>';
+  const emM = (x, y, e, sz) => '<text x="' + x.toFixed(1) + '" y="' + (y + sz * 0.36).toFixed(1) + '" text-anchor="middle" font-size="' + sz.toFixed(1) + '">' + esc(e) + '</text>';
+  // mgrp: per(한 묶음) · n(묶음 수) · emoji(없으면 점) · new(마지막 묶음 = 새로 늘어난 묶음, 주황 점선) · tally(묶음 아래 누적 수 — 문제 그림엔 끔) · data-grp
+  function mgrp(o) {
+    const per = Math.max(1, Math.min(10, o.per | 0)), n = Math.max(1, Math.min(10, o.n | 0));
+    const cc = per <= 3 ? per : per === 4 ? 2 : per <= 6 ? 3 : per <= 8 ? 4 : per === 9 ? 3 : 5, rr = Math.ceil(per / cc);
+    const nr = n <= 5 ? 1 : 2, pr = Math.ceil(n / nr), u = 40, pad = 12, bw = cc * u + pad * 2, bh = rr * u + pad * 2, gap = 18, th = o.tally ? 40 : 0;
+    const Wd = Math.max(460, pr * bw + (pr - 1) * gap + 24), Hd = nr * (bh + th) + (nr - 1) * gap + 16; let s = '';
+    for (let g = 0; g < n; g++) { const r = Math.floor(g / pr), c = g % pr, inRow = r === nr - 1 ? n - pr * (nr - 1) : pr, x0 = (Wd - (inRow * bw + (inRow - 1) * gap)) / 2 + c * (bw + gap), y0 = 8 + r * (bh + th + gap), nw = o.new && g === n - 1;
+      s += '<g class="o-grp' + (nw ? ' new' : '') + '">' + boxM(x0, y0, bw, bh, nw ? ORM[0] : '#F6F9FF', nw ? ORM[1] : '#9DB8E8', nw ? 4 : 3, nw, 18);
+      for (let k = 0; k < per; k++) { const cx = x0 + pad + (k % cc) * u + u / 2, cy = y0 + pad + Math.floor(k / cc) * u + u / 2; s += o.emoji ? emM(cx, cy, o.emoji, 30) : '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="13" fill="' + (nw ? ORM[1] : BLM[1]) + '"/>'; }
+      if (o.tally) s += txt((x0 + bw / 2).toFixed(1), (y0 + bh + 32).toFixed(1), String(per * (g + 1)), 28, nw ? ORM[2] : BLM[2], 900);
+      s += '</g>'; }
+    return svgWrap(s, 'fig-mgrp', '0 0 ' + Wd + ' ' + Hd).replace('<svg ', '<svg data-grp="' + per + '|' + n + '" ');
+  }
+  // mdan: dan · from · to · q(빈칸 곱하는 수들 — 「?」) · hi(짚는 줄) — 카드 사이 「+단」 · 아홉 장이면 두 줄 · data-dan
+  function mdan(o) {
+    const d = o.dan | 0, a = o.from == null ? 1 : o.from | 0, b = o.to == null ? 9 : o.to | 0, ks = []; for (let k = a; k <= b; k++) ks.push(k); if (!ks.length) return '';
+    const qs = [].concat(o.q || []), hs = [].concat(o.hi || []), pr = ks.length <= 3 ? ks.length : ks.length === 4 ? 2 : 3, nr = Math.ceil(ks.length / pr), cw = 250, ch = 84, aw = 66, gy = 22;
+    const Wd = Math.max(460, pr * cw + (pr - 1) * aw + (nr > 1 ? aw : 0) + 20), Hd = nr * ch + (nr - 1) * gy + 16; let s = '';
+    ks.forEach((k, i) => { const r = Math.floor(i / pr), c = i % pr, lead = nr > 1 ? aw : 0, x = 10 + lead + c * (cw + aw), y = 8 + r * (ch + gy), q = qs.indexOf(k) >= 0, h = hs.indexOf(k) >= 0;
+      if (c > 0 || r > 0) s += txt((x - aw / 2).toFixed(1), (y + ch / 2 + 10).toFixed(1), '+' + d, 28, ORM[2], 900);
+      s += boxM(x, y, cw, ch, h ? '#FFF6DF' : '#fff', h ? '#F6C445' : GYM, h ? 4 : 2.5, false, 16);
+      s += txt((x + 18).toFixed(1), (y + ch / 2 + 13).toFixed(1), d + ' × ' + k + ' =', 36, INK, 800, 'start');
+      if (q) s += boxM(x + cw - 72, y + 12, 58, ch - 24, '#fff', ORM[1], 3.5, true, 10) + txt((x + cw - 43).toFixed(1), (y + ch / 2 + 13).toFixed(1), '?', 38, ORM[2], 900);
+      else s += txt((x + cw - 18).toFixed(1), (y + ch / 2 + 13).toFixed(1), String(d * k), 38, BLM[2], 900, 'end'); });
+    return svgWrap(s, 'fig-mdan', '0 0 ' + Wd + ' ' + Hd).replace('<svg ', '<svg data-dan="' + d + '|' + a + '|' + b + '|' + qs.join(',') + '" ');
+  }
+  // mjump: step · n(뛰는 번) · q(true 면 마지막 도착 수 「?」 — 문제 그림) · 0 부터 step 씩 n 번 · 눈금 수는 뛴 자리만 · data-mj
+  function mjump(o) {
+    const st = Math.max(1, o.step | 0), n = Math.max(1, Math.min(10, o.n | 0)), end = st * n, L = 60, R = 60, Wd = Math.max(560, Math.min(1000, 110 * n + L + R)), sc = (Wd - L - R) / end, y = 160; let s = '';
+    s += '<line x1="' + (L - 20) + '" y1="' + y + '" x2="' + (Wd - R + 26) + '" y2="' + y + '" stroke="' + INK + '" stroke-width="3"/>' + '<path d="M' + (Wd - R + 26) + ' ' + (y - 8) + 'l12 8l-12 8z" fill="' + INK + '"/>';
+    if (end <= 50) for (let v = 0; v <= end; v++) if (v % st) s += '<line x1="' + (L + v * sc).toFixed(1) + '" y1="' + (y - 7) + '" x2="' + (L + v * sc).toFixed(1) + '" y2="' + (y + 7) + '" stroke="#9AA6B4" stroke-width="2"/>';
+    for (let i = 0; i <= n; i++) { const x = L + i * st * sc, last = i === n; s += '<line x1="' + x.toFixed(1) + '" y1="' + (y - 14) + '" x2="' + x.toFixed(1) + '" y2="' + (y + 14) + '" stroke="' + INK + '" stroke-width="3"/>';
+      s += last && o.q ? boxM(x - 26, y + 22, 52, 44, '#fff', ORM[1], 3.5, true, 10) + txt(x.toFixed(1), y + 55, '?', 30, ORM[2], 900) : txt(x.toFixed(1), y + 50, String(i * st), 28, i ? BLM[2] : INK, 900);
+      if (i) { const x0 = L + (i - 1) * st * sc, mx = (x0 + x) / 2, hh = Math.min(70, 26 + st * sc * 0.35); s += '<path d="M' + x0.toFixed(1) + ' ' + (y - 6) + ' Q' + mx.toFixed(1) + ' ' + (y - 6 - hh * 2).toFixed(1) + ' ' + x.toFixed(1) + ' ' + (y - 6) + '" fill="none" stroke="' + ORM[1] + '" stroke-width="4" stroke-linecap="round"/>' + '<path d="M' + (x - 1).toFixed(1) + ' ' + (y - 6) + 'l-12 -6l3 12z" fill="' + ORM[1] + '"/>' + txt(mx.toFixed(1), (y - 14 - hh).toFixed(1), '+' + st, 24, ORM[2], 900); } }
+    return svgWrap(s, 'fig-mjump', '0 0 ' + Wd + ' 230').replace('<svg ', '<svg data-mj="' + st + '|' + n + '" ');
+  }
+  // marr: r(줄) · c(칸) · rs(줄 나눔 [3,1]) · cs(칸 나눔) · miss [[r,c]](빈 자리 — 점선) · emoji — 나눈 덩이는 파랑·주황 번갈아 · data-arr
+  function marr(o) {
+    const r = Math.max(1, Math.min(10, o.r | 0)), c = Math.max(1, Math.min(10, o.c | 0)), u = Math.min(56, 860 / c, 380 / r), Wd = Math.max(460, c * u + 40), Hd = r * u + 24, x0 = (Wd - c * u) / 2, y0 = 12;
+    const grpOf = (sp, i) => { let a = 0; for (let k = 0; k < (sp || []).length; k++) { a += sp[k]; if (i < a) return k; } return 0; };
+    const miss = (o.miss || []).map(m => m[0] + '.' + m[1]); let s = '';
+    for (let i = 0; i < r; i++) for (let j = 0; j < c; j++) { const g = grpOf(o.rs, i) + grpOf(o.cs, j), col = g % 2 ? ORM : BLM, cx = x0 + j * u + u / 2, cy = y0 + i * u + u / 2, ms = miss.indexOf(i + '.' + j) >= 0;
+      if (ms) s += '<circle class="o-miss" cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (u * 0.34).toFixed(1) + '" fill="#fff" stroke="#9AA6B4" stroke-width="2.5" stroke-dasharray="5 4"/>';
+      else if (o.emoji) s += ((o.rs || []).length || (o.cs || []).length ? '<rect x="' + (cx - u / 2 + 2).toFixed(1) + '" y="' + (cy - u / 2 + 2).toFixed(1) + '" width="' + (u - 4).toFixed(1) + '" height="' + (u - 4).toFixed(1) + '" rx="8" fill="' + col[0] + '"/>' : '') + emM(cx, cy, o.emoji, u * 0.66);
+      else s += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (u * 0.32).toFixed(1) + '" fill="' + col[1] + '"/>'; }
+    return svgWrap(s, 'fig-marr', '0 0 ' + Wd + ' ' + Hd).replace('<svg ', '<svg data-arr="' + r + '|' + c + '|' + miss.length + '" ');
+  }
+  // mring: dan · seq(일의 자리 차례 — 0 에서 시작해 0 으로) — 0~9 둥근 점판에 차례대로 이은 무늬 · hide(true 면 선을 긋지 않음 — 문제 그림) · data-ring
+  function mring(o) {
+    const R = 150, C = 200, P = (k) => [C + R * Math.sin(k * Math.PI / 5), C - R * Math.cos(k * Math.PI / 5)], seq = (o.seq || []).map(x => x | 0), on = {}; seq.forEach(k => { on[k] = 1; });
+    let s = '<circle cx="' + C + '" cy="' + C + '" r="' + R + '" fill="#F6F9FF" stroke="#DCE3EC" stroke-width="3"/>';
+    if (!o.hide && seq.length > 1) s += '<polyline points="' + seq.map(k => P(k).map(v => v.toFixed(1)).join(',')).join(' ') + '" fill="none" stroke="' + ORM[1] + '" stroke-width="5" stroke-linejoin="round"/>';
+    for (let k = 0; k < 10; k++) { const [x, y] = P(k), [lx, ly] = [C + (R + 30) * Math.sin(k * Math.PI / 5), C - (R + 30) * Math.cos(k * Math.PI / 5)], lit = !o.hide && on[k];
+      s += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (lit ? 11 : 8) + '" fill="' + (lit ? ORM[1] : '#9AA6B4') + '"/>' + txt(lx.toFixed(1), (ly + 10).toFixed(1), String(k), 28, lit ? ORM[2] : INK, 900); }
+    if (o.title) s += txt(C, C + 10, o.title, 30, BLM[2], 900);
+    return svgWrap(s, 'fig-mring', '0 0 400 400').replace('<svg ', '<svg data-ring="' + (o.dan | 0) + '|' + seq.join(',') + '" ');
+  }
+  Object.assign(PARTS, { mgrp, mdan, mjump, marr, mring });
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
