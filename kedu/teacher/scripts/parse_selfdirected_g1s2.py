@@ -51,6 +51,7 @@ def figs(p):
     out.extend(figs8(p))
     out.extend(figs9(p))
     out.extend(figs10(p))
+    out.extend(figs11(p))
     return out
 
 # 123차 — 2단원 「덧셈과 뺄셈(1)」 그림: steps(번호 줄 식) · eqstrip(식 띠: hole=? · res/mark=강조) · chain(색 알 묶음) · cupstack(층 쌓은 컵) · tenframe(십 배열판 a/b 두 색 + tf-lb 꼬리표). 원문 순서대로.
@@ -511,6 +512,62 @@ def figs10(p):
         if inopt(m.start()): continue
         a = [int(x) for x in m.group(1).split('|')]; c = dict((k, hv(h, v)) for k, h, v in re.findall(r'<b class="pw-c (t|a|b)([^"]*)"[^>]*>([^<]*)</b>', m.group(2)))
         found.append((m.start(), m.end(), {'k': 'pw', 'cm': a, 't': c.get('t', ''), 'a': c.get('a', ''), 'b': c.get('b', '')}))
+    return [f for _, _, f in sorted(found, key=lambda x: x[0])]
+
+# 143차 — 2-2 4단원 「시각과 시간」 그림: clock(data-clock 새 꼴 — figs3 clock 과 같은 키) · dclock(디지털시계 h·m·pre 오전/오후) · tband(시간 띠 from·to·h0·h1·step·켠 칸)
+#   · kcal(달력 y·m·first·days·upto·ring·marks 날짜→이모지) · day24(하루 시간 띠 segs·cols·legs) · mdays(월별 날수 표 hide) · upair(단위 짝 카드) · grow(날짜 사이 몇 년·개월·주 후) · plan(시간표). 원문 순서대로.
+def figs11(p):
+    found = []
+    opts = [(m.start(), m.end()) for m in re.finditer(r'<button class="mcq-opt".*?</button>', p, re.S)]
+    inopt = lambda a: any(x <= a < y for x, y in opts)
+    J = lambda v: json.loads(html.unescape(v))
+    for m in re.finditer(r'<svg class="clock (\w+)"[^>]*data-clock="([^"]*)"[^>]*>(.*?)</svg>(?:\s*<span class="cl-tag( amber)?">(.*?)</span>)?', p, re.S):
+        if inopt(m.start()): continue
+        d = J(m.group(2)); hl = re.findall(r'class="cl-hl"[^>]*r="(\d+)"', m.group(3))
+        c = {'k': 'clock', 'h': int(d['h']), 'm': int(d['m']), 'hands': d.get('hands', 'hm'), 'size': m.group(1)}
+        if d.get('bad'): c['bad'] = True; c['deg'] = {k: float(v) for k, v in re.findall(r'data-hand="(\w)" data-deg="([\d.]+)"', m.group(3))}
+        if hl: c['hl'] = 'h' if int(hl[0]) < 60 else 'm'
+        if m.group(5): c['tag'] = clean(m.group(5))
+        if m.group(4): c['amber'] = True
+        found.append((m.start(), m.end(), c))
+    for m in re.finditer(r'<div class="dclock"[^>]*data-dclock="([^"]*)"', p):
+        if inopt(m.start()): continue
+        d = J(m.group(1)); c = {'k': 'dclock', 'h': int(d['h']), 'm': int(d['m'])}
+        if d.get('pre'): c['pre'] = d['pre']
+        found.append((m.start(), m.end(), c))
+    for m in re.finditer(r'<div class="tband"[^>]*data-band="([^"]*)">(.*?)</div></div>', p, re.S):
+        if inopt(m.start()): continue
+        d = J(m.group(1))
+        found.append((m.start(), m.end(), {'k': 'tband', 'title': clean(first(r'class="tb-title">(.*?)</div>', m.group(2))), 'from': d['from'], 'to': d['to'], 'h0': d['h0'], 'h1': d['h1'], 'step': d['step'],
+                                          'on': [int(t) for c2, t in re.findall(r'<i class="tb-c( on)?" data-t="(\d+)"', m.group(2)) if c2]}))
+    for m in re.finditer(r'<div class="kcal[^"]*" data-kcal="([^"]*)">(.*?)</div></div>', p, re.S):
+        if inopt(m.start()): continue
+        d = J(m.group(1)); body = m.group(2)
+        marks = {int(dd): html.unescape(e.strip()) for dd, e in re.findall(r'data-day="(\d+)"[^>]*><b>\d+</b><em>(.*?)</em>', body)}
+        ring = [int(x) for x in re.findall(r'class="kc-d[^"]*ring[^"]*" data-day="(\d+)"', body)] or d.get('ring', [])
+        c = {'k': 'kcal', 'y': d['y'], 'm': d['m'], 'first': d['first'], 'days': d['days'], 'upto': d['upto'], 'ring': ring}
+        if marks: c['marks'] = {str(k): v for k, v in sorted(marks.items())}
+        found.append((m.start(), m.end(), c))
+    for m in re.finditer(r'<div class="day24[^"]*" data-day24="([^"]*)">(.*?)<div class="dy-leg">(.*?)</div>', p, re.S):
+        if inopt(m.start()): continue
+        d = J(m.group(1)); cols = {int(t): col for t, col in re.findall(r'data-t="(\d+)" data-seg="\d+" style="background:(#\w+)"', m.group(2))}
+        legs = [(col, clean(n)) for col, n in re.findall(r'<span class="dy-lg"><i style="background:(#\w+)"></i>(.*?)</span>', m.group(3))]
+        found.append((m.start(), m.end(), {'k': 'day24', 'segs': d['segs'], 'cols': [cols.get(a, '') for a, _ in d['segs']], 'legs': [{'col': c2, 'name': n} for c2, n in legs]}))
+    for m in re.finditer(r'<div class="mdays" data-mdays="([^"]*)">(.*?)</table>', p, re.S):
+        if inopt(m.start()): continue
+        found.append((m.start(), m.end(), {'k': 'mdays', 'days': [int(v) for v in re.findall(r'data-v="(\d+)"', m.group(2))], 'hide': J(m.group(1)).get('hide', [])}))
+    for m in re.finditer(r'<div class="upair"[^>]*>(.*?)</div></div>', p, re.S):
+        if inopt(m.start()): continue
+        found.append((m.start(), m.end(), {'k': 'upair', 'items': [[clean(a), clean(b)] for a, b in re.findall(r'<b>(.*?)</b><i>=</i><b>(.*?)</b>', m.group(1))]}))
+    for m in re.finditer(r'<div class="grow[^"]*" data-grow="[^"]*">(.*?)</div></div>', p, re.S):
+        if inopt(m.start()): continue
+        nodes = [{'date': clean(b), 'label': clean(sp)} for b, sp in re.findall(r'<div class="gr-n"[^>]*><b>(.*?)</b><span>(.*?)</span>', m.group(1))]
+        legs = [{'n': '?' if e.strip() == '?' else int(e), 'u': u} for u, e in re.findall(r'<div class="gr-a" data-n="\d+" data-u="(\w+)"><em>(.*?)</em>', m.group(1))]
+        found.append((m.start(), m.end(), {'k': 'grow', 'nodes': nodes, 'legs': legs}))
+    for m in re.finditer(r'<div class="plan"><table>(.*?)</table>', p, re.S):
+        if inopt(m.start()): continue
+        rows = [[clean(x) for x in re.findall(r'<t[hd]>(.*?)</t[hd]>', r)] for r in re.findall(r'<tr>(.*?)</tr>', m.group(1), re.S)]
+        found.append((m.start(), m.end(), {'k': 'plan', 'rows': rows}))
     return [f for _, _, f in sorted(found, key=lambda x: x[0])]
 
 if __name__ == '__main__':

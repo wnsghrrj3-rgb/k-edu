@@ -16,6 +16,7 @@
    · 64차(2026-10-02) 4학년 1학기 관계와 규칙 부품: bal(저울 — 식을 셈해 기울기) · shapes(모양의 배열 — 변하는/변하지 않는 부분) · ngrid(수 배열표·수열) · eqs(계산식의 배열) · eqc(등호 카드 — 옳음은 부품이 셈)
    · 81차(2026-10-06) 4학년 2학기 사각형 부품: lines(직선 여러 개 — 수직 ㄱ자·평행 꺾쇠는 좌표로 셈해 맞을 때만) · pdist(평행선 사이의 거리) · quad(사각형 하나 — 평행 꺾쇠·같은 변 눈금·직각·대각선·변/각 글자) · quads(사각형 여러 개 가르기) · circ2(두 원으로 그린 사각형)
    · 80차(2026-10-06) 4학년 2학기 분수의 덧셈과 뺄셈 부품: fop(같은 분모 분수의 덧셈·뺄셈 띠 — 파랑 앞의 수·초록 더하는 수·주황 빗금 덜어 낸 칸 · 대분수 자연수는 통 칸)
+   · 143차(2026-10-19) 2학년 2학기 시각과 시간 부품: dclk2(디지털시계) · tbnd2(시간 띠) · kcal2(달력) · d24(하루 24칸 띠) · upr2(단위 짝 카드) · grow2(날짜 사이 몇 년·개월·주 후)
    · 141차(2026-10-16) 2학년 2학기 길이 재기 부품: lbar(길이 막대·이어 붙이기·잘라 낸 칸·100 cm 금) · ltape(자·끊긴 줄자) · lpw(전체·부분 가지) · lcard(몸·물건 어림 카드) · lch(나누어 어림) · tvert q(답 줄 빈칸 「?」)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
    ============================================================================ */
@@ -2371,6 +2372,72 @@
     return svgWrap(s, 'fig-lch', '0 0 460 ' + (y + h + 82)).replace('<svg ', '<svg data-ch="' + esc(cm.join(',') + '|' + (o.tot || '')) + '" ');
   }
   Object.assign(PARTS, { lbar, ltape, lpw, lcard, lch });
+  }
+  { // 143차 2학년 2학기 「시각과 시간」 부품 — 이름이 겹치지 않게 블록 안에 둔다
+  // ══ dclk2(디지털시계) · tbnd2(시간 띠) · kcal2(달력) · d24(하루 시간 띠) · upr2(시간 단위 짝 카드) · grow2(날짜 사이 몇 년·개월·주 후) ══
+  const OR3 = ['#FFF1E6', '#FF7A2F', '#C2551A'], BL3 = ['#DCE8FB', '#5B8DEF', '#1F4A9E'], RED = '#E0413C', GR = '#6B7C93';
+  const rr = (x, y, w, h, fill, st, sw, dash, r) => '<rect x="' + (+x).toFixed(1) + '" y="' + (+y).toFixed(1) + '" width="' + Math.max(0, w).toFixed(1) + '" height="' + (+h).toFixed(1) + '" rx="' + (r == null ? 12 : r) + '" fill="' + fill + '" stroke="' + (st || 'none') + '" stroke-width="' + (sw || 0) + '"' + (dash ? ' stroke-dasharray="9 6"' : '') + '/>';
+  const pad2 = (n) => (n < 10 ? '0' : '') + n;
+  // dclk2: h · m · pre(「오전」·「오후」 — 있으면 화면 왼쪽 위 작은 글) · data-t
+  function dclk2(o) {
+    const h = +o.h || 0, m = +o.m || 0, pre = o.pre ? String(o.pre) : '', W = 320, x0 = (460 - W) / 2; let s = '';
+    s += rr(x0, 10, W, 128, '#26313F', '#0F1720', 5, false, 22) + rr(x0 + 16, 26, W - 32, 96, '#0E1A12', 'none', 0, false, 12);
+    if (pre) s += txt((x0 + 30).toFixed(1), 52, pre, 22, '#7CF29B', 800, 'start');
+    s += txt(230, pre ? 112 : 104, h + ':' + pad2(m), 72, '#7CF29B', 900);
+    return svgWrap(s, 'fig-dclk2', '0 0 460 148').replace('<svg ', '<svg data-t="' + (pre ? esc(pre) + ' ' : '') + h + ':' + pad2(m) + '" ');
+  }
+  // tbnd2: title · h0·h1(띠 처음·끝 시) · step(칸 분) · on [칸 시작 분(하루 0시부터)] 켠 칸 · from·to [시, 분] · data-band
+  function tbnd2(o) {
+    const h0 = +o.h0, h1 = +o.h1, step = +o.step || 10, n = Math.round((h1 - h0) * 60 / step), cw = Math.max(30, Math.min(56, 400 / n)), W0 = cw * n, Wd = Math.max(460, W0 + 64), x0 = (Wd - W0) / 2, on = (o.on || []).map(Number); let s = '', y = 8;
+    if (o.title) { s += txt((Wd / 2).toFixed(1), y + 28, o.title, 28, INK, 900); y += 46; }
+    for (let i = 0; i <= n; i++) { const t = h0 * 60 + i * step, x = x0 + i * cw, hr = t % 60 === 0;
+      s += '<line x1="' + x.toFixed(1) + '" y1="' + (y + (hr ? 30 : 40)) + '" x2="' + x.toFixed(1) + '" y2="' + (y + 50) + '" stroke="' + (hr ? INK : '#9AA6B4') + '" stroke-width="' + (hr ? 4 : 2) + '"/>';
+      if (hr) s += txt(x.toFixed(1), y + 24, (t / 60) + '시', 24, INK, 900); else if (cw >= 34) s += txt(x.toFixed(1), y + 30, String(t % 60), 18, GR, 800); }
+    y += 52;
+    for (let i = 0; i < n; i++) { const t = h0 * 60 + i * step, lit = on.indexOf(t) >= 0; s += '<rect class="o-tb' + (lit ? ' on' : '') + '" x="' + (x0 + i * cw + 1.5).toFixed(1) + '" y="' + y + '" width="' + (cw - 3).toFixed(1) + '" height="44" rx="6" fill="' + (lit ? BL3[1] : '#EEF2F7') + '" stroke="' + (lit ? BL3[2] : '#C9D3E0') + '" stroke-width="2"/>'; }
+    y += 58; s += txt((x0 - 6).toFixed(1), y, step + '분 = 한 칸', 18, GR, 800, 'start');
+    return svgWrap(s, 'fig-tbnd2', '0 0 ' + Math.ceil(Wd) + ' ' + (y + 8)).replace('<svg ', '<svg data-band="' + esc([(o.from || []).join(':'), (o.to || []).join(':'), on.length * step].join('|')) + '" ');
+  }
+  // kcal2: y·m(제목 「m월」) · first(1일 요일 0=일) · days · upto(그 날까지만 그림) · ring [동그라미 친 날] · marks {날: 이모지} · data-cal
+  function kcal2(o) {
+    const first = +o.first || 0, upto = Math.min(+o.upto || +o.days || 30, +o.days || 31), ring = (o.ring || []).map(Number), marks = o.marks || {}, cw = 60, ch = 58, x0 = 20; let s = '', y = 6;
+    s += txt(230, y + 34, (o.m || '') + '월', 34, INK, 900); y += 50;
+    '일월화수목금토'.split('').forEach((d, i) => { s += txt((x0 + i * cw + cw / 2).toFixed(1), y + 24, d, 22, i === 0 ? RED : i === 6 ? BL3[1] : '#4E5C70', 900); }); y += 34;
+    const rows = Math.ceil((first + upto) / 7);
+    for (let d = 1; d <= upto; d++) { const k = first + d - 1, c = k % 7, r = Math.floor(k / 7), x = x0 + c * cw, yy = y + r * ch, mk = marks[d] || marks[String(d)], rg = ring.indexOf(d) >= 0;
+      s += rr(x + 2, yy + 2, cw - 4, ch - 4, rg ? OR3[0] : '#fff', rg ? OR3[1] : '#DDE3EB', rg ? 3.5 : 1.5, false, 10);
+      s += txt((x + cw / 2).toFixed(1), yy + (mk ? 25 : 38), String(d), mk ? 20 : 24, c === 0 ? RED : c === 6 ? BL3[1] : INK, 900);
+      if (mk) s += '<text x="' + (x + cw / 2).toFixed(1) + '" y="' + (yy + 50) + '" text-anchor="middle" font-size="22">' + esc(mk) + '</text>'; }
+    return svgWrap(s, 'fig-kcal2', '0 0 460 ' + (y + rows * ch + 8)).replace('<svg ', '<svg data-cal="' + esc([o.y, o.m, first, o.days, upto].join('|') + (ring.length ? '|r' + ring.join(',') : '')) + '" ');
+  }
+  // d24: segs [[시작 시, 끝 시]] · cols [칸 색] · legs [{col, name}] — 24칸 하루 띠(오전·오후) · data-d24
+  function d24(o) {
+    const segs = o.segs || [], cols = o.cols || [], cw = 30, x0 = 30, W0 = cw * 24, Wd = W0 + 60; let s = '', y = 6;
+    s += rr(x0, y, W0 / 2, 34, '#E8F1FD', 'none', 0, false, 8) + rr(x0 + W0 / 2, y, W0 / 2, 34, '#FFF1E6', 'none', 0, false, 8) + txt((x0 + W0 / 4).toFixed(1), y + 25, '오전', 22, BL3[2], 900) + txt((x0 + W0 * 3 / 4).toFixed(1), y + 25, '오후', 22, OR3[2], 900); y += 44;
+    for (let i = 0; i <= 24; i++) s += txt((x0 + i * cw).toFixed(1), y + 20, String(i % 12 === 0 ? 12 : i % 12), 18, i % 12 === 0 ? INK : GR, 900); y += 28;
+    for (let t = 0; t < 24; t++) { const si = segs.findIndex(g => t >= g[0] && t < g[1]); s += '<rect x="' + (x0 + t * cw + 1).toFixed(1) + '" y="' + y + '" width="' + (cw - 2) + '" height="52" rx="4" fill="' + (cols[si] || '#EEF2F7') + '"/>'; }
+    s += '<line x1="' + (x0 + W0 / 2) + '" y1="' + (y - 6) + '" x2="' + (x0 + W0 / 2) + '" y2="' + (y + 58) + '" stroke="' + INK + '" stroke-width="3"/>'; y += 66;
+    let lx = x0, ly = y; (o.legs || []).forEach(g => { const w = 46 + String(g.name).length * 22; if (lx + w > x0 + W0) { lx = x0; ly += 40; } s += rr(lx, ly, 28, 28, g.col, 'none', 0, false, 6) + txt((lx + 36).toFixed(1), ly + 22, g.name, 22, '#3E4A5C', 800, 'start'); lx += w + 10; });
+    return svgWrap(s, 'fig-d24', '0 0 ' + Wd + ' ' + (ly + 40)).replace('<svg ', '<svg data-d24="' + esc(segs.map(g => g.join('-')).join(',')) + '" ');
+  }
+  // upr2: items [[왼쪽, 오른쪽]] — 「1시간 = 60분」 짝 카드(두 줄 두 칸) · data-pairs
+  function upr2(o) {
+    const its = (o.items || []).slice(0, 6), per = its.length <= 2 ? its.length : 2, cw = 212, ch = 86, gap = 16, x0 = (460 - (per * cw + (per - 1) * gap)) / 2; let s = '';
+    its.forEach((it, i) => { const r = Math.floor(i / per), c = i % per, x = x0 + c * (cw + gap), y = 8 + r * (ch + gap), cx = x + cw / 2;
+      s += rr(x, y, cw, ch, '#fff', BL3[1], 3, false, 16) + txt((cx - 14).toFixed(1), y + 54, it[0], 28, BL3[2], 900, 'end') + txt(cx.toFixed(1), y + 54, '=', 28, GR, 900) + txt((cx + 14).toFixed(1), y + 54, it[1], 28, OR3[2], 900, 'start'); });
+    const nr = Math.ceil(its.length / per);
+    return svgWrap(s, 'fig-upr2', '0 0 460 ' + (16 + nr * ch + (nr - 1) * gap)).replace('<svg ', '<svg data-pairs="' + esc(its.map(x => x.join('=')).join(',')) + '" ');
+  }
+  // grow2: nodes [{date, label}] · legs [{n('?' 이면 빈칸), u}] — 위에서 아래로 날짜 카드와 「몇 ○ 후」 화살표 · data-grow
+  function grow2(o) {
+    const nodes = (o.nodes || []).slice(0, 5), legs = o.legs || [], W = 420, x0 = 20, nh = 82, lh = 62; let s = '', y = 6;
+    nodes.forEach((n, i) => { s += rr(x0, y, W, nh, '#fff', '#C9D3E0', 3, false, 16) + txt(x0 + 22, y + 34, n.date, 26, INK, 900, 'start') + txt(x0 + 22, y + 66, n.label, String(n.label).length > 14 ? 20 : 22, '#4E5C70', 800, 'start'); y += nh;
+      const g = legs[i]; if (g && i < nodes.length - 1) { s += '<path d="M90 ' + (y + 6) + 'V' + (y + lh - 8) + 'M80 ' + (y + lh - 18) + 'L90 ' + (y + lh - 6) + 'L100 ' + (y + lh - 18) + '" fill="none" stroke="' + OR3[1] + '" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+        if (g.n === '?') s += rr(124, y + 10, 60, 42, OR3[0], OR3[1], 3.5, true, 10) + txt(154, y + 41, '?', 28, OR3[2], 900) + txt(194, y + 41, g.u + ' 후', 26, OR3[2], 900, 'start');
+        else s += txt(124, y + 41, g.n + g.u + ' 후', 26, OR3[2], 900, 'start'); y += lh; } });
+    return svgWrap(s, 'fig-grow2', '0 0 460 ' + (y + 6)).replace('<svg ', '<svg data-grow="' + esc(legs.map(g => g.n + g.u).join(',')) + '" ');
+  }
+  Object.assign(PARTS, { dclk2, tbnd2, kcal2, d24, upr2, grow2 });
   }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
