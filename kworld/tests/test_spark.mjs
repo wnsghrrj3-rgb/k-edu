@@ -68,5 +68,7 @@ ok(g.flags.has('sur:bond2'), '갈림 카드가 열렸다'); const bw = w.spark.s
 g.story.isNight = true; g.story.skyName = 'night'; run(1); ok(g.spark.ff && added.includes(g.spark.ff), '밤 → 반딧불이가 뜬다'); g.story.isNight = false; run(1); ok(!g.spark.ff, '낮 → 사라진다');
 g.story.isNight = true; for (let i = 0; i < 3; i++) g.spark.shootStar(); ok(g.spark.stars === 3 && g.flags.has('title:stars') && said.some((s) => s.includes('밤하늘을 보는 사람')), '별똥별 셋 → 「밤하늘을 보는 사람」'); run(2); ok(!g.spark.shot, '별똥별은 1초 남짓이면 진다');
 // 5) 족보 상자: 붙은 이름이 족보에 같이 내려간다
-const { titlesHtml } = await import('../core/jokbo.js'); const th = titlesHtml([{ era: 'joseon-life', short: '조선 전기', kind: 'now' }]); ok(th.includes('발소리를 떨군 사람') && th.includes('🩹'), '족보: 🏅 붙은 이름 상자(쓴 이름은 🩹)');
+const { titlesHtml, carryRecord, bondOf, bondLine, jokboHtml } = await import('../core/jokbo.js');
+// 6) 끝 카드·족보로: carryRecord 에 titles·bond, 족보 줄에 🏅·👤
+const rec = carryRecord(g.life, { id: 'x' }); ok(rec.titles.some((t) => t.id === 'free') && rec.bond?.name === '돌쇠' && rec.bond.how === 'enemy', 'carryRecord 에 titles + bond(돌쇠·등짐)'); ok(bondLine(bondOf(g)) === '👤 돌쇠과 등졌다'.replace('돌쇠과', '돌쇠과') , 'bondLine'); const jh = jokboHtml({ title: 't', eras: [{ era: 'joseon-life', short: '조선 전기' }] }, [{ era: 'joseon-life', short: '조선 전기', kind: 'now', values: {}, titles: rec.titles, bond: rec.bond, heirlooms: [] }]); ok(jh.includes('🏅') && jh.includes('👤 돌쇠'), '족보 줄에 🏅 이름 + 👤 운명의 사람'); const th = titlesHtml([{ era: 'joseon-life', short: '조선 전기', kind: 'now' }]); ok(th.includes('발소리를 떨군 사람') && th.includes('🩹'), '족보: 🏅 붙은 이름 상자(쓴 이름은 🩹)');
 console.log(`${pass} passed, ${fail} failed`); if (fail) process.exit(1);

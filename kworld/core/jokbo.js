@@ -12,9 +12,14 @@ export function heirloomsOf(era = null, store = (k) => read(k)) { const all = st
 const mergeHeir = (a, b) => { const out = []; const seen = new Set(); for (const h of [...(a || []), ...(b || [])]) { if (!h || !h.id || seen.has(h.id)) continue; seen.add(h.id); out.push(h); } return out; };
 
 /** 끝 카드가 남길 한 줄 — life.end() 가 kworld_carry 에 같이 쓴다(제목·신분 이름·흔적 이름까지 적어 두면 족보가 life.json 을 다시 읽을 필요가 없다) */
+/** 이 기기에서 붙은 이름(core/spark.js 칭호가 kworld_titles 에 쓴다) — era 를 주면 그 시대 것만 */
+export function titlesOf(era = null, store = (k) => read(k)) { const all = store('kworld_titles') || []; return (era ? all.filter((t) => t.era === era) : all).map((t) => ({ id: t.id, name: t.name, line: t.line || null, bitter: !!t.bitter, t: t.t || 0 })); }
+/** 운명의 사람 — world.spark.bond.name + 깃발(bond:friend/enemy/met) → { name, how } 또는 null */
+export function bondOf(g) { const name = g?.world?.spark?.bond?.name; if (!name || !g.flags) return null; const how = g.flags.has('bond:friend') ? 'friend' : g.flags.has('bond:enemy') ? 'enemy' : g.flags.has('bond:met') ? 'met' : null; return how ? { name, how } : null; }
+export const bondLine = (b) => !b ? '' : b.how === 'friend' ? `👤 ${b.name}의 벗` : b.how === 'enemy' ? `👤 ${b.name}과 등졌다` : `👤 ${b.name}을 만났다`;
 export function carryRecord(life, branch) {
   const v = life.values; const d = life.d;
-  return { craft: v.craft, heart: v.heart, grain: v.grain || 0, rank: v.rank || 0, cap: life.cap(), branch: branch.id, title: branch.title || null, status: life.status || null, statusName: life.statusName || null, nation: life.nation || null, nationName: life.nationName || null, hurt: [...life.hurt], marks: [...life.hurt].map((h) => d.hurts?.[h]?.name || h), sits: life.log.length, heirlooms: heirloomsOf(life.g?.era), t: Date.now() };
+  return { craft: v.craft, heart: v.heart, grain: v.grain || 0, rank: v.rank || 0, cap: life.cap(), branch: branch.id, title: branch.title || null, status: life.status || null, statusName: life.statusName || null, nation: life.nation || null, nationName: life.nationName || null, hurt: [...life.hurt], marks: [...life.hurt].map((h) => d.hurts?.[h]?.name || h), sits: life.log.length, heirlooms: heirloomsOf(life.g?.era), titles: titlesOf(life.g?.era), bond: bondOf(life.g), t: Date.now() };
 }
 
 /** 줄 모으기 — chain.eras 순서대로. g 가 있으면 지금 사는 시대 줄은 산 채로(값·신분은 지금 것) */
@@ -22,10 +27,10 @@ export function collect(chain, g = null, store = (k) => read(k)) {
   const rows = []; let prevT = 0; let seen = false, broken = false;   // seen: 이 집 줄이 하나라도 나왔나(앞쪽 「아직」은 집을 끊지 않는다 — 신석기부터 시작해도 된다)
   for (const e of chain.eras || []) {
     const c = store('kworld_carry:' + e.era); const now = g && g.era === e.era && g.life && !g.flags?.has('life:end') ? g.life : null;
-    if (now) { rows.push({ ...e, kind: 'now', nationName: now.nationName, statusName: now.statusName, values: { ...now.values }, cap: now.cap(), marks: [...now.hurt].map((h) => now.d.hurts?.[h]?.name || h), sits: now.log.length, heirlooms: heirloomsOf(e.era, store) }); seen = true; broken = true; continue; }
+    if (now) { rows.push({ ...e, kind: 'now', nationName: now.nationName, statusName: now.statusName, values: { ...now.values }, cap: now.cap(), marks: [...now.hurt].map((h) => now.d.hurts?.[h]?.name || h), sits: now.log.length, heirlooms: heirloomsOf(e.era, store), titles: titlesOf(e.era, store), bond: bondOf(g) }); seen = true; broken = true; continue; }
     if (!c) { rows.push({ ...e, kind: 'none', heirlooms: heirloomsOf(e.era, store) }); if (seen) broken = true; continue; }
     const inHouse = !broken && c.t >= prevT; if (inHouse) { prevT = c.t; seen = true; } else broken = true;
-    rows.push({ ...e, kind: inHouse ? 'lived' : 'old', title: c.title || c.branch, nationName: c.nationName, statusName: c.statusName, values: { craft: c.craft, heart: c.heart, grain: c.grain, rank: c.rank }, cap: c.cap ?? null, marks: c.marks || c.hurt || [], sits: c.sits, heirlooms: mergeHeir(c.heirlooms, heirloomsOf(e.era, store)), t: c.t });
+    rows.push({ ...e, kind: inHouse ? 'lived' : 'old', title: c.title || c.branch, nationName: c.nationName, statusName: c.statusName, values: { craft: c.craft, heart: c.heart, grain: c.grain, rank: c.rank }, cap: c.cap ?? null, marks: c.marks || c.hurt || [], sits: c.sits, heirlooms: mergeHeir(c.heirlooms, heirloomsOf(e.era, store)), titles: (c.titles?.length ? c.titles : titlesOf(e.era, store)), bond: c.bond || null, t: c.t });
   }
   return rows;
 }
@@ -44,8 +49,9 @@ export function jokboHtml(chain, rows, opts = {}) {
     if (r.kind === 'none') return `<li class="jrow none"><span class="jn">${n}</span><div><b class="je">${esc(r.short)}</b><span class="jy">${esc(r.years || '')}</span><div class="jt">아직 오지 않은 대</div>${r.heirlooms?.length ? `<div class="jg">🎁 ${esc(r.heirlooms.map((h) => h.name).join(' · '))}</div>` : ''}</div></li>`;
     const who = [r.nationName ? `🏳️ ${esc(r.nationName)}` : '', r.statusName ? `🏠 ${esc(r.statusName)}` : ''].filter(Boolean).join(' · ');
     const tt = r.kind === 'now' ? '지금 사는 중' : r.title || '';
+    const tl = (r.kind !== 'old' && (r.titles?.length || r.bond)) ? `<div class="jg jtb">${r.titles?.length ? `🏅 ${esc(r.titles.map((t) => (t.bitter ? '🩹' : '') + t.name).join(' · '))}` : ''}${r.titles?.length && r.bond ? ' · ' : ''}${esc(bondLine(r.bond))}</div>` : '';
     const hl = r.heirlooms?.length ? `<div class="jg">🎁 ${esc(r.heirlooms.map((h) => h.name).join(' · '))}${r.relics ? ` <span class="jd">${r.heirlooms.length}/${r.relics}</span>` : ''}</div>` : '';
-    return `<li class="jrow ${r.kind}"><span class="jn">${n}</span><div><b class="je">${esc(r.short)}</b><span class="jy">${esc(r.years || '')}${r.kind === 'old' ? ' · 지난 집' : ''}</span>${who ? `<div class="jw">${who}</div>` : ''}<div class="jt">${r.kind === 'now' ? '🔶 ' : '✦ '}${esc(tt)}</div><div class="jv">${vals(r)}${r.marks?.length ? ` · <span class="jh">흔적 ${esc(r.marks.join(', '))}</span>` : ''}${r.sits ? ` · 겪은 상황 ${r.sits}` : ''}${r.t ? ` <span class="jd">${when(r.t)}</span>` : ''}</div>${hl}${r.chain && r.kind !== 'old' ? `<div class="jc">${esc(r.chain)}</div>` : ''}</div></li>`;
+    return `<li class="jrow ${r.kind}"><span class="jn">${n}</span><div><b class="je">${esc(r.short)}</b><span class="jy">${esc(r.years || '')}${r.kind === 'old' ? ' · 지난 집' : ''}</span>${who ? `<div class="jw">${who}</div>` : ''}<div class="jt">${r.kind === 'now' ? '🔶 ' : '✦ '}${esc(tt)}</div><div class="jv">${vals(r)}${r.marks?.length ? ` · <span class="jh">흔적 ${esc(r.marks.join(', '))}</span>` : ''}${r.sits ? ` · 겪은 상황 ${r.sits}` : ''}${r.t ? ` <span class="jd">${when(r.t)}</span>` : ''}</div>${hl}${tl}${r.chain && r.kind !== 'old' ? `<div class="jc">${esc(r.chain)}</div>` : ''}</div></li>`;
   }).join('');
   return `<div class="chk life jokbo">${head}<ol class="jlist">${body}</ol>${chestHtml(rows)}${titlesHtml(rows, opts.store || ((k) => read(k)))}</div>`;
 }
