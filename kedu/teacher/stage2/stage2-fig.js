@@ -16,6 +16,7 @@
    · 64차(2026-10-02) 4학년 1학기 관계와 규칙 부품: bal(저울 — 식을 셈해 기울기) · shapes(모양의 배열 — 변하는/변하지 않는 부분) · ngrid(수 배열표·수열) · eqs(계산식의 배열) · eqc(등호 카드 — 옳음은 부품이 셈)
    · 81차(2026-10-06) 4학년 2학기 사각형 부품: lines(직선 여러 개 — 수직 ㄱ자·평행 꺾쇠는 좌표로 셈해 맞을 때만) · pdist(평행선 사이의 거리) · quad(사각형 하나 — 평행 꺾쇠·같은 변 눈금·직각·대각선·변/각 글자) · quads(사각형 여러 개 가르기) · circ2(두 원으로 그린 사각형)
    · 80차(2026-10-06) 4학년 2학기 분수의 덧셈과 뺄셈 부품: fop(같은 분모 분수의 덧셈·뺄셈 띠 — 파랑 앞의 수·초록 더하는 수·주황 빗금 덜어 낸 칸 · 대분수 자연수는 통 칸)
+   · 144차(2026-10-19) 2학년 2학기 표와 그래프 부품: tbl2(표·합계·빈칸) · cg2(◯·×·/ 그래프 — 세로·가로·잘못 그린 칸) · tly2(세면서 표시하기) · dc2(자료 낱장·/ 표시) · srt2(분류 칸) · wcl2(날씨 달력 △·◯) · nte2(쪽지·발표 자료) · objs1 이름 줄바꿈(\n)
    · 143차(2026-10-19) 2학년 2학기 시각과 시간 부품: dclk2(디지털시계) · tbnd2(시간 띠) · kcal2(달력) · d24(하루 24칸 띠) · upr2(단위 짝 카드) · grow2(날짜 사이 몇 년·개월·주 후)
    · 141차(2026-10-16) 2학년 2학기 길이 재기 부품: lbar(길이 막대·이어 붙이기·잘라 낸 칸·100 cm 금) · ltape(자·끊긴 줄자) · lpw(전체·부분 가지) · lcard(몸·물건 어림 카드) · lch(나누어 어림) · tvert q(답 줄 빈칸 「?」)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
@@ -1940,8 +1941,8 @@
         nm.forEach((l, k) => { s += T1(cx, 196 + k * 28 - (nm.length - 1) * 8, l, fz, '#3E4A5C', 900); }); });
       return svgWrap(s, 'fig-objs1', '0 0 ' + Wd + ' 248').replace('<svg ', '<svg data-n="' + its.length + '" data-cnt="' + its.map(i => (i.n == null ? '' : i.n)).join(',') + '" '); }
     // 132차: 이름이 6자 넘는 카드가 있으면 넓은 카드(196) · 긴 이름은 두 줄(옆 칸으로 넘치지 않게) — 6자 이하만 있는 장은 그대로
-    const hasS = its.some(i => i.s), wide = its.some(i => String(i.name || '').length > 6);
-    const lines2 = (t) => { if (t.length <= 8) return [t]; const ws = t.split(' '); let a = '', b = ''; ws.forEach(w => { if ((a + ' ' + w).trim().length <= Math.ceil(t.length / 2) + 1 && !b) a = (a + ' ' + w).trim(); else b = (b + ' ' + w).trim(); }); return b ? [a, b] : [t]; };
+    const hasS = its.some(i => i.s), wide = its.some(i => String(i.name || '').length > 6 || /\n/.test(i.name || '')); // 144차: 이름 안 \n = 그 자리에서 줄바꿈
+    const lines2 = (t) => { if (/\n/.test(t)) return t.split('\n'); if (t.length <= 8) return [t]; const ws = t.split(' '); let a = '', b = ''; ws.forEach(w => { if ((a + ' ' + w).trim().length <= Math.ceil(t.length / 2) + 1 && !b) a = (a + ' ' + w).trim(); else b = (b + ' ' + w).trim(); }); return b ? [a, b] : [t]; };
     const cw = wide ? 214 : 150, rw = wide ? 196 : 132, Wd = Math.max(460, its.length * cw + 20), x0 = (Wd - its.length * cw) / 2, two = wide && its.some(i => lines2(String(i.name)).length > 1), Hc = (hasS ? 206 : 160) + (two ? 26 : 0); let s = '';
     its.forEach((i, j) => { const cx = x0 + j * cw + cw / 2, nm = wide ? lines2(String(i.name)) : [i.name], fz = wide ? (Math.max(...nm.map(l => l.length)) > 8 ? 22 : 24) : (i.name.length > 5 ? 20 : 24), y0 = hasS ? 196 : 146;
       s += '<rect x="' + (cx - rw / 2) + '" y="8" width="' + rw + '" height="' + Hc + '" rx="18" fill="#fff" stroke="#DCE3EC" stroke-width="3"/>' + T1(cx, 86, i.emoji, 62, INK, 400);
@@ -2438,6 +2439,128 @@
     return svgWrap(s, 'fig-grow2', '0 0 460 ' + (y + 6)).replace('<svg ', '<svg data-grow="' + esc(legs.map(g => g.n + g.u).join(',')) + '" ');
   }
   Object.assign(PARTS, { dclk2, tbnd2, kcal2, d24, upr2, grow2 });
+  }
+  { // 144차 2학년 2학기 「표와 그래프」 부품 — 이름이 겹치지 않게 블록 안에 둔다
+  // ══ tbl2(표) · cg2(◯·×·/ 그래프 — 세로·가로, 잘못 그린 칸 그대로) · tly2(세면서 표시하기) · dc2(자료 낱장) · srt2(분류 칸) · wcl2(날씨 달력) · nte2(쪽지·발표 자료) ══
+  // 그림 문법: 파랑 = 항목·합계 · 주황 점선 = 채울 칸(?) · 주황 = 짚는 것(/ 표시·△·◯) · 빨강 = 섞어 쓴 기호 · svg 고유 크기 = viewBox(글씨가 줄지 않게, 넘칠 때만 그림 줄이기)
+  const OR4 = ['#FFF1E6', '#FF7A2F', '#C2551A'], BL4 = ['#EAF1FF', '#5B8DEF', '#1F4A9E'], RED4 = '#E0413C', GR4 = '#6B7C93', LN4 = '#C9D3E0';
+  const r4 = (x, y, w, h, fill, st, sw, dash, r) => '<rect x="' + (+x).toFixed(1) + '" y="' + (+y).toFixed(1) + '" width="' + Math.max(0, w).toFixed(1) + '" height="' + Math.max(0, h).toFixed(1) + '" rx="' + (r == null ? 8 : r) + '" fill="' + fill + '" stroke="' + (st || 'none') + '" stroke-width="' + (sw || 0) + '"' + (dash ? ' stroke-dasharray="8 6"' : '') + '/>';
+  const cw4 = (t, fz) => Array.from(String(t)).reduce((a, c) => a + (/[\u3131-\uD7A3]/.test(c) ? 1 : /[\s.,()·:]/.test(c) ? 0.38 : 0.6), 0) * fz; // 글자 폭 어림
+  function wr4(t, mx) { t = String(t == null ? '' : t); if (t.indexOf('\n') >= 0) return t.split('\n'); if (Array.from(t).length <= mx) return [t];
+    const sp = t.split(' '); if (sp.length > 1) { let best = [t], bd = 1e9; for (let i = 1; i < sp.length; i++) { const a = sp.slice(0, i).join(' '), b = sp.slice(i).join(' '), d = Math.max(a.length, b.length); if (d < bd) { bd = d; best = [a, b]; } } return best; }
+    const h = Math.ceil(t.length / 2); return [t.slice(0, h), t.slice(h)]; }
+  const ml4 = (x, y, ls, fz, col, wt, lh) => ls.map((l, i) => txt(x.toFixed ? x.toFixed(1) : x, (y + (i - (ls.length - 1) / 2) * (lh || fz * 1.15) + fz * 0.36).toFixed(1), l, fz, col, wt)).join('');
+  const sv4 = (s, cls, W, H, data) => svgWrap(s, 'fig-dat2 ' + cls, '0 0 ' + Math.ceil(W) + ' ' + Math.ceil(H)).replace('<svg ', '<svg width="' + Math.ceil(W) + '" height="' + Math.ceil(H) + '" ' + (data || '') + ' ');
+  // tbl2: title · head [첫 줄 이름, 둘째 줄 이름] · cats · vals · total(null = 합계 칸 없음) · total_hole · holes [항목 번호 → 「?」] · hi [항목 번호] · data-tbl
+  function tbl2(o) {
+    const cats = o.cats || [], vals = o.vals || [], holes = o.holes || [], hi = o.hi || [], hasT = o.total != null, FZ = 28, MX = 4;
+    const cols = [{ h: wr4(o.head[0], 5), v: wr4(o.head[1], 5), n: true }].concat(cats.map((c, i) => ({ h: wr4(c, MX), v: [holes.indexOf(i) >= 0 ? '?' : String(vals[i])], q: holes.indexOf(i) >= 0, hi: hi.indexOf(i) >= 0 })));
+    if (hasT) cols.push({ h: ['합계'], v: [o.total_hole ? '?' : String(o.total)], q: !!o.total_hole, sum: true });
+    cols.forEach(c => { c.w = Math.max(c.n ? 120 : 84, ...c.h.concat(c.v).map(l => cw4(l, FZ) + 30)); });
+    const h1 = Math.max(...cols.map(c => c.h.length)) > 1 ? 92 : 62, h2 = Math.max(...cols.map(c => c.v.length)) > 1 ? 92 : 64, W0 = cols.reduce((a, c) => a + c.w, 0), Wd = Math.max(460, W0 + 20); let s = '', y = 6, x = (Wd - W0) / 2;
+    if (o.title) { const tl = wr4(o.title, 22); s += ml4(Wd / 2, y + tl.length * 17, tl, 26, INK, 900, 32); y += tl.length * 34 + 8; }
+    s += r4(x, y, W0, h1 + h2, '#fff', '#8FA3BF', 3, false, 14);
+    cols.forEach(c => { const cx = x + c.w / 2;
+      s += r4(x + 1.5, y + 1.5, c.w - 3, h1 - 3, c.n ? '#E4E9F0' : c.sum ? BL4[0] : c.hi ? OR4[0] : '#F3F7FD', 'none', 0, false, 10) + ml4(cx, y + h1 / 2, c.h, FZ, c.sum ? BL4[2] : c.hi ? OR4[2] : INK, 900, 32);
+      if (c.q) s += r4(x + 12, y + h1 + 8, c.w - 24, h2 - 16, OR4[0], OR4[1], 3, true, 10) + txt(cx.toFixed(1), (y + h1 + h2 / 2 + 11).toFixed(1), '?', 32, OR4[2], 900);
+      else s += (c.n ? r4(x + 1.5, y + h1 + 1.5, c.w - 3, h2 - 3, '#E4E9F0', 'none', 0, false, 10) : '') + ml4(cx, y + h1 + h2 / 2, c.v, c.n ? FZ : 32, c.n ? INK : c.sum ? BL4[2] : c.hi ? OR4[2] : '#1F2937', 900, 32);
+      x += c.w; if (x < (Wd + W0) / 2 - 1) s += '<line x1="' + x.toFixed(1) + '" y1="' + y + '" x2="' + x.toFixed(1) + '" y2="' + (y + h1 + h2) + '" stroke="' + LN4 + '" stroke-width="2"/>'; });
+    s += '<line x1="' + ((Wd - W0) / 2).toFixed(1) + '" y1="' + (y + h1) + '" x2="' + ((Wd + W0) / 2).toFixed(1) + '" y2="' + (y + h1) + '" stroke="' + LN4 + '" stroke-width="2"/>';
+    return sv4(s, 'fig-tbl2', Wd, y + h1 + h2 + 8, 'data-tbl="' + esc(cats.map((c, i) => c + ':' + (holes.indexOf(i) >= 0 ? '?' : vals[i])).join(';') + (hasT ? '|' + (o.total_hole ? '?' : o.total) : '')) + '"');
+  }
+  // 기호 하나 — ◯(파랑 동그라미) · ×(파랑 엑스) · /(파랑 빗금) · bad = 빨강
+  function sym4(c, cx, cy, r, bad) { const col = bad ? RED4 : BL4[1];
+    if (c === '◯' || c === 'O') return '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="none" stroke="' + col + '" stroke-width="5"/>';
+    if (c === '×' || c === 'X') return '<path d="M' + (cx - r) + ' ' + (cy - r) + 'L' + (cx + r) + ' ' + (cy + r) + 'M' + (cx + r) + ' ' + (cy - r) + 'L' + (cx - r) + ' ' + (cy + r) + '" stroke="' + col + '" stroke-width="5" stroke-linecap="round"/>';
+    return '<path d="M' + (cx - r * 0.7) + ' ' + (cy + r) + 'L' + (cx + r * 0.7) + ' ' + (cy - r) + '" stroke="' + col + '" stroke-width="5" stroke-linecap="round"/>'; }
+  // cg2: title · sym('O'·'X'·'/') · vert · cats · max · grid [항목마다 '0101…' 아래→위(가로면 왼→오)] · odd [[칸 번호]] 다른 기호(빨강 ×) · holes [채울 항목 — 주황 점선] · ax [수 이름, 항목 이름] · hi · data-graph
+  function cg2(o) {
+    const cats = o.cats || [], n = cats.length, mx = +o.max || 1, grid = o.grid || [], holes = o.holes || [], hi = o.hi || [], odd = o.odd || [], SY = { O: '◯', X: '×', '/': '/' }[o.sym] || '◯', FZ = 26;
+    const cl = cats.map(c => wr4(c, 4)), ax0 = wr4(o.ax[0], 5), ax1 = wr4(o.ax[1], 5);
+    let s = '', y = 6, Wd, H;
+    if (o.vert !== false) {
+      const cw = Math.max(76, Math.min(132, ...cl.map(l => Math.max(...l.map(t => cw4(t, FZ))) + 26))), ch = mx <= 6 ? 50 : mx <= 9 ? 42 : 36, nw = Math.max(76, Math.max(...ax0.concat(ax1).map(t => cw4(t, 20))) + 24), nh = cl.some(l => l.length > 1) ? 74 : 50, W0 = nw + cw * n; Wd = Math.max(460, W0 + 20); const x0 = (Wd - W0) / 2;
+      if (o.title) { const tl = wr4(o.title, 22); s += ml4(Wd / 2, y + tl.length * 17, tl, 26, INK, 900, 32); y += tl.length * 34 + 8; }
+      const gy = y; s += r4(x0, gy, W0, ch * mx + nh, '#fff', '#8FA3BF', 3, false, 12);
+      for (let i = 0; i < n; i++) { const hx = x0 + nw + i * cw; if (holes.indexOf(i) >= 0) s += r4(hx + 4, gy + 4, cw - 8, ch * mx - 8, OR4[0], OR4[1], 3, true, 8); else if (hi.indexOf(i) >= 0) s += r4(hx + 3, gy + 3, cw - 6, ch * mx - 6, OR4[0], 'none', 0, false, 8); }
+      for (let r = 0; r <= mx; r++) s += '<line x1="' + x0 + '" y1="' + (gy + r * ch) + '" x2="' + (x0 + W0) + '" y2="' + (gy + r * ch) + '" stroke="' + LN4 + '" stroke-width="2"/>';
+      for (let i = 0; i <= n; i++) s += '<line x1="' + (x0 + nw + i * cw) + '" y1="' + gy + '" x2="' + (x0 + nw + i * cw) + '" y2="' + (gy + ch * mx + nh) + '" stroke="' + LN4 + '" stroke-width="2"/>';
+      for (let r = 1; r <= mx; r++) s += txt((x0 + nw / 2).toFixed(1), (gy + (mx - r) * ch + ch / 2 + 9).toFixed(1), String(r), 26, GR4, 900);
+      for (let i = 0; i < n; i++) { const g = String(grid[i] || ''), cx = x0 + nw + i * cw + cw / 2; for (let r = 0; r < mx; r++) if (g[r] === '1') s += sym4((odd[i] || []).indexOf(r) >= 0 ? '×' : SY, cx, gy + (mx - 1 - r) * ch + ch / 2, ch * 0.3, (odd[i] || []).indexOf(r) >= 0);
+        s += ml4(cx, gy + ch * mx + nh / 2, cl[i], FZ, hi.indexOf(i) >= 0 ? OR4[2] : INK, 900, 30); }
+      const cy = gy + ch * mx; s += '<line x1="' + x0 + '" y1="' + cy + '" x2="' + (x0 + nw) + '" y2="' + (cy + nh) + '" stroke="' + LN4 + '" stroke-width="2"/>' + ml4(x0 + nw - 4 - Math.max(...ax0.map(t => cw4(t, 18))) / 2, cy + 14, ax0, 18, GR4, 800, 20) + ml4(x0 + 4 + Math.max(...ax1.map(t => cw4(t, 18))) / 2, cy + nh - 14, ax1, 18, GR4, 800, 20);
+      H = gy + ch * mx + nh + 8;
+    } else {
+      const ch = 56, cw = mx <= 7 ? 64 : 52, nw = Math.max(110, Math.max(...cl.map(l => Math.max(...l.map(t => cw4(t, FZ))))) + 30, Math.max(...ax0.concat(ax1).map(t => cw4(t, 18))) + 24), rh = cl.some(l => l.length > 1) ? 72 : ch, W0 = nw + cw * mx; Wd = Math.max(460, W0 + 20); const x0 = (Wd - W0) / 2;
+      if (o.title) { const tl = wr4(o.title, 22); s += ml4(Wd / 2, y + tl.length * 17, tl, 26, INK, 900, 32); y += tl.length * 34 + 8; }
+      const gy = y, nh = 50; s += r4(x0, gy, W0, rh * n + nh, '#fff', '#8FA3BF', 3, false, 12);
+      for (let i = 0; i < n; i++) { if (holes.indexOf(i) >= 0) s += r4(x0 + nw + 4, gy + i * rh + 4, cw * mx - 8, rh - 8, OR4[0], OR4[1], 3, true, 8); else if (hi.indexOf(i) >= 0) s += r4(x0 + nw + 3, gy + i * rh + 3, cw * mx - 6, rh - 6, OR4[0], 'none', 0, false, 8); }
+      for (let i = 0; i <= n; i++) s += '<line x1="' + x0 + '" y1="' + (gy + i * rh) + '" x2="' + (x0 + W0) + '" y2="' + (gy + i * rh) + '" stroke="' + LN4 + '" stroke-width="2"/>';
+      for (let c = 0; c <= mx; c++) s += '<line x1="' + (x0 + nw + c * cw) + '" y1="' + gy + '" x2="' + (x0 + nw + c * cw) + '" y2="' + (gy + rh * n + nh) + '" stroke="' + LN4 + '" stroke-width="2"/>';
+      for (let i = 0; i < n; i++) { const g = String(grid[i] || ''), cy = gy + i * rh + rh / 2; s += ml4(x0 + nw / 2, cy, cl[i], FZ, hi.indexOf(i) >= 0 ? OR4[2] : INK, 900, 30);
+        for (let c = 0; c < mx; c++) if (g[c] === '1') s += sym4((odd[i] || []).indexOf(c) >= 0 ? '×' : SY, x0 + nw + c * cw + cw / 2, cy, Math.min(cw, rh) * 0.3, (odd[i] || []).indexOf(c) >= 0); }
+      for (let c = 1; c <= mx; c++) s += txt((x0 + nw + (c - 1) * cw + cw / 2).toFixed(1), (gy + rh * n + nh / 2 + 9).toFixed(1), String(c), 26, GR4, 900);
+      const cy = gy + rh * n; s += '<line x1="' + x0 + '" y1="' + cy + '" x2="' + (x0 + nw) + '" y2="' + (cy + nh) + '" stroke="' + LN4 + '" stroke-width="2"/>' + ml4(x0 + nw - 4 - Math.max(...ax0.map(t => cw4(t, 18))) / 2, cy + nh - 13, ax0, 18, GR4, 800, 20) + ml4(x0 + 4 + Math.max(...ax1.map(t => cw4(t, 18))) / 2, cy + 13, ax1, 18, GR4, 800, 20);
+      H = gy + rh * n + nh + 8;
+    }
+    return sv4(s, 'fig-cg2', Wd, H, 'data-graph="' + esc(cats.map((c, i) => c + ':' + String(grid[i] || '').split('').filter(x => x === '1').length).join(';')) + '" data-grid="' + esc(grid.join(',')) + '"');
+  }
+  // tly2: name(항목 이름) · cats · counts — 「세면서 표시하기」 줄에 / 를 다섯씩(다섯째는 주황) · data-tally
+  function tly2(o) {
+    const cats = o.cats || [], cnt = (o.counts || []).map(Number), FZ = 28, per = 5, mw = 20, rows = Math.max(1, ...cnt.map(c => Math.ceil(c / per)));
+    const lab = wr4('세면서 표시하기', 4), nw = Math.max(130, cw4(o.name || '', FZ) + 30, ...lab.map(t => cw4(t, 24) + 28)), cw = Math.max(126, ...cats.map(c => cw4(c, FZ) + 30)), h1 = 62, h2 = Math.max(92, rows * 38 + 24), W0 = nw + cw * cats.length, Wd = Math.max(460, W0 + 20), x0 = (Wd - W0) / 2, y = 6; let s = '';
+    s += r4(x0, y, W0, h1 + h2, '#fff', '#8FA3BF', 3, false, 14) + r4(x0 + 1.5, y + 1.5, nw - 3, h1 + h2 - 3, '#E4E9F0', 'none', 0, false, 10);
+    s += ml4(x0 + nw / 2, y + h1 / 2, [o.name || ''], FZ, INK, 900) + ml4(x0 + nw / 2, y + h1 + h2 / 2, lab, 24, INK, 900, 28);
+    cats.forEach((c, i) => { const x = x0 + nw + i * cw; s += r4(x + 1.5, y + 1.5, cw - 3, h1 - 3, '#F3F7FD', 'none', 0, false, 10) + txt((x + cw / 2).toFixed(1), y + h1 / 2 + 10, c, FZ, INK, 900);
+      const k0 = Math.min(per, cnt[i]), gw = per * mw, sx = x + (cw - gw) / 2, top = y + h1 + (h2 - Math.ceil(cnt[i] / per) * 38) / 2 + 6;
+      for (let k = 0; k < cnt[i]; k++) { const r = Math.floor(k / per), j = k % per, mx = sx + j * mw + mw / 2, my = top + r * 38; s += '<path d="M' + (mx - 6).toFixed(1) + ' ' + (my + 28) + 'L' + (mx + 6).toFixed(1) + ' ' + my + '" stroke="' + (j === per - 1 ? OR4[1] : BL4[2]) + '" stroke-width="5" stroke-linecap="round"/>'; }
+      if (k0 < 0) s += ''; s += '<line x1="' + x + '" y1="' + y + '" x2="' + x + '" y2="' + (y + h1 + h2) + '" stroke="' + LN4 + '" stroke-width="2"/>'; });
+    s += '<line x1="' + x0 + '" y1="' + (y + h1) + '" x2="' + (x0 + W0) + '" y2="' + (y + h1) + '" stroke="' + LN4 + '" stroke-width="2"/>';
+    return sv4(s, 'fig-tly2', Wd, y + h1 + h2 + 8, 'data-tally="' + esc(cats.map((c, i) => c + ':' + cnt[i]).join(';')) + '"');
+  }
+  // dc2: items [[이름, 항목]] · on [센 낱장 번호 — 주황 / 표시] · cols(한 줄 장 수) · data-dc
+  function dc2(o) {
+    const its = o.items || [], on = o.on || [], cols = +o.cols || (its.length <= 10 ? 5 : 6), FZ = 24, cw = Math.max(150, ...its.map(t => cw4(t[1], FZ) + 30)), ch = 96, gap = 12, nr = Math.ceil(its.length / cols), W0 = cols * cw + (cols - 1) * gap, Wd = Math.max(460, W0 + 20), x0 = (Wd - W0) / 2; let s = '';
+    its.forEach((t, i) => { const x = x0 + (i % cols) * (cw + gap), y = 6 + Math.floor(i / cols) * (ch + gap), lit = on.indexOf(i) >= 0, cx = x + cw / 2;
+      s += r4(x, y, cw, ch, lit ? OR4[0] : '#fff', lit ? OR4[1] : LN4, lit ? 3.5 : 2.5, false, 14) + txt(cx.toFixed(1), y + 42, t[1], FZ, INK, 900) + txt(cx.toFixed(1), y + 78, t[0], 22, GR4, 800);
+      if (lit) s += '<path d="M' + (x + cw - 34) + ' ' + (y + ch - 10) + 'L' + (x + cw - 12) + ' ' + (y + 10) + '" stroke="' + OR4[1] + '" stroke-width="6" stroke-linecap="round"/>'; });
+    return sv4(s, 'fig-dc2', Wd, 12 + nr * ch + (nr - 1) * gap, 'data-dc="' + esc(its.map(t => t.join(':')).join(';')) + '" data-on="' + on.join(',') + '"');
+  }
+  // srt2: groups [[항목, [이름…]]] — 항목 칸 아래 이름 낱말을 세로로 · data-sort(항목:수)
+  function srt2(o) {
+    const gs = o.groups || [], FZ = 26, hl = gs.map(g => wr4(g[0], 6)), cw = Math.max(132, ...hl.map(l => Math.max(...l.map(t => cw4(t, FZ))) + 30)), gap = 10, hh = hl.some(l => l.length > 1) ? 84 : 58, nh = 40, mxn = Math.max(1, ...gs.map(g => g[1].length)), W0 = gs.length * cw + (gs.length - 1) * gap, Wd = Math.max(460, W0 + 20), x0 = (Wd - W0) / 2; let s = '';
+    gs.forEach((g, i) => { const x = x0 + i * (cw + gap), cx = x + cw / 2; s += r4(x, 6, cw, hh + 14 + mxn * nh, '#F7F9FC', LN4, 2.5, false, 14) + r4(x, 6, cw, hh, BL4[0], BL4[1], 2.5, false, 14) + ml4(cx, 6 + hh / 2, hl[i], FZ, BL4[2], 900, 30);
+      g[1].forEach((nm, k) => { s += r4(x + 12, 6 + hh + 8 + k * nh, cw - 24, nh - 6, '#fff', '#DDE3EB', 1.5, false, 8) + txt(cx.toFixed(1), 6 + hh + 8 + k * nh + 26, nm, 22, INK, 800); }); });
+    return sv4(s, 'fig-srt2', Wd, 20 + hh + mxn * nh + 8, 'data-sort="' + esc(gs.map(g => String(g[0]).replace(/\n/g, ' ') + ':' + g[1].length).join(';')) + '"');
+  }
+  // wcl2: m(달) · first(1일 요일 0=일) · days [날마다 날씨 이름] · mark [△ 친 날] · ring [◯ 친 날] · data-wcal(날씨:일수)
+  const WX = { 맑음: '☀️', 흐림: '☁️', 비: '🌧️', 눈: '❄️' };
+  function wcl2(o) {
+    const first = +o.first || 0, ds = o.days || [], mark = (o.mark || []).map(Number), ring = (o.ring || []).map(Number), cw = 76, ch = 66, x0 = 20, Wd = x0 * 2 + cw * 7; let s = '', y = 6;
+    if (o.m) { s += txt(Wd / 2, y + 32, o.m + '월', 32, INK, 900); y += 46; }
+    '일월화수목금토'.split('').forEach((d, i) => { s += txt((x0 + i * cw + cw / 2).toFixed(1), y + 24, d, 24, i === 0 ? RED4 : i === 6 ? BL4[1] : '#4E5C70', 900); }); y += 34;
+    const rows = Math.ceil((first + ds.length) / 7);
+    ds.forEach((w, k0) => { const d = k0 + 1, k = first + k0, c = k % 7, r = Math.floor(k / 7), x = x0 + c * cw, yy = y + r * ch, rg = ring.indexOf(d) >= 0, mk = mark.indexOf(d) >= 0;
+      s += r4(x + 2, yy + 2, cw - 4, ch - 4, rg || mk ? OR4[0] : '#fff', rg || mk ? OR4[1] : '#DDE3EB', rg || mk ? 3.5 : 1.5, false, 10);
+      s += txt((x + 18).toFixed(1), yy + 26, String(d), 20, c === 0 ? RED4 : c === 6 ? BL4[1] : INK, 900) + '<text x="' + (x + cw / 2 + 8).toFixed(1) + '" y="' + (yy + 52) + '" text-anchor="middle" font-size="28">' + esc(WX[w] || '') + '</text>';
+      if (mk) s += '<path d="M' + (x + cw - 20) + ' ' + (yy + 8) + 'L' + (x + cw - 8) + ' ' + (yy + 28) + 'L' + (x + cw - 32) + ' ' + (yy + 28) + 'Z" fill="none" stroke="' + OR4[1] + '" stroke-width="3.5" stroke-linejoin="round"/>';
+      if (rg) s += '<circle cx="' + (x + cw - 18) + '" cy="' + (yy + 18) + '" r="10" fill="none" stroke="' + OR4[1] + '" stroke-width="3.5"/>'; });
+    y += rows * ch + 6; let lx = x0; Object.keys(WX).forEach(k => { s += '<text x="' + (lx + 14) + '" y="' + (y + 26) + '" text-anchor="middle" font-size="24">' + WX[k] + '</text>' + txt(lx + 32, y + 26, k, 22, '#3E4A5C', 800, 'start'); lx += 46 + cw4(k, 22) + 30; });
+    const cnt = {}; ds.forEach(w => { cnt[w] = (cnt[w] || 0) + 1; });
+    return sv4(s, 'fig-wcl2', Wd, y + 40, 'data-wcal="' + esc(Object.keys(cnt).map(k => k + ':' + cnt[k]).join(';')) + '" data-mark="' + mark.join(',') + '" data-ring="' + ring.join(',') + '"');
+  }
+  // nte2: hd(제목) · body(**강조** · **?** = 빈칸) · sg(보낸 사람) — 줄무늬 쪽지 · data-note
+  function nte2(o) {
+    const FZ = 28, W = 760, pad = 34, LH = 46, toks = []; String(o.body || '').split(/(\*\*[^*]+\*\*)/).forEach(seg => { if (!seg) return; const b = /^\*\*/.test(seg), t = seg.replace(/\*\*/g, ''); if (b) toks.push({ t, b: true, q: t === '?' }); else t.split(/(\s+)/).forEach(w => { if (w) toks.push({ t: w, sp: /^\s+$/.test(w) }); }); });
+    const lines = [[]]; let lw = 0; toks.forEach(tk => { const w = tk.q ? 90 : cw4(tk.t, FZ) + (tk.b ? 4 : 0); if (tk.sp) { if (lw) { lines[lines.length - 1].push(tk); lw += w; } return; } if (lw + w > W - pad * 2 && lw) { lines.push([]); lw = 0; } lines[lines.length - 1].push(tk); lw += w; });
+    let s = '', y = 6; const H = 70 + lines.length * LH + (o.sg ? 46 : 14);
+    s += r4(10, y, W, H, '#FFFBEF', '#E8D9A8', 3, false, 18) + r4(10, y, W, 58, '#FFF1C9', 'none', 0, false, 18) + txt(10 + pad, y + 39, o.hd || '', 26, '#7A5A14', 900, 'start'); y += 58;
+    lines.forEach((ln, i) => { let x = 10 + pad; const by = y + 16 + i * LH + 30; s += '<line x1="' + (10 + pad) + '" y1="' + (by + 10) + '" x2="' + (10 + W - pad) + '" y2="' + (by + 10) + '" stroke="#EADFBE" stroke-width="2"/>';
+      ln.forEach(tk => { const w = tk.q ? 90 : cw4(tk.t, FZ) + (tk.b ? 4 : 0); if (tk.q) s += r4(x + 4, by - 30, 80, 40, OR4[0], OR4[1], 3, true, 8) + txt((x + 44).toFixed(1), by, '?', 28, OR4[2], 900); else if (!tk.sp) s += txt(x.toFixed(1), by, tk.t, FZ, tk.b ? OR4[2] : '#3A4150', tk.b ? 900 : 700, 'start'); x += w; }); });
+    if (o.sg) s += txt(10 + W - pad, y + 16 + lines.length * LH + 28, o.sg, 24, '#7A5A14', 800, 'end');
+    return sv4(s, 'fig-nte2', W + 20, H + 12, 'data-note="' + esc(String(o.body || '').replace(/\*\*/g, '')) + '"');
+  }
+  Object.assign(PARTS, { tbl2, cg2, tly2, dc2, srt2, wcl2, nte2 });
   }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {

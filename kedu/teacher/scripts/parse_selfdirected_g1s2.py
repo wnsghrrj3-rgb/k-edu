@@ -52,6 +52,7 @@ def figs(p):
     out.extend(figs9(p))
     out.extend(figs10(p))
     out.extend(figs11(p))
+    out.extend(figs12(p))
     return out
 
 # 123차 — 2단원 「덧셈과 뺄셈(1)」 그림: steps(번호 줄 식) · eqstrip(식 띠: hole=? · res/mark=강조) · chain(색 알 묶음) · cupstack(층 쌓은 컵) · tenframe(십 배열판 a/b 두 색 + tf-lb 꼬리표). 원문 순서대로.
@@ -568,6 +569,64 @@ def figs11(p):
         if inopt(m.start()): continue
         rows = [[clean(x) for x in re.findall(r'<t[hd]>(.*?)</t[hd]>', r)] for r in re.findall(r'<tr>(.*?)</tr>', m.group(1), re.S)]
         found.append((m.start(), m.end(), {'k': 'plan', 'rows': rows}))
+    return [f for _, _, f in sorted(found, key=lambda x: x[0])]
+
+# 144차 — 2-2 5단원 「표와 그래프」 그림: tbl(ftab 표 · 제목 tb-ttl · head·cats·vals·total·total_hole·holes) · graph(cgraph 그래프 · 제목 cg-ttl · sym·vert·cats·vals·max·holes·bad
+#          · ax[세로 이름, 가로 이름] · grid 칸마다 기호(아래→위 / 왼→오, 실제 그려진 대로)) · tally(세면서 표시 · cats·counts·name) · dc(자료 낱장 · items[이름,항목] · on)
+#          · sort(분류 칸 · groups[[항목,[이름]]]) · ways(조사 방법 카드) · wcal(날씨 달력 · first·days·mark·ring) · note(쪽지 · hd·body·sg). pairbox 안이면 pb 꼬리표. 원문 순서대로.
+def figs12(p):
+    found = []
+    opts = [(m.start(), m.end()) for m in re.finditer(r'<button class="mcq-opt".*?</button>', p, re.S)]
+    inopt = lambda a: any(x <= a < y for x, y in opts)
+    J = lambda v: json.loads(html.unescape(v))
+    pbs = [(m.start(), m.group(1)) for m in re.finditer(r'<span class="pb-n">(.*?)</span>', p)]
+    def pb(a, c):
+        if 'class="pairbox"' in p[:a]:
+            lab = [t for x, t in pbs if x < a]
+            if lab and a - max(x for x, _ in pbs if x < a) < 400: c['pb'] = clean(lab[-1])
+        return c
+    def ttl(a, cls):
+        t = re.findall(r'<p class="%s">(.*?)</p>' % cls, p[max(0, a - 300):a], re.S)
+        return clean(t[-1]) if t else ''
+    for m in re.finditer(r'<div class="ftab[^"]*" data-tbl="([^"]*)"', p):
+        if inopt(m.start()): continue
+        d = J(m.group(1)); c = {'k': 'tbl', 'title': ttl(m.start(), 'tb-ttl'), 'head': d['head'], 'cats': d['cats'], 'vals': d['vals'], 'total': d['total'], 'total_hole': d['total_hole'], 'holes': d['holes']}
+        found.append((m.start(), m.end(), pb(m.start(), c)))
+    for m in re.finditer(r'<div class="cgraph[^"]*" data-graph="([^"]*)"[^>]*>(.*?)<div class="cg-corner"><b>(.*?)</b><b>(.*?)</b></div>', p, re.S):
+        if inopt(m.start()): continue
+        d = J(m.group(1)); n = len(d['cats']); mx = d['max']
+        cells = [html.unescape(x) for x in re.findall(r'<div class="cg-c[^"]*">(?:<i>(.*?)</i>)?</div>', m.group(2))]
+        grid = [[] for _ in range(n)]
+        if d['vert']:  # 줄 = 위(max)→아래(1), 칸 = 항목
+            for r in range(mx):
+                for i in range(n): grid[i].insert(0, cells[r * n + i] if r * n + i < len(cells) else '')
+        else:          # 줄 = 항목, 칸 = 1→max
+            for i in range(n): grid[i] = cells[i * mx:(i + 1) * mx]
+        c = {'k': 'graph', 'title': ttl(m.start(), 'cg-ttl'), 'sym': d['sym'], 'vert': d['vert'], 'cats': d['cats'], 'vals': d['vals'], 'max': mx, 'holes': d['holes'], 'bad': d['bad'],
+             'ax': [clean(m.group(3)), clean(m.group(4))], 'grid': [''.join('1' if x else '0' for x in g) for g in grid]}
+        if d['sym'] == 'O' and any(x and x != '◯' for g in grid for x in g): c['odd'] = [[j for j, x in enumerate(g) if x and x != '◯'] for g in grid]
+        found.append((m.start(), m.end(), pb(m.start(), c)))
+    for m in re.finditer(r'<div class="tally[^"]*" data-tally="([^"]*)"[^>]*>(.*?)<div class="tl-h tl-n">(.*?)</div>', p, re.S):
+        if inopt(m.start()): continue
+        d = J(m.group(1))
+        found.append((m.start(), m.end(), pb(m.start(), {'k': 'tally', 'name': clean(m.group(3)), 'cats': d['cats'], 'counts': d['counts'], 'holes': d.get('holes', [])})))
+    for m in re.finditer(r'<div class="dcset[^"]*" data-dc="([^"]*)"[^>]*>(.*?)</div></div>', p, re.S):
+        if inopt(m.start()): continue
+        on = [i for i, c2 in enumerate(re.findall(r'<div class="dc( on)?">', m.group(2))) if c2]
+        found.append((m.start(), m.end(), pb(m.start(), {'k': 'dc', 'items': J(m.group(1)), 'on': on})))
+    for m in re.finditer(r'<div class="sorttab[^"]*" data-sort="([^"]*)"', p):
+        if inopt(m.start()): continue
+        found.append((m.start(), m.end(), pb(m.start(), {'k': 'sort', 'groups': [[clean(g), ns] for g, ns in J(m.group(1))]})))
+    for m in re.finditer(r'<div class="wcset" data-way="[^"]*">(.*?)</div></div>', p, re.S):
+        if inopt(m.start()): continue
+        found.append((m.start(), m.end(), {'k': 'ways', 'items': [{'emoji': html.unescape(e.strip()), 'name': clean(n)} for e, n in re.findall(r'<div class="wc"><em>(.*?)</em><b>(.*?)</b></div>', m.group(1))]}))
+    for m in re.finditer(r'<div class="cal[^"]*" data-cal="([^"]*)"', p):
+        if inopt(m.start()): continue
+        d = J(m.group(1))
+        found.append((m.start(), m.end(), pb(m.start(), {'k': 'wcal', 'first': d['first'], 'days': d['days'], 'mark': d.get('mark', []), 'ring': d.get('ring', [])})))
+    for m in re.finditer(r'<div class="note"><p class="nt-hd">(.*?)</p><p class="nt-b">(.*?)</p>(?:<p class="nt-sg">(.*?)</p>)?', p, re.S):
+        if inopt(m.start()): continue
+        found.append((m.start(), m.end(), {'k': 'note', 'hd': clean(m.group(1)), 'body': clean(re.sub(r'<b class="nt-h[^"]*">(.*?)</b>', r'<b>\1</b>', m.group(2))), 'sg': clean(m.group(3) or '')}))
     return [f for _, _, f in sorted(found, key=lambda x: x[0])]
 
 if __name__ == '__main__':
