@@ -47,6 +47,8 @@ const ENG = loadEngine();
 
 /* ── 에셋 규격 — drawAsset 이 아는 종류와 필수 칸 ─────────────────────────────── */
 const ASSETS = {
+  /* v3.6 — 3학년 1학기 「평면도형」 (2026-10-19): 점·선분·반직선·직선·각·직각 표시·도형 */
+  geo:            ['items'],
   count_group:    ['item', 'n'],
   scatter_group:  ['item', 'n'],
   dots:           ['n'],
@@ -177,6 +179,21 @@ const BAT_FAMILIAR = '각국낙막박북떡목약죽책학악속먹벽간눈문�
 let fails = [];
 function bad(where, msg) { fails.push(where + ' — ' + msg); }
 
+/* v3.6 geo — 판마다 가리키는 점이 실재하는가 · 직각 표시는 정말 직각인가 · 같은 길이 표시는 정말 같은가 */
+function checkGeoAsset(where, a) {
+  if (!Array.isArray(a.items) || !a.items.length) return bad(where, 'geo items 비었음');
+  a.items.forEach((g, i) => {
+    const P = g.pts || {}; const R = r => Array.isArray(r) ? r : (P[r] ? P[r] : null);
+    for (const k of ['seg', 'ray', 'line', 'curve', 'poly', 'right', 'arc', 'tick'])
+      (g[k] || []).forEach((x, j) => { if (!Array.isArray(x)) return bad(where, `geo[${i}].${k}[${j}] 배열 아님`);
+        x.forEach((r, m) => { if (k === 'tick' && m === 2) return; if (!R(r)) bad(where, `geo[${i}].${k}[${j}] 점 ${JSON.stringify(r)} 없음`); }); });
+    (g.show || []).forEach(k => { if (!P[k]) bad(where, `geo[${i}].show 점 ${k} 없음`); });
+    (g.right || []).forEach(([A, B, C]) => { const p = R(A), q = R(B), r = R(C); if (!(p && q && r)) return;
+      const d = (p[0] - q[0]) * (r[0] - q[0]) + (p[1] - q[1]) * (r[1] - q[1]); if (Math.abs(d) > 1e-6) bad(where, `geo[${i}] 직각 표시 ${A}${B}${C} 가 직각이 아님`); });
+    const ticks = {}; (g.tick || []).forEach(([A, B, n]) => { const p = R(A), q = R(B); if (!(p && q)) return; const k = Number(n) || 1; (ticks[k] = ticks[k] || []).push(Math.hypot(p[0] - q[0], p[1] - q[1])); });
+    Object.keys(ticks).forEach(k => { const v = ticks[k]; if (Math.max(...v) - Math.min(...v) > 1e-6) bad(where, `geo[${i}] 같은 길이 표시(${k})의 변 길이가 다름`); });
+  });
+}
 function checkAsset(where, a) {
   if (!a) return;
   if (typeof a === 'string') return;                     /* 글자 에셋은 그대로 그린다 */
@@ -185,6 +202,7 @@ function checkAsset(where, a) {
   if (a.type === 'ftable' || a.type === 'pgraph' || a.type === 'cards') checkTgAsset(where, a);
   if (['ptile', 'spin', 'stack', 'optab', 'numgrid', 'cal'].indexOf(a.type) >= 0) checkKrAsset(where, a);
   if (a.type === 'fbar') checkFdAsset(where, a);
+  if (a.type === 'geo') checkGeoAsset(where, a);
   if (a.type === 'spv') checkSpAsset(where, a);
   if (a.type === 'picto_table' || a.type === 'compare_groups') {
     if (!Array.isArray(a.rows) || !a.rows.length) bad(where, `${a.type} rows 비었음`);
