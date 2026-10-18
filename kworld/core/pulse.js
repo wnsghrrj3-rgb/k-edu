@@ -41,6 +41,7 @@ export class Pulse {
   tickChase(dt) {
     const g = this.g; const ch = this.chase; const c = ch.c; const p = g.p.pos; const o = ch.actor?.obj; if (!o) return this.endChase(null);
     if (g.ui.isOpen?.()) return;   // 카드를 읽는 동안은 쫓는 사람도 멈춘다(상황이 열리며 바로 시작하는 쫓김 — 읽고 나서 달린다)
+    if (ch.holdUntil > performance.now()) { ch.actor.tick(dt); this.tension(0.5); return; }   // 벗이 앞을 막은 동안(bond.blocking) 쫓는 사람은 서 있다
     ch.t += dt; const d = this.dist({ x: o.position.x, z: o.position.z }, p);
     ch.re += dt; if (ch.re > 0.35) { ch.re = 0; ch.actor.goTo([p.x, p.z], { anim: 'run', then: 'run', speed: ch.speed * (d > 30 ? 1.35 : 1) }); }   // 너무 멀어지면 따라붙는다(놓치지 않는다)
     ch.actor.tick(dt); this.tension(Math.max(0.35, 1 - d / 14)); if (d < 7 && !ch.near) { ch.near = true; g.sound?.play?.('growl', 0.3); g.ui.say(c.nearSay || '숨이 목에. 바로 뒤다.', 2400); } if (d > 10) ch.near = false;
@@ -49,6 +50,8 @@ export class Pulse {
     if (d < (c.catchR || 1.5) && ch.t > 1.2) return this.endChase('caught');
     if (ch.t > (c.maxSec || 150)) return this.endChase('escaped');   // 끝없이 쫓지는 않는다
   }
+  /** 쫓는 사람을 sec 초 세운다(벗의 끼어듦) */
+  hold(sec) { const ch = this.chase; if (!ch) return; ch.holdUntil = performance.now() + sec * 1000; if (ch.actor) { ch.actor.path = null; ch.actor.state = 'idle'; ch.actor.play?.('idle'); } }
   endChase(how) {
     const g = this.g; const ch = this.chase; if (!ch) return; this.chase = null; this.tension(0); const c = ch.c;
     if (how === 'caught') { g.sound?.play?.('bad', 0.6); g.ui.say(c.caughtSay || '…손이 어깨를 잡았다.', 4200); g.ui.setGoal?.(''); if (c.caughtHurt) g.life?.injure(c.caughtHurt); setTimeout(() => { this.removeChaser(ch); g.flag(c.caughtFlag); }, 1400); return; }

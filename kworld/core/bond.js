@@ -4,10 +4,13 @@
 //  · 끝(`bond:end`): 벗이면 끝까지 곁에, 등졌으면 떠난다(몸이 사라진다).
 //  · 한마디: 곁에 있을 때 가끔(55초) 「👤 이름 — …」 한 줄. 값·판정엔 손대지 않는다 — 보이고, 걷고, 말할 뿐(반 친구와 같은 원칙).
 //  · 저장할 것 없음 — 깃발(bond:met/friend/enemy/end)만으로 다시 선다. 재개 땐 조용히(손 흔들기·첫 줄 없음).
+//  · 말 걸기(E, 10-19 77): 곁(3.8m — 선 자리 3.4 안)에 서면 「말을 건다」 — 한마디·주머니 물건 주기(bond:gave:<k>)·벗은 한 번 답례(cfg.gift 있으면, bond:gift). 등진 사람에겐 말이 닿지 않는다(bond:tried).
+//  · 벗이 쫓김에 끼어든다: bond:friend 인 채 쫓기면 벗이 쫓는 사람에게 달려가 앞을 막아 3초를 번다(한 쫓김에 한 번, bond:blocked) — 그 사이 쫓는 사람은 멈춘다.
+//  · 조건 토큰 `bond:1` = 벗이 곁(5m) — life.cond·game.cond 에서 「운명의 벗과 함께」 길에 쓴다.
 import * as THREE from 'three';
 import { createAvatar } from './avatar.js';
 
-const FOLLOW = { met: 3.4, friend: 2.4 }, AWAY = 11, STEPBACK = 5, WALK = 3.4, RUN = 6.2, LINE_GAP = 55, WAVE_MS = 1600;
+const FOLLOW = { met: 3.4, friend: 2.4 }, AWAY = 11, STEPBACK = 5, WALK = 3.4, RUN = 6.2, LINE_GAP = 55, WAVE_MS = 1600, TALK_R = 3.8, WITH_R = 5, BLOCK_R = 2.2, BLOCK_SEC = 3;
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 const JO = (n, a, b) => { const c = String(n || '').slice(-1).charCodeAt(0); return n + ((c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28) ? a : b); };
 function label(text) {
@@ -26,7 +29,7 @@ function defaultLines(n) {
 }
 
 export class Bond {
-  constructor(g, cfg) { this.g = g; this.cfg = cfg || {}; this.name = this.cfg.name || '그 사람'; this.lines = { ...defaultLines(this.name), ...(this.cfg.lines || {}) }; this.body = null; this.pos = null; this.yaw = 0; this.walk = 0; this.sinceLine = 20; this.waveUntil = 0; this.lastWave = 0; this.spokenSky = null; this.turned = false; this.gone = false; }
+  constructor(g, cfg) { this.g = g; this.cfg = cfg || {}; this.name = this.cfg.name || '그 사람'; this.lines = { ...defaultLines(this.name), ...(this.cfg.lines || {}) }; this.body = null; this.pos = null; this.yaw = 0; this.walk = 0; this.sinceLine = 20; this.waveUntil = 0; this.lastWave = 0; this.spokenSky = null; this.turned = false; this.gone = false; this.block = null; }
   /** 지금 관계 — null(아직) / met / friend / enemy / gone(등지고 끝) */
   state() { const f = this.g.flags; if (!f.has('bond:met')) return null; if (f.has('bond:enemy')) return f.has('bond:end') ? 'gone' : 'enemy'; return f.has('bond:friend') ? 'friend' : 'met'; }
   dist(a, b) { return Math.hypot(a.x - b.x, a.z - b.z); }
@@ -57,6 +60,7 @@ export class Bond {
       if (d < STEPBACK) { const ax = this.pos.x - p.x, az = this.pos.z - p.z; const n = Math.hypot(ax, az) || 1; moving = this.step(dt, this.pos.x + ax / n * 4, this.pos.z + az / n * 4, 2.2, 0); }   // 물러난다
       else if (d > AWAY * 2.2) { moving = this.step(dt, p.x, p.z, WALK, AWAY); }   // 아주 멀어지면 멀찍이 따라는 온다 — 보이는 거리에
       else { const away = Math.atan2(this.pos.x - p.x, this.pos.z - p.z); let dy = away - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * Math.min(1, dt * 3); }   // 등을 돌리고 선다
+    } else if (st === 'friend' && this.blocking(dt)) { moving = this.block.moving;   // 벗이 쫓는 사람 앞을 막으러 간다
     } else {
       const stopAt = FOLLOW[st] ?? FOLLOW.met; const run = d > 9 || (st === 'friend' && g.pulse?.chase); speed = run ? RUN : WALK;
       moving = this.step(dt, p.x, p.z, speed, stopAt);
@@ -70,6 +74,44 @@ export class Bond {
     this.sinceLine += dt; const sky = g.story?.skyName || 'day'; if (sky !== this.spokenSky) { this.spokenSky = sky; this.sinceLine = Math.max(this.sinceLine, LINE_GAP - 12); }
     if (this.sinceLine >= LINE_GAP && this.quiet() && d < (st === 'enemy' ? AWAY + 3 : 6)) { this.sinceLine = 0; const pool = this.lines[st] || []; if (pool.length) g.ui?.say?.(`👤 ${this.name} — ${pool[Math.floor(Math.random() * pool.length)]}`, 4200); }
   }
+  /** 쫓김 중 벗의 끼어듦 — 쫓는 사람에게 달려가 BLOCK_R 안이면 pulse.hold(3초). 한 쫓김에 한 번. 돌려준다: 지금 끼어드는 중인가 */
+  blocking(dt) {
+    const g = this.g; const ch = g.pulse?.chase; const now = performance.now();
+    if (this.block && (!ch || ch !== this.block.ch)) this.block = null;
+    if (!ch) return false;
+    if (ch.bondBlocked && !(this.block && this.block.until > now)) return false;
+    const o = ch.actor?.obj; if (!o) return false;
+    if (!this.block) this.block = { ch, moving: false, until: 0 };
+    const b = this.block;
+    if (b.until > now) { b.moving = false; return true; }   // 막고 서 있다
+    if (ch.bondBlocked) return false;
+    b.moving = this.step(dt, o.position.x, o.position.z, RUN, 0.4);
+    if (Math.hypot(o.position.x - this.pos.x, o.position.z - this.pos.z) <= BLOCK_R) {
+      ch.bondBlocked = true; b.until = now + BLOCK_SEC * 1000; g.pulse.hold?.(BLOCK_SEC); this.yaw = Math.atan2(o.position.x - this.pos.x, o.position.z - this.pos.z);
+      g.sound?.play?.('good', 0.4); g.ui?.say?.(`👤 ${JO(this.name, '이', '가')} 앞을 막았다 — 「뛰어!」`, 3600); g.flags.add('bond:blocked'); g.flag?.('bond:blocked:' + ch.c.id);
+    }
+    return true;
+  }
+  /** 벗이 곁(WITH_R)에 있나 — 조건 토큰 `bond:1` */
+  withMe(r = WITH_R) { return this.state() === 'friend' && this.near(r); }
+  /** 말을 걸 수 있나(E) — 몸이 있고 TALK_R 안 */
+  canTalk() { return !!this.body && !this.gone && this.near(TALK_R); }
+  prompt() { const st = this.state(); return { action: true, name: this.name, verb: st === 'enemy' ? '…등을 돌린 채다' : '말을 건다' }; }
+  /** 말 걸기(E) — 한마디 + 물건 주기. 값·판정엔 손대지 않는다 */
+  talk() {
+    const g = this.g; const st = this.state(); if (!this.body || !st || st === 'gone') return;
+    if (st === 'enemy') { g.ui?.say?.(`👤 ${JO(this.name, '이', '가')} 등을 돌린 채다. 말이 닿지 않는다.`, 4200); g.flag?.('bond:tried'); return; }
+    const pool = this.lines[st] || []; const line = pool.length ? pool[Math.floor(Math.random() * pool.length)] : `${this.name}.`;
+    this.sinceLine = 0; g.p.enabled = false;
+    const close = () => { g.ui.close(); g.p.enabled = true; };
+    const kinds = [...new Set(g.inventory || [])].filter((k) => g.items?.items?.[k]).slice(0, 4);
+    const buttons = [{ label: st === 'friend' ? '「같이 가자.」' : '「같이 갈래?」', primary: true, onClick: () => { close(); g.ui?.say?.(`👤 ${this.name} — ${st === 'friend' ? '「응. 어디든.」' : '「…응.」'}`, 3200); g.flag?.('bond:talked'); } }];
+    for (const k of kinds) { const d = g.items.items[k]; buttons.push({ label: `${d.icon || ''} ${d.name} 준다`, onClick: () => { close(); g.take(k); g.renderInv?.(); g.flag?.('bond:gave'); g.flag?.('bond:gave:' + k); g.ui?.say?.(`👤 ${JO(this.name, '이', '가')} ${d.name}을(를) 받았다. ${st === 'friend' ? '「…고마워.」' : '「…이걸 나한테?」'}`, 4200); this.gift(); } }); }
+    buttons.push({ label: '그냥 간다', onClick: close });
+    g.ui.open(`<div class="npc"><b>👤 ${esc(this.name)}</b><p>${esc(line)}</p></div>`, buttons, 'npcpanel');
+  }
+  /** 벗의 답례 — cfg.gift(물건 키)가 있으면 한 번만 */
+  gift() { const g = this.g; const k = this.cfg.gift; if (!k || this.state() !== 'friend' || g.flags.has('bond:gift') || !g.items?.items?.[k]) return; setTimeout(() => { g.inventory.push(k); g.renderInv?.(); g.flag?.('bond:gift'); g.ui?.say?.(`👤 ${this.name} — 「이건 네 거.」 ${g.items.items[k].icon || ''} ${g.items.items[k].name}`, 4200); }, 1600); }
   onFlag() { if (this.g.restoring) return; const st = this.state(); if (st === 'met' && !this.body) this.spawn(false); if (st === 'gone') this.remove(`👤 ${JO(this.name, '이', '가')} 떠났다. 다시 보지 못했다.`); }
   /** 곁에 있나(시험·HUD용) */
   near(r = 6) { return !!this.body && this.dist(this.pos, this.g.p.pos) <= r; }

@@ -184,7 +184,7 @@ export class Game {
   cond(expr) { // "a && !b" 정도의 간단 조건 — 인생 층이 있으면 val:·hurt:·sex:·status: 도 같은 규칙으로(조선 전기 「곡식 셋이면 문과」가 defFor 에서 막히던 것)
     if (!expr) return true;
     if (this.life) return this.life.cond(expr);
-    return expr.split('&&').every((t) => { t = t.trim(); const neg = t.startsWith('!'); const f = neg ? t.slice(1) : t; return neg ? !this.flags.has(f) : this.flags.has(f); });
+    return expr.split('&&').every((t) => { t = t.trim(); const neg = t.startsWith('!'); const f = neg ? t.slice(1) : t; const v = /^bond:\d+$/.test(f) ? ((this.bond?.withMe?.() ? 1 : 0) >= Number(f.slice(5))) : this.flags.has(f); return neg ? !v : v; });
   }
   renderInv() { this.ui.renderInventory(this.inventory, this.items.items, (k) => this.tapItem(k)); }
   tapItem(k) {
@@ -201,6 +201,7 @@ export class Game {
     if (!this.ui.isOpen()) {
       const t = this.target = this.e.pickTarget(this.e.camera, 3.2, this.p.pos);
       if (t) this.ui.setPrompt(this.promptFor(t));
+      else if (this.bond?.canTalk()) this.ui.setPrompt(this.bond.prompt());   // 운명의 사람 곁 — 말을 건다(E)
       else { const near = this.e.pickTarget(this.e.camera, 9 * (this.stats.sense || 1), this.p.pos); this.ui.setPrompt(near ? this.infoFor(near) : null); }
     } else { this.target = null; this.ui.setPrompt(null); }
     // 시간이 지나면 바뀌는 대상(밭이 자라는 것 등)
@@ -258,7 +259,7 @@ export class Game {
   // ---------- 행동 ----------
   act() {
     if (this.ui.isOpen()) return;
-    const t = this.target; if (!t) { this.ui.say('가까이 가서 바라보면 할 수 있는 일이 보여.'); return; }
+    const t = this.target; if (!t) { if (this.bond?.canTalk()) return this.bond.talk(); this.ui.say('가까이 가서 바라보면 할 수 있는 일이 보여.'); return; }
     const def = this.defFor(t); if (!def) return;
     if (t.type === 'npc') { this.flag(def.flag); this.flag('talk:' + t.id); if (this.ui.isOpen()) return; /* 깃발이 상황 카드를 열었으면 사람 말은 그 뒤에(카드 위에 덮지 않는다) */ return this.talk(t); }
     if (t.type === 'gate') return this.enterGate();
