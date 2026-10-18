@@ -6,11 +6,12 @@
 //  · 저장할 것 없음 — 깃발(bond:met/friend/enemy/end)만으로 다시 선다. 재개 땐 조용히(손 흔들기·첫 줄 없음).
 //  · 말 걸기(E, 10-19 77): 곁(3.8m — 선 자리 3.4 안)에 서면 「말을 건다」 — 한마디·주머니 물건 주기(bond:gave:<k>)·벗은 한 번 답례(cfg.gift 있으면, bond:gift). 등진 사람에겐 말이 닿지 않는다(bond:tried).
 //  · 벗이 쫓김에 끼어든다: bond:friend 인 채 쫓기면 벗이 쫓는 사람에게 달려가 앞을 막아 3초를 번다(한 쫓김에 한 번, bond:blocked) — 그 사이 쫓는 사람은 멈춘다.
-//  · 조건 토큰 `bond:1` = 벗이 곁(5m) — life.cond·game.cond 에서 「운명의 벗과 함께」 길에 쓴다.
+//  · 조건 토큰 `bond:1` = 벗이 곁(5m) — life.cond·game.cond 에서 「운명의 벗과 함께」 길에 쓴다(10-19 78: 열한 시대마다 하나, gen_bond_ways.py — 결과 카드 `bond:true` 면 `together()` 한마디).
+//  · 벗은 숨은 것을 먼저 안다(78): 벗이 아직 못 찾은 숨은 것(pulse.secrets) 12m 안을 지나면 한 번 「저기 뭔가 있다」 — 자리는 안 알려 준다(반짝임을 찾는 건 네 몫), `bond:hint:<id>`.
 import * as THREE from 'three';
 import { createAvatar } from './avatar.js';
 
-const FOLLOW = { met: 3.4, friend: 2.4 }, AWAY = 11, STEPBACK = 5, WALK = 3.4, RUN = 6.2, LINE_GAP = 55, WAVE_MS = 1600, TALK_R = 3.8, WITH_R = 5, BLOCK_R = 2.2, BLOCK_SEC = 3;
+const FOLLOW = { met: 3.4, friend: 2.4 }, HINT_R = 12, HINT_GAP = 20, AWAY = 11, STEPBACK = 5, WALK = 3.4, RUN = 6.2, LINE_GAP = 55, WAVE_MS = 1600, TALK_R = 3.8, WITH_R = 5, BLOCK_R = 2.2, BLOCK_SEC = 3;
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 const JO = (n, a, b) => { const c = String(n || '').slice(-1).charCodeAt(0); return n + ((c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28) ? a : b); };
 function label(text) {
@@ -29,7 +30,7 @@ function defaultLines(n) {
 }
 
 export class Bond {
-  constructor(g, cfg) { this.g = g; this.cfg = cfg || {}; this.name = this.cfg.name || '그 사람'; this.lines = { ...defaultLines(this.name), ...(this.cfg.lines || {}) }; this.body = null; this.pos = null; this.yaw = 0; this.walk = 0; this.sinceLine = 20; this.waveUntil = 0; this.lastWave = 0; this.spokenSky = null; this.turned = false; this.gone = false; this.block = null; }
+  constructor(g, cfg) { this.g = g; this.cfg = cfg || {}; this.name = this.cfg.name || '그 사람'; this.lines = { ...defaultLines(this.name), ...(this.cfg.lines || {}) }; this.body = null; this.pos = null; this.yaw = 0; this.walk = 0; this.sinceLine = 20; this.waveUntil = 0; this.lastWave = 0; this.spokenSky = null; this.turned = false; this.gone = false; this.block = null; this.sinceHint = 0; }
   /** 지금 관계 — null(아직) / met / friend / enemy / gone(등지고 끝) */
   state() { const f = this.g.flags; if (!f.has('bond:met')) return null; if (f.has('bond:enemy')) return f.has('bond:end') ? 'gone' : 'enemy'; return f.has('bond:friend') ? 'friend' : 'met'; }
   dist(a, b) { return Math.hypot(a.x - b.x, a.z - b.z); }
@@ -73,7 +74,17 @@ export class Bond {
     // 한마디 — 곁에 있고 조용할 때, 55초에 한 번, 하늘이 바뀌면 새로
     this.sinceLine += dt; const sky = g.story?.skyName || 'day'; if (sky !== this.spokenSky) { this.spokenSky = sky; this.sinceLine = Math.max(this.sinceLine, LINE_GAP - 12); }
     if (this.sinceLine >= LINE_GAP && this.quiet() && d < (st === 'enemy' ? AWAY + 3 : 6)) { this.sinceLine = 0; const pool = this.lines[st] || []; if (pool.length) g.ui?.say?.(`👤 ${this.name} — ${pool[Math.floor(Math.random() * pool.length)]}`, 4200); }
+    this.sinceHint += dt; if (st === 'friend' && this.sinceHint >= HINT_GAP) this.hint();
   }
+  /** 벗이 숨은 것 곁을 지나면 「저기 뭔가 있다」 — 못 찾은 것, 한 번(bond:hint:<id>), 자리는 말 안 한다 */
+  hint() {
+    const g = this.g; const list = g.pulse?.secrets; if (!list?.length || !this.pos || !this.quiet()) return;
+    for (const sc of list) { if (sc.found || g.flags.has('secret:' + sc.s.id) || g.flags.has('bond:hint:' + sc.s.id)) continue; if (this.dist(sc, this.pos) > HINT_R) continue;
+      this.sinceHint = 0; this.sinceLine = Math.min(this.sinceLine, LINE_GAP - 20); g.flags.add('bond:hint:' + sc.s.id); g.sound?.play?.('good', 0.2);
+      g.ui?.say?.(`👤 ${this.name} — 「저기 뭔가 있다. …어디더라.」`, 4200); return; }
+  }
+  /** 「운명의 벗과 함께」 길을 고른 뒤(결과 카드 bond:true) — 벗이 한마디. 값은 각자 */
+  together(s, c) { const g = this.g; if (this.state() !== 'friend') return; this.sinceLine = 0; g.flags.add('bond:together'); g.flag?.('bond:together:' + (s?.id || '')); setTimeout(() => g.ui?.say?.(`👤 ${this.name} — 「같이 하니까 됐지.」 (${s?.title || ''})`, 4200), 1800); }
   /** 쫓김 중 벗의 끼어듦 — 쫓는 사람에게 달려가 BLOCK_R 안이면 pulse.hold(3초). 한 쫓김에 한 번. 돌려준다: 지금 끼어드는 중인가 */
   blocking(dt) {
     const g = this.g; const ch = g.pulse?.chase; const now = performance.now();

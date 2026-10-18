@@ -1,5 +1,6 @@
 // 운명의 사람이 세상에 있다(10-19, core/bond.js) — 열한 시대 데이터(이름·옷·한마디) + 엔진(만나면 나와 따라옴·벗이면 더 가까이·등지면 물러섬·끝에 떠남·재개는 조용히·?bond=0)
 // + 77: 말 걸기(E — 한마디·물건 주기·등진 사람은 안 닿음) · 벗이 쫓김에 끼어듦(앞을 막아 3초, 한 번) · 조건 토큰 bond:1
+// + 78: 「운명의 벗과 함께」 길 열한 시대(gen_bond_ways.py, items bond:1 + life.json bond:true → together 한마디) · 벗 답례 gift 열한 시대(items 키 실재) · 벗이 숨은 것 곁에서 「저기 뭔가 있다」(한 번·자리 안 말함)
 import * as THREE from 'three';
 import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -68,4 +69,27 @@ const pj = fs.readFileSync(path.join(root, 'core/pulse.js'), 'utf8'); ok(/hold\(
 const lj = fs.readFileSync(path.join(root, 'core/life.js'), 'utf8'); ok(/bond:\\d\+\$\/\.test\(f\)/.test(lj) && /withMe/.test(lj), 'life.cond — bond:n 토큰(withMe)');
 // 7) game.js 연결
 const gj = fs.readFileSync(path.join(root, 'core/game.js'), 'utf8'); ok(/import \{ Bond \}/.test(gj) && /get\('bond'\) !== '0'/.test(gj) && /this\.bond\.onFlag\(\)/.test(gj) && /this\.bond\.tick\(dt\)/.test(gj) && /this\.bond\?\.canTalk\(\)\) return this\.bond\.talk\(\)/.test(gj) && /this\.bond\.prompt\(\)/.test(gj) && /\^bond:\\d\+\$/.test(gj), 'game.js — 생성(?bond=0 끔)·onFlag·tick·E 말 걸기·prompt·cond bond:n');
+// 11) 78 — 열한 시대 데이터: 벗 길(bond:1)·결과 카드(bond:true)·답례 물건
+const BW = { life: ['gully', 'gully:bond'], neo: ['burn', 'burn:hand_bond'], 'bronze-life': ['rockart', 'rock:carve_bond'], 'gojoseon-life': ['rampart', 'war:build_bond'], 'samguk-life': ['wall', 'wall:carry_bond'], 'silla-life': ['stonepile', 'temple:carry_bond'], 'goryeo-life': ['wall', 'mongol:stone_bond'], 'joseon-life': ['hangeul', 'hangeul:learn_bond'], 'joseon-late-life': ['mine', 'mine:dig_bond'], 'gaehang-life': ['malmoi', 'ml:send_bond'], 'daehan-life': ['hakgyo', 'gb:night_bond'] };
+for (const era of ERAS) {
+  const w = JSON.parse(fs.readFileSync(path.join(root, 'eras', era, 'world.json'), 'utf8')); const it = JSON.parse(fs.readFileSync(path.join(root, 'eras', era, 'items.json'), 'utf8')); const lf = JSON.parse(fs.readFileSync(path.join(root, 'eras', era, 'life.json'), 'utf8'));
+  const [tgt, fb] = BW[era]; const nm = w.spark.bond.name; const rn = it.targets[tgt].rename; const all = []; rn.forEach((r, i) => { all.push([r, i, -1]); (r.choices || []).forEach((c, j) => all.push([c, i, j])); });
+  const near = all.find(([x]) => /\bnear:1\b/.test(x.if || '')), bond = all.find(([x]) => x.flag === fb);
+  ok(near && bond && /\bbond:1\b/.test(bond[0].if || '') && (bond[0].label || bond[0].verb || '').includes(nm) && (bond[1] > near[1] || (bond[1] === near[1] && bond[2] === near[2] + 1)) && bond[0].say && !(bond[0].label || bond[0].verb || '').includes('반 친구'), `${era}: ${tgt} 에 「${nm}과 함께」 bond:1 길이 반 친구 길 바로 뒤에, 깃발 ${fb}`);
+  if (bond[2] === -1) { const base = (bond[0].if || '').replace(/\s*&&\s*bond:1\b/, ''); const oi = rn.findIndex((r) => (r.if || '') === base); ok(oi > bond[1], `${era}: rename 벗 길이 원 길(if 같은 것)보다 앞(첫 맞는 것이 이긴다)`); }
+  else ok(true, `${era}: 선택지 벗 길 — 순서 무관(단추)`);
+  const lc = lf.situations.flatMap((s) => s.choices || []).find((c) => c.done === fb); ok(lc && lc.bond === true && !lc.with && (lc.title || '').includes(nm) && !(lc.title || '').includes('반 친구'), `${era}: life.json 결과 카드 done ${fb} · bond:true(with 없음) · 제목에 ${nm}`);
+  const neg = JSON.stringify(it) + JSON.stringify(fs.existsSync(path.join(root, 'eras', era, 'npcs.json')) ? JSON.parse(fs.readFileSync(path.join(root, 'eras', era, 'npcs.json'), 'utf8')) : {}); const fw = near[0].flag; ok(!neg.includes('!' + fw) || (neg.match(new RegExp('!' + fw.replace(/[:]/g, '\\:') + '(?!_)', 'g')) || []).length <= (neg.match(new RegExp('!' + fb.replace(/[:]/g, '\\:'), 'g')) || []).length, `${era}: !${fw} 를 보는 if 마다 !${fb} 도 같이`);
+  ok(w.spark.bond.gift && it.items[w.spark.bond.gift], `${era}: 벗 답례 gift=${w.spark.bond.gift} 가 items 에 있다`);
+}
+// 12) 78 — 엔진: 벗 길 결과 카드 → together 한마디(bond:together:<sit>) · 답례 gift · 숨은 것 힌트
+g = mk(['bond:met', 'bond:friend']); run(g, 4); g.bond.cfg.gift = 'berry'; g.inventory.push('stone'); g.bond.talk(); pn = g.panels.at(-1); pn.buttons.find((b) => b.label.includes('돌 준다')).onClick();
+await new Promise((r) => setTimeout(r, 1700)); ok(g.inventory.includes('berry') && g.flags.has('bond:gift') && g.said.at(-1).includes('네 거'), '벗에게 물건을 주면 1.6초 뒤 답례(cfg.gift) 한 번 + bond:gift');
+g.inventory.push('stone'); g.bond.talk(); pn = g.panels.at(-1); pn.buttons.find((b) => b.label.includes('돌 준다')).onClick(); await new Promise((r) => setTimeout(r, 1700)); ok(g.inventory.filter((k) => k === 'berry').length === 1, '답례는 한 번뿐');
+g.said.length = 0; g.bond.together({ id: 'drive', title: '좁은 골짜기' }, { bond: true }); ok(g.flags.has('bond:together') && g.flags.has('bond:together:drive'), '벗 길 결과 → bond:together:drive'); await new Promise((r) => setTimeout(r, 1900)); ok(g.said.some((t) => t.includes('같이 하니까') && t.includes('좁은 골짜기')), '1.8초 뒤 벗 한마디 「같이 하니까 됐지.」');
+g.flags.delete('bond:friend'); g.said.length = 0; g.bond.together({ id: 'x' }, {}); ok(!g.flags.has('bond:together:x'), '벗이 아니면 together 는 아무것도 안 한다'); g.flags.add('bond:friend');
+g.pulse = { secrets: [{ s: { id: 'axe' }, x: g.bond.pos.x + 8, z: g.bond.pos.z, found: false }, { s: { id: 'far' }, x: g.bond.pos.x + 40, z: 0, found: false }, { s: { id: 'got' }, x: g.bond.pos.x + 2, z: 0, found: true }] }; g.said.length = 0; g.bond.sinceHint = 0; run(g, 21);
+ok(g.said.filter((t) => t.includes('저기 뭔가 있다')).length === 1 && g.flags.has('bond:hint:axe') && !g.flags.has('bond:hint:far') && !g.flags.has('bond:hint:got') && !g.said.some((t) => t.includes('8')), '벗 12m 안의 못 찾은 숨은 것 하나 → 「저기 뭔가 있다」 한 번(bond:hint:axe), 먼 것·찾은 것은 안 말함, 자리는 안 말함');
+g.said.length = 0; run(g, 40); ok(!g.said.some((t) => t.includes('저기 뭔가')), '같은 숨은 것은 다시 말하지 않는다');
+const lj2 = fs.readFileSync(path.join(root, 'core/life.js'), 'utf8'); ok(/c\.bond\) g\.bond\?\.together\?\.\(s, c\)/.test(lj2), 'life.finish — 결과 카드 bond:true → bond.together');
 console.log(`\n운명의 사람(bond): ${pass}/${pass + fail} 통과`); if (fail) process.exit(1);
