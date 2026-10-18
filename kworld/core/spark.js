@@ -41,8 +41,8 @@ export class Spark {
   }
   pickGaze(G, id) {
     const g = this.g; const v = g.life?.values || {}; const h = g.life?.hurt || new Set(); const list = [];
-    for (const r of G.rules || []) { if (r.who && r.who !== id) continue; if (r.if && !g.cond(r.if)) continue; list.push(r); }   // 시대 데이터 규칙(깃발·신분 조건) 우선
-    if (list.length) return list[Math.floor(Math.random() * list.length)];
+    for (const r of G.rules || []) { if (r.who && r.who !== id) continue; if (r.once && g.flags.has('gaze:said:' + r.id)) continue; if (r.if && !g.cond(r.if)) continue; list.push(r); }   // 시대 데이터 규칙(깃발·신분 조건) 우선 — 내 선택이 사람 입으로 돌아온다
+    if (list.length) { const r = list[Math.floor(Math.random() * list.length)]; if (r.once) g.flags.add('gaze:said:' + r.id); return r; }
     const band = h.has('leg') && Math.random() < 0.5 ? 'mark' : (v.heart || 0) >= (G.warmAt ?? 5) ? 'warm' : (v.heart || 0) <= (G.coldAt ?? 0) && (g.life?.log?.length || 0) >= 2 ? 'cold' : null; if (!band) return null;
     const pool = G[band] || []; if (!pool.length) return null; const text = pool[Math.floor(Math.random() * pool.length)]; const line = { text, band };
     if (band === 'warm' && G.gift && Math.random() < (G.giftP ?? 0.35)) line.give = G.gift; if (band === 'cold') line.sound = null; return line;

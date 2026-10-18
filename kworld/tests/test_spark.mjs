@@ -16,6 +16,8 @@ for (const era of ERAS) {
   const statusIds = new Set((lf.status?.rules || []).map((r) => r.id)); const hurts = new Set(Object.keys(lf.hurts || {}));
   const secretIds = (w.pulse?.secrets || []).map((s) => s.id); const esc = w.pulse?.chases?.[0]?.escapedFlag;
   ok(S && S.gaze && S.titles?.length >= 6 && S.surprises?.length === 3 && S.starTitle && S.starSay, `${era}: 마을의 눈·칭호 6+·돌발 3·별똥별`);
+  ok((S.gaze.rules || []).length >= 5 && S.gaze.rules.every((r) => r.id && r.if && r.text && r.once) && new Set(S.gaze.rules.map((r) => r.id)).size === S.gaze.rules.length, `${era}: 선택 뒤 반응 규칙 5+ (id·if·text·once)`);
+  ok(S.gaze.rules.some((r) => r.if === esc) && S.gaze.rules.some((r) => r.if === w.pulse?.chases?.[0]?.caughtFlag) && S.gaze.rules.filter((r) => r.if.startsWith('sur:')).every((r) => S.surprises.some((x) => r.if.startsWith('sur:' + x.id + ':'))), `${era}: 규칙이 쫓김 탈출·잡힘·돌발 결과 깃발에 맞물린다`);
   ok(S.gaze.warm?.length >= 3 && S.gaze.cold?.length >= 3 && S.gaze.mark?.length >= 2 && S.gaze.gift, `${era}: 눈 — 따뜻·차가움·흔적 줄 + 쥐여 주는 것`);
   const tOn = S.titles.map((t) => t.on); ok(tOn.includes(esc) && tOn.includes(secretIds.map((s) => 'found:' + s).join(' && ')) && tOn.some((x) => x.startsWith('val:heart')) && tOn.some((x) => x.startsWith('val:craft')) && tOn.includes('hurt:leg'), `${era}: 칭호가 쫓김 탈출·숨은 것 셋·인심·솜씨·절뚝 깃발에 맞물린다`);
   ok(S.titles.filter((t) => t.on.startsWith('hurt:')).every((t) => hurts.has(t.on.slice(5)) && t.bitter), `${era}: 흔적 칭호는 hurts 에 있고 쓴 이름`);
@@ -44,6 +46,9 @@ inter.set('npc_jumo', { obj: { position: new THREE.Vector3(1.5, 0, -20) }, label
 ok(said.some((s) => s.startsWith('💬') && s.includes('주모')), '마을의 눈: 주모 곁 → 👀 한마디(인심 6 = 따뜻한 줄)'); const n1 = said.filter((s) => s.startsWith('💬')).length; run(5); ok(said.filter((s) => s.startsWith('💬')).length === n1, '같은 사람은 하늘이 바뀌기 전엔 다시 말하지 않는다');
 g.story.skyName = 'night'; g.story.isNight = true; g.spark.lastGaze = 0; run(1.5); ok(said.filter((s) => s.startsWith('💬')).length === n1 + 1, '하늘이 바뀌면(밤) 다시 한마디');
 g.life.values.heart = 0; g.life.log.push({}, {}); g.story.skyName = 'day'; g.story.isNight = false; g.spark.lastGaze = 0; said.length = 0; run(1.5); ok(said.some((s) => s.startsWith('💬')), '인심 0 → 차가운 줄');
+// 2b) 선택 뒤 반응: 돌발·쫓김 깃발이 서면 그 일이 사람 입으로 — 한 번만
+g.flags.add('sur:tiger:ok'); g.story.skyName = 'dusk'; g.spark.lastGaze = 0; said.length = 0; run(1.5); ok(said.some((s) => s.includes('호랑이 앞에서 안 뛰었다며')), '선택 뒤 반응: sur:tiger:ok → 「산길 호랑이 앞에서 안 뛰었다며」'); ok(g.flags.has('gaze:said:s1'), '한 번 말하면 gaze:said:<id>');
+g.story.skyName = 'day'; g.spark.lastGaze = 0; said.length = 0; run(1.5); ok(!said.some((s) => s.includes('호랑이 앞에서')), '같은 반응은 두 번 안 온다(once)');
 inter.delete('npc_jumo');
 // 3) 돌발: 조용할 때 걷다 보면 느닷없이 카드 — 고르면 값·흔적, 한 번만
 Math.random = () => 0.01; g.spark.sinceSur = 200; g.p.pos.set(50, 0, 50); run(3); ok(g.opened && opens[opens.length - 1].includes('⚡'), '돌발: 간격이 지나고 걷는 중이면 카드가 열린다'); const b = g.lastOpen.b; ok(b.length >= 2, '길 2~3');
