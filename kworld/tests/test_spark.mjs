@@ -15,18 +15,19 @@ for (const era of ERAS) {
   const w = JSON.parse(fs.readFileSync(path.join(root, 'eras', era, 'world.json'), 'utf8')); const lf = JSON.parse(fs.readFileSync(path.join(root, 'eras', era, 'life.json'), 'utf8')); const S = w.spark;
   const statusIds = new Set((lf.status?.rules || []).map((r) => r.id)); const hurts = new Set(Object.keys(lf.hurts || {}));
   const secretIds = (w.pulse?.secrets || []).map((s) => s.id); const esc = w.pulse?.chases?.[0]?.escapedFlag;
-  ok(S && S.gaze && S.titles?.length >= 6 && S.surprises?.length === 3 && S.starTitle && S.starSay, `${era}: 마을의 눈·칭호 6+·돌발 3·별똥별`);
+  ok(S && S.gaze && S.titles?.length >= 6 && S.surprises?.length >= 7 && S.starTitle && S.starSay, `${era}: 마을의 눈·칭호 6+·돌발 3·별똥별`);
   ok((S.gaze.rules || []).length >= 5 && S.gaze.rules.every((r) => r.id && r.if && r.text && r.once) && new Set(S.gaze.rules.map((r) => r.id)).size === S.gaze.rules.length, `${era}: 선택 뒤 반응 규칙 5+ (id·if·text·once)`);
   ok(S.gaze.rules.some((r) => r.if === esc) && S.gaze.rules.some((r) => r.if === w.pulse?.chases?.[0]?.caughtFlag) && S.gaze.rules.filter((r) => r.if.startsWith('sur:')).every((r) => S.surprises.some((x) => r.if.startsWith('sur:' + x.id + ':'))), `${era}: 규칙이 쫓김 탈출·잡힘·돌발 결과 깃발에 맞물린다`);
   ok(S.gaze.warm?.length >= 3 && S.gaze.cold?.length >= 3 && S.gaze.mark?.length >= 2 && S.gaze.gift, `${era}: 눈 — 따뜻·차가움·흔적 줄 + 쥐여 주는 것`);
   const tOn = S.titles.map((t) => t.on); ok(tOn.includes(esc) && tOn.includes(secretIds.map((s) => 'found:' + s).join(' && ')) && tOn.some((x) => x.startsWith('val:heart')) && tOn.some((x) => x.startsWith('val:craft')) && tOn.includes('hurt:leg'), `${era}: 칭호가 쫓김 탈출·숨은 것 셋·인심·솜씨·절뚝 깃발에 맞물린다`);
   ok(S.titles.filter((t) => t.on.startsWith('hurt:')).every((t) => hurts.has(t.on.slice(5)) && t.bitter), `${era}: 흔적 칭호는 hurts 에 있고 쓴 이름`);
-  ok(new Set(S.titles.map((t) => t.id)).size === S.titles.length && new Set(S.surprises.map((s) => s.id)).size === 3, `${era}: id 겹침 없음`);
+  ok(new Set(S.titles.map((t) => t.id)).size === S.titles.length && new Set(S.surprises.map((s) => s.id)).size === S.surprises.length, `${era}: id 겹침 없음`);
   let w3 = true, rollOk = true, hurtOk = true, condOk = true, factOk = true;
   for (const s of S.surprises) { if (!s.fact || !s.title || !s.body?.length) factOk = false; if ((s.ways || []).length < 2 || s.ways.length > 3) w3 = false;
     for (const wy of s.ways) { if (wy.roll && (!ABIL.has(wy.roll.ab) || !wy.fail)) rollOk = false; for (const o of [wy.then, wy.fail]) if (o?.hurt && !hurts.has(o.hurt)) hurtOk = false;
-      for (const tok of (wy.if || '').split(/&&|\|\|/)) { const f = tok.trim().replace(/^!/, ''); if (!f) continue; if (f.startsWith('status:')) { if (!statusIds.has(f.slice(7))) condOk = false; } else if (!f.startsWith('val:')) condOk = false; } } }
+      for (const tok of (wy.if || '').split(/&&|\|\|/)) { const f = tok.trim().replace(/^!/, ''); if (!f) continue; if (f.startsWith('status:')) { if (!statusIds.has(f.slice(7))) condOk = false; } else if (!f.startsWith('val:') && !f.startsWith('bond:') && !f.startsWith('sur:')) condOk = false; } } }
   ok(w3 && rollOk && hurtOk && condOk && factOk, `${era}: 돌발 — 길 2~3·굴림은 능력+실패 줄·흔적은 hurts·조건은 신분/값·📜 사실`);
+  const B = ['bond1', 'bond2', 'bond3f', 'bond3e'].map((i) => S.surprises.find((x) => x.id === i)); ok(B.every(Boolean) && B[1].if === 'bond:met' && B[2].if === 'bond:friend' && B[3].if === 'bond:enemy' && B[0].ways[0].then.flag === 'bond:met' && B[1].ways[0].then.flag === 'bond:friend' && B[1].ways[0].fail?.flag === 'bond:enemy' && B[1].ways[1].then.flag === 'bond:enemy' && S.titles.some((t) => t.on === 'bond:friend') && S.titles.some((t) => t.on === 'bond:enemy' && t.bitter) && S.gaze.rules.some((r) => r.if === 'bond:friend'), `${era}: 운명의 사람 — 만남→갈림(벗/원수, 굴림 실패=원수)→끝 사슬 + 칭호 + 사람 반응`);
   ok(S.surprises.some((s) => s.night === true) && S.surprises.some((s) => !s.night), `${era}: 밤 돌발 하나 이상 + 낮 돌발`);
 }
 // ---- 엔진(조선 전기) ----
@@ -58,6 +59,11 @@ g.spark.sinceSur = 200; g.p.pos.set(-50, 0, 50); run(3); ok(!g.opened || !opens[
 g.spark.sinceSur = 200; g.p.moving = false; const n2 = opens.length; run(3); ok(opens.length === n2, '서 있으면 안 온다'); g.p.moving = true;
 g.pulse = new Pulse(g, w.pulse); g.flags.delete('escape:free'); g.flags.delete('chase:escape'); g.flags.delete('escape:caught'); g.p.pos.set(0, 0, 0); g.pulse.onFlag(); if (!g.pulse.chase) { g.flags.add('escape:run'); g.pulse.onFlag(); }
 g.spark.sinceSur = 200; g.p.pos.set(80, 0, 80); const n3 = opens.length; run(3); ok(opens.length === n3, '쫓기는 동안엔 돌발이 안 온다'); g.pulse.endChase(null);
+// 3b) 운명의 사람: 만남 전엔 갈림이 안 오고, 깃발 뒤엔 온다
+for (const id of ['bond2', 'bond3f', 'bond3e']) g.flags.delete('sur:' + id); g.flags.delete('bond:met');
+ok(!w.spark.surprises.filter((s) => g.cond(s.if)).some((s) => s.id === 'bond2'), '운명의 사람: bond:met 전엔 갈림 카드가 후보에 없다'); g.flags.add('bond:met'); ok(w.spark.surprises.filter((s) => g.cond(s.if) && !g.flags.has('sur:' + s.id)).some((s) => s.id === 'bond2'), 'bond:met 뒤엔 후보에 든다');
+Math.random = () => 0.01; g.spark.sinceSur = 200; g.p.pos.set(-90, 0, -90); g.spark.lastSurAt = null; opens.length = 0; let guard = 0; while (!g.flags.has('sur:bond2') && guard++ < 12) { if (g.opened) { g.lastOpen.b.find((x) => !x.disabled).onClick(); g.lastOpen.b[0].onClick(); } g.spark.sinceSur = 200; g.p.pos.x += 30; run(3); }
+ok(g.flags.has('sur:bond2'), '갈림 카드가 열렸다'); const bw = w.spark.surprises.find((s) => s.id === 'bond2').ways[1]; g.spark.chooseSurprise(w.spark.surprises.find((s) => s.id === 'bond2'), bw); await sleep(400); g.lastOpen.b[0].onClick(); ok(g.flags.has('bond:enemy') && g.flags.has('title:enemy'), '외면 → bond:enemy + 쓴 칭호 「돌쇠와 등진 사람」');
 // 4) 밤의 설렘: 밤이면 반딧불이, 별똥별 세 번이면 칭호
 g.story.isNight = true; g.story.skyName = 'night'; run(1); ok(g.spark.ff && added.includes(g.spark.ff), '밤 → 반딧불이가 뜬다'); g.story.isNight = false; run(1); ok(!g.spark.ff, '낮 → 사라진다');
 g.story.isNight = true; for (let i = 0; i < 3; i++) g.spark.shootStar(); ok(g.spark.stars === 3 && g.flags.has('title:stars') && said.some((s) => s.includes('밤하늘을 보는 사람')), '별똥별 셋 → 「밤하늘을 보는 사람」'); run(2); ok(!g.spark.shot, '별똥별은 1초 남짓이면 진다');

@@ -53,7 +53,8 @@ export class Spark {
     if (this.sinceSur < (this.cfg.gapSec || 110) || !this.quiet() || !g.p.moving) return; if (!this.lastSurAt) this.lastSurAt = { x: g.p.pos.x, z: g.p.pos.z }; else if (this.dist(this.lastSurAt, g.p.pos) < 18) return;   // 같은 자리에서 또 안 온다
     const night = !!g.story?.isNight; const cands = S.filter((s) => !g.flags.has('sur:' + s.id) && (s.night == null || !!s.night === night) && g.cond(s.if)); if (!cands.length) return;
     if (Math.random() > (this.cfg.chance ?? 0.5)) { this.sinceSur = (this.cfg.gapSec || 110) - 20; return; }
-    this.openSurprise(cands[Math.floor(Math.random() * cands.length)]);
+    const chained = cands.filter((s) => s.if); const pool = chained.length && Math.random() < 0.7 ? chained : cands;   // 이어지는 이야기(운명의 사람)는 먼저 온다
+    this.openSurprise(pool[Math.floor(Math.random() * pool.length)]);
   }
   openSurprise(s) {
     const g = this.g; g.flags.add('sur:' + s.id); this.sinceSur = 0; this.lastSurAt = { x: g.p.pos.x, z: g.p.pos.z }; g.p.enabled = false; g.sound?.play?.(s.sound || (s.night ? 'growl' : 'drum'), 0.35); if (s.tension) g.pulse?.tension?.(s.tension);
