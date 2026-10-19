@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-19 · 과목 20 · 차시 1026 · 슬라이드 18107 */
+   생성: 2026-10-19 · 과목 21 · 차시 1033 · 슬라이드 18240 */
 window.KT2_MANIFEST = {
  "built": "2026-10-19",
- "lessons": 1026,
- "slides": 18107,
+ "lessons": 1033,
+ "slides": 18240,
  "subjects": [
   {
    "slug": "g1_math",
@@ -13107,6 +13107,206 @@ window.KT2_MANIFEST = {
        ],
        "interactive": 3,
        "blocks": 11,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "slug": "g2s2_korean",
+   "grade": 2,
+   "term": 2,
+   "subject": "korean",
+   "subject_ko": "국어",
+   "title": "2학년 2학기 국어",
+   "units": [
+    {
+     "unit": 1,
+     "title": "장면을 상상하며",
+     "file": "data/g2s2_korean_u1.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u1_l01",
+       "no": "1",
+       "title": "단원 시작 — 배울 내용 살펴보기",
+       "meta_title": "단원 시작 — 배울 내용 살펴보기",
+       "std": "[2국05-04]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l03",
+       "no": "3",
+       "title": "시를 읽고 장면 상상하기",
+       "meta_title": "시를 읽고 장면 상상하기",
+       "std": "[2국05-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l05",
+       "no": "5",
+       "title": "시를 읽고 생각이나 느낌 나누기",
+       "meta_title": "시를 읽고 생각이나 느낌 나누기",
+       "std": "[2국05-02][2국05-04]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l07",
+       "no": "7",
+       "title": "이야기를 읽고 인물의 마음 상상하기",
+       "meta_title": "이야기를 읽고 인물의 마음 상상하기",
+       "std": "[2국05-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l09",
+       "no": "9",
+       "title": "이야기를 읽고 생각이나 느낌 나누기",
+       "meta_title": "이야기를 읽고 생각이나 느낌 나누기",
+       "std": "[2국05-04]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l11",
+       "no": "11",
+       "title": "배운 내용 실천하기 — 이야기 소개하기",
+       "meta_title": "배운 내용 실천하기 — 이야기 소개하기",
+       "std": "[2국05-04]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l14",
+       "no": "14",
+       "title": "단원 마무리하기",
+       "meta_title": "단원 마무리하기",
+       "std": "단원 전체 통합",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
        "seven": [
         1,
         1,
