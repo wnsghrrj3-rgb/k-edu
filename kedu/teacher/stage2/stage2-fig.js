@@ -16,6 +16,7 @@
    · 64차(2026-10-02) 4학년 1학기 관계와 규칙 부품: bal(저울 — 식을 셈해 기울기) · shapes(모양의 배열 — 변하는/변하지 않는 부분) · ngrid(수 배열표·수열) · eqs(계산식의 배열) · eqc(등호 카드 — 옳음은 부품이 셈)
    · 81차(2026-10-06) 4학년 2학기 사각형 부품: lines(직선 여러 개 — 수직 ㄱ자·평행 꺾쇠는 좌표로 셈해 맞을 때만) · pdist(평행선 사이의 거리) · quad(사각형 하나 — 평행 꺾쇠·같은 변 눈금·직각·대각선·변/각 글자) · quads(사각형 여러 개 가르기) · circ2(두 원으로 그린 사각형)
    · 80차(2026-10-06) 4학년 2학기 분수의 덧셈과 뺄셈 부품: fop(같은 분모 분수의 덧셈·뺄셈 띠 — 파랑 앞의 수·초록 더하는 수·주황 빗금 덜어 낸 칸 · 대분수 자연수는 통 칸)
+   · 145차(2026-10-19) 2학년 2학기 규칙 찾기 부품: prow2(모양 줄) · pgd2(모양 판) · nstr2(수 띠) · optab2(덧셈표·곱셈표 — 칸 값은 부품이 셈) · ntab2(수 배열표) · cubep2(쌓은 모양) · mcal2(달력) · spin2(돌림판·도는 모양) · beat2(소리 박자) · gdot2(점 늘어나기) · rcd2(규칙 글 카드)
    · 144차(2026-10-19) 2학년 2학기 표와 그래프 부품: tbl2(표·합계·빈칸) · cg2(◯·×·/ 그래프 — 세로·가로·잘못 그린 칸) · tly2(세면서 표시하기) · dc2(자료 낱장·/ 표시) · srt2(분류 칸) · wcl2(날씨 달력 △·◯) · nte2(쪽지·발표 자료) · objs1 이름 줄바꿈(\n)
    · 143차(2026-10-19) 2학년 2학기 시각과 시간 부품: dclk2(디지털시계) · tbnd2(시간 띠) · kcal2(달력) · d24(하루 24칸 띠) · upr2(단위 짝 카드) · grow2(날짜 사이 몇 년·개월·주 후)
    · 141차(2026-10-16) 2학년 2학기 길이 재기 부품: lbar(길이 막대·이어 붙이기·잘라 낸 칸·100 cm 금) · ltape(자·끊긴 줄자) · lpw(전체·부분 가지) · lcard(몸·물건 어림 카드) · lch(나누어 어림) · tvert q(답 줄 빈칸 「?」)
@@ -2561,6 +2562,145 @@
     return sv4(s, 'fig-nte2', W + 20, H + 12, 'data-note="' + esc(String(o.body || '').replace(/\*\*/g, '')) + '"');
   }
   Object.assign(PARTS, { tbl2, cg2, tly2, dc2, srt2, wcl2, nte2 });
+  }
+  { // 145차 2학년 2학기 「규칙 찾기」 부품 — 이름이 겹치지 않게 블록 안에 둔다
+  // ══ prow2(모양 줄) · pgd2(모양 판) · nstr2(수 띠) · optab2(덧셈표·곱셈표) · ntab2(수 배열표) · cubep2(쌓은 모양) · mcal2(달력) · spin2(돌림판) · beat2(소리 박자) · gdot2(점 늘어나기) · rcd2(규칙 글 카드) ══
+  // 그림 문법: 원문 색 그대로(빨강·노랑·파랑…) · 주황 점선 「?」 = 구할 자리 · 주황/파랑/초록 칸 = 짚는 줄(a/b/c) · svg 고유 크기(fig-dat2 — 글씨가 줄지 않게)
+  const CO5 = { red: '#E53935', yel: '#FDD835', blu: '#1E88E5', grn: '#43A047', org: '#FB8C00', pur: '#8E24AA', sky: '#4FC3F7', lgr: '#AED581', pnk: '#F06292', gry: '#B0BEC5' };
+  const OR5 = ['#FFF1E6', '#FF7A2F', '#C2551A'], BL5 = ['#EAF1FF', '#5B8DEF', '#1F4A9E'], GN5 = ['#E3F6EA', '#2E9E5B', '#1D6B3D'], LN5 = '#C9D3E0', GR5 = '#6B7C93', ST5 = '#37474F';
+  const PU5 = ['#EDE7F6', '#7E57C2', '#4527A0'], BD5 = { a: OR5, b: GN5, c: PU5 }; // 원문 띠 색: a 주황 · b 초록 · c 보라
+  const r5 = (x, y, w, h, fill, st, sw, dash, r) => '<rect x="' + (+x).toFixed(1) + '" y="' + (+y).toFixed(1) + '" width="' + Math.max(0, w).toFixed(1) + '" height="' + Math.max(0, h).toFixed(1) + '" rx="' + (r == null ? 8 : r) + '" fill="' + fill + '" stroke="' + (st || 'none') + '" stroke-width="' + (sw || 0) + '"' + (dash ? ' stroke-dasharray="8 6"' : '') + '/>';
+  const cw5 = (t, fz) => Array.from(String(t)).reduce((a, c) => a + (/[\u3131-\uD7A3\u2190-\u21FF◯△□■●◆]/.test(c) ? 1 : /[\s.,()·:]/.test(c) ? 0.38 : 0.6), 0) * fz;
+  const sv5 = (s, cls, W, H, data) => svgWrap(s, 'fig-dat2 ' + cls, '0 0 ' + Math.ceil(W) + ' ' + Math.ceil(H)).replace('<svg ', '<svg width="' + Math.ceil(W) + '" height="' + Math.ceil(H) + '" ' + (data || '') + ' ');
+  const q5 = (x, y, w, h, fz) => r5(x + 2, y + 2, w - 4, h - 4, '#fff', OR5[1], 3.5, true, 10) + txt((x + w / 2).toFixed(1), (y + h / 2 + fz * 0.36).toFixed(1), '?', fz, OR5[2], 900);
+  const LW5 = (o) => o && o.lab ? cw5(o.lab, 26) + 40 : 0;
+  const lab5 = (l, Wd, y) => l ? txt((Wd / 2).toFixed(1), y + 26, l, 26, '#4E5C70', 800) : '';
+  // shape5: 모양 하나 — sq 네모 · cir 동그라미 · tri 세모 · dia 마름모 · clb 클로버 · hs 집 (원문 모양·색 그대로)
+  function shape5(sh, co, cx, cy, d, rot) {
+    const f = CO5[co] || co || '#999', r = d / 2, a = ' fill="' + f + '" stroke="' + ST5 + '" stroke-width="2"';
+    const P = (pts) => '<polygon points="' + pts.map(p => (cx + p[0] * r).toFixed(1) + ',' + (cy + p[1] * r).toFixed(1)).join(' ') + '"' + a + '/>';
+    let s;
+    if (sh === 'sq') s = '<rect x="' + (cx - r * 0.86).toFixed(1) + '" y="' + (cy - r * 0.86).toFixed(1) + '" width="' + (r * 1.72).toFixed(1) + '" height="' + (r * 1.72).toFixed(1) + '" rx="' + (r * 0.2).toFixed(1) + '"' + a + '/>';
+    else if (sh === 'cir') s = '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (r * 0.88).toFixed(1) + '"' + a + '/>';
+    else if (sh === 'tri') s = P([[0, -0.9], [0.92, 0.8], [-0.92, 0.8]]);
+    else if (sh === 'dia') s = P([[0, -0.92], [0.92, 0], [0, 0.92], [-0.92, 0]]);
+    else if (sh === 'clb') s = ['<circle cx="' + cx.toFixed(1) + '" cy="' + (cy - r * 0.4).toFixed(1) + '" r="' + (r * 0.44).toFixed(1) + '"' + a + '/>', '<circle cx="' + (cx - r * 0.4).toFixed(1) + '" cy="' + (cy + r * 0.12).toFixed(1) + '" r="' + (r * 0.44).toFixed(1) + '"' + a + '/>', '<circle cx="' + (cx + r * 0.4).toFixed(1) + '" cy="' + (cy + r * 0.12).toFixed(1) + '" r="' + (r * 0.44).toFixed(1) + '"' + a + '/>', '<rect x="' + (cx - r * 0.1).toFixed(1) + '" y="' + (cy + r * 0.2).toFixed(1) + '" width="' + (r * 0.2).toFixed(1) + '" height="' + (r * 0.68).toFixed(1) + '"' + a + '/>'].join('');
+    else if (sh === 'hs') s = P([[0, -0.84], [0.86, -0.08], [-0.86, -0.08]]) + '<rect x="' + (cx - r * 0.6).toFixed(1) + '" y="' + (cy - r * 0.08).toFixed(1) + '" width="' + (r * 1.2).toFixed(1) + '" height="' + (r * 0.92).toFixed(1) + '"' + a + '/>';
+    else return '';
+    return rot ? '<g transform="rotate(' + rot + ' ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')">' + s + '</g>' : s;
+  }
+  const skey5 = (c) => c ? c[0] + ':' + c[1] : '?';
+  // prow2: cells [[모양, 색] | null(「?」)] · lab(위 꼬리표) · data-prow
+  function prow2(o) {
+    const cs = o.cells || []; if (!cs.length) return '';
+    const n = cs.length, u = n > 10 ? 64 : 76, gp = 8, tw = n * u + (n - 1) * gp, Wd = Math.max(460, LW5(o), tw + 28), x0 = (Wd - tw) / 2, y0 = o.lab ? 50 : 10; let s = lab5(o.lab, Wd, 6);
+    s += r5(x0 - 10, y0 - 6, tw + 20, u + 12, '#F6F8FB', '#DCE3EC', 2.5, false, 14);
+    cs.forEach((c, i) => { const x = x0 + i * (u + gp); s += c ? shape5(c[0], c[1], x + u / 2, y0 + u / 2, u * 0.78) : q5(x, y0, u, u, u * 0.5); });
+    return sv5(s, 'fig-prow2', Wd, y0 + u + 12, 'data-prow="' + esc(cs.map(skey5).join(',')) + '"');
+  }
+  // pgd2: rows [[[모양, 색] | null]] · lab · data-pgrid(줄|줄)
+  function pgd2(o) {
+    const rs = o.rows || []; if (!rs.length) return '';
+    const nc = Math.max(...rs.map(r => r.length)), u = nc > 5 ? 66 : 76, gp = 6, gw = nc * (u + gp) - gp, gh = rs.length * (u + gp) - gp, Wd = Math.max(460, LW5(o), gw + 28), x0 = (Wd - gw) / 2, y0 = o.lab ? 52 : 12; let s = lab5(o.lab, Wd, 6);
+    s += r5(x0 - 10, y0 - 8, gw + 20, gh + 16, '#F6F8FB', '#DCE3EC', 2.5, false, 14);
+    rs.forEach((row, r) => row.forEach((c, i) => { const x = x0 + i * (u + gp), y = y0 + r * (u + gp); s += c ? r5(x, y, u, u, '#fff', '#E3E8EF', 2, false, 8) + shape5(c[0], c[1], x + u / 2, y + u / 2, u * 0.8) : q5(x, y, u, u, u * 0.5); }));
+    return sv5(s, 'fig-pgd2', Wd, y0 + gh + 12, 'data-pgrid="' + esc(rs.map(r => r.map(skey5).join(',')).join('|')) + '"');
+  }
+  // nstr2: vals [수 | null(「?」)] · lab · data-nstrip
+  function nstr2(o) {
+    const vs = o.vals || []; if (!vs.length) return '';
+    const n = vs.length, u = n > 10 ? 64 : 72, gp = 6, tw = n * u + (n - 1) * gp, Wd = Math.max(460, LW5(o), tw + 28), x0 = (Wd - tw) / 2, y0 = o.lab ? 50 : 10; let s = lab5(o.lab, Wd, 6);
+    vs.forEach((v, i) => { const x = x0 + i * (u + gp); s += v == null ? q5(x, y0, u, u, 36) : r5(x, y0, u, u, BL5[0], BL5[1], 2.5, false, 10) + txt((x + u / 2).toFixed(1), y0 + u / 2 + 13, String(v), 36, BL5[2], 900); });
+    return sv5(s, 'fig-nstr2', Wd, y0 + u + 10, 'data-nstrip="' + esc(vs.map(v => v == null ? '?' : v).join(',')) + '"');
+  }
+  const opv5 = (op, a, b) => op === '+' ? a + b : a * b;
+  // optab2: op('+'·'x') · rh(왼쪽 머리) · ch(위 머리) · holes [[줄, 칸]] · bands [[[[줄, 칸]…], 'a'|'b'|'c']] · lab · data-optab(줄|줄 — 「?」 그대로)
+  function optab2(o) {
+    const rh = o.rh || [], ch = o.ch || [], op = o.op === 'x' ? 'x' : '+', holes = o.holes || [], bands = o.bands || [];
+    const isH = (r, c) => holes.some(h => h[0] === r && h[1] === c), bandOf = (r, c) => { for (const b of bands) if ((b[0] || []).some(p => p[0] === r && p[1] === c)) return b[1]; return ''; };
+    const mx = Math.max(1, ...rh.map(a => Math.max(...ch.map(b => opv5(op, a, b))))), nc = ch.length + 1, u = nc > 7 ? 62 : nc > 5 ? 70 : 80, FZ = mx >= 10 ? (u < 70 ? 28 : 32) : 34, gw = nc * u, gh = (rh.length + 1) * u, Wd = Math.max(460, LW5(o), gw + 28), x0 = (Wd - gw) / 2, y0 = o.lab ? 52 : 10; let s = lab5(o.lab, Wd, 6);
+    s += r5(x0, y0, gw, gh, '#fff', '#8FA3BF', 3, false, 12);
+    s += r5(x0 + 1.5, y0 + 1.5, u - 3, u - 3, '#DDE3EC', 'none', 0, false, 8) + txt((x0 + u / 2).toFixed(1), y0 + u / 2 + 13, op === 'x' ? '×' : '+', 38, INK, 900);
+    ch.forEach((v, i) => { const x = x0 + (i + 1) * u; s += r5(x + 1.5, y0 + 1.5, u - 3, u - 3, '#E4E9F0', 'none', 0, false, 8) + txt((x + u / 2).toFixed(1), y0 + u / 2 + 12, String(v), FZ, INK, 900); });
+    rh.forEach((a, r) => { const y = y0 + (r + 1) * u; s += r5(x0 + 1.5, y + 1.5, u - 3, u - 3, '#E4E9F0', 'none', 0, false, 8) + txt((x0 + u / 2).toFixed(1), y + u / 2 + 12, String(a), FZ, INK, 900);
+      ch.forEach((b, c) => { const x = x0 + (c + 1) * u, bd = BD5[bandOf(r, c)];
+        if (isH(r, c)) s += q5(x + 3, y + 3, u - 6, u - 6, 34);
+        else s += (bd ? r5(x + 3, y + 3, u - 6, u - 6, bd[0], bd[1], 3, false, 8) : '') + txt((x + u / 2).toFixed(1), y + u / 2 + 12, String(opv5(op, a, b)), FZ, bd ? bd[2] : '#1F2937', 900); }); });
+    for (let i = 1; i < nc; i++) s += '<line x1="' + (x0 + i * u) + '" y1="' + y0 + '" x2="' + (x0 + i * u) + '" y2="' + (y0 + gh) + '" stroke="' + LN5 + '" stroke-width="' + (i === 1 ? 3 : 1.5) + '"/>';
+    for (let i = 1; i <= rh.length; i++) s += '<line x1="' + x0 + '" y1="' + (y0 + i * u) + '" x2="' + (x0 + gw) + '" y2="' + (y0 + i * u) + '" stroke="' + LN5 + '" stroke-width="' + (i === 1 ? 3 : 1.5) + '"/>';
+    return sv5(s, 'fig-optab2', Wd, y0 + gh + 10, 'data-optab="' + esc(op + '|' + rh.join(',') + '|' + ch.join(',') + '|' + rh.map((a, r) => ch.map((b, c) => isH(r, c) ? '?' : opv5(op, a, b)).join(',')).join(';')) + '"');
+  }
+  // ntab2: vals [[수]] · holes [[줄, 칸]] · band [[줄, 칸]](주황) · lab · data-numtab
+  function ntab2(o) {
+    const vs = o.vals || [], holes = o.holes || [], band = o.band || []; if (!vs.length) return '';
+    const isH = (r, c) => holes.some(h => h[0] === r && h[1] === c), isB = (r, c) => band.some(h => h[0] === r && h[1] === c);
+    const nc = Math.max(...vs.map(r => r.length)), u = nc > 5 ? 70 : 80, gp = 6, gw = nc * (u + gp) - gp, gh = vs.length * (u + gp) - gp, Wd = Math.max(460, LW5(o), gw + 28), x0 = (Wd - gw) / 2, y0 = o.lab ? 52 : 12; let s = lab5(o.lab, Wd, 6);
+    s += r5(x0 - 10, y0 - 8, gw + 20, gh + 16, '#F6F8FB', '#DCE3EC', 2.5, false, 14);
+    vs.forEach((row, r) => row.forEach((v, c) => { const x = x0 + c * (u + gp), y = y0 + r * (u + gp);
+      s += isH(r, c) ? q5(x, y, u, u, 34) : r5(x, y, u, u, isB(r, c) ? OR5[0] : '#fff', isB(r, c) ? OR5[1] : LN5, isB(r, c) ? 3.5 : 2, false, 10) + txt((x + u / 2).toFixed(1), y + u / 2 + 12, String(v), 32, isB(r, c) ? OR5[2] : INK, 900); }));
+    return sv5(s, 'fig-ntab2', Wd, y0 + gh + 12, 'data-numtab="' + esc(vs.map((row, r) => row.map((v, c) => isH(r, c) ? '?' : v).join(',')).join(';')) + '"');
+  }
+  // cubep2: steps [[[층(아래 0), 칸, 색]…]] 단계마다 쌓은 모양 · nums [단계 아래 글] · lab · data-cubep(단계별 상자 수)
+  function cubep2(o) {
+    const st = o.steps || []; if (!st.length) return '';
+    const u = 40, gp = 46, dims = st.map(cs => ({ w: Math.max(1, ...cs.map(c => c[1] + 1)), h: Math.max(1, ...cs.map(c => c[0] + 1)) })), Hm = Math.max(...dims.map(d => d.h)) * u, tw = dims.reduce((a, d) => a + d.w * u, 0) + (st.length - 1) * gp, Wd = Math.max(460, LW5(o), tw + 40), y0 = o.lab ? 52 : 12; let s = lab5(o.lab, Wd, 6), x = (Wd - tw) / 2;
+    st.forEach((cs, k) => { const d = dims[k], base = y0 + Hm;
+      cs.forEach(c => { const cx = x + c[1] * u, cy = base - (c[0] + 1) * u; s += r5(cx + 1, cy + 1, u - 2, u - 2, CO5[c[2]] || '#FDD835', '#5D4037', 2.5, false, 5) + '<path d="M' + (cx + 7) + ' ' + (cy + 8) + 'H' + (cx + u - 9) + '" stroke="#fff" stroke-opacity=".6" stroke-width="3"/>'; });
+      s += '<line x1="' + (x - 6) + '" y1="' + (base + 1) + '" x2="' + (x + d.w * u + 6) + '" y2="' + (base + 1) + '" stroke="#A1887F" stroke-width="3"/>';
+      const lb = (o.nums || [])[k]; s += txt((x + d.w * u / 2).toFixed(1), base + 36, lb != null ? String(lb) : '', 26, GR5, 900);
+      if (k < st.length - 1) s += txt((x + d.w * u + gp / 2).toFixed(1), base - Hm / 2 + 10, '›', 34, '#9AA6B4', 900);
+      x += d.w * u + gp; });
+    return sv5(s, 'fig-cubep2', Wd, y0 + Hm + 48, 'data-cubep="' + st.map(cs => cs.length).join(',') + '"');
+  }
+  // mcal2: first(1일 요일 0=일) · days · holes [「?」 날] · band [짚는 날 — 주황] · lab · data-mcal
+  function mcal2(o) {
+    const first = +o.first || 0, days = +o.days || 30, holes = (o.holes || []).map(Number), band = (o.band || []).map(Number), cw = 70, ch = 54, Wd = Math.max(20 * 2 + cw * 7, LW5(o)), mx0 = (Wd - cw * 7) / 2; let s = '', y = o.lab ? 46 : 6;
+    s += lab5(o.lab, Wd, 2);
+    '일월화수목금토'.split('').forEach((d, i) => { s += txt((mx0 + i * cw + cw / 2).toFixed(1), y + 26, d, 26, i === 0 ? '#E0413C' : i === 6 ? BL5[1] : '#4E5C70', 900); }); y += 38;
+    const rows = Math.ceil((first + days) / 7);
+    for (let d = 1; d <= days; d++) { const k = first + d - 1, c = k % 7, r = Math.floor(k / 7), x = mx0 + c * cw, yy = y + r * ch, h = holes.indexOf(d) >= 0, b = band.indexOf(d) >= 0;
+      s += h ? q5(x, yy, cw, ch, 30) : r5(x + 2, yy + 2, cw - 4, ch - 4, b ? OR5[0] : '#fff', b ? OR5[1] : '#DDE3EB', b ? 3.5 : 1.5, false, 8) + txt((x + cw / 2).toFixed(1), yy + ch / 2 + 10, String(d), 28, b ? OR5[2] : c === 0 ? '#E0413C' : c === 6 ? BL5[1] : INK, 900); }
+    return sv5(s, 'fig-mcal2', Wd, y + rows * ch + 8, 'data-mcal="' + first + '|' + days + '|' + holes.join(',') + '|' + band.join(',') + '"');
+  }
+  // spin2: n(칸 수) · marks [그림마다 칠한 칸(또는 모양 자리)] · dir('cw'·'ccw') · sh(모양 — 있으면 칸 대신 모양이 돈다) · lab · data-spin
+  function spin2(o) {
+    const n = Math.max(2, +o.n || 4), mk = o.marks || [], R = 62, D = R * 2 + 16, gp = 34, tw = mk.length * D + (mk.length - 1) * gp, Wd = Math.max(460, LW5(o), tw + 40), y0 = o.lab ? 50 : 10, cy = y0 + D / 2; let s = lab5(o.lab, Wd, 4), x = (Wd - tw) / 2;
+    const pt = (cx, a, rr) => [cx + rr * Math.sin(a), cy - rr * Math.cos(a)];
+    mk.forEach((m, k) => { const cx = x + D / 2;
+      if (o.sh) { s += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + R + '" fill="#FFF8E1" stroke="#FFB74D" stroke-width="3"/>'; const a = 2 * Math.PI * m / n, p = pt(cx, a, R * 0.52); s += shape5(o.sh, 'org', p[0], p[1], R * 0.7, Math.round(360 * m / n)); }
+      else for (let i = 0; i < n; i++) { const a0 = 2 * Math.PI * i / n, a1 = 2 * Math.PI * (i + 1) / n, p0 = pt(cx, a0, R), p1 = pt(cx, a1, R);
+        s += '<path d="M' + cx.toFixed(1) + ' ' + cy.toFixed(1) + 'L' + p0[0].toFixed(1) + ' ' + p0[1].toFixed(1) + 'A' + R + ' ' + R + ' 0 0 1 ' + p1[0].toFixed(1) + ' ' + p1[1].toFixed(1) + 'Z" fill="' + (i === m ? CO5.grn : '#fff') + '" stroke="#455A64" stroke-width="2.5"/>'; }
+      if (k < mk.length - 1) s += txt((x + D + gp / 2).toFixed(1), cy + 12, '›', 34, '#9AA6B4', 900);
+      x += D + gp; });
+    return sv5(s, 'fig-spin2', Wd, y0 + D + 8, 'data-spin="' + n + '|' + mk.join(',') + '|' + (o.dir || '') + (o.sh ? '|' + o.sh : '') + '"');
+  }
+  // beat2: cells [[소리 글, 수] | null(「?」)] · lab · data-beat
+  function beat2(o) {
+    const cs = o.cells || []; if (!cs.length) return '';
+    const n = cs.length, u = n > 10 ? 62 : 74, gp = 6, h = 112, tw = n * u + (n - 1) * gp, Wd = Math.max(460, LW5(o), tw + 28), x0 = (Wd - tw) / 2, y0 = o.lab ? 50 : 10; let s = lab5(o.lab, Wd, 6);
+    cs.forEach((c, i) => { const x = x0 + i * (u + gp);
+      if (!c) { s += q5(x, y0, u, h, 36); return; }
+      s += r5(x, y0, u, h, '#FFFDF5', '#E8D9A8', 2.5, false, 12) + txt((x + u / 2).toFixed(1), y0 + 44, c[0], 32, '#7A5A14', 900) + '<line x1="' + (x + 10) + '" y1="' + (y0 + 60) + '" x2="' + (x + u - 10) + '" y2="' + (y0 + 60) + '" stroke="#EADFBE" stroke-width="2"/>' + txt((x + u / 2).toFixed(1), y0 + 96, String(c[1]), 30, BL5[2], 900); });
+    return sv5(s, 'fig-beat2', Wd, y0 + h + 10, 'data-beat="' + esc(cs.map(c => c ? c[0] + ':' + c[1] : '?').join(',')) + '"');
+  }
+  // gdot2: cells [[색, 점 수]] — 칸마다 점을 세로로 · lab · data-grow
+  function gdot2(o) {
+    const cs = o.cells || []; if (!cs.length) return '';
+    const n = cs.length, mx = Math.max(1, ...cs.map(c => +c[1] || 0)), u = 64, gp = 10, d = 34, tw = n * u + (n - 1) * gp, ch = mx * (d + 8) + 18, Wd = Math.max(460, LW5(o), tw + 28), x0 = (Wd - tw) / 2, y0 = o.lab ? 50 : 10; let s = lab5(o.lab, Wd, 6);
+    cs.forEach((c, i) => { const x = x0 + i * (u + gp); s += r5(x, y0, u, ch, '#F6F8FB', '#DCE3EC', 2, false, 12);
+      for (let k = 0; k < (+c[1] || 0); k++) s += '<circle cx="' + (x + u / 2).toFixed(1) + '" cy="' + (y0 + ch - 9 - d / 2 - k * (d + 8)).toFixed(1) + '" r="' + (d / 2) + '" fill="' + (CO5[c[0]] || '#999') + '" stroke="' + ST5 + '" stroke-width="1.5"/>'; });
+    return sv5(s, 'fig-gdot2', Wd, y0 + ch + 10, 'data-grow="' + esc(cs.map(c => c[0] + ':' + c[1]).join(',')) + '"');
+  }
+  // rcd2: lines [규칙 글(**강조**)] — 규칙 카드(파랑 테 · 강조 주황) · data-rules
+  function rcd2(o) {
+    const ls = (o.lines || []).filter(Boolean); if (!ls.length) return '';
+    const FZ = 30, LH = 52, segs = ls.map(l => String(l).split(/(\*\*[^*]+\*\*)/).filter(Boolean).map(t => ({ t: t.replace(/\*\*/g, ''), b: /^\*\*/.test(t) })));
+    const lw = segs.map(sg => sg.reduce((a, x) => a + cw5(x.t, FZ), 0)), W0 = Math.max(...lw) + 80, Wd = Math.max(460, LW5(o), W0 + 20), x0 = (Wd - W0) / 2, H0 = ls.length * LH + 24; let s = r5(x0, 6, W0, H0, BL5[0], BL5[1], 3, false, 16);
+    segs.forEach((sg, i) => { let x = x0 + 48; const y = 6 + 12 + i * LH + LH / 2 + 11; s += '<circle cx="' + (x0 + 26) + '" cy="' + (y - 10) + '" r="7" fill="' + BL5[1] + '"/>';
+      s += '<text x="' + x.toFixed(1) + '" y="' + y + '" text-anchor="start" font-size="' + FZ + '" font-weight="800" fill="#2B3440" xml:space="preserve" ' + FONT + '>' + sg.map(t => t.b ? '<tspan font-weight="900" fill="' + OR5[2] + '">' + esc(t.t) + '</tspan>' : esc(t.t)).join('') + '</text>'; }); // 한 줄 = text 하나(tspan) — 글자 사이를 브라우저가 잰다
+    return sv5(s, 'fig-rcd2', Wd, H0 + 12, 'data-rules="' + esc(ls.join(' / ').replace(/\*\*/g, '')) + '"');
+  }
+  Object.assign(PARTS, { prow2, pgd2, nstr2, optab2, ntab2, cubep2, mcal2, spin2, beat2, gdot2, rcd2 });
   }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {

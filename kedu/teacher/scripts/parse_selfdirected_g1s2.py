@@ -53,6 +53,7 @@ def figs(p):
     out.extend(figs10(p))
     out.extend(figs11(p))
     out.extend(figs12(p))
+    out.extend(figs13(p))
     return out
 
 # 123차 — 2단원 「덧셈과 뺄셈(1)」 그림: steps(번호 줄 식) · eqstrip(식 띠: hole=? · res/mark=강조) · chain(색 알 묶음) · cupstack(층 쌓은 컵) · tenframe(십 배열판 a/b 두 색 + tf-lb 꼬리표). 원문 순서대로.
@@ -563,6 +564,7 @@ def figs11(p):
     for m in re.finditer(r'<div class="grow[^"]*" data-grow="[^"]*">(.*?)</div></div>', p, re.S):
         if inopt(m.start()): continue
         nodes = [{'date': clean(b), 'label': clean(sp)} for b, sp in re.findall(r'<div class="gr-n"[^>]*><b>(.*?)</b><span>(.*?)</span>', m.group(1))]
+        if not nodes: continue  # 145차 — 2-2 u6 「grow」(점 늘어나기)는 figs13 gdot
         legs = [{'n': '?' if e.strip() == '?' else int(e), 'u': u} for u, e in re.findall(r'<div class="gr-a" data-n="\d+" data-u="(\w+)"><em>(.*?)</em>', m.group(1))]
         found.append((m.start(), m.end(), {'k': 'grow', 'nodes': nodes, 'legs': legs}))
     for m in re.finditer(r'<div class="plan"><table>(.*?)</table>', p, re.S):
@@ -627,6 +629,46 @@ def figs12(p):
     for m in re.finditer(r'<div class="note"><p class="nt-hd">(.*?)</p><p class="nt-b">(.*?)</p>(?:<p class="nt-sg">(.*?)</p>)?', p, re.S):
         if inopt(m.start()): continue
         found.append((m.start(), m.end(), {'k': 'note', 'hd': clean(m.group(1)), 'body': clean(re.sub(r'<b class="nt-h[^"]*">(.*?)</b>', r'<b>\1</b>', m.group(2))), 'sg': clean(m.group(3) or '')}))
+    return [f for _, _, f in sorted(found, key=lambda x: x[0])]
+
+# 145차 — 2-2 6단원 「규칙 찾기」 그림(모두 data-* JSON): prow(모양 줄 [[모양,색]|null=?]) · pgd2(모양 판 줄×칸) · nstrip(수 줄, null=?) · optab(덧셈표·곱셈표 op·rh·ch·holes·bands)
+#          · ntab2(수 배열표 vals·holes·bands) · cubep(쌓은 모양 — 단계마다 [층(아래 0),칸,색]) · mcal(달력 first·days·holes·bands bd-a) · spin(돌림판 n·marks·dir · sh 모양이면 그림 돌림)
+#          · beat(소리 박자 [[글,수]|null]) · gdot(점 늘어나기 [[색,수]]) · rcard(규칙 글 줄). 바로 앞 p-lab = lab. 원문 순서대로.
+def figs13(p):
+    found = []
+    J = lambda v: json.loads(html.unescape(v))
+    def lab(a):
+        t = re.search(r'<p class="p-lab">((?:(?!</p>).)*)</p>\s*$', p[max(0, a - 400):a], re.S)
+        return clean(t.group(1)) if t else ''
+    def put(m, c):
+        l = lab(m.start())
+        if l: c['lab'] = l
+        found.append((m.start(), m.end(), c))
+    for m in re.finditer(r'<div class="prow( sm)?" data-prow="([^"]*)"', p): put(m, {'k': 'prow', 'cells': J(m.group(2))})
+    for m in re.finditer(r'<div class="pgrid( sm)?" data-pgrid="([^"]*)"', p): put(m, {'k': 'pgd2', 'rows': J(m.group(2))})
+    for m in re.finditer(r'<div class="nstrip" data-nstrip="([^"]*)"', p): put(m, {'k': 'nstrip', 'vals': J(m.group(1))})
+    for m in re.finditer(r'<div class="optab( sm)?" data-optab="([^"]*)"', p):
+        d = J(m.group(2)); put(m, {'k': 'optab', 'op': d['op'], 'rh': d['rh'], 'ch': d['ch'], 'holes': d['holes'], 'bands': d['bands']})
+    for m in re.finditer(r'<div class="numtab( sm)?" data-numtab="([^"]*)"[^>]*>(.*?)</div></div>', p, re.S):
+        d = J(m.group(2)); c = {'k': 'ntab2', 'vals': d['vals'], 'holes': d['holes']}
+        bd = [[int(x) for x in rc.split(',')] for b, rc in re.findall(r'class="nt-c (bd-\w+)" data-rc="([\d,]+)"', m.group(3))]
+        if bd: c['band'] = bd
+        put(m, c)
+    for m in re.finditer(r'<div class="cubep( sm)?" data-cubep="([^"]*)">(.*?)</div></div>(?=</div>|<p|<div class="(?:q-part|rcard))', p, re.S):
+        put(m, {'k': 'cubep', 'steps': J(m.group(2)), 'nums': [clean(x) for x in re.findall(r'class="cb-n">(.*?)</b>', m.group(3))]})
+    for m in re.finditer(r'<div class="mcal( sm)?" data-mcal="([^"]*)">(.*?)</div></div>', p, re.S):
+        d = J(m.group(2)); c = {'k': 'mcal', 'first': d['first'], 'days': d['days'], 'holes': d['holes']}
+        bd = [int(x) for x in re.findall(r'class="cl-d bd-\w+" data-d="(\d+)"', m.group(3))]
+        if bd: c['band'] = bd
+        put(m, c)
+    for m in re.finditer(r'<div class="spin( sm)?" data-(spin|spinfig)="([^"]*)"', p):
+        d = J(m.group(3)); c = {'k': 'spin', 'n': d['n'], 'marks': d['marks'], 'dir': d['dir']}
+        if d.get('sh'): c['sh'] = d['sh']
+        put(m, c)
+    for m in re.finditer(r'<div class="beat" data-beat="([^"]*)"', p): put(m, {'k': 'beat', 'cells': J(m.group(1))})
+    for m in re.finditer(r'<div class="grow( sm)?" data-grow="(\[[^"]*)"', p): put(m, {'k': 'gdot', 'cells': J(m.group(2))})
+    for m in re.finditer(r'<div class="rcard">(.*?)</div></div>', p, re.S):
+        found.append((m.start(), m.end(), {'k': 'rcard', 'lines': [clean(x) for x in re.findall(r'<div class="rc-l"[^>]*>(.*?)</div>', m.group(1) + '</div>', re.S)]}))
     return [f for _, _, f in sorted(found, key=lambda x: x[0])]
 
 if __name__ == '__main__':
