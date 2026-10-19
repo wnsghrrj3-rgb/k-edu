@@ -50,12 +50,22 @@ export class Actor {
       if (d <= Math.max(step, 0.15)) { o.position.x = to.x; o.position.z = to.z; const done = this.path.done; const then = this.path.then; this.path = null; this.state = then; this.play(then, 0.35); this.syncBox(); done && done(); }
       else { o.position.x += dx / d * step; o.position.z += dz / d * step; this.turnTo = Math.atan2(dx, dz); }
       if (this.g.e.groundY) o.position.y = this.g.e.groundY(o.position.x, o.position.z);
+      this.baseY = o.position.y;
     }
     if (this.turnTo != null) { let diff = this.turnTo - o.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff)); const k = Math.min(1, dt * 8); o.rotation.y += diff * k; if (Math.abs(diff) < 0.02) this.turnTo = null; }
     // LOD: 멀면 동작 갱신을 띄엄띄엄
     const dist = this.g.p?.pos ? Math.hypot(o.position.x - this.g.p.pos.x, o.position.z - this.g.p.pos.z) : 0;
     if (this.mixer) { if (dist < 25 || (this.t * 60 | 0) % 3 === 0) this.mixer.update(dist < 25 ? dt : dt * 3); }
     else if (o.userData.animate) o.userData.animate(this.t, !!this.path);
+    else this.sway(dt);   // 뼈대도 관절도 없는 통짜 사람(bpy 메시): 걸음 들썩임으로 미끄러짐을 가린다
+  }
+  /** 통짜 메시의 걸음 흔들림 — 걸으면 위아래 4.5cm 들썩·좌우 2° 기울기(달리면 더), 서면 부드럽게 제자리 */
+  sway(dt) {
+    const o = this.obj; const want = this.path ? (this.state === 'run' ? 1.4 : 1) : 0;
+    this.swayK = THREE.MathUtils.lerp(this.swayK ?? 0, want, Math.min(1, dt * 6)); if (this.swayK < 0.01) { this.swayK = 0; if (o.rotation.z) o.rotation.z = 0; if (this.baseY != null) o.position.y = this.baseY; return; }
+    this.swayT = (this.swayT ?? 0) + dt * (this.state === 'run' ? 11 : 8);
+    if (this.baseY != null) o.position.y = this.baseY + Math.abs(Math.sin(this.swayT)) * 0.045 * this.swayK;
+    o.rotation.z = Math.sin(this.swayT) * 0.035 * this.swayK;
   }
 }
 

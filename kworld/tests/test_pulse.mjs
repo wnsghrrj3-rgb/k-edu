@@ -46,4 +46,10 @@ ok(g.pulse.secrets.length === 3, '숨은 것 셋이 서 있다'); g.p.pos.set(46
 ok(g.life.values.craft >= 1 && Pulse.heirlooms().some((h) => h.id === 'arrow'), '솜씨 +1 · 물려줄 것에 화살촉이 적힌다'); g.lastOpen.b[0].onClick(); ok(g.flags.has('found:arrow'), '챙기면 found:arrow');
 // 6) 저장·재개
 const snap = g.pulse.snapshot(); ok(snap.chase === null && snap.deadline === null, '저장: 쫓김·모래시계 없음이면 null');
+// 9) 통짜 GLB 사람(뼈대·관절 없음)은 걸을 때 들썩이고 기울었다가, 서면 제자리로(미끄러짐 가림)
+{ const { Actor } = await import('../core/actor.js'); const obj = new THREE.Object3D(); const a = new Actor(g, 'sway_t', obj); a.goTo([0, 30]);
+  let bob = 0, tilt = 0; for (let i = 0; i < 40; i++) { a.tick(0.05); bob = Math.max(bob, obj.position.y); tilt = Math.max(tilt, Math.abs(obj.rotation.z)); }
+  ok(a.path && bob > 0.02 && bob <= 0.046 && tilt > 0.015 && tilt <= 0.036, `걷는 동안 들썩임 ${bob.toFixed(3)}·기울기 ${tilt.toFixed(3)}`);
+  for (let i = 0; i < 400; i++) a.tick(0.1); ok(!a.path && obj.position.y === 0 && obj.rotation.z === 0 && obj.position.z === 30, '도착해 서면 높이·기울기 0 으로 돌아온다');
+  const m = new THREE.Object3D(); const b = new Actor(g, 'sway_m', m); b.mixer = { update() {} }; b.goTo([0, 10]); for (let i = 0; i < 20; i++) b.tick(0.05); ok(m.rotation.z === 0, '뼈대 있는 GLB 는 흔들림을 안 얹는다(동작 클립이 한다)'); }
 console.log(`\n긴장·설렘 층: ${pass} 통과 / ${fail} 실패`); if (fail) process.exit(1);
