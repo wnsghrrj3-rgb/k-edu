@@ -3,10 +3,14 @@
 //      숨는 자리에 먼저 닿아 숨을 죽이면 escapedFlag, 손이 닿으면 caughtFlag + 흔적. 심장 소리·붉은 가장자리가 같이 온다.
 //  · 급한 일(deadlines): 깃발이 서면 모래시계 — 시간 안에 끝(until)을 못 내면 failFlag. 「왜군이 온다, 불이 번진다」가 글이 아니라 시간이 된다.
 //  · 살아 있는 마을(routines): 사람이 낮·밤에 다른 자리로 걸어간다(장터→집). 서 있는 마을이 아니라 사는 마을.
+//      마주침: 일과 사람 둘이 길에서 만나면 멈춰 서서 마주 보고 한마디 나눈 뒤 제 길을 간다(값·깃발 없음, 보이는 것뿐).
 //  · 숨은 것(secrets): 길에서 안 보이는 자리에 반짝임 — 찾으면 한 줄·값·물려줄 물건(heirloom, 다음 시대 끝 카드에 보인다).
 //  · 느낌(tension): 위험층·쫓김·급한 일이 같은 심장·가장자리를 쓴다. 0=없음 1=최고.
 import * as THREE from 'three';
 import { Actor } from './actor.js';
+const MEET_R = 1.9, MEET_SEC = 2.4, MEET_GAP = 90, HEAR = 14, SAY_GAP = 20;   // 마주침: 거리·서 있는 시간·같은 둘 사이·들리는 거리·한마디 사이
+const GREET_D = ['잘 지내나.', '오늘도 바쁘구먼.', '밥은 먹었나.', '비 올 것 같은데.', '그 얘기 들었나?', '어디 가는 길인가.', '먼저 가게, 나는 천천히.'];
+const GREET_N = ['이 밤에 어딜 가나.', '불 조심하게.', '어서 들어가게.', '잘 자게.'];
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 
 export class Pulse {
@@ -69,11 +73,27 @@ export class Pulse {
   actorOf(id) { const st = this.g.story; const a = st?.actors?.[id]; if (a) return a; const it = this.g.e.interactables.get('npc_' + id); if (!it?.obj) return null; (this.wrapped ??= {})[id] ??= new Actor(this.g, id, it.obj, { speed: { walk: 1.2 } }); return this.wrapped[id]; }
   tickRoutine(dt) {
     const g = this.g; const night = !!g.story?.isNight; this.rt = (this.rt || 0) + dt; const check = this.rt > 2.5; if (check) this.rt = 0;
-    for (const r of this.cfg.routines || []) { const a = this.actorOf(r.actor); if (!a) continue; if (this.wrapped?.[r.actor] === a) a.tick(dt);   /* 장면층 배우는 story 가 tick */
-      if (!check || a.path) continue; if (r.if && !g.cond(r.if)) continue; const want = night ? (r.night || r.day) : r.day; const to = this.area(want); if (!to) continue; const o = a.obj; const d = this.dist({ x: o.position.x, z: o.position.z }, to);
+    const who = []; for (const r of this.cfg.routines || []) { const a = this.actorOf(r.actor); if (!a) continue; who.push(a); if (this.wrapped?.[r.actor] === a) a.tick(dt);   /* 장면층 배우는 story 가 tick */
+      if (!check || a.path || this.meet?.who.includes(a)) continue; if (r.if && !g.cond(r.if)) continue; const want = night ? (r.night || r.day) : r.day; const to = this.area(want); if (!to) continue; const o = a.obj; const d = this.dist({ x: o.position.x, z: o.position.z }, to);
       if (d > (r.r || 3)) { const ang = Math.random() * Math.PI * 2; a.goTo([to.x + Math.cos(ang) * 1.5, to.z + Math.sin(ang) * 1.5], { anim: 'walk', then: r.then || 'idle' }).then(() => a.syncBox()); if (r.say && !night === !r.sayNight && !g.flags.has('routine:' + r.actor + ':' + (night ? 'n' : 'd'))) { g.flags.add('routine:' + r.actor + ':' + (night ? 'n' : 'd')); } }
       else if (r.wander && Math.random() < 0.25) { const ang = Math.random() * Math.PI * 2; a.goTo([to.x + Math.cos(ang) * r.wander, to.z + Math.sin(ang) * r.wander], { anim: 'walk', then: r.then || 'idle' }).then(() => a.syncBox()); } }
+    this.tickMeet(dt, who);
   }
+  // ---------- 마주침 ----------
+  /** 일과 사람 둘이 길에서 MEET_R 안에 들면(한쪽은 걷는 중) 둘 다 멈춰 마주 보고 MEET_SEC 동안 선 뒤 걷던 길을 그대로 잇는다.
+   *  같은 둘은 MEET_GAP 뒤에야 다시. 내가 HEAR 안에 있고 조용하면 「👥 이름·이름 — 한마디」(SAY_GAP 에 한 번). 값·깃발엔 손대지 않는다. */
+  tickMeet(dt, who) {
+    const g = this.g; this.mclock = (this.mclock || 0) + dt; const mt = this.meet;
+    if (mt) { mt.left -= dt; if (mt.left > 0) return; this.meet = null; for (const [a, p] of mt.resume) if (p && !a.path) { a.path = p; a.state = p.anim; a.play(p.anim); } return; }
+    if ((this.mt = (this.mt || 0) + dt) < 0.5) return; this.mt = 0; if (this.chase || g.ui.isOpen?.()) return;
+    for (let i = 0; i < who.length; i++) for (let j = i + 1; j < who.length; j++) { const a = who[i], b = who[j]; if (!a.path && !b.path) continue;
+      const d = Math.hypot(a.obj.position.x - b.obj.position.x, a.obj.position.z - b.obj.position.z); if (d > MEET_R) continue;
+      const key = [a.id, b.id].sort().join('|'); if ((this.metAt?.[key] ?? -1e9) + MEET_GAP > this.mclock) continue; (this.metAt ??= {})[key] = this.mclock;
+      this.meet = { who: [a, b], resume: [[a, a.path], [b, b.path]], left: MEET_SEC }; for (const x of [a, b]) { if (x.path) { x.path = null; x.state = 'idle'; x.play('idle', 0.3); } } a.face({ x: b.obj.position.x, z: b.obj.position.z }); b.face({ x: a.obj.position.x, z: a.obj.position.z });
+      const near = g.p?.pos && Math.hypot(a.obj.position.x - g.p.pos.x, a.obj.position.z - g.p.pos.z) <= HEAR; if (near && (this.meetSaidAt ?? -1e9) + SAY_GAP <= this.mclock) { this.meetSaidAt = this.mclock; const night = !!g.story?.isNight; const pool = (night ? this.cfg.greetNight : this.cfg.greet) || (night ? GREET_N : GREET_D); const line = pool[Math.floor(Math.random() * pool.length)]; g.ui.say(`👥 ${this.nameOf(a.id)}·${this.nameOf(b.id)} — 「${line}」`, 3200); }
+      return; }
+  }
+  nameOf(id) { const n = this.g.npcs?.[id]?.name; return (n || id).replace(/\s*\(.*?\)\s*$/, ''); }
   // ---------- 숨은 것 ----------
   placeSecrets() {
     const g = this.g; const e = g.e; if (!e.scene?.add) return; for (const s of this.cfg.secrets || []) { if (g.flags.has('secret:' + s.id)) continue; const base = this.area(s.at); if (!base) continue; const x = base.x + (s.dx || 0), z = base.z + (s.dz || 0); const y = e.groundY ? e.groundY(x, z) : 0;

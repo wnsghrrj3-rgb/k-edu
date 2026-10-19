@@ -52,4 +52,13 @@ const snap = g.pulse.snapshot(); ok(snap.chase === null && snap.deadline === nul
   ok(a.path && bob > 0.02 && bob <= 0.046 && tilt > 0.015 && tilt <= 0.036, `걷는 동안 들썩임 ${bob.toFixed(3)}·기울기 ${tilt.toFixed(3)}`);
   for (let i = 0; i < 400; i++) a.tick(0.1); ok(!a.path && obj.position.y === 0 && obj.rotation.z === 0 && obj.position.z === 30, '도착해 서면 높이·기울기 0 으로 돌아온다');
   const m = new THREE.Object3D(); const b = new Actor(g, 'sway_m', m); b.mixer = { update() {} }; b.goTo([0, 10]); for (let i = 0; i < 20; i++) b.tick(0.05); ok(m.rotation.z === 0, '뼈대 있는 GLB 는 흔들림을 안 얹는다(동작 클립이 한다)'); }
+// 10) 마주침: 일과 사람 둘이 길에서 만나면 둘 다 멈춰 마주 보고 한마디, 2.4초 뒤 걷던 길을 잇는다 — 같은 둘은 90초 안엔 다시 안 함
+{ const nb = new THREE.Group(); nb.position.set(4, 0, 20); inter.set('npc_nongbu', { obj: nb, box: new THREE.Box3(), center: new THREE.Vector3(), name: 'npc_nongbu' }); g.npcs = { jumo: { name: '주모(상민)' }, nongbu: { name: '농부(상민)' } };
+  g.story.isNight = false; run(45); const A = g.pulse.actorOf('jumo'), B = g.pulse.actorOf('nongbu'); ok(!g.pulse.meet, '시작: 마주침 없음'); jumo.position.set(4, 0, 6); A.path = null; said.length = 0; g.p.pos.set(4, 0, 22);
+  A.goTo([4, 40]); run(11); ok(g.pulse.meet && g.pulse.meet.who.includes(A) && g.pulse.meet.who.includes(B), `주모가 농부 1.9m 안에 들자 마주침이 선다 (z ${jumo.position.z.toFixed(1)})`); ok(!A.path && !B.path && A.state === 'idle', '둘 다 멈춰 선다(걷던 길은 접어 둔다)');
+  ok(Math.abs(A.turnTo - Math.atan2(nb.position.x - jumo.position.x, nb.position.z - jumo.position.z)) < 0.01, '서로를 보도록 돈다'); ok(said.some((t) => t.startsWith('👥 주모·농부 — 「')), `한마디가 「👥 주모·농부 — …」 로 뜬다(괄호 신분 뗌): ${said.find((t) => t.startsWith('👥')) || '없음'}`);
+  const zStop = jumo.position.z; run(1); ok(jumo.position.z === zStop && g.pulse.meet, '서 있는 동안엔 안 움직인다'); run(2); ok(!g.pulse.meet && A.path && A.state === 'walk', '2.4초 뒤 걷던 길을 그대로 잇는다'); run(10); ok(A.path?.to.z === 40 && jumo.position.z > 28, `원래 가던 곳으로 계속 간다 (z ${jumo.position.z.toFixed(1)})`); run(14);
+  said.length = 0; nb.position.set(4, 0, 30); A.path = null; jumo.position.set(4, 0, 6); A.goTo([4, 40]); run(12); ok(!g.pulse.meet && !said.some((t) => t.startsWith('👥')), '같은 둘은 90초 안엔 다시 안 멈춘다'); run(100);
+  said.length = 0; g.p.pos.set(80, 0, 80); A.path = null; jumo.position.set(4, 0, 6); nb.position.set(4, 0, 20); A.goTo([4, 40]); run(11); ok(g.pulse.meet && !said.some((t) => t.startsWith('👥')), '내가 14m 밖이면 멈추긴 해도 한마디는 안 들린다'); run(30);
+  ok(g.pulse.nameOf('jumo') === '주모' && g.pulse.nameOf('없는사람') === '없는사람', 'nameOf: 괄호 뗌·모르면 id'); }
 console.log(`\n긴장·설렘 층: ${pass} 통과 / ${fail} 실패`); if (fail) process.exit(1);
