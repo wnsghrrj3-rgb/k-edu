@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-19 · 과목 21 · 차시 1040 · 슬라이드 18373 */
+   생성: 2026-10-19 · 과목 21 · 차시 1047 · 슬라이드 18506 */
 window.KT2_MANIFEST = {
  "built": "2026-10-19",
- "lessons": 1040,
- "slides": 18373,
+ "lessons": 1047,
+ "slides": 18506,
  "subjects": [
   {
    "slug": "g1_math",
@@ -13483,6 +13483,196 @@ window.KT2_MANIFEST = {
       },
       {
        "key": "u2_l14",
+       "no": "14",
+       "title": "단원 마무리하기",
+       "meta_title": "단원 마무리하기",
+       "std": "단원 전체 통합",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    },
+    {
+     "unit": 3,
+     "title": "내용을 살펴요",
+     "file": "data/g2s2_korean_u3.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u3_l01",
+       "no": "1",
+       "title": "단원 시작 — 배울 내용 살펴보기",
+       "meta_title": "단원 시작 — 배울 내용 살펴보기",
+       "std": "[2국02-03][2국03-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l03",
+       "no": "3",
+       "title": "중심 내용을 찾는 방법 알기",
+       "meta_title": "중심 내용을 찾는 방법 알기",
+       "std": "[2국02-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l05",
+       "no": "5",
+       "title": "글을 읽고 내용 간추리기",
+       "meta_title": "글을 읽고 내용 간추리기",
+       "std": "[2국02-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l07",
+       "no": "7",
+       "title": "사물을 설명하는 글 쓰는 방법 알기",
+       "meta_title": "사물을 설명하는 글 쓰는 방법 알기",
+       "std": "[2국03-03][2국04-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l09",
+       "no": "9",
+       "title": "좋아하는 사물을 설명하는 글 쓰기",
+       "meta_title": "좋아하는 사물을 설명하는 글 쓰기",
+       "std": "[2국03-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l11",
+       "no": "11",
+       "title": "놀이 방법을 설명하는 글 쓰기",
+       "meta_title": "놀이 방법을 설명하는 글 쓰기",
+       "std": "[2국03-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l14",
        "no": "14",
        "title": "단원 마무리하기",
        "meta_title": "단원 마무리하기",
