@@ -189,10 +189,16 @@ function checkGeoAsset(where, a) {
   if (!Array.isArray(a.items) || !a.items.length) return bad(where, 'geo items 비었음');
   a.items.forEach((g, i) => {
     const P = g.pts || {}; const R = r => Array.isArray(r) ? r : (P[r] ? P[r] : null);
-    for (const k of ['seg', 'ray', 'line', 'curve', 'poly', 'right', 'arc', 'tick'])
+    for (const k of ['seg', 'dash', 'ray', 'line', 'curve', 'poly', 'right', 'arc', 'tick'])
       (g[k] || []).forEach((x, j) => { if (!Array.isArray(x)) return bad(where, `geo[${i}].${k}[${j}] 배열 아님`);
         x.forEach((r, m) => { if (k === 'tick' && m === 2) return; if (!R(r)) bad(where, `geo[${i}].${k}[${j}] 점 ${JSON.stringify(r)} 없음`); }); });
     (g.show || []).forEach(k => { if (!P[k]) bad(where, `geo[${i}].show 점 ${k} 없음`); });
+    /* v3.11 점선 — 같은 두 점을 실선(seg)과 점선(dash)으로 함께 그리면 모순, 길이 0 금지 */
+    { const key = (A, B) => { const p = R(A), q = R(B); return p && q ? [p.join(','), q.join(',')].sort().join('|') : null; };
+      const sk = new Set((g.seg || []).map(([A, B]) => key(A, B)));
+      (g.dash || []).forEach(([A, B], j) => { const p = R(A), q = R(B); if (!(p && q)) return;
+        if (Math.hypot(p[0] - q[0], p[1] - q[1]) < 1e-6) bad(where, `geo[${i}].dash[${j}] 길이 0`);
+        if (sk.has(key(A, B))) bad(where, `geo[${i}].dash[${j}] ${A}${B} 가 실선 seg 에도 있음`); }); }
     /* v3.10 원·타원·글 */
     (g.circle || []).forEach(([O, r], j) => { const o = R(O); if (!o) return bad(where, `geo[${i}].circle[${j}] 중심 ${JSON.stringify(O)} 없음`);
       const q = typeof r === 'number' ? null : R(r); const rr = q ? Math.hypot(q[0] - o[0], q[1] - o[1]) : Number(r);

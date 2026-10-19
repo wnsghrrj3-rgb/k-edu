@@ -2016,6 +2016,7 @@ function figsHTML(a, paper){
         poly:[[A,B,C,…]], right:[[A,B,C]], arc:[[A,B,C]], tick:[[A,B,n]], grid:칸, cap:'이름',
         circle:[[O, R]], oval:[[cx, cy, rx, ry]], lab:[[A, '글']]}   ← v3.10 (3학년 2학기 「원」): circle 은 중심 O·반지름 R(px 수 또는 점 이름 = 그 점까지 거리),
         oval 은 원이 아닌 길쭉한 모양, lab 은 점(또는 [x,y]) 옆 작은 글(길이 등).
+        dash:[[A,B]] ← v3.11 (5학년 2학기 「직육면체」): 점선 선분 — 겨냥도의 보이지 않는 모서리, 전개도의 접는 선.
    A·B 는 pts 의 이름 또는 [x,y]. ray 는 A에서 B 쪽으로 판 끝까지, line 은 양쪽 끝까지 늘인다(끝없음).
    right 는 B 에 직각 표시(ㄱ자), arc 는 B 에 각 호, tick 은 변 가운데 같은 길이 표시. 점 이름은 show(없으면 pts 전부)만 쓴다. */
 function geoRef(P, r){ return Array.isArray(r) ? r : (P[r] ? [P[r][0], P[r][1]] : null); }
@@ -2033,6 +2034,7 @@ function geoSVG(g){
   (g.oval || []).forEach(([x, y, rx, ry]) => { s += `<ellipse cx="${Number(x).toFixed(1)}" cy="${Number(y).toFixed(1)}" rx="${Number(rx).toFixed(1)}" ry="${Number(ry).toFixed(1)}" fill="none" ${st}/>`; });
   (g.circle || []).forEach(([o, r]) => { o = R(o); if (!o) return; const q = typeof r === 'number' ? null : R(r); const rr = q ? Math.hypot(q[0] - o[0], q[1] - o[1]) : Number(r);
     if (rr > 0) s += `<circle cx="${o[0].toFixed(1)}" cy="${o[1].toFixed(1)}" r="${rr.toFixed(1)}" fill="none" ${st}/>`; });
+  (g.dash || []).forEach(([a, b]) => { a = R(a); b = R(b); if (a && b) s += `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="${CMP_INK}" stroke-width="1.8" stroke-dasharray="5 4" stroke-linecap="butt"/>`; });
   (g.seg || []).forEach(([a, b]) => { a = R(a); b = R(b); if (a && b) s += L(a, b); });
   (g.ray || []).forEach(([a, b]) => { a = R(a); b = R(b); if (a && b) s += L(a, geoExt(a, b, W, H)); });
   (g.line || []).forEach(([a, b]) => { a = R(a); b = R(b); if (a && b) s += L(geoExt(b, a, W, H), geoExt(a, b, W, H)); });
