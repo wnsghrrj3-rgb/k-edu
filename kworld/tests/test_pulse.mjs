@@ -7,6 +7,7 @@ const store = {}; globalThis.localStorage = { getItem: (k) => store[k] ?? null, 
 globalThis.performance ??= { now: () => Date.now() };
 const { Pulse } = await import('../core/pulse.js'); const { Story } = await import('../core/story.js'); const { Life } = await import('../core/life.js');
 let pass = 0, fail = 0; const ok = (c, m) => { c ? pass++ : fail++; console.log((c ? '  ✓ ' : '  ✗ ') + m); };
+const ABOUTW = () => ['저기 가는 사람, 지난번에 나눠 줬다지.', '저 사람 집은 인심이 좋아.', '저 사람이 그때 도와준 사람이야.'], ABOUTC = () => ['저 사람하곤 엮이지 말게.', '혼자 먹던 사람이야, 저 사람.', '저 사람 말은 반만 믿게.'], ABOUTM = () => ['저 사람 다리를 봐… 그때 그 일이지.', '절뚝이는 사람, 저 사람이야.'];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // ---- 데이터: 조선 전기 pulse ----
 const w = JSON.parse(fs.readFileSync(path.join(root, 'eras/joseon-life/world.json'), 'utf8')); const lf = JSON.parse(fs.readFileSync(path.join(root, 'eras/joseon-life/life.json'), 'utf8'));
@@ -61,4 +62,13 @@ const snap = g.pulse.snapshot(); ok(snap.chase === null && snap.deadline === nul
   said.length = 0; nb.position.set(4, 0, 30); A.path = null; jumo.position.set(4, 0, 6); A.goTo([4, 40]); run(12); ok(!g.pulse.meet && !said.some((t) => t.startsWith('👥')), '같은 둘은 90초 안엔 다시 안 멈춘다'); run(100);
   said.length = 0; g.p.pos.set(80, 0, 80); A.path = null; jumo.position.set(4, 0, 6); nb.position.set(4, 0, 20); A.goTo([4, 40]); run(11); ok(g.pulse.meet && !said.some((t) => t.startsWith('👥')), '내가 14m 밖이면 멈추긴 해도 한마디는 안 들린다'); run(30);
   ok(g.pulse.nameOf('jumo') === '주모' && g.pulse.nameOf('없는사람') === '없는사람', 'nameOf: 괄호 뗌·모르면 id'); }
+// 11) 마주침 ② — 고개 끄덕임 + 마주친 둘이 내 얘기를 한다(절뚝 → 흔적 / 인심 ≥5 → 따뜻 / 인심 ≤0·상황 둘 뒤 → 차갑게)
+{ const A = g.pulse.actorOf('jumo'), B = g.pulse.actorOf('nongbu'); const nb = inter.get('npc_nongbu').obj; const lf = g.life;
+  ok(g.pulse.aboutMe() === null && lf.values.heart === 0 && lf.done.size === 1, '인심 0이라도 상황 하나뿐이면 아직 내 얘기 없음(다리 흔적 없음)'); const h0 = lf.values.heart;
+  lf.values.heart = 6; ok(ABOUTW().includes(g.pulse.aboutMe()), '인심 6 → 따뜻한 줄'); lf.values.heart = 0; lf.done.add('_t'); ok(lf.done.size >= 2 && ABOUTC().includes(g.pulse.aboutMe()), '인심 0·상황 둘 지남 → 차가운 줄');
+  lf.hurt.add('leg'); ok(ABOUTM().includes(g.pulse.aboutMe()), '절뚝이면 흔적 줄이 먼저'); lf.hurt.delete('leg'); lf.values.heart = 6;
+  const rnd = Math.random; Math.random = () => 0.1; said.length = 0; g.p.pos.set(4, 0, 22); A.path = null; jumo.position.set(4, 0, 6); nb.position.set(4, 0, 20); g.pulse.metAt = {}; g.pulse.meetSaidAt = -1e9; A.goTo([4, 40]); run(11); Math.random = rnd;
+  ok(g.pulse.meet && said.some((t) => t.startsWith('👥') && ABOUTW().some((l) => t.endsWith(`「${l}」`))), `인심 6이면 마주친 둘이 내 얘기를 한다: ${said.find((t) => t.startsWith('👥'))}`);
+  let mx = 0; for (let i = 0; i < 6; i++) { run(0.1); mx = Math.max(mx, jumo.rotation.x, nb.rotation.x); } ok(mx > 0.02 && mx <= 0.0901, `멈춘 둘이 고개를 숙인다 (최대 ${mx.toFixed(2)})`); run(3); ok(jumo.rotation.x === 0 && nb.rotation.x === 0 && A.path, '끄덕임이 끝나면 몸이 펴지고 다시 걷는다');
+  lf.values.heart = h0; run(30); }
 console.log(`\n긴장·설렘 층: ${pass} 통과 / ${fail} 실패`); if (fail) process.exit(1);

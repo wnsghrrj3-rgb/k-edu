@@ -11,6 +11,7 @@ import { Actor } from './actor.js';
 const MEET_R = 1.9, MEET_SEC = 2.4, MEET_GAP = 90, HEAR = 14, SAY_GAP = 20;   // 마주침: 거리·서 있는 시간·같은 둘 사이·들리는 거리·한마디 사이
 const GREET_D = ['잘 지내나.', '오늘도 바쁘구먼.', '밥은 먹었나.', '비 올 것 같은데.', '그 얘기 들었나?', '어디 가는 길인가.', '먼저 가게, 나는 천천히.'];
 const GREET_N = ['이 밤에 어딜 가나.', '불 조심하게.', '어서 들어가게.', '잘 자게.'];
+const ABOUT = { warm: ['저기 가는 사람, 지난번에 나눠 줬다지.', '저 사람 집은 인심이 좋아.', '저 사람이 그때 도와준 사람이야.'], cold: ['저 사람하곤 엮이지 말게.', '혼자 먹던 사람이야, 저 사람.', '저 사람 말은 반만 믿게.'], mark: ['저 사람 다리를 봐… 그때 그 일이지.', '절뚝이는 사람, 저 사람이야.'] };   // 마주친 둘이 내 얘길 한다(마을의 눈과 같은 기준)
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 
 export class Pulse {
@@ -90,9 +91,13 @@ export class Pulse {
       const d = Math.hypot(a.obj.position.x - b.obj.position.x, a.obj.position.z - b.obj.position.z); if (d > MEET_R) continue;
       const key = [a.id, b.id].sort().join('|'); if ((this.metAt?.[key] ?? -1e9) + MEET_GAP > this.mclock) continue; (this.metAt ??= {})[key] = this.mclock;
       this.meet = { who: [a, b], resume: [[a, a.path], [b, b.path]], left: MEET_SEC }; for (const x of [a, b]) { if (x.path) { x.path = null; x.state = 'idle'; x.play('idle', 0.3); } } a.face({ x: b.obj.position.x, z: b.obj.position.z }); b.face({ x: a.obj.position.x, z: a.obj.position.z });
-      const near = g.p?.pos && Math.hypot(a.obj.position.x - g.p.pos.x, a.obj.position.z - g.p.pos.z) <= HEAR; if (near && (this.meetSaidAt ?? -1e9) + SAY_GAP <= this.mclock) { this.meetSaidAt = this.mclock; const night = !!g.story?.isNight; const pool = (night ? this.cfg.greetNight : this.cfg.greet) || (night ? GREET_N : GREET_D); const line = pool[Math.floor(Math.random() * pool.length)]; g.ui.say(`👥 ${this.nameOf(a.id)}·${this.nameOf(b.id)} — 「${line}」`, 3200); }
+      const near = g.p?.pos && Math.hypot(a.obj.position.x - g.p.pos.x, a.obj.position.z - g.p.pos.z) <= HEAR; if (near && (this.meetSaidAt ?? -1e9) + SAY_GAP <= this.mclock) { this.meetSaidAt = this.mclock; const night = !!g.story?.isNight; const pool = (night ? this.cfg.greetNight : this.cfg.greet) || (night ? GREET_N : GREET_D); const about = this.aboutMe(); const line = (about && Math.random() < 0.5) ? about : pool[Math.floor(Math.random() * pool.length)]; g.ui.say(`👥 ${this.nameOf(a.id)}·${this.nameOf(b.id)} — 「${line}」`, 3200); }
+      for (const x of [a, b]) x.nod?.(1.2);
       return; }
   }
+  /** 마주친 둘이 내 얘기를 할 때 — 절뚝이면 흔적 줄, 인심 ≥5 따뜻한 줄, 인심 ≤0(상황 둘 지난 뒤) 차가운 줄, 아니면 null. 시대 데이터 `pulse.greetAbout {warm,cold,mark}` 가 있으면 그것 */
+  aboutMe() { const lf = this.g.life; if (!lf) return null; const P = this.cfg.greetAbout || {}; const pick = (k) => { const pool = P[k] || ABOUT[k]; return pool[Math.floor(Math.random() * pool.length)]; };
+    if (lf.hurt?.has('leg')) return pick('mark'); if ((lf.values?.heart ?? 0) >= 5) return pick('warm'); if ((lf.values?.heart ?? 0) <= 0 && (lf.done?.size ?? 0) >= 2) return pick('cold'); return null; }
   nameOf(id) { const n = this.g.npcs?.[id]?.name; return (n || id).replace(/\s*\(.*?\)\s*$/, ''); }
   // ---------- 숨은 것 ----------
   placeSecrets() {

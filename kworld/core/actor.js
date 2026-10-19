@@ -53,12 +53,16 @@ export class Actor {
       this.baseY = o.position.y;
     }
     if (this.turnTo != null) { let diff = this.turnTo - o.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff)); const k = Math.min(1, dt * 8); o.rotation.y += diff * k; if (Math.abs(diff) < 0.02) this.turnTo = null; }
+    this.tickNod(dt);
     // LOD: 멀면 동작 갱신을 띄엄띄엄
     const dist = this.g.p?.pos ? Math.hypot(o.position.x - this.g.p.pos.x, o.position.z - this.g.p.pos.z) : 0;
     if (this.mixer) { if (dist < 25 || (this.t * 60 | 0) % 3 === 0) this.mixer.update(dist < 25 ? dt : dt * 3); }
     else if (o.userData.animate) o.userData.animate(this.t, !!this.path);
     else this.sway(dt);   // 뼈대도 관절도 없는 통짜 사람(bpy 메시): 걸음 들썩임으로 미끄러짐을 가린다
   }
+  /** 고개 끄덕임 — sec 동안 몸을 앞으로 두 번 숙였다 든다(마주침 인사). 뼈대·관절·통짜 모두 같은 몸 기울기 */
+  nod(sec = 1.2) { this.nodT = 0; this.nodSec = sec; }
+  tickNod(dt) { if (this.nodSec == null) return; this.nodT += dt; const k = this.nodT / this.nodSec; if (k >= 1) { this.nodSec = null; this.obj.rotation.x = 0; return; } this.obj.rotation.x = Math.abs(Math.sin(k * Math.PI * 2)) * 0.09; }
   /** 통짜 메시의 걸음 흔들림 — 걸으면 위아래 4.5cm 들썩·좌우 2° 기울기(달리면 더), 서면 부드럽게 제자리 */
   sway(dt) {
     const o = this.obj; const want = this.path ? (this.state === 'run' ? 1.4 : 1) : 0;
