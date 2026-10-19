@@ -8,13 +8,14 @@
 //  · 벗이 쫓김에 끼어든다: bond:friend 인 채 쫓기면 벗이 쫓는 사람에게 달려가 앞을 막아 3초를 번다(한 쫓김에 한 번, bond:blocked) — 그 사이 쫓는 사람은 멈춘다.
 //  · 조건 토큰 `bond:1` = 벗이 곁(5m) — life.cond·game.cond 에서 「운명의 벗과 함께」 길에 쓴다(10-19 78: 열한 시대마다 하나, gen_bond_ways.py — 결과 카드 `bond:true` 면 `together()` 한마디).
 //  · 화해(79): bond3e 에서 먼저 다가간 쪽(bond:sorry)에겐 돌발 bond4 가 한 번 더 — 굴림에 이기면 `bond:mended`: 등졌던 사람이 벗으로 돌아와 다시 따라다닌다(「…다시, 같이 가.」). 족보엔 「○○과 다시 벗」.
+//  · 벗이 서두르게 한다(81): 급한 일(모래시계) 중이면 벗이 「서둘러! 이쪽이야.」 하며 그 상황의 자리(deadline.goal || life 상황 place)로 먼저 뛴다 — 12m 뒤처지면 기다리고, 내가 6m 안에 닿으면 그만(bond:hurry:<id>). 쫓김이 같이 있으면 쫓김 이끌기가 먼저.
 //  · 벗이 길을 보여 준다(79): 쫓길 때(앞을 막은 뒤) 벗이 「이쪽!」 하며 숨을 곳(goal_at) 쪽으로 먼저 뛴다 — 내가 12m 넘게 뒤처지면 멈춰 기다린다. 값·판정엔 손 안 댐(bond:lead:<chase>).
 //  · 벗의 한마디가 지난 선택에 반응(79): cfg.react[{id,if,text,once}] — 깃발이 서면(쫓김 탈출·잡힘·앞 막음·준 것·늦음·같이 한 것) 벗이 그 일을 말한다, 한 번(bond:said:<id>). 벗일 때만.
 //  · 벗은 숨은 것을 먼저 안다(78): 벗이 아직 못 찾은 숨은 것(pulse.secrets) 12m 안을 지나면 한 번 「저기 뭔가 있다」 — 자리는 안 알려 준다(반짝임을 찾는 건 네 몫), `bond:hint:<id>`.
 import * as THREE from 'three';
 import { createAvatar } from './avatar.js';
 
-const FOLLOW = { met: 3.4, friend: 2.4 }, LEAD_WAIT = 12, LEAD_STOP = 1.6, REACT_GAP = 8, HINT_R = 12, HINT_GAP = 20, AWAY = 11, STEPBACK = 5, WALK = 3.4, RUN = 6.2, LINE_GAP = 55, WAVE_MS = 1600, TALK_R = 3.8, WITH_R = 5, BLOCK_R = 2.2, BLOCK_SEC = 3;
+const FOLLOW = { met: 3.4, friend: 2.4 }, LEAD_WAIT = 12, LEAD_STOP = 1.6, HURRY_NEAR = 6, REACT_GAP = 8, HINT_R = 12, HINT_GAP = 20, AWAY = 11, STEPBACK = 5, WALK = 3.4, RUN = 6.2, LINE_GAP = 55, WAVE_MS = 1600, TALK_R = 3.8, WITH_R = 5, BLOCK_R = 2.2, BLOCK_SEC = 3;
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 const JO = (n, a, b) => { const c = String(n || '').slice(-1).charCodeAt(0); return n + ((c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28) ? a : b); };
 function label(text) {
@@ -33,7 +34,7 @@ function defaultLines(n) {
 }
 
 export class Bond {
-  constructor(g, cfg) { this.g = g; this.cfg = cfg || {}; this.name = this.cfg.name || '그 사람'; this.lines = { ...defaultLines(this.name), ...(this.cfg.lines || {}) }; this.body = null; this.pos = null; this.yaw = 0; this.walk = 0; this.sinceLine = 20; this.waveUntil = 0; this.lastWave = 0; this.spokenSky = null; this.turned = false; this.gone = false; this.block = null; this.sinceHint = 0; this.lead = null; this.reactT = 0; }
+  constructor(g, cfg) { this.g = g; this.cfg = cfg || {}; this.name = this.cfg.name || '그 사람'; this.lines = { ...defaultLines(this.name), ...(this.cfg.lines || {}) }; this.body = null; this.pos = null; this.yaw = 0; this.walk = 0; this.sinceLine = 20; this.waveUntil = 0; this.lastWave = 0; this.spokenSky = null; this.turned = false; this.gone = false; this.block = null; this.sinceHint = 0; this.lead = null; this.hurry = null; this.reactT = 0; }
   /** 지금 관계 — null(아직) / met / friend / enemy / gone(등지고 끝) */
   state() { const f = this.g.flags; if (!f.has('bond:met')) return null; if (f.has('bond:mended')) return 'friend'; if (f.has('bond:enemy')) return f.has('bond:end') ? 'gone' : 'enemy'; return f.has('bond:friend') ? 'friend' : 'met'; }
   dist(a, b) { return Math.hypot(a.x - b.x, a.z - b.z); }
@@ -66,6 +67,7 @@ export class Bond {
       else { const away = Math.atan2(this.pos.x - p.x, this.pos.z - p.z); let dy = away - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * Math.min(1, dt * 3); }   // 등을 돌리고 선다
     } else if (st === 'friend' && this.blocking(dt)) { moving = this.block.moving;   // 벗이 쫓는 사람 앞을 막으러 간다
     } else if (st === 'friend' && this.leading(dt)) { moving = this.lead.moving;   // 벗이 숨을 곳 쪽으로 먼저 뛰어 길을 보여 준다
+    } else if (st === 'friend' && this.hurrying(dt)) { moving = this.hurry.moving;   // 급한 일(모래시계)이면 벗이 「서둘러!」 하며 그 자리로 먼저 뛴다
     } else {
       const stopAt = FOLLOW[st] ?? FOLLOW.met; const run = d > 9 || (st === 'friend' && g.pulse?.chase); speed = run ? RUN : WALK;
       moving = this.step(dt, p.x, p.z, speed, stopAt);
@@ -97,6 +99,18 @@ export class Bond {
     const L = this.lead; const p = g.p.pos; const dp = this.dist(this.pos, p);
     if (dp > LEAD_WAIT) { L.moving = false; const face = Math.atan2(p.x - this.pos.x, p.z - this.pos.z); let dy = face - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * Math.min(1, dt * 5); return true; }   // 기다린다 — 돌아보고 선다
     L.moving = this.step(dt, goal.x, goal.z, RUN, LEAD_STOP); return true;
+  }
+  /** 급한 일(모래시계) 중 벗이 「서둘러!」 하며 그 상황의 자리(deadline.goal || life 상황 place)로 먼저 뛴다 — 내가 HURRY_NEAR 안에 닿으면 그 급한 일에선 더 안 이끈다. 쫓김이 같이 있으면 쫓김 이끌기가 먼저. 돌려준다: 지금 서두르게 하는 중인가 */
+  hurrying(dt) {
+    const g = this.g; const dl = g.pulse?.deadline; if (!dl || g.pulse?.chase) { this.hurry = null; return false; }
+    if (this.hurry && this.hurry.dl !== dl) this.hurry = null;
+    if (this.hurry?.done) return false;
+    const sit = g.life?.situations?.find?.((x) => x.id === dl.d?.id); const goal = g.pulse.area?.(dl.d?.goal || sit?.place); if (!goal) return false;
+    const p = g.p.pos; if (this.dist(goal, p) <= HURRY_NEAR) { if (this.hurry) this.hurry.done = true; else this.hurry = { dl, moving: false, done: true }; return false; }   // 이미 그 자리면 이끌 것 없다
+    if (!this.hurry) { this.hurry = { dl, moving: false, done: false }; if (!g.flags.has('bond:hurry:' + dl.d.id)) { g.flags.add('bond:hurry'); g.flag?.('bond:hurry:' + dl.d.id); g.sound?.play?.('good', 0.3); g.ui?.say?.(`👤 ${this.name} — 「서둘러! 이쪽이야.」`, 2600); } }
+    const H = this.hurry; const dp = this.dist(this.pos, p);
+    if (dp > LEAD_WAIT) { H.moving = false; const face = Math.atan2(p.x - this.pos.x, p.z - this.pos.z); let dy = face - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * Math.min(1, dt * 5); return true; }   // 기다린다 — 돌아보고 선다
+    H.moving = this.step(dt, goal.x, goal.z, RUN, LEAD_STOP); return true;
   }
   /** 벗이 숨은 것 곁을 지나면 「저기 뭔가 있다」 — 못 찾은 것, 한 번(bond:hint:<id>), 자리는 말 안 한다 */
   hint() {

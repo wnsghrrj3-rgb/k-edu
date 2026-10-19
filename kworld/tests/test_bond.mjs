@@ -2,6 +2,7 @@
 // + 77: 말 걸기(E — 한마디·물건 주기·등진 사람은 안 닿음) · 벗이 쫓김에 끼어듦(앞을 막아 3초, 한 번) · 조건 토큰 bond:1
 // + 79: 등진 사람과 화해(bond3e 「미안했다」 길 → bond:sorry → 돌발 bond4 굴림 → bond:mended 면 다시 벗으로 돌아와 따라다님) · 쫓길 때 벗이 「이쪽!」 하며 goal_at 쪽으로 먼저 뜀(12m 뒤처지면 기다림) · 벗 한마디가 지난 선택에 반응(cfg.react, 한 번)
 // + 78: 「운명의 벗과 함께」 길 열한 시대(gen_bond_ways.py, items bond:1 + life.json bond:true → together 한마디) · 벗 답례 gift 열한 시대(items 키 실재) · 벗이 숨은 것 곁에서 「저기 뭔가 있다」(한 번·자리 안 말함)
+// + 81: 벗이 급한 일(모래시계)에서 「서둘러! 이쪽이야.」 하며 그 상황의 자리로 먼저 뜀(bond:hurry:<id>, 6m 안이면 그만, 쫓김 이끌기가 먼저) · 반 친구 외침에 답하기(외침 뒤 9초 안 G → wave reply → 「👋 이름 — 「다행이다!」」)
 // + 80: 벗의 물려줄 것(bond3f 첫 길·bond4 화해 성공 then.heirloom → spark.apply → Pulse.keep from:'bond', 족보 n/3 셈엔 안 들어감) · 벗이 쓰러진 나를 일으킴(danger.collapse — 벗 곁 8m 면 먹을 것 1/4, bond:lifted) · 반 친구 외침(friends.shout — 쫓김 끝·급한 일 늦음, 곁 14m 친구만)
 import * as THREE from 'three';
 import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
@@ -163,5 +164,31 @@ for (const era of ERAS) {
   fr.recvShout({ id: 'f1', kind: 'escaped', x: 3, z: 0 }); ok(said.length === 1 && /👥 7 박솔 — 「/.test(said[0]), `곁 친구의 외침이 한 줄로: ${said[0]}`);
   fr.recvShout({ id: 'f1', kind: 'caught', x: 40, z: 0 }); ok(said.length === 1, '14m 밖 친구 외침은 안 뜬다'); fr.recvShout({ id: 'f1', kind: 'xx', x: 3, z: 0 }); fr.recvShout({ id: 'me', kind: 'late' }); ok(said.length === 1, '모르는 종류·내 것은 무시');
   fr.on = false; fr.ch.sent.length = 0; fr.shout('late'); ok(fr.ch.sent.length === 0, '반 멀티가 꺼져 있으면 안 보낸다');
+}
+// 21) 81 — 엔진: 급한 일(모래시계) 중이면 벗이 「서둘러!」 하며 그 상황의 자리로 먼저 뛴다, 내가 6m 안에 닿으면 그만, 쫓김이 있으면 쫓김 이끌기가 먼저
+{
+  const h = mk(['bond:met', 'bond:friend']); run(h, 4); const dl = { d: { id: 'imjin', title: '왜군이 강을 건넌다' }, left: 60 }; h.life = { situations: [{ id: 'imjin', place: 'eogwi' }] }; h.pulse = { chase: null, deadline: dl, hold() {}, area: (t) => t === 'eogwi' ? { x: 50, z: 0 } : null };
+  h.said.length = 0; run(h, 0.3); ok(h.flags.has('bond:hurry') && h.flags.has('bond:hurry:imjin') && h.said.some((t) => t.includes('서둘러!')), '급한 일이 서면 「서둘러! 이쪽이야.」 + bond:hurry:imjin');
+  run(h, 1.5); ok(h.bond.pos.x > 6 && h.bond.pos.x < 12.5, `상황 자리(life place) 쪽으로 달린다(x=${h.bond.pos.x.toFixed(1)})`);
+  run(h, 1); ok(h.bond.pos.x >= 11.9 && h.bond.pos.x <= 12.4 && !h.bond.hurry.moving, `내가 12m 넘게 뒤처지면 멈춰 기다린다(x=${h.bond.pos.x.toFixed(1)})`);
+  for (let t = 0; t < 12 && !h.bond.hurry.done; t += 0.1) { h.p.pos.set(h.bond.pos.x - 3, 0, 0); h.bond.tick(0.1); } ok(h.bond.hurry.done && h.p.pos.x >= 44 && h.bond.pos.x < 50, `내가 자리 6m 안에 닿으면 그만 이끈다(나 x=${h.p.pos.x.toFixed(1)}, 벗 x=${h.bond.pos.x.toFixed(1)})`); run(h, 3); ok(d(h) <= 2.6, '그 뒤엔 곁으로');
+  h.said.length = 0; h.p.pos.set(0, 0, 0); run(h, 2); ok(!h.said.some((t) => t.includes('서둘러')) && h.bond.hurry.done, '같은 급한 일에선 다시 이끌지 않는다');
+  h.pulse.deadline = null; run(h, 1); ok(h.bond.hurry === null, '급한 일이 끝나면 상태가 지워진다');
+  const h2 = mk(['bond:met', 'bond:friend']); run(h2, 4); h2.p.pos.set(48, 0, 0); run(h2, 12); h2.life = { situations: [{ id: 'flood', place: 'ford' }] }; h2.pulse = { chase: null, deadline: { d: { id: 'flood' }, left: 40 }, hold() {}, area: (t) => t === 'ford' ? { x: 50, z: 0 } : null }; h2.said.length = 0; run(h2, 1); ok(!h2.flags.has('bond:hurry') && !h2.said.some((t) => t.includes('서둘러')), '이미 그 자리(6m 안)면 서두르게 하지 않는다');
+  const h3 = mk(['bond:met', 'bond:friend']); run(h3, 4); h3.life = { situations: [{ id: 'war', place: 'gate' }] }; h3.pulse = { chase: { c: { id: 'x', goal_at: 'hide' }, actor: { obj: { position: new THREE.Vector3(-30, 0, 0) } }, bondBlocked: true }, deadline: { d: { id: 'war' }, left: 90 }, hold() {}, area: (t) => t === 'hide' ? { x: 60, z: 0 } : t === 'gate' ? { x: -60, z: 0 } : null }; h3.said.length = 0; run(h3, 0.5); ok(h3.flags.has('bond:lead:x') && !h3.flags.has('bond:hurry') && h3.bond.pos.x > 0, '쫓김이 같이 있으면 쫓김 이끌기(숨을 곳)가 먼저');
+  const h4 = mk(['bond:met', 'bond:friend']); run(h4, 4); h4.life = { situations: [{ id: 'q', place: 'nowhere' }] }; h4.pulse = { chase: null, deadline: { d: { id: 'q' }, left: 30 }, hold() {}, area: () => null }; run(h4, 1); ok(!h4.flags.has('bond:hurry') && d(h4) <= 2.6, '자리를 모르는 급한 일이면 이끌지 않고 곁에 있다');
+  const h5 = mk(['bond:met', 'bond:friend']); run(h5, 4); h5.pulse = { chase: null, deadline: { d: { id: 'z', goal: 'spot' }, left: 30 }, hold() {}, area: (t) => t === 'spot' ? { x: 40, z: 0 } : null }; run(h5, 1); ok(h5.flags.has('bond:hurry:z') && h5.bond.pos.x > 3, 'deadline.goal 이 있으면 life 상황 없이도 그리로');
+}
+// 22) 81 — 반 친구 외침에 답하기: 외침 뒤 9초 안에 G 면 wave 에 reply 가 실리고, 외친 쪽엔 「👋 이름 — 「다행이다!」」
+{
+  const { Friends } = await import('../core/friends.js'); const said = []; const g = { p: { pos: { x: 0, z: 0 }, body: null }, ui: { say: (t) => said.push(t), isOpen: () => false }, e: { scene: { add() {}, remove() {} }, onFrame: [] }, world: {} };
+  const fr = new Friends(g); fr.on = true; fr.me = { sid: 'me', nick: '3 김철수' }; fr.ch = { sent: [], send(m) { this.sent.push(m); } }; fr.friends = new Map([['f1', { tx: 3, tz: 0, body: { userData: { nick: '7 박솔' } } }]]);
+  fr.recvShout({ id: 'f1', kind: 'escaped', x: 3, z: 0 }); ok(fr.reply && fr.reply.id === 'f1' && fr.reply.kind === 'escaped' && /G 👋/.test(said[0]), '외침 줄 끝에 「· G 👋」 + 답할 상대가 잡힌다');
+  fr.wave(); ok(fr.ch.sent.length === 1 && fr.ch.sent[0].event === 'wave' && fr.ch.sent[0].payload.reply?.to === 'f1' && fr.ch.sent[0].payload.reply?.kind === 'escaped' && fr.reply === null, '9초 안 G → wave 에 reply{to,kind} 가 실려 간다(한 번)');
+  fr.ch.sent.length = 0; fr.wave(); ok(fr.ch.sent.length === 1 && !fr.ch.sent[0].payload.reply, '다시 흔들면 그냥 손 흔들기');
+  fr.recvShout({ id: 'f1', kind: 'late', x: 3, z: 0 }); fr.reply.until = performance.now() - 1; fr.ch.sent.length = 0; fr.wave(); ok(!fr.ch.sent[0].payload.reply, '9초가 지나면 답이 아니다');
+  said.length = 0; fr.recvWave({ id: 'f1', reply: { to: 'me', kind: 'escaped' } }); ok(said.length === 1 && /^👋 7 박솔 — 「/.test(said[0]) && !/손을 흔든다/.test(said[0]), `내 외침에 답한 손 흔들기는 한 줄로: ${said[0]}`);
+  said.length = 0; fr.recvWave({ id: 'f1', reply: { to: 'other', kind: 'escaped' } }); ok(said.length === 1 && /손을 흔든다/.test(said[0]), '남에게 한 답은 그냥 손 흔들기로 보인다');
+  said.length = 0; fr.recvWave({ id: 'f1', reply: { to: 'me', kind: 'xx' } }); ok(/손을 흔든다/.test(said[0]), '모르는 종류의 답은 그냥 손 흔들기');
 }
 console.log(`\n운명의 사람(bond): ${pass}/${pass + fail} 통과`); if (fail) process.exit(1);
