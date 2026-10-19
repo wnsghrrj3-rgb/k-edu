@@ -2,6 +2,7 @@
 // + 77: 말 걸기(E — 한마디·물건 주기·등진 사람은 안 닿음) · 벗이 쫓김에 끼어듦(앞을 막아 3초, 한 번) · 조건 토큰 bond:1
 // + 79: 등진 사람과 화해(bond3e 「미안했다」 길 → bond:sorry → 돌발 bond4 굴림 → bond:mended 면 다시 벗으로 돌아와 따라다님) · 쫓길 때 벗이 「이쪽!」 하며 goal_at 쪽으로 먼저 뜀(12m 뒤처지면 기다림) · 벗 한마디가 지난 선택에 반응(cfg.react, 한 번)
 // + 78: 「운명의 벗과 함께」 길 열한 시대(gen_bond_ways.py, items bond:1 + life.json bond:true → together 한마디) · 벗 답례 gift 열한 시대(items 키 실재) · 벗이 숨은 것 곁에서 「저기 뭔가 있다」(한 번·자리 안 말함)
+// + 83: 「여기야」 뒤 벗이 반짝임 곁(1.6m)에 서서 나를 본다(standing) — 12m 넘게 멀어지면 기다림, 반짝임 다 꺼지면 곁으로
 // + 82: 벗이 「여기야.」 하며 그 상황의 대상·사람(items rename·npc lines 의 if 가 sit:<id>:open 을 보고 지금 맞는 것)에 호박빛 반짝임(bond:point:<id>, 급한 일 자리 6m 안에 닿은 뒤, 30m 안 넷까지, 쓰면 그것만 꺼짐, 끝나면 전부) · 외침 답을 받으면 외친 쪽 몸도 손 흔들기 + reply kind back 「고마워.」
 // + 81: 벗이 급한 일(모래시계)에서 「서둘러! 이쪽이야.」 하며 그 상황의 자리로 먼저 뜀(bond:hurry:<id>, 6m 안이면 그만, 쫓김 이끌기가 먼저) · 반 친구 외침에 답하기(외침 뒤 9초 안 G → wave reply → 「👋 이름 — 「다행이다!」」)
 // + 80: 벗의 물려줄 것(bond3f 첫 길·bond4 화해 성공 then.heirloom → spark.apply → Pulse.keep from:'bond', 족보 n/3 셈엔 안 들어감) · 벗이 쓰러진 나를 일으킴(danger.collapse — 벗 곁 8m 면 먹을 것 1/4, bond:lifted) · 반 친구 외침(friends.shout — 쫓김 끝·급한 일 늦음, 곁 14m 친구만)
@@ -198,9 +199,13 @@ for (const era of ERAS) {
   ok(h.bond.point && h.bond.point.marks.length === 3 && h.bond.point.marks.map((m) => m.t.id).sort().join() === 'boat_1,hideout_1,uibyeong', `30m 안 대상·사람에만 반짝임(${h.bond.point.marks.map((m) => m.t.id).sort().join()}) — 먼 것·다른 상황 것 없음`);
   ok(h.added.length === before + 3 && h.bond.point.marks.every((m) => Math.abs(m.grp.position.y - (m.t.box.max.y + 0.25)) < 1e-6), '반짝임은 scene 에 셋, 대상 위(box.max.y+0.25)에 뜬다');
   ok(h.said.some((t) => t.includes('3곳')), '여럿이면 「n곳이 반짝인다 — 어디로 갈지는 네 몫」');
+  run(h, 4); { const near = h.bond.point.marks.map((m) => Math.hypot(m.grp.position.x - h.bond.pos.x, m.grp.position.z - h.bond.pos.z)); ok(Math.min(...near) <= 1.75 && Math.min(...near) >= 1.4 && h.bond.stand && !h.bond.stand.moving, `83: 「여기야」 뒤 벗은 곁으로 안 오고 가장 가까운 반짝임 곁(1.6m)에 선다(${Math.min(...near).toFixed(2)})`); }
+  { const yawTo = Math.atan2(h.p.pos.x - h.bond.pos.x, h.p.pos.z - h.bond.pos.z); let dy = yawTo - h.bond.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); ok(Math.abs(dy) < 0.2, '83: 서서 나를 본다'); }
+  h.p.pos.set(h.bond.pos.x + 20, 0, 0); run(h, 1); ok(!h.bond.stand.moving && d(h) > 15, '83: 내가 12m 넘게 멀어지면 따라오지 않고 기다린다'); h.p.pos.set(49, 0, 0); run(h, 1);
   h.flags.add('imjin:run'); run(h, 1.2); ok(h.bond.point.marks.length === 2 && !h.bond.point.marks.some((m) => m.t.id === 'hideout_1') && h.added.length === before + 2, '하나를 쓰면(조건이 바뀌면) 그 반짝임만 꺼진다');
   h.p.pos.set(0, 0, 0); run(h, 0.5); ok(h.bond.point.marks.every((m) => m.grp.visible === false), '40m 밖에선 안 보인다');
   h.pulse.deadline = null; run(h, 0.5); ok(h.bond.point === null && h.added.length === before, '급한 일이 끝나면 전부 꺼진다');
+  h.p.pos.set(49, 0, 0); run(h, 4); ok(h.bond.stand === null && d(h) <= 2.6, `83: 반짝임이 다 꺼지면 곁으로 돌아온다(d=${d(h).toFixed(1)} stand=${h.bond.stand} hurry=${JSON.stringify(h.bond.hurry)})`);
   h.pulse.deadline = dl; h.bond.hurry = null; h.p.pos.set(49, 0, 0); h.said.length = 0; run(h, 1); ok(h.bond.point && h.bond.point.marks.length === 0 && !h.said.some((t) => t.includes('여기야')), '같은 급한 일에선 다시 가리키지 않는다(bond:point:imjin)');
   const h2 = mk(['bond:met', 'bond:enemy']); run(h2, 2); h2.cond = h.cond; h2.items.targets = h.items.targets; h2.npcs = h.npcs; h2.e.interactables = h.e.interactables; h2.life = h.life; h2.pulse = { chase: null, deadline: { d: { id: 'imjin' }, left: 60 }, hold() {}, area: h.pulse.area }; h2.p.pos.set(49, 0, 0); run(h2, 1); ok(!h2.flags.has('bond:point'), '등진 사람은 가리키지 않는다');
   const h3 = mk(['bond:met', 'bond:friend']); run(h3, 4); h3.cond = h.cond; h3.items.targets = {}; h3.npcs = {}; h3.e.interactables = new Map(); h3.life = h.life; h3.pulse = { chase: null, deadline: { d: { id: 'imjin' }, left: 60 }, hold() {}, area: h.pulse.area }; h3.p.pos.set(49, 0, 0); h3.said.length = 0; run(h3, 1); ok(h3.flags.has('bond:point:imjin') && !h3.said.some((t) => t.includes('여기야')) && h3.bond.point.marks.length === 0, '가리킬 것이 없으면 말도 반짝임도 없다(깃발만)');

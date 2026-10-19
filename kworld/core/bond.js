@@ -10,6 +10,7 @@
 //  · 화해(79): bond3e 에서 먼저 다가간 쪽(bond:sorry)에겐 돌발 bond4 가 한 번 더 — 굴림에 이기면 `bond:mended`: 등졌던 사람이 벗으로 돌아와 다시 따라다닌다(「…다시, 같이 가.」). 족보엔 「○○과 다시 벗」.
 //  · 벗이 서두르게 한다(81): 급한 일(모래시계) 중이면 벗이 「서둘러! 이쪽이야.」 하며 그 상황의 자리(deadline.goal || life 상황 place)로 먼저 뛴다 — 12m 뒤처지면 기다리고, 내가 6m 안에 닿으면 그만(bond:hurry:<id>). 쫓김이 같이 있으면 쫓김 이끌기가 먼저.
 //  · 벗이 「여기야」 하며 그 상황의 물건을 반짝인다(82): 급한 일 자리에 닿으면(hurry.done) 그 상황(sit:<id>:open)이 지금 열어 둔 대상·사람(items rename·npc lines 의 if 가 그 상황을 보고, 지금 조건이 맞는 것)에 호박빛 반짝임을 붙인다 — 어느 길을 고를지는 안 가리킨다(여럿이면 전부, 가까운 넷까지), 쓰면 그 자리 반짝임은 꺼지고, 급한 일이 끝나면(또는 60초) 전부 꺼진다. bond:point:<id>, 한 번.
+//  · 벗이 「여기야」 뒤 그 자리에 서 있는다(83): 반짝임이 살아 있는 동안 벗은 곁으로 돌아오지 않고 **나에게서 가장 가까운 반짝임 곁(1.6m)**에 서서 나를 본다(standing) — 내가 12m 넘게 멀어지면 돌아보고 기다림, 반짝임이 다 꺼지면 곁으로.
 //  · 벗이 길을 보여 준다(79): 쫓길 때(앞을 막은 뒤) 벗이 「이쪽!」 하며 숨을 곳(goal_at) 쪽으로 먼저 뛴다 — 내가 12m 넘게 뒤처지면 멈춰 기다린다. 값·판정엔 손 안 댐(bond:lead:<chase>).
 //  · 벗의 한마디가 지난 선택에 반응(79): cfg.react[{id,if,text,once}] — 깃발이 서면(쫓김 탈출·잡힘·앞 막음·준 것·늦음·같이 한 것) 벗이 그 일을 말한다, 한 번(bond:said:<id>). 벗일 때만.
 //  · 벗은 숨은 것을 먼저 안다(78): 벗이 아직 못 찾은 숨은 것(pulse.secrets) 12m 안을 지나면 한 번 「저기 뭔가 있다」 — 자리는 안 알려 준다(반짝임을 찾는 건 네 몫), `bond:hint:<id>`.
@@ -35,7 +36,7 @@ function defaultLines(n) {
 }
 
 export class Bond {
-  constructor(g, cfg) { this.g = g; this.cfg = cfg || {}; this.name = this.cfg.name || '그 사람'; this.lines = { ...defaultLines(this.name), ...(this.cfg.lines || {}) }; this.body = null; this.pos = null; this.yaw = 0; this.walk = 0; this.sinceLine = 20; this.waveUntil = 0; this.lastWave = 0; this.spokenSky = null; this.turned = false; this.gone = false; this.block = null; this.sinceHint = 0; this.lead = null; this.hurry = null; this.point = null; this.reactT = 0; }
+  constructor(g, cfg) { this.g = g; this.cfg = cfg || {}; this.name = this.cfg.name || '그 사람'; this.lines = { ...defaultLines(this.name), ...(this.cfg.lines || {}) }; this.body = null; this.pos = null; this.yaw = 0; this.walk = 0; this.sinceLine = 20; this.waveUntil = 0; this.lastWave = 0; this.spokenSky = null; this.turned = false; this.gone = false; this.block = null; this.sinceHint = 0; this.lead = null; this.hurry = null; this.point = null; this.stand = null; this.reactT = 0; }
   /** 지금 관계 — null(아직) / met / friend / enemy / gone(등지고 끝) */
   state() { const f = this.g.flags; if (!f.has('bond:met')) return null; if (f.has('bond:mended')) return 'friend'; if (f.has('bond:enemy')) return f.has('bond:end') ? 'gone' : 'enemy'; return f.has('bond:friend') ? 'friend' : 'met'; }
   dist(a, b) { return Math.hypot(a.x - b.x, a.z - b.z); }
@@ -69,6 +70,7 @@ export class Bond {
     } else if (st === 'friend' && this.blocking(dt)) { moving = this.block.moving;   // 벗이 쫓는 사람 앞을 막으러 간다
     } else if (st === 'friend' && this.leading(dt)) { moving = this.lead.moving;   // 벗이 숨을 곳 쪽으로 먼저 뛰어 길을 보여 준다
     } else if (st === 'friend' && this.hurrying(dt)) { moving = this.hurry.moving;   // 급한 일(모래시계)이면 벗이 「서둘러!」 하며 그 자리로 먼저 뛴다
+    } else if (st === 'friend' && this.standing(dt)) { moving = this.stand.moving;   // 「여기야」 뒤 반짝임 곁에 서 있는다
     } else {
       const stopAt = FOLLOW[st] ?? FOLLOW.met; const run = d > 9 || (st === 'friend' && g.pulse?.chase); speed = run ? RUN : WALK;
       moving = this.step(dt, p.x, p.z, speed, stopAt);
@@ -154,6 +156,16 @@ export class Bond {
       const grp = m.grp; grp.visible = this.dist(grp.position, p) < POINT_SEE; grp.rotation.y += dt * 1.2;
       for (const c of grp.children) if (c.isMesh) c.position.y = Math.sin(P.t * 2.5 + c.userData.ph) * 0.15;
     }
+  }
+  /** 「여기야」 뒤 — 반짝임이 살아 있는 동안 나에게서 가장 가까운 반짝임 곁(LEAD_STOP)에 서서 나를 본다. 12m 넘게 멀어지면 돌아보고 기다린다. 돌려준다: 지금 서 있는 중인가 */
+  standing(dt) {
+    const g = this.g; const P = this.point; if (!P?.marks?.length) { this.stand = null; return false; }
+    const p = g.p.pos; let best = null, bd = Infinity; for (const m of P.marks) { const d = this.dist(m.grp.position, p); if (d < bd) { bd = d; best = m; } }
+    if (!this.stand) this.stand = { moving: false };
+    const S = this.stand; const dp = this.dist(this.pos, p); const face = () => { const f = Math.atan2(p.x - this.pos.x, p.z - this.pos.z); let dy = f - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * Math.min(1, dt * 4); };
+    if (dp > LEAD_WAIT) { S.moving = false; face(); return true; }
+    if (bd === Infinity || this.dist(best.grp.position, this.pos) <= LEAD_STOP + 0.05) { S.moving = false; face(); return true; }   // 다 왔다 — 서서 나를 본다
+    S.moving = this.step(dt, best.grp.position.x, best.grp.position.z, WALK, LEAD_STOP); return true;
   }
   /** 벗이 숨은 것 곁을 지나면 「저기 뭔가 있다」 — 못 찾은 것, 한 번(bond:hint:<id>), 자리는 말 안 한다 */
   hint() {
