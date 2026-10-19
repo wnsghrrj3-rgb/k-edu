@@ -2013,7 +2013,9 @@ function figsHTML(a, paper){
 }
 /* ---------- v3.6 — 3학년 1학기 「평면도형」 그림 geo (2026-10-19, 오푸스 5.5) ----------
    geo {items:[판, …], tag:true}  판 = {w, h, pts:{ㄱ:[x,y], …}, show:[…], seg:[[A,B]], ray:[[A,B]], line:[[A,B]], curve:[[A,B,C]],
-        poly:[[A,B,C,…]], right:[[A,B,C]], arc:[[A,B,C]], tick:[[A,B,n]], grid:칸, cap:'이름'}
+        poly:[[A,B,C,…]], right:[[A,B,C]], arc:[[A,B,C]], tick:[[A,B,n]], grid:칸, cap:'이름',
+        circle:[[O, R]], oval:[[cx, cy, rx, ry]], lab:[[A, '글']]}   ← v3.10 (3학년 2학기 「원」): circle 은 중심 O·반지름 R(px 수 또는 점 이름 = 그 점까지 거리),
+        oval 은 원이 아닌 길쭉한 모양, lab 은 점(또는 [x,y]) 옆 작은 글(길이 등).
    A·B 는 pts 의 이름 또는 [x,y]. ray 는 A에서 B 쪽으로 판 끝까지, line 은 양쪽 끝까지 늘인다(끝없음).
    right 는 B 에 직각 표시(ㄱ자), arc 는 B 에 각 호, tick 은 변 가운데 같은 길이 표시. 점 이름은 show(없으면 pts 전부)만 쓴다. */
 function geoRef(P, r){ return Array.isArray(r) ? r : (P[r] ? [P[r][0], P[r][1]] : null); }
@@ -2028,6 +2030,9 @@ function geoSVG(g){
   if (g.grid){ const u = Number(g.grid); for (let x = 0; x <= W + .1; x += u) s += `<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="#C9CFD6" stroke-width=".8"/>`;
     for (let y = 0; y <= H + .1; y += u) s += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="#C9CFD6" stroke-width=".8"/>`; }
   (g.poly || []).forEach(pp => { const Q = pp.map(R).filter(Boolean); if (Q.length > 2) s += `<polygon points="${Q.map(p => p.map(v => v.toFixed(1)).join(',')).join(' ')}" fill="${FIG_FILL}" ${st}/>`; });
+  (g.oval || []).forEach(([x, y, rx, ry]) => { s += `<ellipse cx="${Number(x).toFixed(1)}" cy="${Number(y).toFixed(1)}" rx="${Number(rx).toFixed(1)}" ry="${Number(ry).toFixed(1)}" fill="none" ${st}/>`; });
+  (g.circle || []).forEach(([o, r]) => { o = R(o); if (!o) return; const q = typeof r === 'number' ? null : R(r); const rr = q ? Math.hypot(q[0] - o[0], q[1] - o[1]) : Number(r);
+    if (rr > 0) s += `<circle cx="${o[0].toFixed(1)}" cy="${o[1].toFixed(1)}" r="${rr.toFixed(1)}" fill="none" ${st}/>`; });
   (g.seg || []).forEach(([a, b]) => { a = R(a); b = R(b); if (a && b) s += L(a, b); });
   (g.ray || []).forEach(([a, b]) => { a = R(a); b = R(b); if (a && b) s += L(a, geoExt(a, b, W, H)); });
   (g.line || []).forEach(([a, b]) => { a = R(a); b = R(b); if (a && b) s += L(geoExt(b, a, W, H), geoExt(a, b, W, H)); });
@@ -2040,6 +2045,8 @@ function geoSVG(g){
   (g.tick || []).forEach(([a, b, n]) => { a = R(a); b = R(b); if (!(a && b)) return; n = Number(n) || 1; const u = unit(a, b, 1), nx = -u[1] * 6, ny = u[0] * 6;
     for (let k = 0; k < n; k++){ const o = (k - (n - 1) / 2) * 5; const mx = (a[0] + b[0]) / 2 + u[0] * o, my = (a[1] + b[1]) / 2 + u[1] * o;
       s += `<line x1="${(mx - nx).toFixed(1)}" y1="${(my - ny).toFixed(1)}" x2="${(mx + nx).toFixed(1)}" y2="${(my + ny).toFixed(1)}" stroke="#2F6FB5" stroke-width="2"/>`; } });
+  (g.lab || []).forEach(([a, tx]) => { a = R(a); if (!(a && tx)) return; const at = `x="${a[0].toFixed(1)}" y="${(a[1] + 5).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="700"`;
+    s += `<text ${at} fill="#fff" stroke="#fff" stroke-width="4" stroke-linejoin="round">${esc(tx)}</text><text ${at} fill="#2F6FB5">${esc(tx)}</text>`; });
   const names = Array.isArray(g.show) ? g.show : Object.keys(P); const ks = Object.keys(P);
   const cx = ks.reduce((t, k) => t + P[k][0], 0) / (ks.length || 1), cy = ks.reduce((t, k) => t + P[k][1], 0) / (ks.length || 1);
   names.forEach(k => { const p = P[k]; if (!p) return; let dx = p[0] - cx, dy = p[1] - cy; const n = Math.hypot(dx, dy);

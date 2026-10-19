@@ -193,6 +193,13 @@ function checkGeoAsset(where, a) {
       (g[k] || []).forEach((x, j) => { if (!Array.isArray(x)) return bad(where, `geo[${i}].${k}[${j}] 배열 아님`);
         x.forEach((r, m) => { if (k === 'tick' && m === 2) return; if (!R(r)) bad(where, `geo[${i}].${k}[${j}] 점 ${JSON.stringify(r)} 없음`); }); });
     (g.show || []).forEach(k => { if (!P[k]) bad(where, `geo[${i}].show 점 ${k} 없음`); });
+    /* v3.10 원·타원·글 */
+    (g.circle || []).forEach(([O, r], j) => { const o = R(O); if (!o) return bad(where, `geo[${i}].circle[${j}] 중심 ${JSON.stringify(O)} 없음`);
+      const q = typeof r === 'number' ? null : R(r); const rr = q ? Math.hypot(q[0] - o[0], q[1] - o[1]) : Number(r);
+      if (!(rr > 0)) bad(where, `geo[${i}].circle[${j}] 반지름이 0 이하이거나 점 ${JSON.stringify(r)} 없음`); });
+    (g.oval || []).forEach((v, j) => { if (!Array.isArray(v) || v.length !== 4 || v.some(x => typeof x !== 'number')) return bad(where, `geo[${i}].oval[${j}] 은 [cx,cy,rx,ry] 수`);
+      if (!(v[2] > 0 && v[3] > 0)) bad(where, `geo[${i}].oval[${j}] 반지름 0 이하`); if (Math.abs(v[2] - v[3]) < 1e-6) bad(where, `geo[${i}].oval[${j}] rx=ry 면 원 — circle 로 그릴 것`); });
+    (g.lab || []).forEach(([A, tx], j) => { if (!R(A)) bad(where, `geo[${i}].lab[${j}] 점 ${JSON.stringify(A)} 없음`); if (!tx) bad(where, `geo[${i}].lab[${j}] 글 없음`); });
     (g.right || []).forEach(([A, B, C]) => { const p = R(A), q = R(B), r = R(C); if (!(p && q && r)) return;
       const d = (p[0] - q[0]) * (r[0] - q[0]) + (p[1] - q[1]) * (r[1] - q[1]); if (Math.abs(d) > 1e-6) bad(where, `geo[${i}] 직각 표시 ${A}${B}${C} 가 직각이 아님`); });
     const ticks = {}; (g.tick || []).forEach(([A, B, n]) => { const p = R(A), q = R(B); if (!(p && q)) return; const k = Number(n) || 1; (ticks[k] = ticks[k] || []).push(Math.hypot(p[0] - q[0], p[1] - q[1])); });
