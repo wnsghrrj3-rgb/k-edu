@@ -10,6 +10,7 @@
 //  · 화해(79): bond3e 에서 먼저 다가간 쪽(bond:sorry)에겐 돌발 bond4 가 한 번 더 — 굴림에 이기면 `bond:mended`: 등졌던 사람이 벗으로 돌아와 다시 따라다닌다(「…다시, 같이 가.」). 족보엔 「○○과 다시 벗」.
 //  · 벗이 서두르게 한다(81): 급한 일(모래시계) 중이면 벗이 「서둘러! 이쪽이야.」 하며 그 상황의 자리(deadline.goal || life 상황 place)로 먼저 뛴다 — 12m 뒤처지면 기다리고, 내가 6m 안에 닿으면 그만(bond:hurry:<id>). 쫓김이 같이 있으면 쫓김 이끌기가 먼저.
 //  · 벗이 「여기야」 하며 그 상황의 물건을 반짝인다(82): 급한 일 자리에 닿으면(hurry.done) 그 상황(sit:<id>:open)이 지금 열어 둔 대상·사람(items rename·npc lines 의 if 가 그 상황을 보고, 지금 조건이 맞는 것)에 호박빛 반짝임을 붙인다 — 어느 길을 고를지는 안 가리킨다(여럿이면 전부, 가까운 넷까지), 쓰면 그 자리 반짝임은 꺼지고, 급한 일이 끝나면(또는 60초) 전부 꺼진다. bond:point:<id>, 한 번.
+//  · 「여기야」가 급한 일 밖으로(84, 준호 결정 「섞여 나오는 상황까지 전부」): 어떤 상황이든 열려 있고(꼭·섞여) 벗이 곁 6m 안·카드 닫힌 뒤·쫓김 없으면 그 상황의 대상·사람에 한 번만 반짝임(bond:point:<id>), 상황이 끝나면 꺼짐; 급한 일은 전처럼 「서둘러」 뒤.
 //  · 비켜서기(84): 반짝임 곁에 선 벗에게 내가 2m 안에 오면(그 대상 앞에 서려고) 내 길 옆으로 1.5m 물러선다 — 선택 대상을 막지 않게; 5m 넘게 물러나면 다시 곁으로.
 //  · 벗이 「여기야」 뒤 그 자리에 서 있는다(83): 반짝임이 살아 있는 동안 벗은 곁으로 돌아오지 않고 **나에게서 가장 가까운 반짝임 곁(1.6m)**에 서서 나를 본다(standing) — 내가 12m 넘게 멀어지면 돌아보고 기다림, 반짝임이 다 꺼지면 곁으로.
 //  · 벗이 길을 보여 준다(79): 쫓길 때(앞을 막은 뒤) 벗이 「이쪽!」 하며 숨을 곳(goal_at) 쪽으로 먼저 뛴다 — 내가 12m 넘게 뒤처지면 멈춰 기다린다. 값·판정엔 손 안 댐(bond:lead:<chase>).
@@ -135,20 +136,25 @@ export class Bond {
   }
   unpoint() { const g = this.g; const P = this.point; if (!P) return; for (const m of P.marks) g.e?.scene?.remove?.(m.grp); this.point = null; }
   /** 벗이 「여기야」 — 급한 일 자리에 닿은 뒤(hurry.done) 그 상황의 대상·사람에 반짝임. 길은 안 가리킨다. 쓰면(조건이 안 맞으면) 그 반짝임만 꺼지고, 급한 일이 끝나면(또는 POINT_SEC) 전부 꺼진다 */
+  /** 「여기야.」 — 상황 id 의 지금 맞는 대상·사람(goal 둘레 POINT_R 안 POINT_MAX)에 반짝임, 한 번(bond:point:<id>) */
+  pointAt(id, goal, key) {
+    const g = this.g; const now = performance.now(); this.point = { ...key, marks: [], until: now + POINT_SEC * 1000, t: 0 };
+    if (g.flags.has('bond:point:' + id)) return;   // 이미 가리켰다(재개·다시 온 자리)
+    const list = this.sitTargets(id).map((x) => ({ ...x, dd: this.dist(x.t.center || x.t.obj?.position || goal, goal) })).filter((x) => x.dd <= POINT_R).sort((a, b) => a.dd - b.dd).slice(0, POINT_MAX);
+    g.flags.add('bond:point'); g.flag?.('bond:point:' + id);
+    if (!list.length) return;
+    for (const x of list) { const grp = this.mark(x.t); g.e?.scene?.add?.(grp); this.point.marks.push({ t: x.t, rule: x.rule, grp }); }
+    this.sinceLine = 0; g.sound?.play?.('good', 0.3); g.ui?.say?.(`👤 ${this.name} — 「여기야.」 ${list.length > 1 ? `(${list.length}곳이 반짝인다 — 어디로 갈지는 네 몫)` : ''}`.trim(), 3200);
+  }
   pointing(dt) {
     const g = this.g; const dl = g.pulse?.deadline; const now = performance.now();
-    if (this.point && (!dl || this.point.dl !== dl || now > this.point.until)) this.unpoint();
-    if (!dl) return;
-    const H = this.hurry; if (!H?.done || H.dl !== dl) return;
+    if (this.point && (now > this.point.until || (this.point.dl && (!dl || this.point.dl !== dl)) || (this.point.sit && g.flags.has('sit:' + this.point.sit + ':done')))) this.unpoint();
     if (!this.point) {
-      this.point = { dl, marks: [], until: now + POINT_SEC * 1000, t: 0 };
-      if (g.flags.has('bond:point:' + dl.d.id)) return;   // 이미 가리켰다(재개·다시 온 자리)
-      const sit = g.life?.situations?.find?.((x) => x.id === dl.d?.id); const goal = g.pulse.area?.(dl.d?.goal || sit?.place) || g.p.pos;
-      const list = this.sitTargets(dl.d.id).map((x) => ({ ...x, dd: this.dist(x.t.center || x.t.obj?.position || goal, goal) })).filter((x) => x.dd <= POINT_R).sort((a, b) => a.dd - b.dd).slice(0, POINT_MAX);
-      g.flags.add('bond:point'); g.flag?.('bond:point:' + dl.d.id);
-      if (!list.length) return;
-      for (const x of list) { const grp = this.mark(x.t); g.e?.scene?.add?.(grp); this.point.marks.push({ t: x.t, rule: x.rule, grp }); }
-      this.sinceLine = 0; g.sound?.play?.('good', 0.3); g.ui?.say?.(`👤 ${this.name} — 「여기야.」 ${list.length > 1 ? `(${list.length}곳이 반짝인다 — 어디로 갈지는 네 몫)` : ''}`.trim(), 3200);
+      if (dl) { const H = this.hurry; if (!H?.done || H.dl !== dl) return; const sit = g.life?.situations?.find?.((x) => x.id === dl.d?.id); this.pointAt(dl.d.id, g.pulse.area?.(dl.d?.goal || sit?.place) || g.p.pos, { dl }); }
+      else if (this.withMe(WITH_R + 1) && this.quiet() && !g.pulse?.chase) {   // 84: 급한 일 밖 — 열린 상황(꼭·섞여 전부)마다 벗이 곁에 있으면 한 번만, 카드를 읽고 닫은 뒤
+        const s = (g.life?.situations || []).find((x) => g.flags.has('sit:' + x.id + ':open') && !g.flags.has('sit:' + x.id + ':done') && !g.flags.has('bond:point:' + x.id));
+        if (s) { this.pointAt(s.id, g.pulse?.area?.(s.place) || g.p.pos, { sit: s.id }); if (this.point && !this.point.marks.length) this.unpoint(); }   // 가리킬 것이 없으면 깃발만 두고 다음 상황으로
+      }
       return;
     }
     const P = this.point; P.t += dt; const p = g.p.pos; const re = Math.floor(P.t) !== Math.floor(P.t - dt);

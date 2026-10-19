@@ -2,6 +2,7 @@
 // + 77: 말 걸기(E — 한마디·물건 주기·등진 사람은 안 닿음) · 벗이 쫓김에 끼어듦(앞을 막아 3초, 한 번) · 조건 토큰 bond:1
 // + 79: 등진 사람과 화해(bond3e 「미안했다」 길 → bond:sorry → 돌발 bond4 굴림 → bond:mended 면 다시 벗으로 돌아와 따라다님) · 쫓길 때 벗이 「이쪽!」 하며 goal_at 쪽으로 먼저 뜀(12m 뒤처지면 기다림) · 벗 한마디가 지난 선택에 반응(cfg.react, 한 번)
 // + 78: 「운명의 벗과 함께」 길 열한 시대(gen_bond_ways.py, items bond:1 + life.json bond:true → together 한마디) · 벗 답례 gift 열한 시대(items 키 실재) · 벗이 숨은 것 곁에서 「저기 뭔가 있다」(한 번·자리 안 말함)
+// + 84: 「여기야」 급한 일 밖(준호 「섞여 나오는 상황까지 전부」) — 열린 상황마다 벗이 곁이면 한 번만, 카드 닫힌 뒤, 끝나면 꺼짐
 // + 84: 비켜서기 — 반짝임 곁에 선 벗에게 내가 2m 안에 오면 내 길 옆 1.5m 로 물러선다(선택 대상을 막지 않게), 5m 넘게 물러나면 다시 곁으로
 // + 83: 「여기야」 뒤 벗이 반짝임 곁(1.6m)에 서서 나를 본다(standing) — 12m 넘게 멀어지면 기다림, 반짝임 다 꺼지면 곁으로
 // + 82: 벗이 「여기야.」 하며 그 상황의 대상·사람(items rename·npc lines 의 if 가 sit:<id>:open 을 보고 지금 맞는 것)에 호박빛 반짝임(bond:point:<id>, 급한 일 자리 6m 안에 닿은 뒤, 30m 안 넷까지, 쓰면 그것만 꺼짐, 끝나면 전부) · 외침 답을 받으면 외친 쪽 몸도 손 흔들기 + reply kind back 「고마워.」
@@ -222,6 +223,27 @@ for (const era of ERAS) {
   h.pulse.deadline = dl; h.bond.hurry = null; h.p.pos.set(49, 0, 0); h.said.length = 0; run(h, 1); ok(h.bond.point && h.bond.point.marks.length === 0 && !h.said.some((t) => t.includes('여기야')), '같은 급한 일에선 다시 가리키지 않는다(bond:point:imjin)');
   const h2 = mk(['bond:met', 'bond:enemy']); run(h2, 2); h2.cond = h.cond; h2.items.targets = h.items.targets; h2.npcs = h.npcs; h2.e.interactables = h.e.interactables; h2.life = h.life; h2.pulse = { chase: null, deadline: { d: { id: 'imjin' }, left: 60 }, hold() {}, area: h.pulse.area }; h2.p.pos.set(49, 0, 0); run(h2, 1); ok(!h2.flags.has('bond:point'), '등진 사람은 가리키지 않는다');
   const h3 = mk(['bond:met', 'bond:friend']); run(h3, 4); h3.cond = h.cond; h3.items.targets = {}; h3.npcs = {}; h3.e.interactables = new Map(); h3.life = h.life; h3.pulse = { chase: null, deadline: { d: { id: 'imjin' }, left: 60 }, hold() {}, area: h.pulse.area }; h3.p.pos.set(49, 0, 0); h3.said.length = 0; run(h3, 1); ok(h3.flags.has('bond:point:imjin') && !h3.said.some((t) => t.includes('여기야')) && h3.bond.point.marks.length === 0, '가리킬 것이 없으면 말도 반짝임도 없다(깃발만)');
+}
+// 24) 84 — 「여기야」 급한 일 밖(준호 「섞여 나오는 상황까지 전부」): 어떤 상황이든 열려 있고 벗이 곁 6m·카드 닫힘·쫓김 없음이면 그 상황의 대상에 한 번만, 끝나면 꺼짐, 가리킬 게 없으면 깃발만, 등진 사람·멀리·카드 열림엔 안 함
+{
+  const mkIx = (name, type, id, x, z, top = 1) => [name, { type, id, obj: { position: new THREE.Vector3(x, 0, z) }, center: new THREE.Vector3(x, 0.5, z), box: { max: { y: top } } }];
+  const mkH = (flags) => { const h = mk(flags); run(h, 4); h.cond = (expr) => !expr || expr.split('&&').every((t) => { t = t.trim(); const neg = t.startsWith('!'); const f = neg ? t.slice(1) : t; const v = h.flags.has(f); return neg ? !v : v; });
+    h.items.targets = { bush: { name: '덤불', rename: [{ if: 'sit:berry:open && !sit:berry:done', verb: '딴다' }] }, stone: { name: '돌', rename: [{ if: 'sit:stone:open && !sit:stone:done', verb: '깬다' }] }, far: { name: '먼 것', rename: [{ if: 'sit:berry:open', verb: '…' }] } };
+    h.npcs = { elder: { name: '어른', lines: [{ if: 'sit:berry:open && !sit:berry:done', text: 'a' }, { text: '…' }] } };
+    h.e.interactables = new Map([mkIx('bush_1', 'bush', 'bush_1', 3, 2), mkIx('stone_1', 'stone', 'stone_1', 40, 0), mkIx('far_1', 'far', 'far_1', 120, 0), mkIx('npc_elder', 'npc', 'elder', -2, 4, 1.8)]);
+    h.life = { situations: [{ id: 'berry', place: 'camp' }, { id: 'stone', place: 'shore' }, { id: 'mixed_x' }] }; h.pulse = { chase: null, deadline: null, hold() {}, area: (t) => t === 'camp' ? { x: 0, z: 0 } : t === 'shore' ? { x: 40, z: 0 } : null }; h.p.pos.set(0, 0, 0); h.said.length = 0; return h; };
+  let h = mkH(['bond:met', 'bond:friend']); const before = h.added.length; run(h, 1); ok(!h.bond.point && !h.flags.has('bond:point'), '상황이 안 열렸으면 아무것도 없다');
+  h.flags.add('sit:berry:open'); h.ui.isOpen = () => true; run(h, 1); ok(!h.bond.point && !h.flags.has('bond:point:berry'), '상황 카드가 열려 있는 동안엔 가리키지 않는다(읽고 나서)');
+  h.ui.isOpen = () => false; run(h, 1); ok(h.flags.has('bond:point:berry') && h.said.some((t) => t.includes('여기야')) && h.bond.point?.sit === 'berry', '카드를 닫으면 벗이 「여기야.」 — 급한 일 없이도(bond:point:berry)');
+  ok(h.bond.point.marks.length === 2 && h.bond.point.marks.map((m) => m.t.id).sort().join() === 'bush_1,elder' && h.added.length === before + 2, `그 상황 것만, 자리 30m 안(${h.bond.point.marks.map((m) => m.t.id).sort().join()}) — 먼 것·다른 상황 돌 없음`);
+  h.flags.add('sit:berry:done'); run(h, 1); ok(h.bond.point === null && h.added.length === before, '상황이 끝나면 전부 꺼진다');
+  h.flags.add('sit:stone:open'); run(h, 1); ok(h.flags.has('bond:point:stone') && h.bond.point?.sit === 'stone' && h.bond.point.marks.length === 1 && h.bond.point.marks[0].t.id === 'stone_1' && h.bond.point.marks[0].grp.visible === false, '다음 상황이 열리면 그 자리(place) 둘레 것에 — 40m 밖이라 아직 안 보임');
+  h.p.pos.set(40, 0, 0); h.bond.pos.x = 38; h.bond.pos.z = 0; h.said.length = 0; run(h, 1); ok(h.bond.point.marks[0].grp.visible === true && !h.said.some((t) => t.includes('여기야')), '가까이 가면 보이고, 같은 상황은 다시 가리키지 않는다');
+  h.flags.add('sit:stone:done'); run(h, 0.5); h.flags.add('sit:mixed_x:open'); run(h, 1); ok(h.flags.has('bond:point:mixed_x') && h.bond.point === null, '섞여 나오는 상황(자리 없음)도 — 가리킬 게 없으면 깃발만');
+  h = mkH(['bond:met', 'bond:friend']); h.flags.add('sit:berry:open'); h.p.pos.set(20, 0, 0); h.bond.pos.x = 0; h.bond.pos.z = 0; run(h, 0.1); ok(!h.flags.has('bond:point:berry'), '벗이 곁 6m 밖이면 안 한다(따라온 뒤에)');
+  h = mkH(['bond:met', 'bond:friend']); h.flags.add('sit:berry:open'); h.pulse.chase = { id: 'x' }; run(h, 1); ok(!h.flags.has('bond:point:berry'), '쫓기는 중엔 안 한다');
+  h = mkH(['bond:met', 'bond:enemy']); h.flags.add('sit:berry:open'); run(h, 1); ok(!h.flags.has('bond:point:berry'), '등진 사람은 가리키지 않는다');
+  h = mkH(['bond:met', 'bond:friend']); h.flags.add('sit:berry:open'); h.pulse.deadline = { d: { id: 'berry' }, left: 60 }; h.bond.hurry = null; run(h, 0.5); ok(!h.flags.has('bond:point:berry') || h.bond.hurry?.done, '급한 일이면 전처럼 「서둘러」 뒤에만(일반 길은 안 끼어듦)');
 }
 // 22) 81 — 반 친구 외침에 답하기: 외침 뒤 9초 안에 G 면 wave 에 reply 가 실리고, 외친 쪽엔 「👋 이름 — 「다행이다!」」
 {
