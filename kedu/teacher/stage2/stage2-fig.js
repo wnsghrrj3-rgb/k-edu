@@ -2479,7 +2479,7 @@
     const cl = cats.map(c => wr4(c, 4)), ax0 = wr4(o.ax[0], 5), ax1 = wr4(o.ax[1], 5);
     let s = '', y = 6, Wd, H;
     if (o.vert !== false) {
-      const cw = Math.max(76, Math.min(132, ...cl.map(l => Math.max(...l.map(t => cw4(t, FZ))) + 26))), ch = mx <= 6 ? 50 : mx <= 9 ? 42 : 36, nw = Math.max(76, Math.max(...ax0.concat(ax1).map(t => cw4(t, 20))) + 24), nh = cl.some(l => l.length > 1) ? 74 : 50, W0 = nw + cw * n; Wd = Math.max(460, W0 + 20); const x0 = (Wd - W0) / 2;
+      const cw = Math.max(76, Math.min(132, Math.max(...cl.map(l => Math.max(...l.map(t => cw4(t, FZ))) + 26)))), ch = mx <= 6 ? 50 : mx <= 9 ? 42 : 36, nw = Math.max(76, Math.max(...ax0.concat(ax1).map(t => cw4(t, 20))) + 24), nh = Math.max(cl.some(l => l.length > 1) ? 74 : 50, (ax0.length + ax1.length) * 20 + 18), W0 = nw + cw * n; Wd = Math.max(460, W0 + 20); const x0 = (Wd - W0) / 2;
       if (o.title) { const tl = wr4(o.title, 22); s += ml4(Wd / 2, y + tl.length * 17, tl, 26, INK, 900, 32); y += tl.length * 34 + 8; }
       const gy = y; s += r4(x0, gy, W0, ch * mx + nh, '#fff', '#8FA3BF', 3, false, 12);
       for (let i = 0; i < n; i++) { const hx = x0 + nw + i * cw; if (holes.indexOf(i) >= 0) s += r4(hx + 4, gy + 4, cw - 8, ch * mx - 8, OR4[0], OR4[1], 3, true, 8); else if (hi.indexOf(i) >= 0) s += r4(hx + 3, gy + 3, cw - 6, ch * mx - 6, OR4[0], 'none', 0, false, 8); }
@@ -2488,19 +2488,19 @@
       for (let r = 1; r <= mx; r++) s += txt((x0 + nw / 2).toFixed(1), (gy + (mx - r) * ch + ch / 2 + 9).toFixed(1), String(r), 26, GR4, 900);
       for (let i = 0; i < n; i++) { const g = String(grid[i] || ''), cx = x0 + nw + i * cw + cw / 2; for (let r = 0; r < mx; r++) if (g[r] === '1') s += sym4((odd[i] || []).indexOf(r) >= 0 ? '×' : SY, cx, gy + (mx - 1 - r) * ch + ch / 2, ch * 0.3, (odd[i] || []).indexOf(r) >= 0);
         s += ml4(cx, gy + ch * mx + nh / 2, cl[i], FZ, hi.indexOf(i) >= 0 ? OR4[2] : INK, 900, 30); }
-      const cy = gy + ch * mx; s += '<line x1="' + x0 + '" y1="' + cy + '" x2="' + (x0 + nw) + '" y2="' + (cy + nh) + '" stroke="' + LN4 + '" stroke-width="2"/>' + ml4(x0 + nw - 4 - Math.max(...ax0.map(t => cw4(t, 18))) / 2, cy + 14, ax0, 18, GR4, 800, 20) + ml4(x0 + 4 + Math.max(...ax1.map(t => cw4(t, 18))) / 2, cy + nh - 14, ax1, 18, GR4, 800, 20);
+      const cy = gy + ch * mx; s += '<line x1="' + x0 + '" y1="' + cy + '" x2="' + (x0 + nw) + '" y2="' + (cy + nh) + '" stroke="' + LN4 + '" stroke-width="2"/>' + ml4(x0 + nw - 4 - Math.max(...ax0.map(t => cw4(t, 18))) / 2, cy + 6 + ax0.length * 10, ax0, 18, GR4, 800, 20) + ml4(x0 + 4 + Math.max(...ax1.map(t => cw4(t, 18))) / 2, cy + nh - 6 - ax1.length * 10, ax1, 18, GR4, 800, 20);
       H = gy + ch * mx + nh + 8;
     } else {
       const ch = 56, cw = mx <= 7 ? 64 : 52, nw = Math.max(110, Math.max(...cl.map(l => Math.max(...l.map(t => cw4(t, FZ))))) + 30, Math.max(...ax0.concat(ax1).map(t => cw4(t, 18))) + 24), rh = cl.some(l => l.length > 1) ? 72 : ch, W0 = nw + cw * mx; Wd = Math.max(460, W0 + 20); const x0 = (Wd - W0) / 2;
       if (o.title) { const tl = wr4(o.title, 22); s += ml4(Wd / 2, y + tl.length * 17, tl, 26, INK, 900, 32); y += tl.length * 34 + 8; }
-      const gy = y, nh = 50; s += r4(x0, gy, W0, rh * n + nh, '#fff', '#8FA3BF', 3, false, 12);
+      const gy = y, nh = Math.max(50, (ax0.length + ax1.length) * 20 + 18); s += r4(x0, gy, W0, rh * n + nh, '#fff', '#8FA3BF', 3, false, 12);
       for (let i = 0; i < n; i++) { if (holes.indexOf(i) >= 0) s += r4(x0 + nw + 4, gy + i * rh + 4, cw * mx - 8, rh - 8, OR4[0], OR4[1], 3, true, 8); else if (hi.indexOf(i) >= 0) s += r4(x0 + nw + 3, gy + i * rh + 3, cw * mx - 6, rh - 6, OR4[0], 'none', 0, false, 8); }
       for (let i = 0; i <= n; i++) s += '<line x1="' + x0 + '" y1="' + (gy + i * rh) + '" x2="' + (x0 + W0) + '" y2="' + (gy + i * rh) + '" stroke="' + LN4 + '" stroke-width="2"/>';
       for (let c = 0; c <= mx; c++) s += '<line x1="' + (x0 + nw + c * cw) + '" y1="' + gy + '" x2="' + (x0 + nw + c * cw) + '" y2="' + (gy + rh * n + nh) + '" stroke="' + LN4 + '" stroke-width="2"/>';
       for (let i = 0; i < n; i++) { const g = String(grid[i] || ''), cy = gy + i * rh + rh / 2; s += ml4(x0 + nw / 2, cy, cl[i], FZ, hi.indexOf(i) >= 0 ? OR4[2] : INK, 900, 30);
         for (let c = 0; c < mx; c++) if (g[c] === '1') s += sym4((odd[i] || []).indexOf(c) >= 0 ? '×' : SY, x0 + nw + c * cw + cw / 2, cy, Math.min(cw, rh) * 0.3, (odd[i] || []).indexOf(c) >= 0); }
       for (let c = 1; c <= mx; c++) s += txt((x0 + nw + (c - 1) * cw + cw / 2).toFixed(1), (gy + rh * n + nh / 2 + 9).toFixed(1), String(c), 26, GR4, 900);
-      const cy = gy + rh * n; s += '<line x1="' + x0 + '" y1="' + cy + '" x2="' + (x0 + nw) + '" y2="' + (cy + nh) + '" stroke="' + LN4 + '" stroke-width="2"/>' + ml4(x0 + nw - 4 - Math.max(...ax0.map(t => cw4(t, 18))) / 2, cy + nh - 13, ax0, 18, GR4, 800, 20) + ml4(x0 + 4 + Math.max(...ax1.map(t => cw4(t, 18))) / 2, cy + 13, ax1, 18, GR4, 800, 20);
+      const cy = gy + rh * n; s += '<line x1="' + x0 + '" y1="' + cy + '" x2="' + (x0 + nw) + '" y2="' + (cy + nh) + '" stroke="' + LN4 + '" stroke-width="2"/>' + ml4(x0 + nw - 4 - Math.max(...ax0.map(t => cw4(t, 18))) / 2, cy + nh - 6 - ax0.length * 10, ax0, 18, GR4, 800, 20) + ml4(x0 + 4 + Math.max(...ax1.map(t => cw4(t, 18))) / 2, cy + 6 + ax1.length * 10, ax1, 18, GR4, 800, 20);
       H = gy + rh * n + nh + 8;
     }
     return sv4(s, 'fig-cg2', Wd, H, 'data-graph="' + esc(cats.map((c, i) => c + ':' + String(grid[i] || '').split('').filter(x => x === '1').length).join(';')) + '" data-grid="' + esc(grid.join(',')) + '"');
