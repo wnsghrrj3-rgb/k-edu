@@ -1,5 +1,6 @@
 // 운명의 사람이 세상에 있다(10-19, core/bond.js) — 열한 시대 데이터(이름·옷·한마디) + 엔진(만나면 나와 따라옴·벗이면 더 가까이·등지면 물러섬·끝에 떠남·재개는 조용히·?bond=0)
 // + 77: 말 걸기(E — 한마디·물건 주기·등진 사람은 안 닿음) · 벗이 쫓김에 끼어듦(앞을 막아 3초, 한 번) · 조건 토큰 bond:1
+// + 79: 등진 사람과 화해(bond3e 「미안했다」 길 → bond:sorry → 돌발 bond4 굴림 → bond:mended 면 다시 벗으로 돌아와 따라다님) · 쫓길 때 벗이 「이쪽!」 하며 goal_at 쪽으로 먼저 뜀(12m 뒤처지면 기다림) · 벗 한마디가 지난 선택에 반응(cfg.react, 한 번)
 // + 78: 「운명의 벗과 함께」 길 열한 시대(gen_bond_ways.py, items bond:1 + life.json bond:true → together 한마디) · 벗 답례 gift 열한 시대(items 키 실재) · 벗이 숨은 것 곁에서 「저기 뭔가 있다」(한 번·자리 안 말함)
 import * as THREE from 'three';
 import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
@@ -92,4 +93,36 @@ g.pulse = { secrets: [{ s: { id: 'axe' }, x: g.bond.pos.x + 8, z: g.bond.pos.z, 
 ok(g.said.filter((t) => t.includes('저기 뭔가 있다')).length === 1 && g.flags.has('bond:hint:axe') && !g.flags.has('bond:hint:far') && !g.flags.has('bond:hint:got') && !g.said.some((t) => t.includes('8')), '벗 12m 안의 못 찾은 숨은 것 하나 → 「저기 뭔가 있다」 한 번(bond:hint:axe), 먼 것·찾은 것은 안 말함, 자리는 안 말함');
 g.said.length = 0; run(g, 40); ok(!g.said.some((t) => t.includes('저기 뭔가')), '같은 숨은 것은 다시 말하지 않는다');
 const lj2 = fs.readFileSync(path.join(root, 'core/life.js'), 'utf8'); ok(/c\.bond\) g\.bond\?\.together\?\.\(s, c\)/.test(lj2), 'life.finish — 결과 카드 bond:true → bond.together');
+// 13) 79 — 열한 시대 데이터: 화해 돌발 bond4(if bond:sorry) · bond3e 첫 길이 bond:end+bond:sorry · 칭호 「다시 벗」·사람 반응 · 벗 반응 규칙 6(실제 깃발)
+for (const era of ERAS) {
+  const w = JSON.parse(fs.readFileSync(path.join(root, 'eras', era, 'world.json'), 'utf8')); const S = w.spark; const b = S.bond; const nm = b.name;
+  const e3 = S.surprises.find((s) => s.id === 'bond3e'), e4 = S.surprises.find((s) => s.id === 'bond4');
+  ok(Array.isArray(e3.ways[0].then.flag) && e3.ways[0].then.flag.includes('bond:end') && e3.ways[0].then.flag.includes('bond:sorry') && e3.ways[1].then.flag === 'bond:end', `${era}: bond3e 다가간 길만 bond:end + bond:sorry`);
+  ok(e4 && e4.if === 'bond:sorry' && e4.ways.length === 2 && e4.ways[0].roll?.ab && e4.ways[0].then.flag === 'bond:mended' && e4.ways[0].fail?.say && !e4.ways[1].then.flag && e4.fact && e4.title.includes(nm.replace(/이$/, '')), `${era}: bond4 화해 — if bond:sorry · 굴림 ${e4?.ways[0].roll?.ab} 성공 bond:mended / 실패·그냥 둔다는 깃발 없음`);
+  ok(S.titles.some((t) => t.on === 'bond:mended' && !t.bitter && t.name.includes('다시 벗')) && S.gaze.rules.some((r) => r.if === 'bond:mended' && r.once), `${era}: 칭호 「${nm}과 다시 벗」 + 마을 사람 반응`);
+  const chase = w.pulse.chases[0], dl = w.pulse.deadlines[0]; const R = b.react || [];
+  ok(R.length >= 6 && R.every((r) => r.id && r.if && r.text && r.once) && new Set(R.map((r) => r.id)).size === R.length, `${era}: 벗 반응 규칙 ${R.length} (id·if·text·once)`);
+  ok(R.some((r) => r.if === chase.escapedFlag) && R.some((r) => r.if === chase.caughtFlag) && R.some((r) => r.if === dl.failFlag) && R.some((r) => r.if === 'bond:blocked') && R.some((r) => r.if === 'bond:gave') && R.some((r) => r.if === 'bond:together'), `${era}: 규칙이 쫓김 탈출(${chase.escapedFlag})·잡힘·늦음(${dl.failFlag})·앞 막음·준 것·같이 한 것에 맞물린다`);
+}
+// 14) 79 — 엔진: 화해 → 떠났던 사람이 벗으로 돌아온다
+g = mk(['bond:met']); run(g, 3); g.flag('bond:enemy'); run(g, 3); g.flag('bond:end'); ok(g.added.length === 0 && g.bond.state() === 'gone', '등지고 끝나 떠났다');
+g.said.length = 0; g.flag('bond:mended'); run(g, 0.3); ok(g.bond.state() === 'friend' && g.added.length === 1 && g.flags.has('bond:here') && g.said.some((t) => t.includes('다시, 같이 가')), 'bond:mended → 벗으로 돌아와 몸이 다시 서고 「…다시, 같이 가.」');
+run(g, 6); ok(d(g) <= 2.45 && g.bond.withMe(), '돌아온 벗은 2.4m 로 붙고 bond:1 참');
+g.flag('bond:end'); run(g, 2); ok(g.added.length === 1, '화해한 벗은 bond:end 뒤에도 곁에');
+// 15) 79 — 엔진: 쫓길 때 벗이 「이쪽!」 하며 숨을 곳 쪽으로 먼저 뛴다, 12m 뒤처지면 기다린다, 끝나면 돌아온다
+g = mk(['bond:met', 'bond:friend']); run(g, 4); const ch2 = { c: { id: 'esc', goal_at: 'hide' }, actor: { obj: { position: new THREE.Vector3(-30, 0, 0) } }, bondBlocked: true }; g.pulse = { chase: ch2, hold() {}, area: (t) => t === 'hide' ? { x: 60, z: 0 } : null };
+g.said.length = 0; run(g, 0.3); ok(g.flags.has('bond:lead') && g.flags.has('bond:lead:esc') && g.said.some((t) => t.includes('이쪽!')), '앞 막기 뒤 쫓김 중이면 「이쪽!」 + bond:lead:esc');
+run(g, 1.5); ok(g.bond.pos.x > 6 && g.bond.pos.x < 12.5, `goal_at 쪽으로 달린다(x=${g.bond.pos.x.toFixed(1)}, 달리기 6.2)`);
+run(g, 1); ok(g.bond.pos.x >= 11.9 && g.bond.pos.x <= 12.4 && !g.bond.lead.moving, `내가 12m 넘게 뒤처지면 멈춰 기다린다(x=${g.bond.pos.x.toFixed(1)})`);
+for (let t = 0; t < 12; t += 0.1) { g.p.pos.set(g.bond.pos.x - 3, 0, 0); g.bond.tick(0.1); } ok(Math.abs(g.bond.pos.x - 60) <= 1.7, `내가 따라오면 숨을 곳 앞(1.6m)까지 간다(x=${g.bond.pos.x.toFixed(1)})`);
+g.said.length = 0; g.pulse.chase = null; run(g, 1); ok(g.bond.lead === null && !g.said.some((t) => t.includes('이쪽')), '쫓김이 끝나면 이끌기 상태가 지워진다'); g.p.pos.set(g.bond.pos.x, 0, 0); run(g, 12); ok(d(g) <= 2.45, '다시 곁으로');
+ok((() => { const h = mk(['bond:met', 'bond:friend']); run(h, 4); h.pulse = { chase: { c: { id: 'x' }, actor: { obj: { position: new THREE.Vector3(-30, 0, 0) } }, bondBlocked: true }, hold() {}, area: () => null }; run(h, 1); return !h.flags.has('bond:lead') && d(h) <= 2.6; })(), '숨을 곳이 없는 쫓김이면 이끌지 않고 곁에서 같이 뛴다');
+// 16) 79 — 엔진: 벗 한마디가 지난 선택에 반응(cfg.react) — 깃발이 서면 8초 안에, 한 번, 벗일 때만
+g = mk(['bond:met', 'bond:friend']); g.cond = (x) => x.split('&&').every((t) => { t = t.trim(); const n = t.startsWith('!'); const f = n ? t.slice(1) : t; return n ? !g.flags.has(f) : g.flags.has(f); }); run(g, 4);
+g.said.length = 0; g.bond.sinceLine = 0; g.flags.add('crack:in'); run(g, 9); ok(g.said.filter((t) => t.includes('그 틈, 나도 봤어')).length === 1 && g.flags.has('bond:said:esc'), '깃발 crack:in → 벗이 「그 틈, 나도 봤어」 (bond:said:esc)');
+g.said.length = 0; run(g, 30); ok(!g.said.some((t) => t.includes('그 틈')), '같은 일은 다시 말하지 않는다');
+g.flags.add('bond:gave'); g.said.length = 0; run(g, 9); ok(g.said.some((t) => t.includes('네가 준 거')), '다른 깃발(bond:gave)은 또 한 번');
+ok((() => { const h = mk(['bond:met']); h.cond = g.cond; run(h, 4); h.flags.add('crack:in'); h.said.length = 0; run(h, 10); return !h.said.some((t) => t.includes('그 틈')); })(), '벗이 아니면(met) 반응 줄은 없다');
+const sj = fs.readFileSync(path.join(root, 'core/spark.js'), 'utf8'); ok(/\[\]\.concat\(out\.flag\)/.test(sj), 'spark.apply — then.flag 가 여럿이어도 전부 세운다');
+const jj = fs.readFileSync(path.join(root, 'core/jokbo.js'), 'utf8'); ok(/bond:mended/.test(jj) && /다시 벗/.test(jj), 'jokbo — 화해하면 「○○과 다시 벗」');
 console.log(`\n운명의 사람(bond): ${pass}/${pass + fail} 통과`); if (fail) process.exit(1);

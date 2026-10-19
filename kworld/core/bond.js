@@ -7,11 +7,14 @@
 //  · 말 걸기(E, 10-19 77): 곁(3.8m — 선 자리 3.4 안)에 서면 「말을 건다」 — 한마디·주머니 물건 주기(bond:gave:<k>)·벗은 한 번 답례(cfg.gift 있으면, bond:gift). 등진 사람에겐 말이 닿지 않는다(bond:tried).
 //  · 벗이 쫓김에 끼어든다: bond:friend 인 채 쫓기면 벗이 쫓는 사람에게 달려가 앞을 막아 3초를 번다(한 쫓김에 한 번, bond:blocked) — 그 사이 쫓는 사람은 멈춘다.
 //  · 조건 토큰 `bond:1` = 벗이 곁(5m) — life.cond·game.cond 에서 「운명의 벗과 함께」 길에 쓴다(10-19 78: 열한 시대마다 하나, gen_bond_ways.py — 결과 카드 `bond:true` 면 `together()` 한마디).
+//  · 화해(79): bond3e 에서 먼저 다가간 쪽(bond:sorry)에겐 돌발 bond4 가 한 번 더 — 굴림에 이기면 `bond:mended`: 등졌던 사람이 벗으로 돌아와 다시 따라다닌다(「…다시, 같이 가.」). 족보엔 「○○과 다시 벗」.
+//  · 벗이 길을 보여 준다(79): 쫓길 때(앞을 막은 뒤) 벗이 「이쪽!」 하며 숨을 곳(goal_at) 쪽으로 먼저 뛴다 — 내가 12m 넘게 뒤처지면 멈춰 기다린다. 값·판정엔 손 안 댐(bond:lead:<chase>).
+//  · 벗의 한마디가 지난 선택에 반응(79): cfg.react[{id,if,text,once}] — 깃발이 서면(쫓김 탈출·잡힘·앞 막음·준 것·늦음·같이 한 것) 벗이 그 일을 말한다, 한 번(bond:said:<id>). 벗일 때만.
 //  · 벗은 숨은 것을 먼저 안다(78): 벗이 아직 못 찾은 숨은 것(pulse.secrets) 12m 안을 지나면 한 번 「저기 뭔가 있다」 — 자리는 안 알려 준다(반짝임을 찾는 건 네 몫), `bond:hint:<id>`.
 import * as THREE from 'three';
 import { createAvatar } from './avatar.js';
 
-const FOLLOW = { met: 3.4, friend: 2.4 }, HINT_R = 12, HINT_GAP = 20, AWAY = 11, STEPBACK = 5, WALK = 3.4, RUN = 6.2, LINE_GAP = 55, WAVE_MS = 1600, TALK_R = 3.8, WITH_R = 5, BLOCK_R = 2.2, BLOCK_SEC = 3;
+const FOLLOW = { met: 3.4, friend: 2.4 }, LEAD_WAIT = 12, LEAD_STOP = 1.6, REACT_GAP = 8, HINT_R = 12, HINT_GAP = 20, AWAY = 11, STEPBACK = 5, WALK = 3.4, RUN = 6.2, LINE_GAP = 55, WAVE_MS = 1600, TALK_R = 3.8, WITH_R = 5, BLOCK_R = 2.2, BLOCK_SEC = 3;
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 const JO = (n, a, b) => { const c = String(n || '').slice(-1).charCodeAt(0); return n + ((c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28) ? a : b); };
 function label(text) {
@@ -30,9 +33,9 @@ function defaultLines(n) {
 }
 
 export class Bond {
-  constructor(g, cfg) { this.g = g; this.cfg = cfg || {}; this.name = this.cfg.name || '그 사람'; this.lines = { ...defaultLines(this.name), ...(this.cfg.lines || {}) }; this.body = null; this.pos = null; this.yaw = 0; this.walk = 0; this.sinceLine = 20; this.waveUntil = 0; this.lastWave = 0; this.spokenSky = null; this.turned = false; this.gone = false; this.block = null; this.sinceHint = 0; }
+  constructor(g, cfg) { this.g = g; this.cfg = cfg || {}; this.name = this.cfg.name || '그 사람'; this.lines = { ...defaultLines(this.name), ...(this.cfg.lines || {}) }; this.body = null; this.pos = null; this.yaw = 0; this.walk = 0; this.sinceLine = 20; this.waveUntil = 0; this.lastWave = 0; this.spokenSky = null; this.turned = false; this.gone = false; this.block = null; this.sinceHint = 0; this.lead = null; this.reactT = 0; }
   /** 지금 관계 — null(아직) / met / friend / enemy / gone(등지고 끝) */
-  state() { const f = this.g.flags; if (!f.has('bond:met')) return null; if (f.has('bond:enemy')) return f.has('bond:end') ? 'gone' : 'enemy'; return f.has('bond:friend') ? 'friend' : 'met'; }
+  state() { const f = this.g.flags; if (!f.has('bond:met')) return null; if (f.has('bond:mended')) return 'friend'; if (f.has('bond:enemy')) return f.has('bond:end') ? 'gone' : 'enemy'; return f.has('bond:friend') ? 'friend' : 'met'; }
   dist(a, b) { return Math.hypot(a.x - b.x, a.z - b.z); }
   quiet() { const g = this.g; return !g.ui?.isOpen?.() && !g.story?.cutsceneOn && g.p?.enabled !== false; }
   /** 몸 세우기 — 플레이어 앞 7m. 재개(restoring)면 조용히 */
@@ -43,7 +46,7 @@ export class Bond {
     const tag = label(this.name); if (tag) { tag.position.y = 2.05; body.add(tag); }
     const p = g.p.pos; const ang = (g.p.yaw || 0); const x = p.x - Math.sin(ang) * 7, z = p.z - Math.cos(ang) * 7;
     this.pos = { x, z }; this.yaw = Math.atan2(p.x - x, p.z - z); body.position.set(x, g.e.groundY ? g.e.groundY(x, z) : 0, z); body.rotation.y = this.yaw; g.e.scene.add(body); this.body = body; g.flags.add('bond:here');
-    if (!silent) { this.waveUntil = performance.now() + WAVE_MS; g.sound?.play?.('good', 0.25); g.ui?.say?.(`👤 ${this.name} — 「같이 가.」`, 4200); this.sinceLine = 0; }
+    if (!silent) { this.waveUntil = performance.now() + WAVE_MS; g.sound?.play?.('good', 0.25); g.ui?.say?.(`👤 ${this.name} — ${g.flags.has('bond:mended') ? '「…다시, 같이 가.」' : '「같이 가.」'}`, 4200); this.sinceLine = 0; }
   }
   remove(say) { const g = this.g; if (!this.body) return; g.e.scene.remove(this.body); this.body = null; this.pos = null; g.flags.delete('bond:here'); this.gone = true; if (say) g.ui?.say?.(say, 4200); }
   /** 걸음 — 목표 자리로 speed 로, 닿으면 서 있다. 돌려준다: 움직였나 */
@@ -62,6 +65,7 @@ export class Bond {
       else if (d > AWAY * 2.2) { moving = this.step(dt, p.x, p.z, WALK, AWAY); }   // 아주 멀어지면 멀찍이 따라는 온다 — 보이는 거리에
       else { const away = Math.atan2(this.pos.x - p.x, this.pos.z - p.z); let dy = away - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * Math.min(1, dt * 3); }   // 등을 돌리고 선다
     } else if (st === 'friend' && this.blocking(dt)) { moving = this.block.moving;   // 벗이 쫓는 사람 앞을 막으러 간다
+    } else if (st === 'friend' && this.leading(dt)) { moving = this.lead.moving;   // 벗이 숨을 곳 쪽으로 먼저 뛰어 길을 보여 준다
     } else {
       const stopAt = FOLLOW[st] ?? FOLLOW.met; const run = d > 9 || (st === 'friend' && g.pulse?.chase); speed = run ? RUN : WALK;
       moving = this.step(dt, p.x, p.z, speed, stopAt);
@@ -75,6 +79,24 @@ export class Bond {
     this.sinceLine += dt; const sky = g.story?.skyName || 'day'; if (sky !== this.spokenSky) { this.spokenSky = sky; this.sinceLine = Math.max(this.sinceLine, LINE_GAP - 12); }
     if (this.sinceLine >= LINE_GAP && this.quiet() && d < (st === 'enemy' ? AWAY + 3 : 6)) { this.sinceLine = 0; const pool = this.lines[st] || []; if (pool.length) g.ui?.say?.(`👤 ${this.name} — ${pool[Math.floor(Math.random() * pool.length)]}`, 4200); }
     this.sinceHint += dt; if (st === 'friend' && this.sinceHint >= HINT_GAP) this.hint();
+    this.reactT += dt; if (st === 'friend' && this.reactT >= 1 && this.sinceLine >= REACT_GAP && this.quiet() && d < 6) { this.reactT = 0; this.react(); }
+  }
+  /** 벗의 한마디가 지난 선택에 반응 — cfg.react 규칙 중 깃발이 선 것 하나, 한 번(bond:said:<id>) */
+  react() {
+    const g = this.g; const cond = g.cond ? (x) => g.cond(x) : () => false;
+    for (const r of this.cfg.react || []) { if (!r?.id || !r.if || g.flags.has('bond:said:' + r.id) || !cond(r.if)) continue;
+      this.sinceLine = 0; g.flags.add('bond:said:' + r.id); g.ui?.say?.(`👤 ${this.name} — ${r.text}`, 4600); return true; }
+    return false;
+  }
+  /** 쫓김 중 벗이 숨을 곳 쪽으로 먼저 뛴다(앞 막기가 끝난 뒤). 내가 LEAD_WAIT 넘게 뒤처지면 멈춰 기다린다. 돌려준다: 지금 이끄는 중인가 */
+  leading(dt) {
+    const g = this.g; const ch = g.pulse?.chase; if (!ch) { this.lead = null; return false; }
+    if (this.lead && this.lead.ch !== ch) this.lead = null;
+    const goal = g.pulse.area?.(ch.c?.goal_at || ch.c?.goal); if (!goal) return false;
+    if (!this.lead) { this.lead = { ch, moving: false }; if (!g.flags.has('bond:lead:' + ch.c.id)) { g.flags.add('bond:lead'); g.flag?.('bond:lead:' + ch.c.id); g.sound?.play?.('good', 0.3); g.ui?.say?.(`👤 ${this.name} — 「이쪽!」`, 2600); } }
+    const L = this.lead; const p = g.p.pos; const dp = this.dist(this.pos, p);
+    if (dp > LEAD_WAIT) { L.moving = false; const face = Math.atan2(p.x - this.pos.x, p.z - this.pos.z); let dy = face - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * Math.min(1, dt * 5); return true; }   // 기다린다 — 돌아보고 선다
+    L.moving = this.step(dt, goal.x, goal.z, RUN, LEAD_STOP); return true;
   }
   /** 벗이 숨은 것 곁을 지나면 「저기 뭔가 있다」 — 못 찾은 것, 한 번(bond:hint:<id>), 자리는 말 안 한다 */
   hint() {
@@ -123,7 +145,8 @@ export class Bond {
   }
   /** 벗의 답례 — cfg.gift(물건 키)가 있으면 한 번만 */
   gift() { const g = this.g; const k = this.cfg.gift; if (!k || this.state() !== 'friend' || g.flags.has('bond:gift') || !g.items?.items?.[k]) return; setTimeout(() => { g.inventory.push(k); g.renderInv?.(); g.flag?.('bond:gift'); g.ui?.say?.(`👤 ${this.name} — 「이건 네 거.」 ${g.items.items[k].icon || ''} ${g.items.items[k].name}`, 4200); }, 1600); }
-  onFlag() { if (this.g.restoring) return; const st = this.state(); if (st === 'met' && !this.body) this.spawn(false); if (st === 'gone') this.remove(`👤 ${JO(this.name, '이', '가')} 떠났다. 다시 보지 못했다.`); }
+  onFlag() { if (this.g.restoring) return; const st = this.state(); if (this.g.flags.has('bond:mended') && this.gone) { this.gone = false; this.turned = false; }   // 화해 — 떠났던 사람이 돌아온다(tick 에서 다시 선다)
+    if (st === 'met' && !this.body) this.spawn(false); if (st === 'gone') this.remove(`👤 ${JO(this.name, '이', '가')} 떠났다. 다시 보지 못했다.`); }
   /** 곁에 있나(시험·HUD용) */
   near(r = 6) { return !!this.body && this.dist(this.pos, this.g.p.pos) <= r; }
 }

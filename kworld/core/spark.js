@@ -72,7 +72,7 @@ export class Spark {
     const g = this.g; const lines = []; if (!out) return lines; const L = g.life;
     for (const k of ['craft', 'heart', 'grain']) { const n = out[k]; if (!n) continue; if (k === 'grain' && !L?.d?.grain?.open) continue; L?.add(k, n); lines.push(`${V[k]} ${n > 0 ? '+' : ''}${n}`); }
     if (out.hurt) { L?.injure(out.hurt); lines.push(`🩹 ${L?.d?.hurts?.[out.hurt]?.name || out.hurt}`); } if (out.give) { for (const k of [].concat(out.give)) g.inventory.push(k); g.renderInv?.(); lines.push(`🎒 ${[].concat(out.give).map((k) => g.world.items?.[k]?.name || k).join('·')}`); }
-    if (out.flag) setTimeout(() => g.flag(out.flag), 300); if (!silent && (label || out.say)) g.ui.say(`${label ? label + ' — ' : ''}${lines.join(' · ') || out.say || ''}`, 4200);
+    if (out.flag) setTimeout(() => { for (const f of [].concat(out.flag)) g.flag(f); }, 300);   // 깃발 하나 또는 여럿(79: bond3e 「미안했다」 길은 bond:end + bond:sorry) if (!silent && (label || out.say)) g.ui.say(`${label ? label + ' — ' : ''}${lines.join(' · ') || out.say || ''}`, 4200);
     return lines;
   }
   // ---------- 밤의 설렘 ----------

@@ -15,8 +15,8 @@ const mergeHeir = (a, b) => { const out = []; const seen = new Set(); for (const
 /** 이 기기에서 붙은 이름(core/spark.js 칭호가 kworld_titles 에 쓴다) — era 를 주면 그 시대 것만 */
 export function titlesOf(era = null, store = (k) => read(k)) { const all = store('kworld_titles') || []; return (era ? all.filter((t) => t.era === era) : all).map((t) => ({ id: t.id, name: t.name, line: t.line || null, bitter: !!t.bitter, t: t.t || 0 })); }
 /** 운명의 사람 — world.spark.bond.name + 깃발(bond:friend/enemy/met) → { name, how } 또는 null */
-export function bondOf(g) { const name = g?.world?.spark?.bond?.name; if (!name || !g.flags) return null; const how = g.flags.has('bond:friend') ? 'friend' : g.flags.has('bond:enemy') ? 'enemy' : g.flags.has('bond:met') ? 'met' : null; return how ? { name, how } : null; }
-export const bondLine = (b) => !b ? '' : b.how === 'friend' ? `👤 ${b.name}의 벗` : b.how === 'enemy' ? `👤 ${b.name}과 등졌다` : `👤 ${b.name}을 만났다`;
+export function bondOf(g) { const name = g?.world?.spark?.bond?.name; if (!name || !g.flags) return null; const how = g.flags.has('bond:mended') ? 'mended' : g.flags.has('bond:friend') ? 'friend' : g.flags.has('bond:enemy') ? 'enemy' : g.flags.has('bond:met') ? 'met' : null; return how ? { name, how } : null; }
+export const bondLine = (b) => !b ? '' : b.how === 'mended' ? `👤 ${b.name}과 다시 벗` : b.how === 'friend' ? `👤 ${b.name}의 벗` : b.how === 'enemy' ? `👤 ${b.name}과 등졌다` : `👤 ${b.name}을 만났다`;
 export function carryRecord(life, branch) {
   const v = life.values; const d = life.d;
   return { craft: v.craft, heart: v.heart, grain: v.grain || 0, rank: v.rank || 0, cap: life.cap(), branch: branch.id, title: branch.title || null, status: life.status || null, statusName: life.statusName || null, nation: life.nation || null, nationName: life.nationName || null, hurt: [...life.hurt], marks: [...life.hurt].map((h) => d.hurts?.[h]?.name || h), sits: life.log.length, heirlooms: heirloomsOf(life.g?.era), titles: titlesOf(life.g?.era), bond: bondOf(life.g), t: Date.now() };
