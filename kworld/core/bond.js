@@ -9,13 +9,14 @@
 //  · 조건 토큰 `bond:1` = 벗이 곁(5m) — life.cond·game.cond 에서 「운명의 벗과 함께」 길에 쓴다(10-19 78: 열한 시대마다 하나, gen_bond_ways.py — 결과 카드 `bond:true` 면 `together()` 한마디).
 //  · 화해(79): bond3e 에서 먼저 다가간 쪽(bond:sorry)에겐 돌발 bond4 가 한 번 더 — 굴림에 이기면 `bond:mended`: 등졌던 사람이 벗으로 돌아와 다시 따라다닌다(「…다시, 같이 가.」). 족보엔 「○○과 다시 벗」.
 //  · 벗이 서두르게 한다(81): 급한 일(모래시계) 중이면 벗이 「서둘러! 이쪽이야.」 하며 그 상황의 자리(deadline.goal || life 상황 place)로 먼저 뛴다 — 12m 뒤처지면 기다리고, 내가 6m 안에 닿으면 그만(bond:hurry:<id>). 쫓김이 같이 있으면 쫓김 이끌기가 먼저.
+//  · 벗이 「여기야」 하며 그 상황의 물건을 반짝인다(82): 급한 일 자리에 닿으면(hurry.done) 그 상황(sit:<id>:open)이 지금 열어 둔 대상·사람(items rename·npc lines 의 if 가 그 상황을 보고, 지금 조건이 맞는 것)에 호박빛 반짝임을 붙인다 — 어느 길을 고를지는 안 가리킨다(여럿이면 전부, 가까운 넷까지), 쓰면 그 자리 반짝임은 꺼지고, 급한 일이 끝나면(또는 60초) 전부 꺼진다. bond:point:<id>, 한 번.
 //  · 벗이 길을 보여 준다(79): 쫓길 때(앞을 막은 뒤) 벗이 「이쪽!」 하며 숨을 곳(goal_at) 쪽으로 먼저 뛴다 — 내가 12m 넘게 뒤처지면 멈춰 기다린다. 값·판정엔 손 안 댐(bond:lead:<chase>).
 //  · 벗의 한마디가 지난 선택에 반응(79): cfg.react[{id,if,text,once}] — 깃발이 서면(쫓김 탈출·잡힘·앞 막음·준 것·늦음·같이 한 것) 벗이 그 일을 말한다, 한 번(bond:said:<id>). 벗일 때만.
 //  · 벗은 숨은 것을 먼저 안다(78): 벗이 아직 못 찾은 숨은 것(pulse.secrets) 12m 안을 지나면 한 번 「저기 뭔가 있다」 — 자리는 안 알려 준다(반짝임을 찾는 건 네 몫), `bond:hint:<id>`.
 import * as THREE from 'three';
 import { createAvatar } from './avatar.js';
 
-const FOLLOW = { met: 3.4, friend: 2.4 }, LEAD_WAIT = 12, LEAD_STOP = 1.6, HURRY_NEAR = 6, REACT_GAP = 8, HINT_R = 12, HINT_GAP = 20, AWAY = 11, STEPBACK = 5, WALK = 3.4, RUN = 6.2, LINE_GAP = 55, WAVE_MS = 1600, TALK_R = 3.8, WITH_R = 5, BLOCK_R = 2.2, BLOCK_SEC = 3;
+const FOLLOW = { met: 3.4, friend: 2.4 }, LEAD_WAIT = 12, LEAD_STOP = 1.6, HURRY_NEAR = 6, POINT_R = 30, POINT_SEE = 40, POINT_MAX = 4, POINT_SEC = 60, REACT_GAP = 8, HINT_R = 12, HINT_GAP = 20, AWAY = 11, STEPBACK = 5, WALK = 3.4, RUN = 6.2, LINE_GAP = 55, WAVE_MS = 1600, TALK_R = 3.8, WITH_R = 5, BLOCK_R = 2.2, BLOCK_SEC = 3;
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 const JO = (n, a, b) => { const c = String(n || '').slice(-1).charCodeAt(0); return n + ((c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28) ? a : b); };
 function label(text) {
@@ -34,7 +35,7 @@ function defaultLines(n) {
 }
 
 export class Bond {
-  constructor(g, cfg) { this.g = g; this.cfg = cfg || {}; this.name = this.cfg.name || '그 사람'; this.lines = { ...defaultLines(this.name), ...(this.cfg.lines || {}) }; this.body = null; this.pos = null; this.yaw = 0; this.walk = 0; this.sinceLine = 20; this.waveUntil = 0; this.lastWave = 0; this.spokenSky = null; this.turned = false; this.gone = false; this.block = null; this.sinceHint = 0; this.lead = null; this.hurry = null; this.reactT = 0; }
+  constructor(g, cfg) { this.g = g; this.cfg = cfg || {}; this.name = this.cfg.name || '그 사람'; this.lines = { ...defaultLines(this.name), ...(this.cfg.lines || {}) }; this.body = null; this.pos = null; this.yaw = 0; this.walk = 0; this.sinceLine = 20; this.waveUntil = 0; this.lastWave = 0; this.spokenSky = null; this.turned = false; this.gone = false; this.block = null; this.sinceHint = 0; this.lead = null; this.hurry = null; this.point = null; this.reactT = 0; }
   /** 지금 관계 — null(아직) / met / friend / enemy / gone(등지고 끝) */
   state() { const f = this.g.flags; if (!f.has('bond:met')) return null; if (f.has('bond:mended')) return 'friend'; if (f.has('bond:enemy')) return f.has('bond:end') ? 'gone' : 'enemy'; return f.has('bond:friend') ? 'friend' : 'met'; }
   dist(a, b) { return Math.hypot(a.x - b.x, a.z - b.z); }
@@ -81,6 +82,7 @@ export class Bond {
     this.sinceLine += dt; const sky = g.story?.skyName || 'day'; if (sky !== this.spokenSky) { this.spokenSky = sky; this.sinceLine = Math.max(this.sinceLine, LINE_GAP - 12); }
     if (this.sinceLine >= LINE_GAP && this.quiet() && d < (st === 'enemy' ? AWAY + 3 : 6)) { this.sinceLine = 0; const pool = this.lines[st] || []; if (pool.length) g.ui?.say?.(`👤 ${this.name} — ${pool[Math.floor(Math.random() * pool.length)]}`, 4200); }
     this.sinceHint += dt; if (st === 'friend' && this.sinceHint >= HINT_GAP) this.hint();
+    if (st === 'friend') this.pointing(dt); else if (this.point) this.unpoint();
     this.reactT += dt; if (st === 'friend' && this.reactT >= 1 && this.sinceLine >= REACT_GAP && this.quiet() && d < 6) { this.reactT = 0; this.react(); }
   }
   /** 벗의 한마디가 지난 선택에 반응 — cfg.react 규칙 중 깃발이 선 것 하나, 한 번(bond:said:<id>) */
@@ -111,6 +113,47 @@ export class Bond {
     const H = this.hurry; const dp = this.dist(this.pos, p);
     if (dp > LEAD_WAIT) { H.moving = false; const face = Math.atan2(p.x - this.pos.x, p.z - this.pos.z); let dy = face - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * Math.min(1, dt * 5); return true; }   // 기다린다 — 돌아보고 선다
     H.moving = this.step(dt, goal.x, goal.z, RUN, LEAD_STOP); return true;
+  }
+  /** 그 상황이 지금 열어 둔 대상·사람 — items rename(첫 맞는 것)·npc lines(첫 맞는 것)의 `if` 가 `sit:<id>:open` 을 보고 지금 조건이 맞는 것. 돌려준다: [{t, rule}] */
+  sitTargets(sitId) {
+    const g = this.g; const ix = g.e?.interactables; if (!ix?.values || !g.cond) return []; const key = 'sit:' + sitId + ':open'; const out = [];
+    for (const t of ix.values()) { let rule = null;
+      if (t.type === 'npc') { const l = g.npcs?.[t.id]?.lines?.find((x) => g.cond(x.if)); if (l?.if?.includes(key)) rule = l; }
+      else { const d = g.items?.targets?.[t.type]; const r = d?.rename?.find((x) => g.cond(x.if)); if (r?.if?.includes(key)) rule = r; else if (!r && d?.if?.includes(key) && g.cond(d.if)) rule = d; }
+      if (rule) out.push({ t, rule }); }
+    return out;
+  }
+  /** 호박빛 반짝임 한 묶음 — 대상 위(box.max.y)에서 떠돈다 */
+  mark(t) {
+    const c = t.center || t.obj?.position || { x: 0, y: 0, z: 0 }; const top = t.box?.max?.y ?? (c.y + 1);
+    const grp = new THREE.Group(); const m = new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0.9 });
+    for (let i = 0; i < 6; i++) { const s = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 5), m); const a = i / 6 * Math.PI * 2; s.position.set(Math.cos(a) * 0.45, 0, Math.sin(a) * 0.45); s.userData.ph = a; grp.add(s); }
+    const l = new THREE.PointLight(0xffc070, 0.8, 4.5, 2); l.position.y = 0.3; grp.add(l); grp.position.set(c.x, top + 0.25, c.z); return grp;
+  }
+  unpoint() { const g = this.g; const P = this.point; if (!P) return; for (const m of P.marks) g.e?.scene?.remove?.(m.grp); this.point = null; }
+  /** 벗이 「여기야」 — 급한 일 자리에 닿은 뒤(hurry.done) 그 상황의 대상·사람에 반짝임. 길은 안 가리킨다. 쓰면(조건이 안 맞으면) 그 반짝임만 꺼지고, 급한 일이 끝나면(또는 POINT_SEC) 전부 꺼진다 */
+  pointing(dt) {
+    const g = this.g; const dl = g.pulse?.deadline; const now = performance.now();
+    if (this.point && (!dl || this.point.dl !== dl || now > this.point.until)) this.unpoint();
+    if (!dl) return;
+    const H = this.hurry; if (!H?.done || H.dl !== dl) return;
+    if (!this.point) {
+      this.point = { dl, marks: [], until: now + POINT_SEC * 1000, t: 0 };
+      if (g.flags.has('bond:point:' + dl.d.id)) return;   // 이미 가리켰다(재개·다시 온 자리)
+      const sit = g.life?.situations?.find?.((x) => x.id === dl.d?.id); const goal = g.pulse.area?.(dl.d?.goal || sit?.place) || g.p.pos;
+      const list = this.sitTargets(dl.d.id).map((x) => ({ ...x, dd: this.dist(x.t.center || x.t.obj?.position || goal, goal) })).filter((x) => x.dd <= POINT_R).sort((a, b) => a.dd - b.dd).slice(0, POINT_MAX);
+      g.flags.add('bond:point'); g.flag?.('bond:point:' + dl.d.id);
+      if (!list.length) return;
+      for (const x of list) { const grp = this.mark(x.t); g.e?.scene?.add?.(grp); this.point.marks.push({ t: x.t, rule: x.rule, grp }); }
+      this.sinceLine = 0; g.sound?.play?.('good', 0.3); g.ui?.say?.(`👤 ${this.name} — 「여기야.」 ${list.length > 1 ? `(${list.length}곳이 반짝인다 — 어디로 갈지는 네 몫)` : ''}`.trim(), 3200);
+      return;
+    }
+    const P = this.point; P.t += dt; const p = g.p.pos; const re = Math.floor(P.t) !== Math.floor(P.t - dt);
+    for (const m of [...P.marks]) {
+      if (re && !g.cond(m.rule.if)) { g.e?.scene?.remove?.(m.grp); P.marks.splice(P.marks.indexOf(m), 1); continue; }   // 썼다(조건이 바뀜) — 그 반짝임만 끈다
+      const grp = m.grp; grp.visible = this.dist(grp.position, p) < POINT_SEE; grp.rotation.y += dt * 1.2;
+      for (const c of grp.children) if (c.isMesh) c.position.y = Math.sin(P.t * 2.5 + c.userData.ph) * 0.15;
+    }
   }
   /** 벗이 숨은 것 곁을 지나면 「저기 뭔가 있다」 — 못 찾은 것, 한 번(bond:hint:<id>), 자리는 말 안 한다 */
   hint() {

@@ -2,6 +2,7 @@
 // + 77: 말 걸기(E — 한마디·물건 주기·등진 사람은 안 닿음) · 벗이 쫓김에 끼어듦(앞을 막아 3초, 한 번) · 조건 토큰 bond:1
 // + 79: 등진 사람과 화해(bond3e 「미안했다」 길 → bond:sorry → 돌발 bond4 굴림 → bond:mended 면 다시 벗으로 돌아와 따라다님) · 쫓길 때 벗이 「이쪽!」 하며 goal_at 쪽으로 먼저 뜀(12m 뒤처지면 기다림) · 벗 한마디가 지난 선택에 반응(cfg.react, 한 번)
 // + 78: 「운명의 벗과 함께」 길 열한 시대(gen_bond_ways.py, items bond:1 + life.json bond:true → together 한마디) · 벗 답례 gift 열한 시대(items 키 실재) · 벗이 숨은 것 곁에서 「저기 뭔가 있다」(한 번·자리 안 말함)
+// + 82: 벗이 「여기야.」 하며 그 상황의 대상·사람(items rename·npc lines 의 if 가 sit:<id>:open 을 보고 지금 맞는 것)에 호박빛 반짝임(bond:point:<id>, 급한 일 자리 6m 안에 닿은 뒤, 30m 안 넷까지, 쓰면 그것만 꺼짐, 끝나면 전부) · 외침 답을 받으면 외친 쪽 몸도 손 흔들기 + reply kind back 「고마워.」
 // + 81: 벗이 급한 일(모래시계)에서 「서둘러! 이쪽이야.」 하며 그 상황의 자리로 먼저 뜀(bond:hurry:<id>, 6m 안이면 그만, 쫓김 이끌기가 먼저) · 반 친구 외침에 답하기(외침 뒤 9초 안 G → wave reply → 「👋 이름 — 「다행이다!」」)
 // + 80: 벗의 물려줄 것(bond3f 첫 길·bond4 화해 성공 then.heirloom → spark.apply → Pulse.keep from:'bond', 족보 n/3 셈엔 안 들어감) · 벗이 쓰러진 나를 일으킴(danger.collapse — 벗 곁 8m 면 먹을 것 1/4, bond:lifted) · 반 친구 외침(friends.shout — 쫓김 끝·급한 일 늦음, 곁 14m 친구만)
 import * as THREE from 'three';
@@ -179,6 +180,31 @@ for (const era of ERAS) {
   const h4 = mk(['bond:met', 'bond:friend']); run(h4, 4); h4.life = { situations: [{ id: 'q', place: 'nowhere' }] }; h4.pulse = { chase: null, deadline: { d: { id: 'q' }, left: 30 }, hold() {}, area: () => null }; run(h4, 1); ok(!h4.flags.has('bond:hurry') && d(h4) <= 2.6, '자리를 모르는 급한 일이면 이끌지 않고 곁에 있다');
   const h5 = mk(['bond:met', 'bond:friend']); run(h5, 4); h5.pulse = { chase: null, deadline: { d: { id: 'z', goal: 'spot' }, left: 30 }, hold() {}, area: (t) => t === 'spot' ? { x: 40, z: 0 } : null }; run(h5, 1); ok(h5.flags.has('bond:hurry:z') && h5.bond.pos.x > 3, 'deadline.goal 이 있으면 life 상황 없이도 그리로');
 }
+// 23) 82 — 엔진: 급한 일 자리에 닿은 뒤(hurry.done) 벗이 「여기야.」 하며 그 상황의 대상·사람에 반짝임 — items rename·npc lines 의 if 가 sit:<id>:open 을 보고 지금 조건이 맞는 것만, 30m 안 넷까지, 길은 안 가리킴, 쓰면 그 반짝임만, 급한 일 끝나면 전부
+{
+  const mkIx = (name, type, id, x, z, top = 1) => [name, { type, id, obj: { position: new THREE.Vector3(x, 0, z) }, center: new THREE.Vector3(x, 0.5, z), box: { max: { y: top } } }];
+  const h = mk(['bond:met', 'bond:friend', 'status:solgeo', 'sit:imjin:open']); run(h, 4);
+  h.cond = (expr) => !expr || expr.split('&&').every((t) => { t = t.trim(); const neg = t.startsWith('!'); const f = neg ? t.slice(1) : t; const v = h.flags.has(f); return neg ? !v : v; });
+  h.items.targets = { hideout: { name: '숯가마 옆', rename: [{ if: 'sit:imjin:open && !sit:imjin:done && status:solgeo && !imjin:run', verb: '달아난다' }] }, boat: { name: '배', rename: [{ if: 'sit:imjin:open && !sit:imjin:done && status:yangban', verb: '피란' }, { if: 'sit:imjin:open && !sit:imjin:done', verb: '노를 젓는다' }] }, well: { name: '우물', rename: [{ if: 'sit:other:open', verb: '긷는다' }] }, far: { name: '먼 것', rename: [{ if: 'sit:imjin:open', verb: '…' }] } };
+  h.npcs = { uibyeong: { name: '의병장', lines: [{ if: 'sit:imjin:open && !sit:imjin:done && status:yangban', text: 'a' }, { if: 'sit:imjin:open && !sit:imjin:done', text: '같이 간다' }, { text: '…' }] }, jumo: { name: '주모', lines: [{ if: 'talk:x', text: 'b' }, { text: 'c' }] } };
+  h.e.interactables = new Map([mkIx('hideout_1', 'hideout', 'hideout_1', 52, 3, 1.4), mkIx('boat_1', 'boat', 'boat_1', 60, -4, 0.6), mkIx('well_1', 'well', 'well_1', 48, 0), mkIx('far_1', 'far', 'far_1', 120, 0), mkIx('npc_uibyeong', 'npc', 'uibyeong', 46, 5, 1.8), mkIx('npc_jumo', 'npc', 'jumo', 50, 1)]);
+  const st = h.bond.sitTargets('imjin'); ok(st.length === 4 && st.map((x) => x.t.id).sort().join() === 'boat_1,far_1,hideout_1,uibyeong', `sitTargets — 그 상황이 지금 열어 둔 것만(${st.map((x) => x.t.id).sort().join()})`);
+  ok(st.find((x) => x.t.id === 'boat_1').rule.verb === '노를 젓는다' && st.find((x) => x.t.id === 'uibyeong').rule.text === '같이 간다', '첫 맞는 rename·line 으로 고른다(양반 줄은 건너뜀)');
+  const dl = { d: { id: 'imjin', title: '왜군' }, left: 60 }; h.life = { situations: [{ id: 'imjin', place: 'eogwi' }] }; h.pulse = { chase: null, deadline: dl, hold() {}, area: (t) => t === 'eogwi' ? { x: 50, z: 0 } : null };
+  h.said.length = 0; const before = h.added.length; run(h, 0.5); ok(h.bond.point === null, '자리에 닿기 전엔 반짝임이 없다');
+  ok(!h.flags.has('bond:point') && h.added.length === before, '멀리 있을 땐 가리키지 않는다');
+  for (let t = 0; t < 14 && !h.bond.hurry?.done; t += 0.1) { h.p.pos.set(h.bond.pos.x - 3, 0, 0); h.bond.tick(0.1); } run(h, 0.3);
+  ok(h.flags.has('bond:point') && h.flags.has('bond:point:imjin') && h.said.some((t) => t.includes('여기야')), '자리 6m 안에 닿으면 「여기야.」 + bond:point:imjin');
+  ok(h.bond.point && h.bond.point.marks.length === 3 && h.bond.point.marks.map((m) => m.t.id).sort().join() === 'boat_1,hideout_1,uibyeong', `30m 안 대상·사람에만 반짝임(${h.bond.point.marks.map((m) => m.t.id).sort().join()}) — 먼 것·다른 상황 것 없음`);
+  ok(h.added.length === before + 3 && h.bond.point.marks.every((m) => Math.abs(m.grp.position.y - (m.t.box.max.y + 0.25)) < 1e-6), '반짝임은 scene 에 셋, 대상 위(box.max.y+0.25)에 뜬다');
+  ok(h.said.some((t) => t.includes('3곳')), '여럿이면 「n곳이 반짝인다 — 어디로 갈지는 네 몫」');
+  h.flags.add('imjin:run'); run(h, 1.2); ok(h.bond.point.marks.length === 2 && !h.bond.point.marks.some((m) => m.t.id === 'hideout_1') && h.added.length === before + 2, '하나를 쓰면(조건이 바뀌면) 그 반짝임만 꺼진다');
+  h.p.pos.set(0, 0, 0); run(h, 0.5); ok(h.bond.point.marks.every((m) => m.grp.visible === false), '40m 밖에선 안 보인다');
+  h.pulse.deadline = null; run(h, 0.5); ok(h.bond.point === null && h.added.length === before, '급한 일이 끝나면 전부 꺼진다');
+  h.pulse.deadline = dl; h.bond.hurry = null; h.p.pos.set(49, 0, 0); h.said.length = 0; run(h, 1); ok(h.bond.point && h.bond.point.marks.length === 0 && !h.said.some((t) => t.includes('여기야')), '같은 급한 일에선 다시 가리키지 않는다(bond:point:imjin)');
+  const h2 = mk(['bond:met', 'bond:enemy']); run(h2, 2); h2.cond = h.cond; h2.items.targets = h.items.targets; h2.npcs = h.npcs; h2.e.interactables = h.e.interactables; h2.life = h.life; h2.pulse = { chase: null, deadline: { d: { id: 'imjin' }, left: 60 }, hold() {}, area: h.pulse.area }; h2.p.pos.set(49, 0, 0); run(h2, 1); ok(!h2.flags.has('bond:point'), '등진 사람은 가리키지 않는다');
+  const h3 = mk(['bond:met', 'bond:friend']); run(h3, 4); h3.cond = h.cond; h3.items.targets = {}; h3.npcs = {}; h3.e.interactables = new Map(); h3.life = h.life; h3.pulse = { chase: null, deadline: { d: { id: 'imjin' }, left: 60 }, hold() {}, area: h.pulse.area }; h3.p.pos.set(49, 0, 0); h3.said.length = 0; run(h3, 1); ok(h3.flags.has('bond:point:imjin') && !h3.said.some((t) => t.includes('여기야')) && h3.bond.point.marks.length === 0, '가리킬 것이 없으면 말도 반짝임도 없다(깃발만)');
+}
 // 22) 81 — 반 친구 외침에 답하기: 외침 뒤 9초 안에 G 면 wave 에 reply 가 실리고, 외친 쪽엔 「👋 이름 — 「다행이다!」」
 {
   const { Friends } = await import('../core/friends.js'); const said = []; const g = { p: { pos: { x: 0, z: 0 }, body: null }, ui: { say: (t) => said.push(t), isOpen: () => false }, e: { scene: { add() {}, remove() {} }, onFrame: [] }, world: {} };
@@ -188,6 +214,8 @@ for (const era of ERAS) {
   fr.ch.sent.length = 0; fr.wave(); ok(fr.ch.sent.length === 1 && !fr.ch.sent[0].payload.reply, '다시 흔들면 그냥 손 흔들기');
   fr.recvShout({ id: 'f1', kind: 'late', x: 3, z: 0 }); fr.reply.until = performance.now() - 1; fr.ch.sent.length = 0; fr.wave(); ok(!fr.ch.sent[0].payload.reply, '9초가 지나면 답이 아니다');
   said.length = 0; fr.recvWave({ id: 'f1', reply: { to: 'me', kind: 'escaped' } }); ok(said.length === 1 && /^👋 7 박솔 — 「/.test(said[0]) && !/손을 흔든다/.test(said[0]), `내 외침에 답한 손 흔들기는 한 줄로: ${said[0]}`);
+  ok(fr.myWaveUntil > performance.now() - 10 && fr.ch.sent.length >= 1 && fr.ch.sent[fr.ch.sent.length - 1].event === 'wave' && fr.ch.sent[fr.ch.sent.length - 1].payload.reply?.to === 'f1' && fr.ch.sent[fr.ch.sent.length - 1].payload.reply?.kind === 'back', '82: 답을 받으면 내 몸도 손을 들고(myWaveUntil) 답한 쪽에 reply kind back 이 간다');
+  said.length = 0; fr.ch.sent.length = 0; fr.myWaveUntil = 0; fr.recvWave({ id: 'f1', reply: { to: 'me', kind: 'back' } }); ok(said.length === 1 && /^👋 7 박솔 — 「/.test(said[0]) && fr.ch.sent.length === 0 && fr.myWaveUntil === 0, `82: 「고마워」 답(back)은 한 줄뿐 — 다시 답하지 않는다(${said[0]})`);
   said.length = 0; fr.recvWave({ id: 'f1', reply: { to: 'other', kind: 'escaped' } }); ok(said.length === 1 && /손을 흔든다/.test(said[0]), '남에게 한 답은 그냥 손 흔들기로 보인다');
   said.length = 0; fr.recvWave({ id: 'f1', reply: { to: 'me', kind: 'xx' } }); ok(/손을 흔든다/.test(said[0]), '모르는 종류의 답은 그냥 손 흔들기');
 }
