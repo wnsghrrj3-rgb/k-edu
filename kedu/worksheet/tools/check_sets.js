@@ -52,6 +52,8 @@ const ASSETS = {
   /* v3.7 — 3학년 1학기 「길이와 시간」 (2026-10-19): mm 눈금 자 · 초바늘 시계 */
   mmruler:        ['len', 'label'],
   clock3:         ['h', 'm', 's'],
+  /* v3.9 — 3학년 2학기 「나눗셈」 (2026-10-19): 나눗셈 세로셈 — 줄은 play.html 이 a·b 에서 직접 만든다 */
+  ldiv:           ['a', 'b'],
   count_group:    ['item', 'n'],
   scatter_group:  ['item', 'n'],
   dots:           ['n'],
@@ -299,6 +301,23 @@ function checkAsset(where, a) {
     if (!Number.isInteger(s0) || s0 < 0 || s0 > 5) bad(where, 'mmruler s 는 0~5 cm 정수');
     if (n > 12) bad(where, 'mmruler 자가 12 cm 를 넘는다');
     if (s0 * 10 + len > n * 10) bad(where, 'mmruler 물건 끝이 자 밖');
+  }
+  if (a.type === 'ldiv') {   /* v3.9 — 나눗셈 세로셈: a 10~9999 · b 2~99 · a ≥ b 정수, hide 는 q·[q,i]·[r,k]·rem, upto 0~줄 수 */
+    const A = a.a, B = a.b;
+    if (!(Number.isInteger(A) && A >= 10 && A <= 9999)) bad(where, 'ldiv a 는 10~9999 정수: ' + A);
+    if (!(Number.isInteger(B) && B >= 2 && B <= 99)) bad(where, 'ldiv b 는 2~99 정수: ' + B);
+    if (Number.isInteger(A) && Number.isInteger(B) && A < B) bad(where, 'ldiv a 가 b 보다 작다');
+    if (Number.isInteger(A) && Number.isInteger(B) && A >= B && B >= 2) {
+      const ds = String(A).split('').map(Number); let cur = 0, started = false, first = true, nr = 0; const qcols = [];
+      for (let i = 0; i < ds.length; i++) { cur = cur * 10 + ds[i]; if (!started && cur < B) continue; started = true; const qd = Math.floor(cur / B); qcols.push(i);
+        if (qd === 0 && i < ds.length - 1) continue; if (!first || qd === 0) nr++; first = false; if (qd > 0) { nr++; cur -= qd * B; if (i === ds.length - 1) nr++; } }
+      if (cur !== A % B) bad(where, 'ldiv 나머지 검산 실패');
+      (a.hide || []).forEach(h => { const H = Array.isArray(h) ? h : [h];
+        if (['q', 'r', 'rem'].indexOf(H[0]) < 0) bad(where, 'ldiv hide 는 q·r·rem: ' + JSON.stringify(h));
+        if (H[0] === 'q' && H.length > 1 && qcols.indexOf(H[1]) < 0) bad(where, 'ldiv hide q 자리에 몫이 없다: ' + H[1]);
+        if (H[0] === 'r' && !(Number.isInteger(H[1]) && H[1] >= 0 && H[1] < nr)) bad(where, 'ldiv hide r 줄 번호 밖: ' + H[1]); });
+      if (a.upto !== undefined && !(Number.isInteger(a.upto) && a.upto >= 0 && a.upto <= nr)) bad(where, 'ldiv upto 는 0~' + nr);
+    }
   }
   if (a.type === 'clock3') {   /* v3.7 — 초바늘 시계: h 1~12 · m·s 0~59 정수 */
     if (!(Number.isInteger(a.h) && a.h >= 1 && a.h <= 12)) bad(where, 'clock3 h 는 1~12 정수: ' + a.h);
