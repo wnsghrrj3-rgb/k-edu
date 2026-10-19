@@ -9,6 +9,7 @@ for (const era of ERAS) {
   const P = w.pulse; const sits = lf.situations; const sit = (id) => sits.find((s) => s.id === id);
   ok(P && P.chases?.length >= 1 && P.deadlines?.length >= 1 && P.routines?.length >= 4 && P.secrets?.length === 3, `${era}: 쫓김 ${P?.chases?.length} · 급한 일 ${P?.deadlines?.length} · 일과 ${P?.routines?.length} · 숨은 것 ${P?.secrets?.length}`);
   if (!P) continue;
+  ok(Array.isArray(P.greet) && P.greet.length >= 5 && Array.isArray(P.greetNight) && P.greetNight.length >= 3 && [...P.greet, ...P.greetNight].every((t) => typeof t === 'string' && t.length > 0 && t.length <= 30), `${era} 마주침 한마디: 낮 ${P.greet?.length} · 밤 ${P.greetNight?.length}, 30자 이내`);
   const blob = JSON.stringify(npcs) + JSON.stringify(sits.map((s) => s.choices.map((c) => c.flag)));
   for (const c of P.chases) {
     ok(w.areas[c.from] && w.areas[c.goal_at] && c.from !== c.goal_at, `${era} 쫓김 ${c.id}: from·goal 이 서로 다른 구역`);
