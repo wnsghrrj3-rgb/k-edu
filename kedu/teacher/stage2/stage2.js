@@ -284,7 +284,7 @@
   }
   function wide7(f) { return !!f && ((f.k === 'pat1' && (f.toks || []).some(t => t && t.p)) || f.k === 'tally1'); } // 132차 — 7단원 모양 규칙 줄(9칸)·점 줄은 가로로 길어 넓은 띠(pf2w)로 · 다른 단원 장은 그대로
   function dat2W(f) { return !!f && (['tbl2', 'cg2', 'dc2'].indexOf(f.k) >= 0 || (f.k === 'panels' && (f.items || []).some(i => dat2W(i.fig)))); } // 144차 — 2-2 표와 그래프(표·그래프·자료 낱장)는 넓어서 넓은 띠(pf2w)로
-  function pat2W(f) { return !!f && (['prow2', 'nstr2', 'beat2', 'cubep2', 'spin2'].indexOf(f.k) >= 0 || (f.k === 'panels' && (f.items || []).some(i => pat2W(i.fig)))); } // 145차 — 2-2 규칙 찾기 줄 그림(모양 줄·수 띠·소리 박자·쌓은 모양·돌림판)은 가로로 길어 넓은 띠(pf2w)로
+  function pat2W(f) { return !!f && (['prow2', 'nstr2', 'beat2', 'cubep2', 'spin2', 'pcrw2'].indexOf(f.k) >= 0 || (f.k === 'panels' && (f.items || []).some(i => pat2W(i.fig)))); } // 145차 — 2-2 규칙 찾기 줄 그림(모양 줄·수 띠·소리 박자·쌓은 모양·돌림판)은 가로로 길어 넓은 띠(pf2w)로 · 146차 실천 카드 전시 줄(pcrw2)도
   function pf2Wide(f) { return !!f && (['bar', 'pgraph', 'ptable'].indexOf(f.k) >= 0 || (f.k === 'rtab' && (f.rows || []).length > 1)); } // 119차 — pf2w 는 표·그래프만(도형은 왼쪽 그림 판)
   function dataFig(f) { return !!f && (['bar', 'pgraph', 'ptable', 'ngrid', 'eqs', 'eqc', 'bal', 'shapes', 'lines', 'pdist', 'quad', 'quads', 'circ2', 'dgrid', 'dline', 'dpv', 'dvert'].indexOf(f.k) >= 0 || (f.k === 'rtab' && (f.rows || []).length > 1) || (f.k === 'panels' && (f.items || []).some(i => dataFig(i.fig)))); } // 63차 · 65차 관계·규칙 부품 · 82차 사각형 부품 · 83차 소수 부품(기록표는 두 줄 이상일 때만 두 칸 — 한 줄 표는 넓게 위아래)
   function options(opts, multi, revealed) {
