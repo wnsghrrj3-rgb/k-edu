@@ -10,6 +10,7 @@
 //  · 화해(79): bond3e 에서 먼저 다가간 쪽(bond:sorry)에겐 돌발 bond4 가 한 번 더 — 굴림에 이기면 `bond:mended`: 등졌던 사람이 벗으로 돌아와 다시 따라다닌다(「…다시, 같이 가.」). 족보엔 「○○과 다시 벗」.
 //  · 벗이 서두르게 한다(81): 급한 일(모래시계) 중이면 벗이 「서둘러! 이쪽이야.」 하며 그 상황의 자리(deadline.goal || life 상황 place)로 먼저 뛴다 — 12m 뒤처지면 기다리고, 내가 6m 안에 닿으면 그만(bond:hurry:<id>). 쫓김이 같이 있으면 쫓김 이끌기가 먼저.
 //  · 벗이 「여기야」 하며 그 상황의 물건을 반짝인다(82): 급한 일 자리에 닿으면(hurry.done) 그 상황(sit:<id>:open)이 지금 열어 둔 대상·사람(items rename·npc lines 의 if 가 그 상황을 보고, 지금 조건이 맞는 것)에 호박빛 반짝임을 붙인다 — 어느 길을 고를지는 안 가리킨다(여럿이면 전부, 가까운 넷까지), 쓰면 그 자리 반짝임은 꺼지고, 급한 일이 끝나면(또는 60초) 전부 꺼진다. bond:point:<id>, 한 번.
+//  · 비켜서기(84): 반짝임 곁에 선 벗에게 내가 2m 안에 오면(그 대상 앞에 서려고) 내 길 옆으로 1.5m 물러선다 — 선택 대상을 막지 않게; 5m 넘게 물러나면 다시 곁으로.
 //  · 벗이 「여기야」 뒤 그 자리에 서 있는다(83): 반짝임이 살아 있는 동안 벗은 곁으로 돌아오지 않고 **나에게서 가장 가까운 반짝임 곁(1.6m)**에 서서 나를 본다(standing) — 내가 12m 넘게 멀어지면 돌아보고 기다림, 반짝임이 다 꺼지면 곁으로.
 //  · 벗이 길을 보여 준다(79): 쫓길 때(앞을 막은 뒤) 벗이 「이쪽!」 하며 숨을 곳(goal_at) 쪽으로 먼저 뛴다 — 내가 12m 넘게 뒤처지면 멈춰 기다린다. 값·판정엔 손 안 댐(bond:lead:<chase>).
 //  · 벗의 한마디가 지난 선택에 반응(79): cfg.react[{id,if,text,once}] — 깃발이 서면(쫓김 탈출·잡힘·앞 막음·준 것·늦음·같이 한 것) 벗이 그 일을 말한다, 한 번(bond:said:<id>). 벗일 때만.
@@ -17,7 +18,7 @@
 import * as THREE from 'three';
 import { createAvatar } from './avatar.js';
 
-const FOLLOW = { met: 3.4, friend: 2.4 }, LEAD_WAIT = 12, LEAD_STOP = 1.6, HURRY_NEAR = 6, POINT_R = 30, POINT_SEE = 40, POINT_MAX = 4, POINT_SEC = 60, REACT_GAP = 8, HINT_R = 12, HINT_GAP = 20, AWAY = 11, STEPBACK = 5, WALK = 3.4, RUN = 6.2, LINE_GAP = 55, WAVE_MS = 1600, TALK_R = 3.8, WITH_R = 5, BLOCK_R = 2.2, BLOCK_SEC = 3;
+const FOLLOW = { met: 3.4, friend: 2.4 }, LEAD_WAIT = 12, LEAD_STOP = 1.6, HURRY_NEAR = 6, POINT_R = 30, POINT_SEE = 40, POINT_MAX = 4, POINT_SEC = 60, REACT_GAP = 8, HINT_R = 12, HINT_GAP = 20, AWAY = 11, STEPBACK = 5, WALK = 3.4, RUN = 6.2, LINE_GAP = 55, WAVE_MS = 1600, TALK_R = 3.8, WITH_R = 5, BLOCK_R = 2.2, BLOCK_SEC = 3, ASIDE_R = 2.0, ASIDE_D = 1.5;
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 const JO = (n, a, b) => { const c = String(n || '').slice(-1).charCodeAt(0); return n + ((c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28) ? a : b); };
 function label(text) {
@@ -163,7 +164,13 @@ export class Bond {
     const p = g.p.pos; let best = null, bd = Infinity; for (const m of P.marks) { const d = this.dist(m.grp.position, p); if (d < bd) { bd = d; best = m; } }
     if (!this.stand) this.stand = { moving: false };
     const S = this.stand; const dp = this.dist(this.pos, p); const face = () => { const f = Math.atan2(p.x - this.pos.x, p.z - this.pos.z); let dy = f - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * Math.min(1, dt * 4); };
-    if (dp > LEAD_WAIT) { S.moving = false; face(); return true; }
+    if (dp > LEAD_WAIT) { S.moving = false; S.aside = null; face(); return true; }
+    if (S.mark && S.mark !== best) S.aside = null; S.mark = best;
+    // 84: 비켜서기 — 내가 그 대상 앞에 서려고 ASIDE_R 안에 오면 내 길 옆으로 ASIDE_D 물러선다(내가 가는 선에 수직, 나에게서 먼 쪽). 내가 ASIDE_R*2.5 넘게 물러나면 다시 반짝임 곁으로
+    if (S.aside && dp > ASIDE_R * 2.5) S.aside = null;
+    if (!S.aside && dp < ASIDE_R && bd !== Infinity) { const mx = best.grp.position.x - p.x, mz = best.grp.position.z - p.z; const n = Math.hypot(mx, mz) || 1; const px = -mz / n, pz = mx / n;
+      const a = { x: this.pos.x + px * ASIDE_D, z: this.pos.z + pz * ASIDE_D }, b = { x: this.pos.x - px * ASIDE_D, z: this.pos.z - pz * ASIDE_D }; S.aside = this.dist(a, p) >= this.dist(b, p) ? a : b; }
+    if (S.aside) { if (this.dist(S.aside, this.pos) <= 0.12) { S.moving = false; face(); } else S.moving = this.step(dt, S.aside.x, S.aside.z, WALK, 0.05); return true; }
     if (bd === Infinity || this.dist(best.grp.position, this.pos) <= LEAD_STOP + 0.05) { S.moving = false; face(); return true; }   // 다 왔다 — 서서 나를 본다
     S.moving = this.step(dt, best.grp.position.x, best.grp.position.z, WALK, LEAD_STOP); return true;
   }

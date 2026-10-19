@@ -2,6 +2,7 @@
 // + 77: 말 걸기(E — 한마디·물건 주기·등진 사람은 안 닿음) · 벗이 쫓김에 끼어듦(앞을 막아 3초, 한 번) · 조건 토큰 bond:1
 // + 79: 등진 사람과 화해(bond3e 「미안했다」 길 → bond:sorry → 돌발 bond4 굴림 → bond:mended 면 다시 벗으로 돌아와 따라다님) · 쫓길 때 벗이 「이쪽!」 하며 goal_at 쪽으로 먼저 뜀(12m 뒤처지면 기다림) · 벗 한마디가 지난 선택에 반응(cfg.react, 한 번)
 // + 78: 「운명의 벗과 함께」 길 열한 시대(gen_bond_ways.py, items bond:1 + life.json bond:true → together 한마디) · 벗 답례 gift 열한 시대(items 키 실재) · 벗이 숨은 것 곁에서 「저기 뭔가 있다」(한 번·자리 안 말함)
+// + 84: 비켜서기 — 반짝임 곁에 선 벗에게 내가 2m 안에 오면 내 길 옆 1.5m 로 물러선다(선택 대상을 막지 않게), 5m 넘게 물러나면 다시 곁으로
 // + 83: 「여기야」 뒤 벗이 반짝임 곁(1.6m)에 서서 나를 본다(standing) — 12m 넘게 멀어지면 기다림, 반짝임 다 꺼지면 곁으로
 // + 82: 벗이 「여기야.」 하며 그 상황의 대상·사람(items rename·npc lines 의 if 가 sit:<id>:open 을 보고 지금 맞는 것)에 호박빛 반짝임(bond:point:<id>, 급한 일 자리 6m 안에 닿은 뒤, 30m 안 넷까지, 쓰면 그것만 꺼짐, 끝나면 전부) · 외침 답을 받으면 외친 쪽 몸도 손 흔들기 + reply kind back 「고마워.」
 // + 81: 벗이 급한 일(모래시계)에서 「서둘러! 이쪽이야.」 하며 그 상황의 자리로 먼저 뜀(bond:hurry:<id>, 6m 안이면 그만, 쫓김 이끌기가 먼저) · 반 친구 외침에 답하기(외침 뒤 9초 안 G → wave reply → 「👋 이름 — 「다행이다!」」)
@@ -202,6 +203,18 @@ for (const era of ERAS) {
   run(h, 4); { const near = h.bond.point.marks.map((m) => Math.hypot(m.grp.position.x - h.bond.pos.x, m.grp.position.z - h.bond.pos.z)); ok(Math.min(...near) <= 1.75 && Math.min(...near) >= 1.4 && h.bond.stand && !h.bond.stand.moving, `83: 「여기야」 뒤 벗은 곁으로 안 오고 가장 가까운 반짝임 곁(1.6m)에 선다(${Math.min(...near).toFixed(2)})`); }
   { const yawTo = Math.atan2(h.p.pos.x - h.bond.pos.x, h.p.pos.z - h.bond.pos.z); let dy = yawTo - h.bond.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); ok(Math.abs(dy) < 0.2, '83: 서서 나를 본다'); }
   h.p.pos.set(h.bond.pos.x + 20, 0, 0); run(h, 1); ok(!h.bond.stand.moving && d(h) > 15, '83: 내가 12m 넘게 멀어지면 따라오지 않고 기다린다'); h.p.pos.set(49, 0, 0); run(h, 1);
+  { // 84: 비켜서기 — 내가 반짝임 앞(벗 2m 안)에 서려 하면 벗이 내 길 옆으로 1.5m 비킨다
+    const m = h.bond.stand.mark; const bx0 = h.bond.pos.x, bz0 = h.bond.pos.z; const dirx = m.grp.position.x - bx0, dirz = m.grp.position.z - bz0; const n0 = Math.hypot(dirx, dirz) || 1;
+    h.p.pos.set(bx0 - dirx / n0 * 1.2, 0, bz0 - dirz / n0 * 1.2); run(h, 2);   // 벗 바로 뒤 1.2m, 반짝임을 향하는 선 위
+    const moved = Math.hypot(h.bond.pos.x - bx0, h.bond.pos.z - bz0); const dm = Math.hypot(m.grp.position.x - h.bond.pos.x, m.grp.position.z - h.bond.pos.z);
+    const mx = m.grp.position.x - h.p.pos.x, mz = m.grp.position.z - h.p.pos.z; const nn = Math.hypot(mx, mz) || 1; const off = Math.abs((h.bond.pos.x - h.p.pos.x) * (-mz / nn) + (h.bond.pos.z - h.p.pos.z) * (mx / nn));
+    ok(h.bond.stand.aside && moved > 1.3 && moved < 1.7 && off > 1.3 && !h.bond.stand.moving, `84: 2m 안에 오면 내 길 옆으로 1.5m 비켜선다(moved=${moved.toFixed(2)} 옆으로=${off.toFixed(2)})`);
+    ok(d(h) > 1.2 && dm > 1.4, `84: 비킨 뒤에도 나에게서 멀어진 쪽·반짝임 곁(${d(h).toFixed(2)}/${dm.toFixed(2)})`);
+    { const yawTo = Math.atan2(h.p.pos.x - h.bond.pos.x, h.p.pos.z - h.bond.pos.z); let dy = yawTo - h.bond.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); ok(Math.abs(dy) < 0.25, '84: 비켜선 채 나를 본다'); }
+    const ax = h.bond.pos.x, az = h.bond.pos.z; h.p.pos.set(h.p.pos.x + 0.3, 0, h.p.pos.z); run(h, 1); ok(Math.hypot(h.bond.pos.x - ax, h.bond.pos.z - az) < 0.05, '84: 내가 곁에서 조금 움직여도 다시 비키지 않는다(한 번 비킨 자리 그대로)');
+    h.p.pos.set(bx0 - dirx / n0 * 7, 0, bz0 - dirz / n0 * 7); run(h, 3); const m2 = h.bond.stand.mark; const back = Math.hypot(m2.grp.position.x - h.bond.pos.x, m2.grp.position.z - h.bond.pos.z);
+    ok(!h.bond.stand.aside && back <= 1.75, `84: 5m 넘게 물러나면 다시 반짝임 곁 1.6m 로(${back.toFixed(2)})`);
+    h.p.pos.set(49, 0, 0); run(h, 1); }
   h.flags.add('imjin:run'); run(h, 1.2); ok(h.bond.point.marks.length === 2 && !h.bond.point.marks.some((m) => m.t.id === 'hideout_1') && h.added.length === before + 2, '하나를 쓰면(조건이 바뀌면) 그 반짝임만 꺼진다');
   h.p.pos.set(0, 0, 0); run(h, 0.5); ok(h.bond.point.marks.every((m) => m.grp.visible === false), '40m 밖에선 안 보인다');
   h.pulse.deadline = null; run(h, 0.5); ok(h.bond.point === null && h.added.length === before, '급한 일이 끝나면 전부 꺼진다');
