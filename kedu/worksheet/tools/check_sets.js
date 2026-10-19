@@ -1600,7 +1600,7 @@ function checkSp(where, q){
   if (want === null) return;
   if (num(cor) !== want) B(`정답 ${cor} ≠ 그림에서 셈한 ${want}`);
   wr.forEach(w => { if (num(w) === want) B('오답 보기가 정답과 같은 값: ' + w); });
-  if (q.kind === 'sa' && want > 99) B('단답 정답이 두 자리를 넘는다');
+  if (q.kind === 'sa' && want > 9999) B('단답 정답이 네 자리를 넘는다');
 }
 function checkKrAsset(where, a){
   const B = m => bad(where, a.type + ' ' + m);
@@ -2002,6 +2002,7 @@ function checkQ(where, q, opt) {
     case 'sa':
       if (!Array.isArray(q.answer) || !q.answer.length) bad(where, '단답 정답(answer 배열) 없음');
       else if (q.answer.some(a => a === '' || a === null || a === undefined)) bad(where, '단답 정답에 빈 값');
+      else if (q.answer.every(a => /^\d+$/.test(String(a))) && q.answer.some(a => String(a).length > 4)) bad(where, '숫자 단답 정답이 네 자리를 넘는다(숫자판은 네 자리까지)');
       break;
     case 'ox':
       if (q.answer !== 'O' && q.answer !== 'X') bad(where, 'OX 정답이 O/X 아님: ' + q.answer);
@@ -2065,6 +2066,7 @@ function checkSet(file) {
         if (!pc.stem) bad(where, `alt[${i}] 에 stem 없음 — 다른 문제여야 한다`);
         const kind = pc.kind || q.kind;
         if (kind === 'sa' && !pc.answer && !q.answer) bad(where, `alt[${i}] 단답에 answer 없음`);
+        if (kind === 'sa' && Array.isArray(pc.answer) && pc.answer.every(a => /^\d+$/.test(String(a))) && pc.answer.some(a => String(a).length > 4)) bad(where, `alt[${i}] 숫자 단답 정답이 네 자리를 넘는다`);
         if ((kind === 'mc' || kind === 'blank' || kind === 'error') && !pc.options) bad(where, `alt[${i}] 객관식에 options 없음 — 발문이 바뀌면 보기도 함께`);
         if (kind === 'ox' && (!pc.answer || !pc.reason_options)) bad(where, `alt[${i}] OX 에 answer·reason_options 없음`);
         if (kind === 'match' && !pc.pairs) bad(where, `alt[${i}] 선긋기에 pairs 없음`);

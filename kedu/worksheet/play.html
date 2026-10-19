@@ -5920,7 +5920,7 @@ function widgetSA(q, el, r, prev){
   const finish = (ok) => { box.classList.add(ok ? 'ok' : 'no'); box.textContent = val; el.querySelectorAll('button').forEach(b => b.disabled = true); if (!ok) box.textContent = `${val} → ${q.answer[0]}`; };
   if (prev){ finish(prev.ok); showFB(q, prev.ok, prev); return; }
   const check = () => { if (!val.trim()) return; const norm = s => s.replace(/[\s.!?,。]/g, '');   /* 띄어쓰기·마침표는 답에 안 친다 (국어 단답, 2026-09-29) */ const ok = q.answer.some(a => norm(a) === norm(val)); finish(ok); grade(q, ok, {val}); };
-  if (numeric) el.querySelectorAll('.pad button').forEach(b => b.onclick = () => { const n = b.dataset.n; if (n === 'del') val = val.slice(0, -1); else if (n === 'go') return check(); else if (val.length < 2) val += n; box.textContent = val || '\u00a0'; });
+  if (numeric) el.querySelectorAll('.pad button').forEach(b => b.onclick = () => { const n = b.dataset.n; if (n === 'del') val = val.slice(0, -1); else if (n === 'go') return check(); else if (val.length < 4) val += n;   /* v3.8 — 네 자리까지(세 자리 곱·덧셈 답, 2026-10-19) */ box.textContent = val || '\u00a0'; });
   else { const ta = document.getElementById('ta'); ta.oninput = () => val = ta.value; document.getElementById('go').onclick = check; }
 }
 /* OX + 근거 (2단) */
