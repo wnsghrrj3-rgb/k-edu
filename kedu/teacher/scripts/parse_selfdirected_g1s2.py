@@ -54,6 +54,7 @@ def figs(p):
     out.extend(figs11(p))
     out.extend(figs12(p))
     out.extend(figs13(p))
+    if F14[0]: out.extend(figs14(p))  # 146차 — 2-2 7단원만(앞 단원 꾸민 goal-card 는 그림으로 안 뽑음 · 재추출 바이트 동일)
     return out
 
 # 123차 — 2단원 「덧셈과 뺄셈(1)」 그림: steps(번호 줄 식) · eqstrip(식 띠: hole=? · res/mark=강조) · chain(색 알 묶음) · cupstack(층 쌓은 컵) · tenframe(십 배열판 a/b 두 색 + tf-lb 꼬리표). 원문 순서대로.
@@ -167,8 +168,9 @@ def figs4(p):
         found.append((m.start(), m.end(), {'k': 'bingo', 'nums': [int(x) for x in re.findall(r'<b>(\d+)</b>', m.group(1))]}))
     return [f for _, _, f in sorted(found, key=lambda x: x[0])]
 
+F14 = [False]
 def parse(path):
-    src = open(path, encoding='utf-8').read()
+    src = open(path, encoding='utf-8').read(); F14[0] = os.path.basename(path).startswith('g2_math_u7_')
     parts = re.split(r'(?=<div class="slide(?: active)?" data-stage)', src)[1:]
     out = {'file': os.path.basename(path), 'title': '', 'goal': [], 'slides': [], 'problems': [], 'summary': '', 'cells': [], 'next': '', 'next_emoji': ''}
     out['title'] = clean(first(r'<title>(.*?)</title>', src)).split('—')[0].strip()
@@ -213,7 +215,7 @@ def parse(path):
             for m in re.findall(pat, p, re.S):
                 v = m[-1] if isinstance(m, tuple) else m
                 txt.append(clean(v))
-        if 'goal-card' in p:
+        if 'goal-card' in p and ('goal-list' in p or not F14[0]):
             out['goal'] = [clean(x) for x in re.findall(r'<li>(.*?)</li>', p, re.S)]; out['goal_title'] = clean(first(r'class="goal-title">(.*?)</p>', p)); out['goal_emoji'] = clean(first(r'class="goal-emojis">(.*?)</div>', p))
         if 'sum-card' in p:
             out['summary'] = clean(first(r'class="sum-msg">(.*?)</p>', p)); out['cells'] = [clean(c) for c in re.findall(r'class="sum-cell">(.*?)</div>', p, re.S)]
@@ -669,6 +671,34 @@ def figs13(p):
     for m in re.finditer(r'<div class="grow( sm)?" data-grow="(\[[^"]*)"', p): put(m, {'k': 'gdot', 'cells': J(m.group(2))})
     for m in re.finditer(r'<div class="rcard">(.*?)</div></div>', p, re.S):
         found.append((m.start(), m.end(), {'k': 'rcard', 'lines': [clean(x) for x in re.findall(r'<div class="rc-l"[^>]*>(.*?)</div>', m.group(1) + '</div>', re.S)]}))
+    return [f for _, _, f in sorted(found, key=lambda x: x[0])]
+
+# 146차 — 2-2 7단원 「수학이랑 함께해요」(바른 식습관 프로젝트) 그림(모두 data-* JSON): pcard(실천 카드 하나 — name·habit·score·emoji) · pcrow(카드 전시 줄 — cards [{name,habit,score,emoji}|null=빈자리 「?」]·seq·ask·cm(카드 한 장 길이, 0 = 자 없음))
+#          · rtab(실천 기록표 — title·rows [[날짜, ◯/×, 점수]]·sum·n · 모은 점수 칸은 늘 「?」) · hcard(장 안 식습관 카드 — 꾸민 goal-card · items [{emoji, name, sub}]). 보기 안·전시 줄 안 카드는 따로 뽑지 않음. 원문 순서대로.
+def figs14(p):
+    found = []
+    J = lambda v: json.loads(html.unescape(v))
+    def pc(body):
+        d = J(first(r'data-pcard="([^"]*)"', body))
+        return {'name': d['name'], 'habit': d['habit'], 'score': d['score'], 'emoji': clean(first(r'class="pc-em">(.*?)</div>', body))}
+    rows_spans = []
+    for m in re.finditer(r'<div class="pcrow-wrap" data-pcrow="([^"]*)"><div class="pcrow">(.*?)(?=<p class|<div class="q-part|<div class="pc-ruler|\n\s*</div>\s*\n)', p, re.S):
+        d = J(m.group(1)); body = m.group(2); cards = []
+        for c in re.finditer(r'<div class="pcard sm( blank)?"', body):
+            cards.append(None if c.group(1) else pc(body[c.start():c.start() + 900]))
+        rows_spans.append((m.start(), m.end()))
+        found.append((m.start(), m.end(), {'k': 'pcrow', 'cards': cards, 'seq': d['seq'], 'ask': d.get('ask', []), 'cm': d.get('cm', 0)}))
+    for m in re.finditer(r'<div class="pcard( sm)?" data-pcard="[^"]*">(.*?)<div class="pc-s">.*?</div></div>', p, re.S):
+        if any(a <= m.start() < b for a, b in rows_spans): continue
+        found.append((m.start(), m.end(), dict({'k': 'pcard'}, **pc(m.group(0)))))
+    for m in re.finditer(r'<div class="plan rtab" data-rtab="([^"]*)">(.*?)</table>', p, re.S):
+        d = J(m.group(1)); body = m.group(2)
+        rows = [[clean(a), clean(b), int(c)] for a, b, c in re.findall(r'<tr data-ok="\d" data-sc="\d+"><td>(.*?)</td><td class="rt-ok">(.*?)</td><td class="num">(\d+)</td></tr>', body, re.S)]
+        found.append((m.start(), m.end(), {'k': 'rtab', 'title': clean(first(r'class="tb-title">(.*?)</div>', body)), 'rows': rows, 'sum': d['sum'], 'n': d['n']}))
+    for m in re.finditer(r'(?:<div class="goal-card" style="[^"]*"><div class="goal-emojis">(.*?)</div><p class="goal-title" style="[^"]*">(.*?)</p></div>)+', p, re.S):
+        its = [{'emoji': clean(e), 'name': clean(re.sub(r'<br>\s*<small>.*', '', t, flags=re.S)), 'sub': clean(first(r'<small>(.*?)</small>', t))}
+               for e, t in re.findall(r'<div class="goal-emojis">(.*?)</div><p class="goal-title" style="[^"]*">(.*?)</p>', m.group(0), re.S)]
+        found.append((m.start(), m.end(), {'k': 'hcard', 'items': its}))
     return [f for _, _, f in sorted(found, key=lambda x: x[0])]
 
 if __name__ == '__main__':
