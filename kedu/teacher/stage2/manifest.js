@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-19 · 과목 21 · 차시 1033 · 슬라이드 18240 */
+   생성: 2026-10-19 · 과목 21 · 차시 1040 · 슬라이드 18373 */
 window.KT2_MANIFEST = {
  "built": "2026-10-19",
- "lessons": 1033,
- "slides": 18240,
+ "lessons": 1040,
+ "slides": 18373,
  "subjects": [
   {
    "slug": "g1_math",
@@ -13293,6 +13293,196 @@ window.KT2_MANIFEST = {
       },
       {
        "key": "u1_l14",
+       "no": "14",
+       "title": "단원 마무리하기",
+       "meta_title": "단원 마무리하기",
+       "std": "단원 전체 통합",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    },
+    {
+     "unit": 2,
+     "title": "서로 존중해요",
+     "file": "data/g2s2_korean_u2.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u2_l01",
+       "no": "1",
+       "title": "단원 시작 — 배울 내용 살펴보기",
+       "meta_title": "단원 시작 — 배울 내용 살펴보기",
+       "std": "[2국01-06]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u2_l03",
+       "no": "3",
+       "title": "고운 말로 대화하는 방법 알기",
+       "meta_title": "고운 말로 대화하는 방법 알기",
+       "std": "[2국01-06]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u2_l05",
+       "no": "5",
+       "title": "상황에 알맞게 고운 말로 대화하기",
+       "meta_title": "상황에 알맞게 고운 말로 대화하기",
+       "std": "[2국01-06]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u2_l07",
+       "no": "7",
+       "title": "칭찬이나 조언하기",
+       "meta_title": "칭찬이나 조언하기",
+       "std": "[2국01-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u2_l09",
+       "no": "9",
+       "title": "말하는 사람에게 적절히 반응하기",
+       "meta_title": "말하는 사람에게 적절히 반응하기",
+       "std": "[2국01-05]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u2_l11",
+       "no": "11",
+       "title": "배운 내용 실천하기 — 칭찬이나 조언 주고받기",
+       "meta_title": "배운 내용 실천하기 — 칭찬이나 조언 주고받기",
+       "std": "[2국01-06][2국01-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u2_l14",
        "no": "14",
        "title": "단원 마무리하기",
        "meta_title": "단원 마무리하기",
