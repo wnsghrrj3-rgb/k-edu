@@ -37,6 +37,7 @@ function defaultLines(n) {
     enemy: [`${JO(n, '이', '가')} 멀리서 너를 본다. 등을 돌린다.`, `${JO(n, '이', '가')} 네가 오자 한 걸음 물러난다.`, `${n}. 그날 이후로 말을 안 한다.`] };
 }
 
+const POINT_SETTLE = 0.8, POINT_GAP = 10;   // 85: 카드 닫힌 뒤 한숨 · 일반 상황 「여기야」 사이 간격(초)
 export class Bond {
   constructor(g, cfg) { this.g = g; this.cfg = cfg || {}; this.name = this.cfg.name || '그 사람'; this.lines = { ...defaultLines(this.name), ...(this.cfg.lines || {}) }; this.body = null; this.pos = null; this.yaw = 0; this.walk = 0; this.sinceLine = 20; this.waveUntil = 0; this.lastWave = 0; this.spokenSky = null; this.turned = false; this.gone = false; this.block = null; this.sinceHint = 0; this.lead = null; this.hurry = null; this.point = null; this.stand = null; this.reactT = 0; }
   /** 지금 관계 — null(아직) / met / friend / enemy / gone(등지고 끝) */
@@ -86,6 +87,7 @@ export class Bond {
     this.sinceLine += dt; const sky = g.story?.skyName || 'day'; if (sky !== this.spokenSky) { this.spokenSky = sky; this.sinceLine = Math.max(this.sinceLine, LINE_GAP - 12); }
     if (this.sinceLine >= LINE_GAP && this.quiet() && d < (st === 'enemy' ? AWAY + 3 : 6)) { this.sinceLine = 0; const pool = this.lines[st] || []; if (pool.length) g.ui?.say?.(`👤 ${this.name} — ${pool[Math.floor(Math.random() * pool.length)]}`, 4200); }
     this.sinceHint += dt; if (st === 'friend' && this.sinceHint >= HINT_GAP) this.hint();
+    this.quietT = this.quiet() ? (this.quietT || 0) + dt : 0; this.sincePoint = (this.sincePoint ?? 99) + dt;   // 85: 카드 닫힌 뒤 한숨(0.8초)·「여기야」 사이 10초 — 상황마다 바로 잇따르면 잔소리라
     if (st === 'friend') this.pointing(dt); else if (this.point) this.unpoint();
     this.reactT += dt; if (st === 'friend' && this.reactT >= 1 && this.sinceLine >= REACT_GAP && this.quiet() && d < 6) { this.reactT = 0; this.react(); }
   }
@@ -151,9 +153,9 @@ export class Bond {
     if (this.point && (now > this.point.until || (this.point.dl && (!dl || this.point.dl !== dl)) || (this.point.sit && g.flags.has('sit:' + this.point.sit + ':done')))) this.unpoint();
     if (!this.point) {
       if (dl) { const H = this.hurry; if (!H?.done || H.dl !== dl) return; const sit = g.life?.situations?.find?.((x) => x.id === dl.d?.id); this.pointAt(dl.d.id, g.pulse.area?.(dl.d?.goal || sit?.place) || g.p.pos, { dl }); }
-      else if (this.withMe(WITH_R + 1) && this.quiet() && !g.pulse?.chase) {   // 84: 급한 일 밖 — 열린 상황(꼭·섞여 전부)마다 벗이 곁에 있으면 한 번만, 카드를 읽고 닫은 뒤
+      else if (this.withMe(WITH_R + 1) && this.quiet() && this.quietT >= POINT_SETTLE && this.sincePoint >= POINT_GAP && !g.pulse?.chase) {   // 84: 급한 일 밖 — 열린 상황(꼭·섞여 전부)마다 벗이 곁에 있으면 한 번만, 카드를 읽고 닫은 뒤
         const s = (g.life?.situations || []).find((x) => g.flags.has('sit:' + x.id + ':open') && !g.flags.has('sit:' + x.id + ':done') && !g.flags.has('bond:point:' + x.id));
-        if (s) { this.pointAt(s.id, g.pulse?.area?.(s.place) || g.p.pos, { sit: s.id }); if (this.point && !this.point.marks.length) this.unpoint(); }   // 가리킬 것이 없으면 깃발만 두고 다음 상황으로
+        if (s) { this.pointAt(s.id, g.pulse?.area?.(s.place) || g.p.pos, { sit: s.id }); if (this.point && !this.point.marks.length) this.unpoint(); else this.sincePoint = 0; }   // 가리킬 것이 없으면 깃발만 두고 다음 상황으로
       }
       return;
     }
