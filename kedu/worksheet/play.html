@@ -1256,6 +1256,37 @@ function estRowSVG(a){
   const w = Math.max(W, 120), h = ppl ? 116 : 88;
   return `<svg class="cmpsv" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${ppl ? '간격을 두고 선 사람들' : '어림한 간격'}">${s}</svg>`;
 }
+/* ===== v3.7 — 3학년 1학기 「길이와 시간」 그림 2종 (2026-10-19, 오푸스 5.5) =====
+   mmruler {len, label, s?, n?}   mm 눈금 자 — len 물건 길이(mm 정수) · s 물건 왼쪽 끝 눈금(cm 정수, 기본 0) · n 자의 끝 숫자(기본 = 끝 올림 + 1, 12까지)
+           1 cm 를 10칸(1 mm)으로 나누고 5 mm 눈금은 조금 길게. 물건 양 끝에서 자까지 점선.
+   clock3  {h 1~12, m 0~59, s 0~59}  초바늘 시계 — 짧은바늘 시(검정) · 긴바늘 분(파랑, 분 눈금에 딱 맞춤 — 3학년이 몇 분을 헷갈리지 않게) · 가는 빨간 바늘 초(꼬리 있음)
+   화면·종이 같은 SVG. */
+function mmRulerSVG(a){
+  const U = 40, X0 = 24, s = Math.max(0, Math.round(Number(a.s) || 0)), len = Math.max(1, Math.round(Number(a.len) || 10));
+  const n = Math.min(12, Number(a.n) || Math.ceil(s + len / 10) + 1); const W = X0 * 2 + n * U, xs = X0 + s * U, xe = X0 + s * U + len * U / 10, ry = 56;
+  let t = `<text x="${X0}" y="16" font-size="14" fill="${CMP_INK}">${svgEsc(a.label || '')}</text>`;
+  t += `<rect x="${xs}" y="24" width="${(xe - xs).toFixed(1)}" height="16" rx="6" fill="${CMP_FILL[0]}" stroke="${CMP_INK}" stroke-width="1.6"/>`;
+  t += `<line x1="${xs}" y1="40" x2="${xs}" y2="${ry}" stroke="#C0392B" stroke-width="1.4" stroke-dasharray="3 3"/><line x1="${xe.toFixed(1)}" y1="40" x2="${xe.toFixed(1)}" y2="${ry}" stroke="#C0392B" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+  t += `<rect x="${X0 - 12}" y="${ry}" width="${n * U + 24}" height="46" rx="4" fill="#FFF3C4" stroke="#B9A77A" stroke-width="1.6"/>`;
+  for (let k = 0; k <= n * 10; k++){ const x = X0 + k * U / 10, big = k % 10 === 0, mid = k % 5 === 0;
+    t += `<line x1="${x.toFixed(1)}" y1="${ry}" x2="${x.toFixed(1)}" y2="${ry + (big ? 17 : mid ? 11 : 7)}" stroke="${CMP_INK}" stroke-width="${big ? 1.6 : 0.8}"/>`;
+    if (big) t += `<text x="${x}" y="${ry + 34}" text-anchor="middle" font-size="13" fill="${CMP_INK}">${k / 10}</text>`; }
+  t += `<text x="${X0 + n * U + 6}" y="${ry + 43}" text-anchor="end" font-size="10" fill="#8A8172">cm</text>`;
+  return `<svg class="cmpsv" viewBox="0 0 ${W} ${ry + 50}" width="${W}" height="${ry + 50}" role="img" aria-label="mm 눈금 자 위에 놓인 ${svgEsc(a.label || '물건')}">${t}</svg>`;
+}
+function clock3SVG(a){
+  const h = ((Number(a.h) || 12) % 12), m = Math.max(0, Math.min(59, Math.round(Number(a.m) || 0))), sc = Math.max(0, Math.min(59, Math.round(Number(a.s) || 0)));
+  const C = 60, R = 56, P = (ang, len) => { const t = (ang - 90) * Math.PI / 180; return [(C + Math.cos(t) * len).toFixed(1), (C + Math.sin(t) * len).toFixed(1)]; };
+  let s = `<circle cx="${C}" cy="${C}" r="${R}" fill="#FFFDF7" stroke="${CMP_INK}" stroke-width="2.4"/>`;
+  for (let i = 0; i < 60; i++){ const big = i % 5 === 0, p1 = P(i * 6, big ? R - 8 : R - 4), p2 = P(i * 6, R - 1);
+    s += `<line x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}" stroke="${CMP_INK}" stroke-width="${big ? 2 : 0.9}"/>`; }
+  for (let n = 1; n <= 12; n++){ const p = P(n * 30, R - 17); s += `<text x="${p[0]}" y="${(+p[1] + 4.5).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="700" fill="${CMP_INK}">${n}</text>`; }
+  const ph = P((h + m / 60) * 30, 26), pm = P(m * 6, 43), ps = P(sc * 6, 50), pt = P(sc * 6 + 180, 10);
+  s += `<line class="hh3" x1="${C}" y1="${C}" x2="${ph[0]}" y2="${ph[1]}" stroke="${CMP_INK}" stroke-width="5.5" stroke-linecap="round"/>`;
+  s += `<line class="mh3" x1="${C}" y1="${C}" x2="${pm[0]}" y2="${pm[1]}" stroke="#1F5FA8" stroke-width="3.4" stroke-linecap="round"/>`;
+  s += `<line class="sh3" x1="${pt[0]}" y1="${pt[1]}" x2="${ps[0]}" y2="${ps[1]}" stroke="#D32F2F" stroke-width="1.3" stroke-linecap="round"/><circle cx="${C}" cy="${C}" r="3.6" fill="#D32F2F"/>`;
+  return `<svg class="cmpsv" viewBox="0 0 120 120" width="170" height="170" role="img" aria-label="초바늘이 있는 시계">${s}</svg>`;
+}
 /* ===== v3.1 — 2학년 2학기 「시각과 시간」 그림 6종 (2026-10-12, 오푸스 5.5) =====
    clock2  {h 1~12, m 0~59}            분 눈금 60 · 숫자 12개 바늘 시계 — 짧은바늘은 분만큼 다음 숫자 쪽으로 간다
    digital {h, m, ampm?:'오전'|'오후'}  디지털시계 「h : mm」
@@ -1868,6 +1899,8 @@ function drawAsset(a, r){
     case 'est_row': return `<div class="cmpw">${estRowSVG(a)}</div>`;
     /* v3.1 — 2학년 2학기 「시각과 시간」 */
     case 'clock2': return `<div class="cmpw">${clock2SVG(a)}</div>`;
+    case 'clock3': return `<div class="cmpw">${clock3SVG(a)}</div>`;   /* v3.7 — 3학년 1학기 「길이와 시간」 */
+    case 'mmruler': return `<div class="cmpw">${mmRulerSVG(a)}</div>`;
     case 'digital': return `<div class="cmpw">${digitalSVG(a)}</div>`;
     case 'dpair': return `<div class="cmpw">${dpairSVG(a)}</div>`;
     case 'tbar': return `<div class="cmpw">${tbarSVG(a)}</div>`;
@@ -6105,6 +6138,8 @@ function paperAsset(a){
     case 'mbar': return `<div class="pcmpw">${mbarSVG(a)}</div>`;
     case 'est_row': return `<div class="pcmpw">${estRowSVG(a)}</div>`;
     case 'clock2': return `<div class="pcmpw">${clock2SVG(a)}</div>`;
+    case 'clock3': return `<div class="pcmpw">${clock3SVG(a)}</div>`;
+    case 'mmruler': return `<div class="pcmpw">${mmRulerSVG(a)}</div>`;
     case 'digital': return `<div class="pcmpw">${digitalSVG(a)}</div>`;
     case 'dpair': return `<div class="pcmpw">${dpairSVG(a)}</div>`;
     case 'tbar': return `<div class="pcmpw">${tbarSVG(a)}</div>`;

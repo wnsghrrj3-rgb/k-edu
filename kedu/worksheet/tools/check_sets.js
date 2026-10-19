@@ -49,6 +49,9 @@ const ENG = loadEngine();
 const ASSETS = {
   /* v3.6 — 3학년 1학기 「평면도형」 (2026-10-19): 점·선분·반직선·직선·각·직각 표시·도형 */
   geo:            ['items'],
+  /* v3.7 — 3학년 1학기 「길이와 시간」 (2026-10-19): mm 눈금 자 · 초바늘 시계 */
+  mmruler:        ['len', 'label'],
+  clock3:         ['h', 'm', 's'],
   count_group:    ['item', 'n'],
   scatter_group:  ['item', 'n'],
   dots:           ['n'],
@@ -289,6 +292,17 @@ function checkAsset(where, a) {
     if (a.op === '-' && (P[0][1] < P[1][1] || P[0][0] < P[1][0] || P[0][0] * 100 + P[0][1] <= P[1][0] * 100 + P[1][1])) bad(where, a.type + ' 빼는 길이가 더 길거나 cm 받아내림이 필요하다');
     if (a.type === 'mcm_calc' && a.ask !== undefined && ['both', 'm', 'cm', 'show'].indexOf(a.ask) < 0) bad(where, 'mcm_calc ask 는 both·m·cm·show');
     if (a.type === 'mcm_calc' && a.said !== undefined && !okp(a.said)) bad(where, 'mcm_calc said 는 [m, cm]');
+  }
+  if (a.type === 'mmruler') {   /* v3.7 — mm 눈금 자: len 은 mm 정수, s 는 cm 정수, 자는 12 cm 까지 */
+    const len = Number(a.len), s0 = a.s === undefined ? 0 : Number(a.s), n = Number(a.n) || Math.ceil(s0 + len / 10) + 1;
+    if (!Number.isInteger(len) || len < 3 || len > 110) bad(where, 'mmruler len 은 3~110 mm 정수: ' + a.len);
+    if (!Number.isInteger(s0) || s0 < 0 || s0 > 5) bad(where, 'mmruler s 는 0~5 cm 정수');
+    if (n > 12) bad(where, 'mmruler 자가 12 cm 를 넘는다');
+    if (s0 * 10 + len > n * 10) bad(where, 'mmruler 물건 끝이 자 밖');
+  }
+  if (a.type === 'clock3') {   /* v3.7 — 초바늘 시계: h 1~12 · m·s 0~59 정수 */
+    if (!(Number.isInteger(a.h) && a.h >= 1 && a.h <= 12)) bad(where, 'clock3 h 는 1~12 정수: ' + a.h);
+    ['m', 's'].forEach(k => { if (!(Number.isInteger(a[k]) && a[k] >= 0 && a[k] <= 59)) bad(where, `clock3 ${k} 는 0~59 정수: ` + a[k]); });
   }
   if (a.type === 'clock2' || a.type === 'digital') {   /* v3.1 — 시각: h 1~12 · m 0~59 정수 */
     if (!(Number.isInteger(a.h) && a.h >= 1 && a.h <= 12)) bad(where, a.type + ' h 는 1~12 정수: ' + a.h);
