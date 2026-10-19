@@ -7,7 +7,9 @@ const V = { craft: '✋', heart: '🤝', grain: '🌾', rank: '🎖' };
 const read = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
 
 /** 이 기기에서 찾은 물려줄 것(core/pulse.js 숨은 것이 kworld_heirlooms 에 쓴다) — era 를 주면 그 시대 것만 */
-export function heirloomsOf(era = null, store = (k) => read(k)) { const all = store('kworld_heirlooms') || []; return (era ? all.filter((h) => h.era === era) : all).map((h) => ({ id: h.id, name: h.name, tag: h.tag || null, fact: h.fact || null, t: h.t || 0 })); }
+export function heirloomsOf(era = null, store = (k) => read(k)) { const all = store('kworld_heirlooms') || []; return (era ? all.filter((h) => h.era === era) : all).map((h) => ({ id: h.id, name: h.name, tag: h.tag || null, fact: h.fact || null, from: h.from || null, t: h.t || 0 })); }
+/** 숨은 것으로 찾은 수 — 벗의 선물(from)은 n/3 셈에서 뺀다(80) */
+const relicN = (list) => (list || []).filter((h) => !h.from).length;
 /** 줄마다 물려줄 것 합치기 — carry 에 실린 것(서버에서 와도 됨) + 이 기기 kworld_heirlooms, id 로 겹침 제거 */
 const mergeHeir = (a, b) => { const out = []; const seen = new Set(); for (const h of [...(a || []), ...(b || [])]) { if (!h || !h.id || seen.has(h.id)) continue; seen.add(h.id); out.push(h); } return out; };
 
@@ -43,14 +45,14 @@ export function jokboHtml(chain, rows, opts = {}) {
   const lived = rows.filter((r) => r.kind === 'lived' || r.kind === 'now').length; const total = rows.length;
   const marks = rows.filter((r) => r.kind !== 'old').flatMap((r) => r.marks || []);
   const hist = opts.history || []; const houses = hist.filter((h) => h.era === chain.eras?.[0]?.era).length;
-  const head = `<div class="tag">${esc(opts.tag || '족보')}</div><h3>${esc(chain.title || '우리 집 족보')}</h3><p class="sub">${esc(chain.note || '')}</p><p class="jsum">${lived}대 / ${total}대 ${lived === total ? `— ${total}대를 다 살았다` : lived ? '— 아직 가는 중' : '— 아직 아무 대도 살지 않았다'}${marks.length ? ` · 남은 흔적 ${marks.length}` : ''}${houses > 1 ? ` · 지난 집 ${houses - 1}채` : ''}${(() => { const n = rows.filter((r) => r.kind !== 'old').reduce((a, r) => a + (r.heirlooms?.length || 0), 0); const tot = rows.reduce((a, r) => a + (r.relics || 0), 0); return n ? ` · 집에 내려오는 것 ${n}${tot ? `/${tot}` : ''}` : ''; })()}</p>`;
+  const head = `<div class="tag">${esc(opts.tag || '족보')}</div><h3>${esc(chain.title || '우리 집 족보')}</h3><p class="sub">${esc(chain.note || '')}</p><p class="jsum">${lived}대 / ${total}대 ${lived === total ? `— ${total}대를 다 살았다` : lived ? '— 아직 가는 중' : '— 아직 아무 대도 살지 않았다'}${marks.length ? ` · 남은 흔적 ${marks.length}` : ''}${houses > 1 ? ` · 지난 집 ${houses - 1}채` : ''}${(() => { const all = rows.filter((r) => r.kind !== 'old').reduce((a, r) => a + (r.heirlooms?.length || 0), 0); const n = rows.filter((r) => r.kind !== 'old').reduce((a, r) => a + relicN(r.heirlooms), 0); const tot = rows.reduce((a, r) => a + (r.relics || 0), 0); return all ? ` · 집에 내려오는 것 ${n}${tot ? `/${tot}` : ''}${all > n ? ` +👤${all - n}` : ''}` : ''; })()}</p>`;
   const body = rows.map((r, i) => {
     const n = `${i + 1}대`;
     if (r.kind === 'none') return `<li class="jrow none"><span class="jn">${n}</span><div><b class="je">${esc(r.short)}</b><span class="jy">${esc(r.years || '')}</span><div class="jt">아직 오지 않은 대</div>${r.heirlooms?.length ? `<div class="jg">🎁 ${esc(r.heirlooms.map((h) => h.name).join(' · '))}</div>` : ''}</div></li>`;
     const who = [r.nationName ? `🏳️ ${esc(r.nationName)}` : '', r.statusName ? `🏠 ${esc(r.statusName)}` : ''].filter(Boolean).join(' · ');
     const tt = r.kind === 'now' ? '지금 사는 중' : r.title || '';
     const tl = (r.kind !== 'old' && (r.titles?.length || r.bond)) ? `<div class="jg jtb">${r.titles?.length ? `🏅 ${esc(r.titles.map((t) => (t.bitter ? '🩹' : '') + t.name).join(' · '))}` : ''}${r.titles?.length && r.bond ? ' · ' : ''}${esc(bondLine(r.bond))}</div>` : '';
-    const hl = r.heirlooms?.length ? `<div class="jg">🎁 ${esc(r.heirlooms.map((h) => h.name).join(' · '))}${r.relics ? ` <span class="jd">${r.heirlooms.length}/${r.relics}</span>` : ''}</div>` : '';
+    const hl = r.heirlooms?.length ? `<div class="jg">🎁 ${esc(r.heirlooms.map((h) => h.name).join(' · '))}${r.relics ? ` <span class="jd">${relicN(r.heirlooms)}/${r.relics}${r.heirlooms.length > relicN(r.heirlooms) ? ` +👤${r.heirlooms.length - relicN(r.heirlooms)}` : ''}</span>` : ''}</div>` : '';
     return `<li class="jrow ${r.kind}"><span class="jn">${n}</span><div><b class="je">${esc(r.short)}</b><span class="jy">${esc(r.years || '')}${r.kind === 'old' ? ' · 지난 집' : ''}</span>${who ? `<div class="jw">${who}</div>` : ''}<div class="jt">${r.kind === 'now' ? '🔶 ' : '✦ '}${esc(tt)}</div><div class="jv">${vals(r)}${r.marks?.length ? ` · <span class="jh">흔적 ${esc(r.marks.join(', '))}</span>` : ''}${r.sits ? ` · 겪은 상황 ${r.sits}` : ''}${r.t ? ` <span class="jd">${when(r.t)}</span>` : ''}</div>${hl}${tl}${r.chain && r.kind !== 'old' ? `<div class="jc">${esc(r.chain)}</div>` : ''}</div></li>`;
   }).join('');
   return `<div class="chk life jokbo">${head}<ol class="jlist">${body}</ol>${chestHtml(rows)}${titlesHtml(rows, opts.store || ((k) => read(k)))}</div>`;
@@ -61,7 +63,7 @@ export function chestHtml(rows) {
   const items = rows.filter((r) => r.kind !== 'old').flatMap((r) => (r.heirlooms || []).map((h) => ({ ...h, era: r.short, idx: rows.indexOf(r) + 1 })));
   if (!items.length) return '';
   const tot = rows.reduce((a, r) => a + (r.relics || 0), 0);
-  return `<div class="jchest"><div class="jct">🎁 집에 내려오는 것 <span class="jd">${items.length}${tot ? `/${tot}` : ''}</span></div><ul>${items.map((h) => `<li><b>${esc(h.name)}</b><span class="jce">${h.idx}대 ${esc(h.era)}${h.tag ? ` · ${esc(h.tag)}` : ''}</span>${h.fact ? `<div class="jcf">📜 ${esc(h.fact)}</div>` : ''}</li>`).join('')}</ul><p class="sub">시대마다 길에서 안 보이는 자리에 숨어 있다. 찾은 것은 다음 대로 내려간다.</p></div>`;
+  return `<div class="jchest"><div class="jct">🎁 집에 내려오는 것 <span class="jd">${relicN(items)}${tot ? `/${tot}` : ''}${items.length > relicN(items) ? ` +👤${items.length - relicN(items)}` : ''}</span></div><ul>${items.map((h) => `<li><b>${esc(h.name)}</b><span class="jce">${h.idx}대 ${esc(h.era)}${h.tag ? ` · ${esc(h.tag)}` : ''}${h.from === 'bond' ? ' · 벗의 선물' : ''}</span>${h.fact ? `<div class="jcf">📜 ${esc(h.fact)}</div>` : ''}</li>`).join('')}</ul><p class="sub">시대마다 길에서 안 보이는 자리에 숨어 있다. 찾은 것은 다음 대로 내려간다. 벗이 준 것(👤)도 함께 내려간다.</p></div>`;
 }
 
 /** 붙은 이름(core/spark.js 칭호가 kworld_titles 에 쓴다) — 이 집 줄(지난 집 제외)의 시대 순, 쓴 이름은 🩹 */

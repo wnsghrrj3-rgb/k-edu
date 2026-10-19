@@ -54,8 +54,8 @@ export class Pulse {
   hold(sec) { const ch = this.chase; if (!ch) return; ch.holdUntil = performance.now() + sec * 1000; if (ch.actor) { ch.actor.path = null; ch.actor.state = 'idle'; ch.actor.play?.('idle'); } }
   endChase(how) {
     const g = this.g; const ch = this.chase; if (!ch) return; this.chase = null; this.tension(0); const c = ch.c;
-    if (how === 'caught') { g.sound?.play?.('bad', 0.6); g.ui.say(c.caughtSay || '…손이 어깨를 잡았다.', 4200); g.ui.setGoal?.(''); if (c.caughtHurt) g.life?.injure(c.caughtHurt); setTimeout(() => { this.removeChaser(ch); g.flag(c.caughtFlag); }, 1400); return; }
-    if (how === 'escaped') { g.sound?.play?.('good', 0.5); g.ui.say(c.escapedSay || '…발소리가 멀어진다. 놓쳤다.', 4200); g.ui.setGoal?.(''); this.chaserLeave(ch); setTimeout(() => g.flag(c.escapedFlag), 1200); return; }
+    if (how === 'caught') { g.sound?.play?.('bad', 0.6); g.ui.say(c.caughtSay || '…손이 어깨를 잡았다.', 4200); g.ui.setGoal?.(''); if (c.caughtHurt) g.life?.injure(c.caughtHurt); g.friends?.shout?.('caught', c.title); setTimeout(() => { this.removeChaser(ch); g.flag(c.caughtFlag); }, 1400); return; }
+    if (how === 'escaped') { g.sound?.play?.('good', 0.5); g.ui.say(c.escapedSay || '…발소리가 멀어진다. 놓쳤다.', 4200); g.ui.setGoal?.(''); this.chaserLeave(ch); g.friends?.shout?.('escaped', c.title); setTimeout(() => g.flag(c.escapedFlag), 1200); return; }
     this.chaserLeave(ch);
   }
   chaserLeave(ch) { const g = this.g; const back = this.area(ch.c.from) || { x: ch.actor.obj.position.x + 30, z: ch.actor.obj.position.z + 30 }; ch.actor?.goTo([back.x, back.z], { anim: 'walk', then: 'idle' }).then(() => this.removeChaser(ch)); (this.leaving ??= []).push(ch.actor); }
@@ -64,7 +64,7 @@ export class Pulse {
   startDeadline(d) { const g = this.g; g.flags.add('deadline:' + d.id); this.deadline = { d, left: d.sec || 60 }; g.sound?.play?.('drum', 0.4); g.ui.say(d.say || '시간이 없다.', 4000); if (this.bar) { this.bar.style.display = 'block'; this.bar.classList.remove('hot'); } this.renderBar(); }
   tickDeadline(dt) { const dl = this.deadline; if (this.g.ui.isOpen?.() || this.g.story?.cutsceneOn) return; dl.left -= dt; const k = dl.left / (dl.d.sec || 60); this.tension(Math.max(this.level, k < 0.3 ? 0.6 : 0.2)); if (k < 0.3 && !dl.hot) { dl.hot = true; this.bar?.classList.add('hot'); this.g.ui.say(dl.d.hotSay || '…거의 다 왔다.', 2600); } if ((dl.tk = (dl.tk || 0) + dt) > 0.5) { dl.tk = 0; this.renderBar(); } if (dl.left <= 0) this.endDeadline(false); }
   renderBar() { const dl = this.deadline; if (!this.bar || !dl) return; this.bar.querySelector('.t').innerHTML = `⏳ <b>${esc(dl.d.title || '')}</b> ${Math.max(0, Math.ceil(dl.left))}초`; this.bar.querySelector('.bar i').style.width = `${Math.max(0, Math.min(100, dl.left / (dl.d.sec || 60) * 100))}%`; }
-  endDeadline(ok) { const g = this.g; const dl = this.deadline; if (!dl) return; this.deadline = null; this.tension(0); if (this.bar) this.bar.style.display = 'none'; if (ok) { if (dl.d.okSay) g.ui.say(dl.d.okSay, 3600); return; } g.sound?.play?.('bad', 0.6); g.ui.say(dl.d.failSay || '…늦었다.', 4400); if (dl.d.failThen) g.life?.doThen(dl.d.failThen); g.flag(dl.d.failFlag); }
+  endDeadline(ok) { const g = this.g; const dl = this.deadline; if (!dl) return; this.deadline = null; this.tension(0); if (this.bar) this.bar.style.display = 'none'; if (ok) { if (dl.d.okSay) g.ui.say(dl.d.okSay, 3600); return; } g.sound?.play?.('bad', 0.6); g.ui.say(dl.d.failSay || '…늦었다.', 4400); g.friends?.shout?.('late', dl.d.title); if (dl.d.failThen) g.life?.doThen(dl.d.failThen); g.flag(dl.d.failFlag); }
   // ---------- 살아 있는 마을 ----------
   actorOf(id) { const st = this.g.story; const a = st?.actors?.[id]; if (a) return a; const it = this.g.e.interactables.get('npc_' + id); if (!it?.obj) return null; (this.wrapped ??= {})[id] ??= new Actor(this.g, id, it.obj, { speed: { walk: 1.2 } }); return this.wrapped[id]; }
   tickRoutine(dt) {
@@ -87,9 +87,11 @@ export class Pulse {
   findSecret(sc) {
     const g = this.g; const s = sc.s; sc.found = true; g.e.scene.remove?.(sc.grp); g.flags.add('secret:' + s.id); g.p.enabled = false; g.sound?.play?.('good', 0.5);
     const deltas = []; if (s.craft) { g.life?.add('craft', s.craft); deltas.push(`✋ 솜씨 +${s.craft}`); } if (s.heart) { g.life?.add('heart', s.heart); deltas.push(`🤝 인심 +${s.heart}`); } if (s.give) { for (const k of [].concat(s.give)) g.inventory.push(k); g.renderInv?.(); }
-    if (s.heirloom) { try { const list = JSON.parse(localStorage.getItem('kworld_heirlooms') || '[]'); if (!list.some((h) => h.id === s.id)) { list.push({ id: s.id, era: g.era, name: s.heirloom, tag: s.tag || null, fact: s.fact || null, t: Date.now() }); localStorage.setItem('kworld_heirlooms', JSON.stringify(list.slice(-40))); } } catch { } g.flags.add('heirloom:' + s.id); deltas.push(`🎁 물려줄 것 — ${s.heirloom}`); }
+    if (s.heirloom) { Pulse.keep(g, { id: s.id, name: s.heirloom, tag: s.tag || null, fact: s.fact || null }); deltas.push(`🎁 물려줄 것 — ${s.heirloom}`); }
     g.ui.open(`<div class="chk life secret"><div class="tag">✨ ${esc(s.tag || '숨어 있던 것')}</div><h3>${esc(s.title || '')}</h3>${(s.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}${deltas.length ? `<p class="delta">${deltas.join(' · ')}</p>` : ''}${s.fact ? `<div class="facts"><div>📜 <b>실제</b> ${esc(s.fact)}</div></div>` : ''}</div>`, [{ label: s.button || '챙긴다', primary: true, onClick: () => { g.ui.close(); g.p.enabled = true; if (s.journal && g.story) g.story.journal(s.journal); g.flag('found:' + s.id); g.save?.touch(); } }]);
   }
+  /** 물려줄 것 한 점을 이 기기 kworld_heirlooms 에 적는다(같은 id 는 한 번) + heirloom:<id> 깃발. from 은 출처(없으면 숨은 것, 'bond' 면 벗의 선물 — n/3 셈엔 안 들어간다). 돌려준다: 새로 적었나 */
+  static keep(g, h) { let fresh = false; try { const list = JSON.parse(localStorage.getItem('kworld_heirlooms') || '[]'); const id = h.from ? `${h.from}:${h.id}` : h.id; if (!list.some((x) => x.id === id && x.era === g.era)) { list.push({ id, era: g.era, name: h.name, tag: h.tag || null, fact: h.fact || null, from: h.from || null, t: Date.now() }); localStorage.setItem('kworld_heirlooms', JSON.stringify(list.slice(-60))); fresh = true; } } catch { } g.flags.add('heirloom:' + (h.from ? h.from + ':' : '') + h.id); return fresh; }
   static heirlooms() { try { return JSON.parse(localStorage.getItem('kworld_heirlooms') || '[]'); } catch { return []; } }
   // ---------- 매 프레임 ----------
   tick(dt) {

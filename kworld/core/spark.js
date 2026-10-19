@@ -6,6 +6,7 @@
 //      고르면 값·흔적·깃발이 바로 온다. 굴림이 있으면 능력으로 판다. 📜 실제 한 줄.
 //  · 밤의 설렘(wonder): 밤이면 반딧불이가 발치에 떠다니고, 가끔 별똥별이 진다 — 보고만 있어도 좋은 것. 세 번 보면 칭호.
 import * as THREE from 'three';
+import { Pulse } from './pulse.js';
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 const V = { craft: '✋ 솜씨', heart: '🤝 인심', grain: '🌾 곡식' };
 
@@ -72,6 +73,7 @@ export class Spark {
     const g = this.g; const lines = []; if (!out) return lines; const L = g.life;
     for (const k of ['craft', 'heart', 'grain']) { const n = out[k]; if (!n) continue; if (k === 'grain' && !L?.d?.grain?.open) continue; L?.add(k, n); lines.push(`${V[k]} ${n > 0 ? '+' : ''}${n}`); }
     if (out.hurt) { L?.injure(out.hurt); lines.push(`🩹 ${L?.d?.hurts?.[out.hurt]?.name || out.hurt}`); } if (out.give) { for (const k of [].concat(out.give)) g.inventory.push(k); g.renderInv?.(); lines.push(`🎒 ${[].concat(out.give).map((k) => g.world.items?.[k]?.name || k).join('·')}`); }
+    if (out.heirloom?.name) { Pulse.keep(g, { ...out.heirloom, from: 'bond' }); lines.push(`🎁 집에 내려오는 것 — ${out.heirloom.name}`); }   // 80: 벗의 선물·화해 선물이 족보 상자로
     if (out.flag) setTimeout(() => { for (const f of [].concat(out.flag)) g.flag(f); }, 300);   // 깃발 하나 또는 여럿(79: bond3e 「미안했다」 길은 bond:end + bond:sorry) if (!silent && (label || out.say)) g.ui.say(`${label ? label + ' — ' : ''}${lines.join(' · ') || out.say || ''}`, 4200);
     return lines;
   }

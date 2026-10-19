@@ -2,12 +2,14 @@
 // + 77: 말 걸기(E — 한마디·물건 주기·등진 사람은 안 닿음) · 벗이 쫓김에 끼어듦(앞을 막아 3초, 한 번) · 조건 토큰 bond:1
 // + 79: 등진 사람과 화해(bond3e 「미안했다」 길 → bond:sorry → 돌발 bond4 굴림 → bond:mended 면 다시 벗으로 돌아와 따라다님) · 쫓길 때 벗이 「이쪽!」 하며 goal_at 쪽으로 먼저 뜀(12m 뒤처지면 기다림) · 벗 한마디가 지난 선택에 반응(cfg.react, 한 번)
 // + 78: 「운명의 벗과 함께」 길 열한 시대(gen_bond_ways.py, items bond:1 + life.json bond:true → together 한마디) · 벗 답례 gift 열한 시대(items 키 실재) · 벗이 숨은 것 곁에서 「저기 뭔가 있다」(한 번·자리 안 말함)
+// + 80: 벗의 물려줄 것(bond3f 첫 길·bond4 화해 성공 then.heirloom → spark.apply → Pulse.keep from:'bond', 족보 n/3 셈엔 안 들어감) · 벗이 쓰러진 나를 일으킴(danger.collapse — 벗 곁 8m 면 먹을 것 1/4, bond:lifted) · 반 친구 외침(friends.shout — 쫓김 끝·급한 일 늦음, 곁 14m 친구만)
 import * as THREE from 'three';
 import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 globalThis.document = { getElementById: () => null, createElement: () => ({ style: {}, classList: { add() {}, remove() {}, toggle() {} }, querySelector: () => ({ style: {} }), innerHTML: '' }), body: { appendChild() {} }, head: { appendChild() {} } };
 globalThis.performance ??= { now: () => Date.now() };
-const { Bond } = await import('../core/bond.js');
+const store = {}; globalThis.localStorage = { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; }, removeItem: (k) => { delete store[k]; } };
+const { Bond } = await import('../core/bond.js'); const { Pulse } = await import('../core/pulse.js'); const { Spark } = await import('../core/spark.js'); const { Danger } = await import('../core/danger.js'); const { heirloomsOf, chestHtml } = await import('../core/jokbo.js');
 let pass = 0, fail = 0; const ok = (c, m) => { c ? pass++ : fail++; console.log((c ? '  ✓ ' : '  ✗ ') + m); };
 const ERAS = ['life', 'neo', 'bronze-life', 'gojoseon-life', 'samguk-life', 'silla-life', 'goryeo-life', 'joseon-life', 'joseon-late-life', 'gaehang-life', 'daehan-life'];
 // ---- 데이터 전수 ----
@@ -125,4 +127,41 @@ g.flags.add('bond:gave'); g.said.length = 0; run(g, 9); ok(g.said.some((t) => t.
 ok((() => { const h = mk(['bond:met']); h.cond = g.cond; run(h, 4); h.flags.add('crack:in'); h.said.length = 0; run(h, 10); return !h.said.some((t) => t.includes('그 틈')); })(), '벗이 아니면(met) 반응 줄은 없다');
 const sj = fs.readFileSync(path.join(root, 'core/spark.js'), 'utf8'); ok(/\[\]\.concat\(out\.flag\)/.test(sj), 'spark.apply — then.flag 가 여럿이어도 전부 세운다');
 const jj = fs.readFileSync(path.join(root, 'core/jokbo.js'), 'utf8'); ok(/bond:mended/.test(jj) && /다시 벗/.test(jj), 'jokbo — 화해하면 「○○과 다시 벗」');
+
+// 17) 80 — 데이터: 벗의 선물·화해 선물이 물려줄 것(heirloom) 열한 시대
+for (const era of ERAS) {
+  const w = JSON.parse(fs.readFileSync(path.join(root, 'eras', era, 'world.json'), 'utf8')); const S = w.spark; const nm = S.bond.name;
+  const f3 = S.surprises.find((s) => s.id === 'bond3f'); const h = f3?.ways[0].then.heirloom;
+  ok(h && h.id === 'bond' && h.name && h.fact && h.tag === `👤 ${nm}` && !f3.ways[1].then.heirloom, `${era}: 벗 끝 카드 첫 길에만 물려줄 것 「${h?.name}」(👤 ${nm})`);
+  const e4 = S.surprises.find((s) => s.id === 'bond4'); const hm = e4?.ways[0].then.heirloom;
+  ok(hm && hm.id === 'bond_mend' && hm.name && hm.fact && hm.tag.includes('다시 벗') && !e4.ways[1].then.heirloom, `${era}: 화해 성공 길에만 물려줄 것 「${hm?.name}」`);
+}
+// 18) 80 — 엔진: spark.apply(then.heirloom) → kworld_heirlooms(from:'bond') + heirloom:bond:bond 깃발, 같은 것 두 번 안 적음; 족보 셈은 숨은 것만
+{
+  const g = mk(['bond:met', 'bond:friend']); g.era = 'life'; g.world = w; g.life = { add() {}, d: {} }; g.spark = new Spark(g, w.spark); g.flag = (f) => g.flags.add(f);
+  delete store.kworld_heirlooms; const lines = g.spark.apply({ say: 'x', heirloom: { id: 'bond', name: '흰돌의 돌', tag: '👤 흰돌', fact: 'f' } }, null, true);
+  const list = JSON.parse(store.kworld_heirlooms || '[]');
+  ok(list.length === 1 && list[0].id === 'bond:bond' && list[0].from === 'bond' && list[0].era === 'life' && g.flags.has('heirloom:bond:bond') && lines.some((t) => t.includes('집에 내려오는 것')), '벗의 선물 → kworld_heirlooms(from bond) + 깃발 + 결과 줄');
+  g.spark.apply({ heirloom: { id: 'bond', name: '흰돌의 돌' } }, null, true); ok(JSON.parse(store.kworld_heirlooms).length === 1, '같은 선물은 두 번 안 적는다');
+  Pulse.keep(g, { id: 'sec1', name: '주먹도끼' }); const rd = (k) => JSON.parse(store[k] || 'null');
+  const hl = heirloomsOf('life', rd); ok(hl.length === 2 && hl.find((x) => x.id === 'bond:bond')?.from === 'bond' && !hl.find((x) => x.id === 'sec1').from, 'heirloomsOf 가 from 을 함께 돌려준다');
+  const html = chestHtml([{ kind: 'now', short: '구석기', relics: 3, heirlooms: hl }]); ok(/1\/3 \+👤1/.test(html) && html.includes('벗의 선물'), `족보 상자 — 숨은 것 1/3 + 👤1(벗의 선물 표시): ${html.match(/<span class="jd">[^<]*/)?.[0]}`);
+}
+// 19) 80 — 엔진: 쓰러질 때 벗이 곁(8m)이면 먹을 것 1/4 만 잃고 「…일어나. 업어 왔어.」 + bond:lifted
+{
+  const mkD = (withBond) => { const g = mk(['bond:met', 'bond:friend']); run(g, 4); if (!withBond) g.p.pos.set(50, 0, 0); g.world = { eye: 1.55, events: [] }; g.e.areas = new Map([['camp', { x: 0, z: 0 }]]); g.inventory.push('berry', 'berry', 'berry', 'berry'); g.hunger = 50; g.checkpoint = null; g.flag = (f) => g.flags.add(f);
+    const dg = new Danger(g, { food: ['berry'] }); dg.showEyes = () => {}; return { g, dg }; };
+  const a = mkD(true); await a.dg.collapse('night', '눈 두 쌍.'); ok(a.g.inventory.length === 3 && a.g.flags.has('bond:lifted') && a.g.flags.has('bond:lifted:night') && a.g.said.some((t) => t.includes('업어 왔어')), `벗이 곁이면 열매 넷 중 하나만 잃고(${a.g.inventory.length} 남음) 벗의 한 줄 + bond:lifted`);
+  const b = mkD(false); await b.dg.collapse('night', '눈 두 쌍.'); ok(b.g.inventory.length === 2 && !b.g.flags.has('bond:lifted') && b.g.said.some((t) => t.includes('혼자 가지 마')), `벗이 멀면 전처럼 절반(${b.g.inventory.length} 남음)·bond:lifted 없음`);
+}
+// 20) 80 — 반 친구 외침: pulse 가 friends.shout 를 부르고, 받는 쪽은 곁 14m 친구만 한 줄
+{
+  const pj = fs.readFileSync(path.join(root, 'core/pulse.js'), 'utf8'); ok(/shout\?\.\('escaped'/.test(pj) && /shout\?\.\('caught'/.test(pj) && /shout\?\.\('late'/.test(pj), 'pulse.endChase·endDeadline → friends.shout(escaped/caught/late)');
+  const { Friends } = await import('../core/friends.js'); const said = []; const g = { p: { pos: { x: 0, z: 0 } }, ui: { say: (t) => said.push(t) }, e: { scene: { add() {}, remove() {} }, onFrame: [] }, world: {} };
+  const fr = new Friends(g); fr.on = true; fr.me = { sid: 'me' }; fr.ch = { sent: [], send(m) { this.sent.push(m); } }; fr.friends = new Map([['f1', { tx: 3, tz: 0, body: { userData: { nick: '7 박솔' } } }]]);
+  fr.shout('escaped', '포졸'); ok(fr.ch.sent.length === 1 && fr.ch.sent[0].event === 'shout' && fr.ch.sent[0].payload.kind === 'escaped', '내 외침이 채널로 나간다(kind·자리)');
+  fr.recvShout({ id: 'f1', kind: 'escaped', x: 3, z: 0 }); ok(said.length === 1 && /👥 7 박솔 — 「/.test(said[0]), `곁 친구의 외침이 한 줄로: ${said[0]}`);
+  fr.recvShout({ id: 'f1', kind: 'caught', x: 40, z: 0 }); ok(said.length === 1, '14m 밖 친구 외침은 안 뜬다'); fr.recvShout({ id: 'f1', kind: 'xx', x: 3, z: 0 }); fr.recvShout({ id: 'me', kind: 'late' }); ok(said.length === 1, '모르는 종류·내 것은 무시');
+  fr.on = false; fr.ch.sent.length = 0; fr.shout('late'); ok(fr.ch.sent.length === 0, '반 멀티가 꺼져 있으면 안 보낸다');
+}
 console.log(`\n운명의 사람(bond): ${pass}/${pass + fail} 통과`); if (fail) process.exit(1);

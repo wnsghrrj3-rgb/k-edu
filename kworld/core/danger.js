@@ -3,6 +3,7 @@
 //  · 숲 깊은 곳 큰 발자국 옆에 오래 있으면 큰 짐승 — 움직이면 다가오고, 가만히 있으면 물러난다.
 //  · 배고픔 0 이 오래가면 쓰러진다.
 //  · 쓰러지면 죽지 않는다: 그 ACT 시작(체크포인트)으로, 주머니의 먹을 것 절반을 잃고 불 곁에서 눈을 뜬다. 이미 끝낸 ACT 는 다시 하지 않는다.
+//  · 80: 운명의 벗(bond.js)이 곁 8m 안이면 벗이 업어 온다 — 먹을 것은 1/4 만 잃고 「…일어나」 한 줄, bond:lifted.
 // world.danger 로 켠다. 시대 이름 없음.
 import * as THREE from 'three';
 
@@ -76,10 +77,12 @@ export class Danger {
     // 체크포인트 되돌리기(있으면) — 이미 끝난 ACT 의 깃발은 남는다
     if (g.checkpoint) { g.flags.clear(); for (const f of g.checkpoint.flags) g.flags.add(f); g.inventory.length = 0; g.inventory.push(...g.checkpoint.inventory); for (const ev of g.world.events || []) ev.done = g.cond(ev.on); g.story?.onFlag(); }
     // 먹을 것 절반
-    const food = this.cfg.food || ['berry', 'root', 'meat', 'cooked', 'fish', 'shell']; const have = g.inventory.filter((k) => food.includes(k)); const lose = Math.floor(have.length / 2); for (let i = 0; i < lose; i++) g.take(have[i]); g.renderInv?.();
+    const lifted = !!g.bond?.withMe?.(8);   // 80: 운명의 벗이 곁(8m)이면 벗이 일으킨다 — 먹을 것 절반 대신 1/4
+    const food = this.cfg.food || ['berry', 'root', 'meat', 'cooked', 'fish', 'shell']; const have = g.inventory.filter((k) => food.includes(k)); const lose = Math.floor(have.length / (lifted ? 4 : 2)); for (let i = 0; i < lose; i++) g.take(have[i]); g.renderInv?.();
     g.hunger = Math.max(g.hunger, 22);
     const f = this.firePos() || (g.e.areas?.get('camp') ? g.e.areas.get('camp') : null); if (f) { g.p.pos.x = f.x + 1.5; g.p.pos.z = f.z + 1.5; if (g.e.groundY) g.p.pos.y = g.e.groundY(g.p.pos.x, g.p.pos.z) + (g.world.eye || 1.55); }
-    g.ui.say(this.cfg.wakeSay || '…불 곁이다. 누가 데려왔다. 「혼자 가지 마.」', 5200); g.life?.afterCollapse(reason);
+    if (lifted) { g.flags.add('bond:lifted'); g.flag?.('bond:lifted:' + reason); g.bond.sinceLine = 0; g.ui.say(`👤 ${g.bond.name} — 「…일어나. 업어 왔어.」 먹을 것은 조금만 잃었다.`, 5200); } else g.ui.say(this.cfg.wakeSay || '…불 곁이다. 누가 데려왔다. 「혼자 가지 마.」', 5200);
+    g.life?.afterCollapse(reason);
     g.updateMission?.(true); g.save?.touch(); g.p.enabled = true; this.collapsing = false;
   }
 }
