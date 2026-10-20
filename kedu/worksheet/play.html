@@ -1603,6 +1603,66 @@ function picgHTML(a, paper){
   const body = Array.isArray(a.units2) ? `<div class="pgtwo">${graph(a.units || [10, 1], nm[0] + ' 그림그래프', true)}${graph(a.units2, nm[1] + ' 그림그래프', false)}</div>` : graph(a.units || [10, 1], '', true);
   return `<div class="${P}sortw"><div class="tgw">${tgTitle(a, paper)}${tab}${body}</div></div>`;
 }
+/* ===== v3.13 — 4학년 2학기 「꺾은선그래프」 (2026-10-20, 오푸스 5.5) =====
+   lgraph {xs:[가로 눈금 이름…], series:[{name?, vals:[수|null]}](1~2), step 세로 눈금 한 칸, ymax 세로 끝, y0? 세로 시작(기본 0, 0 보다 크면 wave 필수),
+           wave? 물결선(≈ 0 과 y0 사이), mode?:'line'|'bar', title?, ylab?(세로 단위 '(cm)'), xlab?(가로 단위 '(월)'),
+           hide?:[[s,i]…] 그 점을 그리지 않음(선도 끊김), mark?:[[s,i,글]…] 점 옆 글(㉠·?), order?:[i…] 잇는 순서(잘못 이은 그래프),
+           curve?:true 곡선으로 이음(잘못) · dots?:true 점만(잇지 않음) · blank?:true 판만 · every? 세로 수 쓰는 간격(칸 수)}
+     null 값은 조사하지 않은 자리 — 점을 찍지 않고 이웃한 두 점을 바로 잇는다(사이 값 짐작). 막대(mode bar)는 한 계열만.
+     세로 한 칸 픽셀은 칸 수로 정한다(합 ≤ 약 200px). 다섯 칸마다 굵은 선. 두 계열은 색(화면)·실선/점선(종이)과 이름표.
+   화면·종이 같은 SVG(종이는 흑백). */
+function lgraphSVG(a, paper){
+  const xs = a.xs || [], S = (a.series || []).slice(0, 2), step = Number(a.step) || 1, y0 = Number(a.y0) || 0, ymax = Number(a.ymax) || 10, n = xs.length;
+  const cells = Math.max(1, Math.round((ymax - y0) / step)), cp = Math.max(6, Math.min(26, Math.floor(200 / cells))), H = cells * cp;
+  const wave = !!a.wave && y0 > 0, gx = Math.max(36, Math.min(58, Math.floor(400 / Math.max(1, n))));
+  const L = 52, T = (a.title ? 30 : 12) + (S.length > 1 || (S[0] && S[0].name && a.mode !== 'bar') ? 20 : 0) + 10, W = L + gx * n + 22, yB = T + H + (wave ? 22 : 0), Hh = yB + 30 + (a.xlab ? 0 : 0);
+  const fmt = v => { const r = Math.round(v * 1000) / 1000; return String(r); };
+  const Y = v => T + H - (v - y0) / step * cp, X = i => L + gx * (i + 0.5);
+  const INK = CMP_INK, GR = paper ? '#BBB' : '#D9D2C3', GR5 = paper ? '#888' : '#B5AA94';
+  const COL = paper ? [INK, INK] : ['#1F5FA8', '#D35400'], DASH = paper ? ['', ' stroke-dasharray="6 4"'] : ['', ''];
+  let t = '';
+  if (a.title) t += `<text x="${(L + W - 22) / 2 + 11}" y="18" text-anchor="middle" font-size="15" font-weight="700" fill="${INK}">${svgEsc(a.title)}</text>`;
+  let ev = Number(a.every) || 0; if (!ev) { for (const k of [1, 2, 5, 10, 20, 25, 50, 100]) { if (k * cp >= 15) { ev = k; break; } } if (!ev) ev = 100; }
+  for (let k = 0; k <= cells; k++){ const y = T + H - k * cp, five = k % 5 === 0;
+    t += `<line x1="${L}" y1="${y}" x2="${W - 22}" y2="${y}" stroke="${five ? GR5 : GR}" stroke-width="${five ? 1.1 : 0.7}"/>`;
+    if (k % ev === 0) t += `<text x="${L - 6}" y="${y + 4}" text-anchor="end" font-size="12" fill="${INK}">${fmt(y0 + k * step)}</text>`; }
+  for (let i = 0; i < n; i++){ t += `<line x1="${X(i)}" y1="${T}" x2="${X(i)}" y2="${T + H}" stroke="${GR}" stroke-width="0.7"/>`;
+    t += `<text x="${X(i)}" y="${yB + 17}" text-anchor="middle" font-size="12" fill="${INK}">${svgEsc(String(xs[i]))}</text>`; }
+  t += `<line x1="${L}" y1="${T - 6}" x2="${L}" y2="${yB}" stroke="${INK}" stroke-width="1.6"/><line x1="${L}" y1="${yB}" x2="${W - 14}" y2="${yB}" stroke="${INK}" stroke-width="1.6"/>`;
+  if (wave){ const m = T + H + 11, wv = y => `M${L - 9} ${y} q4 -5 8 0 t8 0 t8 0`;
+    t += `<rect x="${L - 10}" y="${m - 6}" width="26" height="12" fill="#FFFFFF"/><path d="${wv(m - 3)}" fill="none" stroke="${INK}" stroke-width="1.4"/><path d="${wv(m + 3)}" fill="none" stroke="${INK}" stroke-width="1.4"/>`;
+    t += `<text x="${L - 6}" y="${yB + 4}" text-anchor="end" font-size="12" fill="${INK}">0</text>`; }
+  if (a.ylab) t += `<text x="${L - 4}" y="${T - 12}" text-anchor="end" font-size="11" fill="${INK}">${svgEsc(a.ylab)}</text>`;
+  if (a.xlab) t += `<text x="${W - 12}" y="${yB + 17}" text-anchor="end" font-size="11" fill="${INK}">${svgEsc(a.xlab)}</text>`;
+  const hid = new Set((a.hide || []).map(h => h[0] + ':' + h[1]));
+  if (!a.blank) S.forEach((se, si) => {
+    const vals = se.vals || [];
+    if (a.mode === 'bar'){ const bw = gx * 0.52;
+      vals.forEach((v, i) => { if (v === null || v === undefined || hid.has(si + ':' + i)) return;
+        t += `<rect x="${(X(i) - bw / 2).toFixed(1)}" y="${Y(v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(yB - Y(v)).toFixed(1)}" fill="${paper ? '#DDD' : '#9CC3EA'}" stroke="${paper ? INK : '#1F5FA8'}" stroke-width="1.3"/>`; });
+      if (wave) { const m = T + H + 11; t += `<rect x="${L + 1}" y="${m - 3}" width="${W - 22 - L - 1}" height="6" fill="#FFFFFF" opacity="0.92"/>`; }
+      return; }
+    let idx = vals.map((v, i) => i).filter(i => vals[i] !== null && vals[i] !== undefined && !hid.has(si + ':' + i));
+    if (Array.isArray(a.order) && si === 0) idx = a.order.filter(i => idx.indexOf(i) >= 0);
+    const P = idx.map(i => [X(i), Y(vals[i])]);
+    if (!a.dots && P.length > 1){
+      const runs = []; let cur = [P[0]];
+      for (let k = 1; k < idx.length; k++){ const gap = !Array.isArray(a.order) && (a.hide || []).some(h => h[0] === si && h[1] > idx[k - 1] && h[1] < idx[k]); if (gap){ runs.push(cur); cur = []; } cur.push(P[k]); }
+      runs.push(cur);
+      runs.forEach(r => { if (r.length < 2) return;
+        let d = `M${r[0][0].toFixed(1)} ${r[0][1].toFixed(1)}`;
+        if (a.curve) for (let k = 1; k < r.length; k++){ const [x0, yA] = r[k - 1], [x1, yC] = r[k], cx = (x0 + x1) / 2; d += ` C${cx.toFixed(1)} ${(yA - (k % 2 ? 18 : -18)).toFixed(1)} ${cx.toFixed(1)} ${(yC + (k % 2 ? 18 : -18)).toFixed(1)} ${x1.toFixed(1)} ${yC.toFixed(1)}`; }
+        else for (let k = 1; k < r.length; k++) d += ` L${r[k][0].toFixed(1)} ${r[k][1].toFixed(1)}`;
+        t += `<path d="${d}" fill="none" stroke="${COL[si]}" stroke-width="2.4"${DASH[si]} stroke-linejoin="round"/>`; }); }
+    P.forEach(([x, y]) => { t += si === 1 && paper ? `<rect x="${(x - 3.6).toFixed(1)}" y="${(y - 3.6).toFixed(1)}" width="7.2" height="7.2" fill="${INK}"/>` : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${COL[si]}"/>`; });
+  });
+  (a.mark || []).forEach(([si, i, txt]) => { const se = S[si] || {}, v = (se.vals || [])[i]; const y = (v === null || v === undefined) ? T + H / 2 : Y(v);
+    t += `<text x="${(X(i) + 7).toFixed(1)}" y="${(y - 7).toFixed(1)}" font-size="14" font-weight="700" fill="${paper ? INK : '#C0392B'}" stroke="#fff" stroke-width="3" paint-order="stroke">${svgEsc(String(txt))}</text>`; });
+  if (a.mode !== 'bar' && (S.length > 1 || (S[0] && S[0].name))){ let lx = L + 4; const ly = (a.title ? 30 : 12) + 12;
+    S.forEach((se, si) => { t += `<line x1="${lx}" y1="${ly}" x2="${lx + 22}" y2="${ly}" stroke="${COL[si]}" stroke-width="2.4"${DASH[si]}/><text x="${lx + 27}" y="${ly + 4}" font-size="12" fill="${INK}">${svgEsc(se.name || '')}</text>`; lx += 40 + 13 * String(se.name || '').length; }); }
+  const lab = (a.title || '') + ' ' + (a.mode === 'bar' ? '막대그래프' : '꺾은선그래프');
+  return `<svg class="cmpsv" viewBox="0 0 ${W} ${Hh}" width="${W}" height="${Hh}" role="img" aria-label="${svgEsc(lab.trim())}">${t}</svg>`;
+}
 /* ===== v2.9 — 2학년 2학기 「곱셈구구」 그림 (2026-10-12, 오푸스 5.5) =====
    gugu_table {rows:[세로줄 왼쪽 수…], cols:[가로줄 맨 위 수…], q?:[r,c], blank?:[[r,c]…], hrow?:r, diag?:true}
      곱셈표 — 칸은 언제나 r × c 를 엔진이 셈한다(데이터에 곱을 적지 않는다).
@@ -1996,6 +2056,7 @@ function drawAsset(a, r){
     case 'clock3': return `<div class="cmpw">${clock3SVG(a)}</div>`;   /* v3.7 — 3학년 1학기 「길이와 시간」 */
     case 'ldiv': return `<div class="cmpw">${ldivSVG(a)}</div>`;   /* v3.9 — 3학년 2학기 「나눗셈」 세로셈 */
     case 'picg': return picgHTML(a, false);   /* v3.12 — 3학년 2학기 「그림그래프」 */
+    case 'lgraph': return `<div class="cmpw">${lgraphSVG(a, false)}</div>`;   /* v3.13 — 4학년 2학기 「꺾은선그래프」 */
     case 'mmruler': return `<div class="cmpw">${mmRulerSVG(a)}</div>`;
     case 'digital': return `<div class="cmpw">${digitalSVG(a)}</div>`;
     case 'dpair': return `<div class="cmpw">${dpairSVG(a)}</div>`;
@@ -6246,6 +6307,7 @@ function paperAsset(a){
     case 'clock3': return `<div class="pcmpw">${clock3SVG(a)}</div>`;
     case 'ldiv': return `<div class="pcmpw">${ldivSVG(a)}</div>`;
     case 'picg': return picgHTML(a, true);
+    case 'lgraph': return `<div class="pcmpw">${lgraphSVG(a, true)}</div>`;
     case 'mmruler': return `<div class="pcmpw">${mmRulerSVG(a)}</div>`;
     case 'digital': return `<div class="pcmpw">${digitalSVG(a)}</div>`;
     case 'dpair': return `<div class="pcmpw">${dpairSVG(a)}</div>`;

@@ -56,6 +56,8 @@ const ASSETS = {
   ldiv:           ['a', 'b'],
   /* v3.12 — 3학년 2학기 「그림그래프」 (2026-10-20): 큰·(가운데)·작은 그림 그림그래프 */
   picg:           ['cols', 'counts', 'head'],
+  /* v3.13 — 4학년 2학기 「꺾은선그래프」 (2026-10-20): 꺾은선그래프·막대그래프 */
+  lgraph:         ['xs', 'series', 'step', 'ymax'],
   count_group:    ['item', 'n'],
   scatter_group:  ['item', 'n'],
   dots:           ['n'],
@@ -351,6 +353,35 @@ function checkAsset(where, a) {
         cn.forEach((n, i) => { if (Number.isInteger(n) && n % u2[u2.length - 1] !== 0) bad(where, `picg ${cols[i]} 은 units2 로 나타낼 수 없다`); });
         cols.forEach((c, i) => { if (bl.indexOf(i) >= 0) return; const tot = ENG.picgPieces(draw[i], u2).reduce((x, y) => x + y, 0); if (tot > 48) bad(where, `picg units2 ${c} 그림이 ${tot}개 — 48개 이하로`); }); }
       if (a.names !== undefined && (!Array.isArray(a.names) || a.names.length !== 2 || a.names[0] === a.names[1])) bad(where, 'picg names 는 서로 다른 두 이름'); }
+  }
+  if (a.type === 'lgraph') {   /* v3.13 — 꺾은선그래프: 값은 y0~ymax 안·눈금 위, 칸 수 2~40, 물결선은 y0>0 일 때만(그리고 꼭), 계열 1~2·막대는 1 */
+    const xs = a.xs || [], S = a.series || [], st = a.step, y0 = a.y0 === undefined ? 0 : a.y0, ym = a.ymax;
+    const near = (x) => Math.abs(x - Math.round(x)) < 1e-9;
+    if (!(xs.length >= 2 && xs.length <= 12)) bad(where, 'lgraph 가로 눈금은 2~12개');
+    if (new Set(xs.map(String)).size !== xs.length) bad(where, 'lgraph 가로 눈금 이름이 겹친다');
+    if (!(typeof st === 'number' && st > 0)) bad(where, 'lgraph step 은 양수');
+    if (!(typeof y0 === 'number' && y0 >= 0 && near(y0 / st))) bad(where, 'lgraph y0 는 0 이상·step 의 배수');
+    if (!(typeof ym === 'number' && ym > y0 && near((ym - y0) / st))) bad(where, 'lgraph ymax 는 y0 보다 크고 step 칸에 맞아야');
+    else { const c = Math.round((ym - y0) / st); if (c < 2 || c > 40) bad(where, 'lgraph 세로 칸 수 2~40: ' + c); }
+    if (y0 > 0 && !a.wave) bad(where, 'lgraph y0 > 0 인데 물결선이 없다');
+    if (a.wave && !(y0 > 0)) bad(where, 'lgraph 물결선인데 y0 가 0');
+    if (a.mode !== undefined && a.mode !== 'line' && a.mode !== 'bar') bad(where, "lgraph mode 는 'line'|'bar'");
+    if (!(S.length >= 1 && S.length <= 2)) bad(where, 'lgraph 계열은 1~2');
+    if (a.mode === 'bar' && S.length !== 1) bad(where, 'lgraph 막대는 계열 하나');
+    if (S.length === 2 && !(S[0].name && S[1].name && S[0].name !== S[1].name)) bad(where, 'lgraph 두 계열은 서로 다른 이름이 있어야');
+    S.forEach((se, si) => { const vs = se.vals || [];
+      if (vs.length !== xs.length) bad(where, `lgraph 계열 ${si} 값 수가 가로 눈금 수와 다르다`);
+      vs.forEach((v, i) => { if (v === null) return;
+        if (typeof v !== 'number') { bad(where, `lgraph 값 ${v} 은 수가 아님`); return; }
+        if (v < y0 || v > ym) bad(where, `lgraph ${xs[i]} 값 ${v} 이 세로 범위 ${y0}~${ym} 밖`);
+        if (!near((v - y0) / st)) bad(where, `lgraph ${xs[i]} 값 ${v} 이 눈금(${st}) 위에 있지 않다`); });
+      if (vs.filter(v => v !== null).length < 1 && !a.blank) bad(where, 'lgraph 값이 하나도 없다'); });
+    (a.hide || []).forEach(h => { if (!(Array.isArray(h) && S[h[0]] && Number.isInteger(h[1]) && h[1] >= 0 && h[1] < xs.length)) bad(where, 'lgraph hide 자리 밖: ' + JSON.stringify(h)); });
+    (a.mark || []).forEach(m => { if (!(Array.isArray(m) && m.length === 3 && S[m[0]] && Number.isInteger(m[1]) && m[1] >= 0 && m[1] < xs.length && String(m[2]).length <= 4)) bad(where, 'lgraph mark 는 [계열, 자리, 짧은 글]: ' + JSON.stringify(m)); });
+    if (a.order !== undefined) { const o = a.order; if (!Array.isArray(o) || o.length !== xs.length || new Set(o).size !== o.length || o.some(i => !(Number.isInteger(i) && i >= 0 && i < xs.length))) bad(where, 'lgraph order 는 가로 자리의 순열');
+      else if (o.every((x, k) => x === k)) bad(where, 'lgraph order 가 차례 그대로다(잘못 이은 그래프가 아님)'); }
+    if ([a.order !== undefined, !!a.curve, !!a.dots].filter(Boolean).length > 1) bad(where, 'lgraph order·curve·dots 는 하나만');
+    if (a.mode === 'bar' && (a.order !== undefined || a.curve || a.dots)) bad(where, 'lgraph 막대에 order·curve·dots');
   }
   if (a.type === 'ldiv') {   /* v3.9 — 나눗셈 세로셈: a 10~9999 · b 2~99 · a ≥ b 정수, hide 는 q·[q,i]·[r,k]·rem, upto 0~줄 수 */
     const A = a.a, B = a.b;
