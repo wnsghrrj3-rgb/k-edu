@@ -345,6 +345,16 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .gph th.cn{position:relative;min-width:96px;background:linear-gradient(to top right,var(--tint) 49%,var(--rule-strong) 49.5%,var(--rule-strong) 50.5%,var(--tint) 51%)}
 .gph th.cn span{display:block;font-size:12px;line-height:1.1}
 .gph th.cn span:first-child{text-align:left}.gph th.cn span:last-child{text-align:right}
+.picg{border-collapse:collapse;font-size:17px;background:var(--card)}
+.picg th,.picg td{border:1px solid var(--rule-strong);padding:6px 10px;text-align:center}
+.picg th{background:var(--tint);font-weight:600;white-space:nowrap}
+.picg td.pgr{text-align:left;min-width:220px;max-width:420px;line-height:1.15}
+.picg td.pgr.bl{background:repeating-linear-gradient(45deg,transparent 0 6px,var(--tint) 6px 8px)}
+.picg .pgi{display:inline-block;vertical-align:bottom;margin:0 1px}
+.picg td.pgkey{text-align:right;font-size:14px;color:var(--ink-soft)}
+.picg .pgk{margin-left:14px;white-space:nowrap}
+.picg caption{font-weight:700;padding:2px 0 6px;color:var(--ink)}
+.pgtwo{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:flex-start}
 .tgcards{display:grid;grid-template-columns:repeat(5,82px);gap:6px}
 .tgcard{border:2px solid var(--rule-strong);border-radius:10px;background:var(--card);padding:6px 4px;display:flex;flex-direction:column;align-items:center;gap:2px}
 .tgcard b{font-size:12px;color:var(--accent);line-height:1.15;text-align:center}.tgcard span{font-size:15px}
@@ -376,6 +386,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .pq .psortw .stab{border-collapse:collapse;font-size:13px}.pq .psortw .stab th,.pq .psortw .stab td{border:1px solid #999;padding:4px 10px;text-align:center}
 .pq .psortw .tgw{display:flex;flex-direction:column;align-items:flex-start;gap:4px}.pq .psortw .ptgt{font-size:12px;font-weight:700}
 .pq .psortw .gph{border-collapse:collapse;font-size:12px}.pq .psortw .gph th,.pq .psortw .gph td{border:1px solid #999;min-width:30px;height:22px;padding:0 4px;text-align:center}
+.pq .psortw .picg{border-collapse:collapse;font-size:12px}.pq .psortw .picg th,.pq .psortw .picg td{border:1px solid #999;padding:3px 6px;text-align:center}.pq .psortw .picg td.pgr{text-align:left;min-width:160px;line-height:1.1}.pq .psortw .picg td.pgr.bl{background:none}.pq .psortw .picg td.pgkey{text-align:right;font-size:10px}.pq .psortw .picg .pgk{margin-left:8px}.pq .psortw .picg .pgi{display:inline-block;vertical-align:bottom}.pq .psortw .picg caption{font-weight:700;font-size:11px;text-align:left}.pq .psortw .pgtwo{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
 .pq .psortw .gph td.m{font-size:15px;line-height:1}.pq .psortw .gph th.cn{min-width:70px}.pq .psortw .gph th.cn span{display:block;font-size:9px;line-height:1.1}
 .pq .psortw .tgcards{display:grid;grid-template-columns:repeat(5,66px);gap:3px}.pq .psortw .tgcard{border:1px solid #999;border-radius:6px;padding:2px;display:flex;flex-direction:column;align-items:center}
 .pq .psortw .tgcard b{font-size:9px;line-height:1.1;text-align:center}.pq .psortw .tgcard span{font-size:11px}
@@ -1561,6 +1572,37 @@ function tgHTML(a, paper){
   const tab = a.table ? tgTableHTML(Object.assign({}, a, {total: a.counts.reduce((s, x) => s + (Number(x) || 0), 0)}), paper) : '';
   return `<div class="${P}sortw"><div class="tgw">${tgTitle(a, paper)}${tab}${tgGraphHTML(a, paper)}</div></div>`;
 }
+/* ===== v3.12 — 3학년 2학기 「그림그래프」 (2026-10-20, 오푸스 5.5) =====
+   picg {title?, head, cols:[항목…], counts:[수|null], units:[큰 수, (가운데), 작은 수], icon, unit, vh?, table?:true, blank?:[줄 번호…], drawn?:[수…], pieces?:[[개수…]…], key?:false, units2?:[…], names?:[가, 나], only?:'table', total?:수|null|false}
+     그림그래프 — 줄마다 큰 그림부터 그린다(수는 엔진이 units 로 나눈다: 큰 그림 ⌊n/큰 수⌋개 → 나머지를 다음 그림으로).
+     그림 크기는 units 순서대로 큰·(가운데)·작은 — 맨 아래 「그림 뜻」 줄에 그림마다 나타내는 수(key:false 면 「?」).
+     table:true 면 같은 자료의 표(합계 포함)를 위에 · blank 줄은 비워 둔다(완성하기) · drawn 이 있으면 그 수대로 · pieces 는 줄마다 그림 개수를 그대로(잘못 그린 그래프).
+     units2 가 있으면 같은 자료를 단위가 다른 두 그림그래프(names 기본 가·나)로 나란히 — pieces 는 첫째에만.
+     only:'table' 이면 표만(합계 칸 = total, null 은 ?, false 는 합계 없음 · 없으면 칸의 합) — 수 제한 없는 표(ftable 은 0~20 주제 표).
+   화면·종이 같은 꼴(종이는 흑백 표, 그림 크기만 줄인다). */
+function picgPieces(n, units){ let r = Math.max(0, Number(n) || 0); return units.map(u => { const k = Math.floor(r / u); r -= k * u; return k; }); }
+function picgHTML(a, paper){
+  const P = paper ? 'p' : '', cols = a.cols || [], U = a.unit || '명', vh = a.vh || '학생 수';
+  const draw = Array.isArray(a.drawn) ? a.drawn : (a.counts || []), blank = a.blank || [], ic = esc(a.icon || '🙂');
+  const graph = (units, cap, usePieces) => {
+    units = units.map(Number);
+    const SZ = paper ? (units.length === 3 ? [22, 16, 11] : [21, 12]) : (units.length === 3 ? [34, 24, 15] : [32, 17]);
+    const one = (k, j) => `<span class="pgi" style="font-size:${SZ[j]}px">${ic}</span>`.repeat(Math.max(0, k));
+    let t = cap ? `<caption>${esc(cap)}</caption>` : '';
+    t += `<tr><th>${esc(a.head || '')}</th><th>${esc(vh)}</th></tr>`;
+    cols.forEach((c, i) => {
+      const pcs = usePieces && Array.isArray(a.pieces) && Array.isArray(a.pieces[i]) ? a.pieces[i] : picgPieces(draw[i], units);
+      t += `<tr><th>${esc(c)}</th><td class="pgr${blank.indexOf(i) >= 0 ? ' bl' : ''}">${blank.indexOf(i) >= 0 ? '' : pcs.map(one).join('')}</td></tr>`; });
+    const key = units.map((u, j) => `<span class="pgk"><span class="pgi" style="font-size:${SZ[j]}px">${ic}</span> ${a.key === false ? '?' : esc(String(u))}${esc(U)}</span>`).join('');
+    return `<table class="picg" aria-label="그림그래프">${t}<tr><td colspan="2" class="pgkey">${key}</td></tr></table>`;
+  };
+  const tot = a.total !== undefined ? a.total : (a.counts || []).reduce((s, x) => s + (Number(x) || 0), 0);
+  const tab = (a.table || a.only === 'table') ? tgTableHTML({head: a.head, cols, counts: a.counts, total: tot === false ? undefined : tot, unit: U, vh}, paper) : '';
+  if (a.only === 'table') return `<div class="${P}sortw"><div class="tgw">${tgTitle(a, paper)}${tab}</div></div>`;
+  const nm = a.names || ['가', '나'];
+  const body = Array.isArray(a.units2) ? `<div class="pgtwo">${graph(a.units || [10, 1], nm[0] + ' 그림그래프', true)}${graph(a.units2, nm[1] + ' 그림그래프', false)}</div>` : graph(a.units || [10, 1], '', true);
+  return `<div class="${P}sortw"><div class="tgw">${tgTitle(a, paper)}${tab}${body}</div></div>`;
+}
 /* ===== v2.9 — 2학년 2학기 「곱셈구구」 그림 (2026-10-12, 오푸스 5.5) =====
    gugu_table {rows:[세로줄 왼쪽 수…], cols:[가로줄 맨 위 수…], q?:[r,c], blank?:[[r,c]…], hrow?:r, diag?:true}
      곱셈표 — 칸은 언제나 r × c 를 엔진이 셈한다(데이터에 곱을 적지 않는다).
@@ -1953,6 +1995,7 @@ function drawAsset(a, r){
     case 'clock2': return `<div class="cmpw">${clock2SVG(a)}</div>`;
     case 'clock3': return `<div class="cmpw">${clock3SVG(a)}</div>`;   /* v3.7 — 3학년 1학기 「길이와 시간」 */
     case 'ldiv': return `<div class="cmpw">${ldivSVG(a)}</div>`;   /* v3.9 — 3학년 2학기 「나눗셈」 세로셈 */
+    case 'picg': return picgHTML(a, false);   /* v3.12 — 3학년 2학기 「그림그래프」 */
     case 'mmruler': return `<div class="cmpw">${mmRulerSVG(a)}</div>`;
     case 'digital': return `<div class="cmpw">${digitalSVG(a)}</div>`;
     case 'dpair': return `<div class="cmpw">${dpairSVG(a)}</div>`;
@@ -6202,6 +6245,7 @@ function paperAsset(a){
     case 'clock2': return `<div class="pcmpw">${clock2SVG(a)}</div>`;
     case 'clock3': return `<div class="pcmpw">${clock3SVG(a)}</div>`;
     case 'ldiv': return `<div class="pcmpw">${ldivSVG(a)}</div>`;
+    case 'picg': return picgHTML(a, true);
     case 'mmruler': return `<div class="pcmpw">${mmRulerSVG(a)}</div>`;
     case 'digital': return `<div class="pcmpw">${digitalSVG(a)}</div>`;
     case 'dpair': return `<div class="pcmpw">${dpairSVG(a)}</div>`;

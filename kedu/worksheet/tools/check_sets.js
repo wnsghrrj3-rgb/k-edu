@@ -40,7 +40,7 @@ function loadEngine() {
   sandbox.window.speechSynthesis = undefined;
   vm.createContext(sandbox);
   vm.runInContext('const SEED = 1;\n' + head + body + paper +
-    '\nthis.API = { makeVariant, prep, drawAsset, paperAsset, rng, FIG, TAN7, CUTS, CUBE_LIB, cubeFaces, cubeOrder, FTAG, spCols, spH, spFront, spSide, spTopRows, spLayerCount, spSolutions, spHidden };', sandbox);
+    '\nthis.API = { makeVariant, prep, drawAsset, paperAsset, rng, FIG, TAN7, CUTS, CUBE_LIB, cubeFaces, cubeOrder, FTAG, spCols, spH, spFront, spSide, spTopRows, spLayerCount, spSolutions, spHidden, picgPieces };', sandbox);
   return sandbox.API;
 }
 const ENG = loadEngine();
@@ -54,6 +54,8 @@ const ASSETS = {
   clock3:         ['h', 'm', 's'],
   /* v3.9 — 3학년 2학기 「나눗셈」 (2026-10-19): 나눗셈 세로셈 — 줄은 play.html 이 a·b 에서 직접 만든다 */
   ldiv:           ['a', 'b'],
+  /* v3.12 — 3학년 2학기 「그림그래프」 (2026-10-20): 큰·(가운데)·작은 그림 그림그래프 */
+  picg:           ['cols', 'counts', 'head'],
   count_group:    ['item', 'n'],
   scatter_group:  ['item', 'n'],
   dots:           ['n'],
@@ -314,6 +316,41 @@ function checkAsset(where, a) {
     if (!Number.isInteger(s0) || s0 < 0 || s0 > 5) bad(where, 'mmruler s 는 0~5 cm 정수');
     if (n > 12) bad(where, 'mmruler 자가 12 cm 를 넘는다');
     if (s0 * 10 + len > n * 10) bad(where, 'mmruler 물건 끝이 자 밖');
+  }
+  if (a.type === 'picg') {   /* v3.12 — 그림그래프: units 2~3개 내림·나누어떨어짐, 줄 2~8, 수는 작은 단위의 배수, 줄마다 그림 48개 이하 */
+    const u = (a.units || []).map(Number), cols = a.cols || [], cn = a.counts || [], bl = a.blank || [];
+    const TBL = a.only === 'table';
+    if (!TBL && !a.icon) bad(where, 'picg icon 없음');
+    if (TBL) {} else if (!(u.length >= 2 && u.length <= 3) || u.some(x => !Number.isInteger(x) || x < 1)) bad(where, 'picg units 는 2~3개 자연수: ' + JSON.stringify(a.units));
+    else for (let j = 0; j + 1 < u.length; j++) if (!(u[j] > u[j + 1] && u[j] % u[j + 1] === 0)) bad(where, 'picg units 는 큰 수부터, 앞 수는 뒤 수의 배수: ' + JSON.stringify(a.units));
+    if (!(cols.length >= 2 && cols.length <= 8)) bad(where, 'picg 줄은 2~8개');
+    if (new Set(cols).size !== cols.length) bad(where, 'picg 같은 항목 이름이 둘');
+    if (cn.length !== cols.length) bad(where, 'picg cols·counts 길이가 다르다');
+    bl.forEach(i => { if (!(Number.isInteger(i) && i >= 0 && i < cols.length)) bad(where, 'picg blank 줄 번호 밖: ' + i); });
+    cn.forEach((n, i) => { if (n === null) { if (bl.indexOf(i) < 0 && a.only !== 'table') bad(where, 'picg 수가 null 인데 빈 줄이 아니다(그림 줄은 blank 로)'); return; }
+      if (!(Number.isInteger(n) && n >= 0)) bad(where, 'picg counts 는 0 이상 정수: ' + n);
+      else if (!TBL && u.length && n % u[u.length - 1] !== 0) bad(where, `picg ${cols[i]} ${n} 은 작은 그림(${u[u.length - 1]})으로 나타낼 수 없다`); });
+    if (a.drawn !== undefined && (!Array.isArray(a.drawn) || a.drawn.length !== cols.length)) bad(where, 'picg drawn 길이가 cols 와 다르다');
+    if (a.pieces !== undefined) { if (!Array.isArray(a.pieces) || a.pieces.length !== cols.length) bad(where, 'picg pieces 길이가 cols 와 다르다');
+      else a.pieces.forEach((pc, i) => { if (!Array.isArray(pc) || pc.length !== u.length || pc.some(k => !Number.isInteger(k) || k < 0)) bad(where, 'picg pieces[' + i + '] 는 units 와 같은 길이의 0 이상 정수'); }); }
+    if (a.only !== undefined && a.only !== 'table') bad(where, "picg only 는 'table' 만");
+    if (a.only === 'table') { const nn = cn.filter(x => x === null).length, sum = cn.reduce((x, y) => x + (Number(y) || 0), 0);
+      if (nn > 1) bad(where, 'picg 표 빈칸이 둘 넘다'); if (nn === 1 && typeof a.total !== 'number') bad(where, 'picg 표 빈칸인데 합계가 없다(구할 길이 없다)');
+      if (typeof a.total === 'number' && nn === 0 && a.total !== sum) bad(where, 'picg 표 합계가 칸의 합과 다르다');
+      if (typeof a.total === 'number' && nn === 1 && a.total < sum) bad(where, 'picg 표 빈칸이 음수가 된다');
+      if (a.total === null && nn) bad(where, 'picg 표 빈칸과 합계 ? 가 같이 있다'); }
+    if (a.table && cn.some(x => x === null)) bad(where, 'picg table:true 는 수가 모두 있어야 한다');
+    const draw = Array.isArray(a.drawn) ? a.drawn : cn;
+    if (!TBL) cols.forEach((c, i) => { if (bl.indexOf(i) >= 0) return; const pc = Array.isArray(a.pieces) && Array.isArray(a.pieces[i]) ? a.pieces[i] : ENG.picgPieces(draw[i], u);
+      const tot = pc.reduce((x, y) => x + y, 0); if (tot > 48) bad(where, `picg ${c} 그림이 ${tot}개 — 48개 이하로`); });
+    if (a.units2 !== undefined) { const u2 = (a.units2 || []).map(Number);
+      if (TBL) bad(where, 'picg 표만에 units2');
+      if (!(u2.length >= 2 && u2.length <= 3) || u2.some(x => !Number.isInteger(x) || x < 1)) bad(where, 'picg units2 는 2~3개 자연수');
+      else { for (let j = 0; j + 1 < u2.length; j++) if (!(u2[j] > u2[j + 1] && u2[j] % u2[j + 1] === 0)) bad(where, 'picg units2 는 큰 수부터·배수');
+        if (JSON.stringify(u2) === JSON.stringify(u)) bad(where, 'picg units2 가 units 와 같다');
+        cn.forEach((n, i) => { if (Number.isInteger(n) && n % u2[u2.length - 1] !== 0) bad(where, `picg ${cols[i]} 은 units2 로 나타낼 수 없다`); });
+        cols.forEach((c, i) => { if (bl.indexOf(i) >= 0) return; const tot = ENG.picgPieces(draw[i], u2).reduce((x, y) => x + y, 0); if (tot > 48) bad(where, `picg units2 ${c} 그림이 ${tot}개 — 48개 이하로`); }); }
+      if (a.names !== undefined && (!Array.isArray(a.names) || a.names.length !== 2 || a.names[0] === a.names[1])) bad(where, 'picg names 는 서로 다른 두 이름'); }
   }
   if (a.type === 'ldiv') {   /* v3.9 — 나눗셈 세로셈: a 10~9999 · b 2~99 · a ≥ b 정수, hide 는 q·[q,i]·[r,k]·rem, upto 0~줄 수 */
     const A = a.a, B = a.b;
