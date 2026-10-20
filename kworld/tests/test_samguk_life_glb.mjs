@@ -42,4 +42,11 @@ assert.ok(life.hurts?.wound && world.danger?.safe?.length === 3, '흔적 「다�
 assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');
 const prev = JSON.parse(fs.readFileSync(new URL('../eras/gojoseon-life/world.json', import.meta.url))); assert.ok(prev.gate?.next === 'samguk-life' && prev.gate.ready, '고조선 끝 카드 → 삼국·가야 문(열림)');
 const h = read('height.json'); assert.ok(h && typeof h === 'object', 'height.json');
+// 92: 깊은 숲(woods) 은 한강 속이 아니다 — (78,76)→(84,58) 로 옮김(전엔 RIVER_Y 물속이라 hollow·통나무에 설 자리가 없어 부흥군·노비 도망 길이 막혔음); world.json 풀 피하기 자리도 같이 옮김
+{ const gy = (x, z) => { const fx = (x + h.ext) / (2 * h.ext) * (h.n - 1), fy = (-z + h.ext) / (2 * h.ext) * (h.n - 1); return h.h[Math.round(fy)][Math.round(fx)]; };
+  const w = data.nodes.find((n) => n.name === 'area_woods').translation; assert.ok(Math.abs(w[0] - 84) < 2 && Math.abs(w[2] + 58) < 2, `woods 자리 (${w[0]},${w[2]})`);
+  const deep = world.deepWater ?? -1; assert.ok(gy(w[0], w[2]) > deep, `woods 중심 높이 ${gy(w[0], w[2])}`);
+  for (const [dx, dz] of [[-4, 0], [4, 0], [0, -4], [0, 4], [-6, -6], [6, 6]]) assert.ok(gy(w[0] + dx, w[2] + dz) > deep, `woods 둘레 (${w[0] + dx},${w[2] + dz}) 물속`);
+  assert.ok(names.some((n) => n.startsWith('ix_hollow_')) && names.filter((n) => n.startsWith('ix_log_')).length >= 4, 'hollow·통나무 (자리는 꼭짓점에 구워짐)');
+  assert.ok(world.scenery.grass.avoid.some(([x, y]) => x === 84 && y === -58) && !world.scenery.grass.avoid.some(([x, y]) => x === 78 && y === -76), '풀 피하기 자리 woods 84,-58'); }
 console.log(`samguk.glb: ix ${ix.length} (${[...types].join(',')}) · areas ${areas.length} · npc ${npcs.length} · ${(buffer.length / 1e6).toFixed(2)}MB`);

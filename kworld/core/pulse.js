@@ -80,12 +80,13 @@ export class Pulse {
   spot(to, r = 1.5) { const e = this.g.e; const hit = e.collides ? (x, z) => e.collides({ x, z }, 1.6) : () => false; const a0 = Math.random() * Math.PI * 2;
     for (const rr of [r, r * 2]) for (let i = 0; i < 8; i++) { const ang = a0 + i * Math.PI / 4; const x = to.x + Math.cos(ang) * rr, z = to.z + Math.sin(ang) * rr; if (!hit(x, z)) return [x, z]; }
     return [to.x + Math.cos(a0) * r, to.z + Math.sin(a0) * r]; }
+  blocked(to) { const e = this.g.e; return !!(e.collides && e.collides({ x: to.x, z: to.z }, 1.6)); }   /* 92: 구역 중심이 건물 col_ 안이면(주막·서당·대장간) 거닐지 않는다 — 거닐면 집을 가로질러 지붕 속을 지나감(91 spot 시험이 그 틈에 걸려 흔들렸음) */
   tickRoutine(dt) {
     const g = this.g; const night = !!g.story?.isNight; this.rt = (this.rt || 0) + dt; const check = this.rt > 2.5; if (check) this.rt = 0;
     const who = []; for (const r of this.cfg.routines || []) { const a = this.actorOf(r.actor); if (!a) continue; who.push(a); if (this.wrapped?.[r.actor] === a) a.tick(dt);   /* 장면층 배우는 story 가 tick */
       if (!check || a.path || this.meet?.who.includes(a)) continue; if (r.if && !g.cond(r.if)) continue; const want = night ? (r.night || r.day) : r.day; const to = this.area(want); if (!to) continue; const o = a.obj; const d = this.dist({ x: o.position.x, z: o.position.z }, to);
       if (d > (r.r || 3)) { a.goTo(this.spot(to, 1.5), { anim: 'walk', then: r.then || 'idle' }).then(() => a.syncBox()); if (r.say && !night === !r.sayNight && !g.flags.has('routine:' + r.actor + ':' + (night ? 'n' : 'd'))) { g.flags.add('routine:' + r.actor + ':' + (night ? 'n' : 'd')); } }
-      else if (r.wander && Math.random() < 0.25) { a.goTo(this.spot(to, r.wander), { anim: 'walk', then: r.then || 'idle' }).then(() => a.syncBox()); } }
+      else if (r.wander && Math.random() < 0.25 && !this.blocked(to)) { a.goTo(this.spot(to, r.wander), { anim: 'walk', then: r.then || 'idle' }).then(() => a.syncBox()); } }
     this.tickMeet(dt, who);
   }
   // ---------- 마주침 ----------

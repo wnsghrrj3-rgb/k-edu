@@ -28,4 +28,8 @@ for (const m of list) assert.ok(must.some((x) => 'sit:' + x.id + ':done' === m.d
 for (const sit of life.situations) { if (sit.place) assert.ok(world.areas[sit.place], `상황 ${sit.id} 장소 ${sit.place}`); for (const c of sit.choices) assert.ok(c.done || c.count, `상황 ${sit.id} 선택 ${c.id} 에 done/count 없음`); }
 assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');
 const h = read('height.json'); assert.ok(h && typeof h === 'object', 'height.json');
+// 92: 고개 목(passn) 바닥은 깊은 물 밑이 아니다(전엔 -2.37 이라 구역 중심·대상 passn_1 에 설 자리가 없었음 — 생성기 max(h,-0.5))
+{ const gy = (x, z) => { const fx = (x + h.ext) / (2 * h.ext) * (h.n - 1), fy = (-z + h.ext) / (2 * h.ext) * (h.n - 1); return h.h[Math.round(fy)][Math.round(fx)]; };
+  const pn = data.nodes.find((n) => n.name === 'area_passn').translation; assert.ok(names.some((n) => n.startsWith('ix_passn_')), 'ix_passn_ (자리는 꼭짓점에 구워져 translation 없음)');
+  for (const [x, z] of [[pn[0], pn[2]], [pn[0] - 3, pn[2]], [pn[0] + 3, pn[2]], [pn[0], pn[2] - 3], [pn[0], pn[2] + 3]]) assert.ok(gy(x, z) > (world.deepWater ?? -1), `고개 목 (${x.toFixed(1)},${z.toFixed(1)}) 높이 ${gy(x, z)} — 깊은 물`); }
 console.log(`paleo.glb: ix ${ix.length} (${[...types].join(',')}) · areas ${areas.length} · npc ${npcs.length} · ${(buffer.length / 1e6).toFixed(2)}MB`);
