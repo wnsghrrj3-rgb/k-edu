@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-20 · 과목 21 · 차시 1068 · 슬라이드 18905 */
+   생성: 2026-10-20 · 과목 22 · 차시 1069 · 슬라이드 18924 */
 window.KT2_MANIFEST = {
  "built": "2026-10-20",
- "lessons": 1068,
- "slides": 18905,
+ "lessons": 1069,
+ "slides": 18924,
  "subjects": [
   {
    "slug": "g1_math",
@@ -28863,6 +28863,50 @@ window.KT2_MANIFEST = {
        "title": "3단원 경제활동과 지역 간 교류 정리",
        "meta_title": "3단원 경제활동과 지역 간 교류 정리",
        "std": "[4사07-01][4사07-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "slug": "g5s2_social",
+   "grade": 5,
+   "term": 2,
+   "subject": "social",
+   "subject_ko": "사회",
+   "title": "5학년 2학기 사회",
+   "units": [
+    {
+     "unit": 1,
+     "title": "유적과 유물로 살펴본 옛 사람들의 생활",
+     "file": "data/g5s2_social_u1.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u1_l02",
+       "no": "2",
+       "title": "구석기 시대 사람들의 생활 모습",
+       "meta_title": "구석기 시대 사람들의 생활 모습",
+       "std": "[6사04-01]",
        "slides": 19,
        "stages": [
         3,
