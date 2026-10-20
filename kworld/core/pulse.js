@@ -12,6 +12,10 @@ const MEET_R = 1.9, MEET_SEC = 2.4, MEET_GAP = 90, HEAR = 14, SAY_GAP = 20;   //
 const GREET_D = ['잘 지내나.', '오늘도 바쁘구먼.', '밥은 먹었나.', '비 올 것 같은데.', '그 얘기 들었나?', '어디 가는 길인가.', '먼저 가게, 나는 천천히.'];
 const GREET_N = ['이 밤에 어딜 가나.', '불 조심하게.', '어서 들어가게.', '잘 자게.'];
 const ABOUT = { warm: ['저기 가는 사람, 지난번에 나눠 줬다지.', '저 사람 집은 인심이 좋아.', '저 사람이 그때 도와준 사람이야.'], cold: ['저 사람하곤 엮이지 말게.', '혼자 먹던 사람이야, 저 사람.', '저 사람 말은 반만 믿게.'], mark: ['저 사람 다리를 봐… 그때 그 일이지.', '절뚝이는 사람, 저 사람이야.'] };   // 마주친 둘이 내 얘길 한다(마을의 눈과 같은 기준)
+/** GLB 의 ix_npc_* 는 엔진이 세계 좌표를 자식 메시에 구워 둔 채 묶음(Group)을 원점에 둔다 — 그대로 Actor 에 주면 goTo·face·sway 가 **원점을 축으로** 사람을 돌리고 멀리 날린다(㉟ 헤드리스 확인: 일과 사람이 마을 밖으로 빙 돈 것).
+ *  발밑 가운데(상자 x·z 가운데, y 는 바닥)를 묶음 자리로 옮기고 자식은 그만큼 되돌려, obj.position 이 그 사람이 선 자리가 되게 한다. 한 번만(userData.centered). */
+const recenter = (grp) => { if (grp.userData.centered) return grp; grp.updateMatrixWorld(true); const box = new THREE.Box3().setFromObject(grp); grp.userData.centered = true; if (box.isEmpty() || !grp.children.length) return grp;   /* 시험의 빈 Group 은 그대로 */ const c = box.getCenter(new THREE.Vector3()); c.y = box.min.y;
+  for (const m of grp.children) m.position.sub(c); grp.position.copy(c); grp.updateMatrixWorld(true); return grp; };
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 
 export class Pulse {
@@ -71,7 +75,7 @@ export class Pulse {
   renderBar() { const dl = this.deadline; if (!this.bar || !dl) return; this.bar.querySelector('.t').innerHTML = `⏳ <b>${esc(dl.d.title || '')}</b> ${Math.max(0, Math.ceil(dl.left))}초`; this.bar.querySelector('.bar i').style.width = `${Math.max(0, Math.min(100, dl.left / (dl.d.sec || 60) * 100))}%`; }
   endDeadline(ok) { const g = this.g; const dl = this.deadline; if (!dl) return; this.deadline = null; this.tension(0); if (this.bar) this.bar.style.display = 'none'; if (ok) { if (dl.d.okSay) g.ui.say(dl.d.okSay, 3600); return; } g.sound?.play?.('bad', 0.6); g.ui.say(dl.d.failSay || '…늦었다.', 4400); g.friends?.shout?.('late', dl.d.title); if (dl.d.failThen) g.life?.doThen(dl.d.failThen); g.flag(dl.d.failFlag); }
   // ---------- 살아 있는 마을 ----------
-  actorOf(id) { const st = this.g.story; const a = st?.actors?.[id]; if (a) return a; const it = this.g.e.interactables.get('npc_' + id); if (!it?.obj) return null; (this.wrapped ??= {})[id] ??= new Actor(this.g, id, it.obj, { speed: { walk: 1.2 } }); return this.wrapped[id]; }
+  actorOf(id) { const st = this.g.story; const a = st?.actors?.[id]; if (a) return a; const it = this.g.e.interactables.get('npc_' + id); if (!it?.obj) return null; (this.wrapped ??= {})[id] ??= new Actor(this.g, id, recenter(it.obj), { speed: { walk: 1.2 } }); return this.wrapped[id]; }
   tickRoutine(dt) {
     const g = this.g; const night = !!g.story?.isNight; this.rt = (this.rt || 0) + dt; const check = this.rt > 2.5; if (check) this.rt = 0;
     const who = []; for (const r of this.cfg.routines || []) { const a = this.actorOf(r.actor); if (!a) continue; who.push(a); if (this.wrapped?.[r.actor] === a) a.tick(dt);   /* 장면층 배우는 story 가 tick */
