@@ -76,12 +76,16 @@ export class Pulse {
   endDeadline(ok) { const g = this.g; const dl = this.deadline; if (!dl) return; this.deadline = null; this.tension(0); if (this.bar) this.bar.style.display = 'none'; if (ok) { if (dl.d.okSay) g.ui.say(dl.d.okSay, 3600); return; } g.sound?.play?.('bad', 0.6); g.ui.say(dl.d.failSay || '…늦었다.', 4400); g.friends?.shout?.('late', dl.d.title); if (dl.d.failThen) g.life?.doThen(dl.d.failThen); g.flag(dl.d.failFlag); }
   // ---------- 살아 있는 마을 ----------
   actorOf(id) { const st = this.g.story; const a = st?.actors?.[id]; if (a) return a; const it = this.g.e.interactables.get('npc_' + id); if (!it?.obj) return null; (this.wrapped ??= {})[id] ??= new Actor(this.g, id, recenter(it.obj), { speed: { walk: 1.2 } }); return this.wrapped[id]; }
+  /** 일과 목적지 — 구역 중심 둘레 r 에서 `e.collides` 가 거짓인 자리(건물 col_ 상자·담 안이 아닌 곳). 8방향을 r → 2r 로 돌고, 다 막히면 아무 각. (90-② 건물 구역에서 사람이 지붕·벽 속에 서던 것) */
+  spot(to, r = 1.5) { const e = this.g.e; const hit = e.collides ? (x, z) => e.collides({ x, z }, 1.6) : () => false; const a0 = Math.random() * Math.PI * 2;
+    for (const rr of [r, r * 2]) for (let i = 0; i < 8; i++) { const ang = a0 + i * Math.PI / 4; const x = to.x + Math.cos(ang) * rr, z = to.z + Math.sin(ang) * rr; if (!hit(x, z)) return [x, z]; }
+    return [to.x + Math.cos(a0) * r, to.z + Math.sin(a0) * r]; }
   tickRoutine(dt) {
     const g = this.g; const night = !!g.story?.isNight; this.rt = (this.rt || 0) + dt; const check = this.rt > 2.5; if (check) this.rt = 0;
     const who = []; for (const r of this.cfg.routines || []) { const a = this.actorOf(r.actor); if (!a) continue; who.push(a); if (this.wrapped?.[r.actor] === a) a.tick(dt);   /* 장면층 배우는 story 가 tick */
       if (!check || a.path || this.meet?.who.includes(a)) continue; if (r.if && !g.cond(r.if)) continue; const want = night ? (r.night || r.day) : r.day; const to = this.area(want); if (!to) continue; const o = a.obj; const d = this.dist({ x: o.position.x, z: o.position.z }, to);
-      if (d > (r.r || 3)) { const ang = Math.random() * Math.PI * 2; a.goTo([to.x + Math.cos(ang) * 1.5, to.z + Math.sin(ang) * 1.5], { anim: 'walk', then: r.then || 'idle' }).then(() => a.syncBox()); if (r.say && !night === !r.sayNight && !g.flags.has('routine:' + r.actor + ':' + (night ? 'n' : 'd'))) { g.flags.add('routine:' + r.actor + ':' + (night ? 'n' : 'd')); } }
-      else if (r.wander && Math.random() < 0.25) { const ang = Math.random() * Math.PI * 2; a.goTo([to.x + Math.cos(ang) * r.wander, to.z + Math.sin(ang) * r.wander], { anim: 'walk', then: r.then || 'idle' }).then(() => a.syncBox()); } }
+      if (d > (r.r || 3)) { a.goTo(this.spot(to, 1.5), { anim: 'walk', then: r.then || 'idle' }).then(() => a.syncBox()); if (r.say && !night === !r.sayNight && !g.flags.has('routine:' + r.actor + ':' + (night ? 'n' : 'd'))) { g.flags.add('routine:' + r.actor + ':' + (night ? 'n' : 'd')); } }
+      else if (r.wander && Math.random() < 0.25) { a.goTo(this.spot(to, r.wander), { anim: 'walk', then: r.then || 'idle' }).then(() => a.syncBox()); } }
     this.tickMeet(dt, who);
   }
   // ---------- 마주침 ----------

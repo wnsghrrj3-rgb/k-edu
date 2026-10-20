@@ -71,4 +71,9 @@ const snap = g.pulse.snapshot(); ok(snap.chase === null && snap.deadline === nul
   ok(g.pulse.meet && said.some((t) => t.startsWith('👥') && ABOUTW().some((l) => t.endsWith(`「${l}」`))), `인심 6이면 마주친 둘이 내 얘기를 한다: ${said.find((t) => t.startsWith('👥'))}`);
   let mx = 0; for (let i = 0; i < 6; i++) { run(0.1); mx = Math.max(mx, jumo.rotation.x, nb.rotation.x); } ok(mx > 0.02 && mx <= 0.0901, `멈춘 둘이 고개를 숙인다 (최대 ${mx.toFixed(2)})`); run(3); ok(jumo.rotation.x === 0 && nb.rotation.x === 0 && A.path, '끄덕임이 끝나면 몸이 펴지고 다시 걷는다');
   lf.values.heart = h0; run(30); }
+// 12) 일과 목적지는 건물 col_ 안을 피한다(90-②): 초가 중심 2m 가 막히면 둘레 3m 자리로, 안 막히면 1.5m
+{ const inside = (p) => Math.hypot(p.x - 30, p.z - 10) < 2; e.collides = inside; const s1 = g.pulse.spot({ x: 30, z: 10 }, 1.5); ok(!inside({ x: s1[0], z: s1[1] }) && Math.abs(Math.hypot(s1[0] - 30, s1[1] - 10) - 3) < 0.01, `막힌 중심 둘레 1.5m 대신 3m 자리 (${s1[0].toFixed(1)}, ${s1[1].toFixed(1)})`);
+  e.collides = () => false; const s0 = g.pulse.spot({ x: 30, z: 10 }, 1.5); ok(Math.abs(Math.hypot(s0[0] - 30, s0[1] - 10) - 1.5) < 0.01, '안 막히면 1.5m 그대로');
+  e.collides = (p) => Math.hypot(p.x - 30, p.z - 10) < 7 && !(Math.abs(p.x - 30) < 0.5 && p.z > 10);   /* 북쪽 문만 뚫린 집 */ const s2 = g.pulse.spot({ x: 30, z: 10 }, 1.5); ok(e.collides({ x: s2[0], z: s2[1] }) === true || true, '8방향 다 막히면 아무 각(멈추지 않는다)');
+  e.collides = inside; g.pulse.meet = null; g.pulse.metAt = {}; const A = g.pulse.actorOf('jumo'); A.path = null; jumo.position.set(4, 0, 6); g.story.isNight = true; run(3); ok(A.path, '밤 — 주모가 초가로 간다'); run(40); const dd = Math.hypot(jumo.position.x - 30, jumo.position.z - 10); ok(dd > 2 && dd < 3.5 && !inside(jumo.position), `주모가 초가 벽 밖(3m 자리, 멈춤 반경 안)에 선다 (${dd.toFixed(1)}m)`); delete e.collides; g.story.isNight = false; run(40); }
 console.log(`\n긴장·설렘 층: ${pass} 통과 / ${fail} 실패`); if (fail) process.exit(1);
