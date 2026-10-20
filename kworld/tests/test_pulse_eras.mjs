@@ -26,6 +26,7 @@ for (const era of ERAS) {
     ok(dl.sec >= 30 && dl.sec <= 120, `${era} 급한 일 ${dl.id}: ${dl.sec}초`);
   }
   ok(P.routines.every((r) => npcs[r.actor] && w.areas[r.day] && w.areas[r.night]), `${era} 일과: 사람·낮·밤 자리 전부 있음`);
+  ok(P.facing && Object.keys(P.facing).every((k) => npcs[k]) && Object.values(P.facing).every((v) => typeof v === 'number' && v !== 0 && Math.abs(v) <= Math.PI + 0.01), `${era} 사람 처음 바라보는 방향(facing) ${Object.keys(P.facing || {}).length}명 — 전부 npcs.json 사람·-π~π·0 은 안 적음`);
   ok(P.secrets.every((s) => w.areas[s.at] && s.heirloom && s.fact && w.journal[s.journal] && (s.craft || s.heart)), `${era} 숨은 것: 자리·물려줄 것·실제·탐험일지·값`);
   ok(new Set(P.secrets.map((s) => s.id)).size === 3, `${era} 숨은 것 id 셋이 다름`);
 }

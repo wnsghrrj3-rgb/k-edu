@@ -77,4 +77,12 @@ const snap = g.pulse.snapshot(); ok(snap.chase === null && snap.deadline === nul
   e.collides = (p) => Math.hypot(p.x - 30, p.z - 10) < 7 && !(Math.abs(p.x - 30) < 0.5 && p.z > 10);   /* 북쪽 문만 뚫린 집 */ const s2 = g.pulse.spot({ x: 30, z: 10 }, 1.5); ok(e.collides({ x: s2[0], z: s2[1] }) === true || true, '8방향 다 막히면 아무 각(멈추지 않는다)');
   e.collides = inside; g.pulse.meet = null; g.pulse.metAt = {}; const A = g.pulse.actorOf('jumo'); A.path = null; jumo.position.set(4, 0, 6); g.story.isNight = true; run(3); ok(A.path, '밤 — 주모가 초가로 간다'); run(40); const dd = Math.hypot(jumo.position.x - 30, jumo.position.z - 10); ok(dd > 2 && dd < 3.5 && !inside(jumo.position), `주모가 초가 벽 밖(3m 자리, 멈춤 반경 안)에 선다 (${dd.toFixed(1)}m)`); ok(g.pulse.blocked({ x: 30, z: 10 }) && !g.pulse.blocked({ x: 50, z: 10 }), '92: 건물 중심은 blocked');
   run(40); const dd2 = Math.hypot(jumo.position.x - 30, jumo.position.z - 10); ok(dd2 > 2 && !inside(jumo.position) && !A.path, `92: 막힌 중심 둘레에선 거닐지 않는다 — 40초 뒤에도 집 밖 제자리 (${dd2.toFixed(1)}m)`); delete e.collides; g.story.isNight = false; run(40); }
+// 13) 통짜 GLB 사람의 처음 바라보는 방향(93): world.json pulse.facing(bpy facing=θ, 0=남쪽) → Actor.yaw0 — face·걷기는 θ 만큼 빼서 돌아 결국 그쪽을 본다
+{ ok(P.facing && typeof P.facing === 'object' && Object.keys(P.facing).length >= 10 && Object.values(P.facing).every((v) => typeof v === 'number' && Math.abs(v) <= Math.PI + 0.01), `조선 전기 facing ${Object.keys(P.facing || {}).length}명(-π~π)`);
+  ok(P.routines.every((r) => !(r.actor in P.facing) || P.facing[r.actor] !== 0) && Object.keys(P.facing).every((k) => npcs[k]), 'facing 키는 npcs.json 사람, 0(남쪽) 은 적지 않는다');
+  const A = g.pulse.actorOf('jumo'); ok(Math.abs(A.yaw0 - (P.facing.jumo || 0)) < 1e-9 && A.yaw0 !== 0, `actorOf 가 facing 을 yaw0 로 넘긴다 (주모 ${A.yaw0})`);
+  const { Actor } = await import('../core/actor.js'); const o = new THREE.Group(); const B = new Actor(g, 'x', o, { yaw0: Math.PI / 2 });
+  B.face({ x: 0, z: 1 }, true); ok(Math.abs(o.rotation.y - (0 - Math.PI / 2)) < 1e-9, '얼굴이 +z(yaw 0) 인 사람이 face(+z) 하면 rotation.y = -π/2 (처음 바라보던 +x 를 되돌린다)');
+  B.face({ x: 1, z: 0 }); for (let i = 0; i < 50; i++) B.tick(0.1); ok(Math.abs(Math.atan2(Math.sin(o.rotation.y), Math.cos(o.rotation.y))) < 0.03, 'face(+x) 로 돌면 rotation.y → 0 (yaw π/2 − yaw0 π/2)');
+  const C = new Actor(g, 'y', new THREE.Group()); ok(C.yaw0 === 0, 'yaw0 없으면 0 — 관절 인형·뼈대 GLB 는 전과 같다'); }
 console.log(`\n긴장·설렘 층: ${pass} 통과 / ${fail} 실패`); if (fail) process.exit(1);

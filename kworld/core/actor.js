@@ -9,6 +9,7 @@ export class Actor {
   constructor(g, id, obj, opts = {}) {
     this.g = g; this.id = id; this.obj = obj; this.speed = { walk: 1.5, run: 4.2, ...(opts.speed || {}) };
     this.state = 'idle'; this.anim = 'idle'; this.path = null; this.cur = null; this.actions = {}; this.mixer = null; this.t = 0; this.turnTo = null;
+    this.yaw0 = opts.yaw0 || 0;   /* 모델이 rotation.y=0 일 때 바라보는 yaw(통짜 bpy 사람은 facing 이 꼭짓점에 구워져 있다 — world.json pulse.facing). face·걷기는 이만큼 빼서 돈다. 93 */
   }
   /** GLB 가 로드되면 뼈대·동작을 붙인다(story.loadPerson 이 부른다) */
   setModel(inst, mixer, clips) {
@@ -35,7 +36,7 @@ export class Actor {
   }
   /** 움직인 뒤 상호작용 상자를 새 자리로 */
   syncBox() { const it = this.g.e.interactables?.get('npc_' + this.id); if (it && it.box) { it.box.setFromObject(this.obj); it.center.copy(it.box.getCenter(new THREE.Vector3())); } }
-  face(target, snap = false) { const p = this.resolve(target); if (!p) return; const yaw = Math.atan2(p.x - this.obj.position.x, p.z - this.obj.position.z); if (snap) this.obj.rotation.y = yaw; else this.turnTo = yaw; }
+  face(target, snap = false) { const p = this.resolve(target); if (!p) return; const yaw = Math.atan2(p.x - this.obj.position.x, p.z - this.obj.position.z); if (snap) this.obj.rotation.y = yaw - this.yaw0; else this.turnTo = yaw; }
   resolve(t) {
     if (t === 'player') return { x: this.g.p.pos.x, z: this.g.p.pos.z };
     if (typeof t === 'string') { const a = this.g.e.areas?.get(t) || (this.g.story?.s?.areas?.[t] && new THREE.Vector3(this.g.story.s.areas[t][0], 0, this.g.story.s.areas[t][1])); return a ? { x: a.x, z: a.z } : null; }
@@ -52,7 +53,7 @@ export class Actor {
       if (this.g.e.groundY) o.position.y = this.g.e.groundY(o.position.x, o.position.z);
       this.baseY = o.position.y;
     }
-    if (this.turnTo != null) { let diff = this.turnTo - o.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff)); const k = Math.min(1, dt * 8); o.rotation.y += diff * k; if (Math.abs(diff) < 0.02) this.turnTo = null; }
+    if (this.turnTo != null) { let diff = this.turnTo - this.yaw0 - o.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff)); const k = Math.min(1, dt * 8); o.rotation.y += diff * k; if (Math.abs(diff) < 0.02) this.turnTo = null; }
     this.tickNod(dt);
     // LOD: 멀면 동작 갱신을 띄엄띄엄
     const dist = this.g.p?.pos ? Math.hypot(o.position.x - this.g.p.pos.x, o.position.z - this.g.p.pos.z) : 0;
