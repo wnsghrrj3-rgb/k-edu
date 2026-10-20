@@ -16,7 +16,7 @@ Object.assign(window.LESSONS, {
    "std": "[6사04-01]",
    "duration_min": 40,
    "lesson_format": "1차시(40분) · 2세대 19장(7요소) · 그날의 선택",
-   "theme": "곰이·펭이 시간 여행 탐사대",
+   "theme": "시간 여행 탐사대",
    "topic": "선사 시대와 고조선 사람들의 생활 모습",
    "method": "지도서 핵심 질문 → 왜 옮겨 다녔을까(먹을 것) → 그래서 막집·뗀석기 → 그날의 선택(머물까 떠날까)",
    "textbook": "p.12~14"
@@ -67,16 +67,7 @@ Object.assign(window.LESSONS, {
     "block": "motivate",
     "data": {
      "scene_title": "바위 아래에서 나온 청동 검",
-     "kids": [
-      {
-       "face": "🐻",
-       "label": "곰이\n\"바위에 사람 그림이 새겨져 있고, 그 아래 땅속에서 검이 나왔대!\""
-      },
-      {
-       "face": "🐧",
-       "label": "펭이\n\"글자도 없던 때인데, 왜 굳이 바위에 그리고 땅에 묻었을까?\""
-      }
-     ],
+     "desc": "바위에 **사람 그림**이 새겨져 있고, 그 아래 땅속에서 **청동 검**이 나왔어요.",
      "question": "옛날 사람들은 왜 바위에 그림을 새기고 땅속에 물건을 묻었을까요?",
      "img": "assets/photo/social/rock_carving_sword.jpg",
      "tnote": {
@@ -277,7 +268,7 @@ Object.assign(window.LESSONS, {
      "title": "기본 문제 ①",
      "scenario": {
       "icon": "✏️",
-      "body": "곰이가 이 시대의 이름을 물었어요."
+      "body": "이 시대의 이름은 무엇일까요?"
      },
      "question": "글로 쓰인 기록이 없는, 문자를 쓰기 이전의 시대를 무엇이라 할까요?",
      "options": [
@@ -309,7 +300,7 @@ Object.assign(window.LESSONS, {
      "title": "기본 문제 ②",
      "scenario": {
       "icon": "🪓",
-      "body": "펭이가 박물관에서 주먹 도끼를 보았어요."
+      "body": "박물관에서 주먹 도끼를 보았어요."
      },
      "question": "돌을 깨뜨리거나 떼어 내서 만든 도구를 무엇이라 할까요?",
      "options": [
@@ -341,7 +332,7 @@ Object.assign(window.LESSONS, {
      "title": "기본 문제 ③",
      "scenario": {
       "icon": "🚶",
-      "body": "곰이가 구석기 사람들이 자꾸 이사한 까닭을 찾고 있어요."
+      "body": "구석기 사람들이 자꾸 이사한 까닭을 찾아봐요."
      },
      "question": "구석기 시대 사람들이 이리저리 옮겨 다닌 까닭으로 알맞은 것은?",
      "options": [
