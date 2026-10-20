@@ -48,5 +48,8 @@ assert.ok(st.some((r) => r.id === 'yetbaekjeong' && r.if === 'fromstatus:baekjeo
 assert.ok(life.hurts?.wound && life.hurts?.leg && life.hurts?.jail && world.danger?.safe?.length === 9, '흔적 셋 + 밤 안전 자리 9');
 assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');
 assert.ok(world.gate?.next === 'daehan-life' && world.gate.ready, '문 → 대한민국(열림)');
+// 91: 부두 잔교는 걷는 바닥 — col_ 이 아니고, 높이맵이 갑판(0.38)이라 구역 hang 중심이 깊은 물(deepWater) 밑이 아니다(전엔 -1.5 라 부두에 못 들어갔음)
+{ assert.ok(!names.some((n) => n.startsWith('col_dock')), '잔교 col_ 없음'); const hm = read('height.json'); const gy = (x, z) => { const by = -z; const fx = (x + hm.ext) / (2 * hm.ext) * (hm.n - 1), fy = (by + hm.ext) / (2 * hm.ext) * (hm.n - 1); return hm.h[Math.round(fy)][Math.round(fx)]; };
+  const hang = data.nodes.find((n) => n.name === 'area_hang').translation; for (const [x, z] of [[hang[0], hang[2]], [8, 75], [8, 92], [20, 91]]) assert.ok(gy(x, z) > world.deepWater && gy(x, z) >= 0.3, `잔교 위 (${x},${z}) 높이 ${gy(x, z)}`); assert.ok(gy(3, 84) < world.deepWater && gy(13, 84) < world.deepWater, '잔교 옆은 깊은 물(못 내려감)'); }
 const prev = JSON.parse(fs.readFileSync(new URL('../eras/joseon-late-life/world.json', import.meta.url))); assert.ok(prev.gate?.next === 'gaehang-life' && prev.gate.ready, '조선 후기 끝 카드 → 개항 문(열림)');
 console.log(`gaehang-life: ix ${ix.length} · areas ${areas.length} · npc ${npcs.length} · 상황 ${life.situations.length} · 직업 ${ids.size} · 끝 갈림 ${last.choices[0].then[0].end.branches.length} · glb ${(buffer.length / 1048576).toFixed(1)}MB · 노드 ${names.length}`);
