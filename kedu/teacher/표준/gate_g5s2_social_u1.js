@@ -1,4 +1,4 @@
-/* gate_g5s2_social_u1.js — 5학년 2학기 사회 1단원 「유적과 유물로 살펴본 옛 사람들의 생활」 케이티처 2세대 게이트 (158차, 베프 — 과학 u3 게이트 틀 · 160차 u1_l06 고조선 · 161차 u1_l07 삼국과 가야).
+/* gate_g5s2_social_u1.js — 5학년 2학기 사회 1단원 「유적과 유물로 살펴본 옛 사람들의 생활」 케이티처 2세대 게이트 (158차, 베프 — 과학 u3 게이트 틀 · 160차 u1_l06 고조선 · 161차 u1_l07 삼국과 가야 · 162차 u1_l09 삼국과 가야 사람들의 생활).
    지도서 직행(자기주도 원문 없음) — T 표 자체 규칙을 잰다. 역사 원칙: 인과 중심 · 연도 묻기 0 · s15 = 「그날의 선택」.
    A 로드·meta · B 19장 골격 · C 7요소(5학년 = 인물 없이 장면·물음) · D 복습 계보 · E 기본 문제 정답 표시 · F 분 합계
    G 역사 원칙(연도·숫자 연대 0 · 그날의 선택 = 고르기 둘 → 그때 실제로는 → 다음 이야기) · H 선행 용어 · I 실렌더 · J 차단 어휘 · K 5학년 인물 0
@@ -12,8 +12,8 @@ const T = (n, f) => { try { f(); pass++; console.log('  ✅ ' + n); } catch (e) 
 const ok = (v, m) => { if (!v) throw new Error(m || 'falsy'); };
 function load(file) { const L = {}; const c = { window: { LESSONS: L } }; c.window.window = c.window; vm.createContext(c); vm.runInContext(fs.readFileSync(file, 'utf8'), c); return c.window.LESSONS; }
 const L = load(path.join(TDIR, 'data/g5s2_social_u1.js'));
-const KEYS = ['u1_l01', 'u1_l02', 'u1_l03', 'u1_l04', 'u1_l06', 'u1_l07'];
-const COV = { u1_l01: [1, 1], u1_l02: [2, 2], u1_l03: [3, 3], u1_l04: [4, 5], u1_l06: [6, 6], u1_l07: [7, 8] };
+const KEYS = ['u1_l01', 'u1_l02', 'u1_l03', 'u1_l04', 'u1_l06', 'u1_l07', 'u1_l09'];
+const COV = { u1_l01: [1, 1], u1_l02: [2, 2], u1_l03: [3, 3], u1_l04: [4, 5], u1_l06: [6, 6], u1_l07: [7, 8], u1_l09: [9, 10] };
 const ORDER = ['cover', 'review', 'motivate', 'concept', 'concept', 'concept', 'concept', 'misconception', 'basic_problem', 'basic_problem', 'basic_problem', 'leveled_problem', 'offline_activity', 'real_world', 'advanced_problem', 'exit_ticket', 'summary', 'self_assessment', 'next_lesson'];
 const STAGE = ['도입', '도입', '도입', '전개', '전개', '전개', '전개', '전개', '기본문제', '기본문제', '기본문제', '기본문제', '응용문제', '응용문제', '응용문제', '정리', '정리', '정리', '정리'];
 const UT = '유적과 유물로 살펴본 옛 사람들의 생활';
@@ -26,7 +26,7 @@ const w = dom.window; w.KT2_NO_BOOT = true;
 const render = (s, les, rev) => w.KT2.renderSlide(s, { revealed: rev, state: {}, meta: les.meta, unitTitle: UT, classNames: [] });
 
 console.log('═══ A. 로드·meta ═══');
-T('키 = 지도서 1·2·3·4~5·6·7~8차시', () => ok(JSON.stringify(Object.keys(L)) === JSON.stringify(KEYS), Object.keys(L).join(',')));
+T('키 = 지도서 1·2·3·4~5·6·7~8·9~10차시', () => ok(JSON.stringify(Object.keys(L)) === JSON.stringify(KEYS), Object.keys(L).join(',')));
 T('meta: 5학년 2학기 사회 · unit 1 · 단원명 · n·covers·분 = 지도서 차시 · [6사04-01] · 목표·교과서 쪽', () => KEYS.forEach(k => { const m = L[k].meta, [a, b] = COV[k];
   ok(m.grade === 5 && m.term === 2 && m.unit === 1 && m.unit_title === UT && m.subject === '사회' && m.n === a, k);
   ok(m.duration_min === 40 * (b - a + 1) && m.covers === (a === b ? a + '차시' : a + '·' + b + '차시'), k + ' 분·covers'); ok(/^\[6사04-0[123]\]$/.test(m.std), k + ' std ' + m.std); ok(m.goal && m.goal.length > 4 && /^p\.\d/.test(m.textbook), k + ' 목표·쪽'); }));
@@ -58,7 +58,7 @@ T('단원 전체 모두 고르기 ≥ 2', () => { const n = KEYS.reduce((a, k) =
 T('수준별 세 계단 각 문항·답 있음 · 심화 = 열린 답', () => KEYS.forEach(k => { const lv = L[k].slides[11].data.levels; Object.entries(lv).forEach(([n, x]) => ok(x && x.q && x.a, k + ' 계단 ' + n)); ok(lv.심화.open, k + ' 심화 open'); }));
 
 console.log('═══ F. 분 합계 ═══');
-T('분 합계 = 320 (8차시 × 40)', () => { const n = KEYS.reduce((a, k) => a + L[k].meta.duration_min, 0); ok(n === 320, n); });
+T('분 합계 = 400 (10차시 × 40)', () => { const n = KEYS.reduce((a, k) => a + L[k].meta.duration_min, 0); ok(n === 400, n); });
 
 console.log('═══ G. 역사 원칙 ═══');
 T('연도·연대 숫자 0 (○○년·○만 년 전·기원전·세기 — 교사 메모 포함 전부)', () => KEYS.forEach(k => { const s = JSON.stringify(L[k].slides); ok(!/\d+\s*(만\s*)?년|기원전|기원후|세기/.test(s), k + ' ' + (s.match(/.{12}(\d+\s*(만\s*)?년|기원전|기원후|세기).{8}/) || [''])[0]); }));
@@ -66,7 +66,7 @@ T('문제·출구에 「언제」 묻기 0', () => KEYS.forEach(k => L[k].slides
 KEYS.forEach(k => T(k + ' s15 그날의 선택 = 상황 · ①② 고르기 · 그때 실제로는 · 다음 이야기', () => { const d = L[k].slides[14].data;
   ok(d.title === '그날의 선택', d.title); ok(d.context && d.context.length > 30, 'context'); ok(/①[^②]+②/.test(d.challenge) && /까닭/.test(d.challenge), 'challenge');
   ok(/^그때 실제로는:/.test(d.note) && /→ 다음 이야기:/.test(d.note), 'note'); }));
-T('그날의 선택 「다음 이야기」 → 다음 차시 주제로 이어짐', () => { ok(/구석기/.test(L.u1_l01.slides[14].data.note) && /구석기/.test(L.u1_l02.meta.title), 'l01→l02'); ok(/씨앗/.test(L.u1_l02.slides[14].data.note) && /농사/.test(txt(L.u1_l03)), 'l02→l03'); ok(/더 많이 가진/.test(L.u1_l03.slides[14].data.note) && /빈부의 차이/.test(txt(L.u1_l04)), 'l03→l04'); ok(/고조선/.test(L.u1_l04.slides[14].data.note) && /고조선/.test(L.u1_l04.slides[18].data.preview) && /고조선/.test(L.u1_l06.meta.title), 'l04→l06'); ok(/삼국과 가야/.test(L.u1_l06.slides[14].data.note) && /삼국과 가야/.test(L.u1_l06.slides[18].data.preview) && /삼국과 가야/.test(L.u1_l07.meta.title), 'l06→l07'); ok(/삼국과 가야 사람들/.test(L.u1_l07.slides[14].data.note) && /삼국과 가야 사람들/.test(L.u1_l07.slides[18].data.preview), 'l07→l09(생활 모습)'); });
+T('그날의 선택 「다음 이야기」 → 다음 차시 주제로 이어짐', () => { ok(/구석기/.test(L.u1_l01.slides[14].data.note) && /구석기/.test(L.u1_l02.meta.title), 'l01→l02'); ok(/씨앗/.test(L.u1_l02.slides[14].data.note) && /농사/.test(txt(L.u1_l03)), 'l02→l03'); ok(/더 많이 가진/.test(L.u1_l03.slides[14].data.note) && /빈부의 차이/.test(txt(L.u1_l04)), 'l03→l04'); ok(/고조선/.test(L.u1_l04.slides[14].data.note) && /고조선/.test(L.u1_l04.slides[18].data.preview) && /고조선/.test(L.u1_l06.meta.title), 'l04→l06'); ok(/삼국과 가야/.test(L.u1_l06.slides[14].data.note) && /삼국과 가야/.test(L.u1_l06.slides[18].data.preview) && /삼국과 가야/.test(L.u1_l07.meta.title), 'l06→l07'); ok(/삼국과 가야 사람들/.test(L.u1_l07.slides[14].data.note) && /삼국과 가야 사람들/.test(L.u1_l07.slides[18].data.preview) && /삼국과 가야 사람들/.test(L.u1_l09.meta.title), 'l07→l09'); ok(/통일신라/.test(L.u1_l09.slides[14].data.note) && /통일신라/.test(L.u1_l09.slides[18].data.preview), 'l09→다음(통일신라)'); });
 T('인과 줄: 요약 화살표 ≥3 · 마지막 = 「다음:」 물음', () => KEYS.forEach(k => { const a = L[k].slides[16].data.arrows; ok(a.length >= 3 && a.slice(0, -1).every(x => /→/.test(x)) && /^다음: .+\?$/.test(a[a.length - 1]), k); }));
 T('l03 정착 까닭 = 먹을 것을 꾸준히(지도서 핵심 질문) · 농사는 「점차」', () => { const s = txt(L.u1_l03); ok(/꾸준히/.test(s) && /정착 생활/.test(s) && /점차/.test(s), 'l03'); });
 T('l04 지도서 핵심: 청동기 = 지배자가 주로(농사엔 돌·나무) · 빈부의 차이 까닭 = 곡식이 남음 · 고인돌 = 지배자 짐작', () => { const s = txt(L.u1_l04); ok(/지배자\*\*가 무기와 제사/.test(s) && /돌·나무/.test(s), '청동기 쓰임'); ok(/곡식이 남[자았]/.test(s) && /\*\*빈부의 차이\*\*/.test(s), '빈부'); ok(/\*\*고인돌\*\*/.test(s) && /많은 사람/.test(s), '고인돌'); ok(/청동.{0,6}농기구/.test(JSON.stringify(L.u1_l04.slides[7].data.wrong)), '오개념 = 청동 농기구(교과서 꼭 기억해요 1)'); });
@@ -75,12 +75,14 @@ T('l06 지도서 핵심: 청동기 문화 → 첫 나라 · 건국 이야기 = �
 
 T('l07 지도서 핵심: 철기 문화 → 삼국과 가야 · 고구려 광개토대왕·장수왕(평양·한강 유역) · 백제 한강 유역·근초고왕·칠지도 · 신라 진흥왕·화랑·중국과 바로 · 가야 연맹 금관가야→대가야 · 교류 = 먼 곳 유물 · 오개념 = 청동기로 세움(꼭 기억해요 1)', () => { const s = txt(L.u1_l07); ok(/\*\*철기 문화\*\*/.test(s) && /\*\*삼국\*\*/.test(s), '철기'); ok(/\*\*광개토대왕\*\*/.test(s) && /\*\*장수왕\*\*/.test(s) && /\*\*평양\*\*/.test(s), '고구려'); ok(/\*\*근초고왕\*\*/.test(s) && /칠지도/.test(s) && /온조/.test(s), '백제'); ok(/\*\*진흥왕\*\*/.test(s) && /화랑/.test(s) && /중국과 바로/.test(s), '신라'); ok(/\*\*금관가야\*\*/.test(s) && /\*\*대가야\*\*/.test(s) && /낙동강/.test(s), '가야'); ok(/광개토대왕/.test(L.u1_l07.slides[10].data.scenario.body) && /오갔다/.test(L.u1_l07.slides[10].data.options.filter(o => o.correct)[0].text), '교류 유물'); ok(/청동기/.test(L.u1_l07.slides[7].data.wrong) && /철기/.test(L.u1_l07.slides[7].data.right), '오개념'); ok(L.u1_l07.meta.topic === '고대 사람들의 생각과 생활 모습' && L.u1_l07.meta.std === '[6사04-02]', '주제·성취기준'); });
 
+T('l09 지도서 핵심: 귀족·평민·천민 · 신분에 따라 옷·음식·집 · 비단/삼베 · 쌀/잡곡 · 기와집/초가집 · 불교 = 마음을 하나로·왕의 힘 · 가야 철 기술·덩이쇠 화폐처럼·토기 · 오개념 = 모두 같은 생활(꼭 기억해요 1)', () => { const s = txt(L.u1_l09); ok(/\*\*귀족·평민·천민\*\*/.test(s) && /\*\*신분\*\*/.test(s), '신분'); ok(/\*\*비단\*\*/.test(s) && /\*\*삼베\*\*/.test(s) && /\*\*쌀\*\*/.test(s) && /\*\*잡곡\*\*/.test(s) && /\*\*기와집\*\*/.test(s) && /\*\*초가집\*\*/.test(s), '의식주'); ok(/\*\*불교\*\*/.test(s) && /마음을 하나로/.test(s) && /왕의 힘/.test(s) && /절과 탑, 불상/.test(s), '불교'); ok(/\*\*철을 다루는 기술\*\*/.test(s) && /\*\*덩이쇠\*\*/.test(s) && /\*\*화폐처럼\*\*/.test(s) && /\*\*토기\*\*/.test(s), '가야'); ok(/같은/.test(L.u1_l09.slides[7].data.wrong) && /신분에 따라/.test(L.u1_l09.slides[7].data.right), '오개념'); ok(L.u1_l09.slides[8].data.options.filter(o => o.correct)[0].text === '가야', '철 = 가야(꼭 기억해요 2)'); ok(/고양이/.test(L.u1_l09.slides[10].data.scenario.body) && /곡식/.test(L.u1_l09.slides[10].data.options.filter(o => o.correct)[0].text), '집 모양 토기'); ok(L.u1_l09.meta.topic === '고대 사람들의 생각과 생활 모습' && L.u1_l09.meta.std === '[6사04-02]' && L.u1_l09.meta.textbook === 'p.34~39', '주제·성취기준·쪽'); });
+
 console.log('═══ H. 선행 용어 ═══');
 const pre = (k) => JSON.stringify(L[k].slides.slice(0, 18).map(s => Object.assign({}, s.data, { tnote: 0 }))).replace(/"다음: [^"]*"/g, '');
 const firstK = (re) => KEYS[KEYS.findIndex(k => re.test(pre(k)))];
-[['유적', /유적/, 'u1_l01'], ['유물', /유물/, 'u1_l01'], ['선사 시대', /선사 시대/, 'u1_l01'], ['뗀석기', /뗀석기/, 'u1_l02'], ['막집', /막집/, 'u1_l02'], ['움집', /움집/, 'u1_l03'], ['가락바퀴', /가락바퀴/, 'u1_l03'], ['빗살무늬', /빗살무늬/, 'u1_l03'], ['정착 생활', /정착 생활/, 'u1_l03'], ['고인돌', /고인돌/, 'u1_l04'], ['민무늬 토기', /민무늬/, 'u1_l04'], ['반달 돌칼', /반달 돌칼/, 'u1_l04'], ['빈부의 차이', /빈부/, 'u1_l04'], ['지배자', /지배자/, 'u1_l04'], ['부족', /부족/, 'u1_l04'], ['단군왕검', /단군왕검/, 'u1_l06'], ['8조법', /8조법/, 'u1_l06'], ['비파형 동검', /비파형/, 'u1_l06'], ['삼국유사', /삼국유사/, 'u1_l06'], ['노비', /노비/, 'u1_l06'], ['화폐', /화폐/, 'u1_l06'], ['철기 문화', /철기 문화/, 'u1_l07'], ['광개토대왕', /광개토/, 'u1_l07'], ['근초고왕', /근초고왕/, 'u1_l07'], ['진흥왕', /진흥왕/, 'u1_l07'], ['한강 유역', /한강 유역/, 'u1_l07'], ['가야 연맹', /가야 연맹/, 'u1_l07'], ['칠지도', /칠지도/, 'u1_l07'], ['화랑', /화랑/, 'u1_l07']].forEach(([n, re, at]) =>
+[['유적', /유적/, 'u1_l01'], ['유물', /유물/, 'u1_l01'], ['선사 시대', /선사 시대/, 'u1_l01'], ['뗀석기', /뗀석기/, 'u1_l02'], ['막집', /막집/, 'u1_l02'], ['움집', /움집/, 'u1_l03'], ['가락바퀴', /가락바퀴/, 'u1_l03'], ['빗살무늬', /빗살무늬/, 'u1_l03'], ['정착 생활', /정착 생활/, 'u1_l03'], ['고인돌', /고인돌/, 'u1_l04'], ['민무늬 토기', /민무늬/, 'u1_l04'], ['반달 돌칼', /반달 돌칼/, 'u1_l04'], ['빈부의 차이', /빈부/, 'u1_l04'], ['지배자', /지배자/, 'u1_l04'], ['부족', /부족/, 'u1_l04'], ['단군왕검', /단군왕검/, 'u1_l06'], ['8조법', /8조법/, 'u1_l06'], ['비파형 동검', /비파형/, 'u1_l06'], ['삼국유사', /삼국유사/, 'u1_l06'], ['노비', /노비/, 'u1_l06'], ['화폐', /화폐/, 'u1_l06'], ['철기 문화', /철기 문화/, 'u1_l07'], ['광개토대왕', /광개토/, 'u1_l07'], ['근초고왕', /근초고왕/, 'u1_l07'], ['진흥왕', /진흥왕/, 'u1_l07'], ['한강 유역', /한강 유역/, 'u1_l07'], ['가야 연맹', /가야 연맹/, 'u1_l07'], ['칠지도', /칠지도/, 'u1_l07'], ['화랑', /화랑/, 'u1_l07'], ['귀족', /귀족/, 'u1_l09'], ['평민', /평민/, 'u1_l09'], ['천민', /천민/, 'u1_l09'], ['불교', /불교/, 'u1_l09'], ['삼베', /삼베/, 'u1_l09'], ['기와집', /기와집/, 'u1_l09'], ['덩이쇠', /덩이쇠/, 'u1_l09']].forEach(([n, re, at]) =>
   T('「' + n + '」 첫 등장 = ' + at.slice(3), () => ok(firstK(re) === at, firstK(re))));
-T('다루지 않는 것 0(l01~l03: 계급·지배자·부족·씨족 · l04: 계급·계층·씨족·제정일치·군장·족장·비파형 · l06: + 위만·철기·낙랑·멸망·풍백·우사·운사 · l07: 골품·율령·불교·통일·발해·멸망·관산성·성왕·태학)', () => KEYS.forEach(k => { const s = txt(L[k]), re = k === 'u1_l04' ? /계급|계층|씨족|제정일치|군장|족장|비파형/ : k === 'u1_l06' ? /계급|계층|씨족|제정일치|군장|족장|위만|철기|낙랑|멸망|풍백|우사|운사/ : k === 'u1_l07' ? /계급|계층|골품|율령|불교|통일|발해|멸망|관산성|성왕|태학/ : /계급|지배자|부족|씨족/; ok(!re.test(s), k + ' ' + (s.match(new RegExp('.{10}(' + re.source + ').{10}')) || [''])[0]); }));
+T('다루지 않는 것 0(l01~l03: 계급·지배자·부족·씨족 · l04: 계급·계층·씨족·제정일치·군장·족장·비파형 · l06: + 위만·철기·낙랑·멸망·풍백·우사·운사 · l07: 골품·율령·불교·통일·발해·멸망·관산성·성왕·태학 · l09: 계급·계층·율령·발해·멸망·이차돈·법흥왕·태학 — 골품은 더 물어보기에만)', () => KEYS.forEach(k => { const s = txt(L[k]), re = k === 'u1_l04' ? /계급|계층|씨족|제정일치|군장|족장|비파형/ : k === 'u1_l06' ? /계급|계층|씨족|제정일치|군장|족장|위만|철기|낙랑|멸망|풍백|우사|운사/ : k === 'u1_l07' ? /계급|계층|골품|율령|불교|통일|발해|멸망|관산성|성왕|태학/ : k === 'u1_l09' ? /계급|계층|골품|율령|발해|멸망|이차돈|법흥왕|태학/ : /계급|지배자|부족|씨족/; ok(!re.test(s), k + ' ' + (s.match(new RegExp('.{10}(' + re.source + ').{10}')) || [''])[0]); }));
 T('유적 = 자리 · 유물 = 물건 (l01 정의)', () => { const s = txt(L.u1_l01); ok(/자리를 \*\*유적\*\*/.test(s) && /물건을 \*\*유물\*\*/.test(s), 'l01'); });
 T('간석기 = 갈고 다듬어 (l03 정의)', () => ok(/\*\*갈고 다듬어\*\*[^"]*\*\*간석기\*\*/.test(txt(L.u1_l03)), 'l03'));
 
