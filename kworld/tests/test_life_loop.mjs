@@ -18,8 +18,8 @@ g.ui = { setMission: (t) => { g._mission = t; }, setCompass() {}, pulseHint() {}
 g.p = { enabled: true, speedMul: 1, teleport() {}, pos: new THREE.Vector3(0, 0, 20), yaw: 0 };
 const ix = new Map();
 const mk = (name) => { const [type, ...rest] = name.split('_'); ix.set(name, { type, id: rest.join('_') || type, name, uses: 0, state: null, center: new THREE.Vector3(), obj: { traverse() {}, position: new THREE.Vector3(), rotation: {} } }); };
-['fire_1', 'npc_fire', 'npc_stone', 'stone_1', 'stone_2', 'stone_3', 'stone_4', 'bush_1', 'bush_2', 'fish_1', 'npc_food', 'deer_1', 'deer_2', 'npc_hunt', 'track_1', 'cave_1', 'shelter_1', 'flint_1', 'view_1', 'npc_other1'].forEach(mk);
-const areas = new Map(Object.entries({ camp: [0, 20], river: [0, 6], berry: [40, -6], meadow: [12, -46], deep: [66, -58], shelter: [-40, 16], cave: [-72, 8], flint: [-78, -78], ford: [44, 36], ford_n: [44, 44], hill: [62, 80], other: [-30, 74] }).map(([k, v]) => [k, new THREE.Vector3(v[0], 0, v[1])]));
+['fire_1', 'npc_fire', 'npc_stone', 'stone_1', 'stone_2', 'stone_3', 'stone_4', 'bush_1', 'bush_2', 'fish_1', 'npc_food', 'deer_1', 'deer_2', 'npc_hunt', 'passn_1', 'track_1', 'cave_1', 'shelter_1', 'flint_1', 'view_1', 'npc_other1'].forEach(mk);
+const areas = new Map(Object.entries({ camp: [0, 20], river: [0, 6], berry: [40, -6], meadow: [12, -46], deep: [66, -58], shelter: [-40, 16], cave: [-72, 8], flint: [-78, -78], ford: [44, 36], ford_n: [44, 44], hill: [62, 80], other: [-30, 74], passn: [10, -100] }).map(([k, v]) => [k, new THREE.Vector3(v[0], 0, v[1])]));
 g.e = { interactables: ix, removeInteractable: (k) => ix.delete(k), areas, groundY: () => 0, pickTarget: () => null, scene: { add() {}, remove() {}, children: [], traverse() {} }, onFrame: [], spawn: new THREE.Vector3(), sun: { intensity: 1, color: new THREE.Color() }, renderer: { toneMappingExposure: 1 } };
 g.setFire = (on, small) => { g._fire = on ? (small ? 'small' : 'lit') : 'off'; };
 g.story = new Story(g, J('scene')); g.story.fast = true; g.story.apply();
@@ -37,7 +37,7 @@ Math.random = () => 0.01;   // 굴림은 항상 성공(실패 갈래는 따로 �
 
 // 태어남 뒤: 능력 단계가 표에서 왔는지, 곡식 잠김
 ok(g.life.abil['손'] === 3 && g.life.abil['발'] === 1, '능력 단계 = characters.levels');
-ok(g.life.situations.length === 12, '이번 판 상황 7 + 5 = 12');
+ok(g.life.situations.length === 13, '이번 판 상황 8(떠나는 날 포함) + 5 = 13');
 // 상황 1 배고픔 — 막집에서 열린다
 goTo('camp'); ok(opened('hunger') && panel && panel.h.includes('배가 고프다'), '배고픔 상황 카드'); closeCard();
 g.updateMission(true); ok(g._mission.includes('배가 고프다'), '미션 1');
@@ -92,9 +92,15 @@ await settle(80); ok(g.flags.has('gone:1') && opened('gone'), '비 갬 → 사�
 use('npc_hunt'); pick('남아서'); ok(panel && panel.h.includes('안 됐다'), '남으면 쓰러진다'); closeCard(); await settle(60);
 ok(!done('gone') && !g.flags.has('leave:stay'), '상황 앞으로 되돌아옴');
 use('npc_hunt'); pick('무리와'); closeCard(); await settle();
-ok(g.flags.has('life:end') && g.flags.has('life:left'), '끝: 다쳤고 인심 2 → 뒤처짐'); ok(panels.at(-1).includes('뒤처졌다') && panels.at(-1).includes('솜씨'), '끝 카드에 값·흔적');
+ok(!g.flags.has('life:end') && g.flags.has('leave:go') && opened('leave'), '떠난다 → 끝이 아니라 「떠나는 날」(고개) 상황이 열림'); closeCard();
+ok((g.world.pulse?.deadlines || []).some((d) => d.id === 'leave' && d.on === 'sit:leave:open' && d.until === 'sit:leave:done'), '떠나는 날 급한 일(해가 진다) 데이터가 상황과 맞물림');
+goTo('passn'); ok(g.promptFor(ix.get('passn_1')).name.includes('떠나는 날'), '고개 돌무더기 이름이 「떠나는 날」');
+use('passn_1'); ok(panel && panel.b.some((b) => b.label.includes('기다린다 — 아무도') && !b.disabled) && panel.b.some((b) => b.label === '뒤처진 사람을 기다린다' && b.disabled), '인심 2 → 「기다린다」는 회색, 「아무도 없을지도」가 열림');
+pick('기다린다 —'); closeCard(); await settle();
+ok(done('leave') && g.flags.has('sit:leave:waitnone'), '기다렸지만 아무도 없음(인심 -1)');
+ok(g.flags.has('life:end') && g.flags.has('life:left'), '끝: 다쳤고 인심 1 → 뒤처짐'); ok(panels.at(-1).includes('뒤처졌다') && panels.at(-1).includes('솜씨'), '끝 카드에 값·흔적');
 // 저장 왕복
-const snap = g.life.snapshot(); const l2 = new Life(g, J('life')); l2.restore(snap); ok(l2.values.heart === 2 && l2.hurt.has('leg') && l2.mixed.length === 5, '저장·복원');
+const snap = g.life.snapshot(); const l2 = new Life(g, J('life')); l2.restore(snap); ok(l2.values.heart === 1 && l2.hurt.has('leg') && l2.mixed.length === 5, '저장·복원(인심 1 — 기다렸지만 아무도 없음 뒤)');
 // 다른 씨앗이면 섞여 나오는 것이 다르다
 const a = g.life.pickMixed(1).join(), b = g.life.pickMixed(99).join(); ok(a !== b, '씨앗 다르면 섞임 다름');
 console.log(`life 고리: ${pass} 통과 / ${fail} 실패`); process.exit(fail ? 1 : 0);

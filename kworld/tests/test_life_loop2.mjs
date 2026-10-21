@@ -36,7 +36,7 @@ const settle = (ms = 160) => new Promise((r) => setTimeout(r, ms));
 const opened = (id) => g.flags.has('sit:' + id + ':open'), done = (id) => g.flags.has('sit:' + id + ':done');
 Math.random = () => 0.01;
 
-ok(g.life.situations.length === 14, '이번 판 상황 7 + 7 = 14');
+ok(g.life.situations.length === 15, '이번 판 상황 8 + 7 = 15');
 ok(ix.has('carcass_1') && ix.has('root_1') && ix.has('bank_1') && ix.has('beast_1') && ix.has('stick_8'), '새 소품이 놓였다');
 goTo('camp'); ok(opened('hunger'), '배고픔'); closeCard();
 // 며칠째 허탕 — 풀밭에서 열림, 사냥 이끄는 사람 말이 바뀜, 뿌리 둘로 버팀

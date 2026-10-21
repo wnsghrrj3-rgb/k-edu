@@ -37,7 +37,7 @@ const opened = (id) => g.flags.has('sit:' + id + ':open'), done = (id) => g.flag
 Math.random = () => 0.01;
 const btn = (label) => panel?.b.find((x) => x.label.startsWith(label));
 const at = (area, sitId, target, label) => { goTo(area); ok(opened(sitId), `${sitId} 열림(${area})`); closeCard(); use(target); if (!btn(label)) { console.log('버튼 없음', label, panel?.b.map((x) => x.label)); fail++; return; } pick(label); closeCard(); };
-ok(g.life.situations.length === 15, '꼭 7 + 새 장소 8');
+ok(g.life.situations.length === 16, '꼭 8 + 새 장소 8');
 goTo('camp'); ok(opened('hunger'), '배고픔'); closeCard();
 at('pool', 'waterhole', 'pool_1', '덤불에 숨어'); ok(done('waterhole') && g.flags.has('pool:wait') && g.count('meat') >= 1, '물웅덩이 — 기다려서 잡음');
 goTo('gully'); closeCard(); use('gully_1'); ok(btn('무리를 불러')?.disabled, '인심 3 전엔 몰이 회색'); pick('혼자 해 본다'); closeCard(); ok(done('drive') && g.flags.has('gully:alone'), '몰이 골짜기 — 혼자');

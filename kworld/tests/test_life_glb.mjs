@@ -23,7 +23,7 @@ for (const id of npcs) assert.ok(npcDefs[id], `GLB NPC ${id} 가 npcs.json 에 �
 assert.equal(npcs.length, 6, 'NPC 6');
 const list = Array.isArray(missions) ? missions : missions.missions || Object.values(missions);
 assert.equal(list.length, 7, '꼭 나오는 상황 7 = 미션 7');
-const must = life.situations.filter((x) => x.must); assert.equal(must.length, 7, '꼭 나오는 상황 7'); assert.ok(life.situations.length - must.length >= life.mixedCount, '섞여 나오는 상황 ≥ mixedCount');
+const must = life.situations.filter((x) => x.must); assert.equal(must.length, 8, '꼭 나오는 상황 8(떠나는 날 포함)'); assert.ok(life.situations.length - must.length >= life.mixedCount, '섞여 나오는 상황 ≥ mixedCount');
 for (const m of list) assert.ok(must.some((x) => 'sit:' + x.id + ':done' === m.done), `미션 ${m.id} 가 상황과 안 맞음`);
 for (const sit of life.situations) { if (sit.place) assert.ok(world.areas[sit.place], `상황 ${sit.id} 장소 ${sit.place}`); for (const c of sit.choices) assert.ok(c.done || c.count, `상황 ${sit.id} 선택 ${c.id} 에 done/count 없음`); }
 assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');

@@ -35,7 +35,7 @@ const goTo = (area) => { const a = areas.get(area); g.p.pos.set(a.x, 0, a.z); g.
 const opened = (id) => g.flags.has('sit:' + id + ':open'), done = (id) => g.flags.has('sit:' + id + ':done');
 Math.random = () => 0.01;
 const btn = (label) => panel?.b.find((x) => x.label.startsWith(label));
-ok(g.life.situations.length === 10, '꼭 7 + 새 장소 3');
+ok(g.life.situations.length === 11, '꼭 8 + 새 장소 3');
 for (const id of ['wildfire', 'coldwind', 'bonetool']) { const s = g.life.situations.find((x) => x.id === id); ok(s && s.q && s.q.a.length === 3 && s.q.revisit, `${id} 복습 물음 q 셋·revisit`); ok(s.choices.every((c) => c.fact && c.journal && g.world.journal[c.journal]), `${id} 선택마다 📜 사실·사전`); }
 goTo('camp'); ok(opened('hunger'), '배고픔'); closeCard();
 // 불탄 들: 불씨 가져오기(손) + 그을린 짐승(고기)
