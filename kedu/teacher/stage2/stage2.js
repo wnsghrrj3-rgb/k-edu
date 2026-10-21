@@ -86,7 +86,8 @@
   function qv2(d, g) { const A = global.KT2_ART, q = md(d.content || d.question || ''), its = (Array.isArray(d.items) ? d.items : []).filter(isStr).slice(0, 4), kd = A ? A.kindOf((d.title || '') + ' ' + (d.content || d.question || '')) : 'hill';
     const pic = '<div class="qv2-pic picture ' + kd + '">' + (A ? A.backdrop(kd) : '') + '<div class="qv2-cast"><span class="qv2-ch">' + guideChr(g, 0) + '</span><span class="qv2-ch r">' + guideChr(g, 1) + '</span></div></div>';
     return '<div class="qv2-q"><span class="qv2-m">💬</span><span class="qv2-qt">' + q + '</span></div>' + (its.length ? '<div class="qv2-row">' + pic + '<ol class="qv2-its">' + its.map((t, i) => '<li><b>' + (i + 1) + '</b><span>' + md(t) + '</span></li>').join('') + '</ol></div>' : '<div class="qv2-row solo">' + pic + '</div>') + (d.note ? '<div class="qv2-note">' + md(d.note) + '</div>' : ''); }
-  function guideChr(g, i) { const A = global.KT2_ART, f = (g && g[i]) || (i ? '🐧' : '🐻'); return A && A.character ? A.character(f) : esc(f); }
+  let NOCHR = false; // 158차 — 5학년 이상(준호 2026-10-21): 곰이·펭이 등 인물 그림 없이 장면·물음만 — renderSlide 가 meta.grade 로 켠다
+  function guideChr(g, i) { if (NOCHR) return ''; const A = global.KT2_ART, f = (g && g[i]) || (i ? '🐧' : '🐻'); return A && A.character ? A.character(f) : esc(f); }
   function sa2(d, st, n, g) { const its = (d.items || d.dimensions || []).map(saSplit), pr = (d.prompts || []).map(md);
     return '<div class="sa2-board">' + its.map((x, i) => '<div class="sa2-r"><span class="sa2-ic">' + esc(x.ic) + '</span><div class="sa2-t">' + (x.tag ? '<b>' + md(x.tag) + '</b>' : '') + '<span>' + md(x.q) + '</span></div>' + saStars(i, n, st) + '</div>').join('') + '</div>' + (pr.length ? '<div class="sa2-pr2"><span class="sa2-gm">' + guideChr(g, 0) + '</span><div class="sa2-bub">' + pr.join('<br>') + '</div></div>' : ''); }
   function nl2(d, g) { const A = global.KT2_ART, kd = A ? A.kindOf(d.preview || '') : 'hill';
@@ -150,7 +151,7 @@
   function scenario(sc) { return '<div class="scenario"><div class="ic">' + esc(sc.icon || '💬') + '</div><div>' + md(sc.body || '') + '</div></div>'; }
   // 15차 — 안내 인물: 그 차시에 나오는 그림 인물이 개념을 말해 주고(왼쪽), 문제 상황을 들려준다(오른쪽, 마주 봄)
   function guideOf(lesson) { const A = global.KT2_ART, out = []; if (!A || !A.character || !lesson) return out; (lesson.slides || []).forEach(s => ((s.data || {}).kids || []).forEach(k => { if (k && k.face && A.character(k.face) && (!A.isMain || A.isMain(k.face)) && out.indexOf(k.face) < 0) out.push(k.face); })); return out.slice(0, 2); }
-  function guideSay(face, inner, side) { const A = global.KT2_ART; const chr = A && A.character ? A.character(face) : ''; if (!chr) return inner; return '<div class="guide-say ' + (side || 'l') + '"><div class="g-chr">' + chr + '</div><div class="g-bub">' + inner + '</div></div>'; }
+  function guideSay(face, inner, side) { if (NOCHR) return inner; const A = global.KT2_ART; const chr = A && A.character ? A.character(face) : ''; if (!chr) return inner; return '<div class="guide-say ' + (side || 'l') + '"><div class="g-chr">' + chr + '</div><div class="g-bub">' + inner + '</div></div>'; }
   function scenarioG(sc, g) { const f = g && (g[1] || g[0]); if (!f) return scenario(sc); return guideSay(f, '<div class="sc-body">' + (sc.icon ? '<span class="sc-ic">' + esc(sc.icon) + '</span>' : '') + md(sc.body || '') + '</div>', 'r q'); }
   // 113차 — 기호·뜻 개념 장 sm2(짝 줄 + 그림 판): 왼쪽 = 배경 + 설명 말풍선 + 안내 인물 둘 · 오른쪽 = 기호 칩 ▶ 뜻 줄(뜻이 겹치면 뜻 알약 아래로 묶음). 교사 무대만.
   function sm2Ok(d) { return !!(d.content && Array.isArray(d.symbol_meanings) && d.symbol_meanings.length >= 2 && d.symbol_meanings.length <= 6 && !d.fig && !d.img && !d.items && !d.kids_after && !d.examples && !d.pairs && !d.bidirect && !d.expression && !d.note); }
@@ -249,8 +250,8 @@
     if (its.length >= 3) qh = '<ul class="ch2-its">' + its.map(x => '<li>' + md(x) + '</li>').join('') + '</ul><div class="ch2-q sm">' + md(dm[2].trim()) + '</div>';
     else qh = '<div class="ch2-q' + (qs.length > 70 ? ' sm' : '') + '">' + md(qs) + '</div>';
     const low = d.note ? (rev ? '<div class="ch2-a"><span class="ch2-h">' + (ex ? '이렇게' : '풀이') + '</span>' + md(note) + '</div>' : '<div class="ch2-w">💭 짝과 이야기한 뒤 펼쳐 봐요</div>') : '';
-    const A0 = A && A.character ? A.character(ch2Face(ctx, g)) : '';
-    const kid = '<div class="ch2-kid' + (ctx ? '' : ' solo') + '">' + (ctx ? '<div class="ch2-say">' + md(ctx) + '</div>' : '') + '<span class="ch2-ch">' + A0 + '</span></div>';
+    const A0 = !NOCHR && A && A.character ? A.character(ch2Face(ctx, g)) : '';
+    const kid = '<div class="ch2-kid' + (ctx ? '' : ' solo') + (A0 ? '' : ' nochr') + '">' + (ctx ? '<div class="ch2-say">' + md(ctx) + '</div>' : '') + '<span class="ch2-ch">' + A0 + '</span></div>';
     return '<div class="ch2-row"><div class="ch2-board"><span class="ch2-k">🚀 도전</span>' + qh + (low ? '<div class="ch2-line"></div>' + low : '') + '</div>' + kid + '</div>';
   }
   // 92차 — 새 문제 장(pv3): 읽을 글이 있는 보기 문제. 글은 원문 그대로 장면 ①②③으로 끊어 왼쪽 띠 · 오른쪽은 큰 물음 + 세로 보기 · 풀이
@@ -326,6 +327,7 @@
     return keep.length ? keep.join('\n') : content;
   }
   function renderSlide(slide, ctx) {
+    NOCHR = !!(ctx && ctx.meta && +ctx.meta.grade >= 5);
     let d = slide.data || {}; const rev = !!ctx.revealed; const S = ctx.state; const seed = hashSeed(slide.id || '');
     // 👉 로 시작하는 note 는 교사에게 주는 말이라 학생 화면(TV)에 안 띄우고 발문 띠(N)로 보낸다
     let teacherNote = '';

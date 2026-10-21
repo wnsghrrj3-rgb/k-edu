@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-20 · 과목 23 · 차시 1095 · 슬라이드 19418 */
+   생성: 2026-10-21 · 과목 23 · 차시 1097 · 슬라이드 19456 */
 window.KT2_MANIFEST = {
- "built": "2026-10-20",
- "lessons": 1095,
- "slides": 19418,
+ "built": "2026-10-21",
+ "lessons": 1097,
+ "slides": 19456,
  "subjects": [
   {
    "slug": "g1_math",
@@ -29612,10 +29612,62 @@ window.KT2_MANIFEST = {
      "resources": null,
      "lessons": [
       {
+       "key": "u1_l01",
+       "no": "1",
+       "title": "단원 도입 — 박물관에서 옛 사람들의 생활을 만나요",
+       "meta_title": "단원 도입 — 박물관에서 옛 사람들의 생활을 만나요",
+       "std": "[6사04-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
        "key": "u1_l02",
        "no": "2",
        "title": "구석기 시대 사람들의 생활 모습",
        "meta_title": "구석기 시대 사람들의 생활 모습",
+       "std": "[6사04-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l03",
+       "no": "3",
+       "title": "신석기 시대 사람들의 생활 모습",
+       "meta_title": "신석기 시대 사람들의 생활 모습",
        "std": "[6사04-01]",
        "slides": 19,
        "stages": [
