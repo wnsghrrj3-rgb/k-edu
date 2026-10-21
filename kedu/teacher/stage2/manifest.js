@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-21 · 과목 23 · 차시 1106 · 슬라이드 19627 */
+   생성: 2026-10-21 · 과목 23 · 차시 1107 · 슬라이드 19646 */
 window.KT2_MANIFEST = {
  "built": "2026-10-21",
- "lessons": 1106,
- "slides": 19627,
+ "lessons": 1107,
+ "slides": 19646,
  "subjects": [
   {
    "slug": "g1_math",
@@ -29902,6 +29902,32 @@ window.KT2_MANIFEST = {
        "no": "15",
        "title": "고려와 주변 나라들의 관계",
        "meta_title": "고려와 주변 나라들의 관계",
+       "std": "[6사04-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l17",
+       "no": "17",
+       "title": "고려의 문화와 사람들의 생활 모습",
+       "meta_title": "고려의 문화와 사람들의 생활 모습",
        "std": "[6사04-03]",
        "slides": 19,
        "stages": [
