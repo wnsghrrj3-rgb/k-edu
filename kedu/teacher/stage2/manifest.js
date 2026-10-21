@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-21 · 과목 23 · 차시 1101 · 슬라이드 19532 */
+   생성: 2026-10-21 · 과목 23 · 차시 1102 · 슬라이드 19551 */
 window.KT2_MANIFEST = {
  "built": "2026-10-21",
- "lessons": 1101,
- "slides": 19532,
+ "lessons": 1102,
+ "slides": 19551,
  "subjects": [
   {
    "slug": "g1_math",
@@ -29772,6 +29772,32 @@ window.KT2_MANIFEST = {
        "no": "9",
        "title": "삼국과 가야 사람들의 생활 모습",
        "meta_title": "삼국과 가야 사람들의 생활 모습",
+       "std": "[6사04-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l11",
+       "no": "11",
+       "title": "통일신라의 발전과 사람들의 생활 모습",
+       "meta_title": "통일신라의 발전과 사람들의 생활 모습",
        "std": "[6사04-02]",
        "slides": 19,
        "stages": [
