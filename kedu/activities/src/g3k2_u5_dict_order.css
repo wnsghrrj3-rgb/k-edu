@@ -41,3 +41,33 @@
 .os-slot .os-c, .os-card { justify-content:center; text-align:center; }
 .os-slot .os-c { flex:1 1 auto; }
 .os-t { font-size:1.15em; letter-spacing:.04em; }
+/* 이 활동 — 풀이 칸(58회차): 풀이가 길어(낱말 차례 + 갈리는 자리 + 한 줄) 폰에서 7~9줄이 된다.
+ * ① 숨은 풀이는 지난 판 글을 품은 채 키를 차지해 다음 판 무대를 밀었다 → 숨은 동안은 최소 키만.
+ * ② 뜬 풀이는 작은 화면에서 글씨를 줄여 무대(빈자리 넷)가 한 화면에 남게. */
+#explain:not(.show) { max-height:clamp(34px,5vh,52px); overflow:hidden; }
+@media (max-width:600px) { #explain { font-size:15px; line-height:1.35; padding:6px 12px; } }
+@media (max-width:600px) and (max-height:620px) { #explain { font-size:13.5px; padding:5px 10px; } }
+@media (max-height:500px) and (orientation:landscape) { #explain { font-size:14px; line-height:1.3; padding:4px 12px; max-width:96vw; } }
+@media (min-width:1000px) and (max-height:800px) { #explain { font-size:19px; padding:6px 18px; } }
+/* ③ 풀이가 뜬 동안 — 아래 안내 줄(「맞아요! 바른 차례예요」)은 풀이 앞 ⭕/❌ 와 같은 말이라 접는다(무대가 넓어지기만 함). */
+#scr-game:has(#explain.show) #os-step { display:none; }
+/* ④ 4장 판 — 빈자리 넷 + 카드 넷 = 여덟 줄. 낱말 한 개짜리 줄이라 줄 키·틈만 낮춘다(글씨는 그대로). */
+#os:has(#os-slots > .os-slot:nth-child(4)) { gap:clamp(5px,1.1vh,16px); }
+#os:has(#os-slots > .os-slot:nth-child(4)) #os-main { gap:clamp(6px,1.1vh,14px); }
+#os:has(#os-slots > .os-slot:nth-child(4)) #os-slots,
+#os:has(#os-slots > .os-slot:nth-child(4)) #os-pool { gap:clamp(4px,.7vh,10px); }
+#os:has(#os-slots > .os-slot:nth-child(4)) .os-slot,
+#os:has(#os-slots > .os-slot:nth-child(4)) .os-card { min-height:clamp(32px,5vh,72px); padding-top:clamp(2px,.5vh,8px); padding-bottom:clamp(2px,.5vh,8px); }
+@media (max-width:600px) and (max-height:620px) { #os-step { font-size:13px; padding:3px 8px; } #os-prompt { font-size:15px; } }
+@media (max-height:500px) and (orientation:landscape) {
+  #os { gap:6px; padding-bottom:6px; } #os-main { gap:8px; } #os-slots, #os-pool { gap:4px; } #os-slots { padding:4px 6px; }
+  #os-prompt { font-size:17px; padding:5px 14px; } #os-step { font-size:14px; padding:3px 12px; }
+  .os-slot, .os-card { min-height:32px; padding:2px 10px; font-size:17px; border-width:3px; }
+}
+@media (max-height:380px) and (orientation:landscape) { .os-slot, .os-card { min-height:29px; padding:1px 10px; font-size:16px; } #os-prompt { font-size:16px; padding:4px 12px; } #os { gap:4px; padding-bottom:4px; } #os-main { gap:6px; } #os-slots { padding:3px 6px; } }   /* 더 낮은 폰 가로(740×360) */
+@media (max-height:380px) and (orientation:landscape) {   /* 4장 판 규칙(④)이 더 굳어 여기서 다시 */
+  #os:has(#os-slots > .os-slot:nth-child(4)) { gap:4px; }
+  #os:has(#os-slots > .os-slot:nth-child(4)) #os-main { gap:6px; }
+  #os:has(#os-slots > .os-slot:nth-child(4)) #os-slots, #os:has(#os-slots > .os-slot:nth-child(4)) #os-pool { gap:3px; }
+  #os:has(#os-slots > .os-slot:nth-child(4)) .os-slot, #os:has(#os-slots > .os-slot:nth-child(4)) .os-card { min-height:28px; padding-top:1px; padding-bottom:1px; }
+}
