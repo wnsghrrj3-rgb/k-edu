@@ -34,7 +34,7 @@ export class Player {
     c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
   }
   bindJoystick(stick, knob) {
-    let id = null; const set = (x, y) => { knob.style.left = (35 + x * 35) + 'px'; knob.style.top = (35 + y * 35) + 'px'; };
+    let id = null; const set = (x, y) => { const c = (stick.clientWidth - knob.clientWidth) / 2 || 35; knob.style.left = (c + x * c) + 'px'; knob.style.top = (c + y * c) + 'px'; };   // 조이스틱 크기(120·폰 가로 96)에 맞춰 손잡이 가운데·반지름을 잼(35 고정이면 작은 조이스틱에서 손잡이가 오른쪽 아래로 쏠림)
     const move = (ev) => { const r = stick.getBoundingClientRect(); let x = (ev.clientX - (r.left + r.width / 2)) / (r.width / 2), y = (ev.clientY - (r.top + r.height / 2)) / (r.height / 2); const L = Math.hypot(x, y); if (L > 1) { x /= L; y /= L; } this.joy = { x, y }; set(x, y); };
     stick.addEventListener('pointerdown', (ev) => { id = ev.pointerId; stick.setPointerCapture(ev.pointerId); move(ev); });
     stick.addEventListener('pointermove', (ev) => { if (ev.pointerId === id) move(ev); });
