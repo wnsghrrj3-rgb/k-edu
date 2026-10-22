@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-22 · 과목 23 · 차시 1122 · 슬라이드 19931 */
+   생성: 2026-10-22 · 과목 23 · 차시 1123 · 슬라이드 19950 */
 window.KT2_MANIFEST = {
  "built": "2026-10-22",
- "lessons": 1122,
- "slides": 19931,
+ "lessons": 1123,
+ "slides": 19950,
  "subjects": [
   {
    "slug": "g1_math",
@@ -30334,6 +30334,32 @@ window.KT2_MANIFEST = {
        "no": "2",
        "title": "일제에 맞서 나라를 지키려고 저항한 사람들의 노력",
        "meta_title": "일제에 맞서 나라를 지키려고 저항한 사람들의 노력",
+       "std": "[6사06-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l03",
+       "no": "3",
+       "title": "일제 통치 시기 우리 민족의 고통과 저항",
+       "meta_title": "일제 통치 시기 우리 민족의 고통과 저항",
        "std": "[6사06-01]",
        "slides": 19,
        "stages": [
