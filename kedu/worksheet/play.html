@@ -2034,6 +2034,7 @@ function drawAsset(a, r){
     /* v2.3 — 2학년 1학기 「여러 가지 도형」 */
     case 'figs': return figsHTML(a, false);
     case 'geo': return geoHTML(a, false);   /* v3.6 — 3학년 1학기 「평면도형」 */
+    case 'prot': return `<div class="cmpw">${protSVG(a)}</div>`;   /* v3.14 — 4학년 1학기 「각도」 각도기 */
     case 'tiles': return `<div class="cmpw">${tilesSVG(a)}</div>`;
     case 'cubes': return cubesHTML(a, false);
     /* v2.4 — 2학년 1학기 「덧셈과 뺄셈」 */
@@ -2164,6 +2165,32 @@ function geoSVG(g){
 function geoHTML(a, paper){
   const it = a.items || []; const tag = a.tag !== false && it.length > 1;
   return `<div class="${paper ? 'pcmpw' : 'cmpw'} figs">${it.map((g, i) => `<div class="figc">${geoSVG(g)}${tag ? `<b>${FTAG[i]}</b>` : (g.cap ? `<b>${esc(g.cap)}</b>` : '')}</div>`).join('')}</div>`;
+}
+/* ---------- v3.14 — 4학년 1학기 「각도」 각도기 prot (2026-10-23, 오푸스 5.5) ----------
+   prot {deg, from?, parts?}  deg = 잴 각(1~179 정수) · null 이면 각 없이 각도기만(parts 와 함께 — 부분 이름 묻기)
+   from 'right'(기본) = 밑금 위 한 변이 오른쪽 → 안쪽 눈금(오른쪽 0)을 읽는다 · 'left' = 한 변이 왼쪽 → 바깥쪽 눈금(왼쪽 0)을 읽는다.
+   눈금: 1° 작은 눈금·5°·10° 큰 눈금, 숫자는 10°마다 두 줄(바깥 = 180−φ, 안 = φ, φ = 오른쪽 밑금에서 위로 잰 방향). 답 숫자는 그리지 않는다. */
+function protSVG(a){
+  const R = 150, C = [R + 34, R + 24], W = 2 * R + 68, H = R + 62, DR = Math.PI / 180;
+  const P = (r, f) => [C[0] + r * Math.cos(f * DR), C[1] - r * Math.sin(f * DR)]; const F = v => v.toFixed(1);
+  let s = `<path d="M${F(C[0] - R)} ${C[1] + 14} L${F(C[0] - R)} ${C[1]} A${R} ${R} 0 0 1 ${F(C[0] + R)} ${C[1]} L${F(C[0] + R)} ${C[1] + 14} Z" fill="#EAF3FF" fill-opacity=".9" stroke="#7FA6D9" stroke-width="1.6"/>`;
+  for (let f = 10; f < 180; f += 10){ const p = P(R - 54, f), q = P(26, f); s += `<line x1="${F(p[0])}" y1="${F(p[1])}" x2="${F(q[0])}" y2="${F(q[1])}" stroke="#C7D7EE" stroke-width=".6"/>`; }
+  s += `<line x1="${F(C[0] - R)}" y1="${C[1]}" x2="${F(C[0] + R)}" y2="${C[1]}" stroke="#4E6E9E" stroke-width="1.6"/>`;
+  const d = a.deg == null ? null : Number(a.deg), left = a.from === 'left';
+  if (d != null){ const b0 = left ? 180 : 0, f2 = left ? 180 - d : d, L = R + 22;
+    const e1 = P(L, b0), e2 = P(L, f2); const ln = (q) => `<line x1="${C[0]}" y1="${C[1]}" x2="${F(q[0])}" y2="${F(q[1])}" stroke="${CMP_INK}" stroke-width="2.6" stroke-linecap="round"/>`;
+    s += ln(e1) + ln(e2); const lo = Math.min(b0, f2), hi = Math.max(b0, f2), r = 30, p1 = P(r, lo), p2 = P(r, hi);
+    s += `<path d="M${F(p1[0])} ${F(p1[1])} A${r} ${r} 0 0 0 ${F(p2[0])} ${F(p2[1])}" fill="none" stroke="#2F6FB5" stroke-width="2"/>`; }
+  for (let f = 0; f <= 180; f++){ const k = f % 10 === 0 ? 13 : f % 5 === 0 ? 9 : 5; const p = P(R, f), q = P(R - k, f);
+    s += `<line x1="${F(p[0])}" y1="${F(p[1])}" x2="${F(q[0])}" y2="${F(q[1])}" stroke="#4E6E9E" stroke-width="${f % 10 === 0 ? 1.4 : .7}"/>`; }
+  const num = (q, t, fs, col) => { const at = `x="${F(q[0])}" y="${F(q[1] + 4)}" text-anchor="middle" font-size="${fs}" font-weight="700"`;
+    return `<text ${at} fill="#EAF3FF" stroke="#EAF3FF" stroke-width="3.2" stroke-linejoin="round">${t}</text><text ${at} fill="${col}">${t}</text>`; };
+  for (let f = 0; f <= 180; f += 10){ const fo = f === 0 ? 3 : f === 180 ? 177 : f;
+    s += num(P(R - 23, fo), 180 - f, 10.5, '#2F4F7F') + num(P(R - 43, fo), f, 9.5, '#B5542C'); }
+  s += `<circle cx="${C[0]}" cy="${C[1]}" r="3.6" fill="${CMP_INK}"/>`;
+  if (a.parts){ const t = (x, y, w) => `<text x="${F(x)}" y="${F(y)}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" stroke="#fff" stroke-width="4" stroke-linejoin="round">${w}</text><text x="${F(x)}" y="${F(y)}" text-anchor="middle" font-size="13" font-weight="700" fill="#C0392B">${w}</text>`;
+    s += t(C[0], C[1] + 30, '중심') + t(C[0] + R * .62, C[1] + 30, '밑금') + `<line x1="${C[0]}" y1="${C[1] + 5}" x2="${C[0]}" y2="${C[1] + 17}" stroke="#C0392B" stroke-width="1.6"/><line x1="${F(C[0] + R * .62)}" y1="${C[1] + 3}" x2="${F(C[0] + R * .62)}" y2="${C[1] + 17}" stroke="#C0392B" stroke-width="1.6"/>`; }
+  return `<svg class="protsv" viewBox="0 0 ${W} ${H + (a.parts ? 14 : 0)}" width="${W}" height="${H + (a.parts ? 14 : 0)}" role="img" aria-label="각도기">${s}</svg>`;
 }
 const TILE_PAL = ['#F7C6B5', '#BFD9EE', '#F8E3A1', '#C9E4C5', '#E3CDEB', '#F5D0A9', '#CFE3E8'];
 function tilesSVG(a){
@@ -6323,6 +6350,7 @@ function paperAsset(a){
     case 'numgrid': return numgridHTML(a, true);
     case 'figs': return figsHTML(a, true);
     case 'geo': return geoHTML(a, true);
+    case 'prot': return `<div class="pcmpw">${protSVG(a)}</div>`;
     case 'tiles': return `<div class="pcmpw">${tilesSVG(a)}</div>`;
     case 'cubes': return cubesHTML(a, true);
     case 'plate': return `<div class="pplate">${a.n === 0 ? '(비어 있음)' : a.item.repeat(a.n)}</div>`;

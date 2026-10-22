@@ -49,6 +49,7 @@ const ENG = loadEngine();
 const ASSETS = {
   /* v3.6 — 3학년 1학기 「평면도형」 (2026-10-19): 점·선분·반직선·직선·각·직각 표시·도형 */
   geo:            ['items'],
+  prot:           ['from'],
   /* v3.7 — 3학년 1학기 「길이와 시간」 (2026-10-19): mm 눈금 자 · 초바늘 시계 */
   mmruler:        ['len', 'label'],
   clock3:         ['h', 'm', 's'],
@@ -225,6 +226,11 @@ function checkAsset(where, a) {
   if (['ptile', 'spin', 'stack', 'optab', 'numgrid', 'cal'].indexOf(a.type) >= 0) checkKrAsset(where, a);
   if (a.type === 'fbar') checkFdAsset(where, a);
   if (a.type === 'geo') checkGeoAsset(where, a);
+  if (a.type === 'prot') {   /* v3.14 — 각도기: deg 1~179 정수(또는 null = 각도기만, parts 필요) · from right|left */
+    if (['right', 'left'].indexOf(a.from) < 0) bad(where, "prot from 은 'right'|'left'");
+    if (a.deg === null) { if (!a.parts) bad(where, 'prot 각 없는 각도기는 parts 로 부분 이름을 보여야'); }
+    else if (!(Number.isInteger(a.deg) && a.deg >= 1 && a.deg <= 179)) bad(where, 'prot deg 는 1~179 정수: ' + a.deg);
+  }
   if (a.type === 'spv') checkSpAsset(where, a);
   if (a.type === 'picto_table' || a.type === 'compare_groups') {
     if (!Array.isArray(a.rows) || !a.rows.length) bad(where, `${a.type} rows 비었음`);
