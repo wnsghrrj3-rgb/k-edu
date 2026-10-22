@@ -57,7 +57,7 @@ const carry = (key) => JSON.parse(store['kworld_carry:daehan-life'] || '{}')[key
   const life = J('life'), items = J('items'), npcs = J('npcs'), world = J('world');
   const mixed = life.situations.filter((s) => !s.must); ok(mixed.length === 14 && life.mixedCount === 4, '섞여 14 · mixedCount 4');
   const blob = JSON.stringify(items) + JSON.stringify(npcs);
-  for (const id of MIX) { const s = life.situations.find((x) => x.id === id); ok(!!s && s.q.a.length === 3 && s.q.revisit && world.journal[id]?.note && s.choices.every((c) => c.fact === world.journal[id].note && c.journal === id), `상황 ${id} q·사실·기록`); for (const c of s.choices) ok(blob.includes(`"${c.done}"`), `${id}.${c.id} done 세우는 곳`); }
+  for (const id of MIX) { const s = life.situations.find((x) => x.id === id); ok(!!s && s.q.a.length === 3 && s.q.revisit && world.journal[id]?.note && s.choices.every((c) => c.fact && c.fact.includes('그래서') && !/\d{3,4}년/.test(c.fact) && c.journal === id), `상황 ${id} q·사실·기록`); for (const c of s.choices) ok(blob.includes(`"${c.done}"`), `${id}.${c.id} done 세우는 곳`); }
   const gray = (id) => npcs[id].lines[0].choices.filter((c) => c.if).length; ok(gray('sangigunin') === 6 && gray('jeonpasa') === 6 && gray('gyogam') === 7, '회색 조건 6·6·7');
   const ids = new Set(life.status.rules.map((r) => r.id));
   for (const id of ['sangigunin', 'jeonpasa', 'gyogam']) for (const c of npcs[id].lines[0].choices) { for (const f of (c.if || '').match(/status:(\w+)/g) || []) ok(ids.has(f.slice(7)), `${id} ${f} 실재`); if (c.status) ok(ids.has(c.status), `${id} 선택 신분 ${c.status} 실재`); }
