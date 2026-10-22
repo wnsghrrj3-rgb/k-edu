@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-22 · 과목 23 · 차시 1109 · 슬라이드 19684 */
+   생성: 2026-10-22 · 과목 23 · 차시 1111 · 슬라이드 19722 */
 window.KT2_MANIFEST = {
  "built": "2026-10-22",
- "lessons": 1109,
- "slides": 19684,
+ "lessons": 1111,
+ "slides": 19722,
  "subjects": [
   {
    "slug": "g1_math",
@@ -29981,6 +29981,66 @@ window.KT2_MANIFEST = {
        "title": "단원 마무리 — 생각 그물과 자음 단어 찾기 놀이",
        "meta_title": "단원 마무리 — 생각 그물과 자음 단어 찾기 놀이",
        "std": "[6사04-01][6사04-02][6사04-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    },
+    {
+     "unit": 2,
+     "title": "달라지는 시대, 변화하는 생활 모습",
+     "file": "data/g5s2_social_u2.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u2_l01",
+       "no": "1",
+       "title": "단원 도입 — 유교 문화 축제에서 조선 사람들의 생활을 만나요",
+       "meta_title": "단원 도입 — 유교 문화 축제에서 조선 사람들의 생활을 만나요",
+       "std": "[6사05-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u2_l02",
+       "no": "2",
+       "title": "유교를 바탕으로 건국한 조선",
+       "meta_title": "유교를 바탕으로 건국한 조선",
+       "std": "[6사05-01]",
        "slides": 19,
        "stages": [
         3,
