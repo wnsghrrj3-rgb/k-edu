@@ -334,7 +334,7 @@
    },
    {
     "if": "sit:imjin:open && !sit:imjin:done && status:solgeo",
-    "text": "문서가 탔어! 주인집이 피란 가면서 — 지금 산으로 가면 아무도 몰라. 아니면 의병에 들면 공을 세우면 풀어 준대."
+    "text": "관아 호적은 탔어 — 그런데 주인집 궤짝의 노비 문서는 안 탔어. 주인이 피란 짐 싸는 틈에 행랑채 궤짝… 눈이 빨라야 해. 아니면 의병, 아니면 곡식 셋으로 납속."
    },
    {
     "if": "sit:corvee:open && !sit:corvee:done && status:solgeo",
@@ -804,7 +804,7 @@
   "lines": [
    {
     "if": "sit:imjin:open && !sit:imjin:done && status:yangban && sex:m && !imjin:lead && !imjin:flee && !imjin:stay && !imjin:hurt",
-    "text": "곽재우다. 붉은 옷. 양반이면 사람을 모아라 — 네 집 노비·소작부터. 아니면 배로 피란.",
+    "text": "곽재우다. 붉은 옷. 양반이면 사람을 모아라 — 따라올 사람이 있어야 의병이다. 못 모으면 곳간이라도 열어라. 아니면 배로 피란.",
     "choices": [
      {
       "label": "의병을 일으킨다 ⚠",
@@ -818,12 +818,16 @@
       "rollHurt": "wound",
       "flag": "imjin:lead",
       "journal": "imjin",
-      "say": "🔴 홍의 밑. 의령·정암진. 왜군이 강을 못 건넜다. 마을이 나를 「장군」이라 불렀다."
+      "say": "🔴 홍의 밑. 의령·정암진. 왜군이 강을 못 건넜다. 마을이 나를 「장군」이라 불렀다.",
+      "if": "val:heart>=2",
+      "gray": "사람을 모으려면 따라올 사람이 있어야 — 인심 둘이면 모인다. 네 말에 설 사람이 없다."
      },
      {
       "label": "마을에 남는다 — 곳간을 연다",
       "flag": "imjin:stay",
-      "say": "🌾 곳간을 열어 의병을 먹였다. 「싸우진 않았는데 먹였다.」"
+      "say": "🌾 곳간을 열어 의병을 먹였다. 「싸우진 않았는데 먹였다.」",
+      "if": "val:grain>=3",
+      "gray": "곳간이 빈 양반은 열 것이 없다 — 곡식 셋이면 연다."
      },
      {
       "label": "…피란 간다",
@@ -832,9 +836,17 @@
     ]
    },
    {
-    "if": "sit:imjin:open && !sit:imjin:done && status:yangban && sex:f && !imjin:flee && !imjin:care",
-    "text": "양반 댁 안방마님이 여길. 다친 사람이 많다.",
+    "if": "sit:imjin:open && !sit:imjin:done && status:yangban && sex:f && !imjin:flee && !imjin:care && !imjin:feed",
+    "text": "양반 댁 안방마님이 여길. 다친 사람이 많다 — 그리고 의병은 굶는다. 안채 곳간 열쇠는 마님 손에 있지 않소.",
     "choices": [
+     {
+      "label": "안채 곳간을 연다 — 의병을 먹인다",
+      "if": "val:grain>=2",
+      "gray": "안채 곳간이 비었다 — 곡식 둘이면 주먹밥이 된다.",
+      "flag": "imjin:feed",
+      "journal": "imjin",
+      "say": "🍙 벼 두 단이 주먹밥이 됐다. 의병이 먹고 정암진으로. 뒤에 「원종공신」 문서가 안채에 왔다."
+     },
      {
       "label": "마을에 남아 돌본다",
       "flag": "imjin:care",
@@ -972,8 +984,8 @@
     ]
    },
    {
-    "if": "sit:imjin:open && !sit:imjin:done && sex:m && status:solgeo && !imjin:slavefight && !imjin:run && !imjin:caught && !imjin:follow && !imjin:hurt",
-    "text": "노비냐. 공을 세우면 양인이다 — 나라가 약속했다. 들어라.",
+    "if": "sit:imjin:open && !sit:imjin:done && sex:m && status:solgeo && !imjin:slavefight && !imjin:run && !imjin:caught && !imjin:follow && !imjin:hurt && !imjin:napsok && !imjin:burnpaper && !imjin:papercaught",
+    "text": "노비냐. 공을 세우면 양인이다 — 나라가 약속했다. 곡식 셋이 있으면 관아에 바쳐도 양인이다(납속). 들어라, 아니면 바쳐라.",
     "choices": [
      {
       "label": "의병에 들어 공을 세운다 ⚠",
@@ -990,6 +1002,14 @@
       "say": "⚔ 왜군 둘. 「면천.」 호패에서 주인 이름이 지워졌다."
      },
      {
+      "label": "곡식 셋을 바쳐 면천 — 납속",
+      "if": "val:grain>=3",
+      "gray": "바칠 곡식이 없는 노비는 몸으로만 — 곡식 셋이면 납속.",
+      "flag": "imjin:napsok",
+      "journal": "imjin",
+      "say": "📜 벼 세 단이 관아로. 「양인.」 호패에서 주인 이름이 지워졌다 — 칼 없이."
+     },
+     {
       "label": "주인 따라 피란",
       "flag": "imjin:follow",
       "say": "🚢 짐을 졌다. 「난리 때도 노비.」"
@@ -997,8 +1017,8 @@
     ]
    },
    {
-    "if": "sit:imjin:open && !sit:imjin:done && sex:m && status:oegeo && !imjin:slavefight && !imjin:run && !imjin:caught && !imjin:follow && !imjin:hurt",
-    "text": "노비냐. 공을 세우면 양인이다.",
+    "if": "sit:imjin:open && !sit:imjin:done && sex:m && status:oegeo && !imjin:slavefight && !imjin:run && !imjin:caught && !imjin:follow && !imjin:hurt && !imjin:napsok && !imjin:burnpaper && !imjin:papercaught",
+    "text": "노비냐. 공을 세우면 양인이다 — 나라가 약속했다. 곡식 셋이 있으면 관아에 바쳐도 양인이다(납속). 들어라, 아니면 바쳐라.",
     "choices": [
      {
       "label": "의병에 들어 공을 세운다 ⚠",
@@ -1013,6 +1033,14 @@
       "flag": "imjin:slavefight",
       "journal": "imjin",
       "say": "⚔ 「면천.」 주인 이름이 지워졌다."
+     },
+     {
+      "label": "곡식 셋을 바쳐 면천 — 납속",
+      "if": "val:grain>=3",
+      "gray": "바칠 곡식이 없는 노비는 몸으로만 — 곡식 셋이면 납속.",
+      "flag": "imjin:napsok",
+      "journal": "imjin",
+      "say": "📜 벼 세 단이 관아로. 「양인.」 호패에서 주인 이름이 지워졌다 — 칼 없이."
      },
      {
       "label": "주인 따라 피란",
