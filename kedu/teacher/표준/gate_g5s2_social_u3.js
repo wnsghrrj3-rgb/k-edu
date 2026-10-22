@@ -1,4 +1,4 @@
-/* gate_g5s2_social_u3.js — 5학년 2학기 사회 3단원 「식민 통치와 저항, 전쟁이 바꾼 사회와 생활」 케이티처 2세대 게이트 (179차, 베프 — u2 게이트 틀 복제 · u3_l01 단원 도입 · 180차 u3_l02 을사늑약·의병 · 181차 u3_l03 총독부·헌병·토지 조사).
+/* gate_g5s2_social_u3.js — 5학년 2학기 사회 3단원 「식민 통치와 저항, 전쟁이 바꾼 사회와 생활」 케이티처 2세대 게이트 (179차, 베프 — u2 게이트 틀 복제 · u3_l01 단원 도입 · 180차 u3_l02 을사늑약·의병 · 181차 u3_l03 총독부·헌병·토지 조사 · 182차 u3_l04 3·1 운동·임시 정부).
    지도서 직행(자기주도 원문 없음) — T 표 자체 규칙을 잰다. 역사 원칙: 인과 중심 · 연도 묻기 0 · s15 = 「그날의 선택」.
    A 로드·meta · B 19장 골격 · C 7요소(5학년 = 인물 없이 장면·물음) · D 복습 계보 · E 기본 문제 정답 표시 · F 분 합계
    G 역사 원칙(연도·숫자 연대 0 · 그날의 선택 = 고르기 둘 → 그때 실제로는 → 다음 이야기) · H 선행 용어 · I 실렌더 · J 차단 어휘 · K 5학년 인물 0
@@ -12,8 +12,8 @@ const T = (n, f) => { try { f(); pass++; console.log('  ✅ ' + n); } catch (e) 
 const ok = (v, m) => { if (!v) throw new Error(m || 'falsy'); };
 function load(file) { const L = {}; const c = { window: { LESSONS: L } }; c.window.window = c.window; vm.createContext(c); vm.runInContext(fs.readFileSync(file, 'utf8'), c); return c.window.LESSONS; }
 const L = load(path.join(TDIR, 'data/g5s2_social_u3.js'));
-const KEYS = ['u3_l01', 'u3_l02', 'u3_l03'];
-const COV = { u3_l01: [1, 1], u3_l02: [2, 2], u3_l03: [3, 3] };
+const KEYS = ['u3_l01', 'u3_l02', 'u3_l03', 'u3_l04'];
+const COV = { u3_l01: [1, 1], u3_l02: [2, 2], u3_l03: [3, 3], u3_l04: [4, 4] };
 const ORDER = ['cover', 'review', 'motivate', 'concept', 'concept', 'concept', 'concept', 'misconception', 'basic_problem', 'basic_problem', 'basic_problem', 'leveled_problem', 'offline_activity', 'real_world', 'advanced_problem', 'exit_ticket', 'summary', 'self_assessment', 'next_lesson'];
 const STAGE = ['도입', '도입', '도입', '전개', '전개', '전개', '전개', '전개', '기본문제', '기본문제', '기본문제', '기본문제', '응용문제', '응용문제', '응용문제', '정리', '정리', '정리', '정리'];
 const UT = '식민 통치와 저항, 전쟁이 바꾼 사회와 생활';
@@ -61,7 +61,7 @@ KEYS.forEach(k => T(k + ' 기본 문제 셋 — 정답 표시 · 모두 고르�
 T('수준별 세 계단 각 문항·답 있음 · 심화 = 열린 답', () => KEYS.forEach(k => { const lv = L[k].slides[11].data.levels; Object.entries(lv).forEach(([n, x]) => ok(x && x.q && x.a, k + ' 계단 ' + n)); ok(lv.심화.open, k + ' 심화 open'); }));
 
 console.log('═══ F. 분 합계 ═══');
-T('분 합계 = 120 (지금까지 3차시 × 40 · 단원 끝 560)', () => { const n = KEYS.reduce((a, k) => a + L[k].meta.duration_min, 0); ok(n === 120, n); });
+T('분 합계 = 160 (지금까지 4차시 × 40 · 단원 끝 560)', () => { const n = KEYS.reduce((a, k) => a + L[k].meta.duration_min, 0); ok(n === 160, n); });
 
 console.log('═══ G. 역사 원칙 ═══');
 T('연도·연대 숫자 0 (○○년·○○년대·기원전·세기 — 교사 메모 포함 전부 · 3·1·8·15·6·25 이름은 허용)', () => KEYS.forEach(k => { const s = JSON.stringify(L[k].slides); ok(!/\d+\s*(만\s*)?년|기원전|기원후|세기/.test(s), k + ' ' + (s.match(/.{12}(\d+\s*(만\s*)?년|기원전|기원후|세기).{8}/) || [''])[0]); }));
@@ -117,16 +117,34 @@ T('l03 지도서 핵심(271~273쪽): 동기 = 칼을 찬 선생님의 교실(실
   ok(d[15].data.items.map(x => x.a).join() === '조선 총독부,헌병,토지 조사 사업', '출구');
   ok(L.u3_l03.meta.textbook === 'p.125~127' && L.u3_l03.meta.covers === '3차시', '쪽'); });
 
+T('l04 그날의 선택 「다음 이야기」 → 다음 차시 「3·1 운동 이후 일어난 다양한 민족 운동」', () => ok(/방법을 바꿨/.test(L.u3_l04.slides[14].data.note) && /민족 운동/.test(L.u3_l04.slides[14].data.note) && /\*\*3·1 운동 이후 일어난 다양한 민족 운동\*\*/.test(L.u3_l04.slides[18].data.preview), 'l04→l05'));
+T('l04 지도서 핵심(278~280쪽): 동기 = 삼일절 아침(실사 자리 samiljeol_flags · 태극기) · 3·1 운동(독립 선언서·탑골 공원·학생·시민·만세 시위) · 전국·석 달·농민·상인·폭력적 진압 · 임시 정부(힘을 하나로·상하이·탄압 피함·외교) · 한 일(비밀 연락망·신문·외교 활동) + 한인 애국단 · 오개념 = 서울 하루 ✗ → 전국 석 달 · 기본 ① 3·1 운동 ② 임시 정부가 한 일 3개(토지 조사 함정) ③ 한인 애국단(흥사단 함정) · 활동 = 우리 지역 3·1 운동(활동지 283쪽 · 1인 포함) · 실생활 = 임시 정부 기념관·VR · 그날의 선택 = 장날 만세 · 유관순·김구·윤봉길·이봉창 이름은 팁에만', () => { const d = L.u3_l04.slides;
+  ok(/samiljeol_flags/.test(d[2].data.img) && ['3월 1일', '태극기'].every(x => d[2].data.desc.indexOf('**' + x + '**') >= 0), '동기');
+  ok(['독립 선언서', '학생', '시민', '탑골 공원', '만세 시위', '3·1 운동'].every(x => d[3].data.content.indexOf('**' + x + '**') >= 0), '3·1 운동');
+  ok(['전국', '석 달', '농민', '상인', '폭력적으로'].every(x => d[4].data.content.indexOf('**' + x + '**') >= 0), '전국·진압');
+  ok(['힘을 하나로 모아야', '상하이', '대한민국 임시 정부', '탄압을 피하기', '외교 활동'].every(x => d[5].data.content.indexOf('**' + x + '**') >= 0), '임시 정부 수립');
+  ok(['비밀 연락망', '신문', '외교 활동', '한인 애국단'].every(x => d[6].data.content.indexOf('**' + x + '**') >= 0 && d[6].data.fig.items.some(i => i.name === x)), '임시 정부가 한 일');
+  ok(['유관순', '김구', '윤봉길', '이봉창'].every(x => JSON.stringify(L.u3_l04.extras).indexOf(x) >= 0), '팁에 이름');
+  ok(/하루/.test(d[7].data.wrong) && /전국/.test(d[7].data.right) && /석 달/.test(d[7].data.right), '오개념');
+  ok(d[8].data.options.filter(o => o.correct)[0].text === '3·1 운동', '기본 ①'); ok(d[9].data.options.filter(o => o.correct).length === 3 && d[9].data.options.some(o => /토지 조사/.test(o.text) && !o.correct), '기본 ②');
+  ok(d[10].data.options.filter(o => o.correct)[0].text === '한인 애국단' && d[10].data.options.some(o => o.text === '흥사단' && !o.correct), '기본 ③');
+  ok(/3·1 운동/.test(d[12].data.title) && /283쪽/.test(JSON.stringify(d[12].data.materials)), '활동');
+  ok(/임시 정부 기념관/.test(d[13].data.scenario.body) && /VR/.test(d[13].data.scenario.body), '실생활'); ok(/장날/.test(d[14].data.context) && /\*\*장날\*\*/.test(d[14].data.note), '그날의 선택');
+  ok(d[15].data.items.map(x => x.a).join() === '3·1 운동,대한민국 임시 정부,한인 애국단', '출구');
+  ok(L.u3_l04.meta.textbook === 'p.128~130' && L.u3_l04.meta.covers === '4차시', '쪽'); });
+
 console.log('═══ H. 선행 용어 ═══');
 const pre = (k) => JSON.stringify(L[k].slides.slice(0, 18).map(s => Object.assign({}, s.data, { tnote: 0 }))).replace(/"다음: [^"]*"/g, '');
 const firstK = (re) => KEYS[KEYS.findIndex(k => re.test(pre(k)))];
-[['식민 통치', /식민 통치/, 'u3_l01'], ['저항', /저항/, 'u3_l01'], ['광복', /광복/, 'u3_l01'], ['6·25 전쟁', /6·25 전쟁/, 'u3_l01'], ['일제', /일제/, 'u3_l01'], ['독립운동가', /독립운동가/, 'u3_l01'], ['태극기', /태극기/, 'u3_l01'], ['을사늑약', /을사늑약/, 'u3_l02'], ['헤이그 특사', /헤이그/, 'u3_l02'], ['의병', /의병/, 'u3_l02'], ['대한 제국', /대한 제국/, 'u3_l02'], ['외교권', /외교권/, 'u3_l02'], ['조선 총독부', /총독부/, 'u3_l03'], ['헌병', /헌병/, 'u3_l03'], ['토지 조사 사업', /토지 조사/, 'u3_l03'], ['신흥 무관 학교', /신흥 무관 학교/, 'u3_l03'], ['흥사단', /흥사단/, 'u3_l03']].forEach(([n, re, at]) =>
+[['식민 통치', /식민 통치/, 'u3_l01'], ['저항', /저항/, 'u3_l01'], ['광복', /광복/, 'u3_l01'], ['6·25 전쟁', /6·25 전쟁/, 'u3_l01'], ['일제', /일제/, 'u3_l01'], ['독립운동가', /독립운동가/, 'u3_l01'], ['태극기', /태극기/, 'u3_l01'], ['을사늑약', /을사늑약/, 'u3_l02'], ['헤이그 특사', /헤이그/, 'u3_l02'], ['의병', /의병/, 'u3_l02'], ['대한 제국', /대한 제국/, 'u3_l02'], ['외교권', /외교권/, 'u3_l02'], ['조선 총독부', /총독부/, 'u3_l03'], ['헌병', /헌병/, 'u3_l03'], ['토지 조사 사업', /토지 조사/, 'u3_l03'], ['신흥 무관 학교', /신흥 무관 학교/, 'u3_l03'], ['흥사단', /흥사단/, 'u3_l03'], ['3·1 운동', /3·1/, 'u3_l04'], ['독립 선언서', /독립 선언/, 'u3_l04'], ['만세', /만세/, 'u3_l04'], ['대한민국 임시 정부', /임시 정부/, 'u3_l04'], ['상하이', /상하이/, 'u3_l04'], ['한인 애국단', /애국단/, 'u3_l04'], ['탑골 공원', /탑골/, 'u3_l04']].forEach(([n, re, at]) =>
   T('「' + n + '」 첫 등장 = ' + at.slice(3), () => ok(firstK(re) === at, firstK(re))));
 T('다루지 않는 것 0(l01: 을사늑약·의병·헌병·토지 조사·3·1 운동·임시 정부·한인 애국단·광주 학생·청산리·대한 제국·고종·손기정·유관순·안중근·김구·윤봉길·이회영·창씨·신사 참배·위안부·광복군·정부 수립·피란·휴전·이산가족)', () => { const s = JSON.stringify(L.u3_l01); ['을사', '늑약', '의병', '헌병', '토지 조사', '3·1', '임시 정부', '애국단', '광주 학생', '청산리', '대한 제국', '고종', '손기정', '유관순', '안중근', '김구', '윤봉길', '이회영', '창씨', '신사 참배', '위안부', '광복군', '정부 수립', '피란', '휴전', '이산가족'].forEach(x => ok(s.indexOf(x) < 0, 'l01 ' + x)); });
 
 T('다루지 않는 것 0(l02 장: 헌병·토지 조사·3·1·임시 정부·애국단·광주 학생·청산리·유관순·김구·윤봉길·이회영·창씨·신사 참배·위안부·광복군·정부 수립·피란·휴전·이산가족 · 손기정·안중근·윤희순은 팁에만)', () => { const s = JSON.stringify(L.u3_l02.slides); ['헌병', '토지 조사', '3·1', '임시 정부', '애국단', '광주 학생', '청산리', '유관순', '김구', '윤봉길', '이회영', '창씨', '신사 참배', '위안부', '광복군', '정부 수립', '피란', '휴전', '이산가족', '손기정', '안중근', '윤희순', '이토'].forEach(x => ok(s.indexOf(x) < 0, 'l02 ' + x)); });
 
 T('다루지 않는 것 0(l03 장 · s19 예고·다음 이야기 빼고: 3·1·임시 정부·독립 선언·만세·애국단·광주 학생·청산리·유관순·김구·윤봉길·창씨·신사 참배·위안부·광복군·정부 수립·피란·휴전·이산가족·병합·공진회 · 이회영·안창호·이은숙·김동삼·이해동·이완용·데라우치는 팁에만)', () => { const sl = L.u3_l03.slides.slice(0, 18).map(x => { const d = Object.assign({}, x.data); if (d.note) d.note = d.note.split('→ 다음 이야기')[0]; if (d.arrows) d.arrows = d.arrows.filter(a => !/^다음:/.test(a)); return d; }); const s = JSON.stringify(sl); ['3·1', '임시 정부', '독립 선언', '만세', '애국단', '광주 학생', '청산리', '유관순', '김구', '윤봉길', '창씨', '신사 참배', '위안부', '광복군', '정부 수립', '피란', '휴전', '이산가족', '병합', '공진회', '이회영', '안창호', '이은숙', '김동삼', '이해동', '이완용', '데라우치', '손기정', '안중근', '윤희순'].forEach(x => ok(s.indexOf(x) < 0, 'l03 ' + x)); });
+
+T('다루지 않는 것 0(l04 장 · s19 예고·다음 이야기 빼고: 물산 장려·조선어 학회·실력 양성·산미·문화 통치·광주 학생·청산리·봉오동·의열단·창씨·신사 참배·위안부·광복군·정부 수립·피란·휴전·이산가족 · 유관순·김구·윤봉길·이봉창·이승만·안창호·스코필드·제암리·훙커우·김상득·한봉삼은 팁에만)', () => { const sl = L.u3_l04.slides.slice(0, 18).map(x => { const d = Object.assign({}, x.data); if (d.note) d.note = d.note.split('→ 다음 이야기')[0]; if (d.arrows) d.arrows = d.arrows.filter(a => !/^다음:/.test(a)); return d; }); const s = JSON.stringify(sl); ['물산', '조선어 학회', '실력 양성', '산미', '문화 통치', '광주 학생', '청산리', '봉오동', '의열단', '창씨', '신사 참배', '위안부', '광복군', '정부 수립', '피란', '휴전', '이산가족', '유관순', '김구', '윤봉길', '이봉창', '이승만', '안창호', '스코필드', '제암리', '훙커우', '김상득', '한봉삼', '이회영', '손기정', '안중근'].forEach(x => ok(s.indexOf(x) < 0, 'l04 ' + x)); });
 
 console.log('═══ I. 실렌더 ═══');
 KEYS.forEach(k => T(k + ' 19장 × (가림·공개) 렌더 — 빈 장·undefined·NaN 0', () => L[k].slides.forEach(s => [false, true].forEach(rev => { const r = render(s, L[k], rev) || {}; const h = String(r.body || r.html || '') + String(r.title || '');

@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-22 · 과목 23 · 차시 1123 · 슬라이드 19950 */
+   생성: 2026-10-22 · 과목 23 · 차시 1124 · 슬라이드 19969 */
 window.KT2_MANIFEST = {
  "built": "2026-10-22",
- "lessons": 1123,
- "slides": 19950,
+ "lessons": 1124,
+ "slides": 19969,
  "subjects": [
   {
    "slug": "g1_math",
@@ -30360,6 +30360,32 @@ window.KT2_MANIFEST = {
        "no": "3",
        "title": "일제 통치 시기 우리 민족의 고통과 저항",
        "meta_title": "일제 통치 시기 우리 민족의 고통과 저항",
+       "std": "[6사06-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l04",
+       "no": "4",
+       "title": "3·1 운동과 대한민국 임시 정부의 노력",
+       "meta_title": "3·1 운동과 대한민국 임시 정부의 노력",
        "std": "[6사06-01]",
        "slides": 19,
        "stages": [
