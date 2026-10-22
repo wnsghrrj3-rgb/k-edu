@@ -62,6 +62,13 @@ export function track(kind = 'step', seed = 1) {
   else for (let i = 0; i < 6; i++) { const t = mesh(g, new THREE.ConeGeometry(0.03, 0.22, 4), M(0xc9a97a, { name: 'fur' }), (r() - .5) * 0.5, 0.1, (r() - .5) * 0.5); t.rotation.set(1.2 + r(), r() * 3, 0); }
   return g;
 }
+/** 보따리·바구니 — 길 위의 일(road.js) 소품. sack = 끈으로 묶은 천 보따리 / basket = 테 있는 바구니 */
+export function bundle(kind = 'sack', seed = 1) {
+  const g = new THREE.Group(); const r = R(seed);
+  if (kind === 'basket') { const b = mesh(g, new THREE.CylinderGeometry(0.3, 0.22, 0.3, 12, 1, true), M(0xb48a52, { rough: 1 }), 0, 0.16, 0); b.material.side = THREE.DoubleSide; mesh(g, new THREE.TorusGeometry(0.3, 0.025, 6, 16), M(0x8a6538), 0, 0.31, 0).rotation.x = Math.PI / 2; mesh(g, new THREE.CircleGeometry(0.22, 12), M(0x9a7a48), 0, 0.012, 0).rotation.x = -Math.PI / 2; for (let i = 0; i < 4; i++) mesh(g, new THREE.SphereGeometry(0.07, 7, 6), M(0x6e8a3a), (r() - .5) * 0.3, 0.3, (r() - .5) * 0.3); }
+  else { mesh(g, new THREE.SphereGeometry(0.36, 12, 9), M(0xcbb089, { rough: 1 }), 0, 0.26, 0, 1.1, 0.72, 1); const knot = mesh(g, new THREE.SphereGeometry(0.09, 7, 6), M(0xb09468), 0, 0.56, 0); knot.scale.set(1, 0.6, 1); mesh(g, new THREE.TorusGeometry(0.3, 0.02, 5, 14), M(0x6b4f33), 0, 0.3, 0).rotation.x = 0.35; }
+  g.rotation.y = seed; return g;
+}
 /** 사람. look: {cloth, hair} 색으로 구분 */
 export function person(look = {}) {
   const a = createAvatar(false);
@@ -98,4 +105,4 @@ export function shelter(kind = 'hide', seed = 1) {
   const cloth = mesh(g, new THREE.ConeGeometry(1.35, 2.0, 7, 1, true), hide, 0, 1.0, 0); cloth.rotation.y = seed;
   return g;
 }
-export const PROPS = { shelter, berryBush, rootPlant, stone, deer, track, person, spot, wind, stick };
+export const PROPS = { shelter, berryBush, rootPlant, stone, deer, track, person, spot, wind, stick, bundle };

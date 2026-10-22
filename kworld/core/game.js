@@ -16,6 +16,7 @@ import { Story } from './story.js';
 import { Life } from './life.js';
 import { Pulse } from './pulse.js';
 import { Spark } from './spark.js';
+import { Road } from './road.js';
 import { Bond } from './bond.js';
 
 const J = (u) => fetch(u).then((r) => r.json());
@@ -49,6 +50,7 @@ export class Game {
     if (this.world.pulse && new URLSearchParams(location.search).get('pulse') !== '0') this.pulse = new Pulse(this, this.world.pulse);
     // 설렘·반응 층: 마을의 눈·칭호·돌발·밤의 설렘 — world.spark 가 있을 때만(10-16)
     if (this.world.spark && new URLSearchParams(location.search).get('spark') !== '0') this.spark = new Spark(this, this.world.spark);
+    if (this.world.road && new URLSearchParams(location.search).get('road') !== '0') this.road = new Road(this, this.world.road);   // 길 위의 일(111)
     // 운명의 사람이 세상에 있다: 만나면 따라다니고, 등지면 물러선다 — world.spark.bond 가 있을 때만(10-19)
     if (this.world.spark?.bond && new URLSearchParams(location.search).get('bond') !== '0') this.bond = new Bond(this, this.world.spark.bond);
     // 시대별 장식 코드는 world.json 이 가리킬 때만(코어는 시대 이름을 모른다)
@@ -209,6 +211,7 @@ export class Game {
     if (this.danger) this.danger.tick(dt);
     if (this.pulse) this.pulse.tick(dt);
     if (this.spark) this.spark.tick(dt);
+    if (this.road) this.road.tick(dt);
     if (this.bond) this.bond.tick(dt);
     // 미션 나침반 + 힌트 시간
     this.updateMission(false);
@@ -238,11 +241,13 @@ export class Game {
     }
   }
   infoFor(t) {
+    if (t.type === 'road') return this.road?.info(t) || null;
     const def = this.defFor(t); if (!def) return null;
     const st = def.states && def.states[t.state || 'unlit']; const info = (st && st.info) || def.info;
     return info ? { name: def.name, info } : null;
   }
   promptFor(t) {
+    if (t.type === 'road') return this.road?.prompt(t) || null;
     const def = this.defFor(t); if (!def) return null;
     let verb = def.verb; if (def.states) verb = def.states[t.state || 'unlit'].verb;
     if (t.type === 'gate' && this.world.gate && !this.gateOpen) verb = '아직 닫혀 있다 (눌러서 무엇이 남았는지 보기)';
@@ -260,6 +265,7 @@ export class Game {
   act() {
     if (this.ui.isOpen()) return;
     const t = this.target; if (!t) { if (this.bond?.canTalk()) return this.bond.talk(); this.ui.say('가까이 가서 바라보면 할 수 있는 일이 보여.'); return; }
+    if (t.type === 'road') return this.road?.open(t);
     const def = this.defFor(t); if (!def) return;
     if (t.type === 'npc') { this.flag(def.flag); this.flag('talk:' + t.id); if (this.ui.isOpen()) return; /* 깃발이 상황 카드를 열었으면 사람 말은 그 뒤에(카드 위에 덮지 않는다) */ return this.talk(t); }
     if (t.type === 'gate') return this.enterGate();
