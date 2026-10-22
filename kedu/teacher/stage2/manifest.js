@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-22 · 과목 23 · 차시 1115 · 슬라이드 19798 */
+   생성: 2026-10-22 · 과목 23 · 차시 1116 · 슬라이드 19817 */
 window.KT2_MANIFEST = {
  "built": "2026-10-22",
- "lessons": 1115,
- "slides": 19798,
+ "lessons": 1116,
+ "slides": 19817,
  "subjects": [
   {
    "slug": "g1_math",
@@ -30144,6 +30144,32 @@ window.KT2_MANIFEST = {
        "no": "8",
        "title": "조선 후기의 경제적 변화",
        "meta_title": "조선 후기의 경제적 변화",
+       "std": "[6사05-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u2_l09",
+       "no": "9",
+       "title": "조선 후기 달라진 사회 모습",
+       "meta_title": "조선 후기 달라진 사회 모습",
        "std": "[6사05-02]",
        "slides": 19,
        "stages": [
