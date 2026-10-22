@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-22 · 과목 23 · 차시 1117 · 슬라이드 19836 */
+   생성: 2026-10-22 · 과목 23 · 차시 1118 · 슬라이드 19855 */
 window.KT2_MANIFEST = {
  "built": "2026-10-22",
- "lessons": 1117,
- "slides": 19836,
+ "lessons": 1118,
+ "slides": 19855,
  "subjects": [
   {
    "slug": "g1_math",
@@ -30196,6 +30196,32 @@ window.KT2_MANIFEST = {
        "no": "10",
        "title": "서민 문화에 나타난 사람들의 생활 모습",
        "meta_title": "서민 문화에 나타난 사람들의 생활 모습",
+       "std": "[6사05-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u2_l11",
+       "no": "11",
+       "title": "개항 이후 달라진 사회와 사람들의 생활 모습",
+       "meta_title": "개항 이후 달라진 사회와 사람들의 생활 모습",
        "std": "[6사05-02]",
        "slides": 19,
        "stages": [
