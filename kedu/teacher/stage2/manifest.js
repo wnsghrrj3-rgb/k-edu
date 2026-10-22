@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-22 · 과목 23 · 차시 1120 · 슬라이드 19893 */
+   생성: 2026-10-22 · 과목 23 · 차시 1121 · 슬라이드 19912 */
 window.KT2_MANIFEST = {
  "built": "2026-10-22",
- "lessons": 1120,
- "slides": 19893,
+ "lessons": 1121,
+ "slides": 19912,
  "subjects": [
   {
    "slug": "g1_math",
@@ -30275,6 +30275,40 @@ window.KT2_MANIFEST = {
        "title": "단원 마무리 — 생각 그물과 그림으로 기억하기 놀이",
        "meta_title": "단원 마무리 — 생각 그물과 그림으로 기억하기 놀이",
        "std": "[6사05-01][6사05-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    },
+    {
+     "unit": 3,
+     "title": "식민 통치와 저항, 전쟁이 바꾼 사회와 생활",
+     "file": "data/g5s2_social_u3.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u3_l01",
+       "no": "1",
+       "title": "단원 도입 — 거리에서 독립운동가의 동지를 찾아요",
+       "meta_title": "단원 도입 — 거리에서 독립운동가의 동지를 찾아요",
+       "std": "[6사06-01]",
        "slides": 19,
        "stages": [
         3,
