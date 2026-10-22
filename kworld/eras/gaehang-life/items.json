@@ -544,9 +544,9 @@
      ]
     },
     {
-     "if": "sit:samil:open && !sit:samil:done && samil:morning && !status:chinil && !sm:manse && !sm:hurt && !sm:home && !sm:report",
+     "if": "sit:samil:open && !sit:samil:done && samil:morning && !sm:manse && !sm:hurt && !sm:home && !sm:report && !sm:read && !sm:readcaught && !sm:carry && !sm:carrycaught && !sm:cheolsi && !sm:openshop && !sm:fund && !sm:hold && !sm:sameline && !sm:silent && !sm:suspect && !sm:lock && status:jiju",
      "name": "장터 연단",
-     "verb": "만세 ⚠(몸 1) / 집에 있는다",
+     "verb": "만세 ⚠ / 선언서를 읽는다 ⚠ / 값을 댄다(곡식 둘) / 소작인들을 말린다 / 집에",
      "once": false,
      "choices": [
       {
@@ -564,6 +564,34 @@
        "say": "🇰🇷 「대한 독립 만세!」 장터가 울었다. 헌병이 쏘았다. 셋이 쓰러졌다. 나는 골목으로. — 전국 200만."
       },
       {
+       "label": "선언서를 읽는다 ⚠ — 연단에 선다(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "헌병이 주재소 쪽 길로 언제 오는지 보는 눈. 비어 있을 때 오른다.",
+        "fail": "…세 줄을 읽었을 때 헌병이 팔을 꺾었다. 「주모자.」 옥."
+       },
+       "rollFailFlag": "sm:readcaught",
+       "rollHurt": "jail",
+       "flag": "sm:read",
+       "journal": "samil",
+       "say": "📜 「우리는 오늘 조선이 독립국임을 —」 장터가 울었다. 읽은 사람이 있어야 만세가 시작됐다 — 나였다."
+      },
+      {
+       "label": "선언서 찍을 값을 댄다 — 곡식 둘",
+       "if": "val:grain>=2",
+       "gray": "종이 값·광목 값 — 곡식 둘은 있어야 댄다.",
+       "flag": "sm:fund",
+       "journal": "samil",
+       "say": "📜 뒷방. 종이 값, 광목 값. 곡식 둘. 이름은 어디에도 안 적었다."
+      },
+      {
+       "label": "소작인들을 말린다 — 잃을 것이 있는 집",
+       "flag": "sm:hold",
+       "journal": "samil",
+       "say": "소작 집마다 돌았다. 「나가면 논을 뺀다.」 반은 안 나갔고 반은 나갔다. 땅은 지켰다."
+      },
+      {
        "label": "집에 있는다",
        "flag": "sm:home",
        "say": "문을 닫았다. 밖에서 만세, 총소리. 밤에 누가 문을 두드렸다 — 다친 사람. 들였다."
@@ -571,9 +599,246 @@
      ]
     },
     {
-     "if": "sit:samil:open && !sit:samil:done && samil:morning && status:chinil && !sm:report && !sm:manse && !sm:home",
+     "if": "sit:samil:open && !sit:samil:done && samil:morning && !sm:manse && !sm:hurt && !sm:home && !sm:report && !sm:read && !sm:readcaught && !sm:carry && !sm:carrycaught && !sm:cheolsi && !sm:openshop && !sm:fund && !sm:hold && !sm:sameline && !sm:silent && !sm:suspect && !sm:lock && status:sangin",
      "name": "장터 연단",
-     "verb": "주재소에 알린다 / 집에 있는다",
+     "verb": "만세 ⚠ / 선언서를 읽는다 ⚠ / 가게 문을 닫는다 / 가게를 연다 / 집에",
+     "once": false,
+     "choices": [
+      {
+       "label": "만세 ⚠ — 태극기를 든다(몸 1)",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "칼·총 앞에서 손을 안 내리는 몸.",
+        "fail": "…헌병. 칼. 어깨. 끌려갔다."
+       },
+       "rollFailFlag": "sm:hurt",
+       "rollHurt": "wound",
+       "flag": "sm:manse",
+       "journal": "samil",
+       "say": "🇰🇷 「대한 독립 만세!」 장터가 울었다. 헌병이 쏘았다. 셋이 쓰러졌다. 나는 골목으로. — 전국 200만."
+      },
+      {
+       "label": "선언서를 읽는다 ⚠ — 연단에 선다(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "헌병이 주재소 쪽 길로 언제 오는지 보는 눈. 비어 있을 때 오른다.",
+        "fail": "…세 줄을 읽었을 때 헌병이 팔을 꺾었다. 「주모자.」 옥."
+       },
+       "rollFailFlag": "sm:readcaught",
+       "rollHurt": "jail",
+       "flag": "sm:read",
+       "journal": "samil",
+       "say": "📜 「우리는 오늘 조선이 독립국임을 —」 장터가 울었다. 읽은 사람이 있어야 만세가 시작됐다 — 나였다."
+      },
+      {
+       "label": "가게 문을 닫는다 — 철시",
+       "flag": "sm:cheolsi",
+       "journal": "samil",
+       "say": "📜 「금일 휴업」. 거리의 가게가 하나씩 닫혔다. 일본 상인 가게만 열렸다."
+      },
+      {
+       "label": "가게를 연다",
+       "flag": "sm:openshop",
+       "journal": "samil",
+       "say": "문을 열었다. 헌병이 물을 사 갔다. 마을 사람들은 돌아앉았다."
+      },
+      {
+       "label": "집에 있는다",
+       "flag": "sm:home",
+       "say": "문을 닫았다. 밖에서 만세, 총소리. 밤에 누가 문을 두드렸다 — 다친 사람. 들였다."
+      }
+     ]
+    },
+    {
+     "if": "sit:samil:open && !sit:samil:done && samil:morning && !sm:manse && !sm:hurt && !sm:home && !sm:report && !sm:read && !sm:readcaught && !sm:carry && !sm:carrycaught && !sm:cheolsi && !sm:openshop && !sm:fund && !sm:hold && !sm:sameline && !sm:silent && !sm:suspect && !sm:lock && status:yetbaekjeong",
+     "name": "장터 연단",
+     "verb": "같은 줄에 선다 — 만세 ⚠ / 선언서를 읽는다 ⚠ / 집에",
+     "once": false,
+     "choices": [
+      {
+       "label": "같은 줄에 선다 — 만세 ⚠(몸 1)",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "칼·총 앞에서 손을 안 내리는 몸.",
+        "fail": "…헌병. 칼. 어깨. 끌려갔다."
+       },
+       "rollFailFlag": "sm:hurt",
+       "rollHurt": "wound",
+       "flag": "sm:sameline",
+       "journal": "hyeong",
+       "say": "🇰🇷 옆에 김 지주의 아들, 옆에 소작농. 아무도 물러서라 하지 않았다. 「대한 독립 만세.」 — 돌아온 호적은 그대로 「도한」."
+      },
+      {
+       "label": "선언서를 읽는다 ⚠ — 연단에 선다(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "헌병이 주재소 쪽 길로 언제 오는지 보는 눈. 비어 있을 때 오른다.",
+        "fail": "…세 줄을 읽었을 때 헌병이 팔을 꺾었다. 「주모자.」 옥."
+       },
+       "rollFailFlag": "sm:readcaught",
+       "rollHurt": "jail",
+       "flag": "sm:read",
+       "journal": "samil",
+       "say": "📜 「우리는 오늘 조선이 독립국임을 —」 장터가 울었다. 읽은 사람이 있어야 만세가 시작됐다 — 나였다."
+      },
+      {
+       "label": "집에 있는다",
+       "flag": "sm:home",
+       "say": "문을 닫았다. 밖에서 만세, 총소리. 밤에 누가 문을 두드렸다 — 다친 사람. 들였다."
+      }
+     ]
+    },
+    {
+     "if": "sit:samil:open && !sit:samil:done && samil:morning && !sm:manse && !sm:hurt && !sm:home && !sm:report && !sm:read && !sm:readcaught && !sm:carry && !sm:carrycaught && !sm:cheolsi && !sm:openshop && !sm:fund && !sm:hold && !sm:sameline && !sm:silent && !sm:suspect && !sm:lock && (status:yetnobi || status:sojak || status:nodongja || status:hwajeon || status:nongmin)",
+     "name": "장터 연단",
+     "verb": "만세 ⚠ / 선언서를 읽는다 ⚠ / 쓰러진 사람을 업는다 ⚠ / 집에",
+     "once": false,
+     "choices": [
+      {
+       "label": "만세 ⚠ — 태극기를 든다(몸 1)",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "칼·총 앞에서 손을 안 내리는 몸.",
+        "fail": "…헌병. 칼. 어깨. 끌려갔다."
+       },
+       "rollFailFlag": "sm:hurt",
+       "rollHurt": "wound",
+       "flag": "sm:manse",
+       "journal": "samil",
+       "say": "🇰🇷 「대한 독립 만세!」 장터가 울었다. 헌병이 쏘았다. 셋이 쓰러졌다. 나는 골목으로. — 전국 200만."
+      },
+      {
+       "label": "선언서를 읽는다 ⚠ — 연단에 선다(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "헌병이 주재소 쪽 길로 언제 오는지 보는 눈. 비어 있을 때 오른다.",
+        "fail": "…세 줄을 읽었을 때 헌병이 팔을 꺾었다. 「주모자.」 옥."
+       },
+       "rollFailFlag": "sm:readcaught",
+       "rollHurt": "jail",
+       "flag": "sm:read",
+       "journal": "samil",
+       "say": "📜 「우리는 오늘 조선이 독립국임을 —」 장터가 울었다. 읽은 사람이 있어야 만세가 시작됐다 — 나였다."
+      },
+      {
+       "label": "쓰러진 사람을 업는다 ⚠ — 골목으로(몸 2)",
+       "roll": {
+        "ab": "몸",
+        "hard": 2,
+        "why": "사람 하나를 업고 골목을 뛰는 몸. 객주집 담 밑 길을 아는 발.",
+        "fail": "…골목 어귀에서 헌병. 둘 다 잡혔다."
+       },
+       "rollFailFlag": "sm:carrycaught",
+       "rollHurt": "jail",
+       "flag": "sm:carry",
+       "journal": "samil",
+       "say": "📜 총소리. 옆 사람이 무릎을 꿇었다. 업었다. 골목. 객주집 뒷문. 「여기.」"
+      },
+      {
+       "label": "집에 있는다",
+       "flag": "sm:home",
+       "say": "문을 닫았다. 밖에서 만세, 총소리. 밤에 누가 문을 두드렸다 — 다친 사람. 들였다."
+      }
+     ]
+    },
+    {
+     "if": "sit:samil:open && !sit:samil:done && samil:morning && !sm:manse && !sm:hurt && !sm:home && !sm:report && !sm:read && !sm:readcaught && !sm:carry && !sm:carrycaught && !sm:cheolsi && !sm:openshop && !sm:fund && !sm:hold && !sm:sameline && !sm:silent && !sm:suspect && !sm:lock && status:gyosa",
+     "name": "장터 연단",
+     "verb": "만세 ⚠ / 선언서를 읽는다 ⚠ / 교문을 잠근다 / 집에",
+     "once": false,
+     "choices": [
+      {
+       "label": "만세 ⚠ — 태극기를 든다(몸 1)",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "칼·총 앞에서 손을 안 내리는 몸.",
+        "fail": "…헌병. 칼. 어깨. 끌려갔다."
+       },
+       "rollFailFlag": "sm:hurt",
+       "rollHurt": "wound",
+       "flag": "sm:manse",
+       "journal": "samil",
+       "say": "🇰🇷 「대한 독립 만세!」 장터가 울었다. 헌병이 쏘았다. 셋이 쓰러졌다. 나는 골목으로. — 전국 200만."
+      },
+      {
+       "label": "선언서를 읽는다 ⚠ — 연단에 선다(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "헌병이 주재소 쪽 길로 언제 오는지 보는 눈. 비어 있을 때 오른다.",
+        "fail": "…세 줄을 읽었을 때 헌병이 팔을 꺾었다. 「주모자.」 옥."
+       },
+       "rollFailFlag": "sm:readcaught",
+       "rollHurt": "jail",
+       "flag": "sm:read",
+       "journal": "samil",
+       "say": "📜 「우리는 오늘 조선이 독립국임을 —」 장터가 울었다. 읽은 사람이 있어야 만세가 시작됐다 — 나였다."
+      },
+      {
+       "label": "교문을 잠근다 — 학생들을 막는다",
+       "flag": "sm:lock",
+       "journal": "samil",
+       "say": "교문에 자물쇠. 창밖으로 학생들이 담을 넘었다. 유관순이 맨 앞."
+      },
+      {
+       "label": "집에 있는다",
+       "flag": "sm:home",
+       "say": "문을 닫았다. 밖에서 만세, 총소리. 밤에 누가 문을 두드렸다 — 다친 사람. 들였다."
+      }
+     ]
+    },
+    {
+     "if": "sit:samil:open && !sit:samil:done && samil:morning && !sm:manse && !sm:hurt && !sm:home && !sm:report && !sm:read && !sm:readcaught && !sm:carry && !sm:carrycaught && !sm:cheolsi && !sm:openshop && !sm:fund && !sm:hold && !sm:sameline && !sm:silent && !sm:suspect && !sm:lock && !status:chinil",
+     "name": "장터 연단",
+     "verb": "만세 ⚠(몸 1) / 선언서를 읽는다 ⚠(눈 2) / 집에 있는다",
+     "once": false,
+     "choices": [
+      {
+       "label": "만세 ⚠ — 태극기를 든다(몸 1)",
+       "roll": {
+        "ab": "몸",
+        "hard": 1,
+        "why": "칼·총 앞에서 손을 안 내리는 몸.",
+        "fail": "…헌병. 칼. 어깨. 끌려갔다."
+       },
+       "rollFailFlag": "sm:hurt",
+       "rollHurt": "wound",
+       "flag": "sm:manse",
+       "journal": "samil",
+       "say": "🇰🇷 「대한 독립 만세!」 장터가 울었다. 헌병이 쏘았다. 셋이 쓰러졌다. 나는 골목으로. — 전국 200만."
+      },
+      {
+       "label": "선언서를 읽는다 ⚠ — 연단에 선다(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "헌병이 주재소 쪽 길로 언제 오는지 보는 눈. 비어 있을 때 오른다.",
+        "fail": "…세 줄을 읽었을 때 헌병이 팔을 꺾었다. 「주모자.」 옥."
+       },
+       "rollFailFlag": "sm:readcaught",
+       "rollHurt": "jail",
+       "flag": "sm:read",
+       "journal": "samil",
+       "say": "📜 「우리는 오늘 조선이 독립국임을 —」 장터가 울었다. 읽은 사람이 있어야 만세가 시작됐다 — 나였다."
+      },
+      {
+       "label": "집에 있는다",
+       "flag": "sm:home",
+       "say": "문을 닫았다. 밖에서 만세, 총소리. 밤에 누가 문을 두드렸다 — 다친 사람. 들였다."
+      }
+     ]
+    },
+    {
+     "if": "sit:samil:open && !sit:samil:done && samil:morning && status:chinil && !sm:report && !sm:manse && !sm:home && !sm:silent && !sm:suspect",
+     "name": "장터 연단",
+     "verb": "주재소에 알린다 / 「모른다」 한다 ⚠ / 집에 있는다",
      "once": false,
      "choices": [
       {
@@ -581,6 +846,19 @@
        "flag": "sm:report",
        "journal": "samil",
        "say": "📜 셋이 잡혀갔다. 두 단. 마을이 등을 돌렸다. 족보에 적혔다."
+      },
+      {
+       "label": "주재소에서 「모른다」 한다 ⚠(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "순사가 장부를 폈을 때 네 집 사람이 연단에 없었는지 아는 눈. 집 사람부터 집에.",
+        "fail": "…「네 집 머슴이 연단에 있었다.」 면장 자리에서 한 단. 쌀 두 섬."
+       },
+       "rollFailFlag": "sm:suspect",
+       "flag": "sm:silent",
+       "journal": "samil",
+       "say": "📜 「누가 앞장섰나.」 「모릅니다.」 순사가 한참 봤다. 돌아왔다 — 마을이 조금 돌아봤다."
       },
       {
        "label": "집에 있는다",

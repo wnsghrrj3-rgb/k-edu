@@ -1,4 +1,4 @@
-// 개항~일제 인생 층 구조 검증 — 새 터 gaehang.glb(bpy gaehang_land.py): ix 31 + NPC 21 · 구역 23(10-15 넓히기 2: 야학·공장 기숙사·토막 마을) · 미션 8 · 숨김 재질(일장기 sunred, 1910 토지 조사 때 보임 + chalk_hangul·strike_cloth·tomak_new) · done 깃발 전수 · 직업 카드 14(천장: 협력 6 / 쫓기는 몸 0 / 나머지 4) · 끝 갈림 45 · 조선 후기에서 넘겨받음 · 문 → 대한민국(준비 중)
+// 개항~일제 인생 층 구조 검증 — 새 터 gaehang.glb(bpy gaehang_land.py): ix 31 + NPC 21 · 구역 23(10-15 넓히기 2: 야학·공장 기숙사·토막 마을) · 미션 8 · 숨김 재질(일장기 sunred, 1910 토지 조사 때 보임 + chalk_hangul·strike_cloth·tomak_new) · done 깃발 전수 · 직업 카드 14(천장: 협력 6 / 쫓기는 몸 0 / 나머지 4) · 끝 갈림 57(10-22 만세 아침 깊이기 +12) · 조선 후기에서 넘겨받음 · 문 → 대한민국(준비 중)
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const base = new URL('../eras/gaehang-life/', import.meta.url);
@@ -39,7 +39,7 @@ const last = life.situations.find((s) => s.id === 'jingyong'); for (const c of l
 const toji = life.situations.find((s) => s.id === 'toji'); assert.ok(toji.onOpen?.[0]?.show?.mats?.[0] === 'sunred', '토지 조사 열릴 때 일장기');
 const ids = new Set(life.status.rules.map((r) => r.id));
 for (const b of last.choices[0].then[0].end.branches) for (const f of (b.if || '').match(/status:(\w+)/g) || []) assert.ok(ids.has(f.slice(7)), `끝 갈림 ${b.id} 의 ${f} 없음`);
-assert.equal(last.choices[0].then[0].end.branches.length, 45, '끝 갈림 45');
+assert.equal(last.choices[0].then[0].end.branches.length, 57, '끝 갈림 57');
 assert.ok(life.grain?.open && life.rank?.open && life.carry?.from === 'joseon-late-life', '쌀 + 자리 + 조선 후기에서 넘겨받음');
 const st = life.status.rules; const cap = (id) => st.find((r) => r.id === id).cap;
 assert.ok(ids.size === 14 && cap('chinil') === 6 && cap('dongnip') === 0 && ['jiju', 'sangin', 'gisulja', 'nongmin', 'sojak', 'nodongja', 'yetnobi', 'yetbaekjeong', 'hwajeon', 'haksaeng', 'gyosa', 'ijumin'].every((k) => cap(k) === 4), '직업 카드 14 — 천장은 누구나 4, 협력 6, 쫓기는 몸 0');
