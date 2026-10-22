@@ -48,7 +48,7 @@ for (const t of ['taxpile_1', 'bugoksign_1', 'silverstall_1', 'coinstall_1', 'cl
 for (const id of ['bugok', 'market', 'palgwan', 'hermit', 'station', 'gunpowder', 'burnt']) assert.ok(life.situations.some((x) => x.id === id && !x.must && x.place === id), `새 상황 ${id}`);
 assert.equal(life.mixedCount, 6, '판마다 섞여 6');
 const ends = []; (function walk(o) { if (Array.isArray(o)) o.forEach(walk); else if (o && typeof o === 'object') { if (o.branches) ends.push(o.branches); Object.values(o).forEach(walk); } })(life.situations.find((x) => x.id === 'land'));
-assert.ok(ends.length === 4 && ends.every((b) => b[0].id === 'gongnyeo' && b.some((x) => x.id === 'hwatong') && b.findIndex((x) => x.id === 'hwatong') < b.findIndex((x) => x.id === 'gongsin')), '끝 갈림 「원으로 간 집」 맨 앞 · 「화약을 만든 집」 공신 앞 (네 사본)');
+assert.ok(ends.length === 9 && ends.every((b) => b[0].id === 'gongnyeo' && b.some((x) => x.id === 'hwatong') && b.findIndex((x) => x.id === 'hwatong') < b.findIndex((x) => x.id === 'gongsin')), '끝 갈림 「원으로 간 집」 맨 앞 · 「화약을 만든 집」 공신 앞 (아홉 사본 — 깊이기 ⑥ 뒤 land 길 9)');
 for (const s of life.situations) for (const c of s.choices) for (const a of c.then || []) if (a.show) assert.ok(ix.includes('ix_' + a.show.name) && a.show.mats.every((m) => mats.has(m)), `then show ${a.show.name}`);
 assert.ok(world.hideHunger && world.hunger.perSecond === 0, '배고픔 없음');
 assert.ok(world.gate?.next === 'joseon-life' && world.gate.ready, '문 → 조선 전기(열림)');

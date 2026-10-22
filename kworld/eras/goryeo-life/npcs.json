@@ -575,7 +575,7 @@
   "lines": [
    {
     "if": "sit:land:open && !sit:land:done && !land:burn && !status:gwonmun && !status:solgeo",
-    "text": "불 자리부터. 땅문서가 다 타야 새 나라다. 양민이면 먼저 더미에서 네 문서를 찾아라 — 신돈의 도감."
+    "text": "불 자리부터. 땅문서가 다 타야 새 나라다. 양민이면 먼저 더미에서 네 문서를 찾아라 — 신돈의 도감. 우리는 기다리지 않는다, 해가 지기 전에 불을 놓는다."
    },
    {
     "if": "sit:land:open && !sit:land:done && land:burn && !land:yi && !land:jeong",
@@ -1191,21 +1191,70 @@
   "name": "권문세족(최씨)",
   "lines": [
    {
-    "if": "sit:land:open && !sit:land:done && status:gwonmun",
-    "text": "땅문서는 내 것이다. 사대부 놈들이 태운다고? 더미를 지켜라."
+    "if": "sit:land:open && !sit:land:done && status:gwonmun && !land:keep && !land:yield",
+    "text": "땅문서는 내 것이다. 사대부 놈들이 태운다고? 더미를 지켜라 — 아니면… 이성계 군사가 오기 전에 우리가 먼저 수레에 실어 주는 길도 있다. 땅은 잃어도 이름은 남는다.",
+    "choices": [
+     {
+      "label": "더미를 넘긴다 — 사대부 편으로 돌아선다",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "군사가 오기 전에 돌아서는 때를 보는 눈. 늦으면 넘기는 게 아니라 빼앗기는 것이다.",
+       "fail": "…늦었다. 사대부들이 이성계 군사와 왔다. 더미째 가져갔다."
+      },
+      "rollFailFlag": "land:keep",
+      "flag": "land:yield",
+      "journal": "gwajeon",
+      "say": "🛞 「가져가시오.」 수레. 사흘을 탔다. 과전 한 뙈기를 새로 받았다 — 이름은 남았다."
+     },
+     {
+      "label": "더미를 지킨다 ⚠ — 「내 땅이다」",
+      "flag": "land:keep",
+      "journal": "gwajeon",
+      "say": "🛡 창 든 사람을 세웠다. 사대부들이 왔다 — 이성계 군사와 함께. 더미째 가져갔다."
+     }
+    ]
    },
    {
     "if": "sit:land:open && !sit:land:done && status:yangmin && !land:reclaim && !land:trust",
-    "text": "네 논 문서가 여기 있다. 「맡기면 세금은 내가 막아 준다」 — 그때 네 조상이 맡겼다. 되찾겠다고? 신돈의 도감으로."
+    "text": "네 논 문서가 여기 있다. 「맡기면 세금은 내가 막아 준다」 — 그때 네 조상이 맡겼다. 그대로 두면 올해도 세금은 없다. 되찾겠다고? 신돈의 도감으로 — 사대부들이 불을 놓기 전에.",
+    "choices": [
+     {
+      "label": "맡긴 채 둔다 — 세금을 막아 준다니",
+      "flag": "land:trust",
+      "journal": "sindon",
+      "say": "🌾 두루마리를 두고 왔다. …연기. 사대부들이 더미에 불을 놓았다. 내 논 이름이 재가 됐다."
+     },
+     {
+      "label": "되찾는다 — 더미로",
+      "say": "「신돈의 도감.」 두루마리 백 장. 불보다 먼저."
+     }
+    ]
    },
    {
-    "if": "sit:land:open && !sit:land:done && status:solgeo && !land:follow",
-    "text": "노비가 여길 왜. 네 주인은 어느 편이냐 — 짐이나 져라.",
+    "if": "sit:land:open && !sit:land:done && status:solgeo && !land:follow && !land:slip && !land:slipcaught",
+    "text": "노비가 여길 왜. 네 주인은 어느 편이냐 — 짐이나 져라. …궤짝 바닥에 노비 문서. 더미는 어차피 탄다.",
     "choices": [
      {
       "label": "주인 짐을 진다",
       "flag": "land:follow",
       "say": "🎒 주인집 짐. 땅문서는 타고 노비 문서는 안 탔다."
+     },
+     {
+      "label": "노비 문서를 더미에 섞는다 ⚠ — 같이 태운다",
+      "if": "!hurt:leg",
+      "gray": "궤짝까지 뛰어갈 다리가 성해야.",
+      "roll": {
+       "ab": "눈",
+       "hard": 2,
+       "why": "주인의 사람이 궤짝을 보기 전에 종이 한 장을 빼는 눈.",
+       "fail": "…궤짝 소리. 주인의 사람이 뒤에 서 있었다. 곤장."
+      },
+      "rollFailFlag": "land:slipcaught",
+      "rollHurt": "leg",
+      "flag": "land:slip",
+      "journal": "gwajeon",
+      "say": "📜🔥 내 이름이 적힌 종이 한 장, 더미 속으로. 주인이 몰랐다."
      }
     ]
    },
