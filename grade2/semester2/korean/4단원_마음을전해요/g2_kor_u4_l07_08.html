@@ -139,130 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 7~8차시(소단원 2 기본 — 인물의 마음을 생각하며 실감 나게 읽기) 13슬 =====
+/* ===== 7~8차시(소단원 2 기본 — 인물의 마음을 생각하며 실감 나게 읽기) 『국어』 114~119쪽 13슬 — v2 교과서 기준 재구성 (2026-10-22)
    학습 목표: 인물의 마음을 생각하며 실감 나게 읽을 수 있다.
-   ★ 정답 로깅 7슬. 이야기 읽기(read-line)·무대·마무리 = 로깅 X.
-   ★ 지도서 182쪽 — 인물이 처한 상황과 말·행동을 찾아 마음을 짐작 ⇒ s3(세 실마리) · s7 · s8.
-   ★ 지도서 182쪽 — 억울했던 경험을 떠올리되 특정 친구를 지칭하지 않게 ⇒ s0·s11 문구.
-   ★ 지도서 189쪽 — 같은 마음도 여러 낱말로 ⇒ s5·s6은 collect(정답 둘).
-   ★★ 스물넷째 기준 — s6 오답 칸에 **다른 인물의 마음(미안한 마음)**, s7 오답 칸에 **「느낌표가 있어서」**.
-      마음은 인물마다·상황마다 다르고, 근거는 부호가 아니라 상황·말·행동이다.
-   ★ 열여덟째 기준 재적용(크기의 규칙) — 지도서 182쪽: 성우처럼 다양한 목소리로 연기하는 것을 지도하는 것이 아니다
-      ⇒ s9 오답 = 아주 크고 우렁차게 · s10 규칙 = 마음에 어울리게(오답 = 목소리를 여러 번 바꾸기 / 누구보다 크게).
-   ★ 저작권: 교과서 114~119쪽 「냄새 맡은 값」(옛이야기지만 교과서가 고른 제재)·표·목소리 점검표,
-      국어활동 「떡 먹기 내기」, 지도서 185쪽 「빨간 부채 파란 부채」 문제 카드 미차용.
-      교과서 표현(눈을 부릅뜨다·얼굴이 빨개지다·입을 삐죽이다)도 피했다.
-      자체 이야기 「넘친 화분」 = 교실 안의 일 · 인물 담우·하빈(신규). */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·밑줄 긋기·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「냄새 맡은 값」은 간추림과 짧은 말 몇 마디만. 그 밖의 자료는 교육부 집필이라 그대로. 문장의 종류는 부호와 뜻을 함께(지도서 169쪽 ❶). */
 const slides=[
-  {tag:'① 만나기', t:'억울했던 적이 있나요?',
-   html:`<div class="scene">
-      <div class="scene-pic">😣</div>
-      <div class="scene-say">내가 안 했는데 나라고 했어요!</div>
-    </div>
-    <div class="ka-bub">그때 <b class="emph">어떤 목소리</b>로 말했는지 떠올려 봐요. 🤔</div>`},
+  {tag:'① 동기 유발', t:'억울했던 일을 떠올려 봐요',
+   html:`<div class="stage-box">💭 억울했던 일이 있었나요? 그때 어떤 마음이 들었는지 말해 보세요.<br><small>다른 사람 이름은 말하지 않아요. 친구 이야기에는 「속상했겠다」처럼 공감해 줘요.</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 그 마음을 떠올리며 「냄새 맡은 값」을 읽어 봐요. 🍲">💭 말했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
   {tag:'① 학습 문제', t:'오늘 배울 것이에요',
-   html:`<div class="sentence">인물의 마음을 생각하며 실감 나게 읽어 봐요.</div>
-    <div class="ka-bub">이야기 「넘친 화분」을 읽어 봐요. 🙂</div>`},
+   html:`<div class="sentence">인물의 마음을 생각하며 실감 나게 읽어 봅시다.</div>`},
 
-  {tag:'② 이야기 읽기', t:'인물의 마음을 생각하며 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>담우는 아침마다 교실 화분에 물을 줘요.</div>
-      <div class="read-line"><span class="rl-num">2</span>어느 날 화분 밑이 물바다였어요. 하빈이가 두 손을 허리에 올렸어요.</div>
-      <div class="read-line"><span class="rl-num">3</span>“담우야, 물을 너무 많이 줬잖아!”</div>
-      <div class="read-line"><span class="rl-num">4</span>담우는 주먹을 꼭 쥐었어요. “나 오늘은 아직 물 안 줬어!”</div>
-      <div class="read-line"><span class="rl-num">5</span>그때 열린 창문으로 빗방울이 톡톡 들어왔어요.</div>
-      <div class="read-line"><span class="rl-num">6</span>하빈이는 고개를 푹 숙였어요. “미안해. 잘 보지도 않고…….”</div>
-    </div><div class="fb" id="readFb"></div>`},
+  {tag:'② 114~115쪽 글 읽기', t:'『국어』 114~116쪽을 펴고 「냄새 맡은 값」을 읽어요 (앞부분)',
+   html:`<div class="ka-bub">📖 마음씨 고약한 구두쇠 영감의 국밥집은 장사가 아주 잘되었어요.<br>옆 마을 최 서방이 지나가다 국밥 냄새를 맡고 감탄하며 집으로 가려는데, 구두쇠 영감이 눈을 부릅뜨고 붙잡았어요.<br>「냄새를 맡았으면 값을 치르고 가야지.」 — 최 서방은 기가 막혔어요.</div>`},
 
-  {tag:'② 마음 짐작 방법', t:'인물의 마음은 이것을 살펴 짐작해요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🏫</span><span class="pc-name">이야기<br>상황</span></div>
-      <div class="punct-card"><span class="pc-mark">💬</span><span class="pc-name">인물의<br>말</span></div>
-      <div class="punct-card"><span class="pc-mark">✊</span><span class="pc-name">인물의<br>행동</span></div>
-    </div>`},
+  {tag:'② 116쪽 글 읽기', t:'「냄새 맡은 값」을 읽어요 (뒷부분)',
+   html:`<div class="ka-bub">📖 좋은 생각이 떠오른 최 서방은 돈주머니를 영감의 귀에 대고 흔들었어요. 「자, 이 소리가 들리지요?」<br>영감이 엽전 소리를 분명히 들었다고 하자, 최 서방은 엽전 소리를 오래 들었으니 냄새 맡은 값은 치르고도 남았다고 했어요.<br>영감은 아무 말도 못 하고 얼굴이 빨개졌고, 국밥집 사람들은 모두 웃음을 터뜨렸어요.<br><small>◆ 엽전: 옛날에 사용하던, 놋쇠로 만든 돈.</small></div>`},
 
-  {tag:'③ 내용 알기', t:'화분 밑이 물바다가 된 까닭은 무엇인가요?', log:true,
-   okMsg:'맞아요! 열린 창문으로 빗물이 들어왔어요. 5번 줄에 있어요. 👍',
-   hint:'힌트: 하빈이의 말이 아니라 5번 줄에서 무슨 일이 있었는지 봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">담우가 물을<br>많이 줘서</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">창문으로 빗물이<br>들어와서</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 117쪽 2번 (1)', t:'구두쇠 영감은 최 서방에게 무엇을 내놓으라고 했나요?', log:true, okMsg:'맞아요! 냄새를 맡았다고 값을 내라니, 억지였어요. 😤',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🍲</div><div class="wc-word">국밥 한 그릇 값</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🍲</div><div class="wc-word">엽전 주머니</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🍲</div><div class="wc-word">국밥 냄새 맡은 값</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 하빈이의 마음', t:'3번 줄에서 하빈이의 마음으로 어울리는 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 같은 마음도 여러 낱말로 말할 수 있어요. 🎉',
-   hint:'힌트: 두 손을 허리에 올리고 한 말이에요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">화나는 마음</div>
-      <div class="chip" data-hit="0">신나는 마음</div>
-      <div class="chip" data-hit="1">답답한 마음</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 117쪽 2번 (2)', t:'최 서방이 엽전 소리를 들려준 까닭은?', log:true, okMsg:'맞아요! 냄새에는 소리로 값을 치른 재치 있는 해결이에요. 🪙',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">냄새 맡은 값은 엽전 소리로 갚으면 된다고 생각해서</div></div><div class="wcard" data-ok="0"><div class="wc-word">구두쇠 영감에게 엽전을 주려고</div></div><div class="wcard" data-ok="0"><div class="wc-word">엽전 소리가 듣기 좋아서</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 담우의 마음', t:'4번 줄에서 담우의 마음으로 어울리는 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 하지 않은 일로 꾸중을 들으면 억울하고 속상해요. 🎉',
-   hint:'힌트: 「미안한 마음」은 누구의 마음일까요?',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">억울한 마음</div>
-      <div class="chip" data-hit="0">미안한 마음</div>
-      <div class="chip" data-hit="1">속상한 마음</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 118쪽 3번', t:'일이 일어난 차례로 알맞은 것은?', log:true, okMsg:'맞아요! 차례를 알면 이야기 흐름 속에서 마음을 짐작하기 쉬워요. 🔢',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">값을 달라고 했다 → 냄새를 맡았다 → 영감이 얼굴이 빨개졌다 → 엽전 소리로 값을 냈다</div></div><div class="wcard" data-ok="0"><div class="wc-word">엽전 소리로 값을 냈다 → 냄새를 맡았다 → 값을 달라고 했다 → 영감이 얼굴이 빨개졌다</div></div><div class="wcard" data-ok="1"><div class="wc-word">냄새를 맡았다 → 값을 달라고 했다 → 엽전 소리로 값을 냈다 → 영감이 얼굴이 빨개졌다</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 무엇을 보고', t:'담우가 억울하다는 것을 무엇을 보고 알 수 있나요?', log:true,
-   okMsg:'맞아요! 주먹을 꼭 쥔 행동과 「아직 물 안 줬어!」라는 말을 보고 알 수 있어요. 🎉',
-   hint:'힌트: 느낌표는 여러 가지 마음에 쓰였지요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">주먹을 쥔 행동과<br>담우가 한 말</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">문장 끝에<br>느낌표가 있어서</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">창문이<br>열려 있어서</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 인물의 마음을 짐작하는 방법', t:'이렇게 마음을 짐작해요',
+   html:`<div class="ka-bub">🧩 <b>이야기 상황</b> — 인물에게 어떤 일이 일어났나요?<br>🗣️ <b>인물의 말이나 행동</b> — 인물은 어떤 말이나 행동을 했나요?<br>💗 이 둘을 보고 <b class="emph">인물의 마음</b>을 짐작해요.</div>`},
 
-  {tag:'③ 행동과 마음', t:'인물의 행동과 어울리는 마음을 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 행동에도 마음이 담겨 있어요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">행동</div>
-        <div class="match-card" data-k="a" data-pair="A">두 손을<br>허리에 올렸어요</div>
-        <div class="match-card" data-k="b" data-pair="B">주먹을<br>꼭 쥐었어요</div>
-        <div class="match-card" data-k="c" data-pair="C">고개를<br>푹 숙였어요</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">마음</div>
-        <div class="match-card" data-k="C" data-pair="c">미안해요</div>
-        <div class="match-card" data-k="A" data-pair="a">화나요</div>
-        <div class="match-card" data-k="B" data-pair="b">억울해요</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'④ 118쪽 4번', t:'인물의 말이나 행동과 마음을 이어 봐요', log:true, matchMsg:'상황과 말·행동을 보고 마음을 찾았어요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">인물의 말이나 행동</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">👴</span>구두쇠 영감: 눈을 부릅뜨고 「값을 치르고 가야지.」</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🧑</span>최 서방: 「냄새 맡은 값이라니요?」</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🪙</span>최 서방: 「자, 이 소리가 들리지요?」</div></div><div class="match-col"><div class="match-col-h">인물의 마음</div><div class="match-card" data-k="B" data-pair="b">황당하다 · 어이없다</div><div class="match-card" data-k="C" data-pair="c">통쾌하다 · 고소하다</div><div class="match-card" data-k="A" data-pair="a">화나다 · 괘씸하다</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 어울리는 목소리', t:'「미안해. 잘 보지도 않고…….」에 어울리는 목소리는?', log:true,
-   okMsg:'맞아요! 미안한 마음이 느껴지게 작고 천천히 읽어요. 👍',
-   hint:'힌트: 고개를 푹 숙이고 한 말이에요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">작고<br>천천히</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">아주 크고<br>우렁차게</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">화난 목소리로<br>빠르게</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 118쪽 4번', t:'엽전 소리를 듣고 눈을 동그랗게 뜨고 최 서방을 쳐다본 구두쇠 영감의 마음은?', log:true, okMsg:'맞아요! 왜 엽전 소리를 들려주는지 몰라 어리둥절했어요. 😳',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">😴</div><div class="wc-word">졸리다</div></div><div class="wcard" data-ok="1"><div class="wc-pic">😳</div><div class="wc-word">어리둥절하다</div></div><div class="wcard" data-ok="0"><div class="wc-pic">😄</div><div class="wc-word">신나다</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 실감 나게 읽기', t:'실감 나게 읽을 때 가장 중요한 것은?', log:true,
-   okMsg:'맞아요! 목소리를 크게 하거나 많이 바꾸는 것이 아니라, 인물의 마음에 어울리게 읽어요. 🎉',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">목소리를<br>여러 번 바꾸기</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">인물의 마음에<br>어울리게 읽기</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">누구보다<br>크게 읽기</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑤ 119쪽 5번', t:'「아니, 뭐라고?」 하고 얼굴이 빨개진 구두쇠 영감 — 어울리는 목소리는?', log:true, okMsg:'맞아요! 마음을 먼저 짐작하면 어울리는 목소리를 찾을 수 있어요. 🎭',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">당황하고 창피해서 오히려 화를 내듯이</div></div><div class="wcard" data-ok="0"><div class="wc-word">느릿느릿 졸린 목소리로</div></div><div class="wcard" data-ok="0"><div class="wc-word">신나서 노래하듯이</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 실감 나게 읽기', t:'인물을 나누어 읽어 봐요',
-   html:`<div class="stage-box">
-      🗣️ 가족과 <b>담우</b>와 <b>하빈</b>을 나누어 「넘친 화분」을 소리 내어 읽어요.<br>
-      읽고 나서 스스로 물어봐요 — 마음에 어울렸나요? 내용이 잘 전해졌나요? 크기는 알맞았나요?<br>
-      억울했던 일을 이야기할 때는 친구 이름을 말하지 않아요.
-      <br><button class="stage-do" id="stageDo" data-fb="인물의 마음을 생각하며 읽었어요! 👏">🗣️ 읽어 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 119쪽 (3)', t:'실감 나게 잘 읽었는지 확인할 것으로 알맞은 것은?', log:true, okMsg:'맞아요! 내용이 잘 전달되도록, 알맞은 크기로 읽었는지도 봐요. 🔊',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">가장 빨리 읽었나요?</div></div><div class="wcard" data-ok="0"><div class="wc-word">성우처럼 목소리를 매번 바꿨나요?</div></div><div class="wcard" data-ok="1"><div class="wc-word">인물의 마음에 어울리는 목소리로 읽었나요?</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🔎</span><b>상황 · 말 · 행동</b>을 살펴 인물의 마음을 짐작해요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">💭</span>같은 이야기에서도 <b>인물마다 마음이 달라요</b>.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🎙️</span>크게가 아니라 <b>마음에 어울리게</b> 읽어요.</div>
-    </div>`},
+  {tag:'⑥ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🧩</span><b>이야기 상황</b>을 살펴요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🗣️</span>인물의 <b>말이나 행동</b>을 찾아요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🎭</span>짐작한 마음에 <b>어울리는 목소리</b>로 읽어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;

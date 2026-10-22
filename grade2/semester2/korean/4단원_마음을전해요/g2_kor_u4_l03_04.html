@@ -139,126 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 3~4차시(소단원 1 기본 — 여러 가지 문장의 종류 알기) 13슬 =====
+/* ===== 3~4차시(소단원 1 기본 — 여러 가지 문장의 종류 알기) 『국어』 106~109쪽 13슬 — v2 교과서 기준 재구성 (2026-10-22)
    학습 목표: 여러 가지 문장의 종류를 안다.
-   ★ 정답 로깅 7슬. 대화 읽기(read-line)·무대·마무리 = 로깅 X.
-   ★ 지도서 175쪽 참고 자료 — 개념보다 부호로 먼저 가르고, 스스로 나눈 뒤 이름을 붙인다 ⇒ s2(읽기) → s3(이름) → s4(잇기).
-   ★ 지도서 175쪽 — 용어를 2학년 말로(설명하는·묻는·감탄하는 문장). 평서문·의문문·감탄문 용어는 쓰지 않았다.
-   ★★ 스물넷째 기준 — 지도서 176쪽: ‘감탄’을 사전 뜻으로 가르치면 개념이 줄어든다(감정을 강하게 표현함 정도로)
-      ⇒ s6 정답에 **속상한 감탄 문장**을 넣고 · s7에서 그 느낌을 내용으로 묻는다. 감탄 = 신기함으로 굳지 않게.
-   ★ 지도서 177쪽 — 문장의 종류가 세 가지만 있는 것은 아니다(오개념 주의) ⇒ s10 정답 = 「이 밖에도 있어요」.
-      시키는·권하는 문장은 분류 문항에 넣지 않았다(셋 중 하나로 억지로 넣게 되므로).
-   ★ 지도서 177쪽 참고 자료 — 문장의 종류 바꾸어 보기 ⇒ s8(자체 문장).
-   ★ 저작권: 교과서 106~109쪽 그림 대화(줄넘기·우체국·이가 아파요)·열 개 대화(공연·상추 씨앗·종이 강아지·공놀이)·
-      국어활동 48~49쪽 문장, 지도서 문장 예시·바꾸기 예문 미차용. 자체 문장 = 학교·집 안의 일. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·밑줄 긋기·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「냄새 맡은 값」은 간추림과 짧은 말 몇 마디만. 그 밖의 자료는 교육부 집필이라 그대로. 문장의 종류는 부호와 뜻을 함께(지도서 169쪽 ❶). */
 const slides=[
-  {tag:'① 만나기', t:'우리는 하루에 어떤 문장으로 말할까요?',
-   html:`<div class="scene">
-      <div class="scene-pic">💬</div>
-      <div class="scene-say">설명도 하고, 묻기도 하고, 놀라기도 해요.</div>
-    </div>
-    <div class="ka-bub">오늘 한 말을 떠올려 봐요. 모두 <b class="emph">같은 모양</b>이었을까요? 🤔</div>`},
+  {tag:'① 동기 유발', t:'오늘 가족이나 친구와 나눈 말을 떠올려 봐요',
+   html:`<div class="stage-box">💭 아침에 가족이나 친구와 나눈 대화를 떠올려 말해 보세요. 묻는 말도, 설명하는 말도, 놀라는 말도 있었나요?<br><button class="stage-do" id="stageDo" data-fb="좋아요! 우리가 나누는 대화도 여러 가지 문장으로 되어 있어요. 💬">💭 떠올렸어요!</button></div><div class="fb" id="stageFb"></div>`},
 
   {tag:'① 학습 문제', t:'오늘 배울 것이에요',
-   html:`<div class="sentence">여러 가지 문장의 종류를 알아봐요.</div>
-    <div class="ka-bub">먼저 여러 친구의 말을 읽어 봐요. 🙂</div>`},
+   html:`<div class="sentence">여러 가지 문장의 종류를 알아봅시다.</div>`},
 
-  {tag:'② 말 읽기', t:'한 줄씩 소리 내어 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>“나는 종이접기가 제일 재미있어.”</div>
-      <div class="read-line"><span class="rl-num">2</span>“보건실은 몇 층에 있나요?”</div>
-      <div class="read-line"><span class="rl-num">3</span>“와, 연이 하늘 높이 올라갔어!”</div>
-      <div class="read-line"><span class="rl-num">4</span>“우리 반 금붕어는 두 마리예요.”</div>
-      <div class="read-line"><span class="rl-num">5</span>“같이 그림 그릴래?”</div>
-    </div><div class="fb" id="readFb"></div>`},
+  {tag:'② 106쪽 1번', t:'그림을 보고 파란색 문장이 어떻게 쓰였는지 생각해 봐요',
+   html:`<div class="ka-bub">가: 「난 줄넘기를 좋아해.」 「그래? <b class="emph">나는 축구가 가장 재미있어.</b>」<br>나: 「<b class="emph">우체국이 어디 있나요?</b>」 「저기 모퉁이를 돌면 우체국이 바로 보이실 거예요.」<br>다: 「<b class="emph">이가 너무 아파요!</b>」 「그래, 많이 아팠겠구나. 금방 치료해 줄게.」</div>`},
 
-  {tag:'② 문장의 이름', t:'문장에는 이런 종류가 있어요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">.</span><span class="pc-name">설명하는 문장<br>설명하거나<br>생각을 나타낼 때</span></div>
-      <div class="punct-card"><span class="pc-mark">?</span><span class="pc-name">묻는 문장<br>무엇인가를<br>물어볼 때</span></div>
-      <div class="punct-card"><span class="pc-mark">!</span><span class="pc-name">감탄하는 문장<br>강한 느낌을<br>나타낼 때</span></div>
-    </div>`},
+  {tag:'② 107쪽 2번', t:'파란색 문장이 어떻게 쓰였는지 이어 봐요', log:true, matchMsg:'설명 · 물음 · 강한 느낌! 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">파란색 문장</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">⚽</span>나는 축구가 가장 재미있어.</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">📮</span>우체국이 어디 있나요?</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🦷</span>이가 너무 아파요!</div></div><div class="match-col"><div class="match-col-h">어떻게 쓰였나요</div><div class="match-card" data-k="B" data-pair="b">무엇인가를 물어볼 때</div><div class="match-card" data-k="C" data-pair="c">기쁨, 슬픔, 놀람처럼 강한 느낌을 나타낼 때</div><div class="match-card" data-k="A" data-pair="a">무엇을 설명하거나 생각을 나타낼 때</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 종류 잇기', t:'문장과 문장의 종류를 알맞게 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 끝의 부호와 뜻을 함께 보았지요? 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">문장</div>
-        <div class="match-card" data-k="a" data-pair="A">종이접기가<br>제일 재미있어.</div>
-        <div class="match-card" data-k="b" data-pair="B">보건실은<br>몇 층에 있나요?</div>
-        <div class="match-card" data-k="c" data-pair="C">와, 연이 하늘<br>높이 올라갔어!</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">종류</div>
-        <div class="match-card" data-k="C" data-pair="c">감탄하는 문장</div>
-        <div class="match-card" data-k="A" data-pair="a">설명하는 문장</div>
-        <div class="match-card" data-k="B" data-pair="b">묻는 문장</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 문장의 종류', t:'문장의 종류를 알아봐요',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">.</span><span class="pc-name">설명하는 문장</span></div><div class="punct-card"><span class="pc-mark">?</span><span class="pc-name">묻는 문장</span></div><div class="punct-card"><span class="pc-mark">!</span><span class="pc-name">감탄하는 문장</span></div></div><div class="ka-bub"><b>감탄하는 문장</b>은 기쁨, 슬픔, 놀람처럼 감정을 강하게 나타내는 문장이에요.<br>문장 부호만 보지 말고 <b class="emph">문장의 뜻</b>도 함께 살펴요.</div>`},
 
-  {tag:'③ 묻는 문장', t:'묻는 문장을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 무엇인가를 물어보는 문장이에요. 🎉',
-   hint:'힌트: 끝에 물음표가 있는 문장을 찾아봐요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">보건실은 몇 층에 있나요?</div>
-      <div class="chip" data-hit="0">금붕어는 두 마리예요.</div>
-      <div class="chip" data-hit="1">같이 그림 그릴래?</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 107쪽 3번', t:'묻는 문장은 어느 것인가요?', log:true, okMsg:'맞아요! 친구에게 무엇인가를 물어보는 문장이에요. ❓',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🌊</div><div class="wc-word">바람이 불자 파도가 거세졌습니다.</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🐶</div><div class="wc-word">우리 집 강아지는 정말 귀여워!</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🤲</div><div class="wc-word">다음 쉬는 시간에 공기놀이할래?</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 감탄하는 문장', t:'감탄하는 문장을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 신나는 느낌도, 속상한 느낌도 강하면 감탄하는 문장이에요. 🎉',
-   hint:'힌트: 기쁜 느낌만 감탄하는 문장일까요?',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">와, 연이 높이 올라갔어!</div>
-      <div class="chip" data-hit="0">종이접기가 재미있어.</div>
-      <div class="chip" data-hit="1">아, 아이스크림을 떨어뜨렸어!</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 107쪽 3번', t:'감탄하는 문장은 어느 것인가요?', log:true, okMsg:'맞아요! 귀여운 느낌을 강하게 나타냈어요. ❗',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🌊</div><div class="wc-word">바람이 불자 파도가 거세졌습니다.</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🤲</div><div class="wc-word">다음 쉬는 시간에 공기놀이할래?</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🐶</div><div class="wc-word">우리 집 강아지는 정말 귀여워!</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 어떤 느낌', t:'「아, 아이스크림을 떨어뜨렸어!」는 어떤 느낌일까요?', log:true,
-   okMsg:'맞아요! 무슨 일이 있었는지 보면 속상한 느낌이에요. 👍',
-   hint:'힌트: 느낌표만 보지 말고 무슨 일이 있었는지 봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">신나는 느낌</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">속상한 느낌</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">궁금한 느낌</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 108쪽 4번', t:'각 상황에서 어떤 문장을 쓰는지 대화를 읽어요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>가 공연은 몇 시에 시작하나요? / 나 2시 30분에 시작합니다.</div><div class="read-line"><span class="rl-num">2</span>다 여기 상추 씨앗이 있어. / 라 씨앗이 참 작구나!</div><div class="read-line"><span class="rl-num">3</span>마 주인공이 병에 걸려서 너무 슬펐어! / 바 그 뒤에 주인공은 어떻게 되었을까?</div><div class="read-line"><span class="rl-num">4</span>사 종이 가장자리를 모두 안으로 접으면 강아지 모양이 된단다. / 아 우아, 신기해요!</div><div class="read-line"><span class="rl-num">5</span>자 나랑 공놀이할래? — 그래, 좋아.</div></div><div class="fb" id="readFb">🔊 한 줄씩 또박또박 따라 읽어 봐요.</div>`},
 
-  {tag:'③ 바꾸어 보기', t:'「내일 비가 와요.」를 묻는 문장으로 바꾸면?', log:true,
-   okMsg:'맞아요! 묻는 뜻이 되고 끝에 물음표를 써요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">내일 비가 와요?</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">내일 비가 와요!</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">어제 비가 왔어요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 109쪽 5번', t:'문장을 문장의 종류에 따라 나누어요', log:true, matchMsg:'잘 나누었어요! 부호와 뜻을 함께 봤어요. 🧺',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">문장</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🎭</span>공연은 몇 시에 시작하나요?</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🕑</span>2시 30분에 시작합니다.</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🌱</span>씨앗이 참 작구나!</div></div><div class="match-col"><div class="match-col-h">문장의 종류</div><div class="match-card" data-k="C" data-pair="c">감탄하는 문장</div><div class="match-card" data-k="A" data-pair="a">묻는 문장</div><div class="match-card" data-k="B" data-pair="b">설명하는 문장</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 쓴 까닭', t:'「우리 반 금붕어는 두 마리예요.」를 쓴 까닭은?', log:true,
-   okMsg:'맞아요! 금붕어가 몇 마리인지 설명하려고 쓴 문장이에요. 👍',
-   hint:'힌트: 끝의 부호와 문장의 뜻을 함께 봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">몇 마리인지<br>설명하려고</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">몇 마리인지<br>물어보려고</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">금붕어를 보고<br>깜짝 놀라서</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 109쪽 6번', t:'문장을 쓴 까닭을 이어 봐요', log:true, matchMsg:'문장의 종류를 알면 쓴 까닭이 보여요. 🔎',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">문장</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">😢</span>주인공이 병에 걸려서 너무 슬펐어!</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🎭</span>공연은 몇 시에 시작하나요?</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🐕</span>종이 가장자리를 모두 안으로 접으면 강아지 모양이 된단다.</div></div><div class="match-col"><div class="match-col-h">그 문장을 쓴 까닭</div><div class="match-card" data-k="B" data-pair="b">공연이 시작하는 시간을 물으려고</div><div class="match-card" data-k="C" data-pair="c">종이 접는 방법을 설명하려고</div><div class="match-card" data-k="A" data-pair="a">영화를 본 느낌을 표현하려고</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 세 가지뿐일까', t:'문장의 종류는 이 세 가지뿐일까요?', log:true,
-   okMsg:'맞아요! 「같이 가자.」처럼 함께 하자고 하는 문장도 있어요. 오늘은 세 가지를 먼저 배웠어요. 🎉',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">네, 모든 문장은<br>셋 중 하나예요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">아니요, 이 밖에도<br>여러 문장이 있어요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 109쪽 5번', t:'「그 뒤에 주인공은 어떻게 되었을까?」는 어떤 문장인가요?', log:true, okMsg:'맞아요! 주인공이 어떻게 되었는지 궁금해서 묻는 문장이에요. ❓',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">묻는 문장</div></div><div class="wcard" data-ok="0"><div class="wc-word">설명하는 문장</div></div><div class="wcard" data-ok="0"><div class="wc-word">감탄하는 문장</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 말로 해 보기', t:'가족과 세 가지 문장으로 말해 봐요',
-   html:`<div class="stage-box">
-      🗣️ 저녁을 먹으며 <b>설명하는 문장</b>, <b>묻는 문장</b>, <b>감탄하는 문장</b>을 한 번씩 말해 봐요.<br>
-      가족이 어떤 문장이었는지 맞혀 보게 해요.
-      <br><button class="stage-do" id="stageDo" data-fb="세 가지 문장으로 말해 봤어요! 👏">🗣️ 말해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 정리', t:'문장의 종류를 알려면 무엇을 살펴보면 좋을까요?', log:true, okMsg:'맞아요! 부호만이 아니라 무엇을 하려는 문장인지도 봐요. 문장의 종류는 이 셋 말고도 더 있어요. 🌱',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">문장 부호와 문장의 뜻을 함께 살펴봐요</div></div><div class="wcard" data-ok="0"><div class="wc-word">문장의 길이만 세어 봐요</div></div><div class="wcard" data-ok="0"><div class="wc-word">첫 글자만 봐요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">.</span><b>설명하는 문장</b> — 설명하거나 생각을 나타내요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">?</span><b>묻는 문장</b> — 무엇인가를 물어봐요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">!</span><b>감탄하는 문장</b> — 기쁨·속상함·놀람 같은 강한 느낌을 나타내요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">✨</span>이 밖에도 <b>여러 가지 문장</b>이 있어요.</div>
-    </div>`},
+  {tag:'⑤ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🔵</span><b>설명하는 문장</b> — 설명하거나 생각을 나타내요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">❓</span><b>묻는 문장</b> — 무엇인가를 물어봐요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">❗</span><b>감탄하는 문장</b> — 감정을 강하게 나타내요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;

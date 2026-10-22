@@ -139,128 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 11~12차시(실천 — 배운 내용 실천하기: 목소리 연극 하기) 13슬 =====
+/* ===== 11~12차시(실천 — 역할놀이하기: 옛이야기를 읽고 목소리 연극 하기) 『국어』 124~125쪽 13슬 — v2 교과서 기준 재구성 (2026-10-22)
    학습 목표: 배운 내용을 실천할 수 있다.
-   ★ 정답 로깅 7슬. 대본 읽기(read-line)·무대·마무리 = 로깅 X.
-   ★ 지도서 192~193쪽 — 목소리 연극 차례(고르기 → 대본 쓰기 → 역할 정하기 → 연습 → 발표) ⇒ s3.
-      이야기를 대본으로 바꾸는 과정을 먼저 보인다 ⇒ s2(7~8차시 「넘친 화분」을 대본으로) · s4 · s5.
-   ★ 지도서 193쪽 — 대사는 인물의 마음에 어긋나지 않는 범위에서 융통성 있게 바꿀 수 있다
-      ⇒ s7 오답 칸에 **양쪽 극단**(한 글자도 바꾸면 안 된다 / 재미있으면 마음과 달라도 된다).
-   ★ 지도서 193쪽 — 역할은 사이좋게, 바꾸어 여러 인물을 경험 ⇒ s8.
-   ★ 지도서 193쪽 참고 자료 — 관찰자 평가 관점(마음 표현·어울리는 목소리·경청) ⇒ s9 (오답 = 누가 가장 큰가, 사회적 비교).
-   ★ 지도서 193쪽 — 칭찬의 관점 제시 ⇒ s10 정답 = 무엇이 어떻게 좋았는지 · 오답 = 다른 모둠과 견주기. 스물둘째 기준과 이음.
-   ★ 열넷째 기준 — 연극 연습·발표는 화면 밖(s11). 가짜 무대 0 · 가짜 녹음 0. s0에서 「화면 밖에서 친구와」를 먼저 밝혔다.
-   ★ 저작권: 교과서 124~125쪽 목소리 연극 대본(소금 장수·기름 장수), 지도서 194~195쪽 삼 년 고개·팥죽 할멈·의좋은 형제·
-      두꺼비·호랑이 편지·온라인 게시판 예시 미차용. 자체 대본 = 7~8차시 자체 이야기 「넘친 화분」. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·밑줄 긋기·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「냄새 맡은 값」은 간추림과 짧은 말 몇 마디만. 그 밖의 자료는 교육부 집필이라 그대로. 문장의 종류는 부호와 뜻을 함께(지도서 169쪽 ❶). */
 const slides=[
-  {tag:'① 만나기', t:'목소리로만 하는 연극이 있어요',
-   html:`<div class="scene">
-      <div class="scene-pic">🎭</div>
-      <div class="scene-say">대본을 들고 목소리로 마음을 전해요.</div>
-    </div>
-    <div class="ka-bub">연극은 <b class="emph">화면 밖에서 친구들과</b> 해요. 여기서는 준비하는 방법을 알아봐요. 🙂</div>`},
+  {tag:'① 활동 정하기', t:'우리 반에서 할 활동을 정해요',
+   html:`<div class="stage-box">🗳️ 「옛이야기를 읽고 목소리 연극 하기」, 「이야기 알아맞히기」, 「친구가 쓴 편지 읽고 공감 댓글 달기」 가운데 우리 반에서 하고 싶은 활동을 골라요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 먼저 목소리 연극 대본을 살펴봐요. 🎭">🗳️ 정했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'① 학습 문제', t:'오늘 할 것이에요',
-   html:`<div class="sentence">배운 내용을 실천해요 — 목소리 연극 하기</div>
-    <div class="ka-bub">7~8차시에 읽은 「넘친 화분」을 대본으로 바꾸어 봤어요. 🎬</div>`},
+  {tag:'② 124쪽 대본 예시', t:'목소리 연극 대본을 읽어요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>해설: 호랑이 뱃속에서 소금 장수와 기름 장수가 만났습니다.</div><div class="read-line"><span class="rl-num">2</span>기름 장수: 아이고, 깜깜해. 거기 누구 있소?</div><div class="read-line"><span class="rl-num">3</span>소금 장수: 누구요? 누가 부르는 거요?</div><div class="read-line"><span class="rl-num">4</span>기름 장수: 나는 기름 장수인데 당신은 누구요?</div><div class="read-line"><span class="rl-num">5</span>소금 장수: 나는 소금 장수요. 당신도 호랑이한테 잡아먹혔소?</div><div class="read-line"><span class="rl-num">6</span>해설: 둘은 서로 반가웠지만 호랑이 뱃속이 깜깜해서 서로가 보이지 않았습니다.</div></div><div class="fb" id="readFb">🔊 한 줄씩 또박또박 따라 읽어 봐요.</div>`},
 
-  {tag:'② 대본 읽기', t:'대본을 한 줄씩 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>해설: 교실 화분 밑이 물바다가 되었어요.</div>
-      <div class="read-line"><span class="rl-num">2</span>하빈: 담우야, 물을 너무 많이 줬잖아!</div>
-      <div class="read-line"><span class="rl-num">3</span>담우: 나 오늘은 아직 물 안 줬어!</div>
-      <div class="read-line"><span class="rl-num">4</span>해설: 열린 창문으로 빗방울이 들어왔어요.</div>
-      <div class="read-line"><span class="rl-num">5</span>하빈: 미안해. 잘 보지도 않고…….</div>
-      <div class="read-line"><span class="rl-num">6</span>담우: 괜찮아. 같이 창문 닫자.</div>
-    </div><div class="fb" id="readFb"></div>`},
+  {tag:'② 대본 살펴보기', t:'대본에서 「해설」은 무엇을 하나요?', log:true, okMsg:'맞아요! 해설은 어디서 무슨 일이 일어나는지 들려줘요. 📢',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">인물의 이름만 불러요</div></div><div class="wcard" data-ok="0"><div class="wc-word">노래를 불러요</div></div><div class="wcard" data-ok="1"><div class="wc-word">이야기 상황을 알려 줘요</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 연극 차례', t:'목소리 연극은 이렇게 준비해요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">📝</span><span class="pc-name">이야기 골라<br>대본 쓰기</span></div>
-      <div class="punct-card"><span class="pc-mark">🙋</span><span class="pc-name">역할<br>정하기</span></div>
-      <div class="punct-card"><span class="pc-mark">🎙️</span><span class="pc-name">연습하고<br>발표하기</span></div>
-    </div>`},
+  {tag:'② 대본 살펴보기', t:'소금 장수와 기름 장수는 어디에서 만났나요?', log:true, okMsg:'맞아요! 그래서 깜깜해서 서로 보이지 않았어요. 🐯',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">⛰️</div><div class="wc-word">고갯마루</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🐯</div><div class="wc-word">호랑이 뱃속</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🏠</div><div class="wc-word">기름 장수 집</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 해설', t:'대본에서 「해설」은 무엇을 하나요?', log:true,
-   okMsg:'맞아요! 해설은 이야기의 상황을 알려 줘요. 👍',
-   hint:'힌트: 1번 줄과 4번 줄을 읽어 봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">상황을<br>알려 줘요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">인물의 말을<br>크게 따라 해요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 마음 짐작하기', t:'「아이고, 깜깜해. 거기 누구 있소?」 하는 기름 장수의 마음은?', log:true, okMsg:'맞아요! 깜깜한 호랑이 뱃속이라 무섭고 걱정됐을 거예요. 😨',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">😴</div><div class="wc-word">졸려요</div></div><div class="wcard" data-ok="1"><div class="wc-pic">😨</div><div class="wc-word">무섭고 걱정돼요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">😆</div><div class="wc-word">신나고 즐거워요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 대본으로 바꾸기', t:'이야기 문장을 대본으로 알맞게 바꾼 것은?', log:true,
-   okMsg:'맞아요! 말한 사람의 이름을 쓰고 그 사람이 한 말을 써요. 🎉',
-   hint:'힌트: 이 말은 누가 했나요?',
-   html:`<div class="sentence">담우는 주먹을 꼭 쥐었어요. “나 오늘은 아직 물 안 줬어!”</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">담우: 나 오늘은<br>아직 물 안 줬어!</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">하빈: 나 오늘은<br>아직 물 안 줬어!</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 목소리 연극 차례', t:'목소리 연극을 하는 차례를 이어 봐요', log:true, matchMsg:'고르기 → 대본 → 역할·연습 → 발표! 🎭',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">차례</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">1️⃣</span>첫째</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">2️⃣</span>둘째</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">3️⃣</span>셋째</div><div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">4️⃣</span>넷째</div></div><div class="match-col"><div class="match-col-h">하는 일</div><div class="match-card" data-k="B" data-pair="b">표현할 부분을 골라 대본 쓰기</div><div class="match-card" data-k="D" data-pair="d">친구들 앞에서 실감 나게 목소리 연극 하기</div><div class="match-card" data-k="A" data-pair="a">모둠에서 표현할 옛이야기 고르기</div><div class="match-card" data-k="C" data-pair="c">역할 정하고 연습하기</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 대사와 목소리', t:'대사와 어울리는 목소리를 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 인물의 마음이 목소리를 정해요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">대사</div>
-        <div class="match-card" data-k="a" data-pair="A">물을 너무<br>많이 줬잖아!</div>
-        <div class="match-card" data-k="b" data-pair="B">아직 물<br>안 줬어!</div>
-        <div class="match-card" data-k="c" data-pair="C">미안해.<br>잘 보지도 않고…….</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">목소리</div>
-        <div class="match-card" data-k="C" data-pair="c">작고 느리게</div>
-        <div class="match-card" data-k="A" data-pair="a">따지듯이</div>
-        <div class="match-card" data-k="B" data-pair="b">억울해서 힘주어</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 실감 나게', t:'목소리 연극을 실감 나게 하려면 무엇을 조절하나요?', log:true, okMsg:'맞아요! 인물의 마음에 맞게 목소리를 조절해요. 🔊',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">목소리 크기, 말의 빠르기, 말의 높낮이</div></div><div class="wcard" data-ok="0"><div class="wc-word">옷 색깔과 머리 모양</div></div><div class="wcard" data-ok="0"><div class="wc-word">대본 종이의 크기</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 대사 바꾸기', t:'연습하다가 대사를 조금 바꿔도 될까요?', log:true,
-   okMsg:'맞아요! 인물의 마음에 어긋나지 않으면 우리 말로 바꾸어도 돼요. 🎉',
-   hint:'힌트: 하빈이가 사과하는 대사를 신나는 말로 바꾸면 어떻게 될까요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">한 글자도<br>바꾸면 안 돼요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">인물의 마음에 어긋나지<br>않으면 바꿀 수 있어요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">재미있으면 마음과<br>달라도 돼요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 125쪽 우리가 활동을 해요', t:'모둠에서 대본을 쓰고 연습해요',
+   html:`<div class="stage-box">✍️ 모둠이 고른 옛이야기에서 한 장면을 골라 해설과 인물의 말로 대본을 써 보세요. 역할을 이름표로 표시하고, 어울리는 목소리를 찾을 때까지 연습해요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 인물의 마음에 어긋나지 않게 대사를 조금 바꾸어도 돼요. 🎭">✍️ 연습했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 역할 정하기', t:'모두 하빈이를 하고 싶어요. 어떻게 할까요?', log:true,
-   okMsg:'맞아요! 돌아가며 맡으면 여러 인물의 마음을 모두 느껴 볼 수 있어요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">차례를 정해<br>돌아가며 맡아요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">목소리가 큰 친구가<br>모두 맡아요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 예시 1 이야기 알아맞히기', t:'「할아버지가 고개에서 쿵 넘어졌어요. 「이제 삼 년밖에 못 살겠네.」」 — 이 이야기의 제목은?', log:true, okMsg:'맞아요! 넘어지면 삼 년밖에 못 산다는 고개 이야기예요. ⛰️',
+   html:`<div class="ka-bub">할아버지는 주먹으로 땅을 치며 통곡하기 시작했어요. 「하필 여기에서 넘어지다니! 아이고, 아이고.」</div><div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">팥죽 할멈과 호랑이</div></div><div class="wcard" data-ok="1"><div class="wc-word">삼 년 고개</div></div><div class="wcard" data-ok="0"><div class="wc-word">의좋은 형제</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 볼 때 살필 것', t:'친구의 목소리 연극을 볼 때 살펴볼 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 보는 사람도 연극에 함께 참여해요. 🎉',
-   hint:'힌트: 친구끼리 견주는 물음이 하나 있어요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">인물의 마음이 드러나나요?</div>
-      <div class="chip" data-hit="1">어울리는 목소리인가요?</div>
-      <div class="chip" data-hit="0">누가 가장 크게 하나요?</div>
-      <div class="chip" data-hit="1">나는 바르게 듣고 있나요?</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 예시 1', t:'삼 년 고개에서 넘어진 할아버지의 마음은?', log:true, okMsg:'맞아요! 그 마음을 담아 실감 나게 읽어 봐요. 🔊',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">😌</div><div class="wc-word">편안해요</div></div><div class="wcard" data-ok="1"><div class="wc-pic">😢</div><div class="wc-word">슬프고 걱정돼요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">😆</div><div class="wc-word">즐겁고 신나요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 칭찬하기', t:'친구의 연극이 끝났어요. 알맞은 칭찬은?', log:true,
-   okMsg:'맞아요! 무엇이 어떻게 좋았는지 말해 주면 친구가 알 수 있어요. 🎉',
-   hint:'힌트: 다른 모둠과 견주는 말은 칭찬일까요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">사과할 때 목소리가 작아져서<br>미안한 마음이 느껴졌어</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">너희 모둠이 제일 잘했고<br>다른 모둠은 별로였어</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 예시 2 인물에게 편지 쓰기', t:'옛이야기 속 인물에게 편지를 써요',
+   html:`<div class="stage-box">✉️ 「떡 먹기 내기」의 두꺼비나 호랑이처럼, 옛이야기 속 인물을 골라 편지를 써 보세요. 받는 사람 · 첫인사 · 하고 싶은 말 · 끝인사 · 쓴 날짜 · 쓴 사람을 넣어요. 친구 편지에는 공감 댓글을 달아요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 친구가 쓴 편지에도 마음을 담아 댓글을 달아 줘요. 💬">✉️ 썼어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 연극 하기', t:'친구들과 목소리 연극을 해 봐요',
-   html:`<div class="stage-box">
-      🎭 모둠에서 옛이야기나 읽은 이야기를 하나 골라 <b>대본</b>을 써요.<br>
-      역할을 나누고, 마음에 어울리는 목소리를 찾을 때까지 <b>연습</b>한 뒤 친구들 앞에서 발표해요.<br>
-      끝나면 연극한 친구와 잘 들어 준 친구를 칭찬해요.
-      <br><button class="stage-do" id="stageDo" data-fb="마음을 담아 목소리 연극을 했어요! 👏">🎭 해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 정리', t:'목소리 연극을 한 친구와 본 친구를 칭찬해요',
+   html:`<div class="stage-box">👏 「인물의 마음을 잘 표현했어」, 「어울리는 목소리였어」, 「잘 들어 줬어」처럼 무엇이 좋았는지 넣어 칭찬해 보세요.<br><button class="stage-do" id="stageDo" data-fb="멋져요! 구체적인 칭찬은 더 힘이 돼요. 🌟">👏 칭찬했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 해냈어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">📝</span>대본에는 <b>해설</b>과 <b>인물 이름: 대사</b>를 써요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🎙️</span>대사는 <b>인물의 마음에 어울리게</b> 읽어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">👂</span>볼 때는 <b>바르게 듣고</b>, 좋았던 점을 <b>콕 집어</b> 칭찬해요.</div>
-    </div>`},
+  {tag:'⑤ 마무리', t:'잘했어요! 이만큼 배웠어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">📢</span><b>해설</b>은 상황을, <b>대사</b>는 인물의 말을 나타내요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🎭</span>인물의 마음에 맞게 <b>목소리</b>를 조절해요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">💌</span>인물에게 <b>편지</b>로 마음을 전해요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
