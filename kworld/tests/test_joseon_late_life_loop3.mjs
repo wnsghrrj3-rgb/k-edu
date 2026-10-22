@@ -56,12 +56,12 @@ const ALL = ['sit:monaegi:done', 'sit:jangsi:done', 'sit:gongmyeong:done', 'sit:
 const endOf = (g) => g.life.d.situations.find((s) => s.id === 'uprising').choices[0].then[0].end;
 const carry = (key) => JSON.parse(store['kworld_carry:joseon-late-life'] || '{}')[key];
 
-// ===== 데이터 전수: 섞여 23 · 새 상황 셋에 q 셋·📜 사실·기록 · done 깃발을 세우는 곳 · 회색 수
+// ===== 데이터 전수: 섞여 23 · 새 상황 셋에 q 셋·📜 사실(선택지마다 「그래서」 인과·연도 없음, 109)·기록 · done 깃발을 세우는 곳 · 회색 수
 {
   const life = J('life'), items = J('items'), npcs = J('npcs'), world = J('world');
   const mixed = life.situations.filter((s) => !s.must); ok(mixed.length === 23 && life.mixedCount === 6, '섞여 23 · mixedCount 6');
   const blob = JSON.stringify(items) + JSON.stringify(npcs);
-  for (const id of MIX) { const s = life.situations.find((x) => x.id === id); ok(!!s && s.q.a.length === 3 && s.q.revisit && world.journal[id]?.note && s.choices.every((c) => c.fact === world.journal[id].note && c.journal === id), `상황 ${id} q·사실·기록`); for (const c of s.choices) ok(blob.includes(`"${c.done}"`), `${id}.${c.id} done 세우는 곳`); }
+  for (const id of MIX) { const s = life.situations.find((x) => x.id === id); ok(!!s && s.q.a.length === 3 && s.q.revisit && world.journal[id]?.note && s.choices.every((c) => c.fact && c.fact.includes('그래서') && !/\d{3,4}년/.test(c.fact) && c.journal === id), `상황 ${id} q·사실·기록`); for (const c of s.choices) ok(blob.includes(`"${c.done}"`), `${id}.${c.id} done 세우는 곳`); }
   const gray = (id) => npcs[id].lines[0].choices.filter((c) => c.if).length; ok(gray('yusaeng') === 8 && gray('yugijang') === 6 && gray('changri') === 8, '회색 조건 8·6·8');
   ok(['seowon', 'yugi', 'jochang'].every((a) => world.areas[a]) && world.danger.safe.some(([x, z]) => x === -42 && z === 48) && world.scenery.grass.avoid.some(([x, z]) => x === 28 && z === 90), '구역·밤 안전·풀 피하기');
 }
