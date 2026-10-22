@@ -49,7 +49,7 @@ assert.ok(life.situations.find((s) => s.id === 'sanupwha').onOpen?.some((a) => a
 assert.ok(life.situations.find((s) => s.id === 'apt').onOpen?.[0]?.show?.mats?.[0] === 'apt_concrete', '아파트 상황 때 아파트');
 const ids = new Set(life.status.rules.map((r) => r.id));
 for (const b of last.choices[0].then[0].end.branches) for (const f of (b.if || '').match(/status:(\w+)/g) || []) assert.ok(ids.has(f.slice(7)), `끝 갈림 ${b.id} 의 ${f} 없음`);
-assert.equal(last.choices[0].then[0].end.branches.length, 41, '끝 갈림 41');
+assert.equal(last.choices[0].then[0].end.branches.length, 48, '끝 갈림 48(농지 개혁 깊이기 +7)');
 assert.ok(life.grain?.open && life.rank?.open && life.carry?.from === 'gaehang-life', '쌀 + 자리 + 개항에서 넘겨받음');
 const st = life.status.rules; assert.ok(ids.size === 13 && st.every((r) => r.cap === 6), '직업 카드 13 — 천장 없음, 누구나 6');
 assert.ok(st.findIndex((r) => r.id === 'hoesawon') < st.findIndex((r) => r.id === 'jiju') && st.at(-1).id === 'nongmin', '삶 중간 카드가 앞, 농사짓는 집이 기본');

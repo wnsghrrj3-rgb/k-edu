@@ -96,9 +96,9 @@
    "info": "지주 집 — 땅을 내놓거나 미리 팔거나.",
    "rename": [
     {
-     "if": "sit:nongji:open && !sit:nongji:done && status:jiju && !nj:give && !nj:sell && !nj:sellfail && !nj:get && !nj:debt && !nj:report && !nj:watch",
+     "if": "sit:nongji:open && !sit:nongji:done && status:jiju && !nj:give && !nj:sell && !nj:sellfail && !nj:get && !nj:debt && !nj:report && !nj:watch && !nj:factory && !nj:paper",
      "name": "지주 집 솟을대문",
-     "verb": "땅을 내놓는다 — 지가증권 / 미리 판다 ⚠(눈 2)",
+     "verb": "땅을 내놓는다 — 지가증권 / 미리 판다 ⚠(눈 2) / 증권으로 귀속 공장을 산다 ⚠(눈 2)",
      "once": false,
      "choices": [
       {
@@ -119,6 +119,19 @@
        "flag": "nj:sell",
        "journal": "nongji",
        "say": "💴 소작에게 직접 팔았다 — 나라 값보다 비싸게. 세 단. 「저 집은 끝까지 지주였다.」 인심 한 단이 갔다."
+      },
+      {
+       "label": "지가증권으로 귀속 공장을 산다 ⚠ — 내놓고 바로(눈 2)",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "증권이 종이가 되기 전에 공장을 보는 눈 — 전쟁 전에.",
+        "fail": "…「전쟁 끝나면.」 장롱에 넣었다. 전쟁이 끝나자 종이 한 뭉치가 쌀 한 되 값."
+       },
+       "rollFailFlag": "nj:paper",
+       "flag": "nj:factory",
+       "journal": "nongji",
+       "say": "🏭 논 열이 셋. 증권 한 뭉치가 읍내 정미 공장이 됐다. 소작들이 공장 문 앞에 섰다."
       }
      ]
     },
@@ -147,9 +160,9 @@
    "info": "소작 집 — 분배 신청.",
    "rename": [
     {
-     "if": "sit:nongji:open && !sit:nongji:done && status:sojak && !nj:give && !nj:sell && !nj:sellfail && !nj:get && !nj:debt && !nj:report && !nj:watch",
+     "if": "sit:nongji:open && !sit:nongji:done && status:sojak && !nj:give && !nj:sell && !nj:sellfail && !nj:get && !nj:debt && !nj:report && !nj:watch && !nj:buy && !nj:buyfail && !nj:late",
      "name": "소작 집 마루",
-     "verb": "분배를 신청한다 — 처음으로 내 땅 / 못 한다(빚)",
+     "verb": "분배를 신청한다 — 처음으로 내 땅 / 전쟁 전에 지주에게서 산다 ⚠(곡식 셋) / 못 한다(빚)",
      "once": false,
      "choices": [
       {
@@ -160,6 +173,22 @@
        "say": "📜 말뚝에 내 이름. 구석기부터 처음 — 「내 땅.」 5년 동안 수확의 30%. 할아버지가 이름표를 만졌다. 두 단 인심."
       },
       {
+       "label": "전쟁 전에 지주에게서 산다 ⚠ — 곡식 셋, 5년 없음(눈 2)",
+       "if": "val:grain>=3",
+       "gray": "지주는 세 단은 받아야 판다 — 빈손이면 나라 분배를 기다린다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "지주가 나라보다 빨리 팔 때 문서까지 손에 쥐는 눈 — 곡식은 그 뒤에.",
+        "fail": "…「문서는 내일.」 내일 지주 집은 비어 있었다. 나라가 먼저 샀다 — 곡식은 안 돌아왔다."
+       },
+       "rollFailFlag": "nj:buyfail",
+       "gives": "deed",
+       "flag": "nj:buy",
+       "journal": "nongji",
+       "say": "📜 「나라보다 비싸다 — 대신 문서는 오늘.」 곡식 셋. 5년을 안 갚는다. 내 땅."
+      },
+      {
        "label": "못 한다 — 빚이 먼저",
        "flag": "nj:debt",
        "journal": "nongji",
@@ -168,13 +197,26 @@
      ]
     },
     {
-     "if": "sit:nongji:open && !sit:nongji:done && status:nongmin && !nj:give && !nj:sell && !nj:sellfail && !nj:get && !nj:debt && !nj:report && !nj:watch",
+     "if": "sit:nongji:open && !sit:nongji:done && status:nongmin && !nj:give && !nj:sell && !nj:sellfail && !nj:get && !nj:debt && !nj:report && !nj:watch && !nj:lend",
      "name": "소작 집 마루",
-     "verb": "내 땅을 신고한다",
+     "verb": "내 땅을 신고한다 / 옆집 소작에게 첫 해 곡식을 꿔 준다(곡식 하나)",
      "once": false,
-     "flag": "nj:report",
-     "journal": "nongji",
-     "say": "📜 「3정보 안.」 그대로 내 땅. 옆집 소작이 처음으로 이름표를 받는 걸 봤다."
+     "choices": [
+      {
+       "label": "내 땅을 신고한다",
+       "flag": "nj:report",
+       "journal": "nongji",
+       "say": "📜 「3정보 안.」 그대로 내 땅. 옆집 소작이 처음으로 이름표를 받는 걸 봤다."
+      },
+      {
+       "label": "옆집 소작에게 첫 해 곡식을 꿔 준다 — 곡식 하나",
+       "if": "val:grain>=1",
+       "gray": "꿔 줄 곡식이 없다 — 한 가마는 있어야 옆집 말뚝이 선다.",
+       "flag": "nj:lend",
+       "journal": "nongji",
+       "say": "🌾 옆집 마루에 쌀 한 가마. 「첫 해 갚을 게 없어.」 옆집 말뚝이 안 뽑혔다. 마을이 기억했다."
+      }
+     ]
     },
     {
      "if": "sit:nongji:open && !sit:nongji:done && !status:sojak && !status:nongmin && !status:jiju && !nj:give && !nj:sell && !nj:sellfail && !nj:get && !nj:debt && !nj:report && !nj:watch",
@@ -420,6 +462,35 @@
    "journal": "bundan",
    "info": "읍사무소 — 벽보, 투표소.",
    "rename": [
+    {
+     "if": "sit:nongji:open && !sit:nongji:done && !status:sojak && !status:nongmin && !status:jiju && !sit:gundae:open && !nj:watch && !nj:plot && !nj:pleadfail",
+     "name": "읍사무소 벽보 — 농지위원회",
+     "verb": "농지위원에게 매달린다 ⚠(인심 둘, 눈 2) / 본다",
+     "once": false,
+     "choices": [
+      {
+       "label": "농지위원에게 매달린다 ⚠ — 우리 집도 지었습니다(눈 2)",
+       "if": "val:heart>=2",
+       "gray": "마을이 「저 집도 지었다」 해 줘야 위원이 듣는다 — 인심 둘.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "명단을 적는 위원이 누구인지, 어느 집이 고개를 끄덕여 줄지 보는 눈.",
+        "fail": "…「짓던 집에만.」 명단에 우리 집은 없었다."
+       },
+       "rollFailFlag": "nj:pleadfail",
+       "gives": "deed",
+       "flag": "nj:plot",
+       "journal": "nongji",
+       "say": "📜 마을 사람 둘이 고개를 끄덕였다. 한 뙈기 — 땅 없는 집이 처음으로 말뚝 하나."
+      },
+      {
+       "label": "본다",
+       "flag": "nj:watch",
+       "say": "벽보 앞. 「짓던 집에만.」 우리 집은 아니었다."
+      }
+     ]
+    },
     {
      "if": "sit:bundan:open && !sit:bundan:done && !bd:go && !bd:lost && !bd:letter && !bd:goods && !bd:goodslost",
      "name": "읍사무소 벽보",
