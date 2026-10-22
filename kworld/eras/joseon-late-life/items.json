@@ -423,7 +423,7 @@
     {
      "if": "sit:gongmyeong:open && !sit:gongmyeong:done && sex:m && (status:sangmin || status:dogo || status:jangin || status:sojak) && !gong:buy && !gong:gyun && !gong:sell && !gong:keep && !gong:out && !gong:in && !gong:soknyang && !gong:nosell && !gong:nobaek && !gong:tong && !gong:tongfail && !gong:daughter && !gong:watch",
      "name": "공명첩 상",
-     "verb": "공명첩을 산다 — 곡식 다섯 / 안 산다(군포 한 필)",
+     "verb": "공명첩을 산다 — 곡식 다섯 / 꾸어 산다 ⚠ / 안 산다(군포 한 필)",
      "once": false,
      "choices": [
       {
@@ -434,6 +434,15 @@
        "flag": "gong:buy",
        "journal": "gongmyeong",
        "say": "📜 이름 칸에 내 이름. 「통정대부.」 군역이 빠졌다. 기와집을 올렸다. 그런데 — 향안엔 못 올랐다."
+      },
+      {
+       "label": "도고에게 꾸어 산다 ⚠ — 곡식 셋 + 가을 빚",
+       "if": "val:grain>=3 && val:grain<5",
+       "gray": "셋은 있어야 꾸어 준다 — 다섯이면 그냥 산다.",
+       "gives": "deed",
+       "flag": "gong:borrowbuy",
+       "journal": "gongmyeong",
+       "say": "📜 곡식 셋에 도고의 둘. 이름 칸에 내 이름. 군역이 빠졌다 — 도고가 가을 날짜를 적었다."
       },
       {
        "label": "안 산다 — 군포 한 필(균역법)",
@@ -465,19 +474,34 @@
     {
      "if": "sit:gongmyeong:open && !sit:gongmyeong:done && status:yangban && !gong:buy && !gong:gyun && !gong:sell && !gong:keep && !gong:out && !gong:in && !gong:soknyang && !gong:nosell && !gong:nobaek && !gong:tong && !gong:tongfail && !gong:daughter && !gong:watch",
      "name": "공명첩 상",
-     "verb": "향안 — 족보 산 집을 뺀다 / 끼워 준다",
+     "verb": "향안 — 족보 산 집을 뺀다 / 끼워 준다 / 양자로 적어 준다 ⚠",
      "once": false,
      "choices": [
       {
        "label": "향안에서 뺀다 — 「가짜 양반」",
        "flag": "gong:out",
        "journal": "gongmyeong",
-       "say": "📜 「공명첩은 벼슬이 아니다.」 그 집은 기와집에 살아도 양반 모임에 못 온다. 담이 더 높아졌다."
+       "say": "📜 「공명첩은 벼슬이 아니다.」 그 집은 기와집에 살아도 양반 모임에 못 온다. 담이 더 높아졌다.",
+       "if": "val:heart>=2",
+       "gray": "향회를 열 사람이 없다 — 인심 둘이면 양반들이 모인다."
       },
       {
        "label": "끼워 준다 — 곡식 둘 받고",
        "flag": "gong:in",
        "say": "🌾🌾 「요즘 양반이 어디 있나.」 곡식 둘. 마을 양반 셋이 나를 안 본다."
+      },
+      {
+       "label": "족보에 양자로 적어 준다 ⚠ — 곡식 넷",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "먹이 마르기 전에 부농이 자랑하지 않을지 보는 눈. 입이 무거운 부농을 고른다.",
+        "fail": "…부농이 자랑했다. 향회가 족보를 폈다. 「이 줄은 먹이 새것.」 관아. 벼슬 한 단."
+       },
+       "rollFailFlag": "gong:adoptcaught",
+       "flag": "gong:adopt",
+       "journal": "gongmyeong",
+       "say": "🖋 「몇 대손 자리.」 붓으로 한 줄. 곡식 넷. 마을 양반 둘이 돌아앉았다."
       }
      ]
     },
@@ -503,13 +527,33 @@
      ]
     },
     {
-     "if": "sit:gongmyeong:open && !sit:gongmyeong:done && status:solgeo && !gong:nosell",
+     "if": "sit:gongmyeong:open && !sit:gongmyeong:done && status:solgeo && !gong:nosell && !gong:solsok && !gong:solrefuse",
      "name": "공명첩 상",
-     "verb": "살펴보기",
+     "verb": "주인에게 다섯 단을 들고 간다 ⚠ / 본다",
      "once": false,
-     "flag": "gong:nosell",
-     "journal": "gongnobi",
-     "say": "아전이 「속량은 주인이 팔아 줘야」. 주인이 안 판다. 「요즘은 도망이 쉽다」고 행랑 노비가 속삭였다."
+     "choices": [
+      {
+       "label": "주인에게 다섯 단을 들고 간다 ⚠ — 속량을 청한다",
+       "if": "val:grain>=5",
+       "gray": "다섯 단이 없으면 말도 못 꺼낸다 — 속량값 곡식 다섯.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "주인의 눈치. 문서를 먼저 보여 달라 할 때를 보는 눈 — 곡식부터 내밀면 곡식만 받는다.",
+        "fail": "…주인이 다섯 단을 받았다. 「문서는 내년에.」 내년은 오지 않았다."
+       },
+       "rollFailFlag": "gong:solrefuse",
+       "flag": "gong:solsok",
+       "journal": "gongnobi",
+       "say": "📜 주인이 한참 보더니 궤짝에서 종이를 꺼내 찢었다. 「양인.」 호패에서 주인 이름이 지워졌다."
+      },
+      {
+       "label": "본다 — 「속량은 주인이 팔아 줘야」",
+       "flag": "gong:nosell",
+       "journal": "gongnobi",
+       "say": "아전이 「속량은 주인이 팔아 줘야」. 주인이 안 판다. 「요즘은 도망이 쉽다」고 행랑 노비가 속삭였다."
+      }
+     ]
     },
     {
      "if": "sit:gongmyeong:open && !sit:gongmyeong:done && status:gwanno && !gong:nosell",
@@ -521,13 +565,33 @@
      "say": "관노는 나라 것. 「속량값은 관아에.」 돈이 없다. — 그런데 한양에서 이상한 말이 돈다. 「나라 노비 문서를 태운대.」"
     },
     {
-     "if": "sit:gongmyeong:open && !sit:gongmyeong:done && status:baekjeong && !gong:nobaek",
+     "if": "sit:gongmyeong:open && !sit:gongmyeong:done && status:baekjeong && !gong:nobaek && !gong:move && !gong:movecaught",
      "name": "공명첩 상",
-     "verb": "살펴보기",
+     "verb": "호적을 다른 고을로 옮긴다 ⚠ / 엽전을 꺼낸다",
      "once": false,
-     "flag": "gong:nobaek",
-     "journal": "baekjeong",
-     "say": "엽전 두 꾸러미를 꺼냈다. 아전이 「백정에겐 안 판다」. 돈이 있어도 백정."
+     "choices": [
+      {
+       "label": "호적을 다른 고을로 옮긴다 ⚠ — 아전에게 곡식 셋",
+       "if": "val:grain>=3",
+       "gray": "아전이 목을 거는 일이다 — 곡식 셋은 있어야 말을 꺼낸다.",
+       "roll": {
+        "ab": "눈",
+        "hard": 2,
+        "why": "입이 무거운 아전을 고르는 눈. 목을 거는 일이다.",
+        "fail": "…아전이 곡식을 받고 적다 말았다. 「백정 호적을 옮기면 내 목이.」 「도한」 그대로."
+       },
+       "rollFailFlag": "gong:movecaught",
+       "flag": "gong:move",
+       "journal": "baekjeong",
+       "say": "📜 다른 고을 호적에 「농(農)」. 마을 밖 집을 떠났다 — 가죽 냄새만 안 들키면."
+      },
+      {
+       "label": "엽전을 꺼낸다",
+       "flag": "gong:nobaek",
+       "journal": "baekjeong",
+       "say": "엽전 두 꾸러미를 꺼냈다. 아전이 「백정에겐 안 판다」. 돈이 있어도 백정."
+      }
+     ]
     },
     {
      "if": "sit:gongmyeong:open && !sit:gongmyeong:done && sex:m && status:seoeol && !gong:buy && !gong:gyun && !gong:sell && !gong:keep && !gong:out && !gong:in && !gong:soknyang && !gong:nosell && !gong:nobaek && !gong:tong && !gong:tongfail && !gong:daughter && !gong:watch",
@@ -562,6 +626,29 @@
      "once": false,
      "flag": "gong:watch",
      "say": "호적이 없다. 「호적에 없는 사람은 공명첩도 없다.」"
+    },
+    {
+     "if": "sit:gongmyeong:open && !sit:gongmyeong:done && sex:f && (status:sangmin || status:dogo || status:jangin || status:sojak) && !gong:daughter && !gong:sonbuy",
+     "name": "공명첩 상",
+     "verb": "아들 이름으로 산다 — 곡식 다섯 / 안채로",
+     "once": false,
+     "choices": [
+      {
+       "label": "아들 이름으로 산다 — 곡식 다섯",
+       "if": "val:grain>=5",
+       "gray": "안채 곡식 다섯이면 아들 이름으로 산다.",
+       "gives": "deed",
+       "flag": "gong:sonbuy",
+       "journal": "women",
+       "say": "📜 이름 칸에 아들 이름. 집에 기와가 올랐다 — 내 이름은 어디에도 없다."
+      },
+      {
+       "label": "안 산다 — 안채로",
+       "flag": "gong:daughter",
+       "journal": "women",
+       "say": "아전이 「공명첩은 남자」. 안채로 — 그런데 요즘 딸 몫이 줄었다고 한다."
+      }
+     ]
     },
     {
      "if": "sit:gongmyeong:open && !sit:gongmyeong:done && sex:f && !gong:daughter",
