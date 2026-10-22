@@ -1,4 +1,4 @@
-/* gate_g5s2_social_u3.js — 5학년 2학기 사회 3단원 「식민 통치와 저항, 전쟁이 바꾼 사회와 생활」 케이티처 2세대 게이트 (179차, 베프 — u2 게이트 틀 복제 · u3_l01 단원 도입).
+/* gate_g5s2_social_u3.js — 5학년 2학기 사회 3단원 「식민 통치와 저항, 전쟁이 바꾼 사회와 생활」 케이티처 2세대 게이트 (179차, 베프 — u2 게이트 틀 복제 · u3_l01 단원 도입 · 180차 u3_l02 을사늑약·의병).
    지도서 직행(자기주도 원문 없음) — T 표 자체 규칙을 잰다. 역사 원칙: 인과 중심 · 연도 묻기 0 · s15 = 「그날의 선택」.
    A 로드·meta · B 19장 골격 · C 7요소(5학년 = 인물 없이 장면·물음) · D 복습 계보 · E 기본 문제 정답 표시 · F 분 합계
    G 역사 원칙(연도·숫자 연대 0 · 그날의 선택 = 고르기 둘 → 그때 실제로는 → 다음 이야기) · H 선행 용어 · I 실렌더 · J 차단 어휘 · K 5학년 인물 0
@@ -12,8 +12,8 @@ const T = (n, f) => { try { f(); pass++; console.log('  ✅ ' + n); } catch (e) 
 const ok = (v, m) => { if (!v) throw new Error(m || 'falsy'); };
 function load(file) { const L = {}; const c = { window: { LESSONS: L } }; c.window.window = c.window; vm.createContext(c); vm.runInContext(fs.readFileSync(file, 'utf8'), c); return c.window.LESSONS; }
 const L = load(path.join(TDIR, 'data/g5s2_social_u3.js'));
-const KEYS = ['u3_l01'];
-const COV = { u3_l01: [1, 1] };
+const KEYS = ['u3_l01', 'u3_l02'];
+const COV = { u3_l01: [1, 1], u3_l02: [2, 2] };
 const ORDER = ['cover', 'review', 'motivate', 'concept', 'concept', 'concept', 'concept', 'misconception', 'basic_problem', 'basic_problem', 'basic_problem', 'leveled_problem', 'offline_activity', 'real_world', 'advanced_problem', 'exit_ticket', 'summary', 'self_assessment', 'next_lesson'];
 const STAGE = ['도입', '도입', '도입', '전개', '전개', '전개', '전개', '전개', '기본문제', '기본문제', '기본문제', '기본문제', '응용문제', '응용문제', '응용문제', '정리', '정리', '정리', '정리'];
 const UT = '식민 통치와 저항, 전쟁이 바꾼 사회와 생활';
@@ -61,7 +61,7 @@ KEYS.forEach(k => T(k + ' 기본 문제 셋 — 정답 표시 · 모두 고르�
 T('수준별 세 계단 각 문항·답 있음 · 심화 = 열린 답', () => KEYS.forEach(k => { const lv = L[k].slides[11].data.levels; Object.entries(lv).forEach(([n, x]) => ok(x && x.q && x.a, k + ' 계단 ' + n)); ok(lv.심화.open, k + ' 심화 open'); }));
 
 console.log('═══ F. 분 합계 ═══');
-T('분 합계 = 40 (지금까지 1차시 × 40 · 단원 끝 560)', () => { const n = KEYS.reduce((a, k) => a + L[k].meta.duration_min, 0); ok(n === 40, n); });
+T('분 합계 = 80 (지금까지 2차시 × 40 · 단원 끝 560)', () => { const n = KEYS.reduce((a, k) => a + L[k].meta.duration_min, 0); ok(n === 80, n); });
 
 console.log('═══ G. 역사 원칙 ═══');
 T('연도·연대 숫자 0 (○○년·○○년대·기원전·세기 — 교사 메모 포함 전부 · 3·1·8·15·6·25 이름은 허용)', () => KEYS.forEach(k => { const s = JSON.stringify(L[k].slides); ok(!/\d+\s*(만\s*)?년|기원전|기원후|세기/.test(s), k + ' ' + (s.match(/.{12}(\d+\s*(만\s*)?년|기원전|기원후|세기).{8}/) || [''])[0]); }));
@@ -85,12 +85,30 @@ T('l01 지도서 핵심(256~258쪽): 동기 = 전차 거리(실사 자리 dongji
   ok(d[15].data.items[2].a === '광복' && d[15].data.items[1].a === T1, '출구');
   ok(L.u3_l01.meta.textbook === 'p.116~121' && L.u3_l01.meta.duration_min === 40 && L.u3_l01.meta.covers === '1차시', '쪽·40분'); });
 
+T('l02 그날의 선택 「다음 이야기」 → 다음 차시 「일제 통치 시기 우리 민족의 고통과 저항」', () => ok(/나라를 빼앗겼/.test(L.u3_l02.slides[14].data.note) && /고통/.test(L.u3_l02.slides[14].data.note) && /\*\*일제 통치 시기 우리 민족의 고통과 저항\*\*/.test(L.u3_l02.slides[18].data.preview), 'l02→l03'));
+T('l02 지도서 핵심(264~266쪽): 동기 = 생각을 열어요 시상대 장면(실사 자리 marathon_podium · 이름은 팁에만) · 나라 밖 다툼·러시아·대한 제국 · 을사늑약 = 외교권·늑약 뜻 · 헤이그 특사 = 무효 · 의병 = 상인·학생 반발·군대 해산·만주·연해주 · 오개념 = 군인만 ✗ → 다양한 사람 · 기본 ① 외교권 ② 맞선 모습 3개(잔치 함정) ③ 군대 해산 · 활동 = 「안사람 의병가」(활동지 269쪽 · 1인 포함) · 실생활 = 중명전 · 그날의 선택 = 군대 해산 명령', () => { const d = L.u3_l02.slides;
+  ok(/marathon_podium/.test(d[2].data.img) && ['일장기', '금메달', '고개를 숙였어요'].every(x => d[2].data.desc.indexOf('**' + x + '**') >= 0) && !/손기정/.test(JSON.stringify(d[2].data)), '동기');
+  ok(/손기정/.test(JSON.stringify(L.u3_l02.extras)), '팁에 이름');
+  ok(['대한 제국', '러시아', '일제'].every(x => d[3].data.content.indexOf('**' + x + '**') >= 0), '침략');
+  ok(['을사늑약', '외교권', '늑약'].every(x => d[4].data.content.indexOf('**' + x + '**') >= 0) && /억지로/.test(d[4].data.content), '을사늑약');
+  ok(['헤이그', '특사', '무효'].every(x => d[5].data.content.indexOf('**' + x + '**') >= 0), '헤이그 특사');
+  ok(['상인', '학생', '의병', '군대가 해산', '만주', '연해주'].every(x => d[6].data.content.indexOf('**' + x + '**') >= 0), '의병');
+  ok(/군인들만/.test(d[7].data.wrong) && /다양한 사람/.test(d[7].data.right), '오개념');
+  ok(d[8].data.options.filter(o => o.correct)[0].text === '외교권', '기본 ①'); ok(d[9].data.options.filter(o => o.correct).length === 3 && d[9].data.options.some(o => /잔치/.test(o.text) && !o.correct), '기본 ②');
+  ok(/해산된 군인/.test(d[10].data.options.filter(o => o.correct)[0].text) && /군대가 해산/.test(d[10].data.note), '기본 ③');
+  ok(/안사람 의병가/.test(d[12].data.title) && /269쪽/.test(JSON.stringify(d[12].data.materials)), '활동');
+  ok(/중명전/.test(d[13].data.scenario.body), '실생활'); ok(/해산/.test(d[14].data.context) && /\*\*의병\*\*/.test(d[14].data.note), '그날의 선택');
+  ok(d[15].data.items.map(x => x.a).join() === '을사늑약,헤이그 특사,의병', '출구');
+  ok(L.u3_l02.meta.textbook === 'p.122~124' && L.u3_l02.meta.covers === '2차시', '쪽'); });
+
 console.log('═══ H. 선행 용어 ═══');
 const pre = (k) => JSON.stringify(L[k].slides.slice(0, 18).map(s => Object.assign({}, s.data, { tnote: 0 }))).replace(/"다음: [^"]*"/g, '');
 const firstK = (re) => KEYS[KEYS.findIndex(k => re.test(pre(k)))];
-[['식민 통치', /식민 통치/, 'u3_l01'], ['저항', /저항/, 'u3_l01'], ['광복', /광복/, 'u3_l01'], ['6·25 전쟁', /6·25 전쟁/, 'u3_l01'], ['일제', /일제/, 'u3_l01'], ['독립운동가', /독립운동가/, 'u3_l01'], ['태극기', /태극기/, 'u3_l01']].forEach(([n, re, at]) =>
+[['식민 통치', /식민 통치/, 'u3_l01'], ['저항', /저항/, 'u3_l01'], ['광복', /광복/, 'u3_l01'], ['6·25 전쟁', /6·25 전쟁/, 'u3_l01'], ['일제', /일제/, 'u3_l01'], ['독립운동가', /독립운동가/, 'u3_l01'], ['태극기', /태극기/, 'u3_l01'], ['을사늑약', /을사늑약/, 'u3_l02'], ['헤이그 특사', /헤이그/, 'u3_l02'], ['의병', /의병/, 'u3_l02'], ['대한 제국', /대한 제국/, 'u3_l02'], ['외교권', /외교권/, 'u3_l02']].forEach(([n, re, at]) =>
   T('「' + n + '」 첫 등장 = ' + at.slice(3), () => ok(firstK(re) === at, firstK(re))));
 T('다루지 않는 것 0(l01: 을사늑약·의병·헌병·토지 조사·3·1 운동·임시 정부·한인 애국단·광주 학생·청산리·대한 제국·고종·손기정·유관순·안중근·김구·윤봉길·이회영·창씨·신사 참배·위안부·광복군·정부 수립·피란·휴전·이산가족)', () => { const s = JSON.stringify(L.u3_l01); ['을사', '늑약', '의병', '헌병', '토지 조사', '3·1', '임시 정부', '애국단', '광주 학생', '청산리', '대한 제국', '고종', '손기정', '유관순', '안중근', '김구', '윤봉길', '이회영', '창씨', '신사 참배', '위안부', '광복군', '정부 수립', '피란', '휴전', '이산가족'].forEach(x => ok(s.indexOf(x) < 0, 'l01 ' + x)); });
+
+T('다루지 않는 것 0(l02 장: 헌병·토지 조사·3·1·임시 정부·애국단·광주 학생·청산리·유관순·김구·윤봉길·이회영·창씨·신사 참배·위안부·광복군·정부 수립·피란·휴전·이산가족 · 손기정·안중근·윤희순은 팁에만)', () => { const s = JSON.stringify(L.u3_l02.slides); ['헌병', '토지 조사', '3·1', '임시 정부', '애국단', '광주 학생', '청산리', '유관순', '김구', '윤봉길', '이회영', '창씨', '신사 참배', '위안부', '광복군', '정부 수립', '피란', '휴전', '이산가족', '손기정', '안중근', '윤희순', '이토'].forEach(x => ok(s.indexOf(x) < 0, 'l02 ' + x)); });
 
 console.log('═══ I. 실렌더 ═══');
 KEYS.forEach(k => T(k + ' 19장 × (가림·공개) 렌더 — 빈 장·undefined·NaN 0', () => L[k].slides.forEach(s => [false, true].forEach(rev => { const r = render(s, L[k], rev) || {}; const h = String(r.body || r.html || '') + String(r.title || '');
