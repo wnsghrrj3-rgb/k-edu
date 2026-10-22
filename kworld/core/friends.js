@@ -78,7 +78,7 @@ export class Friends {
   /** 곁(r m 안)에 있는 친구 수 — 「같이 하기」 조건 near:n */
   near(r = NEAR_WITH) { const g = this.g; if (!g.p) return 0; let n = 0; for (const f of this.friends.values()) if (Math.hypot(f.tx - g.p.pos.x, f.tz - g.p.pos.z) <= r) n++; return n; }   // 목표 자리(마지막 받은 자리)로 잰다
   /** 👋 손 흔들기 — G 키·단추. 카드 열린 중엔 안 보냄 */
-  wave() { const g = this.g; if (!this.on || g.ui?.isOpen?.()) return; const now = performance.now(); this.myWaveUntil = now + WAVE_MS; const r = this.reply && this.reply.until > now ? { to: this.reply.id, kind: this.reply.kind } : null; this.reply = null; try { this.ch.send({ type: 'broadcast', event: 'wave', payload: { id: this.me.sid, nick: this.me.nick, ...(r ? { reply: r } : {}) } }); } catch { } }   // 81: 곁 친구의 외침 뒤 9초 안에 G 면 답(reply)이 실려 간다
+  wave() { const g = this.g; if (!this.on || g.ui?.isOpen?.()) return; const now = performance.now(); this.myWaveUntil = now + WAVE_MS; g.sound?.play?.('wave', 0.4); const r = this.reply && this.reply.until > now ? { to: this.reply.id, kind: this.reply.kind } : null; this.reply = null; try { this.ch.send({ type: 'broadcast', event: 'wave', payload: { id: this.me.sid, nick: this.me.nick, ...(r ? { reply: r } : {}) } }); } catch { } }   // 81: 곁 친구의 외침 뒤 9초 안에 G 면 답(reply)이 실려 간다
   /** 82: 내 외침에 답이 오면 내 몸도 손을 들어 답한다 + 답한 쪽엔 「고마워」 한 줄(reply kind 'back' — 그쪽은 다시 답하지 않는다) */
   waveBack(to) { if (!this.on) return; this.myWaveUntil = performance.now() + WAVE_MS; try { this.ch.send({ type: 'broadcast', event: 'wave', payload: { id: this.me.sid, nick: this.me.nick, reply: { to, kind: 'back' } } }); } catch { } }
   /** 외침 — 쫓김 끝(escaped/caught)·급한 일 늦음(late). 곁 친구 화면에만 뜬다 */

@@ -65,7 +65,7 @@ export class Game {
     if (qs.get('fps') === '1') this.fpsMeter();
     this.autoTune();
     this.p = new Player(this.e, { eye: this.world.eye, bounds: this.world.bounds, yaw: 0 });
-    try { this.sound = new Sound(this); } catch (err) { console.warn('sound', err); }
+    try { this.sound = new Sound(this); this.ui.onGray = () => this.sound?.play?.('locked', 0.45); } catch (err) { console.warn('sound', err); }
     const vq = new URLSearchParams(location.search).get('view'); this.p.setView(vq || this.world.view || 'fp');
     this.p.bindJoystick(document.getElementById('stick'), document.getElementById('knob'));
     // 풍경층: 원경 산·바람 풀·새·꽃가루·손맛 — world.scenery 가 있을 때만, ?fx=0 이면 끔(후처리 없이 도는 가벼운 층)
@@ -189,7 +189,7 @@ export class Game {
   renderInv() { this.ui.renderInventory(this.inventory, this.items.items, (k) => this.tapItem(k)); }
   tapItem(k) {
     const d = this.items.items[k];
-    if (d.eat) { this.take(k); this.hunger = Math.max(0, Math.min(100, this.hunger + d.eat)); this.flag(d.flag); this.ui.say(d.say || `${d.icon} ${d.name}을(를) 먹었다.`, d.say ? 4200 : 3200); this.renderInv(); if (d.journal && this.story) this.story.journal(d.journal); }
+    if (d.eat) { this.take(k); this.sound?.play?.('eat', 0.5); this.hunger = Math.max(0, Math.min(100, this.hunger + d.eat)); this.flag(d.flag); this.ui.say(d.say || `${d.icon} ${d.name}을(를) 먹었다.`, d.say ? 4200 : 3200); this.renderInv(); if (d.journal && this.story) this.story.journal(d.journal); }
     else this.ui.say(`${d.icon} ${d.name} — ${d.desc}`);
   }
   // ---------- 매 프레임 ----------
@@ -275,6 +275,7 @@ export class Game {
     this.applyState(t, rule);
     const gives = Array.isArray(rule.gives) ? rule.gives : (rule.gives ? [rule.gives] : []);
     for (const g of gives) this.inventory.push(g);
+    if (rule.sound) this.sound?.play?.(rule.sound, 0.5); else if (gives.length) this.sound?.play?.(t.type === 'water' || /water|river|fish|shell/.test(String(t.id || '')) ? 'splash' : /tree|wood|bark/.test(String(t.id || '')) ? 'chop' : /stone|rock|flint/.test(String(t.id || '')) ? 'stone' : 'pick', 0.5);   // 108: 손으로 얻을 때 — 규칙의 sound 가 먼저, 없으면 자리 이름으로
     if (rule.uses) { t.uses++; }
     this.renderInv();
     if (rule.say) this.ui.say(rule.say); else if (gives.length) this.ui.say(`${this.items.items[gives[0]].icon} ${this.items.items[gives[0]].name}을(를) 얻었다.`);
@@ -337,7 +338,7 @@ export class Game {
     for (const [k, n] of Object.entries(need)) if (this.count(k) < n) { this.ui.say('아무것도 안 됐어. 재료가 모자라.'); return; }
     if (this.fumble(r.out)) { this.ui.close(); this.p.enabled = true; this.ui.say(r.almost || '…거의 됐다. 손이 미끄러졌다. 다시.', 3600); return; }
     for (const i of r.in) if (!(r.keep || []).includes(i)) this.take(i);
-    this.inventory.push(out); this.renderInv(); this.ui.close(); this.p.enabled = true; if (out === 'torch') this.danger?.lightTorch();
+    this.inventory.push(out); this.renderInv(); this.ui.close(); this.p.enabled = true; this.sound?.play?.(out === 'torch' || out === 'fire' ? 'flint' : /axe|handaxe|blade|arrow|spear/.test(out) ? 'knap' : 'craft', 0.5); if (out === 'torch') this.danger?.lightTorch();
     const d = this.items.items[out]; this.ui.say(r.say || `${d.icon} ${d.name}이(가) 됐다!`, r.say ? 4800 : 3200);
     this.flag(r.flag); this.life?.onFlag(); if (r.journal && this.story) setTimeout(() => this.story.journal(r.journal), 1400);
     if (d.why) setTimeout(() => this.showWhy(d.why), 900);
@@ -416,7 +417,7 @@ export class Game {
   // ---------- 시간의 문 ----------
   checkGate() {
     const g = this.world.gate; if (!g) return; const ok = g.requires.every((f) => this.flags.has(f));
-    if (ok && !this.gateOpen) { this.gateOpen = true; this.ui.setGoal(`시간의 문이 열렸다. ${g.hint || '문으로 가 보자.'}`); this.updateMission(false); this.ui.say('어디선가 바람이… 시간의 문이 열렸다!', 4000); }
+    if (ok && !this.gateOpen) { this.gateOpen = true; this.sound?.play?.('gate', 0.5); this.ui.setGoal(`시간의 문이 열렸다. ${g.hint || '문으로 가 보자.'}`); this.updateMission(false); this.ui.say('어디선가 바람이… 시간의 문이 열렸다!', 4000); }
   }
   enterGate() {
     if (!this.gateOpen) { const g = this.world.gate; if (!g) { this.ui.say('빛나는 문. 아직은 아무 일도 없다.'); return; } const left = g.requires.filter((f) => !this.flags.has(f)).length; this.ui.say(`아직 닫혀 있다. 해야 할 일이 ${left}가지 남았어.`); return; }

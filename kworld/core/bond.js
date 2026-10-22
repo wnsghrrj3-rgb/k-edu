@@ -52,7 +52,7 @@ export class Bond {
     const tag = label(this.name); if (tag) { tag.position.y = 2.05; body.add(tag); }
     const p = g.p.pos; const ang = (g.p.yaw || 0); const x = p.x - Math.sin(ang) * 7, z = p.z - Math.cos(ang) * 7;
     this.pos = { x, z }; this.yaw = Math.atan2(p.x - x, p.z - z); body.position.set(x, g.e.groundY ? g.e.groundY(x, z) : 0, z); body.rotation.y = this.yaw; g.e.scene.add(body); this.body = body; g.flags.add('bond:here');
-    if (!silent) { this.waveUntil = performance.now() + WAVE_MS; g.sound?.play?.('good', 0.25); g.ui?.say?.(`👤 ${this.name} — ${g.flags.has('bond:mended') ? '「…다시, 같이 가.」' : '「같이 가.」'}`, 4200); this.sinceLine = 0; }
+    if (!silent) { this.waveUntil = performance.now() + WAVE_MS; g.sound?.play?.('wave', 0.4); g.ui?.say?.(`👤 ${this.name} — ${g.flags.has('bond:mended') ? '「…다시, 같이 가.」' : '「같이 가.」'}`, 4200); this.sinceLine = 0; }
   }
   remove(say) { const g = this.g; if (!this.body) return; g.e.scene.remove(this.body); this.body = null; this.pos = null; g.flags.delete('bond:here'); this.gone = true; if (say) g.ui?.say?.(say, 4200); }
   /** 걸음 — 목표 자리로 speed 로, 닿으면 서 있다. 돌려준다: 움직였나 */

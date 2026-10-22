@@ -48,7 +48,7 @@ export class Life {
   /** 신분이 삶 중간에 바뀐다(법으로 종이 되거나, 값을 치르고 풀려나거나) — 선택지 c.status = '<id>' */
   setStatusTo(id) {
     const st = this.d.status; const r = st?.rules?.find((x) => x.id === id); if (!r) return; if (this.status) this.g.flags.delete('status:' + this.status);
-    this.status = r.id; this.statusName = r.name; this.g.flags.add('status:' + r.id); if (typeof localStorage !== 'undefined') recordStatus(this.g.era, r.id, r.name); this.g.ui.say(`🏠 ${r.name}`, 3600); this.render(); this.g.save?.touch();
+    this.status = r.id; this.statusName = r.name; this.g.flags.add('status:' + r.id); if (typeof localStorage !== 'undefined') recordStatus(this.g.era, r.id, r.name); this.g.sound?.play?.('status', 0.5); this.g.ui.say(`🏠 ${r.name}`, 3600); this.render(); this.g.save?.touch();
   }
   /** 천장 — 지금 신분이 오를 수 있는 벼슬 높이(status 규칙의 cap). null 이면 천장 없음 */
   cap() { const r = this.d.status?.rules?.find((x) => x.id === this.status); return (r && typeof r.cap === 'number') ? r.cap : null; }
@@ -87,7 +87,7 @@ export class Life {
     return `${tail}${hist >= 2 ? ` 벌써 ${hist}번째다 — 하면 할수록 익는다.` : ''}`;
   }
   /** 흔적 — 다침. 끝까지 남는다. leg: 절뚝(느려짐) */
-  injure(kind) { if (this.hurt.has(kind)) return; this.hurt.add(kind); this.g.flags.add('hurt:' + kind); /* 깃발로도 — items.json rename if 에서 hurt:leg 로 읽는다 */ const t = (this.d.hurts || {})[kind]; this.g.ui.say(t?.say || '…다쳤다. 흔적이 남는다.', 4800); this.render(); this.g.save?.touch(); }
+  injure(kind) { if (this.hurt.has(kind)) return; this.hurt.add(kind); this.g.flags.add('hurt:' + kind); /* 깃발로도 — items.json rename if 에서 hurt:leg 로 읽는다 */ const t = (this.d.hurts || {})[kind]; this.g.sound?.play?.('hurt', 0.6); this.g.ui.say(t?.say || '…다쳤다. 흔적이 남는다.', 4800); this.render(); this.g.save?.touch(); }
   get speedMul() { return this.hurt.has('leg') ? (this.d.hurts?.leg?.speed ?? 0.7) : 1; }
   /** 선택지 회색 — c.if 조건이 거짓이면 못 누른다(이유 한 줄). hurt:leg 같은 흔적도 깃발처럼 본다 */
   /** 조건 — "a && !b" 에 더해 "(a || b)" / "!(a || b)" 묶음(조선 후기부터: 여러 신분이 같은 자리를 쓸 때) */
@@ -124,7 +124,8 @@ export class Life {
     const deltas = []; if (c.craft) { this.add('craft', c.craft); deltas.push(`✋ 솜씨 ${c.craft > 0 ? '+' : ''}${c.craft}`); } if (c.heart) { this.add('heart', c.heart); deltas.push(`🤝 인심 ${c.heart > 0 ? '+' : ''}${c.heart}`); } if (c.grain && this.d.grain?.open) { this.add('grain', c.grain); deltas.push(`🌾 곡식 ${c.grain > 0 ? '+' : ''}${c.grain}`); } if (c.rank) { const l = this.rise(c.rank); if (l) deltas.push(l); }
     for (const a of [].concat(c.gain || [])) this.gain(a, 1); if (c.hurt) this.injure(c.hurt); if (c.flag) for (const f of [].concat(c.flag)) g.flags.add(f);   // 결과가 바로 세우는 깃발(then 은 카드 뒤, 이건 즉시)
     this.log.push({ sit: s.id, choice: c.id, t: Date.now() }); g.friends?.picked?.(s, c); if (c.bond) g.bond?.together?.(s, c);   // 「운명의 벗과 함께」 길 — 벗이 한마디(값은 각자)   // 반 친구에게 「무엇을 골랐는지」 한 줄(값 없음) g.telemetry && ((g.telemetry.life ??= []).push({ sit: s.id, choice: c.id }));
-    const items = [{ kind: 'result', s, c, deltas }]; if (c.then) items.push({ kind: 'then', list: c.then }); if (s.luck) this.queue.unshift(...items); else this.queue.push(...items);   // 운 카드 결과는 줄 맨 앞(다음 상황 카드보다 먼저)
+    const cues = []; if (c.craft) cues.push('craft'); if (c.heart) cues.push(c.heart > 0 ? 'heart' : 'bad'); if (c.grain && this.d.grain?.open) cues.push('grain'); if (c.rank) cues.push(this.g.flags.has('rank:capped') && deltas.some((d) => d.includes('천장')) ? 'capped' : 'rank'); if (c.sound) cues.unshift(c.sound);   // 108: 결과 카드 뒤 값마다 소리 한 번(선택지 sound 가 있으면 맨 앞)
+    const items = [{ kind: 'result', s, c, deltas, cues }]; if (c.then) items.push({ kind: 'then', list: c.then }); if (s.luck) this.queue.unshift(...items); else this.queue.push(...items);   // 운 카드 결과는 줄 맨 앞(다음 상황 카드보다 먼저)
     g.flag(['sit:' + s.id + ':done', 'sit:' + s.id + ':' + c.id]);   // 결과 카드를 먼저 줄 세운 뒤 깃발(깃발이 여는 다음 상황은 그 뒤에)
     if (c.retry) { this.done.delete(s.id); g.flags.delete('sit:' + s.id + ':done'); g.flags.delete('sit:' + s.id + ':' + c.id); if (c.done) for (const f of c.done.split('&&')) if (!f.trim().startsWith('!')) g.flags.delete(f.trim()); }   // 쓰러짐: 그 상황 앞으로 — 다른 선택을 해 본다
     this.flush(); g.save?.touch(); if (s.must) this.luckTick();
@@ -141,14 +142,14 @@ export class Life {
   /** 운 카드의 결과 = outcomes 중 값 조건에 처음 맞는 것(마지막은 조건 없음) */
   luckResolve(s) { const outs = s.outcomes || []; const hit = outs.find((o) => this.cond(o.if)); const c = hit || outs.slice(-1)[0]; if (!c) return; const held = !!(hit && hit.if);   // 버팀 = 값 조건이 있는 결과에 맞은 것; 마지막(조건 없음) = 못 버팀
     if (outs.length > 1) this.g.results = [...(this.g.results || []), { id: 'luck:' + s.id, concept: 'hist.luck', ok: held, t: s.title, r: c.title || '' }];   // 리포트 「운 — 버텼나」(결과가 하나뿐인 선물 카드는 안 셈)
-    this.finish(s, { id: c.id || 'luck', ...c }); }
+    this.g.sound?.play?.('luck', 0.5); this.finish(s, { id: c.id || 'luck', ...c }); }
   /** 카드는 한 번에 하나 — 다른 판이 열려 있으면 기다린다 */
   flush() {
     const g = this.g; if (this.busy || !this.queue.length || g.ui.isOpen?.() || g.story?.cutsceneOn) return;
     const q = this.queue.shift(); this.busy = true;
     const done = () => { this.busy = false; g.p.enabled = true; setTimeout(() => this.flush(), 120); };
     if (q.kind === 'sit') this.showSituation(q.s, done);
-    else if (q.kind === 'result') this.showResult(q.s, q.c, q.deltas, done);
+    else if (q.kind === 'result') this.showResult(q.s, q.c, q.deltas, done, q.cues);
     else if (q.kind === 'then') { this.busy = false; this.doThen(q.list); setTimeout(() => this.flush(), 120); }
     else done();
   }
@@ -157,8 +158,8 @@ export class Life {
     const ways = (s.ways || []).map((w) => `<li>${esc(w)}</li>`).join('');
     g.ui.open(`<div class="chk life"><div class="tag">${esc(s.tag || '상황')}${s.must ? '' : ' · 이번 판'}</div><h3>${esc(s.title)}</h3>${(s.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}${ways ? `<p class="sub">할 수 있는 것 — 말이 아니라 몸으로:</p><ul class="mlist">${ways}</ul>` : ''}</div>`, [{ label: s.button || '…해 보자', primary: true, onClick: () => { g.ui.close(); cb(); if (s.luck) this.luckResolve(s); } }]);
   }
-  showResult(s, c, deltas, cb) {
-    const g = this.g; g.p.enabled = false; g.sound?.play?.(c.bad ? 'bad' : 'good', 0.5);
+  showResult(s, c, deltas, cb, cues) {
+    const g = this.g; g.p.enabled = false; g.sound?.play?.(c.bad ? 'bad' : 'good', 0.5); (cues || []).forEach((n, i) => setTimeout(() => g.sound?.play?.(n, 0.4), 480 + i * 380));
     const why = c.why ? `<p class="why">🧭 <b>왜?</b> ${esc(c.why)}</p>` : '';
     const fact = (c.fact || s.fact) ? `<div class="facts"><div>📜 <b>실제</b> ${esc(c.fact || s.fact)}</div></div>` : '';
     g.ui.open(`<div class="chk life ${c.bad ? 'bad' : ''}"><div class="tag">${c.bad ? '결과 — 안 됐다' : '결과'}</div><h3>${esc(c.title || c.label || '')}</h3>${(c.result || []).map((b) => `<p>${esc(b)}</p>`).join('')}${why}${deltas.length ? `<p class="delta">${deltas.join(' · ')}</p>` : ''}${fact}</div>`, [{ label: c.button || '알겠어', primary: true, onClick: () => { g.ui.close(); cb(); } }]);
@@ -224,7 +225,7 @@ export class Life {
   /** 「그 뒤」 — 시대가 바뀐 까닭. 끝 카드 뒤·족보 앞에 한 장: 이 시대의 물음 → 한 줄 답 → 세상·우리 집(끝 갈림·값·흔적 깃발로 갈림)·다음 시대 첫 줄 → 「왜 세상이 바뀌었을까」 물음 하나(틀리면 정답 한 줄, 되돌아가기 없음 — 시대는 끝났다).
    *  world.bridge = { tag, years, answer, beats:[{k, text | rules:[{if,text}], text}], q:{q, a:[정답, …], why}, next } — 없으면 그냥 지나간다. 한 번(life:bridge). */
   bridge(done) {
-    const g = this.g, b = g.world?.bridge; if (!b || g.flags.has('life:bridge')) return done();
+    const g = this.g, b = g.world?.bridge; if (!b || g.flags.has('life:bridge')) return done(); g.sound?.play?.('gate', 0.45);
     const pick = (bt) => { if (!bt) return ''; if (typeof bt === 'string') return bt; const r = (bt.rules || []).find((x) => !x.if || this.cond(x.if)); return r ? r.text : (bt.text || ''); };
     const lines = (b.beats || []).map((bt) => ({ k: bt.k || '', t: pick(bt) })).filter((x) => x.t);
     g.flag('life:bridge'); g.p.enabled = false;
@@ -247,8 +248,8 @@ export class Life {
     const db = document.createElement('button'); db.id = 'dogambtn'; db.textContent = '📖 도감'; db.title = '신분 도감 — 살아 본 집 (B)'; db.onclick = () => this.dogam(); (document.getElementById('hud') || el).appendChild(db);   // 왼쪽 여정 카드 밑(오른쪽 값판을 키우면 행동 단추를 덮는다)
   }
   /** 족보 한 장 — 카드가 열려 있지 않을 때만(상황 카드 도중엔 안 끼어든다) */
-  jokbo() { if (this.g.ui.isOpen?.() || this.g.story?.cutsceneOn) return; openJokbo(this.g); }
-  dogam() { if (this.g.ui.isOpen?.() || this.g.story?.cutsceneOn) return; openDogam(this.g); }
+  jokbo() { if (this.g.ui.isOpen?.() || this.g.story?.cutsceneOn) return; this.g.sound?.play?.('jokbo', 0.5); openJokbo(this.g); }
+  dogam() { if (this.g.ui.isOpen?.() || this.g.story?.cutsceneOn) return; this.g.sound?.play?.('paper', 0.5); openDogam(this.g); }
   render() {
     if (!this.el) return; const v = this.values; const prev = this.el.dataset.v || '';
     const marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h).join(' · ');

@@ -1,5 +1,7 @@
-// 소리층 — 파일 없이 브라우저가 합성하는 환경음(바람·불·비·강물·발소리·심장) + 있으면 트는 샘플(assets/sfx/<name>.mp3).
+// 소리층 — 파일 없이 브라우저가 합성하는 환경음(바람·불·비·강물·발소리·심장) + 한 번 소리 60여 종(SFX, 108) + 있으면 트는 샘플(assets/sfx/<name>.mp3).
 // 첫 터치 뒤에만 켜진다(브라우저 정책). ?sound=0 이면 끔, 🔈 단추로 토글. 시대 이름 없음. 구조 설계 v1 §7.
+/** 합성할 수 있는 한 번 소리 이름(108) — 데이터(ambience.day/night·사건 sound·선택지 sound)에서 이 이름을 쓴다 */
+export const SFX = ['growl','rustle','wolf','card','good','bad','drum','bird','owl','dog','rooster','hammer','horse','train','car','bell','pick','gather','stone','knap','chop','flint','splash','eat','hoe','loom','coin','paper','door','locked','gong','flute','horn','whistle','tiger','bear','boar','cow','crow','frog','hurt','fall','breath','wake','limp','grain','craft','heart','rank','capped','status','tick','late','gate','jokbo','luck','star','wave','meet','secret'];
 export class Sound {
   constructor(g) {
     this.g = g; this.on = new URLSearchParams(location.search).get('sound') !== '0' && localStorage.getItem('kworld_sound') !== '0';
@@ -64,6 +66,57 @@ export class Sound {
     if (name === 'train') { osc('sawtooth', 220, 215, 1.4, 0.07); osc('sawtooth', 277, 270, 1.4, 0.06); return true; }
     if (name === 'car') { this.blip(300, 1.6, 0.14 * gain, 'lowpass'); return true; }
     if (/bell/.test(name)) { osc('sine', 660, 640, 2.2, 0.16); osc('sine', 1320, 1300, 1.2, 0.05); return true; }
+    // ─ 108: 효과음 층 넓히기 — 손·값·문·짐승·시대 (파일 없이 전부 합성, 이름으로 부른다)
+    const seq = (ms, fn) => setTimeout(fn, ms); const B = (f, d, v, ty) => this.blip(f, d, v * gain, ty);
+    // 손으로 하는 일
+    if (name === 'pick') { B(520, 0.06, 0.18, 'bandpass'); osc('triangle', 880, 620, 0.09, 0.05); return true; }
+    if (name === 'gather') { B(2400, 0.2, 0.1, 'highpass'); seq(160, () => B(2000, 0.18, 0.09, 'highpass')); return true; }
+    if (name === 'stone') { B(1800, 0.05, 0.22, 'bandpass'); seq(90, () => B(1500, 0.05, 0.16, 'bandpass')); return true; }
+    if (name === 'knap') { for (let i = 0; i < 3; i++) seq(i * 180, () => B(2200 + i * 200, 0.04, 0.2, 'bandpass')); return true; }
+    if (name === 'chop') { for (let i = 0; i < 2; i++) seq(i * 480, () => { this.thump(0.18 * gain); B(1200, 0.07, 0.2, 'bandpass'); }); return true; }
+    if (name === 'flint') { for (let i = 0; i < 3; i++) seq(i * 110, () => B(3200, 0.03, 0.14, 'highpass')); seq(380, () => B(700, 0.7, 0.16, 'lowpass')); return true; }
+    if (name === 'splash') { B(900, 0.32, 0.26, 'bandpass'); this.thump(0.12 * gain); seq(140, () => B(1600, 0.4, 0.1, 'highpass')); return true; }
+    if (name === 'eat') { for (let i = 0; i < 3; i++) seq(i * 150, () => B(400, 0.06, 0.12, 'lowpass')); return true; }
+    if (name === 'hoe') { for (let i = 0; i < 2; i++) seq(i * 420, () => { this.thump(0.14 * gain); B(700, 0.1, 0.16, 'lowpass'); }); return true; }
+    if (name === 'loom') { for (let i = 0; i < 4; i++) seq(i * 220, () => B(1500, 0.04, 0.14, 'bandpass')); return true; }
+    if (name === 'coin') { osc('sine', 3200, 3100, 0.4, 0.06); osc('sine', 4800, 4700, 0.25, 0.03); return true; }
+    if (name === 'paper') { B(3000, 0.18, 0.1, 'highpass'); seq(160, () => B(2600, 0.22, 0.09, 'highpass')); return true; }
+    if (name === 'door') { B(300, 0.4, 0.12, 'lowpass'); osc('sawtooth', 120, 90, 0.5, 0.035); return true; }
+    if (name === 'locked') { this.thump(0.35 * gain); seq(60, () => B(2400, 0.05, 0.14, 'bandpass')); seq(140, () => B(2000, 0.05, 0.12, 'bandpass')); return true; }
+    // 악기·신호
+    if (name === 'gong') { osc('sine', 180, 170, 2.5, 0.18); osc('sine', 270, 262, 1.8, 0.08); osc('sine', 540, 530, 1.0, 0.04); return true; }
+    if (name === 'flute') { osc('sine', 880, 0, 0.3, 0.07); seq(300, () => osc('sine', 988, 0, 0.3, 0.07)); seq(600, () => osc('sine', 784, 0, 0.5, 0.07)); return true; }
+    if (name === 'horn') { osc('triangle', 196, 220, 1.0, 0.07); osc('sawtooth', 196, 220, 1.0, 0.02); return true; }
+    if (name === 'whistle') { osc('sine', 1100, 1080, 0.8, 0.08); osc('sine', 1650, 1620, 0.8, 0.04); return true; }
+    // 짐승
+    if (name === 'tiger') { B(90, 1.0, 0.5, 'lowpass'); osc('sawtooth', 50, 38, 1.1, 0.12); return true; }
+    if (name === 'bear') { osc('sawtooth', 70, 55, 0.9, 0.1); B(160, 0.7, 0.3, 'lowpass'); return true; }
+    if (name === 'boar') { for (let i = 0; i < 3; i++) seq(i * 200, () => osc('sawtooth', 200, 140, 0.22, 0.05)); return true; }
+    if (name === 'cow') { osc('sawtooth', 140, 110, 1.2, 0.06); osc('triangle', 280, 220, 1.0, 0.04); return true; }
+    if (name === 'crow') { for (let i = 0; i < 2; i++) seq(i * 240, () => osc('sawtooth', 700, 500, 0.18, 0.05)); return true; }
+    if (name === 'frog') { for (let i = 0; i < 3; i++) seq(i * 300, () => osc('sine', 300, 260, 0.12, 0.05)); return true; }
+    // 몸
+    if (name === 'hurt') { B(400, 0.12, 0.3, 'lowpass'); osc('triangle', 300, 180, 0.3, 0.08); return true; }
+    if (name === 'fall') { this.thump(0.5 * gain); osc('sawtooth', 90, 35, 1.4, 0.09); seq(120, () => B(200, 0.6, 0.2, 'lowpass')); return true; }
+    if (name === 'breath') { B(1400, 0.22, 0.06, 'highpass'); seq(320, () => B(1200, 0.26, 0.05, 'highpass')); return true; }
+    if (name === 'wake') { osc('triangle', 392, 0, 0.4, 0.07); seq(300, () => osc('triangle', 523, 0, 0.5, 0.07)); return true; }
+    if (name === 'limp') { this.thump(0.16 * gain); seq(90, () => B(220, 0.14, 0.14, 'lowpass')); return true; }
+    // 값·신분·시대
+    if (name === 'grain') { B(600, 0.45, 0.14, 'lowpass'); seq(60, () => B(900, 0.3, 0.08, 'bandpass')); return true; }
+    if (name === 'craft') { B(1600, 0.05, 0.14, 'bandpass'); seq(120, () => B(1700, 0.05, 0.12, 'bandpass')); seq(200, () => osc('triangle', 660, 0, 0.15, 0.05)); return true; }
+    if (name === 'heart') { osc('triangle', 392, 0, 0.35, 0.06); osc('triangle', 494, 0, 0.35, 0.06); osc('triangle', 587, 0, 0.5, 0.06); return true; }
+    if (name === 'rank') { osc('sine', 880, 870, 1.2, 0.1); osc('sine', 1760, 1740, 0.6, 0.03); return true; }
+    if (name === 'capped') { this.thump(0.25 * gain); osc('triangle', 147, 140, 0.6, 0.08); return true; }
+    if (name === 'status') { this.thump(0.4 * gain); seq(80, () => { osc('triangle', 330, 0, 0.8, 0.05); osc('triangle', 415, 0, 0.8, 0.05); osc('triangle', 494, 0, 0.9, 0.05); }); return true; }
+    if (name === 'tick') { B(2800, 0.025, 0.12, 'bandpass'); return true; }
+    if (name === 'late') { this.thump(0.45 * gain); seq(150, () => this.thump(0.35 * gain)); osc('sawtooth', 110, 60, 0.8, 0.08); return true; }
+    if (name === 'gate') { for (const [i, f] of [262, 330, 392, 523].entries()) seq(i * 140, () => osc('sine', f, f * 1.01, 1.8, 0.06)); return true; }
+    if (name === 'jokbo') { B(3000, 0.18, 0.1, 'highpass'); seq(160, () => B(2600, 0.22, 0.09, 'highpass')); osc('sine', 220, 215, 0.8, 0.05); return true; }
+    if (name === 'luck') { osc('sine', 1047, 0, 0.15, 0.06); seq(110, () => osc('sine', 1319, 0, 0.15, 0.06)); seq(220, () => osc('sine', 1568, 0, 0.3, 0.06)); return true; }
+    if (name === 'star') { osc('sine', 2093, 1568, 0.5, 0.05); return true; }
+    if (name === 'wave') { osc('sine', 660, 990, 0.12, 0.05); seq(100, () => osc('sine', 660, 990, 0.12, 0.05)); return true; }
+    if (name === 'meet') { B(350, 0.08, 0.08, 'bandpass'); seq(110, () => B(300, 0.08, 0.07, 'bandpass')); return true; }
+    if (name === 'secret') { osc('sine', 784, 0, 0.12, 0.05); seq(90, () => osc('sine', 988, 0, 0.12, 0.05)); seq(180, () => osc('sine', 1319, 0, 0.3, 0.05)); return true; }
     return false;
   }
   /** 샘플: assets/sfx/<name>.mp3 — 없으면 이름으로 합성, 그것도 없으면 조용히 */
@@ -85,7 +138,10 @@ export class Sound {
       for (const k of ['sea', 'crowd', 'insects', 'machines']) if (Math.abs((want[k] || 0) - (this.level[k] || 0)) > 0.01) this.set(k, want[k] || 0);
       const list = night ? amb.night : amb.day; if (list?.length && !g.ui?.isOpen?.()) { this.oneT = (this.oneT || 0) + 0.6; const gap = amb.gap || 14; if (this.oneT > gap * (0.6 + Math.random() * 0.8)) { this.oneT = 0; this.play(list[Math.floor(Math.random() * list.length)], 0.5); } } } }
     // 발소리
-    if (g.p?.moving) { this.stepT += dt * (g.p.keys.ShiftLeft || g.p.keys.ShiftRight ? 3.4 : 2.0); if (this.stepT >= 1) { this.stepT = 0; this.blip(g.p.inWater ? 700 : 260, g.p.inWater ? 0.12 : 0.07, g.p.inWater ? 0.18 : 0.14, g.p.inWater ? 'bandpass' : 'lowpass'); } }
+    const running = !!(g.p?.keys?.ShiftLeft || g.p?.keys?.ShiftRight || (g.p?.joy && Math.hypot(g.p.joy.x || 0, g.p.joy.y || 0) > 0.93));
+    if (g.p?.moving) { const limp = !!g.life?.hurt?.has?.('leg'); this.stepT += dt * (running ? 3.4 : 2.0) * (limp ? 0.8 : 1); if (this.stepT >= 1) { this.stepT = 0; this.stepN = (this.stepN || 0) + 1; if (limp && !g.p.inWater && this.stepN % 2) { this.synth('limp', 0.7); } else this.blip(g.p.inWater ? 700 : 260, g.p.inWater ? 0.12 : 0.07, g.p.inWater ? 0.18 : 0.14, g.p.inWater ? 'bandpass' : 'lowpass'); }
+      // 숨소리 — 4초 넘게 달리면 1.3초마다 (절뚝이면 더 빨리)
+      if (running) { this.runT = (this.runT || 0) + dt; if (this.runT > 4) { this.breathT = (this.breathT || 0) + dt; if (this.breathT > (g.life?.hurt?.has?.('leg') ? 1.0 : 1.3)) { this.breathT = 0; this.synth('breath', 0.8); } } } else this.runT = 0; } else { this.runT = 0; }
     // 심장: 배가 너무 고플 때
     if (g.hunger != null && g.hunger < 18) { this.heartT += dt; if (this.heartT > 0.9) { this.heartT = 0; this.thump(0.22); setTimeout(() => this.thump(0.14), 180); } }
   }

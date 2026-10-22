@@ -91,7 +91,7 @@ export class Spark {
   shootStar() {
     const g = this.g; const e = g.e; const p = g.p.pos; this.starT = 0; const ang = Math.random() * 6.28; const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(-9, 3.5, 0)]); const m = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1 })); m.position.set(p.x + Math.cos(ang) * 120, 95 + Math.random() * 30, p.z + Math.sin(ang) * 120); m.rotation.y = -ang + Math.PI / 2; m.frustumCulled = false; e.scene.add(m);
     this.shot = { m, t: 0, life: 1.1, v: new THREE.Vector3(Math.cos(ang + 1.3) * 60, -22, Math.sin(ang + 1.3) * 60) }; this.stars++; g.flags.add('star:' + this.stars);
-    if (this.stars === 1) g.ui.say(this.cfg.starSay || '✨ 별똥별. — 봤다.', 3200); if (this.stars === 3 && this.cfg.starTitle && !this.hasTitle(this.cfg.starTitle.id)) this.earn(this.cfg.starTitle); g.sound?.play?.('good', 0.12);
+    if (this.stars === 1) g.ui.say(this.cfg.starSay || '✨ 별똥별. — 봤다.', 3200); if (this.stars === 3 && this.cfg.starTitle && !this.hasTitle(this.cfg.starTitle.id)) this.earn(this.cfg.starTitle); g.sound?.play?.('star', 0.3);
   }
   // ---------- 매 프레임 ----------
   tick(dt) { const g = this.g; if (!g.p?.pos || g.restoring) return; this.t += dt; this.tickGaze(dt); this.tickSurprise(dt); this.tickWonder(dt); this.tt = (this.tt || 0) + dt; if (this.tt > 1.5) { this.tt = 0; this.checkTitles(); } }

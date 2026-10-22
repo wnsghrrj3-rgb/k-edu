@@ -7,7 +7,7 @@ globalThis.window = { AudioContext: function () { return { currentTime: 0, sampl
 globalThis.location = { search: '' }; globalThis.localStorage = { getItem: () => null, setItem() {} };
 globalThis.document = { createElement: () => ({ style: {}, addEventListener() {} }), body: { appendChild() {} } };
 globalThis.fetch = () => Promise.resolve({ ok: false }); globalThis.setTimeout = (f) => f();
-const { Sound } = await import('../core/sound.js');
+const { Sound, SFX } = await import('../core/sound.js');
 // 물 비율 — 통일신라 높이맵 실제 파일로
 const hm = JSON.parse(fs.readFileSync(path.join(root, 'eras/silla-life/height.json'), 'utf8'));
 const e = { hm, areas: new Map(), onFrame: [], groundY(x, z) { const m = this.hm; const by = -z; const fx = (x + m.ext) / (2 * m.ext) * (m.n - 1), fy = (by + m.ext) / (2 * m.ext) * (m.n - 1); const i = Math.max(0, Math.min(m.n - 2, Math.floor(fx))), j = Math.max(0, Math.min(m.n - 2, Math.floor(fy))); return m.h[j][i]; } };
@@ -42,4 +42,32 @@ S2.g.story.isNight = true; set.length = 0; S2.tick(0.7); ok(set.some(([k, v]) =>
 S2.g.p.pos = { x: 200, z: 0 }; set.length = 0; S2.tick(0.7); ok(set.some(([k, v]) => k === 'sea' && v > 0.1), '부두 곁: 바다 소리');
 for (const n of ['bird', 'owl', 'dog', 'rooster', 'hammer', 'horse', 'train', 'car']) { made.length = 0; snd.synth(n); if (!made.length) ok(false, `${n} 합성 없음`); }
 ok(true, '한 번 소리 여덟 가지 전부 합성됨');
+
+// 108: 효과음 층 넓히기 — SFX 60여 종 전부 합성됨 · 절뚝 발소리 · 숨소리 · 호출부 연결 · 시대 분위기 짐승
+ok(SFX.length >= 60, `SFX 이름 ${SFX.length}개(≥60)`);
+const missing = []; for (const n of SFX) { made.length = 0; if (!snd.synth(n)) missing.push(n); else if (!made.length) missing.push(n + '(빈)'); }
+ok(!missing.length, `SFX 전부 합성됨 ${missing.length ? '— 빠짐: ' + missing.join(',') : ''}`);
+ok(new Set(SFX).size === SFX.length, 'SFX 이름 겹침 없음');
+// 절뚝: 다리 다치면 한 걸음 걸러 끌리는 소리(osc 쿵 포함) · 멀쩡하면 잡음만
+const g2 = { e, p: { pos: { x: 0, z: 0 }, moving: true, keys: {} }, life: { hurt: new Set(['leg']) } }; const S3 = new Sound(g2); S3.init();
+made.length = 0; S3.tick(0.7); S3.tick(0.7); const limpOsc = made.filter((m) => m === 'osc').length; ok(limpOsc >= 1, `절뚝 — 두 걸음 중 한 번은 끌리는 소리(osc ${limpOsc})`);
+g2.life.hurt.clear(); made.length = 0; S3.stepT = 0; S3.stepN = 0; S3.tick(0.7); S3.tick(0.7); ok(!made.includes('osc'), '멀쩡하면 발소리는 잡음만');
+// 숨소리: 4초 넘게 달리면
+g2.p.keys.ShiftLeft = true; made.length = 0; for (let i = 0; i < 12; i++) S3.tick(0.5); ok(made.includes('buf'), '6초 달리면 숨소리');
+S3.runT = 0; g2.p.keys.ShiftLeft = false; S3.tick(0.5); ok(S3.runT === 0, '걸으면 달리기 시간 0');
+// 호출부
+const src = (f) => fs.readFileSync(path.join(root, 'core', f), 'utf8');
+ok(src('ui.js').includes('this.onGray?.()') && src('game.js').includes("play?.('locked'"), '회색 단추 → locked');
+ok(src('life.js').includes("cues.push(c.heart > 0 ? 'heart' : 'bad')") && src('life.js').includes("'capped' : 'rank'") && src('life.js').includes('480 + i * 380'), 'life.finish 값 소리(craft·heart·grain·rank/capped) 결과 카드 뒤 차례로');
+ok(src('life.js').includes("play?.('status'") && src('life.js').includes("play?.('hurt'") && src('life.js').includes("play?.('luck'") && src('life.js').includes("play?.('jokbo'") && src('life.js').includes("play?.('paper'"), 'life: 신분·상처·운 카드·족보·도감');
+ok(src('pulse.js').includes("play?.('tick'") && src('pulse.js').includes("play?.('late'") && src('pulse.js').includes("play?.('meet'") && src('pulse.js').includes("play?.('secret'"), 'pulse: 마지막 10초 틱·늦음·한마디·숨은 것');
+ok(src('danger.js').includes("play?.('fall'") && src('danger.js').includes("play?.('wake'"), 'danger: 쓰러짐·눈 뜸');
+ok(src('game.js').includes("play?.('eat'") && src('game.js').includes("play?.('gate'") && src('game.js').includes("'splash'") && src('game.js').includes("'knap'"), 'game: 먹기·시대 문·줍기(자리별)·만들기');
+ok(src('bond.js').includes("play?.('wave'") && src('friends.js').includes("play?.('wave'") && src('spark.js').includes("play?.('star'"), 'bond/friends 손 흔들기 · 별똥별');
+// 시대 분위기 — 새 이름이 전부 SFX 에 있고, 구석기~고조선·조선 밤엔 호랑이, 개항·대한민국 낮엔 기적
+const amb2 = eras.map((e) => JSON.parse(fs.readFileSync(path.join(root, `eras/${e}/world.json`), 'utf8')).ambience);
+const unknown = amb2.flatMap((a) => [...a.day, ...a.night]).filter((n) => !SFX.includes(n));
+ok(!unknown.length, `ambience 소리 이름 전부 SFX 에 있음 ${unknown.length ? unknown.join(',') : ''}`);
+ok([0, 1, 2, 3].every((i) => amb2[i].night.includes('tiger')) && amb2[7].night.includes('tiger') && !amb2[10].night.includes('tiger'), '구석기~고조선·조선 전기 밤 호랑이 · 대한민국 밤엔 없음');
+ok(amb2[9].day.includes('whistle') && amb2[10].day.includes('whistle') && !amb2[0].day.includes('whistle'), '개항·대한민국 낮 기적 · 구석기엔 없음');
 console.log(`sound ${pass}/${fail}`); if (fail) process.exit(1);
