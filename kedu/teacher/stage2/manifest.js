@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-22 · 과목 23 · 차시 1112 · 슬라이드 19741 */
+   생성: 2026-10-22 · 과목 23 · 차시 1113 · 슬라이드 19760 */
 window.KT2_MANIFEST = {
  "built": "2026-10-22",
- "lessons": 1112,
- "slides": 19741,
+ "lessons": 1113,
+ "slides": 19760,
  "subjects": [
   {
    "slug": "g1_math",
@@ -30066,6 +30066,32 @@ window.KT2_MANIFEST = {
        "no": "4",
        "title": "유교 질서에 따른 조선 사회의 모습",
        "meta_title": "유교 질서에 따른 조선 사회의 모습",
+       "std": "[6사05-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u2_l06",
+       "no": "6",
+       "title": "조선의 발전에 따른 사람들의 생활 모습",
+       "meta_title": "조선의 발전에 따른 사람들의 생활 모습",
        "std": "[6사05-01]",
        "slides": 19,
        "stages": [
