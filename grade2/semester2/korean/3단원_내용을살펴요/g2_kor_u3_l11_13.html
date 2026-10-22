@@ -139,127 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 11~13차시(실천 — 주제를 정해 설명하는 글 쓰기 · 놀이 방법 설명하기) 13슬 =====
+/* ===== 11~13차시(실천 — 주제를 정해 설명하는 글 쓰기: 놀이 방법 설명하기) 『국어』 92~93쪽 13슬 — v2 교과서 기준 재구성 (2026-10-22)
    학습 목표: 배운 내용을 실천할 수 있다.
-   ★ 정답 로깅 7슬. 설명서 읽기(read-line)·무대·마무리 = 로깅 X.
-   ★ 열넷째 기준(화면이 실을 수 없는 것) — 놀이 설명 글 쓰기 · 친구와 놀이하기 · 막힌 곳 고치기는 사람 앞에서 일어난다.
-      ⇒ s0에서 「이 활동은 화면 밖에서 친구와 해요」를 먼저 밝히고, 화면은 설명하는 방법을 익히는 데까지만.
-      가짜 놀이판 0 · 가짜 친구 0.
-   ★ 지도서 154쪽 — 놀이는 줄글보다 개조식이나 그림이 효과적 ⇒ s3 · s9.
-      다만 155쪽이 여러 표현 형태를 허용하므로 s9는 「차례를 알아보기 쉬운 것」 하나만 묻는다(줄글을 틀렸다고 하지 않는다).
-   ★ 지도서 154쪽 — 놀이의 이름·규칙은 변형이 많으니 **내용(방법)**을 설명 ⇒ s7 오답 칸 = 「놀이를 처음 만든 사람」.
-   ★ 지도서 155쪽 — 놀이하다 막힌 부분을 떠올려 보완 ⇒ s8(빠진 내용 찾기, 정답 문구 안에서 바로 고쳐 준다).
-   ★ 지도서 155쪽 정리 — 긍정적인 피드백 ⇒ s10. 2단원 스물둘째 기준과 이어 두었다
-      — 오답 칸에 **양쪽 극단**(흉보기 / 말하지 않고 넘어가기).
-   ★ 저작권: 교과서 92~93쪽 보기·표, 지도서 155쪽 구슬치기 얼거리, 156~157쪽 두 놀이(책 표지 낱말·신호등 다섯 고개) 미차용.
-      자체 놀이 = 「종이컵 탑 쌓기」(교실 안의 일). 놀이 규칙은 자체로 지었다. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·밑줄 긋기·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「진심으로 사과하는 법을 알아 둬」·「빗자루」는 간추림만. 그 밖의 자료는 교육부 집필이라 그대로. 밑줄 긋기(중요한 문장)는 채점하지 않음(지도서 135쪽 ❶). */
 const slides=[
-  {tag:'① 만나기', t:'종이컵으로 무슨 놀이를 할까요?',
-   html:`<div class="scene">
-      <div class="scene-pic">🥤</div>
-      <div class="scene-say">놀이 방법을 글로 알려 줄게!</div>
-    </div>
-    <div class="ka-bub">놀이는 <b class="emph">화면 밖에서 친구와</b> 해요. 화면에서는 설명하는 방법을 먼저 익혀요. 🙂</div>`},
+  {tag:'① 활동 정하기', t:'우리 반에서 할 활동을 정해요',
+   html:`<div class="stage-box">🗳️ 주제를 정해 설명하는 글 쓰기 가운데 우리 반에서 하고 싶은 활동을 정해 보세요.<br><small>이런 활동 어때요: 친구들과 함께 하고 싶은 놀이 방법 설명하기</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 놀이 방법을 설명하는 글을 써서 친구들과 놀이해 봐요. 🎲">🗳️ 정했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'① 학습 문제', t:'오늘 배울 것이에요',
-   html:`<div class="sentence">놀이 방법을 설명하는 글을 써 봐요.</div>
-    <div class="ka-bub">먼저 친구가 쓴 놀이 설명을 읽어 봐요.</div>`},
+  {tag:'② 92쪽 1번', t:'놀이를 설명하는 글에 넣으면 좋은 내용을 모두 골라요', log:true, collectMsg:'잘 골랐어요! 이것만 있으면 친구가 놀이를 따라 할 수 있어요. 🎲',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">📜 놀이 규칙</div><div class="chip" data-hit="1">⚠️ 놀이할 때 주의할 점</div><div class="chip" data-hit="0">🍰 어제 먹은 간식</div><div class="chip" data-hit="1">👥 필요한 사람 수</div><div class="chip" data-hit="1">🎒 준비물</div><div class="chip" data-hit="1">📍 놀이 장소</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'② 설명 읽기', t:'한 줄씩 소리 내어 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>놀이 이름: 종이컵 탑 쌓기</div>
-      <div class="read-line"><span class="rl-num">2</span>사람 수: 두 명 · 준비물: 종이컵 열 개</div>
-      <div class="read-line"><span class="rl-num">3</span>① 먼저 누가 먼저 할지 차례를 정해요.</div>
-      <div class="read-line"><span class="rl-num">4</span>② 한 사람씩 번갈아 컵을 하나씩 쌓아요.</div>
-      <div class="read-line"><span class="rl-num">5</span>③ 탑을 무너뜨린 사람이 져요.</div>
-      <div class="read-line"><span class="rl-num">6</span>주의할 점: 컵을 던지지 않아요.</div>
-    </div><div class="fb" id="readFb"></div>`},
+  {tag:'② 놀이 글의 짜임', t:'놀이 설명 글은 이렇게 짜요 (예: 구슬치기)',
+   html:`<div class="ka-bub">처음: 놀이해 본 경험 이야기<br>가운데: 놀이 준비(사람 수 정하기, 구멍 파기, 차례 정하기) → 하는 방법<br>끝맺음: 「재미있는 놀이 많이 하자!」</div>`},
 
-  {tag:'② 이렇게 쓰면', t:'놀이 설명은 이렇게 쓰면 알아보기 쉬워요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🔢</span><span class="pc-name">차례는<br>번호로</span></div>
-      <div class="punct-card"><span class="pc-mark">📋</span><span class="pc-name">짧게<br>나누어</span></div>
-      <div class="punct-card"><span class="pc-mark">🖼️</span><span class="pc-name">그림을<br>곁들여</span></div>
-    </div>`},
+  {tag:'② 놀이 글의 짜임', t:'놀이 설명 글의 「가운데」에 쓸 내용은?', log:true, okMsg:'맞아요! 가운데에는 친구가 따라 할 수 있게 준비와 방법을 써요. 🔢',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">📖</div><div class="wc-word">놀이해 본 경험 이야기</div></div><div class="wcard" data-ok="0"><div class="wc-pic">👋</div><div class="wc-word">「다음에 또 하자」는 인사</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🔢</div><div class="wc-word">놀이 준비와 하는 방법</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 준비물', t:'이 놀이의 준비물은 무엇인가요?', log:true,
-   okMsg:'맞아요! 2번 줄에 준비물이 있어요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">종이컵 열 개</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">공 한 개</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 놀이 방법', t:'놀이 이름보다 놀이 방법을 자세히 써야 하는 까닭은?', log:true, okMsg:'맞아요! 동네마다 이름이 달라도 방법을 읽으면 함께 놀 수 있어요. 🤝',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">놀이 이름은 쓰면 안 되기 때문이에요</div></div><div class="wcard" data-ok="0"><div class="wc-word">글을 길게 쓰기 위해서예요</div></div><div class="wcard" data-ok="1"><div class="wc-word">같은 놀이도 이름과 규칙이 달라서, 방법을 써야 친구가 따라 할 수 있어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 무엇이 어디에', t:'설명한 것과 내용을 알맞게 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 나누어 쓰니 한눈에 찾을 수 있어요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">설명한 것</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">👥</span>사람 수</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🔢</span>놀이 방법</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">⚠️</span>주의할 점</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">내용</div>
-        <div class="match-card" data-k="C" data-pair="c">컵을 던지지 않아요</div>
-        <div class="match-card" data-k="A" data-pair="a">두 명</div>
-        <div class="match-card" data-k="B" data-pair="b">번갈아 하나씩 쌓아요</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'② 쉽게 쓰기', t:'놀이 방법을 알기 쉽게 쓰려면 어떻게 할까요?', log:true, okMsg:'맞아요! 표나 숫자로 차례를 나타내면 한눈에 알 수 있어요. 📋',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">📃</div><div class="wc-word">쉬지 않고 한 줄로 길게 써요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🖼️</div><div class="wc-word">그림만 그리고 글은 쓰지 않아요</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🔢</div><div class="wc-word">숫자로 차례를 붙이고, 그림에 짧은 설명을 더해요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 차례', t:'차례를 정한 다음에 할 일은 무엇인가요?', log:true,
-   okMsg:'맞아요! 번호 ②에 있어요. 번호가 차례를 알려 줘요. 👍',
-   hint:'힌트: 번호를 따라가 봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">탑을 무너뜨린<br>사람이 져요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">번갈아 컵을<br>하나씩 쌓아요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 92쪽 2번', t:'놀이 방법을 설명하는 글을 써요',
+   html:`<div class="stage-box">✍️ 『국어』 붙임 8에 놀이 이름과 놀이 방법을 써 보세요. 필요한 사람 수·준비물·장소·규칙·주의할 점을 넣어요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 이제 친구들과 글을 읽고 놀이해 봐요. 🎉">✍️ 썼어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 꼭 쓸 것', t:'놀이를 설명할 때 꼭 쓸 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 이것이 있어야 읽고 바로 놀이할 수 있어요. 🎉',
-   hint:'힌트: 읽는 친구가 놀이를 하는 데 필요한 것만 골라요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">놀이 방법</div>
-      <div class="chip" data-hit="1">준비물</div>
-      <div class="chip" data-hit="0">놀이를 처음 만든 사람</div>
-      <div class="chip" data-hit="1">주의할 점</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 예시 1 책 표지 낱말 놀이', t:'책 표지를 낱말로 설명하기 — 「나도!」 점수는 어떻게 매길까요?', log:true, okMsg:'맞아요! 아무도 「나도!」 하지 않으면 0점이에요. 친구도 떠올릴 특징을 고르는 놀이예요. 📚',
+   html:`<div class="ka-bub">그림책 표지를 보고 친구들도 생각했을 법한 낱말 세 개를 써요. 돌아가며 하나씩 읽고, 같은 낱말을 쓴 친구는 「나도!」 하고 손을 들어요.</div><div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">낱말을 말한 사람과 「나도!」 한 사람 수를 더해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">글씨를 예쁘게 쓴 사람이 점수를 받아요</div></div><div class="wcard" data-ok="0"><div class="wc-word">가장 긴 낱말이 점수를 받아요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 막힌 곳', t:'「컵을 쌓다가 지면 끝나요.」 무엇이 빠졌나요?', log:true,
-   okMsg:'맞아요! 어떻게 하면 지는지가 빠졌어요. 이렇게 고쳐요 — “탑을 무너뜨린 사람이 져요.” 👍',
-   hint:'힌트: 이 문장만 읽고 놀이하면 어디에서 막힐까요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">어떻게 하면<br>지는지</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">종이컵의<br>색깔</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 예시 1 규칙', t:'책 표지에 나와 있는 낱말(제목 낱말)을 써도 될까요?', log:true, okMsg:'맞아요! 그림을 자세히 살펴보고 새 낱말로 설명해야 해요. 🔎',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">안 돼요 — 표지에 나와 있는 낱말은 쓸 수 없어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">돼요 — 제목 낱말이 가장 좋아요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 알아보기 쉬운', t:'놀이 차례를 알아보기 더 쉬운 것은?', log:true,
-   okMsg:'맞아요! 번호를 붙여 나누면 차례가 한눈에 보여요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">차례를 정하고 번갈아 쌓고<br>무너뜨리면 져요.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">① 차례 정하기<br>② 번갈아 쌓기<br>③ 무너뜨리면 짐</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 예시 2 신호등 다섯 고개', t:'신호등 다섯 고개 놀이 방법',
+   html:`<div class="ka-bub">술래 등에 낱말 쪽지(예: 비행기)를 붙여요. 술래는 「바퀴가 있어요.」처럼 설명하는 문장을 말하고, 친구들은 🟢예 · 🟡모름 · 🔴아니요 신호등으로만 답해요. 다섯 번 물은 뒤 답을 말해요.</div>`},
 
-  {tag:'③ 고칠 점 나누기', t:'친구 설명에서 막힌 곳을 찾았어요. 어떻게 말할까요?', log:true,
-   okMsg:'맞아요! 무엇을 더 쓰면 좋을지 알려 주면 친구 글이 좋아져요. 🎉',
-   hint:'힌트: 친구를 돕는 말이면서, 고칠 점도 알려 주는 말을 골라요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">네 설명은<br>하나도 모르겠어</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">여기에 지는 방법을<br>더 쓰면 좋겠어</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">말하지 않고<br>그냥 넘어가요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 예시 2 규칙', t:'술래의 설명을 들은 친구들은 어떻게 답하나요?', log:true, okMsg:'맞아요! 그래서 술래는 특징을 잘 골라 물어야 해요. 🚦',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🙆</div><div class="wc-word">고개를 끄덕여 알려 줘요</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🚦</div><div class="wc-word">말하거나 고개를 끄덕이지 않고 신호등으로만 답해요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🗣️</div><div class="wc-word">정답을 크게 말해 줘요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 쓰고 놀이하기', t:'친구와 함께 해 봐요',
-   html:`<div class="stage-box">
-      ✏️ 준비물: 종이 · 연필<br>
-      ① 친구와 하고 싶은 놀이를 정해요. ② 번호를 붙여 방법을 써요.<br>
-      ③ 친구가 그 글만 읽고 놀이해요. ④ 막힌 곳이 있었는지 이야기하고 고쳐 써요.
-      <br><button class="stage-do" id="stageDo" data-fb="글만 읽고도 놀이할 수 있게 고쳤어요! 👏">🥤 놀이해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 92쪽 4번', t:'놀이한 뒤 설명하는 글에서 고칠 점을 이야기해요',
+   html:`<div class="stage-box">🛠️ 놀이하다가 막혔던 부분이나 다툼이 생긴 곳이 있었나요? 글에 무엇을 더 쓰면 좋을지 의견을 나누어 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 친구가 따라 할 수 있게 고쳐 쓰면 더 좋은 설명하는 글이 돼요. 🌟">🛠️ 나눴어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 해냈어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">📋</span><b>사람 수·준비물·방법·주의할 점</b>을 나누어 써요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🔢</span>차례는 <b>번호</b>를 붙이면 알아보기 쉬워요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🔁</span>놀이하다 막힌 곳은 <b>더 써서</b> 고쳐요.</div>
-    </div>`},
+  {tag:'⑤ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">👥</span><b>사람 수·준비물·장소·규칙</b>을 써요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🔢</span><b>차례</b>를 붙여 알기 쉽게 써요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🛠️</span>놀이해 보고 <b>고쳐 써요</b>.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;

@@ -139,133 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 5~6차시(소단원 1 통합 — 글을 읽고 내용 간추리기) 13슬 =====
+/* ===== 5~6차시(소단원 1 통합 — 글을 읽고 내용 간추리기) 『국어』 78~83쪽 13슬 — v2 교과서 기준 재구성 (2026-10-22)
    학습 목표: 글을 읽고 내용을 간추릴 수 있다.
-   ★ 정답 로깅 7슬. 글 읽기(read-line)·무대·마무리 = 로깅 X.
-   ★ 지도서 142쪽 — 요약 전략은 3~4학년군 ⇒ 간추리기 전략을 가르치지 않고,
-      설명하는 대상의 특징으로 무엇이 나왔는지 살펴보는 데 무게를 두었다(s3 · s8).
-   ★ 지도서 143쪽 — ‘문단’ 대신 ‘글의 덩어리’ ⇒ s3.
-   ★ 지도서 143쪽 활동의 유의점 — 순서를 나타내는 표현(먼저·그다음에) ⇒ s6.
-   ★ 지도서 143쪽 낱말 알기 — 뜻이 반대인 낱말 ⇒ s7(자체 글에서 뽑은 짝 셋).
-   ★★ 판단 기준(스물셋째) 둘째 갈래 — 간추리기를 채점하면 「옮겨 쓰기」가 남는다.
-      지도서 158쪽 — 글의 문장을 재진술하는 것이 아니라 내용을 알맞게 파악했는지 확인한다.
-      ⇒ s9 오답 칸 = 첫 줄과 끝 줄을 그대로 옮긴 것 · s10 = 재미있는 것과 중요한 것을 가른다.
-   ★ 저작권: 교과서 78~83쪽 제재(윤혜신)·사진·낱말 짝 셋(묶어·질겨져·가지런히)·정리 표, 지도서 145쪽 사고 구술 예시·영상 미차용.
-      자체 글 「실내화」 = 학교와 집 안의 일. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·밑줄 긋기·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「진심으로 사과하는 법을 알아 둬」·「빗자루」는 간추림만. 그 밖의 자료는 교육부 집필이라 그대로. 밑줄 긋기(중요한 문장)는 채점하지 않음(지도서 135쪽 ❶). */
 const slides=[
-  {tag:'① 만나기', t:'날마다 신는 이것에 대한 글이에요',
-   html:`<div class="scene">
-      <div class="scene-pic">👟</div>
-      <div class="scene-say">실내화</div>
-    </div>
-    <div class="ka-bub">실내화에 대해 <b class="emph">무엇을 알려 줄지</b> 짐작해 봐요. 🤔</div>`},
+  {tag:'① 동기 유발', t:'집이나 학교에서 볼 수 있는 생활 도구를 찾아봐요',
+   html:`<div class="stage-box">🧹 교실·부엌·마당에서 쓰는 생활 도구를 떠올려 말해 보세요. 옛이야기 그림에서 본 옛날 도구도 좋아요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 오늘은 그중 하나인 빗자루에 대한 글을 읽어요. 🧹">🧹 찾았어요!</button></div><div class="fb" id="stageFb"></div>`},
 
   {tag:'① 학습 문제', t:'오늘 배울 것이에요',
-   html:`<div class="sentence">글을 읽고 내용을 간추려 봐요.</div>
-    <div class="ka-bub">간추린다는 것은 <b>중요한 내용을 모아 짧게</b> 말하는 거예요. 🙂</div>`},
+   html:`<div class="sentence">글을 읽고 내용을 간추려 봅시다.</div>`},
 
-  {tag:'② 글 읽기', t:'한 줄씩 소리 내어 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>실내화는 교실 안에서 신는 신발이에요.</div>
-      <div class="read-line"><span class="rl-num">2</span>바깥 흙이 교실에 들어오지 않게 해 주지요.</div>
-      <div class="read-line"><span class="rl-num">3</span>끈이 있는 것도, 찍찍이가 붙은 것도 있어요.</div>
-      <div class="read-line"><span class="rl-num">4</span>빨 때는 먼저 물에 적셔요.</div>
-      <div class="read-line"><span class="rl-num">5</span>그다음에 솔로 문지르고, 마지막으로 햇볕에 말려요.</div>
-      <div class="read-line"><span class="rl-num">6</span>동생은 내 실내화를 신고 거실을 걸어 다니기도 해요.</div>
-    </div><div class="fb" id="readFb"></div>`},
+  {tag:'② 78쪽 제목·사진', t:'제목 「빗자루」와 사진(수수·갈대·댑싸리·쉽싸리)을 보고 짐작해요', log:true, okMsg:'맞아요! 제목과 사진을 보면 무엇을 설명할지 짐작할 수 있어요. 🧹',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🌾</div><div class="wc-word">곡식을 거두는 방법일 것 같아요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🎨</div><div class="wc-word">그림 그리는 방법일 것 같아요</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🧹</div><div class="wc-word">빗자루에 대한 설명일 것 같아요</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 글의 덩어리', t:'글을 덩어리로 나누어 보면',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🏫</span><span class="pc-name">1~2줄<br>어디에서 신나</span></div>
-      <div class="punct-card"><span class="pc-mark">🔷</span><span class="pc-name">3줄<br>어떤 모양이 있나</span></div>
-      <div class="punct-card"><span class="pc-mark">🧼</span><span class="pc-name">4~5줄<br>어떻게 빠나</span></div>
-    </div>
-    <div class="ka-bub">덩어리마다 실내화의 <b>다른 특징</b>을 말하고 있어요.</div>`},
+  {tag:'② 78~80쪽 글 읽기', t:'『국어』 78~80쪽을 펴고 글의 덩어리마다 살펴봐요',
+   html:`<div class="ka-bub">📖 덩어리마다 이런 이야기가 나와요.<br>① 빗자루는 먼지나 쓰레기를 쓸어 모으는 청소 도구예요. 수수·갈대·댑싸리·대나무 같은 것을 묶어 만들어요.<br>② 만드는 방법: 줄기를 소금물에 삶아요 → 그늘에 말려요 → 나락·꽃가루를 긁어내요 → 가지런히 묶어요 → 끝을 가지런히 잘라요.<br>③ 재료나 생김새에 따라 이름이 달라요 — 싸리비·장목비·갈목비·대장 비·솔비·꽃비.<br>④ 옛날에는 빗자루로 인형 놀이도 했어요.</div>`},
 
-  {tag:'③ 설명하는 것', t:'이 글이 설명하는 것은 무엇인가요?', log:true,
-   okMsg:'맞아요! 처음부터 끝까지 실내화를 설명해요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">교실</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">실내화</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">동생</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 81쪽 내용 알기 (1)', t:'빗자루는 무엇을 할 때 쓰는 물건인가요?', log:true, okMsg:'맞아요! 빗자루의 쓰임새예요. 🧹',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🧹</div><div class="wc-word">먼지나 쓰레기를 쓸어 모을 때 써요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🍚</div><div class="wc-word">밥을 지을 때 써요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🧵</div><div class="wc-word">옷을 꿰맬 때 써요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 쓰임새', t:'실내화는 어디에서 신나요?', log:true,
-   okMsg:'맞아요! 교실 안에서 신어요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">교실 안에서</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">운동장에서<br>달릴 때</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 81쪽 내용 알기 (2)', t:'빗자루를 만드는 재료를 모두 골라요', log:true, collectMsg:'잘 골랐어요! 솔가지나 솔잎으로도 만들어요. 🌲',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">🌾 수수</div><div class="chip" data-hit="1">🌿 갈대</div><div class="chip" data-hit="1">🌱 싸리</div><div class="chip" data-hit="1">🎋 대나무</div><div class="chip" data-hit="0">🧱 벽돌</div><div class="chip" data-hit="0">🥄 숟가락</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 차례 잇기', t:'빠는 차례를 알맞게 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! “먼저·그다음에·마지막으로”가 차례를 알려 줘요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">차례를 알리는 말</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">1️⃣</span>먼저</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">2️⃣</span>그다음에</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">3️⃣</span>마지막으로</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">하는 일</div>
-        <div class="match-card" data-k="C" data-pair="c">햇볕에 말려요</div>
-        <div class="match-card" data-k="A" data-pair="a">물에 적셔요</div>
-        <div class="match-card" data-k="B" data-pair="b">솔로 문질러요</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 81쪽 내용 알기 (3)', t:'빗자루의 이름은 어떻게 정해지나요?', log:true, okMsg:'맞아요! 싸리로 만들면 싸리비, 수수로 만들면 장목비예요. 🌾',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">만든 재료나 생김새에 따라 정해져요</div></div><div class="wcard" data-ok="0"><div class="wc-word">만든 사람의 이름을 따라요</div></div><div class="wcard" data-ok="0"><div class="wc-word">빗자루를 산 날짜를 따라요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 반대인 낱말', t:'뜻이 반대인 낱말끼리 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 뜻이 반대인 낱말을 알면 글이 더 잘 읽혀요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">글에 나온 낱말</div>
-        <div class="match-card" data-k="a" data-pair="A">안</div>
-        <div class="match-card" data-k="b" data-pair="B">적시다</div>
-        <div class="match-card" data-k="c" data-pair="C">붙다</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">뜻이 반대인 낱말</div>
-        <div class="match-card" data-k="B" data-pair="b">말리다</div>
-        <div class="match-card" data-k="C" data-pair="c">떨어지다</div>
-        <div class="match-card" data-k="A" data-pair="a">바깥</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 내용 알기 · 순서', t:'빗자루를 만들 때 맨 먼저 하는 일은?', log:true, okMsg:'맞아요! 「먼저 → 그런 다음에 → 그러고는 → 이제」 같은 말이 순서를 알려 줘요. 🔢',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">✂️</div><div class="wc-word">묶은 자루 끝을 가지런히 잘라요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🪢</div><div class="wc-word">여러 묶음을 끈으로 동여매요</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🔥</div><div class="wc-word">갈대나 수수 줄기를 소금물에 삶아요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 중요한 내용', t:'간추릴 때 넣을 중요한 내용을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 실내화의 특징을 알려 주는 내용이에요. 🎉',
-   hint:'힌트: 실내화가 어떤 신발인지 알려 주는 것만 골라요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">교실 안에서 신어요</div>
-      <div class="chip" data-hit="1">끈이나 찍찍이가 있어요</div>
-      <div class="chip" data-hit="0">동생이 거실에서 신어요</div>
-      <div class="chip" data-hit="1">적시고 문지르고 말려요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 81쪽 낱말 알기', t:'뜻이 반대인 낱말을 이어 봐요', log:true, matchMsg:'묶어↔풀어 · 질겨져↔연해져 · 가지런히↔들쭉날쭉! 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">글 속 낱말</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🪢</span>묶어</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">💪</span>질겨져</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">📏</span>가지런히</div></div><div class="match-col"><div class="match-col-h">뜻이 반대인 낱말</div><div class="match-card" data-k="C" data-pair="c">들쭉날쭉</div><div class="match-card" data-k="A" data-pair="a">풀어</div><div class="match-card" data-k="B" data-pair="b">연해져</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 간추린 글', t:'내용을 알맞게 간추린 것은 무엇일까요?', log:true,
-   okMsg:'맞아요! 문장을 그대로 옮기지 않고 중요한 내용을 모아 짧게 말했어요. 🎉',
-   hint:'힌트: 두 줄을 그대로 옮기면 빠는 방법과 모양이 빠져요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">실내화는 교실 안에서 신고,<br>끈이나 찍찍이가 있으며,<br>적시고 문질러 말려 빨아요.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">실내화는 교실 안에서 신는 신발이에요.<br>동생은 내 실내화를 신고<br>거실을 걸어 다니기도 해요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑤ 82쪽 내용 간추리기 (2)', t:'중요하다고 생각하는 문장에 밑줄을 그어 봐요',
+   html:`<div class="stage-box">✏️ 교과서 78~80쪽 글의 덩어리마다 한두 문장만 밑줄을 긋고, 그렇게 고른 까닭을 짝에게 말해 보세요.<br><small>선생님 생각: 「먼저 갈대나 수수를 삶는다니, 이 덩어리는 만드는 방법 이야기구나. 칼 모양은 덜 중요하겠어.」</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 덩어리마다 무엇을 설명하는지 찾으면 글을 간추릴 수 있어요. 🔎">✏️ 밑줄 그었어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 재미와 중요', t:'6번 줄은 간추린 글에 꼭 넣어야 할까요?', log:true,
-   okMsg:'맞아요! 재미있는 내용이 모두 중요한 내용은 아니에요. 👍',
-   hint:'힌트: 그 줄이 실내화의 특징을 알려 주나요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">재미있으니까<br>꼭 넣어요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">실내화의 특징이 아니라서<br>빼도 돼요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑤ 83쪽 (5) 중심 내용 정리', t:'빗자루의 특징을 칸에 맞게 이어 봐요', log:true, matchMsg:'쓰임새 · 만드는 방법 · 이름 · 놀이 — 글이 한눈에 간추려졌어요! 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">칸</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🧹</span>쓰임새</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🔥</span>만드는 방법</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🏷️</span>여러 가지 빗자루 이름</div><div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">🧸</span>빗자루로 하는 놀이</div></div><div class="match-col"><div class="match-col-h">중심 내용</div><div class="match-card" data-k="B" data-pair="b">줄기를 삶아 말리고, 가지런히 묶어 끝을 자른다</div><div class="match-card" data-k="D" data-pair="d">인형 놀이</div><div class="match-card" data-k="A" data-pair="a">먼지나 쓰레기를 쓸어 모으는 청소 도구</div><div class="match-card" data-k="C" data-pair="c">재료나 생김새에 따라 이름이 달라진다</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'④ 다른 글과 잇기', t:'생활 도구가 나오는 책을 찾아 읽어 봐요',
-   html:`<div class="stage-box">
-      📚 도서실이나 집에서 <b>생활 도구</b>가 나오는 책을 한 권 찾아 읽어요.<br>
-      그 도구가 <b>어디에 쓰이는지 · 어떻게 생겼는지</b>를 간추려 가족에게 말해 봐요.
-      <br><button class="stage-do" id="stageDo" data-fb="중요한 내용을 모아 짧게 말했어요! 👏">📚 찾아 읽었어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑥ 83쪽 다른 글과 연결하기', t:'생활 도구가 나오는 다른 책을 찾아 읽어 봐요',
+   html:`<div class="stage-box">📚 빗자루를 타고 하늘을 나는 이야기, 옛날과 오늘날 생활 도구를 견주는 책, 다른 생활 도구가 나오는 이야기 가운데 하나를 골라 읽어 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 읽은 책에서 무엇을 설명하는지도 찾아봐요. 🔎">📚 골랐어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🎯</span>먼저 글이 <b>무엇을 설명하는지</b> 찾아요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🧩</span>덩어리마다 나온 <b>특징</b>을 살펴요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">✂️</span>문장을 그대로 옮기지 않고 <b>중요한 내용을 모아</b> 짧게 말해요.</div>
-    </div>`},
+  {tag:'⑥ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">📖</span>글의 <b>덩어리마다</b> 무엇을 설명하는지 찾아요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">✏️</span>중요한 문장은 덩어리마다 <b>한두 개</b>만 골라요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🧹</span>찾은 내용을 이어 <b>간추려요</b>.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;

@@ -139,123 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 3~4차시(소단원 1 기본 — 중심 내용을 파악하는 방법 알기) 13슬 =====
+/* ===== 3~4차시(소단원 1 기본 — 글을 읽고 중심 내용을 파악하는 방법 알기) 『국어』 74~77쪽 13슬 — v2 교과서 기준 재구성 (2026-10-22)
    학습 목표: 글을 읽고 중심 내용을 파악하는 방법을 안다.
-   ★ 정답 로깅 7슬. 글 읽기(read-line)·무대·마무리 = 로깅 X.
-   ★★ 이 단원의 판단 기준(스물셋째) 첫 갈래 — 중심 내용을 채점하면 「위치 찾기」가 남는다.
-      「중요한 문장은 무엇인가」를 문장 고르기로 채점하면 아이는 내용이 아니라 **위치**(첫 줄)를 외운다.
-      지도서가 세 곳에서 막는다 — 135쪽 ❶(중심 문장과 뒷받침 문장 구분에 초점을 맞추지 않는다) ·
-      138쪽(문단 기준으로 엄격하게 구분하도록 요구하지 않는다) ·
-      140쪽(‘중심 문장’을 알아맞히는 것이 아니라 중점적으로 다루는 내용을 탐색).
-      ⇒ ⑴ 자체 글의 하고 싶은 말을 **첫 줄이 아니라 끝 줄**에 두었다 ·
-        ⑵ s7 정답은 본문 문장이 아니라 **내용을 모은 말**, 오답 칸에 **첫 줄을 그대로 옮긴 것** ·
-        ⑶ s8 오답 칸 = 「맨 끝에 있어서」(위치로 대는 까닭) · ⑷ s9에서 규칙으로 확정.
-   ★ 지도서 140쪽 — 밑줄은 문단별 한두 개로 제한 ⇒ s6은 「중요한 문장」이 아니라 「글쓴이가 하라고 한 것」을 모은다.
-   ★ 저작권: 교과서 74~77쪽 제재(박현숙, 사과하는 법)·보기 낱말·빈칸 문장, 지도서 141쪽 참고 글 미차용.
-      중심 내용 찾는 방법(제목 · 하고 싶은 말 · 까닭)은 학습 내용이라 s10에서 다루되 교과서의 빈칸 틀은 옮기지 않았다.
-      자체 글 「줄을 설 때」 = 학교 안의 일. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·밑줄 긋기·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「진심으로 사과하는 법을 알아 둬」·「빗자루」는 간추림만. 그 밖의 자료는 교육부 집필이라 그대로. 밑줄 긋기(중요한 문장)는 채점하지 않음(지도서 135쪽 ❶). */
 const slides=[
-  {tag:'① 제목 만나기', t:'이런 제목의 글이 있어요',
-   html:`<div class="scene">
-      <div class="scene-pic">🚶</div>
-      <div class="scene-say">줄을 설 때</div>
-    </div>
-    <div class="ka-bub">제목만 보고 <b class="emph">무슨 이야기</b>일지 짐작해 봐요. 🤔</div>`},
+  {tag:'① 동기 유발', t:'사과를 하거나 받아 본 적이 있나요?',
+   html:`<div class="stage-box">💭 누구에게 어떤 일로 사과를 했거나 받았는지 떠올려 말해 보세요. 그때 어떤 말을 했나요?<br><small>누가 잘못했는지 따지지 말고, 어떤 상황이었고 어떤 말을 했는지만 말해요.</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 사과하는 말이 잘 전해지지 않았던 적도 있나요? 🤔">💭 떠올렸어요!</button></div><div class="fb" id="stageFb"></div>`},
 
   {tag:'① 학습 문제', t:'오늘 배울 것이에요',
-   html:`<div class="sentence">중심 내용을 찾는 방법을 알아봐요.</div>
-    <div class="ka-bub">글쓴이가 <b>가장 하고 싶은 말</b>이 중심 내용이에요. 🙂</div>`},
+   html:`<div class="sentence">글을 읽고 중심 내용을 파악하는 방법을 알아봅시다.</div>`},
 
-  {tag:'② 글 읽기', t:'한 줄씩 소리 내어 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>급식실에 갈 때 우리는 줄을 서요.</div>
-      <div class="read-line"><span class="rl-num">2</span>줄을 설 때는 앞사람과 조금 떨어져 서요.</div>
-      <div class="read-line"><span class="rl-num">3</span>밀거나 끼어들면 넘어져 다칠 수 있거든요.</div>
-      <div class="read-line"><span class="rl-num">4</span>줄에서는 장난을 치지 않고 차례를 기다려요.</div>
-      <div class="read-line"><span class="rl-num">5</span>줄을 잘 서면 모두 안전하게 갈 수 있어요.</div>
-    </div><div class="fb" id="readFb"></div>`},
+  {tag:'② 74쪽 제목 보기', t:'제목 「진심으로 사과하는 법을 알아 둬」를 보고 짐작해요. 무엇에 대한 글일까요?', log:true, okMsg:'맞아요! 제목을 보면 글쓴이가 무엇을 말하려는지 미리 짐작할 수 있어요. 🙏',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🙏</div><div class="wc-word">사과를 잘하는 방법을 알려 주는 글</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🎲</div><div class="wc-word">재미있는 놀이 방법을 알려 주는 글</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🍎</div><div class="wc-word">사과를 맛있게 먹는 방법을 알려 주는 글</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 읽고 나서', t:'이렇게 살펴볼 거예요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🏷️</span><span class="pc-name">제목과<br>맞았는지</span></div>
-      <div class="punct-card"><span class="pc-mark">💬</span><span class="pc-name">글쓴이가<br>하고 싶은 말</span></div>
-      <div class="punct-card"><span class="pc-mark">❓</span><span class="pc-name">그렇게<br>말한 까닭</span></div>
-    </div>`},
+  {tag:'② 74~75쪽 글 읽기', t:'『국어』 74~75쪽을 펴고 글을 소리 내어 읽어요',
+   html:`<div class="ka-bub">📖 덩어리마다 이런 이야기가 나와요.<br>① 잘못했을 때는 꼭 사과해야 해요. 왜 미안한지 말하고, 다시는 그러지 않겠다고 약속해요.<br>② 상대에게 「내 사과를 받아 줄래?」 하고 정중하게 물어봐요.<br>③ 「너도 잘못했어.」 하고 따지거나 「하지만…….」 하고 변명하지 않아요. 깨끗하게 잘못을 인정하고 진심으로 사과해요.</div><div class="sentence"><small>모르는 낱말은 표시해 두었다가 물어봐요.</small></div>`},
 
-  {tag:'③ 제목과 내용', t:'제목을 보고 짐작한 것과 맞는 것은?', log:true,
-   okMsg:'맞아요! 제목대로 줄을 설 때 알아 둘 것을 말하는 글이에요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">줄을 설 때<br>알아 둘 것</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">오늘 급식에<br>나온 반찬</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 76쪽 2번 (1)', t:'잘못을 했을 때 사과해야 하는 까닭은?', log:true, okMsg:'맞아요! 내 마음은 말로 해야 상대에게 전해져요. 💬',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">사과하면 선물을 받을 수 있기 때문이에요</div></div><div class="wcard" data-ok="0"><div class="wc-word">선생님께 혼나지 않으려고요</div></div><div class="wcard" data-ok="1"><div class="wc-word">마음속으로만 잘못했다고 생각하면 상대가 알 수 없기 때문이에요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 까닭 찾기', t:'앞사람과 떨어져 서야 하는 까닭은?', log:true,
-   okMsg:'맞아요! 3번 줄에 까닭이 있어요. 👍',
-   hint:'힌트: “~거든요”로 끝나는 줄을 찾아봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">급식을 더 빨리<br>먹으려고</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">밀리면 넘어져<br>다칠 수 있어서</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 76쪽 2번 (2)', t:'사과를 받아 주는 상대에게 뭐라고 물어봐야 할까요?', log:true, okMsg:'맞아요! 사과를 받아 줄지는 마음이 상한 상대가 정해요. 🙏',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">😤</div><div class="wc-word">「미안하다고 했잖아, 됐지?」</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🏃</div><div class="wc-word">아무것도 묻지 않고 가 버려요</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🙏</div><div class="wc-word">「내 사과를 받아 줄래?」 하고 정중하게 물어봐요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 하라고 한 것', t:'글쓴이가 줄을 설 때 하라고 한 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 글쓴이가 알려 준 것들이에요. 🎉',
-   hint:'힌트: 글에 없는 것이 하나 있어요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">조금 떨어져 서요</div>
-      <div class="chip" data-hit="0">먼저 가려고 뛰어요</div>
-      <div class="chip" data-hit="1">장난을 치지 않아요</div>
-      <div class="chip" data-hit="1">차례를 기다려요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 76쪽 2번 (3)', t:'사과할 때 변명하는 것이 좋지 않은 까닭은?', log:true, okMsg:'맞아요! 「미안해. 하지만…….」은 다시 다툼이 될 수 있어요. 😥',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">변명하다 보면 상대를 탓하게 되기 때문이에요</div></div><div class="wcard" data-ok="0"><div class="wc-word">변명은 말이 너무 짧기 때문이에요</div></div><div class="wcard" data-ok="0"><div class="wc-word">변명하면 사과가 빨리 끝나기 때문이에요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 중심 내용', t:'이 글의 중심 내용은 무엇일까요?', log:true,
-   okMsg:'맞아요! 여러 줄이 모두 이 말을 하고 있어요. 첫 줄을 그대로 옮긴다고 중심 내용이 되지는 않아요. 🎉',
-   hint:'힌트: 1번부터 5번까지 모두 무엇을 말하고 있나요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">급식실에 갈 때<br>우리는 줄을 서요.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">줄을 설 때는 안전하게<br>차례를 지키자.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">급식실에서는<br>맛있게 먹자.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 76쪽 3번 (2)', t:'중요하다고 생각하는 문장에 밑줄을 그어 봐요',
+   html:`<div class="stage-box">✏️ 교과서 74~75쪽에서 글의 덩어리마다 한두 문장만 밑줄을 긋고, 왜 중요하다고 생각했는지 짝에게 말해 보세요.<br><small>밑줄은 많이 긋지 않아요. 정답 위치를 찾는 게 아니라, 이 덩어리가 무슨 이야기를 하는지 찾는 거예요.</small><br><button class="stage-do" id="stageDo" data-fb="좋아요! 친구가 고른 문장과 견주어 보고, 왜 다른지 이야기해 봐요. 👥">✏️ 밑줄 그었어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 중요한 까닭', t:'5번 줄이 중요하다고 생각한 까닭으로 알맞은 것은?', log:true,
-   okMsg:'맞아요! 앞에서 한 말을 모아 하고 싶은 말을 들려주기 때문이에요. 👍',
-   hint:'힌트: 줄이 있는 곳이 아니라, 그 줄이 하는 말을 살펴봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">글의 맨 끝에<br>있어서</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">글쓴이가 하고 싶은 말을<br>모아 말해 주어서</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 77쪽 3번 (3)', t:'빈칸에 들어갈 알맞은 말을 이어 봐요', log:true, matchMsg:'사과 · 정중 · 잘못 · 인정 — 글의 중요한 내용이 모였어요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">문장</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">1️⃣</span>잘못을 했을 때에는 상대에게 꼭 ___하고 미안한 까닭을 말한다.</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">2️⃣</span>「내 사과를 받아 줄래?」라고 ___하게 물어본다.</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">3️⃣</span>사과할 때에는 자신의 ___을/를 깨끗하게 인정한다.</div><div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">4️⃣</span>자신의 잘못을 깨끗하게 ___하고 진심으로 사과한다.</div></div><div class="match-col"><div class="match-col-h">들어갈 말</div><div class="match-card" data-k="C" data-pair="c">잘못</div><div class="match-card" data-k="A" data-pair="a">사과</div><div class="match-card" data-k="D" data-pair="d">인정</div><div class="match-card" data-k="B" data-pair="b">정중</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 어디에 있을까', t:'중요한 내용은 글의 어디에 있을까요?', log:true,
-   okMsg:'맞아요! 첫 줄에도, 가운데에도, 끝 줄에도 있을 수 있어요. 그래서 글 전체를 살펴요. 🎉',
-   hint:'힌트: 오늘 읽은 글에서 하고 싶은 말은 몇 번 줄에 모여 있었나요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">언제나<br>첫 줄에 있어요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">어디에나 있을 수 있어요.<br>글 전체를 살펴요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">가장 긴 문장에<br>있어요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 77쪽 3번 (4)', t:'이 글의 중심 내용을 친구들과 이야기해 봐요',
+   html:`<div class="stage-box">👥 돌아가며 한 사람씩 「이 글에서 가장 중요한 말은 ○○ 같아. 왜냐하면 ……」 하고 말해 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 내 생각과 친구 생각을 견주어 보면 중심 내용이 더 잘 보여요. 🔎">👥 이야기했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 찾는 방법', t:'중심 내용을 찾는 방법을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 이 방법으로 다른 글도 읽어 봐요. 🎉',
-   hint:'힌트: 밑줄은 많이 긋는 것보다 한두 개로 골라 긋는 것이 좋아요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">제목을 보고 짐작해요</div>
-      <div class="chip" data-hit="1">하고 싶은 말을 찾아요</div>
-      <div class="chip" data-hit="0">모든 줄에 밑줄을 그어요</div>
-      <div class="chip" data-hit="1">그렇게 말한 까닭을 찾아요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'⑤ 77쪽 4번', t:'글을 읽고 중심 내용을 찾는 방법을 이어 봐요', log:true, matchMsg:'제목 → 하고 싶은 말 → 까닭! 중심 내용을 찾는 순서예요. 🗝️',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">방법</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">📕</span>___을 보고 무슨 내용일지 짐작한다.</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">💡</span>글쓴이가 ___이 무엇인지 찾아본다.</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">❓</span>글쓴이가 그렇게 말한 ___을 찾는다.</div></div><div class="match-col"><div class="match-col-h">들어갈 말</div><div class="match-card" data-k="B" data-pair="b">하고 싶은 말</div><div class="match-card" data-k="C" data-pair="c">까닭</div><div class="match-card" data-k="A" data-pair="a">제목</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'④ 다른 글에서', t:'다른 글로도 해 봐요',
-   html:`<div class="stage-box">
-      📚 다른 교과서나 즐겨 읽는 책에서 <b>짧은 글 하나</b>를 골라요.<br>
-      제목을 보고 짐작한 뒤 읽고, 가족에게 <b>중심 내용을 한 문장</b>으로 말해 봐요.
-      <br><button class="stage-do" id="stageDo" data-fb="내 말로 중심 내용을 말해 보았어요! 👏">📚 말해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 중심 내용', t:'「진심으로 사과하는 법을 알아 둬」의 중심 내용으로 알맞은 것은?', log:true, okMsg:'맞아요! 글쓴이가 하고 싶은 말을 한 문장으로 모았어요. 🌟',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">친한 친구끼리는 사과하지 않아도 된다</div></div><div class="wcard" data-ok="1"><div class="wc-word">사과할 때에는 까닭을 말하고 정중하게, 변명 없이 진심으로 해야 한다</div></div><div class="wcard" data-ok="0"><div class="wc-word">사과는 마음속으로만 하면 된다</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🏷️</span><b>제목</b>을 보고 무슨 내용일지 짐작해요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">💬</span>글쓴이가 <b>하고 싶은 말</b>과 그 <b>까닭</b>을 찾아요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🔍</span>중요한 내용은 첫 줄에만 있지 않아요. <b>글 전체</b>를 살펴요.</div>
-    </div>`},
+  {tag:'⑤ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">📕</span><b>제목</b>을 보고 무슨 내용일지 짐작해요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">💡</span>글쓴이가 <b>하고 싶은 말</b>을 찾아요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">❓</span>그렇게 말한 <b>까닭</b>을 찾아요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
