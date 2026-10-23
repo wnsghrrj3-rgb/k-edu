@@ -65,5 +65,5 @@ road.lastAt = { x: g.p.pos.x, z: g.p.pos.z }; road.since = 99; road.walk = 99; r
 // 8) 밤 일은 밤에만
 g.story.isNight = false; const nightIds = w.road.events.filter((s) => s.night).map((s) => s.id); ok(nightIds.length && road.cands().every((s) => !nightIds.includes(s.id)), '낮엔 밤 일이 후보에 없다'); g.story.isNight = true; ok(road.cands().some((s) => nightIds.includes(s.id)), '밤엔 밤 일이 후보에 든다');
 // 9) 신분 조건이 있는 일(백정은 「길을 피하는 사람」을 안 만난다)
-g.story.isNight = false; g.life.status = 'baekjeong'; ok(!road.cands().some((s) => s.id === 'baekjeongroad'), '백정은 「길을 피하는 사람」 일을 안 만난다'); g.life.status = 'sangmin'; ok(road.cands().some((s) => s.id === 'baekjeongroad'), '상민은 만난다');
+g.story.isNight = false; g.flags.delete('road:baekjeongroad'); g.life.status = 'baekjeong'; ok(!road.cands().some((s) => s.id === 'baekjeongroad'), '백정은 「길을 피하는 사람」 일을 안 만난다'); g.life.status = 'sangmin'; ok(road.cands().some((s) => s.id === 'baekjeongroad'), '상민은 만난다');
 console.log(`\n길 위의 일: ${pass} 통과 / ${fail} 실패`); process.exit(fail ? 1 : 0);

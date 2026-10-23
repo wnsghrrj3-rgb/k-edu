@@ -2,6 +2,7 @@
 //  · 돌발(spark.surprises)은 카드가 느닷없이 떠서 고르게 한다. 길 위의 일은 **세상에 보인다** — 걷다 보면 앞길 10여 m 에 작은 것(보따리·주저앉은 사람·길을 막은 돌·새끼 짐승)이 놓인다.
 //    가까이 가서 살펴보면(E) 작은 카드 — 길 둘셋, 값은 ±1 안팎, 📜 한 줄. 그냥 지나쳐도 된다: 멀어지거나 시간이 지나면 조용히 사라진다(pass 가 있으면 한 줄).
 //  · 한 판에 같은 일은 한 번. 조용할 때(카드·쫓김·급한 일·짐승 없음)·걷는 중에만. 같은 자리에선 다시 안 놓인다.
+//  · prop 'track' 에 beast(tiger·bear·boar)가 붙은 자국은 길에 then.lure 가 있으면 「따라가 본다」 → 짐승 층이 그 자리 둘레에 그 짐승을 세운다(113).
 //  · 선택엔 roll(능력 굴림)·if(회색, 이유)·then/fail(값·흔적·물건·깃발) — 돌발과 같은 틀(spark.apply 재사용).
 import * as THREE from 'three';
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
@@ -66,6 +67,7 @@ export class Road {
     const g = this.g; const s = c.s; let out = w.then || {}; let ok = true;
     if (w.roll) { ok = g.life ? g.life.roll({ roll: w.roll, rollFail: w.fail?.say || '…안 됐다.', rollFailFlag: w.fail?.flag }) : Math.random() < 0.6; if (!ok) out = w.fail || {}; }
     g.ui.close(); const lines = this.apply(out); g.flag('road:' + s.id + ':' + (ok ? 'ok' : 'fail'));
+    if (out.lure && s.beast) g.beasts?.lure?.(s.beast, { x: c.x, z: c.z });   // 113 발자국을 따라갔다 → 그 자리 둘레에 그 짐승이 선다
     const re = out.result || (ok ? w.result : null);
     g.ui.open(`<div class="chk life road"><div class="tag">🛤 ${esc(s.tag || '길 위에서')}</div><h3>${esc(re?.title || w.label)}</h3>${(re?.body || [out.say || (ok ? '…그렇게 했다.' : '…그렇게는 안 됐다.')]).map((b) => `<p>${esc(b)}</p>`).join('')}${lines.length ? `<p class="delta">${lines.join(' · ')}</p>` : ''}${s.fact ? `<div class="facts"><div>📜 <b>실제</b> ${esc(s.fact)}</div></div>` : ''}</div>`, [{ label: '…', primary: true, onClick: () => { g.ui.close(); g.p.enabled = true; this.remove(c); if (s.journal && g.story) g.story.journal(s.journal); g.spark?.checkTitles?.(); g.save?.touch(); } }]);
   }

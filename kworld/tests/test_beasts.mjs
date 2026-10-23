@@ -25,7 +25,7 @@ const w = JSON.parse(fs.readFileSync(path.join(root, 'eras/life/world.json'), 'u
 const added = []; const e = { areas: new Map([['deep', new THREE.Vector3(66, 0, 58)], ['meadow', new THREE.Vector3(12, 0, 46)], ['camp', new THREE.Vector3(0, 0, -20)]]), groundY: () => 0, scene: { add: (o) => added.push(o), remove: (o) => { const i = added.indexOf(o); if (i >= 0) added.splice(i, 1); } }, collides: () => false };
 const said = []; const flags = new Set(); let collapsed = null;
 const g = { e, p: { pos: new THREE.Vector3(66, 0, 58), yaw: 0, moving: false, enabled: true }, flags, inventory: ['berry', 'meat'], world: { ...w, bounds: 116 }, ui: { say: (t) => said.push(t), setGoal() {}, isOpen: () => false }, sound: { play() {}, thump() {} }, story: { isNight: true, cutsceneOn: false }, danger: { cfg: { nightRadius: 9, food: ['berry', 'meat'] }, hasTorch: () => false, firePos: () => null, collapse: (r, l) => { collapsed = { r, l }; }, collapsing: false }, has: (k) => g.inventory.includes(k), take: (k) => { const i = g.inventory.indexOf(k); if (i >= 0) g.inventory.splice(i, 1); }, renderInv() {}, flag: (f) => { for (const x of [].concat(f)) flags.add(x); }, save: { touch() {} } };
-const bs = new Beasts(g, { ...w.beasts, tiger: { ...w.beasts.tiger, chance: 1, waitSec: 2 }, boar: { ...w.beasts.boar, chance: 1, waitSec: 2 } });
+const bs = new Beasts(g, { ...w.beasts, tiger: { ...w.beasts.tiger, chance: 1, waitSec: 2 }, boar: { ...w.beasts.boar, chance: 1, waitSec: 2 }, bear: { areas: [] } });   // 곰(113)은 아래에서 따로
 const run = (sec, step = 0.1, each) => { for (let t = 0; t < sec; t += step) { bs.tick(step); each?.(step); } };
 // 1) 밤 깊은 숲에 서 있으면 호랑이가 뒤 18m 쯤에 선다 — 보인다·busy·한 줄
 run(3); const c1 = bs.cur; const d1 = c1 && Math.hypot(c1.obj.position.x - 66, c1.obj.position.z - 58);
@@ -59,4 +59,39 @@ run(12); ok(bs.cur === null && flags.has('beast:boar:fled'), 'beast:boar:fled');
 // 10) 위험층·길 위의 일 연동: busy 면 늑대 밤 판정·길 위의 일이 쉰다(코드 문자열)
 const dj = fs.readFileSync(path.join(root, 'core/danger.js'), 'utf8'), rj = fs.readFileSync(path.join(root, 'core/road.js'), 'utf8'), gj = fs.readFileSync(path.join(root, 'core/game.js'), 'utf8');
 ok(dj.includes('!g.beasts?.busy') && rj.includes('!g.beasts?.busy') && gj.includes('new Beasts(this, this.world.beasts)') && gj.includes('this.beasts.tick(dt)'), 'danger·road 는 busy 면 쉼 · game.js 가 켠다(?beasts=0 끔)');
+
+// ==== 113 — 곰(셋째 짐승) · 발자국 → 그 자리에 짐승 · 흔들림 ====
+const BEAR_ERAS = ERAS.slice(0, 9);
+for (const era of ERAS) {
+  const w2 = JSON.parse(fs.readFileSync(path.join(root, 'eras', era, 'world.json'), 'utf8')); const Bb = w2.beasts.bear;
+  if (BEAR_ERAS.includes(era)) ok(Bb?.areas?.length >= 2 && Bb.areas.every((a) => w2.areas?.[a]) && Bb.fact?.includes('→') && !/\d{3,4}년|\(\d{3,4}\)/.test(Bb.fact) && !Bb.areas.some((a) => ['village', 'camp', 'maeul', 'jangteo'].includes(a)), `${era}: 곰 자리 2+(굴·깊은 산) · 📜 인과 · 연도 0`);
+  else ok(!Bb, `${era}: 곰 없음`);
+  const tracks = (w2.road?.events || []).filter((s) => s.beast);
+  ok(tracks.length >= 1 && tracks.every((s) => s.prop === 'track' && w2.beasts[s.beast]?.areas?.length && s.ways.some((wy) => wy.then?.lure) && s.ways.some((wy) => !wy.then?.lure)), `${era}: 짐승 발자국 ${tracks.map((s) => s.id + '→' + s.beast).join(',')} — 따라가는 길(lure)·안 따라가는 길`);
+}
+const bm = beastModel('bear'); ok(bm.getObjectByName('rig') && bm.getObjectByName('moon') && bm.userData.legs.length === 4, '곰 모양 — 일어서는 rig·가슴 반달·다리 넷');
+// 곰 엔진(구석기 굴)
+g.inventory = ['meat', 'berry']; g.story.isNight = false; g.story.skyName = 'day'; g.danger.hasTorch = () => false; collapsed = null; flags.clear(); said.length = 0;
+const cave = { x: 30, z: 70 }; e.areas.set('cave', new THREE.Vector3(cave.x, 0, cave.z));
+const bb = new Beasts(g, { ...w.beasts, tiger: { areas: [] }, boar: { areas: [] }, bear: { ...w.beasts.bear, chance: 1, waitSec: 2 } }); const runB = (sec, step = 0.1, each) => { for (let t = 0; t < sec; t += step) { bb.tick(step); each?.(step); } };
+g.p.pos.set(cave.x, 0, cave.z); g.p.moving = false; runB(3); const k1 = bb.cur; ok(k1?.kind === 'bear' && k1.mode === 'approach' && said.some((s) => s.includes('곰')), '낮 굴 앞 → 곰이 선다 · 「곰이다」');
+runB(25); ok(['rear', 'eat', 'leave'].includes(k1.mode), `가만히 있으면 6m 쯤에서 일어선다(${k1.mode})`); ok(flags.has('beast:bear:reared'), 'beast:bear:reared');
+runB(6); ok(k1.mode === 'eat' || k1.mode === 'leave', '먹을 것이 있으면 하나 던져 준다'); ok(flags.has('beast:bear:fed') && g.inventory.length === 1 && g.inventory[0] === 'berry', `고기부터 던짐 — 남은 것 ${g.inventory}`);
+runB(30); ok(bb.cur === null && flags.has('beast:bear:met') && flags.has('beast:bear:fed') && !collapsed, '먹고 돌아가 사라짐 · met · 쓰러지지 않음');
+// 먹을 것 없으면 한참(7초) 노려보다 돌아선다
+bb.cool.bear = 0; g.inventory = []; g.p.pos.set(cave.x, 0, cave.z); said.length = 0; runB(3); const k2 = bb.cur; runB(25); runB(9); ok(k2 && (k2.mode === 'leave' || bb.cur === null) && said.some((s) => s.includes('돌아선다')) && !collapsed, '먹을 것 없으면 한참 노려보다 돌아선다');
+runB(30);
+// 뛰면 쫓아와 덮친다 — jolt
+bb.cool.bear = 0; g.p.pos.set(cave.x, 0, cave.z); runB(3); const k3 = bb.cur; for (let t = 0; t < 40 && k3?.mode !== 'rear'; t += 0.1) bb.tick(0.1); ok(k3?.mode === 'rear', '세 번째 곰이 일어섰다'); const j0 = bb.jolts; g.p.moving = true; runB(8, 0.1, (dt) => { g.p.pos.x += 6.5 * dt; }); ok(collapsed?.r === 'bear' && flags.has('beast:bear:caught') && bb.jolts === j0 + 1 && bb.cur === null, `뛰면 쫓아와 덮친다 → collapse('bear') · 흔들림 1 · 「${collapsed?.l}」`);
+// 겨울엔 안 나온다
+collapsed = null; g.p.moving = false; bb.cool.bear = 0; g.p.pos.set(cave.x, 0, cave.z); g.story.skyName = 'winter'; bb.runT = 0; bb.vel = 0; bb.prev = null; runB(6); ok(bb.cur === null, '겨울엔 곰이 안 나온다(겨울잠)'); g.story.skyName = 'day';
+// 발자국 → 그 자리에 짐승: 호랑이는 낮에도 온다
+const tb = new Beasts(g, { ...w.beasts, tiger: { ...w.beasts.tiger, chance: 0 }, boar: { areas: [] }, bear: { areas: [] } }); g.p.pos.set(0, 0, 0); g.story.isNight = false; said.length = 0; flags.clear();
+for (let t = 0; t < 5; t += 0.1) tb.tick(0.1); ok(tb.cur === null, '발자국 없으면(마을 밖 아님·낮) 호랑이 없음');
+ok(tb.lure('tiger', { x: 2, z: -3 }) && flags.has('beast:tiger:lured'), 'lure(tiger) — beast:tiger:lured'); for (let t = 0; t < 4; t += 0.1) tb.tick(0.1);
+const tc = tb.cur; ok(tc?.kind === 'tiger' && tc.lured && flags.has('beast:tiger:tracked'), '발자국을 따라가면 낮에도 그 자리에 호랑이가 선다(tracked)');
+for (let t = 0; t < 4; t += 0.1) tb.tick(0.1); ok(tc.mode === 'stalk', '따라온 호랑이는 낮이라고 바로 돌아서지 않는다');
+ok(!new Beasts(g, { boar: { areas: ['x'] } }).lure('bear', { x: 0, z: 0 }), '그 시대에 없는 짐승은 lure 안 됨');
+// 흔들림: 멧돼지 받힘·호랑이 덮침도 jolt
+ok(fs.readFileSync(path.join(root, 'core/beasts.js'), 'utf8').match(/this\.jolt\(/g).length >= 3 && fs.readFileSync(path.join(root, 'core/road.js'), 'utf8').includes('g.beasts?.lure?.(s.beast'), '덮침·받힘·앞발 → jolt · road 가 lure 를 부른다');
 console.log(`\n짐승 층: ${pass} 통과 / ${fail} 실패`); process.exit(fail ? 1 : 0);
