@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>케이모션 · 리듬 체육</title>
+<link rel="stylesheet" href="./kmotion.css">
+<style>
+.stage{max-width:960px;aspect-ratio:16/9}
+.hud .combo{color:var(--ok)}
+.setup{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;width:100%;max-width:560px;text-align:left}
+.setup label{display:flex;flex-direction:column;gap:6px;font-size:.9rem;color:var(--dim)}
+.setup select,.setup input{background:#0b1220;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:1rem}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.85rem;color:var(--dim)}
+.result{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;width:100%;max-width:640px}
+.result div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;font-size:.9rem}
+.result b{display:block;font-size:1.4rem;color:var(--gold)}
+.overlay{overflow:auto}
+</style>
+</head>
+<body>
+<header><a href="./">← 케이모션</a><h1>🥁 리듬 체육</h1><span id="hdr"></span></header>
+<div class="hud"><span class="big" id="score">0점</span><span class="combo" id="combo">콤보 0</span><span id="judge">—</span><span id="prog">—</span></div>
+<div class="stage">
+  <video id="v" autoplay playsinline muted></video>
+  <canvas id="c" width="960" height="540"></canvas>
+  <div class="dev hidden" id="dev"></div>
+  <div class="overlay" id="ov"></div>
+</div>
+<p class="note">두세 걸음 떨어져 머리부터 발까지 보이게 서요. 카드가 왼쪽 동그라미에 닿는 순간 그 동작을 해요. 영상은 기기 안에서만 처리돼요.</p>
+<script src="./kmotion.js"></script>
+<script src="./kmotion-data.js"></script>
+<script>
+// ───────── 동작 카드 정의
+const ACT = {
+  L: { name: '왼손 올려', icon: '🙋', color: '#4de1ff' },
+  R: { name: '오른손 올려', icon: '🙋‍♂️', color: '#4de1ff' },
+  B: { name: '양손 올려', icon: '🙌', color: '#ffd35c' },
+  C: { name: '손뼉', icon: '👏', color: '#ff8aa0' },
+  J: { name: '점프', icon: '🦘', color: '#5cf2a4' },
+  S: { name: '앉기', icon: '🧎', color: '#c4b5fd' },
+  LL: { name: '왼쪽 기울기', icon: '↙', color: '#f9a8d4' },
+  RR: { name: '오른쪽 기울기', icon: '↘', color: '#f9a8d4' },
+};
+const LEVELS = {
+  easy:   { label: '쉬움', bpm: 90,  bars: 16, pool: ['L', 'R', 'B', 'C'], per: 2, eighth: 0 },
+  normal: { label: '보통', bpm: 104, bars: 16, pool: ['L', 'R', 'B', 'C', 'J', 'S'], per: 1, eighth: 0 },
+  hard:   { label: '어려움', bpm: 120, bars: 20, pool: ['L', 'R', 'B', 'C', 'J', 'S', 'LL', 'RR'], per: 1, eighth: .25 },
+};
+const WIN = { perfect: 130, good: 280 }; // ms
+const LEAD = 2600;                        // 카드가 화면에 보이는 시간(ms)
+
+// ───────── 상태
+const km = KMotion.create({ video: document.getElementById('v'), canvas: document.getElementById('c'), modes: ['pose'], activity: 'rhythm' });
+KMotionData.attach(km, document.getElementById('hdr'));
+const ov = document.getElementById('ov'), dev = document.getElementById('dev'), { ctx, W, H } = km;
+if (new URLSearchParams(location.search).has('dev')) dev.classList.remove('hidden');
+const $ = id => document.getElementById(id);
+let level = 'easy', targets = [], hits = [], music = null, t0 = 0, playing = false, offset = 0, offsets = [], judgeText = '', judgeT = 0, pulse = 0;
+let stats = { score: 0, combo: 0, maxCombo: 0, perfect: 0, good: 0, miss: 0, per: {} };
+const now = () => performance.now();
+
+// ───────── 소리: 내장 비트(합성) 또는 선생님 파일
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+function kick(t){ const o = AC.createOscillator(), g = AC.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(45, t + .12); g.gain.setValueAtTime(.9, t); g.gain.exponentialRampToValueAtTime(.001, t + .25); o.connect(g).connect(AC.destination); o.start(t); o.stop(t + .3); }
+function snare(t){ const b = AC.createBuffer(1, AC.sampleRate * .15, AC.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2);
+  const s = AC.createBufferSource(), g = AC.createGain(), f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 1800; s.buffer = b; g.gain.value = .5; s.connect(f).connect(g).connect(AC.destination); s.start(t); }
+function hat(t, a){ const b = AC.createBuffer(1, AC.sampleRate * .04, AC.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+  const s = AC.createBufferSource(), g = AC.createGain(), f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 7000; s.buffer = b; g.gain.value = a || .18; s.connect(f).connect(g).connect(AC.destination); s.start(t); }
+function bass(t, hz, dur){ const o = AC.createOscillator(), g = AC.createGain(); o.type = 'sawtooth'; o.frequency.value = hz; const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 500;
+  g.gain.setValueAtTime(.18, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(f).connect(g).connect(AC.destination); o.start(t); o.stop(t + dur + .05); }
+const BASS = [55, 55, 65.4, 73.4]; // A A C D
+function scheduleBuiltin(bpm, beats, startAt){ const sp = 60 / bpm;
+  for (let i = -4; i < beats; i++) { const t = startAt + i * sp, bar = Math.floor(i / 4), b4 = ((i % 4) + 4) % 4;
+    if (i < 0) { hat(t, .3); continue; }
+    kick(t); if (b4 === 1 || b4 === 3) snare(t); hat(t, .15); hat(t + sp / 2, .1); if (b4 === 0 || b4 === 2) bass(t, BASS[bar % 4], sp * .9); } }
+
+// ───────── 악보 만들기
+function makeChart(lv){ const L = LEVELS[lv], sp = 60000 / L.bpm, beats = L.bars * 4, out = []; let last = null;
+  for (let i = 0; i < beats; i++) { if (i % L.per) continue;
+    let a; do { a = L.pool[Math.random() * L.pool.length | 0]; } while (a === last && L.pool.length > 2); last = a;
+    out.push({ a, t: i * sp, i });
+    if (L.eighth && Math.random() < L.eighth && i % 4 === 2) { const b = ['C', 'L', 'R'][Math.random() * 3 | 0]; out.push({ a: b, t: i * sp + sp / 2, i: i + .5 }); } }
+  return out.map((x, k) => Object.assign(x, { id: k, state: 'wait' })); }
+
+// ───────── 동작 감지 → 상승 에지 버퍼
+const st = { L: false, R: false, B: false, C: false, S: false, LL: false, RR: false };
+function pushHit(a, t){ hits.push({ a, t }); while (hits.length && t - hits[0].t > 2000) hits.shift(); }
+km.on('body:jump', e => pushHit('J', e.t));
+function sense(f){ const p = f.pose, b = f.actions.body; if (!p || !b || !b.ok) return null;
+  const sh = b.sh, torso = b.torso, lw = p[15], rw = p[16];      // 거울: p[15]=화면 왼쪽(사용자 왼손)
+  const up = w => w.v > .4 && w.y < sh.y - torso * .15;
+  const cur = { L: up(lw) && !up(rw), R: up(rw) && !up(lw), B: up(lw) && up(rw), C: Math.hypot(lw.x - rw.x, lw.y - rw.y) < torso * .32 && lw.v > .4 && rw.v > .4, S: b.squat, LL: b.lean < -12, RR: b.lean > 12 };
+  for (const k in cur) { if (cur[k] && !st[k]) pushHit(k, f.t); st[k] = cur[k]; }
+  return cur; }
+
+// ───────── 판정
+function judge(tnow){ const tm = tnow - t0 + offset; // 곡 시간(ms)
+  for (const tg of targets) { if (tg.state !== 'wait') continue; const d = tm - tg.t;
+    if (d > WIN.good) { tg.state = 'miss'; onJudge(tg, 'miss', null); continue; }
+    if (d < -WIN.good) break;
+    const h = hits.find(h => !h.used && h.a === tg.a && Math.abs((h.t - t0 + offset) - tg.t) <= WIN.good);
+    if (h) { h.used = true; const off = (h.t - t0 + offset) - tg.t; const q = Math.abs(off) <= WIN.perfect ? 'perfect' : 'good'; tg.state = q; onJudge(tg, q, off); } } }
+function onJudge(tg, q, off){ const s = stats, per = s.per[tg.a] = s.per[tg.a] || { perfect: 0, good: 0, miss: 0 }; per[q]++; s[q]++;
+  if (q === 'miss') { s.combo = 0; judgeText = '놓침'; } else { s.combo++; s.maxCombo = Math.max(s.maxCombo, s.combo); s.score += (q === 'perfect' ? 100 : 60) + Math.min(50, s.combo * 2); judgeText = q === 'perfect' ? '완벽!' : '좋아'; pulse = 1;
+    offsets.push(off); if (offsets.length >= 6 && offsets.length % 4 === 2) { const sorted = [...offsets].slice(-10).sort((a, b) => a - b); const med = sorted[sorted.length >> 1]; offset -= med * .5; } } // 자동 지연 보정: 최근 중앙값의 절반만큼 당김
+  judgeT = now(); $('score').textContent = s.score + '점'; $('combo').textContent = '콤보 ' + s.combo; $('judge').textContent = judgeText + (off != null ? ` (${off > 0 ? '+' : ''}${Math.round(off)}ms)` : '');
+  km.emit('rhythm:' + q, { act: tg.a, beat: tg.i, offsetMs: off == null ? null : Math.round(off), score: q === 'perfect' ? 1 : q === 'good' ? .6 : 0 }); }
+
+// ───────── 화면
+function draw(f){ km.drawCamera();
+  const p = f.pose; if (p) km.drawSkeleton(p, km.POSE_BONES, 'rgba(255,255,255,.55)', 4);
+  if (!playing) return;
+  const tm = now() - t0 + offset, L = LEVELS[level], sp = 60000 / L.bpm;
+  // 레일
+  const y = H * .18, hx = W * .16, r = 54; ctx.fillStyle = 'rgba(5,9,20,.55)'; ctx.fillRect(0, y - 70, W, 140);
+  ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx, y - 60); ctx.lineTo(W, y - 60); ctx.moveTo(hx, y + 60); ctx.lineTo(W, y + 60); ctx.stroke();
+  const beatPulse = 1 - ((tm % sp) / sp); ctx.beginPath(); ctx.arc(hx, y, r + 6 + beatPulse * 6 + pulse * 14, 0, Math.PI * 2); ctx.strokeStyle = `rgba(255,255,255,${.35 + pulse * .5})`; ctx.lineWidth = 5; ctx.stroke(); pulse = Math.max(0, pulse - .08);
+  for (const tg of targets) { const dt = tg.t - tm; if (dt > LEAD || dt < -600) continue; const x = hx + (W - hx) * (dt / LEAD), a = ACT[tg.a], alpha = tg.state === 'wait' ? 1 : tg.state === 'miss' ? .25 : Math.max(0, 1 + dt / 600);
+    ctx.globalAlpha = alpha; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = a.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke();
+    ctx.font = '48px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; ctx.fillText(a.icon, x, y + 2);
+    ctx.font = '800 20px sans-serif'; ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 4; ctx.strokeText(a.name, x, y + r + 24); ctx.fillText(a.name, x, y + r + 24); ctx.globalAlpha = 1; }
+  // 다음 카드 크게 안내
+  const nxt = targets.find(t => t.state === 'wait'); if (nxt) { const a = ACT[nxt.a]; ctx.font = '900 64px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = a.color; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = 8; ctx.strokeText(a.icon + ' ' + a.name, W / 2, H * .82); ctx.fillText(a.icon + ' ' + a.name, W / 2, H * .82); }
+  if (now() - judgeT < 500) { ctx.font = '900 80px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = judgeText === '놓침' ? '#ff8aa0' : judgeText === '완벽!' ? '#ffd35c' : '#5cf2a4'; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = 8; ctx.strokeText(judgeText, W / 2, H * .5); ctx.fillText(judgeText, W / 2, H * .5); }
+  if (tm < 0) { ctx.font = '900 140px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = 10; const n = Math.ceil(-tm / sp); ctx.strokeText(n, W / 2, H * .5); ctx.fillText(n, W / 2, H * .5); }
+  const total = L.bars * 4 * sp; $('prog').textContent = Math.max(0, Math.round((total - tm) / 1000)) + '초';
+  if (tm > total + 800) end(); }
+
+km.onFrame = f => { const cur = sense(f); if (playing) judge(now()); draw(f);
+  if (!dev.classList.contains('hidden')) dev.textContent = `fps ${km.fps} offset ${offset.toFixed(0)}ms\n` + (cur ? Object.entries(cur).filter(([, v]) => v).map(([k]) => k).join(' ') : '사람 없음'); };
+
+// ───────── 흐름
+function setup(){ ov.innerHTML = `<h2>🥁 리듬 체육</h2><p>박자에 맞춰 카드가 동그라미에 닿는 순간 그 동작을 해요.</p>
+  <div class="setup">
+    <label>난이도<select id="lv">${Object.entries(LEVELS).map(([k, v]) => `<option value="${k}" ${k === level ? 'selected' : ''}>${v.label} · ${v.bpm} BPM · ${v.pool.length}가지 동작</option>`).join('')}</select></label>
+    <label>음악<select id="mu"><option value="builtin">내장 비트(합성)</option><option value="file">내 음악 파일 + BPM</option></select></label>
+    <label id="fileRow" class="hidden">파일·BPM<input type="file" id="mf" accept="audio/*"><input type="number" id="mbpm" value="100" min="60" max="180" style="margin-top:6px"></label>
+  </div>
+  <div class="chips">${Object.values(ACT).map(a => `<span class="chip">${a.icon} ${a.name}</span>`).join('')}</div>
+  <button class="btn" id="start">시작</button>`; ov.classList.remove('hidden');
+  $('lv').onchange = e => level = e.target.value; $('mu').onchange = e => $('fileRow').classList.toggle('hidden', e.target.value !== 'file'); $('start').onclick = begin; }
+async function begin(){
+  if (!km.running) { ov.innerHTML = '<h2>카메라 준비 중…</h2>'; try { await km.start(); } catch (e) { ov.innerHTML = `<h2>시작할 수 없어요</h2><p>${e.message}</p><button class="btn" id="start">다시</button>`; $('start').onclick = setup; return; } }
+  await AC.resume();
+  const L = LEVELS[level]; const useFile = $('mu') && $('mu').value === 'file' && $('mf') && $('mf').files[0];
+  if (useFile) { L.bpm = +$('mbpm').value || 100; music = new Audio(URL.createObjectURL($('mf').files[0])); }
+  targets = makeChart(level); hits = []; offsets = []; offset = 0; stats = { score: 0, combo: 0, maxCombo: 0, perfect: 0, good: 0, miss: 0, per: {} };
+  $('score').textContent = '0점'; $('combo').textContent = '콤보 0'; $('judge').textContent = '—';
+  const sp = 60000 / L.bpm, startIn = 4 * sp; // 4박 카운트인
+  ov.classList.add('hidden'); t0 = now() + startIn; playing = true;
+  if (useFile) { setTimeout(() => music.play(), startIn); for (let i = 1; i <= 4; i++) hat(AC.currentTime + (startIn - i * sp) / 1000, .3); }
+  else scheduleBuiltin(L.bpm, L.bars * 4, AC.currentTime + startIn / 1000);
+}
+function end(){ playing = false; if (music) { music.pause(); music = null; }
+  const s = stats, n = s.perfect + s.good + s.miss, acc = n ? Math.round((s.perfect + s.good * .6) / n * 100) : 0;
+  const rows = Object.entries(s.per).map(([k, v]) => `<div>${ACT[k].icon} ${ACT[k].name}<b>${v.perfect + v.good}/${v.perfect + v.good + v.miss}</b></div>`).join('');
+  ov.innerHTML = `<h2>${s.score}점 · 정확도 ${acc}%</h2><p>완벽 ${s.perfect} · 좋아 ${s.good} · 놓침 ${s.miss} · 최대 콤보 ${s.maxCombo}</p><div class="result">${rows}</div>
+    <p>${acc >= 85 ? '박자 감각이 끝내줘요!' : acc >= 60 ? '좋아요, 조금만 더 빨리 반응해 봐요' : '카드 이름을 먼저 보고 미리 준비해 봐요'}</p><button class="btn gold" id="again">다시 하기</button>`; ov.classList.remove('hidden'); $('again').onclick = setup;
+  km.emit('rhythm:result', { level, points: s.score, acc, perfect: s.perfect, good: s.good, miss: s.miss, maxCombo: s.maxCombo, offsetMs: Math.round(offset), score: acc / 100 }); }
+setup();
+</script>
+</body>
+</html>
