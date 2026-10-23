@@ -65,6 +65,13 @@ export function recordBeast(era, kind, how, store = { read, write }) {
   const r = e[kind] || { n: 0, how: {}, first: t }; r.n += 1; r.how[how] = (r.how[how] || 0) + 1; r.last = t; e[kind] = r; store.write('kworld_beasts', all); return r;
 }
 export function beastLog(store = { read }) { return store.read('kworld_beasts') || {}; }
+/** 115: 한 시대의 만난 짐승을 짧게 — [{kind,n,how:{…}}] (끝 카드·족보 줄이 carry 에 싣는다) */
+export function beastsOf(era, store = { read }) { const e = beastLog(store)?.[era] || {}; return Object.keys(e).filter((k) => BEAST[k]).map((k) => ({ kind: k, n: e[k].n || 0, how: { ...(e[k].how || {}) } })); }
+/** 115: 🐾 한 줄 — 「🐅 호랑이 마주 봄 · 🐻 곰 먹을 것을 던짐 ×2 · 🐗 멧돼지 받힘」. 없으면 '' */
+export function beastLine(list) {
+  if (!list?.length) return '';
+  return '🐾 ' + list.map((b) => { const B = BEAST[b.kind]; if (!B) return null; const hows = Object.entries(b.how || {}).sort((a, c) => (GOOD.includes(c[0]) - GOOD.includes(a[0])) || c[1] - a[1]).map(([h, n]) => `${HOW[h] || h}${n > 1 ? ` ×${n}` : ''}`); return `${B.icon} ${B.name} ${hows.join('·')}`; }).filter(Boolean).join(' · ');
+}
 /** 짐승 칸 HTML — kinds = 이 시대에 나오는 짐승(없으면 만난 것만). 못 만난 짐승은 그림자 + 어디서 나오는지 */
 export function beastHtml(log, opts = {}) {
   const era = opts.era || null; const here = log?.[era] || {}; const kinds = opts.kinds?.length ? opts.kinds.filter((k) => BEAST[k]) : Object.keys(here).filter((k) => BEAST[k]);

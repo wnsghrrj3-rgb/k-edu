@@ -15,6 +15,7 @@
 //  · 벗이 「여기야」 뒤 그 자리에 서 있는다(83): 반짝임이 살아 있는 동안 벗은 곁으로 돌아오지 않고 **나에게서 가장 가까운 반짝임 곁(1.6m)**에 서서 나를 본다(standing) — 내가 12m 넘게 멀어지면 돌아보고 기다림, 반짝임이 다 꺼지면 곁으로.
 //  · 벗이 길을 보여 준다(79): 쫓길 때(앞을 막은 뒤) 벗이 「이쪽!」 하며 숨을 곳(goal_at) 쪽으로 먼저 뛴다 — 내가 12m 넘게 뒤처지면 멈춰 기다린다. 값·판정엔 손 안 댐(bond:lead:<chase>).
 //  · 벗의 한마디가 지난 선택에 반응(79): cfg.react[{id,if,text,once}] — 깃발이 서면(쫓김 탈출·잡힘·앞 막음·준 것·늦음·같이 한 것) 벗이 그 일을 말한다, 한 번(bond:said:<id>). 벗일 때만.
+//  · 벗이 짐승 앞에 같이 선다(115): 짐승 층(beasts.js)의 호랑이·곰·멧돼지가 나와 있으면 벗은 따라오기를 멈추고 그 자리에 서서 짐승 쪽을 본다 — 한마디 「뛰지 마. 가만히. 옆에 있어.」(멧돼지는 「물러서. 천천히.」) 한 번, 짐승이 가면 「…갔다. 숨 쉬어.」(쓰러졌으면 말 없음 — 일으키기는 danger 쪽). 값·판정엔 손 안 댐(bond:beast:<kind>, 한 만남에 한 번). 벗일 때만.
 //  · 벗은 숨은 것을 먼저 안다(78): 벗이 아직 못 찾은 숨은 것(pulse.secrets) 12m 안을 지나면 한 번 「저기 뭔가 있다」 — 자리는 안 알려 준다(반짝임을 찾는 건 네 몫), `bond:hint:<id>`.
 import * as THREE from 'three';
 import { createAvatar } from './avatar.js';
@@ -70,6 +71,7 @@ export class Bond {
       if (d < STEPBACK) { const ax = this.pos.x - p.x, az = this.pos.z - p.z; const n = Math.hypot(ax, az) || 1; moving = this.step(dt, this.pos.x + ax / n * 4, this.pos.z + az / n * 4, 2.2, 0); }   // 물러난다
       else if (d > AWAY * 2.2) { moving = this.step(dt, p.x, p.z, WALK, AWAY); }   // 아주 멀어지면 멀찍이 따라는 온다 — 보이는 거리에
       else { const away = Math.atan2(this.pos.x - p.x, this.pos.z - p.z); let dy = away - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * Math.min(1, dt * 3); }   // 등을 돌리고 선다
+    } else if (st === 'friend' && this.guarding(dt)) { moving = false;   // 115: 짐승이 나와 있으면 그 자리에 서서 짐승을 본다
     } else if (st === 'friend' && this.blocking(dt)) { moving = this.block.moving;   // 벗이 쫓는 사람 앞을 막으러 간다
     } else if (st === 'friend' && this.leading(dt)) { moving = this.lead.moving;   // 벗이 숨을 곳 쪽으로 먼저 뛰어 길을 보여 준다
     } else if (st === 'friend' && this.hurrying(dt)) { moving = this.hurry.moving;   // 급한 일(모래시계)이면 벗이 「서둘러!」 하며 그 자리로 먼저 뛴다
@@ -90,6 +92,14 @@ export class Bond {
     this.quietT = this.quiet() ? (this.quietT || 0) + dt : 0; this.sincePoint = (this.sincePoint ?? 99) + dt;   // 85: 카드 닫힌 뒤 한숨(0.8초)·「여기야」 사이 10초 — 상황마다 바로 잇따르면 잔소리라
     if (st === 'friend') this.pointing(dt); else if (this.point) this.unpoint();
     this.reactT += dt; if (st === 'friend' && this.reactT >= 1 && this.sinceLine >= REACT_GAP && this.quiet() && d < 6) { this.reactT = 0; this.react(); }
+  }
+  /** 115: 짐승 앞 — beasts.cur 가 있으면 서서 짐승 쪽을 보고 한마디(한 만남에 한 번), 가면 「…갔다」. 돌려준다: 지금 짐승 앞인가 */
+  guarding(dt) {
+    const g = this.g; const c = g.beasts?.cur || null;
+    if (!c) { const was = this.guard; this.guard = null; if (was && !was.said2 && !g.danger?.collapsing && !g.flags.has('beast:' + was.kind + ':caught')) { was.said2 = true; this.sinceLine = 0; g.ui?.say?.(`👤 ${this.name} — ${this.cfg.beastGone || '「…갔다. 숨 쉬어.」'}`, 3600); } return false; }
+    if (!this.guard || this.guard.c !== c) { this.guard = { c, kind: c.kind, said2: false }; if (!g.flags.has('bond:beast:' + c.kind)) { g.flags.add('bond:beast'); g.flag?.('bond:beast:' + c.kind); } this.sinceLine = 0; const L = this.cfg.beastSay?.[c.kind] || (c.kind === 'boar' ? '「물러서. 천천히. 눈 떼지 마.」' : '「뛰지 마. 가만히. 옆에 있어.」'); g.ui?.say?.(`👤 ${this.name} — ${L}`, 4200); }
+    const b = c.obj?.position; if (b) { const face = Math.atan2(b.x - this.pos.x, b.z - this.pos.z); let dy = face - this.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); this.yaw += dy * Math.min(1, dt * 4); }
+    return true;
   }
   /** 벗의 한마디가 지난 선택에 반응 — cfg.react 규칙 중 깃발이 선 것 하나, 한 번(bond:said:<id>) */
   react() {

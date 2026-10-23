@@ -4,6 +4,7 @@
 //  · 멧돼지(낮, 들·밭·숲 가장자리 — world.beasts.boar.areas): 코로 땅을 뒤지며 돌아다닌다 → 4m 안에 들면 멈춰 노려봄(물러서면 다시 뒤진다) → 3m 안이면 **받는다**(넘어져 먹을 것 하나 잃음, 흔적 없음) → 달아난다 / 횃불·창·활·도끼를 들고 있으면 먼저 달아난다.
 //  · 곰(113, 낮·밤, 굴·깊은 산 — world.beasts.bear.areas, **겨울엔 안 나온다** — 겨울잠): 냄새를 따라 느릿느릿 와서 6m 에서 **일어선다**(으르렁) → 뛰면 쫓아와 덮친다 / 2.6m 안이면 앞발 / 가만히 서면 먹을 것 하나를 던져 주고(있으면) 그 사이 물러나게 된다·없으면 한참 노려보다 돌아선다 / 걸어서 14m 밖이면 놓아준다 / 불·횃불이면 안 온다.
 //  · 발자국(113): 길 위의 일 가운데 beast 가 붙은 자국을 「따라가 보면」(then.lure) 그 자리 둘레에 그 짐승이 선다 — lure(kind, 자리). 호랑이는 발자국을 따라가면 낮에도 온다.
+//  · 날씨에 따라 자리가 바뀐다(115, world.beasts.<kind>.wx 로 덮어쓸 수 있음): **비·폭풍** = 멧돼지는 숲 속에 들어 안 나오고, 호랑이는 빗소리에 발소리가 묻혀 더 가까이(12m)에서 선다 · **겨울·눈** = 곰은 잔다(113), 호랑이는 먹이가 없어 마을 길 가까이까지 내려온다(자리 반경 16→30, 자주), 멧돼지는 밭에 먹을 게 없어 뜸하다 · **가뭄** = 멧돼지가 산에 먹을 게 없어 밭으로 자주 내려온다(기다림 짧게·자주) · **가을** = 도토리 철, 멧돼지·곰이 자주 · 비 오는 밤 호랑이 「빗소리에 발소리가 묻혔다」 같은 한 줄은 처음 한 번(beast:<kind>:wx:<날씨>).
 //  · 덮침·받힘·앞발엔 화면이 흔들리고 가장자리가 한 번 붉어진다(jolt — pulse 붉은 테 재사용).
 //  · 모양은 GLB 없이 코드로(늑대 틀 그대로 — 몸통·머리·다리 넷·꼬리, 다리는 걸음 흔들림). 값·깃발엔 거의 손대지 않는다(beast:tiger:met·faced·boar:hit 정도). 한 번 만나면 cooldownSec 뒤에야 다시.
 import * as THREE from 'three';
@@ -57,6 +58,12 @@ export function beastModel(kind) {
 }
 
 const DEF = { bear: { r: 14, waitSec: 5, chance: 0.6, cooldownSec: 140, far: 20, rear: 6, swipeR: 2.6, stillSec: 7, feedSec: 4, leaveR: 14, speed: 1.0, charge: 8.5 }, tiger: { r: 16, waitSec: 5, chance: 0.75, cooldownSec: 150, far: 18, keep: 7, stillSec: 6, walkSec: 14, speed: 0.95, lunge: 9 }, boar: { r: 14, waitSec: 4, chance: 0.6, cooldownSec: 90, far: 14, alertR: 4.2, chargeR: 3.0, staySec: 90, speed: 0.6, charge: 7, flee: 6.5 } };
+// 115: 날씨별 덮어쓰기 — 이름은 story.skyName(rainy·storm·winter·drought·autumn) + 눈(snowOn → winter). skip 이면 그 날씨엔 안 나온다
+const WX = {
+  tiger: { rainy: { far: 12, keep: 6, say: '…빗소리에 발소리가 묻혔다. 벌써 가까이 와 있다. 뛰지 마.' }, storm: { far: 12, keep: 6, say: '…천둥 사이로 줄무늬. 너무 가깝다. 뛰지 마.' }, winter: { r: 30, chance: 0.9, waitSec: 4, say: '…눈 위에 큰 발자국. 산에 먹이가 없어 마을 길까지 내려왔다. 뛰지 마.' } },
+  boar: { rainy: { skip: true }, storm: { skip: true }, winter: { r: 8, chance: 0.35 }, drought: { chance: 0.9, waitSec: 2, r: 20, say: '…산에 먹을 게 없다. 멧돼지가 밭으로 내려왔다. 너무 가까이 가지 마.' }, autumn: { chance: 0.8, waitSec: 3, say: '…도토리 철. 멧돼지가 숲 가장자리를 뒤진다.' } },
+  bear: { autumn: { chance: 0.8, waitSec: 4, say: '…도토리 철. 곰이 겨울잠 앞에 살을 찌운다. 뛰지 마.' } },
+};
 const KINDS = ['tiger', 'bear', 'boar'];
 const WEAPON = ['spear', 'bow', 'axe', 'handaxe', 'sword', 'blade', 'gun'];
 
@@ -69,11 +76,15 @@ export class Beasts {
   get busy() { return !!this.cur; }
   /** 겨울 — 곰은 겨울잠(하늘 winter 또는 눈) */
   get winter() { const s = this.g.story; return !!(s && (s.skyName === 'winter' || s.snowOn)); }
+  /** 115: 지금 날씨 이름 — 눈이면 winter, 아니면 story.skyName(day·night 는 날씨 아님 → null) */
+  get wxName() { const s = this.g.story; if (!s) return null; if (s.snowOn) return 'winter'; const n = s.skyName; return ['rainy', 'storm', 'winter', 'drought', 'autumn'].includes(n) ? n : null; }
+  /** 115: 날씨를 입힌 종류별 값 — 기본 DEF·시대 cfg 위에 WX[kind][날씨](또는 cfg.wx[날씨]) 를 얹는다 */
+  eff(kind) { const K = this.k[kind]; const n = this.wxName; if (!n) return K; const m = (K.wx && K.wx[n]) || WX[kind]?.[n]; return m ? { ...K, ...m, wxName: n } : K; }
   get night() { const s = this.g.story; return !!(s && (s.isNight != null ? s.isNight : (s.nightOn && s.skyName === 'night'))); }
   safe(p) { const d = this.g.danger; if (d?.hasTorch?.()) return true; const f = d?.firePos?.(); if (f && dist2(p, f) < (d.cfg?.nightRadius || 9)) return true; return (d?.cfg?.safe || []).some(([x, z, r]) => Math.hypot(p.x - x, p.z - z) < r); }
   weapon() { const g = this.g; return WEAPON.some((k) => g.has?.(k)) || !!g.danger?.hasTorch?.(); }
   /** 플레이어가 kind 의 자리(areas 중심 r 안)에 있나 → 그 자리 이름 */
-  zoneOf(kind) { const g = this.g; const K = this.k[kind]; const p = g.p.pos; for (const name of K.areas || []) { const a = g.e.areas?.get(name); if (a && dist2(p, a) < (K.r || 16)) return name; } return null; }
+  zoneOf(kind) { const g = this.g; const K = this.eff(kind); const p = g.p.pos; for (const name of K.areas || []) { const a = g.e.areas?.get(name); if (a && dist2(p, a) < (K.r || 16)) return name; } return null; }
   quiet() { const g = this.g; return !g.ui.isOpen?.() && !g.story?.cutsceneOn && !g.danger?.enc && !g.danger?.eyesOn && !g.danger?.collapsing && g.p?.enabled !== false && !g.restoring; }
   /** 플레이어에게서 far m 떨어진 땅 자리(깊은 물·건물 밖·땅 안) — 뒤쪽부터 */
   spot(far, front) {
@@ -93,7 +104,7 @@ export class Beasts {
     if (this.lured && this.tickLure(step)) return;
     const night = this.night;
     for (const kind of KINDS) {
-      const K = this.k[kind]; if (!K.areas?.length || this.cool[kind] > 0) { this.hold[kind] = 0; continue; }
+      const K = this.eff(kind); if (!K.areas?.length || this.cool[kind] > 0 || K.skip) { this.hold[kind] = 0; continue; }   // 115: 비엔 멧돼지가 숲 속에 든다(skip)
       if (kind === 'tiger' ? (!night || this.safe(p.pos)) : kind === 'bear' ? (this.winter || this.safe(p.pos)) : night) { this.hold[kind] = 0; continue; }
       const zone = this.zoneOf(kind); if (!zone) { this.hold[kind] = Math.max(0, this.hold[kind] - step); continue; }
       this.hold[kind] += step; if (this.hold[kind] < K.waitSec) continue; this.hold[kind] = 0;
@@ -122,7 +133,8 @@ export class Beasts {
   spawn(kind, at, zone) {
     const g = this.g; const e = g.e; const obj = beastModel(kind); obj.position.set(at.x, e.groundY ? e.groundY(at.x, at.z) : 0, at.z);   // 앞(+x)은 face() 가 맞춘다
     if (e.scene?.add) e.scene.add(obj);
-    const K = this.k[kind]; this.cur = { kind, obj, zone, t: 0, mode: kind === 'tiger' ? 'stalk' : kind === 'bear' ? 'approach' : 'root', rearT: 0, still: 0, walk: 0, growl: 0, origin: { x: at.x, z: at.z }, goal: null, hit: false, seen: false };
+    const K = this.eff(kind); if (K.wxName && K.say && !g.flags.has('beast:' + kind + ':wx:' + K.wxName)) { g.flags.add('beast:' + kind + ':wx:' + K.wxName); K.see = K.say; }   // 115: 날씨 한 줄은 처음 한 번
+    this.cur = { kind, obj, zone, K, t: 0, mode: kind === 'tiger' ? 'stalk' : kind === 'bear' ? 'approach' : 'root', rearT: 0, still: 0, walk: 0, growl: 0, origin: { x: at.x, z: at.z }, goal: null, hit: false, seen: false };
     this.face(obj, g.p.pos); g.flag?.('beast:' + kind + ':near');
     if (kind === 'tiger') { g.sound?.play?.('tiger', 0.5); g.sound?.thump?.(0.3); g.ui.say(K.see || '…풀 속에 줄무늬. 호랑이다. 뛰지 마.', 4200); g.ui.setGoal?.('가만히. 마주 본다. 뛰지 않는다.'); }
     else if (kind === 'bear') { g.sound?.play?.('bear', 0.4); g.ui.say(K.see || '…나뭇가지 꺾이는 소리. 검고 큰 것. 곰이다. 뛰지 마.', 4200); g.ui.setGoal?.('뛰지 않는다. 가만히 — 또는 천천히 물러난다.'); }
@@ -141,7 +153,7 @@ export class Beasts {
   }
   // ---------- 호랑이 ----------
   tickTiger(c, dt) {
-    const g = this.g; const K = this.k.tiger; const p = g.p; const obj = c.obj; const d = dist2(obj.position, p.pos);
+    const g = this.g; const K = c.K || this.k.tiger; const p = g.p; const obj = c.obj; const d = dist2(obj.position, p.pos);
     if (c.mode === 'gone') return this.remove(c);
     if (c.mode === 'retreat') { this.face(obj, this.away(obj.position, p.pos, 30), 0.2); this.move(obj, this.away(obj.position, p.pos, 30), 3.2, dt); this.legs(obj, dt, 7); if (d > 26 || c.t > 40) this.end(c, c.how || 'faced'); return; }
     if (c.mode === 'lunge') { this.face(obj, p.pos, 0.5); this.move(obj, p.pos, K.lunge, dt); this.legs(obj, dt, 12); if (d < 1.3) { c.mode = 'gone'; this.jolt(1.3); g.flag?.('beast:tiger:caught'); this.rec('tiger', 'caught'); g.danger?.collapse?.('tiger', K.catchSay || '…뛰었다. 그게 더 빨랐다. 뒤에서 덮쳤다.'); } return; }
