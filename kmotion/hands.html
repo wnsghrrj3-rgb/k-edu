@@ -13,7 +13,7 @@
 <div class="stage">
   <video id="v" autoplay playsinline muted></video>
   <canvas id="c" width="640" height="480"></canvas>
-  <div class="overlay" id="ov"><h2>손을 보여 주세요</h2><p>펴기·주먹·집기(엄지+검지)·가리키기·흔들기·쓸기를 알아봐요. 엔진이 뭘 보는지 확인하는 화면이에요.</p><button class="btn" id="start">시작</button></div>
+  <div class="overlay" id="ov"><h2>손을 보여 주세요</h2><p>펴기·주먹·집기·가리키기·흔들기·쓸기, 손 방향(초록 화살표)·가리키는 방향(노란 화살표)·손바닥/손등·정밀 위치(점)를 알아봐요.</p><button class="btn" id="start">시작</button></div>
 </div>
 <div class="log" id="log"></div>
 <script src="./kmotion.js"></script>
@@ -33,7 +33,13 @@ km.on('*', e => { if (e.type === 'frame' || e.type === 'hand:move') return; if (
 km.onFrame = f => { km.drawCamera();
   const slot = { left: '—', right: '—' };
   f.hands.forEach((h, i) => { const a = f.actions.hands[i]; km.drawSkeleton(h, km.HAND_BONES, a && a.pinched ? 'rgba(255,211,92,.95)' : 'rgba(77,225,255,.9)', 4);
-    if (a) slot[a.side || (i ? 'right' : 'left')] = `${NAME[a.pose]} ${a.fingersUp}손가락${a.pinched ? ' · 잡음' : ''}`; });
+    if (!a) return;
+    // 방향 화살표(손목→중지 밑동), 가리키는 방향(검지), 정밀 위치 점
+    const ctx = km.ctx, c = a.center, L = a.span * 1.2, rad = d => d * Math.PI / 180;
+    ctx.strokeStyle = 'rgba(92,242,164,.9)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(c.x + Math.sin(rad(a.dir)) * L, c.y - Math.cos(rad(a.dir)) * L); ctx.stroke();
+    if (a.pose === 'point') { ctx.strokeStyle = 'rgba(255,211,92,.9)'; ctx.beginPath(); ctx.moveTo(a.pointer.x, a.pointer.y); ctx.lineTo(a.pointer.x + Math.sin(rad(a.pointDir)) * L * 1.5, a.pointer.y - Math.cos(rad(a.pointDir)) * L * 1.5); ctx.stroke(); }
+    const pt = a.pinched ? a.pinchPt : a.pointer; ctx.fillStyle = a.pinched ? '#ffd35c' : '#5cf2a4'; ctx.beginPath(); ctx.arc(pt.x, pt.y, 8, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#06121f'; ctx.lineWidth = 2; ctx.stroke();
+    slot[a.side || (i ? 'right' : 'left')] = `${NAME[a.pose]} ${a.fingersUp}개 · ${a.dirName} ${a.dir}° · ${a.facing === 'palm' ? '손바닥' : a.facing === 'back' ? '손등' : ''}${a.pinched ? ' · 잡음' : ''} · (${Math.round(pt.x)},${Math.round(pt.y)})`; });
   document.getElementById('l').textContent = '왼손 ' + slot.left; document.getElementById('r').textContent = '오른손 ' + slot.right; document.getElementById('fps').textContent = km.fps + ' fps'; };
 </script>
 </body>

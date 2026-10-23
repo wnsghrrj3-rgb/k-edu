@@ -16,11 +16,11 @@
  *   km.on('body:jump', e => ...);   // e = {type, t, hand?, side?, pos?, score, source:'rule', session, engine, action, model}
  *   km.onFrame = f => ...            // f.ctx f.W f.H f.t f.fresh f.motion f.hands f.pose f.actions
  *   await km.start(); km.stop();
- * 좌표는 전부 캔버스(거울) 픽셀. 랜드마크 {x,y,z,v}. score = 자체 판정 점수(모델 신뢰도와 다름).
+ * 좌표는 전부 캔버스(거울) 픽셀, 원유로 필터로 떨림 보정. 랜드마크 {x,y,z,v}. score = 자체 판정 점수(모델 신뢰도와 다름).\n * 손 actions: dir(손 방향 0~359°, 위=0 시계방향)·pointDir(검지 방향)·facing(palm/back)·pointer(검지 끝)·pinchPt(엄지·검지 사이). 몸: facing(front/left/right)·lean(기울기°).
  */
 (function(){
-  const ENGINE_VERSION = '0.2.1';
-  const ACTION_VERSION = 'rule-0.2.1';
+  const ENGINE_VERSION = '0.3.0';
+  const ACTION_VERSION = 'rule-0.3.0';
   const MODEL_VERSION  = { hands: 'hand_landmarker/float16/1', pose: 'pose_landmarker_lite/float16/1', vision: 'tasks-vision@0.10.21' };
   const VENDOR = new URL('./vendor/tasks-vision/', document.currentScript ? document.currentScript.src : location.href).href;
   const MODELS = {
@@ -40,6 +40,15 @@
   const mid  = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
   function angle(a, b, c){ const v1 = { x: a.x - b.x, y: a.y - b.y }, v2 = { x: c.x - b.x, y: c.y - b.y };
     const d = (v1.x * v2.x + v1.y * v2.y) / ((Math.hypot(v1.x, v1.y) * Math.hypot(v2.x, v2.y)) || 1); return Math.acos(Math.max(-1, Math.min(1, d))) * 180 / Math.PI; }
+
+  // 떨림 보정 — 원유로(One Euro) 필터: 멈추면 매끈, 빨리 움직이면 바로 따라감
+  function oneEuro(minCut, beta){ minCut = minCut || 1.2; beta = beta || 0.02; const dCut = 1.0; let xp = null, dxp = 0, tp = 0;
+    const a = (cut, dt) => { const r = 2 * Math.PI * cut * dt; return r / (r + 1); };
+    return (x, t) => { if (xp == null) { xp = x; tp = t; return x; } const dt = Math.max(1e-3, (t - tp) / 1000); tp = t;
+      const dx = (x - xp) / dt, ad = a(dCut, dt); dxp = ad * dx + (1 - ad) * dxp;
+      const cut = minCut + beta * Math.abs(dxp), ax = a(cut, dt); xp = ax * x + (1 - ax) * xp; return xp; }; }
+  function smoother(n){ const fx = [], fy = []; for (let i = 0; i < n; i++) { fx.push(oneEuro()); fy.push(oneEuro()); }
+    return { apply(lm, t){ return lm.map((p, i) => ({ x: fx[i](p.x, t), y: fy[i](p.y, t), z: p.z, v: p.v })); }, reset(){ for (let i = 0; i < n; i++) { fx[i] = oneEuro(); fy[i] = oneEuro(); } } }; }
 
   function create(opt){
     const video = opt.video, canvas = opt.canvas;
@@ -80,6 +89,7 @@
 
     // ── MediaPipe
     let handLm = null, poseLm = null;
+    const handSm = [smoother(21), smoother(21)], poseSm = smoother(33); let poseSeen = false;
     function toPx(lm){ return lm.map(p => ({ x: (1 - p.x) * W, y: p.y * H, z: p.z, v: p.visibility == null ? 1 : p.visibility })); }
     async function loadModels(){
       if (!modes.has('hands') && !modes.has('pose')) return;
@@ -106,7 +116,16 @@
       const thumbExt = dist(h[4], h[17]) > dist(h[3], h[17]) * 1.1 && dist(h[4], h[5]) > span * 0.45; // 엄지 끝이 새끼손가락 쪽에서 멀고 검지 밑동에서도 떨어짐
       const curl = tips.reduce((s, t) => s + dist(h[t], c), 0) / (4 * span);   // 작을수록 쥠
       const pinch = dist(h[4], h[8]) / span;                                   // 엄지-검지 거리(손 크기 비)
-      return { span, ext, thumbExt, fingersUp: ext.filter(Boolean).length + (thumbExt ? 1 : 0), curl, pinch, center: c, wrist: w };
+      // 방향: 손목→중지 밑동 각도(화면 위=0°, 시계 방향 +), 가리키는 방향은 검지 밑동→검지 끝
+      const dirDeg = (a, b) => (Math.atan2(b.x - a.x, -(b.y - a.y)) * 180 / Math.PI + 360) % 360;
+      const dir = dirDeg(w, c), pointDir = dirDeg(h[5], h[8]);
+      const named = d => ['위', '오른쪽 위', '오른쪽', '오른쪽 아래', '아래', '왼쪽 아래', '왼쪽', '왼쪽 위'][Math.round(d / 45) % 8];
+      // 손바닥/손등: 검지 밑동·새끼 밑동이 손목 기준으로 도는 방향 (왼손·오른손은 호출부에서 side 로 보정)
+      const crossZ = (h[5].x - w.x) * (h[17].y - w.y) - (h[5].y - w.y) * (h[17].x - w.x);
+      const pointer = { x: h[8].x, y: h[8].y };                                 // 정밀 위치 = 검지 끝
+      const pinchPt = mid(h[4], h[8]);                                         // 집기 위치 = 엄지·검지 사이
+      return { span, ext, thumbExt, fingersUp: ext.filter(Boolean).length + (thumbExt ? 1 : 0), curl, pinch, center: c, wrist: w,
+        dir: Math.round(dir), dirName: named(dir), pointDir: Math.round(pointDir), pointDirName: named(pointDir), crossZ, pointer, pinchPt };
     };
     km.isFist = h => !!h && km.handFeatures(h).curl < 0.55;
     km.fingersUp = h => h ? km.handFeatures(h).fingersUp : 0;
@@ -130,17 +149,18 @@
         const f = km.handFeatures(h);
         const hd = frame.handedness && frame.handedness[i] && frame.handedness[i][0];
         const side = hd ? (hd.categoryName === 'Left' ? 'left' : 'right') : null; // 모델 라벨이 거울 기준이라 그대로(실기기 10-23 확인)
+        f.facing = side ? ((f.crossZ < 0) === (side === 'right') ? 'palm' : 'back') : null; // 손바닥/손등 (거울 화면 기준)
         const lab = labelHand(f), now = frame.t;
         if (lab === st.cand) st.n++; else { st.cand = lab; st.n = 1; }
         if (st.n >= HOLD && lab !== st.pose) {
           st.pose = lab;
           const score = lab === 'pinch' ? Math.min(1, (0.25 - f.pinch) / 0.15 + .6) : lab === 'fist' ? Math.min(1, (0.55 - f.curl) / 0.3 + .6) : .8;
-          if (lab === 'pinch' || lab === 'fist') { if (!st.pinched) { st.pinched = true; km.emit('hand:grab', { hand: i, side, pos: f.center, score, via: lab }); } }
-          else if (st.pinched) { st.pinched = false; km.emit('hand:release', { hand: i, side, pos: f.center, score }); }
-          km.emit('hand:' + lab, { hand: i, side, pos: f.center, score, fingersUp: f.fingersUp });
+          if (lab === 'pinch' || lab === 'fist') { if (!st.pinched) { st.pinched = true; km.emit('hand:grab', { hand: i, side, pos: lab === 'pinch' ? f.pinchPt : f.center, score, via: lab }); } }
+          else if (st.pinched) { st.pinched = false; km.emit('hand:release', { hand: i, side, pos: f.pinchPt, score }); }
+          km.emit('hand:' + lab, { hand: i, side, pos: lab === 'point' ? f.pointer : f.center, score, fingersUp: f.fingersUp, dir: f.dir, pointDir: f.pointDir, facing: f.facing });
         }
         st.hist.push({ x: f.center.x, y: f.center.y, t: now }); while (st.hist.length && now - st.hist[0].t > 600) st.hist.shift();
-        if (now - st.lastMoveEmit > 50) { st.lastMoveEmit = now; km.emit('hand:move', { hand: i, side, pos: f.center, pinched: st.pinched, pose: st.pose }); }
+        if (now - st.lastMoveEmit > 50) { st.lastMoveEmit = now; km.emit('hand:move', { hand: i, side, pos: f.center, pointer: f.pointer, pinchPt: f.pinchPt, dir: f.dir, pointDir: f.pointDir, facing: f.facing, pinched: st.pinched, pose: st.pose }); }
         if (st.hist.length > 8) {
           const xs = st.hist.map(p => p.x), dx = xs[xs.length - 1] - xs[0];
           let turns = 0; for (let k = 2; k < xs.length; k++) if ((xs[k] - xs[k-1]) * (xs[k-1] - xs[k-2]) < 0 && Math.abs(xs[k] - xs[k-1]) > 4) turns++;
@@ -148,7 +168,8 @@
           if (turns >= 4 && range > f.span * 1.5 && st.pose === 'open' && !st.waved) { st.waved = true; km.emit('hand:wave', { hand: i, side, pos: f.center, score: Math.min(1, turns / 6) }); setTimeout(() => st.waved = false, 900); }
           if (Math.abs(dx) > f.span * 3 && turns <= 1 && !st.swiped) { st.swiped = true; km.emit('hand:swipe', { hand: i, side, pos: f.center, dir: dx > 0 ? 'right' : 'left', score: Math.min(1, Math.abs(dx) / (f.span * 5)) }); setTimeout(() => st.swiped = false, 700); }
         }
-        acts.push({ hand: i, side, pose: st.pose, pinched: st.pinched, fingersUp: f.fingersUp, pinch: +f.pinch.toFixed(3), curl: +f.curl.toFixed(3) });
+        acts.push({ hand: i, side, pose: st.pose, pinched: st.pinched, fingersUp: f.fingersUp, pinch: +f.pinch.toFixed(3), curl: +f.curl.toFixed(3),
+          dir: f.dir, dirName: f.dirName, pointDir: f.pointDir, pointDirName: f.pointDirName, facing: f.facing, pointer: f.pointer, pinchPt: f.pinchPt, center: f.center, span: Math.round(f.span) });
       }
       return acts;
     }
@@ -172,7 +193,11 @@
       const up = p[15].y < sh.y - torso * .3 && p[16].y < sh.y - torso * .3;
       body.armsN = up === body.armsUp ? 0 : body.armsN + 1;
       if (body.armsN >= HOLD) { body.armsUp = up; body.armsN = 0; km.emit(up ? 'body:arms_up' : 'body:arms_down', { pos: sh }); }
-      return { vis, feet, ok: true, hip, sh, torso, air: body.air, squat: body.squat, armsUp: body.armsUp, knee: Math.round(kneeA) };
+      // 몸 방향: 어깨 폭/몸통 비(정면 클수록)·코가 어깨 중심에서 어느 쪽인지·기울기
+      const shW = dist(p[11], p[12]) / torso, nose = p[0];
+      const facing = shW > 0.55 ? 'front' : (nose.x < sh.x ? 'left' : 'right');
+      const lean = Math.round(Math.atan2(sh.x - hip.x, -(sh.y - hip.y)) * 180 / Math.PI); // 0 = 똑바로, + 오른쪽으로 기움
+      return { vis, feet, ok: true, hip, sh, torso, air: body.air, squat: body.squat, armsUp: body.armsUp, knee: Math.round(kneeA), facing, shoulderRatio: +shW.toFixed(2), lean };
     }
 
     // ── 루프
@@ -185,8 +210,10 @@
         lastVideoTime = video.currentTime; f.fresh = true;
         try {
           if (modes.has('motion')) stepMotion();
-          if (handLm) { const r = handLm.detectForVideo(video, t); f.hands = (r.landmarks || []).map(toPx); f.handedness = r.handednesses; }
-          if (poseLm) { const r = poseLm.detectForVideo(video, t); f.pose = r.landmarks && r.landmarks[0] ? toPx(r.landmarks[0]) : null; }
+          if (handLm) { const r = handLm.detectForVideo(video, t); f.hands = (r.landmarks || []).map((lm, i) => handSm[i] ? handSm[i].apply(toPx(lm), t) : toPx(lm)); f.handedness = r.handednesses;
+            for (let i = f.hands.length; i < 2; i++) handSm[i].reset(); }
+          if (poseLm) { const r = poseLm.detectForVideo(video, t); const raw = r.landmarks && r.landmarks[0] ? toPx(r.landmarks[0]) : null;
+            if (raw) { f.pose = poseSm.apply(raw, t); poseSeen = true; } else { f.pose = null; if (poseSeen) { poseSm.reset(); poseSeen = false; } } }
         } catch (e) { km.emit('error', { kind: 'detect', message: String(e), score: 0 }); }
         if (handLm) f.actions.hands = stepHands(f);
         if (poseLm) f.actions.body = stepBody(f);
