@@ -7,6 +7,7 @@
 //  · 덮침·받힘·앞발엔 화면이 흔들리고 가장자리가 한 번 붉어진다(jolt — pulse 붉은 테 재사용).
 //  · 모양은 GLB 없이 코드로(늑대 틀 그대로 — 몸통·머리·다리 넷·꼬리, 다리는 걸음 흔들림). 값·깃발엔 거의 손대지 않는다(beast:tiger:met·faced·boar:hit 정도). 한 번 만나면 cooldownSec 뒤에야 다시.
 import * as THREE from 'three';
+import { recordBeast } from './dogam.js';
 const dist2 = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const M = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: o.rough ?? 0.85, metalness: 0, flatShading: !!o.flat, name: o.name || '' });
 const mesh = (parent, geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
@@ -142,22 +143,22 @@ export class Beasts {
   tickTiger(c, dt) {
     const g = this.g; const K = this.k.tiger; const p = g.p; const obj = c.obj; const d = dist2(obj.position, p.pos);
     if (c.mode === 'gone') return this.remove(c);
-    if (c.mode === 'retreat') { this.face(obj, this.away(obj.position, p.pos, 30), 0.2); this.move(obj, this.away(obj.position, p.pos, 30), 3.2, dt); this.legs(obj, dt, 7); if (d > 26 || c.t > 40) this.end(c, 'faced'); return; }
-    if (c.mode === 'lunge') { this.face(obj, p.pos, 0.5); this.move(obj, p.pos, K.lunge, dt); this.legs(obj, dt, 12); if (d < 1.3) { c.mode = 'gone'; this.jolt(1.3); g.flag?.('beast:tiger:caught'); g.danger?.collapse?.('tiger', K.catchSay || '…뛰었다. 그게 더 빨랐다. 뒤에서 덮쳤다.'); } return; }
+    if (c.mode === 'retreat') { this.face(obj, this.away(obj.position, p.pos, 30), 0.2); this.move(obj, this.away(obj.position, p.pos, 30), 3.2, dt); this.legs(obj, dt, 7); if (d > 26 || c.t > 40) this.end(c, c.how || 'faced'); return; }
+    if (c.mode === 'lunge') { this.face(obj, p.pos, 0.5); this.move(obj, p.pos, K.lunge, dt); this.legs(obj, dt, 12); if (d < 1.3) { c.mode = 'gone'; this.jolt(1.3); g.flag?.('beast:tiger:caught'); this.rec('tiger', 'caught'); g.danger?.collapse?.('tiger', K.catchSay || '…뛰었다. 그게 더 빨랐다. 뒤에서 덮쳤다.'); } return; }
     // stalk: 7m 까지 다가와 돈다
-    if ((!this.night && !c.lured) || this.safe(p.pos) || g.story?.cutsceneOn) { c.mode = 'retreat'; g.ui.say(K.lightSay || '…불빛을 보고 돌아선다.', 3200); g.ui.setGoal?.(''); return; }
+    if ((!this.night && !c.lured) || this.safe(p.pos) || g.story?.cutsceneOn) { c.mode = 'retreat'; c.how = 'lit'; g.ui.say(K.lightSay || '…불빛을 보고 돌아선다.', 3200); g.ui.setGoal?.(''); return; }
     if (g.danger?.collapsing) return this.remove(c);
     c.growl += dt; if (c.growl > 5) { c.growl = 0; g.sound?.play?.('tiger', 0.35 + Math.max(0, 7 - d) * 0.03); }
     if (this.runT > 0.8 && d < 14) { c.mode = 'lunge'; g.sound?.play?.('tiger', 0.8); g.sound?.thump?.(0.5); g.ui.say('…뛰었다.', 1600); return; }
     if (p.moving) { c.still = 0; c.walk += dt; } else { if (d < 10) c.still += dt; c.walk = 0; }   // 마주 보기는 10m 안에서부터 센다
     const weapon = this.weapon();
     if (c.still > (weapon ? K.stillSec * 0.5 : K.stillSec)) { c.mode = 'retreat'; g.ui.say(weapon ? (K.weaponSay || '…창끝을 보고 멈칫한다. 돌아선다.') : (K.faceSay || '…눈을 피하지 않았다. 돌아선다. 숨을 쉰다.'), 4200); g.ui.setGoal?.(''); return; }
-    if (c.walk > K.walkSec && d > 12) { c.mode = 'retreat'; g.ui.say(K.walkSay || '…걸어서 멀어졌다. 따라오지 않는다.', 3600); g.ui.setGoal?.(''); return; }
+    if (c.walk > K.walkSec && d > 12) { c.mode = 'retreat'; c.how = 'walked'; g.ui.say(K.walkSay || '…걸어서 멀어졌다. 따라오지 않는다.', 3600); g.ui.setGoal?.(''); return; }
     if (d > K.keep) { this.face(obj, p.pos, 0.15); const sp = d > 11 ? K.speed * 2.6 : K.speed; this.move(obj, p.pos, sp, dt); this.legs(obj, dt, sp > 1.5 ? 6 : 3); }   // 멀면 낮게 빨리, 10m 안부터 천천히
     else { // 돈다 — 플레이어 둘레 keep 거리의 원, 눈은 늘 플레이어
       const ang = Math.atan2(obj.position.z - p.pos.z, obj.position.x - p.pos.x) + dt * 0.35; const to = { x: p.pos.x + Math.cos(ang) * K.keep, z: p.pos.z + Math.sin(ang) * K.keep }; this.move(obj, to, 1.2, dt); this.face(obj, p.pos, 0.3); this.legs(obj, dt, 3.5);
     }
-    if (c.t > 120) this.end(c, 'faced');   // 너무 오래면 알아서 간다
+    if (c.t > 120) this.end(c, 'passed');   // 너무 오래면 알아서 간다
   }
   // ---------- 곰 ----------
   tickBear(c, dt) {
@@ -168,7 +169,7 @@ export class Beasts {
     if (c.mode === 'charge') { stand(0, 8); this.face(obj, p.pos, 0.5); this.move(obj, p.pos, K.charge, dt); this.legs(obj, dt, 11); if (d < 1.4) this.maul(c, K.catchSay || '…뛰었다. 곰은 생각보다 훨씬 빨랐다. 뒤에서 덮쳤다.'); return; }
     if (c.mode === 'eat') { stand(0, 4); const head = obj.getObjectByName?.('head'); if (head) head.position.y = 0.85 + Math.sin(c.t * 4) * 0.04; c.eatT += dt; if (c.eatT > 6) { c.how = 'fed'; c.mode = 'leave'; } return; }
     if (g.danger?.collapsing) return this.remove(c);
-    if (this.winter || this.safe(p.pos) || g.story?.cutsceneOn) { c.mode = 'leave'; c.how = 'faced'; g.ui.say(this.winter ? '…졸린 듯 돌아선다. 굴로 간다.' : (K.lightSay || '…불 냄새. 곰이 돌아선다.'), 3200); g.ui.setGoal?.(''); return; }
+    if (this.winter || this.safe(p.pos) || g.story?.cutsceneOn) { c.mode = 'leave'; c.how = this.winter ? 'winter' : 'lit'; g.ui.say(this.winter ? '…졸린 듯 돌아선다. 굴로 간다.' : (K.lightSay || '…불 냄새. 곰이 돌아선다.'), 3200); g.ui.setGoal?.(''); return; }
     if (this.runT > 0.8 && d < 16) { c.mode = 'charge'; g.sound?.play?.('bear', 0.9); g.sound?.thump?.(0.5); g.ui.say('…뛰었다. 곰이 네 발로 달려온다.', 1800); return; }
     if (d < K.swipeR) return this.maul(c, K.swipeSay || '…너무 가까이 갔다. 앞발이 날아왔다.');
     c.growl += dt;
@@ -188,7 +189,7 @@ export class Beasts {
     }
     if (!have.length && c.still > K.stillSec) { c.mode = 'leave'; c.how = 'faced'; g.ui.say(K.faceSay || '…한참 노려보다 네 발로 내려앉는다. 먹을 게 없다는 걸 안다. 돌아선다.', 4200); g.ui.setGoal?.(''); }
   }
-  maul(c, line) { const g = this.g; c.mode = 'gone'; this.jolt(1.3); g.sound?.play?.('bear', 1); g.flag?.('beast:bear:caught'); g.danger?.collapse?.('bear', line); }
+  maul(c, line) { const g = this.g; c.mode = 'gone'; this.jolt(1.3); g.sound?.play?.('bear', 1); g.flag?.('beast:bear:caught'); this.rec('bear', 'caught'); g.danger?.collapse?.('bear', line); }
   // ---------- 멧돼지 ----------
   tickBoar(c, dt) {
     const g = this.g; const K = this.k.boar; const p = g.p; const obj = c.obj; const d = dist2(obj.position, p.pos);
@@ -224,7 +225,8 @@ export class Beasts {
     if (g.p) { g.p.enabled = false; setTimeout(() => { if (g.p && !g.ui.isOpen?.()) g.p.enabled = true; }, 1300); }
     g.spark?.checkTitles?.(); g.save?.touch?.();
   }
-  end(c, how) { const g = this.g; this.cool[c.kind] = this.k[c.kind].cooldownSec; g.flag?.('beast:' + c.kind + ':' + how); g.flags.add('beast:' + c.kind + ':met'); this.remove(c); }
+  rec(kind, how) { recordBeast(this.g.era, kind, how); }   // 짐승 도감(114) — 이 기기 kworld_beasts
+  end(c, how) { const g = this.g; this.cool[c.kind] = this.k[c.kind].cooldownSec; this.rec(c.kind, how); g.flag?.('beast:' + c.kind + ':' + how); g.flags.add('beast:' + c.kind + ':met'); this.remove(c); }
   remove(c) { const e = this.g.e; if (c.obj && e.scene?.remove) e.scene.remove(c.obj); if (this.cur === c) this.cur = null; this.g.ui.setGoal?.(''); }
   snapshot() { return null; }   // 짐승은 저장하지 않는다 — 다시 들어오면 조용하다
 }

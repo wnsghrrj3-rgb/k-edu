@@ -54,13 +54,40 @@ export function dogamHtml(data, lived, opts = {}) {
   return `<div class="chk life dogam">${head}${body}</div>`;
 }
 
+// ---------- 짐승 도감(114) — 만난 짐승과 어떻게 지나갔는지. 이 기기 kworld_beasts { era: { kind: { n, how:{faced:1,…}, first, last } } } ----------
+export const BEAST = { tiger: { icon: '🐅', name: '호랑이', hint: '밤 · 마을 밖 산길' }, bear: { icon: '🐻', name: '곰', hint: '굴 · 깊은 산 (겨울엔 잔다)' }, boar: { icon: '🐗', name: '멧돼지', hint: '낮 · 들과 밭 가장자리' } };
+export const HOW = { faced: '마주 봄', walked: '걸어서 물러남', lit: '불빛에 돌아섬', fed: '먹을 것을 던짐', winter: '겨울잠 길', fled: '쫓아 보냄', hit: '받힘', passed: '지나감', caught: '쓰러짐' };
+const GOOD = ['faced', 'fed', 'fled'];
+/** 만난 짐승 한 줄 — beasts.js end()·덮침에서 */
+export function recordBeast(era, kind, how, store = { read, write }) {
+  if (!era || !kind || !how) return null;
+  const all = store.read('kworld_beasts') || {}; const e = (all[era] ??= {}); const t = Date.now();
+  const r = e[kind] || { n: 0, how: {}, first: t }; r.n += 1; r.how[how] = (r.how[how] || 0) + 1; r.last = t; e[kind] = r; store.write('kworld_beasts', all); return r;
+}
+export function beastLog(store = { read }) { return store.read('kworld_beasts') || {}; }
+/** 짐승 칸 HTML — kinds = 이 시대에 나오는 짐승(없으면 만난 것만). 못 만난 짐승은 그림자 + 어디서 나오는지 */
+export function beastHtml(log, opts = {}) {
+  const era = opts.era || null; const here = log?.[era] || {}; const kinds = opts.kinds?.length ? opts.kinds.filter((k) => BEAST[k]) : Object.keys(here).filter((k) => BEAST[k]);
+  const total = {}; for (const e in log || {}) for (const k in log[e] || {}) { const r = log[e][k]; const T = (total[k] ??= { n: 0, how: {} }); T.n += r.n || 0; for (const h in r.how || {}) T.how[h] = (T.how[h] || 0) + r.how[h]; }
+  const card = (k) => { const B = BEAST[k]; const r = here[k];
+    if (!r) return `<li class="bc ghost"><b>${B.icon} ${esc(B.name)}</b><div class="bm">아직 못 만났다 — ${esc(B.hint)}</div></li>`;
+    const hows = Object.entries(r.how || {}).sort((a, b) => (GOOD.includes(b[0]) - GOOD.includes(a[0])) || b[1] - a[1]).map(([h, n]) => `<span class="${h === 'caught' || h === 'hit' ? 'bad' : GOOD.includes(h) ? 'good' : ''}">${esc(HOW[h] || h)}${n > 1 ? ` ×${n}` : ''}</span>`).join('');
+    return `<li class="bc met"><b>${B.icon} ${esc(B.name)}</b>${r.n > 1 ? `<span class="dx">×${r.n}</span>` : ''}<div class="bh">${hows}</div></li>`; };
+  const allKinds = Object.keys(total).filter((k) => BEAST[k]);
+  const sum = allKinds.length ? `<p class="bsum">모든 시대 — ${allKinds.map((k) => `${BEAST[k].icon} ${total[k].n}번`).join(' · ')}</p>` : '';
+  if (!kinds.length && !sum) return '';
+  return `<div class="beasts"><p class="bt">🐾 만난 짐승${era ? ' — 이 시대' : ''}</p>${kinds.length ? `<ul class="blist">${kinds.map(card).join('')}</ul>` : ''}${sum}</div>`;
+}
+export const BEAST_CSS = `.beasts{border-top:1px solid rgba(150,120,70,.25);border-bottom:1px solid rgba(150,120,70,.25);padding:8px 0 6px;margin:6px 0 8px}.beasts .bt{font-weight:700;margin:0 0 6px}.blist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}.blist .bc{border:1px solid rgba(150,120,70,.3);border-radius:10px;padding:6px 8px}.blist .bc.ghost{opacity:.55;border-style:dashed}.blist .bm{font-size:12px;opacity:.8;margin-top:2px}.blist .bh{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}.blist .bh span{font-size:11.5px;border-radius:8px;padding:1px 6px;background:rgba(150,120,70,.14)}.blist .bh span.good{background:rgba(90,150,90,.2)}.blist .bh span.bad{background:rgba(190,80,60,.18)}.beasts .bsum{font-size:12px;opacity:.75;margin:6px 0 0}`;
+
 export const DOGAM_CSS = `.dogam .dsum{font-weight:700;margin:4px 0 10px}.dogam .dsum b{color:#b7692b}.dera{border-top:1px solid rgba(150,120,70,.25);padding:6px 0}.dera summary{cursor:pointer;display:flex;gap:10px;align-items:baseline;font-size:16px;font-family:var(--serif);list-style:none}.dera summary::-webkit-details-marker{display:none}.dera summary::before{content:"▸";font-size:12px;opacity:.6}.dera[open] summary::before{content:"▾"}.dera.now summary b{color:#b7492b}.dera .dy{font-size:11px;opacity:.6}.dera .dcnt{margin-left:auto;font-size:12px;color:#9a6a1c;font-variant-numeric:tabular-nums}.dchain{font-size:12px;color:#5a4a2a;background:rgba(255,255,255,.55);border-radius:8px;padding:4px 8px;margin:4px 0 6px}.dnone{font-size:13px;opacity:.7;margin:4px 0 8px}.dlist{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}.dc{border-radius:12px;padding:10px 12px;line-height:1.45;font-size:12.5px;background:rgba(255,255,255,.6);border:1px solid rgba(150,120,70,.25);text-align:left}.dc .dn{font-size:14px;font-family:var(--serif)}.dc.lived{border-color:#dfa53f;box-shadow:0 2px 10px rgba(223,165,63,.18)}.dc.ghost{opacity:.55;background:repeating-linear-gradient(135deg,rgba(0,0,0,.025) 0 6px,transparent 6px 12px)}.dc.ghost .dn{color:#6a5a3a}.dc .dx{margin-left:6px;font-size:11px;color:#9a6a1c}.dc .dm{font-size:11.5px;color:#8a5a12;margin-top:2px}.dc .ds{margin:6px 0 4px;font-size:12.5px}.dc .dq{margin-top:6px;font-size:11px;color:#8a7a5a;font-style:italic}.dc .dw{margin-top:6px;font-size:11.5px;display:flex;flex-wrap:wrap;gap:4px}.dc .dw i{font-style:normal;color:#9a6a1c;flex-basis:100%;font-size:10.5px;letter-spacing:.3px}.dc .dw span{background:rgba(154,106,28,.08);border:1px solid rgba(154,106,28,.2);border-radius:999px;padding:1px 8px}.dc .dw.ok span{background:rgba(70,140,90,.1);border-color:rgba(70,140,90,.3)}.dc .dw.no span{background:rgba(183,73,43,.08);border-color:rgba(183,73,43,.3);text-decoration:line-through;opacity:.8}@media(max-width:760px){.dlist{grid-template-columns:1fr}}`;
 
 /** 게임 안에서 열기 — HUD 단추·B 키. dogam.json 은 base 의 한 단계 위(eras/) */
 export async function openDogam(g, onClose = null, opts = {}) {
   let data = null; try { data = await fetch(g.base.replace(/[^/]+\/$/, '') + 'dogam.json').then((r) => r.json()); } catch { }
   if (!data) { g.ui.say('도감을 못 찾았다.', 3000); return; }
-  if (typeof document !== 'undefined' && !document.getElementById('dogam-css')) { const st = document.createElement('style'); st.id = 'dogam-css'; st.textContent = DOGAM_CSS; document.head.appendChild(st); }
+  if (typeof document !== 'undefined' && !document.getElementById('dogam-css')) { const st = document.createElement('style'); st.id = 'dogam-css'; st.textContent = DOGAM_CSS + BEAST_CSS; document.head.appendChild(st); }
   const lived = livedMap(data); const wasOpen = g.ui.isOpen?.(); g.p.enabled = false;
-  g.ui.open(dogamHtml(data, lived, { era: g.era, tag: opts.tag }), [{ label: '닫기', primary: true, onClick: () => { g.ui.close(); if (onClose) onClose(); else if (!wasOpen) g.p.enabled = true; } }]);
+  const bz = beastHtml(beastLog(), { era: g.era, kinds: Object.keys(g.world?.beasts || {}) }); let html = dogamHtml(data, lived, { era: g.era, tag: opts.tag }); if (bz) html = html.replace('</p><details', '</p>' + bz + '<details');
+  g.ui.open(html, [{ label: '닫기', primary: true, onClick: () => { g.ui.close(); if (onClose) onClose(); else if (!wasOpen) g.p.enabled = true; } }]);
 }
