@@ -5,14 +5,15 @@
 //  · 80: 외침(shout) — 내가 쫓김에서 살았다/잡혔다/급한 일에 늦었다 하면 곁(14m) 친구 화면에 「👥 이름 — 「살았다!」」 한 줄(값 없음). pulse.endChase·endDeadline 이 부른다.
 //  · 82: 답을 받으면 외친 쪽 몸도 손을 들어 답한다(myWaveUntil) + wave reply kind 'back' → 답한 쪽엔 「👋 이름 — 「고마워.」」 한 줄(그 줄엔 다시 답하지 않는다).
 //  · 81: 외침에 답하기 — 곁 친구의 외침이 뜬 뒤 9초 안에 G 로 손을 흔들면 wave 에 reply{to,kind} 가 실려 가고, 외친 쪽 화면엔 「👋 이름 — 「다행이다!」」 한 줄(값 없음).
+//  · 116: 짐승 앞 외침 — 곁 친구에게 짐승이 서면 「뛰지 마!」(멧돼지는 「물러서!」), 지나가면 「갔다!」, 덮치면 「괜찮아?」 — beasts.spawn·end·maul·hit 가 부른다(값 없음).
 //  · 20초 넘게 소식 없으면 사라진다. `?friends=0` 또는 world.friends === false 면 끔. 망에서 wss 가 막히면 조용히 없음.
 import * as THREE from 'three';
 import { createAvatar } from './avatar.js';
 import { seat } from './save.js';
 
 const SEND_MS = 200, STALE_MS = 20000, WAVE_MS = 1600, NEAR_PICK = 3.5, NEAR_WITH = 5, NEAR_SHOUT = 14;
-const REPLY_MS = 9000, REPLY = { escaped: ['「다행이다!」', '「잘 뛰었어.」'], caught: ['「괜찮아, 다시 하자.」', '「다음엔 같이.」'], late: ['「나도 늦을 뻔했어.」', '「다음엔 같이 뛰자.」'], back: ['「고마워.」', '「응, 봤어!」'] };
-const SHOUT = { escaped: ['「살았다!」', '「봤어, 뛰는 거!」', '「숨 좀 돌려.」'], caught: ['「…잡혔네.」', '「다음엔 같이 뛰자.」', '「괜찮아?」'], late: ['「늦었다…」', '「모래시계 봤어?」', '「다음엔 내가 알려 줄게.」'] };
+const REPLY_MS = 9000, REPLY = { beast: ['「…응. 안 뛸게.」', '「고마워, 봤어.」'], beastboar: ['「물러설게.」'], beastok: ['「휴.」', '「고마워.」'], beastbad: ['「…응. 다시.」', '「다음엔 서 있을게.」'], escaped: ['「다행이다!」', '「잘 뛰었어.」'], caught: ['「괜찮아, 다시 하자.」', '「다음엔 같이.」'], late: ['「나도 늦을 뻔했어.」', '「다음엔 같이 뛰자.」'], back: ['「고마워.」', '「응, 봤어!」'] };
+const SHOUT = { beast: ['「뛰지 마!」', '「가만히 — 마주 봐.」', '「뛰면 안 돼. 서 있어.」'], beastboar: ['「물러서! 천천히.」', '「눈 떼지 마.」'], beastok: ['「갔다! 숨 쉬어.」', '「봤어, 안 뛰었어!」', '「잘했어.」'], beastbad: ['「괜찮아? 일어나.」', '「…뛰었구나. 다음엔 서 있어.」'], escaped: ['「살았다!」', '「봤어, 뛰는 거!」', '「숨 좀 돌려.」'], caught: ['「…잡혔네.」', '「다음엔 같이 뛰자.」', '「괜찮아?」'], late: ['「늦었다…」', '「모래시계 봤어?」', '「다음엔 내가 알려 줄게.」'] };
 function label(text) {
   if (typeof document === 'undefined' || typeof document.createElement !== 'function') return null;
   const c = document.createElement('canvas'); c.width = 256; c.height = 64; const x = c.getContext('2d'); if (!x) return null;

@@ -3,6 +3,7 @@
 //    가까이 가서 살펴보면(E) 작은 카드 — 길 둘셋, 값은 ±1 안팎, 📜 한 줄. 그냥 지나쳐도 된다: 멀어지거나 시간이 지나면 조용히 사라진다(pass 가 있으면 한 줄).
 //  · 한 판에 같은 일은 한 번. 조용할 때(카드·쫓김·급한 일·짐승 없음)·걷는 중에만. 같은 자리에선 다시 안 놓인다.
 //  · prop 'track' 에 beast(tiger·bear·boar)가 붙은 자국은 길에 then.lure 가 있으면 「따라가 본다」 → 짐승 층이 그 자리 둘레에 그 짐승을 세운다(113).
+//  · 116: after:<kind> 가 붙은 일은 걷다 만나는 후보가 아니라 **짐승을 보내 준 자리**에 놓인다(beasts.end → afterBeast → 2.5초 뒤 그 자리, 40m 안·조용할 때만).
 //  · 선택엔 roll(능력 굴림)·if(회색, 이유)·then/fail(값·흔적·물건·깃발) — 돌발과 같은 틀(spark.apply 재사용).
 import * as THREE from 'three';
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
@@ -15,11 +16,23 @@ export class Road {
   dist(a, b) { return Math.hypot(a.x - b.x, a.z - b.z); }
   quiet() { const g = this.g; return !g.ui.isOpen?.() && !g.pulse?.chase && !g.pulse?.deadline && !g.story?.cutsceneOn && !g.danger?.enc && !g.danger?.eyesOn && !g.beasts?.busy && g.p?.enabled !== false; }
   /** 아직 안 온 일 중 지금 조건에 맞는 것 */
-  cands() { const g = this.g; const night = !!g.story?.isNight; return (this.cfg.events || []).filter((s) => !g.flags.has('road:' + s.id) && (s.night == null || !!s.night === night) && g.cond(s.if)); }
+  cands() { const g = this.g; const night = !!g.story?.isNight; return (this.cfg.events || []).filter((s) => !s.after && !g.flags.has('road:' + s.id) && (s.night == null || !!s.night === night) && g.cond(s.if)); }
   // ---------- 놓기 ----------
+  /** 116: 짐승을 보내 준 자리 — world.road.events 에 after:<kind> 가 붙은 일(「쫓겨난 자리의 발자국」)을 그 자리에 놓는다. 한 판에 종류마다 한 번. */
+  afterBeast(kind, how, at) {
+    const g = this.g; if (!at) return false; const s = (this.cfg.events || []).find((x) => x.after === kind && !g.flags.has('road:' + x.id) && g.cond(x.if)); if (!s) return false;
+    this.pending = { s, x: at.x, z: at.z, how, t: 0 }; return true;
+  }
+  tickPending(dt) {
+    const g = this.g; const pd = this.pending; pd.t += dt; if (pd.t < (this.cfg.afterSec ?? 2.5)) return; if (pd.t > 90) { this.pending = null; return; }
+    if (!this.quiet()) return; const d = this.dist(pd, g.p.pos); if (d > 40) { this.pending = null; return; }
+    const e = g.e; const gy = e.groundY ? e.groundY(pd.x, pd.z) : 0; if ((g.world.deepWater != null && gy < g.world.deepWater) || e.collides?.({ x: pd.x, z: pd.z }, 1.6)) { this.pending = null; return; }
+    const yaw = Math.atan2(g.p.pos.x - pd.x, g.p.pos.z - pd.z) + Math.PI; this.pending = null; this.put(pd.s, { x: pd.x, z: pd.z, yaw });
+  }
   tick(dt) {
     const g = this.g; if (!g.p?.pos || g.restoring) return;
     if (this.cur) return this.tickCur(dt);
+    if (this.pending) return this.tickPending(dt);
     this.since += dt; if (g.p.moving) this.walk += dt; else this.walk = Math.max(0, this.walk - dt * 0.5);
     this.t += dt; if (this.t < 1.5) return; this.t = 0;
     if (this.since < (this.cfg.gapSec || 75) || this.walk < 4 || !this.quiet()) return;

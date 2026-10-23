@@ -66,7 +66,7 @@ for (const era of ERAS) {
   const w2 = JSON.parse(fs.readFileSync(path.join(root, 'eras', era, 'world.json'), 'utf8')); const Bb = w2.beasts.bear;
   if (BEAR_ERAS.includes(era)) ok(Bb?.areas?.length >= 2 && Bb.areas.every((a) => w2.areas?.[a]) && Bb.fact?.includes('→') && !/\d{3,4}년|\(\d{3,4}\)/.test(Bb.fact) && !Bb.areas.some((a) => ['village', 'camp', 'maeul', 'jangteo'].includes(a)), `${era}: 곰 자리 2+(굴·깊은 산) · 📜 인과 · 연도 0`);
   else ok(!Bb, `${era}: 곰 없음`);
-  const tracks = (w2.road?.events || []).filter((s) => s.beast);
+  const tracks = (w2.road?.events || []).filter((s) => s.beast && !s.after);   // 116 after:<kind> 는 보내 준 자리에 놓이는 일 — 발자국 아님
   ok(tracks.length >= 1 && tracks.every((s) => s.prop === 'track' && w2.beasts[s.beast]?.areas?.length && s.ways.some((wy) => wy.then?.lure) && s.ways.some((wy) => !wy.then?.lure)), `${era}: 짐승 발자국 ${tracks.map((s) => s.id + '→' + s.beast).join(',')} — 따라가는 길(lure)·안 따라가는 길`);
 }
 const bm = beastModel('bear'); ok(bm.getObjectByName('rig') && bm.getObjectByName('moon') && bm.userData.legs.length === 4, '곰 모양 — 일어서는 rig·가슴 반달·다리 넷');
