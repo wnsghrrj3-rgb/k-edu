@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-23 · 과목 23 · 차시 1128 · 슬라이드 20045 */
+   생성: 2026-10-23 · 과목 23 · 차시 1129 · 슬라이드 20064 */
 window.KT2_MANIFEST = {
  "built": "2026-10-23",
- "lessons": 1128,
- "slides": 20045,
+ "lessons": 1129,
+ "slides": 20064,
  "subjects": [
   {
    "slug": "g1_math",
@@ -30490,6 +30490,32 @@ window.KT2_MANIFEST = {
        "no": "10",
        "title": "6·25 전쟁과 사람들의 생활 모습",
        "meta_title": "6·25 전쟁과 사람들의 생활 모습",
+       "std": "[6사06-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u3_l12",
+       "no": "12",
+       "title": "6·25 전쟁 이후 달라진 사회와 사람들의 생활 모습",
+       "meta_title": "6·25 전쟁 이후 달라진 사회와 사람들의 생활 모습",
        "std": "[6사06-02]",
        "slides": 19,
        "stages": [
