@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>케이모션 · 행동 데이터</title>
+<link rel="stylesheet" href="./kmotion.css">
+<style>
+main{width:100%;max-width:980px}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0 14px}
+.bar .sp{flex:1}
+.small{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:.9rem;cursor:pointer;font-weight:700}
+.small.danger{border-color:#ff5c7a;color:#ff8aa0}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--dim);font-weight:700;font-size:.82rem}
+tr.sess{cursor:pointer}tr.sess:hover td{background:rgba(77,225,255,.06)}
+tr.sel td{background:rgba(255,211,92,.08)}
+.meter{height:8px;background:var(--panel);border:1px solid var(--line);border-radius:999px;overflow:hidden;width:220px}
+.meter i{display:block;height:100%;background:var(--accent)}
+select,input{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:.88rem}
+.ok{color:var(--ok)}.user{color:var(--gold)}
+.empty{color:var(--dim);padding:30px;text-align:center}
+#detail{margin-top:18px}
+.wrap{overflow-x:auto}
+h2{font-size:1.05rem;margin:14px 0 8px;color:var(--dim)}
+</style>
+</head>
+<body>
+<header><a href="./">← 케이모션</a><h1>📦 행동 데이터</h1><span></span></header>
+<main>
+<p class="note" style="text-align:left;margin:0 0 8px">기록 스위치가 켜진 세션만 이 기기 안(브라우저 저장소)에 쌓여요. 영상은 없고 관절 좌표·행동 이벤트뿐. 라벨을 고쳐 두면 「사람 검증」으로 표시되고, 내보낸 JSON이 학습 재료가 돼요.</p>
+<div class="bar">
+  <span id="usage">저장 추정 —</span><span class="meter"><i id="meter" style="width:0"></i></span>
+  <span class="sp"></span>
+  <button class="small" id="exportAll">전체 내보내기</button>
+  <button class="small danger" id="clearAll">전체 삭제</button>
+</div>
+<div class="wrap"><table id="sessions"><thead><tr><th>시작</th><th>활동</th><th>길이</th><th>프레임</th><th>이벤트</th><th>오류</th><th>엔진/규칙</th><th></th></tr></thead><tbody></tbody></table></div>
+<div id="detail"></div>
+</main>
+<script src="./kmotion-data.js"></script>
+<script>
+const D = KMotionData; const tb = document.querySelector('#sessions tbody'), detail = document.getElementById('detail');
+const fmt = ts => ts ? new Date(ts).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+const dur = s => s.endedAt ? Math.round((s.endedAt - s.startedAt) / 1000) + '초' : '…';
+let current = null;
+async function refresh(){
+  const ss = await D.list(); const mb = await D.estimateMB();
+  document.getElementById('usage').textContent = `저장 추정 ${mb.toFixed(1)} MB / 상한 ${D.QUOTA_MB} MB · 세션 ${ss.length}`;
+  document.getElementById('meter').style.width = Math.min(100, mb / D.QUOTA_MB * 100) + '%';
+  tb.innerHTML = ss.length ? '' : '<tr><td colspan="8" class="empty">아직 기록이 없어요. 활동 화면에서 ⚪ 기록을 눌러 켜고 활동해 보세요.</td></tr>';
+  for (const s of ss) {
+    const tr = document.createElement('tr'); tr.className = 'sess' + (current === s.id ? ' sel' : '');
+    tr.innerHTML = `<td>${fmt(s.startedAt)}</td><td>${s.activity}</td><td>${dur(s)}</td><td>${s.frames||0}</td><td>${s.events||0}</td><td>${s.errors||0}</td><td style="font-size:.8rem;color:var(--dim)">${s.engine} · ${s.action}</td>
+      <td><button class="small" data-x="${s.id}">내보내기</button> <button class="small danger" data-d="${s.id}">삭제</button></td>`;
+    tr.onclick = e => { if (e.target.tagName === 'BUTTON') return; current = s.id; refresh(); showDetail(s); };
+    tr.querySelector('[data-x]').onclick = async () => D.download(await D.exportSession(s.id), `kmotion-${s.activity}-${s.id}.json`);
+    tr.querySelector('[data-d]').onclick = async () => { if (confirm('이 세션 기록을 지울까요?')) { await D.remove(s.id); if (current === s.id) { current = null; detail.innerHTML = ''; } refresh(); } };
+    tb.appendChild(tr);
+  }
+}
+async function showDetail(s){
+  const ev = (await D.events(s.id)).filter(e => e.type !== 'frame');
+  const byType = {}; ev.forEach(e => byType[e.label] = (byType[e.label] || 0) + 1);
+  detail.innerHTML = `<h2>${s.activity} · ${fmt(s.startedAt)} — 이벤트 ${ev.length}개 · 사람 검증 ${ev.filter(e => e.verified).length}개</h2>
+    <p class="note" style="text-align:left;margin:0 0 8px">${Object.entries(byType).map(([k, v]) => `${k} ${v}`).join(' · ') || '이벤트 없음'}</p>
+    <div class="wrap"><table><thead><tr><th>시각(초)</th><th>인식(규칙)</th><th>점수</th><th>자료</th><th>라벨(사람)</th><th>메모</th></tr></thead><tbody id="evb"></tbody></table></div>`;
+  const b = document.getElementById('evb'); const t0 = ev.length ? ev[0].t : 0;
+  for (const e of ev) {
+    const tr = document.createElement('tr');
+    const opts = D.LABELS.map(l => `<option ${l === e.label ? 'selected' : ''}>${l}</option>`).join('');
+    const data = Object.entries(e.data || {}).filter(([k]) => k !== 'pos').map(([k, v]) => `${k}=${typeof v === 'object' ? JSON.stringify(v) : v}`).join(' ');
+    tr.innerHTML = `<td>${((e.t - t0) / 1000).toFixed(2)}</td><td>${e.type}</td><td>${e.score}</td><td style="font-size:.8rem;color:var(--dim)">${data}</td>
+      <td><select>${opts}</select> <span class="${e.verified ? 'user' : ''}">${e.verified ? '✓ 검증' : ''}</span></td><td><input value="${e.note || ''}" placeholder="메모" size="14"></td>`;
+    const sel = tr.querySelector('select'), inp = tr.querySelector('input');
+    const save = async () => { await D.setLabel(e.id, sel.value, inp.value); tr.querySelector('td:nth-child(5) span').textContent = '✓ 검증'; tr.querySelector('td:nth-child(5) span').className = 'user'; };
+    sel.onchange = save; inp.onchange = save; b.appendChild(tr);
+  }
+}
+document.getElementById('exportAll').onclick = async () => D.download(await D.exportAll(), `kmotion-all-${Date.now()}.json`);
+document.getElementById('clearAll').onclick = async () => { if (confirm('이 기기의 케이모션 기록을 전부 지울까요?')) { await D.clear(); current = null; detail.innerHTML = ''; refresh(); } };
+refresh();
+</script>
+</body>
+</html>

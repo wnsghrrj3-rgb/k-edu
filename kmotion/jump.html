@@ -7,54 +7,46 @@
 <link rel="stylesheet" href="./kmotion.css">
 </head>
 <body>
-<header><a href="./">← 케이모션</a><h1>🦘 제자리 점프 세기</h1><span></span></header>
+<header><a href="./">← 케이모션</a><h1>🦘 제자리 점프 세기</h1><span id="hdr"></span></header>
 <div class="hud"><span class="big" id="count">0번</span><span id="time">20초</span><span id="hint">몸 전체가 보이게 서 주세요</span></div>
 <div class="stage">
   <video id="v" autoplay playsinline muted></video>
   <canvas id="c" width="640" height="480"></canvas>
+  <div class="dev hidden" id="dev"></div>
   <div class="overlay" id="ov"><h2>20초 동안 제자리 점프!</h2><p>머리부터 발까지 다 보이게 카메라에서 두세 걸음 떨어져 서요. 뼈대가 보이면 준비 끝!</p><button class="btn" id="start">시작</button></div>
 </div>
 <p class="note">카메라 영상은 이 기기 안에서만 처리돼요. 밝은 곳에서, 창문을 등지지 말고 서면 더 잘 잡혀요.</p>
 <script src="./kmotion.js"></script>
+<script src="./kmotion-data.js"></script>
 <script>
-const km = KMotion.create({ video: document.getElementById('v'), canvas: document.getElementById('c'), modes: ['pose'] });
-const ov = document.getElementById('ov'), cnt = document.getElementById('count'), tm = document.getElementById('time'), hint = document.getElementById('hint');
-const { ctx, W, H, POSE } = km;
-let count = 0, timeLeft = 20, timer = null, playing = false, ready = false;
-let base = null, air = false, flash = 0;
+const km = KMotion.create({ video: document.getElementById('v'), canvas: document.getElementById('c'), modes: ['pose'], activity: 'jump' });
+KMotionData.attach(km, document.getElementById('hdr'));
+const ov = document.getElementById('ov'), cnt = document.getElementById('count'), tm = document.getElementById('time'), hint = document.getElementById('hint'), dev = document.getElementById('dev');
+if (new URLSearchParams(location.search).has('dev')) dev.classList.remove('hidden');
+const { ctx, W, H } = km;
+let count = 0, timeLeft = 20, timer = null, playing = false, flash = 0, lastJump = null;
 function show(h, p, btn){ ov.innerHTML = `<h2>${h}</h2><p>${p}</p>` + (btn ? `<button class="btn" id="start">${btn}</button>` : ''); ov.classList.remove('hidden'); if (btn) document.getElementById('start').onclick = begin; }
-km.onStatus = (s) => { if (s) show(s, '잠깐만요'); };
+km.onStatus = s => { if (s) show(s, '잠깐만요'); };
 async function begin(){
-  if (!km.running) { try { await km.start(); } catch (e) { show('카메라를 열 수 없어요', e.message, '다시 시도'); return; } }
-  ov.classList.add('hidden'); count = 0; timeLeft = 20; playing = true; base = null; air = false;
-  cnt.textContent = '0번'; tm.textContent = '20초';
+  if (!km.running) { try { await km.start(); } catch (e) { show('시작할 수 없어요', e.message, '다시 시도'); return; } }
+  ov.classList.add('hidden'); count = 0; timeLeft = 20; playing = true; cnt.textContent = '0번'; tm.textContent = '20초';
   clearInterval(timer); timer = setInterval(() => { timeLeft--; tm.textContent = timeLeft + '초'; if (timeLeft <= 0) end(); }, 1000);
 }
 function end(){ playing = false; clearInterval(timer); show(`${count}번 뛰었어요!`, count >= 30 ? '우와, 캥거루예요!' : count >= 15 ? '멋져요! 다음엔 더 높이!' : '좋아요, 한 번 더 해 볼까요?', '다시 하기'); }
 document.getElementById('start').onclick = begin;
-km.onFrame = (f) => {
+// 행동 층 이벤트로 센다 — 착지(body:land)마다 +1
+km.on('body:jump', e => { lastJump = e; });
+km.on('body:land', e => { if (playing) { count++; cnt.textContent = count + '번'; flash = 1; } });
+km.onFrame = f => {
   km.drawCamera();
-  const p = f.pose;
-  if (!p) { hint.textContent = '사람이 안 보여요'; ready = false; return; }
-  km.drawSkeleton(p, km.POSE_BONES, air ? 'rgba(255,211,92,.95)' : 'rgba(77,225,255,.9)');
-  const hip = { x: (p[POSE.lHip].x + p[POSE.rHip].x) / 2, y: (p[POSE.lHip].y + p[POSE.rHip].y) / 2 };
-  const sh  = { x: (p[POSE.lShoulder].x + p[POSE.rShoulder].x) / 2, y: (p[POSE.lShoulder].y + p[POSE.rShoulder].y) / 2 };
-  const torso = Math.hypot(hip.x - sh.x, hip.y - sh.y) || 1;
-  const vis = Math.min(p[POSE.lHip].v, p[POSE.rHip].v, p[POSE.lShoulder].v, p[POSE.rShoulder].v);
-  const feet = Math.min(p[POSE.lAnkle].v, p[POSE.rAnkle].v);
-  if (vis < .5) { hint.textContent = '몸이 잘 안 보여요'; ready = false; return; }
-  hint.textContent = feet < .5 ? '발까지 보이게 뒤로 조금' : (playing ? '뛰어요!' : '준비 완료');
-  ready = true;
-  // 서 있을 때 엉덩이 높이를 기준으로 잡고, 몸통 길이의 1/4 이상 올라가면 공중
-  if (base == null) base = hip.y;
-  if (!air) {
-    base = base * 0.85 + hip.y * 0.15;
-    if (hip.y < base - torso * 0.25) air = true;
-  } else {
-    if (hip.y > base - torso * 0.08) { air = false; if (playing) { count++; cnt.textContent = count + '번'; flash = 1; } }
-  }
+  const p = f.pose, b = f.actions.body;
+  if (!p || !b) { hint.textContent = '사람이 안 보여요'; return; }
+  km.drawSkeleton(p, km.POSE_BONES, b.air ? 'rgba(255,211,92,.95)' : 'rgba(77,225,255,.9)');
+  if (!b.ok) { hint.textContent = '몸이 잘 안 보여요'; return; }
+  hint.textContent = b.feet < .5 ? '발까지 보이게 뒤로 조금' : (playing ? '뛰어요!' : '준비 완료');
   if (flash > 0) { ctx.fillStyle = `rgba(255,211,92,${flash * .25})`; ctx.fillRect(0, 0, W, H);
     ctx.font = '900 120px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = `rgba(255,255,255,${flash})`; ctx.fillText(count, W / 2, H / 2 + 40); flash -= 0.06; }
+  if (!dev.classList.contains('hidden')) dev.textContent = `fps ${km.fps}  air ${b.air}  squat ${b.squat} knee ${b.knee}  armsUp ${b.armsUp}\ntorso ${b.torso.toFixed(0)}  hip.y ${b.hip.y.toFixed(0)}  lastJump h=${lastJump ? lastJump.height : '-'}`;
 };
 </script>
 </body>

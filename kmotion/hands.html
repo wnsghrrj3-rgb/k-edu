@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>케이모션 · 손동작 보기</title>
+<link rel="stylesheet" href="./kmotion.css">
+<style>.log{width:100%;max-width:820px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-top:10px;font:13px/1.6 ui-monospace,monospace;height:150px;overflow:auto;color:var(--dim)}.log b{color:var(--gold)}</style>
+</head>
+<body>
+<header><a href="./">← 케이모션</a><h1>🖐 손동작 보기</h1><span id="hdr"></span></header>
+<div class="hud"><span id="l">왼손 —</span><span id="r">오른손 —</span><span id="fps">— fps</span></div>
+<div class="stage">
+  <video id="v" autoplay playsinline muted></video>
+  <canvas id="c" width="640" height="480"></canvas>
+  <div class="overlay" id="ov"><h2>손을 보여 주세요</h2><p>펴기·주먹·집기(엄지+검지)·가리키기·흔들기·쓸기를 알아봐요. 엔진이 뭘 보는지 확인하는 화면이에요.</p><button class="btn" id="start">시작</button></div>
+</div>
+<div class="log" id="log"></div>
+<script src="./kmotion.js"></script>
+<script src="./kmotion-data.js"></script>
+<script>
+const km = KMotion.create({ video: document.getElementById('v'), canvas: document.getElementById('c'), modes: ['hands'], activity: 'hands' });
+KMotionData.attach(km, document.getElementById('hdr'));
+const ov = document.getElementById('ov'), log = document.getElementById('log');
+const NAME = { open: '펴기', fist: '주먹', pinch: '집기', point: '가리키기', other: '…', none: '—' };
+function show(h, p, btn){ ov.innerHTML = `<h2>${h}</h2><p>${p}</p>` + (btn ? `<button class="btn" id="start">${btn}</button>` : ''); ov.classList.remove('hidden'); if (btn) document.getElementById('start').onclick = begin; }
+km.onStatus = s => { if (s) show(s, '잠깐만요'); };
+async function begin(){ try { await km.start(); ov.classList.add('hidden'); } catch (e) { show('시작할 수 없어요', e.message, '다시 시도'); } }
+document.getElementById('start').onclick = begin;
+let t0 = 0;
+km.on('*', e => { if (e.type === 'frame' || e.type === 'hand:move') return; if (!t0) t0 = e.t;
+  const line = document.createElement('div'); line.innerHTML = `${((e.t - t0) / 1000).toFixed(1)}s <b>${e.type}</b> ${e.side || ''} ${e.dir || ''} ${e.via ? '(' + e.via + ')' : ''} ${e.score != null ? '·' + e.score.toFixed(2) : ''}`; log.prepend(line); while (log.children.length > 60) log.lastChild.remove(); });
+km.onFrame = f => { km.drawCamera();
+  const slot = { left: '—', right: '—' };
+  f.hands.forEach((h, i) => { const a = f.actions.hands[i]; km.drawSkeleton(h, km.HAND_BONES, a && a.pinched ? 'rgba(255,211,92,.95)' : 'rgba(77,225,255,.9)', 4);
+    if (a) slot[a.side || (i ? 'right' : 'left')] = `${NAME[a.pose]} ${a.fingersUp}손가락${a.pinched ? ' · 잡음' : ''}`; });
+  document.getElementById('l').textContent = '왼손 ' + slot.left; document.getElementById('r').textContent = '오른손 ' + slot.right; document.getElementById('fps').textContent = km.fps + ' fps'; };
+</script>
+</body>
+</html>

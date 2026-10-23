@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="./kmotion.css">
 </head>
 <body>
-<header><a href="./">← 케이모션</a><h1>🫧 비눗방울 터뜨리기</h1><span></span></header>
+<header><a href="./">← 케이모션</a><h1>🫧 비눗방울 터뜨리기</h1><span id="hdr"></span></header>
 <div class="hud"><span id="score">점수 0</span><span id="time">30초</span></div>
 <div class="stage">
   <video id="v" autoplay playsinline muted></video>
@@ -16,8 +16,10 @@
 </div>
 <p class="note">카메라 영상은 이 기기 안에서만 처리되고 어디에도 보내지 않아요. 화면은 거울처럼 보여요.</p>
 <script src="./kmotion.js"></script>
+<script src="./kmotion-data.js"></script>
 <script>
-const km = KMotion.create({ video: document.getElementById('v'), canvas: document.getElementById('c'), modes: ['motion'] });
+const km = KMotion.create({ video: document.getElementById('v'), canvas: document.getElementById('c'), modes: ['motion'], activity: 'bubble' });
+KMotionData.attach(km, document.getElementById('hdr'));
 const ov = document.getElementById('ov'), sc = document.getElementById('score'), tm = document.getElementById('time');
 const { ctx, W, H } = km;
 let bubbles = [], pops = [], score = 0, timeLeft = 30, timer = null, playing = false;
@@ -37,7 +39,7 @@ km.onFrame = (f) => {
   if (Math.random() < 0.04 && bubbles.length < 8) bubbles.push({ x: 40 + Math.random() * (W - 80), y: H + 30, r: 28 + Math.random() * 22, vy: 1.2 + Math.random() * 1.5, col: colors[Math.random() * colors.length | 0] });
   for (const b of bubbles) {
     b.y -= b.vy;
-    if (f.motion && f.motion.at(b.x, b.y, b.r) > 0.25) { b.dead = true; score++; sc.textContent = '점수 ' + score; pops.push({ x: b.x, y: b.y, r: b.r, t: 1 }); }
+    if (f.motion && f.motion.at(b.x, b.y, b.r) > 0.25) { b.dead = true; score++; sc.textContent = '점수 ' + score; km.emit('game:pop', { pos: { x: b.x, y: b.y }, score: 1 }); pops.push({ x: b.x, y: b.y, r: b.r, t: 1 }); }
     ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fillStyle = b.col + '99'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
     ctx.beginPath(); ctx.arc(b.x - b.r * .3, b.y - b.r * .3, b.r * .2, 0, Math.PI * 2); ctx.fillStyle = '#fffc'; ctx.fill();
   }
