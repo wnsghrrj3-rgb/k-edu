@@ -19,8 +19,8 @@
  * 좌표는 전부 캔버스(거울) 픽셀. 랜드마크 {x,y,z,v}. score = 자체 판정 점수(모델 신뢰도와 다름).
  */
 (function(){
-  const ENGINE_VERSION = '0.2.0';
-  const ACTION_VERSION = 'rule-0.2.0';
+  const ENGINE_VERSION = '0.2.1';
+  const ACTION_VERSION = 'rule-0.2.1';
   const MODEL_VERSION  = { hands: 'hand_landmarker/float16/1', pose: 'pose_landmarker_lite/float16/1', vision: 'tasks-vision@0.10.21' };
   const VENDOR = new URL('./vendor/tasks-vision/', document.currentScript ? document.currentScript.src : location.href).href;
   const MODELS = {
@@ -103,10 +103,10 @@
       const w = h[0], c = h[9], span = dist(c, w) || 1;
       const tips = [8, 12, 16, 20], pips = [6, 10, 14, 18];
       const ext = tips.map((t, i) => dist(h[t], w) > dist(h[pips[i]], w) * 1.05);
-      const thumbExt = dist(h[4], h[17]) > dist(h[2], h[17]) * 1.15;
+      const thumbExt = dist(h[4], h[17]) > dist(h[3], h[17]) * 1.1 && dist(h[4], h[5]) > span * 0.45; // 엄지 끝이 새끼손가락 쪽에서 멀고 검지 밑동에서도 떨어짐
       const curl = tips.reduce((s, t) => s + dist(h[t], c), 0) / (4 * span);   // 작을수록 쥠
       const pinch = dist(h[4], h[8]) / span;                                   // 엄지-검지 거리(손 크기 비)
-      return { span, ext, thumbExt, fingersUp: ext.filter(Boolean).length, curl, pinch, center: c, wrist: w };
+      return { span, ext, thumbExt, fingersUp: ext.filter(Boolean).length + (thumbExt ? 1 : 0), curl, pinch, center: c, wrist: w };
     };
     km.isFist = h => !!h && km.handFeatures(h).curl < 0.55;
     km.fingersUp = h => h ? km.handFeatures(h).fingersUp : 0;
@@ -118,7 +118,7 @@
     function labelHand(f){
       if (f.pinch < 0.25 && f.ext[1] && f.ext[2]) return 'pinch';
       if (f.curl < 0.55) return 'fist';
-      if (f.fingersUp === 1 && f.ext[0]) return 'point';
+      if (f.ext[0] && !f.ext[1] && !f.ext[2] && !f.ext[3]) return 'point';
       if (f.fingersUp >= 4) return 'open';
       return 'other';
     }
@@ -129,7 +129,7 @@
         if (!h) { if (st.pose !== 'none') { if (st.pinched) { km.emit('hand:release', { hand: i, reason: 'lost', score: .5 }); st.pinched = false; } st.pose = 'none'; st.cand = 'none'; st.n = 0; st.hist = []; } continue; }
         const f = km.handFeatures(h);
         const hd = frame.handedness && frame.handedness[i] && frame.handedness[i][0];
-        const side = hd ? (hd.categoryName === 'Left' ? 'right' : 'left') : null; // 거울이라 반대
+        const side = hd ? (hd.categoryName === 'Left' ? 'left' : 'right') : null; // 모델 라벨이 거울 기준이라 그대로(실기기 10-23 확인)
         const lab = labelHand(f), now = frame.t;
         if (lab === st.cand) st.n++; else { st.cand = lab; st.n = 1; }
         if (st.n >= HOLD && lab !== st.pose) {
