@@ -12,7 +12,7 @@ export class Road {
   constructor(g, cfg) { this.g = g; this.cfg = cfg || {}; this.cur = null; this.since = cfg?.firstGap ?? 45; this.t = 0; this.walk = 0; this.lastAt = null; this.dom(); }
   dom() { if (typeof document === 'undefined' || typeof document.createElement !== 'function' || document.getElementById('roadfx')) return; const st = document.createElement('style'); st.id = 'roadfx'; st.textContent = `.chk.road .tag{color:#ffc78a}`; document.head.appendChild(st); }
   dist(a, b) { return Math.hypot(a.x - b.x, a.z - b.z); }
-  quiet() { const g = this.g; return !g.ui.isOpen?.() && !g.pulse?.chase && !g.pulse?.deadline && !g.story?.cutsceneOn && !g.danger?.enc && !g.danger?.eyesOn && g.p?.enabled !== false; }
+  quiet() { const g = this.g; return !g.ui.isOpen?.() && !g.pulse?.chase && !g.pulse?.deadline && !g.story?.cutsceneOn && !g.danger?.enc && !g.danger?.eyesOn && !g.beasts?.busy && g.p?.enabled !== false; }
   /** 아직 안 온 일 중 지금 조건에 맞는 것 */
   cands() { const g = this.g; const night = !!g.story?.isNight; return (this.cfg.events || []).filter((s) => !g.flags.has('road:' + s.id) && (s.night == null || !!s.night === night) && g.cond(s.if)); }
   // ---------- 놓기 ----------
