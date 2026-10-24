@@ -17,6 +17,8 @@ export class UI {
     el.classList.add('on'); el.addEventListener('animationend', () => el.classList.remove('on'), { once: true });
   }
   setGoal(t) { this.goal.textContent = t; }
+  /** 119: 나침반(goal) 밑 작은 한 줄 — 「👂 … 미리 해 둘 수 있다」. 빈 글이면 숨김 */
+  setGoalSub(t) { const G = this.goal; if (!G?.parentNode) return; let el = G.nextElementSibling; if (!el || el.id !== 'goalsub') { el = document.createElement('div'); el.id = 'goalsub'; G.parentNode.insertBefore(el, G.nextSibling); } el.textContent = t || ''; el.style.display = t ? 'block' : 'none'; }
   setMission(title, i, n) { $('mtitle').textContent = title; $('mcount').textContent = `${Math.min(i + 1, n)}/${n}`; $('mission').classList.add('flash'); setTimeout(() => $('mission').classList.remove('flash'), 900); }
   setCompass(name, bearing, dist) { const el = $('compass'); el.style.display = 'flex'; $('cname').textContent = name; $('cdist').textContent = dist < 6 ? '여기' : Math.round(dist) + 'm'; $('carrow').style.transform = `rotate(${-bearing}rad)`; }
   pulseHint() { $('hintbtn').classList.add('pulse'); setTimeout(() => $('hintbtn').classList.remove('pulse'), 6000); }

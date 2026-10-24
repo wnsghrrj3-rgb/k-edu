@@ -105,7 +105,7 @@ export class Life {
       if (s.place) { const a = g.e.areas.get(s.place); if (a && Math.hypot(a.x - g.p.pos.x, a.z - g.p.pos.z) < (s.radius || 11)) this.open(s); }
     }
     for (const s of this.situations) if (this.opened.has(s.id) && !this.done.has(s.id)) this.resolve(s);
-    this.flush();
+    this.flush(); this.prepHint();   // 119
   }
   onFlag() { if (this.g.restoring) return; for (const s of this.situations) { if (!this.opened.has(s.id) && s.on && this.cond(s.on) && this.cond(s.if)) this.open(s); if (this.opened.has(s.id) && !this.done.has(s.id)) this.resolve(s); } this.flush(); }
   open(s) {
@@ -222,14 +222,28 @@ export class Life {
     btns.push({ label: '더 둘러보기', onClick: () => { g.ui.close(); g.p.enabled = true; } });
     show(); g.save?.touch();
   }
+  /** 119: 「그 뒤」 카드 👂 한 줄 — 이 시대에 떠도는 말을 몇 번 먼저 들었나(rumor:<X>:heard)·그래서 몇 번 남보다 앞서 섰나(:used)·미리 해 둔 일(prep:<X>). 소문 데이터가 없는 시대면 빈 줄. 값은 안 바뀐다 — 「소식을 먼저 아는 집이 살아남았다」가 한 줄로 남을 뿐 */
+  earLine() {
+    const g = this.g; const rules = g.world?.spark?.gaze?.rules || []; if (!rules.some((r) => /^rumor:.+:heard$/.test(String(r?.flag || '')))) return '';
+    const F = [...g.flags]; const heard = F.filter((f) => /^rumor:[^:]+:heard$/.test(f)).length, used = F.filter((f) => /^rumor:[^:]+:used$/.test(f)).length, prep = F.filter((f) => /^prep:[^:]+$/.test(f)).length;
+    if (!heard) return '소문은 지나쳤다 — 사람 곁을 지나지 않아 늘 뒤늦게 알았다. 소식을 먼저 아는 집이 살아남았다.';
+    return `먼저 들은 집 — 떠도는 말을 ${heard}번 먼저 들었다${used ? `, 그래서 ${used}번은 남보다 앞서 섰다` : ''}${prep ? `. 미리 해 둔 일 ${prep}가지` : ''}. 소식을 먼저 아는 집이 살아남았다.`;
+  }
+  /** 119: 소문을 들었으면 나침반 밑에 살짝 — 「👂 자리 — 미리 … · 미리 해 둘 수 있다」(items.targets rename 중 if 에 rumor:<X>:heard, flag 에 prep 가 든 것이 지금 조건에 맞을 때). 사건이 열리거나 미리 하면 사라진다. 자리·길은 데이터가 정한다 */
+  prepHint() {
+    const g = this.g; const T = g.items?.targets; if (!T || !g.ui?.setGoalSub || !g.cond) return; let txt = '';
+    for (const [k, def] of Object.entries(T)) { for (const r of def?.rename || []) { if (!/rumor:\w+:heard/.test(String(r?.if || '')) || !/prep/.test(String(r?.flag || ''))) continue; if (!g.cond(r.if)) continue; txt = `👂 ${def.name || r.name || k} — ${String(r.verb || '').split(' — ')[0]} · 미리 해 둘 수 있다`; break; } if (txt) break; }
+    if (txt !== (this.prepTxt || '')) { this.prepTxt = txt; g.ui.setGoalSub(txt); }
+  }
   /** 「그 뒤」 — 시대가 바뀐 까닭. 끝 카드 뒤·족보 앞에 한 장: 이 시대의 물음 → 한 줄 답 → 세상·우리 집(끝 갈림·값·흔적 깃발로 갈림)·다음 시대 첫 줄 → 「왜 세상이 바뀌었을까」 물음 하나(틀리면 정답 한 줄, 되돌아가기 없음 — 시대는 끝났다).
    *  world.bridge = { tag, years, answer, beats:[{k, text | rules:[{if,text}], text}], q:{q, a:[정답, …], why}, next } — 없으면 그냥 지나간다. 한 번(life:bridge). */
   bridge(done) {
     const g = this.g, b = g.world?.bridge; if (!b || g.flags.has('life:bridge')) return done(); g.sound?.play?.('gate', 0.45);
     const pick = (bt) => { if (!bt) return ''; if (typeof bt === 'string') return bt; const r = (bt.rules || []).find((x) => !x.if || this.cond(x.if)); return r ? r.text : (bt.text || ''); };
     const lines = (b.beats || []).map((bt) => ({ k: bt.k || '', t: pick(bt) })).filter((x) => x.t);
+    const ear = this.earLine();   // 119: 👂 먼저 들은 집·미리 한 집 한 줄
     g.flag('life:bridge'); g.p.enabled = false;
-    const html = `<div class="chk life bridge"><div class="tag">⏭ ${esc(b.tag || '그 뒤')}${b.years ? ` · ${esc(b.years)}` : ''}</div><h3>${esc(g.world.question || '')}</h3>${b.answer ? `<p class="why">${esc(b.answer)}</p>` : ''}${lines.map((x) => `<p>${x.k ? `<b>${esc(x.k)}</b> ` : ''}${esc(x.t)}</p>`).join('')}</div>`;
+    const html = `<div class="chk life bridge"><div class="tag">⏭ ${esc(b.tag || '그 뒤')}${b.years ? ` · ${esc(b.years)}` : ''}</div><h3>${esc(g.world.question || '')}</h3>${b.answer ? `<p class="why">${esc(b.answer)}</p>` : ''}${lines.map((x) => `<p>${x.k ? `<b>${esc(x.k)}</b> ` : ''}${esc(x.t)}</p>`).join('')}${ear ? `<p class="ear"><b>👂</b> ${esc(ear)}</p>` : ''}</div>`;
     const ask = () => { const q = b.q; if (!q || !q.a?.length) return done(); let seed = (this.seed || 1) * 131 + 7; const opts = q.a.map((t, k) => ({ t, k })); for (let i = opts.length - 1; i > 0; i--) { seed = (seed * 1103515245 + 12345) % 2147483648; const j = seed % (i + 1); [opts[i], opts[j]] = [opts[j], opts[i]]; }
       g.ui.open(`<div class="chk life review"><div class="tag">왜 세상이 바뀌었을까</div><h3>${esc(q.q)}</h3></div>`, opts.map((o) => ({ label: o.t, onClick: () => { g.ui.close(); const ok = o.k === 0; g.results = [...(g.results || []), { id: 'bridge:' + g.era, concept: 'hist.why', ok, t: q.q, pick: o.t }]; g.flag(ok ? 'bridge:ok' : 'bridge:miss');
         if (ok) { g.sound?.play?.('good', 0.4); g.ui.say('그래 — 그래서 세상이 바뀌었다.', 2800); done(); }

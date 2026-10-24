@@ -1,4 +1,5 @@
 // 「그 뒤」 다리 카드 시험 — 끝 카드 「○○로 가기」 → 그 뒤 카드(시대 질문·답·세상·우리 집·다음) → 「왜 세상이 바뀌었을까」 3지선다(틀리면 정답 한 줄) → 족보 → 다음 시대.
+// + 119: 「그 뒤」 카드 👂 한 줄(먼저 들은 집 / 소문은 지나쳤다)
 // 데이터 전수(열한 시대): bridge 있음·beats 셋·우리 집 규칙의 if 가 실제 끝 갈림(life:<branch>)·done 깃발·값 조건을 가리킴·마지막 규칙은 조건 없음·q 셋(중복 없음)·why.
 import * as THREE from 'three';
 import fs from 'fs';
@@ -40,12 +41,13 @@ const mk = () => {
   g.save = { clear() {}, touch() {}, recordEnd() {} }; return g;
 };
 const g = mk(); g.flags.add('life:review:done');
-g.life.values.heart = 4; g.life.injure('leg'); g.flags.add('sit:leave:ember');
+g.life.values.heart = 4; g.life.injure('leg'); g.flags.add('sit:leave:ember'); ['rumor:stone:heard', 'rumor:leave:heard', 'rumor:leave:used', 'prep:leave'].forEach((f) => g.flags.add(f));   // 119: 👂 줄
 const end = g.life.situations.find((s) => s.id === 'leave').choices[0].then[0].end; g.life.end(end);
 ok(g.flags.has('life:carried') && g._panel?.h.includes('업혀서'), '끝 카드: 절뚝+인심 4 → 업혀서');
 const goBtn = g._panel.b.find((b) => b.label.includes('신석기로 가기')); ok(!!goBtn, '끝 카드에 「신석기로 가기」'); g._panel = null; goBtn.onClick();
 ok(g.flags.has('life:bridge') && g._panel?.h.includes('그 뒤') && g._panel.h.includes(g.world.question) && g._panel.h.includes(g.world.bridge.answer), '그 뒤 카드: 시대 질문·답');
 ok(g._panel.h.includes('업혀서 떠난 너는') && !g._panel.h.includes('불씨를 들고 넘은'), '우리 집 줄: 끝 갈림(carried)이 먼저 맞는 규칙');
+ok(g._panel.h.includes('<b>👂</b> 먼저 들은 집 — 떠도는 말을 2번 먼저 들었다, 그래서 1번은 남보다 앞서 섰다. 미리 해 둔 일 1가지.'), '119: 그 뒤 카드 👂 줄 — 들음 2·앞섬 1·미리 1');
 ok(g._panel.h.includes('빙하기가 끝나며') && g._panel.h.includes('강가 움집'), '세상·다음 줄');
 const next = g._panel.b[0]; ok(next.primary && next.label.includes('다음 대로'), '단추 「그래서 — 다음 대로」'); g._panel = null; next.onClick();
 ok(g._panel?.h.includes('왜 세상이 바뀌었을까') && g._panel.b.length === 3, '물음 카드: 3지선다');
@@ -58,6 +60,7 @@ ok(g._panel?.h.includes('족보') && g._panel.b[0].label.includes('신석기로 
 const g2 = mk(); g2.flags.add('life:review:done'); g2.life.values.heart = 1; g2.flags.add('sit:leave:alone'); g2.life.end(end);
 ok(g2.flags.has('life:alone') && g2._panel.h.includes('먼저 떠났다'), '끝 갈림 alone');
 g2._panel.b.find((b) => b.label.includes('신석기로 가기')).onClick(); ok(g2._panel.h.includes('혼자 먼저 넘은 너는'), '우리 집 줄: sit:leave:alone');
+ok(g2._panel.h.includes('<b>👂</b> 소문은 지나쳤다'), '119: 하나도 못 들었으면 「소문은 지나쳤다」 한 줄');
 g2._panel.b[0].onClick(); const right = g2._panel.b.find((b) => b.label === g2.world.bridge.q.a[0]); g2._panel = null; right.onClick();
 await new Promise((r) => setTimeout(r, 30)); ok(g2.flags.has('bridge:ok') && g2._panel?.h.includes('족보'), '맞힘 → 바로 족보');
 g2._panel = null; g2.life.bridge(() => { g2._bridged = true; }); ok(g2._bridged && !g2._panel, '두 번째 bridge() 는 안 뜨고 바로 done');
