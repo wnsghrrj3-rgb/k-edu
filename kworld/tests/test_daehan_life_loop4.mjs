@@ -57,7 +57,7 @@ const carry = (key) => JSON.parse(store['kworld_carry:daehan-life'] || '{}')[key
 {
   const life = J('life'), items = J('items'), npcs = J('npcs'), world = J('world');
   const s = life.situations.find((x) => x.id === 'nongji');
-  ok(s.choices.length === 15 && ['buy', 'buyfail', 'factory', 'paper', 'lend', 'plot', 'pleadfail', 'late'].every((id) => s.choices.some((c) => c.id === id)), '길 15');
+  ok(s.choices.length === 16 && ['buy', 'buyfail', 'factory', 'paper', 'lend', 'plot', 'pleadfail', 'late'].every((id) => s.choices.some((c) => c.id === id)), '길 16(118 prep 포함)');
   ok(s.body.some((b) => b.startsWith('📜') && b.includes('→')) && s.q.a.length === 3 && new Set(s.q.a).size === 3 && !/\d{4}년/.test(s.q.a[0]), '📜 인과 한 줄 · q 셋(연도 없음)');
   const dl = world.pulse.deadlines.find((d) => d.id === 'nongji'); ok(dl && dl.sec === 90 && dl.on.includes('status:sojak') && dl.failFlag === 'nj:late' && s.choices.some((c) => c.done === 'nj:late' && c.bad), '급한 일: 소작만 90초 → nj:late 선택지(bad)');
   const br = endOf({ life: { d: life } }).branches; const idx = (id) => br.findIndex((b) => b.id === id);
@@ -65,9 +65,9 @@ const carry = (key) => JSON.parse(store['kworld_carry:daehan-life'] || '{}')[key
   const rules = world.bridge.beats[1].rules; ok(rules.length === 9 && !rules.at(-1).if, '그 뒤 규칙 아홉 · 마지막 무조건');
   for (const r of rules) if (r.if) for (const tok of r.if.split('||').map((x) => x.trim())) ok(br.some((b) => 'life:' + b.id === tok), `그 뒤 ${tok} 는 실제 끝 갈림`);
   const gate = items.targets.jijugate.rename.find((r) => r.if.includes('status:jiju') && r.choices); ok(gate.choices.length === 3 && gate.choices[2].rollFailFlag === 'nj:paper' && gate.choices[2].flag === 'nj:factory', '대문 셋: 증권 공장 ⚠');
-  const sj = items.targets.sojakjip.rename.find((r) => r.if.includes('status:sojak') && r.choices); ok(sj.choices.length === 3 && sj.choices[1].if === 'val:grain>=3' && sj.choices[1].gives === 'deed' && sj.choices[1].rollFailFlag === 'nj:buyfail', '마루 소작 셋: 미리 사기 곡식 셋 회색·땅문서');
+  const sj = items.targets.sojakjip.rename.find((r) => r.if.includes('status:sojak') && r.choices); ok(sj.choices.length === 4 && sj.choices[3].showIf === 'prep:nongji' && sj.choices[1].if === 'val:grain>=3' && sj.choices[1].gives === 'deed' && sj.choices[1].rollFailFlag === 'nj:buyfail', '마루 소작 셋+👂 미리: 미리 사기 곡식 셋 회색·땅문서');
   const nm = items.targets.sojakjip.rename.find((r) => r.if.includes('status:nongmin') && r.choices); ok(nm.choices.length === 2 && nm.choices[1].if === 'val:grain>=1' && nm.choices[1].flag === 'nj:lend', '마루 자작농 둘: 꿔 주기 곡식 하나 회색');
-  const ep = items.targets.eup.rename[0]; ok(ep.if.includes('sit:nongji:open') && ep.choices[0].if === 'val:heart>=2' && ep.choices[0].rollFailFlag === 'nj:pleadfail' && ep.choices[0].gives === 'deed', '읍사무소 벽보: 매달리기 인심 둘 회색·땅문서');
+  const ep = items.targets.eup.rename.find((r) => r.if.startsWith('sit:nongji:open')); ok(ep.if.includes('sit:nongji:open') && ep.choices[0].if === 'val:heart>=2' && ep.choices[0].rollFailFlag === 'nj:pleadfail' && ep.choices[0].gives === 'deed', '읍사무소 벽보: 매달리기 인심 둘 회색·땅문서');
   const ids = new Set(life.status.rules.map((r) => r.id)); for (const c of s.choices) if (c.status) ok(ids.has(c.status), `nongji.${c.id} 결과 신분 ${c.status} 실재`);
   const blob = JSON.stringify(items) + JSON.stringify(npcs) + JSON.stringify(world); for (const c of s.choices) ok(blob.includes(`"${c.done}"`), `nongji.${c.id} done 세우는 곳`);
   ok(npcs.eupjang.lines.some((l) => l.if === 'sit:nongji:open && !sit:nongji:done'), '읍장 농지 줄');
