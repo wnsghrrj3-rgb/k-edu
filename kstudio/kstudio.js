@@ -4,13 +4,13 @@
  */
 (() => {
 const $ = id => document.getElementById(id), now = () => performance.now(), rnd = (a, b) => a + Math.random() * (b - a), clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const km = KMotion.create({ video: $('v'), canvas: $('c'), modes: ['pose'], segment: true, activity: 'kstudio' });
+const km = KMotion.create({ video: $('v'), canvas: $('c'), modes: ['pose'], segment: false, activity: 'kstudio' });
 KMotionData.attach(km, $('hdr'));
 const ov = $('ov'), dev = $('dev'), { ctx, W, H } = km; if (new URLSearchParams(location.search).has('dev')) dev.classList.remove('hidden');
 let view = 'person', bg = 'camera', bgImg = null, fx = { fire: false, shock: false, crown: false, sparkle: false, bones: false }, parts = [], shocks = [];
 
 // ───── Three.js 캐릭터(로봇)
-const tcv = $('three'); const renderer = new THREE.WebGLRenderer({ canvas: tcv, antialias: true, alpha: true }); renderer.setClearColor(0x000000, 0); renderer.setSize(W, H, false);
+const tcv = $('three'); const renderer = new THREE.WebGLRenderer({ canvas: tcv, antialias: false, alpha: true, powerPreference: 'low-power' }); renderer.setPixelRatio(1); renderer.setClearColor(0x000000, 0); renderer.setSize(W, H, false);
 const scene = new THREE.Scene(); const camera = new THREE.PerspectiveCamera(40, W / H, .1, 100); camera.position.set(0, 1.6, 7.2); camera.lookAt(0, 1.5, 0);
 scene.add(new THREE.HemisphereLight(0xffffff, 0x334466, 1.0)); const key = new THREE.DirectionalLight(0xffffff, 1.0); key.position.set(3, 6, 5); scene.add(key);
 const M = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: .4, metalness: .45 });
@@ -67,6 +67,7 @@ function drawBg(t){ if (bg === 'camera') { km.drawCamera(); return; } if (bg ===
 function spawnFx(p, b, t){ if (!p || !b) return;
   if (fx.fire) for (const w of [15, 16]) if (p[w].v > .4) for (let i = 0; i < 3; i++) parts.push({ x: p[w].x + rnd(-8, 8), y: p[w].y, vx: rnd(-1, 1), vy: rnd(-4, -1.5), r: rnd(6, 14), life: 1, decay: .04, kind: 'fire' });
   if (fx.sparkle) for (let i = 0; i < 2; i++) { const k = [0, 11, 12, 15, 16, 23, 24][Math.random() * 7 | 0]; parts.push({ x: p[k].x + rnd(-30, 30), y: p[k].y + rnd(-30, 30), vx: rnd(-.5, .5), vy: rnd(-1.5, -.3), r: rnd(2, 5), life: 1, decay: .025, kind: 'spark', hue: rnd(0, 360) }); } }
+km.on('warn', e => { if (e.kind === 'slow') { $('posetxt').textContent = '느림 — 효과·배경을 줄여 보세요'; } });
 km.on('body:land', e => { if (fx.shock) shocks.push({ x: e.pos.x, y: Math.min(H - 10, e.pos.y + (km.last && km.last.pose ? (km.last.pose[27].y - e.pos.y) : 150)), r: 10, life: 1 }); });
 function drawFx(p, t){ for (const q of parts) { q.x += q.vx; q.y += q.vy; q.life -= q.decay; if (q.kind === 'fire') { q.r *= .97; const g = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, q.r); g.addColorStop(0, `rgba(255,240,150,${q.life})`); g.addColorStop(.5, `rgba(255,120,30,${q.life * .8})`); g.addColorStop(1, 'rgba(200,30,0,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, Math.PI * 2); ctx.fill(); }
     else { ctx.fillStyle = `hsla(${q.hue},90%,70%,${q.life})`; ctx.beginPath(); for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + t / 300; ctx.moveTo(q.x, q.y); ctx.lineTo(q.x + Math.cos(a) * q.r * 2, q.y + Math.sin(a) * q.r * 2); } ctx.strokeStyle = `hsla(${q.hue},90%,75%,${q.life})`; ctx.lineWidth = 2; ctx.stroke(); } } parts = parts.filter(q => q.life > 0);
@@ -79,7 +80,7 @@ let last = 0;
 km.onFrame = f => { const t = now(), dt = Math.min(.05, (t - last) / 1000 || .016); last = t; const p = f.pose, b = f.actions.body, ok = !!(p && b && b.ok);
   $('posedot').className = 'dot ' + (ok ? 'on' : km.running ? 'bad' : ''); $('posetxt').textContent = !km.running ? '인식 대기' : ok ? '인식 중' : '몸이 안 보여요';
   drawBg(t);
-  if (view !== 'robot') { if (bg === 'camera') { /* 카메라 그대로면 이미 사람 포함 */ } else if (f.maskCanvas && !km.mouse) km.drawPerson(ctx); }
+  if (view !== 'robot') { if (bg === 'camera') { /* 카메라 그대로면 이미 사람 포함 */ } else if (f.maskCanvas && !km.mouse) km.drawPerson(ctx); else if (!km.mouse && km.segmentOn) { ctx.font = '700 18px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText('사람 분리 준비 중…', W / 2, H - 30); } }
   if (view !== 'person') { retarget(p, b); renderRobot(dt); ctx.drawImage(tcv, 0, 0, W, H); }
   spawnFx(p, b, t); drawFx(p, t);
   if (recording) { ctx.fillStyle = '#ff4d6d'; ctx.beginPath(); ctx.arc(W - 26, 26, 10, 0, Math.PI * 2); ctx.fill(); }
@@ -87,9 +88,10 @@ km.onFrame = f => { const t = now(), dt = Math.min(.05, (t - last) / 1000 || .01
   if (!dev.classList.contains('hidden')) dev.textContent = `fps ${km.fps} view ${view} bg ${bg} mask ${!!f.maskCanvas} ` + (b ? `squat ${b.squat} air ${b.air} lean ${b.lean}` : 'no body'); };
 
 // ───── UI
-document.querySelectorAll('[data-view]').forEach(btn => btn.onclick = () => { view = btn.dataset.view; document.querySelectorAll('[data-view]').forEach(x => x.classList.toggle('on', x === btn)); km.emit('kstudio:view', { view }); });
+document.querySelectorAll('[data-view]').forEach(btn => btn.onclick = () => { view = btn.dataset.view; document.querySelectorAll('[data-view]').forEach(x => x.classList.toggle('on', x === btn)); syncSegment(); km.emit('kstudio:view', { view }); });
 document.querySelectorAll('[data-fx]').forEach(btn => btn.onclick = () => { fx[btn.dataset.fx] = !fx[btn.dataset.fx]; btn.classList.toggle('on', fx[btn.dataset.fx]); });
-$('bg').onchange = e => { bg = e.target.value; if (bg === 'upload') $('bgfile').click(); km.emit('kstudio:bg', { bg }); };
+function syncSegment(){ const need = bg !== 'camera' && view !== 'robot'; if (need !== km.segmentOn) km.setSegment(need); }
+$('bg').onchange = e => { bg = e.target.value; if (bg === 'upload') $('bgfile').click(); syncSegment(); km.emit('kstudio:bg', { bg }); };
 $('bgfile').onchange = e => { const f = e.target.files[0]; if (!f) return; const img = new Image(); img.onload = () => bgImg = img; img.src = URL.createObjectURL(f); };
 $('fs').onclick = () => { const el = $('stage'); document.fullscreenElement ? document.exitFullscreen() : el.requestFullscreen && el.requestFullscreen(); };
 $('snap').onclick = () => { const a = document.createElement('a'); a.download = `kstudio-${Date.now()}.png`; a.href = $('c').toDataURL('image/png'); a.click(); addClip(a.download, a.href, '📷'); };

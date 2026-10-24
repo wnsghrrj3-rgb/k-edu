@@ -23,7 +23,7 @@
  * 좌표는 전부 캔버스(거울) 픽셀, 원유로 필터로 떨림 보정. 랜드마크 {x,y,z,v}. score = 자체 판정 점수(모델 신뢰도와 다름).\n * 손 actions: dir(손 방향 0~359°, 위=0 시계방향)·pointDir(검지 방향)·facing(palm/back)·pointer(검지 끝)·pinchPt(엄지·검지 사이). 몸: facing(front/left/right)·lean(기울기°).
  */
 (function(){
-  const ENGINE_VERSION = '0.5.0';
+  const ENGINE_VERSION = '0.5.1';
   const ACTION_VERSION = 'rule-0.4.0';
   const MODEL_VERSION  = { hands: 'hand_landmarker/float16/1', pose: 'pose_landmarker_lite/float16/1', vision: 'tasks-vision@0.10.21' };
   const VENDOR = new URL('./vendor/tasks-vision/', document.currentScript ? document.currentScript.src : location.href).href;
@@ -116,8 +116,14 @@
 
     // ── 사람 마스크(segment 옵션): 거울 좌표 알파 캔버스. 배경 바꾸기·실루엣에 씀
     const maskCanvas = document.createElement('canvas'); const mctx = maskCanvas.getContext('2d'); let maskImg = null;
-    km.updateMask = function(mask){ const mw = mask.width, mh = mask.height; if (maskCanvas.width !== mw || maskCanvas.height !== mh) { maskCanvas.width = mw; maskCanvas.height = mh; maskImg = mctx.createImageData(mw, mh); }
-      const a = mask.getAsFloat32Array(), d = maskImg.data; for (let i = 0, j = 3; i < a.length; i++, j += 4) { const v = a[i]; d[j] = v > .6 ? 255 : v < .3 ? 0 : ((v - .3) / .3 * 255) | 0; } mctx.putImageData(maskImg, 0, 0); };
+    let maskN = 0; km.maskEvery = opt.maskEvery || 2; km.segmentOn = !!opt.segment;
+    km.updateMask = function(mask){ if ((maskN++ % km.maskEvery) !== 0) return; const S2 = 2, mw = mask.width, mh = mask.height, ow = mw / S2 | 0, oh = mh / S2 | 0;
+      if (maskCanvas.width !== ow || maskCanvas.height !== oh) { maskCanvas.width = ow; maskCanvas.height = oh; maskImg = mctx.createImageData(ow, oh); }
+      const a = mask.getAsFloat32Array(), d = maskImg.data; let j = 3;
+      for (let y = 0; y < oh; y++) { const row = y * S2 * mw; for (let x = 0; x < ow; x++, j += 4) { const v = a[row + x * S2]; d[j] = v > .6 ? 255 : v < .3 ? 0 : ((v - .3) / .3 * 255) | 0; } }
+      mctx.putImageData(maskImg, 0, 0); };
+    /** 사람 마스크 켜고 끄기(배경 바꿀 때만 켜서 프레임 아낌) */
+    km.setSegment = async function(on){ km.segmentOn = !!on; if (poseLm && poseLm.setOptions) { try { await poseLm.setOptions({ outputSegmentationMasks: !!on }); } catch (e) { km.emit('error', { kind: 'segment', message: String(e), score: 0 }); } } };
     /** 사람만 거울로 그린다(배경 투명). target ctx 에 W×H */
     km.drawPerson = function(tctx){ tctx = tctx || ctx; const pc = km._pc || (km._pc = document.createElement('canvas')); if (pc.width !== W || pc.height !== H) { pc.width = W; pc.height = H; } const p = pc.getContext('2d');
       p.clearRect(0, 0, W, H); p.save(); p.translate(W, 0); p.scale(-1, 1); p.drawImage(video, 0, 0, W, H); p.globalCompositeOperation = 'destination-in'; p.drawImage(maskCanvas, 0, 0, W, H); p.restore(); tctx.drawImage(pc, 0, 0); };
@@ -258,7 +264,7 @@
             for (let i = f.hands.length; i < 2; i++) handSm[i].reset(); }
           if (poseLm) { const r = poseLm.detectForVideo(video, t); const raw = r.landmarks && r.landmarks[0] ? toPx(r.landmarks[0]) : null;
             if (raw) { f.pose = poseSm.apply(raw, t); poseSeen = true; } else { f.pose = null; if (poseSeen) { poseSm.reset(); poseSeen = false; } }
-            if (opt.segment && r.segmentationMasks && r.segmentationMasks[0]) { f.mask = r.segmentationMasks[0]; km.updateMask(f.mask); f.mask.close(); f.mask = null; f.maskCanvas = maskCanvas; } }
+            if (r.segmentationMasks && r.segmentationMasks.length) { const m = r.segmentationMasks[0]; try { if (km.segmentOn) km.updateMask(m); } catch (e) { km.emit('error', { kind: 'mask', message: String(e), score: 0 }); } finally { try { m.close(); } catch (_) {} } if (km.segmentOn && maskCanvas.width) f.maskCanvas = maskCanvas; } }
         } catch (e) { km.emit('error', { kind: 'detect', message: String(e), score: 0 }); }
         if (handLm) f.actions.hands = stepHands(f);
         if (poseLm) f.actions.body = stepBody(f);
@@ -266,7 +272,7 @@
         km.emit('frame', { hands: f.hands, pose: f.pose, actions: f.actions, fps: km.fps });
       }
       km.last = f;
-      if (km.onFrame) km.onFrame(f);
+      const t1 = performance.now(); if (km.onFrame) { try { km.onFrame(f); } catch (e) { km.emit('error', { kind: 'onFrame', message: String(e), score: 0 }); console.error(e); } } const dtF = performance.now() - t1; km.slow = dtF > 120 ? (km.slow || 0) + 1 : 0; if (km.slow === 3) km.emit('warn', { kind: 'slow', message: '프레임이 ' + Math.round(dtF) + 'ms 걸림', ms: Math.round(dtF) });
       raf = requestAnimationFrame(loop);
     }
 
