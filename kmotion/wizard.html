@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>케이모션 · 마법사의 주문</title>
+<link rel="stylesheet" href="./kmotion.css">
+<style>
+.stage{max-width:960px;aspect-ratio:16/9;background:#120a2a}
+.spells{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%;max-width:520px;text-align:left}
+.spells div{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:14px;padding:10px 14px;font-size:.95rem}
+.spells b{display:block;font-size:1.1rem}
+.result{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;font-size:1rem}.result b{color:var(--gold)}
+.grad{font-size:3rem;font-weight:900;color:var(--gold);line-height:1.1}
+.opts{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;font-size:.9rem;color:var(--dim)}
+.opts label{display:flex;gap:6px;align-items:center}
+</style>
+</head>
+<body>
+<header><a href="./">← 케이모션</a><h1>🪄 마법사의 주문</h1><span id="hdr"></span></header>
+<div class="hud"><span class="big" id="score">0</span><span id="stageName">—</span><span id="hp">❤❤❤</span><span id="cast">—</span></div>
+<div class="stage">
+  <video id="v" autoplay playsinline muted></video>
+  <canvas id="c" width="960" height="540"></canvas>
+  <div class="dev hidden" id="dev"></div>
+  <div class="overlay" id="ov"></div>
+</div>
+<p class="note">오른손을 들면 ⚡번개, 왼손을 들면 ❄얼음, 양팔을 옆으로 벌리면 🛡보호막, 양손을 위로 올리면 💚회복. 영상은 기기 안에서만 처리돼요.</p>
+<script src="./kmotion.js"></script>
+<script src="./kmotion-data.js"></script>
+<script>
+const km = KMotion.create({ video: document.getElementById('v'), canvas: document.getElementById('c'), modes: ['pose'], activity: 'wizard' });
+KMotionData.attach(km, document.getElementById('hdr'));
+const ov = document.getElementById('ov'), dev = document.getElementById('dev'), { ctx, W, H } = km, $ = id => document.getElementById(id);
+if (new URLSearchParams(location.search).has('dev')) dev.classList.remove('hidden');
+const now = () => performance.now(), rnd = (a, b) => a + Math.random() * (b - a), pick = a => a[Math.random() * a.length | 0];
+const SPELL = {
+  bolt:   { name: '번개', icon: '⚡', color: '#ffe066', how: '오른손 들기', act: 'RAISE_HAND', side: 'right' },
+  ice:    { name: '얼음', icon: '❄', color: '#7fe3ff', how: '왼손 들기', act: 'RAISE_HAND', side: 'left' },
+  shield: { name: '보호막', icon: '🛡', color: '#c9a7ff', how: '양팔 옆으로 벌리기', act: 'OPEN_ARMS' },
+  heal:   { name: '회복', icon: '💚', color: '#7dffb0', how: '양손 위로 올리기', act: 'ARMS_UP' },
+};
+const COOL = 900; // 주문 재사용 간격(ms) — 오인식·연타 방지
+let state = 'setup', stage = 0, score = 0, hp = 3, lastCast = 0, castName = '', castT = 0, shake = 0, shieldT = 0, parts = [], bolts = [], monsters = [], targets = [], prompt = null, seq = [], seqIdx = 0, seqShow = -1, stageT = 0, timers = [], reduce = false, pending = null, poseOk = false, stats = { cast: 0, wrong: 0, blocked: 0, kills: 0, heals: 0 };
+const nextTick = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); return id; };
+const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
+
+// ── 소리
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+function tone(f, dur, type, g0, slide){ const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(); o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur); g.gain.setValueAtTime(g0 || .18, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g).connect(AC.destination); o.start(t); o.stop(t + dur + .02); }
+const sfx = { bolt: () => { tone(1200, .18, 'sawtooth', .22, 200); }, ice: () => { tone(900, .3, 'triangle', .18, 1800); }, shield: () => { tone(220, .5, 'sine', .2, 330); }, heal: () => [0, 90, 180].forEach((d, i) => setTimeout(() => tone(523 * Math.pow(1.26, i), .3, 'sine', .15), d)),
+  ok: () => { tone(660, .1); setTimeout(() => tone(990, .15), 80); }, bad: () => tone(140, .35, 'sawtooth', .25, 80), hit: () => tone(90, .4, 'square', .25, 50), win: () => [0, 120, 240, 360, 600].forEach((d, i) => setTimeout(() => tone([523, 659, 784, 1047, 1319][i], .4, 'sine', .18), d)) };
+
+// ── 입자
+function burst(x, y, color, n, spd, life){ for (let i = 0; i < n; i++) { const a = rnd(0, Math.PI * 2), s = rnd(spd * .3, spd); parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1, decay: 1 / (life || 40), color, r: rnd(2, 6) }); } }
+function lightning(x1, y1, x2, y2){ const pts = [{ x: x1, y: y1 }]; const n = 9; for (let i = 1; i < n; i++) { const t = i / n; pts.push({ x: x1 + (x2 - x1) * t + rnd(-28, 28), y: y1 + (y2 - y1) * t + rnd(-22, 22) }); } pts.push({ x: x2, y: y2 }); bolts.push({ pts, life: 1 }); }
+
+// ── 주문 발동(엔진 표준 명령으로만)
+function cast(key, from){ const t = now(); if (state !== 'play' || !poseOk) return; if (t - lastCast < COOL) return; lastCast = t; const sp = SPELL[key]; castName = sp.icon + ' ' + sp.name; castT = t; stats.cast++;
+  $('cast').textContent = castName; km.emit('wizard:cast', { spell: key, stage, via: from });
+  const px = W * .5, py = H * .62;
+  if (key === 'bolt') { sfx.bolt(); if (!reduce) shake = .8; const tg = nearest(); lightning(px, py - 120, tg ? tg.x : W * .8, tg ? tg.y : H * .3); burst(tg ? tg.x : W * .8, tg ? tg.y : H * .3, '#ffe066', 30, 7, 30); }
+  if (key === 'ice') { sfx.ice(); const tg = nearest(); for (let i = 0; i < 14; i++) parts.push({ x: px + rnd(-30, 30), y: py - 100, vx: ((tg ? tg.x : W * .8) - px) / 22 + rnd(-1, 1), vy: ((tg ? tg.y : H * .3) - py + 100) / 22 + rnd(-1, 1), life: 1, decay: .045, color: '#7fe3ff', r: rnd(3, 7), star: true }); }
+  if (key === 'shield') { sfx.shield(); shieldT = t + 1600; burst(px, py - 90, '#c9a7ff', 24, 3, 50); }
+  if (key === 'heal') { sfx.heal(); for (let i = 0; i < 40; i++) parts.push({ x: px + rnd(-80, 80), y: py + rnd(-20, 40), vx: rnd(-.5, .5), vy: rnd(-3, -1), life: 1, decay: .02, color: '#7dffb0', r: rnd(2, 5) }); if (hp < 3) { hp++; stats.heals++; } }
+  resolve(key); paintHud(); }
+function nearest(){ if (monsters.length) return monsters.reduce((a, b) => (b.x < a.x ? b : a)); if (targets.length) return targets[0]; return null; }
+// 한 손 들기는 0.3초 기다렸다 발동 — 두 손을 차례로 올려 「회복」하려는 아이가 번개를 먼저 쏘지 않게
+km.on('RAISE_HAND', e => { if (e.phase !== 'start') return; const key = e.side === 'right' ? 'bolt' : 'ice', t = now(); pending = { key, t }; setTimeout(() => { if (pending && pending.t === t) { pending = null; cast(key, 'std'); } }, 300); });
+km.on('OPEN_ARMS', e => { if (e.phase === 'start') { pending = null; cast('shield', 'std'); } });
+km.on('ARMS_UP', e => { if (e.phase === 'start') { pending = null; cast('heal', 'std'); } });
+
+// ── 단계
+const STAGES = [
+  { name: '1단계 · 마법 연습', intro: '화면에 뜨는 주문을 몸으로 외워 봐요', run: runPractice },
+  { name: '2단계 · 표적 맞히기', intro: '표적의 색에 맞는 주문을 쓰세요 — 노랑은 번개, 파랑은 얼음', run: runTargets },
+  { name: '3단계 · 몬스터 방어', intro: '다가오는 몬스터를 맞는 주문으로 물리치고, 빨간 눈이 번쩍이면 보호막!', run: runMonsters },
+  { name: '4단계 · 최종 도전', intro: '주문 순서를 기억했다가 그대로 외워요', run: runSequence },
+];
+function startStage(i){ stage = i; clearTimers(); monsters = []; targets = []; prompt = null; seq = []; seqIdx = 0; seqShow = -1; state = 'intro'; $('stageName').textContent = STAGES[i].name;
+  ov.innerHTML = `<h2>${STAGES[i].name}</h2><p>${STAGES[i].intro}</p><button class="btn" id="go">준비 완료</button>`; ov.classList.remove('hidden'); $('go').onclick = () => { ov.classList.add('hidden'); state = 'play'; stageT = now(); STAGES[i].run(); }; }
+function endStage(){ state = 'between'; clearTimers(); km.emit('wizard:stage_clear', { stage, score }); sfx.ok(); if (stage + 1 < STAGES.length) nextTick(() => startStage(stage + 1), 900); else nextTick(graduate, 900); }
+
+// 1단계: 각 주문 2번씩 안내 → 성공
+let practiceList = [];
+function runPractice(){ practiceList = ['bolt', 'ice', 'shield', 'heal', 'bolt', 'ice', 'shield', 'heal'].sort(() => Math.random() - .5); nextPrompt(); }
+function nextPrompt(){ if (!practiceList.length) return endStage(); prompt = { key: practiceList.shift(), t: now() }; }
+// 2단계: 표적 8개, 색 맞는 주문
+function runTargets(){ let left = 8; const spawn = () => { if (state !== 'play') return; const key = pick(['bolt', 'ice']); targets.push({ key, x: rnd(W * .62, W * .9), y: rnd(H * .18, H * .5), r: 46, born: now(), ttl: 5000 }); if (--left > 0) nextTick(spawn, 1400); }; spawn(); }
+// 3단계: 몬스터 60초
+function runMonsters(){ const until = now() + 60000; const spawn = () => { if (state !== 'play') return; if (now() > until) { if (!monsters.length) endStage(); else nextTick(spawn, 500); return; }
+  const key = pick(['bolt', 'ice']); monsters.push({ key, x: W + 60, y: rnd(H * .28, H * .6), spd: rnd(.55, .95), hp: 1, attackAt: 0, eye: 0 }); nextTick(spawn, rnd(1500, 2600)); }; spawn(); }
+// 4단계: 순서 기억 3·4·5
+function runSequence(){ seqRound(3); }
+function seqRound(n){ seq = Array.from({ length: n }, () => pick(Object.keys(SPELL))); seqIdx = 0; seqShow = 0; prompt = null; const step = () => { if (state !== 'play') return; seqShow++; if (seqShow <= seq.length) nextTick(step, 900); else { seqShow = -1; prompt = { key: null, t: now(), seqN: n }; } }; nextTick(step, 900); }
+
+function resolve(key){
+  if (stage === 0 && prompt) { if (key === prompt.key) { score += 50; sfx.ok(); km.emit('wizard:prompt_ok', { spell: key }); nextTick(nextPrompt, 300); } else { stats.wrong++; sfx.bad(); km.emit('wizard:prompt_wrong', { want: prompt.key, got: key, score: 0 }); } }
+  if (stage === 1) { const tg = targets[0]; if (tg) { if (tg.key === key) { score += 100; targets.shift(); burst(tg.x, tg.y, SPELL[key].color, 40, 6, 36); stats.kills++; if (!targets.length && now() - stageT > 8 * 1400) endStage(); } else if (key === 'bolt' || key === 'ice') { stats.wrong++; sfx.bad(); score = Math.max(0, score - 20); } } }
+  if (stage === 2) { const m = nearest(); if (m && (key === 'bolt' || key === 'ice')) { if (m.key === key) { monsters = monsters.filter(x => x !== m); burst(m.x, m.y, SPELL[key].color, 44, 6, 40); score += 150; stats.kills++; } else { stats.wrong++; sfx.bad(); } } }
+  if (stage === 3 && prompt && seqShow < 0) { if (key === seq[seqIdx]) { seqIdx++; sfx.ok(); if (seqIdx >= seq.length) { score += 100 * seq.length; prompt = null; if (seq.length >= 5) nextTick(endStage, 600); else nextTick(() => seqRound(seq.length + 1), 900); } } else { stats.wrong++; sfx.bad(); seqIdx = 0; castName = '처음부터 다시!'; } }
+}
+function hurt(){ if (now() < shieldT) { stats.blocked++; score += 30; burst(W * .5, H * .5, '#c9a7ff', 30, 5, 30); sfx.ok(); km.emit('wizard:block'); return; } hp--; sfx.hit(); if (!reduce) shake = 1; km.emit('wizard:hurt', { hp, score: 0 }); paintHud(); if (hp <= 0) return fail(); }
+function fail(){ state = 'end'; clearTimers(); ov.innerHTML = `<h2>마법이 바닥났어요</h2><p>${score}점 — 몬스터가 다가올 때 🛡보호막(양팔 벌리기), 체력이 깎이면 💚회복(양손 위)을 써 봐요</p><button class="btn gold" id="again">3단계 다시</button>`; ov.classList.remove('hidden'); $('again').onclick = () => { hp = 3; paintHud(); startStage(2); }; }
+function graduate(){ state = 'end'; sfx.win(); for (let i = 0; i < 6; i++) nextTick(() => burst(rnd(W * .2, W * .8), rnd(H * .2, H * .6), pick(['#ffe066', '#7fe3ff', '#c9a7ff', '#7dffb0']), 50, 7, 60), i * 250);
+  ov.innerHTML = `<div class="grad">🎓 마법 학교 졸업!</div><h2>${score}점</h2><div class="result"><span>주문 <b>${stats.cast}</b></span><span>물리침 <b>${stats.kills}</b></span><span>막아냄 <b>${stats.blocked}</b></span><span>회복 <b>${stats.heals}</b></span><span>틀림 <b>${stats.wrong}</b></span></div><button class="btn gold" id="again">처음부터</button>`; ov.classList.remove('hidden'); $('again').onclick = setup;
+  km.emit('wizard:graduate', { points: score, ...stats, score: stats.cast ? 1 - stats.wrong / stats.cast : 1 }); }
+function paintHud(){ $('score').textContent = score; $('hp').textContent = '❤'.repeat(hp) + '♡'.repeat(Math.max(0, 3 - hp)); }
+
+// ── 진행(프레임)
+let last = 0;
+function update(f){ const t = now(), dt = Math.min(.05, (t - last) / 1000 || .016); last = t; const b = f.actions.body; poseOk = !!(f.pose && b && b.ok);
+  shake *= .86; parts.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += p.star ? 0 : .08; p.life -= p.decay; }); parts = parts.filter(p => p.life > 0); bolts.forEach(b => b.life -= .07); bolts = bolts.filter(b => b.life > 0);
+  if (state !== 'play') return;
+  if (stage === 1) { targets.forEach(tg => { if (t - tg.born > tg.ttl) { tg.dead = true; stats.wrong++; } }); if (targets.some(x => x.dead)) { targets = targets.filter(x => !x.dead); sfx.bad(); } if (!targets.length && t - stageT > 8 * 1400 + 5000) endStage(); }
+  if (stage === 2) { for (const m of monsters) { m.x -= m.spd * dt * 60; if (m.x < W * .58 && !m.attackAt) { m.attackAt = t + 1300; m.eye = 1; } if (m.attackAt && t > m.attackAt) { hurt(); m.x = W + 80; m.attackAt = 0; m.eye = 0; } } } }
+
+// ── 그리기
+function draw(f){ const t = now(); ctx.save(); if (shake > .02) ctx.translate(rnd(-10, 10) * shake, rnd(-7, 7) * shake);
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#1b1040'); g.addColorStop(.6, '#2a1a5e'); g.addColorStop(1, '#140a2c'); ctx.fillStyle = g; ctx.fillRect(-20, -20, W + 40, H + 40);
+  ctx.fillStyle = 'rgba(255,255,255,.08)'; for (let i = 0; i < 40; i++) { const x = (i * 97 + t * .01) % W, y = (i * 53) % (H * .5); ctx.fillRect(x, y, 2, 2); }
+  ctx.fillStyle = '#0d0820'; ctx.beginPath(); ctx.moveTo(0, H * .42); [.05, .12, .2, .28, .36, .44, .52, .6, .68, .76, .84, .92, 1].forEach((p, i) => ctx.lineTo(W * p, H * (.42 - (i % 3 === 1 ? .12 : i % 3 === 2 ? .06 : 0)))); ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.fill();
+  const floor = ctx.createRadialGradient(W * .5, H * .78, 10, W * .5, H * .78, W * .55); floor.addColorStop(0, '#4a2f8f'); floor.addColorStop(1, '#1a1038'); ctx.fillStyle = floor; ctx.fillRect(0, H * .55, W, H * .45);
+  ctx.strokeStyle = `rgba(201,167,255,${.5 + Math.sin(t / 400) * .2})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(W * .5, H * .8, 190, 48, 0, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.ellipse(W * .5, H * .8, 120, 30, 0, 0, Math.PI * 2); ctx.stroke();
+  for (const px of [.08, .92]) { ctx.fillStyle = '#2b2150'; ctx.fillRect(W * px - 26, H * .22, 52, H * .5); ctx.fillStyle = '#3a2d6a'; ctx.fillRect(W * px - 34, H * .2, 68, 16); ctx.fillStyle = `rgba(127,227,255,${.5 + Math.sin(t / 300 + px) * .3})`; ctx.beginPath(); ctx.moveTo(W * px, H * .12); ctx.lineTo(W * px + 14, H * .19); ctx.lineTo(W * px, H * .26); ctx.lineTo(W * px - 14, H * .19); ctx.fill(); }
+  // 마법사(실루엣 — 뼈대 기반, 얼굴 안 나옴)
+  const p = f.pose; if (p) { const S = .62, oy = H * .62 - ((p[23].y + p[24].y) / 2) * S;
+    ctx.save(); ctx.translate(W * .5 - ((p[11].x + p[12].x) / 2) * S, oy); ctx.scale(S, S);
+    ctx.strokeStyle = now() < shieldT ? '#c9a7ff' : '#ffd9a8'; ctx.lineWidth = 16; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (const [a, b] of km.POSE_BONES) { if (p[a].v < .4 || p[b].v < .4) continue; ctx.beginPath(); ctx.moveTo(p[a].x, p[a].y); ctx.lineTo(p[b].x, p[b].y); ctx.stroke(); }
+    ctx.fillStyle = '#ffd9a8'; ctx.beginPath(); ctx.arc(p[0].x, p[0].y - 10, 34, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#4a2f8f'; ctx.beginPath(); ctx.moveTo(p[0].x - 48, p[0].y - 30); ctx.lineTo(p[0].x + 48, p[0].y - 30); ctx.lineTo(p[0].x + 6, p[0].y - 130); ctx.fill();
+    for (const w of [15, 16]) if (p[w].v > .4) { ctx.fillStyle = `rgba(255,224,102,${.5 + Math.sin(t / 150) * .3})`; ctx.beginPath(); ctx.arc(p[w].x, p[w].y, 14, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore(); if (now() < shieldT) { ctx.strokeStyle = `rgba(201,167,255,${.5 + Math.sin(t / 90) * .3})`; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(W * .5, H * .5, 200, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = 'rgba(201,167,255,.12)'; ctx.fill(); } }
+  else { ctx.font = '900 40px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ff8aa0'; ctx.fillText('몸 전체가 보이게 서 주세요', W * .5, H * .5); }
+  // 표적·몬스터
+  for (const tg of targets) { const sp = SPELL[tg.key], left = 1 - (t - tg.born) / tg.ttl; ctx.beginPath(); ctx.arc(tg.x, tg.y, tg.r, 0, Math.PI * 2); ctx.fillStyle = sp.color + 'cc'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke(); ctx.beginPath(); ctx.arc(tg.x, tg.y, tg.r + 8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); ctx.font = '40px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#1b1040'; ctx.fillText(sp.icon, tg.x, tg.y + 2); }
+  for (const m of monsters) { const sp = SPELL[m.key]; ctx.fillStyle = sp.color + '66'; ctx.beginPath(); ctx.ellipse(m.x, m.y, 48, 44 + Math.sin(t / 200 + m.x) * 4, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = sp.color; ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = m.eye && Math.floor(t / 120) % 2 ? '#ff4d6d' : '#fff'; ctx.beginPath(); ctx.arc(m.x - 14, m.y - 6, 9, 0, Math.PI * 2); ctx.arc(m.x + 14, m.y - 6, 9, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#1b1040'; ctx.beginPath(); ctx.arc(m.x - 12, m.y - 6, 4, 0, Math.PI * 2); ctx.arc(m.x + 16, m.y - 6, 4, 0, Math.PI * 2); ctx.fill(); ctx.font = '26px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText(sp.icon, m.x, m.y + 22); }
+  // 효과
+  for (const b of bolts) { ctx.strokeStyle = `rgba(255,224,102,${b.life})`; ctx.lineWidth = 6 * b.life + 2; ctx.shadowColor = '#ffe066'; ctx.shadowBlur = 20; ctx.beginPath(); b.pts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke(); ctx.shadowBlur = 0; }
+  for (const q of parts) { ctx.globalAlpha = Math.max(0, q.life); ctx.fillStyle = q.color; ctx.beginPath(); if (q.star) { for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; ctx.moveTo(q.x, q.y); ctx.lineTo(q.x + Math.cos(a) * q.r * 1.6, q.y + Math.sin(a) * q.r * 1.6); } ctx.strokeStyle = q.color; ctx.lineWidth = 2; ctx.stroke(); } else { ctx.arc(q.x, q.y, q.r * q.life, 0, Math.PI * 2); ctx.fill(); } } ctx.globalAlpha = 1;
+  // 안내(큰 글씨)
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  if (state === 'play') { let line = '';
+    if (stage === 0 && prompt) line = `${SPELL[prompt.key].icon} ${SPELL[prompt.key].name} — ${SPELL[prompt.key].how}`;
+    if (stage === 1) line = targets.length ? '표적 색에 맞는 주문!' : '표적을 기다려요…';
+    if (stage === 2) line = monsters.some(m => m.eye) ? '🛡 보호막! 양팔을 벌려요' : `몬스터 ${monsters.length} · 남은 시간 ${Math.max(0, 60 - Math.round((t - stageT) / 1000))}초`;
+    if (stage === 3) line = seqShow >= 0 ? (seqShow > 0 && seqShow <= seq.length ? `${seqShow}/${seq.length}  ${SPELL[seq[seqShow - 1]].icon} ${SPELL[seq[seqShow - 1]].name}` : '잘 봐 두세요…') : `순서대로 외워요 ${seqIdx}/${seq.length}`;
+    ctx.font = '900 34px sans-serif'; ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = 7; ctx.strokeText(line, W * .5, H * .12); ctx.fillText(line, W * .5, H * .12); }
+  if (t - castT < 700 && castName) { ctx.font = '900 60px sans-serif'; ctx.fillStyle = '#ffe9a8'; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = 8; ctx.strokeText(castName, W * .5, H * .3); ctx.fillText(castName, W * .5, H * .3); }
+  ctx.restore();
+  if (km.mouse) km.drawMouseHelp(); }
+km.onFrame = f => { try { update(f); draw(f); } catch (e) { km.emit('error', { kind: 'game', message: String(e), score: 0 }); console.error(e); } if (!dev.classList.contains('hidden')) { const b = f.actions.body; dev.textContent = `fps ${km.fps} state ${state} stage ${stage} pose ${poseOk} ` + (b ? `raiseL ${b.raiseL} raiseR ${b.raiseR} open ${b.openArms} armsUp ${b.armsUp}` : ''); } };
+
+// ── 흐름
+function setup(){ state = 'setup'; score = 0; hp = 3; stats = { cast: 0, wrong: 0, blocked: 0, kills: 0, heals: 0 }; paintHud(); $('stageName').textContent = '—'; $('cast').textContent = '—';
+  ov.innerHTML = `<h2>🪄 마법사의 주문</h2><p>몸으로 주문을 외우는 마법 학교. 네 가지 주문을 익히고 몬스터를 막아내면 졸업!</p>
+    <div class="spells">${Object.values(SPELL).map(s => `<div><b>${s.icon} ${s.name}</b>${s.how}</div>`).join('')}</div>
+    <div class="opts"><label><input type="checkbox" id="rm"> 화면 흔들림 끄기</label></div><button class="btn" id="start">입학하기</button>`; ov.classList.remove('hidden');
+  $('rm').checked = reduce || matchMedia('(prefers-reduced-motion: reduce)').matches; $('rm').onchange = e => reduce = e.target.checked; $('start').onclick = begin; }
+async function begin(){ reduce = $('rm') ? $('rm').checked : reduce; if (!km.running) { ov.innerHTML = '<h2>카메라 준비 중…</h2>'; try { await km.start(); } catch (e) { ov.innerHTML = `<h2>시작할 수 없어요</h2><p>${e.message}</p><button class="btn" id="b">다시</button>`; $('b').onclick = setup; return; } } await AC.resume(); km.emit('wizard:start'); startStage(0); }
+setup();
+</script>
+</body>
+</html>
