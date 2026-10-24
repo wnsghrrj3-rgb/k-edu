@@ -139,114 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 10차시(소단원 2 통합 — 친구들이 쓴 글에 대한 자신의 생각 쓰기) 13슬 =====
+/* ===== 10차시(소단원 2 통합 — 친구들이 쓴 글에 대한 자신의 생각 쓰기) 『국어』 220~221쪽 13슬 — v2 교과서 기준 재구성 (2026-10-24)
    학습 목표: 친구들이 쓴 글에 대한 자신의 생각을 쓸 수 있다.
-   ★ 정답 로깅 7슬. 친구 글 읽기(read-line)·스스로 확인(sc-row)·무대·마무리 = 로깅 X.
-   ★ 지도서 300쪽 — 댓글 예절 · 글쓴이가 속상하지 않게 ⇒ s5·s8.
-   ★ 지도서 301쪽 — 질문이나 느낌을 쓸 때에도 까닭·경험을 함께 · 친구의 댓글에 답하기 ⇒ s7·s10.
-   ★ 교과서 220쪽 도움말 — 댓글에서 궁금한 점도 물어볼 수 있다 ⇒ s7.
-   ★★ 스물일곱째 기준 이음 — 댓글을 채점하면 **칭찬만 정답**이 된다.
-      ⇒ s6 다른 생각 댓글의 오답 칸 양쪽 극단(「틀렸어」 몰아세우기 / 다른 생각을 숨기고 「좋아요」만 쓰기) · 정답 = 다른 생각을 까닭과 함께 예의 있게.
-      ⇒ s10 답글도 양쪽(「그런 말 하지 마」 / 고마움 + 받아들이기).
-   ★ 열넷째 기준 — 댓글 알림판·붙임쪽지는 화면 밖의 일 ⇒ 무대 · 가짜 게시판 0 · 가짜 입력칸 0.
-   ★ 저작권: 교과서 220~221쪽 댓글 알림판 활동 그림·순서 문구, 국어활동 96~99쪽 예시 답안 미차용.
-      자체 글 = 모람이의 「쉬는 시간에 창문을 엽시다」. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·스스로 확인·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 판단(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「왜 책임이 필요하죠?」(채화영)·「반려견을 사랑한다면」(학생 글)은 간추림과 짧은 말 몇 마디만. 그 밖의 자료(쥐 회의·그림 ㉮~㉱·「아침에 운동장을 달려요」·규빈이 글·다육 식물 글·국어활동)는 교육부 집필이라 그대로. 글쓴이의 생각은 중심 생각 하나가 아니라 제목과 여러 중심 생각을 모아서(지도서 284·288쪽). */
 const slides=[
-  {tag:'① 만나기', t:'친구의 글에 내 생각을 남겨요',
-   html:`<div class="scene">
-      <div class="scene-pic">📝 💬</div>
-      <div class="scene-say">네 글 잘 읽었어!</div>
-    </div>
-    <div class="ka-bub">글을 읽고 짧게 남기는 글을 <b class="emph">댓글</b>이라고 해요.</div>`},
+  {tag:'① 동기 유발', t:'봄솔이의 글과 댓글을 읽어요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>봄솔이의 글: 쉬는 시간에 복도에서 뛰지 맙시다. 왜냐하면 친구와 부딪쳐 다칠 수 있기 때문입니다.</div><div class="read-line"><span class="rl-num">2</span>댓글 ㉠: 좋은 생각이야! 나도 지난주에 복도에서 부딪칠 뻔했어.</div><div class="read-line"><span class="rl-num">3</span>댓글 ㉡: 그걸 누가 몰라? 재미없어.</div></div><div class="fb" id="readFb">🔊 글쓴이가 댓글을 읽으면 어떤 표정일지 떠올려 봐요.</div>`},
 
   {tag:'① 학습 문제', t:'오늘 배울 것이에요',
-   html:`<div class="sentence">친구가 쓴 글에 대한 내 생각을 써요.</div>
-    <div class="ka-bub">내 댓글을 <b>읽을 친구의 마음</b>을 생각하며 써요.</div>`},
+   html:`<div class="sentence">친구들이 쓴 글에 대한 자신의 생각을 써 봅시다.</div>`},
 
-  {tag:'② 친구 글 읽기', t:'모람이가 쓴 글이에요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>쉬는 시간에 창문을 엽시다.</div>
-      <div class="read-line"><span class="rl-num">2</span>왜냐하면 교실 공기가 맑아지기 때문입니다.</div>
-      <div class="read-line"><span class="rl-num">3</span>창문을 여니 머리가 시원해졌습니다.</div>
-    </div>`},
+  {tag:'① 동기 유발', t:'봄솔이가 웃게 될 댓글은?', log:true, okMsg:'맞아요! 생각에 공감하고 자기 경험을 함께 썼어요. 😊',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">😢</div><div class="wc-word">댓글 ㉡</div></div><div class="wcard" data-ok="1"><div class="wc-pic">😊</div><div class="wc-word">댓글 ㉠</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 친구의 생각', t:'모람이의 생각은 무엇인가요?', log:true,
-   okMsg:'맞아요! 댓글을 쓰기 전에 친구의 생각부터 바르게 알아야 해요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">쉬는 시간에<br>창문을 열자</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">쉬는 시간을<br>없애자</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'① 동기 유발', t:'봄솔이가 댓글 ㉡을 보고 속상해하는 까닭은?', log:true, okMsg:'맞아요! 댓글을 읽을 친구의 마음을 생각해야 해요. 💔',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">댓글이 너무 짧아서</div></div><div class="wcard" data-ok="0"><div class="wc-word">글씨가 작아서</div></div><div class="wcard" data-ok="1"><div class="wc-word">내 생각을 무시하는 말이라서</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 두 댓글', t:'읽을 친구를 생각하며 쓴 댓글은?', log:true,
-   okMsg:'맞아요! 내 생각과 겪은 일을 함께 써서 모람이가 읽고 기분이 좋을 거예요. 🎉',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">별로야.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">좋은 생각이야. 나도 교실이<br>답답할 때가 있었어.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'① 동기 유발', t:'어떻게 하면 글쓴이가 속상하지 않게 댓글을 쓸 수 있을까요?', log:true, okMsg:'맞아요! 궁금한 점을 물어보는 댓글도 좋아요. ✍️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">읽을 친구의 마음을 생각하며, 내 생각을 까닭과 함께 써요</div></div><div class="wcard" data-ok="0"><div class="wc-word">짧게 「별로」라고만 써요</div></div><div class="wcard" data-ok="0"><div class="wc-word">친구의 잘못만 찾아 써요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 생각이 다를 때', t:'나는 겨울에 추울까 봐 걱정돼요. 댓글을 어떻게 쓸까요?', log:true,
-   okMsg:'맞아요! 다른 생각도 댓글로 쓸 수 있어요. 까닭과 함께, 친구 마음을 살피며 쓰면 돼요. 🎉',
-   hint:'힌트: 몰아세워도, 내 생각을 숨겨도 안 돼요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">틀렸어. 추운데<br>무슨 창문이야.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">나는 조금 달라. 겨울엔 추우니<br>잠깐만 열면 어떨까?</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">걱정은 숨기고<br>「좋아요」만 써요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 220쪽 활동 순서', t:'댓글 알림판 활동 순서를 읽어요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>1. 책상 위에 자신이 쓴 글을 펼쳐 둔다.</div><div class="read-line"><span class="rl-num">2</span>2. 자리를 이동하며 친구들이 쓴 글을 읽는다.</div><div class="read-line"><span class="rl-num">3</span>3. 친구의 글에 대한 자신의 생각을 붙임쪽지에 쓴다.</div><div class="read-line"><span class="rl-num">4</span>4. 친구의 댓글 알림판에 붙임쪽지를 붙인다.</div></div><div class="fb" id="readFb">🔊 순서대로 소리 내어 읽어 봐요.</div>`},
 
-  {tag:'③ 댓글에 담을 것', t:'댓글에 쓸 수 있는 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 생각과 까닭, 비슷한 경험, 궁금한 점까지 모두 댓글이 될 수 있어요. 🎉',
-   hint:'힌트: 글의 내용과 상관없거나 친구가 속상할 말은 빼요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">내 생각과 그 까닭</div>
-      <div class="chip" data-hit="0">글씨 모양 놀리기</div>
-      <div class="chip" data-hit="1">비슷한 내 경험</div>
-      <div class="chip" data-hit="1">궁금한 점 묻기</div>
-      <div class="chip" data-hit="0">글과 상관없는 장난말</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'② 220쪽 활동 순서', t:'순서와 할 일을 이어 봐요', log:true, matchMsg:'잘 이었어요! 질서 있게 차례대로 해요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">순서</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">1️⃣</span>첫째</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">2️⃣</span>둘째</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">3️⃣</span>셋째</div><div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">4️⃣</span>넷째</div></div><div class="match-col"><div class="match-col-h">할 일</div><div class="match-card" data-k="D" data-pair="d">친구의 댓글 알림판에 붙인다</div><div class="match-card" data-k="B" data-pair="b">자리를 이동하며 친구들의 글을 읽는다</div><div class="match-card" data-k="A" data-pair="a">책상 위에 자신이 쓴 글을 펼쳐 둔다</div><div class="match-card" data-k="C" data-pair="c">친구 글에 대한 생각을 붙임쪽지에 쓴다</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 댓글 고치기', t:'「글씨가 엉망이네.」를 알맞게 고친 댓글은?', log:true,
-   okMsg:'맞아요! 글씨가 아니라 글에 담긴 생각을 읽고, 궁금한 점까지 물었어요. 👍',
-   hint:'힌트: 댓글은 친구의 생각에 대해 쓰는 글이에요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">글씨가 엉망이지만<br>봐줄게.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">창문을 열자는 생각이 좋아.<br>언제 열면 좋을지 궁금해.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 221쪽 점검하기', t:'봄솔이의 글에 바르게 쓴 댓글을 모두 골라요', log:true, collectMsg:'잘 골랐어요! 생각·궁금한 점·칭찬을 까닭과 함께 썼어요. 💬',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">나도 같은 생각이야. 복도에서 뛰면 위험하니까.</div><div class="chip" data-hit="1">좋은 생각이야. 그런데 계단에서는 어떻게 하면 좋을까?</div><div class="chip" data-hit="1">까닭이 분명해서 네 생각이 잘 이해돼.</div><div class="chip" data-hit="0">별로야.</div><div class="chip" data-hit="0">너도 맨날 뛰잖아.</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 댓글을 붙일 때', t:'교실에서 댓글 쪽지를 붙일 때 알맞은 모습을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 차례를 지키고, 다른 친구의 댓글이 가려지지 않게 붙여요. 🎉',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">차례를 지켜 조용히 움직여요</div>
-      <div class="chip" data-hit="0">친구 글을 큰 소리로 놀리며 읽어요</div>
-      <div class="chip" data-hit="1">다른 댓글을 가리지 않게 붙여요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 지도서 301쪽', t:'붙임쪽지를 댓글 알림판에 붙일 때 알맞은 것은?', log:true, okMsg:'맞아요! 질서 있게 붙여야 모두의 댓글이 잘 보여요. 📌',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">아무 곳에나 던져 두어요</div></div><div class="wcard" data-ok="1"><div class="wc-word">다른 친구의 댓글을 가리지 않게 바르게 붙여요</div></div><div class="wcard" data-ok="0"><div class="wc-word">내 댓글이 잘 보이게 다른 댓글 위에 겹쳐 붙여요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 댓글에 답하기', t:'「겨울엔 잠깐만 열면 어떨까?」라는 댓글에 모람이가 답해요', log:true,
-   okMsg:'맞아요! 다른 생각을 들려준 친구에게 고마워하며 생각을 더 키웠어요. 🎉',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">내 생각이 맞아.<br>그런 말 하지 마.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">고마워. 추운 날엔<br>잠깐만 여는 걸로 할게.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 220~221쪽', t:'댓글 알림판 활동을 해요',
+   html:`<div class="stage-box">📝 『국어』 붙임 4를 이용해 친구들의 글을 읽고 댓글을 써서 친구의 댓글 알림판에 붙여 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 이제 내 글에 달린 댓글을 읽어 봐요. 😊">📝 붙였어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'② 스스로 확인', t:'댓글을 쓸 때 할 수 있는 것을 눌러 봐요',
-   html:`<div class="selfcheck">
-      <div class="sc-row"><span class="sc-box">✓</span>친구의 생각을 먼저 알아봐요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>내 생각에 까닭을 함께 써요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>읽을 친구의 마음을 생각해요.</div>
-    </div>`},
+  {tag:'③ 221쪽 (2)', t:'가장 인상 깊은 댓글을 발표할 때 알맞은 것은?', log:true, okMsg:'맞아요! 고른 댓글과 그 까닭을 함께 말했어요. 🌟',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">「다 별로였어요.」</div></div><div class="wcard" data-ok="0"><div class="wc-word">「제일 긴 댓글이 좋았어요.」</div></div><div class="wcard" data-ok="1"><div class="wc-word">「「나도 그런 적 있어.」라는 댓글이 좋았어요. 내 생각에 공감해 주어서 힘이 났기 때문이에요.」</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 해 보기', t:'가족의 글에 댓글 쪽지를 붙여요',
-   html:`<div class="stage-box">
-      💬 가족이 쓴 <b>쪽지나 글</b>을 읽고, 작은 종이에 댓글을 써서 옆에 붙여 봐요.<br>
-      내 생각과 까닭, 궁금한 점을 함께 써요.
-      <br><button class="stage-do" id="stageDo" data-fb="댓글 쪽지를 붙여 봤어요! 👏">💬 해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'③ 칭찬하기', t:'상대를 배려하며 댓글을 쓴 친구를 칭찬해요',
+   html:`<div class="stage-box">👏 상대를 배려하는 태도로 댓글을 쓴 친구를 찾아 칭찬하고, 칭찬한 까닭도 말해 보세요.<br><button class="stage-do" id="stageDo" data-fb="멋져요! 따뜻한 댓글은 글쓴이를 다시 쓰고 싶게 만들어요. 💌">👏 칭찬했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 마무리', t:'이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">💬</span>댓글에는 <b>생각·까닭·경험·궁금한 점</b>을 써요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🤝</span><b>다른 생각</b>도 친구 마음을 살피며 쓸 수 있어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">💌</span>내 댓글을 <b>읽을 친구의 마음</b>을 생각해요.</div>
-    </div>`},
+  {tag:'④ 마무리', t:'잘했어요! 이만큼 해냈어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">💬</span>친구 글을 읽고 내 생각을 <b>댓글</b>로 썼어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">💗</span>댓글을 읽을 친구의 <b>마음</b>을 생각했어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">📌</span><b>질서</b> 있게 댓글 알림판 활동을 했어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;

@@ -139,130 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 5~6차시(소단원 1 통합 — 글쓴이의 생각에 대한 자신의 생각 발표하기) 13슬 =====
+/* ===== 5~6차시(소단원 1 통합 — 글쓴이의 생각에 대한 자신의 생각 발표하기) 『국어』 207~210쪽 13슬 — v2 교과서 기준 재구성 (2026-10-24)
    학습 목표: 글쓴이의 생각에 대한 자신의 생각을 발표할 수 있다.
-   ★ 정답 로깅 7슬. 글 읽기·친구 말 읽기(read-line)·무대·마무리 = 로깅 X.
-   ★★ 스물일곱째 기준(이 단원의 새 판단 기준) — 「내 생각」을 채점하면 찬성이 정답이 된다.
-      글쓴이의 생각에 대한 내 생각을 고르게 하면 가장 깔끔한 정답은 「나도 그렇게 할래요」다.
-      아이가 열 번 찬성을 골라 점수를 얻으면 배우는 것은 생각하기가 아니라 **글쓴이 따라가기**다.
-      지도서 290쪽(설득이 아니라 나눔 · 서로 생각이 다른 것은 자연스러운 일) · 291쪽(글쓴이와 다른 생각을 낼 수도 있음) ·
-      292쪽 예시 답(달리기 찬성 / 줄넘기로 바꾸기 **둘 다**) · 281쪽(타당성을 엄밀히 따지지 말고 허용적으로).
-      풀이 = ⑴ 채점의 축을 「찬성인가」에서 **「생각과 까닭을 갖추었는가」**로 옮긴다(s7 정답 = 둘 다 · s8 찬성+까닭 · 다른 생각+까닭 모두 정답)
-             ⑵ 오답 칸 = 까닭 없는 말 / 친구를 따라가는 말(s8)
-             ⑶ 처음과 끝을 같은 물음으로(l01_02 s9 → **s11** → l14_15 s7).
-   ★ 지도서 291쪽 — 글과 관련해 알고 있는 것이나 경험을 떠올려 생각 마련 ⇒ s9.
-   ★ 지도서 292쪽 — 말하기 불안 · 듣는 태도 · 반응하기 예시(언어·비언어) ⇒ s10 · 무대 문구 「떨려도 괜찮아요」.
-   ★ 저작권: 교과서 207~210쪽 「아침에 운동장을 달려요」·물음·예시 답(달리기·줄넘기), 국어활동 84~95쪽 「시끌시끌 소음 공해 이제 그만!」 미차용.
-      자체 글 = 「비 오는 날엔 교실 놀이를 해요」(세찬). */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·스스로 확인·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 판단(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「왜 책임이 필요하죠?」(채화영)·「반려견을 사랑한다면」(학생 글)은 간추림과 짧은 말 몇 마디만. 그 밖의 자료(쥐 회의·그림 ㉮~㉱·「아침에 운동장을 달려요」·규빈이 글·다육 식물 글·국어활동)는 교육부 집필이라 그대로. 글쓴이의 생각은 중심 생각 하나가 아니라 제목과 여러 중심 생각을 모아서(지도서 284·288쪽). */
 const slides=[
-  {tag:'① 만나기', t:'글쓴이의 생각, 나는 어떻게 생각하나요?',
-   html:`<div class="scene">
-      <div class="scene-pic">📄 ➡️ 💭</div>
-      <div class="scene-say">글쓴이는 이렇대. 내 생각은?</div>
-    </div>
-    <div class="ka-bub">글쓴이의 생각을 알았으면, 이번에는 <b class="emph">내 생각</b>을 말해 봐요.</div>`},
+  {tag:'① 동기 유발', t:'아침 시간에 무엇을 하고 싶나요?',
+   html:`<div class="stage-box">🌅 학교에서 아침 시간에 친구들과 하고 싶은 활동을 떠올려 짝에게 말해 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 친구마다 하고 싶은 활동이 다를 수 있어요. 🙂">🗣️ 말했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
   {tag:'① 학습 문제', t:'오늘 배울 것이에요',
-   html:`<div class="sentence">글쓴이의 생각에 대한 내 생각을 발표해요.</div>
-    <div class="ka-bub">친구를 이기려는 것이 아니에요. 서로의 생각을 <b>나누는</b> 시간이에요.</div>`},
+   html:`<div class="sentence">글쓴이의 생각에 대한 자신의 생각을 발표해 봅시다.</div>`},
 
-  {tag:'② 글 읽기', t:'「비 오는 날엔 교실 놀이를 해요」',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">㉮</span>비 오는 날 쉬는 시간에 다 같이 교실 놀이를 해요.</div>
-      <div class="read-line"><span class="rl-num">㉯</span>첫째, 밖에 못 나가도 심심하지 않아요.</div>
-      <div class="read-line"><span class="rl-num">㉰</span>둘째, 놀다 보면 친구와 더 친해져요.</div>
-      <div class="read-line"><span class="rl-num">㉱</span>끝말잇기부터 같이 해 봐요. — 세찬</div>
-    </div>`},
+  {tag:'② 207쪽 「아침에 운동장을 달려요」', t:'글쓴이의 생각을 파악하며 읽어요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>㉮ 안녕하세요? 저는 2학년 3반 이채영이에요. 저는 아침에 다 같이 운동장에서 달리기를 하자는 생각을 전하고 싶어요. 아침에 운동장을 달리면 좋은 점이 많기 때문이에요.</div><div class="read-line"><span class="rl-num">2</span>㉯ 첫째, 아침에 운동장을 달리면 기분이 좋아져요. 이른 아침 운동장에는 시원한 공기가 가득해요. 시원한 아침 공기는 스트레스를 사라지게 해 줘요.</div><div class="read-line"><span class="rl-num">3</span>㉰ 둘째, 아침에 운동장을 달리면 더 건강해져요. 점점 체력이 좋아지고, 몸무게를 조절하는 데에도 도움이 된답니다.</div><div class="read-line"><span class="rl-num">4</span>㉱ 아침 일찍 운동장을 달리는 것이 처음에는 어려울 수 있어요. 하지만 며칠 동안만 꾸준히 실천해 보세요. 달리는 즐거움에 푹 빠지게 될 거예요.</div></div><div class="fb" id="readFb">🔊 글쓴이의 생각이 어디에 드러나는지 생각하며 읽어 봐요.</div>`},
 
-  {tag:'③ 글쓴이의 생각', t:'세찬이의 생각은 무엇인가요?', log:true,
-   okMsg:'맞아요! 제목과 중심 생각들을 모으면 세찬이가 하고 싶은 말이 보여요. 👍',
-   hint:'힌트: 제목을 다시 읽어 봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">비 오는 날에는<br>학교에 오지 말자</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">비 오는 날에는<br>교실 놀이를 하자</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">끝말잇기는<br>어려운 놀이다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 208쪽 내용 알기 (1)', t:'글쓴이는 아침에 운동장을 달리면 왜 기분이 좋아진다고 했나요?', log:true, okMsg:'맞아요! 글 ㉯에 까닭이 나와 있어요. 🌬️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🌬️</div><div class="wc-word">운동장에 가득한 시원한 공기가 스트레스를 사라지게 하기 때문에</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🏆</div><div class="wc-word">달리기 대회에서 상을 받기 때문에</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🍞</div><div class="wc-word">달리고 나면 간식을 주기 때문에</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 글쓴이의 까닭', t:'세찬이가 말한 까닭을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 심심하지 않고 친구와 더 친해진다고 했어요. 🎉',
-   hint:'힌트: 글 ㉯와 ㉰를 다시 읽어 봐요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">심심하지 않아요</div>
-      <div class="chip" data-hit="0">비가 빨리 그쳐요</div>
-      <div class="chip" data-hit="1">친구와 더 친해져요</div>
-      <div class="chip" data-hit="0">숙제가 없어져요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 208쪽 내용 알기 (2)', t:'아침에 운동장을 달리는 즐거움을 느끼려면 어떻게 하라고 했나요?', log:true, okMsg:'맞아요! 처음엔 어려워도 꾸준히 하면 즐거워진대요. 🏃',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">친구와 경주를 해 보라고 했어요</div></div><div class="wcard" data-ok="1"><div class="wc-word">며칠 동안 꾸준히 실천해 보라고 했어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">하루만 아주 빨리 달려 보라고 했어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 두 친구의 생각', t:'세찬이의 글을 읽고 두 친구가 말했어요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>해담: 나도 좋아. 비 오는 날 많이 심심했거든.</div>
-      <div class="read-line"><span class="rl-num">2</span>모람: 나는 조금 달라. 쉬고 싶은 친구도 있으니 조용한 놀이면 좋겠어.</div>
-    </div>`},
+  {tag:'③ 208쪽 글과 이어서 (1)', t:'글의 제목을 확인해요',
+   html:`<div class="sentence">제목: 「아침에 운동장을 달려요」 — 제목에 글쓴이의 생각이 담겨 있어요.</div>`},
 
-  {tag:'③ 누가 알맞게 말했나', t:'자기 생각을 알맞게 말한 친구는 누구일까요?', log:true,
-   okMsg:'맞아요! 글쓴이와 생각이 같아도, 달라도 괜찮아요. 두 친구 모두 까닭을 함께 말했어요. 🎉',
-   hint:'힌트: 두 친구의 말에 저마다 까닭이 들어 있는지 살펴봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">해담이만<br>(생각이 같으니까)</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">둘 다<br>(까닭을 함께 말했으니까)</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">모람이만<br>(생각이 다르니까)</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 208쪽 글과 이어서 (2)', t:'글 ㉯와 ㉰의 중심 생각을 이어 봐요', log:true, matchMsg:'잘 이었어요! 「첫째」, 「둘째」 다음 문장에 중심 생각이 있어요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">글</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🅑</span>글 ㉯</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🅒</span>글 ㉰</div></div><div class="match-col"><div class="match-col-h">중심 생각</div><div class="match-card" data-k="B" data-pair="b">아침에 운동장을 달리면 더 건강해져요.</div><div class="match-card" data-k="A" data-pair="a">아침에 운동장을 달리면 기분이 좋아져요.</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 내 생각 말하기', t:'내 생각을 잘 나타낸 말을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 생각이 같든 다르든, 내 생각과 까닭이 함께 들어 있으면 잘 나타낸 말이에요. 🎉',
-   hint:'힌트: 까닭이 없는 말, 남을 따라가기만 하는 말은 빼요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">좋아. 친구와 친해질 수 있으니까.</div>
-      <div class="chip" data-hit="0">그냥 싫어.</div>
-      <div class="chip" data-hit="1">난 책을 볼래. 비 오는 날엔 조용히 있고 싶거든.</div>
-      <div class="chip" data-hit="0">다들 한다니까 나도 할래.</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 209쪽 (3)', t:'이 글에서 글쓴이의 생각은?', log:true, okMsg:'맞아요! 제목과 중심 생각을 모으면 글쓴이의 생각이 보여요. 🏃‍♀️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">아침에 운동장을 달리자.</div></div><div class="wcard" data-ok="0"><div class="wc-word">시원한 공기가 가득하다.</div></div><div class="wcard" data-ok="0"><div class="wc-word">몸무게를 조절할 수 있다.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 생각 떠올리기', t:'내 생각이 잘 떠오르지 않을 때는 어떻게 할까요?', log:true,
-   okMsg:'맞아요! 글과 이어지는 내 경험이나 아는 것을 떠올리면 생각이 잘 떠올라요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">비슷한 내 경험이나<br>아는 것을 떠올려요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">친구가 무슨 말을 할지<br>눈치를 봐요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 209쪽 자신의 생각 정리하기', t:'글쓴이의 생각에 대한 내 생각을 정리해요',
+   html:`<div class="stage-box">✍️ 「아침에 운동장을 달리면 좋은 점이 많다고 하니 나도 달려야겠어.」처럼 같은 생각도, 「나는 줄넘기를 하고 싶어.」처럼 다른 생각도 좋아요. 까닭과 함께 짝에게 말해 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 내 경험이나 아는 것을 떠올리면 생각이 더 잘 떠올라요. 💭">✍️ 정리했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 발표하고 듣기', t:'때에 알맞은 모습을 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 말하는 태도와 듣는 태도가 모두 중요해요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">때</div>
-        <div class="match-card" data-k="a" data-pair="A">내가<br>발표할 때</div>
-        <div class="match-card" data-k="b" data-pair="B">친구가<br>발표할 때</div>
-        <div class="match-card" data-k="c" data-pair="C">친구 발표가<br>끝났을 때</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">알맞은 모습</div>
-        <div class="match-card" data-k="B" data-pair="b">친구를 보며<br>귀 기울여 들어요</div>
-        <div class="match-card" data-k="C" data-pair="c">「나도 비슷해」<br>「난 조금 달라」</div>
-        <div class="match-card" data-k="A" data-pair="a">친구들을 보며<br>또박또박 말해요</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'④ 209쪽', t:'글쓴이와 다른 생각을 알맞게 말한 친구는?', log:true, okMsg:'맞아요! 다른 생각도 까닭과 함께 말하면 잘 전해져요. 🪢',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">「달리기는 그냥 싫어.」</div></div><div class="wcard" data-ok="1"><div class="wc-word">「나는 줄넘기를 좋아하니까 줄넘기를 하고 싶어. 줄넘기도 몸에 좋으니까.」</div></div><div class="wcard" data-ok="0"><div class="wc-word">「글쓴이는 틀렸어!」</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 생각이 다를 때', t:'친구와 생각이 다를 때는 어떻게 할까요?', log:true,
-   okMsg:'맞아요! 1~2차시에도 만난 물음이에요. 생각이 다른 것은 자연스러운 일이에요. 👍',
-   hint:'힌트: 친구의 생각도, 내 생각도 모두 소중해요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">내 생각은 말하지 않고<br>친구를 따라가요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">끝까지 듣고 내 생각도<br>까닭과 함께 말해요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">내 생각이 맞다고<br>끝까지 우겨요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 지도서 291쪽', t:'짝과 생각이 다를 때 알맞은 것은?', log:true, okMsg:'맞아요! 이 활동은 설득이 아니라 생각을 나누는 것이에요. 🤝',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">서로 생각이 다른 것은 자연스러운 일이니 서로의 생각을 나눠요</div></div><div class="wcard" data-ok="0"><div class="wc-word">짝이 내 생각을 따를 때까지 설득해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">생각이 다르면 짝을 바꿔요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 말로 해 보기', t:'가족 앞에서 발표해 봐요',
-   html:`<div class="stage-box">
-      🗣️ 세찬이의 글을 가족에게 들려주고 이렇게 말해 봐요.<br>
-      <b>「글쓴이는 ……. 그에 대한 제 생각은 ……. 왜냐하면 …….」</b><br>
-      떨려도 괜찮아요. 천천히 말하면 돼요.
-      <br><button class="stage-do" id="stageDo" data-fb="내 생각을 발표해 봤어요! 👏">🗣️ 해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 210쪽 발표하기', t:'발표하고 들을 때 바른 태도를 모두 골라요', log:true, collectMsg:'잘 골랐어요! 말하는 태도와 듣는 태도가 모두 중요해요. 🎤',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">친구의 발표를 존중하는 마음으로 귀 기울여 들어요</div><div class="chip" data-hit="1">고개를 끄덕이며 들어요</div><div class="chip" data-hit="0">친구가 말할 때 끼어들어요</div><div class="chip" data-hit="0">바닥을 보며 작은 목소리로 말해요</div><div class="chip" data-hit="1">바른 자세로 친구들을 바라보고 또박또박 발표해요</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'④ 마무리', t:'이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">💭</span>글쓴이와 생각이 <b>같아도, 달라도</b> 괜찮아요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🧩</span>내 생각에는 <b>까닭</b>을 함께 담아요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">👂</span>말하는 태도와 <b>듣는 태도</b>가 모두 중요해요.</div>
-    </div>`},
+  {tag:'⑤ 210쪽 발표하기', t:'반 친구들 앞에서 발표해요',
+   html:`<div class="stage-box">🎤 「글쓴이는 ~라고 생각했어요. 그에 대한 제 생각은 ~예요. 왜냐하면 ~이기 때문이에요.」 틀로 모둠에서 먼저 연습하고 반 친구들 앞에서 발표해 보세요.<br><button class="stage-do" id="stageDo" data-fb="멋져요! 「좋은 생각인걸?」, 「나도 비슷한 생각이야.」처럼 친구 발표에 반응해 봐요. 👏">🎤 발표했어요!</button></div><div class="fb" id="stageFb"></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;

@@ -139,118 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 11~13차시(실천 — 배운 내용 실천하기 · 이야기 속 인물 되어 보기) 13슬 =====
+/* ===== 11~13차시(실천 — 이야기 속 인물 되어 보기) 『국어』 222~223쪽 13슬 — v2 교과서 기준 재구성 (2026-10-24)
    학습 목표: 배운 내용을 실천할 수 있다.
-   ★ 정답 로깅 7슬. 이야기 읽기(read-line)·놀이 방법(punct)·무대·마무리 = 로깅 X.
-   ★ 지도서 302쪽 — 등장인물의 생각이 또렷이 나타나는 이야기 · 생각을 주고받는 연습 ⇒ 자체 이야기 두 인물 · 생각 + 까닭.
-   ★ 지도서 303쪽 — 같은 장면·같은 인물에도 여러 생각을 떠올릴 수 있다 ⇒ s10.
-   ★ 지도서 303쪽 참고 자료(듣기 = 귀 기울여 듣기) ⇒ 이야기 끝 줄 · s9.
-   ★★ 스물일곱째 기준 이음 — 인물의 생각을 채점하면 **누가 맞나**가 남는다 ⇒ s7 정답 = 「둘 다 까닭이 있는 생각」.
-   ★ 열넷째 기준 — 인물의 의자 놀이는 화면 밖의 일 ⇒ s11 방법 안내 + s12 무대. 가짜 의자·가짜 대화 입력 0.
-   ★ 저작권: 교과서 222~223쪽 활동 틀 문구, 지도서 304~305쪽 활동 예시(손 팻말 · 몸으로 말해요)의 그림·상황 예 미차용.
-      자체 이야기 = 「도토리를 어디에 둘까」(다람쥐 도롱이·알밤이). */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·스스로 확인·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 판단(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「왜 책임이 필요하죠?」(채화영)·「반려견을 사랑한다면」(학생 글)은 간추림과 짧은 말 몇 마디만. 그 밖의 자료(쥐 회의·그림 ㉮~㉱·「아침에 운동장을 달려요」·규빈이 글·다육 식물 글·국어활동)는 교육부 집필이라 그대로. 글쓴이의 생각은 중심 생각 하나가 아니라 제목과 여러 중심 생각을 모아서(지도서 284·288쪽). */
 const slides=[
-  {tag:'① 만나기', t:'이야기 속 인물이 되어 봐요',
-   html:`<div class="scene">
-      <div class="scene-pic">🐿️ 🌰 🐿️</div>
-      <div class="scene-say">내가 다람쥐라면?</div>
-    </div>
-    <div class="ka-bub">인물이 되어 보면 <b class="emph">생각을 주고받는 연습</b>을 할 수 있어요.</div>`},
+  {tag:'① 활동 정하기', t:'우리 반에서 할 활동을 정해요',
+   html:`<div class="ka-bub">「이런 활동 어때요」 — <b class="emph">이야기 속 인물이 되어 생각하기</b><br>손 팻말 알림 활동이나 「생각을 몸으로 말해요」 놀이를 할 수도 있어요. 🎭</div>`},
 
-  {tag:'① 학습 문제', t:'오늘 할 것이에요',
-   html:`<div class="sentence">배운 내용을 떠올리며 인물이 되어 생각을 말해요.</div>
-    <div class="ka-bub">생각을 말할 때는 <b>까닭</b>을 함께! 이 단원에서 배운 것이에요.</div>`},
+  {tag:'② 222쪽 활동 순서', t:'이야기 속 인물이 되어 생각하기 순서',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>① 활동을 위한 이야기 선정하기</div><div class="read-line"><span class="rl-num">2</span>② 이야기 속 등장인물의 생각 파악하기</div><div class="read-line"><span class="rl-num">3</span>③ 등장인물의 생각에 대한 서로의 생각 나누기</div><div class="read-line"><span class="rl-num">4</span>④ 자신이 되고 싶은 등장인물 선택하기</div><div class="read-line"><span class="rl-num">5</span>⑤ 그 인물이 된다면 어떤 말이나 행동을 하고 싶은지 정리하기</div><div class="read-line"><span class="rl-num">6</span>⑥ 등장인물의 의자에 앉아 묻고 답하기 놀이 하기</div></div><div class="fb" id="readFb">🔊 순서를 소리 내어 읽어 봐요.</div>`},
 
-  {tag:'② 이야기 읽기', t:'「도토리를 어디에 둘까」',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>겨울을 앞두고 두 다람쥐가 도토리를 모았어요.</div>
-      <div class="read-line"><span class="rl-num">2</span>도롱이: 큰 나무 구멍에 다 넣자. 찾기 쉽잖아.</div>
-      <div class="read-line"><span class="rl-num">3</span>알밤이: 여러 곳에 나눠 묻자. 하나를 잃어도 남으니까.</div>
-      <div class="read-line"><span class="rl-num">4</span>둘은 서로의 말을 끝까지 들었어요.</div>
-    </div>`},
+  {tag:'② ① 이야기 고르기', t:'활동할 이야기를 고를 때 알맞은 것은?', log:true, okMsg:'맞아요! 인물의 생각이 잘 보여야 그 인물이 되어 볼 수 있어요. 📚',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">등장인물의 생각이 분명히 드러나는 대사나 장면이 많은 이야기</div></div><div class="wcard" data-ok="0"><div class="wc-word">글자가 가장 많은 이야기</div></div><div class="wcard" data-ok="0"><div class="wc-word">그림이 하나도 없는 이야기</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 인물의 생각', t:'다람쥐와 다람쥐의 생각을 이어요', log:true,
-   matchMsg:'잘 이었어요! 두 다람쥐의 생각이 서로 달라요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">인물</div>
-        <div class="match-card" data-k="a" data-pair="A">도롱이</div>
-        <div class="match-card" data-k="b" data-pair="B">알밤이</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">생각</div>
-        <div class="match-card" data-k="B" data-pair="b">여러 곳에<br>나눠 묻자</div>
-        <div class="match-card" data-k="A" data-pair="a">한곳에<br>모두 넣자</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'② 이야기 예', t:'「왜 책임이 필요하죠?」의 한 장면',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>선생님: 병아리를 키우는 것은 좋지만 책임지고 보살필 누군가가 필요해요.</div><div class="read-line"><span class="rl-num">2</span>규빈: 선생님, 제가 하겠습니다!</div><div class="read-line"><span class="rl-num">3</span>선생님: 혼자 하기 어려울 텐데.</div><div class="read-line"><span class="rl-num">4</span>규빈: 그럼 돌아가면서 돌볼게요. 매일매일 병아리를 책임지고 보살필 돌보미를 정해서요.</div></div><div class="fb" id="readFb">🔊 인물이 된 것처럼 실감 나게 읽어 봐요.</div>`},
 
-  {tag:'③ 도롱이의 까닭', t:'도롱이가 한곳에 넣자고 한 까닭은?', log:true,
-   okMsg:'맞아요! 도롱이는 찾기 쉽다는 까닭을 함께 말했어요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">나중에<br>찾기 쉬워서</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">도토리가<br>싫어서</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② ② 생각 파악하기', t:'이 장면에서 규빈이의 생각은?', log:true, okMsg:'맞아요! 혼자가 어렵다는 말에 함께 돌보는 방법을 생각했어요. 🐣',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🥚</div><div class="wc-word">병아리를 키워 달걀을 먹자</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🙅</div><div class="wc-word">병아리는 키우지 말자</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🐣</div><div class="wc-word">돌보미를 정해 병아리를 돌아가며 책임지고 돌보자</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 알밤이의 까닭', t:'알밤이가 나눠 묻자고 한 까닭은?', log:true,
-   okMsg:'맞아요! 알밤이는 한 곳을 잃어도 다른 곳에 남는다는 까닭을 말했어요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">땅 파는 것이<br>재미있어서</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">하나를 잃어도<br>남으니까</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② ③ 생각 나누기', t:'등장인물의 생각에 대한 서로의 생각을 나눌 때 알맞은 것은?', log:true, okMsg:'맞아요! 다양한 생각을 들으면 이야기가 더 재미있어져요. 🌈',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">같은 장면이라도 친구마다 다른 생각을 할 수 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">정답은 하나뿐이니 하나로 맞춰야 해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">선생님 생각만 말해야 해요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 누가 맞을까', t:'두 다람쥐 가운데 누구의 생각이 맞을까요?', log:true,
-   okMsg:'맞아요! 생각이 달라도 저마다 까닭이 있어요. 누가 맞는지 가리기보다 서로의 까닭을 들어 봐요. 🎉',
-   hint:'힌트: 두 다람쥐 모두 까닭을 말했어요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">도롱이만<br>맞아요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">둘 다 까닭이 있는<br>생각이에요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">알밤이만<br>맞아요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ ④⑤ 인물 되어 보기', t:'되고 싶은 인물을 골라 생각을 정리해요',
+   html:`<div class="stage-box">🎭 되고 싶은 인물을 고르고 「내가 만약 ~라면 ~할 거예요. 그렇게 생각한 까닭은 ~이에요.」 틀로 『국어』 붙임 5에 정리해 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 생각을 글로 표현하는 방법을 떠올리며 정리했어요. ✍️">🎭 정리했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 인물이 되어 말하기', t:'인물이 되어 말할 때 담을 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 「내가 도롱이라면 …. 왜냐하면 ….」처럼 말해요. 🎉',
-   hint:'힌트: 이 단원에서 배운 생각 나타내기를 떠올려요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">하고 싶은 말이나 행동</div>
-      <div class="chip" data-hit="0">가장 큰 목소리</div>
-      <div class="chip" data-hit="1">그렇게 생각한 까닭</div>
-      <div class="chip" data-hit="0">앞 친구와 똑같은 대답</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ ⑤ 정리 예', t:'인물이 되어 생각을 알맞게 정리한 것은?', log:true, okMsg:'맞아요! 하고 싶은 말이나 행동과 그 까닭을 함께 정리했어요. 🌟',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">「내가 만약 다혜라면 돌보미를 하겠다고 손을 들 거예요. 병아리를 키우고 싶었기 때문이에요.」</div></div><div class="wcard" data-ok="0"><div class="wc-word">「내가 만약 다혜라면…….」</div></div><div class="wcard" data-ok="0"><div class="wc-word">「다혜는 이상해요.」</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 인물에게 묻기', t:'도롱이가 된 친구에게 알맞게 물은 것은?', log:true,
-   okMsg:'맞아요! 궁금한 점을 고운 말로 묻고, 대답을 귀 기울여 들어요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">도롱이야, 구멍이 막히면<br>어떻게 할 거니?</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">그것도 생각 못 했어?</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ ⑥ 묻고 답하기', t:'등장인물의 의자에 앉아 묻고 답해요',
+   html:`<div class="stage-box">🪑 인물 의자에 앉은 친구에게 친구들이 질문하고, 의자에 앉은 친구는 그 인물이 되어 대답해 보세요.<br><button class="stage-do" id="stageDo" data-fb="멋져요! 바른 태도로 묻고 답했어요. 🎤">🪑 해 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 대답이 달라요', t:'똑같이 도롱이가 되었는데 두 친구의 대답이 달라요. 어떻게 볼까요?', log:true,
-   okMsg:'맞아요! 같은 장면, 같은 인물이어도 사람마다 떠올리는 생각이 다를 수 있어요. 🎉',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">한 친구는<br>틀린 거예요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">사람마다 생각이<br>다를 수 있어요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ ⑥ 묻고 답하기', t:'인물 의자에 앉은 「규빈」에게 할 질문으로 알맞은 것은?', log:true, okMsg:'맞아요! 인물의 생각을 알아보는 질문이에요. ❓',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">「아무거나 말해 봐.」</div></div><div class="wcard" data-ok="1"><div class="wc-word">「규빈아, 병아리를 키우자고 한 까닭은 무엇이니?」</div></div><div class="wcard" data-ok="0"><div class="wc-word">「너는 왜 그렇게 이상하니?」</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 놀이 방법', t:'인물의 의자 놀이는 이렇게 해요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🐿️</span><span class="pc-name">① 되고 싶은<br>인물 고르기</span></div>
-      <div class="punct-card"><span class="pc-mark">🪑</span><span class="pc-name">② 인물의<br>의자에 앉기</span></div>
-      <div class="punct-card"><span class="pc-mark">🙋</span><span class="pc-name">③ 묻고<br>답하기</span></div>
-    </div>
-    <div class="ka-bub">이 놀이는 <b>화면 밖에서</b> 친구나 가족과 함께 해요.</div>`},
+  {tag:'④ 우리 반에서 정한 활동 예시 1', t:'손 팻말 문장과 역할을 이어 봐요', log:true, matchMsg:'잘 이었어요! 모둠원이 한 문장씩 맡아 팻말을 만들어요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">팻말 문장</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🪧</span>계단에서 뛰지 말자!</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🪧</span>부딪쳐 다칠 수 있으니까.</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🪧</span>나도 계단에서 미끄러질 뻔했어.</div><div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">🪧</span>모두 안전하면 마음이 놓여.</div></div><div class="match-col"><div class="match-col-h">역할</div><div class="match-card" data-k="B" data-pair="b">생각에 대한 까닭</div><div class="match-card" data-k="D" data-pair="d">느낌</div><div class="match-card" data-k="A" data-pair="a">생각</div><div class="match-card" data-k="C" data-pair="c">경험이나 알고 있는 것</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'④ 해 보기', t:'가족과 인물의 의자 놀이를 해요',
-   html:`<div class="stage-box">
-      🪑 의자 하나를 놓고 도롱이나 알밤이가 되어 앉아 봐요.<br>
-      가족이 물으면 <b>「내가 ○○라면 …. 왜냐하면 ….」</b> 하고 답해요.<br>
-      좋아하는 다른 이야기의 인물로 바꿔서 해도 좋아요.
-      <br><button class="stage-do" id="stageDo" data-fb="인물이 되어 생각을 말해 봤어요! 👏">🪑 해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'④ 우리 반에서 정한 활동 예시 2', t:'「지하철에서 소리를 지르는 상황」에 대한 생각으로 알맞은 것은?', log:true, okMsg:'맞아요! 「생각을 몸으로 말해요」 놀이에서 이 생각을 몸짓으로 보여 줄 수 있어요. 🚇',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">「지하철은 재미없어.」</div></div><div class="wcard" data-ok="1"><div class="wc-word">「공공장소에서는 조용히 말하자.」</div></div><div class="wcard" data-ok="0"><div class="wc-word">「더 크게 소리 지르자.」</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 마무리', t:'이만큼 해 봤어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🐿️</span>인물의 생각에는 저마다 <b>까닭</b>이 있어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🪑</span>인물이 되어 <b>생각과 까닭</b>을 함께 말해요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">👂</span>친구의 대답을 <b>귀 기울여</b> 들어요.</div>
-    </div>`},
+  {tag:'⑤ 마무리', t:'잘했어요! 이만큼 실천했어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🎭</span>이야기 속 <b>인물</b>이 되어 생각해 봤어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🌈</span>같은 장면에도 <b>다양한 생각</b>이 있어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🪑</span>바른 태도로 <b>묻고 답했어요</b>.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;

@@ -139,126 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 3~4차시(소단원 1 기본 — 글을 읽고 글쓴이의 생각 파악하기) 13슬 =====
+/* ===== 3~4차시(소단원 1 기본 — 글을 읽고 글쓴이의 생각 파악하기) 『국어』 202~206쪽 13슬 — v2 교과서 기준 재구성 (2026-10-24)
    학습 목표: 글을 읽고 글쓴이의 생각을 파악할 수 있다.
-   ★ 정답 로깅 7슬. 글 읽기(read-line)·무대·마무리 = 로깅 X.
-   ★ 직접 교수 모형(설명 → 시범 → 질문 → 활동) ⇒ s5(시범: 글 ㉯) → s6(질문: 글 ㉰) → s8~s9(활동).
-   ★ 지도서 284쪽 — 글쓴이의 생각 ≠ 중심 생각. 문장·문단은 3학년 ⇒ 용어는 「중심 생각」「작은 글」만.
-   ★ 지도서 287~289쪽 — 제목으로 짐작 · 작은 글마다 중심 생각 · 중심 생각을 모으면 글 전체의 생각.
-   ★★ 스물셋째 기준 재적용 — 교과서 글은 중심 생각이 전부 **첫 줄**이다. 그대로 따르면 아이는 첫 줄을 외운다.
-      ⇒ 글 ㉰의 중심 생각을 **끝 줄**에 두었다(s6) · s10 오답 칸 「맨 앞 줄만 읽어요」.
-      ⇒ s9 오답 칸 = **중심 생각 하나만**(책장을 살살 넘기자) — 「여러 중심 생각이 모여 글쓴이의 생각」(288쪽 ※).
-   ★ 지도서 285쪽 ※ — 한쪽에 나쁜 이름표가 붙지 않게 ⇒ 자체 글도 누구를 탓하지 않고 「다음 사람을 생각하며」로.
-   ★ 저작권: 교과서 202~206쪽 「반려견을 사랑한다면」·물음·예시 답, 지도서 284~285쪽 영상·그림, 287쪽 읽기 자료(공공장소 질서) 미차용.
-      자체 글 = 「도서관 책은 모두의 책」(학교 도서관 · 실재 기관 아님). */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·스스로 확인·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 판단(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「왜 책임이 필요하죠?」(채화영)·「반려견을 사랑한다면」(학생 글)은 간추림과 짧은 말 몇 마디만. 그 밖의 자료(쥐 회의·그림 ㉮~㉱·「아침에 운동장을 달려요」·규빈이 글·다육 식물 글·국어활동)는 교육부 집필이라 그대로. 글쓴이의 생각은 중심 생각 하나가 아니라 제목과 여러 중심 생각을 모아서(지도서 284·288쪽). */
 const slides=[
-  {tag:'① 만나기', t:'글쓴이는 무슨 말을 하고 싶을까요?',
-   html:`<div class="scene">
-      <div class="scene-pic">📄 🔎</div>
-      <div class="scene-say">이 글로 전하고 싶은 말은?</div>
-    </div>
-    <div class="ka-bub">글쓴이가 글로 전하고 싶은 말을 <b class="emph">글쓴이의 생각</b>이라고 해요.</div>`},
+  {tag:'① 동기 유발', t:'반려견과 관련한 경험을 말해 봐요',
+   html:`<div class="stage-box">🐶 반려견을 키우거나 산책시키는 모습을 본 적이 있나요? 반려견과 나갈 때 생길 수 있는 문제(배설물, 목줄 등)에 대한 내 생각을 짝에게 말해 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 반려견이 나쁜 것이 아니라 함께 지킬 약속이 있다는 이야기예요. 🐾">🗣️ 말했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
   {tag:'① 학습 문제', t:'오늘 배울 것이에요',
-   html:`<div class="sentence">글을 읽고 글쓴이의 생각을 알아봐요.</div>
-    <div class="ka-bub">글은 <b>작은 글</b> 여러 개로 되어 있기도 해요. ㉮, ㉯, ㉰처럼요.</div>`},
+   html:`<div class="sentence">글을 읽고 글쓴이의 생각을 파악해 봅시다.</div>`},
 
-  {tag:'② 글 읽기 1', t:'「도서관 책은 모두의 책」',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">㉮</span>학교 도서관 책을 볼 때 지킬 일이 있어요.</div>
-      <div class="read-line"><span class="rl-num">㉯</span>책장은 살살 넘겨요. 세게 넘기면 찢어져요.</div>
-      <div class="read-line"><span class="rl-num">㉰</span>낙서가 있으면 읽기 힘들어요. 그러니 책에 낙서하지 않아요.</div>
-    </div>`},
+  {tag:'② 202~204쪽 1번', t:'「반려견을 사랑한다면」 — 간추린 글',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>㉮ 반려견과 함께 야외로 나갈 때에는 꼭 지켜야 하는 에티켓이 있다.</div><div class="read-line"><span class="rl-num">2</span>㉯ 첫째, 반려견의 배설물은 주인이 치워야 한다. 비닐봉지와 집게 같은 도구를 챙긴다.</div><div class="read-line"><span class="rl-num">3</span>㉰ 둘째, 반려견을 야외로 데리고 나갈 때에는 목줄을 채워야 한다. 개를 무서워하는 어린이도 있다.</div><div class="read-line"><span class="rl-num">4</span>㉱ 셋째, 반려견의 출입이 금지된 곳에는 반려견을 데리고 가지 않아야 한다. 도서관에서 짖으면 큰 피해를 준다.</div><div class="read-line"><span class="rl-num">5</span>㉲ 다른 사람과 내 반려견을 위해 에티켓을 꼭 지키도록 하자.</div></div><div class="fb" id="readFb">📖 『국어』 202~204쪽을 펴고 읽어 봐요. (위 글은 간추린 것이에요. 「에티켓」은 예의범절이라는 뜻이에요.)</div>`},
 
-  {tag:'③ 제목으로 짐작', t:'제목을 보면 글쓴이는 무슨 말을 하려는 것 같나요?', log:true,
-   okMsg:'맞아요! 글쓴이는 제목에 하고 싶은 말을 담아요. 그래서 제목을 꼭 살펴봐요. 👍',
-   hint:'힌트: 제목은 「도서관 책은 모두의 책」이에요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">도서관에<br>가지 말자고</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">함께 보는 책을<br>아끼자고</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">책을 집에<br>가져가자고</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 204쪽 2번 (1)', t:'글쓴이는 반려견을 야외로 데리고 나갈 때 왜 목줄을 채워야 한다고 했나요?', log:true, okMsg:'맞아요! 다른 사람의 마음을 생각한 까닭이에요. 🦮',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">개에게 물렸던 사람이나 개를 무서워하는 어린이는 개가 가까이 오면 무섭기 때문에</div></div><div class="wcard" data-ok="0"><div class="wc-word">목줄이 예뻐 보여서</div></div><div class="wcard" data-ok="0"><div class="wc-word">반려견이 길을 잃지 않게 하려고만</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 중심 생각 ㉯', t:'글 ㉯에서 가장 하고 싶은 말(중심 생각)은?', log:true,
-   okMsg:'맞아요! 「세게 넘기면 찢어져요」는 그 까닭을 알려 주며 중심 생각을 도와줘요. 🎉',
-   hint:'힌트: 어떻게 하자고 하는 말을 찾아요.',
-   html:`<div class="sentence">책장은 살살 넘겨요. 세게 넘기면 찢어져요.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">책장은<br>살살 넘겨요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">세게 넘기면<br>찢어져요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 204쪽 2번 (2)', t:'글쓴이는 반려견을 진심으로 사랑한다면 어떻게 해야 한다고 했나요?', log:true, okMsg:'맞아요! 그것이 반려견 가족으로서의 책임이라고 했어요. 💗',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">반려견이 하고 싶은 대로 다 하게 해야 해요</div></div><div class="wcard" data-ok="1"><div class="wc-word">반려견이 미움을 받거나 공포의 대상이 되지 않도록 해야 해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">반려견을 집 밖에 절대 데리고 나가지 않아야 해요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 중심 생각 ㉰', t:'글 ㉰에서 가장 하고 싶은 말(중심 생각)은?', log:true,
-   okMsg:'맞아요! 중심 생각이 언제나 맨 앞에 있는 것은 아니에요. 작은 글을 끝까지 읽고 찾아요. 🎉',
-   hint:'힌트: 앞의 말은 까닭이에요. 어떻게 하자는 말은 어디에 있나요?',
-   html:`<div class="sentence">낙서가 있으면 읽기 힘들어요. 그러니 책에 낙서하지 않아요.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">낙서가 있으면<br>읽기 힘들어요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">책에<br>낙서하지 않아요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 205쪽 3번 (1)', t:'제목 「반려견을 사랑한다면」을 보고 글쓴이가 하고 싶은 말을 짐작하면?', log:true, okMsg:'맞아요! 글쓴이는 제목에 자기 생각을 담기도 해요. 🏷️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">반려견 이름 짓는 법을 알려 주려는 것 같아요</div></div><div class="wcard" data-ok="1"><div class="wc-word">반려견을 키우는 사람들에게 에티켓을 지키자고 말하려는 것 같아요</div></div><div class="wcard" data-ok="0"><div class="wc-word">반려견을 키우지 말자고 말하려는 것 같아요</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 글 읽기 2', t:'이어서 읽어요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">㉱</span>다 본 책은 있던 곳에 꽂아요. 그래야 친구가 쉽게 찾아요.</div>
-      <div class="read-line"><span class="rl-num">㉲</span>도서관 책은 모두의 책이에요. 다음 사람을 생각하며 아껴 봐요.</div>
-    </div>`},
+  {tag:'③ 205쪽 3번 (2)', t:'글 ㉯의 중심 생각은 어느 것인가요?', log:true, okMsg:'맞아요! 나머지 문장들은 중심 생각을 뒷받침해요. 🎯',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">반려견의 배설물은 주인이 치워야 한다.</div></div><div class="wcard" data-ok="0"><div class="wc-word">반려견이 산책 중 변을 봤을 때 모르는 척 그냥 가 버리는 사람이 있다.</div></div><div class="wcard" data-ok="0"><div class="wc-word">그러면 그 자리에서 냄새가 나고 다른 사람이 배설물을 밟을 수도 있다.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 중심 생각과 까닭', t:'중심 생각과 그 까닭을 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 작은 글은 중심 생각과 그것을 도와주는 말로 되어 있어요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">중심 생각</div>
-        <div class="match-card" data-k="a" data-pair="A">책장은<br>살살 넘겨요</div>
-        <div class="match-card" data-k="b" data-pair="B">책에 낙서하지<br>않아요</div>
-        <div class="match-card" data-k="c" data-pair="C">있던 곳에<br>꽂아요</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">까닭</div>
-        <div class="match-card" data-k="C" data-pair="c">친구가<br>쉽게 찾아요</div>
-        <div class="match-card" data-k="A" data-pair="a">세게 넘기면<br>찢어져요</div>
-        <div class="match-card" data-k="B" data-pair="b">낙서가 있으면<br>읽기 힘들어요</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 205쪽 3번 (2)', t:'글 ㉰·㉱·㉲의 중심 생각을 이어 봐요', log:true, matchMsg:'잘 이었어요! 작은 글마다 중심 생각이 하나씩 있어요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">글</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🅓</span>글 ㉰</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🅔</span>글 ㉱</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🅕</span>글 ㉲</div></div><div class="match-col"><div class="match-col-h">중심 생각</div><div class="match-card" data-k="C" data-pair="c">다른 사람과 내 반려견을 위해 에티켓을 꼭 지키도록 하자.</div><div class="match-card" data-k="A" data-pair="a">반려견을 야외로 데리고 나갈 때에는 목줄을 채워야 한다.</div><div class="match-card" data-k="B" data-pair="b">반려견의 출입이 금지된 곳에는 반려견을 데리고 가지 않아야 한다.</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 글쓴이의 생각', t:'이 글에서 글쓴이의 생각은 무엇일까요?', log:true,
-   okMsg:'맞아요! 제목과 중심 생각들을 모으면 글 전체의 생각이 보여요. 살살 넘기기는 그 가운데 하나예요. 🎉',
-   hint:'힌트: 중심 생각 하나만이 아니라, 모두를 모은 말을 찾아요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">책장을<br>살살 넘기자</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">다음 사람을 생각하며<br>도서관 책을 아끼자</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">학교에는<br>도서관이 있다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 206쪽 4번', t:'「반려견을 사랑한다면」에서 글쓴이의 생각은?', log:true, okMsg:'맞아요! 여러 중심 생각이 모이면 글 전체의 생각이 돼요. 중심 생각 하나만 고르면 안 돼요. 🧩',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">반려견은 무서운 동물이다</div></div><div class="wcard" data-ok="1"><div class="wc-word">반려견을 진심으로 사랑한다면 여러 가지 반려견 에티켓을 꼭 지켜야 한다</div></div><div class="wcard" data-ok="0"><div class="wc-word">반려견의 배설물은 주인이 치워야 한다</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 알아보는 방법', t:'글쓴이의 생각을 알아보는 방법을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 제목을 살피고, 작은 글마다 중심 생각을 찾아 모아요. 🎉',
-   hint:'힌트: 한 줄만 보고 넘어가는 방법은 빼요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">제목을 살펴봐요</div>
-      <div class="chip" data-hit="0">맨 앞 줄만 읽어요</div>
-      <div class="chip" data-hit="1">중심 생각들을 모아 봐요</div>
-      <div class="chip" data-hit="0">글이 몇 줄인지 세어 봐요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 방법 정리', t:'글쓴이의 생각을 파악하는 방법',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>하나, 글의 제목을 보고 글쓴이가 하고 싶은 말을 짐작해요.</div><div class="read-line"><span class="rl-num">2</span>둘, 작은 글마다 중심 생각을 찾아요.</div><div class="read-line"><span class="rl-num">3</span>셋, 제목과 여러 중심 생각을 모아 글쓴이의 생각을 정리해요.</div></div><div class="fb" id="readFb">🔊 세 가지 방법을 소리 내어 읽어 봐요.</div>`},
 
-  {tag:'③ 좋은 점', t:'글쓴이의 생각을 알아보며 읽으면 좋은 점을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 글쓴이가 하고 싶은 말을 알고, 내 생각과 견주어 볼 수 있어요. 🎉',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">글쓴이가 하고 싶은 말을 알아요</div>
-      <div class="chip" data-hit="0">글을 안 읽어도 돼요</div>
-      <div class="chip" data-hit="1">내 생각과 견주며 읽어요</div>
-      <div class="chip" data-hit="1">마음을 모아 읽게 돼요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 연습', t:'다른 글로 연습해요',
+   html:`<div class="stage-box">🗣️ 지도서 참고 글 「왜 공공장소에서 질서를 지켜야 할까요?」의 제목만 보고 글쓴이의 생각을 짐작해 짝에게 말해 보세요. (힌트: 「~하자」)<br><button class="stage-do" id="stageDo" data-fb="좋아요! 글쓴이의 생각은 「공공장소에서 질서를 지키자.」예요. 🚶">🗣️ 짐작했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 말로 해 보기', t:'집에 있는 짧은 글에서 찾아봐요',
-   html:`<div class="stage-box">
-      🔎 집에 있는 <b>안내문이나 짧은 글</b>을 하나 골라 제목을 먼저 읽어 봐요.<br>
-      글쓴이가 하고 싶은 말이 무엇인지 가족에게 말해 봐요.
-      <br><button class="stage-do" id="stageDo" data-fb="글쓴이의 생각을 말해 봤어요! 👏">🔎 해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'④ 206쪽 5번', t:'글쓴이의 생각을 파악하며 글을 읽으면 좋은 점은?', log:true, okMsg:'맞아요! 내 생각과 견주며 읽을 수도 있어요. 💡',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">글쓴이가 글을 통해 하고 싶은 말이 무엇인지 알 수 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">글을 빨리 끝까지 읽을 수 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">글자 수를 셀 수 있어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 마무리', t:'이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🏷️</span><b>제목</b>에는 글쓴이가 하고 싶은 말이 담겨 있어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🔎</span>중심 생각은 <b>작은 글을 끝까지 읽고</b> 찾아요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🧺</span>중심 생각을 <b>모으면</b> 글쓴이의 생각이 보여요.</div>
-    </div>`},
+  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🏷️</span><b>제목</b>을 보고 글쓴이의 말을 짐작해요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🎯</span>작은 글마다 <b>중심 생각</b>을 찾아요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🧩</span>여러 중심 생각을 모으면 <b>글쓴이의 생각</b>이에요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;

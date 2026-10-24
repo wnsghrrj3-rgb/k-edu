@@ -139,134 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 7~9차시(소단원 2 기본 — 자신의 생각을 글로 표현하기) 13슬 =====
+/* ===== 7~9차시(소단원 2 기본 — 자신의 생각을 글로 표현하기) 『국어』 211~219쪽 13슬 — v2 교과서 기준 재구성 (2026-10-24)
    학습 목표: 자신의 생각을 글로 표현할 수 있다.
-   ★ 정답 로깅 7슬. 이야기·글 읽기(read-line)·무대·마무리 = 로깅 X.
-   ★ 지도서 295쪽 — 생각 · 생각에 대한 까닭 · 경험이나 알고 있는 것 · 느낌 ⇒ s7·s8(해담이의 글 네 줄).
-   ★ 지도서 296쪽 예시 글 2(이어 주는 말이 어긋난 글) ⇒ s9 「왜냐하면」.
-   ★ 지도서 294쪽 — 글을 쓸 상황 · 목적 · 읽는 사람 ⇒ s11.
-   ★ 지도서 297쪽 — 띄어쓰기나 맞춤법보다 내용과 읽는 사람을 생각한 표현 ⇒ s11 오답 칸 「틀린 글자가 하나도 없게」 · 무대 문구.
-   ★ 지도서 295쪽 참고 자료(손 글씨 쓰기 유창성) ⇒ 무대에 「그림을 곁들여도 좋아요」.
-   ★★ 스물둘째 기준 승계 — 읽는 사람을 생각한 표현을 채점하면 **내 생각 지우기**가 남는다.
-      ⇒ s10 오답 칸 양쪽 극단(다른 생각을 깎아내리기 / 「아무거나 해도 돼요」로 내 생각 지우기).
-   ★ 열넷째 기준 — 실제 글쓰기는 화면이 실을 수 없다 ⇒ 무대(종이에 쓰기) · 가짜 입력칸 0.
-   ★ 저작권: 교과서 211~219쪽 「왜 책임이 필요하죠?」(채화영) 글·만화·규빈이의 글·물음·예시 답, 지도서 294쪽 예시 문장·296쪽 예시 글(책을 많이 읽읍시다),
-      국어활동 96~99쪽(문을 잘 닫고 다니자·계단) 미차용.
-      자체 이야기 = 「학예회에 무엇을 할까」(세찬·해담·모람) · 자체 글 = 해담이의 합창 글. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·스스로 확인·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 판단(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「왜 책임이 필요하죠?」(채화영)·「반려견을 사랑한다면」(학생 글)은 간추림과 짧은 말 몇 마디만. 그 밖의 자료(쥐 회의·그림 ㉮~㉱·「아침에 운동장을 달려요」·규빈이 글·다육 식물 글·국어활동)는 교육부 집필이라 그대로. 글쓴이의 생각은 중심 생각 하나가 아니라 제목과 여러 중심 생각을 모아서(지도서 284·288쪽). */
 const slides=[
-  {tag:'① 만나기', t:'내 생각을 글로 써 볼까요?',
-   html:`<div class="scene">
-      <div class="scene-pic">💭 ➡️ 📝</div>
-      <div class="scene-say">말로 한 생각, 글로도 쓸 수 있어요</div>
-    </div>
-    <div class="ka-bub">글로 쓰면 내 생각을 <b class="emph">차근차근 가다듬어</b> 전할 수 있어요.</div>`},
+  {tag:'① 동기 유발', t:'여러분이라면 어떻게 할까요?',
+   html:`<div class="stage-box">🤔 「1교시가 시작되었는데 선생님이 자리에 안 계세요.」 — 「선생님을 찾으러 가자!」와 「곧 오실 테니 자리에 앉아 기다리자!」 가운데 하나를 고르고 그 까닭을 말해 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 고른 생각보다 까닭을 말하는 것이 더 중요해요. 💡">🤔 골랐어요!</button></div><div class="fb" id="stageFb"></div>`},
 
   {tag:'① 학습 문제', t:'오늘 배울 것이에요',
-   html:`<div class="sentence">내 생각을 글로 나타내요.</div>
-    <div class="ka-bub">먼저 이야기 속 친구들이 생각을 어떻게 말하는지 살펴봐요.</div>`},
+   html:`<div class="sentence">자신의 생각을 글로 표현해 봅시다.</div>`},
 
-  {tag:'② 이야기 읽기', t:'「학예회에 무엇을 할까」',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>선생님: 학예회에 우리 반은 무엇을 할까요?</div>
-      <div class="read-line"><span class="rl-num">2</span>세찬: 줄넘기요! 연습하면 멋질 거예요.</div>
-      <div class="read-line"><span class="rl-num">3</span>해담: 합창이요. 모두 함께 설 수 있어요.</div>
-      <div class="read-line"><span class="rl-num">4</span>모람: 연극은 어때요? 옷도 꾸밀 수 있어요.</div>
-    </div>`},
+  {tag:'② 211~214쪽 「왜 책임이 필요하죠?」', t:'간추린 이야기',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>교장 선생님께서 학교 뒤뜰을 자유롭게 꾸며 보라고 하셨어요. 우철이는 고구마, 친구들은 꽃·토마토·상추를 심고 싶어 해요.</div><div class="read-line"><span class="rl-num">2</span>선생님은 뒤뜰을 꾸미는 건 자유지만 책임도 져야 한다고 하셨어요. 식물도 생명이라 돌보지 않으면 죽는대요.</div><div class="read-line"><span class="rl-num">3</span>규빈이는 병아리를 키우자고 해요. 병아리가 자라 닭이 되는 과정을 볼 수 있다고요. 우철이는 달걀을 먹을 수 있다고 해요.</div><div class="read-line"><span class="rl-num">4</span>선생님은 병아리를 책임지고 보살필 누군가가 필요하다고 하셨어요.</div><div class="read-line"><span class="rl-num">5</span>규빈이는 매일매일 병아리를 책임지고 보살필 돌보미를 정해 돌아가면서 돌보자고 해요.</div></div><div class="fb" id="readFb">📖 『국어』 211~214쪽을 펴고 만화와 함께 읽어 봐요. (위 글은 간추린 것이에요.)</div>`},
 
-  {tag:'③ 누구의 생각', t:'친구와 친구가 말한 생각을 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 세 친구가 저마다 다른 생각을 말했어요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">친구</div>
-        <div class="match-card" data-k="a" data-pair="A">세찬</div>
-        <div class="match-card" data-k="b" data-pair="B">해담</div>
-        <div class="match-card" data-k="c" data-pair="C">모람</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">생각</div>
-        <div class="match-card" data-k="C" data-pair="c"><span class="mc-ic">🎭</span>연극을 해요</div>
-        <div class="match-card" data-k="A" data-pair="a"><span class="mc-ic">🪢</span>줄넘기를 해요</div>
-        <div class="match-card" data-k="B" data-pair="b"><span class="mc-ic">🎵</span>합창을 해요</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 215쪽 2번 (1)', t:'등장인물들은 무엇을 정하려고 생각을 나누고 있나요?', log:true, okMsg:'맞아요! 학교 뒤뜰을 어떻게 꾸밀지 생각을 나누어요. 🌱',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🌱</div><div class="wc-word">학교 뒤뜰에서 무엇을 키울지</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🎒</div><div class="wc-word">소풍 갈 장소</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🎨</div><div class="wc-word">교실 벽 색깔</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 까닭을 함께', t:'생각에 까닭을 함께 말하면 어떤 점이 좋을까요?', log:true,
-   okMsg:'맞아요! 까닭을 들으면 친구가 왜 그렇게 생각하는지 알 수 있어요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">듣는 사람이 내 생각을<br>더 잘 알 수 있어요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">말이 길어져서<br>내가 이겨요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 215쪽 2번 (2)', t:'규빈이가 병아리를 키우자고 한 까닭은?', log:true, okMsg:'맞아요! 달걀을 먹을 수 있다고 한 것은 우철이예요. 🐣',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🥚</div><div class="wc-word">달걀을 먹을 수 있기 때문에</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🐶</div><div class="wc-word">강아지보다 작아서</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🐣</div><div class="wc-word">병아리가 자라며 닭이 되는 과정을 볼 수 있기 때문에</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 해담이의 글', t:'해담이가 생각을 글로 썼어요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>학예회에서 합창을 합시다.</div>
-      <div class="read-line"><span class="rl-num">2</span>왜냐하면 모두 함께 무대에 설 수 있기 때문입니다.</div>
-      <div class="read-line"><span class="rl-num">3</span>1학년 때 함께 노래하니 힘이 났습니다.</div>
-      <div class="read-line"><span class="rl-num">4</span>다 같이 노래하면 정말 신날 것 같습니다.</div>
-    </div>`},
+  {tag:'③ 215쪽 2번 (3)', t:'동물이나 식물을 키울 때 책임이 필요한 까닭은?', log:true, okMsg:'맞아요! 돌보지 않으면 생명이 다칠 수 있어요. 💚',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">선생님이 혼내시기 때문에</div></div><div class="wcard" data-ok="1"><div class="wc-word">동물과 식물은 소중한 생명이기 때문에</div></div><div class="wcard" data-ok="0"><div class="wc-word">키우면 돈을 벌 수 있기 때문에</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 글의 짜임 1', t:'해담이 글의 줄과 그 줄에 담긴 것을 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 생각을 먼저 쓰고, 까닭과 겪은 일을 덧붙였어요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">줄</div>
-        <div class="match-card" data-k="a" data-pair="A">1 합창을<br>합시다</div>
-        <div class="match-card" data-k="b" data-pair="B">2 왜냐하면 …<br>때문입니다</div>
-        <div class="match-card" data-k="c" data-pair="C">3 1학년 때 …<br>힘이 났습니다</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">담긴 것</div>
-        <div class="match-card" data-k="B" data-pair="b">생각에 대한<br>까닭</div>
-        <div class="match-card" data-k="C" data-pair="c">겪은 일이나<br>아는 것</div>
-        <div class="match-card" data-k="A" data-pair="a">생각</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 215쪽 3번', t:'등장인물과 생각을 이어 봐요', log:true, matchMsg:'잘 이었어요! 같은 일에도 저마다 생각이 달라요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">인물</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🧢</span>규빈</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">😋</span>우철</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">👩‍🏫</span>선생님</div></div><div class="match-col"><div class="match-col-h">생각</div><div class="match-card" data-k="B" data-pair="b">병아리 키워요. 달걀 먹을 수 있잖아요.</div><div class="match-card" data-k="C" data-pair="c">병아리를 키우는 것은 좋지만 책임지고 보살필 사람이 필요해요.</div><div class="match-card" data-k="A" data-pair="a">매일매일 병아리를 책임지고 보살필 돌보미를 정하면 돼요.</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 글의 짜임 2', t:'4번 줄 「정말 신날 것 같습니다」에 담긴 것은?', log:true,
-   okMsg:'맞아요! 글의 끝에 느낌을 쓰면 내 마음까지 전할 수 있어요. 🎉',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">까닭</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">느낌</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 216쪽 4번', t:'규빈이가 쓴 글을 읽어요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>뒤뜰에서 병아리를 키웁시다.</div><div class="read-line"><span class="rl-num">2</span>왜냐하면 병아리를 직접 키우면서 책임감을 기를 수 있기 때문입니다.</div><div class="read-line"><span class="rl-num">3</span>병아리는 연약해서 잘 보살펴 주어야 한다는 것을 책에서 보았습니다.</div><div class="read-line"><span class="rl-num">4</span>우리 반 친구들이 노력해서 병아리를 잘 키운다면 정말 뿌듯할 것 같습니다.</div></div><div class="fb" id="readFb">🔊 한 줄씩 읽고 각 줄이 무슨 역할인지 생각해 봐요.</div>`},
 
-  {tag:'③ 이어 주는 말', t:'빈칸에 알맞은 말은 무엇일까요?', log:true,
-   okMsg:'맞아요! 까닭을 말할 때는 「왜냐하면 … 때문입니다」로 이어요. 👍',
-   hint:'힌트: 뒤에 「때문입니다」가 있어요.',
-   html:`<div class="sentence">합창을 합시다. (　　) 모두 함께 설 수 있기 때문입니다.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">그래서</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">왜냐하면</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 216쪽 4번', t:'규빈이 글의 문장과 역할을 이어 봐요', log:true, matchMsg:'잘 이었어요! 생각을 나타내는 글에는 생각·까닭·경험·느낌이 들어가요. 🧩',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">문장</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">1️⃣</span>뒤뜰에서 병아리를 키웁시다.</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">2️⃣</span>책임감을 기를 수 있기 때문입니다.</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">3️⃣</span>책에서 보았습니다.</div><div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">4️⃣</span>정말 뿌듯할 것 같습니다.</div></div><div class="match-col"><div class="match-col-h">역할</div><div class="match-card" data-k="C" data-pair="c">경험이나 알고 있는 것</div><div class="match-card" data-k="A" data-pair="a">생각</div><div class="match-card" data-k="D" data-pair="d">느낌</div><div class="match-card" data-k="B" data-pair="b">생각에 대한 까닭</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 읽는 사람 생각하기', t:'읽는 사람을 생각하며 내 생각을 쓴 것은?', log:true,
-   okMsg:'맞아요! 내 생각을 또렷이 밝히면서도 다른 생각을 낸 친구의 마음을 살폈어요. 🎉',
-   hint:'힌트: 친구 생각을 깎아내려도, 내 생각을 지워 버려도 안 돼요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">합창 말고<br>다른 건 다 시시해요.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">합창을 하면 좋겠습니다.<br>모두 함께할 수 있으니까요.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">저는 아무거나<br>해도 돼요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 지도서 296쪽', t:'두 글 가운데 생각을 더 잘 나타낸 글은?', log:true, okMsg:'맞아요! 까닭은 「왜냐하면 ~때문입니다」로, 말투는 한 가지로 써야 잘 읽혀요. 📝',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">「책을 많이 읽읍시다. 그래서 책을 많이 읽으면 좋은 점이 많기 때문입니다. 나는 책을 읽고 새로운 것들을 많이 알게 되었다.」</div></div><div class="wcard" data-ok="1"><div class="wc-word">「책을 많이 읽읍시다. 왜냐하면 책을 많이 읽으면 좋은 점이 많기 때문입니다. 저는 책을 읽고 새로운 것들을 많이 알게 되었습니다.」</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 쓰기 전에', t:'글을 쓰기 전에 떠올릴 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 틀린 글자가 조금 있어도 괜찮아요. 내 생각과 읽는 사람을 먼저 떠올려요. 🎉',
-   hint:'힌트: 글자를 하나도 안 틀리는 것보다 더 먼저 생각할 것이 있어요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">어떤 일에 대한 생각인지</div>
-      <div class="chip" data-hit="1">누가 읽을 글인지</div>
-      <div class="chip" data-hit="0">틀린 글자가 하나도 없게 쓰는 법</div>
-      <div class="chip" data-hit="1">내 생각과 그 까닭</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 215쪽 도움말', t:'생각에 대한 까닭을 함께 쓰면 좋은 점은?', log:true, okMsg:'맞아요! 까닭이 있으면 상대를 설득하는 데도 도움이 돼요. 🤝',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">글자 수가 많아져서 좋아요</div></div><div class="wcard" data-ok="0"><div class="wc-word">까닭은 없어도 상관없어요</div></div><div class="wcard" data-ok="1"><div class="wc-word">읽는 사람이 내 생각을 잘 이해하고 받아들이는 데 도움이 돼요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 종이에 써 보기', t:'내 생각을 글로 써 봐요',
-   html:`<div class="stage-box">
-      📝 우리 반이나 우리 집에 바라는 점을 하나 골라 종이에 써 봐요.<br>
-      <b>생각 → 까닭 → 겪은 일이나 아는 것 → 느낌</b> 차례로 써요.<br>
-      잘 쓰려고 애쓰지 않아도 돼요. 그림을 곁들여도 좋아요.
-      <br><button class="stage-do" id="stageDo" data-fb="내 생각을 글로 써 봤어요! 👏">📝 써 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 217~219쪽 5~8번', t:'내 생각을 글로 써 봐요',
+   html:`<div class="stage-box">✍️ 글을 쓸 상황을 정하세요(알림판에 붙일 학급 행사, 교장 선생님께 드릴 텃밭 편지 등). 그다음 「생각 → 까닭 → 경험이나 알고 있는 것 → 느낌」 차례로 정리해 『국어』 219쪽에 글을 써 보세요. 완벽하지 않아도 괜찮아요!<br><button class="stage-do" id="stageDo" data-fb="멋져요! 읽을 사람을 생각하며 예의 바른 표현으로 썼는지 살펴봐요. 🌟">✍️ 썼어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 마무리', t:'이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">📝</span>생각 글에는 <b>생각·까닭·겪은 일·느낌</b>을 담아요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🔗</span>까닭은 <b>「왜냐하면 … 때문입니다」</b>로 이어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">💌</span><b>읽는 사람</b>을 생각하며 예의 바르게 써요.</div>
-    </div>`},
+  {tag:'⑤ 219쪽 9번', t:'쓴 글을 스스로 확인해요', hint:'힌트: 내가 쓴 글을 떠올리며 해당하는 것을 눌러요. 정답은 없어요!',
+   html:`<div class="selfcheck"><div class="sc-row"><span class="sc-box">✓</span>생각에 대한 <b>까닭</b>을 함께 썼나요?</div><div class="sc-row"><span class="sc-box">✓</span>글을 <b>읽을 사람</b>을 생각해서 썼나요?</div><div class="sc-row"><span class="sc-box">✓</span>생각을 잘 나타내는 <b>낱말</b>을 골라 썼나요?</div></div><div class="fb">스스로 확인해요. 다음 시간에 친구들과 서로의 글을 읽어요! 📬</div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
