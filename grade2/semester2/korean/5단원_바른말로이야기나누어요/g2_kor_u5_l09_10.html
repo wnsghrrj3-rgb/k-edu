@@ -139,138 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 9~10차시(소단원 2 통합 — 글을 읽고 일이 일어난 차례 말하기) 13슬 =====
+/* ===== 9~10차시(소단원 2 통합 — 글을 읽고 일이 일어난 차례 말하기) 『국어』 154~159쪽 13슬 — v2 교과서 기준 재구성 (2026-10-24)
    학습 목표: 글을 읽고 일이 일어난 차례를 말할 수 있다.
-   ★ 정답 로깅 7슬. 글 읽기(read-line)·중심 내용 찾는 방법·무대·마무리 = 로깅 X.
-   ★ 지도서 224~227쪽 흐름 = 작품 읽기 → 내용 알기 → 낱말 알기 → 시간 말 찾기 → 차례대로 정리 → 간추려 말하기 ⇒ s2~s8.
-   ★ 지도서 225쪽 — 인물이 한 일을 주요 사건으로 ⇒ s3(까닭을 묻는 내용 문항).
-   ★★ 스물다섯째 기준 둘째 적용 — 글 5번 줄에 **시간을 나타내는 말을 일부러 넣지 않았다.**
-      시간 말을 따라 차례를 늘어놓는 아이는 여기서 멈춘다 ⇒ s6(시간 말이 없는 줄이 왜 그 차례인가).
-      오답 칸 = 「맨 끝 줄에 있으니까」(위치 — 3단원 스물셋째 기준과 이음) · 「알 수 없어요」.
-   ★ 스물셋째 기준 재적용 — 간추리기 = 옮겨 쓰기 함정(지도서 227쪽 「단편적인 지식으로 익히지 말고」) ⇒ s8 오답 칸에
-      다섯 줄을 그대로 옮기기 · 시간 말만 늘어놓기(스물다섯째)를 함께.
-   ★ 지도서 226쪽 — 시간 말로 문장 만들기 ⇒ s9. 오답 = 시간 말과 문장의 때가 어긋난 문장(지도서 239쪽 참고 자료, 과거 표현).
-   ★ 저작권: 교과서 154~159쪽 「희망을 만든 우편집배원」(김현태)과 그림·낱말(만발·자태·조성·내내·황량·묘목·훗날)·
-      예시 문장(코스모스·산꼭대기·강변), 국어활동 62~67쪽 「팥죽 할머니와 호랑이」 미차용.
-      자체 글 = 「창가의 강낭콩」(호야 · 교실 안의 일) · 자체 낱말 = 불리다·떡잎·돋다. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·밑줄 긋기·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「아빠와 함께 추억 만들기」(이규희)·「희망을 만든 우편집배원」(김현태)은 간추림과 짧은 말 몇 마디만. 그 밖의 자료(만화·당나귀·발표 준비·국어활동)는 교육부 집필이라 그대로. 차례는 시간을 나타내는 말만이 아니라 일의 앞뒤로(지도서 221쪽 오개념). */
 const slides=[
-  {tag:'① 만나기', t:'씨앗은 어떻게 자랄까요?',
-   html:`<div class="scene">
-      <div class="scene-pic">🌱</div>
-      <div class="scene-say">우리 교실 창가에 콩을 심었어요!</div>
-    </div>
-    <div class="ka-bub">무슨 일이 <b class="emph">어떤 차례로</b> 일어나는지 살피며 읽어요. 🔎</div>`},
+  {tag:'① 동기 유발', t:'「고마운 마음」 하면 떠오르는 것은?',
+   html:`<div class="stage-box">💭 누군가에게 고마운 마음을 느꼈던 때를 떠올려 짝에게 말해 보세요. 오늘 읽을 이야기도 고마운 마음에 대한 이야기예요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 이야기를 읽으며 누가 누구에게 고마운지도 찾아봐요. 🌼">💭 떠올렸어요!</button></div><div class="fb" id="stageFb"></div>`},
 
   {tag:'① 학습 문제', t:'오늘 배울 것이에요',
-   html:`<div class="sentence">글을 읽고 일이 일어난 차례를 말해 봐요.</div>
-    <div class="ka-bub">제목을 보고 어떤 내용일지 먼저 짐작해 봐요. 🙂</div>`},
+   html:`<div class="sentence">글을 읽고 일이 일어난 차례를 말해 봅시다.</div>`},
 
-  {tag:'② 글 읽기', t:'「창가의 강낭콩」',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>월요일, 호야는 콩을 물에 불렸어요.</div>
-      <div class="read-line"><span class="rl-num">2</span>이틀 뒤, 콩을 화분에 심었어요.</div>
-      <div class="read-line"><span class="rl-num">3</span>흙이 마르지 않게 물을 주었어요.</div>
-      <div class="read-line"><span class="rl-num">4</span>일주일쯤 지나자 떡잎이 돋았어요.</div>
-      <div class="read-line"><span class="rl-num">5</span>줄기가 자라 쓰러져 막대를 꽂았어요.</div>
-    </div><div class="fb" id="readFb"></div>`},
+  {tag:'② 154~157쪽 작품 읽기', t:'「희망을 만든 우편집배원」(김현태) — 간추린 이야기 (1)',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>시골 마을로 우편물을 배달하는 우편집배원이 있었어요.</div><div class="read-line"><span class="rl-num">2</span>마을로 가는 길은 들꽃조차 없어서 늘 쓸쓸했어요.</div><div class="read-line"><span class="rl-num">3</span>가을의 어느 날, 우편집배원은 한숨을 쉬며 좋은 수가 없을까 생각했어요.</div><div class="read-line"><span class="rl-num">4</span>다음 날부터 마을로 오는 길에 하루도 빠짐없이 들꽃 씨앗을 뿌렸어요.</div></div><div class="fb" id="readFb">🔊 교과서 154~157쪽을 펴고 그림과 함께 읽어 봐요.</div>`},
 
-  {tag:'③ 내용 알기', t:'호야가 화분에 막대를 꽂은 까닭은?', log:true,
-   okMsg:'맞아요! 줄기가 자라다 쓰러져서 막대를 꽂아 주었어요. 👍',
-   hint:'힌트: 5번 줄을 다시 읽어 봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">줄기가<br>쓰러져서</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">떡잎이<br>돋아서</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">월요일이<br>되어서</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 154~157쪽 작품 읽기', t:'「희망을 만든 우편집배원」(김현태) — 간추린 이야기 (2)',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>봄날, 길가에 예쁜 꽃과 향기 진한 들풀이 피어났어요.</div><div class="read-line"><span class="rl-num">2</span>일 년이 지난 여름날, 꽃들은 더욱 만발했어요.</div><div class="read-line"><span class="rl-num">3</span>우편집배원은 꽃길을 오가는 게 행복해 휘파람이 절로 나왔어요.</div><div class="read-line"><span class="rl-num">4</span>그는 길가에 작은 묘목을 심으며 먼 훗날을 기약했어요.</div></div><div class="fb" id="readFb">🔊 시간을 나타내는 말에 손가락을 짚으며 읽어 봐요.</div>`},
 
-  {tag:'③ 낱말 알기', t:'낱말과 뜻을 알맞게 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 앞뒤 문장을 보면 낱말의 뜻을 짐작할 수 있어요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">낱말</div>
-        <div class="match-card" data-k="a" data-pair="A">불리다</div>
-        <div class="match-card" data-k="b" data-pair="B">떡잎</div>
-        <div class="match-card" data-k="c" data-pair="C">돋다</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">뜻</div>
-        <div class="match-card" data-k="B" data-pair="b">씨에서 처음<br>나오는 잎</div>
-        <div class="match-card" data-k="C" data-pair="c">속에서 겉으로<br>솟아 나오다</div>
-        <div class="match-card" data-k="A" data-pair="a">물에 담가<br>부드럽게 하다</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 158쪽 내용 알기 (1)', t:'우편집배원의 마음이 쓸쓸했던 까닭은?', log:true, okMsg:'맞아요! 들꽃조차 없는 길이라 쓸쓸했어요. 🏜️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">📮</div><div class="wc-word">우편물이 너무 많았기 때문이에요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🌧️</div><div class="wc-word">날마다 비가 왔기 때문이에요</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🏜️</div><div class="wc-word">시골 마을을 오가는 길이 황량했기 때문이에요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 시간을 나타내는 말', t:'글에서 시간을 나타내는 말을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 이 말들이 일이 일어난 때를 알려 줘요. 🎉',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">월요일</div>
-      <div class="chip" data-hit="0">화분</div>
-      <div class="chip" data-hit="1">이틀 뒤</div>
-      <div class="chip" data-hit="0">막대</div>
-      <div class="chip" data-hit="1">일주일쯤 지나자</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 158쪽 내용 알기 (2)', t:'우편집배원이 마을로 가는 길에 한 일은?', log:true, okMsg:'맞아요! 하루도 빠짐없이 씨앗을 뿌렸어요. 🌱',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🚲</div><div class="wc-word">자전거를 새로 샀어요</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🌱</div><div class="wc-word">들꽃 씨앗을 뿌렸어요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🧱</div><div class="wc-word">길에 벽돌을 깔았어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 시간 말이 없는 줄', t:'5번 줄에는 시간을 나타내는 말이 없어요. 4번 줄 다음 일인 것을 어떻게 알까요?', log:true,
-   okMsg:'맞아요! 떡잎이 돋고 줄기가 자라야 쓰러질 수 있어요. 일이 이어진 모양을 보면 알아요. 🎉',
-   hint:'힌트: 떡잎도 나기 전에 줄기가 쓰러질 수 있을까요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">맨 끝 줄에<br>있으니까</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">줄기가 자라야<br>쓰러질 수 있으니까</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">시간 말이 없어서<br>알 수 없어요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 158쪽 내용 알기 (3)', t:'우편집배원이 새로 갖게 된 바람은?', log:true, okMsg:'맞아요! 작은 묘목을 심으며 먼 훗날을 기약했어요. 🌳',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🌳</div><div class="wc-word">마을로 가는 길가에 가로수를 만드는 것</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🏠</div><div class="wc-word">도시로 이사하는 것</div></div><div class="wcard" data-ok="0"><div class="wc-pic">📬</div><div class="wc-word">배달을 그만두는 것</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 차례대로 정리', t:'일어난 일을 차례대로 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 차례대로 정리하니 콩이 자란 과정이 한눈에 보여요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">일어난 일</div>
-        <div class="match-card" data-k="a" data-pair="C">떡잎이<br>돋았어요</div>
-        <div class="match-card" data-k="b" data-pair="A">콩을 물에<br>불렸어요</div>
-        <div class="match-card" data-k="c" data-pair="D">막대를<br>꽂았어요</div>
-        <div class="match-card" data-k="d" data-pair="B">콩을 화분에<br>심었어요</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">차례</div>
-        <div class="match-card" data-k="A" data-pair="b">첫째</div>
-        <div class="match-card" data-k="B" data-pair="d">둘째</div>
-        <div class="match-card" data-k="C" data-pair="a">셋째</div>
-        <div class="match-card" data-k="D" data-pair="c">넷째</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'④ 159쪽 낱말 알기', t:'낱말과 뜻을 이어 봐요', log:true, matchMsg:'잘 이었어요! 「화단에 코스모스가 만발했다.」처럼 문장도 만들어 봐요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">낱말</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🌸</span>만발</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🦢</span>자태</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🏗️</span>조성</div></div><div class="match-col"><div class="match-col-h">뜻</div><div class="match-card" data-k="C" data-pair="c">무언가를 만들어 이룸</div><div class="match-card" data-k="A" data-pair="a">꽃이 활짝 다 핌</div><div class="match-card" data-k="B" data-pair="b">어떤 모습이나 모양</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 간추려 말하기', t:'「창가의 강낭콩」을 알맞게 간추린 것은?', log:true,
-   okMsg:'맞아요! 중요한 일을 차례대로 이어 짧게 말했어요. 🎉',
-   hint:'힌트: 간추리기는 다 옮겨 쓰는 것도, 시간 말만 모으는 것도 아니에요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">호야가 콩을 심어 돌보자<br>떡잎이 나고 줄기가 자랐어요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">1번부터 5번 줄까지<br>그대로 옮겨 써요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">월요일, 이틀 뒤,<br>일주일쯤 지나자</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑤ 159쪽 일이 일어난 차례', t:'시간을 나타내는 말과 일어난 일을 이어 봐요', log:true, matchMsg:'잘 이었어요! 시간을 나타내는 말을 따라가면 이야기 차례가 보여요. 🕰️',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">시간을 나타내는 말</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🍂</span>가을의 어느 날</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🌱</span>다음 날</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🌷</span>봄날</div><div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">☀️</span>일 년이 지난 여름날</div></div><div class="match-col"><div class="match-col-h">일어난 일</div><div class="match-card" data-k="D" data-pair="d">꽃들이 더욱 만발함</div><div class="match-card" data-k="B" data-pair="b">마을로 오는 길에 들꽃 씨앗을 뿌림</div><div class="match-card" data-k="A" data-pair="a">길이 지루하다고 느껴 한숨을 쉼</div><div class="match-card" data-k="C" data-pair="c">길가에 핀 꽃과 들풀 향기를 맡음</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 시간 말로 문장 쓰기', t:'「이틀 뒤」를 알맞게 쓴 문장은?', log:true,
-   okMsg:'맞아요! 「이틀 뒤」는 앞으로 올 때라서 「갈 거예요」와 어울려요. 👍',
-   hint:'힌트: 이틀 뒤는 지나간 날일까요, 앞으로 올 날일까요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">이틀 뒤에<br>수영장에 갈 거예요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">이틀 뒤에<br>수영장에 갔어요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑤ 차례 = 시간 말만?', t:'우편집배원이 꽃향기를 맡을 수 있었던 까닭이 된, 앞에서 있었던 일은?', log:true, okMsg:'맞아요! 씨앗을 뿌렸기 때문에 꽃이 피었어요. 일의 앞뒤를 보면 차례가 더 또렷해져요. 🔗',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">휘파람을 분 일</div></div><div class="wcard" data-ok="1"><div class="wc-word">날마다 들꽃 씨앗을 뿌렸던 일</div></div><div class="wcard" data-ok="0"><div class="wc-word">묘목을 심은 일</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 중심 내용 찾는 방법', t:'글의 중심 내용은 이렇게 찾아요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">📖</span><span class="pc-name">제목을 보고<br>짐작하기</span></div>
-      <div class="punct-card"><span class="pc-mark">🔢</span><span class="pc-name">일을 차례대로<br>정리하기</span></div>
-      <div class="punct-card"><span class="pc-mark">🔎</span><span class="pc-name">중요한 일을<br>이어 말하기</span></div>
-    </div>`},
+  {tag:'⑤ 159쪽 (2) 간추려 말하기', t:'이야기를 차례대로 간추려 말해요',
+   html:`<div class="stage-box">🗣️ 「가을의 어느 날 ~. 다음 날 ~. 봄날 ~. 일 년이 지난 여름날 ~.」 차례에 맞게 이야기를 간추려 친구에게 말해 보세요.<br><button class="stage-do" id="stageDo" data-fb="멋져요! 차례대로 간추리니 이야기가 짧고 또렷해졌어요. 📜">🗣️ 말했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 말로 해 보기', t:'책을 읽고 차례대로 간추려 말해 봐요',
-   html:`<div class="stage-box">
-      📚 집에 있는 그림책 한 권을 골라 읽어요.<br>
-      일어난 일을 <b>차례대로</b> 정리하고, <b>중요한 일</b>을 이어 가족에게 짧게 들려줘요.
-      <br><button class="stage-do" id="stageDo" data-fb="간추려 들려주었어요! 👏">📚 들려줬어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑥ 생각 넓히기', t:'이야기 제목에 「희망」이 들어간 까닭으로 알맞은 것은?', log:true, okMsg:'맞아요! 매일 조금씩 한 일이 희망을 만들었어요. 🌼',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🌼</div><div class="wc-word">마을 사람들이 꽃을 사 왔기 때문이에요</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🌼</div><div class="wc-word">날마다 조금씩 한 일이 쓸쓸한 길을 즐거운 꽃길로 바꾸었기 때문이에요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🌼</div><div class="wc-word">우편집배원이 편지를 빨리 배달했기 때문이에요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🕐</span>글에서 <b>시간을 나타내는 말</b>을 찾아 차례의 실마리로 써요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🔗</span>시간 말이 없는 곳은 <b>일이 이어진 모양</b>을 보고 차례를 알아요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">✂️</span>간추릴 때는 <b>중요한 일</b>을 차례대로 이어 짧게 말해요.</div>
-    </div>`},
+  {tag:'⑥ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🕰️</span>「가을의 어느 날 → 다음 날 → 봄날 → 일 년이 지난 여름날」</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🔗</span><b>앞의 일</b> 때문에 <b>뒤의 일</b>이 생겼어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">📜</span>차례대로 정리하면 <b>간추려 말하기</b>가 쉬워요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;

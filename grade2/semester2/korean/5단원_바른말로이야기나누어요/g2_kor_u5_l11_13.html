@@ -139,128 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 11~13차시(실천 — 배운 내용 실천하기 · 바른 말 사용 알리기) 13슬 =====
+/* ===== 11~13차시(실천 — 바른 말 사용 알리기) 『국어』 160~161쪽 13슬 — v2 교과서 기준 재구성 (2026-10-24)
    학습 목표: 배운 내용을 실천할 수 있다.
-   ★ 정답 로깅 7슬. 알림 쪽지 읽기(read-line)·무대·스스로 확인(sc-row)·마무리 = 로깅 X.
-   ★ 열넷째 기준(화면이 실을 수 없는 것) — 알림 쪽지 만들기 · 게시판에 붙이기 · 교문 앞 알리기 · 서로 칭찬하기는 사람 앞에서 일어난다.
-      ⇒ s0에서 「이 활동은 화면 밖에서 친구들과 해요」를 먼저 밝히고, 화면은 계획하고 점검하는 데까지만.
-      가짜 게시판 0 · 가짜 쪽지 꾸미기 0 · 가짜 친구 0.
-   ★ 지도서 228쪽 — 알리기 전에 바른 말의 뜻을 명확히 알고 있는지 스스로 확인 ⇒ s3(예문 점검) · s4.
-   ★ 지도서 229쪽 — 계획 = 때·장소·맡은 역할·방법 ⇒ s5 · 역할을 골고루 ⇒ s7.
-   ★ 지도서 229쪽 — 단순히 전시물 꾸미기에 그치지 않고 실천으로 ⇒ s8 오답 = 가장 멋지게 꾸미기 · s9 오답 = 붙였으니 끝.
-   ★★ 스물둘째 기준 이음 — 알림 활동은 쉽게 **「틀린 말 쓰는 사람」을 겨누는 캠페인**이 된다.
-      ⇒ s6 알림 문구 오답 칸 = 창피 주기 · 낙인 · s8 목적 오답 = 틀리게 쓰는 친구 찾아내기.
-   ★ 저작권: 교과서 160~161쪽 「이런 활동 어때요」 그림 셋(누리집 알림 글·교문 앞·스스로 노력)·계획표 문구,
-      지도서 229쪽 공익 광고, 230~231쪽 우리 반에서 정한 활동 예시(긍정적인 말 문장 틀·중심 내용 그리기 놀이) 미차용.
-      자체 알림 쪽지 = 루아 모둠 「다르다와 틀리다」 · 교실 안의 일. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·밑줄 긋기·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「아빠와 함께 추억 만들기」(이규희)·「희망을 만든 우편집배원」(김현태)은 간추림과 짧은 말 몇 마디만. 그 밖의 자료(만화·당나귀·발표 준비·국어활동)는 교육부 집필이라 그대로. 차례는 시간을 나타내는 말만이 아니라 일의 앞뒤로(지도서 221쪽 오개념). */
 const slides=[
-  {tag:'① 만나기', t:'헷갈리는 말, 우리가 알려 줄게요!',
-   html:`<div class="scene">
-      <div class="scene-pic">📢</div>
-      <div class="scene-say">바른 말 알림 쪽지를 만들자!</div>
-    </div>
-    <div class="ka-bub">알림 활동은 <b class="emph">화면 밖에서 친구들과</b> 해요. 화면에서는 계획하고 점검해요. 🙂</div>`},
+  {tag:'① 160쪽 활동 정하기', t:'배운 내용을 실천해요 — 바른 말 사용 알리기',
+   html:`<div class="ka-bub">화면 밖에서 친구들과 함께 <b class="emph">바른 말을 쓰자고 알리는 활동</b>을 해요.<br>먼저 화면에서 알릴 바른 말과 계획을 정리해요. 📣</div>`},
 
-  {tag:'① 학습 문제', t:'오늘 배울 것이에요',
-   html:`<div class="sentence">바른 말 사용을 알리는 활동을 해 봐요.</div>
-    <div class="ka-bub">먼저 루아 모둠이 쓴 알림 쪽지를 읽어 봐요.</div>`},
+  {tag:'① 160쪽 이런 활동 어때요', t:'바른 말 사용을 알리는 방법으로 알맞은 것을 모두 골라요', log:true, collectMsg:'잘 골랐어요! 알리는 것은 친구를 탓하려는 게 아니라 함께 바른 말을 쓰려는 거예요. 📣',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">인터넷 누리집에 바른 말 사용 알림 글을 올린다.</div><div class="chip" data-hit="1">등굣길에 교문 앞에서 바른 말 사용 알림 활동을 한다.</div><div class="chip" data-hit="1">바른 말을 사용하려고 스스로 노력한다.</div><div class="chip" data-hit="0">틀리게 말한 친구의 이름을 게시판에 적는다.</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'② 알림 쪽지 읽기', t:'루아 모둠의 알림 쪽지',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>알릴 말: 다르다와 틀리다</div>
-      <div class="read-line"><span class="rl-num">2</span>다르다 — 서로 같지 않을 때</div>
-      <div class="read-line"><span class="rl-num">3</span>틀리다 — 셈이나 사실이 맞지 않을 때</div>
-      <div class="read-line"><span class="rl-num">4</span>보기: 나와 형은 키가 달라요.</div>
-      <div class="read-line"><span class="rl-num">5</span>보기: 뺄셈 답이 틀렸어요.</div>
-    </div><div class="fb" id="readFb"></div>`},
+  {tag:'② 알릴 바른 말 정하기', t:'알릴 바른 말과 뜻이 바르게 짝지어진 것은?', log:true, okMsg:'맞아요! 알리기 전에 뜻을 정확히 알고 있는지 스스로 확인해요. ✅',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">적다 — 크기가 작다</div></div><div class="wcard" data-ok="1"><div class="wc-word">잃어버리다 — 물건이 없어지다</div></div><div class="wcard" data-ok="0"><div class="wc-word">잃어버리다 — 생각이 나지 않다</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 보기 점검', t:'4번 줄의 보기 문장은 바르게 썼나요?', log:true,
-   okMsg:'맞아요! 키가 서로 같지 않으니 「달라요」가 바른 말이에요. 👍',
-   hint:'힌트: 키는 맞고 틀리는 것일까요, 같고 다른 것일까요?',
-   html:`<div class="sentence">나와 형은 키가 <span class="vmark">달라요</span>.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">바르게 썼어요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">「틀려요」로<br>고쳐야 해요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 알림 글 고르기', t:'알림 글로 가장 알맞은 것은?', log:true, okMsg:'맞아요! 바른 말을 알려 주면서도 읽는 사람의 기분을 생각했어요. 💛',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">📢</div><div class="wc-word">「아무렇게나 말해도 괜찮아요.」</div></div><div class="wcard" data-ok="1"><div class="wc-pic">📢</div><div class="wc-word">「색이 흐려졌을 땐 『바랬다』! 우리 같이 바른 말을 써요.」</div></div><div class="wcard" data-ok="0"><div class="wc-pic">📢</div><div class="wc-word">「바랐다라고 말하는 사람은 창피해요.」</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 알리기 전에', t:'알림 쪽지를 만들기 전에 먼저 할 일은?', log:true,
-   okMsg:'맞아요! 내가 뜻을 정확히 알아야 친구들에게 바르게 알릴 수 있어요. 🎉',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">알릴 낱말의 뜻을<br>정확히 아는지 확인해요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">쪽지를 예쁘게<br>꾸미는 것부터 해요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 160쪽 알림 계획 세우기', t:'알림 계획에 들어갈 것을 모두 골라요', log:true, collectMsg:'잘 골랐어요! 때·장소·맡은 역할·방법을 구체적으로 정해요. 🗓️',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">때</div><div class="chip" data-hit="1">장소</div><div class="chip" data-hit="1">맡은 역할</div><div class="chip" data-hit="1">방법</div><div class="chip" data-hit="0">친구들의 시험 점수</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 알림 계획', t:'루아 모둠의 알림 계획을 알맞게 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 때·장소·역할·방법을 정하면 실천하기 쉬워요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">계획</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🕐</span>때</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">📍</span>장소</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🙋</span>맡은 역할</div>
-        <div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">📌</span>방법</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">정한 내용</div>
-        <div class="match-card" data-k="C" data-pair="c">보기 문장 쓰기</div>
-        <div class="match-card" data-k="D" data-pair="d">쪽지 붙이기</div>
-        <div class="match-card" data-k="A" data-pair="a">아침 활동 시간</div>
-        <div class="match-card" data-k="B" data-pair="b">교실 뒤 게시판</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'② 역할 나누기', t:'모둠에서 역할을 나눌 때 알맞은 것은?', log:true, okMsg:'맞아요! 역할을 골고루 나누면 모두 즐겁게 참여해요. 🤝',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">하고 싶은 사람만 해요</div></div><div class="wcard" data-ok="1"><div class="wc-word">모두가 한 가지씩 맡아 함께 참여해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">잘하는 한 사람이 다 해요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 알림 문구', t:'알림 쪽지에 쓰기 알맞은 문구를 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 뜻을 알려 주고, 함께 써 보자고 권하는 문구예요. 🎉',
-   hint:'힌트: 읽는 친구가 창피해지는 문구는 알림이 아니에요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">같지 않을 땐 「달라요」라고 해요</div>
-      <div class="chip" data-hit="0">틀리게 말하면 창피해요</div>
-      <div class="chip" data-hit="1">물건은 잃어버리고, 기억은 잊어버려요</div>
-      <div class="chip" data-hit="0">이 말도 모르면 부끄러워요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 알림 활동 해 보기', t:'계획한 대로 알림 활동을 해요',
+   html:`<div class="stage-box">📣 화면 밖에서 모둠 친구들과 계획한 때와 장소에서 바른 말 알림 활동을 해 보세요. 알림판을 만들어 교실에 붙여도 좋아요.<br><button class="stage-do" id="stageDo" data-fb="멋져요! 바른 말을 알리면 나도 친구도 더 바르게 말하게 돼요. 🌟">📣 해 봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 역할 나누기', t:'모둠에서 역할은 어떻게 나눌까요?', log:true,
-   okMsg:'맞아요! 모두 한 가지씩 맡으면 모둠 모두가 함께 참여해요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">모두 한 가지씩<br>나누어 맡아요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">글씨를 잘 쓰는<br>친구가 다 해요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 예시 1 긍정적인 말', t:'바른 말을 사용한 긍정적인 말로 알맞은 것은?', log:true, okMsg:'맞아요! 바른 말에 고운 마음까지 담았어요. 💛',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">😊</div><div class="wc-word">너는 나랑 틀려서 싫어.</div></div><div class="wcard" data-ok="1"><div class="wc-pic">😊</div><div class="wc-word">내가 모르는 것을 가르쳐 줘서 고마워.</div></div><div class="wcard" data-ok="0"><div class="wc-pic">😊</div><div class="wc-word">내가 모르는 것을 가리켜 줘서 고마워.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 알리는 까닭', t:'바른 말 알림 활동을 하는 까닭은?', log:true,
-   okMsg:'맞아요! 친구들이 헷갈리는 말을 바르게 쓰도록 돕는 활동이에요. 🎉',
-   hint:'힌트: 누구를 찾아내거나, 누가 더 멋진지 겨루는 활동일까요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">게시판을 가장<br>멋지게 꾸미려고</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">헷갈리는 말을 바르게<br>쓰도록 도우려고</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">틀리게 쓰는 친구를<br>찾아내려고</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 예시 1 긍정적인 말', t:'「너는 나와 다르게 ( ).」 — 빈칸에 어울리는 긍정적인 말을 넣어 친구에게 말해 봐요',
+   html:`<div class="stage-box">💬 「너는 나와 다르게 그림을 잘 그려.」처럼 친구의 좋은 점을 바른 말로 말해 보세요. 들은 친구는 어떤 느낌이 들었는지 말해 줘요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 「다르다」를 바르게 쓰니 칭찬이 더 잘 전해져요. 🌈">💬 말했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 알린 다음', t:'알림 쪽지를 붙인 다음에는?', log:true,
-   okMsg:'맞아요! 알린 말을 나부터 날마다 써 보는 것이 진짜 실천이에요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">나도 그 말을<br>날마다 바르게 써 봐요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">붙였으니<br>이제 끝이에요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 예시 2 이야기의 중심 내용 그리기', t:'모둠 친구와 함께 읽은 책의 중심 내용을 그려요',
+   html:`<div class="stage-box">🖍️ 모둠이 고른 책에서 일이 일어난 차례대로 인물이 한 일을 정리하고, 순서를 정해 1분씩 인상 깊은 장면을 이어 그려 보세요.<br><button class="stage-do" id="stageDo" data-fb="멋져요! 차례대로 이어 그리니 이야기 한 편이 되었어요. 🎨">🖍️ 그렸어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 알림 활동 하기', t:'친구들과 바른 말을 알려 봐요',
-   html:`<div class="stage-box">
-      📢 모둠 친구들과 <b>알릴 바른 말</b>을 정하고, 때·장소·역할·방법을 계획해요.<br>
-      알림 쪽지를 만들어 알린 뒤, 서로 잘한 점을 칭찬하고 느낀 점을 이야기해요.
-      <br><button class="stage-do" id="stageDo" data-fb="바른 말 알림 활동을 했어요! 👏">📢 알렸어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'④ 정리하기', t:'알림 활동을 한 뒤에 할 일로 알맞은 것은?', log:true, okMsg:'맞아요! 서로 칭찬하고 새롭게 안 바른 말을 생활에서 써 봐요. 🌱',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">📌</div><div class="wc-word">알림판에 전시하고 새롭게 안 점을 나누며 서로 칭찬해요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">📌</div><div class="wc-word">만든 것을 바로 버려요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">📌</div><div class="wc-word">누가 가장 잘했는지 순위를 매겨요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 스스로 확인', t:'활동을 돌아보며 할 수 있었던 것을 눌러 봐요',
-   html:`<div class="selfcheck">
-      <div class="sc-row"><span class="sc-box">✓</span>알릴 낱말의 뜻을 정확히 알았어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>내가 맡은 역할을 해냈어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>알린 말을 나도 바르게 쓰고 있어요.</div>
-    </div>`},
+  {tag:'④ 스스로 다짐', t:'앞으로 나의 다짐', hint:'힌트: 지킬 수 있는 다짐을 눌러요. 정답은 없어요!',
+   html:`<div class="selfcheck"><div class="sc-row"><span class="sc-box">✓</span>헷갈리는 낱말은 <b>뜻을 생각하고</b> 말할게요.</div><div class="sc-row"><span class="sc-box">✓</span>친구가 틀리게 말하면 <b>부드럽게</b> 알려 줄게요.</div><div class="sc-row"><span class="sc-box">✓</span>알게 된 바른 말을 <b>날마다</b> 써 볼게요.</div></div><div class="fb">다짐을 떠올리며 실천해 봐요! 🌱</div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 실천했어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">✅</span>알리기 전에 <b>뜻을 정확히</b> 확인해요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🗓️</span><b>때·장소·역할·방법</b>을 정해 계획해요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🤝</span>알림은 친구를 <b>돕는</b> 말로 써요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">🌱</span>알린 말을 <b>나부터</b> 날마다 써요.</div>
-    </div>`},
+  {tag:'④ 정리', t:'실천 활동을 마쳤어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">📣</span>바른 말을 <b>알리는 방법</b>을 정했어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🗓️</span><b>때·장소·역할·방법</b>으로 계획을 세웠어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">💛</span>바른 말에 <b>고운 마음</b>을 담았어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;

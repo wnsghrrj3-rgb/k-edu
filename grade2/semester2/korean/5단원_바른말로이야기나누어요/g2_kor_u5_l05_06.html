@@ -139,131 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 5~6차시(소단원 1 통합 — 자신의 생각을 바른 말로 표현하기) 13슬 =====
+/* ===== 5~6차시(소단원 1 통합 — 자신의 생각을 바른 말로 표현하기) 『국어』 146~149쪽 13슬 — v2 교과서 기준 재구성 (2026-10-24)
    학습 목표: 자신의 생각을 바른 말로 표현할 수 있다.
-   ★ 정답 로깅 7슬. 발표 글 읽기(read-line)·무대·스스로 확인(sc-row)·마무리 = 로깅 X.
-   ★ 지도서 215쪽 — 말할 내용은 「지켜야 할 일」 + 「그와 관련한 생각이나 경험」 ⇒ s5 짜임 잇기.
-   ★ 지도서 215쪽 — 앞 차시에서 배운 바른 말을 써서 ⇒ s2 발표 글 3번 줄에 **일부러 잘못 쓴 낱말 하나**, s4에서 찾아 고친다.
-   ★ 지도서 216쪽 — 발표할 때(중요한 내용·듣는 사람 바라보며 알맞은 목소리) / 들을 때(중요한 내용·바른 말 확인) ⇒ s6·s7.
-      길 찾기 놀이는 교과서의 선택이라 싣지 않고 주의할 점만 문항으로.
-   ★ 열여덟째 기준 재적용 — 알맞은 목소리 ≠ 큰 목소리 ⇒ s6 오답 칸에 소리 지르기와 작게 웅얼거리기를 함께.
-   ★★ 스물둘째 기준 이음 — 지도서 217쪽 「서로 존중하는 태도로 좋은 점, 보완할 점」 ⇒ s8(발표 뒤 친구에게 하는 말).
-      들을 때 「바른 말을 확인한다」를 채점하면 **틀린 낱말 사냥**이 남는다 ⇒ s7 오답 = 틀린 말이 나오면 바로 크게 외치기 ·
-      s8 오답 칸에 양쪽 극단(낱말 하나로 발표 전체를 깎기 / 속상할까 봐 아무 말 않기).
-   ★ 열넷째 기준 — 발표·동료 평가는 사람 앞에서 ⇒ s10 무대 · s11 스스로 확인. 가짜 청중 0 · 가짜 녹음 0.
-   ★ 저작권: 교과서 146~149쪽 생각그물(복도·점심시간·줄 서기·소곤소곤)·세 친구 말풍선·길 찾기 문구·점검표,
-      지도서 215쪽 바른 문장 찾기 예문(음료수·사과와 딸기·악기 연주)·216쪽 평가표 미차용.
-      자체 발표 글 = 「빌린 물건은 돌려줘요」(호야) · 교실 안의 일. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·밑줄 긋기·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「아빠와 함께 추억 만들기」(이규희)·「희망을 만든 우편집배원」(김현태)은 간추림과 짧은 말 몇 마디만. 그 밖의 자료(만화·당나귀·발표 준비·국어활동)는 교육부 집필이라 그대로. 차례는 시간을 나타내는 말만이 아니라 일의 앞뒤로(지도서 221쪽 오개념). */
 const slides=[
-  {tag:'① 만나기', t:'우리 반 친구들에게 하고 싶은 말이 있나요?',
-   html:`<div class="scene">
-      <div class="scene-pic">🎤</div>
-      <div class="scene-say">즐거운 교실을 위해 말할래요!</div>
-    </div>
-    <div class="ka-bub">내 생각을 <b class="emph">바른 말</b>로 말하면 더 잘 전해져요. 🙂</div>`},
+  {tag:'① 동기 유발', t:'바르게 말한 사람 찾기', log:true, okMsg:'맞아요! 양이 모자랄 때는 「적다」예요. 🥤',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🥤</div><div class="wc-word">내 음료수의 양이 친구 것보다 작다.</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🥤</div><div class="wc-word">내 음료수의 양이 친구 것보다 적다.</div></div></div><div class="fb"></div>`},
 
   {tag:'① 학습 문제', t:'오늘 배울 것이에요',
-   html:`<div class="sentence">자신의 생각을 바른 말로 발표해 봐요.</div>
-    <div class="ka-bub">먼저 호야가 준비한 발표 글을 읽어 봐요.</div>`},
+   html:`<div class="sentence">자신의 생각을 바른 말로 표현해 봅시다.</div>`},
 
-  {tag:'② 발표 글 읽기', t:'호야의 발표 글을 한 줄씩 읽어 봐요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>빌린 물건은 꼭 돌려줘요.</div>
-      <div class="read-line"><span class="rl-num">2</span>지난주에 짝의 색연필을 빌렸어요.</div>
-      <div class="read-line"><span class="rl-num">3</span>돌려주는 걸 잃어버렸어요.</div>
-      <div class="read-line"><span class="rl-num">4</span>짝은 색칠을 못 해서 속상했대요.</div>
-      <div class="read-line"><span class="rl-num">5</span>우리 모두 빌린 물건을 챙겨요.</div>
-    </div><div class="fb" id="readFb"></div>`},
+  {tag:'② 146쪽 계획하기 (1)', t:'즐거운 학교생활을 위해 지켜야 할 일을 떠올려요',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">🚶</span><span class="pc-name">복도에서 걸어 다니기</span></div><div class="punct-card"><span class="pc-mark">🧍</span><span class="pc-name">차례대로 줄 서기</span></div><div class="punct-card"><span class="pc-mark">🤫</span><span class="pc-name">소곤소곤 말하기</span></div></div><div class="ka-bub">친구: 「나는 복도에서 걸어 다니자고 이야기하고 싶어. 다른 친구와 부딪치거나 넘어져서 다칠 수 있어.」<br>친구: 「나는 생각이 다른 친구의 말도 존중하면 좋겠어. 서로 기분이 상하지 않게 이야기해야 해.」</div>`},
 
-  {tag:'③ 중요한 내용', t:'호야가 친구들에게 가장 하고 싶은 말은?', log:true,
-   okMsg:'맞아요! 1번 줄과 5번 줄에서 같은 생각을 말했어요. 👍',
-   hint:'힌트: 호야는 무엇을 지키자고 했나요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">빌린 물건은<br>꼭 돌려주자</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">색연필은<br>빌리지 말자</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 146쪽 (1)', t:'즐거운 학교생활을 위해 지켜야 할 일로 알맞은 것을 모두 골라요', log:true, collectMsg:'잘 골랐어요! 이 가운데 하나를 골라 발표할 내용을 정해요. 📝',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">차례대로 줄 서기</div><div class="chip" data-hit="1">생각이 다른 친구의 말도 존중하기</div><div class="chip" data-hit="0">급식 줄 먼저 서려고 뛰기</div><div class="chip" data-hit="0">교실에서 큰 소리로 떠들기</div><div class="chip" data-hit="1">복도에서 걸어 다니기</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 바른 말로 고치기', t:'3번 줄에서 바르게 고칠 낱말은?', log:true,
-   okMsg:'맞아요! 돌려주는 것을 깜빡했으니 「잊어버렸어요」라고 해야 해요. 🎉',
-   hint:'힌트: 3~4차시에서 배운 헷갈리는 짝을 떠올려 봐요.',
-   html:`<div class="sentence">돌려주는 걸 <span class="vmark">잃어버렸어요</span>.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">잊어버렸어요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">고칠 곳이<br>없어요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 147쪽 (2)', t:'발표할 내용을 정리할 때 쓸 것을 모두 골라요', log:true, collectMsg:'잘 골랐어요! 「지켜야 할 일」과 「생각이나 경험」을 정리해요. 📝',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="0">친구들의 별명</div><div class="chip" data-hit="0">어제 본 만화 이름</div><div class="chip" data-hit="1">지켜야 할 일</div><div class="chip" data-hit="1">그와 관련한 생각이나 경험</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 발표 글의 짜임', t:'무엇을 말했는지 알맞게 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 지켜야 할 일과 그 까닭이 된 경험을 함께 말했어요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">말한 것</div>
-        <div class="match-card" data-k="a" data-pair="A">지켜야 할 일</div>
-        <div class="match-card" data-k="b" data-pair="B">관련한 경험</div>
-        <div class="match-card" data-k="c" data-pair="C">친구들에게<br>하는 부탁</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">줄</div>
-        <div class="match-card" data-k="B" data-pair="b">2~4번 줄</div>
-        <div class="match-card" data-k="C" data-pair="c">5번 줄</div>
-        <div class="match-card" data-k="A" data-pair="a">1번 줄</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'② 147쪽 (2)', t:'「복도에서 걸어 다니자.」와 이어지는 생각이나 경험으로 알맞은 것은?', log:true, okMsg:'맞아요! 지켜야 할 일과 이어지는 경험을 말하면 생각이 잘 전해져요. 🚶',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">복도에는 창문이 여러 개 있어요</div></div><div class="wcard" data-ok="1"><div class="wc-word">복도에서 뛰다가 친구와 부딪혀 넘어질 뻔한 적이 있어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">나는 운동장에서 달리기를 좋아해요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 발표할 때', t:'발표할 때 주의할 점을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 중요한 내용을 생각하며, 듣는 사람에게 알맞은 목소리로 말해요. 🎉',
-   hint:'힌트: 크게만 말하면 될까요?',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">중요한 내용을 생각하며 말해요</div>
-      <div class="chip" data-hit="0">소리를 지르듯 크게 말해요</div>
-      <div class="chip" data-hit="1">듣는 사람을 보며 알맞은 목소리로</div>
-      <div class="chip" data-hit="0">종이만 보며 작게 웅얼거려요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 148쪽 말하기 (2)', t:'발표할 때 주의할 점을 모두 골라요', log:true, collectMsg:'잘 골랐어요! 길 찾기에서 이 두 길로 가면 도착해요. 🏁',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="0">아래쪽을 바라보며 작은 목소리로 발표한다.</div><div class="chip" data-hit="1">중요한 내용을 생각하면서 발표한다.</div><div class="chip" data-hit="1">듣는 사람을 바라보며 알맞은 목소리로 발표한다.</div><div class="chip" data-hit="0">떠오르는 생각을 모두 발표한다.</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 들을 때', t:'친구의 발표를 들을 때 주의할 점을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 무슨 말을 하려는지 먼저 듣고, 바른 말을 썼는지도 살펴요. 🎉',
-   hint:'힌트: 발표하는 친구를 방해하는 것은 무엇일까요?',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">중요한 내용을 생각하며 들어요</div>
-      <div class="chip" data-hit="0">틀린 말이 나오면 바로 외쳐요</div>
-      <div class="chip" data-hit="1">바른 말을 썼는지 살피며 들어요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 148쪽 말하기 (2)', t:'다른 사람의 발표를 들을 때 주의할 점을 모두 골라요', log:true, collectMsg:'잘 골랐어요! 잘 들어야 친구의 생각을 잘 알 수 있어요. 👂',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">바른 말을 사용하는지 확인하면서 듣는다.</div><div class="chip" data-hit="0">발표하는 내용을 모두 쓰면서 듣는다.</div><div class="chip" data-hit="0">헷갈리는 말을 구분하지 않고 듣는다.</div><div class="chip" data-hit="1">중요한 내용을 생각하면서 듣는다.</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 발표가 끝나고', t:'호야의 발표가 끝났어요. 호야에게 할 말로 알맞은 것은?', log:true,
-   okMsg:'맞아요! 잘 들은 내용을 먼저 말하고, 고칠 낱말은 부드럽게 알려 줘요. 🎉',
-   hint:'힌트: 낱말 하나 때문에 발표 전체가 잘못된 걸까요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">낱말이 틀렸으니<br>발표를 못 했어</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">잘 들었어! 「잊어버렸어요」<br>라고 하면 더 정확해</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">속상할 테니<br>아무 말도 안 해요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 바른 말 고치기', t:'발표 글 「선생님께서 줄 서는 방법을 가리켜 주셨어요.」를 바르게 고치면?', log:true, okMsg:'맞아요! 방법을 알려 주셨으니 「가르치다」예요. 발표 전에 바른 말인지 다시 봐요. ✏️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">선생님께서 줄 서는 방법을 가리켰어요.</div></div><div class="wcard" data-ok="0"><div class="wc-word">선생님께서 줄 서는 방법을 잃어버리셨어요.</div></div><div class="wcard" data-ok="1"><div class="wc-word">선생님께서 줄 서는 방법을 가르쳐 주셨어요.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 내 생각 바른 말로', t:'빈칸에 알맞은 말을 골라요', log:true,
-   okMsg:'맞아요! 좋아하는 것이 서로 같지 않을 때는 「달라요」예요. 다른 것은 틀린 것이 아니에요. 👍',
-   html:`<div class="sentence">나와 짝은 좋아하는 놀이가 <span class="vmark">□</span></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">달라요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">틀려요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 147쪽 (1) 발표 연습', t:'정리한 내용으로 발표 연습을 해요',
+   html:`<div class="stage-box">🎤 정리한 「지켜야 할 일」과 「생각이나 경험」을 소리 내어 연습해 보세요. 바른 말을 쓰고 있는지 스스로 확인해요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 연습하며 고친 말이 발표를 더 또렷하게 해 줘요. 🌟">🎤 연습했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 발표해 보기', t:'내 생각을 바른 말로 발표해 봐요',
-   html:`<div class="stage-box">
-      🎤 즐거운 교실을 위해 <b>지켜야 할 일 하나</b>를 정해요.<br>
-      그 일과 관련한 <b>내 경험</b>을 붙여 가족이나 친구 앞에서 발표해 봐요.
-      <br><button class="stage-do" id="stageDo" data-fb="바른 말로 발표해 봤어요! 👏">🎤 발표해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'③ 149쪽 (3) 발표하기', t:'친구들 앞에서 바른 말로 발표해요',
+   html:`<div class="stage-box">🗣️ 친구들 앞에서 듣는 사람을 바라보며 알맞은 목소리로 발표해 보세요. 친구가 발표할 때는 중요한 내용을 생각하며 들어요.<br><button class="stage-do" id="stageDo" data-fb="멋져요! 바른 말로 또렷하게 생각을 전했어요. 👏">🗣️ 발표했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 스스로 확인', t:'발표를 돌아보며 할 수 있었던 것을 눌러 봐요',
-   html:`<div class="selfcheck">
-      <div class="sc-row"><span class="sc-box">✓</span>헷갈리는 낱말을 바르게 썼어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>지켜야 할 일과 내 경험을 함께 말했어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>듣는 사람을 보며 알맞은 목소리로 말했어요.</div>
-    </div>`},
+  {tag:'④ 149쪽 점검하기', t:'발표를 잘했는지 스스로 확인해요', hint:'힌트: 오늘 내 모습을 떠올리며 해당하는 것을 눌러요. 정답은 없어요!',
+   html:`<div class="selfcheck"><div class="sc-row"><span class="sc-box">✓</span><b>바른 말</b>로 발표했어요.</div><div class="sc-row"><span class="sc-box">✓</span><b>듣는 사람을 바라보며</b> 알맞은 목소리로 발표했어요.</div><div class="sc-row"><span class="sc-box">✓</span><b>중요한 내용</b>을 생각하며 친구의 발표를 들었어요.</div></div><div class="fb">스스로 확인해요. 아쉬운 점은 다음 발표에서 고쳐 봐요! 🌱</div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">📝</span><b>지켜야 할 일</b>과 <b>관련한 경험</b>을 정리해 말해요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">✏️</span>발표하기 전에 <b>바른 말</b>을 썼는지 살펴요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🎤</span>듣는 사람을 보며 <b>알맞은 목소리</b>로 말해요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">👂</span>들을 때는 내용을 먼저 듣고, 고칠 말은 <b>부드럽게</b> 알려 줘요.</div>
-    </div>`},
+  {tag:'④ 정리', t:'오늘 알게 된 것을 모아 봐요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">📝</span><b>지켜야 할 일</b>과 <b>생각이나 경험</b>을 정리해 발표해요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">✏️</span>발표 전에 <b>바른 말</b>인지 다시 봐요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">👀</span>듣는 사람을 <b>바라보며</b> 알맞은 목소리로.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;

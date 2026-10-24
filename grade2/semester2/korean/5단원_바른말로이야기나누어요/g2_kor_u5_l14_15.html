@@ -139,150 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 14~15차시(마무리 — 정리하기 · 스스로 확인하기 · 기초 다지기 · 글씨 쓰기) 13슬 =====
+/* ===== 14~15차시(마무리 — 정리 · 기초 다지기) 『국어』 162~165쪽 13슬 — v2 교과서 기준 재구성 (2026-10-24)
    학습 목표: 배운 내용을 마무리할 수 있다.
-   ★ 정답 로깅 7슬. 스스로 확인하기(sc-row)·글씨 쓰기(trace)·무대·마무리 = 로깅 X.
-   ★ 지도서 232쪽 — 그림 상황을 파악한 뒤 문장에 어울리는 낱말 ⇒ s3·s4(자체 문장).
-   ★ 스물둘째 기준 닫기 — s5 「틀리다」 고르기의 오답 칸 = 다른 것을 틀리다고 말한 문장 두 개.
-   ★★ 스물다섯째 기준 닫기 — s6 = l01_02 s9 · l07_08 s8과 같은 물음(「시간 말이 없으면 차례를 알 수 없을까?」). 처음과 끝을 같은 물음으로(세 번).
-   ★ 지도서 232쪽 — 시간을 나타내는 말로 차례를 구분하고 잇기 ⇒ s7(시간 말이 있는 쪽도 한 번 — 두 실마리를 다 쓴다).
-   ★ 기초 다지기(지도서 233쪽) = 표준 발음(비음화 · 유음화) ⇒ s8·s9.
-      ⚠ 소리대로 적는 버릇이 생기지 않게 **정답 문구 안에서 「쓸 때는 그대로」**를 바로 붙였다(발음 공부가 표기 공부를 흔들지 않게).
-      교과서 낱말(앞문·국민·분리·설날·줄넘기·국물·먹는)을 **모두 피하고** 자체 낱말 — 식물[싱물] · 난로[날로].
-      오답 보기(난노)는 비단어 확인.
-   ★ 글씨 쓰기(지도서 233쪽) — 교과서 글씨(잃어버리다·추억·절로 휘파람이 나왔습니다) 미차용 ⇒ 자체 = 차례·식물·다르다.
-   ★ 저작권: 교과서 162~165쪽 그림 문장 넷(달·오빠와 동생·두 아이 키·1+1=4)·윤재네 토요일 공원 차례·점검표 문구,
-      지도서 234~237쪽 평가 예시 미차용. 자체 차례 이야기 = 낚시터(할아버지와 호야). 마무리 격려 문구는 상투구를 피했다. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·밑줄 긋기·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 결정(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「아빠와 함께 추억 만들기」(이규희)·「희망을 만든 우편집배원」(김현태)은 간추림과 짧은 말 몇 마디만. 그 밖의 자료(만화·당나귀·발표 준비·국어활동)는 교육부 집필이라 그대로. 차례는 시간을 나타내는 말만이 아니라 일의 앞뒤로(지도서 221쪽 오개념). */
 const slides=[
-  {tag:'① 만나기', t:'5단원 마지막 시간이에요',
-   html:`<div class="scene">
-      <div class="scene-pic">🎒</div>
-      <div class="scene-say">바른 말도, 차례도 챙겼어요.</div>
-    </div>
-    <div class="ka-bub">배운 것을 하나씩 <b class="emph">꺼내 확인</b>해 봐요. 🙂</div>`},
+  {tag:'① 162쪽 정리하기 1번', t:'그림을 보고 알맞은 낱말을 골라요 — 「남자아이가 달을 ( ).」', log:true, okMsg:'맞아요! 손가락으로 달을 짚어 보이니 「가리키다」예요. 🌙',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🌙</div><div class="wc-word">틀리다</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🌙</div><div class="wc-word">가리키다</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🌙</div><div class="wc-word">가르치다</div></div></div><div class="fb"></div>`},
 
-  {tag:'① 학습 문제', t:'오늘은 단원을 마무리해요',
-   html:`<div class="sentence">배운 내용을 확인하고 정리해요.</div>
-    <div class="ka-bub">모르는 문제가 나오면 앞 차시를 다시 찾아봐도 좋아요. 🔎</div>`},
+  {tag:'① 162쪽 정리하기 1번', t:'문장에 어울리는 낱말을 이어 봐요', log:true, matchMsg:'잘 이었어요! 뜻을 생각하면 바른 말이 보여요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">문장</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🧑‍🏫</span>오빠가 동생을 ( ).</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">📏</span>두 아이의 키가 ( ).</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">➕</span>1+1=4 답이 ( ).</div></div><div class="match-col"><div class="match-col-h">낱말</div><div class="match-card" data-k="C" data-pair="c">틀리다</div><div class="match-card" data-k="A" data-pair="a">가르치다</div><div class="match-card" data-k="B" data-pair="b">다르다</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'② 스스로 확인', t:'할 수 있게 된 것을 눌러 봐요',
-   html:`<div class="selfcheck">
-      <div class="sc-row"><span class="sc-box">✓</span>헷갈리는 낱말의 뜻을 알고 알맞게 써요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>내 생각을 바른 말로 발표할 수 있어요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>일이 일어난 차례를 생각하며 말할 수 있어요.</div>
-    </div>`},
+  {tag:'① 163쪽 정리하기 2번', t:'시간을 나타내는 말을 보고 가장 먼저 일어난 일을 골라요', log:true, okMsg:'맞아요! 아침 → 오전 → 점심 → 오후 차례예요. 🌅',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🛝</div><div class="wc-word">오전에는 공원의 놀이터에서 놀았습니다.</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🌷</div><div class="wc-word">오후에는 식물원에서 꽃을 구경했습니다.</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🌅</div><div class="wc-word">토요일 아침, 윤재네 가족은 공원에 도착했습니다.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 알맞은 말 1', t:'빈칸에 알맞은 말을 골라요', log:true,
-   okMsg:'맞아요! 손으로 방향을 짚을 때는 「가리켜요」라고 해요. 👍',
-   html:`<div class="sentence">짝이 칠판의 글자를 손으로 <span class="vmark">□</span></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">가리켜요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">가르쳐요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'① 163쪽 정리하기 2번', t:'윤재네 가족의 하루를 차례대로 읽어요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>토요일 아침, 윤재네 가족은 공원에 도착했습니다.</div><div class="read-line"><span class="rl-num">2</span>오전에는 공원의 놀이터에서 놀았습니다.</div><div class="read-line"><span class="rl-num">3</span>점심에는 미리 준비한 도시락을 맛있게 먹었습니다.</div><div class="read-line"><span class="rl-num">4</span>오후에는 식물원에서 다양한 꽃을 구경했습니다.</div></div><div class="fb" id="readFb">🔊 시간을 나타내는 말을 크게 읽어 봐요.</div>`},
 
-  {tag:'③ 알맞은 말 2', t:'문장과 알맞은 말을 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 뜻을 생각하니 헷갈리지 않았지요? 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">문장</div>
-        <div class="match-card" data-k="a" data-pair="A">연필이 두 자루뿐<br>이라 □</div>
-        <div class="match-card" data-k="b" data-pair="B">작년에 입던<br>바지가 □</div>
-        <div class="match-card" data-k="c" data-pair="C">오래된 달력<br>색이 □</div>
-        <div class="match-card" data-k="d" data-pair="D">소풍날 맑기를<br>□</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">알맞은 말</div>
-        <div class="match-card" data-k="C" data-pair="c">바랬어요</div>
-        <div class="match-card" data-k="A" data-pair="a">적어요</div>
-        <div class="match-card" data-k="D" data-pair="d">바랐어요</div>
-        <div class="match-card" data-k="B" data-pair="b">작아요</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'① 국어활동 66~67쪽', t:'「팥죽 할머니와 호랑이」 — 가장 먼저 일어난 일은?', log:true, okMsg:'맞아요! 「옛날에」 → 「동짓날」 → 「밤이 되자」 차례예요. 🫘',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">밤이 되자 호랑이가 할머니 집으로 걸어 들어왔어요.</div></div><div class="wcard" data-ok="0"><div class="wc-word">드디어 동짓날이 되어 팥죽을 쑤었어요.</div></div><div class="wcard" data-ok="1"><div class="wc-word">옛날에 산비탈에서 할머니가 팥밭을 매고 있었어요.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 틀리다', t:'「틀리다」를 바르게 쓴 문장을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 셈이나 사실이 맞지 않을 때만 「틀리다」예요. 서로 같지 않은 것은 「다르다」예요. 🎉',
-   hint:'힌트: 키와 시간표는 맞고 틀리는 것일까요?',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">덧셈 답이 틀려서 다시 풀었어요</div>
-      <div class="chip" data-hit="0">너와 나는 키가 틀려요</div>
-      <div class="chip" data-hit="1">받아쓰기에서 한 글자를 틀렸어요</div>
-      <div class="chip" data-hit="0">옆 반과 시간표가 틀려요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'② 164쪽 기초 다지기 1번', t:'낱말을 바르게 발음한 것을 모두 골라요', log:true, collectMsg:'잘 골랐어요! 이웃한 소리 때문에 글자와 다르게 소리 나요. 🔊',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="0">국민 [국민]</div><div class="chip" data-hit="1">앞문 [암문]</div><div class="chip" data-hit="1">국민 [궁민]</div><div class="chip" data-hit="1">분리 [불리]</div><div class="chip" data-hit="0">앞문 [압문]</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 차례를 아는 방법', t:'시간을 나타내는 말이 없으면 차례를 알 수 없을까요?', log:true,
-   okMsg:'맞아요! 씨를 심어야 싹이 나고, 싹이 나야 꽃이 피지요. 앞뒤 일을 이어 보면 알아요. 🎉',
-   hint:'힌트: 1~2차시 종이배 이야기를 떠올려 봐요.',
-   html:`<div class="sentence">꽃씨를 심었어요. 싹이 났어요. 꽃이 피었어요.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">네, 시간 말이<br>있어야 알아요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">아니요, 앞의 일 때문에<br>생긴 일을 보면 알아요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 164쪽 기초 다지기 2번', t:'파란색 낱말을 정확하게 발음해요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span><b class="emph">설날</b>[설랄]에는 떡국을 먹는다.</div><div class="read-line"><span class="rl-num">2</span>아이들이 운동장에서 <b class="emph">줄넘기</b>[줄럼끼]를 하고 있다.</div><div class="read-line"><span class="rl-num">3</span>냉면은 <b class="emph">국물</b>[궁물]이 시원하고 맛있었다.</div><div class="read-line"><span class="rl-num">4</span>맛있는 음식을 <b class="emph">먹는</b>[멍는] 것도 좋았다.</div></div><div class="fb" id="readFb">🔊 [ ] 안의 소리대로 또박또박 읽어 봐요.</div>`},
 
-  {tag:'③ 시간 말로 차례 잇기', t:'호야와 할아버지의 낚시 — 때와 있었던 일을 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 시간을 나타내는 말도 차례를 알려 주는 좋은 실마리예요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">때</div>
-        <div class="match-card" data-k="a" data-pair="A">새벽</div>
-        <div class="match-card" data-k="b" data-pair="B">해가 뜨자</div>
-        <div class="match-card" data-k="c" data-pair="C">한낮</div>
-        <div class="match-card" data-k="d" data-pair="D">저녁</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">있었던 일</div>
-        <div class="match-card" data-k="D" data-pair="d">그림일기를 썼어요</div>
-        <div class="match-card" data-k="B" data-pair="b">첫 물고기를 낚았어요</div>
-        <div class="match-card" data-k="A" data-pair="a">낚시터에 갔어요</div>
-        <div class="match-card" data-k="C" data-pair="c">물고기를 놓아주었어요</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'② 164쪽 기초 다지기 2번', t:'「국물」의 소리로 알맞은 것은?', log:true, okMsg:'맞아요! 「국」의 ㄱ이 「물」의 ㅁ을 만나 [궁물]로 소리 나요. 🍜',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">[궁물]</div></div><div class="wcard" data-ok="0"><div class="wc-word">[국물]</div></div><div class="wcard" data-ok="0"><div class="wc-word">[국믈]</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 바르게 소리 내기 1', t:'「식물」은 어떻게 소리 낼까요?', log:true,
-   okMsg:'맞아요! [싱물]로 소리 내요. 그래도 쓸 때는 「식물」 그대로 써요. 👍',
-   hint:'힌트: 천천히 여러 번 소리 내어 봐요.',
-   html:`<div class="sentence">창가에 <span class="vmark">식물</span>을 길러요.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">[싱물]</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">[식물]</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 165쪽 3번 글씨 쓰기', t:'글씨를 바르게 따라 써 봐요 (글자를 눌러요)',
+   html:`<div class="trace-wrap"><div class="trace-row"><span class="trace-pic">🧳</span><div class="trace-word"><span class="trace-cell">잃</span><span class="trace-cell">어</span><span class="trace-cell">버</span><span class="trace-cell">리</span><span class="trace-cell">다</span></div></div><div class="trace-row"><span class="trace-pic">📸</span><div class="trace-word"><span class="trace-cell">추</span><span class="trace-cell">억</span></div></div><div class="trace-row"><span class="trace-pic">🎵</span><div class="trace-word"><span class="trace-cell">휘</span><span class="trace-cell">파</span><span class="trace-cell">람</span></div></div></div><div class="fb" id="traceFb">또박또박 따라 써 봐요.</div>`},
 
-  {tag:'③ 바르게 소리 내기 2', t:'「난로」는 어떻게 소리 낼까요?', log:true,
-   okMsg:'맞아요! [날로]로 소리 내요. 쓸 때는 「난로」 그대로 써요. 소리와 글자가 다를 수 있어요. 🎉',
-   html:`<div class="sentence">교실 <span class="vmark">난로</span>가 따뜻해요.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">[난노]</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">[날로]</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 163쪽 스스로 확인하기', t:'이 단원에서 나는 어떠했나요?', hint:'힌트: 평소 내 모습을 떠올리며 해당하는 것을 눌러요. 정답은 없어요!',
+   html:`<div class="selfcheck"><div class="sc-row"><span class="sc-box">✓</span><b>바른 말</b>을 알고 상황에 알맞게 사용할 수 있어요.</div><div class="sc-row"><span class="sc-box">✓</span><b>일이 일어난 차례</b>를 생각해서 말할 수 있어요.</div><div class="sc-row"><span class="sc-box">✓</span>시간을 나타내는 말이 없어도 <b>일의 앞뒤</b>로 차례를 찾을 수 있어요.</div></div><div class="fb">스스로 확인해요. 부족한 것은 앞 차시를 다시 살펴봐요! 🌱</div>`},
 
-  {tag:'④ 글씨 쓰기', t:'또박또박 따라 써 봐요',
-   html:`<div class="trace-wrap">
-      <div class="trace-row"><span class="trace-pic">🔢</span>
-        <div class="trace-word">
-          <div class="trace-cell">차</div><div class="trace-cell">례</div>
-        </div>
-      </div>
-      <div class="trace-row"><span class="trace-pic">🌿</span>
-        <div class="trace-word">
-          <div class="trace-cell">식</div><div class="trace-cell">물</div>
-        </div>
-      </div>
-      <div class="trace-row"><span class="trace-pic">🍎</span>
-        <div class="trace-word">
-          <div class="trace-cell">다</div><div class="trace-cell">르</div><div class="trace-cell">다</div>
-        </div>
-      </div>
-    </div><div class="fb" id="traceFb"></div>`},
+  {tag:'④ 단원 마무리', t:'오늘 집에서 실천해 봐요',
+   html:`<div class="stage-box">🏠 오늘 저녁, 가족에게 하루 동안 있었던 일을 「아침에 ~, 점심에 ~, 오후에 ~」처럼 바른 말로 차례대로 이야기해 보세요.<br><button class="stage-do" id="stageDo" data-fb="멋져요! 바른 말로 차례대로 말하면 가족도 내 하루가 훤히 보여요. 🗓️">🏠 약속했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 말로 해 보기', t:'가족과 헷갈리는 말 퀴즈를 해 봐요',
-   html:`<div class="stage-box">
-      🎲 가족에게 <b>헷갈리는 말 한 짝</b>으로 문제를 내 봐요.<br>
-      가족이 맞히면, 이번에는 어제 있었던 일을 <b>차례대로</b> 들려 달라고 해요.
-      <br><button class="stage-do" id="stageDo" data-fb="가족과 함께 해 봤어요! 👏">🎲 해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'② 164쪽 기초 다지기 2번', t:'「줄넘기」의 소리로 알맞은 것은?', log:true, okMsg:'맞아요! ㄹ 뒤의 ㄴ이 [ㄹ]로 소리 나요. 다음은 6단원 「매체를 경험해요」예요. 📺',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">[줄럼끼]</div></div><div class="wcard" data-ok="0"><div class="wc-word">[줄넘기]</div></div><div class="wcard" data-ok="0"><div class="wc-word">[줄넘끼]</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 마무리', t:'5단원을 모두 마쳤어요!',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">✏️</span>헷갈리는 말은 <b>뜻</b>을 생각해 바르게 써요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🍎</span>서로 같지 않은 것은 <b>다른</b> 것이지 틀린 것이 아니에요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🔗</span>시간 말과 <b>앞뒤 일</b>을 함께 보며 차례를 찾아요.</div>
-      <div class="recap-item" style="animation-delay:.5s"><span class="recap-ic">🗣️</span>말 한마디를 고르는 네 마음이 듣는 사람을 <b>편하게</b> 해요.</div>
-    </div>`},
+  {tag:'④ 마무리', t:'5단원을 마쳤어요!',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">✏️</span><b>바른 말</b>을 알고 바르게 썼어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🗣️</span>내 생각을 <b>바른 말로 발표</b>했어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🔢</span>일이 일어난 <b>차례대로</b> 말했어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
