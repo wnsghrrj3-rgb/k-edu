@@ -29,7 +29,7 @@ KMotionData.attach(km, document.getElementById('hdr'));
 const ov = document.getElementById('ov'), dev = document.getElementById('dev'), { ctx, W, H } = km, $ = id => document.getElementById(id);
 if (new URLSearchParams(location.search).has('dev')) dev.classList.remove('hidden');
 const HY = H * .32, RUN = 90; // 지평선, 코스 길이(초)
-let state = 'setup', t0 = 0, px = 0, vx = 0, steer = 0, tuck = false, speed = 0, dist = 0, score = 0, lives = 3, inv = 0, air = 0, airT = 0, trick = false, gatesHit = 0, gatesAll = 0, trees = 0, tricks = 0, objs = [], spawnZ = 0, flakes = [], msg = '', msgT = 0, calib = { n: 0, x: 0, tilt: 0 }, headRaw = null, shake = 0;
+let state = 'setup', t0 = 0, px = 0, vx = 0, steer = 0, tuck = false, speed = 0, dist = 0, score = 0, lives = 3, inv = 0, air = 0, airT = 0, trick = false, gatesHit = 0, gatesAll = 0, trees = 0, tricks = 0, objs = [], spawnZ = 0, flakes = [], msg = '', msgT = 0, calib = { n: 0, x: 0, tilt: 0, drop: 0 }, headRaw = null, shake = 0;
 const now = () => performance.now(), clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 // ── 소리
@@ -38,17 +38,20 @@ function tone(f, dur, type, g0){ const t = AC.currentTime, o = AC.createOscillat
 const sfx = { gate: () => { tone(660, .12); setTimeout(() => tone(990, .18), 90); }, crash: () => tone(90, .4, 'sawtooth', .35), jump: () => { tone(440, .1); setTimeout(() => tone(880, .25), 80); }, trick: () => [0, 80, 160, 240].forEach((d, i) => setTimeout(() => tone(523 * Math.pow(1.19, i), .15), d)) };
 
 // ── 고개 읽기 → 조종값
-function readHead(f){ const p = f.pose, b = f.actions.body; if (!p || !b || !b.ok) { headRaw = null; return; }
-  const nose = p[0], le = p[7], re = p[8], sh = b.sh, shw = Math.hypot(p[11].x - p[12].x, p[11].y - p[12].y) || 1;
-  const hx = (nose.x - sh.x) / shw;                                           // 고개 좌우 위치(어깨폭 비) — 거울이라 왼쪽 기울이면 음수
+function readHead(f){ const p = f.pose, b = f.actions.body; if (!p) { headRaw = null; return; }
+  const nose = p[0], le = p[7], re = p[8], ls = p[11], rs = p[12];
+  if (nose.v < .4 || ls.v < .4 || rs.v < .4) { headRaw = null; return; }                 // 코·어깨만 있으면 됨(앉아서도 됨)
+  const sh = { x: (ls.x + rs.x) / 2, y: (ls.y + rs.y) / 2 }, shw = Math.hypot(ls.x - rs.x, ls.y - rs.y) || 1;
+  const hx = (nose.x - sh.x) / shw;                                                        // 고개 좌우 위치(어깨폭 비)
   const tilt = (le.v > .4 && re.v > .4) ? Math.atan2(re.y - le.y, re.x - le.x) * 180 / Math.PI : 0; // 귀 선 기울기(도)
-  const drop = (nose.y - sh.y) / b.torso;                                     // 코가 어깨에 가까울수록 0에 가까움(숙임)
-  headRaw = { hx, tilt, drop, lean: b.lean, air: b.air };
-  if (state === 'calib') { calib.n++; calib.x += hx; calib.tilt += tilt; return; }
-  const cx = calib.n ? calib.x / calib.n : 0, ct = calib.n ? calib.tilt / calib.n : 0;
-  const raw = clamp((hx - cx) * 2.2 + (tilt - ct) / 22 + b.lean / 30, -1, 1);
-  steer = steer * .75 + raw * .25;                                            // 부드럽게
-  tuck = drop > -0.45 || b.squat; }                                           // 서 있으면 drop ≈ -0.7, 숙이면 -0.4 위
+  const drop = (nose.y - sh.y) / shw;                                                      // 서 있으면 ≈ -0.6, 숙이면 0에 가까워짐
+  const lean = b && b.ok ? b.lean : 0;
+  headRaw = { hx, tilt, drop, lean, shw };
+  if (state === 'calib') { calib.n++; calib.x += hx; calib.tilt += tilt; calib.drop += drop; return; }
+  const n = calib.n || 1, cx = calib.x / n, ct = calib.tilt / n, cd = calib.drop / n;
+  const raw = clamp((hx - cx) * 3.0 + (tilt - ct) / 18 + lean / 30, -1, 1);
+  steer = steer * .7 + raw * .3;
+  tuck = (drop - cd) > 0.2 || (b && b.squat); }                                             // 보정 때보다 고개가 어깨 쪽으로 0.2 어깨폭 내려오면 웅크림
 km.on('body:jump', e => { if (state !== 'play') return; if (air > 0 && !trick) { trick = true; tricks++; score += 200; msg = '트릭! +200'; msgT = now(); sfx.trick(); km.emit('ski:trick'); } });
 
 // ── 코스
@@ -104,17 +107,19 @@ function draw(f){ const tn = now();
   if (tn - msgT < 1100 && msg) { ctx.font = '900 56px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = msg.startsWith('쿵') || msg.includes('놓침') ? '#ff4d6d' : '#2f6df6'; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 8; ctx.strokeText(msg, W / 2, H * .22); ctx.fillText(msg, W / 2, H * .22); }
   ctx.restore();
   // 내 모습(작게)
-  const pw = 224, ph = 126, pxl = W - pw - 12, pyl = 12; ctx.save(); ctx.beginPath(); ctx.roundRect(pxl, pyl, pw, ph, 12); ctx.clip(); ctx.translate(pxl + pw, pyl); ctx.scale(-pw / W, ph / H); ctx.drawImage(km.video, 0, 0, W, H); ctx.restore();
+  const pw = 224, ph = 126, pxl = W - pw - 12, pyl = 12; ctx.save(); rr(pxl, pyl, pw, ph, 12); ctx.clip(); ctx.translate(pxl + pw, pyl); ctx.scale(-pw / W, ph / H); ctx.drawImage(km.video, 0, 0, W, H); ctx.restore();
   if (f.pose) { ctx.save(); ctx.translate(pxl, pyl); ctx.scale(pw / W, ph / H); km.drawSkeleton(f.pose, km.POSE_BONES, 'rgba(255,255,255,.9)', 6); ctx.restore(); }
-  ctx.strokeStyle = headRaw ? '#5cf2a4' : '#ff4d6d'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(pxl, pyl, pw, ph, 12); ctx.stroke(); }
-km.onFrame = f => { update(f); draw(f); if (!dev.classList.contains('hidden')) dev.textContent = headRaw ? `fps ${km.fps} steer ${steer.toFixed(2)} hx ${headRaw.hx.toFixed(2)} tilt ${headRaw.tilt.toFixed(0)} drop ${headRaw.drop.toFixed(2)} tuck ${tuck} speed ${speed.toFixed(0)}` : '사람 없음'; };
+  ctx.strokeStyle = headRaw ? '#5cf2a4' : '#ff4d6d'; ctx.lineWidth = 3; rr(pxl, pyl, pw, ph, 12); ctx.stroke(); }
+function rr(x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+km.onFrame = f => { try { update(f); draw(f); } catch (e) { km.emit('error', { kind: 'game', message: String(e), score: 0 }); console.error(e); }
+  if (state === 'play' && !headRaw) { ctx.font = '900 40px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ff4d6d'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 6; ctx.strokeText('얼굴과 어깨가 보이게 서 주세요', W / 2, H * .5); ctx.fillText('얼굴과 어깨가 보이게 서 주세요', W / 2, H * .5); } if (!dev.classList.contains('hidden')) dev.textContent = headRaw ? `fps ${km.fps} state ${state} steer ${steer.toFixed(2)} hx ${headRaw.hx.toFixed(2)} tilt ${headRaw.tilt.toFixed(0)} drop ${headRaw.drop.toFixed(2)} calib ${calib.n} tuck ${tuck} speed ${speed.toFixed(0)}` : `fps ${km.fps} state ${state} 사람 없음`; };
 
 // ── 흐름
 function setup(){ state = 'setup'; ov.innerHTML = `<h2>⛷ 고개 스키</h2><p>고개를 기울이거나 옮겨서 방향을 잡고, 빨간·파란 깃발 사이로 지나가요.<br>나무는 피하고, 숙이면 빨라지고, 점프대에서 진짜 뛰면 트릭!</p><button class="btn" id="start">시작</button>`; ov.classList.remove('hidden'); $('start').onclick = begin; }
 async function begin(){ if (!km.running) { ov.innerHTML = '<h2>카메라 준비 중…</h2>'; try { await km.start(); } catch (e) { ov.innerHTML = `<h2>시작할 수 없어요</h2><p>${e.message}</p><button class="btn" id="b">다시</button>`; $('b').onclick = setup; return; } }
-  await AC.resume(); state = 'calib'; calib = { n: 0, x: 0, tilt: 0 }; let left = 3;
-  ov.innerHTML = `<h2>바르게 서서 정면을 봐 주세요</h2><p class="calib" id="cd">3</p><p>고개 가운데를 기억해요</p>`;
-  const iv = setInterval(() => { left--; $('cd').textContent = left; if (left <= 0) { clearInterval(iv); if (calib.n < 5) { calib = { n: 0, x: 0, tilt: 0 }; } startRun(); } }, 1000); }
+  await AC.resume(); state = 'calib'; calib = { n: 0, x: 0, tilt: 0, drop: 0 }; let left = 3;
+  ov.innerHTML = `<h2>바르게 서서 정면을 봐 주세요</h2><p class="calib" id="cd">3</p><p id="cs">고개 가운데를 기억해요</p>`;
+  const iv = setInterval(() => { left--; $('cd').textContent = left; $('cs').textContent = headRaw ? `고개 인식 중 ✓ (${calib.n})` : '얼굴과 어깨가 안 보여요 — 카메라를 봐 주세요'; if (!headRaw) left = Math.max(left, 1); if (left <= 0) { clearInterval(iv); if (calib.n < 5) { calib = { n: 0, x: 0, tilt: 0, drop: 0 }; } startRun(); } }, 1000); }
 function startRun(){ px = 0; vx = 0; steer = 0; speed = 12; dist = 0; score = 0; lives = 3; inv = 0; air = 0; gatesHit = gatesAll = trees = tricks = 0; objs = []; spawnZ = 20; msg = ''; last = now(); t0 = now(); state = 'play'; ov.classList.add('hidden'); km.emit('ski:start'); }
 function end(why){ state = 'end'; const total = (now() - t0) / 1000;
   ov.innerHTML = `<h2>${why} · ${score}점</h2><div class="result"><span>거리 <b>${Math.round(dist * 4)} m</b></span><span>깃발 문 <b>${gatesHit}/${gatesAll}</b></span><span>트릭 <b>${tricks}</b></span><span>충돌 <b>${trees}</b></span><span>시간 <b>${Math.round(total)}초</b></span></div>
