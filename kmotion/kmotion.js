@@ -23,7 +23,7 @@
  * 좌표는 전부 캔버스(거울) 픽셀, 원유로 필터로 떨림 보정. 랜드마크 {x,y,z,v}. score = 자체 판정 점수(모델 신뢰도와 다름).\n * 손 actions: dir(손 방향 0~359°, 위=0 시계방향)·pointDir(검지 방향)·facing(palm/back)·pointer(검지 끝)·pinchPt(엄지·검지 사이). 몸: facing(front/left/right)·lean(기울기°).
  */
 (function(){
-  const ENGINE_VERSION = '0.5.2';
+  const ENGINE_VERSION = '0.5.3';
   const ACTION_VERSION = 'rule-0.4.0';
   const MODEL_VERSION  = { hands: 'hand_landmarker/float16/1', pose: 'pose_landmarker_lite/float16/1', vision: 'tasks-vision@0.10.21' };
   const VENDOR = new URL('./vendor/tasks-vision/', document.currentScript ? document.currentScript.src : location.href).href;
@@ -133,8 +133,29 @@
       const r = segLm.segmentForVideo(video, t); const m = r.confidenceMasks && r.confidenceMasks[0]; if (!m) return false; try { km.updateMask(m); } finally { try { m.close(); } catch (_) {} } return true; }
     /** 사람 마스크 켜고 끄기(배경 바꿀 때만 켜서 프레임 아낌) */
     km.setSegment = async function(on){ km.segmentOn = !!on; if (on) { try { await ensureSeg(); } catch (e) { km.emit('error', { kind: 'segment', message: String(e), score: 0 }); } } else { maskAcc = null; } };
+    // ── 가장자리 다듬기(WebGL 조인트 바이래터럴): 저해상 마스크를 영상 색 경계에 맞춰 다시 그음 — 머리카락·손가락 끝
+    let gl = null, glc = null, prog = null, texV = null, texM = null, glFail = false;
+    function initGL(){ if (gl || glFail) return !!gl; try { glc = document.createElement('canvas'); glc.width = W; glc.height = H; gl = glc.getContext('webgl', { premultipliedAlpha: false, alpha: true, antialias: false, preserveDrawingBuffer: false }); if (!gl) throw new Error('webgl 없음');
+      const vs = 'attribute vec2 p;varying vec2 v;void main(){v=vec2(p.x*.5+.5,p.y*.5+.5);gl_Position=vec4(p,0.,1.);}';
+      const fs = `precision mediump float;varying vec2 v;uniform sampler2D uV;uniform sampler2D uM;uniform vec2 uT;uniform float uSc;uniform float uR;
+        void main(){ vec3 c=texture2D(uV,v).rgb; float ws=0.,wm=0.;
+          for(int y=-3;y<=3;y++){for(int x=-3;x<=3;x++){ vec2 o=vec2(float(x),float(y))*uR*uT; vec3 cn=texture2D(uV,v+o).rgb; float m=texture2D(uM,v+o).a;
+            float dc=distance(c,cn); float w=exp(-dot(o/uT,o/uT)/(2.*3.*3.*uR*uR))*exp(-(dc*dc)/(2.*uSc*uSc)); ws+=w; wm+=w*m; }}
+          float a=wm/max(ws,1e-4); a=smoothstep(.38,.62,a); gl_FragColor=vec4(c,a); }`;
+      const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
+      prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog); if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog)); gl.useProgram(prog);
+      const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW); const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      const mkTex = (unit) => { const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); return t; };
+      texV = mkTex(0); texM = mkTex(1); gl.uniform1i(gl.getUniformLocation(prog, 'uV'), 0); gl.uniform1i(gl.getUniformLocation(prog, 'uM'), 1); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); gl.viewport(0, 0, W, H); return true; }
+      catch (e) { glFail = true; gl = null; km.emit('warn', { kind: 'gl', message: '가장자리 다듬기 불가: ' + e.message }); return false; } }
+    function refineGL(){ if (!initGL()) return null; gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texV); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+      gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, texM); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, maskCanvas);
+      gl.uniform2f(gl.getUniformLocation(prog, 'uT'), 1 / W, 1 / H); gl.uniform1f(gl.getUniformLocation(prog, 'uSc'), km.maskColorSigma == null ? .12 : km.maskColorSigma); gl.uniform1f(gl.getUniformLocation(prog, 'uR'), km.maskRefineStep == null ? 2.0 : km.maskRefineStep);
+      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); return glc; }
     /** 사람만 거울로 그린다(배경 투명). target ctx 에 W×H */
-    km.drawPerson = function(tctx){ tctx = tctx || ctx; const pc = km._pc || (km._pc = document.createElement('canvas')); if (pc.width !== W || pc.height !== H) { pc.width = W; pc.height = H; } const p = pc.getContext('2d');
+    km.drawPerson = function(tctx){ tctx = tctx || ctx;
+      if (km.maskRefine !== false) { const out = refineGL(); if (out) { tctx.save(); tctx.translate(W, 0); tctx.scale(-1, 1); tctx.drawImage(out, 0, 0, W, H); tctx.restore(); return; } }
+      const pc = km._pc || (km._pc = document.createElement('canvas')); if (pc.width !== W || pc.height !== H) { pc.width = W; pc.height = H; } const p = pc.getContext('2d');
       p.clearRect(0, 0, W, H); p.save(); p.translate(W, 0); p.scale(-1, 1); p.drawImage(video, 0, 0, W, H); p.globalCompositeOperation = 'destination-in'; p.filter = 'blur(' + (km.maskFeather == null ? 3 : km.maskFeather) + 'px)'; const sh = km.maskShrink == null ? 2 : km.maskShrink; p.drawImage(maskCanvas, sh, sh, W - sh * 2, H - sh * 2); p.filter = 'none'; p.restore(); tctx.drawImage(pc, 0, 0); };
     km.maskCanvas = maskCanvas;
 
