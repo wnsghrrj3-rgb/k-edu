@@ -11,6 +11,7 @@
  *   body:raise_left/right · lower_* / body:open_arms · close_arms / body:clap / body:lean_left·right·center / body:freeze · unfreeze
  *   표준 명령(별칭, phase start/update/end): POINT GRAB RELEASE MOVE SWIPE WAVE JUMP SQUAT ARMS_UP RAISE_HAND OPEN_ARMS CLAP LEAN_LEFT LEAN_RIGHT FREEZE — km.on('GRAB', e => e.phase)
  *   마우스 모드: ?mouse=1 (카메라 없이 개발·시연)
+ *   segment:true → 포즈 모델의 사람 마스크(f.maskCanvas, km.drawPerson) — 배경 바꾸기
  *   session:start / session:stop / frame / error
  * 영상은 기기 안에서만 처리되고 어디에도 보내지 않는다. 기록(kmotion-data.js)은 관절 좌표·행동 이벤트만.
  *
@@ -22,7 +23,7 @@
  * 좌표는 전부 캔버스(거울) 픽셀, 원유로 필터로 떨림 보정. 랜드마크 {x,y,z,v}. score = 자체 판정 점수(모델 신뢰도와 다름).\n * 손 actions: dir(손 방향 0~359°, 위=0 시계방향)·pointDir(검지 방향)·facing(palm/back)·pointer(검지 끝)·pinchPt(엄지·검지 사이). 몸: facing(front/left/right)·lean(기울기°).
  */
 (function(){
-  const ENGINE_VERSION = '0.4.0';
+  const ENGINE_VERSION = '0.5.0';
   const ACTION_VERSION = 'rule-0.4.0';
   const MODEL_VERSION  = { hands: 'hand_landmarker/float16/1', pose: 'pose_landmarker_lite/float16/1', vision: 'tasks-vision@0.10.21' };
   const VENDOR = new URL('./vendor/tasks-vision/', document.currentScript ? document.currentScript.src : location.href).href;
@@ -109,9 +110,18 @@
       const files = await v.FilesetResolver.forVisionTasks(VENDOR + 'wasm');
       const base = (path) => ({ baseOptions: { modelAssetPath: path, delegate: 'GPU' }, runningMode: 'VIDEO' });
       if (modes.has('hands')) handLm = await v.HandLandmarker.createFromOptions(files, Object.assign(base(MODELS.hands), { numHands: opt.numHands || 2 }));
-      if (modes.has('pose'))  poseLm = await v.PoseLandmarker.createFromOptions(files, Object.assign(base(MODELS.pose), { numPoses: 1 }));
+      if (modes.has('pose'))  poseLm = await v.PoseLandmarker.createFromOptions(files, Object.assign(base(MODELS.pose), { numPoses: 1, outputSegmentationMasks: !!opt.segment }));
     }
     function status(s){ if (km.onStatus) km.onStatus(s); }
+
+    // ── 사람 마스크(segment 옵션): 거울 좌표 알파 캔버스. 배경 바꾸기·실루엣에 씀
+    const maskCanvas = document.createElement('canvas'); const mctx = maskCanvas.getContext('2d'); let maskImg = null;
+    km.updateMask = function(mask){ const mw = mask.width, mh = mask.height; if (maskCanvas.width !== mw || maskCanvas.height !== mh) { maskCanvas.width = mw; maskCanvas.height = mh; maskImg = mctx.createImageData(mw, mh); }
+      const a = mask.getAsFloat32Array(), d = maskImg.data; for (let i = 0, j = 3; i < a.length; i++, j += 4) { const v = a[i]; d[j] = v > .6 ? 255 : v < .3 ? 0 : ((v - .3) / .3 * 255) | 0; } mctx.putImageData(maskImg, 0, 0); };
+    /** 사람만 거울로 그린다(배경 투명). target ctx 에 W×H */
+    km.drawPerson = function(tctx){ tctx = tctx || ctx; const pc = km._pc || (km._pc = document.createElement('canvas')); if (pc.width !== W || pc.height !== H) { pc.width = W; pc.height = H; } const p = pc.getContext('2d');
+      p.clearRect(0, 0, W, H); p.save(); p.translate(W, 0); p.scale(-1, 1); p.drawImage(video, 0, 0, W, H); p.globalCompositeOperation = 'destination-in'; p.drawImage(maskCanvas, 0, 0, W, H); p.restore(); tctx.drawImage(pc, 0, 0); };
+    km.maskCanvas = maskCanvas;
 
     // ── 그리기 도우미
     km.drawSkeleton = function(lm, bones, color, r){ if (!lm) return; ctx.strokeStyle = color || 'rgba(77,225,255,.9)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
@@ -247,7 +257,8 @@
           if (handLm) { const r = handLm.detectForVideo(video, t); f.hands = (r.landmarks || []).map((lm, i) => handSm[i] ? handSm[i].apply(toPx(lm), t) : toPx(lm)); f.handedness = r.handednesses;
             for (let i = f.hands.length; i < 2; i++) handSm[i].reset(); }
           if (poseLm) { const r = poseLm.detectForVideo(video, t); const raw = r.landmarks && r.landmarks[0] ? toPx(r.landmarks[0]) : null;
-            if (raw) { f.pose = poseSm.apply(raw, t); poseSeen = true; } else { f.pose = null; if (poseSeen) { poseSm.reset(); poseSeen = false; } } }
+            if (raw) { f.pose = poseSm.apply(raw, t); poseSeen = true; } else { f.pose = null; if (poseSeen) { poseSm.reset(); poseSeen = false; } }
+            if (opt.segment && r.segmentationMasks && r.segmentationMasks[0]) { f.mask = r.segmentationMasks[0]; km.updateMask(f.mask); f.mask.close(); f.mask = null; f.maskCanvas = maskCanvas; } }
         } catch (e) { km.emit('error', { kind: 'detect', message: String(e), score: 0 }); }
         if (handLm) f.actions.hands = stepHands(f);
         if (poseLm) f.actions.body = stepBody(f);

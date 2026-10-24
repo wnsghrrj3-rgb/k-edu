@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>케이스튜디오 — 몸으로 만드는 CG 스튜디오</title>
+<link rel="stylesheet" href="/kmotion/kmotion.css">
+<style>
+.stage{max-width:1040px;aspect-ratio:16/9;background:#000}
+#three{display:none}
+.bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;max-width:1040px;margin-top:10px}
+.bar button,.bar label,.bar select{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:9px 14px;font-size:.9rem;cursor:pointer;font-weight:700;display:flex;gap:6px;align-items:center}
+.bar button.on{border-color:var(--accent);color:var(--accent)}
+.bar button.rec{border-color:var(--danger);color:var(--danger)}
+.bar .grp{display:flex;gap:6px;align-items:center;padding:4px 8px;border:1px dashed var(--line);border-radius:14px}
+.bar .grp b{font-size:.78rem;color:var(--dim);margin-right:4px}
+.status{display:inline-flex;align-items:center;gap:6px}.dot{width:10px;height:10px;border-radius:50%;background:#888}.dot.on{background:var(--ok)}.dot.bad{background:var(--danger)}
+#clips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%;max-width:1040px;margin-top:10px}
+#clips a{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 12px;color:var(--text);text-decoration:none;font-size:.85rem}
+</style>
+</head>
+<body>
+<header><a href="/">← 케이에듀</a><h1>🎬 케이스튜디오</h1><span id="hdr"></span></header>
+<div class="hud"><span class="status"><i class="dot" id="camdot"></i><span id="camtxt">카메라 대기</span></span><span class="status"><i class="dot" id="posedot"></i><span id="posetxt">인식 대기</span></span><span id="rectime">—</span></div>
+<div class="stage" id="stage">
+  <video id="v" autoplay playsinline muted></video>
+  <canvas id="c" width="960" height="540"></canvas>
+  <canvas id="three" width="960" height="540"></canvas>
+  <div class="dev hidden" id="dev"></div>
+  <div class="overlay" id="ov"></div>
+</div>
+<div class="bar">
+  <span class="grp"><b>보기</b><button data-view="person" class="on">🧍 나</button><button data-view="robot">🤖 캐릭터</button><button data-view="both">👥 둘 다</button></span>
+  <span class="grp"><b>배경</b><select id="bg"><option value="camera">카메라 그대로</option><option value="space">우주 정거장</option><option value="joseon">조선 거리</option><option value="forest">숲</option><option value="green">초록(크로마키)</option><option value="upload">내 이미지…</option></select><input type="file" id="bgfile" accept="image/*" style="display:none"></span>
+  <span class="grp"><b>효과</b><button data-fx="fire">🔥 손 불꽃</button><button data-fx="shock">💥 점프 충격파</button><button data-fx="crown">👑 왕관</button><button data-fx="sparkle">✨ 반짝이</button><button data-fx="bones">🦴 뼈대</button></span>
+</div>
+<div class="bar">
+  <button id="rec">⏺ 녹화</button><button id="snap">📷 사진</button><label><input type="checkbox" id="mic"> 소리도 같이</label><button id="fs">⛶ 전체 화면</button>
+</div>
+<div id="clips"></div>
+<p class="note">카메라 앞에서 움직이면 캐릭터가 따라 하고, 배경이 바뀌고, 손에서 불꽃이 나와요. 녹화하면 그 화면이 그대로 영상 파일로 저장돼요. 영상은 기기 안에서만 처리되고 어디에도 보내지 않아요.</p>
+<script src="/kedu/teacher/vendor/three.min.js"></script>
+<script src="/kmotion/kmotion.js"></script>
+<script src="/kmotion/kmotion-data.js"></script>
+<script src="./kstudio.js"></script>
+</body>
+</html>
