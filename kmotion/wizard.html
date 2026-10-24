@@ -41,6 +41,12 @@ const SPELL = {
   heal:   { name: '회복', icon: '💚', color: '#7dffb0', how: '양손 위로 올리기', act: 'ARMS_UP' },
 };
 const COOL = 900; // 주문 재사용 간격(ms) — 오인식·연타 방지
+const SIL = .42;  // 실루엣 배율(준호: .62는 큼)
+function toScreen(pt, p){ const shx = (p[11].x + p[12].x) / 2, hipy = (p[23].y + p[24].y) / 2; return { x: W * .5 + (pt.x - shx) * SIL, y: H * .66 + (pt.y - hipy) * SIL }; }
+// 팔 방향 광선: 팔꿈치→손목 연장. 맞은 것 중 가장 가까운 표적/몬스터
+function aimRay(side){ const p = km.last && km.last.pose; if (!p) return null; const e = p[side === 'right' ? 14 : 13], w = p[side === 'right' ? 16 : 15]; if (w.v < .4) return null;
+  const o = toScreen(w, p), el = e.v > .4 ? toScreen(e, p) : { x: o.x, y: o.y + 40 }; let dx = o.x - el.x, dy = o.y - el.y; const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L; return { o, dx, dy, end: { x: o.x + dx * 1400, y: o.y + dy * 1400 } }; }
+function rayHit(ray, list, rad){ let best = null, bd = 1e9; for (const m of list) { const vx = m.x - ray.o.x, vy = m.y - ray.o.y, t = vx * ray.dx + vy * ray.dy; if (t < 0) continue; const d = Math.abs(vx * ray.dy - vy * ray.dx); if (d < rad && t < bd) { bd = t; best = m; } } return best ? { m: best, t: bd } : null; }
 let state = 'setup', stage = 0, score = 0, hp = 3, lastCast = 0, castName = '', castT = 0, shake = 0, shieldT = 0, parts = [], bolts = [], monsters = [], targets = [], prompt = null, seq = [], seqIdx = 0, seqShow = -1, stageT = 0, timers = [], reduce = false, pending = null, poseOk = false, stats = { cast: 0, wrong: 0, blocked: 0, kills: 0, heals: 0 };
 const nextTick = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); return id; };
 const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
@@ -58,12 +64,14 @@ function lightning(x1, y1, x2, y2){ const pts = [{ x: x1, y: y1 }]; const n = 9;
 // ── 주문 발동(엔진 표준 명령으로만)
 function cast(key, from){ const t = now(); if (state !== 'play' || !poseOk) return; if (t - lastCast < COOL) return; lastCast = t; const sp = SPELL[key]; castName = sp.icon + ' ' + sp.name; castT = t; stats.cast++;
   $('cast').textContent = castName; km.emit('wizard:cast', { spell: key, stage, via: from });
-  const px = W * .5, py = H * .62;
-  if (key === 'bolt') { sfx.bolt(); if (!reduce) shake = .8; const tg = nearest(); lightning(px, py - 120, tg ? tg.x : W * .8, tg ? tg.y : H * .3); burst(tg ? tg.x : W * .8, tg ? tg.y : H * .3, '#ffe066', 30, 7, 30); }
-  if (key === 'ice') { sfx.ice(); const tg = nearest(); for (let i = 0; i < 14; i++) parts.push({ x: px + rnd(-30, 30), y: py - 100, vx: ((tg ? tg.x : W * .8) - px) / 22 + rnd(-1, 1), vy: ((tg ? tg.y : H * .3) - py + 100) / 22 + rnd(-1, 1), life: 1, decay: .045, color: '#7fe3ff', r: rnd(3, 7), star: true }); }
+  const px = W * .5, py = H * .66; let hitObj = null;
+  if (key === 'bolt' || key === 'ice') { const ray = aimRay(key === 'bolt' ? 'right' : 'left') || { o: { x: px, y: py - 120 }, dx: 1, dy: -.3, end: { x: px + 1400, y: py - 120 - 420 } };
+    const hit = rayHit(ray, stage === 2 ? monsters : targets, 60); hitObj = hit ? hit.m : null; const endPt = hit ? { x: hit.m.x, y: hit.m.y } : ray.end;
+    if (key === 'bolt') { sfx.bolt(); if (!reduce) shake = .8; lightning(ray.o.x, ray.o.y, endPt.x, endPt.y); burst(endPt.x, endPt.y, '#ffe066', 30, 7, 30); }
+    else { sfx.ice(); const L = Math.hypot(endPt.x - ray.o.x, endPt.y - ray.o.y) || 1; for (let i = 0; i < 14; i++) parts.push({ x: ray.o.x + rnd(-14, 14), y: ray.o.y + rnd(-14, 14), vx: (endPt.x - ray.o.x) / 18 + rnd(-.8, .8), vy: (endPt.y - ray.o.y) / 18 + rnd(-.8, .8), life: 1, decay: 18 / Math.max(18, L / 20) * .05, color: '#7fe3ff', r: rnd(3, 7), star: true }); } }
   if (key === 'shield') { sfx.shield(); shieldT = t + 1600; burst(px, py - 90, '#c9a7ff', 24, 3, 50); }
   if (key === 'heal') { sfx.heal(); for (let i = 0; i < 40; i++) parts.push({ x: px + rnd(-80, 80), y: py + rnd(-20, 40), vx: rnd(-.5, .5), vy: rnd(-3, -1), life: 1, decay: .02, color: '#7dffb0', r: rnd(2, 5) }); if (hp < 3) { hp++; stats.heals++; } }
-  resolve(key); paintHud(); }
+  resolve(key, hitObj); paintHud(); }
 function nearest(){ if (monsters.length) return monsters.reduce((a, b) => (b.x < a.x ? b : a)); if (targets.length) return targets[0]; return null; }
 // 한 손 들기는 0.3초 기다렸다 발동 — 두 손을 차례로 올려 「회복」하려는 아이가 번개를 먼저 쏘지 않게
 km.on('RAISE_HAND', e => { if (e.phase !== 'start') return; const key = e.side === 'right' ? 'bolt' : 'ice', t = now(); pending = { key, t }; setTimeout(() => { if (pending && pending.t === t) { pending = null; cast(key, 'std'); } }, 300); });
@@ -86,7 +94,7 @@ let practiceList = [];
 function runPractice(){ practiceList = ['bolt', 'ice', 'shield', 'heal', 'bolt', 'ice', 'shield', 'heal'].sort(() => Math.random() - .5); nextPrompt(); }
 function nextPrompt(){ if (!practiceList.length) return endStage(); prompt = { key: practiceList.shift(), t: now() }; }
 // 2단계: 표적 8개, 색 맞는 주문
-function runTargets(){ let left = 8; const spawn = () => { if (state !== 'play') return; const key = pick(['bolt', 'ice']); targets.push({ key, x: rnd(W * .62, W * .9), y: rnd(H * .18, H * .5), r: 46, born: now(), ttl: 5000 }); if (--left > 0) nextTick(spawn, 1400); }; spawn(); }
+function runTargets(){ let left = 8; const spawn = () => { if (state !== 'play') return; const key = pick(['bolt', 'ice']); const sideR = Math.random() < .5; targets.push({ key, x: sideR ? rnd(W * .66, W * .92) : rnd(W * .08, W * .34), y: rnd(H * .12, H * .5), r: 46, born: now(), ttl: 6000 }); if (--left > 0) nextTick(spawn, 1400); }; spawn(); }
 // 3단계: 몬스터 60초
 function runMonsters(){ const until = now() + 60000; const spawn = () => { if (state !== 'play') return; if (now() > until) { if (!monsters.length) endStage(); else nextTick(spawn, 500); return; }
   const key = pick(['bolt', 'ice']); monsters.push({ key, x: W + 60, y: rnd(H * .28, H * .6), spd: rnd(.55, .95), hp: 1, attackAt: 0, eye: 0 }); nextTick(spawn, rnd(1500, 2600)); }; spawn(); }
@@ -94,10 +102,10 @@ function runMonsters(){ const until = now() + 60000; const spawn = () => { if (s
 function runSequence(){ seqRound(3); }
 function seqRound(n){ seq = Array.from({ length: n }, () => pick(Object.keys(SPELL))); seqIdx = 0; seqShow = 0; prompt = null; const step = () => { if (state !== 'play') return; seqShow++; if (seqShow <= seq.length) nextTick(step, 900); else { seqShow = -1; prompt = { key: null, t: now(), seqN: n }; } }; nextTick(step, 900); }
 
-function resolve(key){
+function resolve(key, hitObj){
   if (stage === 0 && prompt) { if (key === prompt.key) { score += 50; sfx.ok(); km.emit('wizard:prompt_ok', { spell: key }); nextTick(nextPrompt, 300); } else { stats.wrong++; sfx.bad(); km.emit('wizard:prompt_wrong', { want: prompt.key, got: key, score: 0 }); } }
-  if (stage === 1) { const tg = targets[0]; if (tg) { if (tg.key === key) { score += 100; targets.shift(); burst(tg.x, tg.y, SPELL[key].color, 40, 6, 36); stats.kills++; if (!targets.length && now() - stageT > 8 * 1400) endStage(); } else if (key === 'bolt' || key === 'ice') { stats.wrong++; sfx.bad(); score = Math.max(0, score - 20); } } }
-  if (stage === 2) { const m = nearest(); if (m && (key === 'bolt' || key === 'ice')) { if (m.key === key) { monsters = monsters.filter(x => x !== m); burst(m.x, m.y, SPELL[key].color, 44, 6, 40); score += 150; stats.kills++; } else { stats.wrong++; sfx.bad(); } } }
+  if (stage === 1 && (key === 'bolt' || key === 'ice')) { const tg = hitObj; if (!tg) { castName = '빗나감'; stats.wrong++; return; } if (tg.key === key) { score += 100; targets = targets.filter(x => x !== tg); burst(tg.x, tg.y, SPELL[key].color, 40, 6, 36); stats.kills++; if (!targets.length && now() - stageT > 8 * 1400) endStage(); } else { stats.wrong++; sfx.bad(); score = Math.max(0, score - 20); castName = '색이 달라요'; } }
+  if (stage === 2 && (key === 'bolt' || key === 'ice')) { const m = hitObj; if (!m) { castName = '빗나감'; return; } if (m.key === key) { monsters = monsters.filter(x => x !== m); burst(m.x, m.y, SPELL[key].color, 44, 6, 40); score += 150; stats.kills++; } else { stats.wrong++; sfx.bad(); castName = '색이 달라요'; } }
   if (stage === 3 && prompt && seqShow < 0) { if (key === seq[seqIdx]) { seqIdx++; sfx.ok(); if (seqIdx >= seq.length) { score += 100 * seq.length; prompt = null; if (seq.length >= 5) nextTick(endStage, 600); else nextTick(() => seqRound(seq.length + 1), 900); } } else { stats.wrong++; sfx.bad(); seqIdx = 0; castName = '처음부터 다시!'; } }
 }
 function hurt(){ if (now() < shieldT) { stats.blocked++; score += 30; burst(W * .5, H * .5, '#c9a7ff', 30, 5, 30); sfx.ok(); km.emit('wizard:block'); return; } hp--; sfx.hit(); if (!reduce) shake = 1; km.emit('wizard:hurt', { hp, score: 0 }); paintHud(); if (hp <= 0) return fail(); }
@@ -124,13 +132,16 @@ function draw(f){ const t = now(); ctx.save(); if (shake > .02) ctx.translate(rn
   ctx.strokeStyle = `rgba(201,167,255,${.5 + Math.sin(t / 400) * .2})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(W * .5, H * .8, 190, 48, 0, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.ellipse(W * .5, H * .8, 120, 30, 0, 0, Math.PI * 2); ctx.stroke();
   for (const px of [.08, .92]) { ctx.fillStyle = '#2b2150'; ctx.fillRect(W * px - 26, H * .22, 52, H * .5); ctx.fillStyle = '#3a2d6a'; ctx.fillRect(W * px - 34, H * .2, 68, 16); ctx.fillStyle = `rgba(127,227,255,${.5 + Math.sin(t / 300 + px) * .3})`; ctx.beginPath(); ctx.moveTo(W * px, H * .12); ctx.lineTo(W * px + 14, H * .19); ctx.lineTo(W * px, H * .26); ctx.lineTo(W * px - 14, H * .19); ctx.fill(); }
   // 마법사(실루엣 — 뼈대 기반, 얼굴 안 나옴)
-  const p = f.pose; if (p) { const S = .62, oy = H * .62 - ((p[23].y + p[24].y) / 2) * S;
-    ctx.save(); ctx.translate(W * .5 - ((p[11].x + p[12].x) / 2) * S, oy); ctx.scale(S, S);
+  const p = f.pose; if (p) { const S = SIL, o0 = toScreen({ x: 0, y: 0 }, p);
+    ctx.save(); ctx.translate(o0.x, o0.y); ctx.scale(S, S);
     ctx.strokeStyle = now() < shieldT ? '#c9a7ff' : '#ffd9a8'; ctx.lineWidth = 16; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     for (const [a, b] of km.POSE_BONES) { if (p[a].v < .4 || p[b].v < .4) continue; ctx.beginPath(); ctx.moveTo(p[a].x, p[a].y); ctx.lineTo(p[b].x, p[b].y); ctx.stroke(); }
     ctx.fillStyle = '#ffd9a8'; ctx.beginPath(); ctx.arc(p[0].x, p[0].y - 10, 34, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#4a2f8f'; ctx.beginPath(); ctx.moveTo(p[0].x - 48, p[0].y - 30); ctx.lineTo(p[0].x + 48, p[0].y - 30); ctx.lineTo(p[0].x + 6, p[0].y - 130); ctx.fill();
     for (const w of [15, 16]) if (p[w].v > .4) { ctx.fillStyle = `rgba(255,224,102,${.5 + Math.sin(t / 150) * .3})`; ctx.beginPath(); ctx.arc(p[w].x, p[w].y, 14, 0, Math.PI * 2); ctx.fill(); }
-    ctx.restore(); if (now() < shieldT) { ctx.strokeStyle = `rgba(201,167,255,${.5 + Math.sin(t / 90) * .3})`; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(W * .5, H * .5, 200, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = 'rgba(201,167,255,.12)'; ctx.fill(); } }
+    ctx.restore();
+    // 조준선: 한 손을 들고 있을 때 팔 방향으로 점선
+    const b = f.actions.body; if (b && (b.raiseL || b.raiseR) && state === 'play') { const ray = aimRay(b.raiseR ? 'right' : 'left'); if (ray) { ctx.setLineDash([10, 14]); ctx.strokeStyle = b.raiseR ? 'rgba(255,224,102,.55)' : 'rgba(127,227,255,.55)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(ray.o.x, ray.o.y); ctx.lineTo(ray.end.x, ray.end.y); ctx.stroke(); ctx.setLineDash([]); } }
+    if (now() < shieldT) { ctx.strokeStyle = `rgba(201,167,255,${.5 + Math.sin(t / 90) * .3})`; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(W * .5, H * .5, 170, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = 'rgba(201,167,255,.12)'; ctx.fill(); } }
   else { ctx.font = '900 40px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ff8aa0'; ctx.fillText('몸 전체가 보이게 서 주세요', W * .5, H * .5); }
   // 표적·몬스터
   for (const tg of targets) { const sp = SPELL[tg.key], left = 1 - (t - tg.born) / tg.ttl; ctx.beginPath(); ctx.arc(tg.x, tg.y, tg.r, 0, Math.PI * 2); ctx.fillStyle = sp.color + 'cc'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke(); ctx.beginPath(); ctx.arc(tg.x, tg.y, tg.r + 8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); ctx.font = '40px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#1b1040'; ctx.fillText(sp.icon, tg.x, tg.y + 2); }
