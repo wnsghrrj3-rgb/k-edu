@@ -7,6 +7,10 @@
 <link rel="stylesheet" href="./kmotion.css">
 <style>
 .stage{max-width:1000px;aspect-ratio:16/9;background:#f7f8fc}
+.setup{display:grid;grid-template-columns:1fr;gap:10px;width:100%;max-width:520px;text-align:left}
+.setup label{display:flex;flex-direction:column;gap:5px;font-size:.9rem;color:var(--dim)}
+.setup select,.setup input{background:#0b1220;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:1rem}
+.setup small{color:var(--dim);font-size:.78rem}
 .teach{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px;width:100%;max-width:1000px}
 .teach button,.teach label{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:9px 14px;font-size:.9rem;cursor:pointer;font-weight:700;display:flex;gap:6px;align-items:center}
 .status{display:inline-flex;align-items:center;gap:6px}.dot{width:10px;height:10px;border-radius:50%;background:#888}.dot.on{background:var(--ok)}.dot.bad{background:var(--danger)}
@@ -24,7 +28,7 @@
 </div>
 <div class="teach">
   <button id="say">🔊 낱말 듣기</button><button id="pass">✅ 글자 채우기(교사)</button><button id="skip">⏭ 다음 낱말</button><button id="restart">↻ 다시 시작</button><button id="fs">⛶ 전체 화면</button>
-  <label><input type="checkbox" id="cam"> 카메라 비치기</label>
+  <label><input type="checkbox" id="cam"> 카메라 비치기</label><label><input type="checkbox" id="snd" checked> 집을 때 자모 소리</label>
 </div>
 <p class="note">엄지와 검지를 붙이면 카드를 잡고, 손을 움직여 가운데 칸에 놓고, 손가락을 벌리면 놓아요. 영상은 기기 안에서만 처리돼요. 카메라가 없으면 주소 뒤에 ?mouse=1 (누르면 잡기).</p>
 <script src="./kmotion.js"></script>
@@ -38,14 +42,23 @@ const ov = $('ov'), dev = $('dev'), { ctx, W, H } = km; if (new URLSearchParams(
 // ───── 한글
 const CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
 const JUNG = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
-const compose = (c, j) => String.fromCharCode(0xAC00 + (CHO.indexOf(c) * 21 + JUNG.indexOf(j)) * 28);
-const split = ch => { const code = ch.charCodeAt(0) - 0xAC00; return { c: CHO[Math.floor(code / 28 / 21)], j: JUNG[Math.floor(code / 28) % 21] }; };
+const JONG = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const compose = (c, j, g) => String.fromCharCode(0xAC00 + (CHO.indexOf(c) * 21 + JUNG.indexOf(j)) * 28 + (g ? JONG.indexOf(g) : 0));
+const split = ch => { const code = ch.charCodeAt(0) - 0xAC00; return { c: CHO[Math.floor(code / 28 / 21)], j: JUNG[Math.floor(code / 28) % 21], g: JONG[code % 28] || null }; };
+const SOUND = { 'ㄱ':'그','ㄴ':'느','ㄷ':'드','ㄹ':'르','ㅁ':'므','ㅂ':'브','ㅅ':'스','ㅇ':'으','ㅈ':'즈','ㅊ':'츠','ㅋ':'크','ㅌ':'트','ㅍ':'프','ㅎ':'흐','ㄲ':'끄','ㄸ':'뜨','ㅃ':'쁘','ㅆ':'쓰','ㅉ':'쯔',
+  'ㅏ':'아','ㅑ':'야','ㅓ':'어','ㅕ':'여','ㅗ':'오','ㅛ':'요','ㅜ':'우','ㅠ':'유','ㅡ':'으','ㅣ':'이','ㅐ':'애','ㅔ':'에','ㅘ':'와','ㅚ':'외','ㅟ':'위','ㅢ':'의','ㅝ':'워' };
+const WORDS_B = [ { w: '가방', e: '🎒' }, { w: '수박', e: '🍉' }, { w: '연필', e: '✏️' }, { w: '공책', e: '📒' }, { w: '사탕', e: '🍬' }, { w: '구름', e: '☁️' }, { w: '바람', e: '🍃' }, { w: '거울', e: '🪞' }, { w: '신발', e: '👟' }, { w: '물고기', e: '🐟' }, { w: '선물', e: '🎁' }, { w: '달님', e: '🌙' } ];
+const EASY_G = ['ㄱ','ㄴ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ'];
+const MODES = { see: { label: '보고 만들기', hint: '글자와 그림을 보고 만들어요' }, pic: { label: '그림 보고 만들기', hint: '그림만 보고 낱말을 떠올려 만들어요' }, hear: { label: '듣고 만들기', hint: '소리만 듣고 만들어요 (🔊 다시 듣기)' }, batchim: { label: '받침 글자', hint: '자음·모음·받침 세 칸으로 만들어요' } };
+let mode = localStorage.getItem('kmotion.hangul.mode') || 'see';
+let teacherWords = (localStorage.getItem('kmotion.hangul.words') || '').split(/[,\s、，]+/).filter(Boolean);
 const WORDS = [ { w: '나무', e: '🌳' }, { w: '바다', e: '🌊' }, { w: '하마', e: '🦛' }, { w: '오리', e: '🦆' }, { w: '포도', e: '🍇' }, { w: '사자', e: '🦁' }, { w: '치마', e: '👗' }, { w: '모자', e: '🧢' }, { w: '나비', e: '🦋' }, { w: '기차', e: '🚂' }, { w: '두부', e: '🧈' }, { w: '우유', e: '🥛' }, { w: '비누', e: '🧼' }, { w: '소리', e: '🔔' }, { w: '사과', e: '🍎' }, { w: '시소', e: '🎠' } ];
-const TOTAL = 8;
+let TOTAL = 8;
 
 // ───── 상태
-let words = [], wi = -1, word = null, si = 0, slots = { c: null, j: null }, cards = [], grabbed = null, state = 'setup', score = 0, done = [], celebrate = null, hands = [], stats = { built: 0, teacher: 0, skip: 0, drops: 0 };
-const SLOT = { c: { x: W * .40, y: H * .40, w: 110, h: 130 }, j: { x: W * .60, y: H * .40, w: 110, h: 130 } }, RESULT = { x: W * .5, y: H * .40 };
+let words = [], wi = -1, word = null, si = 0, slots = { c: null, j: null, g: null }, cards = [], grabbed = null, hoverCard = null, state = 'setup', score = 0, done = [], celebrate = null, hands = [], stats = { built: 0, teacher: 0, skip: 0, drops: 0 };
+const SLOT = { c: { x: W * .40, y: H * .40, w: 110, h: 130 }, j: { x: W * .60, y: H * .40, w: 110, h: 130 }, g: { x: W * .50, y: H * .66, w: 110, h: 100 } };
+const needG = () => !!(word && split(word.w[si]).g);
 const EASY_C = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'], EASY_J = ['ㅏ','ㅑ','ㅓ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ','ㅐ','ㅔ','ㅘ'];
 
 // ───── 음성
@@ -56,24 +69,26 @@ function tone(f, dur, type, g0){ const t = AC.currentTime, o = AC.createOscillat
 const sfx = { grab: () => tone(520, .06, 'triangle', .1), drop: () => tone(330, .08, 'triangle', .1), ok: () => { tone(660, .12); setTimeout(() => tone(990, .18), 90); }, word: () => [0, 110, 220, 330].forEach((d, i) => setTimeout(() => tone([523, 659, 784, 1047][i], .3), d)), bad: () => tone(160, .25, 'sawtooth', .15) };
 
 // ───── 낱말·카드 배치
-function newWord(){ wi++; if (wi >= TOTAL) return finish(); word = words[wi]; si = 0; done = []; celebrate = null; $('prog').textContent = `낱말 ${wi} / ${TOTAL}`; layoutCards(); say(word.w); km.emit('hangul:word', { word: word.w }); }
-function layoutCards(){ slots = { c: null, j: null }; grabbed = null; const need = split(word.w[si]);
+function newWord(){ wi++; if (wi >= TOTAL) return finish(); word = words[wi]; si = 0; done = []; celebrate = null; $('prog').textContent = `낱말 ${wi} / ${TOTAL}`; layoutCards(); if (mode !== 'pic') say(word.w); km.emit('hangul:word', { word: word.w }); }
+function layoutCards(){ slots = { c: null, j: null, g: null }; grabbed = null; const need = split(word.w[si]);
   const cs = new Set([need.c]); while (cs.size < 5) cs.add(pick(EASY_C)); const js = new Set([need.j]); while (js.size < 5) js.add(pick(EASY_J));
   cards = []; [...cs].sort(() => Math.random() - .5).forEach((ch, i) => cards.push(mk(ch, 'c', W * .11, H * .16 + i * H * .16)));
-  [...js].sort(() => Math.random() - .5).forEach((ch, i) => cards.push(mk(ch, 'j', W * .89, H * .16 + i * H * .16))); }
-function mk(ch, kind, x, y){ return { ch, kind, x, y, hx: x, hy: y, w: 86, h: 100, color: kind === 'c' ? '#4865F5' : '#8466F5', placed: false, pop: 0 }; }
+  [...js].sort(() => Math.random() - .5).forEach((ch, i) => cards.push(mk(ch, 'j', W * .89, H * .16 + i * H * .16)));
+  if (need.g) { const gs = new Set([need.g]); while (gs.size < 5) gs.add(pick(EASY_G)); [...gs].sort(() => Math.random() - .5).forEach((ch, i) => cards.push(mk(ch, 'g', W * .30 + i * W * .10, H * .90))); } }
+function mk(ch, kind, x, y){ return { ch, kind, x, y, hx: x, hy: y, w: kind === 'g' ? 72 : 86, h: kind === 'g' ? 80 : 100, color: kind === 'c' ? '#4865F5' : kind === 'j' ? '#8466F5' : '#27B985', placed: false, pop: 0, hover: 0 }; }
 
 // ───── 손 → 카드 조작 (엔진 표준 명령 GRAB / RELEASE / MOVE)
 let cursors = [{ x: 0, y: 0, pinched: false, seen: false }, { x: 0, y: 0, pinched: false, seen: false }];
-km.on('GRAB', e => { if (state !== 'play' || grabbed) return; const pos = e.pos; const c = cards.find(k => !k.placed && Math.abs(pos.x - k.x) < k.w * .7 && Math.abs(pos.y - k.y) < k.h * .7); if (c) { grabbed = { card: c, hand: e.hand }; c.pop = 1; sfx.grab(); km.emit('hangul:grab', { ch: c.ch }); } });
+km.on('GRAB', e => { if (state !== 'play' || grabbed) return; const pos = e.pos; const c = cards.find(k => !k.placed && Math.abs(pos.x - k.x) < k.w * .7 && Math.abs(pos.y - k.y) < k.h * .7); if (c) { grabbed = { card: c, hand: e.hand }; c.pop = 1; c.x = pos.x; c.y = pos.y; sfx.grab(); if ($('snd').checked) say(SOUND[c.ch] || c.ch); km.emit('hangul:grab', { ch: c.ch }); } });
 km.on('RELEASE', e => { if (!grabbed || e.hand !== grabbed.hand) return; drop(grabbed.card); grabbed = null; });
-km.on('MOVE', e => { const cu = cursors[e.hand]; cu.x = (e.pinchPt || e.pos).x; cu.y = (e.pinchPt || e.pos).y; cu.pinched = e.pinched; cu.seen = true; if (grabbed && grabbed.hand === e.hand) { grabbed.card.x += (cu.x - grabbed.card.x) * .5; grabbed.card.y += (cu.y - grabbed.card.y) * .5; } });
-function drop(c){ stats.drops++; const s = SLOT[c.kind]; const inSlot = Math.abs(c.x - s.x) < 80 && Math.abs(c.y - s.y) < 90;
+km.on('MOVE', e => { const cu = cursors[e.hand]; cu.x = (e.pinchPt || e.pos).x; cu.y = (e.pinchPt || e.pos).y; cu.pinched = e.pinched; cu.seen = true; if (grabbed && grabbed.hand === e.hand) { grabbed.card.x += (cu.x - grabbed.card.x) * .6; grabbed.card.y += (cu.y - grabbed.card.y) * .6; } });
+function nearSlot(c){ const s = SLOT[c.kind]; return !slots[c.kind] && (c.kind !== 'g' || needG()) && Math.abs(c.x - s.x) < 120 && Math.abs(c.y - s.y) < 120; }
+function drop(c){ stats.drops++; const s = SLOT[c.kind]; const inSlot = nearSlot(c);
   if (inSlot && !slots[c.kind]) { c.x = s.x; c.y = s.y; c.placed = true; slots[c.kind] = c; sfx.drop(); checkSyllable(); }
   else { c.x = c.hx; c.y = c.hy; sfx.drop(); } }
-function checkSyllable(){ if (!slots.c || !slots.j) return; const made = compose(slots.c.ch, slots.j.ch), want = word.w[si];
+function checkSyllable(){ if (!slots.c || !slots.j || (needG() && !slots.g)) return; const made = compose(slots.c.ch, slots.j.ch, slots.g && slots.g.ch), want = word.w[si];
   if (made === want) { score += 20; sfx.ok(); say(made); done.push(made); km.emit('hangul:syllable', { made, word: word.w }); stats.built++; si++; setTimeout(() => { if (si >= word.w.length) completeWord(); else layoutCards(); }, 900); }
-  else { sfx.bad(); km.emit('hangul:wrong', { made, want, score: 0 }); setTimeout(() => { for (const k of ['c', 'j']) { const c = slots[k]; if (c) { c.placed = false; c.x = c.hx; c.y = c.hy; } } slots = { c: null, j: null }; }, 700); } }
+  else { sfx.bad(); km.emit('hangul:wrong', { made, want, score: 0 }); setTimeout(() => { for (const k of ['c', 'j', 'g']) { const c = slots[k]; if (c) { c.placed = false; c.x = c.hx; c.y = c.hy; } } slots = { c: null, j: null, g: null }; }, 700); } }
 function completeWord(){ score += 50; stats.built++; sfx.word(); say(word.w); celebrate = { t: now(), parts: [] }; for (let i = 0; i < 60; i++) celebrate.parts.push({ x: W * .5, y: H * .42, vx: rnd(-6, 6), vy: rnd(-9, -2), r: rnd(3, 7), c: pick(['#4865F5', '#8466F5', '#37C9E8', '#27B985', '#FFAE45', '#F1646C']) });
   $('prog').textContent = `낱말 ${wi + 1} / ${TOTAL}`; $('score').textContent = score + '점'; km.emit('hangul:complete', { word: word.w }); cards = []; setTimeout(newWord, 2600); }
 function finish(){ state = 'end'; ov.innerHTML = `<h2>🎉 ${TOTAL}개 낱말 완성! ${score}점</h2><div class="result"><span>만든 글자 <b>${stats.built}</b></span><span>교사 채움 <b>${stats.teacher}</b></span><span>건너뜀 <b>${stats.skip}</b></span></div><button class="btn gold" id="again">다시 하기</button>`; ov.classList.remove('hidden'); $('again').onclick = setup; km.emit('hangul:finish', { points: score, ...stats }); }
@@ -86,35 +101,48 @@ km.onFrame = f => { const t = now();
   if (state === 'play' && word) {
     // 목표 낱말
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '800 26px sans-serif'; ctx.fillStyle = '#697187'; ctx.fillText('만들 낱말', W * .5, H * .08);
-    const chars = [...word.w]; chars.forEach((ch, i) => { const x = W * .5 + (i - (chars.length - 1) / 2) * 90, y = H * .17; rrect(x - 36, y - 36, 72, 72, 14); ctx.fillStyle = i < si ? '#27B985' : '#ffffff'; ctx.fill(); ctx.strokeStyle = i === si ? '#4865F5' : '#dde2f0'; ctx.lineWidth = i === si ? 4 : 2; ctx.stroke(); ctx.font = '800 40px sans-serif'; ctx.fillStyle = i < si ? '#fff' : '#9BA3B5'; ctx.fillText(i < si ? ch : '?', x, y + 2); });
-    ctx.font = '48px sans-serif'; ctx.fillText(word.e, W * .5 + (chars.length / 2) * 90 + 40, H * .17);
+    const chars = [...word.w]; chars.forEach((ch, i) => { const x = W * .5 + (i - (chars.length - 1) / 2) * 90, y = H * .17; rrect(x - 36, y - 36, 72, 72, 14); ctx.fillStyle = i < si ? '#27B985' : '#ffffff'; ctx.fill(); ctx.strokeStyle = i === si ? '#4865F5' : '#dde2f0'; ctx.lineWidth = i === si ? 4 : 2; ctx.stroke(); ctx.font = '800 40px sans-serif'; ctx.fillStyle = i < si ? '#fff' : '#9BA3B5'; ctx.fillText(i < si ? ch : (mode === 'see' || mode === 'batchim') && i === si ? ch : '?', x, y + 2); });
+    if (mode !== 'hear') { ctx.font = '48px sans-serif'; ctx.fillText(word.e, W * .5 + (chars.length / 2) * 90 + 40, H * .17); } else { ctx.font = '40px sans-serif'; ctx.fillText('🔊', W * .5 + (chars.length / 2) * 90 + 40, H * .17); }
     // 조립 칸
-    for (const k of ['c', 'j']) { const s = SLOT[k]; rrect(s.x - s.w / 2, s.y - s.h / 2, s.w, s.h, 18); ctx.fillStyle = slots[k] ? '#eef2ff' : '#ffffff'; ctx.fill(); ctx.setLineDash(slots[k] ? [] : [10, 10]); ctx.strokeStyle = k === 'c' ? '#4865F5' : '#8466F5'; ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]); if (!slots[k]) { ctx.font = '700 18px sans-serif'; ctx.fillStyle = '#9BA3B5'; ctx.fillText(k === 'c' ? '자음' : '모음', s.x, s.y); } }
+    const kinds = needG() ? ['c', 'j', 'g'] : ['c', 'j'];
+    for (const k of kinds) { const s = SLOT[k]; const glow = grabbed && grabbed.card.kind === k && nearSlot(grabbed.card); rrect(s.x - s.w / 2, s.y - s.h / 2, s.w, s.h, 18); ctx.fillStyle = slots[k] ? '#eef2ff' : glow ? 'rgba(72,101,245,.12)' : '#ffffff'; ctx.fill(); ctx.setLineDash(slots[k] ? [] : [10, 10]); ctx.strokeStyle = k === 'c' ? '#4865F5' : k === 'j' ? '#8466F5' : '#27B985'; ctx.lineWidth = glow ? 6 : 3; ctx.stroke(); ctx.setLineDash([]); if (!slots[k]) { ctx.font = '700 18px sans-serif'; ctx.fillStyle = '#9BA3B5'; ctx.fillText(k === 'c' ? '자음' : k === 'j' ? '모음' : '받침', s.x, s.y); } }
     ctx.font = '800 36px sans-serif'; ctx.fillStyle = '#9BA3B5'; ctx.fillText('+', W * .5, H * .40);
-    if (slots.c && slots.j) { const made = compose(slots.c.ch, slots.j.ch); ctx.font = '900 90px sans-serif'; ctx.fillStyle = made === word.w[si] ? '#27B985' : '#F1646C'; ctx.fillText(made, W * .5, H * .66); }
-    else { ctx.font = '800 22px sans-serif'; ctx.fillStyle = '#697187'; ctx.fillText(`"${word.w[si]}" 글자를 만들어요 — 왼쪽 자음, 오른쪽 모음을 집어서 칸에`, W * .5, H * .66); }
+    const full = slots.c && slots.j && (!needG() || slots.g);
+    if (full) { const made = compose(slots.c.ch, slots.j.ch, slots.g && slots.g.ch); ctx.font = '900 90px sans-serif'; ctx.fillStyle = made === word.w[si] ? '#27B985' : '#F1646C'; ctx.fillText(made, W * .5, needG() ? H * .40 - 0 : H * .66); if (needG()) { ctx.fillStyle = 'rgba(247,248,252,.0)'; } }
+    else if (!needG()) { ctx.font = '800 22px sans-serif'; ctx.fillStyle = '#697187'; ctx.fillText(mode === 'hear' ? '들은 글자를 만들어요 — 왼손은 자음, 오른손은 모음을 집어도 돼요' : `${mode === 'pic' ? '그림의 낱말' : '"' + word.w[si] + '"'} 글자를 만들어요 — 왼쪽 자음, 오른쪽 모음을 집어서 칸에`, W * .5, H * .66); }
     // 카드
-    for (const c of cards) { const g = grabbed && grabbed.card === c; c.pop = Math.max(0, c.pop - .06); const sc = 1 + (g ? .12 : 0) + c.pop * .1;
-      ctx.save(); ctx.translate(c.x, c.y); ctx.scale(sc, sc); if (g) { ctx.shadowColor = 'rgba(72,101,245,.45)'; ctx.shadowBlur = 24; } rrect(-c.w / 2, -c.h / 2, c.w, c.h, 16); ctx.fillStyle = c.placed ? '#eef2ff' : '#ffffff'; ctx.fill(); ctx.shadowBlur = 0; ctx.strokeStyle = c.color; ctx.lineWidth = 3; ctx.stroke(); ctx.font = '900 54px sans-serif'; ctx.fillStyle = c.color; ctx.fillText(c.ch, 0, 4); ctx.restore(); }
+    hoverCard = null; for (const cu of cursors) if (cu.seen && !cu.pinched && !grabbed) { const c = cards.find(k => !k.placed && Math.abs(cu.x - k.x) < k.w * .7 && Math.abs(cu.y - k.y) < k.h * .7); if (c) hoverCard = c; }
+    for (const c of cards) { const g = grabbed && grabbed.card === c; c.pop = Math.max(0, c.pop - .06); c.hover += ((hoverCard === c ? 1 : 0) - c.hover) * .25; const sc = 1 + (g ? .12 : 0) + c.pop * .1 + c.hover * .14;
+      ctx.save(); ctx.translate(c.x, c.y); ctx.scale(sc, sc); if (g) { ctx.shadowColor = 'rgba(72,101,245,.45)'; ctx.shadowBlur = 24; } rrect(-c.w / 2, -c.h / 2, c.w, c.h, 16); ctx.fillStyle = c.placed ? '#eef2ff' : '#ffffff'; ctx.fill(); ctx.shadowBlur = 0; ctx.strokeStyle = c.color; ctx.lineWidth = 3; ctx.stroke(); ctx.font = '900 54px sans-serif'; ctx.fillStyle = c.color; ctx.fillText(c.ch, 0, 4); if (c.hover > .5 && !g) { ctx.font = '700 14px sans-serif'; ctx.fillStyle = '#4865F5'; ctx.fillText('👌 집어요', 0, -c.h / 2 - 12); } ctx.restore(); }
     // 완성 낱말 보관
-    done.forEach((ch, i) => { ctx.font = '800 28px sans-serif'; ctx.fillStyle = '#27B985'; ctx.fillText(ch, W * .5 - 60 + i * 40, H * .92); });
+    if (!needG()) done.forEach((ch, i) => { ctx.font = '800 28px sans-serif'; ctx.fillStyle = '#27B985'; ctx.fillText(ch, W * .5 - 60 + i * 40, H * .92); });
   }
   if (celebrate) { const el = (t - celebrate.t) / 1000; ctx.font = `900 ${Math.min(160, 60 + el * 220)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#202438'; ctx.fillText(word.w, W * .5, H * .45); ctx.font = `${Math.min(150, 40 + el * 200)}px sans-serif`; ctx.fillText(word.e, W * .5, H * .72 + Math.sin(el * 8) * 10);
     for (const p of celebrate.parts) { p.x += p.vx; p.y += p.vy; p.vy += .25; ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); } }
   // 손 커서
-  f.hands.forEach((h, i) => { const a = f.actions.hands[i]; if (!a) return; const pt = a.pinched ? a.pinchPt : a.pointer; ctx.beginPath(); ctx.arc(pt.x, pt.y, a.pinched ? 16 : 12, 0, Math.PI * 2); ctx.fillStyle = a.pinched ? '#4865F5' : 'rgba(72,101,245,.35)'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); if (!a.pinched) { ctx.font = '12px sans-serif'; ctx.fillStyle = '#697187'; ctx.textAlign = 'center'; ctx.fillText('엄지+검지 = 잡기', pt.x, pt.y - 22); } });
+  f.hands.forEach((h, i) => { const a = f.actions.hands[i]; if (!a) return; const pt = a.pinched ? a.pinchPt : a.pointer; ctx.beginPath(); ctx.arc(pt.x, pt.y, a.pinched ? 16 : 12, 0, Math.PI * 2); ctx.fillStyle = a.pinched ? '#4865F5' : 'rgba(72,101,245,.35)'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); if (!a.pinched && !hoverCard && state === 'play') { ctx.font = '12px sans-serif'; ctx.fillStyle = '#697187'; ctx.textAlign = 'center'; ctx.fillText('카드 위에서 엄지+검지', pt.x, pt.y - 22); } });
   if (!dev.classList.contains('hidden')) dev.textContent = `fps ${km.fps} hands ${f.hands.length} grabbed ${grabbed ? grabbed.card.ch : '-'} ` + f.actions.hands.map(a => `${a.side}:${a.pose} pinch=${a.pinch}`).join(' '); };
 
 // ───── 교사 버튼·공통
 $('say').onclick = () => word && say(word.w); $('restart').onclick = () => setup();
-$('pass').onclick = () => { if (state !== 'play' || !word) return; stats.teacher++; const need = split(word.w[si]); for (const k of ['c', 'j']) { let c = cards.find(x => x.kind === k && x.ch === need[k]); if (!c) { c = mk(need[k], k, SLOT[k].x, SLOT[k].y); cards.push(c); } c.x = SLOT[k].x; c.y = SLOT[k].y; c.placed = true; slots[k] = c; } km.emit('hangul:teacher_fill', { ch: word.w[si], score: .5 }); checkSyllable(); };
+$('pass').onclick = () => { if (state !== 'play' || !word) return; stats.teacher++; const need = split(word.w[si]); for (const k of (need.g ? ['c', 'j', 'g'] : ['c', 'j'])) { let c = cards.find(x => x.kind === k && x.ch === need[k]); if (!c) { c = mk(need[k], k, SLOT[k].x, SLOT[k].y); cards.push(c); } c.x = SLOT[k].x; c.y = SLOT[k].y; c.placed = true; slots[k] = c; } km.emit('hangul:teacher_fill', { ch: word.w[si], score: .5 }); checkSyllable(); };
 $('skip').onclick = () => { if (state === 'play') { stats.skip++; km.emit('hangul:skip', { word: word && word.w, score: 0 }); newWord(); } };
 $('fs').onclick = () => { const el = $('stage'); document.fullscreenElement ? document.exitFullscreen() : el.requestFullscreen && el.requestFullscreen(); };
 addEventListener('keydown', e => { if (e.key === 'p' || e.key === 'P') $('pass').click(); if (e.key === 'n' || e.key === 'N') $('skip').click(); });
 function setup(){ state = 'setup'; score = 0; wi = -1; word = null; cards = []; done = []; celebrate = null; grabbed = null; stats = { built: 0, teacher: 0, skip: 0, drops: 0 }; $('score').textContent = '0점'; $('prog').textContent = `낱말 0 / ${TOTAL}`;
-  ov.innerHTML = `<h2>✍️ 한글 조립</h2><p>왼쪽의 자음, 오른쪽의 모음을 손으로 집어 가운데 칸에 놓으면 글자가 돼요.<br>글자를 다 모으면 낱말 그림이 나타나요!</p><p style="color:var(--dim)">엄지와 검지를 붙이면 잡기 · 손을 움직여 옮기기 · 손가락을 벌리면 놓기</p><button class="btn" id="start">시작</button>`; ov.classList.remove('hidden'); $('start').onclick = begin; }
+  ov.innerHTML = `<h2>✍️ 한글 조립</h2><p>자음·모음을 손으로 집어 칸에 놓으면 글자가 돼요. 왼손은 자음, 오른손은 모음을 집어도 돼요.</p>
+    <div class="setup"><label>단계<select id="mode">${Object.entries(MODES).map(([k, v]) => `<option value="${k}" ${k === mode ? 'selected' : ''}>${v.label}</option>`).join('')}</select><small id="modehint">${MODES[mode].hint}</small></label>
+    <label>우리 반 낱말(교사, 쉼표로)<input id="tw" placeholder="예) 나무, 바다, 우리 반 아이 이름" value="${teacherWords.join(', ')}"><small>비우면 기본 낱말. 받침 글자는 「받침 글자」 단계에서</small></label>
+    <label>낱말 수<select id="total">${[4, 6, 8, 10].map(n => `<option ${n === TOTAL ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div>
+    <p style="color:var(--dim)">엄지와 검지를 붙이면 잡기 · 옮기기 · 손가락을 벌리면 놓기</p><button class="btn" id="start">시작</button>`; ov.classList.remove('hidden');
+  $('mode').onchange = e => { mode = e.target.value; localStorage.setItem('kmotion.hangul.mode', mode); $('modehint').textContent = MODES[mode].hint; }; $('total').onchange = e => TOTAL = +e.target.value;
+  $('tw').onchange = e => { teacherWords = e.target.value.split(/[,\s、，]+/).filter(Boolean); localStorage.setItem('kmotion.hangul.words', teacherWords.join(',')); };
+  $('start').onclick = begin; }
 async function begin(){ await AC.resume(); if (!km.running) { ov.innerHTML = '<h2>카메라 준비 중…</h2>'; $('camtxt').textContent = '연결 중'; try { await km.start(); $('camdot').className = 'dot on'; $('camtxt').textContent = km.mouse ? '마우스 모드' : '카메라 연결됨'; } catch (e) { $('camdot').className = 'dot bad'; $('camtxt').textContent = '카메라 실패'; ov.innerHTML = `<h2>시작할 수 없어요</h2><p>${e.message}</p><p style="color:var(--dim)">카메라 없이 해 보려면 주소 뒤에 ?mouse=1</p><button class="btn" id="b">다시</button>`; $('b').onclick = setup; return; } }
-  words = WORDS.slice().sort(() => Math.random() - .5).slice(0, TOTAL); ov.classList.add('hidden'); state = 'play'; km.emit('hangul:start'); newWord(); }
+  const valid = w => [...w].every(ch => ch >= '가' && ch <= '힣') && w.length >= 1 && w.length <= 4;
+  const tw = teacherWords.filter(valid).map(w => ({ w, e: (WORDS.concat(WORDS_B).find(x => x.w === w) || {}).e || '⭐' }));
+  const base = mode === 'batchim' ? WORDS_B : WORDS;
+  words = (tw.length ? tw : base).slice().sort(() => Math.random() - .5).slice(0, TOTAL); if (words.length < TOTAL) words = words.concat(base.slice().sort(() => Math.random() - .5)).slice(0, TOTAL); ov.classList.add('hidden'); state = 'play'; km.emit('hangul:start'); newWord(); }
 setup();
 </script>
 </body>
