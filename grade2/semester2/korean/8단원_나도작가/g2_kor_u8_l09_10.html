@@ -139,122 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 9~10차시(소단원 2 통합 — 이야기를 읽고 이어질 이야기 상상하기) 13슬 =====
+/* ===== 9~10차시(소단원 2 통합 — 이야기를 읽고 이어질 이야기 상상하기) 『국어』 252~259쪽 13슬 — v2 교과서 기준 재구성 (2026-10-24)
    학습 목표: 이야기를 읽고 이어질 이야기를 상상할 수 있다.
-   ★ 정답 로깅 7슬. 이야기 읽기·무대·마무리 = 로깅 X.
-   ★ 창의성 계발 학습 모형(지도서 335~339쪽) 변환 — 생성(s8 여러 가능성을 모두) → 선택(s9 고르는 잣대) → 적용(s10 장면 나누기 · 무대).
-      ⚠ 「적용」(실제 글·그림)은 화면이 실을 수 없다 ⇒ 무대(종이) · 가짜 입력칸 0. 3·6단원 선례.
-   ★ 지도서 338쪽 ※ — 떠올리는 가능성을 자유롭게 ⇒ s8 정답 셋(서로 다른 세 갈래).
-   ★ 지도서 339쪽 — 장면을 나누는 잣대 = 마음이 바뀔 때 · 다른 행동을 할 때 · 다른 사람이 나올 때 ⇒ s10.
-   ★★ 스물여덟째 기준 — s9 오답 양쪽(가장 놀라운 일 / 친구들이 가장 많이 고른 것) · s11 오답 양쪽(다르면 틀렸다 / 내 것을 지우고 따라 쓰기 — 스물둘째·스물일곱째 승계).
-   ★ 지도서 348쪽 — 그림이 보기 좋은가가 아니라 흐름에 맞게 나타냈는가 ⇒ 무대 문구.
-   ★ 저작권: 교과서 252~259쪽 「오, 미지의 택배」(차영아·한지선) 본문·제품 설명서·낱말(인생·제품·인공)·붙임딱지·상황 카드 놀이 문구, 지도서 334쪽 제재 소개(반려견) 미차용.
-      자체 이야기 = 「가슬이와 노란 단추」 · 낱말 「술술」. */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·스스로 확인·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 판단(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      시·노랫말은 한 줄도 옮기지 않고 교과서 쪽을 펴게 함. 「빈집에 온 손님」(황선미)·「오, 미지의 택배」(차영아)는 자체 문장 간추림만. 생각 열기·줄글·물음·놀이 방법·활동 순서·정리·토박이말은 교육부 집필이라 그대로. 이어질 이야기는 흐름과 인물의 성격 — 원작과 같을 필요도 엉뚱할 필요도 없음(지도서 317·331·344쪽). */
 const slides=[
-  {tag:'① 만나기', t:'오늘은 내가 이야기를 이어 가요',
-   html:`<div class="scene">
-      <div class="scene-pic">🟡 ✨</div>
-      <div class="scene-say">필통 속에서 이상한 단추가 나왔어요</div>
-    </div>
-    <div class="ka-bub">먼저 <b class="emph">여러 가지</b>를 떠올리고, 그 가운데 <b class="emph">어울리는 것</b>을 골라요.</div>`},
+  {tag:'① 문제 발견하기', t:'이어질 장면 상상하기 놀이',
+   html:`<div class="stage-box">📸 선생님이 보여 주시는 사진이나 그림을 보고, 바로 다음에 어떤 장면이 이어질지 상상해 말해 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 이야기를 상상하며 읽으면 더 흥미진진해요. ✨">🗣️ 상상했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'① 학습 문제', t:'오늘 배울 것이에요',
-   html:`<div class="sentence">이야기를 읽고 이어질 이야기를 상상해요.</div>
-    <div class="ka-bub">「가슬이와 노란 단추」를 읽어 봐요.</div>`},
+  {tag:'① 문제 발견하기', t:'이어질 장면을 상상할 때 무엇을 생각해야 하나요?', log:true, okMsg:'맞아요! 오늘 학습 문제는 「이야기를 읽고 이어질 이야기를 상상해 봅시다.」예요. 📖',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">가장 놀랍고 엉뚱한 장면</div></div><div class="wcard" data-ok="0"><div class="wc-word">원래 이야기와 똑같은 장면</div></div><div class="wcard" data-ok="1"><div class="wc-word">일이 일어난 차례와 인물의 성격</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 이야기 읽기 1', t:'「가슬이와 노란 단추」',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>가슬이는 발표할 때 목소리가 작아져요.</div>
-      <div class="read-line"><span class="rl-num">2</span>들려주고 싶은 이야기는 참 많은데.</div>
-      <div class="read-line"><span class="rl-num">3</span>어느 날 필통에서 노란 단추가 나왔어요.</div>
-      <div class="read-line"><span class="rl-num">4</span>작은 쪽지도 함께 있었어요.</div>
-    </div>`},
+  {tag:'② 252~256쪽 「오, 미지의 택배」', t:'간추린 이야기',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>아홉 살 미지는 자기 앞으로 온 택배를 받게 되면 그때부터 어른이라고 정해 두었어요.</div><div class="read-line"><span class="rl-num">2</span>어느 날 경비 아저씨가 「오미지」라는 이름이 크게 찍힌 파란 택배 상자를 건네주셨어요. 보낸 사람 이름은 찢겨 알아볼 수 없었어요.</div><div class="read-line"><span class="rl-num">3</span>상자 안에는 아주 심심해 보이는 하얀 끈 운동화와 별·꽃이 박힌 제품 설명서가 있었어요.</div><div class="read-line"><span class="rl-num">4</span>설명서에는 이 운동화가 하늘나라로 떠난 누군가에게 데려다준다고 적혀 있었어요. 만나고 싶은 이의 이름을 세 번 부르며 세 번 뛰고, 숨이 찰 때까지 힘껏 달리래요. 머물 수 있는 시간은 30분이래요.</div><div class="read-line"><span class="rl-num">5</span>머릿속이 시끄러웠던 미지는 정신을 차려 보니 벌써 운동화를 신고 폴짝폴짝 세 번 뛰고 있었어요.</div></div><div class="fb" id="readFb">📖 『국어』 252~256쪽을 펴고 인물의 마음을 생각하며 읽어 봐요. (위 글은 간추린 것이에요.)</div>`},
 
-  {tag:'③ 인물 알기', t:'가슬이는 어떤 아이일까요?', log:true,
-   okMsg:'맞아요! 부끄럼이 많지만 친구들에게 들려주고 싶은 이야기가 많은 아이예요. 👍',
-   hint:'힌트: 1번 줄과 2번 줄을 함께 봐요.',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">말하기가 싫어서<br>할 이야기가 없는 아이</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">부끄럼이 많지만<br>할 이야기가 많은 아이</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 256쪽 (1)', t:'4월 3일에 미지가 어른이 되었다고 생각한 까닭은?', log:true, okMsg:'맞아요! 미지가 정해 둔 「어른이 되는 때」 가운데 하나였어요. 📦',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">📦</div><div class="wc-word">아홉 살 인생에 첫 택배가 도착했기 때문에</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🎂</div><div class="wc-word">생일이 지나서</div></div><div class="wcard" data-ok="0"><div class="wc-pic">📏</div><div class="wc-word">키가 커서</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 이야기 읽기 2', t:'이야기가 이어져요',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">5</span>"이 단추를 쥐면 말이 술술 나와요."</div>
-      <div class="read-line"><span class="rl-num">6</span>다음 날, 발표 차례가 다가왔어요.</div>
-      <div class="read-line"><span class="rl-num">7</span>가슬이는 주머니에 손을 넣었어요.</div>
-      <div class="read-line"><span class="rl-num">8</span>어? 단추가 없어요!</div>
-    </div>`},
+  {tag:'③ 256쪽 (2)', t:'택배 상자 속 운동화는 어떤 점이 특별한가요?', log:true, okMsg:'맞아요! 보고 싶은 누군가를 30분 동안 만날 수 있대요. ⏳',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🕊️</div><div class="wc-word">신으면 하늘을 날아다녀요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">📏</div><div class="wc-word">신으면 키가 커져요</div></div><div class="wcard" data-ok="1"><div class="wc-pic">👟</div><div class="wc-word">하늘나라에 있는 누군가에게 데려다줘요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 일어난 차례', t:'일이 일어난 차례대로 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 이야기는 「단추가 없어요!」에서 멈췄어요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">차례</div>
-        <div class="match-card" data-k="a" data-pair="A">처음</div>
-        <div class="match-card" data-k="b" data-pair="B">가운데</div>
-        <div class="match-card" data-k="c" data-pair="C">끝</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">일어난 일</div>
-        <div class="match-card" data-k="B" data-pair="b">발표 차례가<br>다가왔어요</div>
-        <div class="match-card" data-k="C" data-pair="c">주머니에<br>단추가 없어요</div>
-        <div class="match-card" data-k="A" data-pair="a">필통에서 단추와<br>쪽지가 나왔어요</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'④ 257쪽 낱말 알기', t:'낱말과 뜻을 이어 봐요', log:true, matchMsg:'잘 이었어요! 이야기 속 어디에 나왔는지 떠올리면 뜻이 보여요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">낱말</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🧒</span>인생</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">📄</span>제품</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🤖</span>인공</div></div><div class="match-col"><div class="match-col-h">뜻</div><div class="match-card" data-k="B" data-pair="b">재료를 써서 만든 물건. 또는 그렇게 만드는 일.</div><div class="match-card" data-k="C" data-pair="c">사람이 만들어 내거나 꾸며 낸 것.</div><div class="match-card" data-k="A" data-pair="a">사람이 세상을 살아가는 일. 또는 그 기간.</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 낱말 알기', t:'「술술」은 무슨 뜻일까요?', log:true,
-   okMsg:'맞아요! 「술술」은 말이나 글이 막힘없이 잘 나오는 모양이에요. 👍',
-   html:`<div class="sentence">이 단추를 쥐면 말이 <b>술술</b> 나와요.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">막힘없이<br>잘 나오는 모양</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">자꾸 막혀서<br>더듬는 모양</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑤ 257쪽 계획하기 (1)', t:'일이 일어난 차례대로 이어 봐요', log:true, matchMsg:'잘 이었어요! 이제 그다음을 상상할 차례예요. 👟',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">차례</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">1️⃣</span>첫째</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">2️⃣</span>둘째</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">3️⃣</span>셋째</div><div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">4️⃣</span>넷째</div><div class="match-card" data-k="e" data-pair="E"><span class="mc-ic">5️⃣</span>다섯째</div></div><div class="match-col"><div class="match-col-h">일어난 일</div><div class="match-card" data-k="D" data-pair="d">미지는 제품 설명서를 발견하고 읽었다</div><div class="match-card" data-k="B" data-pair="b">미지는 경비실에서 파란색 택배 상자를 찾아왔다</div><div class="match-card" data-k="E" data-pair="e">미지는 운동화를 신고 폴짝폴짝 세 번 뛰었다</div><div class="match-card" data-k="A" data-pair="a">어느 날 미지에게 택배가 도착했다</div><div class="match-card" data-k="C" data-pair="c">택배 상자 안에 운동화가 들어 있었다</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 떠올리기', t:'이어질 수 있는 일을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 세 가지가 서로 다르지요? 먼저 여러 가지를 떠올릴수록 좋아요. 🎉',
-   hint:'힌트: 가슬이가 할 법하지 않은 일 하나만 빼요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">떨리지만 단추 없이 용기 내어 발표해요</div>
-      <div class="chip" data-hit="1">짝이 떨어진 단추를 주워 건네줘요</div>
-      <div class="chip" data-hit="0">가슬이가 갑자기 친구들을 큰 소리로 놀려요</div>
-      <div class="chip" data-hit="1">발표를 마치고 보니 단추는 가방 속에 있었어요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'⑤ 258쪽 (2) 놀이 방법', t:'이야기 표현하기 놀이를 해요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>상황 카드의 빈칸에 자신이 상상한 내용을 쓴다.</div><div class="read-line"><span class="rl-num">2</span>카드를 모아 뒤집어 놓고 모둠원 한 명이 카드를 뽑아 뒤집는다.</div><div class="read-line"><span class="rl-num">3</span>카드를 뽑은 친구는 카드 속 상황이 이야기에 이어질 때 미지가 어떻게 행동할지 생각한다.</div><div class="read-line"><span class="rl-num">4</span>미지의 행동을 말과 몸짓으로 표현하고 왜 그렇게 행동할 것이라고 생각했는지 설명한다.</div><div class="read-line"><span class="rl-num">5</span>모든 카드를 뒤집을 때까지 계속 놀이한다.</div></div><div class="fb" id="readFb">🃏 『국어』 붙임 7 상황 카드로 모둠 놀이를 해요.</div>`},
 
-  {tag:'③ 고르기', t:'떠올린 일 가운데 하나를 고를 때 무엇을 살필까요?', log:true,
-   okMsg:'맞아요! 가장 놀라운 것도, 가장 많이 고른 것도 아니에요. 인물과 앞 이야기에 어울리는지를 살펴요. 🎉',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">가장 시끄럽고<br>놀라운 일인지</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">가슬이의 성격과<br>앞 이야기에 어울리는지</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">친구들이 가장<br>많이 고른 것인지</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑥ 아이디어 선택하기', t:'「미지가 달리고 달려 하늘나라에 닿았다.」 — 이어서 미지가 할 행동으로 알맞은 것은?', log:true, okMsg:'맞아요! 앞 이야기의 흐름과 미지의 마음에 이어져요. 💫',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🗑️</div><div class="wc-word">택배 상자를 버리고 잠을 자요</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🙅</div><div class="wc-word">운동화를 본 적이 없다고 해요</div></div><div class="wcard" data-ok="1"><div class="wc-pic">👀</div><div class="wc-word">보고 싶었던 누군가를 찾아 두리번거려요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 장면 나누기', t:'이야기를 장면으로 나눌 때 새 장면이 되는 때는?', log:true,
-   okMsg:'맞아요! 인물의 마음이나 하는 일이 바뀔 때, 다른 인물이 나올 때 새 장면으로 나눠요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">인물의 마음이나<br>하는 일이 바뀔 때</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">글자가 열 개를<br>넘을 때</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑥ 지도서 339쪽', t:'모둠에서 이어질 상황을 뽑을 때 생각할 것은?', log:true, okMsg:'맞아요! 뽑은 까닭도 함께 설명해요. 🗳️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">가장 짧은지</div></div><div class="wcard" data-ok="1"><div class="wc-word">이야기 흐름에 알맞은지, 인물의 성격에 어울리는지</div></div><div class="wcard" data-ok="0"><div class="wc-word">가장 웃긴지</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 친구 이야기 듣기', t:'친구가 상상한 이야기가 내 것과 다르면 어떻게 할까요?', log:true,
-   okMsg:'맞아요! 다른 것은 틀린 것이 아니에요. 어디가 다른지 살피면 이야기가 더 재미있어져요. 🎉',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">내 것과 다르니<br>틀렸다고 말해요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">내 이야기를 지우고<br>친구 것을 따라 써요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">어디가 다른지 살피며<br>재미있게 들어요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑦ 259쪽 글쓰기 (1)', t:'이어질 이야기를 글로 써요',
+   html:`<div class="stage-box">✍️ 고른 상황으로 이어질 이야기를 상상해 259쪽에 써 보세요. 인물의 마음이 바뀌거나, 다른 행동을 하거나, 다른 인물이 나올 때마다 장면을 나누면 쓰기 쉬워요.<br><button class="stage-do" id="stageDo" data-fb="멋져요! 흐름이 자연스러운지 한 번 더 읽어 봐요. 📝">✍️ 썼어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 종이에 써 보기', t:'뒷이야기를 글과 그림으로 나타내요',
-   html:`<div class="stage-box">
-      📝 고른 일로 가슬이의 뒷이야기를 <b>두세 장면</b>으로 나눠 종이에 써 봐요.<br>
-      장면마다 그림을 곁들여요. <b>그림은 잘 그리지 않아도 돼요.</b> 이야기가 이어지는 것이 먼저예요.
-      <br><button class="stage-do" id="stageDo" data-fb="뒷이야기를 글과 그림으로 나타냈어요! 👏">📝 써 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑦ 259쪽 글쓰기 (2)', t:'쓴 이야기를 발표해요',
+   html:`<div class="stage-box">🎤 쓴 이야기를 친구들 앞에서 발표하고, 친구 이야기를 들으며 내 이야기와 비슷한 점과 다른 점, 고쳐 쓸 부분을 생각해 보세요.<br><button class="stage-do" id="stageDo" data-fb="잘했어요! 친구 이야기에서 인상 깊었던 점도 말해 줘요. 👏">🎤 발표했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 마무리', t:'이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">💡</span>먼저 이어질 일을 <b>여러 가지</b> 떠올려요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🎯</span><b>인물과 흐름</b>에 어울리는 것을 골라요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🎬</span>마음이나 하는 일이 바뀌면 <b>새 장면</b>이에요.</div>
-    </div>`},
+  {tag:'⑧ 원작과 견주기', t:'미지는 누구를 만나러 갔을까요?',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🐶</span>원작에서 미지는 하늘나라로 떠난 <b>반려견 봉자</b>를 만나러 가요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">💗</span>반려동물도 정을 나누는 <b>가족</b>일 수 있어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🌈</span>내가 상상한 사람이 달라도 <b>흐름과 성격</b>에 맞으면 좋은 이야기예요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
