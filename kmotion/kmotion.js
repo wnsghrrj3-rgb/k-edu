@@ -11,7 +11,7 @@
  *   body:raise_left/right · lower_* / body:open_arms · close_arms / body:clap / body:lean_left·right·center / body:freeze · unfreeze
  *   표준 명령(별칭, phase start/update/end): POINT GRAB RELEASE MOVE SWIPE WAVE JUMP SQUAT ARMS_UP RAISE_HAND OPEN_ARMS CLAP LEAN_LEFT LEAN_RIGHT FREEZE — km.on('GRAB', e => e.phase)
  *   마우스 모드: ?mouse=1 (카메라 없이 개발·시연)
- *   segment:true → 포즈 모델의 사람 마스크(f.maskCanvas, km.drawPerson) — 배경 바꾸기
+ *   segment:true / km.setSegment(on) → 셀피 세그멘터 사람 마스크(f.maskCanvas, km.drawPerson; maskSmooth·maskFeather·maskShrink 조절) — 배경 바꾸기
  *   session:start / session:stop / frame / error
  * 영상은 기기 안에서만 처리되고 어디에도 보내지 않는다. 기록(kmotion-data.js)은 관절 좌표·행동 이벤트만.
  *
@@ -23,13 +23,14 @@
  * 좌표는 전부 캔버스(거울) 픽셀, 원유로 필터로 떨림 보정. 랜드마크 {x,y,z,v}. score = 자체 판정 점수(모델 신뢰도와 다름).\n * 손 actions: dir(손 방향 0~359°, 위=0 시계방향)·pointDir(검지 방향)·facing(palm/back)·pointer(검지 끝)·pinchPt(엄지·검지 사이). 몸: facing(front/left/right)·lean(기울기°).
  */
 (function(){
-  const ENGINE_VERSION = '0.5.1';
+  const ENGINE_VERSION = '0.5.2';
   const ACTION_VERSION = 'rule-0.4.0';
   const MODEL_VERSION  = { hands: 'hand_landmarker/float16/1', pose: 'pose_landmarker_lite/float16/1', vision: 'tasks-vision@0.10.21' };
   const VENDOR = new URL('./vendor/tasks-vision/', document.currentScript ? document.currentScript.src : location.href).href;
   const MODELS = {
     hands: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
-    pose : 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task'
+    pose : 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+    seg  : 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite'
   };
   let visionMod = null;
   async function vision(){ if(!visionMod) visionMod = await import(VENDOR + 'vision_bundle.mjs'); return visionMod; }
@@ -110,23 +111,31 @@
       const files = await v.FilesetResolver.forVisionTasks(VENDOR + 'wasm');
       const base = (path) => ({ baseOptions: { modelAssetPath: path, delegate: 'GPU' }, runningMode: 'VIDEO' });
       if (modes.has('hands')) handLm = await v.HandLandmarker.createFromOptions(files, Object.assign(base(MODELS.hands), { numHands: opt.numHands || 2 }));
-      if (modes.has('pose'))  poseLm = await v.PoseLandmarker.createFromOptions(files, Object.assign(base(MODELS.pose), { numPoses: 1, outputSegmentationMasks: !!opt.segment }));
+      if (modes.has('pose'))  poseLm = await v.PoseLandmarker.createFromOptions(files, Object.assign(base(MODELS.pose), { numPoses: 1 }));
+      if (opt.segment) await ensureSeg();
     }
     function status(s){ if (km.onStatus) km.onStatus(s); }
 
     // ── 사람 마스크(segment 옵션): 거울 좌표 알파 캔버스. 배경 바꾸기·실루엣에 씀
     const maskCanvas = document.createElement('canvas'); const mctx = maskCanvas.getContext('2d'); let maskImg = null;
-    let maskN = 0; km.maskEvery = opt.maskEvery || 2; km.segmentOn = !!opt.segment;
-    km.updateMask = function(mask){ if ((maskN++ % km.maskEvery) !== 0) return; const S2 = 2, mw = mask.width, mh = mask.height, ow = mw / S2 | 0, oh = mh / S2 | 0;
-      if (maskCanvas.width !== ow || maskCanvas.height !== oh) { maskCanvas.width = ow; maskCanvas.height = oh; maskImg = mctx.createImageData(ow, oh); }
-      const a = mask.getAsFloat32Array(), d = maskImg.data; let j = 3;
-      for (let y = 0; y < oh; y++) { const row = y * S2 * mw; for (let x = 0; x < ow; x++, j += 4) { const v = a[row + x * S2]; d[j] = v > .6 ? 255 : v < .3 ? 0 : ((v - .3) / .3 * 255) | 0; } }
+    km.segmentOn = !!opt.segment; let segLm = null, segLoading = null, maskAcc = null, segLastT = -1;
+    async function ensureSeg(){ if (segLm) return segLm; if (segLoading) return segLoading; status('사람 분리 모델 준비 중…');
+      segLoading = (async () => { const v = await vision(); const files = await v.FilesetResolver.forVisionTasks(VENDOR + 'wasm');
+        segLm = await v.ImageSegmenter.createFromOptions(files, { baseOptions: { modelAssetPath: MODELS.seg, delegate: 'GPU' }, runningMode: 'VIDEO', outputConfidenceMasks: true, outputCategoryMask: false }); status(''); return segLm; })();
+      return segLoading; }
+    // 사람 확률(0~1) → 시간 평활(EMA .55) → 부드러운 문턱 → 알파. 끝부분 떨림을 잡는 핵심은 EMA + 그릴 때 blur 깃털
+    km.updateMask = function(mask){ const mw = mask.width, mh = mask.height; if (maskCanvas.width !== mw || maskCanvas.height !== mh) { maskCanvas.width = mw; maskCanvas.height = mh; maskImg = mctx.createImageData(mw, mh); maskAcc = null; }
+      const a = mask.getAsFloat32Array(); if (!maskAcc || maskAcc.length !== a.length) maskAcc = Float32Array.from(a);
+      const d = maskImg.data, k = km.maskSmooth == null ? .55 : km.maskSmooth; let j = 3;
+      for (let i = 0; i < a.length; i++, j += 4) { const v = maskAcc[i] = maskAcc[i] * k + a[i] * (1 - k); d[j] = v > .7 ? 255 : v < .4 ? 0 : ((v - .4) / .3 * 255) | 0; }
       mctx.putImageData(maskImg, 0, 0); };
+    function stepSeg(t){ if (!segLm || !km.segmentOn) return false; if (video.currentTime === segLastT) return !!maskCanvas.width; segLastT = video.currentTime;
+      const r = segLm.segmentForVideo(video, t); const m = r.confidenceMasks && r.confidenceMasks[0]; if (!m) return false; try { km.updateMask(m); } finally { try { m.close(); } catch (_) {} } return true; }
     /** 사람 마스크 켜고 끄기(배경 바꿀 때만 켜서 프레임 아낌) */
-    km.setSegment = async function(on){ km.segmentOn = !!on; if (poseLm && poseLm.setOptions) { try { await poseLm.setOptions({ outputSegmentationMasks: !!on }); } catch (e) { km.emit('error', { kind: 'segment', message: String(e), score: 0 }); } } };
+    km.setSegment = async function(on){ km.segmentOn = !!on; if (on) { try { await ensureSeg(); } catch (e) { km.emit('error', { kind: 'segment', message: String(e), score: 0 }); } } else { maskAcc = null; } };
     /** 사람만 거울로 그린다(배경 투명). target ctx 에 W×H */
     km.drawPerson = function(tctx){ tctx = tctx || ctx; const pc = km._pc || (km._pc = document.createElement('canvas')); if (pc.width !== W || pc.height !== H) { pc.width = W; pc.height = H; } const p = pc.getContext('2d');
-      p.clearRect(0, 0, W, H); p.save(); p.translate(W, 0); p.scale(-1, 1); p.drawImage(video, 0, 0, W, H); p.globalCompositeOperation = 'destination-in'; p.drawImage(maskCanvas, 0, 0, W, H); p.restore(); tctx.drawImage(pc, 0, 0); };
+      p.clearRect(0, 0, W, H); p.save(); p.translate(W, 0); p.scale(-1, 1); p.drawImage(video, 0, 0, W, H); p.globalCompositeOperation = 'destination-in'; p.filter = 'blur(' + (km.maskFeather == null ? 3 : km.maskFeather) + 'px)'; const sh = km.maskShrink == null ? 2 : km.maskShrink; p.drawImage(maskCanvas, sh, sh, W - sh * 2, H - sh * 2); p.filter = 'none'; p.restore(); tctx.drawImage(pc, 0, 0); };
     km.maskCanvas = maskCanvas;
 
     // ── 그리기 도우미
@@ -264,7 +273,8 @@
             for (let i = f.hands.length; i < 2; i++) handSm[i].reset(); }
           if (poseLm) { const r = poseLm.detectForVideo(video, t); const raw = r.landmarks && r.landmarks[0] ? toPx(r.landmarks[0]) : null;
             if (raw) { f.pose = poseSm.apply(raw, t); poseSeen = true; } else { f.pose = null; if (poseSeen) { poseSm.reset(); poseSeen = false; } }
-            if (r.segmentationMasks && r.segmentationMasks.length) { const m = r.segmentationMasks[0]; try { if (km.segmentOn) km.updateMask(m); } catch (e) { km.emit('error', { kind: 'mask', message: String(e), score: 0 }); } finally { try { m.close(); } catch (_) {} } if (km.segmentOn && maskCanvas.width) f.maskCanvas = maskCanvas; } }
+            }
+          if (km.segmentOn) { try { if (stepSeg(t)) f.maskCanvas = maskCanvas; } catch (e) { km.emit('error', { kind: 'mask', message: String(e), score: 0 }); } }
         } catch (e) { km.emit('error', { kind: 'detect', message: String(e), score: 0 }); }
         if (handLm) f.actions.hands = stepHands(f);
         if (poseLm) f.actions.body = stepBody(f);

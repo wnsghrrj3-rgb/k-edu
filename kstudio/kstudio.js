@@ -81,6 +81,7 @@ km.onFrame = f => { const t = now(), dt = Math.min(.05, (t - last) / 1000 || .01
   $('posedot').className = 'dot ' + (ok ? 'on' : km.running ? 'bad' : ''); $('posetxt').textContent = !km.running ? '인식 대기' : ok ? '인식 중' : '몸이 안 보여요';
   drawBg(t);
   if (view !== 'robot') { if (bg === 'camera') { /* 카메라 그대로면 이미 사람 포함 */ } else if (f.maskCanvas && !km.mouse) km.drawPerson(ctx); else if (!km.mouse && km.segmentOn) { ctx.font = '700 18px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText('사람 분리 준비 중…', W / 2, H - 30); } }
+  if (km.segmentOn && $('smooth')) { km.maskSmooth = +$('smooth').value; km.maskFeather = +$('feather').value; }
   if (view !== 'person') { retarget(p, b); renderRobot(dt); ctx.drawImage(tcv, 0, 0, W, H); }
   spawnFx(p, b, t); drawFx(p, t);
   if (recording) { ctx.fillStyle = '#ff4d6d'; ctx.beginPath(); ctx.arc(W - 26, 26, 10, 0, Math.PI * 2); ctx.fill(); }
