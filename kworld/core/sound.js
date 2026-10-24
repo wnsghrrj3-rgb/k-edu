@@ -1,7 +1,7 @@
 // 소리층 — 파일 없이 브라우저가 합성하는 환경음(바람·불·비·강물·발소리·심장) + 한 번 소리 60여 종(SFX, 108) + 있으면 트는 샘플(assets/sfx/<name>.mp3).
 // 첫 터치 뒤에만 켜진다(브라우저 정책). ?sound=0 이면 끔, 🔈 단추로 토글. 시대 이름 없음. 구조 설계 v1 §7.
 /** 합성할 수 있는 한 번 소리 이름(108) — 데이터(ambience.day/night·사건 sound·선택지 sound)에서 이 이름을 쓴다 */
-export const SFX = ['growl','rustle','wolf','card','good','bad','drum','bird','owl','dog','rooster','hammer','horse','train','car','bell','pick','gather','stone','knap','chop','flint','splash','eat','hoe','loom','coin','paper','door','locked','gong','flute','horn','whistle','tiger','bear','boar','cow','crow','frog','hurt','fall','breath','wake','limp','grain','craft','heart','rank','capped','status','tick','late','gate','jokbo','luck','star','wave','meet','secret'];
+export const SFX = ['growl','rustle','wolf','card','good','bad','drum','bird','owl','dog','rooster','hammer','horse','train','car','bell','pick','gather','stone','knap','chop','flint','splash','eat','hoe','loom','coin','paper','door','locked','gong','flute','horn','whistle','tiger','bear','boar','cow','crow','frog','hurt','fall','breath','wake','limp','grain','craft','heart','rank','capped','status','tick','late','gate','jokbo','luck','star','wave','meet','secret','rumor'];
 export class Sound {
   constructor(g) {
     this.g = g; this.on = new URLSearchParams(location.search).get('sound') !== '0' && localStorage.getItem('kworld_sound') !== '0';
@@ -116,6 +116,7 @@ export class Sound {
     if (name === 'star') { osc('sine', 2093, 1568, 0.5, 0.05); return true; }
     if (name === 'wave') { osc('sine', 660, 990, 0.12, 0.05); seq(100, () => osc('sine', 660, 990, 0.12, 0.05)); return true; }
     if (name === 'meet') { B(350, 0.08, 0.08, 'bandpass'); seq(110, () => B(300, 0.08, 0.07, 'bandpass')); return true; }
+    if (name === 'rumor') { B(1700, 0.11, 0.05, 'bandpass'); seq(120, () => B(1300, 0.13, 0.045, 'bandpass')); seq(260, () => osc('sine', 880, 620, 0.26, 0.025)); return true; }   /* 121: 귓속말 — 소문 번짐(meet 와 따로) */
     if (name === 'secret') { osc('sine', 784, 0, 0.12, 0.05); seq(90, () => osc('sine', 988, 0, 0.12, 0.05)); seq(180, () => osc('sine', 1319, 0, 0.3, 0.05)); return true; }
     return false;
   }

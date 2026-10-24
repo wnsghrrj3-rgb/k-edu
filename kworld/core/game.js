@@ -177,7 +177,7 @@ export class Game {
   take(k) { const i = this.inventory.indexOf(k); if (i >= 0) this.inventory.splice(i, 1); }
   give(k) { this.inventory.push(k); this.renderInv(); }
   flag(f) { if (Array.isArray(f)) { for (const x of f) this.flag(x); return; } if (!f || this.flags.has(f)) return; this.save?.touch();
-    if (/^act\d+$/.test(f)) this.checkpoint = { act: f, flags: [...this.flags, f], inventory: [...this.inventory] };   /* 체크포인트: ACT 시작마다(쓰러지면 여기로) */ this.flags.add(f); this.checkGate(); if (this.story) this.story.onFlag(); if (this.life) this.life.onFlag(); if (this.pulse) this.pulse.onFlag(); if (this.spark) this.spark.onFlag(); if (this.bond) this.bond.onFlag(); }
+    if (/^act\d+$/.test(f)) this.checkpoint = { act: f, flags: [...this.flags, f], inventory: [...this.inventory] };   /* 체크포인트: ACT 시작마다(쓰러지면 여기로) */ this.flags.add(f); this.checkGate(); if (this.story) this.story.onFlag(); if (this.life) this.life.onFlag(); if (this.pulse) this.pulse.onFlag(); if (this.spark) this.spark.onFlag(); if (this.bond) this.bond.onFlag(); if (this.friends) this.friends.onFlag?.(f); }
   /** 대상 정의: kinds(종류별 덮어쓰기) → rename(깃발에 따라 이름·동사·규칙이 바뀜, 첫 맞는 것) */
   defFor(t) {
     let d = this.items.targets[t.type]; if (!d) return null;

@@ -225,9 +225,9 @@ export class Life {
   /** 119: 「그 뒤」 카드 👂 한 줄 — 이 시대에 떠도는 말을 몇 번 먼저 들었나(rumor:<X>:heard)·그래서 몇 번 남보다 앞서 섰나(:used)·미리 해 둔 일(prep:<X>). 소문 데이터가 없는 시대면 빈 줄. 값은 안 바뀐다 — 「소식을 먼저 아는 집이 살아남았다」가 한 줄로 남을 뿐 */
   earLine() {
     const g = this.g; const rules = g.world?.spark?.gaze?.rules || []; if (!rules.some((r) => /^rumor:.+:heard$/.test(String(r?.flag || '')))) return '';
-    const F = [...g.flags]; const heard = F.filter((f) => /^rumor:[^:]+:heard$/.test(f)).length, used = F.filter((f) => /^rumor:[^:]+:used$/.test(f)).length, prep = F.filter((f) => /^prep:[^:]+$/.test(f)).length;
+    const F = [...g.flags]; const heard = F.filter((f) => /^rumor:[^:]+:heard$/.test(f)).length, used = F.filter((f) => /^rumor:[^:]+:used$/.test(f)).length, prep = F.filter((f) => /^prep:[^:]+$/.test(f)).length, fromFriend = F.filter((f) => /^friend:rumor:[^:]+$/.test(f)).length;   // 121: 그중 반 친구에게 들은 것
     if (!heard) return '소문은 지나쳤다 — 사람 곁을 지나지 않아 늘 뒤늦게 알았다. 소식을 먼저 아는 집이 살아남았다.';
-    return `먼저 들은 집 — 떠도는 말을 ${heard}번 먼저 들었다${used ? `, 그래서 ${used}번은 남보다 앞서 섰다` : ''}${prep ? `. 미리 해 둔 일 ${prep}가지` : ''}. 소식을 먼저 아는 집이 살아남았다.`;
+    return `먼저 들은 집 — 떠도는 말을 ${heard}번 먼저 들었다${fromFriend ? `(그중 ${fromFriend}번은 반 친구에게서)` : ''}${used ? `, 그래서 ${used}번은 남보다 앞서 섰다` : ''}${prep ? `. 미리 해 둔 일 ${prep}가지` : ''}. 소식을 먼저 아는 집이 살아남았다.`;
   }
   /** 119: 소문을 들었으면 나침반 밑에 살짝 — 「👂 자리 — 미리 … · 미리 해 둘 수 있다」(items.targets rename 중 if 에 rumor:<X>:heard, flag 에 prep 가 든 것이 지금 조건에 맞을 때). 사건이 열리거나 미리 하면 사라진다. 자리·길은 데이터가 정한다 */
   prepHint() {

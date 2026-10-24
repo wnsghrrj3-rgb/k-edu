@@ -211,7 +211,7 @@ export class Bond {
     const wait = this.cfg.rumorWait ?? RUMOR_WAIT; const x = [...by.keys()].find((k) => T[k] >= wait); if (!x) return;
     const list = by.get(x); const r = list[Math.floor(Math.random() * list.length)]; delete T[x];
     g.flags.add(r.flag); if (r.once) g.flags.add('gaze:said:' + r.id); g.flags.add('bond:rumor'); g.flag?.('bond:rumor:' + x); g.friends?.rumored?.(x, r.text, r.id);   /* 120: 벗에게 들은 소문도 곁 반 친구에게 번진다 */
-    this.sinceLine = 0; g.sound?.play?.('meet', 0.3); g.ui?.say?.(`👤 ${this.name} — 「들었어? ${r.text}」`, 4600);
+    this.sinceLine = 0; g.sound?.play?.('rumor', 0.3); g.ui?.say?.(`👤 ${this.name} — 「들었어? ${r.text}」`, 4600);
   }
   /** 「운명의 벗과 함께」 길을 고른 뒤(결과 카드 bond:true) — 벗이 한마디. 값은 각자 */
   together(s, c) { const g = this.g; if (this.state() !== 'friend') return; this.sinceLine = 0; g.flags.add('bond:together'); g.flag?.('bond:together:' + (s?.id || '')); setTimeout(() => g.ui?.say?.(`👤 ${this.name} — 「같이 하니까 됐지.」 (${s?.title || ''})`, 4200), 1800); }
