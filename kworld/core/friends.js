@@ -6,6 +6,7 @@
 //  · 82: 답을 받으면 외친 쪽 몸도 손을 들어 답한다(myWaveUntil) + wave reply kind 'back' → 답한 쪽엔 「👋 이름 — 「고마워.」」 한 줄(그 줄엔 다시 답하지 않는다).
 //  · 81: 외침에 답하기 — 곁 친구의 외침이 뜬 뒤 9초 안에 G 로 손을 흔들면 wave 에 reply{to,kind} 가 실려 가고, 외친 쪽 화면엔 「👋 이름 — 「다행이다!」」 한 줄(값 없음).
 //  · 116: 짐승 앞 외침 — 곁 친구에게 짐승이 서면 「뛰지 마!」(멧돼지는 「물러서!」), 지나가면 「갔다!」, 덮치면 「괜찮아?」 — beasts.spawn·end·maul·hit 가 부른다(값 없음).
+//  · 120: 소문 번짐(rumor) — 내가 떠도는 말을 들으면(사람 입·벗 귀띔) 곁(14m) 친구 화면에 「👥 이름 — 「들었어? …」」 한 줄. 그 친구도 같은 차례(앞 상황 열림·다음 아직)면 깃발 rumor:<X>:heard 가 같이 선다(값 없음, 시간만) — 번진 소문은 다시 번지지 않는다. spark.pickGaze·bond.rumoring 이 부른다.
 //  · 20초 넘게 소식 없으면 사라진다. `?friends=0` 또는 world.friends === false 면 끔. 망에서 wss 가 막히면 조용히 없음.
 import * as THREE from 'three';
 import { createAvatar } from './avatar.js';
@@ -35,7 +36,7 @@ export class Friends {
       this.ch = s.db.channel('kworld:' + s.classId + ':' + g.era, { config: { broadcast: { self: false }, presence: { key: s.sid } } });
       this.ch.on('broadcast', { event: 'pos' }, ({ payload }) => this.recv(payload));
       this.ch.on('broadcast', { event: 'wave' }, ({ payload }) => this.recvWave(payload)).on('broadcast', { event: 'shout' }, ({ payload }) => this.recvShout(payload));
-      this.ch.on('broadcast', { event: 'pick' }, ({ payload }) => this.recvPick(payload));
+      this.ch.on('broadcast', { event: 'pick' }, ({ payload }) => this.recvPick(payload)).on('broadcast', { event: 'rumor' }, ({ payload }) => this.recvRumor(payload));
       this.ch.on('presence', { event: 'leave' }, ({ key }) => this.drop(key));
       this.ch.subscribe((st) => { if (st === 'SUBSCRIBED') { this.on = true; this.ch.track({ nick: s.nick, chr: g.character?.id || null }); this.send(true); } });
       g.e.onFrame.push((dt) => this.tick(dt)); this.hud();
@@ -85,6 +86,17 @@ export class Friends {
   /** 외침 — 쫓김 끝(escaped/caught)·급한 일 늦음(late). 곁 친구 화면에만 뜬다 */
   shout(kind, title) { if (!this.on || !SHOUT[kind]) return; try { this.ch.send({ type: 'broadcast', event: 'shout', payload: { id: this.me.sid, nick: this.me.nick, kind, title: title || '', x: this.g.p?.pos.x, z: this.g.p?.pos.z } }); } catch { } }
   recvShout(p) { if (!p || !p.id || p.id === this.me?.sid || !SHOUT[p.kind]) return; const f = this.friends.get(p.id); const g = this.g; if (!f || !g.p) return; const x = p.x ?? f.tx, z = p.z ?? f.tz; if (Math.hypot(x - g.p.pos.x, z - g.p.pos.z) > NEAR_SHOUT) return; const pool = SHOUT[p.kind]; g.ui?.say?.(`👥 ${f.body.userData.nick || p.nick || '친구'} — ${pool[Math.floor(Math.random() * pool.length)]}${p.title ? ` (${p.title})` : ''} · G 👋`, 4200); f.shoutKind = p.kind; this.reply = { id: p.id, kind: p.kind, until: performance.now() + REPLY_MS }; }
+  /** 120: 소문 번짐 — 내가 떠도는 말을 들었다(x = 다음 상황 id). 곁 친구에게만 뜬다(값 없음) */
+  rumored(x, text, ruleId) { if (!this.on || !x || !text) return; try { this.ch.send({ type: 'broadcast', event: 'rumor', payload: { id: this.me.sid, nick: this.me.nick, x, text: String(text), rule: ruleId || null, px: this.g.p?.pos.x, pz: this.g.p?.pos.z } }); } catch { } }
+  recvRumor(p) {
+    if (!p || !p.id || p.id === this.me?.sid || !p.x || !p.text) return; const f = this.friends.get(p.id); const g = this.g; if (!f || !g.p) return;
+    const x = p.px ?? f.tx, z = p.pz ?? f.tz; if (Math.hypot(x - g.p.pos.x, z - g.p.pos.z) > NEAR_SHOUT) return;
+    const flag = 'rumor:' + p.x + ':heard'; if (g.flags?.has(flag)) return;   // 이미 들었으면 조용히
+    const rules = (g.spark?.cfg?.gaze?.rules || g.world?.spark?.gaze?.rules || []).filter((r) => String(r?.flag || '') === flag); if (!rules.length) return;   // 이 시대 소문이 아니면 없음
+    const r = rules.find((q) => q.id === p.rule) || rules[0]; if (r.if && g.cond && !g.cond(r.if)) return;   // 내 차례(앞 상황 열림·다음 아직)가 아니면 아직 뜻 없는 말 — 안 뜸
+    g.flags.add(flag); g.flags.add('friend:rumor'); if (r.once) g.flags.add('gaze:said:' + r.id);
+    g.sound?.play?.('meet', 0.3); g.ui?.say?.(`👥 ${f.body.userData.nick || p.nick || '친구'} — 「들었어? ${p.text}」`, 4200); if (g.flag) g.flag('friend:rumor:' + p.x); else g.flags.add('friend:rumor:' + p.x);
+  }
   recvWave(p) { if (!p || !p.id || p.id === this.me?.sid) return; const f = this.friends.get(p.id); if (!f) return; f.waveUntil = performance.now() + WAVE_MS; const nick = f.body.userData.nick || p.nick || '친구'; const r = p.reply; if (r && r.to === this.me?.sid && REPLY[r.kind]) { const pool = REPLY[r.kind]; this.g.ui?.say?.(`👋 ${nick} — ${pool[Math.floor(Math.random() * pool.length)]}`, 3200); if (r.kind !== 'back') this.waveBack(p.id); return; }   // 81: 내 외침에 답한 손 흔들기 — 한 줄
     this.g.ui?.say?.(`👋 ${nick}이(가) 손을 흔든다`, 2600); }
   /** life.finish 가 부른다 — 무엇을 골랐는지 한 줄(제목만, 값 없음). `with` 면 곁 친구에게 「함께」 */

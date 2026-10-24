@@ -59,7 +59,7 @@ ok(e.sun.intensity > 2.3 && !st.isNight, '낮: 해 원래대로');
 st.snow(true); run(0.5);
 ok(st.rainPts && st.rainPts.visible && st.snowOn && !st.rainOn && st.rainPts.material.size > 0.1, '눈: 비 점이 희고 굵게, rainOn 아님');
 ok(winds.at(-1)[0] === 'rain' && winds.at(-1)[1] === 0, '눈은 빗소리 없음');
-const y0 = st.rainPts.geometry.attributes.position.array[1]; run(1); const y1 = st.rainPts.geometry.attributes.position.array[1];
+const arr0 = st.rainPts.geometry.attributes.position.array; let pi = 1; for (let i = 1; i < arr0.length; i += 3) if (arr0[i] > 6) { pi = i; break; }   /* 120: 바닥 가까운 점은 1초 안에 위(18)로 되감겨 음수가 나오던 흔들림 — 높이 6 위의 점으로 잰다 */ const y0 = arr0[pi]; run(1); const y1 = st.rainPts.geometry.attributes.position.array[pi];
 ok(y1 < y0 && y0 - y1 < 6, `눈은 천천히 내린다 (${(y0 - y1).toFixed(2)}/초)`);
 st.snow(false); ok(!st.rainPts.visible && !st.snowOn && st.rainPts.material.size < 0.1, '눈 그침 → 점 숨김·비 크기로');
 st.rain(true); ok(st.rainOn && !st.snowOn && st.rainPts.material.color.getHex() === 0xbfd0e6, '비는 푸르스름한 점');
