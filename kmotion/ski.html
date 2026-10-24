@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>케이모션 · 고개 스키</title>
+<link rel="stylesheet" href="./kmotion.css">
+<style>
+.stage{max-width:960px;aspect-ratio:16/9;background:#dfe9f5}
+.result{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;font-size:1rem}.result b{color:var(--gold)}
+.calib{font-size:1.1rem;color:var(--ok)}
+</style>
+</head>
+<body>
+<header><a href="./">← 케이모션</a><h1>⛷ 고개 스키</h1><span id="hdr"></span></header>
+<div class="hud"><span class="big" id="score">0</span><span id="dist">0 m</span><span id="gates">문 0/0</span><span id="lives">❤❤❤</span></div>
+<div class="stage">
+  <video id="v" autoplay playsinline muted></video>
+  <canvas id="c" width="960" height="540"></canvas>
+  <div class="dev hidden" id="dev"></div>
+  <div class="overlay" id="ov"></div>
+</div>
+<p class="note">고개를 왼쪽·오른쪽으로 기울이거나 옮기면 방향, 몸을 숙이면 빨라져요(웅크리기). 점프대에서 진짜로 뛰면 트릭 보너스. 영상은 기기 안에서만 처리돼요.</p>
+<script src="./kmotion.js"></script>
+<script src="./kmotion-data.js"></script>
+<script>
+const km = KMotion.create({ video: document.getElementById('v'), canvas: document.getElementById('c'), modes: ['pose'], activity: 'ski' });
+KMotionData.attach(km, document.getElementById('hdr'));
+const ov = document.getElementById('ov'), dev = document.getElementById('dev'), { ctx, W, H } = km, $ = id => document.getElementById(id);
+if (new URLSearchParams(location.search).has('dev')) dev.classList.remove('hidden');
+const HY = H * .32, RUN = 90; // 지평선, 코스 길이(초)
+let state = 'setup', t0 = 0, px = 0, vx = 0, steer = 0, tuck = false, speed = 0, dist = 0, score = 0, lives = 3, inv = 0, air = 0, airT = 0, trick = false, gatesHit = 0, gatesAll = 0, trees = 0, tricks = 0, objs = [], spawnZ = 0, flakes = [], msg = '', msgT = 0, calib = { n: 0, x: 0, tilt: 0 }, headRaw = null, shake = 0;
+const now = () => performance.now(), clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+// ── 소리
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+function tone(f, dur, type, g0){ const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(); o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); g.gain.setValueAtTime(g0 || .2, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g).connect(AC.destination); o.start(t); o.stop(t + dur + .02); }
+const sfx = { gate: () => { tone(660, .12); setTimeout(() => tone(990, .18), 90); }, crash: () => tone(90, .4, 'sawtooth', .35), jump: () => { tone(440, .1); setTimeout(() => tone(880, .25), 80); }, trick: () => [0, 80, 160, 240].forEach((d, i) => setTimeout(() => tone(523 * Math.pow(1.19, i), .15), d)) };
+
+// ── 고개 읽기 → 조종값
+function readHead(f){ const p = f.pose, b = f.actions.body; if (!p || !b || !b.ok) { headRaw = null; return; }
+  const nose = p[0], le = p[7], re = p[8], sh = b.sh, shw = Math.hypot(p[11].x - p[12].x, p[11].y - p[12].y) || 1;
+  const hx = (nose.x - sh.x) / shw;                                           // 고개 좌우 위치(어깨폭 비) — 거울이라 왼쪽 기울이면 음수
+  const tilt = (le.v > .4 && re.v > .4) ? Math.atan2(re.y - le.y, re.x - le.x) * 180 / Math.PI : 0; // 귀 선 기울기(도)
+  const drop = (nose.y - sh.y) / b.torso;                                     // 코가 어깨에 가까울수록 0에 가까움(숙임)
+  headRaw = { hx, tilt, drop, lean: b.lean, air: b.air };
+  if (state === 'calib') { calib.n++; calib.x += hx; calib.tilt += tilt; return; }
+  const cx = calib.n ? calib.x / calib.n : 0, ct = calib.n ? calib.tilt / calib.n : 0;
+  const raw = clamp((hx - cx) * 2.2 + (tilt - ct) / 22 + b.lean / 30, -1, 1);
+  steer = steer * .75 + raw * .25;                                            // 부드럽게
+  tuck = drop > -0.45 || b.squat; }                                           // 서 있으면 drop ≈ -0.7, 숙이면 -0.4 위
+km.on('body:jump', e => { if (state !== 'play') return; if (air > 0 && !trick) { trick = true; tricks++; score += 200; msg = '트릭! +200'; msgT = now(); sfx.trick(); km.emit('ski:trick'); } });
+
+// ── 코스
+function spawn(){ while (spawnZ < dist + 60) { spawnZ += 7 + Math.random() * 5; const r = Math.random();
+  if (r < .45) { const gx = (Math.random() * 2 - 1) * .8; objs.push({ kind: 'gate', z: spawnZ, x: gx, w: .36, done: false }); gatesAll++; }
+  else if (r < .85) objs.push({ kind: 'tree', z: spawnZ, x: (Math.random() * 2 - 1) * 1.1, w: .14 });
+  else objs.push({ kind: 'ramp', z: spawnZ, x: (Math.random() * 2 - 1) * .6, w: .3 }); } }
+function proj(o){ const t = clamp(1 - (o.z - dist) / 60, 0, 1.15); const e = Math.pow(t, 2.2); return { t, y: HY + (H * .97 - HY) * e, s: .08 + e * 1.25, x: W / 2 + (o.x - px) * W * .55 * (e + .03) }; }
+
+// ── 진행
+let last = 0;
+function update(f){ const tn = now(), dt = Math.min(.05, (tn - last) / 1000 || .016); last = tn;
+  readHead(f); if (state !== 'play') return;
+  const el = (tn - t0) / 1000; if (el > RUN) return end('완주!');
+  const target = (tuck ? 28 : 19) * (1 + el / RUN * .6); speed += (target - speed) * dt * (speed > target ? 2.5 : .8);
+  dist += speed * dt; vx += steer * 7 * dt; vx *= .86; px = clamp(px + vx * dt * 60 / 10, -1.3, 1.3);
+  if (air > 0) air -= dt; inv = Math.max(0, inv - dt); shake *= .85;
+  spawn();
+  for (const o of objs) { if (o.done) continue; const rel = o.z - dist; if (rel < -1) { o.done = true; if (o.kind === 'gate' && !o.pass) { msg = '문 놓침'; msgT = tn; km.emit('ski:gate_miss'); } continue; }
+    if (rel < 1.6 && rel > -1 && !o.hitChecked) { o.hitChecked = true; const dx = Math.abs(o.x - px);
+      if (o.kind === 'gate') { if (dx < o.w) { o.pass = true; gatesHit++; score += 100 + (tuck ? 50 : 0); msg = tuck ? '문 통과 +150' : '문 통과 +100'; sfx.gate(); km.emit('ski:gate', { score: 1 }); } }
+      else if (o.kind === 'tree') { if (dx < o.w + .1 && air <= 0 && inv <= 0) { lives--; inv = 1.6; shake = 1; speed *= .35; msg = '쿵!'; sfx.crash(); trees++; km.emit('ski:crash', { score: 0 }); if (lives <= 0) return end('넘어졌어요'); } }
+      else if (o.kind === 'ramp') { if (dx < o.w) { air = 1.1; airT = tn; trick = false; score += 50; msg = '점프! 지금 뛰어 봐요'; sfx.jump(); km.emit('ski:ramp'); } }
+      msgT = tn; } }
+  objs = objs.filter(o => !o.done || o.z - dist > -2);
+  $('score').textContent = score; $('dist').textContent = Math.round(dist * 4) + ' m'; $('gates').textContent = `문 ${gatesHit}/${gatesAll}`; $('lives').textContent = '❤'.repeat(lives) + '♡'.repeat(3 - lives); }
+
+// ── 그리기
+function draw(f){ const tn = now();
+  ctx.save(); if (shake > .02) ctx.translate((Math.random() - .5) * 14 * shake, (Math.random() - .5) * 10 * shake);
+  const sky = ctx.createLinearGradient(0, 0, 0, HY); sky.addColorStop(0, '#5ea0e6'); sky.addColorStop(1, '#cfe3f7'); ctx.fillStyle = sky; ctx.fillRect(-20, -20, W + 40, HY + 20);
+  ctx.fillStyle = '#eef4fb'; ctx.beginPath(); ctx.moveTo(-20, HY); for (let x = 0; x <= W + 40; x += 40) ctx.lineTo(x - 20, HY - 18 - Math.abs(Math.sin(x * .013) * 46 + Math.sin(x * .031) * 20)); ctx.lineTo(W + 20, HY); ctx.fill();
+  const snow = ctx.createLinearGradient(0, HY, 0, H); snow.addColorStop(0, '#dfe9f5'); snow.addColorStop(1, '#ffffff'); ctx.fillStyle = snow; ctx.fillRect(-20, HY, W + 40, H - HY + 20);
+  for (let i = 0; i < 9; i++) { const z = ((dist * 1.3 + i * 7) % 60); const t = Math.pow(1 - z / 60, 2.2); const y = HY + (H * .97 - HY) * t; ctx.strokeStyle = `rgba(160,185,210,${.15 + t * .3})`; ctx.lineWidth = 1 + t * 3; ctx.beginPath(); ctx.moveTo(W / 2 + (-1.5 - px) * W * .55 * (t + .03), y); ctx.lineTo(W / 2 + (1.5 - px) * W * .55 * (t + .03), y); ctx.stroke(); }
+  const sorted = objs.slice().sort((a, b) => b.z - a.z);
+  for (const o of sorted) { const pr = proj(o); if (pr.t <= 0 || pr.t > 1.1) continue; const s = pr.s;
+    if (o.kind === 'tree') { ctx.fillStyle = '#5b3a1e'; ctx.fillRect(pr.x - 6 * s, pr.y - 30 * s, 12 * s, 30 * s); ctx.fillStyle = '#2f7d4a'; for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.moveTo(pr.x, pr.y - (120 - k * 28) * s); ctx.lineTo(pr.x - (50 - k * 10) * s, pr.y - (58 - k * 24) * s); ctx.lineTo(pr.x + (50 - k * 10) * s, pr.y - (58 - k * 24) * s); ctx.fill(); } ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.beginPath(); ctx.moveTo(pr.x, pr.y - 120 * s); ctx.lineTo(pr.x - 18 * s, pr.y - 98 * s); ctx.lineTo(pr.x + 18 * s, pr.y - 98 * s); ctx.fill(); }
+    else if (o.kind === 'gate') { for (const sd of [-1, 1]) { const gx = W / 2 + (o.x + sd * o.w - px) * W * .55 * (Math.pow(pr.t, 2.2) + .03); ctx.strokeStyle = '#333'; ctx.lineWidth = 3 * s; ctx.beginPath(); ctx.moveTo(gx, pr.y); ctx.lineTo(gx, pr.y - 90 * s); ctx.stroke(); ctx.fillStyle = o.pass ? '#5cf2a4' : sd < 0 ? '#ff4d6d' : '#2f6df6'; ctx.beginPath(); ctx.moveTo(gx, pr.y - 90 * s); ctx.lineTo(gx + 42 * s * sd, pr.y - 76 * s); ctx.lineTo(gx, pr.y - 60 * s); ctx.fill(); } }
+    else { ctx.fillStyle = '#cbd8e8'; ctx.beginPath(); ctx.moveTo(pr.x - 70 * s, pr.y); ctx.lineTo(pr.x + 70 * s, pr.y); ctx.lineTo(pr.x + 50 * s, pr.y - 36 * s); ctx.lineTo(pr.x - 50 * s, pr.y - 36 * s); ctx.fill(); ctx.strokeStyle = '#8fa5bf'; ctx.lineWidth = 2; ctx.stroke(); } }
+  // 스키어(나)
+  const sx = W / 2, sy = H * .9 - (air > 0 ? Math.sin(Math.min(1, air / 1.1) * Math.PI) * 90 : 0), ang = steer * .5, sc = tuck ? .8 : 1;
+  ctx.save(); ctx.translate(sx, sy); ctx.rotate(ang); if (inv > 0 && Math.floor(tn / 100) % 2) ctx.globalAlpha = .4;
+  ctx.strokeStyle = '#1d2433'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-26, 6); ctx.lineTo(-10, 16); ctx.moveTo(26, 6); ctx.lineTo(10, 16); ctx.stroke();
+  ctx.fillStyle = '#ff4d6d'; ctx.beginPath(); ctx.ellipse(0, -36 * sc, 24, 34 * sc, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ffd9b3'; ctx.beginPath(); ctx.arc(0, -84 * sc, 17, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#2f6df6'; ctx.beginPath(); ctx.arc(0, -90 * sc, 17, Math.PI, 0); ctx.fill();
+  ctx.strokeStyle = '#1d2433'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-20, -40 * sc); ctx.lineTo(-38, 10); ctx.moveTo(20, -40 * sc); ctx.lineTo(38, 10); ctx.stroke(); ctx.restore();
+  // 눈 날림
+  if (flakes.length < 60) flakes.push({ x: Math.random() * W, y: -10, v: 2 + Math.random() * 3, r: 1 + Math.random() * 2 });
+  ctx.fillStyle = 'rgba(255,255,255,.9)'; for (const fl of flakes) { fl.y += fl.v * (1 + speed / 20); fl.x -= steer * 3; ctx.beginPath(); ctx.arc(fl.x, fl.y, fl.r, 0, Math.PI * 2); ctx.fill(); } flakes = flakes.filter(fl => fl.y < H + 10);
+  // 조종 게이지·메시지
+  ctx.fillStyle = 'rgba(29,36,51,.35)'; ctx.fillRect(W / 2 - 120, H - 26, 240, 10); ctx.fillStyle = '#ffd35c'; ctx.fillRect(W / 2 - 4 + steer * 116, H - 30, 8, 18);
+  if (tuck && state === 'play') { ctx.font = '800 18px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#1d2433'; ctx.fillText('웅크리기 · 가속', W / 2, H - 40); }
+  if (tn - msgT < 1100 && msg) { ctx.font = '900 56px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = msg.startsWith('쿵') || msg.includes('놓침') ? '#ff4d6d' : '#2f6df6'; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 8; ctx.strokeText(msg, W / 2, H * .22); ctx.fillText(msg, W / 2, H * .22); }
+  ctx.restore();
+  // 내 모습(작게)
+  const pw = 224, ph = 126, pxl = W - pw - 12, pyl = 12; ctx.save(); ctx.beginPath(); ctx.roundRect(pxl, pyl, pw, ph, 12); ctx.clip(); ctx.translate(pxl + pw, pyl); ctx.scale(-pw / W, ph / H); ctx.drawImage(km.video, 0, 0, W, H); ctx.restore();
+  if (f.pose) { ctx.save(); ctx.translate(pxl, pyl); ctx.scale(pw / W, ph / H); km.drawSkeleton(f.pose, km.POSE_BONES, 'rgba(255,255,255,.9)', 6); ctx.restore(); }
+  ctx.strokeStyle = headRaw ? '#5cf2a4' : '#ff4d6d'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(pxl, pyl, pw, ph, 12); ctx.stroke(); }
+km.onFrame = f => { update(f); draw(f); if (!dev.classList.contains('hidden')) dev.textContent = headRaw ? `fps ${km.fps} steer ${steer.toFixed(2)} hx ${headRaw.hx.toFixed(2)} tilt ${headRaw.tilt.toFixed(0)} drop ${headRaw.drop.toFixed(2)} tuck ${tuck} speed ${speed.toFixed(0)}` : '사람 없음'; };
+
+// ── 흐름
+function setup(){ state = 'setup'; ov.innerHTML = `<h2>⛷ 고개 스키</h2><p>고개를 기울이거나 옮겨서 방향을 잡고, 빨간·파란 깃발 사이로 지나가요.<br>나무는 피하고, 숙이면 빨라지고, 점프대에서 진짜 뛰면 트릭!</p><button class="btn" id="start">시작</button>`; ov.classList.remove('hidden'); $('start').onclick = begin; }
+async function begin(){ if (!km.running) { ov.innerHTML = '<h2>카메라 준비 중…</h2>'; try { await km.start(); } catch (e) { ov.innerHTML = `<h2>시작할 수 없어요</h2><p>${e.message}</p><button class="btn" id="b">다시</button>`; $('b').onclick = setup; return; } }
+  await AC.resume(); state = 'calib'; calib = { n: 0, x: 0, tilt: 0 }; let left = 3;
+  ov.innerHTML = `<h2>바르게 서서 정면을 봐 주세요</h2><p class="calib" id="cd">3</p><p>고개 가운데를 기억해요</p>`;
+  const iv = setInterval(() => { left--; $('cd').textContent = left; if (left <= 0) { clearInterval(iv); if (calib.n < 5) { calib = { n: 0, x: 0, tilt: 0 }; } startRun(); } }, 1000); }
+function startRun(){ px = 0; vx = 0; steer = 0; speed = 12; dist = 0; score = 0; lives = 3; inv = 0; air = 0; gatesHit = gatesAll = trees = tricks = 0; objs = []; spawnZ = 20; msg = ''; last = now(); t0 = now(); state = 'play'; ov.classList.add('hidden'); km.emit('ski:start'); }
+function end(why){ state = 'end'; const total = (now() - t0) / 1000;
+  ov.innerHTML = `<h2>${why} · ${score}점</h2><div class="result"><span>거리 <b>${Math.round(dist * 4)} m</b></span><span>깃발 문 <b>${gatesHit}/${gatesAll}</b></span><span>트릭 <b>${tricks}</b></span><span>충돌 <b>${trees}</b></span><span>시간 <b>${Math.round(total)}초</b></span></div>
+    <p>${gatesHit >= gatesAll * .8 ? '깃발을 거의 다 통과했어요, 선수급!' : gatesHit >= gatesAll * .5 ? '좋아요, 고개를 조금 더 크게 기울여 봐요' : '깃발이 멀리서 보일 때 미리 방향을 잡아 봐요'}</p><button class="btn gold" id="again">다시 타기</button>`; ov.classList.remove('hidden'); $('again').onclick = begin;
+  km.emit('ski:result', { points: score, dist: Math.round(dist * 4), gatesHit, gatesAll, tricks, trees, seconds: Math.round(total), score: gatesAll ? gatesHit / gatesAll : 0 }); }
+setup();
+</script>
+</body>
+</html>
