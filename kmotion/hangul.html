@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>케이모션 · 한글 조립</title>
+<link rel="stylesheet" href="./kmotion.css">
+<style>
+.stage{max-width:1000px;aspect-ratio:16/9;background:#f7f8fc}
+.teach{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px;width:100%;max-width:1000px}
+.teach button,.teach label{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:9px 14px;font-size:.9rem;cursor:pointer;font-weight:700;display:flex;gap:6px;align-items:center}
+.status{display:inline-flex;align-items:center;gap:6px}.dot{width:10px;height:10px;border-radius:50%;background:#888}.dot.on{background:var(--ok)}.dot.bad{background:var(--danger)}
+.result{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;font-size:1rem}.result b{color:var(--gold)}
+</style>
+</head>
+<body>
+<header><a href="./">← 케이모션</a><h1>✍️ 한글 조립 — 손으로 글자 만들기</h1><span id="hdr"></span></header>
+<div class="hud"><span class="big" id="score">0점</span><span id="prog">낱말 0 / 8</span><span class="status"><i class="dot" id="camdot"></i><span id="camtxt">카메라 대기</span></span><span class="status"><i class="dot" id="handdot"></i><span id="handtxt">손 대기</span></span></div>
+<div class="stage" id="stage">
+  <video id="v" autoplay playsinline muted></video>
+  <canvas id="c" width="960" height="540"></canvas>
+  <div class="dev hidden" id="dev"></div>
+  <div class="overlay" id="ov"></div>
+</div>
+<div class="teach">
+  <button id="say">🔊 낱말 듣기</button><button id="pass">✅ 글자 채우기(교사)</button><button id="skip">⏭ 다음 낱말</button><button id="restart">↻ 다시 시작</button><button id="fs">⛶ 전체 화면</button>
+  <label><input type="checkbox" id="cam"> 카메라 비치기</label>
+</div>
+<p class="note">엄지와 검지를 붙이면 카드를 잡고, 손을 움직여 가운데 칸에 놓고, 손가락을 벌리면 놓아요. 영상은 기기 안에서만 처리돼요. 카메라가 없으면 주소 뒤에 ?mouse=1 (누르면 잡기).</p>
+<script src="./kmotion.js"></script>
+<script src="./kmotion-data.js"></script>
+<script>
+const $ = id => document.getElementById(id), now = () => performance.now(), rnd = (a, b) => a + Math.random() * (b - a), pick = a => a[Math.random() * a.length | 0];
+const km = KMotion.create({ video: $('v'), canvas: $('c'), modes: ['hands'], numHands: 2, activity: 'hangul' });
+KMotionData.attach(km, $('hdr'));
+const ov = $('ov'), dev = $('dev'), { ctx, W, H } = km; if (new URLSearchParams(location.search).has('dev')) dev.classList.remove('hidden');
+
+// ───── 한글
+const CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const JUNG = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+const compose = (c, j) => String.fromCharCode(0xAC00 + (CHO.indexOf(c) * 21 + JUNG.indexOf(j)) * 28);
+const split = ch => { const code = ch.charCodeAt(0) - 0xAC00; return { c: CHO[Math.floor(code / 28 / 21)], j: JUNG[Math.floor(code / 28) % 21] }; };
+const WORDS = [ { w: '나무', e: '🌳' }, { w: '바다', e: '🌊' }, { w: '하마', e: '🦛' }, { w: '오리', e: '🦆' }, { w: '포도', e: '🍇' }, { w: '사자', e: '🦁' }, { w: '치마', e: '👗' }, { w: '모자', e: '🧢' }, { w: '나비', e: '🦋' }, { w: '기차', e: '🚂' }, { w: '두부', e: '🧈' }, { w: '우유', e: '🥛' }, { w: '비누', e: '🧼' }, { w: '소리', e: '🔔' }, { w: '사과', e: '🍎' }, { w: '시소', e: '🎠' } ];
+const TOTAL = 8;
+
+// ───── 상태
+let words = [], wi = -1, word = null, si = 0, slots = { c: null, j: null }, cards = [], grabbed = null, state = 'setup', score = 0, done = [], celebrate = null, hands = [], stats = { built: 0, teacher: 0, skip: 0, drops: 0 };
+const SLOT = { c: { x: W * .40, y: H * .40, w: 110, h: 130 }, j: { x: W * .60, y: H * .40, w: 110, h: 130 } }, RESULT = { x: W * .5, y: H * .40 };
+const EASY_C = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'], EASY_J = ['ㅏ','ㅑ','ㅓ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ','ㅐ','ㅔ','ㅘ'];
+
+// ───── 음성
+const synth = window.speechSynthesis;
+function say(text){ if (!synth) return; synth.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.rate = .9; synth.speak(u); }
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+function tone(f, dur, type, g0){ const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(); o.type = type || 'sine'; o.frequency.value = f; g.gain.setValueAtTime(g0 || .15, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g).connect(AC.destination); o.start(t); o.stop(t + dur + .02); }
+const sfx = { grab: () => tone(520, .06, 'triangle', .1), drop: () => tone(330, .08, 'triangle', .1), ok: () => { tone(660, .12); setTimeout(() => tone(990, .18), 90); }, word: () => [0, 110, 220, 330].forEach((d, i) => setTimeout(() => tone([523, 659, 784, 1047][i], .3), d)), bad: () => tone(160, .25, 'sawtooth', .15) };
+
+// ───── 낱말·카드 배치
+function newWord(){ wi++; if (wi >= TOTAL) return finish(); word = words[wi]; si = 0; done = []; celebrate = null; $('prog').textContent = `낱말 ${wi} / ${TOTAL}`; layoutCards(); say(word.w); km.emit('hangul:word', { word: word.w }); }
+function layoutCards(){ slots = { c: null, j: null }; grabbed = null; const need = split(word.w[si]);
+  const cs = new Set([need.c]); while (cs.size < 5) cs.add(pick(EASY_C)); const js = new Set([need.j]); while (js.size < 5) js.add(pick(EASY_J));
+  cards = []; [...cs].sort(() => Math.random() - .5).forEach((ch, i) => cards.push(mk(ch, 'c', W * .11, H * .16 + i * H * .16)));
+  [...js].sort(() => Math.random() - .5).forEach((ch, i) => cards.push(mk(ch, 'j', W * .89, H * .16 + i * H * .16))); }
+function mk(ch, kind, x, y){ return { ch, kind, x, y, hx: x, hy: y, w: 86, h: 100, color: kind === 'c' ? '#4865F5' : '#8466F5', placed: false, pop: 0 }; }
+
+// ───── 손 → 카드 조작 (엔진 표준 명령 GRAB / RELEASE / MOVE)
+let cursors = [{ x: 0, y: 0, pinched: false, seen: false }, { x: 0, y: 0, pinched: false, seen: false }];
+km.on('GRAB', e => { if (state !== 'play' || grabbed) return; const pos = e.pos; const c = cards.find(k => !k.placed && Math.abs(pos.x - k.x) < k.w * .7 && Math.abs(pos.y - k.y) < k.h * .7); if (c) { grabbed = { card: c, hand: e.hand }; c.pop = 1; sfx.grab(); km.emit('hangul:grab', { ch: c.ch }); } });
+km.on('RELEASE', e => { if (!grabbed || e.hand !== grabbed.hand) return; drop(grabbed.card); grabbed = null; });
+km.on('MOVE', e => { const cu = cursors[e.hand]; cu.x = (e.pinchPt || e.pos).x; cu.y = (e.pinchPt || e.pos).y; cu.pinched = e.pinched; cu.seen = true; if (grabbed && grabbed.hand === e.hand) { grabbed.card.x += (cu.x - grabbed.card.x) * .5; grabbed.card.y += (cu.y - grabbed.card.y) * .5; } });
+function drop(c){ stats.drops++; const s = SLOT[c.kind]; const inSlot = Math.abs(c.x - s.x) < 80 && Math.abs(c.y - s.y) < 90;
+  if (inSlot && !slots[c.kind]) { c.x = s.x; c.y = s.y; c.placed = true; slots[c.kind] = c; sfx.drop(); checkSyllable(); }
+  else { c.x = c.hx; c.y = c.hy; sfx.drop(); } }
+function checkSyllable(){ if (!slots.c || !slots.j) return; const made = compose(slots.c.ch, slots.j.ch), want = word.w[si];
+  if (made === want) { score += 20; sfx.ok(); say(made); done.push(made); km.emit('hangul:syllable', { made, word: word.w }); stats.built++; si++; setTimeout(() => { if (si >= word.w.length) completeWord(); else layoutCards(); }, 900); }
+  else { sfx.bad(); km.emit('hangul:wrong', { made, want, score: 0 }); setTimeout(() => { for (const k of ['c', 'j']) { const c = slots[k]; if (c) { c.placed = false; c.x = c.hx; c.y = c.hy; } } slots = { c: null, j: null }; }, 700); } }
+function completeWord(){ score += 50; stats.built++; sfx.word(); say(word.w); celebrate = { t: now(), parts: [] }; for (let i = 0; i < 60; i++) celebrate.parts.push({ x: W * .5, y: H * .42, vx: rnd(-6, 6), vy: rnd(-9, -2), r: rnd(3, 7), c: pick(['#4865F5', '#8466F5', '#37C9E8', '#27B985', '#FFAE45', '#F1646C']) });
+  $('prog').textContent = `낱말 ${wi + 1} / ${TOTAL}`; $('score').textContent = score + '점'; km.emit('hangul:complete', { word: word.w }); cards = []; setTimeout(newWord, 2600); }
+function finish(){ state = 'end'; ov.innerHTML = `<h2>🎉 ${TOTAL}개 낱말 완성! ${score}점</h2><div class="result"><span>만든 글자 <b>${stats.built}</b></span><span>교사 채움 <b>${stats.teacher}</b></span><span>건너뜀 <b>${stats.skip}</b></span></div><button class="btn gold" id="again">다시 하기</button>`; ov.classList.remove('hidden'); $('again').onclick = setup; km.emit('hangul:finish', { points: score, ...stats }); }
+
+// ───── 그리기 (밝은 화면)
+function rrect(x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+km.onFrame = f => { const t = now();
+  if ($('cam').checked && !km.mouse) { km.drawCamera(); ctx.fillStyle = 'rgba(247,248,252,.82)'; ctx.fillRect(0, 0, W, H); } else { ctx.fillStyle = '#f7f8fc'; ctx.fillRect(0, 0, W, H); if (km.mouse) km.drawMouseHelp(); }
+  const seen = f.hands.length > 0; $('handdot').className = 'dot ' + (seen ? 'on' : km.running ? 'bad' : ''); $('handtxt').textContent = !km.running ? '손 대기' : seen ? `손 ${f.hands.length}개 인식` : '손이 안 보여요';
+  if (state === 'play' && word) {
+    // 목표 낱말
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '800 26px sans-serif'; ctx.fillStyle = '#697187'; ctx.fillText('만들 낱말', W * .5, H * .08);
+    const chars = [...word.w]; chars.forEach((ch, i) => { const x = W * .5 + (i - (chars.length - 1) / 2) * 90, y = H * .17; rrect(x - 36, y - 36, 72, 72, 14); ctx.fillStyle = i < si ? '#27B985' : '#ffffff'; ctx.fill(); ctx.strokeStyle = i === si ? '#4865F5' : '#dde2f0'; ctx.lineWidth = i === si ? 4 : 2; ctx.stroke(); ctx.font = '800 40px sans-serif'; ctx.fillStyle = i < si ? '#fff' : '#9BA3B5'; ctx.fillText(i < si ? ch : '?', x, y + 2); });
+    ctx.font = '48px sans-serif'; ctx.fillText(word.e, W * .5 + (chars.length / 2) * 90 + 40, H * .17);
+    // 조립 칸
+    for (const k of ['c', 'j']) { const s = SLOT[k]; rrect(s.x - s.w / 2, s.y - s.h / 2, s.w, s.h, 18); ctx.fillStyle = slots[k] ? '#eef2ff' : '#ffffff'; ctx.fill(); ctx.setLineDash(slots[k] ? [] : [10, 10]); ctx.strokeStyle = k === 'c' ? '#4865F5' : '#8466F5'; ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]); if (!slots[k]) { ctx.font = '700 18px sans-serif'; ctx.fillStyle = '#9BA3B5'; ctx.fillText(k === 'c' ? '자음' : '모음', s.x, s.y); } }
+    ctx.font = '800 36px sans-serif'; ctx.fillStyle = '#9BA3B5'; ctx.fillText('+', W * .5, H * .40);
+    if (slots.c && slots.j) { const made = compose(slots.c.ch, slots.j.ch); ctx.font = '900 90px sans-serif'; ctx.fillStyle = made === word.w[si] ? '#27B985' : '#F1646C'; ctx.fillText(made, W * .5, H * .66); }
+    else { ctx.font = '800 22px sans-serif'; ctx.fillStyle = '#697187'; ctx.fillText(`"${word.w[si]}" 글자를 만들어요 — 왼쪽 자음, 오른쪽 모음을 집어서 칸에`, W * .5, H * .66); }
+    // 카드
+    for (const c of cards) { const g = grabbed && grabbed.card === c; c.pop = Math.max(0, c.pop - .06); const sc = 1 + (g ? .12 : 0) + c.pop * .1;
+      ctx.save(); ctx.translate(c.x, c.y); ctx.scale(sc, sc); if (g) { ctx.shadowColor = 'rgba(72,101,245,.45)'; ctx.shadowBlur = 24; } rrect(-c.w / 2, -c.h / 2, c.w, c.h, 16); ctx.fillStyle = c.placed ? '#eef2ff' : '#ffffff'; ctx.fill(); ctx.shadowBlur = 0; ctx.strokeStyle = c.color; ctx.lineWidth = 3; ctx.stroke(); ctx.font = '900 54px sans-serif'; ctx.fillStyle = c.color; ctx.fillText(c.ch, 0, 4); ctx.restore(); }
+    // 완성 낱말 보관
+    done.forEach((ch, i) => { ctx.font = '800 28px sans-serif'; ctx.fillStyle = '#27B985'; ctx.fillText(ch, W * .5 - 60 + i * 40, H * .92); });
+  }
+  if (celebrate) { const el = (t - celebrate.t) / 1000; ctx.font = `900 ${Math.min(160, 60 + el * 220)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#202438'; ctx.fillText(word.w, W * .5, H * .45); ctx.font = `${Math.min(150, 40 + el * 200)}px sans-serif`; ctx.fillText(word.e, W * .5, H * .72 + Math.sin(el * 8) * 10);
+    for (const p of celebrate.parts) { p.x += p.vx; p.y += p.vy; p.vy += .25; ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); } }
+  // 손 커서
+  f.hands.forEach((h, i) => { const a = f.actions.hands[i]; if (!a) return; const pt = a.pinched ? a.pinchPt : a.pointer; ctx.beginPath(); ctx.arc(pt.x, pt.y, a.pinched ? 16 : 12, 0, Math.PI * 2); ctx.fillStyle = a.pinched ? '#4865F5' : 'rgba(72,101,245,.35)'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); if (!a.pinched) { ctx.font = '12px sans-serif'; ctx.fillStyle = '#697187'; ctx.textAlign = 'center'; ctx.fillText('엄지+검지 = 잡기', pt.x, pt.y - 22); } });
+  if (!dev.classList.contains('hidden')) dev.textContent = `fps ${km.fps} hands ${f.hands.length} grabbed ${grabbed ? grabbed.card.ch : '-'} ` + f.actions.hands.map(a => `${a.side}:${a.pose} pinch=${a.pinch}`).join(' '); };
+
+// ───── 교사 버튼·공통
+$('say').onclick = () => word && say(word.w); $('restart').onclick = () => setup();
+$('pass').onclick = () => { if (state !== 'play' || !word) return; stats.teacher++; const need = split(word.w[si]); for (const k of ['c', 'j']) { let c = cards.find(x => x.kind === k && x.ch === need[k]); if (!c) { c = mk(need[k], k, SLOT[k].x, SLOT[k].y); cards.push(c); } c.x = SLOT[k].x; c.y = SLOT[k].y; c.placed = true; slots[k] = c; } km.emit('hangul:teacher_fill', { ch: word.w[si], score: .5 }); checkSyllable(); };
+$('skip').onclick = () => { if (state === 'play') { stats.skip++; km.emit('hangul:skip', { word: word && word.w, score: 0 }); newWord(); } };
+$('fs').onclick = () => { const el = $('stage'); document.fullscreenElement ? document.exitFullscreen() : el.requestFullscreen && el.requestFullscreen(); };
+addEventListener('keydown', e => { if (e.key === 'p' || e.key === 'P') $('pass').click(); if (e.key === 'n' || e.key === 'N') $('skip').click(); });
+function setup(){ state = 'setup'; score = 0; wi = -1; word = null; cards = []; done = []; celebrate = null; grabbed = null; stats = { built: 0, teacher: 0, skip: 0, drops: 0 }; $('score').textContent = '0점'; $('prog').textContent = `낱말 0 / ${TOTAL}`;
+  ov.innerHTML = `<h2>✍️ 한글 조립</h2><p>왼쪽의 자음, 오른쪽의 모음을 손으로 집어 가운데 칸에 놓으면 글자가 돼요.<br>글자를 다 모으면 낱말 그림이 나타나요!</p><p style="color:var(--dim)">엄지와 검지를 붙이면 잡기 · 손을 움직여 옮기기 · 손가락을 벌리면 놓기</p><button class="btn" id="start">시작</button>`; ov.classList.remove('hidden'); $('start').onclick = begin; }
+async function begin(){ await AC.resume(); if (!km.running) { ov.innerHTML = '<h2>카메라 준비 중…</h2>'; $('camtxt').textContent = '연결 중'; try { await km.start(); $('camdot').className = 'dot on'; $('camtxt').textContent = km.mouse ? '마우스 모드' : '카메라 연결됨'; } catch (e) { $('camdot').className = 'dot bad'; $('camtxt').textContent = '카메라 실패'; ov.innerHTML = `<h2>시작할 수 없어요</h2><p>${e.message}</p><p style="color:var(--dim)">카메라 없이 해 보려면 주소 뒤에 ?mouse=1</p><button class="btn" id="b">다시</button>`; $('b').onclick = setup; return; } }
+  words = WORDS.slice().sort(() => Math.random() - .5).slice(0, TOTAL); ov.classList.add('hidden'); state = 'play'; km.emit('hangul:start'); newWord(); }
+setup();
+</script>
+</body>
+</html>
