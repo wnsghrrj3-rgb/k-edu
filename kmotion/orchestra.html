@@ -33,7 +33,7 @@
 <div class="bar" id="loopbar" style="display:none"><span class="grp"><b>루프</b><select id="bpm"><option>80</option><option selected>100</option><option>120</option></select><button id="loopRec">⏺ 4마디 녹음</button><button id="loopPlay">▶ 재생</button><button id="loopUndo">↶ 마지막 지우기</button><button id="loopClear">🗑 모두 지우기</button><span id="loopInfo" style="color:var(--dim);font-size:.85rem">트랙 0</span></span><span class="grp"><button id="export">💾 소리 파일로</button></span></div>
 <div class="bar"><button id="fs">⛶ 전체 화면</button><label><input type="checkbox" id="cam" checked> 카메라 비치기</label></div>
 <div id="clips"></div>
-<p class="note">손을 패드에 내려치면 소리가 나요. 2명이면 화면을 반씩 나눠 각자 악기를 골라요. 테레민은 손 높이가 음 높이. 영상은 기기 안에서만 처리돼요. 카메라 없으면 ?mouse=1.</p>
+<p class="note">패드 안에서 북 치듯 내려치거나, 화면 누르듯 손을 앞으로 쑥 밀거나, 옆에서 쓸어 들어와도 소리가 나요. 2명이면 화면을 반씩 나눠 각자 악기를 골라요. 테레민은 손 높이가 음 높이. 영상은 기기 안에서만 처리돼요. 카메라 없으면 ?mouse=1.</p>
 <script src="./kmotion.js"></script>
 <script src="./kmotion-data.js"></script>
 <script>
@@ -76,15 +76,23 @@ function layout(){ pads = []; const regions = players === 1 ? [{ x0: 0, x1: W, p
 layout();
 const colorOf = (hue, a) => `hsla(${hue},80%,60%,${a})`;
 
-// ───── 타격: 손이 패드에 '아래로' 들어오는 순간(속도 = 세기)
-const handSt = {}; // id → {x,y,t,inside:Set}
+// ───── 타격 — 세 가지 자연스러운 손짓을 모두 받는다
+//  ① 내려치기: 패드 안에서 손이 빠르게 내려오다 멈추는 순간(속도 꺾임)  ② 밀기: 손을 카메라 쪽으로 쑥(손 크기 급증)  ③ 들어오기: 어느 방향이든 빠르게 패드로 진입
+const handSt = {}; // id → {x,y,span,t,vy,inside:Set,cool:Map}
 function sense(f){ const t = f.t, seen = new Set();
-  f.hands.forEach((h, i) => { const a = f.actions.hands[i]; if (!a) return; const id = i; seen.add(id); const pt = { x: h[9].x, y: h[9].y }; const st = handSt[id] || (handSt[id] = { x: pt.x, y: pt.y, t, inside: new Set() });
-    const vy = (pt.y - st.y) / Math.max(1, t - st.t) * 16, speed = Math.hypot(pt.x - st.x, pt.y - st.y) / Math.max(1, t - st.t) * 16; st.x = pt.x; st.y = pt.y; st.t = t;
+  f.hands.forEach((h, i) => { const a = f.actions.hands[i]; if (!a) return; const id = i; seen.add(id); const pt = { x: h[9].x, y: h[9].y }, span = a.span || 60;
+    const st = handSt[id] || (handSt[id] = { x: pt.x, y: pt.y, span, t, vy: 0, vyPrev: 0, inside: new Set(), cool: new Map(), pushCool: 0 });
+    const dt = Math.max(1, t - st.t), vy = (pt.y - st.y) / dt * 16, speed = Math.hypot(pt.x - st.x, pt.y - st.y) / dt * 16, grow = (span - st.span) / st.span / dt * 16; // 16ms 기준 정규화
     const p = players === 2 ? (pt.x < W / 2 ? 0 : 1) : 0; const kit = KITS[kits[p]];
-    if (kit.continuous) { thereminUpdate(id, !a.pinched, pt.y / H, pt.x / W); return; } else thereminUpdate(id, false);
-    const now_in = new Set(); for (const pad of pads) { if (pad.p !== p) continue; if (Math.abs(pt.x - pad.x) < pad.w / 2 && Math.abs(pt.y - pad.y) < pad.h / 2) { now_in.add(pad); if (!st.inside.has(pad) && vy > 1.5) hit(pad, clamp(.35 + speed / 18, .35, 1), id); } }
-    st.inside = now_in; });
+    if (kit.continuous) { thereminUpdate(id, !a.pinched, pt.y / H, pt.x / W); Object.assign(st, { x: pt.x, y: pt.y, span, t, vyPrev: st.vy, vy }); return; } else thereminUpdate(id, false);
+    const now_in = new Set();
+    for (const pad of pads) { if (pad.p !== p) continue; if (!(Math.abs(pt.x - pad.x) < pad.w / 2 && Math.abs(pt.y - pad.y) < pad.h / 2)) continue; now_in.add(pad);
+      const last = st.cool.get(pad) || 0; if (t - last < 120) continue; let v = 0;
+      if (!st.inside.has(pad) && speed > 1.2) v = clamp(.35 + speed / 16, .35, 1);                                   // ③ 진입(어느 방향이든)
+      else if (st.vyPrev > 1.6 && vy < st.vyPrev * .45) v = clamp(.35 + st.vyPrev / 10, .35, 1);                    // ① 내려오다 꺾임(북 치기)
+      else if (grow > .018 && t - st.pushCool > 220) { v = clamp(.4 + grow * 20, .4, 1); st.pushCool = t; }         // ② 카메라 쪽으로 밀기
+      if (v) { st.cool.set(pad, t); hit(pad, v, id); } }
+    st.inside = now_in; Object.assign(st, { x: pt.x, y: pt.y, span: span * .3 + st.span * .7, t, vyPrev: st.vy, vy }); });
   for (const id in handSt) if (!seen.has(+id)) { thereminUpdate(id, false); delete handSt[id]; } }
 function hit(pad, v, by){ const t = AC.currentTime; KITS[kits[pad.p]].play(pad.i, v, t); pad.glow = 1; flashes.push({ x: pad.x, y: pad.y, r: 10, life: 1, hue: pad.hue }); hits++;
   km.emit('orch:hit', { kit: kits[pad.p], pad: pad.i, vel: +v.toFixed(2), player: pad.p, by, score: 1 });
