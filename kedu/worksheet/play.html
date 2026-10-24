@@ -1608,7 +1608,8 @@ function picgHTML(a, paper){
            wave? 물결선(≈ 0 과 y0 사이), mode?:'line'|'bar', title?, ylab?(세로 단위 '(cm)'), xlab?(가로 단위 '(월)'),
            hide?:[[s,i]…] 그 점을 그리지 않음(선도 끊김), mark?:[[s,i,글]…] 점 옆 글(㉠·?), order?:[i…] 잇는 순서(잘못 이은 그래프),
            curve?:true 곡선으로 이음(잘못) · dots?:true 점만(잇지 않음) · blank?:true 판만 · every? 세로 수 쓰는 간격(칸 수)}
-     null 값은 조사하지 않은 자리 — 점을 찍지 않고 이웃한 두 점을 바로 잇는다(사이 값 짐작). 막대(mode bar)는 한 계열만.
+     null 값은 조사하지 않은 자리 — 점을 찍지 않고 이웃한 두 점을 바로 잇는다(사이 값 짐작).
+     v3.15(2026-10-24, 4학년 1학기 「막대그래프」): 막대(mode bar)도 두 계열 — 가로 눈금마다 두 막대를 나란히(묶음 막대), 색(화면)·진하기(종이)와 네모 이름표.
      세로 한 칸 픽셀은 칸 수로 정한다(합 ≤ 약 200px). 다섯 칸마다 굵은 선. 두 계열은 색(화면)·실선/점선(종이)과 이름표.
    화면·종이 같은 SVG(종이는 흑백). */
 function lgraphSVG(a, paper){
@@ -1620,6 +1621,7 @@ function lgraphSVG(a, paper){
   const Y = v => T + H - (v - y0) / step * cp, X = i => L + gx * (i + 0.5);
   const INK = CMP_INK, GR = paper ? '#BBB' : '#D9D2C3', GR5 = paper ? '#888' : '#B5AA94';
   const COL = paper ? [INK, INK] : ['#1F5FA8', '#D35400'], DASH = paper ? ['', ' stroke-dasharray="6 4"'] : ['', ''];
+  const BF = paper ? ['#DDD', '#8A8A8A'] : ['#9CC3EA', '#F5B98A'], BX = (si) => (a.mode === 'bar' && S.length > 1) ? (si === 0 ? -1 : 1) * gx * 0.18 : 0;
   let t = '';
   if (a.title) t += `<text x="${(L + W - 22) / 2 + 11}" y="18" text-anchor="middle" font-size="15" font-weight="700" fill="${INK}">${svgEsc(a.title)}</text>`;
   let ev = Number(a.every) || 0; if (!ev) { for (const k of [1, 2, 5, 10, 20, 25, 50, 100]) { if (k * cp >= 15) { ev = k; break; } } if (!ev) ev = 100; }
@@ -1637,9 +1639,9 @@ function lgraphSVG(a, paper){
   const hid = new Set((a.hide || []).map(h => h[0] + ':' + h[1]));
   if (!a.blank) S.forEach((se, si) => {
     const vals = se.vals || [];
-    if (a.mode === 'bar'){ const bw = gx * 0.52;
+    if (a.mode === 'bar'){ const two = S.length > 1, bw = gx * (two ? 0.36 : 0.52), off = two ? (si === 0 ? -bw / 2 : bw / 2) : 0;   /* v3.15 두 계열 = 묶음 막대 */
       vals.forEach((v, i) => { if (v === null || v === undefined || hid.has(si + ':' + i)) return;
-        t += `<rect x="${(X(i) - bw / 2).toFixed(1)}" y="${Y(v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(yB - Y(v)).toFixed(1)}" fill="${paper ? '#DDD' : '#9CC3EA'}" stroke="${paper ? INK : '#1F5FA8'}" stroke-width="1.3"/>`; });
+        t += `<rect x="${(X(i) + off - bw / 2).toFixed(1)}" y="${Y(v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(yB - Y(v)).toFixed(1)}" fill="${BF[si]}" stroke="${paper ? INK : COL[si]}" stroke-width="1.3"/>`; });
       if (wave) { const m = T + H + 11; t += `<rect x="${L + 1}" y="${m - 3}" width="${W - 22 - L - 1}" height="6" fill="#FFFFFF" opacity="0.92"/>`; }
       return; }
     let idx = vals.map((v, i) => i).filter(i => vals[i] !== null && vals[i] !== undefined && !hid.has(si + ':' + i));
@@ -1657,7 +1659,9 @@ function lgraphSVG(a, paper){
     P.forEach(([x, y]) => { t += si === 1 && paper ? `<rect x="${(x - 3.6).toFixed(1)}" y="${(y - 3.6).toFixed(1)}" width="7.2" height="7.2" fill="${INK}"/>` : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${COL[si]}"/>`; });
   });
   (a.mark || []).forEach(([si, i, txt]) => { const se = S[si] || {}, v = (se.vals || [])[i]; const y = (v === null || v === undefined) ? T + H / 2 : Y(v);
-    t += `<text x="${(X(i) + 7).toFixed(1)}" y="${(y - 7).toFixed(1)}" font-size="14" font-weight="700" fill="${paper ? INK : '#C0392B'}" stroke="#fff" stroke-width="3" paint-order="stroke">${svgEsc(String(txt))}</text>`; });
+    t += `<text x="${(X(i) + BX(si) + 7).toFixed(1)}" y="${(y - 7).toFixed(1)}" font-size="14" font-weight="700" fill="${paper ? INK : '#C0392B'}" stroke="#fff" stroke-width="3" paint-order="stroke">${svgEsc(String(txt))}</text>`; });
+  if (a.mode === 'bar' && S.length > 1){ let lx = L + 16; const ly = (a.title ? 30 : 12) + 12;   /* v3.15 묶음 막대 이름표(범례) */
+    S.forEach((se, si) => { t += `<rect x="${lx}" y="${ly - 6}" width="18" height="12" fill="${BF[si]}" stroke="${paper ? INK : COL[si]}" stroke-width="1.2"/><text x="${lx + 24}" y="${ly + 4}" font-size="12" fill="${INK}">${svgEsc(se.name || '')}</text>`; lx += 40 + 13 * String(se.name || '').length; }); }
   if (a.mode !== 'bar' && (S.length > 1 || (S[0] && S[0].name))){ let lx = L + 4; const ly = (a.title ? 30 : 12) + 12;
     S.forEach((se, si) => { t += `<line x1="${lx}" y1="${ly}" x2="${lx + 22}" y2="${ly}" stroke="${COL[si]}" stroke-width="2.4"${DASH[si]}/><text x="${lx + 27}" y="${ly + 4}" font-size="12" fill="${INK}">${svgEsc(se.name || '')}</text>`; lx += 40 + 13 * String(se.name || '').length; }); }
   const lab = (a.title || '') + ' ' + (a.mode === 'bar' ? '막대그래프' : '꺾은선그래프');

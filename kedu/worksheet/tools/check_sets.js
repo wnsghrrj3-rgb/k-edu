@@ -360,7 +360,7 @@ function checkAsset(where, a) {
         cols.forEach((c, i) => { if (bl.indexOf(i) >= 0) return; const tot = ENG.picgPieces(draw[i], u2).reduce((x, y) => x + y, 0); if (tot > 48) bad(where, `picg units2 ${c} 그림이 ${tot}개 — 48개 이하로`); }); }
       if (a.names !== undefined && (!Array.isArray(a.names) || a.names.length !== 2 || a.names[0] === a.names[1])) bad(where, 'picg names 는 서로 다른 두 이름'); }
   }
-  if (a.type === 'lgraph') {   /* v3.13 — 꺾은선그래프: 값은 y0~ymax 안·눈금 위, 칸 수 2~40, 물결선은 y0>0 일 때만(그리고 꼭), 계열 1~2·막대는 1 */
+  if (a.type === 'lgraph') {   /* v3.13 — 꺾은선그래프: 값은 y0~ymax 안·눈금 위, 칸 수 2~40, 물결선은 y0>0 일 때만(그리고 꼭), 계열 1~2(v3.15 막대도 2 — 묶음 막대) */
     const xs = a.xs || [], S = a.series || [], st = a.step, y0 = a.y0 === undefined ? 0 : a.y0, ym = a.ymax;
     const near = (x) => Math.abs(x - Math.round(x)) < 1e-9;
     if (!(xs.length >= 2 && xs.length <= 12)) bad(where, 'lgraph 가로 눈금은 2~12개');
@@ -373,7 +373,6 @@ function checkAsset(where, a) {
     if (a.wave && !(y0 > 0)) bad(where, 'lgraph 물결선인데 y0 가 0');
     if (a.mode !== undefined && a.mode !== 'line' && a.mode !== 'bar') bad(where, "lgraph mode 는 'line'|'bar'");
     if (!(S.length >= 1 && S.length <= 2)) bad(where, 'lgraph 계열은 1~2');
-    if (a.mode === 'bar' && S.length !== 1) bad(where, 'lgraph 막대는 계열 하나');
     if (S.length === 2 && !(S[0].name && S[1].name && S[0].name !== S[1].name)) bad(where, 'lgraph 두 계열은 서로 다른 이름이 있어야');
     S.forEach((se, si) => { const vs = se.vals || [];
       if (vs.length !== xs.length) bad(where, `lgraph 계열 ${si} 값 수가 가로 눈금 수와 다르다`);
