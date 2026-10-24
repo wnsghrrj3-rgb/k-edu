@@ -8,6 +8,9 @@
  *   hand:grab / hand:release                                       — 집기 시작·놓기(pinch 또는 fist)
  *   hand:move(50ms) / hand:wave / hand:swipe(dir)
  *   body:found / body:lost / body:jump(height) / body:land(airMs) / body:squat / body:stand / body:arms_up / body:arms_down
+ *   body:raise_left/right · lower_* / body:open_arms · close_arms / body:clap / body:lean_left·right·center / body:freeze · unfreeze
+ *   표준 명령(별칭, phase start/update/end): POINT GRAB RELEASE MOVE SWIPE WAVE JUMP SQUAT ARMS_UP RAISE_HAND OPEN_ARMS CLAP LEAN_LEFT LEAN_RIGHT FREEZE — km.on('GRAB', e => e.phase)
+ *   마우스 모드: ?mouse=1 (카메라 없이 개발·시연)
  *   session:start / session:stop / frame / error
  * 영상은 기기 안에서만 처리되고 어디에도 보내지 않는다. 기록(kmotion-data.js)은 관절 좌표·행동 이벤트만.
  *
@@ -19,8 +22,8 @@
  * 좌표는 전부 캔버스(거울) 픽셀, 원유로 필터로 떨림 보정. 랜드마크 {x,y,z,v}. score = 자체 판정 점수(모델 신뢰도와 다름).\n * 손 actions: dir(손 방향 0~359°, 위=0 시계방향)·pointDir(검지 방향)·facing(palm/back)·pointer(검지 끝)·pinchPt(엄지·검지 사이). 몸: facing(front/left/right)·lean(기울기°).
  */
 (function(){
-  const ENGINE_VERSION = '0.3.0';
-  const ACTION_VERSION = 'rule-0.3.0';
+  const ENGINE_VERSION = '0.4.0';
+  const ACTION_VERSION = 'rule-0.4.0';
   const MODEL_VERSION  = { hands: 'hand_landmarker/float16/1', pose: 'pose_landmarker_lite/float16/1', vision: 'tasks-vision@0.10.21' };
   const VENDOR = new URL('./vendor/tasks-vision/', document.currentScript ? document.currentScript.src : location.href).href;
   const MODELS = {
@@ -67,10 +70,18 @@
     const subs = {};
     km.on = (type, fn) => { (subs[type] = subs[type] || []).push(fn); return km; };
     km.off = (type, fn) => { subs[type] = (subs[type] || []).filter(f => f !== fn); return km; };
+    // 표준 행동 명령(KEDU ACTION LAB 명세) ← 내부 이벤트 별칭. phase: start/update/end
+    const STD = { 'hand:point': ['POINT', 'start'], 'hand:grab': ['GRAB', 'start'], 'hand:release': ['RELEASE', 'start'], 'hand:move': ['MOVE', 'update'], 'hand:swipe': ['SWIPE', 'start'], 'hand:wave': ['WAVE', 'start'],
+      'body:jump': ['JUMP', 'start'], 'body:land': ['JUMP', 'end'], 'body:squat': ['SQUAT', 'start'], 'body:stand': ['SQUAT', 'end'], 'body:arms_up': ['ARMS_UP', 'start'], 'body:arms_down': ['ARMS_UP', 'end'],
+      'body:raise_left': ['RAISE_HAND', 'start'], 'body:raise_right': ['RAISE_HAND', 'start'], 'body:lower_left': ['RAISE_HAND', 'end'], 'body:lower_right': ['RAISE_HAND', 'end'],
+      'body:open_arms': ['OPEN_ARMS', 'start'], 'body:close_arms': ['OPEN_ARMS', 'end'], 'body:clap': ['CLAP', 'start'], 'body:lean_left': ['LEAN_LEFT', 'start'], 'body:lean_right': ['LEAN_RIGHT', 'start'], 'body:lean_center': ['LEAN', 'end'],
+      'body:freeze': ['FREEZE', 'start'], 'body:unfreeze': ['FREEZE', 'end'] };
     km.emit = (type, data) => {
       const e = Object.assign({ type, t: performance.now(), score: 1, source: 'rule', session: sessionId, engine: ENGINE_VERSION, action: ACTION_VERSION,
         model: type.startsWith('hand') ? MODEL_VERSION.hands : type.startsWith('body') ? MODEL_VERSION.pose : null }, data || {});
-      (subs[type] || []).forEach(f => f(e)); (subs['*'] || []).forEach(f => f(e)); return e;
+      (subs[type] || []).forEach(f => f(e)); (subs['*'] || []).forEach(f => f(e));
+      const std = STD[type]; if (std) { const se = Object.assign({}, e, { type: std[0], actionType: std[0], phase: std[1], raw: type }); (subs[std[0]] || []).forEach(f => f(se)); (subs['std:*'] || []).forEach(f => f(se)); }
+      return e;
     };
 
     // ── 모션(픽셀 차이)
@@ -106,7 +117,7 @@
     km.drawSkeleton = function(lm, bones, color, r){ if (!lm) return; ctx.strokeStyle = color || 'rgba(77,225,255,.9)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
       for (const [a, b] of bones) { if (lm[a].v < .4 || lm[b].v < .4) continue; ctx.beginPath(); ctx.moveTo(lm[a].x, lm[a].y); ctx.lineTo(lm[b].x, lm[b].y); ctx.stroke(); }
       ctx.fillStyle = '#fff'; for (const p of lm) { if (p.v < .4) continue; ctx.beginPath(); ctx.arc(p.x, p.y, r || 5, 0, Math.PI * 2); ctx.fill(); } };
-    km.drawCamera = function(){ ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1); ctx.drawImage(video, 0, 0, W, H); ctx.restore(); };
+    km.drawCamera = function(){ if (km.mouse) { ctx.fillStyle = '#1b2236'; ctx.fillRect(0, 0, W, H); km.drawMouseHelp(); return; } ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1); ctx.drawImage(video, 0, 0, W, H); ctx.restore(); };
 
     // ── 손 특징(규칙 층 재료)
     km.handFeatures = function(h){
@@ -133,7 +144,8 @@
     // ── 행동 층 상태
     const HOLD = 3; // 연속 프레임 확인(히스테리시스)
     const handState = [0, 1].map(() => ({ pose: 'none', cand: 'none', n: 0, pinched: false, hist: [], lastMoveEmit: 0, waved: false, swiped: false }));
-    const body = { seen: false, base: null, air: false, airT: 0, squat: false, squatN: 0, armsUp: false, armsN: 0 };
+    const body = { seen: false, base: null, air: false, airT: 0, squat: false, squatN: 0, armsUp: false, armsN: 0, raiseL: false, raiseR: false, openArms: false, clapClose: false, leanDir: 'center', leanN: 0, still: 0, frozen: false, prevPose: null };
+    function flip(key, cur, onT, offT, data){ const nk = key + 'N'; body[nk] = cur === body[key] ? 0 : (body[nk] || 0) + 1; if (body[nk] >= HOLD) { body[key] = cur; body[nk] = 0; km.emit(cur ? onT : offT, data || {}); } }
     function labelHand(f){
       if (f.pinch < 0.25 && f.ext[1] && f.ext[2]) return 'pinch';
       if (f.curl < 0.55) return 'fist';
@@ -175,7 +187,7 @@
     }
     function stepBody(frame){
       const p = frame.pose;
-      if (!p) { if (body.seen) { body.seen = false; km.emit('body:lost'); } return null; }
+      if (!p) { if (body.seen) { body.seen = false; body.prevPose = null; body.still = 0; km.emit('body:lost'); } return null; }
       const hip = mid(p[23], p[24]), sh = mid(p[11], p[12]), torso = dist(hip, sh) || 1;
       const vis = Math.min(p[23].v, p[24].v, p[11].v, p[12].v), feet = Math.min(p[27].v, p[28].v);
       if (vis < .5) { if (body.seen) { body.seen = false; km.emit('body:lost'); } return { vis, feet, ok: false }; }
@@ -190,14 +202,30 @@
       body.squatN = sq === body.squat ? 0 : body.squatN + 1;
       if (body.squatN >= HOLD) { body.squat = sq; body.squatN = 0; km.emit(sq ? 'body:squat' : 'body:stand', { pos: hip, score: sq ? Math.min(1, (140 - kneeA) / 50) : 1, knee: Math.round(kneeA) }); }
       // 팔 올리기: 양 손목이 어깨보다 몸통 0.3 위
-      const up = p[15].y < sh.y - torso * .3 && p[16].y < sh.y - torso * .3;
-      body.armsN = up === body.armsUp ? 0 : body.armsN + 1;
-      if (body.armsN >= HOLD) { body.armsUp = up; body.armsN = 0; km.emit(up ? 'body:arms_up' : 'body:arms_down', { pos: sh }); }
+      const upL = p[15].v > .4 && p[15].y < sh.y - torso * .3, upR = p[16].v > .4 && p[16].y < sh.y - torso * .3;
+      flip('armsUp', upL && upR, 'body:arms_up', 'body:arms_down', { pos: sh });
+      flip('raiseL', upL && !upR, 'body:raise_left', 'body:lower_left', { pos: p[15], side: 'left' });
+      flip('raiseR', upR && !upL, 'body:raise_right', 'body:lower_right', { pos: p[16], side: 'right' });
+      // 양팔 벌리기: 손목이 어깨 높이 근처, 둘 사이가 어깨폭 1.6배 넘음
+      const shw = dist(p[11], p[12]) || 1, wristDist = dist(p[15], p[16]);
+      const open = p[15].v > .4 && p[16].v > .4 && wristDist > shw * 1.6 && Math.abs(p[15].y - sh.y) < torso * .45 && Math.abs(p[16].y - sh.y) < torso * .45;
+      flip('openArms', open, 'body:open_arms', 'body:close_arms', { pos: sh, spread: +(wristDist / shw).toFixed(2) });
+      // 손뼉: 손목 거리가 몸통 .3 아래로 들어오는 순간
+      const close = p[15].v > .4 && p[16].v > .4 && wristDist < torso * .3;
+      if (close && !body.clapClose) km.emit('body:clap', { pos: mid(p[15], p[16]) }); body.clapClose = close;
+      // 기울기: lean ±12°
+      const leanNow = Math.atan2(sh.x - hip.x, -(sh.y - hip.y)) * 180 / Math.PI, ld = leanNow < -12 ? 'left' : leanNow > 12 ? 'right' : 'center';
+      body.leanN = ld === body.leanDir ? 0 : body.leanN + 1;
+      if (body.leanN >= HOLD) { body.leanDir = ld; body.leanN = 0; km.emit(ld === 'center' ? 'body:lean_center' : 'body:lean_' + ld, { pos: sh, lean: Math.round(leanNow) }); }
+      // 멈춤: 주요 관절 평균 속도가 낮은 상태 1초
+      if (body.prevPose) { let mv = 0, n = 0; for (const k of [0, 11, 12, 15, 16, 23, 24]) { mv += dist(p[k], body.prevPose[k]); n++; } mv = mv / n / torso;
+        body.still = mv < 0.02 ? body.still + 1 : 0; const fz = body.still > 25; if (fz !== body.frozen) { body.frozen = fz; km.emit(fz ? 'body:freeze' : 'body:unfreeze', { pos: hip }); } }
+      body.prevPose = p;
       // 몸 방향: 어깨 폭/몸통 비(정면 클수록)·코가 어깨 중심에서 어느 쪽인지·기울기
       const shW = dist(p[11], p[12]) / torso, nose = p[0];
       const facing = shW > 0.55 ? 'front' : (nose.x < sh.x ? 'left' : 'right');
       const lean = Math.round(Math.atan2(sh.x - hip.x, -(sh.y - hip.y)) * 180 / Math.PI); // 0 = 똑바로, + 오른쪽으로 기움
-      return { vis, feet, ok: true, hip, sh, torso, air: body.air, squat: body.squat, armsUp: body.armsUp, knee: Math.round(kneeA), facing, shoulderRatio: +shW.toFixed(2), lean };
+      return { vis, feet, ok: true, hip, sh, torso, air: body.air, squat: body.squat, armsUp: body.armsUp, raiseL: body.raiseL, raiseR: body.raiseR, openArms: body.openArms, frozen: body.frozen, leanDir: body.leanDir, knee: Math.round(kneeA), facing, shoulderRatio: +shW.toFixed(2), lean };
     }
 
     // ── 루프
@@ -206,7 +234,13 @@
       if (!km.running) return;
       const t = performance.now();
       const f = { ctx, W, H, t, motion: modes.has('motion') ? motion : null, hands: [], handedness: null, pose: null, actions: { hands: [], body: null }, fresh: false };
-      if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+      if (mouseMode) { f.fresh = true;
+        if (modes.has('hands')) { f.hands = [mockHand()]; f.handedness = [[{ categoryName: 'Right', score: 1 }]]; f.actions.hands = stepHands(f); }
+        if (modes.has('pose')) { f.pose = mockPose(); f.actions.body = stepBody(f); }
+        if (modes.has('motion')) { grid.fill(0); const gx = (W - mouse.x) / S | 0, gy = mouse.y / S | 0; if (mouse.down) for (let yy = gy - 4; yy <= gy + 4; yy++) for (let xx = gx - 4; xx <= gx + 4; xx++) if (yy >= 0 && xx >= 0 && yy < off.height && xx < off.width) grid[yy * off.width + xx] = 1; }
+        fpsN++; if (t - fpsT > 1000) { km.fps = fpsN; fpsN = 0; fpsT = t; }
+        km.emit('frame', { hands: f.hands, pose: f.pose, actions: f.actions, fps: km.fps });
+      } else if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
         lastVideoTime = video.currentTime; f.fresh = true;
         try {
           if (modes.has('motion')) stepMotion();
@@ -225,7 +259,35 @@
       raf = requestAnimationFrame(loop);
     }
 
+    // 마우스 모드 — 카메라 없이 개발·시연. 손: 마우스 위치=손, 누르면 집기, F=주먹. 몸: 마우스 x=고개·몸 위치, 클릭=점프, S=앉기, A/D=기울기, Q/E=왼손/오른손 들기, W=양손, O=양팔 벌리기
+    const mouseMode = opt.mouse || new URLSearchParams(location.search).has('mouse');
+    const mouse = { x: W / 2, y: H / 2, down: false, keys: {} , jumpT: 0 };
+    if (mouseMode) { km.mouse = true;
+      const rect = () => canvas.getBoundingClientRect();
+      const mv = ev => { const r = rect(); const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX), cy = (ev.touches ? ev.touches[0].clientY : ev.clientY); mouse.x = (cx - r.left) / r.width * W; mouse.y = (cy - r.top) / r.height * H; };
+      canvas.addEventListener('mousemove', mv); canvas.addEventListener('touchmove', mv, { passive: true });
+      canvas.addEventListener('mousedown', ev => { mv(ev); mouse.down = true; if (modes.has('pose')) mouse.jumpT = performance.now(); }); window.addEventListener('mouseup', () => mouse.down = false);
+      canvas.addEventListener('touchstart', ev => { mv(ev); mouse.down = true; if (modes.has('pose')) mouse.jumpT = performance.now(); }, { passive: true }); window.addEventListener('touchend', () => mouse.down = false);
+      window.addEventListener('keydown', ev => { mouse.keys[ev.key.toLowerCase()] = true; if (ev.key === ' ') mouse.jumpT = performance.now(); }); window.addEventListener('keyup', ev => { mouse.keys[ev.key.toLowerCase()] = false; }); }
+    function mockHand(){ const s = 60, c = { x: mouse.x, y: mouse.y }, fist = !!mouse.keys.f, pinch = mouse.down && !fist; const pt = []; const fing = [[-.55, -1.2], [-.2, -1.6], [.15, -1.7], [.5, -1.5]];
+      pt[0] = { x: c.x, y: c.y + s, z: 0, v: 1 }; for (let i = 1; i <= 4; i++) pt[i] = { x: c.x - s * (.4 + i * .18), y: c.y + s * (.6 - i * .3), z: 0, v: 1 };
+      fing.forEach(([dx, dy], fi) => { for (let j = 0; j < 4; j++) { const k = 5 + fi * 4 + j, r = fist && j > 0 ? .25 : 1; pt[k] = { x: c.x + dx * s * (j === 0 ? 1 : 1 + j * .15 * r), y: c.y + s * (j === 0 ? -.2 : -.2 + dy * j * .35 * r), z: 0, v: 1 }; } });
+      if (pinch) { pt[4] = { x: pt[8].x - 4, y: pt[8].y, z: 0, v: 1 }; } return pt; }
+    function mockPose(){ const t = performance.now(), cx = W / 2 + (mouse.x - W / 2) * .35, air = t - mouse.jumpT < 320 ? Math.sin((t - mouse.jumpT) / 320 * Math.PI) : 0, sq = mouse.keys.s ? 1 : 0, lean = mouse.keys.a ? -22 : mouse.keys.d ? 22 : 0;
+      const T = 110, hipY = H * .62 - air * 70 + sq * 40, shY = hipY - T, headX = cx + (mouse.x - W / 2) * .25, L = Math.sin(lean * Math.PI / 180) * T;
+      const P = (x, y, v) => ({ x, y, z: 0, v: v == null ? 1 : v }); const p = new Array(33).fill(null).map(() => P(cx, shY, 0));
+      p[11] = P(cx - 60 + L, shY); p[12] = P(cx + 60 + L, shY); p[23] = P(cx - 35, hipY); p[24] = P(cx + 35, hipY);
+      p[0] = P(headX + L * 1.3, shY - 75); p[7] = P(headX - 22 + L * 1.3, shY - 70 + lean * .6); p[8] = P(headX + 22 + L * 1.3, shY - 70 - lean * .6); p[2] = P(headX - 10 + L * 1.3, shY - 80); p[5] = P(headX + 10 + L * 1.3, shY - 80);
+      const upL = mouse.keys.q || mouse.keys.w, upR = mouse.keys.e || mouse.keys.w, open = mouse.keys.o;
+      p[13] = P(cx - 85 + L, shY + 60); p[14] = P(cx + 85 + L, shY + 60);
+      p[15] = open ? P(cx - 150 + L, shY) : upL ? P(cx - 70 + L, shY - 110) : P(cx - 90 + L, shY + 120); p[16] = open ? P(cx + 150 + L, shY) : upR ? P(cx + 70 + L, shY - 110) : P(cx + 90 + L, shY + 120);
+      if (mouse.keys.c) { p[15] = P(cx - 8, shY + 40); p[16] = P(cx + 8, shY + 40); }
+      const kneeY = hipY + 90 - sq * 30, ankY = hipY + 180; p[25] = P(cx - 40 - sq * 30, kneeY); p[26] = P(cx + 40 + sq * 30, kneeY); p[27] = P(cx - 40, ankY); p[28] = P(cx + 40, ankY);
+      return p; }
+    km.drawMouseHelp = function(){ if (!mouseMode) return; ctx.font = '13px ui-monospace,monospace'; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillText('마우스 모드 · ' + (modes.has('pose') ? '이동=몸·고개  클릭/Space=점프  S=앉기  A/D=기울기  Q/E=손 들기  W=양손  O=팔 벌리기  C=손뼉' : '이동=손  누르기=집기  F=주먹'), 10, H - 10); };
+
     km.start = async function(){
+      if (mouseMode) { status(''); km.running = true; lastVideoTime = -1; km.emit('session:start', { activity: km.activity, modes: [...modes], ua: 'mouse-mode', W, H }); raf = requestAnimationFrame(loop); return; }
       status('카메라 여는 중…');
       try { video.srcObject = await navigator.mediaDevices.getUserMedia({ video: { width: W, height: H, facingMode: 'user' }, audio: false }); await video.play(); }
       catch (e) { const err = new Error(e && e.name === 'NotAllowedError' ? '카메라 사용이 허용되지 않았어요. 주소창 왼쪽 자물쇠에서 카메라를 「허용」으로 바꿔 주세요.'

@@ -85,7 +85,7 @@
     async estimateMB(){ const ss = await D.list(); return ss.reduce((m, s) => m + (s.frames || 0) * 0.0012 + (s.events || 0) * 0.0003, 0); }, // 프레임≈1.2KB, 이벤트≈0.3KB
     async enforceQuota(){ let ss = await D.list(); let mb = await D.estimateMB(); while (mb > QUOTA_MB && ss.length > 1) { const old = ss.pop(); await D.remove(old.id); mb -= (old.frames || 0) * 0.0012 + (old.events || 0) * 0.0003; } },
     download(obj, name){ const blob = new Blob([JSON.stringify(obj)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); },
-    LABELS: ['hand:open', 'hand:fist', 'hand:pinch', 'hand:point', 'hand:other', 'hand:grab', 'hand:release', 'hand:wave', 'hand:swipe', 'body:jump', 'body:land', 'body:squat', 'body:stand', 'body:arms_up', 'body:arms_down', 'body:found', 'body:lost', '오인식(없음)'],
+    LABELS: ['hand:open', 'hand:fist', 'hand:pinch', 'hand:point', 'hand:other', 'hand:grab', 'hand:release', 'hand:wave', 'hand:swipe', 'body:jump', 'body:land', 'body:squat', 'body:stand', 'body:arms_up', 'body:arms_down', 'body:raise_left', 'body:raise_right', 'body:lower_left', 'body:lower_right', 'body:open_arms', 'body:close_arms', 'body:clap', 'body:lean_left', 'body:lean_right', 'body:lean_center', 'body:freeze', 'body:unfreeze', 'body:found', 'body:lost', '오인식(없음)'],
     SCHEMA, MAX_FRAMES, QUOTA_MB
   };
   window.KMotionData = D;
