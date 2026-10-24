@@ -139,129 +139,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 7~8차시(소단원 2 기본 — 친숙한 매체와 매체 자료에 관심 가지기) 13슬 =====
+/* ===== 7~8차시(소단원 2 기본 — 친숙한 매체와 매체 자료에 관심 가지기) 『국어』 184~187쪽 13슬 — v2 교과서 기준 재구성 (2026-10-24)
    학습 목표: 친숙한 매체와 매체 자료에 흥미와 관심을 가질 수 있다.
-   ★ 정답 로깅 7슬. 누리집 화면 읽기(read-line)·말하기 틀(punct)·무대·마무리 = 로깅 X.
-   ★ 지도서 258·262쪽 — 누리집 = 개인이나 단체가 인터넷에서 볼 수 있게 만든 홈페이지(누리 + 집) · 게시물 ⇒ s1·s5.
-   ★ 지도서 258쪽 — 문자 언어만이 아니라 그림·사진·영상·소리가 함께 작용하는 매체 ⇒ s6.
-   ★ 지도서 259쪽 참고 자료(디지털 발자국) — 온라인에 남긴 개인 정보 ⇒ s7 오답 = 모르는 사람에게 이름 알려 주기.
-   ★ 지도서 259쪽 활동 질문(어떤 누리집 · 본 글이나 그림 · 느낀 점) ⇒ s9·s10.
-   ★★ 스물여섯째 기준 — 매체에 이름표를 붙이지 않는다.
-      지도서 261쪽 참고 자료(허위 정보 예방 — 공신력 있는 정보 찾기 · 한쪽 입장만 수용 금지)를 2학년 눈높이로 옮기면
-      「누리집 글은 다 맞다」와 「누리집 글은 다 거짓말이다」가 **양쪽 이름표**가 된다 ⇒ s8 오답 칸에 둘 다 · 정답 = 어른에게 묻거나 더 알아보기.
-   ★ 열넷째 기준 — 실제 누리집에 들어가 보기는 어른과 함께 화면 밖에서 ⇒ s11 무대. 가짜 브라우저 0 · 가짜 링크 0.
-   ★ 저작권·기관: 교과서 184~187쪽 국립중앙박물관 어린이박물관 누리집 화면·대화 그림·학교 누리집 「학교 소개」 메뉴,
-      지도서 260쪽 디지털윤리 누리집 화면 미차용.
-      자체 누리집 = 이야기 속 「햇살마을 작은 도서관」(실재 기관 아님 · 화면에 「이야기 속」 명시). */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·스스로 확인·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 판단(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      「오염물이 터졌다」(송수혜)는 간추림과 짧은 말 몇 마디만. 그 밖의 자료(대화·공익 광고 글·영준이 만화·누리집·게시물·시간표·빙고)는 교육부 집필이라 그대로. 매체끼리 우열을 매기지 않고, 누리집에 올릴 때는 예절과 허락을 함께(지도서 245·259·265쪽). */
 const slides=[
-  {tag:'① 만나기', t:'누리집에 놀러 가요!',
-   html:`<div class="scene">
-      <div class="scene-pic">🖥️</div>
-      <div class="scene-say">누리집이 뭐지?</div>
-    </div>
-    <div class="ka-bub">인터넷의 홈페이지를 우리말로 <b class="emph">누리집</b>이라고 해요. 🙂</div>`},
+  {tag:'① 동기 유발', t:'인터넷에서 무엇을 보고 들었나요?',
+   html:`<div class="stage-box">🌐 인터넷에서 글뿐 아니라 그림, 사진, 영상, 소리, 음악을 보거나 들은 경험을 짝에게 말해 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 인터넷에는 여러 가지가 함께 들어 있어요. 🎧">🗣️ 말했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
   {tag:'① 학습 문제', t:'오늘 배울 것이에요',
-   html:`<div class="sentence">친숙한 매체와 매체 자료에 관심을 가져요.</div>
-    <div class="ka-bub">누리는 <b>세상</b>이라는 뜻이에요. 세상 사람 누구나 들어와 볼 수 있는 집이지요.</div>`},
+   html:`<div class="sentence">친숙한 매체와 매체 자료에 흥미와 관심을 가져 봅시다.</div>`},
 
-  {tag:'② 누리집 살펴보기', t:'이야기 속 「햇살마을 작은 도서관」 누리집',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>🏠 햇살마을 작은 도서관</div>
-      <div class="read-line"><span class="rl-num">2</span>📍 오시는 길</div>
-      <div class="read-line"><span class="rl-num">3</span>🕘 여는 시간</div>
-      <div class="read-line"><span class="rl-num">4</span>📚 이달의 그림책</div>
-      <div class="read-line"><span class="rl-num">5</span>📢 토요일 그림책 읽어 주기</div>
-    </div><div class="fb" id="readFb"></div>`},
+  {tag:'② 184쪽 도움말', t:'「누리집」은 어떤 말일까요?', log:true, okMsg:'맞아요! 「홈페이지」보다 순우리말 「누리집」을 써 봐요. 🏠',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">학교 안에 있는 작은 집</div></div><div class="wcard" data-ok="1"><div class="wc-word">세상을 뜻하는 「누리」와 「집」을 합친, 홈페이지의 순우리말</div></div><div class="wcard" data-ok="0"><div class="wc-word">누워서 쉬는 집을 뜻하는 말</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 알 수 있는 것', t:'이 누리집에서 알 수 있는 것을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 누리집 차례를 보면 무엇을 알 수 있는지 짐작할 수 있어요. 🎉',
-   hint:'힌트: 누리집 화면에 적힌 차례를 다시 봐요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">도서관 가는 길</div>
-      <div class="chip" data-hit="0">내일 날씨</div>
-      <div class="chip" data-hit="1">문을 여는 시간</div>
-      <div class="chip" data-hit="0">오늘 급식 반찬</div>
-      <div class="chip" data-hit="1">토요일에 하는 일</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'② 184쪽 1번', t:'국립중앙박물관 어린이박물관 누리집을 살펴봐요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>맨 위 차림표: 관람 · 전시 · 교육 · 자료 · 소개</div><div class="read-line"><span class="rl-num">2</span>큰 글: 「새로운 공간을 소개합니다!」와 박물관 안내도 그림</div><div class="read-line"><span class="rl-num">3</span>관람 시간과 관람료가 적혀 있어요.</div><div class="read-line"><span class="rl-num">4</span>날짜별 관람 예약 현황이 있어요.</div><div class="read-line"><span class="rl-num">5</span>「관람 예약」, 「교육 예약」 단추가 있어요.</div></div><div class="fb" id="readFb">🔊 누리집 첫 화면에 무엇이 있는지 하나씩 읽어 봐요.</div>`},
 
-  {tag:'③ 어디를 누를까', t:'궁금한 것과 눌러 볼 차례를 이어요', log:true,
-   matchMsg:'모두 잘 이었어요! 궁금한 것을 먼저 떠올리면 누리집에서 빨리 찾아요. 🎉',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">궁금한 것</div>
-        <div class="match-card" data-k="a" data-pair="A">어떻게<br>가지?</div>
-        <div class="match-card" data-k="b" data-pair="B">몇 시에<br>열지?</div>
-        <div class="match-card" data-k="c" data-pair="C">새 책은<br>뭐지?</div>
-      </div>
-      <div class="match-col"><div class="match-col-h">누를 차례</div>
-        <div class="match-card" data-k="C" data-pair="c">이달의<br>그림책</div>
-        <div class="match-card" data-k="A" data-pair="a">오시는 길</div>
-        <div class="match-card" data-k="B" data-pair="b">여는 시간</div>
-      </div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'② 185쪽 2번', t:'이 누리집에서 알 수 있는 내용을 모두 골라요', log:true, collectMsg:'잘 골랐어요! 누리집에는 그곳을 소개하는 정보가 모여 있어요. 🏛️',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">관람 시간과 관람료</div><div class="chip" data-hit="1">관람 예약을 하는 방법</div><div class="chip" data-hit="0">내 친구의 집 주소</div><div class="chip" data-hit="0">오늘 우리 학교 급식 메뉴</div><div class="chip" data-hit="1">어린이박물관이 어떤 곳인지</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 게시물', t:'누리집에 올린 글·그림·사진 같은 자료를 무엇이라고 할까요?', log:true,
-   okMsg:'맞아요! 누리집에 올린 자료를 게시물이라고 해요. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">게시물</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">매체</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 185쪽 2번', t:'어린이박물관에서 하는 교육 내용이 궁금해요. 어느 차림표를 누르면 될까요?', log:true, okMsg:'맞아요! 차림표 이름을 보면 어디에 무엇이 있는지 알 수 있어요. 🎓',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🎫</div><div class="wc-word">관람</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🎓</div><div class="wc-word">교육</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🖼️</div><div class="wc-word">전시</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 무엇으로 되어 있나', t:'누리집의 게시물은 무엇으로 되어 있을까요?', log:true,
-   okMsg:'맞아요! 누리집에는 글뿐 아니라 그림·사진·영상이 함께 있어요. 🎉',
-   hint:'힌트: 「이달의 그림책」을 누르면 책 사진도 보일까요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">글자만<br>있어요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">글·그림·사진·영상이<br>함께 있어요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 184쪽 도움말', t:'우리 주변의 <b>매체 자료</b>를 모두 골라요', log:true, collectMsg:'잘 골랐어요! 그림책, 만화, 뉴스, 광고, 웹툰, 애니메이션, 영화가 매체 자료예요. 🎞️',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">만화</div><div class="chip" data-hit="1">뉴스</div><div class="chip" data-hit="1">광고</div><div class="chip" data-hit="1">웹툰</div><div class="chip" data-hit="0">운동장</div><div class="chip" data-hit="0">필통</div><div class="chip" data-hit="1">그림책</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'③ 누리집을 볼 때', t:'누리집을 볼 때 알맞은 모습을 모두 골라요', log:true,
-   collectMsg:'모두 찾았어요! 어른과 함께, 궁금한 것을 찾으며 살펴봐요. 내 이름과 사는 곳은 함부로 알려 주지 않아요. 🎉',
-   hint:'힌트: 모르는 사람이 내 이름을 물으면 어떻게 할까요?',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">어른과 함께 들어가요</div>
-      <div class="chip" data-hit="0">모르는 사람에게 이름을 알려 줘요</div>
-      <div class="chip" data-hit="1">궁금한 것을 찾아 살펴요</div>
-      <div class="chip" data-hit="0">번쩍이는 광고를 마구 눌러요</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 185쪽 3번', t:'친구들은 어떤 누리집을 찾아보았을까요?',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>학교 누리집을 찾아보고 우리 학교 모습을 본 적이 있어.</div><div class="read-line"><span class="rl-num">2</span>우리 동네 소방서 누리집을 들어가 보았어.</div><div class="read-line"><span class="rl-num">3</span>나는 여행했던 지역의 박물관 누리집에 들어가 보았어.</div><div class="read-line"><span class="rl-num">4</span>우리 지역 구청 누리집에 들어가 보았어.</div></div><div class="fb" id="readFb">🔊 읽고 나서 내가 찾아본 누리집도 떠올려 봐요.</div>`},
 
-  {tag:'③ 누리집 글 믿기', t:'「이 그림책을 읽으면 키가 쑥쑥 커요!」라는 글을 봤어요. 어떻게 할까요?', log:true,
-   okMsg:'맞아요! 누리집 글도 사람이 쓴 것이에요. 다 맞다거나 다 틀렸다고 정하지 말고 어른에게 묻거나 더 알아봐요. 🎉',
-   hint:'힌트: 누리집에 쓰여 있으면 모두 맞을까요? 모두 틀릴까요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">누리집 글이니<br>다 맞아요</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">어른에게 묻거나<br>더 알아봐요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">누리집 글은<br>다 거짓말이에요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 186쪽 4번', t:'우리 학교 누리집을 찾아봐요',
+   html:`<div class="stage-box">🏫 선생님과 함께 인터넷에서 우리 학교 누리집을 찾아보세요. 흥미와 관심이 생긴 글과 사진이 있으면 짝에게 이야기해요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 친구들의 이야기도 귀 기울여 들어 봐요. 👂">🏫 찾아봤어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 경험 말하기', t:'누리집을 본 경험을 더 잘 말한 친구는 누구일까요?', log:true,
-   okMsg:'맞아요! 새별이는 무엇을 보았는지와 어떤 생각이 들었는지를 함께 말했어요. 👍',
-   hint:'힌트: 듣는 사람이 궁금해할 것이 들어 있나요?',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">새별: 도서관 누리집에서<br>그림책 사진을 보고<br>읽고 싶어졌어</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">아림: 나도<br>누리집 봤어</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 186쪽 4번', t:'학교 누리집에서 친구 얼굴이 나온 사진을 보았어요. 어떻게 하면 좋을까요?', log:true, okMsg:'맞아요! 인터넷에 남은 흔적(디지털 발자국)은 쉽게 지워지지 않아요. 👣',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">친구 이름과 사진을 함께 여기저기 올려요</div></div><div class="wcard" data-ok="1"><div class="wc-word">친구에게 묻지 않고 다른 곳에 퍼뜨리지 않아요</div></div><div class="wcard" data-ok="0"><div class="wc-word">재미있게 꾸며서 단체 대화방에 올려요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 말할 내용 정리', t:'누리집 경험은 이렇게 말해요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">🖥️</span><span class="pc-name">어떤<br>누리집</span></div>
-      <div class="punct-card"><span class="pc-mark">👀</span><span class="pc-name">본 글이나<br>그림·사진</span></div>
-      <div class="punct-card"><span class="pc-mark">💭</span><span class="pc-name">떠오른<br>생각</span></div>
-    </div>`},
+  {tag:'④ 187쪽 5번', t:'우리 학교 누리집 「학교 소개」 — 차림표와 알 수 있는 내용을 이어 봐요', log:true, matchMsg:'잘 이었어요! 「학교 소개」에서 우리 학교를 더 잘 알 수 있어요. 🎉',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">차림표</div><div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🗺️</span>오시는 길</div><div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">🏫</span>교실 배치도</div><div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🌳</span>학교 상징</div><div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">🎵</span>교가</div></div><div class="match-col"><div class="match-col-h">알 수 있는 내용</div><div class="match-card" data-k="D" data-pair="d">학교의 노래</div><div class="match-card" data-k="B" data-pair="b">교실이 어떻게 놓여 있는지</div><div class="match-card" data-k="A" data-pair="a">학교의 위치와 오는 방법</div><div class="match-card" data-k="C" data-pair="c">학교를 나타내는 나무·꽃·표지</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'④ 말로 해 보기', t:'어른과 함께 누리집에 들어가 봐요',
-   html:`<div class="stage-box">
-      🖥️ <b>어른과 함께</b> 우리 학교 누리집이나 동네 도서관 누리집에 들어가 봐요.<br>
-      눈에 띈 글이나 사진, 떠오른 생각을 가족에게 말해요.
-      <br><button class="stage-do" id="stageDo" data-fb="누리집에서 본 것을 이야기했어요! 👏">🖥️ 해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'④ 186쪽 4번 (3)', t:'우리 학교 누리집을 보고 떠올린 생각이나 느낌을 알맞게 발표한 친구는?', log:true, okMsg:'맞아요! 무엇을 보았는지와 그때 든 느낌을 함께 말했어요. 🌟',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">「누리집이요.」</div></div><div class="wcard" data-ok="0"><div class="wc-word">「몰라요, 그냥 봤어요.」</div></div><div class="wcard" data-ok="1"><div class="wc-word">「학교 소개에서 교가를 보았어요. 입학식 때 불렀던 노래라 반가웠어요.」</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🏠</span>인터넷 홈페이지를 우리말로 <b>누리집</b>이라고 해요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">📝</span>누리집에 올린 자료는 <b>게시물</b>이에요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🧑‍🤝‍🧑</span>누리집은 <b>어른과 함께</b> 보고, 궁금한 글은 더 알아봐요.</div>
-    </div>`},
+  {tag:'⑤ 마무리', t:'잘했어요! 이만큼 배웠어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🏠</span><b>누리집</b>은 홈페이지의 순우리말이에요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🎞️</span>그림책·만화·뉴스·광고·웹툰은 <b>매체 자료</b>예요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">👣</span>인터넷에 올린 것은 오래 남아요. 조심해서 써요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
