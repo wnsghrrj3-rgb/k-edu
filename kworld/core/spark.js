@@ -1,4 +1,5 @@
 // 케이히스토리 엔진 · spark.js — 「설렘·반응 층」. world.spark 가 있으면 켜진다. 코어는 시대 이름을 모른다. (?spark=0 끔)
+//  · 117: 소문(gaze.rules rm_*) — 다음 큰 사건의 전조를 사람 입으로 먼저 듣는다(생성기 gen_rumor.py). 들은 규칙의 flag 가 서고, 그 상황의 급한 일(pulse.deadlines rumor:)은 시간이 heardBonus(기본 15초)만큼 는다 — 소식을 먼저 아는 집이 살아남았다.
 //  · 마을의 눈(gaze): 사람 곁을 지나면 그 사람이 나를 보고 한마디 — 인심이 좋으면 반기고(가끔 뭘 쥐여 준다), 나쁘면 등을 돌리고, 절뚝이면 그걸 본다.
 //      내가 한 선택이 마을 사람 입으로 돌아온다. 같은 사람은 하늘이 한 번 바뀔 때까지 다시 말하지 않는다.
 //  · 칭호(titles): 어떤 깃발이 서면 이름이 하나 붙는다 — 「발소리를 떨군 사람」. 이 기기 kworld_titles 에 남아 족보 상자에 보인다. 쓴 것도 명예다.
@@ -43,7 +44,7 @@ export class Spark {
   pickGaze(G, id) {
     const g = this.g; const v = g.life?.values || {}; const h = g.life?.hurt || new Set(); const list = [];
     for (const r of G.rules || []) { if (r.who && r.who !== id) continue; if (r.once && g.flags.has('gaze:said:' + r.id)) continue; if (r.if && !g.cond(r.if)) continue; list.push(r); }   // 시대 데이터 규칙(깃발·신분 조건) 우선 — 내 선택이 사람 입으로 돌아온다
-    if (list.length) { const r = list[Math.floor(Math.random() * list.length)]; if (r.once) g.flags.add('gaze:said:' + r.id); return r; }
+    if (list.length) { const r = list[Math.floor(Math.random() * list.length)]; if (r.once) g.flags.add('gaze:said:' + r.id); if (r.flag) for (const f of [].concat(r.flag)) g.flags.add(f); return r; }   // 117: 소문 — 들으면 깃발이 선다(rumor:<다음 상황>:heard → 그 급한 일에 여유가 붙는다)
     const band = h.has('leg') && Math.random() < 0.5 ? 'mark' : (v.heart || 0) >= (G.warmAt ?? 5) ? 'warm' : (v.heart || 0) <= (G.coldAt ?? 0) && (g.life?.log?.length || 0) >= 2 ? 'cold' : null; if (!band) return null;
     const pool = G[band] || []; if (!pool.length) return null; const text = pool[Math.floor(Math.random() * pool.length)]; const line = { text, band };
     if (band === 'warm' && G.gift && Math.random() < (G.giftP ?? 0.35)) line.give = G.gift; if (band === 'cold') line.sound = null; return line;
