@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>케이모션 · 손 스텝</title>
+<link rel="stylesheet" href="./kmotion.css">
+<style>
+.stage{max-width:960px;aspect-ratio:16/9}
+.setup{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;width:100%;max-width:460px;text-align:left}
+.setup label{display:flex;flex-direction:column;gap:6px;font-size:.9rem;color:var(--dim)}
+.setup select{background:#0b1220;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:1rem}
+.grade{font-size:4rem;font-weight:900;color:var(--gold);line-height:1}
+.result{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;font-size:1rem}
+.result b{color:var(--gold)}
+</style>
+</head>
+<body>
+<header><a href="./">← 케이모션</a><h1>🕹 손 스텝</h1><span id="hdr"></span></header>
+<div class="hud"><span class="big" id="score">0</span><span id="combo" style="color:var(--ok)">콤보 0</span><span id="judge">—</span><span id="prog">—</span></div>
+<div class="stage">
+  <video id="v" autoplay playsinline muted></video>
+  <canvas id="c" width="960" height="540"></canvas>
+  <div class="dev hidden" id="dev"></div>
+  <div class="overlay" id="ov"></div>
+</div>
+<p class="note">펌프처럼, 떨어지는 화살표가 자기 자리에 닿는 순간 그 자리를 손으로 쳐요. 다섯 자리는 내 몸 주변 — 왼쪽 위·아래, 가운데, 오른쪽 위·아래. 영상은 기기 안에서만 처리돼요.</p>
+<script src="./kmotion.js"></script>
+<script src="./kmotion-data.js"></script>
+<script>
+const km = KMotion.create({ video: document.getElementById('v'), canvas: document.getElementById('c'), modes: ['hands'], numHands: 2, activity: 'step' });
+KMotionData.attach(km, document.getElementById('hdr'));
+const ov = document.getElementById('ov'), dev = document.getElementById('dev'), { ctx, W, H } = km, $ = id => document.getElementById(id);
+if (new URLSearchParams(location.search).has('dev')) dev.classList.remove('hidden');
+
+// ── 다섯 자리(거울 화면 기준: 왼쪽 = 내 왼손 쪽)
+const R = 62;
+const LANES = [
+  { id: 'UL', arrow: '↖', x: .22, y: .30, color: '#4de1ff' },
+  { id: 'DL', arrow: '↙', x: .14, y: .66, color: '#5cf2a4' },
+  { id: 'C',  arrow: '●', x: .50, y: .48, color: '#ffd35c' },
+  { id: 'DR', arrow: '↘', x: .86, y: .66, color: '#5cf2a4' },
+  { id: 'UR', arrow: '↗', x: .78, y: .30, color: '#4de1ff' },
+].map(l => Object.assign(l, { px: l.x * W, py: l.y * H, inside: false, enteredAt: -1, usedAt: -1, glow: 0 }));
+const LEVELS = {
+  easy:   { label: '쉬움', bpm: 80,  bars: 12, per: 2, pool: ['UL', 'DL', 'C', 'DR', 'UR'], dbl: 0 },
+  normal: { label: '보통', bpm: 100, bars: 16, per: 1, pool: ['UL', 'DL', 'C', 'DR', 'UR'], dbl: 0 },
+  hard:   { label: '어려움', bpm: 120, bars: 20, per: 1, pool: ['UL', 'DL', 'C', 'DR', 'UR'], dbl: .25 },
+};
+const WIN = { perfect: 150, good: 330 }, FALL = 2200;
+let level = 'easy', targets = [], t0 = 0, playing = false, offset = 0, offsets = [], judgeText = '', judgeT = 0;
+let stats = { score: 0, combo: 0, maxCombo: 0, perfect: 0, good: 0, miss: 0 };
+const now = () => performance.now();
+
+// ── 소리(합성, 저작권 0)
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+function kick(t){ const o = AC.createOscillator(), g = AC.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(45, t + .12); g.gain.setValueAtTime(.9, t); g.gain.exponentialRampToValueAtTime(.001, t + .25); o.connect(g).connect(AC.destination); o.start(t); o.stop(t + .3); }
+function noise(t, len, hp, a){ const b = AC.createBuffer(1, AC.sampleRate * len, AC.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2);
+  const s = AC.createBufferSource(), g = AC.createGain(), f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp; s.buffer = b; g.gain.value = a; s.connect(f).connect(g).connect(AC.destination); s.start(t); }
+function bass(t, hz, dur){ const o = AC.createOscillator(), g = AC.createGain(), f = AC.createBiquadFilter(); o.type = 'square'; o.frequency.value = hz; f.type = 'lowpass'; f.frequency.value = 420; g.gain.setValueAtTime(.14, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(f).connect(g).connect(AC.destination); o.start(t); o.stop(t + dur + .05); }
+function ping(){ const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(); o.frequency.value = 880; g.gain.setValueAtTime(.2, t); g.gain.exponentialRampToValueAtTime(.001, t + .12); o.connect(g).connect(AC.destination); o.start(t); o.stop(t + .15); }
+const BASS = [55, 55, 65.4, 73.4];
+function schedule(bpm, beats, at){ const sp = 60 / bpm; for (let i = -4; i < beats; i++) { const t = at + i * sp, b4 = ((i % 4) + 4) % 4, bar = Math.floor(i / 4);
+  if (i < 0) { noise(t, .04, 7000, .3); continue; } kick(t); if (b4 === 1 || b4 === 3) noise(t, .15, 1800, .5); noise(t, .04, 7000, .14); noise(t + sp / 2, .04, 7000, .09); if (b4 % 2 === 0) bass(t, BASS[bar % 4], sp * .9); } }
+
+// ── 악보: 좌우 번갈아 자연스럽게
+function chart(lv){ const L = LEVELS[lv], sp = 60000 / L.bpm, beats = L.bars * 4, out = []; let side = Math.random() < .5 ? 'L' : 'R', k = 0;
+  const pick = s => s === 'L' ? ['UL', 'DL'][Math.random() * 2 | 0] : s === 'R' ? ['UR', 'DR'][Math.random() * 2 | 0] : 'C';
+  for (let i = 0; i < beats; i++) { if (i % L.per) continue; const t = i * sp;
+    const useC = Math.random() < .2; let a = useC ? 'C' : pick(side); if (!useC) side = side === 'L' ? 'R' : 'L';
+    out.push({ id: k++, lane: a, t, i, state: 'wait' });
+    if (L.dbl && Math.random() < L.dbl && !useC) { const b = a.endsWith('L') ? a.replace('L', 'R') : a.replace('R', 'L'); out.push({ id: k++, lane: b, t, i, state: 'wait' }); } }
+  return out; }
+
+// ── 손 → 자리 감지
+function sense(f){ const tn = f.t;
+  for (const ln of LANES) { let inside = false;
+    for (const h of f.hands) { const c = h[9], tip = h[8]; if (Math.hypot(c.x - ln.px, c.y - ln.py) < R + 20 || Math.hypot(tip.x - ln.px, tip.y - ln.py) < R + 10) { inside = true; break; } }
+    if (inside && !ln.inside) ln.enteredAt = tn; ln.inside = inside; } }
+function judge(){ const tm = now() - t0 + offset;
+  for (const tg of targets) { if (tg.state !== 'wait') continue; const d = tm - tg.t;
+    if (d > WIN.good) { tg.state = 'miss'; onJudge(tg, 'miss', null); continue; }
+    if (d < -WIN.good) break;
+    const ln = LANES.find(l => l.id === tg.lane); if (!ln) continue;
+    const ent = ln.enteredAt < 0 ? null : ln.enteredAt - t0 + offset;
+    let off = null;
+    if (ent != null && Math.abs(ent - tg.t) <= WIN.good && ln.usedAt < ln.enteredAt) off = ent - tg.t;                 // 창 안에 손이 들어옴
+    else if (ln.inside && ent != null && ent < tg.t - WIN.good && ln.usedAt < ln.enteredAt && d >= 0) off = 0;          // 미리 손 대고 기다림 → 박자 순간 성공
+    if (off != null) { ln.usedAt = now(); tg.state = Math.abs(off) <= WIN.perfect ? 'perfect' : 'good'; ln.glow = 1; onJudge(tg, tg.state, off); } } }
+function onJudge(tg, q, off){ const s = stats; s[q]++;
+  if (q === 'miss') { s.combo = 0; judgeText = 'MISS'; } else { s.combo++; s.maxCombo = Math.max(s.maxCombo, s.combo); s.score += (q === 'perfect' ? 100 : 60) + Math.min(50, s.combo * 2); judgeText = q === 'perfect' ? 'PERFECT' : 'GREAT'; ping();
+    if (off !== 0) { offsets.push(off); if (offsets.length >= 5 && offsets.length % 3 === 2) { const s10 = [...offsets].slice(-10).sort((a, b) => a - b); offset -= s10[s10.length >> 1] * .5; } } }
+  judgeT = now(); $('score').textContent = s.score; $('combo').textContent = '콤보 ' + s.combo; $('judge').textContent = judgeText + (off != null ? ` ${off > 0 ? '+' : ''}${Math.round(off)}ms` : '');
+  km.emit('step:' + q, { lane: tg.lane, beat: tg.i, offsetMs: off == null ? null : Math.round(off), score: q === 'perfect' ? 1 : q === 'good' ? .6 : 0 }); }
+
+// ── 그리기
+function draw(f){ km.drawCamera(); ctx.fillStyle = 'rgba(5,9,20,.35)'; ctx.fillRect(0, 0, W, H);
+  const tm = playing ? now() - t0 + offset : 0;
+  for (const ln of LANES) { // 자리
+    ctx.beginPath(); ctx.arc(ln.px, ln.py, R + ln.glow * 12, 0, Math.PI * 2); ctx.fillStyle = ln.inside ? ln.color + '55' : 'rgba(255,255,255,.08)'; ctx.fill(); ctx.strokeStyle = ln.inside ? ln.color : 'rgba(255,255,255,.55)'; ctx.lineWidth = ln.inside ? 6 : 3; ctx.stroke();
+    ctx.font = '900 54px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.fillText(ln.arrow, ln.px, ln.py + 3); ln.glow = Math.max(0, ln.glow - .07); }
+  for (const h of f.hands) { const c = h[9]; ctx.beginPath(); ctx.arc(c.x, c.y, 22, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fill(); ctx.strokeStyle = '#06121f'; ctx.lineWidth = 3; ctx.stroke(); }
+  if (!playing) return;
+  for (const tg of targets) { const dt = tg.t - tm; if (dt > FALL || dt < -500) continue; const ln = LANES.find(l => l.id === tg.lane); const prog = 1 - dt / FALL; const y = -R + (ln.py + R) * prog;
+    ctx.globalAlpha = tg.state === 'wait' ? 1 : tg.state === 'miss' ? .2 : Math.max(0, 1 + dt / 500);
+    ctx.beginPath(); ctx.arc(ln.px, y, R - 6, 0, Math.PI * 2); ctx.fillStyle = ln.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke();
+    ctx.font = '900 54px sans-serif'; ctx.fillStyle = '#06121f'; ctx.fillText(ln.arrow, ln.px, y + 3); ctx.globalAlpha = 1; }
+  if (now() - judgeT < 450) { ctx.font = '900 72px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = judgeText === 'MISS' ? '#ff8aa0' : judgeText === 'PERFECT' ? '#ffd35c' : '#5cf2a4'; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = 8; ctx.strokeText(judgeText, W / 2, H * .86); ctx.fillText(judgeText, W / 2, H * .86); }
+  const L = LEVELS[level], sp = 60000 / L.bpm;
+  if (tm < 0) { ctx.font = '900 150px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = 10; const n = Math.ceil(-tm / sp); ctx.strokeText(n, W / 2, H / 2); ctx.fillText(n, W / 2, H / 2); }
+  const total = L.bars * 4 * sp; $('prog').textContent = Math.max(0, Math.round((total - tm) / 1000)) + '초'; if (tm > total + 800) end(); }
+km.onFrame = f => { sense(f); if (playing) judge(); draw(f); if (!dev.classList.contains('hidden')) dev.textContent = `fps ${km.fps} hands ${f.hands.length} offset ${offset.toFixed(0)}ms inside ${LANES.filter(l => l.inside).map(l => l.id).join(',')}`; };
+
+// ── 흐름
+function setup(){ ov.innerHTML = `<h2>🕹 손 스텝</h2><p>화살표가 자기 자리에 닿는 순간 그 자리를 손으로 쳐요.<br>자리는 내 몸 둘레 다섯 군데 — 카메라에 손 두 개가 보이면 준비 끝.</p>
+  <div class="setup"><label>난이도<select id="lv">${Object.entries(LEVELS).map(([k, v]) => `<option value="${k}" ${k === level ? 'selected' : ''}>${v.label} · ${v.bpm} BPM${v.per === 2 ? ' · 2박마다' : ''}${v.dbl ? ' · 양손 동시' : ''}</option>`).join('')}</select></label></div>
+  <button class="btn" id="start">시작</button>`; ov.classList.remove('hidden'); $('lv').onchange = e => level = e.target.value; $('start').onclick = begin; }
+async function begin(){
+  if (!km.running) { ov.innerHTML = '<h2>카메라 준비 중…</h2>'; try { await km.start(); } catch (e) { ov.innerHTML = `<h2>시작할 수 없어요</h2><p>${e.message}</p><button class="btn" id="b">다시</button>`; $('b').onclick = setup; return; } }
+  await AC.resume(); const L = LEVELS[level], sp = 60000 / L.bpm, startIn = 4 * sp;
+  targets = chart(level); offsets = []; offset = 0; stats = { score: 0, combo: 0, maxCombo: 0, perfect: 0, good: 0, miss: 0 }; LANES.forEach(l => { l.usedAt = -1; l.enteredAt = -1; });
+  $('score').textContent = '0'; $('combo').textContent = '콤보 0'; $('judge').textContent = '—';
+  ov.classList.add('hidden'); t0 = now() + startIn; playing = true; schedule(L.bpm, L.bars * 4, AC.currentTime + startIn / 1000); }
+function end(){ playing = false; const s = stats, n = s.perfect + s.good + s.miss, acc = n ? (s.perfect + s.good * .6) / n : 0, pct = Math.round(acc * 100);
+  const grade = pct >= 95 ? 'SSS' : pct >= 90 ? 'SS' : pct >= 80 ? 'S' : pct >= 65 ? 'A' : pct >= 50 ? 'B' : 'C';
+  ov.innerHTML = `<div class="grade">${grade}</div><h2>${s.score}점 · ${pct}%</h2><div class="result"><span>PERFECT <b>${s.perfect}</b></span><span>GREAT <b>${s.good}</b></span><span>MISS <b>${s.miss}</b></span><span>최대 콤보 <b>${s.maxCombo}</b></span></div>
+    <p>${pct >= 80 ? '리듬이 손에 붙었어요!' : pct >= 50 ? '좋아요, 화살표가 내려올 때 미리 손을 가져가 봐요' : '쉬움으로 몸 풀고 다시 해 봐요'}</p><button class="btn gold" id="again">다시 하기</button>`; ov.classList.remove('hidden'); $('again').onclick = setup;
+  km.emit('step:result', { level, points: s.score, pct, perfect: s.perfect, good: s.good, miss: s.miss, maxCombo: s.maxCombo, offsetMs: Math.round(offset), grade, score: acc }); }
+setup();
+</script>
+</body>
+</html>
