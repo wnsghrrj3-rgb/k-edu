@@ -156,7 +156,7 @@ export class Life {
   /** 123: 소리 장면 — 상황 데이터 sound(이름 또는 2~3개 배열)를 카드가 뜬 뒤 0.45초부터 0.5초 간격으로 겹쳐 튼다(세기 0.38, 둘째부터 조금 작게). 짐승·급한 일 결이면 환경이 움츠린다 */
   /** 124: 예고 — 섞여 나오는 상황의 자리에 가까워지면(여는 반지름의 2.2배 안) 그 상황 첫 소리를 멀리서 한 번(0.2). 상황마다 한 번, 카드 열려 있으면 안 함, 시작 지점 안에서 바로 걸리는 것은 그대로. */
   foreshadow(s) { const g = this.g; (this.hinted ??= new Set()); if (this.hinted.has(s.id) || !s.sound?.length || g.ui?.isOpen?.()) return; this.hinted.add(s.id); g.sound?.play?.(Array.isArray(s.sound) ? s.sound[0] : s.sound, 0.2); }
-  scene(list) { const g = this.g; if (!list || !g.sound?.play) return; const arr = Array.isArray(list) ? list : [list]; arr.slice(0, 3).forEach((n, i) => setTimeout(() => g.sound?.play?.(n, i ? 0.3 : 0.38), 450 + i * 500)); }
+  scene(list, at = 450) { const g = this.g; if (!list || !g.sound?.play) return; const arr = Array.isArray(list) ? list : [list]; arr.slice(0, 3).forEach((n, i) => setTimeout(() => g.sound?.play?.(n, i ? 0.3 : 0.38), at + i * 500)); }   /* 125: at — 「그 뒤」 카드는 gate 뒤 1.1초부터 */
   showSituation(s, cb) {
     const g = this.g; g.p.enabled = false; g.sound?.play?.('card', 0.6); this.scene(s.sound);   /* 123: 카드 뒤 그 상황의 소리 장면 */
     const ways = (s.ways || []).map((w) => `<li>${esc(w)}</li>`).join('');
@@ -242,7 +242,7 @@ export class Life {
   /** 「그 뒤」 — 시대가 바뀐 까닭. 끝 카드 뒤·족보 앞에 한 장: 이 시대의 물음 → 한 줄 답 → 세상·우리 집(끝 갈림·값·흔적 깃발로 갈림)·다음 시대 첫 줄 → 「왜 세상이 바뀌었을까」 물음 하나(틀리면 정답 한 줄, 되돌아가기 없음 — 시대는 끝났다).
    *  world.bridge = { tag, years, answer, beats:[{k, text | rules:[{if,text}], text}], q:{q, a:[정답, …], why}, next } — 없으면 그냥 지나간다. 한 번(life:bridge). */
   bridge(done) {
-    const g = this.g, b = g.world?.bridge; if (!b || g.flags.has('life:bridge')) return done(); g.sound?.play?.('gate', 0.45);
+    const g = this.g, b = g.world?.bridge; if (!b || g.flags.has('life:bridge')) return done(); g.sound?.play?.('gate', 0.45); this.scene(b.sound, 1100);   /* 125: 다음 시대가 먼저 들린다 — 저 너머의 소리 */
     const pick = (bt) => { if (!bt) return ''; if (typeof bt === 'string') return bt; const r = (bt.rules || []).find((x) => !x.if || this.cond(x.if)); return r ? r.text : (bt.text || ''); };
     const lines = (b.beats || []).map((bt) => ({ k: bt.k || '', t: pick(bt) })).filter((x) => x.t);
     const ear = this.earLine();   // 119: 👂 먼저 들은 집·미리 한 집 한 줄

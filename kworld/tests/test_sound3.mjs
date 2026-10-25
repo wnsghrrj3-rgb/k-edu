@@ -22,7 +22,7 @@ ok(by('life', 'hunt').includes('growl') && by('neo', 'seed').includes('hoe'), '�
 ok(new Set(D.map((d) => JSON.stringify(d.situations.map((s) => s.sound)))).size === ERAS.length, '열한 시대 소리 장면이 전부 다르다');
 // 엔진: life.scene 이 카드 뒤 0.45초부터 0.5초 간격, 첫 소리 0.38·다음 0.3, 셋까지 · 문자열 하나도 됨 · 없으면 조용
 const life = fs.readFileSync(path.join(root, 'core/life.js'), 'utf8');
-ok(life.includes("g.sound?.play?.('card', 0.6); this.scene(s.sound);") && life.includes('scene(list) {'), 'showSituation: card 뒤 scene(s.sound)');
+ok(life.includes("g.sound?.play?.('card', 0.6); this.scene(s.sound);") && life.includes('scene(list, at = 450) {'), 'showSituation: card 뒤 scene(s.sound)');
 const timers = []; globalThis.setTimeout = (f, ms) => { timers.push([ms, f]); };
 const played = []; const g = { sound: { play: (n, v) => played.push([n, v]) } };
 const { Life } = await import('../core/life.js'); const L = Object.create(Life.prototype); L.g = g;
