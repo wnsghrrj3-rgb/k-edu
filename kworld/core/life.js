@@ -242,7 +242,7 @@ export class Life {
   /** 「그 뒤」 — 시대가 바뀐 까닭. 끝 카드 뒤·족보 앞에 한 장: 이 시대의 물음 → 한 줄 답 → 세상·우리 집(끝 갈림·값·흔적 깃발로 갈림)·다음 시대 첫 줄 → 「왜 세상이 바뀌었을까」 물음 하나(틀리면 정답 한 줄, 되돌아가기 없음 — 시대는 끝났다).
    *  world.bridge = { tag, years, answer, beats:[{k, text | rules:[{if,text}], text}], q:{q, a:[정답, …], why}, next } — 없으면 그냥 지나간다. 한 번(life:bridge). */
   bridge(done) {
-    const g = this.g, b = g.world?.bridge; if (!b || g.flags.has('life:bridge')) return done(); g.sound?.play?.('gate', 0.45); this.scene(b.sound, 1100);   /* 125: 다음 시대가 먼저 들린다 — 저 너머의 소리 */
+    const g = this.g, b = g.world?.bridge; if (!b || g.flags.has('life:bridge')) return done(); g.sound?.play?.('gate', 0.45); this.scene(b.sound, 1100);   /* 125: 다음 시대가 먼저 들린다 — 저 너머의 소리 · 126: 물음 맞음·틀림은 q.sound.ok/miss(시대 소리), 없으면 good/bad */
     const pick = (bt) => { if (!bt) return ''; if (typeof bt === 'string') return bt; const r = (bt.rules || []).find((x) => !x.if || this.cond(x.if)); return r ? r.text : (bt.text || ''); };
     const lines = (b.beats || []).map((bt) => ({ k: bt.k || '', t: pick(bt) })).filter((x) => x.t);
     const ear = this.earLine();   // 119: 👂 먼저 들은 집·미리 한 집 한 줄
@@ -250,8 +250,8 @@ export class Life {
     const html = `<div class="chk life bridge"><div class="tag">⏭ ${esc(b.tag || '그 뒤')}${b.years ? ` · ${esc(b.years)}` : ''}</div><h3>${esc(g.world.question || '')}</h3>${b.answer ? `<p class="why">${esc(b.answer)}</p>` : ''}${lines.map((x) => `<p>${x.k ? `<b>${esc(x.k)}</b> ` : ''}${esc(x.t)}</p>`).join('')}${ear ? `<p class="ear"><b>👂</b> ${esc(ear)}</p>` : ''}</div>`;
     const ask = () => { const q = b.q; if (!q || !q.a?.length) return done(); let seed = (this.seed || 1) * 131 + 7; const opts = q.a.map((t, k) => ({ t, k })); for (let i = opts.length - 1; i > 0; i--) { seed = (seed * 1103515245 + 12345) % 2147483648; const j = seed % (i + 1); [opts[i], opts[j]] = [opts[j], opts[i]]; }
       g.ui.open(`<div class="chk life review"><div class="tag">왜 세상이 바뀌었을까</div><h3>${esc(q.q)}</h3></div>`, opts.map((o) => ({ label: o.t, onClick: () => { g.ui.close(); const ok = o.k === 0; g.results = [...(g.results || []), { id: 'bridge:' + g.era, concept: 'hist.why', ok, t: q.q, pick: o.t }]; g.flag(ok ? 'bridge:ok' : 'bridge:miss');
-        if (ok) { g.sound?.play?.('good', 0.4); g.ui.say('그래 — 그래서 세상이 바뀌었다.', 2800); done(); }
-        else { g.sound?.play?.('bad', 0.3); g.ui.open(`<div class="chk life bad"><div class="tag">음 — 그건 아니었어</div><h3>${esc(q.a[0])}</h3>${q.why ? `<p>${esc(q.why)}</p>` : ''}</div>`, [{ label: '알겠어', primary: true, onClick: () => { g.ui.close(); done(); } }]); } } }))); };
+        if (ok) { if (q.sound?.ok) this.scene(q.sound.ok, 120); else g.sound?.play?.('good', 0.4); g.ui.say('그래 — 그래서 세상이 바뀌었다.', 2800); done(); }
+        else { if (q.sound?.miss) this.scene(q.sound.miss, 120); else g.sound?.play?.('bad', 0.3); g.ui.open(`<div class="chk life bad"><div class="tag">음 — 그건 아니었어</div><h3>${esc(q.a[0])}</h3>${q.why ? `<p>${esc(q.why)}</p>` : ''}</div>`, [{ label: '알겠어', primary: true, onClick: () => { g.ui.close(); done(); } }]); } } }))); };
     g.ui.open(html, [{ label: b.next || '그래서 —', primary: true, onClick: () => { g.ui.close(); ask(); } }]);
   }
   // ---------- 저장 ----------
