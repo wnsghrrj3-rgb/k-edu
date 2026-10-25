@@ -153,8 +153,10 @@ export class Life {
     else if (q.kind === 'then') { this.busy = false; this.doThen(q.list); setTimeout(() => this.flush(), 120); }
     else done();
   }
+  /** 123: 소리 장면 — 상황 데이터 sound(이름 또는 2~3개 배열)를 카드가 뜬 뒤 0.45초부터 0.5초 간격으로 겹쳐 튼다(세기 0.38, 둘째부터 조금 작게). 짐승·급한 일 결이면 환경이 움츠린다 */
+  scene(list) { const g = this.g; if (!list || !g.sound?.play) return; const arr = Array.isArray(list) ? list : [list]; arr.slice(0, 3).forEach((n, i) => setTimeout(() => g.sound?.play?.(n, i ? 0.3 : 0.38), 450 + i * 500)); }
   showSituation(s, cb) {
-    const g = this.g; g.p.enabled = false; g.sound?.play?.('card', 0.6);
+    const g = this.g; g.p.enabled = false; g.sound?.play?.('card', 0.6); this.scene(s.sound);   /* 123: 카드 뒤 그 상황의 소리 장면 */
     const ways = (s.ways || []).map((w) => `<li>${esc(w)}</li>`).join('');
     g.ui.open(`<div class="chk life"><div class="tag">${esc(s.tag || '상황')}${s.must ? '' : ' · 이번 판'}</div><h3>${esc(s.title)}</h3>${(s.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}${ways ? `<p class="sub">할 수 있는 것 — 말이 아니라 몸으로:</p><ul class="mlist">${ways}</ul>` : ''}</div>`, [{ label: s.button || '…해 보자', primary: true, onClick: () => { g.ui.close(); cb(); if (s.luck) this.luckResolve(s); } }]);
   }
