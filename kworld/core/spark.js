@@ -26,7 +26,7 @@ export class Spark {
   earn(t) {
     const g = this.g; g.flags.add('title:' + t.id);
     try { const list = Spark.titles(); if (!list.some((x) => x.id === t.id && x.era === g.era)) { list.push({ id: t.id, era: g.era, name: t.name, line: t.line || null, bitter: !!t.bitter, t: Date.now() }); localStorage.setItem('kworld_titles', JSON.stringify(list.slice(-60))); } } catch { }
-    g.sound?.play?.(t.bitter ? 'bad' : 'good', 0.5); g.ui.say(`🏅 ${t.bitter ? '남은 이름' : '얻은 이름'} — **${t.name}**${t.line ? `\n${t.line}` : ''}`, 5600); this.renderBadge(true); g.save?.touch();
+    g.sound?.play?.(t.bitter ? 'bad' : 'good', 0.5); if (t.sound) setTimeout(() => g.sound?.play?.(t.sound, 0.32), 420);   /* 127: 칭호마다 그 칭호의 소리 하나(데이터 sound) — 범·곰·절뚝·불… */ g.ui.say(`🏅 ${t.bitter ? '남은 이름' : '얻은 이름'} — **${t.name}**${t.line ? `\n${t.line}` : ''}`, 5600); this.renderBadge(true); g.save?.touch();
   }
   checkTitles() { const g = this.g; for (const t of this.cfg.titles || []) if (!this.hasTitle(t.id) && g.cond(t.on)) this.earn(t); }
   renderBadge(pop) { if (!this.badge) return; const mine = Spark.titles().filter((t) => t.era === this.g.era); this.badge.style.display = mine.length ? 'block' : 'none'; this.badge.innerHTML = `🏅 <b>${esc(mine[mine.length - 1]?.name || '')}</b>${mine.length > 1 ? ` <span style="opacity:.6">+${mine.length - 1}</span>` : ''}`; if (pop) { this.badge.classList.remove('pop'); void this.badge.offsetWidth; this.badge.classList.add('pop'); } }

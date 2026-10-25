@@ -426,7 +426,7 @@ export class Game {
   // ---------- 시간의 문 ----------
   checkGate() {
     const g = this.world.gate; if (!g) return; const ok = g.requires.every((f) => this.flags.has(f));
-    if (ok && !this.gateOpen) { this.gateOpen = true; this.sound?.play?.('gate', 0.5); this.ui.setGoal(`시간의 문이 열렸다. ${g.hint || '문으로 가 보자.'}`); this.updateMission(false); this.ui.say('어디선가 바람이… 시간의 문이 열렸다!', 4000); }
+    if (ok && !this.gateOpen) { this.gateOpen = true; this.sound?.play?.('gate', 0.5); if (g.sound && this.life?.scene) this.life.scene(g.sound, 1300);   /* 127: 문이 열리면 다음 시대의 아침이 먼저 들린다(gate.sound 둘, 1.3·1.8초) */ this.ui.setGoal(`시간의 문이 열렸다. ${g.hint || '문으로 가 보자.'}`); this.updateMission(false); this.ui.say('어디선가 바람이… 시간의 문이 열렸다!', 4000); }
   }
   enterGate() {
     if (!this.gateOpen) { const g = this.world.gate; if (!g) { this.ui.say('빛나는 문. 아직은 아무 일도 없다.'); return; } const left = g.requires.filter((f) => !this.flags.has(f)).length; this.ui.say(`아직 닫혀 있다. 해야 할 일이 ${left}가지 남았어.`); return; }

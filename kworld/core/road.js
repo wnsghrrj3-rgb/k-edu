@@ -71,7 +71,7 @@ export class Road {
   prompt(t) { const s = t.road; if (!s) return null; return { action: true, name: s.title || '길 위의 것', verb: s.verb || '살펴본다' }; }
   info(t) { const s = t.road; if (!s) return null; return { name: s.title || '길 위의 것', info: s.info || '길에 놓여 있다' }; }
   open(t) {
-    const g = this.g; const c = this.cur; const s = t.road; if (!s || !c || c.it !== t) return; c.opened = true; g.p.enabled = false; g.sound?.play?.(s.sound || 'pick', 0.3);
+    const g = this.g; const c = this.cur; const s = t.road; if (!s || !c || c.it !== t) return; c.opened = true; g.p.enabled = false; g.sound?.play?.('pick', 0.3); if (g.life?.scene) g.life.scene(s.sound, 350); else g.sound?.play?.(s.sound?.[0] || s.sound || 'pick', 0.3);   /* 127: 카드 뜨면 그 길 위의 일 소리 장면(데이터 sound 1~2) */
     const ways = (s.ways || []).map((w) => { const off = w.if && !g.cond(w.if); return { label: (off ? '▫ ' : '') + w.label + (w.roll ? ' 🎲' : ''), disabled: off, reason: off ? (w.why || '지금은 못 한다') : '', onClick: () => { if (off) return; this.choose(c, w); } }; });
     ways.push({ label: s.leave || '그냥 간다', onClick: () => { g.ui.close(); g.p.enabled = true; c.opened = false; this.pass(c, true); g.flag('road:' + s.id + ':left'); } });
     g.ui.open(`<div class="chk life road"><div class="tag">🛤 ${esc(s.tag || '길 위에서')}</div><h3>${esc(s.title || '')}</h3>${(s.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}${s.ask ? `<p class="sub">${esc(s.ask)}</p>` : ''}</div>`, ways, 'roadpanel');
