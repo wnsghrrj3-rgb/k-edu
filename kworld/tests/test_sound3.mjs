@@ -42,3 +42,30 @@ console.log(`sound3 ${pass}/${fail}`); if (fail) process.exit(1);
   const pulse = fs.readFileSync(path.join(root, 'core/pulse.js'), 'utf8');
   ok2(pulse.includes("g.sound?.play?.('drum', 0.4); g.life?.scene?.(d.sound);") && pulse.includes("g.life?.scene?.(c.sound);"), 'pulse: 큰 사건·쫓김 시작에 life.scene');
   console.log(`sound3② ${p2}/${f2}`); if (f2) process.exit(1); }
+// 124: 규칙 소리 중 어색한 것 손으로 고침 — 「세금」이 쇠로, 「두 배」가 바다로 잡히던 것 등(핸드오프 kworld/game/fix_sounds124.py)
+{ let p3 = 0, f3 = 0; const ok3 = (c, m) => { c ? p3++ : f3++; console.log((c ? '  ✓ ' : '  ✗ ') + m); };
+  const ch = (e, s, c) => D[ERAS.indexOf(e)].situations.find((x) => x.id === s).choices.find((x) => x.id === c);
+  ok3(!by('silla-life', 'famine').some((n) => ['bellows', 'anvil'].includes(n)), '통일신라 「흉년인데 세금」 — 쇠 소리 없음');
+  ok3(ch('goryeo-life', 'bugok', 'pay').sound === 'coin', '고려 부곡 「두 배를 냈다」 = 동전(바다 아님)');
+  ok3(by('neo', 'tiger').includes('tiger') && by('life', 'bear').includes('bear'), '신석기 밤 큰 울음 = 호랑이 · 구석기 동굴 = 곰');
+  ok3(!by('life', 'fire').includes('drum') && by('life', 'stone').includes('knap'), '구석기 밤·짐승 북 없음 · 맨손 = 돌 깨기');
+  ok3(by('daehan-life', 'dmz').includes('siren') && !by('daehan-life', 'dmz').includes('horse'), '휴전선 = 사이렌(말·수레 아님)');
+  ok3(by('samguk-life', 'beacon').includes('horn') && !by('samguk-life', 'beacon').includes('splash'), '삼국 봉화 = 나팔(물 아님)');
+  ok3(!ch('bronze-life', 'salt', 'no').sound && ch('joseon-life', 'imjin', 'lead').sound === 'horn', '「안 샀다」 소리 없음 · 의병 = 나팔');
+  ok3(sits.every((s) => s.sound.length >= 1 && s.sound.length <= 3), '고친 뒤에도 상황 전부 1~3');
+  console.log(`sound3③ ${p3}/${f3}`); if (f3) process.exit(1); }
+// 124 ②: 예고 — 섞여 상황 자리에 가까워지면(반지름 2.2배 안) 그 상황 첫 소리 0.2 한 번 · 꼭 나오는 상황은 안 함 · 열리면 그대로 · 카드 열려 있으면 안 함 · 되감으면 다시
+{ let p4 = 0, f4 = 0; const ok4 = (c, m) => { c ? p4++ : f4++; console.log((c ? '  ✓ ' : '  ✗ ') + m); };
+  const played4 = []; const flags = new Set(); let uiOpen = false;
+  const g4 = { sound: { play: (n, v) => played4.push([n, v]) }, flags, flag: (f) => flags.add(f), ui: { isOpen: () => uiOpen, setGoal() {}, open() {} }, p: { pos: { x: 0, z: 0 }, enabled: true }, e: { areas: new Map([['area_a', { x: 20, z: 0 }], ['area_m', { x: 0, z: 20 }]]) }, cond: () => true, inventory: [] };
+  const L4 = Object.create(Life.prototype); L4.g = g4; L4.d = {}; L4.opened = new Set(); L4.done = new Set(); L4.queue = []; L4.log = []; L4.cond = () => true; L4.flush = () => {}; L4.prepHint = () => {}; L4.doThen = () => {};
+  L4.d.situations = [{ id: 'mix', place: 'area_a', sound: ['gull', 'wave'] }, { id: 'must', must: true, place: 'area_m', sound: ['drum'] }]; L4.mixed = ['mix'];
+  const tick = () => { L4.t = 1; L4.tick(1); };
+  g4.p.pos = { x: -20, z: -20 }; tick(); ok4(!played4.length, '멀면(28m 넘게) 조용');
+  g4.p.pos = { x: 0, z: 0 }; tick(); ok4(played4.length === 1 && played4[0][0] === 'gull' && played4[0][1] === 0.2 && !L4.opened.has('mix'), '20m 안 — 첫 소리 gull 0.2, 아직 안 열림');
+  ok4(!played4.some(([n]) => n === 'drum') && !L4.opened.has('must'), '꼭 나오는 상황(20m)은 예고 없음');
+  tick(); ok4(played4.length === 1, '같은 상황 다시 안 함');
+  g4.p.pos = { x: 15, z: 0 }; tick(); ok4(L4.opened.has('mix') && played4.length === 1, '11m 안 — 열림(예고는 더 안 남)');
+  L4.opened.delete('mix'); L4.hinted.delete('mix'); played4.length = 0; uiOpen = true; g4.p.pos = { x: 0, z: 0 }; tick(); ok4(!played4.length, '카드 열려 있으면 조용'); uiOpen = false;
+  flags.clear(); L4.opened.add('mix'); L4.hinted.add('mix'); L4.afterCollapse?.('test'); ok4(!L4.hinted.has('mix') && !L4.opened.has('mix'), '쓰러져 되감으면(sit:open 없음) 예고도 다시');
+  console.log(`sound3④ ${p4}/${f4}`); if (f4) process.exit(1); }

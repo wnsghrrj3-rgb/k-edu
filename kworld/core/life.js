@@ -102,7 +102,7 @@ export class Life {
     for (const s of this.situations) {
       if (this.opened.has(s.id) || !this.cond(s.if)) continue;
       if (s.on) { if (this.cond(s.on)) this.open(s); continue; }   // on 이 있으면 장소는 나침반일 뿐, 여는 건 깃발
-      if (s.place) { const a = g.e.areas.get(s.place); if (a && Math.hypot(a.x - g.p.pos.x, a.z - g.p.pos.z) < (s.radius || 11)) this.open(s); }
+      if (s.place) { const a = g.e.areas.get(s.place); if (!a) continue; const dist = Math.hypot(a.x - g.p.pos.x, a.z - g.p.pos.z), r = s.radius || 11; if (dist < r) this.open(s); else if (!s.must && dist < r * 2.2) this.foreshadow(s); }   /* 124: 섞여 상황은 가까워지면 멀리서 그 장소 소리 한 번 */
     }
     for (const s of this.situations) if (this.opened.has(s.id) && !this.done.has(s.id)) this.resolve(s);
     this.flush(); this.prepHint();   // 119
@@ -154,6 +154,8 @@ export class Life {
     else done();
   }
   /** 123: 소리 장면 — 상황 데이터 sound(이름 또는 2~3개 배열)를 카드가 뜬 뒤 0.45초부터 0.5초 간격으로 겹쳐 튼다(세기 0.38, 둘째부터 조금 작게). 짐승·급한 일 결이면 환경이 움츠린다 */
+  /** 124: 예고 — 섞여 나오는 상황의 자리에 가까워지면(여는 반지름의 2.2배 안) 그 상황 첫 소리를 멀리서 한 번(0.2). 상황마다 한 번, 카드 열려 있으면 안 함, 시작 지점 안에서 바로 걸리는 것은 그대로. */
+  foreshadow(s) { const g = this.g; (this.hinted ??= new Set()); if (this.hinted.has(s.id) || !s.sound?.length || g.ui?.isOpen?.()) return; this.hinted.add(s.id); g.sound?.play?.(Array.isArray(s.sound) ? s.sound[0] : s.sound, 0.2); }
   scene(list) { const g = this.g; if (!list || !g.sound?.play) return; const arr = Array.isArray(list) ? list : [list]; arr.slice(0, 3).forEach((n, i) => setTimeout(() => g.sound?.play?.(n, i ? 0.3 : 0.38), 450 + i * 500)); }
   showSituation(s, cb) {
     const g = this.g; g.p.enabled = false; g.sound?.play?.('card', 0.6); this.scene(s.sound);   /* 123: 카드 뒤 그 상황의 소리 장면 */
@@ -174,7 +176,7 @@ export class Life {
   }
   /** 쓰러진 뒤(위험층) — 상황 앞으로 돌아온다: 열린 상황은 다시 열리고, 값·흔적은 남는다 */
   afterCollapse(reason) {
-    const g = this.g; for (const s of this.situations) { const open = g.flags.has('sit:' + s.id + ':open'), done = g.flags.has('sit:' + s.id + ':done'); if (!open) this.opened.delete(s.id); if (!done) this.done.delete(s.id); }
+    const g = this.g; for (const s of this.situations) { const open = g.flags.has('sit:' + s.id + ':open'), done = g.flags.has('sit:' + s.id + ':done'); if (!open) this.opened.delete(s.id); if (!open) this.hinted?.delete(s.id); if (!done) this.done.delete(s.id); }
     const cp = g.checkpoint?.act?.startsWith('sit:') ? this.sit(g.checkpoint.act.slice(4)) : null; if (cp?.wake) g.ui.say(cp.wake, 5200); if (cp?.onWake) this.doThen(cp.onWake);
     this.render();
   }
