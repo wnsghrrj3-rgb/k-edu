@@ -37,8 +37,8 @@ ok(!ambs[0].day.includes('dog') && ambs[0].night.includes('wolf') && ambs[10].da
 for (const [i, a] of ambs.entries()) for (const id of Object.keys(a.near)) { const w = JSON.parse(fs.readFileSync(path.join(root, `eras/${eras[i]}/world.json`), 'utf8')); const ids = Array.isArray(w.areas) ? w.areas.map((x) => x.id) : Object.keys(w.areas || {}); if (!ids.includes(id)) ok(false, `${eras[i]} near ${id} 구역 없음`); }
 ok(true, 'near 구역 이름이 전부 그 시대 구역에 있다');
 const set = []; const S2 = new Sound({ e: { hm: null, areas: new Map([['jangteo', { x: 0, z: 0 }], ['hang', { x: 200, z: 0 }]]), onFrame: [] }, p: { pos: { x: 0, z: 0 }, keys: {} }, world: { ambience: ambs[9] }, story: { isNight: false }, ui: { isOpen: () => true } }); S2.init(); S2.set = (k, v) => { S2.level[k] = v; set.push([k, +v.toFixed(2)]); };
-S2.tick(0.7); ok(set.some(([k, v]) => k === 'crowd' && v > 0.1) && !set.some(([k, v]) => k === 'sea' && v > 0), '개항 장터 곁 낮: 사람 소리 켜짐·바다 안 켜짐');
-S2.g.story.isNight = true; set.length = 0; S2.tick(0.7); ok(set.some(([k, v]) => k === 'crowd' && v === 0) && set.some(([k, v]) => k === 'insects' && v > 0), `밤: 사람 소리 꺼지고 벌레 소리 (${JSON.stringify(set)})`);
+S2.tick(0.7); ok(set.some(([k, v]) => (k === 'crowd' || k === 'market') && v > 0.1) && !set.some(([k, v]) => k === 'sea' && v > 0), '개항 장터 곁 낮: 사람(장터) 소리 켜짐·바다 안 켜짐');   /* 122: 장터는 market 층 */
+S2.g.story.isNight = true; set.length = 0; S2.tick(0.7); ok(set.some(([k, v]) => (k === 'crowd' || k === 'market') && v === 0) && set.some(([k, v]) => k === 'insects' && v > 0), `밤: 사람(장터) 소리 꺼지고 벌레 소리 (${JSON.stringify(set)})`);
 S2.g.p.pos = { x: 200, z: 0 }; set.length = 0; S2.tick(0.7); ok(set.some(([k, v]) => k === 'sea' && v > 0.1), '부두 곁: 바다 소리');
 for (const n of ['bird', 'owl', 'dog', 'rooster', 'hammer', 'horse', 'train', 'car']) { made.length = 0; snd.synth(n); if (!made.length) ok(false, `${n} 합성 없음`); }
 ok(true, '한 번 소리 여덟 가지 전부 합성됨');
