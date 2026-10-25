@@ -23,7 +23,7 @@
  * 좌표는 전부 캔버스(거울) 픽셀, 원유로 필터로 떨림 보정. 랜드마크 {x,y,z,v}. score = 자체 판정 점수(모델 신뢰도와 다름).\n * 손 actions: dir(손 방향 0~359°, 위=0 시계방향)·pointDir(검지 방향)·facing(palm/back)·pointer(검지 끝)·pinchPt(엄지·검지 사이). 몸: facing(front/left/right)·lean(기울기°).
  */
 (function(){
-  const ENGINE_VERSION = '0.5.3';
+  const ENGINE_VERSION = '0.5.4';
   const ACTION_VERSION = 'rule-0.4.0';
   const MODEL_VERSION  = { hands: 'hand_landmarker/float16/1', pose: 'pose_landmarker_lite/float16/1', vision: 'tasks-vision@0.10.21' };
   const VENDOR = new URL('./vendor/tasks-vision/', document.currentScript ? document.currentScript.src : location.href).href;
@@ -102,7 +102,7 @@
 
     // ── MediaPipe
     let handLm = null, poseLm = null;
-    const handSm = [smoother(21), smoother(21)], poseSm = smoother(33); let poseSeen = false;
+    const NH = Math.max(1, opt.numHands || 2); const handSm = Array.from({ length: NH }, () => smoother(21)), poseSm = smoother(33); let poseSeen = false;
     function toPx(lm){ return lm.map(p => ({ x: (1 - p.x) * W, y: p.y * H, z: p.z, v: p.visibility == null ? 1 : p.visibility })); }
     async function loadModels(){
       if (!modes.has('hands') && !modes.has('pose')) return;
@@ -189,7 +189,7 @@
 
     // ── 행동 층 상태
     const HOLD = 3; // 연속 프레임 확인(히스테리시스)
-    const handState = [0, 1].map(() => ({ pose: 'none', cand: 'none', n: 0, pinched: false, hist: [], lastMoveEmit: 0, waved: false, swiped: false }));
+    const handState = Array.from({ length: NH }, () => ({ pose: 'none', cand: 'none', n: 0, pinched: false, hist: [], lastMoveEmit: 0, waved: false, swiped: false }));
     const body = { seen: false, base: null, air: false, airT: 0, squat: false, squatN: 0, armsUp: false, armsN: 0, raiseL: false, raiseR: false, openArms: false, clapClose: false, leanDir: 'center', leanN: 0, still: 0, frozen: false, prevPose: null };
     function flip(key, cur, onT, offT, data){ const nk = key + 'N'; body[nk] = cur === body[key] ? 0 : (body[nk] || 0) + 1; if (body[nk] >= HOLD) { body[key] = cur; body[nk] = 0; km.emit(cur ? onT : offT, data || {}); } }
     function labelHand(f){
@@ -201,7 +201,7 @@
     }
     function stepHands(frame){
       const acts = [];
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < NH; i++) {
         const h = frame.hands[i], st = handState[i];
         if (!h) { if (st.pose !== 'none') { if (st.pinched) { km.emit('hand:release', { hand: i, reason: 'lost', score: .5 }); st.pinched = false; } st.pose = 'none'; st.cand = 'none'; st.n = 0; st.hist = []; } continue; }
         const f = km.handFeatures(h);
@@ -291,7 +291,7 @@
         try {
           if (modes.has('motion')) stepMotion();
           if (handLm) { const r = handLm.detectForVideo(video, t); f.hands = (r.landmarks || []).map((lm, i) => handSm[i] ? handSm[i].apply(toPx(lm), t) : toPx(lm)); f.handedness = r.handednesses;
-            for (let i = f.hands.length; i < 2; i++) handSm[i].reset(); }
+            for (let i = f.hands.length; i < NH; i++) handSm[i].reset(); }
           if (poseLm) { const r = poseLm.detectForVideo(video, t); const raw = r.landmarks && r.landmarks[0] ? toPx(r.landmarks[0]) : null;
             if (raw) { f.pose = poseSm.apply(raw, t); poseSeen = true; } else { f.pose = null; if (poseSeen) { poseSm.reset(); poseSeen = false; } }
             }
