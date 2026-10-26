@@ -6,7 +6,7 @@
 //  · 흔적(hurt): 다치면 절뚝이고(느려짐) 어떤 선택지는 회색이 된다. 끝까지 남는다.
 //  · 천장(cap): d.rank.open 이면 값 🎖 벼슬이 열린다. 신분 규칙의 cap 이 오를 수 있는 높이 — 아무리 해도 그 위로는 못 오른다(통일신라 골품). 막히면 깃발 rank:capped.
 //  · 꼭 나오는 상황은 전부, 섞여 나오는 상황은 판마다 몇 개만(태어남 때 정한 씨앗).
-import { carryRecord, openJokbo, titlesOf, bondOf, bondLine } from './jokbo.js';
+import { carryRecord, openJokbo, titlesOf, bondOf, bondLine, heirloomsOf } from './jokbo.js';
 import { recordStatus, openDogam, beastLine } from './dogam.js';
 const ABIL = ['눈', '손', '발', '배', '몸'];
 const DOTS = (lv) => ({ 3: '●●●', 2: '●●○', 1: '●○○' })[Math.max(1, Math.min(3, lv))] || '●●○';
@@ -249,6 +249,17 @@ export class Life {
     for (const [k, def] of Object.entries(T)) { for (const r of def?.rename || []) { if (!/rumor:\w+:heard/.test(String(r?.if || '')) || !/prep/.test(String(r?.flag || ''))) continue; if (!g.cond(r.if)) continue; txt = `👂 ${def.name || r.name || k} — ${String(r.verb || '').split(' — ')[0]} · 미리 해 둘 수 있다`; break; } if (txt) break; }
     if (txt !== (this.prepTxt || '')) { this.prepTxt = txt; g.ui.setGoalSub(txt); }
   }
+  /** 129: 「그 뒤」 카드 🧬 한 줄 — 다음 대가 받는 것. world.bridge.carry = { next, keep, ratios }(다음 시대 life.json carry 와 같음, gen_heir129.py). 값은 carryIn 과 같은 셈(비율·반올림·0 은 뺌) + 🎁 물려줄 것·🩹 흔적·🏷 이름. 없으면 빈 글 */
+  heirLine() {
+    const g = this.g; const c = g.world?.bridge?.carry; if (!c) return '';
+    const NM = { craft: '✋ 솜씨', heart: '🤝 인심', grain: '🌾 곡식', rank: '🎖 벼슬' };
+    const got = []; for (const k of c.keep || ['craft', 'heart']) { const n = Math.round((this.values[k] || 0) * (c.ratios?.[k] ?? c.ratio ?? 0.5)); if (n > 0) got.push(`${NM[k] || k} ${n}`); }
+    const half = (c.keep || []).filter((k) => (c.ratios?.[k] ?? c.ratio ?? 0.5) < 1).map((k) => (NM[k] || k).split(' ')[1]), whole = (c.keep || []).filter((k) => (c.ratios?.[k] ?? c.ratio ?? 0.5) >= 1).map((k) => (NM[k] || k).split(' ')[1]);
+    const rule = [half.length ? `${half.join('·')}은 절반만` : '', whole.length ? `${whole.join('·')}은 그대로` : ''].filter(Boolean).join(', ');
+    const heir = heirloomsOf(g.era).map((h) => h.name), marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h), tit = titlesOf(g.era).map((t) => t.name);
+    const more = [heir.length ? `🎁 ${heir.join('·')}` : '', marks.length ? `🩹 ${marks.join('·')}` : '', tit.length ? `🏷 ${tit.slice(0, 3).join('·')}${tit.length > 3 ? ` 외 ${tit.length - 3}` : ''}` : ''].filter(Boolean);
+    return `${c.next ? `${c.next}의 자손이 받는 것` : '다음 대가 받는 것'} — ${got.length ? got.join(' · ') : '넘어갈 값이 없다 — 다음 대는 맨손으로 시작한다'}${more.length ? ' · ' + more.join(' · ') : ''}${rule ? ` (${rule})` : ''}`;
+  }
   /** 「그 뒤」 — 시대가 바뀐 까닭. 끝 카드 뒤·족보 앞에 한 장: 이 시대의 물음 → 한 줄 답 → 세상·우리 집(끝 갈림·값·흔적 깃발로 갈림)·다음 시대 첫 줄 → 「왜 세상이 바뀌었을까」 물음 하나(틀리면 정답 한 줄, 되돌아가기 없음 — 시대는 끝났다).
    *  world.bridge = { tag, years, answer, beats:[{k, text | rules:[{if,text}], text}], q:{q, a:[정답, …], why}, next } — 없으면 그냥 지나간다. 한 번(life:bridge). */
   bridge(done) {
@@ -256,8 +267,9 @@ export class Life {
     const pick = (bt) => { if (!bt) return ''; if (typeof bt === 'string') return bt; const r = (bt.rules || []).find((x) => !x.if || this.cond(x.if)); return r ? r.text : (bt.text || ''); };
     const lines = (b.beats || []).map((bt) => ({ k: bt.k || '', t: pick(bt) })).filter((x) => x.t);
     const ear = this.earLine();   // 119: 👂 먼저 들은 집·미리 한 집 한 줄
+    const heir = this.heirLine();   // 129: 🧬 다음 대가 받는 것 한 줄
     g.flag('life:bridge'); g.p.enabled = false;
-    const html = `<div class="chk life bridge"><div class="tag">⏭ ${esc(b.tag || '그 뒤')}${b.years ? ` · ${esc(b.years)}` : ''}</div><h3>${esc(g.world.question || '')}</h3>${b.answer ? `<p class="why">${esc(b.answer)}</p>` : ''}${lines.map((x) => `<p>${x.k ? `<b>${esc(x.k)}</b> ` : ''}${esc(x.t)}</p>`).join('')}${ear ? `<p class="ear"><b>👂</b> ${esc(ear)}</p>` : ''}</div>`;
+    const html = `<div class="chk life bridge"><div class="tag">⏭ ${esc(b.tag || '그 뒤')}${b.years ? ` · ${esc(b.years)}` : ''}</div><h3>${esc(g.world.question || '')}</h3>${b.answer ? `<p class="why">${esc(b.answer)}</p>` : ''}${lines.map((x) => `<p>${x.k ? `<b>${esc(x.k)}</b> ` : ''}${esc(x.t)}</p>`).join('')}${ear ? `<p class="ear"><b>👂</b> ${esc(ear)}</p>` : ''}${heir ? `<p class="ear heir"><b>🧬</b> ${esc(heir)}</p>` : ''}</div>`;
     const ask = () => { const q = b.q; if (!q || !q.a?.length) return done(); let seed = (this.seed || 1) * 131 + 7; const opts = q.a.map((t, k) => ({ t, k })); for (let i = opts.length - 1; i > 0; i--) { seed = (seed * 1103515245 + 12345) % 2147483648; const j = seed % (i + 1); [opts[i], opts[j]] = [opts[j], opts[i]]; }
       g.ui.open(`<div class="chk life review"><div class="tag">왜 세상이 바뀌었을까</div><h3>${esc(q.q)}</h3></div>`, opts.map((o) => ({ label: o.t, onClick: () => { g.ui.close(); const ok = o.k === 0; g.results = [...(g.results || []), { id: 'bridge:' + g.era, concept: 'hist.why', ok, t: q.q, pick: o.t }]; g.flag(ok ? 'bridge:ok' : 'bridge:miss');
         if (ok) { if (q.sound?.ok) this.scene(q.sound.ok, 120); else g.sound?.play?.('good', 0.4); g.ui.say('그래 — 그래서 세상이 바뀌었다.', 2800); done(); }
