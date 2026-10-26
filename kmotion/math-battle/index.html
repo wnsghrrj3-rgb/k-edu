@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>K-MOTION MATH BATTLE · 수학 마법 아레나</title>
+<link rel="stylesheet" href="./mb.css">
+<script type="importmap">
+{ "imports": { "three": "/labs/vendor/three185/three.module.min.js", "three/addons/": "/labs/vendor/three185/addons/" } }
+</script>
+</head>
+<body>
+<div id="app">
+  <canvas id="gl"></canvas>
+
+  <!-- 시작 -->
+  <section class="screen" id="scr-start">
+    <div class="logo"><span class="k">K-MOTION</span><span class="t">MATH BATTLE</span><small>MATH MAGIC ARENA</small></div>
+    <div class="panel">
+      <div class="modes" id="modeSeg">
+        <button data-v="adventure" class="on"><b>🗺 모험</b><span>몬스터 3마리 · 12문제</span></button>
+        <button data-v="time"><b>⏱ 타임 어택</b><span>60초 동안 최대한</span></button>
+        <button data-v="class"><b>🏫 모둠 배틀</b><span>모둠별 30초 대결</span></button>
+      </div>
+      <div class="row"><span class="lbl">학습 내용</span>
+        <select id="qtype">
+          <option value="add10">10 이내 덧셈</option><option value="sub10">10 이내 뺄셈</option>
+          <option value="make10">10을 만들어 더하기</option><option value="from10">10을 기준으로 빼기</option>
+          <option value="add20">20 이내 덧셈</option><option value="sub20">20 이내 뺄셈</option><option value="mix" selected>덧셈·뺄셈 섞어서</option>
+        </select></div>
+      <div class="row"><span class="lbl">난이도</span><div class="seg" id="diffSeg"><button data-v="easy">쉬움</button><button data-v="normal" class="on">보통</button><button data-v="hard">어려움</button></div></div>
+      <div class="row" id="rowLimit"><span class="lbl">문제당 시간</span><div class="seg" id="limitSeg"><button data-v="0" class="on">없음</button><button data-v="15">15초</button><button data-v="10">10초</button></div></div>
+      <div class="row"><span class="lbl">조작</span><div class="seg" id="inputSeg"><button data-v="camera" class="on">🖐 카메라</button><button data-v="mouse">🖱 마우스·터치</button></div></div>
+      <div class="row class-only hidden" id="rowClass"><span class="lbl">모둠</span><div class="seg" id="teamSeg"><button data-v="2">2</button><button data-v="3">3</button><button data-v="4" class="on">4</button><button data-v="5">5</button><button data-v="6">6</button></div></div>
+      <div class="row class-only hidden" id="rowNames"><span class="lbl">모둠 이름</span><div class="names" id="teamNames"></div></div>
+      <button class="big" id="btnStart">게임 시작</button>
+      <div class="best" id="bestLine"></div>
+    </div>
+    <a class="back" href="../">← 케이모션</a>
+    <button class="gear" id="btnSound" title="소리 설정">🔊</button>
+    <div class="sound hidden" id="soundBox"><label>음악 <input type="range" id="volM" min="0" max="100" value="50"></label><label>효과음 <input type="range" id="volS" min="0" max="100" value="80"></label></div>
+  </section>
+
+  <!-- 손 보정 -->
+  <section class="screen hidden" id="scr-calib">
+    <h2>손을 들어 보여 주세요</h2>
+    <p class="sub" id="calibMsg">카메라에 손바닥이 보이면 커서가 나타나요. 빛나는 구슬 3개를 차례로 만져요.</p>
+    <div class="calib-stage" id="calibStage"><canvas id="calibView"></canvas>
+      <div class="corb" data-i="0" style="left:18%;top:68%"></div><div class="corb" data-i="1" style="left:50%;top:22%"></div><div class="corb" data-i="2" style="left:82%;top:68%"></div>
+    </div>
+    <button class="big ghost" id="btnCalibCancel">돌아가기</button>
+  </section>
+
+  <!-- 플레이 HUD -->
+  <section class="hud hidden" id="hud">
+    <div class="top">
+      <div class="side-l"><div class="stat"><span>점수</span><b id="hScore">0</b></div><div class="stat"><span>콤보</span><b id="hCombo">0</b></div><div class="stat"><span>내 체력</span><b id="hLife">💚💚💚</b></div></div>
+      <div class="qbox"><div class="mname" id="hMon">숲의 슬라임</div><div class="hpbar"><i id="hMonHp"></i></div><div class="q" id="hQ">3 + 4 = ?</div></div>
+      <div class="side-r"><div class="stat"><span id="hTimeLbl">남은 시간</span><b id="hTime">60</b></div><div class="stat"><span>문제</span><b id="hProg">1 / 12</b></div><div class="stat class-only hidden"><span>모둠</span><b id="hTeam">-</b></div></div>
+    </div>
+    <div class="orbs" id="orbs"><button class="orb" data-i="0"><svg viewBox="0 0 100 100"><circle class="ring" cx="50" cy="50" r="46"/></svg><b>3</b></button><button class="orb" data-i="1"><svg viewBox="0 0 100 100"><circle class="ring" cx="50" cy="50" r="46"/></svg><b>7</b></button><button class="orb" data-i="2"><svg viewBox="0 0 100 100"><circle class="ring" cx="50" cy="50" r="46"/></svg><b>5</b></button></div>
+    <div class="cursor hidden" id="cursor"><svg viewBox="0 0 60 60"><circle class="bg" cx="30" cy="30" r="24"/><circle class="fg" id="curFg" cx="30" cy="30" r="24"/></svg><span>🖐</span></div>
+    <div class="cam" id="camBox"><video id="v" autoplay playsinline muted></video><canvas id="c" width="480" height="360"></canvas><div class="st" id="camSt">카메라</div></div>
+    <div class="pop-layer" id="pops"></div>
+    <div class="banner hidden" id="banner"></div>
+    <div class="flash" id="flash"></div>
+    <div class="pause hidden" id="pause"><h3 id="pauseTitle">일시 정지</h3><p id="pauseMsg"></p><button class="big" id="btnResume">계속하기</button><button class="big ghost" id="btnQuit">그만하기</button></div>
+    <div class="dev hidden" id="dev"></div>
+  </section>
+
+  <!-- 결과 -->
+  <section class="screen hidden" id="scr-result">
+    <h2 id="resTitle">승리!</h2>
+    <div class="rank hidden" id="rank"></div>
+    <div class="res-grid">
+      <div><span>최종 점수</span><b id="rScore">0</b></div><div><span>정답</span><b id="rOk">0</b></div><div><span>오답</span><b id="rNg">0</b></div>
+      <div><span>정답률</span><b id="rRate">0%</b></div><div><span>최대 콤보</span><b id="rCombo">0</b></div><div><span>최고 기록</span><b id="rBest">0</b></div>
+    </div>
+    <div class="wrongs" id="wrongs"></div>
+    <div class="btns"><button class="big" id="btnRetry">다시 하기</button><button class="big ghost" id="btnHome">메인 화면</button></div>
+  </section>
+  <div class="loading" id="loading"><span>아레나를 여는 중…</span></div>
+</div>
+<script src="../kmotion.js"></script>
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>
