@@ -48,6 +48,8 @@ export function bindMinimap(engine, player, canvas, game = null) {
       if(seen.has(s.id)&&s.name){ctx.fillStyle='#ead5a8';ctx.beginPath();ctx.arc(px,py,2.5,0,Math.PI*2);ctx.fill();ctx.font='9px sans-serif';ctx.textAlign='center';ctx.fillText(s.name,px,py+12);}
       else{ctx.fillStyle='rgba(234,213,168,.28)';ctx.beginPath();ctx.arc(px,py,1.6,0,Math.PI*2);ctx.fill();}
     }
+    // 내 집(130) — 신분의 집 자리에 🏠
+    const hm=game?.doors?.homeArea?.(); if(hm){const [px,py]=point(hm.x,hm.z);ctx.fillStyle='#ffd98a';ctx.beginPath();ctx.moveTo(px,py-5);ctx.lineTo(px-4,py-1);ctx.lineTo(px-3,py-1);ctx.lineTo(px-3,py+3);ctx.lineTo(px+3,py+3);ctx.lineTo(px+3,py-1);ctx.lineTo(px+4,py-1);ctx.closePath();ctx.fill();}
     // 반 친구 — 점 + 이름 첫 글자, 손 흔드는 중이면 커졌다 작아진다
     const fr=game?.friends?.friends; if(fr&&fr.size){const now=performance.now();for(const f of fr.values()){const [px,py]=point(f.x,f.z);const wv=f.waveUntil>now;const r=wv?3.2+Math.sin(now*.02)*1.4:2.6;ctx.fillStyle=wv?'#ffe9a8':'#8fd3c7';ctx.shadowColor=wv?'#ffd36b':'transparent';ctx.shadowBlur=wv?8:0;ctx.beginPath();ctx.arc(px,py,r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;const ch=String(f.body?.userData?.nick||'').replace(/^\d+\s*/,'').charAt(0);if(ch){ctx.fillStyle='#dff7f0';ctx.font='8px sans-serif';ctx.textAlign='center';ctx.fillText(ch,px,py-5);}}}
     const [x,y]=point(player.pos.x,player.pos.z);ctx.translate(x,y);ctx.rotate(-player.yaw);

@@ -19,6 +19,7 @@ import { Spark } from './spark.js';
 import { Road } from './road.js';
 import { Beasts } from './beasts.js';
 import { Bond } from './bond.js';
+import { Doors } from './doors.js';
 
 const J = (u) => fetch(u).then((r) => r.json());
 
@@ -53,6 +54,7 @@ export class Game {
     if (this.world.spark && new URLSearchParams(location.search).get('spark') !== '0') this.spark = new Spark(this, this.world.spark);
     if (this.world.road && new URLSearchParams(location.search).get('road') !== '0') this.road = new Road(this, this.world.road);   // 길 위의 일(111)
     if (this.world.beasts && new URLSearchParams(location.search).get('beasts') !== '0') this.beasts = new Beasts(this, this.world.beasts);   // 짐승 층(112) — 호랑이·멧돼지가 보인다
+    if (this.world.doors && new URLSearchParams(location.search).get('doors') !== '0') this.doors = new Doors(this, this.world.doors);   // 신분의 문(130) — 못 들어가는 문·막힌 길이 몸으로, 내 집
     // 운명의 사람이 세상에 있다: 만나면 따라다니고, 등지면 물러선다 — world.spark.bond 가 있을 때만(10-19)
     if (this.world.spark?.bond && new URLSearchParams(location.search).get('bond') !== '0') this.bond = new Bond(this, this.world.spark.bond);
     // 시대별 장식 코드는 world.json 이 가리킬 때만(코어는 시대 이름을 모른다)
@@ -216,6 +218,7 @@ export class Game {
     if (this.road) this.road.tick(dt);
     if (this.beasts) this.beasts.tick(dt);
     if (this.bond) this.bond.tick(dt);
+    if (this.doors) this.doors.tick(dt);
     // 미션 나침반 + 힌트 시간
     this.updateMission(false);
     // 불꽃
