@@ -21,6 +21,7 @@
    · 146차(2026-10-19) 2학년 2학기 수학이랑 함께해요 부품: pcd2(실천 카드) · pcrw2(카드 전시 줄 — 빈자리 「?」·끈·10 cm 자) · rtb2(실천 기록표 — 모은 점수 「?」) · pln2(실천 계획표 — 「 · 」 줄 나눔)
    · 144차(2026-10-19) 2학년 2학기 표와 그래프 부품: tbl2(표·합계·빈칸) · cg2(◯·×·/ 그래프 — 세로·가로·잘못 그린 칸) · tly2(세면서 표시하기) · dc2(자료 낱장·/ 표시) · srt2(분류 칸) · wcl2(날씨 달력 △·◯) · nte2(쪽지·발표 자료) · objs1 이름 줄바꿈(\n)
    · 143차(2026-10-19) 2학년 2학기 시각과 시간 부품: dclk2(디지털시계) · tbnd2(시간 띠) · kcal2(달력) · d24(하루 24칸 띠) · upr2(단위 짝 카드) · grow2(날짜 사이 몇 년·개월·주 후)
+   · 191차(2026-10-26) 4학년 2학기 꺾은선그래프 부품: lg(꺾은선그래프 — 눈금 한 칸·물결선·두 자료·짐작 점·잘못 그린 그래프)
    · 141차(2026-10-16) 2학년 2학기 길이 재기 부품: lbar(길이 막대·이어 붙이기·잘라 낸 칸·100 cm 금) · ltape(자·끊긴 줄자) · lpw(전체·부분 가지) · lcard(몸·물건 어림 카드) · lch(나누어 어림) · tvert q(답 줄 빈칸 「?」)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
    ============================================================================ */
@@ -2864,6 +2865,60 @@
     return sv5(s, 'fig-pln2', Wd, y0 + gh + 10, 'data-plan="' + esc(rs.map(r => r[0]).join('|')) + '"');
   }
   Object.assign(PARTS, { pcd2, pcrw2, rtb2, pln2 });
+  }
+  { // ══ 191차(2026-10-26) 4학년 2학기 꺾은선그래프 부품 — lg(꺾은선그래프: 눈금 한 칸 · 물결선 · 두 자료 + 범례 · 빈 점 · 짐작 점 · 잘못 그린 그래프) ══
+  // 그림 문법(자기주도 원문과 같음): 파랑 점·선분 = 자료 · 두 자료는 파랑·주황 + 범례 · 주황 = 짚는 점·선분(mark) · 회색 가로줄 = 눈금 한 칸
+  //   · 세로축 ≈ = 물결선(0 과 base 사이를 줄임) · 주황 점선 원 「?」 = 짐작할 점(q) · 주황 점선 「?」 칸 = 아직 안 찍은 점(hide) · 빨강 = 잘못 그린 선(bad).
+  // x 가로 이름[] · at 가로 자리(수 — 재지 않은 달을 사이에 둘 때) · v 값[] (또는 sets [{name, v[]}] 두 자료) · step 세로 눈금 한 칸 · base 물결선 위 첫 눈금(0 이면 물결선 없음) · max 눈금 끝 · every 수 글자 간격(칸)
+  // unit 세로 단위 · xu 가로 단위 · xl·yl 축 이름 · title · mark [i] · q [i] · hide [i] · upto k(앞 k 점만 — 그리는 차례) · dots(선분 없이 점만) · vals(점 위 수 — 개념 장만)
+  // bad 'curve'(곡선으로 이음) | 'order'(차례를 건너뛰어 이음) | 'wavein'(물결선이 자료 범위 안 — base 아래 값이 물결선 칸에 눌림)
+  // data-v · data-step · data-base · data-max · data-wave · data-bad · data-hide · data-q · data-n · 눈금선 line.lgl[data-val] · 점 circle.lp[data-i][data-s] · 선분 path.ll[data-s]
+  const fl = (n) => (+n).toFixed(1);
+  const rnd = (v) => Math.round(v * 1e6) / 1e6;
+  function lg(o) {
+    const sets = o.sets ? o.sets.map(s => ({ name: s.name, v: (s.v || []).map(Number) })) : [{ name: '', v: (o.v || []).map(Number) }];
+    const x = o.x || [], n = x.length, ns = sets.length; if (!n || sets.some(s => s.v.length !== n)) return '';
+    const step = +o.step || 1, base = +o.base || 0, wave = base > 0, all = [].concat(...sets.map(s => s.v));
+    const top = +o.max || Math.max(base + step, Math.ceil(Math.max.apply(null, all) / step - 1e-9) * step);
+    const W1 = wave ? 1.5 : 0, nc = Math.round((top - base) / step), nt = nc + W1; // 칸 수(물결선 칸은 한 칸 반)
+    const every = +o.every || (nc <= 12 ? 1 : ([2, 5, 10, 4, 3, 6, 20, 25, 50].find(d => nc % d === 0 && nc / d <= 10) || Math.ceil(nc / 10)));
+    const hide = [].concat(o.hide || []), qs = [].concat(o.q || []), mark = [].concat(o.mark || []), upto = o.upto == null ? n : +o.upto, bad = o.bad || '';
+    const TP = o.title ? 42 : 0, W0 = 760, H0 = TP + 420, L = 100, R = 34, T = TP + (ns > 1 ? 64 : 44), B = 72, PW = W0 - L - R, PH = H0 - T - B;
+    const COL = ['#4F86E8', '#FF9F5A'], HI = '#FF7A2F', BAD = '#E5484D';
+    const cellOf = (v) => (wave ? (v >= base ? W1 + (v - base) / step : W1 * Math.max(0.2, Math.min(0.8, v / base))) : v / step); // wavein: base 아래 값은 물결선 칸에 눌림
+    const at = Array.isArray(o.at) && o.at.length === n ? o.at.map(Number) : null, a0 = at ? Math.min(...at) : 0, sp = at ? (Math.max(...at) - a0) || 1 : 0, pad = sp / (2 * (n - 1 || 1));
+    const Y = (v) => T + PH - PH * cellOf(v) / nt, X = (i) => (at ? L + PW * (at[i] - a0 + pad) / (sp + 2 * pad) : L + PW * (i + 0.5) / n);
+    let s = '';
+    for (let i = 0; i <= nc + (wave ? 1 : 0); i++) { const k = wave ? i - 1 : i, val = wave && i === 0 ? 0 : rnd(base + k * step); const gy = T + PH - PH * (wave && i === 0 ? 0 : W1 + k) / nt; const lab = (wave && i === 0) || k % every === 0;
+      s += '<line class="lgl" data-val="' + val + '" x1="' + L + '" y1="' + fl(gy) + '" x2="' + (L + PW) + '" y2="' + fl(gy) + '" stroke="' + (i ? '#DCE3EC' : INK) + '" stroke-width="' + (i ? 2 : 3) + '"/>' + (lab ? txt(L - 12, fl(gy + 7), String(val), 20, '#5B6B80', 700, 'end') : ''); }
+    for (let i = 0; i < n; i++) s += '<line x1="' + fl(X(i)) + '" y1="' + T + '" x2="' + fl(X(i)) + '" y2="' + (T + PH) + '" stroke="#EEF2F7" stroke-width="1.5"/>';
+    s += '<line x1="' + L + '" y1="' + T + '" x2="' + L + '" y2="' + (T + PH) + '" stroke="' + INK + '" stroke-width="3"/>';
+    if (wave) { const y0 = T + PH, y1 = T + PH - PH * W1 / nt, ym = (y0 + y1) / 2; s += '<rect class="lgw" x="' + (L - 14) + '" y="' + fl(ym - 9) + '" width="28" height="18" fill="#fff"/>' + [-5, 5].map(d => '<path d="M' + (L - 16) + ' ' + fl(ym + d) + ' q7 -7 14 0 t14 0" fill="none" stroke="' + INK + '" stroke-width="2.6"/>').join(''); }
+    sets.forEach((st, j) => {
+      const col = bad ? BAD : COL[j % 2], idx = st.v.map((_, i) => i).filter(i => i < upto && hide.indexOf(i) < 0);
+      let ord = idx.slice(); if (bad === 'order') { ord = idx.slice().sort((a, b) => st.v[a] - st.v[b]); }
+      const P = ord.map(i => [X(i), Y(st.v[i])]);
+      if (!o.dots && P.length > 1) {
+        let d = 'M' + fl(P[0][0]) + ' ' + fl(P[0][1]);
+        if (bad === 'curve') for (let k = 1; k < P.length; k++) { const p0 = P[Math.max(0, k - 2)], p1 = P[k - 1], p2 = P[k], p3 = P[Math.min(P.length - 1, k + 1)]; d += ' C' + fl(p1[0] + (p2[0] - p0[0]) / 6) + ' ' + fl(p1[1] + (p2[1] - p0[1]) / 6) + ' ' + fl(p2[0] - (p3[0] - p1[0]) / 6) + ' ' + fl(p2[1] - (p3[1] - p1[1]) / 6) + ' ' + fl(p2[0]) + ' ' + fl(p2[1]); }
+        else for (let k = 1; k < P.length; k++) d += ' L' + fl(P[k][0]) + ' ' + fl(P[k][1]);
+        s += '<path class="ll" data-s="' + j + '" d="' + d + '" fill="none" stroke="' + col + '" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>';
+        if (!bad && ns === 1) for (let k = 1; k < ord.length; k++) { const a = ord[k - 1], b = ord[k]; if (mark.indexOf(a) >= 0 && mark.indexOf(b) >= 0 && b === a + 1) s += '<line class="lm" x1="' + fl(X(a)) + '" y1="' + fl(Y(st.v[a])) + '" x2="' + fl(X(b)) + '" y2="' + fl(Y(st.v[b])) + '" stroke="' + HI + '" stroke-width="8" stroke-linecap="round"/>'; }
+      }
+      idx.forEach(i => { const q = qs.indexOf(i) >= 0, on = mark.indexOf(i) >= 0 && ns === 1 && !bad, cx = X(i), cy = Y(st.v[i]);
+        if (q) s += '<circle class="lp lq" data-i="' + i + '" data-s="' + j + '" cx="' + fl(cx) + '" cy="' + fl(cy) + '" r="11" fill="#fff" stroke="' + HI + '" stroke-width="3" stroke-dasharray="5 4"/>' + txt(fl(cx), fl(cy - 18), '?', 24, HI, 900);
+        else s += '<circle class="lp" data-i="' + i + '" data-s="' + j + '" cx="' + fl(cx) + '" cy="' + fl(cy) + '" r="' + (on ? 9 : 7) + '" fill="' + (on ? HI : col) + '" stroke="#fff" stroke-width="2"/>';
+        if (o.vals && !q) s += txt(fl(cx), fl(cy - 16 - (ns > 1 && j === 0 && sets[1].v[i] > st.v[i] ? -36 : 0)), String(st.v[i]), 19, on ? '#C2551A' : (j ? '#C2551A' : '#2B4C8C'), 900); });
+      if (j === 0) hide.forEach(i => { if (i < n) s += '<rect class="lh" data-i="' + i + '" x="' + fl(X(i) - 16) + '" y="' + (T + PH - 44) + '" width="32" height="38" rx="6" fill="none" stroke="' + HI + '" stroke-width="2.5" stroke-dasharray="6 5"/>' + txt(fl(X(i)), T + PH - 16, '?', 22, HI, 900); });
+    });
+    x.forEach((nm, i) => { s += txt(fl(X(i)), T + PH + 30, String(nm), 20, mark.indexOf(i) >= 0 && ns === 1 ? '#C2551A' : '#334', 800); });
+    const un = o.unit ? '(' + o.unit + ')' : '', xu = o.xu ? '(' + o.xu + ')' : '';
+    s += txt(8, T - 16, (o.yl || '') + un, 19, '#6B7C93', 800, 'start') + txt(L + PW, H0 - 10, (o.xl || '') + xu, 19, '#6B7C93', 800, 'end');
+    if (ns > 1) sets.forEach((st, j) => { const lx = W0 - R - 360 + j * 180; s += '<line x1="' + lx + '" y1="' + (TP + 22) + '" x2="' + (lx + 30) + '" y2="' + (TP + 22) + '" stroke="' + COL[j] + '" stroke-width="4.5"/><circle cx="' + (lx + 15) + '" cy="' + (TP + 22) + '" r="6" fill="' + COL[j] + '"/>' + txt(lx + 38, TP + 29, st.name, 18, '#334', 800, 'start'); });
+    const head = o.title ? txt(W0 / 2, 30, o.title, 24, INK, 900) : '';
+    return svgWrap(head + s, 'fig-lg', '0 0 ' + W0 + ' ' + H0).replace('<svg class="fig-svg fig-lg"', '<svg class="fig-svg fig-lg" data-v="' + sets.map(st => st.v.join(',')).join('|') + '" data-step="' + step + '" data-base="' + base + '" data-max="' + top + '" data-wave="' + (wave ? 1 : 0) + '" data-bad="' + esc(bad) + '" data-n="' + n + '" data-hide="' + hide.join(',') + '" data-q="' + qs.join(',') + '"' + (o.title ? ' data-title="' + esc(o.title) + '"' : ''));
+  }
+  Object.assign(PARTS, { lg });
   }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
