@@ -59,6 +59,8 @@ const ASSETS = {
   picg:           ['cols', 'counts', 'head'],
   /* v3.13 — 4학년 2학기 「꺾은선그래프」 (2026-10-20): 꺾은선그래프·막대그래프 */
   lgraph:         ['xs', 'series', 'step', 'ymax'],
+  /* v3.16 — 6학년 1학기 「여러 가지 그래프」 (2026-10-26): 띠그래프·원그래프 */
+  pgr:            ['kind', 'items'],
   count_group:    ['item', 'n'],
   scatter_group:  ['item', 'n'],
   dots:           ['n'],
@@ -359,6 +361,19 @@ function checkAsset(where, a) {
         cn.forEach((n, i) => { if (Number.isInteger(n) && n % u2[u2.length - 1] !== 0) bad(where, `picg ${cols[i]} 은 units2 로 나타낼 수 없다`); });
         cols.forEach((c, i) => { if (bl.indexOf(i) >= 0) return; const tot = ENG.picgPieces(draw[i], u2).reduce((x, y) => x + y, 0); if (tot > 48) bad(where, `picg units2 ${c} 그림이 ${tot}개 — 48개 이하로`); }); }
       if (a.names !== undefined && (!Array.isArray(a.names) || a.names.length !== 2 || a.names[0] === a.names[1])) bad(where, 'picg names 는 서로 다른 두 이름'); }
+  }
+  if (a.type === 'pgr') {   /* v3.16 — 비율그래프: 항목 2~6, 이름 겹침 없음·짧게, 백분율 0~100 정수(0.5 단위까지), 합 100(bad 면 100 미만) */
+    const it = Array.isArray(a.items) ? a.items : [];
+    if (a.kind !== 'band' && a.kind !== 'pie') bad(where, "pgr kind 는 'band'|'pie'");
+    if (!(it.length >= 2 && it.length <= 6)) bad(where, 'pgr 항목은 2~6개');
+    if (new Set(it.map(p => String(p[0]))).size !== it.length) bad(where, 'pgr 항목 이름이 겹친다');
+    let sum = 0;
+    it.forEach(p => { if (!(Array.isArray(p) && p.length === 2 && String(p[0]).length >= 1 && String(p[0]).length <= 8)) { bad(where, 'pgr 항목은 [이름(1~8자), 백분율]: ' + JSON.stringify(p)); return; }
+      const v = p[1]; if (!(typeof v === 'number' && v > 0 && v <= 100 && Number.isInteger(v * 2))) bad(where, `pgr ${p[0]} 백분율 ${v} 은 0 초과 100 이하·0.5 단위`); sum += Number(v) || 0; });
+    if (!a.blank) { if (a.bad) { if (!(sum < 100)) bad(where, 'pgr bad(잘못 그린 그래프)인데 합이 100 미만이 아니다: ' + sum); }
+      else if (Math.abs(sum - 100) > 1e-9) bad(where, 'pgr 백분율 합이 100 이 아니다: ' + sum); }
+    (a.hide || []).forEach(i => { if (!(Number.isInteger(i) && i >= 0 && i < it.length)) bad(where, 'pgr hide 자리 밖: ' + i); });
+    (a.tag || []).forEach(x => { if (!(Array.isArray(x) && x.length === 2 && Number.isInteger(x[0]) && x[0] >= 0 && x[0] < it.length && String(x[1]).length >= 1 && String(x[1]).length <= 4)) bad(where, 'pgr tag 는 [자리, 짧은 글]: ' + JSON.stringify(x)); });
   }
   if (a.type === 'lgraph') {   /* v3.13 — 꺾은선그래프: 값은 y0~ymax 안·눈금 위, 칸 수 2~40, 물결선은 y0>0 일 때만(그리고 꼭), 계열 1~2(v3.15 막대도 2 — 묶음 막대) */
     const xs = a.xs || [], S = a.series || [], st = a.step, y0 = a.y0 === undefined ? 0 : a.y0, ym = a.ymax;
