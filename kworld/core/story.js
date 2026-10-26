@@ -292,7 +292,7 @@ export class Story {
   }
   journalHtml() {
     const j = this.g.world.journal || {}; const got = Object.entries(j).filter(([k]) => this.g.flags.has('journal:' + k));
-    return `<h3>📔 탐험일지</h3>${got.length ? '<ul class="mlist">' + got.map(([, v]) => `<li><b>${v.title}</b>${v.note ? `<div class="mhint">${v.note}</div>` : ''}</li>`).join('') + '</ul>' : '<p class="sub">아직 적은 게 없어. 세상을 돌아다녀 봐.</p>'}`;
+    return `<h3>📔 탐험일지</h3>${this.g.life?.inheritHtml?.() || ''}${got.length ? '<ul class="mlist">' + got.map(([, v]) => `<li><b>${v.title}</b>${v.note ? `<div class="mhint">${v.note}</div>` : ''}</li>`).join('') + '</ul>' : '<p class="sub">아직 적은 게 없어. 세상을 돌아다녀 봐.</p>'}`;
   }
   /** 프롤로그: 검은 화면에 소리만, 눈을 뜨면 시작 */
   prologue(pro) {
