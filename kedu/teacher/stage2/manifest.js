@@ -1,9 +1,9 @@
 /* stage2/manifest.js — 생성물. 손으로 고치지 말고 build_manifest.js 를 다시 돌릴 것.
-   생성: 2026-10-26 · 과목 24 · 차시 1225 · 슬라이드 21888 */
+   생성: 2026-10-26 · 과목 25 · 차시 1233 · 슬라이드 22040 */
 window.KT2_MANIFEST = {
  "built": "2026-10-26",
- "lessons": 1225,
- "slides": 21888,
+ "lessons": 1233,
+ "slides": 22040,
  "subjects": [
   {
    "slug": "g1_math",
@@ -30201,6 +30201,232 @@ window.KT2_MANIFEST = {
        "title": "단원 마무리 — 다양한 생물 한눈에",
        "meta_title": "단원 마무리 — 다양한 생물 한눈에",
        "std": "[4과12-01][4과12-02][4과12-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "slug": "g4s2_science",
+   "grade": 4,
+   "term": 2,
+   "subject": "science",
+   "subject_ko": "과학",
+   "title": "4학년 2학기 과학",
+   "units": [
+    {
+     "unit": 1,
+     "title": "밤하늘 관찰",
+     "file": "data/g4s2_science_u1.js",
+     "resources": null,
+     "lessons": [
+      {
+       "key": "u1_l01",
+       "no": "1",
+       "title": "활짝! 과학 열기 — 밤하늘 단어 놀이",
+       "meta_title": "활짝! 과학 열기 — 밤하늘 단어 놀이",
+       "std": "[4과13-01][4과13-02][4과13-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l02",
+       "no": "2",
+       "title": "달의 모양과 표면 관찰",
+       "meta_title": "달의 모양과 표면 관찰",
+       "std": "[4과13-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l03",
+       "no": "3",
+       "title": "여러 날 동안 변하는 달의 모양",
+       "meta_title": "여러 날 동안 변하는 달의 모양",
+       "std": "[4과13-01]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l04",
+       "no": "4",
+       "title": "태양계 구성원과 특징",
+       "meta_title": "태양계 구성원과 특징",
+       "std": "[4과13-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l06",
+       "no": "6",
+       "title": "별과 별자리",
+       "meta_title": "별과 별자리",
+       "std": "[4과13-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l08",
+       "no": "8",
+       "title": "태양계 여행 홍보 자료 만들기",
+       "meta_title": "태양계 여행 홍보 자료 만들기",
+       "std": "[4과13-01][4과13-02][4과13-03]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l10",
+       "no": "10",
+       "title": "밤하늘의 신비를 밝히는 망원경",
+       "meta_title": "밤하늘의 신비를 밝히는 망원경",
+       "std": "[4과13-02]",
+       "slides": 19,
+       "stages": [
+        3,
+        5,
+        4,
+        3,
+        4
+       ],
+       "interactive": 2,
+       "blocks": 14,
+       "seven": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "key": "u1_l11",
+       "no": "11",
+       "title": "단원 마무리",
+       "meta_title": "단원 마무리",
+       "std": "[4과13-01][4과13-02][4과13-03]",
        "slides": 19,
        "stages": [
         3,
