@@ -36,6 +36,7 @@ export class Danger {
   }
   tick(dt) {
     const g = this.g; const p = g.p; if (!p?.pos || g.restoring || g.story?.cutsceneOn || this.collapsing) return;
+    if (g.doors?.sleeping) { this.t = 0; return; }   // 131: 내 집에서 잠든 동안은 밤 시계가 안 간다
     if (this.torch) { this.torch.position.set(p.pos.x, (p.pos.y || 0) + 0.3, p.pos.z); this.torch.visible = this.hasTorch(); }
     if (this.wolf?.g.visible) this.tickWolf(dt);
     if (this.torchUntil && !this.hasTorch() && g.has?.('torch')) { g.take('torch'); g.renderInv?.(); this.torchUntil = 0; g.ui.say('횃불이 꺼졌다.', 2600); }

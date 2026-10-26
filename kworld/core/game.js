@@ -208,6 +208,7 @@ export class Game {
       const t = this.target = this.e.pickTarget(this.e.camera, 3.2, this.p.pos);
       if (t) this.ui.setPrompt(this.promptFor(t));
       else if (this.bond?.canTalk()) this.ui.setPrompt(this.bond.prompt());   // 운명의 사람 곁 — 말을 건다(E)
+      else if (this.doors?.canSleep()) this.ui.setPrompt(this.doors.sleepPrompt());   // 131: 밤, 내 집 — 잠든다(E)
       else { const near = this.e.pickTarget(this.e.camera, 9 * (this.stats.sense || 1), this.p.pos); this.ui.setPrompt(near ? this.infoFor(near) : null); }
     } else { this.target = null; this.ui.setPrompt(null); }
     // 시간이 지나면 바뀌는 대상(밭이 자라는 것 등)
@@ -270,7 +271,7 @@ export class Game {
   // ---------- 행동 ----------
   act() {
     if (this.ui.isOpen()) return;
-    const t = this.target; if (!t) { if (this.bond?.canTalk()) return this.bond.talk(); this.ui.say('가까이 가서 바라보면 할 수 있는 일이 보여.'); return; }
+    const t = this.target; if (!t) { if (this.bond?.canTalk()) return this.bond.talk(); if (this.doors?.canSleep()) return this.doors.sleep(); this.ui.say('가까이 가서 바라보면 할 수 있는 일이 보여.'); return; }
     if (t.type === 'road') return this.road?.open(t);
     const def = this.defFor(t); if (!def) return;
     if (t.type === 'npc') { this.flag(def.flag); this.flag('talk:' + t.id); if (this.ui.isOpen()) return; /* 깃발이 상황 카드를 열었으면 사람 말은 그 뒤에(카드 위에 덮지 않는다) */ return this.talk(t); }

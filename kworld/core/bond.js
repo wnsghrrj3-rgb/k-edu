@@ -96,6 +96,14 @@ export class Bond {
     this.reactT += dt; if (st === 'friend' && this.reactT >= 1 && this.sinceLine >= REACT_GAP && this.quiet() && d < 6) { this.reactT = 0; this.react(); }
   }
   /** 115: 짐승 앞 — beasts.cur 가 있으면 서서 짐승 쪽을 보고 한마디(한 만남에 한 번), 가면 「…갔다」. 돌려준다: 지금 짐승 앞인가 */
+  /** 131: 내가 신분의 문 앞에서 밀려나면(doors) 벗이 1.7초 뒤 한마디 — 문마다 한 번, 벗일 때·곁(10m)일 때만. 값·판정 변경 0 */
+  onDoor(d, areaName) {
+    const g = this.g; if (this.state() !== 'friend' || !this.near(10) || g.flags.has('bond:door:' + d.id)) return;
+    g.flags.add('bond:door'); g.flag?.('bond:door:' + d.id);
+    const pool = this.cfg.doorSay?.[d.id] ? [this.cfg.doorSay[d.id]] : (this.cfg.doorSay?.default ? [this.cfg.doorSay.default] : ['거긴 우리 자리가 아니야. 가자.', '문은 문이지. 돌아가자.', '…언젠가는 열리겠지. 오늘은 아니고.']);
+    const line = pool[Math.min(pool.length - 1, (this.doorN = (this.doorN || 0) + 1) - 1)];
+    setTimeout(() => { if (this.state() === 'friend' && !this.gone) { g.ui?.say?.(`👤 ${this.name} — 「${line}」`, 4200); this.sinceLine = 0; } }, g.story?.fast ? 5 : 1700);
+  }
   guarding(dt) {
     const g = this.g; const c = g.beasts?.cur || null;
     if (!c) { const was = this.guard; this.guard = null; if (was && !was.said2 && !g.danger?.collapsing && !g.flags.has('beast:' + was.kind + ':caught')) { was.said2 = true; this.sinceLine = 0; g.ui?.say?.(`👤 ${this.name} — ${this.cfg.beastGone || '「…갔다. 숨 쉬어.」'}`, 3600); } return false; }

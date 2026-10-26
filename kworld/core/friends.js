@@ -15,7 +15,7 @@ import { seat } from './save.js';
 
 const SEND_MS = 200, STALE_MS = 20000, WAVE_MS = 1600, NEAR_PICK = 3.5, NEAR_WITH = 5, NEAR_SHOUT = 14;
 const REPLY_MS = 9000, REPLY = { beast: ['「…응. 안 뛸게.」', '「고마워, 봤어.」'], beastboar: ['「물러설게.」'], beastok: ['「휴.」', '「고마워.」'], beastbad: ['「…응. 다시.」', '「다음엔 서 있을게.」'], escaped: ['「다행이다!」', '「잘 뛰었어.」'], caught: ['「괜찮아, 다시 하자.」', '「다음엔 같이.」'], late: ['「나도 늦을 뻔했어.」', '「다음엔 같이 뛰자.」'], back: ['「고마워.」', '「응, 봤어!」'] };
-const SHOUT = { beast: ['「뛰지 마!」', '「가만히 — 마주 봐.」', '「뛰면 안 돼. 서 있어.」'], beastboar: ['「물러서! 천천히.」', '「눈 떼지 마.」'], beastok: ['「갔다! 숨 쉬어.」', '「봤어, 안 뛰었어!」', '「잘했어.」'], beastbad: ['「괜찮아? 일어나.」', '「…뛰었구나. 다음엔 서 있어.」'], escaped: ['「살았다!」', '「봤어, 뛰는 거!」', '「숨 좀 돌려.」'], caught: ['「…잡혔네.」', '「다음엔 같이 뛰자.」', '「괜찮아?」'], late: ['「늦었다…」', '「모래시계 봤어?」', '「다음엔 내가 알려 줄게.」'] };
+const SHOUT = { beast: ['「뛰지 마!」', '「가만히 — 마주 봐.」', '「뛰면 안 돼. 서 있어.」'], beastboar: ['「물러서! 천천히.」', '「눈 떼지 마.」'], beastok: ['「갔다! 숨 쉬어.」', '「봤어, 안 뛰었어!」', '「잘했어.」'], beastbad: ['「괜찮아? 일어나.」', '「…뛰었구나. 다음엔 서 있어.」'], escaped: ['「살았다!」', '「봤어, 뛰는 거!」', '「숨 좀 돌려.」'], caught: ['「…잡혔네.」', '「다음엔 같이 뛰자.」', '「괜찮아?」'], late: ['「늦었다…」', '「모래시계 봤어?」', '「다음엔 내가 알려 줄게.」'], door: ['「거긴 못 들어가!」', '「문 앞에서 돌아섰네.」', '「우리 자리가 아니래…」'] };   // door: 131 — 문 앞에서 밀려난 친구
 function label(text) {
   if (typeof document === 'undefined' || typeof document.createElement !== 'function') return null;
   const c = document.createElement('canvas'); c.width = 256; c.height = 64; const x = c.getContext('2d'); if (!x) return null;
