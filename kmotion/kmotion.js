@@ -23,7 +23,7 @@
  * 좌표는 전부 캔버스(거울) 픽셀, 원유로 필터로 떨림 보정. 랜드마크 {x,y,z,v}. score = 자체 판정 점수(모델 신뢰도와 다름).\n * 손 actions: dir(손 방향 0~359°, 위=0 시계방향)·pointDir(검지 방향)·facing(palm/back)·pointer(검지 끝)·pinchPt(엄지·검지 사이). 몸: facing(front/left/right)·lean(기울기°).
  */
 (function(){
-  const ENGINE_VERSION = '0.5.4';
+  const ENGINE_VERSION = '0.6.0';
   const ACTION_VERSION = 'rule-0.4.0';
   const MODEL_VERSION  = { hands: 'hand_landmarker/float16/1', pose: 'pose_landmarker_lite/float16/1', vision: 'tasks-vision@0.10.21' };
   const VENDOR = new URL('./vendor/tasks-vision/', document.currentScript ? document.currentScript.src : location.href).href;
@@ -62,6 +62,16 @@
     const ctx = canvas.getContext('2d');
     const modes = new Set(opt.modes || ['motion']);
     const S = opt.motionCell || 8;
+    // ── 카메라 범위(모든 케이모션 공통): 웹캠(가까이)·전자칠판 캠(멀리)에 따라 영상의 일부만 잘라 쓴다.
+    //    range = { zoom: 1~3, cx, cy: 잘라 쓸 상자의 중심(0~1, 영상 원본 좌표) } — localStorage 'kmotion.camRange'
+    const RANGE_KEY = 'kmotion.camRange';
+    function loadRange(){ try { const r = JSON.parse(localStorage.getItem(RANGE_KEY) || 'null'); if (r && r.zoom) return { zoom: Math.min(3, Math.max(1, +r.zoom)), cx: Math.min(1, Math.max(0, +r.cx)), cy: Math.min(1, Math.max(0, +r.cy)) }; } catch (_) {} return { zoom: 1, cx: .5, cy: .5 }; }
+    let range = loadRange();
+    const cropC = document.createElement('canvas'); cropC.width = W; cropC.height = H; const cctx = cropC.getContext('2d');
+    const cropOn = () => range.zoom > 1.001 || Math.abs(range.cx - .5) > .001 || Math.abs(range.cy - .5) > .001;
+    const srcImg = () => cropOn() ? cropC : video;
+    function cropRect(){ const vw = video.videoWidth || W, vh = video.videoHeight || H; const sw = vw / range.zoom, sh = vh / range.zoom; return { sx: Math.min(vw - sw, Math.max(0, range.cx * vw - sw / 2)), sy: Math.min(vh - sh, Math.max(0, range.cy * vh - sh / 2)), sw, sh, vw, vh }; }
+    function updateCrop(){ if (!cropOn()) return; const r = cropRect(); cctx.drawImage(video, r.sx, r.sy, r.sw, r.sh, 0, 0, W, H); }
     const sessionId = opt.sessionId || ('s' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
 
     const km = { W, H, ctx, video, canvas, modes, sessionId, onFrame: null, onStatus: null, running: false, fps: 0,
@@ -95,7 +105,7 @@
         const y0 = Math.max(0, gy - gr | 0), y1 = Math.min(off.height, gy + gr), x0 = Math.max(0, gx - gr | 0), x1 = Math.min(off.width, gx + gr);
         for (let yy = y0; yy < y1; yy++) for (let xx = x0; xx < x1; xx++) { tot++; if (grid[yy * off.width + xx]) hit++; } return tot ? hit / tot : 0; },
       total(){ let h = 0; for (let i = 0; i < grid.length; i++) h += grid[i]; return h / grid.length; } };
-    function stepMotion(){ octx.drawImage(video, 0, 0, off.width, off.height);
+    function stepMotion(){ octx.drawImage(srcImg(), 0, 0, off.width, off.height);
       const d = octx.getImageData(0, 0, off.width, off.height).data, n = grid.length;
       if (prev) for (let i = 0, j = 0; i < n; i++, j += 4) grid[i] = (Math.abs(d[j] - prev[j]) + Math.abs(d[j+1] - prev[j+1]) + Math.abs(d[j+2] - prev[j+2])) > 90 ? 1 : 0;
       prev = new Uint8ClampedArray(d); }
@@ -130,7 +140,7 @@
       for (let i = 0; i < a.length; i++, j += 4) { const v = maskAcc[i] = maskAcc[i] * k + a[i] * (1 - k); d[j] = v > .7 ? 255 : v < .4 ? 0 : ((v - .4) / .3 * 255) | 0; }
       mctx.putImageData(maskImg, 0, 0); };
     function stepSeg(t){ if (!segLm || !km.segmentOn) return false; if (video.currentTime === segLastT) return !!maskCanvas.width; segLastT = video.currentTime;
-      const r = segLm.segmentForVideo(video, t); const m = r.confidenceMasks && r.confidenceMasks[0]; if (!m) return false; try { km.updateMask(m); } finally { try { m.close(); } catch (_) {} } return true; }
+      const r = segLm.segmentForVideo(srcImg(), t); const m = r.confidenceMasks && r.confidenceMasks[0]; if (!m) return false; try { km.updateMask(m); } finally { try { m.close(); } catch (_) {} } return true; }
     /** 사람 마스크 켜고 끄기(배경 바꿀 때만 켜서 프레임 아낌) */
     km.setSegment = async function(on){ km.segmentOn = !!on; if (on) { try { await ensureSeg(); } catch (e) { km.emit('error', { kind: 'segment', message: String(e), score: 0 }); } } else { maskAcc = null; } };
     // ── 가장자리 다듬기(WebGL 조인트 바이래터럴): 저해상 마스크를 영상 색 경계에 맞춰 다시 그음 — 머리카락·손가락 끝
@@ -148,7 +158,7 @@
       const mkTex = (unit) => { const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); return t; };
       texV = mkTex(0); texM = mkTex(1); gl.uniform1i(gl.getUniformLocation(prog, 'uV'), 0); gl.uniform1i(gl.getUniformLocation(prog, 'uM'), 1); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); gl.viewport(0, 0, W, H); return true; }
       catch (e) { glFail = true; gl = null; km.emit('warn', { kind: 'gl', message: '가장자리 다듬기 불가: ' + e.message }); return false; } }
-    function refineGL(){ if (!initGL()) return null; gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texV); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+    function refineGL(){ if (!initGL()) return null; gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texV); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, srcImg());
       gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, texM); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, maskCanvas);
       gl.uniform2f(gl.getUniformLocation(prog, 'uT'), 1 / W, 1 / H); gl.uniform1f(gl.getUniformLocation(prog, 'uSc'), km.maskColorSigma == null ? .12 : km.maskColorSigma); gl.uniform1f(gl.getUniformLocation(prog, 'uR'), km.maskRefineStep == null ? 2.0 : km.maskRefineStep);
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); return glc; }
@@ -156,14 +166,58 @@
     km.drawPerson = function(tctx){ tctx = tctx || ctx;
       if (km.maskRefine !== false) { const out = refineGL(); if (out) { tctx.save(); tctx.translate(W, 0); tctx.scale(-1, 1); tctx.drawImage(out, 0, 0, W, H); tctx.restore(); return; } }
       const pc = km._pc || (km._pc = document.createElement('canvas')); if (pc.width !== W || pc.height !== H) { pc.width = W; pc.height = H; } const p = pc.getContext('2d');
-      p.clearRect(0, 0, W, H); p.save(); p.translate(W, 0); p.scale(-1, 1); p.drawImage(video, 0, 0, W, H); p.globalCompositeOperation = 'destination-in'; p.filter = 'blur(' + (km.maskFeather == null ? 3 : km.maskFeather) + 'px)'; const sh = km.maskShrink == null ? 2 : km.maskShrink; p.drawImage(maskCanvas, sh, sh, W - sh * 2, H - sh * 2); p.filter = 'none'; p.restore(); tctx.drawImage(pc, 0, 0); };
+      p.clearRect(0, 0, W, H); p.save(); p.translate(W, 0); p.scale(-1, 1); p.drawImage(srcImg(), 0, 0, W, H); p.globalCompositeOperation = 'destination-in'; p.filter = 'blur(' + (km.maskFeather == null ? 3 : km.maskFeather) + 'px)'; const sh = km.maskShrink == null ? 2 : km.maskShrink; p.drawImage(maskCanvas, sh, sh, W - sh * 2, H - sh * 2); p.filter = 'none'; p.restore(); tctx.drawImage(pc, 0, 0); };
     km.maskCanvas = maskCanvas;
+
+    // ── 카메라 범위 API·조절 화면
+    km.getRange = () => ({ ...range });
+    km.setRange = (r, save) => { range = { zoom: Math.min(3, Math.max(1, +r.zoom || 1)), cx: Math.min(1, Math.max(0, r.cx == null ? .5 : +r.cx)), cy: Math.min(1, Math.max(0, r.cy == null ? .5 : +r.cy)) }; if (save !== false) try { localStorage.setItem(RANGE_KEY, JSON.stringify(range)); } catch (_) {} km.emit('range', { ...range }); };
+    km.resetRange = () => km.setRange({ zoom: 1, cx: .5, cy: .5 });
+    /** 범위 조절 화면(공통). 카메라가 켜진 뒤에 호출. 저장하면 모든 케이모션 활동에 같이 적용. */
+    km.openRangeUI = function(onClose){ if (km._rangeUI) return; const before = { ...range }; let cur = { ...range };
+      const el = document.createElement('div'); km._rangeUI = el; el.setAttribute('style', 'position:fixed;inset:0;z-index:99999;background:rgba(5,4,18,.92);color:#fff;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;box-sizing:border-box');
+      el.innerHTML = `<div style="font-size:1.4rem;font-weight:900">📷 카메라 범위</div>
+        <div style="font-size:.92rem;opacity:.8;text-align:center;max-width:720px">상자 안이 게임 화면 전체가 돼요. 아이가 서는 자리가 상자에 꽉 차게 맞춰요. 화면을 눌러 상자를 옮길 수 있어요.</div>
+        <canvas style="width:min(92vw,760px);aspect-ratio:4/3;border-radius:14px;background:#000;border:2px solid rgba(255,255,255,.25);touch-action:none"></canvas>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+          <button data-p="1" style="padding:10px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;font-size:1rem;cursor:pointer">🖥 웹캠 (가까이)</button>
+          <button data-p="1.8" style="padding:10px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;font-size:1rem;cursor:pointer">📺 전자칠판 캠 (멀리)</button>
+          <button data-p="2.5" style="padding:10px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;font-size:1rem;cursor:pointer">🔭 아주 멀리</button>
+        </div>
+        <div style="display:grid;grid-template-columns:auto 1fr auto;gap:8px 12px;align-items:center;width:min(92vw,520px);font-size:.95rem">
+          <span>확대</span><input data-k="zoom" type="range" min="1" max="3" step="0.05"><b data-v="zoom" style="min-width:3.5em;text-align:right"></b>
+          <span>좌우</span><input data-k="x" type="range" min="0" max="1" step="0.01"><b data-v="x" style="min-width:3.5em;text-align:right"></b>
+          <span>상하</span><input data-k="y" type="range" min="0" max="1" step="0.01"><b data-v="y" style="min-width:3.5em;text-align:right"></b>
+        </div>
+        <div style="display:flex;gap:10px"><button data-a="save" style="padding:12px 26px;border-radius:14px;border:0;background:#5ef2c8;color:#0b1020;font-weight:900;font-size:1.05rem;cursor:pointer">저장 (모든 케이모션에 적용)</button><button data-a="cancel" style="padding:12px 20px;border-radius:14px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;font-size:1rem;cursor:pointer">닫기</button></div>`;
+      document.body.appendChild(el);
+      const pv = el.querySelector('canvas'); pv.width = 640; pv.height = 480; const pc = pv.getContext('2d');
+      const inZ = el.querySelector('[data-k=zoom]'), inX = el.querySelector('[data-k=x]'), inY = el.querySelector('[data-k=y]');
+      const sync = () => { inZ.value = cur.zoom; inX.value = 1 - cur.cx; inY.value = cur.cy; el.querySelector('[data-v=zoom]').textContent = cur.zoom.toFixed(2) + '×'; el.querySelector('[data-v=x]').textContent = Math.round((1 - cur.cx) * 100) + '%'; el.querySelector('[data-v=y]').textContent = Math.round(cur.cy * 100) + '%'; km.setRange(cur, false); };
+      inZ.oninput = () => { cur.zoom = +inZ.value; sync(); }; inX.oninput = () => { cur.cx = 1 - +inX.value; sync(); }; inY.oninput = () => { cur.cy = +inY.value; sync(); };
+      el.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { cur = { zoom: +b.dataset.p, cx: .5, cy: .5 }; sync(); });
+      const pick = e => { const r = pv.getBoundingClientRect(); const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height; cur.cx = 1 - Math.min(1, Math.max(0, x)); cur.cy = Math.min(1, Math.max(0, y)); sync(); };
+      let dragging = false; pv.onpointerdown = e => { dragging = true; pv.setPointerCapture(e.pointerId); pick(e); }; pv.onpointermove = e => { if (dragging) pick(e); }; pv.onpointerup = pv.onpointercancel = () => { dragging = false; };
+      let rafId = 0; const draw = () => { if (!km._rangeUI) return; const vw = video.videoWidth || W, vh = video.videoHeight || H;
+        pc.save(); pc.translate(640, 0); pc.scale(-1, 1); if (vw) pc.drawImage(video, 0, 0, 640, 480); else { pc.fillStyle = '#222'; pc.fillRect(0, 0, 640, 480); } pc.restore();
+        if (cur.zoom > 1.001 || cur.cx !== .5 || cur.cy !== .5) { const sw = 640 / cur.zoom, sh = 480 / cur.zoom; const sx = Math.min(640 - sw, Math.max(0, cur.cx * 640 - sw / 2)), sy = Math.min(480 - sh, Math.max(0, cur.cy * 480 - sh / 2)); const mx = 640 - sx - sw;
+          pc.fillStyle = 'rgba(0,0,0,.55)'; pc.fillRect(0, 0, 640, 480); pc.clearRect(mx, sy, sw, sh); pc.save(); pc.translate(640, 0); pc.scale(-1, 1); pc.beginPath(); pc.rect(640 - mx - sw, sy, sw, sh); pc.clip(); pc.drawImage(video, 0, 0, 640, 480); pc.restore();
+          pc.strokeStyle = '#5ef2c8'; pc.lineWidth = 4; pc.strokeRect(mx, sy, sw, sh); }
+        else { pc.strokeStyle = '#5ef2c8'; pc.lineWidth = 4; pc.strokeRect(2, 2, 636, 476); }
+        rafId = requestAnimationFrame(draw); };
+      const close = (save) => { cancelAnimationFrame(rafId); if (save) km.setRange(cur, true); else km.setRange(before, false); el.remove(); km._rangeUI = null; if (onClose) onClose(save ? { ...range } : null); };
+      el.querySelector('[data-a=save]').onclick = () => close(true); el.querySelector('[data-a=cancel]').onclick = () => close(false);
+      sync(); draw(); };
+    /** 캔버스 옆에 「📷 범위」 단추 붙이기(활동이 원하면 opt.rangeButton: false 로 끔) */
+    function mountRangeButton(){ if (opt.rangeButton === false || km.mouse || km._rangeBtn) return; const host = canvas.parentElement; if (!host) return; if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+      const b = document.createElement('button'); km._rangeBtn = b; b.type = 'button'; b.textContent = '📷 범위'; b.title = '카메라 범위 조절(웹캠·전자칠판 캠)'; b.setAttribute('style', 'position:absolute;left:6px;top:6px;z-index:20;padding:4px 9px;border-radius:9px;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.55);color:#fff;font-size:.78rem;cursor:pointer;font-family:inherit;pointer-events:auto');
+      b.onclick = e => { e.stopPropagation(); km.openRangeUI(); }; host.appendChild(b); }
 
     // ── 그리기 도우미
     km.drawSkeleton = function(lm, bones, color, r){ if (!lm) return; ctx.strokeStyle = color || 'rgba(77,225,255,.9)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
       for (const [a, b] of bones) { if (lm[a].v < .4 || lm[b].v < .4) continue; ctx.beginPath(); ctx.moveTo(lm[a].x, lm[a].y); ctx.lineTo(lm[b].x, lm[b].y); ctx.stroke(); }
       ctx.fillStyle = '#fff'; for (const p of lm) { if (p.v < .4) continue; ctx.beginPath(); ctx.arc(p.x, p.y, r || 5, 0, Math.PI * 2); ctx.fill(); } };
-    km.drawCamera = function(){ if (km.mouse) { ctx.fillStyle = '#1b2236'; ctx.fillRect(0, 0, W, H); km.drawMouseHelp(); return; } ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1); ctx.drawImage(video, 0, 0, W, H); ctx.restore(); };
+    km.drawCamera = function(){ if (km.mouse) { ctx.fillStyle = '#1b2236'; ctx.fillRect(0, 0, W, H); km.drawMouseHelp(); return; } ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1); ctx.drawImage(srcImg(), 0, 0, W, H); ctx.restore(); };
 
     // ── 손 특징(규칙 층 재료)
     km.handFeatures = function(h){
@@ -289,10 +343,11 @@
       } else if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
         lastVideoTime = video.currentTime; f.fresh = true;
         try {
+          updateCrop();
           if (modes.has('motion')) stepMotion();
-          if (handLm) { const r = handLm.detectForVideo(video, t); f.hands = (r.landmarks || []).map((lm, i) => handSm[i] ? handSm[i].apply(toPx(lm), t) : toPx(lm)); f.handedness = r.handednesses;
+          if (handLm) { const r = handLm.detectForVideo(srcImg(), t); f.hands = (r.landmarks || []).map((lm, i) => handSm[i] ? handSm[i].apply(toPx(lm), t) : toPx(lm)); f.handedness = r.handednesses;
             for (let i = f.hands.length; i < NH; i++) handSm[i].reset(); }
-          if (poseLm) { const r = poseLm.detectForVideo(video, t); const raw = r.landmarks && r.landmarks[0] ? toPx(r.landmarks[0]) : null;
+          if (poseLm) { const r = poseLm.detectForVideo(srcImg(), t); const raw = r.landmarks && r.landmarks[0] ? toPx(r.landmarks[0]) : null;
             if (raw) { f.pose = poseSm.apply(raw, t); poseSeen = true; } else { f.pose = null; if (poseSeen) { poseSm.reset(); poseSeen = false; } }
             }
           if (km.segmentOn) { try { if (stepSeg(t)) f.maskCanvas = maskCanvas; } catch (e) { km.emit('error', { kind: 'mask', message: String(e), score: 0 }); } }
@@ -343,9 +398,9 @@
         err.cause = e; km.emit('error', { kind: 'camera', message: err.message, score: 0 }); throw err; }
       try { await loadModels(); } catch (e) { km.emit('error', { kind: 'model', message: String(e), score: 0 }); throw new Error('인식 모델을 불러오지 못했어요. 인터넷(모델 서버) 연결을 확인해 주세요.'); }
       status(''); km.running = true; lastVideoTime = -1;
-      km.emit('session:start', { activity: km.activity, modes: [...modes], ua: navigator.userAgent, W, H }); raf = requestAnimationFrame(loop);
+      km.emit('session:start', { activity: km.activity, modes: [...modes], ua: navigator.userAgent, W, H }); mountRangeButton(); raf = requestAnimationFrame(loop);
     };
-    km.stop = function(){ if (km.running) km.emit('session:stop'); km.running = false; cancelAnimationFrame(raf); if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; } };
+    km.stop = function(){ if (km.running) km.emit('session:stop'); km.running = false; if (km._rangeBtn) { km._rangeBtn.remove(); km._rangeBtn = null; } cancelAnimationFrame(raf); if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; } };
     return km;
   }
   window.KMotion = { create, POSE, HAND, POSE_BONES, HAND_BONES, ENGINE_VERSION, ACTION_VERSION, MODEL_VERSION };

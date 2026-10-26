@@ -18,6 +18,7 @@ export class AudioManager {
   win(){ [523, 659, 784, 1046, 1318].forEach((f, i) => this.tone(f, .5, { type: 'triangle', g: .12, delay: i * .11 })); this.tone(1568, 1.4, { type: 'sine', g: .1, delay: .6 }); }
   lose(){ [392, 349, 311, 262].forEach((f, i) => this.tone(f, .45, { type: 'triangle', g: .12, delay: i * .22 })); }
   tick(){ this.tone(900, .05, { type: 'square', g: .04 }); }
+  heart(){ this.tone(70, .14, { type: 'sine', g: .22, slide: 45 }); this.noise(.06, { g: .05, hp: 40, lp: 160 }); }
   // 배경 음악: 판타지 아르페지오 + 베이스, 스케줄러 루프
   startMusic(){ if (!this.ac || this.music) return; const bpm = 108, beat = 60 / bpm; const prog = [[0, 4, 7, 11], [5, 9, 12, 16], [3, 7, 10, 14], [7, 11, 14, 17]]; const base = 220; const st = { i: 0, next: this.ac.currentTime + .1, on: true };
     const step = () => { if (!st.on) return; while (st.next < this.ac.currentTime + .4) { const bar = Math.floor(st.i / 8) % prog.length, pos = st.i % 8; const ch = prog[bar]; const n = ch[[0, 1, 2, 3, 2, 1, 3, 1][pos]]; const f = base * Math.pow(2, n / 12); const delay = st.next - this.ac.currentTime;
