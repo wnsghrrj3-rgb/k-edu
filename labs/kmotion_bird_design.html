@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>내가 새가 된다면 · 디자인 시험</title>
+<script type="importmap">
+{ "imports": {
+    "three": "./vendor/three185/three.module.min.js",
+    "three/addons/": "./vendor/three185/addons/"
+} }
+</script>
+<style>
+  :root{color-scheme:dark}
+  html,body{margin:0;height:100%;background:#1a2440;overflow:hidden;font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif}
+  #view{position:fixed;inset:0}
+  #view canvas{display:block;width:100%;height:100%}
+  .title{position:fixed;left:max(28px,env(safe-area-inset-left));bottom:max(28px,env(safe-area-inset-bottom));color:#fff7ec;text-shadow:0 2px 24px rgba(40,30,20,.55);pointer-events:none}
+  .title h1{margin:0;font-size:clamp(26px,4.2vw,52px);font-weight:600;letter-spacing:-.02em;line-height:1.05}
+  .title p{margin:10px 0 0;font-size:clamp(13px,1.3vw,17px);opacity:.82;font-weight:400}
+  .alt{position:fixed;right:max(24px,env(safe-area-inset-right));top:max(22px,env(safe-area-inset-top));color:#fff7ec;font-size:14px;opacity:.75;text-shadow:0 1px 12px rgba(40,30,20,.6);pointer-events:none}
+  #boot{position:fixed;inset:0;display:grid;place-items:center;background:#1a2440;color:#fff7ec;font-size:15px;transition:opacity .9s;z-index:5}
+  #boot.off{opacity:0;pointer-events:none}
+  @media (prefers-reduced-motion:reduce){ #boot{transition:none} }
+</style>
+</head>
+<body>
+<div id="view"></div>
+<div id="boot">하늘을 여는 중…</div>
+<div class="alt">고도 1,200 m · 해 질 무렵</div>
+<div class="title">
+  <h1>내가 새가 된다면</h1>
+  <p>구름 바다 위를 활공하는 첫 화면 — 디자인 시험판</p>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+/* ---------- palette (golden hour above a cloud sea) ---------- */
+const C = {
+  zenith:  new THREE.Color('#1f3a6b'),
+  mid:     new THREE.Color('#5a86b8'),
+  horizon: new THREE.Color('#f4b98a'),
+  sun:     new THREE.Color('#fff1cf'),
+  cloudLit:new THREE.Color('#fff0dc'),
+  cloudShade:new THREE.Color('#a9b7d6'),
+  forestLo:new THREE.Color('#15321f'),
+  forestHi:new THREE.Color('#4a6b3a'),
+  rock:    new THREE.Color('#6b6a63'),
+  haze:    new THREE.Color('#c9b7c7'),
+};
+
+const view = document.getElementById('view');
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+view.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(C.haze.clone().lerp(C.horizon, .45), 0.00075);
+
+const camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 1, 6000);
+camera.position.set(0, 76, 54);
+camera.lookAt(0, 62, -80);
+
+/* ---------- sky dome ---------- */
+const sunDir = new THREE.Vector3(-0.55, 0.16, -0.82).normalize();
+const sky = new THREE.Mesh(
+  new THREE.SphereGeometry(4200, 48, 32),
+  new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { zenith:{value:C.zenith}, mid:{value:C.mid}, horizon:{value:C.horizon}, sunCol:{value:C.sun}, sunDir:{value:sunDir} },
+    vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+    fragmentShader: `
+      uniform vec3 zenith, mid, horizon, sunCol, sunDir; varying vec3 vDir;
+      void main(){
+        float h = clamp(vDir.y, -0.1, 1.0);
+        vec3 col = mix(horizon, mid, smoothstep(0.0, 0.22, h));
+        col = mix(col, zenith, smoothstep(0.18, 0.85, h));
+        float s = max(dot(normalize(vDir), sunDir), 0.0);
+        col += sunCol * (pow(s, 900.0) * 3.2 + pow(s, 24.0) * 0.55 + pow(s, 4.0) * 0.14);
+        // warm band hugging the horizon, strongest toward the sun
+        float band = exp(-abs(vDir.y - 0.02) * 14.0) * (0.35 + 0.65 * pow(s, 2.0));
+        col = mix(col, horizon * 1.08, band * 0.6);
+        gl_FragColor = vec4(col, 1.0);
+      }`
+  })
+);
+scene.add(sky);
+
+/* ---------- light ---------- */
+const sun = new THREE.DirectionalLight(C.sun, 3.4);
+sun.position.copy(sunDir).multiplyScalar(400);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 50; sun.shadow.camera.far = 900;
+sun.shadow.camera.left = -40; sun.shadow.camera.right = 40;
+sun.shadow.camera.top = 40; sun.shadow.camera.bottom = -40;
+sun.shadow.bias = -0.0004;
+scene.add(sun, sun.target);
+scene.add(new THREE.HemisphereLight(C.mid, C.horizon, 0.9));
+
+/* ---------- noise ---------- */
+const hash = (x, y) => { let n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return n - Math.floor(n); };
+const smooth = t => t * t * (3 - 2 * t);
+function vnoise(x, y) {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = smooth(x - xi), yf = smooth(y - yi);
+  const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+  return a + (b - a) * xf + (c - a) * yf + (a - b - c + d) * xf * yf;
+}
+function fbm(x, y, oct = 5) { let v = 0, amp = .5, f = 1; for (let i = 0; i < oct; i++) { v += amp * vnoise(x * f, y * f); f *= 2.03; amp *= .5; } return v; }
+const ridge = (x, y) => { const n = fbm(x, y, 5); const r = 1 - Math.abs(n * 2 - 1); return r * r; };
+
+/* ---------- mountains ---------- */
+const SIZE = 3600, SEG = 220;
+const terrGeo = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG);
+terrGeo.rotateX(-Math.PI / 2);
+{
+  const pos = terrGeo.attributes.position, col = new Float32Array(pos.count * 3), tmp = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i);
+    const big = ridge(x * 0.0006 + 10, z * 0.0006 + 3) * 150;
+    const detail = fbm(x * 0.004, z * 0.004, 4) * 26;
+    // a long valley opens straight ahead of the bird
+    const valley = 1 - Math.exp(-Math.pow(x / 420, 2));
+    const h = -40 + big * (0.35 + 0.65 * valley) + detail;
+    pos.setY(i, h);
+    const t = THREE.MathUtils.clamp((h + 20) / 140, 0, 1);
+    tmp.copy(C.forestLo).lerp(C.forestHi, Math.pow(t, 1.4));
+    if (h > 95) tmp.lerp(C.rock, THREE.MathUtils.clamp((h - 95) / 35, 0, .8));
+    col.set([tmp.r, tmp.g, tmp.b], i * 3);
+  }
+  terrGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  terrGeo.computeVertexNormals();
+}
+const terrain = new THREE.Mesh(terrGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0 }));
+terrain.receiveShadow = true;
+scene.add(terrain);
+
+/* ---------- trees on the near ridges (instanced) ---------- */
+{
+  const geo = new THREE.ConeGeometry(2.6, 11, 6, 1);
+  geo.translate(0, 5.5, 0);
+  const mat = new THREE.MeshStandardMaterial({ color: '#1d3b24', roughness: 1 });
+  const N = 9000, m = new THREE.InstancedMesh(geo, mat, N), M = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
+  let k = 0, tries = 0;
+  while (k < N && tries < 60000) {
+    tries++;
+    const x = (hash(tries, 7) - .5) * 2200, z = -120 - hash(tries, 11) * 1700;
+    const big = ridge(x * 0.0006 + 10, z * 0.0006 + 3) * 150;
+    const valley = 1 - Math.exp(-Math.pow(x / 420, 2));
+    const h = -40 + big * (0.35 + 0.65 * valley) + fbm(x * 0.004, z * 0.004, 4) * 26;
+    if (h < 22 || h > 92) continue;
+    const sc = 0.8 + hash(tries, 3) * 1.1;
+    p.set(x, h - 1, z); s.set(sc, sc * (0.9 + hash(tries, 5) * .5), sc);
+    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), hash(tries, 9) * 6.28);
+    M.compose(p, q, s); m.setMatrixAt(k++, M);
+  }
+  m.count = k; m.castShadow = false; m.receiveShadow = true;
+  scene.add(m);
+}
+
+/* ---------- cloud sea (soft sprites, two tiers) ---------- */
+function cloudTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(128, 128, 10, 128, 128, 128);
+  grd.addColorStop(0, 'rgba(255,255,255,0.95)');
+  grd.addColorStop(0.45, 'rgba(255,255,255,0.55)');
+  grd.addColorStop(0.8, 'rgba(255,255,255,0.12)');
+  grd.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, 256, 256);
+  // break the perfect circle a little
+  g.globalCompositeOperation = 'destination-out';
+  for (let i = 0; i < 9; i++) { g.beginPath(); g.arc(hash(i, 2) * 256, hash(i, 4) * 256, 30 + hash(i, 6) * 40, 0, 6.28); g.fillStyle = 'rgba(0,0,0,0.35)'; g.fill(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const cloudTex = cloudTexture();
+const clouds = [];
+function makeClouds(n, yMin, yMax, sMin, sMax, rMax, alpha, tint) {
+  const mat = new THREE.SpriteMaterial({ map: cloudTex, transparent: true, depthWrite: false, opacity: alpha, color: tint });
+  for (let i = 0; i < n; i++) {
+    const sp = new THREE.Sprite(mat.clone());
+    const a = hash(i, 21 + yMin) * 6.28, r = Math.sqrt(hash(i, 33 + yMin)) * rMax;
+    sp.position.set(Math.cos(a) * r, yMin + hash(i, 44 + yMin) * (yMax - yMin), -200 + Math.sin(a) * r * 0.9);
+    const sc = sMin + hash(i, 55 + yMin) * (sMax - sMin);
+    sp.scale.set(sc * (1.3 + hash(i, 61) * .6), sc * .55, 1);
+    sp.material.rotation = hash(i, 66) * 6.28;
+    sp.material.color = C.cloudShade.clone().lerp(C.cloudLit, 0.55 + 0.45 * hash(i, 71));
+    sp.userData.drift = 0.6 + hash(i, 73) * 1.4;
+    scene.add(sp); clouds.push(sp);
+  }
+}
+makeClouds(260, 24, 46, 120, 260, 1500, 0.78, C.cloudLit);   // the sea
+makeClouds(90, 10, 30, 220, 420, 1700, 0.55, C.cloudShade);  // deeper, bluer layer
+makeClouds(14, 300, 520, 500, 900, 2200, 0.22, C.horizon);   // high wisps catching the sun
+
+/* ---------- the bird (third person, wings spread) ---------- */
+const bird = new THREE.Group();
+{
+  const plumage = new THREE.MeshStandardMaterial({ color: '#3b2a1c', roughness: .85, metalness: .05 });
+  const belly = new THREE.MeshStandardMaterial({ color: '#d9c3a3', roughness: .9 });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), plumage);
+  body.scale.set(1.05, .85, 2.9); bird.add(body);
+  const chest = new THREE.Mesh(new THREE.SphereGeometry(.92, 24, 16), belly);
+  chest.scale.set(.95, .7, 2.3); chest.position.set(0, -.25, .25); bird.add(chest);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.72, 24, 18), plumage);
+  head.position.set(0, .55, -2.9); bird.add(head);
+  const beak = new THREE.Mesh(new THREE.ConeGeometry(.26, 1.1, 12), new THREE.MeshStandardMaterial({ color: '#e0a23a', roughness: .5 }));
+  beak.rotation.x = -Math.PI / 2; beak.position.set(0, .4, -3.9); bird.add(beak);
+  for (const sx of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(.11, 10, 8), new THREE.MeshStandardMaterial({ color: '#111', roughness: .2 }));
+    eye.position.set(sx * .5, .68, -3.25); bird.add(eye);
+  }
+  // wing: tapered shape with finger feathers at the tip
+  const wingShape = new THREE.Shape();
+  wingShape.moveTo(0, -1.2); wingShape.quadraticCurveTo(5, -1.9, 10.5, -1.1);
+  wingShape.lineTo(11.4, -.2); wingShape.lineTo(10.2, .5); wingShape.lineTo(11.8, 1.0);
+  wingShape.lineTo(10.4, 1.3); wingShape.lineTo(11.5, 2.0); wingShape.lineTo(9.6, 1.9);
+  wingShape.quadraticCurveTo(5, 1.6, 0, 1.3); wingShape.closePath();
+  const wingGeo = new THREE.ShapeGeometry(wingShape, 12);
+  wingGeo.rotateX(-Math.PI / 2);
+  for (const sx of [-1, 1]) {
+    const w = new THREE.Mesh(wingGeo, new THREE.MeshStandardMaterial({ color: '#4a3524', roughness: .9, side: THREE.DoubleSide }));
+    w.scale.x = sx; w.position.set(sx * .7, .25, .1);
+    w.rotation.z = sx * 0.16;          // gentle dihedral
+    w.castShadow = true; bird.add(w);
+    w.userData.sx = sx;
+    bird.userData[sx < 0 ? 'wl' : 'wr'] = w;
+  }
+  const tailShape = new THREE.Shape();
+  tailShape.moveTo(-.5, 0); tailShape.lineTo(-1.9, 3.2); tailShape.lineTo(-.9, 3.1); tailShape.lineTo(0, 3.4);
+  tailShape.lineTo(.9, 3.1); tailShape.lineTo(1.9, 3.2); tailShape.lineTo(.5, 0); tailShape.closePath();
+  const tail = new THREE.Mesh(new THREE.ShapeGeometry(tailShape), new THREE.MeshStandardMaterial({ color: '#4a3524', roughness: .9, side: THREE.DoubleSide }));
+  tail.rotation.x = -Math.PI / 2 + .12; tail.position.set(0, .1, 2.4); tail.castShadow = true; bird.add(tail);
+  bird.traverse(o => { if (o.isMesh) o.castShadow = true; });
+}
+bird.position.set(0, 60, -14);
+scene.add(bird);
+sun.target.position.copy(bird.position);
+// a soft shadow catcher so the bird reads as "above" the cloud top
+const catcher = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), new THREE.ShadowMaterial({ opacity: 0.12 }));
+catcher.rotation.x = -Math.PI / 2; catcher.position.set(0, 40, -14); catcher.receiveShadow = true; scene.add(catcher);
+
+/* ---------- post ---------- */
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.75, 0.86);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+/* ---------- quiet motion: the air is moving, the bird is not flapping ---------- */
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clock = new THREE.Clock();
+function frame() {
+  const t = clock.getElapsedTime();
+  if (!reduce) {
+    bird.position.y = 60 + Math.sin(t * .7) * .9;
+    bird.rotation.z = Math.sin(t * .45) * .05;
+    bird.rotation.x = Math.sin(t * .6) * .02;
+    const flex = Math.sin(t * .9) * .035;
+    bird.userData.wl.rotation.z = -0.16 - flex; bird.userData.wr.rotation.z = 0.16 + flex;
+    for (const c of clouds) c.position.x += c.userData.drift * .02 * (c.position.y < 60 ? 1 : .3);
+    camera.position.x = Math.sin(t * .18) * 3;
+    camera.position.y = 76 + Math.sin(t * .25) * 1.2;
+    camera.lookAt(bird.position.x, bird.position.y + 1, bird.position.z - 90);
+  }
+  composer.render();
+  requestAnimationFrame(frame);
+}
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
+});
+frame();
+requestAnimationFrame(() => setTimeout(() => document.getElementById('boot').classList.add('off'), 300));
+</script>
+</body>
+</html>
