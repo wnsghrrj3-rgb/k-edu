@@ -18,7 +18,7 @@ export class KeyboardInput {
 export class MotionController {
   constructor(input, { video, canvas, getLane, onStatus, onDebug }){
     this.input = input; this.getLane = getLane; this.onStatus = onStatus || (() => {}); this.onDebug = onDebug || (() => {});
-    this.km = KMotion.create({ video, canvas, modes: ['pose'], activity: 'run' });
+    this.km = KMotion.create({ video, canvas, modes: ['pose'], poseConf: .35, activity: 'run' }); // 인식 문턱 낮춤(멀리·어두운 교실)
     this.base = null; this.calib = null; this.zone = 'center'; this.zoneCand = 'center'; this.zoneSince = 0; this.lastMove = 0;
     this.armsWas = false; this.bent = false; this.lastSlide = 0; this.seen = false; this.lostSince = 0; this.paused = false; this.foundAt = 0; this.active = false;
     this.cfg = { laneIn: .55, laneOut: .28, holdMs: 90, bendIn: .3, bendOut: .16, lostMs: 900 }; // bend: 어깨가 어깨폭의 30% 내려가면 슬라이드

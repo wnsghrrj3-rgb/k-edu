@@ -121,7 +121,7 @@
       const files = await v.FilesetResolver.forVisionTasks(VENDOR + 'wasm');
       const base = (path) => ({ baseOptions: { modelAssetPath: path, delegate: 'GPU' }, runningMode: 'VIDEO' });
       if (modes.has('hands')) { const hc = opt.handConf; handLm = await v.HandLandmarker.createFromOptions(files, Object.assign(base(MODELS.hands), { numHands: opt.numHands || 2 }, hc ? { minHandDetectionConfidence: hc, minHandPresenceConfidence: hc, minTrackingConfidence: hc } : {})); }
-      if (modes.has('pose'))  poseLm = await v.PoseLandmarker.createFromOptions(files, Object.assign(base(MODELS.pose), { numPoses: 1 }));
+      if (modes.has('pose')) { const pcf = opt.poseConf; poseLm = await v.PoseLandmarker.createFromOptions(files, Object.assign(base(MODELS.pose), { numPoses: 1 }, pcf ? { minPoseDetectionConfidence: pcf, minPosePresenceConfidence: pcf, minTrackingConfidence: pcf } : {})); }
       if (opt.segment) await ensureSeg();
     }
     function status(s){ if (km.onStatus) km.onStatus(s); }
@@ -175,10 +175,10 @@
     km.resetRange = () => km.setRange({ zoom: 1, cx: .5, cy: .5 });
     /** 범위 조절 화면(공통). 카메라가 켜진 뒤에 호출. 저장하면 모든 케이모션 활동에 같이 적용. */
     km.openRangeUI = function(onClose){ if (km._rangeUI) return; const before = { ...range }; let cur = { ...range };
-      const el = document.createElement('div'); km._rangeUI = el; el.setAttribute('style', 'position:fixed;inset:0;z-index:99999;background:rgba(5,4,18,.92);color:#fff;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;box-sizing:border-box');
-      el.innerHTML = `<div style="font-size:1.4rem;font-weight:900">📷 카메라 범위</div>
-        <div style="font-size:.92rem;opacity:.8;text-align:center;max-width:720px">상자 안이 게임 화면 전체가 돼요. 아이가 서는 자리가 상자에 꽉 차게 맞춰요. 화면을 눌러 상자를 옮길 수 있어요.</div>
-        <canvas style="width:min(92vw,760px);aspect-ratio:4/3;border-radius:14px;background:#000;border:2px solid rgba(255,255,255,.25);touch-action:none"></canvas>
+      const el = document.createElement('div'); km._rangeUI = el; el.setAttribute('style', 'position:fixed;inset:0;z-index:99999;background:rgba(5,4,18,.94);color:#fff;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;padding:10px 12px 16px;box-sizing:border-box;overflow:auto;-webkit-overflow-scrolling:touch');
+      el.innerHTML = `<div style="display:flex;align-items:center;gap:12px;width:min(92vw,760px);justify-content:space-between"><div style="font-size:1.2rem;font-weight:900">📷 카메라 범위</div><div style="display:flex;gap:8px"><button data-a="save" style="padding:9px 18px;border-radius:12px;border:0;background:#5ef2c8;color:#0b1020;font-weight:900;font-size:1rem;cursor:pointer">저장</button><button data-a="cancel" style="padding:9px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;font-size:1rem;cursor:pointer">닫기</button></div></div>
+        <div style="font-size:.85rem;opacity:.8;text-align:center;max-width:720px">상자 안이 게임 화면 전체가 돼요. 아이가 서는 자리가 상자에 꽉 차게 맞춘 뒤 「저장」 — 모든 케이모션에 같이 적용돼요. 화면을 눌러 상자를 옮길 수 있어요.</div>
+        <canvas style="width:min(92vw,760px,calc(46vh * 4 / 3));aspect-ratio:4/3;border-radius:14px;background:#000;border:2px solid rgba(255,255,255,.25);touch-action:none;flex:none"></canvas>
         <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
           <button data-p="1" style="padding:10px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;font-size:1rem;cursor:pointer">🖥 웹캠 (가까이)</button>
           <button data-p="1.8" style="padding:10px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;font-size:1rem;cursor:pointer">📺 전자칠판 캠 (멀리)</button>
@@ -189,7 +189,7 @@
           <span>좌우</span><input data-k="x" type="range" min="0" max="1" step="0.01"><b data-v="x" style="min-width:3.5em;text-align:right"></b>
           <span>상하</span><input data-k="y" type="range" min="0" max="1" step="0.01"><b data-v="y" style="min-width:3.5em;text-align:right"></b>
         </div>
-        <div style="display:flex;gap:10px"><button data-a="save" style="padding:12px 26px;border-radius:14px;border:0;background:#5ef2c8;color:#0b1020;font-weight:900;font-size:1.05rem;cursor:pointer">저장 (모든 케이모션에 적용)</button><button data-a="cancel" style="padding:12px 20px;border-radius:14px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;font-size:1rem;cursor:pointer">닫기</button></div>`;
+        `;
       document.body.appendChild(el);
       const pv = el.querySelector('canvas'); pv.width = 640; pv.height = 480; const pc = pv.getContext('2d');
       const inZ = el.querySelector('[data-k=zoom]'), inX = el.querySelector('[data-k=x]'), inY = el.querySelector('[data-k=y]');
