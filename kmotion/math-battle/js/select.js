@@ -42,7 +42,7 @@ export class GestureSelector {
   setRing(p){ const fg = this.cursor.querySelector('.fg'); if (fg) fg.style.strokeDashoffset = 151 * (1 - p); }
   resetHover(){ if (this.hoverSlot !== -1) this.input.emit('hover', { slot: -1, progress: 0 }); this.hoverSlot = -1; this.hoverSince = 0; this.setRing(0); }
   // 보정: 화면 위 3개 구슬을 차례로 400ms 씩 만지기 → 손이 화면 전체에 닿는지 확인
-  calibrate(targets, onProgress){ return new Promise(res => { let i = 0, since = 0; const T = 420;
-    this.calib = (sx, sy, now) => { const r = targets[i].getBoundingClientRect(); const inside = Math.hypot(sx - (r.left + r.width / 2), sy - (r.top + r.height / 2)) < r.width * .7; if (!inside) { since = 0; onProgress(i, 0); this.setRing(0); return; } if (!since) since = now; const p = Math.min(1, (now - since) / T); onProgress(i, p); this.setRing(p);
+  calibrate(targets, onProgress){ return new Promise(res => { let i = 0, since = 0; const T = 500;
+    this.calib = (sx, sy, now) => { const r = targets[i].getBoundingClientRect(); const inside = Math.hypot(sx - (r.left + r.width / 2), sy - (r.top + r.height / 2)) < r.width * .95; if (!inside) { since = 0; onProgress(i, 0); this.setRing(0); return; } if (!since) since = now; const p = Math.min(1, (now - since) / T); onProgress(i, p); this.setRing(p);
       if (p >= 1) { i++; since = 0; this.setRing(0); if (i >= targets.length) { this.calib = null; onProgress(targets.length, 1); res(); } } }; }); }
 }

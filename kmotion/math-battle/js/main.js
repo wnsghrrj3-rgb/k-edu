@@ -63,7 +63,8 @@ const game = new GameStateManager({
 // ───────── 입력 이벤트
 input.on('hover', e => { if (e.slot !== hovered) { hovered = e.slot; if (e.slot >= 0) audio.hover(); } ui.hover(e.slot, e.progress || 0); });
 input.on('select', e => { if (game.state === 'play') game.answer(e.slot); });
-input.on('lost', () => ui.camStatus('lost', '손이 안 보여요')); input.on('found', () => ui.camStatus('ok', '손 인식 중'));
+input.on('lost', () => { ui.camStatus('lost', '손이 안 보여요'); if (calibrating && gestureReady) $('calibMsg').textContent = '손이 안 보여요 — 카메라를 향해 손바닥을 펴 주세요'; });
+input.on('found', () => { ui.camStatus('ok', '손 인식 중'); if (calibrating && gestureReady) $('calibMsg').textContent = '손이 보여요! 🖐 커서로 빛나는 구슬 3개를 차례로 만져요.'; });
 
 // ───────── 흐름
 async function startFlow(){
