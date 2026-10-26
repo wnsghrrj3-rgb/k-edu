@@ -21,6 +21,7 @@
    · 146차(2026-10-19) 2학년 2학기 수학이랑 함께해요 부품: pcd2(실천 카드) · pcrw2(카드 전시 줄 — 빈자리 「?」·끈·10 cm 자) · rtb2(실천 기록표 — 모은 점수 「?」) · pln2(실천 계획표 — 「 · 」 줄 나눔)
    · 144차(2026-10-19) 2학년 2학기 표와 그래프 부품: tbl2(표·합계·빈칸) · cg2(◯·×·/ 그래프 — 세로·가로·잘못 그린 칸) · tly2(세면서 표시하기) · dc2(자료 낱장·/ 표시) · srt2(분류 칸) · wcl2(날씨 달력 △·◯) · nte2(쪽지·발표 자료) · objs1 이름 줄바꿈(\n)
    · 143차(2026-10-19) 2학년 2학기 시각과 시간 부품: dclk2(디지털시계) · tbnd2(시간 띠) · kcal2(달력) · d24(하루 24칸 띠) · upr2(단위 짝 카드) · grow2(날짜 사이 몇 년·개월·주 후)
+   · 192차(2026-10-26) 4학년 2학기 평면도형의 이동 부품: mvpt(점의 이동) · mvfig(밀기·뒤집기·돌리기 · 자동차 출구) · mvrow(가~라 고르기 판) · mvchr(글자·도장) · mvpat(무늬 판 — 칸 상태는 부품이 셈)
    · 191차(2026-10-26) 4학년 2학기 꺾은선그래프 부품: lg(꺾은선그래프 — 눈금 한 칸·물결선·두 자료·짐작 점·잘못 그린 그래프)
    · 141차(2026-10-16) 2학년 2학기 길이 재기 부품: lbar(길이 막대·이어 붙이기·잘라 낸 칸·100 cm 금) · ltape(자·끊긴 줄자) · lpw(전체·부분 가지) · lcard(몸·물건 어림 카드) · lch(나누어 어림) · tvert q(답 줄 빈칸 「?」)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
@@ -2919,6 +2920,116 @@
     return svgWrap(head + s, 'fig-lg', '0 0 ' + W0 + ' ' + H0).replace('<svg class="fig-svg fig-lg"', '<svg class="fig-svg fig-lg" data-v="' + sets.map(st => st.v.join(',')).join('|') + '" data-step="' + step + '" data-base="' + base + '" data-max="' + top + '" data-wave="' + (wave ? 1 : 0) + '" data-bad="' + esc(bad) + '" data-n="' + n + '" data-hide="' + hide.join(',') + '" data-q="' + qs.join(',') + '"' + (o.title ? ' data-title="' + esc(o.title) + '"' : ''));
   }
   Object.assign(PARTS, { lg });
+  }
+  { // ══ 192차(2026-10-26) 4학년 2학기 평면도형의 이동 부품 — mvpt(점의 이동) · mvfig(도형의 이동: 밀기·뒤집기·돌리기 · 자동차 출구) · mvrow(가~라 고르기 판) · mvchr(글자·도장 뒤집기) · mvpat(무늬 판) ══
+  // 자기주도 원문 「4-2 U6 평면도형의 이동 부품 라이브러리 v1」(l05 html) 과 같은 셈: 부품이 이동 후 자리를 스스로 셈해 그린다.
+  //   뒤집기·돌리기 중심 = 도형을 감싸는 정사각형 칸(긴 쪽 = 한 변)의 한가운데 · 위쪽/아래쪽 뒤집기 = 위아래 바꿈 · 왼쪽/오른쪽 = 좌우 바꿈.
+  // 그림 문법: 파랑 = 이동 전 · 주황 테 = 이동 후(밀기 한 판은 이동 전을 점선 테로) · 주황 점선 화살표 = 옮긴 길 · 주황 「?」 = 찾을 자리.
+  // mvpt: cols·rows·pt[x,y]·name·steps[[dir,n]]·show('both'|'before')·ask·cell('1 cm')·mark[[x,y,'가']]·title
+  // mvfig: cols·rows·sh[{p:[[x,y]…],c}](「fig」 이름은 panel 이 감싸개로 읽으므로 sh)·op{t:'slide',steps}|{t:'flip',dir}|{t:'turn',dir:'cw'|'ccw',deg}|{t:'none'}·wrong(그림만 이 이동으로)·mode('one'|'two')·ask·only('after')·labels·exit(출구 줄 y)·title
+  // mvrow: items[{name, fig:{mvfig 꼴}}] — 첫 칸 = 기준(크게) · 나머지 = 고르기 칸 · mvchr: items[{txt, op:'none'|'flipX'|'flipY'|'turn90'|'turn180'|'turn270', cap, stamp}]
+  // mvpat: rows·cols·rowOp·colOp('slide'|'flipX'|'flipY'|'turn90'|'turn180'|'turn270')·blank[[r,c]]·shape('wing'|'tri') — 칸 모양 상태(돌린 횟수·뒤집힘)를 부품이 셈
+  // data-*: svg data-c(한 칸 px)·data-pan(판 왼위 px)·data-op(신고한 이동)·data-drawn(그린 이동) · 다각형 polygon.mvp[data-side][data-col] · 점 circle.mvd[data-k] · 표시 circle.mvm[data-name]
+  const MVF = { a: ['#DCE8FB', '#3E6FCF'], b: ['#FFE3CF', '#E0661F'], c: ['#FFF0B8', '#B98900'], g: ['#D9F0D6', '#2F7D32'], p: ['#BFD4F7', '#1F4A9E'], v: ['#EBDDF7', '#7A4FBF'] };
+  const MVD = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const mf1 = (n) => String(Math.round(n * 10) / 10);
+  function mvBox(parts) { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; parts.forEach(pt => pt.p.forEach(q => { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); })); return [x0, y0, Math.max(x1 - x0, y1 - y0)]; }
+  function mvApply(parts, op) {
+    const cp = (f) => parts.map(pt => ({ p: pt.p.map(f), c: pt.c || 'a' }));
+    if (!op || op.t === 'none') return cp(q => [q[0], q[1]]);
+    if (op.t === 'slide') { let dx = 0, dy = 0; (op.steps || []).forEach(s => { const d = MVD[s[0]]; if (!d) throw new Error('방향 ' + s[0]); dx += d[0] * s[1]; dy += d[1] * s[1]; }); return cp(q => [q[0] + dx, q[1] + dy]); }
+    const B = mvBox(parts), cx = B[0] + B[2] / 2, cy = B[1] + B[2] / 2;
+    if (op.t === 'flip') { const vert = op.dir === 'up' || op.dir === 'down'; return cp(q => (vert ? [q[0], 2 * cy - q[1]] : [2 * cx - q[0], q[1]])); }
+    if (op.t === 'turn') { let k = Math.round((op.deg % 360) / 90); if (op.dir === 'ccw') k = (4 - k) % 4; return cp(q => { let dx = q[0] - cx, dy = q[1] - cy; for (let i = 0; i < k; i++) { const t = dx; dx = -dy; dy = t; } return [cx + dx, cy + dy]; }); }
+    throw new Error('이동 ' + op.t);
+  }
+  const mvOpStr = (op) => (!op || op.t === 'none' ? 'none' : op.t === 'slide' ? 'slide:' + (op.steps || []).map(s => s[0] + ':' + s[1]).join(',') : op.t === 'flip' ? 'flip:' + op.dir : 'turn:' + op.dir + ':' + op.deg);
+  function mvGrid(px, py, cols, rows, C) { let s = '<rect x="' + px + '" y="' + py + '" width="' + cols * C + '" height="' + rows * C + '" fill="#FBFDFF"/>'; for (let r = 0; r <= rows; r++) s += '<line x1="' + px + '" y1="' + (py + r * C) + '" x2="' + (px + cols * C) + '" y2="' + (py + r * C) + '" stroke="#B8D3EE" stroke-width="1.5" stroke-dasharray="4 4"/>'; for (let c = 0; c <= cols; c++) s += '<line x1="' + (px + c * C) + '" y1="' + py + '" x2="' + (px + c * C) + '" y2="' + (py + rows * C) + '" stroke="#B8D3EE" stroke-width="1.5" stroke-dasharray="4 4"/>'; return s; }
+  function mvPolys(parts, px, py, C, side, ghost) { return parts.map((pt, i) => { const col = MVF[pt.c] || MVF.a; const d = pt.p.map(q => mf1(px + q[0] * C) + ',' + mf1(py + q[1] * C)).join(' '); return '<polygon class="mvp" data-side="' + side + '" data-i="' + i + '" data-col="' + (pt.c || 'a') + '" points="' + d + '" fill="' + (ghost ? 'none' : col[0]) + '" stroke="' + (ghost ? '#8FA3BF' : col[1]) + '" stroke-width="' + (ghost ? 2.5 : 3.5) + '"' + (ghost ? ' stroke-dasharray="7 5"' : '') + ' stroke-linejoin="round"/>'; }).join(''); }
+  const mvArrow = (x1, y1, x2, y2, cls) => { const L = Math.hypot(x2 - x1, y2 - y1); if (L < 1) return ''; const ux = (x2 - x1) / L, uy = (y2 - y1) / L, hx = x2 - ux * 14, hy = y2 - uy * 14; return '<g class="' + (cls || 'mva') + '"><line x1="' + mf1(x1) + '" y1="' + mf1(y1) + '" x2="' + mf1(hx) + '" y2="' + mf1(hy) + '" stroke="' + ORANGE + '" stroke-width="4" stroke-dasharray="9 6"/><path d="M' + mf1(x2) + ' ' + mf1(y2) + 'L' + mf1(hx - uy * 9) + ' ' + mf1(hy + ux * 9) + 'L' + mf1(hx + uy * 9) + ' ' + mf1(hy - ux * 9) + 'Z" fill="' + ORANGE + '"/></g>'; };
+  // ── 점의 이동 ──
+  function mvpt(o) {
+    const cols = o.cols || 10, rows = o.rows || 8, W0 = 760, TP = o.title ? 44 : 6, C = Math.min(52, Math.floor(620 / cols), Math.floor(330 / rows)), px = Math.round((W0 - cols * C) / 2), py = TP + 40, H0 = py + rows * C + 26;
+    const p0 = o.pt || [1, 1]; let x = p0[0], y = p0[1]; const path = [[x, y]];
+    (o.steps || []).forEach(s => { const d = MVD[s[0]]; x += d[0] * s[1]; y += d[1] * s[1]; path.push([x, y]); });
+    if (x < 0 || y < 0 || x > cols || y > rows) return '';
+    const show = o.show || ((o.steps || []).length ? 'both' : 'before'), X = (v) => px + v * C, Y = (v) => py + v * C;
+    let s = (o.title ? txt(W0 / 2, 32, o.title, 24, INK, 900) : '') + mvGrid(px, py, cols, rows, C);
+    if (o.cell) s += '<path d="M' + px + ' ' + (py - 22) + 'v-8M' + px + ' ' + (py - 26) + 'h' + C + 'M' + (px + C) + ' ' + (py - 22) + 'v-8" stroke="' + INK + '" stroke-width="2.5" fill="none"/>' + txt(px + C + 8, py - 18, o.cell, 18, '#5B6B80', 800, 'start');
+    if (show === 'both' && !o.ask) for (let i = 1; i < path.length; i++) s += mvArrow(X(path[i - 1][0]), Y(path[i - 1][1]), X(path[i][0]), Y(path[i][1]), 'mva');
+    (o.mark || []).forEach(m => { s += '<circle class="mvm" data-name="' + esc(m[2] || '') + '" cx="' + X(m[0]) + '" cy="' + Y(m[1]) + '" r="8" fill="#fff" stroke="#6B7C93" stroke-width="3"/>' + (m[2] ? txt(X(m[0]), Y(m[1]) - 14, m[2], 21, '#4A5A70', 900) : ''); });
+    const nm = o.name || 'ㄱ';
+    s += '<circle class="mvd" data-k="0" cx="' + X(p0[0]) + '" cy="' + Y(p0[1]) + '" r="9" fill="' + BLUE2 + '" stroke="#fff" stroke-width="2.5"/>' + txt(X(p0[0]), Y(p0[1]) - 15, nm + (show === 'both' ? ' · 이동 전' : ''), 19, BLUE2, 900);
+    if (show === 'both') { if (o.ask) s += txt(X(x), Y(y) + 10, '?', 30, '#C2551A', 900).replace('<text ', '<text class="mvq" '); else s += '<circle class="mvd" data-k="1" cx="' + X(x) + '" cy="' + Y(y) + '" r="9" fill="' + ORANGE + '" stroke="#fff" stroke-width="2.5"/>' + txt(X(x), Y(y) + (Math.abs(y - p0[1]) < 1 ? 32 : -15), nm + ' · 이동 후', 19, '#C2551A', 900); }
+    return svgWrap(s, 'fig-mvpt', '0 0 ' + W0 + ' ' + H0).replace('<svg class="fig-svg fig-mvpt"', '<svg class="fig-svg fig-mvpt" data-c="' + C + '" data-pan="' + px + ',' + py + '" data-cols="' + cols + '" data-rows="' + rows + '" data-show="' + show + '" data-ask="' + (o.ask ? 1 : 0) + '"');
+  }
+  // ── 한 판(또는 두 판) 도형의 이동 — 판 그리기만 (mvfig·mvrow 공용) ──
+  function mvFigDraw(o, x0, y0, wAvail, hAvail, small) {
+    const cols = o.cols || 8, rows = o.rows || 7, mode = o.mode || 'two', nP = mode === 'two' ? 2 : 1, gap = nP === 2 ? 56 : 0;
+    const C = Math.min(small ? 30 : 46, Math.floor((wAvail - gap) / nP / cols), Math.floor(hAvail / rows)), PW = cols * C, PH = rows * C;
+    const left = Math.round(x0 + (wAvail - (nP * PW + gap)) / 2), top = Math.round(y0 + (hAvail - PH) / 2);
+    const before = (o.sh || []).map(pt => ({ p: pt.p.map(q => [q[0], q[1]]), c: pt.c || 'a' })); if (!before.length) return null;
+    const op = o.op || { t: 'none' }, drawn = o.wrong || op, after = mvApply(before, drawn);
+    if ([].concat(before, after).some(pt => pt.p.some(q => q[0] < 0 || q[1] < 0 || q[0] > cols || q[1] > rows))) return null;
+    const pan = []; for (let k = 0; k < nP; k++) pan.push([left + k * (PW + gap), top]);
+    const lb = o.labels || (mode === 'two' ? ['이동 전', '이동 후'] : []);
+    let s = pan.map((P, k) => mvGrid(P[0], P[1], cols, rows, C) + (lb[k] ? txt(P[0] + PW / 2, P[1] - 12, lb[k], small ? 17 : 20, '#4A5A70', 900) : '')).join('');
+    if (o.exit != null) { const ey = top + o.exit * C, ex = left + PW; s += '<rect class="mvx" data-row="' + o.exit + '" x="' + (ex - 3) + '" y="' + ey + '" width="9" height="' + C + '" fill="' + ORANGE + '"/>' + txt(ex + 12, ey + C / 2 + 7, '출구', 19, '#C2551A', 900, 'start'); }
+    if (mode === 'two') {
+      s += mvPolys(before, pan[0][0], pan[0][1], C, 'before', false) + txt(left + PW + gap / 2, top + PH / 2 + 10, '➜', 30, BLUE2, 900);
+      if (o.ask) s += txt(pan[1][0] + PW / 2, top + PH / 2 + 14, '?', 44, '#C2551A', 900).replace('<text ', '<text class="mvq" ');
+      else s += mvPolys(after, pan[1][0], pan[1][1], C, 'after', false).replace(/stroke="#3E6FCF"/g, 'stroke="' + ORANGE + '"').replace(/fill="#DCE8FB"/g, 'fill="#FFF1E6"');
+    } else {
+      const only = o.only === 'after';
+      if (!only) s += mvPolys(before, left, top, C, 'before', true);
+      if (o.ask) { const A = mvBox(after); s += txt(left + (A[0] + A[2] / 2) * C, top + (A[1] + A[2] / 2) * C + 13, '?', 38, '#C2551A', 900).replace('<text ', '<text class="mvq" '); }
+      else { s += mvPolys(after, left, top, C, 'after', false); if (!only) { const b0 = mvBox(before), a0 = mvBox(after); s += mvArrow(left + (b0[0] + b0[2] / 2) * C, top + (b0[1] + b0[2] / 2) * C, left + (a0[0] + a0[2] / 2) * C, top + (a0[1] + a0[2] / 2) * C, 'mva'); } }
+    }
+    return { s, C, pan, op, drawn, cols, rows, mode };
+  }
+  function mvfig(o) {
+    const W0 = 760, TP = o.title ? 44 : 0, ex = o.exit != null ? 70 : 0, H0 = TP + 400, R = mvFigDraw(o, 20, TP + 34, W0 - 40 - ex, 340, false); if (!R) return '';
+    return svgWrap((o.title ? txt(W0 / 2, 32, o.title, 24, INK, 900) : '') + R.s, 'fig-mvfig', '0 0 ' + W0 + ' ' + H0).replace('<svg class="fig-svg fig-mvfig"', '<svg class="fig-svg fig-mvfig" data-c="' + R.C + '" data-pan="' + R.pan.map(P => P.join(',')).join(';') + '" data-op="' + mvOpStr(R.op) + '" data-drawn="' + mvOpStr(R.drawn) + '" data-mode="' + R.mode + '" data-ask="' + (o.ask ? 1 : 0) + '"' + (o.exit != null ? ' data-exit="' + o.exit + '"' : ''));
+  }
+  // ── 가~라 고르기 판: 첫 칸(기준) 왼쪽 크게 · 나머지 오른쪽 격자 ──
+  function mvrow(o) {
+    const it = o.items || [], n = it.length; if (n < 2) return '';
+    const W0 = 760; let s = '', H0, cells = [];
+    if (n === 2) { H0 = 330; cells = [[10, 5, 365, 318], [385, 5, 365, 318]]; }
+    else { const rest = n - 1, rc = rest <= 2 ? rest : 2, rr = Math.ceil(rest / rc), cw = 470 / rc, ch = 206; H0 = rr * ch + 8; cells.push([6, (H0 - 260) / 2, 270, 260]); for (let i = 0; i < rest; i++) cells.push([284 + (i % rc) * cw, 4 + Math.floor(i / rc) * ch, cw - 8, ch - 8]); }
+    it.forEach((x, i) => { const [cx, cy, cw, ch] = cells[i]; const f = Object.assign({ mode: 'one', only: 'after' }, x.fig || {}); const R = mvFigDraw(f, cx + 6, cy + 30, cw - 12, ch - 38, true); if (!R) return;
+      s += '<g class="mvri" data-name="' + esc(x.name || '') + '" data-c="' + R.C + '" data-pan="' + R.pan[0].join(',') + '"><rect x="' + mf1(cx) + '" y="' + mf1(cy) + '" width="' + mf1(cw) + '" height="' + mf1(ch) + '" rx="14" fill="' + (i === 0 ? '#F3F7FD' : '#fff') + '" stroke="' + (i === 0 ? BLUE2 : '#C9D3E0') + '" stroke-width="' + (i === 0 ? 3 : 2) + '"/>' + txt(mf1(cx + cw / 2), mf1(cy + 24), x.name || '', 20, i === 0 ? BLUE2 : INK, 900) + R.s + '</g>'; cells[i].push(R.C); });
+    return svgWrap(s, 'fig-mvrow', '0 0 ' + W0 + ' ' + H0).replace('<svg class="fig-svg fig-mvrow"', '<svg class="fig-svg fig-mvrow" data-names="' + esc(it.map(x => x.name).join('|')) + '"');
+  }
+  // ── 글자·도장 ──
+  const MVT = { none: '', flipX: 'scale(-1 1)', flipY: 'scale(1 -1)', turn90: 'rotate(90)', turn180: 'rotate(180)', turn270: 'rotate(270)' };
+  function mvchr(o) {
+    const it = o.items || [], n = it.length; if (!n) return ''; const W0 = 760, TP = o.title ? 44 : 0, bw = 220, gap = 80, tw = n * bw + (n - 1) * gap, x0 = (W0 - tw) / 2, H0 = TP + 230;
+    let s = o.title ? txt(W0 / 2, 32, o.title, 24, INK, 900) : '';
+    it.forEach((x, i) => { const op = x.op || 'none'; if (MVT[op] == null) return; const bx = x0 + i * (bw + gap), by = TP + 20, cx = bx + bw / 2, cy = by + 74;
+      if (i) s += txt(bx - gap / 2, cy + 12, '➜', 34, BLUE2, 900);
+      s += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="148" rx="' + (x.stamp ? 74 : 18) + '" fill="' + (x.stamp ? '#FFE3CF' : '#fff') + '" stroke="' + (x.stamp ? '#E0661F' : '#C9D3E0') + '" stroke-width="3.5"/>';
+      s += '<g class="mvc" data-txt="' + esc(x.txt) + '" data-op="' + op + '" transform="translate(' + cx + ' ' + cy + ')' + (MVT[op] ? ' ' + MVT[op] : '') + '"><text x="0" y="22" text-anchor="middle" font-size="64" font-weight="900" fill="' + (x.stamp ? '#C2551A' : INK) + '" ' + FONT + '>' + esc(x.txt) + '</text></g>';
+      if (x.cap) s += txt(cx, by + 182, x.cap, 20, '#4A5A70', 800); });
+    return svgWrap(s, 'fig-mvchr', '0 0 ' + W0 + ' ' + H0);
+  }
+  // ── 무늬 판 ──
+  const MVSH = { wing: [[0.08, 0.08], [0.92, 0.5], [0.42, 0.5], [0.42, 0.92], [0.08, 0.92]], tri: [[0.1, 0.9], [0.5, 0.1], [0.9, 0.9]] };
+  function mvSt(st, op) { const r = st[0], m = st[1]; if (op === 'slide' || op === 'none') return [r, m]; if (op === 'turn90') return [(r + 1) % 4, m]; if (op === 'turn180') return [(r + 2) % 4, m]; if (op === 'turn270') return [(r + 3) % 4, m]; if (op === 'flipX') return [(4 - r) % 4, 1 - m]; if (op === 'flipY') return [(6 - r) % 4, 1 - m]; throw new Error('무늬 이동 ' + op); }
+  function mvStPts(st, pts) { return pts.map(q => { let x = q[0] - 0.5, y = q[1] - 0.5; if (st[1]) x = -x; for (let i = 0; i < st[0]; i++) { const t = x; x = -y; y = t; } return [x + 0.5, y + 0.5]; }); }
+  function mvpat(o) {
+    const R = o.rows || 4, Cn = o.cols || 4, base = MVSH[o.shape || 'wing'], W0 = 760, C = Math.min(R === 1 ? 120 : 84, Math.floor(600 / Cn), Math.floor(R === 1 ? 140 : 340 / R)), px = Math.round((W0 - Cn * C) / 2), py = 14, H0 = py + R * C + 16;
+    const blank = {}; (o.blank || []).forEach(b => { blank[b[0] + ',' + b[1]] = 1; });
+    let s = '<rect x="' + px + '" y="' + py + '" width="' + Cn * C + '" height="' + R * C + '" fill="#fff" stroke="#8FA3BF" stroke-width="3"/>', colSt = [0, 0];
+    for (let r = 0; r < R; r++) { let st = colSt.slice();
+      for (let c = 0; c < Cn; c++) { const x0 = px + c * C, y0 = py + r * C; s += '<rect x="' + x0 + '" y="' + y0 + '" width="' + C + '" height="' + C + '" fill="none" stroke="#E2E8F0" stroke-width="1.5"/>';
+        if (blank[r + ',' + c]) s += '<rect class="mvb" data-r="' + r + '" data-c="' + c + '" x="' + (x0 + 6) + '" y="' + (y0 + 6) + '" width="' + (C - 12) + '" height="' + (C - 12) + '" rx="8" fill="#FFF7EF" stroke="' + ORANGE + '" stroke-width="3" stroke-dasharray="7 5"/>' + txt(x0 + C / 2, y0 + C / 2 + 13, '?', 36, '#C2551A', 900);
+        else s += '<polygon class="mvpc" data-r="' + r + '" data-c="' + c + '" data-st="' + st.join('') + '" points="' + mvStPts(st, base).map(q => mf1(x0 + q[0] * C) + ',' + mf1(y0 + q[1] * C)).join(' ') + '" fill="#DCE8FB" stroke="#3E6FCF" stroke-width="3" stroke-linejoin="round"/>';
+        st = mvSt(st, o.colOp || 'slide'); }
+      colSt = mvSt(colSt, o.rowOp || 'slide'); }
+    return svgWrap(s, 'fig-mvpat', '0 0 ' + W0 + ' ' + H0).replace('<svg class="fig-svg fig-mvpat"', '<svg class="fig-svg fig-mvpat" data-c="' + C + '" data-pan="' + px + ',' + py + '" data-rows="' + R + '" data-cols="' + Cn + '" data-shape="' + (o.shape || 'wing') + '"');
+  }
+  Object.assign(PARTS, { mvpt, mvfig, mvrow, mvchr, mvpat });
   }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
