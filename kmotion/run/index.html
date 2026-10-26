@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>K-MOTION RUN · 숲속 달리기</title>
+<link rel="stylesheet" href="./run.css">
+<script type="importmap">
+{ "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+} }
+</script>
+</head>
+<body>
+<div id="app">
+  <canvas id="gl"></canvas>
+
+  <!-- 시작 화면 -->
+  <section class="screen" id="scr-start">
+    <div class="logo"><span class="k">K-MOTION</span><span class="run">RUN</span><small>FOREST ADVENTURE</small></div>
+    <div class="panel">
+      <div class="row"><span class="lbl">조작 방법</span>
+        <div class="seg" id="modeSeg"><button data-v="camera" class="on">📷 카메라</button><button data-v="keyboard">⌨️ 키보드</button></div></div>
+      <div class="row"><span class="lbl">난이도</span>
+        <div class="seg" id="diffSeg"><button data-v="easy">쉬움</button><button data-v="normal" class="on">보통</button><button data-v="hard">어려움</button></div></div>
+      <button class="big" id="btnStart">게임 시작</button>
+      <div class="howto" id="howto"></div>
+    </div>
+    <a class="back" href="../">← 케이모션</a>
+  </section>
+
+  <!-- 보정 화면 -->
+  <section class="screen hidden" id="scr-calib">
+    <h2>카메라 앞에 서 주세요</h2>
+    <div class="calib-wrap">
+      <div class="calib-cam"><canvas id="calibView"></canvas><div class="guide-box"><span>이 안에 몸 전체가 보이게</span></div></div>
+      <div class="calib-side">
+        <div class="ring"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" id="ringFg" cx="60" cy="60" r="52"/></svg><b id="calibNum">3</b></div>
+        <p id="calibMsg">머리부터 발까지 보이게 두세 걸음 뒤로</p>
+        <ul class="tips"><li>🧍 가운데에 바르게 서요</li><li>👐 양손을 들면 점프</li><li>🦵 무릎을 살짝 굽히면 슬라이드</li><li>↔ 몸을 옆으로 옮기면 차선 이동</li></ul>
+        <button class="big ghost" id="btnCalibCancel">돌아가기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 게임 HUD -->
+  <section class="hud hidden" id="hud">
+    <div class="top">
+      <div class="stat"><span class="t">남은 시간</span><b id="hTime">60</b></div>
+      <div class="stat score"><span class="t">점수</span><b id="hScore">0</b></div>
+      <div class="stat"><span class="t">체력</span><b id="hLife">❤❤❤</b></div>
+    </div>
+    <div class="count hidden" id="count">3</div>
+    <div class="cam" id="camBox"><video id="v" autoplay playsinline muted></video><canvas id="c" width="480" height="360"></canvas><div class="st" id="camSt">카메라 준비</div></div>
+    <div class="motion"><div class="act" id="hAct">READY</div><div class="combo" id="hCombo"></div></div>
+    <div class="pop-layer" id="pops"></div>
+    <div class="flash" id="flash"></div>
+    <div class="pause hidden" id="pause"><h3 id="pauseTitle">일시 정지</h3><p id="pauseMsg">ESC 또는 계속하기를 누르면 이어서 해요</p><button class="big" id="btnResume">계속하기</button><button class="big ghost" id="btnQuit">그만하기</button></div>
+    <div class="dev hidden" id="dev"></div>
+  </section>
+
+  <!-- 결과 화면 -->
+  <section class="screen hidden" id="scr-result">
+    <h2 id="resTitle">스테이지 성공!</h2>
+    <div class="res-grid">
+      <div><span>최종 점수</span><b id="rScore">0</b></div>
+      <div><span>생존 시간</span><b id="rTime">60초</b></div>
+      <div><span>회피 성공</span><b id="rDodge">0</b></div>
+      <div><span>최대 콤보</span><b id="rCombo">0</b></div>
+      <div><span>코인</span><b id="rCoin">0</b></div>
+      <div><span>최고 기록</span><b id="rBest">0</b></div>
+    </div>
+    <div class="btns"><button class="big" id="btnRetry">다시 하기</button><button class="big ghost" id="btnHome">메인 화면</button></div>
+  </section>
+
+  <div class="loading" id="loading"><div class="bar"><i id="loadBar"></i></div><span id="loadTxt">숲을 준비하는 중…</span></div>
+</div>
+<script src="../kmotion.js"></script>
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>
