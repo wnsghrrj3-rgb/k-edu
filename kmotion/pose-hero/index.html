@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>K-MOTION POSE HERO · 몸으로 완성하는 포즈 배틀</title>
+<link rel="stylesheet" href="./ph.css">
+<script type="importmap">
+{ "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+} }
+</script>
+</head>
+<body>
+<div id="app">
+  <canvas id="gl"></canvas>
+  <div class="vignette"></div>
+
+  <!-- 시작 화면 -->
+  <section class="screen" id="scr-start">
+    <div class="start-top">
+      <div class="logo"><span class="k">K-MOTION</span><span class="t">POSE<i>HERO</i></span><small>몸으로 완성하는 포즈 배틀</small></div>
+      <div class="camst" id="camStart"><i></i><span>카메라: 시작하면 연결돼요</span></div>
+    </div>
+    <div class="modes" id="modes"></div>
+    <div class="start-bottom">
+      <div class="seg" id="diffSeg"><button data-v="easy">쉬움</button><button data-v="normal" class="on">보통</button><button data-v="hard">어려움</button></div>
+      <button class="big" id="btnStart">게임 시작</button>
+      <div class="opts">
+        <label>🎵 <input type="range" id="volM" min="0" max="1" step=".05"></label>
+        <label>🔔 <input type="range" id="volS" min="0" max="1" step=".05"></label>
+        <label class="dev-only hidden" id="testWrap"><input type="checkbox" id="testMode"> 키보드 테스트(카메라 없음)</label>
+      </div>
+      <p class="note">카메라 영상은 이 기기 안에서만 처리되고 저장되지 않아요 · Chrome 권장</p>
+    </div>
+    <a class="back" href="../">← 케이모션</a>
+  </section>
+
+  <!-- 보정 화면 -->
+  <section class="screen hidden" id="scr-calib">
+    <h2 id="calibTitle">카메라 앞에 서 주세요</h2>
+    <div class="calib-wrap">
+      <div class="calib-cam"><canvas id="calibView"></canvas><div class="guide-box"><span>머리·어깨·양팔이 보이게</span></div></div>
+      <div class="calib-side">
+        <div class="ring"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" id="ringFg" cx="60" cy="60" r="52"/></svg><b id="calibNum">3</b></div>
+        <p id="calibMsg">카메라를 켜는 중…</p>
+        <ul class="tips"><li>👀 카메라를 바라보세요</li><li>🧍 몸이 화면에 들어오도록 서세요</li><li>🙆 양팔을 편하게 내려주세요</li></ul>
+        <button class="big ghost" id="btnCalibCancel">돌아가기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 플레이 HUD -->
+  <section class="hud hidden" id="hud">
+    <div class="top">
+      <div class="stat"><span class="t">점수</span><b id="hScore">0</b></div>
+      <div class="stat combo"><span class="t">콤보</span><b id="hCombo">0</b></div>
+      <div class="stat time" id="timeWrap"><span class="t" id="timeLbl">남은 시간</span><b id="hTime">60</b></div>
+      <div class="stat level hidden" id="levelWrap"><span class="t">LEVEL</span><b id="hLevel">1</b></div>
+      <div class="stat life hidden" id="lifeWrap"><span class="t">체력</span><b id="hLife">❤❤❤</b></div>
+    </div>
+    <div class="boss-bar hidden" id="bossBar"><span>👹 SHADOW KING</span><div class="bar"><i id="bossHpFill"></i></div></div>
+    <div class="pose-card" id="poseCard"><div class="emoji" id="pcEmoji">🙌</div><div class="txt"><b id="pcName">준비!</b><small id="pcHint">포즈가 곧 나와요</small></div><div class="n" id="pcN"></div></div>
+    <div class="mem-slots hidden" id="memSlots"></div>
+    <div class="rhythm hidden" id="rhythm"><div class="beat-ring"><i id="beatFill"></i><span id="beatLbl">●</span></div><div class="bpm" id="bpmLbl">100 BPM</div></div>
+    <div class="cam" id="camBox"><video id="v" autoplay playsinline muted></video><canvas id="c" width="480" height="360"></canvas><div class="st" id="camSt">카메라 준비</div></div>
+    <div class="bottom">
+      <div class="meter"><span class="t">포즈 정확도</span><div class="bar"><i id="simFill"></i><em id="simPass"></em></div><b id="simPct">0%</b></div>
+      <div class="hold"><svg viewBox="0 0 80 80"><circle class="bg" cx="40" cy="40" r="34"/><circle class="fg" id="holdFg" cx="40" cy="40" r="34"/></svg><span id="holdLbl">유지</span></div>
+      <div class="judge" id="judge"></div>
+    </div>
+    <div class="count hidden" id="count">3</div>
+    <div class="pop-layer" id="pops"></div>
+    <div class="flash" id="flash"></div>
+    <div class="banner hidden" id="banner"></div>
+    <div class="pause hidden" id="pause"><h3 id="pauseTitle">일시 정지</h3><p id="pauseMsg">ESC 또는 계속하기를 누르면 이어서 해요</p><button class="big" id="btnResume">계속하기</button><button class="big ghost" id="btnQuit">그만하기</button></div>
+    <div class="dev hidden" id="dev"></div>
+  </section>
+
+  <!-- 결과 -->
+  <section class="screen hidden" id="scr-result">
+    <div class="result">
+      <div class="rank" id="rRank">A</div>
+      <h2 id="rTitle">RESULT</h2>
+      <div class="rscore"><span>최종 점수</span><b id="rScore">0</b></div>
+      <div class="rgrid">
+        <div><span>성공 포즈</span><b id="rHits">0</b></div>
+        <div><span>최고 콤보</span><b id="rCombo">0</b></div>
+        <div><span>평균 유사도</span><b id="rAvg">0%</b></div>
+        <div><span>최고 기록</span><b id="rBest">0</b></div>
+      </div>
+      <div class="rgrades" id="rGrades"></div>
+      <p class="rnote hidden" id="rNote"></p>
+      <div class="btns"><button class="big" id="btnRetry">다시 하기</button><button class="big ghost" id="btnHome">모드 선택</button></div>
+    </div>
+  </section>
+</div>
+<script src="../kmotion.js"></script>
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>
