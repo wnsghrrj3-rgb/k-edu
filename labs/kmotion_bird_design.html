@@ -149,27 +149,77 @@ const terrain = new THREE.Mesh(terrGeo, new THREE.MeshStandardMaterial({ vertexC
 terrain.receiveShadow = true;
 scene.add(terrain);
 
-/* ---------- trees on the near ridges (instanced) ---------- */
-{
-  const geo = new THREE.ConeGeometry(2.6, 11, 6, 1);
-  geo.translate(0, 5.5, 0);
-  const mat = new THREE.MeshStandardMaterial({ color: '#1d3b24', roughness: 1 });
-  const N = 9000, m = new THREE.InstancedMesh(geo, mat, N), M = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
-  let k = 0, tries = 0;
-  while (k < N && tries < 60000) {
-    tries++;
-    const x = (hash(tries, 7) - .5) * 2200, z = -120 - hash(tries, 11) * 1700;
-    const big = ridge(x * 0.0006 + 10, z * 0.0006 + 3) * 150;
-    const valley = 1 - Math.exp(-Math.pow(x / 420, 2));
-    const h = -40 + big * (0.35 + 0.65 * valley) + fbm(x * 0.004, z * 0.004, 4) * 26;
-    if (h < 22 || h > 92) continue;
-    const sc = 0.8 + hash(tries, 3) * 1.1;
-    p.set(x, h - 1, z); s.set(sc, sc * (0.9 + hash(tries, 5) * .5), sc);
-    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), hash(tries, 9) * 6.28);
-    M.compose(p, q, s); m.setMatrixAt(k++, M);
+/* ---------- trees: two species, layered foliage, per-tree color, near detail / far silhouette ---------- */
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+function paint(geo, color, shade = 0) {
+  const n = geo.attributes.position.count, c = new Float32Array(n * 3), tmp = color.clone();
+  const pos = geo.attributes.position;
+  let minY = Infinity, maxY = -Infinity;
+  for (let i = 0; i < n; i++) { const y = pos.getY(i); minY = Math.min(minY, y); maxY = Math.max(maxY, y); }
+  for (let i = 0; i < n; i++) {
+    const t = (pos.getY(i) - minY) / Math.max(1e-6, maxY - minY);
+    tmp.copy(color).multiplyScalar(1 - shade * (1 - t));          // darker toward the bottom of each tier
+    c.set([tmp.r, tmp.g, tmp.b], i * 3);
   }
-  m.count = k; m.castShadow = false; m.receiveShadow = true;
-  scene.add(m);
+  geo.setAttribute('color', new THREE.BufferAttribute(c, 3));
+  return geo;
+}
+function roughen(geo, amt, seed) {               // knock the perfect cones/spheres out of true
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const k = 1 + (vnoise(x * .9 + seed, z * .9 + y * .7) - .5) * amt;
+    p.setXYZ(i, x * k, y, z * k);
+  }
+  geo.computeVertexNormals(); return geo;
+}
+const BARK = new THREE.Color('#3a2a1e'), FIR = new THREE.Color('#1f4a2a'), FIR2 = new THREE.Color('#2f5f33'), LEAF = new THREE.Color('#4f7a34');
+function conifer() {
+  const parts = [paint(new THREE.CylinderGeometry(.22, .45, 4, 6).translate(0, 2, 0), BARK)];
+  const tiers = [[3.3, 5.5, 2.2], [2.6, 4.6, 5.0], [1.8, 3.8, 7.4], [1.0, 3.0, 9.4]];
+  tiers.forEach(([r, h, y], i) => parts.push(paint(roughen(new THREE.ConeGeometry(r, h, 9, 2).translate(0, y + h / 2 - 1.2, 0), .22, i * 3.1), i % 2 ? FIR2 : FIR, .35)));
+  return mergeGeometries(parts.map(g => g.toNonIndexed()));
+}
+function broadleaf() {
+  const parts = [paint(new THREE.CylinderGeometry(.3, .55, 5, 6).translate(0, 2.5, 0), BARK)];
+  const lobes = [[0, 7.2, 0, 3.4], [1.9, 6.3, .6, 2.5], [-1.7, 6.6, -.5, 2.6], [.4, 5.4, 1.9, 2.3], [-.3, 5.6, -1.9, 2.2], [0, 9.2, 0, 2.2]];
+  lobes.forEach(([x, y, z, r], i) => parts.push(paint(roughen(new THREE.IcosahedronGeometry(r, 1).translate(x, y, z), .3, i * 2.3), LEAF, .4)));
+  return mergeGeometries(parts.map(g => g.toNonIndexed()));
+}
+const treeMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95, flatShading: true });
+const farMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 });
+const heightAt = (x, z) => {
+  const big = ridge(x * 0.0006 + 10, z * 0.0006 + 3) * 150;
+  const valley = 1 - Math.exp(-Math.pow(x / 420, 2));
+  return -40 + big * (0.35 + 0.65 * valley) + fbm(x * 0.004, z * 0.004, 4) * 26;
+};
+function plant(geo, mat, N, zMin, zMax, xSpread, seed, pick) {
+  const m = new THREE.InstancedMesh(geo, mat, N), M = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), col = new THREE.Color();
+  let k = 0, tries = 0;
+  while (k < N && tries < N * 8) {
+    tries++;
+    const x = (hash(tries, seed) - .5) * xSpread, z = zMin - hash(tries, seed + 1) * (zMax - zMin);
+    const h = heightAt(x, z);
+    if (h < 20 || h > 94) continue;
+    if (!pick(x, z, h, tries)) continue;
+    const sc = 0.7 + hash(tries, seed + 2) * 1.0;
+    p.set(x, h - .6, z); s.set(sc, sc * (.9 + hash(tries, seed + 3) * .4), sc);
+    q.setFromAxisAngle(up, hash(tries, seed + 4) * 6.28);
+    M.compose(p, q, s); m.setMatrixAt(k, M);
+    // warm/cool and light/dark variation per tree, a little more amber on the sunlit ridges
+    col.setHSL(.27 + (hash(tries, seed + 5) - .5) * .07, .45 + hash(tries, seed + 6) * .25, .45 + (hash(tries, seed + 7) - .5) * .2);
+    m.setColorAt(k, col); k++;
+  }
+  m.count = k; m.receiveShadow = true; scene.add(m); return m;
+}
+const coniferGeo = conifer(), broadGeo = broadleaf();
+// near band: full detail, conifers on the high slopes, broadleaf lower
+plant(coniferGeo, treeMat, 2600, -90, -820, 1500, 100, (x, z, h) => h > 48 + fbm(x * .01, z * .01, 3) * 20);
+plant(broadGeo, treeMat, 1600, -90, -820, 1500, 200, (x, z, h) => h <= 48 + fbm(x * .01, z * .01, 3) * 20);
+// far band: cheap silhouettes carrying the forest to the horizon
+{
+  const g = paint(new THREE.ConeGeometry(2.4, 11, 5, 1).translate(0, 5.5, 0), FIR, .3);
+  plant(g, farMat, 9000, -800, -1900, 2400, 300, () => true);
 }
 
 /* ---------- cloud sea (soft sprites, two tiers) ---------- */
