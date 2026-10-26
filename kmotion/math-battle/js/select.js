@@ -8,11 +8,12 @@ export class MouseSelector {
 
 // 손 위치(거울 캔버스 픽셀) → 화면 비율 좌표 → 구슬 영역 판정 → 600ms 유지 선택
 export class GestureSelector {
-  constructor(input, { video, canvas, orbEls, cursorEl, onStatus, onDebug, dwellMs = 600 }){
+  constructor(input, { video, canvas, orbEls, cursorEl, onStatus, onDebug, dwellMs = 450 }){
     this.input = input; this.orbEls = orbEls; this.cursor = cursorEl; this.onStatus = onStatus || (() => {}); this.onDebug = onDebug || (() => {}); this.dwell = dwellMs;
-    this.km = KMotion.create({ video, canvas, modes: ['hands'], numHands: 2, activity: 'math-battle' });
+    // 손 1개만 추적(빠르고 안 튐) · 인식 문턱 낮춤(멀리·어두운 교실) · 포인터용 필터(지연 적게)
+    this.km = KMotion.create({ video, canvas, modes: ['hands'], numHands: 1, handConf: .3, handSmooth: { minCut: 2.5, beta: .3 }, activity: 'math-battle' });
     this.pos = null; this.sm = null; this.hoverSlot = -1; this.hoverSince = 0; this.selectedAt = 0; this.seen = false; this.lostAt = 0; this.active = false; this.calib = null;
-    this.cfg = { smooth: .45, margin: 1.15, edge: { x0: .08, x1: .92, y0: .12, y1: .95 } }; // 손 이동 범위를 화면 전체에 펴기(가장자리 보정)
+    this.cfg = { smooth: .85, margin: 1.25, edge: { x0: .08, x1: .92, y0: .12, y1: .95 } }; // 손 이동 범위를 화면 전체에 펴기(가장자리 보정)
     this.km.onFrame = f => this.frame(f); this.km.on('error', e => this.onStatus({ kind: 'error', text: e.message }));
   }
   async start(){ await this.km.start(); this.started = true; }

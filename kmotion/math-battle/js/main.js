@@ -8,6 +8,7 @@ const $ = id => document.getElementById(id), qs = new URLSearchParams(location.s
 const quality = qs.get('q') || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4 ? 'low' : 'high');
 const S = { mode: localStorage.getItem('kmmb.mode') || 'adventure', type: localStorage.getItem('kmmb.type') || 'mix', diff: localStorage.getItem('kmmb.diff') || 'normal', limit: +(localStorage.getItem('kmmb.limit') || 0), input: localStorage.getItem('kmmb.input') || 'camera', teams: +(localStorage.getItem('kmmb.teams') || 4) };
 const orbEls = [...document.querySelectorAll('#orbs .orb')];
+if (quality !== 'low') { $('c').width = 640; $('c').height = 480; } // 손이 멀어도 보이게 카메라 해상도 올림(저사양은 480×360 유지)
 const battle = new BattleEngine($('gl'), quality); const audio = new AudioManager(); const input = new InputManager(); new MouseSelector(input, orbEls);
 let gesture = null, gestureReady = false, calibrating = false, hovered = -1, pendingTimer = null;
 

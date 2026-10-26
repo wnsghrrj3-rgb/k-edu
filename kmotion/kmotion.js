@@ -52,8 +52,8 @@
     return (x, t) => { if (xp == null) { xp = x; tp = t; return x; } const dt = Math.max(1e-3, (t - tp) / 1000); tp = t;
       const dx = (x - xp) / dt, ad = a(dCut, dt); dxp = ad * dx + (1 - ad) * dxp;
       const cut = minCut + beta * Math.abs(dxp), ax = a(cut, dt); xp = ax * x + (1 - ax) * xp; return xp; }; }
-  function smoother(n){ const fx = [], fy = []; for (let i = 0; i < n; i++) { fx.push(oneEuro()); fy.push(oneEuro()); }
-    return { apply(lm, t){ return lm.map((p, i) => ({ x: fx[i](p.x, t), y: fy[i](p.y, t), z: p.z, v: p.v })); }, reset(){ for (let i = 0; i < n; i++) { fx[i] = oneEuro(); fy[i] = oneEuro(); } } }; }
+  function smoother(n, minCut, beta){ const fx = [], fy = []; for (let i = 0; i < n; i++) { fx.push(oneEuro(minCut, beta)); fy.push(oneEuro(minCut, beta)); }
+    return { apply(lm, t){ return lm.map((p, i) => ({ x: fx[i](p.x, t), y: fy[i](p.y, t), z: p.z, v: p.v })); }, reset(){ for (let i = 0; i < n; i++) { fx[i] = oneEuro(minCut, beta); fy[i] = oneEuro(minCut, beta); } } }; }
 
   function create(opt){
     const video = opt.video, canvas = opt.canvas;
@@ -102,7 +102,7 @@
 
     // ── MediaPipe
     let handLm = null, poseLm = null;
-    const NH = Math.max(1, opt.numHands || 2); const handSm = Array.from({ length: NH }, () => smoother(21)), poseSm = smoother(33); let poseSeen = false;
+    const NH = Math.max(1, opt.numHands || 2); const hsm = opt.handSmooth || {}; const handSm = Array.from({ length: NH }, () => smoother(21, hsm.minCut, hsm.beta)), poseSm = smoother(33); let poseSeen = false;
     function toPx(lm){ return lm.map(p => ({ x: (1 - p.x) * W, y: p.y * H, z: p.z, v: p.visibility == null ? 1 : p.visibility })); }
     async function loadModels(){
       if (!modes.has('hands') && !modes.has('pose')) return;
@@ -110,7 +110,7 @@
       const v = await vision();
       const files = await v.FilesetResolver.forVisionTasks(VENDOR + 'wasm');
       const base = (path) => ({ baseOptions: { modelAssetPath: path, delegate: 'GPU' }, runningMode: 'VIDEO' });
-      if (modes.has('hands')) handLm = await v.HandLandmarker.createFromOptions(files, Object.assign(base(MODELS.hands), { numHands: opt.numHands || 2 }));
+      if (modes.has('hands')) { const hc = opt.handConf; handLm = await v.HandLandmarker.createFromOptions(files, Object.assign(base(MODELS.hands), { numHands: opt.numHands || 2 }, hc ? { minHandDetectionConfidence: hc, minHandPresenceConfidence: hc, minTrackingConfidence: hc } : {})); }
       if (modes.has('pose'))  poseLm = await v.PoseLandmarker.createFromOptions(files, Object.assign(base(MODELS.pose), { numPoses: 1 }));
       if (opt.segment) await ensureSeg();
     }
