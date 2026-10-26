@@ -25,7 +25,7 @@ export class UIManager {
   pauseView(on, reason){ this.el.pause.classList.toggle('hidden', !on); if (!on) return; const lost = reason === 'lost'; this.el.pauseTitle.textContent = lost ? '친구가 안 보여요' : '일시 정지'; this.el.pauseMsg.textContent = lost ? '카메라 앞 가운데로 다시 서면 이어서 달려요' : 'ESC 또는 계속하기를 누르면 이어서 해요'; }
   camStatus(kind, text){ this.el.cam.classList.toggle('ok', kind === 'ok'); this.el.cam.classList.toggle('bad', kind !== 'ok'); this.el.camSt.textContent = text; }
   camVisible(v){ this.el.cam.classList.toggle('off', !v); }
-  calib(p, visible){ this.el.ringFg.style.strokeDashoffset = 327 * (1 - p); this.el.calibNum.textContent = Math.max(1, Math.ceil(3 - p * 3)); this.el.calibMsg.textContent = visible ? (p < .99 ? '좋아요! 그대로 서 있어요' : '준비 완료!') : '머리부터 발까지 보이게 두세 걸음 뒤로'; this.el.calibView.parentElement.classList.toggle('ok', visible); }
+  calib(p, visible){ this.el.ringFg.style.strokeDashoffset = 327 * (1 - p); this.el.calibNum.textContent = Math.max(1, Math.ceil(3 - p * 3)); this.el.calibMsg.textContent = visible ? (p < .99 ? '좋아요! 그대로 서 있어요' : '준비 완료!') : '머리와 어깨, 양손이 보이게 서요'; this.el.calibView.parentElement.classList.toggle('ok', visible); }
   result(r, best){ this.show('result'); const h = document.getElementById('resTitle'); h.textContent = r.win ? '🏁 스테이지 성공!' : '💥 다시 도전!'; h.classList.toggle('fail', !r.win);
     $('rScore').textContent = r.score.toLocaleString(); $('rTime').textContent = r.time.toFixed(1) + '초'; $('rDodge').textContent = r.dodges; $('rCombo').textContent = r.maxCombo; $('rCoin').textContent = r.coins; $('rBest').textContent = best.toLocaleString() + (r.score >= best && r.score > 0 ? ' 🆕' : ''); }
   dev(txt){ this.el.dev.textContent = txt; }
