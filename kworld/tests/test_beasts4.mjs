@@ -34,7 +34,7 @@ reset(-40, 20, false); story.skyName = 'rainy'; run(10); ok(!bs.cur && bs.eff('b
 reset(-40, 20, false); run(3); ok(bs.cur?.kind === 'boar', '맑은 낮 — 멧돼지 나옴');
 // 4) 눈 — 호랑이 자리 반경 30(마을 길 가까이) · 멧돼지 뜸함(r 8)
 reset(66, 58, true); story.snowOn = true; ok(bs.wxName === 'winter' && bs.eff('tiger').r === 30 && bs.eff('tiger').chance === 0.9 && bs.eff('boar').r === 8, '눈 → winter: 호랑이 r 30·자주, 멧돼지 r 8');
-g.p.pos.set(66 + 24, 0, 58); run(6); ok(bs.cur?.kind === 'tiger' && said.some((s) => s.includes('눈 위에 큰 발자국')), '눈 오는 밤, 깊은 숲 중심에서 24m 떨어진 길에서도 호랑이가 선다 + 「눈 위에 큰 발자국」');
+g.p.pos.set(66 + 24, 0, 58); const R0 = Math.random; Math.random = () => 0.1;   /* 131: chance(0.9) 굴림이 3할쯤 비어 흔들리던 것 — 이 한 판만 늘 나오게 */ run(6); Math.random = R0; ok(bs.cur?.kind === 'tiger' && said.some((s) => s.includes('눈 위에 큰 발자국')), '눈 오는 밤, 깊은 숲 중심에서 24m 떨어진 길에서도 호랑이가 선다 + 「눈 위에 큰 발자국」');
 reset(66 + 24, 58, true); run(10); ok(!bs.cur, '맑은 밤엔 24m 밖은 자리가 아니다(r 16)');
 // 5) 가뭄 — 멧돼지 자주·밭으로
 reset(-40, 20, false); story.skyName = 'drought'; ok(bs.eff('boar').chance === 0.9 && bs.eff('boar').waitSec === 2 && bs.eff('boar').r === 20, '가뭄 → 멧돼지 기다림 2초·0.9·r 20'); run(3); ok(bs.cur?.kind === 'boar' && said.some((s) => s.includes('밭으로 내려왔다')), '「산에 먹을 게 없다 — 밭으로」 한 줄');
