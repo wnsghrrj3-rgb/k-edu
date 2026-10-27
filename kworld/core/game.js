@@ -206,7 +206,8 @@ export class Game {
     // 대상 안내
     if (!this.ui.isOpen()) {
       const t = this.target = this.e.pickTarget(this.e.camera, 3.2, this.p.pos);
-      if (t) this.ui.setPrompt(this.promptFor(t));
+      if (this.doors?.sleepFirst(t)) this.ui.setPrompt(this.doors.sleepPrompt());   // 132 ③: 잠자리 3m 안 — 집 소품보다 잠들기가 먼저
+      else if (t) this.ui.setPrompt(this.promptFor(t));
       else if (this.bond?.canTalk()) this.ui.setPrompt(this.bond.prompt());   // 운명의 사람 곁 — 말을 건다(E)
       else if (this.doors?.canSleep()) this.ui.setPrompt(this.doors.sleepPrompt());   // 131: 밤, 내 집 — 잠든다(E)
       else { const near = this.e.pickTarget(this.e.camera, 9 * (this.stats.sense || 1), this.p.pos); this.ui.setPrompt(near ? this.infoFor(near) : null); }
@@ -271,9 +272,11 @@ export class Game {
   // ---------- 행동 ----------
   act() {
     if (this.ui.isOpen()) return;
-    const t = this.target; if (!t) { if (this.bond?.canTalk()) return this.bond.talk(); if (this.doors?.canSleep()) return this.doors.sleep(); this.ui.say('가까이 가서 바라보면 할 수 있는 일이 보여.'); return; }
+    const t = this.target; if (this.doors?.sleepFirst(t)) return this.doors.sleep();   // 132 ③
+    if (!t) { if (this.bond?.canTalk()) return this.bond.talk(); if (this.doors?.canSleep()) return this.doors.sleep(); this.ui.say('가까이 가서 바라보면 할 수 있는 일이 보여.'); return; }
     if (t.type === 'road') return this.road?.open(t);
     const def = this.defFor(t); if (!def) return;
+    if (t.type === 'npc' && this.doors?.gateTalk(t)) return;   // 132 ②: 막아선 문지기 — 그 문의 fact + 「…하면 열린다」(npcs 줄·talk 깃발 안 씀)
     if (t.type === 'npc') { this.flag(def.flag); this.flag('talk:' + t.id); if (this.ui.isOpen()) return; /* 깃발이 상황 카드를 열었으면 사람 말은 그 뒤에(카드 위에 덮지 않는다) */ return this.talk(t); }
     if (t.type === 'gate') return this.enterGate();
     const rule = def.states ? def.states[t.state || 'unlit'] : def;

@@ -81,6 +81,6 @@ ok(ds.canSleep() && ds.sleepPrompt().verb === '행랑 바닥에 눕는다', '솔
 ok(said[0]?.startsWith('🛏 주인이 먼저 잔다') && g.hunger === 56 && ds.sleeps === 2, `「🛏 주인이 먼저 잔다…」 먼저 · 배고픔 +6 (${said[0]})`);
 g.world = w0; g.hunger = 50; await ds.sleep(); ok(g.hunger === 50 && ds.sleeps === 3, 'hideHunger 시대(조선 원본)는 배고픔 그대로'); g.world = w;
 // 8) 「그 뒤」 한 줄에 잠잔 횟수
-ok(/돌아섰다\. 문은 신분이 정했다\. 내 집에서 3번 잤다\.$/.test(ds.doorLine()), `그 뒤 한 줄: ${ds.doorLine()}`);
+ok(/돌아섰다\. 문은 신분이 정했다\. 내 집에서 3번 잤다(, 꿈을 \d번 꿨다)?\.$/.test(ds.doorLine()), `그 뒤 한 줄: ${ds.doorLine()}`);
 const d0 = new Doors({ ...g, life: null }, { list: [] }); d0.sleeps = 2; ok(d0.doorLine() === '막힌 문은 없었다. 내 집에서 2번 잤다.', '막힌 문 없이 잠만 잤으면 그 줄만');
 console.log(`\n신분의 문 ②·③(131): ${pass} 통과 / ${fail} 실패`); process.exit(fail ? 1 : 0);
