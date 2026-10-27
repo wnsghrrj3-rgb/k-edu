@@ -24,6 +24,8 @@
 | `q:right` | id, slot, mana, streak | 정답 폭죽, 마나 구슬이 지팡이로 |
 | `q:wrong` | id, slot, tag | 회색 흔들림, 낮은 「뿌웅」(혼내는 소리 아님) |
 | `q:gauge` | id, uid | 게이지 가득 — 몬스터 공격 |
+| `q:hint` | id, step(1·2), auto | 🦉 힌트 열림 — 1단계 문구·2단계 구슬 그림(v1.2; auto = 1~2학년 6초 자동) |
+| `zone:enter` | zone, idx, stage | 전투장 들어감(idx 0 = 첫 전투장, 1 = 전투장 2 — 「다음 전투장으로!」, v1.2) |
 | `reward` | kind('mana'·'feather'), amount, pos | 줍기 반짝 |
 | `mastery:up` | concept, stage('sprout'·'tree'·'fruit') | 도감 나무 자람 |
 | `wave` | idx, of | 「몬스터가 와요!」 |
@@ -42,3 +44,4 @@ v1.1 추가 필드: `telegraph:start` 에 attack·n, `q:open` 에 kind('crystal'
 | `spell:chain` | spell, points[] | 번개 사슬 — 지팡이 끝 → 대상들 꺾인 선(v1.1) |
 | `shield:on` / `shield:block` | t / nullify | 비전 방패 켜짐 / 막음(nullify = 완전 무효) |
 | `spell:equip` | spell | 마법 바퀴에서 주 마법 바꿈 |
+v1.2 추가: `q:hint`·`zone:enter` idx, snapshot.question.hint/hintPic·targets kind 'hint'·world.zoneIdx/arenas, UI action 'hint', 문제 type 'word1'(문장제 — 보스 마지막 봉인 칸).

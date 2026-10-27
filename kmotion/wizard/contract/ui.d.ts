@@ -14,7 +14,7 @@ export interface SkinUI {
  *               action 'start' {mode:'camera'|'mouse'|'keyboard', char, calib:boolean}
  * S17 보정      model snapshot.calib { step, idx, of, msg, p }      action 'calib-skip' · 'home'
  * S08 전투      (HUD 는 매 프레임 snapshot 으로)                     action 'pause' · 'attack' {zone:0|1|2}(터치로 적 누르기)
- * S08Q 문제     snapshot.question + targets                           action 'select' {slot}(마우스·터치 클릭)
+ * S08Q 문제     snapshot.question + targets                           action 'select' {slot}(마우스·터치 클릭) · 'hint'(🦉 힌트 구슬 클릭, v1.2 — 손은 targets 의 'hint' 로)
  * (멈춤)        snapshot.paused                                       action 'resume' · 'recalib' · 'home' · 'spell' {id}(마법 바퀴 — player.spells 중 하나, v1.1)
  * S13 클리어    snapshot.result                                       action 'again' · 'home'
  * S14 다시 일어서기 snapshot.result                                   action 'again' · 'home'

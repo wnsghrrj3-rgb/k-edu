@@ -13,7 +13,7 @@ export type EnemyState = 'spawn' | 'idle' | 'chase' | 'windup' | 'attack' | 'rec
 export interface Snapshot {
   t: number; gameT: number; slow: number;           // slow: 문제 중 0.15
   screen: ScreenId; paused: null | 'user' | 'body';
-  world: { id: 'forest'; stage: string; zone: 'rail' | 'arena' | 'boss' | 'puzzle'; railProgress: number; seed: number; wave: number; waves: number };
+  world: { id: 'forest'; stage: string; zone: 'rail' | 'arena' | 'boss' | 'puzzle'; zoneIdx: number; arenas: number; railProgress: number; seed: number; wave: number; waves: number };
   player: {
     id: 'luna' | 'tori' | 'haru'; pos: Vec3; yaw: number; vel: Vec3;
     /** 4절 시간 규칙: phase 0~1 로 클립을 재매핑. A09(충전)의 upperPhase = 충전 비율 */
@@ -52,9 +52,12 @@ export interface Snapshot {
     picked: number | null; reveal: number | null;     // reveal = 보여 줄 정답 자리
     explain: string | null;                           // 오답 해설 문구 키
     choices: Array<{ id: string; num: number; targetId: string }>;
+    /** v1.2 힌트(07 문서 8절): 1단계 길잡이 문구 · 2단계 구슬 그림(a·b·연산 — 더하기는 a 뒤에 b 이어서, 빼기는 뒤 b개를 흐리게) */
+    hint: { key: string; args: Record<string, string | number> } | null;
+    hintPic: { kind: 'beads'; a: number; b: number; op: '+' | '-' } | null;
   };
   /** 손 선택 대상 — 3-5절. rect 는 화면 비율, 눌리는 자리 = rect. hover = 유지 게이지 */
-  targets: Array<{ id: string; kind: 'choice' | 'crystal' | 'menu'; rect: { x: number; y: number; w: number; h: number }; hover: number; locked: boolean }>;
+  targets: Array<{ id: string; kind: 'choice' | 'hint' | 'crystal' | 'menu';   // hint = 🦉 힌트 구슬(v1.2, 문제 열려 있고 2단계 전까지) rect: { x: number; y: number; w: number; h: number }; hover: number; locked: boolean }>;
   input: { cursor: { x: number; y: number } | null; mode: 'camera' | 'keyboard'; body: 'ok' | 'lost' | 'partial'; calibrating: boolean;
     preview: { ok: boolean; joints: Array<[number, number, number] | null> } | null };   // joints: 0,11,12,13,14,15,16,23,24,25,26,27,28 (화면 비율, 거울)
   camera: { mode: 'rail' | 'arena' | 'boss-intro' | 'q'; target: Vec3; shake: number };
