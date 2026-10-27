@@ -69,8 +69,11 @@ export function createUI(ctx, audio){
   pauseScr.querySelector('.resume').onclick = () => act('resume'); pauseScr.querySelector('.recal').onclick = () => act('recalib'); pauseScr.querySelector('.home').onclick = () => act('home');
 
   // ── S08Q 문제
-  const q = h('section', 'mw-q mw-hide'); q.innerHTML = `<div class="mw-qpanel"><div class="prompt"></div><div class="sub"></div><div class="mw-gauge"><i></i></div></div>`;
-  const qp = q.querySelector('.mw-qpanel'), qPrompt = q.querySelector('.prompt'), qSub = q.querySelector('.sub'), qGauge = q.querySelector('.mw-gauge'), qGaugeI = qGauge.querySelector('i');
+  const q = h('section', 'mw-q mw-hide'); q.innerHTML = `<div class="mw-qpanel"><div class="prompt"></div><div class="hint mw-hide"></div><div class="beads mw-hide"></div><div class="sub"></div><div class="mw-gauge"><i></i></div></div>`;
+  const qp = q.querySelector('.mw-qpanel'), qPrompt = q.querySelector('.prompt'), qHint = q.querySelector('.hint'), qBeads = q.querySelector('.beads'), qSub = q.querySelector('.sub'), qGauge = q.querySelector('.mw-gauge'), qGaugeI = qGauge.querySelector('i');
+  // 🦉 힌트 구슬(07 문서 8절) — 대상 rect 는 snapshot.targets 의 'hint'(시스템 소유)
+  const owl = h('div', 'mw-orb mw-owl mw-hide', `<b>🦉</b><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="289" stroke-dashoffset="289"/></svg>`); owl.onclick = () => act('hint'); q.append(owl);
+  let hintStep = -1;
   const orbs = []; for (let s = 0; s < 4; s++) { const o = h('div', 'mw-orb mw-hide', `<b></b><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="289" stroke-dashoffset="289"/></svg>`); o.onclick = () => act('select', { slot: s }); q.append(o); orbs.push(o); }
   const cursor = h('div', 'mw-cursor mw-hide');
   let qId = null, lastHot = false, rects = {}, qMana = '';
@@ -83,6 +86,9 @@ export function createUI(ctx, audio){
   ctx.root.append(root);
 
   const fmtQ = Q => { const a = Object.assign({}, Q.prompt.args); return T(Q.prompt.key, a); };
+  // 힌트 2단계 그림: 구슬 — 더하기는 두 색 이어서, 빼기는 뒤에서 b개를 흐리게(거꾸로 세기)
+  const beadsHtml = p => { const n = p.op === '+' ? p.a + p.b : p.a; let o = ''; for (let i = 0; i < n; i++) { const cls = p.op === '+' ? (i < p.a ? 'a' : 'b') : (i >= p.a - p.b ? 'x' : 'a'); o += `<i class="${cls}"></i>${(i + 1) % 5 === 0 && i < n - 1 ? '<s></s>' : ''}`; }
+    return o + (p.op === '+' ? `<em>${p.a} + ${p.b}</em>` : `<em>${p.a} − ${p.b}</em>`); };
   function paintHud(s){
     const P = s.player; if (!P) return; const hpk = P.hp / P.hpMax, mk = P.mana / P.manaMax;
     hpBar.firstElementChild.style.transform = `scaleX(${hpk})`; hpBar.classList.toggle('low', hpk < .3); hpBar.lastElementChild.textContent = `${T('hud.hp')} ${P.hp}`;
@@ -94,7 +100,7 @@ export function createUI(ctx, audio){
     const sp = pauseScr.querySelector('.spells'), list = P.spells || []; pauseScr.querySelector('.spl-t').classList.toggle('mw-hide', list.length < 2); sp.classList.toggle('mw-hide', list.length < 2);
     if (sp.dataset.k !== list.join() + P.main) { sp.dataset.k = list.join() + P.main; sp.innerHTML = ''; for (const id of list) { const b = h('button', id === P.main ? 'on' : '', `${SI[id]} ${T('spell.' + id)}`); b.onclick = () => act('spell', { id }); sp.append(b); } }
     $h('.feather').classList.toggle('mw-hide', !P.feather);
-    const w = s.world, Bs = s.boss; $h('.mw-wave').textContent = !Bs && w && w.waves ? `🌲 ${Math.min(w.wave + 1, w.waves)} / ${w.waves}` : '';
+    const w = s.world, Bs = s.boss; $h('.mw-wave').textContent = !Bs && w && w.waves ? `🌲 ${w.arenas > 1 ? T('hud.zone', { n: (w.zoneIdx || 0) + 1 }) + ' · ' : ''}${Math.min(w.wave + 1, w.waves)} / ${w.waves}` : '';
     const bb = $h('.mw-boss'); bb.classList.toggle('mw-hide', !Bs); if (Bs) { bb.querySelector('.nm').textContent = T(Bs.nameKey) + ` · ${Bs.phase + 1}/${Bs.phases}`;
       const bar = bb.querySelector('.bb'); if (bar.children.length !== Bs.phases) bar.innerHTML = Bs.phaseHpMax.map(() => '<i><u></u></i>').join('');
       [...bar.children].forEach((c, i) => { c.firstChild.style.transform = `scaleX(${Bs.phaseHp[i] / Bs.phaseHpMax[i]})`; c.classList.toggle('on', i === Bs.phase); });
@@ -104,20 +110,27 @@ export function createUI(ctx, audio){
     const cam = s.input && s.input.mode === 'camera'; pip.classList.toggle('mw-hide', !cam); pip.classList.toggle('bad', s.input && s.input.body !== 'ok');
     if (cam) drawSkeleton(pip, s.input.preview);
     $h('.mw-help').innerHTML = cam ? '<b>옆으로 걷기</b> 이동 · <b>손 휙</b> 마법탄 · <b>두 손 모아 머리 위→내리기</b> 불꽃탄 · <b>팔 X자</b> 막기 · <b>숙이기</b> · <b>수정</b>을 쳐서 문제 열기'
-      : '<b>←→</b> 이동 · <b>Shift+←→</b> 피하기 · <b>Space</b> 마법탄 · <b>K</b> 불꽃탄 · <b>L</b> 막기 · <b>↓</b> 숙이기 · <b>P</b> 멈춤';
+      : '<b>←→</b> 이동 · <b>Shift+←→</b> 피하기 · <b>Space</b> 마법탄 · <b>K</b> 불꽃탄 · <b>L</b> 막기 · <b>↓</b> 숙이기 · <b>H</b> 힌트 · <b>P</b> 멈춤';
     const lostOn = s.input && s.input.body === 'lost' && !s.paused; lost.classList.toggle('mw-hide', !lostOn); if (lostOn) lost.textContent = T('toast.showBody');
     pauseScr.classList.toggle('mw-hide', !s.paused); if (s.paused) pauseScr.querySelector('.why').textContent = s.paused === 'body' ? T('toast.showBody') : '';
   }
   function paintQ(s){
     const Q = s.question; if (!Q) return;
-    if (Q.id !== qId) { qId = Q.id; qPrompt.textContent = (Q.kind === 'seal' ? '🔒 ' : '') + fmtQ(Q); qp.classList.toggle('seal', Q.kind === 'seal'); }
+    if (Q.id !== qId) { qId = Q.id; hintStep = -1; qPrompt.textContent = (Q.kind === 'seal' ? '🔒 ' : '') + fmtQ(Q); qp.classList.toggle('seal', Q.kind === 'seal'); qp.classList.toggle('word', Q.type === 'word1'); }
+    if (Q.hintStep !== hintStep) { hintStep = Q.hintStep; qHint.classList.toggle('mw-hide', !Q.hint); if (Q.hint) qHint.textContent = '🦉 ' + T(Q.hint.key, Q.hint.args);
+      qBeads.classList.toggle('mw-hide', !Q.hintPic); if (Q.hintPic && Q.hintPic.kind === 'beads') qBeads.innerHTML = beadsHtml(Q.hintPic); }
     qp.classList.toggle('right', Q.state === 'right'); qp.classList.toggle('wrong', Q.state === 'wrong');
     qSub.textContent = Q.state === 'right' ? T('q.right', { a: qMana }) + ' ✨' : Q.state === 'wrong' ? (Q.explain ? T(Q.explain) : T('q.wrong')) : Q.readP < 1 ? T('q.read') : '';
     qGauge.classList.toggle('mw-hide', !Q.gaugeOn); qGaugeI.style.transform = `scaleX(${Q.gauge})`;
     const hot = Q.gaugeOn && Q.gauge > .7 && Q.state === 'open'; q.classList.toggle('hot', hot); if (hot && !lastHot) audio.play('gauge'); lastHot = hot;
     const W = innerWidth, H = innerHeight; rects = {};
     orbs.forEach(o => o.classList.add('mw-hide'));
-    for (const t of s.targets || []) { if (t.kind !== 'choice') continue; const slot = +t.id.slice(1), o = orbs[slot]; if (!o) continue; const ch = Q.choices.find(c => c.targetId === t.id);
+    owl.classList.add('mw-hide');
+    for (const t of s.targets || []) {
+      if (t.kind === 'hint') { const d = t.rect.w * W, cx = (t.rect.x + t.rect.w / 2) * W, cy = (t.rect.y + t.rect.h / 2) * H; rects[t.id] = { x: cx / W, y: cy / H };
+        owl.style.cssText = `left:${cx - d / 2}px;top:${cy - d / 2}px;width:${d}px;height:${d}px`; owl.classList.remove('mw-hide'); owl.classList.toggle('locked', t.locked);
+        owl.querySelector('circle').style.strokeDashoffset = String(289 * (1 - (t.hover || 0))); continue; }
+      if (t.kind !== 'choice') continue; const slot = +t.id.slice(1), o = orbs[slot]; if (!o) continue; const ch = Q.choices.find(c => c.targetId === t.id);
       const d = t.rect.w * W, cx = (t.rect.x + t.rect.w / 2) * W, cy = (t.rect.y + t.rect.h / 2) * H; rects[t.id] = { x: cx / W, y: cy / H };
       o.style.cssText = `left:${cx - d / 2}px;top:${cy - d / 2}px;width:${d}px;height:${d}px`; o.classList.remove('mw-hide');
       o.querySelector('b').textContent = ch ? ch.num : '?';

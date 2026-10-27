@@ -32,6 +32,7 @@ export function createAudio(){
     windup(){ tone({ f: 300, f2: 180, type: 'square', d: .2, g: .05, lp: 700 }); },
     fizzle(){ noise({ d: .35, g: .15, lp: 1200, f2: 200 }); },
     crystal(){ [0, .08].forEach((t, i) => tone({ f: 1568 * (i ? 1.5 : 1), type: 'sine', d: .4, g: .12, t })); },
+    hint(){ [784, 988].forEach((f, i) => tone({ f, type: 'sine', d: .25, g: .1, t: i * .09 })); },   // 부엉이 「후-후」 대신 짧은 두 음
     qopen(){ [523, 659, 784].forEach((f, i) => tone({ f, type: 'sine', d: .35, g: .12, t: i * .06 })); },
     right(streak){ const base = 523 * Math.pow(2, Math.min(5, streak || 0) / 12); [0, 4, 7, 12].forEach((s, i) => tone({ f: base * Math.pow(2, s / 12), type: 'triangle', d: .3, g: .16, t: i * .07 })); },
     wrong(){ tone({ f: 233, f2: 196, type: 'sine', d: .4, g: .16 }); },

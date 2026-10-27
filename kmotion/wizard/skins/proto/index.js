@@ -110,6 +110,8 @@ export function createSkin(ctx){
     else if (T === 'q:open') audio.play('qopen');
     else if (T === 'q:right') { audio.play('right', ev.streak); ui.setMana(ev.mana); if (player) { const p = player.position; sparks.burst([-p.x, 1.6, p.z], 0x58b7ff, 60, 3, 4); sparks.burst([-p.x, 1.6, p.z], 0xffd45c, 40, 3, 5); } }
     else if (T === 'q:wrong') audio.play('wrong');
+    else if (T === 'q:hint') audio.play('hint');
+    else if (T === 'zone:enter' && ev.zone === 'arena' && ev.idx) { audio.play('wave'); ui.toast('toast.zone'); }
     else if (T === 'q:gauge') { audio.play('gauge'); }
     else if (T === 'reward') { audio.play(ev.kind === 'feather' ? 'feather' : 'crystal'); if (ev.pos) sparks.burst(ev.pos, ev.kind === 'feather' ? 0xffffff : 0x58b7ff, 40, 2, 4); }
     else if (T === 'wave') { audio.play('wave'); ui.toast('toast.wave'); }
