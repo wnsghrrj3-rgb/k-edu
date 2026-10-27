@@ -21,6 +21,7 @@
  *   opt.modelBase:'/kmotion/vendor/models/' — 모델 파일 자리(학교망 대비). 실패하면 구글 주소로 한 번 더(km.modelSource 'local'|'google')
  *   opt.numPoses:2 + opt.ownerLock:true (실험) — 두 사람 중 처음 잡은 사람(주인)만 따라감
  *   opt.worker (예약) — 아직 메인 스레드만. 켜면 warn 이벤트만 냄
+ * 0.7.1: 마우스 모드 가짜 몸에 MATH WIZARD 시험 키 추가(마우스 모드에서만, 기존 키 무변경) — Z/X 왼손/오른손 휙 내밀기 · V 두 손 모아 머리 위(떼면 내림) · B 팔 X자
  * 영상은 기기 안에서만 처리되고 어디에도 보내지 않는다. 기록(kmotion-data.js)은 관절 좌표·행동 이벤트만.
  *
  * 사용:
@@ -31,7 +32,7 @@
  * 좌표는 전부 캔버스(거울) 픽셀, 원유로 필터로 떨림 보정. 랜드마크 {x,y,z,v}. score = 자체 판정 점수(모델 신뢰도와 다름).\n * 손 actions: dir(손 방향 0~359°, 위=0 시계방향)·pointDir(검지 방향)·facing(palm/back)·pointer(검지 끝)·pinchPt(엄지·검지 사이). 몸: facing(front/left/right)·lean(기울기°).
  */
 (function(){
-  const ENGINE_VERSION = '0.7.0';
+  const ENGINE_VERSION = '0.7.1';
   const ACTION_VERSION = 'rule-0.4.0';
   const MODEL_VERSION  = { hands: 'hand_landmarker/float16/1', pose: 'pose_landmarker_lite/float16/1', vision: 'tasks-vision@0.10.21' };
   const VENDOR = new URL('./vendor/tasks-vision/', document.currentScript ? document.currentScript.src : location.href).href;
@@ -408,14 +409,14 @@
 
     // 마우스 모드 — 카메라 없이 개발·시연. 손: 마우스 위치=손, 누르면 집기, F=주먹. 몸: 마우스 x=고개·몸 위치, 클릭=점프, S=앉기, A/D=기울기, Q/E=왼손/오른손 들기, W=양손, O=양팔 벌리기
     const mouseMode = opt.mouse || new URLSearchParams(location.search).has('mouse');
-    const mouse = { x: W / 2, y: H / 2, down: false, keys: {} , jumpT: 0 };
+    const mouse = { x: W / 2, y: H / 2, down: false, keys: {} , kt: {}, jumpT: 0 };
     if (mouseMode) { km.mouse = true;
       const rect = () => canvas.getBoundingClientRect();
       const mv = ev => { const r = rect(); const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX), cy = (ev.touches ? ev.touches[0].clientY : ev.clientY); mouse.x = (cx - r.left) / r.width * W; mouse.y = (cy - r.top) / r.height * H; };
       canvas.addEventListener('mousemove', mv); canvas.addEventListener('touchmove', mv, { passive: true });
       canvas.addEventListener('mousedown', ev => { mv(ev); mouse.down = true; if (modes.has('pose')) mouse.jumpT = performance.now(); }); window.addEventListener('mouseup', () => mouse.down = false);
       canvas.addEventListener('touchstart', ev => { mv(ev); mouse.down = true; if (modes.has('pose')) mouse.jumpT = performance.now(); }, { passive: true }); window.addEventListener('touchend', () => mouse.down = false);
-      window.addEventListener('keydown', ev => { mouse.keys[ev.key.toLowerCase()] = true; if (ev.key === ' ') mouse.jumpT = performance.now(); }); window.addEventListener('keyup', ev => { mouse.keys[ev.key.toLowerCase()] = false; }); }
+      window.addEventListener('keydown', ev => { const k = ev.key.toLowerCase(); if (!mouse.keys[k]) mouse.kt[k] = performance.now(); mouse.keys[k] = true; if (ev.key === ' ') mouse.jumpT = performance.now(); }); window.addEventListener('keyup', ev => { mouse.keys[ev.key.toLowerCase()] = false; }); }
     function mockHand(){ const s = 60, c = { x: mouse.x, y: mouse.y }, fist = !!mouse.keys.f, pinch = mouse.down && !fist; const pt = []; const fing = [[-.55, -1.2], [-.2, -1.6], [.15, -1.7], [.5, -1.5]];
       pt[0] = { x: c.x, y: c.y + s, z: 0, v: 1 }; for (let i = 1; i <= 4; i++) pt[i] = { x: c.x - s * (.4 + i * .18), y: c.y + s * (.6 - i * .3), z: 0, v: 1 };
       fing.forEach(([dx, dy], fi) => { for (let j = 0; j < 4; j++) { const k = 5 + fi * 4 + j, r = fist && j > 0 ? .25 : 1; pt[k] = { x: c.x + dx * s * (j === 0 ? 1 : 1 + j * .15 * r), y: c.y + s * (j === 0 ? -.2 : -.2 + dy * j * .35 * r), z: 0, v: 1 }; } });
@@ -429,9 +430,14 @@
       p[13] = P(cx - 85 + L, shY + 60); p[14] = P(cx + 85 + L, shY + 60);
       p[15] = open ? P(cx - 150 + L, shY) : upL ? P(cx - 70 + L, shY - 110) : P(cx - 90 + L, shY + 120); p[16] = open ? P(cx + 150 + L, shY) : upR ? P(cx + 70 + L, shY - 110) : P(cx + 90 + L, shY + 120);
       if (mouse.keys.c) { p[15] = P(cx - 8, shY + 40); p[16] = P(cx + 8, shY + 40); }
+      // 0.7.1 MATH WIZARD 시험 키: Z/X 휙 내밀기(150ms 동안 바깥 위로 뻗음) · V 두 손 모아 머리 위 · B 팔 X자
+      const thr = (k, sgn, wi, ei) => { if (!mouse.keys[k]) return; const q = Math.min(1, (t - (mouse.kt[k] || t)) / 150); p[wi] = P(cx + sgn * (90 + 70 * q) + L, shY + 120 - 120 * q); p[ei] = P(cx + sgn * (85 + 40 * q) + L, shY + 60 - 40 * q); };
+      thr('z', -1, 15, 13); thr('x', 1, 16, 14);
+      if (mouse.keys.v) { p[15] = P(cx - 20 + L, shY - 150); p[16] = P(cx + 20 + L, shY - 150); p[13] = P(cx - 70 + L, shY - 70); p[14] = P(cx + 70 + L, shY - 70); }
+      if (mouse.keys.b) { p[15] = P(cx + 30 + L, shY + 50); p[16] = P(cx - 30 + L, shY + 50); p[13] = P(cx - 70 + L, shY + 70); p[14] = P(cx + 70 + L, shY + 70); }
       const kneeY = hipY + 90 - sq * 30, ankY = hipY + 180; p[25] = P(cx - 40 - sq * 30, kneeY); p[26] = P(cx + 40 + sq * 30, kneeY); p[27] = P(cx - 40, ankY); p[28] = P(cx + 40, ankY);
       return p; }
-    km.drawMouseHelp = function(){ if (!mouseMode) return; ctx.font = '13px ui-monospace,monospace'; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillText('마우스 모드 · ' + (modes.has('pose') ? '이동=몸·고개  클릭/Space=점프  S=앉기  A/D=기울기  Q/E=손 들기  W=양손  O=팔 벌리기  C=손뼉' : '이동=손  누르기=집기  F=주먹'), 10, H - 10); };
+    km.drawMouseHelp = function(){ if (!mouseMode) return; ctx.font = '13px ui-monospace,monospace'; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillText('마우스 모드 · ' + (modes.has('pose') ? '이동=몸·고개  클릭/Space=점프  S=앉기  A/D=기울기  Q/E=손 들기  W=양손  O=팔 벌리기  C=손뼉  Z/X=휙  V=모으기  B=X자' : '이동=손  누르기=집기  F=주먹'), 10, H - 10); };
 
     km.start = async function(){
       if (mouseMode) { status(''); km.running = true; lastVideoTime = -1; km.emit('session:start', { activity: km.activity, modes: [...modes], ua: 'mouse-mode', W, H }); raf = requestAnimationFrame(loop); return; }
