@@ -13,6 +13,14 @@
  *   마우스 모드: ?mouse=1 (카메라 없이 개발·시연)
  *   segment:true / km.setSegment(on) → 셀피 세그멘터 사람 마스크(f.maskCanvas, km.drawPerson; maskSmooth·maskFeather·maskShrink 조절) — 배경 바꾸기
  *   session:start / session:stop / frame / error
+ * 0.7.0(MATH WIZARD 대비, 기존 활동 기본값 무변경):
+ *   km.setActive('hands'|'pose', bool) / km.isActive(mode) — 모델은 올려 둔 채 추론만 끔·켬(전환 지연 ≈ 0)
+ *   opt.active:['pose'] — 처음 켜 둘 모드(없으면 modes 전부)
+ *   opt.inferEvery:n — n 렌더 프레임에 1번만 추론(저사양). km.setInferEvery(n)
+ *   f.captureTime / f.lagMs — 카메라 프레임 촬영 시각(requestVideoFrameCallback) · 추론 끝까지 걸린 ms
+ *   opt.modelBase:'/kmotion/vendor/models/' — 모델 파일 자리(학교망 대비). 실패하면 구글 주소로 한 번 더(km.modelSource 'local'|'google')
+ *   opt.numPoses:2 + opt.ownerLock:true (실험) — 두 사람 중 처음 잡은 사람(주인)만 따라감
+ *   opt.worker (예약) — 아직 메인 스레드만. 켜면 warn 이벤트만 냄
  * 영상은 기기 안에서만 처리되고 어디에도 보내지 않는다. 기록(kmotion-data.js)은 관절 좌표·행동 이벤트만.
  *
  * 사용:
@@ -23,7 +31,7 @@
  * 좌표는 전부 캔버스(거울) 픽셀, 원유로 필터로 떨림 보정. 랜드마크 {x,y,z,v}. score = 자체 판정 점수(모델 신뢰도와 다름).\n * 손 actions: dir(손 방향 0~359°, 위=0 시계방향)·pointDir(검지 방향)·facing(palm/back)·pointer(검지 끝)·pinchPt(엄지·검지 사이). 몸: facing(front/left/right)·lean(기울기°).
  */
 (function(){
-  const ENGINE_VERSION = '0.6.0';
+  const ENGINE_VERSION = '0.7.0';
   const ACTION_VERSION = 'rule-0.4.0';
   const MODEL_VERSION  = { hands: 'hand_landmarker/float16/1', pose: 'pose_landmarker_lite/float16/1', vision: 'tasks-vision@0.10.21' };
   const VENDOR = new URL('./vendor/tasks-vision/', document.currentScript ? document.currentScript.src : location.href).href;
@@ -32,6 +40,7 @@
     pose : 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
     seg  : 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite'
   };
+  const MODEL_FILES = { hands: 'hand_landmarker.task', pose: 'pose_landmarker_lite.task', seg: 'selfie_segmenter.tflite' };
   let visionMod = null;
   async function vision(){ if(!visionMod) visionMod = await import(VENDOR + 'vision_bundle.mjs'); return visionMod; }
 
@@ -72,11 +81,27 @@
     const srcImg = () => cropOn() ? cropC : video;
     function cropRect(){ const vw = video.videoWidth || W, vh = video.videoHeight || H; const sw = vw / range.zoom, sh = vh / range.zoom; return { sx: Math.min(vw - sw, Math.max(0, range.cx * vw - sw / 2)), sy: Math.min(vh - sh, Math.max(0, range.cy * vh - sh / 2)), sw, sh, vw, vh }; }
     function updateCrop(){ if (!cropOn()) return; const r = cropRect(); cctx.drawImage(video, r.sx, r.sy, r.sw, r.sh, 0, 0, W, H); }
+    // ── 0.7.0 모델 교대·추론 간격
+    const active = new Set(opt.active || [...modes]);
+    const drain = {}; // 끈 모드의 잡기·몸 상태를 한 번 비워 release/body:lost 를 내기
+    let inferEvery = Math.max(1, opt.inferEvery | 0 || 1), tick = 0;
+    let modelBase = opt.modelBase ? new URL(opt.modelBase, location.href).href.replace(/\/?$/, '/') : null;
+    const NP = Math.max(1, opt.numPoses | 0 || 1), ownerLock = !!opt.ownerLock && NP > 1; let owner = null;
+    // 촬영 시각: requestVideoFrameCallback(크롬) — 없으면 null
+    let vfMeta = null, vfOn = false;
+    function watchFrames(){ if (vfOn || !video.requestVideoFrameCallback) return; vfOn = true;
+      const cb = (now, meta) => { vfMeta = meta; if (km.running && !km.mouse) video.requestVideoFrameCallback(cb); else vfOn = false; }; video.requestVideoFrameCallback(cb); }
     const sessionId = opt.sessionId || ('s' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
 
     const km = { W, H, ctx, video, canvas, modes, sessionId, onFrame: null, onStatus: null, running: false, fps: 0,
       POSE, HAND, POSE_BONES, HAND_BONES, ENGINE_VERSION, ACTION_VERSION, MODEL_VERSION,
-      activity: opt.activity || (location.pathname.split('/').pop() || 'index').replace('.html', '') };
+      activity: opt.activity || (location.pathname.split('/').pop() || 'index').replace('.html', ''), modelSource: null };
+    km.isActive = m => modes.has(m) && active.has(m);
+    km.setActive = function(m, on){ if (!modes.has(m)) return km; const was = active.has(m); if (on) active.add(m); else active.delete(m);
+      if (was !== !!on) { if (!on) drain[m] = true; if (m === 'hands') handSm.forEach(sm => sm.reset()); if (m === 'pose') { poseSm.reset(); poseSeen = false; owner = null; }
+        km.emit('mode:active', { mode: m, on: !!on }); } return km; };
+    km.setInferEvery = n => { inferEvery = Math.max(1, n | 0 || 1); return km; };
+    km.getInferEvery = () => inferEvery;
 
     // ── 이벤트 버스
     const subs = {};
@@ -120,8 +145,13 @@
       const v = await vision();
       const files = await v.FilesetResolver.forVisionTasks(VENDOR + 'wasm');
       const base = (path) => ({ baseOptions: { modelAssetPath: path, delegate: 'GPU' }, runningMode: 'VIDEO' });
-      if (modes.has('hands')) { const hc = opt.handConf; handLm = await v.HandLandmarker.createFromOptions(files, Object.assign(base(MODELS.hands), { numHands: opt.numHands || 2 }, hc ? { minHandDetectionConfidence: hc, minHandPresenceConfidence: hc, minTrackingConfidence: hc } : {})); }
-      if (modes.has('pose')) { const pcf = opt.poseConf; poseLm = await v.PoseLandmarker.createFromOptions(files, Object.assign(base(MODELS.pose), { numPoses: 1 }, pcf ? { minPoseDetectionConfidence: pcf, minPosePresenceConfidence: pcf, minTrackingConfidence: pcf } : {})); }
+      // 자체 호스팅 자리(modelBase)를 먼저, 안 되면 구글 주소로 한 번 더
+      async function make(Cls, key, extra){ if (modelBase) { try { const r = await Cls.createFromOptions(files, Object.assign(base(modelBase + MODEL_FILES[key]), extra)); km.modelSource = 'local'; return r; }
+          catch (e) { km.emit('warn', { kind: 'model-local', message: key + ' 자체 호스팅 실패 → 구글 주소: ' + String(e) }); } }
+        const r = await Cls.createFromOptions(files, Object.assign(base(MODELS[key]), extra)); if (km.modelSource !== 'local') km.modelSource = 'google'; return r; }
+      if (modes.has('hands')) { const hc = opt.handConf; handLm = await make(v.HandLandmarker, 'hands', Object.assign({ numHands: opt.numHands || 2 }, hc ? { minHandDetectionConfidence: hc, minHandPresenceConfidence: hc, minTrackingConfidence: hc } : {})); }
+      if (modes.has('pose')) { const pcf = opt.poseConf; poseLm = await make(v.PoseLandmarker, 'pose', Object.assign({ numPoses: NP }, pcf ? { minPoseDetectionConfidence: pcf, minPosePresenceConfidence: pcf, minTrackingConfidence: pcf } : {})); }
+      if (opt.worker) km.emit('warn', { kind: 'worker', message: 'opt.worker 는 아직 예약 — 메인 스레드에서 실행' });
       if (opt.segment) await ensureSeg();
     }
     function status(s){ if (km.onStatus) km.onStatus(s); }
@@ -328,6 +358,14 @@
       return { vis, feet, ok: true, hip, sh, torso, air: body.air, squat: body.squat, armsUp: body.armsUp, raiseL: body.raiseL, raiseR: body.raiseR, openArms: body.openArms, frozen: body.frozen, leanDir: body.leanDir, knee: Math.round(kneeA), facing, shoulderRatio: +shW.toFixed(2), lean };
     }
 
+    // 사람 고르기: 1명이면 그대로, ownerLock 이면 직전 주인(어깨 중심)에 가장 가까운 사람
+    function pickPose(list){ if (!list || !list.length) { return null; } if (!ownerLock || list.length === 1) { const p = toPx(list[0]); if (ownerLock) owner = mid(p[11], p[12]); return p; }
+      const all = list.map(toPx); let best = 0;
+      if (owner) { let bd = Infinity; all.forEach((p, i) => { const d = dist(mid(p[11], p[12]), owner); if (d < bd) { bd = d; best = i; } }); }
+      else { let bw = -1; all.forEach((p, i) => { const w = dist(p[11], p[12]); if (w > bw) { bw = w; best = i; } }); } // 처음엔 가장 가까운(어깨 넓은) 사람
+      owner = mid(all[best][11], all[best][12]); return all[best]; }
+    km.resetOwner = () => { owner = null; return km; };
+
     // ── 루프
     let raf = 0, lastVideoTime = -1, fpsT = 0, fpsN = 0;
     function loop(){
@@ -335,28 +373,34 @@
       const t = performance.now();
       const f = { ctx, W, H, t, motion: modes.has('motion') ? motion : null, hands: [], handedness: null, pose: null, actions: { hands: [], body: null }, fresh: false };
       if (mouseMode) { f.fresh = true;
-        if (modes.has('hands')) { f.hands = [mockHand()]; f.handedness = [[{ categoryName: 'Right', score: 1 }]]; f.actions.hands = stepHands(f); }
-        if (modes.has('pose')) { f.pose = mockPose(); f.actions.body = stepBody(f); }
+        if (km.isActive('hands')) { f.hands = [mockHand()]; f.handedness = [[{ categoryName: 'Right', score: 1 }]]; f.actions.hands = stepHands(f); }
+        if (km.isActive('pose')) { f.pose = mockPose(); f.actions.body = stepBody(f); }
         if (modes.has('motion')) { grid.fill(0); const gx = (W - mouse.x) / S | 0, gy = mouse.y / S | 0; if (mouse.down) for (let yy = gy - 4; yy <= gy + 4; yy++) for (let xx = gx - 4; xx <= gx + 4; xx++) if (yy >= 0 && xx >= 0 && yy < off.height && xx < off.width) grid[yy * off.width + xx] = 1; }
         fpsN++; if (t - fpsT > 1000) { km.fps = fpsN; fpsN = 0; fpsT = t; }
         km.emit('frame', { hands: f.hands, pose: f.pose, actions: f.actions, fps: km.fps });
-      } else if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+      } else if (video.readyState >= 2 && video.currentTime !== lastVideoTime && (++tick % inferEvery === 0)) {
         lastVideoTime = video.currentTime; f.fresh = true;
+        if (vfMeta) f.captureTime = vfMeta.captureTime != null ? vfMeta.captureTime : (vfMeta.presentationTime != null ? vfMeta.presentationTime : null);
         try {
           updateCrop();
           if (modes.has('motion')) stepMotion();
-          if (handLm) { const r = handLm.detectForVideo(srcImg(), t); f.hands = (r.landmarks || []).map((lm, i) => handSm[i] ? handSm[i].apply(toPx(lm), t) : toPx(lm)); f.handedness = r.handednesses;
+          if (handLm && active.has('hands')) { const r = handLm.detectForVideo(srcImg(), t); f.hands = (r.landmarks || []).map((lm, i) => handSm[i] ? handSm[i].apply(toPx(lm), t) : toPx(lm)); f.handedness = r.handednesses;
             for (let i = f.hands.length; i < NH; i++) handSm[i].reset(); }
-          if (poseLm) { const r = poseLm.detectForVideo(srcImg(), t); const raw = r.landmarks && r.landmarks[0] ? toPx(r.landmarks[0]) : null;
+          if (poseLm && active.has('pose')) { const r = poseLm.detectForVideo(srcImg(), t); const raw = pickPose(r.landmarks);
             if (raw) { f.pose = poseSm.apply(raw, t); poseSeen = true; } else { f.pose = null; if (poseSeen) { poseSm.reset(); poseSeen = false; } }
             }
           if (km.segmentOn) { try { if (stepSeg(t)) f.maskCanvas = maskCanvas; } catch (e) { km.emit('error', { kind: 'mask', message: String(e), score: 0 }); } }
         } catch (e) { km.emit('error', { kind: 'detect', message: String(e), score: 0 }); }
-        if (handLm) f.actions.hands = stepHands(f);
-        if (poseLm) f.actions.body = stepBody(f);
+        if (handLm && active.has('hands')) f.actions.hands = stepHands(f);
+        if (poseLm && active.has('pose')) f.actions.body = stepBody(f);
+        if (f.captureTime != null) f.lagMs = Math.round(performance.now() - f.captureTime);
         fpsN++; if (t - fpsT > 1000) { km.fps = fpsN; fpsN = 0; fpsT = t; }
         km.emit('frame', { hands: f.hands, pose: f.pose, actions: f.actions, fps: km.fps });
       }
+      // 꺼진 모드 정리: 잡고 있던 손은 release, 보이던 몸은 body:lost 를 한 번 냄
+      if (drain.hands && !active.has('hands')) { drain.hands = false; stepHands({ hands: [], handedness: null, t }); }
+      if (drain.pose && !active.has('pose')) { drain.pose = false; stepBody({ pose: null, t }); }
+      if (ownerLock && f.fresh && !f.pose && owner && t - (km._ownerSeen || 0) > 1500) owner = null; else if (f.pose) km._ownerSeen = t;
       km.last = f;
       const t1 = performance.now(); if (km.onFrame) { try { km.onFrame(f); } catch (e) { km.emit('error', { kind: 'onFrame', message: String(e), score: 0 }); console.error(e); } } const dtF = performance.now() - t1; km.slow = dtF > 120 ? (km.slow || 0) + 1 : 0; if (km.slow === 3) km.emit('warn', { kind: 'slow', message: '프레임이 ' + Math.round(dtF) + 'ms 걸림', ms: Math.round(dtF) });
       raf = requestAnimationFrame(loop);
@@ -398,10 +442,10 @@
         err.cause = e; km.emit('error', { kind: 'camera', message: err.message, score: 0 }); throw err; }
       try { await loadModels(); } catch (e) { km.emit('error', { kind: 'model', message: String(e), score: 0 }); throw new Error('인식 모델을 불러오지 못했어요. 인터넷(모델 서버) 연결을 확인해 주세요.'); }
       status(''); km.running = true; lastVideoTime = -1;
-      km.emit('session:start', { activity: km.activity, modes: [...modes], ua: navigator.userAgent, W, H }); mountRangeButton(); raf = requestAnimationFrame(loop);
+      km.emit('session:start', { activity: km.activity, modes: [...modes], ua: navigator.userAgent, W, H, modelSource: km.modelSource }); mountRangeButton(); watchFrames(); raf = requestAnimationFrame(loop);
     };
     km.stop = function(){ if (km.running) km.emit('session:stop'); km.running = false; if (km._rangeBtn) { km._rangeBtn.remove(); km._rangeBtn = null; } cancelAnimationFrame(raf); if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; } };
     return km;
   }
-  window.KMotion = { create, POSE, HAND, POSE_BONES, HAND_BONES, ENGINE_VERSION, ACTION_VERSION, MODEL_VERSION };
+  window.KMotion = { create, POSE, HAND, POSE_BONES, HAND_BONES, ENGINE_VERSION, ACTION_VERSION, MODEL_VERSION, MODEL_FILES };
 })();
