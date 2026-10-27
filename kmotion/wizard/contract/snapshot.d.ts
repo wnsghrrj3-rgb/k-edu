@@ -26,14 +26,22 @@ export interface Snapshot {
   enemies: Array<{ uid: number; kind: string; pos: Vec3; yaw: number; scale: number; state: EnemyState; stateT: number; hp: number; hpMax: number; label: string | null;
     /** 예고 — 있으면 스킨은 바닥 범위를 반드시 그린다(빨강 + 빗금). t0→t1 비율로 채움 */
     telegraph: { shape: 'circle' | 'line' | 'cone'; center: Vec3; size: number[]; t0: number; t1: number } | null; tags: string[] }>;
-  boss: null;                                         // P2
+  /** 보스(v1.1 추가, 06 문서 4·5절). 보스방이 아니면 null. telegraphs 는 전부 그려야 한다(돌 3개처럼 여러 개일 수 있음) */
+  boss: null | { uid: number; kind: string; pos: Vec3; yaw: number; scale: number;
+    state: 'intro' | 'chase' | 'windup' | 'attack' | 'recover' | 'kneel' | 'phase' | 'dead'; stateT: number;
+    attack: null | 'slam' | 'charge' | 'rocks' | 'quake' | string;
+    phase: number; phases: number; hp: number; hpMax: number; phaseHp: number[]; phaseHpMax: number[];   // hp = 지금 페이즈 체력
+    shield: number; shieldMax: number;                // 수학 보호막 칸(켜져 있으면 몸 공격 ×0.1)
+    weak: number;                                     // 약점 시간 남은 비율 0~1(0 = 아님)
+    telegraphs: Array<{ shape: 'circle' | 'line' | 'ring'; center: Vec3; size: number[]; yaw: number; t0: number; t1: number; label: string | null; avoid: null | 'duck' }>;
+    nameKey: string };                                // line: size=[폭, 길이], yaw 방향 · ring: 전체 범위 — avoid 'duck' = 숙여서 피함
   projectiles: Array<{ uid: number; kind: 'bolt' | 'fireball' | string; pos: Vec3; vel: Vec3; owner: 'player' | number; label: string | null; r: number }>;
   areas: Array<{ uid: number; kind: 'explosion' | string; pos: Vec3; radius: number; t0: number; t1: number }>;
   /** 수학 수정(v1 추가) — near = 지금 치면 열림 */
   crystals: Array<{ uid: number; kind: 'math' | 'empower'; pos: Vec3; near: boolean }>;
   pickups: Array<{ uid: number; kind: 'mana' | 'gold' | 'shard'; pos: Vec3 }>;
   question: null | {
-    id: string; type: string; concept: string;
+    id: string; type: string; concept: string; kind?: 'crystal' | 'seal';   // seal = 보스 봉인 문제(v1.1)
     prompt: { key: string; args: Record<string, string | number> };   // 문구 = text(key) 에 args 채우기
     state: 'open' | 'right' | 'wrong'; hintStep: number;
     gauge: number; gaugeOn: boolean;                  // 몬스터 공격 게이지 0~1 (가득 = 몬스터 1번 공격)

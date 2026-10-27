@@ -31,3 +31,11 @@
 | `stage:clear` / `player:defeat` | — | 승리·패배 연출 |
 | `screen` | from, to | 화면 전환 |
 | `ui:action` | id | (기록용) |
+| `boss:intro` | uid, kind, phase, pos | 등장 컷(카메라 mode 'boss-intro' 동안) · 이름 띠 |
+| `boss:shield` | uid, n, max | 수학 보호막 칸 펼침 |
+| `boss:seal` | uid, left, max, pos | 봉인 문제 정답 → 칸 하나 깨짐(유리 「쾅!」) |
+| `boss:weak` | uid, on, t? | 약점 시간 시작(무릎 꿇음)·끝 |
+| `boss:phaseEnd` / `boss:phase` | uid, phase | 페이즈 체력 0 → 1.5초 연출 → 다음 페이즈 |
+| `boss:die` | uid | 쓰러짐(뒤이어 `enemy:die` boss:true, `stage:clear`) |
+
+v1.1 추가 필드: `telegraph:start` 에 attack·n, `q:open` 에 kind('crystal'·'seal'), `hit` 에 shielded, `dodge` 에 duck(땅 흔들기를 숙여서 피함).
