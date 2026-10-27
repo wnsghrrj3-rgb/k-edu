@@ -1,5 +1,5 @@
 // MATH WIZARD 진입 — 시스템(sim/) 과 스킨(skins/*) 을 잇는 유일한 곳(13 문서 2절)
-// ?skin=proto|empty|hq  ?q=low|medium|high  ?dev=1  ?mouse=1(마우스 모드로 바로)  ?seed=n  ?grade=n  ?check=1(스킨 검사기 상시)
+// ?skin=proto|empty|hq  ?q=low|medium|high  ?spells=all(마법 5종 시험)  ?dev=1  ?mouse=1(마우스 모드로 바로)  ?seed=n  ?grade=n  ?check=1(스킨 검사기 상시)
 import { createFlow } from './sim/flow/screens.js';
 import { checkInterface, checkTelegraphs, checkTargets, CONTRACT } from './contract/validate.js';
 
@@ -19,7 +19,7 @@ const data = { spells, enemies, anim, layout, text: textKo, camera, stages: { 'f
 const text = (key, args) => { const s = textKo[key] != null ? textKo[key] : key; return args ? s.replace(/\{(\w+)\}/g, (_, k) => args[k] != null ? args[k] : '') : s; };
 
 let cal = null; try { cal = JSON.parse(localStorage.getItem(CAL_KEY) || 'null'); } catch (_) {}
-const flow = createFlow({ data, grade: GRADE, freeze: DEV, cal, ...(qs.has('seed') ? { seed: +qs.get('seed') } : {}) });
+const flow = createFlow({ data, grade: GRADE, freeze: DEV, cal, unlock: qs.get('spells') === 'all' ? 'all' : null, ...(qs.has('seed') ? { seed: +qs.get('seed') } : {}) });
 let savedCal = flow.cal;
 
 // ── 스킨
