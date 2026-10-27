@@ -1,6 +1,6 @@
 // proto 스킨 — 이펙트(예고 바닥·탄·폭발·입자·숫자). 크기·시간은 스냅샷 값 그대로(13 문서 5-4)
 import * as THREE from 'three';
-import { WX } from './actors.js';
+import { WX, textSprite } from './actors.js';
 const add = (c, o = 1) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, blending: THREE.AdditiveBlending, depthWrite: false });
 const hatchTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); g.fillStyle = 'rgba(255,60,80,.35)'; g.fillRect(0, 0, 64, 64);
   g.strokeStyle = 'rgba(255,230,230,.55)'; g.lineWidth = 7; for (let i = -64; i < 128; i += 18) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 64, 64); g.stroke(); }
@@ -13,13 +13,19 @@ export function makeTelegraph(){ const g = new THREE.Group();
 export function poseTelegraph(g, tg, gameT){ const r = tg.size[0], k = Math.max(0, Math.min(1, (gameT - tg.t0) / (tg.t1 - tg.t0))); g.position.set(WX(tg.center[0]), .03, tg.center[2]); g.scale.setScalar(r);
   g.userData.fill.scale.setScalar(Math.max(.01, k)); g.userData.area.material.map.offset.x = performance.now() / 4000; }
 
-export function makeProjectile(p){ const g = new THREE.Group(); const fire = p.kind === 'fireball'; const col = fire ? 0xff8a3d : 0xffe27a;
+export function makeProjectile(p){ if (p.kind === 'acorn') return makeAcorn(p); const g = new THREE.Group(); const fire = p.kind === 'fireball'; const col = fire ? 0xff8a3d : 0xffe27a;
   const core = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), new THREE.MeshBasicMaterial({ color: fire ? 0xffd27a : 0xffffff })); core.scale.setScalar(p.r * .7); g.add(core);
   const glow = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), add(col, .55)); glow.scale.setScalar(p.r * 1.6); g.add(glow);
   const trailN = fire ? 14 : 8, geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(trailN * 3), 3));
   const trail = new THREE.Points(geo, new THREE.PointsMaterial({ color: col, size: fire ? .35 : .18, transparent: true, opacity: .7, blending: THREE.AdditiveBlending, depthWrite: false })); trail.frustumCulled = false;
   g.userData = { trail, hist: [], n: trailN }; return { g, trail }; }
-export function poseProjectile(o, p){ o.g.position.set(WX(p.pos[0]), p.pos[1], p.pos[2]); const u = o.g.userData; u.hist.unshift([WX(p.pos[0]), p.pos[1], p.pos[2]]); if (u.hist.length > u.n) u.hist.pop();
+// 계산 고블린 도토리: 갈색 알 + 모자 + 식 「a+b」 라벨(스냅샷 projectile.label) — 꼬리 없음
+function makeAcorn(p){ const g = new THREE.Group(); const nut = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), new THREE.MeshToonMaterial({ color: 0xb07a3c })); nut.scale.set(p.r * 1.2, p.r * 1.5, p.r * 1.2); g.add(nut);
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshToonMaterial({ color: 0x5c3a1a })); cap.scale.set(p.r * 1.3, p.r * .9, p.r * 1.3); cap.position.y = p.r * .6; g.add(cap);
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3), 3)); const trail = new THREE.Points(geo, new THREE.PointsMaterial({ size: .01, transparent: true, opacity: 0 })); trail.frustumCulled = false;
+  g.userData = { trail, hist: [], n: 1, nut, label: null }; return { g, trail }; }
+export function poseProjectile(o, p){ o.g.position.set(WX(p.pos[0]), p.pos[1], p.pos[2]); const u = o.g.userData; if (p.kind === 'acorn') { u.nut.rotation.x += .25; u.nut.rotation.z += .1; if (p.label && !u.label) { u.label = textSprite(p.label, { scale: .62, color: '#fff4d6', stroke: '#3a2a10' }); u.label.position.y = .45; o.g.add(u.label); } return; }
+  u.hist.unshift([WX(p.pos[0]), p.pos[1], p.pos[2]]); if (u.hist.length > u.n) u.hist.pop();
   const a = o.trail.geometry.attributes.position; for (let i = 0; i < u.n; i++) { const h = u.hist[Math.min(i, u.hist.length - 1)]; a.setXYZ(i, h[0], h[1], h[2]); } a.needsUpdate = true; }
 
 // 입자 풀(크기 고정·재사용) — 품질 배율로 개수만 줄고 판정은 그대로

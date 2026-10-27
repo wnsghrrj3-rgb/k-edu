@@ -1,7 +1,7 @@
 // proto 스킨 — 기준 구현(13 문서 8절). createSkin(ctx) → Skin(contract/skin.d.ts). 에셋 0·절차적.
 // 규칙: 스냅샷은 읽기만 · 판정 크기·시간은 스냅샷 값 그대로 · 모르는 이벤트는 무시 · 엔진·sim import 0
 import * as THREE from 'three';
-import { WX, makePlayer, posePlayer, tipWorld, makeSlime, poseSlime, makeCrystal, poseCrystal, makeGolem, poseGolem, makeRock } from './actors.js';
+import { WX, makePlayer, posePlayer, tipWorld, makeSlime, poseSlime, makeGoblin, poseGoblin, makeCrystal, poseCrystal, makeGolem, poseGolem, makeRock } from './actors.js';
 import { makeTelegraph, poseTelegraph, makeProjectile, poseProjectile, Sparks, makeBlast, makeTelegraphLine, poseTelegraphLine, makeTelegraphRing, poseTelegraphRing, makeIce, poseIce, makeBolt, poseBolt, makeMeteor, poseMeteor } from './vfx.js';
 import { createUI } from './ui.js';
 import { createAudio } from './audio.js';
@@ -46,14 +46,16 @@ export function createSkin(ctx){
         camera.position.set(Math.sin(menuSpin * .5) * 1.2, 2.2, -.8); camera.lookAt(0, 1.2, 4); camera.fov = 50; camera.updateProjectionMatrix(); sparks.update(dt); renderer.render(scene, camera); drawnTg = []; return; }
       const P = s.player; if (playerId !== P.id) { if (player) scene.remove(player); player = makePlayer(P.id); playerId = P.id; scene.add(player); }
       player.rotation.y = 0; posePlayer(player, P, dt, TIMING);
-      sync(enemies, s.enemies, e => { const g = makeSlime(e); scene.add(g); return g; }, drop);
-      for (const e of s.enemies) poseSlime(enemies.get(e.uid), e, dt, camera, s.gameT);
+      sync(enemies, s.enemies, e => { const g = e.kind === 'calc-goblin' ? makeGoblin(e) : makeSlime(e); g.userData.kind = e.kind; scene.add(g); return g; }, drop);
+      for (const e of s.enemies) { const g = enemies.get(e.uid); if (g.userData.kind === 'calc-goblin') poseGoblin(g, e, dt, camera, s.gameT); else poseSlime(g, e, dt, camera, s.gameT); }
       sync(shots, s.projectiles, p => { const o = makeProjectile(p); scene.add(o.g, o.trail); return o; }, o => { scene.remove(o.g, o.trail); o.trail.geometry.dispose(); });
       for (const p of s.projectiles) poseProjectile(shots.get(p.uid), p);
-      sync(crystals, s.crystals, c => { const g = makeCrystal(); scene.add(g); return g; }, drop); for (const c of s.crystals) poseCrystal(crystals.get(c.uid), c, dt);
+      sync(crystals, s.crystals, c => { const g = makeCrystal(c); scene.add(g); return g; }, drop); for (const c of s.crystals) poseCrystal(crystals.get(c.uid), c, dt);
       // 예고 — 반드시 그린다(검사기 checkTelegraphs). 크기·시간 = 스냅샷
       const withTg = s.enemies.filter(e => e.telegraph).map(e => ({ uid: e.uid, tg: e.telegraph }));
-      sync(tgs, withTg, () => { const g = makeTelegraph(); scene.add(g); return g; }, drop); for (const x of withTg) poseTelegraph(tgs.get(x.uid), x.tg, s.gameT); drawnTg = withTg.map(x => x.uid);
+      sync(tgs, withTg, x => { const g = x.tg.shape === 'line' ? makeTelegraphLine() : makeTelegraph(); g.userData.shape = x.tg.shape; scene.add(g); return g; }, drop);
+      for (const x of withTg) { const g = tgs.get(x.uid); if (g.userData.shape !== x.tg.shape) { drop(g); const n = x.tg.shape === 'line' ? makeTelegraphLine() : makeTelegraph(); n.userData.shape = x.tg.shape; scene.add(n); tgs.set(x.uid, n); }
+        const o = tgs.get(x.uid); if (x.tg.shape === 'line') poseTelegraphLine(o, x.tg, s.gameT); else poseTelegraph(o, x.tg, s.gameT); } drawnTg = withTg.map(x => x.uid);
       // 보스 — 몸·예고(여러 개, 모양별)
       const B = s.boss; if (!B && golem) { scene.remove(golem); golem = null; golemUid = null; }
       if (B) { if (golemUid !== B.uid) { if (golem) scene.remove(golem); golem = makeGolem(); golemUid = B.uid; scene.add(golem); } poseGolem(golem, B, dt, s.gameT); }
@@ -100,12 +102,16 @@ export function createSkin(ctx){
       if (ev.target === 'player') { audio.play(ev.blocked ? 'block' : 'hurt'); if (!ev.blocked) { ui.flash(); if (player) player.userData.flash = 1; } if (sc.front) ui.floatAt(sc.x, sc.y - 40, '−' + ev.amount, 'hurt'); }
       else { audio.play(ev.shielded ? 'block' : 'hit', ev.crit); const g = ev.target === golemUid ? golem : enemyAt(ev.target); if (g) g.userData.flash = 1; sparks.burst(pos, ev.crit ? 0xffd45c : 0xffffff, ev.crit ? 18 : 10, 3, 2); if (sc.front) ui.floatAt(sc.x, sc.y - 30, String(ev.amount), ev.crit ? 'crit' : ''); } }
     else if (T === 'block') { audio.play('block'); if (ev.pos) sparks.burst(ev.pos, 0xb28cff, 20, 3, 1); }
-    else if (T === 'dodge') audio.play('dodge');
-    else if (T === 'enemy:spawn') { audio.play('spawn'); if (ev.pos) sparks.burst(ev.pos, 0x9dffc7, 24, 2.5, 2.5); }
+    else if (T === 'dodge') { audio.play('dodge'); if (ev.acorn && player) { const p = player.position; sparks.burst([-p.x, 1.2, p.z], 0xfff1a8, 24, 3, 2); audio.play('crystal'); } }
+    else if (T === 'enemy:spawn') { if (!ev.mini) audio.play('spawn'); if (ev.pos) sparks.burst(ev.pos, ev.mini ? 0xc8ffe0 : 0x9dffc7, ev.mini ? 12 : 24, 2.5, 2.5); }
+    else if (T === 'enemy:split') { if (!ev.prevented) { audio.play('split'); if (ev.pos) { sparks.burst(ev.pos, 0x9dffc7, 40, 3.5, 3); } } else audio.play('right', 0); }
+    else if (T === 'enemy:shoot') { audio.play('throw'); if (ev.from) sparks.burst(ev.from, 0xd9b27a, 8, 2, 1.5); }
+    else if (T === 'empower:on') { audio.play('empower'); ui.toast('toast.empowerOn'); if (ev.pos) { sparks.burst(ev.pos, 0xffd45c, 120, 4, 5); sparks.burst(ev.pos, 0xfff1a8, 60, 3, 4); } fovPulse = 6; kick = .15; }
+    else if (T === 'empower:off') audio.play('fizzle');
     else if (T === 'telegraph:start') audio.play('windup');
     else if (T === 'enemy:die') { audio.play('die'); if (ev.pos) { sparks.burst(ev.pos, 0xffd45c, 50, 4, 3); sparks.burst(ev.pos, 0x9dffc7, 30, 3, 2); } }
-    else if (T === 'crystal:spawn') { audio.play('crystal'); if (ev.pos) sparks.burst(ev.pos, 0x7ae7ff, 30, 2, 2); }
-    else if (T === 'crystal:break') { audio.play('crystal'); if (ev.pos) sparks.burst(ev.pos, 0x7ae7ff, 70, 4, 3); }
+    else if (T === 'crystal:spawn') { audio.play(ev.kind === 'empower' ? 'gold' : 'crystal'); if (ev.pos) sparks.burst(ev.pos, ev.kind === 'empower' ? 0xffd45c : 0x7ae7ff, ev.kind === 'empower' ? 50 : 30, 2.5, 2.5); }
+    else if (T === 'crystal:break') { audio.play(ev.fade ? 'fizzle' : 'crystal'); if (ev.pos && !ev.fade) sparks.burst(ev.pos, ev.kind === 'empower' ? 0xffd45c : 0x7ae7ff, 70, 4, 3); }
     else if (T === 'hint:crystal') { ui.toast('toast.findCrystal'); audio.play('crystal'); }
     else if (T === 'q:open') audio.play('qopen');
     else if (T === 'q:right') { audio.play('right', ev.streak); ui.setMana(ev.mana); if (player) { const p = player.position; sparks.burst([-p.x, 1.6, p.z], 0x58b7ff, 60, 3, 4); sparks.burst([-p.x, 1.6, p.z], 0xffd45c, 40, 3, 5); } }

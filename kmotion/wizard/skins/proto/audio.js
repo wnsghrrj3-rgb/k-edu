@@ -53,6 +53,10 @@ export function createAudio(){
     meteor(){ tone({ f: 60, f2: 30, type: 'sine', d: .9, g: .6 }); noise({ d: 1.0, g: .5, lp: 1600, f2: 80 }); },
     click(){ tone({ f: 880, type: 'sine', d: .06, g: .08 }); },
     calibOk(){ tone({ f: 880, type: 'triangle', d: .2, g: .14 }); tone({ f: 1320, type: 'triangle', d: .25, g: .1, t: .08 }); },
+    split(){ tone({ f: 420, f2: 840, type: 'sine', d: .18, g: .16 }); tone({ f: 420, f2: 630, type: 'sine', d: .2, g: .12, t: .12 }); noise({ d: .18, g: .12, lp: 2500, f2: 500 }); },   // 슬라임 「뾰롱」 둘로
+    throw(){ noise({ d: .14, g: .16, lp: 3500, hp: 700, f2: 300 }); tone({ f: 980, f2: 520, type: 'square', d: .08, g: .05, lp: 2500 }); },   // 고블린 「끽」+ 휙
+    gold(){ [1047, 1319, 1568, 2093].forEach((f, i) => tone({ f, type: 'sine', d: .45, g: .1, t: i * .07 })); },
+    empower(){ tone({ f: 220, f2: 880, type: 'sawtooth', d: .6, g: .14, lp: 2400 }); [523, 659, 784, 1047, 1319].forEach((f, i) => tone({ f, type: 'triangle', d: .35, g: .12, t: .25 + i * .07 })); },
   };
   // 배경음 — 숲 전투: 펜타토닉 아르페지오 + 베이스, 문제 중엔 반으로 느리고 작게
   const SC = [0, 2, 4, 7, 9]; let slow = false;

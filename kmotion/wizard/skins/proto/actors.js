@@ -33,7 +33,10 @@ export function makePlayer(id = 'luna'){
   const orb = new THREE.Mesh(new THREE.SphereGeometry(.35, 16, 12), new THREE.MeshBasicMaterial({ color: 0xff8a3d, transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false })); orb.visible = false; tip.add(orb);
   const shield = new THREE.Mesh(new THREE.SphereGeometry(1.0, 24, 16), new THREE.MeshBasicMaterial({ color: 0xb28cff, transparent: true, opacity: .22, blending: THREE.AdditiveBlending, depthWrite: false })); shield.position.y = .7; shield.visible = false; g.add(shield);
   const ring = new THREE.Mesh(new THREE.RingGeometry(.42, .5, 32), new THREE.MeshBasicMaterial({ color: c.sub, transparent: true, opacity: .55, side: THREE.DoubleSide })); ring.rotation.x = -Math.PI / 2; ring.position.y = .02; g.add(ring);
-  g.userData = { body, head, armL, armR, staff, tip, orb, shield, robe, mats: [main, skin, sub], flash: 0 };
+  // 강화(상황 B) 금빛 기운 — 발밑 금빛 고리 + 몸 둘레 입자 대신 얇은 금빛 구(가벼움)
+  const aura = new THREE.Mesh(new THREE.SphereGeometry(.75, 18, 12), new THREE.MeshBasicMaterial({ color: 0xffd45c, transparent: true, opacity: .16, blending: THREE.AdditiveBlending, depthWrite: false })); aura.position.y = .65; aura.visible = false; g.add(aura);
+  const auraRing = new THREE.Mesh(new THREE.RingGeometry(.55, .7, 32), new THREE.MeshBasicMaterial({ color: 0xffd45c, transparent: true, opacity: .7, side: THREE.DoubleSide, depthWrite: false })); auraRing.rotation.x = -Math.PI / 2; auraRing.position.y = .03; auraRing.visible = false; g.add(auraRing);
+  g.userData = { body, head, armL, armR, staff, tip, orb, shield, robe, aura, auraRing, mats: [main, skin, sub], flash: 0 };
   g.rotation.y = 0; return g;
 }
 const ease = k => k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k);
@@ -63,18 +66,21 @@ export function posePlayer(g, P, dt, timing){
   u.tip.rotation.y += dt * 2;
   u.flash = Math.max(0, u.flash - dt * 4); const fl = u.flash > 0 ? 1 : 0; for (const m of u.mats) m.emissive && m.emissive.setRGB(fl * .8, fl * .1, fl * .1);
   g.visible = !(P.invuln && Math.floor(t * 18) % 2 === 0 && a.lower !== 'A05');
+  u.aura.visible = u.auraRing.visible = !!P.empowered; if (P.empowered) { u.aura.material.opacity = .12 + .08 * Math.sin(t * 7); u.auraRing.rotation.z += dt * 1.5; const k = P.empowerT != null ? P.empowerT : 1; u.auraRing.scale.setScalar(.8 + .4 * k); }
 }
 export function tipWorld(g, out){ return g.userData.tip.getWorldPosition(out); }
 
 export function makeSlime(e){
-  const g = new THREE.Group(); const hue = new THREE.Color().setHSL((parseInt(e.label || '1', 10) * .11) % 1, .65, .6);
+  const g = new THREE.Group(); const big = e.kind === 'big-slime', mini = e.tags && e.tags.includes('mini');
+  const hue = new THREE.Color().setHSL((parseInt(e.label || '1', 10) * .11) % 1, big ? .75 : .65, big ? .5 : mini ? .68 : .6);
   const jelly = new THREE.Mesh(new THREE.SphereGeometry(.45, 24, 16), new THREE.MeshToonMaterial({ color: hue, gradientMap: grad, transparent: true, opacity: .82 })); jelly.position.y = .4; jelly.scale.set(1, .85, 1); jelly.castShadow = true; g.add(jelly);
   const core = new THREE.Mesh(new THREE.IcosahedronGeometry(.16, 0), new THREE.MeshBasicMaterial({ color: 0xfff3c4 })); core.position.y = .38; g.add(core);
   const eyeM = new THREE.MeshBasicMaterial({ color: 0x1b1630 }); for (const s of [-1, 1]) { const ey = new THREE.Mesh(new THREE.SphereGeometry(.05, 8, 6), eyeM); ey.position.set(s * .14, .52, .37); g.add(ey); }
   const num = textSprite(e.label || '', { scale: .55 }); num.position.y = 1.15; g.add(num);
   const bar = new THREE.Group(); const bg = new THREE.Mesh(new THREE.PlaneGeometry(.7, .08), new THREE.MeshBasicMaterial({ color: 0x1b1630, depthTest: false, transparent: true, opacity: .7 })); const fg = new THREE.Mesh(new THREE.PlaneGeometry(.7, .08), new THREE.MeshBasicMaterial({ color: 0x5cf29a, depthTest: false }));
   fg.position.z = .001; bg.renderOrder = fg.renderOrder = 11; bar.add(bg, fg); bar.position.y = .92; g.add(bar);
-  g.userData = { jelly, core, num, bar, fg, flash: 0, mat: jelly.material, hue, lunge: 0 };
+  if (big) { const crown = new THREE.Mesh(new THREE.ConeGeometry(.12, .2, 5), new THREE.MeshBasicMaterial({ color: 0xffd45c })); crown.position.set(0, .82, 0); g.add(crown); num.scale.setScalar(.7); }   // 큰 슬라임: 왕관 + 큰 숫자(가르기 전 n)
+  g.userData = { jelly, core, num, bar, fg, flash: 0, mat: jelly.material, hue, lunge: 0, k: e.scale || 1 };
   return g;
 }
 export function poseSlime(g, e, dt, cam, gameT){
@@ -86,20 +92,56 @@ export function poseSlime(g, e, dt, cam, gameT){
   else if (e.state === 'attack') { sy = 1.05; sx = .9; }
   else if (e.state === 'hurt') { sx = 1.15; sy = .7; }
   else if (e.state === 'dead') { sc = Math.max(0, 1 - e.stateT / .6); g.rotation.y += e.stateT * 12; op = .5; }
-  g.scale.setScalar(sc); u.jelly.scale.set(sx, sy, sx); u.jelly.position.y = y; u.core.position.y = y; u.core.rotation.y += dt * 2;
+  g.scale.setScalar(sc * (e.scale || u.k || 1)); u.jelly.scale.set(sx, sy, sx); u.jelly.position.y = y; u.core.position.y = y; u.core.rotation.y += dt * 2;
   u.flash = Math.max(0, u.flash - dt * 6); const red = e.state === 'windup' ? (Math.sin(t * 18) * .5 + .5) * .5 : 0;
   u.mat.color.copy(u.hue).lerp(new THREE.Color(1, 1, 1), u.flash).lerp(new THREE.Color(1, .2, .2), red); u.mat.opacity = op;
   u.fg.scale.x = Math.max(.001, e.hp / e.hpMax); u.fg.position.x = -.35 * (1 - u.fg.scale.x); u.bar.quaternion.copy(cam.quaternion); u.bar.visible = e.hp < e.hpMax && e.state !== 'dead';
   if (u.num.userData.text !== e.label) { u.num.userData.text = e.label; u.num.userData.set(e.label || ''); }
 }
-export function makeCrystal(){
-  const g = new THREE.Group(); const m = new THREE.Mesh(new THREE.OctahedronGeometry(.42, 0), new THREE.MeshToonMaterial({ color: 0x7ae7ff, gradientMap: grad, emissive: 0x1a6b8a })); m.scale.y = 1.35; g.add(m);
-  const q = textSprite('?', { scale: .5, color: '#fffbe0' }); q.position.y = 0; g.add(q);
-  const ring = new THREE.Mesh(new THREE.RingGeometry(.9, 1.5, 40), new THREE.MeshBasicMaterial({ color: 0x7ae7ff, transparent: true, opacity: .0, side: THREE.DoubleSide, depthWrite: false })); ring.rotation.x = -Math.PI / 2; g.add(ring);
-  g.userData = { m, q, ring }; return g;
+// 수정: math(하늘색 「?」) · empower(금빛 큰 수정 「★」, 07 문서 상황 B — 남은 시간은 고리가 줄어듦)
+export function makeCrystal(c = {}){
+  const em = c.kind === 'empower', col = em ? 0xffd45c : 0x7ae7ff;
+  const g = new THREE.Group(); const m = new THREE.Mesh(new THREE.OctahedronGeometry(em ? .55 : .42, 0), new THREE.MeshToonMaterial({ color: col, gradientMap: grad, emissive: em ? 0x8a5a10 : 0x1a6b8a })); m.scale.y = 1.35; g.add(m);
+  const q = textSprite(em ? '★' : '?', { scale: .5, color: em ? '#fff8d6' : '#fffbe0' }); q.position.y = 0; g.add(q);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(.9, 1.5, 40), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .0, side: THREE.DoubleSide, depthWrite: false })); ring.rotation.x = -Math.PI / 2; g.add(ring);
+  const life = em ? new THREE.Mesh(new THREE.RingGeometry(.62, .7, 40), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .8, side: THREE.DoubleSide, depthWrite: false })) : null; if (life) { life.rotation.x = -Math.PI / 2; g.add(life); }
+  g.userData = { m, q, ring, life, em }; return g;
 }
-export function poseCrystal(g, c, dt){ const u = g.userData, t = performance.now() / 1000; g.position.set(WX(c.pos[0]), c.pos[1] + Math.sin(t * 2 + c.uid) * .15, c.pos[2]); u.m.rotation.y += dt * 1.2;
-  u.ring.position.y = -g.position.y + .03; u.ring.material.opacity = c.near ? .35 + Math.sin(t * 8) * .15 : .08; const s = c.near ? 1.15 : 1; u.m.scale.set(s, 1.35 * s, s); }
+export function poseCrystal(g, c, dt){ const u = g.userData, t = performance.now() / 1000; g.position.set(WX(c.pos[0]), c.pos[1] + Math.sin(t * 2 + c.uid) * .15, c.pos[2]); u.m.rotation.y += dt * (u.em ? 2.2 : 1.2);
+  u.ring.position.y = -g.position.y + .03; u.ring.material.opacity = c.near ? .35 + Math.sin(t * 8) * .15 : .08; const s = (c.near ? 1.15 : 1) * (u.em ? 1 + .05 * Math.sin(t * 6) : 1); u.m.scale.set(s, 1.35 * s, s);
+  if (u.life) { u.life.position.y = -g.position.y + .04; const k = c.life != null ? c.life : 1; u.life.scale.setScalar(.6 + 1.3 * k); u.life.material.opacity = .5 + .4 * (k < .3 ? Math.sin(t * 10) * .5 + .5 : 1); } }
+// 계산 고블린(06 문서 3절) — 초록 작은 몸 + 큰 귀 + 계산판(가슴). 조준 중엔 팔을 뒤로 젖히고, 던질 때 앞으로
+export function makeGoblin(e){
+  const g = new THREE.Group(); const green = toon(0x6fbf4a), dark = toon(0x3f7a2a), skin = toon(0x9bd36f);
+  const body = new THREE.Group(); g.add(body);
+  const torso = withOutline(new THREE.Mesh(new THREE.CapsuleGeometry(.2, .3, 4, 10), green)); torso.position.y = .5; torso.castShadow = true; body.add(torso);
+  const head = withOutline(new THREE.Mesh(new THREE.SphereGeometry(.22, 16, 12), skin)); head.position.y = .9; head.castShadow = true; body.add(head);
+  for (const s of [-1, 1]) { const ear = new THREE.Mesh(new THREE.ConeGeometry(.08, .32, 6), skin); ear.position.set(s * .27, .98, 0); ear.rotation.z = s * -1.25; body.add(ear);
+    const ey = new THREE.Mesh(new THREE.SphereGeometry(.04, 8, 6), new THREE.MeshBasicMaterial({ color: 0x1b1630 })); ey.position.set(s * .08, .92, .2); body.add(ey); }
+  const board = new THREE.Mesh(new THREE.BoxGeometry(.3, .22, .04), toon(0xf1e3bd)); board.position.set(0, .55, .22); body.add(board);
+  const bt = textSprite('+', { scale: .22, color: '#2d2112', stroke: '#fff4d6' }); bt.position.set(0, .55, .26); body.add(bt);
+  const arm = side => { const piv = new THREE.Group(); piv.position.set(side * .25, .68, 0); const a = new THREE.Mesh(new THREE.CapsuleGeometry(.05, .22, 4, 8), green); a.position.y = -.15; piv.add(a); body.add(piv); return piv; };
+  const armL = arm(1), armR = arm(-1); const acorn = new THREE.Mesh(new THREE.SphereGeometry(.09, 10, 8), toon(0x9a6a3a)); acorn.position.y = -.32; armR.add(acorn);
+  for (const s of [-1, 1]) { const leg = new THREE.Mesh(new THREE.CapsuleGeometry(.06, .16, 4, 8), dark); leg.position.set(s * .1, .18, 0); body.add(leg); }
+  const bar = new THREE.Group(); const bg = new THREE.Mesh(new THREE.PlaneGeometry(.7, .08), new THREE.MeshBasicMaterial({ color: 0x1b1630, depthTest: false, transparent: true, opacity: .7 })); const fg = new THREE.Mesh(new THREE.PlaneGeometry(.7, .08), new THREE.MeshBasicMaterial({ color: 0x5cf29a, depthTest: false }));
+  fg.position.z = .001; bg.renderOrder = fg.renderOrder = 11; bar.add(bg, fg); bar.position.y = 1.28; g.add(bar);
+  g.userData = { body, head, armL, armR, acorn, bar, fg, flash: 0, mats: [green, skin, dark] };
+  return g;
+}
+export function poseGoblin(g, e, dt, cam, gameT){
+  const u = g.userData, t = performance.now() / 1000, k = 1 - Math.exp(-dt / .06); g.position.set(WX(e.pos[0]), 0, e.pos[2]); g.rotation.y = -e.yaw;
+  let sc = 1, bob = 0, aR = -.3, aL = .2, lean = 0;
+  if (e.state === 'spawn') sc = Math.min(1, e.stateT / .6);
+  else if (e.state === 'chase' || e.state === 'recover') { bob = Math.abs(Math.sin(t * 9)) * .06; aL = Math.sin(t * 9) * .5; aR = -Math.sin(t * 9) * .5; }
+  else if (e.state === 'windup' && e.telegraph) { const w = Math.min(1, (gameT - e.telegraph.t0) / Math.max(.01, e.telegraph.t1 - e.telegraph.t0)); aR = -.3 - 2.4 * w; lean = -.15 * w; }
+  else if (e.state === 'attack') { aR = 1.2; lean = .25; }
+  else if (e.state === 'hurt') { lean = -.3; }
+  else if (e.state === 'dead') { sc = Math.max(0, 1 - e.stateT / .6); g.rotation.y += e.stateT * 12; }
+  const L = (o, v) => o + (v - o) * k; u.body.position.y = L(u.body.position.y, bob); u.body.rotation.x = L(u.body.rotation.x, lean); u.armR.rotation.x = L(u.armR.rotation.x, aR); u.armL.rotation.x = L(u.armL.rotation.x, aL);
+  u.acorn.visible = e.state !== 'attack' && e.state !== 'recover'; g.scale.setScalar(sc * (e.scale || 1));
+  u.flash = Math.max(0, u.flash - dt * 6); const red = e.state === 'windup' ? (Math.sin(t * 18) * .5 + .5) * .6 : 0; for (const m of u.mats) m.emissive && m.emissive.setRGB(u.flash + red, u.flash * .9, u.flash * .9);
+  u.fg.scale.x = Math.max(.001, e.hp / e.hpMax); u.fg.position.x = -.35 * (1 - u.fg.scale.x); u.bar.quaternion.copy(cam.quaternion); u.bar.visible = e.hp < e.hpMax && e.state !== 'dead';
+}
 
 // ── 보스 「숫자 골렘」(06 문서 5절) — 바위 덩어리 + 몸에 박힌 숫자 돌 + 균열 빛. 보호막 칸 = 둘레를 도는 룬 판
 export function makeGolem(){
