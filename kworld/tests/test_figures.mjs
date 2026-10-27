@@ -97,9 +97,28 @@ run(230); ok(L.leaving && said.some((s) => s.includes('한산도로 간다')), '
 const placedSecrets = []; g.pulse = { placeSecret(s) { if (g.flags.has('secret:' + s.id)) return false; placedSecrets.push(s); return true; } };
 run(40); await wait(20); ok(!fg.live.has('yisunsin') && e.removed.includes('npc_yisunsin') && !g.npcs.yisunsin && flags.has('figure:yisunsin:gone') && !flags.has('figure:yisunsin:here'), '걸어 나가 사라짐 · npcs 지움 · gone');
 run(2); ok(!fg.live.has('yisunsin') && g.placed.length === 1, '다시 안 온다');
+// 138 엔진 — 다시 만남: 떠난 뒤 revisit.on(병자호란 열림)이 맞으면 한 번 더 걸어와 내가 고른 것(wood)을 기억한 한 줄·E 한 줄·8초 뒤 말없이 돌아감·gone 그대로·한 번뿐
+{ const n0 = said.length; flags.add('sit:horan:open'); run(0.5); const L8 = fg.live.get('yisunsin');
+  ok(L8?.revisit === true && flags.has('figure:yisunsin:revisit') && !flags.has('figure:yisunsin:here') && said.slice(n0).some((x) => x.startsWith('📯 낯익은 사람이 지나간다 — 이순신')) && g.npcs.yisunsin.lines.length === 1 && g.npcs.yisunsin.lines[0].text.includes('소나무 내준 집'), '다시 온다 — 「낯익은 사람이 지나간다」·E 한 줄(소나무 내준 집)·here 깃발 없음');
+  run(40); await wait(80); ok(said.slice(n0).some((x) => x === '📯 이순신 — 「소나무 내준 집. 그 배는 바다에 떠 있다.」') && !said.slice(n0).some((x) => x.startsWith('📜')), '닿으면 고른 것을 기억한 한 줄만(📜·세 줄 없음)');
+  const n1 = said.length; run(12); ok(L8.leaving && !said.slice(n1).some((x) => x.includes('한산도로 간다')), '8초 뒤 말없이 돌아간다');
+  L8.ac.path = null; run(1); ok(!fg.live.has('yisunsin') && flags.has('figure:yisunsin:gone') && placedSecrets.length === 1, '사라져도 gone 그대로·relic 또 안 둠'); run(2); ok(!fg.live.has('yisunsin'), '다시 만남은 한 번뿐');
+  ok(fg.figureLine().includes('떠난 뒤 1번은 다시 지나가며 나를 기억했다'), `그 뒤 줄: ${fg.figureLine()}`);
+  ok(fg.revisitLine({ id: 'zz', revisit: { say: { default: 'd' } }, talk: { choices: [{ id: 'a', label: '곡식을 낸다' }, { id: 'b', label: '돌아선다', val: { heart: -1 } }] } }) === 'd', 'revisitLine — 안 골랐으면 default');
+  flags.add('figure:zz:b'); ok(fg.revisitLine({ id: 'zz', revisit: { say: { default: 'd' } }, talk: { choices: [{ id: 'a', label: '곡식을 낸다' }, { id: 'b', label: '돌아선다', val: { heart: -1 } }] } }).includes('돌아섰던 얼굴'), 'revisitLine — 돌아선 선택은 공통 줄'); flags.delete('figure:zz:b');
+  flags.add('figure:zz:a'); ok(fg.revisitLine({ id: 'zz', revisit: { say: { default: 'd' } }, talk: { choices: [{ id: 'a', label: '곡식을 낸다' }] } }) === '다시 보는구나. 그날 — 곡식을 낸다. 잊지 않았다.', 'revisitLine — 따로 없는 선택은 선택지 글로'); }
+// 138 데이터 — 38 전부 revisit{on: 뒤의 꼭 나오는 상황, say.default ≤44자·연도 0, 선택 줄은 실재 선택지}
+{ const why = []; let n = 0; for (const era of ERAS) { const w = read(era, 'world.json'); const L = read(era, w.life); const must = new Set(L.situations.filter((x) => x.must).map((x) => x.id));
+    for (const f of w.figures || []) { const r = f.revisit; if (!r?.on || !r.say?.default) { why.push(`${era}.${f.id}`); continue; } const sid = r.on.split(':')[1]; if (!must.has(sid) || (sid === f.on.split(':')[1] && !r.on.endsWith(':done'))) why.push(`${era}.${f.id} on`);
+      for (const [k, v] of Object.entries(r.say)) { if ((k !== 'default' && k !== 'scorn' && !f.talk.choices.find((c) => c.id === k)) || v.length > 44 || /\d/.test(v)) why.push(`${era}.${f.id}.${k}`); } n++; } }
+  ok(!why.length && n === 38, `138 다시 만남 ${n} — 뒤의 꼭 나오는 상황·한 줄 ≤44·선택 줄 실재${why.length ? ' — ' + why.slice(0, 6).join(' / ') : ''}`); }
+// 138 — 손님 인물에 반 친구 「누가 불렀어?」(friends SHOUT.figure, recvFigure 가 shout) · 「그 뒤」 📯 줄에 손님으로만 본 인물
+{ const fr = fs.readFileSync(path.join(root, 'core/friends.js'), 'utf8'); ok(/figure: \['「누가 불렀어\?」/.test(fr) && fr.includes("this.shout('figure', f.name)") && /REPLY = \{[^\n]*figure: \[/.test(fr), 'friends.js — SHOUT.figure·REPLY.figure·recvFigure 가 shout');
+  const g9 = { ...g, flags: new Set(['status:sangmin', 'figure:sejong:guest']), npcs: {} }; const f9 = new Figures(g9, w.figures); ok(f9.figureLine() === '역사의 인물 — 반 친구의 일로 온 세종을(를) 보았다.', `손님으로만 본 인물: ${f9.figureLine()}`);
+  g9.flags.add('figure:yisunsin:gone'); g9.flags.add('figure:yisunsin:met'); f9.picked.set('yisunsin', { label: 'x' }); ok(f9.figureLine().endsWith('을(를) 만났다. 반 친구의 일로 온 세종을(를) 보았다.'), `만남 + 손님: ${f9.figureLine()}`); }
 ok(placedSecrets.length === 1 && placedSecrets[0].id === 'fig_yisunsin' && placedSecrets[0].at === 'naru' && placedSecrets[0].from === 'figure' && placedSecrets[0].heirloom === '거북선 쇠못' && placedSecrets[0].tag === '📯 이순신이 남긴 것' && flags.has('figure:yisunsin:relic'), `136 떠난 자리(나루)에 남긴 것 ✨: ${placedSecrets[0]?.heirloom} · ${placedSecrets[0]?.tag}`);
-ok(fg.figureLine() === '역사의 인물 — 이순신(배 만드는 나무를 댄다)을(를) 만났다.', `그 뒤 줄(아직 안 챙김): ${fg.figureLine()}`);
-flags.add('secret:fig_yisunsin'); ok(fg.figureLine().endsWith('을(를) 만났다. 지나간 자리에서 거북선 쇠못을(를) 챙겼다.'), `챙기면 그 뒤 줄에 한 토막: ${fg.figureLine()}`);
+ok(fg.figureLine() === '역사의 인물 — 이순신(배 만드는 나무를 댄다)을(를) 만났다. 떠난 뒤 1번은 다시 지나가며 나를 기억했다.', `그 뒤 줄(아직 안 챙김): ${fg.figureLine()}`);
+flags.add('secret:fig_yisunsin'); ok(fg.figureLine().includes('을(를) 만났다. 지나간 자리에서 거북선 쇠못을(를) 챙겼다. 떠난 뒤 1번'), `챙기면 그 뒤 줄에 한 토막: ${fg.figureLine()}`);
 ok(fg.leaveRelic(L) === false, '같은 인물 relic 두 번 안 세움(secret 깃발)');
 // 말 안 걸고 보낸 경우 · 인물 없는 세계
 const g2 = { ...g, flags: new Set(['status:sangmin', 'sit:imjin:open']), npcs: {}, placed: null }; g2.cond = (x) => { const old = fakeLife.g; fakeLife.g = g2; const r = fakeLife.cond(x); fakeLife.g = old; return r; }; g2.flag = (f) => g2.flags.add(f);
@@ -142,4 +161,4 @@ ok(new Figures(g, []).figureLine() === '', '인물 없는 세계는 빈 줄');
   const cm = said3.filter((s) => s.startsWith('👥 가람 — 「저 사람 누구야?')); ok(cm.length === 2 && flags3.has('figure:yisunsin:saw') && flags3.has('figure:sejong:saw') && cm[0].includes('전라좌수사'), `반 친구가 먼저 「저 사람 누구야?」 인물마다 한 번: ${cm[0]}`);
   const g4 = { ...g3, flags: new Set(['status:sangmin', 'sit:imjin:open']), npcs: {}, placed: null, friends: { friends: new Map([['s1', { x: 40, z: 40, body: { userData: { nick: '가람' } } }]]) }, ui: { say: () => {}, isOpen: () => false } }; g4.cond = (x) => { const old = fakeLife.g; fakeLife.g = g4; const r = fakeLife.cond(x); fakeLife.g = old; return r; }; g4.flag = (f) => g4.flags.add(f);
   const f4 = new Figures(g4, w.figures); for (let t = 0; t < 40; t += 0.5) f4.tick(0.5); await wait(60); ok(!g4.flags.has('figure:yisunsin:saw'), '친구가 멀면(8m 밖) 말 안 함'); }
-console.log(`\n133·134·135·136·137 역사의 인물: ${pass} 통과 · ${fail} 실패`); if (fail) process.exit(1);
+console.log(`\n133~138 역사의 인물: ${pass} 통과 · ${fail} 실패`); if (fail) process.exit(1);
