@@ -21,6 +21,8 @@ export interface Snapshot {
     hp: number; hpMax: number; mana: number; manaMax: number;
     charging: { spell: string; ratio: number } | null; blocking: boolean; ducking: boolean; invuln: boolean; hurtT: number; empowered: boolean;
     castReady: boolean; spell: string; spellCost: number; feather: boolean;
+    /** v1.1 마법 5종: spell = 지금 시전하면 나갈 것(마나 100 이면 meteor), main = 장착한 주 마법, spells = 바꿀 수 있는 주 마법 목록 */
+    main: string; spells: string[]; arcana: null | { ratio: number; nullify: number }; shieldReady: boolean;
     outfit: { hat: string; cape: string; staff: string; bolt: string; trail: string | null };
   };
   enemies: Array<{ uid: number; kind: string; pos: Vec3; yaw: number; scale: number; state: EnemyState; stateT: number; hp: number; hpMax: number; label: string | null;
@@ -36,7 +38,8 @@ export interface Snapshot {
     telegraphs: Array<{ shape: 'circle' | 'line' | 'ring'; center: Vec3; size: number[]; yaw: number; t0: number; t1: number; label: string | null; avoid: null | 'duck' }>;
     nameKey: string };                                // line: size=[폭, 길이], yaw 방향 · ring: 전체 범위 — avoid 'duck' = 숙여서 피함
   projectiles: Array<{ uid: number; kind: 'bolt' | 'fireball' | string; pos: Vec3; vel: Vec3; owner: 'player' | number; label: string | null; r: number }>;
-  areas: Array<{ uid: number; kind: 'explosion' | string; pos: Vec3; radius: number; t0: number; t1: number }>;
+  areas: Array<{ uid: number; kind: 'explosion' | 'ice' | 'meteor' | string;   // ice: t0~t1 동안 얼음 폭풍 · meteor: t1 에 떨어짐(그림자 먼저)
+                 pos: Vec3; radius: number; t0: number; t1: number }>;
   /** 수학 수정(v1 추가) — near = 지금 치면 열림 */
   crystals: Array<{ uid: number; kind: 'math' | 'empower'; pos: Vec3; near: boolean }>;
   pickups: Array<{ uid: number; kind: 'mana' | 'gold' | 'shard'; pos: Vec3 }>;
