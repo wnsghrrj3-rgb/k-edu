@@ -3,11 +3,12 @@
 //                       talk:{ text, choices:[{ id, label, showIf, say, val:{heart,craft,grain,rank}, fact }] }, again(두 번째 말 걸면), gone(떠나며) }]  (생성기 핸드오프 kworld/game/gen_figures133.py)
 //  · 조건이 맞으면 story.place 로 사람 몸(관절 인형·look)을 from 자리에 세워 to 구역으로 걸어오고(Actor), 닿으면 📯 한 줄씩(4.6초 간격) + 처음 한 번 📜; g.npcs[id] 에 대사(선택형)를 끼워 넣어 E 로 말을 건다(npcs.json 변경 0).
 //  · 고른 선택지 = 깃발 figure:<id>:<choice> + 값(life.add) + 한마디 + 📜; 두 번째부터는 again 한 줄. stay 초가 지나면(또는 그 사건이 done) 온 길로 걸어 나가 사라진다(gone 한 줄). 깃발 figure:<id>:here / :met / :gone.
+//  · 135: 인물 둘이 같이 와도 한 사람씩 말한다(speaking) · 곁의 반 친구가 먼저 「저 사람 누구야?」(classmateSaw) · 벗은 spark.bond.react fg_* 로 먼저 한마디 · 구석기~청동기는 이름 없는 얼굴(낯선 우두머리·바다 건너 온 사람·거울을 든 사람).
 //  · 「그 뒤」 카드 📯 줄(figureLine): 만난 인물·고른 것. 값은 작게(±1~2), 신분·갈림은 안 바꾼다 — 인물은 그 사건을 「사람의 얼굴」로 보여 줄 뿐. 📜 연도 0·판단 0(개항~현대는 사실만). ?figures=0 끔.
 import { Actor } from './actor.js';
 const GAP = 4600, STAY = 240, LEAVE_R = 60;
 export class Figures {
-  constructor(g, list) { this.g = g; this.list = list || []; this.live = new Map(); this.t = 0; this.met = []; this.picked = new Map(); }
+  constructor(g, list) { this.g = g; this.list = list || []; this.live = new Map(); this.t = 0; this.met = []; this.picked = new Map(); this.speaking = null; }
   area(a) { if (Array.isArray(a)) return { x: a[0], z: a[1] }; const v = this.g.e?.areas?.get(a); return v ? { x: v.x, z: v.z } : null; }
   tick(dt) {
     const g = this.g; if (!g.p?.pos || g.restoring || g.story?.cutsceneOn) return; this.t += dt; if ((this.tk = (this.tk || 0) + dt) < 0.5) return; this.tk = 0;
@@ -24,9 +25,16 @@ export class Figures {
     g.sound?.play?.(f.sound || 'horn', 0.4); g.ui?.say?.(`📯 멀리서 누가 온다 — ${f.title || ''} ${f.name}.`, 4200);
     ac.goTo([stop.x, stop.z], { anim: 'walk', then: 'idle', speed: f.speed || 2.0 }).then(() => { L.there = true; ac.face([g.p.pos.x, g.p.pos.z]); ac.syncBox?.(); this.speak(L); });
   }
+  /** 135: 인물 둘이 같이 와도 한 사람씩 말한다 — this.speaking 이 비어야 📯 줄을 시작하고, 세 줄·📜가 끝나면 비운다(기다리는 쪽은 1.5초마다 다시 본다) */
   speak(L) {
-    const g = this.g, f = L.f; const next = () => { if (L.leaving || !this.live.has(f.id)) return; const s = f.say?.[L.said]; if (!s) { if (!g.flags.has('figure:' + f.id + ':fact') && f.fact) { g.flags.add('figure:' + f.id + ':fact'); g.ui?.say?.('📜 ' + f.fact, 6200); } return; } L.said++; if (g.ui?.isOpen?.()) { setTimeout(next, 1500); return; } g.ui?.say?.(`📯 ${f.name} — 「${s}」`, GAP - 300); setTimeout(next, g.story?.fast ? 5 : GAP); };
-    next();
+    const g = this.g, f = L.f; const done = () => { if (this.speaking === L) this.speaking = null; };
+    const next = () => { if (L.leaving || !this.live.has(f.id)) { done(); return; } if (this.speaking && this.speaking !== L) { setTimeout(next, g.story?.fast ? 5 : 1500); return; } const s = f.say?.[L.said]; if (!s) { if (!g.flags.has('figure:' + f.id + ':fact') && f.fact) { g.flags.add('figure:' + f.id + ':fact'); g.ui?.say?.('📜 ' + f.fact, 6200); } done(); return; } if (g.ui?.isOpen?.()) { setTimeout(next, 1500); return; } this.speaking = L; L.said++; g.ui?.say?.(`📯 ${f.name} — 「${s}」`, GAP - 300); setTimeout(next, g.story?.fast ? 5 : GAP); };
+    this.classmateSaw(L); next();
+  }
+  /** 135: 곁(8m)에 반 친구가 있으면 그 친구가 먼저 「저 사람 누구야?」 한 줄(인물마다 한 번, 값 없음). 벗(bond)은 spark.bond.react fg_* 규칙으로 따로 말한다 */
+  classmateSaw(L) {
+    const g = this.g, f = L.f, fr = g.friends?.friends; if (!fr?.size || !g.p?.pos || g.flags.has('figure:' + f.id + ':saw')) return;
+    for (const o of fr.values()) { if (Math.hypot(o.x - g.p.pos.x, o.z - g.p.pos.z) > 8) continue; g.flags.add('figure:' + f.id + ':saw'); setTimeout(() => g.ui?.say?.(`👥 ${o.body?.userData?.nick || '친구'} — 「저 사람 누구야? ${f.title || ''}…」`, 3600), g.story?.fast ? 5 : 1600); return; }
   }
   lines(f) {
     const g = this.g, t = f.talk; if (!t) return [{ text: f.say?.[0] || '…' }];
@@ -46,7 +54,7 @@ export class Figures {
     const g = this.g, f = L.f; L.leaving = true; const from = this.area(f.from) || { x: L.it.obj.position.x, z: L.it.obj.position.z + LEAVE_R };
     g.ui?.say?.(`📯 ${f.name} — 「${f.gone || '…갈 길이 멀다.'}」`, 4200); L.ac.goTo([from.x, from.z], { anim: 'walk', then: 'idle', speed: 2.0 });
   }
-  remove(L) { const g = this.g, f = L.f; this.live.delete(f.id); g.e?.removeInteractable?.(L.it.name); if (g.story?.actors) delete g.story.actors[f.id]; delete g.npcs[f.id]; g.flags.delete('figure:' + f.id + ':here'); g.flag('figure:' + f.id + ':gone'); }
+  remove(L) { const g = this.g, f = L.f; this.live.delete(f.id); if (this.speaking === L) this.speaking = null; g.e?.removeInteractable?.(L.it.name); if (g.story?.actors) delete g.story.actors[f.id]; delete g.npcs[f.id]; g.flags.delete('figure:' + f.id + ':here'); g.flag('figure:' + f.id + ':gone'); }
   /** 「그 뒤」 카드 📯 한 줄 — 이 시대에 만난 인물과 고른 것. 못 만났으면 빈 글(인물이 온 적 있으면 「지나쳤다」) */
   figureLine() {
     const g = this.g; const came = this.list.filter((f) => g.flags.has('figure:' + f.id + ':gone') || g.flags.has('figure:' + f.id + ':here'));
