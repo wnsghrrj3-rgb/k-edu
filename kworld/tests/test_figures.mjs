@@ -1,4 +1,4 @@
-// 역사의 인물 층(133) — 데이터 열한 시대(인물 11: 구역·사건·선택지·연도 0·값 ±2) + 엔진(조선 전기 이순신): 사건 열림 → 걸어 들어옴 → 📯 세 줄·📜 → E 선택지 값·깃발 → again → 떠남·gone → 「그 뒤」 줄
+// 역사의 인물 층(133·134) — 데이터 열한 시대(인물 19 = 133 큰 사건 11 + 134 평화 사건 8: 구역·사건·선택지·연도 0·값 ±2) + 엔진(조선 전기 이순신): 사건 열림 → 걸어 들어옴 → 📯 세 줄·📜 → E 선택지 값·깃발 → again → 떠남·gone → 「그 뒤」 줄
 import * as THREE from 'three';
 import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -23,7 +23,16 @@ for (const era of ERAS) {
   }
   ok(!why.length, `${era}: 인물 ${figs.length}${figs.length ? '(' + figs.map((f) => f.name).join('·') + ')' : ''}${why.length ? ' — ' + why.join(' / ') : ''}`);
 }
-ok(n === 11 && new Set(names).size === 11, `인물 11, 이름 다 다름 (${n})`);
+ok(n === 19 && new Set(names).size === 19, `인물 19(133 큰 사건 11 + 134 평화 사건 8), 이름 다 다름 (${n})`);
+// 134 — 떠난 뒤 마을 사람 한마디(spark gaze.rules fg_*)·만난 칭호(spark.titles fg_*)가 인물마다 하나씩, 실제 깃발에 맞물림
+{ const why = []; let nr = 0, nt = 0;
+  for (const era of ERAS) { const w = read(era, 'world.json'); for (const f of w.figures || []) { const r = (w.spark?.gaze?.rules || []).find((x) => x.id === 'fg_' + f.id); const t = (w.spark?.titles || []).find((x) => x.id === 'fg_' + f.id);
+    if (!r || r.if !== 'figure:' + f.id + ':gone' || !r.once || !r.text) why.push(`${era}.${f.id} 소문`); else nr++;
+    if (!t || t.on !== 'figure:' + f.id + ':met' || !t.name.endsWith(' 만난 사람') || !t.name.startsWith(f.name) || !t.line) why.push(`${era}.${f.id} 칭호`); else nt++; } }
+  ok(!why.length && nr === 19 && nt === 19, `134 소문 ${nr}·칭호 ${nt} — 인물마다 하나씩${why.length ? ' — ' + why.join(' / ') : ''}`); }
+{ const j = read('joseon-life', 'world.json'); ok(j.figures.length === 2 && j.figures[1].id === 'sejong' && j.figures[1].on === 'sit:hangeul:open' && j.figures[1].to === 'seodang', '134 조선 전기 둘째 인물 = 세종(한글 열리면 서당으로)');
+  const sl = read('silla-life', 'world.json').figures; ok(sl.length === 3 && sl.find((f) => f.id === 'wonhyo')?.if === 'nation:silla' && sl.find((f) => f.id === 'daejoyeong')?.if === 'nation:balhae', '134 통일신라·발해는 나라마다(원효 silla · 대조영 balhae)');
+  const jl = read('joseon-late-life', 'world.json').figures; ok(jl.length === 3 && jl.map((f) => f.on).includes('sit:silhak:open') && jl.map((f) => f.on).includes('sit:jangsi:open'), '134 조선 후기 정약용(실학)·김홍도(장시) 서로 다른 사건'); }
 const sam = read('samguk-life', 'world.json').figures; ok(sam.length === 4 && sam.every((f) => /^nation:(goguryeo|baekje|silla|gaya)$/.test(f.if)), '삼국·가야는 나라마다 한 사람(if nation:)');
 const gameSrc = fs.readFileSync(path.join(root, 'core/game.js'), 'utf8');
 ok(gameSrc.includes("this.figures = new Figures(this, this.world.figures)") && gameSrc.includes('if (this.figures) this.figures.tick(dt);') && gameSrc.includes('if (this.figures) this.figures.onFlag(f);'), 'game.js — 생성·tick·onFlag 세 줄');
