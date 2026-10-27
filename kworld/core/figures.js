@@ -4,9 +4,11 @@
 //  · 조건이 맞으면 story.place 로 사람 몸(관절 인형·look)을 from 자리에 세워 to 구역으로 걸어오고(Actor), 닿으면 📯 한 줄씩(4.6초 간격) + 처음 한 번 📜; g.npcs[id] 에 대사(선택형)를 끼워 넣어 E 로 말을 건다(npcs.json 변경 0).
 //  · 고른 선택지 = 깃발 figure:<id>:<choice> + 값(life.add) + 한마디 + 📜; 두 번째부터는 again 한 줄. stay 초가 지나면(또는 그 사건이 done) 온 길로 걸어 나가 사라진다(gone 한 줄). 깃발 figure:<id>:here / :met / :gone.
 //  · 135: 인물 둘이 같이 와도 한 사람씩 말한다(speaking) · 곁의 반 친구가 먼저 「저 사람 누구야?」(classmateSaw) · 벗은 spark.bond.react fg_* 로 먼저 한마디 · 구석기~청동기는 이름 없는 얼굴(낯선 우두머리·바다 건너 온 사람·거울을 든 사람).
+//  · 136: 셋째 사람 7(준왕·선덕여왕·문익점·장영실·김만덕·안창호·전태일) · 벗이 고른 선택을 두고 한마디(spark.bond.react fgc_*) · 떠난 자리에 남긴 것(relic → pulse 숨은 것, 🎁 from:'figure', leaveRelic).
 //  · 「그 뒤」 카드 📯 줄(figureLine): 만난 인물·고른 것. 값은 작게(±1~2), 신분·갈림은 안 바꾼다 — 인물은 그 사건을 「사람의 얼굴」로 보여 줄 뿐. 📜 연도 0·판단 0(개항~현대는 사실만). ?figures=0 끔.
 import { Actor } from './actor.js';
 const GAP = 4600, STAY = 240, LEAVE_R = 60;
+const iga = (n) => { const o = n.charCodeAt(n.length - 1); return o >= 0xac00 && o <= 0xd7a3 && (o - 0xac00) % 28 ? '이' : '가'; };   // 이/가
 export class Figures {
   constructor(g, list) { this.g = g; this.list = list || []; this.live = new Map(); this.t = 0; this.met = []; this.picked = new Map(); this.speaking = null; }
   area(a) { if (Array.isArray(a)) return { x: a[0], z: a[1] }; const v = this.g.e?.areas?.get(a); return v ? { x: v.x, z: v.z } : null; }
@@ -54,12 +56,19 @@ export class Figures {
     const g = this.g, f = L.f; L.leaving = true; const from = this.area(f.from) || { x: L.it.obj.position.x, z: L.it.obj.position.z + LEAVE_R };
     g.ui?.say?.(`📯 ${f.name} — 「${f.gone || '…갈 길이 멀다.'}」`, 4200); L.ac.goTo([from.x, from.z], { anim: 'walk', then: 'idle', speed: 2.0 });
   }
-  remove(L) { const g = this.g, f = L.f; this.live.delete(f.id); if (this.speaking === L) this.speaking = null; g.e?.removeInteractable?.(L.it.name); if (g.story?.actors) delete g.story.actors[f.id]; delete g.npcs[f.id]; g.flags.delete('figure:' + f.id + ':here'); g.flag('figure:' + f.id + ':gone'); }
+  /** 136: 인물이 지나간 자리에 남는 것 — 떠난 뒤 to 구역 곁에 ✨ 하나(pulse 숨은 것 틀, id fig_<id>, from 'figure' → 챙기면 🎁 집에 내려오는 것 상자에, n/3 셈엔 안 들어감). f.relic {name,title,body,fact} 데이터가 있을 때만 */
+  leaveRelic(L) {
+    const g = this.g, f = L.f, r = f.relic; if (!r?.name || !g.pulse?.placeSecret || g.flags.has('secret:fig_' + f.id)) return false;
+    const s = { id: 'fig_' + f.id, at: f.to, dx: r.dx ?? 1.4, dz: r.dz ?? 1.1, tag: `📯 ${f.name}${iga(f.name)} 남긴 것`, title: r.title, body: r.body, fact: r.fact, heirloom: r.name, from: 'figure', seeR: r.seeR || 22, button: '챙긴다' };
+    const ok = g.pulse.placeSecret(s); if (ok) g.flags.add('figure:' + f.id + ':relic'); return ok;
+  }
+  remove(L) { const g = this.g, f = L.f; this.live.delete(f.id); this.leaveRelic(L); if (this.speaking === L) this.speaking = null; g.e?.removeInteractable?.(L.it.name); if (g.story?.actors) delete g.story.actors[f.id]; delete g.npcs[f.id]; g.flags.delete('figure:' + f.id + ':here'); g.flag('figure:' + f.id + ':gone'); }
   /** 「그 뒤」 카드 📯 한 줄 — 이 시대에 만난 인물과 고른 것. 못 만났으면 빈 글(인물이 온 적 있으면 「지나쳤다」) */
   figureLine() {
     const g = this.g; const came = this.list.filter((f) => g.flags.has('figure:' + f.id + ':gone') || g.flags.has('figure:' + f.id + ':here'));
     if (!came.length) return ''; const met = came.filter((f) => g.flags.has('figure:' + f.id + ':met'));
-    if (!met.length) return `역사의 인물 — ${came.map((f) => f.name).join('·')}이(가) 마을에 왔지만 말을 걸지 않았다. 역사는 지나가는 사람의 얼굴로도 온다.`;
-    return `역사의 인물 — ${met.map((f) => { const c = this.picked.get(f.id); return `${f.name}${c ? '(' + c.label + ')' : ''}`; }).join(' · ')}을(를) 만났다.`;
+    if (!met.length) { const kept = came.filter((f) => g.flags.has('secret:fig_' + f.id)).map((f) => f.relic?.name).filter(Boolean); return `역사의 인물 — ${came.map((f) => f.name).join('·')}이(가) 마을에 왔지만 말을 걸지 않았다.${kept.length ? ` 지나간 자리에서 ${kept.join('·')}을(를) 챙겼다.` : ''} 역사는 지나가는 사람의 얼굴로도 온다.`; }
+    const kept = came.filter((f) => g.flags.has('secret:fig_' + f.id)).map((f) => f.relic?.name).filter(Boolean);
+    return `역사의 인물 — ${met.map((f) => { const c = this.picked.get(f.id); return `${f.name}${c ? '(' + c.label + ')' : ''}`; }).join(' · ')}을(를) 만났다.${kept.length ? ` 지나간 자리에서 ${kept.join('·')}을(를) 챙겼다.` : ''}`;
   }
 }

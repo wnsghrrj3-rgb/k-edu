@@ -114,8 +114,12 @@ export class Pulse {
   nameOf(id) { const n = this.g.npcs?.[id]?.name; return (n || id).replace(/\s*\(.*?\)\s*$/, ''); }
   // ---------- 숨은 것 ----------
   placeSecrets() {
-    const g = this.g; const e = g.e; if (!e.scene?.add) return; for (const s of this.cfg.secrets || []) { if (g.flags.has('secret:' + s.id)) continue; const base = this.area(s.at); if (!base) continue; const x = base.x + (s.dx || 0), z = base.z + (s.dz || 0); const y = e.groundY ? e.groundY(x, z) : 0;
-      const grp = new THREE.Group(); const m = new THREE.MeshBasicMaterial({ color: 0xa8f0c0, transparent: true, opacity: 0.85 }); for (let i = 0; i < 5; i++) { const p = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 5), m); p.position.set((Math.random() - .5) * 0.8, 0.35 + Math.random() * 0.5, (Math.random() - .5) * 0.8); p.userData.ph = Math.random() * 6; grp.add(p); } const l = new THREE.PointLight(0x9fe0b0, 0.7, 4, 2); l.position.y = 0.6; grp.add(l); grp.position.set(x, y, z); e.scene.add(grp); this.secrets.push({ s, grp, x, z }); }
+    for (const s of this.cfg.secrets || []) this.placeSecret(s);
+  }
+  /** 숨은 것 한 점을 세운다 — 136: 인물이 떠난 자리에 남긴 것(figures.js)도 이 길로 들어온다(s.from = 'figure'). 돌려준다: 세웠나 */
+  placeSecret(s) {
+    const g = this.g; const e = g.e; if (!e.scene?.add) return false; { if (g.flags.has('secret:' + s.id)) return false; const base = this.area(s.at); if (!base) return false; const x = base.x + (s.dx || 0), z = base.z + (s.dz || 0); const y = e.groundY ? e.groundY(x, z) : 0;
+      const grp = new THREE.Group(); const m = new THREE.MeshBasicMaterial({ color: 0xa8f0c0, transparent: true, opacity: 0.85 }); for (let i = 0; i < 5; i++) { const p = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 5), m); p.position.set((Math.random() - .5) * 0.8, 0.35 + Math.random() * 0.5, (Math.random() - .5) * 0.8); p.userData.ph = Math.random() * 6; grp.add(p); } const l = new THREE.PointLight(0x9fe0b0, 0.7, 4, 2); l.position.y = 0.6; grp.add(l); grp.position.set(x, y, z); e.scene.add(grp); this.secrets.push({ s, grp, x, z }); } return true;
   }
   tickSecrets(dt) {
     const g = this.g; const p = g.p.pos; this.st = (this.st || 0) + dt;
@@ -125,7 +129,7 @@ export class Pulse {
   findSecret(sc) {
     const g = this.g; const s = sc.s; sc.found = true; g.e.scene.remove?.(sc.grp); g.flags.add('secret:' + s.id); g.p.enabled = false; g.sound?.play?.('secret', 0.5);
     const deltas = []; if (s.craft) { g.life?.add('craft', s.craft); deltas.push(`✋ 솜씨 +${s.craft}`); } if (s.heart) { g.life?.add('heart', s.heart); deltas.push(`🤝 인심 +${s.heart}`); } if (s.give) { for (const k of [].concat(s.give)) g.inventory.push(k); g.renderInv?.(); }
-    if (s.heirloom) { Pulse.keep(g, { id: s.id, name: s.heirloom, tag: s.tag || null, fact: s.fact || null }); deltas.push(`🎁 물려줄 것 — ${s.heirloom}`); }
+    if (s.heirloom) { Pulse.keep(g, { id: s.id, name: s.heirloom, tag: s.tag || null, fact: s.fact || null, from: s.from || null }); deltas.push(`🎁 물려줄 것 — ${s.heirloom}`); }
     g.ui.open(`<div class="chk life secret"><div class="tag">✨ ${esc(s.tag || '숨어 있던 것')}</div><h3>${esc(s.title || '')}</h3>${(s.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}${deltas.length ? `<p class="delta">${deltas.join(' · ')}</p>` : ''}${s.fact ? `<div class="facts"><div>📜 <b>실제</b> ${esc(s.fact)}</div></div>` : ''}</div>`, [{ label: s.button || '챙긴다', primary: true, onClick: () => { g.ui.close(); g.p.enabled = true; if (s.journal && g.story) g.story.journal(s.journal); g.flag('found:' + s.id); g.save?.touch(); } }]);
   }
   /** 물려줄 것 한 점을 이 기기 kworld_heirlooms 에 적는다(같은 id 는 한 번) + heirloom:<id> 깃발. from 은 출처(없으면 숨은 것, 'bond' 면 벗의 선물 — n/3 셈엔 안 들어간다). 돌려준다: 새로 적었나 */
