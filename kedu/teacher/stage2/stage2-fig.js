@@ -3031,6 +3031,116 @@
   }
   Object.assign(PARTS, { mvpt, mvfig, mvrow, mvchr, mvpat });
   }
+  // ══ 211차(2026-10-28) 5학년 2학기 수학 1단원 「수의 범위와 어림하기」 부품 — 자기주도 원문 부품 라이브러리(rangeLine·rangeRow·valueChips·dialRow·numLineZoom·rangeTable·estRow)를 2세대로 옮김 ══
+  //   rgl(수의 범위 수직선 — 줄 여럿 · ● 포함 / ○ 포함 안 함 · 반직선·사이) · vch(값 카드 줄 — ○·△표) · dial(어림 카드 — 구하려는 자리 밑줄·아래 자리 회색 · 부품이 스스로 다시 셈 data-calc)
+  //   nlz(어림 전후 수직선 — up 올림 · down 버림 · near 반올림) · rtb(범위 표) · est(어림셈 표)
+  {
+    const mf1 = (n) => String(Math.round(n * 10) / 10);
+    const C5 = { band: '#FF7A2F', deep: '#C2551A', tgt: '#1F4A9E', low: '#9AA6B8', pick: '#2E7D4F', emph: '#E0413C', soft: '#6B7C93' };
+    const RD_PL = { '만': 4, '천': 3, '백': 2, '십': 1, '일': 0, '소수 첫째': -1, '소수 둘째': -2, '소수 셋째': -3 };
+    const rdSplit = (n) => { const s = String(n), i = s.indexOf('.'); return i < 0 ? [s, ''] : [s.slice(0, i), s.slice(i + 1)]; };
+    // 어림 다시 셈 — BigInt 로 자리 그대로(부동소수 없음)
+    function rdCalc(n, method, place) {
+      const pe = RD_PL[place]; if (pe == null) throw new Error('dial: 모르는 자리 ' + place);
+      const [ip, dp] = rdSplit(n), d = Math.max(dp.length, -pe, 0);
+      const sc = BigInt(ip + dp.padEnd(d, '0')), unit = 10n ** BigInt(pe + d);
+      let q = sc / unit; const r = sc % unit;
+      if (method === '올림') { if (r > 0n) q += 1n; } else if (method === '반올림') { if (r * 2n >= unit) q += 1n; } else if (method !== '버림') throw new Error('dial: 모르는 어림 ' + method);
+      const v = q * unit, D = 10n ** BigInt(d), I = v / D, F = v % D;
+      if (pe >= 0) return String(I);
+      return String(I) + '.' + String(F).padStart(d, '0').slice(0, -pe);
+    }
+    const t5 = (x, y, t, sz, col, wt, anc, cls) => txt(x, y, t, sz, col, wt, anc).replace('<text ', '<text ' + (cls ? 'class="' + cls + '" ' : ''));
+    // ── rgl ──
+    function rglRow(o, y0) {
+      const from = +o.from, to = +o.to, step = +(o.step || 1); if (!(to > from) || Math.abs(((to - from) / step) - Math.round((to - from) / step)) > 1e-9) throw new Error('rgl: 눈금');
+      const X0 = 70, X1 = 690, Y = y0 + 44, px = (v) => X0 + (X1 - X0) * (v - from) / (to - from), has = (v) => v !== undefined && v !== null && v !== '';
+      const lo = has(o.lo) ? +o.lo : null, hi = has(o.hi) ? +o.hi : null; let g = '';
+      if (lo !== null || hi !== null) { const a = lo !== null ? px(lo) : X0 - 26, b = hi !== null ? px(hi) : X1 + 26; g += '<line class="rgl-band" data-a="' + (lo === null ? '' : lo) + '" data-b="' + (hi === null ? '' : hi) + '" x1="' + mf1(a) + '" y1="' + Y + '" x2="' + mf1(b) + '" y2="' + Y + '" stroke="' + C5.band + '" stroke-width="11" stroke-linecap="round"/>'; }
+      g += '<line x1="' + (X0 - 30) + '" y1="' + Y + '" x2="' + (X1 + 30) + '" y2="' + Y + '" stroke="' + INK + '" stroke-width="3.5"/><path d="M' + (X1 + 30) + ' ' + (Y - 8) + 'l16 8l-16 8Z" fill="' + INK + '"/><path d="M' + (X0 - 30) + ' ' + (Y - 8) + 'l-16 8l16 8Z" fill="' + INK + '"/>';
+      const picks = (o.picks || []).map(Number), n = Math.round((to - from) / step);
+      for (let i = 0; i <= n; i++) { const v = +(from + i * step).toFixed(6), x = px(v), on = picks.indexOf(v) >= 0;
+        g += '<line x1="' + mf1(x) + '" y1="' + (Y - 11) + '" x2="' + mf1(x) + '" y2="' + (Y + 11) + '" stroke="' + INK + '" stroke-width="3"/>' + t5(mf1(x), Y + 42, String(v), on ? 28 : 24, on ? C5.deep : INK, on ? 900 : 800, null, 'rgl-t' + (on ? ' on' : '')).replace('<text ', '<text data-v="' + v + '" ');
+        if (on) g += '<circle class="rgl-pick" data-v="' + v + '" cx="' + mf1(x) + '" cy="' + Y + '" r="9" fill="' + C5.deep + '"/>'; }
+      const pt = (v, inc) => '<circle class="rgl-pt" data-v="' + v + '" data-inc="' + (inc ? 1 : 0) + '" cx="' + mf1(px(v)) + '" cy="' + Y + '" r="13" fill="' + (inc ? C5.deep : '#fff') + '" stroke="' + C5.deep + '" stroke-width="4.5"/>';
+      if (lo !== null) g += pt(lo, !!o.loInc); if (hi !== null) g += pt(hi, !!o.hiInc);
+      const cap = o.ask ? '?' : (o.cap || ''), H = cap ? 128 : 92;
+      if (cap) g += t5(380, Y + 80, cap, o.ask ? 30 : 24, o.ask ? ORANGE : INK, 900, null, 'rgl-cap');
+      return { s: '<g class="rgl-r" data-range="' + from + ',' + to + ',' + step + ',' + (lo === null ? '' : lo) + ',' + (lo === null ? '' : o.loInc ? 1 : 0) + ',' + (hi === null ? '' : hi) + ',' + (hi === null ? '' : o.hiInc ? 1 : 0) + '" data-ask="' + (o.ask ? 1 : 0) + '">' + g + '</g>', h: H };
+    }
+    function rgl(o) {
+      const rows = o.rows || [o]; let s = '', y = 6; rows.forEach(r => { const R = rglRow(r, y); s += R.s; y += R.h + 8; });
+      if (o.note) { s += t5(380, y + 22, o.note, 22, C5.soft, 800, null, 'rgl-note'); y += 40; }
+      return svgWrap(s, 'fig-rgl', '0 0 760 ' + Math.round(y));
+    }
+    // ── vch ──
+    function vch(o) {
+      const it = o.items || [], n = it.length; if (!n) return ''; const per = n > 6 ? Math.ceil(n / 2) : n, gap = 14, cw = Math.min(170, (740 - gap * (per - 1)) / per), ch = 74;
+      let s = '', y = 8; const rows = Math.ceil(n / per);
+      for (let r = 0; r < rows; r++) { const row = it.slice(r * per, r * per + per), tw = row.length * cw + (row.length - 1) * gap, x0 = (760 - tw) / 2;
+        row.forEach((c, i) => { const mk = o.ask ? '' : (c.mk || ''), x = x0 + i * (cw + gap), fs = Math.min(30, Math.floor((cw - 16) / Math.max(1, String(c.v).length) * 1.6));
+          s += '<g class="vch-c" data-v="' + esc(c.v) + '" data-mk="' + mk + '"><rect x="' + mf1(x) + '" y="' + y + '" width="' + mf1(cw) + '" height="' + ch + '" rx="14" fill="' + (mk === 'o' ? '#FFF1E6' : mk === 't' ? '#EEF4FD' : '#fff') + '" stroke="' + (mk === 'o' ? C5.band : mk === 't' ? '#5B8DEF' : '#B9C4D2') + '" stroke-width="' + (mk ? 4 : 2.5) + '"/>' + t5(mf1(x + cw / 2), y + ch / 2 + fs * 0.36, String(c.v), fs, INK, 900);
+          if (mk === 'o') s += '<circle cx="' + mf1(x + cw - 14) + '" cy="' + (y + 14) + '" r="11" fill="none" stroke="' + C5.band + '" stroke-width="4"/>';
+          if (mk === 't') s += '<path d="M' + mf1(x + cw - 14) + ' ' + (y + 3) + 'l11 19h-22Z" fill="none" stroke="#3E6FCF" stroke-width="3.5"/>';
+          s += '</g>'; });
+        y += ch + 12; }
+      if (o.note) { s += t5(380, y + 22, o.note, 22, C5.soft, 800); y += 40; }
+      return svgWrap(s, 'fig-vch', '0 0 760 ' + Math.round(y + 2)).replace('<svg ', '<svg data-chips="' + esc(it.map(c => c.v).join('|')) + '" data-marks="' + it.map(c => (o.ask ? '' : c.mk || '')).join('|') + '" data-ask="' + (o.ask ? 1 : 0) + '" ');
+    }
+    // ── dial ──
+    function dialCard(o, y0) {
+      const n = String(o.n), pe = RD_PL[o.place]; if (pe == null) throw new Error('dial: 자리 ' + o.place);
+      const [ip, dp] = rdSplit(n); if (pe >= ip.length) throw new Error('dial: 자리가 수보다 큼 ' + n); if (pe < 0 && -pe > dp.length) throw new Error('dial: 소수 자리 모자람 ' + n);
+      const calc = rdCalc(n, o.method, o.place), H = 112; let s = '';
+      s += '<rect x="10" y="' + y0 + '" width="740" height="' + (H - 10) + '" rx="16" fill="' + (o.bad ? '#FFF0F0' : '#F7FAFE') + '" stroke="' + (o.bad ? C5.emph : '#B9C4D2') + '" stroke-width="' + (o.bad ? 3.5 : 2.5) + '"' + (o.bad ? ' stroke-dasharray="10 6"' : '') + '/>';
+      s += t5(30, y0 + 32, o.method + '하여 ' + o.place + (/^소수/.test(o.place) ? ' 자리까지' : '의 자리까지'), 22, C5.soft, 900, 'start');
+      const chars = []; for (let i = 0; i < ip.length; i++) chars.push([ip[i], ip.length - 1 - i]); if (dp) { chars.push(['.', 'dot']); for (let i = 0; i < dp.length; i++) chars.push([dp[i], -(i + 1)]); }
+      const cw = 34, x0 = 40, yb = y0 + 84;
+      chars.forEach(([c, e], i) => { const x = x0 + i * cw + (c === '.' ? -6 : 0) + 17, tg = e === pe, lw = e !== 'dot' && e < pe;
+        s += t5(x, yb, c, 46, tg ? C5.tgt : lw ? C5.low : INK, 900, null, 'dial-d' + (tg ? ' tgt' : lw ? ' low' : '')).replace('<text ', '<text data-e="' + e + '" ');
+        if (tg) s += '<line x1="' + (x - 14) + '" y1="' + (yb + 8) + '" x2="' + (x + 14) + '" y2="' + (yb + 8) + '" stroke="' + C5.tgt + '" stroke-width="5"/>'; });
+      const ax = x0 + chars.length * cw + 30; s += t5(ax + 22, yb - 2, '→', 40, C5.band, 900);
+      const res = o.ask ? '?' : String(o.result == null ? calc : o.result), rx = ax + 64, rw = Math.max(120, String(res).length * 28 + 36);
+      s += '<rect x="' + rx + '" y="' + (y0 + 40) + '" width="' + rw + '" height="58" rx="12" fill="' + (o.ask ? '#FFF7EF' : o.bad ? '#fff' : '#EAF6EF') + '" stroke="' + (o.ask ? ORANGE : o.bad ? C5.emph : C5.pick) + '" stroke-width="3"' + (o.ask ? ' stroke-dasharray="8 5"' : '') + '/>' + t5(rx + rw / 2, y0 + 83, res, o.ask ? 40 : 40, o.ask ? C5.deep : o.bad ? C5.emph : C5.pick, 900, null, 'dial-res');
+      if (o.bad) s += t5(Math.min(730, rx + rw + 26), y0 + 82, '✗', 40, C5.emph, 900);
+      return { s: '<g class="dial-c" data-round="' + esc(n) + '|' + o.method + '|' + o.place + '|' + (o.ask ? '' : esc(String(o.result == null ? calc : o.result))) + '|' + (o.bad ? 1 : 0) + '" data-calc="' + calc + '">' + s + '</g>', h: H };
+    }
+    function rdial(o) {
+      let s = '', y = 4; (o.items || []).forEach(c => { const R = dialCard(c, y); s += R.s; y += R.h; });
+      if (o.note) { s += t5(380, y + 20, o.note, 22, C5.soft, 800); y += 36; }
+      return svgWrap(s, 'fig-rdial', '0 0 760 ' + Math.round(y + 4));
+    }
+    // ── nlz ──
+    function nlz(o) {
+      const from = +o.from, to = +o.to, step = +(o.step || to - from), at = +o.at; if (!(to > from) || (to - from) % step) throw new Error('nlz: 눈금'); if (!(at > from && at < to)) throw new Error('nlz: at');
+      const mode = o.mode || 'near'; if (['up', 'down', 'near'].indexOf(mode) < 0) throw new Error('nlz: 갈래');
+      const X0 = 80, X1 = 680, Y = 104, px = (v) => X0 + (X1 - X0) * (v - from) / (to - from); let s = '';
+      s += '<line x1="' + X0 + '" y1="' + Y + '" x2="' + X1 + '" y2="' + Y + '" stroke="' + INK + '" stroke-width="3.5"/>';
+      if (o.mid != null) s += '<line x1="' + mf1(px(o.mid)) + '" y1="' + (Y - 18) + '" x2="' + mf1(px(o.mid)) + '" y2="' + (Y + 18) + '" stroke="' + C5.soft + '" stroke-width="3" stroke-dasharray="6 5"/>' + t5(mf1(px(o.mid)), Y + 46, String(o.mid), 22, C5.soft, 800, null, 'nlz-mid').replace('<text ', '<text data-v="' + o.mid + '" ');
+      const pick = o.ask ? null : (o.pick == null ? null : +o.pick);
+      for (let v = from; v <= to; v += step) { const x = px(v), on = pick === v; s += '<line x1="' + mf1(x) + '" y1="' + (Y - 15) + '" x2="' + mf1(x) + '" y2="' + (Y + 15) + '" stroke="' + INK + '" stroke-width="3"/>' + t5(mf1(x), Y + 48, String(v), on ? 30 : 25, on ? C5.pick : INK, 900, null, on ? 'nlz-pick' : 'nlz-t').replace('<text ', '<text data-v="' + v + '" ');
+        if (on) s += '<rect x="' + mf1(x - 46) + '" y="' + (Y + 18) + '" width="92" height="42" rx="10" fill="none" stroke="' + C5.pick + '" stroke-width="3"/>'; }
+      const ax = px(at); s += '<g class="nlz-at" data-v="' + at + '"><path d="M' + mf1(ax) + ' ' + (Y - 6) + 'l-13 -24h26Z" fill="' + C5.emph + '"/>' + t5(mf1(ax), Y - 38, String(at), 28, C5.emph, 900) + '</g>';
+      if (pick != null) { const bx = px(pick); s += '<path class="nlz-go" d="M' + mf1(ax) + ' ' + (Y - 70) + ' Q' + mf1((ax + bx) / 2) + ' ' + (Y - 100) + ' ' + mf1(bx) + ' ' + (Y - 22) + '" fill="none" stroke="' + C5.pick + '" stroke-width="3.5" stroke-dasharray="7 5"/>'; }
+      let H = Y + 66; if (o.cap) { s += t5(380, H + 12, o.cap, 23, INK, 900); H += 38; } if (o.note) { s += t5(380, H + 12, o.note, 21, C5.soft, 800); H += 34; }
+      return svgWrap(s, 'fig-nlz', '0 0 760 ' + Math.round(H)).replace('<svg ', '<svg data-zoom="' + from + ',' + to + ',' + step + ',' + at + ',' + (pick == null ? '' : pick) + ',' + mode + '" ');
+    }
+    // ── rtb · est (HTML 표) ──
+    function rtb(o) {
+      const ask = o.ask || null, cells = (o.rows || []).map((r, ri) => r.map((c, ci) => (ask && ask[0] === ri && ask[1] === ci ? '?' : String(c))));
+      let h = '<table class="pt rtb5">' + (o.head ? '<tr>' + o.head.map(t => '<th>' + esc(t) + '</th>').join('') + '</tr>' : '');
+      cells.forEach((r, ri) => { h += '<tr' + (o.hi === ri ? ' class="hi"' : '') + '>' + r.map(c => '<td class="' + (c === '?' ? 'q' : o.hi === ri ? 'hi' : '') + '">' + esc(c) + '</td>').join('') + '</tr>'; });
+      return '<div class="fig-vert fig-ptable fig-rtb5" data-rtable="' + esc(cells.map(r => r.join('|')).join(';')) + '">' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + h + '</table>' + (o.note ? '<div class="fig-cap">' + esc(o.note) + '</div>' : '') + '</div>';
+    }
+    function est(o) {
+      let h = '<table class="pt rtb5"><tr><th>재료</th><th>단위당 가격</th><th>어림한 가격</th><th>구입 수량</th><th>어림셈</th></tr>';
+      (o.rows || []).forEach(r => { h += '<tr data-est="' + esc(r.name) + '|' + r.price + '|' + r.est + '|' + r.cnt + '|' + r.sum + '"><td>' + esc(r.name) + '</td><td class="n">' + r.price + '</td><td class="n hi">' + r.est + '</td><td class="n">' + r.cnt + '</td><td class="n">' + r.sum + '</td></tr>'; });
+      h += '<tr><td colspan="4">어림셈한 구입 비용의 합</td><td class="n ' + (o.ask ? 'q' : 'sum') + '">약 ' + (o.ask ? '?' : o.total) + '</td></tr></table>';
+      return '<div class="fig-vert fig-ptable fig-rtb5 fig-est" data-total="' + (o.ask ? '' : o.total) + '">' + h + (o.note ? '<div class="fig-cap">' + esc(o.note) + '</div>' : '') + '</div>';
+    }
+    Object.assign(PARTS, { rgl, vch, rdial, nlz }); Object.assign(HTML_PARTS, { rtb, est });
+    global.KT2_RDCALC = rdCalc;
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
