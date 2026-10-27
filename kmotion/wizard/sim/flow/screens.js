@@ -9,13 +9,13 @@ import { STAGE_BY_GRADE } from '../input/config.js';
 import { createBus } from '../core/events.js';
 import { deepFreeze } from '../core/snapshot.js';
 
-export function createFlow({ data, grade = 1, seed = Date.now() % 100000, freeze = false, cal = null }){
+export function createFlow({ data, grade = 1, seed = Date.now() % 100000, freeze = false, cal = null, unlock = null }){
   const bus = createBus();
   const f = { screen: 'S01', mode: 'keyboard', char: 'luna', grade, game: null, calib: null, cal, wi: null, kb: new KeyInput(), t: 0, preview: null, cursor: null, seed };
   const ctrl = STAGE_BY_GRADE(grade);
   function newGame(){
     f.wi = new WizardInput({ stage: ctrl, cal: f.mode === 'mouse' ? null : f.cal, uMaxAuto: f.mode === 'mouse' ? .55 : null });
-    f.game = createGame({ data, seed: f.seed, grade, charId: f.char, inputMode: f.mode === 'keyboard' ? 'keyboard' : 'camera', freeze, mastery: f.game ? f.game.qe.m : null });
+    f.game = createGame({ data, seed: f.seed, grade, charId: f.char, inputMode: f.mode === 'keyboard' ? 'keyboard' : 'camera', freeze, unlock, mastery: f.game ? f.game.qe.m : null });
     for (const ch of [f.wi.charge, f.kb.charge]) { ch.canCharge = () => f.game.canCast(); Object.defineProperty(ch, 'chargeTime', { get: () => f.game.chargeTime(), configurable: true }); }
     f.screen = 'S08'; bus.emit('screen', { from: 'S17', to: 'S08' });
   }
@@ -29,6 +29,7 @@ export function createFlow({ data, grade = 1, seed = Date.now() % 100000, freeze
     else if (id === 'resume' && f.game) f.game.paused = null;
     else if (id === 'pause' && f.game) f.game.paused = f.game.paused ? null : 'user';
     else if (id === 'recalib') { f.calib = new Calib(); f.screen = 'S17'; f.game = null; }
+    else if (id === 'spell' && f.game) f.game.setSpell(p.id);
     else if (id === 'select' && f.game) f.game.input.push({ type: 'SELECT', t: f.t * 1000, via: 'mouse', value: { slot: p.slot } });
     else if (id === 'attack' && f.game) f.game.input.push({ type: 'ATTACK', t: f.t * 1000, via: 'mouse', value: { side: 'R', zone: p.zone != null ? p.zone : 1, power: 1 } });
   };

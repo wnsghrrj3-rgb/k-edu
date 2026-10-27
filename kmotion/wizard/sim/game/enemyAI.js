@@ -20,7 +20,7 @@ export function stepEnemy(g, e, dt){
       // 부채꼴 자리(플레이어 앞쪽 ±fan) — 뒤에서 오는 공격 0
       const n = Math.max(1, g.aliveCount), a = (n === 1 ? 0 : (e.slot / (n - 1) - .5) * 2) * E.fanDeg * Math.PI / 180;
       const tx = P.pos[0] + Math.sin(a) * cfg.keep, tz = P.pos[2] + Math.cos(a) * cfg.keep;
-      const mx = tx - e.pos[0], mz = tz - e.pos[2], md = Math.hypot(mx, mz), sp = cfg.speed * B.speed;
+      const mx = tx - e.pos[0], mz = tz - e.pos[2], md = Math.hypot(mx, mz), sp = cfg.speed * B.speed * (e.slowUntil > g.gameT ? e.slowMul : 1);
       if (md > .05) { const s = Math.min(md, sp * dt); e.pos[0] += mx / md * s; e.pos[2] += mz / md * s; }
       face();
       const ready = g.gameT - e.lastAtk >= cfg.cycle && dist < cfg.keep + .4;

@@ -4,8 +4,8 @@ import { createFlow } from '../../sim/flow/screens.js';
 import { loadData } from './load.mjs';
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? +process.argv[i + 1] : d; };
 
-export function playOne({ data, seed, acc = .75, react = .4, grade = 1, maxT = 600, record = null }){
-  const f = createFlow({ data, grade, seed }); f.action('start', { mode: 'keyboard', seed });
+export function playOne({ data, seed, acc = .75, react = .4, grade = 1, maxT = 600, record = null, unlock = process.env.UNLOCK || null }){
+  const f = createFlow({ data, grade, seed, unlock }); f.action('start', { mode: 'keyboard', seed });
   const g = f.game, dt = 1 / 60; let nextAtk = 0, plan = [], seenTele = new Set(), qAnswerAt = null, castAt = null, lastQ = null, minHp = 100, hash = 0, slowSum = 0;
   const push = (type, value = {}) => g.input.push({ type, t: f.t * 1000, via: 'key', value });
   while (f.t < maxT) {

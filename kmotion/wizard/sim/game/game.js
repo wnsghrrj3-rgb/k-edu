@@ -7,12 +7,13 @@ import { deepFreeze, r3, v3 } from '../core/snapshot.js';
 import { clamp } from '../core/math.js';
 import { damage, steer } from './combat.js';
 import { makeEnemy, stepEnemy, hurtEnemy, separate } from './enemyAI.js';
+import { castSpell, stepMagic, shieldFilter, currentSpell, MAIN } from './magic.js';
 import { makeBoss, stepBoss, bossMul, bossAfterHit, sealBroken, bossSnapshot } from './boss.js';
 import { QuestionEngine } from '../learn/questionEngine.js';
 import { Mastery } from '../learn/mastery.js';
 import { Selector } from '../input/selector.js';
 
-export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge = null, inputMode = 'keyboard', mastery = null, freeze = false }){
+export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge = null, inputMode = 'keyboard', mastery = null, freeze = false, unlock = null }){
   const bus = createBus(), rng = createRng(seed);
   const bandName = GAME.gradeBand(grade), band = GAME.grade[bandName];
   const stage = data.stages['forest-1-1'], timing = data.anim, spells = data.spells, layout = data.layout;
@@ -26,12 +27,12 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     player: null, enemies: [], projectiles: [], areas: [], crystals: [], pickups: [], toast: null, trauma: 0,
     zone: null, waveIdx: 0, waveT: 0, tokensUsed: 0, tokenQ: [], aliveCount: 0, questionOpen: false, q: null, cursor: null, inputMode,
     helpWindup: 1, deaths: 0, stats: null, input: [], spell: 'fireball', empower: 0, streak: 0, lastQClose: -99, lastCrystalT: 0, regenT: 0, endT: 0,
-    emit: (type, d) => bus.emit(type, d),
+    emit: (type, d) => bus.emit(type, d), data, unlocked: new Set(unlock === 'all' ? ['fireball', 'ice', 'lightning', 'shield', 'meteor'] : ['fireball'].concat(unlock || [])), meteorOff: false,
   };
   function resetRun(){
     const P = GAME.player;
     g.player = { id: charId, pos: [0, 0, 0], yaw: 0, vel: [0, 0, 0], targetX: 0, hp: P.hp, hpMax: P.hp, mana: P.mana, manaMax: P.manaMax, atk: P.atk, def: P.def,
-      invulnUntil: 0, dodge: null, dodgeReady: 0, duck: false, block: false, charging: null, castReady: 0, hurtUntil: 0, feather: band.feather,
+      invulnUntil: 0, cd: {}, arcana: null, blockT0: 0, dodge: null, dodgeReady: 0, duck: false, block: false, charging: null, castReady: 0, hurtUntil: 0, feather: band.feather,
       anim: { lower: 'A01', upper: null, t0: 0, ut0: 0, phaseLoop: 0 }, pending: [], outfit: { hat: charId, cape: charId, staff: charId, bolt: charId, trail: null } };
     g.enemies = []; g.projectiles = []; g.areas = []; g.crystals = []; g.pickups = []; g.tokensUsed = 0; g.tokenQ = []; g.waveIdx = 0; g.waveT = 0;
     g.zoneIdx = 0; g.zone = stage.zones[0]; g.boss = null; g.screen = 'S08'; g.paused = null; g.slow = 1; g.slowTo = 1; g.q = null; g.questionOpen = false; g.lastCrystalT = 0; g.lastQClose = -99; g.endT = 0;
@@ -60,6 +61,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     const P = g.player; if (g.gameT < P.invulnUntil || g.screen !== 'S08' && g.screen !== 'S08Q') return false;
     let { amount } = damage(rng, { atk: atk * band.dmg * mul, def: P.def, canCrit: false });
     const blocked = P.block; if (blocked) amount = Math.max(1, Math.round(amount * GAME.player.blockDmg));
+    const sf = shieldFilter(g, amount); amount = sf.amount; if (sf.used && amount === 0) { g.emit('hit', { target: 'player', amount: 0, crit: false, weak: false, pos: v3([P.pos[0], 1, P.pos[2]]), blocked: true, arcana: true }); return true; }
     P.hp = Math.max(0, P.hp - amount); g.trauma = Math.min(GAME.shake.max, g.trauma + GAME.shake.hurt * (blocked ? .4 : 1));
     if (blocked) g.emit('block', { pos: v3([P.pos[0], 1, P.pos[2]]), perfect: false });
     else { P.hurtUntil = g.gameT + GAME.player.hurtLock; setLower('A12'); P.pending = P.pending.filter(x => x.kind !== 'attack'); }
@@ -102,12 +104,14 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     g.projectiles.push(p); g.emit('attack:fire', { uid: p.uid, from: v3(from), dir: v3([p.vel[0] / sp.speed, 0, p.vel[2] / sp.speed]), power: strong ? 1 : .5, side });
   }
   function fireSpell(aim){
-    const P = g.player, sp = spells[g.spell]; if (P.mana < sp.mp) { g.emit('spell:fizzle', { spell: g.spell, reason: 'mana' }); return; }
-    P.mana -= sp.mp; P.castReady = g.gameT + sp.cd; const from = tipPos();
+    const P = g.player, id = P.castId || currentSpell(g), sp = spells[id]; P.castId = null; if (P.mana < sp.mp) { g.emit('spell:fizzle', { spell: id, reason: 'mana' }); return; }
+    P.mana -= sp.mp; P.cd[id] = g.gameT + sp.cd; P.castReady = g.gameT + Math.min(1, sp.cd);
+    if (id !== 'fireball') { castSpell(g, id, aim, magicApi); return; }
+    const from = tipPos();
     const tgt = aim === 'auto' || !aim ? pickCluster(sp.radius) : pickTarget(aim === 'L' ? 0 : aim === 'R' ? 2 : 1);
     const dir = tgt ? [tgt.pos[0] - from[0], 0, tgt.pos[2] - from[2]] : [0, 0, 1]; const n = Math.hypot(dir[0], dir[2]) || 1;
     const p = { uid: nid(), kind: 'fireball', pos: from, vel: [dir[0] / n * sp.speed, 0, dir[2] / n * sp.speed], target: tgt && tgt.uid, homing: sp.homing, r: sp.hit, left: sp.range, owner: 'player', hitSet: [] };
-    g.projectiles.push(p); g.emit('spell:cast', { spell: g.spell, uid: p.uid, pos: v3(from), dir: v3([p.vel[0] / sp.speed, 0, p.vel[2] / sp.speed]) });
+    g.projectiles.push(p); g.emit('spell:cast', { spell: 'fireball', uid: p.uid, pos: v3(from), dir: v3([p.vel[0] / sp.speed, 0, p.vel[2] / sp.speed]) });
   }
   function explode(p){
     const sp = spells.fireball, c = p.pos, emp = g.empower > g.gameT ? 1.5 : 1;
@@ -117,6 +121,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
       if (e.uid === p.target && d <= sp.radius + e.r || p.hitSet.includes(e.uid)) hitEnemy(e, sp.dmg.direct + sp.dmg.splash, 'spell', emp);
       else if (d <= sp.radius + e.r * .5) hitEnemy(e, sp.dmg.splash, 'spell', emp); }
   }
+  const magicApi = { hitEnemy: (e, m, k) => hitEnemy(e, m, k), pickTarget: z => pickTarget(z), pickCluster: r => pickCluster(r), tipPos: () => tipPos(), nid: () => nid(), hurtShieldSeal: b => sealBroken(g, b) };
   function hitEnemy(e, mult, kind, emp = 1){
     if (e.state === 'dead') return;
     if (e.boss) return hitBoss(e, mult, kind, emp);
@@ -224,17 +229,19 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
       case 'MOVE': P.targetX = clamp(v.u, -1, 1) * GAME.player.xMax; break;
       case 'DODGE': if (g.gameT >= P.dodgeReady && !P.block) { const D = GAME.player.dodge; P.dodge = { from: P.pos[0], to: clamp(P.pos[0] + v.dir * D.dist, -GAME.player.xMax, GAME.player.xMax), t0: g.gameT }; P.invulnUntil = Math.max(P.invulnUntil, g.gameT + D.invuln); P.dodgeReady = g.gameT + D.cd; P.targetX = P.dodge.to; setLower('A05'); g.emit('dodge', { dir: v.dir, perfect: false }); if (P.charging) P.charging.ratio *= .5; } break;
       case 'DUCK': P.duck = !!v.on; if (v.on) setLower('A06'); break;
-      case 'BLOCK': P.block = !!v.on; if (v.on) { P.charging = null; setUpper('A11'); } else if (P.anim.upper === 'A11') P.anim.upper = null; break;
+      case 'BLOCK': P.block = !!v.on; P.blockT0 = v.on ? g.gameT : 0; if (v.on) { P.charging = null; setUpper('A11'); } else if (P.anim.upper === 'A11') P.anim.upper = null; break;
       case 'ATTACK': { if (P.block || P.charging || hurt) break; const c = crystalNear(); if (c) { openQuestion(c); break; }
         const strong = g.empower > g.gameT, id = strong ? 'A08' : 'A07'; setUpper(id); P.pending.push({ kind: 'attack', at: g.gameT + mark(id, 'fire'), zone: v.zone, side: v.side }); break; }
-      case 'CHARGE': if (v.start && !g.canCast()) { handle({ type: 'NEED_MANA', value: {} }); break; } if (v.start) { P.charging = { spell: g.spell, ratio: 0 }; setUpper('A09'); g.emit('spell:charge', { spell: g.spell, ratio: 0, pos: v3(tipPos()) }); } else if (P.charging) P.charging.ratio = v.p; break;
+      case 'CHARGE': if (v.start && !g.canCast()) { handle({ type: 'NEED_MANA', value: {} }); break; } if (v.start) { P.castId = currentSpell(g); P.charging = { spell: P.castId, ratio: 0 }; setUpper('A09'); g.emit('spell:charge', { spell: g.spell, ratio: 0, pos: v3(tipPos()) }); } else if (P.charging) P.charging.ratio = v.p; break;
       case 'CAST': if (P.charging) { P.charging = null; setUpper('A10'); P.pending.push({ kind: 'spell', at: g.gameT + mark('A10', 'fire'), aim: v.aim }); } break;
-      case 'FIZZLE': if (P.charging) { P.charging = null; if (P.anim.upper === 'A09') P.anim.upper = null; g.emit('spell:fizzle', { spell: g.spell }); g.toast = { key: 'toast.fizzle', t: g.t }; } break;
+      case 'FIZZLE': if (P.charging) { P.charging = null; if (P.anim.upper === 'A09') P.anim.upper = null; g.emit('spell:fizzle', { spell: P.castId || g.spell }); P.castId = null; g.toast = { key: 'toast.fizzle', t: g.t }; } break;
       case 'NEED_MANA': g.toast = { key: 'toast.findCrystal', t: g.t }; g.emit('hint:crystal', { uids: g.crystals.map(c => c.uid) }); if (!g.crystals.length) spawnCrystal(); break;
     }
   }
-  g.canCast = () => { const P = g.player, sp = spells[g.spell]; return g.screen === 'S08' && !g.paused && P.mana >= sp.mp && g.gameT >= P.castReady && !P.block; };
-  g.chargeTime = () => spells[g.spell].cast;
+  g.canCast = () => { const P = g.player, id = currentSpell(g), sp = spells[id]; return g.screen === 'S08' && !g.paused && P.mana >= sp.mp && g.gameT >= P.castReady && g.gameT >= (P.cd[id] || 0) && !P.block; };
+  g.chargeTime = () => spells[currentSpell(g)].cast;
+  g.setSpell = id => { if (!MAIN.includes(id) || !g.unlocked.has(id)) return false; g.spell = id; g.emit('spell:equip', { spell: id }); return true; };
+  g.spellList = () => MAIN.filter(k => g.unlocked.has(k));
 
   // ── 한 틱
   g.step = function(dt, events = []){
@@ -257,8 +264,10 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     separate(g.enemies.filter(e => !e.boss));
     if (g.boss && g.boss.state === 'dead') g.boss.stateT += 0;   // 보스 시체는 승리까지 남김
     g.enemies = g.enemies.filter(e => e.boss || !(e.state === 'dead' && e.stateT > GAME.enemy.dieT));
-    stepProjectiles(gdt);
-    g.areas = g.areas.filter(a => g.gameT < a.t1);
+    stepProjectiles(gdt); stepMagic(g, magicApi);
+    { const P = g.player, sh = spells.shield; if (P.block && P.blockT0 && g.unlocked.has('shield') && g.screen === 'S08' && !g.endT && g.gameT - P.blockT0 >= sh.hold && P.mana >= sh.mp && g.gameT >= (P.cd.shield || 0) && !(P.arcana && g.gameT < P.arcana.until)) {
+        P.blockT0 = 0; P.mana -= sh.mp; P.cd.shield = g.gameT + sh.cd; castSpell(g, 'shield', null, magicApi); } }
+    g.areas = g.areas.filter(a => a.kind === 'meteor' ? !a.hit : g.gameT < a.t1);
     // 마나 자연 회복: 1~2학년만 5초마다 +1
     if (band.regen && g.screen === 'S08') { g.regenT += gdt; if (g.regenT >= band.regen) { g.regenT = 0; g.player.mana = Math.min(g.player.manaMax, g.player.mana + 1); } }
   };
@@ -309,7 +318,8 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
       player: { id: P.id, pos: v3(P.pos), yaw: 0, vel: v3(P.vel), anim: { lower: a.lower, upper: a.upper, phase: r3(lowerPhase), upperPhase: a.upper ? r3(a.upper === 'A09' ? (P.charging ? P.charging.ratio : 1) : ph(a.upper, a.ut0)) : 0, speed: r3(Math.abs(P.vel[0]) / GAME.player.vMax) },
         hp: P.hp, hpMax: P.hpMax, mana: Math.round(P.mana), manaMax: P.manaMax, charging: P.charging ? { spell: P.charging.spell, ratio: r3(P.charging.ratio) } : null,
         blocking: P.block, ducking: P.duck, invuln: g.gameT < P.invulnUntil, hurtT: r3(Math.max(0, P.hurtUntil - g.gameT)), empowered: g.empower > g.gameT,
-        castReady: g.gameT >= P.castReady, spell: g.spell, spellCost: spells[g.spell].mp, outfit: P.outfit, feather: P.feather },
+        castReady: g.gameT >= P.castReady && g.gameT >= (P.cd[currentSpell(g)] || 0), spell: currentSpell(g), main: g.spell, spells: g.spellList(), spellCost: spells[currentSpell(g)].mp,
+        arcana: P.arcana && g.gameT < P.arcana.until ? { ratio: r3((P.arcana.until - g.gameT) / P.arcana.t), nullify: P.arcana.nullify } : null, shieldReady: g.unlocked.has('shield') && P.mana >= spells.shield.mp && g.gameT >= (P.cd.shield || 0), outfit: P.outfit, feather: P.feather },
       enemies: g.enemies.filter(e => !e.boss).map(e => ({ uid: e.uid, kind: e.kind, pos: v3(e.pos), yaw: r3(e.yaw), scale: e.scale, state: e.state, stateT: r3(e.stateT), hp: e.hp, hpMax: e.hpMax, label: e.label,
         telegraph: e.telegraph ? { shape: e.telegraph.shape, center: v3(e.telegraph.center), size: e.telegraph.size, t0: r3(e.telegraph.t0), t1: r3(e.telegraph.t1) } : null, tags: e.tags })),
       boss: bossSnapshot(g, g.boss, r3, v3),

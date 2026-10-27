@@ -35,7 +35,7 @@ export function stepBoss(g, b, dt){
     case 'chase': {
       b.yaw = Math.atan2(dx, dz);
       const want = [P.pos[0] * .6, 0, Math.min(B.zMax, P.pos[2] + B.keep)];
-      const mx = want[0] - b.pos[0], mz = want[2] - b.pos[2], md = Math.hypot(mx, mz), sp = ph(b).speed * g.band.speed;
+      const mx = want[0] - b.pos[0], mz = want[2] - b.pos[2], md = Math.hypot(mx, mz), sp = ph(b).speed * g.band.speed * (b.slowUntil > g.gameT ? b.slowMul : 1);
       if (md > .1) { const s = Math.min(md, sp * dt); b.pos[0] += mx / md * s; b.pos[2] += mz / md * s; }
       // 크리스털 문제 중엔 새 공격을 시작하지 않는다(봉인 문제 중엔 계속 — 06 4절)
       const crystalQ = g.q && g.q.kind !== 'seal';

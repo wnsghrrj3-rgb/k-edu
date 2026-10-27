@@ -11,7 +11,7 @@ export const GAME = {
     high: { windup: 1.0, dmg: 1.0, speed: 1.0, maxEnemies: 8, tokens: 3, gaugeGrade: 1.0, readMs: 1200, holdMs: 450, regen: 0, gaugeHitMul: 1, feather: false },
   },
   gradeBand: g => g <= 2 ? 'low' : g <= 4 ? 'mid' : 'high',
-  enemy: { spawnT: .6, recover: 1.0, backoff: .8, tokenReturn: .5, sep: .9, stagger: { bolt: .15, spell: .4 }, dieT: .6, fanDeg: 45, bounds: { x: 5.2, zMin: 0.5, zMax: 16 } },
+  enemy: { spawnT: .6, recover: 1.0, backoff: .8, tokenReturn: .5, sep: .9, stagger: { bolt: .15, spell: .4, tick: .05 }, dieT: .6, fanDeg: 45, bounds: { x: 5.2, zMin: 0.5, zMax: 16 } },
   crystal: { firstAt: 2, every: 18, max: 2, reach: 1.5, sideMin: 2.5, sideMax: 3.5, z: 1.2, y: 1.2, approachAfter: 25, approachV: .5 },
   question: { slowTo: .15, slowIn: .2, slowOut: .25, gaugeBase: 12, gaugeSetting: { off: Infinity, slow: 1.5, normal: 1, fast: .65 },
               mana: { right: 25, hint1: 20, hint2: 15, wrong: 5, streak: [0, 0, 3, 6, 9, 12] }, rightShow: .9, wrongExplain: 2.0, revealShow: 1.0 },
