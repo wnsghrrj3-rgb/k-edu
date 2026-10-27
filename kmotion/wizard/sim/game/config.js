@@ -16,6 +16,8 @@ export const GAME = {
   question: { slowTo: .15, slowIn: .2, slowOut: .25, gaugeBase: 12, gaugeByType: { calc1: 12, calc2: 16, pick: 10, word1: 24 },   // 07 문서 5절 유형별 기본 초
               hint: { autoLowS: 6, holdMs: 500 },   /* 07 문서 8절 — 1~2학년은 6초 손이 안 움직이면 부엉이가 먼저 · 힌트 구슬 유지 시간 */ gaugeSetting: { off: Infinity, slow: 1.5, normal: 1, fast: .65 },
               mana: { right: 25, hint1: 20, hint2: 15, wrong: 5, streak: [0, 0, 3, 6, 9, 12] }, rightShow: .9, wrongExplain: 2.0, revealShow: 1.0 },
+  // 레벨(04 문서 2-1·11 문서 1절): 필요 경험치 60×L^1.35, 최대 30, 레벨당 HP +4·ATK +.5·DEF +.3 · 레벨 차이 ×3% 상한 ±25%
+  level: { max: 30, need: L => Math.round(60 * Math.pow(L, 1.35)), hpPer: 4, atkPer: .5, defPer: .3, xpQ: 5, xpClear: 50, diffPct: .03, diffCap: .25 },
   shake: { hit: .05, hurt: .25, decay: 1.4, max: .7 },
   // 보스(06 문서 4·5절) — 1~2학년은 공격 주기 ×1.25 추가(5절 학년 배율 예)
   boss: { introT: 2.4, phaseT: 1.5, keep: 3.4, zMax: 12, dashT: .45, recover: .9, shieldMul: .1, weakMul: 1.5, weakT: 8, lowCycleMul: 1.25, sealCd: 1.2, heal: 20 },

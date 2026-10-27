@@ -9,13 +9,14 @@ import { STAGE_BY_GRADE } from '../input/config.js';
 import { createBus } from '../core/events.js';
 import { deepFreeze } from '../core/snapshot.js';
 
-export function createFlow({ data, grade = 1, seed = Date.now() % 100000, freeze = false, cal = null, unlock = null }){
+export function createFlow({ data, grade = 1, seed = Date.now() % 100000, freeze = false, cal = null, unlock = null, progress = null }){
   const bus = createBus();
   const f = { screen: 'S01', mode: 'keyboard', char: 'luna', grade, game: null, calib: null, cal, wi: null, kb: new KeyInput(), t: 0, preview: null, cursor: null, seed };
   const ctrl = STAGE_BY_GRADE(grade);
   function newGame(){
     f.wi = new WizardInput({ stage: ctrl, cal: f.mode === 'mouse' ? null : f.cal, uMaxAuto: f.mode === 'mouse' ? .55 : null });
-    f.game = createGame({ data, seed: f.seed, grade, charId: f.char, inputMode: f.mode === 'keyboard' ? 'keyboard' : 'camera', freeze, unlock, mastery: f.game ? f.game.qe.m : null });
+    f.game = createGame({ data, seed: f.seed, grade, charId: f.char, inputMode: f.mode === 'keyboard' ? 'keyboard' : 'camera', freeze, unlock, mastery: f.game ? f.game.qe.m : null, progress: f.game ? f.game.progress : progress });
+    f.progress = f.game.progress;
     for (const ch of [f.wi.charge, f.kb.charge]) { ch.canCharge = () => f.game.canCast(); Object.defineProperty(ch, 'chargeTime', { get: () => f.game.chargeTime(), configurable: true }); }
     f.screen = 'S08'; bus.emit('screen', { from: 'S17', to: 'S08' });
   }
@@ -44,7 +45,7 @@ export function createFlow({ data, grade = 1, seed = Date.now() % 100000, freeze
     if (!f.game) return; const c = lm ? Selector.norm(lm[9].x, lm[9].y, W, H) : null; f.game.input.push({ type: 'CURSOR', t: f.t * 1000, via: 'hand', value: c || {} });
   };
   f.key = (code, down, tMs) => { if (f.game && f.mode === 'keyboard') f.kb.key(code, down, tMs); else if (f.game && (code === 'Escape' || code === 'KeyP') && down) f.game.input.push({ type: 'PAUSE', t: tMs, via: 'key', value: {} }); };
-  f.wantModes = () => !f.game ? (f.screen === 'S17' ? ['pose'] : []) : f.game.screen === 'S08Q' ? ['hands'] : f.game.screen === 'S08' ? ['pose'] : ['hands'];
+  f.wantModes = () => !f.game ? (f.screen === 'S17' ? ['pose'] : []) : f.game.paused === 'user' ? ['hands'] : f.game.screen === 'S08Q' ? ['hands'] : f.game.screen === 'S08' ? ['pose'] : ['hands'];
   f.step = function(dt){
     f.t += dt; const tMs = f.t * 1000;
     if (!f.game) return;
