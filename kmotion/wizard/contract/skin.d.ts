@@ -12,6 +12,7 @@ export interface SkinContext {
   dev: boolean;
   camera: Record<string, unknown>;   // contract/camera.json (기준 자세 — 연출 오프셋만 더함)
   layout: Record<string, unknown>;   // data/layout/targets.json (읽기 전용)
+  anim: Record<string, { duration?: number; in?: number; out?: number; marks?: Record<string, number> }>;   // data/anim-timing.json — 클립 재매핑용(4절, 읽기 전용) · v1 추가
 }
 export interface Skin {
   load(progress: (p: number) => void): Promise<void>;   // 실패해도 throw 대신 proto 대체물로
