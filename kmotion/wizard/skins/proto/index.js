@@ -1,0 +1,105 @@
+// proto 스킨 — 기준 구현(13 문서 8절). createSkin(ctx) → Skin(contract/skin.d.ts). 에셋 0·절차적.
+// 규칙: 스냅샷은 읽기만 · 판정 크기·시간은 스냅샷 값 그대로 · 모르는 이벤트는 무시 · 엔진·sim import 0
+import * as THREE from 'three';
+import { WX, makePlayer, posePlayer, tipWorld, makeSlime, poseSlime, makeCrystal, poseCrystal } from './actors.js';
+import { makeTelegraph, poseTelegraph, makeProjectile, poseProjectile, Sparks, makeBlast } from './vfx.js';
+import { createUI } from './ui.js';
+import { createAudio } from './audio.js';
+import { buildForest } from './env.js';
+
+export const CONTRACT = '1';
+export function createSkin(ctx){
+  const CAM = ctx.camera, TIMING = ctx.anim || {};
+  let quality = ctx.quality, css = null, renderer, scene, camera, sun, sparks, forest, W = innerWidth, H = innerHeight;
+  let player = null, playerId = null; const enemies = new Map(), shots = new Map(), crystals = new Map(), tgs = new Map(), blasts = new Map();
+  let lastT = performance.now(), drawnTg = [], kick = 0, fovPulse = 0, camPos = new THREE.Vector3(0, 4.2, -7.5), camLook = new THREE.Vector3(0, 1, 3), menuSpin = 0;
+  const audio = createAudio(), ui = createUI(ctx, audio), tmp = new THREE.Vector3();
+
+  function toScreen(pos){ tmp.set(WX(pos[0]), pos[1], pos[2]).project(camera); return { x: (tmp.x * .5 + .5) * W, y: (-tmp.y * .5 + .5) * H, front: tmp.z < 1 }; }
+  function applyQuality(){ if (!renderer) return; renderer.setPixelRatio(Math.min(devicePixelRatio || 1, quality === 'high' ? 2 : quality === 'medium' ? 1.5 : 1));
+    renderer.shadowMap.enabled = quality !== 'low'; sun.castShadow = quality !== 'low'; if (sparks) sparks.mul = quality === 'low' ? .5 : 1; if (forest) forest.setQuality(quality); }
+  function sync(map, list, make, remove){ const seen = new Set(); for (const it of list) { seen.add(it.uid); if (!map.has(it.uid)) map.set(it.uid, make(it)); }
+    for (const [k, v] of map) if (!seen.has(k)) { remove(v, k); map.delete(k); } return seen; }
+  const drop = o => { const g = o.g || o; scene.remove(g); g.traverse(n => { if (n.geometry && !n.geometry.userData.shared) n.geometry.dispose(); }); };
+
+  const skin = {
+    ui,
+    async load(progress){ progress(0);
+      css = document.createElement('link'); css.rel = 'stylesheet'; css.href = new URL('./theme.css', import.meta.url).href; await new Promise(r => { css.onload = css.onerror = r; document.head.append(css); setTimeout(r, 3000); });
+      renderer = new THREE.WebGLRenderer({ antialias: quality !== 'low', powerPreference: 'high-performance' });
+      renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.domElement.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0';
+      scene = new THREE.Scene(); scene.background = new THREE.Color(0x9fd0f0); scene.fog = new THREE.Fog(0xa9d6ee, 18, 46);
+      camera = new THREE.PerspectiveCamera(CAM.arena.fov, W / H, .1, 120);
+      scene.add(new THREE.HemisphereLight(0xdff2ff, 0x3d5a2a, 1.25));
+      sun = new THREE.DirectionalLight(0xfff1d6, 2.2); sun.position.set(-6, 14, -4); sun.target.position.set(0, 0, 6); scene.add(sun, sun.target);
+      Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 12, bottom: -6, near: 1, far: 40 }); sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -.0005;
+      progress(.4); forest = buildForest(scene, { arenaZ: CAM.arenaCenterZ || 9 }); sparks = new Sparks(scene, 700); progress(1); applyQuality(); },
+    mount(){ ctx.root.prepend(renderer.domElement); skin.resize(innerWidth, innerHeight, devicePixelRatio || 1);
+      const unlock = () => audio.unlock(); addEventListener('pointerdown', unlock, { once: true }); addEventListener('keydown', unlock, { once: true }); },
+    render(s, alpha){
+      const now = performance.now(), dt = Math.min(.1, (now - lastT) / 1000); lastT = now; forest.update(dt);
+      if (!s.player) { // 메뉴: 고른 캐릭터를 천천히 돌려 보여 줌
+        const id = s.title ? s.title.char : 'luna'; if (playerId !== id) { if (player) scene.remove(player); player = makePlayer(id); playerId = id; scene.add(player); }
+        menuSpin += dt * .4; player.position.set(0, 0, 4); player.rotation.y = Math.PI + Math.sin(menuSpin) * .6; player.userData.armR.rotation.x = -.6 + Math.sin(menuSpin * 3) * .2; player.userData.orb.visible = false; player.userData.shield.visible = false;
+        for (const m of [enemies, shots, crystals, tgs, blasts]) { for (const v of m.values()) drop(v); m.clear(); }
+        camera.position.set(Math.sin(menuSpin * .5) * 1.2, 2.2, -.8); camera.lookAt(0, 1.2, 4); camera.fov = 50; camera.updateProjectionMatrix(); sparks.update(dt); renderer.render(scene, camera); drawnTg = []; return; }
+      const P = s.player; if (playerId !== P.id) { if (player) scene.remove(player); player = makePlayer(P.id); playerId = P.id; scene.add(player); }
+      player.rotation.y = 0; posePlayer(player, P, dt, TIMING);
+      sync(enemies, s.enemies, e => { const g = makeSlime(e); scene.add(g); return g; }, drop);
+      for (const e of s.enemies) poseSlime(enemies.get(e.uid), e, dt, camera, s.gameT);
+      sync(shots, s.projectiles, p => { const o = makeProjectile(p); scene.add(o.g, o.trail); return o; }, o => { scene.remove(o.g, o.trail); o.trail.geometry.dispose(); });
+      for (const p of s.projectiles) poseProjectile(shots.get(p.uid), p);
+      sync(crystals, s.crystals, c => { const g = makeCrystal(); scene.add(g); return g; }, drop); for (const c of s.crystals) poseCrystal(crystals.get(c.uid), c, dt);
+      // 예고 — 반드시 그린다(검사기 checkTelegraphs). 크기·시간 = 스냅샷
+      const withTg = s.enemies.filter(e => e.telegraph).map(e => ({ uid: e.uid, tg: e.telegraph }));
+      sync(tgs, withTg, () => { const g = makeTelegraph(); scene.add(g); return g; }, drop); for (const x of withTg) poseTelegraph(tgs.get(x.uid), x.tg, s.gameT); drawnTg = withTg.map(x => x.uid);
+      sync(blasts, s.areas, a => { const m = makeBlast(0xff8a3d); scene.add(m); return m; }, drop);
+      for (const a of s.areas) { const m = blasts.get(a.uid), k = Math.max(0, Math.min(1, (s.gameT - a.t0) / Math.max(.01, a.t1 - a.t0))); m.position.set(WX(a.pos[0]), .2, a.pos[2]); m.scale.set(a.radius * (.6 + .4 * k), a.radius * .55 * (.6 + .4 * k), a.radius * (.6 + .4 * k)); m.material.opacity = .75 * (1 - k); }
+      sparks.update(dt * (s.slow < 1 ? Math.max(.25, s.slow) : 1));
+      // 카메라 — 기준 자세(contract/camera.json) + 연출 오프셋(흔들림 ±0.6m 이하, FOV ±8° 이하)
+      const C = s.camera.mode === 'q' ? CAM.q : CAM.arena, px = P.pos[0] * C.trackX, pz = P.pos[2];
+      const wantPos = new THREE.Vector3(WX(px), C.height, pz - C.dist), wantLook = new THREE.Vector3(WX(px), C.lookY, pz + (CAM.arenaCenterZ - pz) * C.lookMix);
+      const kk = 1 - Math.exp(-dt / C.tau); camPos.lerp(wantPos, kk); camLook.lerp(wantLook, kk);
+      const sh = Math.min(.6, (s.camera.shake || 0) * .6 + kick); kick = Math.max(0, kick - dt * 1.6);
+      camera.position.set(camPos.x + (Math.random() - .5) * sh, camPos.y + (Math.random() - .5) * sh * .6, camPos.z); camera.lookAt(camLook);
+      fovPulse = Math.max(0, fovPulse - dt * 20); const fov = C.fov + Math.min(8, fovPulse); if (Math.abs(camera.fov - fov) > .01) { camera.fov = fov; camera.updateProjectionMatrix(); }
+      renderer.render(scene, camera);
+    },
+    onEvent(ev){ try { handle(ev); } catch (e) { if (ctx.dev) console.warn('[proto] 이벤트', ev.type, e); } },
+    resize(w, h, dpr){ W = w; H = h; if (!renderer) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); },
+    setQuality(q){ quality = q; applyQuality(); },
+    stats(){ const i = renderer ? renderer.info : null; return { drawCalls: i ? i.render.calls : 0, triangles: i ? i.render.triangles : 0, textures: i ? i.memory.textures : 0, telegraphs: drawnTg.slice(), targetRects: ui.targetRects() }; },
+    dispose(){ audio.dispose(); ui.dispose(); if (css) css.remove(); if (renderer) { renderer.dispose(); renderer.domElement.remove(); } },
+  };
+
+  function enemyAt(uid){ return enemies.get(uid); }
+  function handle(ev){
+    const T = ev.type;
+    if (T === 'attack:fire') { audio.play('bolt'); if (player) { const p = tipWorld(player, new THREE.Vector3()); sparks.burst([-p.x, p.y, p.z], 0xfff1a8, 8, 2, 1); } kick = Math.max(kick, .03); }
+    else if (T === 'spell:charge') audio.play('charge');
+    else if (T === 'spell:cast') { audio.play('cast'); fovPulse = 5; kick = .08; }
+    else if (T === 'spell:impact') { audio.play('boom'); sparks.burst(ev.pos, 0xff8a3d, 60, 5, 3); sparks.burst(ev.pos, 0xffe27a, 30, 3, 4); kick = .2; }
+    else if (T === 'spell:fizzle') { audio.play('fizzle'); if (ev.reason === 'mana') ui.toast('toast.findCrystal'); else ui.toast('toast.fizzle'); }
+    else if (T === 'hit') { const pos = ev.pos || [0, 1, 0], sc = toScreen(pos);
+      if (ev.target === 'player') { audio.play(ev.blocked ? 'block' : 'hurt'); if (!ev.blocked) { ui.flash(); if (player) player.userData.flash = 1; } if (sc.front) ui.floatAt(sc.x, sc.y - 40, '−' + ev.amount, 'hurt'); }
+      else { audio.play('hit', ev.crit); const g = enemyAt(ev.target); if (g) g.userData.flash = 1; sparks.burst(pos, ev.crit ? 0xffd45c : 0xffffff, ev.crit ? 18 : 10, 3, 2); if (sc.front) ui.floatAt(sc.x, sc.y - 30, String(ev.amount), ev.crit ? 'crit' : ''); } }
+    else if (T === 'block') { audio.play('block'); if (ev.pos) sparks.burst(ev.pos, 0xb28cff, 20, 3, 1); }
+    else if (T === 'dodge') audio.play('dodge');
+    else if (T === 'enemy:spawn') { audio.play('spawn'); if (ev.pos) sparks.burst(ev.pos, 0x9dffc7, 24, 2.5, 2.5); }
+    else if (T === 'telegraph:start') audio.play('windup');
+    else if (T === 'enemy:die') { audio.play('die'); if (ev.pos) { sparks.burst(ev.pos, 0xffd45c, 50, 4, 3); sparks.burst(ev.pos, 0x9dffc7, 30, 3, 2); } }
+    else if (T === 'crystal:spawn') { audio.play('crystal'); if (ev.pos) sparks.burst(ev.pos, 0x7ae7ff, 30, 2, 2); }
+    else if (T === 'crystal:break') { audio.play('crystal'); if (ev.pos) sparks.burst(ev.pos, 0x7ae7ff, 70, 4, 3); }
+    else if (T === 'hint:crystal') { ui.toast('toast.findCrystal'); audio.play('crystal'); }
+    else if (T === 'q:open') audio.play('qopen');
+    else if (T === 'q:right') { audio.play('right', ev.streak); ui.setMana(ev.mana); if (player) { const p = player.position; sparks.burst([-p.x, 1.6, p.z], 0x58b7ff, 60, 3, 4); sparks.burst([-p.x, 1.6, p.z], 0xffd45c, 40, 3, 5); } }
+    else if (T === 'q:wrong') audio.play('wrong');
+    else if (T === 'q:gauge') { audio.play('gauge'); }
+    else if (T === 'reward') { audio.play(ev.kind === 'feather' ? 'feather' : 'crystal'); if (ev.pos) sparks.burst(ev.pos, ev.kind === 'feather' ? 0xffffff : 0x58b7ff, 40, 2, 4); }
+    else if (T === 'wave') { audio.play('wave'); ui.toast('toast.wave'); }
+    else if (T === 'stage:clear') audio.play('clear');
+    else if (T === 'player:defeat') audio.play('defeat');
+  }
+  return skin;
+}
