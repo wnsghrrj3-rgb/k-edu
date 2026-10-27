@@ -5,6 +5,7 @@
 //  · 고른 선택지 = 깃발 figure:<id>:<choice> + 값(life.add) + 한마디 + 📜; 두 번째부터는 again 한 줄. stay 초가 지나면(또는 그 사건이 done) 온 길로 걸어 나가 사라진다(gone 한 줄). 깃발 figure:<id>:here / :met / :gone.
 //  · 135: 인물 둘이 같이 와도 한 사람씩 말한다(speaking) · 곁의 반 친구가 먼저 「저 사람 누구야?」(classmateSaw) · 벗은 spark.bond.react fg_* 로 먼저 한마디 · 구석기~청동기는 이름 없는 얼굴(낯선 우두머리·바다 건너 온 사람·거울을 든 사람).
 //  · 136: 셋째 사람 7(준왕·선덕여왕·문익점·장영실·김만덕·안창호·전태일) · 벗이 고른 선택을 두고 한마디(spark.bond.react fgc_*) · 떠난 자리에 남긴 것(relic → pulse 숨은 것, 🎁 from:'figure', leaveRelic).
+//  · 137: 넷째 사람 9(불을 지키는 할머니·토기 굽는 사람·가야 토기 장인·최치원·정천익·신사임당·박지원·서재필·국민학교 선생) · 인물이 같은 마을 반 친구 화면에도(friends.figured → recvFigure → arrive guest) · carry 에 figures 실려 다음 시대 🧬 「조상이 만난 사람」.
 //  · 「그 뒤」 카드 📯 줄(figureLine): 만난 인물·고른 것. 값은 작게(±1~2), 신분·갈림은 안 바꾼다 — 인물은 그 사건을 「사람의 얼굴」로 보여 줄 뿐. 📜 연도 0·판단 0(개항~현대는 사실만). ?figures=0 끔.
 import { Actor } from './actor.js';
 const GAP = 4600, STAY = 240, LEAVE_R = 60;
@@ -17,16 +18,20 @@ export class Figures {
     for (const f of this.list) { if (this.live.has(f.id) || g.flags.has('figure:' + f.id + ':gone')) continue; if (!g.cond(f.on) || (f.if && !g.cond(f.if))) continue; this.arrive(f); }
     for (const L of this.live.values()) this.tickOne(L, 0.5);
   }
-  arrive(f) {
-    const g = this.g, st = g.story; const from = this.area(f.from), to = this.area(f.to); if (!st?.place || !from || !to) return;
+  /** opt.guest(137): 반 친구의 사건으로 온 손님 — 📯 줄·📜 는 그대로, E 는 한 줄뿐(선택지 없음), 내 사건이 열리면 promote 로 선택지가 붙고 머무는 시간이 다시 잰다; 손님이 그냥 떠나면 gone 깃발을 안 세워 내 사건 때 다시 온다 */
+  arrive(f, opt = {}) {
+    const g = this.g, st = g.story; const from = this.area(f.from), to = this.area(f.to); if (!st?.place || !from || !to || this.live.has(f.id) || g.flags.has('figure:' + f.id + ':gone')) return false;
     const name = 'npc_' + f.id; const it = st.place({ id: f.id, name, prop: 'person', look: f.look || { body: 0x4a3c2e, skin: 0xd7a981 }, x: from.x, z: from.z, noAuto: true });
-    const ac = st.actors?.[f.id] || (it && new Actor(g, f.id, it.obj)); if (!it || !ac) return;
+    const ac = st.actors?.[f.id] || (it && new Actor(g, f.id, it.obj)); if (!it || !ac) return false;
     const dx = from.x - to.x, dz = from.z - to.z, d = Math.hypot(dx, dz) || 1; const stop = { x: to.x + dx / d * 2.2, z: to.z + dz / d * 2.2 };   // 구역 중심 2.2m 앞에 선다
-    const L = { f, it, ac, t: 0, said: 0, there: false, leaving: false, stop }; this.live.set(f.id, L); g.flags.add('figure:' + f.id + ':here');
-    g.npcs[f.id] = { name: `${f.name}${f.title ? ' · ' + f.title : ''}`, lines: this.lines(f) };
-    g.sound?.play?.(f.sound || 'horn', 0.4); g.ui?.say?.(`📯 멀리서 누가 온다 — ${f.title || ''} ${f.name}.`, 4200);
-    ac.goTo([stop.x, stop.z], { anim: 'walk', then: 'idle', speed: f.speed || 2.0 }).then(() => { L.there = true; ac.face([g.p.pos.x, g.p.pos.z]); ac.syncBox?.(); this.speak(L); });
+    const L = { f, it, ac, t: 0, said: 0, there: false, leaving: false, stop, guest: !!opt.guest }; this.live.set(f.id, L); g.flags.add('figure:' + f.id + ':here');
+    g.npcs[f.id] = { name: `${f.name}${f.title ? ' · ' + f.title : ''}`, lines: L.guest ? [{ text: `「${f.say?.[0] || '…'}」` }] : this.lines(f) };
+    g.sound?.play?.(f.sound || 'horn', 0.4); g.ui?.say?.(L.guest ? `📯 멀리서 누가 온다 — ${f.title || ''} ${f.name}. (반 친구 ${opt.by || '친구'}의 일로)` : `📯 멀리서 누가 온다 — ${f.title || ''} ${f.name}.`, 4200);
+    if (!L.guest) g.friends?.figured?.(f.id);   // 137: 같은 마을 반 친구 화면에도
+    ac.goTo([stop.x, stop.z], { anim: 'walk', then: 'idle', speed: f.speed || 2.0 }).then(() => { L.there = true; ac.face([g.p.pos.x, g.p.pos.z]); ac.syncBox?.(); this.speak(L); }); return true;
   }
+  /** 137: 손님으로 와 있던 인물에게 내 사건이 열리면 — 선택지가 붙고 머무는 시간을 다시 잰다 */
+  promote(L) { const g = this.g, f = L.f; L.guest = false; L.t = 0; if (g.npcs[f.id]) g.npcs[f.id].lines = this.lines(f); g.ui?.say?.(`📯 ${f.name}${iga(f.name)} 너를 보았다 — 말을 걸 수 있다.`, 3600); }
   /** 135: 인물 둘이 같이 와도 한 사람씩 말한다 — this.speaking 이 비어야 📯 줄을 시작하고, 세 줄·📜가 끝나면 비운다(기다리는 쪽은 1.5초마다 다시 본다) */
   speak(L) {
     const g = this.g, f = L.f; const done = () => { if (this.speaking === L) this.speaking = null; };
@@ -49,6 +54,7 @@ export class Figures {
   tickOne(L, dt) {
     const g = this.g, f = L.f; if (L.leaving) { if (!L.ac.path) this.remove(L); else if (!(g.story?.actors?.[f.id])) L.ac.tick(dt); return; }
     if (!(g.story?.actors?.[f.id])) L.ac.tick(dt);
+    if (L.guest && g.cond(f.on) && (!f.if || g.cond(f.if))) this.promote(L);
     if (L.there && g.p?.pos && !g.ui?.isOpen?.()) { const d = Math.hypot(g.p.pos.x - L.it.obj.position.x, g.p.pos.z - L.it.obj.position.z); if (d < 7) L.ac.face([g.p.pos.x, g.p.pos.z]); }
     L.t += dt; const over = L.t >= (f.stay || STAY) || (f.until && g.cond(f.until)); if (L.there && over && !g.ui?.isOpen?.()) this.leave(L);
   }
@@ -62,7 +68,7 @@ export class Figures {
     const s = { id: 'fig_' + f.id, at: f.to, dx: r.dx ?? 1.4, dz: r.dz ?? 1.1, tag: `📯 ${f.name}${iga(f.name)} 남긴 것`, title: r.title, body: r.body, fact: r.fact, heirloom: r.name, from: 'figure', seeR: r.seeR || 22, button: '챙긴다' };
     const ok = g.pulse.placeSecret(s); if (ok) g.flags.add('figure:' + f.id + ':relic'); return ok;
   }
-  remove(L) { const g = this.g, f = L.f; this.live.delete(f.id); this.leaveRelic(L); if (this.speaking === L) this.speaking = null; g.e?.removeInteractable?.(L.it.name); if (g.story?.actors) delete g.story.actors[f.id]; delete g.npcs[f.id]; g.flags.delete('figure:' + f.id + ':here'); g.flag('figure:' + f.id + ':gone'); }
+  remove(L) { const g = this.g, f = L.f; this.live.delete(f.id); if (!L.guest) this.leaveRelic(L); if (this.speaking === L) this.speaking = null; g.e?.removeInteractable?.(L.it.name); if (g.story?.actors) delete g.story.actors[f.id]; delete g.npcs[f.id]; g.flags.delete('figure:' + f.id + ':here'); if (L.guest) { g.flags.add('figure:' + f.id + ':guestgone'); return; } g.flag('figure:' + f.id + ':gone'); }   // 손님(137)은 남긴 것도 gone 도 없다 — 내 사건 때 다시 온다
   /** 「그 뒤」 카드 📯 한 줄 — 이 시대에 만난 인물과 고른 것. 못 만났으면 빈 글(인물이 온 적 있으면 「지나쳤다」) */
   figureLine() {
     const g = this.g; const came = this.list.filter((f) => g.flags.has('figure:' + f.id + ':gone') || g.flags.has('figure:' + f.id + ':here'));

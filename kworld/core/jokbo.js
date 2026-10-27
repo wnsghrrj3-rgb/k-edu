@@ -11,6 +11,8 @@ const read = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null')
 export function heirloomsOf(era = null, store = (k) => read(k)) { const all = store('kworld_heirlooms') || []; return (era ? all.filter((h) => h.era === era) : all).map((h) => ({ id: h.id, name: h.name, tag: h.tag || null, fact: h.fact || null, from: h.from || null, t: h.t || 0 })); }
 /** 숨은 것으로 찾은 수 — 벗의 선물(from)은 n/3 셈에서 뺀다(80) */
 const relicN = (list) => (list || []).filter((h) => !h.from).length;
+/** 137: 이 시대에 만난 역사의 인물 — [{id,name,choice}] (figures.met + 고른 것). carry 에 실려 다음 시대 탐험일지 🧬 「조상이 만난 사람」 줄이 읽는다 */
+export function figuresOf(g) { const fg = g?.figures; if (!fg?.met?.length) return []; return fg.met.map((id) => { const f = (fg.list || []).find((x) => x.id === id); const c = fg.picked?.get?.(id); return f ? { id, name: f.name, choice: c?.label || null } : null; }).filter(Boolean); }
 /** 줄마다 물려줄 것 합치기 — carry 에 실린 것(서버에서 와도 됨) + 이 기기 kworld_heirlooms, id 로 겹침 제거 */
 const mergeHeir = (a, b) => { const out = []; const seen = new Set(); for (const h of [...(a || []), ...(b || [])]) { if (!h || !h.id || seen.has(h.id)) continue; seen.add(h.id); out.push(h); } return out; };
 
@@ -22,7 +24,7 @@ export function bondOf(g) { const name = g?.world?.spark?.bond?.name; if (!name 
 export const bondLine = (b) => !b ? '' : b.how === 'mended' ? `👤 ${b.name}과 다시 벗` : b.how === 'friend' ? `👤 ${b.name}의 벗` : b.how === 'enemy' ? `👤 ${b.name}과 등졌다` : `👤 ${b.name}을 만났다`;
 export function carryRecord(life, branch) {
   const v = life.values; const d = life.d;
-  return { craft: v.craft, heart: v.heart, grain: v.grain || 0, rank: v.rank || 0, cap: life.cap(), branch: branch.id, title: branch.title || null, status: life.status || null, statusName: life.statusName || null, nation: life.nation || null, nationName: life.nationName || null, hurt: [...life.hurt], marks: [...life.hurt].map((h) => d.hurts?.[h]?.name || h), sits: life.log.length, heirlooms: heirloomsOf(life.g?.era), titles: titlesOf(life.g?.era), bond: bondOf(life.g), beasts: beastsOf(life.g?.era), t: Date.now() };   // 115: 🐾 만난 짐승도 싣는다
+  return { craft: v.craft, heart: v.heart, grain: v.grain || 0, rank: v.rank || 0, cap: life.cap(), branch: branch.id, title: branch.title || null, status: life.status || null, statusName: life.statusName || null, nation: life.nation || null, nationName: life.nationName || null, hurt: [...life.hurt], marks: [...life.hurt].map((h) => d.hurts?.[h]?.name || h), sits: life.log.length, heirlooms: heirloomsOf(life.g?.era), titles: titlesOf(life.g?.era), bond: bondOf(life.g), beasts: beastsOf(life.g?.era), figures: figuresOf(life.g), t: Date.now() };   // 115: 🐾 만난 짐승도 싣는다 · 137: 👤 만난 인물도
 }
 
 /** 줄 모으기 — chain.eras 순서대로. g 가 있으면 지금 사는 시대 줄은 산 채로(값·신분은 지금 것) */

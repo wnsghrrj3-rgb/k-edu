@@ -33,7 +33,9 @@ export class Life {
     const got = []; for (const k of c.keep || ['craft', 'heart']) { const n = Math.round((v[k] || 0) * (c.ratios?.[k] ?? c.ratio ?? 0.5)); if (n > 0) { this.values[k] = (this.values[k] || 0) + n; got.push(`${{ craft: '✋ 솜씨', heart: '🤝 인심', grain: '🌾 곡식', rank: '🎖 벼슬' }[k] || k} ${n}`); } }
     if (got.length) setTimeout(() => this.g.ui.say(`${c.say || '조상에게서 넘어온 것'} — ${got.join(' · ')}`, 5200), 1800);
     // 탐험일지 🧬 물려받은 것 — 한 번 지나가는 토스트와 달리 언제든 다시 읽는다(지난 시대 갈림·신분·값·물려줄 것·흔적·이름)
-    this.inherited = { from: c.from, fromName: c.fromName || null, title: v.title || v.branch || null, statusName: v.statusName || null, nationName: v.nationName || null, got, heirlooms: (v.heirlooms || []).map((h) => h?.name).filter(Boolean), marks: v.marks || [], titles: (v.titles || []).map((t) => t?.name).filter(Boolean) };
+    const WHO = (t) => { const m = /^📯 (.+?)(?:이|가) 남긴 것$/.exec(String(t || '')); return m ? m[1] : null; };   // 137: 인물이 남긴 것의 tag 「📯 이순신이 남긴 것」 → 이순신
+    this.inherited = { from: c.from, fromName: c.fromName || null, title: v.title || v.branch || null, statusName: v.statusName || null, nationName: v.nationName || null, got, heirlooms: (v.heirlooms || []).filter((h) => h?.from !== 'figure').map((h) => h?.name).filter(Boolean), marks: v.marks || [], titles: (v.titles || []).map((t) => t?.name).filter(Boolean),
+      figures: (v.figures || []).map((f) => f?.name ? { name: f.name, choice: f.choice || null } : null).filter(Boolean), relics: (v.heirlooms || []).filter((h) => h?.from === 'figure' && h.name).map((h) => ({ name: h.name, who: WHO(h.tag) })) };   // 137: 조상이 만난 사람 · 인물이 남긴 것(🎁 줄과 따로)
   }
   /** 탐험일지 맨 위 🧬 한 칸 — carryIn 이 적어 둔 것. carry 없는 시대(구석기)는 빈 글, 조상 기록이 없으면 「이 집의 첫 사람」 */
   inheritHtml() {
@@ -41,6 +43,9 @@ export class Life {
     const h = this.inherited; if (!h) return `<div class="inherit"><b>🧬 물려받은 것</b> — 이 집의 첫 사람. 조상에게서 넘어온 것이 없다 — 맨손으로 시작했다.</div>`;
     const who = [h.fromName, h.title ? `「${h.title}」` : '', h.nationName, h.statusName].filter(Boolean).map(esc).join(' ');
     const more = [h.heirlooms.length ? `🎁 물려줄 것 ${h.heirlooms.map(esc).join('·')}` : '', h.marks.length ? `🩹 조상의 흔적 ${h.marks.map(esc).join('·')}` : '', h.titles.length ? `🏷 조상의 이름 ${h.titles.map(esc).join('·')}` : ''].filter(Boolean);
+    const fig = h.figures?.length ? `👤 조상이 만난 사람 ${h.figures.map((f) => esc(f.name) + (f.choice ? `(${esc(f.choice)})` : '')).join('·')}` : '';   // 137
+    const rel = h.relics?.length ? `🎁 ${h.relics.map((r) => esc(r.name) + (r.who ? `(${esc(r.who)}에게서)` : '')).join('·')}` : '';   // 137: 인물이 남긴 것
+    if (fig || rel) more.push([fig, rel].filter(Boolean).join(' · '));
     return `<div class="inherit"><b>🧬 물려받은 것</b> — ${who || '지난 시대'}<div class="mhint">${h.got.length ? h.got.map(esc).join(' · ') : '넘어온 값은 없다 — 조상이 남긴 게 적었다'}</div>${more.length ? `<div class="mhint">${more.join(' · ')}</div>` : ''}</div>`;
   }
   /** 나라 — d.nation = { rules:[{id,name,if,say}] }: 지난 시대 끝 갈림(from:<branch>)으로 어느 나라 사람으로 태어나는지 정해진다. 깃발 nation:<id> */

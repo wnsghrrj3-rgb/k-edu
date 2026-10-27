@@ -37,7 +37,7 @@ export class Friends {
       this.ch = s.db.channel('kworld:' + s.classId + ':' + g.era, { config: { broadcast: { self: false }, presence: { key: s.sid } } });
       this.ch.on('broadcast', { event: 'pos' }, ({ payload }) => this.recv(payload));
       this.ch.on('broadcast', { event: 'wave' }, ({ payload }) => this.recvWave(payload)).on('broadcast', { event: 'shout' }, ({ payload }) => this.recvShout(payload));
-      this.ch.on('broadcast', { event: 'pick' }, ({ payload }) => this.recvPick(payload)).on('broadcast', { event: 'rumor' }, ({ payload }) => this.recvRumor(payload)).on('broadcast', { event: 'prep' }, ({ payload }) => this.recvPrep(payload));
+      this.ch.on('broadcast', { event: 'pick' }, ({ payload }) => this.recvPick(payload)).on('broadcast', { event: 'rumor' }, ({ payload }) => this.recvRumor(payload)).on('broadcast', { event: 'prep' }, ({ payload }) => this.recvPrep(payload)).on('broadcast', { event: 'figure' }, ({ payload }) => this.recvFigure(payload));
       this.ch.on('presence', { event: 'leave' }, ({ key }) => this.drop(key));
       this.ch.subscribe((st) => { if (st === 'SUBSCRIBED') { this.on = true; this.ch.track({ nick: s.nick, chr: g.character?.id || null }); this.send(true); } });
       g.e.onFrame.push((dt) => this.tick(dt)); this.hud();
@@ -101,6 +101,9 @@ export class Friends {
   }
   /** 121: game.flag 가 부른다 — 미리 한 것(prep:<X>)이면 곁 친구에게 번진다. 글은 그 자리 rename(items.targets, flag 가 같은 것)에서 — 데이터 변경 0 */
   onFlag(f) { const m = /^prep:([^:]+)$/.exec(String(f || '')); if (!m || !this.on) return; let verb = '', place = ''; const T = this.g.items?.targets || {}; outer: for (const [k, def] of Object.entries(T)) for (const r of def?.rename || []) if (String(r?.flag || '') === f) { verb = String(r.verb || '').split(' — ')[0]; place = def.name || r.name || k; break outer; } if (!verb) return; try { this.ch.send({ type: 'broadcast', event: 'prep', payload: { id: this.me.sid, nick: this.me.nick, x: m[1], verb, place } }); } catch { } }
+  /** 137: 역사의 인물이 내 마을에 들어오면(figures.arrive, 내 사건으로) 같은 채널 반 친구 화면에도 그 인물이 걸어 들어온다(손님 — 📯 줄은 보이고 E 는 한 줄뿐, 그 친구 제 사건이 열리면 그때 선택지가 붙는다). 값·깃발 없음 */
+  figured(id) { if (!this.on || !id) return; try { this.ch.send({ type: 'broadcast', event: 'figure', payload: { id: this.me.sid, nick: this.me.nick, fig: id } }); } catch { } }
+  recvFigure(p) { if (!p || !p.id || p.id === this.me?.sid || !p.fig) return; const g = this.g, fg = g.figures; if (!fg || !this.friends.has(p.id)) return; if (g.flags?.has('figure:' + p.fig + ':guest')) return; const f = (fg.list || []).find((x) => x.id === p.fig); if (!f) return; const ok = fg.arrive(f, { guest: true, by: this.friends.get(p.id)?.body?.userData?.nick || p.nick || '친구' }); if (ok) g.flags?.add('figure:' + p.fig + ':guest'); }
   recvPrep(p) { if (!p || !p.id || p.id === this.me?.sid || !p.x || !p.verb) return; const f = this.friends.get(p.id); if (!f) return; if (f.prep?.x === p.x) return; f.prep = { x: p.x, verb: String(p.verb), place: p.place ? String(p.place) : '', shown: false }; }   // 곁에 올 때까지 들고 있다(pick 과 같음)
   recvWave(p) { if (!p || !p.id || p.id === this.me?.sid) return; const f = this.friends.get(p.id); if (!f) return; f.waveUntil = performance.now() + WAVE_MS; const nick = f.body.userData.nick || p.nick || '친구'; const r = p.reply; if (r && r.to === this.me?.sid && REPLY[r.kind]) { const pool = REPLY[r.kind]; this.g.ui?.say?.(`👋 ${nick} — ${pool[Math.floor(Math.random() * pool.length)]}`, 3200); if (r.kind !== 'back') this.waveBack(p.id); return; }   // 81: 내 외침에 답한 손 흔들기 — 한 줄
     this.g.ui?.say?.(`👋 ${nick}이(가) 손을 흔든다`, 2600); }

@@ -21,6 +21,11 @@ store['kworld_carry:joseon-life'] = JSON.stringify({ craft: 4, heart: 2, grain: 
   g.flags.add('journal:a'); const st = Object.create(Story.prototype); st.g = g; const jh = st.journalHtml(); ok(jh.indexOf('🧬') > jh.indexOf('📔 탐험일지') && jh.indexOf('🧬') < jh.indexOf('발견 하나'), '탐험일지 제목 바로 밑·발견 목록 위');
   l.carryIn(); ok(l.values.craft === 3 && l.inherited.got.length === 3, '두 번 안 더함(carried)'); }
 // ③ 조상 기록 없음 → 첫 사람 한 줄 · 값 0 이면 「넘어온 값은 없다」 · carry 없는 시대(구석기)는 빈 글 · 글자 escape
+// 137 — 조상이 만난 사람(carry.figures) · 인물이 남긴 것(heirlooms from figure)은 🎁 줄과 따로 「(이순신에게서)」
+store['kworld_carry:joseon-late-life'] = JSON.stringify({ craft: 2, heart: 2, branch: 'x', title: '장시 집', heirlooms: [{ id: 'h1', name: '깨진 벼루' }, { id: 'figure:fig_yisunsin', name: '거북선 쇠못', from: 'figure', tag: '📯 이순신이 남긴 것' }, { id: 'bond:b', name: '돌쇠의 짚신', from: 'bond', tag: '👤 돌쇠' }], figures: [{ id: 'yisunsin', name: '이순신', choice: '배 만드는 나무를 댄다' }, { id: 'saimdang', name: '신사임당', choice: null }] });
+{ const { l } = mk({ from: 'joseon-late-life', fromName: '조선 후기', keep: ['craft', 'heart'] }); l.carryIn(); const h = l.inheritHtml();
+  ok(l.inherited.figures.length === 2 && l.inherited.relics.length === 1 && l.inherited.relics[0].who === '이순신' && l.inherited.heirlooms.length === 2, '137 inherited — 만난 사람 둘·인물이 남긴 것 하나(who)·🎁 줄엔 인물 것 뺌');
+  ok(h.includes('👤 조상이 만난 사람 이순신(배 만드는 나무를 댄다)·신사임당') && h.includes('🎁 거북선 쇠못(이순신에게서)') && h.includes('🎁 물려줄 것 깨진 벼루·돌쇠의 짚신') && !h.includes('물려줄 것 깨진 벼루·돌쇠의 짚신·거북선'), '137 🧬 칸 — 「👤 조상이 만난 사람 …」 + 「🎁 …(이순신에게서)」: ' + h); }
 { const { l } = mk({ from: 'goryeo-life', fromName: '고려', keep: ['craft'] }); l.carryIn(); ok(l.inherited === null && l.inheritHtml().includes('이 집의 첫 사람') && l.inheritHtml().includes('맨손'), '조상 없음 → 첫 사람'); }
 store['kworld_carry:neo'] = JSON.stringify({ craft: 0, heart: 0, branch: 'left', title: '떠난 <집>' });
 { const { l, says } = mk({ from: 'neo', fromName: '신석기', keep: ['craft', 'heart'] }); l.carryIn(); const h = l.inheritHtml(); ok(l.inherited.got.length === 0 && h.includes('넘어온 값은 없다') && h.includes('「떠난 &lt;집&gt;」') && !h.includes('🎁') && !h.includes('🩹') && says.length === 0, '값 0 — 한 줄·토스트 없음·escape'); }
