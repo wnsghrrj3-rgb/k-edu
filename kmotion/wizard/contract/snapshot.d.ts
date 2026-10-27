@@ -19,7 +19,8 @@ export interface Snapshot {
     /** 4절 시간 규칙: phase 0~1 로 클립을 재매핑. A09(충전)의 upperPhase = 충전 비율 */
     anim: { lower: AnimLower; upper: AnimUpper; phase: number; upperPhase: number; speed: number };
     hp: number; hpMax: number; level: number; xp: number; xpNext: number;   // v1.3 레벨·경험치(11 문서) — 판 안에서 바로 오름 mana: number; manaMax: number;
-    charging: { spell: string; ratio: number } | null; blocking: boolean; ducking: boolean; invuln: boolean; hurtT: number; empowered: boolean;
+    charging: { spell: string; ratio: number } | null; blocking: boolean; ducking: boolean; invuln: boolean; hurtT: number;
+    empowered: boolean; empowerT: number;   // v1.4 강화 20초 — empowerT 남은 비율 0~1. 켜진 동안 마법 ×1.5·기본 공격이 강력 공격(A08). 스킨은 금빛 기운만 그린다
     castReady: boolean; spell: string; spellCost: number; feather: boolean;
     /** v1.1 마법 5종: spell = 지금 시전하면 나갈 것(마나 100 이면 meteor), main = 장착한 주 마법, spells = 바꿀 수 있는 주 마법 목록 */
     main: string; spells: string[]; arcana: null | { ratio: number; nullify: number }; shieldReady: boolean;
@@ -27,7 +28,8 @@ export interface Snapshot {
   };
   enemies: Array<{ uid: number; kind: string; pos: Vec3; yaw: number; scale: number; state: EnemyState; stateT: number; hp: number; hpMax: number; label: string | null;
     /** 예고 — 있으면 스킨은 바닥 범위를 반드시 그린다(빨강 + 빗금). t0→t1 비율로 채움 */
-    telegraph: { shape: 'circle' | 'line' | 'cone'; center: Vec3; size: number[]; t0: number; t1: number } | null; tags: string[] }>;
+    /** v1.4: line = 계산 고블린 조준선(size=[폭, 길이], yaw 방향 — 보스 돌진 띠와 같은 그림) · scale = 큰 슬라임 1.5 / 분열 작은 슬라임 .72(tags 'mini') · kind 'num-slime'|'big-slime'|'calc-goblin' */
+    telegraph: { shape: 'circle' | 'line' | 'cone'; center: Vec3; size: number[]; yaw: number; t0: number; t1: number } | null; tags: string[] }>;
   /** 보스(v1.1 추가, 06 문서 4·5절). 보스방이 아니면 null. telegraphs 는 전부 그려야 한다(돌 3개처럼 여러 개일 수 있음) */
   boss: null | { uid: number; kind: string; pos: Vec3; yaw: number; scale: number;
     state: 'intro' | 'chase' | 'windup' | 'attack' | 'recover' | 'kneel' | 'phase' | 'dead'; stateT: number;
@@ -37,14 +39,15 @@ export interface Snapshot {
     weak: number;                                     // 약점 시간 남은 비율 0~1(0 = 아님)
     telegraphs: Array<{ shape: 'circle' | 'line' | 'ring'; center: Vec3; size: number[]; yaw: number; t0: number; t1: number; label: string | null; avoid: null | 'duck' }>;
     nameKey: string };                                // line: size=[폭, 길이], yaw 방향 · ring: 전체 범위 — avoid 'duck' = 숙여서 피함
-  projectiles: Array<{ uid: number; kind: 'bolt' | 'fireball' | string; pos: Vec3; vel: Vec3; owner: 'player' | number; label: string | null; r: number }>;
+  /** v1.4: kind 'acorn' = 고블린 도토리(owner = 그 몬스터 uid, label = 식 「2+3」) — 플레이어만 맞춤, 숙이면 머리 위로 지나감 */
+  projectiles: Array<{ uid: number; kind: 'bolt' | 'fireball' | 'acorn' | string; pos: Vec3; vel: Vec3; owner: 'player' | number; label: string | null; r: number }>;
   areas: Array<{ uid: number; kind: 'explosion' | 'ice' | 'meteor' | string;   // ice: t0~t1 동안 얼음 폭풍 · meteor: t1 에 떨어짐(그림자 먼저)
                  pos: Vec3; radius: number; t0: number; t1: number }>;
-  /** 수학 수정(v1 추가) — near = 지금 치면 열림 */
-  crystals: Array<{ uid: number; kind: 'math' | 'empower'; pos: Vec3; near: boolean }>;
+  /** 수학 수정(v1 추가) — near = 지금 치면 열림. v1.4 empower = 금빛 강화 수정(07 문서 상황 B): life = 남은 시간 비율(15초, 0 이면 사라짐) · retry = 오답 뒤 「다시 도전」 수정 */
+  crystals: Array<{ uid: number; kind: 'math' | 'empower'; pos: Vec3; near: boolean; retry: boolean; life: number }>;
   pickups: Array<{ uid: number; kind: 'mana' | 'gold' | 'shard'; pos: Vec3 }>;
   question: null | {
-    id: string; type: string; concept: string; kind?: 'crystal' | 'seal';   // seal = 보스 봉인 문제(v1.1)
+    id: string; type: string; concept: string; kind: 'crystal' | 'seal' | 'power';   // seal = 보스 봉인 문제(v1.1) · power = 강화 문제(v1.4, 금빛 수정 — 패널 금테)
     prompt: { key: string; args: Record<string, string | number> };   // 문구 = text(key) 에 args 채우기
     state: 'open' | 'right' | 'wrong'; hintStep: number;
     gauge: number; gaugeOn: boolean;                  // 몬스터 공격 게이지 0~1 (가득 = 몬스터 1번 공격)
@@ -62,7 +65,8 @@ export interface Snapshot {
     preview: { ok: boolean; joints: Array<[number, number, number] | null> } | null };   // joints: 0,11,12,13,14,15,16,23,24,25,26,27,28 (화면 비율, 거울)
   camera: { mode: 'rail' | 'arena' | 'boss-intro' | 'q'; target: Vec3; shake: number };
   toast: string | null; streak: number;
-  result: null | { win: boolean; kills: number; q: number; right: number; time: number; keyboard: boolean; deaths: number };
+  result: null | { win: boolean; kills: number; q: number; right: number; time: number; keyboard: boolean; deaths: number; xp: number; level: number; levelUps: number[];
+    empowers: number; splits: number; niceDodges: number };   // v1.4 강화 성공·분열·도토리 멋진 회피 횟수
 }
 /** 게임 밖 화면(S01 시작 · S17 보정) */
 export interface MenuSnapshot { t: number; screen: 'S01' | 'S17';
