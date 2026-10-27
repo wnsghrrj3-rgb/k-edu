@@ -1,4 +1,4 @@
-// 역사의 인물 층(133·134·135·136) — 데이터 열한 시대(인물 29 = 133 큰 사건 11 + 134 평화 사건 8 + 135 이름 없는 얼굴 3 + 136 셋째 사람 7: 구역·사건·선택지·연도 0·값 ±2) + 엔진(조선 전기 이순신): 사건 열림 → 걸어 들어옴 → 📯 세 줄·📜 → E 선택지 값·깃발 → again → 떠남·gone → 「그 뒤」 줄
+// 역사의 인물 층(133~139) — 데이터 열한 시대(인물 29 = 133 큰 사건 11 + 134 평화 사건 8 + 135 이름 없는 얼굴 3 + 136 셋째 사람 7: 구역·사건·선택지·연도 0·값 ±2) + 엔진(조선 전기 이순신): 사건 열림 → 걸어 들어옴 → 📯 세 줄·📜 → E 선택지 값·깃발 → again → 떠남·gone → 「그 뒤」 줄
 import * as THREE from 'three';
 import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -113,7 +113,7 @@ run(2); ok(!fg.live.has('yisunsin') && g.placed.length === 1, '다시 안 온다
       for (const [k, v] of Object.entries(r.say)) { if ((k !== 'default' && k !== 'scorn' && !f.talk.choices.find((c) => c.id === k)) || v.length > 44 || /\d/.test(v)) why.push(`${era}.${f.id}.${k}`); } n++; } }
   ok(!why.length && n === 38, `138 다시 만남 ${n} — 뒤의 꼭 나오는 상황·한 줄 ≤44·선택 줄 실재${why.length ? ' — ' + why.slice(0, 6).join(' / ') : ''}`); }
 // 138 — 손님 인물에 반 친구 「누가 불렀어?」(friends SHOUT.figure, recvFigure 가 shout) · 「그 뒤」 📯 줄에 손님으로만 본 인물
-{ const fr = fs.readFileSync(path.join(root, 'core/friends.js'), 'utf8'); ok(/figure: \['「누가 불렀어\?」/.test(fr) && fr.includes("this.shout('figure', f.name)") && /REPLY = \{[^\n]*figure: \[/.test(fr), 'friends.js — SHOUT.figure·REPLY.figure·recvFigure 가 shout');
+{ const fr = fs.readFileSync(path.join(root, 'core/friends.js'), 'utf8'); ok(/figure: \['「누가 불렀어\?」/.test(fr) && fr.includes("this.shout('figure', f.name, f.id)") && /REPLY = \{[^\n]*figure: \[/.test(fr), 'friends.js — SHOUT.figure·REPLY.figure·recvFigure 가 shout');
   const g9 = { ...g, flags: new Set(['status:sangmin', 'figure:sejong:guest']), npcs: {} }; const f9 = new Figures(g9, w.figures); ok(f9.figureLine() === '역사의 인물 — 반 친구의 일로 온 세종을(를) 보았다.', `손님으로만 본 인물: ${f9.figureLine()}`);
   g9.flags.add('figure:yisunsin:gone'); g9.flags.add('figure:yisunsin:met'); f9.picked.set('yisunsin', { label: 'x' }); ok(f9.figureLine().endsWith('을(를) 만났다. 반 친구의 일로 온 세종을(를) 보았다.'), `만남 + 손님: ${f9.figureLine()}`); }
 ok(placedSecrets.length === 1 && placedSecrets[0].id === 'fig_yisunsin' && placedSecrets[0].at === 'naru' && placedSecrets[0].from === 'figure' && placedSecrets[0].heirloom === '거북선 쇠못' && placedSecrets[0].tag === '📯 이순신이 남긴 것' && flags.has('figure:yisunsin:relic'), `136 떠난 자리(나루)에 남긴 것 ✨: ${placedSecrets[0]?.heirloom} · ${placedSecrets[0]?.tag}`);
@@ -161,4 +161,57 @@ ok(new Figures(g, []).figureLine() === '', '인물 없는 세계는 빈 줄');
   const cm = said3.filter((s) => s.startsWith('👥 가람 — 「저 사람 누구야?')); ok(cm.length === 2 && flags3.has('figure:yisunsin:saw') && flags3.has('figure:sejong:saw') && cm[0].includes('전라좌수사'), `반 친구가 먼저 「저 사람 누구야?」 인물마다 한 번: ${cm[0]}`);
   const g4 = { ...g3, flags: new Set(['status:sangmin', 'sit:imjin:open']), npcs: {}, placed: null, friends: { friends: new Map([['s1', { x: 40, z: 40, body: { userData: { nick: '가람' } } }]]) }, ui: { say: () => {}, isOpen: () => false } }; g4.cond = (x) => { const old = fakeLife.g; fakeLife.g = g4; const r = fakeLife.cond(x); fakeLife.g = old; return r; }; g4.flag = (f) => g4.flags.add(f);
   const f4 = new Figures(g4, w.figures); for (let t = 0; t < 40; t += 0.5) f4.tick(0.5); await wait(60); ok(!g4.flags.has('figure:yisunsin:saw'), '친구가 멀면(8m 밖) 말 안 함'); }
-console.log(`\n133~138 역사의 인물: ${pass} 통과 · ${fail} 실패`); if (fail) process.exit(1);
+
+// ---- 139 — 인물 기록(kworld_figures) · 도감 📯 칸 · 족보 👤 줄·n/38 · 「누가 불렀어?」 답 뒤 같이 가기(figure:<id>:with) ----
+{ const { recordFigure, figureLog, figuresOfEra, figLine, figureHtml } = await import('../core/dogam.js'); const { collect, jokboHtml } = await import('../core/jokbo.js'); const { Friends } = await import('../core/friends.js');
+  const chain = JSON.parse(fs.readFileSync(path.join(root, 'eras/chain.json'), 'utf8')); const dg = JSON.parse(fs.readFileSync(path.join(root, 'eras/dogam.json'), 'utf8'));
+  ok(chain.eras.every((e) => e.people === (read(e.era, 'world.json').figures || []).length) && chain.eras.reduce((a, e) => a + e.people, 0) === 38, '139 chain.json people = 시대마다 인물 수, 합 38');
+  const whyD = []; for (const E of dg.eras) { const W = read(E.era, 'world.json').figures || []; if (!E.figures || E.figures.length !== W.length) { whyD.push(E.era); continue; } for (const f of E.figures) { const w = W.find((x) => x.id === f.id); if (!w || f.name !== w.name || (w.title || null) !== (f.title || null) || !f.event) whyD.push(`${E.era}.${f.id}`); } }
+  ok(!whyD.length && dg.people === 38, `139 dogam.json 시대마다 figures(id·이름·직함·어느 사건) · people 38${whyD.length ? ' — ' + whyD.join(' / ') : ''}`);
+  // 가짜 localStorage — recordFigure 가 적고 도감·족보가 읽는다
+  const mem = new Map(); globalThis.localStorage = { getItem: (k) => mem.has(k) ? mem.get(k) : null, setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k) };
+  const said9 = [], flags9 = new Set(['status:sangmin']), added9 = []; const life9 = { g: null, status: 'sangmin', values: { craft: 1, heart: 1 }, add: (k, v) => added9.push([k, v]), cap: () => 0, hurt: new Set(), d: { hurts: {} }, log: [], nationName: null, statusName: '상민' }; life9.cond = Life.prototype.cond; life9.one = Life.prototype.one; life9.valCond = Life.prototype.valCond;
+  const e9 = { areas: new Map([['outroad', new THREE.Vector3(0, 0, 58)], ['naru', new THREE.Vector3(9, 0, 93)], ['seodang', new THREE.Vector3(-32, 0, 35)]]), groundY: () => 0, interactables: new Map(), removed: [], removeInteractable(k) { this.interactables.delete(k); } };
+  const g9 = { era: 'joseon-life', e: e9, p: { pos: new THREE.Vector3(9, 1.6, 88), enabled: true }, flags: flags9, world: w, npcs: {}, ui: { say: (t) => said9.push(t), isOpen: () => false }, sound: { play: () => { } }, life: life9, restoring: false,
+    story: { fast: true, actors: {}, cutsceneOn: false, place(a) { const obj = new THREE.Group(); obj.position.set(a.x, 0, a.z); const it = { name: a.name, obj, box: { setFromObject() { return this; }, getCenter: (v) => v }, center: new THREE.Vector3() }; e9.interactables.set(a.name, it); return it; } } };
+  life9.g = g9; g9.cond = (x) => life9.cond(x); const fg9 = new Figures(g9, w.figures); g9.figures = fg9; g9.flag = (f) => { if (flags9.has(f)) return; flags9.add(f); fg9.onFlag(f); };
+  const run9 = (sec) => { for (let t = 0; t < sec; t += 0.5) fg9.tick(0.5); };
+  flags9.add('sit:imjin:open'); run9(0.5); const log1 = figureLog();
+  ok(log1['joseon-life']?.yisunsin?.how?.came === 1 && log1['joseon-life'].yisunsin.name === '이순신' && log1['joseon-life'].yisunsin.title === '전라좌수사' && !log1['joseon-life'].yisunsin.choice, '왔을 때 kworld_figures 에 came(이름·직함)');
+  run9(25); await wait(40); g9.flag('figure:yisunsin:wood'); await wait(20); const log2 = figureLog();
+  ok(log2['joseon-life'].yisunsin.how.met === 1 && log2['joseon-life'].yisunsin.choice === '배 만드는 나무를 댄다' && log2['joseon-life'].yisunsin.n === 1, '말 걸고 고르면 met + 고른 것(n 은 온 횟수 그대로 1)');
+  flags9.add('sit:hangeul:open'); run9(0.5); ok(figureLog()['joseon-life'].sejong?.how?.came === 1, '세종도 오면 came');
+  const list9 = figuresOfEra('joseon-life'); ok(list9.length === 2 && figLine(list9) === '👤 이순신(배 만드는 나무를 댄다) · 세종 지나침', `figuresOfEra·figLine: ${figLine(list9)}`);
+  recordFigure('joseon-life', 'yisunsin', 'with', { name: '이순신' }); ok(figLine(figuresOfEra('joseon-life')).startsWith('👤 이순신(배 만드는 나무를 댄다) 👥'), 'with 면 👥');
+  recordFigure('gaehang-life', 'yugwansun', 'guest', { name: '유관순' }); ok(figLine(figuresOfEra('gaehang-life')) === '👤 유관순 손님', '손님으로만 본 인물은 「손님」');
+  // 도감 📯 칸 — 이 시대: 만난·지나친·그림자(어느 사건에 온다, 연도 없이)
+  const sits9 = read('joseon-life', 'life.json').situations; const list = w.figures.map((f) => ({ id: f.id, name: f.name, title: f.title || null, event: sits9.find((s) => s.id === f.on.split(':')[1])?.title || '' }));
+  const h9 = figureHtml(figureLog(), { era: 'joseon-life', list, all: 38 });
+  ok(h9.includes('fc met') && h9.includes('배 만드는 나무를 댄다') && h9.includes('반 친구와 함께') && h9.includes('fc seen') && h9.includes('마을에 왔지만 말을 걸지 않았다') && (h9.match(/fc ghost/g) || []).length === 2 && h9.includes('때 온다') && !/\d+년/.test(h9) && h9.includes('만난 역사의 인물 1/38') && h9.includes('지나친 얼굴 2'), '도감 📯 칸 — 만남·지나침·그림자 둘(어느 사건에 온다)·합 1/38·지나친 얼굴 2');
+  const hA = figureHtml(figureLog(), { eras: dg.eras, all: 38 }); ok((hA.match(/<details class="fera"/g) || []).length === 11 && hA.includes('<details class="fera" open><summary><b>조선 전기</b><span class="dcnt">1/4') && hA.includes('<b>신석기</b><span class="dcnt">0/2'), '따로 연 도감 — 시대 11 묶음, 만난 시대만 펼침, n/전체');
+  ok(figureHtml({}, { era: 'life', list: [] }) === '' && figureHtml({}, { era: 'life', list: [{ id: 'x', name: '낯선 우두머리', event: '다른 무리를 만났다.' }] }).includes('다른 무리를 만났다 때 온다'), '기록·목록 없으면 빈 글 / 목록만 있으면 그림자');
+  ok(fs.readFileSync(path.join(root, 'core/dogam.js'), 'utf8').includes("'</p>' + bz + fz + '<details'") && fs.readFileSync(path.join(root, 'dogam.html'), 'utf8').includes('figureHtml(figureLog(), { eras: data.eras'), 'openDogam·dogam.html 에 📯 칸');
+  // 족보 👤 줄 — carry 에 figures 가 실렸으면 그것, 없으면 이 기기 kworld_figures · 요약 n/38
+  const store9 = { 'kworld_carry:life': { craft: 1, heart: 1, grain: 0, rank: 0, branch: 'b', title: '갈림', marks: [], sits: 3, t: 100, figures: [{ id: 'stranger', name: '낯선 우두머리', choice: '고기를 나눈다' }] } };
+  const rows9 = collect(chain, g9, (k) => store9[k] || JSON.parse(mem.get(k) || 'null'));
+  ok(rows9[0].figures?.[0]?.name === '낯선 우두머리' && rows9[7].kind === 'now' && rows9[7].figures?.length === 2 && rows9[7].figures.find((f) => f.id === 'yisunsin')?.choice === '배 만드는 나무를 댄다', '족보 줄: 1대는 carry 의 figures · 지금 사는 대는 figures.met(고른 것)');
+  const j9 = jokboHtml(chain, rows9); ok(j9.includes('jfg">👤 낯선 우두머리(고기를 나눈다) <span class="jd">1/2</span>') && j9.includes('👤 이순신(배 만드는 나무를 댄다) 👥 · 세종 지나침 <span class="jd">1/4</span>') && j9.includes('역사의 인물 2/38'), '족보 한 장 — 👤 줄 n/시대 인물 수 · 요약 「역사의 인물 2/38」');
+  const rowsN = collect(chain, null, (k) => k === 'kworld_carry:neo' ? { craft: 1, heart: 1, branch: 'b', title: 't', marks: [], sits: 1, t: 50 } : JSON.parse(mem.get(k) || 'null'));
+  ok(rowsN[1].figures?.length === 0 && !jokboHtml(chain, rowsN).includes('역사의 인물 '), 'carry 에도 기기에도 없으면 👤 줄·요약 없음');
+  // 「누가 불렀어?」 답 뒤 같이 가기 — 외친 쪽(손님을 본 친구)이 답을 받을 때 6m 안이면 figure:<id>:with
+  const mk = (pos) => { const sd = [], fl = new Set(), bc = []; const gg = { era: 'joseon-life', p: { pos: new THREE.Vector3(pos[0], 0, pos[1]), body: null }, flags: fl, figures: { list: w.figures }, ui: { say: (t) => sd.push(t), isOpen: () => false }, sound: { play: () => { } }, e: { scene: { add() { }, remove() { } }, onFrame: [] }, world: {} }; gg.flag = (f) => fl.add(f);
+    const F = new Friends(gg); F.on = true; F.me = { sid: 'me' + pos.join(''), nick: '나' }; F.ch = { send: (m) => bc.push(m) }; return { gg, F, sd, fl, bc }; };
+  const A = mk([0, 0]); const fB = { body: new THREE.Group(), x: 3, z: 0, tx: 3, tz: 0 }; fB.body.userData = { nick: '7 박솔' }; A.F.friends.set('B', fB);
+  A.F.recvWave({ id: 'B', nick: '7 박솔', reply: { to: A.F.me.sid, kind: 'figure', fig: 'sejong' } });
+  ok(A.fl.has('figure:sejong:with') && A.fl.has('friend:figure') && A.sd.some((x) => x === '👥 7 박솔이(가) 같이 간다 — 세종') && A.bc.some((m) => m.payload?.reply?.kind === 'back' && m.payload.reply.for === 'figure' && m.payload.reply.fig === 'sejong' && m.payload.reply.with === true), `답을 받은 쪽(3m): 깃발 figure:sejong:with + 「같이 간다」 + back(for figure, with)`);
+  ok(figureLog()['joseon-life'].sejong.how.with === 1, '기기 기록에도 with');
+  const A2 = mk([0, 0]); const fC = { body: new THREE.Group(), x: 9, z: 0, tx: 9, tz: 0 }; fC.body.userData = { nick: '3 김하늘' }; A2.F.friends.set('C', fC);
+  A2.F.recvWave({ id: 'C', reply: { to: A2.F.me.sid, kind: 'figure', fig: 'sejong' } }); ok(!A2.fl.has('figure:sejong:with') && A2.bc.some((m) => m.payload?.reply?.kind === 'back' && m.payload.reply.with === false) && A2.sd.some((x) => x.startsWith('👋 3 김하늘 — ')), '9m 밖이면 깃발 없음(답 한 줄·back 은 그대로, with false)');
+  const D = mk([0, 0]); const fE = { body: new THREE.Group(), x: 4, z: 2, tx: 4, tz: 2 }; fE.body.userData = { nick: '5 이솔' }; D.F.friends.set('E', fE);
+  D.F.recvWave({ id: 'E', reply: { to: D.F.me.sid, kind: 'back', for: 'figure', fig: 'sejong', with: true } }); ok(D.fl.has('figure:sejong:with') && D.sd.some((x) => x.includes('같이 간다 — 세종')) && !D.bc.length, '답한 쪽(부른 사람): back(for figure, with) 이 오면 자기 화면에도 깃발 + 한 줄, 다시 답하진 않음');
+  D.F.recvWave({ id: 'E', reply: { to: D.F.me.sid, kind: 'back', for: 'figure', fig: 'sejong', with: true } }); ok(D.sd.filter((x) => x.includes('같이 간다')).length === 1, '같은 인물은 한 번');
+  const Z = mk([0, 0]); const fZ = { body: new THREE.Group(), x: 1, z: 0, tx: 1, tz: 0 }; fZ.body.userData = { nick: 'z' }; Z.F.friends.set('Z', fZ); Z.F.recvWave({ id: 'Z', reply: { to: Z.F.me.sid, kind: 'figure', fig: 'nobody' } }); ok(!Z.fl.has('figure:nobody:with'), '이 시대에 없는 인물 id 면 조용');
+  Z.F.recvShout({ id: 'Z', kind: 'figure', title: '세종', fig: 'sejong', x: 1, z: 0 }); Z.F.wave(); ok(Z.F.reply === null && Z.bc.some((m) => m.event === 'wave' && m.payload.reply?.kind === 'figure' && m.payload.reply.fig === 'sejong'), 'recvShout 가 fig 를 들고 있다가 G 답에 실어 보낸다');
+  ok(fg9.figureLine().includes('그중 1번은 반 친구와 함께 갔다') === flags9.has('figure:yisunsin:with') || (flags9.add('figure:yisunsin:with'), fg9.figureLine().includes('을(를) 만났다. 그중 1번은 반 친구와 함께 갔다.')), `그 뒤 줄: ${fg9.figureLine()}`);
+  delete globalThis.localStorage; }
+console.log(`\n133~139 역사의 인물: ${pass} 통과 · ${fail} 실패`); if (fail) process.exit(1);

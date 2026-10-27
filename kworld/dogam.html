@@ -29,14 +29,14 @@
 <script src="/kedu_config.js"></script>
 <script src="/kedu_tier.js"></script>
 <script type="module">
-import { livedMap, dogamHtml, DOGAM_CSS, beastHtml, beastLog, BEAST_CSS } from './core/dogam.js';
+import { livedMap, dogamHtml, DOGAM_CSS, beastHtml, beastLog, BEAST_CSS, figureHtml, figureLog, FIGURE_CSS } from './core/dogam.js';
 import { syncJokbo } from './core/save.js';
-const st = document.createElement('style'); st.textContent = DOGAM_CSS + BEAST_CSS; document.head.appendChild(st);
+const st = document.createElement('style'); st.textContent = DOGAM_CSS + BEAST_CSS + FIGURE_CSS; document.head.appendChild(st);
 document.getElementById('print').onclick = (e) => { e.preventDefault(); print(); };
 try {
   const data = await fetch('./eras/dogam.json').then((r) => r.json());
   const fromServer = await syncJokbo();   // 정식 좌석이면 서버 족보(끝 신분)를 이 기기에 먼저 채운다 — 삶 중간 신분은 이 기기 기록만
-  let html = dogamHtml(data, livedMap(data), { tag: fromServer ? '신분 도감 · 우리 집 기록' : '신분 도감 · 이 기기의 기록' }); const bz = beastHtml(beastLog()); if (bz) html = html.replace('</p><details', '</p>' + bz + '<details');   // 만난 짐승(114) — 모든 시대 합
+  let html = dogamHtml(data, livedMap(data), { tag: fromServer ? '신분 도감 · 우리 집 기록' : '신분 도감 · 이 기기의 기록' }); const bz = beastHtml(beastLog()); const fz = figureHtml(figureLog(), { eras: data.eras, all: data.people || 0 }); if (bz || fz) html = html.replace('</p><details', '</p>' + bz + fz + '<details');   // 만난 짐승(114) — 모든 시대 합 · 📯 역사의 인물(139) 모든 시대 합
   document.getElementById('paper').innerHTML = html;
 } catch (e) { document.getElementById('paper').textContent = '도감을 못 불러왔어: ' + e; }
 </script>

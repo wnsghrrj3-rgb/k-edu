@@ -128,9 +128,11 @@ def build():
         for sid, c in cards.items():
             if len(c['ways']) > 4: c['ways'] = c['ways'][:4] + [f'…그 밖에 {len(c["ways"]) - 4}길']
             gg = g.get(sid, {}); c['only'] = gg.get('only', [])[:12]; c['closed'] = gg.get('closed', [])[:12]
-        eras.append({'era': e['era'], 'short': e['short'], 'years': e.get('years', ''), 'chain': e.get('chain', ''), 'none': life.get('status', {}).get('none') or (None if cards else '신분이 없다 — 쌓아 둘 것이 없어 높고 낮음이 없었다.'), 'statuses': list(cards.values())})
+        sitT = {s['id']: s.get('title') or s['id'] for s in life.get('situations', [])}   # 139: 역사의 인물 — 이름·직함·어느 사건에 오는지(그림자용)
+        figs = [{'id': f['id'], 'name': f['name'], 'title': f.get('title'), 'event': sitT.get(str(f.get('on', '')).split(':')[1] if ':' in str(f.get('on', '')) else '', '')} for f in world.get('figures', [])]
+        eras.append({'era': e['era'], 'short': e['short'], 'years': e.get('years', ''), 'chain': e.get('chain', ''), 'figures': figs, 'none': life.get('status', {}).get('none') or (None if cards else '신분이 없다 — 쌓아 둘 것이 없어 높고 낮음이 없었다.'), 'statuses': list(cards.values())})
         prev_life = life
-    out = {'title': '신분 도감', 'note': '시대마다 어떤 집이 있었고, 그 집은 무엇을 할 수 있고 무엇을 못 했나. 살아 본 집만 안이 보인다 — 다른 집이 궁금하면 다시 태어나 보자.', 'eras': eras}
+    out = {'title': '신분 도감', 'people': sum(len(x['figures']) for x in eras), 'note': '시대마다 어떤 집이 있었고, 그 집은 무엇을 할 수 있고 무엇을 못 했나. 살아 본 집만 안이 보인다 — 다른 집이 궁금하면 다시 태어나 보자.', 'eras': eras}
     p = os.path.join(ERAS, 'dogam.json'); json.dump(out, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     n = sum(len(x['statuses']) for x in eras); print(f'dogam.json — 시대 {len(eras)} · 신분 카드 {n}')
     for x in eras: print(' ', x['short'], len(x['statuses']), [s['id'] for s in x['statuses']])
