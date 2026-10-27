@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<!-- ════════════════════════════════════════
+     K-edu 영어 v3 양산 · Lv2 #16-2 매직e 섞어 읽기 「연습+응용」 매직e 섞어 읽기 (cap↔cape · kit↔kite) 「연습+응용」
+     베이스: 14_3_magiceou_practice.html (Lv2 #14 연습응용 · 자기확인·게이트① 판형 그대로 — 판정 단위를 「단어」에서 「짝」으로)
+     펼침 원천: handoff kedu/english/v3/lv2/16_magice_total.md
+     ════════════════════════════════════════ -->
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu | 영어 Lv2 — 매직 e 섞어 읽기 연습 (16-2)</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   골격 = 골든 불변 / 옷 = P트랙 파랑 #1565C0
+   두 글자 한 소리(이중자음) 블록은 자음이므로 파랑 유지 — 모음만 주황
+   ============================================================ */
+:root{
+  --bg:#F0F6FE; --card:#fff;
+  --primary:#1565C0; --primary-light:#E3EEFC; --secondary:#5B8DEF;
+  --vowel:#FF8A3D; --vowel-light:#FFF1E6;
+  --green:#4CAF50; --green-light:#E8F5E9; --red:#F44336; --red-light:#FFEBEE;
+  --yellow:#FFC107; --yellow-light:#FFF8E1;
+  --text:#333; --subtext:#888; --border:#D7E4F7;
+  --shadow:0 4px 16px rgba(0,0,0,.08); --radius:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;gap:8px}
+.back{font-size:18px;color:var(--subtext);text-decoration:none}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 4px}
+.progress-bar{flex:1;height:10px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;color:#e6a800}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 10px;font-size:14px}
+.kedu-logo .logo-circle{width:20px;height:20px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:12px}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 18px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;width:100%;max-width:560px;text-align:center}
+.slide-title{font-size:21px;color:var(--subtext);margin-bottom:8px}
+.badge{display:inline-block;background:var(--primary-light);color:var(--primary);border-radius:99px;padding:4px 14px;font-size:17px;margin-bottom:8px}
+.concept-text{font-size:24px;line-height:1.6;margin:8px 0}
+.highlight{color:var(--primary)}
+/* 표지 */
+.today-label{font-size:22px;color:var(--secondary);letter-spacing:.5px;margin:18px 0 18px}
+.today-en{font-size:42px;color:var(--primary);font-weight:bold;line-height:1.3;margin:8px 0}
+.today-ko{font-size:26px;color:#2B925E;line-height:1.4;margin:14px 0 18px}
+/* 형광 강조 */
+.hl{background:linear-gradient(transparent 58%,#FFE680 58%);background-repeat:no-repeat;background-size:0% 100%;transition:background-size .55s cubic-bezier(.4,0,.2,1) .15s;padding:0 3px;font-weight:bold;color:var(--text)}
+.slide.lit .hl{background-size:100% 100%}
+/* 탭 단계 등장 */
+.step{opacity:0;transform:translateY(34px) scale(.82);transition:opacity .26s ease,transform .42s cubic-bezier(.34,1.6,.5,1);pointer-events:none}
+.step.in{opacity:1;transform:none;pointer-events:auto}
+.concept-big{font-size:30px;line-height:1.5;margin:10px 0}
+@keyframes tapBlink{0%,100%{opacity:.4}50%{opacity:1}}
+.hl-slot{background:var(--yellow-light);border:2px dashed var(--yellow);border-radius:8px;padding:1px 8px;color:#e6a800}
+.kay-says{display:flex;align-items:center;gap:12px;background:var(--primary-light);border-radius:16px;padding:12px 16px;margin:10px 0;text-align:left}
+.kay-icon{font-size:30px;flex-shrink:0}
+.kay-text{font-size:21px;line-height:1.5}
+/* 소리 블록 — 파닉스 심장 */
+.sblocks{display:flex;gap:12px;justify-content:center;align-items:center;margin:14px 0;transition:gap .5s cubic-bezier(.4,0,.2,1);flex-wrap:wrap}
+.sblocks.merged{gap:2px}
+.sblock{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:16px;padding:12px 18px;font-size:40px;line-height:1;cursor:pointer;box-shadow:0 4px 0 rgba(21,101,192,.25);transition:transform .12s,box-shadow .3s;position:relative}
+.sblock .sko{font-size:14px;color:var(--subtext)}
+.sblock.vowel{border-color:var(--vowel);color:var(--vowel);box-shadow:0 4px 0 rgba(255,138,61,.3)}
+.sblock:active{transform:scale(.94)}
+.sblock.singing{transform:scale(1.15);box-shadow:0 0 0 5px var(--yellow-light),0 4px 0 rgba(21,101,192,.25)}
+.sblock.isnew::after{content:'NEW';position:absolute;top:-10px;right:-6px;background:var(--red);color:#fff;font-size:11px;padding:1px 6px;border-radius:99px}
+.sblock.used{opacity:.25;pointer-events:none}
+.sblock.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+/* 소리 슬롯 */
+.sslots{display:flex;gap:10px;justify-content:center;align-items:center;margin:14px 0;flex-wrap:wrap}
+.sslot{min-width:72px;height:70px;border:3px dashed #A8C4EA;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:34px;color:#A8C4EA;background:#F8FBFF;padding:0 10px;transition:all .3s}
+.sslot.filled{border-style:solid;border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.sslot.filled.vslot{border-color:var(--vowel);color:var(--vowel);background:var(--vowel-light)}
+.sslot.swap{animation:swapPop .5s ease}
+@keyframes swapPop{0%{transform:translateY(0)}40%{transform:translateY(-14px) scale(1.1);background:var(--yellow-light);border-color:var(--yellow)}100%{transform:translateY(0)}}
+.word-done{font-size:34px;color:var(--primary);margin:8px 0}
+.mean{font-size:20px;color:var(--subtext)}
+.pic{font-size:80px;margin:6px 0;line-height:1}
+@keyframes popIn{0%{transform:scale(0) rotate(-15deg)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+/* 합치기 다이어그램 */
+.blend-map{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0;flex-wrap:wrap}
+.bm-piece{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:12px;padding:6px 14px;font-size:28px}
+.bm-piece.v{border-color:var(--vowel);color:var(--vowel)}
+.bm-arrow{font-size:26px;color:#e6a800;font-weight:bold}
+.bm-word{background:var(--yellow-light);border:3px solid var(--yellow);color:#e6a800;border-radius:12px;padding:6px 16px;font-size:30px;font-weight:bold}
+/* 문제 */
+.question-label{display:inline-flex;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:17px;margin-bottom:8px}
+.stars{color:#FCD34D}
+.question-text{font-size:23px;margin:6px 0 12px;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
+.choice-btn{background:#fff;border:3px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);color:var(--text)}
+.choice-btn .ko{display:block;font-size:14px;color:var(--subtext)}
+.choice-btn.big{font-size:40px;padding:10px 22px}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}}
+.listen-btn{background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:8px 22px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;color:var(--primary);margin:4px 0 8px}
+.feedback{font-size:19px;margin-top:10px;min-height:34px;border-radius:12px;padding:5px 12px;line-height:1.5}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#e6a800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-emoji{font-size:76px;margin:8px 0;animation:bounce 1s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.result-score{font-size:30px;color:#e6a800;margin:6px 0}
+.result-stars{font-size:34px;margin:4px 0}
+.nav{display:flex;justify-content:space-between;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,.06);flex-shrink:0;gap:10px}
+.nav-btn{flex:1;max-width:200px;background:var(--primary);color:#fff;border:none;border-radius:14px;padding:13px 0;font-family:'Jua',sans-serif;font-size:20px;cursor:pointer}
+.nav-btn:disabled{opacity:.3}
+.hint{font-size:16px;color:var(--subtext);margin-top:6px}
+/*MAGIC-BEGIN — 매직e 표기 단일 원천(blocks/MAGIC.css → sync_blocks.py 주입, 하네스가 5파일 동일 검사).
+  ★e 는 소리를 내지 않는다 — 회색 + 🤫 를 글자에 붙여 둔다(11_B 오류① 의 처방을 표기 자체로).
+  ★a_e 는 한 블록(모음 주황)이다 — 두 글자를 「‿」 이음표로 묶는다. 칸은 하나다.
+  ★노랑(두 글자 한 소리 배지)을 쓰지 않는다 — a_e 는 자음이 아니라 「모음」 칸이고,
+    모음의 의미색은 Lv1 부터 주황이다. 색이 바뀌면 아이는 「다른 종류」로 읽는다. */
+.mw{display:inline-block;letter-spacing:1px;color:var(--primary)}
+.mw b{color:var(--vowel);font-weight:inherit}
+.se{color:#B5B5B5;position:relative;display:inline-block;font-style:normal}
+.se::after{content:'🤫';position:absolute;left:50%;top:-.6em;transform:translateX(-50%);font-size:.38em;line-height:1}
+.tie{color:var(--vowel);opacity:.7;font-style:normal}
+.sblock.vowel .se,.sslot .se,.bm-piece .se{color:#B5B5B5}
+.aenote{font-size:17px;color:var(--subtext);margin-top:4px}
+.aenote b{color:var(--vowel)}
+/*MAGIC-END*/
+.wchips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.wchip{border:3px solid var(--primary);border-radius:13px;background:#fff;padding:7px 11px 4px;font-size:23px;cursor:pointer}
+.wchip:active{transform:scale(.95)}
+.wchip .ar{color:var(--vowel);font-size:16px;margin:0 4px}
+.pic-choices{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.pic-btn{background:#fff;border:3px solid var(--border);border-radius:18px;padding:10px 16px;font-size:46px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);line-height:1}
+.pic-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+.pic-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.bigword{font-size:52px;margin:12px 0 4px}
+.choice-btn .mw{font-size:inherit}
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back" href="../index.html">🪜</a>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 15</span>
+  </div>
+  <div class="score-badge">⭐ <span id="scoreVal">0</span></div>
+  <div class="kedu-logo"><div class="logo-circle">K</div>영어</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesContainer">
+  <!-- ━━━ S0 표지 ━━━ -->
+  <div class="slide active" data-steps>
+    <div class="card">
+      <div class="badge step">영어 Lv2 · 매직 e 섞어 읽기 16-2</div>
+      <div class="today-label step">Today's Learn ✏️</div>
+      <div class="today-en step">cap · cape · kit · kite</div>
+      <div class="today-ko step">짝을 <span class="hl">섞어도</span> 끝을 보고 갈라 읽어요</div>
+    </div>
+  </div>
+
+  <!-- ━━━ S1 소환 — 다섯 짝 ━━━ -->
+  <div class="slide" data-steps>
+    <div class="card">
+      <div class="slide-title step">🔁 지난 장의 다섯 짝 — 눌러서 들어 봐!</div>
+      <div class="wchips step">
+        <div class="wchip" data-word="cap"><span class="mw">c<b>a</b>p</span></div><div class="wchip" data-word="cape"><span class="mw">c<b>a</b>p<i class="se">e</i></span></div>
+        <div class="wchip" data-word="kit"><span class="mw">k<b>i</b>t</span></div><div class="wchip" data-word="kite"><span class="mw">k<b>i</b>t<i class="se">e</i></span></div>
+      </div>
+      <div class="wchips step">
+        <div class="wchip" data-word="hop"><span class="mw">h<b>o</b>p</span></div><div class="wchip" data-word="hope"><span class="mw">h<b>o</b>p<i class="se">e</i></span></div>
+        <div class="wchip" data-word="cut"><span class="mw">c<b>u</b>t</span></div><div class="wchip" data-word="cute"><span class="mw">c<b>u</b>t<i class="se">e</i></span></div>
+        <div class="wchip" data-word="mat"><span class="mw">m<b>a</b>t</span></div><div class="wchip" data-word="mate"><span class="mw">m<b>a</b>t<i class="se">e</i></span></div>
+      </div>
+      <div class="concept-text step" style="font-size:19px">짝마다 다른 건 <b>끝의 e 하나</b> — 그게 가운데 소리를 정해요.</div>
+    </div>
+  </div>
+
+  <!-- ━━━ S2 개념① 읽는 순서 ━━━ -->
+  <div class="slide" data-steps>
+    <div class="card">
+      <div class="slide-title step">📐 읽는 순서 — 오늘 쓰는 건 이것 하나</div>
+      <div class="concept-big step">① <span class="hl">끝을 먼저</span> 봐요 — e 가 있나?<br>② 있으면 모음은 <span class="hl">자기 이름</span>, 없으면 <span class="hl">짧은 소리</span><br>③ 앞부터 읽고 🔊 로 확인해요</div>
+      <div class="kay-says step">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">짝 두 단어는 <b>앞부분이 똑같아요</b> — 그래서 앞만 보면 꼭 틀려요.<br>다른 곳은 <b>맨 끝 한 글자</b>뿐!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S3 연습1 — 듣고 고르기 cap ↔ cape ━━━ -->
+  <div class="slide" data-correct="1" data-score="10" data-w="cape" data-pair="cap-cape" data-concept="phonics.magice">
+    <div class="card">
+      <div class="question-label">연습 1 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 잘 듣고 — 짝 중 어느 쪽일까?</div>
+      <button class="listen-btn" id="lb3">🔊 소리 듣기</button>
+      <div class="choices">
+        <button class="choice-btn" onclick="answer(this,0)">cap<span class="ko">a = /애/</span></button>
+        <button class="choice-btn" onclick="answer(this,1)">cape<span class="ko">a = /에이/</span></button>
+      </div>
+      <div class="feedback" id="fb3"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S4 연습2 — 듣고 고르기 kit ↔ kite (짧은 쪽) ━━━ -->
+  <div class="slide" data-correct="0" data-score="10" data-w="kit" data-pair="kit-kite" data-concept="phonics.magice">
+    <div class="card">
+      <div class="question-label">연습 2 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 이번엔 어느 쪽일까?</div>
+      <button class="listen-btn" id="lb4">🔊 소리 듣기</button>
+      <div class="choices">
+        <button class="choice-btn" onclick="answer(this,0)">kit<span class="ko">i = /이/</span></button>
+        <button class="choice-btn" onclick="answer(this,1)">kite<span class="ko">i = /아이/</span></button>
+      </div>
+      <div class="feedback" id="fb4"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S5 연습3 — 듣고 고르기 hop ↔ hope ━━━ -->
+  <div class="slide" data-correct="1" data-score="10" data-w="hope" data-pair="hop-hope" data-concept="phonics.magice">
+    <div class="card">
+      <div class="question-label">연습 3 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 잘 듣고 — 짝 중 어느 쪽일까?</div>
+      <button class="listen-btn" id="lb5">🔊 소리 듣기</button>
+      <div class="choices">
+        <button class="choice-btn" onclick="answer(this,0)">hop<span class="ko">o = /오/</span></button>
+        <button class="choice-btn" onclick="answer(this,1)">hope<span class="ko">o = /오우/</span></button>
+      </div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S6 연습4 — 듣고 고르기 cut ↔ cute (짧은 쪽) ━━━ -->
+  <div class="slide" data-correct="0" data-score="10" data-w="cut" data-pair="cut-cute" data-concept="phonics.magice">
+    <div class="card">
+      <div class="question-label">연습 4 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 이번엔 어느 쪽일까?</div>
+      <button class="listen-btn" id="lb6">🔊 소리 듣기</button>
+      <div class="choices">
+        <button class="choice-btn" onclick="answer(this,0)">cut<span class="ko">u = /어/</span></button>
+        <button class="choice-btn" onclick="answer(this,1)">cute<span class="ko">u = /유/</span></button>
+      </div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S7 연습5 — 듣고 고르기 mat ↔ mate ━━━ -->
+  <div class="slide" data-correct="1" data-score="10" data-w="mate" data-pair="mat-mate" data-concept="phonics.magice">
+    <div class="card">
+      <div class="question-label">연습 5 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 잘 듣고 — 짝 중 어느 쪽일까?</div>
+      <button class="listen-btn" id="lb7">🔊 소리 듣기</button>
+      <div class="choices">
+        <button class="choice-btn" onclick="answer(this,0)">mat<span class="ko">a = /애/</span></button>
+        <button class="choice-btn" onclick="answer(this,1)">mate<span class="ko">a = /에이/</span></button>
+      </div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S8 연습6 — 글자 보고 그림 cape (짝의 그림이 오답으로) ━━━ -->
+  <div class="slide" data-correct="1" data-score="10" data-w="cape" data-pair="cap-cape" data-concept="phonics.magice">
+    <div class="card">
+      <div class="question-label">연습 6 <span class="stars">⭐</span></div>
+      <div class="question-text">끝을 먼저 보고 — 그림을 골라요</div>
+      <div class="bigword"><span class="mw">c<b>a</b>p<i class="se">e</i></span></div>
+      <div class="pic-choices">
+        <button class="pic-btn" onclick="answer(this,0)">🧢</button>
+        <button class="pic-btn" onclick="answer(this,1)">🦸</button>
+        <button class="pic-btn" onclick="answer(this,2)">🪁</button>
+      </div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S9 연습7 — 글자 보고 그림 kit (e 가 없다) ━━━ -->
+  <div class="slide" data-correct="2" data-score="10" data-w="kit" data-pair="kit-kite" data-concept="phonics.magice">
+    <div class="card">
+      <div class="question-label">연습 7 <span class="stars">⭐</span></div>
+      <div class="question-text">끝을 먼저 보고 — 그림을 골라요</div>
+      <div class="bigword"><span class="mw">k<b>i</b>t</span></div>
+      <div class="pic-choices">
+        <button class="pic-btn" onclick="answer(this,0)">🪁</button>
+        <button class="pic-btn" onclick="answer(this,1)">🧢</button>
+        <button class="pic-btn" onclick="answer(this,2)">🧰</button>
+      </div>
+      <div class="feedback" id="fb9"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S10 개념② — 처음 보는 짝 ━━━ -->
+  <div class="slide" data-steps>
+    <div class="card">
+      <div class="slide-title step">🚀 이제 진짜 시험!</div>
+      <div class="concept-big step">지금부터는 <span class="hl">처음 짝지어 보는</span> 단어예요.<br>끝을 먼저 보고 <span class="hl">스스로</span> 갈라 읽어 봐요!</div>
+      <div class="kay-says step">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">외운 짝이 아니어도 괜찮아요 — 같은 순서면 <b>어떤 짝이든</b> 갈라져요.<br>👀 끝 → 🔤 가운데 → 👉 앞부터!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S11 응용1 — tap ↔ tape (뜻을 보고 단어를 고른다 · 소리 단서 없음) ━━━ -->
+  <div class="slide" data-correct="1" data-score="10" data-w="tape" data-pair="tap-tape" data-concept="phonics.magice">
+    <div class="card">
+      <div class="question-label">응용 1 <span class="stars">⭐</span></div>
+      <div class="question-text">스스로 읽고 — <b>「테이프」</b> 는 어느 쪽일까?</div>
+      <div class="choices">
+        <button class="choice-btn big" onclick="answer(this,0)"><span class="mw">t<b>a</b>p</span></button>
+        <button class="choice-btn big" onclick="answer(this,1)"><span class="mw">t<b>a</b>p<i class="se">e</i></span></button>
+      </div>
+      <div class="feedback" id="fb11"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S12 응용2 — pine (pin 의 그림이 오답으로) ━━━ -->
+  <div class="slide" data-correct="0" data-score="10" data-w="pine" data-pair="pin-pine" data-concept="phonics.magice">
+    <div class="card">
+      <div class="question-label">응용 2 <span class="stars">⭐</span></div>
+      <div class="question-text">스스로 읽고 그림을 골라요</div>
+      <div class="bigword"><span class="mw">p<b>i</b>n<i class="se">e</i></span></div>
+      <button class="listen-btn" id="lb12">🔊 읽었으면 눌러 확인</button>
+      <div class="pic-choices">
+        <button class="pic-btn" onclick="answer(this,0)">🌲</button>
+        <button class="pic-btn" onclick="answer(this,1)">📌</button>
+        <button class="pic-btn" onclick="answer(this,2)">🧰</button>
+      </div>
+      <div class="feedback" id="fb12"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S13 응용3 — note (not 의 뜻이 오답으로) ━━━ -->
+  <div class="slide" data-correct="1" data-score="10" data-w="note" data-pair="not-note" data-concept="phonics.magice">
+    <div class="card">
+      <div class="question-label">응용 3 <span class="stars">⭐</span></div>
+      <div class="question-text">스스로 읽고 <b>뜻</b>을 골라요</div>
+      <div class="bigword"><span class="mw">n<b>o</b>t<i class="se">e</i></span></div>
+      <button class="listen-btn" id="lb13">🔊 읽었으면 눌러 확인</button>
+      <div class="choices">
+        <button class="choice-btn" onclick="answer(this,0)">아니다</button>
+        <button class="choice-btn" onclick="answer(this,1)">쪽지 📝</button>
+        <button class="choice-btn" onclick="answer(this,2)">소나무</button>
+      </div>
+      <div class="feedback" id="fb13"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S14 결과 — 게이트① ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="result-emoji" id="resultEmoji">🎉</div>
+      <div style="font-size:26px" id="resultTitle">잘 갈라 읽었어요!</div>
+      <div class="result-score">⭐ <span id="finalScore">0</span>점</div>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <div class="kay-says">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text" id="gateText">채점 중…</div>
+      </div>
+      <button class="nav-btn" id="gateBtn" style="margin-top:10px">▶ 다음</button>
+      <button class="nav-btn" style="margin-top:10px;background:var(--secondary)" onclick="location.href='../index.html'">🪜 사다리로</button>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script src="../engine/k-tts.js"></script>
+<script src="../engine/k-collection.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
+<script>
+let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
+const TOTAL=15;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playTone(f,t,d,g=.3){getCtx();audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d);});}
+function playCorrect(){[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
+function playWrong(){[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
+function playClick(){playTone(880,'sine',.08,.2);}
+document.body.addEventListener('pointerdown',()=>{if(!unlocked){KTTS.unlock();unlocked=true;justUnlocked=true;setTimeout(()=>justUnlocked=false,350);
+  const cur=document.querySelectorAll('.slide')[currentSlide];
+  const last=cur&&cur.querySelectorAll('.step.in');
+  if(last&&last.length){speakStep(last[last.length-1]);}
+}},{once:true});
+
+/* ── 탭 기반 단계 등장 (자동 흐름 ❌) ── */
+let stepState={};
+function setupSlide(slide,idx){
+  slide.classList.add('lit');
+  const steps=slide.querySelectorAll('.step');
+  if(!steps.length)return;
+  if(stepState[idx]===undefined){
+    steps.forEach(s=>s.classList.remove('in'));
+    steps[0].classList.add('in');stepState[idx]=1;
+    speakStep(steps[0]);
+  }else{
+    steps.forEach(s=>s.classList.add('in'));stepState[idx]=steps.length;
+  }
+}
+function speakStep(el){
+  if(!unlocked||!el)return;
+  if(el.dataset.sound)KTTS.sound(el.dataset.sound);
+  else if(el.dataset.speakWord)KTTS.word(el.dataset.speakWord);
+  else if(el.dataset.speak)KTTS.sentence(el.dataset.speak);
+}
+function advanceStep(slide,idx){
+  const steps=[...slide.querySelectorAll('.step')];
+  if(stepState[idx]<steps.length){
+    const el=steps[stepState[idx]];
+    el.classList.add('in');playClick();speakStep(el);
+    stepState[idx]++;
+    return true;
+  }
+  return false;
+}
+function goSlide(n){
+  const sl=document.querySelectorAll('.slide');KTTS.stop();
+  sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');
+  setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);
+  currentSlide=n;sl[n].classList.add('active');updateUI();
+  setupSlide(sl[n],n);
+}
+function nextSlide(){
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  if(slide.hasAttribute('data-steps')&&advanceStep(slide,currentSlide))return;
+  if(currentSlide<TOTAL-1)goSlide(currentSlide+1);
+}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;
+  document.getElementById('scoreVal').textContent=score;
+  if(currentSlide===TOTAL-1)finish();
+}
+function addScore(p){
+  const bonus=combo>=3?Math.floor(p*.5):0;
+  score+=p+bonus;combo++;
+  document.getElementById('scoreVal').textContent=score;
+  if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}
+}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.innerHTML=msg;el.className='feedback '+(ok?'ok':'err');}}
+
+const OK_MSGS=['✅ 정답! +{p}점','🎯 바로 그거야! +{p}점','✨ 소리 박사인데? +{p}점'];
+const SAM_MSGS=['🙋 Sam: "나도 그거 골랐는데…" 다시 들어 봐!','🙋 Sam: "내가 맞다니까!" …아니래. 한 번 더!','🤔 Sam이 또 헷갈리게 했구나 — 소리를 잘 듣고 다시!'];
+function okMsg(p){return OK_MSGS[Math.floor(Math.random()*OK_MSGS.length)].replace('{p}',p);}
+function samMsg(){return SAM_MSGS[Math.floor(Math.random()*SAM_MSGS.length)];}
+/* ── 오늘의 재료 (펼침 16_magice_total.md 16-2) ──
+   ★연습 = 다섯 짝 하나씩 듣고 고르기(5) + 글자 보고 그림(2). 응용 = 처음 짝지어 보는 tap↔tape · pin↔pine · not↔note(전부 앞 칸 소환처 있음).
+   ★게이트① 판정 단위는 「짝」이다(펼침 명시) — 같은 짝을 두 번 틀려도 하나로 센다. data-pair 슬러그를 16_B 에 넘긴다.
+   ★응용1 tap↔tape 는 소리 단서를 주지 않는다 — 뜻(테이프)을 보고 글자 둘 중 하나를 고른다. 테이프·tap 은 그림 근거가 약해
+     그림 선택지 0(#11 tape 판정 계승). 소리는 정답 뒤에만.
+   ★hop·cut·mat·mate·hope·cute·not 은 그림 선택지 0 — 귀·뜻 글자로만(#14 판정 계승). */
+const MEAN={cap:'모자 🧢',cape:'망토 🦸',kit:'준비물 🧰',kite:'연 🪁',hop:'깡충 뛰다',hope:'바라다',cut:'자르다',cute:'귀여운 🐥',mat:'돗자리 🧺',mate:'친구',tap:'톡톡 👆',tape:'테이프',pin:'핀 📌',pine:'소나무 🌲',not:'아니다',note:'쪽지 📝'};
+const KEYS={cap:['c','a','p'],cape:['c','a_e','p'],kit:['k','i','t'],kite:['k','i_e','t'],hop:['h','o','p'],hope:['h','o_e','p'],cut:['c','u','t'],cute:['c','u_e','t'],mat:['m','a','t'],mate:['m','a_e','t'],tap:['t','a','p'],tape:['t','a_e','p'],pin:['p','i','n'],pine:['p','i_e','n'],not:['n','o','t'],note:['n','o_e','t']};
+/* 가운데 모음 칸의 정체 */
+const VK={cap:'a',cape:'a_e',kit:'i',kite:'i_e',hop:'o',hope:'o_e',cut:'u',cute:'u_e',mat:'a',mate:'a_e',tap:'a',tape:'a_e',pin:'i',pine:'i_e',not:'o',note:'o_e'};
+const VWHY={a_e:'끝에 e 🤫 → a 는 <b>/에이/</b>',i_e:'끝에 e 🤫 → i 는 <b>/아이/</b>',o_e:'끝에 e 🤫 → o 는 <b>/오우/</b>',u_e:'끝에 e 🤫 → u 는 <b>/유/</b>',a:'끝에 e 가 <b>없어요</b> → a 는 <b>/애/</b>',i:'끝에 e 가 <b>없어요</b> → i 는 <b>/이/</b>',o:'끝에 e 가 <b>없어요</b> → o 는 <b>/오/</b>',u:'끝에 e 가 <b>없어요</b> → u 는 <b>/어/</b>'};
+let wrongPairs={};   /* 게이트① 판정용 — 짝 슬러그 */
+
+function say(w){ if(KEYS[w])return KTTS.blend(KEYS[w],{word:w,passes:1}); return KTTS.word(w); }
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
+  const W=slide.dataset.w;
+  playClick();
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);
+    say(W);
+    setFB('fb'+currentSlide,okMsg(pts)+' — <b>'+W+'</b> '+MEAN[W]+' · '+VWHY[VK[W]],true);
+    answered[currentSlide]=true;
+  }else{
+    btn.classList.add('wrong');playWrong();combo=0;wrongPairs[slide.dataset.pair]=true;
+    setFB('fb'+currentSlide,samMsg()+' 앞부분은 짝이 <b>똑같아요</b> — <b>맨 끝</b>부터 다시 봐요!',false);
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+/* S1 소환 — 단어 칩 탭 = 조각 합치기 1회 */
+document.querySelectorAll('.wchip').forEach(c=>{
+  c.addEventListener('click',()=>{playClick();say(c.dataset.word);});
+});
+
+/* 듣기 버튼(S3~S7) · 자기확인 버튼(S12·S13) — 응용1(S11)은 소리 단서를 주지 않는다 */
+[['lb3','cape'],['lb4','kit'],['lb5','hope'],['lb6','cut'],['lb7','mate'],['lb12','pine'],['lb13','note']].forEach(p=>{
+  document.getElementById(p[0]).onclick=()=>{playClick();KTTS.word(p[1]);};
+});
+
+/* ── 게이트① — 틀린 짝 3개↑ 면 보조로 ── */
+function finish(){
+  document.getElementById('finalScore').textContent=score;
+  const miss=Object.keys(wrongPairs);
+  document.getElementById('resultStars').textContent=score>=90?'⭐⭐⭐⭐⭐':score>=70?'⭐⭐⭐⭐':'⭐⭐⭐';
+  document.getElementById('resultEmoji').textContent=miss.length>=3?'💪':(score>=90?'🏆':'🎉');
+  try{ if(window.KCollection) KCollection.add(['cape','kite','hope','cute','mate','tape','pine','note']); }catch(e){}
+  const t=document.getElementById('gateText'),b=document.getElementById('gateBtn');
+  if(miss.length>=3){
+    document.getElementById('resultTitle').textContent='천천히 한 번 더!';
+    t.innerHTML='헷갈린 짝이 <b>'+miss.length+'개</b> 있어요 ('+miss.map(m=>m.replace('-',' ↔ ')).join(' · ')+').<br>단어를 <span class="hl">오른쪽부터</span> 켜 보면서 다시 볼게요!';
+    b.textContent='💪 보충으로 가기';
+    b.onclick=()=>location.href='16_B_magicemix_support.html?miss='+encodeURIComponent(miss.join(','));
+  }else{
+    t.innerHTML='오늘 손에 넣은 것 🏆<br>① 짝이 <span class="hl">섞여 있어도</span> 끝을 먼저 보고 갈라 읽었다<br>② <span class="hl">처음 짝지어 보는</span> 단어도 갈라 읽었다 (tap↔tape · pin↔pine · not↔note)<br>다음은 <b>숙달</b> — 표시 없는 맨글자로, 소리 없이 읽어요!';
+    b.textContent='▶ 숙달로 가기';
+    b.onclick=()=>location.href='16_3_magicemix_master.html';
+  }
+}
+
+let tx=0,ty=0;
+const sc=document.getElementById('slidesContainer');
+sc.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;});
+sc.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){d_swipe(dx);return;}
+});
+function d_swipe(dx){dx>0?prevSlide():nextSlide();}
+sc.addEventListener('click',e=>{
+  if(justUnlocked)return;
+  const w=e.target.closest('[data-sound]');
+  if(!w)return;
+  const host=w.classList.contains('step')?w:w.closest('.step');
+  if(!host||host.classList.contains('in'))KTTS.sound(w.dataset.sound);
+});
+updateUI();
+setupSlide(document.querySelectorAll('.slide')[0],0);
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
