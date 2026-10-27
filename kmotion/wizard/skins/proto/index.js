@@ -2,7 +2,7 @@
 // 규칙: 스냅샷은 읽기만 · 판정 크기·시간은 스냅샷 값 그대로 · 모르는 이벤트는 무시 · 엔진·sim import 0
 import * as THREE from 'three';
 import { WX, makePlayer, posePlayer, tipWorld, makeSlime, poseSlime, makeCrystal, poseCrystal, makeGolem, poseGolem, makeRock } from './actors.js';
-import { makeTelegraph, poseTelegraph, makeProjectile, poseProjectile, Sparks, makeBlast, makeTelegraphLine, poseTelegraphLine, makeTelegraphRing, poseTelegraphRing } from './vfx.js';
+import { makeTelegraph, poseTelegraph, makeProjectile, poseProjectile, Sparks, makeBlast, makeTelegraphLine, poseTelegraphLine, makeTelegraphRing, poseTelegraphRing, makeIce, poseIce, makeBolt, poseBolt, makeMeteor, poseMeteor } from './vfx.js';
 import { createUI } from './ui.js';
 import { createAudio } from './audio.js';
 import { buildForest } from './env.js';
@@ -11,7 +11,7 @@ export const CONTRACT = '1';
 export function createSkin(ctx){
   const CAM = ctx.camera, TIMING = ctx.anim || {};
   let quality = ctx.quality, css = null, renderer, scene, camera, sun, sparks, forest, W = innerWidth, H = innerHeight;
-  let player = null, playerId = null; const enemies = new Map(), shots = new Map(), crystals = new Map(), tgs = new Map(), blasts = new Map(), btgs = new Map(); let golem = null, golemUid = null;
+  let player = null, playerId = null; const enemies = new Map(), shots = new Map(), crystals = new Map(), tgs = new Map(), blasts = new Map(), btgs = new Map(); let bolts = [], golem = null, golemUid = null;
   let lastT = performance.now(), drawnTg = [], kick = 0, fovPulse = 0, camPos = new THREE.Vector3(0, 4.2, -7.5), camLook = new THREE.Vector3(0, 1, 3), menuSpin = 0;
   const audio = createAudio(), ui = createUI(ctx, audio), tmp = new THREE.Vector3();
 
@@ -62,8 +62,10 @@ export function createSkin(ctx){
       for (const x of bt) { const o = btgs.get(x.uid), tg = x.tg; if (tg.shape === 'line') poseTelegraphLine(o, tg, s.gameT); else if (tg.shape === 'ring') poseTelegraphRing(o, tg, s.gameT); else poseTelegraph(o, tg, s.gameT);
         if (o.userData.rock) { const k = Math.max(0, Math.min(1, (s.gameT - tg.t0) / (tg.t1 - tg.t0))), f = Math.max(0, (k - .45) / .55); o.userData.rock.position.y = (7 - 7 * f * f) / Math.max(.01, tg.size[0]); o.userData.rock.scale.setScalar(1 / Math.max(.01, tg.size[0])); o.userData.rock.rotation.x += dt * 4; } }
       drawnTg = drawnTg.concat(bt.map(x => 'b' + x.i));
-      sync(blasts, s.areas, a => { const m = makeBlast(0xff8a3d); scene.add(m); return m; }, drop);
-      for (const a of s.areas) { const m = blasts.get(a.uid), k = Math.max(0, Math.min(1, (s.gameT - a.t0) / Math.max(.01, a.t1 - a.t0))); m.position.set(WX(a.pos[0]), .2, a.pos[2]); m.scale.set(a.radius * (.6 + .4 * k), a.radius * .55 * (.6 + .4 * k), a.radius * (.6 + .4 * k)); m.material.opacity = .75 * (1 - k); }
+      sync(blasts, s.areas, a => { const m = a.kind === 'ice' ? makeIce() : a.kind === 'meteor' ? makeMeteor() : makeBlast(0xff8a3d); m.userData.kind = a.kind; scene.add(m); return m; }, drop);
+      for (const a of s.areas) { const m = blasts.get(a.uid); if (a.kind === 'ice') { poseIce(m, a, s.gameT); continue; } if (a.kind === 'meteor') { poseMeteor(m, a, s.gameT); continue; } { const k = Math.max(0, Math.min(1, (s.gameT - a.t0) / Math.max(.01, a.t1 - a.t0))); m.position.set(WX(a.pos[0]), .2, a.pos[2]); m.scale.set(a.radius * (.6 + .4 * k), a.radius * .55 * (.6 + .4 * k), a.radius * (.6 + .4 * k)); m.material.opacity = .75 * (1 - k); } }
+      bolts = bolts.filter(b => { const live = poseBolt(b); if (!live) { scene.remove(b); b.geometry.dispose(); } return live; });
+      if (player) { const ar = P.arcana; player.userData.shield.visible = P.blocking || !!ar; player.userData.shield.material.color.setHex(ar ? 0xb28cff : 0x9a8cc8); player.userData.shield.material.opacity = ar ? .28 + .1 * Math.sin(now / 90) : .22; }
       sparks.update(dt * (s.slow < 1 ? Math.max(.25, s.slow) : 1));
       // 카메라 — 기준 자세(contract/camera.json) + 연출 오프셋(흔들림 ±0.6m 이하, FOV ±8° 이하)
       const C = s.camera.mode === 'q' ? CAM.q : CAM.arena, px = P.pos[0] * C.trackX, pz = P.pos[2], intro = s.camera.mode === 'boss-intro' && s.boss;
@@ -87,8 +89,12 @@ export function createSkin(ctx){
     const T = ev.type;
     if (T === 'attack:fire') { audio.play('bolt'); if (player) { const p = tipWorld(player, new THREE.Vector3()); sparks.burst([-p.x, p.y, p.z], 0xfff1a8, 8, 2, 1); } kick = Math.max(kick, .03); }
     else if (T === 'spell:charge') audio.play('charge');
-    else if (T === 'spell:cast') { audio.play('cast'); fovPulse = 5; kick = .08; }
-    else if (T === 'spell:impact') { audio.play('boom'); sparks.burst(ev.pos, 0xff8a3d, 60, 5, 3); sparks.burst(ev.pos, 0xffe27a, 30, 3, 4); kick = .2; }
+    else if (T === 'spell:cast') { audio.play(ev.spell === 'ice' ? 'ice' : ev.spell === 'meteor' ? 'sky' : 'cast'); fovPulse = 5; kick = .08; }
+    else if (T === 'spell:chain') { audio.play('zap'); const b = makeBolt(ev.points); scene.add(b); bolts.push(b); for (const p of ev.points.slice(1)) sparks.burst(p, 0xfff27a, 16, 3, 2); fovPulse = 3; }
+    else if (T === 'shield:on') audio.play('shield');
+    else if (T === 'shield:block') { audio.play('block'); if (player) { const p = player.position; sparks.burst([-p.x, 1, p.z], 0xb28cff, 30, 3, 2); } }
+    else if (T === 'spell:equip') audio.play('click');
+    else if (T === 'spell:impact') { audio.play(ev.spell === 'meteor' ? 'meteor' : 'boom'); if (ev.spell === 'meteor') { sparks.burst(ev.pos, 0xffb46b, 160, 9, 5); kick = .6; fovPulse = 8; } sparks.burst(ev.pos, 0xff8a3d, 60, 5, 3); sparks.burst(ev.pos, 0xffe27a, 30, 3, 4); kick = .2; }
     else if (T === 'spell:fizzle') { audio.play('fizzle'); if (ev.reason === 'mana') ui.toast('toast.findCrystal'); else ui.toast('toast.fizzle'); }
     else if (T === 'hit') { const pos = ev.pos || [0, 1, 0], sc = toScreen(pos);
       if (ev.target === 'player') { audio.play(ev.blocked ? 'block' : 'hurt'); if (!ev.blocked) { ui.flash(); if (player) player.userData.flash = 1; } if (sc.front) ui.floatAt(sc.x, sc.y - 40, '−' + ev.amount, 'hurt'); }

@@ -28,10 +28,10 @@ const skin = createSkin({ root, quality: 'medium', text, assetBase: '', dev: tru
 console.log('인터페이스', checkInterface(skin)); await skin.load(() => {}); skin.mount();
 const errs = []; const S = fn => { try { fn(); } catch (e) { errs.push(e.stack.split('\n').slice(0, 3).join(' | ')); } };
 for (const mode of ['keyboard', 'camera-menu']) {}
-const runs = []; for (const seed of [7, 31, 99, 5]) { const passive = seed === 5;
-  const flow = createFlow({ data, grade: 1, seed }); let cur = null, lastToast = null, acts = [];
+const runs = []; for (const seed of [7, 31, 99, 5, 13]) { const passive = seed === 5, all = seed === 13;
+  const flow = createFlow({ data, grade: 1, seed, unlock: all ? 'all' : null }); const castSeen = new Set(); let cur = null, lastToast = null, acts = [];
   skin.ui.bind({ action: (id, p) => { acts.push(id); flow.action(id, p); } });
-  const frame = () => { flow.step(1 / 60); if (flow.game) flow.game.aspect = 16 / 9; for (const ev of flow.drainEvents()) S(() => skin.onEvent(ev)); const snap = flow.snapshot();
+  const frame = () => { flow.step(1 / 60); if (flow.game) flow.game.aspect = 16 / 9; for (const ev of flow.drainEvents()) { if (ev.type === 'spell:cast' || ev.type === 'shield:on') castSeen.add(ev.spell || 'shield'); S(() => skin.onEvent(ev)); } const snap = flow.snapshot();
     if (snap.screen !== cur) { const p = cur; cur = snap.screen; S(() => { if (p) skin.ui.hide(p); skin.ui.show(cur, snap); }); }
     S(() => skin.ui.update(cur, snap)); if (snap.toast && snap.toast !== lastToast) S(() => skin.ui.toast(snap.toast)); lastToast = snap.toast; S(() => skin.render(snap, 0)); return snap; };
   for (let i = 0; i < 30; i++) frame();                                  // S01 메뉴
@@ -46,13 +46,15 @@ const runs = []; for (const seed of [7, 31, 99, 5]) { const passive = seed === 5
     if (s.enemies) { maxEnemies = Math.max(maxEnemies, s.enemies.length); const st = skin.stats(); const a = checkTelegraphs(s, st.telegraphs); if (s.enemies.some(e => e.telegraph) || (s.boss && s.boss.telegraphs.length)) tgN++; if (!a.ok) tgBad++; }
     if (s.screen === 'S08Q' && s.question && s.question.state === 'open' && s.question.readP >= 1) { const st = skin.stats(); if (!checkTargets(s, st.targetRects).ok) rectBad++;
       if (tick % 20 === 0) { qN++; const slot = !passive && (qN % 2 || s.question.kind === 'seal') ? flow.game.q.v.correctSlot : (flow.game.q.v.correctSlot + 1) % 3; root.querySelectorAll('.mw-orb')[slot].click(); } }
+    if (all && s.screen === 'S08' && !s.paused && tick % 500 === 250) { root.querySelector('.mw-top-r .pause').click(); frame(); const bs = root.querySelectorAll('.mw-ui .spells button'); if (bs.length) bs[(tick / 500 | 0) % bs.length].click(); frame(); root.querySelector('.mw-ui .resume').click(); }
+    if (all && s.screen === 'S08') { flow.game.player.mana = Math.max(flow.game.player.mana, 55); if (tick % 900 === 450) flow.game.player.mana = 100; }
     if (s.screen === 'S08' && !s.paused) { const P = s.player, e = s.enemies.find(x => x.state !== 'dead');
       if (!passive && tick > 900 && tick % 30 === 0) { press('Space', true); press('Space', false); }
       if (e) { const want = e.pos[0] > P.pos[0] + .3 ? 'ArrowRight' : e.pos[0] < P.pos[0] - .3 ? 'ArrowLeft' : null; press('ArrowLeft', want === 'ArrowLeft'); press('ArrowRight', want === 'ArrowRight'); if (e.telegraph && tick % 30 === 0) { press('KeyL', true); } else press('KeyL', false); }
       const c = s.crystals.find(c => c.near); if (c && tick % 20 === 0 && (!passive || qN < 3)) { press('Space', true); press('Space', false); }
-      if (P.mana >= 20 && tick % 200 === 0) press('KeyK', true); if (tick % 200 === 50) press('KeyK', false); }
+      if (P.mana >= 20 && tick % (all ? 120 : 200) === 0) press('KeyK', true); if (tick % (all ? 120 : 200) === (all ? 100 : 50)) press('KeyK', false); if (all && tick % 700 === 600) press('KeyL', true); if (all && tick % 700 === 690) press('KeyL', false); }
     if (s.screen === 'S13' || s.screen === 'S14') { for (let i = 0; i < 30; i++) frame(); break; } }
-  const snap = flow.snapshot(); runs.push({ seed, bossMax, bossTg, bossUI: root.querySelector('.mw-boss .nm') ? root.querySelector('.mw-boss .nm').textContent : '', end: snap.screen, ticks: tick, screens: [...screens].join(','), tg: `${tgN}프레임 중 누락 ${tgBad}`, rectBad, qClicks: qN, maxEnemies, result: JSON.stringify(snap.result), resultUI: root.querySelector('.mw-result') ? root.querySelector('.mw-result').textContent.slice(0, 60) : '' });
+  const snap = flow.snapshot(); runs.push({ seed, casts: [...castSeen].join(','), bossMax, bossTg, bossUI: root.querySelector('.mw-boss .nm') ? root.querySelector('.mw-boss .nm').textContent : '', end: snap.screen, ticks: tick, screens: [...screens].join(','), tg: `${tgN}프레임 중 누락 ${tgBad}`, rectBad, qClicks: qN, maxEnemies, result: JSON.stringify(snap.result), resultUI: root.querySelector('.mw-result') ? root.querySelector('.mw-result').textContent.slice(0, 60) : '' });
   root.querySelector('.again') && root.querySelector('.again').click(); for (let i = 0; i < 30; i++) frame(); flow.action('home'); for (let i = 0; i < 5; i++) frame();
 }
 console.log(runs); console.log('stats', skin.stats().drawCalls, '그린 횟수 OK'); console.log(errs.length ? '오류 ' + errs.length + '\n' + [...new Set(errs)].slice(0, 8).join('\n') : '오류 0'); skin.dispose(); process.exit(0);

@@ -45,6 +45,10 @@ export function createAudio(){
     shield(){ [660, 990, 1320].forEach((f, i) => tone({ f, type: 'sine', d: .6, g: .1, t: i * .05 })); },
     glass(){ noise({ d: .5, g: .4, lp: 9000, hp: 2500 }); [2093, 2637, 3136, 2349].forEach((f, i) => tone({ f, type: 'triangle', d: .35, g: .1, t: i * .03 })); tone({ f: 90, f2: 40, d: .4, g: .4 }); },
     weak(){ [523, 659, 784, 1047, 1319].forEach((f, i) => tone({ f, type: 'square', d: .18, g: .08, lp: 3000, t: i * .07 })); },
+    zap(){ for (let i = 0; i < 3; i++) { noise({ d: .08, g: .25, lp: 7000, hp: 1500, t: i * .07 }); tone({ f: 1800, f2: 600, type: 'square', d: .06, g: .08, t: i * .07 }); } },
+    ice(){ noise({ d: 1.6, g: .18, lp: 3000, hp: 800, f2: 1200 }); for (let i = 0; i < 6; i++) tone({ f: 2400 + Math.random() * 1600, type: 'triangle', d: .15, g: .05, t: Math.random() * 1.2 }); },
+    sky(){ tone({ f: 120, f2: 480, type: 'sawtooth', d: 1.1, g: .12, lp: 1200 }); tone({ f: 2400, f2: 300, type: 'sine', d: 1.0, g: .06, t: .3 }); },
+    meteor(){ tone({ f: 60, f2: 30, type: 'sine', d: .9, g: .6 }); noise({ d: 1.0, g: .5, lp: 1600, f2: 80 }); },
     click(){ tone({ f: 880, type: 'sine', d: .06, g: .08 }); },
     calibOk(){ tone({ f: 880, type: 'triangle', d: .2, g: .14 }); tone({ f: 1320, type: 'triangle', d: .25, g: .1, t: .08 }); },
   };

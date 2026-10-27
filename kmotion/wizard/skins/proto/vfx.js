@@ -50,3 +50,26 @@ export function makeTelegraphRing(){ const g = new THREE.Group();
   g.userData = { waves, floor }; return g; }
 export function poseTelegraphRing(g, tg, gameT){ const R = tg.size[0], k = Math.max(0, Math.min(1, (gameT - tg.t0) / (tg.t1 - tg.t0))), u = g.userData; g.position.set(WX(tg.center[0]), 0, tg.center[2]);
   u.floor.scale.setScalar(R); u.floor.material.opacity = .1 + .25 * k; u.waves.forEach((w, i) => { const f = ((performance.now() / 700 + i / 3) % 1); w.scale.setScalar(.5 + f * R); w.material.opacity = (1 - f) * (.4 + .6 * k); }); }
+
+// ── v1.1 마법: 얼음 폭풍 원 · 번개 사슬 · 별똥(그림자→낙하) · 비전 방패는 actors 의 shield 구 재사용
+export function makeIce(){ const g = new THREE.Group();
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ color: 0x9be7ff, transparent: true, opacity: .4, depthWrite: false })); disc.rotation.x = -Math.PI / 2; disc.position.y = .03; g.add(disc);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(.9, 1, 48), add(0xe8fbff, .8)); ring.rotation.x = -Math.PI / 2; ring.position.y = .05; g.add(ring);
+  const n = 60, geo = new THREE.BufferGeometry(), pos = new Float32Array(n * 3), seed = []; for (let i = 0; i < n; i++) seed.push([Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random()]);
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const flakes = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: .14, transparent: true, opacity: .9, depthWrite: false })); flakes.frustumCulled = false; g.add(flakes);
+  g.userData = { disc, ring, flakes, pos, seed, n }; return g; }
+export function poseIce(g, a, gameT){ const u = g.userData, k = Math.max(0, Math.min(1, (gameT - a.t0) / Math.max(.01, a.t1 - a.t0))), grow = Math.min(1, (gameT - a.t0) / .3);
+  g.position.set(WX(a.pos[0]), 0, a.pos[2]); u.disc.scale.setScalar(a.radius * grow); u.ring.scale.setScalar(a.radius * grow); u.disc.material.opacity = .45 * (1 - k * .7);
+  for (let i = 0; i < u.n; i++) { const s = u.seed[i], f = ((gameT * .8 + s[2]) % 1); u.pos[i * 3] = s[0] * a.radius * .9; u.pos[i * 3 + 1] = 3.5 * (1 - f); u.pos[i * 3 + 2] = s[1] * a.radius * .9; } u.flakes.geometry.attributes.position.needsUpdate = true; }
+export function makeBolt(points){ const pts = points.map(p => new THREE.Vector3(WX(p[0]), p[1], p[2])), geo = new THREE.BufferGeometry(); const N = (pts.length - 1) * 12 + 1; geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+  const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xfff27a, transparent: true, opacity: 1 })); line.frustumCulled = false; line.userData = { pts, N, born: performance.now() }; return line; }
+export function poseBolt(line){ const u = line.userData, a = line.geometry.attributes.position, age = (performance.now() - u.born) / 1000; let k = 0;
+  for (let s = 0; s < u.pts.length - 1; s++) for (let j = 0; j < 12; j++) { const t = j / 12, p = u.pts[s].clone().lerp(u.pts[s + 1], t), jit = j === 0 ? 0 : .35; a.setXYZ(k++, p.x + (Math.random() - .5) * jit, p.y + (Math.random() - .5) * jit, p.z + (Math.random() - .5) * jit); }
+  const L = u.pts[u.pts.length - 1]; a.setXYZ(k, L.x, L.y, L.z); a.needsUpdate = true; line.material.opacity = Math.floor(age / .06) % 2 ? .35 : 1; return age < .35; }
+export function makeMeteor(){ const g = new THREE.Group();
+  const shadow = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ color: 0x2a0a0a, transparent: true, opacity: .35, depthWrite: false })); shadow.rotation.x = -Math.PI / 2; shadow.position.y = .03; g.add(shadow);
+  const edge = new THREE.Mesh(new THREE.RingGeometry(.96, 1, 64), new THREE.MeshBasicMaterial({ color: 0xff8a3d, transparent: true, opacity: .9, depthWrite: false })); edge.rotation.x = -Math.PI / 2; edge.position.y = .04; g.add(edge);
+  const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2, 1), new THREE.MeshBasicMaterial({ color: 0xffb46b })); const glow = new THREE.Mesh(new THREE.SphereGeometry(2, 16, 12), add(0xff6a2a, .5)); rock.add(glow); g.add(rock);
+  g.userData = { shadow, edge, rock }; return g; }
+export function poseMeteor(g, a, gameT){ const u = g.userData, fall = a.t1 - a.t0, k = Math.max(0, Math.min(1, (gameT - a.t0) / Math.max(.01, fall)));
+  g.position.set(WX(a.pos[0]), 0, a.pos[2]); u.shadow.scale.setScalar(a.radius * (.3 + .7 * k)); u.edge.scale.setScalar(a.radius); u.rock.position.set(-6 * (1 - k), 22 * (1 - k * k) + 1, -4 * (1 - k)); u.rock.visible = k < 1; u.rock.rotation.x += .1; }

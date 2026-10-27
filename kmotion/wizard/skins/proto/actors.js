@@ -60,7 +60,7 @@ export function posePlayer(g, P, dt, timing){
   const kk = 1 - Math.exp(-dt / (up ? .03 : .12));
   u.armR.rotation.x = lerpA(u.armR.rotation.x, kk, rR.x); u.armR.rotation.z = lerpA(u.armR.rotation.z, kk, rR.z); u.armL.rotation.x = lerpA(u.armL.rotation.x, kk, rL.x); u.armL.rotation.z = lerpA(u.armL.rotation.z, kk, rL.z);
   u.orb.visible = !!P.charging; if (P.charging) u.orb.scale.setScalar(.15 + P.charging.ratio * .85 + Math.sin(t * 20) * .05);
-  u.shield.visible = P.blocking; u.tip.rotation.y += dt * 2;
+  u.tip.rotation.y += dt * 2;
   u.flash = Math.max(0, u.flash - dt * 4); const fl = u.flash > 0 ? 1 : 0; for (const m of u.mats) m.emissive && m.emissive.setRGB(fl * .8, fl * .1, fl * .1);
   g.visible = !(P.invuln && Math.floor(t * 18) % 2 === 0 && a.lower !== 'A05');
 }

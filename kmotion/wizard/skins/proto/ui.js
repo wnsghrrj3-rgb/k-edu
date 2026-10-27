@@ -59,13 +59,13 @@ export function createUI(ctx, audio){
 
   // ── S08 HUD (S08Q 에서도 보임)
   const hud = h('section', 'mw-hud mw-hide');
-  hud.innerHTML = `<div class="mw-bars"><div class="mw-bar hp"><i></i><span></span></div><div class="mw-bar mana"><i></i><s></s><span></span></div><div class="mw-chips"><span class="spell"></span><span class="feather">🪶</span></div></div>
+  hud.innerHTML = `<div class="mw-bars"><div class="mw-bar hp"><i></i><span></span></div><div class="mw-bar mana"><i></i><s></s><span></span></div><div class="mw-chips"><span class="spell"></span><span class="feather">🪶</span><span class="shieldc mw-hide"></span></div></div>
     <div class="mw-wave"></div><div class="mw-boss mw-hide"><b class="nm"></b><div class="bb"></div><span class="sh"></span></div><div class="mw-top-r"><button class="mute">🔊</button><button class="pause">⏸</button></div><div class="mw-streak"></div>
     <canvas class="mw-pip" width="320" height="240"></canvas><div class="mw-help"></div><div class="mw-lost mw-hide"></div><div class="mw-flash"></div>`;
   const $h = s => hud.querySelector(s), hpBar = $h('.hp'), mpBar = $h('.mana'), pip = $h('.mw-pip'), lost = $h('.mw-lost'), flashEl = $h('.mw-flash');
   $h('.pause').onclick = () => act('pause'); $h('.mute').onclick = () => { $h('.mute').textContent = audio.mute() ? '🔇' : '🔊'; };
   const pauseScr = h('section', 'mw-scr dim mw-hide'); pauseScr.innerHTML = `<div class="mw-panel"><div class="mw-big">${T('pause.title')}</div><div class="mw-note why"></div>
-    <div class="mw-row"><button class="big resume">${T('pause.resume')}</button></div><div class="mw-row"><button class="recal">${T('pause.calib')}</button><button class="home">${T('pause.home')}</button></div></div>`;
+    <div class="mw-note spl-t">${T('pause.spell')}</div><div class="mw-row spells"></div><div class="mw-row"><button class="big resume">${T('pause.resume')}</button></div><div class="mw-row"><button class="recal">${T('pause.calib')}</button><button class="home">${T('pause.home')}</button></div></div>`;
   pauseScr.querySelector('.resume').onclick = () => act('resume'); pauseScr.querySelector('.recal').onclick = () => act('recalib'); pauseScr.querySelector('.home').onclick = () => act('home');
 
   // ── S08Q 문제
@@ -88,7 +88,11 @@ export function createUI(ctx, audio){
     hpBar.firstElementChild.style.transform = `scaleX(${hpk})`; hpBar.classList.toggle('low', hpk < .3); hpBar.lastElementChild.textContent = `${T('hud.hp')} ${P.hp}`;
     mpBar.firstElementChild.style.transform = `scaleX(${mk})`; mpBar.querySelector('s').style.left = (P.spellCost / P.manaMax * 100) + '%'; mpBar.lastElementChild.textContent = `${T('hud.mana')} ${P.mana}`;
     mpBar.classList.toggle('ready', P.mana >= P.spellCost && P.castReady);
-    $h('.spell').textContent = P.charging ? `🔥 ${Math.round(P.charging.ratio * 100)}%` : P.mana >= P.spellCost ? '🔥 불꽃탄 준비' : `🔥 ${P.spellCost} 필요`;
+    const SI = { fireball: '🔥', ice: '❄️', lightning: '⚡', meteor: '☄️', shield: '🛡' }, si = SI[P.spell] || '✨', sn = T('spell.' + P.spell);
+    $h('.spell').textContent = P.charging ? `${si} ${Math.round(P.charging.ratio * 100)}%` : P.mana >= P.spellCost ? `${si} ${sn} 준비` : `${si} ${sn} ${P.spellCost} 필요`;
+    $h('.shieldc').classList.toggle('mw-hide', !(P.shieldReady || P.arcana)); $h('.shieldc').textContent = P.arcana ? `🛡 ${Math.ceil(P.arcana.ratio * 6)}초` : '🛡 막기 꾹';
+    const sp = pauseScr.querySelector('.spells'), list = P.spells || []; pauseScr.querySelector('.spl-t').classList.toggle('mw-hide', list.length < 2); sp.classList.toggle('mw-hide', list.length < 2);
+    if (sp.dataset.k !== list.join() + P.main) { sp.dataset.k = list.join() + P.main; sp.innerHTML = ''; for (const id of list) { const b = h('button', id === P.main ? 'on' : '', `${SI[id]} ${T('spell.' + id)}`); b.onclick = () => act('spell', { id }); sp.append(b); } }
     $h('.feather').classList.toggle('mw-hide', !P.feather);
     const w = s.world, Bs = s.boss; $h('.mw-wave').textContent = !Bs && w && w.waves ? `🌲 ${Math.min(w.wave + 1, w.waves)} / ${w.waves}` : '';
     const bb = $h('.mw-boss'); bb.classList.toggle('mw-hide', !Bs); if (Bs) { bb.querySelector('.nm').textContent = T(Bs.nameKey) + ` · ${Bs.phase + 1}/${Bs.phases}`;
