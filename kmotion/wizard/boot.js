@@ -8,7 +8,7 @@ const DEFAULT_SKIN = 'proto';               // hq 완성·준호 확인 뒤 이 
 const DEV = qs.has('dev'), CHECK = DEV || qs.has('check');
 const QUALITY = ['low', 'medium', 'high'].includes(qs.get('q')) ? qs.get('q') : 'medium';
 const GRADE = Math.min(6, Math.max(1, +qs.get('grade') || 1));
-const CAL_KEY = 'kmwiz.cal', TICK = 1 / 60;
+const CAL_KEY = 'kmwiz.cal', PROG_KEY = 'kmwiz.progress', TICK = 1 / 60;   // progress = 경험치·레벨(11 문서) — 기기 안에만, 동의 체계 연결은 공개 트랙에서
 const $ = id => document.getElementById(id), bootEl = $('boot');
 const say = m => { if (bootEl) bootEl.textContent = m; };
 
@@ -19,7 +19,9 @@ const data = { spells, enemies, anim, layout, text: textKo, camera, stages: { 'f
 const text = (key, args) => { const s = textKo[key] != null ? textKo[key] : key; return args ? s.replace(/\{(\w+)\}/g, (_, k) => args[k] != null ? args[k] : '') : s; };
 
 let cal = null; try { cal = JSON.parse(localStorage.getItem(CAL_KEY) || 'null'); } catch (_) {}
-const flow = createFlow({ data, grade: GRADE, freeze: DEV, cal, unlock: qs.get('spells') === 'all' ? 'all' : null, ...(qs.has('seed') ? { seed: +qs.get('seed') } : {}) });
+let progress = null; try { progress = JSON.parse(localStorage.getItem(PROG_KEY) || 'null'); } catch (_) {} if (qs.get('level')) progress = { level: +qs.get('level'), xp: 0 };   // ?level=n 시험용
+let savedProg = '';
+const flow = createFlow({ data, grade: GRADE, freeze: DEV, cal, progress, unlock: qs.get('spells') === 'all' ? 'all' : null, ...(qs.has('seed') ? { seed: +qs.get('seed') } : {}) });
 let savedCal = flow.cal;
 
 // ── 스킨
@@ -96,6 +98,7 @@ function frame(now){
   safe(() => skin.ui.update(scr, snap));
   if (snap.toast && snap.toast !== lastToast) safe(() => skin.ui.toast(snap.toast)); lastToast = snap.toast || null;
   safe(() => skin.render(snap, acc / TICK));
+  if (flow.progress) { const j = JSON.stringify(flow.progress); if (j !== savedProg) { savedProg = j; try { localStorage.setItem(PROG_KEY, j); } catch (_) {} } }
   if (flow.cal && flow.cal !== savedCal) { savedCal = flow.cal; try { localStorage.setItem(CAL_KEY, JSON.stringify(flow.cal)); } catch (_) {} }
   fpsN++; if (now - fpsT > 500) { fps = Math.round(fpsN * 1000 / (now - fpsT)); fpsN = 0; fpsT = now; if (devEl) devLine(snap); }
   requestAnimationFrame(frame);

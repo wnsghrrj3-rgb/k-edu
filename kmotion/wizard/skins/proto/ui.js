@@ -59,13 +59,15 @@ export function createUI(ctx, audio){
 
   // ── S08 HUD (S08Q 에서도 보임)
   const hud = h('section', 'mw-hud mw-hide');
-  hud.innerHTML = `<div class="mw-bars"><div class="mw-bar hp"><i></i><span></span></div><div class="mw-bar mana"><i></i><s></s><span></span></div><div class="mw-chips"><span class="spell"></span><span class="feather">🪶</span><span class="shieldc mw-hide"></span></div></div>
+  hud.innerHTML = `<div class="mw-bars"><div class="mw-bar hp"><i></i><span></span></div><div class="mw-bar mana"><i></i><s></s><span></span></div><div class="mw-bar xp"><i></i><span></span></div><div class="mw-chips"><span class="spell"></span><span class="feather">🪶</span><span class="shieldc mw-hide"></span></div></div>
     <div class="mw-wave"></div><div class="mw-boss mw-hide"><b class="nm"></b><div class="bb"></div><span class="sh"></span></div><div class="mw-top-r"><button class="mute">🔊</button><button class="pause">⏸</button></div><div class="mw-streak"></div>
     <canvas class="mw-pip" width="320" height="240"></canvas><div class="mw-help"></div><div class="mw-lost mw-hide"></div><div class="mw-flash"></div>`;
-  const $h = s => hud.querySelector(s), hpBar = $h('.hp'), mpBar = $h('.mana'), pip = $h('.mw-pip'), lost = $h('.mw-lost'), flashEl = $h('.mw-flash');
+  const $h = s => hud.querySelector(s), hpBar = $h('.hp'), mpBar = $h('.mana'), xpBar = $h('.xp'), pip = $h('.mw-pip'), lost = $h('.mw-lost'), flashEl = $h('.mw-flash');
   $h('.pause').onclick = () => act('pause'); $h('.mute').onclick = () => { $h('.mute').textContent = audio.mute() ? '🔇' : '🔊'; };
   const pauseScr = h('section', 'mw-scr dim mw-hide'); pauseScr.innerHTML = `<div class="mw-panel"><div class="mw-big">${T('pause.title')}</div><div class="mw-note why"></div>
-    <div class="mw-note spl-t">${T('pause.spell')}</div><div class="mw-row spells"></div><div class="mw-row"><button class="big resume">${T('pause.resume')}</button></div><div class="mw-row"><button class="recal">${T('pause.calib')}</button><button class="home">${T('pause.home')}</button></div></div>`;
+    <div class="mw-note spl-t">${T('pause.spell')}</div><div class="mw-row spells"></div><div class="mw-note hand mw-hide">${T('pause.hand')}</div><div class="mw-row"><button class="big resume">${T('pause.resume')}</button></div><div class="mw-row"><button class="recal">${T('pause.calib')}</button><button class="home">${T('pause.home')}</button></div></div>`;
+  // 손 유지 마법 바퀴(v1.3) — 카메라 모드에선 snapshot.targets(kind 'menu') 자리에 구슬을 그리고 DOM 버튼 줄은 숨김
+  const wheel = h('div', 'mw-wheel mw-hide'); pauseScr.append(wheel); const wheelOrbs = {};
   pauseScr.querySelector('.resume').onclick = () => act('resume'); pauseScr.querySelector('.recal').onclick = () => act('recalib'); pauseScr.querySelector('.home').onclick = () => act('home');
 
   // ── S08Q 문제
@@ -94,6 +96,7 @@ export function createUI(ctx, audio){
     hpBar.firstElementChild.style.transform = `scaleX(${hpk})`; hpBar.classList.toggle('low', hpk < .3); hpBar.lastElementChild.textContent = `${T('hud.hp')} ${P.hp}`;
     mpBar.firstElementChild.style.transform = `scaleX(${mk})`; mpBar.querySelector('s').style.left = (P.spellCost / P.manaMax * 100) + '%'; mpBar.lastElementChild.textContent = `${T('hud.mana')} ${P.mana}`;
     mpBar.classList.toggle('ready', P.mana >= P.spellCost && P.castReady);
+    if (P.level != null) { xpBar.firstElementChild.style.transform = `scaleX(${Math.min(1, P.xp / Math.max(1, P.xpNext))})`; xpBar.lastElementChild.textContent = `${T('hud.level')}${P.level} · ${P.xp}/${P.xpNext}`; }
     const SI = { fireball: '🔥', ice: '❄️', lightning: '⚡', meteor: '☄️', shield: '🛡' }, si = SI[P.spell] || '✨', sn = T('spell.' + P.spell);
     $h('.spell').textContent = P.charging ? `${si} ${Math.round(P.charging.ratio * 100)}%` : P.mana >= P.spellCost ? `${si} ${sn} 준비` : `${si} ${sn} ${P.spellCost} 필요`;
     $h('.shieldc').classList.toggle('mw-hide', !(P.shieldReady || P.arcana)); $h('.shieldc').textContent = P.arcana ? `🛡 ${Math.ceil(P.arcana.ratio * 6)}초` : '🛡 막기 꾹';
@@ -113,6 +116,14 @@ export function createUI(ctx, audio){
       : '<b>←→</b> 이동 · <b>Shift+←→</b> 피하기 · <b>Space</b> 마법탄 · <b>K</b> 불꽃탄 · <b>L</b> 막기 · <b>↓</b> 숙이기 · <b>H</b> 힌트 · <b>P</b> 멈춤';
     const lostOn = s.input && s.input.body === 'lost' && !s.paused; lost.classList.toggle('mw-hide', !lostOn); if (lostOn) lost.textContent = T('toast.showBody');
     pauseScr.classList.toggle('mw-hide', !s.paused); if (s.paused) pauseScr.querySelector('.why').textContent = s.paused === 'body' ? T('toast.showBody') : '';
+    const menu = s.paused === 'user' && cam ? (s.targets || []).filter(t => t.kind === 'menu') : []; const handUI = menu.length > 0;
+    wheel.classList.toggle('mw-hide', !handUI); pauseScr.querySelector('.hand').classList.toggle('mw-hide', !handUI); sp.classList.toggle('mw-hide', handUI || list.length < 2); pauseScr.querySelector('.resume').classList.toggle('mw-hide', handUI);
+    const c = s.input && s.input.cursor; if (s.paused === 'user') { cursor.classList.toggle('mw-hide', !(cam && c && c.x != null)); if (cam && c && c.x != null) cursor.style.transform = `translate(${c.x * innerWidth}px,${c.y * innerHeight}px)`; }
+    if (handUI) { if (!rects) rects = {}; const W = innerWidth, H = innerHeight; for (const o of Object.values(wheelOrbs)) o.classList.add('mw-hide');
+      for (const t of menu) { let o = wheelOrbs[t.id]; if (!o) { o = wheelOrbs[t.id] = h('div', 'mw-orb mw-menu', `<b></b><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="289" stroke-dashoffset="289"/></svg>`); o.onclick = () => t.id === 'resume' ? act('resume') : act('spell', { id: t.id.slice(6) }); wheel.append(o); }
+        const d = t.rect.w * W, cx = (t.rect.x + t.rect.w / 2) * W, cy = (t.rect.y + t.rect.h / 2) * H; rects[t.id] = { x: cx / W, y: cy / H };
+        o.style.cssText = `left:${cx - d / 2}px;top:${cy - d / 2}px;width:${d}px;height:${d}px`; o.classList.remove('mw-hide'); o.classList.toggle('on', t.id === 'spell:' + P.main);
+        o.querySelector('b').textContent = t.id === 'resume' ? '▶' : SI[t.id.slice(6)] || '✨'; o.querySelector('circle').style.strokeDashoffset = String(289 * (1 - (t.hover || 0))); } }
   }
   function paintQ(s){
     const Q = s.question; if (!Q) return;
@@ -142,7 +153,7 @@ export function createUI(ctx, audio){
   }
   function paintRes(s, win){ const r = s.result || {}; res.querySelector('.ttl').textContent = win ? '🏆 ' + T('clear.title') : '💪 ' + T('defeat.title');
     res.querySelector('.again').textContent = win ? T('clear.again') : T('defeat.again');
-    const rows = [['result.kills', r.kills], ['result.q', r.q], ['result.right', r.right], ['result.time', (r.time || 0) + '초']]; if (r.keyboard) rows.push(['result.key', '⌨️']);
+    const rows = [['result.kills', r.kills], ['result.q', r.q], ['result.right', r.right], ['result.time', (r.time || 0) + '초']]; if (r.xp != null) rows.push(['result.xp', `+${r.xp}` + (r.levelUps && r.levelUps.length ? ` · ${T('toast.levelUp')} Lv${r.levelUps.at(-1)}` : '')], ['result.level', `Lv${r.level}`]); if (r.keyboard) rows.push(['result.key', '⌨️']);
     res.querySelector('dl').innerHTML = rows.map(([k, v]) => `<dt>${T(k)}</dt><dd>${v}</dd>`).join(''); }
 
   const SCR = { S01: [s01], S17: [s17], S08: [hud], S08Q: [hud, q], S13: [res], S14: [res] };

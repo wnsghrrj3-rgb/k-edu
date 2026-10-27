@@ -115,6 +115,8 @@ export function createSkin(ctx){
     else if (T === 'q:gauge') { audio.play('gauge'); }
     else if (T === 'reward') { audio.play(ev.kind === 'feather' ? 'feather' : 'crystal'); if (ev.pos) sparks.burst(ev.pos, ev.kind === 'feather' ? 0xffffff : 0x58b7ff, 40, 2, 4); }
     else if (T === 'wave') { audio.play('wave'); ui.toast('toast.wave'); }
+    else if (T === 'xp') { if (ev.pos && ev.amount >= 5) { const sc = toScreen(ev.pos); if (sc.front) ui.floatAt(sc.x, sc.y - 50, `+${ev.amount} XP`, 'xp'); } }
+    else if (T === 'level:up') { audio.play('levelup'); ui.toast('toast.levelUp'); if (player) { const p = player.position; sparks.burst([-p.x, 1.2, p.z], 0xffd45c, 90, 3, 5); sparks.burst([-p.x, 1.6, p.z], 0xb28cff, 60, 3, 4); } }
     else if (T === 'boss:intro') { audio.play('roar'); kick = .3; }
     else if (T === 'boss:shield') { audio.play('shield'); ui.toast('toast.seal'); }
     else if (T === 'boss:seal') { audio.play('glass'); if (ev.pos) { sparks.burst(ev.pos, 0x9fe8ff, 90, 6, 4); sparks.burst(ev.pos, 0xffffff, 40, 4, 5); } kick = .35; fovPulse = 6; }
