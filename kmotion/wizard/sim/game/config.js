@@ -12,8 +12,9 @@ export const GAME = {
   },
   gradeBand: g => g <= 2 ? 'low' : g <= 4 ? 'mid' : 'high',
   enemy: { spawnT: .6, recover: 1.0, backoff: .8, tokenReturn: .5, sep: .9, stagger: { bolt: .15, spell: .4, tick: .05 }, dieT: .6, fanDeg: 45, bounds: { x: 5.2, zMin: 0.5, zMax: 16 } },
-  crystal: { firstAt: 2, every: 18, max: 2, reach: 1.5, sideMin: 2.5, sideMax: 3.5, z: 1.2, y: 1.2, approachAfter: 25, approachV: .5 },
-  question: { slowTo: .15, slowIn: .2, slowOut: .25, gaugeBase: 12, gaugeSetting: { off: Infinity, slow: 1.5, normal: 1, fast: .65 },
+  crystal: { firstAt: 2, every: 28, lowManaAfter: 12, max: 2, reach: 1.5, sideMin: 2.5, sideMax: 3.5, z: 1.2, y: 1.2, approachAfter: 25, approachV: .5 },   // v1.3: every 18→28 · 마나 부족 수정은 직전 문제 뒤 12초(문제 시간 비율 25~35% 맞추기)
+  question: { slowTo: .15, slowIn: .2, slowOut: .25, gaugeBase: 12, gaugeByType: { calc1: 12, calc2: 16, pick: 10, word1: 24 },   // 07 문서 5절 유형별 기본 초
+              hint: { autoLowS: 6, holdMs: 500 },   /* 07 문서 8절 — 1~2학년은 6초 손이 안 움직이면 부엉이가 먼저 · 힌트 구슬 유지 시간 */ gaugeSetting: { off: Infinity, slow: 1.5, normal: 1, fast: .65 },
               mana: { right: 25, hint1: 20, hint2: 15, wrong: 5, streak: [0, 0, 3, 6, 9, 12] }, rightShow: .9, wrongExplain: 2.0, revealShow: 1.0 },
   shake: { hit: .05, hurt: .25, decay: 1.4, max: .7 },
   // 보스(06 문서 4·5절) — 1~2학년은 공격 주기 ×1.25 추가(5절 학년 배율 예)

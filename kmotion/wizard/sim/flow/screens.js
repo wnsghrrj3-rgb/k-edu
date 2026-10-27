@@ -31,6 +31,7 @@ export function createFlow({ data, grade = 1, seed = Date.now() % 100000, freeze
     else if (id === 'recalib') { f.calib = new Calib(); f.screen = 'S17'; f.game = null; }
     else if (id === 'spell' && f.game) f.game.setSpell(p.id);
     else if (id === 'select' && f.game) f.game.input.push({ type: 'SELECT', t: f.t * 1000, via: 'mouse', value: { slot: p.slot } });
+    else if (id === 'hint' && f.game) f.game.input.push({ type: 'HINT', t: f.t * 1000, via: 'mouse', value: {} });
     else if (id === 'attack' && f.game) f.game.input.push({ type: 'ATTACK', t: f.t * 1000, via: 'mouse', value: { side: 'R', zone: p.zone != null ? p.zone : 1, power: 1 } });
   };
   // 엔진 프레임 — pose(문제 밖) / hands(문제 중)

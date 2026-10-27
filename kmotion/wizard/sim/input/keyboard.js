@@ -16,6 +16,7 @@ export class KeyInput {
     if (code === 'KeyL') this.e('BLOCK', t, { on: isDown });
     if (isDown && /^Digit[1-4]$/.test(code)) this.e('SELECT', t, { slot: +code.slice(5) - 1 });
     if (isDown && (code === 'Escape' || code === 'KeyP')) this.e('PAUSE', t);
+    if (isDown && code === 'KeyH') this.e('HINT', t);   // 🦉 힌트(문제 중)
   }
   // 누르고 있는 동안 위치 목표가 움직임(연속) — 1.6/초
   tick(t){ const dt = this.lastT ? Math.min(.1, (t - this.lastT) / 1000) : 0; this.lastT = t;
