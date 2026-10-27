@@ -16,4 +16,6 @@ export const GAME = {
   question: { slowTo: .15, slowIn: .2, slowOut: .25, gaugeBase: 12, gaugeSetting: { off: Infinity, slow: 1.5, normal: 1, fast: .65 },
               mana: { right: 25, hint1: 20, hint2: 15, wrong: 5, streak: [0, 0, 3, 6, 9, 12] }, rightShow: .9, wrongExplain: 2.0, revealShow: 1.0 },
   shake: { hit: .05, hurt: .25, decay: 1.4, max: .7 },
+  // 보스(06 문서 4·5절) — 1~2학년은 공격 주기 ×1.25 추가(5절 학년 배율 예)
+  boss: { introT: 2.4, phaseT: 1.5, keep: 3.4, zMax: 12, dashT: .45, recover: .9, shieldMul: .1, weakMul: 1.5, weakT: 8, lowCycleMul: 1.25, sealCd: 1.2, heal: 20 },
 };
