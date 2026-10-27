@@ -8,8 +8,9 @@ export class QuestionEngine {
   next(opt = {}){
     let cands = [];
     const forced = opt.want ? null : this.retry.shift();
-    // want 'word' = 문장제만(보스 마지막 봉인 칸) · 'calc' = 계산형만 — 장면 개념 밖이어도 같은 단원 생성기에서
-    const wantPool = opt.want ? Object.keys(GENERATORS).filter(k => !!GENERATORS[k].word === (opt.want === 'word') && (this.concepts.includes(k) || opt.want === 'word')) : null;
+    // want 'word' = 문장제만(보스 마지막 봉인 칸) · 'calc' = 계산형만 · 'compare' = 비교·크기형 · 'pattern' = 규칙형(강화 수정, 05 문서 12항) — 장면 개념 밖이어도 같은 단원 생성기에서, 없으면 장면 개념으로
+    const TAG = { word: x => !!x.word, calc: x => !x.word, compare: x => !!x.compare, pattern: x => !!x.pattern };
+    const wantPool = opt.want && TAG[opt.want] ? Object.keys(GENERATORS).filter(k => TAG[opt.want](GENERATORS[k]) && (this.concepts.includes(k) || opt.want !== 'calc')) : null;
     const pool = forced ? [forced.concept] : (wantPool && wantPool.length ? wantPool : this.concepts);
     for (let i = 0; i < 24; i++) { const k = this.rng.pick(pool), g = GENERATORS[k]; const dd = forced ? .1 : this.rng.next(); const q = g.gen(this.rng, dd);
       if (this.recent.includes(q.fact)) continue; if (forced && q.d > .35) continue; q.p = this.m.p(k, q.d); cands.push(q); }

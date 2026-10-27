@@ -31,7 +31,7 @@ const BASE = {
     verify: q => beads(q.a, q.b, q.op) === q.answer },
 };
 // 문장제 2종(08 문서 59행·64행 — 보스 3페이즈 마지막 칸 「복합 문제」) — type word1, 게이지 24
-BASE['g1.compare.word'] = { id: 'compareWord', word: true, gen(rng, d){ const a = lvl(rng, d) ? rng.int(6, 9) : rng.int(3, 6), b = rng.int(1, a - 1), ans = a - b; const [[n1, u1], [n2]] = pair(rng); const u = u1;
+BASE['g1.compare.word'] = { id: 'compareWord', word: true, compare: true, gen(rng, d){ const a = lvl(rng, d) ? rng.int(6, 9) : rng.int(3, 6), b = rng.int(1, a - 1), ans = a - b; const [[n1, u1], [n2]] = pair(rng); const u = u1;
     return { concept: 'g1.compare.word', type: 'word1', fact: `cmp:${a},${b}`, d: .3 + (a - 3) / 6 * .5, prompt: { key: 'q.word.compare', args: { n1, n2, a, b, u, j1: wIga(n1), j2: wIga(n2), j3: wEun(n1) } }, a, b, op: '-', answer: ans,
       wrongs: [[a + b, 'add-instead'], [b, 'smaller-whole'], [ans + 1, 'off-by-one'], [ans - 1, 'off-by-one']] }; },
   verify: q => beads(q.a, q.b, '-') === q.answer && q.answer >= 1 };

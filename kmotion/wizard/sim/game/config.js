@@ -18,6 +18,11 @@ export const GAME = {
               mana: { right: 25, hint1: 20, hint2: 15, wrong: 5, streak: [0, 0, 3, 6, 9, 12] }, rightShow: .9, wrongExplain: 2.0, revealShow: 1.0 },
   // 레벨(04 문서 2-1·11 문서 1절): 필요 경험치 60×L^1.35, 최대 30, 레벨당 HP +4·ATK +.5·DEF +.3 · 레벨 차이 ×3% 상한 ±25%
   level: { max: 30, need: L => Math.round(60 * Math.pow(L, 1.35)), hpPer: 4, atkPer: .5, defPer: .3, xpQ: 5, xpClear: 50, diffPct: .03, diffCap: .25 },
+  // 강화 수정(07 문서 상황 B): 마나 100 뒤 3초 금빛 수정, 판당 3번, 15초 뒤 사라짐 · 성공 = 20초 마법 ×1.5 + 강력 공격(A08) · 실패 = 같은 개념 쉬운 문제 재도전 수정 1번
+  //   문제 종류는 장착 주 마법의 「수학 연결」(05 문서 12항): 불 = 연산 속도형(게이지 ×.75) · 얼음 = 비교·크기형 · 번개 = 규칙형(1학년 생성기 없으면 계산형으로)
+  empower: { delay: 3, perRun: 3, life: 15, t: 20, mul: 1.5, want: { fireball: 'calc', ice: 'compare', lightning: 'pattern' }, gaugeMul: { fireball: .75 } },
+  // 적 투사체(계산 고블린 도토리): 날아오는 중(발사 뒤) 회피하거나 숙여서 피하면 「멋진 회피」 마나 +3
+  acorn: { dodgeMana: 3 },
   shake: { hit: .05, hurt: .25, decay: 1.4, max: .7 },
   // 보스(06 문서 4·5절) — 1~2학년은 공격 주기 ×1.25 추가(5절 학년 배율 예)
   boss: { introT: 2.4, phaseT: 1.5, keep: 3.4, zMax: 12, dashT: .45, recover: .9, shieldMul: .1, weakMul: 1.5, weakT: 8, lowCycleMul: 1.25, sealCd: 1.2, heal: 20 },
