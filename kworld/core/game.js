@@ -20,6 +20,7 @@ import { Road } from './road.js';
 import { Beasts } from './beasts.js';
 import { Bond } from './bond.js';
 import { Doors } from './doors.js';
+import { Figures } from './figures.js';
 
 const J = (u) => fetch(u).then((r) => r.json());
 
@@ -54,7 +55,8 @@ export class Game {
     if (this.world.spark && new URLSearchParams(location.search).get('spark') !== '0') this.spark = new Spark(this, this.world.spark);
     if (this.world.road && new URLSearchParams(location.search).get('road') !== '0') this.road = new Road(this, this.world.road);   // 길 위의 일(111)
     if (this.world.beasts && new URLSearchParams(location.search).get('beasts') !== '0') this.beasts = new Beasts(this, this.world.beasts);   // 짐승 층(112) — 호랑이·멧돼지가 보인다
-    if (this.world.doors && new URLSearchParams(location.search).get('doors') !== '0') this.doors = new Doors(this, this.world.doors);   // 신분의 문(130) — 못 들어가는 문·막힌 길이 몸으로, 내 집
+    if (this.world.doors && new URLSearchParams(location.search).get('doors') !== '0') this.doors = new Doors(this, this.world.doors);
+    if (this.world.figures?.length && new URLSearchParams(location.search).get('figures') !== '0') this.figures = new Figures(this, this.world.figures);   // 133: 역사의 인물 — 큰 사건에 실존 인물이 마을로 걸어 들어온다   // 신분의 문(130) — 못 들어가는 문·막힌 길이 몸으로, 내 집
     // 운명의 사람이 세상에 있다: 만나면 따라다니고, 등지면 물러선다 — world.spark.bond 가 있을 때만(10-19)
     if (this.world.spark?.bond && new URLSearchParams(location.search).get('bond') !== '0') this.bond = new Bond(this, this.world.spark.bond);
     // 시대별 장식 코드는 world.json 이 가리킬 때만(코어는 시대 이름을 모른다)
@@ -179,7 +181,7 @@ export class Game {
   take(k) { const i = this.inventory.indexOf(k); if (i >= 0) this.inventory.splice(i, 1); }
   give(k) { this.inventory.push(k); this.renderInv(); }
   flag(f) { if (Array.isArray(f)) { for (const x of f) this.flag(x); return; } if (!f || this.flags.has(f)) return; this.save?.touch();
-    if (/^act\d+$/.test(f)) this.checkpoint = { act: f, flags: [...this.flags, f], inventory: [...this.inventory] };   /* 체크포인트: ACT 시작마다(쓰러지면 여기로) */ this.flags.add(f); this.checkGate(); if (this.story) this.story.onFlag(); if (this.life) this.life.onFlag(); if (this.pulse) this.pulse.onFlag(); if (this.spark) this.spark.onFlag(); if (this.bond) this.bond.onFlag(); if (this.friends) this.friends.onFlag?.(f); }
+    if (/^act\d+$/.test(f)) this.checkpoint = { act: f, flags: [...this.flags, f], inventory: [...this.inventory] };   /* 체크포인트: ACT 시작마다(쓰러지면 여기로) */ this.flags.add(f); this.checkGate(); if (this.story) this.story.onFlag(); if (this.life) this.life.onFlag(); if (this.pulse) this.pulse.onFlag(); if (this.spark) this.spark.onFlag(); if (this.bond) this.bond.onFlag(); if (this.friends) this.friends.onFlag?.(f); if (this.figures) this.figures.onFlag(f); }
   /** 대상 정의: kinds(종류별 덮어쓰기) → rename(깃발에 따라 이름·동사·규칙이 바뀜, 첫 맞는 것) */
   defFor(t) {
     let d = this.items.targets[t.type]; if (!d) return null;
@@ -221,6 +223,7 @@ export class Game {
     if (this.beasts) this.beasts.tick(dt);
     if (this.bond) this.bond.tick(dt);
     if (this.doors) this.doors.tick(dt);
+    if (this.figures) this.figures.tick(dt);
     // 미션 나침반 + 힌트 시간
     this.updateMission(false);
     // 불꽃
