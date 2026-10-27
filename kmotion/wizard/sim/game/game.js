@@ -139,7 +139,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     const dealt = shielded ? Math.max(1, Math.round(amount * bm)) : amount; b.hp = Math.max(0, b.hp - dealt); g.trauma = Math.min(GAME.shake.max, g.trauma + GAME.shake.hit);
     g.emit('hit', { target: b.uid, amount: dealt, crit, weak: bm > 1, shielded, pos: v3([b.pos[0], b.h * .6, b.pos[2]]) });
     const r = bossAfterHit(g, b);
-    if (r === 'dead') { g.stats.kills++; g.emit('enemy:die', { uid: b.uid, kind: b.kind, pos: v3(b.pos), boss: true }); g.emit('boss:die', { uid: b.uid }); for (const e of g.enemies) if (!e.boss && e.state !== 'dead') { e.state = 'dead'; e.stateT = 0; } }
+    if (r === 'dead') { g.stats.kills++; g.emit('enemy:die', { uid: b.uid, kind: b.kind, pos: v3(b.pos), boss: true }); g.emit('boss:die', { uid: b.uid }); if (!g.unlocked.has('shield')) { g.unlocked.add('shield'); g.emit('reward', { kind: 'spell', spell: 'shield', amount: 1, pos: v3(b.pos) }); } for (const e of g.enemies) if (!e.boss && e.state !== 'dead') { e.state = 'dead'; e.stateT = 0; } }
     else if (r === 'phase') g.emit('boss:phaseEnd', { uid: b.uid, phase: b.phase });
     else if (shielded && !g.q && g.screen === 'S08' && g.gameT - g.lastQClose >= GAME.boss.sealCd) openQuestion(null, 'seal');
   }
