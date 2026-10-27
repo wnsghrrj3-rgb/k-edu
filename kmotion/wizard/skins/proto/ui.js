@@ -60,7 +60,7 @@ export function createUI(ctx, audio){
   // ── S08 HUD (S08Q 에서도 보임)
   const hud = h('section', 'mw-hud mw-hide');
   hud.innerHTML = `<div class="mw-bars"><div class="mw-bar hp"><i></i><span></span></div><div class="mw-bar mana"><i></i><s></s><span></span></div><div class="mw-chips"><span class="spell"></span><span class="feather">🪶</span></div></div>
-    <div class="mw-wave"></div><div class="mw-top-r"><button class="mute">🔊</button><button class="pause">⏸</button></div><div class="mw-streak"></div>
+    <div class="mw-wave"></div><div class="mw-boss mw-hide"><b class="nm"></b><div class="bb"></div><span class="sh"></span></div><div class="mw-top-r"><button class="mute">🔊</button><button class="pause">⏸</button></div><div class="mw-streak"></div>
     <canvas class="mw-pip" width="320" height="240"></canvas><div class="mw-help"></div><div class="mw-lost mw-hide"></div><div class="mw-flash"></div>`;
   const $h = s => hud.querySelector(s), hpBar = $h('.hp'), mpBar = $h('.mana'), pip = $h('.mw-pip'), lost = $h('.mw-lost'), flashEl = $h('.mw-flash');
   $h('.pause').onclick = () => act('pause'); $h('.mute').onclick = () => { $h('.mute').textContent = audio.mute() ? '🔇' : '🔊'; };
@@ -90,7 +90,12 @@ export function createUI(ctx, audio){
     mpBar.classList.toggle('ready', P.mana >= P.spellCost && P.castReady);
     $h('.spell').textContent = P.charging ? `🔥 ${Math.round(P.charging.ratio * 100)}%` : P.mana >= P.spellCost ? '🔥 불꽃탄 준비' : `🔥 ${P.spellCost} 필요`;
     $h('.feather').classList.toggle('mw-hide', !P.feather);
-    const w = s.world; $h('.mw-wave').textContent = w && w.waves ? `🌲 ${Math.min(w.wave + 1, w.waves)} / ${w.waves}` : '';
+    const w = s.world, Bs = s.boss; $h('.mw-wave').textContent = !Bs && w && w.waves ? `🌲 ${Math.min(w.wave + 1, w.waves)} / ${w.waves}` : '';
+    const bb = $h('.mw-boss'); bb.classList.toggle('mw-hide', !Bs); if (Bs) { bb.querySelector('.nm').textContent = T(Bs.nameKey) + ` · ${Bs.phase + 1}/${Bs.phases}`;
+      const bar = bb.querySelector('.bb'); if (bar.children.length !== Bs.phases) bar.innerHTML = Bs.phaseHpMax.map(() => '<i><u></u></i>').join('');
+      [...bar.children].forEach((c, i) => { c.firstChild.style.transform = `scaleX(${Bs.phaseHp[i] / Bs.phaseHpMax[i]})`; c.classList.toggle('on', i === Bs.phase); });
+      bb.querySelector('.sh').textContent = Bs.weak > 0 ? `⚡ ${T('toast.weak')}` : Bs.shieldMax ? `${T('boss.shield')} ` + '🔷'.repeat(Bs.shield) + '▫️'.repeat(Bs.shieldMax - Bs.shield) : '';
+      bb.classList.toggle('weak', Bs.weak > 0); }
     $h('.mw-streak').textContent = s.streak >= 2 ? `연속 ${s.streak}!` : '';
     const cam = s.input && s.input.mode === 'camera'; pip.classList.toggle('mw-hide', !cam); pip.classList.toggle('bad', s.input && s.input.body !== 'ok');
     if (cam) drawSkeleton(pip, s.input.preview);
@@ -101,7 +106,7 @@ export function createUI(ctx, audio){
   }
   function paintQ(s){
     const Q = s.question; if (!Q) return;
-    if (Q.id !== qId) { qId = Q.id; qPrompt.textContent = fmtQ(Q); }
+    if (Q.id !== qId) { qId = Q.id; qPrompt.textContent = (Q.kind === 'seal' ? '🔒 ' : '') + fmtQ(Q); qp.classList.toggle('seal', Q.kind === 'seal'); }
     qp.classList.toggle('right', Q.state === 'right'); qp.classList.toggle('wrong', Q.state === 'wrong');
     qSub.textContent = Q.state === 'right' ? T('q.right', { a: qMana }) + ' ✨' : Q.state === 'wrong' ? (Q.explain ? T(Q.explain) : T('q.wrong')) : Q.readP < 1 ? T('q.read') : '';
     qGauge.classList.toggle('mw-hide', !Q.gaugeOn); qGaugeI.style.transform = `scaleX(${Q.gauge})`;

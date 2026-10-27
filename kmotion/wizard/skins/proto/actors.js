@@ -100,3 +100,58 @@ export function makeCrystal(){
 }
 export function poseCrystal(g, c, dt){ const u = g.userData, t = performance.now() / 1000; g.position.set(WX(c.pos[0]), c.pos[1] + Math.sin(t * 2 + c.uid) * .15, c.pos[2]); u.m.rotation.y += dt * 1.2;
   u.ring.position.y = -g.position.y + .03; u.ring.material.opacity = c.near ? .35 + Math.sin(t * 8) * .15 : .08; const s = c.near ? 1.15 : 1; u.m.scale.set(s, 1.35 * s, s); }
+
+// ── 보스 「숫자 골렘」(06 문서 5절) — 바위 덩어리 + 몸에 박힌 숫자 돌 + 균열 빛. 보호막 칸 = 둘레를 도는 룬 판
+export function makeGolem(){
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const rock = toon(0x8a8f9c), dark = toon(0x5d6270), glowM = new THREE.MeshBasicMaterial({ color: 0xff8a3d });
+  const blob = (r, x, y, z, m = rock, d = 0) => { const s = withOutline(new THREE.Mesh(new THREE.DodecahedronGeometry(r, d), m), 1.04); s.position.set(x, y, z); s.castShadow = true; return s; };
+  const torso = blob(.95, 0, 1.75, 0); torso.scale.set(1.15, 1, .85); body.add(torso);
+  const belly = blob(.6, 0, 1.2, .25, dark); body.add(belly);
+  const head = blob(.45, 0, 2.75, .1); body.add(head);
+  const eyeM = new THREE.MeshBasicMaterial({ color: 0xffd45c }); const eyes = []; for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(.08, 8, 6), eyeM); e.position.set(s * .17, 2.8, .48); body.add(e); eyes.push(e); }
+  const cracks = []; for (let i = 0; i < 7; i++) { const c = new THREE.Mesh(new THREE.BoxGeometry(.05, .3 + (i % 3) * .12, .05), glowM); c.position.set(Math.sin(i * 2.1) * .7, 1.4 + (i % 4) * .25, .78 - Math.abs(Math.sin(i * 2.1)) * .25); c.rotation.z = Math.sin(i * 1.7) * .8; body.add(c); cracks.push(c); }
+  const nums = []; for (const [x, y] of [[-.45, 1.95], [.45, 1.95], [0, 1.55]]) { const st = blob(.2, x, y, .82, toon(0xd9cdb4)); body.add(st); const n = textSprite(String(1 + nums.length * 3), { scale: .38, color: '#3a2a10', stroke: '#fff4d6' }); n.position.set(x, y, 1.05); body.add(n); nums.push(st, n); }
+  const arm = side => { const piv = new THREE.Group(); piv.position.set(side * 1.15, 2.15, 0); const up = blob(.38, 0, -.4, 0); piv.add(up); const fist = blob(.5, 0, -1.15, .1, dark); piv.add(fist); body.add(piv); piv.userData.fist = fist; return piv; };
+  const armL = arm(1), armR = arm(-1);
+  const leg = side => { const l = blob(.42, side * .5, .45, 0, dark); l.scale.y = 1.2; body.add(l); return l; };
+  const legL = leg(1), legR = leg(-1);
+  const shield = new THREE.Group(); g.add(shield); const plates = [];
+  for (let i = 0; i < 3; i++) { const p = new THREE.Mesh(new THREE.OctahedronGeometry(.35, 0), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: .9 })); p.scale.set(1, 1.4, .3); shield.add(p); plates.push(p); }
+  const bubble = new THREE.Mesh(new THREE.SphereGeometry(2.0, 28, 18), new THREE.MeshBasicMaterial({ color: 0x7ae7ff, transparent: true, opacity: .14, blending: THREE.AdditiveBlending, depthWrite: false })); bubble.position.y = 1.5; shield.add(bubble);
+  const lock = textSprite('🔒', { scale: .7 }); lock.position.y = 3.6; shield.add(lock);
+  g.userData = { body, head, armL, armR, legL, legR, cracks, glowM, eyes, rock, dark, shield, plates, bubble, flash: 0, mats: [rock, dark], lunge: 0 };
+  return g;
+}
+export function poseGolem(g, b, dt, gameT){
+  const u = g.userData, t = performance.now() / 1000, k = 1 - Math.exp(-dt / .08);
+  g.position.set(WX(b.pos[0]), 0, b.pos[2]); g.rotation.y = -b.yaw;
+  let aL = -.15, aR = -.15, lean = 0, sink = 0, sc = 1, legSw = 0;
+  const tg = b.telegraphs[0], wk = tg ? Math.max(0, Math.min(1, (gameT - tg.t0) / Math.max(.01, tg.t1 - tg.t0))) : 0;
+  if (b.state === 'chase') { legSw = Math.sin(t * 5) * .35; aL = -.15 + Math.sin(t * 5) * .2; aR = -.15 - Math.sin(t * 5) * .2; }
+  if (b.state === 'windup' || b.state === 'attack') {
+    const hit = b.state === 'attack';
+    if (b.attack === 'slam') { aR = hit ? .3 : -2.8 * wk; aL = hit ? .3 : -2.8 * wk; lean = hit ? .45 : -.15 * wk; }
+    else if (b.attack === 'charge') { lean = hit ? .55 : .35 * wk; aL = aR = hit ? -1.4 : -.6 * wk; sink = .2 * wk; }
+    else if (b.attack === 'rocks') { aR = hit ? -.5 : -2.6 * wk; aL = -.4; lean = -.1 * wk; }
+    else if (b.attack === 'quake') { aL = aR = hit ? .2 : -3.0 * wk; sink = hit ? -.1 : .1 * wk; }
+  }
+  if (b.state === 'kneel') { sink = .7; lean = .5; aL = aR = .4; }
+  if (b.state === 'phase') { lean = Math.sin(t * 30) * .05; sink = .2; }
+  if (b.state === 'intro') { sc = Math.min(1, .3 + b.stateT / 1.2); sink = (1 - Math.min(1, b.stateT / 1.2)) * 2.5; }
+  if (b.state === 'dead') { sc = Math.max(.01, 1 - b.stateT / 1.2); lean = Math.min(1.4, b.stateT * 1.5); }
+  const L = (o, v) => o + (v - o) * k;
+  u.armL.rotation.x = L(u.armL.rotation.x, aL); u.armR.rotation.x = L(u.armR.rotation.x, aR); u.body.rotation.x = L(u.body.rotation.x, lean); u.body.position.y = L(u.body.position.y, -sink);
+  u.legL.rotation.x = legSw; u.legR.rotation.x = -legSw; g.scale.setScalar(sc);
+  // 페이즈 색: 2페이즈부터 달아오름 · 약점 시간엔 흰빛 깜빡
+  const heat = b.phase >= 1 ? .35 + b.phase * .15 : 0, pulse = .5 + .5 * Math.sin(t * (b.state === 'windup' ? 14 : 3));
+  u.glowM.color.setRGB(1, .55 - heat * .4 * pulse, .24 - heat * .2); for (const c of u.cracks) c.scale.y = 1 + heat * pulse;
+  u.flash = Math.max(0, u.flash - dt * 5); const wf = b.weak > 0 ? (Math.sin(t * 10) * .5 + .5) * .35 : 0, fl = Math.max(u.flash, wf);
+  for (const m of u.mats) m.emissive && m.emissive.setRGB(fl * .9 + heat * .25, fl * .7, fl * .5);
+  for (const e of u.eyes) e.material.color.setHex(b.state === 'windup' ? 0xff3048 : b.state === 'kneel' ? 0x6b7280 : 0xffd45c);
+  // 보호막 칸
+  u.shield.visible = b.shield > 0 && b.state !== 'dead'; u.bubble.material.opacity = .1 + .05 * Math.sin(t * 3);
+  u.plates.forEach((p, i) => { p.visible = i < b.shield; const a = t * .9 + i * Math.PI * 2 / Math.max(1, b.shieldMax); p.position.set(Math.cos(a) * 2.1, 1.6 + Math.sin(t * 2 + i) * .2, Math.sin(a) * 2.1); p.rotation.y = -a; });
+}
+export function makeRock(label){ const g = new THREE.Group(); const r = new THREE.Mesh(new THREE.DodecahedronGeometry(.55, 0), toon(0xbfae8c)); r.castShadow = true; g.add(r);
+  const n = textSprite(label || '?', { scale: .5, color: '#3a2a10', stroke: '#fff4d6' }); n.position.y = .1; g.add(n); g.userData = { r }; return g; }

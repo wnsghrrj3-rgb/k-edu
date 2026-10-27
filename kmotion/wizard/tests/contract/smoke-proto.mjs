@@ -41,17 +41,18 @@ const runs = []; for (const seed of [7, 31, 99, 5]) { const passive = seed === 5
   console.log('보정 건너뛴 뒤', flow.snapshot().screen); flow.action('home'); for (let i = 0; i < 5; i++) frame();
   root.querySelectorAll('.modes button')[1].click(); root.querySelector('.go').click();   // 키보드
   let hurt = 0; let tick = 0, tgBad = 0, tgN = 0, qN = 0, rectBad = 0, screens = new Set(), maxEnemies = 0; const press = (c, d) => flow.key(c, d, flow.t * 1000);
-  while (tick++ < 60 * 240) { const s = frame(); screens.add(s.screen);
-    if (s.enemies) { maxEnemies = Math.max(maxEnemies, s.enemies.length); const st = skin.stats(); const a = checkTelegraphs(s, st.telegraphs); if (s.enemies.some(e => e.telegraph)) tgN++; if (!a.ok) tgBad++; }
+  let bossMax = -1, bossTg = 0; while (tick++ < 60 * 420) { const s = frame(); screens.add(s.screen);
+    if (s.boss) { bossMax = Math.max(bossMax, s.boss.phase + (s.boss.state === 'dead' ? 1 : 0)); if (s.boss.telegraphs.length) bossTg++; if (s.boss.telegraphs.some(t => t.avoid === 'duck')) press('ArrowDown', true); else press('ArrowDown', false); }
+    if (s.enemies) { maxEnemies = Math.max(maxEnemies, s.enemies.length); const st = skin.stats(); const a = checkTelegraphs(s, st.telegraphs); if (s.enemies.some(e => e.telegraph) || (s.boss && s.boss.telegraphs.length)) tgN++; if (!a.ok) tgBad++; }
     if (s.screen === 'S08Q' && s.question && s.question.state === 'open' && s.question.readP >= 1) { const st = skin.stats(); if (!checkTargets(s, st.targetRects).ok) rectBad++;
-      if (tick % 40 === 0) { qN++; const slot = !passive && qN % 2 ? flow.game.q.v.correctSlot : (flow.game.q.v.correctSlot + 1) % 3; root.querySelectorAll('.mw-orb')[slot].click(); } }
+      if (tick % 20 === 0) { qN++; const slot = !passive && (qN % 2 || s.question.kind === 'seal') ? flow.game.q.v.correctSlot : (flow.game.q.v.correctSlot + 1) % 3; root.querySelectorAll('.mw-orb')[slot].click(); } }
     if (s.screen === 'S08' && !s.paused) { const P = s.player, e = s.enemies.find(x => x.state !== 'dead');
       if (!passive && tick > 900 && tick % 30 === 0) { press('Space', true); press('Space', false); }
       if (e) { const want = e.pos[0] > P.pos[0] + .3 ? 'ArrowRight' : e.pos[0] < P.pos[0] - .3 ? 'ArrowLeft' : null; press('ArrowLeft', want === 'ArrowLeft'); press('ArrowRight', want === 'ArrowRight'); if (e.telegraph && tick % 30 === 0) { press('KeyL', true); } else press('KeyL', false); }
       const c = s.crystals.find(c => c.near); if (c && tick % 20 === 0 && (!passive || qN < 3)) { press('Space', true); press('Space', false); }
       if (P.mana >= 20 && tick % 200 === 0) press('KeyK', true); if (tick % 200 === 50) press('KeyK', false); }
     if (s.screen === 'S13' || s.screen === 'S14') { for (let i = 0; i < 30; i++) frame(); break; } }
-  const snap = flow.snapshot(); runs.push({ seed, end: snap.screen, ticks: tick, screens: [...screens].join(','), tg: `${tgN}프레임 중 누락 ${tgBad}`, rectBad, qClicks: qN, maxEnemies, result: JSON.stringify(snap.result), resultUI: root.querySelector('.mw-result') ? root.querySelector('.mw-result').textContent.slice(0, 60) : '' });
+  const snap = flow.snapshot(); runs.push({ seed, bossMax, bossTg, bossUI: root.querySelector('.mw-boss .nm') ? root.querySelector('.mw-boss .nm').textContent : '', end: snap.screen, ticks: tick, screens: [...screens].join(','), tg: `${tgN}프레임 중 누락 ${tgBad}`, rectBad, qClicks: qN, maxEnemies, result: JSON.stringify(snap.result), resultUI: root.querySelector('.mw-result') ? root.querySelector('.mw-result').textContent.slice(0, 60) : '' });
   root.querySelector('.again') && root.querySelector('.again').click(); for (let i = 0; i < 30; i++) frame(); flow.action('home'); for (let i = 0; i < 5; i++) frame();
 }
 console.log(runs); console.log('stats', skin.stats().drawCalls, '그린 횟수 OK'); console.log(errs.length ? '오류 ' + errs.length + '\n' + [...new Set(errs)].slice(0, 8).join('\n') : '오류 0'); skin.dispose(); process.exit(0);

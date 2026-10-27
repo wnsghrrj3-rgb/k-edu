@@ -41,6 +41,10 @@ export function createAudio(){
     feather(){ [784, 988, 1175, 1568].forEach((f, i) => tone({ f, type: 'sine', d: .5, g: .12, t: i * .08 })); },
     clear(){ [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone({ f, type: 'triangle', d: .35, g: .16, t: i * .12 })); },
     defeat(){ [392, 330, 262].forEach((f, i) => tone({ f, type: 'sine', d: .5, g: .14, t: i * .2 })); },
+    roar(){ tone({ f: 110, f2: 60, type: 'sawtooth', d: .9, g: .35, lp: 700 }); tone({ f: 165, f2: 80, type: 'square', d: .8, g: .12, lp: 500, t: .05 }); noise({ d: .9, g: .25, lp: 600, f2: 150 }); },
+    shield(){ [660, 990, 1320].forEach((f, i) => tone({ f, type: 'sine', d: .6, g: .1, t: i * .05 })); },
+    glass(){ noise({ d: .5, g: .4, lp: 9000, hp: 2500 }); [2093, 2637, 3136, 2349].forEach((f, i) => tone({ f, type: 'triangle', d: .35, g: .1, t: i * .03 })); tone({ f: 90, f2: 40, d: .4, g: .4 }); },
+    weak(){ [523, 659, 784, 1047, 1319].forEach((f, i) => tone({ f, type: 'square', d: .18, g: .08, lp: 3000, t: i * .07 })); },
     click(){ tone({ f: 880, type: 'sine', d: .06, g: .08 }); },
     calibOk(){ tone({ f: 880, type: 'triangle', d: .2, g: .14 }); tone({ f: 1320, type: 'triangle', d: .25, g: .1, t: .08 }); },
   };
