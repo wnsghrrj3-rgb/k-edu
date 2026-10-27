@@ -18,7 +18,7 @@ export interface Snapshot {
     id: 'luna' | 'tori' | 'haru'; pos: Vec3; yaw: number; vel: Vec3;
     /** 4절 시간 규칙: phase 0~1 로 클립을 재매핑. A09(충전)의 upperPhase = 충전 비율 */
     anim: { lower: AnimLower; upper: AnimUpper; phase: number; upperPhase: number; speed: number };
-    hp: number; hpMax: number; mana: number; manaMax: number;
+    hp: number; hpMax: number; level: number; xp: number; xpNext: number;   // v1.3 레벨·경험치(11 문서) — 판 안에서 바로 오름 mana: number; manaMax: number;
     charging: { spell: string; ratio: number } | null; blocking: boolean; ducking: boolean; invuln: boolean; hurtT: number; empowered: boolean;
     castReady: boolean; spell: string; spellCost: number; feather: boolean;
     /** v1.1 마법 5종: spell = 지금 시전하면 나갈 것(마나 100 이면 meteor), main = 장착한 주 마법, spells = 바꿀 수 있는 주 마법 목록 */
@@ -57,7 +57,7 @@ export interface Snapshot {
     hintPic: { kind: 'beads'; a: number; b: number; op: '+' | '-' } | null;
   };
   /** 손 선택 대상 — 3-5절. rect 는 화면 비율, 눌리는 자리 = rect. hover = 유지 게이지 */
-  targets: Array<{ id: string; kind: 'choice' | 'hint' | 'crystal' | 'menu';   // hint = 🦉 힌트 구슬(v1.2, 문제 열려 있고 2단계 전까지) rect: { x: number; y: number; w: number; h: number }; hover: number; locked: boolean }>;
+  targets: Array<{ id: string; kind: 'choice' | 'hint' | 'crystal' | 'menu';   // hint = 🦉 힌트 구슬(v1.2, 문제 열려 있고 2단계 전까지) · menu = 멈춤 화면 손 유지 바퀴(v1.3, 카메라 모드만): 'spell:<id>'(주 마법)·'resume' rect: { x: number; y: number; w: number; h: number }; hover: number; locked: boolean }>;
   input: { cursor: { x: number; y: number } | null; mode: 'camera' | 'keyboard'; body: 'ok' | 'lost' | 'partial'; calibrating: boolean;
     preview: { ok: boolean; joints: Array<[number, number, number] | null> } | null };   // joints: 0,11,12,13,14,15,16,23,24,25,26,27,28 (화면 비율, 거울)
   camera: { mode: 'rail' | 'arena' | 'boss-intro' | 'q'; target: Vec3; shake: number };

@@ -57,4 +57,12 @@ const runs = []; for (const seed of [7, 31, 99, 5, 13]) { const passive = seed =
   const snap = flow.snapshot(); runs.push({ seed, casts: [...castSeen].join(','), bossMax, bossTg, bossUI: root.querySelector('.mw-boss .nm') ? root.querySelector('.mw-boss .nm').textContent : '', end: snap.screen, ticks: tick, screens: [...screens].join(','), tg: `${tgN}프레임 중 누락 ${tgBad}`, rectBad, qClicks: qN, maxEnemies, result: JSON.stringify(snap.result), resultUI: root.querySelector('.mw-result') ? root.querySelector('.mw-result').textContent.slice(0, 60) : '' });
   root.querySelector('.again') && root.querySelector('.again').click(); for (let i = 0; i < 30; i++) frame(); flow.action('home'); for (let i = 0; i < 5; i++) frame();
 }
+// 마우스(카메라) 모드 멈춤 — 손 유지 마법 바퀴 구슬이 targets 자리에 그려지는지(v1.3)
+{ const flow = createFlow({ data, grade: 1, seed: 77, unlock: 'all' }); let cur = null; skin.ui.bind({ action: (id, p) => flow.action(id, p) });
+  const frame = () => { flow.step(1 / 60); if (flow.game) flow.game.aspect = 16 / 9; for (const ev of flow.drainEvents()) S(() => skin.onEvent(ev)); const snap = flow.snapshot();
+    if (snap.screen !== cur) { const p = cur; cur = snap.screen; S(() => { if (p) skin.ui.hide(p); skin.ui.show(cur, snap); }); } S(() => skin.ui.update(cur, snap)); S(() => skin.render(snap, 0)); return snap; };
+  for (let i = 0; i < 5; i++) frame(); flow.action('start', { mode: 'mouse' }); for (let i = 0; i < 60; i++) frame(); flow.game.input.push({ type: 'PAUSE', t: 0, via: 'key', value: {} }); let s; for (let i = 0; i < 5; i++) s = frame();
+  const r = checkTargets(s, skin.stats().targetRects); const orbs = root.querySelectorAll('.mw-wheel .mw-orb:not(.mw-hide)').length;
+  console.log('멈춤 바퀴', s.paused, '대상', s.targets.map(t => t.id).join(','), '그림', r.ok ? '✓' : '✗ ' + r.bad, '구슬', orbs); if (!r.ok || orbs !== s.targets.length) errs.push('멈춤 바퀴 대상 어긋남');
+  root.querySelector('.mw-wheel .mw-orb').click(); for (let i = 0; i < 3; i++) s = frame(); flow.action('resume'); for (let i = 0; i < 3; i++) s = frame(); console.log('바퀴 클릭 뒤 주 마법', s.player.main, '· 다시 뒤 대상', s.targets.length); flow.action('home'); for (let i = 0; i < 3; i++) frame(); }
 console.log(runs); console.log('stats', skin.stats().drawCalls, '그린 횟수 OK'); console.log(errs.length ? '오류 ' + errs.length + '\n' + [...new Set(errs)].slice(0, 8).join('\n') : '오류 0'); skin.dispose(); process.exit(0);

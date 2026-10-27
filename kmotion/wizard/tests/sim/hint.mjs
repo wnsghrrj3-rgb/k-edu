@@ -49,5 +49,26 @@ function openCrystal(f, g){ run(f, 40, s => s.crystals.length > 0); const c = g.
   ok('전투장 2 진입', g.zoneIdx === 1 && g.checkpoint && g.checkpoint.zone === 'arena'); g.player.hp = 1; g.player.invulnUntil = 0; run(f, 60, s => s.screen === 'S14'); f.action('again'); run(f, .5);
   ok('전투장 2에서 지면 전투장 2부터', g.zoneIdx === 1 && g.screen === 'S08', `zoneIdx=${g.zoneIdx}`); }
 
+// ⑤ 손 유지 마법 바퀴(멈춤 화면) · 경험치·레벨
+{ const { f, g } = setup('camera', 1); push(g, 'PAUSE'); run(f, .1); let s = g.snapshot();
+  ok('멈춤 → 바퀴 대상(주 마법 3 + 다시)', s.paused === 'user' && s.targets.filter(t => t.kind === 'menu').length === 3 + 1, s.targets.map(t => t.id).join(','));
+  ok('멈춤 중 모드 hands', f.wantModes().join() === 'hands');
+  const tg = s.targets.find(t => t.id === 'spell:ice'); push(g, 'CURSOR', { x: tg.rect.x + tg.rect.w / 2, y: tg.rect.y + tg.rect.h / 2 }); const ev = run(f, 1.0, s => s.player.main === 'ice');
+  ok('손 유지 → 얼음 폭풍 장착', g.spell === 'ice' && ev.some(e => e.type === 'spell:equip'), `main=${g.spell} t=${g.t.toFixed(2)}`);
+  const rs = s.targets.find(t => t.id === 'resume'); push(g, 'CURSOR', { x: rs.rect.x + rs.rect.w / 2, y: rs.rect.y + rs.rect.h / 2 }); run(f, 1.2, s => !s.paused);
+  ok('손 유지 → 다시 하기', !g.paused && g.snapshot().targets.length === 0);
+  const { f: f2, g: g2 } = setup('keyboard', 1); push(g2, 'PAUSE'); run(f2, .1); ok('키보드 멈춤엔 바퀴 대상 없음(DOM 버튼)', g2.snapshot().targets.length === 0); }
+{ const rec = []; const r = playOne({ data, seed: 1011, acc: .9, react: .3, record: rec }); const lv = rec.filter(e => e.type === 'level:up').map(e => e.level), xp = rec.filter(e => e.type === 'xp');
+  ok('경험치 이벤트(처치·정답·클리어)', ['kill', 'q', 'clear', 'boss'].every(w => xp.some(e => e.why === w)), [...new Set(xp.map(e => e.why))].join(' '));
+  ok('한 판 안에 레벨 업', lv.length >= 1 && r.win, `Lv ${lv.join('→')}`);
+  const f = createFlow({ data, grade: 1, seed: 3, progress: { level: 10, xp: 0 } }); f.action('start', { mode: 'keyboard' }); const P = f.game.snapshot().player;
+  ok('레벨 10 이어받기 → HP 136·ATK 14.5', P.level === 10 && P.hpMax === 136 && Math.abs(f.game.player.atk - 14.5) < 1e-9 && P.xpNext === 1343, `hp ${P.hpMax} atk ${f.game.player.atk} next ${P.xpNext}`);
+  const f3 = createFlow({ data, grade: 1, seed: 3, progress: { level: 30, xp: 99999 } }); f3.action('start', { mode: 'keyboard' }); run(f3, 1); f3.game.gainXp && f3.game.gainXp(1000);
+  ok('최대 레벨 30 고정', f3.game.snapshot().player.level === 30);
+  // 레벨 차이 상한 ±25%: 레벨 30 → 받는 피해 ×.75
+  const f4 = createFlow({ data, grade: 1, seed: 4, progress: { level: 30, xp: 0 } }); f4.action('start', { mode: 'keyboard' }); run(f4, 1); const g4 = f4.game; g4.player.invulnUntil = 0; const hp = g4.player.hp;
+  g4.enemyStrike({ uid: 0, kind: 'test', telegraph: { center: g4.player.pos.slice(), size: [1] }, def: { atk: 100 } });
+  ok('레벨 30 받는 피해 −25%', hp - g4.player.hp < 100 * .7 * .75 + 1 && hp - g4.player.hp > 100 * .7 * .75 - 8, `피해 ${hp - g4.player.hp}`); }
+
 console.table(out); console.log(fail ? `✗ 실패 ${fail}` : '전부 통과');
 if (fail) process.exit(1);
