@@ -214,4 +214,9 @@ ok(new Figures(g, []).figureLine() === '', '인물 없는 세계는 빈 줄');
   Z.F.recvShout({ id: 'Z', kind: 'figure', title: '세종', fig: 'sejong', x: 1, z: 0 }); Z.F.wave(); ok(Z.F.reply === null && Z.bc.some((m) => m.event === 'wave' && m.payload.reply?.kind === 'figure' && m.payload.reply.fig === 'sejong'), 'recvShout 가 fig 를 들고 있다가 G 답에 실어 보낸다');
   ok(fg9.figureLine().includes('그중 1번은 반 친구와 함께 갔다') === flags9.has('figure:yisunsin:with') || (flags9.add('figure:yisunsin:with'), fg9.figureLine().includes('을(를) 만났다. 그중 1번은 반 친구와 함께 갔다.')), `그 뒤 줄: ${fg9.figureLine()}`);
   delete globalThis.localStorage; }
+// 140 — 교사 안내 한 장(teacher.html): 새 층(소문·인물·신분의 문·짐승·소리) 상자 + 7번 역사의 인물 표(dogam.json figures) + 층 끄는 스위치
+{ const tg = fs.readFileSync(path.join(root, 'teacher.html'), 'utf8');
+  ok(tg.includes('./eras/dogam.json') && tg.includes('id="figures"') && tg.includes('7. 역사의 인물') && tg.includes('e.figures.map'), 'teacher.html — 7번 역사의 인물 표가 dogam.json figures 를 읽는다');
+  ok(['소문과 전조', '역사의 인물</b>', '신분의 문 · 내 집', '짐승 · 길 위의 일 · 소리', '인물로 여는 이야기', '?figures=0', '?beasts=0', '?doors=0', '잠들기'].every((k) => tg.includes(k)), 'teacher.html — 새 층 상자 다섯·수업 이야기·스위치·잠들기');
+  ok(!/\d{3,4}년/.test(tg.split('<h2>7.')[1] || ''), 'teacher.html 7번 표 둘레에 연도 없음(표는 ev() 가 연도를 뺀다)'); }
 console.log(`\n133~139 역사의 인물: ${pass} 통과 · ${fail} 실패`); if (fail) process.exit(1);
