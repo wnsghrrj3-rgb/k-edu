@@ -116,7 +116,8 @@ export class WizardInput {
       const inward = (side === 'R' ? -S.vx : S.vx) > C.inward * S.s;                // 가운데로 모으는 움직임(손뼉·X자)
       let toHead = false; if (vis(nose)) { const hx = nose.x - w.x, hy = nose.y - w.y, hn = Math.hypot(hx, hy) || 1; toHead = (S.vx * sw0 * hx + S.vy * sw0 * hy) / (S.s * sw0 * hn) > C.toHead; }   // 머리 쪽으로 가는 손
       const o = st[side === 'R' ? 'L' : 'R'], raise2 = S.vy < -C.raise2 * vA && o.vy < -C.raise2 * vA;   // 두 손 함께 올림 = 마법 모으기 시작
-      if (disp < C.disp || !notDown || !outSide || !offHead || !above || inward || toHead || raise2 || t - this.castEndT < C.afterCast || t - this.blockOffT < C.afterCast) continue;
+      const raiseHit = S.vy < -C.raiseHit * S.s && !raise2 && !inward && vis(nose) && (nose.y - w.y) / sw0 >= C.raiseAbove;   // v2.1 한 손을 머리 위로 치켜들기 = 공격(머리 긁기는 코 높이에서 멈춰 제외)
+      if (disp < C.disp || !notDown || !outSide || !above || inward || raise2 || (!raiseHit && (!offHead || toHead)) || t - this.castEndT < C.afterCast || t - this.blockOffT < C.afterCast) continue;
       if (t - hs.last < C.cdHand || t - this.lastAtk < C.cdAll) continue;
       hs.last = t; this.lastAtk = t; hs.armed = false;
       const fx = w.x / Wpx, zone = fx < 1 / 3 ? 0 : fx < 2 / 3 ? 1 : 2;

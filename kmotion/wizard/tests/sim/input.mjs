@@ -14,6 +14,8 @@ const ACT = {
   attackR: { dur: 1.0, want: 'ATTACK', f: (t, sp, sz) => { const k = ease((t - .2) / (.17 / sp)), back = ease((t - .6) / .4); const w = [lerp(.6, 1.35 * sz, k - back), lerp(1.05, .15, k - back)]; return { wR: w, eR: [lerp(.62, 1.0 * sz, k - back), lerp(.55, .2, k - back)] }; } },
   attackL: { dur: 1.0, want: 'ATTACK', f: (t, sp, sz) => { const k = ease((t - .2) / (.17 / sp)), back = ease((t - .6) / .4); return { wL: [lerp(-.6, -1.35 * sz, k - back), lerp(1.05, .15, k - back)], eL: [lerp(-.62, -1.0 * sz, k - back), lerp(.55, .2, k - back)] }; } },
   swingR:  { dur: 1.0, want: 'ATTACK', f: (t, sp, sz) => { const k = ease((t - .2) / (.15 / sp)), back = ease((t - .6) / .4); return { wR: [lerp(.2, 1.4 * sz, k - back), lerp(.6, .45, k - back)], eR: [lerp(.5, .9, k - back), .5] }; } },
+  // v2.1 한 손을 머리 위로 빠르게 치켜들기(준호 실기기 10-28 「손 들면 공격?」) = 공격
+  raiseR:  { dur: 1.2, want: 'ATTACK', f: (t, sp, sz) => { const k = ease((t - .2) / (.2 / sp)), back = ease((t - .7) / .4); return { wR: [lerp(.6, .75 * sz, k - back), lerp(1.05, -1.4 * sz, k - back)], eR: [lerp(.62, .7, k - back), lerp(.55, -.3, k - back)] }; } },
   dodgeL:  { dur: 1.2, want: 'DODGE', f: (t, sp, sz) => ({ dx: -lerp(0, .85 * sz, ease((t - .2) / (.2 / sp))) }) },
   duck:    { dur: 1.4, want: 'DUCK', f: (t, sp, sz) => ({ dy: lerp(0, .45 * sz, ease((t - .2) / (.3 / sp)) - ease((t - 1.0) / .3)) }) },
   cast:    { dur: 2.2, want: 'CAST', f: (t, sp, sz) => { const up = ease((t - .2) / (.4 / sp)), down = ease((t - 1.5) / (.25 / sp)), k = up - down;
