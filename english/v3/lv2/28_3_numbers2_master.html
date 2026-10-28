@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<!-- ════════════════════════════════════════
+     K-edu 영어 v3 양산 · Lv2 #28-3 수·양 「숙달」 섞어 고르고 줄 세우기 「숙달」
+     베이스: 27_3_sightwords3_master.html (Lv2 #27 숙달 · 게이트② 6중 4↑) + #18 하루 띠 순서 강제 판형
+     펼침 원천: handoff kedu/english/v3/lv2/28_numbers2.md
+     ════════════════════════════════════════ -->
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu | 영어 Lv2 — 수·양 six~ten · many·some·all (28-3 숙달)</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   골격 = 골든 불변 / 옷 = P트랙 파랑 #1565C0
+   두 글자 한 소리(이중자음) 블록은 자음이므로 파랑 유지 — 모음만 주황
+   ============================================================ */
+:root{
+  --bg:#F0F6FE; --card:#fff;
+  --primary:#1565C0; --primary-light:#E3EEFC; --secondary:#5B8DEF;
+  --vowel:#FF8A3D; --vowel-light:#FFF1E6;
+  --green:#4CAF50; --green-light:#E8F5E9; --red:#F44336; --red-light:#FFEBEE;
+  --yellow:#FFC107; --yellow-light:#FFF8E1;
+  --text:#333; --subtext:#888; --border:#D7E4F7;
+  --shadow:0 4px 16px rgba(0,0,0,.08); --radius:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;gap:8px}
+.back{font-size:18px;color:var(--subtext);text-decoration:none}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 4px}
+.progress-bar{flex:1;height:10px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;color:#e6a800}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 10px;font-size:14px}
+.kedu-logo .logo-circle{width:20px;height:20px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:12px}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 18px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;width:100%;max-width:560px;text-align:center}
+.slide-title{font-size:21px;color:var(--subtext);margin-bottom:8px}
+.badge{display:inline-block;background:var(--primary-light);color:var(--primary);border-radius:99px;padding:4px 14px;font-size:17px;margin-bottom:8px}
+.concept-text{font-size:24px;line-height:1.6;margin:8px 0}
+.highlight{color:var(--primary)}
+/* 표지 */
+.today-label{font-size:22px;color:var(--secondary);letter-spacing:.5px;margin:18px 0 18px}
+.today-en{font-size:42px;color:var(--primary);font-weight:bold;line-height:1.3;margin:8px 0}
+.today-ko{font-size:26px;color:#2B925E;line-height:1.4;margin:14px 0 18px}
+/* 형광 강조 */
+.hl{background:linear-gradient(transparent 58%,#FFE680 58%);background-repeat:no-repeat;background-size:0% 100%;transition:background-size .55s cubic-bezier(.4,0,.2,1) .15s;padding:0 3px;font-weight:bold;color:var(--text)}
+.slide.lit .hl{background-size:100% 100%}
+/* 탭 단계 등장 */
+.step{opacity:0;transform:translateY(34px) scale(.82);transition:opacity .26s ease,transform .42s cubic-bezier(.34,1.6,.5,1);pointer-events:none}
+.step.in{opacity:1;transform:none;pointer-events:auto}
+.concept-big{font-size:30px;line-height:1.5;margin:10px 0}
+@keyframes tapBlink{0%,100%{opacity:.4}50%{opacity:1}}
+.hl-slot{background:var(--yellow-light);border:2px dashed var(--yellow);border-radius:8px;padding:1px 8px;color:#e6a800}
+.kay-says{display:flex;align-items:center;gap:12px;background:var(--primary-light);border-radius:16px;padding:12px 16px;margin:10px 0;text-align:left}
+.kay-icon{font-size:30px;flex-shrink:0}
+.kay-text{font-size:21px;line-height:1.5}
+/* 소리 블록 — 파닉스 심장 */
+.sblocks{display:flex;gap:12px;justify-content:center;align-items:center;margin:14px 0;transition:gap .5s cubic-bezier(.4,0,.2,1);flex-wrap:wrap}
+.sblocks.merged{gap:2px}
+.sblock{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:16px;padding:12px 18px;font-size:40px;line-height:1;cursor:pointer;box-shadow:0 4px 0 rgba(21,101,192,.25);transition:transform .12s,box-shadow .3s;position:relative}
+.sblock .sko{font-size:14px;color:var(--subtext)}
+.sblock.vowel{border-color:var(--vowel);color:var(--vowel);box-shadow:0 4px 0 rgba(255,138,61,.3)}
+.sblock:active{transform:scale(.94)}
+.sblock.singing{transform:scale(1.15);box-shadow:0 0 0 5px var(--yellow-light),0 4px 0 rgba(21,101,192,.25)}
+.sblock.isnew::after{content:'NEW';position:absolute;top:-10px;right:-6px;background:var(--red);color:#fff;font-size:11px;padding:1px 6px;border-radius:99px}
+.sblock.used{opacity:.25;pointer-events:none}
+.sblock.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+/* 소리 슬롯 */
+.sslots{display:flex;gap:10px;justify-content:center;align-items:center;margin:14px 0;flex-wrap:wrap}
+.sslot{min-width:72px;height:70px;border:3px dashed #A8C4EA;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:34px;color:#A8C4EA;background:#F8FBFF;padding:0 10px;transition:all .3s}
+.sslot.filled{border-style:solid;border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.sslot.filled.vslot{border-color:var(--vowel);color:var(--vowel);background:var(--vowel-light)}
+.sslot.swap{animation:swapPop .5s ease}
+@keyframes swapPop{0%{transform:translateY(0)}40%{transform:translateY(-14px) scale(1.1);background:var(--yellow-light);border-color:var(--yellow)}100%{transform:translateY(0)}}
+.word-done{font-size:34px;color:var(--primary);margin:8px 0}
+.mean{font-size:20px;color:var(--subtext)}
+.pic{font-size:80px;margin:6px 0;line-height:1}
+@keyframes popIn{0%{transform:scale(0) rotate(-15deg)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+/* 합치기 다이어그램 */
+.blend-map{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0;flex-wrap:wrap}
+.bm-piece{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:12px;padding:6px 14px;font-size:28px}
+.bm-piece.v{border-color:var(--vowel);color:var(--vowel)}
+.bm-arrow{font-size:26px;color:#e6a800;font-weight:bold}
+.bm-word{background:var(--yellow-light);border:3px solid var(--yellow);color:#e6a800;border-radius:12px;padding:6px 16px;font-size:30px;font-weight:bold}
+/* 문제 */
+.question-label{display:inline-flex;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:17px;margin-bottom:8px}
+.stars{color:#FCD34D}
+.question-text{font-size:23px;margin:6px 0 12px;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
+.choice-btn{background:#fff;border:3px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);color:var(--text)}
+.choice-btn .ko{display:block;font-size:14px;color:var(--subtext)}
+.choice-btn.big{font-size:40px;padding:10px 22px}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}}
+.listen-btn{background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:8px 22px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;color:var(--primary);margin:4px 0 8px}
+.feedback{font-size:19px;margin-top:10px;min-height:34px;border-radius:12px;padding:5px 12px;line-height:1.5}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#e6a800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-emoji{font-size:76px;margin:8px 0;animation:bounce 1s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.result-score{font-size:30px;color:#e6a800;margin:6px 0}
+.result-stars{font-size:34px;margin:4px 0}
+.nav{display:flex;justify-content:space-between;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,.06);flex-shrink:0;gap:10px}
+.nav-btn{flex:1;max-width:200px;background:var(--primary);color:#fff;border:none;border-radius:14px;padding:13px 0;font-family:'Jua',sans-serif;font-size:20px;cursor:pointer}
+.nav-btn:disabled{opacity:.3}
+.hint{font-size:16px;color:var(--subtext);margin-top:6px}
+:root{
+  --bg:#FFF6EF;
+  --primary:#FF8A3D; --primary-light:#FFF0E4; --secondary:#FFB27A;
+  --border:#F7DFCB;
+}
+/*NUM28CSS-BEGIN — #28 수·양 그림 단일 원천(blocks/NUM28CSS.css → sync_blocks.py 주입, 하네스가 4파일 동일 검사).
+  ★수 = 열 칸 판(.tf) — 다섯씩 두 줄이라 「다섯 하고 몇」 으로 셀 수 있다(Lv1 one~five 위에 쌓인다).
+  ★양 = 사탕 덩어리(.qty) — 칸이 없다. 세는 그림이 아니라 「얼마쯤」을 보는 그림이다.
+  ★all = 접시 위 사탕이 하나도 빠짐없이 초록 동그라미 · many = 접시 없이 수북한 무더기(펼침 「접시 그림 1:1」). */
+.npic{display:inline-block;line-height:1;vertical-align:middle}
+.tf{display:inline-grid;grid-template-columns:repeat(5,1em);grid-auto-rows:1em;gap:.14em;padding:.16em;border:.1em solid #ADB5BD;border-radius:.2em;background:#fff;font-size:18px;vertical-align:middle}
+.tf i{display:block;border-radius:50%;background:#F1F3F5;border:.07em solid #DEE2E6}
+.tf i.on{background:var(--primary);border-color:#E8590C}
+.qty{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;font-size:18px;line-height:1}
+.qty i{font-style:normal;display:inline-block;line-height:1}
+.qty .heap{display:inline-grid;grid-template-columns:repeat(4,1em);gap:.04em}
+.qty .few{display:inline-flex;gap:.3em}
+.qty .dish{display:inline-flex;gap:.16em;padding:.4em .6em;border-radius:50%/42%;background:#fff;border:.12em solid #ADB5BD}
+.qty .dish.all i{border-radius:50%;box-shadow:0 0 0 .1em #2B8A3E;background:#EBFBEE}
+/*NUM28CSS-END*/
+.wcards{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.wcard{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:16px;
+       padding:7px 12px;font-size:24px;cursor:pointer;box-shadow:0 4px 0 rgba(255,138,61,.25);
+       transition:transform .1s;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:80px}
+.wcard .tf,.wcard .qty{font-size:11px}
+.wcard:active{transform:scale(.94)}
+.wcard.used{opacity:.35;pointer-events:none}
+.wcard.wrong{background:var(--red-light);border-color:var(--red);color:var(--red);animation:shake .4s}
+.qpic{margin:8px 0}
+.qpic .tf{font-size:30px}
+.qpic .qty{font-size:28px}
+/* ★1~10 줄 세우기 — 빈 칸 열 개(keycap 없음) · 섞인 단어 열 장 · one 부터 차례로만 꽂힌다 */
+.nl{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.nlc{width:54px;min-height:44px;border:3px dashed #F0C9A6;border-radius:12px;background:#FFFBF7;display:flex;align-items:center;justify-content:center;font-size:15px;color:#C9B39C;transition:all .3s}
+.nlc.now{border-color:var(--yellow);background:var(--yellow-light);animation:tapBlink 1.1s infinite}
+.nlc.filled{border-style:solid;border-color:var(--green);background:var(--green-light);color:var(--green)}
+@keyframes tapBlink{0%,100%{opacity:.55}50%{opacity:1}}
+.stamp{display:none;background:var(--yellow-light);border:3px solid var(--yellow);color:#C77700;border-radius:14px;padding:6px 16px;font-size:20px;margin:8px 0}
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back" href="../index.html">🪜</a>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 10</span>
+  </div>
+  <div class="score-badge">⭐ <span id="scoreVal">0</span></div>
+  <div class="kedu-logo"><div class="logo-circle">K</div>영어</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesContainer">
+  <!-- ━━━ S0 표지 ━━━ -->
+  <div class="slide active" data-steps>
+    <div class="card">
+      <div class="badge step">영어 Lv2 · 수·양 28-3</div>
+      <div class="today-label step">숙달 🏁</div>
+      <div class="today-en step">섞어서 골라요</div>
+      <div class="today-ko step">여덟 장이 <span class="today-blank">내 단어</span>가 됐는지 확인해요</div>
+    </div>
+  </div>
+
+  <!-- ━━━ S1 소환 — 8장 마지막 확인 ━━━ -->
+  <div class="slide" data-steps>
+    <div class="card">
+      <div class="slide-title step">🔊 마지막으로 한 바퀴 — 눌러서 들어 봐</div>
+      <div class="wcards step" id="recall"></div>
+      <div class="kay-says step">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">섞어서 <b>여섯 문제</b> — 소리 듣고 단어 넷, 소리 없이 그림 보고 둘.<br>그다음 <span class="hl">one 부터 ten 까지</span> 줄 세우기가 기다려요!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S2~S5 섞어 듣고 단어 ①~④ (게이트) ━━━ -->
+  <div class="slide" data-correct="0" data-score="10" data-concept="vocab.meaning" data-gate="1">
+    <div class="card">
+      <div class="question-label">문제 1 <span class="stars">⭐</span></div>
+      <div class="question-text">듣고 맞는 단어를 골라요!</div>
+      <button class="listen-btn big" id="lb2">🔊 다시 듣기</button>
+      <div class="choices" id="ch2"></div>
+      <div class="feedback" id="fb2"></div>
+    </div>
+  </div>
+  <div class="slide" data-correct="2" data-score="10" data-concept="vocab.meaning" data-gate="1">
+    <div class="card">
+      <div class="question-label">문제 2 <span class="stars">⭐</span></div>
+      <div class="question-text">듣고 맞는 단어를 골라요!</div>
+      <button class="listen-btn big" id="lb3">🔊 다시 듣기</button>
+      <div class="choices" id="ch3"></div>
+      <div class="feedback" id="fb3"></div>
+    </div>
+  </div>
+  <div class="slide" data-correct="1" data-score="10" data-concept="vocab.meaning" data-gate="1">
+    <div class="card">
+      <div class="question-label">문제 3 <span class="stars">⭐</span></div>
+      <div class="question-text">듣고 맞는 단어를 골라요!</div>
+      <button class="listen-btn big" id="lb4">🔊 다시 듣기</button>
+      <div class="choices" id="ch4"></div>
+      <div class="feedback" id="fb4"></div>
+    </div>
+  </div>
+  <div class="slide" data-correct="3" data-score="10" data-concept="vocab.meaning" data-gate="1">
+    <div class="card">
+      <div class="question-label">문제 4 <span class="stars">⭐</span></div>
+      <div class="question-text">듣고 맞는 단어를 골라요!</div>
+      <button class="listen-btn big" id="lb5">🔊 다시 듣기</button>
+      <div class="choices" id="ch5"></div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S6 세기 ⑤ · S7 양 판정 ⑥ (게이트, 소리 없이) ━━━ -->
+  <div class="slide" data-correct="1" data-score="10" data-concept="vocab.meaning" data-gate="1">
+    <div class="card">
+      <div class="question-label">문제 5 <span class="stars">⭐</span></div>
+      <div class="question-text">🔇 소리 없이 — 칸을 세어 봐요. 맞는 단어는?</div>
+      <div class="qpic" id="q6pic"></div>
+      <div class="choices" id="ch6"></div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+  <div class="slide" data-correct="2" data-score="10" data-concept="vocab.meaning" data-gate="1">
+    <div class="card">
+      <div class="question-label">문제 6 <span class="stars">⭐</span></div>
+      <div class="question-text">🔇 소리 없이 — 그림에 맞는 말은?</div>
+      <div class="qpic" id="q7pic"></div>
+      <div class="choices" id="ch7"></div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S8 1~10 줄 세우기 (손활동 · 진단 미적립) ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">📏 one 부터 ten 까지 — <b>깜빡이는 칸</b>에 차례로 꽂아요!</div>
+      <div class="nl" id="oline"></div>
+      <div class="wcards" id="ocards"></div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S9 결과 — 게이트② ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="result-emoji" id="resultEmoji">🎉</div>
+      <div style="font-size:26px" id="resultTitle">여섯 문제 끝!</div>
+      <div class="result-score">⭐ <span id="finalScore">0</span>점</div>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <div class="stamp" id="stamp">🏅 Lv2 · 스물여덟 번째 칸 점등!</div>
+      <div class="kay-says">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text" id="gateText">채점 중…</div>
+      </div>
+      <button class="nav-btn" id="wsBtn" style="margin-top:10px;display:none" onclick="location.href='../worksheets/numbers2.html'">🖨 활동지 출력</button>
+      <button class="nav-btn" id="gateBtn" style="margin-top:10px">▶ 다음</button>
+      <button class="nav-btn" style="margin-top:10px;background:var(--secondary)" onclick="location.href='../index.html'">🪜 사다리로</button>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script src="../engine/k-tts.js"></script>
+<script src="../engine/k-progress.js"></script>
+<script src="../engine/k-collection.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
+<script>
+let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
+const TOTAL=10;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playTone(f,t,d,g=.3){getCtx();audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d);});}
+function playCorrect(){[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
+function playWrong(){[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
+function playClick(){playTone(880,'sine',.08,.2);}
+document.body.addEventListener('pointerdown',()=>{if(!unlocked){KTTS.unlock();unlocked=true;justUnlocked=true;setTimeout(()=>justUnlocked=false,350);
+  const cur=document.querySelectorAll('.slide')[currentSlide];
+  const last=cur&&cur.querySelectorAll('.step.in');
+  if(last&&last.length){speakStep(last[last.length-1]);}
+}},{once:true});
+
+/* ── 탭 기반 단계 등장 (자동 흐름 ❌) ── */
+let stepState={};
+function setupSlide(slide,idx){
+  slide.classList.add('lit');
+  const steps=slide.querySelectorAll('.step');
+  if(!steps.length)return;
+  if(stepState[idx]===undefined){
+    steps.forEach(s=>s.classList.remove('in'));
+    steps[0].classList.add('in');stepState[idx]=1;
+    speakStep(steps[0]);
+  }else{
+    steps.forEach(s=>s.classList.add('in'));stepState[idx]=steps.length;
+  }
+}
+function speakStep(el){
+  if(!unlocked||!el)return;
+  if(el.dataset.sound)KTTS.sound(el.dataset.sound);
+  else if(el.dataset.speakWord)KTTS.word(el.dataset.speakWord);
+  else if(el.dataset.speak)KTTS.sentence(el.dataset.speak);
+}
+function advanceStep(slide,idx){
+  const steps=[...slide.querySelectorAll('.step')];
+  if(stepState[idx]<steps.length){
+    const el=steps[stepState[idx]];
+    el.classList.add('in');playClick();speakStep(el);
+    stepState[idx]++;
+    return true;
+  }
+  return false;
+}
+function goSlide(n){
+  const sl=document.querySelectorAll('.slide');KTTS.stop();
+  sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');
+  setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);
+  currentSlide=n;sl[n].classList.add('active');updateUI();
+  setupSlide(sl[n],n);
+}
+function nextSlide(){
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  if(slide.hasAttribute('data-steps')&&advanceStep(slide,currentSlide))return;
+  if(currentSlide<TOTAL-1)goSlide(currentSlide+1);
+}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;
+  document.getElementById('scoreVal').textContent=score;
+  if(currentSlide===TOTAL-1)finish();
+}
+function addScore(p){
+  const bonus=combo>=3?Math.floor(p*.5):0;
+  score+=p+bonus;combo++;
+  document.getElementById('scoreVal').textContent=score;
+  if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}
+}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.innerHTML=msg;el.className='feedback '+(ok?'ok':'err');}}
+
+const OK_MSGS=['✅ 정답! +{p}점','🎯 바로 그거야! +{p}점','✨ 소리 박사인데? +{p}점'];
+const SAM_MSGS=['🙋 Sam: "나도 그거 골랐는데…" 다시 들어 봐!','🙋 Sam: "내가 맞다니까!" …아니래. 한 번 더!','🤔 Sam이 또 헷갈리게 했구나 — 소리를 잘 듣고 다시!'];
+function okMsg(p){return OK_MSGS[Math.floor(Math.random()*OK_MSGS.length)].replace('{p}',p);}
+function samMsg(){return SAM_MSGS[Math.floor(Math.random()*SAM_MSGS.length)];}
+/*NUM28-BEGIN — #28 수·양 재료(펼침 28_numbers2.md) · 4파일 문자 단위 동일(하네스 A4).
+  ★8단어 중 규칙으로 읽히는 것은 둘뿐 — nine(#13 i‿e 응용 조립) · ten(Lv1 #11 CVC 조립). 나머지 여섯은 통째로(펼침 판정 1).
+    six(x 씨앗 없음) · seven(2음절) · eight(불규칙) · many(-y) · all(-all) · some(🚫). 파닉스 문항 재료 금지 — 낱소리·조각 0.
+  ★some = 🚫 규칙 — o_e 모양인데 /썸/. #27 said 와 같은 서랍 절차(펼침 판정 2). some 에 매직e 표기를 입히지 않는다.
+  ★그림이 두 종류다 — 수 = 열 칸 판(.tf, 정확히 센다) · 양 = 사탕 덩어리(.qty, 세지 않는다).
+    같은 그림으로 그리면 「many = 12」 처럼 양을 수로 외운다. 카드 얼굴은 keycap(Lv1 #15 1️⃣~5️⃣ · #18 9️⃣ 관용).
+  ★Lv1 one~five = 소환·순서 세우기에만 선다(문항 정답 0 — 오늘 재료가 아니다). */
+const NW=[
+  {w:'six',  n:6,  e:'6️⃣', ko:'여섯'},
+  {w:'seven',n:7,  e:'7️⃣', ko:'일곱'},
+  {w:'eight',n:8,  e:'8️⃣', ko:'여덟'},
+  {w:'nine', n:9,  e:'9️⃣', ko:'아홉', from:'#13'},
+  {w:'ten',  n:10, e:'🔟', ko:'열',   from:'Lv1'},
+  {w:'many', q:'many', ko:'많은'},
+  {w:'some', q:'some', ko:'조금', nor:1},
+  {w:'all',  q:'all',  ko:'전부'}
+];
+const NWB=w=>NW.find(x=>x.w===w);
+const NWW=NW.map(x=>x.w);
+const NUMS=['six','seven','eight','nine','ten'];
+const QTY=['many','some','all'];
+const LV1N=[{w:'one',e:'1️⃣'},{w:'two',e:'2️⃣'},{w:'three',e:'3️⃣'},{w:'four',e:'4️⃣'},{w:'five',e:'5️⃣'}];
+/* 혼동 짝 — six↔seven(s 시작) · nine↔ten(수직선 이웃) · many↔all(많은가 전부인가) · eight→seven(이웃) · some→many(둘 다 「정확히 몇 개」를 말하지 않음) */
+const CONFUSE={six:'seven',seven:'six',eight:'seven',nine:'ten',ten:'nine',many:'all',all:'many',some:'many'};
+/* 열 칸 판 — 다섯씩 두 줄. 앞에서부터 n칸이 찬다(세는 순서 = 읽는 순서) */
+function tf(n){let h='';for(let i=0;i<10;i++)h+='<i'+(i<n?' class="on"':'')+'></i>';return '<span class="tf" data-n="'+n+'">'+h+'</span>';}
+/* 사탕 덩어리 — many 열두 개 무더기 · some 세 개 · all 접시 위 다섯 개가 하나도 빠짐없이 동그라미 */
+function qty(k){
+  const C='<i>🍬</i>';
+  const inner={many:'<span class="heap">'+C.repeat(12)+'</span>',some:'<span class="few">'+C.repeat(3)+'</span>',all:'<span class="dish all">'+C.repeat(5)+'</span>'}[k];
+  return '<span class="qty" data-q="'+k+'">'+inner+'</span>';
+}
+function npic(w){const x=NWB(w);return '<span class="npic" data-pic="'+w+'">'+(x.n?tf(x.n):qty(x.q))+'</span>';}
+/*NUM28-END*/
+/* ── 28-3 숙달 (펼침 28_3) ──
+   ★섞어 고르기 6 = 듣고 단어 4(4지) + 소리 없이 세기 1(3지) + 소리 없이 양 판정 1(3지, 펼침 「양 3단어 그림 판정」). 8단어 중 겹치지 않게 6개.
+     오답에 혼동 짝(six↔seven · nine↔ten · many↔all · eight→seven · some→many). 게이트② = 이 6문항 첫 시도 4↑.
+   ★1~10 줄 세우기 = 손활동(진단 미적립) — Lv1 one~five 를 앞에 세워야 six 가 선다. 칸에 keycap 0(읽어야 꽂힌다).
+   ★오답 때 소리 0 · 정답 때만 단어 낭독. */
+document.getElementById('recall').innerHTML=NWW.map(w=>'<div class="wcard" data-word="'+w+'">'+npic(w)+w+'</div>').join('');
+function distractOf(word,n,pool){
+  const rest=pool.filter(w=>w!==word&&w!==CONFUSE[word]).sort(()=>Math.random()-.5);
+  return [CONFUSE[word]].concat(rest).slice(0,n).sort(()=>Math.random()-.5);
+}
+const WRONG_AT={};
+let firstTryOK=0;
+/* 출제 — 양 하나 · 수 하나를 그림 문항으로 먼저 뽑고, 남은 여섯 중 넷을 듣기로 */
+const QQ=QTY[Math.floor(Math.random()*3)];
+const QN=NUMS[Math.floor(Math.random()*5)];
+const QL=NWW.filter(w=>w!==QQ&&w!==QN).sort(()=>Math.random()-.5).slice(0,4);
+function buildL(slideIdx,word){
+  const slide=document.querySelectorAll('.slide')[slideIdx];
+  const correct=+slide.dataset.correct;
+  const arr=distractOf(word,3,NWW);arr.splice(correct,0,word);
+  document.getElementById('ch'+slideIdx).innerHTML=
+    arr.map((w,i)=>'<button class="choice-btn" onclick="answer(this,'+i+')">'+w+'</button>').join('');
+  document.getElementById('lb'+slideIdx).onclick=()=>{playClick();KTTS.word(word,{natural:true});};
+  slide.dataset.word=word;
+}
+function buildP(slideIdx,word,pool){
+  const slide=document.querySelectorAll('.slide')[slideIdx];
+  const correct=+slide.dataset.correct;
+  const arr=distractOf(word,2,pool);arr.splice(correct,0,word);
+  document.getElementById('q'+slideIdx+'pic').innerHTML=npic(word);
+  document.getElementById('ch'+slideIdx).innerHTML=
+    arr.map((w,i)=>'<button class="choice-btn" onclick="answer(this,'+i+')">'+w+'</button>').join('');
+  slide.dataset.word=word;
+}
+for(let i=0;i<4;i++)buildL(2+i,QL[i]);
+buildP(6,QN,NUMS);
+buildP(7,QQ,QTY);
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
+  const gated=slide.dataset.gate==='1';
+  const w=slide.dataset.word;
+  playClick();
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);
+    if(gated&&!WRONG_AT[currentSlide])firstTryOK++;
+    KTTS.word(w);
+    setFB('fb'+currentSlide,okMsg(pts)+' — <b>'+w+'</b> = '+NWB(w).ko,true);
+    answered[currentSlide]=true;
+  }else{
+    btn.classList.add('wrong');playWrong();combo=0;
+    WRONG_AT[currentSlide]=(WRONG_AT[currentSlide]||0)+1;
+    if(WRONG_AT[currentSlide]>=3){
+      setFB('fb'+currentSlide,'정답은 <b>'+w+'</b> — '+NWB(w).ko+' '+npic(w),false);
+    }else if(WRONG_AT[currentSlide]===2){
+      setFB('fb'+currentSlide,'힌트 💡 짝이 숨어 있어요 — six·seven · nine·ten · many·all!',false);
+    }else{
+      setFB('fb'+currentSlide,samMsg(),false);
+    }
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+/* S8 1~10 줄 세우기 — 지금 칸에 맞는 단어만 꽂힌다 · 틀린 카드는 튕기고 소리 0 */
+(function(){
+  const ALL10=LV1N.map(x=>x.w).concat(NUMS);
+  const line=document.getElementById('oline'),cards=document.getElementById('ocards');
+  line.innerHTML=ALL10.map(w=>'<div class="nlc" data-w="'+w+'">___</div>').join('');
+  const slots=[...line.querySelectorAll('.nlc')];
+  const order=ALL10.slice().sort(()=>Math.random()-.5);
+  cards.innerHTML=order.map(w=>'<div class="wcard" data-w="'+w+'">'+w+'</div>').join('');
+  let cur=0;
+  function mark(){slots.forEach((s,i)=>s.classList.toggle('now',i===cur));}
+  mark();
+  cards.querySelectorAll('.wcard').forEach(card=>card.addEventListener('click',()=>{
+    if(cur>=ALL10.length)return;
+    const w=card.dataset.w;playClick();
+    if(w===ALL10[cur]){
+      slots[cur].textContent=w;slots[cur].classList.add('filled');card.classList.add('used');
+      KTTS.word(w);cur++;mark();
+      if(cur<ALL10.length)setFB('fb8','✅ <b>'+w+'</b> — 다음 칸!',true);
+      else{
+        playCorrect();
+        if(!answered[8]){answered[8]=true;addScore(10);}
+        setFB('fb8','🎉 one 부터 ten 까지 줄을 다 세웠어요! +10점',true);
+      }
+    }else{
+      card.classList.add('wrong');playWrong();combo=0;
+      setFB('fb8',samMsg()+' 하나씩 세어 봐요 — 지금은 <b>'+(cur+1)+'번째</b> 칸이에요!',false);
+      setTimeout(()=>card.classList.remove('wrong'),450);
+    }
+  }));
+})();
+
+function finish(){
+  document.getElementById('finalScore').textContent=score;
+  const pass=firstTryOK>=4;
+  document.getElementById('resultStars').textContent=firstTryOK>=6?'⭐⭐⭐⭐⭐':firstTryOK>=4?'⭐⭐⭐⭐':'⭐⭐⭐';
+  const t=document.getElementById('gateText'),b=document.getElementById('gateBtn');
+  if(pass){
+    document.getElementById('resultEmoji').textContent='🏆';
+    document.getElementById('resultTitle').textContent='통과! Lv2 스물여덟 번째 칸 점등!';
+    document.getElementById('stamp').style.display='inline-block';
+    document.getElementById('wsBtn').style.display='inline-block';
+    try{ if(window.KProgress) KProgress.light('lv2-28'); }catch(e){}
+    try{ if(window.KCollection) KCollection.add(NWW.slice()); }catch(e){}
+    t.innerHTML='오늘 손에 넣은 것 🏆<br>① <b>one 부터 ten 까지</b> 셀 수 있다 🎉<br>② <b>many·some·all</b> 을 덩어리로 알아본다<br>다음은 <b>#29</b> — 아는 단어로 문장을 만들어요!';
+    b.textContent='▶ 사다리에서 다음 칸';
+    b.onclick=()=>location.href='../index.html';
+  }else{
+    document.getElementById('resultEmoji').textContent='💪';
+    document.getElementById('resultTitle').textContent='조금만 더!';
+    t.innerHTML='한 번에 맞힌 게 <b>'+firstTryOK+' / 6</b>이에요.<br>연습을 한 번 더 하고 오면 <span class="hl">훨씬 쉬워져요</span>!';
+    b.textContent='↩ 연습 한 번 더';
+    b.onclick=()=>location.href='28_2_numbers2_practice.html';
+  }
+}
+
+document.getElementById('slidesContainer').addEventListener('click',e=>{
+  if(justUnlocked)return;
+  const w=e.target.closest('[data-word]');
+  if(!w||w.classList.contains('slide'))return;
+  const host=w.classList.contains('step')?w:w.closest('.step');
+  if(host&&host.classList.contains('in')&&w.dataset.word)KTTS.word(w.dataset.word);
+});
+
+let tx=0,ty=0;
+const sc=document.getElementById('slidesContainer');
+sc.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;});
+sc.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){d_swipe(dx);return;}
+});
+function d_swipe(dx){dx>0?prevSlide():nextSlide();}
+sc.addEventListener('click',e=>{
+  if(justUnlocked)return;
+  const w=e.target.closest('[data-sound]');
+  if(!w)return;
+  const host=w.classList.contains('step')?w:w.closest('.step');
+  if(!host||host.classList.contains('in'))KTTS.sound(w.dataset.sound);
+});
+updateUI();
+setupSlide(document.querySelectorAll('.slide')[0],0);
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
