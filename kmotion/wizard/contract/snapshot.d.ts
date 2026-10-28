@@ -5,7 +5,7 @@
  * 규칙: 여기 없는 값을 스킨이 지어내지 않는다(체력바는 hp/hpMax 만). 스냅샷에 쓰기 금지(dev 에서 Object.freeze).
  */
 export type Vec3 = [number, number, number];
-export type ScreenId = 'S01' | 'S17' | 'S08' | 'S08Q' | 'S13' | 'S14';
+export type ScreenId = 'S01' | 'S17' | 'S08' | 'S08Q' | 'S08P' | 'S13' | 'S14';   // v1.5 S08P = 길 구간 수학 퍼즐(HUD 위에 퍼즐 판)
 export type AnimLower = 'A01' | 'A02' | 'A03' | 'A04' | 'A05' | 'A06' | 'A12' | 'A13' | 'A14' | 'A15';
 export type AnimUpper = 'A07' | 'A08' | 'A09' | 'A10' | 'A11' | 'A16' | 'A17' | null;
 export type EnemyState = 'spawn' | 'idle' | 'chase' | 'windup' | 'attack' | 'recover' | 'hurt' | 'stagger' | 'dead' | 'flee';
@@ -13,7 +13,17 @@ export type EnemyState = 'spawn' | 'idle' | 'chase' | 'windup' | 'attack' | 'rec
 export interface Snapshot {
   t: number; gameT: number; slow: number;           // slow: 문제 중 0.15
   screen: ScreenId; paused: null | 'user' | 'body';
-  world: { id: 'forest'; stage: string; zone: 'rail' | 'arena' | 'boss' | 'puzzle'; zoneIdx: number; arenas: number; railProgress: number; seed: number; wave: number; waves: number };
+  world: { id: 'forest'; stage: string; zone: 'rail' | 'arena' | 'boss'; zoneIdx: number; arenaNo: number; arenas: number; railProgress: number; seed: number; wave: number; waves: number;
+    /** v1.5 길 구간(09 문서 2절): 플레이어는 z=0 에 서고 길이 다가온다. dist·len(m)·speed(m/s, 퍼즐 앞 0·맞으면 느려짐)·phase 'go'|'stop'|'puzzle'·xMax(좌우 ±2.6). 스킨은 바닥·나무를 −speed 로 흘리면 된다 */
+    rail: null | { idx: number; len: number; dist: number; progress: number; speed: number; base: number; phase: 'go' | 'stop' | 'puzzle'; xMax: number } };
+  /** v1.5 길 위 물건(z = 앞 거리, −8 ~ 42m 만): rock(옆으로 비킴, r=반지름 .9·h) · branch(가지 — 숙여서, h=높이 1.25, 길 전체 폭) · firefly(반딧불, pos.y 떠 있음) · chest(상자). state ahead|passed|hit|taken */
+  obstacles: { uid: number; kind: 'rock' | 'branch' | 'firefly' | 'chest'; pos: Vec3; r: number; h: number; state: 'ahead' | 'passed' | 'hit' | 'taken' }[];
+  /** v1.5 수학 퍼즐(S08P, 07 문서 상황 D). 돌 고르기(number-bridge 2개·rule-stones 1개)는 targets kind 'puzzle'(rect = choices3) · size-gate 는 몸 위치(lane 'L'|'R') — 게이지 없음.
+   *  state open → right(1.6초)|wrong(1.3초 → 다른 수로 다시, hint 켜짐)|reveal(3번 틀림 — 정답 돌 answer:true 2.8초 → 통과) · stones.lit = 집은 돌 · gate.answer 는 reveal/right 때만 */
+  puzzle: null | { id: string; type: 'number-bridge' | 'size-gate' | 'rule-stones'; concept: string; state: 'open' | 'right' | 'wrong' | 'reveal'; stateT: number; prompt: TextRef; picks: (number | string)[]; wrong: number; maxWrong: number; need: number;
+    hint: TextRef | null; seq: number[] | null; target: number | null;
+    stones: null | { id: string; slot: number; num: number; targetId: string; lit: boolean; answer: boolean; wrong: boolean }[];
+    gate: null | { left: number; right: number; bigger: boolean; picked: string | null; answer: 'L' | 'R' | null; lane: 'L' | 'R' | null } };
   player: {
     id: 'luna' | 'tori' | 'haru'; pos: Vec3; yaw: number; vel: Vec3;
     /** 4절 시간 규칙: phase 0~1 로 클립을 재매핑. A09(충전)의 upperPhase = 충전 비율 */
@@ -63,10 +73,11 @@ export interface Snapshot {
   targets: Array<{ id: string; kind: 'choice' | 'hint' | 'crystal' | 'menu';   // hint = 🦉 힌트 구슬(v1.2, 문제 열려 있고 2단계 전까지) · menu = 멈춤 화면 손 유지 바퀴(v1.3, 카메라 모드만): 'spell:<id>'(주 마법)·'resume' rect: { x: number; y: number; w: number; h: number }; hover: number; locked: boolean }>;
   input: { cursor: { x: number; y: number } | null; mode: 'camera' | 'keyboard'; body: 'ok' | 'lost' | 'partial'; calibrating: boolean;
     preview: { ok: boolean; joints: Array<[number, number, number] | null> } | null };   // joints: 0,11,12,13,14,15,16,23,24,25,26,27,28 (화면 비율, 거울)
-  camera: { mode: 'rail' | 'arena' | 'boss-intro' | 'q'; target: Vec3; shake: number };
+  camera: { mode: 'rail' | 'arena' | 'boss-intro' | 'q' | 'puzzle'; target: Vec3; shake: number };   // v1.5 rail = 03 문서 길 카메라(camera.json rail: 뒤 6.5·높이 2.6·앞 6m 봄·FOV 58+달리기 6) · puzzle = 멈춘 길
   toast: string | null; streak: number;
   result: null | { win: boolean; kills: number; q: number; right: number; time: number; keyboard: boolean; deaths: number; xp: number; level: number; levelUps: number[];
-    empowers: number; splits: number; niceDodges: number };   // v1.4 강화 성공·분열·도토리 멋진 회피 횟수
+    empowers: number; splits: number; niceDodges: number;   // v1.4 강화 성공·분열·도토리 멋진 회피 횟수
+    fireflies: number; chests: number; gold: number; puzzles: number; puzzleRight: number; obstaclesHit: number; nicePasses: number; stars: [boolean, boolean, boolean] };   // v1.5 길 구간 — 별 3개 = 클리어·반딧불 7↑·정답률 70%↑(퍼즐 포함)
 }
 /** 게임 밖 화면(S01 시작 · S17 보정) */
 export interface MenuSnapshot { t: number; screen: 'S01' | 'S17';
