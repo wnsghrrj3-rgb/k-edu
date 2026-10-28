@@ -50,3 +50,13 @@ v1.2 추가: `q:hint`·`zone:enter` idx, snapshot.question.hint/hintPic·targets
 v1.3 추가: `xp`·`level:up`, snapshot.player.level/xp/xpNext, result.xp/level/levelUps, targets kind 'menu'(멈춤 화면 손 유지 바퀴 — 카메라 모드만, `layout.pauseMenu`), UI action 'spell' 은 그대로.
 v1.4 추가(P2 ④): `empower:on`(t·mul·pos — 강화 시작, 금빛 기운·팡파르) / `empower:off` · `enemy:split`(uid·kind·pos·parts[a,b]·label·uids·prevented — 큰 슬라임 가르기; prevented = 정답 6초 안 처치라 분열 없음) · `enemy:shoot`(uid·kind·pid·from·label — 고블린 도토리 던짐, 「끽」) · `projectile:hit`(uid·target 'player') · `enemy:spawn` 에 mini·from(분열로 생긴 작은 슬라임) · `enemy:attack` 에 shoot · `crystal:spawn`/`crystal:break` 에 kind('math'·'empower')·retry·fade(15초 지나 사라짐 — 벌 없음) · `dodge` 에 acorn·duck(도토리를 날아오는 중 회피·숙이기로 피함 = 「멋진 회피」 마나 +3, 뒤이어 `reward` mana) · snapshot: enemies.telegraph.yaw·scale·kind 3종, projectiles kind 'acorn'+label, crystals.retry/life, question.kind 'power', player.empowerT, result.empowers/splits/niceDodges.
 v1.5 추가(P3 길 구간): `rail:start`(idx·len·seconds·obstacles) / `rail:end`(idx·hits·passes) · `obstacle:hit`(uid·kind·pos — 바위·가지에 맞음, 피해 + 1.2초 느려짐) · `obstacle:pass`(uid·kind·nice — 비켜 지나감, nice = 가까이 스쳐 「멋진 통과」 마나 +2) · `pickup`(uid·kind 'firefly'|'chest'·pos·n|gold·mana) · `puzzle:open`(id·ptype·wrong·hint) / `puzzle:pick`(id·slot|side·via) / `puzzle:right`(id·gold·mana·pos) / `puzzle:wrong`(id·wrong·ptype — 돌 가라앉음·문 튕김) / `puzzle:reveal`(id·answer — 3번 틀려 정답 보여 줌) / `puzzle:close`(id·solved·wrong) · `zone:enter` 에 zone 'rail'|'arena'|'boss'·arenaNo · `enemy:spawn` 에 rail(길 위 몬스터) · `screen` S08↔S08P · `xp` why 'puzzle' · snapshot: screen 'S08P', world.zone 'rail'·arenaNo·rail{...}, obstacles[], puzzle{...}, targets kind 'puzzle', camera.mode 'rail'|'puzzle', result.fireflies/chests/gold/puzzles/puzzleRight/obstaclesHit/nicePasses/stars.
+
+## v1.6 추가(2026-10-28, 1-2 「버섯 마을 길」) — 추가만, 기존 변경 0
+| type | 필드 | 표현 예 |
+|---|---|---|
+| `enemy:shieldHit` | uid, kind, amount, left, pos | 방패병 방패가 마법탄을 받음 — 나무 「턱」, 몸 피해 0 |
+| `enemy:shieldBreak` | uid, kind, pos, byMath | 방패 깨짐 — byMath 면 유리 소리+FOV, 아니면 「쾅」·조각 |
+| `bounce` | uid, pos, n, mana | 버섯 튕김 발판 — 플레이어 폴짝(스킨 연출, `player.hopping` 동안) |
+| `stage:clear` | stage, stars, **reward**(마법 id 또는 null) | 보상 토스트 `toast.reward.<id>` |
+- 스냅샷 추가: `enemies[].shield {hp,hpMax,up,broken,byMath,eq}`(방패병만, 그 외 null) · `player.hopping` · `world.stageName` · `puzzle.mush {a,b}`(mushroom-add) · `question.kind 'shield'`·`shieldUid` · `obstacles[].kind 'mushroom'`(state ahead|bounced|passed) · `result.reward/shields/bounces` · 시작 화면 `title.stages[{id,nameKo,stars,locked,requires,reward}]`·`title.stage`
+- UI action `start` 에 `stage` 추가 · boot `?stage=forest-1-2`(잠김 무시) · progress(`kmwiz.progress`)에 `cleared{}`·`unlocked[]`

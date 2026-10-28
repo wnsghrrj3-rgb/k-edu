@@ -14,11 +14,12 @@ import { Mastery } from '../learn/mastery.js';
 import { Selector } from '../input/selector.js';
 import { startRail, stepRail, stepPuzzle, puzzlePick, puzzleTargets, puzzleSnapshot, railSnapshot } from './rail.js';
 
-export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge = null, inputMode = 'keyboard', mastery = null, freeze = false, unlock = null, progress = null, startZone = 0 }){
+export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge = null, inputMode = 'keyboard', mastery = null, freeze = false, unlock = null, progress = null, startZone = 0, stageId = 'forest-1-1' }){
   const LV = GAME.level; const prog = progress || { xp: 0, level: 1 }; prog.level = Math.max(1, Math.min(LV.max, prog.level | 0 || 1)); prog.xp = Math.max(0, prog.xp | 0);
+  prog.cleared = prog.cleared && typeof prog.cleared === 'object' ? prog.cleared : {}; prog.unlocked = Array.isArray(prog.unlocked) ? prog.unlocked : [];   // v1.6: 깬 스테이지(별 수)·해금 마법 — 기기 안 progress 에 같이
   const bus = createBus(), rng = createRng(seed);
   const bandName = GAME.gradeBand(grade), band = GAME.grade[bandName];
-  const stage = data.stages['forest-1-1'], timing = data.anim, spells = data.spells, layout = data.layout;
+  const stage = data.stages[stageId] || data.stages['forest-1-1'], timing = data.anim, spells = data.spells, layout = data.layout;
   const gaugeSetting = gauge || (grade <= 2 ? 'slow' : 'normal');
   const qe = new QuestionEngine({ rng, concepts: stage.concepts, mastery: mastery || new Mastery() });
   const sel = new Selector(e => g.input.push(e)); sel.holdMs = band.holdMs;
@@ -29,7 +30,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     player: null, enemies: [], projectiles: [], areas: [], crystals: [], pickups: [], toast: null, trauma: 0,
     zone: null, waveIdx: 0, waveT: 0, tokensUsed: 0, tokenQ: [], aliveCount: 0, questionOpen: false, q: null, cursor: null, inputMode,
     helpWindup: 1, deaths: 0, stats: null, input: [], spell: 'fireball', rail: null, puzzle: null, empower: 0, empowerN: 0, empowerAt: 0, empowerOn: false, lastRightT: -99, streak: 0, lastQClose: -99, lastCrystalT: 0, regenT: 0, endT: 0,
-    emit: (type, d) => bus.emit(type, d), data, unlocked: new Set(unlock === 'all' ? ['fireball', 'ice', 'lightning', 'shield', 'meteor'] : ['fireball'].concat(unlock || [])), meteorOff: false,
+    emit: (type, d) => bus.emit(type, d), data, unlocked: new Set(unlock === 'all' ? ['fireball', 'ice', 'lightning', 'shield', 'meteor'] : ['fireball'].concat(prog.unlocked, unlock || [])), meteorOff: false,
   };
   function resetRun(){
     const P = GAME.player;
@@ -39,7 +40,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
       anim: { lower: 'A01', upper: null, t0: 0, ut0: 0, phaseLoop: 0 }, pending: [], outfit: { hat: charId, cape: charId, staff: charId, bolt: charId, trail: null } };
     g.enemies = []; g.projectiles = []; g.areas = []; g.crystals = []; g.pickups = []; g.tokensUsed = 0; g.tokenQ = []; g.waveIdx = 0; g.waveT = 0;
     g.zoneIdx = 0; g.zone = stage.zones[0]; g.boss = null; g.rail = null; g.puzzle = null; g.screen = 'S08'; g.paused = null; g.slow = 1; g.slowTo = 1; g.q = null; g.questionOpen = false; g.lastCrystalT = 0; g.lastQClose = -99; g.endT = 0;
-    g.empower = 0; g.empowerN = 0; g.empowerAt = 0; g.empowerOn = false; g.lastRightT = -99;
+    g.empower = 0; g.empowerN = 0; g.empowerAt = 0; g.empowerOn = false; g.lastRightT = -99; g.rewardSpell = null;
     g.stats = g.stats && g.keepStats ? g.stats : { kills: 0, q: 0, right: 0, startT: g.t, keyboard: inputMode === 'keyboard', qTime: 0, deaths: g.deaths, log: [], xp: 0, levelUps: [] };
     g.zoneStartT = g.gameT; g.firstCrystal = false; g.lastCrystalT = g.gameT; enterZone(0);
   }
@@ -145,9 +146,22 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
       else if (d <= sp.radius + e.r * .5) hitEnemy(e, sp.dmg.splash, 'spell', emp); }
   }
   const magicApi = { hitEnemy: (e, m, k) => hitEnemy(e, m, k, g.empower > g.gameT ? GAME.empower.mul : 1), pickTarget: z => pickTarget(z), pickCluster: r => pickCluster(r), tipPos: () => tipPos(), nid: () => nid(), hurtShieldSeal: b => sealBroken(g, b) };
-  function hitEnemy(e, mult, kind, emp = 1){
+  // v1.6 방패병: 방패가 올라가 있고(정면 ±coneDeg) 마법탄(bolt)이 정면에서 오면 방패가 받는다(몸 0). 옆·뒤 · 방패 내린 회복 중 · 마법(spell·tick)은 몸에
+  function shieldTakes(e, kind, from){
+    const sh = e.shield; if (!sh || sh.broken || !sh.up) return false; if (GAME.shield.spellBypass && kind !== 'bolt') return false; if (!from) return true;
+    const fx = Math.sin(e.yaw), fz = Math.cos(e.yaw), dx = from[0] - e.pos[0], dz = from[2] - e.pos[2], d = Math.hypot(dx, dz) || 1;
+    return (dx / d * fx + dz / d * fz) >= Math.cos((e.def.shield.coneDeg || 60) * Math.PI / 180);
+  }
+  function breakShield(e, byMath){
+    const sh = e.shield; if (!sh || sh.broken) return; sh.broken = true; sh.up = false; sh.hp = 0; sh.byMath = !!byMath; g.stats.shields = (g.stats.shields || 0) + 1;
+    g.emit('enemy:shieldBreak', { uid: e.uid, kind: e.kind, pos: v3([e.pos[0], e.h * .6, e.pos[2]]), byMath: !!byMath }); if (e.state !== 'dead') { e.staggerT = GAME.shield.breakStagger; e.state = 'hurt'; e.stateT = 0; if (e.telegraph) { g.emit('telegraph:end', { uid: e.uid }); e.telegraph = null; g.releaseToken(e, 0); } }
+  }
+  function hitEnemy(e, mult, kind, emp = 1, from = null){
     if (e.state === 'dead') return;
     if (e.boss) return hitBoss(e, mult, kind, emp);
+    if (shieldTakes(e, kind, from)) { const sh = e.shield; const { amount } = damage(rng, { atk: g.player.atk * (1 + lvDiff()), mult, def: 0, empower: emp }); sh.hp = Math.max(0, sh.hp - amount);
+      g.emit('enemy:shieldHit', { uid: e.uid, kind: e.kind, amount, left: sh.hp, pos: v3([e.pos[0], e.h * .6, e.pos[2]]) }); g.emit('hit', { target: e.uid, amount: 0, crit: false, weak: false, shielded: true, pos: v3([e.pos[0], e.h * .6, e.pos[2]]) });
+      if (sh.hp <= 0) breakShield(e, false); return; }
     const { amount, crit } = damage(rng, { atk: g.player.atk * (1 + lvDiff()), mult, def: e.def.def, empower: emp });
     e.hp = Math.max(0, e.hp - amount); g.trauma = Math.min(GAME.shake.max, g.trauma + GAME.shake.hit);
     g.emit('hit', { target: e.uid, amount, crit, weak: false, pos: v3([e.pos[0], e.h * .7, e.pos[2]]) });
@@ -195,7 +209,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   function crystalNear(){ const P = g.player; return g.crystals.find(c => Math.abs(c.pos[0] - P.pos[0]) <= GAME.crystal.reach); }
   function updateCrystals(dt){
     if (g.empowerOn && g.empower <= g.gameT) { g.empowerOn = false; g.emit('empower:off', {}); }
-    const C = GAME.crystal, sp = spells[g.spell]; if (g.screen !== 'S08' || g.endT || g.rail) return;   // 길 구간엔 수정 없음(문제 시간 비율은 길에서 내려감)
+    const C = Object.assign({}, GAME.crystal, stage.crystal || {}), sp = spells[g.spell]; if (g.screen !== 'S08' || g.endT || g.rail) return;   // 길 구간엔 수정 없음(문제 시간 비율은 길에서 내려감) · v1.6 스테이지가 every·firstAt 을 덮어쓸 수 있음(보스 없는 1-2는 수정이 더 자주)
     const since = g.gameT - g.zoneStartT; const want = g.crystals.length < C.max && (
       (since >= C.firstAt && !g.firstCrystal) || (g.player.mana < sp.mp && g.crystals.length === 0 && g.gameT - g.lastQClose >= C.lowManaAfter) || (g.gameT - Math.max(g.lastQClose, g.lastCrystalT) >= C.every));
     if (want && g.gameT - g.lastQClose >= 3) { spawnCrystal(); g.firstCrystal = true; }
@@ -213,14 +227,16 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     // 보스 마지막 페이즈의 마지막 보호막 칸 = 「복합 문제」(문장제, 06 문서 5절·08 문서 64행)
     const lastSeal = kind === 'seal' && b && b.phase >= b.def.phases.length - 1 && b.shield === 1;
     if (c && c.kind === 'empower') kind = 'power';
+    // v1.6 방패병: 방패가 살아 있는 방패병이 있으면 수정 문제 = 그 방패의 빈칸 식(가장 가까운 방패병) → 정답이면 방패가 깨진다(06 문서 3절)
+    let shieldE = null; if (kind === 'crystal') { let bd = Infinity; for (const e of g.enemies) if (e.shield && !e.shield.broken && e.shield.eq && e.state !== 'dead') { const d = Math.hypot(e.pos[0] - g.player.pos[0], e.pos[2] - g.player.pos[2]); if (d < bd) { bd = d; shieldE = e; } } if (shieldE) kind = 'shield'; }
     // 강화 문제 = 장착 주 마법의 「수학 연결」 유형(05 문서 12항) — 재도전 수정은 같은 개념 쉬운 문제(qe.retry 예약)
-    const qv = qe.next(lastSeal ? { want: 'word' } : kind === 'power' && !(c && c.retry) ? { want: GAME.empower.want[g.spell] || 'calc' } : {});
+    const qv = qe.next(lastSeal ? { want: 'word' } : kind === 'shield' ? { fixed: { concept: 'g1.missing.add9', b: shieldE.shield.eq.b, c: shieldE.shield.eq.c } } : kind === 'power' && !(c && c.retry) ? { want: GAME.empower.want[g.spell] || 'calc' } : {});
     if (c) { g.crystals = g.crystals.filter(x => x !== c); g.emit('crystal:break', { uid: c.uid, kind: c.kind, pos: v3(c.pos) }); }
     if (kind === 'seal' && g.boss) { g.boss.sealsAsked++; }
     const total = (Q.gaugeByType[qv.type] || Q.gaugeBase) * band.gaugeGrade * (Q.gaugeSetting[gaugeSetting] || 1) * (kind === 'power' ? (GAME.empower.gaugeMul[g.spell] || 1) : 1);
     // 힌트 1단계 자동: 봉인 문제 3번째부터 · 오답 뒤 재도전 문제(07 문서 8절)
     const hint0 = (kind === 'seal' && b && b.sealsAsked >= 3) || qv.retry ? 1 : 0;
-    g.q = { v: qv, kind, retryCrystal: !!(c && c.retry), state: 'open', openT: g.t, readUntil: g.t + band.readMs / 1000, gauge: 0, total, endAt: 0, picked: null, hint: hint0, hintT: g.t, cursorMoveT: g.t, lastCursor: g.cursor ? { x: g.cursor.x, y: g.cursor.y } : null };
+    g.q = { v: qv, kind, shieldUid: shieldE ? shieldE.uid : null, retryCrystal: !!(c && c.retry), state: 'open', openT: g.t, readUntil: g.t + band.readMs / 1000, gauge: 0, total, endAt: 0, picked: null, hint: hint0, hintT: g.t, cursorMoveT: g.t, lastCursor: g.cursor ? { x: g.cursor.x, y: g.cursor.y } : null };
     g.questionOpen = true; g.screen = 'S08Q'; g.slowTo = Q.slowTo; sel.reset(); g.stats.q++;
     const P = g.player; P.charging = null; P.pending = P.pending.filter(x => x.kind !== 'attack' && x.kind !== 'spell'); if (P.block) P.block = false; P.duck = false;
     g.emit('q:open', { id: qv.id, concept: qv.concept, kind }); g.emit('screen', { from: 'S08', to: 'S08Q' });
@@ -233,6 +249,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     const r = qe.result(v, right ? yRight : 0, ms, false);
     if (right) { g.streak++; const bonus = Q.mana.streak[Math.min(g.streak, 5)] || 0; const add = (q.hint >= 2 ? Q.mana.hint2 : q.hint === 1 ? Q.mana.hint1 : Q.mana.right) + bonus; P.mana = Math.min(P.manaMax, P.mana + add);
       q.state = 'right'; q.endAt = g.t + Q.rightShow; g.stats.right++; g.lastRightT = g.gameT; if (q.kind === 'seal' && g.boss) sealBroken(g, g.boss); g.emit('q:right', { id: v.id, slot, mana: add, streak: g.streak }); gainXp(LV.xpQ, 'q'); g.emit('reward', { kind: 'mana', amount: add, pos: v3([P.pos[0], 1.2, P.pos[2]]) });
+      if (q.kind === 'shield') { const e = g.enemies.find(x => x.uid === q.shieldUid); if (e) breakShield(e, true); g.toast = { key: 'toast.shieldBroke', t: g.t }; }
       if (q.kind === 'power') { const EM = GAME.empower; g.empower = g.gameT + EM.t; g.empowerOn = true; g.stats.empowers = (g.stats.empowers || 0) + 1; g.emit('empower:on', { t: EM.t, mul: EM.mul, pos: v3([P.pos[0], 1, P.pos[2]]) }); g.toast = { key: 'toast.empowerOn', t: g.t }; } }
     else { g.streak = 0; P.mana = Math.min(P.manaMax, P.mana + Q.mana.wrong); q.state = 'wrong'; q.tag = (v.choices[slot] || {}).tag || 'other'; q.endAt = g.t + Q.wrongExplain + Q.revealShow;
       g.emit('q:wrong', { id: v.id, slot, tag: q.tag }); g.emit('reward', { kind: 'mana', amount: Q.mana.wrong, pos: v3([P.pos[0], 1.2, P.pos[2]]) });
@@ -275,7 +292,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     g.waveT += dt;
     const alive = g.enemies.filter(e => e.state !== 'dead'); const w = z.waves[g.waveIdx];
     if (w) { const go = w.at != null ? g.waveT >= w.at : (alive.length === 0 && (g.clearT == null ? (g.clearT = g.gameT, false) : g.gameT - g.clearT >= (w.delay || 1)));
-      if (go) { let cnt = alive.length; for (const s of w.spawn) { if (cnt >= band.maxEnemies) break; cnt++; const e = makeEnemy(data.enemies[s.kind], nid(), s.x, s.z, rng, band, { label: s.label }); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label }); if (e.def.ranged && !g.goblinSeen) { g.goblinSeen = true; g.toast = { key: 'toast.goblin', t: g.t }; } }
+      if (go) { let cnt = alive.length; for (const s of w.spawn) { if (cnt >= band.maxEnemies) break; cnt++; const e = makeEnemy(data.enemies[s.kind], nid(), s.x, s.z, rng, band, { label: s.label }); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label }); if (e.def.ranged && !g.goblinSeen) { g.goblinSeen = true; g.toast = { key: 'toast.goblin', t: g.t }; } if (e.shield && !g.shieldSeen) { g.shieldSeen = true; g.toast = { key: 'toast.shieldGoblin', t: g.t }; } }
         g.waveIdx++; g.waveT = 0; g.clearT = null; g.emit('wave', { idx: g.waveIdx, of: z.waves.length }); } }
     else if (alive.length === 0) { if (g.clearT == null) g.clearT = g.gameT; else if (g.gameT - g.clearT >= 1.2) { if (!nextZone()) victory(); } }
   }
@@ -285,7 +302,11 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   const railApi = { nid: () => nid(), hurtPlayer: (src, atk) => hurtPlayer(src, atk), nextZone: () => { if (!nextZone()) victory(); }, gainXp: (n, why) => gainXp(n, why),
     spawnEnemy: (kind, x, z) => { const alive = g.enemies.filter(e => e.state !== 'dead' && !e.boss).length; if (alive >= band.maxEnemies) return null; const e = makeEnemy(data.enemies[kind], nid(), x, z, rng, band); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label, rail: true }); return e; },
     get sel(){ return sel; }, get mastery(){ return qe.m; } };
-  function victory(){ if (g.endT) return; g.checkpoint = null; if (g.q) closeQuestion(); gainXp(LV.xpClear, 'clear'); g.endT = g.t; setLower('A14'); g.player.anim.upper = null; g.emit('stage:clear', { stage: stage.id }); }
+  function victory(){ if (g.endT) return; g.checkpoint = null; if (g.q) closeQuestion(); gainXp(LV.xpClear, 'clear'); g.endT = g.t; setLower('A14'); g.player.anim.upper = null;
+    // v1.6 깬 기록(별 수 최대값)·스테이지 보상 마법(09 문서 12행: 1-2 ICE STORM …) → progress 에 남아 다음 판부터 장착 가능
+    const st = starsOf().filter(Boolean).length; prog.cleared[stage.id] = Math.max(prog.cleared[stage.id] || 0, st); g.rewardSpell = null;
+    const rw = stage.reward && stage.reward.spell; if (rw && !prog.unlocked.includes(rw)) { prog.unlocked.push(rw); g.rewardSpell = rw; if (!g.unlocked.has(rw)) { g.unlocked.add(rw); g.emit('reward', { kind: 'spell', spell: rw, amount: 1, pos: v3([g.player.pos[0], 1.4, g.player.pos[2]]) }); } }
+    g.emit('stage:clear', { stage: stage.id, stars: st, reward: g.rewardSpell }); }
   function defeat(){ if (g.endT) return; g.endT = g.t; g.deaths++; g.stats.deaths = g.deaths; setLower('A15'); g.player.anim.upper = null; if (g.q) { g.q = null; g.questionOpen = false; } g.slowTo = 1; g.emit('player:defeat', {}); }
 
   // ── 입력 처리
@@ -387,7 +408,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
         const dx = e.pos[0] - p.pos[0], dz = e.pos[2] - p.pos[2], dy = (e.h * .5) - p.pos[1];
         if (Math.hypot(dx, dz) <= p.r + e.r && Math.abs(dy) <= e.h * .5 + p.r + .3) { p.hitSet.push(e.uid);
           if (p.kind === 'fireball') { gone = true; explode(p); }
-          else { hitEnemy(e, p.mult, 'bolt'); if (p.pierce > 0) p.pierce--; else gone = true; } } }
+          else { hitEnemy(e, p.mult, 'bolt', 1, [p.pos[0] - p.vel[0] * .2, 0, p.pos[2] - p.vel[2] * .2]); if (p.pierce > 0) p.pierce--; else gone = true; } } }
       if (gone && p.kind === 'fireball' && !p.hitSet.length) explode(p);
       if (!gone) keep.push(p); else g.emit('projectile:end', { uid: p.uid });
     }
@@ -401,20 +422,21 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     const lowerPhase = ['A01', 'A04'].includes(a.lower) ? loopPh(a.lower) : ph(a.lower, a.t0);
     const q = g.q, railSnap = railSnapshot(g, r3, v3); const snap = {
       t: r3(g.t), gameT: r3(g.gameT), slow: r3(g.slow), screen: g.screen, paused: g.paused,
-      world: { id: 'forest', stage: stage.id, zone: g.zone ? g.zone.type : 'arena', zoneIdx: g.zoneIdx, arenaNo: g.zone && g.zone.type === 'arena' ? arenaNoOf(g.zoneIdx) : 0, arenas: stage.zones.filter(z => z.type === 'arena').length, railProgress: g.rail ? r3(g.rail.dist / g.rail.len) : 0, rail: railSnap.rail, seed, wave: g.waveIdx, waves: g.zone && g.zone.waves ? g.zone.waves.length : 0 },
+      world: { id: 'forest', stage: stage.id, stageName: stage.nameKo, zone: g.zone ? g.zone.type : 'arena', zoneIdx: g.zoneIdx, arenaNo: g.zone && g.zone.type === 'arena' ? arenaNoOf(g.zoneIdx) : 0, arenas: stage.zones.filter(z => z.type === 'arena').length, railProgress: g.rail ? r3(g.rail.dist / g.rail.len) : 0, rail: railSnap.rail, seed, wave: g.waveIdx, waves: g.zone && g.zone.waves ? g.zone.waves.length : 0 },
       player: { id: P.id, pos: v3(P.pos), yaw: 0, vel: v3(P.vel), anim: { lower: a.lower, upper: a.upper, phase: r3(lowerPhase), upperPhase: a.upper ? r3(a.upper === 'A09' ? (P.charging ? P.charging.ratio : 1) : ph(a.upper, a.ut0)) : 0, speed: r3(Math.abs(P.vel[0]) / GAME.player.vMax) },
         hp: P.hp, hpMax: P.hpMax, mana: Math.round(P.mana), manaMax: P.manaMax, charging: P.charging ? { spell: P.charging.spell, ratio: r3(P.charging.ratio) } : null,
-        blocking: P.block, ducking: P.duck, invuln: g.gameT < P.invulnUntil, hurtT: r3(Math.max(0, P.hurtUntil - g.gameT)), empowered: g.empower > g.gameT, empowerT: r3(Math.max(0, (g.empower - g.gameT) / GAME.empower.t)),
+        blocking: P.block, ducking: P.duck, hopping: !!(P.hopUntil && g.gameT < P.hopUntil), invuln: g.gameT < P.invulnUntil, hurtT: r3(Math.max(0, P.hurtUntil - g.gameT)), empowered: g.empower > g.gameT, empowerT: r3(Math.max(0, (g.empower - g.gameT) / GAME.empower.t)),
         castReady: g.gameT >= P.castReady && g.gameT >= (P.cd[currentSpell(g)] || 0), spell: currentSpell(g), main: g.spell, spells: g.spellList(), spellCost: spells[currentSpell(g)].mp,
         level: prog.level, xp: prog.xp, xpNext: LV.need(prog.level), arcana: P.arcana && g.gameT < P.arcana.until ? { ratio: r3((P.arcana.until - g.gameT) / P.arcana.t), nullify: P.arcana.nullify } : null, shieldReady: g.unlocked.has('shield') && P.mana >= spells.shield.mp && g.gameT >= (P.cd.shield || 0), outfit: P.outfit, feather: P.feather },
       enemies: g.enemies.filter(e => !e.boss).map(e => ({ uid: e.uid, kind: e.kind, pos: v3(e.pos), yaw: r3(e.yaw), scale: e.scale, state: e.state, stateT: r3(e.stateT), hp: e.hp, hpMax: e.hpMax, label: e.label,
-        telegraph: e.telegraph ? { shape: e.telegraph.shape, center: v3(e.telegraph.center), size: e.telegraph.size, yaw: e.telegraph.yaw != null ? r3(e.telegraph.yaw) : 0, t0: r3(e.telegraph.t0), t1: r3(e.telegraph.t1) } : null, tags: e.tags })),
+        telegraph: e.telegraph ? { shape: e.telegraph.shape, center: v3(e.telegraph.center), size: e.telegraph.size, yaw: e.telegraph.yaw != null ? r3(e.telegraph.yaw) : 0, t0: r3(e.telegraph.t0), t1: r3(e.telegraph.t1) } : null, tags: e.tags,
+        shield: e.shield ? { hp: e.shield.hp, hpMax: e.shield.hpMax, up: e.shield.up && !e.shield.broken, broken: e.shield.broken, byMath: e.shield.byMath, eq: e.shield.eq ? `□ + ${e.shield.eq.b} = ${e.shield.eq.c}` : null } : null })),
       boss: bossSnapshot(g, g.boss, r3, v3),
       projectiles: g.projectiles.map(p => ({ uid: p.uid, kind: p.kind, pos: v3(p.pos), vel: v3(p.vel), owner: p.owner, label: p.label || null, r: r3(p.r) })),
       areas: g.areas.map(x => ({ uid: x.uid, kind: x.kind, pos: x.pos, radius: x.radius, t0: r3(x.t0), t1: r3(x.t1) })),
       crystals: g.crystals.map(c => ({ uid: c.uid, kind: c.kind, pos: v3(c.pos), near: Math.abs(c.pos[0] - P.pos[0]) <= GAME.crystal.reach, retry: !!c.retry, life: c.kind === 'empower' ? r3(Math.max(0, 1 - (g.gameT - c.born) / GAME.empower.life)) : 1 })),
       pickups: [], obstacles: railSnap.obstacles, puzzle: puzzleSnapshot(g, r3),
-      question: q ? { id: q.v.id, type: q.v.type, concept: q.v.concept, kind: q.kind, prompt: q.v.prompt, state: q.state, hintStep: q.hint, gauge: r3(Math.min(1, q.gauge)), gaugeOn: Number.isFinite(q.total),
+      question: q ? { id: q.v.id, type: q.v.type, concept: q.v.concept, kind: q.kind, shieldUid: q.shieldUid || null, prompt: q.v.prompt, state: q.state, hintStep: q.hint, gauge: r3(Math.min(1, q.gauge)), gaugeOn: Number.isFinite(q.total),
         readP: r3(clamp((g.t - q.openT) / Math.max(.01, q.readUntil - q.openT), 0, 1)), picked: q.picked,
         reveal: q.state === 'right' || (q.state === 'wrong' && g.t >= q.endAt - GAME.question.revealShow) ? q.v.correctSlot : null,
         explain: q.state === 'wrong' ? (q.v.type === 'word1' && ['add-instead', 'sub-instead'].includes(q.tag) ? 'why.word.' : 'why.') + q.tag : null, choices: q.v.choices.map(c => ({ id: c.id, num: c.num, targetId: 'c' + c.slot })),
@@ -424,7 +446,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
       camera: { mode: q ? 'q' : g.screen === 'S08P' ? 'puzzle' : g.rail ? 'rail' : g.boss && g.boss.state === 'intro' ? 'boss-intro' : 'arena', target: v3([P.pos[0], 1, P.pos[2]]), shake: r3(g.trauma * g.trauma) },
       toast: g.toast ? g.toast.key : null, streak: g.streak,
       result: g.endT ? { win: P.hp > 0, kills: g.stats.kills, q: g.stats.q, right: g.stats.right, time: Math.round(g.t - g.stats.startT), keyboard: g.stats.keyboard, deaths: g.deaths, xp: g.stats.xp, level: prog.level, levelUps: g.stats.levelUps.slice(), empowers: g.stats.empowers || 0, splits: g.stats.splits || 0, niceDodges: g.stats.niceDodges || 0,
-        fireflies: g.stats.fireflies || 0, chests: g.stats.chests || 0, gold: g.stats.gold || 0, puzzles: g.stats.puzzles || 0, puzzleRight: g.stats.puzzleRight || 0, obstaclesHit: g.stats.obstaclesHit || 0, nicePasses: g.stats.nicePasses || 0, stars: starsOf() } : null,
+        fireflies: g.stats.fireflies || 0, chests: g.stats.chests || 0, gold: g.stats.gold || 0, puzzles: g.stats.puzzles || 0, puzzleRight: g.stats.puzzleRight || 0, obstaclesHit: g.stats.obstaclesHit || 0, nicePasses: g.stats.nicePasses || 0, bounces: g.stats.bounces || 0, shields: g.stats.shields || 0, stars: starsOf(), reward: g.rewardSpell || null } : null,
     };
     return freeze ? deepFreeze(snap) : snap;
   };
@@ -435,7 +457,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   function starsOf(){ const st = g.stats, qn = st.q + (st.puzzles || 0), rn = st.right + (st.puzzleRight || 0); return [g.player.hp > 0, (st.fireflies || 0) >= (stage.stars && stage.stars.fireflies || 7), qn > 0 && rn / qn >= (stage.stars && stage.stars.accuracy || .7)].map(Boolean); }
   g.jumpZone = zi => enterZone(zi);   // 시험·?zone=n 용
   g.wantsPose = () => g.screen === 'S08' || (g.screen === 'S08P' && !!(g.puzzle && g.puzzle.cur && g.puzzle.cur.type === 'size-gate'));   // 보스에서 지면 그 페이즈부터(06 5절) · 전투장 2에서 지면 전투장 2부터
-  g.qe = qe; g.answer = answer; g.targetsNow = targetsNow; g.progress = prog;
+  g.stageId = stage.id; g.qe = qe; g.answer = answer; g.targetsNow = targetsNow; g.progress = prog;
   resetRun(); g.zoneStartT = 0; if (startZone > 0) { enterZone(startZone); g.checkpoint = null; }   // 시험용: 전투장부터 시작(?zone=n)
   return g;
 }

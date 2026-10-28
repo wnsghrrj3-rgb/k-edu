@@ -27,8 +27,10 @@ export const GAME = {
   // 길 구간(09 문서 2절·07 문서 상황 D, v1.5): 자동 전진 = len/seconds(≈3.8 m/s) · 좌우 ±2.6 · 바위는 옆으로, 가지는 숙여서 · 맞으면 피해 + 1.2초 느려짐(판은 안 멈춤)
   //   퍼즐 자리에서 길이 멈춤(1초 감속) → S08P. 게이지 없음 · 3번 틀리면 정답 보여 주고 통과(보상 0) · 정답 = 마나 +20 + 골드 10~30 · 1~2학년은 장애물 간격 ×1.3
   rail: { xMax: 2.6, lane: 1.7, gap: 9, lowGapMul: 1.3, startD: 12, endD: 14, puzzleClear: 12, decel: 1.0, accel: 1.5, hitSlow: .35, hitRecover: 1.2, viewZ: 42, enemyZ: 14, engageZ: 6, goldCap: 200,
-          rock: { r: .9, atk: 10 }, branch: { atk: 8, h: 1.25, win: .45 }, firefly: { r: .9, mana: 2 }, chest: { r: 1.0, mana: 15, goldMin: 10, goldMax: 30 }, nicePass: { r: .9, mana: 2 },
+          mushroom: { r: .9, mana: 2, hop: .5 }, rock: { r: .9, atk: 10 }, branch: { atk: 8, h: 1.25, win: .45 }, firefly: { r: .9, mana: 2 }, chest: { r: 1.0, mana: 15, goldMin: 10, goldMax: 30 }, nicePass: { r: .9, mana: 2 },
           puzzle: { rightShow: 1.6, wrongShow: 1.3, revealShow: 2.8, maxWrong: 3, laneX: 1.1, laneHold: .8, mana: 20 } },
+  // 고블린 방패병(04·06 문서, v1.6): 방패가 깨지면 비틀 .6초 · 수학으로 깬 방패는 다시 안 올라옴 · 마법(spell·tick)은 방패를 지나 몸에
+  shield: { breakStagger: .6, spellBypass: true },
   // 보스(06 문서 4·5절) — 1~2학년은 공격 주기 ×1.25 추가(5절 학년 배율 예)
   boss: { introT: 2.4, phaseT: 1.5, keep: 3.4, zMax: 12, dashT: .45, recover: .9, shieldMul: .1, weakMul: 1.5, weakT: 8, lowCycleMul: 1.25, sealCd: 1.2, heal: 20 },
 };

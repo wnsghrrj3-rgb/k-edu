@@ -125,7 +125,7 @@ export function makeGoblin(e){
   for (const s of [-1, 1]) { const leg = new THREE.Mesh(new THREE.CapsuleGeometry(.06, .16, 4, 8), dark); leg.position.set(s * .1, .18, 0); body.add(leg); }
   const bar = new THREE.Group(); const bg = new THREE.Mesh(new THREE.PlaneGeometry(.7, .08), new THREE.MeshBasicMaterial({ color: 0x1b1630, depthTest: false, transparent: true, opacity: .7 })); const fg = new THREE.Mesh(new THREE.PlaneGeometry(.7, .08), new THREE.MeshBasicMaterial({ color: 0x5cf29a, depthTest: false }));
   fg.position.z = .001; bg.renderOrder = fg.renderOrder = 11; bar.add(bg, fg); bar.position.y = 1.28; g.add(bar);
-  g.userData = { body, head, armL, armR, acorn, bar, fg, flash: 0, mats: [green, skin, dark] };
+  g.userData = { body, head, armL, armR, acorn, bar, fg, board, bt, flash: 0, mats: [green, skin, dark] };
   return g;
 }
 export function poseGoblin(g, e, dt, cam, gameT){
@@ -141,6 +141,27 @@ export function poseGoblin(g, e, dt, cam, gameT){
   u.acorn.visible = e.state !== 'attack' && e.state !== 'recover'; g.scale.setScalar(sc * (e.scale || 1));
   u.flash = Math.max(0, u.flash - dt * 6); const red = e.state === 'windup' ? (Math.sin(t * 18) * .5 + .5) * .6 : 0; for (const m of u.mats) m.emissive && m.emissive.setRGB(u.flash + red, u.flash * .9, u.flash * .9);
   u.fg.scale.x = Math.max(.001, e.hp / e.hpMax); u.fg.position.x = -.35 * (1 - u.fg.scale.x); u.bar.quaternion.copy(cam.quaternion); u.bar.visible = e.hp < e.hpMax && e.state !== 'dead';
+}
+
+// ── v1.6 고블린 방패병(06 문서 3절): 고블린 몸 + 앞 나무 방패(빈칸 식 글자) — 방패 up 이면 앞, 내리면 옆으로 처짐, 깨지면 조각나며 사라짐
+export function makeShieldGoblin(e){
+  const g = makeGoblin(e); const u = g.userData; u.board.visible = false; u.bt && (u.bt.visible = false);
+  const pivot = new THREE.Group(); pivot.position.set(.3, .6, .18); u.body.add(pivot);
+  const wood = toon(0x8a5a30), rim = toon(0x5a3a1c);
+  const sh = withOutline(new THREE.Mesh(new THREE.CylinderGeometry(.42, .42, .07, 18), wood)); sh.rotation.x = Math.PI / 2; sh.castShadow = true; pivot.add(sh);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(.4, .035, 8, 24), rim); pivot.add(ring); const boss = new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8), rim); boss.position.z = .05; pivot.add(boss);
+  const eq = textSprite((e.shield && e.shield.eq) || '□+?=?', { scale: .34, color: '#fff4d6', stroke: '#3a2412' }); eq.position.z = .09; eq.position.y = .0; pivot.add(eq);
+  const pieces = new THREE.Group(); pieces.visible = false; for (let i = 0; i < 6; i++) { const pc = new THREE.Mesh(new THREE.BoxGeometry(.18, .14, .05), wood); pc.position.set(Math.cos(i) * .2, Math.sin(i * 1.7) * .2, 0); pc.userData.v = [Math.cos(i * 1.3) * 2.2, 2 + Math.sin(i) * 1.5, Math.sin(i * .7) * 1.5]; pieces.add(pc); } pivot.add(pieces);
+  const shBar = new THREE.Mesh(new THREE.PlaneGeometry(.7, .05), new THREE.MeshBasicMaterial({ color: 0xd9a35c, depthTest: false })); shBar.position.y = 1.36; shBar.renderOrder = 11; g.add(shBar);
+  Object.assign(u, { shield: { pivot, sh, ring, eq, pieces, bar: shBar, broken: false, bt: 0 } }); return g;
+}
+export function poseShieldGoblin(g, e, dt, cam, gameT){
+  poseGoblin(g, e, dt, cam, gameT); const u = g.userData, S = u.shield, st = e.shield, k = 1 - Math.exp(-dt / .08);
+  if (!st) return; if (st.broken && !S.broken) { S.broken = true; S.pieces.visible = true; S.sh.visible = S.ring.visible = S.eq.visible = false; S.bt = 0; }
+  if (S.broken) { S.bt += dt; for (const pc of S.pieces.children) { pc.position.x += pc.userData.v[0] * dt; pc.position.y += pc.userData.v[1] * dt; pc.position.z += pc.userData.v[2] * dt; pc.userData.v[1] -= 9 * dt; pc.rotation.x += dt * 7; pc.rotation.z += dt * 5; pc.scale.setScalar(Math.max(0, 1 - S.bt / .9)); } if (S.bt > 1) S.pieces.visible = false; S.bar.visible = false; return; }
+  const up = st.up && e.state !== 'dead'; const want = up ? { x: .3, y: .6, z: .18, ry: 0, rx: 0 } : { x: .48, y: .45, z: 0, ry: 1.3, rx: .2 };
+  S.pivot.position.x += (want.x - S.pivot.position.x) * k; S.pivot.position.y += (want.y - S.pivot.position.y) * k; S.pivot.position.z += (want.z - S.pivot.position.z) * k; S.pivot.rotation.y += (want.ry - S.pivot.rotation.y) * k; S.pivot.rotation.x += (want.rx - S.pivot.rotation.x) * k;
+  S.eq.quaternion.copy(cam.quaternion); S.eq.visible = up; S.bar.scale.x = Math.max(.001, st.hp / st.hpMax); S.bar.position.x = -.35 * (1 - S.bar.scale.x); S.bar.quaternion.copy(cam.quaternion); S.bar.visible = st.hp < st.hpMax && e.state !== 'dead';
 }
 
 // ── 보스 「숫자 골렘」(06 문서 5절) — 바위 덩어리 + 몸에 박힌 숫자 돌 + 균열 빛. 보호막 칸 = 둘레를 도는 룬 판
@@ -207,6 +228,10 @@ export function makeObstacle(o){
   else if (o.kind === 'branch') { const w = o.r * 2 + 1.5; const b = withOutline(new THREE.Mesh(new THREE.CylinderGeometry(.16, .22, w, 7), woodMat)); b.rotation.z = Math.PI / 2; b.position.y = o.h + .1; b.castShadow = true; g.add(b);
     for (let i = -2; i <= 2; i++) { const l = new THREE.Mesh(new THREE.IcosahedronGeometry(.42, 0), leafMat); l.position.set(i * w / 5, o.h + .35 + (i % 2) * .15, .1); l.scale.set(1.3, .7, 1); g.add(l); }
     const post = new THREE.Mesh(new THREE.CylinderGeometry(.14, .2, o.h + .3, 6), woodMat); post.position.set(-w / 2, (o.h + .3) / 2, 0); g.add(post); const post2 = post.clone(); post2.position.x = w / 2; g.add(post2); }
+  else if (o.kind === 'mushroom') { const cap = toon(0xe8584a), spot = toon(0xfff4d6), stem = toon(0xf0e2c4); const st = withOutline(new THREE.Mesh(new THREE.CylinderGeometry(.28, .36, .4, 10), stem)); st.position.y = .2; g.add(st);
+    const cp = withOutline(new THREE.Mesh(new THREE.SphereGeometry(o.r * .95, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2), cap)); cp.scale.y = .55; cp.position.y = .38; cp.castShadow = true; g.add(cp); g.userData.cap = cp;
+    for (let i = 0; i < 5; i++) { const sp = new THREE.Mesh(new THREE.SphereGeometry(.09, 8, 6), spot); const a = i * 1.26 + o.uid; sp.position.set(Math.cos(a) * o.r * .55, .38 + .3 * Math.sin(i * .9 + 1) + .05, Math.sin(a) * o.r * .55); cp.add(sp); }
+    const ring = new THREE.Mesh(new THREE.RingGeometry(o.r * .9, o.r * 1.15, 28), new THREE.MeshBasicMaterial({ color: 0xffc8b0, transparent: true, opacity: .3, side: THREE.DoubleSide, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.y = .02; g.add(ring); g.userData.ring = ring; g.userData.sq = 0; }
   else if (o.kind === 'firefly') { const s = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xfff1a8, transparent: true, opacity: .95, blending: THREE.AdditiveBlending, depthWrite: false })); s.scale.setScalar(.55); g.add(s);
     const core = new THREE.Mesh(new THREE.SphereGeometry(.09, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff })); g.add(core); const halo = new THREE.Mesh(new THREE.RingGeometry(.5, .75, 28), new THREE.MeshBasicMaterial({ color: 0xfff1a8, transparent: true, opacity: .35, side: THREE.DoubleSide, depthWrite: false })); halo.rotation.x = -Math.PI / 2; halo.position.y = -(o.pos ? o.pos[1] : 1.2) + .02; g.add(halo); g.userData.halo = halo; }
   else if (o.kind === 'chest') { const box = withOutline(new THREE.Mesh(new THREE.BoxGeometry(.9, .55, .6), chestMat)); box.position.y = .28; box.castShadow = true; g.add(box); const lid = withOutline(new THREE.Mesh(new THREE.BoxGeometry(.92, .3, .62), chestMat)); lid.position.set(0, .7, 0); g.add(lid); g.userData.lid = lid;
@@ -217,16 +242,23 @@ export function poseObstacle(g, o, dt, gameT){
   const u = g.userData; u.t += dt; g.position.set(WX(o.pos[0]), o.pos[1] || 0, o.pos[2]);
   if (o.kind === 'firefly') { g.position.y += Math.sin(u.t * 3) * .12; g.children[0].material.opacity = .6 + .4 * Math.sin(u.t * 6); g.visible = o.state !== 'taken'; }
   else if (o.kind === 'chest') { u.ring.rotation.z += dt; u.ring.material.opacity = .25 + .2 * Math.sin(u.t * 4); if (o.state === 'taken') { u.lid.rotation.x = Math.max(-1.2, u.lid.rotation.x - dt * 6); u.lid.position.z = -.25; } }
+  else if (o.kind === 'mushroom') { const breathe = 1 + Math.sin(u.t * 2.2) * .03; if (o.state === 'bounced') { u.sq = Math.min(u.sq + dt * 6, 1); } const sqz = u.sq ? Math.sin(u.sq * Math.PI) * .35 : 0; u.cap.scale.set(breathe * (1 + sqz * .5), .55 * breathe * (1 - sqz), breathe * (1 + sqz * .5)); u.ring.material.opacity = o.state === 'ahead' ? .25 + .15 * Math.sin(u.t * 4) : 0; }
   else if (o.kind === 'rock' && o.state === 'hit') g.position.y = -.08;
   else if (o.kind === 'branch' && o.state === 'hit') g.rotation.z = Math.sin(u.t * 14) * .04;
 }
 // 퍼즐 돌(number-bridge·rule-stones) · 문(size-gate) — 멈춘 길 앞 바닥에 세움. 고르는 자리는 화면 UI(targets rect)라 여기 돌은 그림만
 export function makePuzzleProp(pz){
-  const g = new THREE.Group(); g.userData = { kind: pz.type, items: [] };
+  const g = new THREE.Group(); g.userData = { kind: pz.type, items: [] }; let u;
   if (pz.stones) { pz.stones.forEach((s, i) => { const st = withOutline(new THREE.Mesh(new THREE.CylinderGeometry(.75, .9, .5, 9), stoneMat)); st.position.set(WX((i - 1) * 2.0), .25, 7 + (i === 1 ? .8 : 0)); st.castShadow = true; g.add(st);
       const n = textSprite(String(s.num), { scale: .6, color: '#fff7d6' }); n.position.set(st.position.x, 1.0, st.position.z); g.add(n); g.userData.items.push({ st, n }); });
     if (pz.type === 'number-bridge') { const water = new THREE.Mesh(new THREE.PlaneGeometry(9, 4), new THREE.MeshBasicMaterial({ color: 0x4f9fd6, transparent: true, opacity: .55 })); water.rotation.x = -Math.PI / 2; water.position.set(0, .03, 7.6); g.add(water);
       const bridge = new THREE.Mesh(new THREE.BoxGeometry(2.4, .2, 4.2), woodMat); bridge.position.set(0, -.6, 7.6); bridge.visible = false; g.add(bridge); g.userData.bridge = bridge; }
+    if (pz.type === 'mushroom-add' && pz.mush) { const capM = toon(0xe8584a), spotM = toon(0xfff4d6), stemM = toon(0xf0e2c4);   // 버섯 두 송이(점 a·b) + 문 3개(돌 대신 문 모양)
+      [[-2.2, pz.mush.a], [2.2, pz.mush.b]].forEach(([x, n]) => { const grp = new THREE.Group(); const st = withOutline(new THREE.Mesh(new THREE.CylinderGeometry(.3, .4, .9, 10), stemM)); st.position.y = .45; grp.add(st);
+        const cp = withOutline(new THREE.Mesh(new THREE.SphereGeometry(1.0, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), capM)); cp.scale.y = .6; cp.position.y = .85; cp.castShadow = true; grp.add(cp);
+        for (let i = 0; i < n; i++) { const sp = new THREE.Mesh(new THREE.SphereGeometry(.15, 10, 8), spotM); const a = -Math.PI * .15 + i * (Math.PI * 1.3 / Math.max(1, n - 1)) - Math.PI * .65 + Math.PI * .5; sp.position.set(Math.cos(a) * .62, .95 + .25 * Math.sin(i * 1.1 + .5), .78); grp.add(sp); }
+        grp.position.set(WX(x), 0, 3.8); g.add(grp); });
+      u = g.userData; u.items.forEach((it, i) => { it.st.geometry.dispose(); it.st.geometry = new THREE.BoxGeometry(1.3, 2.0, .3); it.st.position.y = 1.0; it.n.position.y = 2.35; const frame = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.3, .2), woodMat); frame.position.set(it.st.position.x, 1.15, it.st.position.z - .12); g.add(frame); }); }
     if (pz.type === 'rule-stones' && pz.seq) pz.seq.forEach((v, i) => { const st = new THREE.Mesh(new THREE.CylinderGeometry(.5, .6, .35, 9), stoneMat); st.position.set(WX(-2.4 + i * 1.6), .17, 3.2 + i * .3); g.add(st); const n = textSprite(String(v), { scale: .45, color: '#dfe7ff' }); n.position.set(st.position.x, .75, st.position.z); g.add(n); }); }
   if (pz.gate) { for (const [side, num] of [['L', pz.gate.left], ['R', pz.gate.right]]) { const x = WX(side === 'L' ? -1.7 : 1.7); const arch = new THREE.Group();
       for (const dx of [-1, 1]) { const p = withOutline(new THREE.Mesh(new THREE.CylinderGeometry(.22, .28, 3.2, 7), stoneMat)); p.position.set(dx * 1.0, 1.6, 0); p.castShadow = true; arch.add(p); }
@@ -237,7 +269,8 @@ export function makePuzzleProp(pz){
 }
 export function posePuzzleProp(g, pz, dt){
   const u = g.userData; if (!u) return;
-  if (pz.stones) u.items.forEach((it, i) => { const s = pz.stones[i]; if (!s) return; const lit = s.lit || s.answer; it.st.material = lit ? (s.answer ? goldMat : toon(0x9fe8ff)) : stoneMat; const sink = s.wrong ? -.35 : 0; it.st.position.y += (.25 + sink - it.st.position.y) * Math.min(1, dt * 6); it.n.position.y = it.st.position.y + .75; });
+  const door = u.kind === 'mushroom-add', baseY = door ? 1.0 : .25, nOff = door ? 1.35 : .75;   // v1.6 버섯 문은 문 판(높이 1.0) — 오답이면 살짝 내려앉음
+  if (pz.stones) u.items.forEach((it, i) => { const s = pz.stones[i]; if (!s) return; const lit = s.lit || s.answer; it.st.material = lit ? (s.answer ? goldMat : toon(0x9fe8ff)) : (door ? woodMat : stoneMat); const sink = s.wrong ? -.35 : 0; it.st.position.y += (baseY + sink - it.st.position.y) * Math.min(1, dt * 6); it.n.position.y = it.st.position.y + nOff; });
   if (u.bridge) { u.bridge.visible = pz.state === 'right' || pz.state === 'reveal'; u.bridge.position.y += (.1 - u.bridge.position.y) * Math.min(1, dt * 3); }
   if (pz.gate) u.items.forEach(it => { const on = pz.gate.lane === it.side, ans = pz.gate.answer === it.side, wrong = pz.state === 'wrong' && pz.gate.picked === it.side; it.glow.material.color.setHex(wrong ? 0xff5c6e : ans ? 0x5cf29a : 0xfff1a8); it.glow.material.opacity += ((wrong ? .5 : ans ? .45 : on ? .25 : 0) - it.glow.material.opacity) * Math.min(1, dt * 8); });
 }

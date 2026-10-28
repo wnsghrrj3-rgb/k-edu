@@ -30,6 +30,11 @@ const BASE = {
       return { concept: 'g1.zero.op', fact: `zero:${a}${op}${b}`, d: .25, prompt: { key: op === '+' ? 'q.add' : 'q.sub', args: { a, b } }, a, b, op, answer: ans, wrongs }; },
     verify: q => beads(q.a, q.b, q.op) === q.answer },
 };
+// 빈칸 식(08 문서 7절 표준 「□+2=6」, 11행 「방패병 방패 빈칸 식」) — opt.fixed {b,c} 로 수를 고정(방패병 방패에 적힌 식 그대로). 오개념 ⑤ 「=」을 답 쓰라는 표시로만 봄 → c 그대로 고르는 오답
+BASE['g1.missing.add9'] = { id: 'missingAdd9', gen(rng, d, opt){ const fx = opt && opt.fixed; const c = fx ? fx.c : (lvl(rng, d) ? rng.int(6, 9) : rng.int(3, 6)), b = fx ? fx.b : rng.int(1, c - 1), ans = c - b;
+    return { concept: 'g1.missing.add9', fact: `miss:${b},${c}`, d: .2 + (c - 3) / 6 * .5, prompt: { key: 'q.missing', args: { b, c } }, a: ans, b, c, op: '+', answer: ans,
+      wrongs: [[c + b, 'add-instead'], [c, 'equals-answer'], [ans + 1, 'off-by-one'], [ans - 1, 'off-by-one']] }; },
+  verify: q => beads(q.a, q.b, '+') === q.c && q.answer >= 1 && q.c <= 9 };
 // 문장제 2종(08 문서 59행·64행 — 보스 3페이즈 마지막 칸 「복합 문제」) — type word1, 게이지 24
 BASE['g1.compare.word'] = { id: 'compareWord', word: true, compare: true, gen(rng, d){ const a = lvl(rng, d) ? rng.int(6, 9) : rng.int(3, 6), b = rng.int(1, a - 1), ans = a - b; const [[n1, u1], [n2]] = pair(rng); const u = u1;
     return { concept: 'g1.compare.word', type: 'word1', fact: `cmp:${a},${b}`, d: .3 + (a - 3) / 6 * .5, prompt: { key: 'q.word.compare', args: { n1, n2, a, b, u, j1: wIga(n1), j2: wIga(n2), j3: wEun(n1) } }, a, b, op: '-', answer: ans,
@@ -40,7 +45,7 @@ BASE['g1.join.word'] = { id: 'joinWord', word: true, gen(rng, d){ const sum = lv
       wrongs: [[Math.abs(a - b), 'sub-instead'], [Math.max(a, b), 'pick-larger'], [sum + 1, 'off-by-one'], [sum - 1, 'off-by-one']] }; },
   verify: q => beads(q.a, q.b, '+') === q.answer && q.answer <= 9 };
 // 힌트(07 문서 8절): 1단계 = 생각 길잡이 문구 키 · 2단계 = 구슬 그림(a·b·연산) — 모든 생성기에 공통으로 붙임
-const HINT1 = { 'g1.compose9': 'hint.addCount', 'g1.add.expr9': 'hint.addCount', 'g1.join.word': 'hint.joinCount', 'g1.decompose9': 'hint.subCount', 'g1.sub.expr9': 'hint.subCount', 'g1.compare.word': 'hint.compare', 'g1.zero.op': 'hint.zero' };
+const HINT1 = { 'g1.compose9': 'hint.addCount', 'g1.add.expr9': 'hint.addCount', 'g1.join.word': 'hint.joinCount', 'g1.decompose9': 'hint.subCount', 'g1.sub.expr9': 'hint.subCount', 'g1.compare.word': 'hint.compare', 'g1.zero.op': 'hint.zero', 'g1.missing.add9': 'hint.missing' };
 export const G1U3 = {};
-for (const [k, g] of Object.entries(BASE)) G1U3[k] = Object.assign({}, g, { gen(rng, d){ const q = g.gen(rng, d); q.type = q.type || 'calc1';
-  q.hint1 = { key: HINT1[k], args: { a: q.a, b: q.b } }; q.hint2 = { kind: 'beads', a: q.a, b: q.b, op: q.op }; return q; } });
+for (const [k, g] of Object.entries(BASE)) G1U3[k] = Object.assign({}, g, { gen(rng, d, opt){ const q = g.gen(rng, d, opt); q.type = q.type || 'calc1';
+  q.hint1 = { key: HINT1[k], args: { a: q.a, b: q.b, c: q.c } }; q.hint2 = { kind: 'beads', a: q.a, b: q.b, op: q.op }; return q; } });

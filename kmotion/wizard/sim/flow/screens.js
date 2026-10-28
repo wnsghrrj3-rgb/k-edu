@@ -9,20 +9,25 @@ import { STAGE_BY_GRADE } from '../input/config.js';
 import { createBus } from '../core/events.js';
 import { deepFreeze } from '../core/snapshot.js';
 
-export function createFlow({ data, grade = 1, seed = Date.now() % 100000, freeze = false, cal = null, unlock = null, progress = null, startZone = 0 }){
+export function createFlow({ data, grade = 1, seed = Date.now() % 100000, freeze = false, cal = null, unlock = null, progress = null, startZone = 0, stage = null, forceStage = false }){
   const bus = createBus();
-  const f = { screen: 'S01', mode: 'keyboard', char: 'luna', grade, game: null, calib: null, cal, wi: null, kb: new KeyInput(), t: 0, preview: null, cursor: null, seed };
+  const f = { screen: 'S01', mode: 'keyboard', char: 'luna', grade, game: null, calib: null, cal, wi: null, kb: new KeyInput(), t: 0, preview: null, cursor: null, seed, progress: progress || null, forceStage };
+  // v1.6 스테이지 목록(data.stages 순서) — requires 를 깬 뒤 열림(?stage= 로 들어오면 forceStage). 기본 = 가장 뒤에 열린 스테이지가 아니라 「고른 것」, 처음은 1-1
+  const STAGES = Object.keys(data.stages);
+  const isLocked = id => { const z = data.stages[id]; const prog = f.progress || {}; return !!(z && z.requires && !(prog.cleared && prog.cleared[z.requires]) && !(forceStage && id === f.stage)); };
+  f.stage = stage && data.stages[stage] ? stage : STAGES[0]; if (isLocked(f.stage) && !forceStage) f.stage = STAGES[0];
+  f.stageList = () => STAGES.map(id => ({ id, nameKo: data.stages[id].nameKo, stars: (f.progress && f.progress.cleared && f.progress.cleared[id]) || 0, locked: isLocked(id), requires: data.stages[id].requires || null, reward: data.stages[id].reward ? data.stages[id].reward.spell : null }));
   const ctrl = STAGE_BY_GRADE(grade);
   function newGame(){
     f.wi = new WizardInput({ stage: ctrl, cal: f.mode === 'mouse' ? null : f.cal, uMaxAuto: f.mode === 'mouse' ? .55 : null });
-    f.game = createGame({ data, seed: f.seed, grade, charId: f.char, inputMode: f.mode === 'keyboard' ? 'keyboard' : 'camera', freeze, unlock, mastery: f.game ? f.game.qe.m : null, progress: f.game ? f.game.progress : progress, startZone });
+    f.game = createGame({ data, seed: f.seed, grade, charId: f.char, inputMode: f.mode === 'keyboard' ? 'keyboard' : 'camera', freeze, unlock, mastery: f.game ? f.game.qe.m : null, progress: f.game ? f.game.progress : (f.progress || progress), startZone, stageId: f.stage });
     f.progress = f.game.progress;
     for (const ch of [f.wi.charge, f.kb.charge]) { ch.canCharge = () => f.game.canCast(); Object.defineProperty(ch, 'chargeTime', { get: () => f.game.chargeTime(), configurable: true }); }
     f.screen = 'S08'; bus.emit('screen', { from: 'S17', to: 'S08' });
   }
   f.action = function(id, p = {}){
     bus.emit('ui:action', { id });
-    if (id === 'start') { f.mode = p.mode || 'keyboard'; f.char = p.char || f.char; f.seed = p.seed != null ? p.seed : f.seed;
+    if (id === 'start') { f.mode = p.mode || 'keyboard'; f.char = p.char || f.char; f.seed = p.seed != null ? p.seed : f.seed; if (p.stage && data.stages[p.stage] && !isLocked(p.stage)) f.stage = p.stage;
       if (f.mode === 'camera' && (p.calib || !f.cal)) { f.calib = new Calib(); f.screen = 'S17'; bus.emit('screen', { from: 'S01', to: 'S17' }); } else newGame(); }
     else if (id === 'calib-skip' && f.calib) f.calib.skip(f.t * 1000);
     else if (id === 'again' && f.game) { f.game.restart(); f.wi = new WizardInput({ stage: ctrl, cal: f.mode === 'mouse' ? null : f.cal, uMaxAuto: f.mode === 'mouse' ? .55 : null }); for (const ch of [f.wi.charge]) { ch.canCharge = () => f.game.canCast(); Object.defineProperty(ch, 'chargeTime', { get: () => f.game.chargeTime(), configurable: true }); } f.screen = 'S08'; }
@@ -56,7 +61,7 @@ export function createFlow({ data, grade = 1, seed = Date.now() % 100000, freeze
   f.snapshot = function(){
     if (f.game) { const s = f.game.snapshot(); if (freeze) return s; return s; }
     const s = { t: f.t, screen: f.screen, calib: f.calib ? { step: f.calib.step, idx: f.calib.i, of: CALIB_STEPS.length, msg: f.calib.msg, p: Math.round(f.calib.p * 100) / 100 } : null,
-      input: { preview: f.preview, mode: f.mode }, title: f.screen === 'S01' ? { chars: ['luna', 'tori', 'haru'], char: f.char, hasCal: !!f.cal } : null };
+      input: { preview: f.preview, mode: f.mode }, title: f.screen === 'S01' ? { chars: ['luna', 'tori', 'haru'], char: f.char, hasCal: !!f.cal, stages: f.stageList(), stage: f.stage } : null };
     return freeze ? deepFreeze(s) : s;
   };
   f.drainEvents = () => [...bus.drain(), ...(f.game ? f.game.drainEvents() : [])];

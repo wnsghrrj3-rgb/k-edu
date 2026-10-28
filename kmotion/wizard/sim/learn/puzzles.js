@@ -3,7 +3,7 @@
 // 학년 폭: 1학년 9 이내 · 2학년 20 이내 · 3학년↑ 50 이내(규칙은 2·3·5 걸음)
 import { eul, iga } from './josa.js';
 const span = g => g <= 1 ? 9 : g <= 2 ? 20 : 50;
-export const PUZZLE_CONCEPT = { 'number-bridge': 'g1.compose9', 'size-gate': 'g1.compare', 'rule-stones': 'g1.pattern' };
+export const PUZZLE_CONCEPT = { 'number-bridge': 'g1.compose9', 'size-gate': 'g1.compare', 'rule-stones': 'g1.pattern', 'mushroom-add': 'g1.add.expr9' };
 
 export function makePuzzle(type, rng, grade = 1, opt = {}){
   const N = span(grade);
@@ -37,11 +37,22 @@ export function makePuzzle(type, rng, grade = 1, opt = {}){
       prompt: { key: 'pz.rule', args: { s: seq.join(', ') } }, stones: nums.map((n, s) => ({ slot: s, num: n })), answer: [slot],
       hint1: { key: 'pz.rule.hint', args: { d: dlt } } };
   }
+  if (type === 'mushroom-add') {
+    // 버섯 점 더하기 문(09 문서 9행, 1-2 버섯 마을 길): 버섯 두 송이의 점(a·b) 합 = 문 번호 — 문 3개 중 1(점을 세어 더한다, 글자 없음)
+    const hi = Math.min(N, 9), a = rng.int(1, 4), b = rng.int(1, Math.min(4, hi - a)), T = a + b;
+    const wrongs = []; for (const w of rng.shuffle([T + 1, T - 1, Math.max(a, b), a + b + 2, Math.abs(a - b)])) { if (w >= 1 && w <= hi && w !== T && !wrongs.includes(w)) wrongs.push(w); if (wrongs.length === 2) break; }
+    while (wrongs.length < 2) { const w = rng.int(1, hi); if (w !== T && !wrongs.includes(w)) wrongs.push(w); }
+    const slot = rng.int(0, 2), nums = []; let wi = 0; for (let s = 0; s < 3; s++) nums.push(s === slot ? T : wrongs[wi++]);
+    return { type, id: `pz-mush-${a}-${b}`, concept: PUZZLE_CONCEPT[type], fact: `mush:${a}+${b}`, d: .15 + T / 9 * .45, need: 1, target: T, mush: { a, b },
+      prompt: { key: 'pz.mush', args: { a, b } }, stones: nums.map((n, s) => ({ slot: s, num: n })), answer: [slot],
+      hint1: { key: 'pz.mush.hint', args: { a, b } } };
+  }
   throw new Error('퍼즐 종류 없음: ' + type);
 }
 export function verifyPuzzle(p){
   if (p.type === 'number-bridge') { const n = p.stones.map(s => s.num); let pairs = 0; for (let i = 0; i < 3; i++) for (let j = i + 1; j < 3; j++) if (n[i] + n[j] === p.target) pairs++; return pairs === 1 && n[p.answer[0]] + n[p.answer[1]] === p.target; }
   if (p.type === 'size-gate') { const { left, right } = p.gate; return left !== right && ((p.bigger ? left > right : left < right) ? 'L' : 'R') === p.answer; }
   if (p.type === 'rule-stones') { const n = p.stones.map(s => s.num); return n.filter(x => x === p.seq[2] + p.step).length === 1 && n[p.answer[0]] === p.seq[2] + p.step; }
+  if (p.type === 'mushroom-add') { const n = p.stones.map(s => s.num); return n.filter(x => x === p.mush.a + p.mush.b).length === 1 && n[p.answer[0]] === p.mush.a + p.mush.b; }
   return false;
 }

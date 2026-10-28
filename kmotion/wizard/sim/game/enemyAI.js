@@ -7,8 +7,11 @@ const E = GAME.enemy;
 export function makeEnemy(def, uid, x, z, rng, band, opt = {}){
   const label = def.label === 'digit' ? String(opt.label != null ? opt.label : rng.int(def.labelMin || 1, 9)) : null;
   const hp = opt.hp || def.hp, sc = opt.scale || def.scale || 1;
-  return { uid, kind: def.kind, def, pos: [x, 0, z], yaw: Math.PI, scale: sc, hp, hpMax: hp, state: 'spawn', stateT: 0, since: 0, xp: opt.xp != null ? opt.xp : def.xp,
-    label, telegraph: null, token: false, lastAtk: -9, slot: 0, band, h: def.height * (opt.scale ? sc : 1), r: def.body * (opt.scale ? sc : 1), staggerT: 0, tags: opt.tags || [] };
+  const e = { uid, kind: def.kind, def, pos: [x, 0, z], yaw: Math.PI, scale: sc, hp, hpMax: hp, state: 'spawn', stateT: 0, since: 0, xp: opt.xp != null ? opt.xp : def.xp,
+    label, telegraph: null, token: false, lastAtk: -9, slot: 0, band, h: def.height * (opt.scale ? sc : 1), r: def.body * (opt.scale ? sc : 1), staggerT: 0, tags: opt.tags || [], shield: null };
+  // v1.6 방패병: 앞 방패 + 방패에 적힌 빈칸 식 「□+b=c」(1~9) — 수학 수정 정답이면 깨짐
+  if (def.shield) { const c = rng.int(3, 9), b = rng.int(1, c - 1); e.shield = { hp: def.shield.hp, hpMax: def.shield.hp, up: true, broken: false, byMath: false, eq: def.shield.eq ? { b, c, ans: c - b } : null }; }
+  return e;
 }
 export function stepEnemy(g, e, dt){
   const P = g.player, B = g.band, cfg = e.def; e.stateT += dt;
@@ -19,7 +22,7 @@ export function stepEnemy(g, e, dt){
     case 'spawn': if (e.stateT >= E.spawnT) set('chase'); return;
     case 'dead': return;
     case 'hurt': if (e.stateT >= e.staggerT) set('chase'); return;
-    case 'chase': {
+    case 'chase': { if (e.shield && !e.shield.broken) e.shield.up = true;
       // 부채꼴 자리(플레이어 앞쪽 ±fan) — 뒤에서 오는 공격 0. 원거리형은 keep 이 멀고(6.5m), keepMin 보다 가까우면 물러난다
       const n = Math.max(1, g.aliveCount), a = (n === 1 ? 0 : (e.slot / (n - 1) - .5) * 2) * E.fanDeg * Math.PI / 180;
       const tx = P.pos[0] + Math.sin(a) * cfg.keep, tz = P.pos[2] + Math.cos(a) * cfg.keep;
@@ -46,7 +49,7 @@ export function stepEnemy(g, e, dt){
     }
     case 'windup': if (g.gameT >= e.telegraph.t1) { set('attack'); if (cfg.ranged) g.enemyShoot(e); else g.enemyStrike(e); } return;
     case 'attack': if (e.stateT >= cfg.attack.dur) { e.telegraph = null; e.lastAtk = g.gameT; g.emit('telegraph:end', { uid: e.uid }); set('recover'); g.releaseToken(e, E.tokenReturn); } return;
-    case 'recover': { const back = (cfg.ranged ? E.backoff * 2 : E.backoff) / E.recover * dt, d = dist || 1; e.pos[0] -= dx / d * back; e.pos[2] -= dz / d * back; face(); if (e.stateT >= E.recover) set('chase'); return; }
+    case 'recover': { if (e.shield && !e.shield.broken) e.shield.up = false; const back = (cfg.ranged ? E.backoff * 2 : E.backoff) / E.recover * dt, d = dist || 1; e.pos[0] -= dx / d * back; e.pos[2] -= dz / d * back; face(); if (e.stateT >= E.recover) set('chase'); return; }
   }
 }
 export function hurtEnemy(g, e, kind){

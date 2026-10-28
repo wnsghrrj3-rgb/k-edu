@@ -6,6 +6,8 @@ export const GENERATORS = Object.assign({}, G1U3);
 export class QuestionEngine {
   constructor({ rng, concepts, mastery = new Mastery() }){ this.rng = rng; this.concepts = concepts.filter(k => GENERATORS[k]); this.m = mastery; this.recent = []; this.retry = []; this.slotUse = [0, 0, 0]; this.seq = 0; }
   next(opt = {}){
+    // v1.6: fixed = 수가 정해진 문제(방패병 방패의 빈칸 식 「□+b=c」 그대로) — 고르기 없이 바로 만든다
+    if (opt.fixed) { const k = opt.fixed.concept, g = GENERATORS[k]; if (g) { const q = g.gen(this.rng, .5, { fixed: opt.fixed }); q.p = this.m.p(k, q.d); this.recent.push(q.fact); if (this.recent.length > 30) this.recent.shift(); return this.build(q, false); } }
     let cands = [];
     const forced = opt.want ? null : this.retry.shift();
     // want 'word' = 문장제만(보스 마지막 봉인 칸) · 'calc' = 계산형만 · 'compare' = 비교·크기형 · 'pattern' = 규칙형(강화 수정, 05 문서 12항) — 장면 개념 밖이어도 같은 단원 생성기에서, 없으면 장면 개념으로

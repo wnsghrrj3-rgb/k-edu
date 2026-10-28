@@ -17,6 +17,8 @@ export function startRail(g, api, zone, zi){
   const lanes = [-C.lane, 0, C.lane];
   for (let i = 0; i < (ob.rock || 0); i++) { const d = place(C.gap * gapMul); if (d == null) break; r.obstacles.push({ uid: nid(), kind: 'rock', d, x: rng.pick(lanes), r: C.rock.r, h: 1.1, state: 'ahead' }); }
   for (let i = 0; i < (ob.branch || 0); i++) { const d = place(C.gap * gapMul); if (d == null) break; r.obstacles.push({ uid: nid(), kind: 'branch', d, x: 0, r: C.xMax + 1, h: C.branch.h, state: 'ahead' }); }
+  // v1.6 버섯 튕김 발판(09 문서 4-2 「길 A 버섯 튕김 발판(자동)」): 밟으면 폴짝 — 피해 0, 마나 +2, 잠깐 무적(공중). 장애물 사이 .5 간격
+  for (let i = 0; i < (ob.mushroom || 0); i++) { const d = place(C.gap * .5); if (d == null) break; r.obstacles.push({ uid: nid(), kind: 'mushroom', d, x: rng.pick(lanes) * .9, r: C.mushroom.r, h: .45, state: 'ahead' }); }
   for (let i = 0; i < (zone.chest || 0); i++) { const d = place(C.gap * .6); if (d == null) break; r.obstacles.push({ uid: nid(), kind: 'chest', d, x: rng.pick(lanes) * .8, r: C.chest.r, h: .8, state: 'ahead' }); }
   for (let i = 0; i < (zone.fireflies || 0); i++) { const d = place(C.gap * .35); if (d == null) break; r.obstacles.push({ uid: nid(), kind: 'firefly', d, x: rng.range(-C.xMax + .4, C.xMax - .4), y: 1.1 + rng.range(0, .5), r: C.firefly.r, h: .3, state: 'ahead' }); }
   r.obstacles.sort((a, b) => a.d - b.d);
@@ -43,6 +45,9 @@ export function stepRail(g, api, dt){
         g.emit('obstacle:pass', { uid: o.uid, kind: o.kind, nice, pos: [o.x, 0, z] }); } }
     else if (o.kind === 'branch') { if (z <= C.branch.win && z >= -C.branch.win && !P.duck && g.gameT >= P.invulnUntil) { hitObstacle(g, api, r, o); continue; }
       if (z < -C.branch.win) { o.state = 'passed'; r.passes++; g.emit('obstacle:pass', { uid: o.uid, kind: o.kind, nice: true, pos: [0, o.h, z] }); } }
+    else if (o.kind === 'mushroom') { if (z <= .6 && z >= -.6 && dx < o.r) { o.state = 'bounced'; g.stats.bounces = (g.stats.bounces || 0) + 1; P.mana = Math.min(P.manaMax, P.mana + C.mushroom.mana); P.invulnUntil = Math.max(P.invulnUntil, g.gameT + C.mushroom.hop); P.hopUntil = g.gameT + C.mushroom.hop;
+        g.emit('bounce', { uid: o.uid, pos: [o.x, o.h, z], n: g.stats.bounces, mana: C.mushroom.mana }); g.emit('reward', { kind: 'mana', amount: C.mushroom.mana, pos: [P.pos[0], 1.2, 0] }); }
+      else if (z < -.6) o.state = 'passed'; }
     else if (o.kind === 'firefly') { if (z <= .8 && z >= -.8 && dx < o.r) { o.state = 'taken'; g.stats.fireflies = (g.stats.fireflies || 0) + 1; P.mana = Math.min(P.manaMax, P.mana + C.firefly.mana); g.emit('pickup', { uid: o.uid, kind: 'firefly', pos: [o.x, o.y, z], n: g.stats.fireflies }); }
       else if (z < -.8) o.state = 'passed'; }
     else if (o.kind === 'chest') { if (z <= .8 && z >= -.8 && dx < o.r) { o.state = 'taken'; const gold = g.rng.int(C.chest.goldMin, C.chest.goldMax); g.stats.chests = (g.stats.chests || 0) + 1; g.stats.gold = Math.min(C.goldCap, (g.stats.gold || 0) + gold);
@@ -111,7 +116,7 @@ function closePuzzle(g, api, pz){
 export function puzzleSnapshot(g, r3){
   const pz = g.puzzle; if (!pz || !pz.cur) return null; const c = pz.cur, revealed = pz.state === 'reveal' || pz.state === 'right';
   return { id: pz.id, type: c.type, concept: c.concept, state: pz.state, stateT: r3(g.t - pz.stateT), prompt: c.prompt, picks: pz.picks.slice(), wrong: pz.wrong, maxWrong: R().puzzle.maxWrong, need: c.need,
-    hint: pz.hint ? c.hint1 : null, seq: c.seq || null, target: c.target || null,
+    hint: pz.hint ? c.hint1 : null, seq: c.seq || null, target: c.target || null, mush: c.mush || null,
     stones: c.stones ? c.stones.map(s => ({ id: 'c' + s.slot, slot: s.slot, num: s.num, targetId: 'c' + s.slot, lit: pz.picks.includes(s.slot), answer: revealed && c.answer.includes(s.slot), wrong: pz.state === 'wrong' && pz.picks.includes(s.slot) })) : null,
     gate: c.gate ? { left: c.gate.left, right: c.gate.right, bigger: c.bigger, picked: pz.picks[0] || null, answer: revealed ? c.answer : null, lane: g.player.pos[0] <= -R().puzzle.laneX ? 'L' : g.player.pos[0] >= R().puzzle.laneX ? 'R' : null } : null };
 }

@@ -33,12 +33,16 @@ export function createUI(ctx, audio){
   // ── S01 시작
   const s01 = h('section', 'mw-scr dim mw-hide');
   s01.innerHTML = `<a class="mw-back" href="../">← 케이모션</a><div class="mw-title">${T('title')}</div><div class="mw-sub">${T('title.sub')}</div>
-    <div class="mw-panel"><div class="mw-row chars"></div><div class="mw-row modes"></div><div class="mw-row calibs"></div>
+    <div class="mw-panel"><div class="mw-row stages"></div><div class="mw-row chars"></div><div class="mw-row modes"></div><div class="mw-row calibs"></div>
     <button class="big go">▶ 시작</button><div class="mw-note help"></div></div>`;
-  const charRow = s01.querySelector('.chars'), modeRow = s01.querySelector('.modes'), calRow = s01.querySelector('.calibs'), helpS = s01.querySelector('.help');
-  let sel = { char: pref.char || 'luna', mode: pref.mode || 'camera', calib: false };
+  const stageRow = s01.querySelector('.stages'), charRow = s01.querySelector('.chars'), modeRow = s01.querySelector('.modes'), calRow = s01.querySelector('.calibs'), helpS = s01.querySelector('.help');
+  let sel = { char: pref.char || 'luna', mode: pref.mode || 'camera', calib: false, stage: null };
   const MODES = [['camera', '📷 ' + T('start.camera')], ['keyboard', '⌨️ ' + T('start.keyboard')], ['mouse', '🖱 ' + T('start.mouse')]];
   function paintS01(m){
+    // v1.6 스테이지 고르기(10 문서 S04 간이판): 열린 것만 누름, 잠긴 건 🔒 + 「앞 숲길을 깨면 열려요」, 별 ⭐
+    const list = (m && m.stages) || []; stageRow.classList.toggle('mw-hide', list.length < 2); stageRow.innerHTML = '';
+    if (list.length >= 2) { if (!sel.stage || !list.some(x => x.id === sel.stage && !x.locked)) sel.stage = (m && m.stage) || list[0].id;
+      for (const st of list) { const b = h('button', 'mw-stage' + (sel.stage === st.id ? ' on' : '') + (st.locked ? ' locked' : ''), `<b>${T('stage.' + st.id)}</b><s>${st.locked ? '🔒 ' + T('start.locked') : st.stars ? '⭐'.repeat(st.stars) + '☆'.repeat(3 - st.stars) : '☆☆☆'}</s>`); b.disabled = st.locked; b.onclick = () => { sel.stage = st.id; paintS01(m); }; stageRow.append(b); } }
     charRow.innerHTML = ''; for (const c of (m && m.chars) || ['luna', 'tori', 'haru']) { const b = h('button', 'mw-char' + (sel.char === c ? ' on' : ''), `<i>${CHAR_ICON[c] || '✨'}</i>${T('char.' + c)}`); b.onclick = () => { sel.char = c; pref.char = c; savePref(); paintS01(m); }; charRow.append(b); }
     modeRow.innerHTML = ''; for (const [v, l] of MODES) { const b = h('button', sel.mode === v ? 'on' : '', l); b.onclick = () => { sel.mode = v; pref.mode = v; savePref(); paintS01(m); }; modeRow.append(b); }
     calRow.innerHTML = ''; calRow.classList.toggle('mw-hide', !(sel.mode === 'camera' && m && m.hasCal));
@@ -47,7 +51,7 @@ export function createUI(ctx, audio){
       : sel.mode === 'mouse' ? '카메라 없이 시험: 마우스 좌우 = 몸 이동 · <b>Z/X</b> 손 휙(공격) · <b>V</b> 꾹(모으기→떼면 불꽃탄) · <b>B</b> 막기 · <b>S</b> 숙이기 · 빠르게 좌우 = 피하기 · 문제는 마우스로 구슬 위에 머물기'
       : '몸이 조종기예요 — 옆으로 걸으면 이동, 손을 휙 내밀면 마법탄, 두 손을 머리 위로 모았다 내리면 불꽃탄, 팔 X자 = 막기. 문제는 손을 구슬 위에 잠깐 대고 있어요.';
   }
-  s01.querySelector('.go').onclick = () => act('start', { mode: sel.mode, char: sel.char, calib: sel.calib });
+  s01.querySelector('.go').onclick = () => act('start', { mode: sel.mode, char: sel.char, calib: sel.calib, stage: sel.stage || undefined });
 
   // ── S17 보정
   const s17 = h('section', 'mw-scr dim mw-hide');
@@ -110,8 +114,8 @@ export function createUI(ctx, audio){
     if (sp.dataset.k !== list.join() + P.main) { sp.dataset.k = list.join() + P.main; sp.innerHTML = ''; for (const id of list) { const b = h('button', id === P.main ? 'on' : '', `${SI[id]} ${T('spell.' + id)}`); b.onclick = () => act('spell', { id }); sp.append(b); } }
     $h('.feather').classList.toggle('mw-hide', !P.feather);
     $h('.empower').classList.toggle('mw-hide', !P.empowered); if (P.empowered) $h('.empower').textContent = `✨ 강화 ${Math.ceil((P.empowerT != null ? P.empowerT : 1) * 20)}초`;
-    const w = s.world, Bs = s.boss, R = w && w.rail; $h('.mw-wave').textContent = !Bs && !R && w && w.waves ? `🌲 ${w.arenas > 1 ? T('hud.zone', { n: w.arenaNo || 1 }) + ' · ' : ''}${Math.min(w.wave + 1, w.waves)} / ${w.waves}` : '';
-    const rb = $h('.mw-rail'); rb.classList.toggle('mw-hide', !R); if (R) { rb.querySelector('.nm').textContent = `🌲 ${T('hud.rail')} ${(w.arenaNo || 0) + 1}`; const k = Math.min(1, R.progress || 0); rb.querySelector('.rb i').style.transform = `scaleX(${k})`; rb.querySelector('.rb u').style.left = (k * 100) + '%'; rb.querySelector('.ff').textContent = `🪲 ${fireflies}`; rb.classList.toggle('stop', R.phase !== 'go'); }
+    const w = s.world, Bs = s.boss, R = w && w.rail; $h('.mw-wave').textContent = !Bs && !R && w && w.waves ? `🌲 ${w.arenas > 1 ? T('hud.zone', { n: w.arenaNo || 1 }) + ' · ' : ''}${Math.min(w.wave + 1, w.waves)} / ${w.waves}` : ''; $h('.mw-wave').title = w && w.stageName ? w.stageName : '';
+    const rb = $h('.mw-rail'); rb.classList.toggle('mw-hide', !R); if (R) { rb.querySelector('.nm').textContent = `🌲 ${w.stageName ? w.stageName + ' · ' : ''}${T('hud.rail')} ${(w.arenaNo || 0) + 1}`; const k = Math.min(1, R.progress || 0); rb.querySelector('.rb i').style.transform = `scaleX(${k})`; rb.querySelector('.rb u').style.left = (k * 100) + '%'; rb.querySelector('.ff').textContent = `🪲 ${fireflies}`; rb.classList.toggle('stop', R.phase !== 'go'); }
     const bb = $h('.mw-boss'); bb.classList.toggle('mw-hide', !Bs); if (Bs) { bb.querySelector('.nm').textContent = T(Bs.nameKey) + ` · ${Bs.phase + 1}/${Bs.phases}`;
       const bar = bb.querySelector('.bb'); if (bar.children.length !== Bs.phases) bar.innerHTML = Bs.phaseHpMax.map(() => '<i><u></u></i>').join('');
       [...bar.children].forEach((c, i) => { c.firstChild.style.transform = `scaleX(${Bs.phaseHp[i] / Bs.phaseHpMax[i]})`; c.classList.toggle('on', i === Bs.phase); });
@@ -120,7 +124,7 @@ export function createUI(ctx, audio){
     $h('.mw-streak').textContent = s.streak >= 2 ? `연속 ${s.streak}!` : '';
     const cam = s.input && s.input.mode === 'camera'; pip.classList.toggle('mw-hide', !cam); pip.classList.toggle('bad', s.input && s.input.body !== 'ok');
     if (cam) drawSkeleton(pip, s.input.preview);
-    $h('.mw-help').innerHTML = R ? (cam ? '<b>옆으로 걷기</b> 바위 피하기 · <b>숙이기</b> 가지 밑으로 · <b>반딧불</b>은 몸으로 주워요' : '<b>←→</b> 바위 피하기 · <b>↓</b> 가지 밑으로 숙이기 · <b>반딧불</b>을 지나며 줍기') : cam ? '<b>옆으로 걷기</b> 이동 · <b>손 휙</b> 마법탄 · <b>두 손 모아 머리 위→내리기</b> 불꽃탄 · <b>팔 X자</b> 막기 · <b>숙이기</b> · <b>수정</b>을 쳐서 문제 열기'
+    $h('.mw-help').innerHTML = R ? (cam ? '<b>옆으로 걷기</b> 바위 피하기 · <b>숙이기</b> 가지 밑으로 · <b>반딧불</b>·<b>🍄 버섯</b>은 몸으로' : '<b>←→</b> 바위 피하기 · <b>↓</b> 가지 밑으로 숙이기 · <b>반딧불</b>·<b>🍄</b>을 지나며') : cam ? '<b>옆으로 걷기</b> 이동 · <b>손 휙</b> 마법탄 · <b>두 손 모아 머리 위→내리기</b> 불꽃탄 · <b>팔 X자</b> 막기 · <b>숙이기</b> · <b>수정</b>을 쳐서 문제 열기'
       : '<b>←→</b> 이동 · <b>Shift+←→</b> 피하기 · <b>Space</b> 마법탄 · <b>K</b> 불꽃탄 · <b>L</b> 막기 · <b>↓</b> 숙이기 · <b>H</b> 힌트 · <b>P</b> 멈춤';
     const lostOn = s.input && s.input.body === 'lost' && !s.paused; lost.classList.toggle('mw-hide', !lostOn); if (lostOn) lost.textContent = T('toast.showBody');
     pauseScr.classList.toggle('mw-hide', !s.paused); if (s.paused) pauseScr.querySelector('.why').textContent = s.paused === 'body' ? T('toast.showBody') : '';
@@ -135,7 +139,7 @@ export function createUI(ctx, audio){
   }
   function paintQ(s){
     const Q = s.question; if (!Q) return;
-    if (Q.id !== qId) { qId = Q.id; hintStep = -1; qPrompt.textContent = (Q.kind === 'seal' ? '🔒 ' : Q.kind === 'power' ? '★ ' : '') + fmtQ(Q); qp.classList.toggle('seal', Q.kind === 'seal'); qp.classList.toggle('power', Q.kind === 'power'); qp.classList.toggle('word', Q.type === 'word1'); }
+    if (Q.id !== qId) { qId = Q.id; hintStep = -1; qPrompt.textContent = (Q.kind === 'seal' ? '🔒 ' : Q.kind === 'power' ? '★ ' : Q.kind === 'shield' ? '🛡 ' : '') + fmtQ(Q); qp.classList.toggle('seal', Q.kind === 'seal'); qp.classList.toggle('shieldq', Q.kind === 'shield'); qp.classList.toggle('power', Q.kind === 'power'); qp.classList.toggle('word', Q.type === 'word1'); }
     if (Q.hintStep !== hintStep) { hintStep = Q.hintStep; qHint.classList.toggle('mw-hide', !Q.hint); if (Q.hint) qHint.textContent = '🦉 ' + T(Q.hint.key, Q.hint.args);
       qBeads.classList.toggle('mw-hide', !Q.hintPic); if (Q.hintPic && Q.hintPic.kind === 'beads') qBeads.innerHTML = beadsHtml(Q.hintPic); }
     qp.classList.toggle('right', Q.state === 'right'); qp.classList.toggle('wrong', Q.state === 'wrong');
@@ -161,12 +165,13 @@ export function createUI(ctx, audio){
   }
   function paintPz(s){
     const Z = s.puzzle; if (!Z) return; const W = innerWidth, H = innerHeight; rects = {};
-    if (Z.id !== pzCur) { pzCur = Z.id; pzState = null; pzKind.textContent = Z.type === 'number-bridge' ? '🌉 숫자 다리' : Z.type === 'size-gate' ? '🚪 크기 문' : '🪨 규칙 징검다리'; pzPrompt.textContent = T(Z.prompt.key, Z.prompt.args); pzp.classList.toggle('gate', Z.type === 'size-gate');
+    if (Z.id !== pzCur) { pzCur = Z.id; pzState = null; pzKind.textContent = Z.type === 'number-bridge' ? '🌉 숫자 다리' : Z.type === 'size-gate' ? '🚪 크기 문' : Z.type === 'mushroom-add' ? '🍄 버섯 문' : '🪨 규칙 징검다리'; pzPrompt.textContent = T(Z.prompt.key, Z.prompt.args);
+      if (Z.type === 'mushroom-add' && Z.mush) pzPrompt.innerHTML = `<span class="mush">🍄<i>${'●'.repeat(Z.mush.a)}</i> + 🍄<i>${'●'.repeat(Z.mush.b)}</i></span><br>${T(Z.prompt.key, Z.prompt.args)}`; pzp.classList.toggle('gate', Z.type === 'size-gate');
       gate.classList.toggle('mw-hide', Z.type !== 'size-gate'); if (Z.gate) { gate.querySelector('.L b').textContent = Z.gate.left; gate.querySelector('.R b').textContent = Z.gate.right; } }
     pzHint.classList.toggle('mw-hide', !Z.hint); if (Z.hint) pzHint.textContent = '🦉 ' + T(Z.hint.key, Z.hint.args);
     pzTries.textContent = Z.wrong > 0 ? '💧'.repeat(Z.wrong) + '○'.repeat(Math.max(0, Z.maxWrong - Z.wrong)) : '';
     pzp.classList.toggle('right', Z.state === 'right'); pzp.classList.toggle('wrong', Z.state === 'wrong'); pzp.classList.toggle('reveal', Z.state === 'reveal');
-    pzSub.textContent = Z.state === 'right' ? T('pz.right') + ' ✨' : Z.state === 'wrong' ? T(Z.type === 'size-gate' ? 'pz.gateWrong' : 'pz.wrong') : Z.state === 'reveal' ? T('pz.reveal') : Z.need > 1 ? `돌 ${Z.picks.length} / ${Z.need}` : '';
+    pzSub.textContent = Z.state === 'right' ? T('pz.right') + ' ✨' : Z.state === 'wrong' ? T(Z.type === 'size-gate' ? 'pz.gateWrong' : Z.type === 'mushroom-add' ? 'pz.mushWrong' : 'pz.wrong') : Z.state === 'reveal' ? T('pz.reveal') : Z.need > 1 ? `돌 ${Z.picks.length} / ${Z.need}` : '';
     pzOrbs.forEach(o => o.classList.add('mw-hide'));
     for (const t of s.targets || []) { if (t.kind !== 'puzzle') continue; const st = Z.stones && Z.stones.find(x => x.targetId === t.id); const o = pzOrbs[st ? st.slot : +t.id.slice(1)]; if (!o) continue;
       const d = t.rect.w * W, cx = (t.rect.x + t.rect.w / 2) * W, cy = (t.rect.y + t.rect.h / 2) * H; rects[t.id] = { x: cx / W, y: cy / H };
@@ -178,7 +183,7 @@ export function createUI(ctx, audio){
   }
   function paintRes(s, win){ const r = s.result || {}; res.querySelector('.ttl').textContent = win ? '🏆 ' + T('clear.title') : '💪 ' + T('defeat.title');
     res.querySelector('.again').textContent = win ? T('clear.again') : T('defeat.again');
-    const rows = [['result.kills', r.kills], ['result.q', r.q], ['result.right', r.right], ['result.time', (r.time || 0) + '초']]; if (r.xp != null) rows.push(['result.xp', `+${r.xp}` + (r.levelUps && r.levelUps.length ? ` · ${T('toast.levelUp')} Lv${r.levelUps.at(-1)}` : '')], ['result.level', `Lv${r.level}`]); if (r.fireflies != null) rows.push(['result.fireflies', `🪲 ${r.fireflies}`], ['result.gold', `💰 ${r.gold || 0}`], ['result.puzzles', `${r.puzzleRight || 0} / ${r.puzzles || 0}`], ['result.stars', (r.stars || []).map(b => b ? '⭐' : '☆').join('')]); if (r.keyboard) rows.push(['result.key', '⌨️']);
+    const rows = [['result.kills', r.kills], ['result.q', r.q], ['result.right', r.right], ['result.time', (r.time || 0) + '초']]; if (r.xp != null) rows.push(['result.xp', `+${r.xp}` + (r.levelUps && r.levelUps.length ? ` · ${T('toast.levelUp')} Lv${r.levelUps.at(-1)}` : '')], ['result.level', `Lv${r.level}`]); if (r.fireflies != null) rows.push(['result.fireflies', `🪲 ${r.fireflies}`], ['result.gold', `💰 ${r.gold || 0}`], ['result.puzzles', `${r.puzzleRight || 0} / ${r.puzzles || 0}`], ['result.stars', (r.stars || []).map(b => b ? '⭐' : '☆').join('')]); if (r.shields) rows.push(['result.shields', `🛡 ${r.shields}`]); if (r.bounces) rows.push(['result.bounces', `🍄 ${r.bounces}`]); if (r.reward) rows.push(['result.reward', ({ ice: '❄️ 얼음 폭풍', shield: '🛡 비전 방패', lightning: '⚡ 번개 사슬' })[r.reward] || r.reward]); if (r.keyboard) rows.push(['result.key', '⌨️']);
     res.querySelector('dl').innerHTML = rows.map(([k, v]) => `<dt>${T(k)}</dt><dd>${v}</dd>`).join(''); }
 
   const SCR = { S01: [s01], S17: [s17], S08: [hud], S08Q: [hud, q], S08P: [hud, pz], S13: [res], S14: [res] };

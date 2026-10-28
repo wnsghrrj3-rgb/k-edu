@@ -3,4 +3,4 @@ import { readFileSync } from 'node:fs';
 const here = new URL('../../', import.meta.url);
 const j = p => JSON.parse(readFileSync(new URL(p, here), 'utf8'));
 export function loadData(){ return { spells: j('data/spells.json'), enemies: j('data/enemies.json'), anim: j('data/anim-timing.json'), layout: j('data/layout/targets.json'),
-  text: j('data/text/ko.json'), camera: j('contract/camera.json'), stages: { 'forest-1-1': j('data/stages/forest-1-1.json') } }; }
+  text: j('data/text/ko.json'), camera: j('contract/camera.json'), stages: { 'forest-1-1': j('data/stages/forest-1-1.json'), 'forest-1-2': j('data/stages/forest-1-2.json') } }; }

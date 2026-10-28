@@ -1,13 +1,13 @@
 // 화면 없는 한 판(13 문서 9절 · 04 문서 8절 봇 시뮬) — three·DOM 없이 sim/ 만으로 숲 1-1 전투장 완주
-// node tests/sim/run.mjs [--bot 0.75] [--react 0.4] [--n 20]
+// node tests/sim/run.mjs [--bot 0.75] [--react 0.4] [--n 20]   STAGE=forest-1-2 node tests/sim/run.mjs (v1.6 스테이지 고르기)
 import { createFlow } from '../../sim/flow/screens.js';
 import { loadData } from './load.mjs';
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? +process.argv[i + 1] : d; };
 
-export function playOne({ data, seed, acc = .75, react = .4, grade = 1, maxT = 600, record = null, unlock = process.env.UNLOCK || null }){
-  const f = createFlow({ data, grade, seed, unlock }); f.action('start', { mode: 'keyboard', seed });
+export function playOne({ data, seed, acc = .75, react = .4, grade = 1, maxT = 600, record = null, unlock = process.env.UNLOCK || null, stage = process.env.STAGE || null, progress = null, rand = Math.random, inputLog = null }){
+  const f = createFlow({ data, grade, seed, unlock, stage, forceStage: !!stage, progress }); f.action('start', { mode: 'keyboard', seed });
   const g = f.game, dt = 1 / 60; let nextAtk = 0, plan = [], seenTele = new Set(), qAnswerAt = null, castAt = null, lastQ = null, minHp = 100, hash = 0, slowSum = 0, pzAt = null, lastPz = null, duckOn = false, railT = 0;
-  const push = (type, value = {}) => g.input.push({ type, t: f.t * 1000, via: 'key', value });
+  const push = (type, value = {}) => { g.input.push({ type, t: f.t * 1000, via: 'key', value }); if (inputLog) inputLog.push({ at: Math.round(f.t * 1000), type, value }); };
   while (f.t < maxT) {
     const s = g.snapshot(); minHp = Math.min(minHp, s.player.hp);
     if (s.screen === 'S13' || s.screen === 'S14') { if (s.screen === 'S14' && f.t < maxT - 5) { f.action('again'); continue; } break; }
@@ -31,14 +31,14 @@ export function playOne({ data, seed, acc = .75, react = .4, grade = 1, maxT = 6
       if (duckOn && !s.obstacles.some(o => o.state === 'ahead' && o.kind === 'branch' && o.pos[2] < sp * (react + .9) + .6)) { duckOn = false; push('DUCK', { on: false }); } }
     else if (duckOn && s.screen === 'S08') { duckOn = false; push('DUCK', { on: false }); }
     if (s.screen === 'S08P' && s.puzzle) { const pz = s.puzzle;
-      if (lastPz !== pz.id) { lastPz = pz.id; pzAt = t + react + 1.5 + Math.random(); }
-      if (pz.state === 'open' && t >= pzAt) { const ok = Math.random() < acc; const g2 = f.game.puzzle.cur;
+      if (lastPz !== pz.id) { lastPz = pz.id; pzAt = t + react + 1.5 + rand(); }
+      if (pz.state === 'open' && t >= pzAt) { const ok = rand() < acc; const g2 = f.game.puzzle.cur;
         if (pz.stones) { const ans = g2.answer, pool = [0, 1, 2]; const want = ok ? ans : (ans.length === 2 ? [ans[0], pool.find(x => !ans.includes(x))] : [(ans[0] + 1) % 3]); for (const sl of want) push('SELECT', { slot: sl }); }
         else push('MOVE', { u: (ok ? g2.answer : (g2.answer === 'L' ? 'R' : 'L')) === 'L' ? -1 : 1 });
         pzAt = Infinity; } }
     if (s.screen === 'S08Q' && s.question) {
-      if (lastQ !== s.question.id) { lastQ = s.question.id; qAnswerAt = t + react + 1.8 + 1.5 + Math.random() * 2; }
-      if (s.question.state === 'open' && t >= qAnswerAt) { const right = g.q.v.correctSlot, slot = Math.random() < acc ? right : (right + 1) % 3; push('SELECT', { slot }); qAnswerAt = Infinity; }
+      if (lastQ !== s.question.id) { lastQ = s.question.id; qAnswerAt = t + react + 1.8 + 1.5 + rand() * 2; }
+      if (s.question.state === 'open' && t >= qAnswerAt) { const right = g.q.v.correctSlot, slot = rand() < acc ? right : (right + 1) % 3; push('SELECT', { slot }); qAnswerAt = Infinity; }
     } else if (s.screen === 'S08') {
       const threat = s.enemies.some(e => e.telegraph && Math.abs(P.pos[0] - e.telegraph.center[0]) < e.telegraph.size[0] + .3) || !!(s.boss && s.boss.telegraphs.length);
       const cr = s.crystals[0];
@@ -50,7 +50,7 @@ export function playOne({ data, seed, acc = .75, react = .4, grade = 1, maxT = 6
     f.step(dt); slowSum += g.slow < 1 ? dt : 0;
     for (const ev of f.drainEvents()) { hash = (hash * 31 + ev.type.length + (ev.amount || 0)) % 1000000007; if (record) record.push(ev); }
   }
-  const st = g.stats; const bs = g.snapshot().boss; return { fireflies: st.fireflies || 0, puzzles: st.puzzles || 0, pzRight: st.puzzleRight || 0, obHit: st.obstaclesHit || 0, zone: g.zoneIdx, bossPhase: bs ? bs.phase + (bs.state === 'dead' ? 1 : 0) : -1, win: g.snapshot().screen === 'S13', t: Math.round(f.t), deaths: g.deaths, q: st.q, right: st.right, kills: st.kills, minHp, qShare: Math.round(st.qTime / f.t * 100), hash, log: st.log };
+  const st = g.stats; const bs = g.snapshot().boss; return { stage: g.stageId, shields: st.shields || 0, bounces: st.bounces || 0, reward: g.rewardSpell || null, fireflies: st.fireflies || 0, puzzles: st.puzzles || 0, pzRight: st.puzzleRight || 0, obHit: st.obstaclesHit || 0, zone: g.zoneIdx, bossPhase: bs ? bs.phase + (bs.state === 'dead' ? 1 : 0) : -1, win: g.snapshot().screen === 'S13', t: Math.round(f.t), deaths: g.deaths, q: st.q, right: st.right, kills: st.kills, minHp, qShare: Math.round(st.qTime / f.t * 100), hash, log: st.log };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
@@ -59,7 +59,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   for (const react of [.25, .4, .6]) for (const acc of [.5, .75, .9]) {
     const rs = []; for (let i = 0; i < n; i++) rs.push(playOne({ data, seed: 1000 + i, acc, react }));
     const avg = k => Math.round(rs.reduce((a, r) => a + r[k], 0) / rs.length * 10) / 10;
-    rows.push({ react, acc, boss: avg('bossPhase'), win: rs.filter(r => r.win).length + '/' + n, t: avg('t'), deaths: avg('deaths'), q: avg('q'), right: avg('right'), kills: avg('kills'), minHp: avg('minHp'), qShare: avg('qShare') + '%', ff: avg('fireflies'), pz: avg('pzRight') + '/' + avg('puzzles'), obHit: avg('obHit') });
+    rows.push({ react, acc, zone: avg('zone'), boss: avg('bossPhase'), win: rs.filter(r => r.win).length + '/' + n, t: avg('t'), deaths: avg('deaths'), q: avg('q'), right: avg('right'), kills: avg('kills'), minHp: avg('minHp'), qShare: avg('qShare') + '%', ff: avg('fireflies'), pz: avg('pzRight') + '/' + avg('puzzles'), obHit: avg('obHit'), sh: avg('shields'), bn: avg('bounces') });
   }
   console.table(rows);
 }
