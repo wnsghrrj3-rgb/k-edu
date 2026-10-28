@@ -1,7 +1,7 @@
 // proto 스킨 — 기준 구현(13 문서 8절). createSkin(ctx) → Skin(contract/skin.d.ts). 에셋 0·절차적.
 // 규칙: 스냅샷은 읽기만 · 판정 크기·시간은 스냅샷 값 그대로 · 모르는 이벤트는 무시 · 엔진·sim import 0
 import * as THREE from 'three';
-import { WX, makePlayer, posePlayer, tipWorld, makeSlime, poseSlime, makeGoblin, poseGoblin, makeCrystal, poseCrystal, makeGolem, poseGolem, makeRock } from './actors.js';
+import { WX, makePlayer, posePlayer, tipWorld, makeSlime, poseSlime, makeGoblin, poseGoblin, makeCrystal, poseCrystal, makeGolem, poseGolem, makeRock, makeObstacle, poseObstacle, makePuzzleProp, posePuzzleProp } from './actors.js';
 import { makeTelegraph, poseTelegraph, makeProjectile, poseProjectile, Sparks, makeBlast, makeTelegraphLine, poseTelegraphLine, makeTelegraphRing, poseTelegraphRing, makeIce, poseIce, makeBolt, poseBolt, makeMeteor, poseMeteor } from './vfx.js';
 import { createUI } from './ui.js';
 import { createAudio } from './audio.js';
@@ -11,7 +11,7 @@ export const CONTRACT = '1';
 export function createSkin(ctx){
   const CAM = ctx.camera, TIMING = ctx.anim || {};
   let quality = ctx.quality, css = null, renderer, scene, camera, sun, sparks, forest, W = innerWidth, H = innerHeight;
-  let player = null, playerId = null; const enemies = new Map(), shots = new Map(), crystals = new Map(), tgs = new Map(), blasts = new Map(), btgs = new Map(); let bolts = [], golem = null, golemUid = null;
+  let player = null, playerId = null; const enemies = new Map(), shots = new Map(), crystals = new Map(), tgs = new Map(), blasts = new Map(), btgs = new Map(); let bolts = [], golem = null, golemUid = null; const obst = new Map(); let pzProp = null, pzId = null;
   let lastT = performance.now(), drawnTg = [], kick = 0, fovPulse = 0, camPos = new THREE.Vector3(0, 4.2, -7.5), camLook = new THREE.Vector3(0, 1, 3), menuSpin = 0;
   const audio = createAudio(), ui = createUI(ctx, audio), tmp = new THREE.Vector3();
 
@@ -42,7 +42,7 @@ export function createSkin(ctx){
       if (!s.player) { // 메뉴: 고른 캐릭터를 천천히 돌려 보여 줌
         const id = s.title ? s.title.char : 'luna'; if (playerId !== id) { if (player) scene.remove(player); player = makePlayer(id); playerId = id; scene.add(player); }
         menuSpin += dt * .4; player.position.set(0, 0, 4); player.rotation.y = Math.PI + Math.sin(menuSpin) * .6; player.userData.armR.rotation.x = -.6 + Math.sin(menuSpin * 3) * .2; player.userData.orb.visible = false; player.userData.shield.visible = false;
-        for (const m of [enemies, shots, crystals, tgs, blasts, btgs]) { for (const v of m.values()) drop(v); m.clear(); } if (golem) { scene.remove(golem); golem = null; golemUid = null; }
+        for (const m of [enemies, shots, crystals, tgs, blasts, btgs, obst]) { for (const v of m.values()) drop(v); m.clear(); } if (golem) { scene.remove(golem); golem = null; golemUid = null; } if (pzProp) { drop(pzProp); pzProp = null; pzId = null; } forest.setMode('arena');
         camera.position.set(Math.sin(menuSpin * .5) * 1.2, 2.2, -.8); camera.lookAt(0, 1.2, 4); camera.fov = 50; camera.updateProjectionMatrix(); sparks.update(dt); renderer.render(scene, camera); drawnTg = []; return; }
       const P = s.player; if (playerId !== P.id) { if (player) scene.remove(player); player = makePlayer(P.id); playerId = P.id; scene.add(player); }
       player.rotation.y = 0; posePlayer(player, P, dt, TIMING);
@@ -51,6 +51,11 @@ export function createSkin(ctx){
       sync(shots, s.projectiles, p => { const o = makeProjectile(p); scene.add(o.g, o.trail); return o; }, o => { scene.remove(o.g, o.trail); o.trail.geometry.dispose(); });
       for (const p of s.projectiles) poseProjectile(shots.get(p.uid), p);
       sync(crystals, s.crystals, c => { const g = makeCrystal(c); scene.add(g); return g; }, drop); for (const c of s.crystals) poseCrystal(crystals.get(c.uid), c, dt);
+      // v1.5 길 위 물건·퍼즐 소품(27 문서 ①) — 크기·자리는 스냅샷 그대로, 바닥·나무는 env 가 rail.dist 로 흘림
+      const R = s.world && s.world.rail; forest.setMode(R ? 'rail' : 'arena', R);
+      sync(obst, s.obstacles || [], o => { const g = makeObstacle(o); scene.add(g); return g; }, drop); for (const o of (s.obstacles || [])) poseObstacle(obst.get(o.uid), o, dt, s.gameT);
+      const PZ = s.puzzle; if (!PZ && pzProp) { drop(pzProp); pzProp = null; pzId = null; }
+      if (PZ) { if (pzId !== PZ.id) { if (pzProp) drop(pzProp); pzProp = makePuzzleProp(PZ); pzId = PZ.id; scene.add(pzProp); } posePuzzleProp(pzProp, PZ, dt); }
       // 예고 — 반드시 그린다(검사기 checkTelegraphs). 크기·시간 = 스냅샷
       const withTg = s.enemies.filter(e => e.telegraph).map(e => ({ uid: e.uid, tg: e.telegraph }));
       sync(tgs, withTg, x => { const g = x.tg.shape === 'line' ? makeTelegraphLine() : makeTelegraph(); g.userData.shape = x.tg.shape; scene.add(g); return g; }, drop);
@@ -70,13 +75,14 @@ export function createSkin(ctx){
       if (player) { const ar = P.arcana; player.userData.shield.visible = P.blocking || !!ar; player.userData.shield.material.color.setHex(ar ? 0xb28cff : 0x9a8cc8); player.userData.shield.material.opacity = ar ? .28 + .1 * Math.sin(now / 90) : .22; }
       sparks.update(dt * (s.slow < 1 ? Math.max(.25, s.slow) : 1));
       // 카메라 — 기준 자세(contract/camera.json) + 연출 오프셋(흔들림 ±0.6m 이하, FOV ±8° 이하)
-      const C = s.camera.mode === 'q' ? CAM.q : CAM.arena, px = P.pos[0] * C.trackX, pz = P.pos[2], intro = s.camera.mode === 'boss-intro' && s.boss;
-      const wantPos = new THREE.Vector3(WX(px), C.height, pz - C.dist), wantLook = new THREE.Vector3(WX(px), C.lookY, pz + (CAM.arenaCenterZ - pz) * C.lookMix);
+      const cm = s.camera.mode, C = cm === 'q' ? CAM.q : cm === 'rail' ? CAM.rail : cm === 'puzzle' ? CAM.puzzle : CAM.arena, px = P.pos[0] * C.trackX, pz = P.pos[2], intro = cm === 'boss-intro' && s.boss;
+      const wantPos = new THREE.Vector3(WX(px), C.height, pz - C.dist), wantLook = C.lookAhead != null ? new THREE.Vector3(WX(px), C.lookY, pz + C.lookAhead) : new THREE.Vector3(WX(px), C.lookY, pz + (CAM.arenaCenterZ - pz) * C.lookMix);
+      const runFov = R && C.fovRun ? C.fovRun * Math.min(1.3, R.speed / Math.max(.1, R.base)) : 0;   // 길: 달릴수록 FOV +(속도/기준×6)
       if (intro) { wantLook.set(WX(s.boss.pos[0]), 2.0, s.boss.pos[2]); wantPos.y += .5; }   // 등장 컷: 기준 자세 그대로, 시선만 보스로
       const kk = 1 - Math.exp(-dt / C.tau); camPos.lerp(wantPos, kk); camLook.lerp(wantLook, kk);
       const sh = Math.min(.6, (s.camera.shake || 0) * .6 + kick); kick = Math.max(0, kick - dt * 1.6);
       camera.position.set(camPos.x + (Math.random() - .5) * sh, camPos.y + (Math.random() - .5) * sh * .6, camPos.z); camera.lookAt(camLook);
-      fovPulse = Math.max(0, fovPulse - dt * 20); const fov = C.fov + Math.min(8, fovPulse); if (Math.abs(camera.fov - fov) > .01) { camera.fov = fov; camera.updateProjectionMatrix(); }
+      fovPulse = Math.max(0, fovPulse - dt * 20); const fov = C.fov + runFov + Math.min(8, fovPulse); if (Math.abs(camera.fov - fov) > .01) { camera.fov = fov; camera.updateProjectionMatrix(); }
       renderer.render(scene, camera);
     },
     onEvent(ev){ try { handle(ev); } catch (e) { if (ctx.dev) console.warn('[proto] 이벤트', ev.type, e); } },
@@ -87,6 +93,7 @@ export function createSkin(ctx){
   };
 
   function enemyAt(uid){ return enemies.get(uid); }
+  function P_(){ return player ? -player.position.x : 0; }   // 계약 x(스킨은 x 뒤집어 그림)
   function handle(ev){
     const T = ev.type;
     if (T === 'attack:fire') { audio.play('bolt'); if (player) { const p = tipWorld(player, new THREE.Vector3()); sparks.burst([-p.x, p.y, p.z], 0xfff1a8, 8, 2, 1); } kick = Math.max(kick, .03); }
@@ -130,6 +137,18 @@ export function createSkin(ctx){
     else if (T === 'boss:phaseEnd') { audio.play('roar'); kick = .4; if (golem) sparks.burst([-golem.position.x, 1.8, golem.position.z], 0xff8a3d, 80, 5, 4); }
     else if (T === 'boss:die') { audio.play('boom'); audio.play('clear'); if (golem) { const p = [-golem.position.x, 1.5, golem.position.z]; sparks.burst(p, 0xffd45c, 160, 7, 5); sparks.burst(p, 0x9fe8ff, 80, 5, 6); } kick = .5; }
     else if (T === 'stage:clear') audio.play('clear');
+    // v1.5 길·퍼즐
+    else if (T === 'rail:start') audio.play('wave');
+    else if (T === 'obstacle:hit') { kick = Math.max(kick, .3); if (ev.pos) sparks.burst(ev.pos, ev.kind === 'branch' ? 0x7fc466 : 0xb8bcc8, 24, 3, 2); const g = obst.get(ev.uid); if (g) g.userData.t = 0; }
+    else if (T === 'obstacle:pass' && ev.nice) { audio.play('dodge'); if (player) { const p = player.position; sparks.burst([-p.x, 1.1, p.z], 0xfff1a8, 20, 3, 2); const sc = toScreen([P_(), 1.6, 0]); if (sc.front) ui.floatAt(sc.x, sc.y - 30, '멋져!', 'xp'); } }
+    else if (T === 'pickup') { if (ev.kind === 'firefly') { audio.play('crystal'); ui.setFireflies(ev.n); if (ev.pos) { sparks.burst(ev.pos, 0xfff1a8, 26, 2.5, 3); const sc = toScreen(ev.pos); if (sc.front) ui.floatAt(sc.x, sc.y - 20, `🪲 ${ev.n}마리`, 'xp'); } }
+      else { audio.play('gold'); if (ev.pos) { sparks.burst(ev.pos, 0xffd45c, 70, 4, 4); sparks.burst(ev.pos, 0xfff1a8, 30, 3, 5); const sc = toScreen(ev.pos); if (sc.front) ui.floatAt(sc.x, sc.y - 40, `💰 +${ev.gold}`, 'crit'); } fovPulse = 4; } }
+    else if (T === 'puzzle:open') audio.play('qopen');
+    else if (T === 'puzzle:pick') audio.play('click');
+    else if (T === 'puzzle:right') { audio.play('right', 0); if (ev.pos) { sparks.burst(ev.pos, 0x58b7ff, 50, 3, 4); sparks.burst(ev.pos, 0xffd45c, 40, 3, 5); } if (ev.gold) { const sc = toScreen(ev.pos || [0, 1.2, 0]); if (sc.front) ui.floatAt(sc.x, sc.y - 60, `💰 +${ev.gold}`, 'crit'); } }
+    else if (T === 'puzzle:wrong') { audio.play('wrong'); kick = Math.max(kick, ev.ptype === 'size-gate' ? .25 : .08); if (ev.ptype !== 'size-gate') sparks.burst([0, .3, 7], 0x4f9fd6, 30, 2.5, 2); }
+    else if (T === 'puzzle:reveal') audio.play('hint');
+    else if (T === 'puzzle:close') { if (ev.solved) audio.play('clear'); }
     else if (T === 'player:defeat') audio.play('defeat');
   }
   return skin;

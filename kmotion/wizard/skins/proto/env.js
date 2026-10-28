@@ -41,10 +41,34 @@ export function buildForest(scene, { arenaZ = 9 } = {}){
   const fireN = 80, fp = new Float32Array(fireN * 3), seeds = []; for (let i = 0; i < fireN; i++) { seeds.push([(r() * 2 - 1) * 10, .4 + r() * 2.5, -1 + r() * 20, r() * 7]); }
   const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.BufferAttribute(fp, 3));
   const flies = new THREE.Points(fg, new THREE.PointsMaterial({ color: 0xfff6b0, size: .09, transparent: true, opacity: .85, blending: THREE.AdditiveBlending, depthWrite: false })); flies.frustumCulled = false; root.add(flies);
+  // ── v1.5 길 모드(27 문서 ②): 길 띠 + 나무 두 줄을 rail.dist 로 흘림. 두 장 돌려쓰기 — 전투장 원판·둘레 장식·고정 숲은 숨김
+  const rail = new THREE.Group(); rail.visible = false; root.add(rail);
+  const RL = 64;   // 돌려쓰는 한 장 길이(m), z −12 ~ 52 를 덮음
+  const roadTex = (() => { const c = document.createElement('canvas'); c.width = 128; c.height = 512; const g = c.getContext('2d'), q = rng(5); g.fillStyle = '#9c7b55'; g.fillRect(0, 0, 128, 512);
+    for (let i = 0; i < 700; i++) { g.fillStyle = `rgba(${110 + q() * 60},${85 + q() * 40},${55 + q() * 30},.5)`; g.beginPath(); g.arc(q() * 128, q() * 512, 1 + q() * 3, 0, 7); g.fill(); }
+    g.fillStyle = 'rgba(95,154,62,.55)'; for (let i = 0; i < 60; i++) { const x = q() < .5 ? q() * 14 : 114 + q() * 14; g.fillRect(x, q() * 512, 3 + q() * 6, 2 + q() * 4); }
+    const tx = new THREE.CanvasTexture(c); tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.repeat.set(1, 4); tx.colorSpace = THREE.SRGBColorSpace; return tx; })();
+  const roads = [0, 1].map(i => { const m = new THREE.Mesh(new THREE.PlaneGeometry(7.2, RL), new THREE.MeshLambertMaterial({ map: roadTex })); m.rotation.x = -Math.PI / 2; m.position.set(0, .012, i * RL); m.receiveShadow = true; rail.add(m); return m; });
+  // 나무 두 줄(좌우 |x| 4.6~9), 줄마다 침엽·활엽 섞어 — 인스턴스 z 를 매 프레임 갱신
+  const rr = rng(77), rs = []; for (let i = 0; i < 64; i++) { const side = i % 2 ? 1 : -1; rs.push([side * (4.6 + rr() * 4.4), (i / 64) * RL + rr() * .6, .75 + rr() * .7, rr()]); }
+  const rPine = rs.filter(s => s[3] < .55), rLeaf = rs.filter(s => s[3] >= .55);
+  const rMeshes = [[trunkG, toon(0x6b4a2e), rs, null], [pineG, toon(0x2f6b3a), rPine, null], [pine2, toon(0x3b8045), rPine, null], [leafG, toon(0x5aa03c), rLeaf, (d, s) => d.scale.set(s[2], s[2] * (.9 + s[3] * .3), s[2])]]
+    .map(([g, m, list, f]) => { const im = new THREE.InstancedMesh(g, m, list.length); im.castShadow = true; im.receiveShadow = true; im.userData = { list, f }; rail.add(im); return im; });
+  rLeaf.forEach((s, i) => { lc.setHSL(.24 + s[3] * .08, .5, .38 + (s[3] - .55) * .4); rMeshes[3].setColorAt(i, lc); }); if (rMeshes[3].instanceColor) rMeshes[3].instanceColor.needsUpdate = true;
+  const rb = []; for (let i = 0; i < 40; i++) rb.push([(i % 2 ? 1 : -1) * (3.9 + rr() * 1.2), (i / 40) * RL + rr() * 1.2, .4 + rr() * .5, rr()]);
+  rMeshes.push(Object.assign(new THREE.InstancedMesh(bushG, toon(0x4c8c36), rb.length), { userData: { list: rb, f: (d, s) => d.scale.set(s[2] * 1.3, s[2], s[2] * 1.1) } })); rail.add(rMeshes[4]);
+  const wrapZ = (z0, dist) => (((z0 - dist) % RL) + RL) % RL - 12;
+  function layRail(dist){ for (const m of rMeshes) { const { list, f } = m.userData; list.forEach((s, i) => { dummy.position.set(s[0], 0, wrapZ(s[1], dist)); dummy.rotation.set(0, s[3] * 9, 0); dummy.scale.setScalar(s[2]); f && f(dummy, s); dummy.updateMatrix(); m.setMatrixAt(i, dummy.matrix); }); m.instanceMatrix.needsUpdate = true; }
+    roads.forEach((m, i) => { m.position.z = wrapZ(i * RL + RL / 2, dist); }); }
+  layRail(0);
+  const arenaOnly = [arena, ...meshes]; let mode = 'arena', lastDist = -1;
   let t = 0;
   return {
+    /** mode 'arena'|'rail' + rail 스냅샷(world.rail) — 길이면 바닥·나무를 dist 로 흘린다 */
+    setMode(m, r){ if (m !== mode) { mode = m; rail.visible = m === 'rail'; for (const o of arenaOnly) o.visible = m !== 'rail'; lastDist = -1; }
+      if (m === 'rail' && r && r.dist !== lastDist) { layRail(r.dist); lastDist = r.dist; } },
     update(dt){ t += dt; for (let i = 0; i < fireN; i++) { const s = seeds[i]; fp[i * 3] = s[0] + Math.sin(t * .4 + s[3]) * .8; fp[i * 3 + 1] = s[1] + Math.sin(t * .9 + s[3] * 2) * .3; fp[i * 3 + 2] = s[2] + Math.cos(t * .3 + s[3]) * .8; } fg.attributes.position.needsUpdate = true; },
-    setQuality(q){ flies.visible = q !== 'low'; meshes.forEach(m => { m.castShadow = q === 'high' || (q === 'medium' && m.count < 140); }); },
+    setQuality(q){ flies.visible = q !== 'low'; meshes.forEach(m => { m.castShadow = q === 'high' || (q === 'medium' && m.count < 140); }); rMeshes.forEach(m => { m.castShadow = q !== 'low'; }); },
     dispose(){ scene.remove(root); },
   };
 }

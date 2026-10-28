@@ -60,7 +60,7 @@ export function createUI(ctx, audio){
   // ── S08 HUD (S08Q 에서도 보임)
   const hud = h('section', 'mw-hud mw-hide');
   hud.innerHTML = `<div class="mw-bars"><div class="mw-bar hp"><i></i><span></span></div><div class="mw-bar mana"><i></i><s></s><span></span></div><div class="mw-bar xp"><i></i><span></span></div><div class="mw-chips"><span class="spell"></span><span class="feather">🪶</span><span class="shieldc mw-hide"></span><span class="empower mw-hide"></span></div></div>
-    <div class="mw-wave"></div><div class="mw-boss mw-hide"><b class="nm"></b><div class="bb"></div><span class="sh"></span></div><div class="mw-top-r"><button class="mute">🔊</button><button class="pause">⏸</button></div><div class="mw-streak"></div>
+    <div class="mw-wave"></div><div class="mw-rail mw-hide"><b class="nm"></b><div class="rb"><i></i><u>🧙</u></div><span class="ff">🪲 0</span></div><div class="mw-boss mw-hide"><b class="nm"></b><div class="bb"></div><span class="sh"></span></div><div class="mw-top-r"><button class="mute">🔊</button><button class="pause">⏸</button></div><div class="mw-streak"></div>
     <canvas class="mw-pip" width="320" height="240"></canvas><div class="mw-help"></div><div class="mw-lost mw-hide"></div><div class="mw-flash"></div>`;
   const $h = s => hud.querySelector(s), hpBar = $h('.hp'), mpBar = $h('.mana'), xpBar = $h('.xp'), pip = $h('.mw-pip'), lost = $h('.mw-lost'), flashEl = $h('.mw-flash');
   $h('.pause').onclick = () => act('pause'); $h('.mute').onclick = () => { $h('.mute').textContent = audio.mute() ? '🔇' : '🔊'; };
@@ -79,12 +79,18 @@ export function createUI(ctx, audio){
   const orbs = []; for (let s = 0; s < 4; s++) { const o = h('div', 'mw-orb mw-hide', `<b></b><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="289" stroke-dashoffset="289"/></svg>`); o.onclick = () => act('select', { slot: s }); q.append(o); orbs.push(o); }
   const cursor = h('div', 'mw-cursor mw-hide');
   let qId = null, lastHot = false, rects = {}, qMana = '';
+  // ── S08P 퍼즐(v1.5, 07 문서 상황 D) — 돌 구슬 = targets kind 'puzzle' rect 그대로 · 크기 문 = 좌우 문 카드(몸 위치, 눌리는 자리 없음)
+  const pz = h('section', 'mw-pz mw-hide'); pz.innerHTML = `<div class="mw-qpanel pzp"><div class="kind"></div><div class="prompt"></div><div class="hint mw-hide"></div><div class="sub"></div><div class="tries"></div></div>
+    <div class="mw-gate mw-hide"><div class="door L"><b></b><s>◀</s></div><div class="lane">${T('pz.lane')}</div><div class="door R"><b></b><s>▶</s></div></div>`;
+  const pzp = pz.querySelector('.pzp'), pzKind = pz.querySelector('.kind'), pzPrompt = pz.querySelector('.prompt'), pzHint = pz.querySelector('.hint'), pzSub = pz.querySelector('.sub'), pzTries = pz.querySelector('.tries'), gate = pz.querySelector('.mw-gate');
+  const pzOrbs = []; for (let s = 0; s < 3; s++) { const o = h('div', 'mw-orb mw-stone mw-hide', `<b></b><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="289" stroke-dashoffset="289"/></svg>`); o.onclick = () => act('select', { slot: s }); pz.append(o); pzOrbs.push(o); }
+  let pzCur = null, pzState = null, fireflies = 0;
 
   // ── 결과
   const res = h('section', 'mw-scr dim mw-hide'); res.innerHTML = `<div class="mw-panel"><div class="mw-big ttl"></div><dl class="mw-result"></dl><div class="mw-row"><button class="big again"></button><button class="home">${T('clear.home')}</button></div></div>`;
   res.querySelector('.again').onclick = () => act('again'); res.querySelector('.home').onclick = () => act('home');
   const toastEl = h('div', 'mw-toast mw-hide'); let toastT = 0;
-  root.append(hud, q, s01, s17, pauseScr, res, toastEl, cursor);
+  root.append(hud, q, pz, s01, s17, pauseScr, res, toastEl, cursor);
   ctx.root.append(root);
 
   const fmtQ = Q => { const a = Object.assign({}, Q.prompt.args); return T(Q.prompt.key, a); };
@@ -104,7 +110,8 @@ export function createUI(ctx, audio){
     if (sp.dataset.k !== list.join() + P.main) { sp.dataset.k = list.join() + P.main; sp.innerHTML = ''; for (const id of list) { const b = h('button', id === P.main ? 'on' : '', `${SI[id]} ${T('spell.' + id)}`); b.onclick = () => act('spell', { id }); sp.append(b); } }
     $h('.feather').classList.toggle('mw-hide', !P.feather);
     $h('.empower').classList.toggle('mw-hide', !P.empowered); if (P.empowered) $h('.empower').textContent = `✨ 강화 ${Math.ceil((P.empowerT != null ? P.empowerT : 1) * 20)}초`;
-    const w = s.world, Bs = s.boss; $h('.mw-wave').textContent = !Bs && w && w.waves ? `🌲 ${w.arenas > 1 ? T('hud.zone', { n: (w.zoneIdx || 0) + 1 }) + ' · ' : ''}${Math.min(w.wave + 1, w.waves)} / ${w.waves}` : '';
+    const w = s.world, Bs = s.boss, R = w && w.rail; $h('.mw-wave').textContent = !Bs && !R && w && w.waves ? `🌲 ${w.arenas > 1 ? T('hud.zone', { n: w.arenaNo || 1 }) + ' · ' : ''}${Math.min(w.wave + 1, w.waves)} / ${w.waves}` : '';
+    const rb = $h('.mw-rail'); rb.classList.toggle('mw-hide', !R); if (R) { rb.querySelector('.nm').textContent = `🌲 ${T('hud.rail')} ${(w.arenaNo || 0) + 1}`; const k = Math.min(1, R.progress || 0); rb.querySelector('.rb i').style.transform = `scaleX(${k})`; rb.querySelector('.rb u').style.left = (k * 100) + '%'; rb.querySelector('.ff').textContent = `🪲 ${fireflies}`; rb.classList.toggle('stop', R.phase !== 'go'); }
     const bb = $h('.mw-boss'); bb.classList.toggle('mw-hide', !Bs); if (Bs) { bb.querySelector('.nm').textContent = T(Bs.nameKey) + ` · ${Bs.phase + 1}/${Bs.phases}`;
       const bar = bb.querySelector('.bb'); if (bar.children.length !== Bs.phases) bar.innerHTML = Bs.phaseHpMax.map(() => '<i><u></u></i>').join('');
       [...bar.children].forEach((c, i) => { c.firstChild.style.transform = `scaleX(${Bs.phaseHp[i] / Bs.phaseHpMax[i]})`; c.classList.toggle('on', i === Bs.phase); });
@@ -113,7 +120,7 @@ export function createUI(ctx, audio){
     $h('.mw-streak').textContent = s.streak >= 2 ? `연속 ${s.streak}!` : '';
     const cam = s.input && s.input.mode === 'camera'; pip.classList.toggle('mw-hide', !cam); pip.classList.toggle('bad', s.input && s.input.body !== 'ok');
     if (cam) drawSkeleton(pip, s.input.preview);
-    $h('.mw-help').innerHTML = cam ? '<b>옆으로 걷기</b> 이동 · <b>손 휙</b> 마법탄 · <b>두 손 모아 머리 위→내리기</b> 불꽃탄 · <b>팔 X자</b> 막기 · <b>숙이기</b> · <b>수정</b>을 쳐서 문제 열기'
+    $h('.mw-help').innerHTML = R ? (cam ? '<b>옆으로 걷기</b> 바위 피하기 · <b>숙이기</b> 가지 밑으로 · <b>반딧불</b>은 몸으로 주워요' : '<b>←→</b> 바위 피하기 · <b>↓</b> 가지 밑으로 숙이기 · <b>반딧불</b>을 지나며 줍기') : cam ? '<b>옆으로 걷기</b> 이동 · <b>손 휙</b> 마법탄 · <b>두 손 모아 머리 위→내리기</b> 불꽃탄 · <b>팔 X자</b> 막기 · <b>숙이기</b> · <b>수정</b>을 쳐서 문제 열기'
       : '<b>←→</b> 이동 · <b>Shift+←→</b> 피하기 · <b>Space</b> 마법탄 · <b>K</b> 불꽃탄 · <b>L</b> 막기 · <b>↓</b> 숙이기 · <b>H</b> 힌트 · <b>P</b> 멈춤';
     const lostOn = s.input && s.input.body === 'lost' && !s.paused; lost.classList.toggle('mw-hide', !lostOn); if (lostOn) lost.textContent = T('toast.showBody');
     pauseScr.classList.toggle('mw-hide', !s.paused); if (s.paused) pauseScr.querySelector('.why').textContent = s.paused === 'body' ? T('toast.showBody') : '';
@@ -152,30 +159,48 @@ export function createUI(ctx, audio){
       o.classList.toggle('fade', done && Q.reveal !== slot && Q.picked !== slot); }
     const c = s.input && s.input.cursor; cursor.classList.toggle('mw-hide', !(c && c.x != null)); if (c && c.x != null) cursor.style.transform = `translate(${c.x * W}px,${c.y * H}px)`;
   }
+  function paintPz(s){
+    const Z = s.puzzle; if (!Z) return; const W = innerWidth, H = innerHeight; rects = {};
+    if (Z.id !== pzCur) { pzCur = Z.id; pzState = null; pzKind.textContent = Z.type === 'number-bridge' ? '🌉 숫자 다리' : Z.type === 'size-gate' ? '🚪 크기 문' : '🪨 규칙 징검다리'; pzPrompt.textContent = T(Z.prompt.key, Z.prompt.args); pzp.classList.toggle('gate', Z.type === 'size-gate');
+      gate.classList.toggle('mw-hide', Z.type !== 'size-gate'); if (Z.gate) { gate.querySelector('.L b').textContent = Z.gate.left; gate.querySelector('.R b').textContent = Z.gate.right; } }
+    pzHint.classList.toggle('mw-hide', !Z.hint); if (Z.hint) pzHint.textContent = '🦉 ' + T(Z.hint.key, Z.hint.args);
+    pzTries.textContent = Z.wrong > 0 ? '💧'.repeat(Z.wrong) + '○'.repeat(Math.max(0, Z.maxWrong - Z.wrong)) : '';
+    pzp.classList.toggle('right', Z.state === 'right'); pzp.classList.toggle('wrong', Z.state === 'wrong'); pzp.classList.toggle('reveal', Z.state === 'reveal');
+    pzSub.textContent = Z.state === 'right' ? T('pz.right') + ' ✨' : Z.state === 'wrong' ? T(Z.type === 'size-gate' ? 'pz.gateWrong' : 'pz.wrong') : Z.state === 'reveal' ? T('pz.reveal') : Z.need > 1 ? `돌 ${Z.picks.length} / ${Z.need}` : '';
+    pzOrbs.forEach(o => o.classList.add('mw-hide'));
+    for (const t of s.targets || []) { if (t.kind !== 'puzzle') continue; const st = Z.stones && Z.stones.find(x => x.targetId === t.id); const o = pzOrbs[st ? st.slot : +t.id.slice(1)]; if (!o) continue;
+      const d = t.rect.w * W, cx = (t.rect.x + t.rect.w / 2) * W, cy = (t.rect.y + t.rect.h / 2) * H; rects[t.id] = { x: cx / W, y: cy / H };
+      o.style.cssText = `left:${cx - d / 2}px;top:${cy - d / 2}px;width:${d}px;height:${d}px`; o.classList.remove('mw-hide'); o.querySelector('b').textContent = st ? st.num : '?';
+      o.querySelector('circle').style.strokeDashoffset = String(289 * (1 - (t.hover || 0)));
+      o.classList.toggle('locked', t.locked && Z.state === 'open'); o.classList.toggle('lit', !!(st && st.lit)); o.classList.toggle('right', !!(st && st.answer)); o.classList.toggle('wrong', !!(st && st.wrong)); o.classList.toggle('fade', Z.state !== 'open' && !(st && (st.answer || st.lit))); }
+    if (Z.gate) { for (const side of ['L', 'R']) { const d = gate.querySelector('.' + side), G = Z.gate; d.classList.toggle('on', G.lane === side); d.classList.toggle('right', G.answer === side); d.classList.toggle('wrong', Z.state === 'wrong' && G.picked === side); } }
+    const c = s.input && s.input.cursor; cursor.classList.toggle('mw-hide', !(c && c.x != null && Z.type !== 'size-gate')); if (c && c.x != null) cursor.style.transform = `translate(${c.x * W}px,${c.y * H}px)`;
+  }
   function paintRes(s, win){ const r = s.result || {}; res.querySelector('.ttl').textContent = win ? '🏆 ' + T('clear.title') : '💪 ' + T('defeat.title');
     res.querySelector('.again').textContent = win ? T('clear.again') : T('defeat.again');
-    const rows = [['result.kills', r.kills], ['result.q', r.q], ['result.right', r.right], ['result.time', (r.time || 0) + '초']]; if (r.xp != null) rows.push(['result.xp', `+${r.xp}` + (r.levelUps && r.levelUps.length ? ` · ${T('toast.levelUp')} Lv${r.levelUps.at(-1)}` : '')], ['result.level', `Lv${r.level}`]); if (r.keyboard) rows.push(['result.key', '⌨️']);
+    const rows = [['result.kills', r.kills], ['result.q', r.q], ['result.right', r.right], ['result.time', (r.time || 0) + '초']]; if (r.xp != null) rows.push(['result.xp', `+${r.xp}` + (r.levelUps && r.levelUps.length ? ` · ${T('toast.levelUp')} Lv${r.levelUps.at(-1)}` : '')], ['result.level', `Lv${r.level}`]); if (r.fireflies != null) rows.push(['result.fireflies', `🪲 ${r.fireflies}`], ['result.gold', `💰 ${r.gold || 0}`], ['result.puzzles', `${r.puzzleRight || 0} / ${r.puzzles || 0}`], ['result.stars', (r.stars || []).map(b => b ? '⭐' : '☆').join('')]); if (r.keyboard) rows.push(['result.key', '⌨️']);
     res.querySelector('dl').innerHTML = rows.map(([k, v]) => `<dt>${T(k)}</dt><dd>${v}</dd>`).join(''); }
 
-  const SCR = { S01: [s01], S17: [s17], S08: [hud], S08Q: [hud, q], S13: [res], S14: [res] };
+  const SCR = { S01: [s01], S17: [s17], S08: [hud], S08Q: [hud, q], S08P: [hud, pz], S13: [res], S14: [res] };
   return {
     bind(hd){ handlers = hd; },
     show(id, model){ for (const e of SCR[id] || []) e.classList.remove('mw-hide'); if (id === 'S01') { paintS01(model && model.title ? model.title : model); audio.bgm(false); }
-      if (id === 'S17') lastStep = null; if (id === 'S08') audio.slow(false); if (id === 'S08Q') { qId = null; audio.slow(true); }
-      if (id === 'S13' || id === 'S14') { paintRes(model, id === 'S13'); audio.bgm(false); } if (id === 'S08' || id === 'S08Q') audio.bgm(true);
-      if (id !== 'S08' && id !== 'S08Q') { pauseScr.classList.add('mw-hide'); cursor.classList.add('mw-hide'); } },
+      if (id === 'S17') lastStep = null; if (id === 'S08') audio.slow(false); if (id === 'S08Q') { qId = null; audio.slow(true); } if (id === 'S08P') { pzCur = null; audio.slow(true); } if (id === 'S01') fireflies = 0;
+      if (id === 'S13' || id === 'S14') { paintRes(model, id === 'S13'); audio.bgm(false); } if (id === 'S08' || id === 'S08Q' || id === 'S08P') audio.bgm(true);
+      if (id !== 'S08' && id !== 'S08Q' && id !== 'S08P') { pauseScr.classList.add('mw-hide'); cursor.classList.add('mw-hide'); } },
     update(id, s){
       if (id === 'S17' && s) { const c = s.calib; drawSkeleton(cv17, s.input && s.input.preview, { calib: c }); if (c) { msg17.textContent = T(c.msg); ring17.style.strokeDashoffset = String(326.7 * (1 - c.p));
           dots17.innerHTML = Array.from({ length: c.of }, (_, i) => `<b class="${i < c.idx ? 'done' : i === c.idx ? 'on' : ''}"></b>`).join(''); if (lastStep !== null && lastStep !== c.idx) audio.play('calibOk'); lastStep = c.idx; } }
-      if ((id === 'S08' || id === 'S08Q') && s) { paintHud(s); if (id === 'S08Q') paintQ(s); }
+      if ((id === 'S08' || id === 'S08Q' || id === 'S08P') && s) { paintHud(s); if (id === 'S08Q') paintQ(s); if (id === 'S08P') paintPz(s); }
       if (toastT && performance.now() > toastT) { toastEl.classList.add('mw-hide'); toastT = 0; } },
-    hide(id){ for (const e of SCR[id] || []) e.classList.add('mw-hide'); if (id === 'S08Q') { cursor.classList.add('mw-hide'); q.classList.remove('hot'); rects = {}; } },
+    hide(id){ for (const e of SCR[id] || []) e.classList.add('mw-hide'); if (id === 'S08Q') { cursor.classList.add('mw-hide'); q.classList.remove('hot'); rects = {}; } if (id === 'S08P') { cursor.classList.add('mw-hide'); rects = {}; } },
     toast(key, args){ toastEl.textContent = T(key, args); toastEl.classList.remove('mw-hide'); toastT = performance.now() + 2200; },
     // ── 계약 밖(스킨 안에서만): 떠오르는 숫자·피격 번쩍·검사기용 rect
     floatAt(x, y, text, cls = ''){ const e = h('div', 'mw-float ' + cls, text); e.style.left = x + 'px'; e.style.top = y + 'px'; root.append(e); setTimeout(() => e.remove(), 850); },
     flash(){ flashEl.style.transition = 'none'; flashEl.style.opacity = '1'; requestAnimationFrame(() => { flashEl.style.transition = 'opacity .35s'; flashEl.style.opacity = '0'; }); },
     targetRects: () => rects,
     setMana(m){ qMana = m; },
+    setFireflies(n){ fireflies = n || 0; },
     dispose(){ root.remove(); },
   };
 }
