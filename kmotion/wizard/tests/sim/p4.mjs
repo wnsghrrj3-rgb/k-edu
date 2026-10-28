@@ -14,7 +14,7 @@ const push = (g, type, value = {}, via = 'key') => g.input.push({ type, t: 0, vi
 const S2 = 'forest-1-2';
 // 시험용 데이터: 전투장 1 첫 파를 방패병 1마리만으로(방패 검사)
 const withShield = () => { const d = JSON.parse(JSON.stringify(data)); const z = d.stages[S2].zones.find(z => z.id === 'arena-1'); z.waves = [{ at: .5, spawn: [{ kind: 'shield-goblin', x: 0, z: 6.0 }] }]; return d; };
-const flowAt = (d, zone, seed = 11, extra = {}) => { const f = createFlow(Object.assign({ data: d, grade: 1, seed, stage: S2, forceStage: true, startZone: zone }, extra)); f.action('start', { mode: 'keyboard' }); return f; };
+const flowAt = (d, zone, seed = 11, extra = {}) => { const f = createFlow(Object.assign({ data: d, grade: 1, seed, stage: S2, forceStage: true, startZone: zone }, extra)); f.action('start', { mode: 'keyboard' }); f.action('enter'); return f; };
 
 // ── 1. 생성기: 빈칸 식 「□+b=c」 + fixed · 버섯 점 더하기 퍼즐
 { const rng = createRng(5); let bad = 0; for (let i = 0; i < 3000; i++) { const q = GENERATORS['g1.missing.add9'].gen(rng, rng.next()); if (!GENERATORS['g1.missing.add9'].verify(q) || q.answer !== q.c - q.b || q.c > 9 || q.answer < 1) bad++; }
@@ -28,11 +28,11 @@ const flowAt = (d, zone, seed = 11, extra = {}) => { const f = createFlow(Object
 // ── 2. 스테이지 목록·잠김·?stage 강제
 { const f = createFlow({ data, grade: 1, seed: 1 }); const t = f.snapshot().title;
   ok('시작 화면 스테이지 2개 이상(1-1 열림 · 1-2 잠김)', t.stages.length >= 2 && t.stages[0].id === 'forest-1-1' && !t.stages[0].locked && t.stages[1].id === S2 && t.stages[1].locked && t.stages[1].reward === 'ice', JSON.stringify(t.stages.map(s => [s.id, s.locked])));
-  f.action('start', { mode: 'keyboard', stage: S2 }); ok('잠긴 스테이지를 고르면 1-1 로 시작', f.game.stageId === 'forest-1-1', f.game.stageId);
+  f.action('start', { mode: 'keyboard', stage: S2 }); f.action('enter'); ok('잠긴 스테이지를 고르면 1-1 로 시작', f.game.stageId === 'forest-1-1', f.game.stageId);
   const f2 = createFlow({ data, grade: 1, seed: 1, progress: { xp: 0, level: 1, cleared: { 'forest-1-1': 2 }, unlocked: ['shield'] } }); const t2 = f2.snapshot().title;
   ok('1-1 깬 기록이 있으면 1-2 열림 · 별 2', !t2.stages[1].locked && t2.stages[0].stars === 2, JSON.stringify(t2.stages));
-  f2.action('start', { mode: 'keyboard', stage: S2 }); ok('1-2 시작 · 이름 「버섯 마을 길」 · 방패 마법 해금 유지', f2.game.stageId === S2 && f2.game.snapshot().world.stageName === '버섯 마을 길' && f2.game.unlocked.has('shield'), f2.game.snapshot().world.stageName);
-  const f3 = createFlow({ data, grade: 1, seed: 1, stage: S2, forceStage: true }); f3.action('start', { mode: 'keyboard' }); ok('?stage= 강제 = 잠김 무시', f3.game.stageId === S2);
+  f2.action('start', { mode: 'keyboard', stage: S2 }); f2.action('enter'); ok('1-2 시작 · 이름 「버섯 마을 길」 · 방패 마법 해금 유지', f2.game.stageId === S2 && f2.game.snapshot().world.stageName === '버섯 마을 길' && f2.game.unlocked.has('shield'), f2.game.snapshot().world.stageName);
+  const f3 = createFlow({ data, grade: 1, seed: 1, stage: S2, forceStage: true }); f3.action('start', { mode: 'keyboard' }); f3.action('enter'); ok('?stage= 강제 = 잠김 무시', f3.game.stageId === S2);
   const z = f3.game.snapshot().world; ok('1-2 구역 6개(길·전투장 교대, 보스 없음) · 전투장 3', data.stages[S2].zones.length === 6 && z.arenas === 3 && !data.stages[S2].zones.some(x => x.type === 'boss'), `arenas ${z.arenas}`); }
 
 // ── 3. 길 A: 버섯 발판 배치 · 밟으면 폴짝(피해 0 · 마나 +2 · 공중 무적)
@@ -85,8 +85,8 @@ const flowAt = (d, zone, seed = 11, extra = {}) => { const f = createFlow(Object
   ok('봇 1-2 완주(전투장 3 뒤 보스 없이 클리어)', r.win && r.zone === 5, `zone ${r.zone} t ${r.t}`);
   ok('퍼즐 2(버섯 문·크기 문)', r.puzzles === 2, `${r.pzRight}/${r.puzzles}`);
   ok('보상 ICE STORM · progress.unlocked 에 ice · cleared[1-2] 별 수', r.reward === 'ice' && prog.unlocked.includes('ice') && prog.cleared[S2] >= 1, JSON.stringify({ r: r.reward, u: prog.unlocked, c: prog.cleared }));
-  const f = createFlow({ data, grade: 1, seed: 2, progress: prog }); f.action('start', { mode: 'keyboard', stage: S2 }); ok('다음 판: 얼음 폭풍 장착 가능', f.game.spellList().includes('ice') && f.game.setSpell('ice'), f.game.spellList().join());
-  const f2 = createFlow({ data, grade: 1, seed: 2, progress: prog }); f2.action('start', { mode: 'keyboard', stage: S2 }); const r2 = playOne({ data, seed: 78, acc: .9, react: .3, stage: S2, progress: prog }); ok('두 번째 클리어 = 보상 다시 안 줌', r2.win && r2.reward === null && prog.unlocked.filter(x => x === 'ice').length === 1); }
+  const f = createFlow({ data, grade: 1, seed: 2, progress: prog }); f.action('start', { mode: 'keyboard', stage: S2 }); f.action('enter'); ok('다음 판: 얼음 폭풍 장착 가능', f.game.spellList().includes('ice') && f.game.setSpell('ice'), f.game.spellList().join());
+  const f2 = createFlow({ data, grade: 1, seed: 2, progress: prog }); f2.action('start', { mode: 'keyboard', stage: S2 }); f2.action('enter'); const r2 = playOne({ data, seed: 78, acc: .9, react: .3, stage: S2, progress: prog }); ok('두 번째 클리어 = 보상 다시 안 줌', r2.win && r2.reward === null && prog.unlocked.filter(x => x === 'ice').length === 1); }
 
 // ── 9. 봇 6판: 전부 완주 · 문제 수 10~13(수정 + 퍼즐 2) · 방패 깸 · 발판
 { const rs = []; for (let i = 0; i < 6; i++) rs.push(playOne({ data, seed: 500 + i, acc: .75, react: .4, stage: S2 }));

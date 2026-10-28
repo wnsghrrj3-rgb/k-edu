@@ -39,12 +39,23 @@ const runs = []; for (const seed of [7, 31, 99, 5, 13, 21, 44, 61, 62, 63, 64]) 
   // 보정 화면 거쳐 보기(카메라 모드, 몸 없음 → 단계 건너뛰기 4번)
   root.querySelectorAll('.modes button')[0].click(); root.querySelector('.go').click(); let calSeen = ''; for (let i = 0; i < 20; i++) { flow.pose(null, flow.t * 1000, 640, 480); calSeen = frame().screen + ':' + root.querySelector('.mw-calib .msg').textContent; } console.log('보정 화면', calSeen);
   for (let k = 0; k < 4; k++) { root.querySelector('.skip') && root.querySelector('.skip').click(); for (let i = 0; i < 5; i++) { flow.pose(null, flow.t * 1000, 640, 480); frame(); } }
-  console.log('보정 건너뛴 뒤', flow.snapshot().screen); flow.action('home'); for (let i = 0; i < 5; i++) frame();
-  if (seed === 21) { const sb = root.querySelectorAll('.mw-stage'); if (sb.length !== 4 || sb[1].disabled || !sb[2].disabled || !sb[3].disabled || !sb[0].textContent.includes('⭐⭐☆')) errs.push('스테이지 단추 ' + sb.length + ' ' + [...sb].map(b => b.textContent + (b.disabled ? '(잠김)' : '')).join('/')); sb[1].click(); }
-  if (seed === 7) { const sb = root.querySelectorAll('.mw-stage'); if (sb.length !== 4 || !sb[1].disabled || !sb[2].disabled || !sb[3].disabled || !sb[3].textContent.includes('👑')) errs.push('1-2·1-3·보스 잠김 단추 아님'); }
-  if (seed === 62) { const sb = root.querySelectorAll('.mw-stage'); if (sb.length !== 4 || sb[2].disabled || !sb[3].disabled) errs.push('1-3 단추 안 열림'); else sb[2].click(); }
-  if (seed === 64) { const sb = root.querySelectorAll('.mw-stage'); if (sb.length !== 4 || sb[3].disabled) errs.push('보스 단추 안 열림'); else sb[3].click(); }
-  root.querySelectorAll('.modes button')[1].click(); root.querySelector('.go').click();   // 키보드
+  const forced = seed === 44 || seed === 61 || seed === 63;   // ?stage= 강제 = 지도 없이 바로 판(v1.9)
+  console.log('보정 건너뛴 뒤', flow.snapshot().screen); if (flow.snapshot().screen !== (forced ? 'S08' : 'S04')) errs.push('보정 뒤 화면: ' + flow.snapshot().screen); for (let i = 0; i < 5; i++) frame();
+  // v1.9 S04 지도(카메라 모드): 노드 4 + 들어가기 = targets rect 자리에 그려짐(검사기), 받침대 6, 잠긴 노드 클릭 → 토스트
+  if (forced) { flow.action('home'); for (let i = 0; i < 5; i++) frame(); } else { const s4 = flow.snapshot(); const st = skin.stats(); const ck = checkTargets(s4, st.targetRects); if (!ck.ok) errs.push('지도 대상 rect 어긋남 ' + JSON.stringify(ck.bad)); const nodes = root.querySelectorAll('.mw-map .mw-node'), ped = root.querySelectorAll('.mw-ped i');
+    if (nodes.length !== 4 || ped.length !== 6 || !root.querySelector('.mw-map .mw-enter')) errs.push(`지도 노드 ${nodes.length} 받침대 ${ped.length}`);
+    const lockedNode = [...nodes].find(n => n.classList.contains('locked')); if (lockedNode) { lockedNode.click(); let saw = ''; for (let i = 0; i < 4; i++) { const sn = frame(); if (sn.toast) saw = sn.toast; } if (!/^map\.locked\./.test(saw)) errs.push('잠긴 노드 토스트 없음: ' + saw); }
+    if (seed === 21) { if (!nodes[1].classList.contains('locked') && nodes[2].classList.contains('locked') && nodes[3].classList.contains('locked') && nodes[0].querySelector('s').textContent.includes('⭐⭐☆')) {} else errs.push('지도 노드 상태(21) ' + [...nodes].map(n => n.textContent + (n.classList.contains('locked') ? '(잠김)' : '')).join('/')); }
+    if (seed === 7 && !(nodes[1].classList.contains('locked') && nodes[2].classList.contains('locked') && nodes[3].classList.contains('locked') && nodes[3].textContent.includes('🔒'))) errs.push('1-2·1-3·보스 노드 잠김 아님');
+    if (seed === 64 && !(nodes[3].querySelector('b').textContent === '👑')) errs.push('보스 노드 👑 아님: ' + nodes[3].textContent);
+    // 손 유지(마우스 모드가 아니라 카메라라 커서 0) → 클릭 경로로 들어가기 대신 처음으로 돌아가 키보드 판
+    root.querySelector('.mw-map .home').click(); for (let i = 0; i < 5; i++) frame(); if (flow.snapshot().screen !== 'S01') errs.push('지도 → 처음으로 안 됨'); }
+  root.querySelectorAll('.modes button')[1].click(); root.querySelector('.go').click();   // 키보드 → S04(강제는 바로 판)
+  for (let i = 0; i < 3; i++) frame(); if (!forced && flow.snapshot().screen !== 'S04') errs.push('키보드 시작 뒤 S04 아님');
+  if (!forced) { const nodes = root.querySelectorAll('.mw-map .mw-node'); const want = seed === 21 ? 1 : seed === 62 ? 2 : seed === 64 ? 3 : null;
+    if (want != null) { if (nodes[want].classList.contains('locked')) errs.push('노드 ' + want + ' 안 열림'); else nodes[want].click(); frame(); }
+    if (seed === 7) { nodes[1].click(); let saw = ''; for (let i = 0; i < 3; i++) { const sn = frame(); if (sn.toast) saw = sn.toast; } if (saw !== 'map.locked.forest-1-2') errs.push('키보드 모드 잠긴 노드 토스트: ' + saw); }
+    if (seed === 21) { flow.key('ArrowLeft', true, 0); flow.key('ArrowRight', true, 0); flow.key('Enter', true, 0); } else root.querySelector('.mw-map .mw-enter').click(); /* 21 = 키보드 ←→ Enter 경로(1-2) */ for (let i = 0; i < 3; i++) frame(); if (!flow.game) errs.push('들어가기 뒤 게임 없음 ' + flow.snapshot().screen); }
   if (s12 && flow.game && flow.game.stageId !== 'forest-1-2') errs.push('1-2 로 시작 안 됨: ' + flow.game.stageId);
   if (s13 && flow.game && flow.game.stageId !== 'forest-1-3') errs.push('1-3 로 시작 안 됨: ' + flow.game.stageId);
   if (sB && flow.game && flow.game.stageId !== 'forest-1-boss') errs.push('1-보스 로 시작 안 됨: ' + flow.game.stageId);
@@ -85,7 +96,7 @@ const runs = []; for (const seed of [7, 31, 99, 5, 13, 21, 44, 61, 62, 63, 64]) 
 { const flow = createFlow({ data, grade: 1, seed: 77, unlock: 'all' }); let cur = null; skin.ui.bind({ action: (id, p) => flow.action(id, p) });
   const frame = () => { flow.step(1 / 60); if (flow.game) flow.game.aspect = 16 / 9; for (const ev of flow.drainEvents()) S(() => skin.onEvent(ev)); const snap = flow.snapshot();
     if (snap.screen !== cur) { const p = cur; cur = snap.screen; S(() => { if (p) skin.ui.hide(p); skin.ui.show(cur, snap); }); } S(() => skin.ui.update(cur, snap)); S(() => skin.render(snap, 0)); return snap; };
-  for (let i = 0; i < 5; i++) frame(); flow.action('start', { mode: 'mouse' }); for (let i = 0; i < 60; i++) frame(); flow.game.input.push({ type: 'PAUSE', t: 0, via: 'key', value: {} }); let s; for (let i = 0; i < 5; i++) s = frame();
+  for (let i = 0; i < 5; i++) frame(); flow.action('start', { mode: 'mouse' }); flow.action('enter'); for (let i = 0; i < 60; i++) frame(); flow.game.input.push({ type: 'PAUSE', t: 0, via: 'key', value: {} }); let s; for (let i = 0; i < 5; i++) s = frame();
   const r = checkTargets(s, skin.stats().targetRects); const orbs = root.querySelectorAll('.mw-wheel .mw-orb:not(.mw-hide)').length;
   console.log('멈춤 바퀴', s.paused, '대상', s.targets.map(t => t.id).join(','), '그림', r.ok ? '✓' : '✗ ' + r.bad, '구슬', orbs); if (!r.ok || orbs !== s.targets.length) errs.push('멈춤 바퀴 대상 어긋남');
   root.querySelector('.mw-wheel .mw-orb').click(); for (let i = 0; i < 3; i++) s = frame(); flow.action('resume'); for (let i = 0; i < 3; i++) s = frame(); console.log('바퀴 클릭 뒤 주 마법', s.player.main, '· 다시 뒤 대상', s.targets.length); flow.action('home'); for (let i = 0; i < 3; i++) frame(); }

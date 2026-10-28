@@ -8,7 +8,7 @@ const data = loadData(), out = []; let fail = 0;
 const ok = (name, cond, note = '') => { out.push({ 검사: name, 결과: cond ? '✓' : '✗', 메모: note }); if (!cond) fail++; };
 const run = (f, s, until) => { const ev = []; for (let i = 0; i < 60 * s; i++) { f.step(1 / 60); ev.push(...f.drainEvents()); if (until && until(f.game.snapshot())) break; } return ev; };
 const push = (g, type, value = {}, via = 'key') => g.input.push({ type, t: 0, via, value });
-function setup(mode = 'keyboard', grade = 1){ const f = createFlow({ data, grade, seed: 21, unlock: 'all', startZone: 1 }); f.action('start', { mode: mode === 'camera' ? 'mouse' : mode }); const g = f.game; run(f, 3.0); return { f, g }; }
+function setup(mode = 'keyboard', grade = 1){ const f = createFlow({ data, grade, seed: 21, unlock: 'all', startZone: 1 }); f.action('start', { mode: mode === 'camera' ? 'mouse' : mode }); f.action('enter'); const g = f.game; run(f, 3.0); return { f, g }; }
 // 수정 쳐서 문제 열기(키보드)
 function openCrystal(f, g){ run(f, 40, s => s.crystals.length > 0); const c = g.crystals[0]; if (!c) return false; push(g, 'MOVE', { u: c.pos[0] / 4 }); run(f, 6, s => s.crystals[0] && s.crystals[0].near); push(g, 'ATTACK', { zone: 1, side: 'R' }); run(f, .5); return g.screen === 'S08Q'; }
 
@@ -45,7 +45,7 @@ function openCrystal(f, g){ run(f, 40, s => s.crystals.length > 0); const c = g.
   ok('전투장 2 거침', zones.includes(3) && r.win, `zone idx ${zones.join('→')} · 처치 ${r.kills}`);
   const words = r.log.filter(x => x.type === 'word1'); ok('보스 마지막 칸 문장제', words.length >= 1, `문장제 ${words.length}개 · 전체 ${r.q}`);
   // 재도전(전투장 2에서 패배하면 전투장 2부터)
-  const f = createFlow({ data, grade: 1, seed: 5, startZone: 1 }); f.action('start', { mode: 'keyboard' }); const g = f.game; for (let i = 0; i < 12 && g.zoneIdx === 1; i++) { run(f, 2.5); g.enemies.forEach(e => { if (e.state !== 'dead') { e.hp = 0; e.state = 'dead'; e.stateT = 0; } }); run(f, 2.5, s => s.world.zoneIdx !== 1); }
+  const f = createFlow({ data, grade: 1, seed: 5, startZone: 1 }); f.action('start', { mode: 'keyboard' }); f.action('enter'); const g = f.game; for (let i = 0; i < 12 && g.zoneIdx === 1; i++) { run(f, 2.5); g.enemies.forEach(e => { if (e.state !== 'dead') { e.hp = 0; e.state = 'dead'; e.stateT = 0; } }); run(f, 2.5, s => s.world.zoneIdx !== 1); }
   if (g.zoneIdx === 2) { g.jumpZone(3); run(f, .5); }   // 길 B는 p3.mjs 가 따로 검사 — 여기선 전투장 2 체크포인트만
   ok('전투장 2 진입', g.zoneIdx === 3 && g.checkpoint && g.checkpoint.zone === 'arena'); g.player.hp = 1; g.player.invulnUntil = 0; run(f, 60, s => s.screen === 'S14'); f.action('again'); run(f, .5);
   ok('전투장 2에서 지면 전투장 2부터', g.zoneIdx === 3 && g.screen === 'S08', `zoneIdx=${g.zoneIdx}`); }
@@ -62,12 +62,12 @@ function openCrystal(f, g){ run(f, 40, s => s.crystals.length > 0); const c = g.
 { const rec = []; const r = playOne({ data, seed: 1011, acc: .9, react: .3, record: rec }); const lv = rec.filter(e => e.type === 'level:up').map(e => e.level), xp = rec.filter(e => e.type === 'xp');
   ok('경험치 이벤트(처치·정답·클리어)', ['kill', 'q', 'clear', 'boss'].every(w => xp.some(e => e.why === w)), [...new Set(xp.map(e => e.why))].join(' '));
   ok('한 판 안에 레벨 업', lv.length >= 1 && r.win, `Lv ${lv.join('→')}`);
-  const f = createFlow({ data, grade: 1, seed: 3, progress: { level: 10, xp: 0 } }); f.action('start', { mode: 'keyboard' }); const P = f.game.snapshot().player;
+  const f = createFlow({ data, grade: 1, seed: 3, progress: { level: 10, xp: 0 } }); f.action('start', { mode: 'keyboard' }); f.action('enter'); const P = f.game.snapshot().player;
   ok('레벨 10 이어받기 → HP 136·ATK 14.5', P.level === 10 && P.hpMax === 136 && Math.abs(f.game.player.atk - 14.5) < 1e-9 && P.xpNext === 1343, `hp ${P.hpMax} atk ${f.game.player.atk} next ${P.xpNext}`);
-  const f3 = createFlow({ data, grade: 1, seed: 3, progress: { level: 30, xp: 99999 } }); f3.action('start', { mode: 'keyboard' }); run(f3, 1); f3.game.gainXp && f3.game.gainXp(1000);
+  const f3 = createFlow({ data, grade: 1, seed: 3, progress: { level: 30, xp: 99999 } }); f3.action('start', { mode: 'keyboard' }); f3.action('enter'); run(f3, 1); f3.game.gainXp && f3.game.gainXp(1000);
   ok('최대 레벨 30 고정', f3.game.snapshot().player.level === 30);
   // 레벨 차이 상한 ±25%: 레벨 30 → 받는 피해 ×.75
-  const f4 = createFlow({ data, grade: 1, seed: 4, progress: { level: 30, xp: 0 } }); f4.action('start', { mode: 'keyboard' }); run(f4, 1); const g4 = f4.game; g4.player.invulnUntil = 0; const hp = g4.player.hp;
+  const f4 = createFlow({ data, grade: 1, seed: 4, progress: { level: 30, xp: 0 } }); f4.action('start', { mode: 'keyboard' }); f4.action('enter'); run(f4, 1); const g4 = f4.game; g4.player.invulnUntil = 0; const hp = g4.player.hp;
   g4.enemyStrike({ uid: 0, kind: 'test', telegraph: { center: g4.player.pos.slice(), size: [1] }, def: { atk: 100 } });
   ok('레벨 30 받는 피해 −25%', hp - g4.player.hp < 100 * .7 * .75 + 1 && hp - g4.player.hp > 100 * .7 * .75 - 8, `피해 ${hp - g4.player.hp}`); }
 

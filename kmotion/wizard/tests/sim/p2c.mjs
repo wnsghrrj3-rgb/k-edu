@@ -7,7 +7,7 @@ const data = loadData(), out = []; let fail = 0;
 const ok = (name, cond, note = '') => { out.push({ 검사: name, 결과: cond ? '✓' : '✗', 메모: String(note) }); if (!cond) fail++; };
 const run = (f, s, until) => { const ev = []; for (let i = 0; i < 60 * s; i++) { f.step(1 / 60); ev.push(...f.drainEvents()); if (until && until(f.game.snapshot(), ev)) break; } return ev; };
 const push = (g, type, value = {}, via = 'key') => g.input.push({ type, t: 0, via, value });
-function setup(seed = 21, grade = 1){ const f = createFlow({ data, grade, seed, unlock: 'all', startZone: 1 }); f.action('start', { mode: 'keyboard' }); const g = f.game; run(f, 2.0); return { f, g }; }
+function setup(seed = 21, grade = 1){ const f = createFlow({ data, grade, seed, unlock: 'all', startZone: 1 }); f.action('start', { mode: 'keyboard' }); f.action('enter'); const g = f.game; run(f, 2.0); return { f, g }; }
 const empCr = g => g.crystals.find(c => c.kind === 'empower');
 function openCrystal(f, g, kind = 'math'){ run(f, 30, s => s.crystals.some(c => c.kind === kind)); const c = g.crystals.find(c => c.kind === kind); if (!c) return false; push(g, 'MOVE', { u: c.pos[0] / 4 }); run(f, 6, s => { const x = s.crystals.find(y => y.uid === c.uid); return x && x.near; }); push(g, 'ATTACK', { zone: 1, side: 'R' }); run(f, .5); return g.screen === 'S08Q'; }
 

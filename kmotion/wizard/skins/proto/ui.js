@@ -40,7 +40,7 @@ export function createUI(ctx, audio){
   const MODES = [['camera', '📷 ' + T('start.camera')], ['keyboard', '⌨️ ' + T('start.keyboard')], ['mouse', '🖱 ' + T('start.mouse')]];
   function paintS01(m){
     // v1.6 스테이지 고르기(10 문서 S04 간이판): 열린 것만 누름, 잠긴 건 🔒 + 「앞 숲길을 깨면 열려요」, 별 ⭐
-    const list = (m && m.stages) || []; stageRow.classList.toggle('mw-hide', list.length < 2); stageRow.innerHTML = '';
+    const list = []; stageRow.classList.add('mw-hide'); stageRow.innerHTML = '';   // v1.9: 스테이지 고르기는 S04 지도로 옮김
     if (list.length >= 2) { if (!sel.stage || !list.some(x => x.id === sel.stage && !x.locked)) sel.stage = (m && m.stage) || list[0].id;
       for (const st of list) { const b = h('button', 'mw-stage' + (sel.stage === st.id ? ' on' : '') + (st.locked ? ' locked' : ''), `<b>${st.final ? '👑 ' : ''}${T('stage.' + st.id)}</b><s>${st.locked ? '🔒 ' + T('start.locked') : st.stars ? '⭐'.repeat(st.stars) + '☆'.repeat(3 - st.stars) : '☆☆☆'}</s>`); b.disabled = st.locked; b.onclick = () => { sel.stage = st.id; paintS01(m); }; stageRow.append(b); } }
     charRow.innerHTML = ''; for (const c of (m && m.chars) || ['luna', 'tori', 'haru']) { const b = h('button', 'mw-char' + (sel.char === c ? ' on' : ''), `<i>${CHAR_ICON[c] || '✨'}</i>${T('char.' + c)}`); b.onclick = () => { sel.char = c; pref.char = c; savePref(); paintS01(m); }; charRow.append(b); }
@@ -51,7 +51,33 @@ export function createUI(ctx, audio){
       : sel.mode === 'mouse' ? '카메라 없이 시험: 마우스 좌우 = 몸 이동 · <b>Z/X</b> 손 휙(공격) · <b>V</b> 꾹(모으기→떼면 불꽃탄) · <b>B</b> 막기 · <b>S</b> 숙이기 · 빠르게 좌우 = 피하기 · 문제는 마우스로 구슬 위에 머물기'
       : '몸이 조종기예요 — 옆으로 걸으면 이동, 손을 휙 내밀면 마법탄, 두 손을 머리 위로 모았다 내리면 불꽃탄, 팔 X자 = 막기. 문제는 손을 구슬 위에 잠깐 대고 있어요.';
   }
-  s01.querySelector('.go').onclick = () => act('start', { mode: sel.mode, char: sel.char, calib: sel.calib, stage: sel.stage || undefined });
+  s01.querySelector('.go').onclick = () => act('start', { mode: sel.mode, char: sel.char, calib: sel.calib });
+
+  // ── S04 월드 지도(v1.9, 10 문서 S04 받침대 + S06 지도) — 노드·들어가기 = snapshot.targets(kind 'map') rect 그대로(시스템 소유), 받침대는 보기만
+  const map = h('section', 'mw-map mw-hide');
+  map.innerHTML = `<div class="mw-map-top"><span class="lv"></span><span class="st"></span><button class="home">← ${T('map.back')}</button></div>
+    <div class="mw-map-title"><b>${T('map.title')}</b><s></s></div>
+    <svg class="mw-map-path" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline/></svg>
+    <div class="mw-ped"><em>${T('map.pedestal')}</em><div class="row"></div></div>
+    <div class="mw-map-info"><b class="nm"></b><div class="learn"><em>${T('map.learn')}</em><span></span></div><div class="rec"></div></div>
+    <div class="mw-map-help"></div>`;
+  const mapNodes = {}, mapPed = map.querySelector('.mw-ped .row'), mapInfo = map.querySelector('.mw-map-info'), mapHelp = map.querySelector('.mw-map-help'), mapLine = map.querySelector('polyline');
+  map.querySelector('.home').onclick = () => act('home');
+  const CRYSTAL_ICON = { number: '🔮', shape: '🔷', measure: '📏', pattern: '🔁', data: '📊', arcana: '✨' };
+  let mapPedKey = '';
+  function paintMap(s){ const M = s.map; if (!M) return; const W = innerWidth, H = innerHeight, cam = s.input && s.input.mode !== 'keyboard'; rects = rects || {};
+    map.querySelector('.lv').textContent = `${T('hud.level')}${M.level} · ✦${M.xp}`; map.querySelector('.st').textContent = `⭐ ${M.stars}`; map.querySelector('.mw-map-title s').textContent = `🌲 ${M.worldName || T('map.world.forest')}`;
+    const pts = []; for (const t of M.targets || []) { let o = mapNodes[t.id]; const isEnter = t.id === 'enter', sid = isEnter ? null : t.id.slice(6), st = sid ? (M.stages || []).find(z => z.id === sid) : null;
+      if (!o) { o = mapNodes[t.id] = h('div', 'mw-orb ' + (isEnter ? 'mw-enter' : 'mw-node'), `<b></b><s></s><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="289" stroke-dashoffset="289"/></svg>`); o.onclick = () => isEnter ? act('enter') : act('pick', { stage: sid }); map.append(o); }
+      const d = t.rect.w * W, cx = (t.rect.x + t.rect.w / 2) * W, cy = (t.rect.y + t.rect.h / 2) * H; rects[t.id] = { x: cx / W, y: cy / H }; if (!isEnter) pts.push(`${cx / W * 100},${cy / H * 100}`);
+      o.style.cssText = `left:${cx - d / 2}px;top:${cy - d / 2}px;width:${d}px;height:${d}px`; o.querySelector('circle').style.strokeDashoffset = String(289 * (1 - (t.hover || 0)));
+      if (isEnter) { o.classList.toggle('locked', !!t.locked); o.querySelector('b').textContent = t.locked ? '🔒' : '🚪'; o.querySelector('s').textContent = T('map.enter'); }
+      else { o.classList.toggle('on', sid === M.stage); o.classList.toggle('locked', !!(st && st.locked)); o.querySelector('b').textContent = st && st.locked ? '🔒' : st && st.final ? '👑' : String(st ? (M.stages.indexOf(st) + 1) : ''); o.querySelector('s').textContent = st ? (st.locked ? '' : '⭐'.repeat(st.stars) + '☆'.repeat(3 - st.stars)) : ''; o.title = st ? T('stage.' + sid) : ''; } }
+    mapLine.setAttribute('points', pts.join(' '));
+    const pk = (M.pedestals || []).map(p => p.crystal + (p.got ? 1 : 0) + (p.open ? 1 : 0)).join(); if (pk !== mapPedKey) { mapPedKey = pk; mapPed.innerHTML = (M.pedestals || []).map(p => `<i class="${p.got ? 'got' : p.open ? 'open' : ''}" title="${T('crystal.' + p.crystal)} · ${p.worldName}${p.open ? '' : ' (' + T('map.soon') + ')'}"><b>${p.got ? CRYSTAL_ICON[p.crystal] || '🔮' : '○'}</b><s>${p.icon || ''}</s></i>`).join(''); }
+    mapInfo.querySelector('.nm').textContent = (M.locked ? '🔒 ' : '') + T('stage.' + M.stage); mapInfo.querySelector('.learn span').textContent = (M.learn || []).map(k => T('learn.' + k)).join(' · '); mapInfo.querySelector('.rec').textContent = `${T('map.recLevel')} ${T('hud.level')}${M.recLevel}`;
+    mapHelp.textContent = cam ? T('map.hand') : T('map.key');
+    const c = s.input && s.input.cursor; cursor.classList.toggle('mw-hide', !(cam && c && c.x != null)); if (cam && c && c.x != null) cursor.style.transform = `translate(${c.x * W}px,${c.y * H}px)`; }
 
   // ── S17 보정
   const s17 = h('section', 'mw-scr dim mw-hide');
@@ -91,10 +117,10 @@ export function createUI(ctx, audio){
   let pzCur = null, pzState = null, fireflies = 0;
 
   // ── 결과
-  const res = h('section', 'mw-scr dim mw-hide'); res.innerHTML = `<div class="mw-panel"><div class="mw-big ttl"></div><dl class="mw-result"></dl><div class="mw-row"><button class="big again"></button><button class="home">${T('clear.home')}</button></div></div>`;
-  res.querySelector('.again').onclick = () => act('again'); res.querySelector('.home').onclick = () => act('home');
+  const res = h('section', 'mw-scr dim mw-hide'); res.innerHTML = `<div class="mw-panel"><div class="mw-big ttl"></div><dl class="mw-result"></dl><div class="mw-row"><button class="big again"></button><button class="tomap">🗺 ${T('clear.map')}</button><button class="home">${T('clear.home')}</button></div></div>`;
+  res.querySelector('.again').onclick = () => act('again'); res.querySelector('.tomap').onclick = () => act('map'); res.querySelector('.home').onclick = () => act('home');
   const toastEl = h('div', 'mw-toast mw-hide'); let toastT = 0;
-  root.append(hud, q, pz, s01, s17, pauseScr, res, toastEl, cursor);
+  root.append(hud, q, pz, s01, map, s17, pauseScr, res, toastEl, cursor);
   ctx.root.append(root);
 
   const fmtQ = Q => { const a = Object.assign({}, Q.prompt.args); return T(Q.prompt.key, a); };
@@ -187,19 +213,20 @@ export function createUI(ctx, audio){
     const rows = [['result.kills', r.kills], ['result.q', r.q], ['result.right', r.right], ['result.time', (r.time || 0) + '초']]; if (r.xp != null) rows.push(['result.xp', `+${r.xp}` + (r.levelUps && r.levelUps.length ? ` · ${T('toast.levelUp')} Lv${r.levelUps.at(-1)}` : '')], ['result.level', `Lv${r.level}`]); if (r.fireflies != null) rows.push(['result.fireflies', `🪲 ${r.fireflies}`], ['result.gold', `💰 ${r.gold || 0}`], ['result.puzzles', `${r.puzzleRight || 0} / ${r.puzzles || 0}`], ['result.stars', (r.stars || []).map(b => b ? '⭐' : '☆').join('')]); if (r.shields) rows.push(['result.shields', `🛡 ${r.shields}`]); if (r.bounces) rows.push(['result.bounces', `🍄 ${r.bounces}`]); if (r.cracks) rows.push(['result.cracks', `💎 ${r.cracks}`]); if (r.reward) rows.push(['result.reward', ({ ice: '❄️ 얼음 폭풍', shield: '🛡 비전 방패', lightning: '⚡ 번개 사슬' })[r.reward] || r.reward]); if (r.crystal) rows.push(['result.crystal', ({ number: '🔮 수의 결정' })[r.crystal] || r.crystal]); if (r.final && r.stars && r.stars[0]) rows.push(['result.world1', '🎉']); if (r.keyboard) rows.push(['result.key', '⌨️']);
     res.querySelector('dl').innerHTML = rows.map(([k, v]) => `<dt>${T(k)}</dt><dd>${v}</dd>`).join(''); }
 
-  const SCR = { S01: [s01], S17: [s17], S08: [hud], S08Q: [hud, q], S08P: [hud, pz], S13: [res], S14: [res] };
+  const SCR = { S01: [s01], S04: [map], S17: [s17], S08: [hud], S08Q: [hud, q], S08P: [hud, pz], S13: [res], S14: [res] };
   return {
     bind(hd){ handlers = hd; },
-    show(id, model){ for (const e of SCR[id] || []) e.classList.remove('mw-hide'); if (id === 'S01') { paintS01(model && model.title ? model.title : model); audio.bgm(false); }
+    show(id, model){ for (const e of SCR[id] || []) e.classList.remove('mw-hide'); if (id === 'S01') { paintS01(model && model.title ? model.title : model); audio.bgm(false); } if (id === 'S04') { mapPedKey = ''; audio.bgm(false); audio.slow(false); }
       if (id === 'S17') lastStep = null; if (id === 'S08') audio.slow(false); if (id === 'S08Q') { qId = null; audio.slow(true); } if (id === 'S08P') { pzCur = null; audio.slow(true); } if (id === 'S01') fireflies = 0;
       if (id === 'S13' || id === 'S14') { paintRes(model, id === 'S13'); audio.bgm(false); } if (id === 'S08' || id === 'S08Q' || id === 'S08P') audio.bgm(true);
       if (id !== 'S08' && id !== 'S08Q' && id !== 'S08P') { pauseScr.classList.add('mw-hide'); cursor.classList.add('mw-hide'); } },
     update(id, s){
       if (id === 'S17' && s) { const c = s.calib; drawSkeleton(cv17, s.input && s.input.preview, { calib: c }); if (c) { msg17.textContent = T(c.msg); ring17.style.strokeDashoffset = String(326.7 * (1 - c.p));
           dots17.innerHTML = Array.from({ length: c.of }, (_, i) => `<b class="${i < c.idx ? 'done' : i === c.idx ? 'on' : ''}"></b>`).join(''); if (lastStep !== null && lastStep !== c.idx) audio.play('calibOk'); lastStep = c.idx; } }
+      if (id === 'S04' && s) paintMap(s);
       if ((id === 'S08' || id === 'S08Q' || id === 'S08P') && s) { paintHud(s); if (id === 'S08Q') paintQ(s); if (id === 'S08P') paintPz(s); }
       if (toastT && performance.now() > toastT) { toastEl.classList.add('mw-hide'); toastT = 0; } },
-    hide(id){ for (const e of SCR[id] || []) e.classList.add('mw-hide'); if (id === 'S08Q') { cursor.classList.add('mw-hide'); q.classList.remove('hot'); rects = {}; } if (id === 'S08P') { cursor.classList.add('mw-hide'); rects = {}; } },
+    hide(id){ for (const e of SCR[id] || []) e.classList.add('mw-hide'); if (id === 'S04') { cursor.classList.add('mw-hide'); rects = {}; } if (id === 'S08Q') { cursor.classList.add('mw-hide'); q.classList.remove('hot'); rects = {}; } if (id === 'S08P') { cursor.classList.add('mw-hide'); rects = {}; } },
     toast(key, args){ toastEl.textContent = T(key, args); toastEl.classList.remove('mw-hide'); toastT = performance.now() + 2200; },
     // ── 계약 밖(스킨 안에서만): 떠오르는 숫자·피격 번쩍·검사기용 rect
     floatAt(x, y, text, cls = ''){ const e = h('div', 'mw-float ' + cls, text); e.style.left = x + 'px'; e.style.top = y + 'px'; root.append(e); setTimeout(() => e.remove(), 850); },

@@ -19,7 +19,7 @@ const R = GAME.rail;
   const p6 = makePuzzle('number-bridge', createRng(3), 1, { target: 6 }); ok('숫자 다리 6 = 두 돌 합', p6.target === 6 && p6.stones[p6.answer[0]].num + p6.stones[p6.answer[1]].num === 6, JSON.stringify(p6.stones.map(s => s.num))); }
 
 // ── 2. 길 A: 자동 전진·장애물 배치·간격
-{ const f = createFlow({ data, grade: 1, seed: 31 }); f.action('start', { mode: 'keyboard' }); const g = f.game; const s0 = g.snapshot();
+{ const f = createFlow({ data, grade: 1, seed: 31 }); f.action('start', { mode: 'keyboard' }); f.action('enter'); const g = f.game; const s0 = g.snapshot();
   ok('판 시작 = 길 구간(zone 0 rail)', s0.world.zone === 'rail' && g.zoneIdx === 0 && s0.camera.mode === 'rail', `zone ${s0.world.zone} cam ${s0.camera.mode}`);
   const obs = g.rail.obstacles, kinds = k => obs.filter(o => o.kind === k).length;
   ok('길 A 배치 바위 4·가지 2·상자 1·반딧불 6', kinds('rock') === 4 && kinds('branch') === 2 && kinds('chest') === 1 && kinds('firefly') === 6, `${kinds('rock')}/${kinds('branch')}/${kinds('chest')}/${kinds('firefly')}`);
@@ -31,24 +31,24 @@ const R = GAME.rail;
   ok('플레이어 z = 0 · 좌우 ±2.6', s3.player.pos[2] === 0 && (push(g, 'MOVE', { u: 1 }), run(f, 1), Math.abs(g.player.pos[0] - R.xMax) < .05), `x ${g.player.pos[0].toFixed(2)}`); }
 
 // ── 3. 바위: 서 있으면 맞고(피해·느려짐·무적 .6초) · 옆으로 비키면 지나감(가까우면 「멋진 통과」 마나 +2)
-{ const f = createFlow({ data, grade: 1, seed: 31 }); f.action('start', { mode: 'keyboard' }); const g = f.game; const rock = g.rail.obstacles.filter(o => o.kind === 'rock').sort((a, b) => a.d - b.d)[0];
+{ const f = createFlow({ data, grade: 1, seed: 31 }); f.action('start', { mode: 'keyboard' }); f.action('enter'); const g = f.game; const rock = g.rail.obstacles.filter(o => o.kind === 'rock').sort((a, b) => a.d - b.d)[0];
   push(g, 'MOVE', { u: rock.x / R.xMax }); const hp0 = g.player.hp; const ev = run(f, 60, (s, e) => e.some(x => x.type === 'obstacle:hit'));
   const hit = ev.find(e => e.type === 'obstacle:hit'); ok('바위 자리에 서 있으면 맞음', !!hit && hit.kind === 'rock' && g.player.hp < hp0, `hp ${hp0}→${g.player.hp}`);
   const v1 = g.rail.v; run(f, .25); ok('맞으면 길이 느려짐(×.35→회복)', g.rail.v < v1 * .8, `v ${v1.toFixed(2)}→${g.rail.v.toFixed(2)}`); run(f, 1.5); ok('1.2초 뒤 속도 회복', Math.abs(g.rail.v - g.rail.vBase) < .2, `v ${g.rail.v.toFixed(2)}`);
-  const f2 = createFlow({ data, grade: 1, seed: 31 }); f2.action('start', { mode: 'keyboard' }); const g2 = f2.game; const r2 = g2.rail.obstacles.filter(o => o.kind === 'rock').sort((a, b) => a.d - b.d)[0];
+  const f2 = createFlow({ data, grade: 1, seed: 31 }); f2.action('start', { mode: 'keyboard' }); f2.action('enter'); const g2 = f2.game; const r2 = g2.rail.obstacles.filter(o => o.kind === 'rock').sort((a, b) => a.d - b.d)[0];
   push(g2, 'MOVE', { u: (r2.x + (r2.x <= 0 ? 1 : -1) * (R.rock.r + .6)) / R.xMax }); const m0 = g2.player.mana; const ev2 = run(f2, 60, (s, e) => e.some(x => x.type === 'obstacle:pass' || x.type === 'obstacle:hit'));
   const ps = ev2.find(e => e.type === 'obstacle:pass'); ok('옆으로 비키면 통과 · 가까우면 멋진 통과 마나 +2', !!ps && ps.nice && !ev2.some(e => e.type === 'obstacle:hit') && g2.player.mana >= m0 + 2 - 1e-9, `nice ${ps && ps.nice} 마나 ${m0}→${g2.player.mana}`); }
 
 // ── 4. 가지: 숙이면 지나가고 안 숙이면 맞음
-{ const f = createFlow({ data, grade: 1, seed: 31 }); f.action('start', { mode: 'keyboard' }); const g = f.game; const br = g.rail.obstacles.filter(o => o.kind === 'branch').sort((a, b) => a.d - b.d)[0];
+{ const f = createFlow({ data, grade: 1, seed: 31 }); f.action('start', { mode: 'keyboard' }); f.action('enter'); const g = f.game; const br = g.rail.obstacles.filter(o => o.kind === 'branch').sort((a, b) => a.d - b.d)[0];
   const rocksBefore = g.rail.obstacles.filter(o => o.kind === 'rock' && o.d < br.d); push(g, 'MOVE', { u: -1 }); // 왼쪽 끝(바위 lane −1.7 은 맞을 수 있어 x=−2.6)
   run(f, 60, s => s.obstacles.some(o => o.uid === br.uid && o.pos[2] < 2.5)); push(g, 'DUCK', { on: true }); const ev = run(f, 3, (s, e) => e.some(x => x.type === 'obstacle:pass' && x.uid === br.uid || x.type === 'obstacle:hit' && x.uid === br.uid)); push(g, 'DUCK', { on: false });
   ok('숙이면 가지 통과', ev.some(e => e.type === 'obstacle:pass' && e.uid === br.uid) && !ev.some(e => e.type === 'obstacle:hit' && e.uid === br.uid), rocksBefore.length ? `(앞 바위 ${rocksBefore.length}개 x=−2.6 으로 피함)` : '');
-  const f2 = createFlow({ data, grade: 1, seed: 31 }); f2.action('start', { mode: 'keyboard' }); const g2 = f2.game; const b2 = g2.rail.obstacles.filter(o => o.kind === 'branch').sort((a, b) => a.d - b.d)[0]; push(g2, 'MOVE', { u: -1 });
+  const f2 = createFlow({ data, grade: 1, seed: 31 }); f2.action('start', { mode: 'keyboard' }); f2.action('enter'); const g2 = f2.game; const b2 = g2.rail.obstacles.filter(o => o.kind === 'branch').sort((a, b) => a.d - b.d)[0]; push(g2, 'MOVE', { u: -1 });
   const ev2 = run(f2, 60, (s, e) => e.some(x => x.uid === b2.uid && (x.type === 'obstacle:hit' || x.type === 'obstacle:pass'))); ok('안 숙이면 가지에 맞음(피해 8×.7)', ev2.some(e => e.type === 'obstacle:hit' && e.uid === b2.uid)); }
 
 // ── 5. 반딧불·상자 줍기 · 길 위 슬라임 · 길 끝 → 전투장 1
-{ const f = createFlow({ data, grade: 1, seed: 31 }); f.action('start', { mode: 'keyboard' }); const g = f.game; let steer = null; const rec = [];
+{ const f = createFlow({ data, grade: 1, seed: 31 }); f.action('start', { mode: 'keyboard' }); f.action('enter'); const g = f.game; let steer = null; const rec = [];
   for (let i = 0; i < 60 * 70 && g.zoneIdx === 0; i++) { const s = g.snapshot(); const nxt = s.obstacles.filter(o => o.state === 'ahead' && o.pos[2] > -.5).sort((a, b) => a.pos[2] - b.pos[2])[0];
     if (nxt) { const want = nxt.kind === 'rock' ? (nxt.x <= 0 ? R.xMax : -R.xMax) : nxt.kind === 'branch' ? g.player.pos[0] : nxt.pos[0]; if (steer !== want) { steer = want; push(g, 'MOVE', { u: want / R.xMax }); } push(g, 'DUCK', { on: nxt.kind === 'branch' }); }
     if (i % 40 === 0) push(g, 'ATTACK', { zone: 1, side: 'R' }); f.step(1 / 60); rec.push(...f.drainEvents()); }
@@ -59,7 +59,7 @@ const R = GAME.rail;
   ok('길 구간 피해 ≤ 2번(봇이 피함)', (g.stats.obstaclesHit || 0) <= 2, `맞음 ${g.stats.obstaclesHit || 0}`); }
 
 // ── 6. 길 B 숫자 다리 퍼즐: 멈춤 → S08P → 정답 → 길 열림
-function toPuzzle(d, seed = 31){ const f = createFlow({ data: d, grade: 1, seed, startZone: 2 }); f.action('start', { mode: 'keyboard' }); const g = f.game; let steer = null;
+function toPuzzle(d, seed = 31){ const f = createFlow({ data: d, grade: 1, seed, startZone: 2 }); f.action('start', { mode: 'keyboard' }); f.action('enter'); const g = f.game; let steer = null;
   for (let i = 0; i < 60 * 60 && g.screen !== 'S08P'; i++) { const s = g.snapshot(); const nxt = s.obstacles.filter(o => o.state === 'ahead' && o.pos[2] > -.5).sort((a, b) => a.pos[2] - b.pos[2])[0];
     if (nxt) { const want = nxt.kind === 'rock' ? (nxt.x <= 0 ? R.xMax : -R.xMax) : nxt.kind === 'branch' ? g.player.pos[0] : nxt.pos[0]; if (steer !== want) { steer = want; push(g, 'MOVE', { u: want / R.xMax }); } push(g, 'DUCK', { on: nxt.kind === 'branch' }); }
     f.step(1 / 60); f.drainEvents(); } return { f, g }; }
@@ -96,9 +96,9 @@ function toPuzzle(d, seed = 31){ const f = createFlow({ data: d, grade: 1, seed,
   push(g3, 'SELECT', { slot: g3.puzzle.cur.answer[0] }); const ev3 = run(f3, .2); ok('다음 돌 맞히면 정답', ev3.some(e => e.type === 'puzzle:right')); }
 
 // ── 9. 체크포인트: 길에서 지면 그 길부터 · 길 B 에서 지면 길 B 부터
-{ const f = createFlow({ data, grade: 1, seed: 31 }); f.action('start', { mode: 'keyboard' }); const g = f.game; run(f, 5); g.player.feather = false; g.player.hp = 1; g.player.invulnUntil = 0;
+{ const f = createFlow({ data, grade: 1, seed: 31 }); f.action('start', { mode: 'keyboard' }); f.action('enter'); const g = f.game; run(f, 5); g.player.feather = false; g.player.hp = 1; g.player.invulnUntil = 0;
   push(g, 'MOVE', { u: 0 }); run(f, 60, s => s.screen === 'S14'); ok('길 A 에서 패배 화면', g.screen === 'S14'); f.action('again'); run(f, .5); ok('다시 → 길 A 처음부터(dist 0 근처)', g.zoneIdx === 0 && g.rail && g.rail.dist < 5, `dist ${g.rail && g.rail.dist.toFixed(1)}`);
-  const f2 = createFlow({ data, grade: 1, seed: 31, startZone: 2 }); f2.action('start', { mode: 'keyboard' }); const g2 = f2.game; run(f2, 2); g2.checkpoint = { zone: 'rail', idx: 2 }; g2.player.feather = false; g2.player.hp = 1; g2.player.invulnUntil = 0; run(f2, 80, s => s.screen === 'S14');
+  const f2 = createFlow({ data, grade: 1, seed: 31, startZone: 2 }); f2.action('start', { mode: 'keyboard' }); f2.action('enter'); const g2 = f2.game; run(f2, 2); g2.checkpoint = { zone: 'rail', idx: 2 }; g2.player.feather = false; g2.player.hp = 1; g2.player.invulnUntil = 0; run(f2, 80, s => s.screen === 'S14');
   f2.action('again'); run(f2, .5); ok('길 B 에서 지면 길 B 부터', g2.zoneIdx === 2 && g2.rail && g2.rail.dist < 5, `zone ${g2.zoneIdx}`); }
 
 // ── 10. 봇 9조합 완주 · 문제 시간 비율 25~35% 근처(acc .75)
@@ -108,7 +108,7 @@ function toPuzzle(d, seed = 31){ const f = createFlow({ data: d, grade: 1, seed,
   ok('문제 시간 비율 평균 25~35%(정답률 .75)', avg >= 24 && avg <= 36, `${share.join(',')} 평균 ${avg}%`);
   ok('반딧불 ≥ 7 · 퍼즐 1 · 별 3개(acc .9)', rs.filter(r => r.acc === .9).every(r => r.fireflies >= 7 && r.puzzles === 1), rs.filter(r => r.acc === .9).map(r => r.fireflies).join(','));
   const a = playOne({ data, seed: 777, acc: .75, react: .4 }), b = playOne({ data, seed: 777, acc: .75, react: .4 }); ok('같은 시드 = 같은 배치(장애물 자리)', JSON.stringify(a.log.map(x => x.qid)) !== null && a.zone === b.zone);
-  const f = createFlow({ data, grade: 1, seed: 777 }); f.action('start', { mode: 'keyboard' }); const f2 = createFlow({ data, grade: 1, seed: 777 }); f2.action('start', { mode: 'keyboard' });
+  const f = createFlow({ data, grade: 1, seed: 777 }); f.action('start', { mode: 'keyboard' }); f.action('enter'); const f2 = createFlow({ data, grade: 1, seed: 777 }); f2.action('start', { mode: 'keyboard' }); f2.action('enter');
   ok('같은 시드 = 같은 장애물 배치', JSON.stringify(f.game.rail.obstacles.map(o => [o.kind, o.d, o.x])) === JSON.stringify(f2.game.rail.obstacles.map(o => [o.kind, o.d, o.x]))); }
 
 console.table(out); console.log(fail ? `✗ 실패 ${fail}` : '전부 통과');

@@ -78,3 +78,14 @@ v1.5 추가(P3 길 구간): `rail:start`(idx·len·seconds·obstacles) / `rail:e
 - 스냅샷 추가: `world.heart`(고대 나무 심장 구역 — 길·보스방 둘 다, 스킨은 거대 나무+숫자 무늬를 둠) · `world.final` · `world.crystals[]`(되찾은 결정) · `result.crystal`·`result.final`
 - 스테이지 JSON: `final`·`reward.crystal` · 구역 `heart`·`toast`(구역 들어갈 때 한마디 — 보스 전 한마디) · 보스 구역 `hpMul`(페이즈 HP 배율, 1-보스 ×1.2 — def 복사, 다른 스테이지 무변경)
 - 길 → 보스방 바로 이어질 때 `world.rail` 이 null 로 돌아감(1-보스 — 이전엔 전투장을 거쳐서 문제 없었음) · 시작 화면 `title.stages[].crystal/final`(👑) · boot `?stage=forest-1-boss`
+
+## v1.9 추가(2026-10-28, S04 월드 지도) — 추가만, 기존 변경 0
+| type | 필드 | 표현 예 |
+|---|---|---|
+| `screen` | from, **to 'S04'** | S01·S17·S13·S14 → S04 지도 · S04 → S08(들어가기) |
+| `map:pick` | stage, locked, via('hand'|'click'|'key') | 노드 고름 — 잠겼으면 토스트 `map.locked.<stage>`(아이콘 흔들림), 아니면 선택 테 |
+| `map:enter` | stage, via | 들어가기 — 문 열림 소리·전환 |
+- 흐름: `start` → (카메라 첫 판 S17 보정) → **S04** → `enter` → S08. 결과 화면 `map` → S04(마스터리·progress 유지). `?stage=`(forceStage)만 지도 없이 바로 판(시험용·골든 리플레이 무변경)
+- MenuSnapshot 추가: `map{world,worldName,stages[],stage,locked,learn[](개념 키 — 스킨은 `learn.<키>` 문구로),recLevel,stars,level,xp,pedestals[6]{crystal,world,worldName,icon,open,got},targets}` · `targets`(kind **`map`**: `stage:<id>`·`enter`) · `toast` · `input.cursor`
+- 데이터: `data/worlds.json`(결정 6·월드 6 — 받침대 순서, 시스템 소유) · `data/layout/targets.json` **`map`**(노드 4·enter rect) · ko.json `map.*`·`crystal.*`·`learn.*`·`clear.map`
+- 시작 화면 `title.stages` 는 남지만 proto 는 더 안 그림(지도로). 키보드 모드 S04: ←→/↑↓ 고르기 · 1~4 · Enter/Space 들어가기 · Esc 처음으로

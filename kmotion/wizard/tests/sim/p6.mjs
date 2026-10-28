@@ -7,7 +7,7 @@ const data = loadData(), out = []; let fail = 0;
 const ok = (name, cond, note = '') => { out.push({ 검사: name, 결과: cond ? '✓' : '✗', 메모: note }); if (!cond) fail++; };
 const run = (f, s, until) => { const ev = []; for (let i = 0; i < 60 * s; i++) { f.step(1 / 60); ev.push(...f.drainEvents()); if (until && until(f.game.snapshot(), ev)) break; } return ev; };
 const SB = 'forest-1-boss', ST = data.stages[SB];
-const flowAt = (zone, seed = 11, extra = {}) => { const f = createFlow(Object.assign({ data, grade: 1, seed, stage: SB, forceStage: true, startZone: zone }, extra)); f.action('start', { mode: 'keyboard' }); return f; };
+const flowAt = (zone, seed = 11, extra = {}) => { const f = createFlow(Object.assign({ data, grade: 1, seed, stage: SB, forceStage: true, startZone: zone }, extra)); f.action('start', { mode: 'keyboard' }); f.action('enter'); return f; };
 
 // ── 1. 스테이지 데이터·목록: 4번째 · 1-3 뒤 · final · 보상 crystal(마법 아님) · 구역 2(길→보스)
 { ok('구역 2(길 20초 76m → 보스 num-golem hpMul 1.2 heal 20)', ST.zones.length === 2 && ST.zones[0].type === 'rail' && ST.zones[0].seconds === 20 && ST.zones[0].len === 76 && ST.zones[1].type === 'boss' && ST.zones[1].boss === 'num-golem' && ST.zones[1].hpMul === 1.2 && ST.zones[1].heal === 20);
@@ -15,9 +15,9 @@ const flowAt = (zone, seed = 11, extra = {}) => { const f = createFlow(Object.as
   ok('final · 보상 = crystal number(spell 없음) · 별 반딧불 3', ST.final === true && ST.reward.crystal === 'number' && !ST.reward.spell && ST.stars.fireflies === 3);
   const f = createFlow({ data, grade: 1, seed: 1, progress: { xp: 0, level: 3, cleared: { 'forest-1-1': 3, 'forest-1-2': 2 } } }); const t = f.snapshot().title;
   ok('시작 화면 스테이지 4개 · 보스는 4번째 · 잠김(1-3 안 깸) · final · crystal number · reward null', t.stages.length === 4 && t.stages[3].id === SB && t.stages[3].locked && t.stages[3].requires === 'forest-1-3' && t.stages[3].final && t.stages[3].crystal === 'number' && t.stages[3].reward === null, JSON.stringify(t.stages[3]));
-  f.action('start', { mode: 'keyboard', stage: SB }); ok('잠긴 채 고르면 1-1 로 감', f.game.stageId === 'forest-1-1');
+  f.action('start', { mode: 'keyboard', stage: SB }); f.action('enter'); ok('잠긴 채 고르면 1-1 로 감', f.game.stageId === 'forest-1-1');
   const f2 = createFlow({ data, grade: 1, seed: 1, progress: { xp: 0, level: 4, cleared: { 'forest-1-1': 3, 'forest-1-2': 2, 'forest-1-3': 1 }, unlocked: ['shield', 'ice', 'lightning'] } });
-  ok('1-3 깬 기록이 있으면 열림 · 결정 0', !f2.snapshot().title.stages[3].locked); f2.action('start', { mode: 'keyboard', stage: SB });
+  ok('1-3 깬 기록이 있으면 열림 · 결정 0', !f2.snapshot().title.stages[3].locked); f2.action('start', { mode: 'keyboard', stage: SB }); f2.action('enter');
   const w = f2.game.snapshot().world; ok('시작 · 이름 「고대 나무 심장」 · world.heart·final · crystals [] · 마법 3종 장착 가능', f2.game.stageId === SB && w.stageName === '고대 나무 심장' && w.heart && w.final && Array.isArray(w.crystals) && w.crystals.length === 0 && ['ice', 'lightning'].every(k => f2.game.spellList().includes(k)), JSON.stringify([w.stageName, w.heart, w.final, w.crystals])); }
 
 // ── 2. 길: 보스 전 한마디 toast.heart.rail · 20초 전후에 끝남 · 바로 보스방(rail null·heart 유지·heal) · toast.heart.boss

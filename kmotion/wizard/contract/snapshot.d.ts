@@ -5,7 +5,7 @@
  * 규칙: 여기 없는 값을 스킨이 지어내지 않는다(체력바는 hp/hpMax 만). 스냅샷에 쓰기 금지(dev 에서 Object.freeze).
  */
 export type Vec3 = [number, number, number];
-export type ScreenId = 'S01' | 'S17' | 'S08' | 'S08Q' | 'S08P' | 'S13' | 'S14';   // v1.5 S08P = 길 구간 수학 퍼즐(HUD 위에 퍼즐 판)
+export type ScreenId = 'S01' | 'S04' | 'S17' | 'S08' | 'S08Q' | 'S08P' | 'S13' | 'S14';   // v1.5 S08P = 길 구간 수학 퍼즐(HUD 위에 퍼즐 판) · v1.9 S04 월드 지도(게임 밖 — MenuSnapshot.map)
 export type AnimLower = 'A01' | 'A02' | 'A03' | 'A04' | 'A05' | 'A06' | 'A12' | 'A13' | 'A14' | 'A15';
 export type AnimUpper = 'A07' | 'A08' | 'A09' | 'A10' | 'A11' | 'A16' | 'A17' | null;
 export type EnemyState = 'spawn' | 'idle' | 'chase' | 'windup' | 'attack' | 'recover' | 'hurt' | 'stagger' | 'dead' | 'flee';
@@ -71,7 +71,7 @@ export interface Snapshot {
     hintPic: { kind: 'beads'; a: number; b: number; op: '+' | '-' } | null;
   };
   /** 손 선택 대상 — 3-5절. rect 는 화면 비율, 눌리는 자리 = rect. hover = 유지 게이지 */
-  targets: Array<{ id: string; kind: 'choice' | 'hint' | 'crystal' | 'menu';   // hint = 🦉 힌트 구슬(v1.2, 문제 열려 있고 2단계 전까지) · menu = 멈춤 화면 손 유지 바퀴(v1.3, 카메라 모드만): 'spell:<id>'(주 마법)·'resume' rect: { x: number; y: number; w: number; h: number }; hover: number; locked: boolean }>;
+  targets: Array<{ id: string; kind: 'choice' | 'hint' | 'crystal' | 'menu' | 'puzzle' | 'map';   // map = S04 지도 노드 'stage:<id>'·'enter'(v1.9, 카메라·마우스 손 유지 고르기 — MenuSnapshot.targets)   // hint = 🦉 힌트 구슬(v1.2, 문제 열려 있고 2단계 전까지) · menu = 멈춤 화면 손 유지 바퀴(v1.3, 카메라 모드만): 'spell:<id>'(주 마법)·'resume' rect: { x: number; y: number; w: number; h: number }; hover: number; locked: boolean }>;
   input: { cursor: { x: number; y: number } | null; mode: 'camera' | 'keyboard'; body: 'ok' | 'lost' | 'partial'; calibrating: boolean;
     preview: { ok: boolean; joints: Array<[number, number, number] | null> } | null };   // joints: 0,11,12,13,14,15,16,23,24,25,26,27,28 (화면 비율, 거울)
   camera: { mode: 'rail' | 'arena' | 'boss-intro' | 'q' | 'puzzle'; target: Vec3; shake: number };   // v1.5 rail = 03 문서 길 카메라(camera.json rail: 뒤 6.5·높이 2.6·앞 6m 봄·FOV 58+달리기 6) · puzzle = 멈춘 길
@@ -82,6 +82,13 @@ export interface Snapshot {
     fireflies: number; chests: number; gold: number; puzzles: number; puzzleRight: number; obstaclesHit: number; nicePasses: number; stars: [boolean, boolean, boolean] };   // v1.5 길 구간 — 별 3개 = 클리어·반딧불 7↑·정답률 70%↑(퍼즐 포함)
 }
 /** 게임 밖 화면(S01 시작 · S17 보정) */
-export interface MenuSnapshot { t: number; screen: 'S01' | 'S17';
+export interface MenuSnapshot { t: number; screen: 'S01' | 'S04' | 'S17';
   calib: null | { step: 'stand' | 'up' | 'side' | 'punch'; idx: number; of: number; msg: string; p: number };
-  input: { preview: Snapshot['input']['preview']; mode: string }; title: null | { chars: string[]; char: string; hasCal: boolean } }
+  input: { preview: Snapshot['input']['preview']; mode: string; cursor: null | { x: number; y: number } }; title: null | { chars?: string[]; char: string; hasCal?: boolean; stages?: unknown[]; stage?: string };
+  /** v1.9 S04 월드 지도(10 문서 S04 받침대 + S06 지도) — 노드·들어가기 자리는 targets(kind 'map') rect 그대로, 받침대 6개는 보기만(눌리는 자리 아님) */
+  map: null | { world: string; worldName: string; stages: Array<{ id: string; nameKo: string; stars: number; locked: boolean; requires: string | null; reward: string | null; crystal: string | null; final: boolean }>;
+    stage: string; locked: boolean; learn: string[]; recLevel: number; stars: number; level: number; xp: number;
+    pedestals: Array<{ idx: number; crystal: string; world: string | null; worldName: string; icon: string; open: boolean; got: boolean }>;
+    targets: Snapshot['targets'] };
+  targets: Snapshot['targets'];   // S04 에서만 채움(kind 'map': 'stage:<id>' ×스테이지 수 + 'enter', 잠긴 스테이지도 눌림 — 손을 대면 잠김 토스트)
+  toast: string | null }   // 지도 토스트 키(map.locked.<stage>)

@@ -12,7 +12,7 @@ const run = (f, s, until) => { const ev = []; for (let i = 0; i < 60 * s; i++) {
 const push = (g, type, value = {}) => g.input.push({ type, t: 0, via: 'key', value });
 const S3 = 'forest-1-3';
 const withGolem = () => { const d = JSON.parse(JSON.stringify(data)); const z = d.stages[S3].zones.find(z => z.id === 'arena-1'); z.waves = [{ at: .5, spawn: [{ kind: 'crystal-golem', x: 0, z: 6.0 }] }]; return d; };
-const flowAt = (d, zone, seed = 11, extra = {}) => { const f = createFlow(Object.assign({ data: d, grade: 1, seed, stage: S3, forceStage: true, startZone: zone }, extra)); f.action('start', { mode: 'keyboard' }); return f; };
+const flowAt = (d, zone, seed = 11, extra = {}) => { const f = createFlow(Object.assign({ data: d, grade: 1, seed, stage: S3, forceStage: true, startZone: zone }, extra)); f.action('start', { mode: 'keyboard' }); f.action('enter'); return f; };
 const openQ = (f, g) => { run(f, 12, s => s.crystals.length > 0); const c = g.crystals[0]; if (!c) return null; push(g, 'MOVE', { u: c.pos[0] / 4 }); run(f, 3, s => s.crystals[0] && s.crystals[0].near); push(g, 'ATTACK', { zone: 1, side: 'R', power: 1 }); run(f, 2, s => s.screen === 'S08Q'); return g.q; };
 
 // ── 1. 수정 묶음 세기 생성기(6학년 × 400) · 1학년 범위 10~49 · 오답에 자리 바꿈
@@ -30,7 +30,7 @@ const openQ = (f, g) => { run(f, 12, s => s.crystals.length > 0); const c = g.cr
 { const f = createFlow({ data, grade: 1, seed: 1, progress: { xp: 0, level: 1, cleared: { 'forest-1-1': 3 } } }); const t = f.snapshot().title;
   ok('시작 화면 스테이지 3개↑ · 1-3 잠김(1-2 안 깸) · 보상 lightning', t.stages.length >= 3 && t.stages[2].id === S3 && t.stages[2].locked && t.stages[2].requires === 'forest-1-2' && t.stages[2].reward === 'lightning', JSON.stringify(t.stages.map(s => [s.id, s.locked])));
   const f2 = createFlow({ data, grade: 1, seed: 1, progress: { xp: 0, level: 2, cleared: { 'forest-1-1': 3, 'forest-1-2': 2 }, unlocked: ['shield', 'ice'] } }); const t2 = f2.snapshot().title;
-  ok('1-2 깬 기록이 있으면 1-3 열림', !t2.stages[2].locked); f2.action('start', { mode: 'keyboard', stage: S3 });
+  ok('1-2 깬 기록이 있으면 1-3 열림', !t2.stages[2].locked); f2.action('start', { mode: 'keyboard', stage: S3 }); f2.action('enter');
   ok('1-3 시작 · 이름 「반딧불 동굴」 · 얼음 장착 가능', f2.game.stageId === S3 && f2.game.snapshot().world.stageName === '반딧불 동굴' && f2.game.spellList().includes('ice'));
   ok('1-3 구역 6개 · 전투장 3 · 보스 없음', data.stages[S3].zones.length === 6 && f2.game.snapshot().world.arenas === 3 && !data.stages[S3].zones.some(z => z.type === 'boss')); }
 
@@ -79,7 +79,7 @@ const openQ = (f, g) => { run(f, 12, s => s.crystals.length > 0); const c = g.cr
 { const prog = { xp: 0, level: 2, cleared: { 'forest-1-1': 3, 'forest-1-2': 3 }, unlocked: ['shield', 'ice'] }; const r = playOne({ data, seed: 91, acc: .9, react: .3, stage: S3, progress: prog });
   ok('봇 1-3 완주(전투장 3 뒤 클리어)', r.win && r.zone === 5, `zone ${r.zone} t ${r.t}`); ok('퍼즐 2(수정 묶음·규칙 징검다리)', r.puzzles === 2, `${r.pzRight}/${r.puzzles}`);
   ok('보상 LIGHTNING · unlocked · cleared[1-3]', r.reward === 'lightning' && prog.unlocked.includes('lightning') && prog.cleared[S3] >= 1, JSON.stringify({ r: r.reward, u: prog.unlocked }));
-  const f = createFlow({ data, grade: 1, seed: 2, progress: prog }); f.action('start', { mode: 'keyboard', stage: S3 }); ok('다음 판: 번개 사슬 장착 가능', f.game.spellList().includes('lightning') && f.game.setSpell('lightning'));
+  const f = createFlow({ data, grade: 1, seed: 2, progress: prog }); f.action('start', { mode: 'keyboard', stage: S3 }); f.action('enter'); ok('다음 판: 번개 사슬 장착 가능', f.game.spellList().includes('lightning') && f.game.setSpell('lightning'));
   const r2 = playOne({ data, seed: 92, acc: .9, react: .3, stage: S3, progress: prog }); ok('두 번째 클리어 = 보상 다시 안 줌', r2.win && r2.reward === null && prog.unlocked.filter(x => x === 'lightning').length === 1); }
 
 // ── 9. 봇 6판: 완주 · 문제 수 8~14 · 골렘 깨기 ≥ 1.5/판 · 반딧불 별 조건(10) 달성 가능 · 문제 시간 비율
