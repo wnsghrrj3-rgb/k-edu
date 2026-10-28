@@ -9,28 +9,43 @@
 //  · 138: 「다시 만남」(figures[].revisit {on, say}) — 만났던 인물이 떠난 뒤 그 시대 끝 무렵 한 번 더 지나가며 내가 고른 것을 기억해 한 줄(E 한 줄·값 0·8초) · 손님 인물에 반 친구 「누가 불렀어?」(friends shout figure) · 「그 뒤」 📯 줄에 손님으로만 본 인물·다시 만남 횟수.
 //  · 139: 만난 인물을 이 기기 kworld_figures 에 적는다(recordFigure — 도감 📯 칸·족보 👤 줄) · 반 친구 「누가 불렀어?」에 답한 둘이 6m 안이면 깃발 figure:<id>:with(friends.together) → 「그 뒤」 줄 「반 친구와 함께 갔다」.
 //  · 143: 「그 뒤」 줄 이름은 world.figuresTag·figuresTail(케이시티 「광장에 온 시민」 — 선택으로 웃거나 운 시민이 광장으로 걸어온다, 같은 엔진).
+//  · 148: 「작년에 왔던 사람」(world.recallAfter 초 뒤, figures[].recall {say{<choice id>|scorn|default}, gone, stay}) — 지난 해 광장에서 말을 섞은 시민(life.lastFigures ← carry.figures[].pick)이 올해 광장에 다시 들러 그때 내가 고른 것을 기억해 한 줄(E 한 줄·값 0·9초 간격 한 사람씩·stay 뒤 gone 한 줄), 깃발 figure:<id>:recall(칭호) — gone 깃발은 안 세워 올해 사건 때 또 온다. 역사 열한 시대는 recall 데이터가 없어 전과 같음.
 //  · 「그 뒤」 카드 📯 줄(figureLine): 만난 인물·고른 것. 값은 작게(±1~2), 신분·갈림은 안 바꾼다 — 인물은 그 사건을 「사람의 얼굴」로 보여 줄 뿐. 📜 연도 0·판단 0(개항~현대는 사실만). ?figures=0 끔.
 import { Actor } from './actor.js';
 import { recordFigure } from './dogam.js';   // 139: 이 기기 kworld_figures 에 만난 인물 기록(도감·족보가 읽는다)
 const GAP = 4600, STAY = 240, LEAVE_R = 60, REVISIT_STAY = 8;   // 138: 다시 만남은 8초 서 있다 간다
 const iga = (n) => { const o = n.charCodeAt(n.length - 1); return o >= 0xac00 && o <= 0xd7a3 && (o - 0xac00) % 28 ? '이' : '가'; };   // 이/가
 export class Figures {
-  constructor(g, list) { this.g = g; this.list = list || []; this.live = new Map(); this.t = 0; this.met = []; this.picked = new Map(); this.speaking = null; }
+  constructor(g, list) { this.g = g; this.list = list || []; this.live = new Map(); this.t = 0; this.met = []; this.picked = new Map(); this.speaking = null; this.recallQ = null; this.recallT = 0; }
   area(a) { if (Array.isArray(a)) return { x: a[0], z: a[1] }; const v = this.g.e?.areas?.get(a); return v ? { x: v.x, z: v.z } : null; }
   tick(dt) {
     const g = this.g; if (!g.p?.pos || g.restoring || g.story?.cutsceneOn) return; this.t += dt; if ((this.tk = (this.tk || 0) + dt) < 0.5) return; this.tk = 0;
     for (const f of this.list) { if (this.live.has(f.id)) continue;
       if (g.flags.has('figure:' + f.id + ':gone')) { if (f.revisit?.on && g.flags.has('figure:' + f.id + ':met') && !g.flags.has('figure:' + f.id + ':revisit') && g.cond(f.revisit.on)) this.arrive(f, { revisit: true }); continue; }   // 138: 다시 만남
       if (!g.cond(f.on) || (f.if && !g.cond(f.if))) continue; this.arrive(f); }
+    this.recallTick(0.5);
     for (const L of this.live.values()) this.tickOne(L, 0.5);
   }
+  /** 148: 지난 해 사람 — carry 에 실린 figures(id·pick)에서 recall 데이터가 있는 시민을 recallAfter 초 뒤부터 9초 간격으로 한 사람씩 광장에 들르게 한다 */
+  lastYear() { const lf = this.g.life?.lastFigures; if (!lf?.length) return []; return lf.map((r) => { const f = this.list.find((x) => x.id === r.id); return f?.recall ? { f, pick: r.pick } : null; }).filter(Boolean); }
+  recallTick(dt) {
+    const g = this.g, after = g.world?.recallAfter; if (!after || this.recallQ === false) return;
+    if (this.recallQ === null) { if (this.t < after) return; this.recallQ = this.lastYear(); if (!this.recallQ.length) { this.recallQ = false; return; } this.recallT = 99; }
+    this.recallT += dt; if (this.recallT < 9 || !this.recallQ.length) { if (!this.recallQ.length) this.recallQ = false; return; }
+    const r = this.recallQ[0]; if (this.live.has(r.f.id) || g.flags.has('figure:' + r.f.id + ':recall')) { this.recallQ.shift(); return; }
+    if (this.arrive(r.f, { recall: true, pick: r.pick })) { this.recallQ.shift(); this.recallT = 0; }
+  }
+  /** 148: 작년 사람의 한 줄 — recall.say[지난 해 고른 선택지 id] → 돌아섰던 선택(🤝-)은 scorn → default */
+  recallLine(f, pick) { const say = f.recall?.say || {}; if (pick && say[pick]) return say[pick]; const c = (f.talk?.choices || []).find((x) => x.id === pick); if (c && (c.val?.heart || 0) < 0 && say.scorn) return say.scorn; return say.default || '…작년에 뵈었지요.'; }
   /** opt.guest(137): 반 친구의 사건으로 온 손님 — 📯 줄·📜 는 그대로, E 는 한 줄뿐(선택지 없음), 내 사건이 열리면 promote 로 선택지가 붙고 머무는 시간이 다시 잰다; 손님이 그냥 떠나면 gone 깃발을 안 세워 내 사건 때 다시 온다 */
   arrive(f, opt = {}) {
-    const g = this.g, st = g.story; const from = this.area(f.from), to = this.area(f.to); if (!st?.place || !from || !to || this.live.has(f.id) || (!opt.revisit && g.flags.has('figure:' + f.id + ':gone'))) return false;
+    const g = this.g, st = g.story; const from = this.area(f.from), to = this.area(f.to); if (!st?.place || !from || !to || this.live.has(f.id) || (!opt.revisit && !opt.recall && g.flags.has('figure:' + f.id + ':gone'))) return false;
     const name = 'npc_' + f.id; const it = st.place({ id: f.id, name, prop: 'person', look: f.look || { body: 0x4a3c2e, skin: 0xd7a981 }, x: from.x, z: from.z, noAuto: true });
     const ac = st.actors?.[f.id] || (it && new Actor(g, f.id, it.obj)); if (!it || !ac) return false;
     const dx = from.x - to.x, dz = from.z - to.z, d = Math.hypot(dx, dz) || 1; const stop = { x: to.x + dx / d * 2.2, z: to.z + dz / d * 2.2 };   // 구역 중심 2.2m 앞에 선다
-    const L = { f, it, ac, t: 0, said: 0, there: false, leaving: false, stop, guest: !!opt.guest, revisit: !!opt.revisit }; this.live.set(f.id, L);
+    const L = { f, it, ac, t: 0, said: 0, there: false, leaving: false, stop, guest: !!opt.guest, revisit: !!opt.revisit, recall: !!opt.recall, pick: opt.pick || null }; this.live.set(f.id, L);
+    if (L.recall) { g.flags.add('figure:' + f.id + ':recall'); const line = this.recallLine(f, L.pick); g.npcs[f.id] = { name: `${f.name}${f.title ? ' · ' + f.title : ''}`, lines: [{ text: `「${line}」` }] }; g.sound?.play?.(f.sound || 'meet', 0.3); g.ui?.say?.(`📯 ${g.world?.figuresRecall || '작년에 왔던 사람'} — ${f.name}${iga(f.name)} 광장으로 온다.`, 3600);
+      ac.goTo([stop.x, stop.z], { anim: 'walk', then: 'idle', speed: f.speed || 2.0 }).then(() => { L.there = true; L.t = 0; ac.face([g.p.pos.x, g.p.pos.z]); ac.syncBox?.(); g.ui?.say?.(`📯 ${f.name} — 「${line}」`, 5600); }); return true; }
     recordFigure(g.era, f.id, L.revisit ? 'revisit' : L.guest ? 'guest' : 'came', { name: f.name, title: f.title || null });   // 139
     if (L.revisit) { g.flags.add('figure:' + f.id + ':revisit'); g.npcs[f.id] = { name: `${f.name}${f.title ? ' · ' + f.title : ''}`, lines: [{ text: `「${this.revisitLine(f)}」` }] }; g.sound?.play?.(f.sound || 'horn', 0.3); g.ui?.say?.(`📯 낯익은 사람이 지나간다 — ${f.name}.`, 3600); }
     else { g.flags.add('figure:' + f.id + ':here');
@@ -71,11 +86,11 @@ export class Figures {
     if (!(g.story?.actors?.[f.id])) L.ac.tick(dt);
     if (L.guest && g.cond(f.on) && (!f.if || g.cond(f.if))) this.promote(L);
     if (L.there && g.p?.pos && !g.ui?.isOpen?.()) { const d = Math.hypot(g.p.pos.x - L.it.obj.position.x, g.p.pos.z - L.it.obj.position.z); if (d < 7) L.ac.face([g.p.pos.x, g.p.pos.z]); }
-    L.t += dt; const over = L.revisit ? L.t >= (f.stay || STAY) + (f.revisit?.stay || REVISIT_STAY) : (L.t >= (f.stay || STAY) || (f.until && g.cond(f.until))); if (L.there && over && !g.ui?.isOpen?.()) this.leave(L);
+    L.t += dt; const over = L.recall ? (L.there && L.t >= (f.recall?.stay || 12)) : L.revisit ? L.t >= (f.stay || STAY) + (f.revisit?.stay || REVISIT_STAY) : (L.t >= (f.stay || STAY) || (f.until && g.cond(f.until))); if (L.there && over && !g.ui?.isOpen?.()) this.leave(L);
   }
   leave(L) {
     const g = this.g, f = L.f; L.leaving = true; const from = this.area(f.from) || { x: L.it.obj.position.x, z: L.it.obj.position.z + LEAVE_R };
-    if (!L.revisit) g.ui?.say?.(`📯 ${f.name} — 「${f.gone || '…갈 길이 멀다.'}」`, 4200); L.ac.goTo([from.x, from.z], { anim: 'walk', then: 'idle', speed: 2.0 });
+    if (L.recall) g.ui?.say?.(`📯 ${f.name} — 「${f.recall?.gone || f.gone || '…또 뵙지요.'}」`, 4200); else if (!L.revisit) g.ui?.say?.(`📯 ${f.name} — 「${f.gone || '…갈 길이 멀다.'}」`, 4200); L.ac.goTo([from.x, from.z], { anim: 'walk', then: 'idle', speed: 2.0 });
   }
   /** 136: 인물이 지나간 자리에 남는 것 — 떠난 뒤 to 구역 곁에 ✨ 하나(pulse 숨은 것 틀, id fig_<id>, from 'figure' → 챙기면 🎁 집에 내려오는 것 상자에, n/3 셈엔 안 들어감). f.relic {name,title,body,fact} 데이터가 있을 때만 */
   leaveRelic(L) {
@@ -83,17 +98,18 @@ export class Figures {
     const s = { id: 'fig_' + f.id, at: f.to, dx: r.dx ?? 1.4, dz: r.dz ?? 1.1, tag: `📯 ${f.name}${iga(f.name)} 남긴 것`, title: r.title, body: r.body, fact: r.fact, heirloom: r.name, from: 'figure', seeR: r.seeR || 22, button: '챙긴다' };
     const ok = g.pulse.placeSecret(s); if (ok) g.flags.add('figure:' + f.id + ':relic'); return ok;
   }
-  remove(L) { const g = this.g, f = L.f; this.live.delete(f.id); if (!L.guest && !L.revisit) this.leaveRelic(L); if (this.speaking === L) this.speaking = null; g.e?.removeInteractable?.(L.it.name); if (g.story?.actors) delete g.story.actors[f.id]; delete g.npcs[f.id]; g.flags.delete('figure:' + f.id + ':here'); if (L.guest) { g.flags.add('figure:' + f.id + ':guestgone'); return; } if (L.revisit) return; g.flag('figure:' + f.id + ':gone'); }   // 손님(137)은 남긴 것도 gone 도 없다 — 내 사건 때 다시 온다
+  remove(L) { const g = this.g, f = L.f; this.live.delete(f.id); if (!L.guest && !L.revisit && !L.recall) this.leaveRelic(L); if (this.speaking === L) this.speaking = null; g.e?.removeInteractable?.(L.it.name); if (g.story?.actors) delete g.story.actors[f.id]; delete g.npcs[f.id]; g.flags.delete('figure:' + f.id + ':here'); if (L.guest) { g.flags.add('figure:' + f.id + ':guestgone'); return; } if (L.revisit || L.recall) return; g.flag('figure:' + f.id + ':gone'); }   // 148: 작년 사람도 gone 없이 — 올해 그 사건이 열리면 또 온다   // 손님(137)은 남긴 것도 gone 도 없다 — 내 사건 때 다시 온다
   /** 「그 뒤」 카드 📯 한 줄 — 이 시대에 만난 인물과 고른 것. 못 만났으면 빈 글(인물이 온 적 있으면 「지나쳤다」) */
   figureLine() {
     const g = this.g; const TAG = g.world?.figuresTag || '역사의 인물', TAIL = g.world?.figuresTail || '역사는 지나가는 사람의 얼굴로도 온다.';   // 143: 세계 팩마다 이름(케이시티 「광장에 온 시민」)
     const came = this.list.filter((f) => g.flags.has('figure:' + f.id + ':gone') || g.flags.has('figure:' + f.id + ':here'));
+    const rc = this.list.filter((f) => g.flags.has('figure:' + f.id + ':recall')).length; const rcl = rc ? ` ${g.world?.figuresRecall || '작년에 왔던 사람'} ${rc}명이 올해도 광장에 들러 지난 해 일을 말했다.` : '';   // 148
     const guest = this.list.filter((f) => g.flags.has('figure:' + f.id + ':guest') && !g.flags.has('figure:' + f.id + ':met') && !came.includes(f)); const gl = guest.length ? ` 반 친구의 일로 온 ${guest.map((f) => f.name).join('·')}을(를) 보았다.` : '';   // 138: 손님으로만 본 인물
-    if (!came.length) return gl ? `${TAG} —${gl}` : ''; const met = came.filter((f) => g.flags.has('figure:' + f.id + ':met'));
+    if (!came.length) return (gl || rcl) ? `${TAG} —${gl}${rcl}` : ''; const met = came.filter((f) => g.flags.has('figure:' + f.id + ':met'));
     const rv = came.filter((f) => g.flags.has('figure:' + f.id + ':revisit')).length; const rl = rv ? ` 떠난 뒤 ${rv}번은 다시 지나가며 나를 기억했다.` : '';
     const wt = met.filter((f) => g.flags.has('figure:' + f.id + ':with')).length; const wl = wt ? ` 그중 ${wt}번은 반 친구와 함께 갔다.` : '';   // 139
-    if (!met.length) { const kept = came.filter((f) => g.flags.has('secret:fig_' + f.id)).map((f) => f.relic?.name).filter(Boolean); return `${TAG} — ${came.map((f) => f.name).join('·')}이(가) 마을에 왔지만 말을 걸지 않았다.${kept.length ? ` 지나간 자리에서 ${kept.join('·')}을(를) 챙겼다.` : ''}${gl} ${TAIL}`; }
+    if (!met.length) { const kept = came.filter((f) => g.flags.has('secret:fig_' + f.id)).map((f) => f.relic?.name).filter(Boolean); return `${TAG} — ${came.map((f) => f.name).join('·')}이(가) 마을에 왔지만 말을 걸지 않았다.${kept.length ? ` 지나간 자리에서 ${kept.join('·')}을(를) 챙겼다.` : ''}${gl}${rcl} ${TAIL}`; }
     const kept = came.filter((f) => g.flags.has('secret:fig_' + f.id)).map((f) => f.relic?.name).filter(Boolean);
-    return `${TAG} — ${met.map((f) => { const c = this.picked.get(f.id); return `${f.name}${c ? '(' + c.label + ')' : ''}`; }).join(' · ')}을(를) 만났다.${wl}${kept.length ? ` 지나간 자리에서 ${kept.join('·')}을(를) 챙겼다.` : ''}${rl}${gl}`;
+    return `${TAG} — ${met.map((f) => { const c = this.picked.get(f.id); return `${f.name}${c ? '(' + c.label + ')' : ''}`; }).join(' · ')}을(를) 만났다.${wl}${kept.length ? ` 지나간 자리에서 ${kept.join('·')}을(를) 챙겼다.` : ''}${rl}${gl}${rcl}`;
   }
 }

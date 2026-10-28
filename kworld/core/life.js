@@ -35,6 +35,7 @@ export class Life {
   carryIn() {
     const c = this.d.carry; if (!c || this.carried || typeof localStorage === 'undefined') return; this.carried = true;
     let v = null; try { v = JSON.parse(localStorage.getItem('kworld_carry:' + c.from) || 'null'); } catch { } if (!v) { this.inherited = null; return; }   // null = 이 집의 첫 사람(조상 기록 없음) — 탐험일지 🧬 줄이 읽는다
+    this.lastFigures = (v.figures || []).filter((f) => f?.id && f.pick).map((f) => ({ id: f.id, pick: f.pick, choice: f.choice || null }));   // 148: 지난 해 광장에서 말을 섞은 시민(figures.recall 이 읽는다 — 역사 시대는 recall 데이터가 없어 안 쓴다)
     if (v.branch) this.g.flags.add('from:' + v.branch); if (v.rank) this.g.flags.add('fromrank:' + v.rank); if (v.status) this.g.flags.add('fromstatus:' + v.status); if (v.nation) this.g.flags.add('fromnation:' + v.nation);   // 지난 시대의 갈림·신분을 깃발로(신분 규칙 if 에서 from:<branch> 로 읽는다)
     const got = []; for (const k of c.keep || ['craft', 'heart']) { const n = Math.round((v[k] || 0) * (c.ratios?.[k] ?? c.ratio ?? 0.5)); if (n > 0) { this.values[k] = (this.values[k] || 0) + n; got.push(`${this.vn(k)} ${n}`); } }
     if (got.length) setTimeout(() => this.g.ui.say(`${c.say || '조상에게서 넘어온 것'} — ${got.join(' · ')}`, 5200), 1800);

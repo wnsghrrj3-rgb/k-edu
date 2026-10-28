@@ -13,7 +13,7 @@ export function heirloomsOf(era = null, store = (k) => read(k)) { const all = st
 /** 숨은 것으로 찾은 수 — 벗의 선물(from)은 n/3 셈에서 뺀다(80) */
 const relicN = (list) => (list || []).filter((h) => !h.from).length;
 /** 137: 이 시대에 만난 역사의 인물 — [{id,name,choice}] (figures.met + 고른 것). carry 에 실려 다음 시대 탐험일지 🧬 「조상이 만난 사람」 줄이 읽는다 */
-export function figuresOf(g) { const fg = g?.figures; if (!fg?.met?.length) return []; return fg.met.map((id) => { const f = (fg.list || []).find((x) => x.id === id); const c = fg.picked?.get?.(id); return f ? { id, name: f.name, choice: c?.label || null } : null; }).filter(Boolean); }
+export function figuresOf(g) { const fg = g?.figures; if (!fg?.met?.length) return []; return fg.met.map((id) => { const f = (fg.list || []).find((x) => x.id === id); const c = fg.picked?.get?.(id); return f ? { id, name: f.name, choice: c?.label || null, pick: c?.id || null } : null; }).filter(Boolean); }   // 148: pick = 고른 선택지 id(다음 해 「작년에 왔던 사람」이 읽는다)
 /** 139: 줄마다 역사의 인물 합치기 — carry 에 실린 것(만난 사람·고른 것, 서버에서 와도 됨) 위에 이 기기 kworld_figures(지나친 사람까지), id 로 겹침 제거 */
 const mergeFig = (a, b) => { const out = new Map(); for (const f of b || []) if (f?.id) out.set(f.id, { ...f }); for (const f of a || []) if (f?.id) out.set(f.id, { ...(out.get(f.id) || {}), ...f, how: { ...(out.get(f.id)?.how || {}), met: 1 } }); return [...out.values()]; };
 /** 줄마다 물려줄 것 합치기 — carry 에 실린 것(서버에서 와도 됨) + 이 기기 kworld_heirlooms, id 로 겹침 제거 */
