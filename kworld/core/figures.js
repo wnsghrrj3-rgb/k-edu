@@ -8,6 +8,7 @@
 //  · 137: 넷째 사람 9(불을 지키는 할머니·토기 굽는 사람·가야 토기 장인·최치원·정천익·신사임당·박지원·서재필·국민학교 선생) · 인물이 같은 마을 반 친구 화면에도(friends.figured → recvFigure → arrive guest) · carry 에 figures 실려 다음 시대 🧬 「조상이 만난 사람」.
 //  · 138: 「다시 만남」(figures[].revisit {on, say}) — 만났던 인물이 떠난 뒤 그 시대 끝 무렵 한 번 더 지나가며 내가 고른 것을 기억해 한 줄(E 한 줄·값 0·8초) · 손님 인물에 반 친구 「누가 불렀어?」(friends shout figure) · 「그 뒤」 📯 줄에 손님으로만 본 인물·다시 만남 횟수.
 //  · 139: 만난 인물을 이 기기 kworld_figures 에 적는다(recordFigure — 도감 📯 칸·족보 👤 줄) · 반 친구 「누가 불렀어?」에 답한 둘이 6m 안이면 깃발 figure:<id>:with(friends.together) → 「그 뒤」 줄 「반 친구와 함께 갔다」.
+//  · 143: 「그 뒤」 줄 이름은 world.figuresTag·figuresTail(케이시티 「광장에 온 시민」 — 선택으로 웃거나 운 시민이 광장으로 걸어온다, 같은 엔진).
 //  · 「그 뒤」 카드 📯 줄(figureLine): 만난 인물·고른 것. 값은 작게(±1~2), 신분·갈림은 안 바꾼다 — 인물은 그 사건을 「사람의 얼굴」로 보여 줄 뿐. 📜 연도 0·판단 0(개항~현대는 사실만). ?figures=0 끔.
 import { Actor } from './actor.js';
 import { recordFigure } from './dogam.js';   // 139: 이 기기 kworld_figures 에 만난 인물 기록(도감·족보가 읽는다)
@@ -85,13 +86,14 @@ export class Figures {
   remove(L) { const g = this.g, f = L.f; this.live.delete(f.id); if (!L.guest && !L.revisit) this.leaveRelic(L); if (this.speaking === L) this.speaking = null; g.e?.removeInteractable?.(L.it.name); if (g.story?.actors) delete g.story.actors[f.id]; delete g.npcs[f.id]; g.flags.delete('figure:' + f.id + ':here'); if (L.guest) { g.flags.add('figure:' + f.id + ':guestgone'); return; } if (L.revisit) return; g.flag('figure:' + f.id + ':gone'); }   // 손님(137)은 남긴 것도 gone 도 없다 — 내 사건 때 다시 온다
   /** 「그 뒤」 카드 📯 한 줄 — 이 시대에 만난 인물과 고른 것. 못 만났으면 빈 글(인물이 온 적 있으면 「지나쳤다」) */
   figureLine() {
-    const g = this.g; const came = this.list.filter((f) => g.flags.has('figure:' + f.id + ':gone') || g.flags.has('figure:' + f.id + ':here'));
+    const g = this.g; const TAG = g.world?.figuresTag || '역사의 인물', TAIL = g.world?.figuresTail || '역사는 지나가는 사람의 얼굴로도 온다.';   // 143: 세계 팩마다 이름(케이시티 「광장에 온 시민」)
+    const came = this.list.filter((f) => g.flags.has('figure:' + f.id + ':gone') || g.flags.has('figure:' + f.id + ':here'));
     const guest = this.list.filter((f) => g.flags.has('figure:' + f.id + ':guest') && !g.flags.has('figure:' + f.id + ':met') && !came.includes(f)); const gl = guest.length ? ` 반 친구의 일로 온 ${guest.map((f) => f.name).join('·')}을(를) 보았다.` : '';   // 138: 손님으로만 본 인물
-    if (!came.length) return gl ? `역사의 인물 —${gl}` : ''; const met = came.filter((f) => g.flags.has('figure:' + f.id + ':met'));
+    if (!came.length) return gl ? `${TAG} —${gl}` : ''; const met = came.filter((f) => g.flags.has('figure:' + f.id + ':met'));
     const rv = came.filter((f) => g.flags.has('figure:' + f.id + ':revisit')).length; const rl = rv ? ` 떠난 뒤 ${rv}번은 다시 지나가며 나를 기억했다.` : '';
     const wt = met.filter((f) => g.flags.has('figure:' + f.id + ':with')).length; const wl = wt ? ` 그중 ${wt}번은 반 친구와 함께 갔다.` : '';   // 139
-    if (!met.length) { const kept = came.filter((f) => g.flags.has('secret:fig_' + f.id)).map((f) => f.relic?.name).filter(Boolean); return `역사의 인물 — ${came.map((f) => f.name).join('·')}이(가) 마을에 왔지만 말을 걸지 않았다.${kept.length ? ` 지나간 자리에서 ${kept.join('·')}을(를) 챙겼다.` : ''}${gl} 역사는 지나가는 사람의 얼굴로도 온다.`; }
+    if (!met.length) { const kept = came.filter((f) => g.flags.has('secret:fig_' + f.id)).map((f) => f.relic?.name).filter(Boolean); return `${TAG} — ${came.map((f) => f.name).join('·')}이(가) 마을에 왔지만 말을 걸지 않았다.${kept.length ? ` 지나간 자리에서 ${kept.join('·')}을(를) 챙겼다.` : ''}${gl} ${TAIL}`; }
     const kept = came.filter((f) => g.flags.has('secret:fig_' + f.id)).map((f) => f.relic?.name).filter(Boolean);
-    return `역사의 인물 — ${met.map((f) => { const c = this.picked.get(f.id); return `${f.name}${c ? '(' + c.label + ')' : ''}`; }).join(' · ')}을(를) 만났다.${wl}${kept.length ? ` 지나간 자리에서 ${kept.join('·')}을(를) 챙겼다.` : ''}${rl}${gl}`;
+    return `${TAG} — ${met.map((f) => { const c = this.picked.get(f.id); return `${f.name}${c ? '(' + c.label + ')' : ''}`; }).join(' · ')}을(를) 만났다.${wl}${kept.length ? ` 지나간 자리에서 ${kept.join('·')}을(를) 챙겼다.` : ''}${rl}${gl}`;
   }
 }
