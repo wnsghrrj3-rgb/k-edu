@@ -27,7 +27,37 @@ export function bondOf(g) { const name = g?.world?.spark?.bond?.name; if (!name 
 export const bondLine = (b) => !b ? '' : b.how === 'mended' ? `👤 ${b.name}과 다시 벗` : b.how === 'friend' ? `👤 ${b.name}의 벗` : b.how === 'enemy' ? `👤 ${b.name}과 등졌다` : `👤 ${b.name}을 만났다`;
 export function carryRecord(life, branch) {
   const v = life.values; const d = life.d;
-  return { craft: v.craft, heart: v.heart, grain: v.grain || 0, rank: v.rank || 0, cap: life.cap(), branch: branch.id, title: branch.title || null, status: life.status || null, statusName: life.statusName || null, nation: life.nation || null, nationName: life.nationName || null, hurt: [...life.hurt], marks: [...life.hurt].map((h) => d.hurts?.[h]?.name || h), sits: life.log.length, heirlooms: heirloomsOf(life.g?.era), titles: titlesOf(life.g?.era), bond: bondOf(life.g), beasts: beastsOf(life.g?.era), figures: figuresOf(life.g), t: Date.now() };   // 115: 🐾 만난 짐승도 싣는다 · 137: 👤 만난 인물도
+  return { craft: v.craft, heart: v.heart, grain: v.grain || 0, rank: v.rank || 0, cap: life.cap(), branch: branch.id, title: branch.title || null, status: life.status || null, statusName: life.statusName || null, nation: life.nation || null, nationName: life.nationName || null, hurt: [...life.hurt], marks: [...life.hurt].map((h) => d.hurts?.[h]?.name || h), sits: life.log.length, heirlooms: heirloomsOf(life.g?.era), titles: titlesOf(life.g?.era), bond: bondOf(life.g), beasts: beastsOf(life.g?.era), figures: figuresOf(life.g), looks: life.lookLines?.() || [], picks: life.pickLines?.() || [], vn: life.vn ? { craft: life.vn('craft'), heart: life.vn('heart'), grain: life.vn('grain'), rank: life.vn('rank') } : null, t: Date.now() };   // 115: 🐾 만난 짐승도 싣는다 · 137: 👤 만난 인물도 · 145: 세상 모습 줄·고른 길·값 이름(연대기)
+}
+
+/** 145: 족보 기록(kworld_jokbo) 한 줄 — 끝 카드(life.endCard)와 서버 동기화(save.syncJokbo)가 같은 꼴로 쓴다. 역사 족보는 앞 다섯 칸만 읽고, 연대기 세계(케이시티)는 뒤 칸(값·모습·고른 길·광장 시민)까지 읽는다 */
+export function histEntry(era, rec) {
+  return { era, branch: rec.branch, title: rec.title, status: rec.statusName, statusId: rec.status || null, t: rec.t, vals: { craft: rec.craft ?? 0, heart: rec.heart ?? 0, grain: rec.grain ?? 0, rank: rec.rank ?? 0 }, sits: rec.sits || 0, looks: rec.looks || [], picks: rec.picks || [], met: (rec.figures || []).filter((f) => f?.name).map((f) => ({ name: f.name, choice: f.choice || null })), vn: rec.vn || null };
+}
+
+/** 145: 연대기 줄 모으기 — world.chronicle = { era, title, note, tag, unit } 인 세계(케이시티 「한내시 연대기」). 같은 폴더를 해마다 다시 사는 세계라 족보(대 11)가 아니라 「n년째」 한 줄씩. g 가 있고 아직 끝 안 난 해면 맨 끝에 산 채로 */
+export function chronicle(ch, g = null, store = (k) => read(k)) {
+  const era = ch?.era || g?.era; const hist = (store('kworld_jokbo') || []).filter((h) => h.era === era).sort((a, b) => (a.t || 0) - (b.t || 0));
+  const rows = hist.map((h, i) => ({ kind: 'lived', n: i + 1, t: h.t, title: h.title || h.branch || '', status: h.status || null, vals: h.vals || null, sits: h.sits || 0, looks: h.looks || [], picks: h.picks || [], met: h.met || [], vn: h.vn || null }));
+  const now = g && g.era === era && g.life && !g.flags?.has('life:end') ? g.life : null;
+  if (now) rows.push({ kind: 'now', n: rows.length + 1, t: 0, title: '지금 사는 중', status: now.statusName || null, vals: { ...now.values }, sits: now.log.length, looks: now.lookLines?.() || [], picks: now.pickLines?.() || [], met: figuresOf(g).map((f) => ({ name: f.name, choice: f.choice })), vn: now.vn ? { craft: now.vn('craft'), heart: now.vn('heart'), grain: now.vn('grain'), rank: now.vn('rank') } : null });
+  return rows;
+}
+const cvals = (r) => { const v = r.vals || {}; const n = r.vn || {}; const one = (k, icon) => `${(n[k] || icon).split(' ')[0]} ${v[k] ?? 0}`; const out = [one('craft', V.craft), one('heart', V.heart)]; if (v.grain) out.push(one('grain', V.grain)); if (v.rank) out.push(one('rank', V.rank)); return out.join(' · '); };
+
+/** 145: 연대기 한 장 — 해마다 끝 갈림·값·세상이 된 모습·고른 길·광장에 온 시민. 점수·판단 0 */
+export function chronicleHtml(ch, rows, opts = {}) {
+  const unit = ch.unit || '년째'; const lived = rows.filter((r) => r.kind === 'lived').length; const last = [...rows].reverse().find((r) => r.kind === 'lived');
+  const head = `<div class="tag">${esc(opts.tag || ch.tag || '연대기')}</div><h3>${esc(ch.title || '연대기')}</h3><p class="sub">${esc(ch.note || '')}</p><p class="jsum">${lived ? `${lived}${unit}까지 살았다` : '아직 한 해도 다 살지 않았다'}${rows.some((r) => r.kind === 'now') ? ` · 지금 ${rows.length}${unit}` : ''}${last ? ` · 지난 해 「${esc(last.title)}」` : ''}</p>`;
+  const body = rows.map((r) => {
+    const lk = r.looks?.length ? `<div class="jg jlk">🏙 ${r.looks.map((x) => esc(x)).join(' <span class="jd">·</span> ')}</div>` : '';
+    const pk = r.picks?.length ? `<div class="jg jpk">🗳 ${r.picks.map((p) => `${p.tag ? `<span class="jd">[${esc(p.tag)}]</span> ` : ''}${esc(p.title)} → <b>${esc(p.choice)}</b>`).join(' <span class="jd">·</span> ')}</div>` : '';
+    const mt = r.met?.length ? `<div class="jg jfg">🗣 광장에 온 시민 — ${r.met.map((m) => esc(m.name) + (m.choice ? `(${esc(m.choice)})` : '')).join(' · ')}</div>` : '';
+    return `<li class="jrow ${r.kind}"><span class="jn">${r.n}${esc(unit)}</span><div><div class="jt">${r.kind === 'now' ? '🔶 ' : '✦ '}${esc(r.title)}</div>${r.status ? `<div class="jw">🏠 ${esc(r.status)}</div>` : ''}<div class="jv">${cvals(r)}${r.sits ? ` · 겪은 상황 ${r.sits}` : ''}${r.t ? ` <span class="jd">${when(r.t)}</span>` : ''}</div>${lk}${pk}${mt}</div></li>`;
+  }).join('');
+  const trail = rows.filter((r) => r.kind === 'lived').map((r) => esc(r.title)).join(' → ');
+  const foot = trail ? `<div class="jchest jtrail"><div class="jct">🧭 ${esc(ch.trailTitle || '거쳐 온 길')}</div><p>${trail}</p><p class="sub">${esc(ch.foot || '해마다 고른 것이 다음 해 첫 상황으로 돌아온다. 점수는 없다 — 누가 웃고 누가 울었는지만 남는다.')}</p></div>` : '';
+  return `<div class="chk life jokbo chronicle">${head}<ol class="jlist">${body}</ol>${foot}</div>`;
 }
 
 /** 줄 모으기 — chain.eras 순서대로. g 가 있으면 지금 사는 시대 줄은 산 채로(값·신분은 지금 것) */
@@ -81,17 +111,18 @@ export function titlesHtml(rows, store = (k) => read(k)) {
   return `<div class="jchest jtitles"><div class="jct">🏅 붙은 이름 <span class="jd">${items.length}</span></div><ul>${items.map((t) => `<li><b>${t.bitter ? '🩹' : '🏅'} ${esc(t.name)}</b><span class="jce">${t.idx}대 ${esc(t.short)}</span>${t.line ? `<div class="jcf">${esc(t.line)}</div>` : ''}</li>`).join('')}</ul><p class="sub">한 일로 붙는 이름. 쓴 것도 같이 내려간다.</p></div>`;
 }
 
-export const JOKBO_CSS = `.jtitles{border-color:#9fb8d8;background:rgba(235,242,255,.6)}.jrow .jg{font-size:12.5px;color:#2d6b3f;margin-top:2px}.jrow .jbz{color:#7a4a1c}.jrow .jfg{color:#4a3a6a}.jchest{margin:16px 0 4px;padding:12px 14px;border:1px dashed #c9a45c;border-radius:12px;background:rgba(255,250,235,.7)}.jchest .jct{font-weight:700;font-size:15px;margin-bottom:6px}.jchest ul{list-style:none;padding:0;margin:0}.jchest li{padding:5px 0;border-top:1px solid rgba(201,164,92,.25);font-size:13.5px}.jchest li:first-child{border-top:0}.jchest .jce{font-size:11px;opacity:.6;margin-left:8px}.jchest .jcf{font-size:12px;color:#5a4a2a;margin-top:2px;line-height:1.5}.jokbo .jsum{font-weight:700;margin:4px 0 10px}.jlist{list-style:none;padding:0;margin:0;border-left:2px solid #d9caa6;margin-left:14px}.jrow{display:flex;gap:12px;padding:8px 0 8px 16px;position:relative;line-height:1.5}.jrow::before{content:"";position:absolute;left:-7px;top:16px;width:12px;height:12px;border-radius:50%;background:#dfa53f;border:2px solid #fbf6ea;box-shadow:0 0 0 1px #c9a45c}.jrow.none::before{background:#e8dfca}.jrow.old::before{background:#bfb49a}.jrow.now::before{background:#e86a4a;box-shadow:0 0 0 3px rgba(232,106,74,.3)}.jrow .jn{flex:none;width:34px;font-size:12px;color:#9a6a1c;font-weight:700;padding-top:3px}.jrow .je{font-family:var(--serif);font-size:16px}.jrow .jy{font-size:11px;opacity:.6;margin-left:6px}.jrow .jw{font-size:13px;color:#8a5a12}.jrow .jt{font-size:15px;font-weight:700;margin-top:1px}.jrow .jv{font-size:12.5px;opacity:.85;font-variant-numeric:tabular-nums}.jrow .jh{color:#b7492b}.jrow .jd{opacity:.5;font-size:11px}.jrow .jc{font-size:12px;color:#5a4a2a;margin-top:3px;background:rgba(255,255,255,.55);border-radius:8px;padding:4px 8px}.jrow.none{opacity:.45}.jrow.none .jt{font-weight:400;font-size:13px}.jrow.old{opacity:.55}`;
+export const JOKBO_CSS = `.jrow .jlk{color:#1f4f7a}.jrow .jpk{color:#5a4a2a}.jrow .jpk b{color:#8a5a12}.jtrail{border-color:#8fb0c9;background:rgba(230,240,248,.6)}.jtrail p{margin:4px 0;font-size:13.5px;line-height:1.6}.jtitles{border-color:#9fb8d8;background:rgba(235,242,255,.6)}.jrow .jg{font-size:12.5px;color:#2d6b3f;margin-top:2px}.jrow .jbz{color:#7a4a1c}.jrow .jfg{color:#4a3a6a}.jchest{margin:16px 0 4px;padding:12px 14px;border:1px dashed #c9a45c;border-radius:12px;background:rgba(255,250,235,.7)}.jchest .jct{font-weight:700;font-size:15px;margin-bottom:6px}.jchest ul{list-style:none;padding:0;margin:0}.jchest li{padding:5px 0;border-top:1px solid rgba(201,164,92,.25);font-size:13.5px}.jchest li:first-child{border-top:0}.jchest .jce{font-size:11px;opacity:.6;margin-left:8px}.jchest .jcf{font-size:12px;color:#5a4a2a;margin-top:2px;line-height:1.5}.jokbo .jsum{font-weight:700;margin:4px 0 10px}.jlist{list-style:none;padding:0;margin:0;border-left:2px solid #d9caa6;margin-left:14px}.jrow{display:flex;gap:12px;padding:8px 0 8px 16px;position:relative;line-height:1.5}.jrow::before{content:"";position:absolute;left:-7px;top:16px;width:12px;height:12px;border-radius:50%;background:#dfa53f;border:2px solid #fbf6ea;box-shadow:0 0 0 1px #c9a45c}.jrow.none::before{background:#e8dfca}.jrow.old::before{background:#bfb49a}.jrow.now::before{background:#e86a4a;box-shadow:0 0 0 3px rgba(232,106,74,.3)}.jrow .jn{flex:none;width:34px;font-size:12px;color:#9a6a1c;font-weight:700;padding-top:3px}.jrow .je{font-family:var(--serif);font-size:16px}.jrow .jy{font-size:11px;opacity:.6;margin-left:6px}.jrow .jw{font-size:13px;color:#8a5a12}.jrow .jt{font-size:15px;font-weight:700;margin-top:1px}.jrow .jv{font-size:12.5px;opacity:.85;font-variant-numeric:tabular-nums}.jrow .jh{color:#b7492b}.jrow .jd{opacity:.5;font-size:11px}.jrow .jc{font-size:12px;color:#5a4a2a;margin-top:3px;background:rgba(255,255,255,.55);border-radius:8px;padding:4px 8px}.jrow.none{opacity:.45}.jrow.none .jt{font-weight:400;font-size:13px}.jrow.old{opacity:.55}`;
 
 /** 게임 안에서 열기 — 끝 카드·HUD·J 키. chain.json 은 base 의 한 단계 위(eras/) */
 export async function openJokbo(g, onClose = null, opts = {}) {
-  let chain = null; try { chain = await fetch(g.base.replace(/[^/]+\/$/, '') + 'chain.json').then((r) => r.json()); } catch { }
-  if (!chain) { g.ui.say('족보를 못 찾았다.', 3000); return; }
+  const ch = g.world?.chronicle || null;   // 145: 연대기 세계(케이시티)는 chain.json 없이 kworld_jokbo 의 이 세계 줄만
+  let chain = null; if (!ch) { try { chain = await fetch(g.base.replace(/[^/]+\/$/, '') + 'chain.json').then((r) => r.json()); } catch { } if (!chain) { g.ui.say('족보를 못 찾았다.', 3000); return; } }
   if (typeof document !== 'undefined' && !document.getElementById('jokbo-css')) { const st = document.createElement('style'); st.id = 'jokbo-css'; st.textContent = JOKBO_CSS; document.head.appendChild(st); }
-  const rows = collect(chain, g); const history = read('kworld_jokbo') || [];
+  const history = read('kworld_jokbo') || [];
+  const html = ch ? chronicleHtml(ch, chronicle(ch, g), { tag: opts.go ? `${ch.tag || '연대기'} · ${opts.go.label.replace(/ →$/, '')}` : (ch.tag || '연대기') }) : jokboHtml(chain, collect(chain, g), { history, tag: opts.tag });
   const wasOpen = g.ui.isOpen?.(); g.p.enabled = false;
   const btns = [];
   if (opts.go) btns.push({ label: opts.go.label, primary: true, onClick: () => { g.ui.close(); opts.go.onClick(); } });   // 시대 사이 — 족보 한 장이 먼저 펼쳐지고 다음 시대로
   btns.push({ label: opts.go ? '돌아가기' : '닫기', primary: !opts.go, onClick: () => { g.ui.close(); if (onClose) onClose(); else if (!wasOpen) g.p.enabled = true; } });
-  g.ui.open(jokboHtml(chain, rows, { history, tag: opts.tag }), btns);
+  g.ui.open(html, btns);
 }

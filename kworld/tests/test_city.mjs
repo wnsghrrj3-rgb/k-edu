@@ -1,4 +1,4 @@
-// 케이시티(141~144) 「한내시」 — 세계 팩 구조 + 고리 시험: 읍내 터(daehan.glb) 빌림 · 값 이름(일자리·민심·예산) · 시작 예산 5 · 딜레마 셋(공장·시장 골목·예산) + 섞여 일곱(개울·놀이터·달동네·역 앞·둔치 축제·보건소·자전거 길, 판마다 4) · 다음 해 넘겨받기(민심·예산 절반) · 선택지마다 📜 「~해서 → 그래서」 · 끝 갈림 5(판단 0) · 성찰 물음 · 시민 NPC 이해관계 · 143 광장에 온 시민 13(선택 뒤 그 시민이 광장으로 걸어와 말을 건다) · 시민 회의 150초(셋을 들으면 넷째 길, 늦으면 내년) · 144 둘째 해 전용 상황 6(지난 해 갈림이 올해 첫 상황으로 돌아온다 — life `only`)
+// 케이시티(141~144) 「한내시」 — 세계 팩 구조 + 고리 시험: 읍내 터(daehan.glb) 빌림 · 값 이름(일자리·민심·예산) · 시작 예산 5 · 딜레마 셋(공장·시장 골목·예산) + 섞여 일곱(개울·놀이터·달동네·역 앞·둔치 축제·보건소·자전거 길, 판마다 4) · 다음 해 넘겨받기(민심·예산 절반) · 선택지마다 📜 「~해서 → 그래서」 · 끝 갈림 5(판단 0) · 성찰 물음 · 시민 NPC 이해관계 · 143 광장에 온 시민 13(선택 뒤 그 시민이 광장으로 걸어와 말을 건다) · 시민 회의 150초(셋을 들으면 넷째 길, 늦으면 내년) · 144 둘째 해 전용 상황 6(지난 해 갈림이 올해 첫 상황으로 돌아온다 — life `only`) · 145 한내시 연대기(족보 대신 「n년째」 한 장 — 값·모습·고른 길·광장 시민)
 import * as THREE from 'three';
 import fs from 'fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -71,6 +71,16 @@ ok(g.flags.has('bg:lunch') && g.life.values.grain === 3 && g.flags.has('sit:budg
 closeCard(); await new Promise((r) => setTimeout(r, 400)); ok(g.flags.has('life:end') && g.flags.has('life:clean_jobs'), `끝 갈림 = 맑은 개울, 느린 도시(${[...g.flags].filter((f) => f.startsWith('life:')).join(',')})`);
 { const h = S.panels.find((x) => x.includes('chk life end')) || ''; ok(h.includes('🔧 일자리') && h.includes('💰 예산') && !h.includes('솜씨'), `끝 카드 값 이름 = 일자리·민심·예산(솜씨 없음) ${h ? '' : '— 끝 카드 없음: ' + S.panels.slice(-2).map((x) => x.slice(0, 80)).join(' | ')}`); }
 const REC = localStorage.getItem('kworld_carry:city');   // 142: 첫 해 끝 카드가 남긴 것(아래 넘겨받기 시험용)
+// ---- 145: 한내시 연대기 — 끝 카드가 kworld_jokbo 에 값·모습·고른 길까지 남기고, 족보 대신 「n년째」 한 장 ----
+const { chronicle, chronicleHtml, histEntry, openJokbo } = await import('../core/jokbo.js');
+ok(world.chronicle?.era === 'city' && world.chronicle.title === '한내시 연대기' && world.chronicle.unit === '년째', 'world.json chronicle(한내시 연대기)');
+ok(S.panel?.b.some((b) => b.label === '📜 연대기') && !S.panel.b.some((b) => b.label === '📜 족보'), '끝 카드 단추 「📜 연대기」(족보 아님)');
+{ const hist = JSON.parse(localStorage.getItem('kworld_jokbo') || '[]'); const h = hist[hist.length - 1]; ok(h && h.era === 'city' && h.title === '맑은 개울, 느린 도시' && h.vals?.heart === 7 && h.vals.grain === 3 && h.sits === 3 && h.vn?.grain === '💰 예산', `기록 한 줄 = 갈림·값·겪은 상황·값 이름 (${JSON.stringify({ t: h?.title, v: h?.vals, s: h?.sits })})`);
+  ok(h.looks.length === 3 && h.looks[0].startsWith('정화 시설을 달고') && h.looks.some((x) => x.includes('골목 장날')) && h.looks.some((x) => x.startsWith('급식이 바뀌었다')), `🏙 모습 = 맞은 규칙 전부(「그 뒤」 카드는 하나만) ${h.looks.length}`);
+  ok(h.picks.length === 3 && h.picks[0].sit === 'factory' && h.picks[0].choice.includes('조건을 달') && h.picks[2].choice.includes('급식') && h.picks.every((p) => !p.tag), '🗳 고른 길 = 상황 셋 → 고른 것(첫 해라 둘째 해 태그 없음)');
+  const rows = chronicle(world.chronicle, null, (k) => JSON.parse(localStorage.getItem(k) || 'null')); ok(rows.length === 1 && rows[0].kind === 'lived' && rows[0].n === 1 && rows[0].title === '맑은 개울, 느린 도시', '연대기 줄 1(1년째)');
+  const html = chronicleHtml(world.chronicle, rows); ok(html.includes('1년째') && html.includes('1년째까지 살았다') && html.includes('🏙 정화 시설을 달고') && html.includes('🗳 ') && html.includes('→ <b>') && html.includes('한내시가 거쳐 온 길') && !/점수|옳|착한/.test(html.replace('점수는 없다', '')), '연대기 한 장 — 모습·고른 길·거쳐 온 길, 점수·판단 0');
+  const e = histEntry('neo', { branch: 'b', title: 't', statusName: 's', craft: 1, heart: 2, t: 5 }); ok(e.era === 'neo' && e.status === 's' && e.vals.craft === 1 && e.looks.length === 0 && e.met.length === 0, 'histEntry — 역사 시대도 같은 꼴(빈 칸)'); }
 dismiss();
 // 섞여: 공장을 그냥 들이면 개울 냄새가 열린다 / 조건을 달면 안 열린다
 { const T = mkGame(); T.goTo('gongjang'); T.use('gongjang_1'); T.pick('들인다'); T.closeCard(); T.goTo('dari'); ok(T.g.flags.has('sit:river:open'), '그냥 들이면 개울 냄새 상황이 열린다'); T.use('dari_1'); T.pick('모른 척한다'); ok(T.g.flags.has('rv:ignore') && T.g.life.values.heart === 0, '모른 척 → 👥-2(들여서 2였던 민심이 0)');
@@ -83,6 +93,9 @@ dismiss();
 // ---- 142: 다음 해 넘겨받기 — 첫 해 끝 카드가 남긴 kworld_carry:city 를 다음 판이 절반 받는다 · 「다시 뽑힌 시장」 · 지난 해 말 ----
 { ok(REC, '첫 해 끝 카드가 kworld_carry:city 를 남겼다'); const rec = JSON.parse(REC); localStorage.setItem('kworld_carry:city', REC); ok(rec.branch === 'clean_jobs' && rec.heart === 7 && rec.grain === 3, `남긴 것 = 갈림 clean_jobs · 👥7 💰3 (${rec.branch} ${rec.heart} ${rec.grain})`);
   const Y = mkGame({ keepCarry: true }); ok(Y.g.life.values.grain === 5 + 2 && Y.g.life.values.heart === 3 + 4 && Y.g.flags.has('from:clean_jobs'), `둘째 해 시작 = 💰5+2(절반 반올림) 👥3+4 · from:clean_jobs (${JSON.stringify(Y.g.life.values)})`);
+  { const rows = chronicle(world.chronicle, Y.g, (k) => JSON.parse(localStorage.getItem(k) || 'null')); ok(rows.length === 2 && rows[1].kind === 'now' && rows[1].n === 2 && rows[1].status === '다시 뽑힌 시장' && rows[1].vals.grain === 7 && rows[1].sits === 0, '둘째 해 사는 중이면 2년째 줄이 산 채로(🔶)');
+    const html = chronicleHtml(world.chronicle, rows); ok(html.includes('지금 2년째') && html.includes('🔶 지금 사는 중') && html.includes('지난 해 「맑은 개울, 느린 도시」'), '연대기 요약 — 지금 2년째 · 지난 해');
+    let opened = null; Y.g.ui.open = (h, b) => { opened = { h, b }; }; globalThis.fetch = () => { throw new Error('연대기는 chain.json 을 안 읽는다'); }; await openJokbo(Y.g); ok(opened && opened.h.includes('한내시 연대기') && opened.h.includes('2년째') && opened.b.some((b) => b.label === '닫기'), 'openJokbo — 연대기 세계는 chain.json 없이 한 장'); delete globalThis.fetch; }
   ok(Y.g.life.statusName === '다시 뽑힌 시장' && world.spark.titles.some((t) => t.on === 'from:clean_jobs'), `신분 「다시 뽑힌 시장」(${Y.g.life.statusName}) · 칭호 「둘째 해 시장」 데이터`); ok(Y.g.life.inheritHtml().includes('지난 해') && Y.g.life.inheritHtml().includes('맑은 개울'), '탐험일지 🧬 「지난 해 「맑은 개울, 느린 도시」」');
   ok(npcs.eupjang.lines.some((l) => l.if === 'from:clean_jobs') && world.spark.gaze.rules.some((r) => r.if === 'from:debt_town'), '비서·마을의 눈이 지난 해 갈림을 기억해 말한다');
   localStorage.removeItem('kworld_carry:city'); const Z = mkGame(); ok(Z.g.life.values.grain === 5 && Z.g.life.statusName === '새 시장' && Z.g.life.inheritHtml().includes('첫 사람'), '기록 없으면 첫 해 그대로(💰5 · 새 시장 · 「이 집의 첫 사람」)'); }
@@ -138,4 +151,4 @@ const idx = fs.readFileSync(path.join(root, 'index.html'), 'utf8'); ok(idx.inclu
   const Y = year2('green_town'); Y.goTo('yeok'); ok(Y.g.flags.has('sit:y2_youth:open') && Y.g.flags.has('sit:parking:open'), '옛 모습 그대로의 둘째 해 = 역에 돌아오는 청년(주차장과 같은 자리)'); Y.closeCard(); Y.use('train_1'); Y.pick('빈 가게를 청년에게'); ok(Y.g.flags.has('y2:shop') && Y.g.life.values.craft === 3 && world.bridge.beats[1].rules.some((r) => r.if === 'y2:shop'), '빈 가게를 청년에게 → 🔧+1 · 「그 뒤」 줄');
   localStorage.setItem('kworld_carry:city', JSON.stringify({ ...rec, branch: 'mixed' })); const M = mkGame({ keepCarry: true }); ok(!M.g.life.situations.some((s) => s.only) && M.g.life.statusName === '다시 뽑힌 시장', '반쯤 웃는 도시의 둘째 해엔 돌아오는 상황이 없다(비서 한 줄만)'); localStorage.removeItem('kworld_carry:city'); }
 
-console.log(`\n케이시티(141~144): ${pass} 통과 · ${fail} 실패`); process.exit(fail ? 1 : 0);
+console.log(`\n케이시티(141~145): ${pass} 통과 · ${fail} 실패`); process.exit(fail ? 1 : 0);

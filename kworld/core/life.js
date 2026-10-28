@@ -6,7 +6,7 @@
 //  · 흔적(hurt): 다치면 절뚝이고(느려짐) 어떤 선택지는 회색이 된다. 끝까지 남는다.
 //  · 천장(cap): d.rank.open 이면 값 🎖 벼슬이 열린다. 신분 규칙의 cap 이 오를 수 있는 높이 — 아무리 해도 그 위로는 못 오른다(통일신라 골품). 막히면 깃발 rank:capped.
 //  · 꼭 나오는 상황은 전부, 섞여 나오는 상황은 판마다 몇 개만(태어남 때 정한 씨앗).
-import { carryRecord, openJokbo, titlesOf, bondOf, bondLine, heirloomsOf } from './jokbo.js';
+import { carryRecord, openJokbo, titlesOf, bondOf, bondLine, heirloomsOf, histEntry } from './jokbo.js';
 import { recordStatus, openDogam, beastLine } from './dogam.js';
 const ABIL = ['눈', '손', '발', '배', '몸'];
 const DOTS = (lv) => ({ 3: '●●●', 2: '●●○', 1: '●○○' })[Math.max(1, Math.min(3, lv))] || '●●○';
@@ -234,7 +234,7 @@ export class Life {
     const g = this.g; g.p.enabled = false; const v = this.values; const branch = (e.branches || []).find((b) => this.cond(b.if)) || (e.branches || []).slice(-1)[0] || {};
     g.flag(['life:end', 'life:' + (branch.id || 'end')]); g.results = [...(g.results || []), { id: 'life:end', concept: 'hist.life', ok: true, open: JSON.stringify({ craft: v.craft, heart: v.heart, hurt: [...this.hurt], log: this.log, branch: branch.id }) }];
     const marks = [...this.hurt].map((h) => this.d.hurts?.[h]?.name || h);
-    const rec = carryRecord(this, branch); try { localStorage.setItem('kworld_carry:' + g.era, JSON.stringify(rec)); const hist = JSON.parse(localStorage.getItem('kworld_jokbo') || '[]'); hist.push({ era: g.era, branch: rec.branch, title: rec.title, status: rec.statusName, statusId: rec.status || null, t: rec.t }); localStorage.setItem('kworld_jokbo', JSON.stringify(hist.slice(-300))); } catch { }   // 넘겨줄 것 + 족보 기록(지난 집까지)
+    const rec = carryRecord(this, branch); try { localStorage.setItem('kworld_carry:' + g.era, JSON.stringify(rec)); const hist = JSON.parse(localStorage.getItem('kworld_jokbo') || '[]'); hist.push(histEntry(g.era, rec)); localStorage.setItem('kworld_jokbo', JSON.stringify(hist.slice(-300))); } catch { }   // 넘겨줄 것 + 족보 기록(지난 집까지)
     g.save?.recordEnd?.(rec);   // 서버 족보(정식 좌석만, 조용히)
     const html = `<div class="chk life end"><div class="tag">${esc(e.tag || '이번 삶')}</div><h3>${esc(branch.title || e.title || '')}</h3>${(branch.body || []).map((b) => `<p>${esc(b)}</p>`).join('')}<ul class="mlist"><li>${this.vn('craft')} <b>${v.craft}</b> · ${this.vn('heart')} <b>${v.heart}</b> · ${this.vn('grain')} ${this.d.grain?.open ? `<b>${v.grain || 0}</b>` : '🔒'}${this.d.rank?.open ? ` · ${this.vn('rank')} <b>${v.rank || 0}</b>${this.cap() != null ? ` / 천장 ${this.cap()}` : ''}` : ''}</li><li>능력 ${ABIL.map((a) => `${a} ${DOTS(this.abil[a])}`).join(' · ')}</li>${marks.length ? `<li>흔적 — ${esc(marks.join(', '))}</li>` : ''}${this.nationName || this.statusName ? `<li>${this.nationName ? `🏳️ ${esc(this.nationName)} · ` : ''}${this.statusName ? `🏠 ${esc(this.statusName)}` : ''}</li>` : ''}<li>겪은 상황 ${this.log.length}가지</li>${(() => { const ts = titlesOf(g.era); const b = bondOf(g); return ts.length || b ? `<li>${ts.length ? `🏅 ${esc(ts.map((t) => (t.bitter ? '🩹' : '') + t.name).join(', '))}` : ''}${ts.length && b ? ' · ' : ''}${esc(bondLine(b))}</li>` : ''; })()}${rec.beasts?.length ? `<li>${esc(beastLine(rec.beasts))}</li>` : ''}${(() => { let h = []; try { h = JSON.parse(localStorage.getItem('kworld_heirlooms') || '[]'); } catch { } return h.length ? `<li>🎁 집에 내려오는 것 — ${esc(h.map((x) => x.name).join(', '))}</li>` : ''; })()}</ul>${e.fact ? `<div class="facts"><div>📜 <b>실제</b> ${esc(e.fact)}</div></div>` : ''}${e.next ? `<p class="sub">${esc(e.next)}</p>` : ''}</div>`;
     const btns = [{ label: e.again || '다시 태어난다', primary: true, onClick: () => { g.save?.clear(); const u = new URL(location.href); u.searchParams.set('resume', '0'); location.href = u.toString(); } }];
@@ -243,7 +243,7 @@ export class Life {
       const go = () => { const u = new URL(location.href); u.searchParams.set('era', gt.next); location.href = u.toString(); };
       this.bridge(() => openJokbo(g, show, { tag: '족보 · 다음 대로', go: { label: `${gt.nextName}로 →`, onClick: go } }));   // 시대 사이 — 「그 뒤」 카드(세상이 바뀐 까닭) → 족보(이번 대 한 줄이 방금 적혔다) → 다음 시대로
     } });
-    btns.push({ label: '📜 족보', onClick: () => openJokbo(g, show) });
+    btns.push({ label: g.world?.chronicle ? `📜 ${g.world.chronicle.tag || '연대기'}` : '📜 족보', onClick: () => openJokbo(g, show) });   // 145: 연대기 세계(케이시티)는 「연대기」
     btns.push({ label: '더 둘러보기', onClick: () => { g.ui.close(); g.p.enabled = true; } });
     show(); g.save?.touch();
   }
@@ -273,10 +273,15 @@ export class Life {
   }
   /** 「그 뒤」 — 시대가 바뀐 까닭. 끝 카드 뒤·족보 앞에 한 장: 이 시대의 물음 → 한 줄 답 → 세상·우리 집(끝 갈림·값·흔적 깃발로 갈림)·다음 시대 첫 줄 → 「왜 세상이 바뀌었을까」 물음 하나(틀리면 정답 한 줄, 되돌아가기 없음 — 시대는 끝났다).
    *  world.bridge = { tag, years, answer, beats:[{k, text | rules:[{if,text}], text}], q:{q, a:[정답, …], why}, next } — 없으면 그냥 지나간다. 한 번(life:bridge). */
+  /** 145: 「그 뒤」 카드 줄 — beat 마다 첫 맞는 규칙 하나 */
+  bridgeLines() { const b = this.g.world?.bridge; const pick = (bt) => { if (!bt) return ''; if (typeof bt === 'string') return bt; const r = (bt.rules || []).find((x) => !x.if || this.cond(x.if)); return r ? r.text : (bt.text || ''); }; return (b?.beats || []).map((bt) => ({ k: bt.k || '', t: pick(bt) })).filter((x) => x.t); }
+  /** 145: 세상이 된 모습 줄 전부 — rules 가 있는 beat 의 맞는 규칙 모두(「그 뒤」 카드는 beat 마다 하나만 보이지만 연대기(jokbo.chronicle)엔 전부 남는다) */
+  lookLines() { const b = this.g.world?.bridge; return (b?.beats || []).filter((bt) => bt && bt.rules).flatMap((bt) => bt.rules.filter((x) => x.if && this.cond(x.if)).map((x) => x.text)); }
+  /** 145: 고른 길 — 겪은 상황마다 { sit, tag, title, choice }(연대기 「고른 길」 줄). 운 카드는 제목만 */
+  pickLines() { return this.log.map((l) => { const s = this.sit(l.sit); if (!s) return null; const c = (s.choices || s.outcomes || []).find((x) => x.id === l.choice); return { sit: s.id, tag: s.tag || null, title: String(s.title || '').split(' — ')[0], choice: c?.title || String(l.choice || '') }; }).filter(Boolean); }
   bridge(done) {
     const g = this.g, b = g.world?.bridge; if (!b || g.flags.has('life:bridge')) return done(); g.sound?.play?.('gate', 0.45); this.scene(b.sound, 1100);   /* 125: 다음 시대가 먼저 들린다 — 저 너머의 소리 · 126: 물음 맞음·틀림은 q.sound.ok/miss(시대 소리), 없으면 good/bad */
-    const pick = (bt) => { if (!bt) return ''; if (typeof bt === 'string') return bt; const r = (bt.rules || []).find((x) => !x.if || this.cond(x.if)); return r ? r.text : (bt.text || ''); };
-    const lines = (b.beats || []).map((bt) => ({ k: bt.k || '', t: pick(bt) })).filter((x) => x.t);
+    const lines = this.bridgeLines();
     const ear = this.earLine();   // 119: 👂 먼저 들은 집·미리 한 집 한 줄
     const heir = this.heirLine();   // 129: 🧬 다음 대가 받는 것 한 줄
     const door = g.doors?.doorLine?.() || '';   // 130: 🚪 어느 문 앞에서 돌아섰나 한 줄
@@ -297,7 +302,7 @@ export class Life {
     if (typeof document === 'undefined' || typeof document.createElement !== 'function' || document.getElementById('life')) return;
     const st = document.createElement('style'); st.textContent = `.inherit{margin:10px 0 2px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:12.5px;line-height:1.5}.inherit .mhint{margin-top:3px}#life{position:fixed;top:199px;right:22px;width:150px;background:var(--panel);border:1px solid var(--line);padding:10px 13px;border-radius:14px;font-size:12px;backdrop-filter:blur(10px);line-height:1.55}#life .v{display:flex;justify-content:space-between}#life .v b{font-variant-numeric:tabular-nums}#life .lock{opacity:.55}#life .ab{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:0 8px;font-size:11px;letter-spacing:.5px}#life .ab span i{font-style:normal;color:var(--accent2);letter-spacing:1px;text-shadow:0 0 6px rgba(233,182,91,.35)}#life .v b{color:#fff;font-size:13px}#life .v span{opacity:.85}#life .hurt{margin-top:5px;color:#f3a05a;font-size:11px}#life .up{animation:lifeup .9s ease}@keyframes lifeup{0%{transform:scale(1.25);color:#ffe08a}100%{transform:none}}.chk.life .why{background:rgba(255,220,138,.12);border-left:3px solid #ffe08a;padding:8px 10px;border-radius:8px}.chk.life .delta{font-weight:700;letter-spacing:.3px}.chk.life.bad .tag{color:#f3a05a}.pbtns button.gray{opacity:.45;cursor:not-allowed;text-decoration:line-through}@media(max-height:899px){#life{max-height:calc(100vh - 199px - 190px);overflow:auto}}@media(max-width:760px){#life{right:10px;top:10px;width:118px;padding:7px 9px;font-size:11px;max-height:none}#life .ab{display:none}}@media(max-height:540px){#life{top:10px;left:262px;right:128px;width:auto;max-height:none;overflow:visible;padding:5px 10px;border-radius:12px;font-size:11px;line-height:1.4}#life>div{display:flex;flex-wrap:wrap;gap:0 10px;align-items:center}#life .v{gap:4px;justify-content:flex-start}#life .v b{font-size:12px}#life .ab{display:contents}#life .ab span{font-size:10.5px}#life .hurt{margin:0}#life .up{animation:none}}#jokbobtn,#dogambtn{margin-top:8px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:#f2dfb2;border-radius:999px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:.3px}#jokbobtn:hover,#dogambtn:hover{border-color:var(--accent)}#dogambtn{margin-left:6px} .chk.life.review .mlist li{font-size:12.5px;line-height:1.45;margin:7px 0;text-align:left} .chk.life.review .mlist li b{color:#e9b65b}`;
     document.head.appendChild(st); const el = document.createElement('div'); el.id = 'life'; document.body.appendChild(el); const body = document.createElement('div'); el.appendChild(body); this.el = body;   // 값은 body 에, 족보 단추는 그 밑에 남는다
-    const jb = document.createElement('button'); jb.id = 'jokbobtn'; jb.textContent = '📜 족보'; jb.title = '우리 집 족보 (J)'; jb.onclick = () => this.jokbo(); (document.getElementById('hud') || el).appendChild(jb);
+    const jb = document.createElement('button'); jb.id = 'jokbobtn'; jb.textContent = this.g.world?.chronicle ? `📜 ${this.g.world.chronicle.tag || '연대기'}` : '📜 족보'; jb.title = this.g.world?.chronicle ? `${this.g.world.chronicle.title || '연대기'} (J)` : '우리 집 족보 (J)'; jb.onclick = () => this.jokbo(); (document.getElementById('hud') || el).appendChild(jb);
     const db = document.createElement('button'); db.id = 'dogambtn'; db.textContent = '📖 도감'; db.title = '신분 도감 — 살아 본 집 (B)'; db.onclick = () => this.dogam(); (document.getElementById('hud') || el).appendChild(db);   // 왼쪽 여정 카드 밑(오른쪽 값판을 키우면 행동 단추를 덮는다)
   }
   /** 족보 한 장 — 카드가 열려 있지 않을 때만(상황 카드 도중엔 안 끼어든다) */

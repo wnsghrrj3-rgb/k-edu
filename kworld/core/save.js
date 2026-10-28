@@ -4,6 +4,7 @@
 //    시작 때 서버 저장이 이 기기 것보다 새것이면 서버 것을 쓴다(loadMerged). 끝 카드는 kworld_jokbo 에 한 줄 남기고(recordEnd),
 //    시작 때 서버 족보를 이 기기의 kworld_carry:<era>·kworld_jokbo 에 채운다(syncJokbo) — 넘겨받기·족보가 기기를 안 가린다.
 // 재개: 시작 때 저장이 있으면 「이어서 하기 / 처음부터」. 컷신·선택 판 도중엔 저장하지 않는다. 시대 이름 없음(era 키만).
+import { histEntry } from './jokbo.js';
 const LS = () => (typeof localStorage !== 'undefined' ? localStorage : null);
 const rd = (k) => { try { return JSON.parse(LS()?.getItem(k) || 'null'); } catch { return null; } };
 const wr = (k, v) => { try { LS()?.setItem(k, JSON.stringify(v)); } catch { } };
@@ -35,7 +36,7 @@ export async function syncJokbo() {
       const rec = row.record || {}; const t = rec.t || Date.parse(row.ended_at) || 0;
       const cur = rd('kworld_carry:' + row.era); if (!cur || (cur.t || 0) < t) wr('kworld_carry:' + row.era, { ...rec, t });
       if (Array.isArray(rec.heirlooms) && rec.heirlooms.length) { const hl = rd('kworld_heirlooms') || []; let added = false; for (const h of rec.heirlooms) if (h?.id && !hl.some((x) => x.id === h.id)) { hl.push({ id: h.id, era: row.era, name: h.name, tag: h.tag || null, fact: h.fact || null, t: h.t || t }); added = true; } if (added) wr('kworld_heirlooms', hl.slice(-40)); }   // 물려줄 것도 서버 → 기기
-      if (!have.has(row.era + ':' + t)) { hist.push({ era: row.era, branch: rec.branch, title: rec.title, status: rec.statusName, statusId: rec.status || null, t }); have.add(row.era + ':' + t); }
+      if (!have.has(row.era + ':' + t)) { hist.push(histEntry(row.era, { ...rec, t })); have.add(row.era + ':' + t); }   // 145: 끝 카드와 같은 꼴(연대기 칸까지)
     }
     hist.sort((a, b) => (a.t || 0) - (b.t || 0)); wr('kworld_jokbo', hist.slice(-300)); return true;
   } catch { return false; }
