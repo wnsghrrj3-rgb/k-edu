@@ -1,5 +1,5 @@
 // MATH WIZARD 진입 — 시스템(sim/) 과 스킨(skins/*) 을 잇는 유일한 곳(13 문서 2절)
-// ?skin=proto|empty|hq  ?q=low|medium|high  ?spells=all(마법 5종 시험)  ?dev=1  ?mouse=1(마우스 모드로 바로)  ?seed=n  ?grade=n  ?check=1(스킨 검사기 상시)
+// ?skin=proto|empty|hq  ?q=low|medium|high  ?spells=all(마법 5종 시험)  ?dev=1  ?mouse=1(마우스 모드로 바로)  ?seed=n  ?grade=n  ?check=1(스킨 검사기 상시)  ?zone=n(구역부터 시작: 0 길 A·1 전투장 1·2 길 B·3 전투장 2·4 보스, v1.5)
 import { createFlow } from './sim/flow/screens.js';
 import { checkInterface, checkTelegraphs, checkTargets, CONTRACT } from './contract/validate.js';
 
@@ -21,7 +21,7 @@ const text = (key, args) => { const s = textKo[key] != null ? textKo[key] : key;
 let cal = null; try { cal = JSON.parse(localStorage.getItem(CAL_KEY) || 'null'); } catch (_) {}
 let progress = null; try { progress = JSON.parse(localStorage.getItem(PROG_KEY) || 'null'); } catch (_) {} if (qs.get('level')) progress = { level: +qs.get('level'), xp: 0 };   // ?level=n 시험용
 let savedProg = '';
-const flow = createFlow({ data, grade: GRADE, freeze: DEV, cal, progress, unlock: qs.get('spells') === 'all' ? 'all' : null, ...(qs.has('seed') ? { seed: +qs.get('seed') } : {}) });
+const flow = createFlow({ data, grade: GRADE, freeze: DEV, cal, progress, unlock: qs.get('spells') === 'all' ? 'all' : null, startZone: Math.max(0, +qs.get('zone') || 0), ...(qs.has('seed') ? { seed: +qs.get('seed') } : {}) });
 let savedCal = flow.cal;
 
 // ── 스킨
