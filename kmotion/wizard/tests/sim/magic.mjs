@@ -2,7 +2,7 @@
 import { createFlow } from '../../sim/flow/screens.js';
 import { loadData } from './load.mjs';
 const data = loadData(), out = [];
-function setup(){ const f = createFlow({ data, grade: 1, seed: 11, unlock: 'all' }); f.action('start', { mode: 'keyboard' }); const g = f.game; for (let i = 0; i < 60 * 3.5; i++) { f.step(1 / 60); f.drainEvents(); } return { f, g }; }
+function setup(){ const f = createFlow({ data, grade: 1, seed: 11, unlock: 'all', startZone: 1 }); f.action('start', { mode: 'keyboard' }); const g = f.game; for (let i = 0; i < 60 * 3.5; i++) { f.step(1 / 60); f.drainEvents(); } return { f, g }; }
 const run = (f, s) => { const ev = []; for (let i = 0; i < 60 * s; i++) { f.step(1 / 60); ev.push(...f.drainEvents()); } return ev; };
 const push = (g, type, value = {}) => g.input.push({ type, t: 0, via: 'key', value });
 for (const id of ['fireball', 'ice', 'lightning', 'meteor']) {

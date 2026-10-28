@@ -8,7 +8,7 @@ const data = loadData(), out = []; let fail = 0;
 const ok = (name, cond, note = '') => { out.push({ 검사: name, 결과: cond ? '✓' : '✗', 메모: note }); if (!cond) fail++; };
 const run = (f, s, until) => { const ev = []; for (let i = 0; i < 60 * s; i++) { f.step(1 / 60); ev.push(...f.drainEvents()); if (until && until(f.game.snapshot())) break; } return ev; };
 const push = (g, type, value = {}, via = 'key') => g.input.push({ type, t: 0, via, value });
-function setup(mode = 'keyboard', grade = 1){ const f = createFlow({ data, grade, seed: 21, unlock: 'all' }); f.action('start', { mode: mode === 'camera' ? 'mouse' : mode }); const g = f.game; run(f, 3.0); return { f, g }; }
+function setup(mode = 'keyboard', grade = 1){ const f = createFlow({ data, grade, seed: 21, unlock: 'all', startZone: 1 }); f.action('start', { mode: mode === 'camera' ? 'mouse' : mode }); const g = f.game; run(f, 3.0); return { f, g }; }
 // 수정 쳐서 문제 열기(키보드)
 function openCrystal(f, g){ run(f, 40, s => s.crystals.length > 0); const c = g.crystals[0]; if (!c) return false; push(g, 'MOVE', { u: c.pos[0] / 4 }); run(f, 6, s => s.crystals[0] && s.crystals[0].near); push(g, 'ATTACK', { zone: 1, side: 'R' }); run(f, .5); return g.screen === 'S08Q'; }
 
@@ -42,12 +42,13 @@ function openCrystal(f, g){ run(f, 40, s => s.crystals.length > 0); const c = g.
 // ④ 전투장 2 → 보스 · 보스 마지막 칸 = 문장제 · 봉인 3번째부터 힌트 1
 { const rec = []; const r = playOne({ data, seed: 1007, acc: .9, react: .3, record: rec });
   const zones = rec.filter(e => e.type === 'zone:enter').map(e => e.idx ?? 0); const seals = r.log.filter(x => /seal/.test(x.qid) || x.type === 'word1');
-  ok('전투장 2 거침', zones.includes(1) && r.win, `zone idx ${zones.join('→')} · 처치 ${r.kills}`);
+  ok('전투장 2 거침', zones.includes(3) && r.win, `zone idx ${zones.join('→')} · 처치 ${r.kills}`);
   const words = r.log.filter(x => x.type === 'word1'); ok('보스 마지막 칸 문장제', words.length >= 1, `문장제 ${words.length}개 · 전체 ${r.q}`);
   // 재도전(전투장 2에서 패배하면 전투장 2부터)
-  const f = createFlow({ data, grade: 1, seed: 5 }); f.action('start', { mode: 'keyboard' }); const g = f.game; for (let i = 0; i < 12 && g.zoneIdx === 0; i++) { run(f, 2.5); g.enemies.forEach(e => { if (e.state !== 'dead') { e.hp = 0; e.state = 'dead'; e.stateT = 0; } }); run(f, 2.5, s => s.world.zoneIdx === 1); }
-  ok('전투장 2 진입', g.zoneIdx === 1 && g.checkpoint && g.checkpoint.zone === 'arena'); g.player.hp = 1; g.player.invulnUntil = 0; run(f, 60, s => s.screen === 'S14'); f.action('again'); run(f, .5);
-  ok('전투장 2에서 지면 전투장 2부터', g.zoneIdx === 1 && g.screen === 'S08', `zoneIdx=${g.zoneIdx}`); }
+  const f = createFlow({ data, grade: 1, seed: 5, startZone: 1 }); f.action('start', { mode: 'keyboard' }); const g = f.game; for (let i = 0; i < 12 && g.zoneIdx === 1; i++) { run(f, 2.5); g.enemies.forEach(e => { if (e.state !== 'dead') { e.hp = 0; e.state = 'dead'; e.stateT = 0; } }); run(f, 2.5, s => s.world.zoneIdx !== 1); }
+  if (g.zoneIdx === 2) { g.jumpZone(3); run(f, .5); }   // 길 B는 p3.mjs 가 따로 검사 — 여기선 전투장 2 체크포인트만
+  ok('전투장 2 진입', g.zoneIdx === 3 && g.checkpoint && g.checkpoint.zone === 'arena'); g.player.hp = 1; g.player.invulnUntil = 0; run(f, 60, s => s.screen === 'S14'); f.action('again'); run(f, .5);
+  ok('전투장 2에서 지면 전투장 2부터', g.zoneIdx === 3 && g.screen === 'S08', `zoneIdx=${g.zoneIdx}`); }
 
 // ⑤ 손 유지 마법 바퀴(멈춤 화면) · 경험치·레벨
 { const { f, g } = setup('camera', 1); push(g, 'PAUSE'); run(f, .1); let s = g.snapshot();

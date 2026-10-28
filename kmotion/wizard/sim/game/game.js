@@ -12,8 +12,9 @@ import { makeBoss, stepBoss, bossMul, bossAfterHit, sealBroken, bossSnapshot } f
 import { QuestionEngine } from '../learn/questionEngine.js';
 import { Mastery } from '../learn/mastery.js';
 import { Selector } from '../input/selector.js';
+import { startRail, stepRail, stepPuzzle, puzzlePick, puzzleTargets, puzzleSnapshot, railSnapshot } from './rail.js';
 
-export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge = null, inputMode = 'keyboard', mastery = null, freeze = false, unlock = null, progress = null }){
+export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge = null, inputMode = 'keyboard', mastery = null, freeze = false, unlock = null, progress = null, startZone = 0 }){
   const LV = GAME.level; const prog = progress || { xp: 0, level: 1 }; prog.level = Math.max(1, Math.min(LV.max, prog.level | 0 || 1)); prog.xp = Math.max(0, prog.xp | 0);
   const bus = createBus(), rng = createRng(seed);
   const bandName = GAME.gradeBand(grade), band = GAME.grade[bandName];
@@ -27,7 +28,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     bus, rng, band, grade, seed, t: 0, gameT: 0, slow: 1, slowTo: 1, screen: 'S08', paused: null, bodyLost: false, lostT: 0,
     player: null, enemies: [], projectiles: [], areas: [], crystals: [], pickups: [], toast: null, trauma: 0,
     zone: null, waveIdx: 0, waveT: 0, tokensUsed: 0, tokenQ: [], aliveCount: 0, questionOpen: false, q: null, cursor: null, inputMode,
-    helpWindup: 1, deaths: 0, stats: null, input: [], spell: 'fireball', empower: 0, empowerN: 0, empowerAt: 0, empowerOn: false, lastRightT: -99, streak: 0, lastQClose: -99, lastCrystalT: 0, regenT: 0, endT: 0,
+    helpWindup: 1, deaths: 0, stats: null, input: [], spell: 'fireball', rail: null, puzzle: null, empower: 0, empowerN: 0, empowerAt: 0, empowerOn: false, lastRightT: -99, streak: 0, lastQClose: -99, lastCrystalT: 0, regenT: 0, endT: 0,
     emit: (type, d) => bus.emit(type, d), data, unlocked: new Set(unlock === 'all' ? ['fireball', 'ice', 'lightning', 'shield', 'meteor'] : ['fireball'].concat(unlock || [])), meteorOff: false,
   };
   function resetRun(){
@@ -37,10 +38,20 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
       invulnUntil: 0, cd: {}, arcana: null, blockT0: 0, dodge: null, dodgeReady: 0, duck: false, block: false, charging: null, castReady: 0, hurtUntil: 0, feather: band.feather,
       anim: { lower: 'A01', upper: null, t0: 0, ut0: 0, phaseLoop: 0 }, pending: [], outfit: { hat: charId, cape: charId, staff: charId, bolt: charId, trail: null } };
     g.enemies = []; g.projectiles = []; g.areas = []; g.crystals = []; g.pickups = []; g.tokensUsed = 0; g.tokenQ = []; g.waveIdx = 0; g.waveT = 0;
-    g.zoneIdx = 0; g.zone = stage.zones[0]; g.boss = null; g.screen = 'S08'; g.paused = null; g.slow = 1; g.slowTo = 1; g.q = null; g.questionOpen = false; g.lastCrystalT = 0; g.lastQClose = -99; g.endT = 0;
+    g.zoneIdx = 0; g.zone = stage.zones[0]; g.boss = null; g.rail = null; g.puzzle = null; g.screen = 'S08'; g.paused = null; g.slow = 1; g.slowTo = 1; g.q = null; g.questionOpen = false; g.lastCrystalT = 0; g.lastQClose = -99; g.endT = 0;
     g.empower = 0; g.empowerN = 0; g.empowerAt = 0; g.empowerOn = false; g.lastRightT = -99;
     g.stats = g.stats && g.keepStats ? g.stats : { kills: 0, q: 0, right: 0, startT: g.t, keyboard: inputMode === 'keyboard', qTime: 0, deaths: g.deaths, log: [], xp: 0, levelUps: [] };
-    g.emit('zone:enter', { zone: 'arena', idx: 0, stage: stage.id });
+    g.zoneStartT = g.gameT; g.firstCrystal = false; g.lastCrystalT = g.gameT; enterZone(0);
+  }
+  // 구역 들어가기(09 문서 3절): 길 구간 → 전투장 → 길 구간 → 전투장 → 보스방. 체크포인트 = 들어간 구역(보스는 페이즈)
+  const arenaNoOf = zi => stage.zones.slice(0, zi + 1).filter(z => z.type === 'arena').length;
+  function enterZone(zi){
+    const z = stage.zones[zi]; if (!z) return false;
+    if (z.type === 'boss') return enterBoss(0);
+    g.zoneIdx = zi; g.zone = z; g.waveIdx = 0; g.waveT = 0; g.clearT = null; g.enemies = g.enemies.filter(e => e.state !== 'dead'); g.crystals = []; g.zoneStartT = g.gameT; g.firstCrystal = false; g.lastCrystalT = g.gameT; g.rail = null; g.puzzle = null;
+    const P = g.player; P.hp = Math.min(P.hpMax, P.hp + (z.heal || 0)); g.checkpoint = { zone: z.type, idx: zi };
+    if (z.type === 'rail') { for (const e of g.enemies) e.rail = true; startRail(g, railApi, z, zi); g.toast = { key: 'toast.rail', t: g.t }; }
+    g.emit('zone:enter', { zone: z.type, idx: zi, arenaNo: z.type === 'arena' ? arenaNoOf(zi) : 0, stage: stage.id }); return true;
   }
   // 보스방 들어가기(체크포인트 페이즈부터)
   function enterBoss(phase = 0){
@@ -183,7 +194,8 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   }
   function crystalNear(){ const P = g.player; return g.crystals.find(c => Math.abs(c.pos[0] - P.pos[0]) <= GAME.crystal.reach); }
   function updateCrystals(dt){
-    const C = GAME.crystal, sp = spells[g.spell]; if (g.screen !== 'S08' || g.endT) return;
+    if (g.empowerOn && g.empower <= g.gameT) { g.empowerOn = false; g.emit('empower:off', {}); }
+    const C = GAME.crystal, sp = spells[g.spell]; if (g.screen !== 'S08' || g.endT || g.rail) return;   // 길 구간엔 수정 없음(문제 시간 비율은 길에서 내려감)
     const since = g.gameT - g.zoneStartT; const want = g.crystals.length < C.max && (
       (since >= C.firstAt && !g.firstCrystal) || (g.player.mana < sp.mp && g.crystals.length === 0 && g.gameT - g.lastQClose >= C.lowManaAfter) || (g.gameT - Math.max(g.lastQClose, g.lastCrystalT) >= C.every));
     if (want && g.gameT - g.lastQClose >= 3) { spawnCrystal(); g.firstCrystal = true; }
@@ -193,7 +205,6 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     if (P.mana >= P.manaMax && !g.empowerAt && g.empowerN < EM.perRun && !g.crystals.some(c => c.kind === 'empower') && g.empower <= g.gameT) g.empowerAt = g.gameT + EM.delay;
     if (g.empowerAt && g.gameT >= g.empowerAt) { g.empowerAt = 0; g.empowerN++; spawnCrystal('empower'); }
     for (const c of g.crystals.slice()) if (c.kind === 'empower' && g.gameT - c.born > EM.life) { g.crystals.splice(g.crystals.indexOf(c), 1); g.emit('crystal:break', { uid: c.uid, pos: v3(c.pos), fade: true }); }
-    if (g.empowerOn && g.empower <= g.gameT) { g.empowerOn = false; g.emit('empower:off', {}); }
   }
 
   // ── 문제(07 문서 3·4절)
@@ -251,6 +262,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     if (g.paused === 'user' && g.inputMode === 'camera' && layout.pauseMenu) { const M = layout.pauseMenu, list = g.spellList(), ts = []; const n = list.length, x0 = .5 - M.spell.w / 2 - (n - 1) * M.spell.gap / 2;
       if (n >= 2) list.forEach((id, i) => ts.push({ id: 'spell:' + id, slot: i, kind: 'menu', rect: { x: x0 + i * M.spell.gap, y: M.spell.y, w: M.spell.w, h: M.spell.h }, enabled: true }));
       ts.push({ id: 'resume', slot: -1, kind: 'menu', rect: M.resume.rect, enabled: true }); return ts; }
+    if (g.screen === 'S08P') return puzzleTargets(g, layout);
     if (!q) return []; const open = q.state === 'open' && g.t >= q.readUntil;
     const ts = layout.choices3.map(c => ({ id: 'c' + c.slot, slot: c.slot, kind: 'choice', rect: c.rect, enabled: open }));
     if (layout.hint) ts.push({ id: 'hint', slot: -1, kind: 'hint', rect: layout.hint.rect, enabled: open && q.hint < 2 });   // 🦉 힌트 구슬(07 문서 8절)
@@ -258,7 +270,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
 
   // ── 웨이브(06·09 문서) — P1: 전투장 1개
   function updateWaves(dt){
-    const z = g.zone; if (!z || g.endT) return;
+    const z = g.zone; if (!z || g.endT || z.type === 'rail') return;
     if (z.type === 'boss') { if (g.boss && g.boss.state === 'dead' && g.boss.stateT > .8) victory(); return; }
     g.waveT += dt;
     const alive = g.enemies.filter(e => e.state !== 'dead'); const w = z.waves[g.waveIdx];
@@ -267,20 +279,19 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
         g.waveIdx++; g.waveT = 0; g.clearT = null; g.emit('wave', { idx: g.waveIdx, of: z.waves.length }); } }
     else if (alive.length === 0) { if (g.clearT == null) g.clearT = g.gameT; else if (g.gameT - g.clearT >= 1.2) { if (!nextZone()) victory(); } }
   }
-  // 다음 구역(09 문서 2절: 전투장 → 전투장 → 보스방 — 길 구간은 P3, 지금은 1초 이음만)
-  function nextZone(){
-    const zi = g.zoneIdx + 1, z = stage.zones[zi]; if (!z) return false;
-    if (z.type === 'boss') return enterBoss(0);
-    g.zoneIdx = zi; g.zone = z; g.waveIdx = 0; g.waveT = 0; g.clearT = null; g.enemies = g.enemies.filter(e => e.state !== 'dead'); g.crystals = []; g.zoneStartT = g.gameT; g.firstCrystal = false; g.lastCrystalT = g.gameT;
-    const P = g.player; P.hp = Math.min(P.hpMax, P.hp + (z.heal || 0)); g.checkpoint = { zone: 'arena', idx: zi };
-    g.emit('zone:enter', { zone: 'arena', idx: zi, stage: stage.id }); return true; }
+  // 다음 구역(09 문서 3절) — 길 구간이 끝나거나 전투장을 비우면 1.2초 이음 뒤 다음으로
+  function nextZone(){ return enterZone(g.zoneIdx + 1); }
+  // 길 구간이 쓰는 손잡이(rail.js 는 이것만 안다)
+  const railApi = { nid: () => nid(), hurtPlayer: (src, atk) => hurtPlayer(src, atk), nextZone: () => { if (!nextZone()) victory(); }, gainXp: (n, why) => gainXp(n, why),
+    spawnEnemy: (kind, x, z) => { const alive = g.enemies.filter(e => e.state !== 'dead' && !e.boss).length; if (alive >= band.maxEnemies) return null; const e = makeEnemy(data.enemies[kind], nid(), x, z, rng, band); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label, rail: true }); return e; },
+    get sel(){ return sel; }, get mastery(){ return qe.m; } };
   function victory(){ if (g.endT) return; g.checkpoint = null; if (g.q) closeQuestion(); gainXp(LV.xpClear, 'clear'); g.endT = g.t; setLower('A14'); g.player.anim.upper = null; g.emit('stage:clear', { stage: stage.id }); }
   function defeat(){ if (g.endT) return; g.endT = g.t; g.deaths++; g.stats.deaths = g.deaths; setLower('A15'); g.player.anim.upper = null; if (g.q) { g.q = null; g.questionOpen = false; } g.slowTo = 1; g.emit('player:defeat', {}); }
 
   // ── 입력 처리
   function handle(ev){
     const P = g.player, v = ev.value || {};
-    if (ev.type === 'PAUSE') { if (g.screen === 'S08' || g.screen === 'S08Q') g.paused = g.paused ? null : 'user'; return; }
+    if (ev.type === 'PAUSE') { if (g.screen === 'S08' || g.screen === 'S08Q' || g.screen === 'S08P') g.paused = g.paused ? null : 'user'; return; }
     if (ev.type === 'CURSOR') { g.cursor = v.x == null ? null : { x: v.x, y: v.y }; return; }
     if (ev.type === 'LOST') { g.bodyLost = true; g.lostT = g.t; g.toast = { key: 'toast.showBody', t: g.t }; return; }
     if (ev.type === 'FOUND') { g.bodyLost = false; if (g.paused === 'body') g.resumeAt = g.t + .4; return; }
@@ -289,11 +300,12 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     if (g.paused === 'user' && ev.type === 'SELECT' && typeof v.id === 'string') { if (v.id === 'resume') g.paused = null; else if (v.id.startsWith('spell:')) g.setSpell(v.id.slice(6)); return; }
     if (g.paused || g.endT) return;
     if (g.screen === 'S08Q') { if (ev.type === 'HINT' || (ev.type === 'SELECT' && v.id === 'hint')) openHint(false); else if (ev.type === 'SELECT' && v.slot >= 0) answer(v.slot, ev.via); return; }
+    if (g.screen === 'S08P') { if (ev.type === 'SELECT' && v.slot >= 0) puzzlePick(g, railApi, v.slot, ev.via); else if (ev.type === 'MOVE' && g.puzzle && g.puzzle.cur && g.puzzle.cur.type === 'size-gate') P.targetX = clamp(v.u, -1, 1) * GAME.rail.xMax; return; }
     if (g.screen !== 'S08') return;
     const hurt = g.gameT < P.hurtUntil;
     switch (ev.type) {
-      case 'MOVE': P.targetX = clamp(v.u, -1, 1) * GAME.player.xMax; break;
-      case 'DODGE': if (g.gameT >= P.dodgeReady && !P.block) { const D = GAME.player.dodge; P.dodge = { from: P.pos[0], to: clamp(P.pos[0] + v.dir * D.dist, -GAME.player.xMax, GAME.player.xMax), t0: g.gameT }; P.invulnUntil = Math.max(P.invulnUntil, g.gameT + D.invuln); P.dodgeReady = g.gameT + D.cd; P.targetX = P.dodge.to; setLower('A05'); P.lastDodgeT = g.gameT; g.emit('dodge', { dir: v.dir, perfect: false }); if (P.charging) P.charging.ratio *= .5; } break;
+      case 'MOVE': P.targetX = clamp(v.u, -1, 1) * (g.rail ? GAME.rail.xMax : GAME.player.xMax); break;
+      case 'DODGE': if (g.gameT >= P.dodgeReady && !P.block) { const D = GAME.player.dodge; P.dodge = { from: P.pos[0], to: clamp(P.pos[0] + v.dir * D.dist, -(g.rail ? GAME.rail.xMax : GAME.player.xMax), g.rail ? GAME.rail.xMax : GAME.player.xMax), t0: g.gameT }; P.invulnUntil = Math.max(P.invulnUntil, g.gameT + D.invuln); P.dodgeReady = g.gameT + D.cd; P.targetX = P.dodge.to; setLower('A05'); P.lastDodgeT = g.gameT; g.emit('dodge', { dir: v.dir, perfect: false }); if (P.charging) P.charging.ratio *= .5; } break;
       case 'DUCK': P.duck = !!v.on; if (v.on) setLower('A06'); break;
       case 'BLOCK': P.block = !!v.on; P.blockT0 = v.on ? g.gameT : 0; if (v.on) { P.charging = null; setUpper('A11'); } else if (P.anim.upper === 'A11') P.anim.upper = null; break;
       case 'ATTACK': { if (P.block || P.charging || hurt) break; const c = crystalNear(); if (c) { openQuestion(c); break; }
@@ -312,7 +324,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   // ── 한 틱
   g.step = function(dt, events = []){
     g.t += dt; for (const ev of events) handle(ev); for (const ev of g.input.splice(0)) handle(ev);
-    if (g.bodyLost && !g.paused && (g.screen === 'S08' || g.screen === 'S08Q') && g.t - g.lostT > 1.5) g.paused = 'body';
+    if (g.bodyLost && !g.paused && (g.screen === 'S08' || g.screen === 'S08Q' || g.screen === 'S08P') && g.t - g.lostT > 1.5) g.paused = 'body';
     if (g.paused === 'body' && g.resumeAt && g.t >= g.resumeAt) { g.paused = null; g.resumeAt = 0; }
     if (g.toast && g.t - g.toast.t > 2.2) g.toast = null;
     if (g.paused === 'user' && g.inputMode === 'camera') sel.update(g.cursor, targetsNow(), g.t * 1000, g.aspect || 16 / 9);   // 손 유지 마법 바퀴(v1.3)
@@ -321,7 +333,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     const Q = GAME.question; if (g.slow !== g.slowTo) { const rate = (1 - Q.slowTo) / (g.slowTo < g.slow ? Q.slowIn : Q.slowOut); g.slow = g.slowTo < g.slow ? Math.max(g.slowTo, g.slow - rate * dt) : Math.min(g.slowTo, g.slow + rate * dt); }
     const gdt = dt * g.slow; g.gameT += gdt; g.trauma = Math.max(0, g.trauma - GAME.shake.decay * dt);
     if (g.endT) { if (g.t - g.endT > (g.player.hp > 0 ? 2.0 : 1.6) && g.screen !== 'S13' && g.screen !== 'S14') { g.screen = g.player.hp > 0 ? 'S13' : 'S14'; g.emit('screen', { from: 'S08', to: g.screen }); } }
-    stepPlayer(gdt); updateWaves(gdt); updateCrystals(gdt); updateQuestion(dt);
+    stepPlayer(gdt); stepRail(g, railApi, gdt); stepPuzzle(g, railApi, dt, layout); updateWaves(gdt); updateCrystals(gdt); updateQuestion(dt);
     // 토큰 반납 예약
     g.tokenQ = g.tokenQ.filter(at => { if (g.gameT >= at) { g.tokensUsed = Math.max(0, g.tokensUsed - 1); return false; } return true; });
     // 몬스터
@@ -341,15 +353,15 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   function stepPlayer(dt){
     const P = g.player, C = GAME.player; if (g.endT) { P.vel[0] = 0; return; }
     for (const pd of P.pending.slice()) if (g.gameT >= pd.at) { P.pending.splice(P.pending.indexOf(pd), 1); if (pd.kind === 'attack') fireBolt(pd.zone, pd.side); else if (pd.kind === 'spell') fireSpell(pd.aim); }
-    const frozen = g.screen === 'S08Q';
+    const frozen = g.screen === 'S08Q' || (g.screen === 'S08P' && !(g.puzzle && g.puzzle.cur && g.puzzle.cur.type === 'size-gate')), xMax = g.rail ? GAME.rail.xMax : C.xMax;
     if (P.dodge) { const k = Math.min(1, (g.gameT - P.dodge.t0) / C.dodge.dur); const e = 1 - (1 - k) * (1 - k); P.pos[0] = P.dodge.from + (P.dodge.to - P.dodge.from) * e; P.vel[0] = 0; if (k >= 1) P.dodge = null; }
     else if (!frozen) {
       const mul = P.block ? C.blockMul : P.charging ? C.chargeMul : 1, vmax = C.vMax * mul;
       const d = P.targetX - P.pos[0], vDes = clamp(d / C.nearR * vmax, -vmax, vmax);   // 목표 근처 .2m 안이면 거리 비례 감속 → 오버슈트 0
       if (Math.abs(vDes) < Math.abs(P.vel[0]) || Math.sign(vDes) !== Math.sign(P.vel[0])) P.vel[0] = vDes; else P.vel[0] += clamp(vDes - P.vel[0], -C.accel * dt, C.accel * dt);
-      P.pos[0] = clamp(P.pos[0] + P.vel[0] * dt, -C.xMax, C.xMax);
+      P.pos[0] = clamp(P.pos[0] + P.vel[0] * dt, -xMax, xMax);
     } else P.vel[0] = 0;
-    P.pos[2] = C.arcK * P.pos[0] * P.pos[0];   // 전투장 호
+    P.pos[2] = g.rail ? 0 : C.arcK * P.pos[0] * P.pos[0];   // 전투장 호 · 길 구간은 z=0 고정(길이 다가옴)
     if (P.charging) P.charging.ratio = Math.min(1, P.charging.ratio);
     // 하체 애니메이션
     const a = P.anim, sp = Math.abs(P.vel[0]); const oneShot = { A05: dur('A05'), A12: dur('A12'), A14: dur('A14'), A15: dur('A15') };
@@ -387,9 +399,9 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     const P = g.player, a = P.anim, ph = (id, t0) => { const d = dur(id); return d ? clamp((g.gameT - t0) / d, 0, 1) : 0; };
     const loopPh = id => id === 'A04' ? (g.gameT * Math.max(.6, Math.min(1.6, Math.abs(P.vel[0]) / 3))) % 1 : (g.gameT / 2.4) % 1;
     const lowerPhase = ['A01', 'A04'].includes(a.lower) ? loopPh(a.lower) : ph(a.lower, a.t0);
-    const q = g.q; const snap = {
+    const q = g.q, railSnap = railSnapshot(g, r3, v3); const snap = {
       t: r3(g.t), gameT: r3(g.gameT), slow: r3(g.slow), screen: g.screen, paused: g.paused,
-      world: { id: 'forest', stage: stage.id, zone: g.zone && g.zone.type === 'boss' ? 'boss' : 'arena', zoneIdx: g.zoneIdx, arenas: stage.zones.filter(z => z.type === 'arena').length, railProgress: 0, seed, wave: g.waveIdx, waves: g.zone && g.zone.waves ? g.zone.waves.length : 0 },
+      world: { id: 'forest', stage: stage.id, zone: g.zone ? g.zone.type : 'arena', zoneIdx: g.zoneIdx, arenaNo: g.zone && g.zone.type === 'arena' ? arenaNoOf(g.zoneIdx) : 0, arenas: stage.zones.filter(z => z.type === 'arena').length, railProgress: g.rail ? r3(g.rail.dist / g.rail.len) : 0, rail: railSnap.rail, seed, wave: g.waveIdx, waves: g.zone && g.zone.waves ? g.zone.waves.length : 0 },
       player: { id: P.id, pos: v3(P.pos), yaw: 0, vel: v3(P.vel), anim: { lower: a.lower, upper: a.upper, phase: r3(lowerPhase), upperPhase: a.upper ? r3(a.upper === 'A09' ? (P.charging ? P.charging.ratio : 1) : ph(a.upper, a.ut0)) : 0, speed: r3(Math.abs(P.vel[0]) / GAME.player.vMax) },
         hp: P.hp, hpMax: P.hpMax, mana: Math.round(P.mana), manaMax: P.manaMax, charging: P.charging ? { spell: P.charging.spell, ratio: r3(P.charging.ratio) } : null,
         blocking: P.block, ducking: P.duck, invuln: g.gameT < P.invulnUntil, hurtT: r3(Math.max(0, P.hurtUntil - g.gameT)), empowered: g.empower > g.gameT, empowerT: r3(Math.max(0, (g.empower - g.gameT) / GAME.empower.t)),
@@ -401,24 +413,29 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
       projectiles: g.projectiles.map(p => ({ uid: p.uid, kind: p.kind, pos: v3(p.pos), vel: v3(p.vel), owner: p.owner, label: p.label || null, r: r3(p.r) })),
       areas: g.areas.map(x => ({ uid: x.uid, kind: x.kind, pos: x.pos, radius: x.radius, t0: r3(x.t0), t1: r3(x.t1) })),
       crystals: g.crystals.map(c => ({ uid: c.uid, kind: c.kind, pos: v3(c.pos), near: Math.abs(c.pos[0] - P.pos[0]) <= GAME.crystal.reach, retry: !!c.retry, life: c.kind === 'empower' ? r3(Math.max(0, 1 - (g.gameT - c.born) / GAME.empower.life)) : 1 })),
-      pickups: [],
+      pickups: [], obstacles: railSnap.obstacles, puzzle: puzzleSnapshot(g, r3),
       question: q ? { id: q.v.id, type: q.v.type, concept: q.v.concept, kind: q.kind, prompt: q.v.prompt, state: q.state, hintStep: q.hint, gauge: r3(Math.min(1, q.gauge)), gaugeOn: Number.isFinite(q.total),
         readP: r3(clamp((g.t - q.openT) / Math.max(.01, q.readUntil - q.openT), 0, 1)), picked: q.picked,
         reveal: q.state === 'right' || (q.state === 'wrong' && g.t >= q.endAt - GAME.question.revealShow) ? q.v.correctSlot : null,
         explain: q.state === 'wrong' ? (q.v.type === 'word1' && ['add-instead', 'sub-instead'].includes(q.tag) ? 'why.word.' : 'why.') + q.tag : null, choices: q.v.choices.map(c => ({ id: c.id, num: c.num, targetId: 'c' + c.slot })),
         hint: q.hint >= 1 && q.v.hint1 ? q.v.hint1 : null, hintPic: q.hint >= 2 && q.v.hint2 ? q.v.hint2 : null } : null,
-      targets: q || g.paused === 'user' ? targetsNow().map(x => ({ id: x.id, kind: x.kind, rect: x.rect, hover: r3(sel.hover[x.id] || 0), locked: !x.enabled })) : [],
+      targets: q || g.paused === 'user' || g.screen === 'S08P' ? targetsNow().map(x => ({ id: x.id, kind: x.kind, rect: x.rect, hover: r3(sel.hover[x.id] || 0), locked: !x.enabled })) : [],
       input: { cursor: g.cursor, mode: g.inputMode, body: g.bodyLost ? 'lost' : 'ok', calibrating: false, preview: g.preview || null },
-      camera: { mode: q ? 'q' : g.boss && g.boss.state === 'intro' ? 'boss-intro' : 'arena', target: v3([P.pos[0], 1, P.pos[2]]), shake: r3(g.trauma * g.trauma) },
+      camera: { mode: q ? 'q' : g.screen === 'S08P' ? 'puzzle' : g.rail ? 'rail' : g.boss && g.boss.state === 'intro' ? 'boss-intro' : 'arena', target: v3([P.pos[0], 1, P.pos[2]]), shake: r3(g.trauma * g.trauma) },
       toast: g.toast ? g.toast.key : null, streak: g.streak,
-      result: g.endT ? { win: P.hp > 0, kills: g.stats.kills, q: g.stats.q, right: g.stats.right, time: Math.round(g.t - g.stats.startT), keyboard: g.stats.keyboard, deaths: g.deaths, xp: g.stats.xp, level: prog.level, levelUps: g.stats.levelUps.slice(), empowers: g.stats.empowers || 0, splits: g.stats.splits || 0, niceDodges: g.stats.niceDodges || 0 } : null,
+      result: g.endT ? { win: P.hp > 0, kills: g.stats.kills, q: g.stats.q, right: g.stats.right, time: Math.round(g.t - g.stats.startT), keyboard: g.stats.keyboard, deaths: g.deaths, xp: g.stats.xp, level: prog.level, levelUps: g.stats.levelUps.slice(), empowers: g.stats.empowers || 0, splits: g.stats.splits || 0, niceDodges: g.stats.niceDodges || 0,
+        fireflies: g.stats.fireflies || 0, chests: g.stats.chests || 0, gold: g.stats.gold || 0, puzzles: g.stats.puzzles || 0, puzzleRight: g.stats.puzzleRight || 0, obstaclesHit: g.stats.obstaclesHit || 0, nicePasses: g.stats.nicePasses || 0, stars: starsOf() } : null,
     };
     return freeze ? deepFreeze(snap) : snap;
   };
   g.drainEvents = () => bus.drain();
   g.restart = () => { const cp = g.checkpoint; g.keepStats = false; resetRun(); g.zoneStartT = g.gameT; g.firstCrystal = false;
-    if (cp && cp.zone === 'boss') enterBoss(cp.phase); else if (cp && cp.zone === 'arena') { while (g.zoneIdx < cp.idx) nextZone(); } };   // 보스에서 지면 그 페이즈부터(06 5절) · 전투장 2에서 지면 전투장 2부터
+    if (cp && cp.zone === 'boss') enterBoss(cp.phase); else if (cp && cp.idx > 0) enterZone(cp.idx); };   // 지면 들어갔던 구역부터(보스는 그 페이즈)
+  // 별 3개(09 문서 4-1): ① 클리어 ② 반딧불 7마리↑ ③ 정답률 70%↑ — 속도·처치수로는 안 줌
+  function starsOf(){ const st = g.stats, qn = st.q + (st.puzzles || 0), rn = st.right + (st.puzzleRight || 0); return [g.player.hp > 0, (st.fireflies || 0) >= (stage.stars && stage.stars.fireflies || 7), qn > 0 && rn / qn >= (stage.stars && stage.stars.accuracy || .7)].map(Boolean); }
+  g.jumpZone = zi => enterZone(zi);   // 시험·?zone=n 용
+  g.wantsPose = () => g.screen === 'S08' || (g.screen === 'S08P' && !!(g.puzzle && g.puzzle.cur && g.puzzle.cur.type === 'size-gate'));   // 보스에서 지면 그 페이즈부터(06 5절) · 전투장 2에서 지면 전투장 2부터
   g.qe = qe; g.answer = answer; g.targetsNow = targetsNow; g.progress = prog;
-  resetRun(); g.zoneStartT = 0;
+  resetRun(); g.zoneStartT = 0; if (startZone > 0) { enterZone(startZone); g.checkpoint = null; }   // 시험용: 전투장부터 시작(?zone=n)
   return g;
 }
