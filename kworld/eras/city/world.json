@@ -85,9 +85,15 @@
   },
   "junghak": {
    "name": "중학교"
+  },
+  "panja": {
+   "name": "달동네"
+  },
+  "sueri": {
+   "name": "전파사 골목"
   }
  },
- "intro": "한내시. 인구 삼만. 개울 하나, 시장 골목 하나, 학교 둘. 오늘 네가 시장이 됐다 — 서른 명이 시청 앞에서 각자 다른 것을 바라고 서 있다.",
+ "intro": "한내시. 인구 삼만. 개울 하나, 시장 골목 하나, 학교 둘, 달동네 하나. 오늘 네가 시장이 됐다 — 서른 명이 시청 앞에서 각자 다른 것을 바라고 서 있다.",
  "goal": "시청으로. 비서가 첫 해에 정할 일 셋을 들고 기다린다.",
  "surfaces": {
   "grass": {
@@ -360,6 +366,26 @@
   "play": {
    "title": "아이들의 편지",
    "note": "놀이터는 표가 없는 사람들의 요구다. 아이는 투표를 못 한다."
+  },
+  "panja": {
+   "title": "달동네 재개발",
+   "note": "재개발은 새집을 올린다. 보상금은 새집 값의 반쯤이라 살던 사람 중 돌아오는 집은 적다. 집은 늘고 이웃은 준다."
+  },
+  "parking": {
+   "title": "역 앞 주차장",
+   "note": "차가 늘면 길은 넓어지고, 차 없는 사람의 자리는 준다. 세금을 더 낸 쪽과 더 필요한 쪽이 다르다."
+  },
+  "festival": {
+   "title": "개울 둔치 축제",
+   "note": "축제는 돈을 끌어오고, 치우는 일은 사는 사람에게 남긴다. 크기를 고르는 것이 뒤처리를 고르는 것이다."
+  },
+  "clinic": {
+   "title": "보건소 야간 진료",
+   "note": "밤에 아픈 사람은 늘 있다. 눈에 안 보이는 돈(택시비)이 먼저 든다. 돈이 안 드는 길은 누군가 대신 낸다."
+  },
+  "bike": {
+   "title": "중학교 자전거 길",
+   "note": "길은 한 번에 한 쪽만 넓어진다. 사고는 나기 전엔 안 보여서 늘 뒤로 밀린다."
   }
  },
  "night": {
@@ -444,7 +470,7 @@
  ],
  "gate": {
   "next": "city",
-  "nextName": "한내시 — 다음 해(처음부터)",
+  "nextName": "한내시 — 다음 해(지난 해를 이어서)",
   "ready": true,
   "requires": [
    "life:end"
@@ -667,6 +693,34 @@
      {
       "if": "bg:both",
       "text": "빚을 내 둘 다 했다. 내년 예산은 그만큼 없다."
+     },
+     {
+      "if": "pj:apt",
+      "text": "달동네에 아파트가 섰다. 살던 사람 반은 돌아오지 못했다."
+     },
+     {
+      "if": "pj:fix",
+      "text": "달동네 지붕을 고쳤다. 아파트는 안 섰다."
+     },
+     {
+      "if": "pk:lot",
+      "text": "역 앞이 주차장이 됐다. 정류장은 길 건너로."
+     },
+     {
+      "if": "pk:bus",
+      "text": "버스가 넉 대로 늘었다. 역 앞은 그대로 막힌다."
+     },
+     {
+      "if": "fs:big",
+      "text": "개울 축제에 만 명. 봉지도 만 개."
+     },
+     {
+      "if": "cl:night",
+      "text": "보건소가 밤 열 시까지 연다."
+     },
+     {
+      "if": "bk:lane",
+      "text": "중학교 앞에 자전거 길 한 칸."
      }
     ]
    }
@@ -693,7 +747,18 @@
    "car",
    "child",
    "chatter"
-  ]
+  ],
+  "carry": {
+   "next": "다음 해",
+   "keep": [
+    "heart",
+    "grain"
+   ],
+   "ratios": {
+    "heart": 0.5,
+    "grain": 0.5
+   }
+  }
  },
  "spark": {
   "gaze": {
@@ -758,6 +823,60 @@
      "if": "year:end",
      "text": "첫 해가 다 갔네, 시장님.",
      "once": true
+    },
+    {
+     "id": "g_from_debt",
+     "if": "from:debt_town",
+     "text": "작년에 빚 냈다며. 올해는 뭘로 하나.",
+     "once": true
+    },
+    {
+     "id": "g_from_green",
+     "if": "from:green_town",
+     "text": "작년 시장은 다 거절했지. 물은 맑아.",
+     "once": true
+    },
+    {
+     "id": "g_from_fac",
+     "if": "from:factory_town",
+     "text": "공장 덕에 우리 아들 월급. 개울은 좀 그렇고.",
+     "once": true
+    },
+    {
+     "id": "g_again",
+     "if": "from:clean_jobs || from:factory_town || from:green_town || from:debt_town || from:mixed",
+     "text": "또 시장이네. 작년 일 다 기억해요.",
+     "once": true
+    },
+    {
+     "id": "g_pj",
+     "if": "pj:apt",
+     "text": "달동네 할아버지 옆 도시 갔대. 보상금이 반이었다더라.",
+     "once": true
+    },
+    {
+     "id": "g_pk",
+     "if": "pk:lot",
+     "text": "역 앞 주차장 됐대. 정류장은 길 건너로.",
+     "once": true
+    },
+    {
+     "id": "g_fs",
+     "if": "fs:big",
+     "text": "축제에 만 명. 봉지도 만 개.",
+     "once": true
+    },
+    {
+     "id": "g_cl",
+     "if": "cl:night",
+     "text": "보건소 밤에도 연대. 택시 안 타도 돼.",
+     "once": true
+    },
+    {
+     "id": "g_bk",
+     "if": "bk:lane",
+     "text": "중학교 앞 자전거 길. 트럭 기사는 투덜대고.",
+     "once": true
     }
    ]
   },
@@ -797,6 +916,69 @@
     "line": "둘 다 — 내년은 비었다.",
     "sound": "grain",
     "bitter": true
+   },
+   {
+    "id": "t_fix",
+    "on": "pj:fix",
+    "name": "달동네를 고친 시장",
+    "line": "밀지 않고 고쳤다.",
+    "sound": "heart"
+   },
+   {
+    "id": "t_bus",
+    "on": "pk:bus",
+    "name": "버스를 늘린 시장",
+    "line": "차 없는 사람을 먼저.",
+    "sound": "heart"
+   },
+   {
+    "id": "t_night",
+    "on": "cl:night",
+    "name": "밤에 불을 켠 시장",
+    "line": "보이지 않는 돈을 먼저 줄였다.",
+    "sound": "heart"
+   },
+   {
+    "id": "t_lane",
+    "on": "bk:lane",
+    "name": "한 칸을 내준 시장",
+    "line": "트럭 한 칸을 자전거에.",
+    "sound": "craft"
+   },
+   {
+    "id": "t_again_clean_jobs",
+    "on": "from:clean_jobs",
+    "name": "둘째 해 시장",
+    "line": "지난 해를 안고 다시 섰다.",
+    "sound": "meet"
+   },
+   {
+    "id": "t_again_factory_town",
+    "on": "from:factory_town",
+    "name": "둘째 해 시장",
+    "line": "지난 해를 안고 다시 섰다.",
+    "sound": "meet"
+   },
+   {
+    "id": "t_again_green_town",
+    "on": "from:green_town",
+    "name": "둘째 해 시장",
+    "line": "지난 해를 안고 다시 섰다.",
+    "sound": "meet"
+   },
+   {
+    "id": "t_again_debt_town",
+    "on": "from:debt_town",
+    "name": "둘째 해 시장",
+    "line": "지난 해를 안고 다시 섰다.",
+    "sound": "meet"
+   },
+   {
+    "id": "t_again_mixed",
+    "on": "from:mixed",
+    "name": "둘째 해 시장",
+    "line": "지난 해를 안고 다시 섰다.",
+    "sound": "meet"
    }
   ],
   "react": []
