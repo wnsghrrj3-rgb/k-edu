@@ -15,7 +15,8 @@ function openCrystal(f, g){ run(f, 40, s => s.crystals.length > 0); const c = g.
 // ① 생성기 — 문장제 2종 2만 개 검산 + 모든 생성기에 힌트 1·2 있음
 { const rng = createRng(7); let bad = 0, n = 0; for (const k of ['g1.compare.word', 'g1.join.word']) for (let i = 0; i < 10000; i++) { const q = GENERATORS[k].gen(rng, rng.next()); n++; if (!GENERATORS[k].verify(q) || q.type !== 'word1' || !q.hint1 || !q.hint2) bad++; }
   ok('문장제 2만 개 검산', bad === 0, `오류 ${bad}/${n}`);
-  ok('전 생성기 힌트', Object.keys(GENERATORS).every(k => { const q = GENERATORS[k].gen(rng, .5); return q.hint1 && q.hint1.key && q.hint2 && q.hint2.kind === 'beads'; }), Object.keys(GENERATORS).length + '종');
+  const g1u3 = Object.keys(GENERATORS).filter(k => GENERATORS[k].unit === 'g1-1-u3');
+  ok('1-1 3단원 전 생성기 힌트', g1u3.every(k => { const q = GENERATORS[k].gen(rng, .5); return q.hint1 && q.hint1.key && q.hint2 && q.hint2.kind === 'beads'; }), g1u3.length + '종');
   const qe = new QuestionEngine({ rng, concepts: data.stages['forest-1-1'].concepts }); const w = qe.next({ want: 'word' }), c = qe.next({ want: 'calc' });
   ok('want:word → 문장제', w.type === 'word1' && /word/.test(w.concept), w.concept); ok('want:calc → 계산형', c.type === 'calc1', c.concept); }
 

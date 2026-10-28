@@ -26,7 +26,7 @@ const BASE = {
     verify: q => beads(q.a, q.b, '-') === q.answer && q.answer >= 0 },
   'g1.zero.op': { id: 'zeroOp', gen(rng){ const n = rng.int(1, 9), kind = rng.pick(['+0', '-0', '-n']);
       const a = n, b = kind === '-n' ? n : 0, op = kind === '+0' ? '+' : '-', ans = op === '+' ? n : n - b;
-      const wrongs = kind === '-n' ? [[n, 'zero-whole'], [1, 'off-by-one']] : [[n + 1, 'zero-adds-one'], [kind === '-0' ? n - 1 : 0, kind === '-0' ? 'off-by-one' : 'zero-adds-one']];
+      const wrongs = kind === '-n' ? [[n, 'zero-whole'], [n === 1 ? 2 : 1, 'off-by-one']] : [[n + 1, 'zero-adds-one'], [kind === '-0' ? n - 1 : 0, kind === '-0' ? 'off-by-one' : 'zero-adds-one']];
       return { concept: 'g1.zero.op', fact: `zero:${a}${op}${b}`, d: .25, prompt: { key: op === '+' ? 'q.add' : 'q.sub', args: { a, b } }, a, b, op, answer: ans, wrongs }; },
     verify: q => beads(q.a, q.b, q.op) === q.answer },
 };
@@ -46,6 +46,7 @@ BASE['g1.join.word'] = { id: 'joinWord', word: true, gen(rng, d){ const sum = lv
   verify: q => beads(q.a, q.b, '+') === q.answer && q.answer <= 9 };
 // 힌트(07 문서 8절): 1단계 = 생각 길잡이 문구 키 · 2단계 = 구슬 그림(a·b·연산) — 모든 생성기에 공통으로 붙임
 const HINT1 = { 'g1.compose9': 'hint.addCount', 'g1.add.expr9': 'hint.addCount', 'g1.join.word': 'hint.joinCount', 'g1.decompose9': 'hint.subCount', 'g1.sub.expr9': 'hint.subCount', 'g1.compare.word': 'hint.compare', 'g1.zero.op': 'hint.zero', 'g1.missing.add9': 'hint.missing' };
+// v2.0(14 문서): 단원 꼬리표 unit·오답 상한 max — 다른 단원 생성기는 자기 파일에서 같은 틀로(unit 은 파일마다 하나, max 는 그 단원 답 범위)
 export const G1U3 = {};
-for (const [k, g] of Object.entries(BASE)) G1U3[k] = Object.assign({}, g, { gen(rng, d, opt){ const q = g.gen(rng, d, opt); q.type = q.type || 'calc1';
+for (const [k, g] of Object.entries(BASE)) G1U3[k] = Object.assign({}, g, { unit: 'g1-1-u3', max: 18, gen(rng, d, opt){ const q = g.gen(rng, d, opt); q.type = q.type || 'calc1';
   q.hint1 = { key: HINT1[k], args: { a: q.a, b: q.b, c: q.c } }; q.hint2 = { kind: 'beads', a: q.a, b: q.b, op: q.op }; return q; } });
