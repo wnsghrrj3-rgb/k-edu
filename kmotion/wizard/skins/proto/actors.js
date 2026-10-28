@@ -216,6 +216,48 @@ export function poseGolem(g, b, dt, gameT){
   u.shield.visible = b.shield > 0 && b.state !== 'dead'; u.bubble.material.opacity = .1 + .05 * Math.sin(t * 3);
   u.plates.forEach((p, i) => { p.visible = i < b.shield; const a = t * .9 + i * Math.PI * 2 / Math.max(1, b.shieldMax); p.position.set(Math.cos(a) * 2.1, 1.6 + Math.sin(t * 2 + i) * .2, Math.sin(a) * 2.1); p.rotation.y = -a; });
 }
+// ── v1.7 수정 골렘(06 문서 43행 「바위 덩어리 + 균열 빛」, 1-3 반딧불 동굴) — 남보라 바위 몸 + 어깨·등의 청록 수정 묶음. 수학 정답마다 균열이 늘며 빛남(crack.ratio)
+export function makeCrystalGolem(e){
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const rock = toon(0x5b5478), dark = toon(0x3a3452), crysM = new THREE.MeshBasicMaterial({ color: 0x5ef2c8 }), glowM = new THREE.MeshBasicMaterial({ color: 0x5ef2c8, transparent: true, opacity: 0 });
+  const blob = (r, x, y, z, m = rock) => { const s = withOutline(new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), m), 1.04); s.position.set(x, y, z); s.castShadow = true; return s; };
+  const torso = blob(.62, 0, 1.05, 0); torso.scale.set(1.15, 1, .85); body.add(torso);
+  const head = blob(.3, 0, 1.7, .08); body.add(head);
+  const eyes = []; for (const s of [-1, 1]) { const ey = new THREE.Mesh(new THREE.SphereGeometry(.055, 8, 6), new THREE.MeshBasicMaterial({ color: 0x9ffff0 })); ey.position.set(s * .11, 1.74, .34); body.add(ey); eyes.push(ey); }
+  const cluster = (x, y, z, n, sc) => { const c = new THREE.Group(); for (let i = 0; i < n; i++) { const m = new THREE.Mesh(new THREE.OctahedronGeometry(.13 * sc, 0), crysM); m.scale.set(.6, 1.8 + (i % 3) * .5, .6); m.position.set(Math.sin(i * 2.4) * .12 * sc, .1, Math.cos(i * 2.4) * .1 * sc); m.rotation.set(Math.sin(i) * .5, i, Math.cos(i * 1.3) * .5); c.add(m); } c.position.set(x, y, z); body.add(c); return c; };
+  const crystals = [cluster(.55, 1.45, -.05, 4, 1.1), cluster(-.55, 1.45, -.05, 4, 1.1), cluster(0, 1.35, -.45, 5, 1.3)];
+  const cracks = []; for (let i = 0; i < 8; i++) { const c = new THREE.Mesh(new THREE.BoxGeometry(.04, .22 + (i % 3) * .1, .04), glowM); c.position.set(Math.sin(i * 2.1) * .5, .8 + (i % 4) * .17, .52 - Math.abs(Math.sin(i * 2.1)) * .18); c.rotation.z = Math.sin(i * 1.7) * .8; c.visible = false; body.add(c); cracks.push(c); }
+  const arm = side => { const piv = new THREE.Group(); piv.position.set(side * .78, 1.35, 0); const up = blob(.25, 0, -.28, 0); piv.add(up); const fist = blob(.33, 0, -.72, .06, dark); piv.add(fist); body.add(piv); return piv; };
+  const armL = arm(1), armR = arm(-1);
+  const legs = [-1, 1].map(s => { const l = blob(.28, s * .33, .3, 0, dark); l.scale.y = 1.2; body.add(l); return l; });
+  const lamp = new THREE.PointLight(0x5ef2c8, 0, 6, 2); lamp.position.set(0, 1.3, .3); body.add(lamp);   // 균열 빛이 동굴 바닥을 비춤
+  const bar = new THREE.Group(); const bg = new THREE.Mesh(new THREE.PlaneGeometry(1.0, .09), new THREE.MeshBasicMaterial({ color: 0x1b1630, depthTest: false, transparent: true, opacity: .7 })); const fg = new THREE.Mesh(new THREE.PlaneGeometry(1.0, .09), new THREE.MeshBasicMaterial({ color: 0x5cf29a, depthTest: false }));
+  fg.position.z = .001; bg.renderOrder = fg.renderOrder = 11; bar.add(bg, fg); bar.position.y = 2.25; g.add(bar);
+  const defT = textSprite('🛡10', { scale: .42, color: '#cfe9ff', stroke: '#1b1630' }); defT.position.y = 2.55; g.add(defT);
+  g.userData = { body, head, armL, armR, legs, crystals, cracks, glowM, crysM, eyes, lamp, bar, fg, defT, flash: 0, mats: [rock, dark], lastDef: 10, pop: 0 };
+  return g;
+}
+export function poseCrystalGolem(g, e, dt, cam, gameT){
+  const u = g.userData, t = performance.now() / 1000, k = 1 - Math.exp(-dt / .07); g.position.set(WX(e.pos[0]), 0, e.pos[2]); g.rotation.y = -e.yaw;
+  let sc = 1, aL = -.1, aR = -.1, lean = 0, sink = 0, legSw = 0;
+  if (e.state === 'spawn') { sc = Math.min(1, e.stateT / .6); sink = (1 - sc) * 1.2; }
+  else if (e.state === 'chase' || e.state === 'recover') { legSw = Math.sin(t * 4) * .3; aL = -.1 + Math.sin(t * 4) * .15; aR = -.1 - Math.sin(t * 4) * .15; }
+  else if (e.state === 'windup' && e.telegraph) { const w = Math.min(1, (gameT - e.telegraph.t0) / Math.max(.01, e.telegraph.t1 - e.telegraph.t0)); aL = aR = -2.7 * w; lean = -.18 * w; }
+  else if (e.state === 'attack') { aL = aR = .35; lean = .4; sink = .08; }
+  else if (e.state === 'hurt') { lean = -.25; }
+  else if (e.state === 'dead') { sc = Math.max(.01, 1 - e.stateT / .6); lean = Math.min(1.2, e.stateT * 2); }
+  const L = (o, v) => o + (v - o) * k; u.armL.rotation.x = L(u.armL.rotation.x, aL); u.armR.rotation.x = L(u.armR.rotation.x, aR); u.body.rotation.x = L(u.body.rotation.x, lean); u.body.position.y = L(u.body.position.y, -sink);
+  u.legs[0].rotation.x = legSw; u.legs[1].rotation.x = -legSw; g.scale.setScalar(sc * (e.scale || 1));
+  // 균열: ratio(0 · .5 · 1) 만큼 금이 보이고 빛남 — 다 갈라지면 수정이 깜빡이며 몸이 밝아짐
+  const r = e.crack ? e.crack.ratio : 0, n = Math.round(r * u.cracks.length); u.cracks.forEach((c, i) => { c.visible = i < n; }); const pulse = .6 + .4 * Math.sin(t * (r >= 1 ? 9 : 4));
+  u.glowM.opacity = r ? .55 + .45 * pulse : 0; u.lamp.intensity = r ? (1.5 + 2.5 * r) * pulse : 0; u.crysM.color.setHex(r >= 1 ? 0xb9fff0 : 0x5ef2c8);
+  if (e.crack && e.crack.def !== u.lastDef) { u.lastDef = e.crack.def; u.defT.userData.set(e.crack.def > 0 ? '🛡' + e.crack.def : '💥'); u.pop = 1; }
+  u.pop = Math.max(0, u.pop - dt * 2.5); u.defT.scale.setScalar(.42 * (1 + u.pop * .6)); u.defT.quaternion.copy(cam.quaternion); u.defT.visible = e.state !== 'dead';
+  u.flash = Math.max(0, u.flash - dt * 6); const red = e.state === 'windup' ? (Math.sin(t * 14) * .5 + .5) * .5 : 0; for (const m of u.mats) m.emissive && m.emissive.setRGB(u.flash + red, u.flash * .9 + r * .15 * pulse, u.flash * .9 + r * .2 * pulse);
+  for (const ey of u.eyes) ey.material.color.setHex(e.state === 'windup' ? 0xff3048 : 0x9ffff0);
+  u.fg.scale.x = Math.max(.001, e.hp / e.hpMax); u.fg.position.x = -.5 * (1 - u.fg.scale.x); u.bar.quaternion.copy(cam.quaternion); u.bar.visible = e.hp < e.hpMax && e.state !== 'dead';
+}
+
 export function makeRock(label){ const g = new THREE.Group(); const r = new THREE.Mesh(new THREE.DodecahedronGeometry(.55, 0), toon(0xbfae8c)); r.castShadow = true; g.add(r);
   const n = textSprite(label || '?', { scale: .5, color: '#3a2a10', stroke: '#fff4d6' }); n.position.y = .1; g.add(n); g.userData = { r }; return g; }
 
@@ -240,6 +282,7 @@ export function makeObstacle(o){
 }
 export function poseObstacle(g, o, dt, gameT){
   const u = g.userData; u.t += dt; g.position.set(WX(o.pos[0]), o.pos[1] || 0, o.pos[2]);
+  if (o.lit === false) { g.visible = false; return; } if (o.kind !== 'firefly') g.visible = true;   // v1.7 어두운 동굴: 지팡이 빛(시스템 lit) 밖 물건은 안 보임
   if (o.kind === 'firefly') { g.position.y += Math.sin(u.t * 3) * .12; g.children[0].material.opacity = .6 + .4 * Math.sin(u.t * 6); g.visible = o.state !== 'taken'; }
   else if (o.kind === 'chest') { u.ring.rotation.z += dt; u.ring.material.opacity = .25 + .2 * Math.sin(u.t * 4); if (o.state === 'taken') { u.lid.rotation.x = Math.max(-1.2, u.lid.rotation.x - dt * 6); u.lid.position.z = -.25; } }
   else if (o.kind === 'mushroom') { const breathe = 1 + Math.sin(u.t * 2.2) * .03; if (o.state === 'bounced') { u.sq = Math.min(u.sq + dt * 6, 1); } const sqz = u.sq ? Math.sin(u.sq * Math.PI) * .35 : 0; u.cap.scale.set(breathe * (1 + sqz * .5), .55 * breathe * (1 - sqz), breathe * (1 + sqz * .5)); u.ring.material.opacity = o.state === 'ahead' ? .25 + .15 * Math.sin(u.t * 4) : 0; }
@@ -259,6 +302,15 @@ export function makePuzzleProp(pz){
         for (let i = 0; i < n; i++) { const sp = new THREE.Mesh(new THREE.SphereGeometry(.15, 10, 8), spotM); const a = -Math.PI * .15 + i * (Math.PI * 1.3 / Math.max(1, n - 1)) - Math.PI * .65 + Math.PI * .5; sp.position.set(Math.cos(a) * .62, .95 + .25 * Math.sin(i * 1.1 + .5), .78); grp.add(sp); }
         grp.position.set(WX(x), 0, 3.8); g.add(grp); });
       u = g.userData; u.items.forEach((it, i) => { it.st.geometry.dispose(); it.st.geometry = new THREE.BoxGeometry(1.3, 2.0, .3); it.st.position.y = 1.0; it.n.position.y = 2.35; const frame = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.3, .2), woodMat); frame.position.set(it.st.position.x, 1.15, it.st.position.z - .12); g.add(frame); }); }
+    if (pz.type === 'crystal-count' && pz.bundle) { const cm = new THREE.MeshBasicMaterial({ color: 0x5ef2c8 }), bandM = toon(0xffd45c), B = pz.bundle;   // v1.7 수정 묶음: 10개씩 끈으로 묶은 다발(백 묶음은 큰 상자) + 낱개 — 벽에서 자라난 모양
+      const shard = (x, y, z, s) => { const m = new THREE.Mesh(new THREE.OctahedronGeometry(.09 * s, 0), cm); m.scale.set(.6, 2.2, .6); m.position.set(x, y, z); return m; };
+      const groups = []; for (let h = 0; h < (B.hund || 0); h++) groups.push('h'); for (let i = 0; i < B.tens; i++) groups.push('t'); for (let i = 0; i < B.ones; i++) groups.push('o');
+      const nb = groups.filter(x => x !== 'o').length, span = Math.max(1, nb - 1) * .95, ox = -span / 2 - (B.ones ? .7 : 0);
+      groups.forEach((kd, i) => { const grp = new THREE.Group();
+        if (kd === 'h') { const box = withOutline(new THREE.Mesh(new THREE.BoxGeometry(.75, .55, .5), toon(0x3a3452))); box.position.y = .28; grp.add(box); for (let j = 0; j < 10; j++) grp.add(shard(-.3 + (j % 5) * .15, .65, -.1 + Math.floor(j / 5) * .2, 1.1)); const lb = textSprite('100', { scale: .32, color: '#ffd45c' }); lb.position.set(0, .3, .3); grp.add(lb); grp.position.set(WX(ox + i * .95), 0, 4.2); }
+        else if (kd === 't') { for (let j = 0; j < 10; j++) { const a = j / 10 * Math.PI * 2; grp.add(shard(Math.cos(a) * .13, .32, Math.sin(a) * .13, 1)); } const band = new THREE.Mesh(new THREE.TorusGeometry(.17, .03, 6, 16), bandM); band.rotation.x = Math.PI / 2; band.position.y = .28; grp.add(band); grp.position.set(WX(ox + i * .95), 0, 4.2); }
+        else { const j = i - nb; grp.add(shard(0, .2, 0, .9)); grp.position.set(WX(ox + span + 1.0 + (j % 5) * .32), 0, 4.0 + Math.floor(j / 5) * .35); }
+        g.add(grp); }); }
     if (pz.type === 'rule-stones' && pz.seq) pz.seq.forEach((v, i) => { const st = new THREE.Mesh(new THREE.CylinderGeometry(.5, .6, .35, 9), stoneMat); st.position.set(WX(-2.4 + i * 1.6), .17, 3.2 + i * .3); g.add(st); const n = textSprite(String(v), { scale: .45, color: '#dfe7ff' }); n.position.set(st.position.x, .75, st.position.z); g.add(n); }); }
   if (pz.gate) { for (const [side, num] of [['L', pz.gate.left], ['R', pz.gate.right]]) { const x = WX(side === 'L' ? -1.7 : 1.7); const arch = new THREE.Group();
       for (const dx of [-1, 1]) { const p = withOutline(new THREE.Mesh(new THREE.CylinderGeometry(.22, .28, 3.2, 7), stoneMat)); p.position.set(dx * 1.0, 1.6, 0); p.castShadow = true; arch.add(p); }

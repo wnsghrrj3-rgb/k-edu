@@ -3,7 +3,7 @@
 // 학년 폭: 1학년 9 이내 · 2학년 20 이내 · 3학년↑ 50 이내(규칙은 2·3·5 걸음)
 import { eul, iga } from './josa.js';
 const span = g => g <= 1 ? 9 : g <= 2 ? 20 : 50;
-export const PUZZLE_CONCEPT = { 'number-bridge': 'g1.compose9', 'size-gate': 'g1.compare', 'rule-stones': 'g1.pattern', 'mushroom-add': 'g1.add.expr9' };
+export const PUZZLE_CONCEPT = { 'number-bridge': 'g1.compose9', 'size-gate': 'g1.compare', 'rule-stones': 'g1.pattern', 'mushroom-add': 'g1.add.expr9', 'crystal-count': 'g1.count.tens' };
 
 export function makePuzzle(type, rng, grade = 1, opt = {}){
   const N = span(grade);
@@ -47,6 +47,17 @@ export function makePuzzle(type, rng, grade = 1, opt = {}){
       prompt: { key: 'pz.mush', args: { a, b } }, stones: nums.map((n, s) => ({ slot: s, num: n })), answer: [slot],
       hint1: { key: 'pz.mush.hint', args: { a, b } } };
   }
+  if (type === 'crystal-count') {
+    // 수정 묶음 세기(09 문서 9행, 1-3 반딧불 동굴): 벽 수정이 10개씩 묶음 n개 + 낱개 m개 → 모두 몇 개? 돌 3개 중 1
+    // 1학년 10~49(50까지의 수) · 2학년 10~99 · 3학년↑ 백 묶음 1~4 더해 100~499. 오답 = 자리 바꿈(m·n)·묶음 ±1·낱개 ±1 — 「묶음을 낱개처럼 세기」 오개념
+    const hund = grade >= 3 ? rng.int(1, 4) : 0, tens = rng.int(1, grade <= 1 ? 4 : 9), ones = rng.int(grade <= 1 ? 1 : 0, 9), T = hund * 100 + tens * 10 + ones;
+    const cands = [hund * 100 + ones * 10 + tens, T + 10, T - 10, T + 1, T - 1, hund * 100 + tens + ones];
+    const wrongs = []; for (const w of rng.shuffle(cands.slice(0, 3)).concat(cands.slice(3))) { if (w > 0 && w !== T && !wrongs.includes(w)) wrongs.push(w); if (wrongs.length === 2) break; }
+    const slot = rng.int(0, 2), nums = []; let wi = 0; for (let s = 0; s < 3; s++) nums.push(s === slot ? T : wrongs[wi++]);
+    return { type, id: `pz-count-${T}`, concept: PUZZLE_CONCEPT[type], fact: `count:${T}`, d: .2 + tens / 9 * .3 + (hund ? .2 : 0), need: 1, target: T, bundle: { hund, tens, ones },
+      prompt: { key: hund ? 'pz.count3' : 'pz.count', args: { h: hund, t: tens, o: ones } }, stones: nums.map((n, s) => ({ slot: s, num: n })), answer: [slot],
+      hint1: { key: hund ? 'pz.count3.hint' : 'pz.count.hint', args: { h: hund, t: tens, o: ones, tt: tens * 10 } } };
+  }
   throw new Error('퍼즐 종류 없음: ' + type);
 }
 export function verifyPuzzle(p){
@@ -54,5 +65,6 @@ export function verifyPuzzle(p){
   if (p.type === 'size-gate') { const { left, right } = p.gate; return left !== right && ((p.bigger ? left > right : left < right) ? 'L' : 'R') === p.answer; }
   if (p.type === 'rule-stones') { const n = p.stones.map(s => s.num); return n.filter(x => x === p.seq[2] + p.step).length === 1 && n[p.answer[0]] === p.seq[2] + p.step; }
   if (p.type === 'mushroom-add') { const n = p.stones.map(s => s.num); return n.filter(x => x === p.mush.a + p.mush.b).length === 1 && n[p.answer[0]] === p.mush.a + p.mush.b; }
+  if (p.type === 'crystal-count') { const n = p.stones.map(s => s.num), b = p.bundle, T = b.hund * 100 + b.tens * 10 + b.ones; return T === p.target && n.filter(x => x === T).length === 1 && n[p.answer[0]] === T; }
   return false;
 }

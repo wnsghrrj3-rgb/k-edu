@@ -115,7 +115,7 @@ export function createUI(ctx, audio){
     $h('.feather').classList.toggle('mw-hide', !P.feather);
     $h('.empower').classList.toggle('mw-hide', !P.empowered); if (P.empowered) $h('.empower').textContent = `✨ 강화 ${Math.ceil((P.empowerT != null ? P.empowerT : 1) * 20)}초`;
     const w = s.world, Bs = s.boss, R = w && w.rail; $h('.mw-wave').textContent = !Bs && !R && w && w.waves ? `🌲 ${w.arenas > 1 ? T('hud.zone', { n: w.arenaNo || 1 }) + ' · ' : ''}${Math.min(w.wave + 1, w.waves)} / ${w.waves}` : ''; $h('.mw-wave').title = w && w.stageName ? w.stageName : '';
-    const rb = $h('.mw-rail'); rb.classList.toggle('mw-hide', !R); if (R) { rb.querySelector('.nm').textContent = `🌲 ${w.stageName ? w.stageName + ' · ' : ''}${T('hud.rail')} ${(w.arenaNo || 0) + 1}`; const k = Math.min(1, R.progress || 0); rb.querySelector('.rb i').style.transform = `scaleX(${k})`; rb.querySelector('.rb u').style.left = (k * 100) + '%'; rb.querySelector('.ff').textContent = `🪲 ${fireflies}`; rb.classList.toggle('stop', R.phase !== 'go'); }
+    const rb = $h('.mw-rail'); rb.classList.toggle('mw-hide', !R); if (R) { rb.querySelector('.nm').textContent = `${R.dark ? '🔦' : '🌲'} ${w.stageName ? w.stageName + ' · ' : ''}${T(R.dark ? 'hud.cave' : 'hud.rail')} ${(w.arenaNo || 0) + 1}`; const k = Math.min(1, R.progress || 0); rb.querySelector('.rb i').style.transform = `scaleX(${k})`; rb.querySelector('.rb u').style.left = (k * 100) + '%'; rb.querySelector('.ff').textContent = `🪲 ${fireflies}`; rb.classList.toggle('stop', R.phase !== 'go'); }
     const bb = $h('.mw-boss'); bb.classList.toggle('mw-hide', !Bs); if (Bs) { bb.querySelector('.nm').textContent = T(Bs.nameKey) + ` · ${Bs.phase + 1}/${Bs.phases}`;
       const bar = bb.querySelector('.bb'); if (bar.children.length !== Bs.phases) bar.innerHTML = Bs.phaseHpMax.map(() => '<i><u></u></i>').join('');
       [...bar.children].forEach((c, i) => { c.firstChild.style.transform = `scaleX(${Bs.phaseHp[i] / Bs.phaseHpMax[i]})`; c.classList.toggle('on', i === Bs.phase); });
@@ -139,7 +139,7 @@ export function createUI(ctx, audio){
   }
   function paintQ(s){
     const Q = s.question; if (!Q) return;
-    if (Q.id !== qId) { qId = Q.id; hintStep = -1; qPrompt.textContent = (Q.kind === 'seal' ? '🔒 ' : Q.kind === 'power' ? '★ ' : Q.kind === 'shield' ? '🛡 ' : '') + fmtQ(Q); qp.classList.toggle('seal', Q.kind === 'seal'); qp.classList.toggle('shieldq', Q.kind === 'shield'); qp.classList.toggle('power', Q.kind === 'power'); qp.classList.toggle('word', Q.type === 'word1'); }
+    if (Q.id !== qId) { qId = Q.id; hintStep = -1; qPrompt.textContent = (Q.kind === 'seal' ? '🔒 ' : Q.kind === 'power' ? '★ ' : Q.kind === 'shield' ? '🛡 ' : Q.kind === 'golem' ? '💎 ' : '') + fmtQ(Q); qp.classList.toggle('seal', Q.kind === 'seal'); qp.classList.toggle('shieldq', Q.kind === 'shield'); qp.classList.toggle('golemq', Q.kind === 'golem'); qp.dataset.sub = Q.kind === 'golem' ? T('q.golem') : ''; qp.classList.toggle('power', Q.kind === 'power'); qp.classList.toggle('word', Q.type === 'word1'); }
     if (Q.hintStep !== hintStep) { hintStep = Q.hintStep; qHint.classList.toggle('mw-hide', !Q.hint); if (Q.hint) qHint.textContent = '🦉 ' + T(Q.hint.key, Q.hint.args);
       qBeads.classList.toggle('mw-hide', !Q.hintPic); if (Q.hintPic && Q.hintPic.kind === 'beads') qBeads.innerHTML = beadsHtml(Q.hintPic); }
     qp.classList.toggle('right', Q.state === 'right'); qp.classList.toggle('wrong', Q.state === 'wrong');
@@ -165,13 +165,14 @@ export function createUI(ctx, audio){
   }
   function paintPz(s){
     const Z = s.puzzle; if (!Z) return; const W = innerWidth, H = innerHeight; rects = {};
-    if (Z.id !== pzCur) { pzCur = Z.id; pzState = null; pzKind.textContent = Z.type === 'number-bridge' ? '🌉 숫자 다리' : Z.type === 'size-gate' ? '🚪 크기 문' : Z.type === 'mushroom-add' ? '🍄 버섯 문' : '🪨 규칙 징검다리'; pzPrompt.textContent = T(Z.prompt.key, Z.prompt.args);
+    if (Z.id !== pzCur) { pzCur = Z.id; pzState = null; pzKind.textContent = Z.type === 'number-bridge' ? '🌉 숫자 다리' : Z.type === 'size-gate' ? '🚪 크기 문' : Z.type === 'mushroom-add' ? '🍄 버섯 문' : Z.type === 'crystal-count' ? '💎 수정 묶음 세기' : '🪨 규칙 징검다리'; pzPrompt.textContent = T(Z.prompt.key, Z.prompt.args);
       if (Z.type === 'mushroom-add' && Z.mush) pzPrompt.innerHTML = `<span class="mush">🍄<i>${'●'.repeat(Z.mush.a)}</i> + 🍄<i>${'●'.repeat(Z.mush.b)}</i></span><br>${T(Z.prompt.key, Z.prompt.args)}`; pzp.classList.toggle('gate', Z.type === 'size-gate');
+      if (Z.type === 'crystal-count' && Z.bundle) { const B = Z.bundle; pzPrompt.innerHTML = `<span class="bund">${'<b>💯</b>'.repeat(B.hund || 0)}${'<b>🔟</b>'.repeat(B.tens)}${B.ones ? ' + ' + '<i>💎</i>'.repeat(B.ones) : ''}</span><br>${T(Z.prompt.key, Z.prompt.args)}`; }
       gate.classList.toggle('mw-hide', Z.type !== 'size-gate'); if (Z.gate) { gate.querySelector('.L b').textContent = Z.gate.left; gate.querySelector('.R b').textContent = Z.gate.right; } }
     pzHint.classList.toggle('mw-hide', !Z.hint); if (Z.hint) pzHint.textContent = '🦉 ' + T(Z.hint.key, Z.hint.args);
     pzTries.textContent = Z.wrong > 0 ? '💧'.repeat(Z.wrong) + '○'.repeat(Math.max(0, Z.maxWrong - Z.wrong)) : '';
     pzp.classList.toggle('right', Z.state === 'right'); pzp.classList.toggle('wrong', Z.state === 'wrong'); pzp.classList.toggle('reveal', Z.state === 'reveal');
-    pzSub.textContent = Z.state === 'right' ? T('pz.right') + ' ✨' : Z.state === 'wrong' ? T(Z.type === 'size-gate' ? 'pz.gateWrong' : Z.type === 'mushroom-add' ? 'pz.mushWrong' : 'pz.wrong') : Z.state === 'reveal' ? T('pz.reveal') : Z.need > 1 ? `돌 ${Z.picks.length} / ${Z.need}` : '';
+    pzSub.textContent = Z.state === 'right' ? T('pz.right') + ' ✨' : Z.state === 'wrong' ? T(Z.type === 'size-gate' ? 'pz.gateWrong' : Z.type === 'mushroom-add' ? 'pz.mushWrong' : Z.type === 'crystal-count' ? 'pz.countWrong' : 'pz.wrong') : Z.state === 'reveal' ? T('pz.reveal') : Z.need > 1 ? `돌 ${Z.picks.length} / ${Z.need}` : '';
     pzOrbs.forEach(o => o.classList.add('mw-hide'));
     for (const t of s.targets || []) { if (t.kind !== 'puzzle') continue; const st = Z.stones && Z.stones.find(x => x.targetId === t.id); const o = pzOrbs[st ? st.slot : +t.id.slice(1)]; if (!o) continue;
       const d = t.rect.w * W, cx = (t.rect.x + t.rect.w / 2) * W, cy = (t.rect.y + t.rect.h / 2) * H; rects[t.id] = { x: cx / W, y: cy / H };
@@ -183,7 +184,7 @@ export function createUI(ctx, audio){
   }
   function paintRes(s, win){ const r = s.result || {}; res.querySelector('.ttl').textContent = win ? '🏆 ' + T('clear.title') : '💪 ' + T('defeat.title');
     res.querySelector('.again').textContent = win ? T('clear.again') : T('defeat.again');
-    const rows = [['result.kills', r.kills], ['result.q', r.q], ['result.right', r.right], ['result.time', (r.time || 0) + '초']]; if (r.xp != null) rows.push(['result.xp', `+${r.xp}` + (r.levelUps && r.levelUps.length ? ` · ${T('toast.levelUp')} Lv${r.levelUps.at(-1)}` : '')], ['result.level', `Lv${r.level}`]); if (r.fireflies != null) rows.push(['result.fireflies', `🪲 ${r.fireflies}`], ['result.gold', `💰 ${r.gold || 0}`], ['result.puzzles', `${r.puzzleRight || 0} / ${r.puzzles || 0}`], ['result.stars', (r.stars || []).map(b => b ? '⭐' : '☆').join('')]); if (r.shields) rows.push(['result.shields', `🛡 ${r.shields}`]); if (r.bounces) rows.push(['result.bounces', `🍄 ${r.bounces}`]); if (r.reward) rows.push(['result.reward', ({ ice: '❄️ 얼음 폭풍', shield: '🛡 비전 방패', lightning: '⚡ 번개 사슬' })[r.reward] || r.reward]); if (r.keyboard) rows.push(['result.key', '⌨️']);
+    const rows = [['result.kills', r.kills], ['result.q', r.q], ['result.right', r.right], ['result.time', (r.time || 0) + '초']]; if (r.xp != null) rows.push(['result.xp', `+${r.xp}` + (r.levelUps && r.levelUps.length ? ` · ${T('toast.levelUp')} Lv${r.levelUps.at(-1)}` : '')], ['result.level', `Lv${r.level}`]); if (r.fireflies != null) rows.push(['result.fireflies', `🪲 ${r.fireflies}`], ['result.gold', `💰 ${r.gold || 0}`], ['result.puzzles', `${r.puzzleRight || 0} / ${r.puzzles || 0}`], ['result.stars', (r.stars || []).map(b => b ? '⭐' : '☆').join('')]); if (r.shields) rows.push(['result.shields', `🛡 ${r.shields}`]); if (r.bounces) rows.push(['result.bounces', `🍄 ${r.bounces}`]); if (r.cracks) rows.push(['result.cracks', `💎 ${r.cracks}`]); if (r.reward) rows.push(['result.reward', ({ ice: '❄️ 얼음 폭풍', shield: '🛡 비전 방패', lightning: '⚡ 번개 사슬' })[r.reward] || r.reward]); if (r.keyboard) rows.push(['result.key', '⌨️']);
     res.querySelector('dl').innerHTML = rows.map(([k, v]) => `<dt>${T(k)}</dt><dd>${v}</dd>`).join(''); }
 
   const SCR = { S01: [s01], S17: [s17], S08: [hud], S08Q: [hud, q], S08P: [hud, pz], S13: [res], S14: [res] };

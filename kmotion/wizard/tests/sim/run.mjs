@@ -1,5 +1,5 @@
 // 화면 없는 한 판(13 문서 9절 · 04 문서 8절 봇 시뮬) — three·DOM 없이 sim/ 만으로 숲 1-1 전투장 완주
-// node tests/sim/run.mjs [--bot 0.75] [--react 0.4] [--n 20]   STAGE=forest-1-2 node tests/sim/run.mjs (v1.6 스테이지 고르기)
+// node tests/sim/run.mjs [--bot 0.75] [--react 0.4] [--n 20]   STAGE=forest-1-2|forest-1-3 node tests/sim/run.mjs (v1.6~1.7 스테이지 고르기)
 import { createFlow } from '../../sim/flow/screens.js';
 import { loadData } from './load.mjs';
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? +process.argv[i + 1] : d; };
@@ -50,7 +50,7 @@ export function playOne({ data, seed, acc = .75, react = .4, grade = 1, maxT = 6
     f.step(dt); slowSum += g.slow < 1 ? dt : 0;
     for (const ev of f.drainEvents()) { hash = (hash * 31 + ev.type.length + (ev.amount || 0)) % 1000000007; if (record) record.push(ev); }
   }
-  const st = g.stats; const bs = g.snapshot().boss; return { stage: g.stageId, shields: st.shields || 0, bounces: st.bounces || 0, reward: g.rewardSpell || null, fireflies: st.fireflies || 0, puzzles: st.puzzles || 0, pzRight: st.puzzleRight || 0, obHit: st.obstaclesHit || 0, zone: g.zoneIdx, bossPhase: bs ? bs.phase + (bs.state === 'dead' ? 1 : 0) : -1, win: g.snapshot().screen === 'S13', t: Math.round(f.t), deaths: g.deaths, q: st.q, right: st.right, kills: st.kills, minHp, qShare: Math.round(st.qTime / f.t * 100), hash, log: st.log };
+  const st = g.stats; const bs = g.snapshot().boss; return { stage: g.stageId, shields: st.shields || 0, cracks: st.cracks || 0, bounces: st.bounces || 0, reward: g.rewardSpell || null, fireflies: st.fireflies || 0, puzzles: st.puzzles || 0, pzRight: st.puzzleRight || 0, obHit: st.obstaclesHit || 0, zone: g.zoneIdx, bossPhase: bs ? bs.phase + (bs.state === 'dead' ? 1 : 0) : -1, win: g.snapshot().screen === 'S13', t: Math.round(f.t), deaths: g.deaths, q: st.q, right: st.right, kills: st.kills, minHp, qShare: Math.round(st.qTime / f.t * 100), hash, log: st.log };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

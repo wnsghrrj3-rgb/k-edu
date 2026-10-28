@@ -60,3 +60,12 @@ v1.5 추가(P3 길 구간): `rail:start`(idx·len·seconds·obstacles) / `rail:e
 | `stage:clear` | stage, stars, **reward**(마법 id 또는 null) | 보상 토스트 `toast.reward.<id>` |
 - 스냅샷 추가: `enemies[].shield {hp,hpMax,up,broken,byMath,eq}`(방패병만, 그 외 null) · `player.hopping` · `world.stageName` · `puzzle.mush {a,b}`(mushroom-add) · `question.kind 'shield'`·`shieldUid` · `obstacles[].kind 'mushroom'`(state ahead|bounced|passed) · `result.reward/shields/bounces` · 시작 화면 `title.stages[{id,nameKo,stars,locked,requires,reward}]`·`title.stage`
 - UI action `start` 에 `stage` 추가 · boot `?stage=forest-1-2`(잠김 무시) · progress(`kmwiz.progress`)에 `cleared{}`·`unlocked[]`
+
+## v1.7 추가(2026-10-28, 1-3 「반딧불 동굴」) — 추가만, 기존 변경 0
+| type | 필드 | 표현 예 |
+|---|---|---|
+| `enemy:crack` | uid, kind, down, max, def, pos | 수정 골렘이 수학 정답에 갈라짐(DEF −8, 최대 −16) — 청록 빛·금 늘어남·「🛡 10 → 2」 |
+| `hit` | **deflect**(bool) | 안 갈라진 수정 골렘에 마법탄 ×.4 「팅」 — 작은 하얀 불꽃·고음 |
+| `zone:enter` | **dark**(bool) | 어두운 구역(동굴) — 조명·안개 어둡게, 지팡이 빛 |
+- 스냅샷 추가: `world.dark`·`world.light`(지팡이 빛 거리 m) · `world.rail.dark/light` · `obstacles[].lit`(어두운 길에서 지팡이 빛 밖 = false → 그리지 않음, 반딧불은 늘 true) · `enemies[].crack {down,max,ratio,def}`(수정 골렘만, 그 외 null) · `question.kind 'golem'`·`golemUid` · `puzzle.bundle {hund,tens,ones}`(crystal-count) · `result.cracks`
+- 퍼즐 종류 `crystal-count`(수정 묶음 세기 — 10개씩 묶음 + 낱개 → 모두 몇 개, 돌 3개 중 1, 개념 `g1.count.tens`) · 토스트 `toast.golem/golemCrack/golemOpen/dark` · boot `?stage=forest-1-3`

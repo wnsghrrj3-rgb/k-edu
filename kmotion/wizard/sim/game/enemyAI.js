@@ -11,6 +11,8 @@ export function makeEnemy(def, uid, x, z, rng, band, opt = {}){
     label, telegraph: null, token: false, lastAtk: -9, slot: 0, band, h: def.height * (opt.scale ? sc : 1), r: def.body * (opt.scale ? sc : 1), staggerT: 0, tags: opt.tags || [], shield: null };
   // v1.6 방패병: 앞 방패 + 방패에 적힌 빈칸 식 「□+b=c」(1~9) — 수학 수정 정답이면 깨짐
   if (def.shield) { const c = rng.int(3, 9), b = rng.int(1, c - 1); e.shield = { hp: def.shield.hp, hpMax: def.shield.hp, up: true, broken: false, byMath: false, eq: def.shield.eq ? { b, c, ans: c - b } : null }; }
+  // v1.7 수정 골렘: 수학 정답마다 갈라짐(down = DEF 깎인 양)
+  if (def.crack) e.crack = { down: 0, max: def.crack.max || 16, per: def.crack.per || 8 };
   return e;
 }
 export function stepEnemy(g, e, dt){

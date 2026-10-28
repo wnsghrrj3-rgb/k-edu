@@ -9,7 +9,7 @@ const R = () => GAME.rail;
 export function startRail(g, api, zone, zi){
   const C = R(), rng = g.rng, len = zone.len, v = len / (zone.seconds || 45), gapMul = g.band.feather ? C.lowGapMul : 1;
   const r = { zone, idx: zi, len, dist: 0, v: 0, vBase: v, vTarget: v, phase: 'go', obstacles: [], enemies: (zone.enemies || []).map(e => ({ at: e.at * len, kind: e.kind, done: false })),
-    puzzle: zone.puzzle ? { at: zone.puzzle.at * len, type: zone.puzzle.type, opt: zone.puzzle, done: false, cur: null, wrong: 0, hint: 0 } : null, hitUntil: 0, startT: g.gameT, endT: 0, hits: 0, passes: 0 };
+    puzzle: zone.puzzle ? { at: zone.puzzle.at * len, type: zone.puzzle.type, opt: zone.puzzle, done: false, cur: null, wrong: 0, hint: 0 } : null, hitUntil: 0, startT: g.gameT, endT: 0, hits: 0, passes: 0, dark: !!zone.dark };
   // 자리 뽑기: [startD, len−endD] 안, 서로 gap 이상, 퍼즐 자리 ±puzzleClear 비움
   const taken = []; const free = (d, gap) => taken.every(t => Math.abs(t - d) >= gap) && !(r.puzzle && Math.abs(d - r.puzzle.at) < C.puzzleClear);
   const place = (gap) => { for (let i = 0; i < 80; i++) { const d = rng.range(C.startD, len - C.endD); if (free(d, gap)) { taken.push(d); return d; } } return null; };
@@ -116,13 +116,13 @@ function closePuzzle(g, api, pz){
 export function puzzleSnapshot(g, r3){
   const pz = g.puzzle; if (!pz || !pz.cur) return null; const c = pz.cur, revealed = pz.state === 'reveal' || pz.state === 'right';
   return { id: pz.id, type: c.type, concept: c.concept, state: pz.state, stateT: r3(g.t - pz.stateT), prompt: c.prompt, picks: pz.picks.slice(), wrong: pz.wrong, maxWrong: R().puzzle.maxWrong, need: c.need,
-    hint: pz.hint ? c.hint1 : null, seq: c.seq || null, target: c.target || null, mush: c.mush || null,
+    hint: pz.hint ? c.hint1 : null, seq: c.seq || null, target: c.target || null, mush: c.mush || null, bundle: c.bundle || null,
     stones: c.stones ? c.stones.map(s => ({ id: 'c' + s.slot, slot: s.slot, num: s.num, targetId: 'c' + s.slot, lit: pz.picks.includes(s.slot), answer: revealed && c.answer.includes(s.slot), wrong: pz.state === 'wrong' && pz.picks.includes(s.slot) })) : null,
     gate: c.gate ? { left: c.gate.left, right: c.gate.right, bigger: c.bigger, picked: pz.picks[0] || null, answer: revealed ? c.answer : null, lane: g.player.pos[0] <= -R().puzzle.laneX ? 'L' : g.player.pos[0] >= R().puzzle.laneX ? 'R' : null } : null };
 }
 export function railSnapshot(g, r3, v3){
   const r = g.rail; if (!r) return { rail: null, obstacles: [] };
   const C = R();
-  return { rail: { idx: r.idx, len: r.len, dist: r3(r.dist), progress: r3(r.dist / r.len), speed: r3(r.v), base: r3(r.vBase), phase: r.phase, xMax: C.xMax },
-    obstacles: r.obstacles.filter(o => { const z = o.d - r.dist; return z > -8 && z < C.viewZ; }).map(o => ({ uid: o.uid, kind: o.kind, pos: v3([o.x, o.y || 0, o.d - r.dist]), r: o.r, h: o.h, state: o.state })) };
+  return { rail: { idx: r.idx, len: r.len, dist: r3(r.dist), progress: r3(r.dist / r.len), speed: r3(r.v), base: r3(r.vBase), phase: r.phase, xMax: C.xMax, dark: r.dark, light: r.dark ? C.dark.light : null },
+    obstacles: r.obstacles.filter(o => { const z = o.d - r.dist; return z > -8 && z < C.viewZ; }).map(o => ({ uid: o.uid, kind: o.kind, pos: v3([o.x, o.y || 0, o.d - r.dist]), r: o.r, h: o.h, state: o.state, lit: !r.dark || o.kind === 'firefly' || o.d - r.dist <= C.dark.light })) };
 }

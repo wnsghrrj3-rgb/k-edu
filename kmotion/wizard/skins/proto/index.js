@@ -1,7 +1,7 @@
 // proto 스킨 — 기준 구현(13 문서 8절). createSkin(ctx) → Skin(contract/skin.d.ts). 에셋 0·절차적.
 // 규칙: 스냅샷은 읽기만 · 판정 크기·시간은 스냅샷 값 그대로 · 모르는 이벤트는 무시 · 엔진·sim import 0
 import * as THREE from 'three';
-import { WX, makePlayer, posePlayer, tipWorld, makeSlime, poseSlime, makeGoblin, poseGoblin, makeShieldGoblin, poseShieldGoblin, makeCrystal, poseCrystal, makeGolem, poseGolem, makeRock, makeObstacle, poseObstacle, makePuzzleProp, posePuzzleProp } from './actors.js';
+import { WX, makePlayer, posePlayer, tipWorld, makeSlime, poseSlime, makeGoblin, poseGoblin, makeShieldGoblin, poseShieldGoblin, makeCrystalGolem, poseCrystalGolem, makeCrystal, poseCrystal, makeGolem, poseGolem, makeRock, makeObstacle, poseObstacle, makePuzzleProp, posePuzzleProp } from './actors.js';
 import { makeTelegraph, poseTelegraph, makeProjectile, poseProjectile, Sparks, makeBlast, makeTelegraphLine, poseTelegraphLine, makeTelegraphRing, poseTelegraphRing, makeIce, poseIce, makeBolt, poseBolt, makeMeteor, poseMeteor } from './vfx.js';
 import { createUI } from './ui.js';
 import { createAudio } from './audio.js';
@@ -10,7 +10,11 @@ import { buildForest } from './env.js';
 export const CONTRACT = '1';
 export function createSkin(ctx){
   const CAM = ctx.camera, TIMING = ctx.anim || {};
-  let quality = ctx.quality, css = null, renderer, scene, camera, sun, sparks, forest, W = innerWidth, H = innerHeight;
+  let quality = ctx.quality, css = null, renderer, scene, camera, sun, sparks, forest, W = innerWidth, H = innerHeight, hemi = null, staffLight = null, darkK = 0;
+  // v1.7 낮 숲 ↔ 동굴 조명 두 벌(09 문서 3행) — darkK 0~1 로 섞음
+  const LIT = { bg: new THREE.Color(0x9fd0f0), fog: new THREE.Color(0xa9d6ee), near: 18, far: 46, sky: new THREE.Color(0xdff2ff), gnd: new THREE.Color(0x3d5a2a), hemi: 1.25, sun: 2.2 };
+  const DARK = { bg: new THREE.Color(0x120e26), fog: new THREE.Color(0x1d1838), near: 7, far: 30, sky: new THREE.Color(0x7a6fc4), gnd: new THREE.Color(0x15112a), hemi: .55, sun: .18 };
+  const _c = new THREE.Color();
   let player = null, playerId = null; const enemies = new Map(), shots = new Map(), crystals = new Map(), tgs = new Map(), blasts = new Map(), btgs = new Map(); let bolts = [], golem = null, golemUid = null; const obst = new Map(); let pzProp = null, pzId = null;
   let lastT = performance.now(), drawnTg = [], kick = 0, fovPulse = 0, camPos = new THREE.Vector3(0, 4.2, -7.5), camLook = new THREE.Vector3(0, 1, 3), menuSpin = 0, hopY = 0;
   const audio = createAudio(), ui = createUI(ctx, audio), tmp = new THREE.Vector3();
@@ -31,7 +35,7 @@ export function createSkin(ctx){
       renderer.domElement.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0';
       scene = new THREE.Scene(); scene.background = new THREE.Color(0x9fd0f0); scene.fog = new THREE.Fog(0xa9d6ee, 18, 46);
       camera = new THREE.PerspectiveCamera(CAM.arena.fov, W / H, .1, 120);
-      scene.add(new THREE.HemisphereLight(0xdff2ff, 0x3d5a2a, 1.25));
+      hemi = new THREE.HemisphereLight(0xdff2ff, 0x3d5a2a, 1.25); scene.add(hemi); staffLight = new THREE.PointLight(0xcff6ff, 0, 15, 1.4); scene.add(staffLight);   // v1.7 지팡이 빛(동굴에서만 켬, 닿는 거리 = 시스템 light)
       sun = new THREE.DirectionalLight(0xfff1d6, 2.2); sun.position.set(-6, 14, -4); sun.target.position.set(0, 0, 6); scene.add(sun, sun.target);
       Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 12, bottom: -6, near: 1, far: 40 }); sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -.0005;
       progress(.4); forest = buildForest(scene, { arenaZ: CAM.arenaCenterZ || 9 }); sparks = new Sparks(scene, 700); progress(1); applyQuality(); },
@@ -42,17 +46,22 @@ export function createSkin(ctx){
       if (!s.player) { // 메뉴: 고른 캐릭터를 천천히 돌려 보여 줌
         const id = s.title ? s.title.char : 'luna'; if (playerId !== id) { if (player) scene.remove(player); player = makePlayer(id); playerId = id; scene.add(player); }
         menuSpin += dt * .4; player.position.set(0, 0, 4); player.rotation.y = Math.PI + Math.sin(menuSpin) * .6; player.userData.armR.rotation.x = -.6 + Math.sin(menuSpin * 3) * .2; player.userData.orb.visible = false; player.userData.shield.visible = false;
-        for (const m of [enemies, shots, crystals, tgs, blasts, btgs, obst]) { for (const v of m.values()) drop(v); m.clear(); } if (golem) { scene.remove(golem); golem = null; golemUid = null; } if (pzProp) { drop(pzProp); pzProp = null; pzId = null; } forest.setMode('arena');
+        for (const m of [enemies, shots, crystals, tgs, blasts, btgs, obst]) { for (const v of m.values()) drop(v); m.clear(); } if (golem) { scene.remove(golem); golem = null; golemUid = null; } if (pzProp) { drop(pzProp); pzProp = null; pzId = null; } forest.setMode('arena'); forest.setDark(false); darkK = 0; scene.background.copy(LIT.bg); scene.fog.color.copy(LIT.fog); scene.fog.near = LIT.near; scene.fog.far = LIT.far; hemi.intensity = LIT.hemi; hemi.color.copy(LIT.sky); hemi.groundColor.copy(LIT.gnd); sun.intensity = LIT.sun; staffLight.intensity = 0;
         camera.position.set(Math.sin(menuSpin * .5) * 1.2, 2.2, -.8); camera.lookAt(0, 1.2, 4); camera.fov = 50; camera.updateProjectionMatrix(); sparks.update(dt); renderer.render(scene, camera); drawnTg = []; return; }
       const P = s.player; if (playerId !== P.id) { if (player) scene.remove(player); player = makePlayer(P.id); playerId = P.id; scene.add(player); }
       player.rotation.y = 0; posePlayer(player, P, dt, TIMING); hopY += ((P.hopping ? .9 : 0) - hopY) * Math.min(1, dt * (P.hopping ? 14 : 9)); player.position.y = hopY;   // v1.6 버섯 발판 폴짝(스킨 연출, 판정은 시스템)
-      sync(enemies, s.enemies, e => { const g = e.kind === 'calc-goblin' ? makeGoblin(e) : e.kind === 'shield-goblin' ? makeShieldGoblin(e) : makeSlime(e); g.userData.kind = e.kind; scene.add(g); return g; }, drop);
-      for (const e of s.enemies) { const g = enemies.get(e.uid); if (g.userData.kind === 'calc-goblin') poseGoblin(g, e, dt, camera, s.gameT); else if (g.userData.kind === 'shield-goblin') poseShieldGoblin(g, e, dt, camera, s.gameT); else poseSlime(g, e, dt, camera, s.gameT); }
+      sync(enemies, s.enemies, e => { const g = e.kind === 'calc-goblin' ? makeGoblin(e) : e.kind === 'shield-goblin' ? makeShieldGoblin(e) : e.kind === 'crystal-golem' ? makeCrystalGolem(e) : makeSlime(e); g.userData.kind = e.kind; scene.add(g); return g; }, drop);
+      for (const e of s.enemies) { const g = enemies.get(e.uid); if (g.userData.kind === 'calc-goblin') poseGoblin(g, e, dt, camera, s.gameT); else if (g.userData.kind === 'shield-goblin') poseShieldGoblin(g, e, dt, camera, s.gameT); else if (g.userData.kind === 'crystal-golem') poseCrystalGolem(g, e, dt, camera, s.gameT); else poseSlime(g, e, dt, camera, s.gameT); }
       sync(shots, s.projectiles, p => { const o = makeProjectile(p); scene.add(o.g, o.trail); return o; }, o => { scene.remove(o.g, o.trail); o.trail.geometry.dispose(); });
       for (const p of s.projectiles) poseProjectile(shots.get(p.uid), p);
       sync(crystals, s.crystals, c => { const g = makeCrystal(c); scene.add(g); return g; }, drop); for (const c of s.crystals) poseCrystal(crystals.get(c.uid), c, dt);
       // v1.5 길 위 물건·퍼즐 소품(27 문서 ①) — 크기·자리는 스냅샷 그대로, 바닥·나무는 env 가 rail.dist 로 흘림
       const R = s.world && s.world.rail; forest.setMode(R ? 'rail' : 'arena', R);
+      // v1.7 동굴: world.dark 면 조명·안개를 천천히 어둡게 + 지팡이 빛(거리 = world.light)
+      const dk = s.world && s.world.dark ? 1 : 0; forest.setDark(!!dk); darkK += (dk - darkK) * Math.min(1, dt * 2.5);
+      scene.background.copy(_c.copy(LIT.bg).lerp(DARK.bg, darkK)); scene.fog.color.copy(_c.copy(LIT.fog).lerp(DARK.fog, darkK)); scene.fog.near = LIT.near + (DARK.near - LIT.near) * darkK; scene.fog.far = LIT.far + (DARK.far - LIT.far) * darkK;
+      hemi.color.copy(_c.copy(LIT.sky).lerp(DARK.sky, darkK)); hemi.groundColor.copy(_c.copy(LIT.gnd).lerp(DARK.gnd, darkK)); hemi.intensity = LIT.hemi + (DARK.hemi - LIT.hemi) * darkK; sun.intensity = LIT.sun + (DARK.sun - LIT.sun) * darkK;
+      staffLight.intensity = 9 * darkK; staffLight.distance = (s.world && s.world.light) || 15; if (player && darkK > .01) { tipWorld(player, staffLight.position); staffLight.position.y += .3; staffLight.position.z += 1.2; }
       sync(obst, s.obstacles || [], o => { const g = makeObstacle(o); scene.add(g); return g; }, drop); for (const o of (s.obstacles || [])) poseObstacle(obst.get(o.uid), o, dt, s.gameT);
       const PZ = s.puzzle; if (!PZ && pzProp) { drop(pzProp); pzProp = null; pzId = null; }
       if (PZ) { if (pzId !== PZ.id) { if (pzProp) drop(pzProp); pzProp = makePuzzleProp(PZ); pzId = PZ.id; scene.add(pzProp); } posePuzzleProp(pzProp, PZ, dt); }
@@ -107,6 +116,7 @@ export function createSkin(ctx){
     else if (T === 'spell:fizzle') { audio.play('fizzle'); if (ev.reason === 'mana') ui.toast('toast.findCrystal'); else ui.toast('toast.fizzle'); }
     else if (T === 'hit') { const pos = ev.pos || [0, 1, 0], sc = toScreen(pos);
       if (ev.target === 'player') { audio.play(ev.blocked ? 'block' : 'hurt'); if (!ev.blocked) { ui.flash(); if (player) player.userData.flash = 1; } if (sc.front) ui.floatAt(sc.x, sc.y - 40, '−' + ev.amount, 'hurt'); }
+      else if (ev.deflect) { audio.play('ting'); const g = enemyAt(ev.target); if (g) g.userData.flash = .4; sparks.burst(pos, 0xcff6ff, 14, 3.5, 1.5); if (sc.front) ui.floatAt(sc.x, sc.y - 30, '팅! ' + ev.amount, ''); }
       else { audio.play(ev.shielded ? 'block' : 'hit', ev.crit); const g = ev.target === golemUid ? golem : enemyAt(ev.target); if (g) g.userData.flash = 1; sparks.burst(pos, ev.crit ? 0xffd45c : 0xffffff, ev.crit ? 18 : 10, 3, 2); if (sc.front) ui.floatAt(sc.x, sc.y - 30, String(ev.amount), ev.crit ? 'crit' : ''); } }
     else if (T === 'block') { audio.play('block'); if (ev.pos) sparks.burst(ev.pos, 0xb28cff, 20, 3, 1); }
     else if (T === 'dodge') { audio.play('dodge'); if (ev.acorn && player) { const p = player.position; sparks.burst([-p.x, 1.2, p.z], 0xfff1a8, 24, 3, 2); audio.play('crystal'); } }
@@ -140,6 +150,7 @@ export function createSkin(ctx){
     // v1.6 방패병·버섯 발판
     else if (T === 'enemy:shieldHit') { audio.play('block'); if (ev.pos) sparks.burst(ev.pos, 0xd9a35c, 12, 2.5, 2); }
     else if (T === 'enemy:shieldBreak') { audio.play(ev.byMath ? 'glass' : 'boom'); if (ev.pos) { sparks.burst(ev.pos, 0xd9a35c, 60, 4, 3); sparks.burst(ev.pos, 0xfff4d6, 30, 3, 4); } kick = Math.max(kick, .2); if (ev.byMath) fovPulse = 4; const sc = toScreen(ev.pos || [0, 1, 6]); if (sc.front) ui.floatAt(sc.x, sc.y - 40, '방패 깨짐!', 'crit'); }
+    else if (T === 'enemy:crack') { audio.play('crack'); if (ev.pos) { sparks.burst(ev.pos, 0x5ef2c8, 70, 4.5, 3); sparks.burst(ev.pos, 0xffffff, 30, 3, 4); } kick = Math.max(kick, .25); fovPulse = 5; const sc = toScreen(ev.pos || [0, 1, 6]); if (sc.front) ui.floatAt(sc.x, sc.y - 50, ev.def > 0 ? `🛡 ${ev.def + 8} → ${ev.def}` : '💥 활짝!', 'crit'); }
     else if (T === 'bounce') { audio.play('dodge'); audio.play('crystal'); if (ev.pos) sparks.burst(ev.pos, 0xffc8b0, 28, 3, 3); kick = Math.max(kick, .06); const sc = toScreen([P_(), 1.8, 0]); if (sc.front) ui.floatAt(sc.x, sc.y - 30, '폴짝!', 'xp'); }
     // v1.5 길·퍼즐
     else if (T === 'rail:start') audio.play('wave');

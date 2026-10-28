@@ -27,7 +27,7 @@ const flowAt = (d, zone, seed = 11, extra = {}) => { const f = createFlow(Object
 
 // ── 2. 스테이지 목록·잠김·?stage 강제
 { const f = createFlow({ data, grade: 1, seed: 1 }); const t = f.snapshot().title;
-  ok('시작 화면 스테이지 2개(1-1 열림 · 1-2 잠김)', t.stages.length === 2 && t.stages[0].id === 'forest-1-1' && !t.stages[0].locked && t.stages[1].id === S2 && t.stages[1].locked && t.stages[1].reward === 'ice', JSON.stringify(t.stages.map(s => [s.id, s.locked])));
+  ok('시작 화면 스테이지 2개 이상(1-1 열림 · 1-2 잠김)', t.stages.length >= 2 && t.stages[0].id === 'forest-1-1' && !t.stages[0].locked && t.stages[1].id === S2 && t.stages[1].locked && t.stages[1].reward === 'ice', JSON.stringify(t.stages.map(s => [s.id, s.locked])));
   f.action('start', { mode: 'keyboard', stage: S2 }); ok('잠긴 스테이지를 고르면 1-1 로 시작', f.game.stageId === 'forest-1-1', f.game.stageId);
   const f2 = createFlow({ data, grade: 1, seed: 1, progress: { xp: 0, level: 1, cleared: { 'forest-1-1': 2 }, unlocked: ['shield'] } }); const t2 = f2.snapshot().title;
   ok('1-1 깬 기록이 있으면 1-2 열림 · 별 2', !t2.stages[1].locked && t2.stages[0].stars === 2, JSON.stringify(t2.stages));

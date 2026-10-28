@@ -61,14 +61,40 @@ export function buildForest(scene, { arenaZ = 9 } = {}){
   function layRail(dist){ for (const m of rMeshes) { const { list, f } = m.userData; list.forEach((s, i) => { dummy.position.set(s[0], 0, wrapZ(s[1], dist)); dummy.rotation.set(0, s[3] * 9, 0); dummy.scale.setScalar(s[2]); f && f(dummy, s); dummy.updateMatrix(); m.setMatrixAt(i, dummy.matrix); }); m.instanceMatrix.needsUpdate = true; }
     roads.forEach((m, i) => { m.position.z = wrapZ(i * RL + RL / 2, dist); }); }
   layRail(0);
+  // ── v1.7 동굴(1-3 반딧불 동굴, 09 문서 3행 「남보라 #2B2350 + 수정 청록 #5EF2C8 발광 · 수정 점광원 6(LOW 2)」): 바위 기둥·벽 수정 무리(10개씩 묶음 모양)
+  //   길 모드면 rail.dist 로 흘리고, 전투장이면 둘레에 고정. 어두울 때 나무·덤불·먼 산·잔디색을 숨기거나 바꿈
+  const cave = new THREE.Group(); cave.visible = false; root.add(cave); const cr = rng(303);
+  const pillarG = new THREE.CylinderGeometry(.7, 1.3, 9, 7); pillarG.translate(0, 4.5, 0); const stalG = new THREE.ConeGeometry(.45, 2.4, 6); stalG.rotateX(Math.PI); stalG.translate(0, 7.2, 0);
+  const shardG = new THREE.OctahedronGeometry(.22, 0); shardG.scale(.55, 2.4, .55); shardG.translate(0, .45, 0);
+  const caveRock = toon(0x2b2350), caveRock2 = toon(0x3a3060), shardM = new THREE.MeshBasicMaterial({ color: 0x5ef2c8 });
+  const cp = []; for (let i = 0; i < 26; i++) { const side = i % 2 ? 1 : -1; cp.push([side * (4.4 + cr() * 3.8), (i / 26) * RL + cr() * 1.5, .8 + cr() * .6, cr()]); }
+  const cs = []; for (let i = 0; i < 18; i++) { const side = i % 2 ? 1 : -1, base = [side * (3.7 + cr() * .8), (i / 18) * RL + cr() * 2]; for (let j = 0; j < 10; j++) cs.push([base[0] + Math.sin(j * 2.4) * .35, base[1] + Math.cos(j * 2.4) * .35, .6 + cr() * .7, cr(), side]); }
+  const tilt = (d, s) => { d.rotation.set(Math.sin(s[3] * 9) * .35, s[3] * 9, -s[4] * (.2 + s[3] * .4)); };
+  const caveRailM = [[pillarG, caveRock, cp, null], [stalG, caveRock2, cp, null], [shardG, shardM, cs, tilt]].map(([g, m, list, f]) => { const im = new THREE.InstancedMesh(g, m, list.length); im.userData = { list, f }; cave.add(im); return im; });
+  const caveArena = new THREE.Group(); root.add(caveArena); caveArena.visible = false; const ap = [], as = [];
+  for (let i = 0; i < 22; i++) { const a = i / 22 * Math.PI * 2; const R = 9 + cr() * 3; const x = Math.cos(a) * R, z = arenaZ - 2 + Math.sin(a) * R * 1.2; if (z < -3 && Math.abs(x) < 8) continue; ap.push([x, z, .9 + cr() * .6, cr()]); }
+  for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2 + .2, R = 6.6 + cr() * 1.2, bx = Math.cos(a) * R, bz = arenaZ - 2 + Math.sin(a) * R; if (bz < -2 && Math.abs(bx) < 7) continue; for (let j = 0; j < 10; j++) as.push([bx + Math.sin(j * 2.4) * .4, bz + Math.cos(j * 2.4) * .4, .6 + cr() * .8, cr(), bx > 0 ? 1 : -1]); }
+  const caveArenaM = [[pillarG, caveRock, ap, null], [stalG, caveRock2, ap, null], [shardG, shardM, as, tilt]].map(([g, m, list, f]) => { const im = new THREE.InstancedMesh(g, m, list.length); list.forEach((s, i) => { dummy.position.set(s[0], 0, s[1]); dummy.rotation.set(0, s[3] * 9, 0); dummy.scale.setScalar(s[2]); f && f(dummy, s); dummy.updateMatrix(); im.setMatrixAt(i, dummy.matrix); }); caveArena.add(im); return im; });
+  // 수정 점광원 6(LOW 2) — 길에선 벽 수정 무리 자리와 함께 흐르고, 전투장에선 둘레 무리 자리에
+  const caveLights = []; for (let i = 0; i < 6; i++) { const l = new THREE.PointLight(0x5ef2c8, 0, 9, 1.6); l.position.y = 1.2; l.visible = false; root.add(l); caveLights.push(l); }
+  const lightRail = i => cs[(i * 3 % 18) * 10], lightArena = i => as[(i * 2 % 12) * 10] || as[0];
+  const arenaTrees = meshes.slice(0, 5), mounts = root.children.filter(c => c.isMesh && c.material && c.material.isMeshBasicMaterial && c.geometry.type === 'ConeGeometry');
+  const groundCol = ground.material.color.clone(), roadCol = roads[0].material.color.clone(); let dark = false, lightsN = 6;
+  function layCave(dist){ for (const m of caveRailM) { const { list, f } = m.userData; list.forEach((s, i) => { dummy.position.set(s[0], 0, wrapZ(s[1], dist)); dummy.rotation.set(0, s[3] * 9, 0); dummy.scale.setScalar(s[2]); f && f(dummy, s); dummy.updateMatrix(); m.setMatrixAt(i, dummy.matrix); }); m.instanceMatrix.needsUpdate = true; } }
+  function placeLights(dist){ caveLights.forEach((l, i) => { const on = dark && i < lightsN; l.visible = on; l.intensity = on ? 2.2 : 0; if (!on) return; const s = mode === 'rail' ? lightRail(i) : lightArena(i); l.position.set(s[0] * .92, 1.2, mode === 'rail' ? wrapZ(s[1], dist) : s[1]); }); }
   const arenaOnly = [arena, ...meshes]; let mode = 'arena', lastDist = -1;
   let t = 0;
   return {
     /** mode 'arena'|'rail' + rail 스냅샷(world.rail) — 길이면 바닥·나무를 dist 로 흘린다 */
-    setMode(m, r){ if (m !== mode) { mode = m; rail.visible = m === 'rail'; for (const o of arenaOnly) o.visible = m !== 'rail'; lastDist = -1; }
-      if (m === 'rail' && r && r.dist !== lastDist) { layRail(r.dist); lastDist = r.dist; } },
+    setMode(m, r){ if (m !== mode) { mode = m; rail.visible = m === 'rail'; for (const o of arenaOnly) o.visible = m !== 'rail'; lastDist = -1; this.setDark(dark, true); }
+      if (m === 'rail' && r && r.dist !== lastDist) { layRail(r.dist); if (dark) { layCave(r.dist); placeLights(r.dist); } lastDist = r.dist; } },
+    /** v1.7 동굴 켜기/끄기 — 나무·덤불·먼 산 숨김, 바닥 남보라, 바위 기둥·수정 무리·점광원. 조명·안개는 index.js 가 맞춤 */
+    setDark(on, force){ if (on === dark && !force) return; dark = !!on;
+      cave.visible = dark && mode === 'rail'; caveArena.visible = dark && mode !== 'rail'; for (const m of rMeshes) m.visible = !dark; for (const m of arenaTrees) m.visible = !dark && mode !== 'rail'; for (const m of mounts) m.visible = !dark;
+      ground.material.color.copy(groundCol).multiplyScalar(dark ? .28 : 1); if (dark) ground.material.color.lerp(new THREE.Color(0x2b2350), .35); for (const rd of roads) { rd.material.color.copy(roadCol).multiplyScalar(dark ? .45 : 1); } arena.material.opacity = dark ? .55 : 1;
+      if (dark) { layCave(Math.max(0, lastDist)); } placeLights(Math.max(0, lastDist)); },
     update(dt){ t += dt; for (let i = 0; i < fireN; i++) { const s = seeds[i]; fp[i * 3] = s[0] + Math.sin(t * .4 + s[3]) * .8; fp[i * 3 + 1] = s[1] + Math.sin(t * .9 + s[3] * 2) * .3; fp[i * 3 + 2] = s[2] + Math.cos(t * .3 + s[3]) * .8; } fg.attributes.position.needsUpdate = true; },
-    setQuality(q){ flies.visible = q !== 'low'; meshes.forEach(m => { m.castShadow = q === 'high' || (q === 'medium' && m.count < 140); }); rMeshes.forEach(m => { m.castShadow = q !== 'low'; }); },
+    setQuality(q){ lightsN = q === 'low' ? 2 : 6; placeLights(Math.max(0, lastDist)); flies.visible = q !== 'low'; meshes.forEach(m => { m.castShadow = q === 'high' || (q === 'medium' && m.count < 140); }); rMeshes.forEach(m => { m.castShadow = q !== 'low'; }); },
     dispose(){ scene.remove(root); },
   };
 }

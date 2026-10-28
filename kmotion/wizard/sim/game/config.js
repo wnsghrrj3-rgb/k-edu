@@ -28,9 +28,12 @@ export const GAME = {
   //   퍼즐 자리에서 길이 멈춤(1초 감속) → S08P. 게이지 없음 · 3번 틀리면 정답 보여 주고 통과(보상 0) · 정답 = 마나 +20 + 골드 10~30 · 1~2학년은 장애물 간격 ×1.3
   rail: { xMax: 2.6, lane: 1.7, gap: 9, lowGapMul: 1.3, startD: 12, endD: 14, puzzleClear: 12, decel: 1.0, accel: 1.5, hitSlow: .35, hitRecover: 1.2, viewZ: 42, enemyZ: 14, engageZ: 6, goldCap: 200,
           mushroom: { r: .9, mana: 2, hop: .5 }, rock: { r: .9, atk: 10 }, branch: { atk: 8, h: 1.25, win: .45 }, firefly: { r: .9, mana: 2 }, chest: { r: 1.0, mana: 15, goldMin: 10, goldMax: 30 }, nicePass: { r: .9, mana: 2 },
+          dark: { light: 15 },   /* v1.7 어두운 길(1-3 반딧불 동굴): 지팡이 빛이 닿는 앞 15m 안 물건만 보임(반딧불은 스스로 빛나 늘 보임) — 3.8 m/s 면 약 4초 앞 */
           puzzle: { rightShow: 1.6, wrongShow: 1.3, revealShow: 2.8, maxWrong: 3, laneX: 1.1, laneHold: .8, mana: 20 } },
   // 고블린 방패병(04·06 문서, v1.6): 방패가 깨지면 비틀 .6초 · 수학으로 깬 방패는 다시 안 올라옴 · 마법(spell·tick)은 방패를 지나 몸에
   shield: { breakStagger: .6, spellBypass: true },
+  // 수정 골렘(04 문서 5절·06 문서 43행, v1.7): DEF 10 — 골렘이 살아 있는 전투장에서 수학 수정 정답마다 DEF −8(최대 −16 = 몸이 갈라져 빛남) · 갈라질 때 비틀 .5초
+  golem: { crackPer: 8, crackMax: 16, crackStagger: .5, boltMul: .4, crystalAfter: 5 },   // 안 갈라진 몸엔 마법탄 ×.4(「팅」 튕김) · 덜 갈라진 골렘이 있으면 직전 문제 5초 뒤 수정이 또 나옴
   // 보스(06 문서 4·5절) — 1~2학년은 공격 주기 ×1.25 추가(5절 학년 배율 예)
   boss: { introT: 2.4, phaseT: 1.5, keep: 3.4, zMax: 12, dashT: .45, recover: .9, shieldMul: .1, weakMul: 1.5, weakT: 8, lowCycleMul: 1.25, sealCd: 1.2, heal: 20 },
 };
