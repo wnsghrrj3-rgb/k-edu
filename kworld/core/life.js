@@ -83,11 +83,11 @@ export class Life {
   /** 씨앗으로 섞여 나오는 상황을 n개 뽑는다(판마다 다르게, 저장하면 같은 판) */
   pickMixed(seed) {
     let s = seed * 9301 + 49297; const r = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
-    const pool = (this.d.situations || []).filter((x) => !x.must).map((x) => x.id); const n = Math.min(this.d.mixedCount ?? 5, pool.length);
+    const pool = (this.d.situations || []).filter((x) => !x.must && !x.only).map((x) => x.id); const n = Math.min(this.d.mixedCount ?? 5, pool.length);
     for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
     return pool.slice(0, n);
   }
-  get situations() { return (this.d.situations || []).filter((x) => x.must || (this.mixed || []).includes(x.id)); }
+  get situations() { return (this.d.situations || []).filter((x) => (x.must || (this.mixed || []).includes(x.id)) && (!x.only || this.cond(x.only))); }   /* 144: only = 「이 조건이면 있는 상황」(둘째 해 전용 — from:<지난 해 갈림>). 거짓이면 아예 없는 것 — 섞여 풀·운 카드 자리 셈에도 안 든다 */
   sit(id) { return (this.d.situations || []).find((x) => x.id === id) || (this.d.luck?.cards || []).find((x) => x.id === id); }
   // ---------- 값·능력 ----------
   add(key, n) { if (!n) return; this.values[key] = Math.max(0, (this.values[key] || 0) + n); this.render(); this.g.save?.touch(); }
@@ -153,7 +153,7 @@ export class Life {
   }
   /** 운 카드 — 꼭 나오는 상황이 끝날 때마다 보는 자리(판마다 다른 자리·다른 카드, 씨앗으로). 선택은 없다: 결과는 앞에서 쌓은 값이 정한다 — 「운으로 바로 죽지 않고, 앞에서 쌓은 사람만 버틴다」 */
   luckTick() {
-    const L = this.d.luck; if (!L?.cards?.length) return; const g = this.g; if (g.story?.fast && !this.forceLuck) return;   /* 고리 시험은 건너뜀(test_luck 이 forceLuck 으로 켬) */ const mustN = (this.d.situations || []).filter((x) => x.must).length; const n = this.log.filter((l) => this.sit(l.sit)?.must).length;
+    const L = this.d.luck; if (!L?.cards?.length) return; const g = this.g; if (g.story?.fast && !this.forceLuck) return;   /* 고리 시험은 건너뜀(test_luck 이 forceLuck 으로 켬) */ const mustN = this.situations.filter((x) => x.must).length; const n = this.log.filter((l) => this.sit(l.sit)?.must).length;
     if (!this.luckSlots) { const per = Math.min(L.perRun || 2, Math.max(0, mustN - 2)); const cand = []; for (let k = 2; k < mustN; k++) cand.push(k); let seed = (this.seed || 1) * 104729; this.luckSlots = []; while (this.luckSlots.length < per && cand.length) { seed = (seed * 1103515245 + 12345) % 2147483648; this.luckSlots.push(cand.splice(seed % cand.length, 1)[0]); } this.luckSlots.sort((a, b) => a - b); }
     if (!this.luckSlots.includes(n) || g.flags.has('luck:slot:' + n)) return; g.flags.add('luck:slot:' + n);
     const seen = new Set(this.luckSeen || []); let pool = L.cards.filter((c) => !seen.has(c.id) && this.cond(c.if)); if (!pool.length) pool = L.cards.filter((c) => this.cond(c.if)); if (!pool.length) return;
