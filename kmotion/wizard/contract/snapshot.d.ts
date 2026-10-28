@@ -13,7 +13,8 @@ export type EnemyState = 'spawn' | 'idle' | 'chase' | 'windup' | 'attack' | 'rec
 export interface Snapshot {
   t: number; gameT: number; slow: number;           // slow: 문제 중 0.15
   screen: ScreenId; paused: null | 'user' | 'body';
-  world: { id: 'forest'; stage: string; zone: 'rail' | 'arena' | 'boss'; zoneIdx: number; arenaNo: number; arenas: number; railProgress: number; seed: number; wave: number; waves: number;
+  world: { id: 'forest'; stage: string; heart: boolean; final: boolean; crystals: string[];   // v1.8 heart = 고대 나무 심장 구역(길·보스방) · final = 월드 마지막 스테이지 · crystals = 되찾은 결정
+    zone: 'rail' | 'arena' | 'boss'; zoneIdx: number; arenaNo: number; arenas: number; railProgress: number; seed: number; wave: number; waves: number;
     /** v1.5 길 구간(09 문서 2절): 플레이어는 z=0 에 서고 길이 다가온다. dist·len(m)·speed(m/s, 퍼즐 앞 0·맞으면 느려짐)·phase 'go'|'stop'|'puzzle'·xMax(좌우 ±2.6). 스킨은 바닥·나무를 −speed 로 흘리면 된다 */
     rail: null | { idx: number; len: number; dist: number; progress: number; speed: number; base: number; phase: 'go' | 'stop' | 'puzzle'; xMax: number } };
   /** v1.5 길 위 물건(z = 앞 거리, −8 ~ 42m 만): rock(옆으로 비킴, r=반지름 .9·h) · branch(가지 — 숙여서, h=높이 1.25, 길 전체 폭) · firefly(반딧불, pos.y 떠 있음) · chest(상자). state ahead|passed|hit|taken */
@@ -75,7 +76,8 @@ export interface Snapshot {
     preview: { ok: boolean; joints: Array<[number, number, number] | null> } | null };   // joints: 0,11,12,13,14,15,16,23,24,25,26,27,28 (화면 비율, 거울)
   camera: { mode: 'rail' | 'arena' | 'boss-intro' | 'q' | 'puzzle'; target: Vec3; shake: number };   // v1.5 rail = 03 문서 길 카메라(camera.json rail: 뒤 6.5·높이 2.6·앞 6m 봄·FOV 58+달리기 6) · puzzle = 멈춘 길
   toast: string | null; streak: number;
-  result: null | { win: boolean; kills: number; q: number; right: number; time: number; keyboard: boolean; deaths: number; xp: number; level: number; levelUps: number[];
+  result: null | { crystal: string | null; final: boolean;   // v1.8 되찾은 결정(첫 클리어만)·월드 마지막
+    win: boolean; kills: number; q: number; right: number; time: number; keyboard: boolean; deaths: number; xp: number; level: number; levelUps: number[];
     empowers: number; splits: number; niceDodges: number;   // v1.4 강화 성공·분열·도토리 멋진 회피 횟수
     fireflies: number; chests: number; gold: number; puzzles: number; puzzleRight: number; obstaclesHit: number; nicePasses: number; stars: [boolean, boolean, boolean] };   // v1.5 길 구간 — 별 3개 = 클리어·반딧불 7↑·정답률 70%↑(퍼즐 포함)
 }

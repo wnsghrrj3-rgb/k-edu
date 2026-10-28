@@ -69,3 +69,12 @@ v1.5 추가(P3 길 구간): `rail:start`(idx·len·seconds·obstacles) / `rail:e
 | `zone:enter` | **dark**(bool) | 어두운 구역(동굴) — 조명·안개 어둡게, 지팡이 빛 |
 - 스냅샷 추가: `world.dark`·`world.light`(지팡이 빛 거리 m) · `world.rail.dark/light` · `obstacles[].lit`(어두운 길에서 지팡이 빛 밖 = false → 그리지 않음, 반딧불은 늘 true) · `enemies[].crack {down,max,ratio,def}`(수정 골렘만, 그 외 null) · `question.kind 'golem'`·`golemUid` · `puzzle.bundle {hund,tens,ones}`(crystal-count) · `result.cracks`
 - 퍼즐 종류 `crystal-count`(수정 묶음 세기 — 10개씩 묶음 + 낱개 → 모두 몇 개, 돌 3개 중 1, 개념 `g1.count.tens`) · 토스트 `toast.golem/golemCrack/golemOpen/dark` · boot `?stage=forest-1-3`
+
+## v1.8 추가(2026-10-28, 1-보스 「고대 나무 심장」) — 추가만, 기존 변경 0
+| type | 필드 | 표현 예 |
+|---|---|---|
+| `reward` | **kind 'crystal'**, crystal('number'), amount, pos | 보스 뒤 「수의 결정」 되찾음 — 보라 큰 폭발·고대 나무 숫자 무늬 환해짐(09 문서 1절 「결정 복구 장면」) |
+| `stage:clear` | **crystal**(string|null), **final**(bool) | 결정 토스트 `toast.reward.crystal.<name>` · final = 월드 마지막 스테이지 |
+- 스냅샷 추가: `world.heart`(고대 나무 심장 구역 — 길·보스방 둘 다, 스킨은 거대 나무+숫자 무늬를 둠) · `world.final` · `world.crystals[]`(되찾은 결정) · `result.crystal`·`result.final`
+- 스테이지 JSON: `final`·`reward.crystal` · 구역 `heart`·`toast`(구역 들어갈 때 한마디 — 보스 전 한마디) · 보스 구역 `hpMul`(페이즈 HP 배율, 1-보스 ×1.2 — def 복사, 다른 스테이지 무변경)
+- 길 → 보스방 바로 이어질 때 `world.rail` 이 null 로 돌아감(1-보스 — 이전엔 전투장을 거쳐서 문제 없었음) · 시작 화면 `title.stages[].crystal/final`(👑) · boot `?stage=forest-1-boss`

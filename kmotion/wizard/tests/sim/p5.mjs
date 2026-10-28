@@ -28,7 +28,7 @@ const openQ = (f, g) => { run(f, 12, s => s.crystals.length > 0); const c = g.cr
 
 // ── 2. 스테이지 목록: 1-3 은 1-2 뒤 · 보상 lightning · 3단계 순서
 { const f = createFlow({ data, grade: 1, seed: 1, progress: { xp: 0, level: 1, cleared: { 'forest-1-1': 3 } } }); const t = f.snapshot().title;
-  ok('시작 화면 스테이지 3개 · 1-3 잠김(1-2 안 깸) · 보상 lightning', t.stages.length === 3 && t.stages[2].id === S3 && t.stages[2].locked && t.stages[2].requires === 'forest-1-2' && t.stages[2].reward === 'lightning', JSON.stringify(t.stages.map(s => [s.id, s.locked])));
+  ok('시작 화면 스테이지 3개↑ · 1-3 잠김(1-2 안 깸) · 보상 lightning', t.stages.length >= 3 && t.stages[2].id === S3 && t.stages[2].locked && t.stages[2].requires === 'forest-1-2' && t.stages[2].reward === 'lightning', JSON.stringify(t.stages.map(s => [s.id, s.locked])));
   const f2 = createFlow({ data, grade: 1, seed: 1, progress: { xp: 0, level: 2, cleared: { 'forest-1-1': 3, 'forest-1-2': 2 }, unlocked: ['shield', 'ice'] } }); const t2 = f2.snapshot().title;
   ok('1-2 깬 기록이 있으면 1-3 열림', !t2.stages[2].locked); f2.action('start', { mode: 'keyboard', stage: S3 });
   ok('1-3 시작 · 이름 「반딧불 동굴」 · 얼음 장착 가능', f2.game.stageId === S3 && f2.game.snapshot().world.stageName === '반딧불 동굴' && f2.game.spellList().includes('ice'));

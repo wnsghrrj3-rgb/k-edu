@@ -8,7 +8,7 @@ import { createRng } from '../../sim/core/rng.js';
 import { loadData } from './load.mjs';
 import { playOne } from './run.mjs';
 const data = loadData(), DIR = new URL('../golden/', import.meta.url), UPDATE = process.argv.includes('--update');
-const GOLDEN = [{ name: 'forest-1-1', seed: 4242, stage: 'forest-1-1' }, { name: 'forest-1-2', seed: 4343, stage: 'forest-1-2' }, { name: 'forest-1-3', seed: 4444, stage: 'forest-1-3' }];
+const GOLDEN = [{ name: 'forest-1-1', seed: 4242, stage: 'forest-1-1' }, { name: 'forest-1-2', seed: 4343, stage: 'forest-1-2' }, { name: 'forest-1-3', seed: 4444, stage: 'forest-1-3' }, { name: 'forest-1-boss', seed: 4545, stage: 'forest-1-boss' }];
 const hashOf = evs => { let h = 7; for (const ev of evs) { const s = ev.type + '|' + (ev.amount != null ? ev.amount : '') + '|' + (ev.uid != null ? ev.uid : '') + '|' + (ev.slot != null ? ev.slot : ''); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 1000000007; } return h; };
 const statsOf = g => { const st = g.stats; return { win: g.snapshot().screen === 'S13', kills: st.kills, q: st.q, right: st.right, puzzles: st.puzzles || 0, fireflies: st.fireflies || 0, shields: st.shields || 0, bounces: st.bounces || 0, zone: g.zoneIdx, t: Math.round(g.t) }; };
 

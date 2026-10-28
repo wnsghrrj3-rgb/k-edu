@@ -1,5 +1,5 @@
 // MATH WIZARD 진입 — 시스템(sim/) 과 스킨(skins/*) 을 잇는 유일한 곳(13 문서 2절)
-// ?skin=proto|empty|hq  ?q=low|medium|high  ?spells=all(마법 5종 시험)  ?dev=1  ?mouse=1(마우스 모드로 바로)  ?seed=n  ?grade=n  ?check=1(스킨 검사기 상시)  ?zone=n(구역부터 시작: 0 길 A·1 전투장 1·2 길 B·3 전투장 2·4 보스, v1.5)  ?stage=forest-1-2|forest-1-3(스테이지 바로 — 잠김 무시, v1.6~1.7)
+// ?skin=proto|empty|hq  ?q=low|medium|high  ?spells=all(마법 5종 시험)  ?dev=1  ?mouse=1(마우스 모드로 바로)  ?seed=n  ?grade=n  ?check=1(스킨 검사기 상시)  ?zone=n(구역부터 시작: 0 길 A·1 전투장 1·2 길 B·3 전투장 2·4 보스, v1.5)  ?stage=forest-1-2|forest-1-3|forest-1-boss(스테이지 바로 — 잠김 무시, v1.6~1.8)
 import { createFlow } from './sim/flow/screens.js';
 import { checkInterface, checkTelegraphs, checkTargets, CONTRACT } from './contract/validate.js';
 
@@ -14,7 +14,7 @@ const say = m => { if (bootEl) bootEl.textContent = m; };
 
 // ── 데이터(노드 시험 tests/sim/load.mjs 와 같은 묶음)
 const J = async p => { const r = await fetch(new URL(p, import.meta.url)); if (!r.ok) throw new Error(p + ' ' + r.status); return r.json(); };
-const STAGE_IDS = ['forest-1-1', 'forest-1-2', 'forest-1-3'];   // v1.6: 순서 = 시작 화면 목록 순서
+const STAGE_IDS = ['forest-1-1', 'forest-1-2', 'forest-1-3', 'forest-1-boss'];   // v1.8 1-보스 「고대 나무 심장」   // v1.6: 순서 = 시작 화면 목록 순서
 const [spells, enemies, anim, layout, textKo, camera, ...stageJ] = await Promise.all(['data/spells.json', 'data/enemies.json', 'data/anim-timing.json', 'data/layout/targets.json', 'data/text/ko.json', 'contract/camera.json', ...STAGE_IDS.map(id => `data/stages/${id}.json`)].map(J));
 const data = { spells, enemies, anim, layout, text: textKo, camera, stages: Object.fromEntries(STAGE_IDS.map((id, i) => [id, stageJ[i]])) };
 const text = (key, args) => { const s = textKo[key] != null ? textKo[key] : key; return args ? s.replace(/\{(\w+)\}/g, (_, k) => args[k] != null ? args[k] : '') : s; };

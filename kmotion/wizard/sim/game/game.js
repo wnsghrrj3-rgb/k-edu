@@ -16,7 +16,7 @@ import { startRail, stepRail, stepPuzzle, puzzlePick, puzzleTargets, puzzleSnaps
 
 export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge = null, inputMode = 'keyboard', mastery = null, freeze = false, unlock = null, progress = null, startZone = 0, stageId = 'forest-1-1' }){
   const LV = GAME.level; const prog = progress || { xp: 0, level: 1 }; prog.level = Math.max(1, Math.min(LV.max, prog.level | 0 || 1)); prog.xp = Math.max(0, prog.xp | 0);
-  prog.cleared = prog.cleared && typeof prog.cleared === 'object' ? prog.cleared : {}; prog.unlocked = Array.isArray(prog.unlocked) ? prog.unlocked : [];   // v1.6: 깬 스테이지(별 수)·해금 마법 — 기기 안 progress 에 같이
+  prog.cleared = prog.cleared && typeof prog.cleared === 'object' ? prog.cleared : {}; prog.unlocked = Array.isArray(prog.unlocked) ? prog.unlocked : []; prog.crystals = Array.isArray(prog.crystals) ? prog.crystals : [];   // v1.8: 되찾은 결정(09 문서 2절 받침대 6개 — 「수의 결정」부터)   // v1.6: 깬 스테이지(별 수)·해금 마법 — 기기 안 progress 에 같이
   const bus = createBus(), rng = createRng(seed);
   const bandName = GAME.gradeBand(grade), band = GAME.grade[bandName];
   const stage = data.stages[stageId] || data.stages['forest-1-1'], timing = data.anim, spells = data.spells, layout = data.layout;
@@ -40,7 +40,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
       anim: { lower: 'A01', upper: null, t0: 0, ut0: 0, phaseLoop: 0 }, pending: [], outfit: { hat: charId, cape: charId, staff: charId, bolt: charId, trail: null } };
     g.enemies = []; g.projectiles = []; g.areas = []; g.crystals = []; g.pickups = []; g.tokensUsed = 0; g.tokenQ = []; g.waveIdx = 0; g.waveT = 0;
     g.zoneIdx = 0; g.zone = stage.zones[0]; g.boss = null; g.rail = null; g.puzzle = null; g.screen = 'S08'; g.paused = null; g.slow = 1; g.slowTo = 1; g.q = null; g.questionOpen = false; g.lastCrystalT = 0; g.lastQClose = -99; g.endT = 0;
-    g.empower = 0; g.empowerN = 0; g.empowerAt = 0; g.empowerOn = false; g.lastRightT = -99; g.rewardSpell = null;
+    g.empower = 0; g.empowerN = 0; g.empowerAt = 0; g.empowerOn = false; g.lastRightT = -99; g.rewardSpell = null; g.rewardCrystal = null;
     g.stats = g.stats && g.keepStats ? g.stats : { kills: 0, q: 0, right: 0, startT: g.t, keyboard: inputMode === 'keyboard', qTime: 0, deaths: g.deaths, log: [], xp: 0, levelUps: [] };
     g.zoneStartT = g.gameT; g.firstCrystal = false; g.lastCrystalT = g.gameT; enterZone(0);
   }
@@ -51,7 +51,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     if (z.type === 'boss') return enterBoss(0);
     g.zoneIdx = zi; g.zone = z; g.waveIdx = 0; g.waveT = 0; g.clearT = null; g.enemies = g.enemies.filter(e => e.state !== 'dead'); g.crystals = []; g.zoneStartT = g.gameT; g.firstCrystal = false; g.lastCrystalT = g.gameT; g.rail = null; g.puzzle = null;
     const P = g.player; P.hp = Math.min(P.hpMax, P.hp + (z.heal || 0)); g.checkpoint = { zone: z.type, idx: zi };
-    if (z.type === 'rail') { for (const e of g.enemies) e.rail = true; startRail(g, railApi, z, zi); g.toast = { key: z.dark && !g.darkSeen ? 'toast.dark' : 'toast.rail', t: g.t }; }
+    if (z.type === 'rail') { for (const e of g.enemies) e.rail = true; startRail(g, railApi, z, zi); g.toast = { key: z.toast || (z.dark && !g.darkSeen ? 'toast.dark' : 'toast.rail'), t: g.t }; }   // v1.8 zone.toast = 구역 들어갈 때 한마디(보스 전 한마디 — 09 문서 1절)
     if (z.dark) g.darkSeen = true;   // v1.7 첫 어두운 구역은 「동굴이 어두워요」 안내
     g.emit('zone:enter', { zone: z.type, idx: zi, arenaNo: z.type === 'arena' ? arenaNoOf(zi) : 0, stage: stage.id, dark: !!z.dark }); return true;
   }
@@ -59,9 +59,9 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   function enterBoss(phase = 0){
     const zi = stage.zones.findIndex(z => z.type === 'boss'); if (zi < 0) return false; g.zoneIdx = zi; g.zone = stage.zones[zi];
     const P = g.player; P.hp = Math.min(P.hpMax, P.hp + (g.zone.heal || 0));
-    g.enemies = g.enemies.filter(e => e.state !== 'dead'); g.crystals = []; g.zoneStartT = g.gameT; g.firstCrystal = false; g.lastCrystalT = g.gameT; g.clearT = null;
-    g.boss = makeBoss(data.enemies[g.zone.boss], nid(), phase); g.enemies.push(g.boss); g.checkpoint = { zone: 'boss', phase };
-    g.emit('zone:enter', { zone: 'boss', idx: zi, stage: stage.id }); g.emit('boss:intro', { uid: g.boss.uid, kind: g.boss.kind, phase, pos: v3(g.boss.pos) }); g.toast = { key: 'toast.boss', t: g.t };
+    g.enemies = g.enemies.filter(e => e.state !== 'dead'); g.crystals = []; g.zoneStartT = g.gameT; g.firstCrystal = false; g.lastCrystalT = g.gameT; g.clearT = null; g.rail = null; g.puzzle = null;   // v1.8 길→보스방 바로 이어질 때 길 상태 정리(1-보스)
+    const bdef = data.enemies[g.zone.boss], hm = g.zone.hpMul || 1; g.boss = makeBoss(hm === 1 ? bdef : Object.assign({}, bdef, { phases: bdef.phases.map(p => Object.assign({}, p, { hp: Math.round(p.hp * hm) })) }), nid(), phase); /* v1.8 zone.hpMul(1-보스 ×1.2) — def 복사본, 원본 불변 */ g.enemies.push(g.boss); g.checkpoint = { zone: 'boss', phase };
+    g.emit('zone:enter', { zone: 'boss', idx: zi, stage: stage.id }); g.emit('boss:intro', { uid: g.boss.uid, kind: g.boss.kind, phase, pos: v3(g.boss.pos) }); g.toast = { key: g.zone.toast || 'toast.boss', t: g.t };
     return true;
   }
   g.bossHit = (b, dmg) => hurtPlayer(b, dmg);
@@ -318,7 +318,9 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     // v1.6 깬 기록(별 수 최대값)·스테이지 보상 마법(09 문서 12행: 1-2 ICE STORM …) → progress 에 남아 다음 판부터 장착 가능
     const st = starsOf().filter(Boolean).length; prog.cleared[stage.id] = Math.max(prog.cleared[stage.id] || 0, st); g.rewardSpell = null;
     const rw = stage.reward && stage.reward.spell; if (rw && !prog.unlocked.includes(rw)) { prog.unlocked.push(rw); g.rewardSpell = rw; if (!g.unlocked.has(rw)) { g.unlocked.add(rw); g.emit('reward', { kind: 'spell', spell: rw, amount: 1, pos: v3([g.player.pos[0], 1.4, g.player.pos[2]]) }); } }
-    g.emit('stage:clear', { stage: stage.id, stars: st, reward: g.rewardSpell }); }
+    // v1.8 결정(09 문서 12행 「보스: 수의 결정」·1절 「보스 후 결정 복구 장면」): progress.crystals 에 한 번만, 결과·stage:clear 에 crystal
+    const cr = stage.reward && stage.reward.crystal; g.rewardCrystal = null; if (cr && !prog.crystals.includes(cr)) { prog.crystals.push(cr); g.rewardCrystal = cr; g.emit('reward', { kind: 'crystal', crystal: cr, amount: 1, pos: v3([g.player.pos[0], 1.6, g.player.pos[2]]) }); }
+    g.emit('stage:clear', { stage: stage.id, stars: st, reward: g.rewardSpell, crystal: g.rewardCrystal, final: !!stage.final }); }
   function defeat(){ if (g.endT) return; g.endT = g.t; g.deaths++; g.stats.deaths = g.deaths; setLower('A15'); g.player.anim.upper = null; if (g.q) { g.q = null; g.questionOpen = false; } g.slowTo = 1; g.emit('player:defeat', {}); }
 
   // ── 입력 처리
@@ -434,7 +436,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     const lowerPhase = ['A01', 'A04'].includes(a.lower) ? loopPh(a.lower) : ph(a.lower, a.t0);
     const q = g.q, railSnap = railSnapshot(g, r3, v3); const snap = {
       t: r3(g.t), gameT: r3(g.gameT), slow: r3(g.slow), screen: g.screen, paused: g.paused,
-      world: { id: 'forest', stage: stage.id, stageName: stage.nameKo, dark: !!(g.zone && g.zone.dark), light: g.zone && g.zone.dark ? GAME.rail.dark.light : null, zone: g.zone ? g.zone.type : 'arena', zoneIdx: g.zoneIdx, arenaNo: g.zone && g.zone.type === 'arena' ? arenaNoOf(g.zoneIdx) : 0, arenas: stage.zones.filter(z => z.type === 'arena').length, railProgress: g.rail ? r3(g.rail.dist / g.rail.len) : 0, rail: railSnap.rail, seed, wave: g.waveIdx, waves: g.zone && g.zone.waves ? g.zone.waves.length : 0 },
+      world: { id: 'forest', stage: stage.id, stageName: stage.nameKo, heart: !!(g.zone && g.zone.heart), final: !!stage.final, crystals: prog.crystals.slice(), dark: !!(g.zone && g.zone.dark), light: g.zone && g.zone.dark ? GAME.rail.dark.light : null, zone: g.zone ? g.zone.type : 'arena', zoneIdx: g.zoneIdx, arenaNo: g.zone && g.zone.type === 'arena' ? arenaNoOf(g.zoneIdx) : 0, arenas: stage.zones.filter(z => z.type === 'arena').length, railProgress: g.rail ? r3(g.rail.dist / g.rail.len) : 0, rail: railSnap.rail, seed, wave: g.waveIdx, waves: g.zone && g.zone.waves ? g.zone.waves.length : 0 },
       player: { id: P.id, pos: v3(P.pos), yaw: 0, vel: v3(P.vel), anim: { lower: a.lower, upper: a.upper, phase: r3(lowerPhase), upperPhase: a.upper ? r3(a.upper === 'A09' ? (P.charging ? P.charging.ratio : 1) : ph(a.upper, a.ut0)) : 0, speed: r3(Math.abs(P.vel[0]) / GAME.player.vMax) },
         hp: P.hp, hpMax: P.hpMax, mana: Math.round(P.mana), manaMax: P.manaMax, charging: P.charging ? { spell: P.charging.spell, ratio: r3(P.charging.ratio) } : null,
         blocking: P.block, ducking: P.duck, hopping: !!(P.hopUntil && g.gameT < P.hopUntil), invuln: g.gameT < P.invulnUntil, hurtT: r3(Math.max(0, P.hurtUntil - g.gameT)), empowered: g.empower > g.gameT, empowerT: r3(Math.max(0, (g.empower - g.gameT) / GAME.empower.t)),
@@ -459,7 +461,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
       camera: { mode: q ? 'q' : g.screen === 'S08P' ? 'puzzle' : g.rail ? 'rail' : g.boss && g.boss.state === 'intro' ? 'boss-intro' : 'arena', target: v3([P.pos[0], 1, P.pos[2]]), shake: r3(g.trauma * g.trauma) },
       toast: g.toast ? g.toast.key : null, streak: g.streak,
       result: g.endT ? { win: P.hp > 0, kills: g.stats.kills, q: g.stats.q, right: g.stats.right, time: Math.round(g.t - g.stats.startT), keyboard: g.stats.keyboard, deaths: g.deaths, xp: g.stats.xp, level: prog.level, levelUps: g.stats.levelUps.slice(), empowers: g.stats.empowers || 0, splits: g.stats.splits || 0, niceDodges: g.stats.niceDodges || 0,
-        fireflies: g.stats.fireflies || 0, chests: g.stats.chests || 0, gold: g.stats.gold || 0, puzzles: g.stats.puzzles || 0, puzzleRight: g.stats.puzzleRight || 0, obstaclesHit: g.stats.obstaclesHit || 0, nicePasses: g.stats.nicePasses || 0, bounces: g.stats.bounces || 0, shields: g.stats.shields || 0, cracks: g.stats.cracks || 0, stars: starsOf(), reward: g.rewardSpell || null } : null,
+        fireflies: g.stats.fireflies || 0, chests: g.stats.chests || 0, gold: g.stats.gold || 0, puzzles: g.stats.puzzles || 0, puzzleRight: g.stats.puzzleRight || 0, obstaclesHit: g.stats.obstaclesHit || 0, nicePasses: g.stats.nicePasses || 0, bounces: g.stats.bounces || 0, shields: g.stats.shields || 0, cracks: g.stats.cracks || 0, stars: starsOf(), reward: g.rewardSpell || null, crystal: g.rewardCrystal || null, final: !!stage.final } : null,
     };
     return freeze ? deepFreeze(snap) : snap;
   };

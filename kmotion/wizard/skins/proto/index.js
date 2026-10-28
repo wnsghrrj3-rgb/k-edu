@@ -46,7 +46,7 @@ export function createSkin(ctx){
       if (!s.player) { // 메뉴: 고른 캐릭터를 천천히 돌려 보여 줌
         const id = s.title ? s.title.char : 'luna'; if (playerId !== id) { if (player) scene.remove(player); player = makePlayer(id); playerId = id; scene.add(player); }
         menuSpin += dt * .4; player.position.set(0, 0, 4); player.rotation.y = Math.PI + Math.sin(menuSpin) * .6; player.userData.armR.rotation.x = -.6 + Math.sin(menuSpin * 3) * .2; player.userData.orb.visible = false; player.userData.shield.visible = false;
-        for (const m of [enemies, shots, crystals, tgs, blasts, btgs, obst]) { for (const v of m.values()) drop(v); m.clear(); } if (golem) { scene.remove(golem); golem = null; golemUid = null; } if (pzProp) { drop(pzProp); pzProp = null; pzId = null; } forest.setMode('arena'); forest.setDark(false); darkK = 0; scene.background.copy(LIT.bg); scene.fog.color.copy(LIT.fog); scene.fog.near = LIT.near; scene.fog.far = LIT.far; hemi.intensity = LIT.hemi; hemi.color.copy(LIT.sky); hemi.groundColor.copy(LIT.gnd); sun.intensity = LIT.sun; staffLight.intensity = 0;
+        for (const m of [enemies, shots, crystals, tgs, blasts, btgs, obst]) { for (const v of m.values()) drop(v); m.clear(); } if (golem) { scene.remove(golem); golem = null; golemUid = null; } if (pzProp) { drop(pzProp); pzProp = null; pzId = null; } forest.setMode('arena'); forest.setDark(false); forest.setHeart(false); darkK = 0; scene.background.copy(LIT.bg); scene.fog.color.copy(LIT.fog); scene.fog.near = LIT.near; scene.fog.far = LIT.far; hemi.intensity = LIT.hemi; hemi.color.copy(LIT.sky); hemi.groundColor.copy(LIT.gnd); sun.intensity = LIT.sun; staffLight.intensity = 0;
         camera.position.set(Math.sin(menuSpin * .5) * 1.2, 2.2, -.8); camera.lookAt(0, 1.2, 4); camera.fov = 50; camera.updateProjectionMatrix(); sparks.update(dt); renderer.render(scene, camera); drawnTg = []; return; }
       const P = s.player; if (playerId !== P.id) { if (player) scene.remove(player); player = makePlayer(P.id); playerId = P.id; scene.add(player); }
       player.rotation.y = 0; posePlayer(player, P, dt, TIMING); hopY += ((P.hopping ? .9 : 0) - hopY) * Math.min(1, dt * (P.hopping ? 14 : 9)); player.position.y = hopY;   // v1.6 버섯 발판 폴짝(스킨 연출, 판정은 시스템)
@@ -58,6 +58,7 @@ export function createSkin(ctx){
       // v1.5 길 위 물건·퍼즐 소품(27 문서 ①) — 크기·자리는 스냅샷 그대로, 바닥·나무는 env 가 rail.dist 로 흘림
       const R = s.world && s.world.rail; forest.setMode(R ? 'rail' : 'arena', R);
       // v1.7 동굴: world.dark 면 조명·안개를 천천히 어둡게 + 지팡이 빛(거리 = world.light)
+      forest.setHeart(!!(s.world && s.world.heart));   // v1.8 고대 나무 심장(1-보스)
       const dk = s.world && s.world.dark ? 1 : 0; forest.setDark(!!dk); darkK += (dk - darkK) * Math.min(1, dt * 2.5);
       scene.background.copy(_c.copy(LIT.bg).lerp(DARK.bg, darkK)); scene.fog.color.copy(_c.copy(LIT.fog).lerp(DARK.fog, darkK)); scene.fog.near = LIT.near + (DARK.near - LIT.near) * darkK; scene.fog.far = LIT.far + (DARK.far - LIT.far) * darkK;
       hemi.color.copy(_c.copy(LIT.sky).lerp(DARK.sky, darkK)); hemi.groundColor.copy(_c.copy(LIT.gnd).lerp(DARK.gnd, darkK)); hemi.intensity = LIT.hemi + (DARK.hemi - LIT.hemi) * darkK; sun.intensity = LIT.sun + (DARK.sun - LIT.sun) * darkK;
@@ -131,12 +132,12 @@ export function createSkin(ctx){
     else if (T === 'crystal:break') { audio.play(ev.fade ? 'fizzle' : 'crystal'); if (ev.pos && !ev.fade) sparks.burst(ev.pos, ev.kind === 'empower' ? 0xffd45c : 0x7ae7ff, 70, 4, 3); }
     else if (T === 'hint:crystal') { ui.toast('toast.findCrystal'); audio.play('crystal'); }
     else if (T === 'q:open') audio.play('qopen');
-    else if (T === 'q:right') { audio.play('right', ev.streak); ui.setMana(ev.mana); if (player) { const p = player.position; sparks.burst([-p.x, 1.6, p.z], 0x58b7ff, 60, 3, 4); sparks.burst([-p.x, 1.6, p.z], 0xffd45c, 40, 3, 5); } }
+    else if (T === 'q:right') { audio.play('right', ev.streak); ui.setMana(ev.mana); forest.pulseDigits(); if (player) { const p = player.position; sparks.burst([-p.x, 1.6, p.z], 0x58b7ff, 60, 3, 4); sparks.burst([-p.x, 1.6, p.z], 0xffd45c, 40, 3, 5); } }
     else if (T === 'q:wrong') audio.play('wrong');
     else if (T === 'q:hint') audio.play('hint');
     else if (T === 'zone:enter' && ev.zone === 'arena' && ev.idx) { audio.play('wave'); ui.toast('toast.zone'); }
     else if (T === 'q:gauge') { audio.play('gauge'); }
-    else if (T === 'reward') { audio.play(ev.kind === 'feather' ? 'feather' : 'crystal'); if (ev.pos) sparks.burst(ev.pos, ev.kind === 'feather' ? 0xffffff : 0x58b7ff, 40, 2, 4); }
+    else if (T === 'reward') { audio.play(ev.kind === 'feather' ? 'feather' : ev.kind === 'crystal' ? 'clear' : 'crystal'); if (ev.pos) sparks.burst(ev.pos, ev.kind === 'feather' ? 0xffffff : ev.kind === 'crystal' ? 0x9b6bff : 0x58b7ff, ev.kind === 'crystal' ? 120 : 40, 2, ev.kind === 'crystal' ? 6 : 4); if (ev.kind === 'crystal') forest.pulseDigits(); }
     else if (T === 'wave') { audio.play('wave'); ui.toast('toast.wave'); }
     else if (T === 'xp') { if (ev.pos && ev.amount >= 5) { const sc = toScreen(ev.pos); if (sc.front) ui.floatAt(sc.x, sc.y - 50, `+${ev.amount} XP`, 'xp'); } }
     else if (T === 'level:up') { audio.play('levelup'); ui.toast('toast.levelUp'); if (player) { const p = player.position; sparks.burst([-p.x, 1.2, p.z], 0xffd45c, 90, 3, 5); sparks.burst([-p.x, 1.6, p.z], 0xb28cff, 60, 3, 4); } }
@@ -146,7 +147,7 @@ export function createSkin(ctx){
     else if (T === 'boss:weak') { if (ev.on) { audio.play('weak'); ui.toast('toast.weak'); } }
     else if (T === 'boss:phaseEnd') { audio.play('roar'); kick = .4; if (golem) sparks.burst([-golem.position.x, 1.8, golem.position.z], 0xff8a3d, 80, 5, 4); }
     else if (T === 'boss:die') { audio.play('boom'); audio.play('clear'); if (golem) { const p = [-golem.position.x, 1.5, golem.position.z]; sparks.burst(p, 0xffd45c, 160, 7, 5); sparks.burst(p, 0x9fe8ff, 80, 5, 6); } kick = .5; }
-    else if (T === 'stage:clear') { audio.play('clear'); if (ev.reward) ui.toast('toast.reward.' + ev.reward); }
+    else if (T === 'stage:clear') { audio.play('clear'); if (ev.reward) ui.toast('toast.reward.' + ev.reward); else if (ev.crystal) ui.toast('toast.reward.crystal.' + ev.crystal); }
     // v1.6 방패병·버섯 발판
     else if (T === 'enemy:shieldHit') { audio.play('block'); if (ev.pos) sparks.burst(ev.pos, 0xd9a35c, 12, 2.5, 2); }
     else if (T === 'enemy:shieldBreak') { audio.play(ev.byMath ? 'glass' : 'boom'); if (ev.pos) { sparks.burst(ev.pos, 0xd9a35c, 60, 4, 3); sparks.burst(ev.pos, 0xfff4d6, 30, 3, 4); } kick = Math.max(kick, .2); if (ev.byMath) fovPulse = 4; const sc = toScreen(ev.pos || [0, 1, 6]); if (sc.front) ui.floatAt(sc.x, sc.y - 40, '방패 깨짐!', 'crit'); }

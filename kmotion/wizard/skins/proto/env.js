@@ -1,7 +1,7 @@
 // proto 스킨 — 숲 전투장 바닥·둘레(⑥). 판정과 무관한 배경만. 전투장 폭 = 스테이지 arenaHalfX 4m(+여유), 적은 z 0.5~16
 // 좌표는 Three 그대로(배경이라 좌우 대칭 — WX 필요 없음). InstancedMesh 로 그리기 호출 적게
 import * as THREE from 'three';
-import { toon } from './actors.js';
+import { toon, textSprite } from './actors.js';
 function rng(seed){ let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 function groundTex(){ const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
   g.fillStyle = '#5f9a3e'; g.fillRect(0, 0, 512, 512); const r = rng(7);
@@ -83,6 +83,14 @@ export function buildForest(scene, { arenaZ = 9 } = {}){
   function layCave(dist){ for (const m of caveRailM) { const { list, f } = m.userData; list.forEach((s, i) => { dummy.position.set(s[0], 0, wrapZ(s[1], dist)); dummy.rotation.set(0, s[3] * 9, 0); dummy.scale.setScalar(s[2]); f && f(dummy, s); dummy.updateMatrix(); m.setMatrixAt(i, dummy.matrix); }); m.instanceMatrix.needsUpdate = true; } }
   function placeLights(dist){ caveLights.forEach((l, i) => { const on = dark && i < lightsN; l.visible = on; l.intensity = on ? 2.2 : 0; if (!on) return; const s = mode === 'rail' ? lightRail(i) : lightArena(i); l.position.set(s[0] * .92, 1.2, mode === 'rail' ? wrapZ(s[1], dist) : s[1]); }); }
   const arenaOnly = [arena, ...meshes]; let mode = 'arena', lastDist = -1;
+  // v1.8 「고대 나무 심장」(09 문서 4행 2·4열: 줄기에 1~9 숫자 무늬가 빛남 · 정답 때 같이 빛남) — 보스방 북쪽 뒤(z 22), 길 모드에선 멀리 서서(z 40) 다가오는 듯 보임. 처음 켤 때만 만든다
+  let heart = null, heartOn = false, heartPulse = 0; const digits = [];
+  function buildHeart(){ const g = new THREE.Group(); const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 3.2, 14, 12), toon(0x5c3f28)); trunk.position.y = 7; trunk.castShadow = true; g.add(trunk);
+    const rootsG = new THREE.CylinderGeometry(.5, .9, 3.2, 6); for (let i = 0; i < 7; i++) { const m = new THREE.Mesh(rootsG, toon(0x4f3622)); const a = i / 7 * Math.PI * 2; m.position.set(Math.cos(a) * 3.1, .9, Math.sin(a) * 3.1); m.rotation.z = Math.cos(a) * .9; m.rotation.x = -Math.sin(a) * .9; g.add(m); }
+    const can = new THREE.Group(); const cg = new THREE.IcosahedronGeometry(1, 1); const rr = rng(99); for (let i = 0; i < 14; i++) { const m = new THREE.Mesh(cg, toon(i % 3 ? 0x4e9a3a : 0x6fbf4a)); const a = rr() * Math.PI * 2, d = rr() * 5.5; m.position.set(Math.cos(a) * d, 12.5 + rr() * 4, Math.sin(a) * d); m.scale.setScalar(3 + rr() * 2.4); can.add(m); } g.add(can);
+    const core = new THREE.Mesh(new THREE.SphereGeometry(.9, 16, 12), new THREE.MeshBasicMaterial({ color: 0x9b6bff })); core.position.set(0, 5.2, 3.1); g.add(core); const coreL = new THREE.PointLight(0x9b6bff, 1.6, 18, 2); coreL.position.copy(core.position); g.add(coreL);
+    for (let i = 1; i <= 9; i++) { const sp = textSprite(String(i), { scale: 1.1, color: '#ffe7a3', stroke: '#3a2a10' }); const a = (i - 5) * .42, y = 2.4 + (i % 3) * 1.6 + Math.floor((i - 1) / 3) * 2.2; sp.position.set(Math.sin(a) * 3.0, y, Math.cos(a) * 3.0 + .2); sp.material.depthTest = true; sp.material.opacity = .55; g.add(sp); digits.push(sp); }
+    g.userData = { core, coreL, can }; g.visible = false; root.add(g); return g; }
   let t = 0;
   return {
     /** mode 'arena'|'rail' + rail 스냅샷(world.rail) — 길이면 바닥·나무를 dist 로 흘린다 */
@@ -93,7 +101,11 @@ export function buildForest(scene, { arenaZ = 9 } = {}){
       cave.visible = dark && mode === 'rail'; caveArena.visible = dark && mode !== 'rail'; for (const m of rMeshes) m.visible = !dark; for (const m of arenaTrees) m.visible = !dark && mode !== 'rail'; for (const m of mounts) m.visible = !dark;
       ground.material.color.copy(groundCol).multiplyScalar(dark ? .28 : 1); if (dark) ground.material.color.lerp(new THREE.Color(0x2b2350), .35); for (const rd of roads) { rd.material.color.copy(roadCol).multiplyScalar(dark ? .45 : 1); } arena.material.opacity = dark ? .55 : 1;
       if (dark) { layCave(Math.max(0, lastDist)); } placeLights(Math.max(0, lastDist)); },
-    update(dt){ t += dt; for (let i = 0; i < fireN; i++) { const s = seeds[i]; fp[i * 3] = s[0] + Math.sin(t * .4 + s[3]) * .8; fp[i * 3 + 1] = s[1] + Math.sin(t * .9 + s[3] * 2) * .3; fp[i * 3 + 2] = s[2] + Math.cos(t * .3 + s[3]) * .8; } fg.attributes.position.needsUpdate = true; },
+    /** v1.8 고대 나무 심장 켜기/끄기(world.heart) — 보스방이면 z 22, 길이면 z 40 */
+    setHeart(on){ on = !!on; if (on && !heart) heart = buildHeart(); if (!heart) return; heartOn = on; heart.visible = on; if (on) heart.position.set(0, 0, mode === 'rail' ? 40 : 22); },
+    /** v1.8 정답 때 숫자 무늬가 같이 빛남(09 문서 4행) */
+    pulseDigits(){ heartPulse = 1; },
+    update(dt){ t += dt; if (heartOn && heart) { heartPulse = Math.max(0, heartPulse - dt * .8); const k = .55 + .45 * heartPulse + Math.sin(t * 2) * .08; for (const d of digits) d.material.opacity = Math.min(1, k); const u = heart.userData; u.core.scale.setScalar(1 + Math.sin(t * 3) * .08 + heartPulse * .3); u.coreL.intensity = 1.6 + heartPulse * 3; u.can.rotation.y = t * .03; heart.position.z = mode === 'rail' ? 40 : 22; } for (let i = 0; i < fireN; i++) { const s = seeds[i]; fp[i * 3] = s[0] + Math.sin(t * .4 + s[3]) * .8; fp[i * 3 + 1] = s[1] + Math.sin(t * .9 + s[3] * 2) * .3; fp[i * 3 + 2] = s[2] + Math.cos(t * .3 + s[3]) * .8; } fg.attributes.position.needsUpdate = true; },
     setQuality(q){ lightsN = q === 'low' ? 2 : 6; placeLights(Math.max(0, lastDist)); flies.visible = q !== 'low'; meshes.forEach(m => { m.castShadow = q === 'high' || (q === 'medium' && m.count < 140); }); rMeshes.forEach(m => { m.castShadow = q !== 'low'; }); },
     dispose(){ scene.remove(root); },
   };

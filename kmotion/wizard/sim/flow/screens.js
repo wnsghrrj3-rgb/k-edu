@@ -16,7 +16,7 @@ export function createFlow({ data, grade = 1, seed = Date.now() % 100000, freeze
   const STAGES = Object.keys(data.stages);
   const isLocked = id => { const z = data.stages[id]; const prog = f.progress || {}; return !!(z && z.requires && !(prog.cleared && prog.cleared[z.requires]) && !(forceStage && id === f.stage)); };
   f.stage = stage && data.stages[stage] ? stage : STAGES[0]; if (isLocked(f.stage) && !forceStage) f.stage = STAGES[0];
-  f.stageList = () => STAGES.map(id => ({ id, nameKo: data.stages[id].nameKo, stars: (f.progress && f.progress.cleared && f.progress.cleared[id]) || 0, locked: isLocked(id), requires: data.stages[id].requires || null, reward: data.stages[id].reward ? data.stages[id].reward.spell : null }));
+  f.stageList = () => STAGES.map(id => ({ id, nameKo: data.stages[id].nameKo, stars: (f.progress && f.progress.cleared && f.progress.cleared[id]) || 0, locked: isLocked(id), requires: data.stages[id].requires || null, reward: data.stages[id].reward ? data.stages[id].reward.spell || null : null, crystal: data.stages[id].reward ? data.stages[id].reward.crystal || null : null, final: !!data.stages[id].final }));   // v1.8 crystal·final(보스 스테이지)
   const ctrl = STAGE_BY_GRADE(grade);
   function newGame(){
     f.wi = new WizardInput({ stage: ctrl, cal: f.mode === 'mouse' ? null : f.cal, uMaxAuto: f.mode === 'mouse' ? .55 : null });
