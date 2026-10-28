@@ -6,7 +6,12 @@ export { GENERATORS };
 export class QuestionEngine {
   constructor({ rng, concepts, mastery = new Mastery() }){ this.rng = rng; this.concepts = concepts.filter(k => GENERATORS[k]); this.m = mastery; this.recent = []; this.retry = []; this.slotUse = [0, 0, 0]; this.seq = 0;
     // v2.0: 장면 개념이 속한 단원(들)만 — want 풀이 다른 학년 단원으로 새지 않게(14 문서)
-    this.units = new Set(this.concepts.map(k => GENERATORS[k].unit || 'g1-1-u3')); }
+    this.units = new Set(this.concepts.map(k => GENERATORS[k].unit || 'g1-1-u3'));
+    // v2.1: 비교형·규칙형(강화 수정 얼음·번개)은 같은 학년에서 장면 단원 이하(이미 배운 단원)까지 — 1-1 3단원 장면이면 1-1 1단원의 비교·순서는 되고 5단원(50까지)은 안 됨
+    this.unitKey = u => { const m = /^g(\d)-(\d)-u(\d+)$/.exec(u || 'g1-1-u3'); return m ? [+m[1], +m[2] * 100 + +m[3]] : [1, 103]; };
+    const ks = [...this.units].map(this.unitKey); this.grade = ks[0][0]; this.unitMax = Math.max(...ks.map(k => k[1])); }
+  // 어느 단원 생성기를 want 풀에 넣을지: word·calc 는 장면 단원 그대로 · compare·pattern 은 같은 학년 장면 단원 이하
+  unitOk(unit, want){ if (this.units.has(unit)) return true; if (want !== 'compare' && want !== 'pattern') return false; const [g, k] = this.unitKey(unit); return g === this.grade && k <= this.unitMax; }
   next(opt = {}){
     // v1.6: fixed = 수가 정해진 문제(방패병 방패의 빈칸 식 「□+b=c」 그대로) — 고르기 없이 바로 만든다
     if (opt.fixed) { const k = opt.fixed.concept, g = GENERATORS[k]; if (g) { const q = g.gen(this.rng, .5, { fixed: opt.fixed }); q.p = this.m.p(k, q.d); this.recent.push(q.fact); if (this.recent.length > 30) this.recent.shift(); return this.build(q, false); } }
@@ -14,7 +19,7 @@ export class QuestionEngine {
     const forced = opt.want ? null : this.retry.shift();
     // want 'word' = 문장제만(보스 마지막 봉인 칸) · 'calc' = 계산형만 · 'compare' = 비교·크기형 · 'pattern' = 규칙형(강화 수정, 05 문서 12항) — 장면 개념 밖이어도 같은 단원 생성기에서, 없으면 장면 개념으로
     const TAG = { word: x => !!x.word, calc: x => !x.word, compare: x => !!x.compare, pattern: x => !!x.pattern };
-    const wantPool = opt.want && TAG[opt.want] ? Object.keys(GENERATORS).filter(k => TAG[opt.want](GENERATORS[k]) && this.units.has(GENERATORS[k].unit || 'g1-1-u3') && (this.concepts.includes(k) || opt.want !== 'calc')) : null;
+    const wantPool = opt.want && TAG[opt.want] ? Object.keys(GENERATORS).filter(k => TAG[opt.want](GENERATORS[k]) && this.unitOk(GENERATORS[k].unit || 'g1-1-u3', opt.want) && (this.concepts.includes(k) || opt.want !== 'calc')) : null;
     const pool = forced ? [forced.concept] : (wantPool && wantPool.length ? wantPool : this.concepts);
     for (let i = 0; i < 24; i++) { const k = this.rng.pick(pool), g = GENERATORS[k]; const dd = forced ? .1 : this.rng.next(); const q = g.gen(this.rng, dd);
       if (this.recent.includes(q.fact)) continue; if (forced && q.d > .35) continue; q.p = this.m.p(k, q.d); cands.push(q); }
