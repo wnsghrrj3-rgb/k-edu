@@ -1,4 +1,4 @@
-/* parse_figs_g5s2_math.js — 5학년 2학기 수학 자기주도 원문 renderModels → 케이티처 그림 재료 JSON (211차, 베프).
+/* parse_figs_g5s2_math.js — 5학년 2학기 수학 자기주도 원문 renderModels → 케이티처 그림 재료 JSON (211차, 베프 · 217차 2단원 부품 더함).
    원문 부품 라이브러리(rangeLine·rangeRow·valueChips·dialRow·numLineZoom·rangeTable·estRow) 호출을 그대로 실행하되,
    부품 함수를 「그림 명세를 돌려주는 함수」로 바꿔 끼워 2세대 부품(rgl·vch·rdial·nlz·rtb·est) 명세로 받는다.
    자리: m-iN = 도입 N번째 장(개념 장 번호 N−1) · m-eN = 전개 N번째 장(개념 장 번호 N+2) · m-qN = 문항(문제 번호 N−8).
@@ -18,6 +18,10 @@ files.forEach(f => {
     rangeLine: (o) => ({ k: 'rgl', rows: [o] }), rangeRow: (items, o) => Object.assign({ k: 'rgl', rows: items }, o && o.note ? { note: o.note } : {}),
     valueChips: (items, o) => Object.assign({ k: 'vch', items }, o || {}), dialRow: (items, o) => Object.assign({ k: 'rdial', items }, o && o.note ? { note: o.note } : {}),
     numLineZoom: (o) => Object.assign({ k: 'nlz' }, o), rangeTable: (rows, o) => Object.assign({ k: 'rtb', rows }, o || {}), estRow: (rows, o) => Object.assign({ k: 'est', rows }, o || {}),
+    // 217차 2단원 「분수의 곱셈」 부품 — fracChips·fracLines·mulLine·mulCalc·wayCards·opBar·cmpMul·mixRect·areaGrid → fch·fln·mln·mcc·wyc·opb·cmm·mxr·agr
+    fracChips: (items, o) => Object.assign({ k: 'fch', items }, o || {}), fracLines: (rows, o) => Object.assign({ k: 'fln', rows }, o || {}),
+    mulLine: (o) => Object.assign({ k: 'mln' }, o), mulCalc: (rows, o) => Object.assign({ k: 'mcc', rows }, o || {}), wayCards: (items, o) => Object.assign({ k: 'wyc', items }, o || {}),
+    opBar: (o) => Object.assign({ k: 'opb' }, o), cmpMul: (o) => Object.assign({ k: 'cmm' }, o), mixRect: (o) => Object.assign({}, o, { k: 'mxr', cols: o.k }), areaGrid: (o) => Object.assign({ k: 'agr' }, o),
     document: { getElementById: (id) => { const o = {}; Object.defineProperty(o, 'innerHTML', { set: (v) => { got[id] = v; } }); return o; } }
   };
   vm.createContext(ctx); vm.runInContext(body, ctx);

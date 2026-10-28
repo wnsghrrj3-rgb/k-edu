@@ -3141,6 +3141,119 @@
     Object.assign(PARTS, { rgl, vch, rdial, nlz }); Object.assign(HTML_PARTS, { rtb, est });
     global.KT2_RDCALC = rdCalc;
   }
+  // ══ 217차(2026-10-29) 5학년 2학기 수학 2단원 「분수의 곱셈」 부품 — 자기주도 원문 부품 라이브러리(fracChips·fracLines·mulLine·mulCalc·wayCards·opBar·cmpMul·mixRect·areaGrid)를 2세대로 옮김 ══
+  //   fch(분수 카드 줄) · fln/mcc(계산 전개 줄 — data-calc 를 게이트가 분수 계산기로 다시 셈 · cls bad = 잘못 계산한 길) · wyc(약분 시점이 다른 세 방법 카드)
+  //   cmm(곱하는 수에 따라 커지나 작아지나 — 부등호는 부품이 스스로 셈) · mln(수직선 뛰어 세기 — 걸음 신고는 분수 글자) · opb(연산자 띠 — 전체를 d등분 한 것 중의 n)
+  //   agr(넓이 모델 — 전체 ad×bd 칸 중 an×bn 칸 빗금) · mxr(자연수×대분수 — 직사각형을 둘로 가름)
+  //   ⛔ ask 면 답이 되는 수(끝 이름표·칸 수·묶음 값·부등호)를 그리지 않는다.
+  {
+    const mf2 = (n) => String(Math.round(n * 10) / 10);
+    const C6 = { a: '#FF7A2F', aSoft: '#FFE3CF', aDeep: '#C2551A', b: '#2A9D8F', bSoft: '#D5F0EC', bDeep: '#1E6F66', soft: '#6B7C93', line: '#9AA6B8', emph: '#E0413C', ok: '#2E7D4F' };
+    // HTML 분수 — 「w n/d」 「n/d」 를 세로 분수로, 나머지 글자는 그대로(이스케이프)
+    const fqh = (n, d, w) => '<span class="fq">' + (w != null && w !== '' ? '<span class="fq-w">' + esc(w) + '</span>' : '') + '<span class="fq-f"><span class="fq-n">' + esc(n) + '</span><span class="fq-d">' + esc(d) + '</span></span></span>';
+    function fxh(str) {
+      const s = String(str), re = /(\d+)\s+(\d+)\/(\d+)|(\d+)\/(\d+)/g; let out = '', last = 0, m;
+      while ((m = re.exec(s))) { out += esc(s.slice(last, m.index)); out += m[1] != null ? fqh(m[2], m[3], m[1]) : fqh(m[4], m[5]); last = re.lastIndex; }
+      return out + esc(s.slice(last)).replace(/ - /g, ' − ');
+    }
+    // SVG 세로 분수(가운데 x · 가로줄 y)
+    function sfq(x, y, n, d, w, sz, col, cls) {
+      x = +x; y = +y; sz = sz || 26; col = col || INK; const nw = Math.max(String(n).length, String(d).length) * sz * 0.62 + 8;
+      let s = '', fx0 = x;
+      if (w != null && w !== '') { const ww = String(w).length * sz * 0.62; fx0 = x + (ww + 4) / 2; s += txt(mf2(fx0 - nw / 2 - 4 - ww / 2), mf2(y + sz * 0.36), String(w), sz * 1.08, col, 900); }
+      s += txt(mf2(fx0), mf2(y - 6), String(n), sz, col, 900) + '<line x1="' + mf2(fx0 - nw / 2) + '" y1="' + y + '" x2="' + mf2(fx0 + nw / 2) + '" y2="' + y + '" stroke="' + col + '" stroke-width="3"/>' + txt(mf2(fx0), mf2(y + sz * 0.92), String(d), sz, col, 900);
+      return '<g' + (cls ? ' class="' + cls + '"' : '') + '>' + s + '</g>';
+    }
+    // 글자 「w n/d」 → SVG(분수면 세로, 아니면 글자)
+    function sval(x, y, t, sz, col, cls) { x = +x; y = +y; const m = String(t).match(/^(?:(\d+)\s+)?(\d+)\/(\d+)$/); return m ? sfq(x, y, m[2], m[3], m[1], sz, col, cls) : txt(x, y + sz * 0.36, String(t), sz * 1.1, col, 900).replace('<text ', '<text ' + (cls ? 'class="' + cls + '" ' : '')); }
+    // ── fch ──
+    function fch(o) {
+      const it = o.items || []; if (!it.length) return '';
+      const has = (k, i) => (o[k] || []).indexOf(i) >= 0;
+      const body = it.map((v, i) => '<div class="fch-c' + (has('both', i) ? ' both' : has('hi', i) ? ' hi' : has('hi2', i) ? ' hi2' : '') + (has('dim', i) ? ' dim' : '') + '" data-v="' + esc(v) + '">' + fxh(v) + '</div>').join('');
+      return '<div class="fig-vert fig-fch" data-chips="' + esc(it.join(',')) + '"><div class="fch-row">' + body + '</div>' + (o.note ? '<div class="fig-cap fq-cap">' + esc(o.note) + '</div>' : '') + '</div>';
+    }
+    // ── mcc · fln ──
+    function mcc(o) {
+      const rows = o.rows || []; if (!rows.length) return '';
+      const body = rows.map(r => '<div class="mcc-r' + (r.cls ? ' ' + esc(r.cls) : '') + '" data-calc="' + esc(r.expr) + '"><span class="mcc-l">' + esc(r.lead || '') + '</span><span class="mcc-e">' + fxh(r.expr) + '</span>' + (r.cls === 'bad' ? '<span class="mcc-x">✗</span>' : '') + '</div>').join('');
+      return '<div class="fig-vert fig-mcc"><div class="mcc-rows">' + body + '</div>' + (o.note ? '<div class="fig-cap fq-cap">' + esc(o.note) + '</div>' : '') + '</div>';
+    }
+    const fln = mcc;
+    // ── wyc ──
+    function wyc(o) {
+      const it = o.items || []; if (!it.length) return '';
+      const body = it.map(c => '<div class="wyc-c" data-way="' + esc(c.name) + '|' + esc(c.lines[c.lines.length - 1]) + '"><div class="wyc-n">' + esc(c.name) + '</div>' + c.lines.map(l => '<div class="wyc-l" data-calc="' + esc(l) + '">' + fxh(l) + '</div>').join('') + '</div>').join('');
+      return '<div class="fig-vert fig-wyc"><div class="wyc-row">' + body + '</div>' + (o.note ? '<div class="fig-cap fq-cap">' + esc(o.note) + '</div>' : '') + '</div>';
+    }
+    // ── cmm ── 부등호는 부품이 셈(데이터에 쓰지 않음)
+    const fval = (s) => { const m = String(s).match(/^(?:(\d+)\s+)?(\d+)\/(\d+)$/); if (m) return [(m[1] ? +m[1] : 0) * +m[3] + +m[2], +m[3]]; if (/^\d+$/.test(String(s))) return [+s, 1]; throw new Error('cmm: 모르는 수 ' + s); };
+    function cmm(o) {
+      const base = +o.base; if (!(base > 0)) throw new Error('cmm: base');
+      const body = (o.items || []).map(it => { const [p, q] = fval(it.v), rel = p > q ? '>' : p < q ? '<' : '=';
+        return '<div class="cmm-c' + (o.ask ? '' : rel === '>' ? ' up' : rel === '<' ? ' dn' : ' eq') + '" data-cmp="' + base + '|' + esc(it.v) + '" data-rel="' + (o.ask ? '' : rel) + '"><span class="cmm-e">' + fxh(base + ' × ' + it.v) + '</span><span class="cmm-r">' + (o.ask ? '?' : esc(rel)) + '</span><span class="cmm-b">' + base + '</span></div>'; }).join('');
+      return '<div class="fig-vert fig-cmm" data-ask="' + (o.ask ? 1 : 0) + '"><div class="cmm-row">' + body + '</div>' + (o.note ? '<div class="fig-cap fq-cap">' + esc(o.note) + '</div>' : '') + '</div>';
+    }
+    // ── mln ──
+    function mln(o) {
+      const w = +(o.w || 0), n = +o.n, d = +o.d, times = +o.times, to = +o.to; if (!(d > 0 && n >= 0 && times > 0 && to > 0)) throw new Error('mln: 인자');
+      const sn = w * d + n; if (sn * times > to * d) throw new Error('mln: 수직선 밖');
+      const X0 = 50, X1 = 710, Y = 150, px = (v) => X0 + (X1 - X0) * v / to; let s = '';
+      s += '<line x1="' + X0 + '" y1="' + Y + '" x2="' + (X1 + 24) + '" y2="' + Y + '" stroke="' + INK + '" stroke-width="3.5"/><path d="M' + (X1 + 24) + ' ' + (Y - 8) + 'l16 8l-16 8Z" fill="' + INK + '"/>';
+      for (let i = 0; i <= to * d; i++) { const x = px(i / d), big = i % d === 0; s += '<line x1="' + mf2(x) + '" y1="' + (Y - (big ? 14 : 8)) + '" x2="' + mf2(x) + '" y2="' + (Y + (big ? 14 : 8)) + '" stroke="' + INK + '" stroke-width="' + (big ? 3.5 : 2.2) + '"/>'; if (big) s += txt(mf2(x), Y + 48, String(i / d), 28, INK, 900).replace('<text ', '<text class="mln-t" data-v="' + (i / d) + '" '); }
+      for (let k = 0; k < times; k++) { const a = px(sn * k / d), b = px(sn * (k + 1) / d), mid = (a + b) / 2;
+        s += '<g class="mln-j" data-k="' + k + '" data-a="' + sn * k + '/' + d + '" data-b="' + sn * (k + 1) + '/' + d + '"><path d="M' + mf2(a) + ' ' + (Y - 16) + ' Q' + mf2(mid) + ' ' + (Y - 66) + ' ' + mf2(b) + ' ' + (Y - 16) + '" fill="none" stroke="' + C6.aDeep + '" stroke-width="4.5"/><path d="M' + mf2(b - 8) + ' ' + (Y - 27) + ' L' + mf2(b) + ' ' + (Y - 13) + ' L' + mf2(b + 8) + ' ' + (Y - 27) + 'Z" fill="' + C6.aDeep + '"/></g>'; }
+      const step = w ? w + ' ' + n + '/' + d : n + '/' + d; s += sval(mf2(px(sn / d / 2)), Y - 104, step, 22, C6.soft);
+      const end = px(sn * times / d), lab = o.ask ? '?' : (o.res || '');
+      if (lab) s += o.ask ? txt(mf2(end), Y - 84, '?', 38, ORANGE, 900).replace('<text ', '<text class="mln-res" ') : sval(mf2(Math.min(end, 690)), Y - 104, lab, 26, C6.aDeep, 'mln-res');
+      let H = Y + 64; if (o.cap) { s += txt(380, H + 14, o.cap, 24, INK, 900); H += 40; }
+      return svgWrap(s, 'fig-mln', '0 0 760 ' + Math.round(H)).replace('<svg ', '<svg data-mline="' + w + ',' + n + ',' + d + ',' + times + ',' + to + '" data-ask="' + (o.ask ? 1 : 0) + '" ');
+    }
+    // ── opb ── 전체를 d등분 · 앞 n칸 색 · 경계 값은 ask 가 아닐 때만
+    function opb(o) {
+      const whole = +o.whole, n = +o.n, d = +o.d; if (!(whole > 0 && d > 0 && n > 0 && n <= d)) throw new Error('opb: 인자');
+      if (whole % d) throw new Error('opb: 나누어떨어지지 않음 ' + whole + '/' + d);
+      const X0 = 50, X1 = 710, Y = 30, H0 = 72, seg = (X1 - X0) / d; let s = '';
+      for (let i = 0; i < d; i++) s += '<rect class="opb-p' + (i < n ? ' on' : '') + '" data-i="' + i + '" x="' + mf2(X0 + seg * i) + '" y="' + Y + '" width="' + mf2(seg) + '" height="' + H0 + '" fill="' + (i < n ? C6.a : '#fff') + '" stroke="' + C6.line + '" stroke-width="3"/>';
+      s += '<rect x="' + X0 + '" y="' + Y + '" width="' + (X1 - X0) + '" height="' + H0 + '" fill="none" stroke="' + INK + '" stroke-width="4"/>';
+      const yb = Y + H0 + 26; s += '<line x1="' + X0 + '" y1="' + yb + '" x2="' + X1 + '" y2="' + yb + '" stroke="' + INK + '" stroke-width="3"/>';
+      for (let i = 0; i <= d; i++) { const x = X0 + seg * i, v = whole * i / d, show = !o.ask || i === 0 || i === d; s += '<line x1="' + mf2(x) + '" y1="' + (yb - 10) + '" x2="' + mf2(x) + '" y2="' + (yb + 10) + '" stroke="' + INK + '" stroke-width="3"/>'; if (show && (d <= 12 || i === 0 || i === d)) s += txt(mf2(x), yb + 40, String(v), 26, INK, 900).replace('<text ', '<text class="opb-t" data-v="' + v + '" '); }
+      s += '<path d="M' + X0 + ' ' + (Y + H0 + 8) + ' Q' + mf2((X0 + X0 + seg * n) / 2) + ' ' + (Y + H0 + 22) + ' ' + mf2(X0 + seg * n) + ' ' + (Y + H0 + 8) + '" fill="none" stroke="' + C6.aDeep + '" stroke-width="3"/>';
+      let H = yb + 56; const res = o.ask ? '?' : (o.res != null ? String(o.res) : '');
+      if (res) { s += '<g class="opb-res" data-res="' + esc(res) + '">' + txt(330, H + 16, whole + '의', 26, INK, 900) + sfq(400, H + 6, n, d, null, 22, C6.aDeep) + txt(470, H + 16, '→  ' + res, 28, o.ask ? ORANGE : C6.aDeep, 900) + '</g>'; H += 52; }
+      if (o.cap) { s += txt(380, H + 14, o.cap, 23, C6.soft, 900); H += 38; }
+      return svgWrap(s, 'fig-opb', '0 0 760 ' + Math.round(H)).replace('<svg ', '<svg data-opbar="' + whole + ',' + n + ',' + d + '" data-ask="' + (o.ask ? 1 : 0) + '" ');
+    }
+    // ── agr ── 가로 ad 칸 중 an 칸(청록) · 그 안의 세로 bd 칸 중 bn 칸 빗금(주황)
+    function agr(o) {
+      const an = +o.an, ad = +o.ad, bn = +o.bn, bd = +o.bd; if (!(an > 0 && ad > 0 && bn > 0 && bd > 0) || an > ad || bn > bd) throw new Error('agr: 진분수');
+      const S = Math.min(64, Math.floor(380 / Math.max(ad, bd))), gw = S * ad, gh = S * bd, X0 = Math.round((760 - gw) / 2), Y0 = 16; let s = '', hat = 0;
+      for (let r = 0; r < bd; r++) for (let c = 0; c < ad; c++) { const inA = c < an, h = inA && r < bn && o.only !== 'a'; if (h) hat++;
+        s += '<rect class="agr-c' + (h ? ' h' : '') + '" data-r="' + r + '" data-c="' + c + '" x="' + (X0 + S * c) + '" y="' + (Y0 + S * r) + '" width="' + S + '" height="' + S + '" fill="' + (h ? C6.a : inA ? C6.bSoft : '#fff') + '" stroke="' + C6.line + '" stroke-width="3"/>';
+        if (h) s += '<path d="M' + (X0 + S * c + 6) + ' ' + (Y0 + S * r + S - 6) + 'L' + (X0 + S * c + S - 6) + ' ' + (Y0 + S * r + 6) + '" stroke="#fff" stroke-width="3" opacity=".7"/>'; }
+      s += '<rect x="' + X0 + '" y="' + Y0 + '" width="' + gw + '" height="' + gh + '" fill="none" stroke="' + INK + '" stroke-width="4"/>';
+      let H = Y0 + gh + 14;
+      if (o.only !== 'a') { const cap = '전체 ' + (o.ask ? '?' : ad * bd) + '칸 중에서 ' + (o.ask ? '?' : an * bn) + '칸'; s += txt(380, H + 26, cap, 26, o.ask ? ORANGE : INK, 900).replace('<text ', '<text class="agr-cap" '); H += 40; }
+      if (o.cap) { s += o.ask ? txt(380, H + 24, o.cap, 23, C6.soft, 900) : txt(380, H + 24, o.cap, 23, C6.soft, 900); H += 38; }
+      return svgWrap(s, 'fig-agr', '0 0 760 ' + Math.round(H + 4)).replace('<svg ', '<svg data-area="' + an + ',' + ad + ',' + bn + ',' + bd + '" data-only="' + (o.only || '') + '" data-hat="' + hat + '" data-ask="' + (o.ask ? 1 : 0) + '" ');
+    }
+    // ── mxr ── 가로 cols(자연수) × 세로 w + n/d — 위(세로 w)·아래(세로 n/d) 두 칸
+    function mxr(o) {
+      const k = +o.cols, w = +o.w, n = +o.n, d = +o.d; if (!(k > 0 && w >= 0 && d > 0 && n > 0 && n < d)) throw new Error('mxr: 인자');
+      const UW = Math.min(150, Math.floor(520 / k)), UH = 96, wpx = UW * k, hA = UH * w, hB = UH * n / d, X0 = Math.round((760 - wpx) / 2) + 20, Y0 = 14; let s = '';
+      s += '<rect class="mxr-a" x="' + X0 + '" y="' + Y0 + '" width="' + wpx + '" height="' + hA + '" fill="' + C6.bSoft + '" stroke="' + C6.line + '" stroke-width="3"/>';
+      s += '<rect class="mxr-b" x="' + X0 + '" y="' + (Y0 + hA) + '" width="' + wpx + '" height="' + mf2(hB) + '" fill="' + C6.aSoft + '" stroke="' + C6.line + '" stroke-width="3"/>';
+      for (let i = 1; i < k; i++) s += '<line x1="' + (X0 + UW * i) + '" y1="' + Y0 + '" x2="' + (X0 + UW * i) + '" y2="' + mf2(Y0 + hA + hB) + '" stroke="#fff" stroke-width="3"/>';
+      for (let i = 1; i < w; i++) s += '<line x1="' + X0 + '" y1="' + (Y0 + UH * i) + '" x2="' + (X0 + wpx) + '" y2="' + (Y0 + UH * i) + '" stroke="#fff" stroke-width="3"/>';
+      s += '<rect x="' + X0 + '" y="' + Y0 + '" width="' + wpx + '" height="' + mf2(hA + hB) + '" fill="none" stroke="' + INK + '" stroke-width="4"/>';
+      s += txt(X0 - 22, Y0 + hA / 2 + 10, String(w), 30, C6.bDeep, 900, 'end') + sfq(X0 - 40, mf2(Y0 + hA + hB / 2), n, d, null, 22, C6.aDeep);
+      let H = Y0 + hA + hB + 14; s += txt(X0 + wpx / 2, mf2(H + 30), String(k), 30, INK, 900); H += 44;
+      if (o.cap) { s += txt(380, mf2(H + 22), o.cap, 23, C6.soft, 900); H += 38; }
+      return svgWrap(s, 'fig-mxr', '0 0 760 ' + Math.round(H + 4)).replace('<svg ', '<svg data-mixrect="' + k + ',' + w + ',' + n + ',' + d + '" ');
+    }
+    Object.assign(PARTS, { mln, opb, agr, mxr }); Object.assign(HTML_PARTS, { fch, fln, mcc, wyc, cmm });
+    global.KT2_FXH = fxh;
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
