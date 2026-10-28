@@ -7,7 +7,7 @@
 //  · 선택엔 roll(능력 굴림)·if(회색, 이유)·then/fail(값·흔적·물건·깃발) — 돌발과 같은 틀(spark.apply 재사용).
 import * as THREE from 'three';
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-const V = { craft: '✋ 솜씨', heart: '🤝 인심', grain: '🌾 곡식' };
+const V0 = { craft: '✋ 솜씨', heart: '🤝 인심', grain: '🌾 곡식' }; const VN = (g, k) => g?.life?.vn?.(k) || V0[k];   // 141
 const PROP = { bundle: ['bundle', 'sack'], person: ['person', null], stone: ['stone', 'hard'], stick: ['stick', 'dry'], animal: ['deer', 'small'], basket: ['bundle', 'basket'], bush: ['berryBush', 'red'], track: ['track', 'step'] };   // 일의 prop 이름 → 소품 함수·종류
 
 export class Road {
@@ -87,7 +87,7 @@ export class Road {
   /** 효과 한 묶음 → 바뀐 것 줄 — 돌발과 같은 틀(spark 가 있으면 그것을, 없으면 여기서) */
   apply(out) {
     const g = this.g; if (g.spark?.apply) return g.spark.apply(out, null, true); const lines = []; if (!out) return lines; const L = g.life;
-    for (const k of ['craft', 'heart', 'grain']) { const n = out[k]; if (!n) continue; if (k === 'grain' && !L?.d?.grain?.open) continue; L?.add(k, n); lines.push(`${V[k]} ${n > 0 ? '+' : ''}${n}`); }
+    for (const k of ['craft', 'heart', 'grain']) { const n = out[k]; if (!n) continue; if (k === 'grain' && !L?.d?.grain?.open) continue; L?.add(k, n); lines.push(`${VN(this.g, k)} ${n > 0 ? '+' : ''}${n}`); }
     if (out.hurt) { L?.injure(out.hurt); lines.push(`🩹 ${L?.d?.hurts?.[out.hurt]?.name || out.hurt}`); } if (out.give) { for (const k of [].concat(out.give)) g.inventory.push(k); g.renderInv?.(); lines.push(`🎒 ${[].concat(out.give).map((k) => g.world.items?.[k]?.name || k).join('·')}`); }
     if (out.flag) setTimeout(() => { for (const f of [].concat(out.flag)) g.flag(f); }, 300); return lines;
   }

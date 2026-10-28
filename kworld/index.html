@@ -160,7 +160,9 @@
 <a id="back" href="/">← 케이에듀</a>
 <script type="module">
 import { Game } from './core/game.js';
-const era = new URLSearchParams(location.search).get('era') || 'paleo';
+const Q = new URLSearchParams(location.search); let era = Q.get('era');
+if (!era && Q.get('world')) { try { const wl = await fetch('./worlds.json').then((r) => r.json()); era = wl.worlds?.[Q.get('world')]?.start || null; } catch { } }   // 141: 세계 팩(?world=city) → 그 팩의 시작 시대
+era = era || 'paleo';
 const g = new Game(`./eras/${era}/`); window.kworld = g;   // 도구(tools/shot.py)·콘솔용 손잡이
 g.start().catch((e) => { document.getElementById('load').textContent = '불러오지 못했어: ' + e; console.error(e); });
 </script>

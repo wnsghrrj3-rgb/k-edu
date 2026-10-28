@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { Pulse } from './pulse.js';
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-const V = { craft: '✋ 솜씨', heart: '🤝 인심', grain: '🌾 곡식' };
+const V0 = { craft: '✋ 솜씨', heart: '🤝 인심', grain: '🌾 곡식' }; const VN = (g, k) => g?.life?.vn?.(k) || V0[k];   // 141: 값 이름은 세계 팩(life.json values)에서
 
 export class Spark {
   constructor(g, cfg) { this.g = g; this.cfg = cfg || {}; this.t = 0; this.gazeT = 0; this.surT = 0; this.sinceSur = (cfg?.firstGap ?? 70); this.skyKey = null; this.spoken = new Set(); this.stars = 0; this.ff = null; this.shot = null; this.dom(); }
@@ -72,7 +72,7 @@ export class Spark {
   /** 효과 한 묶음 — {heart,craft,grain,hurt,flag,give,say} → 바뀐 것 줄 목록. grain 은 곡식 칸이 열린 시대에만 */
   apply(out, label, silent) {
     const g = this.g; const lines = []; if (!out) return lines; const L = g.life;
-    for (const k of ['craft', 'heart', 'grain']) { const n = out[k]; if (!n) continue; if (k === 'grain' && !L?.d?.grain?.open) continue; L?.add(k, n); lines.push(`${V[k]} ${n > 0 ? '+' : ''}${n}`); }
+    for (const k of ['craft', 'heart', 'grain']) { const n = out[k]; if (!n) continue; if (k === 'grain' && !L?.d?.grain?.open) continue; L?.add(k, n); lines.push(`${VN(this.g, k)} ${n > 0 ? '+' : ''}${n}`); }
     if (out.hurt) { L?.injure(out.hurt); lines.push(`🩹 ${L?.d?.hurts?.[out.hurt]?.name || out.hurt}`); } if (out.give) { for (const k of [].concat(out.give)) g.inventory.push(k); g.renderInv?.(); lines.push(`🎒 ${[].concat(out.give).map((k) => g.world.items?.[k]?.name || k).join('·')}`); }
     if (out.heirloom?.name) { Pulse.keep(g, { ...out.heirloom, from: 'bond' }); lines.push(`🎁 집에 내려오는 것 — ${out.heirloom.name}`); }   // 80: 벗의 선물·화해 선물이 족보 상자로
     if (out.flag) setTimeout(() => { for (const f of [].concat(out.flag)) g.flag(f); }, 300);   // 깃발 하나 또는 여럿(79: bond3e 「미안했다」 길은 bond:end + bond:sorry) if (!silent && (label || out.say)) g.ui.say(`${label ? label + ' — ' : ''}${lines.join(' · ') || out.say || ''}`, 4200);
