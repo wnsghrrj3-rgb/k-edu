@@ -69,7 +69,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     return true;
   }
   g.bossHit = (b, dmg) => hurtPlayer(b, dmg);
-  g.spawnAdd = kind => { const alive = g.enemies.filter(e => e.state !== 'dead' && !e.boss).length; if (alive + 1 >= band.maxEnemies) return; const b = g.boss, x = clamp((b ? b.pos[0] : 0) + rng.range(-2.5, 2.5), -3.5, 3.5);
+  g.spawnAdd = kind => { const alive = slotsUsed(); if (alive + 1 >= band.maxEnemies) return; const b = g.boss, x = clamp((b ? b.pos[0] : 0) + rng.range(-2.5, 2.5), -3.5, 3.5);
     const e = makeEnemy(data.enemies[kind], nid(), x, (b ? b.pos[2] : 8) - .5, rng, band); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label }); };
 
   // ── 공격 토큰(06 문서 1절): 동시에 공격 준비하는 몬스터 수 상한
@@ -204,6 +204,8 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   }
   const packAlive = pk => g.enemies.filter(e => e.pack && e.pack.id === pk.id && e.state !== 'dead');
   const livePacks = () => g.packs.filter(pk => !pk.cleared && packAlive(pk).length >= 1);
+  // v2.5 자리 셈(15 문서 2절 보충): 보통 적 1마리 = 1자리, 산 묶음 = min(산 마리, PK.slots) 자리 — 4학년 n 8 이 maxEnemies(mid 6)에 깎이지 않게. 보스·죽은 것 제외
+  const slotsUsed = () => { let n = g.enemies.filter(e => e.state !== 'dead' && !e.boss && !e.pack).length; for (const pk of livePacks()) n += Math.min(packAlive(pk).length, PK.slots); return n; };
   function checkPack(id, byMath){
     const pk = g.packs.find(p => p.id === id); if (!pk || pk.cleared) return; const alive = packAlive(pk);
     if (alive.length < 2) {   // 15 문서 4절: 2마리 미만이면 묶음 태그 해제(남은 한 마리 = 보통 슬라임, 보통 탄으로) — 수학으로 끝냈으면(마지막 처치가 share 탄) 묶음 처치로 셈
@@ -364,10 +366,11 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     g.waveT += dt;
     const alive = g.enemies.filter(e => e.state !== 'dead'); const w = z.waves[g.waveIdx];
     if (w) { const go = w.at != null ? g.waveT >= w.at : (alive.length === 0 && (g.clearT == null ? (g.clearT = g.gameT, false) : g.gameT - g.clearT >= (w.delay || 1)));
-      if (go) { let cnt = alive.length; let spawnList = w.spawn;
-        // v2.3 묶음 파(변환표 packs, 15 문서 2절): 이 학년·전투장·파면 숫자 슬라임들이 묶음 한 무리로(다른 종류는 그대로), n = 학년 범위 안·남은 자리 안
-        const pw = PACK_WAVES[z.id]; if (PACK_RANGE && Array.isArray(pw) && pw.includes(g.waveIdx) && w.spawn.some(s => s.kind === 'num-slime')) { spawnList = w.spawn.filter(s => s.kind !== 'num-slime'); const room = band.maxEnemies - alive.length - spawnList.length;
-          const n = Math.max(0, Math.min(rng.int(PACK_RANGE.n[0], PACK_RANGE.n[1]), room)); if (n >= 2) { cnt += n; spawnPack(n, rng.int(PACK_RANGE.hpEach[0], PACK_RANGE.hpEach[1]), Math.max(...w.spawn.map(s => s.z))); } else spawnList = w.spawn; }
+      if (go) { let cnt = slotsUsed(); let spawnList = w.spawn;
+        // v2.3 묶음 파(변환표 packs, 15 문서 2절): 이 학년·전투장·파면 숫자 슬라임들이 묶음 한 무리로(다른 종류는 그대로), n = 학년 범위 그대로
+        // v2.5 묶음은 PK.slots 자리만 차지 — 자리(room)가 slots 에 모자라면 n 을 room 으로 깎고(2 미만이면 보통 파), 넉넉하면 학년 범위 상한(4학년 8)까지
+        const pw = PACK_WAVES[z.id]; if (PACK_RANGE && Array.isArray(pw) && pw.includes(g.waveIdx) && w.spawn.some(s => s.kind === 'num-slime')) { spawnList = w.spawn.filter(s => s.kind !== 'num-slime'); const room = band.maxEnemies - cnt - spawnList.length;
+          const want = rng.int(PACK_RANGE.n[0], PACK_RANGE.n[1]), n = room >= PK.slots ? want : Math.max(0, Math.min(want, room)); if (n >= 2) { cnt += Math.min(n, PK.slots); spawnPack(n, rng.int(PACK_RANGE.hpEach[0], PACK_RANGE.hpEach[1]), Math.max(...w.spawn.map(s => s.z))); } else spawnList = w.spawn; }
         for (const s of spawnList) { if (cnt >= band.maxEnemies) break; cnt++; const e = makeEnemy(data.enemies[s.kind], nid(), s.x, s.z, rng, band, { label: s.label, shield: SHIELD_SPEC }); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label }); if (e.def.ranged && !g.goblinSeen) { g.goblinSeen = true; g.toast = { key: 'toast.goblin', t: g.t }; } if (e.shield && !g.shieldSeen) { g.shieldSeen = true; g.toast = { key: 'toast.shieldGoblin', t: g.t }; } if (e.crack && !g.golemSeen) { g.golemSeen = true; g.toast = { key: 'toast.golem', t: g.t }; } }
         g.waveIdx++; g.waveT = 0; g.clearT = null; g.emit('wave', { idx: g.waveIdx, of: z.waves.length }); } }
     else if (alive.length === 0) { if (g.clearT == null) g.clearT = g.gameT; else if (g.gameT - g.clearT >= 1.2) { if (!nextZone()) victory(); } }
@@ -376,7 +379,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   function nextZone(){ return enterZone(g.zoneIdx + 1); }
   // 길 구간이 쓰는 손잡이(rail.js 는 이것만 안다)
   const railApi = { nid: () => nid(), hurtPlayer: (src, atk) => hurtPlayer(src, atk), nextZone: () => { if (!nextZone()) victory(); }, gainXp: (n, why) => gainXp(n, why),
-    spawnEnemy: (kind, x, z) => { const alive = g.enemies.filter(e => e.state !== 'dead' && !e.boss).length; if (alive >= band.maxEnemies) return null; const e = makeEnemy(data.enemies[kind], nid(), x, z, rng, band, { shield: SHIELD_SPEC }); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label, rail: true }); return e; },
+    spawnEnemy: (kind, x, z) => { const alive = slotsUsed(); if (alive >= band.maxEnemies) return null; const e = makeEnemy(data.enemies[kind], nid(), x, z, rng, band, { shield: SHIELD_SPEC }); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label, rail: true }); return e; },
     get sel(){ return sel; }, get mastery(){ return qe.m; } };
   function victory(){ if (g.endT) return; g.checkpoint = null; if (g.q) closeQuestion(); gainXp(LV.xpClear, 'clear'); g.endT = g.t; setLower('A14'); g.player.anim.upper = null;
     // v1.6 깬 기록(별 수 최대값)·스테이지 보상 마법(09 문서 12행: 1-2 ICE STORM …) → progress 에 남아 다음 판부터 장착 가능

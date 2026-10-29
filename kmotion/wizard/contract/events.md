@@ -107,3 +107,7 @@ v1.5 추가(P3 길 구간): `rail:start`(idx·len·seconds·obstacles) / `rail:e
 ## v2.4 추가(2026-10-30, 방패병 방패 식·길 퍼즐을 3학년 변환표 안으로 — D-31 보충) — 추가만, 기존 변경 0 · 새 이벤트 0
 - 스냅샷: `enemies[].shield.eq` 문자열이 3·4학년에선 「□ × b = c」(1학년 「□ + b = c」 그대로 — 스킨은 문자열만 그리므로 무변경) · `question.kind 'shield'` 의 문제가 3학년↑ `q.shield.mul`(정답 = c ÷ b, hint2 groups) · `puzzle.op '+'|'×'`·`puzzle.mul`(위 d.ts)
 - 데이터: `data/concepts-by-grade.json` `shield.g3/g4 {concept, b[], ans[]}`(4학년 답 ≤12) · `puzzle.g3/g4 {bridge 'mul', mushroom 'mul', ruleMul 비율}` — 줄 없는 학년(1·2)은 전부 그대로(골든 불변) · ko.json `q/hint.shield.mul`·`learn.g3.shield.mul`·`pz.bridge.mul*`·`pz.mush.mul*`·`pz.rule.mul.hint`·`why.sub-instead-mul/add-instead-mul`
+
+## v2.5 추가(2026-10-30, 묶음 자리 — 4학년 묶음 n 과 maxEnemies 관계 정리) — 데이터·시스템 수치만, 새 이벤트 0·스냅샷 변경 0
+- 산 묶음 하나는 `maxEnemies` 에서 `min(산 마리, GAME.pack.slots=3)` 자리만 차지(보통 적 1마리 = 1자리, 분열 mini·보스는 전처럼 안 셈). 묶음 n 은 학년 변환표 `pack.n` 범위 그대로(4학년 ≤8, 3학년 ≤6) — 전엔 남은 자리에 깎여 실제 ≤5~6. 자리가 slots 에 모자라면 n 을 남은 자리로 깎고, 2 미만이면 보통 파.
+- 스킨 영향 0(`packs[].alive`·`enemies[].pack` 그대로). 1~2학년은 묶음이 없어 무변경(골든 4판 그대로).
