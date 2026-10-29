@@ -22,6 +22,7 @@
    · 144차(2026-10-19) 2학년 2학기 표와 그래프 부품: tbl2(표·합계·빈칸) · cg2(◯·×·/ 그래프 — 세로·가로·잘못 그린 칸) · tly2(세면서 표시하기) · dc2(자료 낱장·/ 표시) · srt2(분류 칸) · wcl2(날씨 달력 △·◯) · nte2(쪽지·발표 자료) · objs1 이름 줄바꿈(\n)
    · 143차(2026-10-19) 2학년 2학기 시각과 시간 부품: dclk2(디지털시계) · tbnd2(시간 띠) · kcal2(달력) · d24(하루 24칸 띠) · upr2(단위 짝 카드) · grow2(날짜 사이 몇 년·개월·주 후)
    · 192차(2026-10-26) 4학년 2학기 평면도형의 이동 부품: mvpt(점의 이동) · mvfig(밀기·뒤집기·돌리기 · 자동차 출구) · mvrow(가~라 고르기 판) · mvchr(글자·도장) · mvpat(무늬 판 — 칸 상태는 부품이 셈)
+   · 221차(2026-10-29) 5학년 2학기 평균과 가능성 부품: abr(고르게 하기 막대) · sfd(종이띠 n 등분) · bch(막대그래프) · bbx(상자 속 공) · spn(회전판) · chl(가능성 띠) · u6r(나란히)
    · 191차(2026-10-26) 4학년 2학기 꺾은선그래프 부품: lg(꺾은선그래프 — 눈금 한 칸·물결선·두 자료·짐작 점·잘못 그린 그래프)
    · 141차(2026-10-16) 2학년 2학기 길이 재기 부품: lbar(길이 막대·이어 붙이기·잘라 낸 칸·100 cm 금) · ltape(자·끊긴 줄자) · lpw(전체·부분 가지) · lcard(몸·물건 어림 카드) · lch(나누어 어림) · tvert q(답 줄 빈칸 「?」)
    · 22차(2026-09-28) 수학 부품 추가: frac·fracs·numline·tenbox(분수·소수) · geo(평면도형) · bt·regroup·vert(수 모형·세로셈) · share·bundle·arr(나눔·배열) · eq(식 카드)
@@ -3680,6 +3681,143 @@
         '<div class="dpg-ar">→</div><div class="dpg-face res' + (o.ask ? ' q' : '') + '"' + (o.ask ? '' : ' data-end="' + run.end + '"') + '>' + res + '</div></div>' + cap9(o.cap) + '</div>';
     }
     Object.assign(HTML_PARTS, { bxi, bxr, bxn, npk, dpg });
+  }
+  // ══ 221차(2026-10-29) 5학년 2학기 수학 6단원 「평균과 가능성」 부품 — 자기주도 원문 부품 라이브러리(avgBar·stripFold·barChart·ballBox·spinner·chanceLine·u6Row)를 2세대로 옮김 ══
+  //   abr(고르게 하기 막대 — raw·move·even · 평균은 부품이 셈 · 덜어 낸 칸 = 채운 칸 · 나누어떨어지지 않으면 던짐 · ask 면 평균 눈금 이름을 가림)
+  //   sfd(종이띠 이어 붙여 n 등분 — 칸 수가 n 으로 나누어떨어져야) · bch(막대그래프 — 눈금 위는 한 눈금의 배수 · ask 막대 값 가림)
+  //   bbx(상자 속 공) · spn(회전판) — tgt 색이 나올 가능성의 말을 개수·칸 수로 부품이 판정, 신고(want)와 다르면 던짐
+  //   chl(가능성 띠 — 말 다섯 칸 · 수 0·1/2·1 · 「~일 것 같다」「~아닐 것 같다」 자리에 수를 적으면 던짐) · u6r(여러 판·상자·그래프 나란히)
+  {
+    const C10 = { ink: '#2B3440', soft: '#6B7C93', grid: '#E2E8F0', axis: '#94A3B8', a: '#FF7A2F', aDeep: '#C2551A', aSoft: '#FFD8C2', line: '#DC2626', box: '#0369A1', boxBg: '#F0F9FF' };
+    const COL10 = { '파랑': '#3B82F6', '빨강': '#EF4444', '연두': '#84CC16', '보라': '#8B5CF6', '노랑': '#FACC15', '초록': '#16A34A', '검정': '#1F2937', '흰색': '#FFFFFF', '회색': '#CBD5E1', '주황': '#F97316', '하늘': '#7DD3FC' };
+    const WORD10 = ['불가능하다', '~아닐 것 같다', '반반이다', '~일 것 같다', '확실하다'];
+    const AT10 = { '0': 0, 'low': 0.25, 'half': 0.5, 'high': 0.75, '1': 1 };
+    const m10 = (n) => String(Math.round(n * 100) / 100);
+    const cap10 = (t) => t ? '<div class="fig-cap u6-cap">' + esc(t) + '</div>' : '';
+    const ttl10 = (t) => t ? '<div class="u6-t">' + esc(t) + '</div>' : '';
+    const list10 = (x) => Array.isArray(x) ? x.slice() : String(x).split(',').map(s => s.trim()).filter(Boolean);
+    // 전체 n 중 t — 말 다섯 칸 중 어디인가(정수만)
+    function word10(t, n) { if (!(Number.isInteger(t) && Number.isInteger(n) && n > 0 && t >= 0 && t <= n)) throw new Error('가능성 말: 개수'); if (t === 0) return WORD10[0]; if (t === n) return WORD10[4]; if (t * 2 === n) return WORD10[2]; return t * 2 < n ? WORD10[1] : WORD10[3]; }
+    global.KT2_CHANCE = { word: word10, words: WORD10.slice() };
+    // ── abr ── 고르게 하기 막대
+    function abr(o) {
+      const vals = (o.vals || []).map(Number), names = o.names || vals.map((_, i) => String(i + 1)), step = o.step || 1, mode = o.mode || 'raw';
+      if (!vals.length) throw new Error('abr: 자료 없음');
+      if (['raw', 'move', 'even'].indexOf(mode) < 0) throw new Error('abr: mode ' + mode);
+      if (names.length !== vals.length) throw new Error('abr: 이름 수와 자룟값 수가 다르다');
+      vals.forEach(v => { if (!Number.isInteger(v) || v < 0 || v % step !== 0) throw new Error('abr: 자룟값이 한 칸의 배수가 아니다 ' + v); });
+      const cells = vals.map(v => v / step), sum = cells.reduce((a, b) => a + b, 0), n = cells.length;
+      if (sum % n !== 0) throw new Error('abr: 평균이 나누어떨어지지 않는다');
+      const avg = sum / n, top = o.max ? o.max / step : Math.max(...cells) + 1;
+      if (!Number.isInteger(top) || Math.max(...cells) > top) throw new Error('abr: 눈금 위를 넘는다');
+      const ch = Math.max(16, Math.min(52, Math.floor(400 / top))), bw = 70, gap = 42, left = 96, T = 46, H = top * ch, W = left + n * (bw + gap) + 14;
+      let s = '', out = 0, inn = 0;
+      for (let k = 0; k <= top; k++) {
+        const y = T + H - k * ch, major = (k === 0 || k === top || (o.ticks && o.ticks.indexOf(k * step) !== -1));
+        s += '<line x1="' + left + '" y1="' + y + '" x2="' + (W - 8) + '" y2="' + y + '" stroke="' + (major ? C10.axis : C10.grid) + '" stroke-width="' + (major ? 2.4 : 1.4) + '"/>';
+        if (major && !(o.ask && k === avg)) s += txt(left - 14, y + 9, String(k * step), 26, C10.soft, 900, 'end').replace('<text ', '<text class="ab-tick" ');
+      }
+      cells.forEach((c, i) => {
+        const x = left + gap / 2 + i * (bw + gap), show = mode === 'even' ? avg : c;
+        for (let k = 0; k < Math.max(show, mode === 'move' ? avg : 0); k++) {
+          const y = T + H - (k + 1) * ch; let st = 'keep';
+          if (mode === 'move' && k >= avg && k < c) { st = 'out'; out++; } else if (mode === 'move' && k >= c && k < avg) { st = 'in'; inn++; }
+          const fill = st === 'in' ? C10.aSoft : (i % 2 ? C10.a : C10.aDeep);
+          s += '<rect class="ab-c" data-i="' + i + '" data-s="' + st + '" x="' + x + '" y="' + y + '" width="' + bw + '" height="' + ch + '" fill="' + fill + '" stroke="' + (st === 'in' ? C10.aDeep : '#fff') + '" stroke-width="' + (st === 'in' ? 2.4 : 2.4) + '"' + (st === 'in' ? ' stroke-dasharray="6 4"' : '') + '/>';
+          if (st === 'out') s += '<path d="M' + (x + 12) + ' ' + (y + 5) + ' L' + (x + bw - 12) + ' ' + (y + ch - 5) + ' M' + (x + bw - 12) + ' ' + (y + 5) + ' L' + (x + 12) + ' ' + (y + ch - 5) + '" stroke="#fff" stroke-width="4"/>';
+        }
+        if (o.show && mode !== 'even') s += txt(x + bw / 2, T + H - c * ch - 10, String(vals[i]), 26, C10.ink, 900).replace('<text ', '<text class="ab-val" ');
+        s += txt(x + bw / 2, T + H + 34, names[i], 26, C10.ink, 900).replace('<text ', '<text class="ab-name" ');
+      });
+      if (out !== inn) throw new Error('abr: 덜어 낸 칸 ' + out + ' ≠ 채운 칸 ' + inn);
+      if (o.line) s += '<line class="ab-line" x1="' + left + '" y1="' + (T + H - avg * ch) + '" x2="' + (W - 8) + '" y2="' + (T + H - avg * ch) + '" stroke="' + C10.line + '" stroke-width="4" stroke-dasharray="12 8"/>';
+      if (o.unit) s += txt(left - 14, T - 16, '(' + o.unit + ')', 23, C10.soft, 800, 'end');
+      const Hh = T + H + 50, svg = svgWrap(s, 'u6-svg ab-svg', '0 0 ' + W + ' ' + Hh).replace('<svg ', '<svg style="width:' + Math.round(W) + 'px" data-avg="' + vals.join(',') + '|' + step + '|' + mode + '|' + (avg * step) + '|' + (o.ask ? 1 : 0) + '" ');
+      return '<div class="fig-vert fig-abr">' + ttl10(o.title) + svg + cap10(o.cap) + '</div>';
+    }
+    // ── sfd ── 종이띠 이어 붙여 n 등분
+    function sfd(o) {
+      const vals = (o.vals || []).map(Number); if (!vals.length) throw new Error('sfd: 띠 없음');
+      vals.forEach(v => { if (!(Number.isInteger(v) && v > 0)) throw new Error('sfd: 칸 수 ' + v); });
+      const tot = vals.reduce((a, b) => a + b, 0), n = o.n || vals.length;
+      if (tot % n !== 0) throw new Error('sfd: 띠를 똑같이 나눌 수 없다 ' + tot + ' ÷ ' + n);
+      const cw = Math.max(20, Math.min(44, Math.floor(860 / tot))), L = 16, W = L * 2 + tot * cw, pal = ['#15803D', '#F59E0B', '#0EA5E9', '#DB2777', '#7C3AED', '#64748B', '#0F766E'], per = tot / n;
+      let s = '', x = L;
+      vals.forEach((v, i) => { for (let k = 0; k < v; k++) { s += '<rect class="sf-c" data-seg="' + i + '" x="' + x + '" y="14" width="' + cw + '" height="52" fill="' + pal[i % pal.length] + '" stroke="#fff" stroke-width="2.4"/>'; x += cw; } });
+      const y2 = 112;
+      if (!o.hideFold) {
+        s += '<rect x="' + L + '" y="' + y2 + '" width="' + tot * cw + '" height="52" fill="' + C10.aSoft + '" stroke="' + C10.aDeep + '" stroke-width="2.4"/>';
+        for (let k = 1; k < tot; k++) s += '<line x1="' + (L + k * cw) + '" y1="' + y2 + '" x2="' + (L + k * cw) + '" y2="' + (y2 + 52) + '" stroke="#fff" stroke-width="2"/>';
+        for (let g = 1; g < n; g++) s += '<line class="sf-cut" x1="' + (L + g * per * cw) + '" y1="' + (y2 - 12) + '" x2="' + (L + g * per * cw) + '" y2="' + (y2 + 64) + '" stroke="' + C10.line + '" stroke-width="6"/>';
+      }
+      const svg = svgWrap(s, 'u6-svg sf-svg', '0 0 ' + W + ' ' + (o.hideFold ? 80 : 182)).replace('<svg ', '<svg style="width:' + Math.round(W) + 'px" data-strip="' + vals.join(',') + '|' + n + '|' + per + '" ');
+      return '<div class="fig-vert fig-sfd">' + svg + cap10(o.cap) + '</div>';
+    }
+    // ── bch ── 막대그래프
+    function bch(o) {
+      const cats = o.cats || [], vals = (o.vals || []).map(Number), n = cats.length, top = o.max || Math.max(...vals), tick = o.tick || 1, ask = o.ask || [];
+      if (!n || vals.length !== n) throw new Error('bch: 항목 수와 값 수가 다르다');
+      if (top % tick !== 0) throw new Error('bch: 눈금 위가 한 눈금의 배수가 아니다');
+      vals.forEach(v => { if (!(Number.isInteger(v) && v >= 0 && v <= top)) throw new Error('bch: 값 ' + v); });
+      const sm = !!o.sm, H = sm ? 230 : 300, T = 44, left = 84, bw = sm ? 56 : 64, gap = sm ? 30 : 40, W = left + n * (bw + gap) + 12, u = H / top;
+      let s = '';
+      for (let k = 0; k <= top; k += tick) {
+        const y = T + H - k * u, lab = (o.labelEvery ? k % o.labelEvery === 0 : (k === 0 || k === top));
+        s += '<line x1="' + left + '" y1="' + m10(y) + '" x2="' + (W - 8) + '" y2="' + m10(y) + '" stroke="' + (lab ? C10.axis : C10.grid) + '" stroke-width="' + (lab ? 2.2 : 1.4) + '"/>';
+        if (lab) s += txt(left - 12, m10(y + 9), String(k), 25, C10.soft, 900, 'end').replace('<text ', '<text class="bc-tick" ');
+      }
+      cats.forEach((c, i) => {
+        const x = left + gap / 2 + i * (bw + gap), h = vals[i] * u, col = (o.colors && o.colors[i]) ? (COL10[o.colors[i]] || o.colors[i]) : (i % 2 ? C10.a : C10.aDeep);
+        s += '<rect class="bc-b" data-v="' + vals[i] + '" x="' + x + '" y="' + m10(T + H - h) + '" width="' + bw + '" height="' + m10(h) + '" fill="' + col + '" stroke="' + C10.ink + '" stroke-width="2"/>';
+        if (o.show) s += txt(x + bw / 2, m10(T + H - h - 10), ask.indexOf(i) !== -1 ? '?' : String(vals[i]), 25, ask.indexOf(i) !== -1 ? ORANGE : C10.ink, 900).replace('<text ', '<text class="bc-val" ');
+        s += txt(x + bw / 2, T + H + 34, c, 25, C10.ink, 900).replace('<text ', '<text class="bc-cat" ');
+      });
+      if (o.unit) s += txt(left - 12, T - 16, '(' + o.unit + ')', 22, C10.soft, 800, 'end');
+      const svg = svgWrap(s, 'u6-svg bc-svg' + (sm ? ' sm' : ''), '0 0 ' + W + ' ' + (T + H + 50)).replace('<svg ', '<svg style="width:' + Math.round(W) + 'px" data-bars="' + esc(cats.join(',')) + '|' + vals.join(',') + '|' + top + '|' + tick + '|' + ask.join(',') + '|' + (o.show ? 1 : 0) + '" ');
+      return '<div class="fig-vert fig-bch">' + ttl10(o.title) + svg + cap10(o.cap) + '</div>';
+    }
+    // ── bbx ── 상자 속 공
+    function bbx(o) {
+      const balls = list10(o.balls), n = balls.length; if (!n) throw new Error('bbx: 공 없음');
+      balls.forEach(c => { if (!COL10[c]) throw new Error('bbx: 모르는 색 ' + c); });
+      const per = Math.min(4, Math.max(2, n)), rows = Math.ceil(n / per), r = 22, W = per * 60 + 36, H = rows * 56 + 52;
+      let s = '<rect x="6" y="20" width="' + (W - 12) + '" height="' + (H - 26) + '" rx="20" fill="' + C10.boxBg + '" stroke="' + C10.box + '" stroke-width="4"/>';
+      balls.forEach((c, i) => { const cx = 18 + 30 + (i % per) * 60, cy = 20 + 34 + Math.floor(i / per) * 56; s += '<circle class="bb-b" data-c="' + c + '" cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + COL10[c] + '" stroke="' + C10.ink + '" stroke-width="2.6"/>'; });
+      let word = ''; if (o.tgt) { word = word10(balls.filter(c => c === o.tgt).length, n); if (o.want !== undefined && o.want !== word) throw new Error('bbx: ' + o.tgt + ' 공 가능성 신고 「' + o.want + '」 ≠ 공 수 판정 「' + word + '」'); }
+      const svg = svgWrap(s, 'u6-svg bb-svg', '0 0 ' + W + ' ' + H).replace('<svg ', '<svg style="width:' + Math.round(W) + 'px" data-balls="' + balls.join(',') + '|' + esc(o.tgt || '') + '|' + word + '" ');
+      return '<div class="fig-vert u6-item fig-bbx" data-name="' + esc(o.name || '') + '">' + (o.name ? '<div class="u6-n">' + esc(o.name) + '</div>' : '') + svg + cap10(o.cap) + '</div>';
+    }
+    // ── spn ── 회전판(같은 크기 칸)
+    function spn(o) {
+      const seq = list10(o.seq), N = seq.length, R = 100, C = 112;
+      seq.forEach(c => { if (!COL10[c]) throw new Error('spn: 모르는 색 ' + c); }); if (N < 2) throw new Error('spn: 칸이 둘 이상');
+      let s = '';
+      seq.forEach((c, i) => { const a0 = -Math.PI / 2 + i * 2 * Math.PI / N, a1 = a0 + 2 * Math.PI / N;
+        s += '<path class="sp-s" data-c="' + c + '" d="M' + C + ' ' + C + ' L' + m10(C + R * Math.cos(a0)) + ' ' + m10(C + R * Math.sin(a0)) + ' A' + R + ' ' + R + ' 0 0 1 ' + m10(C + R * Math.cos(a1)) + ' ' + m10(C + R * Math.sin(a1)) + ' Z" fill="' + COL10[c] + '" stroke="' + C10.ink + '" stroke-width="2.6"/>';
+        if (o.words) { const am = (a0 + a1) / 2; s += txt(m10(C + R * 0.62 * Math.cos(am)), m10(C + R * 0.62 * Math.sin(am) + 8), o.words[i] || '', 22, '#fff', 900); } });
+      s += '<circle cx="' + C + '" cy="' + C + '" r="' + R + '" fill="none" stroke="' + C10.ink + '" stroke-width="4"/>';
+      s += '<path d="M' + C + ' ' + (C + 14) + ' L' + (C + 44) + ' ' + (C - 38) + '" stroke="#111827" stroke-width="7" stroke-linecap="round"/><circle cx="' + C + '" cy="' + C + '" r="10" fill="#111827"/>';
+      let word = ''; if (o.tgt) { word = word10(seq.filter(c => c === o.tgt).length, N); if (o.want !== undefined && o.want !== word) throw new Error('spn: ' + o.tgt + ' 에 멈출 가능성 신고 「' + o.want + '」 ≠ 칸 수 판정 「' + word + '」'); }
+      const svg = svgWrap(s, 'u6-svg sp-svg', '0 0 224 224').replace('<svg ', '<svg style="width:224px" data-spin="' + seq.join(',') + '|' + esc(o.tgt || '') + '|' + word + '" ');
+      return '<div class="fig-vert u6-item fig-spn" data-name="' + esc(o.name || '') + '">' + (o.name ? '<div class="u6-n">' + esc(o.name) + '</div>' : '') + svg + cap10(o.cap) + '</div>';
+    }
+    // ── chl ── 가능성 띠
+    function chl(o) {
+      const pos = (v) => m10(6 + 88 * v) + '%', marks = o.marks || [];
+      let s = '<div class="cl-track"></div>';
+      [0, 0.25, 0.5, 0.75, 1].forEach((v, i) => { s += '<div class="cl-tick' + (i % 2 ? ' odd' : '') + '" style="left:' + pos(v) + '"></div><div class="cl-word' + (i % 2 ? ' odd' : '') + '" style="left:' + pos(v) + '">' + WORD10[i] + '</div>'; });
+      if (o.nums) [['0', 0], ['1/2', 0.5], ['1', 1]].forEach(([t, v]) => { s += '<div class="cl-num" data-num="' + t + '" style="left:' + pos(v) + '">' + (global.KT2_FXH ? global.KT2_FXH(t) : esc(t)) + '</div>'; });
+      marks.forEach(mk => { const at = String(mk.at); if (!(at in AT10)) throw new Error('chl: 모르는 자리 ' + at);
+        if ((at === 'low' || at === 'high') && /\d+\s*\/\s*\d+|^\s*\d+(\.\d+)?\s*$/.test(mk.label || '')) throw new Error('chl: 「~일 것 같다」 자리에 수를 적었다 — ' + mk.label);
+        s += '<div class="cl-mark" data-at="' + at + '" style="left:' + pos(AT10[at]) + '"><span class="cl-ml">' + esc(mk.label || '') + '</span><span class="cl-ar">↓</span></div>'; });
+      return '<div class="fig-vert fig-chl"><div class="cl-band' + (marks.length ? ' has-mk' : '') + (o.nums ? ' has-num' : '') + '" data-chance="' + marks.map(m => m.at + ':' + (m.label || '')).join(',') + '|' + (o.nums ? 1 : 0) + '">' + s + '</div>' + cap10(o.cap) + '</div>';
+    }
+    // ── u6r ── 나란히
+    function u6r(o) {
+      const it = (o.items || []).map(f => one(f)).filter(Boolean); if (!it.length) return '';
+      return '<div class="fig-vert fig-u6r"><div class="u6r-row n' + it.length + '">' + it.join('') + '</div>' + cap10(o.cap) + '</div>';
+    }
+    Object.assign(HTML_PARTS, { abr, sfd, bch, bbx, spn, chl, u6r });
   }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {

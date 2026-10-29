@@ -1,4 +1,4 @@
-/* parse_figs_g5s2_math.js — 5학년 2학기 수학 자기주도 원문 renderModels → 케이티처 그림 재료 JSON (211차, 베프 · 217차 2단원 · 218차 3단원 · 219차 4단원 · 220차 5단원 부품 더함).
+/* parse_figs_g5s2_math.js — 5학년 2학기 수학 자기주도 원문 renderModels → 케이티처 그림 재료 JSON (211차, 베프 · 217차 2단원 · 218차 3단원 · 219차 4단원 · 220차 5단원 · 221차 6단원 부품 더함).
    원문 부품 라이브러리(rangeLine·rangeRow·valueChips·dialRow·numLineZoom·rangeTable·estRow) 호출을 그대로 실행하되,
    부품 함수를 「그림 명세를 돌려주는 함수」로 바꿔 끼워 2세대 부품(rgl·vch·rdial·nlz·rtb·est) 명세로 받는다.
    자리: m-iN = 도입 N번째 장(개념 장 번호 N−1) · m-eN = 전개 N번째 장(개념 장 번호 N+2) · m-qN = 문항(문제 번호 N−8).
@@ -38,6 +38,10 @@ files.forEach(f => {
     // 220차 5단원 「직육면체」 부품 — boxIso·boxRow·boxNet·netPick·diceProg → bxi·bxr·bxn·npk·dpg (fracChips·calcLines·dataTable 은 앞 부품 그대로)
     boxIso: (o) => Object.assign({ k: 'bxi' }, o), boxRow: (items, o) => Object.assign({ k: 'bxr', items }, o || {}), boxNet: (o) => Object.assign({ k: 'bxn' }, o),
     netPick: (items, o) => Object.assign({ k: 'npk', items }, o || {}), diceProg: (o) => Object.assign({ k: 'dpg' }, o),
+    // 221차 6단원 「평균과 가능성」 부품 — avgBar·stripFold·barChart·ballBox·spinner·chanceLine·u6Row → abr·sfd·bch·bbx·spn·chl·u6r (fracChips·calcLines·dataTable 은 앞 부품 그대로)
+    avgBar: (o) => Object.assign({ k: 'abr' }, o), stripFold: (vals, o) => Object.assign({ k: 'sfd', vals }, o || {}), barChart: (o) => Object.assign({ k: 'bch' }, o),
+    ballBox: (o) => Object.assign({ k: 'bbx' }, o), spinner: (o) => Object.assign({ k: 'spn' }, o), chanceLine: (o) => Object.assign({ k: 'chl' }, o || {}),
+    u6Row: (items, o) => Object.assign({ k: 'u6r', items: items.map(untok) }, o || {}),
     document: { getElementById: (id) => { const o = {}; Object.defineProperty(o, 'innerHTML', { set: (v) => { const a = untokAll(v); got[id] = a.length === 1 ? a[0] : { k: 'panels', col: true, items: a.map(f => ({ fig: f })) }; } }); return o; } }
   };
   Object.keys(ctx).forEach(n => { if (n !== 'document') { const f = ctx[n]; ctx[n] = (...a) => tok(f(...a)); } });
