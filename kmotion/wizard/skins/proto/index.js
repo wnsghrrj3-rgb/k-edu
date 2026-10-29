@@ -106,7 +106,7 @@ export function createSkin(ctx){
   function P_(){ return player ? -player.position.x : 0; }   // 계약 x(스킨은 x 뒤집어 그림)
   function handle(ev){
     const T = ev.type;
-    if (T === 'attack:fire') { audio.play('bolt'); if (player) { const p = tipWorld(player, new THREE.Vector3()); sparks.burst([-p.x, p.y, p.z], 0xfff1a8, 8, 2, 1); } kick = Math.max(kick, .03); }
+    if (T === 'attack:fire') { audio.play(ev.share ? 'glass' : 'bolt'); if (player) { const p = tipWorld(player, new THREE.Vector3()); sparks.burst([-p.x, p.y, p.z], 0xfff1a8, 8, 2, 1); } kick = Math.max(kick, .03); }
     else if (T === 'spell:charge') audio.play('charge');
     else if (T === 'spell:cast') { audio.play(ev.spell === 'ice' ? 'ice' : ev.spell === 'meteor' ? 'sky' : 'cast'); fovPulse = 5; kick = .08; }
     else if (T === 'spell:chain') { audio.play('zap'); const b = makeBolt(ev.points); scene.add(b); bolts.push(b); for (const p of ev.points.slice(1)) sparks.burst(p, 0xfff27a, 16, 3, 2); fovPulse = 3; }
@@ -118,7 +118,11 @@ export function createSkin(ctx){
     else if (T === 'hit') { const pos = ev.pos || [0, 1, 0], sc = toScreen(pos);
       if (ev.target === 'player') { audio.play(ev.blocked ? 'block' : 'hurt'); if (!ev.blocked) { ui.flash(); if (player) player.userData.flash = 1; } if (sc.front) ui.floatAt(sc.x, sc.y - 40, '−' + ev.amount, 'hurt'); }
       else if (ev.deflect) { audio.play('ting'); const g = enemyAt(ev.target); if (g) g.userData.flash = .4; sparks.burst(pos, 0xcff6ff, 14, 3.5, 1.5); if (sc.front) ui.floatAt(sc.x, sc.y - 30, '팅! ' + ev.amount, ''); }
+      else if (ev.exact) { audio.play('glass'); const g = enemyAt(ev.target); if (g) g.userData.flash = 1; sparks.burst(pos, 0x5ef2c8, 26, 3.5, 2.5); if (sc.front) ui.floatAt(sc.x, sc.y - 30, '−' + ev.amount, 'math'); }   // v2.3 정확 피해 = 「수학 빛」 — 13 문서 피해 숫자 색 하나 추가
       else { audio.play(ev.shielded ? 'block' : 'hit', ev.crit); const g = ev.target === golemUid ? golem : enemyAt(ev.target); if (g) g.userData.flash = 1; sparks.burst(pos, ev.crit ? 0xffd45c : 0xffffff, ev.crit ? 18 : 10, 3, 2); if (sc.front) ui.floatAt(sc.x, sc.y - 30, String(ev.amount), ev.crit ? 'crit' : ''); } }
+    else if (T === 'enemy:pack') { audio.play('crystal'); }
+    else if (T === 'enemy:packClear') { if (ev.counted) { audio.play('clear'); fovPulse = Math.max(fovPulse || 0, 3); } }
+    else if (T === 'share:scatter') { audio.play('fizzle'); }
     else if (T === 'block') { audio.play('block'); if (ev.pos) sparks.burst(ev.pos, 0xb28cff, 20, 3, 1); }
     else if (T === 'dodge') { audio.play('dodge'); if (ev.acorn && player) { const p = player.position; sparks.burst([-p.x, 1.2, p.z], 0xfff1a8, 24, 3, 2); audio.play('crystal'); } }
     else if (T === 'enemy:spawn') { if (!ev.mini) audio.play('spawn'); if (ev.pos) sparks.burst(ev.pos, ev.mini ? 0xc8ffe0 : 0x9dffc7, ev.mini ? 12 : 24, 2.5, 2.5); }

@@ -90,7 +90,7 @@ export function createUI(ctx, audio){
   // ── S08 HUD (S08Q 에서도 보임)
   const hud = h('section', 'mw-hud mw-hide');
   hud.innerHTML = `<div class="mw-bars"><div class="mw-bar hp"><i></i><span></span></div><div class="mw-bar mana"><i></i><s></s><span></span></div><div class="mw-bar xp"><i></i><span></span></div><div class="mw-chips"><span class="spell"></span><span class="feather">🪶</span><span class="shieldc mw-hide"></span><span class="empower mw-hide"></span></div></div>
-    <div class="mw-wave"></div><div class="mw-rail mw-hide"><b class="nm"></b><div class="rb"><i></i><u>🧙</u></div><span class="ff">🪲 0</span></div><div class="mw-boss mw-hide"><b class="nm"></b><div class="bb"></div><span class="sh"></span></div><div class="mw-top-r"><button class="mute">🔊</button><button class="pause">⏸</button></div><div class="mw-streak"></div>
+    <div class="mw-wave"></div><div class="mw-rail mw-hide"><b class="nm"></b><div class="rb"><i></i><u>🧙</u></div><span class="ff">🪲 0</span></div><div class="mw-boss mw-hide"><b class="nm"></b><div class="bb"></div><span class="sh"></span></div><div class="mw-pack mw-hide"></div><div class="mw-top-r"><button class="mute">🔊</button><button class="pause">⏸</button></div><div class="mw-streak"></div>
     <canvas class="mw-pip" width="320" height="240"></canvas><div class="mw-help"></div><div class="mw-lost mw-hide"></div><div class="mw-flash"></div>`;
   const $h = s => hud.querySelector(s), hpBar = $h('.hp'), mpBar = $h('.mana'), xpBar = $h('.xp'), pip = $h('.mw-pip'), lost = $h('.mw-lost'), flashEl = $h('.mw-flash');
   $h('.pause').onclick = () => act('pause'); $h('.mute').onclick = () => { $h('.mute').textContent = audio.mute() ? '🔇' : '🔊'; };
@@ -127,6 +127,8 @@ export function createUI(ctx, audio){
   // 힌트 2단계 그림: 구슬 — 더하기는 두 색 이어서, 빼기는 뒤에서 b개를 흐리게(거꾸로 세기)
   const beadsHtml = p => { const n = p.op === '+' ? p.a + p.b : p.a; let o = ''; for (let i = 0; i < n; i++) { const cls = p.op === '+' ? (i < p.a ? 'a' : 'b') : (i >= p.a - p.b ? 'x' : 'a'); o += `<i class="${cls}"></i>${(i + 1) % 5 === 0 && i < n - 1 ? '<s></s>' : ''}`; }
     return o + (p.op === '+' ? `<em>${p.a} + ${p.b}</em>` : `<em>${p.a} − ${p.b}</em>`); };
+  // v2.3 묶음 그림(15 문서 3절 hint2): n줄, 한 줄에 each 개 구슬 — 「36을 4줄로 똑같이 나누면 한 줄은 9」
+  const groupsHtml = p => { let o = ''; for (let r = 0; r < p.n; r++) { o += '<u>'; for (let i = 0; i < p.each; i++) o += '<i class="g"></i>'; o += '</u>'; } return o + `<em>${p.n} × ${p.each} = ${p.n * p.each}</em>`; };
   function paintHud(s){
     const P = s.player; if (!P) return; const hpk = P.hp / P.hpMax, mk = P.mana / P.manaMax;
     hpBar.firstElementChild.style.transform = `scaleX(${hpk})`; hpBar.classList.toggle('low', hpk < .3); hpBar.lastElementChild.textContent = `${T('hud.hp')} ${P.hp}`;
@@ -142,6 +144,8 @@ export function createUI(ctx, audio){
     $h('.empower').classList.toggle('mw-hide', !P.empowered); if (P.empowered) $h('.empower').textContent = `✨ 강화 ${Math.ceil((P.empowerT != null ? P.empowerT : 1) * 20)}초`;
     const w = s.world, Bs = s.boss, R = w && w.rail; $h('.mw-wave').textContent = !Bs && !R && w && w.waves ? `🌲 ${w.arenas > 1 ? T('hud.zone', { n: w.arenaNo || 1 }) + ' · ' : ''}${Math.min(w.wave + 1, w.waves)} / ${w.waves}` : ''; $h('.mw-wave').title = w && w.stageName ? w.stageName : '';
     const rb = $h('.mw-rail'); rb.classList.toggle('mw-hide', !R); if (R) { rb.querySelector('.nm').textContent = w.heart ? `🌳 ${w.stageName} · ${T('hud.heart')}` : `${R.dark ? '🔦' : '🌲'} ${w.stageName ? w.stageName + ' · ' : ''}${T(R.dark ? 'hud.cave' : 'hud.rail')} ${(w.arenaNo || 0) + 1}`; const k = Math.min(1, R.progress || 0); rb.querySelector('.rb i').style.transform = `scaleX(${k})`; rb.querySelector('.rb u').style.left = (k * 100) + '%'; rb.querySelector('.ff').textContent = `🪲 ${fireflies}`; rb.classList.toggle('stop', R.phase !== 'go'); }
+    // v2.3 묶음 띠(15 문서 2절): 「🟢×4 = 36」 — 흐트러지면 지금 합도
+    const pks = s.packs || [], pkEl = $h('.mw-pack'); pkEl.classList.toggle('mw-hide', !pks.length); if (pks.length) pkEl.innerHTML = pks.map(pk => `<span>🟢×${pk.alive} = ${pk.sum}${pk.sum !== pk.alive * pk.hpEach ? ` <s>(${pk.alive}마리 힘 ${pk.hpEach})</s>` : ''}</span>`).join('');
     const bb = $h('.mw-boss'); bb.classList.toggle('mw-hide', !Bs); if (Bs) { bb.querySelector('.nm').textContent = T(Bs.nameKey) + ` · ${Bs.phase + 1}/${Bs.phases}`;
       const bar = bb.querySelector('.bb'); if (bar.children.length !== Bs.phases) bar.innerHTML = Bs.phaseHpMax.map(() => '<i><u></u></i>').join('');
       [...bar.children].forEach((c, i) => { c.firstChild.style.transform = `scaleX(${Bs.phaseHp[i] / Bs.phaseHpMax[i]})`; c.classList.toggle('on', i === Bs.phase); });
@@ -165,9 +169,9 @@ export function createUI(ctx, audio){
   }
   function paintQ(s){
     const Q = s.question; if (!Q) return;
-    if (Q.id !== qId) { qId = Q.id; hintStep = -1; qPrompt.textContent = (Q.kind === 'seal' ? '🔒 ' : Q.kind === 'power' ? '★ ' : Q.kind === 'shield' ? '🛡 ' : Q.kind === 'golem' ? '💎 ' : '') + fmtQ(Q); qp.classList.toggle('seal', Q.kind === 'seal'); qp.classList.toggle('shieldq', Q.kind === 'shield'); qp.classList.toggle('golemq', Q.kind === 'golem'); qp.dataset.sub = Q.kind === 'golem' ? T('q.golem') : ''; qp.classList.toggle('power', Q.kind === 'power'); qp.classList.toggle('word', Q.type === 'word1'); }
+    if (Q.id !== qId) { qId = Q.id; hintStep = -1; qPrompt.textContent = (Q.kind === 'seal' ? '🔒 ' : Q.kind === 'power' ? '★ ' : Q.kind === 'shield' ? '🛡 ' : Q.kind === 'golem' ? '💎 ' : Q.kind === 'share' ? '🟢 ' : '') + fmtQ(Q); qp.classList.toggle('shareq', Q.kind === 'share'); qp.classList.toggle('seal', Q.kind === 'seal'); qp.classList.toggle('shieldq', Q.kind === 'shield'); qp.classList.toggle('golemq', Q.kind === 'golem'); qp.dataset.sub = Q.kind === 'golem' ? T('q.golem') : Q.kind === 'share' ? T('q.share') : ''; qp.classList.toggle('power', Q.kind === 'power'); qp.classList.toggle('word', Q.type === 'word1'); }
     if (Q.hintStep !== hintStep) { hintStep = Q.hintStep; qHint.classList.toggle('mw-hide', !Q.hint); if (Q.hint) qHint.textContent = '🦉 ' + T(Q.hint.key, Q.hint.args);
-      qBeads.classList.toggle('mw-hide', !Q.hintPic); if (Q.hintPic && Q.hintPic.kind === 'beads') qBeads.innerHTML = beadsHtml(Q.hintPic); }
+      qBeads.classList.toggle('mw-hide', !Q.hintPic); if (Q.hintPic && Q.hintPic.kind === 'beads') qBeads.innerHTML = beadsHtml(Q.hintPic); else if (Q.hintPic && Q.hintPic.kind === 'groups') qBeads.innerHTML = groupsHtml(Q.hintPic); }
     qp.classList.toggle('right', Q.state === 'right'); qp.classList.toggle('wrong', Q.state === 'wrong');
     qSub.textContent = Q.state === 'right' ? T('q.right', { a: qMana }) + ' ✨' : Q.state === 'wrong' ? (Q.explain ? T(Q.explain) : T('q.wrong')) : Q.readP < 1 ? T('q.read') : '';
     qGauge.classList.toggle('mw-hide', !Q.gaugeOn); qGaugeI.style.transform = `scaleX(${Q.gauge})`;

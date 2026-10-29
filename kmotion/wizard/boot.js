@@ -15,8 +15,8 @@ const say = m => { if (bootEl) bootEl.textContent = m; };
 // ── 데이터(노드 시험 tests/sim/load.mjs 와 같은 묶음)
 const J = async p => { const r = await fetch(new URL(p, import.meta.url)); if (!r.ok) throw new Error(p + ' ' + r.status); return r.json(); };
 const STAGE_IDS = ['forest-1-1', 'forest-1-2', 'forest-1-3', 'forest-1-boss'];   // v1.8 1-보스 「고대 나무 심장」   // v1.6: 순서 = 시작 화면 목록 순서
-const [spells, enemies, anim, layout, textKo, camera, worlds, ...stageJ] = await Promise.all(['data/spells.json', 'data/enemies.json', 'data/anim-timing.json', 'data/layout/targets.json', 'data/text/ko.json', 'contract/camera.json', 'data/worlds.json', ...STAGE_IDS.map(id => `data/stages/${id}.json`)].map(J));
-const data = { spells, enemies, anim, layout, text: textKo, camera, worlds, stages: Object.fromEntries(STAGE_IDS.map((id, i) => [id, stageJ[i]])) };
+const [spells, enemies, anim, layout, textKo, camera, worlds, gradeTable, ...stageJ] = await Promise.all(['data/spells.json', 'data/enemies.json', 'data/anim-timing.json', 'data/layout/targets.json', 'data/text/ko.json', 'contract/camera.json', 'data/worlds.json', 'data/concepts-by-grade.json', ...STAGE_IDS.map(id => `data/stages/${id}.json`)].map(J));
+const data = { spells, enemies, anim, layout, text: textKo, camera, worlds, gradeTable, stages: Object.fromEntries(STAGE_IDS.map((id, i) => [id, stageJ[i]])) };
 const text = (key, args) => { const s = textKo[key] != null ? textKo[key] : key; return args ? s.replace(/\{(\w+)\}/g, (_, k) => args[k] != null ? args[k] : '') : s; };
 
 let cal = null; try { cal = JSON.parse(localStorage.getItem(CAL_KEY) || 'null'); } catch (_) {}

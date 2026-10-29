@@ -37,7 +37,7 @@ for (const k of keys) {
       if (Number.isInteger(w[0]) && w[0] >= 0 && w[0] <= G.max && !seenW.has(w[0]) && w[0] !== q.answer) { seenW.add(w[0]); validW++; } }
     need(validW >= 2, `쓸 수 있는 오답(0~max·중복 없음) ${validW}개 < 2: ${q.fact}`);
     need(q.hint1 && T[q.hint1.key] != null, `hint1 키 「${q.hint1 && q.hint1.key}」 없음`);
-    if (q.hint2) { need(q.hint2.kind === 'beads' && (q.hint2.op === '+' || q.hint2.op === '-') && q.hint2.a + (q.hint2.op === '+' ? q.hint2.b : 0) <= 20, `hint2 는 beads(+·− 합 20 이하)만, 아니면 null: ${JSON.stringify(q.hint2)}`); }
+    if (q.hint2) { need((q.hint2.kind === 'beads' && (q.hint2.op === '+' || q.hint2.op === '-') && q.hint2.a + (q.hint2.op === '+' ? q.hint2.b : 0) <= 20) || (q.hint2.kind === 'groups' && q.hint2.n >= 2 && q.hint2.n <= 8 && q.hint2.n * q.hint2.each <= 96), `hint2 는 beads(+·− 합 20 이하) 또는 groups(묶음 그림, v2.3 share — n 2~8·합 96 이하)만, 아니면 null: ${JSON.stringify(q.hint2)}`); }
     maxAns = Math.max(maxAns, q.answer);
   }
   // 엔진 통과: 선택지 3·중복 0·정답 자리

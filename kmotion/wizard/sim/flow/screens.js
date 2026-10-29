@@ -7,6 +7,7 @@ import { KeyInput } from '../input/keyboard.js';
 import { Calib, CALIB_STEPS } from '../input/calib.js';
 import { Selector } from '../input/selector.js';
 import { STAGE_BY_GRADE } from '../input/config.js';
+import { conceptsFor } from '../learn/gradeTable.js';
 import { createBus } from '../core/events.js';
 import { deepFreeze } from '../core/snapshot.js';
 
@@ -28,7 +29,7 @@ export function createFlow({ data, grade = 1, seed = Date.now() % 100000, freeze
   function toMap(from){ if (f.game) { f.mastery = f.game.qe.m; f.progress = f.game.progress; f.game = null; } f.calib = null; mapSel.reset(); f.cursor = null; f.screen = 'S04'; bus.emit('screen', { from, to: 'S04' }); }
   f.mapModel = function(){ const prog = f.progress || {}; const stages = f.stageList(); const st = data.stages[f.stage] || {}; const tg = mapTargets();
     const stars = stages.reduce((a, z) => a + (z.stars || 0), 0), crystals = Array.isArray(prog.crystals) ? prog.crystals : [];
-    return { world: 'forest', worldName: (WORLDS.worlds.find(w => w.id === 'forest') || {}).nameKo || '', stages, stage: f.stage, locked: isLocked(f.stage), learn: (st.concepts || []).slice(), recLevel: st.recLevel || 1, stars, level: prog.level || 1, xp: prog.xp || 0,
+    return { world: 'forest', worldName: (WORLDS.worlds.find(w => w.id === 'forest') || {}).nameKo || '', stages, stage: f.stage, locked: isLocked(f.stage), learn: conceptsFor(data, st, grade),   /* v2.3 지도 「배울 것」 = 변환표 그 학년 키 */ recLevel: st.recLevel || 1, stars, level: prog.level || 1, xp: prog.xp || 0,
       pedestals: WORLDS.crystals.map((c, i) => ({ idx: i, crystal: c, world: (WORLDS.worlds[i] || {}).id || null, worldName: (WORLDS.worlds[i] || {}).nameKo || '', icon: (WORLDS.worlds[i] || {}).icon || '', open: !!(WORLDS.worlds[i] && WORLDS.worlds[i].open), got: crystals.includes(c) })),
       targets: tg.map(x => ({ id: x.id, kind: x.kind, rect: x.rect, hover: Math.round((mapSel.hover[x.id] || 0) * 1000) / 1000, locked: !x.enabled || (x.id.startsWith('stage:') && isLocked(x.id.slice(6))) })) }; };
   function newGame(){

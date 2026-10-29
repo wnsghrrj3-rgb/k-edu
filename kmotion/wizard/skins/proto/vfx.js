@@ -13,7 +13,7 @@ export function makeTelegraph(){ const g = new THREE.Group();
 export function poseTelegraph(g, tg, gameT){ const r = tg.size[0], k = Math.max(0, Math.min(1, (gameT - tg.t0) / (tg.t1 - tg.t0))); g.position.set(WX(tg.center[0]), .03, tg.center[2]); g.scale.setScalar(r);
   g.userData.fill.scale.setScalar(Math.max(.01, k)); g.userData.area.material.map.offset.x = performance.now() / 4000; }
 
-export function makeProjectile(p){ if (p.kind === 'acorn') return makeAcorn(p); const g = new THREE.Group(); const fire = p.kind === 'fireball'; const col = fire ? 0xff8a3d : 0xffe27a;
+export function makeProjectile(p){ if (p.kind === 'acorn') return makeAcorn(p); const g = new THREE.Group(); const fire = p.kind === 'fireball', share = p.kind === 'share'; const col = fire ? 0xff8a3d : share ? (p.scatter ? 0x8a8f9c : 0x5ef2c8) : 0xffe27a;   // v2.3 share 탄 = 수학 빛(청록), 흩어진 탄 = 회색
   const core = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), new THREE.MeshBasicMaterial({ color: fire ? 0xffd27a : 0xffffff })); core.scale.setScalar(p.r * .7); g.add(core);
   const glow = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), add(col, .55)); glow.scale.setScalar(p.r * 1.6); g.add(glow);
   const trailN = fire ? 14 : 8, geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(trailN * 3), 3));
