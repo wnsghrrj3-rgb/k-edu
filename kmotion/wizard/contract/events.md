@@ -89,3 +89,17 @@ v1.5 추가(P3 길 구간): `rail:start`(idx·len·seconds·obstacles) / `rail:e
 - MenuSnapshot 추가: `map{world,worldName,stages[],stage,locked,learn[](개념 키 — 스킨은 `learn.<키>` 문구로),recLevel,stars,level,xp,pedestals[6]{crystal,world,worldName,icon,open,got},targets}` · `targets`(kind **`map`**: `stage:<id>`·`enter`) · `toast` · `input.cursor`
 - 데이터: `data/worlds.json`(결정 6·월드 6 — 받침대 순서, 시스템 소유) · `data/layout/targets.json` **`map`**(노드 4·enter rect) · ko.json `map.*`·`crystal.*`·`learn.*`·`clear.map`
 - 시작 화면 `title.stages` 는 남지만 proto 는 더 안 그림(지도로). 키보드 모드 S04: ←→/↑↓ 고르기 · 1~4 · Enter/Space 들어가기 · Esc 처음으로
+
+## v2.3 추가(2026-10-29, 3학년 「똑같이 나누기 공격」 — 15 문서 D-29~31) — 추가만, 기존 변경 0
+| type | 필드 | 표현 예 |
+|---|---|---|
+| `enemy:pack` | id, n, hpEach, total, uids[] | 묶음 등장 — 머리 위 숫자(= 현재 HP)·HUD 묶음 띠 「🟢×n = 합」·토스트 `toast.pack`(처음) |
+| `enemy:packClear` | id, byMath, n, released, counted | 묶음 끝 — counted(수학으로 전부 처치)면 clear 소리·fov 펄스·토스트 `toast.packClear`, 아니면 `toast.packDone`·띠만 사라짐 |
+| `share:scatter` | packId, n | 오답 — 회색 탄 n발 흩어짐(피해 0)·토스트 `toast.shareScatter` |
+| `attack:fire` | +share: true, label | share 탄 발사(마리마다 1발, label = 정답 숫자) — 청록 탄 |
+| `hit` | +exact: true | 정확 피해 채널(D-29) — 피해 숫자 청록 「수학 빛」·glass 소리(치명·강화 표시 없음) |
+| `enemy:die` | +exact: boolean | share 탄으로 처치 |
+| `enemy:spawn` | +pack: id \| null | 묶음 소속 스폰 |
+- 스냅샷 추가(`snapshot.d.ts`): `enemies[].pack {id,n,hpEach}` · `packs[] {id,n,hpEach,total,alive,sum,uids[],retried}`(산 묶음만 — 띠는 alive·sum, sum ≠ alive×hpEach 면 흐트러짐 표시) · `projectiles[].exact`(정확 피해 양, 0 = 일반)·`scatter`(흩어진 탄, kind 'share') · `question.kind 'share'`·`packId`·`shareUids[]`·`hintPic.kind 'groups' {n, each}`(n줄 × each 구슬 그림) · `result.packClears/shareRight/shareWrong`
+- 데이터: `data/concepts-by-grade.json`(학년 변환표 — 스테이지별 `g3/g4 {concepts, fallback, packs}` + `pack.g3/g4` 수 범위, 시스템 소유) · boot `?grade=3|4`(같은 스테이지 재사용, 1학년 줄 없음 = 장면 JSON 그대로) · ko.json `q.share.*`·`hint.share.*`·`toast.pack/shareGo/shareScatter/packClear/packDone`·`learn.g3.share.*`·`why.*` 7키
+- 수정 kind 우선순위: 방패 > 골렘 > **share**(산 묶음 있을 때) · 묶음당 쉬운 재도전 수정 1번(`crystals[].retry`) · 3학년 일반 생성기 0 이면 fallback(share 3종)으로 보통·봉인·강화 수정을 채움(`QuestionEngine.empty`)

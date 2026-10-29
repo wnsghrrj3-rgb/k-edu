@@ -40,7 +40,8 @@ export interface Snapshot {
   enemies: Array<{ uid: number; kind: string; pos: Vec3; yaw: number; scale: number; state: EnemyState; stateT: number; hp: number; hpMax: number; label: string | null;
     /** 예고 — 있으면 스킨은 바닥 범위를 반드시 그린다(빨강 + 빗금). t0→t1 비율로 채움 */
     /** v1.4: line = 계산 고블린 조준선(size=[폭, 길이], yaw 방향 — 보스 돌진 띠와 같은 그림) · scale = 큰 슬라임 1.5 / 분열 작은 슬라임 .72(tags 'mini') · kind 'num-slime'|'big-slime'|'calc-goblin' */
-    telegraph: { shape: 'circle' | 'line' | 'cone'; center: Vec3; size: number[]; yaw: number; t0: number; t1: number } | null; tags: string[] }>;
+    telegraph: { shape: 'circle' | 'line' | 'cone'; center: Vec3; size: number[]; yaw: number; t0: number; t1: number } | null; tags: string[];
+    pack: { id: number; n: number; hpEach: number } | null }>;   // v2.3 묶음 소속(tags 'pack') — 머리 위 숫자 = 현재 hp(D-30)
   /** 보스(v1.1 추가, 06 문서 4·5절). 보스방이 아니면 null. telegraphs 는 전부 그려야 한다(돌 3개처럼 여러 개일 수 있음) */
   boss: null | { uid: number; kind: string; pos: Vec3; yaw: number; scale: number;
     state: 'intro' | 'chase' | 'windup' | 'attack' | 'recover' | 'kneel' | 'phase' | 'dead'; stateT: number;
@@ -51,14 +52,18 @@ export interface Snapshot {
     telegraphs: Array<{ shape: 'circle' | 'line' | 'ring'; center: Vec3; size: number[]; yaw: number; t0: number; t1: number; label: string | null; avoid: null | 'duck' }>;
     nameKey: string };                                // line: size=[폭, 길이], yaw 방향 · ring: 전체 범위 — avoid 'duck' = 숙여서 피함
   /** v1.4: kind 'acorn' = 고블린 도토리(owner = 그 몬스터 uid, label = 식 「2+3」) — 플레이어만 맞춤, 숙이면 머리 위로 지나감 */
-  projectiles: Array<{ uid: number; kind: 'bolt' | 'fireball' | 'acorn' | string; pos: Vec3; vel: Vec3; owner: 'player' | number; label: string | null; r: number }>;
+  projectiles: Array<{ uid: number; kind: 'bolt' | 'fireball' | 'acorn' | 'share' | string; pos: Vec3; vel: Vec3; owner: 'player' | number; label: string | null; r: number;
+    exact: number; scatter: boolean }>;   // v2.3 share 탄: exact = 정확 피해 양(청록, 0 = 일반) · scatter = 오답 흩어진 탄(회색·피해 0)
   areas: Array<{ uid: number; kind: 'explosion' | 'ice' | 'meteor' | string;   // ice: t0~t1 동안 얼음 폭풍 · meteor: t1 에 떨어짐(그림자 먼저)
                  pos: Vec3; radius: number; t0: number; t1: number }>;
   /** 수학 수정(v1 추가) — near = 지금 치면 열림. v1.4 empower = 금빛 강화 수정(07 문서 상황 B): life = 남은 시간 비율(15초, 0 이면 사라짐) · retry = 오답 뒤 「다시 도전」 수정 */
   crystals: Array<{ uid: number; kind: 'math' | 'empower'; pos: Vec3; near: boolean; retry: boolean; life: number }>;
   pickups: Array<{ uid: number; kind: 'mana' | 'gold' | 'shard'; pos: Vec3 }>;
+  /** v2.3 묶음 몬스터(15 문서 D-30) — 산 묶음만. 스킨은 HUD 띠 「🟢×alive = sum」, sum ≠ alive×hpEach 면 흐트러짐 표시 */
+  packs: Array<{ id: number; n: number; hpEach: number; total: number; alive: number; sum: number; uids: number[]; retried: boolean }>;
   question: null | {
-    id: string; type: string; concept: string; kind: 'crystal' | 'seal' | 'power';   // seal = 보스 봉인 문제(v1.1) · power = 강화 문제(v1.4, 금빛 수정 — 패널 금테)
+    id: string; type: string; concept: string; kind: 'crystal' | 'seal' | 'power' | 'shield' | 'golem' | 'share';   // seal = 보스 봉인 문제(v1.1) · power = 강화 문제(v1.4, 금빛 수정 — 패널 금테) · shield(v1.6) · golem(v1.7) · share = 똑같이 나누기 공격(v2.3, 청록 테·🟢·부제 `q.share`)
+    packId: number | null; shareUids: number[] | null;   // v2.3 share 문제가 겨누는 묶음·마리들
     prompt: { key: string; args: Record<string, string | number> };   // 문구 = text(key) 에 args 채우기
     state: 'open' | 'right' | 'wrong'; hintStep: number;
     gauge: number; gaugeOn: boolean;                  // 몬스터 공격 게이지 0~1 (가득 = 몬스터 1번 공격)
@@ -79,6 +84,7 @@ export interface Snapshot {
   result: null | { crystal: string | null; final: boolean;   // v1.8 되찾은 결정(첫 클리어만)·월드 마지막
     win: boolean; kills: number; q: number; right: number; time: number; keyboard: boolean; deaths: number; xp: number; level: number; levelUps: number[];
     empowers: number; splits: number; niceDodges: number;   // v1.4 강화 성공·분열·도토리 멋진 회피 횟수
+    packClears: number; shareRight: number; shareWrong: number;   // v2.3 묶음 처치(수학)·share 정답·오답
     fireflies: number; chests: number; gold: number; puzzles: number; puzzleRight: number; obstaclesHit: number; nicePasses: number; stars: [boolean, boolean, boolean] };   // v1.5 길 구간 — 별 3개 = 클리어·반딧불 7↑·정답률 70%↑(퍼즐 포함)
 }
 /** 게임 밖 화면(S01 시작 · S17 보정) */
