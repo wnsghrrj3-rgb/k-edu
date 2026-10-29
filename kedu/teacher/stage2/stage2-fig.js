@@ -3551,6 +3551,136 @@
     }
     Object.assign(PARTS, { jml, pbr, dar, vml }); Object.assign(HTML_PARTS, { cll, tnc, mch, ecd, dtb });
   }
+  // ══ 220차(2026-10-29) 5학년 2학기 수학 5단원 「직육면체」 부품 — 자기주도 원문 부품 라이브러리(boxIso·boxRow·boxNet·netPick·diceProg)를 2세대로 옮김 ══
+  //   bxi(겨냥도 — 꼭짓점 이름 ㄱㄴㄷㄹ 윗면 · ㅁㅂㅅㅇ 아랫면, 숨은 꼭짓점 = ㅁ · 숨은 모서리 셋 = 점선) · bxr(겨냥도 줄 — 이름 · bad 칸)
+  //   bxn(전개도 — 면을 정수 칸으로 받아 부품이 3차원으로 접어 보고 ok/overlap/gap/edge 를 셈 · 잘린 모서리 실선 · 접는 선 점선)
+  //   npk(전개도 고르기 줄) · dpg(주사위 굴리기 명령 — 전개도를 접어 평행한 면을 찾고 끝 눈을 부품이 셈)
+  //   ⛔ 신고(bad)와 접은 결과가 다르면 던짐 · 숨은 모서리를 점선이 아니게 그리려면 bad 나 plain · ask 면 답(끝 눈·길이)을 그리지 않는다.
+  {
+    const C9 = { ink: '#2B3440', soft: '#6B7C93', cut: '#5B3FB0', fold: '#9B8BC9', face: '#ECE6FA', hi: '#FFE3CF', dim: '#1E6F66', emph: '#E0413C', ask: ORANGE };
+    const FILL9 = { a: '#FFD8C2', b: '#CFE3F7', c: '#FFF1B8', h: '#F4F1EA' };
+    const m9 = (n) => String(Math.round(n * 100) / 100);
+    const cap9 = (t) => t ? '<div class="fig-cap bx-cap">' + esc(t) + '</div>' : '';
+    const V3 = { add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k], neg: (a) => [-a[0], -a[1], -a[2]], cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]], key: (a) => a.map(v => v + 0).join(',') };
+    const BXV = { 'ㄱ': [0, 1, 1], 'ㄴ': [0, 1, 0], 'ㄷ': [1, 1, 0], 'ㄹ': [1, 1, 1], 'ㅁ': [0, 0, 1], 'ㅂ': [0, 0, 0], 'ㅅ': [1, 0, 0], 'ㅇ': [1, 0, 1] };
+    const BXE = [['ㄱ', 'ㄴ'], ['ㄴ', 'ㄷ'], ['ㄷ', 'ㄹ'], ['ㄹ', 'ㄱ'], ['ㅁ', 'ㅂ'], ['ㅂ', 'ㅅ'], ['ㅅ', 'ㅇ'], ['ㅇ', 'ㅁ'], ['ㄱ', 'ㅁ'], ['ㄴ', 'ㅂ'], ['ㄷ', 'ㅅ'], ['ㄹ', 'ㅇ']];
+    const BXF = ['ㄱㄴㄷㄹ', 'ㅁㅂㅅㅇ', 'ㄴㅂㅁㄱ', 'ㄴㅂㅅㄷ', 'ㄷㅅㅇㄹ', 'ㄱㅁㅇㄹ'];
+    const faceOK = (s) => { const k = s.split('').sort().join(''); return BXF.some(f => f.split('').sort().join('') === k); };
+    const posInt = (v, n) => { if (!(Number.isInteger(v) && v > 0 && v <= 40)) throw new Error('bxi: ' + n + ' 가 양의 정수가 아님 ' + v); return v; };
+    // 전개도 접기 — faces:[{x,y,w,h}] → { res: ok|overlap|gap|edge, fr, dims }
+    function fold(F) {
+      const n = F.length, fr = new Array(n).fill(null);
+      F.forEach(f => ['x', 'y', 'w', 'h'].forEach(k => { if (!Number.isInteger(f[k])) throw new Error('bxn: 면 칸이 정수가 아님'); }));
+      if (!n) throw new Error('bxn: 면 없음');
+      fr[0] = { O: [0, 0, 0], U: [1, 0, 0], V: [0, 1, 0] }; fr[0].N = V3.cross(fr[0].U, fr[0].V);
+      const q = [0];
+      while (q.length) {
+        const i = q.shift(), a = F[i], A = fr[i];
+        for (let j = 0; j < n; j++) {
+          if (fr[j]) continue; const b = F[j]; let f = null;
+          if (b.x === a.x + a.w && b.y === a.y && b.h === a.h) f = { U: V3.neg(A.N), V: A.V, O: V3.add(A.O, V3.mul(A.U, a.w)) };
+          else if (b.x + b.w === a.x && b.y === a.y && b.h === a.h) f = { U: A.N, V: A.V, O: V3.add(A.O, V3.mul(A.N, -b.w)) };
+          else if (b.y === a.y + a.h && b.x === a.x && b.w === a.w) f = { U: A.U, V: V3.neg(A.N), O: V3.add(A.O, V3.mul(A.V, a.h)) };
+          else if (b.y + b.h === a.y && b.x === a.x && b.w === a.w) f = { U: A.U, V: A.N, O: V3.add(A.O, V3.mul(A.N, -b.h)) };
+          if (!f) continue; f.N = V3.cross(f.U, f.V); fr[j] = f; q.push(j);
+        }
+      }
+      if (fr.some(f => !f)) return { res: 'edge', fr };
+      if (new Set(fr.map(f => V3.key(f.N))).size < n) return { res: 'overlap', fr };
+      if (n < 6) return { res: 'gap', fr };
+      if (n > 6) return { res: 'overlap', fr };
+      const C = []; F.forEach((a, i) => { const A = fr[i]; [[0, 0], [a.w, 0], [0, a.h], [a.w, a.h]].forEach(([s, t]) => C.push(V3.add(V3.add(A.O, V3.mul(A.U, s)), V3.mul(A.V, t)))); });
+      const lo = [0, 1, 2].map(k => Math.min(...C.map(c => c[k]))), hi = [0, 1, 2].map(k => Math.max(...C.map(c => c[k])));
+      for (let i = 0; i < n; i++) { const N = fr[i].N, k = N.findIndex(v => v !== 0), want = N[k] > 0 ? hi[k] : lo[k], cs = C.slice(i * 4, i * 4 + 4);
+        if (cs.some(c => c[k] !== want)) return { res: 'edge', fr };
+        for (const m of [0, 1, 2]) if (m !== k && (Math.min(...cs.map(c => c[m])) !== lo[m] || Math.max(...cs.map(c => c[m])) !== hi[m])) return { res: 'edge', fr }; }
+      return { res: 'ok', fr, dims: [hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]].sort((a, b) => a - b) };
+    }
+    function diceRun(F, start, times, rel) {
+      const r = fold(F); if (r.res !== 'ok') throw new Error('dpg: 주사위 전개도가 접히지 않음 ' + r.res);
+      const pips = F.map(f => f.pip); if (pips.slice().sort().join() !== '1,2,3,4,5,6') throw new Error('dpg: 눈 1~6 이 한 번씩이 아님');
+      if (pips.indexOf(start) < 0) throw new Error('dpg: 시작 눈');
+      if (!(Number.isInteger(times) && times > 0) || (rel !== 'max' && rel !== 'min')) throw new Error('dpg: 횟수·조건');
+      const N = {}; F.forEach((f, i) => { N[f.pip] = V3.key(r.fr[i].N); }); const opp = (p) => +Object.keys(N).find(x => N[x] === V3.key(V3.neg(N[p].split(',').map(Number))));
+      let cur = start; const trail = [];
+      for (let t = 0; t < times; t++) { const o = opp(cur); const side = [1, 2, 3, 4, 5, 6].filter(p => p !== o && p !== cur); cur = rel === 'max' ? Math.max(...side) : Math.min(...side); trail.push(o, cur); }
+      return { end: cur, trail, opp };
+    }
+    global.KT2_BOX = { fold, diceRun, faces: BXF.slice() };
+    // ── bxi ── 겨냥도
+    function bxiSvg(o, small) {
+      const w = posInt(o.w, 'w'), h = posInt(o.h, 'h'), d = posInt(o.d, 'd'), hid = o.hidden || 'dash';
+      if (['dash', 'solid', 'none'].indexOf(hid) < 0) throw new Error('bxi: hidden ' + hid);
+      if (hid !== 'dash' && !o.bad && !o.plain) throw new Error('bxi: 숨은 모서리를 점선이 아니게 그리려면 bad 나 plain');
+      if (o.bad && hid === 'dash') throw new Error('bxi: bad 인데 겨냥도가 바름');
+      if (o.ask && ['w', 'h', 'd'].indexOf(o.ask) < 0) throw new Error('bxi: ask');
+      const kx = 0.45, ky = 0.35, sw = w + d * kx, sh = h + d * ky, pad = small ? 30 : 46;
+      const u = small ? Math.min(46, 200 / sw, 150 / sh) : Math.min(78, 380 / sw, 250 / sh);
+      const P = (L) => { const v = BXV[L]; const x = v[0] * w, y = v[1] * h, z = v[2] * d; return [pad + (x + z * kx) * u, pad + (h - y + (d - z) * ky) * u]; };
+      const W = sw * u + pad * 2, H = sh * u + pad * 2;
+      let s = '';
+      const shade = o.shade || {};
+      Object.keys(shade).forEach(fc => { if (!faceOK(fc)) throw new Error('bxi: 「' + fc + '」는 상자의 면이 아님'); if (!FILL9[shade[fc]]) throw new Error('bxi: 칠 색 ' + shade[fc]);
+        s += '<polygon class="bx-f" data-face="' + fc + '" data-c="' + shade[fc] + '" points="' + fc.split('').map(P).map(p => m9(p[0]) + ',' + m9(p[1])).join(' ') + '" fill="' + FILL9[shade[fc]] + '" stroke="none" opacity="0.95"/>'; });
+      BXE.forEach(([a, b]) => { const isH = a === 'ㅁ' || b === 'ㅁ'; if (isH && hid === 'none') return; const p = P(a), q2 = P(b), dash = isH && hid === 'dash';
+        s += '<line class="bx-e' + (dash ? ' dash' : '') + (isH ? ' hid' : '') + '" data-a="' + a + '" data-b="' + b + '" x1="' + m9(p[0]) + '" y1="' + m9(p[1]) + '" x2="' + m9(q2[0]) + '" y2="' + m9(q2[1]) + '" stroke="' + (isH && o.bad ? C9.emph : C9.ink) + '" stroke-width="' + (small ? 3.4 : 4.4) + '" stroke-linecap="round"' + (dash ? ' stroke-dasharray="9 8"' : '') + '/>'; });
+      if (o.labels) { const cx = pad + sw * u / 2, cy = pad + sh * u / 2;
+        Object.keys(BXV).forEach(L => { if (hid === 'none' && L === 'ㅁ') return; const p = P(L), dx = p[0] - cx, dy = p[1] - cy, mm = Math.hypot(dx, dy) || 1;
+          s += txt(m9(p[0] + dx / mm * 24), m9(p[1] + dy / mm * 24 + 9), L, small ? 22 : 28, C9.soft, 800).replace('<text ', '<text class="bx-v" data-v="' + L + '" '); }); }
+      if (o.dims) { const lab = (k, v) => (o.ask === k ? '?' : v + ' cm'), fs = small ? 22 : 27;
+        const b1 = P('ㅂ'), b2 = P('ㅅ'), r2 = P('ㄷ'), g2 = P('ㅇ');
+        s += txt(m9((b1[0] + b2[0]) / 2), m9(b1[1] + 34), lab('w', w), fs, o.ask === 'w' ? C9.ask : C9.dim, 900).replace('<text ', '<text class="bx-dim" data-edge="w" ');
+        s += txt(m9(b2[0] - 12), m9((b2[1] + r2[1]) / 2 + 8), lab('h', h), fs, o.ask === 'h' ? C9.ask : C9.dim, 900, 'end').replace('<text ', '<text class="bx-dim" data-edge="h" ');
+        s += txt(m9((b2[0] + g2[0]) / 2 + 14), m9((b2[1] + g2[1]) / 2 + 28), lab('d', d), fs, o.ask === 'd' ? C9.ask : C9.dim, 900, 'start').replace('<text ', '<text class="bx-dim" data-edge="d" '); }
+      return svgWrap(s, 'bx-svg' + (small ? ' sm' : ''), '0 0 ' + m9(W) + ' ' + m9(H)).replace('<svg ', '<svg style="width:' + Math.round(W) + 'px" data-box="' + [w, h, d].join(',') + '|' + hid + '|' + (o.bad || '') + '" ');
+    }
+    function bxi(o) { return '<div class="fig-vert fig-bxi">' + bxiSvg(o, false) + cap9(o.cap) + '</div>'; }
+    function bxr(o) {
+      const it = o.items || []; if (!it.length) return '';
+      return '<div class="fig-vert fig-bxr"><div class="bxr-row n' + it.length + '">' + it.map(x => '<div class="bxr-c' + (x.cls ? ' ' + esc(x.cls) : '') + '">' + bxiSvg(x.box || {}, true) + (x.name ? '<div class="bxr-n">' + esc(x.name) + '</div>' : '') + '</div>').join('') + '</div>' + cap9(o.cap) + '</div>';
+    }
+    // ── bxn ── 전개도
+    function bxnSvg(o, small) {
+      const F = o.faces || [], real = F.filter(f => !f.ghost), r = fold(real);
+      if ((o.bad || 'ok') !== r.res) throw new Error('bxn: 접은 결과 ' + r.res + ' 인데 신고는 ' + (o.bad || 'ok'));
+      const xs = F.map(f => f.x).concat(F.map(f => f.x + f.w)), ys = F.map(f => f.y).concat(F.map(f => f.y + f.h));
+      const x0 = Math.min(...xs), y0 = Math.min(...ys), x1 = Math.max(...xs), y1 = Math.max(...ys), pad = small ? 18 : 34;
+      const u = small ? Math.min(44, 210 / (x1 - x0), 170 / (y1 - y0)) : Math.min(92, 600 / (x1 - x0), 300 / (y1 - y0));
+      const X = v => pad + (v - x0) * u, Y = v => pad + (v - y0) * u;
+      let s = '<defs><pattern id="bnH9" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="12" height="12" fill="#FBE3EC"/><line x1="0" y1="0" x2="0" y2="12" stroke="#E0457B" stroke-width="3.5"/></pattern></defs>';
+      real.forEach((f, i) => { s += '<rect class="bn-f" data-i="' + i + '"' + (f.t ? ' data-lab="' + esc(f.t) + '"' : '') + ' x="' + m9(X(f.x)) + '" y="' + m9(Y(f.y)) + '" width="' + m9(f.w * u) + '" height="' + m9(f.h * u) + '" fill="' + (f.hatch ? 'url(#bnH9)' : f.hi ? C9.hi : C9.face) + '" stroke="none"/>'; });
+      F.filter(f => f.ghost).forEach(f => { s += '<rect class="bn-g" x="' + m9(X(f.x)) + '" y="' + m9(Y(f.y)) + '" width="' + m9(f.w * u) + '" height="' + m9(f.h * u) + '" fill="#fff" stroke="' + C9.ask + '" stroke-width="3" stroke-dasharray="7 6"/>' + txt(m9(X(f.x) + f.w * u / 2), m9(Y(f.y) + f.h * u / 2 + 12), '?', small ? 28 : 36, C9.ask, 900); });
+      const seg = {}; const addS = (ax, ay, bx, by) => { const k = ax + ',' + ay + ',' + bx + ',' + by; seg[k] = (seg[k] || 0) + 1; };
+      real.forEach(f => { for (let t = 0; t < f.w; t++) { addS(f.x + t, f.y, f.x + t + 1, f.y); addS(f.x + t, f.y + f.h, f.x + t + 1, f.y + f.h); } for (let t = 0; t < f.h; t++) { addS(f.x, f.y + t, f.x, f.y + t + 1); addS(f.x + f.w, f.y + t, f.x + f.w, f.y + t + 1); } });
+      Object.keys(seg).forEach(k => { const [ax, ay, bx, by] = k.split(',').map(Number), fd = seg[k] > 1;
+        s += '<line class="bn-l ' + (fd ? 'fold' : 'cut') + '" x1="' + m9(X(ax)) + '" y1="' + m9(Y(ay)) + '" x2="' + m9(X(bx)) + '" y2="' + m9(Y(by)) + '" stroke="' + (fd ? C9.fold : C9.cut) + '" stroke-width="' + (fd ? 2.6 : (small ? 3.4 : 4.4)) + '"' + (fd ? ' stroke-dasharray="5 5"' : '') + ' stroke-linecap="round"/>'; });
+      real.forEach(f => { const cx = X(f.x) + f.w * u / 2, cy = Y(f.y) + f.h * u / 2, fs = Math.max(18, Math.min(small ? 26 : 34, Math.min(f.w, f.h) * u * 0.45));
+        if (f.t) s += txt(m9(cx), m9(cy + fs * 0.36), f.t, fs, C9.ink, 900).replace('<text ', '<text class="bn-t" ');
+        if (f.dot) s += '<circle class="bn-dot" cx="' + m9(cx) + '" cy="' + m9(cy + (f.t ? fs * 0.9 : 0)) + '" r="8" fill="#1E90D6"/>';
+        if (f.pip) { const L = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] }[f.pip]; if (!L) throw new Error('bxn: 눈 ' + f.pip);
+          const g = Math.min(f.w, f.h) * u * 0.26; s += '<g class="bn-pip" data-pip="' + f.pip + '">' + L.map(([a, b]) => '<circle cx="' + m9(cx + a * g) + '" cy="' + m9(cy + b * g) + '" r="' + m9(Math.max(3.5, u * 0.09)) + '" fill="' + C9.ink + '"/>').join('') + '</g>'; } });
+      (o.mark || []).forEach(mk => { s += '<line class="bn-mk" x1="' + m9(X(mk[0])) + '" y1="' + m9(Y(mk[1])) + '" x2="' + m9(X(mk[2])) + '" y2="' + m9(Y(mk[3])) + '" stroke="' + C9.emph + '" stroke-width="7" stroke-linecap="round" opacity="0.85"/>'; });
+      (o.pts || []).forEach(p => { if (!real.some(f => p[0] >= f.x && p[0] <= f.x + f.w && p[1] >= f.y && p[1] <= f.y + f.h)) throw new Error('bxn: 점 ' + p[2] + ' 이 전개도 위에 없음');
+        const cx = (x0 + x1) / 2, dx = p[0] - cx; s += txt(m9(X(p[0]) + (dx < 0 ? -15 : 15)), m9(Y(p[1]) + (p[1] === y0 ? -10 : p[1] === y1 ? 30 : -8)), p[2], small ? 20 : 26, C9.soft, 800).replace('<text ', '<text class="bn-p" data-p="' + esc(p[2]) + '" data-xy="' + p[0] + ',' + p[1] + '" '); });
+      const W = (x1 - x0) * u + pad * 2, H = (y1 - y0) * u + pad * 2, data = real.map(f => [f.x, f.y, f.w, f.h, f.t || '', f.pip || ''].join(':')).join(';');
+      return svgWrap(s, 'bn-svg' + (small ? ' sm' : ''), '0 0 ' + m9(W) + ' ' + m9(H)).replace('<svg ', '<svg style="width:' + Math.round(W) + 'px" data-net="' + esc(data) + '" data-res="' + r.res + '" ');
+    }
+    function bxn(o) { return '<div class="fig-vert fig-bxn">' + bxnSvg(o, false) + cap9(o.cap) + '</div>'; }
+    function npk(o) {
+      const it = o.items || []; if (!it.length) return '';
+      return '<div class="fig-vert fig-npk"><div class="npk-row n' + it.length + '">' + it.map(x => '<div class="npk-c" data-name="' + esc(x.name) + '"><div class="npk-n">' + esc(x.name) + '</div>' + bxnSvg(x, true) + '</div>').join('') + '</div>' + cap9(o.cap) + '</div>';
+    }
+    // ── dpg ── 주사위 명령
+    function dpg(o) {
+      const run = diceRun(o.net || [], o.start, o.times, o.rel);
+      if (o.shown != null && !o.ask && +o.shown !== run.end) throw new Error('dpg: 적은 끝 눈 ' + o.shown + ' ≠ 셈 ' + run.end);
+      const res = o.ask ? '?' : String(run.end);
+      return '<div class="fig-vert fig-dpg"><div class="dpg-flow"><div class="dpg-face">' + o.start + '</div><div class="dpg-ar">→</div>' +
+        '<div class="dpg-card" data-prog="' + [o.start, o.times, o.rel].join(',') + '"><div class="dpg-l"><b>' + o.times + '</b>번 반복하기</div><div class="dpg-l">① 보이는 면과 <b>평행한</b> 면이 보이게 굴리기</div><div class="dpg-l">② 보이는 면과 <b>수직인</b> 면 중 눈의 수가 가장 <b>' + (o.rel === 'max' ? '큰' : '작은') + '</b> 면이 보이게 굴리기</div></div>' +
+        '<div class="dpg-ar">→</div><div class="dpg-face res' + (o.ask ? ' q' : '') + '"' + (o.ask ? '' : ' data-end="' + run.end + '"') + '>' + res + '</div></div>' + cap9(o.cap) + '</div>';
+    }
+    Object.assign(HTML_PARTS, { bxi, bxr, bxn, npk, dpg });
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
