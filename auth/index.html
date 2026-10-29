@@ -456,19 +456,17 @@ document.addEventListener('DOMContentLoaded', initRemember);
    보였다 (2026-08-27) */
 document.addEventListener('DOMContentLoaded', function(){ pickRole(selectedRole); });
 
-// 「로그인 유지」를 끈 기기: 탭을 닫을 때 이 기기에 남은 세션 흔적을 지운다
+// 「로그인 유지」 — 교사 대시보드(/teacher/)와 같은 규약으로 넘긴다:
+//   켬 → kedu_remember=true (타이머 없음) / 끔 → sessionStorage kedu_session (30분 비활동 자동 로그아웃)
+// 예전엔 끔일 때 pagehide 로 sb-* 세션을 지웠는데, pagehide 는 로그인 직후 대시보드로 이동할 때도
+// 울려서 막 로그인한 세션이 바로 지워졌다(2026-10-29 준호 보고: 로그인 뒤 다시 로그인 요구).
 function applyStayPreference(){
   let stay = true;
   try{ stay = localStorage.getItem(STAY_KEY) !== '0'; }catch(e){}
-  if(stay) return;
-  window.addEventListener('pagehide', function(){
-    try{
-      for(let i = localStorage.length - 1; i >= 0; i--){
-        const k = localStorage.key(i);
-        if(k && k.indexOf('sb-') === 0) localStorage.removeItem(k);
-      }
-    }catch(e){}
-  });
+  try{
+    if(stay){ localStorage.setItem('kedu_remember', 'true'); }
+    else { localStorage.removeItem('kedu_remember'); sessionStorage.setItem('kedu_session', 'true'); }
+  }catch(e){}
 }
 
 async function doLogin(ev){
