@@ -3399,6 +3399,158 @@
     }
     Object.assign(PARTS, { cgf, syf, sgd, lcut }); Object.assign(HTML_PARTS, { fpk, crr });
   }
+  // ══ 219차(2026-10-29) 5학년 2학기 수학 4단원 「소수의 곱셈」 부품 — 자기주도 원문 부품 라이브러리(calcLines·tenChain·estCard·jumpLine·mulChain·vMul·partBar·decArea·dataTable)를 2세대로 옮김 ══
+  //   소수 계산은 BigInt 정수 + 소수 자릿수(부동소수 금지) — 곱·배율 이름표·어림값·칸 수·끝 자리는 부품이 스스로 셈(데이터에 쓰지 않음, 어긋나면 던짐)
+  //   cll(식 줄 — data-calc 를 게이트가 다시 셈 · cls hi 강조 · bad 틀린 길) · tnc(10배·1/10배 사슬) · mch(곱셈 사슬 — 줄 사이 배율을 셈)
+  //   ecd(어림 먼저 · 계산으로 확인 · ref 와 크기 견주기) · jml(수직선 뛰어 세기) · pbr(전체를 10등분 한 것 중의 n) · dar(넓이 모델 100칸) · vml(소수 세로셈 · bug dot = 소수점만 어긋난 오류 시연) · dtb(자료 표)
+  //   ⛔ ask 면 답이 되는 수(곱·끝 자리·칸 수·배율·어림값)를 그리지 않는다.
+  {
+    const C8 = { a: '#FF7A2F', aSoft: '#FFE3CF', aDeep: '#C2551A', b: '#2A9D8F', bSoft: '#D5F0EC', bDeep: '#1E6F66', soft: '#6B7C93', line: '#B9C4D2', emph: '#E0413C' };
+    const m8 = (n) => String(Math.round(n * 100) / 100);
+    const D = {
+      dp: (s) => { s = String(s); const i = s.indexOf('.'); return i < 0 ? 0 : s.length - i - 1; },
+      dg: (s) => { const t = String(s); if (!/^\d+(\.\d+)?$/.test(t)) throw new Error('소수 부품: 수가 아님 ' + s); return BigInt(t.replace('.', '')); },
+      p10: (k) => { let v = 1n; for (let i = 0; i < k; i++) v *= 10n; return v; },
+      fmt(n, p, keep) { let s = n.toString(); if (p === 0) return s; while (s.length <= p) s = '0' + s; const ip = s.slice(0, s.length - p); let fp = s.slice(s.length - p); if (!keep) fp = fp.replace(/0+$/, ''); return fp.length ? ip + '.' + fp : ip; },
+      mul(a, b, keep) { return D.fmt(D.dg(a) * D.dg(b), D.dp(a) + D.dp(b), keep); },
+      cmp(a, b) { const p = Math.max(D.dp(a), D.dp(b)), x = D.dg(a) * D.p10(p - D.dp(a)), y = D.dg(b) * D.p10(p - D.dp(b)); return x < y ? -1 : x > y ? 1 : 0; },
+      ratio(a, b) {
+        if (D.cmp(a, b) === 0) return '';
+        const p = Math.max(D.dp(a), D.dp(b)), x = D.dg(a) * D.p10(p - D.dp(a)), y = D.dg(b) * D.p10(p - D.dp(b));
+        if (x === 0n || y === 0n) throw new Error('배율: 0');
+        const big = y > x ? y : x, small = y > x ? x : y; if (big % small !== 0n) throw new Error('배율: 10의 거듭제곱 배가 아님 ' + a + ' → ' + b);
+        let q = big / small, k = 0; while (q % 10n === 0n) { q /= 10n; k++; } if (q !== 1n || k === 0) throw new Error('배율: 10의 거듭제곱 배가 아님 ' + a + ' → ' + b);
+        const t = '1' + '0'.repeat(k); return y > x ? t + '배' : '1/' + t + '배';
+      },
+      prod(expr) { const t = String(expr).split('×').map(s => s.trim()); if (t.length !== 2) throw new Error('두 수의 곱만 — ' + expr); return D.mul(t[0], t[1], false); }
+    };
+    global.KT2_DEC = D;
+    const fx8 = (s) => (global.KT2_FXH ? global.KT2_FXH(s) : esc(s));
+    const rat8 = (lab) => !lab ? '' : fx8(lab.replace(/배$/, '')) + '배';
+    const cap8 = (t) => t ? '<div class="fig-cap fq-cap">' + esc(t) + '</div>' : '';
+    // ── cll ── 식 줄
+    function cll(o) {
+      const rows = o.rows || []; if (!rows.length) return '';
+      const body = rows.map(r => '<div class="mcc-r' + (r.cls ? ' ' + esc(r.cls) : '') + '" data-calc="' + esc(r.expr) + '">' + (r.lead ? '<span class="mcc-l">' + esc(r.lead) + '</span>' : '') + '<span class="mcc-e">' + fx8(r.expr) + '</span>' + (r.cls === 'bad' ? '<span class="mcc-x">✗</span>' : '') + '</div>').join('');
+      return '<div class="fig-vert fig-mcc fig-cll"><div class="mcc-rows">' + body + '</div>' + cap8(o.cap) + '</div>';
+    }
+    // ── tnc ── 10배·1/10배 사슬(이름표는 두 수에서 셈)
+    function tnc(o) {
+      const v = (o.items || []).map(String); if (v.length < 2) return '';
+      let g = '';
+      v.forEach((x, i) => { if (i) { const lab = D.ratio(v[i - 1], x); g += '<span class="tnc-a" data-lab="' + esc(lab) + '"><span class="tnc-l">' + rat8(lab) + '</span><span class="tnc-ar">→</span></span>'; }
+        g += '<span class="tnc-n' + (o.ask === i ? ' q' : '') + '" data-i="' + i + '">' + (o.ask === i ? '?' : esc(x)) + '</span>'; });
+      return '<div class="fig-vert fig-tnc" data-ten="' + esc(v.join(';') + '|' + (o.ask == null ? '' : o.ask)) + '"><div class="tnc-row">' + g + '</div>' + cap8(o.cap) + '</div>';
+    }
+    // ── mch ── 곱셈 사슬(곱·배율은 부품이 셈)
+    function mch(o) {
+      const R = (o.rows || []).map(r => ({ a: String(r.a), b: String(r.b), p: D.mul(String(r.a), String(r.b), false) })); if (!R.length) return '';
+      let g = ''; const key = [], rat = [];
+      R.forEach((r, i) => {
+        if (i) { const ra = D.ratio(R[i - 1].a, r.a), rb = D.ratio(R[i - 1].b, r.b), rp = D.ratio(R[i - 1].p, r.p); rat.push(ra + ',' + rb + ',' + rp);
+          const c = (lab, cls, q) => '<span class="mch-r ' + cls + (lab || q ? '' : ' none') + '">' + (q ? '<b class="q">?</b>' : lab ? '<i>↓</i>' + rat8(lab) : '') + '</span>';
+          g += c(ra, 'ra') + '<span></span>' + c(rb, 'rb') + '<span></span>' + c(rp, 'rp', o.ask === i); }
+        const hi = o.hi === i ? ' hi' : '', q = o.ask === i;
+        g += '<span class="mch-n' + hi + '" data-row="' + i + '">' + esc(r.a) + '</span><span class="mch-op">×</span><span class="mch-n' + hi + '" data-row="' + i + '">' + esc(r.b) + '</span><span class="mch-op">=</span><span class="mch-n mch-p' + hi + (q ? ' q' : '') + '" data-row="' + i + '">' + (q ? '?' : esc(r.p)) + '</span>';
+        key.push(r.a + '*' + r.b + '=' + r.p);
+      });
+      return '<div class="fig-vert fig-mch" data-chain="' + esc(key.join(';') + '|' + rat.join(';') + '|' + (o.ask == null ? '' : o.ask)) + '"><div class="mch-grid">' + g + '</div>' + cap8(o.cap) + '</div>';
+    }
+    // ── ecd ── 어림 먼저, 계산으로 확인
+    function ecd(o) {
+      const est = D.prod(o.round), exact = D.prod(o.expr);
+      if (o.est != null && D.cmp(String(o.est), est) !== 0) throw new Error('ecd: 어림값이 식과 다름 ' + o.est + ' ≠ ' + est);
+      if (o.exact != null && D.cmp(String(o.exact), exact) !== 0) throw new Error('ecd: 계산 값이 식과 다름 ' + o.exact + ' ≠ ' + exact);
+      let tail = '';
+      if (o.ref) { const c = D.cmp(exact, String(o.ref)), want = o.rel === '>' ? 1 : o.rel === '<' ? -1 : 0; if (c !== want) throw new Error('ecd: ' + exact + ' 은 ' + o.ref + ' 보다 ' + o.rel + ' 가 아님'); tail = o.ask === 'rel' ? '' : esc(o.ref) + (want > 0 ? '보다 커요' : '보다 작아요'); }
+      const col = (cls, cap, body, t) => '<div class="ecd-c ' + cls + '"><div class="ecd-h">' + esc(cap) + '</div><div class="ecd-b">' + body + '</div>' + (t ? '<div class="ecd-t">' + t + '</div>' : '') + '</div>';
+      let body = col('est', '어림', esc(o.round) + ' = ' + (o.ask === 'est' ? '<b class="q">?</b>' : esc(est)), '');
+      if (o.exact != null || o.ask === 'exact') body += col('ex', '계산', esc(o.expr) + ' = ' + (o.ask === 'exact' ? '<b class="q">?</b>' : esc(exact)), tail);
+      else if (tail) body += col('ex', '견주기', esc(o.expr), tail);
+      const key = o.expr + '|' + o.round + '|' + est + '|' + exact + '|' + (o.ref || '') + '|' + (o.rel || '') + '|' + (o.ask || '') + '|' + (o.est != null ? 1 : 0) + (o.exact != null ? 1 : 0);
+      return '<div class="fig-vert fig-ecd" data-est="' + esc(key) + '"><div class="ecd-row">' + body + '</div>' + cap8(o.cap) + '</div>';
+    }
+    // ── jml ── 수직선 뛰어 세기
+    function jml(o) {
+      const step = String(o.step), times = +o.times, to = +o.to, split = +(o.split || 10); if (!(times > 0 && to > 0)) throw new Error('jml: times·to');
+      const end = D.mul(step, String(times)); if (D.cmp(end, String(to)) > 0) throw new Error('jml: 끝 ' + end + ' 이 수직선 밖');
+      const X0 = 50, X1 = 710, Y = 158, px = (v) => X0 + (X1 - X0) * Number(v) / to; let s = '';
+      s += '<line x1="' + X0 + '" y1="' + Y + '" x2="' + (X1 + 22) + '" y2="' + Y + '" stroke="' + INK + '" stroke-width="3.5"/><path d="M' + (X1 + 22) + ' ' + (Y - 8) + 'l16 8l-16 8Z" fill="' + INK + '"/>';
+      for (let k = 0; k <= to * split; k++) { const x = px(k / split), big = k % split === 0; s += '<line x1="' + m8(x) + '" y1="' + (Y - (big ? 14 : 8)) + '" x2="' + m8(x) + '" y2="' + (Y + (big ? 14 : 8)) + '" stroke="' + INK + '" stroke-width="' + (big ? 3.5 : 2) + '"/>'; if (big) s += txt(m8(x), Y + 48, String(k / split), 28, INK, 900).replace('<text ', '<text class="jml-t" data-v="' + (k / split) + '" '); }
+      for (let i = 0; i < times; i++) { const a = px(D.mul(step, String(i))), b = px(D.mul(step, String(i + 1))), mid = (a + b) / 2;
+        s += '<g class="jml-j" data-k="' + i + '" data-a="' + D.mul(step, String(i)) + '" data-b="' + D.mul(step, String(i + 1)) + '"><path d="M' + m8(a) + ' ' + (Y - 16) + ' Q' + m8(mid) + ' ' + (Y - 70) + ' ' + m8(b) + ' ' + (Y - 16) + '" fill="none" stroke="' + C8.aDeep + '" stroke-width="4.5"/><path d="M' + m8(b - 8) + ' ' + (Y - 28) + ' L' + m8(b) + ' ' + (Y - 14) + ' L' + m8(b + 8) + ' ' + (Y - 28) + 'Z" fill="' + C8.aDeep + '"/></g>'; }
+      s += txt(m8(px(D.mul(step, '0.5'))), Y - 78, step, 24, C8.soft, 900).replace('<text ', '<text class="jml-s" ');
+      const ex = px(end); s += '<circle class="jml-end" cx="' + m8(ex) + '" cy="' + Y + '" r="9" fill="' + C8.bDeep + '"/>';
+      s += txt(m8(Math.min(Math.max(ex, 70), 690)), Y - 104, o.ask ? '?' : end, o.ask ? 38 : 32, o.ask ? ORANGE : C8.bDeep, 900).replace('<text ', '<text class="jml-res" ');
+      let H = Y + 64; if (o.cap) { s += txt(380, H + 16, o.cap, 24, C8.soft, 900); H += 40; }
+      const key = step + '|' + times + '|' + to + '|' + split + '|' + end + '|' + (o.ask ? 1 : 0);
+      return svgWrap(s, 'fig-jml', '0 0 760 ' + Math.round(H)).replace('<svg ', '<svg data-jump="' + esc(key) + '" ');
+    }
+    // ── pbr ── 전체(whole)를 10칸으로 똑같이 나눈 것 중의 n
+    function pbr(o) {
+      const whole = +o.whole, n = +o.n, d = +(o.d || 10); if (!(whole > 0) || n < 0 || n > d || d !== 10) throw new Error('pbr: 인자');
+      const res = D.fmt(BigInt(whole * n), 1, false), X0 = 50, X1 = 710, Y = 64, BH = 64, seg = (X1 - X0) / d; let s = '';
+      for (let i = 0; i < d; i++) s += '<rect class="pbr-p' + (i < n ? ' on' : '') + '" data-i="' + i + '" x="' + m8(X0 + seg * i) + '" y="' + Y + '" width="' + m8(seg) + '" height="' + BH + '" fill="' + (i < n ? C8.a : '#fff') + '" stroke="' + C8.aDeep + '" stroke-width="2.5"/>';
+      s += '<rect x="' + X0 + '" y="' + Y + '" width="' + (X1 - X0) + '" height="' + BH + '" fill="none" stroke="' + INK + '" stroke-width="4"/>';
+      const LY = Y + BH + 30; s += '<line x1="' + X0 + '" y1="' + LY + '" x2="' + X1 + '" y2="' + LY + '" stroke="' + INK + '" stroke-width="3"/>';
+      for (let k = 0; k <= whole; k++) { const x = X0 + (X1 - X0) * k / whole; s += '<line x1="' + m8(x) + '" y1="' + (LY - 12) + '" x2="' + m8(x) + '" y2="' + (LY + 12) + '" stroke="' + INK + '" stroke-width="3.5"/>' + txt(m8(x), LY + 46, String(k), 28, INK, 900).replace('<text ', '<text class="pbr-t" data-v="' + k + '" '); }
+      const ex = X0 + seg * n; s += '<line x1="' + m8(ex) + '" y1="' + (Y - 8) + '" x2="' + m8(ex) + '" y2="' + (LY + 12) + '" stroke="' + C8.bDeep + '" stroke-width="3.5" stroke-dasharray="7 5"/>';
+      s += txt(m8(Math.min(Math.max(ex, 70), 690)), Y - 18, o.ask ? '?' : res, o.ask ? 38 : 32, o.ask ? ORANGE : C8.bDeep, 900).replace('<text ', '<text class="pbr-res" ');
+      let H = LY + 62; if (o.cap) { s += txt(380, H + 14, o.cap, 24, C8.soft, 900); H += 40; }
+      return svgWrap(s, 'fig-pbr', '0 0 760 ' + Math.round(H)).replace('<svg ', '<svg data-partbar="' + whole + '|' + n + '|' + d + '|' + res + '|' + (o.ask ? 1 : 0) + '" ');
+    }
+    // ── dar ── 넓이 모델: 1×1 을 100칸 · 가로 a · 세로 b 만큼 칠함
+    function dar(o) {
+      const a = String(o.a), b = String(o.b); if (D.dp(a) > 1 || D.dp(b) > 1 || D.cmp(a, '1') > 0 || D.cmp(b, '1') > 0) throw new Error('dar: 1 이하 소수 한 자리만');
+      const cols = Number(D.dg(a) * D.p10(1 - D.dp(a))), rows = Number(D.dg(b) * D.p10(1 - D.dp(b))), on = cols * rows, res = D.fmt(BigInt(on), 2, false);
+      const C = 30, X0 = 230, Y0 = 52; let s = '';
+      for (let r = 0; r < 10; r++) for (let c = 0; c < 10; c++) { const hit = c < cols && r < rows; s += '<rect class="dar-c' + (hit ? ' on' : '') + '" data-rc="' + r + ',' + c + '" x="' + (X0 + c * C) + '" y="' + (Y0 + r * C) + '" width="' + C + '" height="' + C + '" fill="' + (hit ? C8.a : '#fff') + '" stroke="' + (hit ? C8.aDeep : C8.line) + '" stroke-width="1.6"/>'; }
+      s += '<rect x="' + X0 + '" y="' + Y0 + '" width="' + 10 * C + '" height="' + 10 * C + '" fill="none" stroke="' + INK + '" stroke-width="4"/>';
+      s += txt(X0 + cols * C / 2, Y0 - 14, a, 28, C8.aDeep, 900).replace('<text ', '<text class="dar-a" ') + txt(X0 + 10 * C, Y0 - 14, '1', 24, C8.soft, 900);
+      s += txt(X0 - 14, Y0 + rows * C / 2 + 10, b, 28, C8.aDeep, 900, 'end').replace('<text ', '<text class="dar-b" ') + txt(X0 - 14, Y0 + 10 * C + 8, '1', 24, C8.soft, 900, 'end');
+      if (o.unit) s += txt(X0 + 10 * C + 14, Y0 + 10 * C - 6, '한 칸 0.01', 24, C8.bDeep, 900, 'start').replace('<text ', '<text class="dar-u" ');
+      s += txt(380, Y0 + 10 * C + 46, a + ' × ' + b + ' = ' + (o.ask ? '?' : res), 30, o.ask ? ORANGE : C8.bDeep, 900).replace('<text ', '<text class="dar-res" ');
+      let H = Y0 + 10 * C + 62; if (o.cap) { s += txt(380, H + 18, o.cap, 24, C8.soft, 900); H += 40; }
+      return svgWrap(s, 'fig-dar', '0 0 760 ' + Math.round(H)).replace('<svg ', '<svg data-decarea="' + a + '|' + b + '|' + on + '|' + res + '|' + (o.ask ? 1 : 0) + '" ');
+    }
+    // ── vml ── 소수 세로셈(오른쪽 끝 맞춤 · 곱 줄 끝자리 0 은 남김 · part = 부분곱 줄 · bug dot = 소수점만 어긋난 곱)
+    function vml(o) {
+      const a = String(o.a), b = String(o.b), A = D.dg(a), B = D.dg(b), right = D.mul(a, b, !o.trim); let shown = right;
+      if (o.bug === 'dot') { if (!o.shown) throw new Error('vml: bug dot 에 shown'); shown = String(o.shown);
+        if (shown.replace('.', '').replace(/^0+(?=\d)/, '') !== (A * B).toString()) throw new Error('vml: bug dot 인데 숫자가 자연수 곱과 다름');
+        if (D.cmp(shown, right) === 0) throw new Error('vml: bug dot 인데 바른 곱과 같음'); }
+      else if (o.bug) throw new Error('vml: 모르는 bug ' + o.bug);
+      const rows = [{ t: a, k: 'a' }, { t: b, k: 'b' }], bd = B.toString(), parts = [];
+      if (o.part && bd.length > 1) for (let i = bd.length - 1; i >= 0; i--) parts.push({ t: (A * BigInt(bd[i])).toString(), k: 'p', sh: bd.length - 1 - i });
+      const prod = { t: shown, k: 'r' }, CW = 34, RH = 54, cells = (r) => r.t.replace('.', '').length + (r.sh || 0);
+      const maxc = Math.max(...rows.concat(parts, [prod]).map(cells)) + 1, XR = maxc * CW + 26, Wd = XR + 18 + (o.bug ? 30 : 0), top = o.head ? 46 : 8;
+      const H = top + RH * (rows.length + parts.length + 1) + (parts.length ? 12 : 0) + 18;
+      let s = '', y = top + RH - 12, ri = 0;
+      if (o.head) s += txt(Wd / 2, 32, o.head, 24, o.bug ? C8.emph : C8.bDeep, 900).replace('<text ', '<text class="vml-h" ');
+      const draw = (r, hide) => {
+        const digs = r.t.replace('.', ''), dot = r.t.indexOf('.'), nd = digs.length, sh = r.sh || 0, col = r.k === 'r' ? (o.bug ? C8.emph : C8.aDeep) : INK;
+        if (hide) s += txt(XR - CW / 2, y, '?', 40, ORANGE, 900).replace('<text ', '<text class="vml-q" data-r="' + ri + '" ');
+        else { for (let i = 0; i < nd; i++) { const c = nd - 1 - i + sh; s += txt(m8(XR - CW / 2 - c * CW), y, digs[i], 40, col, 900).replace('<text ', '<text class="vml-d" data-r="' + ri + '" '); }
+          if (dot >= 0) { const after = r.t.length - dot - 1; s += txt(m8(XR - after * CW), y, '.', 40, r.k === 'r' && o.bug ? C8.emph : INK, 900).replace('<text ', '<text class="vml-dot" data-r="' + ri + '" '); } }
+        if (r.k === 'b') s += txt(m8(XR - CW / 2 - (maxc - 1) * CW), y, '×', 34, C8.soft, 900);
+        ri++; y += RH;
+      };
+      rows.forEach(r => draw(r, false));
+      const lx0 = XR - maxc * CW + 4; s += '<line x1="' + lx0 + '" y1="' + (y - RH + 14) + '" x2="' + XR + '" y2="' + (y - RH + 14) + '" stroke="' + INK + '" stroke-width="3.5"/>';
+      if (parts.length) { parts.forEach(r => draw(r, false)); s += '<line x1="' + lx0 + '" y1="' + (y - RH + 14) + '" x2="' + XR + '" y2="' + (y - RH + 14) + '" stroke="' + INK + '" stroke-width="3.5"/>'; y += 12; }
+      draw(prod, !!o.ask);
+      if (o.bug) s += txt(Wd - 6, y - RH - 12, '✗', 30, C8.emph, 900, 'end');
+      const key = a + '|' + b + '|' + shown + '|' + (o.bug || '') + '|' + (o.ask ? 1 : 0) + '|' + parts.length;
+      return svgWrap(s, 'fig-vml' + (o.bug ? ' bad' : ''), '0 0 ' + Wd + ' ' + H).replace('<svg ', '<svg style="width:' + Math.round(Wd * 1.05) + 'px" data-vmul="' + esc(key) + '" ');
+    }
+    // ── dtb ── 자료 표
+    function dtb(o) {
+      const head = o.head || [], rows = o.rows || []; if (!rows.length) return '';
+      const th = '<tr>' + head.map(h => '<th>' + esc(h) + '</th>').join('') + '</tr>', tb = rows.map(r => '<tr>' + r.map((c, i) => '<td' + (i ? ' class="num"' : '') + '>' + esc(c) + '</td>').join('') + '</tr>').join('');
+      return '<div class="fig-vert fig-dtb" data-table="' + esc(rows.map(r => r.join(',')).join(';')) + '">' + (o.title ? '<div class="dtb-t">' + esc(o.title) + '</div>' : '') + '<table class="dtb">' + th + tb + '</table>' + cap8(o.cap) + '</div>';
+    }
+    Object.assign(PARTS, { jml, pbr, dar, vml }); Object.assign(HTML_PARTS, { cll, tnc, mch, ecd, dtb });
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';

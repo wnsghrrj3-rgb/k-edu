@@ -1,13 +1,18 @@
-/* parse_figs_g5s2_math.js — 5학년 2학기 수학 자기주도 원문 renderModels → 케이티처 그림 재료 JSON (211차, 베프 · 217차 2단원 · 218차 3단원 부품 더함).
+/* parse_figs_g5s2_math.js — 5학년 2학기 수학 자기주도 원문 renderModels → 케이티처 그림 재료 JSON (211차, 베프 · 217차 2단원 · 218차 3단원 · 219차 4단원 부품 더함).
    원문 부품 라이브러리(rangeLine·rangeRow·valueChips·dialRow·numLineZoom·rangeTable·estRow) 호출을 그대로 실행하되,
    부품 함수를 「그림 명세를 돌려주는 함수」로 바꿔 끼워 2세대 부품(rgl·vch·rdial·nlz·rtb·est) 명세로 받는다.
    자리: m-iN = 도입 N번째 장(개념 장 번호 N−1) · m-eN = 전개 N번째 장(개념 장 번호 N+2) · m-qN = 문항(문제 번호 N−8).
+   219차: 원문이 부품을 「+」로 이어 붙이는 자리(tenChain(…) + tenChain(…) · mulChain(…) + vMul(…))가 있어, 부품 함수는 명세를 글자 토큰으로 돌려주고
+          innerHTML 에 넣는 순간 풀어 하나면 그 명세, 둘 이상이면 panels(col) 로 받는다 — 하나짜리 단원(1~3단원)은 결과가 그대로다.
    사용: node parse_figs_g5s2_math.js <단원 폴더> <out.json> */
 'use strict';
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const [dir, out] = process.argv.slice(2);
 const files = fs.readdirSync(dir).filter(f => /^g5_math_u\d+_l\d+_.*\.html$/.test(f)).sort();
 const res = {};
+const tok = (o) => '\u0001' + JSON.stringify(o) + '\u0002';
+const untokAll = (v) => { const out = [], re = /\u0001([\s\S]*?)\u0002/g; let m; while ((m = re.exec(String(v)))) out.push(JSON.parse(m[1])); return out; };
+const untok = (v) => { const a = untokAll(v); if (a.length !== 1) throw new Error('부품 토큰 하나가 아님'); return a[0]; };
 files.forEach(f => {
   const m = f.match(/_u(\d+)_l(\d+)_/), key = 'u' + (+m[1]) + '_l' + m[2].padStart(2, '0');
   const src = fs.readFileSync(path.join(dir, f), 'utf8');
@@ -25,8 +30,14 @@ files.forEach(f => {
     // 218차 3단원 「합동과 대칭」 부품 — congFig·symFig·symGrid·figPick·corrRow·landCut → cgf·syf·sgd·fpk·crr·lcut
     congFig: (o) => Object.assign({ k: 'cgf' }, o), symFig: (o) => Object.assign({ k: 'syf' }, o), symGrid: (o) => Object.assign({ k: 'sgd' }, o),
     figPick: (items, o) => Object.assign({ k: 'fpk', items }, o || {}), corrRow: (rows, o) => Object.assign({ k: 'crr', rows }, o || {}), landCut: (o) => Object.assign({ k: 'lcut' }, o),
-    document: { getElementById: (id) => { const o = {}; Object.defineProperty(o, 'innerHTML', { set: (v) => { got[id] = v; } }); return o; } }
+    // 219차 4단원 「소수의 곱셈」 부품 — calcLines·tenChain·estCard·jumpLine·mulChain·vMul·vMulRow·partBar·decArea·dataTable → cll·tnc·ecd·jml·mch·vml·(panels)·pbr·dar·dtb
+    calcLines: (rows, o) => Object.assign({ k: 'cll', rows }, o || {}), tenChain: (items, o) => Object.assign({ k: 'tnc', items }, o || {}),
+    estCard: (o) => Object.assign({ k: 'ecd' }, o), jumpLine: (o) => Object.assign({ k: 'jml' }, o), mulChain: (rows, o) => Object.assign({ k: 'mch', rows }, o || {}),
+    vMul: (a, b, o) => Object.assign({ k: 'vml', a: String(a), b: String(b) }, o || {}), vMulRow: (items) => ({ k: 'panels', items: items.map(untok).map(f => ({ fig: f })) }),
+    partBar: (o) => Object.assign({ k: 'pbr' }, o), decArea: (o) => Object.assign({ k: 'dar' }, o), dataTable: (head, rows, o) => Object.assign({ k: 'dtb', head, rows }, o || {}),
+    document: { getElementById: (id) => { const o = {}; Object.defineProperty(o, 'innerHTML', { set: (v) => { const a = untokAll(v); got[id] = a.length === 1 ? a[0] : { k: 'panels', col: true, items: a.map(f => ({ fig: f })) }; } }); return o; } }
   };
+  Object.keys(ctx).forEach(n => { if (n !== 'document') { const f = ctx[n]; ctx[n] = (...a) => tok(f(...a)); } });
   vm.createContext(ctx); vm.runInContext(body, ctx);
   const slides = {}, problems = {};
   Object.keys(got).forEach(id => { const a = id.match(/^m-([ieq])(\d+)$/); if (!a) return; const n = +a[2];
