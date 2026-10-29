@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<!-- ════════════════════════════════════════
+     K-edu 영어 v3 양산 · Lv2 #33-1 디코더블④ 「도입」 디코더블④ Mina 의 하루 「도입」
+     베이스: 26_1 (Lv2 R 판형) + lv2_builder 골격
+     펼침 원천: handoff kedu/english/v3/lv2/33_decodable4.md
+     ════════════════════════════════════════ -->
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu | 영어 Lv2 — 디코더블④ (33-1 도입)</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   골격 = 골든 불변 / 옷 = P트랙 파랑 #1565C0
+   두 글자 한 소리(이중자음) 블록은 자음이므로 파랑 유지 — 모음만 주황
+   ============================================================ */
+:root{
+  --bg:#F0F6FE; --card:#fff;
+  --primary:#1565C0; --primary-light:#E3EEFC; --secondary:#5B8DEF;
+  --vowel:#FF8A3D; --vowel-light:#FFF1E6;
+  --green:#4CAF50; --green-light:#E8F5E9; --red:#F44336; --red-light:#FFEBEE;
+  --yellow:#FFC107; --yellow-light:#FFF8E1;
+  --text:#333; --subtext:#888; --border:#D7E4F7;
+  --shadow:0 4px 16px rgba(0,0,0,.08); --radius:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;gap:8px}
+.back{font-size:18px;color:var(--subtext);text-decoration:none}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 4px}
+.progress-bar{flex:1;height:10px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;color:#e6a800}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 10px;font-size:14px}
+.kedu-logo .logo-circle{width:20px;height:20px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:12px}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 18px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;width:100%;max-width:560px;text-align:center}
+.slide-title{font-size:21px;color:var(--subtext);margin-bottom:8px}
+.badge{display:inline-block;background:var(--primary-light);color:var(--primary);border-radius:99px;padding:4px 14px;font-size:17px;margin-bottom:8px}
+.concept-text{font-size:24px;line-height:1.6;margin:8px 0}
+.highlight{color:var(--primary)}
+/* 표지 */
+.today-label{font-size:22px;color:var(--secondary);letter-spacing:.5px;margin:18px 0 18px}
+.today-en{font-size:42px;color:var(--primary);font-weight:bold;line-height:1.3;margin:8px 0}
+.today-ko{font-size:26px;color:#2B925E;line-height:1.4;margin:14px 0 18px}
+/* 형광 강조 */
+.hl{background:linear-gradient(transparent 58%,#FFE680 58%);background-repeat:no-repeat;background-size:0% 100%;transition:background-size .55s cubic-bezier(.4,0,.2,1) .15s;padding:0 3px;font-weight:bold;color:var(--text)}
+.slide.lit .hl{background-size:100% 100%}
+/* 탭 단계 등장 */
+.step{opacity:0;transform:translateY(34px) scale(.82);transition:opacity .26s ease,transform .42s cubic-bezier(.34,1.6,.5,1);pointer-events:none}
+.step.in{opacity:1;transform:none;pointer-events:auto}
+.concept-big{font-size:30px;line-height:1.5;margin:10px 0}
+@keyframes tapBlink{0%,100%{opacity:.4}50%{opacity:1}}
+.hl-slot{background:var(--yellow-light);border:2px dashed var(--yellow);border-radius:8px;padding:1px 8px;color:#e6a800}
+.kay-says{display:flex;align-items:center;gap:12px;background:var(--primary-light);border-radius:16px;padding:12px 16px;margin:10px 0;text-align:left}
+.kay-icon{font-size:30px;flex-shrink:0}
+.kay-text{font-size:21px;line-height:1.5}
+/* 소리 블록 — 파닉스 심장 */
+.sblocks{display:flex;gap:12px;justify-content:center;align-items:center;margin:14px 0;transition:gap .5s cubic-bezier(.4,0,.2,1);flex-wrap:wrap}
+.sblocks.merged{gap:2px}
+.sblock{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:16px;padding:12px 18px;font-size:40px;line-height:1;cursor:pointer;box-shadow:0 4px 0 rgba(21,101,192,.25);transition:transform .12s,box-shadow .3s;position:relative}
+.sblock .sko{font-size:14px;color:var(--subtext)}
+.sblock.vowel{border-color:var(--vowel);color:var(--vowel);box-shadow:0 4px 0 rgba(255,138,61,.3)}
+.sblock:active{transform:scale(.94)}
+.sblock.singing{transform:scale(1.15);box-shadow:0 0 0 5px var(--yellow-light),0 4px 0 rgba(21,101,192,.25)}
+.sblock.isnew::after{content:'NEW';position:absolute;top:-10px;right:-6px;background:var(--red);color:#fff;font-size:11px;padding:1px 6px;border-radius:99px}
+.sblock.used{opacity:.25;pointer-events:none}
+.sblock.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+/* 소리 슬롯 */
+.sslots{display:flex;gap:10px;justify-content:center;align-items:center;margin:14px 0;flex-wrap:wrap}
+.sslot{min-width:72px;height:70px;border:3px dashed #A8C4EA;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:34px;color:#A8C4EA;background:#F8FBFF;padding:0 10px;transition:all .3s}
+.sslot.filled{border-style:solid;border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.sslot.filled.vslot{border-color:var(--vowel);color:var(--vowel);background:var(--vowel-light)}
+.sslot.swap{animation:swapPop .5s ease}
+@keyframes swapPop{0%{transform:translateY(0)}40%{transform:translateY(-14px) scale(1.1);background:var(--yellow-light);border-color:var(--yellow)}100%{transform:translateY(0)}}
+.word-done{font-size:34px;color:var(--primary);margin:8px 0}
+.mean{font-size:20px;color:var(--subtext)}
+.pic{font-size:80px;margin:6px 0;line-height:1}
+@keyframes popIn{0%{transform:scale(0) rotate(-15deg)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+/* 합치기 다이어그램 */
+.blend-map{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0;flex-wrap:wrap}
+.bm-piece{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:12px;padding:6px 14px;font-size:28px}
+.bm-piece.v{border-color:var(--vowel);color:var(--vowel)}
+.bm-arrow{font-size:26px;color:#e6a800;font-weight:bold}
+.bm-word{background:var(--yellow-light);border:3px solid var(--yellow);color:#e6a800;border-radius:12px;padding:6px 16px;font-size:30px;font-weight:bold}
+/* 문제 */
+.question-label{display:inline-flex;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:17px;margin-bottom:8px}
+.stars{color:#FCD34D}
+.question-text{font-size:23px;margin:6px 0 12px;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
+.choice-btn{background:#fff;border:3px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);color:var(--text)}
+.choice-btn .ko{display:block;font-size:14px;color:var(--subtext)}
+.choice-btn.big{font-size:40px;padding:10px 22px}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}}
+.listen-btn{background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:8px 22px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;color:var(--primary);margin:4px 0 8px}
+.feedback{font-size:19px;margin-top:10px;min-height:34px;border-radius:12px;padding:5px 12px;line-height:1.5}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#e6a800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-emoji{font-size:76px;margin:8px 0;animation:bounce 1s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.result-score{font-size:30px;color:#e6a800;margin:6px 0}
+.result-stars{font-size:34px;margin:4px 0}
+.nav{display:flex;justify-content:space-between;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,.06);flex-shrink:0;gap:10px}
+.nav-btn{flex:1;max-width:200px;background:var(--primary);color:#fff;border:none;border-radius:14px;padding:13px 0;font-family:'Jua',sans-serif;font-size:20px;cursor:pointer}
+.nav-btn:disabled{opacity:.3}
+.hint{font-size:16px;color:var(--subtext);margin-top:6px}
+/* ── R트랙 초록 파생 (골격 무변경, 옷만 갈아입힘) ── */
+:root{
+  --bg:#F1FBF7;
+  --primary:#12B886; --primary-light:#E3F7EF; --secondary:#63D9B4;
+  --border:#CDEBE0;
+}
+/* 소환 카드 */
+.wcards{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.wcard{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:14px;
+       padding:7px 12px;font-size:24px;cursor:pointer;box-shadow:0 3px 0 rgba(18,184,134,.25);transition:transform .1s}
+.wcard:active{transform:scale(.94)}
+.wcard.tapped{background:var(--green-light);border-color:var(--green)}
+.wcard .ko{display:block;font-size:13px;color:var(--subtext)}
+.rowlab{font-size:16px;color:var(--subtext);margin-top:8px}
+/* ★ 두 줄 문장틀 — 문장마다 한 줄, 칸은 두 줄을 이어 왼→오·위→아래로 짚는다(Lv1 #17 buildPoint 확장) */
+.frame{display:flex;flex-direction:column;align-items:center;gap:4px;margin:10px 0}
+.frow{display:flex;gap:6px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+.fbox{display:flex;flex-direction:column;align-items:center;gap:2px}
+.fword{background:#fff;border:3px solid var(--border);color:var(--subtext);border-radius:13px;
+       padding:8px 11px;font-size:25px;min-width:46px;transition:all .3s;cursor:pointer}
+.fword.now{border-color:var(--yellow);background:var(--yellow-light);color:#e6a800;animation:tapBlink 1.2s infinite}
+.fword.read{border-color:var(--green);background:var(--green-light);color:var(--green);animation:none}
+.fdot{font-size:26px;color:var(--subtext);align-self:center}
+.fko{font-size:13px;color:var(--subtext);min-height:17px}
+.frame.demo .fword{cursor:default}
+/* be동사 — #10 에서 아이가 찾은 말. 보라 점선으로만 표시하고 규칙 문장은 쓰지 않는다 */
+.bev{color:#7950F2;border-bottom:3px dotted #7950F2}
+.sent-full{font-size:24px;color:var(--primary);margin:8px 0;letter-spacing:.4px;min-height:32px}
+/* 지문 칩 */
+.schips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.schip{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:14px;
+       padding:8px 13px;font-size:20px;cursor:pointer;box-shadow:0 3px 0 rgba(18,184,134,.25)}
+.schip:active{transform:scale(.95)}
+/* 그림 — 조각(문장 하나)과 한 컷(지문 하나). 이모지·도형 모두 같은 줄 높이에 선다 */
+.pe{display:inline-block;line-height:1;vertical-align:middle}
+.pe.zb{transform:scale(1.45);margin:0 11px}
+.pe.zs{transform:scale(.6)}
+.to{font-size:.55em;color:var(--subtext);vertical-align:middle;margin:0 1px}
+.scene{display:inline-flex;align-items:center;justify-content:center;gap:12px;line-height:1;min-height:60px;
+       opacity:0;transform:scale(0) rotate(-8deg);transition:all .45s cubic-bezier(.34,1.6,.5,1)}
+.scene.on,.scene.still{opacity:1;transform:none}
+.scene .pe{font-size:42px}
+.scene .pc{display:inline-flex;align-items:center;gap:2px;padding:4px 8px;border:2px dashed var(--border);border-radius:12px;transition:all .5s}
+.scene .plus{font-size:22px;color:var(--subtext);transition:all .5s}
+/* ★합쳐진 한 컷 — 두 조각이 테두리 하나 안으로 들어간다 */
+.scene.merge{gap:4px;border:3px solid var(--primary);border-radius:18px;padding:8px 16px;background:#fff;
+             box-shadow:0 4px 0 rgba(18,184,134,.25)}
+.choice-btn.pic-btn{padding:12px 14px;min-width:118px}
+.choice-btn.pic-btn .pe{font-size:30px}
+.choice-btn.tf{font-size:27px;min-width:120px}
+.choice-btn.ptxt{font-size:19px}
+/* 장면판 — 참·거짓의 근거. 의외성은 여기에만 있다 */
+.stage{background:#FBFEFD;border:3px solid var(--border);border-radius:18px;padding:14px 10px;
+       max-width:340px;margin:10px auto;min-height:96px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap}
+.stage .pe{font-size:34px}
+.stage .pe.sm{font-size:24px}
+.stage .who{font-size:34px;line-height:1}
+.stage .nm{font-size:15px;background:#fff;border:2px solid var(--primary);color:var(--primary);border-radius:9px;padding:1px 6px}
+.stage .gap{font-size:15px;color:var(--subtext);letter-spacing:2px}
+.stagecap{font-size:16px;color:var(--subtext);margin-top:6px;min-height:22px}
+/* 표지 빈칸 강조 · 원리 다이어그램 · 나란히 대조 */
+.today-blank{color:#e6a800;background:var(--yellow-light);border-radius:8px;padding:0 10px}
+.mm-row{display:flex;align-items:center;justify-content:center;gap:7px;margin:12px 0;flex-wrap:wrap}
+.mm-box{border:3px solid var(--primary);background:var(--primary-light);border-radius:14px;padding:8px 12px;
+        font-size:19px;color:var(--primary);min-height:66px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.mm-box .cap{display:block;font-size:13px;color:var(--subtext)}
+.mm-box .pe{font-size:30px}
+.mm-sign{font-size:22px;color:var(--subtext)}
+.pair{display:flex;gap:10px;justify-content:center;align-items:stretch;margin:12px 0;flex-wrap:wrap}
+.pcol{flex:1;min-width:140px;max-width:220px;border:3px solid var(--primary);border-radius:16px;padding:10px 8px;
+      background:#fff;box-shadow:0 4px 0 rgba(18,184,134,.25);display:flex;flex-direction:column;align-items:center;gap:6px}
+.pcol .ps{font-size:17px;color:var(--primary)}
+.pcol .pic .pe{font-size:34px}
+.mfill{display:inline-flex;align-items:center;justify-content:center;min-width:64px;
+       border-bottom:3px dashed var(--border);color:var(--subtext)}
+.mfill .pe{font-size:26px}
+/* ── #26 장면판 소품 — 물·잎. ★의외성은 장면판에만(선택지 0, 하네스 C-6b) ── */
+.stage .water{display:inline-flex;align-items:flex-end;background:#D6EEFF;border-radius:12px;padding:4px 7px;margin-right:4px}
+.stage .water .pe{font-size:28px}
+.stage .leaf{display:inline-flex;align-items:center;justify-content:center;background:#51CF66;border-radius:0 70% 0 70%;padding:10px 15px}
+.stage .leaf .pe{font-size:26px}
+/* an — #24 주황(모음 소리 앞에만 서는 말). 😮 는 소환 카드에만 */
+.anw{color:#E8590C;border-bottom:3px solid #E8590C}
+.mo{font-style:normal;font-size:.6em;vertical-align:super;margin-left:2px}
+/* ★판정 — 글의 한 문장이 그림과 맞는가(⭕ 맞아요 / ❌ 틀려요) */
+.choice-btn.jd{font-size:24px;min-width:136px}
+.jline{font-size:26px;color:var(--primary);margin:6px 0;letter-spacing:.3px}
+.jrow{display:flex;align-items:center;justify-content:center;gap:8px;margin:6px 0;flex-wrap:wrap}
+.jrow .js{font-size:21px;color:var(--primary)}
+.jrow .jm{font-size:17px;color:var(--subtext);border:2px dashed var(--border);border-radius:10px;padding:2px 8px}
+.jrow .jm.no{color:var(--red,#E03131);border-color:#FFC9C9;background:#FFF5F5}
+.jrow .jm.yes{color:var(--green);border-color:var(--green);background:var(--green-light)}
+/* 손활동 — 그림에서 짚기 */
+.pickrow{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.pk{border:3px solid var(--border);background:#fff;border-radius:16px;padding:8px 16px;cursor:pointer;font-family:inherit;min-width:110px}
+.pk .pe{font-size:36px}
+.pk .pkl{display:block;font-size:14px;color:var(--subtext);margin-top:2px}
+.pk.on{border-color:var(--green);background:var(--green-light)}
+.pk .leaf{display:inline-flex;background:#51CF66;border-radius:0 70% 0 70%;width:46px;height:34px}
+/*TEAM-BEGIN — 모음팀 표기 단일 원천(blocks/TEAM.css → sync_blocks.py 주입, 하네스가 5파일 동일 검사).
+  ★ai·ay 는 「붙어서」 한 칸이다 — 두 글자를 한 상자에 넣고 위에 🤝 를 단다.
+    매직e 의 ‿ 이음표는 「떨어져서」 한 칸 — 두 표기가 나란히 서야 「바꾸는 방법이 두 가지」가 눈에 보인다.
+  ★앞 글자(a)는 주황 = 자기 이름 /에이/. 뒤 글자(i·y)는 회색 = 입을 다문다(소리 배선 0).
+  ★표기 태그는 <u class="tm"> — 색칠 태그라 단어가 화면·검사기에서 끊기지 않는다(#5 「한 단어는 붙어 있어야」 규칙).
+  ★노랑(두 글자 한 소리 자음 배지)을 쓰지 않는다 — 모음 칸이므로 모음 주황(#11 MAGIC 판정 계승). */
+.tw{display:inline-block;letter-spacing:1px;color:var(--primary)}
+.tm{display:inline-block;position:relative;background:var(--vowel-light);border:2px solid var(--vowel);border-radius:9px;padding:0 3px;margin:0 1px;line-height:1.12;font-style:normal;text-decoration:none;color:var(--vowel)}
+.tm b{color:var(--vowel);font-weight:inherit}
+.tm i{color:#B5B5B5;font-style:normal}
+.tm::before{content:'🤝';position:absolute;left:50%;top:-.66em;transform:translateX(-50%);font-size:.36em;line-height:1}
+.tmnote{font-size:17px;color:var(--subtext);margin-top:4px}
+.tmnote b{color:var(--vowel)}
+/*TEAM-END*/
+/*MAGIC-BEGIN — 매직e 표기 단일 원천(blocks/MAGIC.css → sync_blocks.py 주입, 하네스가 5파일 동일 검사).
+  ★e 는 소리를 내지 않는다 — 회색 + 🤫 를 글자에 붙여 둔다(11_B 오류① 의 처방을 표기 자체로).
+  ★a_e 는 한 블록(모음 주황)이다 — 두 글자를 「‿」 이음표로 묶는다. 칸은 하나다.
+  ★노랑(두 글자 한 소리 배지)을 쓰지 않는다 — a_e 는 자음이 아니라 「모음」 칸이고,
+    모음의 의미색은 Lv1 부터 주황이다. 색이 바뀌면 아이는 「다른 종류」로 읽는다. */
+.mw{display:inline-block;letter-spacing:1px;color:var(--primary)}
+.mw b{color:var(--vowel);font-weight:inherit}
+.se{color:#B5B5B5;position:relative;display:inline-block;font-style:normal}
+.se::after{content:'🤫';position:absolute;left:50%;top:-.6em;transform:translateX(-50%);font-size:.38em;line-height:1}
+.tie{color:var(--vowel);opacity:.7;font-style:normal}
+.sblock.vowel .se,.sslot .se,.bm-piece .se{color:#B5B5B5}
+.aenote{font-size:17px;color:var(--subtext);margin-top:4px}
+.aenote b{color:var(--vowel)}
+/*MAGIC-END*/
+/*ACT-BEGIN — 동작 도형 8종 공통 규격. 4파일 문자 단위 동일(하네스 A3).
+  ★#7 판정: 8동작을 전부 「같은 사람 도형 + 움직임만 다름」으로 세운다.
+    이모지를 섞으면 선택지에서 「이모지냐 도형이냐」가 그 자체로 단서가 된다
+    (#5 「도형이 정답 단서가 되지 않게」 원칙). 그리고 🛑 은 표지판이지 동작이 아니다.
+    동사의 뜻은 「사람이 무엇을 하는가」라 사람 그림만이 정직한 근거다.
+  마크업은 8종이 완전히 같다 — 클래스 a-xxx 하나만 바뀐다. */
+.aw{display:inline-block;line-height:0;vertical-align:middle}
+.act{position:relative;display:inline-block;width:46px;height:52px;vertical-align:middle}
+.act b{position:absolute;display:block;background:#E8823C;border-radius:3px}
+.act .hd{left:15px;top:0;width:16px;height:16px;border-radius:50%}
+.act .bd{left:21px;top:16px;width:5px;height:20px}
+.act .aL{left:8px;top:19px;width:14px;height:5px;transform-origin:right center}
+.act .aR{left:24px;top:19px;width:14px;height:5px;transform-origin:left center}
+.act .lL{left:14px;top:35px;width:5px;height:16px;transform-origin:top center}
+.act .lR{left:27px;top:35px;width:5px;height:16px;transform-origin:top center}
+.act .ob{left:36px;top:16px;width:11px;height:11px;border-radius:50%;background:#3C7FE8}
+.act .sh{left:11px;top:50px;width:24px;height:5px;border-radius:50%;background:rgba(0,0,0,.15)}
+.act .wv{left:-3px;top:44px;width:52px;height:0;background:none;border-top:3px dotted #3C7FE8;border-radius:0}
+.act .sp{left:36px;top:2px;width:13px;height:13px;background:none;color:#E8A93C;font-size:14px;line-height:13px;text-align:center;font-weight:700}
+/* 부품 표시 — 그 동작에 필요한 것만 나온다(장식 0) */
+.act .ob,.act .wv,.act .sp{display:none}
+.act.a-drop .ob,.act.a-grab .ob{display:block}
+.act.a-swim .wv{display:block}
+.act.a-clap .sp,.act.a-snap .sp,.act.a-spin .sp{display:block}
+.act.a-clap .sp::after{content:'✦'}
+.act.a-snap .sp::after{content:'✦'}
+.act.a-spin .sp::after{content:'↻'}
+/* ── stop : 걸어오다 손을 들고 「딱」 멈춘다 ── */
+.act.a-stop .aR{animation:aStopArm 2.2s infinite}
+.act.a-stop .aR::after{content:'';position:absolute;right:-7px;top:-4px;width:10px;height:13px;background:#E8823C;border-radius:3px}
+.act.a-stop .lL{animation:aStopLegL 2.2s infinite}
+.act.a-stop .lR{animation:aStopLegR 2.2s infinite}
+@keyframes aStopArm{0%,42%{transform:rotate(0)}54%,100%{transform:rotate(-74deg)}}
+@keyframes aStopLegL{0%{transform:rotate(15deg)}21%{transform:rotate(-15deg)}42%{transform:rotate(15deg)}54%,100%{transform:rotate(0)}}
+@keyframes aStopLegR{0%{transform:rotate(-15deg)}21%{transform:rotate(15deg)}42%{transform:rotate(-15deg)}54%,100%{transform:rotate(0)}}
+/* ── swim : 두 팔이 번갈아 크게 돌고 물결이 흐른다 ── */
+.act.a-swim .aL{animation:aSwimArm 1s linear infinite}
+.act.a-swim .aR{animation:aSwimArm 1s linear infinite -.5s}
+.act.a-swim .wv{animation:aSwimWave 1.2s linear infinite}
+@keyframes aSwimArm{0%{transform:rotate(0)}100%{transform:rotate(-360deg)}}
+@keyframes aSwimWave{0%{transform:translateX(-9px)}100%{transform:translateX(0)}}
+/* ── clap : 두 손이 가운데서 만난다(두 손 — snap 과 갈리는 자리) ── */
+.act.a-clap .aL{animation:aClapL .52s ease-in-out infinite}
+.act.a-clap .aR{animation:aClapR .52s ease-in-out infinite}
+.act.a-clap .sp{left:17px;top:14px;animation:aSpark .52s ease-out infinite}
+@keyframes aClapL{0%,100%{transform:translateX(0)}50%{transform:translateX(10px)}}
+@keyframes aClapR{0%,100%{transform:translateX(0)}50%{transform:translateX(-10px)}}
+@keyframes aSpark{0%,38%{opacity:0;transform:scale(.4)}54%{opacity:1;transform:scale(1.1)}100%{opacity:0;transform:scale(1.5)}}
+/* ── snap : 한 손만 위로 올려 「딱」 튕긴다(한 손 — clap 과 갈리는 자리) ── */
+.act.a-snap .aR{animation:aSnapArm .95s ease-in-out infinite}
+.act.a-snap .sp{left:37px;top:0;animation:aSnapSpark .95s ease-out infinite}
+@keyframes aSnapArm{0%,56%{transform:rotate(-56deg)}64%{transform:rotate(-74deg)}72%,100%{transform:rotate(-56deg)}}
+@keyframes aSnapSpark{0%,56%{opacity:0;transform:scale(.4)}66%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(1.6)}}
+/* ── drop : 들고 있던 것이 손에서 「간다」(grab 의 반대 방향) ── */
+.act.a-drop .aR{transform:rotate(-12deg)}
+.act.a-drop .ob{animation:aDropOb 1.7s ease-in infinite}
+@keyframes aDropOb{0%,14%{transform:translateY(0);opacity:1}68%{transform:translateY(29px)}78%{transform:translateY(22px)}88%{transform:translateY(29px);opacity:1}100%{transform:translateY(29px);opacity:0}}
+/* ── grab : 팔이 뻗어 나가 붙잡아 「온다」(drop 의 반대 방향) ── */
+.act.a-grab .aR{animation:aGrabArm 1.7s ease-in-out infinite}
+.act.a-grab .ob{animation:aGrabOb 1.7s ease-in-out infinite}
+@keyframes aGrabArm{0%,18%{transform:scaleX(1)}44%{transform:scaleX(1.5)}72%,100%{transform:scaleX(1)}}
+@keyframes aGrabOb{0%,44%{transform:translateX(15px)}72%,100%{transform:translateX(0)}}
+/* ── spin : 몸 전체가 빙글 돈다 ── */
+.act.a-spin{animation:aSpinBody 1.5s linear infinite}
+@keyframes aSpinBody{0%{transform:rotateY(0)}100%{transform:rotateY(360deg)}}
+/* ── jump : 몸이 뜨고 그림자가 작아진다 ── */
+.act.a-jump{animation:aJumpBody 1s ease-in-out infinite}
+.act.a-jump .sh{animation:aJumpSh 1s ease-in-out infinite}
+.act.a-jump .aL{transform:rotate(-42deg)}
+.act.a-jump .aR{transform:rotate(42deg)}
+@keyframes aJumpBody{0%,100%{transform:translateY(0)}46%{transform:translateY(-17px)}}
+@keyframes aJumpSh{0%,100%{transform:scaleX(1);opacity:1}46%{transform:scaleX(.55);opacity:.35}}
+/*ACT-END*/
+/*ACT32CSS-BEGIN — #32 동작② 새 일곱 동작 · 4파일 문자 단위 동일(blocks/ACT32CSS.css → sync_blocks.py 주입, 하네스 A4).
+  ★#7 ACT 규격 위에 클래스 a-xxx 만 더한다 — 마크업 10부품(PARTS)은 그대로, 사람 도형 하나 + 움직임만 다르다(#7 판정 계승).
+    이모지를 섞으면 선택지에서 「이모지냐 도형이냐」가 단서가 된다 — 그래서 #13 smile 😊 · #18 wake 🌅 도 여기선 도형으로 선다.
+  ★jump 는 이 블록에 없다 — #7 ACT 블록의 a-jump 를 문자 그대로 쓴다(#8 A6 「같은 재료 = 같은 그림」).
+  ★갈리는 자리 — ★wave(서서 한 손을 머리 위로 흔든다) ↔ wake(누워 있다가 기지개 · ☀ 가 뜨고 z 가 사라진다) = 오늘 부하의 본체를 「선 / 누운」 자세로 가른다.
+    ride(바퀴 둘이 구르고 다리를 돌린다) ↔ smile(제자리 · 얼굴에 웃는 입) · stand(쪼그렸다가 쭉 선다 · ↑) ↔ sweep(빗자루가 바닥을 오간다)
+    · jump(몸이 뜬다 · #7) ↔ sing(♪ 가 오르고 입이 동그랗다). */
+.ap{display:inline-flex;align-items:center;justify-content:center;line-height:0;vertical-align:middle}
+/* 부품 표시 — 그 동작에 필요한 것만(장식 0) */
+.act.a-ride .wv,.act.a-sweep .ob,.act.a-sweep .sp,.act.a-sing .sp,.act.a-wake .ob,.act.a-wake .sp,.act.a-stand .sp{display:block}
+/* ── ride : 바퀴 둘이 구르고 다리를 돌린다(탈것 위) ── */
+.act.a-ride .sh{left:7px;top:41px;width:32px;height:3px;border-radius:2px;background:#3C7FE8}
+.act.a-ride .sh::before,.act.a-ride .sh::after{content:'';position:absolute;top:-5px;width:13px;height:13px;border:2.5px dashed #3C7FE8;border-radius:50%;box-sizing:border-box;animation:aRideWheel .7s linear infinite}
+.act.a-ride .sh::before{left:-7px}
+.act.a-ride .sh::after{right:-7px}
+.act.a-ride .wv{top:53px;animation:aRideRoad .7s linear infinite}
+.act.a-ride .aL{transform:rotate(200deg)}
+.act.a-ride .aR{transform:rotate(22deg)}
+.act.a-ride .lL{animation:aRideLegL .7s linear infinite}
+.act.a-ride .lR{animation:aRideLegR .7s linear infinite}
+@keyframes aRideWheel{to{transform:rotate(360deg)}}
+@keyframes aRideRoad{0%{transform:translateX(9px)}100%{transform:translateX(0)}}
+@keyframes aRideLegL{0%,100%{transform:rotate(28deg) scaleY(.8)}50%{transform:rotate(-14deg) scaleY(.8)}}
+@keyframes aRideLegR{0%,100%{transform:rotate(-14deg) scaleY(.8)}50%{transform:rotate(28deg) scaleY(.8)}}
+/* ── wave : 서서 한 손을 머리 위로 올려 좌우로 흔든다(wake 와 갈리는 자리 = 서 있다) ── */
+.act.a-wave .aR{animation:aWaveArm .8s ease-in-out infinite}
+.act.a-wave .aR::after{content:'';position:absolute;right:-6px;top:-3px;width:8px;height:11px;background:#E8823C;border-radius:4px}
+.act.a-wave .aL{transform:rotate(-70deg)}
+@keyframes aWaveArm{0%,100%{transform:rotate(-62deg)}50%{transform:rotate(-118deg)}}
+/* ── stand : 쪼그렸다가 쭉 일어선다 ── */
+.act.a-stand .hd,.act.a-stand .bd{animation:aStandUp 2s ease-in-out infinite}
+.act.a-stand .aL{animation:aStandArmL 2s ease-in-out infinite}
+.act.a-stand .aR{animation:aStandArmR 2s ease-in-out infinite}
+.act.a-stand .lL,.act.a-stand .lR{animation:aStandLeg 2s ease-in-out infinite}
+.act.a-stand .sp{left:37px;top:14px;animation:aStandSp 2s ease-in-out infinite}
+.act.a-stand .sp::after{content:'↑'}
+@keyframes aStandUp{0%,22%{transform:translateY(9px)}52%,100%{transform:translateY(0)}}
+@keyframes aStandArmL{0%,22%{transform:translateY(9px) rotate(-70deg)}52%,100%{transform:translateY(0) rotate(-70deg)}}
+@keyframes aStandArmR{0%,22%{transform:translateY(9px) rotate(70deg)}52%,100%{transform:translateY(0) rotate(70deg)}}
+@keyframes aStandLeg{0%,22%{transform:translateY(9px) scaleY(.45)}52%,100%{transform:translateY(0) scaleY(1)}}
+@keyframes aStandSp{0%,30%{opacity:0;transform:translateY(6px)}55%,85%{opacity:1;transform:translateY(0)}100%{opacity:0}}
+/* ── sweep : 빗자루가 바닥을 오가고 먼지가 난다 ── */
+.act.a-sweep .aL{transform:rotate(-140deg)}
+.act.a-sweep .aR{transform:rotate(48deg)}
+.act.a-sweep .ob{left:28px;top:45px;width:16px;height:7px;border-radius:2px 2px 4px 4px;background:#C69C3C;animation:aSweepBroom 1s ease-in-out infinite}
+.act.a-sweep .ob::before{content:'';position:absolute;left:7px;top:-22px;width:3px;height:23px;background:#8D6E63;border-radius:2px;transform:rotate(-30deg);transform-origin:bottom center}
+.act.a-sweep .sp{left:22px;top:41px;color:#B0A48A;font-size:11px;animation:aSweepDust 1s ease-out infinite}
+.act.a-sweep .sp::after{content:'∴'}
+@keyframes aSweepBroom{0%,100%{transform:translateX(-9px)}50%{transform:translateX(3px)}}
+@keyframes aSweepDust{0%,40%{opacity:0;transform:translateX(0)}60%{opacity:1}100%{opacity:0;transform:translateX(-10px)}}
+/* ── sing : 입이 동그랗게 열리고 ♪ 가 오른다(jump 와 갈리는 자리 = 몸은 땅에) ── */
+.act.a-sing .aL{transform:rotate(28deg)}
+.act.a-sing .aR{transform:rotate(-28deg)}
+.act.a-sing .hd{animation:aSingHead 1.2s ease-in-out infinite}
+.act.a-sing .hd::after{content:'';position:absolute;left:6px;top:8px;width:5px;height:5px;border-radius:50%;background:#7A3A10;animation:aSingMouth .6s ease-in-out infinite}
+.act.a-sing .sp{left:33px;top:0;color:#7E57C2;font-size:13px}
+.act.a-sing .sp::after{content:'♪';display:block;animation:aSingNote 1.2s ease-out infinite}
+.act.a-sing .sp::before{content:'♫';position:absolute;left:-30px;top:4px;display:block;animation:aSingNote 1.2s ease-out infinite -.6s}
+@keyframes aSingHead{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+@keyframes aSingMouth{0%,100%{transform:scale(.6)}50%{transform:scale(1.15)}}
+@keyframes aSingNote{0%{opacity:0;transform:translateY(8px)}30%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
+/* ── wake : 누워 있다(침대 띠) — z 가 사라지고 ☀ 가 뜨며 팔을 쭉 편다(wave 와 갈리는 자리 = 누워 있다) ── */
+.act.a-wake{transform:rotate(-90deg)}
+.act.a-wake .sh{left:8px;top:2px;width:4px;height:50px;border-radius:2px;background:#A1887F}
+.act.a-wake .aL{transform:scaleX(.45)}
+.act.a-wake .aR{animation:aWakeArm 2.4s ease-in-out infinite}
+.act.a-wake .ob{left:40px;top:34px;width:11px;height:11px;background:#F5B82E;animation:aWakeSun 2.4s ease-in-out infinite}
+.act.a-wake .sp{left:35px;top:6px;color:#7986CB;font-size:12px;transform:rotate(90deg);animation:aWakeZ 2.4s ease-in-out infinite}
+.act.a-wake .sp::after{content:'z'}
+@keyframes aWakeArm{0%,40%{transform:scaleX(.45)}60%,86%{transform:scaleX(1.25)}100%{transform:scaleX(.45)}}
+@keyframes aWakeSun{0%,38%{opacity:0;transform:scale(.4)}60%,90%{opacity:1;transform:scale(1)}100%{opacity:0}}
+@keyframes aWakeZ{0%,30%{opacity:1}48%,100%{opacity:0}}
+/* ── smile : 제자리에서 얼굴이 웃는다(눈 둘 + 웃는 입 — 얼굴이 곧 뜻이라 얼굴이 선다) ── */
+.act.a-smile .hd{animation:aSmileHead 1.6s ease-in-out infinite}
+.act.a-smile .hd::before{content:'';position:absolute;left:4px;top:5px;width:2.5px;height:2.5px;border-radius:50%;background:#7A3A10;box-shadow:6px 0 #7A3A10}
+.act.a-smile .hd::after{content:'';position:absolute;left:3px;top:6px;width:10px;height:6px;border:solid #7A3A10;border-width:0 0 2.5px;border-radius:0 0 7px 7px;box-sizing:border-box;animation:aSmileMouth 1.6s ease-in-out infinite}
+.act.a-smile .aL{transform:rotate(-70deg)}
+.act.a-smile .aR{transform:rotate(70deg)}
+@keyframes aSmileHead{0%,100%{transform:scale(1.15)}50%{transform:scale(1.3)}}
+@keyframes aSmileMouth{0%,100%{transform:scaleX(.7)}50%{transform:scaleX(1.1)}}
+/*ACT32CSS-END*/
+/*PSG33CSS-BEGIN — #33 장면 소품·하루 띠·물고기 그림 · 4파일 문자 단위 동일(blocks/PSG33CSS.css → sync_blocks.py, 하네스 A8c).
+  ★물고기는 CSS 그림 — 이모지 🐟 는 플랫폼마다 파랑이라 green↔red 를 가를 수 없다. 몸통 + 꼬리 + 눈, 색이 곧 뜻.
+  ★We = 노란 상자(#27 「나」 상자) · They = 상자 밖 셋. ★하루 띠 = 아침·낮·저녁 세 칸, 지금 칸만 깜빡인다(#18 띠 판형). */
+.pe.xs{font-size:.55em}
+.fsh{display:inline-block;position:relative;width:1.15em;height:.62em;vertical-align:middle}
+.fsh::before{content:'';position:absolute;left:0;top:0;width:.82em;height:.62em;border-radius:50%;background:#51CF66}
+.fsh::after{content:'';position:absolute;right:0;top:.08em;width:0;height:0;border-top:.23em solid transparent;border-bottom:.23em solid transparent;border-right:.36em solid #51CF66}
+.fsh.r::before{background:#FA5252}
+.fsh.r::after{border-right-color:#FA5252}
+.fsh.g::before,.fsh.r::before{box-shadow:inset .16em -.05em 0 -.1em rgba(0,0,0,.25)}
+.wbx{display:inline-flex;align-items:center;gap:2px;background:#FFF8E1;border:2px solid #FFC107;border-radius:10px;padding:2px 5px;vertical-align:middle}
+.thy{display:inline-flex;align-items:center;gap:1px;vertical-align:middle}
+.nm{font-size:15px;background:#fff;border:2px solid var(--primary);color:var(--primary);border-radius:9px;padding:1px 6px;line-height:1.3;vertical-align:middle}
+.choice-btn .nm{font-size:13px;padding:0 4px}
+.stage .win{display:inline-flex;align-items:center;justify-content:center;background:#E7F5FF;border:3px solid #A5D8FF;border-radius:6px;padding:3px 5px}
+.stage .bed{display:inline-flex;align-items:center;gap:2px;background:#FFF0F6;border-bottom:5px solid #E599B5;border-radius:10px 10px 4px 4px;padding:2px 4px}
+.stage .bowl,.slot .bowl{display:inline-flex;align-items:center;justify-content:center;background:#D0EBFF;border:2px solid #74C0FC;border-radius:40% 40% 50% 50%;padding:6px 8px;font-size:30px}
+.stage .spill{display:inline-flex;align-items:flex-end;gap:0}
+.stage .dusk{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(#FFD8A8,#FFF4E6);border-radius:12px;padding:6px 8px}
+.stage .water,.slot .water{display:inline-flex;align-items:flex-end;background:#D6EEFF;border-radius:12px;padding:4px 7px}
+.slot .win{display:inline-flex;background:#E7F5FF;border:2px solid #A5D8FF;border-radius:5px;padding:1px 3px}
+/* 하루 띠 */
+.band{display:flex;gap:6px;justify-content:center;margin:10px auto;max-width:360px}
+.slot{flex:1;min-width:0;border:3px dashed var(--border);border-radius:14px;background:#fff;padding:6px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .3s}
+.slot .tlab{font-size:15px;color:var(--subtext);border-radius:8px;padding:0 8px}
+.slot.t0 .tlab{background:#FFF9DB}
+.slot.t1 .tlab{background:#E3FAFC}
+.slot.t2 .tlab{background:#FFE8CC}
+.slot .sp2{font-size:28px;min-height:40px;display:flex;align-items:center;justify-content:center;gap:2px}
+.slot .stx{font-size:13px;color:var(--primary);min-height:34px;line-height:1.25;text-align:center}
+.slot.now{border-color:var(--yellow);background:var(--yellow-light);animation:tapBlink 1.2s infinite}
+.slot.done{border-style:solid;border-color:var(--green);background:var(--green-light);animation:none}
+.slot.lock{opacity:.45}
+.ocards{display:flex;flex-direction:column;gap:7px;align-items:center;margin:8px 0}
+.ocard{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:14px;padding:7px 12px;font-size:19px;cursor:pointer;
+       font-family:inherit;box-shadow:0 3px 0 rgba(18,184,134,.25);min-width:240px}
+.ocard.used{visibility:hidden}
+.ocard.shake{animation:oShake .4s}
+@keyframes oShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+/* 배운 칸 번호 — 단어 위에 잠깐 떴다 사라진다 */
+.fword{position:relative}
+.kno{position:absolute;left:50%;top:-15px;transform:translateX(-50%);font-size:11px;font-style:normal;background:var(--yellow-light);border:1.5px solid var(--yellow);
+     color:#B07A00;border-radius:7px;padding:0 4px;line-height:1.35;opacity:0;transition:opacity .3s;white-space:nowrap}
+.kno.on{opacity:1}
+/* 세 편의 글쓴이 줄(33-1 개념) */
+.wrow{display:flex;align-items:center;justify-content:center;gap:8px;margin:5px 0;flex-wrap:wrap}
+.wrow .js{font-size:20px;color:var(--primary)}
+.wrow .wm{font-size:16px;color:var(--subtext);border:2px dashed var(--border);border-radius:10px;padding:2px 8px}
+/*PSG33CSS-END*/
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back" href="../index.html">🪜</a>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 11</span>
+  </div>
+  <div class="score-badge">⭐ <span id="scoreVal">0</span></div>
+  <div class="kedu-logo"><div class="logo-circle">K</div>영어</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesContainer">
+  <!-- ━━━ S0 표지 ━━━ -->
+  <div class="slide active" data-steps>
+    <div class="card">
+      <div class="badge step">영어 Lv2 · 디코더블④ 33-1</div>
+      <div class="today-label step">Today's Learn ✏️</div>
+      <div class="today-en step" style="font-size:29px">It is a sunny day. I wake.</div>
+      <div class="today-ko step">글 세 편이 이어지면 —<br><span class="today-blank">Mina 의 하루</span>가 돼요</div>
+    </div>
+  </div>
+
+  <!-- ━━━ S1 하루 띠 — 세 칸에 글이 하나씩 ━━━ -->
+  <div class="slide" data-steps>
+    <div class="card">
+      <div class="slide-title step">🗓 오늘부터 읽을 글은 <b>세 편</b>이에요</div>
+      <div class="band step" id="band1"></div>
+      <div class="concept-big step">아침 · 낮 · 저녁 —<br>한 칸에 <span class="hl">글 하나</span>씩!</div>
+      <div class="kay-says step">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">지금까지 글은 한 장면씩 따로였죠.<br>이번엔 세 편이 <span class="hl">한 사람의 하루</span>로 이어져요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S2 소환 — 세 편에 들어 있는 Lv2 단어 ━━━ -->
+  <div class="slide" data-steps>
+    <div class="card">
+      <div class="slide-title step">🔙 눌러 봐 — 이미 <b>읽을 수 있는</b> 단어들</div>
+      <div class="wcards step" id="rowA"></div>
+      <div class="rowlab step">🤝 모음팀 · 🤫 매직e — 19·21·23·32번 칸에서 만난 단어</div>
+      <div class="wcards step" id="rowB"></div>
+      <div class="rowlab step">has · we · they — 27번 칸에서 통째로 기억한 말</div>
+      <div class="feedback" id="fb2"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S3 시범 — 짚어 읽기 + 배운 칸 번호 ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">✨ 먼저 보여줄게 — <b>아침</b> 글이에요</div>
+      <div class="frame demo" id="demoFrame"></div>
+      <div class="sent-full" id="demoSent"></div>
+      <div class="scene" id="demoScene"></div>
+      <div class="stagecap" id="demoCap"></div>
+      <button class="listen-btn" id="demoBtn">▶ 시범 보기</button>
+      <div class="kay-says" id="demoKay" style="display:none">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">단어마다 뜬 번호 보았죠? 전부 <b>네가 지나온 칸</b>이에요.<br>이 문장은 <span class="hl">전부 네가 배운 것</span>으로 되어 있어요!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S4 개념 ★ — 세 편의 글쓴이는 한 사람 ━━━ -->
+  <div class="slide" data-steps>
+    <div class="card">
+      <div class="slide-title step">🔍 세 편을 <b>누가</b> 썼을까요?</div>
+      <div class="wrow step"><span class="js">I wake.</span><span class="wm">I = 나, Mina</span></div>
+      <div class="wrow step"><span class="js">We smile.</span><span class="wm">We = 나 + Ben</span></div>
+      <div class="wrow step"><span class="js">We ride a boat.</span><span class="wm">We = 나 + 친구들</span></div>
+      <div class="concept-big step">쓴 사람은 <span class="hl">한 사람</span> —<br>그래서 하루로 <b>이어져요</b>!</div>
+      <div class="kay-says step">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">「나」는 세 편 내내 <b>Mina</b> 예요.<br>장면이 바뀌어도 <span class="hl">같은 사람의 하루</span>예요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S5 손활동 — 아침 글 짚어 읽기 ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">👆 이번엔 <b>네가</b> 짚어요 — 왼쪽부터, 첫 줄부터</div>
+      <div class="frame" id="f5"></div>
+      <div class="sent-full" id="s5"></div>
+      <div class="scene" id="sc5"></div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S6 손활동 — 글 속의 I 는 누구? ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">👆 <b>I wake.</b> — 글 속의 <b>I</b> 는 누구?</div>
+      <div class="stage" id="st6"></div>
+      <div class="concept-text" style="font-size:21px">그림에서 <b>글을 쓴 「나」</b>를 눌러요</div>
+      <div class="pickrow" id="pick6"></div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S7 확인1 — 아침 글 한 컷 ━━━ -->
+  <div class="slide" data-correct="2" data-score="10" data-concept="reading.sentpic" data-skey="am-wake" data-kind="cut">
+    <div class="card">
+      <div class="question-label">확인 문제 1 <span class="stars">⭐</span></div>
+      <div class="question-text">글이 말하는 그림을 고르세요</div>
+      <div class="today-en" style="font-size:26px">It is a sunny day. I wake.</div>
+      <div class="choices" id="ch7"></div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S8 확인2 — 방향 왕복 (그림 → 글) ━━━ -->
+  <div class="slide" data-correct="0" data-score="10" data-concept="reading.sentpic" data-skey="am-wake" data-kind="txt">
+    <div class="card">
+      <div class="question-label">확인 문제 2 <span class="stars">⭐</span></div>
+      <div class="question-text">이 그림이 말하는 <b>글</b>은?</div>
+      <div class="scene still merge"></div>
+      <div class="choices"></div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S9 손활동 — 하루 띠 아침 칸 채우기 ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">🗓 <b>아침</b> 칸에 들어갈 글을 눌러요</div>
+      <div class="band" id="band9"></div>
+      <div class="ocards" id="cards9"></div>
+      <div class="feedback" id="fb9"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S10 결과 ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="result-emoji" id="resultEmoji">🎉</div>
+      <div style="font-size:26px">하루의 첫 칸 완료!</div>
+      <div class="result-score">⭐ <span id="finalScore">0</span>점</div>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <div class="kay-says">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">오늘 손에 넣은 것 🏆<br>① 글 속 단어가 <span class="hl">전부 배운 칸</span>에서 왔다<br>② 세 편은 <b>Mina 한 사람의 하루</b> — 아침 칸을 채웠다<br>다음은 <b>연습</b> — 낮 글을 읽어요.</div>
+      </div>
+      <button class="nav-btn" style="margin-top:10px" onclick="location.href='33_2_decodable4_practice.html'">▶ 연습하러 가기</button>
+      <button class="nav-btn" style="margin-top:10px;background:var(--secondary)" onclick="location.href='../index.html'">🪜 사다리로</button>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script src="../engine/k-tts.js"></script>
+<script src="../engine/k-collection.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
+<script>
+let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
+const TOTAL=11;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playTone(f,t,d,g=.3){getCtx();audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d);});}
+function playCorrect(){[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
+function playWrong(){[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
+function playClick(){playTone(880,'sine',.08,.2);}
+document.body.addEventListener('pointerdown',()=>{if(!unlocked){KTTS.unlock();unlocked=true;justUnlocked=true;setTimeout(()=>justUnlocked=false,350);
+  const cur=document.querySelectorAll('.slide')[currentSlide];
+  const last=cur&&cur.querySelectorAll('.step.in');
+  if(last&&last.length){speakStep(last[last.length-1]);}
+}},{once:true});
+
+/* ── 탭 기반 단계 등장 (자동 흐름 ❌) ── */
+let stepState={};
+function setupSlide(slide,idx){
+  slide.classList.add('lit');
+  const steps=slide.querySelectorAll('.step');
+  if(!steps.length)return;
+  if(stepState[idx]===undefined){
+    steps.forEach(s=>s.classList.remove('in'));
+    steps[0].classList.add('in');stepState[idx]=1;
+    speakStep(steps[0]);
+  }else{
+    steps.forEach(s=>s.classList.add('in'));stepState[idx]=steps.length;
+  }
+}
+function speakStep(el){
+  if(!unlocked||!el)return;
+  if(el.dataset.sound)KTTS.sound(el.dataset.sound);
+  else if(el.dataset.speakWord)KTTS.word(el.dataset.speakWord);
+  else if(el.dataset.speak)KTTS.sentence(el.dataset.speak);
+}
+function advanceStep(slide,idx){
+  const steps=[...slide.querySelectorAll('.step')];
+  if(stepState[idx]<steps.length){
+    const el=steps[stepState[idx]];
+    el.classList.add('in');playClick();speakStep(el);
+    stepState[idx]++;
+    return true;
+  }
+  return false;
+}
+function goSlide(n){
+  const sl=document.querySelectorAll('.slide');KTTS.stop();
+  sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');
+  setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);
+  currentSlide=n;sl[n].classList.add('active');updateUI();
+  setupSlide(sl[n],n);
+}
+function nextSlide(){
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  if(slide.hasAttribute('data-steps')&&advanceStep(slide,currentSlide))return;
+  if(currentSlide<TOTAL-1)goSlide(currentSlide+1);
+}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;
+  document.getElementById('scoreVal').textContent=score;
+  if(currentSlide===TOTAL-1){
+    document.getElementById('finalScore').textContent=score;
+    document.getElementById('resultStars').textContent=score>=70?'⭐⭐⭐⭐⭐':score>=45?'⭐⭐⭐⭐':'⭐⭐⭐';
+    document.getElementById('resultEmoji').textContent=score>=70?'🏆':'🎉';
+  }
+}
+function addScore(p){
+  const bonus=combo>=3?Math.floor(p*.5):0;
+  score+=p+bonus;combo++;
+  document.getElementById('scoreVal').textContent=score;
+  if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}
+}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.innerHTML=msg;el.className='feedback '+(ok?'ok':'err');}}
+
+const OK_MSGS=['✅ 정답! +{p}점','🎯 바로 그거야! +{p}점','✨ 소리 박사인데? +{p}점'];
+const SAM_MSGS=['🙋 Sam: "나도 그거 골랐는데…" 다시 들어 봐!','🙋 Sam: "내가 맞다니까!" …아니래. 한 번 더!','🤔 Sam이 또 헷갈리게 했구나 — 소리를 잘 듣고 다시!'];
+function okMsg(p){return OK_MSGS[Math.floor(Math.random()*OK_MSGS.length)].replace('{p}',p);}
+function samMsg(){return SAM_MSGS[Math.floor(Math.random()*SAM_MSGS.length)];}
+/*ACTJS-BEGIN — #7 동작 도형 마크업. 07_1 실물과 같은 두 줄(하네스 A6b) — swim 회수·jump 오답 조각 */
+const PARTS='<b class="hd"></b><b class="bd"></b><b class="aL"></b><b class="aR"></b><b class="lL"></b><b class="lR"></b><b class="ob"></b><b class="sh"></b><b class="wv"></b><b class="sp"></b>';
+const ACT=w=>'<span class="aw"><span class="act a-'+w+'">'+PARTS+'</span></span>';
+/*ACTJS-END*/
+/*PSG33-BEGIN — 지문 3편(펼침 33_decodable4.md) · 4파일 문자 단위 동일(하네스 A8). ★신출어 0 — 대장 #33 행 대조 완료.
+  ★#33 고유 원리 = 「연속」 — 세 편이 한 사람(Mina)의 아침 → 낮 → 저녁. #9 해독 · #17 연결 · #26 확인 다음 칸.
+    그래서 글쓴이가 셋 다 같다 — I(①) · We = 나 + Ben(②) · We = 나 + 친구들(③). 하루 띠(DAY)가 이 칸의 축이다.
+  ★그림이 세 종류다 — cut() 글이 말하는 그림(#17·#26) · stage() 실제 장면(참·거짓 근거, 의외성은 여기에만)
+    · slotPic() 하루 띠 칸의 그림(그 장면의 열쇠 하나 — 글을 읽어야 칸이 정해진다).
+  ★동작 그림 = #32 ACT 도형 그대로(fig = #32 ap 와 같은 마크업 — 하네스 A5). wake 는 누운 도형 · smile 은 웃는 얼굴.
+    ride 는 #32 도형이 바퀴(자전거)라 「ride a boat」 그림엔 쓰지 않는다 — 배 ⛵ 가 뜻을 맡는다.
+  ★한 컷 오답 = 「한 문장만 바꾼 컷」(#17·#26 A9). 바꾼 자리는 전부 아는 짝:
+    sunny↔rainy(#20) · wake↔wave(#32 오늘 부하의 본체) · green↔red(Lv1 #13) · smile↔sing(#32 얼굴 둘)
+    · here↔big(#29 They are big. 🐘) · boat↔bike(#25 bike→boat). 오답 글 기지어는 대장 #33 행에 「오답 글 전용」으로 등재.
+  ★오형태 0 — They are 뒤엔 here·big 만(#29 판정 · 복수 -s 0). */
+const PSG={
+  'am-wake':{time:'아침',en:'It is a sunny day. I wake.',ko:'맑은 날이에요. 나는 잠에서 깨요.',
+    s:[{en:'It is a sunny day.',w:['It','is','a','sunny','day'],ko:'맑은 날이에요.'},
+       {en:'I wake.',w:['I','wake'],ko:'나는 잠에서 깨요.'}]},
+  'noon-fish':{time:'낮',en:'Ben has a green fish. We smile.',ko:'Ben 은 초록 물고기가 있어요. 우리는 미소 지어요.',
+    s:[{en:'Ben has a green fish.',w:['Ben','has','a','green','fish'],ko:'Ben 은 초록 물고기가 있어요.'},
+       {en:'We smile.',w:['We','smile'],ko:'우리는 미소 지어요.'}]},
+  'eve-boat':{time:'저녁',en:'They are here. We ride a boat.',ko:'친구들이 여기 있어요. 우리는 배를 타요.',
+    s:[{en:'They are here.',w:['They','are','here'],ko:'친구들이 여기 있어요.'},
+       {en:'We ride a boat.',w:['We','ride','a','boat'],ko:'우리는 배를 타요.'}]}
+};
+const DAY=['am-wake','noon-fish','eve-boat'];
+const WKO={It:'오늘은',is:'~예요',a:'한',sunny:'맑은',day:'날',I:'나는',wake:'잠에서 깨요',
+  Ben:'Ben',has:'가지고 있어요',green:'초록색',fish:'물고기',We:'우리는',smile:'미소 지어요',
+  They:'그들은',are:'~있어요',here:'여기에',ride:'타요',boat:'배'};
+/* 배운 칸 번호 — 33-1 시범에서 단어 위에 잠깐 떴다 사라진다(「전부 네가 배운 것」). 실물 대조:
+   It·I·here = Lv1(#17 첫 문장 · #1·#9) · is·are #10 · a #24 · sunny #20 · day #19 · wake·smile·ride #32 · has·we·they #27
+   · green #21 · fish #1 · boat #23. 사람 이름(Ben)은 칸이 없다. */
+const KNO={It:'Lv1',is:'#10',a:'#24',sunny:'#20',day:'#19',I:'Lv1',wake:'#32',has:'#27',green:'#21',fish:'#1',
+  We:'#27',smile:'#32',They:'#27',are:'#10',here:'Lv1',ride:'#32',boat:'#23'};
+/* 표기 — 모음팀 TEAM(#19·#21·#23) · 매직e MAGIC(#11·#13) · be 보라 점선(#10). 색으로만, 소리 0. 한 단어는 붙어 있다 */
+const BEV={is:1,are:1};
+const MARK={
+  day:'<span class="tw">d<u class="tm"><b>a</b><i>y</i></u></span>',
+  green:'<span class="tw">gr<u class="tm"><b>e</b><i>e</i></u>n</span>',
+  boat:'<span class="tw">b<u class="tm"><b>o</b><i>a</i></u>t</span>',
+  wake:'<span class="mw">w<b>a</b>k<i class="se">e</i></span>',
+  smile:'<span class="mw">sm<b>i</b>l<i class="se">e</i></span>',
+  ride:'<span class="mw">r<b>i</b>d<i class="se">e</i></span>'
+};
+function mgw(w){
+  if(MARK[w])return MARK[w];
+  if(BEV[w])return '<span class="bev">'+w+'</span>';
+  return w;
+}
+const pe=(e,z)=>'<span class="pe'+(z?' '+z:'')+'">'+e+'</span>';
+/* 동작 그림 — #32 ap() 와 같은 마크업(ACT 블록 · 10부품 같은 얼개) */
+const fig=w=>'<span class="ap" data-act="'+w+'">'+ACT(w)+'</span>';
+/* 물고기 — CSS 그림(이모지 🐟 는 파랑 고정이라 green·red 를 못 가른다). 색이 곧 뜻 */
+const fish=c=>'<span class="pe"><span class="fsh '+c+'"></span></span>';
+/* We = 노란 상자(#27 「나」 상자 표기) · They = 상자 밖 셋(Max 👦 · Ben 🧒 · Sam 이름표 — #10 판정) */
+const wbx=h=>'<span class="wbx">'+h+'</span>';
+const they=()=>'<span class="thy">'+pe('👦','sm')+pe('🧒','sm')+'<span class="nm">Sam</span></span>';
+/* 문장 하나의 그림 조각 — ok=1 바른 조각 / ok=0 「그 문장만」 다른 조각 */
+function piece(k,i,ok){
+  if(k==='am-wake')return i===0?pe(ok?'☀️':'🌧️'):fig(ok?'wake':'wave');
+  if(k==='noon-fish')return i===0?pe('🧒','sm')+fish(ok?'g':'r'):wbx(fig(ok?'smile':'sing')+fig(ok?'smile':'sing'));
+  return i===0?(ok?they()+pe('📍','sm'):pe('🐘🐘🐘','sm')):wbx(pe(ok?'⛵':'🚲'));
+}
+/* 한 컷 — 정답 = cut(k,1,1). ★오답은 cut(k,0,1)·cut(k,1,0) 둘뿐(하네스 A9) */
+function cut(k,a,b){return piece(k,0,a)+piece(k,1,b);}
+/* 「한 문장만 바꾼 글」 — 방향 왕복(그림 → 글) 오답. 같은 자리의 그림 조각과 짝이다 */
+const ALT={
+  'am-wake':['It is a rainy day.','I wave.'],
+  'noon-fish':['Ben has a red fish.','We sing.'],
+  'eve-boat':['They are big.','We ride a bike.']
+};
+function altText(k,i){const s=PSG[k].s;return i===0?ALT[k][0]+' '+s[1].en:s[0].en+' '+ALT[k][1];}
+const WHY={
+  'am-wake':['<b>sunny day</b> 맑은 날 ☀️','<b>wake</b> 잠에서 깨요'],
+  'noon-fish':['<b>green fish</b> 초록 물고기','<b>We smile</b> 우리는 미소 지어요'],
+  'eve-boat':['<b>They are here</b> 친구들이 여기','<b>ride a boat</b> 배를 타요 ⛵']
+};
+/* ★장면판 = 실제로 있는 것(참·거짓의 근거). 의외성은 여기에만 — 선택지 0(하네스 C-6b):
+   ① 창밖 ☀️ · 침대의 Mina 가 기지개 — 발치의 고양이는 벌써 깨어 Mina 를 본다
+   ② Ben 이 어항을 들고, 돋보기 든 Mina 가 웃는다 — 넘친 물이 Ben 신발 위에(둘 다 모른다)
+   ③ 해 질 녘 물가 — Max·Ben·Sam 과 Mina, 넷이 타기엔 작은 배 */
+function stage(k){
+  if(k==='am-wake')
+    return '<span class="win">'+pe('☀️','sm')+'</span><span class="bed"><span class="nm">Mina</span>'+fig('wake')+'</span>'+pe('🐱','sm');
+  if(k==='noon-fish')
+    return '<span class="who">🧒</span><span class="bowl">'+fish('g')+'</span><span class="spill">'+pe('👟','xs')+pe('💧','xs')+'</span>'
+          +'<span class="who">👧</span>'+pe('🔍','sm');
+  return '<span class="dusk">'+they()+'<span class="who">👧</span><span class="water">'+pe('⛵','sm')+'</span></span>';
+}
+/* 하루 띠 칸 그림 — 그 장면의 열쇠 하나. 글을 읽어야 어느 칸인지 정해진다(글 카드는 글자만) */
+function slotPic(k){
+  if(k==='am-wake')return '<span class="win">'+pe('☀️','sm')+'</span>'+pe('🛏️','sm');
+  if(k==='noon-fish')return '<span class="bowl">'+fish('g')+'</span>';
+  return '<span class="water">'+pe('⛵','sm')+'</span>';
+}
+/* 참·거짓(한국어 문장 · 근거 = 장면판 + 글). ans = 정답 자리(0 ⭕ 참 · 1 ❌ 거짓) */
+const TF={
+  'am-wake':[{t:'Mina 는 아직 자고 있어요.',ans:1,why:'Mina 는 기지개를 켜요 — <b>I wake.</b> 잠에서 깼어요'},
+             {t:'오늘은 해가 났어요.',ans:0,why:'창밖에 ☀️ — <b>It is a sunny day.</b>'}],
+  'noon-fish':[{t:'물고기는 Mina 것이에요.',ans:1,why:'<b>Ben has a green fish.</b> — 물고기는 Ben 의 것이에요'},
+               {t:'Ben 과 Mina 둘 다 웃어요.',ans:0,why:'<b>We smile.</b> — 우리(Ben 과 나) 둘 다 웃어요'}],
+  'eve-boat':[{t:'Mina 는 혼자 배를 타요.',ans:1,why:'<b>We ride a boat.</b> — 우리 모두 함께 타요'},
+              {t:'친구들이 다 와 있어요.',ans:0,why:'<b>They are here.</b> — 친구들이 여기 있어요'}]
+};
+/*PSG33-END*/
+/* ── ★두 줄 짚어 읽기 — #17·#26 buildPoint2 그대로(왼→오, 첫 줄 → 둘째 줄 강제).
+   한 문장 끝 = 그 문장 낭독 + 조각 하나 · 두 문장 끝 = 조각 둘 → 한 컷 + 지문 전체 낭독. only = 한 줄만(33_B 길이 짐 덜기). ── */
+function buildPoint2(key,frameId,sentId,sceneId,fbId,slideIdx,only){
+  const P=PSG[key],box=document.getElementById(frameId);
+  const rows=(only===undefined)?[0,1]:[only];
+  const flat=[];
+  rows.forEach(si=>P.s[si].w.forEach((w,wi)=>flat.push({w:w,si:si,wi:wi})));
+  let n=0;
+  box.innerHTML=rows.map(si=>'<div class="frow">'+P.s[si].w.map(w=>
+    '<div class="fbox"><div class="fword" data-i="'+(n++)+'">'+mgw(w)+'</div><div class="fko">'+WKO[w]+'</div></div>').join('')
+    +'<span class="fdot">.</span></div>').join('');
+  const cells=[...box.querySelectorAll('.fword')];
+  let cur=0,fin=false;
+  const sc=document.getElementById(sceneId);
+  function mark(){cells.forEach((c,i)=>c.classList.toggle('now',i===cur&&!fin));}
+  function shown(){
+    const done=flat.slice(0,cur);
+    return rows.map(si=>{const ws=done.filter(x=>x.si===si).map(x=>x.w);
+      return ws.length?ws.join(' ')+(ws.length===P.s[si].w.length?'.':' …'):'';}).filter(Boolean).join(' ');
+  }
+  mark();
+  cells.forEach(c=>{
+    c.addEventListener('click',()=>{
+      if(fin)return;
+      const i=+c.dataset.i;
+      playClick();
+      if(i!==cur){
+        setFB(fbId,'🙋 지금은 <b>'+flat[cur].w+'</b> 칸이에요 — 왼쪽부터, 첫 줄부터 짚어요!',false);
+        return;
+      }
+      const it=flat[i];
+      KTTS.word(it.w);
+      c.classList.remove('now');c.classList.add('read');
+      cur++;
+      document.getElementById(sentId).textContent=shown();
+      const endSent=it.wi===P.s[it.si].w.length-1;
+      const isLast=cur>=flat.length;
+      if(isLast){fin=true;}
+      mark();
+      if(!endSent){
+        setFB(fbId,'✅ '+it.w+' = '+WKO[it.w]+' — 다음은 <b>'+flat[cur].w+'</b>!',true);
+        return;
+      }
+      setTimeout(()=>{
+        KTTS.sentence(P.s[it.si].en);
+        if(sc){
+          sc.classList.add('on');
+          sc.insertAdjacentHTML('beforeend',(sc.querySelector('.pc')?'<span class="plus">➕</span>':'')
+            +'<span class="pc">'+piece(key,it.si,1)+'</span>');
+        }
+        if(!isLast){
+          setFB(fbId,'✅ 첫 문장 끝 — <b>'+P.s[it.si].en+'</b> '+P.s[it.si].ko+'<br>그림이 아직 반쪽이에요. 다음 줄!',true);
+          return;
+        }
+        if(only!==undefined){
+          playCorrect();
+          if(!answered[slideIdx]){answered[slideIdx]=true;addScore(10);}
+          setFB(fbId,'🎉 <b>'+P.s[it.si].en+'</b> — '+P.s[it.si].ko+' +10점',true);
+          return;
+        }
+        setFB(fbId,'✅ 둘째 문장 끝 — 이제 <b>둘을 이어 붙여요</b>…',true);
+        setTimeout(()=>{
+          if(sc){sc.classList.add('merge');sc.innerHTML=cut(key,1,1);}
+          KTTS.sentence(P.en);
+          playCorrect();
+          if(!answered[slideIdx]){answered[slideIdx]=true;addScore(10);}
+          setFB(fbId,'🎉 <b>'+P.en+'</b><br>'+P.ko+' — Mina 의 <b>'+P.time+'</b> 장면이 됐어요! +10점',true);
+        },1300);
+      },600);
+    });
+  });
+}
+
+/* 한 컷 문항 — 정답 자리는 정적 선언, 「한 문장만 바꾼 컷」 둘이 나머지 자리 */
+function putCut(slideIdx,cid){
+  const slide=document.querySelectorAll('.slide')[slideIdx];
+  const k=slide.dataset.skey,correct=+slide.dataset.correct;
+  const opts=[cut(k,0,1),cut(k,1,0)];
+  opts.splice(correct,0,cut(k,1,1));
+  document.getElementById(cid).innerHTML=
+    opts.map((h,i)=>'<button class="choice-btn pic-btn" onclick="answer(this,'+i+')">'+h+'</button>').join('');
+}
+/* 참·거짓 — 한국어 문장 + 장면판. 정답은 TF 표(하네스가 정적 data-correct 와 대조) */
+function putTF(slideIdx){
+  const s=document.querySelectorAll('.slide')[slideIdx],k=s.dataset.skey;
+  s.querySelector('.stage').innerHTML=stage(k);
+  s.querySelector('.tfs').textContent=TF[k][+s.dataset.tfi].t;
+}
+/* 방향 왕복(그림 → 글) — 오답 = 「한 문장만 바꾼 글」(ALT) */
+function putTxt(slideIdx){
+  const s=document.querySelectorAll('.slide')[slideIdx],k=s.dataset.skey,correct=+s.dataset.correct;
+  const opts=[altText(k,0),altText(k,1)];
+  opts.splice(correct,0,PSG[k].en);
+  s.querySelector('.scene').innerHTML=cut(k,1,1);
+  s.querySelector('.choices').innerHTML=
+    opts.map((t,i)=>'<button class="choice-btn ptxt" onclick="answer(this,'+i+')">'+t+'</button>').join('');
+}
+/* 맞힌 뒤 낭독·해설 — 낭독은 언제나 바른 지문 문장만(틀린 꼴 소리 0) */
+function aftermath(slide){
+  const kind=slide.dataset.kind,key=slide.dataset.skey;
+  if(kind==='tf')return {say:PSG[key].en,msg:TF[key][+slide.dataset.tfi].why};
+  return {say:PSG[key].en,msg:WHY[key][0]+' + '+WHY[key][1]};
+}
+function wrongMsg(slide){
+  const kind=slide.dataset.kind;
+  if(kind==='tf')return '🙋 Sam: "그냥 그럴 것 같은데…" — <b>글</b>을 읽고 <b>그림</b>에서 찾아봐요!';
+  if(kind==='txt')return '🙋 Sam: "한 문장만 봤어…" — <b>두 문장 다</b> 그림과 맞춰 봐요!';
+  return '🙋 Sam: "한 문장만 읽었어…" — <b>둘째 문장</b>까지 읽어요!';
+}
+
+/* ★하루 띠 — 아침·낮·저녁 세 칸(DAY 순서 고정). 글 카드는 글자만 · 지금 칸만 깜빡이고 그 칸에 맞는 글만 꽂힌다(#18 띠 판형).
+   use = 이번에 채울 칸 · pre = 이미 채운 칸 · deck = 카드 순서(섞음) · 소리는 꽂힌 뒤에만, 틀리면 소리 0 */
+function bandHTML(pre,use){
+  return DAY.map((k,i)=>{
+    const f=pre.indexOf(k)>=0,act=use.indexOf(k)>=0;
+    return '<div class="slot t'+i+(f?' done':'')+(!f&&!act?' lock':'')+'" data-k="'+k+'"><span class="tlab">'+PSG[k].time+'</span>'
+      +'<span class="sp2">'+slotPic(k)+'</span><span class="stx">'+(f?PSG[k].en:(act?'':'?'))+'</span></div>';
+  }).join('');
+}
+function buildBand(o){
+  const band=document.getElementById(o.band),cards=document.getElementById(o.cards);
+  band.innerHTML=bandHTML(o.pre||[],o.use);
+  const order=DAY.filter(k=>o.use.indexOf(k)>=0);
+  let cur=0;
+  const slotOf=k=>band.querySelector('.slot[data-k="'+k+'"]');
+  function mark(){band.querySelectorAll('.slot').forEach(s=>s.classList.toggle('now',cur<order.length&&s.dataset.k===order[cur]));}
+  if(cards){
+    cards.innerHTML=o.deck.map(k=>'<button class="ocard" data-k="'+k+'">'+PSG[k].en+'</button>').join('');
+    cards.querySelectorAll('.ocard').forEach(b=>b.addEventListener('click',()=>{
+      if(cur>=order.length||b.classList.contains('used'))return;
+      playClick();
+      const want=order[cur];
+      if(b.dataset.k!==want){
+        playWrong();b.classList.add('shake');setTimeout(()=>b.classList.remove('shake'),420);
+        setFB(o.fb,'🙋 지금은 <b>'+PSG[want].time+'</b> 칸 — 칸의 그림을 보고, 맞는 <b>글</b>을 골라요!',false);
+        if(o.onWrong)o.onWrong(b.dataset.k);
+        return;
+      }
+      b.classList.add('used');
+      const s=slotOf(want);s.classList.add('done');s.querySelector('.stx').textContent=PSG[want].en;
+      KTTS.sentence(PSG[want].en);
+      cur++;mark();
+      if(cur<order.length){setFB(o.fb,'✅ <b>'+PSG[want].time+'</b> 칸 — '+PSG[want].ko+' 다음은 <b>'+PSG[order[cur]].time+'</b>!',true);return;}
+      o.onDone();
+    }));
+  }
+  mark();
+}
+
+/* 지문 칩 탭 = 통문장 낭독(R트랙 관용) */
+document.getElementById('slidesContainer').addEventListener('click',e=>{
+  if(justUnlocked)return;
+  const s=e.target.closest('[data-psg]');
+  if(!s)return;
+  const h=s.classList.contains('step')?s:s.closest('.step');
+  if(!h||h.classList.contains('in'))KTTS.sentence(PSG[s.dataset.psg].en);
+});
+/* S1 하루 띠 — 세 칸 미리보기(채운 칸 0) */
+document.getElementById('band1').innerHTML=bandHTML([],[]);
+
+/* S2 소환 — 세 편의 Lv2 단어 12 (전부 탭해야 완료) */
+(function(){
+  const A=['day','green','boat','wake','smile','ride'], B=['sunny','fish','has','We','They','here'];
+  const cd=w=>'<div class="wcard" data-w="'+w+'">'+mgw(w)+'<span class="ko">'+WKO[w]+' · '+KNO[w]+'</span></div>';
+  document.getElementById('rowA').innerHTML=A.map(cd).join('');
+  document.getElementById('rowB').innerHTML=B.map(cd).join('');
+  const all=A.concat(B), done=new Set();
+  document.querySelectorAll('#rowA .wcard,#rowB .wcard').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const k=el.dataset.w;
+      playClick();KTTS.word(k);
+      el.classList.add('tapped');
+      if(done.has(k))return;
+      done.add(k);
+      if(done.size<all.length){
+        setFB('fb2','🔊 '+k+' — '+done.size+' / '+all.length+'개 깨웠어요!',true);
+      }else if(!answered[2]){
+        answered[2]=true;addScore(10);
+        setFB('fb2','🎉 열두 단어를 다 깨웠어요! 이 단어들이 세 편의 글을 만들어요. +10점',true);
+      }
+    });
+  });
+})();
+
+/* S6 손활동 — 글 속의 I = 글쓴이 Mina(고양이도 깼지만 「나」는 아니다 · 진단 미적립) */
+(function(){
+  document.getElementById('st6').innerHTML=stage('am-wake');
+  const box=document.getElementById('pick6');
+  box.innerHTML='<button class="pk" data-p="cat">'+pe('🐱')+'<span class="pkl">고양이</span></button>'
+               +'<button class="pk" data-p="mina">'+fig('wake')+'<span class="pkl">Mina</span></button>';
+  box.querySelectorAll('.pk').forEach(b=>b.addEventListener('click',()=>{
+    if(answered[6])return;
+    playClick();
+    if(b.dataset.p!=='mina'){
+      playWrong();
+      setFB('fb6','🙋 고양이도 깼지만 — 글을 <b>쓴</b> 사람은 누구일까요?',false);
+      return;
+    }
+    b.classList.add('on');playCorrect();answered[6]=true;addScore(10);
+    KTTS.sentence(PSG['am-wake'].s[1].en);
+    setFB('fb6','🎉 「나」는 <b>Mina</b>! 고양이는 벌써 깨어 있었지만 글을 쓴 건 Mina 예요. +10점',true);
+  }));
+})();
+
+putCut(7,'ch7');
+putTxt(8);
+
+buildPoint2('am-wake','f5','s5','sc5','fb5',5);
+
+/* S9 하루 띠 — 아침 칸만 연다. 세 카드 중 아침 글을 골라야 꽂힌다(낮·저녁 글은 다음 칸에서) */
+buildBand({band:'band9',cards:'cards9',fb:'fb9',use:['am-wake'],deck:['noon-fish','am-wake','eve-boat'],onDone:()=>{
+  if(answered[9])return;
+  answered[9]=true;addScore(10);playCorrect();
+  setFB('fb9','🎉 아침 칸 완성! 남은 두 글은 <b>낮·저녁</b> 칸 — 다음 칸에서 읽어요. +10점',true);
+}});
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
+  playClick();
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);answered[currentSlide]=true;
+    const a=aftermath(slide);
+    KTTS.sentence(a.say);
+    setFB('fb'+currentSlide,okMsg(pts)+' — '+a.msg,true);
+  }else{
+    btn.classList.add('wrong');playWrong();combo=0;
+    setFB('fb'+currentSlide,wrongMsg(slide),false);
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+/* S3 시범 — 짚어 읽기 + 단어마다 배운 칸 번호가 잠깐 떴다 사라진다 → 한 컷 */
+document.getElementById('demoBtn').addEventListener('click',function(){
+  this.style.display='none';
+  const K='am-wake',P=PSG[K],box=document.getElementById('demoFrame');
+  box.innerHTML=P.s.map(s=>'<div class="frow">'+s.w.map(x=>
+    '<div class="fbox"><div class="fword">'+(KNO[x]?'<i class="kno">'+KNO[x]+'</i>':'')+mgw(x)+'</div><div class="fko">'+WKO[x]+'</div></div>').join('')
+    +'<span class="fdot">.</span></div>').join('');
+  const cells=[...box.querySelectorAll('.fword')];
+  const sc=document.getElementById('demoScene'),st=document.getElementById('demoSent'),cap=document.getElementById('demoCap');
+  let t=0,ci=0;
+  P.s.forEach((s,si)=>{
+    s.w.forEach((x,wi)=>{
+      const c=cells[ci++],upto=P.s.slice(0,si).map(z=>z.en).concat([s.w.slice(0,wi+1).join(' ')+(wi===s.w.length-1?'.':' …')]).join(' ');
+      setTimeout(()=>{
+        cells.forEach(z=>z.classList.remove('now'));
+        c.classList.add('now');KTTS.word(x);st.textContent=upto;
+        const kn=c.querySelector('.kno');
+        if(kn){kn.classList.add('on');setTimeout(()=>kn.classList.remove('on'),650);}
+      },t);
+      t+=750;
+    });
+    setTimeout(()=>{
+      cells.forEach(z=>{z.classList.remove('now');});
+      KTTS.sentence(s.en);playClick();
+      sc.classList.add('on');
+      sc.insertAdjacentHTML('beforeend',(si?'<span class="plus">➕</span>':'')+'<span class="pc">'+piece(K,si,1)+'</span>');
+    },t-250);
+    t+=1000;
+  });
+  setTimeout(()=>{
+    cells.forEach(z=>z.classList.add('read'));
+    sc.classList.add('merge');sc.innerHTML=cut(K,1,1);
+    KTTS.sentence(P.en);
+    cap.innerHTML='☀️ 맑은 날 ➕ 잠에서 깨는 Mina — <b>아침</b> 장면이에요.';
+    playCorrect();
+    document.getElementById('demoKay').style.display='flex';
+  },t+300);
+});
+
+let tx=0,ty=0;
+const sc=document.getElementById('slidesContainer');
+sc.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;});
+sc.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){d_swipe(dx);return;}
+});
+function d_swipe(dx){dx>0?prevSlide():nextSlide();}
+sc.addEventListener('click',e=>{
+  if(justUnlocked)return;
+  const w=e.target.closest('[data-sound]');
+  if(!w)return;
+  const host=w.classList.contains('step')?w:w.closest('.step');
+  if(!host||host.classList.contains('in'))KTTS.sound(w.dataset.sound);
+});
+updateUI();
+setupSlide(document.querySelectorAll('.slide')[0],0);
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
