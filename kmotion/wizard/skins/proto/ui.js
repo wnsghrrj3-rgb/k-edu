@@ -195,8 +195,8 @@ export function createUI(ctx, audio){
   }
   function paintPz(s){
     const Z = s.puzzle; if (!Z) return; const W = innerWidth, H = innerHeight; rects = {};
-    if (Z.id !== pzCur) { pzCur = Z.id; pzState = null; pzKind.textContent = Z.type === 'number-bridge' ? '🌉 숫자 다리' : Z.type === 'size-gate' ? '🚪 크기 문' : Z.type === 'mushroom-add' ? '🍄 버섯 문' : Z.type === 'crystal-count' ? '💎 수정 묶음 세기' : '🪨 규칙 징검다리'; pzPrompt.textContent = T(Z.prompt.key, Z.prompt.args);
-      if (Z.type === 'mushroom-add' && Z.mush) pzPrompt.innerHTML = `<span class="mush">🍄<i>${'●'.repeat(Z.mush.a)}</i> + 🍄<i>${'●'.repeat(Z.mush.b)}</i></span><br>${T(Z.prompt.key, Z.prompt.args)}`; pzp.classList.toggle('gate', Z.type === 'size-gate');
+    if (Z.id !== pzCur) { pzCur = Z.id; pzState = null; pzKind.textContent = Z.type === 'number-bridge' ? (Z.op === '×' ? '🌉 곱셈 다리' : '🌉 숫자 다리') : Z.type === 'size-gate' ? '🚪 크기 문' : Z.type === 'mushroom-add' ? '🍄 버섯 문' : Z.type === 'crystal-count' ? '💎 수정 묶음 세기' : '🪨 규칙 징검다리'; pzPrompt.textContent = T(Z.prompt.key, Z.prompt.args);
+      if (Z.type === 'mushroom-add' && Z.mush) pzPrompt.innerHTML = `<span class="mush">🍄<i>${'●'.repeat(Z.mush.a)}</i> ${Z.op === '×' ? '×' : '+'} 🍄<i>${'●'.repeat(Z.mush.b)}</i></span><br>${T(Z.prompt.key, Z.prompt.args)}`; pzp.classList.toggle('gate', Z.type === 'size-gate');
       if (Z.type === 'crystal-count' && Z.bundle) { const B = Z.bundle; pzPrompt.innerHTML = `<span class="bund">${'<b>💯</b>'.repeat(B.hund || 0)}${'<b>🔟</b>'.repeat(B.tens)}${B.ones ? ' + ' + '<i>💎</i>'.repeat(B.ones) : ''}</span><br>${T(Z.prompt.key, Z.prompt.args)}`; }
       gate.classList.toggle('mw-hide', Z.type !== 'size-gate'); if (Z.gate) { gate.querySelector('.L b').textContent = Z.gate.left; gate.querySelector('.R b').textContent = Z.gate.right; } }
     pzHint.classList.toggle('mw-hide', !Z.hint); if (Z.hint) pzHint.textContent = '🦉 ' + T(Z.hint.key, Z.hint.args);

@@ -7,3 +7,6 @@ export function fallbackFor(data, stage, grade){ const r = row(data, stage.id, g
 // 묶음 파: { 'arena-2': [1, 3] } → 그 전투장 그 파(0부터)의 숫자 슬라임이 묶음으로
 export function packWavesFor(data, stage, grade){ const r = row(data, stage.id, grade); return r && r.packs ? r.packs : {}; }
 export function packRange(data, grade){ const t = data.gradeTable || data.conceptsByGrade; return t && t.pack && t.pack['g' + grade] || null; }
+// v2.4 방패병 방패 식 학년 줄(없으면 null = 1학년 「□ + b = c」 그대로) · 길 퍼즐 학년 변환(없으면 {} = 1학년 셈 그대로)
+export function shieldSpec(data, grade){ const t = data.gradeTable || data.conceptsByGrade; return t && t.shield && t.shield['g' + grade] || null; }
+export function puzzleSpec(data, grade){ const t = data.gradeTable || data.conceptsByGrade; return t && t.puzzle && t.puzzle['g' + grade] || {}; }

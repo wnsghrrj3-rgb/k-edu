@@ -4,6 +4,7 @@
 import { GAME } from './config.js';
 import { clamp } from '../core/math.js';
 import { makePuzzle, verifyPuzzle } from '../learn/puzzles.js';
+import { puzzleSpec } from '../learn/gradeTable.js';   // v2.4 길 퍼즐 학년 변환
 const R = () => GAME.rail;
 
 export function startRail(g, api, zone, zi){
@@ -68,7 +69,7 @@ function hitObstacle(g, api, r, o){
 
 // ── 퍼즐(S08P)
 function openPuzzle(g, api, r){
-  const pz = r.puzzle; pz.cur = makePuzzle(pz.type, g.rng, g.grade, pz.opt); pz.cur.verified = verifyPuzzle(pz.cur);
+  const pz = r.puzzle; pz.cur = makePuzzle(pz.type, g.rng, g.grade, pz.opt, puzzleSpec(g.data, g.grade)); pz.cur.verified = verifyPuzzle(pz.cur);
   pz.state = 'open'; pz.stateT = g.t; pz.picks = []; pz.laneT = 0; pz.openT = pz.openT || g.t; pz.id = pz.cur.id + '-' + (pz.wrong + 1);
   g.screen = 'S08P'; g.puzzle = pz; api.sel.reset(); const P = g.player; P.charging = null; P.pending = []; P.block = false; P.duck = false; P.targetX = 0;
   g.emit('puzzle:open', { id: pz.id, ptype: pz.type, wrong: pz.wrong, hint: pz.hint }); g.emit('screen', { from: 'S08', to: 'S08P' });
@@ -116,7 +117,7 @@ function closePuzzle(g, api, pz){
 export function puzzleSnapshot(g, r3){
   const pz = g.puzzle; if (!pz || !pz.cur) return null; const c = pz.cur, revealed = pz.state === 'reveal' || pz.state === 'right';
   return { id: pz.id, type: c.type, concept: c.concept, state: pz.state, stateT: r3(g.t - pz.stateT), prompt: c.prompt, picks: pz.picks.slice(), wrong: pz.wrong, maxWrong: R().puzzle.maxWrong, need: c.need,
-    hint: pz.hint ? c.hint1 : null, seq: c.seq || null, target: c.target || null, mush: c.mush || null, bundle: c.bundle || null,
+    hint: pz.hint ? c.hint1 : null, seq: c.seq || null, target: c.target || null, mush: c.mush || null, bundle: c.bundle || null, op: c.op || '+', mul: c.mul || null,
     stones: c.stones ? c.stones.map(s => ({ id: 'c' + s.slot, slot: s.slot, num: s.num, targetId: 'c' + s.slot, lit: pz.picks.includes(s.slot), answer: revealed && c.answer.includes(s.slot), wrong: pz.state === 'wrong' && pz.picks.includes(s.slot) })) : null,
     gate: c.gate ? { left: c.gate.left, right: c.gate.right, bigger: c.bigger, picked: pz.picks[0] || null, answer: revealed ? c.answer : null, lane: g.player.pos[0] <= -R().puzzle.laneX ? 'L' : g.player.pos[0] >= R().puzzle.laneX ? 'R' : null } : null };
 }

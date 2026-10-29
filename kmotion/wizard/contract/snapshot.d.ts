@@ -23,6 +23,8 @@ export interface Snapshot {
    *  state open → right(1.6초)|wrong(1.3초 → 다른 수로 다시, hint 켜짐)|reveal(3번 틀림 — 정답 돌 answer:true 2.8초 → 통과) · stones.lit = 집은 돌 · gate.answer 는 reveal/right 때만 */
   puzzle: null | { id: string; type: 'number-bridge' | 'size-gate' | 'rule-stones'; concept: string; state: 'open' | 'right' | 'wrong' | 'reveal'; stateT: number; prompt: TextRef; picks: (number | string)[]; wrong: number; maxWrong: number; need: number;
     hint: TextRef | null; seq: number[] | null; target: number | null;
+    /** v2.4 학년 변환(3학년↑, data/concepts-by-grade.json puzzle 줄): op '×' = 곱셈 다리(두 돌의 곱)·버섯 곱 문(점의 곱) — 스킨은 종류 이름·+ 기호를 op 로 바꿔 그림. mul = 규칙 징검다리 「배가 되는 규칙」(×2·×3)의 배수, 더하기 규칙이면 null */
+    op: '+' | '×'; mul: number | null;
     stones: null | { id: string; slot: number; num: number; targetId: string; lit: boolean; answer: boolean; wrong: boolean }[];
     gate: null | { left: number; right: number; bigger: boolean; picked: string | null; answer: 'L' | 'R' | null; lane: 'L' | 'R' | null } };
   player: {

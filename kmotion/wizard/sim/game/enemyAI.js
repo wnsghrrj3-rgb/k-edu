@@ -10,7 +10,11 @@ export function makeEnemy(def, uid, x, z, rng, band, opt = {}){
   const e = { uid, kind: def.kind, def, pos: [x, 0, z], yaw: Math.PI, scale: sc, hp, hpMax: hp, state: 'spawn', stateT: 0, since: 0, xp: opt.xp != null ? opt.xp : def.xp,
     label, telegraph: null, token: false, lastAtk: -9, slot: 0, band, h: def.height * (opt.scale ? sc : 1), r: def.body * (opt.scale ? sc : 1), staggerT: 0, tags: opt.tags || [], shield: null };
   // v1.6 방패병: 앞 방패 + 방패에 적힌 빈칸 식 「□+b=c」(1~9) — 수학 수정 정답이면 깨짐
-  if (def.shield) { const c = rng.int(3, 9), b = rng.int(1, c - 1); e.shield = { hp: def.shield.hp, hpMax: def.shield.hp, up: true, broken: false, byMath: false, eq: def.shield.eq ? { b, c, ans: c - b } : null }; }
+  // v2.4 학년 변환표 shield 줄(opt.shield)이 있으면 곱셈 빈칸 「□ × b = c」 — 1학년(줄 없음)은 rng 호출 순서까지 그대로(골든 불변)
+  if (def.shield) { let eq = null; const sp = def.shield.eq && opt.shield;
+    if (sp) { const b = rng.int(sp.b[0], sp.b[1]), ans = rng.int(sp.ans[0], sp.ans[1]); eq = { op: '×', b, c: b * ans, ans, concept: sp.concept }; }
+    else { const c = rng.int(3, 9), b = rng.int(1, c - 1); if (def.shield.eq) eq = { op: '+', b, c, ans: c - b, concept: 'g1.missing.add9' }; }
+    e.shield = { hp: def.shield.hp, hpMax: def.shield.hp, up: true, broken: false, byMath: false, eq }; }
   // v1.7 수정 골렘: 수학 정답마다 갈라짐(down = DEF 깎인 양)
   if (def.crack) e.crack = { down: 0, max: def.crack.max || 16, per: def.crack.per || 8 };
   return e;

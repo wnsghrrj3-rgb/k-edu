@@ -103,3 +103,7 @@ v1.5 추가(P3 길 구간): `rail:start`(idx·len·seconds·obstacles) / `rail:e
 - 스냅샷 추가(`snapshot.d.ts`): `enemies[].pack {id,n,hpEach}` · `packs[] {id,n,hpEach,total,alive,sum,uids[],retried}`(산 묶음만 — 띠는 alive·sum, sum ≠ alive×hpEach 면 흐트러짐 표시) · `projectiles[].exact`(정확 피해 양, 0 = 일반)·`scatter`(흩어진 탄, kind 'share') · `question.kind 'share'`·`packId`·`shareUids[]`·`hintPic.kind 'groups' {n, each}`(n줄 × each 구슬 그림) · `result.packClears/shareRight/shareWrong`
 - 데이터: `data/concepts-by-grade.json`(학년 변환표 — 스테이지별 `g3/g4 {concepts, fallback, packs}` + `pack.g3/g4` 수 범위, 시스템 소유) · boot `?grade=3|4`(같은 스테이지 재사용, 1학년 줄 없음 = 장면 JSON 그대로) · ko.json `q.share.*`·`hint.share.*`·`toast.pack/shareGo/shareScatter/packClear/packDone`·`learn.g3.share.*`·`why.*` 7키
 - 수정 kind 우선순위: 방패 > 골렘 > **share**(산 묶음 있을 때) · 묶음당 쉬운 재도전 수정 1번(`crystals[].retry`) · 3학년 일반 생성기 0 이면 fallback(share 3종)으로 보통·봉인·강화 수정을 채움(`QuestionEngine.empty`)
+
+## v2.4 추가(2026-10-30, 방패병 방패 식·길 퍼즐을 3학년 변환표 안으로 — D-31 보충) — 추가만, 기존 변경 0 · 새 이벤트 0
+- 스냅샷: `enemies[].shield.eq` 문자열이 3·4학년에선 「□ × b = c」(1학년 「□ + b = c」 그대로 — 스킨은 문자열만 그리므로 무변경) · `question.kind 'shield'` 의 문제가 3학년↑ `q.shield.mul`(정답 = c ÷ b, hint2 groups) · `puzzle.op '+'|'×'`·`puzzle.mul`(위 d.ts)
+- 데이터: `data/concepts-by-grade.json` `shield.g3/g4 {concept, b[], ans[]}`(4학년 답 ≤12) · `puzzle.g3/g4 {bridge 'mul', mushroom 'mul', ruleMul 비율}` — 줄 없는 학년(1·2)은 전부 그대로(골든 불변) · ko.json `q/hint.shield.mul`·`learn.g3.shield.mul`·`pz.bridge.mul*`·`pz.mush.mul*`·`pz.rule.mul.hint`·`why.sub-instead-mul/add-instead-mul`

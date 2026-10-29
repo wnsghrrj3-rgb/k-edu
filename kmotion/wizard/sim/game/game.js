@@ -10,7 +10,7 @@ import { makeEnemy, stepEnemy, hurtEnemy, separate } from './enemyAI.js';
 import { castSpell, stepMagic, shieldFilter, currentSpell, MAIN } from './magic.js';
 import { makeBoss, stepBoss, bossMul, bossAfterHit, sealBroken, bossSnapshot } from './boss.js';
 import { QuestionEngine } from '../learn/questionEngine.js';
-import { conceptsFor, fallbackFor, packWavesFor, packRange } from '../learn/gradeTable.js';   // v2.3 학년 변환표(15 문서 6절)
+import { conceptsFor, fallbackFor, packWavesFor, packRange, shieldSpec } from '../learn/gradeTable.js';   // v2.3 학년 변환표(15 문서 6절)
 import { Mastery } from '../learn/mastery.js';
 import { Selector } from '../input/selector.js';
 import { startRail, stepRail, stepPuzzle, puzzlePick, puzzleTargets, puzzleSnapshot, railSnapshot } from './rail.js';
@@ -25,6 +25,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   // v2.3(D-31): 장면 개념 = 변환표의 그 학년 줄(없으면 장면 JSON 1학년 값) · 묶음 파·학년별 묶음 수 범위도 변환표에서
   const qe = new QuestionEngine({ rng, concepts: conceptsFor(data, stage, grade), mastery: mastery || new Mastery(), grade, fallback: fallbackFor(data, stage, grade) });
   const PACK_WAVES = packWavesFor(data, stage, grade), PACK_RANGE = packRange(data, grade), PK = GAME.pack;
+  const SHIELD_SPEC = shieldSpec(data, grade);   // v2.4 3·4학년 방패 식 「□ × b = c」(1학년 null = 그대로)
   const sel = new Selector(e => g.input.push(e)); sel.holdMs = band.holdMs;
   let uid = 0; const nid = () => ++uid;
 
@@ -297,7 +298,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     // v2.3 묶음 몬스터(15 문서 3절): 방패병·골렘이 없고 산 묶음이 있으면 수정 문제 = 「똑같이 나누기 공격」(share, 숫자는 그 묶음에서) → 정답이면 묶음 수만큼 정확 피해 탄
     let packQ = null; if (kind === 'crystal') { const pks = livePacks(); if (pks.length) { const pk = pks[0], grp = packGroup(pk); const concept = grp.concept || (c && c.retry ? 'g3.share.div' : rng.pick(PK.concepts)); packQ = { pk, grp, concept }; kind = 'share'; } }
     // 강화 문제 = 장착 주 마법의 「수학 연결」 유형(05 문서 12항) — 재도전 수정은 같은 개념 쉬운 문제(qe.retry 예약)
-    const qv = qe.next(lastSeal ? { want: 'word' } : kind === 'shield' ? { fixed: { concept: 'g1.missing.add9', b: shieldE.shield.eq.b, c: shieldE.shield.eq.c } } : kind === 'share' ? { fixed: { concept: packQ.concept, n: packQ.grp.n, hpEach: packQ.grp.hpEach } } : kind === 'power' && !(c && c.retry) ? { want: GAME.empower.want[g.spell] || 'calc' } : {});
+    const qv = qe.next(lastSeal ? { want: 'word' } : kind === 'shield' ? { fixed: { concept: shieldE.shield.eq.concept || 'g1.missing.add9', b: shieldE.shield.eq.b, c: shieldE.shield.eq.c } } : kind === 'share' ? { fixed: { concept: packQ.concept, n: packQ.grp.n, hpEach: packQ.grp.hpEach } } : kind === 'power' && !(c && c.retry) ? { want: GAME.empower.want[g.spell] || 'calc' } : {});
     if (c) { g.crystals = g.crystals.filter(x => x !== c); g.emit('crystal:break', { uid: c.uid, kind: c.kind, pos: v3(c.pos) }); }
     if (!qv) return;   // v2.3 생성기 0(변환표 학년 줄의 일반 생성기가 아직 없고 fallback 도 없음) = 수정만 사라지고 문제는 안 열림
     if (kind === 'seal' && g.boss) { g.boss.sealsAsked++; }
@@ -367,7 +368,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
         // v2.3 묶음 파(변환표 packs, 15 문서 2절): 이 학년·전투장·파면 숫자 슬라임들이 묶음 한 무리로(다른 종류는 그대로), n = 학년 범위 안·남은 자리 안
         const pw = PACK_WAVES[z.id]; if (PACK_RANGE && Array.isArray(pw) && pw.includes(g.waveIdx) && w.spawn.some(s => s.kind === 'num-slime')) { spawnList = w.spawn.filter(s => s.kind !== 'num-slime'); const room = band.maxEnemies - alive.length - spawnList.length;
           const n = Math.max(0, Math.min(rng.int(PACK_RANGE.n[0], PACK_RANGE.n[1]), room)); if (n >= 2) { cnt += n; spawnPack(n, rng.int(PACK_RANGE.hpEach[0], PACK_RANGE.hpEach[1]), Math.max(...w.spawn.map(s => s.z))); } else spawnList = w.spawn; }
-        for (const s of spawnList) { if (cnt >= band.maxEnemies) break; cnt++; const e = makeEnemy(data.enemies[s.kind], nid(), s.x, s.z, rng, band, { label: s.label }); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label }); if (e.def.ranged && !g.goblinSeen) { g.goblinSeen = true; g.toast = { key: 'toast.goblin', t: g.t }; } if (e.shield && !g.shieldSeen) { g.shieldSeen = true; g.toast = { key: 'toast.shieldGoblin', t: g.t }; } if (e.crack && !g.golemSeen) { g.golemSeen = true; g.toast = { key: 'toast.golem', t: g.t }; } }
+        for (const s of spawnList) { if (cnt >= band.maxEnemies) break; cnt++; const e = makeEnemy(data.enemies[s.kind], nid(), s.x, s.z, rng, band, { label: s.label, shield: SHIELD_SPEC }); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label }); if (e.def.ranged && !g.goblinSeen) { g.goblinSeen = true; g.toast = { key: 'toast.goblin', t: g.t }; } if (e.shield && !g.shieldSeen) { g.shieldSeen = true; g.toast = { key: 'toast.shieldGoblin', t: g.t }; } if (e.crack && !g.golemSeen) { g.golemSeen = true; g.toast = { key: 'toast.golem', t: g.t }; } }
         g.waveIdx++; g.waveT = 0; g.clearT = null; g.emit('wave', { idx: g.waveIdx, of: z.waves.length }); } }
     else if (alive.length === 0) { if (g.clearT == null) g.clearT = g.gameT; else if (g.gameT - g.clearT >= 1.2) { if (!nextZone()) victory(); } }
   }
@@ -375,7 +376,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   function nextZone(){ return enterZone(g.zoneIdx + 1); }
   // 길 구간이 쓰는 손잡이(rail.js 는 이것만 안다)
   const railApi = { nid: () => nid(), hurtPlayer: (src, atk) => hurtPlayer(src, atk), nextZone: () => { if (!nextZone()) victory(); }, gainXp: (n, why) => gainXp(n, why),
-    spawnEnemy: (kind, x, z) => { const alive = g.enemies.filter(e => e.state !== 'dead' && !e.boss).length; if (alive >= band.maxEnemies) return null; const e = makeEnemy(data.enemies[kind], nid(), x, z, rng, band); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label, rail: true }); return e; },
+    spawnEnemy: (kind, x, z) => { const alive = g.enemies.filter(e => e.state !== 'dead' && !e.boss).length; if (alive >= band.maxEnemies) return null; const e = makeEnemy(data.enemies[kind], nid(), x, z, rng, band, { shield: SHIELD_SPEC }); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label, rail: true }); return e; },
     get sel(){ return sel; }, get mastery(){ return qe.m; } };
   function victory(){ if (g.endT) return; g.checkpoint = null; if (g.q) closeQuestion(); gainXp(LV.xpClear, 'clear'); g.endT = g.t; setLower('A14'); g.player.anim.upper = null;
     // v1.6 깬 기록(별 수 최대값)·스테이지 보상 마법(09 문서 12행: 1-2 ICE STORM …) → progress 에 남아 다음 판부터 장착 가능
@@ -509,7 +510,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
         level: prog.level, xp: prog.xp, xpNext: LV.need(prog.level), arcana: P.arcana && g.gameT < P.arcana.until ? { ratio: r3((P.arcana.until - g.gameT) / P.arcana.t), nullify: P.arcana.nullify } : null, shieldReady: g.unlocked.has('shield') && P.mana >= spells.shield.mp && g.gameT >= (P.cd.shield || 0), outfit: P.outfit, feather: P.feather },
       enemies: g.enemies.filter(e => !e.boss).map(e => ({ uid: e.uid, kind: e.kind, pos: v3(e.pos), yaw: r3(e.yaw), scale: e.scale, state: e.state, stateT: r3(e.stateT), hp: e.hp, hpMax: e.hpMax, label: e.label,
         telegraph: e.telegraph ? { shape: e.telegraph.shape, center: v3(e.telegraph.center), size: e.telegraph.size, yaw: e.telegraph.yaw != null ? r3(e.telegraph.yaw) : 0, t0: r3(e.telegraph.t0), t1: r3(e.telegraph.t1) } : null, tags: e.tags,
-        shield: e.shield ? { hp: e.shield.hp, hpMax: e.shield.hpMax, up: e.shield.up && !e.shield.broken, broken: e.shield.broken, byMath: e.shield.byMath, eq: e.shield.eq ? `□ + ${e.shield.eq.b} = ${e.shield.eq.c}` : null } : null,
+        shield: e.shield ? { hp: e.shield.hp, hpMax: e.shield.hpMax, up: e.shield.up && !e.shield.broken, broken: e.shield.broken, byMath: e.shield.byMath, eq: e.shield.eq ? `□ ${e.shield.eq.op || '+'} ${e.shield.eq.b} = ${e.shield.eq.c}` : null } : null,
         crack: e.crack ? { down: e.crack.down, max: e.crack.max, ratio: r3(e.crack.down / e.crack.max), def: e.def.def - e.crack.down } : null, pack: e.pack ? { id: e.pack.id, n: e.pack.n, hpEach: e.pack.hpEach } : null })),
       packs: g.packs.filter(pk => !pk.cleared).map(pk => { const al = packAlive(pk); return { id: pk.id, n: pk.n, hpEach: pk.hpEach, total: pk.total, alive: al.length, sum: al.reduce((a, e) => a + e.hp, 0), uids: al.map(e => e.uid), retried: pk.retried }; }),
       boss: bossSnapshot(g, g.boss, r3, v3),

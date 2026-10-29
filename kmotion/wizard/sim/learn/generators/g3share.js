@@ -33,6 +33,12 @@ const BASE = {
         : { concept: 'g3.share.missing', fact: `miss:t:${n},${hpEach}`, d: diff(n, hpEach), prompt: { key: 'q.share.missingT', args: { n, each: hpEach } }, n, hpEach, total, answer: total, askN,
             wrongs: [[n, 'swap-factor'], [nb * n, 'table-neighbor'], [hpEach + n, 'add-instead']], hint1: { key: 'hint.share.mul', args: { n, each: hpEach } }, hint2: { kind: 'groups', n, each: hpEach } }; },
     verify: q => q.n * q.hpEach === q.total && (q.askN ? q.answer === q.n : q.answer === q.total) && q.n >= 2 },
+  // v2.4 방패병 방패 식 「□ × b = c」(3-1 3단원 곱셈구구로 나눗셈 [4수01-05]) — fixed {b, c} 면 방패의 식 그대로(1학년 g1.missing.add9 와 같은 경로), 없으면 b 2~9·답 2~9(검산). 4학년 변환표는 답 ≤12 — 같은 생성기, 수만 큼.
+  'g3.shield.mul': { id: 'shieldMul', gen(rng, d, opt){ const fx = opt && opt.fixed; const hiA = fx ? 12 : rng.next() >= d ? 5 : 9; const b = fx ? fx.b : rng.int(2, 9), ans = fx ? Math.round(fx.c / fx.b) : rng.int(2, hiA), c = fx ? fx.c : b * ans;
+      return { concept: 'g3.shield.mul', fact: `shield:${b},${c}`, d: Math.min(1, .15 + (b - 2) / 7 * .4 + (ans - 2) / 10 * .4), prompt: { key: 'q.shield.mul', args: { b, c } }, b, c, answer: ans,
+        wrongs: [[c - b, 'sub-instead-mul'], [c, 'equals-answer'], [ans + 1, 'off-one'], [ans - 1, 'off-one'], [c + b, 'add-instead-mul']],
+        hint1: { key: 'hint.shield.mul', args: { b, c } }, hint2: b <= 8 && c <= 96 ? { kind: 'groups', n: b, each: ans } : null }; },
+    verify: q => q.answer * q.b === q.c && q.b >= 2 && q.answer >= 1 && q.c <= 96 },
 };
 export const G3SHARE = {};
 for (const [k, g] of Object.entries(BASE)) G3SHARE[k] = Object.assign({}, g, { unit: k === 'g3.share.mul' ? 'g3-1-u4' : 'g3-1-u3', max: 96, gen(rng, d, opt){ const q = g.gen(rng, d, opt); q.type = 'calc1'; return q; } });
