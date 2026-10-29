@@ -109,6 +109,7 @@ function devLine(s){
   let chk = ''; if (CHECK && s.enemies) { const a = checkTelegraphs(s, st.telegraphs), b = s.targets && s.targets.length ? checkTargets(s, st.targetRects) : { ok: true }; chk = ` · 검사 예고${a.ok ? '✓' : '✗' + a.lack} 대상${b.ok ? '✓' : '✗' + (b.bad || [])}`; }
   devEl.textContent = `${fps}fps · ${skinId} · ${s.screen}${s.paused ? '(멈춤:' + s.paused + ')' : ''} · draw ${st.drawCalls} tri ${st.triangles} · 엔진 ${km ? (km.running ? Math.round(km.fps) + 'fps ' + ['pose', 'hands'].filter(m => km.isActive(m)).join('+') + ' ' + (km.modelSource || (kmMouse ? 'mouse' : '-')) : '꺼짐') : '없음'} · 시드 ${flow.seed}${chk}`
     + (s.player ? ` · hp ${s.player.hp} mp ${s.player.mana} 적 ${s.enemies.length} 탄 ${s.projectiles.length}` : '');
+  const wi = flow.wi, D = wi && wi.dbg; if (D && km && km.running) { const H = x => x ? `${x.s}${x.v < 1 ? '(v' + x.v + ')' : ''}${x.why ? ' ' + x.why : ''}` : '-'; devEl.textContent += ` · 팔 어깨폭 ${D.sw}px 문턱 ${D.vA} · 왼 ${H(D.L)} · 오른 ${H(D.R)} · 공격 ${D.atk}` + (wi.cal && wi.cal.aPeak ? ` 보정피크 ${Math.round(wi.cal.aPeak * 10) / 10}` : ' 보정피크 없음'); }   // v2.3.2 팔 진단
 }
 requestAnimationFrame(frame);
 if (qs.has('mouse') && !qs.has('dev')) { /* ?mouse=1 은 시작 화면에서 카메라를 골라도 마우스 모드로 돈다 */ }

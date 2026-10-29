@@ -20,6 +20,7 @@ export class WizardInput {
     this.charge = new ChargeFSM(e => { if (e.type === 'CAST' || e.type === 'FIZZLE') this.castEndT = e.t; this.out.push(e); }); this.castEndT = -1e9; this.aimX0 = null;
     this.autoCal = []; this.drift = { t: 0, xs: [] }; this.preview = null; this.state = 'ok';
     this.enabled = true;  // 문제 중에는 몸 입력을 막는다(game 이 끔)
+    this.dbg = { sw: 0, vA: 0, L: null, R: null, atk: 0, cast: 0 };   // v2.3.2 ?dev=1 읽기 전용(준호 실기기 「팔 동작 가끔만」 진단) — 판정엔 안 씀
   }
   emit(type, t, value = {}, conf = 1){ this.out.push({ type, t, via: 'body', value, conf: Math.round(conf * 100) / 100 }); }
   drain(){ return this.out.splice(0, this.out.length); }
@@ -95,17 +96,17 @@ export class WizardInput {
     const vA = Math.max(C.vMin, Math.min(C.v, k.aPeak ? k.aPeak * C.peakMul : C.v)) * (Math.abs(vBody) >= C.walkV ? C.walkMul : 1);
     const lH = p[P.lH], rH = p[P.rH]; const hipY = vis(lH) && vis(rH) ? (lH.y + rH.y) / 2 : null;
     const h = this.hist, n = h.length, h3 = h.slice(-3), ts = h3.map(q => q.t / 1000);
-    const st = {};
+    const st = {}; this.dbg.sw = Math.round(sw0); this.dbg.vA = Math.round(vA * 10) / 10;
     for (const side of ['L', 'R']) {
       const rx = h3.map(q => (q.W[side].x - q.S[side].x) / sw0), ry = h3.map(q => (q.W[side].y - q.S[side].y) / sw0);
       const vx = slope(ts, rx), vy = slope(ts, ry); st[side] = { vx, vy, s: Math.hypot(vx, vy) };
     }
     const both = st.L.s >= vA * .6 && st.R.s >= vA * .6 && (st.L.vx * st.R.vx + st.L.vy * st.R.vy) / (st.L.s * st.R.s || 1) > C.corr;
     for (const side of ['L', 'R']) {
-      const hs = this.hand[side], w = h[n - 1].W[side], sh = h[n - 1].S[side]; if (!vis(w, .3)) continue;
+      const hs = this.hand[side], w = h[n - 1].W[side], sh = h[n - 1].S[side]; const D = this.dbg[side] = { v: w && w.v != null ? Math.round(w.v * 100) / 100 : 1, s: Math.round(st[side].s * 10) / 10, why: '' }; if (!vis(w, .3)) { D.why = '손목안보임'; continue; }
       const S = st[side];
-      if (!hs.armed) { if (S.s < C.exit) hs.armed = true; continue; }
-      if (S.s < vA || both) continue;
+      if (!hs.armed) { if (S.s < C.exit) hs.armed = true; D.why = '재장전'; continue; }
+      if (S.s < vA || both) { D.why = both ? '두손같이' : '느림'; continue; }
       const q0 = h.find(q => t - q.t <= C.dispWin) || h[0];
       const disp = Math.hypot((w.x - sh.x) - (q0.W[side].x - q0.S[side].x), (w.y - sh.y) - (q0.W[side].y - q0.S[side].y)) / sw0;
       const cx = (h[n - 1].S.L.x + h[n - 1].S.R.x) / 2, nose = p[P.nose];
@@ -117,8 +118,10 @@ export class WizardInput {
       let toHead = false; if (vis(nose)) { const hx = nose.x - w.x, hy = nose.y - w.y, hn = Math.hypot(hx, hy) || 1; toHead = (S.vx * sw0 * hx + S.vy * sw0 * hy) / (S.s * sw0 * hn) > C.toHead; }   // 머리 쪽으로 가는 손
       const o = st[side === 'R' ? 'L' : 'R'], raise2 = S.vy < -C.raise2 * vA && o.vy < -C.raise2 * vA;   // 두 손 함께 올림 = 마법 모으기 시작
       const raiseHit = S.vy < -C.raiseHit * S.s && !raise2 && !inward && vis(nose) && (nose.y - w.y) / sw0 >= C.raiseAbove;   // v2.1 한 손을 머리 위로 치켜들기 = 공격(머리 긁기는 코 높이에서 멈춰 제외)
-      if (disp < C.disp || !notDown || !outSide || !above || inward || raise2 || (!raiseHit && (!offHead || toHead)) || t - this.castEndT < C.afterCast || t - this.blockOffT < C.afterCast) continue;
-      if (t - hs.last < C.cdHand || t - this.lastAtk < C.cdAll) continue;
+      D.why = disp < C.disp ? '변위짧음' : !notDown ? '내림' : !outSide ? '가운데' : !above ? '허리아래' : inward ? '안쪽' : raise2 ? '두손올림' : (!raiseHit && !offHead) ? '머리근처' : (!raiseHit && toHead) ? '머리쪽' : t - this.castEndT < C.afterCast ? '시전직후' : t - this.blockOffT < C.afterCast ? '막기직후' : '';
+      if (D.why) continue;
+      if (t - hs.last < C.cdHand || t - this.lastAtk < C.cdAll) { D.why = '쿨타임'; continue; }
+      D.why = '공격!'; this.dbg.atk++;
       hs.last = t; this.lastAtk = t; hs.armed = false;
       const fx = w.x / Wpx, zone = fx < 1 / 3 ? 0 : fx < 2 / 3 ? 1 : 2;
       this.emit('ATTACK', t, { side, zone, power: clamp(S.s / vA - .5, 0, 1) }, S.s / vA);
