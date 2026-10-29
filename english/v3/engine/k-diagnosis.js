@@ -68,5 +68,10 @@ window.KDiagnosis.LABEL = {
   'phonics.magice':    '매직 e',
   'phonics.vowelteam': '모음 두 글자',
   'grammar.be':        'am·are·is 고르기',
-  'grammar.article':   'a·an'
+  'grammar.article':   'a·an',
+  /* Lv3 신설 (_LV3_PLAN.md §3) */
+  'grammar.plural':    '하나·여럿 (-s)',
+  'grammar.do':        'Do·don’t 붙이기',
+  'grammar.s3':        '그 사람이 하면 -s',
+  'reading.passage':   '짧은 글 읽기'
 };
