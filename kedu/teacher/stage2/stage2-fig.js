@@ -3254,6 +3254,151 @@
     Object.assign(PARTS, { mln, opb, agr, mxr }); Object.assign(HTML_PARTS, { fch, fln, mcc, wyc, cmm });
     global.KT2_FXH = fxh;
   }
+  // ══ 218차(2026-10-29) 5학년 2학기 수학 3단원 「합동과 대칭」 부품 — 자기주도 원문 부품 라이브러리(congFig·symFig·symGrid·figPick·corrRow·landCut)를 2세대로 옮김 ══
+  //   cgf(포개어 겹치는 두 도형 — 오른쪽 도형은 부품이 밀기·뒤집기·돌리기로 만든다) · syf(접는 선·가운데 점 — 갈래는 부품이 기하로 판정, want 와 다르면 던짐)
+  //   sgd(모눈 위 절반 — 나머지 반은 부품이 만든다) · fpk(분류판 — 칸마다 갈래를 기하로) · crr(대응 관계 줄) · lcut(칸 땅 나누기 — 조각 합동·나무 한 그루씩을 부품이 셈)
+  //   ⛔ hide·ask 면 답이 되는 길이·각·나머지 반·나눔을 그리지 않는다. 각은 45°의 배수만(부품이 검사).
+  {
+    const mf3 = (n) => String(Math.round(n * 100) / 100);
+    const C7 = { emph: '#E0413C', soft: '#6B7C93', grid: '#B8D9F0', ask: ORANGE };
+    const GF = { a: '#D5F0EC', b: '#FFE3CF', c: '#FFF3CC', g: '#D9F0D6', p: '#D7E5FA', v: '#EBDDF7' }, GS = { a: '#1E6F66', b: '#C2551A', c: '#B98900', g: '#2F7D32', p: '#2A5EA8', v: '#7A4FBF' };
+    const r6 = (v) => Math.round(v * 1e6) / 1e6, pk = (q) => r6(q[0]) + ',' + r6(q[1]);
+    function flip(q, ax) { const x = q[0], y = q[1]; if (ax.t === 'v') return [2 * ax.k - x, y]; if (ax.t === 'h') return [x, 2 * ax.k - y]; if (ax.t === 'd') return [ax.a + (y - ax.b), ax.b + (x - ax.a)]; if (ax.t === 'n') return [ax.a - (y - ax.b), ax.b - (x - ax.a)]; throw new Error('flip: 모르는 선 ' + ax.t); }
+    const turn = (q, c) => [2 * c[0] - q[0], 2 * c[1] - q[1]];
+    function edgeKey(p) { const E = []; for (let i = 0; i < p.length; i++) { const a = pk(p[i]), b = pk(p[(i + 1) % p.length]); E.push(a < b ? a + '|' + b : b + '|' + a); } return E.sort().join(';'); }
+    const same = (p, q) => edgeKey(p) === edgeKey(q);
+    const cent = (p) => { let x = 0, y = 0; p.forEach(q => { x += q[0]; y += q[1]; }); return [x / p.length, y / p.length]; };
+    function axesOf(p) { const c = cent(p); return [{ t: 'v', k: c[0] }, { t: 'h', k: c[1] }, { t: 'd', a: c[0], b: c[1] }, { t: 'n', a: c[0], b: c[1] }].filter(ax => same(p, p.map(q => flip(q, ax)))); }
+    function ctrOf(p) { const c = cent(p); return same(p, p.map(q => turn(q, c))) ? c : null; }
+    function kindOf(p) { const L = axesOf(p).length > 0, P = !!ctrOf(p); return L && P ? 'both' : L ? 'line' : P ? 'point' : 'none'; }
+    function angAt(p, i) { const n = p.length, o = p[i], a = p[(i + n - 1) % n], b = p[(i + 1) % n]; const v1 = [a[0] - o[0], a[1] - o[1]], v2 = [b[0] - o[0], b[1] - o[1]]; const m = Math.hypot(v1[0], v1[1]) * Math.hypot(v2[0], v2[1]); if (!(m > 0)) throw new Error('꼭짓점이 겹침'); return Math.acos(Math.max(-1, Math.min(1, (v1[0] * v2[0] + v1[1] * v2[1]) / m))) * 180 / Math.PI; }
+    function checkAng(p) { for (let i = 0; i < p.length; i++) { const a = angAt(p, i); if (Math.abs(a / 45 - Math.round(a / 45)) > 1e-6) throw new Error('각이 45의 배수가 아님 ' + a.toFixed(2)); } }
+    const lenOf = (p, i) => { const a = p[i], b = p[(i + 1) % p.length]; return Math.hypot(a[0] - b[0], a[1] - b[1]); };
+    const axStr = (ax) => ax.t + ':' + (ax.t === 'v' || ax.t === 'h' ? r6(ax.k) : r6(ax.a) + ',' + r6(ax.b));
+    const ptsStr = (p) => p.map(pk).join(' ');
+    const bbox = (ps) => { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; ps.forEach(q => { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); }); return [x0, y0, x1 - x0, y1 - y0]; };
+    const poly = (cls, pts, X, Y, fill, stroke, extra) => '<polygon class="' + cls + '" points="' + pts.map(q => mf3(X(q)) + ',' + mf3(Y(q))).join(' ') + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="4" stroke-linejoin="round"' + (extra || '') + '/>';
+    const gridL = (X, Y, x0, y0, cols, rows) => { let s = '<g class="g7-grid">'; for (let r = 0; r <= rows; r++) s += '<line x1="' + mf3(X([x0, y0 + r])) + '" y1="' + mf3(Y([x0, y0 + r])) + '" x2="' + mf3(X([x0 + cols, y0 + r])) + '" y2="' + mf3(Y([x0 + cols, y0 + r])) + '" stroke="' + C7.grid + '" stroke-width="1.6" stroke-dasharray="4 4"/>'; for (let c = 0; c <= cols; c++) s += '<line x1="' + mf3(X([x0 + c, y0])) + '" y1="' + mf3(Y([x0 + c, y0])) + '" x2="' + mf3(X([x0 + c, y0 + rows])) + '" y2="' + mf3(Y([x0 + c, y0 + rows])) + '" stroke="' + C7.grid + '" stroke-width="1.6" stroke-dasharray="4 4"/>'; return s + '</g>'; };
+    function axisSeg(ax, x0, y0, cols, rows) { // 판 [x0,x0+cols]×[y0,y0+rows] 안에서 끝에서 끝까지
+      if (ax.t === 'v') return [[ax.k, y0], [ax.k, y0 + rows]]; if (ax.t === 'h') return [[x0, ax.k], [x0 + cols, ax.k]];
+      const sg = ax.t === 'd' ? 1 : -1, pts = []; // y - b = sg (x - a)
+      [[x0, null], [x0 + cols, null], [null, y0], [null, y0 + rows]].forEach(([x, y]) => { const P = x != null ? [x, ax.b + sg * (x - ax.a)] : [ax.a + sg * (y - ax.b), y]; if (P[0] >= x0 - 1e-9 && P[0] <= x0 + cols + 1e-9 && P[1] >= y0 - 1e-9 && P[1] <= y0 + rows + 1e-9 && !pts.some(z => Math.abs(z[0] - P[0]) < 1e-9 && Math.abs(z[1] - P[1]) < 1e-9)) pts.push(P); });
+      return pts.length >= 2 ? [pts[0], pts[pts.length - 1]] : null;
+    }
+    const labOut = (ps, i, X, Y, d) => { const c = cent(ps), q = ps[i]; const dx = q[0] - c[0], dy = q[1] - c[1], l = Math.hypot(dx, dy) || 1; return [X(q) + dx / l * d, Y(q) + dy / l * d]; };
+    const cap7 = (s, y, t, sz, col, cls) => txt(380, y, t, sz || 24, col || C7.soft, 900).replace('<text ', '<text' + (cls ? ' class="' + cls + '"' : '') + ' ');
+    // ── cgf ──
+    function cgf(o) {
+      const p = (o.p || []).map(q => [q[0], q[1]]); if (p.length < 3) throw new Error('cgf: 도형 없음'); checkAng(p);
+      const op = o.op || { slide: [0, 0] }; let q2;
+      if (op.flip) q2 = p.map(q => flip(q, op.flip)); else if (op.turn) q2 = p.map(q => turn(q, op.turn)); else if (op.slide) q2 = p.map(q => [q[0] + op.slide[0], q[1] + op.slide[1]]); else throw new Error('cgf: op');
+      for (let i = 0; i < p.length; i++) { if (Math.abs(lenOf(p, i) - lenOf(q2, i)) > 1e-9 || Math.abs(angAt(p, i) - angAt(q2, i)) > 1e-6) throw new Error('cgf: 짝이 안 맞음 ' + i); }
+      const la = (o.la || 'ㄱㄴㄷㄹㅁㅂ').slice(0, p.length), lb = (o.lb || 'ㅅㅇㅈㅊㅋㅌ').slice(0, p.length); if (la.length !== p.length || lb.length !== p.length) throw new Error('cgf: 이름 글자');
+      const BA = bbox(p), BB = bbox(q2), cw = Math.max(BA[2], BB[2], 1), ch = Math.max(BA[3], BB[3], 1), GAP = 120, MT = o.title ? 74 : 38;
+      const C = Math.max(26, Math.min(58, Math.floor(Math.min((760 - 110 - GAP) / 2 / cw, 230 / ch)))), PW = cw * C, left = Math.round((760 - (PW * 2 + GAP)) / 2);
+      const s0 = '<line class="cg-gap" x1="380" y1="' + (MT - 6) + '" x2="380" y2="' + (MT + ch * C + 6) + '" stroke="#DCE3EC" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>';
+      let s = (o.title ? txt(380, 36, '《 ' + o.title + ' 》', 26, INK, 900) : '') + s0;
+      const panel = (ps, B, ox, side, lab) => { const X = q => ox + (q[0] - B[0]) * C, Y = q => MT + (q[1] - B[1]) * C; let g = '<g class="cg-pan" data-side="' + side + '">' + poly('cg-poly', ps, X, Y, GF[side], GS[side]);
+        (o.angles || []).forEach(i => { const n = ps.length, oq = ps[i], a = ps[(i + n - 1) % n], b = ps[(i + 1) % n], u = (v, w) => { const L = Math.hypot(w[0] - v[0], w[1] - v[1]); return [(w[0] - v[0]) / L, (w[1] - v[1]) / L]; };
+          const d1 = u(oq, a), d2 = u(oq, b), R = Math.min(C * 0.55, 24), P1 = [X(oq) + d1[0] * R, Y(oq) + d1[1] * R], P2 = [X(oq) + d2[0] * R, Y(oq) + d2[1] * R], cr = d1[0] * d2[1] - d1[1] * d2[0];
+          g += '<path class="cg-arc" d="M' + mf3(P1[0]) + ' ' + mf3(P1[1]) + ' A' + R + ' ' + R + ' 0 0 ' + (cr > 0 ? 1 : 0) + ' ' + mf3(P2[0]) + ' ' + mf3(P2[1]) + '" fill="none" stroke="' + C7.emph + '" stroke-width="3.5"/>';
+          const mid = [(d1[0] + d2[0]) / 2, (d1[1] + d2[1]) / 2], ml = Math.hypot(mid[0], mid[1]) || 1, hid = side === 'b' && o.hide === 'b';
+          g += txt(mf3(X(oq) + mid[0] / ml * (R + 24)), mf3(Y(oq) + mid[1] / ml * (R + 24) + 8), hid ? '?' : Math.round(angAt(ps, i)) + '°', 24, hid ? C7.ask : C7.emph, 900).replace('<text ', '<text class="cg-ang" data-side="' + side + '" data-i="' + i + '" '); });
+        if (o.unit) (o.sides || []).forEach(i => { const a = ps[i], b = ps[(i + 1) % ps.length], c = cent(ps), off = [(a[0] + b[0]) / 2 - c[0], (a[1] + b[1]) / 2 - c[1]], ol = Math.hypot(off[0], off[1]) || 1, len = lenOf(ps, i) * o.unit;
+          if (Math.abs(len - Math.round(len)) > 1e-9) throw new Error('cgf: 변 길이가 정수 아님 ' + i); const hid = side === 'b' && o.hide === 'b';
+          g += txt(mf3((X(a) + X(b)) / 2 + off[0] / ol * 36), mf3((Y(a) + Y(b)) / 2 + off[1] / ol * 30 + 8), hid ? '?' : Math.round(len) + ' cm', 24, hid ? C7.ask : INK, 900).replace('<text ', '<text class="cg-len" data-side="' + side + '" data-i="' + i + '" '); });
+        ps.forEach((q, i) => { const L = labOut(ps, i, X, Y, 24); g += '<circle cx="' + mf3(X(q)) + '" cy="' + mf3(Y(q)) + '" r="5" fill="' + GS[side] + '"/>' + txt(mf3(L[0]), mf3(L[1] + 9), lab[i], 26, INK, 900).replace('<text ', '<text class="cg-lab" data-side="' + side + '" data-i="' + i + '" '); });
+        return g + '</g>'; };
+      s += panel(p, BA, left, 'a', la) + panel(q2, BB, left + PW + GAP, 'b', lb);
+      let H = MT + ch * C + 52; if (o.cap) { s += cap7(s, H + 14, o.cap, 24, C7.soft, 'cg-cap'); H += 42; }
+      const key = 'la=' + la + '|lb=' + lb + '|A=' + ptsStr(p) + '|B=' + ptsStr(q2) + '|unit=' + (o.unit || 0) + '|hide=' + (o.hide || '');
+      return svgWrap(s, 'fig-cgf', '0 0 760 ' + Math.round(H)).replace('<svg ', '<svg data-cong="' + esc(key) + '" ');
+    }
+    // ── syf ──
+    function syf(o) {
+      const p = (o.p || []).map(q => [q[0], q[1]]); if (p.length < 3) throw new Error('syf: 도형 없음'); checkAng(p);
+      const axes = axesOf(p), ctr = ctrOf(p), kind = kindOf(p); if (o.want && o.want !== kind) throw new Error('syf: 신고 ' + o.want + ' 인데 기하로는 ' + kind);
+      const show = o.show || ''; if ((show === 'line' || show === 'both') && !axes.length) throw new Error('syf: 접어서 겹치는 선이 없는데 선을 그음');
+      if ((show === 'point' || show === 'both') && !ctr && !o.fake) throw new Error('syf: 돌려도 안 겹치는데 가운데 점(반례면 fake)'); if (o.fake && ctr) throw new Error('syf: fake 인데 돌리면 겹침');
+      if (o.fold === 'fold' && !axes.length) throw new Error('syf: 접는 장면인데 대칭축 없음');
+      const B = bbox(p), x0 = B[0] - 1, y0 = B[1] - 1, cols = Math.ceil(B[2]) + 2, rows = Math.ceil(B[3]) + 2, MT = o.title ? 62 : 14;
+      const C = Math.max(26, Math.min(56, Math.floor(Math.min(560 / cols, 260 / rows)))), px = Math.round((760 - cols * C) / 2), X = q => px + (q[0] - x0) * C, Y = q => MT + (q[1] - y0) * C;
+      let s = o.title ? txt(380, 36, '《 ' + o.title + ' 》', 26, INK, 900) : ''; if (o.grid) s += gridL(X, Y, x0, y0, cols, rows);
+      const col = o.c && GF[o.c] ? o.c : 'a'; s += poly('sy-poly', p, X, Y, GF[col], GS[col]);
+      if (o.fold === 'fold') s += poly('sy-fold', p.map(q => flip(q, axes[0])), X, Y, 'none', C7.emph, ' stroke-dasharray="8 6"');
+      const c0 = ctr || cent(p);
+      if (o.fold === 'turn') { s += poly('sy-turn', p.map(q => turn(q, c0)), X, Y, 'none', C7.emph, ' stroke-dasharray="8 6"'); const R = C * 0.95; s += '<path class="sy-arrow" d="M' + mf3(X(c0) + R) + ' ' + mf3(Y(c0)) + ' A' + mf3(R) + ' ' + mf3(R) + ' 0 1 1 ' + mf3(X(c0) - R) + ' ' + mf3(Y(c0)) + '" fill="none" stroke="' + C7.emph + '" stroke-width="3.5" stroke-dasharray="5 4"/><path d="M' + mf3(X(c0) - R - 9) + ' ' + mf3(Y(c0) - 10) + 'l9 14l9 -14Z" fill="' + C7.emph + '"/>'; }
+      const drawn = [];
+      if (show === 'line' || show === 'both') (o.all ? axes : [axes[0]]).forEach((ax, i) => { const sg = axisSeg(ax, x0, y0, cols, rows); if (!sg) return; drawn.push(axStr(ax)); s += '<line class="sy-axis" data-ax="' + axStr(ax) + '" data-i="' + i + '" x1="' + mf3(X(sg[0])) + '" y1="' + mf3(Y(sg[0])) + '" x2="' + mf3(X(sg[1])) + '" y2="' + mf3(Y(sg[1])) + '" stroke="' + C7.emph + '" stroke-width="3.5" stroke-dasharray="12 7"/>'; });
+      let cs = ''; if (show === 'point' || show === 'both') { cs = pk(c0); s += '<circle class="sy-ctr" data-c="' + cs + '" cx="' + mf3(X(c0)) + '" cy="' + mf3(Y(c0)) + '" r="8" fill="' + C7.emph + '" stroke="#fff" stroke-width="2.5"/>'; }
+      if (o.labels) p.forEach((q, i) => { const L = labOut(p, i, X, Y, 24); s += txt(mf3(L[0]), mf3(L[1] + 9), String(o.labels[i] || ''), 26, INK, 900).replace('<text ', '<text class="sy-lab" data-i="' + i + '" '); });
+      let H = MT + rows * C + 10; if (o.cap) { s += cap7(s, H + 18, o.cap, 24, C7.soft, 'sy-cap'); H += 40; }
+      const key = 'pts=' + ptsStr(p) + '|kind=' + kind + '|axes=' + axes.map(axStr).join(';') + '|ctr=' + (ctr ? pk(ctr) : '') + '|show=' + show + '|drawn=' + drawn.join(';') + '|dot=' + cs + '|fold=' + (o.fold || '') + '|fake=' + (o.fake ? 1 : 0);
+      return svgWrap(s, 'fig-syf', '0 0 760 ' + Math.round(H)).replace('<svg ', '<svg data-sym="' + esc(key) + '" ');
+    }
+    // ── sgd ──
+    function sgd(o) {
+      const half = (o.half || []).map(q => [q[0], q[1]]); if (half.length < 2) throw new Error('sgd: 절반 없음'); let full;
+      if (o.axis) { const e0 = flip(half[0], o.axis), e1 = flip(half[half.length - 1], o.axis); if (pk(e0) !== pk(half[0]) || pk(e1) !== pk(half[half.length - 1])) throw new Error('sgd: 절반의 양 끝이 접는 선 위에 있지 않음'); const R = half.map(q => flip(q, o.axis)); full = half.concat(R.slice().reverse().slice(1, -1)); }
+      else if (o.ctr) full = half.concat(half.map(q => turn(q, o.ctr))); else throw new Error('sgd: 선도 점도 없음');
+      checkAng(full); if (o.axis && !same(full, full.map(q => flip(q, o.axis)))) throw new Error('sgd: 접어도 안 겹침'); if (o.ctr && !same(full, full.map(q => turn(q, o.ctr)))) throw new Error('sgd: 돌려도 안 겹침');
+      const cols = o.cols || 10, rows = o.rows || 8; full.forEach(q => { if (q[0] < 0 || q[1] < 0 || q[0] > cols || q[1] > rows) throw new Error('sgd: 모눈 밖 ' + q); });
+      const MT = o.title ? 62 : 14, C = Math.max(24, Math.min(48, Math.floor(Math.min(640 / cols, 270 / rows)))), px = Math.round((760 - cols * C) / 2), X = q => px + q[0] * C, Y = q => MT + q[1] * C;
+      let s = (o.title ? txt(380, 36, '《 ' + o.title + ' 》', 26, INK, 900) : '') + gridL(X, Y, 0, 0, cols, rows);
+      const part = (o.only === 'half' || o.ask) ? 'half' : 'full';
+      if (part === 'half') { s += '<polyline class="sg-poly" data-part="half" points="' + half.map(q => mf3(X(q)) + ',' + mf3(Y(q))).join(' ') + '" fill="none" stroke="' + GS.a + '" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>'; half.forEach(q => { s += '<circle class="sg-v" cx="' + mf3(X(q)) + '" cy="' + mf3(Y(q)) + '" r="5" fill="' + GS.a + '"/>'; });
+        if (o.ask) { const c = cent(full.filter(q => !half.some(h => pk(h) === pk(q))).length ? full.filter(q => !half.some(h => pk(h) === pk(q))) : full); s += txt(mf3(X(c)), mf3(Y(c) + 13), '?', 38, C7.ask, 900).replace('<text ', '<text class="sg-ask" '); } }
+      else s += poly('sg-poly', full, X, Y, GF.a, GS.a).replace('<polygon ', '<polygon data-part="full" ');
+      if (o.axis) { const sg = axisSeg(o.axis, 0, 0, cols, rows); s += '<line class="sg-axis" data-ax="' + axStr(o.axis) + '" x1="' + mf3(X(sg[0])) + '" y1="' + mf3(Y(sg[0])) + '" x2="' + mf3(X(sg[1])) + '" y2="' + mf3(Y(sg[1])) + '" stroke="' + C7.emph + '" stroke-width="3.5" stroke-dasharray="12 7"/>'; }
+      if (o.ctr) s += '<circle class="sg-ctr" data-c="' + pk(o.ctr) + '" cx="' + mf3(X(o.ctr)) + '" cy="' + mf3(Y(o.ctr)) + '" r="8" fill="' + C7.emph + '" stroke="#fff" stroke-width="2.5"/>';
+      let H = MT + rows * C + 10; if (o.cap) { s += cap7(s, H + 18, o.cap, 24, C7.soft, 'sg-cap'); H += 40; }
+      const key = 'half=' + ptsStr(half) + '|full=' + ptsStr(full) + '|axis=' + (o.axis ? axStr(o.axis) : '') + '|ctr=' + (o.ctr ? pk(o.ctr) : '') + '|grid=' + cols + ',' + rows + '|only=' + (o.only || '') + '|ask=' + (o.ask ? 1 : 0);
+      return svgWrap(s, 'fig-sgd', '0 0 760 ' + Math.round(H)).replace('<svg ', '<svg data-sg="' + esc(key) + '" data-part="' + part + '" ');
+    }
+    // ── fpk (HTML 분류판) ──
+    const KNAME = { line: '접어서만', point: '돌려서만', both: '둘 다', none: '둘 다 아님' };
+    function fpk(o) {
+      const items = o.items || []; if (!items.length) throw new Error('fpk: 칸 없음');
+      const CC = Math.min.apply(null, items.map(it => { const B = bbox(it.p); return Math.min(160 / Math.max(B[2], 1), 116 / Math.max(B[3], 1)); })); // 칸마다 따로 맞추면 크기가 다른 두 도형이 같아 보인다 — 한 배율
+      const cells = items.map((it, i) => { const p = it.p.map(q => [q[0], q[1]]); checkAng(p); const kind = kindOf(p); if (it.want && it.want !== kind) throw new Error('fpk: ' + (it.name || i) + ' 신고 ' + it.want + ' 인데 ' + kind);
+        const B = bbox(p), w = Math.max(B[2], 1), h = Math.max(B[3], 1), VW = 200, VH = 150, C = CC, ox = (VW - w * C) / 2 - B[0] * C, oy = (VH - h * C) / 2 - B[1] * C, col = it.c && GF[it.c] ? it.c : 'a';
+        const hit = !o.ask && o.want && kind === o.want, miss = !o.ask && o.want && kind !== o.want;
+        const sv = '<svg class="fpk-svg" viewBox="0 0 ' + VW + ' ' + VH + '" xmlns="http://www.w3.org/2000/svg">' + poly('fp-poly', p, q => ox + q[0] * C, q => oy + q[1] * C, GF[col], GS[col]) + '</svg>';
+        return '<div class="fpk-c' + (hit ? ' pick' : miss ? ' no' : '') + '" data-kind="' + kind + '" data-i="' + i + '">' + (it.name ? '<div class="fpk-n">' + esc(it.name) + '</div>' : '') + sv + (o.tag && !o.ask ? '<div class="fpk-t">' + KNAME[kind] + '</div>' : '') + '</div>'; }).join('');
+      const key = items.map((it, i) => (it.name || '#' + i) + ':' + kindOf(it.p)).join(';');
+      return '<div class="fig-vert fig-fpk" data-pick="' + esc(key) + '" data-want="' + (o.want || '') + '" data-ask="' + (o.ask ? 1 : 0) + '" data-tag="' + (o.tag && !o.ask ? 1 : 0) + '">' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + '<div class="fpk-row n' + items.length + '">' + cells + '</div>' + (o.cap ? '<div class="fig-cap g7-cap">' + esc(o.cap) + '</div>' : '') + '</div>';
+    }
+    // ── crr (HTML 대응 줄) ──
+    function crr(o) {
+      const rows = o.rows || []; if (!rows.length) throw new Error('crr: 줄 없음');
+      const body = rows.map(r => '<div class="crr-r' + (r.cls ? ' ' + esc(r.cls) : '') + '" data-corr="' + esc((r.lead || '') + '|' + (r.a || '') + '|' + (r.b || '') + '|' + (r.v || '')) + '"><span class="crr-l">' + esc(r.lead || '') + '</span><span class="crr-a">' + esc(r.a || '') + '</span><span class="crr-ar">⟷</span><span class="crr-b">' + esc(r.b || '') + '</span>' + (r.v ? '<span class="crr-v' + (r.v === '?' ? ' q' : '') + '">' + esc(r.v) + '</span>' : '') + (r.cls === 'bad' ? '<span class="crr-x">✗</span>' : '') + '</div>').join('');
+      return '<div class="fig-vert fig-crr">' + (o.title ? '<div class="pg-title">' + esc(o.title) + '</div>' : '') + '<div class="crr-rows">' + body + '</div>' + (o.cap ? '<div class="fig-cap g7-cap">' + esc(o.cap) + '</div>' : '') + '</div>';
+    }
+    // ── lcut ──
+    function lnorm(cs) { let best = null; for (let t = 0; t < 8; t++) { const T = cs.map(q => { let x = q[0], y = q[1]; if (t & 1) x = -x; if (t & 2) y = -y; if (t & 4) { const z = x; x = y; y = z; } return [x, y]; }); let mx = Infinity, my = Infinity; T.forEach(q => { mx = Math.min(mx, q[0]); my = Math.min(my, q[1]); }); const k = T.map(q => (q[0] - mx) + ',' + (q[1] - my)).sort().join(';'); if (best === null || k < best) best = k; } return best; }
+    const lk = (q) => q[0] + ',' + q[1];
+    function lcut(o) {
+      const cells = (o.cells || []).map(q => [q[0], q[1]]), trees = (o.trees || []).map(q => [q[0], q[1]]); if (!cells.length) throw new Error('lcut: 땅 없음');
+      const CS = new Set(cells.map(lk)); if (CS.size !== cells.length) throw new Error('lcut: 칸 겹침'); trees.forEach(t => { if (!CS.has(lk(t))) throw new Error('lcut: 나무가 땅 밖'); });
+      const cut = o.cut && !o.ask ? o.cut.map(pc => pc.map(q => [q[0], q[1]])) : null, pcOf = {}; let cong = null, cnt = [];
+      if (cut) { let n = 0; cut.forEach((pc, k) => pc.forEach(q => { const key = lk(q); if (!CS.has(key)) throw new Error('lcut: 조각이 땅 밖'); if (pcOf[key] !== undefined) throw new Error('lcut: 조각 겹침'); pcOf[key] = k; n++; })); if (n !== cells.length) throw new Error('lcut: 땅을 다 덮지 않음');
+        cut.forEach((pc, k) => { const seen = new Set([lk(pc[0])]), st = [pc[0]]; while (st.length) { const q = st.pop(); [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(d => { const nb = [q[0] + d[0], q[1] + d[1]]; if (!seen.has(lk(nb)) && pc.some(z => lk(z) === lk(nb))) { seen.add(lk(nb)); st.push(nb); } }); } if (seen.size !== pc.length) throw new Error('lcut: ' + (k + 1) + '번 조각이 떨어짐'); });
+        const sh = cut.map(lnorm); cong = sh.every(x => x === sh[0]); cnt = cut.map(pc => trees.filter(t => pc.some(q => lk(q) === lk(t))).length); const one = !trees.length || cnt.every(c => c === 1);
+        if (!cong && o.bad !== 'shape') throw new Error('lcut: 합동 아님인데 bad:shape 없음'); if (!one && o.bad !== 'tree' && o.bad !== 'shape') throw new Error('lcut: 나무 한 그루씩 아님인데 bad 없음');
+        if (o.bad === 'shape' && cong) throw new Error('lcut: bad:shape 인데 전부 합동'); if (o.bad === 'tree' && one) throw new Error('lcut: bad:tree 인데 한 그루씩'); }
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; cells.forEach(q => { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0] + 1); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1] + 1); });
+      const cols = x1 - x0, rows = y1 - y0, MT = o.title ? 62 : 14, C = Math.max(34, Math.min(70, Math.floor(Math.min(600 / cols, 280 / rows)))), px = Math.round((760 - cols * C) / 2), X = v => px + (v - x0) * C, Y = v => MT + (v - y0) * C;
+      const PF = ['#D5F0EC', '#FFE3CF', '#FFF3CC', '#D7E5FA', '#EBDDF7', '#D9F0D6'], PS = ['#1E6F66', '#C2551A', '#B98900', '#2A5EA8', '#7A4FBF', '#2F7D32'];
+      let s = o.title ? txt(380, 36, '《 ' + o.title + ' 》', 26, INK, 900) : '';
+      cells.forEach(q => { const k = cut ? pcOf[lk(q)] : -1; s += '<rect class="lc-cell" data-pc="' + k + '" x="' + X(q[0]) + '" y="' + Y(q[1]) + '" width="' + C + '" height="' + C + '" fill="' + (k >= 0 ? PF[k % 6] : '#EFE6DA') + '" stroke="#9C7C5C" stroke-width="1.6"/>'; });
+      if (cut) cells.forEach(q => { const k = pcOf[lk(q)]; [[1, 0, [1, 0, 1, 1]], [-1, 0, [0, 0, 0, 1]], [0, 1, [0, 1, 1, 1]], [0, -1, [0, 0, 1, 0]]].forEach(d => { if (pcOf[lk([q[0] + d[0], q[1] + d[1]])] === k) return; const e = d[2]; s += '<line class="lc-edge" data-pc="' + k + '" x1="' + X(q[0] + e[0]) + '" y1="' + Y(q[1] + e[1]) + '" x2="' + X(q[0] + e[2]) + '" y2="' + Y(q[1] + e[3]) + '" stroke="' + PS[k % 6] + '" stroke-width="6" stroke-linecap="round"/>'; }); });
+      trees.forEach(t => { const cx = X(t[0]) + C / 2, cy = Y(t[1]) + C / 2; s += '<g class="lc-tree" data-at="' + lk(t) + '"><rect x="' + mf3(cx - C * 0.05) + '" y="' + mf3(cy + C * 0.05) + '" width="' + mf3(C * 0.1) + '" height="' + mf3(C * 0.27) + '" fill="#8B5A2B"/><circle cx="' + mf3(cx) + '" cy="' + mf3(cy - C * 0.07) + '" r="' + mf3(C * 0.23) + '" fill="#4CAF50" stroke="#2F7D32" stroke-width="2"/><circle cx="' + mf3(cx - C * 0.08) + '" cy="' + mf3(cy - C * 0.1) + '" r="' + mf3(C * 0.045) + '" fill="#E53935"/><circle cx="' + mf3(cx + C * 0.09) + '" cy="' + mf3(cy - C * 0.02) + '" r="' + mf3(C * 0.045) + '" fill="#E53935"/></g>'; });
+      let H = MT + rows * C + 10; if (o.ask) { s += txt(380, H + 30, '?', 38, C7.ask, 900).replace('<text ', '<text class="lc-ask" '); H += 46; } if (o.cap) { s += cap7(s, H + 18, o.cap, 24, C7.soft, 'lc-cap'); H += 40; }
+      const key = 'cells=' + cells.map(lk).join(' ') + '|trees=' + trees.map(lk).join(' ') + '|cut=' + (cut ? cut.map(pc => pc.map(lk).join(' ')).join(';') : '') + '|bad=' + (o.bad || '') + '|ask=' + (o.ask ? 1 : 0);
+      return svgWrap(s, 'fig-lcut', '0 0 760 ' + Math.round(H)).replace('<svg ', '<svg data-land="' + esc(key) + '" data-cong="' + (cong === null ? '' : cong ? 1 : 0) + '" data-trees="' + cnt.join(',') + '" ');
+    }
+    Object.assign(PARTS, { cgf, syf, sgd, lcut }); Object.assign(HTML_PARTS, { fpk, crr });
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
