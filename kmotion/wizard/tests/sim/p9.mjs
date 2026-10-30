@@ -66,7 +66,7 @@ function toArena2(seed, grade = 3){ const g = createGame({ data, seed, grade, st
   if (rc) { g.player.pos[0] = rc.pos[0]; push(g, 'ATTACK', { zone: 'C', side: 'R' }); run(g, 2, s => !!s.question); ok('재도전 문제 = share.div · 힌트 1단계 자동', g.q && g.q.kind === 'share' && g.q.v.concept === 'g3.share.div' && g.q.hint === 1, g.q && g.q.v.concept);
     run(g, 2.5); push(g, 'SELECT', { slot: [0, 1, 2].find(s => s !== g.q.v.correctSlot) }); run(g, 5, (s, e2) => e2.some(x => x.type === 'q:close')); run(g, 10, s => s.crystals.some(c => c.retry)); ok('두 번째 오답엔 재도전 수정 없음', !g.crystals.some(c => c.retry)); }
   // 2마리 미만 해제: 묶음 마리를 하나만 남기고 몸 공격 경로로 처치
-  const mem = g.enemies.filter(e => e.pack && e.state !== 'dead'); for (const e of mem.slice(1)) { e.hp = 1; } let rel = null; for (let k = 0; k < 120 && !rel; k++) { push(g, 'ATTACK', { zone: 'C', side: k % 2 ? 'L' : 'R' }); const e2 = run(g, .4, (s, e3) => e3.some(x => x.type === 'enemy:packClear')); rel = e2.find(x => x.type === 'enemy:packClear'); }
+  const mem = g.enemies.filter(e => e.pack && e.state !== 'dead'); for (const e of mem.slice(1)) { e.hp = 1; } let rel = null; for (let k = 0; k < 120 && !rel; k++) { g.crystals = [];   /* v2.6 묶음 때 수정이 곁에 오므로 몸 공격 경로 검사엔 수정을 치움 */ push(g, 'ATTACK', { zone: 'C', side: k % 2 ? 'L' : 'R' }); const e2 = run(g, .4, (s, e3) => e3.some(x => x.type === 'enemy:packClear')); rel = e2.find(x => x.type === 'enemy:packClear'); }
   ok('묶음 2마리 미만(몸 공격) → 태그 해제(packClear released, 셈 안 함) · 남은 마리 pack null', !!rel && rel.released === true && !rel.counted && g.enemies.filter(e => e.state !== 'dead' && e.tags.includes('pack')).length === 0, JSON.stringify(rel)); }
 
 // ── 5. 봇 ?grade=3 6판 완주 (1-1 ×2 · 1-2 · 1-3 · 1-boss · 1-1 4학년)

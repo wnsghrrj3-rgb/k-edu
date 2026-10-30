@@ -35,7 +35,8 @@ export const GAME = {
   // 수정 골렘(04 문서 5절·06 문서 43행, v1.7): DEF 10 — 골렘이 살아 있는 전투장에서 수학 수정 정답마다 DEF −8(최대 −16 = 몸이 갈라져 빛남) · 갈라질 때 비틀 .5초
   golem: { crackPer: 8, crackMax: 16, crackStagger: .5, boltMul: .4, crystalAfter: 5 },   // 안 갈라진 몸엔 마법탄 ×.4(「팅」 튕김) · 덜 갈라진 골렘이 있으면 직전 문제 5초 뒤 수정이 또 나옴
   // v2.3 묶음 몬스터·똑같이 나누기 공격(15 문서, D-29~31): 묶음 슬라임은 몸 공격·일반 마법에 1(치명 2)씩만 · 산 묶음이 있으면 직전 문제 4초 뒤 수정이 또 · share 탄 = 정확 피해(공식 0), 유도 강하게 · 묶음 처치 경험치 = 마리 수 × 5 · 오답 탄은 6m 날다 사라짐
-  pack: { slots: 3, /* v2.5 묶음 자리: 산 묶음 하나는 maxEnemies 에서 min(산 마리, slots) 자리만 차지 — n 은 학년 범위(변환표 pack.n)만 따름, 공격 동시성은 tokens 가 이미 묶음 */ normalHit: 1, critHit: 2, crystalAfter: 4, speed: 11, homing: 540, scatterRange: 6, gapX: 1.3, xpPer: 5, concepts: ['g3.share.div', 'g3.share.div', 'g3.share.mul', 'g3.share.missing'] },
+  pack: { slots: 3, /* v2.5 묶음 자리: 산 묶음 하나는 maxEnemies 에서 min(산 마리, slots) 자리만 차지 — n 은 학년 범위(변환표 pack.n)만 따름, 공격 동시성은 tokens 가 이미 묶음 */ normalHit: 1, critHit: 2, crystalAfter: 4, speed: 11, homing: 540, scatterRange: 6, gapX: 1.3, xpPer: 5, concepts: ['g3.share.div', 'g3.share.div', 'g3.share.mul', 'g3.share.missing'],
+    crystalNear: { sideMin: 1.8, sideMax: 2.4, approachAfter: 4, approachV: 1.2 } },   // v2.6 산 묶음이 있는 동안의 수학 수정: 플레이어 곁(reach 1.5 바로 밖)에 뜨고 4초 뒤부터 1.2 m/s 로 다가옴 — 적만 쫓는 아이도 묶음을 수학으로 치게(42절 ②)
   // 보스(06 문서 4·5절) — 1~2학년은 공격 주기 ×1.25 추가(5절 학년 배율 예)
   boss: { introT: 2.4, phaseT: 1.5, keep: 3.4, zMax: 12, dashT: .45, recover: .9, shieldMul: .1, weakMul: 1.5, weakT: 8, lowCycleMul: 1.25, sealCd: 1.2, heal: 20 },
 };

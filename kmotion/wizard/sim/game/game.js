@@ -265,7 +265,8 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   // ── 수학 수정(07 문서 1절 상황 A)
   function spawnCrystal(kind = 'math', opt = {}){
     const C = GAME.crystal, P = g.player; if (kind === 'math' && g.crystals.filter(c => c.kind === 'math').length >= C.max) return;
-    let x; for (let i = 0; i < 6; i++) { const side = rng.chance(.5) ? -1 : 1; x = P.pos[0] + side * rng.range(C.sideMin, C.sideMax); if (Math.abs(x) <= GAME.player.xMax - .2) break; x = clamp(x, -GAME.player.xMax + .2, GAME.player.xMax - .2); }
+    const near = kind === 'math' && livePacks().length > 0 ? PK.crystalNear : C;   // v2.6 산 묶음이 있으면 곁에(rng 호출 수 같음)
+    let x; for (let i = 0; i < 6; i++) { const side = rng.chance(.5) ? -1 : 1; x = P.pos[0] + side * rng.range(near.sideMin, near.sideMax); if (Math.abs(x) <= GAME.player.xMax - .2) break; x = clamp(x, -GAME.player.xMax + .2, GAME.player.xMax - .2); }
     if (g.crystals.some(c => Math.abs(c.pos[0] - x) < 1.2)) x = clamp(-x, -GAME.player.xMax + .2, GAME.player.xMax - .2);
     const c = { uid: nid(), kind, pos: [x, C.y + (kind === 'empower' ? .15 : 0), P.pos[2] + C.z], born: g.gameT, retry: !!opt.retry }; g.crystals.push(c); if (kind === 'math') g.lastCrystalT = g.gameT;
     g.emit('crystal:spawn', { uid: c.uid, kind, pos: v3(c.pos), retry: !!opt.retry }); if (kind === 'empower') g.toast = { key: opt.retry ? 'toast.empowerRetry' : 'toast.empower', t: g.t };
@@ -279,7 +280,8 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
       (g.crystals.length === 0 && g.gameT - g.lastQClose >= GAME.golem.crystalAfter && g.enemies.some(e => e.crack && e.crack.down < e.crack.max && e.state !== 'dead')) ||
       (g.crystals.length === 0 && g.gameT - g.lastQClose >= PK.crystalAfter && livePacks().length > 0));   // v1.7 골렘이 덜 갈라졌으면 수정을 더 자주 · v2.3 산 묶음이 있으면 수정을 더 자주(나누기 공격 길이 늘 열려 있게)
     if (want && g.gameT - g.lastQClose >= 3) { spawnCrystal(); g.firstCrystal = true; }
-    for (const c of g.crystals) if (c.kind === 'math' && g.gameT - c.born > C.approachAfter) { const dx = g.player.pos[0] - c.pos[0]; if (Math.abs(dx) > 1) c.pos[0] += Math.sign(dx) * C.approachV * dt; }
+    const AP = livePacks().length > 0 ? PK.crystalNear : C;   // v2.6 산 묶음이 있으면 수정이 더 빨리·더 빠르게 다가옴
+    for (const c of g.crystals) if (c.kind === 'math' && g.gameT - c.born > AP.approachAfter) { const dx = g.player.pos[0] - c.pos[0]; if (Math.abs(dx) > 1) c.pos[0] += Math.sign(dx) * AP.approachV * dt; }
     // 강화 수정(07 문서 상황 B): 마나 100 도달 3초 뒤 1개(판당 perRun 번), 15초 안 열면 사라짐(벌 없음)
     const EM = GAME.empower, P = g.player;
     if (P.mana >= P.manaMax && !g.empowerAt && g.empowerN < EM.perRun && !g.crystals.some(c => c.kind === 'empower') && g.empower <= g.gameT) g.empowerAt = g.gameT + EM.delay;
