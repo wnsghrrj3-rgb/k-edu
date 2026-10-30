@@ -160,6 +160,17 @@ function renderOpen(){
     renderOpen(); };
   document.getElementById('oGo').onclick = openRun;
 }
+async function boxCard(classId, item){
+  try {
+    const { data: ins, error: e1 } = await db.from('cw_bundles').insert({ teacher_id: ME.id, title: item.title, description: '', status: 'sent', sent_at: new Date().toISOString() }).select('id').single();
+    if (e1 || !ins) return null;
+    const { error: e2 } = await db.from('cw_items').insert({ bundle_id: ins.id, kind: item.kind, title: item.title, url: item.url, config: {}, sort_order: 0 });
+    if (e2) return null;
+    const { error: e3 } = await db.from('cw_sends').upsert({ bundle_id: ins.id, class_code_id: classId }, { onConflict: 'bundle_id,class_code_id' });
+    if (e3) return null;
+    return ins.id;
+  } catch(e){ return null; }
+}
 async function openRun(){
   const classId = f('oClass'), topic = f('oTopic').trim(); if (!classId) return toast('학급을 골라 주세요.'); if (!topic) return toast('논제를 써 주세요.');
   const kw = f('oKw').split(',').map(s => s.trim()).filter(Boolean).slice(0, 3);
@@ -168,8 +179,12 @@ async function openRun(){
   const b = document.getElementById('oGo'); b.disabled = true;
   const { data: run, error } = await db.from('write_runs').insert({ class_code_id: classId, teacher_id: ME.id, type: OPEN.type, band: OPEN.band, title, topic, keywords: kw, prompt_id: OPEN.prompt || null, passage: f('oPassage').trim() || null, guide: f('oGuide').trim() || null, rewrite_max: +f('oRewrite'), due_at: due }).select('id').single();
   if (error){ b.disabled = false; return toast('열지 못했어요 — SQL #51(setup_write_v1.sql) 적용 여부를 확인해 주세요.'); }
-  const { error: e2 } = await db.rpc('open_for_class', { p_class_code_id: classId, p_content_key: 'write:' + run.id, p_title: '✏️ ' + title, p_kind: 'link', p_url: '/kedu/write/task.html?run=' + run.id });
-  if (e2) toast('과제는 열렸지만 케이박스 카드는 만들지 못했어요.'); else toast(`「${title}」을 우리 반에 열었어요.`);
+  /* 학생 입구(받은 박스)는 cw_bundles 만 읽는다 — 원장 한 줄만 쓰면 학생에게 안 보였다(2026-10-30 준호 보고). 학습지와 같은 파이프로 카드 한 장 + 원장 한 줄 */
+  const wurl = '/kedu/write/task.html?run=' + run.id;
+  const bid = await boxCard(classId, { kind: 'link', title: '✏️ ' + title, url: wurl });
+  const { error: e2 } = await db.rpc('open_for_class', { p_class_code_id: classId, p_content_key: 'write:' + run.id, p_title: '✏️ ' + title, p_kind: 'link', p_url: wurl, p_bundle_id: bid });
+  b.disabled = false;
+  if (!bid) toast('과제는 열렸지만 받은 박스 카드는 만들지 못했어요.'); else if (e2) toast('받은 박스에 보냈어요 (개방 원장 기록은 실패).'); else toast(`「${title}」을 우리 반 받은 박스로 보냈어요.`);
   OPEN = { type: OPEN.type, band: OPEN.band, prompt: null }; TAB = 'mine'; document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === 'mine')); render();
 }
 
