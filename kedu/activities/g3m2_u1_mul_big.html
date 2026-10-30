@@ -129,6 +129,24 @@ h1 { font-size:clamp(30px,6vw,58px); color:var(--deep); margin:0; text-align:cen
 @media (max-width:420px) {
   #mb-q { font-size:clamp(30px,9vw,44px); }
 }
+/* 어림 답 버튼 — 넷이 한 줄(§6-2)에 서도록 폰 세로에선 「lo / ~hi」 두 덩이를 위아래로 (320 에서 넷 = 약 300px) */
+#answers-solo .abtn .r1, #answers-solo .abtn .r2 { display:inline; }
+@media (max-width:600px) {
+  /* 네 자리·다섯 자리 답 넷(1278·1298·12780…)도 320 에서 한 줄 — 버튼 옆 여백만 줄임(글씨 그대로) */
+  #answers-solo { gap:8px; }
+  #answers-solo .abtn { padding-left:10px; padding-right:10px; }
+  #answers-solo .abtn .r1, #answers-solo .abtn .r2 { display:block; line-height:1.15; }
+  body:has(#mb-q.est) #answers-solo .abtn { padding-left:8px; padding-right:8px; font-size:18px; }
+}
+@media (max-width:360px) {
+  #answers-solo { gap:6px; }
+  #answers-solo .abtn { padding-left:8px; padding-right:8px; font-size:18px; }
+  body:has(#mb-q.est) #answers-solo .abtn { padding-left:6px; padding-right:6px; font-size:17px; }
+}
+/* 수업 두 팀 겨루기 — 두 팀 줄(4 + 4)이 1280 칠판에서도 한 줄. 어림 답은 칠판에서도 늘 두 덩이로 쌓는다 */
+#answers-class .ansgrp { gap:8px; }
+#answers-class .abtn { padding-left:clamp(10px,1.1vw,24px); padding-right:clamp(10px,1.1vw,24px); }
+#answers-class .abtn .r1, #answers-class .abtn .r2 { display:block; line-height:1.15; }
 </style>
 </head>
 <body>
@@ -1143,7 +1161,7 @@ h1 { font-size:clamp(30px,6vw,58px); color:var(--deep); margin:0; text-align:cen
 </script>
 <script>
 /* gens/math/mul_big.js — 큰 수의 곱셈 (3학년 2학기 수학 1단원 「곱셈」 l02~l10)
- * 순수 함수·DOM 무관 (§9-3). 선다 대결·활동지 공유.
+ * 순수 함수·DOM 무관 (§9-3). 선다 겨루기·활동지 공유.
  *
  * params: { upto: 'l02'|'l03'|'l04'|'l05'|'l06'|'l07'|'l08'|'all' }
  *   upto  그 차시까지 배운 갈래만 섞는다. 이번 차시 갈래가 처음 두 문항 + 이후 절반.
@@ -1581,7 +1599,11 @@ h1 { font-size:clamp(30px,6vw,58px); color:var(--deep); margin:0; text-align:cen
           P.innerHTML = ''; P.style.display = 'none';
         },
         reset: function (app) { app.el('#mb').classList.remove('ok'); },
-        options: function (q) { return q.options.map(function (o) { return { pick: o, label: o }; }); },
+        // 어림 답(「2700~3600」 넷)은 폰 세로 한 줄에 안 들어간다 — 두 덩이로 그려 두고 좁은 화면에서만 위아래로 쌓는다(css)
+        options: function (q) { return q.options.map(function (o) {
+          var r = q.est ? o.split('~') : null;
+          return { pick: o, label: r ? '<span class="r1">' + r[0] + '</span><span class="r2">~' + r[1] + '</span>' : o };
+        }); },
         reveal: function (app, q) {
           app.el('#mb').classList.add('ok');
           if (!q.est && q.type !== 'times_word') app.el('#mb-q').textContent = q.a + ' × ' + q.b + ' = ' + q.answer;

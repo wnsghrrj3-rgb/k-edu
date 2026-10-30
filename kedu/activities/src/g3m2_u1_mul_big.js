@@ -50,7 +50,11 @@
           P.innerHTML = ''; P.style.display = 'none';
         },
         reset: function (app) { app.el('#mb').classList.remove('ok'); },
-        options: function (q) { return q.options.map(function (o) { return { pick: o, label: o }; }); },
+        // 어림 답(「2700~3600」 넷)은 폰 세로 한 줄에 안 들어간다 — 두 덩이로 그려 두고 좁은 화면에서만 위아래로 쌓는다(css)
+        options: function (q) { return q.options.map(function (o) {
+          var r = q.est ? o.split('~') : null;
+          return { pick: o, label: r ? '<span class="r1">' + r[0] + '</span><span class="r2">~' + r[1] + '</span>' : o };
+        }); },
         reveal: function (app, q) {
           app.el('#mb').classList.add('ok');
           if (!q.est && q.type !== 'times_word') app.el('#mb-q').textContent = q.a + ' × ' + q.b + ' = ' + q.answer;
