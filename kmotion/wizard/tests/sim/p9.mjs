@@ -17,7 +17,7 @@ const S11 = data.stages['forest-1-1'];
 { ok('변환표: 1학년 = 장면 JSON 그대로 · 3학년 = g3 줄 · 2학년(줄 없음) = 1학년 값', conceptsFor(data, S11, 1).join() === S11.concepts.join() && conceptsFor(data, S11, 3).join() === 'g3.addsub.3digit,g3.div.basic,g3.mul.2x1' && conceptsFor(data, S11, 2).join() === S11.concepts.join());
   ok('3학년 fallback = share 3종 · packs arena-2 [1,3] · 1학년 packs 없음 · pack 범위 g3 n 2~6·힘 2~9', fallbackFor(data, S11, 3).length === 3 && JSON.stringify(packWavesFor(data, S11, 3)) === '{"arena-2":[1,3]}' && JSON.stringify(packWavesFor(data, S11, 1)) === '{}' && packRange(data, 3).n[1] === 6 && packRange(data, 3).hpEach[1] === 9 && packRange(data, 1) === null);
   const g1 = createGame({ data, seed: 1, grade: 1 }), g3 = createGame({ data, seed: 1, grade: 3 });
-  ok('엔진: 1학년 concepts 5·empty 아님 / 3학년 일반 생성기 0 → empty, concepts = fallback share 3', !g1.qe.empty && g1.qe.concepts.length === 5 && g3.qe.empty && g3.qe.concepts.join() === 'g3.share.div,g3.share.mul,g3.share.missing' && g3.qe.grade === 3);
+  ok('엔진: 1학년 concepts 5·empty 아님 / 3학년 일반 생성기 3종(v2.7) → empty 아님, concepts = 변환표 3키 · fallback 은 share 3', !g1.qe.empty && g1.qe.concepts.length === 5 && !g3.qe.empty && g3.qe.concepts.join() === 'g3.addsub.3digit,g3.div.basic,g3.mul.2x1' && g3.qe.fallback.join() === 'g3.share.div,g3.share.mul,g3.share.missing' && g3.qe.grade === 3 && g3.qe.units.has('g3-1-u1') && g3.qe.units.has('g3-1-u3') && g3.qe.units.has('g3-1-u4'));
   const f = createFlow({ data, grade: 3, seed: 1 }); f.action('start', { mode: 'keyboard' }); ok('지도 「배울 것」 = 3학년 키', f.snapshot().map.learn.join() === 'g3.addsub.3digit,g3.div.basic,g3.mul.2x1', f.snapshot().map.learn.join()); }
 
 // ── 2. 생성기 share 3종 fixed 경로 · 오답 태그 · verify
