@@ -269,7 +269,7 @@ const tick = ms => new Promise(r => setTimeout(r, ms || 0));
     const PJ = require(path.join(__dirname, 'stage2-project.js'));
     const ids = (arr) => arr.map(a => a.id).join(',');
     // (a) 고르기 — 학기·solo·live·phase 차례·둘까지
-    ok(PJ.actsFor(CATALOG, { g: 3, t: 2, s: 'math', u: 1, l: 'u1_l03' }, { all: true }).length === 0, '3-2 수학 u1 에 3-1 활동이 끼지 않는다(학기)');
+    ok(PJ.actsFor(CATALOG, { g: 3, t: 2, s: 'math', u: 1, l: 'u1_l03' }, { all: true }).every(a => a.map && a.map.semester === 2), '3-2 수학 u1 에 3-1 활동이 끼지 않는다(학기 — 70회차부터 2학기 활동만 있음)');
     ok(ids(PJ.actsFor(CATALOG, { g: 3, s: 'math', u: 1, l: 'u1_l03' }, { all: true })) === 'g3m_u1_addsub', '3-1 수학 u1_l03 → g3m_u1_addsub (t 없음 = 1학기)');
     ok(PJ.actsFor(CATALOG, { g: 3, s: 'math', u: 1, l: 'u1_l03' }).length === CATALOG.filter(a => a.status === 'live' && a.map.grade === 3 && a.map.unit === 1 && a.map.subject === 'math').length, '기본은 live 만(지금 live 0 → 학생 화면에 검수 전 활동 0)');
     ok(ids(PJ.actsFor(CATALOG, { g: 1, s: 'math', u: 3, l: 'u3_l09' }, { all: true })) === 'g1m_u3_explore,g1m_u3_duel_sg', 'phase 차례 — 도입(explore) 먼저, 연습(duel_sg) 다음');
@@ -304,7 +304,8 @@ const tick = ms => new Promise(r => setTimeout(r, ms || 0));
     // (d) 교사 무대 KA.groups 학기 수리
     const KAc = { window: { document: null, location: { hostname: 'keduclass.com', origin: 'https://keduclass.com' } } }; vm.createContext(KAc); vm.runInContext('var window=this.window;' + fs.readFileSync(path.join(__dirname, 'stage2-activity.js'), 'utf8'), KAc);
     const KA2 = KAc.window.KT2_ACTIVITY; KA2.setCatalog(CATALOG);
-    ok(KA2.groups({ g: 3, s: 'math', u: 1, t: 2, key: 'u1_l03' }).rec.length === 0 && KA2.groups({ g: 3, s: 'math', u: 1, t: 2, key: 'u1_l03' }).unit.length === 0, '교사 무대 — 3-2 수학 u1 에 3-1 활동 추천 0(학기)');
+    { const G2 = KA2.groups({ g: 3, s: 'math', u: 1, t: 2, key: 'u1_l03' }); const only2 = x => x.every(a => a.map && a.map.semester === 2);
+      ok(only2(G2.rec) && only2(G2.unit) && G2.rec.some(a => a.id === 'g3m2_u1_mul_big'), '교사 무대 — 3-2 수학 u1 에 3-1 활동 추천 0(학기) · 2학기 활동은 뜬다'); }
     ok(ids(KA2.groups({ g: 3, s: 'math', u: 1, t: 1, key: 'u1_l03' }).rec) === 'g3m_u1_addsub', '교사 무대 — 3-1 수학 u1_l03 추천 그대로');
 
     // (e) 학생 화면 jsdom — learn.html 실물 순서로 싣고 활동 장을 끝까지 걷는다
