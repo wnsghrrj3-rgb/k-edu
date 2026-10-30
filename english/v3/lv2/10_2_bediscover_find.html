@@ -337,6 +337,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 <script src="../engine/k-tts.js"></script>
 <script src="../engine/k-progress.js"></script>
 <script src="../engine/k-diagnosis.js"></script>
+<script src="../engine/k-discover.js"></script>
 <script>
 let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
 const TOTAL=11;
@@ -512,42 +513,10 @@ function ruleFold(hostId){
 })();
 
 /* ══════════════════════════════════════════════════════════
-   ★bindDiscover — 사다리 전체의 첫 발견 장치 (10_2 인라인 구현).
-   펼침 §발견 장치 사양의 6단계 최소 계약이 이 블록의 전부다.
-   소비처가 Lv3 에서 두 번째로 서면 engine/k-discover.js 로 승격한다
-   (소비처 없이 엔진을 먼저 만들어 Lv1 내내 안 불린 k-diagnosis.js 전례를 반복하지 않는다).
+   ★bindDiscover — 사다리 전체의 첫 발견 장치.
+   2026-10-30 engine/k-discover.js 로 승격(두 번째 소비처 = Lv3 #10_2 · 규약 Lv3 §8-⑤).
+   이 파일은 엔진을 「소비」만 한다 — 6단계 계약·문구·순서는 인라인 시절과 같다(하네스 C-10 회귀).
    ══════════════════════════════════════════════════════════ */
-let deck=PRE.slice(), placed={I:[],You:[],It:[]}, dIdx=0, backCount=0, ruleFound=false;
-
-function renderBins(){
-  document.getElementById('dBins').innerHTML=['I','You','It'].map(b=>
-    '<div class="dbin" data-b="'+b+'"><div class="bl">'+b+'</div><div class="bko">'+SUBKO[b]+'</div>'
-    +'<span class="cnt" id="cnt-'+b+'">'+placed[b].map(k=>'·').join('')+'</span></div>').join('');
-  document.querySelectorAll('#dBins .dbin').forEach(el=>el.addEventListener('click',()=>drop(el)));
-}
-function showCard(){
-  const cur=document.getElementById('dCur');
-  if(dIdx>=deck.length){cur.style.display='none';reveal();return;}
-  const k=deck[dIdx];
-  cur.style.display='block';
-  cur.innerHTML=SENT[k].en+'<span class="ko">'+SENT[k].ko+'</span>';
-}
-function drop(el){
-  if(dIdx>=deck.length)return;
-  const b=el.dataset.b, k=deck[dIdx];
-  playClick();
-  if(b===SENT[k].sub){
-    placed[b].push(k);dIdx++;
-    el.classList.add('got');
-    document.getElementById('cnt-'+b).textContent=placed[b].map(()=>'·').join('');
-    setFB('fb2','✅ <b>'+SENT[k].en+'</b> → '+b+' 상자 ('+dIdx+' / '+deck.length+')',true);
-    showCard();
-  }else{
-    el.classList.add('wrong');playWrong();
-    setFB('fb2','🙋 문장의 <b>첫 단어</b>를 봐요 — 「'+SENT[k].w[0]+'」 로 시작해요!',false);
-    setTimeout(()=>el.classList.remove('wrong'),450);
-  }
-}
 /* ③정렬 공개 — 주어와 두 번째 단어만 남고 나머지가 흐려진다.
    ⚠ am·are·is 에 색을 입히지 않는다. 흐리기만으로 세 줄이 저절로 겹쳐 보이게 한다. */
 function alignHTML(keys){
@@ -557,69 +526,36 @@ function alignHTML(keys){
       +'<span class="rest">'+S.w.slice(2).join(' ')+'</span></div>';
   }).join('');
 }
-function reveal(){
-  const box=document.getElementById('dAlign');
-  const keys=placed.I.concat(placed.You,placed.It);
-  box.innerHTML=alignHTML(keys);
-  box.style.display='inline-block';
-  const rows=[...box.querySelectorAll('.arow')];
-  rows.forEach((r,i)=>setTimeout(()=>{r.classList.add('in');playClick();},i*260));
-  setTimeout(()=>{
-    box.classList.add('dim');
-    playCorrect();
-    if(!answered[2]){answered[2]=true;addScore(10);}
-    setFB('fb2','🎉 다 나눴어요! 이제 <b>남은 두 칸</b>을 봐요 — 다음 ▶ +10점',true);
-  },rows.length*260+500);
-}
-renderBins();showCard();
-
 /* ④발견 질문 — 화면은 답을 말하지 않는다. 선택지 순서 고정(펼침 명시 ⓐⓑⓒ) */
 const DQ=[
   {t:'주어마다 <b>뒤에 오는 말</b>이 달라요',ok:1},
   {t:'문장은 전부 <b>I</b> 로 시작해요',ok:0},
   {t:'문장 끝에 <b>점</b>이 있어요',ok:0}
 ];
-document.getElementById('qAlign').innerHTML=alignHTML(PRE);
-setTimeout(()=>document.querySelectorAll('#qAlign .arow').forEach(r=>r.classList.add('in')),50);
-document.getElementById('dQ').innerHTML=DQ.map((q,i)=>
-  '<button class="dch" onclick="pick(this,'+i+')">'+q.t+'</button>').join('');
-
-/* ⑥오답 시: 정답을 알려주지 않는다. 분류 화면으로 되돌려 카드를 2장 더 얹는다.
-   되돌림 2회 후에도 못 찾으면 그때만 형광을 켜고 질문을 반복한다. */
-function pick(btn,i){
-  if(ruleFound)return;
-  playClick();
-  if(DQ[i].ok){
-    ruleFound=true;
-    btn.classList.add('correct');playCorrect();addScore(25);
+const DSC=KDiscover.bind({
+  deck:PRE, back:BACK, maxBack:2,
+  bins:['I','You','It'].map(b=>({id:b,html:'<div class="bl">'+b+'</div><div class="bko">'+SUBKO[b]+'</div>'})),
+  binOf:k=>SENT[k].sub,
+  cardHTML:k=>SENT[k].en+'<span class="ko">'+SENT[k].ko+'</span>',
+  wrongMsg:k=>'🙋 문장의 <b>첫 단어</b>를 봐요 — 「'+SENT[k].w[0]+'」 로 시작해요!',
+  alignHTML:alignHTML, qKeys:PRE,
+  el:{cur:'dCur',bins:'dBins',align:'dAlign',q:'dQ',qAlign:'qAlign'},
+  sortSlide:2, qSlide:3, fbSort:'fb2', fbQ:'fb3',
+  choices:DQ,
+  msg:{
+    sortOk:(k,n,N,b)=>'✅ <b>'+SENT[k].en+'</b> → '+b+' 상자 ('+n+' / '+N+')',
+    sortDone:()=>'🎉 다 나눴어요! 이제 <b>남은 두 칸</b>을 봐요 — 다음 ▶ +10점',
+    back:n=>'🤔 조금 더 볼까요? <b>카드를 '+(n===1?'2장 더 ':'')+'</b>나눠 보고 다시 와요.',
+    backSort:n=>n===1?'🃏 카드 <b>두 장</b>을 더 얹었어요 — 다시 나눠 봐요!':'🃏 한 번 더 나눠 보고 <b>남은 두 칸</b>을 봐요!',
+    hint:()=>'💡 <b>두 번째 칸</b>만 다시 봐요 — 노란 칸이 상자마다 다르죠?'
+  },
+  onFound:()=>{
     ruleSave('be','주어마다 뒤에 오는 말이 달라요');
     document.getElementById('cardBox').innerHTML=ruleHTML(ruleGet('be'));
     bindPairs();
     setFB('fb3','🏅 <b>찾았다!</b> 아무도 안 알려줬는데 네가 봤어요 +25점',true);
-  }else{
-    btn.classList.add('wrong');playWrong();combo=0;
-    setTimeout(()=>btn.classList.remove('wrong'),450);
-    if(backCount<2){
-      backCount++;
-      if(backCount===1){
-        BACK.forEach(k=>{if(deck.indexOf(k)<0)deck.push(k);});
-      }
-      dIdx=0;placed={I:[],You:[],It:[]};
-      document.getElementById('dAlign').style.display='none';
-      document.getElementById('dAlign').classList.remove('dim');
-      answered[2]=false;
-      renderBins();showCard();
-      setFB('fb3','🤔 조금 더 볼까요? <b>카드를 '+(backCount===1?'2장 더 ':'')+'</b>나눠 보고 다시 와요.',false);
-      setTimeout(()=>{
-        goSlide(2);
-        setFB('fb2',backCount===1?'🃏 카드 <b>두 장</b>을 더 얹었어요 — 다시 나눠 봐요!':'🃏 한 번 더 나눠 보고 <b>남은 두 칸</b>을 봐요!',true);
-      },1100);
-    }else{
-      document.getElementById('qAlign').classList.add('hint');
-      setFB('fb3','💡 <b>두 번째 칸</b>만 다시 봐요 — 노란 칸이 상자마다 다르죠?',false);
-    }
   }
-}
+});
 function bindPairs(){
   document.querySelectorAll('.rpair').forEach(el=>{
     el.addEventListener('click',()=>{
