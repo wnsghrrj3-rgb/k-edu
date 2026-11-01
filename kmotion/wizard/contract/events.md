@@ -111,3 +111,15 @@ v1.5 추가(P3 길 구간): `rail:start`(idx·len·seconds·obstacles) / `rail:e
 ## v2.5 추가(2026-10-30, 묶음 자리 — 4학년 묶음 n 과 maxEnemies 관계 정리) — 데이터·시스템 수치만, 새 이벤트 0·스냅샷 변경 0
 - 산 묶음 하나는 `maxEnemies` 에서 `min(산 마리, GAME.pack.slots=3)` 자리만 차지(보통 적 1마리 = 1자리, 분열 mini·보스는 전처럼 안 셈). 묶음 n 은 학년 변환표 `pack.n` 범위 그대로(4학년 ≤8, 3학년 ≤6) — 전엔 남은 자리에 깎여 실제 ≤5~6. 자리가 slots 에 모자라면 n 을 남은 자리로 깎고, 2 미만이면 보통 파.
 - 스킨 영향 0(`packs[].alive`·`enemies[].pack` 그대로). 1~2학년은 묶음이 없어 무변경(골든 4판 그대로).
+
+## v2.9 추가(2026-11-02, 월드 2 「도형의 신전」 — 16 문서 D-32~35) — 추가만, 기존 변경 0 · 골든 4판 불변
+| type | 필드 | 표현 예 |
+|---|---|---|
+| `map:world` | world, open, via('hand'|'click'|'key') | S04 에서 세계 바꾸기 — 열렸으면 지도 테마·제목(`map.worldIcon`·`worldName`)·노드 교체, 닫혔으면 토스트 `map.worldClosed`(지도 그대로) |
+- 세계 바꾸기 입력 3가지가 전부 같은 액션 `world {id|dir, via}`: targets `world:prev`·`world:next`(kind `map`, `targets.json map.worldPrev/worldNext` rect — 이웃 세계가 있을 때만 들어가고 닫힌 세계는 locked) · 받침대(`map.pedestals[].world`) 클릭 = `{id}` · 키 `[` `]` · ←→/↑↓ 화살표가 세계 끝 칸을 넘어가면 이웃 세계로. 세계마다 마지막으로 고른 칸을 기억(없으면 앞으로 갈 땐 첫 칸·뒤로 갈 땐 끝 칸).
+- MenuSnapshot `map` 추가: `worldIcon`·`worldIdx`(worlds.json 순서) · `stages[]` = **지금 월드만**(전엔 숲 4개 고정) · `stars` 는 전체 합 · targets 에 `world:prev`/`world:next`. Snapshot `world.id` = 스테이지의 월드(`'forest' | 'temple' | …`, 전엔 `'forest'` 고정) — 스킨은 `root[data-world]`(판)·`map[data-world]`(지도)로 테마 색.
+- 문제 스냅샷 추가(`snapshot.d.ts` v2.9 주석): `question.pic`(문제 그림 id 또는 null)·`choices[].pic`(보기 그림 id — 있으면 구슬에 숫자 대신 그림, `num` 은 그림 코드라 안 보임) · 엔진 반환 `pic`/`choicePic`. 답은 그대로 **정수 하나**(D-33) → build·피해·골든 줄 무변경. 그림 id 는 `sim/learn/pics.js`(도형 9·물건 9·`row:a,b,c`·`cubes:2,1,3`), 그리는 건 스킨(`skins/proto/pics.js` 인라인 SVG). 새 이벤트 0.
+- 데이터: `data/stages/temple-2-1.json`(world temple·requires forest-1-boss·길 A→전투장 1→길 B→전투장 2, 방패병·퍼즐·보스 없음) · `worlds.json` temple open · `concepts-by-grade.json` `temple-2-1.g2` 5키(3·4학년 줄 없음 = 1학년 입체 값) · 생성기 `sim/learn/gen/g1_1_u2.js` 3종·`g2_1_u2.js` 5종 · ko.json `stage.temple-2-1`·`map.locked.temple-2-1`·`map.world.temple`·`map.worldPrev/Next/Closed`·`result.world2` + learn·q·hint·why 59키.
+- boot `?stage=temple-2-1`(forceStage)·`?grade=2&stage=temple-2-1`. 키보드 모드 S04: `[` `]` 세계 · 화살표 끝 칸 넘김.
+- v2.9.1(검증만): smoke-proto 시드 65 「흩어진 탄 0」 원인 = 44 일반 생성기 뒤 share 문제가 봇의 홀수 번째(항상 정답)에만 와 흩어짐 경로가 안 돌던 것 → 시드 67 과 같이 첫 share 문제를 일부러 틀리게 함(시험 코드만, sim 무변경).
+

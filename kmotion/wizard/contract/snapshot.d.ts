@@ -13,7 +13,7 @@ export type EnemyState = 'spawn' | 'idle' | 'chase' | 'windup' | 'attack' | 'rec
 export interface Snapshot {
   t: number; gameT: number; slow: number;           // slow: 문제 중 0.15
   screen: ScreenId; paused: null | 'user' | 'body';
-  world: { id: 'forest'; stage: string; heart: boolean; final: boolean; crystals: string[];   // v1.8 heart = 고대 나무 심장 구역(길·보스방) · final = 월드 마지막 스테이지 · crystals = 되찾은 결정
+  world: { id: string;   /* v2.9 스테이지의 월드 'forest'|'temple'|…(전엔 'forest' 고정) */ stage: string; heart: boolean; final: boolean; crystals: string[];   // v1.8 heart = 고대 나무 심장 구역(길·보스방) · final = 월드 마지막 스테이지 · crystals = 되찾은 결정
     zone: 'rail' | 'arena' | 'boss'; zoneIdx: number; arenaNo: number; arenas: number; railProgress: number; seed: number; wave: number; waves: number;
     /** v1.5 길 구간(09 문서 2절): 플레이어는 z=0 에 서고 길이 다가온다. dist·len(m)·speed(m/s, 퍼즐 앞 0·맞으면 느려짐)·phase 'go'|'stop'|'puzzle'·xMax(좌우 ±2.6). 스킨은 바닥·나무를 −speed 로 흘리면 된다 */
     rail: null | { idx: number; len: number; dist: number; progress: number; speed: number; base: number; phase: 'go' | 'stop' | 'puzzle'; xMax: number } };
