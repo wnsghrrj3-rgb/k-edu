@@ -6,5 +6,7 @@ import { G3SHARE } from './g3share.js';   // v2.3 3학년 「똑같이 나누기
 import { G3_1_U1 } from './g3_1_u1.js';   // v2.7 3-1 1단원 「덧셈과 뺄셈」 — 베프 직접(준호 2026-10-30, 오푸스 대신)
 import { G3_1_U3 } from './g3_1_u3.js';   // v2.7 3-1 3단원 「나눗셈」(곱셈구구 범위)
 import { G3_1_U4 } from './g3_1_u4.js';   // v2.7 3-1 4단원 「곱셈」(두 자리 × 한 자리)
-export const UNITS = [G1U3, G1U1, G2U1, G3SHARE, G3_1_U1, G3_1_U3, G3_1_U4];
+import { G3_2_U1 } from './g3_2_u1.js';   // v2.8 3-2 1단원 「곱셈」 — 세 자리 × 한 자리(4학년 장면 변환표 키, 베프 직접; (두 자리)×(두 자리)는 오푸스 #11 이 더함)
+import { G3_2_U2 } from './g3_2_u2.js';   // v2.8 3-2 2단원 「나눗셈」 — 두 자리 ÷ 한 자리 나머지 0(4학년 장면 변환표 키; 나머지·세 자리는 오푸스 #12 가 더함)
+export const UNITS = [G1U3, G1U1, G2U1, G3SHARE, G3_1_U1, G3_1_U3, G3_1_U4, G3_2_U1, G3_2_U2];
 export const GENERATORS = Object.assign({}, ...UNITS);

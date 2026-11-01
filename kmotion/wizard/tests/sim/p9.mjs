@@ -18,7 +18,12 @@ const S11 = data.stages['forest-1-1'];
   ok('3학년 fallback = share 3종 · packs arena-2 [1,3] · 1학년 packs 없음 · pack 범위 g3 n 2~6·힘 2~9', fallbackFor(data, S11, 3).length === 3 && JSON.stringify(packWavesFor(data, S11, 3)) === '{"arena-2":[1,3]}' && JSON.stringify(packWavesFor(data, S11, 1)) === '{}' && packRange(data, 3).n[1] === 6 && packRange(data, 3).hpEach[1] === 9 && packRange(data, 1) === null);
   const g1 = createGame({ data, seed: 1, grade: 1 }), g3 = createGame({ data, seed: 1, grade: 3 });
   ok('엔진: 1학년 concepts 5·empty 아님 / 3학년 일반 생성기 3종(v2.7) → empty 아님, concepts = 변환표 3키 · fallback 은 share 3', !g1.qe.empty && g1.qe.concepts.length === 5 && !g3.qe.empty && g3.qe.concepts.join() === 'g3.addsub.3digit,g3.div.basic,g3.mul.2x1' && g3.qe.fallback.join() === 'g3.share.div,g3.share.mul,g3.share.missing' && g3.qe.grade === 3 && g3.qe.units.has('g3-1-u1') && g3.qe.units.has('g3-1-u3') && g3.qe.units.has('g3-1-u4'));
-  const f = createFlow({ data, grade: 3, seed: 1 }); f.action('start', { mode: 'keyboard' }); ok('지도 「배울 것」 = 3학년 키', f.snapshot().map.learn.join() === 'g3.addsub.3digit,g3.div.basic,g3.mul.2x1', f.snapshot().map.learn.join()); }
+  const f = createFlow({ data, grade: 3, seed: 1 }); f.action('start', { mode: 'keyboard' }); ok('지도 「배울 것」 = 3학년 키', f.snapshot().map.learn.join() === 'g3.addsub.3digit,g3.div.basic,g3.mul.2x1', f.snapshot().map.learn.join());
+  // v2.8: 4학년 장면 일반 생성기(g3-2-u1·u2 — 두 자리 ÷ 한 자리·세 자리 × 한 자리) → empty 아님, want 'word' 가 그 단원 문장제에서 나옴
+  const g4 = createGame({ data, seed: 1, grade: 4 });
+  ok('엔진: 4학년 일반 생성기 2종(v2.8) → empty 아님, concepts = 변환표 2키(g3.div.2x1·g3.mul.3x1) · units g3-2-u1·u2 · grade 4', !g4.qe.empty && g4.qe.concepts.join() === 'g3.div.2x1,g3.mul.3x1' && g4.qe.grade === 4 && g4.qe.units.has('g3-2-u1') && g4.qe.units.has('g3-2-u2'));
+  { const w = new Set(); for (let i = 0; i < 40; i++) w.add(g4.qe.next({ want: 'word' }).concept); const c = new Set(); for (let i = 0; i < 40; i++) c.add(g4.qe.next().concept);
+    ok('4학년 want word = g3.mul3.word·g3.div2.word 만 / 보통 = 변환표 2키만', [...w].every(k => k === 'g3.mul3.word' || k === 'g3.div2.word') && w.size === 2 && [...c].every(k => k === 'g3.div.2x1' || k === 'g3.mul.3x1'), [...w].join() + ' / ' + [...c].join()); } }
 
 // ── 2. 생성기 share 3종 fixed 경로 · 오답 태그 · verify
 { const qe = new QuestionEngine({ rng: createRng(5), concepts: [], grade: 3, fallback: ['g3.share.div', 'g3.share.mul', 'g3.share.missing'] });
