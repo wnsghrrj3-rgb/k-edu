@@ -8,5 +8,7 @@ import { G3_1_U3 } from './g3_1_u3.js';   // v2.7 3-1 3단원 「나눗셈」(�
 import { G3_1_U4 } from './g3_1_u4.js';   // v2.7 3-1 4단원 「곱셈」(두 자리 × 한 자리)
 import { G3_2_U1 } from './g3_2_u1.js';   // v2.8 3-2 1단원 「곱셈」 — 세 자리 × 한 자리(4학년 장면 변환표 키, 베프 직접; (두 자리)×(두 자리)는 오푸스 #11 이 더함)
 import { G3_2_U2 } from './g3_2_u2.js';   // v2.8 3-2 2단원 「나눗셈」 — 두 자리 ÷ 한 자리 나머지 0(4학년 장면 변환표 키; 나머지·세 자리는 오푸스 #12 가 더함)
-export const UNITS = [G1U3, G1U1, G2U1, G3SHARE, G3_1_U1, G3_1_U3, G3_1_U4, G3_2_U1, G3_2_U2];
+import { G1_1_U2 } from './g1_1_u2.js';   // v2.9 월드 2 「도형의 신전」 — 1-1 2단원 「여러 가지 모양」(입체 상자·둥근 기둥·공), 그림 보기(pics.js), 베프 직접
+import { G2_1_U2 } from './g2_1_u2.js';   // v2.9 2-1 2단원 「여러 가지 도형」(삼각형·사각형·원·쌓기나무)
+export const UNITS = [G1U3, G1U1, G2U1, G3SHARE, G3_1_U1, G3_1_U3, G3_1_U4, G3_2_U1, G3_2_U2, G1_1_U2, G2_1_U2];
 export const GENERATORS = Object.assign({}, ...UNITS);

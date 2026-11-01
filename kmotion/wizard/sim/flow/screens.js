@@ -18,18 +18,26 @@ export function createFlow({ data, grade = 1, seed = Date.now() % 100000, freeze
   const MAP = (data.layout && data.layout.map) || { node: [{ slot: 0, rect: { x: .07, y: .30, w: .15, h: .27 } }, { slot: 1, rect: { x: .29, y: .22, w: .15, h: .27 } }, { slot: 2, rect: { x: .51, y: .30, w: .15, h: .27 } }, { slot: 3, rect: { x: .73, y: .20, w: .15, h: .27 } }], enter: { rect: { x: .41, y: .70, w: .18, h: .32 } } };
   // v1.6 스테이지 목록(data.stages 순서) — requires 를 깬 뒤 열림(?stage= 로 들어오면 forceStage). 기본 = 가장 뒤에 열린 스테이지가 아니라 「고른 것」, 처음은 1-1
   const STAGES = Object.keys(data.stages);
+  // v2.9 월드(16 문서 5절): 스테이지는 world 를 가진다 — 지도는 「지금 월드」의 스테이지만 보이고, 열린 이웃 월드로 바꿀 수 있다(앞/다음 자리·받침대·[ ] 키)
+  const worldOf = id => (data.stages[id] && data.stages[id].world) || 'forest';
+  const WORLD_IDS = WORLDS.worlds.map(w => w.id), worldOpen = id => !!(WORLDS.worlds.find(w => w.id === id) || {}).open;
+  const WSTAGES = () => STAGES.filter(id => worldOf(id) === f.world); const lastPick = {};
   const isLocked = id => { const z = data.stages[id]; const prog = f.progress || {}; return !!(z && z.requires && !(prog.cleared && prog.cleared[z.requires]) && !(forceStage && id === f.stage)); };
-  f.stage = stage && data.stages[stage] ? stage : STAGES[0]; if (isLocked(f.stage) && !forceStage) f.stage = STAGES[0];
+  f.stage = stage && data.stages[stage] ? stage : STAGES[0]; if (isLocked(f.stage) && !forceStage) f.stage = STAGES[0]; f.world = worldOf(f.stage);
   f.stageList = () => STAGES.map(id => ({ id, nameKo: data.stages[id].nameKo, stars: (f.progress && f.progress.cleared && f.progress.cleared[id]) || 0, locked: isLocked(id), requires: data.stages[id].requires || null, reward: data.stages[id].reward ? data.stages[id].reward.spell || null : null, crystal: data.stages[id].reward ? data.stages[id].reward.crystal || null : null, final: !!data.stages[id].final }));   // v1.8 crystal·final(보스 스테이지)
   const ctrl = STAGE_BY_GRADE(grade);
   // ── v1.9 S04 지도: 손 유지 선택은 S08Q 와 같은 Selector(판정 = targets.json map rect, 시스템 소유)
-  const mapSel = new Selector(ev => { if (ev.type !== 'SELECT') return; if (ev.value.id === 'enter') f.action('enter'); else if (ev.value.id && ev.value.id.startsWith('stage:')) f.action('pick', { stage: ev.value.id.slice(6), via: 'hand' }); });
-  const mapTargets = () => [...STAGES.map((id, i) => ({ id: 'stage:' + id, slot: i, kind: 'map', rect: (MAP.node[i] || MAP.node[MAP.node.length - 1]).rect, enabled: true })), { id: 'enter', slot: -1, kind: 'map', rect: MAP.enter.rect, enabled: !isLocked(f.stage) }];
+  const mapSel = new Selector(ev => { if (ev.type !== 'SELECT') return; if (ev.value.id === 'enter') f.action('enter'); else if (ev.value.id && ev.value.id.startsWith('stage:')) f.action('pick', { stage: ev.value.id.slice(6), via: 'hand' }); else if (ev.value.id === 'world:prev' || ev.value.id === 'world:next') f.action('world', { dir: ev.value.id === 'world:next' ? 1 : -1, via: 'hand' }); });
+  const neighborWorld = dir => { const i = WORLD_IDS.indexOf(f.world) + dir; return i >= 0 && i < WORLD_IDS.length ? WORLD_IDS[i] : null; };
+  const mapTargets = () => { const ws = WSTAGES(); const ts = [...ws.map((id, i) => ({ id: 'stage:' + id, slot: i, kind: 'map', rect: (MAP.node[i] || MAP.node[MAP.node.length - 1]).rect, enabled: true })), { id: 'enter', slot: -1, kind: 'map', rect: MAP.enter.rect, enabled: !isLocked(f.stage) }];
+    if (MAP.worldPrev && neighborWorld(-1)) ts.push({ id: 'world:prev', slot: -2, kind: 'map', rect: MAP.worldPrev.rect, enabled: worldOpen(neighborWorld(-1)) });   // v2.9 앞 세계(있으면)
+    if (MAP.worldNext && neighborWorld(1)) ts.push({ id: 'world:next', slot: -3, kind: 'map', rect: MAP.worldNext.rect, enabled: worldOpen(neighborWorld(1)) });    // v2.9 다음 세계(있으면 — 안 열렸으면 locked)
+    return ts; };
   const say = key => { f.toast = { key, t: f.t }; };
   function toMap(from){ if (f.game) { f.mastery = f.game.qe.m; f.progress = f.game.progress; f.game = null; } f.calib = null; mapSel.reset(); f.cursor = null; f.screen = 'S04'; bus.emit('screen', { from, to: 'S04' }); }
-  f.mapModel = function(){ const prog = f.progress || {}; const stages = f.stageList(); const st = data.stages[f.stage] || {}; const tg = mapTargets();
-    const stars = stages.reduce((a, z) => a + (z.stars || 0), 0), crystals = Array.isArray(prog.crystals) ? prog.crystals : [];
-    return { world: 'forest', worldName: (WORLDS.worlds.find(w => w.id === 'forest') || {}).nameKo || '', stages, stage: f.stage, locked: isLocked(f.stage), learn: conceptsFor(data, st, grade),   /* v2.3 지도 「배울 것」 = 변환표 그 학년 키 */ recLevel: st.recLevel || 1, stars, level: prog.level || 1, xp: prog.xp || 0,
+  f.mapModel = function(){ const prog = f.progress || {}; const all = f.stageList(), stages = all.filter(z => worldOf(z.id) === f.world); const st = data.stages[f.stage] || {}; const tg = mapTargets(); const wd = WORLDS.worlds.find(w => w.id === f.world) || {};
+    const stars = all.reduce((a, z) => a + (z.stars || 0), 0), crystals = Array.isArray(prog.crystals) ? prog.crystals : [];
+    return { world: f.world, worldName: wd.nameKo || '', worldIcon: wd.icon || '', worldIdx: WORLD_IDS.indexOf(f.world), stages,   /* v2.9 지금 월드의 스테이지만·별은 전체 합 */ stage: f.stage, locked: isLocked(f.stage), learn: conceptsFor(data, st, grade),   /* v2.3 지도 「배울 것」 = 변환표 그 학년 키 */ recLevel: st.recLevel || 1, stars, level: prog.level || 1, xp: prog.xp || 0,
       pedestals: WORLDS.crystals.map((c, i) => ({ idx: i, crystal: c, world: (WORLDS.worlds[i] || {}).id || null, worldName: (WORLDS.worlds[i] || {}).nameKo || '', icon: (WORLDS.worlds[i] || {}).icon || '', open: !!(WORLDS.worlds[i] && WORLDS.worlds[i].open), got: crystals.includes(c) })),
       targets: tg.map(x => ({ id: x.id, kind: x.kind, rect: x.rect, hover: Math.round((mapSel.hover[x.id] || 0) * 1000) / 1000, locked: !x.enabled || (x.id.startsWith('stage:') && isLocked(x.id.slice(6))) })) }; };
   function newGame(){
@@ -43,7 +51,10 @@ export function createFlow({ data, grade = 1, seed = Date.now() % 100000, freeze
     bus.emit('ui:action', { id });
     if (id === 'start') { f.mode = p.mode || 'keyboard'; f.char = p.char || f.char; f.seed = p.seed != null ? p.seed : f.seed; if (p.stage && data.stages[p.stage] && !isLocked(p.stage)) f.stage = p.stage;
       if (f.mode === 'camera' && (p.calib || !f.cal)) { f.calib = new Calib(); f.screen = 'S17'; bus.emit('screen', { from: 'S01', to: 'S17' }); } else if (forceStage) newGame(); else toMap('S01'); }   // v1.9: 보정 뒤·바로 시작 모두 S04 지도. ?stage= 강제만 지도 없이 판
-    else if (id === 'pick' && f.screen === 'S04') { const sid = p.stage; if (!data.stages[sid]) return; bus.emit('map:pick', { stage: sid, locked: isLocked(sid), via: p.via || 'click' }); if (isLocked(sid)) say('map.locked.' + sid); else { f.stage = sid; f.toast = null; } }
+    else if (id === 'pick' && f.screen === 'S04') { const sid = p.stage; if (!data.stages[sid]) return; bus.emit('map:pick', { stage: sid, locked: isLocked(sid), via: p.via || 'click' }); if (isLocked(sid)) say('map.locked.' + sid); else { f.stage = sid; f.world = worldOf(sid); f.toast = null; } }
+    // v2.9 월드 바꾸기: p.id(받침대 클릭) 또는 p.dir(앞/다음 자리·[ ] 키) — 열린 월드만. 스테이지는 그 월드의 첫 것(이미 고른 적 있으면 그대로)
+    else if (id === 'world' && f.screen === 'S04') { const wid = p.id || neighborWorld(p.dir || 1); if (!wid || !WORLD_IDS.includes(wid)) return; bus.emit('map:world', { world: wid, open: worldOpen(wid), via: p.via || 'click' });
+      if (!worldOpen(wid)) { say('map.worldClosed'); return; } if (wid === f.world) return; lastPick[f.world] = f.stage; f.world = wid; const ws = WSTAGES(); f.stage = lastPick[wid] || ((p.dir || 1) < 0 ? ws[ws.length - 1] : ws[0]) || f.stage; f.toast = null; mapSel.reset(); }   // 그 세계에서 마지막으로 고른 것, 없으면 앞으로 갈 땐 첫 칸·뒤로 갈 땐 끝 칸
     else if (id === 'enter' && f.screen === 'S04') { if (isLocked(f.stage)) { say('map.locked.' + f.stage); return; } bus.emit('map:enter', { stage: f.stage, via: p.via || 'click' }); newGame(); }
     else if (id === 'map') { toMap(f.screen); }
     else if (id === 'calib-skip' && f.calib) f.calib.skip(f.t * 1000);
@@ -68,9 +79,11 @@ export function createFlow({ data, grade = 1, seed = Date.now() % 100000, freeze
     if (f.screen === 'S04' && !f.game) { f.cursor = c; return; }   // v1.9 지도: 커서는 step 에서 mapSel 로
     if (!f.game) return; f.game.input.push({ type: 'CURSOR', t: f.t * 1000, via: 'hand', value: c || {} });
   };
-  f.key = (code, down, tMs) => { if (f.screen === 'S04' && !f.game) { if (!down) return; const i = STAGES.indexOf(f.stage);   // v1.9 지도 키보드: ←→(↑↓) 고르기 · 1~4 바로 · Enter/Space 들어가기 · Esc 처음으로
-      if (code === 'ArrowRight' || code === 'ArrowDown') f.action('pick', { stage: STAGES[Math.min(STAGES.length - 1, i + 1)], via: 'key' }); else if (code === 'ArrowLeft' || code === 'ArrowUp') f.action('pick', { stage: STAGES[Math.max(0, i - 1)], via: 'key' });
-      else if (/^Digit[1-9]$/.test(code) && STAGES[+code[5] - 1]) f.action('pick', { stage: STAGES[+code[5] - 1], via: 'key' }); else if (code === 'Enter' || code === 'Space') f.action('enter', { via: 'key' }); else if (code === 'Escape') f.action('home'); return; }
+  f.key = (code, down, tMs) => { if (f.screen === 'S04' && !f.game) { if (!down) return; const ws = WSTAGES(), i = ws.indexOf(f.stage);   // v1.9 지도 키보드: ←→(↑↓) 고르기 · 1~4 바로 · Enter/Space 들어가기 · Esc 처음으로 · v2.9 [ ] 앞/다음 세계(끝에서 →·← 도 넘어감)
+      if (code === 'ArrowRight' || code === 'ArrowDown') { if (i >= ws.length - 1 && neighborWorld(1)) f.action('world', { dir: 1, via: 'key' }); else f.action('pick', { stage: ws[Math.min(ws.length - 1, i + 1)], via: 'key' }); }
+      else if (code === 'ArrowLeft' || code === 'ArrowUp') { if (i <= 0 && neighborWorld(-1)) f.action('world', { dir: -1, via: 'key' }); else f.action('pick', { stage: ws[Math.max(0, i - 1)], via: 'key' }); }
+      else if (code === 'BracketRight') f.action('world', { dir: 1, via: 'key' }); else if (code === 'BracketLeft') f.action('world', { dir: -1, via: 'key' });
+      else if (/^Digit[1-9]$/.test(code) && ws[+code[5] - 1]) f.action('pick', { stage: ws[+code[5] - 1], via: 'key' }); else if (code === 'Enter' || code === 'Space') f.action('enter', { via: 'key' }); else if (code === 'Escape') f.action('home'); return; }
     if (f.game && f.mode === 'keyboard') f.kb.key(code, down, tMs); else if (f.game && (code === 'Escape' || code === 'KeyP') && down) f.game.input.push({ type: 'PAUSE', t: tMs, via: 'key', value: {} }); };
   f.wantModes = () => !f.game ? (f.screen === 'S17' ? ['pose'] : f.screen === 'S04' && f.mode !== 'keyboard' ? ['hands'] : []) : f.game.paused === 'user' ? ['hands'] : f.game.screen === 'S08Q' ? ['hands'] : f.game.wantsPose() ? ['pose'] : ['hands'];   // S08P 크기 문은 몸(pose), 돌 고르기는 손(hands)
   f.step = function(dt){

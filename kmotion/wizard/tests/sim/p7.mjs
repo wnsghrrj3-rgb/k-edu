@@ -11,7 +11,7 @@ const center = r => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
 
 // ── 1. 데이터: worlds.json 결정 6·월드 6(숲만 열림) · targets.json map 노드 4(지름 ≥ 15%)·enter
 { const W = data.worlds, M = data.layout.map;
-  ok('worlds.json 결정 6 · 월드 6 · 숲 열림·수의 결정, 나머지 닫힘', W.crystals.length === 6 && W.worlds.length === 6 && W.worlds[0].id === 'forest' && W.worlds[0].open && W.worlds[0].crystal === 'number' && W.worlds.slice(1).every(w => !w.open) && W.worlds.every((w, i) => w.crystal === W.crystals[i]));
+  ok('worlds.json 결정 6 · 월드 6 · 숲·신전 열림(v2.9)·수의 결정, 나머지 닫힘', W.crystals.length === 6 && W.worlds.length === 6 && W.worlds[0].id === 'forest' && W.worlds[0].open && W.worlds[0].crystal === 'number' && W.worlds[1].id === 'temple' && W.worlds[1].open && W.worlds.slice(2).every(w => !w.open) && W.worlds.every((w, i) => w.crystal === W.crystals[i]));
   ok('targets.json map 노드 4 · 지름 ≥ 15% · enter', M.node.length === 4 && M.node.every(n => n.rect.w >= .15) && M.enter && M.enter.rect.w >= .15);
   const far = M.node.every((a, i) => M.node.every((b, j) => i === j || Math.hypot((a.rect.x - b.rect.x), (a.rect.y - b.rect.y) / (16 / 9)) >= a.rect.w)); ok('노드끼리 겹치지 않음', far); }
 
@@ -19,8 +19,8 @@ const center = r => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
 { const f = createFlow({ data, grade: 1, seed: 1 }); const ev = []; f.action('start', { mode: 'keyboard' }); ev.push(...f.drainEvents()); const s = f.snapshot();
   ok('start → S04 · screen 이벤트 S01→S04', s.screen === 'S04' && ev.some(e => e.type === 'screen' && e.from === 'S01' && e.to === 'S04'));
   ok('map: 숲 · 1-1 고름 · 스테이지 4 · learn = 1-1 개념 · 권장 Lv1 · 별 0', s.map && s.map.world === 'forest' && s.map.worldName === '숫자의 숲' && s.map.stage === S[0] && s.map.stages.length === 4 && s.map.learn.join() === data.stages[S[0]].concepts.join() && s.map.recLevel === 1 && s.map.stars === 0, JSON.stringify(s.map && s.map.learn));
-  ok('targets 5(kind map: stage:×4 + enter) · 잠긴 노드도 눌림(enabled) · enter 안 잠김', s.targets.length === 5 && s.targets.every(t => t.kind === 'map') && s.targets.slice(0, 4).every((t, i) => t.id === 'stage:' + S[i]) && s.targets[4].id === 'enter' && !s.targets[4].locked && s.targets[1].locked && !s.targets[0].locked);
-  ok('받침대 6 · 하나도 없음 · 숲만 open', s.map.pedestals.length === 6 && s.map.pedestals.every(p => !p.got) && s.map.pedestals[0].open && s.map.pedestals[0].crystal === 'number' && !s.map.pedestals[1].open);
+  ok('targets 6(kind map: stage:×4 + enter + world:next, v2.9) · 잠긴 노드도 눌림(enabled) · enter 안 잠김 · 다음 세계 열림', s.targets.length === 6 && s.targets.every(t => t.kind === 'map') && s.targets.slice(0, 4).every((t, i) => t.id === 'stage:' + S[i]) && s.targets[4].id === 'enter' && !s.targets[4].locked && s.targets[1].locked && !s.targets[0].locked && s.targets[5].id === 'world:next' && !s.targets[5].locked);
+  ok('받침대 6 · 하나도 없음 · 숲·신전 open(v2.9)', s.map.pedestals.length === 6 && s.map.pedestals.every(p => !p.got) && s.map.pedestals[0].open && s.map.pedestals[0].crystal === 'number' && s.map.pedestals[1].open && !s.map.pedestals[2].open);
   ok('wantModes: 키보드 S04 = []', f.wantModes().length === 0);
   const f2 = createFlow({ data, grade: 1, seed: 1, progress: { level: 5, xp: 40, cleared: { [S[0]]: 3, [S[1]]: 2, [S[2]]: 1, [S[3]]: 3 }, crystals: ['number'] } }); f2.action('start', { mode: 'keyboard' }); const s2 = f2.snapshot();
   ok('깬 기록·결정: 별 9 · Lv5 · ✦40 · 받침대 1번 got · 모두 열림', s2.map.stars === 9 && s2.map.level === 5 && s2.map.xp === 40 && s2.map.pedestals[0].got && s2.map.stages.every(z => !z.locked) && s2.map.stages[3].final && s2.map.stages[3].crystal === 'number'); }
@@ -65,6 +65,6 @@ const center = r => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
   f.action('home'); const f2 = f; ok('home → S01 · 마스터리 보관', f2.screen === 'S01' && !f2.game && f2.mastery === m); f2.action('start', { mode: 'keyboard' }); f2.action('enter'); ok('S01 에서 다시 시작해도 마스터리 이어짐', f2.game.qe.m === m); }
 
 // ── 7. S01 스냅샷 호환(title.stages 그대로) · S04 title.char
-{ const f = createFlow({ data, grade: 1, seed: 6 }); const s = f.snapshot(); ok('S01 title.stages 4 · map null', s.title.stages.length === 4 && s.map === null && s.targets.length === 0); f.action('start', { mode: 'keyboard', char: 'tori' }); ok('S04 title.char = tori(메뉴 캐릭터 그리기용)', f.snapshot().title.char === 'tori'); }
+{ const f = createFlow({ data, grade: 1, seed: 6 }); const s = f.snapshot(); ok('S01 title.stages 5(숲 4 + 신전 1, v2.9) · map null', s.title.stages.length === 5 && s.map === null && s.targets.length === 0); f.action('start', { mode: 'keyboard', char: 'tori' }); ok('S04 title.char = tori(메뉴 캐릭터 그리기용)', f.snapshot().title.char === 'tori'); }
 
 console.table(out); console.log(fail ? `✗ ${fail} 실패` : '전부 통과'); process.exit(fail ? 1 : 0);

@@ -2,6 +2,7 @@
 // 최근 30문제 같은 사실 키 금지 · 오답 뒤 같은 개념 쉬운 문제 예약 · 정답 자리 고르게
 import { GENERATORS } from './generators/index.js';
 import { Mastery } from './mastery.js';
+import { PIC } from './pics.js';   // v2.9 그림 보기 코드 → 그림 id
 export { GENERATORS };
 export class QuestionEngine {
   constructor({ rng, concepts, mastery = new Mastery(), grade = null, fallback = [] }){ this.rng = rng; this.concepts = concepts.filter(k => GENERATORS[k]); this.m = mastery; this.recent = []; this.retry = []; this.slotUse = [0, 0, 0]; this.seq = 0;
@@ -34,13 +35,16 @@ export class QuestionEngine {
     const G = GENERATORS[q.concept], max = Number.isFinite(G.max) ? G.max : 18;   // v2.0: 오답 상한은 생성기 max(기본 18 = 1-1 3단원)
     const seen = new Set([q.answer]); const wrong = [];
     for (const [v, tag] of this.rng.shuffle(q.wrongs.slice())) if (Number.isInteger(v) && v >= 0 && v <= max && !seen.has(v)) { seen.add(v); wrong.push({ v, tag }); if (wrong.length === 2) break; }
-    for (const dv of [2, -2, 3, 1, -1]) { if (wrong.length >= 2) break; const v = q.answer + dv; if (v >= 0 && !seen.has(v)) { seen.add(v); wrong.push({ v, tag: 'other' }); } }
+    // v2.9(월드 2 도형): 그림 보기(choicePic) 는 답±n 채움 대신 같은 그림 묶음(picPool)에서 채운다 — 코드 밖 수가 구슬에 뜨지 않게. 숫자 문제는 전과 같은 줄(골든 불변)
+    if (q.choicePic) { for (const v of (q.picPool || [])) { if (wrong.length >= 2) break; if (!seen.has(v)) { seen.add(v); wrong.push({ v, tag: 'other' }); } } }
+    else for (const dv of [2, -2, 3, 1, -1]) { if (wrong.length >= 2) break; const v = q.answer + dv; if (v >= 0 && !seen.has(v)) { seen.add(v); wrong.push({ v, tag: 'other' }); } }
     // 정답 자리: 적게 쓰인 자리 우선
     const minU = Math.min(...this.slotUse), free = [0, 1, 2].filter(s => this.slotUse[s] === minU); const slot = this.rng.pick(free); this.slotUse[slot]++;
     const vals = []; let wi = 0; for (let s = 0; s < 3; s++) vals.push(s === slot ? { v: q.answer, tag: null } : wrong[wi++]);
     const id = `${G.unit || 'g1-1-u3'}-gen-${q.fact}-${++this.seq}`;
     return { id, concept: q.concept, fact: q.fact, d: q.d, p: q.p, type: q.type || 'calc1', hint1: q.hint1 || null, hint2: q.hint2 || null, prompt: q.prompt, answer: q.answer, correctSlot: slot, retry,
-      choices: vals.map((c, s) => ({ id: 'c' + s, slot: s, num: c.v, tag: c.tag })), verified: G.verify(q) };
+      pic: q.pic || null, choicePic: !!q.choicePic,   // v2.9 문제 그림 id · 보기가 그림인지
+      choices: vals.map((c, s) => ({ id: 'c' + s, slot: s, num: c.v, tag: c.tag, pic: q.choicePic ? (PIC[c.v] || null) : null })), verified: G.verify(q) };
   }
   result(q, y, ms, fast){ const r = this.m.update(q.concept, q.d, y, fast); if (y <= 0) this.retry.push({ concept: q.concept }); return r; }
 }

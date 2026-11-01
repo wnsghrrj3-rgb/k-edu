@@ -79,7 +79,7 @@ export function buildForest(scene, { arenaZ = 9 } = {}){
   const caveLights = []; for (let i = 0; i < 6; i++) { const l = new THREE.PointLight(0x5ef2c8, 0, 9, 1.6); l.position.y = 1.2; l.visible = false; root.add(l); caveLights.push(l); }
   const lightRail = i => cs[(i * 3 % 18) * 10], lightArena = i => as[(i * 2 % 12) * 10] || as[0];
   const arenaTrees = meshes.slice(0, 5), mounts = root.children.filter(c => c.isMesh && c.material && c.material.isMeshBasicMaterial && c.geometry.type === 'ConeGeometry');
-  const groundCol = ground.material.color.clone(), roadCol = roads[0].material.color.clone(); let dark = false, lightsN = 6;
+  const groundCol = ground.material.color.clone(), roadCol = roads[0].material.color.clone(), groundCol0 = groundCol.clone(), roadCol0 = roadCol.clone(); let dark = false, lightsN = 6, world = 'forest';
   function layCave(dist){ for (const m of caveRailM) { const { list, f } = m.userData; list.forEach((s, i) => { dummy.position.set(s[0], 0, wrapZ(s[1], dist)); dummy.rotation.set(0, s[3] * 9, 0); dummy.scale.setScalar(s[2]); f && f(dummy, s); dummy.updateMatrix(); m.setMatrixAt(i, dummy.matrix); }); m.instanceMatrix.needsUpdate = true; } }
   function placeLights(dist){ caveLights.forEach((l, i) => { const on = dark && i < lightsN; l.visible = on; l.intensity = on ? 2.2 : 0; if (!on) return; const s = mode === 'rail' ? lightRail(i) : lightArena(i); l.position.set(s[0] * .92, 1.2, mode === 'rail' ? wrapZ(s[1], dist) : s[1]); }); }
   const arenaOnly = [arena, ...meshes]; let mode = 'arena', lastDist = -1;
@@ -97,6 +97,8 @@ export function buildForest(scene, { arenaZ = 9 } = {}){
     setMode(m, r){ if (m !== mode) { mode = m; rail.visible = m === 'rail'; for (const o of arenaOnly) o.visible = m !== 'rail'; lastDist = -1; this.setDark(dark, true); }
       if (m === 'rail' && r && r.dist !== lastDist) { layRail(r.dist); if (dark) { layCave(r.dist); placeLights(r.dist); } lastDist = r.dist; } },
     /** v1.7 동굴 켜기/끄기 — 나무·덤불·먼 산 숨김, 바닥 남보라, 바위 기둥·수정 무리·점광원. 조명·안개는 index.js 가 맞춤 */
+    /** v2.9 월드 테마(world.id) — temple = 바닥 대리석 흰·길 금빛(09 문서 5절 색). 나무·덤불은 그대로(기능 검증 수준, 신전 기둥은 2차). setDark 가 바닥색을 다시 쓰므로 여기서 기준색을 바꾼다 */
+    setWorld(id){ if (id === world) return; world = id; if (id === 'temple') { groundCol.set(0xe6e0d2); roadCol.set(0xd9c27a); } else { groundCol.copy(groundCol0); roadCol.copy(roadCol0); } this.setDark(dark, true); },
     setDark(on, force){ if (on === dark && !force) return; dark = !!on;
       cave.visible = dark && mode === 'rail'; caveArena.visible = dark && mode !== 'rail'; for (const m of rMeshes) m.visible = !dark; for (const m of arenaTrees) m.visible = !dark && mode !== 'rail'; for (const m of mounts) m.visible = !dark;
       ground.material.color.copy(groundCol).multiplyScalar(dark ? .28 : 1); if (dark) ground.material.color.lerp(new THREE.Color(0x2b2350), .35); for (const rd of roads) { rd.material.color.copy(roadCol).multiplyScalar(dark ? .45 : 1); } arena.material.opacity = dark ? .55 : 1;

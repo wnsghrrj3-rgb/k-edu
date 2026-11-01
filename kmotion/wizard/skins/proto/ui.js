@@ -1,3 +1,4 @@
+import { picHtml } from './pics.js';   // v2.9 도형 그림(계약 question.pic·choices[].pic)
 // proto 스킨 — 화면 UI(DOM). 계약 contract/ui.d.ts: show·update·hide·toast·bind. 눌리는 자리(답 구슬)는 snapshot.targets rect 그대로
 // 손 선택 판정은 시스템 몫 — 여기선 hover·locked 를 보여 주기만 한다
 const J = [0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28], JI = Object.fromEntries(J.map((v, i) => [v, i]));
@@ -66,15 +67,19 @@ export function createUI(ctx, audio){
   const CRYSTAL_ICON = { number: '🔮', shape: '🔷', measure: '📏', pattern: '🔁', data: '📊', arcana: '✨' };
   let mapPedKey = '';
   function paintMap(s){ const M = s.map; if (!M) return; const W = innerWidth, H = innerHeight, cam = s.input && s.input.mode !== 'keyboard'; rects = rects || {};
-    map.querySelector('.lv').textContent = `${T('hud.level')}${M.level} · ✦${M.xp}`; map.querySelector('.st').textContent = `⭐ ${M.stars}`; map.querySelector('.mw-map-title s').textContent = `🌲 ${M.worldName || T('map.world.forest')}`;
-    const pts = []; for (const t of M.targets || []) { let o = mapNodes[t.id]; const isEnter = t.id === 'enter', sid = isEnter ? null : t.id.slice(6), st = sid ? (M.stages || []).find(z => z.id === sid) : null;
-      if (!o) { o = mapNodes[t.id] = h('div', 'mw-orb ' + (isEnter ? 'mw-enter' : 'mw-node'), `<b></b><s></s><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="289" stroke-dashoffset="289"/></svg>`); o.onclick = () => isEnter ? act('enter') : act('pick', { stage: sid }); map.append(o); }
-      const d = t.rect.w * W, cx = (t.rect.x + t.rect.w / 2) * W, cy = (t.rect.y + t.rect.h / 2) * H; rects[t.id] = { x: cx / W, y: cy / H }; if (!isEnter) pts.push(`${cx / W * 100},${cy / H * 100}`);
+    map.querySelector('.lv').textContent = `${T('hud.level')}${M.level} · ✦${M.xp}`; map.querySelector('.st').textContent = `⭐ ${M.stars}`; map.querySelector('.mw-map-title s').textContent = `${M.worldIcon || '🌲'} ${M.worldName || T('map.world.forest')}`; map.dataset.world = M.world || 'forest';   // v2.9 월드 이름·아이콘(테마 색은 CSS data-world)
+    const pts = []; for (const o of Object.values(mapNodes)) o.classList.add('mw-hide');   // v2.9 월드가 바뀌면 안 쓰는 노드는 숨김
+    for (const t of M.targets || []) { let o = mapNodes[t.id]; const isEnter = t.id === 'enter', isWorld = t.id.startsWith('world:'), sid = isEnter || isWorld ? null : t.id.slice(6), st = sid ? (M.stages || []).find(z => z.id === sid) : null;
+      if (!o) { o = mapNodes[t.id] = h('div', 'mw-orb ' + (isEnter ? 'mw-enter' : isWorld ? 'mw-world' : 'mw-node'), `<b></b><s></s><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="289" stroke-dashoffset="289"/></svg>`); o.onclick = () => isEnter ? act('enter') : isWorld ? act('world', { dir: t.id === 'world:next' ? 1 : -1 }) : act('pick', { stage: sid }); map.append(o); }
+      o.classList.remove('mw-hide'); const d = t.rect.w * W, cx = (t.rect.x + t.rect.w / 2) * W, cy = (t.rect.y + t.rect.h / 2) * H; rects[t.id] = { x: cx / W, y: cy / H }; if (!isEnter && !isWorld) pts.push(`${cx / W * 100},${cy / H * 100}`);
       o.style.cssText = `left:${cx - d / 2}px;top:${cy - d / 2}px;width:${d}px;height:${d}px`; o.querySelector('circle').style.strokeDashoffset = String(289 * (1 - (t.hover || 0)));
-      if (isEnter) { o.classList.toggle('locked', !!t.locked); o.querySelector('b').textContent = t.locked ? '🔒' : '🚪'; o.querySelector('s').textContent = T('map.enter'); }
+      if (isWorld) { o.classList.toggle('locked', !!t.locked); o.querySelector('b').textContent = t.id === 'world:next' ? '▶' : '◀'; o.querySelector('s').textContent = T(t.id === 'world:next' ? 'map.worldNext' : 'map.worldPrev'); }   // v2.9 앞/다음 세계
+      else if (isEnter) { o.classList.toggle('locked', !!t.locked); o.querySelector('b').textContent = t.locked ? '🔒' : '🚪'; o.querySelector('s').textContent = T('map.enter'); }
       else { o.classList.toggle('on', sid === M.stage); o.classList.toggle('locked', !!(st && st.locked)); o.querySelector('b').textContent = st && st.locked ? '🔒' : st && st.final ? '👑' : String(st ? (M.stages.indexOf(st) + 1) : ''); o.querySelector('s').textContent = st ? (st.locked ? '' : '⭐'.repeat(st.stars) + '☆'.repeat(3 - st.stars)) : ''; o.title = st ? T('stage.' + sid) : ''; } }
     mapLine.setAttribute('points', pts.join(' '));
-    const pk = (M.pedestals || []).map(p => p.crystal + (p.got ? 1 : 0) + (p.open ? 1 : 0)).join(); if (pk !== mapPedKey) { mapPedKey = pk; mapPed.innerHTML = (M.pedestals || []).map(p => `<i class="${p.got ? 'got' : p.open ? 'open' : ''}" title="${T('crystal.' + p.crystal)} · ${p.worldName}${p.open ? '' : ' (' + T('map.soon') + ')'}"><b>${p.got ? CRYSTAL_ICON[p.crystal] || '🔮' : '○'}</b><s>${p.icon || ''}</s></i>`).join(''); }
+    const pk = (M.pedestals || []).map(p => p.crystal + (p.got ? 1 : 0) + (p.open ? 1 : 0)).join(); if (pk !== mapPedKey) { mapPedKey = pk; mapPed.innerHTML = (M.pedestals || []).map(p => `<i class="${p.got ? 'got' : p.open ? 'open' : ''}" data-world="${p.world || ''}" title="${T('crystal.' + p.crystal)} · ${p.worldName}${p.open ? '' : ' (' + T('map.soon') + ')'}"><b>${p.got ? CRYSTAL_ICON[p.crystal] || '🔮' : '○'}</b><s>${p.icon || ''}</s></i>`).join('');
+      mapPed.querySelectorAll('i').forEach(el => { el.onclick = () => el.dataset.world && act('world', { id: el.dataset.world }); }); }   // v2.9 받침대 클릭 = 그 세계로(열린 것만, 닫힌 것은 토스트)
+    mapPed.querySelectorAll('i').forEach(el => el.classList.toggle('now', el.dataset.world === M.world));
     mapInfo.querySelector('.nm').textContent = (M.locked ? '🔒 ' : '') + T('stage.' + M.stage); mapInfo.querySelector('.learn span').textContent = (M.learn || []).map(k => T('learn.' + k)).join(' · '); mapInfo.querySelector('.rec').textContent = `${T('map.recLevel')} ${T('hud.level')}${M.recLevel}`;
     mapHelp.textContent = cam ? T('map.hand') : T('map.key');
     const c = s.input && s.input.cursor; cursor.classList.toggle('mw-hide', !(cam && c && c.x != null)); if (cam && c && c.x != null) cursor.style.transform = `translate(${c.x * W}px,${c.y * H}px)`; }
@@ -101,8 +106,8 @@ export function createUI(ctx, audio){
   pauseScr.querySelector('.resume').onclick = () => act('resume'); pauseScr.querySelector('.recal').onclick = () => act('recalib'); pauseScr.querySelector('.home').onclick = () => act('home');
 
   // ── S08Q 문제
-  const q = h('section', 'mw-q mw-hide'); q.innerHTML = `<div class="mw-qpanel"><div class="prompt"></div><div class="hint mw-hide"></div><div class="beads mw-hide"></div><div class="sub"></div><div class="mw-gauge"><i></i></div></div>`;
-  const qp = q.querySelector('.mw-qpanel'), qPrompt = q.querySelector('.prompt'), qHint = q.querySelector('.hint'), qBeads = q.querySelector('.beads'), qSub = q.querySelector('.sub'), qGauge = q.querySelector('.mw-gauge'), qGaugeI = qGauge.querySelector('i');
+  const q = h('section', 'mw-q mw-hide'); q.innerHTML = `<div class="mw-qpanel"><div class="qpic mw-hide"></div><div class="prompt"></div><div class="hint mw-hide"></div><div class="beads mw-hide"></div><div class="sub"></div><div class="mw-gauge"><i></i></div></div>`;
+  const qp = q.querySelector('.mw-qpanel'), qPrompt = q.querySelector('.prompt'), qPic = q.querySelector('.qpic'), qHint = q.querySelector('.hint'), qBeads = q.querySelector('.beads'), qSub = q.querySelector('.sub'), qGauge = q.querySelector('.mw-gauge'), qGaugeI = qGauge.querySelector('i');
   // 🦉 힌트 구슬(07 문서 8절) — 대상 rect 는 snapshot.targets 의 'hint'(시스템 소유)
   const owl = h('div', 'mw-orb mw-owl mw-hide', `<b>🦉</b><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="289" stroke-dashoffset="289"/></svg>`); owl.onclick = () => act('hint'); q.append(owl);
   let hintStep = -1;
@@ -129,7 +134,7 @@ export function createUI(ctx, audio){
     return o + (p.op === '+' ? `<em>${p.a} + ${p.b}</em>` : `<em>${p.a} − ${p.b}</em>`); };
   // v2.3 묶음 그림(15 문서 3절 hint2): n줄, 한 줄에 each 개 구슬 — 「36을 4줄로 똑같이 나누면 한 줄은 9」
   const groupsHtml = p => { let o = ''; for (let r = 0; r < p.n; r++) { o += '<u>'; for (let i = 0; i < p.each; i++) o += '<i class="g"></i>'; o += '</u>'; } return o + `<em>${p.n} × ${p.each} = ${p.n * p.each}</em>`; };
-  function paintHud(s){
+  function paintHud(s){ root.dataset.world = s.world && s.world.id || '';   // v2.9 테마(그림 색)
     const P = s.player; if (!P) return; const hpk = P.hp / P.hpMax, mk = P.mana / P.manaMax;
     hpBar.firstElementChild.style.transform = `scaleX(${hpk})`; hpBar.classList.toggle('low', hpk < .3); hpBar.lastElementChild.textContent = `${T('hud.hp')} ${P.hp}`;
     mpBar.firstElementChild.style.transform = `scaleX(${mk})`; mpBar.querySelector('s').style.left = (P.spellCost / P.manaMax * 100) + '%'; mpBar.lastElementChild.textContent = `${T('hud.mana')} ${P.mana}`;
@@ -169,7 +174,8 @@ export function createUI(ctx, audio){
   }
   function paintQ(s){
     const Q = s.question; if (!Q) return;
-    if (Q.id !== qId) { qId = Q.id; hintStep = -1; qPrompt.textContent = (Q.kind === 'seal' ? '🔒 ' : Q.kind === 'power' ? '★ ' : Q.kind === 'shield' ? '🛡 ' : Q.kind === 'golem' ? '💎 ' : Q.kind === 'share' ? '🟢 ' : '') + fmtQ(Q); qp.classList.toggle('shareq', Q.kind === 'share'); qp.classList.toggle('seal', Q.kind === 'seal'); qp.classList.toggle('shieldq', Q.kind === 'shield'); qp.classList.toggle('golemq', Q.kind === 'golem'); qp.dataset.sub = Q.kind === 'golem' ? T('q.golem') : Q.kind === 'share' ? T('q.share') : ''; qp.classList.toggle('power', Q.kind === 'power'); qp.classList.toggle('word', Q.type === 'word1'); }
+    if (Q.id !== qId) { qId = Q.id; hintStep = -1; qPrompt.textContent = (Q.kind === 'seal' ? '🔒 ' : Q.kind === 'power' ? '★ ' : Q.kind === 'shield' ? '🛡 ' : Q.kind === 'golem' ? '💎 ' : Q.kind === 'share' ? '🟢 ' : '') + fmtQ(Q); qp.classList.toggle('shareq', Q.kind === 'share'); qp.classList.toggle('seal', Q.kind === 'seal'); qp.classList.toggle('shieldq', Q.kind === 'shield'); qp.classList.toggle('golemq', Q.kind === 'golem'); qp.dataset.sub = Q.kind === 'golem' ? T('q.golem') : Q.kind === 'share' ? T('q.share') : ''; qp.classList.toggle('power', Q.kind === 'power'); qp.classList.toggle('word', Q.type === 'word1');
+      qPic.innerHTML = Q.pic ? picHtml(Q.pic) : ''; qPic.classList.toggle('mw-hide', !Q.pic); }   // v2.9 문제 그림(문구 위)
     if (Q.hintStep !== hintStep) { hintStep = Q.hintStep; qHint.classList.toggle('mw-hide', !Q.hint); if (Q.hint) qHint.textContent = '🦉 ' + T(Q.hint.key, Q.hint.args);
       qBeads.classList.toggle('mw-hide', !Q.hintPic); if (Q.hintPic && Q.hintPic.kind === 'beads') qBeads.innerHTML = beadsHtml(Q.hintPic); else if (Q.hintPic && Q.hintPic.kind === 'groups') qBeads.innerHTML = groupsHtml(Q.hintPic); }
     qp.classList.toggle('right', Q.state === 'right'); qp.classList.toggle('wrong', Q.state === 'wrong');
@@ -186,7 +192,8 @@ export function createUI(ctx, audio){
       if (t.kind !== 'choice') continue; const slot = +t.id.slice(1), o = orbs[slot]; if (!o) continue; const ch = Q.choices.find(c => c.targetId === t.id);
       const d = t.rect.w * W, cx = (t.rect.x + t.rect.w / 2) * W, cy = (t.rect.y + t.rect.h / 2) * H; rects[t.id] = { x: cx / W, y: cy / H };
       o.style.cssText = `left:${cx - d / 2}px;top:${cy - d / 2}px;width:${d}px;height:${d}px`; o.classList.remove('mw-hide');
-      o.querySelector('b').textContent = ch ? ch.num : '?';
+      const bb = o.querySelector('b'); if (ch && ch.pic) { if (bb.dataset.pic !== ch.pic) { bb.dataset.pic = ch.pic; bb.innerHTML = picHtml(ch.pic); } } else { if (bb.dataset.pic) { delete bb.dataset.pic; } bb.textContent = ch ? ch.num : '?'; }   // v2.9 그림 보기
+      o.classList.toggle('pic', !!(ch && ch.pic));
       o.querySelector('circle').style.strokeDashoffset = String(289 * (1 - (t.hover || 0)));
       const done = Q.state !== 'open'; o.classList.toggle('locked', t.locked && !done);
       o.classList.toggle('right', Q.reveal === slot); o.classList.toggle('wrong', Q.state === 'wrong' && Q.picked === slot);
