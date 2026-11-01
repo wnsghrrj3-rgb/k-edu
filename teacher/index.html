@@ -624,6 +624,17 @@ tr:hover td{background:#FAFBFC}
         <input type="text" id="schooltask-title" maxlength="120" placeholder="할 일 (예: 방과후 수요조사 제출)" style="flex:1;min-width:220px;padding:9px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13.5px">
         <input type="date" id="schooltask-due" style="padding:9px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13.5px">
       </div>
+      <!-- v2 종류 — 알림 / 취합 양식 (sql/setup_school_tasks_v2_collect.sql) -->
+      <div style="margin-top:8px;font-size:12.5px;color:var(--sub);display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span>종류</span>
+        <label style="display:inline-flex;gap:4px;align-items:center;cursor:pointer"><input type="radio" name="schooltask-kind" value="notice" checked onchange="setStaskKind('notice')"> 📌 알림 (확인만 하면 끝)</label>
+        <label style="display:inline-flex;gap:4px;align-items:center;cursor:pointer"><input type="radio" name="schooltask-kind" value="collect" onchange="setStaskKind('collect')"> 📋 취합 양식 (각자 칸을 채워 제출)</label>
+      </div>
+      <div id="schooltask-schema" hidden style="margin-top:8px;padding:10px 12px;border:1px dashed #cbd5e0;border-radius:10px;background:#fff">
+        <div style="font-size:12.5px;color:var(--sub);margin-bottom:6px">표의 <b>칸 이름</b>을 적어요. 선생님마다 한 줄씩 채우고, 제출하면 그 선생님 할 일은 저절로 완료돼요. (반·이름은 자동으로 붙어요)</div>
+        <div id="schooltask-schema-rows"></div>
+        <button class="code-btn outline" type="button" style="margin:6px 0 0;padding:5px 12px;font-size:12px" onclick="staskSchemaAdd()">＋ 칸 추가</button>
+      </div>
       <textarea id="schooltask-detail" maxlength="1000" rows="2" placeholder="자세한 내용 (선택)" style="width:100%;margin-top:8px;padding:9px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit"></textarea>
       <!-- 받는 사람 (v1.1 — 준호 결정 ④): 기본은 우리 학교 모두, 「고르기」로 특정 선생님만 -->
       <div id="schooltask-to" style="margin-top:8px;font-size:12.5px;color:var(--sub);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -1704,6 +1715,7 @@ function staskRow(t){
     : `<button class="code-btn primary" style="margin:0;padding:5px 14px;font-size:11.5px;flex-shrink:0" onclick="markSchoolTask('${t.id}',true)">확인</button>`;
   const detail = t.detail
     ? `<div style="margin-top:3px;font-size:12.5px;color:var(--sub);line-height:1.55;white-space:pre-wrap">${escHtml(t.detail)}</div>` : '';
+  if(t.kind === 'collect') return staskCollectRow(t, tone, detail, mineBtn);
   const who = t.created_by_name ? escHtml(t.created_by_name) + ' 선생님' : '누군가';
   const att = staskAttHtml(t);   // v1.5
   return `<div data-stask="${t.id}" data-urgency="${t.urgency}" data-bucket="${t.bucket}"
@@ -1722,6 +1734,164 @@ function staskRow(t){
     </div>
     <div style="display:flex;gap:6px;align-items:flex-start;flex-shrink:0">${act}${mineBtn}</div>
   </div>`;
+}
+// ── v2 취합 양식 (sql/setup_school_tasks_v2_collect.sql) ──
+// 준호 결정(2026-11-02): 파일을 합치지 않고 칸을 채운다 · 제출 = 자동 완료 · 기한 안 고치기 가능 · 필수 칸 비면 제출 불가.
+const STASK_TYPES = { text:'짧은 글', long:'긴 글', number:'숫자' };
+let staskKind = 'notice';
+function setStaskKind(k){
+  staskKind = k;
+  const box = document.getElementById('schooltask-schema');
+  if(box){ box.hidden = (k !== 'collect'); if(k === 'collect' && !document.querySelector('#schooltask-schema-rows .stask-col')){ staskSchemaAdd('내용'); } }
+  const ti = document.getElementById('schooltask-title');
+  if(ti) ti.placeholder = k === 'collect' ? '취합 제목 (예: 11월 방과후 수요조사)' : '할 일 (예: 방과후 수요조사 제출)';
+}
+function staskSchemaAdd(label){
+  const rows = document.getElementById('schooltask-schema-rows');
+  if(!rows || rows.querySelectorAll('.stask-col').length >= 8){ if(rows) showToast('칸은 8개까지예요.'); return; }
+  const d = document.createElement('div');
+  d.className = 'stask-col';
+  d.style.cssText = 'display:flex;gap:6px;align-items:center;margin-top:5px;flex-wrap:wrap';
+  d.innerHTML = `<input type="text" class="stask-col-label" maxlength="40" placeholder="칸 이름 (예: 신청 인원)" value="${escHtml(label||'')}" style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px">
+    <select class="stask-col-type" style="padding:7px 8px;border:1px solid #d5dbe3;border-radius:8px;font-size:12.5px">${Object.keys(STASK_TYPES).map(k => `<option value="${k}">${STASK_TYPES[k]}</option>`).join('')}</select>
+    <label style="display:inline-flex;gap:4px;align-items:center;font-size:12px;color:var(--sub);cursor:pointer"><input type="checkbox" class="stask-col-req" checked> 필수</label>
+    <button type="button" class="code-btn outline" style="margin:0;padding:4px 9px;font-size:12px" onclick="this.parentNode.remove()">✕</button>`;
+  rows.appendChild(d);
+  d.querySelector('.stask-col-label').focus();
+}
+function staskSchemaRead(){
+  return [...document.querySelectorAll('#schooltask-schema-rows .stask-col')].map(d => ({
+    label: (d.querySelector('.stask-col-label').value || '').trim(),
+    type: d.querySelector('.stask-col-type').value,
+    required: d.querySelector('.stask-col-req').checked
+  })).filter(c => c.label);
+}
+function staskCollectRow(t, tone, detail, mineBtn){
+  const who = t.created_by_name ? escHtml(t.created_by_name) + ' 선생님' : '누군가';
+  const cols = (t.collect_schema || []).map(c => escHtml(c.label)).join(' · ');
+  const canFill = t.recipient !== false || t.mine;
+  const act = !canFill
+    ? `<span style="padding:5px 10px;font-size:11.5px;color:var(--sub);border:1px dashed var(--border);border-radius:8px;flex-shrink:0" title="학교 관리자로 보는 중">👁 관리자 열람</span>`
+    : t.my_entry
+    ? `<button class="code-btn outline" style="padding:5px 12px;font-size:11.5px;flex-shrink:0" onclick="toggleStaskEntry('${t.id}')">✅ 제출함 · 고치기</button>`
+    : `<button class="code-btn primary" style="margin:0;padding:5px 14px;font-size:11.5px;flex-shrink:0" onclick="toggleStaskEntry('${t.id}')">✍️ 채우기</button>`;
+  const seeAll = t.mine || isSchoolAdmin;
+  return `<div data-stask="${t.id}" data-urgency="${t.urgency}" data-bucket="${t.bucket}"
+      style="display:flex;gap:12px;padding:12px 20px;border-top:1px solid var(--border);border-left:4px solid ${tone.bar};${t.done?'opacity:.75;':''}">
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="padding:2px 9px;border-radius:999px;background:${tone.chip};color:${tone.ink};font-size:11px;font-weight:700">${tone.label}</span>
+        <span style="padding:2px 8px;border-radius:999px;background:#EDE9FE;color:#5B21B6;font-size:11px;font-weight:700">📋 취합</span>
+        <b style="font-size:14px">${escHtml(t.title)}</b>
+        <span style="font-size:12px;color:${tone.ink};font-weight:600">${escHtml(staskDue(t))}</span>
+      </div>
+      ${detail}
+      <div style="margin-top:3px;font-size:12px;color:var(--sub)">칸: ${cols}</div>
+      ${staskAttHtml(t)}
+      <div style="margin-top:4px;font-size:11.5px;color:var(--sub)">${who} 올림 · ${seeAll
+          ? `<a href="#" style="color:var(--primary);font-weight:700" onclick="toggleStaskTable('${t.id}');return false;">제출 ${t.done_count} / ${t.teacher_count}명 — 모은 표 보기 ▾</a>`
+          : `제출 ${t.done_count} / ${t.teacher_count}명`}${t.targeted ? ' · <span title="' + escHtml(t.to_names||'') + '">👤 ' + (seeAll && t.to_names ? escHtml(t.to_names) + '에게' : '나에게') + '</span>' : ''}</div>
+      <div id="stask-entry-${t.id}" hidden style="margin-top:8px"></div>
+      ${seeAll ? `<div id="stask-table-${t.id}" hidden style="margin-top:8px;font-size:12px"></div>` : ''}
+    </div>
+    <div style="display:flex;gap:6px;align-items:flex-start;flex-shrink:0">${act}${mineBtn}</div>
+  </div>`;
+}
+let staskCache = {};   // id → 목록 행 (채우기 폼이 양식·내 줄을 읽는다)
+function toggleStaskEntry(id){
+  const box = document.getElementById('stask-entry-' + id), t = staskCache[id];
+  if(!box || !t) return;
+  if(!box.hidden){ box.hidden = true; return; }
+  box.hidden = false;
+  const mine = t.my_entry || {};
+  box.innerHTML = `<div style="padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#F8FAFC">
+    ${(t.collect_schema||[]).map(c => `<label style="display:block;margin-bottom:6px;font-size:12.5px"><span style="font-weight:700">${escHtml(c.label)}</span>${c.required ? ' <span style="color:#B91C1C">*</span>' : ''}<br>
+      ${c.type === 'long'
+        ? `<textarea class="stask-in" data-k="${c.key}" rows="2" maxlength="2000" style="width:100%;margin-top:3px;padding:7px 10px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical">${escHtml(mine[c.key]||'')}</textarea>`
+        : `<input class="stask-in" data-k="${c.key}" type="${c.type === 'number' ? 'text' : 'text'}" ${c.type === 'number' ? 'inputmode="decimal" placeholder="숫자"' : ''} maxlength="200" value="${escHtml(mine[c.key]||'')}" style="width:100%;margin-top:3px;padding:7px 10px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px">`}</label>`).join('')}
+    <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+      <button class="code-btn primary" style="margin:0;padding:6px 16px;font-size:12.5px" onclick="submitStaskEntry('${id}')">${t.my_entry ? '고쳐서 다시 제출' : '제출 — 제출하면 내 할 일에서 완료돼요'}</button>
+      <span style="font-size:11.5px;color:var(--sub)">${t.due_date ? '기한 안에는 다시 고칠 수 있어요.' : '언제든 다시 고칠 수 있어요.'}</span>
+    </div></div>`;
+  const first = box.querySelector('.stask-in'); first && first.focus();
+}
+async function submitStaskEntry(id){
+  const box = document.getElementById('stask-entry-' + id), t = staskCache[id];
+  if(!box || !t) return;
+  const data = {};
+  for(const el of box.querySelectorAll('.stask-in')) data[el.dataset.k] = (el.value || '').trim();
+  for(const c of (t.collect_schema||[])){
+    if(c.required && !data[c.key]){ showToast('⚠️ 「' + c.label + '」 칸을 채워 주세요.'); const el = box.querySelector('.stask-in[data-k="' + c.key + '"]'); el && el.focus(); return; }
+    if(c.type === 'number' && data[c.key] && !/^-?[0-9]+([.,][0-9]+)?$/.test(data[c.key])){ showToast('⚠️ 「' + c.label + '」 칸은 숫자만 적어 주세요.'); return; }
+  }
+  const { error } = await db.rpc('submit_task_entry', { p_task_id: id, p_data: data });
+  if(error){
+    const m = error.message || '';
+    showToast(/required:/.test(m) ? '⚠️ ' + m.replace('required:', '').trim() + ' 칸을 채워 주세요.'
+      : /number:/.test(m) ? '⚠️ ' + m.replace('number:', '').trim() + ' 칸은 숫자만 적어 주세요.'
+      : /task closed/.test(m) ? '⚠️ 이미 끝난 취합이에요.'
+      : /not a recipient/.test(m) ? '⚠️ 이 취합은 받는 사람만 채울 수 있어요.'
+      : '⚠️ 제출 실패: ' + m);
+    return;
+  }
+  showToast(t.my_entry ? '✏️ 고쳐서 다시 냈어요.' : '✅ 제출했어요 — 내 할 일에서 완료됐어요.');
+  await loadSchoolTasks();
+}
+// 모은 표 — 올린 사람·학교 관리자. 안 낸 사람은 빈 줄로 같이 보인다.
+async function toggleStaskTable(id){
+  const box = document.getElementById('stask-table-' + id), t = staskCache[id];
+  if(!box || !t) return;
+  if(!box.hidden){ box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = '<span style="color:var(--sub)">불러오는 중…</span>';
+  const { data, error } = await db.rpc('task_entries', { p_task_id: id });
+  if(error){ box.innerHTML = '<span style="color:var(--orange)">표를 불러올 수 없어요 — ' + escHtml(error.message||'') + '</span>'; return; }
+  const rows = data || [], cols = t.collect_schema || [];
+  staskCache[id]._entries = rows;
+  const notYet = rows.filter(r => !r.data && !r.is_creator);
+  box.innerHTML = `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+      ${notYet.length ? `<span style="color:#991B1B;font-weight:700">아직 ${notYet.length}명</span> <span style="display:inline-flex;gap:4px;flex-wrap:wrap">${notYet.map(r => `<span style="padding:3px 9px;border-radius:999px;font-size:11.5px;background:#FEE2E2;color:#991B1B;font-weight:700">⏳ ${escHtml(r.name||'(이름 없음)')}${r.class_label ? ' <span style="opacity:.7">' + escHtml(r.class_label) + '</span>' : ''}</span>`).join('')}</span>` : '<span style="color:#166534;font-weight:700">🎉 모두 제출했어요</span>'}
+      <span style="margin-left:auto;display:inline-flex;gap:6px">
+        <button class="code-btn outline" style="margin:0;padding:4px 10px;font-size:11.5px" onclick="staskCopyTable('${id}')">📋 표 복사 (한글에 붙여넣기)</button>
+        <button class="code-btn outline" style="margin:0;padding:4px 10px;font-size:11.5px" onclick="staskDownloadCsv('${id}')">📥 엑셀(CSV) 내려받기</button>
+      </span></div>
+    <div style="overflow:auto;border:1px solid var(--border);border-radius:8px"><table style="border-collapse:collapse;font-size:12px;min-width:100%">
+      <thead><tr style="background:#F1F5F9">${['반','이름', ...cols.map(c => c.label), '제출'].map(h => `<th style="padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap">${escHtml(h)}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(r => `<tr style="${r.data ? '' : 'color:#991B1B;background:#FFF7F7'}">
+        <td style="padding:5px 8px;border-bottom:1px solid #EEF2F7;white-space:nowrap">${escHtml(r.class_label||'')}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #EEF2F7;white-space:nowrap">${escHtml(r.name||'')}${r.is_creator ? ' <span style="opacity:.6">(담당)</span>' : ''}</td>
+        ${cols.map(c => `<td style="padding:5px 8px;border-bottom:1px solid #EEF2F7;white-space:pre-wrap">${escHtml((r.data||{})[c.key]||'')}</td>`).join('')}
+        <td style="padding:5px 8px;border-bottom:1px solid #EEF2F7;white-space:nowrap;color:var(--sub)">${r.data ? (r.updated_at > r.submitted_at ? '✏️ 수정됨 ' : '✅ ') + new Date(r.updated_at).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'}) : '—'}</td>
+      </tr>`).join('')}</tbody></table></div>`;
+}
+function staskTableData(id){
+  const t = staskCache[id], rows = (t && t._entries) || [], cols = (t && t.collect_schema) || [];
+  const head = ['반','이름', ...cols.map(c => c.label)];
+  const body = rows.filter(r => r.data).map(r => [r.class_label||'', r.name||'', ...cols.map(c => (r.data||{})[c.key]||'')]);
+  return { title: t ? t.title : '', head, body };
+}
+async function staskCopyTable(id){
+  const { head, body } = staskTableData(id);
+  const cell = v => '<td>' + escHtml(String(v)).replace(/\n/g,'<br>') + '</td>';
+  const html = '<table border="1" style="border-collapse:collapse"><tr>' + head.map(h => '<th>' + escHtml(h) + '</th>').join('') + '</tr>'
+    + body.map(r => '<tr>' + r.map(cell).join('') + '</tr>').join('') + '</table>';
+  const text = [head, ...body].map(r => r.map(v => String(v).replace(/\t/g,' ')).join('\t')).join('\n');
+  try {
+    if(navigator.clipboard && window.ClipboardItem){
+      await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], {type:'text/html'}), 'text/plain': new Blob([text], {type:'text/plain'}) })]);
+    } else { await navigator.clipboard.writeText(text); }
+    showToast('📋 표를 복사했어요 — 한글 문서에 붙여넣기(Ctrl+V) 하면 표로 들어가요.');
+  } catch(e){ showToast('⚠️ 복사가 막혔어요. 엑셀(CSV) 내려받기를 써 주세요.'); }
+}
+function staskDownloadCsv(id){
+  const { title, head, body } = staskTableData(id);
+  const q = v => '"' + String(v).replace(/"/g,'""') + '"';
+  const csv = '\uFEFF' + [head, ...body].map(r => r.map(q).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = (title || '취합').replace(/[\\/:*?"<>|]/g,'_') + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  showToast('📥 내려받았어요 — 엑셀에서 열려요.');
 }
 function toggleSchoolTaskFold(which){
   schoolTaskFold[which] = !schoolTaskFold[which];
@@ -1900,6 +2070,7 @@ async function loadSchoolTasks(){
   if(error){ wrap.hidden = true; return; }          // 폴백 — SQL 미적용이면 카드 자체를 숨긴다
   await loadSchoolTaskAtt();                        // v1.5 — 첨부는 별도 RPC, 없으면 조용히 숨김
   const rows = data || [];
+  staskCache = {}; rows.forEach(t => { staskCache[t.id] = t; });   // v2
   wrap.hidden = false;
   await loadMySchool();
   await loadSchoolAdmins();          // v1.4 — staskRow 가 isSchoolAdmin 을 본다
@@ -1965,8 +2136,11 @@ async function addSchoolTask(){
   if(title.length < 2){ showToast('할 일을 두 글자 이상 적어 주세요.'); return; }
   const to = schoolTaskToMode === 'pick' ? pickedSchoolTaskTo() : [];
   if(schoolTaskToMode === 'pick' && !to.length){ showToast('받을 선생님을 한 명 이상 골라 주세요.'); return; }
+  const schema = staskKind === 'collect' ? staskSchemaRead() : null;
+  if(staskKind === 'collect' && !schema.length){ showToast('취합 양식의 칸 이름을 하나 이상 적어 주세요.'); return; }
   const { data: newId, error } = await db.rpc('add_school_task', {
-    p_title: title, p_detail: (de.value || '').trim(), p_due: du.value || null, p_to: to.length ? to : null
+    p_title: title, p_detail: (de.value || '').trim(), p_due: du.value || null, p_to: to.length ? to : null,
+    p_kind: staskKind, p_schema: schema
   });
   if(error){
     showToast(/school required/.test(error.message||'') ? '⚠️ 학교가 지정돼 있어야 올릴 수 있어요.'
@@ -1988,7 +2162,9 @@ async function addSchoolTask(){
   ti.value = ''; de.value = ''; du.value = '';
   document.querySelectorAll('.schooltask-to-cb').forEach(cb => { cb.checked = false; });
   document.getElementById('schooltask-form').hidden = true;
-  showToast(to.length ? '📌 ' + to.length + '명에게 올렸어요.' : '📌 우리 학교 할 일판에 올렸어요.');
+  showToast((staskKind === 'collect' ? '📋 취합 양식을 ' : '📌 ') + (to.length ? to.length + '명에게 올렸어요.' : '우리 학교 할 일판에 올렸어요.'));
+  const kn = document.querySelector('input[name="schooltask-kind"][value="notice"]'); if(kn){ kn.checked = true; } setStaskKind('notice');
+  const sr = document.getElementById('schooltask-schema-rows'); if(sr) sr.innerHTML = '';
   await loadSchoolTasks();
 }
 async function markSchoolTask(id, done){
