@@ -211,11 +211,12 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $fn$
   SELECT w.teacher_id, COALESCE(tt.name,''),
          COALESCE((SELECT c.label FROM class_codes c WHERE c.teacher_id = tt.id AND c.is_active ORDER BY c.created_at DESC LIMIT 1), ''),
          e.data, e.submitted_at, e.updated_at, (w.teacher_id = t.created_by)
-    FROM who w, t
+    FROM who w
+    CROSS JOIN t
     JOIN teachers tt ON tt.id = w.teacher_id
     LEFT JOIN school_task_entries e ON e.task_id = t.id AND e.teacher_id = w.teacher_id
    WHERE t.see_all OR w.teacher_id = cw_my_teacher_id()
-   ORDER BY (e.teacher_id IS NULL), COALESCE((SELECT c.label FROM class_codes c WHERE c.teacher_id = tt.id AND c.is_active ORDER BY c.created_at DESC LIMIT 1), ''), tt.name
+   ORDER BY (e.teacher_id IS NULL), 3, tt.name
 $fn$;
 GRANT EXECUTE ON FUNCTION task_entries(uuid) TO authenticated;
 
