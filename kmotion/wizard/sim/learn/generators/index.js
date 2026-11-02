@@ -12,5 +12,6 @@ import { G1_1_U2 } from './g1_1_u2.js';   // v2.9 월드 2 「도형의 신전�
 import { G2_1_U2 } from './g2_1_u2.js';   // v2.9 2-1 2단원 「여러 가지 도형」(삼각형·사각형·원·쌓기나무)
 import { G3_1_U2 } from './g3_1_u2.js';   // v2.10 3-1 2단원 「평면도형」(선분·반직선·직선·직각·직각삼각형·직사각형·정사각형) — 신전 3학년 줄, 베프 직접
 import { G3_2_U3 } from './g3_2_u3.js';   // v2.10 3-2 3단원 「원」(중심·반지름·지름, 지름 = 반지름의 2배)
-export const UNITS = [G1U3, G1U1, G2U1, G3SHARE, G3_1_U1, G3_1_U3, G3_1_U4, G3_2_U1, G3_2_U2, G1_1_U2, G2_1_U2, G3_1_U2, G3_2_U3];
+import { GSHAPE_NAME } from './gshape_name.js';   // v2.12 도형 정령 「모양 보호막」 이름 맞히기 3종(학년 줄) — fixed 전용, 베프 직접
+export const UNITS = [G1U3, G1U1, G2U1, G3SHARE, G3_1_U1, G3_1_U3, G3_1_U4, G3_2_U1, G3_2_U2, G1_1_U2, G2_1_U2, G3_1_U2, G3_2_U3, GSHAPE_NAME];
 export const GENERATORS = Object.assign({}, ...UNITS);

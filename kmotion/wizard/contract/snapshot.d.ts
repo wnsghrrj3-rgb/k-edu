@@ -45,7 +45,8 @@ export interface Snapshot {
     /** 예고 — 있으면 스킨은 바닥 범위를 반드시 그린다(빨강 + 빗금). t0→t1 비율로 채움 */
     /** v1.4: line = 계산 고블린 조준선(size=[폭, 길이], yaw 방향 — 보스 돌진 띠와 같은 그림) · scale = 큰 슬라임 1.5 / 분열 작은 슬라임 .72(tags 'mini') · kind 'num-slime'|'big-slime'|'calc-goblin' */
     telegraph: { shape: 'circle' | 'line' | 'cone'; center: Vec3; size: number[]; yaw: number; t0: number; t1: number } | null; tags: string[];
-    pack: { id: number; n: number; hpEach: number } | null }>;   // v2.3 묶음 소속(tags 'pack') — 머리 위 숫자 = 현재 hp(D-30)
+    pack: { id: number; n: number; hpEach: number } | null;   // v2.3 묶음 소속(tags 'pack') — 머리 위 숫자 = 현재 hp(D-30)
+    spirit: { fam: string; pic: string | null; up: boolean; weak: boolean; weakT: number; breaks: number } | null }>;   // v2.12 도형 정령 모양 보호막 — pic = 보호막 그림 id, weakT = 약점 남은 비율(1→0)
   /** 보스(v1.1 추가, 06 문서 4·5절). 보스방이 아니면 null. telegraphs 는 전부 그려야 한다(돌 3개처럼 여러 개일 수 있음) */
   boss: null | { uid: number; kind: string; pos: Vec3; yaw: number; scale: number;
     state: 'intro' | 'chase' | 'windup' | 'attack' | 'recover' | 'kneel' | 'phase' | 'dead'; stateT: number;
@@ -56,7 +57,7 @@ export interface Snapshot {
     telegraphs: Array<{ shape: 'circle' | 'line' | 'ring'; center: Vec3; size: number[]; yaw: number; t0: number; t1: number; label: string | null; avoid: null | 'duck' }>;
     nameKey: string };                                // line: size=[폭, 길이], yaw 방향 · ring: 전체 범위 — avoid 'duck' = 숙여서 피함
   /** v1.4: kind 'acorn' = 고블린 도토리(owner = 그 몬스터 uid, label = 식 「2+3」) — 플레이어만 맞춤, 숙이면 머리 위로 지나감 */
-  projectiles: Array<{ uid: number; kind: 'bolt' | 'fireball' | 'acorn' | 'share' | string; pos: Vec3; vel: Vec3; owner: 'player' | number; label: string | null; r: number;
+  projectiles: Array<{ uid: number; kind: 'bolt' | 'fireball' | 'acorn' | 'share' | 'shard' | string; pos: Vec3; vel: Vec3; owner: 'player' | number; label: string | null; pic: string | null;   /* v2.12 shard = 정령 모양 조각, pic = 그 정령 보호막 그림 */ r: number;
     exact: number; scatter: boolean }>;   // v2.3 share 탄: exact = 정확 피해 양(청록, 0 = 일반) · scatter = 오답 흩어진 탄(회색·피해 0)
   areas: Array<{ uid: number; kind: 'explosion' | 'ice' | 'meteor' | string;   // ice: t0~t1 동안 얼음 폭풍 · meteor: t1 에 떨어짐(그림자 먼저)
                  pos: Vec3; radius: number; t0: number; t1: number }>;

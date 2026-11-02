@@ -44,6 +44,7 @@ for (const k of keys) {
   { const qe = new QuestionEngine({ rng: createRng(3), concepts: [k] }); for (let i = 0; i < 120; i++) { const b = qe.next(); const nums = b.choices.map(c => c.num);
       need(nums.length === 3 && new Set(nums).size === 3, `선택지 중복/부족 ${nums}`); need(nums[b.correctSlot] === b.answer && b.verified, '정답 자리·verified'); slots[b.correctSlot]++; need(b.id.startsWith(G.unit + '-gen-'), `id 접두 ${b.id}`); } }
   ok(`${k} (${G.unit}) ${n}개`, bad.length === 0, bad.join(' | ') || `답 최대 ${maxAns}/max ${G.max} · 사실 키 ${facts.size}종 · 정답 자리 ${slots}`);
-  if (bad.length === 0) need(facts.size >= 8, `사실 키 종류 ${facts.size} < 8(너무 반복됨)`), bad.length && ok(`${k} 다양성`, false, bad[0]);
+  // v2.12 fixedOnly(도형 정령 이름) = 정령 하나에 붙은 문제라 보통 풀·최근 30 규칙과 무관 — 사실 키는 보호막 모양 수(1학년 입체 3)만큼이면 됨
+  if (bad.length === 0) need(facts.size >= (G.fixedOnly ? 3 : 8), `사실 키 종류 ${facts.size} < ${G.fixedOnly ? 3 : 8}(너무 반복됨)`), bad.length && ok(`${k} 다양성`, false, bad[0]);
 }
 console.table(out); console.log(fail ? `✗ 실패 ${fail}` : `✓ 전부 통과(생성기 ${keys.length}종)`); process.exit(fail ? 1 : 0);

@@ -131,3 +131,10 @@ v1.5 추가(P3 길 구간): `rail:start`(idx·len·seconds·obstacles) / `rail:e
 - 퍼즐 종류 `shape-key`(`temple-2-1` 길 B 60%): 문 구멍(`puzzle.hole {pic, name, kind}`)에 꼭 맞는 모양의 열쇠 돌 3개 중 1(need 1, targets kind 'puzzle' 그대로). `puzzle.stones[].pic` = 열쇠 돌 그림 id(num = `pics.js` 코드), 숫자 퍼즐은 null. 이벤트는 `puzzle:open/pick/right/wrong/reveal/close` 그대로(ptype 'shape-key').
 - 학년 줄(변환표 줄과 같은 생각, 코드 `sim/learn/puzzles.js SHAPE_KEY_SETS`): 1학년 = 물건 구멍(책·통조림·귤 …) → 입체 열쇠 7·8·9(concept `g1.solid.same`) · 2학년 = 평면 구멍 → 같은 묶음의 다른 변형(`g2.plane.pick`) · 3·4학년 = 직각 도형 구멍(직각·직각삼각형·직사각형·정사각형)과 개념 오답(직각 없는 삼각형·사각형, 직사각형 ↔ 정사각형; `g3.right.find`·`g3.quad.right`) — 직사각형 구멍엔 정사각형 돌 없음(두 답 방지).
 - 문구 키 `pz.key`·`pz.key.solid`·`pz.key.hint`·`pz.key.solid.hint`·`pz.key.hint.rtri/rect/square/rangle`·`pz.keyWrong`. 스킨(proto): 구멍 = `.mw-pz .prompt .hole` 어두운 판 + 그림 id · 열쇠 돌 = `.mw-stone.pic`.
+
+## v2.12 추가(2026-11-02, 월드 2 도형 정령 모양 보호막 — 16 문서 8절 ② · 06 문서 44행) — 추가만 · 골든 4판 불변
+- 새 이벤트 2: `enemy:spiritBreak {uid, kind, fam, weakT, pos}`(이름 정답 → 보호막 깨짐·약점 시작) · `enemy:spiritShield {uid, kind, fam, pic, pos}`(약점 4초 뒤 다른 모양 보호막).
+- `hit` 에 `shielded`(정령 보호막 켜짐 ×0.3)·`weak`(약점 ×1.5) 값이 정령에도 실림. `enemy:shoot` 정령은 `label: null`.
+- Snapshot: `enemies[].spirit {fam, pic, up, weak, weakT, breaks}` · `projectiles[].pic`(kind `shard`) · `question.kind 'spirit'`·`question.spiritUid` · `result.spiritBreaks`.
+- 그림 코드 40~48 = 이름 판(`nm-box·nm-cyl·nm-ball·nm-tri·nm-quad·nm-circ·nm-rtri·nm-rect·nm-square`) — 보기 구슬에 그림 대신 이름 글자. 스킨은 id 만 받아 그린다.
+- 생성기 `g1.solid.name`·`g2.plane.name`·`g3.rshape.name`(fixedOnly — 정령 전용, 오답 재도전 예약 없음). 문구 ko 25키(`q.spirit*`·`hint.spirit.*`·`why.nm-*`·`learn.*.name`·`toast.spirit*`).

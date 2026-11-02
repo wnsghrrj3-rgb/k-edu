@@ -1,7 +1,7 @@
 // proto 스킨 — 기준 구현(13 문서 8절). createSkin(ctx) → Skin(contract/skin.d.ts). 에셋 0·절차적.
 // 규칙: 스냅샷은 읽기만 · 판정 크기·시간은 스냅샷 값 그대로 · 모르는 이벤트는 무시 · 엔진·sim import 0
 import * as THREE from 'three';
-import { WX, makePlayer, posePlayer, tipWorld, makeSlime, poseSlime, makeGoblin, poseGoblin, makeShieldGoblin, poseShieldGoblin, makeCrystalGolem, poseCrystalGolem, makeCrystal, poseCrystal, makeGolem, poseGolem, makeRock, makeObstacle, poseObstacle, makePuzzleProp, posePuzzleProp } from './actors.js';
+import { WX, makePlayer, posePlayer, tipWorld, makeSlime, poseSlime, makeGoblin, poseGoblin, makeShieldGoblin, poseShieldGoblin, makeCrystalGolem, poseCrystalGolem, makeSpirit, poseSpirit, makeCrystal, poseCrystal, makeGolem, poseGolem, makeRock, makeObstacle, poseObstacle, makePuzzleProp, posePuzzleProp } from './actors.js';
 import { makeTelegraph, poseTelegraph, makeProjectile, poseProjectile, Sparks, makeBlast, makeTelegraphLine, poseTelegraphLine, makeTelegraphRing, poseTelegraphRing, makeIce, poseIce, makeBolt, poseBolt, makeMeteor, poseMeteor } from './vfx.js';
 import { createUI } from './ui.js';
 import { createAudio } from './audio.js';
@@ -54,8 +54,8 @@ export function createSkin(ctx){
         camera.position.set(Math.sin(menuSpin * .5) * 1.2, 2.2, -.8); camera.lookAt(0, 1.2, 4); camera.fov = 50; camera.updateProjectionMatrix(); sparks.update(dt); renderer.render(scene, camera); drawnTg = []; return; }
       const P = s.player; if (playerId !== P.id) { if (player) scene.remove(player); player = makePlayer(P.id); playerId = P.id; scene.add(player); }
       player.rotation.y = 0; posePlayer(player, P, dt, TIMING); hopY += ((P.hopping ? .9 : 0) - hopY) * Math.min(1, dt * (P.hopping ? 14 : 9)); player.position.y = hopY;   // v1.6 버섯 발판 폴짝(스킨 연출, 판정은 시스템)
-      sync(enemies, s.enemies, e => { const g = e.kind === 'calc-goblin' ? makeGoblin(e) : e.kind === 'shield-goblin' ? makeShieldGoblin(e) : e.kind === 'crystal-golem' ? makeCrystalGolem(e) : makeSlime(e); g.userData.kind = e.kind; scene.add(g); return g; }, drop);
-      for (const e of s.enemies) { const g = enemies.get(e.uid); if (g.userData.kind === 'calc-goblin') poseGoblin(g, e, dt, camera, s.gameT); else if (g.userData.kind === 'shield-goblin') poseShieldGoblin(g, e, dt, camera, s.gameT); else if (g.userData.kind === 'crystal-golem') poseCrystalGolem(g, e, dt, camera, s.gameT); else poseSlime(g, e, dt, camera, s.gameT); }
+      sync(enemies, s.enemies, e => { const g = e.kind === 'calc-goblin' ? makeGoblin(e) : e.kind === 'shield-goblin' ? makeShieldGoblin(e) : e.kind === 'crystal-golem' ? makeCrystalGolem(e) : e.kind === 'shape-spirit' ? makeSpirit(e) : makeSlime(e); g.userData.kind = e.kind; scene.add(g); return g; }, drop);
+      for (const e of s.enemies) { const g = enemies.get(e.uid); if (g.userData.kind === 'calc-goblin') poseGoblin(g, e, dt, camera, s.gameT); else if (g.userData.kind === 'shield-goblin') poseShieldGoblin(g, e, dt, camera, s.gameT); else if (g.userData.kind === 'crystal-golem') poseCrystalGolem(g, e, dt, camera, s.gameT); else if (g.userData.kind === 'shape-spirit') poseSpirit(g, e, dt, camera, s.gameT); else poseSlime(g, e, dt, camera, s.gameT); }
       sync(shots, s.projectiles, p => { const o = makeProjectile(p); scene.add(o.g, o.trail); return o; }, o => { scene.remove(o.g, o.trail); o.trail.geometry.dispose(); });
       for (const p of s.projectiles) poseProjectile(shots.get(p.uid), p);
       sync(crystals, s.crystals, c => { const g = makeCrystal(c); scene.add(g); return g; }, drop); for (const c of s.crystals) poseCrystal(crystals.get(c.uid), c, dt);
@@ -159,6 +159,8 @@ export function createSkin(ctx){
     else if (T === 'boss:die') { audio.play('boom'); audio.play('clear'); if (golem) { const p = [-golem.position.x, 1.5, golem.position.z]; sparks.burst(p, 0xffd45c, 160, 7, 5); sparks.burst(p, 0x9fe8ff, 80, 5, 6); } kick = .5; }
     else if (T === 'stage:clear') { audio.play('clear'); if (ev.reward) ui.toast('toast.reward.' + ev.reward); else if (ev.crystal) ui.toast('toast.reward.crystal.' + ev.crystal); }
     // v1.6 방패병·버섯 발판
+    else if (T === 'enemy:spiritBreak') { audio.play('glass'); if (ev.pos) { sparks.burst(ev.pos, 0xffd45c, 60, 4, 3); sparks.burst(ev.pos, 0x5ef2c8, 30, 3, 4); } kick = Math.max(kick, .2); fovPulse = 4; const sc = toScreen(ev.pos || [0, 1, 6]); if (sc.front) ui.floatAt(sc.x, sc.y - 40, '보호막 깨짐!', 'crit'); }   // v2.12 도형 정령
+    else if (T === 'enemy:spiritShield') { audio.play('shield'); if (ev.pos) sparks.burst(ev.pos, 0xffe7a3, 24, 2.5, 2); }
     else if (T === 'enemy:shieldHit') { audio.play('block'); if (ev.pos) sparks.burst(ev.pos, 0xd9a35c, 12, 2.5, 2); }
     else if (T === 'enemy:shieldBreak') { audio.play(ev.byMath ? 'glass' : 'boom'); if (ev.pos) { sparks.burst(ev.pos, 0xd9a35c, 60, 4, 3); sparks.burst(ev.pos, 0xfff4d6, 30, 3, 4); } kick = Math.max(kick, .2); if (ev.byMath) fovPulse = 4; const sc = toScreen(ev.pos || [0, 1, 6]); if (sc.front) ui.floatAt(sc.x, sc.y - 40, '방패 깨짐!', 'crit'); }
     else if (T === 'enemy:crack') { audio.play('crack'); if (ev.pos) { sparks.burst(ev.pos, 0x5ef2c8, 70, 4.5, 3); sparks.burst(ev.pos, 0xffffff, 30, 3, 4); } kick = Math.max(kick, .25); fovPulse = 5; const sc = toScreen(ev.pos || [0, 1, 6]); if (sc.front) ui.floatAt(sc.x, sc.y - 50, ev.def > 0 ? `🛡 ${ev.def + 8} → ${ev.def}` : '💥 활짝!', 'crit'); }

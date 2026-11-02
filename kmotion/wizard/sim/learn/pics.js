@@ -13,9 +13,12 @@ export const PIC = {
   19: 'rect', 20: 'rect2', 21: 'square', 22: 'square2', 23: 'quad3',   // 직사각형 2종(가로·세로)·정사각형 2종(크기)·직각 없는 사각형(4 와 함께)
   24: 'cdia', 25: 'cchord', 26: 'crad', 27: 'cline',   // 원: 중심을 지나는 선분(지름)·중심 안 지나는 선분·중심에서 원 위까지(반지름)·원 밖까지 나간 선
   28: 'seg2', 29: 'ray2', 30: 'line2', 31: 'cdia2', 32: 'crad2',   // 놓인 방향이 다른 변형(한 그림으로 외우지 않게)
+  // v2.12 이름 판(도형 정령 「모양 보호막」 이름 맞히기, 06 문서 44행) — 그림이 아니라 이름 글자. 스킨은 id 만 받아 글자 판을 그린다
+  40: 'nm-box', 41: 'nm-cyl', 42: 'nm-ball', 43: 'nm-tri', 44: 'nm-quad', 45: 'nm-circ', 46: 'nm-rtri', 47: 'nm-rect', 48: 'nm-square',
 };
 export const FAMILY = { tri: 'tri', tri2: 'tri', quad: 'quad', quad2: 'quad', circ: 'circ', circ2: 'circ', box: 'box', cyl: 'cyl', ball: 'ball',
-  seg: 'seg', ray: 'ray', line: 'line', rangle: 'rangle', rangle2: 'rangle', angle: 'angle', angle2: 'angle', rtri: 'rtri', rtri2: 'rtri', rect: 'rect', rect2: 'rect', square: 'square', square2: 'square', quad3: 'quad', cdia: 'cdia', cchord: 'cchord', crad: 'crad', cline: 'cline', seg2: 'seg', ray2: 'ray', line2: 'line', cdia2: 'cdia', crad2: 'crad' };
+  seg: 'seg', ray: 'ray', line: 'line', rangle: 'rangle', rangle2: 'rangle', angle: 'angle', angle2: 'angle', rtri: 'rtri', rtri2: 'rtri', rect: 'rect', rect2: 'rect', square: 'square', square2: 'square', quad3: 'quad', cdia: 'cdia', cchord: 'cchord', crad: 'crad', cline: 'cline', seg2: 'seg', ray2: 'ray', line2: 'line', cdia2: 'cdia', crad2: 'crad',
+  'nm-box': 'nm', 'nm-cyl': 'nm', 'nm-ball': 'nm', 'nm-tri': 'nm', 'nm-quad': 'nm', 'nm-circ': 'nm', 'nm-rtri': 'nm', 'nm-rect': 'nm', 'nm-square': 'nm' };
 export const CODES = { tri: [1, 2], quad: [3, 4], circ: [5, 6], box: [7], cyl: [8], ball: [9],
   seg: [10, 28], ray: [11, 29], line: [12, 30], rangle: [13, 16], angle: [14, 15], rtri: [17, 18], rect: [19, 20], square: [21, 22], quadNoRight: [4, 23], cdia: [24, 31], cchord: [25], crad: [26, 32], cline: [27] };
 // 생활 물건(문제 그림 전용) — 1-1 2단원 「교실·생활 주변 물건」: 각 입체 모양 3개씩
@@ -24,3 +27,5 @@ export const OBJ_KO = { book: '책', gift: '선물 상자', brick: '벽돌', can
 export const SHAPE_KO = { tri: '삼각형', quad: '사각형', circ: '원', box: '상자 모양', cyl: '둥근 기둥 모양', ball: '공 모양', seg: '선분', ray: '반직선', line: '직선', rangle: '직각', rtri: '직각삼각형', rect: '직사각형', square: '정사각형' };
 // v2.10 직각 개수(3-1 2단원 06차 분류): 그림 코드 → 직각 수. 1·2·4·23 = 0, 직각삼각형 1, 직사각형·정사각형 4
 export const RIGHT_ANGLES = { 1: 0, 2: 0, 4: 0, 23: 0, 17: 1, 18: 1, 19: 4, 20: 4, 21: 4, 22: 4 };
+// v2.12 도형 이름 판 코드: 도형 묶음 → 그 이름 판 코드(40~48)
+export const NAME_CODE = { box: 40, cyl: 41, ball: 42, tri: 43, quad: 44, circ: 45, rtri: 46, rect: 47, square: 48 };

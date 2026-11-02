@@ -2,6 +2,7 @@
 // 좌표: 계약은 +X = 화면 오른쪽. Three(오른손 좌표계)에서 +Z 를 바라보면 화면 오른쪽이 −X 라서 스킨은 x 를 뒤집어 놓는다(WX)
 export const WX = x => -x;
 import * as THREE from 'three';
+import { svgMarkup } from './pics.js';   // v2.12 도형 정령 보호막 판
 const grad = (() => { const d = new Uint8Array([70, 150, 255]); const t = new THREE.DataTexture(d, 3, 1, THREE.RedFormat); t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true; return t; })();
 export const toon = (color, extra = {}) => new THREE.MeshToonMaterial(Object.assign({ color, gradientMap: grad }, extra));
 const outlineMat = new THREE.MeshBasicMaterial({ color: 0x14121f, side: THREE.BackSide });
@@ -325,4 +326,54 @@ export function posePuzzleProp(g, pz, dt){
   if (pz.stones) u.items.forEach((it, i) => { const s = pz.stones[i]; if (!s) return; const lit = s.lit || s.answer; it.st.material = lit ? (s.answer ? goldMat : toon(0x9fe8ff)) : (door ? woodMat : stoneMat); const sink = s.wrong ? -.35 : 0; it.st.position.y += (baseY + sink - it.st.position.y) * Math.min(1, dt * 6); it.n.position.y = it.st.position.y + nOff; });
   if (u.bridge) { u.bridge.visible = pz.state === 'right' || pz.state === 'reveal'; u.bridge.position.y += (.1 - u.bridge.position.y) * Math.min(1, dt * 3); }
   if (pz.gate) u.items.forEach(it => { const on = pz.gate.lane === it.side, ans = pz.gate.answer === it.side, wrong = pz.state === 'wrong' && pz.gate.picked === it.side; it.glow.material.color.setHex(wrong ? 0xff5c6e : ans ? 0x5cf29a : 0xfff1a8); it.glow.material.opacity += ((wrong ? .5 : ans ? .45 : on ? .25 : 0) - it.glow.material.opacity) * Math.min(1, dt * 8); });
+}
+
+// ── v2.12 도형 정령(06 문서 44행): 떠 있는 빛나는 다면체 + 앞의 「모양 보호막」 판(스냅샷 spirit.pic 그림) — 보호막이 깨지면 조각, 약점 동안 몸이 붉게 깜빡·남은 시간 고리
+function picTexture(id){ const c = document.createElement('canvas'); c.width = c.height = 256; const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  if (typeof Image === 'undefined') return tex;   // 그림 판을 못 읽는 곳(시험용 jsdom)은 빈 판
+  const im = new Image(); im.onload = () => { const g = c.getContext('2d'); g.clearRect(0, 0, 256, 256); g.drawImage(im, 0, 0, 256, 256); tex.needsUpdate = true; }; im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup(id)); return tex; }
+export function makeSpirit(e){
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const gem = toon(0x5ef2c8, { emissive: new THREE.Color(0x1d7a66) }), dark = toon(0x2a5a66);
+  const core = withOutline(new THREE.Mesh(new THREE.OctahedronGeometry(.36, 0), gem)); core.position.y = 1.15; core.castShadow = true; body.add(core);
+  const halo = new THREE.Mesh(new THREE.TorusGeometry(.5, .03, 6, 32), new THREE.MeshBasicMaterial({ color: 0xffe7a3 })); halo.rotation.x = Math.PI / 2; halo.position.y = 1.15; body.add(halo);
+  const eyes = []; for (const s of [-1, 1]) { const ey = new THREE.Mesh(new THREE.SphereGeometry(.045, 8, 6), new THREE.MeshBasicMaterial({ color: 0x1b1630 })); ey.position.set(s * .1, 1.2, .3); body.add(ey); eyes.push(ey); }
+  const bits = []; for (let i = 0; i < 3; i++) { const b = new THREE.Mesh(new THREE.TetrahedronGeometry(.09, 0), dark); body.add(b); bits.push(b); }
+  // 보호막 판: 금테 원판 + 모양 그림(앞 .55m)
+  const pivot = new THREE.Group(); pivot.position.set(0, 1.15, .55); body.add(pivot);
+  const plateM = new THREE.MeshBasicMaterial({ color: 0x1e3a46, transparent: true, opacity: .55, side: THREE.DoubleSide }); const plate = new THREE.Mesh(new THREE.CircleGeometry(.5, 32), plateM); pivot.add(plate);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(.5, .035, 8, 40), new THREE.MeshBasicMaterial({ color: 0xffd45c })); pivot.add(rim);
+  const picM = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide }); const pic = new THREE.Mesh(new THREE.PlaneGeometry(.78, .78), picM); pic.position.z = .01; pivot.add(pic);
+  const pieces = new THREE.Group(); pieces.visible = false; for (let i = 0; i < 8; i++) { const pc = new THREE.Mesh(new THREE.TetrahedronGeometry(.1, 0), new THREE.MeshBasicMaterial({ color: 0xffe7a3 })); pc.userData.v = [Math.cos(i * .8) * 2.2, 1.5 + Math.sin(i) * 1.2, 1 + Math.sin(i * .7)]; pieces.add(pc); } pivot.add(pieces);
+  const weakRing = new THREE.Mesh(new THREE.RingGeometry(.55, .64, 40, 1, 0, Math.PI * 2), new THREE.MeshBasicMaterial({ color: 0xff5a6a, transparent: true, opacity: .9, side: THREE.DoubleSide, depthTest: false })); weakRing.position.y = 1.15; weakRing.renderOrder = 11; weakRing.visible = false; g.add(weakRing);
+  const weakT = textSprite('약점!', { scale: .5, color: '#ffe0e4', stroke: '#6a0f1c' }); weakT.position.y = 1.95; weakT.visible = false; g.add(weakT);
+  const bar = new THREE.Group(); const bg = new THREE.Mesh(new THREE.PlaneGeometry(.7, .08), new THREE.MeshBasicMaterial({ color: 0x1b1630, depthTest: false, transparent: true, opacity: .7 })); const fg = new THREE.Mesh(new THREE.PlaneGeometry(.7, .08), new THREE.MeshBasicMaterial({ color: 0x5cf29a, depthTest: false }));
+  fg.position.z = .001; bg.renderOrder = fg.renderOrder = 11; bar.add(bg, fg); bar.position.y = 1.78; g.add(bar);
+  g.userData = { body, core, halo, eyes, bits, pivot, plate, rim, pic, picM, pieces, weakRing, weakT, bar, fg, flash: 0, mats: [gem, dark], picId: null, up: true, bt: 0 };
+  return g;
+}
+export function poseSpirit(g, e, dt, cam, gameT){
+  const u = g.userData, t = performance.now() / 1000, k = 1 - Math.exp(-dt / .07), S = e.spirit || { up: false, weak: false, weakT: 0, pic: null };
+  g.position.set(WX(e.pos[0]), 0, e.pos[2]); g.rotation.y = -e.yaw;
+  let sc = 1, hover = Math.sin(t * 2.2 + e.uid) * .1, tilt = 0;
+  if (e.state === 'spawn') sc = Math.min(1, e.stateT / .6);
+  else if (e.state === 'windup' && e.telegraph) { const w = Math.min(1, (gameT - e.telegraph.t0) / Math.max(.01, e.telegraph.t1 - e.telegraph.t0)); tilt = -.25 * w; }
+  else if (e.state === 'attack') tilt = .3;
+  else if (e.state === 'hurt') tilt = -.35;
+  else if (e.state === 'dead') { sc = Math.max(.01, 1 - e.stateT / .6); hover = -e.stateT; }
+  u.body.position.y += (hover - u.body.position.y) * k; u.body.rotation.x += (tilt - u.body.rotation.x) * k; u.core.rotation.y += dt * (S.weak ? 6 : 1.4); u.halo.rotation.z += dt * .8;
+  u.bits.forEach((b, i) => { const a = t * 1.6 + i * 2.09; b.position.set(Math.cos(a) * .62, 1.15 + Math.sin(a * 1.3) * .15, Math.sin(a) * .62); b.rotation.x += dt * 3; });
+  g.scale.setScalar(sc * (e.scale || 1));
+  // 보호막: 새 모양이면 그림 바꿈 · 깨지면 조각 · 다시 켜지면 판이 커지며 돌아옴
+  if (S.up && S.pic && S.pic !== u.picId) { u.picId = S.pic; if (u.picM.map) u.picM.map.dispose(); u.picM.map = picTexture(S.pic); u.picM.needsUpdate = true; }
+  if (u.up && !S.up) { u.pieces.visible = true; u.bt = 0; u.pieces.children.forEach((pc, i) => { pc.position.set(Math.cos(i) * .25, Math.sin(i * 1.7) * .25, 0); pc.scale.setScalar(1); }); }
+  if (!u.up && S.up) u.pivot.scale.setScalar(.2);
+  u.up = !!S.up; u.plate.visible = u.rim.visible = u.pic.visible = u.up && e.state !== 'dead'; u.pivot.scale.setScalar(Math.min(1, u.pivot.scale.x + dt * 3));
+  if (u.pieces.visible) { u.bt += dt; for (const pc of u.pieces.children) { pc.position.x += pc.userData.v[0] * dt; pc.position.y += pc.userData.v[1] * dt; pc.position.z += pc.userData.v[2] * dt; pc.userData.v[1] -= 9 * dt; pc.rotation.x += dt * 7; pc.scale.setScalar(Math.max(0, 1 - u.bt / .9)); } if (u.bt > 1) u.pieces.visible = false; }
+  u.pivot.quaternion.copy(g.quaternion).invert().multiply(cam.quaternion);   // 판은 늘 화면을 봄(아이가 모양을 읽게)
+  u.weakRing.visible = u.weakT.visible = !!S.weak && e.state !== 'dead'; if (S.weak) { u.weakRing.quaternion.copy(cam.quaternion); u.weakRing.geometry.dispose(); u.weakRing.geometry = new THREE.RingGeometry(.55, .64, 40, 1, Math.PI / 2, Math.PI * 2 * Math.max(.01, S.weakT)); u.weakT.quaternion.copy(cam.quaternion); u.weakT.scale.setScalar(.5 + Math.sin(t * 10) * .04); }
+  u.flash = Math.max(0, u.flash - dt * 6); const red = e.state === 'windup' ? (Math.sin(t * 16) * .5 + .5) * .5 : S.weak ? (Math.sin(t * 9) * .5 + .5) * .6 : 0;
+  for (const m of u.mats) m.emissive && m.emissive.setRGB(u.flash + red, .12 + u.flash * .9, .1 + u.flash * .9);
+  for (const ey of u.eyes) ey.material.color.setHex(e.state === 'windup' ? 0xff3048 : 0x1b1630);
+  u.fg.scale.x = Math.max(.001, e.hp / e.hpMax); u.fg.position.x = -.35 * (1 - u.fg.scale.x); u.bar.quaternion.copy(cam.quaternion); u.bar.visible = e.hp < e.hpMax && e.state !== 'dead';
 }

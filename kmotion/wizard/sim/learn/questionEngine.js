@@ -46,5 +46,5 @@ export class QuestionEngine {
       pic: q.pic || null, choicePic: !!q.choicePic,   // v2.9 문제 그림 id · 보기가 그림인지
       choices: vals.map((c, s) => ({ id: 'c' + s, slot: s, num: c.v, tag: c.tag, pic: q.choicePic ? (PIC[c.v] || null) : null })), verified: G.verify(q) };
   }
-  result(q, y, ms, fast){ const r = this.m.update(q.concept, q.d, y, fast); if (y <= 0) this.retry.push({ concept: q.concept }); return r; }
+  result(q, y, ms, fast){ const r = this.m.update(q.concept, q.d, y, fast); if (y <= 0 && !(GENERATORS[q.concept] || {}).fixedOnly) this.retry.push({ concept: q.concept }); return r; }   // v2.12 fixedOnly(정령 이름) 오답은 재도전 예약 안 함 — 정령과 떨어진 이름 문제가 보통 수정에 끼지 않게
 }

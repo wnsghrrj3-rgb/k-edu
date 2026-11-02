@@ -10,6 +10,9 @@ import { makeEnemy, stepEnemy, hurtEnemy, separate } from './enemyAI.js';
 import { castSpell, stepMagic, shieldFilter, currentSpell, MAIN } from './magic.js';
 import { makeBoss, stepBoss, bossMul, bossAfterHit, sealBroken, bossSnapshot } from './boss.js';
 import { QuestionEngine } from '../learn/questionEngine.js';
+import { pickSpiritShape } from '../learn/spirit.js';   // v2.12 도형 정령 모양 보호막
+import { PIC } from '../learn/pics.js';
+const PIC_ID = c => PIC[c] || null;
 import { conceptsFor, fallbackFor, packWavesFor, packRange, shieldSpec } from '../learn/gradeTable.js';   // v2.3 학년 변환표(15 문서 6절)
 import { Mastery } from '../learn/mastery.js';
 import { Selector } from '../input/selector.js';
@@ -115,6 +118,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   // ── 목표 고르기: 구역(왼·가운데·오른)의 가장 가까운 적, 없으면 전체에서 가장 가까운 적
   function pickTarget(zone){
     const P = g.player, alive = g.enemies.filter(e => e.state !== 'dead' && e.state !== 'spawn' && !(e.boss && !bossMul(g, e))); if (!alive.length) return null;
+    const weakSp = alive.find(e => e.spirit && !e.spirit.up && g.gameT < e.spirit.weakUntil); if (weakSp) return weakSp;   // v2.12 약점 4초 동안은 마법탄이 그 정령에게(슬라임이 앞에 있어도 — 맞힌 보람)
     const rel = e => Math.atan2(e.pos[0] - P.pos[0], e.pos[2] - P.pos[2]);
     const inZone = zone == null || zone === 1 ? alive.filter(e => Math.abs(rel(e)) < .45) : alive.filter(e => zone === 0 ? rel(e) <= -.15 : rel(e) >= .15);
     const pool = inZone.length ? inZone : alive; let best = null, bd = Infinity;
@@ -167,6 +171,17 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     g.toast = { key: C.down >= C.max ? 'toast.golemOpen' : 'toast.golemCrack', t: g.t };
     if (e.telegraph) { g.emit('telegraph:end', { uid: e.uid }); e.telegraph = null; g.releaseToken(e, 0); } e.staggerT = GAME.golem.crackStagger; e.state = 'hurt'; e.stateT = 0;
   }
+  // v2.12 도형 정령(06 문서 44행): 이름 정답 = 보호막 깨짐 + 약점 4초 · 약점이 끝나면 다른 모양 보호막(stepSpirits)
+  function breakSpirit(e){
+    const S = e.spirit, SPI = GAME.spirit; S.up = false; S.weakUntil = g.gameT + SPI.weakT; S.breaks++; g.stats.spiritBreaks = (g.stats.spiritBreaks || 0) + 1;
+    g.emit('enemy:spiritBreak', { uid: e.uid, kind: e.kind, fam: S.fam, weakT: SPI.weakT, pos: v3([e.pos[0], e.h * .6, e.pos[2]]) }); g.toast = { key: 'toast.spiritBroke', t: g.t };
+    if (e.telegraph) { g.emit('telegraph:end', { uid: e.uid }); e.telegraph = null; g.releaseToken(e, 0); } if (e.state !== 'dead') { e.staggerT = SPI.breakStagger; e.state = 'hurt'; e.stateT = 0; }
+  }
+  function stepSpirits(){
+    for (const e of g.enemies) { const S = e.spirit; if (!S || S.up || e.state === 'dead' || g.gameT < S.weakUntil) continue;
+      const sh = pickSpiritShape(rng, grade, S.fam); S.fam = sh.fam; S.code = sh.code; S.up = true; S.weakUntil = 0;
+      g.emit('enemy:spiritShield', { uid: e.uid, kind: e.kind, fam: S.fam, pic: PIC_ID(S.code), pos: v3([e.pos[0], e.h * .6, e.pos[2]]) }); }
+  }
   function hitEnemy(e, mult, kind, emp = 1, from = null){
     if (e.state === 'dead') return;
     if (e.boss) return hitBoss(e, mult, kind, emp);
@@ -174,10 +189,11 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
       g.emit('enemy:shieldHit', { uid: e.uid, kind: e.kind, amount, left: sh.hp, pos: v3([e.pos[0], e.h * .6, e.pos[2]]) }); g.emit('hit', { target: e.uid, amount: 0, crit: false, weak: false, shielded: true, pos: v3([e.pos[0], e.h * .6, e.pos[2]]) });
       if (sh.hp <= 0) breakShield(e, false); return; }
     const deflect = !!(e.crack && e.crack.down === 0 && kind === 'bolt'); if (deflect) mult *= GAME.golem.boltMul;   // v1.7 아직 안 갈라진 수정 골렘: 마법탄이 튕김(마법은 그대로)
-    let { amount, crit } = damage(rng, { atk: g.player.atk * (1 + lvDiff()), mult, def: e.def.def - (e.crack ? e.crack.down : 0), empower: emp });
+    const SPI = GAME.spirit, spUp = !!(e.spirit && e.spirit.up), spWeak = !!(e.spirit && !e.spirit.up && g.gameT < e.spirit.weakUntil); if (spUp) mult *= SPI.shieldMul;   // v2.12 도형 정령: 보호막 켜짐 ×.3 · 약점 ×1.5
+    let { amount, crit } = damage(rng, { atk: g.player.atk * (1 + lvDiff()), mult, def: e.def.def - (e.crack ? e.crack.down : 0), empower: emp, weak: spWeak ? SPI.weakMul : 1 });
     if (e.pack) amount = Math.min(e.hp, crit ? PK.critHit : PK.normalHit);   // v2.3 묶음 슬라임: 몸 공격·일반 마법은 공식대로지만 머리 숫자가 1~2씩만 깎임(15 문서 2절) → 숫자가 흐트러짐
     e.hp = Math.max(0, e.hp - amount); g.trauma = Math.min(GAME.shake.max, g.trauma + GAME.shake.hit);
-    g.emit('hit', { target: e.uid, amount, crit, weak: false, deflect, pos: v3([e.pos[0], e.h * .7, e.pos[2]]) });
+    g.emit('hit', { target: e.uid, amount, crit, weak: spWeak, deflect, shielded: spUp || undefined, pos: v3([e.pos[0], e.h * .7, e.pos[2]]) });
     if (e.pack) e.label = String(e.hp);
     if (e.hp <= 0) killEnemy(e, false); else hurtEnemy(g, e, kind);
   }
@@ -246,6 +262,9 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   // 계산 고블린 도토리(06 문서 3절): 조준선 방향으로 날아감(유도 없음), 식 「a+b」가 달림. 옆으로 비키거나 숙이면 피함
   g.enemyShoot = e => {
     const A = e.def.attack, tg = e.telegraph, from = [e.pos[0], A.y, e.pos[2]]; const dir = [tg.aim[0] - from[0], 0, tg.aim[2] - from[2]]; const n = Math.hypot(dir[0], dir[2]) || 1;
+    if (e.spirit) {   // v2.12 도형 정령: 모양 조각(shard) — rng 0(골든 불변), 도토리와 같은 피하기 규칙
+      const p = { uid: nid(), kind: 'shard', pos: from, vel: [dir[0] / n * A.speed, 0, dir[2] / n * A.speed], target: null, homing: 0, r: A.r, left: tg.size[1] + 6, mult: 1, owner: e.uid, atk: e.def.atk, label: null, pic: PIC_ID(e.spirit.code), hitSet: [], resolved: false, bornT: g.gameT };
+      g.projectiles.push(p); g.emit('enemy:attack', { uid: e.uid, kind: e.kind, shoot: true }); g.emit('enemy:shoot', { uid: e.uid, kind: e.kind, pid: p.uid, from: v3(from), label: null }); return; }
     const a = rng.int(1, 8), b = rng.int(1, 9 - a);
     const p = { uid: nid(), kind: 'acorn', pos: from, vel: [dir[0] / n * A.speed, 0, dir[2] / n * A.speed], target: null, homing: 0, r: A.r, left: tg.size[1] + 6, mult: 1, owner: e.uid, atk: e.def.atk, label: `${a}+${b}`, hitSet: [], resolved: false, bornT: g.gameT };
     g.projectiles.push(p); g.emit('enemy:attack', { uid: e.uid, kind: e.kind, shoot: true }); g.emit('enemy:shoot', { uid: e.uid, kind: e.kind, pid: p.uid, from: v3(from), label: p.label });
@@ -278,7 +297,8 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     const since = g.gameT - g.zoneStartT; const want = g.crystals.length < C.max && (
       (since >= C.firstAt && !g.firstCrystal) || (g.player.mana < sp.mp && g.crystals.length === 0 && g.gameT - g.lastQClose >= C.lowManaAfter) || (g.gameT - Math.max(g.lastQClose, g.lastCrystalT) >= C.every) ||
       (g.crystals.length === 0 && g.gameT - g.lastQClose >= GAME.golem.crystalAfter && g.enemies.some(e => e.crack && e.crack.down < e.crack.max && e.state !== 'dead')) ||
-      (g.crystals.length === 0 && g.gameT - g.lastQClose >= PK.crystalAfter && livePacks().length > 0));   // v1.7 골렘이 덜 갈라졌으면 수정을 더 자주 · v2.3 산 묶음이 있으면 수정을 더 자주(나누기 공격 길이 늘 열려 있게)
+      (g.crystals.length === 0 && g.gameT - g.lastQClose >= PK.crystalAfter && livePacks().length > 0) ||
+      (g.crystals.length === 0 && g.gameT - g.lastQClose >= GAME.spirit.crystalAfter && g.enemies.some(e => e.spirit && e.spirit.up && e.state !== 'dead')));   // v2.12 보호막 켜진 정령이 있으면 수정을 더 자주   // v1.7 골렘이 덜 갈라졌으면 수정을 더 자주 · v2.3 산 묶음이 있으면 수정을 더 자주(나누기 공격 길이 늘 열려 있게)
     if (want && g.gameT - g.lastQClose >= 3) { spawnCrystal(); g.firstCrystal = true; }
     const AP = livePacks().length > 0 ? PK.crystalNear : C;   // v2.6 산 묶음이 있으면 수정이 더 빨리·더 빠르게 다가옴
     for (const c of g.crystals) if (c.kind === 'math' && g.gameT - c.born > AP.approachAfter) { const dx = g.player.pos[0] - c.pos[0]; if (Math.abs(dx) > 1) c.pos[0] += Math.sign(dx) * AP.approachV * dt; }
@@ -297,19 +317,21 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     if (c && c.kind === 'empower') kind = 'power';
     // v1.6 방패병: 방패가 살아 있는 방패병이 있으면 수정 문제 = 그 방패의 빈칸 식(가장 가까운 방패병) → 정답이면 방패가 깨진다(06 문서 3절)
     let shieldE = null; if (kind === 'crystal') { let bd = Infinity; for (const e of g.enemies) if (e.shield && !e.shield.broken && e.shield.eq && e.state !== 'dead') { const d = Math.hypot(e.pos[0] - g.player.pos[0], e.pos[2] - g.player.pos[2]); if (d < bd) { bd = d; shieldE = e; } } if (shieldE) kind = 'shield'; }
+    // v2.12 도형 정령: 방패병이 없고 보호막 켜진 정령이 있으면 수정 문제 = 「보호막 모양의 이름은?」(가장 가까운 정령) → 정답이면 보호막 깨짐·약점 4초
+    let spiritE = null; if (kind === 'crystal') { let bd = Infinity; for (const e of g.enemies) if (e.spirit && e.spirit.up && e.state !== 'dead') { const d = Math.hypot(e.pos[0] - g.player.pos[0], e.pos[2] - g.player.pos[2]); if (d < bd) { bd = d; spiritE = e; } } if (spiritE) kind = 'spirit'; }
     // v1.7 수정 골렘: 방패병이 없고 아직 덜 갈라진 골렘이 있으면 수정 문제 = 「골렘 깨기」(문제는 보통 계산형) → 정답이면 DEF −8
     let golemE = null; if (kind === 'crystal') { let bd = Infinity; for (const e of g.enemies) if (e.crack && e.crack.down < e.crack.max && e.state !== 'dead') { const d = Math.hypot(e.pos[0] - g.player.pos[0], e.pos[2] - g.player.pos[2]); if (d < bd) { bd = d; golemE = e; } } if (golemE) kind = 'golem'; }
     // v2.3 묶음 몬스터(15 문서 3절): 방패병·골렘이 없고 산 묶음이 있으면 수정 문제 = 「똑같이 나누기 공격」(share, 숫자는 그 묶음에서) → 정답이면 묶음 수만큼 정확 피해 탄
     let packQ = null; if (kind === 'crystal') { const pks = livePacks(); if (pks.length) { const pk = pks[0], grp = packGroup(pk); const concept = grp.concept || (c && c.retry ? 'g3.share.div' : rng.pick(PK.concepts)); packQ = { pk, grp, concept }; kind = 'share'; } }
     // 강화 문제 = 장착 주 마법의 「수학 연결」 유형(05 문서 12항) — 재도전 수정은 같은 개념 쉬운 문제(qe.retry 예약)
-    const qv = qe.next(lastSeal ? { want: 'word' } : kind === 'shield' ? { fixed: { concept: shieldE.shield.eq.concept || 'g1.missing.add9', b: shieldE.shield.eq.b, c: shieldE.shield.eq.c } } : kind === 'share' ? { fixed: { concept: packQ.concept, n: packQ.grp.n, hpEach: packQ.grp.hpEach } } : kind === 'power' && !(c && c.retry) ? { want: GAME.empower.want[g.spell] || 'calc' } : {});
+    const qv = qe.next(lastSeal ? { want: 'word' } : kind === 'shield' ? { fixed: { concept: shieldE.shield.eq.concept || 'g1.missing.add9', b: shieldE.shield.eq.b, c: shieldE.shield.eq.c } } : kind === 'share' ? { fixed: { concept: packQ.concept, n: packQ.grp.n, hpEach: packQ.grp.hpEach } } : kind === 'spirit' ? { fixed: { concept: spiritE.spirit.concept, fam: spiritE.spirit.fam, code: spiritE.spirit.code } } : kind === 'power' && !(c && c.retry) ? { want: GAME.empower.want[g.spell] || 'calc' } : {});
     if (c) { g.crystals = g.crystals.filter(x => x !== c); g.emit('crystal:break', { uid: c.uid, kind: c.kind, pos: v3(c.pos) }); }
     if (!qv) return;   // v2.3 생성기 0(변환표 학년 줄의 일반 생성기가 아직 없고 fallback 도 없음) = 수정만 사라지고 문제는 안 열림
     if (kind === 'seal' && g.boss) { g.boss.sealsAsked++; }
     const total = (Q.gaugeByType[qv.type] || Q.gaugeBase) * band.gaugeGrade * (Q.gaugeSetting[gaugeSetting] || 1) * (kind === 'power' ? (GAME.empower.gaugeMul[g.spell] || 1) : 1);
     // 힌트 1단계 자동: 봉인 문제 3번째부터 · 오답 뒤 재도전 문제(07 문서 8절)
     const hint0 = (kind === 'seal' && b && b.sealsAsked >= 3) || qv.retry || (kind === 'share' && c && c.retry) ? 1 : 0;
-    g.q = { v: qv, kind, shieldUid: shieldE ? shieldE.uid : null, golemUid: golemE ? golemE.uid : null, packId: packQ ? packQ.pk.id : null, shareUids: packQ ? packQ.grp.uids : null, shareAmt: packQ ? packQ.grp.amount : 0, retryCrystal: !!(c && c.retry), state: 'open', openT: g.t, readUntil: g.t + band.readMs / 1000, gauge: 0, total, endAt: 0, picked: null, hint: hint0, hintT: g.t, cursorMoveT: g.t, lastCursor: g.cursor ? { x: g.cursor.x, y: g.cursor.y } : null };
+    g.q = { v: qv, kind, shieldUid: shieldE ? shieldE.uid : null, golemUid: golemE ? golemE.uid : null, spiritUid: spiritE ? spiritE.uid : null, packId: packQ ? packQ.pk.id : null, shareUids: packQ ? packQ.grp.uids : null, shareAmt: packQ ? packQ.grp.amount : 0, retryCrystal: !!(c && c.retry), state: 'open', openT: g.t, readUntil: g.t + band.readMs / 1000, gauge: 0, total, endAt: 0, picked: null, hint: hint0, hintT: g.t, cursorMoveT: g.t, lastCursor: g.cursor ? { x: g.cursor.x, y: g.cursor.y } : null };
     g.questionOpen = true; g.screen = 'S08Q'; g.slowTo = Q.slowTo; sel.reset(); g.stats.q++;
     const P = g.player; P.charging = null; P.pending = P.pending.filter(x => x.kind !== 'attack' && x.kind !== 'spell'); if (P.block) P.block = false; P.duck = false;
     g.emit('q:open', { id: qv.id, concept: qv.concept, kind }); g.emit('screen', { from: 'S08', to: 'S08Q' });
@@ -322,6 +344,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     const r = qe.result(v, right ? yRight : 0, ms, false);
     if (right) { g.streak++; const bonus = Q.mana.streak[Math.min(g.streak, 5)] || 0; const add = (q.hint >= 2 ? Q.mana.hint2 : q.hint === 1 ? Q.mana.hint1 : Q.mana.right) + bonus; P.mana = Math.min(P.manaMax, P.mana + add);
       q.state = 'right'; q.endAt = g.t + Q.rightShow; g.stats.right++; g.lastRightT = g.gameT; if (q.kind === 'seal' && g.boss) sealBroken(g, g.boss); g.emit('q:right', { id: v.id, slot, mana: add, streak: g.streak }); gainXp(LV.xpQ, 'q'); g.emit('reward', { kind: 'mana', amount: add, pos: v3([P.pos[0], 1.2, P.pos[2]]) });
+      if (q.kind === 'spirit') { const e = g.enemies.find(x => x.uid === q.spiritUid); if (e && e.spirit && e.spirit.up && e.state !== 'dead') breakSpirit(e); }
       if (q.kind === 'golem') { const e = g.enemies.find(x => x.uid === q.golemUid); if (e && e.crack && e.state !== 'dead') crackGolem(e); }
       if (q.kind === 'shield') { const e = g.enemies.find(x => x.uid === q.shieldUid); if (e) breakShield(e, true); g.toast = { key: 'toast.shieldBroke', t: g.t }; }
       if (q.kind === 'share') { g.stats.shareRight = (g.stats.shareRight || 0) + 1; fireShare(q.shareUids, q.shareAmt, v.answer); g.toast = { key: 'toast.shareGo', t: g.t }; }
@@ -373,7 +396,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
         // v2.5 묶음은 PK.slots 자리만 차지 — 자리(room)가 slots 에 모자라면 n 을 room 으로 깎고(2 미만이면 보통 파), 넉넉하면 학년 범위 상한(4학년 8)까지
         const pw = PACK_WAVES[z.id]; if (PACK_RANGE && Array.isArray(pw) && pw.includes(g.waveIdx) && w.spawn.some(s => s.kind === 'num-slime')) { spawnList = w.spawn.filter(s => s.kind !== 'num-slime'); const room = band.maxEnemies - cnt - spawnList.length;
           const want = rng.int(PACK_RANGE.n[0], PACK_RANGE.n[1]), n = room >= PK.slots ? want : Math.max(0, Math.min(want, room)); if (n >= 2) { cnt += Math.min(n, PK.slots); spawnPack(n, rng.int(PACK_RANGE.hpEach[0], PACK_RANGE.hpEach[1]), Math.max(...w.spawn.map(s => s.z))); } else spawnList = w.spawn; }
-        for (const s of spawnList) { if (cnt >= band.maxEnemies) break; cnt++; const e = makeEnemy(data.enemies[s.kind], nid(), s.x, s.z, rng, band, { label: s.label, shield: SHIELD_SPEC }); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label }); if (e.def.ranged && !g.goblinSeen) { g.goblinSeen = true; g.toast = { key: 'toast.goblin', t: g.t }; } if (e.shield && !g.shieldSeen) { g.shieldSeen = true; g.toast = { key: 'toast.shieldGoblin', t: g.t }; } if (e.crack && !g.golemSeen) { g.golemSeen = true; g.toast = { key: 'toast.golem', t: g.t }; } }
+        for (const s of spawnList) { if (cnt >= band.maxEnemies) break; cnt++; const e = makeEnemy(data.enemies[s.kind], nid(), s.x, s.z, rng, band, { label: s.label, shield: SHIELD_SPEC, grade }); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label }); if (e.def.ranged && !g.goblinSeen) { g.goblinSeen = true; g.toast = { key: 'toast.goblin', t: g.t }; } if (e.shield && !g.shieldSeen) { g.shieldSeen = true; g.toast = { key: 'toast.shieldGoblin', t: g.t }; } if (e.crack && !g.golemSeen) { g.golemSeen = true; g.toast = { key: 'toast.golem', t: g.t }; } if (e.spirit && !g.spiritSeen) { g.spiritSeen = true; g.toast = { key: 'toast.spirit', t: g.t }; } }
         g.waveIdx++; g.waveT = 0; g.clearT = null; g.emit('wave', { idx: g.waveIdx, of: z.waves.length }); } }
     else if (alive.length === 0) { if (g.clearT == null) g.clearT = g.gameT; else if (g.gameT - g.clearT >= 1.2) { if (!nextZone()) victory(); } }
   }
@@ -381,7 +404,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   function nextZone(){ return enterZone(g.zoneIdx + 1); }
   // 길 구간이 쓰는 손잡이(rail.js 는 이것만 안다)
   const railApi = { nid: () => nid(), hurtPlayer: (src, atk) => hurtPlayer(src, atk), nextZone: () => { if (!nextZone()) victory(); }, gainXp: (n, why) => gainXp(n, why),
-    spawnEnemy: (kind, x, z) => { const alive = slotsUsed(); if (alive >= band.maxEnemies) return null; const e = makeEnemy(data.enemies[kind], nid(), x, z, rng, band, { shield: SHIELD_SPEC }); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label, rail: true }); return e; },
+    spawnEnemy: (kind, x, z) => { const alive = slotsUsed(); if (alive >= band.maxEnemies) return null; const e = makeEnemy(data.enemies[kind], nid(), x, z, rng, band, { shield: SHIELD_SPEC, grade }); g.enemies.push(e); g.emit('enemy:spawn', { uid: e.uid, kind: e.kind, pos: v3(e.pos), label: e.label, rail: true }); return e; },
     get sel(){ return sel; }, get mastery(){ return qe.m; } };
   function victory(){ if (g.endT) return; g.checkpoint = null; if (g.q) closeQuestion(); gainXp(LV.xpClear, 'clear'); g.endT = g.t; setLower('A14'); g.player.anim.upper = null;
     // v1.6 깬 기록(별 수 최대값)·스테이지 보상 마법(09 문서 12행: 1-2 ICE STORM …) → progress 에 남아 다음 판부터 장착 가능
@@ -444,6 +467,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     const live = g.enemies.filter(e => e.state !== 'dead' && !e.boss); g.aliveCount = live.length;
     live.slice().sort((a, b) => a.pos[0] - b.pos[0]).forEach((e, i) => { e.slot = i; });
     for (const e of g.enemies) { if (e.boss) stepBoss(g, e, gdt); else stepEnemy(g, e, gdt); }
+    stepSpirits();
     separate(g.enemies.filter(e => !e.boss));
     if (g.boss && g.boss.state === 'dead') g.boss.stateT += 0;   // 보스 시체는 승리까지 남김
     g.enemies = g.enemies.filter(e => e.boss || !(e.state === 'dead' && e.stateT > GAME.enemy.dieT));
@@ -516,14 +540,15 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
       enemies: g.enemies.filter(e => !e.boss).map(e => ({ uid: e.uid, kind: e.kind, pos: v3(e.pos), yaw: r3(e.yaw), scale: e.scale, state: e.state, stateT: r3(e.stateT), hp: e.hp, hpMax: e.hpMax, label: e.label,
         telegraph: e.telegraph ? { shape: e.telegraph.shape, center: v3(e.telegraph.center), size: e.telegraph.size, yaw: e.telegraph.yaw != null ? r3(e.telegraph.yaw) : 0, t0: r3(e.telegraph.t0), t1: r3(e.telegraph.t1) } : null, tags: e.tags,
         shield: e.shield ? { hp: e.shield.hp, hpMax: e.shield.hpMax, up: e.shield.up && !e.shield.broken, broken: e.shield.broken, byMath: e.shield.byMath, eq: e.shield.eq ? `□ ${e.shield.eq.op || '+'} ${e.shield.eq.b} = ${e.shield.eq.c}` : null } : null,
-        crack: e.crack ? { down: e.crack.down, max: e.crack.max, ratio: r3(e.crack.down / e.crack.max), def: e.def.def - e.crack.down } : null, pack: e.pack ? { id: e.pack.id, n: e.pack.n, hpEach: e.pack.hpEach } : null })),
+        crack: e.crack ? { down: e.crack.down, max: e.crack.max, ratio: r3(e.crack.down / e.crack.max), def: e.def.def - e.crack.down } : null, pack: e.pack ? { id: e.pack.id, n: e.pack.n, hpEach: e.pack.hpEach } : null,
+        spirit: e.spirit ? { fam: e.spirit.fam, pic: PIC_ID(e.spirit.code), up: e.spirit.up, weak: !e.spirit.up && g.gameT < e.spirit.weakUntil, weakT: r3(Math.max(0, (e.spirit.weakUntil - g.gameT) / GAME.spirit.weakT)), breaks: e.spirit.breaks } : null })),   /* v2.12 도형 정령 모양 보호막 */
       packs: g.packs.filter(pk => !pk.cleared).map(pk => { const al = packAlive(pk); return { id: pk.id, n: pk.n, hpEach: pk.hpEach, total: pk.total, alive: al.length, sum: al.reduce((a, e) => a + e.hp, 0), uids: al.map(e => e.uid), retried: pk.retried }; }),
       boss: bossSnapshot(g, g.boss, r3, v3),
-      projectiles: g.projectiles.map(p => ({ uid: p.uid, kind: p.kind, pos: v3(p.pos), vel: v3(p.vel), owner: p.owner, label: p.label || null, r: r3(p.r), exact: p.exact || 0, scatter: !!p.scatter })),
+      projectiles: g.projectiles.map(p => ({ uid: p.uid, kind: p.kind, pos: v3(p.pos), vel: v3(p.vel), owner: p.owner, label: p.label || null, pic: p.pic || null, r: r3(p.r), exact: p.exact || 0, scatter: !!p.scatter })),
       areas: g.areas.map(x => ({ uid: x.uid, kind: x.kind, pos: x.pos, radius: x.radius, t0: r3(x.t0), t1: r3(x.t1) })),
       crystals: g.crystals.map(c => ({ uid: c.uid, kind: c.kind, pos: v3(c.pos), near: Math.abs(c.pos[0] - P.pos[0]) <= GAME.crystal.reach, retry: !!c.retry, life: c.kind === 'empower' ? r3(Math.max(0, 1 - (g.gameT - c.born) / GAME.empower.life)) : 1 })),
       pickups: [], obstacles: railSnap.obstacles, puzzle: puzzleSnapshot(g, r3),
-      question: q ? { id: q.v.id, type: q.v.type, concept: q.v.concept, kind: q.kind, shieldUid: q.shieldUid || null, golemUid: q.golemUid || null, packId: q.packId || null, shareUids: q.shareUids || null, prompt: q.v.prompt, state: q.state, hintStep: q.hint, gauge: r3(Math.min(1, q.gauge)), gaugeOn: Number.isFinite(q.total),
+      question: q ? { id: q.v.id, type: q.v.type, concept: q.v.concept, kind: q.kind, shieldUid: q.shieldUid || null, golemUid: q.golemUid || null, spiritUid: q.spiritUid || null, packId: q.packId || null, shareUids: q.shareUids || null, prompt: q.v.prompt, state: q.state, hintStep: q.hint, gauge: r3(Math.min(1, q.gauge)), gaugeOn: Number.isFinite(q.total),
         readP: r3(clamp((g.t - q.openT) / Math.max(.01, q.readUntil - q.openT), 0, 1)), picked: q.picked,
         reveal: q.state === 'right' || (q.state === 'wrong' && g.t >= q.endAt - GAME.question.revealShow) ? q.v.correctSlot : null,
         explain: q.state === 'wrong' ? (q.v.type === 'word1' && ['add-instead', 'sub-instead'].includes(q.tag) ? 'why.word.' : 'why.') + q.tag : null, pic: q.v.pic || null, choices: q.v.choices.map(c => ({ id: c.id, num: c.num, pic: c.pic || null, targetId: 'c' + c.slot })),   /* v2.9 도형: 문제 그림·보기 그림 id */
@@ -533,7 +558,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
       camera: { mode: q ? 'q' : g.screen === 'S08P' ? 'puzzle' : g.rail ? 'rail' : g.boss && g.boss.state === 'intro' ? 'boss-intro' : 'arena', target: v3([P.pos[0], 1, P.pos[2]]), shake: r3(g.trauma * g.trauma) },
       toast: g.toast ? g.toast.key : null, streak: g.streak,
       result: g.endT ? { win: P.hp > 0, kills: g.stats.kills, q: g.stats.q, right: g.stats.right, time: Math.round(g.t - g.stats.startT), keyboard: g.stats.keyboard, deaths: g.deaths, xp: g.stats.xp, level: prog.level, levelUps: g.stats.levelUps.slice(), empowers: g.stats.empowers || 0, splits: g.stats.splits || 0, niceDodges: g.stats.niceDodges || 0,
-        fireflies: g.stats.fireflies || 0, chests: g.stats.chests || 0, gold: g.stats.gold || 0, puzzles: g.stats.puzzles || 0, puzzleRight: g.stats.puzzleRight || 0, obstaclesHit: g.stats.obstaclesHit || 0, nicePasses: g.stats.nicePasses || 0, bounces: g.stats.bounces || 0, shields: g.stats.shields || 0, cracks: g.stats.cracks || 0, packClears: g.stats.packClears || 0, shareRight: g.stats.shareRight || 0, shareWrong: g.stats.shareWrong || 0, stars: starsOf(), reward: g.rewardSpell || null, crystal: g.rewardCrystal || null, final: !!stage.final } : null,
+        fireflies: g.stats.fireflies || 0, chests: g.stats.chests || 0, gold: g.stats.gold || 0, puzzles: g.stats.puzzles || 0, puzzleRight: g.stats.puzzleRight || 0, obstaclesHit: g.stats.obstaclesHit || 0, nicePasses: g.stats.nicePasses || 0, bounces: g.stats.bounces || 0, shields: g.stats.shields || 0, cracks: g.stats.cracks || 0, spiritBreaks: g.stats.spiritBreaks || 0, packClears: g.stats.packClears || 0, shareRight: g.stats.shareRight || 0, shareWrong: g.stats.shareWrong || 0, stars: starsOf(), reward: g.rewardSpell || null, crystal: g.rewardCrystal || null, final: !!stage.final } : null,
     };
     return freeze ? deepFreeze(snap) : snap;
   };

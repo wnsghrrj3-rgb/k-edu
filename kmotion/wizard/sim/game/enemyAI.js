@@ -3,6 +3,7 @@
 // v1.4: 원거리형(def.ranged — 계산 고블린): 거리 유지 원 keep 위로 가고 너무 가까우면 물러남, 예고 = 조준선(line, 시작 때 플레이어 자리로 고정) → 도토리 발사(game.enemyShoot)
 //       분열형(def.split — 큰 슬라임)은 game.hitEnemy 가 죽을 때 처리
 import { GAME } from './config.js';
+import { pickSpiritShape } from '../learn/spirit.js';
 const E = GAME.enemy;
 export function makeEnemy(def, uid, x, z, rng, band, opt = {}){
   const label = def.label === 'digit' ? String(opt.label != null ? opt.label : rng.int(def.labelMin || 1, 9)) : null;
@@ -16,6 +17,8 @@ export function makeEnemy(def, uid, x, z, rng, band, opt = {}){
     else { const c = rng.int(3, 9), b = rng.int(1, c - 1); if (def.shield.eq) eq = { op: '+', b, c, ans: c - b, concept: 'g1.missing.add9' }; }
     e.shield = { hp: def.shield.hp, hpMax: def.shield.hp, up: true, broken: false, byMath: false, eq }; }
   // v1.7 수정 골렘: 수학 정답마다 갈라짐(down = DEF 깎인 양)
+  // v2.12 도형 정령: 모양 보호막(학년 줄 opt.grade) — rng 는 정령이 나올 때만(숲 판·골든 불변)
+  if (def.spirit) { const sh = pickSpiritShape(rng, opt.grade || 1); e.spirit = { fam: sh.fam, code: sh.code, concept: sh.concept, up: true, weakUntil: 0, breaks: 0 }; }
   if (def.crack) e.crack = { down: 0, max: def.crack.max || 16, per: def.crack.per || 8 };
   return e;
 }

@@ -51,6 +51,13 @@ const S = {
   crad2: () => `<circle cx="50" cy="50" r="38" fill="${F}" stroke="${L}" stroke-width="5"/><line x1="50" y1="50" x2="24" y2="22" stroke="${L}" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="50" r="5" fill="${L}"/>`,
   cline: () => `<circle cx="50" cy="50" r="34" fill="${F}" stroke="${L}" stroke-width="5"/><line x1="6" y1="36" x2="94" y2="36" stroke="${L}" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="50" r="5" fill="${L}"/>`,
 };
+// v2.12 이름 판(도형 정령 보호막 이름 맞히기) — 그림 대신 이름 글자. 긴 이름은 두 줄
+const NM = { box: ['상자', '모양'], cyl: ['둥근 기둥', '모양'], ball: ['공', '모양'], tri: ['삼각형'], quad: ['사각형'], circ: ['원'], rtri: ['직각', '삼각형'], rect: ['직사각형'], square: ['정사각형'] };
+for (const [f, ls] of Object.entries(NM)) S['nm-' + f] = () => { const long = Math.max(...ls.map(x => x.length)), fs = long <= 1 ? 40 : long <= 2 ? 32 : long <= 3 ? 26 : long <= 4 ? 20 : 17, y0 = ls.length === 1 ? 50 : 50 - fs * .58;
+  return `<rect x="6" y="22" width="88" height="56" rx="14" fill="${F}" stroke="${L}" stroke-width="4"/>` + ls.map((t, i) => `<text x="50" y="${(y0 + i * fs * 1.16).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-family="Pretendard, system-ui, sans-serif" font-weight="900" font-size="${fs}" fill="${L}">${t}</text>`).join(''); };
+// v2.12 3D 판(도형 정령 보호막)에 그릴 SVG 문자열 — img 로 읽으니 CSS 변수를 색으로 바꿔 둔다
+export function svgMarkup(id, { fill = '#ffe7a3', line = '#1e3a46' } = {}){ if (!S[id]) return ''; const inner = S[id]().replace(/var\(--mw-pic-fill2,[^)]*\)/g, '#8fd0ff').replace(/var\(--mw-pic-fill,[^)]*\)/g, fill).replace(/var\(--mw-pic-line,[^)]*\)/g, line);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="256" height="256">${inner}</svg>`; }
 // 쌓기나무(앞에서 본 기둥): 'cubes:2,1,3' — 기둥 높이들(1~3), 2~4줄. 네모를 쌓아 그린다.
 function cubes(spec){ const hs = spec.split(',').map(Number); const n = hs.length, w = Math.min(22, 76 / n), x0 = 50 - (n * w) / 2; let o = '';
   hs.forEach((h, i) => { for (let k = 0; k < h; k++) o += `<rect x="${(x0 + i * w).toFixed(1)}" y="${(88 - (k + 1) * w).toFixed(1)}" width="${w}" height="${w}" fill="${F}" stroke="${L}" stroke-width="3"/>`; });
