@@ -11,8 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --c-main:#42A5F5; --c-deep:#1976D2; --c-soft:#E3F2FD; --c-sub:#64B5F6;
-  --c-ink:#1565C0; --c-bg:#F0F7FF; --c-emph:#DC2626; --c-ok:#2E7D32;
+  --c-main:#3042A6; --c-deep:#222F77; --c-soft:#E9ECFB; --c-sub:#8E96C2;
+  --c-ink:#19214D; --c-bg:#F8FAFC; --c-emph:#DC2626; --c-ok:#2E7D32;
   --c-strong:#FB8C00; --c-strong-soft:#FFF3E0;
   --fs-title:clamp(20px,5.2cqw,32px); --fs-heading:clamp(17px,4.2cqw,24px);
   --fs-body:clamp(15px,3.6cqw,21px); --fs-caption:clamp(12px,2.7cqw,16px); --fs-label:clamp(11px,2.3cqw,14px);
@@ -102,7 +102,7 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .ka-nav{background:#F4F4F8; color:#2A2A35; border:none; padding:clamp(8px,2.2cqw,12px) 6px; font-size:var(--fs-caption); border-radius:clamp(10px,2.5cqw,14px); cursor:pointer; font-family:inherit;}
 .ka-nav-next{background:var(--c-main); color:#fff;}
 .ka-nav:disabled{opacity:.4; cursor:default;}
-/* 문장 띠 + 띄어 읽기 표시 (6단원 — 정적 시각 표현, JS 무관) */
+/* 문장 띠 + 빈칸 표시 (정적 시각 표현, JS 무관) */
 .sentence{display:inline-flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:clamp(2px,.6cqw,5px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(12px,2.6cqw,18px); padding:clamp(10px,2.6cqw,16px) clamp(14px,3.2cqw,22px); font-size:clamp(20px,4.6cqw,32px); color:var(--c-deep); box-shadow:0 4px 0 var(--c-soft); max-width:600px; line-height:1.7; margin:clamp(4px,1cqw,8px) auto;}
 .punct{color:var(--c-emph); font-weight:400;}
 .vmark{display:inline-block; color:var(--c-strong); font-family:'Nunito',sans-serif; font-weight:800; font-size:1.05em; transform:translateY(-.05em); margin:0 .05em;}
@@ -113,12 +113,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-card .pc-name{font-size:clamp(15px,3.4cqw,21px); color:var(--c-deep);}
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
-/* 세로 모바일(폭 600px 이하·세로): 5/4 카드가 화면 높이의 1/3만 쓰고 콘텐츠가 0.33까지 축소되던 것을 세로로 꽉 채운다. 가로·데스크톱은 그대로 */
-@media (max-width:600px) and (orientation:portrait){
-  html,body{height:100%;}
-  body{height:100dvh; min-height:0;}
-  .ka{aspect-ratio:auto; width:100%; height:100%; max-height:none;}
-}
 </style>
   <script src="/kedu_gate.js"></script>
 <script src="/kedu_boxbar.js"></script>
@@ -147,111 +141,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 4~5차시(문장의 뜻을 생각하며 읽기) 13슬:
-   ① 만나기 2 → ② 따라가기 3 → ③ 활동·심장 5 → ④ 표현·정리 3 =====
+/* ===== 4~5차시(문장의 뜻을 생각하며 읽기) 『국어』 284~287쪽 · 『국어활동』 85쪽 13슬 — v2 교과서 기준 재구성 (2026-11-03)
    학습 목표: 문장의 뜻을 생각하며 읽을 수 있다.
-   ★ 읽기 트랙. 비슷한 두 문장 중 그림과 일치하는 것 고르기(의미 판정) + 의미 단위로 쉬어 읽기.
-   ★ 로깅 7슬(그림 맞는 문장 4 + collect 1 + 쉬어 읽기 1 + 학교 문장 1). 따라읽기·놀이·정리=로깅X.
-   ★ 저작권: 놀이터·학교 보편 상황 자체 구성(원숭이·하마·토끼·곰 등 일상 보편어). */
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·스스로 확인·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 판단(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      문장(자전거를 타면/가면, 오늘 밤 나무를 심자, 281~287쪽 문장, 놀이판), 「나무를 심어요」·「호랑이 형님」(교육부 집필), 문장 부호 이름·쓰임·쓰는 자리, ∨·≫ 띄어 읽기, 정리·기초 다지기(많다·넓다·짧다·여덟)·글씨 쓰기는 그대로. 「꽃에서 나온 코끼리」(황K)·「코끼리가 꼈어요」는 본문 미인용(교과서 쪽 펴기). 지도서 가르침: 문장 성분은 이름으로 가르치지 않기 · 부호를 기계적으로 외우지 않기 · 띄어 읽기 정답은 하나가 아님(오개념) · 기초 다지기는 따라 읽기만. */
 const slides=[
-  {tag:'① 그림 보고 떠올리기', t:'놀이터 그림을 보고 어울리는 문장을 말해 봐요',
-   html:`<div class="scene"><div class="scene-pic">🛝🐵🦛</div></div>
-    <div class="ka-bub">놀이터에 여러 동물이 있어요. <b class="emph">누가, 무엇을</b> 하고 있는지 살펴봐요.<br>"원숭이가 <b class="emph">달립니다</b>.", "하마가 <b class="emph">그네를 탑니다</b>." 처럼 말해 봐요. 🗣️</div>`},
+  {tag:'① 284쪽 1번', t:'놀이터에 누가 있나요?', log:true, collectMsg:'잘 찾았어요! 동물들이 각자 무엇을 하는지 살펴봐요. 🛝',
+   html:`<div class="collect" id="collect"><div class="chip" data-hit="1">원숭이</div><div class="chip" data-hit="1">호랑이</div><div class="chip" data-hit="0">펭귄</div><div class="chip" data-hit="0">기린</div><div class="chip" data-hit="1">토끼</div><div class="chip" data-hit="1">다람쥐</div><div class="chip" data-hit="1">곰</div><div class="chip" data-hit="1">하마</div></div><div class="fb" id="collectFb"></div>`},
 
-  {tag:'① 따라 읽기', t:'문장을 따라 읽어 봐요',
-   hint:'힌트: 한 줄씩 누르며 뜻을 떠올리며 따라 읽어요.',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>토끼와 다람쥐가 시소를 탑니다.</div>
-      <div class="read-line"><span class="rl-num">2</span>곰이 모래성을 완성했습니다.</div>
-      <div class="read-line"><span class="rl-num">3</span>원숭이가 달립니다.</div>
-    </div><div class="fb" id="readFb">🔊 누가·무엇을 하는지 떠올리며 읽어 봐요.</div>`},
+  {tag:'① 284쪽 1번', t:'그림의 내용에 어울리는 문장을 말해요',
+   html:`<div class="stage-box">🗣️ 「누가 무엇을 하고 있는지」 생각하며 놀이터 동물 하나를 골라 문장으로 말해 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 낱말이 아니라 문장으로 말했어요.">🗣️ 말했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'② 그림 맞는 문장', t:'원숭이가 어떻게 하고 있나요?', log:true, okMsg:'맞아요! 원숭이가 달려요. 🏃',
-   html:`<div class="scene"><div class="scene-pic">🐵💨</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">원숭이가 달립니다.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">원숭이가 자리에 앉습니다.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 285쪽 2번', t:'원숭이 그림에 알맞은 문장은?', log:true, okMsg:'맞아요! 원숭이는 달리고 있어요. 🐒',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">원숭이가 자리에 앉습니다.</div></div><div class="wcard" data-ok="1"><div class="wc-word">원숭이가 달립니다.</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 그림 맞는 문장', t:'하마가 무엇을 하고 있나요?', log:true, okMsg:'맞아요! 하마가 그네를 타요. 🦛',
-   html:`<div class="scene"><div class="scene-pic">🦛🛝</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">하마가 그네를 밉니다.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">하마가 그네를 탑니다.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 285쪽 2번', t:'하마 그림에 알맞은 문장은?', log:true, okMsg:'맞아요! 「탑니다」와 「밉니다」 — 한 낱말 차이로 뜻이 달라요. 🦛',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">하마가 그네를 탑니다.</div></div><div class="wcard" data-ok="0"><div class="wc-word">하마가 그네를 밉니다.</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 그림 맞는 문장', t:'토끼와 다람쥐가 무엇을 하나요?', log:true, okMsg:'맞아요! 시소를 타고 있어요. 🐰',
-   html:`<div class="scene"><div class="scene-pic">🐰🐿️</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">시소를 탑니다.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">시소에서 내립니다.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 285쪽 2번', t:'토끼와 다람쥐 그림에 알맞은 문장은?', log:true, okMsg:'맞아요! 시소를 타고 있어요. 🐰🐿️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">토끼와 다람쥐가 시소에서 내립니다.</div></div><div class="wcard" data-ok="1"><div class="wc-word">토끼와 다람쥐가 시소를 탑니다.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 그림 맞는 문장', t:'곰이 모래성을 어떻게 했나요?', log:true, okMsg:'맞아요! 모래성을 완성했어요. 🏰',
-   html:`<div class="scene"><div class="scene-pic">🐻🏰</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">모래성을 완성했습니다.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">모래성을 무너뜨렸습니다.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 285쪽 2번', t:'곰 그림에 알맞은 문장은?', log:true, okMsg:'맞아요! 다른 낱말에 형광펜을 칠하듯 견주어 읽어요. 🐻',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">곰이 모래성을 무너뜨렸습니다.</div></div><div class="wcard" data-ok="1"><div class="wc-word">곰이 모래성을 완성했습니다.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 알맞은 문장 모으기', t:'놀이터 그림에 알맞은 문장을 모두 찾아봐요', log:true,
-   collectMsg:'그림에 알맞은 문장을 모두 찾았어요! 🎉',
-   hint:'힌트: 위 그림과 뜻이 같은 문장만 모두 눌러요.',
-   html:`<div class="scene"><div class="scene-pic">🛝🐵🦛🐰🐻</div></div>
-    <div class="collect" id="collect">
-      <div class="chip" data-hit="1">원숭이가 달립니다.</div>
-      <div class="chip" data-hit="0">원숭이가 앉습니다.</div>
-      <div class="chip" data-hit="1">하마가 그네를 탑니다.</div>
-      <div class="chip" data-hit="0">하마가 그네를 밉니다.</div>
-      <div class="chip" data-hit="1">시소를 탑니다.</div>
-      <div class="chip" data-hit="0">시소에서 내립니다.</div>
-      <div class="chip" data-hit="1">모래성을 완성했습니다.</div>
-      <div class="chip" data-hit="0">모래성을 무너뜨렸습니다.</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'③ 286~287쪽 3번', t:'문장 읽기 놀이 방법',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>① 짝과 가위바위보를 하여 이긴 사람이 말을 한 칸씩 앞으로 움직인다.</div><div class="read-line"><span class="rl-num">2</span>② 도착한 칸의 그림을 보고 문장을 소리 내어 읽는다.</div><div class="read-line"><span class="rl-num">3</span>③ 알맞은 목소리로 또박또박 읽지 못하면 원래 자리로 돌아간다.</div></div><div class="fb" id="readFb">🔊 놀이 방법을 읽어 봐요.</div>`},
 
-  {tag:'③ 쉬어 읽기', t:'어디서 쉬어 읽으면 뜻이 잘 통할까요?', log:true, okMsg:'맞아요! "토끼와 다람쥐가" 다음에 쉬어 읽어요. ✂️',
-   html:`<div class="ka-bub">긴 문장은 <b class="emph">뜻 덩어리</b>로 나누어 쉬어 읽으면 뜻이 잘 통해요.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">토끼와 다람쥐가 ∨ 시소를 탑니다.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">토끼와 ∨ 다람쥐가 시소를 ∨ 탑니다.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 놀이판', t:'놀이판 문장을 또박또박 읽어요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>나는 학생입니다. · 나는 학교 가는 길에 친구를 만났습니다.</div><div class="read-line"><span class="rl-num">2</span>우리는 점심을 맛있게 먹습니다. · 친구가 손을 깨끗이 씻습니다.</div><div class="read-line"><span class="rl-num">3</span>누나가 실내화를 신습니다. · 선생님께서 반갑게 인사합니다.</div><div class="read-line"><span class="rl-num">4</span>짝꿍이 또박또박 큰 소리로 발표합니다.</div></div><div class="fb" id="readFb">🔊 한 문장씩 알맞은 목소리로 읽어 봐요.</div>`},
 
-  {tag:'③ 학교 문장 읽기', t:'그림에 알맞은 문장을 골라 봐요', log:true, okMsg:'맞아요! 운동장에서 축구를 해요. ⚽',
-   html:`<div class="scene"><div class="scene-pic">⚽🏃</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">친구들이 그림을 그립니다.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">친구들이 운동장에서 축구를 합니다.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 놀이 규칙', t:'또박또박 읽지 못하면 어떻게 하나요?', log:true, okMsg:'맞아요! 다시 기회가 오면 또박또박 읽어 봐요. 🎲',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">놀이를 끝내요</div></div><div class="wcard" data-ok="1"><div class="wc-word">원래 자리로 돌아가요</div></div><div class="wcard" data-ok="0"><div class="wc-word">한 칸 더 가요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 따라 읽기', t:'학교에서 있었던 일을 따라 읽어 봐요',
-   hint:'힌트: 한 줄씩 또박또박, 알맞게 쉬어 가며 읽어요.',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>짝꿍이 또박또박 발표합니다.</div>
-      <div class="read-line"><span class="rl-num">2</span>나는 그림 그리기를 좋아합니다.</div>
-      <div class="read-line"><span class="rl-num">3</span>선생님께서 반갑게 인사합니다.</div>
-    </div><div class="fb" id="readFb">🔊 뜻을 떠올리며 읽어 봐요.</div>`},
+  {tag:'④ 국어활동 85쪽', t:'짧은 이야기를 읽어요',
+   html:`<div class="stage-box">📖 국어활동 85쪽 짧은 이야기를 친구와 한 문장씩 나누어 읽어 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 주고받으며 읽으니 더 재미있어요.">📖 읽었어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 문장 읽기 놀이', t:'짝과 문장 읽기 놀이를 해 봐요',
-   html:`<div class="stage-box">
-      🎲 짝과 가위바위보를 해서 이기면 한 칸 앞으로!<br>
-      도착한 칸의 문장을 <b>또박또박, 알맞게 쉬어</b> 읽으면 통과예요.<br>
-      <small>(잘못 읽으면 제자리로 돌아가요. 누가 먼저 도착할까요?)</small>
-      <br><button class="stage-do" id="stageDo" data-fb="또박또박 잘 읽어서 놀이에 성공했어요! 👏">🎲 놀이해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 287쪽 평가표', t:'나는 이렇게 읽었어요',
+   html:`<div class="selfcheck"><div class="sc-row"><span class="sc-box">✓</span>그림에 어울리는 문장을 잘 찾았어요.</div><div class="sc-row"><span class="sc-box">✓</span>문장을 또박또박 큰 소리로 읽었어요.</div><div class="sc-row"><span class="sc-box">✓</span>바른 자세로 문장을 읽었어요.</div></div><div class="fb">⭐ 스스로 점검해 봐요.</div>`},
 
-  {tag:'④ 정리', t:'오늘 배운 것을 모아 봐요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🔎</span>그림과 <b>뜻이 같은 문장</b>을 골라 읽었어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">✂️</span>긴 문장은 <b>뜻 덩어리</b>로 쉬어 읽었어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🎲</span>놀이로 여러 문장을 <b>재미있게</b> 읽었어요.</div>
-    </div>`},
+  {tag:'⑤ 정리', t:'문장의 뜻을 생각하며 읽으려면?', log:true, okMsg:'맞아요! 뜻을 떠올리며 읽으면 실수가 줄어요. 💡',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">누가, 무엇을 하는지 떠올리며 읽어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">글자 수만 세며 읽어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">아는 낱말만 골라 읽어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🧐</span>문장의 <b>뜻을 생각하며</b> 정확하게 읽었어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">📖</span>그림과 <b>일치하는 문장</b>을 잘 찾았어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">➡️</span>다음 시간에는 <b>문장 부호( , . ? ! )</b>를 배워 볼 거예요.</div>
-    </div>`},
+  {tag:'⑥ 마무리', t:'문장의 뜻을 생각하며 읽었어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🛝</span>그림에 알맞은 문장을 골랐어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🔍</span>한 낱말 차이도 꼼꼼히 견주었어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🎲</span>놀이로 문장을 또박또박 읽었어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;

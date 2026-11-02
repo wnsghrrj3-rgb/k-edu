@@ -11,8 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --c-main:#42A5F5; --c-deep:#1976D2; --c-soft:#E3F2FD; --c-sub:#64B5F6;
-  --c-ink:#1565C0; --c-bg:#F0F7FF; --c-emph:#DC2626; --c-ok:#2E7D32;
+  --c-main:#3042A6; --c-deep:#222F77; --c-soft:#E9ECFB; --c-sub:#8E96C2;
+  --c-ink:#19214D; --c-bg:#F8FAFC; --c-emph:#DC2626; --c-ok:#2E7D32;
   --c-strong:#FB8C00; --c-strong-soft:#FFF3E0;
   --fs-title:clamp(20px,5.2cqw,32px); --fs-heading:clamp(17px,4.2cqw,24px);
   --fs-body:clamp(15px,3.6cqw,21px); --fs-caption:clamp(12px,2.7cqw,16px); --fs-label:clamp(11px,2.3cqw,14px);
@@ -102,7 +102,7 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .ka-nav{background:#F4F4F8; color:#2A2A35; border:none; padding:clamp(8px,2.2cqw,12px) 6px; font-size:var(--fs-caption); border-radius:clamp(10px,2.5cqw,14px); cursor:pointer; font-family:inherit;}
 .ka-nav-next{background:var(--c-main); color:#fff;}
 .ka-nav:disabled{opacity:.4; cursor:default;}
-/* 문장 띠 + 띄어 읽기 표시 (6단원 — 정적 시각 표현, JS 무관) */
+/* 문장 띠 + 빈칸 표시 (정적 시각 표현, JS 무관) */
 .sentence{display:inline-flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:clamp(2px,.6cqw,5px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(12px,2.6cqw,18px); padding:clamp(10px,2.6cqw,16px) clamp(14px,3.2cqw,22px); font-size:clamp(20px,4.6cqw,32px); color:var(--c-deep); box-shadow:0 4px 0 var(--c-soft); max-width:600px; line-height:1.7; margin:clamp(4px,1cqw,8px) auto;}
 .punct{color:var(--c-emph); font-weight:400;}
 .vmark{display:inline-block; color:var(--c-strong); font-family:'Nunito',sans-serif; font-weight:800; font-size:1.05em; transform:translateY(-.05em); margin:0 .05em;}
@@ -113,12 +113,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-card .pc-name{font-size:clamp(15px,3.4cqw,21px); color:var(--c-deep);}
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
-/* 세로 모바일(폭 600px 이하·세로): 5/4 카드가 화면 높이의 1/3만 쓰고 콘텐츠가 0.33까지 축소되던 것을 세로로 꽉 채운다. 가로·데스크톱은 그대로 */
-@media (max-width:600px) and (orientation:portrait){
-  html,body{height:100%;}
-  body{height:100dvh; min-height:0;}
-  .ka{aspect-ratio:auto; width:100%; height:100%; max-height:none;}
-}
 </style>
   <script src="/kedu_gate.js"></script>
 <script src="/kedu_boxbar.js"></script>
@@ -147,110 +141,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 8~9차시(자연스럽게 문장 읽기) 13슬:
-   ① 만나기 2 → ② 따라가기 3 → ③ 활동·심장 5 → ④ 표현·정리 3 =====
-   학습 목표: 문장 부호의 쓰임에 맞게 자연스럽게 문장을 읽을 수 있다.
-   ★ 문학 트랙. 그림책 띄어 읽기(∨ 쉼표 뒤·≫ 마침표/물음표/느낌표 뒤) + 실감 나게 읽기.
-   ★ 로깅 7슬(내용1 + 표시2 + 알맞은표시1 + collect1 + 실감읽기2). 따라읽기·정리=로깅X.
-   ★ 저작권: 그림책 「꽃에서 나온 코끼리」 본문·그림·작가·인물명 미게재.
-      "작은 코끼리를 만나 필통을 보여 주는" 모티프만, 문장은 전부 자체 작성. */
+/* ===== 8~9차시(자연스럽게 문장 읽기) 『국어』 292~295쪽 · 『국어활동』 86~87쪽 13슬 — v2 교과서 기준 재구성 (2026-11-03)
+   학습 목표: 자연스럽게 문장을 읽을 수 있다.
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·스스로 확인·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 판단(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      문장(자전거를 타면/가면, 오늘 밤 나무를 심자, 281~287쪽 문장, 놀이판), 「나무를 심어요」·「호랑이 형님」(교육부 집필), 문장 부호 이름·쓰임·쓰는 자리, ∨·≫ 띄어 읽기, 정리·기초 다지기(많다·넓다·짧다·여덟)·글씨 쓰기는 그대로. 「꽃에서 나온 코끼리」(황K)·「코끼리가 꼈어요」는 본문 미인용(교과서 쪽 펴기). 지도서 가르침: 문장 성분은 이름으로 가르치지 않기 · 부호를 기계적으로 외우지 않기 · 띄어 읽기 정답은 하나가 아님(오개념) · 기초 다지기는 따라 읽기만. */
 const slides=[
-  {tag:'① 예측하기', t:'제목을 보고 어떤 이야기일지 상상해 봐요',
-   html:`<div class="scene"><div class="scene-pic">🌸🐘</div></div>
-    <div class="ka-bub">제목이 <b class="emph">「꽃에서 나온 코끼리」</b>예요.<br>꽃에서 코끼리가 나오다니, 얼마나 작을까요? 어떤 일이 일어날지 마음속으로 상상해 봐요. 🤔</div>`},
+  {tag:'① 동기 유발', t:'제목과 그림을 보고 짐작해요', log:true, okMsg:'맞아요! 필통에 들어갈 만큼 작은 코끼리예요. 🐘',
+   html:`<div class="ka-bub">『국어』 292쪽 그림책 「꽃에서 나온 코끼리」(황K 글·그림)의 제목과 그림을 살펴봐요. 🌺🐘</div><div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">꽃에서 아주 작은 코끼리가 나오는 이야기</div></div><div class="wcard" data-ok="0"><div class="wc-word">코끼리가 꽃을 먹는 이야기</div></div><div class="wcard" data-ok="0"><div class="wc-word">동물원에 가는 이야기</div></div></div><div class="fb"></div>`},
 
-  {tag:'① 작품 따라 읽기', t:'이야기를 따라 읽어 봐요',
-   hint:'힌트: 한 줄씩 누르며 문장 부호에 주의하며 읽어요.',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>꽃에서 작은 코끼리가 나왔어요.</div>
-      <div class="read-line"><span class="rl-num">2</span>우아, 진짜 코끼리다!</div>
-      <div class="read-line"><span class="rl-num">3</span>내 필통 구경할래?</div>
-    </div><div class="fb" id="readFb">🔊 끝에 붙은 부호를 살피며 읽어 봐요.</div>`},
+  {tag:'② 작품 읽기', t:'그림책을 따라 읽어요',
+   html:`<div class="stage-box">📖 교과서 292~294쪽을 펴고 선생님이 한 장면씩 읽어 주시면 따라 읽어 보세요. 누구에게 어떤 일이 일어났는지 생각하며 읽어요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 이제 짝과 번갈아 읽어 봐요.">📖 읽었어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'② 내용 알기', t:'코끼리는 어디에서 나왔나요?', log:true, okMsg:'맞아요! 꽃에서 나왔어요. 🌸',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">🌸</div><div class="wc-word">꽃</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">📦</div><div class="wc-word">상자</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🎒</div><div class="wc-word">가방</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 295쪽 내용 알기', t:'코끼리는 어디에서 나왔나요?', log:true, okMsg:'맞아요! 꽃에서 나왔어요. 🌺',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-pic">🌺</div><div class="wc-word">꽃</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🌺</div><div class="wc-word">필통</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🌺</div><div class="wc-word">가방</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 쉬어 읽기 약속', t:'부호 뒤에서 이렇게 쉬어 읽어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic vmark">∨</span>쉼표( , ) 뒤에는 <b>조금 쉬어</b> 읽어요. (쐐기표 ∨)</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic wmark">≫</span>마침표·물음표·느낌표 뒤에는 <b>조금 더 쉬어</b> 읽어요. (겹쐐기표 ≫)</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🚫</span>글이 <b>끝나는 곳</b>에는 표시하지 않아요.</div>
-    </div>`},
+  {tag:'③ 295쪽 내용 알기', t:'‘나’는 코끼리에게 무엇을 보여 주었나요?', log:true, okMsg:'맞아요! 가방에서 필통을 꺼내 보여 주었어요. ✏️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">✏️</div><div class="wc-word">공책</div></div><div class="wcard" data-ok="0"><div class="wc-pic">✏️</div><div class="wc-word">꽃</div></div><div class="wcard" data-ok="1"><div class="wc-pic">✏️</div><div class="wc-word">필통</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 쉼표 뒤 표시', t:'쉼표 뒤에는 어떤 표시를 할까요?', log:true, okMsg:'맞아요! 쉼표 뒤에는 ∨(조금 쉬어)예요.',
-   html:`<div class="sentence">우아<span class="punct">,</span> <span class="punct">◯</span> 진짜 코끼리다!</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">∨ (조금 쉬어)</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">≫ (더 쉬어)</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 295쪽 문장 읽기', t:'문장 부호를 찾아요 — 「코끼리다!」의 부호는?', log:true, okMsg:'맞아요! 놀란 느낌을 살려 읽어요. ❗',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">. 마침표</div></div><div class="wcard" data-ok="1"><div class="wc-word">! 느낌표</div></div><div class="wcard" data-ok="0"><div class="wc-word">? 물음표</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 느낌표 뒤 표시', t:'느낌표 뒤에는 어떤 표시를 할까요?', log:true, okMsg:'맞아요! 느낌표 뒤에는 ≫(조금 더 쉬어)예요.',
-   html:`<div class="sentence">진짜 코끼리다<span class="punct">!</span> <span class="punct">◯</span></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">∨ (조금 쉬어)</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">≫ (더 쉬어)</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 295쪽 문장 읽기', t:'「내 필통 구경할래?」는 어떻게 읽을까요?', log:true, okMsg:'맞아요! 물음표는 끝을 살짝 올려 읽어요. ❓',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">아주 크게 소리쳐 읽어요</div></div><div class="wcard" data-ok="1"><div class="wc-word">궁금해서 묻는 것처럼 끝을 올려 읽어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">끝을 내려 차분하게 읽어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 알맞게 표시한 문장', t:'쉬어 읽기 표시를 알맞게 한 문장은?', log:true, okMsg:'맞아요! 쉼표 뒤 ∨, 물음표 뒤 ≫. 👍',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">내 필통<span class="punct">,</span><span class="vmark">∨</span> 구경할래<span class="punct">?</span><span class="wmark">≫</span></div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">내 필통<span class="punct">,</span><span class="wmark">≫</span> 구경할래<span class="punct">?</span><span class="vmark">∨</span></div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 쉼표가 있는 문장', t:'쉼표가 있는 문장을 알맞게 띄어 읽은 것은?', log:true, okMsg:'맞아요! 쉼표에서 잠깐 쉬면 뜻을 더 쉽게 알 수 있어요. 🐘',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">눈을 깜빡깜빡, <span class="vmark">∨</span> 귀를 팔랑팔랑, <span class="vmark">∨</span> 긴 코를 살랑살랑 흔든다.</div></div><div class="wcard" data-ok="0"><div class="wc-word">눈을 <span class="vmark">∨</span> 깜빡깜빡 귀를 <span class="vmark">∨</span> 팔랑팔랑 긴 <span class="vmark">∨</span> 코를 살랑살랑 흔든다.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 느낌표 문장 찾기', t:'느낌표(!)로 끝나는 문장을 모두 찾아봐요', log:true,
-   collectMsg:'느낌을 살려 읽을 문장을 모두 찾았어요! 🎉',
-   hint:'힌트: 놀라거나 느낌을 나타내는 문장은 끝에 느낌표(!)가 붙어요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">우아, 진짜 코끼리다!</div>
-      <div class="chip" data-hit="0">꽃에서 코끼리가 나왔어요.</div>
-      <div class="chip" data-hit="1">정말 작구나!</div>
-      <div class="chip" data-hit="0">내 필통 구경할래?</div>
-      <div class="chip" data-hit="1">너무 귀여워!</div>
-      <div class="chip" data-hit="0">코끼리가 쏙 들어갔어요.</div>
-      <div class="chip" data-hit="1">신기해!</div>
-      <div class="chip" data-hit="0">손을 살며시 내밀었어요.</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 오개념 짚기', t:'띄어 읽기에는 단 하나의 정답만 있을까요?', log:true, okMsg:'맞아요! 부호와 뜻을 함께 생각하며 자연스럽게 읽어요. 🌈',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">문장 부호만 보고 기계적으로 쉬면 돼요</div></div><div class="wcard" data-ok="1"><div class="wc-word">아니요, 뜻이 크게 달라지지 않으면 조금씩 달라도 돼요</div></div><div class="wcard" data-ok="0"><div class="wc-word">네, 정답 하나만 맞아요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 실감 나게 읽기', t:'물음표(?) 문장은 어떻게 읽을까요?', log:true, okMsg:'맞아요! 묻는 문장은 끝을 올려서 읽어요. ↗️',
-   html:`<div class="sentence">내 필통 구경할래<span class="punct">?</span></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">↗️</div><div class="wc-word">끝을 올려서</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">➡️</div><div class="wc-word">끝을 평평하게</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">↘️</div><div class="wc-word">끝을 내려서</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑤ 자신과 관련짓기', t:'내가 만나고 싶은 작은 동물은?',
+   html:`<div class="stage-box">🐹 학교 오가는 길의 꽃에서 작은 동물을 만난다면 어떤 동물이면 좋을지, 무엇을 보여 주고 싶은지 친구와 이야기해 보세요.<br><button class="stage-do" id="stageDo" data-fb="재미있어요! 인물이 되어 보면 이야기가 더 가깝게 느껴져요.">🗣️ 말했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 실감 나게 읽기', t:'느낌표(!) 문장은 어떻게 읽을까요?', log:true, okMsg:'맞아요! 느낌을 살려서 읽어요. ❗',
-   html:`<div class="sentence">우아, 진짜 코끼리다<span class="punct">!</span></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-pic">😐</div><div class="wc-word">아무 느낌 없이</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-pic">😲</div><div class="wc-word">놀란 느낌을 살려서</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑥ 국어활동 86~87쪽', t:'「여우의 편지」를 부호에 맞게 띄어 읽어요',
+   html:`<div class="stage-box">✉️ 국어활동 87쪽 편지에 ∨와 ≫를 표시하고, 덮은 면을 열어 확인한 뒤 소리 내어 읽어 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 상대를 생각하는 마음도 함께 느껴 봐요.">✉️ 읽었어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 표시하며 읽기', t:'쉬어 읽기 표시를 보며 따라 읽어 봐요',
-   hint:'힌트: ∨에서는 조금, ≫에서는 조금 더 쉬어 읽어요.',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>손을 내밀자<span class="vmark">∨</span> 톡 떨어진다<span class="wmark">≫</span></div>
-      <div class="read-line"><span class="rl-num">2</span>우아<span class="vmark">∨</span> 살아 있는 진짜 코끼리다<span class="wmark">≫</span></div>
-      <div class="read-line"><span class="rl-num">3</span>내 필통<span class="vmark">∨</span> 구경할래?</div>
-    </div><div class="fb" id="readFb">🎵 표시에 맞게 쉬어 가며 자연스럽게 읽어 봐요.</div>`},
+  {tag:'⑥ 실감 나게 읽기', t:'부호에 따라 실감 나게 읽는 법',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>마침표 — 끝이 올라가거나 내려가지 않게</div><div class="read-line"><span class="rl-num">2</span>물음표 — 궁금한 것을 묻는 것처럼 끝을 올려</div><div class="read-line"><span class="rl-num">3</span>느낌표 — 깜짝 놀라거나 새로 알게 된 느낌을 살려</div></div><div class="fb" id="readFb">🔊 지도서 348쪽을 따라 읽어 봐요.</div>`},
 
-  {tag:'④ 정리', t:'오늘 배운 것을 모아 봐요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">✂️</span>쉼표 뒤는 <b>∨</b>, 마침표·물음표·느낌표 뒤는 <b>≫</b>로 쉬어 읽어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">↗️</span>물음표는 <b>올려서</b>, 느낌표는 <b>느낌을 살려</b> 읽어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">📖</span>부호에 맞게 읽으니 이야기가 <b>더 생생해요</b>.</div>
-    </div>`},
+  {tag:'⑦ 스스로 확인', t:'나는 이렇게 읽었어요',
+   html:`<div class="selfcheck"><div class="sc-row"><span class="sc-box">✓</span>문장 부호를 찾아 알맞게 띄어 읽었어요.</div><div class="sc-row"><span class="sc-box">✓</span>느낌을 살려 자연스럽게 읽었어요.</div></div><div class="fb">⭐ 스스로 별을 주어요.</div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🐘</span>그림책을 <b>자연스럽게</b> 읽으며 감상했어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">✂️</span>문장 부호에 맞게 <b>쉬어 읽는 법</b>을 익혔어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">➡️</span>다음 시간에는 <b>목소리 연극</b>을 해 볼 거예요.</div>
-    </div>`},
+  {tag:'⑦ 정리', t:'자연스럽게 문장을 읽었어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🐘</span>그림책을 부호에 맞게 띄어 읽었어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">❓</span>부호의 느낌을 살려 읽었어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🌈</span>띄어 읽기는 뜻을 생각하며 자연스럽게!</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;

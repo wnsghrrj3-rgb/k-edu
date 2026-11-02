@@ -11,8 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --c-main:#42A5F5; --c-deep:#1976D2; --c-soft:#E3F2FD; --c-sub:#64B5F6;
-  --c-ink:#1565C0; --c-bg:#F0F7FF; --c-emph:#DC2626; --c-ok:#2E7D32;
+  --c-main:#3042A6; --c-deep:#222F77; --c-soft:#E9ECFB; --c-sub:#8E96C2;
+  --c-ink:#19214D; --c-bg:#F8FAFC; --c-emph:#DC2626; --c-ok:#2E7D32;
   --c-strong:#FB8C00; --c-strong-soft:#FFF3E0;
   --fs-title:clamp(20px,5.2cqw,32px); --fs-heading:clamp(17px,4.2cqw,24px);
   --fs-body:clamp(15px,3.6cqw,21px); --fs-caption:clamp(12px,2.7cqw,16px); --fs-label:clamp(11px,2.3cqw,14px);
@@ -102,7 +102,7 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .ka-nav{background:#F4F4F8; color:#2A2A35; border:none; padding:clamp(8px,2.2cqw,12px) 6px; font-size:var(--fs-caption); border-radius:clamp(10px,2.5cqw,14px); cursor:pointer; font-family:inherit;}
 .ka-nav-next{background:var(--c-main); color:#fff;}
 .ka-nav:disabled{opacity:.4; cursor:default;}
-/* 문장 띠 + 띄어 읽기 표시 (6단원 — 정적 시각 표현, JS 무관) */
+/* 문장 띠 + 빈칸 표시 (정적 시각 표현, JS 무관) */
 .sentence{display:inline-flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:clamp(2px,.6cqw,5px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(12px,2.6cqw,18px); padding:clamp(10px,2.6cqw,16px) clamp(14px,3.2cqw,22px); font-size:clamp(20px,4.6cqw,32px); color:var(--c-deep); box-shadow:0 4px 0 var(--c-soft); max-width:600px; line-height:1.7; margin:clamp(4px,1cqw,8px) auto;}
 .punct{color:var(--c-emph); font-weight:400;}
 .vmark{display:inline-block; color:var(--c-strong); font-family:'Nunito',sans-serif; font-weight:800; font-size:1.05em; transform:translateY(-.05em); margin:0 .05em;}
@@ -113,12 +113,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-card .pc-name{font-size:clamp(15px,3.4cqw,21px); color:var(--c-deep);}
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
-/* 세로 모바일(폭 600px 이하·세로): 5/4 카드가 화면 높이의 1/3만 쓰고 콘텐츠가 0.33까지 축소되던 것을 세로로 꽉 채운다. 가로·데스크톱은 그대로 */
-@media (max-width:600px) and (orientation:portrait){
-  html,body{height:100%;}
-  body{height:100dvh; min-height:0;}
-  .ka{aspect-ratio:auto; width:100%; height:100%; max-height:none;}
-}
 </style>
   <script src="/kedu_gate.js"></script>
 <script src="/kedu_boxbar.js"></script>
@@ -147,130 +141,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 6~7차시(문장 부호의 쓰임 알기) 13슬:
-   ① 만나기 2 → ② 따라가기 3 → ③ 활동·심장 5 → ④ 표현·정리 3 =====
-   학습 목표: 문장 부호( , . ? ! )의 쓰임을 안다. ★ 단원 핵심·직접 교수 모형.
-   ★ 문법 트랙. 부호 모양·이름·쓰임·위치 + 부호↔쓰임 잇기 + 빈칸 부호 + 글에서 부호 찾기.
-   ★ 로깅 7슬(이름2 + match1 + 빈칸3 + collect1). 따라읽기·부호쓰기·정리=로깅X.
-   ★ 저작권: 「나무를 심어요」 본문·인물명 미차용. 마당에 나무 심는 대화 상황 모티프만,
-      문장은 전부 자체 작성. 부호 쓰임·위치는 한글 맞춤법 공통 지식. */
+/* ===== 6~7차시(문장 부호의 쓰임 알기 — 직접 교수 모형) 『국어』 288~291쪽 · 『국어활동』 86쪽 13슬 — v2 교과서 기준 재구성 (2026-11-03)
+   학습 목표: 문장 부호의 쓰임을 안다.
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·스스로 확인·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 판단(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      문장(자전거를 타면/가면, 오늘 밤 나무를 심자, 281~287쪽 문장, 놀이판), 「나무를 심어요」·「호랑이 형님」(교육부 집필), 문장 부호 이름·쓰임·쓰는 자리, ∨·≫ 띄어 읽기, 정리·기초 다지기(많다·넓다·짧다·여덟)·글씨 쓰기는 그대로. 「꽃에서 나온 코끼리」(황K)·「코끼리가 꼈어요」는 본문 미인용(교과서 쪽 펴기). 지도서 가르침: 문장 성분은 이름으로 가르치지 않기 · 부호를 기계적으로 외우지 않기 · 띄어 읽기 정답은 하나가 아님(오개념) · 기초 다지기는 따라 읽기만. */
 const slides=[
-  {tag:'① 글 속 기호 찾기', t:'글자가 아닌 기호가 보여요',
-   html:`<div class="sentence">할머니<span class="punct">,</span> 나무를 심어요<span class="punct">.</span></div>
-    <div class="ka-bub">문장 속에 글자가 아닌 <b class="emph">기호( , . ? ! )</b>가 숨어 있어요.<br>이런 기호를 <b class="emph">문장 부호</b>라고 해요. 오늘은 문장 부호의 쓰임을 알아봐요! 🔎</div>`},
+  {tag:'① 동기 유발', t:'선생님이 들려주시는 두 문장 — 「아! 이가 아파요.」 · 「아이가 아파요.」', log:true, okMsg:'맞아요! 띄어 읽기와 부호에 따라 뜻이 달라져요. 🦷',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">둘 다 이가 아파요</div></div><div class="wcard" data-ok="1"><div class="wc-word">첫째는 이가, 둘째는 아이가 아파요</div></div><div class="wcard" data-ok="0"><div class="wc-word">둘 다 아이가 아파요</div></div></div><div class="fb"></div>`},
 
-  {tag:'① 글 따라 읽기', t:'짧은 글을 따라 읽어 봐요',
-   hint:'힌트: 한 줄씩 누르며 문장 부호에 주의하며 읽어요.',
-   html:`<div class="read-lines">
-      <div class="read-line"><span class="rl-num">1</span>우리 집 마당에는 나무가 없어요.</div>
-      <div class="read-line"><span class="rl-num">2</span>할머니, 왜 나무가 없을까요?</div>
-      <div class="read-line"><span class="rl-num">3</span>참 좋은 생각이에요!</div>
-    </div><div class="fb" id="readFb">🔊 끝에 어떤 기호가 붙었는지 살펴봐요.</div>`},
+  {tag:'② 288쪽 1번', t:'「나무를 심어요」를 듣고 따라 읽어요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>할아버지 댁에는 마당이 있어요.</div><div class="read-line"><span class="rl-num">2</span>마당에는 작은 꽃이 있고 가끔 고양이도 놀러 와요. 그런데 어찌 된 일인지 나무는 없어요.</div><div class="read-line"><span class="rl-num">3</span>「할아버지, 왜 마당에 나무가 한 그루도 없어요?」</div><div class="read-line"><span class="rl-num">4</span>「예전에는 나무가 있었단다. 네 키보다 더 컸었지!」</div><div class="read-line"><span class="rl-num">5</span>「그 나무는 어디로 갔어요?」</div><div class="read-line"><span class="rl-num">6</span>「바람이 심하게 불던 날에 쓰러지고 말았어.」</div><div class="read-line"><span class="rl-num">7</span>「마당에 나무가 한 그루 있으면 좋겠어요. 맛있는 감이 열리는 나무요.」</div><div class="read-line"><span class="rl-num">8</span>「그래, 좋은 생각이구나! 오늘 마당에 감나무를 심자.」</div></div><div class="fb" id="readFb">🔊 『국어』 288쪽 — 선생님이 부호에 알맞게 읽어 주시는 대로 따라 읽어 봐요.</div>`},
 
-  {tag:'② 문장 부호 만나기', t:'문장 부호 네 가지를 만나 봐요',
-   html:`<div class="punct-row">
-      <div class="punct-card"><span class="pc-mark">,</span><span class="pc-name">쉼표</span></div>
-      <div class="punct-card"><span class="pc-mark">.</span><span class="pc-name">마침표</span></div>
-      <div class="punct-card"><span class="pc-mark">?</span><span class="pc-name">물음표</span></div>
-      <div class="punct-card"><span class="pc-mark">!</span><span class="pc-name">느낌표</span></div>
-    </div>
-    <div class="ka-bub">문장 부호는 문장의 뜻을 돕고, 문장을 구별해 읽기 쉽게 도와줘요. 😊</div>`},
+  {tag:'② 내용 확인', t:'남자아이는 어떤 나무를 심자고 했나요?', log:true, okMsg:'맞아요! 맛있는 감이 열리는 감나무예요. 🍊',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-pic">🌳</div><div class="wc-word">소나무</div></div><div class="wcard" data-ok="1"><div class="wc-pic">🌳</div><div class="wc-word">감나무</div></div><div class="wcard" data-ok="0"><div class="wc-pic">🌳</div><div class="wc-word">밤나무</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 부호 이름 알기', t:'이 부호의 이름은 무엇일까요?', log:true, okMsg:'맞아요! 묻는 문장 끝에 쓰는 물음표예요. ❓',
-   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">?</span></div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">마침표</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">물음표</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">느낌표</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 289쪽 2·3번', t:'문장 부호의 이름',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">,</span><span class="pc-name">쉼표</span></div><div class="punct-card"><span class="pc-mark">.</span><span class="pc-name">마침표</span></div><div class="punct-card"><span class="pc-mark">?</span><span class="pc-name">물음표</span></div><div class="punct-card"><span class="pc-mark">!</span><span class="pc-name">느낌표</span></div></div><div class="ka-bub">문장 부호는 문장의 뜻을 돕거나 문장을 구별해 읽고 이해하기 쉽도록 하는 부호예요. 쉼표·마침표는 칸의 왼쪽 아래, 물음표·느낌표는 칸의 가운데에 써요.</div>`},
 
-  {tag:'② 부호 이름 알기', t:'이 부호의 이름은 무엇일까요?', log:true, okMsg:'맞아요! 느낌을 나타낼 때 쓰는 느낌표예요. ❗',
-   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">!</span></div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">느낌표</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">쉼표</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">물음표</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 290쪽 4번', t:'문장 부호와 그 쓰임을 이어요', log:true, matchMsg:'잘 이었어요! 부호마다 하는 일이 있어요. ✨',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">문장 부호</div><div class="match-card" data-k="a" data-pair="A">쉼표 ,</div><div class="match-card" data-k="b" data-pair="B">마침표 .</div><div class="match-card" data-k="c" data-pair="C">물음표 ?</div><div class="match-card" data-k="d" data-pair="D">느낌표 !</div></div><div class="match-col"><div class="match-col-h">쓰임</div><div class="match-card" data-k="C" data-pair="c">묻는 문장 끝</div><div class="match-card" data-k="A" data-pair="a">부르는 말이나 대답하는 말 뒤</div><div class="match-card" data-k="D" data-pair="d">느낌을 나타내는 문장 끝</div><div class="match-card" data-k="B" data-pair="b">설명하는 문장 끝</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 부호와 쓰임 잇기', t:'문장 부호와 그 쓰임을 이어 봐요', log:true,
-   matchMsg:'모두 잘 이었어요! 문장 부호의 쓰임을 알았어요. 🎉',
-   hint:'힌트: 왼쪽 부호를 누른 뒤, 알맞은 쓰임을 눌러요.',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">문장 부호</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">.</span>마침표</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">,</span>쉼표</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">?</span>물음표</div>
-        <div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">!</span>느낌표</div></div>
-      <div class="match-col"><div class="match-col-h">이럴 때 써요</div>
-        <div class="match-card" data-k="C" data-pair="c">묻는 문장 끝에</div>
-        <div class="match-card" data-k="A" data-pair="a">설명하는 문장 끝에</div>
-        <div class="match-card" data-k="D" data-pair="d">느낌을 나타내는 문장 끝에</div>
-        <div class="match-card" data-k="B" data-pair="b">부르거나 대답하는 말 뒤에</div></div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'③ 290쪽 5번', t:'「그 나무는 어디로 갔어요」 끝에 알맞은 부호는?', log:true, okMsg:'맞아요! 묻는 문장이니 물음표예요. ❓',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">?</div></div><div class="wcard" data-ok="0"><div class="wc-word">!</div></div><div class="wcard" data-ok="0"><div class="wc-word">.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 빈칸 부호', t:'묻는 문장이에요. 어떤 부호를 쓸까요?', log:true, okMsg:'맞아요! 묻는 문장에는 물음표(?)를 써요.',
-   html:`<div class="sentence">나무는 어디로 갔어요 <span class="punct">◯</span></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">?</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">!</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 290쪽 5번', t:'「그래 ◯ 좋은 생각이구나 ◯」에 알맞은 부호를 차례대로 고르면?', log:true, okMsg:'맞아요! 대답하는 말 뒤 쉼표, 느낌을 나타내는 문장 끝 느낌표예요. ❗',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">, 와 !</div></div><div class="wcard" data-ok="0"><div class="wc-word">. 와 ?</div></div><div class="wcard" data-ok="0"><div class="wc-word">? 와 .</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 빈칸 부호', t:'느낌을 나타내는 문장이에요. 어떤 부호를 쓸까요?', log:true, okMsg:'맞아요! 느낌을 나타낼 때는 느낌표(!)를 써요.',
-   html:`<div class="sentence">참 좋은 생각이에요 <span class="punct">◯</span></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">,</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">?</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">!</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 291쪽 6번', t:'문장 부호에 따라 띄어 읽는 방법',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>쉼표 뒤에는 <span class="vmark">∨</span>를 하고 조금 쉬어 읽어요.</div><div class="read-line"><span class="rl-num">2</span>마침표·물음표·느낌표 뒤에는 ≫를 하고 쉼표보다 조금 더 쉬어 읽어요.</div><div class="read-line"><span class="rl-num">3</span>글이 끝나는 곳에는 ≫를 하지 않아요.</div></div><div class="fb" id="readFb">🔊 ∨는 쐐기표, ≫는 겹쐐기표예요.</div>`},
 
-  {tag:'③ 빈칸 부호', t:'부르는 말 뒤에는 어떤 부호를 쓸까요?', log:true, okMsg:'맞아요! 부르는 말 뒤에는 쉼표(,)를 써요.',
-   html:`<div class="sentence">할머니 <span class="punct">◯</span> 나무를 심어요.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">,</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">?</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 291쪽 6번', t:'「할아버지, 왜 마당에 나무가 한 그루도 없어요?」에서 쉼표 뒤에는?', log:true, okMsg:'맞아요! 쉼표 뒤에는 ∨, 조금 쉬어 읽어요. ✌️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">≫ — 쉼표보다 더 쉬어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">쉬지 않아요</div></div><div class="wcard" data-ok="1"><div class="wc-word">∨ — 조금 쉬어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 부호 찾기', t:'물음표(?)로 끝나는 문장을 모두 찾아봐요', log:true,
-   collectMsg:'물음표로 끝나는 문장을 모두 찾았어요! 🎉',
-   hint:'힌트: 묻는 문장은 끝에 물음표(?)가 붙어요. 그런 문장만 모두 눌러요.',
-   html:`<div class="collect" id="collect">
-      <div class="chip" data-hit="1">왜 나무가 없을까요?</div>
-      <div class="chip" data-hit="0">나무가 없어요.</div>
-      <div class="chip" data-hit="1">나무는 어디로 갔어요?</div>
-      <div class="chip" data-hit="0">참 좋은 생각이에요!</div>
-      <div class="chip" data-hit="1">무엇을 심을까요?</div>
-      <div class="chip" data-hit="0">할머니, 나무를 심어요.</div>
-      <div class="chip" data-hit="1">정말이에요?</div>
-      <div class="chip" data-hit="0">꽃이 참 예뻐요!</div>
-    </div><div class="fb" id="collectFb"></div>`},
+  {tag:'④ 손뼉 치며 읽기', t:'띄어 읽는 곳에서 손뼉을 쳐요',
+   html:`<div class="stage-box">👏 「나무를 심어요」를 읽으며 쉼표 뒤에는 한 번, 마침표·물음표·느낌표 뒤에는 두 번 손뼉을 쳐 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 쉬는 길이가 다르다는 것을 느꼈어요.">👏 했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 부호 쓰기', t:'문장 부호를 바르게 따라 써 봐요',
-   html:`<div class="trace-wrap">
-      <div class="trace-row"><span class="trace-pic">🔵</span>
-        <div class="trace-word"><div class="trace-cell">,</div></div><span style="font-size:clamp(15px,3.4cqw,21px);color:var(--c-deep)">쉼표</span></div>
-      <div class="trace-row"><span class="trace-pic">🔴</span>
-        <div class="trace-word"><div class="trace-cell">.</div></div><span style="font-size:clamp(15px,3.4cqw,21px);color:var(--c-deep)">마침표</span></div>
-      <div class="trace-row"><span class="trace-pic">🟡</span>
-        <div class="trace-word"><div class="trace-cell">?</div></div><span style="font-size:clamp(15px,3.4cqw,21px);color:var(--c-deep)">물음표</span></div>
-      <div class="trace-row"><span class="trace-pic">🟢</span>
-        <div class="trace-word"><div class="trace-cell">!</div></div><span style="font-size:clamp(15px,3.4cqw,21px);color:var(--c-deep)">느낌표</span></div>
-    </div><div class="fb" id="traceFb">✏️ 칸을 눌러 가며 부호를 따라 써 봐요. 쉼표·마침표는 칸의 왼쪽 아래에 써요.</div>`},
+  {tag:'⑤ 291쪽 6번', t:'「예전에는 나무가 있었단다.」 마침표 뒤에는?', log:true, okMsg:'맞아요! 마침표 뒤에는 ≫예요. 짝과 두세 문장씩 번갈아 읽어 봐요. ⏸️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">≫ — 쉼표보다 조금 더 쉬어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">∨ — 조금 쉬어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">쉬지 않아요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 정리', t:'오늘 배운 것을 모아 봐요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">.</span><b>마침표</b>는 설명하는 문장 끝에, <b>쉼표</b>는 부르는 말 뒤에 써요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">?</span><b>물음표</b>는 묻는 문장 끝에 써요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">!</span><b>느낌표</b>는 느낌을 나타내는 문장 끝에 써요.</div>
-    </div>`},
+  {tag:'⑥ 344쪽 문장 부호 노래', t:'「산토끼」 가락으로 불러요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>부르는 말에는 쉼표를 넣고요</div><div class="read-line"><span class="rl-num">2</span>설명하는 문장엔 마침표를 넣지요</div><div class="read-line"><span class="rl-num">3</span>묻는 문장엔 물음표를 넣고요</div><div class="read-line"><span class="rl-num">4</span>느낌 나타낼 땐 느낌표를 넣지요</div></div><div class="fb" id="readFb">🎵 지도서 344쪽 노랫말이에요.</div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🔎</span>문장 부호 <b>네 가지</b>의 이름과 쓰임을 알았어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">✏️</span>문장 부호를 <b>바르게 쓰는 법</b>을 익혔어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">➡️</span>다음 시간에는 부호 뒤에서 <b>알맞게 쉬어 읽기</b>를 배워 볼 거예요.</div>
-    </div>`},
+  {tag:'⑦ 정리', t:'문장 부호의 쓰임을 알았어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">✏️</span>쉼표 · 마침표 · 물음표 · 느낌표의 <b>이름과 쓰임</b></div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">∨</span>쉼표 뒤 <b>∨</b>, 끝 부호 뒤 <b>≫</b></div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🌳</span>「나무를 심어요」를 부호에 맞게 읽었어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
