@@ -103,12 +103,15 @@ GRANT EXECUTE ON FUNCTION school_teacher_overview() TO authenticated;
 CREATE OR REPLACE FUNCTION list_school_teachers()
 RETURNS TABLE (id uuid, name text, class_label text)
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $fn$
-  SELECT t.id, COALESCE(t.name,''),
-         COALESCE((SELECT c.label FROM class_codes c WHERE c.teacher_id = t.id AND c.is_active ORDER BY c.created_at DESC LIMIT 1), '')
-    FROM teachers t
-   WHERE kedu_my_school_id() IS NOT NULL AND t.school_id = kedu_my_school_id()
-     AND t.approval IN ('auto','approved') AND t.id <> cw_my_teacher_id()
-   ORDER BY t.class_sort NULLS LAST, kedu_label_num(3), 3, 2
+  SELECT x.id, x.name, x.class_label FROM (
+    SELECT t.id, COALESCE(t.name,'') AS name,
+           COALESCE((SELECT c.label FROM class_codes c WHERE c.teacher_id = t.id AND c.is_active ORDER BY c.created_at DESC LIMIT 1), '') AS class_label,
+           t.class_sort
+      FROM teachers t
+     WHERE kedu_my_school_id() IS NOT NULL AND t.school_id = kedu_my_school_id()
+       AND t.approval IN ('auto','approved') AND t.id <> cw_my_teacher_id()
+  ) x
+  ORDER BY x.class_sort NULLS LAST, kedu_label_num(x.class_label), x.class_label, x.name
 $fn$;
 GRANT EXECUTE ON FUNCTION list_school_teachers() TO authenticated;
 
