@@ -2044,13 +2044,58 @@ async function staskDownloadZip(id){
     } catch(e){ bad++; }
   }
   if(!n){ showToast('⚠️ 파일을 하나도 받지 못했어요.'); return; }
+  // v3.1 같은 양식의 .hwpx 만 모였으면 → 한 파일로 합쳐서(각 반 = 새 구역). 아니면 묶음(zip)
+  const merged = await staskMergeHwpx(zip, n);
+  if(merged){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(merged);
+    a.download = safe(t.title || '모으기') + '.hwpx';
+    document.body.appendChild(a); a.click(); a.remove();
+    showToast('📄 ' + n + '개 반을 반 순서대로 한 파일로 합쳤어요.' + (bad ? ' (' + bad + '개는 못 받았어요)' : ''));
+    return;
+  }
   showToast('📦 묶는 중… ' + n + '개');
   const blob = await zip.generateAsync({ type: 'blob' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = safe(t.title || '파일취합') + '.zip';
   document.body.appendChild(a); a.click(); a.remove();
-  showToast('📦 ' + n + '개를 반 순서대로 묶어 내려받았어요.' + (bad ? ' (' + bad + '개는 못 받았어요)' : ''));
+  showToast('📦 ' + n + '개를 반 순서대로 묶어 내려받았어요. (양식이 다르거나 .hwp 가 섞여 있어 합치진 못했어요)' + (bad ? ' (' + bad + '개는 못 받았어요)' : ''));
+}
+// 같은 양식(header.xml 동일)의 .hwpx 들을 한 파일로 — 첫 파일을 바탕으로 나머지를 section1, section2… 로 이어 붙인다(준호 상벌점 시험 파일로 확인, 2026-11-03)
+async function staskMergeHwpx(zip, n){
+  try {
+    const names = Object.keys(zip.files).sort();
+    if(names.length !== n || names.some(x => !/\.hwpx$/i.test(x))) return null;
+    const parts = [];
+    for(const nm of names){
+      const inner = await staskZipLib.loadAsync(await zip.file(nm).async('blob'));
+      const header = inner.file('Contents/header.xml'), sec = inner.file('Contents/section0.xml'), hpf = inner.file('Contents/content.hpf');
+      if(!header || !sec || !hpf) return null;
+      if(inner.file(/^Contents\/section[1-9]\d*\.xml$/).length) return null;   // 이미 여러 구역인 파일은 섞지 않는다
+      parts.push({ inner, header: await header.async('string'), sec: await sec.async('uint8array') });
+    }
+    if(parts.some(p => p.header !== parts[0].header)) return null;            // 양식이 다르면 합치지 않는다
+    const base = parts[0].inner, out = new staskZipLib();
+    out.file('mimetype', await base.file('mimetype').async('uint8array'), { compression: 'STORE' });
+    for(const nm of Object.keys(base.files)){
+      if(nm === 'mimetype' || base.files[nm].dir) continue;
+      out.file(nm, await base.file(nm).async('uint8array'));
+    }
+    let hpf = await base.file('Contents/content.hpf').async('string');
+    let items = '', refs = '';
+    for(let i = 1; i < parts.length; i++){
+      out.file('Contents/section' + i + '.xml', parts[i].sec);
+      items += '<opf:item id="section' + i + '" href="Contents/section' + i + '.xml" media-type="application/xml"/>';
+      refs += '<opf:itemref idref="section' + i + '" linear="yes"/>';
+    }
+    hpf = hpf.replace('<opf:item id="section0" href="Contents/section0.xml" media-type="application/xml"/>', '<opf:item id="section0" href="Contents/section0.xml" media-type="application/xml"/>' + items)
+             .replace('<opf:itemref idref="section0" linear="yes"/>', '<opf:itemref idref="section0" linear="yes"/>' + refs);
+    if(!hpf.includes('section' + (parts.length - 1) + '.xml') && parts.length > 1) return null;
+    out.file('Contents/content.hpf', hpf);
+    out.file('Contents/header.xml', parts[0].header.replace(/secCnt="\d+"/, 'secCnt="' + parts.length + '"'));
+    return await out.generateAsync({ type: 'blob', mimeType: 'application/hwp+zip' });
+  } catch(e){ return null; }
 }
 function staskTableData(id){
   const t = staskCache[id], rows = (t && t._entries) || [], cols = (t && t.collect_schema) || [];
