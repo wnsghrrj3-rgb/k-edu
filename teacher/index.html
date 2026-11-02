@@ -1797,7 +1797,7 @@ function staskCollectRow(t, tone, detail, mineBtn){
     : `<button class="code-btn primary" style="margin:0;padding:5px 14px;font-size:11.5px;flex-shrink:0" onclick="toggleStaskEntry('${t.id}')">${isPaste ? '📝 붙여넣기' : '✍️ 채우기'}</button>`;
   const seeAll = t.mine || isSchoolAdmin;
   return `<div data-stask="${t.id}" data-urgency="${t.urgency}" data-bucket="${t.bucket}"
-      style="display:flex;gap:12px;padding:12px 20px;border-top:1px solid var(--border);border-left:4px solid ${tone.bar};${t.done?'opacity:.75;':''}">
+      style="display:flex;gap:12px;padding:12px 20px;border-top:1px solid var(--border);border-left:4px solid ${tone.bar};${(t.done && !t.mine)?'opacity:.75;':''}">
     <div style="flex:1;min-width:0">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span style="padding:2px 9px;border-radius:999px;background:${tone.chip};color:${tone.ink};font-size:11px;font-weight:700">${tone.label}</span>
@@ -2254,6 +2254,8 @@ async function loadSchoolTasks(){
   await loadSchoolTaskAtt();                        // v1.5 — 첨부는 별도 RPC, 없으면 조용히 숨김
   const rows = data || [];
   staskCache = {}; rows.forEach(t => { staskCache[t.id] = t; });   // v2
+  // v2.7 내가 올린 모으기는 내가 내더라도 「확인함」으로 내려가지 않는다 — 내리기·보관 전까지 맨 위에서 모은 글을 본다(준호 요구)
+  rows.forEach(t => { if(t.mine && t.kind && t.kind !== 'notice' && t.bucket === 'done') t.bucket = 'todo'; });
   wrap.hidden = false;
   await loadMySchool();
   await loadSchoolAdmins();          // v1.4 — staskRow 가 isSchoolAdmin 을 본다
