@@ -11,8 +11,8 @@
 
 :root{--kedu-title:'Gowun Batang','Gowun Dodum',serif}
 /* v2.3 붙여넣기 취합 — 표가 표로 보이게 */
-[id^="stask-paste-"] table,[id^="stask-all-"] table{border-collapse:collapse;max-width:100%}
-[id^="stask-paste-"] td,[id^="stask-paste-"] th,[id^="stask-all-"] td,[id^="stask-all-"] th{border:1px solid #666;padding:3px 6px;vertical-align:top}
+[id^="stask-paste-"] table,[id^="stask-all-"] table,[id^="stask-mine-"] table{border-collapse:collapse;max-width:100%}
+[id^="stask-paste-"] td,[id^="stask-paste-"] th,[id^="stask-all-"] td,[id^="stask-all-"] th,[id^="stask-mine-"] td,[id^="stask-mine-"] th{border:1px solid #666;padding:3px 6px;vertical-align:top}
 [contenteditable][data-ph]:empty::before{content:attr(data-ph);color:#9AA3AF;pointer-events:none}
 </style>
 <style>
@@ -1806,7 +1806,7 @@ function staskCollectRow(t, tone, detail, mineBtn){
         <span style="font-size:12px;color:${tone.ink};font-weight:600">${escHtml(staskDue(t))}</span>
       </div>
       ${detail}
-      ${isPaste ? (t.my_entry ? `<div style="margin-top:3px;font-size:12px;color:#166534">📝 내가 낸 내용: ${escHtml((t.my_entry.text||'').slice(0,60))}${(t.my_entry.text||'').length > 60 ? '…' : ''}</div>` : '') : isFile ? (t.my_entry ? `<div style="margin-top:3px;font-size:12px;color:#166534">📄 내가 낸 파일: <a href="#" onclick="openStaskFile('${t.id}', null);return false" style="color:#166534;font-weight:700">${escHtml(t.my_entry.name||'')}</a>${t.my_entry_updated ? ' <span style="color:var(--sub)">(다시 냄)</span>' : ''}</div>` : '') : `<div style="margin-top:3px;font-size:12px;color:var(--sub)">칸: ${cols}</div>`}
+      ${isPaste ? (t.my_entry ? `<div style="margin-top:3px;font-size:12px"><a href="#" style="color:#166534;font-weight:700" onclick="toggleStaskMine('${t.id}');return false;">📝 내가 낸 내용 보기 ▾</a>${t.my_entry_updated ? ' <span style="color:var(--sub)">(다시 냄)</span>' : ''}</div><div id="stask-mine-${t.id}" hidden style="margin-top:6px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:13px;line-height:1.6;max-height:360px;overflow:auto">${staskSafeHtml(t.my_entry.html||'')}</div>` : '') : isFile ? (t.my_entry ? `<div style="margin-top:3px;font-size:12px;color:#166534">📄 내가 낸 파일: <a href="#" onclick="openStaskFile('${t.id}', null);return false" style="color:#166534;font-weight:700">${escHtml(t.my_entry.name||'')}</a>${t.my_entry_updated ? ' <span style="color:var(--sub)">(다시 냄)</span>' : ''}</div>` : '') : `<div style="margin-top:3px;font-size:12px;color:var(--sub)">칸: ${cols}</div>`}
       ${staskAttHtml(t)}
       <div style="margin-top:4px;font-size:11.5px;color:var(--sub)">${who} 올림 · ${seeAll
           ? `<a href="#" style="color:var(--primary);font-weight:700" onclick="toggleStaskTable('${t.id}');return false;">제출 ${t.done_count} / ${t.teacher_count}명 — ${isFile ? '모은 파일 보기' : isPaste ? '모은 글 보기' : '모은 표 보기'} ▾</a>`
@@ -1950,6 +1950,7 @@ function staskSafeHtml(html){
   doc.querySelectorAll('*').forEach(n => { if(/^(o|v|w):/i.test(n.tagName)) n.remove(); });   // 한글·워드 전용 태그
   return doc.body.firstChild ? doc.body.firstChild.innerHTML : '';
 }
+function toggleStaskMine(id){ const b = document.getElementById('stask-mine-' + id); if(b) b.hidden = !b.hidden; }
 async function submitStaskPaste(id){
   const ed = document.getElementById('stask-paste-' + id), t = staskCache[id];
   if(!ed || !t) return;
