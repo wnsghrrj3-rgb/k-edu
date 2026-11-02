@@ -13,6 +13,7 @@
 /* v2.3 붙여넣기 취합 — 표가 표로 보이게 */
 [id^="stask-paste-"] table,[id^="stask-all-"] table{border-collapse:collapse;max-width:100%}
 [id^="stask-paste-"] td,[id^="stask-paste-"] th,[id^="stask-all-"] td,[id^="stask-all-"] th{border:1px solid #666;padding:3px 6px;vertical-align:top}
+[contenteditable][data-ph]:empty::before{content:attr(data-ph);color:#9AA3AF;pointer-events:none}
 </style>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -643,7 +644,7 @@ tr:hover td{background:#FAFBFC}
       <div id="schooltask-pastehint" hidden style="margin-top:8px;padding:10px 12px;border:1px dashed #cbd5e0;border-radius:10px;background:#fff">
         <div style="font-size:12.5px;color:var(--sub)">올리면 받는 선생님마다 <b>「📝 붙여넣기」</b> 단추가 떠요. 각자 한글에서 자기 반 내용을 복사해 붙여넣고 제출하면 그 선생님 할 일은 끝. 다 모이면 <b>「전체 복사」</b> 한 번으로 반 순서대로 이어진 내용을 한글에 넣어요. (표·굵게·글머리표는 살아요, 그림·쪽 설정은 안 와요)</div>
         <div style="margin-top:8px;font-size:12.5px;font-weight:700">내 반 내용도 지금 붙여넣기 <span style="font-weight:400;color:var(--sub)">(선택 — 한글에서 복사한 뒤 아래 칸에 Ctrl+V)</span></div>
-        <div id="schooltask-paste-mine" contenteditable="true" style="min-height:90px;max-height:360px;overflow:auto;margin-top:4px;padding:10px 12px;border:1px solid #d5dbe3;border-radius:8px;background:#fff;font-size:13px;line-height:1.6;outline:none"></div>
+        <div id="schooltask-paste-mine" contenteditable="true" data-ph="여기를 누르고 Ctrl+V" style="min-height:90px;max-height:360px;overflow:auto;margin-top:4px;padding:10px 12px;border:1px solid #d5dbe3;border-radius:8px;background:#fff;font-size:13px;line-height:1.6;outline:none"></div>
       </div>
       <div id="schooltask-filehint" hidden style="margin-top:8px;padding:10px 12px;border:1px dashed #cbd5e0;border-radius:10px;background:#fff;font-size:12.5px;color:var(--sub)">선생님마다 <b>파일 하나</b>를 내요(한글·엑셀 등 20MB까지). 내는 순간 그 선생님 할 일은 완료되고, 다 모이면 <b>반 순서대로 한꺼번에 내려받아</b> 한글에서 「문서 끼워 넣기」로 한 번에 합쳐요.</div>
       <textarea id="schooltask-detail" maxlength="1000" rows="2" placeholder="자세한 내용 (선택)" style="width:100%;margin-top:8px;padding:9px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit"></textarea>
@@ -1758,7 +1759,7 @@ function setStaskKind(k){
   const ph = document.getElementById('schooltask-pastehint'); if(ph) ph.hidden = (k !== 'paste');
   const de = document.getElementById('schooltask-detail'); if(de) de.style.display = (k === 'paste') ? 'none' : '';
   const pm = document.getElementById('schooltask-paste-mine');
-  if(pm && !pm.dataset.wired){ pm.dataset.wired = '1'; pm.addEventListener('paste', e => { const h = e.clipboardData && e.clipboardData.getData('text/html'); if(!h) return; e.preventDefault(); document.execCommand('insertHTML', false, staskSafeHtml(h)); }); }
+  if(pm && !pm.dataset.wired){ pm.dataset.wired = '1'; pm.addEventListener('paste', staskPasteHandler); }
   const ti = document.getElementById('schooltask-title');
   if(ti) ti.placeholder = k === 'collect' ? '취합 제목 (예: 11월 방과후 수요조사)' : k === 'file' ? '파일 취합 제목 (예: 학급 교육과정 제출)' : k === 'paste' ? '붙여넣기 취합 제목 (예: 학급별 체험학습 계획)' : '할 일 (예: 방과후 수요조사 제출)';
 }
@@ -1826,18 +1827,13 @@ function toggleStaskEntry(id){
   if(t.kind === 'paste'){
     box.innerHTML = `<div style="padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#F8FAFC">
       <div style="font-size:12.5px;color:var(--sub);margin-bottom:4px">한글에서 우리 반 내용을 복사(Ctrl+C)한 뒤 아래 칸에 붙여넣기(Ctrl+V) 하세요. 표·굵게·글머리표는 살아요.</div>
-      <div id="stask-paste-${id}" contenteditable="true" style="min-height:120px;max-height:420px;overflow:auto;padding:10px 12px;border:1px solid #d5dbe3;border-radius:8px;background:#fff;font-size:13px;line-height:1.6;outline:none">${staskSafeHtml(mine.html || '')}</div>
+      <div id="stask-paste-${id}" contenteditable="true" data-ph="여기를 누르고 Ctrl+V" style="min-height:120px;max-height:420px;overflow:auto;padding:10px 12px;border:1px solid #d5dbe3;border-radius:8px;background:#fff;font-size:13px;line-height:1.6;outline:none">${staskSafeHtml(mine.html || '')}</div>
       <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
         <button class="code-btn primary" style="margin:0;padding:6px 16px;font-size:12.5px" onclick="submitStaskPaste('${id}')">${t.my_entry ? '고쳐서 다시 제출' : '제출 — 제출하면 내 할 일에서 완료돼요'}</button>
         <span style="font-size:11.5px;color:var(--sub)">다시 제출하면 전 내용을 바꿔요.</span>
       </div></div>`;
     const ed = document.getElementById('stask-paste-' + id);
-    ed.addEventListener('paste', e => {
-      const html = e.clipboardData && e.clipboardData.getData('text/html');
-      if(!html) return;
-      e.preventDefault();
-      document.execCommand('insertHTML', false, staskSafeHtml(html));
-    });
+    ed.addEventListener('paste', staskPasteHandler);
     ed.focus();
     return;
   }
@@ -1928,6 +1924,16 @@ async function toggleStaskTable(id){
       </tr>`).join('')}</tbody></table></div>`;
 }
 // ── v2.3 한글 붙여넣기 취합 — 붙여넣은 HTML 을 안전하게(스크립트·외부 그림 제거) 보관, 반 순서로 이어 한 번에 복사
+function staskPasteHandler(e){
+  const cd = e.clipboardData; if(!cd) return;
+  const html = cd.getData('text/html'), text = cd.getData('text/plain');
+  if(!html) return;                                  // 글자만 온 경우 — 브라우저 기본 붙여넣기
+  e.preventDefault();
+  let safe = '';
+  try { safe = staskSafeHtml(html); } catch(err){ safe = ''; }
+  if(safe && safe.replace(/<[^>]+>/g,'').trim()) document.execCommand('insertHTML', false, safe);
+  else document.execCommand('insertText', false, text || '');
+}
 function staskSafeHtml(html){
   const doc = new DOMParser().parseFromString('<div>' + (html || '') + '</div>', 'text/html');
   doc.querySelectorAll('script,style,iframe,object,embed,link,meta,form,input,button,textarea,select').forEach(n => n.remove());
@@ -1941,7 +1947,7 @@ function staskSafeHtml(html){
   // 표는 구조를 단단히 — 테두리·칸 병합은 살리고, 한글이 못 읽는 속성은 뗀다
   doc.querySelectorAll('table').forEach(tb => { tb.setAttribute('border','1'); tb.setAttribute('cellspacing','0'); tb.setAttribute('cellpadding','4'); tb.style.borderCollapse = 'collapse'; });
   doc.querySelectorAll('td,th').forEach(td => { if(!td.style.border) td.style.border = '1px solid #333'; });
-  doc.querySelectorAll('o\\:p,v\\:*').forEach(n => n.remove());
+  doc.querySelectorAll('*').forEach(n => { if(/^(o|v|w):/i.test(n.tagName)) n.remove(); });   // 한글·워드 전용 태그
   return doc.body.firstChild ? doc.body.firstChild.innerHTML : '';
 }
 async function submitStaskPaste(id){
