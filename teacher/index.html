@@ -2224,7 +2224,7 @@ async function uploadSchoolTaskFile(taskId, f){
   const ext = (f.name.match(/\.([A-Za-z0-9]{1,6})$/) || ['',''])[1].toLowerCase();
   const path = sid + '/' + taskId + '/' + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)) + (ext ? '.' + ext : '');
   const contentType = f.type || 'application/octet-stream';
-  const up = await db.storage.from('school').upload(path, f, { contentType, upsert: false });
+  const up = await db.storage.from('school').upload(path, f, { contentType: 'application/octet-stream', upsert: false });   // 종류 이름은 기록만, 저장소엔 고정
   if(up.error) throw up.error;
   const { error } = await db.rpc('add_school_task_attachment', { p_task_id: taskId, p_kind: 'file', p_url: path, p_label: f.name, p_mime: contentType, p_size: f.size });
   if(error){ await db.storage.from('school').remove([path]); throw error; }
