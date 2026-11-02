@@ -621,7 +621,9 @@ function wrongMsg(sl){
 /*PTN-BEGIN — ★짚어 읽기 N줄(Lv3 규약 §8-② 양산 선행 — Lv2 buildPoint2 두 줄 → 문장 수만큼) + 네 칸 띠 + 스스로 읽기. Lv3 R칸 공통(blocks/PTN.js → sync_blocks.py, 하네스 A8c).
   쓰는 것 = PSG[key].s[i].{en,w,k,p} · mgw(w) · bare(w) · cell(key,i). 짚는 순서 = 왼→오, 첫 줄 → 끝 줄 강제(Lv1 #17 계승).
   한 문장 끝 = 그 문장 낭독 + 그 칸 하나 켜짐 · 끝 문장 끝 = 네 칸이 한 장면으로 묶이고(.merge) 글 전체 낭독.
-  ★낱소리·블렌딩 0 — 단어는 통째로(KTTS.word), 문장은 KTTS.sentence. 틀린 칸을 누르면 소리 0. */
+  ★낱소리·블렌딩 0 — 단어는 통째로(KTTS.word), 문장은 KTTS.sentence. 틀린 칸을 누르면 소리 0.
+  ★칸 수 = 문장 수(NK) — #5·#9 네 문장 · #13 다섯 문장(규약 §4-1 계단참②). 안내 글자도 문장 수를 따라간다. */
+const NK=['','한','두','세','네','다섯','여섯'];
 function stripHTML(key,on){
   return PSG[key].s.map((x,i)=>'<div class="cel'+(on?' on':'')+'" data-i="'+i+'"><span class="cno">'+(i+1)+'</span><span class="cp">'+cell(key,i)+'</span><span class="ctx"></span></div>').join('');
 }
@@ -662,13 +664,13 @@ function buildPointN(key,frameId,sentId,stripId,fbId,slideIdx){
       KTTS.sentence(P.s[it.si].en);
       const cl=strip.querySelector('.cel[data-i="'+it.si+'"]');if(cl)cl.classList.add('on');
       if(!isLast){setFB(fbId,'✅ '+(it.si+1)+'번 문장 끝 — <b>'+P.s[it.si].en+'</b> '+P.s[it.si].ko+'<br>그림 칸 <b>'+(it.si+1)+'</b> 이 켜졌어요. 다음 줄!',true);return;}
-      setFB(fbId,'✅ 마지막 문장 끝 — 이제 <b>네 칸을 이어요</b>…',true);
+      setFB(fbId,'✅ 마지막 문장 끝 — 이제 <b>'+NK[P.s.length]+' 칸을 이어요</b>…',true);
       setTimeout(()=>{
         strip.classList.add('merge');
         KTTS.sentence(P.en);
         playCorrect();
         if(!answered[slideIdx]){answered[slideIdx]=true;addScore(10);}
-        setFB(fbId,'🎉 네 문장 = <b>네 칸</b> = <span class="hl">한 장면</span> — '+P.who+' 의 '+P.time+'! +10점',true);
+        setFB(fbId,'🎉 '+NK[P.s.length]+' 문장 = <b>'+NK[P.s.length]+' 칸</b> = <span class="hl">한 장면</span> — '+P.who+' 의 '+P.time+'! +10점',true);
       },1300);
     },600);
   }));
@@ -690,7 +692,7 @@ function buildSelf(key,readId,lisId,stripId,fbId,slideIdx){
     KTTS.sentence(PSG[key].en);
     strip.querySelectorAll('.cel').forEach(c=>c.classList.add('on'));strip.classList.add('merge');
     if(!answered[slideIdx]){answered[slideIdx]=true;addScore(10);playCorrect();}
-    setFB(fbId,'🎉 내가 읽은 글 = 이 <b>네 칸 장면</b> — '+PSG[key].ko,true);
+    setFB(fbId,'🎉 내가 읽은 글 = 이 <b>'+NK[PSG[key].s.length]+' 칸 장면</b> — '+PSG[key].ko,true);
   });
 }
 /*PTN-END*/
