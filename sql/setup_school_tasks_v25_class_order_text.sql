@@ -18,14 +18,14 @@ RETURNS text[] LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS 
 $fn$;
 GRANT EXECUTE ON FUNCTION get_school_class_order() TO authenticated;
 
--- 저장 — 학교 관리자 또는 준호. 빈 줄·공백은 버린다. 60개까지.
+-- 저장 — 같은 학교 승인 교사 누구나(준호 결정 2026-11-02 · 간결하게). 빈 줄·공백은 버린다. 60개까지.
 CREATE OR REPLACE FUNCTION set_school_class_order(p_labels text[])
 RETURNS int LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $fn$
 DECLARE v_sid text; v_labels text[];
 BEGIN
   v_sid := kedu_my_school_id();
-  IF v_sid IS NULL OR NOT (kedu_is_admin() OR kedu_is_school_admin()) THEN
-    RAISE EXCEPTION 'school admin only' USING ERRCODE = 'insufficient_privilege';
+  IF v_sid IS NULL OR NOT kedu_teacher_approved() THEN
+    RAISE EXCEPTION 'approval required' USING ERRCODE = 'insufficient_privilege';
   END IF;
   SELECT array_agg(x ORDER BY ord) INTO v_labels
     FROM (SELECT DISTINCT ON (btrim(l)) btrim(l) AS x, ord FROM unnest(coalesce(p_labels,'{}')) WITH ORDINALITY u(l, ord)
