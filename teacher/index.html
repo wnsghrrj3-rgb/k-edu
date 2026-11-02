@@ -629,12 +629,14 @@ tr:hover td{background:#FAFBFC}
         <span>종류</span>
         <label style="display:inline-flex;gap:4px;align-items:center;cursor:pointer"><input type="radio" name="schooltask-kind" value="notice" checked onchange="setStaskKind('notice')"> 📌 알림 (확인만 하면 끝)</label>
         <label style="display:inline-flex;gap:4px;align-items:center;cursor:pointer"><input type="radio" name="schooltask-kind" value="collect" onchange="setStaskKind('collect')"> 📋 취합 양식 (각자 칸을 채워 제출)</label>
+        <label style="display:inline-flex;gap:4px;align-items:center;cursor:pointer"><input type="radio" name="schooltask-kind" value="file" onchange="setStaskKind('file')"> 📁 파일 취합 (반마다 파일 하나씩 제출)</label>
       </div>
       <div id="schooltask-schema" hidden style="margin-top:8px;padding:10px 12px;border:1px dashed #cbd5e0;border-radius:10px;background:#fff">
         <div style="font-size:12.5px;color:var(--sub);margin-bottom:6px">표의 <b>칸 이름</b>을 적어요. 선생님마다 한 줄씩 채우고, 제출하면 그 선생님 할 일은 저절로 완료돼요. (반·이름은 자동으로 붙어요)</div>
         <div id="schooltask-schema-rows"></div>
         <button class="code-btn outline" type="button" style="margin:6px 0 0;padding:5px 12px;font-size:12px" onclick="staskSchemaAdd()">＋ 칸 추가</button>
       </div>
+      <div id="schooltask-filehint" hidden style="margin-top:8px;padding:10px 12px;border:1px dashed #cbd5e0;border-radius:10px;background:#fff;font-size:12.5px;color:var(--sub)">선생님마다 <b>파일 하나</b>를 내요(한글·엑셀 등 20MB까지). 내는 순간 그 선생님 할 일은 완료되고, 다 모이면 <b>반 순서대로 한꺼번에 내려받아</b> 한글에서 「문서 끼워 넣기」로 한 번에 합쳐요.</div>
       <textarea id="schooltask-detail" maxlength="1000" rows="2" placeholder="자세한 내용 (선택)" style="width:100%;margin-top:8px;padding:9px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit"></textarea>
       <!-- 받는 사람 (v1.1 — 준호 결정 ④): 기본은 우리 학교 모두, 「고르기」로 특정 선생님만 -->
       <div id="schooltask-to" style="margin-top:8px;font-size:12.5px;color:var(--sub);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -1715,7 +1717,7 @@ function staskRow(t){
     : `<button class="code-btn primary" style="margin:0;padding:5px 14px;font-size:11.5px;flex-shrink:0" onclick="markSchoolTask('${t.id}',true)">확인</button>`;
   const detail = t.detail
     ? `<div style="margin-top:3px;font-size:12.5px;color:var(--sub);line-height:1.55;white-space:pre-wrap">${escHtml(t.detail)}</div>` : '';
-  if(t.kind === 'collect') return staskCollectRow(t, tone, detail, mineBtn);
+  if(t.kind === 'collect' || t.kind === 'file') return staskCollectRow(t, tone, detail, mineBtn);
   const who = t.created_by_name ? escHtml(t.created_by_name) + ' 선생님' : '누군가';
   const att = staskAttHtml(t);   // v1.5
   return `<div data-stask="${t.id}" data-urgency="${t.urgency}" data-bucket="${t.bucket}"
@@ -1743,8 +1745,9 @@ function setStaskKind(k){
   staskKind = k;
   const box = document.getElementById('schooltask-schema');
   if(box){ box.hidden = (k !== 'collect'); if(k === 'collect' && !document.querySelector('#schooltask-schema-rows .stask-col')){ staskSchemaAdd('내용'); } }
+  const fh = document.getElementById('schooltask-filehint'); if(fh) fh.hidden = (k !== 'file');
   const ti = document.getElementById('schooltask-title');
-  if(ti) ti.placeholder = k === 'collect' ? '취합 제목 (예: 11월 방과후 수요조사)' : '할 일 (예: 방과후 수요조사 제출)';
+  if(ti) ti.placeholder = k === 'collect' ? '취합 제목 (예: 11월 방과후 수요조사)' : k === 'file' ? '파일 취합 제목 (예: 학급 교육과정 제출)' : '할 일 (예: 방과후 수요조사 제출)';
 }
 function staskSchemaAdd(label){
   const rows = document.getElementById('schooltask-schema-rows');
@@ -1768,10 +1771,13 @@ function staskSchemaRead(){
 }
 function staskCollectRow(t, tone, detail, mineBtn){
   const who = t.created_by_name ? escHtml(t.created_by_name) + ' 선생님' : '누군가';
-  const cols = (t.collect_schema || []).map(c => escHtml(c.label)).join(' · ');
+  const isFile = t.kind === 'file';
+  const cols = isFile ? '' : (t.collect_schema || []).map(c => escHtml(c.label)).join(' · ');
   const canFill = t.recipient !== false || t.mine;
   const act = !canFill
     ? `<span style="padding:5px 10px;font-size:11.5px;color:var(--sub);border:1px dashed var(--border);border-radius:8px;flex-shrink:0" title="학교 관리자로 보는 중">👁 관리자 열람</span>`
+    : isFile
+    ? `<label class="code-btn ${t.my_entry ? 'outline' : 'primary'}" style="margin:0;padding:5px 12px;font-size:11.5px;flex-shrink:0;cursor:pointer">${t.my_entry ? '✅ 냄 · 다시 내기' : '📤 파일 내기'}<input type="file" hidden onchange="submitStaskFile('${t.id}', this)"></label>`
     : t.my_entry
     ? `<button class="code-btn outline" style="padding:5px 12px;font-size:11.5px;flex-shrink:0" onclick="toggleStaskEntry('${t.id}')">✅ 제출함 · 고치기</button>`
     : `<button class="code-btn primary" style="margin:0;padding:5px 14px;font-size:11.5px;flex-shrink:0" onclick="toggleStaskEntry('${t.id}')">✍️ 채우기</button>`;
@@ -1781,15 +1787,15 @@ function staskCollectRow(t, tone, detail, mineBtn){
     <div style="flex:1;min-width:0">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span style="padding:2px 9px;border-radius:999px;background:${tone.chip};color:${tone.ink};font-size:11px;font-weight:700">${tone.label}</span>
-        <span style="padding:2px 8px;border-radius:999px;background:#EDE9FE;color:#5B21B6;font-size:11px;font-weight:700">📋 취합</span>
+        <span style="padding:2px 8px;border-radius:999px;background:#EDE9FE;color:#5B21B6;font-size:11px;font-weight:700">${isFile ? '📁 파일 취합' : '📋 취합'}</span>
         <b style="font-size:14px">${escHtml(t.title)}</b>
         <span style="font-size:12px;color:${tone.ink};font-weight:600">${escHtml(staskDue(t))}</span>
       </div>
       ${detail}
-      <div style="margin-top:3px;font-size:12px;color:var(--sub)">칸: ${cols}</div>
+      ${isFile ? (t.my_entry ? `<div style="margin-top:3px;font-size:12px;color:#166534">📄 내가 낸 파일: <a href="#" onclick="openStaskFile('${t.id}', null);return false" style="color:#166534;font-weight:700">${escHtml(t.my_entry.name||'')}</a>${t.my_entry_updated ? ' <span style="color:var(--sub)">(다시 냄)</span>' : ''}</div>` : '') : `<div style="margin-top:3px;font-size:12px;color:var(--sub)">칸: ${cols}</div>`}
       ${staskAttHtml(t)}
       <div style="margin-top:4px;font-size:11.5px;color:var(--sub)">${who} 올림 · ${seeAll
-          ? `<a href="#" style="color:var(--primary);font-weight:700" onclick="toggleStaskTable('${t.id}');return false;">제출 ${t.done_count} / ${t.teacher_count}명 — 모은 표 보기 ▾</a>`
+          ? `<a href="#" style="color:var(--primary);font-weight:700" onclick="toggleStaskTable('${t.id}');return false;">제출 ${t.done_count} / ${t.teacher_count}명 — ${isFile ? '모은 파일 보기' : '모은 표 보기'} ▾</a>`
           : `제출 ${t.done_count} / ${t.teacher_count}명`}${t.targeted ? ' · <span title="' + escHtml(t.to_names||'') + '">👤 ' + (seeAll && t.to_names ? escHtml(t.to_names) + '에게' : '나에게') + '</span>' : ''}</div>
       <div id="stask-entry-${t.id}" hidden style="margin-top:8px"></div>
       ${seeAll ? `<div id="stask-table-${t.id}" hidden style="margin-top:8px;font-size:12px"></div>` : ''}
@@ -1849,6 +1855,23 @@ async function toggleStaskTable(id){
   const rows = data || [], cols = t.collect_schema || [];
   staskCache[id]._entries = rows;
   const notYet = rows.filter(r => !r.data && !r.is_creator);
+  if(t.kind === 'file'){
+    const got = rows.filter(r => r.data);
+    box.innerHTML = `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+      ${notYet.length ? `<span style="color:#991B1B;font-weight:700">아직 ${notYet.length}명</span> <span style="display:inline-flex;gap:4px;flex-wrap:wrap">${notYet.map(r => `<span style="padding:3px 9px;border-radius:999px;font-size:11.5px;background:#FEE2E2;color:#991B1B;font-weight:700">⏳ ${escHtml(r.name||'(이름 없음)')}${r.class_label ? ' <span style="opacity:.7">' + escHtml(r.class_label) + '</span>' : ''}</span>`).join('')}</span>` : '<span style="color:#166534;font-weight:700">🎉 모두 냈어요</span>'}
+      <span style="margin-left:auto"><button class="code-btn primary" style="margin:0;padding:4px 12px;font-size:11.5px" ${got.length ? '' : 'disabled'} onclick="staskDownloadZip('${id}')">📦 반 순서대로 한꺼번에 내려받기 (${got.length}개)</button></span></div>
+      <div style="overflow:auto;border:1px solid var(--border);border-radius:8px"><table style="border-collapse:collapse;font-size:12px;min-width:100%">
+      <thead><tr style="background:#F1F5F9">${['순서','반','이름','파일','낸 날'].map(h => `<th style="padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap">${h}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map((r, i) => `<tr style="${r.data ? '' : 'color:#991B1B;background:#FFF7F7'}">
+        <td style="padding:5px 8px;border-bottom:1px solid #EEF2F7">${r.data ? got.indexOf(r) + 1 : ''}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #EEF2F7;white-space:nowrap">${escHtml(r.class_label||'')}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #EEF2F7;white-space:nowrap">${escHtml(r.name||'')}${r.is_creator ? ' <span style="opacity:.6">(담당)</span>' : ''}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #EEF2F7">${r.data ? `<a href="#" onclick="openStaskFile('${id}','${r.teacher_id}');return false" style="color:var(--primary)">📄 ${escHtml(r.data.name||'')}</a> <span style="color:var(--sub)">${staskSize(r.data.size||0)}</span>` : '—'}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #EEF2F7;white-space:nowrap;color:var(--sub)">${r.data ? (r.updated_at > r.submitted_at ? '🔁 다시 냄 ' : '✅ ') + new Date(r.updated_at).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'}) : '—'}</td>
+      </tr>`).join('')}</tbody></table></div>
+      <div style="margin-top:6px;font-size:11.5px;color:var(--sub)">💡 내려받은 파일을 한글에서 <b>입력 → 문서 끼워 넣기</b>로 전부 선택하면 반 순서대로 한 문서에 들어가요.</div>`;
+    return;
+  }
   box.innerHTML = `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
       ${notYet.length ? `<span style="color:#991B1B;font-weight:700">아직 ${notYet.length}명</span> <span style="display:inline-flex;gap:4px;flex-wrap:wrap">${notYet.map(r => `<span style="padding:3px 9px;border-radius:999px;font-size:11.5px;background:#FEE2E2;color:#991B1B;font-weight:700">⏳ ${escHtml(r.name||'(이름 없음)')}${r.class_label ? ' <span style="opacity:.7">' + escHtml(r.class_label) + '</span>' : ''}</span>`).join('')}</span>` : '<span style="color:#166534;font-weight:700">🎉 모두 제출했어요</span>'}
       <span style="margin-left:auto;display:inline-flex;gap:6px">
@@ -1863,6 +1886,70 @@ async function toggleStaskTable(id){
         ${cols.map(c => `<td style="padding:5px 8px;border-bottom:1px solid #EEF2F7;white-space:pre-wrap">${escHtml((r.data||{})[c.key]||'')}</td>`).join('')}
         <td style="padding:5px 8px;border-bottom:1px solid #EEF2F7;white-space:nowrap;color:var(--sub)">${r.data ? (r.updated_at > r.submitted_at ? '✏️ 수정됨 ' : '✅ ') + new Date(r.updated_at).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'}) : '—'}</td>
       </tr>`).join('')}</tbody></table></div>`;
+}
+// ── v2.1 파일 제출형 — 내기 = 저장소 올림 + submit_task_file(자동 완료). 다시 내면 옛 파일은 저장소에서 지운다.
+async function submitStaskFile(id, input){
+  const f = input.files && input.files[0]; input.value = '';
+  if(!f) return;
+  if(f.size > STASK_MAX_FILE){ showToast('⚠️ ' + f.name + ' — 20MB 를 넘어요.'); return; }
+  const sid = mySchoolRow && mySchoolRow.school_id; if(!sid){ showToast('⚠️ 학교가 지정돼 있어야 낼 수 있어요.'); return; }
+  showToast('📤 올리는 중… ' + f.name);
+  const ext = (f.name.match(/\.([A-Za-z0-9]{1,6})$/) || ['',''])[1].toLowerCase();
+  const path = sid + '/' + id + '/' + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)) + (ext ? '.' + ext : '');
+  const up = await db.storage.from('school').upload(path, f, { contentType: f.type || 'application/octet-stream', upsert: false });
+  if(up.error){ showToast('⚠️ 올리기 실패 — ' + (up.error.message || '')); return; }
+  const { data: old, error } = await db.rpc('submit_task_file', { p_task_id: id, p_path: path, p_name: f.name, p_size: f.size });
+  if(error){
+    await db.storage.from('school').remove([path]);
+    const m = error.message || '';
+    showToast(/task closed/.test(m) ? '⚠️ 이미 끝난 취합이에요.' : /not a recipient/.test(m) ? '⚠️ 이 취합은 받는 사람만 낼 수 있어요.' : '⚠️ 내기 실패: ' + m);
+    return;
+  }
+  if(old){ try { await db.storage.from('school').remove([old]); } catch(e){} }
+  showToast(old ? '🔁 다시 냈어요 — 전 파일은 바꿨어요.' : '✅ 냈어요 — 내 할 일에서 완료됐어요.');
+  await loadSchoolTasks();
+}
+async function openStaskFile(id, teacherId){
+  const t = staskCache[id]; if(!t) return;
+  let d = null;
+  if(!teacherId) d = t.my_entry;
+  else { const r = (t._entries || []).find(x => x.teacher_id === teacherId); d = r && r.data; }
+  if(!d || !d.path) return;
+  const { data, error } = await db.storage.from('school').createSignedUrl(d.path, 300, { download: d.name || undefined });
+  if(error){ showToast('⚠️ 파일을 열 수 없어요 — ' + (error.message || '')); return; }
+  window.open(data.signedUrl, '_blank', 'noopener');
+}
+let staskZipLib = null;
+async function staskDownloadZip(id){
+  const t = staskCache[id]; const rows = ((t && t._entries) || []).filter(r => r.data && r.data.path);
+  if(!rows.length){ showToast('아직 낸 파일이 없어요.'); return; }
+  if(!staskZipLib){
+    showToast('📦 묶는 도구를 불러오는 중…');
+    await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }).catch(() => {});
+    staskZipLib = window.JSZip || null;
+    if(!staskZipLib){ showToast('⚠️ 묶기 도구를 못 불러왔어요. 표의 파일 이름을 눌러 하나씩 받아 주세요.'); return; }
+  }
+  const zip = new staskZipLib();
+  const safe = v => String(v || '').replace(/[\\/:*?"<>|]/g, '_').trim();
+  let n = 0, bad = 0;
+  for(const r of rows){
+    const { data, error } = await db.storage.from('school').createSignedUrl(r.data.path, 300);
+    if(error){ bad++; continue; }
+    try {
+      const res = await fetch(data.signedUrl); if(!res.ok) throw new Error(res.status);
+      n++;
+      const nm = String(n).padStart(2,'0') + '_' + [safe(r.class_label), safe(r.name)].filter(Boolean).join('_') + '_' + safe(r.data.name || 'file');
+      zip.file(nm, await res.blob());
+    } catch(e){ bad++; }
+  }
+  if(!n){ showToast('⚠️ 파일을 하나도 받지 못했어요.'); return; }
+  showToast('📦 묶는 중… ' + n + '개');
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = safe(t.title || '파일취합') + '.zip';
+  document.body.appendChild(a); a.click(); a.remove();
+  showToast('📦 ' + n + '개를 반 순서대로 묶어 내려받았어요.' + (bad ? ' (' + bad + '개는 못 받았어요)' : ''));
 }
 function staskTableData(id){
   const t = staskCache[id], rows = (t && t._entries) || [], cols = (t && t.collect_schema) || [];
@@ -2162,7 +2249,7 @@ async function addSchoolTask(){
   ti.value = ''; de.value = ''; du.value = '';
   document.querySelectorAll('.schooltask-to-cb').forEach(cb => { cb.checked = false; });
   document.getElementById('schooltask-form').hidden = true;
-  showToast((staskKind === 'collect' ? '📋 취합 양식을 ' : '📌 ') + (to.length ? to.length + '명에게 올렸어요.' : '우리 학교 할 일판에 올렸어요.'));
+  showToast((staskKind === 'collect' ? '📋 취합 양식을 ' : staskKind === 'file' ? '📁 파일 취합을 ' : '📌 ') + (to.length ? to.length + '명에게 올렸어요.' : '우리 학교 할 일판에 올렸어요.'));
   const kn = document.querySelector('input[name="schooltask-kind"][value="notice"]'); if(kn){ kn.checked = true; } setStaskKind('notice');
   const sr = document.getElementById('schooltask-schema-rows'); if(sr) sr.innerHTML = '';
   await loadSchoolTasks();
