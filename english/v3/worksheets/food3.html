@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv3 #16 음식③ 10단어 — wild.html(Lv3 #15) · subjects.html(Lv3 #3) 판형 계승, V트랙 주황
+     ★그림·식탁 = 화면과 같은 그림(FD316CSS 블록 그대로 · 마크업 = 화면 pz()·table('find') 를 생성기 ws/gen_food3.js 로 그대로 뽑음) — 같은 단어 = 같은 그림.
+     ★상단 식탁 열 접시(이름표 = 단어 상자) · ① 따라쓰기 10(그림 위) · ② 그대로 상자 / 꼬리 상자(cookie 하나만 꼬리 — 상자 보고 옮겨 쓰기)
+     ★③ 내 도시락 그리기 + I like ___. · ④ 👎 I don't like ___. 한 줄 -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 10mm 12mm 8mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --primary:#d9702a; --border:#e0b48c; --green:#4CAF50; --green-light:#E8F5E9; --red:#E53935; --yellow:#FFC107; --yellow-light:#FFF8E1; }
+  body { font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.45; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d9702a; padding-bottom: 5px; }
+  .brand { font-size: 13px; font-weight: 700; color: #9c4d13; }
+  .brand .lv { background: #d9702a; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 7px; background: #fdeee1; border: 2px solid #d9702a; border-radius: 12px; padding: 7px 13px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 24px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #9c4d13; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 15.5px; font-weight: 800; color: #4a2408; }
+  .seed .main b { color: #d85a30; }
+  .keypoint { margin-top: 6px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 5px 12px; font-size: 12px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  .keypoint .big { font-size: 14px; font-weight: 800; color: #d85a30; }
+  /* 그림·동물원 — 화면 블록 그대로 */
+/*FD316CSS-BEGIN — Lv3 #16 음식③ 그림·식탁 한 장·꼬리 칩 · 4파일 + 활동지 문자 단위 동일(blocks/FD316CSS.css → sync_blocks.py 주입, 하네스 A4·D2b).
+  ★그림 타일(.fdp·.fdz·.em) = Lv3 #6·#15 .anp·.anz·.em 과 같은 기하(이름만 음식 — 액자 모양이 정답 단서가 되지 않는다).
+  ★water = CSS 컵(Lv3 #8 glass .gls 와 같은 얼개·색 — 높이 40 · 파란 테두리) 안에 물(.wv) + 💧(.wd — 16-2 시범 판 .demo-pick .dp 와 이름이 겹치지 않게) — 💧 홀로(Lv2 #30 wet)와 갈린다.
+  ★식탁 한 장 = 접시 열 개(5×2 격자 — 자리마다 따로 눌린다 · Lv3 #15 동물원 판형). 안쪽 줄 그릇 넷 + 컵 하나 · 바깥 줄 납작 접시 다섯. 식탁보 = CSS 체크. 장식 이모지 0.
+  ★꼬리 .pl = Lv3 #2 PL302CSS 와 같은 연두 칩(한 단어는 붙어 있다 · 칸 구분은 색으로). ★움직임 0 — 명사 그림은 멈춰 있다. */
+.fdp{position:relative;display:inline-flex;align-items:center;justify-content:center;width:80px;height:64px;border-radius:14px;background:#FFFDF9;border:2px solid #F1DFCD;box-sizing:border-box;line-height:1;vertical-align:middle;overflow:hidden;text-align:center}
+.fdz{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+.fdz>.fdp{position:absolute;left:0;top:0;transform-origin:0 0}
+.fdp .em{font-size:44px;font-style:normal;line-height:1}
+.fdp .em3,.tbl .fa .em3{font-size:20px;letter-spacing:-3px;border-bottom:5px solid #FFCC80;border-radius:0 0 40% 40%;padding:0 4px 3px}
+.cup{position:relative;display:inline-block;width:30px;height:40px;border:3px solid #64B5F6;border-top-width:2px;border-radius:2px 2px 9px 9px;background:rgba(227,242,253,.55);box-sizing:border-box;font-style:normal;vertical-align:middle}
+.cup .wv{position:absolute;left:0;right:0;bottom:0;height:62%;border-radius:0 0 6px 6px;background:#90CAF9;font-style:normal}
+.cup .wd{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font-size:15px;font-style:normal;line-height:1}
+.fdp .cup{transform:scale(1.15)}
+.pl{text-decoration:none;display:inline-block;background:#B2F2BB;color:#2B8A3E;border-radius:6px;padding:0 3px;margin-left:1px}
+.pl.pop{animation:plpop .5s ease-out}
+@keyframes plpop{0%{transform:scale(.2) translateX(-10px);opacity:0}70%{transform:scale(1.25)}100%{transform:scale(1);opacity:1}}
+.tbl{width:min(360px,100%);margin:8px auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:8px 6px;border-radius:16px;border:3px solid #E8B98F;box-sizing:border-box;
+  background:repeating-linear-gradient(0deg,rgba(229,57,53,.09) 0 11px,transparent 11px 22px),repeating-linear-gradient(90deg,rgba(229,57,53,.09) 0 11px,#FFFDF7 11px 22px)}
+.tbl .seat{position:relative;aspect-ratio:1/1;border-radius:50%;border:3px solid transparent;box-sizing:border-box;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;min-width:0;line-height:1;transition:transform .15s}
+.tbl .seat.h-dish{background:radial-gradient(circle,#fff 0 55%,#E3E7EA 56% 64%,#fff 65%);box-shadow:0 2px 0 rgba(0,0,0,.08)}
+.tbl .seat.h-bowl{background:radial-gradient(circle,#FFF8E1 0 48%,#FFB74D 49% 58%,#FFE0B2 59%);box-shadow:0 3px 0 rgba(0,0,0,.1)}
+.tbl .seat.h-cup{background:radial-gradient(circle,#E3F2FD 0 58%,#BBDEFB 59% 66%,transparent 67%)}
+.tbl .seat:active{transform:scale(.93)}
+.tbl .seat .fa{position:relative;line-height:1}
+.tbl .seat .fa .em{font-size:28px;font-style:normal;line-height:1}
+.tbl .seat .fa .em3{font-size:12px}
+.tbl .seat .fa .cup{transform:scale(.78)}
+.tbl .seat.found{border-color:var(--green);box-shadow:0 0 0 2px var(--green) inset}
+.tbl .seat .tag{display:none;position:absolute;left:50%;bottom:-.75em;transform:translateX(-50%);font-size:13px;background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:8px;padding:0 4px;white-space:nowrap;font-family:'Jua',sans-serif;line-height:1.2;z-index:2}
+.tbl .seat.found .tag{display:block}
+.tbl .choice-btn.seat{font-family:inherit;min-height:0}
+.tbl .choice-btn.seat.correct{box-shadow:0 0 0 3px var(--green) inset}
+.tbl .choice-btn.seat.wrong{box-shadow:0 0 0 3px var(--red) inset}
+/*FD316CSS-END*/
+  .tbl { width: 330px; margin: 4px auto 0; }
+  .tbl .seat { cursor: default; }
+  .tbl .seat .lb { position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); font-size: 11.5px; font-weight: 800; color: #9c4d13; background: #fff; border: 1.5px solid #e0b48c; border-radius: 7px; padding: 0 4px; line-height: 1.25; white-space: nowrap; }
+  .boxes { display: flex; gap: 10px; margin-top: 4px; }
+  .bx2 { border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 5px 10px; }
+  .bx2.same { flex: 3; }
+  .bx2.tail { flex: 1.15; border-color: #2B8A3E; background: #f3fbf4; }
+  .bx2 .cap { font-size: 12px; font-weight: 800; color: #9c4d13; margin-bottom: 3px; }
+  .bx2.tail .cap { color: #2B8A3E; }
+  .bx2 .lines { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px 10px; }
+  .bx2.tail .lines { grid-template-columns: 1fr; }
+  .bx2 .ln { border-bottom: 1.6px solid #b4b2a9; height: 22px; display: flex; align-items: flex-end; justify-content: flex-end; font-size: 16px; font-weight: 800; }
+  .lbox2 { display: flex; gap: 5px; border: 3px solid #E8590C; border-radius: 12px; background: #FFF4E6; padding: 5px; flex: none; }
+  .lbox2 .c { width: 54px; height: 54px; border: 2px dashed #FFC078; border-radius: 8px; background: #fff; }
+  h2 { margin-top: 8px; font-size: 13px; color: #9c4d13; display: flex; align-items: center; gap: 7px; }
+  h2 .n { background: #9c4d13; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2 .hint { font-weight: 400; font-size: 10px; color: #888780; }
+  .trace { display: flex; gap: 5px; margin-top: 3px; }
+  .traceword { text-align: center; flex: 1; min-width: 56px; }
+  .traceword .tpic { line-height: 0; }
+  .traceword .outline { font-size: 17px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.3px #c4c2b8; letter-spacing: 1px; }
+  .traceword .line { border-bottom: 1.5px solid #d3d1c7; height: 12px; margin-top: 1px; }
+  .topwrap { display: flex; gap: 12px; margin-top: 4px; align-items: center; }
+  .numbox { flex: 1; border: 1.5px solid #e0b48c; border-radius: 10px; padding: 6px 10px; background: #fffdfa; }
+  .numbox .cap { font-size: 10px; color: #888780; margin-bottom: 4px; }
+  .numgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; }
+  .nb { display: flex; align-items: center; gap: 6px; }
+  .nb .bx { width: 22px; height: 22px; border: 1.6px solid #b4b2a9; border-radius: 5px; flex: none; }
+  .nb .w { font-size: 14px; font-weight: 800; color: #9c4d13; }
+  .duo { display: flex; gap: 12px; margin-top: 2px; align-items: stretch; }
+  .jbox { flex: 1; display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .jrow { display: flex; align-items: center; gap: 8px; border: 2px solid #e0b48c; border-radius: 12px; padding: 4px 10px; background: #fffaf5; }
+  .jrow .jp { line-height: 0; }
+  .jrow .jw { font-size: 19px; font-weight: 800; color: #9c4d13; }
+  .jrow .op { font-size: 16px; color: #5f5e5a; font-weight: 700; }
+  .jrow .wl { flex: 1; border-bottom: 1.6px solid #b4b2a9; height: 24px; }
+  .jrow .big { font-size: 26px; font-weight: 800; color: #4a2408; letter-spacing: 2px; }
+  .jrow .note { font-size: 10.5px; color: #888780; }
+  .mine { flex: 1.15; border: 2px solid #d9702a; border-radius: 12px; background: #fffaf5; padding: 5px 10px; display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+  .mine .draw { width: 112px; height: 92px; border: 2px dashed #c9b39c; border-radius: 10px; background: #fff; flex: none; }
+  .mine .sent { font-size: 17px; font-weight: 800; color: #4a2408; margin: 4px 0; }
+  .mine .sent .bl { display: inline-block; width: 100px; border-bottom: 1.6px solid #b4b2a9; height: 20px; vertical-align: bottom; }
+  .mine .tbox { font-size: 10.5px; color: #9c4d13; font-weight: 800; line-height: 1.5; }
+  .pairbox { margin-top: 6px; border: 2px dashed #ef9f27; border-radius: 10px; padding: 5px 11px; text-align: center; font-size: 11.5px; background: #fffaf2; }
+  .pairbox b { color: #d85a30; }
+  .recap { margin-top: 6px; background: #4a2408; color: #fdeee1; border-radius: 10px; padding: 6px 13px; text-align: center; font-size: 12px; }
+  .recap b { color: #fac775; }
+  .parent { margin-top: 6px; border-top: 1px dashed #b4b2a9; padding-top: 5px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+  .pl { font-weight: 800; }
+  .mrow { display: flex; align-items: center; gap: 8px; border: 2px solid #e0b48c; border-radius: 12px; padding: 4px 10px; background: #fffaf5; margin-top: 4px; }
+  .mrow .yn { font-size: 22px; line-height: 1; }
+  .mrow .draw { width: 58px; height: 44px; border: 2px dashed #c9b39c; border-radius: 8px; background: #fff; flex: none; }
+  .mrow .sent { font-size: 16px; font-weight: 800; color: #4a2408; }
+  .mrow .bl { display: inline-block; width: 86px; border-bottom: 1.6px solid #b4b2a9; height: 18px; vertical-align: bottom; }
+  .mrow .bl.nm { width: 62px; }
+  .mrow .oo { font-size: 15px; color: #5f5e5a; white-space: nowrap; }
+  .tbox2 { font-size: 10.5px; color: #9c4d13; font-weight: 800; line-height: 1.5; margin-top: 3px; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv3 · 어휘 #16</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main">하나씩 세는 건 <b>꼬리</b>, 덜어 먹는 건 <b>그대로</b>.</div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 오늘 열 단어는 <span class="big">식탁 열 접시</span> — 그릇·컵 다섯, 손으로 집는 것 다섯.
+    여럿이면 꼬리가 붙는 건 <b>cookie<u class="pl">s</u></b> 하나 — 나머지 아홉은 <b>그대로</b>예요.
+  </div>
+
+  <div class="tbl"><div class="spot seat h-bowl" data-w="rice"><span class="fa" data-fa="rice"><i class="em">🍚</i></span><span class="lb">rice</span></div><div class="spot seat h-bowl" data-w="soup"><span class="fa" data-fa="soup"><i class="em">🥣</i></span><span class="lb">soup</span></div><div class="spot seat h-cup" data-w="water"><span class="fa" data-fa="water"><i class="cup"><i class="wv"></i><i class="wd">💧</i></i></span><span class="lb">water</span></div><div class="spot seat h-bowl" data-w="salad"><span class="fa" data-fa="salad"><i class="em">🥗</i></span><span class="lb">salad</span></div><div class="spot seat h-bowl" data-w="fruit"><span class="fa" data-fa="fruit"><i class="em em3">🍎🍌🍇</i></span><span class="lb">fruit</span></div><div class="spot seat h-dish" data-w="pizza"><span class="fa" data-fa="pizza"><i class="em">🍕</i></span><span class="lb">pizza</span></div><div class="spot seat h-dish" data-w="bread"><span class="fa" data-fa="bread"><i class="em">🍞</i></span><span class="lb">bread</span></div><div class="spot seat h-dish" data-w="meat"><span class="fa" data-fa="meat"><i class="em">🥩</i></span><span class="lb">meat</span></div><div class="spot seat h-dish" data-w="cookie"><span class="fa" data-fa="cookie"><i class="em">🍪</i></span><span class="lb">cookie</span></div><div class="spot seat h-dish" data-w="cheese"><span class="fa" data-fa="cheese"><i class="em">🧀</i></span><span class="lb">cheese</span></div></div>
+
+  <h2><span class="n">1</span> 따라 써요 <span class="hint">흐린 글자를 따라 쓰고, 쓰면서 소리 내어 읽어요</span></h2>
+  <div class="trace"><div class="traceword"><div class="tpic"><span class="fdz" style="width:40px;height:32px"><span class="fdp f-soup" data-fdp="soup" style="transform:scale(0.5)"><i class="em">🥣</i></span></span></div><div class="outline">soup</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="fdz" style="width:40px;height:32px"><span class="fdp f-rice" data-fdp="rice" style="transform:scale(0.5)"><i class="em">🍚</i></span></span></div><div class="outline">rice</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="fdz" style="width:40px;height:32px"><span class="fdp f-salad" data-fdp="salad" style="transform:scale(0.5)"><i class="em">🥗</i></span></span></div><div class="outline">salad</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="fdz" style="width:40px;height:32px"><span class="fdp f-water" data-fdp="water" style="transform:scale(0.5)"><i class="cup"><i class="wv"></i><i class="wd">💧</i></i></span></span></div><div class="outline">water</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="fdz" style="width:40px;height:32px"><span class="fdp f-fruit" data-fdp="fruit" style="transform:scale(0.5)"><i class="em em3">🍎🍌🍇</i></span></span></div><div class="outline">fruit</div><div class="line"></div></div></div>
+  <div class="trace"><div class="traceword"><div class="tpic"><span class="fdz" style="width:40px;height:32px"><span class="fdp f-bread" data-fdp="bread" style="transform:scale(0.5)"><i class="em">🍞</i></span></span></div><div class="outline">bread</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="fdz" style="width:40px;height:32px"><span class="fdp f-cookie" data-fdp="cookie" style="transform:scale(0.5)"><i class="em">🍪</i></span></span></div><div class="outline">cookie</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="fdz" style="width:40px;height:32px"><span class="fdp f-cheese" data-fdp="cheese" style="transform:scale(0.5)"><i class="em">🧀</i></span></span></div><div class="outline">cheese</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="fdz" style="width:40px;height:32px"><span class="fdp f-meat" data-fdp="meat" style="transform:scale(0.5)"><i class="em">🥩</i></span></span></div><div class="outline">meat</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="fdz" style="width:40px;height:32px"><span class="fdp f-pizza" data-fdp="pizza" style="transform:scale(0.5)"><i class="em">🍕</i></span></span></div><div class="outline">pizza</div><div class="line"></div></div></div>
+
+  <h2><span class="n">2</span> 그대로 상자 · 꼬리 상자 <span class="hint">식탁의 단어를 보고 옮겨 써요 — 여럿일 때 꼬리가 붙는 건 꼬리 상자에</span></h2>
+  <div class="boxes">
+    <div class="bx2 same" data-box="same"><div class="cap">그대로 상자 — 덜어 먹는 것 (꼬리 칸 없음)</div><div class="lines"><span class="ln"></span><span class="ln"></span><span class="ln"></span><span class="ln"></span><span class="ln"></span><span class="ln"></span><span class="ln"></span><span class="ln"></span><span class="ln"></span></div></div>
+    <div class="bx2 tail" data-box="tail"><div class="cap">꼬리 상자 — 하나씩 세는 것</div><div class="lines"><span class="ln"><u class="pl">s</u></span></div></div>
+  </div>
+
+  <div class="duo">
+    <div class="jbox">
+      <h2><span class="n">3</span> 내 도시락 <span class="hint">좋아하는 음식 넷을 그리고, 하나를 골라 써요</span></h2>
+      <div class="mrow" data-m="like"><span class="lbox2"><span class="c"></span><span class="c"></span><span class="c"></span><span class="c"></span></span><span class="sent">I like <span class="bl"></span>.</span></div>
+      <div class="tbox2">쿠키를 담았다면 <b>cookie<u class="pl">s</u></b> — 꼬리를 붙여요</div>
+    </div>
+    <div class="jbox">
+      <h2><span class="n">4</span> 싫은 음식 <span class="hint">하나만 골라 그리고 써요</span></h2>
+      <div class="mrow" data-m="dont"><span class="yn">👎</span><span class="draw"></span><span class="sent">I don't like <span class="bl"></span>.</span></div>
+    </div>
+  </div>
+
+  <div class="pairbox">헷갈리는 짝 —
+    <b>bread</b> ↔ <b>cookie</b> (덩어리 / 하나씩) &nbsp;·&nbsp; <b>soup</b> ↔ <b>water</b> (그릇 / 컵) &nbsp;·&nbsp;
+    <b>rice</b> ↔ <b>salad</b> (하얀 / 초록) &nbsp;·&nbsp; <b>meat</b> ↔ <b>cheese</b> (빨강 / 노랑) &nbsp;·&nbsp; <b>fruit</b> ↔ <b>pizza</b> (한 그릇 / 세모 조각)
+  </div>
+
+  <div class="recap">오늘 열 단어 = <b>soup · rice · salad · water · fruit · bread · cookie · cheese · meat · pizza</b></div>
+
+  <div class="parent">
+    <b>부모님께</b> · 먹을 것 이름은 아직 배우지 않은 철자가 많아 <b>통째로</b> 담습니다(meat 하나만 배운 규칙으로 읽혀요 · pizza 는 Lv1 에서 만난 단어). 글자 하나하나의 소리를 설명하지 마세요.
+    · ② 는 <b>문법 용어로 바꿔 말하지 마세요</b> — 「하나씩 집어 세는 건 꼬리, 덜어 먹는 건 그대로」 한 줄이면 충분합니다.
+    · 물(water)은 <b>컵에 담긴 그림</b>입니다 — 물방울만 있는 그림은 다른 단어예요.
+    · 이 활동지는 <b>보고 옮겨 쓰는</b> 종이입니다. <b>받아쓰기로 확인하지 마세요.</b><br>
+    <b>정답</b> · ② 그대로 상자 = soup · rice · salad · water · fruit · bread · cheese · meat · pizza(순서 상관없음) · 꼬리 상자 = cookies · ③④ 그린 음식과 맞으면 정답(예: I like rice. · I don't like meat.)
+  </div>
+</body>
+</html>
