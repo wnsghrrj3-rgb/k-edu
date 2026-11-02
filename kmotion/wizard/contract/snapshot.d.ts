@@ -21,11 +21,13 @@ export interface Snapshot {
   obstacles: { uid: number; kind: 'rock' | 'branch' | 'firefly' | 'chest'; pos: Vec3; r: number; h: number; state: 'ahead' | 'passed' | 'hit' | 'taken' }[];
   /** v1.5 수학 퍼즐(S08P, 07 문서 상황 D). 돌 고르기(number-bridge 2개·rule-stones 1개)는 targets kind 'puzzle'(rect = choices3) · size-gate 는 몸 위치(lane 'L'|'R') — 게이지 없음.
    *  state open → right(1.6초)|wrong(1.3초 → 다른 수로 다시, hint 켜짐)|reveal(3번 틀림 — 정답 돌 answer:true 2.8초 → 통과) · stones.lit = 집은 돌 · gate.answer 는 reveal/right 때만 */
-  puzzle: null | { id: string; type: 'number-bridge' | 'size-gate' | 'rule-stones'; concept: string; state: 'open' | 'right' | 'wrong' | 'reveal'; stateT: number; prompt: TextRef; picks: (number | string)[]; wrong: number; maxWrong: number; need: number;
+  puzzle: null | { id: string; type: 'number-bridge' | 'size-gate' | 'rule-stones' | 'mushroom-add' | 'crystal-count' | 'shape-key';   // v2.11 shape-key = 모양 열쇠(월드 2 길 B) concept: string; state: 'open' | 'right' | 'wrong' | 'reveal'; stateT: number; prompt: TextRef; picks: (number | string)[]; wrong: number; maxWrong: number; need: number;
     hint: TextRef | null; seq: number[] | null; target: number | null;
     /** v2.4 학년 변환(3학년↑, data/concepts-by-grade.json puzzle 줄): op '×' = 곱셈 다리(두 돌의 곱)·버섯 곱 문(점의 곱) — 스킨은 종류 이름·+ 기호를 op 로 바꿔 그림. mul = 규칙 징검다리 「배가 되는 규칙」(×2·×3)의 배수, 더하기 규칙이면 null */
     op: '+' | '×'; mul: number | null;
-    stones: null | { id: string; slot: number; num: number; targetId: string; lit: boolean; answer: boolean; wrong: boolean }[];
+    /** v2.11 모양 열쇠: hole = 문 구멍 그림 id(pic — 1학년은 물건 id, 2학년↑ 도형 id)·이름·kind 'solid'|'plane'. stones[].pic = 열쇠 돌 그림 id(num = 그림 코드) — 스킨은 id 만 그린다(숫자 퍼즐은 null) */
+    hole: null | { pic: string; name: string; kind: 'solid' | 'plane' };
+    stones: null | { id: string; slot: number; num: number; pic: string | null; targetId: string; lit: boolean; answer: boolean; wrong: boolean }[];
     gate: null | { left: number; right: number; bigger: boolean; picked: string | null; answer: 'L' | 'R' | null; lane: 'L' | 'R' | null } };
   player: {
     id: 'luna' | 'tori' | 'haru'; pos: Vec3; yaw: number; vel: Vec3;

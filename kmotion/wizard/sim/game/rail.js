@@ -4,7 +4,8 @@
 import { GAME } from './config.js';
 import { clamp } from '../core/math.js';
 import { makePuzzle, verifyPuzzle } from '../learn/puzzles.js';
-import { puzzleSpec } from '../learn/gradeTable.js';   // v2.4 길 퍼즐 학년 변환
+import { puzzleSpec } from '../learn/gradeTable.js';
+import { PIC } from '../learn/pics.js';   // v2.11 모양 열쇠 돌 그림 id   // v2.4 길 퍼즐 학년 변환
 const R = () => GAME.rail;
 
 export function startRail(g, api, zone, zi){
@@ -118,7 +119,8 @@ export function puzzleSnapshot(g, r3){
   const pz = g.puzzle; if (!pz || !pz.cur) return null; const c = pz.cur, revealed = pz.state === 'reveal' || pz.state === 'right';
   return { id: pz.id, type: c.type, concept: c.concept, state: pz.state, stateT: r3(g.t - pz.stateT), prompt: c.prompt, picks: pz.picks.slice(), wrong: pz.wrong, maxWrong: R().puzzle.maxWrong, need: c.need,
     hint: pz.hint ? c.hint1 : null, seq: c.seq || null, target: c.target || null, mush: c.mush || null, bundle: c.bundle || null, op: c.op || '+', mul: c.mul || null,
-    stones: c.stones ? c.stones.map(s => ({ id: 'c' + s.slot, slot: s.slot, num: s.num, targetId: 'c' + s.slot, lit: pz.picks.includes(s.slot), answer: revealed && c.answer.includes(s.slot), wrong: pz.state === 'wrong' && pz.picks.includes(s.slot) })) : null,
+    hole: c.hole ? { pic: c.hole.pic, name: c.hole.name, kind: c.hole.kind } : null,   // v2.11 모양 열쇠: 문 구멍 그림 id(스킨이 그림)
+    stones: c.stones ? c.stones.map(s => ({ id: 'c' + s.slot, slot: s.slot, num: s.num, pic: c.hole ? (PIC[s.num] || null) : null, targetId: 'c' + s.slot, lit: pz.picks.includes(s.slot), answer: revealed && c.answer.includes(s.slot), wrong: pz.state === 'wrong' && pz.picks.includes(s.slot) })) : null,
     gate: c.gate ? { left: c.gate.left, right: c.gate.right, bigger: c.bigger, picked: pz.picks[0] || null, answer: revealed ? c.answer : null, lane: g.player.pos[0] <= -R().puzzle.laneX ? 'L' : g.player.pos[0] >= R().puzzle.laneX ? 'R' : null } : null };
 }
 export function railSnapshot(g, r3, v3){

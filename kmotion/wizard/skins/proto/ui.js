@@ -202,18 +202,20 @@ export function createUI(ctx, audio){
   }
   function paintPz(s){
     const Z = s.puzzle; if (!Z) return; const W = innerWidth, H = innerHeight; rects = {};
-    if (Z.id !== pzCur) { pzCur = Z.id; pzState = null; pzKind.textContent = Z.type === 'number-bridge' ? (Z.op === '×' ? '🌉 곱셈 다리' : '🌉 숫자 다리') : Z.type === 'size-gate' ? '🚪 크기 문' : Z.type === 'mushroom-add' ? '🍄 버섯 문' : Z.type === 'crystal-count' ? '💎 수정 묶음 세기' : '🪨 규칙 징검다리'; pzPrompt.textContent = T(Z.prompt.key, Z.prompt.args);
+    if (Z.id !== pzCur) { pzCur = Z.id; pzState = null; pzKind.textContent = Z.type === 'number-bridge' ? (Z.op === '×' ? '🌉 곱셈 다리' : '🌉 숫자 다리') : Z.type === 'size-gate' ? '🚪 크기 문' : Z.type === 'mushroom-add' ? '🍄 버섯 문' : Z.type === 'crystal-count' ? '💎 수정 묶음 세기' : Z.type === 'shape-key' ? '🗝 모양 열쇠' : '🪨 규칙 징검다리'; pzPrompt.textContent = T(Z.prompt.key, Z.prompt.args);
+      if (Z.type === 'shape-key' && Z.hole) pzPrompt.innerHTML = `<span class="hole">${picHtml(Z.hole.pic)}</span><br>${T(Z.prompt.key, Z.prompt.args)}`;   // v2.11 문 구멍(스킨은 id 만 그림)
       if (Z.type === 'mushroom-add' && Z.mush) pzPrompt.innerHTML = `<span class="mush">🍄<i>${'●'.repeat(Z.mush.a)}</i> ${Z.op === '×' ? '×' : '+'} 🍄<i>${'●'.repeat(Z.mush.b)}</i></span><br>${T(Z.prompt.key, Z.prompt.args)}`; pzp.classList.toggle('gate', Z.type === 'size-gate');
       if (Z.type === 'crystal-count' && Z.bundle) { const B = Z.bundle; pzPrompt.innerHTML = `<span class="bund">${'<b>💯</b>'.repeat(B.hund || 0)}${'<b>🔟</b>'.repeat(B.tens)}${B.ones ? ' + ' + '<i>💎</i>'.repeat(B.ones) : ''}</span><br>${T(Z.prompt.key, Z.prompt.args)}`; }
       gate.classList.toggle('mw-hide', Z.type !== 'size-gate'); if (Z.gate) { gate.querySelector('.L b').textContent = Z.gate.left; gate.querySelector('.R b').textContent = Z.gate.right; } }
     pzHint.classList.toggle('mw-hide', !Z.hint); if (Z.hint) pzHint.textContent = '🦉 ' + T(Z.hint.key, Z.hint.args);
     pzTries.textContent = Z.wrong > 0 ? '💧'.repeat(Z.wrong) + '○'.repeat(Math.max(0, Z.maxWrong - Z.wrong)) : '';
     pzp.classList.toggle('right', Z.state === 'right'); pzp.classList.toggle('wrong', Z.state === 'wrong'); pzp.classList.toggle('reveal', Z.state === 'reveal');
-    pzSub.textContent = Z.state === 'right' ? T('pz.right') + ' ✨' : Z.state === 'wrong' ? T(Z.type === 'size-gate' ? 'pz.gateWrong' : Z.type === 'mushroom-add' ? 'pz.mushWrong' : Z.type === 'crystal-count' ? 'pz.countWrong' : 'pz.wrong') : Z.state === 'reveal' ? T('pz.reveal') : Z.need > 1 ? `돌 ${Z.picks.length} / ${Z.need}` : '';
+    pzSub.textContent = Z.state === 'right' ? T('pz.right') + ' ✨' : Z.state === 'wrong' ? T(Z.type === 'size-gate' ? 'pz.gateWrong' : Z.type === 'mushroom-add' ? 'pz.mushWrong' : Z.type === 'crystal-count' ? 'pz.countWrong' : Z.type === 'shape-key' ? 'pz.keyWrong' : 'pz.wrong') : Z.state === 'reveal' ? T('pz.reveal') : Z.need > 1 ? `돌 ${Z.picks.length} / ${Z.need}` : '';
     pzOrbs.forEach(o => o.classList.add('mw-hide'));
     for (const t of s.targets || []) { if (t.kind !== 'puzzle') continue; const st = Z.stones && Z.stones.find(x => x.targetId === t.id); const o = pzOrbs[st ? st.slot : +t.id.slice(1)]; if (!o) continue;
       const d = t.rect.w * W, cx = (t.rect.x + t.rect.w / 2) * W, cy = (t.rect.y + t.rect.h / 2) * H; rects[t.id] = { x: cx / W, y: cy / H };
-      o.style.cssText = `left:${cx - d / 2}px;top:${cy - d / 2}px;width:${d}px;height:${d}px`; o.classList.remove('mw-hide'); o.querySelector('b').textContent = st ? st.num : '?';
+      o.style.cssText = `left:${cx - d / 2}px;top:${cy - d / 2}px;width:${d}px;height:${d}px`; o.classList.remove('mw-hide');
+      const sb = o.querySelector('b'); o.classList.toggle('pic', !!(st && st.pic)); if (st && st.pic) { if (sb.dataset.pic !== st.pic) { sb.dataset.pic = st.pic; sb.innerHTML = picHtml(st.pic); } } else { if (sb.dataset.pic) delete sb.dataset.pic; sb.textContent = st ? st.num : '?'; }   // v2.11 모양 열쇠 = 그림 돌
       o.querySelector('circle').style.strokeDashoffset = String(289 * (1 - (t.hover || 0)));
       o.classList.toggle('locked', t.locked && Z.state === 'open'); o.classList.toggle('lit', !!(st && st.lit)); o.classList.toggle('right', !!(st && st.answer)); o.classList.toggle('wrong', !!(st && st.wrong)); o.classList.toggle('fade', Z.state !== 'open' && !(st && (st.answer || st.lit))); }
     if (Z.gate) { for (const side of ['L', 'R']) { const d = gate.querySelector('.' + side), G = Z.gate; d.classList.toggle('on', G.lane === side); d.classList.toggle('right', G.answer === side); d.classList.toggle('wrong', Z.state === 'wrong' && G.picked === side); } }

@@ -1,9 +1,23 @@
 // 길 구간 수학 퍼즐(07 문서 상황 D · 09 문서 9행) — 숫자 다리(모으기) · 크기 문(비교) · 규칙 징검다리(규칙)
 // 게이지 없음(조작형) · 3번 틀리면 정답을 천천히 보여 주고 통과(숙달도에는 오답 1번, 보상 없음)
 // 학년 폭: 1학년 9 이내 · 2학년 20 이내 · 3학년↑ 50 이내(규칙은 2·3·5 걸음)
-import { eul, iga } from './josa.js';
+import { eul, iga, wEun, wIga } from './josa.js';
+import { PIC, FAMILY, CODES, OBJECTS, OBJ_KO, SHAPE_KO } from './pics.js';   // v2.11 모양 열쇠
 const span = g => g <= 1 ? 9 : g <= 2 ? 20 : 50;
-export const PUZZLE_CONCEPT = { 'number-bridge': 'g1.compose9', 'size-gate': 'g1.compare', 'rule-stones': 'g1.pattern', 'mushroom-add': 'g1.add.expr9', 'crystal-count': 'g1.count.tens' };
+export const PUZZLE_CONCEPT = { 'number-bridge': 'g1.compose9', 'size-gate': 'g1.compare', 'rule-stones': 'g1.pattern', 'mushroom-add': 'g1.add.expr9', 'crystal-count': 'g1.count.tens', 'shape-key': 'g2.plane.pick' };
+
+// v2.11 모양 열쇠(16 문서 8절 ③, 월드 2 「도형의 신전」 길 B): 문에 구멍(hole) — 꼭 맞는 모양의 열쇠 돌 3개 중 1. 답은 그림 코드(정수), 스킨은 id 만 그림.
+// 학년 = 영역 안 단원(변환표와 같은 줄): 1학년 = 물건 구멍 → 같은 입체(7·8·9, g1.solid.same) · 2학년 = 평면 구멍 → 같은 모양(모양이 조금 달라도 같은 묶음이면 열림, g2.plane.pick)
+// 3·4학년 = 직각 도형 구멍(직각·직각삼각형·직사각형·정사각형) → 오답은 「직각 없음」·「네 변 안 같음」 같은 개념 오답(g3.right.find·g3.quad.right). 직사각형 구멍엔 정사각형 돌을 안 둠(정사각형도 직사각형 — 두 답이 됨).
+export const SHAPE_KEY_SETS = {
+  g2: ['tri', 'quad', 'circ'].map(f => ({ hole: f, answer: f, wrongs: ['tri', 'quad', 'circ'].filter(x => x !== f), concept: 'g2.plane.pick', why: f => 'plane-' + f })),
+  g3: [
+    { hole: 'rtri', answer: 'rtri', wrongs: ['tri', 'rect'], concept: 'g3.right.find', why: f => f === 'tri' ? 'miss-right' : 'that-is-rect', hint: 'pz.key.hint.rtri' },
+    { hole: 'rect', answer: 'rect', wrongs: ['quadNoRight', 'rtri'], concept: 'g3.quad.right', why: f => f === 'quadNoRight' ? 'quad-no-right' : 'that-is-rtri', hint: 'pz.key.hint.rect' },
+    { hole: 'square', answer: 'square', wrongs: ['rect', 'quadNoRight'], concept: 'g3.quad.right', why: f => f === 'rect' ? 'rect-not-square' : 'quad-no-right', hint: 'pz.key.hint.square' },
+    { hole: 'rangle', answer: 'rangle', wrongs: ['angle', 'angle'], concept: 'g3.right.find', why: () => 'miss-right', hint: 'pz.key.hint.rangle' },
+  ],
+};
 
 // v2.4 spec = 학년 변환표 puzzle 줄(gradeTable.puzzleSpec) — bridge/mushroom 'mul' 이면 두 돌의 곱·버섯 점의 곱, ruleMul 이면 「배가 되는 규칙」 섞임. 1학년({})은 rng 호출까지 그대로(골든 불변).
 export function makePuzzle(type, rng, grade = 1, opt = {}, spec = {}){
@@ -87,6 +101,24 @@ export function makePuzzle(type, rng, grade = 1, opt = {}, spec = {}){
       prompt: { key: hund ? 'pz.count3' : 'pz.count', args: { h: hund, t: tens, o: ones } }, stones: nums.map((n, s) => ({ slot: s, num: n })), answer: [slot],
       hint1: { key: hund ? 'pz.count3.hint' : 'pz.count.hint', args: { h: hund, t: tens, o: ones, tt: tens * 10 } } };
   }
+  if (type === 'shape-key') {
+    if (grade <= 1) {
+      // 1학년: 물건 구멍(통조림 등) → 같은 입체 열쇠(상자 7·둥근 기둥 8·공 9) — 보기 셋 = 입체 전부
+      const fam = rng.pick(['box', 'cyl', 'ball']), obj = rng.pick(OBJECTS[fam]), ans = CODES[fam][0];
+      const codes = rng.shuffle([CODES.box[0], CODES.cyl[0], CODES.ball[0]]), slot = codes.indexOf(ans);
+      return { type, id: `pz-key-${obj}`, concept: 'g1.solid.same', fact: `key:${obj}`, d: .2 + (fam === 'cyl' ? .15 : fam === 'box' ? .1 : 0), need: 1, hole: { pic: obj, name: OBJ_KO[obj], family: fam, kind: 'solid' },
+        prompt: { key: 'pz.key.solid', args: { o: OBJ_KO[obj] } }, stones: codes.map((n, s) => ({ slot: s, num: n })), answer: [slot],
+        hint1: { key: 'pz.key.solid.hint', args: { o: OBJ_KO[obj], e: wEun(OBJ_KO[obj]), n: SHAPE_KO[fam] } } };
+    }
+    const set = rng.pick(grade <= 2 ? SHAPE_KEY_SETS.g2 : SHAPE_KEY_SETS.g3);
+    const holeCode = rng.pick(CODES[set.hole]), hole = PIC[holeCode];
+    const other = CODES[set.answer].filter(c => c !== holeCode), ans = other.length ? rng.pick(other) : holeCode;   // 같은 묶음의 다른 변형(한 그림으로 외우지 않게)
+    const wrongs = []; for (const f of set.wrongs) { const pool = CODES[f].filter(c => !wrongs.includes(c)); wrongs.push(rng.pick(pool)); }
+    const codes = rng.shuffle([ans, ...wrongs]), slot = codes.indexOf(ans), name = SHAPE_KO[set.answer];
+    return { type, id: `pz-key-${hole}-${ans}`, concept: set.concept, fact: `key:${set.hole}`, d: grade <= 2 ? .25 : .35 + (set.hole === 'square' ? .15 : set.hole === 'rect' ? .1 : 0), need: 1, hole: { pic: hole, name, family: set.answer, kind: 'plane' },
+      prompt: { key: 'pz.key', args: {} }, stones: codes.map((n, s) => ({ slot: s, num: n })), answer: [slot],
+      hint1: { key: set.hint || 'pz.key.hint', args: { n: name, j: wIga(name) } } };
+  }
   throw new Error('퍼즐 종류 없음: ' + type);
 }
 export function verifyPuzzle(p){
@@ -95,5 +127,6 @@ export function verifyPuzzle(p){
   if (p.type === 'rule-stones') { const n = p.stones.map(s => s.num), nx = p.mul ? p.seq[2] * p.mul : p.seq[2] + p.step; return n.filter(x => x === nx).length === 1 && n[p.answer[0]] === nx; }
   if (p.type === 'mushroom-add') { const n = p.stones.map(s => s.num), T = p.op === '×' ? p.mush.a * p.mush.b : p.mush.a + p.mush.b; return T === p.target && n.filter(x => x === T).length === 1 && n[p.answer[0]] === T; }
   if (p.type === 'crystal-count') { const n = p.stones.map(s => s.num), b = p.bundle, T = b.hund * 100 + b.tens * 10 + b.ones; return T === p.target && n.filter(x => x === T).length === 1 && n[p.answer[0]] === T; }
+  if (p.type === 'shape-key') { const fam = c => FAMILY[PIC[c]]; const n = p.stones.map(s => s.num), hit = n.filter(c => fam(c) === p.hole.family); if (p.hole.kind === 'plane' && p.hole.family === 'rect' && n.some(c => fam(c) === 'square')) return false; return hit.length === 1 && fam(n[p.answer[0]]) === p.hole.family && n.every(c => !!PIC[c]); }
   return false;
 }
