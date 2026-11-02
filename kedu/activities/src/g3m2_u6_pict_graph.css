@@ -1,0 +1,74 @@
+/* 무대 — 묻는 글 + 표·그림그래프 + 덩이 줄 (3-2 수학 u6 그림그래프 배달부)
+ * 큰·작은 그림은 크기(u2 > u1 > u0)로만 다르다. 그릴 줄 「?」는 정답 뒤에 그림이 선다. 묻는 줄은 호박 → 초록. */
+#mb { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.4vh,14px); width:100%; max-width:min(94vw,1100px); }
+#mb-tag { font-family:'Jua',sans-serif; font-size:clamp(14px,2vw,22px); color:#fff; background:var(--amber-d);
+          border-radius:999px; padding:4px 14px; }
+#mb-q { font-family:'Jua',sans-serif; font-weight:400; color:var(--deep);
+        background:#fff; border:5px solid var(--amber); border-radius:22px; box-shadow:0 8px 0 #e7c890;
+        padding:clamp(8px,1.8vh,20px) clamp(14px,3vw,34px); transition:border-color .25s;
+        white-space:normal; word-break:keep-all; box-sizing:border-box; min-width:0; }
+#mb-q.word { font-size:clamp(17px,min(2.8vw,4vh),36px); line-height:1.35; text-align:left; max-width:min(90vw,980px); }
+#mb.ok #mb-q { border-color:var(--good); }
+#mb-fig { background:#fffdf6; border:3px solid #ecd9ad; border-radius:16px; padding:clamp(6px,1.2vh,12px) clamp(8px,1.6vw,18px);
+          box-sizing:border-box; max-width:min(92vw,900px); min-width:0; font-family:'Jua',sans-serif; color:var(--deep); }
+#mb-fig .pg-t { font-size:clamp(13px,min(1.8vw,2.6vh),22px); color:var(--amber-d); text-align:center; margin-bottom:4px; word-break:keep-all; }
+#mb-fig .pg { display:flex; flex-direction:column; gap:3px; }
+#mb-fig .pg-row { display:flex; align-items:center; gap:8px; border-radius:10px; padding:2px 6px; min-height:clamp(26px,4.2vh,46px); }
+#mb-fig .pg-row.ask { background:#fff1d0; }
+#mb-fig.ok .pg-row.ask { background:#d9f2df; }
+#mb-fig .pg-n { flex:0 0 auto; min-width:4.6em; font-size:clamp(14px,min(2vw,2.8vh),24px); white-space:nowrap; text-align:right;
+                border-right:3px solid #ecd9ad; padding-right:8px; }
+#mb-fig .pg-i { display:flex; flex-wrap:wrap; align-items:center; gap:1px 2px; min-width:0; line-height:1; }
+#mb-fig i { font-style:normal; display:inline-block; line-height:1; }
+#mb-fig i.u0 { font-size:clamp(13px,min(1.7vw,2.4vh),22px); }
+#mb-fig i.u1 { font-size:clamp(22px,min(3vw,4.2vh),40px); }
+#mb-fig i.u2 { font-size:clamp(30px,min(4vw,5.6vh),54px); }
+#mb-fig .qm { font-size:clamp(20px,min(2.8vw,4vh),36px); color:var(--amber-d); }
+#mb-fig .pg-leg { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:4px 14px; margin-top:4px;
+                  font-size:clamp(12px,min(1.6vw,2.3vh),20px); color:var(--amber-d); }
+#mb-fig .pg-leg span { display:inline-flex; align-items:center; gap:3px; white-space:nowrap; }
+#mb-fig .pg-note { text-align:right; font-size:clamp(12px,min(1.6vw,2.3vh),20px); color:var(--deep); margin-top:2px; }
+#mb-fig .pg2 { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+#mb-fig .pg-box { flex:1 1 220px; min-width:0; border:2px dashed #ecd9ad; border-radius:12px; padding:4px 6px; }
+#mb-fig .pg-lab { font-size:clamp(14px,min(2vw,2.8vh),24px); color:var(--amber-d); }
+#mb-fig .tw { overflow-x:auto; max-width:100%; }
+#mb-fig table.pt { border-collapse:collapse; margin:0 auto; font-size:clamp(14px,min(2vw,2.8vh),26px); }
+#mb-fig table.pt th, #mb-fig table.pt td { border:2px solid #ecd9ad; padding:3px clamp(5px,1vw,12px); text-align:center; white-space:nowrap; font-weight:400; }
+#mb-fig table.pt th { background:#fff6df; }
+#mb-fig table.pt td.ask { background:#fff1d0; color:var(--amber-d); }
+#mb-fig.ok table.pt td.ask { background:#d9f2df; color:var(--deep); }
+#mb-parts { display:none; flex-direction:column; align-items:flex-end; gap:2px;
+            background:#fffdf6; border:3px dashed var(--amber); border-radius:16px;
+            padding:clamp(6px,1.2vh,12px) clamp(12px,2.6vw,26px); max-width:100%; box-sizing:border-box; }
+#mb-parts .prow { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(13px,min(2.2vw,3vh),28px);
+                  color:var(--amber-d); white-space:nowrap; }
+#mb-parts .prow.sum { color:var(--deep); border-top:3px solid var(--amber); padding-top:2px; }
+/* 말 답 = 「㉡이 / 많아요」 — 넓은 화면은 한 줄, 폰 세로는 두 덩이 */
+#answers-solo .abtn .r1, #answers-solo .abtn .r2 { display:inline; }
+@media (max-width:600px) {
+  #answers-solo { gap:6px; }
+  #answers-solo .abtn { padding-left:8px; padding-right:8px; }
+  #answers-solo .abtn .r1, #answers-solo .abtn .r2 { display:block; line-height:1.15; }
+  #mb-q.word { font-size:clamp(14px,4.2vw,19px); }
+  #mb-fig { padding:5px 6px; }
+  #mb-fig .pg-n { min-width:3.6em; font-size:14px; padding-right:5px; }
+  #mb-fig .pg-row { gap:5px; min-height:24px; }
+  #mb-fig i.u0 { font-size:13px; } #mb-fig i.u1 { font-size:21px; } #mb-fig i.u2 { font-size:28px; }
+  #mb-fig table.pt { font-size:13px; }
+  #mb-fig table.pt th, #mb-fig table.pt td { padding:2px 4px; }
+  #mb-parts .prow { font-size:clamp(12px,3.6vw,16px); }
+}
+@media (max-width:430px) {
+  #answers-solo { gap:4px; }
+  #answers-solo .abtn { padding-left:4px; padding-right:4px; font-size:15px; min-width:0; }
+}
+@media (max-height:620px) {
+  #mb { gap:5px; }
+  #mb-fig .pg-row { min-height:22px; }
+  #mb-fig i.u0 { font-size:12px; } #mb-fig i.u1 { font-size:19px; } #mb-fig i.u2 { font-size:25px; }
+  #mb-parts .prow { font-size:clamp(11px,2.4vh,16px); }
+}
+/* 수업 두 팀 겨루기 — 두 팀 줄(4 + 4)이 1280 칠판에서도 한 줄 */
+#answers-class .ansgrp { gap:8px; }
+#answers-class .abtn { padding-left:clamp(8px,1vw,22px); padding-right:clamp(8px,1vw,22px); }
+#answers-class .abtn .r1, #answers-class .abtn .r2 { display:block; line-height:1.15; }
