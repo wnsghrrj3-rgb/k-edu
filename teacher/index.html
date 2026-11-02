@@ -2457,6 +2457,16 @@ async function addSchoolAdmin(){
   await loadSchoolTasks();
   await toggleSchoolOverview();
 }
+// v2.9 완전 삭제 — 올린 사람만. 모은 글·첨부·파일까지 다 지운다(되돌리기 없음)
+async function deleteSchoolTask(id, title){
+  if(!confirm('「' + title + '」을(를) 완전히 지울까요?\n모은 내용과 첨부 파일까지 다 사라지고 되돌릴 수 없어요.')) return;
+  const { data: paths, error } = await db.rpc('delete_school_task', { p_task_id: id });
+  if(error){ showToast('⚠️ 삭제 실패: ' + (error.message || '')); return; }
+  if(Array.isArray(paths) && paths.length){ try { await db.storage.from('school').remove(paths); } catch(e){} }
+  delete staskCache[id];
+  showToast('🗑 지웠어요.');
+  await loadSchoolTasks();
+}
 async function loadSchoolTaskArchive(){
   const wrap = document.getElementById('schooltask-archive-wrap');
   if(!wrap) return;
@@ -2477,6 +2487,7 @@ async function loadSchoolTaskArchive(){
         <b style="flex:1;min-width:0">${escHtml(t.title)}</b>
         <span style="color:var(--sub)">확인 ${t.done_count} / ${t.teacher_count}명${t.targeted ? ' · 👤 ' + escHtml(t.to_names||'') : ''} · ${escHtml(String(t.closed_at||'').slice(0,10))}</span>
         ${gather ? `<a href="#" style="color:var(--primary);font-weight:700" onclick="toggleStaskTable('${t.id}');return false;">모은 글 보기 ▾</a>` : ''}
+        <a href="#" style="color:#B91C1C" onclick="deleteSchoolTask('${t.id}', ${JSON.stringify(t.title||'')});return false;">🗑 삭제</a>
       </div>
       ${gather ? `<div id="stask-table-${t.id}" hidden style="margin-top:8px;font-size:12px"></div>` : ''}
     </div>`; }).join('');
