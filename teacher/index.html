@@ -2077,24 +2077,26 @@ async function staskMergeHwpx(zip, n){
     }
     if(parts.some(p => p.header !== parts[0].header)) return null;            // 양식이 다르면 합치지 않는다
     const base = parts[0].inner, out = new staskZipLib();
-    out.file('mimetype', await base.file('mimetype').async('uint8array'), { compression: 'STORE' });
+    const F = (nm, data) => out.file(nm, data, { createFolders: false });   // 폴더 줄 없이 — 원본 hwpx 와 같은 모양
+    F('mimetype', await base.file('mimetype').async('uint8array'));
     for(const nm of Object.keys(base.files)){
       if(nm === 'mimetype' || base.files[nm].dir) continue;
-      out.file(nm, await base.file(nm).async('uint8array'));
+      F(nm, await base.file(nm).async('uint8array'));
     }
     let hpf = await base.file('Contents/content.hpf').async('string');
     let items = '', refs = '';
     for(let i = 1; i < parts.length; i++){
-      out.file('Contents/section' + i + '.xml', parts[i].sec);
+      F('Contents/section' + i + '.xml', parts[i].sec);
       items += '<opf:item id="section' + i + '" href="Contents/section' + i + '.xml" media-type="application/xml"/>';
       refs += '<opf:itemref idref="section' + i + '" linear="yes"/>';
     }
     hpf = hpf.replace('<opf:item id="section0" href="Contents/section0.xml" media-type="application/xml"/>', '<opf:item id="section0" href="Contents/section0.xml" media-type="application/xml"/>' + items)
              .replace('<opf:itemref idref="section0" linear="yes"/>', '<opf:itemref idref="section0" linear="yes"/>' + refs);
     if(!hpf.includes('section' + (parts.length - 1) + '.xml') && parts.length > 1) return null;
-    out.file('Contents/content.hpf', hpf);
-    out.file('Contents/header.xml', parts[0].header.replace(/secCnt="\d+"/, 'secCnt="' + parts.length + '"'));
-    return await out.generateAsync({ type: 'blob', mimeType: 'application/hwp+zip' });
+    F('Contents/content.hpf', hpf);
+    F('Contents/header.xml', parts[0].header.replace(/secCnt="\d+"/, 'secCnt="' + parts.length + '"'));
+    out.file('mimetype').options.compression = 'STORE';
+    return await out.generateAsync({ type: 'blob', mimeType: 'application/hwp+zip', compression: 'DEFLATE' });
   } catch(e){ return null; }
 }
 function staskTableData(id){
