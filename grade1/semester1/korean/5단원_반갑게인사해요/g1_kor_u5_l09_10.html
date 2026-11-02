@@ -11,8 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --c-main:#42A5F5; --c-deep:#1976D2; --c-soft:#E3F2FD; --c-sub:#64B5F6;
-  --c-ink:#1565C0; --c-bg:#F0F7FF; --c-emph:#DC2626; --c-ok:#2E7D32;
+  --c-main:#30A636; --c-deep:#227726; --c-soft:#E9FBEA; --c-sub:#8EC291;
+  --c-ink:#194D1C; --c-bg:#F8FAFC; --c-emph:#DC2626; --c-ok:#2E7D32;
   --c-strong:#FB8C00; --c-strong-soft:#FFF3E0;
   --fs-title:clamp(20px,5.2cqw,32px); --fs-heading:clamp(17px,4.2cqw,24px);
   --fs-body:clamp(15px,3.6cqw,21px); --fs-caption:clamp(12px,2.7cqw,16px); --fs-label:clamp(11px,2.3cqw,14px);
@@ -102,13 +102,17 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .ka-nav{background:#F4F4F8; color:#2A2A35; border:none; padding:clamp(8px,2.2cqw,12px) 6px; font-size:var(--fs-caption); border-radius:clamp(10px,2.5cqw,14px); cursor:pointer; font-family:inherit;}
 .ka-nav-next{background:var(--c-main); color:#fff;}
 .ka-nav:disabled{opacity:.4; cursor:default;}
+/* 문장 띠 + 빈칸 표시 (정적 시각 표현, JS 무관) */
+.sentence{display:inline-flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:clamp(2px,.6cqw,5px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(12px,2.6cqw,18px); padding:clamp(10px,2.6cqw,16px) clamp(14px,3.2cqw,22px); font-size:clamp(20px,4.6cqw,32px); color:var(--c-deep); box-shadow:0 4px 0 var(--c-soft); max-width:600px; line-height:1.7; margin:clamp(4px,1cqw,8px) auto;}
+.punct{color:var(--c-emph); font-weight:400;}
+.vmark{display:inline-block; color:var(--c-strong); font-family:'Nunito',sans-serif; font-weight:800; font-size:1.05em; transform:translateY(-.05em); margin:0 .05em;}
+.wmark{display:inline-block; color:var(--c-deep); font-family:'Nunito',sans-serif; font-weight:800; font-size:1.05em; margin:0 .05em;}
+/* 문장 부호 이름표 카드 (모양 + 이름) */
+.punct-card{display:inline-flex; flex-direction:column; align-items:center; gap:clamp(3px,.8cqw,6px); padding:clamp(10px,2.6cqw,16px) clamp(14px,3.2cqw,22px); border-radius:clamp(14px,3cqw,20px); border:clamp(3px,.7cqw,4px) solid var(--c-soft); background:#fff; box-shadow:0 4px 0 var(--c-soft); min-width:clamp(72px,16cqw,108px);}
+.punct-card .pc-mark{font-size:clamp(34px,7.5cqw,52px); color:var(--c-emph); line-height:1;}
+.punct-card .pc-name{font-size:clamp(15px,3.4cqw,21px); color:var(--c-deep);}
+.punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
-/* 세로 모바일(폭 600px 이하·세로): 5/4 카드가 화면 높이의 1/3만 쓰고 콘텐츠가 0.33까지 축소되던 것을 세로로 꽉 채운다. 가로·데스크톱은 그대로 */
-@media (max-width:600px) and (orientation:portrait){
-  html,body{height:100%;}
-  body{height:100dvh; min-height:0;}
-  .ka{aspect-ratio:auto; width:100%; height:100%; max-height:none;}
-}
 </style>
   <script src="/kedu_gate.js"></script>
 <script src="/kedu_boxbar.js"></script>
@@ -137,117 +141,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 9~10차시(여러 가지 상황에서 인사하기 — 실천) 13슬:
-   ① 만나기 2 → ② 연습 3 → ③ 심장 5 → ④ 정리 3 =====
-   학습 목표: 일상생활의 여러 상황에 알맞은 인사말을 빠르게 떠올려 실천한다.
-   ★ 통합 트랙(③④). 로깅 O 7슬. 인사 놀이=발화 유도(로깅X·완주✓).
-   ★ 저작권: 지도서 인사 놀이 의도만 차용. 이모지·자체 낱말. */
+/* ===== 9~10차시(실천 — 여러 가지 상황에서 인사하기) 『국어』 270~271쪽 13슬 — v2 교과서 기준 재구성 (2026-11-03)
+   학습 목표: 배운 내용을 실천할 수 있다.
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·스스로 확인·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 판단(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      인사말(안녕?·안녕하세요?·잘 먹겠습니다·다녀오겠습니다·축하해·고마워·다녀왔습니다·초대해 줘서 고마워·조심히 오렴·고맙습니다·정말 미안해·생신 축하드립니다), 299쪽 잘못된 점, 304~305쪽 활동지, 「사슴과 뿔」 듣기 자료 흐름, 연음 낱말(걸음·사슴은·뿔이·깊은·악어·나들이·목요일·놀이터·웃으며·걸으며·날아서·국어·걸어서), 정리·기초 다지기·글씨 쓰기는 교육부 집필이라 그대로. 「모두 모두 안녕!」(윤여림)·「저녁 인사」(최명란)·노래 「안녕」·「인사 노래」(박화목)는 본문 미인용(교과서 쪽 펴기). 지도서 가르침: 인사말 + 자세·표정·마음(비언어) · 상대에 따라 다른 인사말 · 연음은 규칙보다 반복해 읽기, 글자와 소리가 같은 낱말과 견주기(여우) · 저요! 놀이는 말차례 지키기 · 특정 학생 소외 ✗. */
 const slides=[
-  {tag:'① 배운 걸 써먹어요', t:'이제 인사말을 놀이로 실천해요',
-   html:`<div class="build">
-      <div class="syl">🗣️</div><div class="op">→</div><div class="syl">🙋</div><div class="op">→</div><div class="syl">😊</div>
-    </div>
-    <div class="ka-bub">지금까지 배운 인사말을 <b class="emph">상황에 맞게 빠르게</b> 말해 보는 놀이를 해요. 그림 속 상황을 보고 어떤 인사말을 할 수 있는지 떠올려 골라 봐요!</div>`},
+  {tag:'① 활동 정하기', t:'이런 활동 어때요 — 상황에 알맞은 인사말 하기',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>① 모둠에서 한 명이 인사하는 상황 말하기</div><div class="read-line"><span class="rl-num">2</span>② 「저요!」라고 외치고 상황에 알맞은 인사말 하기</div><div class="read-line"><span class="rl-num">3</span>③ 인사말을 한 친구가 다른 상황을 말하며 놀이 계속하기</div></div><div class="fb" id="readFb">🔊 『국어』 270쪽 놀이 차례를 읽어 봐요.</div>`},
 
-  {tag:'① 놀이 방법', t:'이렇게 놀이해요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">1️⃣</span>한 친구가 <b>인사하는 상황</b>을 말해요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">2️⃣</span>"저요!" 외치고 <b>알맞은 인사말</b>을 해요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">3️⃣</span>맞힌 친구가 <b>다음 상황</b>을 말하며 이어 가요.</div>
-    </div>`},
+  {tag:'② 놀이 하기', t:'「이웃집 아주머니를 만났을 때!」 — 알맞은 인사말은?', log:true, okMsg:'맞아요! 「저요! 안녕하세요?」 🙋',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">안녕하세요?</div></div><div class="wcard" data-ok="0"><div class="wc-word">안녕?</div></div><div class="wcard" data-ok="0"><div class="wc-word">잘 먹겠습니다.</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 상황에 맞는 인사말', t:'이웃집 어른을 만났어요', log:true, okMsg:'맞아요! 공손하게 인사해요. 🙇',
-   html:`<div class="scene"><div class="scene-pic">🧓🧒</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">🙇</div><div class="wc-word">안녕하세요?</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">👋</div><div class="wc-word">잘 가.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🍚</div><div class="wc-word">잘 먹겠습니다.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 놀이 하기', t:'「졸업을 축하할 때!」', log:true, okMsg:'맞아요! 기쁜 마음으로 축하해요. 🎓',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">미안해. 조심할게.</div></div><div class="wcard" data-ok="0"><div class="wc-word">다녀오겠습니다.</div></div><div class="wcard" data-ok="1"><div class="wc-word">졸업을 축하해.</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 상황에 맞는 인사말', t:'친구가 다른 학교로 전학을 가요', log:true, okMsg:'맞아요! 따뜻하게 작별 인사를 해요. 💛',
-   html:`<div class="scene"><div class="scene-pic">🧳🧒</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-pic">🎉</div><div class="wc-word">축하해.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-pic">💛</div><div class="wc-word">잘 가, 가서도 잘 지내.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">😟</div><div class="wc-word">미안해.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 놀이 하기', t:'「아픈 친구를 위로해 줄 때!」', log:true, okMsg:'맞아요! 걱정하고 위로하는 말을 해요. 🤗',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">축하해!</div></div><div class="wcard" data-ok="0"><div class="wc-word">잘 가.</div></div><div class="wcard" data-ok="1"><div class="wc-word">많이 아프지? 빨리 나아서 함께 놀자.</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 상황에 맞는 인사말', t:'친구가 상을 받았어요', log:true, okMsg:'맞아요! 기쁜 마음으로 축하해요. 🏆',
-   html:`<div class="scene"><div class="scene-pic">🏆🧒</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-pic">😟</div><div class="wc-word">미안해.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🙇</div><div class="wc-word">안녕하세요?</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-pic">🎉</div><div class="wc-word">축하해.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 305쪽 활동지', t:'상황과 인사말을 이어요', log:true, matchMsg:'잘 이었어요! 여러 상황마다 알맞은 인사말이 있어요. 📞',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">상황</div><div class="match-card" data-k="a" data-pair="A">전화를 끊을 때</div><div class="match-card" data-k="b" data-pair="B">외출할 때</div><div class="match-card" data-k="c" data-pair="C">친구와 헤어질 때</div></div><div class="match-col"><div class="match-col-h">인사말</div><div class="match-card" data-k="B" data-pair="b">다녀오겠습니다.</div><div class="match-card" data-k="C" data-pair="c">안녕, 내일 보자.</div><div class="match-card" data-k="A" data-pair="a">이만 전화를 끊을게.</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 상황에 맞는 인사말', t:'친구에게 실수를 했어요', log:true, okMsg:'맞아요! 진심을 담아 사과해요. 🙏',
-   html:`<div class="scene"><div class="scene-pic">😣🧒</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">🙏</div><div class="wc-word">미안해. 조심할게.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🎉</div><div class="wc-word">축하해.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">😊</div><div class="wc-word">고마워.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 놀이 지킬 점', t:'「저요!」 놀이에서 지킬 점은?', log:true, okMsg:'맞아요! 차례를 지키고 친구를 존중해요. 🤝',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">먼저 맞히려고 친구 말을 끊어요</div></div><div class="wcard" data-ok="0"><div class="wc-word">틀린 친구를 놀려요</div></div><div class="wcard" data-ok="1"><div class="wc-word">말차례를 지키며 이야기해요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 상황에 맞는 인사말', t:'친구에게서 도움을 받았어요', log:true, okMsg:'맞아요! 고마운 마음을 전해요. 😊',
-   html:`<div class="scene"><div class="scene-pic">🤝🧒</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-pic">🙏</div><div class="wc-word">미안해.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-pic">😊</div><div class="wc-word">고마워.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">👋</div><div class="wc-word">잘 가.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 우리 모둠 놀이', t:'상황을 말하고 인사말을 외쳐요',
+   html:`<div class="stage-box">🙋 모둠에서 한 명이 상황을 말하면, 아는 친구가 「저요!」 하고 인사말을 말해요. 맞힌 친구가 다음 상황을 말해요.<br><button class="stage-do" id="stageDo" data-fb="즐거웠어요! 돌아가며 모두 상황을 말해 봐요.">🙋 했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 상황에 맞는 인사말', t:'아픈 친구를 위로해 주고 싶어요', log:true, okMsg:'맞아요! 따뜻하게 위로하는 인사예요. 💗',
-   html:`<div class="scene"><div class="scene-pic">🤒🧒</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-pic">🎉</div><div class="wc-word">축하해.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">👋</div><div class="wc-word">잘 가.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-pic">💗</div><div class="wc-word">빨리 나아서 함께 놀자.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 예시 1 「인사 노래」 놀이', t:'놀이 방법 — 교사가 상황을 말하면?', log:true, okMsg:'맞아요! 상황을 듣고 멈춰 서서 바르게 인사해요. 🙇',
+   html:`<div class="ka-bub">지도서 316쪽 — 「인사 노래」(박화목)를 부르며 안쪽 원과 바깥쪽 원이 반대로 돌아요. 🎶</div><div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">멈춰 서서 바깥쪽 원 친구가 안쪽 원 친구에게 바르게 인사해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">계속 돌면서 노래만 불러요</div></div><div class="wcard" data-ok="0"><div class="wc-word">자리에 앉아요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 상황과 인사말 잇기', t:'상황에 맞는 인사말을 이어 봐요', log:true,
-   matchMsg:'상황과 인사말을 모두 잘 이었어요! 🎉',
-   hint:'힌트: 왼쪽 상황을 누른 뒤, 그때 할 인사말을 짝으로 눌러요.',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">이런 상황에</div>
-        <div class="match-card" data-k="a" data-pair="A"><span class="mc-ic">🎓</span>졸업을 축하할 때</div>
-        <div class="match-card" data-k="b" data-pair="B"><span class="mc-ic">📞</span>전화를 끊을 때</div>
-        <div class="match-card" data-k="c" data-pair="C"><span class="mc-ic">🚪</span>외출할 때</div>
-        <div class="match-card" data-k="d" data-pair="D"><span class="mc-ic">👋</span>친구와 헤어질 때</div></div>
-      <div class="match-col"><div class="match-col-h">이렇게 인사해요</div>
-        <div class="match-card" data-k="C" data-pair="c">다녀오겠습니다.</div>
-        <div class="match-card" data-k="A" data-pair="a">졸업을 축하해.</div>
-        <div class="match-card" data-k="D" data-pair="d">안녕, 내일 보자.</div>
-        <div class="match-card" data-k="B" data-pair="b">이만 전화를 끊을게.</div></div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'⑤ 예시 2 주사위 놀이', t:'주사위 낱말로 짧은 문장을 말해요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>밥을 · 아침에 · 교실에서</div><div class="read-line"><span class="rl-num">2</span>저녁에 · 웃으며 · 가족은</div><div class="read-line"><span class="rl-num">3</span>예) 밥을 먹기 전에 부모님께 인사해.</div></div><div class="fb" id="readFb">🎲 지도서 317쪽 — 나온 낱말로 인사말을 넣어 문장을 말해 봐요.</div>`},
 
-  {tag:'④ 인사 놀이', t:'친구와 함께 인사 놀이를 해 봐요',
-   html:`<div class="stage-box">
-      🎮 한 친구가 상황을 말하면 <b>"저요!"</b> 외치고 알맞은 인사말을 해요.<br>
-      <small>(예: "이웃집 아주머니를 만났을 때!" → "안녕하세요?")</small><br>
-      차례를 지키며, 끼어들지 않고 즐겁게 해 봐요!
-      <br><button class="stage-do" id="stageDo" data-fb="상황에 맞는 인사말을 빠르게 잘 외쳤어요! 👏">🎤 인사 놀이 해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑤ 주사위 놀이', t:'「웃으며」를 바르게 읽은 것은?', log:true, okMsg:'맞아요! [우스며]예요. 웃으며 인사해요. 😊',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">[웃스며]</div></div><div class="wcard" data-ok="1"><div class="wc-word">[우스며]</div></div><div class="wcard" data-ok="0"><div class="wc-word">[웃으며]</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 생활에서 실천', t:'오늘은 이렇게 인사해 볼까요?',
-   html:`<div class="stage-box">
-      🌟 오늘 만나는 친구나 가족에게 <b>바른 자세와 밝은 표정</b>으로 알맞은 인사말을 건네 봐요.<br>
-      누구에게 어떤 인사를 할지 마음속으로 정해 말해 봐요.
-      <br><button class="stage-do" id="stageDo" data-fb="오늘 인사 실천을 다짐했어요! 멋져요. 👏">💪 실천할 거예요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑥ 정리하기', t:'놀이를 하며 느낀 점을 나누어요',
+   html:`<div class="selfcheck"><div class="sc-row"><span class="sc-box">✓</span>여러 상황에 알맞은 인사말을 말했어요.</div><div class="sc-row"><span class="sc-box">✓</span>친구가 말할 때 끼어들지 않았어요.</div><div class="sc-row"><span class="sc-box">✓</span>함께한 친구를 칭찬했어요.</div></div><div class="fb">⭐ 성실히 참여한 친구를 서로 칭찬해요.</div>`},
 
-  {tag:'④ 정리', t:'인사 놀이를 하니 어땠나요?',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">⚡</span>상황을 듣고 <b>알맞은 인사말</b>을 빠르게 떠올렸어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🤝</span>차례를 지키며 친구와 <b>주고받았어요</b>.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🏠</span>배운 인사말을 <b>생활 속에서</b> 써 봐요.</div>
-    </div>`},
+  {tag:'⑥ 생활 속 실천', t:'오늘 만날 사람에게 할 인사말을 정해요',
+   html:`<div class="stage-box">🗓️ 오늘 집에 가서 만날 사람 한 명과 그때 할 인사말을 정해 짝에게 말해 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 생활에서 꼭 실천해 봐요.">🗣️ 정했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 했어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🎮</span>여러 상황에 맞는 인사말을 <b>놀이로 실천</b>했어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">💬</span>친구와 즐겁게 인사를 <b>주고받았어요</b>.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🏁</span>다음 시간에는 단원에서 배운 것을 <b>모아 마무리</b>해요.</div>
-    </div>`},
+  {tag:'⑦ 마무리', t:'여러 가지 상황에서 인사했어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🙋</span>「저요!」 놀이로 상황에 알맞은 인사말을 말했어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🎶</span>노래와 주사위로 즐겁게 인사를 익혔어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🤝</span>말차례를 지키며 함께 놀았어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
