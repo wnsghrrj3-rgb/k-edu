@@ -2,6 +2,7 @@
 // 좌표는 Three 그대로(배경이라 좌우 대칭 — WX 필요 없음). InstancedMesh 로 그리기 호출 적게
 import * as THREE from 'three';
 import { toon, textSprite } from './actors.js';
+import { buildTemple, templeGroundTex, templeArenaTex, templeRoadTex } from './temple.js';   // v2.13 월드 2 신전 지형
 function rng(seed){ let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 function groundTex(){ const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
   g.fillStyle = '#5f9a3e'; g.fillRect(0, 0, 512, 512); const r = rng(7);
@@ -78,6 +79,9 @@ export function buildForest(scene, { arenaZ = 9 } = {}){
   // 수정 점광원 6(LOW 2) — 길에선 벽 수정 무리 자리와 함께 흐르고, 전투장에선 둘레 무리 자리에
   const caveLights = []; for (let i = 0; i < 6; i++) { const l = new THREE.PointLight(0x5ef2c8, 0, 9, 1.6); l.position.y = 1.2; l.visible = false; root.add(l); caveLights.push(l); }
   const lightRail = i => cs[(i * 3 % 18) * 10], lightArena = i => as[(i * 2 % 12) * 10] || as[0];
+  // ── v2.13 신전 지형(09 문서 5절 · 16 문서 8절 ⑤): 기둥·기하 바닥·다면체·고리·빛줄기 — setWorld('temple') 이면 숲 나무·덤불·먼 산 대신 이것. 바닥·길·원판은 지도(map)만 바꿔 낀다
+  const temple = buildTemple(root, { arenaZ, RL, wrapZ }); const forestMaps = [ground.material.map, arena.material.map, roadTex], templeMaps = [templeGroundTex(), templeArenaTex(), templeRoadTex()]; let templeOn = false;
+  function swapMaps(on){ const M = on ? templeMaps : forestMaps; ground.material.map = M[0]; arena.material.map = M[1]; for (const rd of roads) rd.material.map = M[2]; ground.material.needsUpdate = arena.material.needsUpdate = true; for (const rd of roads) rd.material.needsUpdate = true; }
   const arenaTrees = meshes.slice(0, 5), mounts = root.children.filter(c => c.isMesh && c.material && c.material.isMeshBasicMaterial && c.geometry.type === 'ConeGeometry');
   const groundCol = ground.material.color.clone(), roadCol = roads[0].material.color.clone(), groundCol0 = groundCol.clone(), roadCol0 = roadCol.clone(); let dark = false, lightsN = 6, world = 'forest';
   function layCave(dist){ for (const m of caveRailM) { const { list, f } = m.userData; list.forEach((s, i) => { dummy.position.set(s[0], 0, wrapZ(s[1], dist)); dummy.rotation.set(0, s[3] * 9, 0); dummy.scale.setScalar(s[2]); f && f(dummy, s); dummy.updateMatrix(); m.setMatrixAt(i, dummy.matrix); }); m.instanceMatrix.needsUpdate = true; } }
@@ -95,20 +99,21 @@ export function buildForest(scene, { arenaZ = 9 } = {}){
   return {
     /** mode 'arena'|'rail' + rail 스냅샷(world.rail) — 길이면 바닥·나무를 dist 로 흘린다 */
     setMode(m, r){ if (m !== mode) { mode = m; rail.visible = m === 'rail'; for (const o of arenaOnly) o.visible = m !== 'rail'; lastDist = -1; this.setDark(dark, true); }
-      if (m === 'rail' && r && r.dist !== lastDist) { layRail(r.dist); if (dark) { layCave(r.dist); placeLights(r.dist); } lastDist = r.dist; } },
+      if (m === 'rail' && r && r.dist !== lastDist) { layRail(r.dist); if (templeOn) temple.layRail(r.dist); if (dark) { layCave(r.dist); placeLights(r.dist); } lastDist = r.dist; } },
     /** v1.7 동굴 켜기/끄기 — 나무·덤불·먼 산 숨김, 바닥 남보라, 바위 기둥·수정 무리·점광원. 조명·안개는 index.js 가 맞춤 */
-    /** v2.9 월드 테마(world.id) — temple = 바닥 대리석 흰·길 금빛(09 문서 5절 색). 나무·덤불은 그대로(기능 검증 수준, 신전 기둥은 2차). setDark 가 바닥색을 다시 쓰므로 여기서 기준색을 바꾼다 */
-    setWorld(id){ if (id === world) return; world = id; if (id === 'temple') { groundCol.set(0xe6e0d2); roadCol.set(0xd9c27a); } else { groundCol.copy(groundCol0); roadCol.copy(roadCol0); } this.setDark(dark, true); },
+    /** v2.9 월드 테마(world.id) → v2.13: temple = 대리석·금선 기하 바닥 지도 + 신전 지형(temple.js) 켜고 숲 장식은 숨김. setDark 가 바닥색을 다시 쓰므로 여기서 기준색(거의 흰 — 색은 지도가 냄)을 바꾼다 */
+    setWorld(id){ if (id === world) return; world = id; templeOn = id === 'temple'; swapMaps(templeOn); if (templeOn) { groundCol.set(0xfbf8f1); roadCol.set(0xfff6dc); temple.layRail(Math.max(0, lastDist)); } else { groundCol.copy(groundCol0); roadCol.copy(roadCol0); } this.setDark(dark, true); },
     setDark(on, force){ if (on === dark && !force) return; dark = !!on;
-      cave.visible = dark && mode === 'rail'; caveArena.visible = dark && mode !== 'rail'; for (const m of rMeshes) m.visible = !dark; for (const m of arenaTrees) m.visible = !dark && mode !== 'rail'; for (const m of mounts) m.visible = !dark;
+      cave.visible = dark && mode === 'rail'; caveArena.visible = dark && mode !== 'rail'; const woods = !dark && !templeOn; for (const m of rMeshes) m.visible = woods; for (const m of arenaTrees) m.visible = woods && mode !== 'rail'; for (const m of mounts) m.visible = woods;
+      temple.arena.visible = templeOn && !dark && mode !== 'rail'; temple.rail.visible = templeOn && !dark && mode === 'rail'; flies.material.color.set(templeOn ? 0xfff0c0 : 0xfff6b0);
       ground.material.color.copy(groundCol).multiplyScalar(dark ? .28 : 1); if (dark) ground.material.color.lerp(new THREE.Color(0x2b2350), .35); for (const rd of roads) { rd.material.color.copy(roadCol).multiplyScalar(dark ? .45 : 1); } arena.material.opacity = dark ? .55 : 1;
       if (dark) { layCave(Math.max(0, lastDist)); } placeLights(Math.max(0, lastDist)); },
     /** v1.8 고대 나무 심장 켜기/끄기(world.heart) — 보스방이면 z 22, 길이면 z 40 */
     setHeart(on){ on = !!on; if (on && !heart) heart = buildHeart(); if (!heart) return; heartOn = on; heart.visible = on; if (on) heart.position.set(0, 0, mode === 'rail' ? 40 : 22); },
     /** v1.8 정답 때 숫자 무늬가 같이 빛남(09 문서 4행) */
     pulseDigits(){ heartPulse = 1; },
-    update(dt){ t += dt; if (heartOn && heart) { heartPulse = Math.max(0, heartPulse - dt * .8); const k = .55 + .45 * heartPulse + Math.sin(t * 2) * .08; for (const d of digits) d.material.opacity = Math.min(1, k); const u = heart.userData; u.core.scale.setScalar(1 + Math.sin(t * 3) * .08 + heartPulse * .3); u.coreL.intensity = 1.6 + heartPulse * 3; u.can.rotation.y = t * .03; heart.position.z = mode === 'rail' ? 40 : 22; } for (let i = 0; i < fireN; i++) { const s = seeds[i]; fp[i * 3] = s[0] + Math.sin(t * .4 + s[3]) * .8; fp[i * 3 + 1] = s[1] + Math.sin(t * .9 + s[3] * 2) * .3; fp[i * 3 + 2] = s[2] + Math.cos(t * .3 + s[3]) * .8; } fg.attributes.position.needsUpdate = true; },
-    setQuality(q){ lightsN = q === 'low' ? 2 : 6; placeLights(Math.max(0, lastDist)); flies.visible = q !== 'low'; meshes.forEach(m => { m.castShadow = q === 'high' || (q === 'medium' && m.count < 140); }); rMeshes.forEach(m => { m.castShadow = q !== 'low'; }); },
+    update(dt){ t += dt; temple.update(dt); if (heartOn && heart) { heartPulse = Math.max(0, heartPulse - dt * .8); const k = .55 + .45 * heartPulse + Math.sin(t * 2) * .08; for (const d of digits) d.material.opacity = Math.min(1, k); const u = heart.userData; u.core.scale.setScalar(1 + Math.sin(t * 3) * .08 + heartPulse * .3); u.coreL.intensity = 1.6 + heartPulse * 3; u.can.rotation.y = t * .03; heart.position.z = mode === 'rail' ? 40 : 22; } for (let i = 0; i < fireN; i++) { const s = seeds[i]; fp[i * 3] = s[0] + Math.sin(t * .4 + s[3]) * .8; fp[i * 3 + 1] = s[1] + Math.sin(t * .9 + s[3] * 2) * .3; fp[i * 3 + 2] = s[2] + Math.cos(t * .3 + s[3]) * .8; } fg.attributes.position.needsUpdate = true; },
+    setQuality(q){ lightsN = q === 'low' ? 2 : 6; temple.setQuality(q); placeLights(Math.max(0, lastDist)); flies.visible = q !== 'low'; meshes.forEach(m => { m.castShadow = q === 'high' || (q === 'medium' && m.count < 140); }); rMeshes.forEach(m => { m.castShadow = q !== 'low'; }); },
     dispose(){ scene.remove(root); },
   };
 }
