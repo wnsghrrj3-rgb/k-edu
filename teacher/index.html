@@ -1996,7 +1996,8 @@ async function submitStaskFile(id, input){
   showToast('📤 올리는 중… ' + f.name);
   const ext = (f.name.match(/\.([A-Za-z0-9]{1,6})$/) || ['',''])[1].toLowerCase();
   const path = sid + '/' + id + '/' + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)) + (ext ? '.' + ext : '');
-  const up = await db.storage.from('school').upload(path, f, { contentType: f.type || 'application/octet-stream', upsert: false });
+  // 파일 종류 이름은 컴퓨터마다 달라서(.hwpx 가 haansofthwpx 로 오기도) 보지 않고 받는다 — 내려받을 땐 원래 이름으로 저장된다
+  const up = await db.storage.from('school').upload(path, f, { contentType: 'application/octet-stream', upsert: false });
   if(up.error){ showToast('⚠️ 올리기 실패 — ' + (up.error.message || '')); return; }
   const { data: old, error } = await db.rpc('submit_task_file', { p_task_id: id, p_path: path, p_name: f.name, p_size: f.size });
   if(error){
