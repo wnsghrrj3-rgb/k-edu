@@ -29,7 +29,7 @@ const T = data.text, ST = data.stages['temple-2-1'];
 }
 
 // ── 2. 변환표·스테이지
-{ ok('temple-2-1: world temple · requires 1-보스 · 1학년 개념 = 입체 3키 · 2학년 = 평면·쌓기나무 5키 · 3학년(줄 없음) = 1학년 값', ST.world === 'temple' && ST.requires === 'forest-1-boss' && conceptsFor(data, ST, 1).join() === 'g1.solid.same,g1.solid.prop,g1.solid.count' && conceptsFor(data, ST, 2).join() === 'g2.plane.pick,g2.plane.not,g2.plane.count,g2.plane.bySides,g2.cubes.count' && conceptsFor(data, ST, 3).join() === conceptsFor(data, ST, 1).join());
+{ ok('temple-2-1: world temple · requires 1-보스 · 1학년 개념 = 입체 3키 · 2학년 = 평면·쌓기나무 5키 · 3학년 = 평면도형·원 7키(v2.10, 상세는 p14)', ST.world === 'temple' && ST.requires === 'forest-1-boss' && conceptsFor(data, ST, 1).join() === 'g1.solid.same,g1.solid.prop,g1.solid.count' && conceptsFor(data, ST, 2).join() === 'g2.plane.pick,g2.plane.not,g2.plane.count,g2.plane.bySides,g2.cubes.count' && conceptsFor(data, ST, 3).length === 7 && conceptsFor(data, ST, 3)[0] === 'g3.line.find');
   ok('방패병 없음(방패 식은 수와 연산) · 퍼즐 없음(도형 퍼즐은 2차) · 보스 없음', !JSON.stringify(ST.zones).includes('shield-goblin') && ST.zones.every(z => !z.puzzle) && ST.zones.every(z => z.type !== 'boss'));
   const g1 = createGame({ data, seed: 3, grade: 1, stageId: 'temple-2-1' }), g2 = createGame({ data, seed: 3, grade: 2, stageId: 'temple-2-1' });
   ok('엔진: 1학년 concepts 3(g1-1-u2) · 2학년 5(g2-1-u2) · empty 아님 · world.id temple', !g1.qe.empty && g1.qe.concepts.length === 3 && [...g1.qe.units].join() === 'g1-1-u2' && !g2.qe.empty && g2.qe.concepts.length === 5 && [...g2.qe.units].join() === 'g2-1-u2' && g1.snapshot().world.id === 'temple');

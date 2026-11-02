@@ -72,7 +72,7 @@ export interface Snapshot {
     readP: number;                                    // 읽기 보호 0~1 (1 전에는 고를 수 없음 — 흐리게)
     picked: number | null; reveal: number | null;     // reveal = 보여 줄 정답 자리
     explain: string | null;                           // 오답 해설 문구 키
-    /** v2.9(월드 2 도형): pic = 문제 그림 id(없으면 null — 스킨이 문구 위에 그림) · choices[].pic = 보기 그림 id(있으면 구슬에 숫자 대신 그림, num 은 그림 코드라 안 보임). id 목록은 sim/learn/pics.js(tri·tri2·quad·quad2·circ·circ2·box·cyl·ball) + 문제 그림 물건(book·gift·brick·can·drum·battery·orange·ball2·marble)·'row:a,b,c'(물건 줄)·'cubes:2,1,3'(쌓기나무 기둥 높이) */
+    /** v2.9(월드 2 도형): pic = 문제 그림 id(없으면 null — 스킨이 문구 위에 그림) · choices[].pic = 보기 그림 id(있으면 구슬에 숫자 대신 그림, num 은 그림 코드라 안 보임). id 목록은 sim/learn/pics.js(tri·tri2·quad·quad2·circ·circ2·box·cyl·ball) + 문제 그림 물건(book·gift·brick·can·drum·battery·orange·ball2·marble)·'row:a,b,c'(물건 줄)·'cubes:2,1,3'(쌓기나무 기둥 높이). v2.10 3학년 줄 id: seg/ray/line(+2)·rangle(2)·angle(2)·rtri(2)·rect(2)·square(2)·quad3·cdia(2)·cchord·crad(2)·cline */
     pic: string | null;
     choices: Array<{ id: string; num: number; pic: string | null; targetId: string }>;
     /** v1.2 힌트(07 문서 8절): 1단계 길잡이 문구 · 2단계 구슬 그림(a·b·연산 — 더하기는 a 뒤에 b 이어서, 빼기는 뒤 b개를 흐리게) */

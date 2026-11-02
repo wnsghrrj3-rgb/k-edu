@@ -123,3 +123,6 @@ v1.5 추가(P3 길 구간): `rail:start`(idx·len·seconds·obstacles) / `rail:e
 - boot `?stage=temple-2-1`(forceStage)·`?grade=2&stage=temple-2-1`. 키보드 모드 S04: `[` `]` 세계 · 화살표 끝 칸 넘김.
 - v2.9.1(검증만): smoke-proto 시드 65 「흩어진 탄 0」 원인 = 44 일반 생성기 뒤 share 문제가 봇의 홀수 번째(항상 정답)에만 와 흩어짐 경로가 안 돌던 것 → 시드 67 과 같이 첫 share 문제를 일부러 틀리게 함(시험 코드만, sim 무변경).
 
+## v2.10 추가(2026-11-02, 신전 3학년 줄 — 16 문서 8절 ④) — 이벤트·스냅샷 모양 변경 0 · 골든 4판 불변
+- 학년 변환표 `temple-2-1.g3`(7키: 3-1 2단원 `g3.line.find`·`g3.right.find`·`g3.quad.right`·`g3.right.count` + 3-2 3단원 `g3.circle.part`·`g3.circle.dia`·`g3.circle.same`)·`g4`(4-1 생성기 전까지 g3 과 같은 임시 줄). packs 없음.
+- 그림 id 추가(`sim/learn/pics.js` 코드 10~32): 선 `seg·seg2·ray·ray2·line·line2` · 각 `rangle·rangle2·angle·angle2` · `rtri·rtri2` · `rect·rect2·square·square2·quad3` · 원 `cdia·cdia2·cchord·crad·crad2·cline`. 스킨은 id 만 받아 그린다(proto 인라인 SVG 23개 추가). 직각 세기·원 길이 문제는 `question.pic` 만, 나머지는 `choices[].pic`.
