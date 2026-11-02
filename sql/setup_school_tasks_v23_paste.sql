@@ -32,7 +32,7 @@ BEGIN
 END $fn$;
 GRANT EXECUTE ON FUNCTION add_school_task(text, text, date, uuid[], text, jsonb) TO authenticated;
 
--- 붙여넣기 제출(= 자동 완료). html 은 300KB 까지 · script/style/iframe 은 서버에서도 한 번 더 뗀다.
+-- 붙여넣기 제출(= 자동 완료). html 은 1.5MB 까지 · script/style/iframe 은 서버에서도 한 번 더 뗀다.
 CREATE OR REPLACE FUNCTION submit_task_paste(p_task_id uuid, p_html text, p_text text DEFAULT '')
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $fn$
 DECLARE v_tid uuid; v_sid text; v_task school_tasks%ROWTYPE; v_html text; v_text text;
@@ -51,7 +51,7 @@ BEGIN
   v_html := regexp_replace(v_html, '<(script|style|iframe|object|embed|link|meta)[^>]*>.*?</\1>', '', 'gis');
   v_html := regexp_replace(v_html, '<(script|style|iframe|object|embed|link|meta)[^>]*/?>', '', 'gi');
   v_html := regexp_replace(v_html, '\son[a-z]+\s*=\s*("[^"]*"|''[^'']*''|[^\s>]+)', '', 'gi');
-  IF length(v_html) > 300000 THEN RAISE EXCEPTION 'too long' USING ERRCODE = 'check_violation'; END IF;
+  IF length(v_html) > 1500000 THEN RAISE EXCEPTION 'too long' USING ERRCODE = 'check_violation'; END IF;
   v_text := left(btrim(coalesce(p_text, '')), 20000);
   IF length(v_text) = 0 THEN RAISE EXCEPTION 'required: 내용' USING ERRCODE = 'check_violation'; END IF;
   INSERT INTO school_task_entries (task_id, teacher_id, school_id, data)

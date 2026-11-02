@@ -1937,13 +1937,22 @@ function staskPasteHandler(e){
 function staskSafeHtml(html){
   const doc = new DOMParser().parseFromString('<div>' + (html || '') + '</div>', 'text/html');
   doc.querySelectorAll('script,style,iframe,object,embed,link,meta,form,input,button,textarea,select').forEach(n => n.remove());
+  const KEEP_ATTR = { colspan:1, rowspan:1, href:1, src:1, border:1, cellspacing:1, cellpadding:1, width:1, align:1, valign:1 };
+  const KEEP_STYLE = /^(font-weight|text-align|vertical-align|width|text-decoration|color|background-color)$/;
   doc.querySelectorAll('*').forEach(el => {
     [...el.attributes].forEach(a => {
       const n = a.name.toLowerCase(), v = (a.value || '').trim().toLowerCase();
-      if(n.startsWith('on') || n === 'id' || n === 'class' || n === 'contenteditable') el.removeAttribute(a.name);
+      if(n === 'style'){
+        // 한글 표는 칸마다 서식이 수십 개 붙어 온다 — 보이는 데 필요한 것만 남긴다(글자 크기·여백·글꼴은 한글에 붙일 때 그쪽 기본이 낫다)
+        const kept = (a.value || '').split(';').map(x => x.trim()).filter(x => KEEP_STYLE.test(x.split(':')[0].trim().toLowerCase()));
+        if(kept.length) el.setAttribute('style', kept.join(';')); else el.removeAttribute('style');
+      }
+      else if(!KEEP_ATTR[n]) el.removeAttribute(a.name);
       else if((n === 'href' || n === 'src') && (v.startsWith('javascript:') || (n === 'src' && !v.startsWith('data:image/')))) el.removeAttribute(a.name);
     });
   });
+  // 빈 span·주석 정리
+  doc.querySelectorAll('span,font').forEach(el => { if(!el.attributes.length){ el.replaceWith(...el.childNodes); } });
   // 표는 구조를 단단히 — 테두리·칸 병합은 살리고, 한글이 못 읽는 속성은 뗀다
   doc.querySelectorAll('table').forEach(tb => { tb.setAttribute('border','1'); tb.setAttribute('cellspacing','0'); tb.setAttribute('cellpadding','4'); tb.style.borderCollapse = 'collapse'; });
   doc.querySelectorAll('td,th').forEach(td => { if(!td.style.border) td.style.border = '1px solid #333'; });
@@ -1956,7 +1965,7 @@ async function submitStaskPaste(id){
   if(!ed || !t) return;
   const html = staskSafeHtml(ed.innerHTML), text = (ed.innerText || '').trim();
   if(!text){ showToast('⚠️ 붙여넣은 내용이 없어요.'); ed.focus(); return; }
-  if(html.length > 300000){ showToast('⚠️ 내용이 너무 길어요. 그림을 빼고 다시 붙여넣어 주세요.'); return; }
+  if(html.length > 1500000){ showToast('⚠️ 내용이 너무 길어요. 그림을 빼고 다시 붙여넣어 주세요.'); return; }
   const { error } = await db.rpc('submit_task_paste', { p_task_id: id, p_html: html, p_text: text });
   if(error){
     const m = error.message || '';
