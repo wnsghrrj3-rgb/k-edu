@@ -631,16 +631,20 @@ tr:hover td{background:#FAFBFC}
       <div style="margin-top:8px;font-size:12.5px;color:var(--sub);display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <span>종류</span>
         <label style="display:inline-flex;gap:4px;align-items:center;cursor:pointer"><input type="radio" name="schooltask-kind" value="notice" checked onchange="setStaskKind('notice')"> 📌 알림 (확인만 하면 끝)</label>
-        <label style="display:inline-flex;gap:4px;align-items:center;cursor:pointer"><input type="radio" name="schooltask-kind" value="collect" onchange="setStaskKind('collect')"> 📋 취합 양식 (각자 칸을 채워 제출)</label>
-        <label style="display:inline-flex;gap:4px;align-items:center;cursor:pointer"><input type="radio" name="schooltask-kind" value="file" onchange="setStaskKind('file')"> 📁 파일 취합 (반마다 파일 하나씩 제출)</label>
-        <label style="display:inline-flex;gap:4px;align-items:center;cursor:pointer"><input type="radio" name="schooltask-kind" value="paste" onchange="setStaskKind('paste')"> 📝 한글 붙여넣기 취합 (각자 내용을 붙여넣으면 반 순서로 이어짐)</label>
+        <label style="display:inline-flex;gap:4px;align-items:center;cursor:pointer"><input type="radio" name="schooltask-kind" value="paste" onchange="setStaskKind('paste')"> 📝 모으기 (각자 한글 내용을 붙여넣어 내면 반 순서로 합쳐져요)</label>
+        <label hidden style="display:none"><input type="radio" name="schooltask-kind" value="collect" onchange="setStaskKind('collect')"> 취합 양식</label>
+        <label hidden style="display:none"><input type="radio" name="schooltask-kind" value="file" onchange="setStaskKind('file')"> 파일 취합</label>
       </div>
       <div id="schooltask-schema" hidden style="margin-top:8px;padding:10px 12px;border:1px dashed #cbd5e0;border-radius:10px;background:#fff">
         <div style="font-size:12.5px;color:var(--sub);margin-bottom:6px">표의 <b>칸 이름</b>을 적어요. 선생님마다 한 줄씩 채우고, 제출하면 그 선생님 할 일은 저절로 완료돼요. (반·이름은 자동으로 붙어요)</div>
         <div id="schooltask-schema-rows"></div>
         <button class="code-btn outline" type="button" style="margin:6px 0 0;padding:5px 12px;font-size:12px" onclick="staskSchemaAdd()">＋ 칸 추가</button>
       </div>
-      <div id="schooltask-pastehint" hidden style="margin-top:8px;padding:10px 12px;border:1px dashed #cbd5e0;border-radius:10px;background:#fff;font-size:12.5px;color:var(--sub)">선생님마다 한글에서 자기 반 내용을 <b>복사해 붙여넣고 제출</b>해요(표·굵게·글머리표는 살아요, 그림·쪽 설정은 안 와요). 다 모이면 담당자가 <b>「전체 복사」</b> 한 번으로 반 순서대로 이어진 내용을 한글에 붙여넣어요.</div>
+      <div id="schooltask-pastehint" hidden style="margin-top:8px;padding:10px 12px;border:1px dashed #cbd5e0;border-radius:10px;background:#fff">
+        <div style="font-size:12.5px;color:var(--sub)">올리면 받는 선생님마다 <b>「📝 붙여넣기」</b> 단추가 떠요. 각자 한글에서 자기 반 내용을 복사해 붙여넣고 제출하면 그 선생님 할 일은 끝. 다 모이면 <b>「전체 복사」</b> 한 번으로 반 순서대로 이어진 내용을 한글에 넣어요. (표·굵게·글머리표는 살아요, 그림·쪽 설정은 안 와요)</div>
+        <div style="margin-top:8px;font-size:12.5px;font-weight:700">내 반 내용도 지금 붙여넣기 <span style="font-weight:400;color:var(--sub)">(선택 — 한글에서 복사한 뒤 아래 칸에 Ctrl+V)</span></div>
+        <div id="schooltask-paste-mine" contenteditable="true" style="min-height:90px;max-height:360px;overflow:auto;margin-top:4px;padding:10px 12px;border:1px solid #d5dbe3;border-radius:8px;background:#fff;font-size:13px;line-height:1.6;outline:none"></div>
+      </div>
       <div id="schooltask-filehint" hidden style="margin-top:8px;padding:10px 12px;border:1px dashed #cbd5e0;border-radius:10px;background:#fff;font-size:12.5px;color:var(--sub)">선생님마다 <b>파일 하나</b>를 내요(한글·엑셀 등 20MB까지). 내는 순간 그 선생님 할 일은 완료되고, 다 모이면 <b>반 순서대로 한꺼번에 내려받아</b> 한글에서 「문서 끼워 넣기」로 한 번에 합쳐요.</div>
       <textarea id="schooltask-detail" maxlength="1000" rows="2" placeholder="자세한 내용 (선택)" style="width:100%;margin-top:8px;padding:9px 12px;border:1px solid #d5dbe3;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit"></textarea>
       <!-- 받는 사람 (v1.1 — 준호 결정 ④): 기본은 우리 학교 모두, 「고르기」로 특정 선생님만 -->
@@ -1752,6 +1756,9 @@ function setStaskKind(k){
   if(box){ box.hidden = (k !== 'collect'); if(k === 'collect' && !document.querySelector('#schooltask-schema-rows .stask-col')){ staskSchemaAdd('내용'); } }
   const fh = document.getElementById('schooltask-filehint'); if(fh) fh.hidden = (k !== 'file');
   const ph = document.getElementById('schooltask-pastehint'); if(ph) ph.hidden = (k !== 'paste');
+  const de = document.getElementById('schooltask-detail'); if(de) de.style.display = (k === 'paste') ? 'none' : '';
+  const pm = document.getElementById('schooltask-paste-mine');
+  if(pm && !pm.dataset.wired){ pm.dataset.wired = '1'; pm.addEventListener('paste', e => { const h = e.clipboardData && e.clipboardData.getData('text/html'); if(!h) return; e.preventDefault(); document.execCommand('insertHTML', false, staskSafeHtml(h)); }); }
   const ti = document.getElementById('schooltask-title');
   if(ti) ti.placeholder = k === 'collect' ? '취합 제목 (예: 11월 방과후 수요조사)' : k === 'file' ? '파일 취합 제목 (예: 학급 교육과정 제출)' : k === 'paste' ? '붙여넣기 취합 제목 (예: 학급별 체험학습 계획)' : '할 일 (예: 방과후 수요조사 제출)';
 }
@@ -1793,7 +1800,7 @@ function staskCollectRow(t, tone, detail, mineBtn){
     <div style="flex:1;min-width:0">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span style="padding:2px 9px;border-radius:999px;background:${tone.chip};color:${tone.ink};font-size:11px;font-weight:700">${tone.label}</span>
-        <span style="padding:2px 8px;border-radius:999px;background:#EDE9FE;color:#5B21B6;font-size:11px;font-weight:700">${isFile ? '📁 파일 취합' : isPaste ? '📝 붙여넣기 취합' : '📋 취합'}</span>
+        <span style="padding:2px 8px;border-radius:999px;background:#EDE9FE;color:#5B21B6;font-size:11px;font-weight:700">${isFile ? '📁 파일 취합' : isPaste ? '📝 모으기' : '📋 취합'}</span>
         <b style="font-size:14px">${escHtml(t.title)}</b>
         <span style="font-size:12px;color:${tone.ink};font-weight:600">${escHtml(staskDue(t))}</span>
       </div>
@@ -2322,11 +2329,18 @@ async function addSchoolTask(){
     for(const f of staskPending.files){ try { await uploadSchoolTaskFile(newId, f); } catch(e){ bad++; } }
     if(bad) showToast('⚠️ 첨부 ' + bad + '개는 붙지 않았어요. 할 일 줄의 📎 로 다시 붙여 주세요.');
   }
+  // v2.4 모으기 — 올린 사람이 폼에서 붙여넣은 자기 내용을 바로 낸다(= 자기 줄 완료)
+  const pm = document.getElementById('schooltask-paste-mine');
+  if(newId && staskKind === 'paste' && pm && (pm.innerText || '').trim()){
+    const r = await db.rpc('submit_task_paste', { p_task_id: newId, p_html: staskSafeHtml(pm.innerHTML), p_text: (pm.innerText || '').trim() });
+    if(r.error) showToast('⚠️ 내 내용은 들어가지 않았어요 — 줄의 「📝 붙여넣기」로 다시 내 주세요.');
+    pm.innerHTML = '';
+  }
   staskPending = { links: [], files: [] }; renderStaskPending();
   ti.value = ''; de.value = ''; du.value = '';
   document.querySelectorAll('.schooltask-to-cb').forEach(cb => { cb.checked = false; });
   document.getElementById('schooltask-form').hidden = true;
-  showToast((staskKind === 'collect' ? '📋 취합 양식을 ' : staskKind === 'file' ? '📁 파일 취합을 ' : staskKind === 'paste' ? '📝 붙여넣기 취합을 ' : '📌 ') + (to.length ? to.length + '명에게 올렸어요.' : '우리 학교 할 일판에 올렸어요.'));
+  showToast((staskKind === 'collect' ? '📋 취합 양식을 ' : staskKind === 'file' ? '📁 파일 취합을 ' : staskKind === 'paste' ? '📝 모으기를 ' : '📌 ') + (to.length ? to.length + '명에게 올렸어요.' : '우리 학교 할 일판에 올렸어요.'));
   const kn = document.querySelector('input[name="schooltask-kind"][value="notice"]'); if(kn){ kn.checked = true; } setStaskKind('notice');
   const sr = document.getElementById('schooltask-schema-rows'); if(sr) sr.innerHTML = '';
   await loadSchoolTasks();
