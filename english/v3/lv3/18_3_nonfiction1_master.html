@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<!-- ════════════════════════════════════════
+     K-edu 영어 v3 양산 · Lv3 #18-3 동물 상식① 「숙달」 · 계단참② 도장 동물 상식① 두 글 혼자 읽기 「숙달」
+     베이스: lv3/13_3_passage3_master.html (Lv3 R 판형 — 스스로 읽기 🔊 잠금·게이트②) + lv3/09_3 계단참① 정리·도장 판형
+     펼침 원천: handoff kedu/english/v3/lv3/18_nonfiction1_animals.md
+     ════════════════════════════════════════ -->
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu | 영어 Lv3 — 동물 상식① 첫 논픽션 (18-3 숙달)</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   골격 = 골든 불변 / 옷 = P트랙 파랑 #1565C0
+   두 글자 한 소리(이중자음) 블록은 자음이므로 파랑 유지 — 모음만 주황
+   ============================================================ */
+:root{
+  --bg:#F0F6FE; --card:#fff;
+  --primary:#1565C0; --primary-light:#E3EEFC; --secondary:#5B8DEF;
+  --vowel:#FF8A3D; --vowel-light:#FFF1E6;
+  --green:#4CAF50; --green-light:#E8F5E9; --red:#F44336; --red-light:#FFEBEE;
+  --yellow:#FFC107; --yellow-light:#FFF8E1;
+  --text:#333; --subtext:#888; --border:#D7E4F7;
+  --shadow:0 4px 16px rgba(0,0,0,.08); --radius:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;gap:8px}
+.back{font-size:18px;color:var(--subtext);text-decoration:none}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 4px}
+.progress-bar{flex:1;height:10px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;color:#e6a800}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 10px;font-size:14px}
+.kedu-logo .logo-circle{width:20px;height:20px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:12px}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 18px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;width:100%;max-width:560px;text-align:center}
+.slide-title{font-size:21px;color:var(--subtext);margin-bottom:8px}
+.badge{display:inline-block;background:var(--primary-light);color:var(--primary);border-radius:99px;padding:4px 14px;font-size:17px;margin-bottom:8px}
+.concept-text{font-size:24px;line-height:1.6;margin:8px 0}
+.highlight{color:var(--primary)}
+/* 표지 */
+.today-label{font-size:22px;color:var(--secondary);letter-spacing:.5px;margin:18px 0 18px}
+.today-en{font-size:42px;color:var(--primary);font-weight:bold;line-height:1.3;margin:8px 0}
+.today-ko{font-size:26px;color:#2B925E;line-height:1.4;margin:14px 0 18px}
+/* 형광 강조 */
+.hl{background:linear-gradient(transparent 58%,#FFE680 58%);background-repeat:no-repeat;background-size:0% 100%;transition:background-size .55s cubic-bezier(.4,0,.2,1) .15s;padding:0 3px;font-weight:bold;color:var(--text)}
+.slide.lit .hl{background-size:100% 100%}
+/* 탭 단계 등장 */
+.step{opacity:0;transform:translateY(34px) scale(.82);transition:opacity .26s ease,transform .42s cubic-bezier(.34,1.6,.5,1);pointer-events:none}
+.step.in{opacity:1;transform:none;pointer-events:auto}
+.concept-big{font-size:30px;line-height:1.5;margin:10px 0}
+@keyframes tapBlink{0%,100%{opacity:.4}50%{opacity:1}}
+.hl-slot{background:var(--yellow-light);border:2px dashed var(--yellow);border-radius:8px;padding:1px 8px;color:#e6a800}
+.kay-says{display:flex;align-items:center;gap:12px;background:var(--primary-light);border-radius:16px;padding:12px 16px;margin:10px 0;text-align:left}
+.kay-icon{font-size:30px;flex-shrink:0}
+.kay-text{font-size:21px;line-height:1.5}
+/* 소리 블록 — 파닉스 심장 */
+.sblocks{display:flex;gap:12px;justify-content:center;align-items:center;margin:14px 0;transition:gap .5s cubic-bezier(.4,0,.2,1);flex-wrap:wrap}
+.sblocks.merged{gap:2px}
+.sblock{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:16px;padding:12px 18px;font-size:40px;line-height:1;cursor:pointer;box-shadow:0 4px 0 rgba(21,101,192,.25);transition:transform .12s,box-shadow .3s;position:relative}
+.sblock .sko{font-size:14px;color:var(--subtext)}
+.sblock.vowel{border-color:var(--vowel);color:var(--vowel);box-shadow:0 4px 0 rgba(255,138,61,.3)}
+.sblock:active{transform:scale(.94)}
+.sblock.singing{transform:scale(1.15);box-shadow:0 0 0 5px var(--yellow-light),0 4px 0 rgba(21,101,192,.25)}
+.sblock.isnew::after{content:'NEW';position:absolute;top:-10px;right:-6px;background:var(--red);color:#fff;font-size:11px;padding:1px 6px;border-radius:99px}
+.sblock.used{opacity:.25;pointer-events:none}
+.sblock.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+/* 소리 슬롯 */
+.sslots{display:flex;gap:10px;justify-content:center;align-items:center;margin:14px 0;flex-wrap:wrap}
+.sslot{min-width:72px;height:70px;border:3px dashed #A8C4EA;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:34px;color:#A8C4EA;background:#F8FBFF;padding:0 10px;transition:all .3s}
+.sslot.filled{border-style:solid;border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.sslot.filled.vslot{border-color:var(--vowel);color:var(--vowel);background:var(--vowel-light)}
+.sslot.swap{animation:swapPop .5s ease}
+@keyframes swapPop{0%{transform:translateY(0)}40%{transform:translateY(-14px) scale(1.1);background:var(--yellow-light);border-color:var(--yellow)}100%{transform:translateY(0)}}
+.word-done{font-size:34px;color:var(--primary);margin:8px 0}
+.mean{font-size:20px;color:var(--subtext)}
+.pic{font-size:80px;margin:6px 0;line-height:1}
+@keyframes popIn{0%{transform:scale(0) rotate(-15deg)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+/* 합치기 다이어그램 */
+.blend-map{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0;flex-wrap:wrap}
+.bm-piece{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:12px;padding:6px 14px;font-size:28px}
+.bm-piece.v{border-color:var(--vowel);color:var(--vowel)}
+.bm-arrow{font-size:26px;color:#e6a800;font-weight:bold}
+.bm-word{background:var(--yellow-light);border:3px solid var(--yellow);color:#e6a800;border-radius:12px;padding:6px 16px;font-size:30px;font-weight:bold}
+/* 문제 */
+.question-label{display:inline-flex;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:17px;margin-bottom:8px}
+.stars{color:#FCD34D}
+.question-text{font-size:23px;margin:6px 0 12px;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
+.choice-btn{background:#fff;border:3px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);color:var(--text)}
+.choice-btn .ko{display:block;font-size:14px;color:var(--subtext)}
+.choice-btn.big{font-size:40px;padding:10px 22px}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}}
+.listen-btn{background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:8px 22px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;color:var(--primary);margin:4px 0 8px}
+.feedback{font-size:19px;margin-top:10px;min-height:34px;border-radius:12px;padding:5px 12px;line-height:1.5}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#e6a800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-emoji{font-size:76px;margin:8px 0;animation:bounce 1s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.result-score{font-size:30px;color:#e6a800;margin:6px 0}
+.result-stars{font-size:34px;margin:4px 0}
+.nav{display:flex;justify-content:space-between;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,.06);flex-shrink:0;gap:10px}
+.nav-btn{flex:1;max-width:200px;background:var(--primary);color:#fff;border:none;border-radius:14px;padding:13px 0;font-family:'Jua',sans-serif;font-size:20px;cursor:pointer}
+.nav-btn:disabled{opacity:.3}
+.hint{font-size:16px;color:var(--subtext);margin-top:6px}
+/* ── R트랙 초록 파생 (골격 무변경, 옷만 갈아입힘) ── */
+:root{
+  --bg:#F1FBF7;
+  --primary:#12B886; --primary-light:#E3F7EF; --secondary:#63D9B4;
+  --border:#CDEBE0;
+}
+/* 소환 카드 — 단어 + 뜻 + 배운 칸 번호 */
+.wcards{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.wcard{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:14px;
+       padding:6px 11px;font-size:23px;cursor:pointer;box-shadow:0 3px 0 rgba(18,184,134,.25);transition:transform .1s}
+.wcard:active{transform:scale(.94)}
+.wcard.tapped{background:var(--green-light);border-color:var(--green)}
+.wcard .ko{display:block;font-size:12px;color:var(--subtext)}
+.wcard.isnew{border-color:#E6A800;box-shadow:0 3px 0 rgba(230,168,0,.3)}
+.rowlab{font-size:15px;color:var(--subtext);margin-top:6px}
+/* ★ N줄 문장틀 — 문장마다 한 줄, 칸은 줄을 이어 왼→오·위→아래로 짚는다(Lv1 #17 → Lv2 #17 두 줄 → Lv3 네 줄) */
+.frame{display:flex;flex-direction:column;align-items:center;gap:3px;margin:8px 0}
+.frow{display:flex;gap:5px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+.fbox{display:flex;flex-direction:column;align-items:center;gap:1px}
+.fword{position:relative;background:#fff;border:3px solid var(--border);color:var(--subtext);border-radius:12px;
+       padding:5px 8px;font-size:22px;min-width:36px;transition:all .3s;cursor:pointer}
+.fword.now{border-color:var(--yellow);background:var(--yellow-light);color:#e6a800;animation:tapBlink 1.2s infinite}
+.fword.read{border-color:var(--green);background:var(--green-light);color:var(--green);animation:none}
+.fdot{font-size:24px;color:var(--subtext);align-self:center}
+.fko{font-size:11px;color:var(--subtext);min-height:15px}
+.frame.demo .fword{cursor:default}
+/* 배운 칸 번호 — 시범에서 단어 위에 잠깐 떴다 사라진다(Lv2 #33 판형) */
+.kno{position:absolute;left:50%;top:-15px;transform:translateX(-50%);font-size:10px;font-style:normal;background:var(--yellow-light);border:1.5px solid var(--yellow);
+     color:#B07A00;border-radius:7px;padding:0 4px;line-height:1.35;opacity:0;transition:opacity .3s;white-space:nowrap}
+.kno.on{opacity:1}
+.sent-full{font-size:19px;color:var(--primary);margin:6px 0;letter-spacing:.3px;min-height:26px}
+.today-blank{color:#e6a800;background:var(--yellow-light);border-radius:8px;padding:0 10px}
+/* 문항 */
+.choice-btn.pic-btn{padding:10px 12px;min-width:104px;min-height:84px;font-size:32px;overflow:visible}
+.choice-btn.tf{font-size:27px;min-width:120px}
+.tfs{display:inline-block;font-size:20px;color:var(--text);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:12px;padding:5px 12px;margin:6px auto}
+.qline{font-size:22px;color:var(--primary);margin:6px 0}
+/* 스스로 읽기 — 🔊 는 읽은 뒤에만 열린다 */
+.selfrow{display:flex;gap:10px;justify-content:center;margin:8px 0;flex-wrap:wrap}
+.sbtn{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:16px;padding:8px 16px;font-size:19px;font-family:inherit;cursor:pointer;box-shadow:0 3px 0 rgba(18,184,134,.25)}
+.sbtn.done{background:var(--green-light);border-color:var(--green);color:var(--green)}
+.sbtn.lock{opacity:.45;border-style:dashed}
+/* 원리 줄 */
+.mm-row{display:flex;align-items:center;justify-content:center;gap:7px;margin:10px 0;flex-wrap:wrap}
+.mm-box{border:3px solid var(--primary);background:var(--primary-light);border-radius:14px;padding:6px 10px;
+        font-size:18px;color:var(--primary);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.mm-box .cap{display:block;font-size:12px;color:var(--subtext)}
+.mm-sign{font-size:22px;color:var(--subtext)}
+.choice-btn.hint{outline:3px dashed var(--yellow);outline-offset:2px}
+.cl{font-size:14px;color:var(--subtext)}
+/* 계단참② 정리 — 아홉 칸 */
+.stair{display:flex;flex-direction:column;gap:6px;align-items:center;margin:8px 0}
+.stair .sg{display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:center}
+.stair .sl{font-size:14px;color:var(--subtext);min-width:52px}
+.stair .st{display:inline-block;background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:12px;padding:3px 8px;font-size:17px}
+.stair .st.rc{border-color:#CDB4FF;color:#6741D9;background:#F6F0FF}
+/*PSG318CSS-BEGIN — Lv3 #18 논픽션 다섯 칸·사실 그림·근거 줄·내용 일치 · 4파일 문자 단위 동일(blocks/PSG318CSS.css → sync_blocks.py, 하네스 A8b).
+  ★글(.ptxt)·이름표(.nm)·be(.bev)·칸(.cel)·띠(.strip 다섯 칸) = Lv3 #13 PSG313CSS 줄 문자 단위 그대로(하네스 A5d) — 날씨 창문·학교 장소·개그 줄은 가져오지 않았다(재료 0 · 논픽션 = 개그 0).
+  ★근거 줄 켜짐(.ln.ev) = 내용 일치·참·거짓·그림 고르기 정답 뒤에만 노란 띠 — 규약 §8-④ 「정답 시 근거 문장이 지문에서 켜짐」(탭 0).
+  ★사실 그림 — .frt 과일 한 그릇(= Lv3 #16 .em3 얼개) · .swm 물에 잠긴 코끼리 + 물결 · .nox 🎂 위 빨간 ✕(안 먹는다) · .grs 풀밭 띠. 움직임 0(명사·사실 그림은 멈춰 있다).
+  ★소리 포인트 ph(.phw .ph) — elephant 의 p·h = fish 의 f · 낱소리 0 · 단어째 낭독. */
+.pe{display:inline-block;line-height:1;vertical-align:middle}
+.pe.sm{font-size:.7em}
+.pe.xs{font-size:.5em}
+.nm{display:inline-block;font-size:14px;background:#fff;border:2px solid var(--primary);color:var(--primary);border-radius:9px;padding:0 5px;line-height:1.35;vertical-align:middle}
+.bev{color:#7950F2;border-bottom:3px dotted #7950F2}
+.qm{font-size:.7em;color:#7950F2;font-weight:700;vertical-align:middle}
+.ptxt{display:inline-block;text-align:left;font-size:21px;line-height:1.5;color:var(--text);background:#FBFEFD;border:2px solid var(--border);border-radius:14px;padding:6px 14px;margin:6px auto}
+.ptxt .ln{display:block}
+.strip{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;max-width:390px;margin:8px auto;padding:4px;border:3px solid transparent;border-radius:16px;transition:all .5s}
+.strip.merge{border-color:var(--primary);background:#fff;box-shadow:0 4px 0 rgba(18,184,134,.25)}
+.cel{position:relative;min-width:0;border:2px dashed var(--border);border-radius:11px;background:#fff;min-height:82px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:14px 1px 3px;overflow:visible;transition:all .3s}
+.cel .cno{position:absolute;left:5px;top:1px;font-size:11px;color:var(--subtext)}
+.cel .cp{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:1px;font-size:22px;opacity:0;transform:scale(.4);transition:all .45s cubic-bezier(.34,1.6,.5,1)}
+.cel.on{border-style:solid;border-color:var(--green)}
+.cel.on .cp{opacity:1;transform:none}
+.cel.now{border-color:var(--yellow);background:var(--yellow-light);animation:tapBlink 1.2s infinite}
+.cel .ctx{font-size:10px;color:var(--primary);line-height:1.2;text-align:center}
+.cel .nm{font-size:11px;padding:0 3px}
+/* 근거 줄 — 정답 뒤에만 켜진다 */
+.ptxt .ln{border-radius:8px;padding:0 4px;transition:background .4s,box-shadow .4s}
+.ptxt .ln.ev{background:#FFF3BF;box-shadow:0 0 0 3px #FFD43B}
+.ptxt .ln.evx{background:#FFF5F5;box-shadow:0 0 0 3px #FFC9C9}
+/* 내용 일치 — 한국어 문장 버튼(세로 한 줄씩) */
+.choices.col{flex-direction:column;align-items:center;gap:8px}
+.choice-btn.mt{font-size:19px;min-width:250px;padding:8px 14px;text-align:center}
+/* 사실 그림 */
+.frt{display:inline-block;font-size:.55em;letter-spacing:-3px;border-bottom:4px solid #FFCC80;border-radius:0 0 40% 40%;padding:0 3px 2px;line-height:1;vertical-align:middle}
+.frt.sm{font-size:.42em}
+.frt.xs{font-size:.32em;border-bottom-width:3px}
+.swm{position:relative;display:inline-block;padding-bottom:4px;line-height:1;vertical-align:middle}
+.swm::after{content:'';position:absolute;left:-4px;right:-4px;bottom:0;height:46%;border-radius:0 0 10px 10px;background:repeating-linear-gradient(90deg,rgba(66,165,245,.78) 0 7px,rgba(144,202,249,.85) 7px 14px);border-top:2px solid #1E88E5}
+.nox{position:relative;display:inline-block;line-height:1;vertical-align:middle}
+.nox::after{content:'✕';position:absolute;left:50%;top:50%;transform:translate(-50%,-55%);font-size:1.25em;font-weight:700;color:#E03131;line-height:1}
+.grs{display:inline-block;line-height:1;padding-bottom:3px;border-bottom:5px solid #8BC34A;border-radius:0 0 6px 6px;vertical-align:middle}
+/* 소리 포인트 — ph = f 한 상자(낱소리 0 · 단어째 낭독) */
+.phw{display:inline-block;font-size:38px;color:var(--primary);letter-spacing:2px;margin:4px 6px}
+.phw .ph{text-decoration:none;display:inline-block;border:3px solid #E6A800;background:var(--yellow-light);color:#B07A00;border-radius:12px;padding:0 5px}
+/*PSG318CSS-END*/
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back" href="../index.html">🪜</a>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 12</span>
+  </div>
+  <div class="score-badge">⭐ <span id="scoreVal">0</span></div>
+  <div class="kedu-logo"><div class="logo-circle">K</div>영어</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesContainer">
+  <!-- ━━━ S0 표지 ━━━ -->
+  <div class="slide active" data-steps>
+    <div class="card">
+      <div class="badge step">영어 Lv3 · 동물 상식① 18-3</div>
+      <div class="today-label step">Today's Learn ✏️</div>
+      <div class="today-en step" style="font-size:27px">They eat meat. They eat fruit.</div>
+      <div class="today-ko step">알려 주는 글 두 편 — <span class="today-blank">혼자</span> 읽어요</div>
+    </div>
+  </div>
+
+  <!-- ━━━ S1 소환 + 예고 — 이번엔 짚어 주지 않는다 ━━━ -->
+  <div class="slide" data-steps>
+    <div class="card">
+      <div class="slide-title step">🆕 두 글 다 — 이번엔 <b>짚어 주지 않아요</b></div>
+      <div class="wcards step" id="rowA"></div>
+      <div class="rowlab step">⭐ 15·16번 칸에서 배운 이름 넷 — 두 글의 주인공과 먹이</div>
+      <div class="wcards step" id="rowB"></div>
+      <div class="kay-says step">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">숙달은 <span class="hl">혼자</span> 읽어요. 단어는 전부 배운 것 —<br>네가 <b>먼저 소리 내어 읽고</b>, 🔊 로 맞게 읽었는지 확인해요.<br>문제는 섞여 나와요 — <b>어느 글</b> 이야기인지 꼭 봐요!</div>
+      </div>
+      <div class="feedback" id="fb1"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S2 스스로 읽기 — 사자 글 (🔊 잠금) ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">📖 사자 글 — <b>먼저</b> 소리 내어 읽어요</div>
+      <div class="ptxt" id="p2"></div>
+      <div class="selfrow"><button class="sbtn" id="r2">📖 소리 내어 다 읽었어요</button><button class="sbtn lock" id="l2">🔊 내가 맞게 읽었나 듣기</button></div>
+      <div class="strip" id="st2"></div>
+      <div class="feedback" id="fb2"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S3 스스로 읽기 — 코끼리 글 (🔊 잠금) ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">📖 코끼리 글 — <b>먼저</b> 소리 내어 읽어요</div>
+      <div class="ptxt" id="p3"></div>
+      <div class="selfrow"><button class="sbtn" id="r3">📖 소리 내어 다 읽었어요</button><button class="sbtn lock" id="l3">🔊 내가 맞게 읽었나 듣기</button></div>
+      <div class="strip" id="st3"></div>
+      <div class="feedback" id="fb3"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S4 숙달1 — 내용 일치 (사자) ━━━ -->
+  <div class="slide" data-correct="2" data-score="10" data-concept="reading.passage" data-skey="lion" data-kind="match" data-mi="1" data-gate="1">
+    <div class="card">
+      <div class="question-label">숙달 문제 1 <span class="stars">⭐⭐</span></div>
+      <div class="question-text">사자 글 — <b>글과 맞는</b> 문장은?</div>
+      <div class="ptxt"></div>
+      <div class="choices col"></div>
+      <div class="feedback" id="fb4"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S5 숙달2 — 참·거짓 (코끼리) ━━━ -->
+  <div class="slide" data-correct="0" data-score="10" data-concept="reading.passage" data-skey="elephant" data-kind="tf" data-tfi="1" data-gate="1">
+    <div class="card">
+      <div class="question-label">숙달 문제 2 <span class="stars">⭐⭐</span></div>
+      <div class="question-text">코끼리 글 — 맞으면 ⭕ 아니면 ❌</div>
+      <div class="ptxt"></div>
+      <div class="strip"></div>
+      <div class="tfs"></div>
+      <div class="choices"><button class="choice-btn tf" onclick="answer(this,0)">⭕ 참</button><button class="choice-btn tf" onclick="answer(this,1)">❌ 거짓</button></div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S6 숙달3 — 그림 고르기 (코끼리 · 근거 3번 줄) ━━━ -->
+  <div class="slide" data-correct="1" data-score="10" data-concept="reading.passage" data-skey="elephant" data-kind="pic" data-pi="0" data-gate="1">
+    <div class="card">
+      <div class="question-label">숙달 문제 3 <span class="stars">⭐⭐</span></div>
+      <div class="question-text"></div>
+      <div class="ptxt"></div>
+      <div class="choices"></div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S7 숙달4 — 내용 일치 (코끼리) ━━━ -->
+  <div class="slide" data-correct="0" data-score="10" data-concept="reading.passage" data-skey="elephant" data-kind="match" data-mi="1" data-gate="1">
+    <div class="card">
+      <div class="question-label">숙달 문제 4 <span class="stars">⭐⭐</span></div>
+      <div class="question-text">코끼리 글 — <b>글과 맞는</b> 문장은?</div>
+      <div class="ptxt"></div>
+      <div class="choices col"></div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S8 숙달5 — 참·거짓 (사자) ━━━ -->
+  <div class="slide" data-correct="1" data-score="10" data-concept="reading.passage" data-skey="lion" data-kind="tf" data-tfi="1" data-gate="1">
+    <div class="card">
+      <div class="question-label">숙달 문제 5 <span class="stars">⭐⭐</span></div>
+      <div class="question-text">사자 글 — 맞으면 ⭕ 아니면 ❌</div>
+      <div class="ptxt"></div>
+      <div class="strip"></div>
+      <div class="tfs"></div>
+      <div class="choices"><button class="choice-btn tf" onclick="answer(this,0)">⭕ 참</button><button class="choice-btn tf" onclick="answer(this,1)">❌ 거짓</button></div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S9 숙달6 — 그림 고르기 (사자 · 근거 1번 줄) ━━━ -->
+  <div class="slide" data-correct="2" data-score="10" data-concept="reading.passage" data-skey="lion" data-kind="pic" data-pi="1" data-gate="1">
+    <div class="card">
+      <div class="question-label">숙달 문제 6 <span class="stars">⭐⭐</span></div>
+      <div class="question-text"></div>
+      <div class="ptxt"></div>
+      <div class="choices"></div>
+      <div class="feedback" id="fb9"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S10 계단참② 정리 ━━━ -->
+  <div class="slide" data-steps>
+    <div class="card">
+      <div class="slide-title step">🪜 계단참② — 아홉 칸을 <b>다 올랐어요</b></div>
+      <div class="stair step">
+        <div class="sg"><span class="sl">규칙 둘</span><span class="st rc">#10 ❓ 묻기</span><span class="st rc">#14 👎 아니라고</span></div>
+        <div class="sg"><span class="sl">이름 셋</span><span class="st">#11 🛝</span><span class="st">#15 🦁</span><span class="st">#16 🥩</span></div>
+        <div class="sg"><span class="sl">동사 둘</span><span class="st">#12 🧹</span><span class="st">#17 👂</span></div>
+        <div class="sg"><span class="sl">글 둘</span><span class="st">#13 📖 이야기</span><span class="st">#18 🔎 사실</span></div>
+      </div>
+      <div class="concept-big step">묻고 · 아니라고 하고 · <span class="hl">알려 주는 글</span>까지</div>
+      <div class="kay-says step">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">규칙 카드 두 장(<b>Do</b> · <b>don't</b>)과 이름·동사 칸에서 모은 단어로 —<br><b>이야기 글</b>도, <span class="hl">진짜를 알려 주는 글</span>도 읽었어요!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S11 결과 + 게이트② + 계단참② 도장 ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="result-emoji" id="resultEmoji">🎉</div>
+      <div style="font-size:26px" id="resultTitle">숙달 끝!</div>
+      <div class="result-score">⭐ <span id="finalScore">0</span>점</div>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <div style="font-size:44px;display:none" id="stamp">🏅</div>
+      <div class="kay-says">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text" id="gateText"></div>
+      </div>
+      <button class="nav-btn" id="gateBtn" style="margin-top:10px">▶ 다음</button>
+      <button class="nav-btn" id="wsBtn" style="margin-top:10px;display:none" onclick="location.href='../worksheets/nonfiction1.html'">🖨 활동지 출력</button>
+      <button class="nav-btn" style="margin-top:10px;background:var(--secondary)" onclick="location.href='../index.html'">🪜 사다리로</button>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script src="../engine/k-tts.js"></script>
+<script src="../engine/k-progress.js"></script>
+<script src="../engine/k-collection.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
+<script>
+let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
+const TOTAL=12;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playTone(f,t,d,g=.3){getCtx();audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d);});}
+function playCorrect(){[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
+function playWrong(){[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
+function playClick(){playTone(880,'sine',.08,.2);}
+document.body.addEventListener('pointerdown',()=>{if(!unlocked){KTTS.unlock();unlocked=true;justUnlocked=true;setTimeout(()=>justUnlocked=false,350);
+  const cur=document.querySelectorAll('.slide')[currentSlide];
+  const last=cur&&cur.querySelectorAll('.step.in');
+  if(last&&last.length){speakStep(last[last.length-1]);}
+}},{once:true});
+
+/* ── 탭 기반 단계 등장 (자동 흐름 ❌) ── */
+let stepState={};
+function setupSlide(slide,idx){
+  slide.classList.add('lit');
+  const steps=slide.querySelectorAll('.step');
+  if(!steps.length)return;
+  if(stepState[idx]===undefined){
+    steps.forEach(s=>s.classList.remove('in'));
+    steps[0].classList.add('in');stepState[idx]=1;
+    speakStep(steps[0]);
+  }else{
+    steps.forEach(s=>s.classList.add('in'));stepState[idx]=steps.length;
+  }
+}
+function speakStep(el){
+  if(!unlocked||!el)return;
+  if(el.dataset.sound)KTTS.sound(el.dataset.sound);
+  else if(el.dataset.speakWord)KTTS.word(el.dataset.speakWord);
+  else if(el.dataset.speak)KTTS.sentence(el.dataset.speak);
+}
+function advanceStep(slide,idx){
+  const steps=[...slide.querySelectorAll('.step')];
+  if(stepState[idx]<steps.length){
+    const el=steps[stepState[idx]];
+    el.classList.add('in');playClick();speakStep(el);
+    stepState[idx]++;
+    return true;
+  }
+  return false;
+}
+function goSlide(n){
+  const sl=document.querySelectorAll('.slide');KTTS.stop();
+  sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');
+  setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);
+  currentSlide=n;sl[n].classList.add('active');updateUI();
+  setupSlide(sl[n],n);
+}
+function nextSlide(){
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  if(slide.hasAttribute('data-steps')&&advanceStep(slide,currentSlide))return;
+  if(currentSlide<TOTAL-1)goSlide(currentSlide+1);
+}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;
+  document.getElementById('scoreVal').textContent=score;
+  if(currentSlide===TOTAL-1)finish();
+}
+function addScore(p){
+  const bonus=combo>=3?Math.floor(p*.5):0;
+  score+=p+bonus;combo++;
+  document.getElementById('scoreVal').textContent=score;
+  if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}
+}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.innerHTML=msg;el.className='feedback '+(ok?'ok':'err');}}
+
+const OK_MSGS=['✅ 정답! +{p}점','🎯 바로 그거야! +{p}점','✨ 소리 박사인데? +{p}점'];
+const SAM_MSGS=['🙋 Sam: "나도 그거 골랐는데…" 다시 들어 봐!','🙋 Sam: "내가 맞다니까!" …아니래. 한 번 더!','🤔 Sam이 또 헷갈리게 했구나 — 소리를 잘 듣고 다시!'];
+function okMsg(p){return OK_MSGS[Math.floor(Math.random()*OK_MSGS.length)].replace('{p}',p);}
+function samMsg(){return SAM_MSGS[Math.floor(Math.random()*SAM_MSGS.length)];}
+/*PSG318-BEGIN — Lv3 #18 동물 상식① · ★첫 논픽션 2편(펼침 lv3/18_nonfiction1_animals.md) · 4파일 문자 단위 동일(blocks/PSG318.js → sync_blocks.py, 하네스 A8).
+  ★좌표 = 이야기 글 → 「사실을 알려 주는 글」. 화자 = Mina 박사(표지 카드에만 · 글 본문 1인칭 0) · ★인물 개그 0 · 그림 = 사실 그대로(의외성 0 — 하네스 C-6b·I6).
+  ★단어 세 층(규약 §4-2) — 신출 편당 2 = ① lion·meat(#15·#16) ② elephant·fruit(#15·#16) · 재등장 cats(#2)·cake(Lv2 #11)·swim(Lv2 #5)·an(Lv2 #24)·big·eat · V 밖 0.
+  ★문법 통제 — This is a/an · 여럿 + are · ★They + 동사(3인칭 단수 0 · #26 전에도 열림) · don't(#14) · Do you like ~?(끝 줄 · 근거 0 — #13 판정) · and·전치사·can 0.
+  ★문항 = 지문당 2 + 섞어 — ★내용 일치 3지 첫 도입(규약 §8-④): 한국어 문장 버튼 3 · 오답 = 지문 한 단어만 바꾼 문장 · 오답 비잠금 + 소리 0 · 정답 = 근거 줄이 글에서 켜진다(.ln.ev — Lv6 근거 탭의 씨앗 · 탭은 0).
+    ★코끼리 문항 오답 「고기」 = 사자 글 단어 — 두 글을 섞으면 틀린다(논픽션 두 편의 존재 이유).
+  ★같은 단어 = 같은 그림(하네스 A5 — 차시 실물 대조): lion 🦁·elephant 🐘·tiger 🐯·giraffe 🦒 = Lv3 #15 · meat 🥩(🍖 = ham 몫)·fruit 🍎🍌🍇 한 그릇 = Lv3 #16 · cat 🐱 = Lv1 · cake 🎂 = Lv2 #11 · you 👉 = Lv1.
+    ★swim 🏊 0 — 🏊 는 사람 수영(펼침 카드 그림)이지만 주어가 코끼리 → 물에 잠긴 🐘 + 물결(.swm — 장식 0, 사실 그대로) · 🎂 위 빨간 ✕(.nox) = 「안 먹는다」 사실 그림. */
+const PSG={
+  'lion':{who:'Mina 박사',time:'사자 글',
+    s:[{en:'This is a lion.',         w:['This','is','a','lion'],          p:'.',k:['이것은','~예요','한 마리','사자'],        ko:'이것은 사자예요.'},
+       {en:'Lions are big cats.',     w:['Lions','are','big','cats'],      p:'.',k:['사자들은','~예요','큰','고양이들'],      ko:'사자는 큰 고양이예요.'},
+       {en:'They eat meat.',          w:['They','eat','meat'],             p:'.',k:['사자들은','먹어요','고기'],              ko:'사자는 고기를 먹어요.'},
+       {en:"They don't eat cake!",    w:['They',"don't",'eat','cake'],     p:'!',k:['사자들은','안 ~해요','먹어요','케이크'],  ko:'사자는 케이크를 안 먹어요!'},
+       {en:'Do you like lions?',      w:['Do','you','like','lions'],       p:'?',k:['(묻는 말)','너는','좋아해','사자들'],     ko:'너는 사자가 좋아?'}]},
+  'elephant':{who:'Mina 박사',time:'코끼리 글',
+    s:[{en:'This is an elephant.',    w:['This','is','an','elephant'],     p:'.',k:['이것은','~예요','한 마리','코끼리'],      ko:'이것은 코끼리예요.'},
+       {en:'Elephants are big.',      w:['Elephants','are','big'],         p:'.',k:['코끼리들은','~예요','큰'],               ko:'코끼리는 커요.'},
+       {en:'They eat fruit.',         w:['They','eat','fruit'],            p:'.',k:['코끼리들은','먹어요','과일'],            ko:'코끼리는 과일을 먹어요.'},
+       {en:'They swim!',              w:['They','swim'],                   p:'!',k:['코끼리들은','헤엄쳐요'],                 ko:'코끼리는 헤엄쳐요!'},
+       {en:'Do you like elephants?',  w:['Do','you','like','elephants'],   p:'?',k:['(묻는 말)','너는','좋아해','코끼리들'],   ko:'너는 코끼리가 좋아?'}]}
+};
+Object.keys(PSG).forEach(k=>{PSG[k].en=PSG[k].s.map(x=>x.en).join(' ');PSG[k].ko=PSG[k].s.map(x=>x.ko).join(' ');});
+const KEYS=['lion','elephant'];
+/* 물음표 줄 = 글쓴이가 나에게 묻는 줄(#13 판정 — 근거 0) */
+const ASK={'lion':4,'elephant':4};
+/* 배운 칸 번호 — 실물 대조: this·a·big·you·like = Lv1 · is·are = Lv2 #10(be) · they = Lv2 #27 · eat = Lv2 #21 · cake = Lv2 #11 · an = Lv2 #24 · swim = Lv2 #5
+   · cats = #2(여럿) · do = #10 · don't = #14 · lion·lions·elephant·elephants = #15 · meat·fruit = #16 */
+const KNO={this:'Lv1',is:'Lv2 #10',a:'Lv1',lion:'#15',lions:'#15',are:'Lv2 #10',big:'Lv1',cats:'#2',they:'Lv2 #27',eat:'Lv2 #21',meat:'#16',
+  "don't":'#14',cake:'Lv2 #11',do:'#10',you:'Lv1',like:'Lv1',an:'Lv2 #24',elephant:'#15',elephants:'#15',fruit:'#16',swim:'Lv2 #5'};
+const NEW18={'lion':['lion','meat'],'elephant':['elephant','fruit']};
+/* ★아포스트로피는 단어 안 — don't 를 통째로(낭독·배운 칸 번호 모두 don't) */
+const bare=w=>w.replace(/[^A-Za-z']/g,'');
+/* 표기 — be(is·are) 보라 점선(Lv2 #10). 색으로만, 소리 0. 한 단어는 붙어 있다 */
+function mgw(w){
+  const b=bare(w),tail=w.slice(b.length);
+  if(b==='is'||b==='am'||b==='are')return '<span class="bev">'+b+'</span>'+tail;
+  return w;
+}
+/* 글 — 맨글자 다섯 줄(문항·카드는 언제나 맨글자 — 하네스 A12) · 줄마다 번호(data-i) — 근거 줄이 켜지는 자리 */
+function ptxt(k){return PSG[k].s.map((x,i)=>'<span class="ln" data-i="'+i+'">'+x.en+'</span>').join('');}
+const pe=(e,z)=>'<span class="pe'+(z?' '+z:'')+'">'+e+'</span>';
+const nm=n=>'<span class="nm">'+n+'</span>';
+const qm='<b class="qm">?</b>';
+/* 사실 그림 — 같은 단어 = 같은 그림(#15·#16 실물) */
+const frt=z=>'<span class="frt'+(z?' '+z:'')+'">🍎🍌🍇</span>';
+const swim=z=>'<span class="swm">'+pe('🐘',z)+'</span>';
+const nocake=z=>'<span class="nox">'+pe('🎂',z)+'</span>';
+/* 선택지 그림 — opt(k,i,0) 바른 그림 · 1·2 = 그 문장에서 한 단어만 바꾼 그림. ★의외성 0 · ★물음표 줄 그림 0 */
+const OPT={
+  'lion':{
+    0:()=>[pe('🦁'),pe('🐯'),pe('🐘')],
+    2:()=>[pe('🦁','sm')+pe('🥩','sm'),pe('🦁','sm')+pe('🎂','sm'),pe('🦁','sm')+frt('sm')]},
+  'elephant':{
+    0:()=>[pe('🐘'),pe('🦒'),pe('🦁')],
+    2:()=>[pe('🐘','sm')+frt('sm'),pe('🐘','sm')+pe('🥩','sm'),pe('🐘','sm')+pe('🎂','sm')]}
+};
+function opt(k,i,v){return OPT[k][i]()[v];}
+/* 다섯 칸 — 문장 하나 = 사실 하나. ★개그 0(논픽션) · 물음표 줄 칸 = 👉(you) + 그 동물 + ? */
+const CELL={
+  'lion':[
+    ()=>'<span class="grs">'+pe('🦁')+'</span>',
+    ()=>pe('🦁')+pe('🐱','xs'),
+    ()=>pe('🦁','sm')+pe('🥩','xs'),
+    ()=>nocake('sm'),
+    ()=>pe('👉','sm')+pe('🦁','xs')+qm],
+  'elephant':[
+    ()=>pe('🐘'),
+    ()=>pe('🐘')+pe('🧍','xs'),
+    ()=>pe('🐘','sm')+frt('xs'),
+    ()=>swim('sm'),
+    ()=>pe('👉','sm')+pe('🐘','xs')+qm]
+};
+function cell(k,i){return CELL[k][i]();}
+/* 그림 고르기 — 지문당 둘. i = 근거 문장(★물음표 줄은 근거로 쓰지 않는다) */
+const PICQ={
+  'lion':[{i:2,q:'Mina 박사의 글 — 사자는 <b>무엇을</b> 먹어요?'},{i:0,q:'첫째 글은 <b>어떤 동물</b>을 알려 줘요?'}],
+  'elephant':[{i:2,q:'Mina 박사의 글 — 코끼리는 <b>무엇을</b> 먹어요?'},{i:0,q:'둘째 글은 <b>어떤 동물</b>을 알려 줘요?'}]
+};
+/* ★내용 일치 3지 — ok = 글과 맞는 문장 · no = 지문 한 단어만 바꾼 문장 둘 · ev = 근거 줄(★물음표 줄 0) */
+const MATCH={
+  'lion':[{ok:'사자는 고기를 먹어요.',no:['사자는 케이크를 먹어요.','사자는 작아요.'],ev:2},
+          {ok:'사자는 케이크를 안 먹어요.',no:['사자는 고기를 안 먹어요.','사자는 작은 고양이예요.'],ev:3}],
+  'elephant':[{ok:'코끼리는 과일을 먹어요.',no:['코끼리는 고기를 먹어요.','코끼리는 작아요.'],ev:2},
+              {ok:'코끼리는 헤엄쳐요.',no:['코끼리는 케이크를 먹어요.','코끼리는 고양이예요.'],ev:3}]
+};
+/* 참·거짓(한국어 문장 · ★근거 = 글. ev = 근거 문장 · ans = 정답 자리 0 ⭕ 참 / 1 ❌ 거짓) */
+const TF={
+  'lion':[{t:'사자는 큰 고양이예요.',ans:0,ev:1,why:'<b>Lions are big cats.</b> — 사자는 <b>큰 고양이</b>예요'},
+          {t:'사자는 케이크를 먹어요.',ans:1,ev:3,why:"<b>They don't eat cake!</b> — 케이크는 <b>안</b> 먹어요"}],
+  'elephant':[{t:'코끼리는 헤엄을 못 쳐요.',ans:1,ev:3,why:'<b>They swim!</b> — 코끼리는 <b>헤엄쳐요</b>'},
+              {t:'코끼리는 커요.',ans:0,ev:1,why:'<b>Elephants are big.</b> — 코끼리는 <b>커요</b>'}]
+};
+/* 문항 그리기 — 정답 자리는 정적 선언(data-correct), 나머지 자리 = 「한 단어만 바꾼」 것 */
+function putPic(idx){
+  const sl=document.querySelectorAll('.slide')[idx],k=sl.dataset.skey,q=PICQ[k][+sl.dataset.pi],c=+sl.dataset.correct;
+  sl.querySelector('.question-text').innerHTML=q.q;
+  sl.querySelector('.ptxt').innerHTML=ptxt(k);
+  const o=[opt(k,q.i,1),opt(k,q.i,2)];o.splice(c,0,opt(k,q.i,0));
+  sl.querySelector('.choices').innerHTML=o.map((h,j)=>'<button class="choice-btn pic-btn" onclick="answer(this,'+j+')">'+h+'</button>').join('');
+}
+/* 문장 하나 ↔ 사실 그림 둘(18_B 짐 나누기) — 2지: 바른 그림 / 한 단어만 바꾼 그림 */
+function putOne(idx,k,si){
+  const sl=document.querySelectorAll('.slide')[idx],c=+sl.dataset.correct;
+  sl.dataset.skey=k;sl.dataset.si=si;
+  sl.querySelector('.qline').textContent=PSG[k].s[si].en;
+  const o=[opt(k,si,1)];o.splice(c,0,opt(k,si,0));
+  sl.querySelector('.choices').innerHTML=o.map((h,j)=>'<button class="choice-btn pic-btn" onclick="answer(this,'+j+')">'+h+'</button>').join('');
+}
+/* 참·거짓 — 글(맨글자) + 다섯 칸 + 한국어 문장. 정답은 TF 표(하네스가 정적 data-correct 와 대조) */
+function putTF(idx){
+  const sl=document.querySelectorAll('.slide')[idx],k=sl.dataset.skey;
+  sl.querySelector('.ptxt').innerHTML=ptxt(k);
+  const st=sl.querySelector('.strip');st.innerHTML=stripHTML(k,true);st.classList.add('merge');
+  sl.querySelector('.tfs').textContent=TF[k][+sl.dataset.tfi].t;
+}
+/* ★내용 일치 — 글(맨글자) + 한국어 문장 버튼 3(data-two="1" 이면 오답 하나를 지운 2지 — 18_B) */
+function putMatch(idx){
+  const sl=document.querySelectorAll('.slide')[idx],k=sl.dataset.skey,M=MATCH[k][+sl.dataset.mi],c=+sl.dataset.correct;
+  sl.querySelector('.ptxt').innerHTML=ptxt(k);
+  const o=sl.dataset.two==='1'?[M.no[0]]:M.no.slice();o.splice(c,0,M.ok);
+  sl.querySelector('.choices').innerHTML=o.map((h,j)=>'<button class="choice-btn mt" onclick="answer(this,'+j+')">'+h+'</button>').join('');
+}
+function evOf(sl){
+  const k=sl.dataset.skey,kind=sl.dataset.kind;
+  if(kind==='tf')return TF[k][+sl.dataset.tfi].ev;
+  if(kind==='match')return MATCH[k][+sl.dataset.mi].ev;
+  if(kind==='pic')return PICQ[k][+sl.dataset.pi].i;
+  return +sl.dataset.si;
+}
+/* 맞힌 뒤 — 근거 문장 하나만 낭독(언제나 지문 원문 · 틀린 꼴 소리 0 · 물음표 줄 0) */
+function aftermath(sl){
+  const k=sl.dataset.skey,kind=sl.dataset.kind,x=PSG[k].s[evOf(sl)];
+  if(kind==='tf')return {say:x.en,msg:TF[k][+sl.dataset.tfi].why};
+  if(kind==='match')return {say:x.en,msg:'<b>'+x.en+'</b> — '+MATCH[k][+sl.dataset.mi].ok+' 근거 줄이 <span class="hl">글에서 켜졌어요</span>'};
+  return {say:x.en,msg:'<b>'+x.en+'</b> '+x.ko};
+}
+/* ★근거 줄 켜짐 — 정답 뒤에만(탭 0 · 켜짐만) */
+function showEv(sl){
+  const p=sl.querySelector('.ptxt');if(!p)return;
+  const ln=p.querySelector('.ln[data-i="'+evOf(sl)+'"]');if(ln)ln.classList.add('ev');
+}
+function wrongMsg(sl){
+  const k=sl.dataset.kind;
+  if(k==='tf')return '🙋 Sam: "그런 것 같았는데…" — <b>글</b>에서 그 말을 찾아봐요!';
+  if(k==='match')return '🙋 Sam: "두 글을 섞었나…" — 글에서 그 말이 나오는 <b>줄</b>을 찾아 끝까지 읽어요!';
+  return '🙋 Sam: "끝 단어만 봤어…" — 글에서 <b>그 문장</b>을 찾아 끝까지 읽어요!';
+}
+/*PSG318-END*/
+/*PTN-BEGIN — ★짚어 읽기 N줄(Lv3 규약 §8-② 양산 선행 — Lv2 buildPoint2 두 줄 → 문장 수만큼) + 네 칸 띠 + 스스로 읽기. Lv3 R칸 공통(blocks/PTN.js → sync_blocks.py, 하네스 A8c).
+  쓰는 것 = PSG[key].s[i].{en,w,k,p} · mgw(w) · bare(w) · cell(key,i). 짚는 순서 = 왼→오, 첫 줄 → 끝 줄 강제(Lv1 #17 계승).
+  한 문장 끝 = 그 문장 낭독 + 그 칸 하나 켜짐 · 끝 문장 끝 = 네 칸이 한 장면으로 묶이고(.merge) 글 전체 낭독.
+  ★낱소리·블렌딩 0 — 단어는 통째로(KTTS.word), 문장은 KTTS.sentence. 틀린 칸을 누르면 소리 0.
+  ★칸 수 = 문장 수(NK) — #5·#9 네 문장 · #13 다섯 문장(규약 §4-1 계단참②). 안내 글자도 문장 수를 따라간다. */
+const NK=['','한','두','세','네','다섯','여섯'];
+function stripHTML(key,on){
+  return PSG[key].s.map((x,i)=>'<div class="cel'+(on?' on':'')+'" data-i="'+i+'"><span class="cno">'+(i+1)+'</span><span class="cp">'+cell(key,i)+'</span><span class="ctx"></span></div>').join('');
+}
+function putStrip(id,key,on){const el=document.getElementById(id);el.innerHTML=stripHTML(key,on);if(on)el.classList.add('merge');return el;}
+function buildPointN(key,frameId,sentId,stripId,fbId,slideIdx){
+  const P=PSG[key],box=document.getElementById(frameId);
+  const flat=[];
+  P.s.forEach((x,si)=>x.w.forEach((w,wi)=>flat.push({w:w,si:si,wi:wi})));
+  let n=0;
+  box.innerHTML=P.s.map(x=>'<div class="frow">'+x.w.map((w,wi)=>
+    '<div class="fbox"><div class="fword" data-i="'+(n++)+'">'+mgw(w)+'</div><div class="fko">'+x.k[wi]+'</div></div>').join('')
+    +'<span class="fdot">'+x.p+'</span></div>').join('');
+  const cells=[...box.querySelectorAll('.fword')];
+  const strip=putStrip(stripId,key,false);
+  let cur=0,fin=false;
+  function mark(){cells.forEach((c,i)=>c.classList.toggle('now',i===cur&&!fin));}
+  function shown(){
+    const done=flat.slice(0,cur);
+    return P.s.map((x,si)=>{const ws=done.filter(z=>z.si===si).map(z=>z.w);
+      return ws.length?ws.join(' ')+(ws.length===x.w.length?x.p:' …'):'';}).filter(Boolean).join(' ');
+  }
+  mark();
+  cells.forEach(c=>c.addEventListener('click',()=>{
+    if(fin)return;
+    const i=+c.dataset.i;
+    playClick();
+    if(i!==cur){setFB(fbId,'🙋 지금은 <b>'+bare(flat[cur].w)+'</b> 칸이에요 — 왼쪽부터, 첫 줄부터 짚어요!',false);return;}
+    const it=flat[i];
+    KTTS.word(bare(it.w));
+    c.classList.remove('now');c.classList.add('read');
+    cur++;
+    document.getElementById(sentId).textContent=shown();
+    const endSent=it.wi===P.s[it.si].w.length-1,isLast=cur>=flat.length;
+    if(isLast)fin=true;
+    mark();
+    if(!endSent){setFB(fbId,'✅ '+bare(it.w)+' = '+P.s[it.si].k[it.wi]+' — 다음은 <b>'+bare(flat[cur].w)+'</b>!',true);return;}
+    setTimeout(()=>{
+      KTTS.sentence(P.s[it.si].en);
+      const cl=strip.querySelector('.cel[data-i="'+it.si+'"]');if(cl)cl.classList.add('on');
+      if(!isLast){setFB(fbId,'✅ '+(it.si+1)+'번 문장 끝 — <b>'+P.s[it.si].en+'</b> '+P.s[it.si].ko+'<br>그림 칸 <b>'+(it.si+1)+'</b> 이 켜졌어요. 다음 줄!',true);return;}
+      setFB(fbId,'✅ 마지막 문장 끝 — 이제 <b>'+NK[P.s.length]+' 칸을 이어요</b>…',true);
+      setTimeout(()=>{
+        strip.classList.add('merge');
+        KTTS.sentence(P.en);
+        playCorrect();
+        if(!answered[slideIdx]){answered[slideIdx]=true;addScore(10);}
+        setFB(fbId,'🎉 '+NK[P.s.length]+' 문장 = <b>'+NK[P.s.length]+' 칸</b> = <span class="hl">한 장면</span> — '+P.who+' 의 '+P.time+'! +10점',true);
+      },1300);
+    },600);
+  }));
+}
+/* 스스로 읽기 — 🔊 는 「다 읽었어요」 전에는 잠겨 있다(먼저 들려주면 따라 말하기가 된다 · Lv2 #34 판정). 읽은 뒤 🔊 = 글 전체 + 네 칸 */
+function buildSelf(key,readId,lisId,stripId,fbId,slideIdx){
+  const rb=document.getElementById(readId),lb=document.getElementById(lisId);
+  const strip=putStrip(stripId,key,false);
+  let read=false;
+  rb.addEventListener('click',()=>{
+    if(read)return;
+    read=true;playClick();
+    rb.classList.add('done');lb.classList.remove('lock');
+    setFB(fbId,'👍 소리 내어 다 읽었어요 — 이제 🔊 로 <b>내가 읽은 것과 같은지</b> 들어 봐요!',true);
+  });
+  lb.addEventListener('click',()=>{
+    playClick();
+    if(!read){setFB(fbId,'🔒 먼저 <b>소리 내어 읽고</b> — 「다 읽었어요」를 눌러요!',false);return;}
+    KTTS.sentence(PSG[key].en);
+    strip.querySelectorAll('.cel').forEach(c=>c.classList.add('on'));strip.classList.add('merge');
+    if(!answered[slideIdx]){answered[slideIdx]=true;addScore(10);playCorrect();}
+    setFB(fbId,'🎉 내가 읽은 글 = 이 <b>'+NK[PSG[key].s.length]+' 칸 장면</b> — '+PSG[key].ko,true);
+  });
+}
+/*PTN-END*/
+let firstTryOK=0;
+const WRONG_AT={};
+
+/* S1 소환 — 두 글의 이름 넷 + They · don't */
+(function(){
+  const KO={lion:'사자',meat:'고기',elephant:'코끼리',fruit:'과일',they:'그들',"don't":'안 ~해요'};
+  const A=['lion','meat','elephant','fruit'],B=['they',"don't"];
+  const cd=(w,nw)=>'<div class="wcard'+(nw?' isnew':'')+'" data-w="'+w+'">'+mgw(w)+'<span class="ko">'+KO[w]+' · '+KNO[w.toLowerCase()]+'</span></div>';
+  document.getElementById('rowA').innerHTML=A.map(w=>cd(w,1)).join('');
+  document.getElementById('rowB').innerHTML=B.map(w=>cd(w,0)).join('');
+  const all=A.concat(B),done=new Set();
+  document.querySelectorAll('#rowA .wcard,#rowB .wcard').forEach(el=>el.addEventListener('click',()=>{
+    const k=el.dataset.w;
+    playClick();KTTS.word(k);el.classList.add('tapped');
+    if(done.has(k))return;
+    done.add(k);
+    if(done.size<all.length){setFB('fb1','🔊 '+k+' — '+done.size+' / '+all.length+'개 깨웠어요!',true);}
+    else if(!answered[1]){answered[1]=true;addScore(10);setFB('fb1','🎉 여섯 단어를 다 깨웠어요! +10점',true);}
+  }));
+})();
+
+document.getElementById('p2').innerHTML=ptxt('lion');
+buildSelf('lion','r2','l2','st2','fb2',2);
+document.getElementById('p3').innerHTML=ptxt('elephant');
+buildSelf('elephant','r3','l3','st3','fb3',3);
+
+[4,7].forEach(putMatch);[5,8].forEach(putTF);[6,9].forEach(putPic);
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
+  const gated=slide.dataset.gate==='1';
+  playClick();
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);
+    if(gated&&!WRONG_AT[currentSlide])firstTryOK++;
+    const a=aftermath(slide);
+    KTTS.sentence(a.say);showEv(slide);
+    setFB('fb'+currentSlide,okMsg(pts)+' — '+a.msg,true);
+    answered[currentSlide]=true;
+  }else{
+    btn.classList.add('wrong');playWrong();combo=0;
+    WRONG_AT[currentSlide]=(WRONG_AT[currentSlide]||0)+1;
+    if(WRONG_AT[currentSlide]>=3){
+      /* 힌트 2단 후 3회차 = 정답 공개 + 해설(계약 §8) — 낭독 0 · 정답 칸에 점선 */
+      btn.parentNode.children[correct].classList.add('hint');
+      setFB('fb'+currentSlide,'정답은 <b>점선</b> 칸 — '+aftermath(slide).msg,false);
+    }else if(WRONG_AT[currentSlide]===2){
+      setFB('fb'+currentSlide,slide.dataset.kind==='pic'?'힌트 💡 다섯 문장 중 <b>그 이야기를 하는 문장</b>을 찾아 끝까지 — 물음표 줄은 근거가 아니에요!'
+        :'힌트 💡 <b>어느 글</b>인지 먼저 보고 — 그 말이 정말 그 글에 있나 줄마다 찾아봐요!',false);
+    }else{
+      setFB('fb'+currentSlide,wrongMsg(slide),false);
+    }
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+/* ★게이트② — 6문항 중 첫 시도 4↑(67%) · 규약 §2 · 통과 = 계단참② 도장 */
+function finish(){
+  document.getElementById('finalScore').textContent=score;
+  const pass=firstTryOK>=4;
+  document.getElementById('resultStars').textContent=firstTryOK>=6?'⭐⭐⭐⭐⭐':firstTryOK>=4?'⭐⭐⭐⭐':'⭐⭐⭐';
+  const t=document.getElementById('gateText'),b=document.getElementById('gateBtn');
+  if(pass){
+    document.getElementById('resultEmoji').textContent='🏆';
+    document.getElementById('resultTitle').textContent='통과! 계단참② 도장 쾅!';
+    document.getElementById('stamp').style.display='inline-block';
+    document.getElementById('wsBtn').style.display='inline-block';
+    try{ if(window.KProgress) KProgress.light('lv3-18'); }catch(e){}
+    try{ if(window.KCollection) KCollection.add(['lion','meat','elephant','fruit']); }catch(e){}
+    t.innerHTML='오늘 손에 넣은 것 🏆<br>① <span class="hl">알려 주는 글 두 편</span>을 혼자 읽었다<br>② 글과 맞는 문장 — <b>근거 줄</b>을 찾으면 답이 보인다<br>③ 두 글을 섞지 않는다 — 계단참② 아홉 칸 완주<br>다음은 <b>계단참③</b> — 동네의 사람들을 만나요!';
+    b.textContent='▶ 사다리에서 다음 칸';
+    b.onclick=()=>location.href='../index.html';
+  }else{
+    document.getElementById('resultEmoji').textContent='💪';
+    document.getElementById('resultTitle').textContent='조금만 더!';
+    t.innerHTML='한 번에 맞힌 게 <b>'+firstTryOK+' / 6</b>이에요.<br>연습을 한 번 더 하고 오면 <span class="hl">훨씬 쉬워져요</span>!';
+    b.textContent='↩ 연습 한 번 더';
+    b.onclick=()=>location.href='18_2_nonfiction1_practice.html';
+  }
+}
+
+let tx=0,ty=0;
+const sc=document.getElementById('slidesContainer');
+sc.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;});
+sc.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){d_swipe(dx);return;}
+});
+function d_swipe(dx){dx>0?prevSlide():nextSlide();}
+sc.addEventListener('click',e=>{
+  if(justUnlocked)return;
+  const w=e.target.closest('[data-sound]');
+  if(!w)return;
+  const host=w.classList.contains('step')?w:w.closest('.step');
+  if(!host||host.classList.contains('in'))KTTS.sound(w.dataset.sound);
+});
+updateUI();
+setupSlide(document.querySelectorAll('.slide')[0],0);
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
