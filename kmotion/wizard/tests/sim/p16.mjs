@@ -21,20 +21,20 @@ const BAN = /예각|둔각|이등변|정삼각형|수직|평행|사다리꼴|마
   ok('숲 4판·신전 전투장 1·길 = 정령 0', ['forest-1-1', 'forest-1-2', 'forest-1-3', 'forest-1-boss'].every(id => JSON.stringify(data.stages[id]).indexOf('shape-spirit') < 0) && JSON.stringify(ST.zones.filter(z => z.id !== 'arena-2')).indexOf('shape-spirit') < 0);
   const keys = ['q.spirit.name', 'q.spirit', 'toast.spirit', 'toast.spiritBroke', 'learn.g1.solid.name', 'learn.g2.plane.name', 'learn.g3.rshape.name', ...Object.keys(NAME_CODE).flatMap(f => ['hint.spirit.' + f, 'why.nm-' + f])];
   ok(`문구 키 ${keys.length}`, keys.every(k => typeof T[k] === 'string' && T[k].length > 0), keys.filter(k => !T[k]).join());
-  ok('4학년↑ 낱말 0', !BAN.test(keys.map(k => T[k]).join('\n')));
-  ok('이름 판 코드 40~48: PIC nm-* · FAMILY nm · proto 글자 판 SVG', Object.values(NAME_CODE).every(c => /^nm-/.test(PIC[c]) && FAMILY[PIC[c]] === 'nm' && /<text/.test(picHtml(PIC[c]))) && Object.keys(NAME_CODE).length === 9);
+  ok('4학년↑ 낱말 0(1~3학년 키만 — 4학년 줄 v2.14 는 p17)', !BAN.test(keys.filter(k => !/atri|otri|iso|equi/.test(k)).map(k => T[k]).join('\n')));
+  ok('이름 판 코드 40~48·70~73: PIC nm-* · FAMILY nm · proto 글자 판 SVG', Object.values(NAME_CODE).every(c => /^nm-/.test(PIC[c]) && FAMILY[PIC[c]] === 'nm' && /<text/.test(picHtml(PIC[c]))) && Object.keys(NAME_CODE).length === 13);   // v2.14 +4(70~73)
   ok('보호막 그림 svgMarkup: 학년 줄 모양 전부 · CSS 변수 0(이미지로 읽힘)', Object.values(SPIRIT_SETS).flatMap(S => S.fams.flatMap(f => CODES[f])).every(c => { const m = svgMarkup(PIC[c]); return /^<svg xmlns/.test(m) && m.indexOf('var(') < 0; })); }
 
 // ── 2. 생성기 fixed 300 · 엔진 통과(학년별)
 for (const [gk, S] of Object.entries(SPIRIT_SETS)) { const qe = new QuestionEngine({ rng: createRng(7), concepts: [] }); let bad = 0, fams = new Set(), note = '';
-  for (let i = 0; i < 300; i++) { const sh = pickSpiritShape(qe.rng, gk === 'g1' ? 1 : gk === 'g2' ? 2 : 3); const b = qe.next({ fixed: { concept: sh.concept, fam: sh.fam, code: sh.code } }); fams.add(sh.fam);
+  for (let i = 0; i < 300; i++) { const sh = pickSpiritShape(qe.rng, +gk[1]); const b = qe.next({ fixed: { concept: sh.concept, fam: sh.fam, code: sh.code } }); fams.add(sh.fam);
     const names = b.choices.map(c => NAME_FAM[c.num]), right = names[b.correctSlot], wr = names.filter((_, k) => k !== b.correctSlot);
     const good = b.concept === S.concept && b.verified && b.choicePic && b.pic === PIC[sh.code] && right === sh.fam && new Set(b.choices.map(c => c.num)).size === 3 && b.choices.every(c => /^nm-/.test(c.pic)) && wr.every(w => S.wrongs[sh.fam].includes(w))
       && !(sh.fam === 'square' && (wr.includes('rect') || wr.includes('quad'))) && !(sh.fam === 'rect' && wr.includes('quad'));
     if (!good) { bad++; note = note || JSON.stringify({ sh, names }); } }
   ok(`${gk} 300: 문제 그림 = 보호막 모양 · 보기 이름 판 3 · 정답 = 그 이름 · 오답 = 그 모양에 틀린 이름(정사각형에 직사각형·사각형 없음) · 모양 묶음 ${S.fams.length} 다 나옴`, bad === 0 && fams.size === S.fams.length, bad ? note : `묶음 ${[...fams]}`); }
 { const rng = createRng(3); let same = 0; for (let g = 1; g <= 4; g++) { let prev = null; for (let i = 0; i < 200; i++) { const s = pickSpiritShape(rng, g, prev); if (s.fam === prev) same++; prev = s.fam; } }
-  ok('다시 켜지는 보호막은 늘 다른 모양 묶음(1~4학년 200번씩)', same === 0 && spiritSet(4) === SPIRIT_SETS.g3);
+  ok('다시 켜지는 보호막은 늘 다른 모양 묶음(1~4학년 200번씩)', same === 0 && spiritSet(4) === SPIRIT_SETS.g4);   // v2.14
   ok('fixedOnly: 정령 이름 3종은 보통 풀·want 풀에 안 들어감', ['g1.solid.name', 'g2.plane.name', 'g3.rshape.name'].every(k => GENERATORS[k].fixedOnly && !GENERATORS[k].word && !GENERATORS[k].compare && !GENERATORS[k].pattern) && ['forest-1-1', 'temple-2-1'].every(id => !data.stages[id].concepts.some(k => GENERATORS[k].fixedOnly))); }
 
 // ── 3. 판 안: 전투장 2 정령 — 보호막 ×.3 · 수정 → 이름 문제 → 깨짐·약점 ×1.5 → 4초 뒤 다른 모양 / 오답은 그대로

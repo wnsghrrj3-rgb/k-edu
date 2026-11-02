@@ -17,6 +17,13 @@ export const SHAPE_KEY_SETS = {
     { hole: 'square', answer: 'square', wrongs: ['rect', 'quadNoRight'], concept: 'g3.quad.right', why: f => f === 'rect' ? 'rect-not-square' : 'quad-no-right', hint: 'pz.key.hint.square' },
     { hole: 'rangle', answer: 'rangle', wrongs: ['angle', 'angle'], concept: 'g3.right.find', why: () => 'miss-right', hint: 'pz.key.hint.rangle' },
   ],
+  // v2.14 4학년 진짜 줄(4-1 4단원 삼각형): 구멍 = 이등변·정삼각형·예각삼각형·둔각삼각형. 정삼각형 구멍엔 이등변 돌도 안 맞음(변 셋이 같아야), 이등변 구멍의 오답은 세 변이 다른 돌만(정삼각형 돌은 이등변이라 맞아 버림)
+  g4: [
+    { hole: 'iso', answer: 'iso', wrongs: ['scal', 'scal'], concept: 'g4.tri.side', why: () => 'tri-scal', hint: 'pz.key.hint.iso' },
+    { hole: 'equi', answer: 'equi', wrongs: ['iso', 'scal'], concept: 'g4.tri.side', why: f => f === 'iso' ? 'iso-not-equi' : 'tri-scal', hint: 'pz.key.hint.equi' },
+    { hole: 'atri', answer: 'atri', wrongs: ['otri', 'rtri'], concept: 'g4.tri.byAngle', why: f => 'is-' + f, hint: 'pz.key.hint.atri' },
+    { hole: 'otri', answer: 'otri', wrongs: ['atri', 'rtri'], concept: 'g4.tri.byAngle', why: f => 'is-' + f, hint: 'pz.key.hint.otri' },
+  ],
 };
 
 // v2.4 spec = 학년 변환표 puzzle 줄(gradeTable.puzzleSpec) — bridge/mushroom 'mul' 이면 두 돌의 곱·버섯 점의 곱, ruleMul 이면 「배가 되는 규칙」 섞임. 1학년({})은 rng 호출까지 그대로(골든 불변).
@@ -110,7 +117,7 @@ export function makePuzzle(type, rng, grade = 1, opt = {}, spec = {}){
         prompt: { key: 'pz.key.solid', args: { o: OBJ_KO[obj] } }, stones: codes.map((n, s) => ({ slot: s, num: n })), answer: [slot],
         hint1: { key: 'pz.key.solid.hint', args: { o: OBJ_KO[obj], e: wEun(OBJ_KO[obj]), n: SHAPE_KO[fam] } } };
     }
-    const set = rng.pick(grade <= 2 ? SHAPE_KEY_SETS.g2 : SHAPE_KEY_SETS.g3);
+    const set = rng.pick(grade <= 2 ? SHAPE_KEY_SETS.g2 : grade >= 4 ? SHAPE_KEY_SETS.g4 : SHAPE_KEY_SETS.g3);   // v2.14 4학년 줄
     const holeCode = rng.pick(CODES[set.hole]), hole = PIC[holeCode];
     const other = CODES[set.answer].filter(c => c !== holeCode), ans = other.length ? rng.pick(other) : holeCode;   // 같은 묶음의 다른 변형(한 그림으로 외우지 않게)
     const wrongs = []; for (const f of set.wrongs) { const pool = CODES[f].filter(c => !wrongs.includes(c)); wrongs.push(rng.pick(pool)); }

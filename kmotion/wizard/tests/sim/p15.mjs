@@ -37,8 +37,8 @@ const BAN = /예각|둔각|이등변|정삼각형|수직|평행|사다리꼴|마
     if (h === 'rangle') return p.concept === 'g3.right.find' && ws.every(w => w === 'angle') && new Set(p.stones.map(s => s.num)).size === 3;
     return false; });
   ok('3학년 300: 직각삼각형(오답 직각 없는 삼각형·직사각형) · 직사각형(오답 직각 없는 사각형·직각삼각형, 정사각형 없음) · 정사각형(오답 직사각형·직각 없는 사각형) · 직각(오답 직각 아닌 각 2) · 구멍 8종', r3.bad === 0 && r3.seen.size === 8, `bad ${r3.bad} 구멍 ${r3.seen.size}`);
-  const r4 = run(4, p => base(p) && one(p) && ['rtri', 'rect', 'square', 'rangle'].includes(p.hole.family));
-  ok('4학년 = 3학년 줄', r4.bad === 0, `bad ${r4.bad}`);
+  const r4 = run(4, p => base(p) && one(p) && ['iso', 'equi', 'atri', 'otri'].includes(p.hole.family));   // v2.14 4학년 진짜 줄(세부는 p17)
+  ok('4학년 = 4-1 삼각형 줄(v2.14)', r4.bad === 0 && r4.seen.size === 8, `bad ${r4.bad} 구멍 ${r4.seen.size}`);
   ok('verify: 직사각형 구멍에 정사각형 돌이 섞이면 거짓(두 답 방지)', !verifyPuzzle({ type: 'shape-key', hole: { family: 'rect', kind: 'plane' }, stones: [{ slot: 0, num: 19 }, { slot: 1, num: 21 }, { slot: 2, num: 23 }], answer: [0] }) && !verifyPuzzle({ type: 'shape-key', hole: { family: 'tri', kind: 'plane' }, stones: [{ slot: 0, num: 1 }, { slot: 1, num: 2 }, { slot: 2, num: 3 }], answer: [0] })); }
 function PIC_CODE(id){ return +Object.keys(PIC).find(k => PIC[k] === id); }
 

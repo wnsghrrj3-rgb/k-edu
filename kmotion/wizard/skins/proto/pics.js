@@ -50,9 +50,46 @@ const S = {
   cdia2: () => `<circle cx="50" cy="50" r="38" fill="${F}" stroke="${L}" stroke-width="5"/><line x1="50" y1="12" x2="50" y2="88" stroke="${L}" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="50" r="5" fill="${L}"/>`,
   crad2: () => `<circle cx="50" cy="50" r="38" fill="${F}" stroke="${L}" stroke-width="5"/><line x1="50" y1="50" x2="24" y2="22" stroke="${L}" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="50" r="5" fill="${L}"/>`,
   cline: () => `<circle cx="50" cy="50" r="34" fill="${F}" stroke="${L}" stroke-width="5"/><line x1="6" y1="36" x2="94" y2="36" stroke="${L}" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="50" r="5" fill="${L}"/>`,
+  // v2.14 4학년 줄(4-1 2단원 각도 · 4단원 삼각형) — 코드 50~63. 예각·둔각은 호(弧) 표시, 같은 변은 짧은 가로 표시(교과서 표기), 삼각형은 세 각 그대로 작도
+  acute:   () => `<polyline points="88,78 22,78 76,40" fill="none" stroke="${L}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M42 78 a20 20 0 0 0 -4 -11" fill="none" stroke="${L}" stroke-width="3"/><circle cx="22" cy="78" r="6" fill="${L}"/>`,
+  acute2:  () => `<polyline points="88,78 22,78 52,26" fill="none" stroke="${L}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M42 78 a20 20 0 0 0 -10 -17" fill="none" stroke="${L}" stroke-width="3"/><circle cx="22" cy="78" r="6" fill="${L}"/>`,
+  obtuse:  () => `<polyline points="92,78 40,78 12,30" fill="none" stroke="${L}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M60 78 a20 20 0 0 0 -30 -17" fill="none" stroke="${L}" stroke-width="3"/><circle cx="40" cy="78" r="6" fill="${L}"/>`,
+  obtuse2: () => `<polyline points="92,70 50,70 8,46" fill="none" stroke="${L}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M70 70 a20 20 0 0 0 -37 -10" fill="none" stroke="${L}" stroke-width="3"/><circle cx="50" cy="70" r="6" fill="${L}"/>`,
+  iso:   () => tri([[50, 14], [16, 84], [84, 84]], [0, 2]),
+  iso2:  () => tri([[12, 20], [12, 84], [90, 52]], [1, 2]),
+  equi:  () => tri([[50, 12], [14, 74.4], [86, 74.4]], [0, 1, 2]),
+  equi2: () => tri([[69, 17.1], [12, 50], [69, 82.9]], [0, 1, 2]),
+  scal:  () => tri([[12, 80], [90, 80], [34, 20]], []),
+  scal2: () => tri([[8, 84], [92, 84], [72, 18]], []),
+  atri:  () => tri([[14, 80], [86, 80], [57.2, 18.3]], []),
+  atri2: () => tri([[14, 80], [86, 80], [66.8, 27.2]], []),
+  otri:  () => tri([[10, 80], [90, 80], [42, 57.6]], []),
+  otri2: () => tri([[30, 80], [94, 80], [13, 33]], []),
 };
+// v2.14 삼각형 그리기 — 꼭짓점 3·같은 길이 표시를 넣을 변(꼭짓점 i → i+1) 번호
+function tri(P, ticks){ const seg = P.map((p, i) => [p, P[(i + 1) % 3]]);
+  const t = ticks.map(i => { const [a, b] = seg[i], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1], n = Math.hypot(dx, dy) || 1, nx = -dy / n * 5, ny = dx / n * 5; return `<line x1="${(mx - nx).toFixed(1)}" y1="${(my - ny).toFixed(1)}" x2="${(mx + nx).toFixed(1)}" y2="${(my + ny).toFixed(1)}" stroke="${L}" stroke-width="3.5" stroke-linecap="round"/>`; }).join('');
+  return `<polygon points="${P.map(p => p.join(',')).join(' ')}" fill="${F}" stroke="${L}" stroke-width="5" stroke-linejoin="round"/>` + t; }
+
+// v2.14 각으로 작도한 삼각형·사각형(문제 그림 `tri:a,b` · `quad:a,b,c`, 정본 작도 규약: 그림의 각 = 실제 각). 수학 좌표(y 위)로 풀고 화면에 맞춰 뒤집는다
+const RAD = Math.PI / 180;
+export function polyFromAngles(angles){ const [a, b, c] = angles; const A = [0, 0], B = [1, 0];
+  if (angles.length === 2) { const cc = 180 - a - b, t = Math.sin(b * RAD) / Math.sin(cc * RAD); return { pts: [A, B, [t * Math.cos(a * RAD), t * Math.sin(a * RAD)]], labels: [a, b, '?'] }; }
+  // 사각형: AB = 1, BC = L — L 은 1 부터 몇 가지를 돌려 D 가 C·A 와 겹치지 않는(교점이 두 반직선 앞쪽에 충분히 있는) 첫 것(예: 60·60·120 은 L=1 이면 D = C 로 찌그러짐)
+  const u = [Math.cos(a * RAD), Math.sin(a * RAD)], v = [Math.cos((360 - b - c) * RAD), Math.sin((360 - b - c) * RAD)];
+  for (const L of [1, .8, 1.25, .65, 1.5, .5, 2]) { const C = [1 + L * Math.cos((180 - b) * RAD), L * Math.sin((180 - b) * RAD)];
+    const det = u[0] * -v[1] - u[1] * -v[0]; if (Math.abs(det) < 1e-9) continue;   // A + t u = C + s v
+    const dx = C[0] - A[0], dy = C[1] - A[1], t = (dx * -v[1] - dy * -v[0]) / det, sv = (u[0] * dy - u[1] * dx) / det; if (t < .3 || sv < .3) continue;
+    return { pts: [A, B, C, [A[0] + t * u[0], A[1] + t * u[1]]], labels: [a, b, c, '?'], t, s: sv, L }; }
+  return null; }
+function anglePoly(spec){ const angles = spec.split(',').map(Number); const g = polyFromAngles(angles); if (!g) return '';
+  const xs = g.pts.map(p => p[0]), ys = g.pts.map(p => p[1]), minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys), k = 72 / Math.max(maxX - minX, maxY - minY);
+  const P = g.pts.map(([x, y]) => [50 + (x - (minX + maxX) / 2) * k, 50 - (y - (minY + maxY) / 2) * k]); const cx = P.reduce((s, p) => s + p[0], 0) / P.length, cy = P.reduce((s, p) => s + p[1], 0) / P.length;
+  const lab = P.map((p, i) => { const dx = cx - p[0], dy = cy - p[1], n = Math.hypot(dx, dy) || 1; const x = p[0] + dx / n * 15, y = p[1] + dy / n * 15; return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-family="Pretendard, system-ui, sans-serif" font-weight="800" font-size="${typeof g.labels[i] === 'number' ? 12 : 15}" fill="${L}">${g.labels[i]}${typeof g.labels[i] === 'number' ? '°' : ''}</text>`; }).join('');
+  return wrap(`<polygon points="${P.map(p => p.map(v => v.toFixed(1)).join(',')).join(' ')}" fill="${F}" stroke="${L}" stroke-width="4" stroke-linejoin="round"/>` + lab, 'angled'); }
 // v2.12 이름 판(도형 정령 보호막 이름 맞히기) — 그림 대신 이름 글자. 긴 이름은 두 줄
-const NM = { box: ['상자', '모양'], cyl: ['둥근 기둥', '모양'], ball: ['공', '모양'], tri: ['삼각형'], quad: ['사각형'], circ: ['원'], rtri: ['직각', '삼각형'], rect: ['직사각형'], square: ['정사각형'] };
+const NM = { box: ['상자', '모양'], cyl: ['둥근 기둥', '모양'], ball: ['공', '모양'], tri: ['삼각형'], quad: ['사각형'], circ: ['원'], rtri: ['직각', '삼각형'], rect: ['직사각형'], square: ['정사각형'],
+  atri: ['예각', '삼각형'], otri: ['둔각', '삼각형'], iso: ['이등변', '삼각형'], equi: ['정삼각형'] };   // v2.14 4학년 삼각형 이름 판(70~73)
 for (const [f, ls] of Object.entries(NM)) S['nm-' + f] = () => { const long = Math.max(...ls.map(x => x.length)), fs = long <= 1 ? 40 : long <= 2 ? 32 : long <= 3 ? 26 : long <= 4 ? 20 : 17, y0 = ls.length === 1 ? 50 : 50 - fs * .58;
   return `<rect x="6" y="22" width="88" height="56" rx="14" fill="${F}" stroke="${L}" stroke-width="4"/>` + ls.map((t, i) => `<text x="50" y="${(y0 + i * fs * 1.16).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-family="Pretendard, system-ui, sans-serif" font-weight="900" font-size="${fs}" fill="${L}">${t}</text>`).join(''); };
 // v2.12 3D 판(도형 정령 보호막)에 그릴 SVG 문자열 — img 로 읽으니 CSS 변수를 색으로 바꿔 둔다
@@ -64,4 +101,4 @@ function cubes(spec){ const hs = spec.split(',').map(Number); const n = hs.lengt
   return wrap(`<line x1="8" y1="88" x2="92" y2="88" stroke="${L}" stroke-width="3"/>${o}`, 'cubes'); }
 // 물건 줄: 'row:book,can,orange' — 4~6개 한 줄(모양 세기). 각 그림을 작게 가로로.
 function row(spec){ const ids = spec.split(','); const n = ids.length, w = 100 / n; return `<span class="mw-picrow">${ids.map(id => S[id] ? `<svg class="mw-pic small" viewBox="0 0 100 100" style="width:${(w * .9).toFixed(1)}%">${S[id]()}</svg>` : '').join('')}</span>`; }
-export function picHtml(id){ if (!id) return ''; if (id.startsWith('cubes:')) return cubes(id.slice(6)); if (id.startsWith('row:')) return row(id.slice(4)); return S[id] ? wrap(S[id]()) : ''; }
+export function picHtml(id){ if (!id) return ''; if (id.startsWith('cubes:')) return cubes(id.slice(6)); if (id.startsWith('row:')) return row(id.slice(4)); if (id.startsWith('tri:') || id.startsWith('quad:')) return anglePoly(id.slice(id.indexOf(':') + 1)); return S[id] ? wrap(S[id]()) : ''; }
