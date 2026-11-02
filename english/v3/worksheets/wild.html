@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv3 #15 동물② 야생 10단어 — school2places.html(Lv3 #11) · farm.html(Lv3 #6) 판형 계승, V트랙 주황
+     ★그림·동물원 = 화면과 같은 그림(ANM315CSS 블록 그대로 · 마크업 = 화면 pz()·zoo('find') 를 생성기 ws/gen_wild.js 로 그대로 뽑음) — 같은 단어 = 같은 그림.
+     ★① 따라쓰기 10(그림 위) · ② 동물원 번호 잇기(단어 열 = 우리 번호 순서와 다름 — 찾아야 쓴다)
+     ★③ 👍 I like ___s. / 👎 I don't like ___s. 내 문장 2(단어 상자 = 여럿 재료 아홉 — 보고 옮겨 쓰기) · ④ 짝에게 Do you like ___s? 묻고 👍/👎 받아 적기. -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 10mm 12mm 8mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --primary:#d9702a; --border:#e0b48c; --green:#4CAF50; --green-light:#E8F5E9; --red:#E53935; --yellow:#FFC107; --yellow-light:#FFF8E1; }
+  body { font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.45; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d9702a; padding-bottom: 5px; }
+  .brand { font-size: 13px; font-weight: 700; color: #9c4d13; }
+  .brand .lv { background: #d9702a; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 7px; background: #fdeee1; border: 2px solid #d9702a; border-radius: 12px; padding: 7px 13px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 24px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #9c4d13; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 15.5px; font-weight: 800; color: #4a2408; }
+  .seed .main b { color: #d85a30; }
+  .keypoint { margin-top: 6px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 5px 12px; font-size: 12px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  .keypoint .big { font-size: 14px; font-weight: 800; color: #d85a30; }
+  /* 그림·동물원 — 화면 블록 그대로 */
+/*ANM315CSS-BEGIN — Lv3 #15 동물② 그림·동물원 한 장·여럿 꼬리 · 4파일 + 활동지 문자 단위 동일(blocks/ANM315CSS.css → sync_blocks.py 주입, 하네스 A4·D2b).
+  ★그림 타일(.anp·.anz·.em) = Lv3 #6 ANM306CSS 와 같은 선언(같은 단어 = 같은 그림 · 액자 모양이 정답 단서가 되지 않는다).
+  ★동물원 한 장 = 우리 열 칸(5×2 격자) — 칸마다 따로 눌린다(Lv3 #6 농장·#11 지도 「붙어 있는 자리」 검수 대기를 격자로 피했다).
+    윗줄 땅(모래) · 아랫줄 나무(초록) · 코끼리 칸만 물(파랑). 칸 위 나무 들보 + 뒤쪽 옅은 창살. 장식 이모지 0.
+  ★여럿 꼬리 .pl = Lv3 #2 PL302CSS 와 같은 연두 칩(한 단어는 붙어 있다 · 칸 구분은 색으로). ★움직임 0 — 명사 그림은 멈춰 있다. */
+.anp{position:relative;display:inline-flex;align-items:center;justify-content:center;width:80px;height:64px;border-radius:14px;background:#FFFDF9;border:2px solid #F1DFCD;box-sizing:border-box;line-height:1;vertical-align:middle;overflow:hidden;text-align:center}
+.anz{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+.anz>.anp{position:absolute;left:0;top:0;transform-origin:0 0}
+.anp .em{font-size:44px;font-style:normal;line-height:1}
+.pl{text-decoration:none;display:inline-block;background:#B2F2BB;color:#2B8A3E;border-radius:6px;padding:0 3px;margin-left:1px}
+.pl.pop{animation:plpop .5s ease-out}
+@keyframes plpop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.25);opacity:1}100%{transform:scale(1)}}
+.zoo{width:min(360px,100%);margin:8px auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;padding:6px;border-radius:16px;border:3px solid var(--border);background:#D6EEFF;box-sizing:border-box}
+.zoo .cage{position:relative;aspect-ratio:1/1.08;border-radius:10px;border:3px solid transparent;border-top:6px solid #8D6E63;box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;min-width:0;line-height:1;transition:transform .15s}
+.zoo .cage::before{content:'';position:absolute;inset:0;border-radius:6px;background:repeating-linear-gradient(90deg,rgba(121,85,72,.16) 0 2px,transparent 2px 13px);pointer-events:none}
+.zoo .cage.h-land{background:linear-gradient(#FFF3D6,#F3DDA8)}
+.zoo .cage.h-tree{background:linear-gradient(#DDF2C9,#B9DF97)}
+.zoo .cage.h-water{background:linear-gradient(#DDF2C9 0 52%,#90CAF9 52%)}
+.zoo .cage:active{transform:scale(.93)}
+.zoo .cage .fa{position:relative;font-size:32px;line-height:1}
+.zoo .cage.found{border-left-color:var(--green);border-right-color:var(--green);border-bottom-color:var(--green);box-shadow:0 0 0 2px var(--green) inset}
+.zoo .cage .tag{display:none;position:absolute;left:50%;bottom:-.75em;transform:translateX(-50%);font-size:13px;background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:8px;padding:0 4px;white-space:nowrap;font-family:'Jua',sans-serif;line-height:1.2;z-index:2}
+.zoo .cage.found .tag{display:block}
+.zoo .choice-btn.cage{font-family:inherit;box-shadow:none;min-height:0}
+.zoo .choice-btn.cage.correct{box-shadow:0 0 0 3px var(--green) inset}
+.zoo .choice-btn.cage.wrong{box-shadow:0 0 0 3px var(--red) inset}
+/*ANM315CSS-END*/
+  .zoo { margin: 0; width: 300px; flex: none; border-color: #e0b48c; }
+  .zoo .cage { cursor: default; }
+  .zoo .cage .fa { font-size: 28px; }
+  .zoo .spot .no { position: absolute; top: -5px; left: -5px; width: 17px; height: 17px; border-radius: 50%; background: #9c4d13; color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; font-family: sans-serif; line-height: 1; z-index: 3; }
+  h2 { margin-top: 8px; font-size: 13px; color: #9c4d13; display: flex; align-items: center; gap: 7px; }
+  h2 .n { background: #9c4d13; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2 .hint { font-weight: 400; font-size: 10px; color: #888780; }
+  .trace { display: flex; gap: 5px; margin-top: 3px; }
+  .traceword { text-align: center; flex: 1; min-width: 56px; }
+  .traceword .tpic { line-height: 0; }
+  .traceword .outline { font-size: 17px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.3px #c4c2b8; letter-spacing: 1px; }
+  .traceword .line { border-bottom: 1.5px solid #d3d1c7; height: 12px; margin-top: 1px; }
+  .topwrap { display: flex; gap: 12px; margin-top: 4px; align-items: center; }
+  .numbox { flex: 1; border: 1.5px solid #e0b48c; border-radius: 10px; padding: 6px 10px; background: #fffdfa; }
+  .numbox .cap { font-size: 10px; color: #888780; margin-bottom: 4px; }
+  .numgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; }
+  .nb { display: flex; align-items: center; gap: 6px; }
+  .nb .bx { width: 22px; height: 22px; border: 1.6px solid #b4b2a9; border-radius: 5px; flex: none; }
+  .nb .w { font-size: 14px; font-weight: 800; color: #9c4d13; }
+  .duo { display: flex; gap: 12px; margin-top: 2px; align-items: stretch; }
+  .jbox { flex: 1; display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .jrow { display: flex; align-items: center; gap: 8px; border: 2px solid #e0b48c; border-radius: 12px; padding: 4px 10px; background: #fffaf5; }
+  .jrow .jp { line-height: 0; }
+  .jrow .jw { font-size: 19px; font-weight: 800; color: #9c4d13; }
+  .jrow .op { font-size: 16px; color: #5f5e5a; font-weight: 700; }
+  .jrow .wl { flex: 1; border-bottom: 1.6px solid #b4b2a9; height: 24px; }
+  .jrow .big { font-size: 26px; font-weight: 800; color: #4a2408; letter-spacing: 2px; }
+  .jrow .note { font-size: 10.5px; color: #888780; }
+  .mine { flex: 1.15; border: 2px solid #d9702a; border-radius: 12px; background: #fffaf5; padding: 5px 10px; display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+  .mine .draw { width: 112px; height: 92px; border: 2px dashed #c9b39c; border-radius: 10px; background: #fff; flex: none; }
+  .mine .sent { font-size: 17px; font-weight: 800; color: #4a2408; margin: 4px 0; }
+  .mine .sent .bl { display: inline-block; width: 100px; border-bottom: 1.6px solid #b4b2a9; height: 20px; vertical-align: bottom; }
+  .mine .tbox { font-size: 10.5px; color: #9c4d13; font-weight: 800; line-height: 1.5; }
+  .pairbox { margin-top: 6px; border: 2px dashed #ef9f27; border-radius: 10px; padding: 5px 11px; text-align: center; font-size: 11.5px; background: #fffaf2; }
+  .pairbox b { color: #d85a30; }
+  .recap { margin-top: 6px; background: #4a2408; color: #fdeee1; border-radius: 10px; padding: 6px 13px; text-align: center; font-size: 12px; }
+  .recap b { color: #fac775; }
+  .parent { margin-top: 6px; border-top: 1px dashed #b4b2a9; padding-top: 5px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+  .pl { font-weight: 800; }
+  .mrow { display: flex; align-items: center; gap: 8px; border: 2px solid #e0b48c; border-radius: 12px; padding: 4px 10px; background: #fffaf5; margin-top: 4px; }
+  .mrow .yn { font-size: 22px; line-height: 1; }
+  .mrow .draw { width: 58px; height: 44px; border: 2px dashed #c9b39c; border-radius: 8px; background: #fff; flex: none; }
+  .mrow .sent { font-size: 16px; font-weight: 800; color: #4a2408; }
+  .mrow .bl { display: inline-block; width: 86px; border-bottom: 1.6px solid #b4b2a9; height: 18px; vertical-align: bottom; }
+  .mrow .bl.nm { width: 62px; }
+  .mrow .oo { font-size: 15px; color: #5f5e5a; white-space: nowrap; }
+  .tbox2 { font-size: 10.5px; color: #9c4d13; font-weight: 800; line-height: 1.5; margin-top: 3px; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv3 · 어휘 #15</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main">동물 이름은 <b>거의 통째로</b> — 여럿이면 끝에 <b>s</b>.</div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 오늘 열 단어는 <span class="big">동물원 열 마리</span> — 땅 다섯, 나무와 물 곁 다섯.
+    동물을 좋아할 땐 여럿으로 — <b>I like lion<u class="pl">s</u>.</b> 처럼 말해요.
+  </div>
+
+  <h2><span class="n">1</span> 따라 써요 <span class="hint">흐린 글자를 따라 쓰고, 쓰면서 소리 내어 읽어요</span></h2>
+  <div class="trace"><div class="traceword"><div class="tpic"><span class="anz" style="width:40px;height:32px"><span class="anp a-lion" data-anp="lion" style="transform:scale(0.5)"><i class="em">🦁</i></span></span></div><div class="outline">lion</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="anz" style="width:40px;height:32px"><span class="anp a-tiger" data-anp="tiger" style="transform:scale(0.5)"><i class="em">🐯</i></span></span></div><div class="outline">tiger</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="anz" style="width:40px;height:32px"><span class="anp a-zebra" data-anp="zebra" style="transform:scale(0.5)"><i class="em">🦓</i></span></span></div><div class="outline">zebra</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="anz" style="width:40px;height:32px"><span class="anp a-wolf" data-anp="wolf" style="transform:scale(0.5)"><i class="em">🐺</i></span></span></div><div class="outline">wolf</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="anz" style="width:40px;height:32px"><span class="anp a-bear" data-anp="bear" style="transform:scale(0.5)"><i class="em">🐻</i></span></span></div><div class="outline">bear</div><div class="line"></div></div></div>
+  <div class="trace"><div class="traceword"><div class="tpic"><span class="anz" style="width:40px;height:32px"><span class="anp a-monkey" data-anp="monkey" style="transform:scale(0.5)"><i class="em">🐒</i></span></span></div><div class="outline">monkey</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="anz" style="width:40px;height:32px"><span class="anp a-giraffe" data-anp="giraffe" style="transform:scale(0.5)"><i class="em">🦒</i></span></span></div><div class="outline">giraffe</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="anz" style="width:40px;height:32px"><span class="anp a-panda" data-anp="panda" style="transform:scale(0.5)"><i class="em">🐼</i></span></span></div><div class="outline">panda</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="anz" style="width:40px;height:32px"><span class="anp a-elephant" data-anp="elephant" style="transform:scale(0.5)"><i class="em">🐘</i></span></span></div><div class="outline">elephant</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="anz" style="width:40px;height:32px"><span class="anp a-snake" data-anp="snake" style="transform:scale(0.5)"><i class="em">🐍</i></span></span></div><div class="outline">snake</div><div class="line"></div></div></div>
+
+  <h2><span class="n">2</span> 동물원 번호 잇기 <span class="hint">동물원에서 그 동물을 찾아 단어 옆 네모에 번호를 써요</span></h2>
+  <div class="topwrap">
+    <div class="zoo"><div class="spot cage h-land" data-w="zebra"><span class="fa" data-fa="zebra">🦓</span><span class="no">1</span></div><div class="spot cage h-land" data-w="lion"><span class="fa" data-fa="lion">🦁</span><span class="no">2</span></div><div class="spot cage h-land" data-w="bear"><span class="fa" data-fa="bear">🐻</span><span class="no">3</span></div><div class="spot cage h-land" data-w="tiger"><span class="fa" data-fa="tiger">🐯</span><span class="no">4</span></div><div class="spot cage h-land" data-w="wolf"><span class="fa" data-fa="wolf">🐺</span><span class="no">5</span></div><div class="spot cage h-tree" data-w="monkey"><span class="fa" data-fa="monkey">🐒</span><span class="no">6</span></div><div class="spot cage h-water" data-w="elephant"><span class="fa" data-fa="elephant">🐘</span><span class="no">7</span></div><div class="spot cage h-tree" data-w="snake"><span class="fa" data-fa="snake">🐍</span><span class="no">8</span></div><div class="spot cage h-tree" data-w="giraffe"><span class="fa" data-fa="giraffe">🦒</span><span class="no">9</span></div><div class="spot cage h-tree" data-w="panda"><span class="fa" data-fa="panda">🐼</span><span class="no">10</span></div></div>
+    <div class="numbox"><div class="cap">단어 옆 네모에 우리 번호를!</div><div class="numgrid"><div class="nb"><span class="bx"></span><span class="w">lion</span></div><div class="nb"><span class="bx"></span><span class="w">tiger</span></div><div class="nb"><span class="bx"></span><span class="w">zebra</span></div><div class="nb"><span class="bx"></span><span class="w">wolf</span></div><div class="nb"><span class="bx"></span><span class="w">bear</span></div><div class="nb"><span class="bx"></span><span class="w">monkey</span></div><div class="nb"><span class="bx"></span><span class="w">giraffe</span></div><div class="nb"><span class="bx"></span><span class="w">panda</span></div><div class="nb"><span class="bx"></span><span class="w">elephant</span></div><div class="nb"><span class="bx"></span><span class="w">snake</span></div></div></div>
+  </div>
+
+  <div class="duo">
+    <div class="jbox">
+      <h2><span class="n">3</span> 내 문장 <span class="hint">좋아하는 동물 하나, 싫어하는 동물 하나 — 그리고 써요</span></h2>
+      <div class="mrow" data-m="like"><span class="yn">👍</span><span class="draw"></span><span class="sent">I like <span class="bl"></span><u class="pl">s</u>.</span></div>
+      <div class="mrow" data-m="dont"><span class="yn">👎</span><span class="draw"></span><span class="sent">I don't like <span class="bl"></span><u class="pl">s</u>.</span></div>
+      <div class="tbox2">단어 상자 — lion · tiger · zebra · bear · monkey · giraffe · panda · elephant · snake</div>
+    </div>
+    <div class="jbox">
+      <h2><span class="n">4</span> 짝에게 물어봐요 <span class="hint">묻고, 짝의 대답에 ○</span></h2>
+      <div class="mrow" data-m="ask"><span class="sent">Do you like <span class="bl"></span><u class="pl">s</u>?</span><span class="oo">짝 <span class="bl nm"></span> 👍 · 👎</span></div>
+      <div class="mrow" data-m="ask"><span class="sent">Do you like <span class="bl"></span><u class="pl">s</u>?</span><span class="oo">짝 <span class="bl nm"></span> 👍 · 👎</span></div>
+      <div class="tbox2">짝이 👍 면 <b>I like ___s.</b> · 👎 면 <b>I don't like ___s.</b> 라고 대답해요</div>
+    </div>
+  </div>
+
+  <div class="pairbox">헷갈리는 짝 —
+    <b>lion</b> ↔ <b>tiger</b> (갈기 / 줄무늬) &nbsp;·&nbsp; <b>zebra</b> ↔ <b>tiger</b> (말 / 고양이) &nbsp;·&nbsp;
+    <b>elephant</b> ↔ <b>giraffe</b> (코 / 목) &nbsp;·&nbsp; <b>monkey</b> ↔ <b>panda</b> (긴 꼬리 / 까만 눈 둘레) &nbsp;·&nbsp; <b>wolf</b> ↔ <b>bear</b> (뾰족한 귀 / 둥근 귀)
+  </div>
+
+  <div class="recap">오늘 열 단어 = <b>lion · tiger · zebra · wolf · bear · monkey · giraffe · panda · elephant · snake</b></div>
+
+  <div class="parent">
+    <b>부모님께</b> · 동물 이름은 아직 배우지 않은 철자가 많아 <b>통째로</b> 담습니다(snake 하나만 배운 규칙으로 읽혀요). 글자 하나하나의 소리를 설명하지 마세요.
+    · lion·bear 는 Lv1 에서 <b>첫소리 짝</b>으로 만난 단어입니다.
+    · <b>wolf</b> 는 여럿일 때 모양이 바뀌는 단어라 <b>지금은 하나로만</b> 씁니다 — 여럿 문장에 쓰지 않게 해 주세요(단어 상자에도 없습니다).
+    · ④ 는 묻고 대답하는 놀이입니다. 짝이 없으면 가족에게 물어봐 주세요.
+    · 이 활동지는 <b>보고 옮겨 쓰는</b> 종이입니다. <b>받아쓰기로 확인하지 마세요.</b><br>
+    <b>정답</b> · ② lion 2 · tiger 4 · zebra 1 · wolf 5 · bear 3 · monkey 6 · giraffe 9 · panda 10 · elephant 7 · snake 8 · ③④ 그린 동물·짝의 대답과 맞으면 정답(예: I like pandas. · I don't like snakes.)
+  </div>
+</body>
+</html>
