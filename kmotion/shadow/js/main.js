@@ -28,7 +28,7 @@ const AW = 160, AH = 120;
 const mk = () => { const c = document.createElement('canvas'); c.width = AW; c.height = AH; return c; };
 const rawC = mk(), projC = mk(), tgtC = mk();
 const rctx = rawC.getContext('2d', { willReadFrequently: true }), pctx = projC.getContext('2d', { willReadFrequently: true }), tctx = tgtC.getContext('2d', { willReadFrequently: true });
-let tgtBin = null, tgtBox = null, tgtKey = '';
+let tgtBin = null, tgtBox = null, tgtKey = '', tgtCut = AH;   // tgtCut: 상반신 모드일 때 판정 아래 경계(분석판 y)
 
 function analyze(){
   const m = S.mask; if (!m || !m.width) { S.stat = null; S.shadowBox = null; S.projBin = null; return; }
@@ -74,7 +74,7 @@ function stepCalib(t, dt){
   if (!calib.start) { calib.start = t; calib.acc = 0; calib.n = 0; }
   const el = (t - calib.start) / 1000; calib.acc += S.stat.h / AH; calib.n++;
   $('calibMsg').textContent = '좋아요, 그대로 서 있어요'; $('calibNum').textContent = Math.max(1, Math.ceil(3 - el)); $('ringFg').style.strokeDashoffset = 327 * (1 - Math.min(1, el / 3));
-  if (el >= 3) { S.h0 = calib.acc / calib.n; beginPlay(); }
+  if (el >= 3) { S.h0 = calib.acc / calib.n; if (S.body === 'auto') S.upper = S.stat.y1 >= AH - 2; else S.upper = S.body === 'upper'; beginPlay(); }
 }
 
 // ── 공통 그리기
@@ -86,24 +86,31 @@ function updateNums(){ $('hD').textContent = S.d ? Math.round(S.d) + 'cm' : '—
 
 // ══ 괴물 만들기 ══
 function targetFn(mon){ const Hpx = mon.size * H; return c => drawFigure(c, mon.pose, W / 2 + (mon.dx || 0) * W, H * .97, Hpx); }
-function prepTarget(mon){ const key = mon.id + mon.size; if (tgtKey === key) return; tgtKey = key;
+/** 상반신 모드: 목표 허리선(발에서 키의 45% 위) 아래는 그리지도 재지도 않는다 */
+function cutY(mon){ return S.upper ? H * .97 - mon.size * H * .45 : H; }
+function prepTarget(mon){ const key = mon.id + mon.size + (S.upper ? 'u' : 'f'); if (tgtKey === key) return; tgtKey = key;
+  tgtCut = Math.round(cutY(mon) / H * AH);
   tctx.clearRect(0, 0, AW, AH); tctx.save(); tctx.scale(AW / W, AH / H); targetFn(mon)(tctx); tctx.restore();
+  tctx.clearRect(0, tgtCut, AW, AH - tgtCut);
   const d = tctx.getImageData(0, 0, AW, AH).data; tgtBin = binarize(d); tgtBox = maskStats(d, AW, AH); }
+/** 상반신 모드 IoU: 허리선 아래 픽셀은 둘 다 무시 */
+function iouCut(a, b, cut){ if (cut >= AH) return iou(a, b); return iou(a.subarray(0, cut * AW), b.subarray(0, cut * AW)); }
 function stepMatch(t, dt){
   if (S.idx >= MONSTERS.length) { drawBase(t); drawMe(); return; }
   const mon = MONSTERS[S.idx]; prepTarget(mon);
-  S.fit = (S.projBin && tgtBin) ? iou(S.projBin, tgtBin) : 0;
+  S.fit = (S.projBin && tgtBin) ? iouCut(S.projBin, tgtBin, tgtCut) : 0;
   S.timeLeft = Math.max(0, 25 - (t - S.tTarget) / 1000);
   // 판정: 0.55 이상을 1초 유지하면 성공. 별은 그동안의 최고치
   if (S.fit >= .55) { S.holdT += dt; S.bestFit = Math.max(S.bestFit, S.fit); } else S.holdT = Math.max(0, S.holdT - dt * 2);
   if (S.holdT >= 1) return finishTarget(t, S.bestFit >= .75 ? 3 : S.bestFit >= .65 ? 2 : 1);
   if (S.timeLeft <= 0) return finishTarget(t, 0);
   // 그리기
-  drawBase(t); drawTarget(wctx, targetFn(mon), S.fit, t); drawMe();
+  drawBase(t); const cy = cutY(mon); drawTarget(wctx, c => { c.save(); c.beginPath(); c.rect(0, 0, W, cy); c.clip(); targetFn(mon)(c); c.restore(); }, S.fit, t); drawMe();
+  if (S.upper) { wctx.save(); wctx.strokeStyle = 'rgba(255,255,255,.35)'; wctx.setLineDash([10, 8]); wctx.beginPath(); wctx.moveTo(0, cy); wctx.lineTo(W, cy); wctx.stroke(); wctx.setLineDash([]); wctx.fillStyle = 'rgba(255,255,255,.55)'; wctx.font = '700 18px sans-serif'; wctx.textAlign = 'left'; wctx.fillText('상반신만 비교', 16, cy - 8); wctx.restore(); }
   banner(wctx, W, `${S.idx + 1}/${MONSTERS.length}  ${mon.name}`, 150, '#fff', 36);
   // 크기 힌트: 목표 상자 vs 내 그림자 상자(투영 후)
   let hint = mon.tip, col = '#ffe9b0';
-  if (S.shadowBox && tgtBox) { const r = tgtBox.h / S.shadowBox.h; const dx = (tgtBox.cx - S.shadowBox.cx) / AW;
+  if (S.shadowBox && tgtBox) { const myH = S.upper ? Math.max(1, Math.min(S.shadowBox.y1, tgtCut) - S.shadowBox.y0) : S.shadowBox.h; const r = tgtBox.h / myH; const dx = (tgtBox.cx - S.shadowBox.cx) / AW;
     if (r > 1.18) { hint = '더 크게! 빛(카메라)에 가까이 와요'; col = '#ffd35c'; } else if (r < .85) { hint = '더 작게! 빛에서 뒤로 물러나요'; col = '#4de1ff'; }
     else if (Math.abs(dx) > .12) { hint = dx > 0 ? '오른쪽으로 조금 →' : '← 왼쪽으로 조금'; } else if (S.fit >= .55) { hint = '좋아요! 그대로 멈춰요 ' + '●'.repeat(Math.ceil(S.holdT * 3)); col = '#5cf2a4'; } }
   else if (!S.stat) { hint = '사람이 안 보여요'; col = '#ff5c7a'; }
@@ -134,7 +141,7 @@ function stepChase(t, dt){
     const p = Math.min(1, (t - m.t0) / m.dur);
     if (m.state === 'in') { m.x = m.side < 0 ? -W * .15 + (W * .5 + W * .15) * p : W * 1.15 - (W * .65) * p;
       if (p >= 1) { S.judged++; m.state = 'judge'; m.tj = t;
-        if (m.kind === 'scare') { const win = myH >= m.hpx * 1.02 && S.stat; m.win = win; if (win) { S.combo++; S.scared++; S.score += 100 + S.combo * 20; pop(`${m.name} 도망! +${100 + S.combo * 20}`, 'good'); } else { S.combo = 0; S.life--; flash(); pop(S.stat ? '더 크게 — 빛에 가까이!' : '사람이 안 보여요', 'bad'); } }
+        if (m.kind === 'scare') { const win = S.stat && (S.upper ? myTop <= H * .97 - m.hpx * 1.02 : myH >= m.hpx * 1.02); m.win = win; if (win) { S.combo++; S.scared++; S.score += 100 + S.combo * 20; pop(`${m.name} 도망! +${100 + S.combo * 20}`, 'good'); } else { S.combo = 0; S.life--; flash(); pop(S.stat ? '더 크게 — 빛에 가까이!' : '사람이 안 보여요', 'bad'); } }
         else { const win = S.stat && myTop > m.bottomY + 8; m.win = win; if (win) { S.combo++; S.dodged++; S.score += 100 + S.combo * 20; pop(`박쥐 통과! +${100 + S.combo * 20}`, 'good'); } else { S.combo = 0; S.life--; flash(); pop('그림자를 낮춰요 — 뒤로 물러나거나 앉아요', 'bad'); } }
         $('hScore').textContent = S.score; $('hLife').textContent = '❤'.repeat(S.life) + '♡'.repeat(3 - S.life); } }
     else if (m.state === 'judge') { const e = (t - m.tj) / 900; if (m.win) m.x += m.side * W * .9 * dt; if (e >= 1) m.state = 'out'; }
@@ -176,7 +183,7 @@ async function start(){ S.Hb = +$('inHb').value || DEF.Hb; S.d0 = +$('inD0').val
   try { if (!km.running) await km.start(); } catch (e) { $('calibMsg').textContent = '카메라를 열 수 없어요: ' + e.message + ' — 카메라 없이 보려면 주소 뒤에 ?mouse=1'; } }
 function beginPlay(){ S.phase = 'play'; show(null); $('hud').classList.remove('hidden'); const t = performance.now();
   S.score = 0; S.life = 3; S.combo = 0; S.t0 = t; S.idx = 0; S.stars = []; S.holdT = 0; S.bestFit = 0; S.tTarget = t; S.mobs = []; S.nextSpawn = t + 1500; S.judged = 0; S.scared = 0; S.dodged = 0; tgtKey = '';
-  $('hScore').textContent = 0; $('hLife').textContent = '❤❤❤';
+  $('hScore').textContent = 0; $('hLife').textContent = '❤❤❤'; syncBody();
   const m = S.mode; $('stTime').classList.toggle('hidden', m === 'lab'); $('stScore').classList.toggle('hidden', m === 'lab'); $('stLife').classList.toggle('hidden', m !== 'chase'); $('stFit').classList.toggle('hidden', m !== 'match'); $('fitbar').classList.toggle('hidden', m !== 'match'); $('labpanel').classList.toggle('hidden', m !== 'lab'); $('stNums').classList.toggle('hidden', false); }
 function endGame(){ S.phase = 'result'; show('scr-result');
   if (S.mode === 'match') { const tot = S.stars.reduce((a, b) => a + (b || 0), 0); $('resTitle').textContent = tot >= 27 ? '그림자 괴물 마스터!' : tot >= 18 ? '멋진 그림자!' : '괴물 만들기 끝';
@@ -187,6 +194,10 @@ function endGame(){ S.phase = 'result'; show('scr-result');
 
 // ── 단추
 $('modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => { $('modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); S.mode = b.dataset.v; });
+const BODY_KEY = 'kmotion.shadow.body'; try { S.body = localStorage.getItem(BODY_KEY) || 'auto'; } catch (_) {}
+$('bodySeg').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.v === S.body); b.onclick = () => { $('bodySeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); S.body = b.dataset.v; try { localStorage.setItem(BODY_KEY, S.body); } catch (_) {} }; });
+const syncBody = () => { $('btnBody').textContent = S.upper ? '상반신' : '전신'; };
+$('btnBody').onclick = () => { S.upper = !S.upper; tgtKey = ''; syncBody(); pop(S.upper ? '상반신만 비교' : '전신 비교', 'gold', 24, 70); };
 $('btnStart').onclick = start; $('btnCalibCancel').onclick = () => { S.phase = 'start'; show('scr-start'); };
 $('btnQuit').onclick = () => endGame();
 $('btnAgain').onclick = () => { if (S.h0) beginPlay(); else start(); }; $('btnHome').onclick = () => { S.phase = 'start'; show('scr-start'); };
