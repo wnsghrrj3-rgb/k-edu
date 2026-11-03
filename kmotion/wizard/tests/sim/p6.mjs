@@ -14,7 +14,7 @@ const flowAt = (zone, seed = 11, extra = {}) => { const f = createFlow(Object.as
   ok('길에 몬스터 0 · 바위 2·가지 1·상자 1·반딧불 4', ST.zones[0].enemies.length === 0 && ST.zones[0].obstacles.rock === 2 && ST.zones[0].obstacles.branch === 1 && ST.zones[0].chest === 1 && ST.zones[0].fireflies === 4);
   ok('final · 보상 = crystal number(spell 없음) · 별 반딧불 3', ST.final === true && ST.reward.crystal === 'number' && !ST.reward.spell && ST.stars.fireflies === 3);
   const f = createFlow({ data, grade: 1, seed: 1, progress: { xp: 0, level: 3, cleared: { 'forest-1-1': 3, 'forest-1-2': 2 } } }); const t = f.snapshot().title;
-  ok('시작 화면 스테이지 6개(숲 4 + 신전 2, v2.15) · 보스는 4번째 · 잠김(1-3 안 깸) · final · crystal number · reward null', t.stages.length === 6 && t.stages[3].id === SB && t.stages[3].locked && t.stages[3].requires === 'forest-1-3' && t.stages[3].final && t.stages[3].crystal === 'number' && t.stages[3].reward === null, JSON.stringify(t.stages[3]));
+  ok('시작 화면 스테이지 7개(숲 4 + 신전 2 + 협곡 1, v3.0) · 보스는 4번째 · 잠김(1-3 안 깸) · final · crystal number · reward null', t.stages.length === 7 && t.stages[3].id === SB && t.stages[3].locked && t.stages[3].requires === 'forest-1-3' && t.stages[3].final && t.stages[3].crystal === 'number' && t.stages[3].reward === null, JSON.stringify(t.stages[3]));
   f.action('start', { mode: 'keyboard', stage: SB }); f.action('enter'); ok('잠긴 채 고르면 1-1 로 감', f.game.stageId === 'forest-1-1');
   const f2 = createFlow({ data, grade: 1, seed: 1, progress: { xp: 0, level: 4, cleared: { 'forest-1-1': 3, 'forest-1-2': 2, 'forest-1-3': 1 }, unlocked: ['shield', 'ice', 'lightning'] } });
   ok('1-3 깬 기록이 있으면 열림 · 결정 0', !f2.snapshot().title.stages[3].locked); f2.action('start', { mode: 'keyboard', stage: SB }); f2.action('enter');

@@ -102,7 +102,7 @@ export function buildForest(scene, { arenaZ = 9 } = {}){
       if (m === 'rail' && r && r.dist !== lastDist) { layRail(r.dist); if (templeOn) temple.layRail(r.dist); if (dark) { layCave(r.dist); placeLights(r.dist); } lastDist = r.dist; } },
     /** v1.7 동굴 켜기/끄기 — 나무·덤불·먼 산 숨김, 바닥 남보라, 바위 기둥·수정 무리·점광원. 조명·안개는 index.js 가 맞춤 */
     /** v2.9 월드 테마(world.id) → v2.13: temple = 대리석·금선 기하 바닥 지도 + 신전 지형(temple.js) 켜고 숲 장식은 숨김. setDark 가 바닥색을 다시 쓰므로 여기서 기준색(거의 흰 — 색은 지도가 냄)을 바꾼다 */
-    setWorld(id){ if (id === world) return; world = id; templeOn = id === 'temple'; swapMaps(templeOn); if (templeOn) { groundCol.set(0xfbf8f1); roadCol.set(0xfff6dc); temple.layRail(Math.max(0, lastDist)); } else { groundCol.copy(groundCol0); roadCol.copy(roadCol0); } this.setDark(dark, true); },
+    setWorld(id){ if (id === world) return; world = id; templeOn = id === 'temple'; swapMaps(templeOn); if (templeOn) { groundCol.set(0xfbf8f1); roadCol.set(0xfff6dc); temple.layRail(Math.max(0, lastDist)); } else if (id === 'canyon') { groundCol.set(0xb8623a); roadCol.set(0xe0a068); /* v3.0 협곡: 붉은 흙·모래 길(지형은 2차, 숲 나무 그대로) */ } else { groundCol.copy(groundCol0); roadCol.copy(roadCol0); } this.setDark(dark, true); },
     setDark(on, force){ if (on === dark && !force) return; dark = !!on;
       cave.visible = dark && mode === 'rail'; caveArena.visible = dark && mode !== 'rail'; const woods = !dark && !templeOn; for (const m of rMeshes) m.visible = woods; for (const m of arenaTrees) m.visible = woods && mode !== 'rail'; for (const m of mounts) m.visible = woods;
       temple.arena.visible = templeOn && !dark && mode !== 'rail'; temple.rail.visible = templeOn && !dark && mode === 'rail'; flies.material.color.set(templeOn ? 0xfff0c0 : 0xfff6b0);

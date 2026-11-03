@@ -41,9 +41,9 @@ const T = data.text, ST = data.stages['temple-2-1'];
   ok('처음: 숲 · 스테이지 4 · world:next 열림·world:prev 없음', s.map.world === 'forest' && s.map.stages.length === 4 && s.map.worldIdx === 0 && s.targets.some(t => t.id === 'world:next' && !t.locked) && !s.targets.some(t => t.id === 'world:prev'));
   f.action('world', { dir: 1 }); s = f.snapshot();
   ok('다음 세계 → 신전 · 스테이지 2(2-1·2-보스 잠김, v2.15) · 고른 것 = temple-2-1 · enter 잠김 · learn = 입체 3키', s.map.world === 'temple' && s.map.worldName === '도형의 신전' && s.map.worldIcon === '⛩' && s.map.stages.length === 2 && s.map.stages.every(z => z.locked) && s.map.stages[1].id === 'temple-2-boss' && s.map.stage === 'temple-2-1' && s.map.locked && s.targets.find(t => t.id === 'enter').locked && s.map.learn.join() === 'g1.solid.same,g1.solid.prop,g1.solid.count');
-  ok('신전에서 world:prev 있음(열림) · world:next 있음(협곡 닫힘 = locked)', s.targets.some(t => t.id === 'world:prev' && !t.locked) && s.targets.some(t => t.id === 'world:next' && t.locked));
+  ok('신전에서 world:prev 있음(열림) · world:next 있음(협곡 열림, v3.0)', s.targets.some(t => t.id === 'world:prev' && !t.locked) && s.targets.some(t => t.id === 'world:next' && !t.locked));
   f.action('enter'); ok('잠긴 신전 enter → 토스트 map.locked.temple-2-1 · 판 없음', !f.game && f.snapshot().toast === 'map.locked.temple-2-1');
-  f.action('world', { dir: 1 }); ok('닫힌 협곡으로 → 토스트 worldClosed · 그대로 신전', f.snapshot().toast === 'map.worldClosed' && f.snapshot().map.world === 'temple');
+  f.action('world', { dir: 1 }); ok('협곡으로 → canyon(v3.0 열림) · 스테이지 1 잠김 → 탑은 닫힘 토스트 worldClosed · 그대로 협곡', f.snapshot().map.world === 'canyon' && f.snapshot().map.stages.length === 1 && f.snapshot().map.stages[0].locked && (f.action('world', { dir: 1 }), f.snapshot().toast === 'map.worldClosed' && f.snapshot().map.world === 'canyon')); f.action('world', { dir: -1 });
   f.action('world', { id: 'forest' }); s = f.snapshot(); ok('받침대 id 로 숲 → 숲 · 고른 것 = 1-1', s.map.world === 'forest' && s.map.stage === 'forest-1-1');
   f.key('BracketRight', true, 0); ok('] 키 → 신전', f.snapshot().map.world === 'temple'); f.key('BracketLeft', true, 0); ok('[ 키 → 숲', f.snapshot().map.world === 'forest');
   // 1-보스를 깬 기록 → 신전 열림 · 들어가기 · 화살표가 세계 끝을 넘어감(잠긴 칸은 pick 이 안 되므로 다 깬 기록으로)

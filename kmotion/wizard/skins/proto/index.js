@@ -15,8 +15,9 @@ export function createSkin(ctx){
   const mixPal = (A, B, k) => ({ bg: _p.bg.copy(A.bg).lerp(B.bg, k), fog: _p.fog.copy(A.fog).lerp(B.fog, k), near: A.near + (B.near - A.near) * k, far: A.far + (B.far - A.far) * k, sky: _p.sky.copy(A.sky).lerp(B.sky, k), gnd: _p.gnd.copy(A.gnd).lerp(B.gnd, k), hemi: A.hemi + (B.hemi - A.hemi) * k, sun: A.sun + (B.sun - A.sun) * k });
   const _p = { bg: new THREE.Color(), fog: new THREE.Color(), sky: new THREE.Color(), gnd: new THREE.Color() };
   const LIT0 = { bg: new THREE.Color(0x9fd0f0), fog: new THREE.Color(0xa9d6ee), near: 18, far: 46, sky: new THREE.Color(0xdff2ff), gnd: new THREE.Color(0x3d5a2a), hemi: 1.25, sun: 2.2 };
+  const CANYON = { bg: new THREE.Color(0xf6d9b4), fog: new THREE.Color(0xf1c99a), near: 18, far: 48, sky: new THREE.Color(0xffe9c8), gnd: new THREE.Color(0x9a5a3a), hemi: 1.2, sun: 2.2 };   // v3.0 월드 3 협곡: 붉은 흙·황혼 주황(09 문서 5절)
   const TEMPLE = { bg: new THREE.Color(0xeaf4f6), fog: new THREE.Color(0xdfeef0), near: 20, far: 50, sky: new THREE.Color(0xffffff), gnd: new THREE.Color(0xb9a87a), hemi: 1.35, sun: 2.0 };   // v2.9 월드 2 신전: 대리석 흰·금·청록(09 문서 5절)
-  let templeK = 0;
+  let templeK = 0, canyonK = 0;
   const DARK = { bg: new THREE.Color(0x120e26), fog: new THREE.Color(0x1d1838), near: 7, far: 30, sky: new THREE.Color(0x7a6fc4), gnd: new THREE.Color(0x15112a), hemi: .55, sun: .18 };
   const _c = new THREE.Color();
   let player = null, playerId = null; const enemies = new Map(), shots = new Map(), crystals = new Map(), tgs = new Map(), blasts = new Map(), btgs = new Map(); let bolts = [], golem = null, golemUid = null; const obst = new Map(); let pzProp = null, pzId = null;
@@ -50,7 +51,7 @@ export function createSkin(ctx){
       if (!s.player) { // 메뉴: 고른 캐릭터를 천천히 돌려 보여 줌
         const id = s.title ? s.title.char : 'luna'; if (playerId !== id) { if (player) scene.remove(player); player = makePlayer(id); playerId = id; scene.add(player); }
         menuSpin += dt * .4; player.position.set(0, 0, 4); player.rotation.y = Math.PI + Math.sin(menuSpin) * .6; player.userData.armR.rotation.x = -.6 + Math.sin(menuSpin * 3) * .2; player.userData.orb.visible = false; player.userData.shield.visible = false;
-        for (const m of [enemies, shots, crystals, tgs, blasts, btgs, obst]) { for (const v of m.values()) drop(v); m.clear(); } if (golem) { scene.remove(golem); golem = null; golemUid = null; } if (pzProp) { drop(pzProp); pzProp = null; pzId = null; } forest.setMode('arena'); forest.setDark(false); forest.setHeart(false); darkK = 0; templeK = 0; forest.setWorld('forest'); const LIT = LIT0; scene.background.copy(LIT.bg); scene.fog.color.copy(LIT.fog); scene.fog.near = LIT.near; scene.fog.far = LIT.far; hemi.intensity = LIT.hemi; hemi.color.copy(LIT.sky); hemi.groundColor.copy(LIT.gnd); sun.intensity = LIT.sun; staffLight.intensity = 0;
+        for (const m of [enemies, shots, crystals, tgs, blasts, btgs, obst]) { for (const v of m.values()) drop(v); m.clear(); } if (golem) { scene.remove(golem); golem = null; golemUid = null; } if (pzProp) { drop(pzProp); pzProp = null; pzId = null; } forest.setMode('arena'); forest.setDark(false); forest.setHeart(false); darkK = 0; templeK = 0; canyonK = 0; forest.setWorld('forest'); const LIT = LIT0; scene.background.copy(LIT.bg); scene.fog.color.copy(LIT.fog); scene.fog.near = LIT.near; scene.fog.far = LIT.far; hemi.intensity = LIT.hemi; hemi.color.copy(LIT.sky); hemi.groundColor.copy(LIT.gnd); sun.intensity = LIT.sun; staffLight.intensity = 0;
         camera.position.set(Math.sin(menuSpin * .5) * 1.2, 2.2, -.8); camera.lookAt(0, 1.2, 4); camera.fov = 50; camera.updateProjectionMatrix(); sparks.update(dt); renderer.render(scene, camera); drawnTg = []; return; }
       const P = s.player; if (playerId !== P.id) { if (player) scene.remove(player); player = makePlayer(P.id); playerId = P.id; scene.add(player); }
       player.rotation.y = 0; posePlayer(player, P, dt, TIMING); hopY += ((P.hopping ? .9 : 0) - hopY) * Math.min(1, dt * (P.hopping ? 14 : 9)); player.position.y = hopY;   // v1.6 버섯 발판 폴짝(스킨 연출, 판정은 시스템)
@@ -64,7 +65,8 @@ export function createSkin(ctx){
       // v1.7 동굴: world.dark 면 조명·안개를 천천히 어둡게 + 지팡이 빛(거리 = world.light)
       forest.setHeart(!!(s.world && s.world.heart));   // v1.8 고대 나무 심장(1-보스)
       forest.setWorld(s.world && s.world.id || 'forest'); const tk = s.world && s.world.id === 'temple' ? 1 : 0; templeK += (tk - templeK) * Math.min(1, dt * 2.5);   // v2.9 월드 테마
-      const LIT = templeK > 0 ? mixPal(LIT0, TEMPLE, templeK) : LIT0;
+      const ck = s.world && s.world.id === 'canyon' ? 1 : 0; canyonK += (ck - canyonK) * Math.min(1, dt * 2.5);   // v3.0 협곡 테마
+      const LIT = templeK > 0 ? mixPal(LIT0, TEMPLE, templeK) : canyonK > 0 ? mixPal(LIT0, CANYON, canyonK) : LIT0;
       const dk = s.world && s.world.dark ? 1 : 0; forest.setDark(!!dk); darkK += (dk - darkK) * Math.min(1, dt * 2.5);
       scene.background.copy(_c.copy(LIT.bg).lerp(DARK.bg, darkK)); scene.fog.color.copy(_c.copy(LIT.fog).lerp(DARK.fog, darkK)); scene.fog.near = LIT.near + (DARK.near - LIT.near) * darkK; scene.fog.far = LIT.far + (DARK.far - LIT.far) * darkK;
       hemi.color.copy(_c.copy(LIT.sky).lerp(DARK.sky, darkK)); hemi.groundColor.copy(_c.copy(LIT.gnd).lerp(DARK.gnd, darkK)); hemi.intensity = LIT.hemi + (DARK.hemi - LIT.hemi) * darkK; sun.intensity = LIT.sun + (DARK.sun - LIT.sun) * darkK;

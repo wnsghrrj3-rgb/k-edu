@@ -101,4 +101,25 @@ function cubes(spec){ const hs = spec.split(',').map(Number); const n = hs.lengt
   return wrap(`<line x1="8" y1="88" x2="92" y2="88" stroke="${L}" stroke-width="3"/>${o}`, 'cubes'); }
 // 물건 줄: 'row:book,can,orange' — 4~6개 한 줄(모양 세기). 각 그림을 작게 가로로.
 function row(spec){ const ids = spec.split(','); const n = ids.length, w = 100 / n; return `<span class="mw-picrow">${ids.map(id => S[id] ? `<svg class="mw-pic small" viewBox="0 0 100 100" style="width:${(w * .9).toFixed(1)}%">${S[id]()}</svg>` : '').join('')}</span>`; }
-export function picHtml(id){ if (!id) return ''; if (id.startsWith('cubes:')) return cubes(id.slice(6)); if (id.startsWith('row:')) return row(id.slice(4)); if (id.startsWith('tri:') || id.startsWith('quad:')) return anglePoly(id.slice(id.indexOf(':') + 1)); return S[id] ? wrap(S[id]()) : ''; }
+// ── v3.0 월드 3 「측정의 협곡」 측정 그림(17 문서 6절): 번호 ①②③ 는 그림 안에 — 답은 번호(1학년) 또는 cm 수(2학년)
+const NUMS = ['①', '②', '③'];
+const numTag = (x, y, i) => `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-family="Pretendard, system-ui, sans-serif" font-weight="900" font-size="13" fill="${L}">${NUMS[i]}</text>`;
+// 'bars:5,3,7' — 가로 막대 셋, 왼쪽 끝 맞춤(1학년 길이 비교). 길이 2~9 → 폭 최대 70
+function bars(spec){ const vs = spec.split(',').map(Number); let o = ''; vs.forEach((v, i) => { const y = 22 + i * 26; o += numTag(12, y + 7, i) + `<rect x="22" y="${y}" width="${(v / 9 * 70).toFixed(1)}" height="14" rx="4" fill="${F}" stroke="${L}" stroke-width="3"/>`; });
+  return wrap(`<line x1="22" y1="14" x2="22" y2="90" stroke="${L}" stroke-width="2" stroke-dasharray="3 3"/>${o}`, 'bars'); }
+// 'tall:4,8,6' — 세로 막대 셋, 바닥 맞춤(높이·키 비교)
+function tall(spec){ const vs = spec.split(',').map(Number); let o = ''; vs.forEach((v, i) => { const x = 16 + i * 30, h = v / 9 * 66; o += `<rect x="${x}" y="${(84 - h).toFixed(1)}" width="18" height="${h.toFixed(1)}" rx="4" fill="${F}" stroke="${L}" stroke-width="3"/>` + numTag(x + 9, 93, i); });
+  return wrap(`<line x1="8" y1="84" x2="96" y2="84" stroke="${L}" stroke-width="3"/>${o}`, 'tall'); }
+// 'cups:2,3,1' — 같은 컵 셋, 물 높이 다르게(들이 비교)
+function cups(spec){ const vs = spec.split(',').map(Number); let o = ''; vs.forEach((v, i) => { const x = 10 + i * 30, hw = v / 9 * 54; o += `<rect x="${x + 2}" y="${(80 - hw).toFixed(1)}" width="22" height="${hw.toFixed(1)}" fill="var(--mw-pic-fill2, #8fd0ff)"/><path d="M${x} 22 L${x + 2} 80 L${x + 24} 80 L${x + 26} 22" fill="none" stroke="${L}" stroke-width="3" stroke-linejoin="round"/>` + numTag(x + 13, 92, i); });
+  return wrap(o, 'cups'); }
+// 자(0~10 cm): 큰 눈금마다 숫자. 'ruler:a,b' = 눈금 a 에서 b 까지 막대 하나 · 'ruler2:x,y' = 0 에서 x·y 까지 막대 둘(위·아래)
+function rulerBase(y){ let o = `<rect x="6" y="${y}" width="88" height="22" rx="3" fill="#fff8dc" stroke="${L}" stroke-width="2.5"/>`; for (let i = 0; i <= 10; i++) { const x = 10 + i * 8; o += `<line x1="${x}" y1="${y}" x2="${x}" y2="${y + (i % 5 === 0 ? 10 : 6)}" stroke="${L}" stroke-width="${i % 5 === 0 ? 2 : 1.2}"/>` + `<text x="${x}" y="${y + 17}" text-anchor="middle" font-family="Pretendard, system-ui, sans-serif" font-weight="700" font-size="6.5" fill="${L}">${i}</text>`; } return o; }
+const bar = (a, b, y) => `<rect x="${10 + a * 8}" y="${y}" width="${(b - a) * 8}" height="11" rx="3" fill="${F}" stroke="${L}" stroke-width="2.5"/>`;
+function ruler(spec){ const [a, b] = spec.split(',').map(Number); return wrap(bar(a, b, 38) + rulerBase(56), 'ruler'); }
+function ruler2(spec){ const [x, y] = spec.split(',').map(Number); return wrap(numTag(4, 29, 0) + bar(0, x, 24) + numTag(4, 45, 1) + bar(0, y, 40) + rulerBase(58), 'ruler'); }
+// 'units:n' — 1 cm 조각 n개 이어 붙임(조각마다 「1」)
+function units(spec){ const n = Number(spec), w = Math.min(14, 84 / n), x0 = 50 - n * w / 2; let o = ''; for (let i = 0; i < n; i++) o += `<rect x="${(x0 + i * w).toFixed(1)}" y="40" width="${w}" height="20" fill="${F}" stroke="${L}" stroke-width="2.5"/>` + `<text x="${(x0 + i * w + w / 2).toFixed(1)}" y="51" text-anchor="middle" dominant-baseline="central" font-family="Pretendard, system-ui, sans-serif" font-weight="700" font-size="${Math.min(10, w * .7).toFixed(1)}" fill="${L}">1</text>`;
+  return wrap(o + `<text x="50" y="76" text-anchor="middle" font-family="Pretendard, system-ui, sans-serif" font-weight="700" font-size="8" fill="${L}">한 조각 = 1 cm</text>`, 'units'); }
+const MEASURE = { 'bars:': bars, 'tall:': tall, 'cups:': cups, 'ruler:': ruler, 'ruler2:': ruler2, 'units:': units };
+export function picHtml(id){ if (!id) return ''; for (const k in MEASURE) if (id.startsWith(k)) return MEASURE[k](id.slice(k.length)); if (id.startsWith('cubes:')) return cubes(id.slice(6)); if (id.startsWith('row:')) return row(id.slice(4)); if (id.startsWith('tri:') || id.startsWith('quad:')) return anglePoly(id.slice(id.indexOf(':') + 1)); return S[id] ? wrap(S[id]()) : ''; }
