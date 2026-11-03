@@ -4,7 +4,7 @@
 import { eul, iga, wEun, wIga } from './josa.js';
 import { PIC, FAMILY, CODES, OBJECTS, OBJ_KO, SHAPE_KO } from './pics.js';   // v2.11 모양 열쇠
 const span = g => g <= 1 ? 9 : g <= 2 ? 20 : 50;
-export const PUZZLE_CONCEPT = { 'number-bridge': 'g1.compose9', 'size-gate': 'g1.compare', 'rule-stones': 'g1.pattern', 'mushroom-add': 'g1.add.expr9', 'crystal-count': 'g1.count.tens', 'shape-key': 'g2.plane.pick' };
+export const PUZZLE_CONCEPT = { 'number-bridge': 'g1.compose9', 'size-gate': 'g1.compare', 'rule-stones': 'g1.pattern', 'mushroom-add': 'g1.add.expr9', 'crystal-count': 'g1.count.tens', 'shape-key': 'g2.plane.pick', 'length-bridge': 'g2.len.ruler' };   // v3.1 길이 맞추기 다리(월드 3 길 B)
 
 // v2.11 모양 열쇠(16 문서 8절 ③, 월드 2 「도형의 신전」 길 B): 문에 구멍(hole) — 꼭 맞는 모양의 열쇠 돌 3개 중 1. 답은 그림 코드(정수), 스킨은 id 만 그림.
 // 학년 = 영역 안 단원(변환표와 같은 줄): 1학년 = 물건 구멍 → 같은 입체(7·8·9, g1.solid.same) · 2학년 = 평면 구멍 → 같은 모양(모양이 조금 달라도 같은 묶음이면 열림, g2.plane.pick)
@@ -46,8 +46,8 @@ export function makePuzzle(type, rng, grade = 1, opt = {}, spec = {}){
     if (a === b) { a = Math.max(1, a - 1); b = T - a; } if (c === a || c === b || a + c === T || b + c === T) c = T + 2 > N ? Math.max(1, T - a - b) || 1 : T + 2;
     const slots = rng.shuffle([a, b, c]); const ans = [slots.indexOf(a), slots.indexOf(b)].sort();
     return { type, id: `pz-bridge-${T}-${a}-${b}-${c}`, concept: PUZZLE_CONCEPT[type], fact: `bridge:${T}:${a}+${b}`, d: .25 + T / N * .45, need: 2, target: T,
-      prompt: { key: 'pz.bridge', args: { t: T, j: eul(T) } }, stones: slots.map((n, s) => ({ slot: s, num: n })), answer: ans,
-      hint1: { key: 'pz.bridge.hint', args: { a: Math.min(a, b), t: T } } };
+      prompt: { key: 'pz.plank', args: { t: T, j: eul(T) } }, stones: slots.map((n, s) => ({ slot: s, num: n })), answer: ans,
+      hint1: { key: 'pz.plank.hint', args: { a: Math.min(a, b), t: T } } };
   }
   if (type === 'size-gate') {
     // 「더 큰(작은) 수의 문으로」 — 두 문 L/R, 자리 = 몸 위치(I1)
@@ -126,6 +126,22 @@ export function makePuzzle(type, rng, grade = 1, opt = {}, spec = {}){
       prompt: { key: 'pz.key', args: {} }, stones: codes.map((n, s) => ({ slot: s, num: n })), answer: [slot],
       hint1: { key: set.hint || 'pz.key.hint', args: { n: name, j: wIga(name) } } };
   }
+  if (type === 'length-bridge') {
+    // v3.1 길이 맞추기 다리(17 문서 8절 ②, 09 문서 9행, 월드 3 「측정의 협곡」 길 B): 끊어진 다리 틈(hole)에 꼭 맞는 길이의 널빤지 3개 중 1.
+    // 1학년(1-1 4단원 비교하기) = 눈으로 비교: 틈 그림 'gap:n' · 널빤지 그림 'plank:a'(숫자 없음, 틈과 같은 폭만 맞음) — 오답은 ±1·±2 칸(한쪽 끝을 맞춰 보면 티가 남)
+    // 2학년↑(2-1 4단원 길이 재기) = 자로 재기: 틈 아래 자 'gapcm:n' → 「n cm 널빤지」 숫자 돌(끝 눈금을 그대로 읽는 read-end 오답 포함)
+    if (grade <= 1) {
+      const n = rng.int(3, 7); const cands = rng.shuffle([n - 1, n + 1, n - 2, n + 2].filter(v => v >= 2 && v <= 9)); const ws = cands.slice(0, 2);
+      const lens = rng.shuffle([n, ...ws]), slot = lens.indexOf(n);
+      return { type, id: `pz-bridge-${n}-${ws.join('')}`, concept: 'g1.cmp.long', fact: `bridge:${n}`, d: .2 + (ws.some(w => Math.abs(w - n) === 1) ? .2 : 0), need: 1, gap: n, hole: { pic: `gap:${n}`, name: '틈', family: 'gap', kind: 'length' },
+        prompt: { key: 'pz.plank', args: {} }, stones: lens.map((a, s) => ({ slot: s, num: a, pic: `plank:${a}` })), answer: [slot], hint1: { key: 'pz.plank.hint', args: {} } };
+    }
+    const a = rng.next() < .5 ? 0 : rng.int(1, 3), n = rng.int(2, Math.min(7, 10 - a)), b = a + n;   // 자 눈금 a 부터 b 까지가 틈 → n cm
+    const cands = [a > 0 ? b : n + 2, n + 1, n - 1, n + 2]; const ws = []; for (const w of cands) { if (w >= 1 && w <= 10 && w !== n && !ws.includes(w)) ws.push(w); if (ws.length === 2) break; }
+    const lens = rng.shuffle([n, ...ws]), slot = lens.indexOf(n);
+    return { type, id: `pz-bridge-${a}-${b}`, concept: 'g2.len.ruler', fact: `bridgecm:${a},${b}`, d: .25 + (a > 0 ? .25 : 0) + n / 20, need: 1, gap: n, hole: { pic: `gapcm:${a},${b}`, name: `${n} cm`, family: 'gap', kind: 'length' },
+      prompt: { key: 'pz.plankcm', args: {} }, stones: lens.map((v, s) => ({ slot: s, num: v, pic: null })), answer: [slot], hint1: { key: 'pz.plankcm.hint', args: {} } };
+  }
   throw new Error('퍼즐 종류 없음: ' + type);
 }
 export function verifyPuzzle(p){
@@ -135,5 +151,6 @@ export function verifyPuzzle(p){
   if (p.type === 'mushroom-add') { const n = p.stones.map(s => s.num), T = p.op === '×' ? p.mush.a * p.mush.b : p.mush.a + p.mush.b; return T === p.target && n.filter(x => x === T).length === 1 && n[p.answer[0]] === T; }
   if (p.type === 'crystal-count') { const n = p.stones.map(s => s.num), b = p.bundle, T = b.hund * 100 + b.tens * 10 + b.ones; return T === p.target && n.filter(x => x === T).length === 1 && n[p.answer[0]] === T; }
   if (p.type === 'shape-key') { const fam = c => FAMILY[PIC[c]]; const n = p.stones.map(s => s.num), hit = n.filter(c => fam(c) === p.hole.family); if (p.hole.kind === 'plane' && p.hole.family === 'rect' && n.some(c => fam(c) === 'square')) return false; return hit.length === 1 && fam(n[p.answer[0]]) === p.hole.family && n.every(c => !!PIC[c]); }
+  if (p.type === 'length-bridge') { const n = p.stones.map(s => s.num); return n.filter(v => v === p.gap).length === 1 && n[p.answer[0]] === p.gap && new Set(n).size === 3 && n.every(v => v >= 1 && v <= 10) && (p.hole.pic.startsWith('gap:') ? p.stones.every(s => s.pic === 'plank:' + s.num) : p.stones.every(s => s.pic === null)); }
   return false;
 }

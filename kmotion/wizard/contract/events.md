@@ -129,6 +129,7 @@ v1.5 추가(P3 길 구간): `rail:start`(idx·len·seconds·obstacles) / `rail:e
 
 ## v2.11 추가(2026-11-02, 월드 2 모양 열쇠 문 — 16 문서 8절 ③) — 새 이벤트 0 · 스냅샷 추가만 · 골든 4판 불변
 - 퍼즐 종류 `shape-key`(`temple-2-1` 길 B 60%): 문 구멍(`puzzle.hole {pic, name, kind}`)에 꼭 맞는 모양의 열쇠 돌 3개 중 1(need 1, targets kind 'puzzle' 그대로). `puzzle.stones[].pic` = 열쇠 돌 그림 id(num = `pics.js` 코드), 숫자 퍼즐은 null. 이벤트는 `puzzle:open/pick/right/wrong/reveal/close` 그대로(ptype 'shape-key').
+- v3.1 퍼즐 종류 `length-bridge`(`canyon-3-1` 길 B 60%, 월드 3 「측정의 협곡」): 끊어진 다리 틈(`puzzle.hole {pic, name, kind:'length'}`)에 꼭 맞는 길이의 널빤지 3개 중 1(need 1, targets kind 'puzzle' 그대로, 틀림 3번 reveal 규칙 그대로). 1학년 `hole.pic = 'gap:n'`(눈 비교) · `stones[].pic = 'plank:a'`(그림 돌, num = 칸 수) · 2학년↑ `hole.pic = 'gapcm:a,b'`(자 눈금 a~b) · `stones[].pic = null`(숫자 돌 = cm). 스킨은 id 만 그린다. 이벤트·스냅샷 구조 추가 없음(`stones[].pic` 은 돌이 직접 든 id 가 우선, 없으면 모양 코드 — 숫자 퍼즐은 그대로 null).
 - 학년 줄(변환표 줄과 같은 생각, 코드 `sim/learn/puzzles.js SHAPE_KEY_SETS`): 1학년 = 물건 구멍(책·통조림·귤 …) → 입체 열쇠 7·8·9(concept `g1.solid.same`) · 2학년 = 평면 구멍 → 같은 묶음의 다른 변형(`g2.plane.pick`) · 3·4학년 = 직각 도형 구멍(직각·직각삼각형·직사각형·정사각형)과 개념 오답(직각 없는 삼각형·사각형, 직사각형 ↔ 정사각형; `g3.right.find`·`g3.quad.right`) — 직사각형 구멍엔 정사각형 돌 없음(두 답 방지).
 - 문구 키 `pz.key`·`pz.key.solid`·`pz.key.hint`·`pz.key.solid.hint`·`pz.key.hint.rtri/rect/square/rangle`·`pz.keyWrong`. 스킨(proto): 구멍 = `.mw-pz .prompt .hole` 어두운 판 + 그림 id · 열쇠 돌 = `.mw-stone.pic`.
 

@@ -120,7 +120,7 @@ export function puzzleSnapshot(g, r3){
   return { id: pz.id, type: c.type, concept: c.concept, state: pz.state, stateT: r3(g.t - pz.stateT), prompt: c.prompt, picks: pz.picks.slice(), wrong: pz.wrong, maxWrong: R().puzzle.maxWrong, need: c.need,
     hint: pz.hint ? c.hint1 : null, seq: c.seq || null, target: c.target || null, mush: c.mush || null, bundle: c.bundle || null, op: c.op || '+', mul: c.mul || null,
     hole: c.hole ? { pic: c.hole.pic, name: c.hole.name, kind: c.hole.kind } : null,   // v2.11 모양 열쇠: 문 구멍 그림 id(스킨이 그림)
-    stones: c.stones ? c.stones.map(s => ({ id: 'c' + s.slot, slot: s.slot, num: s.num, pic: c.hole ? (PIC[s.num] || null) : null, targetId: 'c' + s.slot, lit: pz.picks.includes(s.slot), answer: revealed && c.answer.includes(s.slot), wrong: pz.state === 'wrong' && pz.picks.includes(s.slot) })) : null,
+    stones: c.stones ? c.stones.map(s => ({ id: 'c' + s.slot, slot: s.slot, num: s.num, pic: 'pic' in s ? s.pic : (c.hole ? (PIC[s.num] || null) : null),   /* v3.1 돌이 그림 id 를 직접 들면 그것(널빤지 plank:a), 아니면 모양 코드 */ targetId: 'c' + s.slot, lit: pz.picks.includes(s.slot), answer: revealed && c.answer.includes(s.slot), wrong: pz.state === 'wrong' && pz.picks.includes(s.slot) })) : null,
     gate: c.gate ? { left: c.gate.left, right: c.gate.right, bigger: c.bigger, picked: pz.picks[0] || null, answer: revealed ? c.answer : null, lane: g.player.pos[0] <= -R().puzzle.laneX ? 'L' : g.player.pos[0] >= R().puzzle.laneX ? 'R' : null } : null };
 }
 export function railSnapshot(g, r3, v3){
