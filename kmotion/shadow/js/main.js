@@ -3,9 +3,9 @@
  * 입력은 케이모션 엔진의 사람 마스크(selfie segmenter) 하나뿐 — 관절 인식이 필요 없어 1~2명·멀리서도 안정적
  * 마우스 모드(?mouse=1): 마우스 x=자리, y=거리(아래=가까이), 키 1~9 = 포즈
  */
-import { DEF, maskStats, distanceFrom, wallDistance, shadowHeight, magnification, iou, binarize } from './physics.js';
-import { drawFigure, MONSTERS, CHASERS, drawBat, POSES } from './silhouette.js';
-import { WALL, drawWall, drawShadow, drawTarget, drawSideView, drawChart, banner } from './render.js';
+import { DEF, maskStats, distanceFrom, wallDistance, shadowHeight, magnification, iou, binarize } from './physics.js?v=1223';
+import { drawFigure, MONSTERS, CHASERS, drawBat, POSES } from './silhouette.js?v=1223';
+import { WALL, drawWall, drawShadow, drawTarget, drawSideView, drawChart, banner } from './render.js?v=1223';
 
 const $ = id => document.getElementById(id);
 const wall = $('wall'), wctx = wall.getContext('2d'); const W = WALL.W, H = WALL.H;

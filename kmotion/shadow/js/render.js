@@ -1,5 +1,5 @@
 /* 그림자 괴물 · 그리기 층 — 벽·전등 빛·그림자·옆에서 본 그림. 시스템(main/physics)과 분리: GPT가 여기만 갈아끼워도 된다 */
-import { project } from './physics.js';
+import { project } from './physics.js?v=1223';
 
 export const WALL = { W: 960, H: 720 };
 
