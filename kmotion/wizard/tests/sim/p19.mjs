@@ -46,8 +46,8 @@ const T = data.text, ST = data.stages['canyon-3-1'];
 
 // ── 5. 봇 완주(1·2학년) — 문제가 전부 그림 문제(pic) · 1학년 답 ≤3
 { for (const grade of [1, 2]) { let wins = 0, qs = 0, badPic = 0; for (const seed of [11, 12, 13]) { const rec = []; const r = playOne({ data, seed, grade, acc: .8, stage: 'canyon-3-1', rand: createRng(seed).next, record: rec }); if (r.win) wins++; qs += r.q || 0;
-      for (const e of rec.filter(e => e.type === 'q:open')) { if (!(e.concept && e.concept.startsWith(grade === 1 ? 'g1.cmp.' : 'g2.len.'))) badPic++; } }
-    ok(`봇 ${grade}학년 canyon-3-1 3판 완주 · 문제 전부 ${grade === 1 ? '비교' : '길이 재기'} 개념`, wins === 3 && badPic === 0, `wins ${wins} q ${qs} 다른 개념 ${badPic}`); }
+      for (const e of rec.filter(e => e.type === 'q:open')) { if (!(e.concept && (e.concept.startsWith(grade === 1 ? 'g1.cmp.' : 'g2.len.') || e.concept === `g${grade}.clock.read`))) badPic++; } }   /* v3.4 시간 정령 시계 문제(전투장 2)는 허용 */
+    ok(`봇 ${grade}학년 canyon-3-1 3판 완주 · 문제 전부 ${grade === 1 ? '비교' : '길이 재기'} 개념(+시간 정령 시계)`, wins === 3 && badPic === 0, `wins ${wins} q ${qs} 다른 개념 ${badPic}`); }
   // 판 안 스냅샷: 문제 그림이 측정 그림(pic 문자열)
   { const rec = []; playOne({ data, seed: 14, grade: 1, acc: .8, stage: 'canyon-3-1', rand: createRng(14).next, record: rec }); const g = createGame({ data, seed: 14, grade: 1, stageId: 'canyon-3-1' }); const b = g.qe.next(); ok('판 엔진의 첫 문제: pic = 측정 그림 · 보기 3 · 답 1~3', /^(bars|tall|cups):\d,\d,\d$/.test(b.pic) && b.choices.length === 3 && b.choices[b.correctSlot].num <= 3); } }
 

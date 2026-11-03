@@ -18,7 +18,7 @@ export function makeEnemy(def, uid, x, z, rng, band, opt = {}){
     e.shield = { hp: def.shield.hp, hpMax: def.shield.hp, up: true, broken: false, byMath: false, eq }; }
   // v1.7 수정 골렘: 수학 정답마다 갈라짐(down = DEF 깎인 양)
   // v2.12 도형 정령: 모양 보호막(학년 줄 opt.grade) — rng 는 정령이 나올 때만(숲 판·골든 불변)
-  if (def.spirit) { const sh = pickSpiritShape(rng, opt.grade || 1); e.spirit = { fam: sh.fam, code: sh.code, concept: sh.concept, up: true, weakUntil: 0, breaks: 0 }; }
+  if (def.spirit) { const type = def.spirit === 'time' ? 'time' : 'shape'; const sh = pickSpiritShape(rng, opt.grade || 1, null, type); e.spirit = { type, fam: sh.fam, code: sh.code, concept: sh.concept, up: true, weakUntil: 0, breaks: 0 }; }   // v3.4 spirit 'time' = 시간 정령
   if (def.crack) e.crack = { down: 0, max: def.crack.max || 16, per: def.crack.per || 8 };
   return e;
 }

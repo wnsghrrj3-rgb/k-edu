@@ -334,7 +334,8 @@ export function picTexture(id){ const c = document.createElement('canvas'); c.wi
   const im = new Image(); im.onload = () => { const g = c.getContext('2d'); g.clearRect(0, 0, 256, 256); g.drawImage(im, 0, 0, 256, 256); tex.needsUpdate = true; }; im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup(id)); return tex; }
 export function makeSpirit(e){
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
-  const gem = toon(0x5ef2c8, { emissive: new THREE.Color(0x1d7a66) }), dark = toon(0x2a5a66);
+  const tm = e.kind === 'time-spirit';   // v3.4 시간 정령: 호박빛 몸·구리 조각(도형 정령은 청록)
+  const gem = toon(tm ? 0xffb347 : 0x5ef2c8, { emissive: new THREE.Color(tm ? 0x8a4a10 : 0x1d7a66) }), dark = toon(tm ? 0x7a4a2a : 0x2a5a66);
   const core = withOutline(new THREE.Mesh(new THREE.OctahedronGeometry(.36, 0), gem)); core.position.y = 1.15; core.castShadow = true; body.add(core);
   const halo = new THREE.Mesh(new THREE.TorusGeometry(.5, .03, 6, 32), new THREE.MeshBasicMaterial({ color: 0xffe7a3 })); halo.rotation.x = Math.PI / 2; halo.position.y = 1.15; body.add(halo);
   const eyes = []; for (const s of [-1, 1]) { const ey = new THREE.Mesh(new THREE.SphereGeometry(.045, 8, 6), new THREE.MeshBasicMaterial({ color: 0x1b1630 })); ey.position.set(s * .1, 1.2, .3); body.add(ey); eyes.push(ey); }

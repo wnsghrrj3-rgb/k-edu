@@ -46,7 +46,7 @@ export interface Snapshot {
     /** v1.4: line = 계산 고블린 조준선(size=[폭, 길이], yaw 방향 — 보스 돌진 띠와 같은 그림) · scale = 큰 슬라임 1.5 / 분열 작은 슬라임 .72(tags 'mini') · kind 'num-slime'|'big-slime'|'calc-goblin' */
     telegraph: { shape: 'circle' | 'line' | 'cone'; center: Vec3; size: number[]; yaw: number; t0: number; t1: number } | null; tags: string[];
     pack: { id: number; n: number; hpEach: number } | null;   // v2.3 묶음 소속(tags 'pack') — 머리 위 숫자 = 현재 hp(D-30)
-    spirit: { fam: string; pic: string | null; up: boolean; weak: boolean; weakT: number; breaks: number } | null }>;   // v2.12 도형 정령 모양 보호막 — pic = 보호막 그림 id, weakT = 약점 남은 비율(1→0)
+    spirit: { type: 'shape' | 'time'; fam: string; pic: string | null; up: boolean; weak: boolean; weakT: number; breaks: number } | null }>;   // v3.4 type 'time' = 시간 정령(pic 'clock:h,m[,s]' 그림 문자열, fam = 시계 읽기 단계 hour|half|five|one|sec) · v2.12 도형 정령 모양 보호막 — pic = 보호막 그림 id, weakT = 약점 남은 비율(1→0)
   /** 보스(v1.1 추가, 06 문서 4·5절). 보스방이 아니면 null. telegraphs 는 전부 그려야 한다(돌 3개처럼 여러 개일 수 있음) */
   boss: null | { uid: number; kind: string; pos: Vec3; yaw: number; scale: number;
     state: 'intro' | 'chase' | 'windup' | 'attack' | 'recover' | 'kneel' | 'phase' | 'dead' | 'hold' | 'stun'; stateT: number;   // v2.15 hold = 거울 분신 멈춤 · stun = 진짜 맞힌 뒤 경직

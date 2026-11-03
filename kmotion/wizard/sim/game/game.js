@@ -12,7 +12,7 @@ import { makeBoss, stepBoss, bossMul, bossAfterHit, sealBroken, bossSnapshot, bo
 import { QuestionEngine } from '../learn/questionEngine.js';
 import { pickSpiritShape } from '../learn/spirit.js';   // v2.12 도형 정령 모양 보호막
 import { PIC } from '../learn/pics.js';
-const PIC_ID = c => PIC[c] || null;
+const PIC_ID = c => PIC[c] || (typeof c === 'string' && c.indexOf(':') > 0 ? c : null);   // v3.4 'clock:h,m' 같은 그림 문자열 코드는 그대로
 import { conceptsFor, fallbackFor, packWavesFor, packRange, shieldSpec } from '../learn/gradeTable.js';   // v2.3 학년 변환표(15 문서 6절)
 import { Mastery } from '../learn/mastery.js';
 import { Selector } from '../input/selector.js';
@@ -179,7 +179,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
   }
   function stepSpirits(){
     for (const e of g.enemies) { const S = e.spirit; if (!S || S.up || e.state === 'dead' || g.gameT < S.weakUntil) continue;
-      const sh = pickSpiritShape(rng, grade, S.fam); S.fam = sh.fam; S.code = sh.code; S.up = true; S.weakUntil = 0;
+      const sh = pickSpiritShape(rng, grade, S.fam, S.type || 'shape'); S.fam = sh.fam; S.code = sh.code; S.up = true; S.weakUntil = 0;
       g.emit('enemy:spiritShield', { uid: e.uid, kind: e.kind, fam: S.fam, pic: PIC_ID(S.code), pos: v3([e.pos[0], e.h * .6, e.pos[2]]) }); }
   }
   function hitEnemy(e, mult, kind, emp = 1, from = null){
@@ -545,7 +545,7 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
         telegraph: e.telegraph ? { shape: e.telegraph.shape, center: v3(e.telegraph.center), size: e.telegraph.size, yaw: e.telegraph.yaw != null ? r3(e.telegraph.yaw) : 0, t0: r3(e.telegraph.t0), t1: r3(e.telegraph.t1) } : null, tags: e.tags,
         shield: e.shield ? { hp: e.shield.hp, hpMax: e.shield.hpMax, up: e.shield.up && !e.shield.broken, broken: e.shield.broken, byMath: e.shield.byMath, eq: e.shield.eq ? `□ ${e.shield.eq.op || '+'} ${e.shield.eq.b} = ${e.shield.eq.c}` : null } : null,
         crack: e.crack ? { down: e.crack.down, max: e.crack.max, ratio: r3(e.crack.down / e.crack.max), def: e.def.def - e.crack.down } : null, pack: e.pack ? { id: e.pack.id, n: e.pack.n, hpEach: e.pack.hpEach } : null,
-        spirit: e.spirit ? { fam: e.spirit.fam, pic: PIC_ID(e.spirit.code), up: e.spirit.up, weak: !e.spirit.up && g.gameT < e.spirit.weakUntil, weakT: r3(Math.max(0, (e.spirit.weakUntil - g.gameT) / GAME.spirit.weakT)), breaks: e.spirit.breaks } : null })),   /* v2.12 도형 정령 모양 보호막 */
+        spirit: e.spirit ? { type: e.spirit.type || 'shape', fam: e.spirit.fam, pic: PIC_ID(e.spirit.code), up: e.spirit.up, weak: !e.spirit.up && g.gameT < e.spirit.weakUntil, weakT: r3(Math.max(0, (e.spirit.weakUntil - g.gameT) / GAME.spirit.weakT)), breaks: e.spirit.breaks } : null })),   /* v2.12 도형 정령 모양 보호막 */
       packs: g.packs.filter(pk => !pk.cleared).map(pk => { const al = packAlive(pk); return { id: pk.id, n: pk.n, hpEach: pk.hpEach, total: pk.total, alive: al.length, sum: al.reduce((a, e) => a + e.hp, 0), uids: al.map(e => e.uid), retried: pk.retried }; }),
       boss: bossSnapshot(g, g.boss, r3, v3),
       projectiles: g.projectiles.map(p => ({ uid: p.uid, kind: p.kind, pos: v3(p.pos), vel: v3(p.vel), owner: p.owner, label: p.label || null, pic: p.pic || null, r: r3(p.r), exact: p.exact || 0, scatter: !!p.scatter })),
