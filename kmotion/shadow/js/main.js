@@ -185,7 +185,7 @@ function labCopy(){ const txt = ['번호\t광원까지(cm)\t벽까지(cm)\t그�
 function show(id){ for (const s of ['scr-start', 'scr-calib', 'scr-result']) $(s).classList.toggle('hidden', s !== id); $('hud').classList.toggle('hidden', id !== null); }
 async function start(){ S.Hb = +$('inHb').value || DEF.Hb; S.d0 = +$('inD0').value || DEF.d0; $('inHb2').value = S.Hb; $('hbV').textContent = S.Hb + 'cm';
   show('scr-calib'); S.phase = 'calib'; calib = { acc: 0, n: 0, start: 0 }; $('hud').classList.add('hidden');
-  try { if (!km.running) await km.start(); } catch (e) { $('calibMsg').textContent = '카메라를 열 수 없어요: ' + e.message + ' — 카메라 없이 보려면 주소 뒤에 ?mouse=1'; } }
+  try { if (!km.running) await km.start(); if (!km.mouse) { $('calibMsg').textContent = '사람 분리 모델 준비 중…'; await km.setSegment(true); } }   // 엔진은 hands/pose 없는 modes 면 모델 로드를 건너뛰어 segment 옵션만으론 세그멘터가 안 올라온다 → 시작 뒤 직접 켠다 catch (e) { $('calibMsg').textContent = '카메라를 열 수 없어요: ' + e.message + ' — 카메라 없이 보려면 주소 뒤에 ?mouse=1'; } }
 function beginPlay(){ S.phase = 'play'; show(null); $('hud').classList.remove('hidden'); const t = performance.now();
   S.score = 0; S.life = 3; S.combo = 0; S.t0 = t; S.idx = 0; S.stars = []; S.holdT = 0; S.bestFit = 0; S.tTarget = t; S.mobs = []; S.nextSpawn = t + 1500; S.judged = 0; S.scared = 0; S.dodged = 0; tgtKey = '';
   $('hScore').textContent = 0; $('hLife').textContent = '❤❤❤'; syncBody();
