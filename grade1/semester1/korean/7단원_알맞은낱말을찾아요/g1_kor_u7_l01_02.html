@@ -11,8 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --c-main:#42A5F5; --c-deep:#1976D2; --c-soft:#E3F2FD; --c-sub:#64B5F6;
-  --c-ink:#1565C0; --c-bg:#F0F7FF; --c-emph:#DC2626; --c-ok:#2E7D32;
+  --c-main:#A63230; --c-deep:#772422; --c-soft:#FBEAE9; --c-sub:#C28F8E;
+  --c-ink:#4D1A19; --c-bg:#F8FAFC; --c-emph:#DC2626; --c-ok:#2E7D32;
   --c-strong:#FB8C00; --c-strong-soft:#FFF3E0;
   --fs-title:clamp(20px,5.2cqw,32px); --fs-heading:clamp(17px,4.2cqw,24px);
   --fs-body:clamp(15px,3.6cqw,21px); --fs-caption:clamp(12px,2.7cqw,16px); --fs-label:clamp(11px,2.3cqw,14px);
@@ -102,7 +102,7 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .ka-nav{background:#F4F4F8; color:#2A2A35; border:none; padding:clamp(8px,2.2cqw,12px) 6px; font-size:var(--fs-caption); border-radius:clamp(10px,2.5cqw,14px); cursor:pointer; font-family:inherit;}
 .ka-nav-next{background:var(--c-main); color:#fff;}
 .ka-nav:disabled{opacity:.4; cursor:default;}
-/* 문장 띠 + 띄어 읽기 표시 (6단원 — 정적 시각 표현, JS 무관) */
+/* 문장 띠 + 빈칸 표시 (정적 시각 표현, JS 무관) */
 .sentence{display:inline-flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:clamp(2px,.6cqw,5px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(12px,2.6cqw,18px); padding:clamp(10px,2.6cqw,16px) clamp(14px,3.2cqw,22px); font-size:clamp(20px,4.6cqw,32px); color:var(--c-deep); box-shadow:0 4px 0 var(--c-soft); max-width:600px; line-height:1.7; margin:clamp(4px,1cqw,8px) auto;}
 .punct{color:var(--c-emph); font-weight:400;}
 .vmark{display:inline-block; color:var(--c-strong); font-family:'Nunito',sans-serif; font-weight:800; font-size:1.05em; transform:translateY(-.05em); margin:0 .05em;}
@@ -113,12 +113,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-card .pc-name{font-size:clamp(15px,3.4cqw,21px); color:var(--c-deep);}
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
-/* 세로 모바일(폭 600px 이하·세로): 5/4 카드가 화면 높이의 1/3만 쓰고 콘텐츠가 0.33까지 축소되던 것을 세로로 꽉 채운다. 가로·데스크톱은 그대로 */
-@media (max-width:600px) and (orientation:portrait){
-  html,body{height:100%;}
-  body{height:100dvh; min-height:0;}
-  .ka{aspect-ratio:auto; width:100%; height:100%; max-height:none;}
-}
 </style>
   <script src="/kedu_gate.js"></script>
 <script src="/kedu_boxbar.js"></script>
@@ -142,101 +136,55 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 
 <script>
 const LESSON_ID='g1_kor_u7_l01_02_v1';
-const LESSON_MAX=50;
+const LESSON_MAX=70;
 const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 1~2차시(배울 내용 살펴보기) 13슬:
-   ① 만나기 2 → ② 따라가기 3 → ③ 활동·심장 5 → ④ 표현·정리 3 =====
-   학습 목표: 배울 내용을 살펴보고, 낱말이 아니라 문장으로 표현해야 하는 까닭을 안다.
-   ★ 준비 차시. 정답 로깅 5슬(잘 통하는 말·그림 맞는 문장·까닭 고르기). 표현 점검·발화·정리=로깅X·완주✓.
-   ★ 저작권: 지도서 도입 활동 의도(낱말만으론 안 통함 → 문장 표현 필요성)만 차용.
-      요리·도서관 상황은 보편 상황으로 자체 구성, 지도서 삽화·대사 미차용. */
+/* ===== 1~2차시(준비 — 배울 내용 살펴보기) 『국어』 302~305쪽 13슬 — v2 교과서 기준 재구성 (2026-11-03)
+   학습 목표: 배울 내용을 살펴볼 수 있다.
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·스스로 확인·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 판단(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      곰과 사자 요리 장면(304~305쪽), 쌍받침 문장·낱말(306~309쪽), 310~317쪽 그림 문장, 324쪽 문장 완성, 붙임 9 낱말 카드 놀이 방법, 328~331쪽 정리·기초 다지기(끼다·신다·입다·쓰다·묶다)·글씨는 그대로. 「도서관 고양이」(최지혜)는 본문 미인용(자체 간추림, 318~323쪽 펴기). 지도서 가르침: 문장 성분 이름은 가르치지 않고 경험으로 · 말로 먼저(구두 작문) · 쌍받침 짜임을 명시적으로 외우게 하지 않기 · 맞춤법보다 문장 구조. */
 const slides=[
-  {tag:'① 단원 만나기', t:'7단원 「알맞은 낱말을 찾아요」를 시작해요',
-   html:`<div class="scene"><div class="scene-pic">🖼️🔤✏️</div></div>
-    <div class="ka-bub">그림을 보고 어울리는 낱말을 떠올려 본 적 있나요?<br>이번 단원에서는 그림과 상황에 <b class="emph">알맞은 낱말</b>을 골라 넣어 <b class="emph">문장을 완성</b>하는 법을 배워요. 🎉</div>`},
+  {tag:'① 302쪽 단원 열기', t:'7단원 「알맞은 낱말을 찾아요」',
+   html:`<div class="punct-row"><div class="punct-card"><span class="pc-mark">🖼️</span><span class="pc-name">그림에 알맞은 낱말 넣기</span></div><div class="punct-card"><span class="pc-mark">🗣️</span><span class="pc-name">여러 가지 문장 말하기</span></div></div><div class="ka-bub">그림에 <b class="emph">알맞은 낱말</b>을 찾아 넣고, 하고 싶은 말을 <b class="emph">문장</b>으로 말해 봐요.</div>`},
 
-  {tag:'① 배울 내용 미리보기', t:'이런 것을 배울 거예요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🔤</span><b>쌍받침</b>(ㄲ·ㅆ) 든 낱말 읽고 쓰기</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🧩</span>그림에 어울리는 <b>낱말 넣어 문장 완성</b>하기</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🃏</span>낱말 카드로 <b>새 문장 만들기</b></div>
-    </div>`},
+  {tag:'① 303쪽 생각 열기', t:'그림 속 아이들은 무엇을 하고 있나요?', log:true, okMsg:'맞아요! 「누가 무엇을 하는지」 문장으로 말하니 그림이 또렷하게 보여요. 📚',
+   html:`<div class="scene"><div class="scene-pic">🧒📚🏫👧</div></div><div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">책.</div></div><div class="wcard" data-ok="0"><div class="wc-word">사다리.</div></div><div class="wcard" data-ok="1"><div class="wc-word">학생들이 도서관에서 책을 읽고 있습니다.</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 그림 살펴보기', t:'그림에는 무엇이 보이나요?',
-   html:`<div class="scene"><div class="scene-pic">📚🪑🧒📖</div></div>
-    <div class="ka-bub">"책, 책상, 의자, 아이…" 보이는 것을 <b class="emph">낱말</b>로 말하기는 쉬워요.<br>그런데 <b class="emph">"누가 무엇을 하는지"</b>를 알려 주려면 어떻게 말해야 할까요? 🤔</div>`},
+  {tag:'① 303쪽 생각 열기', t:'그림에서 무엇이 어디에 있는지 말해요',
+   html:`<div class="stage-box">🔎 『국어』 303쪽 그림을 보고 「책이 책상 위에 있습니다.」처럼 무엇이 어디에 있는지 문장으로 말해 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 낱말 하나가 아니라 문장으로 말했어요.">🗣️ 말했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'② 낱말만 말하면', t:'낱말만 말하면 잘 안 통해요',
-   html:`<div class="scene"><div class="scene-pic">🍳😕</div><div class="scene-say">"넣으세요!" … "무엇을?"</div></div>
-    <div class="ka-bub">요리하는 친구가 <b class="emph">"넣으세요!"</b>라고만 말하면, 무엇을 어디에 넣는지 알 수 없어요.<br><b class="emph">"꿀을 냄비에 넣으세요."</b>처럼 <b>문장</b>으로 말해야 잘 통해요. 🍯</div>`},
+  {tag:'① 303쪽 생각 열기', t:'그림을 설명하려면 어떻게 말해야 할까요?', log:true, okMsg:'맞아요! 그림을 설명할 때는 문장으로 말해요. 🗣️',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">손짓으로만 말해요</div></div><div class="wcard" data-ok="1"><div class="wc-word">문장으로 말해요</div></div><div class="wcard" data-ok="0"><div class="wc-word">낱말 하나만 말해요</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 잘 통하는 말', t:'어느 말이 더 잘 통할까요?', log:true, okMsg:'맞아요! 문장으로 말하면 잘 통해요. 👍',
-   html:`<div class="scene"><div class="scene-pic">🧅🥣</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">양파. 그릇.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">양파를 그릇에 담아 주세요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 304쪽 1번', t:'요리할 때 일어난 일을 살펴봐요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>곰: 요리를 배우러 왔습니다.</div><div class="read-line"><span class="rl-num">2</span>사자: 제가 알려 주는 대로 잘 따라 해 보세요.</div><div class="read-line"><span class="rl-num">3</span>사자: 꿀을! 넣으세요.</div><div class="read-line"><span class="rl-num">4</span>곰: 무엇을 넣어요? 어디에 넣어요?</div><div class="read-line"><span class="rl-num">5</span>사자: 양파. 냄비에! 그릇.</div><div class="read-line"><span class="rl-num">6</span>곰: 설명을 알아듣기 어려워.</div></div><div class="fb" id="readFb">🔊 『국어』 304쪽 — 곰과 사자의 말을 역할을 나누어 읽어 봐요.</div>`},
 
-  {tag:'③ 그림 맞는 문장', t:'그림에 알맞은 문장을 골라 봐요', log:true, okMsg:'맞아요! 아이가 책을 읽어요. 📖',
-   html:`<div class="scene"><div class="scene-pic">🧒📖</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">아이가 책을 읽습니다.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">아이가 공을 찹니다.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 305쪽 2번 (1)', t:'곰이 사자를 찾아온 까닭은 무엇인가요?', log:true, okMsg:'맞아요! 곰은 요리를 배우러 왔어요. 🍳',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">요리를 배우려고</div></div><div class="wcard" data-ok="0"><div class="wc-word">꿀을 팔려고</div></div><div class="wcard" data-ok="0"><div class="wc-word">그릇을 빌리려고</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 잘 전하는 말', t:'친구에게 사과를 받고 싶어요. 어떻게 말할까요?', log:true, okMsg:'맞아요! 문장으로 말하면 정확히 전해져요. 🍎',
-   html:`<div class="scene"><div class="scene-pic">🍎🙏</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">사과.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">사과를 주세요.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 305쪽 2번 (2)', t:'곰은 왜 사자의 설명을 알아듣기 어려웠을까요?', log:true, okMsg:'맞아요! 「양파.」, 「냄비에!」처럼 낱말만 들으면 무엇을 하라는지 알 수 없어요. 🤔',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">사자가 문장으로 말하지 않고 낱말로만 말해서</div></div><div class="wcard" data-ok="0"><div class="wc-word">사자의 목소리가 너무 커서</div></div><div class="wcard" data-ok="0"><div class="wc-word">곰이 요리를 싫어해서</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 그림 맞는 문장', t:'강아지 그림이에요. 알맞은 문장은?', log:true, okMsg:'맞아요! 강아지가 뛰어가요. 🐶',
-   html:`<div class="scene"><div class="scene-pic">🐶💨</div></div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">고양이가 잠을 잡니다.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">강아지가 뛰어갑니다.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 305쪽 2번 (3)', t:'사자가 곰에게 하고 싶었던 말은 무엇이었을까요?', log:true, okMsg:'맞아요! 무엇을, 어디에 넣는지 모두 들어 있어서 뜻이 잘 통해요. 🍯',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">꿀을!</div></div><div class="wcard" data-ok="0"><div class="wc-word">냄비에!</div></div><div class="wcard" data-ok="1"><div class="wc-word">꿀을 냄비에 넣으세요.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 까닭 알기', t:'문장으로 말하면 좋은 점은 무엇일까요?', log:true, okMsg:'맞아요! 내 생각을 정확하게 전할 수 있어요. 💬',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-pic">🎯</div><div class="wc-word">생각을 정확하게 전할 수 있어요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">🎨</div><div class="wc-word">글자 색깔이 예뻐져요</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-pic">📏</div><div class="wc-word">말이 무조건 길어져요</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 305쪽 마지막 장면', t:'사자가 문장으로 바르게 말한 것은?', log:true, okMsg:'맞아요! 문장으로 말하니 곰이 바로 알아들었어요. 🧅',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">그릇.</div></div><div class="wcard" data-ok="1"><div class="wc-word">양파를 그릇에 담아 주세요.</div></div><div class="wcard" data-ok="0"><div class="wc-word">양파.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 내 표현 점검', t:'나는 평소에 어떻게 말하나요? (눌러서 확인해요)',
-   hint:'힌트: 평소 내 모습을 떠올리며 해당하는 것을 눌러요. 정답은 없어요!',
-   html:`<div class="selfcheck">
-      <div class="sc-row"><span class="sc-box">✓</span>나는 낱말이 아니라 <b>문장</b>으로 말해요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>나는 <b>누가·무엇을</b> 하는지 넣어 말해요.</div>
-      <div class="sc-row"><span class="sc-box">✓</span>나는 <b>그림에 어울리는</b> 낱말을 떠올려요.</div>
-    </div>
-    <div class="fb">스스로 점검하면 문장 실력이 쑥쑥 자라요. 🌱</div>`},
+  {tag:'③ 305쪽 3번', t:'하고 싶은 말을 문장으로 표현하면 좋은 점은?', log:true, okMsg:'맞아요! 문장으로 말해야 정확하게 전해져요. 💬',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">말이 짧아져서 빨리 끝나요</div></div><div class="wcard" data-ok="0"><div class="wc-word">아무도 듣지 않아도 돼요</div></div><div class="wcard" data-ok="1"><div class="wc-word">내 생각을 상대에게 정확하게 전할 수 있어요</div></div></div><div class="fb"></div>`},
 
-  {tag:'④ 문장으로 말하기', t:'그림 하나를 골라 문장으로 말해 봐요',
-   html:`<div class="stage-box">
-      🗣️ 교실이나 그림책에서 그림 하나를 골라 <b>"누가 무엇을 합니다"</b> 문장으로 말해 봐요.<br>
-      <small>(예: 그림 속 친구를 보고 → "친구가 그림을 그립니다.")</small>
-      <br><button class="stage-do" id="stageDo" data-fb="그림에 어울리는 문장으로 잘 말했어요! 👏">🙆 문장으로 말해 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'③ 경험 나누기', t:'낱말로만 말해서 곤란했던 일',
+   html:`<div class="stage-box">🪞 낱말만 말해서 친구나 가족이 내 말을 잘 알아듣지 못했던 일이 있었나요? 그때 어떤 문장으로 말하면 좋았을지 말해 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 문장으로 바꾸어 말하니 훨씬 잘 통하네요.">🗣️ 말했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 정리', t:'오늘 알게 된 것을 모아 봐요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🔤</span>낱말만으로는 <b>뜻이 잘 안 통해요</b>.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">💬</span><b>문장</b>으로 말해야 정확히 전할 수 있어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🖼️</span>그림에 <b>어울리는 낱말</b>을 떠올리며 말해요.</div>
-    </div>`},
+  {tag:'④ 다짐하기', t:'나의 다짐',
+   html:`<div class="selfcheck"><div class="sc-row"><span class="sc-box">✓</span>하고 싶은 말을 문장으로 말할래요.</div><div class="sc-row"><span class="sc-box">✓</span>그림에 알맞은 낱말을 찾아 넣어 볼래요.</div></div><div class="fb">💪 다짐을 마음속으로 약속해 봐요.</div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🎯</span>왜 <b>문장으로 표현</b>해야 하는지 알았어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🖼️</span>그림에 <b>어울리는 낱말</b>을 떠올려 봤어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">➡️</span>다음 시간에는 <b>쌍받침</b>이 든 낱말을 읽고 써 볼 거예요.</div>
-    </div>`},
+  {tag:'⑤ 마무리', t:'배울 내용을 살펴보았어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🍯</span>낱말로만 말하면 뜻이 잘 통하지 않아요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🗣️</span>하고 싶은 말을 <b>문장</b>으로 말해요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🖼️</span>그림에 알맞은 낱말을 찾아 넣어요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;

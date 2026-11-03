@@ -11,8 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --c-main:#42A5F5; --c-deep:#1976D2; --c-soft:#E3F2FD; --c-sub:#64B5F6;
-  --c-ink:#1565C0; --c-bg:#F0F7FF; --c-emph:#DC2626; --c-ok:#2E7D32;
+  --c-main:#A63230; --c-deep:#772422; --c-soft:#FBEAE9; --c-sub:#C28F8E;
+  --c-ink:#4D1A19; --c-bg:#F8FAFC; --c-emph:#DC2626; --c-ok:#2E7D32;
   --c-strong:#FB8C00; --c-strong-soft:#FFF3E0;
   --fs-title:clamp(20px,5.2cqw,32px); --fs-heading:clamp(17px,4.2cqw,24px);
   --fs-body:clamp(15px,3.6cqw,21px); --fs-caption:clamp(12px,2.7cqw,16px); --fs-label:clamp(11px,2.3cqw,14px);
@@ -102,7 +102,7 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .ka-nav{background:#F4F4F8; color:#2A2A35; border:none; padding:clamp(8px,2.2cqw,12px) 6px; font-size:var(--fs-caption); border-radius:clamp(10px,2.5cqw,14px); cursor:pointer; font-family:inherit;}
 .ka-nav-next{background:var(--c-main); color:#fff;}
 .ka-nav:disabled{opacity:.4; cursor:default;}
-/* 문장 띠 + 띄어 읽기 표시 (6단원 — 정적 시각 표현, JS 무관) */
+/* 문장 띠 + 빈칸 표시 (정적 시각 표현, JS 무관) */
 .sentence{display:inline-flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:clamp(2px,.6cqw,5px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(12px,2.6cqw,18px); padding:clamp(10px,2.6cqw,16px) clamp(14px,3.2cqw,22px); font-size:clamp(20px,4.6cqw,32px); color:var(--c-deep); box-shadow:0 4px 0 var(--c-soft); max-width:600px; line-height:1.7; margin:clamp(4px,1cqw,8px) auto;}
 .punct{color:var(--c-emph); font-weight:400;}
 .vmark{display:inline-block; color:var(--c-strong); font-family:'Nunito',sans-serif; font-weight:800; font-size:1.05em; transform:translateY(-.05em); margin:0 .05em;}
@@ -113,12 +113,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-card .pc-name{font-size:clamp(15px,3.4cqw,21px); color:var(--c-deep);}
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
-/* 세로 모바일(폭 600px 이하·세로): 5/4 카드가 화면 높이의 1/3만 쓰고 콘텐츠가 0.33까지 축소되던 것을 세로로 꽉 채운다. 가로·데스크톱은 그대로 */
-@media (max-width:600px) and (orientation:portrait){
-  html,body{height:100%;}
-  body{height:100dvh; min-height:0;}
-  .ka{aspect-ratio:auto; width:100%; height:100%; max-height:none;}
-}
 </style>
   <script src="/kedu_gate.js"></script>
 <script src="/kedu_boxbar.js"></script>
@@ -147,107 +141,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 13~14차시(마무리하기 — 정리·기초 다지기·글씨 쓰기) 13슬:
-   ① 만나기 2 → ② 따라가기 3 → ③ 활동·심장 5 → ④ 표현·정리 3 =====
-   학습 목표: 배운 내용을 마무리하며 그림에 알맞은 낱말로 문장을 완성할 수 있다.
-   ★ 통합 트랙. 정답 로깅 7슬(주어·목적어·서술어 빈칸·보기넣기·기초다지기 짝잇기·무엇을어찌하다 2).
-   ★ 기초 다지기: '무엇을 어찌하다' 문형(끼다·신다·쓰다·입다·묶다) / 글씨 쓰기 trace(로깅X).
-   ★ 저작권: 그림 속 문장·기초다지기 낱말은 보편·교과 어휘 자체 구성(지도서 모티프만). */
+/* ===== 13~14차시(마무리 — 정리하기 · 기초 다지기) 『국어』 328~331쪽 13슬 — v2 교과서 기준 재구성 (2026-11-03)
+   학습 목표: 배운 내용을 마무리할 수 있다.
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·스스로 확인·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 판단(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      곰과 사자 요리 장면(304~305쪽), 쌍받침 문장·낱말(306~309쪽), 310~317쪽 그림 문장, 324쪽 문장 완성, 붙임 9 낱말 카드 놀이 방법, 328~331쪽 정리·기초 다지기(끼다·신다·입다·쓰다·묶다)·글씨는 그대로. 「도서관 고양이」(최지혜)는 본문 미인용(자체 간추림, 318~323쪽 펴기). 지도서 가르침: 문장 성분 이름은 가르치지 않고 경험으로 · 말로 먼저(구두 작문) · 쌍받침 짜임을 명시적으로 외우게 하지 않기 · 맞춤법보다 문장 구조. */
 const slides=[
-  {tag:'① 마무리 만나기', t:'배운 내용을 마무리해요',
-   html:`<div class="scene"><div class="scene-pic">🦉🦊🐻🐭</div></div>
-    <div class="ka-bub">7단원 끝까지 왔어요! 이번엔 그림 속 친구들이 <b class="emph">무엇을 하는지</b> 알맞은 낱말로 <b class="emph">문장</b>을 완성해 볼 거예요. 🎉</div>`},
+  {tag:'① 328쪽 1번', t:'누가 무엇을 하는지 생각하며 그림을 살펴봐요',
+   html:`<div class="stage-box">🌳 『국어』 328쪽 그림 속 동물들은 무엇을 하고 있나요? 자전거는 어디에 있나요? 문장으로 말해 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 누가 무엇을 하는지, 물건이 어디에 있는지 모두 문장이 돼요.">🗣️ 말했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'① 무엇을 배웠나요', t:'지금까지 배운 것',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🔤</span>쌍받침 ㄲ·ㅆ 읽고 쓰기</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🧩</span>누가·무엇을·어찌하다로 <b>문장 완성</b></div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🃏</span>낱말 카드로 다양한 문장 만들기</div>
-    </div>`},
+  {tag:'② 329쪽 2번', t:'「부엉이가 집으로 ◯◯◯◯.」', log:true, okMsg:'맞아요! 「부엉이가 집으로 날아갑니다.」 🦉',
+   html:`<div class="scene"><div class="scene-pic">🦉🏠</div></div><div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">마십니다</div></div><div class="wcard" data-ok="0"><div class="wc-word">봅니다</div></div><div class="wcard" data-ok="1"><div class="wc-word">날아갑니다</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 그림 보고 문장', t:'집 안 친구들을 살펴봐요',
-   html:`<div class="scene"><div class="scene-pic">🏠</div></div>
-    <div class="ka-bub">큰 집 그림 속에 동물 친구들이 저마다 다른 일을 하고 있어요.<br>"<b class="emph">누가</b> <b class="emph">무엇을</b> <b class="emph">어찌하다</b>" 순서로 빈칸을 채워 볼까요? 🔎</div>`},
+  {tag:'② 329쪽 2번', t:'「여우가 ◯◯ 마십니다.」', log:true, okMsg:'맞아요! 「여우가 차를 마십니다.」 🍵',
+   html:`<div class="scene"><div class="scene-pic">🦊🍵</div></div><div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">신문을</div></div><div class="wcard" data-ok="0"><div class="wc-word">잠을</div></div><div class="wcard" data-ok="1"><div class="wc-word">차를</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 빈칸 — 누가', t:'누가 집으로 날아가나요?', log:true, okMsg:'맞아요! "부엉이가 집으로 날아갑니다." 🦉',
-   html:`<div class="sentence"><span class="punct">◯◯◯</span>가 집으로 날아갑니다.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">부엉이</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">자전거</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">신문</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 329쪽 2번', t:'「◯◯◯ 신문을 봅니다.」', log:true, okMsg:'맞아요! 「토끼가 신문을 봅니다.」 📰',
+   html:`<div class="scene"><div class="scene-pic">🐰📰</div></div><div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">토끼가</div></div><div class="wcard" data-ok="0"><div class="wc-word">차를</div></div><div class="wcard" data-ok="0"><div class="wc-word">잠을</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 빈칸 — 무엇을', t:'여우가 무엇을 마시나요?', log:true, okMsg:'맞아요! "여우가 차를 마십니다." 🦊',
-   html:`<div class="sentence">여우가 <span class="punct">◯</span>를 마십니다.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">잠</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">차</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">신문</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'② 329쪽 2번', t:'「곰이 재채기를 ◯◯◯.」', log:true, okMsg:'맞아요! 「곰이 재채기를 합니다.」 「생쥐가 잠을 잡니다.」도 읽어 봐요. 🤧',
+   html:`<div class="scene"><div class="scene-pic">🐻🤧</div></div><div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">잡니다</div></div><div class="wcard" data-ok="0"><div class="wc-word">마십니다</div></div><div class="wcard" data-ok="1"><div class="wc-word">합니다</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 빈칸 — 어찌하다', t:'곰이 재채기를 어찌하나요?', log:true, okMsg:'맞아요! "곰이 재채기를 합니다." 🐻',
-   html:`<div class="sentence">곰이 재채기를 <span class="punct">◯◯◯</span>.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">잡니다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">봅니다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">합니다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 329쪽 3번', t:'보기의 말을 넣어 문장을 완성해요 (보기: 하십니다 · 탔습니다 · 닦았습니다)', log:true, matchMsg:'잘 이었어요! 🎣',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">문장 앞</div><div class="match-card" data-k="a" data-pair="A">아버지께서 낚시를</div><div class="match-card" data-k="b" data-pair="B">나는 어머니와 함께 버스를</div><div class="match-card" data-k="c" data-pair="C">나는 이를 깨끗하게</div></div><div class="match-col"><div class="match-col-h">알맞은 말</div><div class="match-card" data-k="B" data-pair="b">탔습니다.</div><div class="match-card" data-k="C" data-pair="c">닦았습니다.</div><div class="match-card" data-k="A" data-pair="a">하십니다.</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 보기 넣어 완성', t:'아버지께서 무엇을 하시나요?', log:true, okMsg:'맞아요! "아버지께서 낚시를 하십니다." 🎣',
-   html:`<div class="sentence">아버지께서 <span class="punct">◯◯</span>를 하십니다.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">낚시</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">탔습니다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">닦았습니다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 330쪽 기초 다지기 1', t:'서로 어울리는 낱말을 이어요', log:true, matchMsg:'잘 이었어요! 🧤',
+   html:`<div class="match" id="match"><div class="match-col"><div class="match-col-h">물건</div><div class="match-card" data-k="a" data-pair="A">🧤 장갑</div><div class="match-card" data-k="b" data-pair="B">👟 신발</div><div class="match-card" data-k="c" data-pair="C">👖 바지</div><div class="match-card" data-k="d" data-pair="D">🧢 모자</div></div><div class="match-col"><div class="match-col-h">어찌하다</div><div class="match-card" data-k="D" data-pair="d">쓰다</div><div class="match-card" data-k="A" data-pair="a">끼다</div><div class="match-card" data-k="C" data-pair="c">입다</div><div class="match-card" data-k="B" data-pair="b">신다</div></div></div><div class="fb" id="matchFb"></div>`},
 
-  {tag:'③ 기초 다지기 — 짝잇기', t:'서로 어울리는 낱말을 이어 봐요', log:true, matchMsg:'잘했어요! 무엇을 어떻게 하는지 딱 맞췄어요. 👏',
-   html:`<div class="match" id="match">
-      <div class="match-col"><div class="match-col-h">무엇을</div>
-        <div class="match-card" data-k="a" data-pair="A">장갑</div>
-        <div class="match-card" data-k="b" data-pair="B">신발</div>
-        <div class="match-card" data-k="c" data-pair="C">모자</div>
-        <div class="match-card" data-k="d" data-pair="D">바지</div></div>
-      <div class="match-col"><div class="match-col-h">어찌하다</div>
-        <div class="match-card" data-k="C" data-pair="c">쓰다</div>
-        <div class="match-card" data-k="A" data-pair="a">끼다</div>
-        <div class="match-card" data-k="D" data-pair="d">입다</div>
-        <div class="match-card" data-k="B" data-pair="b">신다</div></div>
-    </div><div class="fb" id="matchFb"></div>`},
+  {tag:'④ 330쪽 기초 다지기 2', t:'「우산을 (  ).」 (보기: 끼다 · 입다 · 쓰다 · 묶다)', log:true, okMsg:'맞아요! 「우산을 쓰다.」 ☂️',
+   html:`<div class="scene"><div class="scene-pic">☂️</div></div><div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">끼다</div></div><div class="wcard" data-ok="0"><div class="wc-word">입다</div></div><div class="wcard" data-ok="1"><div class="wc-word">쓰다</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 무엇을 어찌하다', t:'반지를 어찌하나요?', log:true, okMsg:'맞아요! "반지를 끼다." 💍',
-   html:`<div class="sentence">반지를 <span class="punct">◯◯</span>.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">끼다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">쓰다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">신다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 330쪽 기초 다지기 2', t:'완성한 문장을 소리 내어 읽어요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>반지를 끼다.</div><div class="read-line"><span class="rl-num">2</span>옷을 입다.</div><div class="read-line"><span class="rl-num">3</span>우산을 쓰다.</div><div class="read-line"><span class="rl-num">4</span>신발 끈을 묶다.</div></div><div class="fb" id="readFb">🔊 끊지 말고 한 문장으로 이어서 자연스럽게 읽어 봐요.</div>`},
 
-  {tag:'③ 무엇을 어찌하다', t:'신발 끈을 어찌하나요?', log:true, okMsg:'맞아요! "신발 끈을 묶다." 👟',
-   html:`<div class="sentence">신발 끈을 <span class="punct">◯◯</span>.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">입다</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">쓰다</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">묶다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑤ 331쪽 글씨 쓰기', t:'글씨를 바르게 써 봐요',
+   html:`<div class="trace-wrap"><div class="trace-row"><span class="trace-pic">🙆</span><div class="trace-word"><span class="trace-cell">기</span><span class="trace-cell">지</span><span class="trace-cell">개</span></div></div><div class="trace-row"><span class="trace-pic">🍑</span><div class="trace-word"><span class="trace-cell">복</span><span class="trace-cell">숭</span><span class="trace-cell">아</span></div></div><div class="trace-row"><span class="trace-pic">🎵</span><div class="trace-word"><span class="trace-cell">노</span><span class="trace-cell">래</span></div></div></div><div class="fb" id="traceFb">또박또박 따라 써 봐요.</div>`},
 
-  {tag:'④ 글씨 쓰기', t:'또박또박 따라 써 봐요',
-   html:`<div class="trace-wrap">
-      <div class="trace-row"><span class="trace-pic">🤸</span><div class="trace-word"><span class="trace-cell">기</span><span class="trace-cell">지</span><span class="trace-cell">개</span></div></div>
-      <div class="trace-row"><span class="trace-pic">🍑</span><div class="trace-word"><span class="trace-cell">복</span><span class="trace-cell">숭</span><span class="trace-cell">아</span></div></div>
-      <div class="trace-row"><span class="trace-pic">📚</span><div class="trace-word"><span class="trace-cell">도</span><span class="trace-cell">서</span><span class="trace-cell">관</span></div></div>
-    </div><div class="fb" id="traceFb"></div>`},
+  {tag:'⑤ 331쪽 글씨 쓰기', t:'글씨를 바르게 써 봐요',
+   html:`<div class="trace-wrap"><div class="trace-row"><span class="trace-pic">📚</span><div class="trace-word"><span class="trace-cell">도</span><span class="trace-cell">서</span><span class="trace-cell">관</span></div></div><div class="trace-row"><span class="trace-pic">✨</span><div class="trace-word"><span class="trace-cell">신</span><span class="trace-cell">기</span><span class="trace-cell">한</span></div></div><div class="trace-row"><span class="trace-pic">🐈</span><div class="trace-word"><span class="trace-cell">꼬</span><span class="trace-cell">리</span></div></div></div><div class="fb" id="traceFb">또박또박 따라 써 봐요.</div>`},
 
-  {tag:'④ 정리', t:'문장을 완성할 때 생각할 점',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">①</span><b>누가</b> 했는지 써요</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">②</span><b>무엇을</b> 했는지 써요</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">③</span><b>어떻게(어찌)</b> 했는지 써요</div>
-    </div>`},
+  {tag:'⑥ 단원 돌아보기', t:'나는 이렇게 했어요',
+   html:`<div class="selfcheck"><div class="sc-row"><span class="sc-box">✓</span>그림에 알맞은 낱말을 찾아 넣어요.</div><div class="sc-row"><span class="sc-box">✓</span>쌍받침이 있는 낱말을 읽고 써요.</div><div class="sc-row"><span class="sc-box">✓</span>하고 싶은 말을 문장으로 말하고 써요.</div></div><div class="fb">⭐ 잘한 것에 스스로 별을 주어요.</div>`},
 
-  {tag:'④ 단원 마무리', t:'7단원 끝! 잘했어요',
-   html:`<div class="scene"><div class="scene-pic">🏅</div></div>
-    <div class="ka-bub">이제 그림을 보고 <b class="emph">알맞은 낱말</b>을 넣어 <b class="emph">스스로 문장</b>을 만들 수 있어요!<br>「알맞은 낱말을 찾아요」 단원을 멋지게 마쳤어요. 🎊</div>`},
+  {tag:'⑦ 마무리', t:'7단원을 마쳤어요!',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🖼️</span>그림에 <b>알맞은 낱말</b>을 찾았어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🧩</span>여러 가지 <b>문장</b>을 완성했어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">🗣️</span>하고 싶은 말을 <b>문장으로</b> 말해요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;

@@ -11,8 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --c-main:#42A5F5; --c-deep:#1976D2; --c-soft:#E3F2FD; --c-sub:#64B5F6;
-  --c-ink:#1565C0; --c-bg:#F0F7FF; --c-emph:#DC2626; --c-ok:#2E7D32;
+  --c-main:#A63230; --c-deep:#772422; --c-soft:#FBEAE9; --c-sub:#C28F8E;
+  --c-ink:#4D1A19; --c-bg:#F8FAFC; --c-emph:#DC2626; --c-ok:#2E7D32;
   --c-strong:#FB8C00; --c-strong-soft:#FFF3E0;
   --fs-title:clamp(20px,5.2cqw,32px); --fs-heading:clamp(17px,4.2cqw,24px);
   --fs-body:clamp(15px,3.6cqw,21px); --fs-caption:clamp(12px,2.7cqw,16px); --fs-label:clamp(11px,2.3cqw,14px);
@@ -102,7 +102,7 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .ka-nav{background:#F4F4F8; color:#2A2A35; border:none; padding:clamp(8px,2.2cqw,12px) 6px; font-size:var(--fs-caption); border-radius:clamp(10px,2.5cqw,14px); cursor:pointer; font-family:inherit;}
 .ka-nav-next{background:var(--c-main); color:#fff;}
 .ka-nav:disabled{opacity:.4; cursor:default;}
-/* 문장 띠 + 띄어 읽기 표시 (6단원 — 정적 시각 표현, JS 무관) */
+/* 문장 띠 + 빈칸 표시 (정적 시각 표현, JS 무관) */
 .sentence{display:inline-flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:clamp(2px,.6cqw,5px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(12px,2.6cqw,18px); padding:clamp(10px,2.6cqw,16px) clamp(14px,3.2cqw,22px); font-size:clamp(20px,4.6cqw,32px); color:var(--c-deep); box-shadow:0 4px 0 var(--c-soft); max-width:600px; line-height:1.7; margin:clamp(4px,1cqw,8px) auto;}
 .punct{color:var(--c-emph); font-weight:400;}
 .vmark{display:inline-block; color:var(--c-strong); font-family:'Nunito',sans-serif; font-weight:800; font-size:1.05em; transform:translateY(-.05em); margin:0 .05em;}
@@ -113,12 +113,6 @@ body{background:var(--c-bg); display:flex; align-items:center; justify-content:c
 .punct-card .pc-name{font-size:clamp(15px,3.4cqw,21px); color:var(--c-deep);}
 .punct-row{display:flex; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
 @container (max-width:420px){ .ka-lb span{display:none;} .ka-f{grid-template-columns:1fr 1fr;} .match{gap:clamp(10px,3cqw,22px);} }
-/* 세로 모바일(폭 600px 이하·세로): 5/4 카드가 화면 높이의 1/3만 쓰고 콘텐츠가 0.33까지 축소되던 것을 세로로 꽉 채운다. 가로·데스크톱은 그대로 */
-@media (max-width:600px) and (orientation:portrait){
-  html,body{height:100%;}
-  body{height:100dvh; min-height:0;}
-  .ka{aspect-ratio:auto; width:100%; height:100%; max-height:none;}
-}
 </style>
   <script src="/kedu_gate.js"></script>
 <script src="/kedu_boxbar.js"></script>
@@ -147,102 +141,50 @@ const tracker={
   answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
   done(i){}
 };
-/* ===== 11~12차시(다양한 문장 만들기 — 실천) 13슬:
-   ① 만나기 2 → ② 따라가기 3 → ③ 활동·심장 5 → ④ 표현·정리 3 =====
-   학습 목표: 배운 내용을 실천하여 다양한 문장을 만들 수 있다.
-   ★ 통합 트랙. 정답 로깅 7슬(자연스러운문장·카드조합·주어/목적어/서술어·어색한문장고치기 wordpick 7).
-   ★ 낱말 카드 놀이: 주어(노랑)-목적어(분홍)-서술어(하늘) 순서로 자연스러운 문장 만들기.
-   ★ 저작권: 카드 놀이·문장 예시는 보편 어휘 자체 구성. */
+/* ===== 11~12차시(실천 — 친구와 함께 문장 만들기) 『국어』 326~327쪽 13슬 — v2 교과서 기준 재구성 (2026-11-03)
+   학습 목표: 배운 내용을 실천할 수 있다.
+   ★ 정답 로깅 7슬(LESSON_MAX 70). 읽기·발화 무대·스스로 확인·정리·마무리 = 로깅 X·완주 ✓.
+   ★ 준호 판단(10-15): 국정 교과서에 최대한 원래와 같게, 쪽마다 나오는 활동을 빠짐없이.
+      곰과 사자 요리 장면(304~305쪽), 쌍받침 문장·낱말(306~309쪽), 310~317쪽 그림 문장, 324쪽 문장 완성, 붙임 9 낱말 카드 놀이 방법, 328~331쪽 정리·기초 다지기(끼다·신다·입다·쓰다·묶다)·글씨는 그대로. 「도서관 고양이」(최지혜)는 본문 미인용(자체 간추림, 318~323쪽 펴기). 지도서 가르침: 문장 성분 이름은 가르치지 않고 경험으로 · 말로 먼저(구두 작문) · 쌍받침 짜임을 명시적으로 외우게 하지 않기 · 맞춤법보다 문장 구조. */
 const slides=[
-  {tag:'① 카드 놀이 만나기', t:'낱말 카드로 새 문장을 만들어요',
-   html:`<div class="scene"><div class="scene-pic">🟡🩷🩵</div></div>
-    <div class="ka-bub">낱말 카드를 색깔별로 모아 뒤집어 놓고, 한 장씩 뽑아 <b class="emph">문장</b>을 만들어요!<br><b class="emph">노란색(누가)</b> → <b class="emph">분홍색(무엇을)</b> → <b class="emph">하늘색(어찌하다)</b> 순서로요. 🃏</div>`},
+  {tag:'① 326쪽 이런 활동 어때요', t:'친구와 함께 문장 만들기 — 놀이 방법',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>낱말 카드를 색깔별로 정리해 뒤집어 놓아요.</div><div class="read-line"><span class="rl-num">2</span>가위바위보로 이긴 사람부터 노란색, 분홍색, 하늘색 순서로 뒤집어요.</div><div class="read-line"><span class="rl-num">3</span>뒤집은 카드로 문장을 만들고 소리 내어 읽어요.</div><div class="read-line"><span class="rl-num">4</span>자연스러우면 카드를 가져가고, 아니면 다시 뒤집어 놓아요.</div><div class="read-line"><span class="rl-num">5</span>자연스러운 문장을 만들 수 없을 때까지 해요.</div></div><div class="fb" id="readFb">🃏 『국어』 붙임 9 낱말 카드를 소리 내어 함께 읽어 봐요.</div>`},
 
-  {tag:'① 활동 방법', t:'이렇게 놀아요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🟡</span><b>누가</b> 카드 (토끼가·곰이·나는…)</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🩷</span><b>무엇을</b> 카드 (딸기를·책을·노래를…)</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🩵</span><b>어찌하다</b> 카드 (먹습니다·읽습니다·부릅니다…)</div>
-    </div>`},
+  {tag:'② 놀이 준비', t:'카드를 뒤집는 순서로 알맞은 것은?', log:true, okMsg:'맞아요! 이 순서로 뒤집어야 자연스러운 문장이 돼요. 🟨🟪🟦',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">하늘색 → 분홍색 → 노란색</div></div><div class="wcard" data-ok="0"><div class="wc-word">분홍색 → 하늘색 → 노란색</div></div><div class="wcard" data-ok="1"><div class="wc-word">노란색 → 분홍색 → 하늘색</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 순서 익히기', t:'카드는 이 순서로 놓아요',
-   html:`<div class="trace-wrap">
-      <div class="sentence"><span class="punct">토끼가</span> · <span class="punct">딸기를</span> · <span class="punct">먹습니다</span></div>
-    </div>
-    <div class="ka-bub"><b class="emph">누가 → 무엇을 → 어찌하다</b> 순서로 놓으면 자연스러운 문장이 돼요.<br>"토끼가 딸기를 먹습니다." 잘 통하죠? 🐰🍓</div>`},
+  {tag:'③ 문장 완성판', t:'「토끼가 ◯◯◯ 칩니다.」', log:true, okMsg:'맞아요! 「토끼가 피아노를 칩니다.」 🎹',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">피아노를</div></div><div class="wcard" data-ok="0"><div class="wc-word">책을</div></div><div class="wcard" data-ok="0"><div class="wc-word">친구를</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 자연스러운 문장?', t:'어느 문장이 자연스러운가요?', log:true, okMsg:'맞아요! "토끼가 책을 읽습니다"가 자연스러워요. 📖',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">토끼가 책을 읽습니다.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">책이 토끼를 읽습니다.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'③ 문장 완성판', t:'「말이 ◯◯◯ 만납니다.」', log:true, okMsg:'맞아요! 「말이 친구를 만납니다.」 🐴',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">책상을</div></div><div class="wcard" data-ok="1"><div class="wc-word">친구를</div></div><div class="wcard" data-ok="0"><div class="wc-word">피아노를</div></div></div><div class="fb"></div>`},
 
-  {tag:'② 카드 조합', t:'빈 카드에 알맞은 낱말을 골라 봐요', log:true, okMsg:'맞아요! 원숭이가 피아노를 칩니다. 🎹',
-   html:`<div class="sentence">원숭이가 <span class="punct">◯◯◯</span>를 칩니다.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">노래</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">피아노</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">딸기</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 자연스러운 문장', t:'뜻이 통하는 자연스러운 문장은?', log:true, okMsg:'맞아요! 「누가 → 무엇을 → 어찌해요」 순서로 놓아야 자연스러워요. 🦁',
+   html:`<div class="wordpick"><div class="wcard" data-ok="1"><div class="wc-word">사자가 사과를 먹습니다.</div></div><div class="wcard" data-ok="0"><div class="wc-word">사과가 사자를 먹습니다.</div></div><div class="wcard" data-ok="0"><div class="wc-word">먹습니다 사자가 사과를.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 누가 카드', t:'노란색(누가) 카드를 골라 봐요', log:true, okMsg:'맞아요! "곰이"는 누가 카드예요. 🐻',
-   html:`<div class="sentence"><span class="punct">◯◯</span> 꿀을 먹습니다.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">곰이</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">꿀을</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">먹습니다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'④ 카드 뒤집기', t:'「곰이 · 우유를 · 칩니다」 — 이렇게 뒤집혔어요. 어떻게 할까요?', log:true, okMsg:'맞아요! 우유는 「칩니다」가 아니라 「마십니다」와 어울려요. 🥛',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">그대로 가져가요</div></div><div class="wcard" data-ok="0"><div class="wc-word">친구 카드를 몰래 바꿔요</div></div><div class="wcard" data-ok="1"><div class="wc-word">뜻이 통하지 않으니 카드를 다시 뒤집어 놓아요</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 무엇을 카드', t:'분홍색(무엇을) 카드를 골라 봐요', log:true, okMsg:'맞아요! "그림을"은 무엇을 카드예요. 🎨',
-   html:`<div class="sentence">친구가 <span class="punct">◯◯◯</span> 그립니다.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">친구가</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">그림을</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">그립니다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑤ 미소 카드', t:'😊 미소 카드가 나왔어요! 「강아지가 😊 먹습니다.」에 알맞은 낱말은?', log:true, okMsg:'맞아요! 미소 카드에는 문장이 자연스러워지는 낱말을 떠올려 넣어요. 🐶',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">책상을</div></div><div class="wcard" data-ok="0"><div class="wc-word">하늘을</div></div><div class="wcard" data-ok="1"><div class="wc-word">간식을</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 어찌하다 카드', t:'하늘색(어찌하다) 카드를 골라 봐요', log:true, okMsg:'맞아요! "마십니다"는 어찌하다 카드예요. 🥤',
-   html:`<div class="sentence">동생이 물을 <span class="punct">◯◯◯◯</span>.</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">동생이</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">물을</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">마십니다</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑤ 하나만 바꾸기', t:'「고양이가 우유를 마십니다.」에서 하늘색 카드 하나만 바꾼 문장은?', log:true, okMsg:'맞아요! 「마십니다」만 바뀌었어요. 같은 낱말로도 새 문장을 만들 수 있어요. 🐱',
+   html:`<div class="wordpick"><div class="wcard" data-ok="0"><div class="wc-word">강아지가 공을 찹니다.</div></div><div class="wcard" data-ok="0"><div class="wc-word">고양이가 물을 마십니다.</div></div><div class="wcard" data-ok="1"><div class="wc-word">고양이가 우유를 쏟습니다.</div></div></div><div class="fb"></div>`},
 
-  {tag:'③ 자연스러운 문장', t:'카드로 만든 자연스러운 문장은?', log:true, okMsg:'맞아요! "여우가 자전거를 탑니다"가 자연스러워요. 🚲',
-   html:`<div class="wordpick">
-      <div class="wcard" data-ok="0"><div class="wc-word">자전거가 여우를 탑니다.</div></div>
-      <div class="wcard" data-ok="1"><div class="wc-word">여우가 자전거를 탑니다.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑥ 활동하기', t:'짝과 낱말 카드 놀이를 해요',
+   html:`<div class="stage-box">🃏 짝과 붙임 9 낱말 카드로 놀이를 해 보세요. 친구를 속상하게 하는 문장은 만들지 않아요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 가장 재미있는 문장을 하나 골라 발표해 봐요.">🃏 놀이했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'③ 어색한 문장 고치기', t:'어색한 문장을 자연스럽게 고쳐 봐요', log:true, okMsg:'맞아요! "새가 하늘을 날아갑니다"가 자연스러워요. 🐦',
-   html:`<div class="scene"><div class="scene-pic">🐦☁️</div></div>
-    <div class="ka-bub">"하늘이 새를 날아갑니다"는 이상해요. 어떻게 고칠까요?</div>
-    <div class="wordpick">
-      <div class="wcard" data-ok="1"><div class="wc-word">새가 하늘을 날아갑니다.</div></div>
-      <div class="wcard" data-ok="0"><div class="wc-word">하늘이 새를 먹습니다.</div></div>
-    </div><div class="fb"></div>`},
+  {tag:'⑦ 우리 반 활동 예시', t:'문장 이어 말하기 놀이 — 점점 길어져요',
+   html:`<div class="read-lines"><div class="read-line"><span class="rl-num">1</span>나는 사람입니다.</div><div class="read-line"><span class="rl-num">2</span>나는 부지런한 사람입니다.</div><div class="read-line"><span class="rl-num">3</span>나는 부지런하고 튼튼한 사람입니다.</div></div><div class="fb" id="readFb">🔊 앞 사람 문장에 내용을 더해서 더 긴 문장을 만들어요.</div>`},
 
-  {tag:'④ 카드로 문장 만들기', t:'나만의 새 문장을 만들어 말해 봐요',
-   html:`<div class="stage-box">
-      🃏 <b>누가 → 무엇을 → 어찌하다</b> 순서로 낱말을 골라 <b>새 문장</b>을 만들어 말해 봐요.<br>
-      <small>(같은 낱말로도 여러 문장을 만들 수 있어요! 예: "나는 책을 읽습니다.")</small>
-      <br><button class="stage-do" id="stageDo" data-fb="자연스러운 새 문장을 잘 만들었어요! 👏">🙆 새 문장을 만들어 봤어요!</button>
-    </div><div class="fb" id="stageFb"></div>`},
+  {tag:'⑦ 문장 늘이기', t:'「고양이는 동물입니다.」를 더 길게',
+   html:`<div class="stage-box">🐈 「고양이는 ◯◯◯ 동물입니다.」처럼 꾸며 주는 말을 넣어 더 긴 문장을 말해 보세요.<br><button class="stage-do" id="stageDo" data-fb="좋아요! 「귀여운」을 넣으니 고양이가 더 잘 보여요.">🗣️ 말했어요!</button></div><div class="fb" id="stageFb"></div>`},
 
-  {tag:'④ 정리', t:'오늘 배운 것을 모아 봐요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">🃏</span>낱말 카드로 <b>새 문장</b>을 만들었어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">➡️</span><b>누가·무엇을·어찌하다</b> 순서를 지켰어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">🔄</span>같은 낱말로도 <b>여러 문장</b>을 만들 수 있어요.</div>
-    </div>`},
+  {tag:'⑧ 돌아보기', t:'문장을 만들 때 이렇게 했어요',
+   html:`<div class="selfcheck"><div class="sc-row"><span class="sc-box">✓</span>누가, 무엇을, 어찌하는지 차례대로 놓았어요.</div><div class="sc-row"><span class="sc-box">✓</span>만든 문장을 소리 내어 읽고 어색한 곳을 찾았어요.</div><div class="sc-row"><span class="sc-box">✓</span>친구 기분을 생각하며 문장을 만들었어요.</div></div><div class="fb">⭐ 잘한 것에 스스로 별을 주어요.</div>`},
 
-  {tag:'④ 마무리', t:'잘했어요! 이만큼 배웠어요',
-   html:`<div class="recap">
-      <div class="recap-item" style="animation-delay:.05s"><span class="recap-ic">✨</span>낱말을 모아 <b>다양한 문장</b>을 만들었어요.</div>
-      <div class="recap-item" style="animation-delay:.2s"><span class="recap-ic">🧐</span>자연스러운 문장인지 <b>스스로 점검</b>했어요.</div>
-      <div class="recap-item" style="animation-delay:.35s"><span class="recap-ic">➡️</span>다음 시간에는 <b>단원을 마무리</b>할 거예요.</div>
-    </div>`},
+  {tag:'⑨ 마무리', t:'친구와 함께 문장을 만들었어요',
+   html:`<div class="recap"><div class="recap-item" style="animation-delay:0.05s"><span class="recap-ic">🃏</span>낱말 카드로 여러 가지 문장을 만들었어요.</div><div class="recap-item" style="animation-delay:0.20s"><span class="recap-ic">🔁</span>같은 낱말로도 <b>다른 문장</b>을 만들 수 있어요.</div><div class="recap-item" style="animation-delay:0.35s"><span class="recap-ic">📏</span>꾸며 주는 말을 더하면 문장이 길어져요.</div></div>`}
 ];
 
 let cur=0, score=0, maxScore=0;
