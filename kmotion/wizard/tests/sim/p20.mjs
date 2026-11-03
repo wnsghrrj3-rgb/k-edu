@@ -15,8 +15,8 @@ const T = data.text;
   ok('1학년 300: 틈 3~7 · 널빤지 2~9 그림 돌(plank:) · 틈과 같은 것 하나 · concept g1.cmp.long', bad === 0, `어긋남 ${bad}`); ok('1학년: 1칸 차 오답이 섞임(한쪽 끝 맞추기 필요)', near > 100, `${near}/300`);
   bad = 0; for (let i = 0; i < 300; i++) { const p = makePuzzle('length-bridge', createRng(i + 1), 2); const m = p.hole.pic.match(/^gapcm:(\d),(\d+)$/); if (!verifyPuzzle(p) || !m || p.concept !== 'g2.len.ruler' || +m[2] - +m[1] !== p.gap || +m[2] > 10 || !p.stones.every(s => s.pic === null)) bad++; else { if (+m[1] === 0) a0++; else { aN++; if (p.stones.some(s => s.num === +m[2])) readEnd++; } } }
   ok('2학년 300: 자 gapcm:a,b · 틈 = b−a · 눈금 ≤10 · 숫자 돌(pic null) · concept g2.len.ruler', bad === 0, `어긋남 ${bad}`); ok('2학년: 0시작·n시작 둘 다 · n시작이면 끝 눈금 그대로 읽는 오답(read-end) 있음', a0 > 50 && aN > 50 && readEnd === aN, `0시작 ${a0} n시작 ${aN} read-end ${readEnd}`);
-  const p3 = makePuzzle('length-bridge', createRng(9), 3); ok('3학년 = 2학년 틀(임시)', p3.concept === 'g2.len.ruler' && p3.hole.pic.startsWith('gapcm:'));
-  ok('문구 키 5', ['pz.plank', 'pz.plank.hint', 'pz.plankcm', 'pz.plankcm.hint', 'pz.plankWrong'].every(k => !!T[k])); }
+  { let bad = 0; for (let i = 0; i < 200; i++) { const p = makePuzzle('length-bridge', createRng(i + 1), 3); const m = p.hole.pic.match(/^gapcm:(\d),(\d+)$/); if (!verifyPuzzle(p) || !m || p.concept !== 'g3.len.mm' || p.gap !== (m[2] - m[1]) * 10 || !p.stones.every(s => s.num % 10 === 0 && s.pic === null) || p.prompt.key !== 'pz.plankmm') bad++; } ok('3학년 200(v3.2): 같은 자 gapcm · 널빤지 mm(10의 배수) · 틈 = (b−a)×10 · concept g3.len.mm', bad === 0, `어긋남 ${bad}`); }
+  ok('문구 키 7', ['pz.plank', 'pz.plank.hint', 'pz.plankcm', 'pz.plankcm.hint', 'pz.plankWrong', 'pz.plankmm', 'pz.plankmm.hint'].every(k => !!T[k])); }
 
 // ── 2. 판 안: 길 B 퍼즐까지 → S08P 스냅샷 · 틀림 → 힌트 · 맞음 → 길 열림
 import { GAME } from '../../sim/game/config.js';

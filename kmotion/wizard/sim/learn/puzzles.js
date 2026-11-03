@@ -138,9 +138,10 @@ export function makePuzzle(type, rng, grade = 1, opt = {}, spec = {}){
     }
     const a = rng.next() < .5 ? 0 : rng.int(1, 3), n = rng.int(2, Math.min(7, 10 - a)), b = a + n;   // 자 눈금 a 부터 b 까지가 틈 → n cm
     const cands = [a > 0 ? b : n + 2, n + 1, n - 1, n + 2]; const ws = []; for (const w of cands) { if (w >= 1 && w <= 10 && w !== n && !ws.includes(w)) ws.push(w); if (ws.length === 2) break; }
-    const lens = rng.shuffle([n, ...ws]), slot = lens.indexOf(n);
-    return { type, id: `pz-bridge-${a}-${b}`, concept: 'g2.len.ruler', fact: `bridgecm:${a},${b}`, d: .25 + (a > 0 ? .25 : 0) + n / 20, need: 1, gap: n, hole: { pic: `gapcm:${a},${b}`, name: `${n} cm`, family: 'gap', kind: 'length' },
-      prompt: { key: 'pz.plankcm', args: {} }, stones: lens.map((v, s) => ({ slot: s, num: v, pic: null })), answer: [slot], hint1: { key: 'pz.plankcm.hint', args: {} } };
+    const mm = grade >= 3 ? 10 : 1;   // v3.2 3학년↑ = 같은 자, 널빤지는 mm 로 적힘(1 cm = 10 mm, 3-1 5단원) — 틈 n cm 에 n0 mm 널빤지
+    const lens = rng.shuffle([n, ...ws]).map(v => v * mm), slot = lens.indexOf(n * mm);
+    return { type, id: `pz-bridge-${a}-${b}${mm > 1 ? 'mm' : ''}`, concept: mm > 1 ? 'g3.len.mm' : 'g2.len.ruler', fact: `bridge${mm > 1 ? 'mm' : 'cm'}:${a},${b}`, d: .25 + (a > 0 ? .25 : 0) + n / 20 + (mm > 1 ? .1 : 0), need: 1, gap: n * mm, hole: { pic: `gapcm:${a},${b}`, name: `${n * mm} ${mm > 1 ? 'mm' : 'cm'}`, family: 'gap', kind: 'length' },
+      prompt: { key: mm > 1 ? 'pz.plankmm' : 'pz.plankcm', args: {} }, stones: lens.map((v, s) => ({ slot: s, num: v, pic: null })), answer: [slot], hint1: { key: mm > 1 ? 'pz.plankmm.hint' : 'pz.plankcm.hint', args: {} } };
   }
   throw new Error('퍼즐 종류 없음: ' + type);
 }
@@ -151,6 +152,6 @@ export function verifyPuzzle(p){
   if (p.type === 'mushroom-add') { const n = p.stones.map(s => s.num), T = p.op === '×' ? p.mush.a * p.mush.b : p.mush.a + p.mush.b; return T === p.target && n.filter(x => x === T).length === 1 && n[p.answer[0]] === T; }
   if (p.type === 'crystal-count') { const n = p.stones.map(s => s.num), b = p.bundle, T = b.hund * 100 + b.tens * 10 + b.ones; return T === p.target && n.filter(x => x === T).length === 1 && n[p.answer[0]] === T; }
   if (p.type === 'shape-key') { const fam = c => FAMILY[PIC[c]]; const n = p.stones.map(s => s.num), hit = n.filter(c => fam(c) === p.hole.family); if (p.hole.kind === 'plane' && p.hole.family === 'rect' && n.some(c => fam(c) === 'square')) return false; return hit.length === 1 && fam(n[p.answer[0]]) === p.hole.family && n.every(c => !!PIC[c]); }
-  if (p.type === 'length-bridge') { const n = p.stones.map(s => s.num); return n.filter(v => v === p.gap).length === 1 && n[p.answer[0]] === p.gap && new Set(n).size === 3 && n.every(v => v >= 1 && v <= 10) && (p.hole.pic.startsWith('gap:') ? p.stones.every(s => s.pic === 'plank:' + s.num) : p.stones.every(s => s.pic === null)); }
+  if (p.type === 'length-bridge') { const n = p.stones.map(s => s.num); return n.filter(v => v === p.gap).length === 1 && n[p.answer[0]] === p.gap && new Set(n).size === 3 && n.every(v => v >= 1 && v <= 100) && (p.hole.pic.startsWith('gap:') ? p.stones.every(s => s.pic === 'plank:' + s.num) : p.stones.every(s => s.pic === null)); }
   return false;
 }

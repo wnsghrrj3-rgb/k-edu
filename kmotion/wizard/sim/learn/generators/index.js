@@ -16,6 +16,8 @@ import { G4_1_U2 } from './g4_1_u2.js';   // v2.14 4-1 2단원 「각도」(예�
 import { G4_1_U4 } from './g4_1_u4.js';   // v2.14 4-1 4단원 「삼각형」(이등변·정삼각형·예각·둔각삼각형·각·변의 길이)
 import { G1_1_U4 } from './g1_1_u4.js';   // v3.0 월드 3 「측정의 협곡」 — 1-1 4단원 「비교하기」(길이·높이·들이 셋 중 번호), 베프 직접
 import { G2_1_U4 } from './g2_1_u4.js';   // v3.0 2-1 4단원 「길이 재기」(1 cm 조각·자 읽기·몇 cm 더)
+import { G3_1_U5 } from './g3_1_u5.js';   // v3.2 월드 3 3학년 줄 — 3-1 5단원 「길이와 시간」(mm·km·초 환산, 수 답)
+import { G3_2_U5 } from './g3_2_u5.js';   // v3.2 3-2 5단원 「들이와 무게」(mL·g·t 환산)
 import { GSHAPE_NAME } from './gshape_name.js';   // v2.12 도형 정령 「모양 보호막」 이름 맞히기 3종(학년 줄) — fixed 전용, 베프 직접
-export const UNITS = [G1U3, G1U1, G2U1, G3SHARE, G3_1_U1, G3_1_U3, G3_1_U4, G3_2_U1, G3_2_U2, G1_1_U2, G2_1_U2, G3_1_U2, G3_2_U3, G4_1_U2, G4_1_U4, G1_1_U4, G2_1_U4, GSHAPE_NAME];
+export const UNITS = [G1U3, G1U1, G2U1, G3SHARE, G3_1_U1, G3_1_U3, G3_1_U4, G3_2_U1, G3_2_U2, G1_1_U2, G2_1_U2, G3_1_U2, G3_2_U3, G4_1_U2, G4_1_U4, G1_1_U4, G2_1_U4, G3_1_U5, G3_2_U5, GSHAPE_NAME];
 export const GENERATORS = Object.assign({}, ...UNITS);
