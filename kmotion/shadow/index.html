@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>K-MOTION 그림자 괴물 · 빛의 직진과 그림자</title>
+<link rel="stylesheet" href="./shadow.css">
+</head>
+<body>
+<div id="app">
+  <!-- 벽(그림자가 비치는 화면). 디자인은 shadow.css 와 js/render.js 에서만 — 시스템은 js/main.js·physics.js -->
+  <canvas id="wall" width="960" height="720"></canvas>
+
+  <!-- 시작 -->
+  <section class="screen" id="scr-start">
+    <div class="logo"><span class="k">K-MOTION</span><span class="name">그림자 괴물</span><small>빛은 똑바로 간다 · 가까우면 커진다</small></div>
+    <div class="panel">
+      <div class="modes" id="modeSeg">
+        <button data-v="match" class="on"><i>👹</i><b>괴물 만들기</b><small>벽에 뜬 괴물 모양을 내 그림자로 똑같이. 크기까지 맞춰야 해요</small></button>
+        <button data-v="chase"><i>🦇</i><b>괴물 쫓기</b><small>다가오는 괴물보다 그림자를 크게! 박쥐는 그림자를 낮춰 피해요</small></button>
+        <button data-v="lab"><i>🔬</i><b>그림자 실험실</b><small>거리·벽·키를 바꿔 가며 그림자 크기를 재고 기록표를 만들어요</small></button>
+      </div>
+      <div class="row"><span class="lbl">사람 키</span><input id="inHb" type="number" min="90" max="200" value="130"> cm <span class="lbl" style="margin-left:14px">보정 자리까지</span><input id="inD0" type="number" min="80" max="500" value="200"> cm</div>
+      <button class="big" id="btnStart">시작</button>
+      <p class="howto">카메라가 곧 전등이에요. 카메라에 다가가면 그림자가 커지고, 멀어지면 작아져요.<br>영상은 이 기기 안에서만 처리되고 어디에도 보내지 않아요.</p>
+    </div>
+    <a class="back" href="../">← 케이모션</a>
+  </section>
+
+  <!-- 보정 -->
+  <section class="screen hidden" id="scr-calib">
+    <h2>보정 자리에 서 주세요</h2>
+    <p class="sub" id="calibSub">카메라에서 약 2m 떨어진 자리에 똑바로 서요. 머리부터 발까지 보이면 좋아요.</p>
+    <div class="calib-wrap">
+      <div class="calib-cam"><canvas id="calibView" width="480" height="360"></canvas><div class="guide"><span>온몸이 보이게</span></div></div>
+      <div class="calib-side">
+        <div class="ring"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" id="ringFg" cx="60" cy="60" r="52"/></svg><b id="calibNum">3</b></div>
+        <p id="calibMsg">사람을 찾는 중…</p>
+        <button class="big ghost" id="btnCalibCancel">돌아가기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 놀이 중 HUD -->
+  <section class="hud hidden" id="hud">
+    <div class="top">
+      <div class="stat" id="stTime"><span class="t">남은 시간</span><b id="hTime">25</b></div>
+      <div class="stat" id="stScore"><span class="t">점수</span><b id="hScore">0</b></div>
+      <div class="stat" id="stLife"><span class="t">체력</span><b id="hLife">❤❤❤</b></div>
+      <div class="stat" id="stFit"><span class="t">맞춘 정도</span><b id="hFit">0%</b></div>
+      <div class="stat wide" id="stNums"><span class="t">광원까지</span><b id="hD">—</b><span class="t">그림자 키</span><b id="hS">—</b><span class="t">배율</span><b id="hM">—</b></div>
+    </div>
+    <div class="fitbar" id="fitbar"><div class="fill" id="fitFill"></div><div class="mark" style="left:55%"></div><div class="mark" style="left:65%"></div><div class="mark" style="left:75%"></div></div>
+    <div class="cam" id="camBox"><video id="v" autoplay playsinline muted></video><canvas id="c" width="480" height="360"></canvas><div class="st" id="camSt">카메라 준비</div></div>
+
+    <!-- 실험실 패널 -->
+    <div class="labpanel hidden" id="labpanel">
+      <div class="lrow"><span>벽까지 거리</span><input type="range" id="inWall" min="1" max="2.2" step="0.05" value="1.35"><b id="wallV">300cm</b></div>
+      <div class="lrow"><span>사람 키</span><input type="range" id="inHb2" min="90" max="200" step="1" value="130"><b id="hbV">130cm</b></div>
+      <div class="lbtn"><button id="btnRec">📏 기록</button><button id="btnClear" class="ghost">지우기</button><button id="btnCopy" class="ghost">복사</button><button id="btnSide" class="ghost on">옆에서 보기</button></div>
+      <table id="recTable"><thead><tr><th>#</th><th>광원까지(cm)</th><th>벽까지(cm)</th><th>그림자 키(cm)</th><th>배율</th></tr></thead><tbody></tbody></table>
+      <p class="lab-q" id="labQ">거리를 반으로 줄이면 그림자 키는 몇 배가 될까요?</p>
+    </div>
+
+    <div class="pop-layer" id="pops"></div>
+    <div class="flash" id="flash"></div>
+    <button class="quit" id="btnQuit">그만</button>
+    <div class="dev hidden" id="dev"></div>
+  </section>
+
+  <!-- 결과 -->
+  <section class="screen hidden" id="scr-result">
+    <h2 id="resTitle">끝!</h2>
+    <div class="result" id="resBody"></div>
+    <div class="btns"><button class="big" id="btnAgain">다시</button><button class="big ghost" id="btnHome">처음으로</button></div>
+  </section>
+</div>
+<script src="../kmotion.js"></script>
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>
