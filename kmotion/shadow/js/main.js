@@ -74,7 +74,7 @@ function stepCalib(t, dt){
   if (!calib.start) { calib.start = t; calib.acc = 0; calib.n = 0; }
   const el = (t - calib.start) / 1000; calib.acc += S.stat.h / AH; calib.n++;
   $('calibMsg').textContent = '좋아요, 그대로 서 있어요'; $('calibNum').textContent = Math.max(1, Math.ceil(3 - el)); $('ringFg').style.strokeDashoffset = 327 * (1 - Math.min(1, el / 3));
-  if (el >= 3) { S.h0 = calib.acc / calib.n; if (S.body === 'auto') S.upper = S.stat.y1 >= AH - 2; else S.upper = S.body === 'upper'; beginPlay(); }
+  if (el >= 3) { S.h0 = calib.acc / calib.n; S.y0 = S.stat.y0 / AH; if (S.body === 'auto') S.upper = S.stat.y1 >= AH - 2; else S.upper = S.body === 'upper'; beginPlay(); }
 }
 
 // ── 공통 그리기
@@ -84,11 +84,16 @@ function pop(text, cls = '', x = 50, y = 40){ const d = document.createElement('
 function flash(){ const f = $('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }
 function updateNums(){ $('hD').textContent = S.d ? Math.round(S.d) + 'cm' : '—'; $('hS').textContent = S.Sh ? Math.round(S.Sh) + 'cm' : '—'; $('hM').textContent = S.mag ? S.mag.toFixed(1) + '×' : '—'; }
 
+// 보정 자리에서의 내 그림자(벽 px): 목표·괴물 크기는 전부 이 값의 배수 — 앉아서 웹캠 앞이든, 서서 전자칠판 앞이든 같은 난이도
+const calibShadowH = () => Math.max(H * .15, S.h0 * S.s * H / (S.upper ? .55 : 1));      // 상반신이면 보이는 건 키의 55%(머리~허리)
+const calibTopY = () => (0.5 - (0.5 - S.y0) * S.s) * H;                                    // 보정 때 그림자 머리 꼭대기 y
+const targetH = mon => Math.min(H * 1.3, mon.size / .6 * calibShadowH());
+
 // ══ 괴물 만들기 ══
-function targetFn(mon){ const Hpx = mon.size * H; return c => drawFigure(c, mon.pose, W / 2 + (mon.dx || 0) * W, H * .97, Hpx); }
+function targetFn(mon){ const Hpx = targetH(mon); return c => drawFigure(c, mon.pose, W / 2 + (mon.dx || 0) * W, S.upper ? Math.min(H * 1.4, calibTopY() + Hpx) : H * .97, Hpx); }
 /** 상반신 모드: 목표 허리선(발에서 키의 45% 위) 아래는 그리지도 재지도 않는다 */
-function cutY(mon){ return S.upper ? H * .97 - mon.size * H * .45 : H; }
-function prepTarget(mon){ const key = mon.id + mon.size + (S.upper ? 'u' : 'f'); if (tgtKey === key) return; tgtKey = key;
+function cutY(mon){ if (!S.upper) return H; const Hpx = targetH(mon); return Math.min(H * 1.4, calibTopY() + Hpx) - Hpx * .45; }
+function prepTarget(mon){ const key = mon.id + mon.size + (S.upper ? 'u' : 'f') + S.s.toFixed(2); if (tgtKey === key) return; tgtKey = key;
   tgtCut = Math.round(cutY(mon) / H * AH);
   tctx.clearRect(0, 0, AW, AH); tctx.save(); tctx.scale(AW / W, AH / H); targetFn(mon)(tctx); tctx.restore();
   tctx.clearRect(0, tgtCut, AW, AH - tgtCut);
@@ -123,13 +128,13 @@ function finishTarget(t, stars){ S.stars[S.idx] = stars; S.score += stars * 100 
   if (S.idx >= MONSTERS.length) setTimeout(() => endGame(), 900); }
 
 // 벽 1px = 몇 cm (보정값으로 정해짐: 그림자 키 S = Hb·L/d 와 화면 높이 h·H·s 를 맞춘 것)
-const cmPerPx = () => (S.h0 ? S.Hb * DEF.L0 / (S.d0 * S.h0 * H) : 0);
+const cmPerPx = () => (S.h0 ? S.Hb * DEF.L0 * (S.upper ? .55 : 1) / (S.d0 * S.h0 * H) : 0);
 
 // ══ 괴물 쫓기 ══
 function spawnMob(t){ const kinds = Object.keys(CHASERS); const k = kinds[Math.random() < .35 ? 2 : Math.random() < .5 ? 0 : 1]; const c = CHASERS[k];
   const side = Math.random() < .5 ? -1 : 1, speed = 2600 - Math.min(1200, S.judged * 70);
   const mob = { k, ...c, side, t0: t, dur: speed, x: side < 0 ? -W * .15 : W * 1.15, state: 'in' };
-  if (c.kind === 'scare') mob.hpx = (.42 + Math.random() * .5) * H; else { mob.w = W * .22; mob.bottomY = (.38 + Math.random() * .25) * H; }
+  if (c.kind === 'scare') mob.hpx = Math.min(H * .95, (.8 + Math.random() * .7) * calibShadowH()); else { mob.w = W * .22; mob.bottomY = Math.min(H * .85, calibTopY() + (.08 + Math.random() * .25) * H); }
   S.mobs.push(mob); }
 function stepChase(t, dt){
   S.timeLeft = Math.max(0, 60 - (t - S.t0) / 1000); $('hTime').textContent = Math.ceil(S.timeLeft);
@@ -141,15 +146,15 @@ function stepChase(t, dt){
     const p = Math.min(1, (t - m.t0) / m.dur);
     if (m.state === 'in') { m.x = m.side < 0 ? -W * .15 + (W * .5 + W * .15) * p : W * 1.15 - (W * .65) * p;
       if (p >= 1) { S.judged++; m.state = 'judge'; m.tj = t;
-        if (m.kind === 'scare') { const win = S.stat && (S.upper ? myTop <= H * .97 - m.hpx * 1.02 : myH >= m.hpx * 1.02); m.win = win; if (win) { S.combo++; S.scared++; S.score += 100 + S.combo * 20; pop(`${m.name} 도망! +${100 + S.combo * 20}`, 'good'); } else { S.combo = 0; S.life--; flash(); pop(S.stat ? '더 크게 — 빛에 가까이!' : '사람이 안 보여요', 'bad'); } }
+        if (m.kind === 'scare') { const mTop = (S.upper ? Math.min(H * 1.4, calibTopY() + m.hpx) : H * .97) - m.hpx; const win = S.stat && (S.upper ? myTop <= mTop - 6 : myH >= m.hpx * 1.02); m.win = win; if (win) { S.combo++; S.scared++; S.score += 100 + S.combo * 20; pop(`${m.name} 도망! +${100 + S.combo * 20}`, 'good'); } else { S.combo = 0; S.life--; flash(); pop(S.stat ? '더 크게 — 빛에 가까이!' : '사람이 안 보여요', 'bad'); } }
         else { const win = S.stat && myTop > m.bottomY + 8; m.win = win; if (win) { S.combo++; S.dodged++; S.score += 100 + S.combo * 20; pop(`박쥐 통과! +${100 + S.combo * 20}`, 'good'); } else { S.combo = 0; S.life--; flash(); pop('그림자를 낮춰요 — 뒤로 물러나거나 앉아요', 'bad'); } }
         $('hScore').textContent = S.score; $('hLife').textContent = '❤'.repeat(S.life) + '♡'.repeat(3 - S.life); } }
     else if (m.state === 'judge') { const e = (t - m.tj) / 900; if (m.win) m.x += m.side * W * .9 * dt; if (e >= 1) m.state = 'out'; }
     // 그리기
-    if (m.kind === 'scare') { const col = m.state === 'judge' ? (m.win ? '#5cf2a4' : '#ff5c7a') : m.color; drawFigure(wctx, m.pose, m.x, H * .97, m.hpx, col);
+    if (m.kind === 'scare') { const col = m.state === 'judge' ? (m.win ? '#5cf2a4' : '#ff5c7a') : m.color; drawFigure(wctx, m.pose, m.x, S.upper ? Math.min(H * 1.4, calibTopY() + m.hpx) : H * .97, m.hpx, col);
       // 키 눈금
-      wctx.save(); wctx.strokeStyle = 'rgba(255,255,255,.55)'; wctx.setLineDash([6, 6]); wctx.beginPath(); wctx.moveTo(m.x - 120, H * .97 - m.hpx); wctx.lineTo(m.x + 120, H * .97 - m.hpx); wctx.stroke(); wctx.setLineDash([]);
-      wctx.fillStyle = '#fff'; wctx.font = '800 20px sans-serif'; wctx.textAlign = 'center'; wctx.fillText(`${m.name} ${Math.round(m.hpx * cmPerPx())}cm`, m.x, H * .97 - m.hpx - 10); wctx.restore(); }
+      wctx.save(); wctx.strokeStyle = 'rgba(255,255,255,.55)'; wctx.setLineDash([6, 6]); const ty = (S.upper ? Math.min(H * 1.4, calibTopY() + m.hpx) : H * .97) - m.hpx; wctx.beginPath(); wctx.moveTo(m.x - 120, ty); wctx.lineTo(m.x + 120, ty); wctx.stroke(); wctx.setLineDash([]);
+      wctx.fillStyle = '#fff'; wctx.font = '800 20px sans-serif'; wctx.textAlign = 'center'; wctx.fillText(`${m.name} ${Math.round(m.hpx * cmPerPx())}cm`, m.x, ty - 10); wctx.restore(); }
     else { const col = m.state === 'judge' ? (m.win ? '#5cf2a4' : '#ff5c7a') : m.color; drawBat(wctx, m.x, m.bottomY - m.w * .1, m.w, col, t / 90);
       wctx.save(); wctx.strokeStyle = 'rgba(255,255,255,.55)'; wctx.setLineDash([6, 6]); wctx.beginPath(); wctx.moveTo(m.x - 140, m.bottomY); wctx.lineTo(m.x + 140, m.bottomY); wctx.stroke(); wctx.setLineDash([]);
       wctx.fillStyle = '#fff'; wctx.font = '800 20px sans-serif'; wctx.textAlign = 'center'; wctx.fillText('이 선 아래로 숨어요', m.x, m.bottomY + 26); wctx.restore(); }
