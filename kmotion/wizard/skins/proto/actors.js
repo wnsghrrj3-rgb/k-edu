@@ -329,7 +329,7 @@ export function posePuzzleProp(g, pz, dt){
 }
 
 // ── v2.12 도형 정령(06 문서 44행): 떠 있는 빛나는 다면체 + 앞의 「모양 보호막」 판(스냅샷 spirit.pic 그림) — 보호막이 깨지면 조각, 약점 동안 몸이 붉게 깜빡·남은 시간 고리
-function picTexture(id){ const c = document.createElement('canvas'); c.width = c.height = 256; const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+export function picTexture(id){ const c = document.createElement('canvas'); c.width = c.height = 256; const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   if (typeof Image === 'undefined') return tex;   // 그림 판을 못 읽는 곳(시험용 jsdom)은 빈 판
   const im = new Image(); im.onload = () => { const g = c.getContext('2d'); g.clearRect(0, 0, 256, 256); g.drawImage(im, 0, 0, 256, 256); tex.needsUpdate = true; }; im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup(id)); return tex; }
 export function makeSpirit(e){
@@ -377,3 +377,63 @@ export function poseSpirit(g, e, dt, cam, gameT){
   for (const ey of u.eyes) ey.material.color.setHex(e.state === 'windup' ? 0xff3048 : 0x1b1630);
   u.fg.scale.x = Math.max(.001, e.hp / e.hpMax); u.fg.position.x = -.35 * (1 - u.fg.scale.x); u.bar.quaternion.copy(cam.quaternion); u.bar.visible = e.hp < e.hpMax && e.state !== 'dead';
 }
+
+// ── v2.15 기하학 수호신(16 문서 9-2, 기능 검증 수준): 떠 있는 큰 정십이면체(청록 유리) + 금 고리 3겹(페이즈마다 1겹씩 깨짐) + 가슴 모양 문양 판(정령 판 재사용 — 지금 「생각하는 모양」 = 벽 답·분신 문제 그림) + 눈 1
+// 거울 분신(hold): 같은 몸(껍데기 shells[1·2])을 반투명으로 분신 x 에 세움 — 셋 다 가슴에 자기 그림(진짜는 안 알려줌). 약점 = 전개도처럼 납작하게 펼쳐짐
+function makeShell(alpha = 1){
+  const sh = new THREE.Group(), gem = toon(0x5ef2c8, { emissive: new THREE.Color(0x14665a), transparent: alpha < 1, opacity: alpha }), gold = new THREE.MeshBasicMaterial({ color: 0xffd45c, transparent: alpha < 1, opacity: alpha });
+  const body = new THREE.Group(); sh.add(body);
+  const core = alpha < 1 ? new THREE.Mesh(new THREE.DodecahedronGeometry(.95, 0), gem) : withOutline(new THREE.Mesh(new THREE.DodecahedronGeometry(.95, 0), gem), 1.04); core.position.y = 1.9; core.castShadow = alpha === 1; body.add(core);
+  const rings = []; for (let i = 0; i < 3; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(1.35 + i * .22, .05, 8, 48), gold); r.position.y = 1.9; r.rotation.set(Math.PI / 2 + i * .45, i * .7, 0); body.add(r); rings.push(r); }
+  const eye = new THREE.Mesh(new THREE.SphereGeometry(.13, 10, 8), new THREE.MeshBasicMaterial({ color: 0x1b1630 })); eye.position.set(0, 2.2, .92); body.add(eye);
+  const pivot = new THREE.Group(); pivot.position.set(0, 1.25, 1.0); body.add(pivot);
+  const plate = new THREE.Mesh(new THREE.CircleGeometry(.5, 32), new THREE.MeshBasicMaterial({ color: 0x1e3a46, transparent: true, opacity: .55 * alpha, side: THREE.DoubleSide })); pivot.add(plate);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(.5, .035, 8, 40), gold); pivot.add(rim);
+  const picM = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, opacity: alpha }); const pic = new THREE.Mesh(new THREE.PlaneGeometry(.78, .78), picM); pic.position.z = .01; pivot.add(pic);
+  sh.userData = { body, core, rings, eye, pivot, plate, rim, pic, picM, gem, picId: null }; return sh;
+}
+function setShellPic(sh, id){ const u = sh.userData; if (id === u.picId) return; u.picId = id; if (u.picM.map) u.picM.map.dispose(); u.picM.map = id ? picTexture(id) : null; u.picM.needsUpdate = true; u.pic.visible = !!id; }
+export function makeGuardian(){
+  const g = new THREE.Group(); const shells = [makeShell(1), makeShell(.45), makeShell(.45)]; for (const sh of shells) g.add(sh); shells[1].visible = shells[2].visible = false;
+  const shield = new THREE.Group(); g.add(shield); const plates = [];
+  for (let i = 0; i < 3; i++) { const p = new THREE.Mesh(new THREE.OctahedronGeometry(.35, 0), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: .9 })); p.scale.set(1, 1.4, .3); shield.add(p); plates.push(p); }
+  const bubble = new THREE.Mesh(new THREE.SphereGeometry(2.1, 28, 18), new THREE.MeshBasicMaterial({ color: 0x7ae7ff, transparent: true, opacity: .14, blending: THREE.AdditiveBlending, depthWrite: false })); bubble.position.y = 1.9; shield.add(bubble);
+  const lock = textSprite('🔒', { scale: .7 }); lock.position.y = 4.1; shield.add(lock);
+  const weakT = textSprite('약점!', { scale: .6, color: '#ffe0e4', stroke: '#6a0f1c' }); weakT.position.y = 3.4; weakT.visible = false; g.add(weakT);
+  const stunT = textSprite('경직!', { scale: .55, color: '#fff6d6', stroke: '#6a4a0f' }); stunT.position.y = 3.4; stunT.visible = false; g.add(stunT);
+  g.userData = { shells, shield, plates, bubble, weakT, stunT, flash: 0, hold: 0 };
+  return g;
+}
+export function poseGuardian(g, b, dt, cam, gameT){
+  const u = g.userData, t = performance.now() / 1000, k = 1 - Math.exp(-dt / .08), main = u.shells[0], M = main.userData;
+  const hold = b.state === 'hold' && b.mirrors && b.mirrors.length;
+  g.position.set(WX(b.pos[0]), 0, b.pos[2]); g.rotation.y = hold ? 0 : -b.yaw;
+  const tg = b.telegraphs[0], wk = tg ? Math.max(0, Math.min(1, (gameT - tg.t0) / Math.max(.01, tg.t1 - tg.t0))) : 0;
+  let hover = .25 + Math.sin(t * 1.6) * .12, tilt = 0, sc = 1, flat = 0, spin = 1.2;
+  if (b.state === 'windup') { tilt = (b.attack === 'quake' ? -.5 : -.3) * wk; spin = 4 + wk * 6; }
+  else if (b.state === 'attack') { tilt = .35; spin = 2; }
+  else if (b.state === 'kneel') { flat = 1; hover = -.9; spin = .2; }
+  else if (b.state === 'phase') { tilt = Math.sin(t * 30) * .08; spin = 8; }
+  else if (b.state === 'stun') { tilt = Math.sin(t * 7) * .25; spin = .1; hover = 0; }
+  else if (b.state === 'intro') { sc = Math.min(1, .3 + b.stateT / 1.2); hover = 4 * (1 - Math.min(1, b.stateT / 1.2)); }
+  else if (b.state === 'dead') { sc = Math.max(.01, 1 - b.stateT / 1.2); tilt = Math.min(1.4, b.stateT * 1.5); }
+  g.scale.setScalar(sc);
+  // 약점 = 전개도처럼 납작하게 펼쳐짐(몸 x 1.9·y .3) · 페이즈 열 = 청록 → 붉은 금 · 고리는 남은 페이즈 수만큼
+  const heat = b.phase >= 1 ? .35 + b.phase * .3 : 0;
+  u.flash = Math.max(0, u.flash - dt * 5); const wf = b.weak > 0 ? (Math.sin(t * 10) * .5 + .5) * .5 : 0;
+  const shells = hold ? u.shells : [main]; u.shells[1].visible = u.shells[2].visible = !!hold;
+  shells.forEach((sh, i) => { const S = sh.userData, mir = hold ? b.mirrors[i] : null;
+    if (hold) { if (!mir) { sh.visible = false; return; } sh.visible = true; sh.position.x = WX(mir.x) - WX(b.pos[0]); sh.position.z = 0; } else sh.position.set(0, 0, 0);
+    S.body.position.y += (hover - S.body.position.y) * k; S.body.rotation.x += (tilt - S.body.rotation.x) * k; S.core.rotation.y += dt * spin;
+    S.core.scale.x += ((1 + flat * .9) - S.core.scale.x) * k; S.core.scale.y += ((1 - flat * .7) - S.core.scale.y) * k; S.core.scale.z += ((1 - flat * .5) - S.core.scale.z) * k;
+    S.rings.forEach((r, j) => { r.visible = j < b.phases - b.phase; r.rotation.y += dt * (.6 + j * .3) * (b.state === 'windup' ? 3 : 1); r.position.y = 1.9 + Math.sin(t * 1.3 + j) * .1 - flat * 1.4; });
+    S.gem.color.setRGB(.37 + heat * .55, .95 - heat * .35, .78 - heat * .5); S.gem.emissive && S.gem.emissive.setRGB(u.flash * .9 + wf + heat * .35, .4 + u.flash * .6 + wf * .5, .35 + u.flash * .5);
+    S.eye.material.color.setHex(b.state === 'windup' ? 0xff3048 : b.state === 'kneel' ? 0x6b7280 : 0x1b1630);
+    // 가슴 판: 분신 중엔 각자 그림 · 벽이 오면 답 모양(1페이즈 몸풀기 벽은 없음) · 그 밖엔 빈 판
+    setShellPic(sh, hold ? mir.pic : b.wall && b.wall.answerPic ? b.wall.answerPic : null);
+    S.pivot.quaternion.copy(sh.quaternion).invert().multiply(g.quaternion).invert().multiply(cam.quaternion); S.pivot.visible = b.state !== 'dead' && !flat; });
+  u.shield.visible = b.shield > 0 && b.state !== 'dead' && !hold; u.bubble.material.opacity = .1 + .05 * Math.sin(t * 3);
+  u.plates.forEach((p, i) => { p.visible = i < b.shield; const a = t * .9 + i * Math.PI * 2 / Math.max(1, b.shieldMax); p.position.set(Math.cos(a) * 2.3, 1.9 + Math.sin(t * 2 + i) * .2, Math.sin(a) * 2.3); p.rotation.y = -a; });
+  u.weakT.visible = b.weak > 0 && b.state !== 'dead'; u.stunT.visible = b.state === 'stun'; for (const sp of [u.weakT, u.stunT]) { sp.quaternion.copy(cam.quaternion); sp.scale.setScalar(.55 + Math.sin(t * 10) * .04); }
+}
+

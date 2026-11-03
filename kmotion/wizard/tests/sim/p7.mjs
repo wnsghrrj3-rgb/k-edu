@@ -65,6 +65,6 @@ const center = r => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
   f.action('home'); const f2 = f; ok('home → S01 · 마스터리 보관', f2.screen === 'S01' && !f2.game && f2.mastery === m); f2.action('start', { mode: 'keyboard' }); f2.action('enter'); ok('S01 에서 다시 시작해도 마스터리 이어짐', f2.game.qe.m === m); }
 
 // ── 7. S01 스냅샷 호환(title.stages 그대로) · S04 title.char
-{ const f = createFlow({ data, grade: 1, seed: 6 }); const s = f.snapshot(); ok('S01 title.stages 5(숲 4 + 신전 1, v2.9) · map null', s.title.stages.length === 5 && s.map === null && s.targets.length === 0); f.action('start', { mode: 'keyboard', char: 'tori' }); ok('S04 title.char = tori(메뉴 캐릭터 그리기용)', f.snapshot().title.char === 'tori'); }
+{ const f = createFlow({ data, grade: 1, seed: 6 }); const s = f.snapshot(); ok('S01 title.stages 6(숲 4 + 신전 2, v2.15) · map null', s.title.stages.length === 6 && s.map === null && s.targets.length === 0); f.action('start', { mode: 'keyboard', char: 'tori' }); ok('S04 title.char = tori(메뉴 캐릭터 그리기용)', f.snapshot().title.char === 'tori'); }
 
 console.table(out); console.log(fail ? `✗ ${fail} 실패` : '전부 통과'); process.exit(fail ? 1 : 0);

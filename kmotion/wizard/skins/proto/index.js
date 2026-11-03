@@ -1,8 +1,8 @@
 // proto 스킨 — 기준 구현(13 문서 8절). createSkin(ctx) → Skin(contract/skin.d.ts). 에셋 0·절차적.
 // 규칙: 스냅샷은 읽기만 · 판정 크기·시간은 스냅샷 값 그대로 · 모르는 이벤트는 무시 · 엔진·sim import 0
 import * as THREE from 'three';
-import { WX, makePlayer, posePlayer, tipWorld, makeSlime, poseSlime, makeGoblin, poseGoblin, makeShieldGoblin, poseShieldGoblin, makeCrystalGolem, poseCrystalGolem, makeSpirit, poseSpirit, makeCrystal, poseCrystal, makeGolem, poseGolem, makeRock, makeObstacle, poseObstacle, makePuzzleProp, posePuzzleProp } from './actors.js';
-import { makeTelegraph, poseTelegraph, makeProjectile, poseProjectile, Sparks, makeBlast, makeTelegraphLine, poseTelegraphLine, makeTelegraphRing, poseTelegraphRing, makeIce, poseIce, makeBolt, poseBolt, makeMeteor, poseMeteor } from './vfx.js';
+import { WX, makePlayer, posePlayer, tipWorld, makeSlime, poseSlime, makeGoblin, poseGoblin, makeShieldGoblin, poseShieldGoblin, makeCrystalGolem, poseCrystalGolem, makeSpirit, poseSpirit, makeCrystal, poseCrystal, makeGolem, poseGolem, makeGuardian, poseGuardian, picTexture, makeRock, makeObstacle, poseObstacle, makePuzzleProp, posePuzzleProp } from './actors.js';
+import { makeTelegraph, poseTelegraph, makeProjectile, poseProjectile, Sparks, makeBlast, makeTelegraphLine, poseTelegraphLine, makeTelegraphRing, poseTelegraphRing, makeTelegraphWall, poseTelegraphWall, makeIce, poseIce, makeBolt, poseBolt, makeMeteor, poseMeteor } from './vfx.js';
 import { createUI } from './ui.js';
 import { createAudio } from './audio.js';
 import { buildForest } from './env.js';
@@ -79,10 +79,10 @@ export function createSkin(ctx){
         const o = tgs.get(x.uid); if (x.tg.shape === 'line') poseTelegraphLine(o, x.tg, s.gameT); else poseTelegraph(o, x.tg, s.gameT); } drawnTg = withTg.map(x => x.uid);
       // 보스 — 몸·예고(여러 개, 모양별)
       const B = s.boss; if (!B && golem) { scene.remove(golem); golem = null; golemUid = null; }
-      if (B) { if (golemUid !== B.uid) { if (golem) scene.remove(golem); golem = makeGolem(); golemUid = B.uid; scene.add(golem); } poseGolem(golem, B, dt, s.gameT); }
+      if (B) { if (golemUid !== B.uid) { if (golem) scene.remove(golem); golem = B.kind === 'geo-guardian' ? makeGuardian() : makeGolem(); golem.userData.guardian = B.kind === 'geo-guardian'; golemUid = B.uid; scene.add(golem); } if (golem.userData.guardian) poseGuardian(golem, B, dt, camera, s.gameT); else poseGolem(golem, B, dt, s.gameT); }   // v2.15 기하학 수호신
       const bt = B ? B.telegraphs.map((tg, i) => ({ uid: 'b' + i + ':' + tg.shape + ':' + tg.t0, i, tg })) : [];
-      sync(btgs, bt, x => { const o = x.tg.shape === 'line' ? makeTelegraphLine() : x.tg.shape === 'ring' ? makeTelegraphRing() : makeTelegraph(); if (x.tg.label) { const r = makeRock(x.tg.label); o.add(r); o.userData.rock = r; } scene.add(o); return o; }, drop);
-      for (const x of bt) { const o = btgs.get(x.uid), tg = x.tg; if (tg.shape === 'line') poseTelegraphLine(o, tg, s.gameT); else if (tg.shape === 'ring') poseTelegraphRing(o, tg, s.gameT); else poseTelegraph(o, tg, s.gameT);
+      sync(btgs, bt, x => { const o = x.tg.shape === 'line' ? makeTelegraphLine() : x.tg.shape === 'ring' || x.tg.shape === 'mirror' ? makeTelegraphRing() : x.tg.shape === 'wall' ? makeTelegraphWall(picTexture) : makeTelegraph();   /* v2.15 wall·mirror(섞임 = 바닥 고리) */ if (x.tg.label) { const r = makeRock(x.tg.label); o.add(r); o.userData.rock = r; } scene.add(o); return o; }, drop);
+      for (const x of bt) { const o = btgs.get(x.uid), tg = x.tg; if (tg.shape === 'line') poseTelegraphLine(o, tg, s.gameT); else if (tg.shape === 'ring' || tg.shape === 'mirror') poseTelegraphRing(o, tg, s.gameT); else if (tg.shape === 'wall') poseTelegraphWall(o, tg, s.gameT, B.wall); else poseTelegraph(o, tg, s.gameT);
         if (o.userData.rock) { const k = Math.max(0, Math.min(1, (s.gameT - tg.t0) / (tg.t1 - tg.t0))), f = Math.max(0, (k - .45) / .55); o.userData.rock.position.y = (7 - 7 * f * f) / Math.max(.01, tg.size[0]); o.userData.rock.scale.setScalar(1 / Math.max(.01, tg.size[0])); o.userData.rock.rotation.x += dt * 4; } }
       drawnTg = drawnTg.concat(bt.map(x => 'b' + x.i));
       sync(blasts, s.areas, a => { const m = a.kind === 'ice' ? makeIce() : a.kind === 'meteor' ? makeMeteor() : makeBlast(0xff8a3d); m.userData.kind = a.kind; scene.add(m); return m; }, drop);
@@ -155,6 +155,11 @@ export function createSkin(ctx){
     else if (T === 'boss:shield') { audio.play('shield'); ui.toast('toast.seal'); }
     else if (T === 'boss:seal') { audio.play('glass'); if (ev.pos) { sparks.burst(ev.pos, 0x9fe8ff, 90, 6, 4); sparks.burst(ev.pos, 0xffffff, 40, 4, 5); } kick = .35; fovPulse = 6; }
     else if (T === 'boss:weak') { if (ev.on) { audio.play('weak'); ui.toast('toast.weak'); } }
+    // v2.15 기하학 수호신: 벽 예고 글(답 모양) · 통과/막힘 · 분신 · 진짜/가짜 맞힘
+    else if (T === 'boss:wall') { if (ev.toast) ui.toast(ev.toast.key, ev.toast.args); audio.play('windup'); }
+    else if (T === 'boss:wallPass') { if (ev.free) {} else if (ev.ok) { audio.play('dodge'); ui.toast('toast.wallPass'); if (player) { const p = player.position; sparks.burst([p.x, 1.2, p.z], 0xffd45c, 50, 3, 4); } } else { audio.play('hurt'); ui.toast('toast.wallHit', { n: ev.name || '' }); kick = .35; } }
+    else if (T === 'boss:mirror') { audio.play('shield'); ui.toast('toast.mirror'); fovPulse = 5; }
+    else if (T === 'boss:mirrorHit') { if (ev.real) { audio.play('glass'); ui.toast('toast.mirrorReal'); if (golem) sparks.burst([-golem.position.x, 2, golem.position.z], 0x5ef2c8, 120, 6, 5); kick = .4; } else { audio.play('boom'); ui.toast('toast.mirrorFake'); if (ev.pos) sparks.burst([-ev.pos[0], ev.pos[1], ev.pos[2]], 0xff8a3d, 70, 5, 4); kick = .3; } }
     else if (T === 'boss:phaseEnd') { audio.play('roar'); kick = .4; if (golem) sparks.burst([-golem.position.x, 1.8, golem.position.z], 0xff8a3d, 80, 5, 4); }
     else if (T === 'boss:die') { audio.play('boom'); audio.play('clear'); if (golem) { const p = [-golem.position.x, 1.5, golem.position.z]; sparks.burst(p, 0xffd45c, 160, 7, 5); sparks.burst(p, 0x9fe8ff, 80, 5, 6); } kick = .5; }
     else if (T === 'stage:clear') { audio.play('clear'); if (ev.reward) ui.toast('toast.reward.' + ev.reward); else if (ev.crystal) ui.toast('toast.reward.crystal.' + ev.crystal); }

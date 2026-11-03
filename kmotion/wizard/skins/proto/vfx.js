@@ -83,3 +83,23 @@ export function makeMeteor(){ const g = new THREE.Group();
   g.userData = { shadow, edge, rock }; return g; }
 export function poseMeteor(g, a, gameT){ const u = g.userData, fall = a.t1 - a.t0, k = Math.max(0, Math.min(1, (gameT - a.t0) / Math.max(.01, fall)));
   g.position.set(WX(a.pos[0]), 0, a.pos[2]); u.shadow.scale.setScalar(a.radius * (.3 + .7 * k)); u.edge.scale.setScalar(a.radius); u.rock.position.set(-6 * (1 - k), 22 * (1 - k * k) + 1, -4 * (1 - k)); u.rock.visible = k < 1; u.rock.rotation.x += .1; }
+
+// ── v2.15 모양 벽 예고(16 문서 9-3 ②): 구멍 3개 뚫린 벽이 예고 시간 동안 먼 곳(+9m)에서 center z 까지 다가옴. 구멍 그림은 setHoles(ids, answerPic) 로 — 답 구멍만 뻥 뚫림, 나머지는 유리(흐릿). 몸풀기 벽(구멍 1·그림 없음)은 뚫린 구멍 하나
+export function makeTelegraphWall(picTexture){ const g = new THREE.Group();
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(1, 2.8), new THREE.MeshBasicMaterial({ color: 0xcfd8dc, transparent: true, opacity: .72, side: THREE.DoubleSide, depthWrite: false })); wall.position.y = 1.4; g.add(wall);
+  const trim = new THREE.Mesh(new THREE.PlaneGeometry(1, .12), new THREE.MeshBasicMaterial({ color: 0xffd45c, side: THREE.DoubleSide, depthWrite: false })); trim.position.y = 2.82; g.add(trim);
+  const holes = []; for (let i = 0; i < 3; i++) { const h = new THREE.Group(); h.position.y = 1.25; h.visible = false;
+    const glass = new THREE.Mesh(new THREE.CircleGeometry(.95, 40), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: .35, side: THREE.DoubleSide, depthWrite: false })); glass.position.z = .01; h.add(glass);
+    const open = new THREE.Mesh(new THREE.CircleGeometry(.95, 40), new THREE.MeshBasicMaterial({ color: 0x14121f, transparent: true, opacity: .92, side: THREE.DoubleSide, depthWrite: false })); open.position.z = .01; h.add(open);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(.95, .05, 8, 48), new THREE.MeshBasicMaterial({ color: 0xffd45c, side: THREE.DoubleSide })); rim.position.z = .02; h.add(rim);
+    const picM = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide }); const pic = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.3), picM); pic.position.z = .03; h.add(pic);
+    g.add(h); holes.push({ g: h, glass, open, rim, pic, picM, id: null }); }
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1, .6), new THREE.MeshBasicMaterial({ color: 0x1b1630, transparent: true, opacity: .25, depthWrite: false })); shadow.rotation.x = -Math.PI / 2; shadow.position.y = .02; g.add(shadow);
+  g.userData = { wall, trim, holes, shadow, picTexture, key: null }; return g; }
+export function poseTelegraphWall(g, tg, gameT, W){ const [w, dur] = tg.size, k = Math.max(0, Math.min(1, (gameT - tg.t0) / Math.max(.01, tg.t1 - tg.t0))), u = g.userData, hs = tg.holes || [];
+  g.position.set(WX(tg.center[0]), 0, tg.center[2] + 9 * (1 - k)); u.wall.scale.x = u.trim.scale.x = u.shadow.scale.x = w + .4;
+  const key = hs.map(h => h.pic + '@' + h.x).join(',') + '|' + (W ? W.answerPic : '');
+  if (key !== u.key) { u.key = key; u.holes.forEach((h, i) => { const src = hs[i]; h.g.visible = !!src; if (!src) return; h.g.position.x = WX(src.x); const open = !src.pic || (W && src.pic === W.answerPic);
+    h.open.visible = open; h.glass.visible = !open; if (src.pic !== h.id) { h.id = src.pic; if (h.picM.map) h.picM.map.dispose(); h.picM.map = src.pic && u.picTexture ? u.picTexture(src.pic) : null; h.picM.needsUpdate = true; } h.pic.visible = !!src.pic; }); }
+  u.wall.material.opacity = .45 + .3 * k; for (const h of u.holes) h.glass.material.opacity = .2 + .3 * k; }
+

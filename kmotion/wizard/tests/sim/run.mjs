@@ -6,7 +6,7 @@ const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ?
 
 export function playOne({ data, seed, acc = .75, react = .4, grade = 1, maxT = 600, record = null, unlock = process.env.UNLOCK || null, stage = process.env.STAGE || null, progress = null, rand = Math.random, inputLog = null }){
   const f = createFlow({ data, grade, seed, unlock, stage, forceStage: !!stage, progress }); f.action('start', { mode: 'keyboard', seed }); f.action('enter');
-  const g = f.game, dt = 1 / 60; let nextAtk = 0, plan = [], seenTele = new Set(), qAnswerAt = null, castAt = null, lastQ = null, minHp = 100, hash = 0, slowSum = 0, pzAt = null, lastPz = null, duckOn = false, railT = 0;
+  const g = f.game, dt = 1 / 60; let nextAtk = 0, mirrorPick = null, plan = [], seenTele = new Set(), qAnswerAt = null, castAt = null, lastQ = null, minHp = 100, hash = 0, slowSum = 0, pzAt = null, lastPz = null, duckOn = false, railT = 0;
   const push = (type, value = {}) => { g.input.push({ type, t: f.t * 1000, via: 'key', value }); if (inputLog) inputLog.push({ at: Math.round(f.t * 1000), type, value }); };
   while (f.t < maxT) {
     const s = g.snapshot(); minHp = Math.min(minHp, s.player.hp);
@@ -16,6 +16,9 @@ export function playOne({ data, seed, acc = .75, react = .4, grade = 1, maxT = 6
     for (const e of s.enemies) if (e.telegraph && !seenTele.has(e.uid + ':' + e.telegraph.t0)) { seenTele.add(e.uid + ':' + e.telegraph.t0); const c = e.telegraph.center, r = e.telegraph.size[0] + .3 + .5;
       if (Math.abs(P.pos[0] - c[0]) < r) { let x = c[0] + (P.pos[0] >= c[0] ? r : -r); if (Math.abs(x) > 3.9) x = c[0] - Math.sign(x) * r; plan.push({ at: t + react, u: Math.max(-1, Math.min(1, x / 4)) }); } }
     if (s.boss) for (const [i, tg] of s.boss.telegraphs.entries()) { const key = 'b' + i + ':' + tg.t0; if (seenTele.has(key)) continue; seenTele.add(key);
+      // v2.15 기하학 수호신: 모양 벽은 답 구멍 x 로(정답률대로 — 틀리면 다른 구멍) · 분신 섞임 예고는 기다림
+      if (tg.shape === 'wall') { const W = f.game.boss && f.game.boss.wall; if (W) { const ans = W.answer, slot = rand() < acc || W.holes.length === 1 ? ans : (ans + 1) % W.holes.length; plan.push({ at: t + react + .3, u: Math.max(-1, Math.min(1, W.holes[slot].x / 4)) }); } continue; }
+      if (tg.shape === 'mirror') continue;
       if (tg.avoid === 'duck') { plan.push({ at: t + react, duck: true }); plan.push({ at: g.gameT + (tg.t1 - g.gameT) / Math.max(.15, g.slow) + .6 > 0 ? t + (tg.t1 - s.gameT) + .7 : t + 2, duck: false }); continue; }
       const half = tg.shape === 'line' ? tg.size[0] / 2 + .5 : tg.size[0] + .8; let dx;
       if (tg.shape === 'line') { const sx = Math.sin(tg.yaw), sz = Math.cos(tg.yaw); const rx = P.pos[0] - tg.center[0], rz = P.pos[2] - tg.center[2]; dx = rx * sz - rz * sx; if (Math.abs(dx) < half) { const side = dx >= 0 ? 1 : -1; let x = P.pos[0] + side * (half - Math.abs(dx) + .3) / Math.max(.3, Math.abs(sz)); if (Math.abs(x) > 3.9) x = P.pos[0] - side * (half + Math.abs(dx) + .3); plan.push({ at: t + react, u: Math.max(-1, Math.min(1, x / 4)) }); } }
@@ -43,6 +46,10 @@ export function playOne({ data, seed, acc = .75, react = .4, grade = 1, maxT = 6
       const threat = s.enemies.some(e => e.telegraph && Math.abs(P.pos[0] - e.telegraph.center[0]) < e.telegraph.size[0] + .3) || !!(s.boss && s.boss.telegraphs.length);
       const cr = s.crystals[0];
       if (castAt != null) { if (t >= castAt) { push('CAST', { aim: 'auto' }); castAt = null; } }
+      // v2.15 거울 분신(hold): 진짜(정답률대로) 쪽으로 몸을 옮긴 뒤 마법탄 — 마나가 없으면 그냥 기다림(5초 뒤 셋의 광선은 위 line 규칙으로 피함)
+      else if (s.boss && s.boss.state === 'hold' && s.boss.mirrors && f.game.boss.mirror) { const M = f.game.boss.mirror, live = M.bodies.filter(m => !m.gone); if (!mirrorPick || mirrorPick.M !== M) mirrorPick = { M, want: rand() < acc ? live.find(m => m.real) : (live.find(m => !m.real) || live[0]) };
+        const want = mirrorPick.want && !mirrorPick.want.gone ? mirrorPick.want : live.find(m => m.real); if (want && Math.abs(P.pos[0] - want.x) > .35) { if (!plan.length) plan.push({ at: t + react * .5, u: Math.max(-1, Math.min(1, want.x / 4)) }); }
+        else if (want && P.mana >= P.spellCost && P.castReady && g.canCast()) { push('CHARGE', { p: 0, start: true }); castAt = t + .55; } }
       else if (cr && !threat && !plan.length && (P.mana < P.spellCost || cr.near)) { if (!cr.near) push('MOVE', { u: cr.pos[0] / 4 }); else if (t >= nextAtk) { push('ATTACK', { zone: 1, side: 'R' }); nextAtk = t + .67; } }
       else if (P.mana >= P.spellCost && P.castReady && (s.enemies.filter(e => e.state !== 'dead').length >= 2 || (s.boss && s.boss.state === 'kneel')) && !threat && g.canCast()) { push('CHARGE', { p: 0, start: true }); castAt = t + .55; }
       else if (t >= nextAtk && (s.enemies.some(e => e.state !== 'dead' && e.state !== 'spawn') || (s.boss && !['intro', 'phase', 'dead'].includes(s.boss.state)))) { push('ATTACK', { zone: 1, side: 'R' }); nextAtk = t + .67; }

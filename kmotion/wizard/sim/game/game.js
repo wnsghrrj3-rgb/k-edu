@@ -8,7 +8,7 @@ import { clamp } from '../core/math.js';
 import { damage, steer, exactHit } from './combat.js';
 import { makeEnemy, stepEnemy, hurtEnemy, separate } from './enemyAI.js';
 import { castSpell, stepMagic, shieldFilter, currentSpell, MAIN } from './magic.js';
-import { makeBoss, stepBoss, bossMul, bossAfterHit, sealBroken, bossSnapshot } from './boss.js';
+import { makeBoss, stepBoss, bossMul, bossAfterHit, sealBroken, bossSnapshot, bossMirrorHit } from './boss.js';   // v2.15 bossMirrorHit = 거울 분신(기하학 수호신)
 import { QuestionEngine } from '../learn/questionEngine.js';
 import { pickSpiritShape } from '../learn/spirit.js';   // v2.12 도형 정령 모양 보호막
 import { PIC } from '../learn/pics.js';
@@ -272,13 +272,15 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
 
   function hitBoss(b, mult, kind, emp){
     const bm = bossMul(g, b); if (!bm) return; const shielded = b.shield > 0;
+    // v2.15 거울 분신(hold): 몸 x 와 가장 가까운 수호신이 맞음 — 가짜면 폭발(플레이어 8)·보스 피해 0, 진짜면 분신 소멸·경직 뒤 피해 그대로
+    if (b.state === 'hold' && b.mirror) { const r = bossMirrorHit(g, b); if (r === 'fake') { g.toast = { key: 'toast.mirrorFake', t: g.t }; return; } if (r === 'real') g.toast = { key: 'toast.mirrorReal', t: g.t }; }
     const { amount, crit } = damage(rng, { atk: g.player.atk, mult, def: b.def.def, empower: emp, weak: shielded ? 1 : bm });
     const dealt = shielded ? Math.max(1, Math.round(amount * bm)) : amount; b.hp = Math.max(0, b.hp - dealt); g.trauma = Math.min(GAME.shake.max, g.trauma + GAME.shake.hit);
     g.emit('hit', { target: b.uid, amount: dealt, crit, weak: bm > 1, shielded, pos: v3([b.pos[0], b.h * .6, b.pos[2]]) });
     const r = bossAfterHit(g, b);
     if (r === 'dead') { g.stats.kills++; g.emit('enemy:die', { uid: b.uid, kind: b.kind, pos: v3(b.pos), boss: true }); g.emit('boss:die', { uid: b.uid }); gainXp(b.def.xp || 0, 'boss', v3([b.pos[0], b.h * .8, b.pos[2]])); if (!g.unlocked.has('shield')) { g.unlocked.add('shield'); g.emit('reward', { kind: 'spell', spell: 'shield', amount: 1, pos: v3(b.pos) }); } for (const e of g.enemies) if (!e.boss && e.state !== 'dead') { e.state = 'dead'; e.stateT = 0; } }
     else if (r === 'phase') g.emit('boss:phaseEnd', { uid: b.uid, phase: b.phase });
-    else if (shielded && !g.q && g.screen === 'S08' && g.gameT - g.lastQClose >= GAME.boss.sealCd) openQuestion(null, 'seal');
+    else if (shielded && !g.q && !b.wall && g.screen === 'S08' && g.gameT - g.lastQClose >= GAME.boss.sealCd) openQuestion(null, 'seal');   // v2.15 모양 벽이 오는 동안엔 봉인 문제를 안 연다(몸으로 답하는 중)
   }
 
   // ── 수학 수정(07 문서 1절 상황 A)
@@ -324,7 +326,9 @@ export function createGame({ data, seed = 1, grade = 1, charId = 'luna', gauge =
     // v2.3 묶음 몬스터(15 문서 3절): 방패병·골렘이 없고 산 묶음이 있으면 수정 문제 = 「똑같이 나누기 공격」(share, 숫자는 그 묶음에서) → 정답이면 묶음 수만큼 정확 피해 탄
     let packQ = null; if (kind === 'crystal') { const pks = livePacks(); if (pks.length) { const pk = pks[0], grp = packGroup(pk); const concept = grp.concept || (c && c.retry ? 'g3.share.div' : rng.pick(PK.concepts)); packQ = { pk, grp, concept }; kind = 'share'; } }
     // 강화 문제 = 장착 주 마법의 「수학 연결」 유형(05 문서 12항) — 재도전 수정은 같은 개념 쉬운 문제(qe.retry 예약)
-    const qv = qe.next(lastSeal ? { want: 'word' } : kind === 'shield' ? { fixed: { concept: shieldE.shield.eq.concept || 'g1.missing.add9', b: shieldE.shield.eq.b, c: shieldE.shield.eq.c } } : kind === 'share' ? { fixed: { concept: packQ.concept, n: packQ.grp.n, hpEach: packQ.grp.hpEach } } : kind === 'spirit' ? { fixed: { concept: spiritE.spirit.concept, fam: spiritE.spirit.fam, code: spiritE.spirit.code } } : kind === 'power' && !(c && c.retry) ? { want: GAME.empower.want[g.spell] || 'calc' } : {});
+    // v2.15 신전 보스(16 문서 9-1): 도형엔 문장제가 없어 마지막 칸 = 정령 이름 판(gshape_name, 학년 줄 spiritSet)
+    const nameQ = lastSeal && stage.world === 'temple' ? pickSpiritShape(rng, g.grade) : null;
+    const qv = qe.next(nameQ ? { fixed: { concept: nameQ.concept, fam: nameQ.fam, code: nameQ.code } } : lastSeal ? { want: 'word' } : kind === 'shield' ? { fixed: { concept: shieldE.shield.eq.concept || 'g1.missing.add9', b: shieldE.shield.eq.b, c: shieldE.shield.eq.c } } : kind === 'share' ? { fixed: { concept: packQ.concept, n: packQ.grp.n, hpEach: packQ.grp.hpEach } } : kind === 'spirit' ? { fixed: { concept: spiritE.spirit.concept, fam: spiritE.spirit.fam, code: spiritE.spirit.code } } : kind === 'power' && !(c && c.retry) ? { want: GAME.empower.want[g.spell] || 'calc' } : {});
     if (c) { g.crystals = g.crystals.filter(x => x !== c); g.emit('crystal:break', { uid: c.uid, kind: c.kind, pos: v3(c.pos) }); }
     if (!qv) return;   // v2.3 생성기 0(변환표 학년 줄의 일반 생성기가 아직 없고 fallback 도 없음) = 수정만 사라지고 문제는 안 열림
     if (kind === 'seal' && g.boss) { g.boss.sealsAsked++; }

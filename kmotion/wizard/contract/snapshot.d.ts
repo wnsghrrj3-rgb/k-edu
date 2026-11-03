@@ -49,12 +49,14 @@ export interface Snapshot {
     spirit: { fam: string; pic: string | null; up: boolean; weak: boolean; weakT: number; breaks: number } | null }>;   // v2.12 도형 정령 모양 보호막 — pic = 보호막 그림 id, weakT = 약점 남은 비율(1→0)
   /** 보스(v1.1 추가, 06 문서 4·5절). 보스방이 아니면 null. telegraphs 는 전부 그려야 한다(돌 3개처럼 여러 개일 수 있음) */
   boss: null | { uid: number; kind: string; pos: Vec3; yaw: number; scale: number;
-    state: 'intro' | 'chase' | 'windup' | 'attack' | 'recover' | 'kneel' | 'phase' | 'dead'; stateT: number;
-    attack: null | 'slam' | 'charge' | 'rocks' | 'quake' | string;
+    state: 'intro' | 'chase' | 'windup' | 'attack' | 'recover' | 'kneel' | 'phase' | 'dead' | 'hold' | 'stun'; stateT: number;   // v2.15 hold = 거울 분신 멈춤 · stun = 진짜 맞힌 뒤 경직
+    attack: null | 'slam' | 'charge' | 'rocks' | 'quake' | 'beam' | 'wall' | 'mirror' | string;   // v2.15 기하학 수호신
     phase: number; phases: number; hp: number; hpMax: number; phaseHp: number[]; phaseHpMax: number[];   // hp = 지금 페이즈 체력
     shield: number; shieldMax: number;                // 수학 보호막 칸(켜져 있으면 몸 공격 ×0.1)
     weak: number;                                     // 약점 시간 남은 비율 0~1(0 = 아님)
-    telegraphs: Array<{ shape: 'circle' | 'line' | 'ring'; center: Vec3; size: number[]; yaw: number; t0: number; t1: number; label: string | null; avoid: null | 'duck' }>;
+    telegraphs: Array<{ shape: 'circle' | 'line' | 'ring' | 'wall' | 'mirror'; center: Vec3; size: number[]; yaw: number; t0: number; t1: number; label: string | null; avoid: null | 'duck'; holes: null | Array<{ pic: string | null; x: number }>; beam: boolean }>;   // v2.15 wall = 구멍 판(size [폭, 예고초]) · beam = 광선(line)
+    wall: null | { holes: Array<{ pic: string | null; x: number }>; answerPic: string | null; name: string | null; concept: string | null; judged: boolean };   // v2.15 다가오는 모양 벽 — 몸 x 자리 = 답
+    mirrors: null | Array<{ x: number; z: number; pic: string }>; mirrorPic: string | null; mirrorName: string | null; hold: number; stun: number;   // v2.15 분신 셋(진짜는 안 알려줌 — 그림만) · hold/stun 남은 비율
     nameKey: string };                                // line: size=[폭, 길이], yaw 방향 · ring: 전체 범위 — avoid 'duck' = 숙여서 피함
   /** v1.4: kind 'acorn' = 고블린 도토리(owner = 그 몬스터 uid, label = 식 「2+3」) — 플레이어만 맞춤, 숙이면 머리 위로 지나감 */
   projectiles: Array<{ uid: number; kind: 'bolt' | 'fireball' | 'acorn' | 'share' | 'shard' | string; pos: Vec3; vel: Vec3; owner: 'player' | number; label: string | null; pic: string | null;   /* v2.12 shard = 정령 모양 조각, pic = 그 정령 보호막 그림 */ r: number;

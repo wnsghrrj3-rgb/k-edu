@@ -14,7 +14,7 @@ const flowAt = (zone, seed = 11, extra = {}) => { const f = createFlow(Object.as
   ok('길에 몬스터 0 · 바위 2·가지 1·상자 1·반딧불 4', ST.zones[0].enemies.length === 0 && ST.zones[0].obstacles.rock === 2 && ST.zones[0].obstacles.branch === 1 && ST.zones[0].chest === 1 && ST.zones[0].fireflies === 4);
   ok('final · 보상 = crystal number(spell 없음) · 별 반딧불 3', ST.final === true && ST.reward.crystal === 'number' && !ST.reward.spell && ST.stars.fireflies === 3);
   const f = createFlow({ data, grade: 1, seed: 1, progress: { xp: 0, level: 3, cleared: { 'forest-1-1': 3, 'forest-1-2': 2 } } }); const t = f.snapshot().title;
-  ok('시작 화면 스테이지 5개(숲 4 + 신전 1, v2.9) · 보스는 4번째 · 잠김(1-3 안 깸) · final · crystal number · reward null', t.stages.length === 5 && t.stages[3].id === SB && t.stages[3].locked && t.stages[3].requires === 'forest-1-3' && t.stages[3].final && t.stages[3].crystal === 'number' && t.stages[3].reward === null, JSON.stringify(t.stages[3]));
+  ok('시작 화면 스테이지 6개(숲 4 + 신전 2, v2.15) · 보스는 4번째 · 잠김(1-3 안 깸) · final · crystal number · reward null', t.stages.length === 6 && t.stages[3].id === SB && t.stages[3].locked && t.stages[3].requires === 'forest-1-3' && t.stages[3].final && t.stages[3].crystal === 'number' && t.stages[3].reward === null, JSON.stringify(t.stages[3]));
   f.action('start', { mode: 'keyboard', stage: SB }); f.action('enter'); ok('잠긴 채 고르면 1-1 로 감', f.game.stageId === 'forest-1-1');
   const f2 = createFlow({ data, grade: 1, seed: 1, progress: { xp: 0, level: 4, cleared: { 'forest-1-1': 3, 'forest-1-2': 2, 'forest-1-3': 1 }, unlocked: ['shield', 'ice', 'lightning'] } });
   ok('1-3 깬 기록이 있으면 열림 · 결정 0', !f2.snapshot().title.stages[3].locked); f2.action('start', { mode: 'keyboard', stage: SB }); f2.action('enter');
@@ -55,7 +55,7 @@ const flowAt = (zone, seed = 11, extra = {}) => { const f = createFlow(Object.as
 // ── 6. 봇 6판: 완주 · 문제 5~12 · 60~200초 · 반딧불 3↑(별) 달성 가능
 { const rs = []; for (let i = 0; i < 6; i++) rs.push(playOne({ data, seed: 700 + i, acc: .75, react: .4, stage: SB }));
   ok('봇 6판 전부 완주 · 3페이즈', rs.every(r => r.win && r.bossPhase === 3), rs.map(r => r.bossPhase).join());
-  ok('문제 수 5~12(봉인+수정)', rs.every(r => r.q >= 5 && r.q <= 12), rs.map(r => r.q).join());
+  ok('문제 수 5~13(봉인+수정, v2.15 변환표 temple-2-boss 추가로 3학년 풀 rng 이동)', rs.every(r => r.q >= 5 && r.q <= 13), rs.map(r => r.q).join());
   ok('한 판 60~200초', rs.every(r => r.t >= 60 && r.t <= 200), rs.map(r => r.t).join());
   ok('반딧불 3↑ 봇 전부', rs.every(r => r.fireflies >= 3), rs.map(r => r.fireflies).join()); }
 
