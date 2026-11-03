@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<!-- ════════════════════════════════════════
+     K-edu 영어 v3 양산 · Lv3 #20-3 시간·요일① 「숙달」 일주일 일곱 날 「숙달」
+     베이스: lv3/19_3_people1_master.html (Lv3 #19 V판형 숙달 · 게이트② · 「누구일까요?」 판 → 「일주일 기차」 순서 판) + Lv3 #8 하루 띠(순서 강제) 판형
+     펼침 원천: handoff kedu/english/v3/lv3/20_days1.md
+     ════════════════════════════════════════ -->
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu | 영어 Lv3 — 시간·요일① 10단어 일주일 기차 · 섞어 고르기 (20-3 숙달)</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   골격 = 골든 불변 / 옷 = P트랙 파랑 #1565C0
+   두 글자 한 소리(이중자음) 블록은 자음이므로 파랑 유지 — 모음만 주황
+   ============================================================ */
+:root{
+  --bg:#F0F6FE; --card:#fff;
+  --primary:#1565C0; --primary-light:#E3EEFC; --secondary:#5B8DEF;
+  --vowel:#FF8A3D; --vowel-light:#FFF1E6;
+  --green:#4CAF50; --green-light:#E8F5E9; --red:#F44336; --red-light:#FFEBEE;
+  --yellow:#FFC107; --yellow-light:#FFF8E1;
+  --text:#333; --subtext:#888; --border:#D7E4F7;
+  --shadow:0 4px 16px rgba(0,0,0,.08); --radius:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;gap:8px}
+.back{font-size:18px;color:var(--subtext);text-decoration:none}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 4px}
+.progress-bar{flex:1;height:10px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;color:#e6a800}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 10px;font-size:14px}
+.kedu-logo .logo-circle{width:20px;height:20px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:12px}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 18px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;width:100%;max-width:560px;text-align:center}
+.slide-title{font-size:21px;color:var(--subtext);margin-bottom:8px}
+.badge{display:inline-block;background:var(--primary-light);color:var(--primary);border-radius:99px;padding:4px 14px;font-size:17px;margin-bottom:8px}
+.concept-text{font-size:24px;line-height:1.6;margin:8px 0}
+.highlight{color:var(--primary)}
+/* 표지 */
+.today-label{font-size:22px;color:var(--secondary);letter-spacing:.5px;margin:18px 0 18px}
+.today-en{font-size:42px;color:var(--primary);font-weight:bold;line-height:1.3;margin:8px 0}
+.today-ko{font-size:26px;color:#2B925E;line-height:1.4;margin:14px 0 18px}
+/* 형광 강조 */
+.hl{background:linear-gradient(transparent 58%,#FFE680 58%);background-repeat:no-repeat;background-size:0% 100%;transition:background-size .55s cubic-bezier(.4,0,.2,1) .15s;padding:0 3px;font-weight:bold;color:var(--text)}
+.slide.lit .hl{background-size:100% 100%}
+/* 탭 단계 등장 */
+.step{opacity:0;transform:translateY(34px) scale(.82);transition:opacity .26s ease,transform .42s cubic-bezier(.34,1.6,.5,1);pointer-events:none}
+.step.in{opacity:1;transform:none;pointer-events:auto}
+.concept-big{font-size:30px;line-height:1.5;margin:10px 0}
+@keyframes tapBlink{0%,100%{opacity:.4}50%{opacity:1}}
+.hl-slot{background:var(--yellow-light);border:2px dashed var(--yellow);border-radius:8px;padding:1px 8px;color:#e6a800}
+.kay-says{display:flex;align-items:center;gap:12px;background:var(--primary-light);border-radius:16px;padding:12px 16px;margin:10px 0;text-align:left}
+.kay-icon{font-size:30px;flex-shrink:0}
+.kay-text{font-size:21px;line-height:1.5}
+/* 소리 블록 — 파닉스 심장 */
+.sblocks{display:flex;gap:12px;justify-content:center;align-items:center;margin:14px 0;transition:gap .5s cubic-bezier(.4,0,.2,1);flex-wrap:wrap}
+.sblocks.merged{gap:2px}
+.sblock{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:16px;padding:12px 18px;font-size:40px;line-height:1;cursor:pointer;box-shadow:0 4px 0 rgba(21,101,192,.25);transition:transform .12s,box-shadow .3s;position:relative}
+.sblock .sko{font-size:14px;color:var(--subtext)}
+.sblock.vowel{border-color:var(--vowel);color:var(--vowel);box-shadow:0 4px 0 rgba(255,138,61,.3)}
+.sblock:active{transform:scale(.94)}
+.sblock.singing{transform:scale(1.15);box-shadow:0 0 0 5px var(--yellow-light),0 4px 0 rgba(21,101,192,.25)}
+.sblock.isnew::after{content:'NEW';position:absolute;top:-10px;right:-6px;background:var(--red);color:#fff;font-size:11px;padding:1px 6px;border-radius:99px}
+.sblock.used{opacity:.25;pointer-events:none}
+.sblock.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+/* 소리 슬롯 */
+.sslots{display:flex;gap:10px;justify-content:center;align-items:center;margin:14px 0;flex-wrap:wrap}
+.sslot{min-width:72px;height:70px;border:3px dashed #A8C4EA;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:34px;color:#A8C4EA;background:#F8FBFF;padding:0 10px;transition:all .3s}
+.sslot.filled{border-style:solid;border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.sslot.filled.vslot{border-color:var(--vowel);color:var(--vowel);background:var(--vowel-light)}
+.sslot.swap{animation:swapPop .5s ease}
+@keyframes swapPop{0%{transform:translateY(0)}40%{transform:translateY(-14px) scale(1.1);background:var(--yellow-light);border-color:var(--yellow)}100%{transform:translateY(0)}}
+.word-done{font-size:34px;color:var(--primary);margin:8px 0}
+.mean{font-size:20px;color:var(--subtext)}
+.pic{font-size:80px;margin:6px 0;line-height:1}
+@keyframes popIn{0%{transform:scale(0) rotate(-15deg)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+/* 합치기 다이어그램 */
+.blend-map{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0;flex-wrap:wrap}
+.bm-piece{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:12px;padding:6px 14px;font-size:28px}
+.bm-piece.v{border-color:var(--vowel);color:var(--vowel)}
+.bm-arrow{font-size:26px;color:#e6a800;font-weight:bold}
+.bm-word{background:var(--yellow-light);border:3px solid var(--yellow);color:#e6a800;border-radius:12px;padding:6px 16px;font-size:30px;font-weight:bold}
+/* 문제 */
+.question-label{display:inline-flex;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:17px;margin-bottom:8px}
+.stars{color:#FCD34D}
+.question-text{font-size:23px;margin:6px 0 12px;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
+.choice-btn{background:#fff;border:3px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);color:var(--text)}
+.choice-btn .ko{display:block;font-size:14px;color:var(--subtext)}
+.choice-btn.big{font-size:40px;padding:10px 22px}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}}
+.listen-btn{background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:8px 22px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;color:var(--primary);margin:4px 0 8px}
+.feedback{font-size:19px;margin-top:10px;min-height:34px;border-radius:12px;padding:5px 12px;line-height:1.5}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#e6a800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-emoji{font-size:76px;margin:8px 0;animation:bounce 1s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.result-score{font-size:30px;color:#e6a800;margin:6px 0}
+.result-stars{font-size:34px;margin:4px 0}
+.nav{display:flex;justify-content:space-between;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,.06);flex-shrink:0;gap:10px}
+.nav-btn{flex:1;max-width:200px;background:var(--primary);color:#fff;border:none;border-radius:14px;padding:13px 0;font-family:'Jua',sans-serif;font-size:20px;cursor:pointer}
+.nav-btn:disabled{opacity:.3}
+.hint{font-size:16px;color:var(--subtext);margin-top:6px}
+/* ── V트랙 주황 파생 ── */
+:root{
+  --bg:#FFF6EF;
+  --primary:#FF8A3D; --primary-light:#FFF0E4; --secondary:#FFB27A;
+  --border:#F7DFCB;
+}
+/*DAY320CSS-BEGIN — Lv3 #20 시간·요일① 그림·일곱 칸 달력 · 4파일 + 활동지 문자 단위 동일(blocks/DAY320CSS.css → sync_blocks.py 주입, 하네스 A4·D2b).
+  ★그림 타일(.dyp·.dyz) = Lv3 #6 .anp·.anz 와 같은 기하(같은 단어 = 같은 그림 · 액자 모양이 정답 단서가 되지 않는다).
+  ★요일 = 일곱 칸 띠(.cal · 월요일 시작) — 그 칸만 켜짐(.on) + 한글 첫 글자(.kd). 토 = 파랑 · 일 = 빨강(켜지지 않아도 옅게).
+  ★today = 띠의 한 칸 동그라미(.rg) + 👆 · week = Lv2 #22 일곱 칸 그림(.wk 세 줄 = 22-1 실물 그대로) · day = 📅.
+  ★일곱 칸 달력 한 장(.wcal) = 칸마다 따로 눌린다 · 칸 얼굴 = 한글 첫 글자만. 움직임 0 — 명사 그림은 멈춰 있다. */
+.dyp{position:relative;display:inline-flex;align-items:center;justify-content:center;width:80px;height:64px;border-radius:14px;background:#FFFDF9;border:2px solid #F1DFCD;box-sizing:border-box;line-height:1;vertical-align:middle;overflow:hidden;text-align:center}
+.dyz{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+.dyz>.dyp{position:absolute;left:0;top:0;transform-origin:0 0}
+.dyp .em{position:relative;font-size:42px;font-style:normal;line-height:1}
+.dyp .cal{position:absolute;left:5px;right:5px;top:7px;height:14px;display:flex;gap:2px}
+.dyp .cal i{flex:1;border-radius:3px;background:#FFF3E0;border:1px solid #E0C3A8;box-sizing:border-box}
+.dyp .cal i.c6{background:#E3F2FD;border-color:#90CAF9}
+.dyp .cal i.c7{background:#FFEBEE;border-color:#EF9A9A}
+.dyp .cal i.on{background:#FF8A65;border-color:#E64A19}
+.dyp .cal i.c6.on{background:#42A5F5;border-color:#1565C0}
+.dyp .cal i.c7.on{background:#EF5350;border-color:#C62828}
+.dyp .cal i.rg{border:2.5px solid #7E57C2;border-radius:50%;background:#fff}
+.dyp .kd{position:relative;top:9px;font-size:30px;font-style:normal;font-weight:700;color:#5D4037;line-height:1;font-family:'Jua',sans-serif}
+.dyp .kd.d6{color:#1E88E5}
+.dyp .kd.d7{color:#E53935}
+.dyp .fg{position:absolute;left:22px;top:22px;font-size:28px;font-style:normal;line-height:1}
+.dyp .wk{font-size:50px}
+.wk{display:inline-flex;gap:.05em;vertical-align:middle;padding:.07em;border:.06em solid #8D6E63;border-radius:.14em;background:#fff;box-sizing:border-box}
+.wk i{display:block;width:.12em;height:.5em;background:#FFCC80;border-radius:.03em}
+.wk i:first-child{background:#FF8A65}
+.wcal{width:min(360px,100%);margin:8px auto;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:6px;border-radius:16px;border:3px solid var(--border);background:#FFE9D6;box-sizing:border-box}
+.wcal .cell{position:relative;aspect-ratio:1/1.25;border-radius:9px;border:3px solid #D7B899;background:#FFFDF9;box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;min-width:0;line-height:1;transition:transform .15s}
+.wcal .cell.c6{background:#E3F2FD;border-color:#90CAF9}
+.wcal .cell.c7{background:#FFEBEE;border-color:#EF9A9A}
+.wcal .cell:active{transform:scale(.93)}
+.wcal .ck{font-size:24px;font-weight:700;color:#5D4037;font-family:'Jua',sans-serif}
+.wcal .ck.d6{color:#1E88E5}
+.wcal .ck.d7{color:#E53935}
+.wcal .cell.found{border-color:var(--green);box-shadow:0 0 0 2px var(--green) inset}
+.wcal .cell.ring{border-color:#7E57C2;box-shadow:0 0 0 3px #B39DDB}
+.wcal .cell .tag{display:none;position:absolute;left:50%;bottom:-.9em;transform:translateX(-50%);font-size:11px;background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:8px;padding:0 3px;white-space:nowrap;font-family:'Jua',sans-serif;line-height:1.2;z-index:3}
+.wcal .cell.found .tag{display:block}
+.wcal .choice-btn.cell{font-family:inherit;box-shadow:none;min-height:0}
+.wcal .choice-btn.cell.correct{border-color:var(--green);box-shadow:0 0 0 3px var(--green) inset}
+.wcal .choice-btn.cell.wrong{border-color:var(--red);box-shadow:0 0 0 3px var(--red) inset}
+/*DAY320CSS-END*/
+.wcards{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.wcard{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:16px;
+       padding:6px 10px;font-size:22px;cursor:pointer;box-shadow:0 4px 0 rgba(255,138,61,.25);
+       transition:transform .1s;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:76px}
+.wcard .fe{display:flex;align-items:center}
+.wcard .ko{display:block;font-size:12px;color:var(--subtext)}
+.wcard:active{transform:scale(.94)}
+.qpic{margin:8px 0;height:96px;display:flex;align-items:center;justify-content:center}
+.choice-btn.pic-btn{padding:6px 8px;line-height:1}
+/* ★일주일 기차 손활동 — 기차 칸(월→일) 왼쪽부터 · 섞인 요일 카드(글자만) · 틀린 카드 튕김 + 소리 0(진단 미적립)
+   · 다 채우면 기차가 달리며 일곱 요일 차례 낭독 → Ben / Max 장면 (Lv3 #8 하루 띠 · #19 누구일까요? 판 판형) */
+.train{display:flex;gap:5px;justify-content:center;align-items:flex-end;flex-wrap:wrap;margin:8px auto;max-width:640px}
+.train .eng{font-size:34px;line-height:1;align-self:center}
+.car{position:relative;width:74px;height:66px;border:3px dashed #F0C9A6;border-radius:10px 10px 6px 6px;background:#fff;box-sizing:border-box;
+     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:all .3s}
+.car::before,.car::after{content:'';position:absolute;bottom:-7px;width:11px;height:11px;border-radius:50%;background:#8D6E63}
+.car::before{left:11px}.car::after{right:11px}
+.car .no{position:absolute;top:-9px;left:-5px;background:var(--primary);color:#fff;font-size:11px;border-radius:99px;padding:0 6px}
+.car .kc{font-size:20px;font-weight:700;color:#5D4037;font-family:'Jua',sans-serif;line-height:1}
+.car .kc.d6{color:#1E88E5}.car .kc.d7{color:#E53935}
+.car .cw{font-size:12px;color:#C9B39C;line-height:1.1}
+.car .food{display:none;position:absolute;top:-21px;right:-4px;font-size:17px;line-height:1}
+.car.now{border-style:solid;border-color:var(--yellow);background:var(--yellow-light);animation:tapBlink 1.1s infinite}
+.car.filled{border-style:solid;border-color:var(--green);background:var(--green-light)}
+.car.filled .cw{color:var(--primary)}
+.car.lit{transform:translateY(-4px);box-shadow:0 0 0 3px var(--yellow)}
+.train.run{animation:trainRun .9s ease-in-out 1}
+.train.fed .car .food{display:block}
+@keyframes trainRun{0%{transform:translateX(0)}35%{transform:translateX(18px)}70%{transform:translateX(-6px)}100%{transform:translateX(0)}}
+.wscene{display:none;gap:10px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.wscene.on{display:flex}
+.who{display:flex;align-items:center;gap:6px;background:#fff;border:2px solid var(--border);border-radius:16px;padding:5px 10px}
+.who .fc{position:relative;font-size:36px;line-height:1}
+.who .blk{position:absolute;left:-6px;right:-6px;bottom:-3px;height:55%;background:repeating-linear-gradient(45deg,#90CAF9 0 6px,#BBDEFB 6px 12px);border-radius:8px 8px 4px 4px;border:2px solid #64B5F6}
+.who .nm{font-size:13px;color:var(--subtext)}
+.who .bub{background:#fff;border:3px solid var(--primary);border-radius:14px;padding:3px 10px;font-size:19px;color:var(--text);cursor:pointer}
+.who .bub.tapped{border-color:var(--green);background:var(--green-light)}
+.chips{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.chip{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:99px;padding:5px 12px;font-size:20px;cursor:pointer;box-shadow:0 4px 0 rgba(255,138,61,.25);transition:transform .1s}
+.chip:active{transform:scale(.94)}
+.chip.used{opacity:.3;pointer-events:none}
+.chip.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back" href="../index.html">🪜</a>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 10</span>
+  </div>
+  <div class="score-badge">⭐ <span id="scoreVal">0</span></div>
+  <div class="kedu-logo"><div class="logo-circle">K</div>영어</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesContainer">
+  <!-- ━━━ S0 표지 ━━━ -->
+  <div class="slide active" data-steps>
+    <div class="card">
+      <div class="badge step">영어 Lv3 · 시간·요일① 20-3</div>
+      <div class="today-label step">숙달 🏁</div>
+      <div class="today-en step">일주일 기차를 채우고<br>섞어서 골라요</div>
+      <div class="today-ko step">일주일 일곱 날이 <span class="today-blank">내 말</span>이 됐는지 확인해요</div>
+    </div>
+  </div>
+
+  <!-- ━━━ S1 소환 — 10장 마지막 확인 ━━━ -->
+  <div class="slide" data-steps>
+    <div class="card">
+      <div class="slide-title step">🔊 마지막으로 한 바퀴 — 눌러서 들어 봐</div>
+      <div class="wcards step" id="recall"></div>
+      <div class="kay-says step">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">먼저 <b>일주일 기차</b>를 월요일부터 채우고, 그다음 <b>섞어서</b> 여섯 문제!<br>뒤의 두 문제는 <span class="hl">소리 없이</span> 그림만 보고 골라요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S2 손활동 — 일주일 기차: 섞인 요일 카드 → 기차 칸(월→일) 왼쪽부터 (진단 미적립) ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">🚂 일주일 기차 — 깜빡이는 칸에 맞는 <b>요일 카드</b>를 꽂아요! 월요일부터</div>
+      <div class="train" id="train"></div>
+      <div class="chips" id="trainCards"></div>
+      <div class="wscene" id="weekScene">
+        <div class="who"><span class="fc">🧒<b class="blk"></b></span><span class="nm">Ben</span><span class="bub" id="benBub" data-say="I don't like Monday.">I don't like Monday.</span></div>
+        <div class="who"><span class="fc">👦</span><span class="nm">Max</span><span class="bub" id="maxBub" data-say="I like it!">I like it!</span></div>
+      </div>
+      <div class="feedback" id="fb2"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S3~S6 섞어 듣고 그림 ①~④ (게이트) ━━━ -->
+  <div class="slide" data-correct="0" data-score="10" data-concept="vocab.meaning" data-gate="1">
+    <div class="card">
+      <div class="question-label">문제 1 <span class="stars">⭐</span></div>
+      <div class="question-text">듣고 맞는 그림을 골라요!</div>
+      <button class="listen-btn big" id="lb3">🔊 다시 듣기</button>
+      <div class="choices" id="ch3"></div>
+      <div class="feedback" id="fb3"></div>
+    </div>
+  </div>
+  <div class="slide" data-correct="2" data-score="10" data-concept="vocab.meaning" data-gate="1">
+    <div class="card">
+      <div class="question-label">문제 2 <span class="stars">⭐</span></div>
+      <div class="question-text">듣고 맞는 그림을 골라요!</div>
+      <button class="listen-btn big" id="lb4">🔊 다시 듣기</button>
+      <div class="choices" id="ch4"></div>
+      <div class="feedback" id="fb4"></div>
+    </div>
+  </div>
+  <div class="slide" data-correct="3" data-score="10" data-concept="vocab.meaning" data-gate="1">
+    <div class="card">
+      <div class="question-label">문제 3 <span class="stars">⭐</span></div>
+      <div class="question-text">듣고 맞는 그림을 골라요!</div>
+      <button class="listen-btn big" id="lb5">🔊 다시 듣기</button>
+      <div class="choices" id="ch5"></div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+  <div class="slide" data-correct="1" data-score="10" data-concept="vocab.meaning" data-gate="1">
+    <div class="card">
+      <div class="question-label">문제 4 <span class="stars">⭐</span></div>
+      <div class="question-text">듣고 맞는 그림을 골라요!</div>
+      <button class="listen-btn big" id="lb6">🔊 다시 듣기</button>
+      <div class="choices" id="ch6"></div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S7~S8 소리 없이 그림 → 단어 ⑤~⑥ (게이트) ━━━ -->
+  <div class="slide" data-correct="1" data-score="10" data-concept="vocab.meaning" data-gate="1" data-kind="pic">
+    <div class="card">
+      <div class="question-label">문제 5 <span class="stars">⭐</span></div>
+      <div class="question-text">🔇 소리 없이 — 이 그림에 맞는 단어는?</div>
+      <div class="qpic" id="q7pic"></div>
+      <div class="choices" id="ch7"></div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+  <div class="slide" data-correct="2" data-score="10" data-concept="vocab.meaning" data-gate="1" data-kind="pic">
+    <div class="card">
+      <div class="question-label">문제 6 <span class="stars">⭐</span></div>
+      <div class="question-text">🔇 소리 없이 — 이 그림에 맞는 단어는?</div>
+      <div class="qpic" id="q8pic"></div>
+      <div class="choices" id="ch8"></div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S9 결과 — 게이트② ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="result-emoji" id="resultEmoji">🎉</div>
+      <div style="font-size:26px" id="resultTitle">여섯 문제 끝!</div>
+      <div class="result-score">⭐ <span id="finalScore">0</span>점</div>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <div class="stamp" id="stamp">🏅 Lv3 · 스무 번째 칸 점등!</div>
+      <div class="kay-says">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text" id="gateText">채점 중…</div>
+      </div>
+      <button class="nav-btn" id="wsBtn" style="margin-top:10px;display:none" onclick="location.href='../worksheets/days1.html'">🖨 활동지 출력</button>
+      <button class="nav-btn" id="gateBtn" style="margin-top:10px">▶ 다음</button>
+      <button class="nav-btn" style="margin-top:10px;background:var(--secondary)" onclick="location.href='../index.html'">🪜 사다리로</button>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script src="../engine/k-tts.js"></script>
+<script src="../engine/k-progress.js"></script>
+<script src="../engine/k-collection.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
+<script>
+let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
+const TOTAL=10;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playTone(f,t,d,g=.3){getCtx();audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d);});}
+function playCorrect(){[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
+function playWrong(){[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
+function playClick(){playTone(880,'sine',.08,.2);}
+document.body.addEventListener('pointerdown',()=>{if(!unlocked){KTTS.unlock();unlocked=true;justUnlocked=true;setTimeout(()=>justUnlocked=false,350);
+  const cur=document.querySelectorAll('.slide')[currentSlide];
+  const last=cur&&cur.querySelectorAll('.step.in');
+  if(last&&last.length){speakStep(last[last.length-1]);}
+}},{once:true});
+
+/* ── 탭 기반 단계 등장 (자동 흐름 ❌) ── */
+let stepState={};
+function setupSlide(slide,idx){
+  slide.classList.add('lit');
+  const steps=slide.querySelectorAll('.step');
+  if(!steps.length)return;
+  if(stepState[idx]===undefined){
+    steps.forEach(s=>s.classList.remove('in'));
+    steps[0].classList.add('in');stepState[idx]=1;
+    speakStep(steps[0]);
+  }else{
+    steps.forEach(s=>s.classList.add('in'));stepState[idx]=steps.length;
+  }
+}
+function speakStep(el){
+  if(!unlocked||!el)return;
+  if(el.dataset.sound)KTTS.sound(el.dataset.sound);
+  else if(el.dataset.speakWord)KTTS.word(el.dataset.speakWord);
+  else if(el.dataset.speak)KTTS.sentence(el.dataset.speak);
+}
+function advanceStep(slide,idx){
+  const steps=[...slide.querySelectorAll('.step')];
+  if(stepState[idx]<steps.length){
+    const el=steps[stepState[idx]];
+    el.classList.add('in');playClick();speakStep(el);
+    stepState[idx]++;
+    return true;
+  }
+  return false;
+}
+function goSlide(n){
+  const sl=document.querySelectorAll('.slide');KTTS.stop();
+  sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');
+  setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);
+  currentSlide=n;sl[n].classList.add('active');updateUI();
+  setupSlide(sl[n],n);
+}
+function nextSlide(){
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  if(slide.hasAttribute('data-steps')&&advanceStep(slide,currentSlide))return;
+  if(currentSlide<TOTAL-1)goSlide(currentSlide+1);
+}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;
+  document.getElementById('scoreVal').textContent=score;
+  if(currentSlide===TOTAL-1)finish();
+}
+function addScore(p){
+  const bonus=combo>=3?Math.floor(p*.5):0;
+  score+=p+bonus;combo++;
+  document.getElementById('scoreVal').textContent=score;
+  if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}
+}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.innerHTML=msg;el.className='feedback '+(ok?'ok':'err');}}
+
+const OK_MSGS=['✅ 정답! +{p}점','🎯 바로 그거야! +{p}점','✨ 소리 박사인데? +{p}점'];
+const SAM_MSGS=['🙋 Sam: "나도 그거 골랐는데…" 다시 들어 봐!','🙋 Sam: "내가 맞다니까!" …아니래. 한 번 더!','🤔 Sam이 또 헷갈리게 했구나 — 소리를 잘 듣고 다시!'];
+function okMsg(p){return OK_MSGS[Math.floor(Math.random()*OK_MSGS.length)].replace('{p}',p);}
+function samMsg(){return SAM_MSGS[Math.floor(Math.random()*SAM_MSGS.length)];}
+/*DAY320-BEGIN — Lv3 #20 시간·요일① 재료(펼침 lv3/20_days1.md) · 4파일 문자 단위 동일(blocks/DAY320.js → sync_blocks.py 주입, 하네스 A4).
+  ★좌표 = 요일 일곱 잠금 → #22 지문(Monday)·#29 주말 이야기(Saturday·Sunday)·#32 하루 흐름의 연료.
+  ★원리 = 「요일은 모두 day 로 끝나요 — 그리고 늘 큰 글자로 시작해요.」 일곱 카드의 day 꼬리가 한꺼번에 켜진다(20-1 원리 한 자리 · u.dy).
+  ★배지 = 실물 대조(Lv1·Lv2·Lv3 앞 칸 실물 html 전수 대조):
+    day 초록 「Lv2 #19」(19-2 KEYS d·ay · Lv2 #20 소환 카드 📅 「하루」 실물)
+    · ★week = 노랑 ee — Lv2 #22 V칸에서 만남(22-1 isrule ee) · 조립 KEYS 0(22-3 TEAMW 는 팀 표기 줄 — Lv3 #12 clean·sweep 판정). 펼침 「초록 Lv2 #22」 정정(거짓 소환).
+    · 요일 일곱 · today 회색 통째로(앞 칸 화면 0). today 의 to 는 쪼개 보이지 않는다(전치사 to 미도입 — §4-4) · Thursday 의 th 표기 0 · Wednesday 의 d 짚기 0.
+  ★그림 = 같은 타일(.dyp — Lv3 #6 .anp 와 같은 기하). 요일 = 일곱 칸 띠(월요일 시작)에서 그 칸만 켜짐 + 한글 첫 글자 — 이모지 0(1:1 그림 없는 재료 · Lv3 #12 rug 판정 계승).
+    토 파랑 · 일 빨강(우리 달력 관습) · today = 띠의 한 칸 동그라미 + 👆 · week = Lv2 #22 일곱 칸 그림(.wk 줄 그대로) · day = 📅(Lv2 #20 실물).
+  ★뒷면 문장 = be · I like · We play(규약 §4-3 — 3인칭 + 일반동사 0) · days = #2 여럿 · seven Lv2 #28 · good Lv1 #15.
+  ★여럿 0 — 요일·today·week 여럿 꼴은 화면·소리 어디에도 만들지 않는다(days 는 week 뒷면 문장 한 자리).
+  ★혼동 짝 = 10단어 전부 — ★Tuesday↔Thursday(둘째 / 넷째) · ★Saturday↔Sunday(파랑 / 빨강) · Monday↔Wednesday · Friday→Saturday(마지막 등교일 / 첫 주말) · today→day · week↔day(일곱 칸 / 하루). */
+const VA=[
+  {w:'Monday',   ko:'월요일', k:'school', n:1, c:'월', b:'whole'},
+  {w:'Tuesday',  ko:'화요일', k:'school', n:2, c:'화', b:'whole'},
+  {w:'Wednesday',ko:'수요일', k:'school', n:3, c:'수', b:'whole'},
+  {w:'Thursday', ko:'목요일', k:'school', n:4, c:'목', b:'whole'},
+  {w:'Friday',   ko:'금요일', k:'school', n:5, c:'금', b:'whole'},
+  {w:'Saturday', ko:'토요일', k:'end',    n:6, c:'토', b:'whole'},
+  {w:'Sunday',   ko:'일요일', k:'end',    n:7, c:'일', b:'whole'},
+  {w:'today',    ko:'오늘',   k:'end',    b:'whole'},
+  {w:'week',     ko:'일주일', k:'end',    b:'rule', r:'ee'},
+  {w:'day',      ko:'하루',   k:'end',    b:'old',  f:'Lv2 #19'}
+];
+const VB=w=>VA.find(x=>x.w===w);
+const VWS=VA.map(x=>x.w);
+const DAYS7=VWS.slice(0,7);                                             /* 일곱 요일(월요일 시작) */
+const SCHOOLW=['Monday','Tuesday','Wednesday','Thursday','Friday'];    /* 등교 판(펼침) */
+const ENDW=['Saturday','Sunday','today','week','day'];                 /* 주말·묶음 판(펼침) */
+const CONFUSE={Tuesday:'Thursday',Thursday:'Tuesday',Saturday:'Sunday',Sunday:'Saturday',Monday:'Wednesday',Wednesday:'Monday',Friday:'Saturday',today:'day',week:'day',day:'week'};
+/* 짝을 가르는 한 줄 — 오답 피드백·보충 대조 공통(소리 0 · 글자만 · 한국어로) */
+const TIP={
+  Monday:'<b>첫째</b> 칸 「월」 — 월요일이에요!',     Tuesday:'<b>둘째</b> 칸 「화」 — 화요일이에요!',
+  Wednesday:'<b>셋째</b> 칸 「수」 — 수요일이에요!',   Thursday:'<b>넷째</b> 칸 「목」 — 목요일이에요!',
+  Friday:'<b>다섯째</b> 칸 「금」 — 학교 가는 마지막 날, 금요일!',
+  Saturday:'<b>파란</b> 칸 「토」 — 토요일이에요!',    Sunday:'<b>빨간</b> 칸 「일」 — 일요일이에요!',
+  today:'👆 손가락이 짚은 <b>오늘</b> — 오늘이에요!',   week:'<b>일곱 칸</b>을 다 묶으면 — 일주일이에요!',
+  day:'📅 <b>하루</b> — 날 하나예요!'
+};
+/* 그림 — 단일 원천. 요일 = 일곱 칸 띠 + 그 칸 켜짐 + 한글 첫 글자 · week = Lv2 #22 일곱 칸 그림 그대로(WK) · day = 📅 */
+const WK='<span class="wk"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>';
+function strip(n,ring){
+  let s='<b class="cal">';
+  for(let i=1;i<=7;i++)s+='<i class="c'+i+(i===n?' on':'')+(i===ring?' rg':'')+'"></i>';
+  return s+'</b>';
+}
+function pin(w){
+  const x=VB(w);
+  if(x.n)return strip(x.n)+'<i class="kd d'+x.n+'">'+x.c+'</i>';
+  if(w==='today')return strip(0,3)+'<i class="fg">👆</i>';
+  if(w==='week')return WK;
+  return '<i class="em">📅</i>';
+}
+function pic(w){return '<span class="dyp p-'+w+'" data-dyp="'+w+'">'+pin(w)+'</span>';}
+function pz(w,k){return '<span class="dyz" style="width:'+Math.round(80*k)+'px;height:'+Math.round(64*k)+'px"><span class="dyp p-'+w+'" data-dyp="'+w+'" style="transform:scale('+k+')">'+pin(w)+'</span></span>';}
+/* 철자 — 맨글자(새 표기 0) · 요일의 day 꼬리·첫 큰 글자 표기는 원리 슬라이드 한 자리에만(tail) */
+const SPELL={};VWS.forEach(w=>{SPELL[w]='<span class="tw">'+w+'</span>';});
+function tail(w){return '<span class="tw"><b class="cap">'+w.charAt(0)+'</b>'+w.slice(1,-3)+'<u class="dy">day</u></span>';}
+/* 배지 카드 속성 — class + data */
+function bdg(w){
+  const x=VB(w);
+  if(x.b==='old')return 'isold" data-from="'+x.f;
+  if(x.b==='rule')return 'isrule" data-rule="'+x.r;
+  return 'iswhole';
+}
+/* 뒷면 문장 — 펼침 열(바른 꼴만) · 오늘 단어는 노란 바탕 */
+const SB={Monday:'It is Monday.',Tuesday:'It is Tuesday.',Wednesday:'It is Wednesday.',Thursday:'I like Thursday.',Friday:'Today is Friday!',
+  Saturday:'It is Saturday. We play!',Sunday:'I like Sunday.',today:'Today is Monday.',week:'A week is seven days.',day:'It is a good day.'};
+function sent(w){return SB[w];}
+function sline(w){return '<span class="sline">'+SB[w].replace(/[A-Za-z]+/g,t=>t.toLowerCase()===w.toLowerCase()?'<b class="swt">'+t+'</b>':t)+'</span>';}
+/* 일곱 칸 달력 한 장 — 월요일 시작 · 칸마다 따로 눌린다. 칸 = 한글 첫 글자만(영어 0).
+   mode='find' = 짚으면 이름표 · 'q' = 문항 선택지(정답 = 칸 번호 0~6) · 'pick' = 오늘 짚기(동그라미) */
+function wcal(mode){
+  return '<div class="wcal">'+DAYS7.map((w,i)=>{
+    const x=VB(w),face='<span class="ck d'+x.n+'">'+x.c+'</span>';
+    return mode==='q'
+      ?'<button class="choice-btn cell c'+x.n+'" onclick="answer(this,'+i+')">'+face+'</button>'
+      :'<div class="cell c'+x.n+'" data-w="'+w+'">'+face+'<span class="tag"></span></div>';
+  }).join('')+'</div>';
+}
+/*DAY320-END*/
+/* ── Lv3 20-3 숙달 (펼침 20_3) ──
+   ★S2 일주일 기차 = 손활동(진단 미적립) — 요일 카드 일곱(글자만 · 섞음)을 기차 칸(월→일 · 칸 얼굴 = 번호 + 한글 첫 글자)에 왼쪽부터 꽂는다.
+     지금 칸에 맞지 않는 카드는 튕김 + 소리 0(꽂히는 동안도 소리 0). 일곱 칸이 다 차면 기차가 달리며 일곱 요일을 차례로 낭독(칸이 하나씩 켜짐)
+     → Ben 🧒(이불 속) `I don't like Monday.` · Max 👦 `I like it!`(칸마다 급식 그림만 바뀐다 — 먹보) 장면 — 문항 근거 0 · 바른 문장만 낭독. 완주 = +10.
+   ★섞어 6 = 듣고 그림 4(4지) + 소리 없이 그림→단어 2(3지) — 10단어 중 겹치지 않게 6개 · 오답 첫 자리에 혼동 짝.
+     게이트② = 이 6문항 첫 시도 4↑(6중 4 · 규약 §2) → KProgress.light('lv3-20').
+   ★소리 = KTTS.word(단어) + 기차 장면 바른 문장 둘(KTTS.sentence) · 오답 때 소리 0 · 낱소리·조각 0. 타이머 없음(계약 §8). */
+const WRONG_AT={};
+let firstTryOK=0;
+document.getElementById('recall').innerHTML=VWS.map(w=>'<div class="wcard" data-word="'+w+'"><span class="fe">'+pz(w,.62)+'</span>'+w+'<span class="ko">'+VB(w).ko+'</span></div>').join('');
+/* 혼동 짝을 오답 첫 자리에 — 나머지는 무작위 */
+function distractOf(word,n){
+  const rest=VWS.filter(w=>w!==word&&w!==CONFUSE[word]).sort(()=>Math.random()-.5);
+  return [CONFUSE[word]].concat(rest.slice(0,n-1)).sort(()=>Math.random()-.5);
+}
+/* S2 일주일 기차 손활동 */
+const MENU20=['🍚','🥣','🍕','🥗','🍞','🍪','🍗'];   /* 급식 그림 — Lv1 #2 · Lv3 #16 실물(글자 0) */
+const SCENE20=["I don't like Monday.",'I like it!'];
+(function(){
+  const train=document.getElementById('train'),cards=document.getElementById('trainCards'),scene=document.getElementById('weekScene');
+  let cur=0,stage='build';
+  train.innerHTML='<span class="eng">🚂</span>'+DAYS7.map((w,i)=>{const x=VB(w);
+    return '<div class="car" data-i="'+i+'"><span class="no">'+(i+1)+'</span><span class="kc d'+x.n+'">'+x.c+'</span><span class="cw">___</span><span class="food">'+MENU20[i]+'</span></div>';}).join('');
+  cards.innerHTML=DAYS7.slice().sort(()=>Math.random()-.5).map(w=>'<div class="chip" data-t="'+w+'">'+w+'</div>').join('');
+  const cars=[...train.querySelectorAll('.car')];
+  function mark(){cars.forEach((c,i)=>c.classList.toggle('now',i===cur&&stage==='build'));}
+  mark();
+  cards.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+    if(stage!=='build'||c.classList.contains('used'))return;
+    playClick();
+    const w=c.dataset.t;
+    if(w===DAYS7[cur]){
+      const car=cars[cur];
+      car.querySelector('.cw').textContent=w;car.classList.add('filled');
+      c.classList.add('used');cur++;mark();
+      if(cur<7){setFB('fb2','✅ <b>'+w+'</b> — 다음 <b>'+(cur+1)+'번 칸 「'+VB(DAYS7[cur]).c+'」</b>!',true);return;}
+      stage='run';mark();playCorrect();
+      setFB('fb2','🚂 일곱 칸이 다 찼어요 — 기차가 달려요!',true);
+      train.classList.add('run');
+      let p=Promise.resolve();
+      DAYS7.forEach((d,i)=>{p=p.then(()=>{cars.forEach((x,j)=>x.classList.toggle('lit',j===i));return KTTS.word(d);});});
+      p.then(()=>{
+        cars.forEach(x=>x.classList.remove('lit'));
+        train.classList.add('fed');scene.classList.add('on');
+        return KTTS.sentence(SCENE20[0]);
+      }).then(()=>KTTS.sentence(SCENE20[1])).then(()=>{
+        stage='done';
+        if(!answered[2]){answered[2]=true;addScore(10);}
+        setFB('fb2','🎉 일주일 기차 완성 — 월요일부터 일요일까지 일곱 날! Ben 은 월요일이 싫고, Max 는 날마다 급식이 좋아요 +10점',true);
+      });
+    }else{
+      c.classList.add('wrong');playWrong();
+      setFB('fb2',samMsg()+' 지금 깜빡이는 칸은 <b>'+(cur+1)+'번째 「'+VB(DAYS7[cur]).c+'」</b> — 그 요일 카드를 찾아요!',false);
+      setTimeout(()=>c.classList.remove('wrong'),450);
+    }
+  }));
+  scene.querySelectorAll('.bub').forEach(b=>b.addEventListener('click',()=>{playClick();b.classList.add('tapped');KTTS.sentence(b.dataset.say);}));
+})();
+
+/* ── 출제 — 그림→단어 둘을 먼저 뽑고, 남은 여덟 중 넷을 듣기로 ── */
+const QP=VWS.slice().sort(()=>Math.random()-.5).slice(0,2);
+const QL=VWS.filter(w=>QP.indexOf(w)<0).sort(()=>Math.random()-.5).slice(0,4);
+function buildL(slideIdx,word){
+  const slide=document.querySelectorAll('.slide')[slideIdx];
+  const correct=+slide.dataset.correct;
+  const arr=distractOf(word,3);arr.splice(correct,0,word);
+  document.getElementById('ch'+slideIdx).innerHTML=
+    arr.map((w,i)=>'<button class="choice-btn pic-btn" onclick="answer(this,'+i+')">'+pz(w,.9)+'</button>').join('');
+  document.getElementById('lb'+slideIdx).onclick=()=>{playClick();KTTS.word(word,{natural:true});};
+  slide.dataset.word=word;
+}
+function buildP(slideIdx,word){
+  const slide=document.querySelectorAll('.slide')[slideIdx];
+  const correct=+slide.dataset.correct;
+  const arr=distractOf(word,2);arr.splice(correct,0,word);
+  document.getElementById('q'+slideIdx+'pic').innerHTML=pz(word,1.4);
+  document.getElementById('ch'+slideIdx).innerHTML=
+    arr.map((w,i)=>'<button class="choice-btn" onclick="answer(this,'+i+')">'+w+'</button>').join('');
+  slide.dataset.word=word;
+}
+for(let i=0;i<4;i++)buildL(3+i,QL[i]);
+for(let i=0;i<2;i++)buildP(7+i,QP[i]);
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
+  const gated=slide.dataset.gate==='1';
+  const w=slide.dataset.word;
+  playClick();
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);
+    if(gated&&!WRONG_AT[currentSlide])firstTryOK++;
+    KTTS.word(w);
+    setFB('fb'+currentSlide,okMsg(pts)+' — <b>'+w+'</b> '+VB(w).ko,true);
+    answered[currentSlide]=true;
+  }else{
+    btn.classList.add('wrong');playWrong();combo=0;
+    WRONG_AT[currentSlide]=(WRONG_AT[currentSlide]||0)+1;
+    if(WRONG_AT[currentSlide]>=3){
+      setFB('fb'+currentSlide,'정답은 <b>'+w+'</b> ('+VB(w).ko+') — 다시 한 번 담아요!',false);
+    }else if(WRONG_AT[currentSlide]===2){
+      setFB('fb'+currentSlide,'힌트 💡 짝이 숨어 있어요 — Tuesday·Thursday(둘째·넷째 칸) · Saturday·Sunday(파랑·빨강) · Monday·Wednesday(첫째·셋째 칸) · Friday·Saturday · today·day · week·day(일곱 칸·하루)!',false);
+    }else{
+      setFB('fb'+currentSlide,samMsg(),false);
+    }
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+/* ── 게이트② — 6문항 중 첫 시도 4↑ 통과. 미통과 = 20-2 되돌림 ── */
+function finish(){
+  document.getElementById('finalScore').textContent=score;
+  const pass=firstTryOK>=4;
+  document.getElementById('resultStars').textContent=firstTryOK>=6?'⭐⭐⭐⭐⭐':firstTryOK>=4?'⭐⭐⭐⭐':'⭐⭐⭐';
+  const t=document.getElementById('gateText'),b=document.getElementById('gateBtn');
+  if(pass){
+    document.getElementById('resultEmoji').textContent='🏆';
+    document.getElementById('resultTitle').textContent='통과! Lv3 스무 번째 칸 점등!';
+    document.getElementById('stamp').style.display='inline-block';
+    document.getElementById('wsBtn').style.display='inline-block';
+    try{ if(window.KProgress) KProgress.light('lv3-20'); }catch(e){}
+    try{ if(window.KCollection) KCollection.add(VWS.slice()); }catch(e){}
+    t.innerHTML='오늘 손에 넣은 것 🏆<br>① <span class="hl">Monday · Tuesday · Wednesday</span><br><span class="hl">Thursday · Friday · Saturday · Sunday</span><br>그리고 <span class="hl">today · week · day</span><br>② 요일은 모두 <b>day</b> 로 끝나고 <b>큰 글자</b>로 시작 — 일주일 기차를 채웠어요 🎉<br>다음은 <b>#21</b> — 학교 규칙 단어예요!';
+    b.textContent='▶ 사다리에서 다음 칸';
+    b.onclick=()=>location.href='../index.html';
+  }else{
+    document.getElementById('resultEmoji').textContent='💪';
+    document.getElementById('resultTitle').textContent='조금만 더!';
+    t.innerHTML='한 번에 맞힌 게 <b>'+firstTryOK+' / 6</b>이에요.<br>연습을 한 번 더 하고 오면 <span class="hl">훨씬 쉬워져요</span>!';
+    b.textContent='↩ 연습 한 번 더';
+    b.onclick=()=>location.href='20_2_days1_practice.html';
+  }
+}
+
+/* 통단어 카드 탭 = KTTS.word (V트랙 관용) */
+document.getElementById('slidesContainer').addEventListener('click',e=>{
+  if(justUnlocked)return;
+  const w=e.target.closest('[data-word]');
+  if(!w||w.classList.contains('slide'))return;
+  const host=w.classList.contains('step')?w:w.closest('.step');
+  if(host&&host.classList.contains('in')&&w.dataset.word)KTTS.word(w.dataset.word);
+});
+
+let tx=0,ty=0;
+const sc=document.getElementById('slidesContainer');
+sc.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;});
+sc.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){d_swipe(dx);return;}
+});
+function d_swipe(dx){dx>0?prevSlide():nextSlide();}
+sc.addEventListener('click',e=>{
+  if(justUnlocked)return;
+  const w=e.target.closest('[data-sound]');
+  if(!w)return;
+  const host=w.classList.contains('step')?w:w.closest('.step');
+  if(!host||host.classList.contains('in'))KTTS.sound(w.dataset.sound);
+});
+updateUI();
+setupSlide(document.querySelectorAll('.slide')[0],0);
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
