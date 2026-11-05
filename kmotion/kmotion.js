@@ -365,7 +365,9 @@
     // 사람 고르기: 1명이면 그대로, ownerLock 이면 직전 주인(어깨 중심)에 가장 가까운 사람
     function pickPose(list){ if (!list || !list.length) { return null; } if (!ownerLock || list.length === 1) { const p = toPx(list[0]); if (ownerLock) owner = mid(p[11], p[12]); return p; }
       const all = list.map(toPx); let best = 0;
-      if (owner) { let bd = Infinity; all.forEach((p, i) => { const d = dist(mid(p[11], p[12]), owner); if (d < bd) { bd = d; best = i; } }); }
+      if (owner) { let bd = Infinity; all.forEach((p, i) => { const d = dist(mid(p[11], p[12]), owner); if (d < bd) { bd = d; best = i; } });
+        // 주인보다 어깨가 1.5배 넘게 넓은(훨씬 가까이 선) 사람이 나타나면 그 사람으로 바꾼다 — 앉은 아이들 사이에 선 아이 우선
+        const ow = dist(all[best][11], all[best][12]); let bw = ow, bi = best; all.forEach((p, i) => { const w = dist(p[11], p[12]); if (w > bw * 1.5) { bw = w; bi = i; } }); best = bi; }
       else { let bw = -1; all.forEach((p, i) => { const w = dist(p[11], p[12]); if (w > bw) { bw = w; best = i; } }); } // 처음엔 가장 가까운(어깨 넓은) 사람
       owner = mid(all[best][11], all[best][12]); return all[best]; }
     km.resetOwner = () => { owner = null; return km; };
@@ -445,7 +447,7 @@
     // ── 카메라 고르기(웹캠·전자칠판 캠) — localStorage 'kmotion.camId', 모든 케이모션에 같이 적용
     const CAM_KEY = 'kmotion.camId';
     function savedCam(){ try { return localStorage.getItem(CAM_KEY) || ''; } catch (_) { return ''; } }
-    async function openCamera(id){ id = id == null ? savedCam() : id; const base = { width: W, height: H };
+    async function openCamera(id){ id = id == null ? savedCam() : id; const base = { width: { ideal: 1280 }, height: { ideal: 720 } };   // 원본은 크게 받아 두고(범위 확대 때 세부가 남게) 처리 캔버스로 줄인다
       const tryOpen = async c => { if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = await navigator.mediaDevices.getUserMedia({ video: c, audio: false }); await video.play(); };
       if (id) { try { await tryOpen(Object.assign({ deviceId: { exact: id } }, base)); km.camId = id; return; } catch (_) { /* 저장된 카메라가 없으면 기본으로 */ } }
       await tryOpen(Object.assign({ facingMode: 'user' }, base)); try { km.camId = video.srcObject.getVideoTracks()[0].getSettings().deviceId || ''; } catch (_) { km.camId = ''; } }

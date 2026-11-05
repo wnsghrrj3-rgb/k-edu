@@ -8,7 +8,7 @@
 const $ = id => document.getElementById(id);
 const stage = $('stage'), ctx = stage.getContext('2d'); const W = stage.width, H = stage.height;
 const MODE_KEY = 'kmotion.inputMode'; let MODE = (() => { try { return localStorage.getItem(MODE_KEY) === 'body' ? 'body' : 'hand'; } catch (_) { return 'hand'; } })();
-const km = KMotion.create({ video: $('v'), canvas: $('c'), modes: ['hands', 'pose'], active: [MODE === 'body' ? 'pose' : 'hands'], numHands: 2, activity: 'balloon', inferEvery: 1 });
+const km = KMotion.create({ video: $('v'), canvas: $('c'), modes: ['hands', 'pose'], active: [MODE === 'body' ? 'pose' : 'hands'], numHands: 2, numPoses: 3, ownerLock: true, activity: 'balloon', inferEvery: 1 });
 function setMode(m){ MODE = m; try { localStorage.setItem(MODE_KEY, m); } catch (_) {} km.setActive('hands', m === 'hand'); km.setActive('pose', m === 'body'); [...$('optM').children].forEach(x => x.classList.toggle('on', x.dataset.m === m)); }
 const BIG = () => MODE === 'body' ? 1.45 : 1;   // 몸 모드(전자칠판 캠)는 손목이 거칠어서 풍선·과녁을 키운다
 const CW = $('c').width, CH = $('c').height;
