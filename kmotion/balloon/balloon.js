@@ -47,7 +47,10 @@ function popBalloon(b){ b.alive = false; pop(); S.popped++; if (b.kind === 'loos
 
 // ── 손 → 손가락 끝
 function readHands(f){ S.hands = [];
-  if (MODE === 'body') { if (f.pose) [15, 16].forEach((k, i) => { const p = f.pose[k]; if (p && p.v > .4) S.hands.push({ x: p.x / CW * W, y: p.y / CH * H, i }); }); }
+  if (MODE === 'body') { if (f.pose) { const ls = f.pose[11], rs = f.pose[12]; if (ls.v > .4 && rs.v > .4) { const mx = (ls.x + rs.x) / 2, my = (ls.y + rs.y) / 2, sw = Math.max(8, Math.hypot(ls.x - rs.x, ls.y - rs.y)), reach = sw * 2.4;
+    // 멀리서 작게 보여도 되게: 손목 위치를 「몸 기준」으로 잰다 — 팔을 뻗으면 화면 끝까지 간다
+    [15, 16].forEach((k, i) => { const p = f.pose[k]; if (!p || p.v < .4) return; const rx = Math.max(-1, Math.min(1, (p.x - mx) / reach)), ry = Math.max(-1, Math.min(1, (p.y - my) / reach));
+      S.hands.push({ x: W / 2 + rx * W * .5, y: H * .55 + ry * H * .55, i }); }); } } }
   else f.hands.forEach((h, i) => { const a = f.actions.hands[i]; if (!a) return; S.hands.push({ x: a.pointer.x / CW * W, y: a.pointer.y / CH * H, i }); });
   if (km.mouse) S.hands = [{ x: S.mouse.x, y: S.mouse.y, i: 0 }]; }
 stage.addEventListener('pointermove', e => { const r = stage.getBoundingClientRect(); S.mouse.x = (e.clientX - r.left) / r.width * W; S.mouse.y = (e.clientY - r.top) / r.height * H; });
