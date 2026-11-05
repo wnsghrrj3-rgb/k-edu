@@ -7,7 +7,10 @@
  */
 const $ = id => document.getElementById(id);
 const stage = $('stage'), ctx = stage.getContext('2d'); const W = stage.width, H = stage.height;
-const km = KMotion.create({ video: $('v'), canvas: $('c'), modes: ['hands'], numHands: 2, activity: 'balloon', inferEvery: 1 });
+const MODE_KEY = 'kmotion.inputMode'; let MODE = (() => { try { return localStorage.getItem(MODE_KEY) === 'body' ? 'body' : 'hand'; } catch (_) { return 'hand'; } })();
+const km = KMotion.create({ video: $('v'), canvas: $('c'), modes: ['hands', 'pose'], active: [MODE === 'body' ? 'pose' : 'hands'], numHands: 2, activity: 'balloon', inferEvery: 1 });
+function setMode(m){ MODE = m; try { localStorage.setItem(MODE_KEY, m); } catch (_) {} km.setActive('hands', m === 'hand'); km.setActive('pose', m === 'body'); [...$('optM').children].forEach(x => x.classList.toggle('on', x.dataset.m === m)); }
+const BIG = () => MODE === 'body' ? 1.45 : 1;   // 몸 모드(전자칠판 캠)는 손목이 거칠어서 풍선·과녁을 키운다
 const CW = $('c').width, CH = $('c').height;
 
 // ── 소리(합성)
@@ -24,14 +27,14 @@ function makeProblems(n){ const all = []; for (let a = 11; a <= 18; a++) for (le
 const COLORS = ['#ff5c7a', '#ffd35c', '#5cf2a4', '#4de1ff', '#c58bff', '#ff9d5c'];
 const R = 36;
 const S = { on: false, phase: 'idle', probs: [], pi: 0, a: 0, b: 0, score: 0, balloons: [], knot: null, tied: true, popped: 0, popLoose: 0, popBundle: 0, hands: [], bits: [], msgT: 0, countI: 0, countT: 0, nextT: 0, hover: { t: 0, hand: -1 }, mouse: { x: -999, y: -999 }, opts: [], t0: 0, limit: 30, wrong: 0 };
-const BX = 180, BY = 190, GAP = 84; const UNTIE = .4, PRESS = .4;   // 묶음 틀 왼쪽 위
-function newBalloon(x, y, kind, i){ return { x, y, tx: x, ty: y, kind, col: COLORS[(kind === 'loose' ? 3 + i : i) % COLORS.length], alive: true, phase: Math.random() * 6.28, r: R, idx: i, pt: 0 }; }
+const BX = 180, BY = 230, GAP = 84; const UNTIE = .4, PRESS = .4;   // 묶음 틀 왼쪽 위
+function newBalloon(x, y, kind, i){ return { x, y, tx: x, ty: y, kind, col: COLORS[(kind === 'loose' ? 3 + i : i) % COLORS.length], alive: true, phase: Math.random() * 6.28, r: R * BIG(), idx: i, pt: 0 }; }
 function setProblem(){ if (S.pi >= S.probs.length) { S.probs = S.probs.concat(makeProblems(99)); } const [a, b] = S.probs[S.pi]; S.opts = []; S.a = a; S.b = b; S.balloons = []; S.tied = true; S.popped = 0; S.popLoose = 0; S.popBundle = 0; S.bits = []; S.phase = 'play'; S.hover = { t: 0, hand: -1 }; S.countI = 0;
   for (let i = 0; i < 10; i++) S.balloons.push(newBalloon(BX + (i % 5) * GAP, BY + (i / 5 | 0) * GAP, 'bundle', i));
-  S.knot = { x: BX + 2 * GAP, y: BY + GAP + 150 };
-  const ones = a - 10; for (let i = 0; i < ones; i++) { const x = 760 + (i % 4) * 110, y = 200 + (i / 4 | 0) * 120 + (i % 2) * 20; S.balloons.push(newBalloon(x, y, 'loose', i)); }
+  S.knot = { x: BX + 2 * GAP, y: BY + GAP + 140 };
+  const ones = a - 10; for (let i = 0; i < ones; i++) { const x = 760 + (i % 4) * 115, y = 260 + (i / 4 | 0) * 125 + (i % 2) * 20; S.balloons.push(newBalloon(x, y, 'loose', i)); }
   $('hNo').textContent = `${S.pi + 1}`; S.msgT = performance.now(); }
-function makeOpts(){ const ans = S.a - S.b; const set = new Set([ans]); const cand = [ans - 1, ans + 1, ans - 2, ans + 2, ans + 3].filter(v => v >= 1 && v <= 9); while (set.size < 3 && cand.length) set.add(cand.splice(Math.random() * cand.length | 0, 1)[0]); const arr = [...set].sort(() => Math.random() - .5); S.opts = arr.map((v, i) => ({ v, x: W / 2 + (i - 1) * 240, y: 590, r: 58, col: COLORS[(i + 1) % COLORS.length], t: 0, dead: false, shake: 0 })); }
+function makeOpts(){ const ans = S.a - S.b; const set = new Set([ans]); const cand = [ans - 1, ans + 1, ans - 2, ans + 2, ans + 3].filter(v => v >= 1 && v <= 9); while (set.size < 3 && cand.length) set.add(cand.splice(Math.random() * cand.length | 0, 1)[0]); const arr = [...set].sort(() => Math.random() - .5); S.opts = arr.map((v, i) => ({ v, x: W / 2 + (i - 1) * 250, y: 590, r: 58 * BIG(), col: COLORS[(i + 1) % COLORS.length], t: 0, dead: false, shake: 0 })); }
 function untie(){ S.tied = false; untieSound(); const bundle = S.balloons.filter(b => b.kind === 'bundle');
   // 10개를 왼쪽 넓은 자리에 흩뿌린다(손에서 먼 쪽 우선)
   const spots = []; for (let i = 0; i < 10; i++) spots.push({ x: 110 + (i % 5) * 120 + (Math.random() - .5) * 30, y: 150 + (i / 5 | 0) * 200 + (Math.random() - .5) * 50 });
@@ -40,10 +43,12 @@ function untie(){ S.tied = false; untieSound(); const bundle = S.balloons.filter
 function popBalloon(b){ b.alive = false; pop(); S.popped++; if (b.kind === 'loose') S.popLoose++; else S.popBundle++;
   for (let i = 0; i < 14; i++) { const an = Math.random() * 6.28, sp = 200 + Math.random() * 400; S.bits.push({ kind: 'dot', x: b.x, y: b.y, vx: Math.cos(an) * sp, vy: Math.sin(an) * sp, a: 1, c: b.col }); }
   S.bits.push({ kind: 'text', x: b.x, y: b.y - 50, txt: `${S.popped}`, a: 1.2, c: '#fff' });
-  if (S.popped >= S.b) { S.phase = 'answer'; tone(880, .2, 'sine', .2); const left = S.balloons.filter(x => x.alive); left.forEach((x, i) => { x.tx = W / 2 - (left.length - 1) * 48 + i * 96; x.ty = 300; x.free = false; }); makeOpts(); } }
+  if (S.popped >= S.b) { S.phase = 'answer'; tone(880, .2, 'sine', .2); const left = S.balloons.filter(x => x.alive); left.forEach((x, i) => { x.tx = W / 2 - (left.length - 1) * 48 + i * 96; x.ty = 330; x.free = false; }); makeOpts(); } }
 
 // ── 손 → 손가락 끝
-function readHands(f){ S.hands = []; f.hands.forEach((h, i) => { const a = f.actions.hands[i]; if (!a) return; S.hands.push({ x: a.pointer.x / CW * W, y: a.pointer.y / CH * H, i }); });
+function readHands(f){ S.hands = [];
+  if (MODE === 'body') { if (f.pose) [15, 16].forEach((k, i) => { const p = f.pose[k]; if (p && p.v > .4) S.hands.push({ x: p.x / CW * W, y: p.y / CH * H, i }); }); }
+  else f.hands.forEach((h, i) => { const a = f.actions.hands[i]; if (!a) return; S.hands.push({ x: a.pointer.x / CW * W, y: a.pointer.y / CH * H, i }); });
   if (km.mouse) S.hands = [{ x: S.mouse.x, y: S.mouse.y, i: 0 }]; }
 stage.addEventListener('pointermove', e => { const r = stage.getBoundingClientRect(); S.mouse.x = (e.clientX - r.left) / r.width * W; S.mouse.y = (e.clientY - r.top) / r.height * H; });
 
@@ -57,7 +62,7 @@ function update(dt, t){
     let hovering = false;
     for (const h of S.hands) {
       // 매듭 풀기(0.5초 대기)
-      if (S.tied && Math.hypot(h.x - S.knot.x, h.y - S.knot.y) < 60) { hovering = true; S.hover.t += dt; if (S.hover.t >= UNTIE) untie(); }
+      if (S.tied && Math.hypot(h.x - S.knot.x, h.y - S.knot.y) < 60 * BIG()) { hovering = true; S.hover.t += dt; if (S.hover.t >= UNTIE) untie(); }
       // 풍선 터뜨리기
       for (const b of S.balloons) { if (!b.alive || (b.kind === 'bundle' && S.tied)) continue; const bob = Math.sin(b.phase) * 6; if (Math.hypot(h.x - b.x, h.y - (b.y + bob)) < b.r + 6) { popBalloon(b); if (S.phase !== 'play') break; } }
       if (S.phase !== 'play') break; }
@@ -96,7 +101,7 @@ function draw(t){
     const k = S.knot, p = S.hover.t / UNTIE; ctx.fillStyle = '#ffd35c'; ctx.beginPath(); ctx.arc(k.x, k.y, 22, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#2a1a00'; ctx.font = '900 20px sans-serif'; ctx.fillText('끈', k.x, k.y);
     ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(k.x, k.y, 40, 0, Math.PI * 2); ctx.stroke(); if (p > 0) { ctx.strokeStyle = '#5cf2a4'; ctx.beginPath(); ctx.arc(k.x, k.y, 40, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2); ctx.stroke(); }
     ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.font = '700 20px sans-serif'; ctx.fillText('손을 대면 10이 풀려요', k.x, k.y + 72); }
-  if (S.phase === 'play') { const ones = S.a - 10; if (ones) { ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.font = '800 22px sans-serif'; ctx.fillText(`낱개 ${ones}개`, 760 + Math.min(ones, 4) * 55 - 55, 130); } }
+  if (S.phase === 'play') { const ones = S.a - 10; if (ones) { ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.font = '800 22px sans-serif'; ctx.fillText(`낱개 ${ones}개`, 760 + Math.min(ones, 4) * 57 - 57, 190); } }
   for (const b of S.balloons) if (b.alive) drawBalloon(b, b.kind === 'bundle' && S.tied);
   // 답 고르기
   if (S.phase === 'answer' || S.phase === 'done') for (const o of S.opts) { if (o.dead) continue; const sx = Math.sin(performance.now() / 30) * o.shake; ctx.save(); ctx.translate(o.x + sx, o.y);
@@ -106,14 +111,15 @@ function draw(t){
   for (const p of S.bits) { ctx.globalAlpha = Math.min(1, p.a); if (p.kind === 'dot') { ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2); ctx.fill(); } else { ctx.fillStyle = p.c; ctx.font = '900 40px sans-serif'; ctx.fillText(p.txt, p.x, p.y); } ctx.globalAlpha = 1; }
   // 손가락 = 바늘
   for (const h of S.hands) { ctx.save(); ctx.translate(h.x, h.y); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(18, 34); ctx.stroke(); ctx.fillStyle = '#4de1ff'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = 'rgba(77,225,255,.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); }
-  if (!S.hands.length && !km.mouse) { ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.font = '900 30px sans-serif'; ctx.fillText('손을 카메라에 보여 주세요', W / 2, H - 60); }
+  if (!S.hands.length && !km.mouse) { ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.font = '900 30px sans-serif'; ctx.fillText(MODE === 'body' ? '몸 전체가 카메라에 보이게 서 주세요' : '손을 카메라에 보여 주세요', W / 2, H - 60); }
 }
 
 // ── 루프
 let last = 0;
-km.onFrame = f => { km.drawCamera(); f.hands.forEach(h => km.drawSkeleton(h, km.HAND_BONES, 'rgba(77,225,255,.8)', 3)); if (S.on) readHands(f); };
+km.onFrame = f => { km.drawCamera(); f.hands.forEach(h => km.drawSkeleton(h, km.HAND_BONES, 'rgba(77,225,255,.8)', 3)); if (f.pose) km.drawSkeleton(f.pose, km.POSE_BONES, 'rgba(255,211,92,.8)', 4); if (S.on) readHands(f); };
 km.onStatus = s => { $('camSt').textContent = s || (km.mouse ? '마우스 모드' : '카메라 연결됨'); };
 function loop(t){ requestAnimationFrame(loop); const dt = last ? Math.min(.05, (t - last) / 1000) : 0; last = t; if (!S.on) return; update(dt, t); draw(t); $('hTime').textContent = Math.max(0, Math.ceil(S.limit - (t - S.t0) / 1000)); }
+$('optM').onclick = e => { const b = e.target.closest('button'); if (b) setMode(b.dataset.m); }; setMode(MODE);
 let N = 30; $('optN').onclick = e => { const b = e.target.closest('button'); if (!b) return; N = +b.dataset.n; [...$('optN').children].forEach(x => x.classList.toggle('on', x === b)); };
 async function start(){ audio(); $('msg').textContent = '카메라 여는 중…'; try { if (!km.running) await km.start(); } catch (e) { $('msg').textContent = '카메라를 열 수 없어요: ' + e.message; return; }
   S.limit = N; S.probs = makeProblems(99); S.pi = 0; S.score = 0; S.wrong = 0; $('hScore').textContent = 0; setProblem(); S.t0 = performance.now(); S.on = true; $('ov').classList.add('hidden'); }
