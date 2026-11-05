@@ -208,6 +208,7 @@
     km.openRangeUI = function(onClose){ if (km._rangeUI) return; const before = { ...range }; let cur = { ...range };
       const el = document.createElement('div'); km._rangeUI = el; el.setAttribute('style', 'position:fixed;inset:0;z-index:99999;background:rgba(5,4,18,.94);color:#fff;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;padding:10px 12px 16px;box-sizing:border-box;overflow:auto;-webkit-overflow-scrolling:touch');
       el.innerHTML = `<div style="display:flex;align-items:center;gap:12px;width:min(92vw,760px);justify-content:space-between"><div style="font-size:1.2rem;font-weight:900">📷 카메라 범위</div><div style="display:flex;gap:8px"><button data-a="save" style="padding:9px 18px;border-radius:12px;border:0;background:#5ef2c8;color:#0b1020;font-weight:900;font-size:1rem;cursor:pointer">저장</button><button data-a="cancel" style="padding:9px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;font-size:1rem;cursor:pointer">닫기</button></div></div>
+        <div data-cams style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;font-size:.95rem"><span>카메라</span><select data-cam style="padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.35);background:#141d33;color:#fff;font-size:.95rem;max-width:min(80vw,460px)"></select></div>
         <div style="font-size:.85rem;opacity:.8;text-align:center;max-width:720px">상자 안이 게임 화면 전체가 돼요. 아이가 서는 자리가 상자에 꽉 차게 맞춘 뒤 「저장」 — 모든 케이모션에 같이 적용돼요. 화면을 눌러 상자를 옮길 수 있어요.</div>
         <canvas style="width:min(92vw,760px,calc(46vh * 4 / 3));aspect-ratio:4/3;border-radius:14px;background:#000;border:2px solid rgba(255,255,255,.25);touch-action:none;flex:none"></canvas>
         <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
@@ -238,10 +239,12 @@
         rafId = requestAnimationFrame(draw); };
       const close = (save) => { cancelAnimationFrame(rafId); if (save) km.setRange(cur, true); else km.setRange(before, false); el.remove(); km._rangeUI = null; if (onClose) onClose(save ? { ...range } : null); };
       el.querySelector('[data-a=save]').onclick = () => close(true); el.querySelector('[data-a=cancel]').onclick = () => close(false);
+      const sel = el.querySelector('[data-cam]'); km.listCameras().then(cams => { if (cams.length < 2) { el.querySelector('[data-cams]').style.display = 'none'; return; } sel.innerHTML = cams.map(c => `<option value="${c.id}"${c.id === km.camId ? ' selected' : ''}>${c.label}</option>`).join('');
+        sel.onchange = async () => { sel.disabled = true; try { await km.switchCamera(sel.value, true); } catch (_) { sel.value = km.camId; } sel.disabled = false; }; });
       sync(); draw(); };
     /** 캔버스 옆에 「📷 범위」 단추 붙이기(활동이 원하면 opt.rangeButton: false 로 끔) */
     function mountRangeButton(){ if (opt.rangeButton === false || km.mouse || km._rangeBtn) return; const host = canvas.parentElement; if (!host) return; if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
-      const b = document.createElement('button'); km._rangeBtn = b; b.type = 'button'; b.textContent = '📷 범위'; b.title = '카메라 범위 조절(웹캠·전자칠판 캠)'; b.setAttribute('style', 'position:absolute;left:6px;top:6px;z-index:20;padding:4px 9px;border-radius:9px;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.55);color:#fff;font-size:.78rem;cursor:pointer;font-family:inherit;pointer-events:auto');
+      const b = document.createElement('button'); km._rangeBtn = b; b.type = 'button'; b.textContent = '📷 카메라'; b.title = '카메라 고르기·범위 조절(웹캠·전자칠판 캠)'; b.setAttribute('style', 'position:absolute;left:6px;top:6px;z-index:20;padding:4px 9px;border-radius:9px;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.55);color:#fff;font-size:.78rem;cursor:pointer;font-family:inherit;pointer-events:auto');
       b.onclick = e => { e.stopPropagation(); km.openRangeUI(); }; host.appendChild(b); }
 
     // ── 그리기 도우미
@@ -439,10 +442,19 @@
       return p; }
     km.drawMouseHelp = function(){ if (!mouseMode) return; ctx.font = '13px ui-monospace,monospace'; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillText('마우스 모드 · ' + (modes.has('pose') ? '이동=몸·고개  클릭/Space=점프  S=앉기  A/D=기울기  Q/E=손 들기  W=양손  O=팔 벌리기  C=손뼉  Z/X=휙  V=모으기  B=X자' : '이동=손  누르기=집기  F=주먹'), 10, H - 10); };
 
+    // ── 카메라 고르기(웹캠·전자칠판 캠) — localStorage 'kmotion.camId', 모든 케이모션에 같이 적용
+    const CAM_KEY = 'kmotion.camId';
+    function savedCam(){ try { return localStorage.getItem(CAM_KEY) || ''; } catch (_) { return ''; } }
+    async function openCamera(id){ id = id == null ? savedCam() : id; const base = { width: W, height: H };
+      const tryOpen = async c => { if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = await navigator.mediaDevices.getUserMedia({ video: c, audio: false }); await video.play(); };
+      if (id) { try { await tryOpen(Object.assign({ deviceId: { exact: id } }, base)); km.camId = id; return; } catch (_) { /* 저장된 카메라가 없으면 기본으로 */ } }
+      await tryOpen(Object.assign({ facingMode: 'user' }, base)); try { km.camId = video.srcObject.getVideoTracks()[0].getSettings().deviceId || ''; } catch (_) { km.camId = ''; } }
+    km.listCameras = async function(){ try { const ds = await navigator.mediaDevices.enumerateDevices(); return ds.filter(d => d.kind === 'videoinput').map((d, i) => ({ id: d.deviceId, label: d.label || `카메라 ${i + 1}` })); } catch (_) { return []; } };
+    km.switchCamera = async function(id, save){ if (mouseMode) return; await openCamera(id); if (save !== false) try { if (id) localStorage.setItem(CAM_KEY, id); else localStorage.removeItem(CAM_KEY); } catch (_) {} lastVideoTime = -1; km.emit('camera', { id: km.camId }); };
     km.start = async function(){
       if (mouseMode) { status(''); km.running = true; lastVideoTime = -1; km.emit('session:start', { activity: km.activity, modes: [...modes], ua: 'mouse-mode', W, H }); raf = requestAnimationFrame(loop); return; }
       status('카메라 여는 중…');
-      try { video.srcObject = await navigator.mediaDevices.getUserMedia({ video: { width: W, height: H, facingMode: 'user' }, audio: false }); await video.play(); }
+      try { await openCamera(); }
       catch (e) { const err = new Error(e && e.name === 'NotAllowedError' ? '카메라 사용이 허용되지 않았어요. 주소창 왼쪽 자물쇠에서 카메라를 「허용」으로 바꿔 주세요.'
           : e && e.name === 'NotFoundError' ? '이 기기에서 카메라를 찾지 못했어요.' : '카메라를 열 수 없어요. (' + (e && e.name || e) + ')');
         err.cause = e; km.emit('error', { kind: 'camera', message: err.message, score: 0 }); throw err; }
