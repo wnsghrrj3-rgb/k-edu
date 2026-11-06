@@ -66,6 +66,8 @@ h1{font-family:'Gowun Batang',serif;font-size:26px;font-weight:700;margin:0 0 4p
 .mk .opt input[type=radio]{transform:scale(1.2)}
 .mk .lvrow{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px}
 .badge.mine{background:#EBF4FF;color:#3b6fc9;border-color:#c9dcf7}
+.badge.apply{background:#FFF4E5;color:#B5651D;border-color:#F2D3A8}
+.applyTog{display:inline-flex;align-items:center;gap:5px;margin:0;font-size:13px;color:var(--muted);align-self:center;cursor:pointer}
 .cols{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
 @media(max-width:860px){.cols{grid-template-columns:1fr}}
 .panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:18px 20px}
@@ -205,7 +207,13 @@ let SCOPE = null;
 const subjOf = q => SUBJ_MAP[q.subject] || q.subject || '';
 const keyOf = q => `${q.grade}_${q.semester || 1}_${subjOf(q)}`;
 const scopeKey = () => SCOPE ? `${SCOPE.grade}_${SCOPE.sem}_${SCOPE.subj}` : '';
-const inScope = q => keyOf(q) === scopeKey();
+/* 교과서판 2학기(2026-11-06 준호): 교과서대로 다시 지은 세트(tb_…)가 생기면 옛 「비슷하게」 세트는 source_kind
+   lesson_apply·unit_apply = 「응용」. 기본은 숨기고 교과서판만 — 「응용 문항도 보기」를 켜면 함께 담는다(시험을 조합하거나 시험마다 다르게 낼 때). */
+const APPLY_KINDS = ['lesson_apply', 'unit_apply'];
+const isApply = q => APPLY_KINDS.indexOf(q.source_kind) >= 0;
+let SHOW_APPLY = false;
+const inScopeAll = q => keyOf(q) === scopeKey();
+const inScope = q => inScopeAll(q) && (SHOW_APPLY || !isApply(q));
 function scopeFix(){
   const grades = uniq(BANK.map(q => q.grade));
   if (!grades.length){ SCOPE = SCOPE || { grade: 1, sem: 1, subj: 'math' }; return; }
@@ -227,11 +235,13 @@ function scopeBar(prefix){
     <select id="${prefix}Sem">${opt(sems, SCOPE.sem, m => m + '학기')}</select>
     <select id="${prefix}Subj">${opt(subjs, SCOPE.subj, j => SUBJ_KO[j] || j)}</select>
     <span class="hint" style="align-self:center">원장 ${BANK.filter(inScope).length}문항</span>
+    ${(() => { const na = BANK.filter(q => inScopeAll(q) && isApply(q)).length; return na ? `<label class="applyTog" title="교과서판이 생기기 전 문항 — 교과서와 조금 다르게 낸 응용 문제예요"><input type="checkbox" id="${prefix}Apply"${SHOW_APPLY ? ' checked' : ''}> 응용 문항도 보기 <span class="badge apply">응용 ${na}</span></label>` : ''; })()}
   </div>`;
 }
 function bindScope(prefix, rerender){
   const on = () => { SCOPE = { grade: Number(f(prefix + 'Grade')), sem: Number(f(prefix + 'Sem')), subj: f(prefix + 'Subj') }; rerender(); };
   ['Grade', 'Sem', 'Subj'].forEach(k => { const el = document.getElementById(prefix + k); if (el) el.onchange = on; });
+  const ap = document.getElementById(prefix + 'Apply'); if (ap) ap.onchange = () => { SHOW_APPLY = ap.checked; rerender(); };
 }
 const scopeMap = () => (window.KEDU_MAP || {})[`g${scopeKey()}`];
 function unitLabel(u){ const n = unitNo(u); if (!n) return u || ''; const m = scopeMap(); const x = m && (m.units || []).find(y => +y.num === n); return `${n}단원` + (x && x.name ? ' ' + x.name : ''); }
@@ -451,7 +461,7 @@ function qCard(q){
       <div class="stem">${esc(q.stem)}</div>
       <div class="tagrow">
         <span class="tag d${q.difficulty}">${DIFFNAME[q.difficulty]}</span>
-        <span class="tag">${KINDNAME[q.qkind] || q.qkind}${q.source === 'teacher' ? ' <span class="badge mine">내 문항</span>' : ''}</span>
+        <span class="tag">${KINDNAME[q.qkind] || q.qkind}${q.source === 'teacher' ? ' <span class="badge mine">내 문항</span>' : ''}${isApply(q) ? ' <span class="badge apply">응용</span>' : ''}</span>
         <span class="tag">${esc(unitName(q))}${q.lesson_code ? ' · ' + esc(lessonLabel(q)) : ''}</span>
         <span class="tag" title="${esc(cname)}">${esc(shortName(cname))}</span>
         ${(q.misconception_codes || []).map(m => `<span class="tag mis" title="이 문항의 오답이 잡아내는 오개념">${esc(misName(m))}</span>`).join('')}
@@ -505,7 +515,7 @@ function drawCart(){
 function quickAssemble(){
   const code = f('qaConcept'), n = Number(f('qaN')), mode = f('qaMix');
   const want = mode === 'basic' ? [0.4, 0.4, 0.2, 0] : [0, 0.2, 0.5, 0.3];
-  const pool = BANK.filter(q => q.concept_code === code && !CART.some(x => x.id === q.id));
+  const pool = BANK.filter(q => q.concept_code === code && (SHOW_APPLY || !isApply(q)) && !CART.some(x => x.id === q.id));
   if (!pool.length) return toast('그 개념에 남은 문항이 없어요.');
   const added = [];
   want.forEach((ratio, di) => {

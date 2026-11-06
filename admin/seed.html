@@ -26,7 +26,7 @@ async function loadUnits(){
   const lm = (await J('/kedu/worksheet/data/_lesson_map.json')).lessons, U = new Map();
   for (const [k, v] of Object.entries(lm)){ const m = k.match(/^(g(\d)_(\d)_([a-z]+)_u(\d+))_/); if (!m) continue;
     if (!U.has(m[1])) U.set(m[1], [m[1], `${m[2]}학년 ${m[3]}학기 ${SUBJ[m[4]] || m[4]} ${m[5]}단원`, []]);
-    const s = U.get(m[1])[2]; for (const x of [v.basic, v.challenge, ...(v.review || [])]) if (x && !s.includes(x)) s.push(x); }
+    const s = U.get(m[1])[2]; for (const x of [v.basic, v.challenge, ...(v.review || []), ...(v.apply || [])]) if (x && !s.includes(x)) s.push(x); }
   return [...U.values()].sort((a, b) => a[0].localeCompare(b[0], 'en', { numeric: true }));
 }
 const db = supabase.createClient(KEDU_SUPABASE_URL, KEDU_SUPABASE_ANON_KEY);
@@ -54,8 +54,10 @@ go.onclick = async () => {
         const mm = []; for (const o of (x.options || []).concat(x.reason_options || [])) for (const k of ['mis','mis_target']) if (o[k] && !mm.includes(o[k])) mm.push(o[k]);
         questions.push({ qcode: name + '#' + x.seq, subject: d.subject, grade: d.grade, semester: d.semester || 1, unit_code: d.unit, lesson_code: d.lesson || '', source_set: name, source_kind: d.kind, concept_code: x.concept, difficulty: x.difficulty, qkind: x.kind, grading: x.kind === 'essay' ? 'teacher' : 'auto', stem: x.stem, misconception_codes: mm, has_variant: !!x.variant_rule, payload: x });
       } });
-      const have = await db.from('question_bank').select('qcode', { count: 'exact', head: true }).like('source_set', u + '\\_%');
-      if (!have.error && have.count === questions.length){ skip++; row(label, '이미 있음', 'ok'); continue; }
+      // 이미 있음 = 이 단원 세트의 문항이 모두 원장에 있고 갈래(source_kind)도 같을 때. 교과서판(tb_)이 들어오면 옛 세트가 응용으로 바뀌므로 개수만으로는 못 본다(2026-11-06).
+      const have = await db.from('question_bank').select('qcode, source_kind').in('source_set', sets).range(0, 9999);
+      const hk = new Map(((have && have.data) || []).map(r => [r.qcode, r.source_kind]));
+      if (!have.error && questions.every(x => hk.get(x.qcode) === x.source_kind)){ skip++; row(label, '이미 있음', 'ok'); continue; }
       // 개념·오개념 먼저, 문항은 200개씩
       let r = await db.rpc('admin_seed_rows', { p_concepts: concepts, p_mis: mis, p_questions: [] }); if (r.error) throw r.error;
       let n = 0;

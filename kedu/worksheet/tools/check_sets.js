@@ -20,7 +20,7 @@
 const fs = require('fs'), path = require('path'), vm = require('vm');
 
 const ROOT = path.join(__dirname, '..');           /* kedu/worksheet */
-const DATA = path.join(ROOT, 'data');
+const DATA = process.env.KWS_DATA || path.join(ROOT, 'data');   /* KWS_DATA = 시험용 다른 data 폴더(tests/test_kedu_worksheet_apply.js) */
 const FUZZ = Number(process.env.FUZZ) || 15;
 const ONLY = process.argv[2] || '';
 
@@ -2142,6 +2142,11 @@ function checkQ(where, q, opt) {
   }
 }
 
+const SET_KINDS = ['lesson_basic', 'lesson_challenge', 'unit_review', 'unit_extra', 'lesson_apply', 'unit_apply'];
+const APPLY_KINDS = ['lesson_apply', 'unit_apply'];
+const SET_KIND = {};
+const DIRLS = {};   /* 세트 이름 → kind (연결표 검사용) */
+
 /* ── 세트 한 벌 ──────────────────────────────────────────────────────────────── */
 function checkSet(file) {
   const name = path.basename(file);
@@ -2153,6 +2158,19 @@ function checkSet(file) {
     if (d[k] === undefined) bad(name, `세트 머리에 ${k} 없음`);
   });
   if (d.set && d.set !== name.replace(/\.json$/, '')) bad(name, `set id(${d.set}) 와 파일 이름이 다름`);
+  /* 교과서판 2학기(2026-11-06): 교과서판 = 「tb_」+옛 접두, 옛 「비슷하게」 세트 = 응용 갈래(lesson_apply·unit_apply) */
+  if (d.kind !== undefined && SET_KINDS.indexOf(d.kind) < 0) bad(name, `모르는 세트 갈래 kind=${d.kind} (${SET_KINDS.join('·')})`);
+  const isTb = /^tb_/.test(name);
+  if (isTb && APPLY_KINDS.indexOf(d.kind) >= 0) bad(name, '교과서판(tb_) 세트가 응용 갈래 — 교과서판은 lesson_basic·lesson_challenge·unit_review');
+  if (APPLY_KINDS.indexOf(d.kind) >= 0) {
+    /* 교과서판 차시 수가 옛것과 다를 수 있어 같은 이름 짝이 아니라 같은 단원에 tb_ 세트가 있는지 본다 */
+    const um = name.match(/^(g\d+(?:_\d+)?_[a-z]+_u\d+)_/);
+    if (!um) bad(name, '응용 세트 이름에서 단원 접두를 못 읽는다');
+    else if (!(DIRLS[path.dirname(file)] = DIRLS[path.dirname(file)] || fs.readdirSync(path.dirname(file))).some(f => f.indexOf('tb_' + um[1] + '_') === 0)) bad(name, `응용 갈래인데 같은 단원 교과서판(tb_${um[1]}_…)이 없다 — 교과서판을 먼저 지어야 옛 세트를 응용으로 돌린다`);
+    const want = { lesson_apply: /_L\d+_(basic|challenge)\.json$/, unit_apply: /_review_[a-z]\.json$/ }[d.kind];
+    if (!want.test(name)) bad(name, `${d.kind} 갈래와 세트 이름 꼴이 안 맞는다`);
+  }
+  SET_KIND[name.replace(/\.json$/, '')] = d.kind;
   if (!Array.isArray(d.questions) || !d.questions.length) return bad(name, '문항 없음');
 
   const seqs = d.questions.map(q => q.seq);
@@ -2443,6 +2461,20 @@ function checkLessonMap(setNames) {
       if (L[slot] && setNames.indexOf(L[slot]) < 0) bad('_lesson_map.json ' + k, `${slot} 이 가리키는 세트 ${L[slot]} 가 없다`);
     });
     (L.review || []).forEach(s => { if (setNames.indexOf(s) < 0) bad('_lesson_map.json ' + k, `단원 종합 ${s} 가 없다`); });
+    /* 교과서판: basic·challenge·review 는 교과서판(응용 아님), apply 는 옛 세트(응용 갈래) */
+    const kindOf = s => SET_KIND[s] !== undefined ? SET_KIND[s] : (() => { try { return JSON.parse(fs.readFileSync(path.join(DATA, s + '.json'), 'utf8')).kind; } catch (e) { return undefined; } })();
+    ['basic', 'challenge'].concat((L.review || []).map((_, i) => 'review' + i)).forEach(slot => {
+      const s = slot.indexOf('review') === 0 ? L.review[+slot.slice(6)] : L[slot];
+      if (s && setNames.indexOf(s) >= 0 && APPLY_KINDS.indexOf(kindOf(s)) >= 0) bad('_lesson_map.json ' + k, `${slot} 이 응용 세트 ${s} 를 가리킨다 — 자기주도·케이티처 문은 교과서판만`);
+    });
+    if (L.apply !== undefined) {
+      if (!Array.isArray(L.apply) || !L.apply.length) bad('_lesson_map.json ' + k, 'apply 는 옛 세트 이름 배열');
+      else L.apply.forEach(s => {
+        if (setNames.indexOf(s) < 0) bad('_lesson_map.json ' + k, `apply 가 가리키는 세트 ${s} 가 없다`);
+        else if (APPLY_KINDS.indexOf(kindOf(s)) < 0) bad('_lesson_map.json ' + k, `apply 세트 ${s} 가 응용 갈래(lesson_apply·unit_apply)가 아니다`);
+      });
+      if (L.basic && !/^tb_/.test(L.basic)) bad('_lesson_map.json ' + k, 'apply 칸이 있는데 basic 이 교과서판(tb_)이 아니다');
+    }
     if (!L.self && !L.teacher) bad('_lesson_map.json ' + k, 'self·teacher 둘 다 없어 문이 안 열린다');
   });
 }

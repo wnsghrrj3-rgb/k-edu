@@ -35,7 +35,7 @@ BEGIN
   ON CONFLICT (qcode) DO UPDATE SET concept_code = EXCLUDED.concept_code, difficulty = EXCLUDED.difficulty,
     qkind = EXCLUDED.qkind, grading = EXCLUDED.grading, stem = EXCLUDED.stem,
     misconception_codes = EXCLUDED.misconception_codes, has_variant = EXCLUDED.has_variant,
-    payload = EXCLUDED.payload, is_active = true;
+    payload = EXCLUDED.payload, source_kind = EXCLUDED.source_kind, is_active = true;   -- 2026-11-06 교과서판: 옛 세트가 응용(lesson_apply·unit_apply)으로 바뀌면 다시 넣기로 갈래도 맞춘다
   GET DIAGNOSTICS nq = ROW_COUNT;
 
   RETURN jsonb_build_object('concepts', nc, 'misconceptions', nm, 'questions', nq);

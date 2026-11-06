@@ -25,10 +25,12 @@ const usedC = new Set(), usedM = new Set();
 let qTotal = 0;
 sets.forEach(f => {
   const d = JSON.parse(rd('kedu/worksheet/data/' + f));
-  const uk = `${d.grade}-${d.semester || 1}학기-${d.subject}-${d.unit}`;
+  /* 교과서판(tb_, 2026-11-06)과 응용(옛 세트)은 각각 한 벌의 단원 규격 — 따로 센다 */
+  const layer = /^tb_/.test(d.set) ? '-교과서판' : (d.kind === 'lesson_apply' || d.kind === 'unit_apply') ? '-응용' : '';
+  const uk = `${d.grade}-${d.semester || 1}학기-${d.subject}-${d.unit}${layer}`;
   byUnit[uk] = byUnit[uk] || { sets: 0, qs: 0, lesson: 0, review: 0, sizeBad: [] };
   byUnit[uk].sets++; byUnit[uk].qs += d.questions.length;
-  const isReview = d.kind === 'unit_review';
+  const isReview = d.kind === 'unit_review' || d.kind === 'unit_apply';
   if (isReview) byUnit[uk].review++; else byUnit[uk].lesson++;
   if (d.questions.length !== (isReview ? 25 : 10)) byUnit[uk].sizeBad.push(d.set + ':' + d.questions.length);
   d.questions.forEach(q => {

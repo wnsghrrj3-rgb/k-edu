@@ -89,7 +89,7 @@ for f, d in zip(sets, docs):
           "(%s,%s,%d,%d,%s,%s,%s,%s,%s,%d,%s,%s,%s,%s,%s,%s::jsonb) ON CONFLICT (qcode) DO UPDATE SET "
           "concept_code=EXCLUDED.concept_code, difficulty=EXCLUDED.difficulty, qkind=EXCLUDED.qkind, "
           "grading=EXCLUDED.grading, stem=EXCLUDED.stem, misconception_codes=EXCLUDED.misconception_codes, "
-          "has_variant=EXCLUDED.has_variant, payload=EXCLUDED.payload, is_active=true;"
+          "has_variant=EXCLUDED.has_variant, payload=EXCLUDED.payload, source_kind=EXCLUDED.source_kind, is_active=true;"
           % (q('%s#%d' % (name, x['seq'])), q(d['subject']), d['grade'], d.get('semester', 1), q(d['unit']),
              q(d.get('lesson') or ''), q(name), q(d['kind']), q(x['concept']), x['difficulty'],
              q(x['kind']), q(grading), q(x['stem']), arr(mis),
