@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>풍선 괴물 퀴즈 · 십몇 빼기 몇</title>
+<link rel="stylesheet" href="../../kmotion-theme.css">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:var(--font);color:#fff;background:linear-gradient(#1b3a7a,#0a1430);user-select:none;-webkit-user-select:none}
+#app{position:relative;height:100%;display:flex;flex-direction:column;align-items:center}
+.top{display:flex;gap:14px;align-items:center;justify-content:center;width:100%;padding:12px 16px}
+.team{flex:1;max-width:260px;border-radius:18px;padding:8px 16px;text-align:center;border:3px solid transparent;transition:.2s;opacity:.55}
+.team.on{opacity:1;transform:scale(1.06)}
+.team b{display:block;font-size:2.2rem;line-height:1.1}.team span{font-weight:900}
+.blue{background:rgba(59,123,255,.25)}.blue.on{border-color:#5b9bff}
+.red{background:rgba(255,77,90,.25)}.red.on{border-color:#ff6b78}
+.solo .team.red{display:none}
+.mid{text-align:center;min-width:150px}.mid small{color:var(--dim);font-weight:800}.mid b{display:block;font-size:1.3rem;color:var(--gold)}
+.boss{position:relative;width:min(56vw,520px);height:clamp(120px,22vh,200px);margin-top:4px}
+.boss .face{position:absolute;left:50%;bottom:0;transform:translateX(-50%);font-size:clamp(3.4rem,9vh,5.2rem);transition:transform .2s}
+.boss .face.hit{animation:hit .4s}.boss .face.laugh{animation:laugh .6s}
+@keyframes hit{30%{transform:translateX(-50%) scale(.8) rotate(-12deg)}}
+@keyframes laugh{25%,75%{transform:translateX(-50%) rotate(10deg)}50%{transform:translateX(-50%) rotate(-10deg)}}
+.boss .hp{position:absolute;left:0;right:0;top:0;display:flex;justify-content:center;gap:4px;flex-wrap:wrap}
+.boss .hp i{font-style:normal;font-size:clamp(1.4rem,4vh,2.2rem);transition:.3s}.boss .hp i.gone{opacity:.12;transform:scale(.6)}
+.tag{font-weight:900;color:var(--accent);letter-spacing:.08em;margin-top:6px;font-size:1rem}
+.q{font-size:clamp(2.6rem,9vh,5.4rem);font-weight:900;text-align:center;margin:4px 16px 0;line-height:1.2}
+.q.story{font-size:clamp(1.5rem,4.6vh,2.5rem);max-width:1000px;line-height:1.5}
+.q .box{display:inline-block;min-width:1.2em;border:5px dashed var(--gold);border-radius:14px;color:var(--gold);padding:0 .15em}
+.bar{width:min(70vw,640px);height:12px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden;margin:12px 0 4px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#5cf2a4,#ffd35c,#ff5c7a);width:100%}
+.opts{flex:1;display:flex;gap:clamp(14px,3vw,40px);align-items:center;justify-content:center;flex-wrap:wrap;width:100%;padding:0 16px 20px}
+.opt{position:relative;width:clamp(120px,17vw,200px);height:clamp(140px,20vw,232px);border:0;background:none;cursor:pointer;animation:bob 2.6s ease-in-out infinite;font-family:inherit}
+.opt:nth-child(2){animation-delay:-.7s}.opt:nth-child(3){animation-delay:-1.4s}.opt:nth-child(4){animation-delay:-2s}
+@keyframes bob{50%{transform:translateY(-10px)}}
+.opt .bl{position:absolute;inset:0 6% 14% 6%;border-radius:50% 50% 48% 48%;box-shadow:inset -14px -18px 0 rgba(0,0,0,.18),inset 12px 12px 0 rgba(255,255,255,.25),0 10px 24px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#1a1030;font-weight:900;font-size:clamp(2.4rem,6vw,4rem)}
+.opt.small .bl{font-size:clamp(1.3rem,2.6vw,2rem);line-height:1.15;padding:0 8%}
+.opt .bl::after{content:"";position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);border:10px solid transparent;border-top:14px solid var(--c)}
+.opt .st{position:absolute;bottom:0;left:50%;width:2px;height:14%;background:rgba(255,255,255,.5)}
+.opt.pop{animation:pop .35s forwards}.opt.wrong{animation:no .5s forwards}
+@keyframes pop{60%{transform:scale(1.35)}100%{transform:scale(0);opacity:0}}
+@keyframes no{20%,60%{transform:translateX(-14px)}40%,80%{transform:translateX(14px)}100%{opacity:.25;filter:grayscale(1)}}
+.fx{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.fx i{position:absolute;width:12px;height:12px;border-radius:50%}
+.say{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);font-size:clamp(2rem,7vh,4rem);font-weight:900;pointer-events:none;text-shadow:0 4px 20px rgba(0,0,0,.5);opacity:0}
+.say.show{animation:say 1.1s}
+@keyframes say{15%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-80%)}}
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(5,8,16,.78);backdrop-filter:blur(4px);text-align:center;padding:24px;z-index:5}
+.ov.hidden{display:none}
+.ov h1{font-size:clamp(2.2rem,7vh,3.4rem);font-weight:900}
+.ov p{color:var(--dim);line-height:1.7;max-width:640px;font-size:1.1rem}.ov p b{color:#fff}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.row button{background:rgba(255,255,255,.08);color:#fff;border:2px solid rgba(255,255,255,.3);border-radius:999px;padding:12px 22px;font-size:1.1rem;cursor:pointer;font-family:inherit;font-weight:800}
+.row button.on{background:var(--accent);color:#06121f;border-color:var(--accent)}
+.go{background:var(--gold);color:#2a1a00;border:0;border-radius:999px;padding:18px 54px;font-size:1.5rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 10px 30px rgba(255,211,92,.3)}
+a.back{position:absolute;left:14px;top:14px;color:var(--dim);text-decoration:none;z-index:6;font-weight:700}
+.quit{position:absolute;left:14px;bottom:14px;background:rgba(5,8,16,.7);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:10px 20px;font-weight:800;cursor:pointer;font-family:inherit;z-index:4}
+.teach{position:absolute;right:14px;bottom:14px;color:var(--dim);font-size:.9rem;z-index:4}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top" id="top">
+    <div class="team blue on" id="tB"><span>🔵 청팀</span><b id="sB">0</b></div>
+    <div class="mid"><small>단계</small><b id="stage">1</b><small id="qn">1 / 12</small></div>
+    <div class="team red" id="tR"><span>🔴 홍팀</span><b id="sR">0</b></div>
+  </div>
+  <div class="boss"><div class="hp" id="hp"></div><div class="face" id="face">👾</div></div>
+  <div class="tag" id="tag"></div>
+  <div class="q" id="q"></div>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="opts" id="opts"></div>
+  <div class="fx" id="fx"></div>
+  <div class="say" id="say"></div>
+  <button class="quit" id="quit">그만</button>
+  <span class="teach">빠르게 맞히면 점수가 더 커요</span>
+  <section class="ov" id="ov">
+    <h1>👾 풍선 괴물 퀴즈</h1>
+    <p>풍선 괴물이 <b>풍선 12개</b>를 달고 나타났어요! 문제를 맞힐 때마다 괴물 풍선이 하나씩 터져요.<br>
+    단계가 올라갈수록 어려워져요 — <b>빈칸 문제 · 크기 비교 · 이야기 문제 · 같은 답 찾기 · 세 수 계산</b>. 정답 풍선을 손가락으로 톡!</p>
+    <div class="row" id="optT"><button data-t="1" class="on">혼자 / 우리 반 함께</button><button data-t="2">🔵 청팀 vs 🔴 홍팀</button></div>
+    <div class="row" id="optS"><button data-s="15">천천히 (15초)</button><button data-s="10" class="on">보통 (10초)</button><button data-s="6">번개 (6초)</button></div>
+    <button class="go" id="go">시작!</button>
+  </section>
+  <a class="back" href="../">← 풍선 터뜨리기</a>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const COLS = ['#ff5c7a', '#ffd35c', '#5cf2a4', '#4de1ff', '#c58bff', '#ff9d5c'];
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = a => a[Math.random() * a.length | 0];
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+// 받아내림 있는 십몇 − 몇: a 11~18, b 2~9, a의 일의 자리 < b
+function pair(){ for (;;) { const a = rnd(11, 18), b = rnd(2, 9); if (a % 10 < b) return [a, b]; } }
+function near(ans, lo = 1, hi = 9){ const s = new Set([ans]); const c = shuffle([ans - 1, ans + 1, ans - 2, ans + 2, ans + 10, ans - 10].filter(v => v >= lo && v <= hi)); while (s.size < 3 && c.length) s.add(c.shift()); while (s.size < 3) s.add(rnd(lo, hi)); return shuffle([...s]); }
+
+// ── 문제 종류(쉬움 → 어려움)
+const STORY = [
+  (a, b) => `풍선 ${a}개 중에서 ${b}개가 펑! 터졌어요. 남은 풍선은 몇 개?`,
+  (a, b) => `사탕이 ${a}개 있었는데 괴물이 ${b}개를 먹었어요. 남은 사탕은?`,
+  (a, b) => `버스에 ${a}명이 타고 있다가 ${b}명이 내렸어요. 버스에 남은 사람은?`,
+  (a, b) => `딱지 ${a}장 중 ${b}장을 친구에게 줬어요. 남은 딱지는?`,
+  (a, b) => `도토리 ${a}개를 모았는데 다람쥐가 ${b}개를 가져갔어요. 남은 도토리는?`
+];
+const KINDS = {
+  basic(){ const [a, b] = pair(); return { tag: '⚡ 계산', html: `${a} − ${b} = <span class="box">?</span>`, ans: a - b, opts: near(a - b) }; },
+  missB(){ const [a, b] = pair(); return { tag: '🔍 빈칸 찾기', html: `${a} − <span class="box">?</span> = ${a - b}`, ans: b, opts: near(b, 2, 9) }; },
+  missA(){ const [a, b] = pair(); return { tag: '🔍 빈칸 찾기', html: `<span class="box">?</span> − ${b} = ${a - b}`, ans: a, opts: near(a, 11, 18) }; },
+  story(){ const [a, b] = pair(); return { tag: '📖 이야기 문제', html: pick(STORY)(a, b), story: true, ans: a - b, opts: near(a - b) }; },
+  compare(){ const [a, b] = pair(); let c, d; do { [c, d] = pair(); } while (c === a && d === b); const x = a - b, y = c - d; const ans = x > y ? '>' : x < y ? '<' : '=';
+    return { tag: '⚖️ 크기 비교', html: `${a} − ${b} <span class="box">?</span> ${c} − ${d}`, ans, opts: ['>', '<', '='] }; },
+  same(){ const [a, b] = pair(); const ans = a - b; const right = `${a} − ${b}`; const wrongs = new Set(); let g = 0;
+    while (wrongs.size < 2 && g++ < 200) { const [c, d] = pair(); const v = c - d; if (v !== ans && Math.abs(v - ans) <= 2) wrongs.add(`${c} − ${d}`); }
+    while (wrongs.size < 2) { const [c, d] = pair(); if (c - d !== ans) wrongs.add(`${c} − ${d}`); }
+    return { tag: '🎯 같은 답 찾기', html: `답이 <span class="box">${ans}</span> 인 식은?`, ans: right, opts: shuffle([right, ...wrongs]), small: true }; },
+  three(){ for (;;) { const a = rnd(11, 18), b = rnd(1, 9), c = rnd(1, 9); const m = a - b; if (m < 10 && m > c && a % 10 >= b) continue; const r = a - b - c; if (r >= 1 && r <= 9 && (a % 10 < b || m % 10 < c)) return { tag: '🔥 세 수 계산', html: `${a} − ${b} − ${c} = <span class="box">?</span>`, ans: r, opts: near(r) }; } },
+  trick(){ const [a, b] = pair(); const ans = a - b; return { tag: '😈 괴물의 함정', html: `${a - b} + <span class="box">?</span> = ${a}`, ans: b, opts: near(b, 2, 9) }; }
+};
+// 12문제: 1단계(1~3) 계산 · 2단계(4~6) 빈칸·이야기 · 3단계(7~9) 비교·같은 답 · 4단계(10~12) 세 수·함정
+const PLAN = [['basic'], ['basic'], ['basic', 'story'], ['missB'], ['story'], ['missA', 'missB'], ['compare'], ['same'], ['compare', 'same'], ['three'], ['trick'], ['three', 'trick']];
+
+// ── 소리
+let ac; function au(){ try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (_) {} }
+function tone(f, d = .2, type = 'triangle', v = .2, at = 0){ if (!ac) return; const t = ac.currentTime + at, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.value = f; g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d + .05); }
+function popS(){ if (!ac) return; const n = ac.createBufferSource(), b = ac.createBuffer(1, 2400, ac.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3); n.buffer = b; const g = ac.createGain(); g.gain.value = .6; n.connect(g); g.connect(ac.destination); n.start(); }
+
+// ── 진행
+const G = { teams: 1, sec: 10, qi: 0, turn: 0, score: [0, 0], hp: 12, cur: null, t0: 0, lock: false, raf: 0, streak: 0 };
+function sel(rowId, key, cb){ $(rowId).onclick = e => { const b = e.target.closest('button'); if (!b) return; [...$(rowId).children].forEach(x => x.classList.toggle('on', x === b)); cb(+b.dataset[key]); }; }
+sel('optT', 't', v => G.teams = v); sel('optS', 's', v => G.sec = v);
+function drawHP(){ $('hp').innerHTML = Array.from({ length: 12 }, (_, i) => `<i class="${i < G.hp ? '' : 'gone'}">🎈</i>`).join(''); }
+function drawTeams(){ $('sB').textContent = G.score[0]; $('sR').textContent = G.score[1]; $('tB').classList.toggle('on', G.teams === 1 || G.turn === 0); $('tR').classList.toggle('on', G.teams === 2 && G.turn === 1); $('top').classList.toggle('solo', G.teams === 1); }
+function say(txt, col){ const s = $('say'); s.textContent = txt; s.style.color = col; s.classList.remove('show'); void s.offsetWidth; s.classList.add('show'); }
+function burst(x, y, n = 18){ const fx = $('fx'); for (let i = 0; i < n; i++) { const d = document.createElement('i'); d.style.background = pick(COLS); d.style.left = x + 'px'; d.style.top = y + 'px'; fx.appendChild(d); const an = Math.random() * 6.28, sp = 80 + Math.random() * 160; d.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${Math.cos(an) * sp}px,${Math.sin(an) * sp + 80}px)`, opacity: 0 }], { duration: 800, easing: 'ease-out' }).onfinish = () => d.remove(); } }
+function next(){
+  if (G.qi >= 12 || G.hp <= 0) return finish();
+  const kind = pick(PLAN[G.qi]); G.cur = KINDS[kind](); G.lock = false;
+  $('stage').textContent = 1 + (G.qi / 3 | 0); $('qn').textContent = `${G.qi + 1} / 12`; $('tag').textContent = G.cur.tag;
+  const q = $('q'); q.className = 'q' + (G.cur.story ? ' story' : ''); q.innerHTML = G.cur.html;
+  const box = $('opts'); box.innerHTML = '';
+  G.cur.opts.forEach((v, i) => { const b = document.createElement('button'); b.className = 'opt' + (G.cur.small ? ' small' : ''); const c = COLS[(i + G.qi) % COLS.length];
+    b.innerHTML = `<span class="bl" style="background:${c};--c:${c}">${v}</span><span class="st"></span>`; b.onpointerdown = e => answer(b, v, e); box.appendChild(b); });
+  drawTeams(); G.t0 = performance.now(); cancelAnimationFrame(G.raf); tick(); }
+function tick(){ const left = Math.max(0, 1 - (performance.now() - G.t0) / (G.sec * 1000)); $('bar').style.width = left * 100 + '%'; if (left <= 0 && !G.lock) return timeout(); if (!G.lock) G.raf = requestAnimationFrame(tick); }
+function answer(btn, v, e){ if (G.lock || btn.classList.contains('wrong')) return; au();
+  if (v === G.cur.ans) { G.lock = true; const left = Math.max(0, 1 - (performance.now() - G.t0) / (G.sec * 1000)); const pts = 10 + Math.round(left * 10) + G.qi; G.streak++;
+    G.score[G.turn] += pts; G.hp--; drawHP(); popS(); [523, 659, 784].forEach((f, i) => tone(f, .3, 'triangle', .2, i * .08));
+    btn.classList.add('pop'); burst(e.clientX, e.clientY); $('face').className = 'face hit';
+    say(G.streak >= 3 ? `🔥 ${G.streak}연속! +${pts}` : `펑! +${pts}`, '#ffd35c'); setTimeout(after, 1100); }
+  else { btn.classList.add('wrong'); tone(150, .35, 'square', .18); $('face').className = 'face laugh'; G.streak = 0; say('크크크~', '#ff5c7a'); setTimeout(() => $('face').className = 'face', 600);
+    if ([...$('opts').children].filter(x => !x.classList.contains('wrong')).length <= 1) { G.lock = true; reveal(); } } }
+function timeout(){ G.lock = true; G.streak = 0; tone(220, .4, 'sawtooth', .15); $('face').className = 'face laugh'; say('⏰ 시간 끝!', '#ff9d5c'); reveal(); }
+function reveal(){ [...$('opts').children].forEach(b => { if (b.textContent.trim() === String(G.cur.ans)) b.querySelector('.bl').style.outline = '6px solid #fff'; }); setTimeout(after, 1600); }
+function after(){ $('face').className = 'face'; G.qi++; if (G.teams === 2) G.turn = 1 - G.turn; next(); }
+function finish(){ cancelAnimationFrame(G.raf); const ov = $('ov'); ov.classList.remove('hidden');
+  const won = G.hp <= 0; let h = won ? '🎉 풍선 괴물을 물리쳤어요!' : `👾 괴물 풍선 ${G.hp}개 남았어요`;
+  if (G.teams === 2) h += `<br><span style="font-size:.7em">${G.score[0] === G.score[1] ? '🤝 비겼어요!' : G.score[0] > G.score[1] ? '🔵 청팀 승리!' : '🔴 홍팀 승리!'} (${G.score[0]} : ${G.score[1]})</span>`;
+  else h += `<br><span style="font-size:.7em">점수 ${G.score[0]}점</span>`;
+  ov.querySelector('h1').innerHTML = h; if (won) [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, .5, 'triangle', .2, i * .12)); $('go').textContent = '다시 도전!'; }
+$('go').onclick = () => { au(); Object.assign(G, { qi: 0, turn: 0, score: [0, 0], hp: 12, streak: 0 }); drawHP(); $('ov').classList.add('hidden'); next(); };
+$('quit').onclick = finish; drawHP(); drawTeams();
+</script>
+</body>
+</html>
