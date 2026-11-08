@@ -23,6 +23,13 @@
 - 준호에게 묻지 말고 끝까지 진행한다. 보고는 한 줄로, 단원은 「3단원」처럼 쓴다.
 - 기준은 「아주 제대로 멋지게」. 양 늘리기보다 깊이 있고 다양한 문항.
 
+## 진행 방식 (준호 2026-11-09 추가)
+- 멈추지 말고 끝까지. 한 단원이 끝나면 커밋·푸시·현황판 갱신 후 **보고 없이 바로 다음 단원**.
+- 확인받거나 질문하지 않는다. 애매하면 가장 나은 쪽으로 정하고 현황판에 그 결정을 한 줄 적는다.
+- 멈춰도 되는 때는 현황판의 2학기 단원이 모두 끝났거나 건너뛴 상태일 때뿐. 대화가 정리되면 현황판과 이 파일을 다시 읽고 이어 간다.
+- 다 끝나면 마지막에만 한 줄로 보고.
+- 절차서 = `handoff/kedu/textbook2/_단원절차_ClaudeCode.md`. 단원 하나씩 하위 에이전트에 맡기고 결과(게이트 숫자·diff)를 검증해도 된다. 공용 파일(_lesson_map·_concepts·_CATALOG)을 쓰는 단계는 한 번에 한 단원만.
+
 ## 교과서판 기술 메모
 - 세트 이름 = `tb_` + 옛 접두(예 `tb_g2_2_math_u1_L02_basic`), kind 는 평소대로. 옛 세트 → `python3 kedu/worksheet/tools/tb_flip.py <접두> --write`.
 - 검사: `FUZZ=200 node kedu/worksheet/tools/check_sets.js tb_<접두>` · `FUZZ=5` 전체(실패 0만 봄) · `tests/test_kedu_worksheet_apply.js` · build · report.
