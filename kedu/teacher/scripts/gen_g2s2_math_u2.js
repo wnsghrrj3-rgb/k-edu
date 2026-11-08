@@ -229,6 +229,23 @@ const T = {
     self: '가장 마음에 드는 무늬를 짝에게 보여 줄까요?',
     nextText: '**곱셈구구** 단원을 모두 마쳤어요! 다음 단원은 **길이 재기** — m 와 cm 로 길이를 재어 봐요.', next: '📏' }
 };
+/* ── 교과서판 보탬 (2026-11-09, 교과서판 2학기 트랙) — 지도서 168~205쪽 활동 가운데 위 19장·extras 에 없던 것만.
+   「교과서 활동」 덤 장(other_activity)으로 넣고 그 차시 「실생활」 장의 추천 덤에 건다. 19장 골격은 그대로. ── */
+const TB = {
+  u2_l01: [['그림 속에서 곱셈식 고르기', '『수학』 33쪽 — 미래 교육 체험관 그림에서 곱셈식으로 나타내고 싶은 것에 ○를 하고 곱셈식을 써요. (예: 딸기 6개씩 3묶음 → 6 × 3 = 18) 짝이 고른 것과 견주어 보고, 같은 그림으로 다른 곱셈식도 만들 수 있는지 이야기해요.'],
+           ['로봇 바퀴 봉지 — 쉬운 방법 찾기', '지도서 177쪽 — 로봇 바퀴가 2개씩 들어 있는 봉지가 4봉지 있어요. 하나씩 세기·뛰어 세기·묶어 세기·곱셈식 가운데 어떤 방법이 가장 쉬울까요? (2씩 4묶음 = 2의 4배 = 2 + 2 + 2 + 2 = 2 × 4 = 8)']],
+  u2_l03: [['손가락의 수 맞히기 놀이', '지도서 183쪽 「이런 활동도 해 봐요」 — ① 5명이 한 모둠, 한 명이 4명 앞에 서요 ② 신호를 주면 4명이 동시에 손바닥을 펼쳐요(안 펼쳐도, 한 손바닥·두 손바닥을 펼쳐도 돼요) ③ 앞에 선 사람이 펼친 손바닥 수를 보고 5단 곱셈구구로 손가락 수를 맞혀요. (예: 손바닥 6개 → 5 × 6 = 30)']],
+  u2_l04: [['공통된 수 카드 찾기', '지도서 187쪽 「이런 활동도 해 봐요」 — 3단의 곱 3, 6, 9, 12, 15, 18, 21, 24, 27 수 카드를 한 장씩 보여 주면, 3단의 수에는 「3」, 6단의 수도 되는 카드(6, 12, 18, 24)에는 「6」이라고 외쳐요. 번갈아 한 뒤 3단의 수와 6단의 수 사이의 공통점을 이야기해요.'],
+           ['학용품 할인 행사', '『수학익힘』 25쪽 — 공책 3권씩·풀 3개씩·지우개 6개씩·자 6개씩 1묶음으로 팔아요. 세미는 공책 7묶음을 샀어요 → 3 × 7 = 21권. 사고 싶은 학용품을 하나 골라 몇 묶음을 살지 정하고 곱셈식으로 나타내요. (예: 자 2묶음 → 6 × 2 = 12)']],
+  u2_l05: [['8 × 5를 다르게 묶어 세기', '『수학』 46쪽 — 8 × 5를 나타낸 그림을 5개씩 묶어 보면 5의 8배와 같아요. 5단 곱셈구구를 떠올리면 8 × 5 = 40이에요. (4차시의 6 × 5 = 5의 6배와 견주어 보세요.)'],
+           ['로봇 수를 8단과 4단으로', '『수학』 47쪽 — 로봇이 한 줄에 8대씩 2줄이면 8 × 2 = 16대예요. 로봇 8대를 4대씩 2묶음으로 보면 4대씩 4줄 — 4 × 4 = 16으로도 구할 수 있어요. 4단과 8단의 공통점을 이야기해요.'],
+           ['바둑돌 놀이 — 4단에서 8단 찾기', '지도서 189쪽 「이런 활동도 해 봐요」 — ① 4 × 2 = 8을 바둑돌로 놓아요 ② 바둑돌을 8개씩 1줄로 다시 놓아요 ③ 8단으로 나타내요(8 × 1 = 8) ④ 4 × 4 = 16, 4 × 6 = 24, 4 × 8 = 32도 같은 방법으로 8단 곱셈구구로 나타내요(8 × 2 · 8 × 3 · 8 × 4).']],
+  u2_l09: [['곱셈표에서 수 찾기 놀이', '『수학』 55쪽 — ① 모둠에서 가위바위보로 문제 낼 차례를 정해요 ② 문제 내는 친구들이 곱셈표에서 수를 하나 정해요 ③ 돌아가며 곱셈구구로 그 수를 설명해요 — 앞 친구와 다른 방법으로(예: 「2단 곱셈구구에 있는 수야」 「4단에도 있어」 「3 × 5보다 커」) ④ 설명을 듣고 곱셈표에서 수를 찾아 말해요 → 16.'],
+           ['곱이 같은 곱셈구구 더 찾기', '지도서 199쪽 — 4 × 6과 곱이 같은 곱셈구구로 3 × 8을 말해도 틀린 것이 아니에요(두 수를 바꾼 것 말고도 곱이 같은 곱셈구구가 있어요). 9 × 4가 생각나지 않으면 4 × 9를 떠올려요. 『수학익힘』 35쪽: 5단에 있고 · 십의 자리 숫자가 40을 나타내고 · 홀수인 수는? (45)']],
+  u2_l10: [['블록 수 — 채우고 빼기', '『수학』 57쪽 — 블록(3개씩 2줄 + 5개씩 4줄)의 수는 3 × 2와 5 × 4를 더해 26개예요. 5개씩 6줄로 꽉 찼다고 보고 5 × 6 = 30에서 빈 곳 4개를 빼도 26개예요. 식은 「3 × 2 = 6, 5 × 4 = 20, 6 + 20 = 26」처럼 나누어 써요 — 한 줄로 이어 쓴 섞인 식은 쓰지 않아요.']],
+  u2_l11: [['수학이랑 — 사물함과 학용품', '『수학익힘』 38쪽 — 실천 활동에서 색칠한 그림 가운데 사물함의 수(예: 2 × 9 = 18)와 학용품 하나(예: 4 × 3 = 12)를 골라 곱셈식으로 나타내요. 자기 평가 세 가지(2단부터 9단까지 곱셈구구를 아나요? · 생활 문제를 곱셈구구로 풀 수 있나요? · 곱셈구구를 알면 좋은 점을 말할 수 있나요?)로 단원을 돌아봐요.']],
+  u2_l12: [['곱셈구구 퍼즐 놀이', '지도서 205쪽 「이런 활동도 해 봐요」 — ① 곱셈표에 진하게 선을 긋고 같은 조각끼리 색칠해 퍼즐 조각을 만들어요 ② 가위로 잘라 봉투에 넣고 짝과 봉투를 바꿔요 ③ 차례로 조각을 하나씩 꺼내 곱셈구구 판의 알맞은 곳에 놓아요(10초 안에 못 놓으면 다시 봉투에) ④ 먼저 퍼즐을 완성한 사람이 이겨요. 곱하는 수와 곱해지는 수의 관계를 생각하며 맞춰요.']],
+};
 /* ── extras ── */
 function extras(n, t, s) {
   const id = (p, i) => p + '_l' + n + '_' + i, ex = [];
@@ -238,6 +255,7 @@ function extras(n, t, s) {
   s.problems.filter(p => p.miss && typeof p.miss === 'string' && p.miss).slice(0, 2).forEach((p, i) => ex.push({ id: id('t', i + 1), type: 'tip', icon: '🧩', title: '자주 틀리는 곳', content: p.miss.replace(/<\/?b>/g, '**'), fit_slides: ['concept', 'misconception'] }));
   ex.push({ id: id('r', 1), type: 'real_world', icon: '🌍', title: t.real[0], content: t.real[2], fit_slides: ['real_world', 'summary'] });
   ex.push({ id: id('g', 1), type: 'game', icon: '🎮', title: t.act.t, content: t.act.goal, fit_slides: ['leveled_problem', 'offline_activity'] });
+  (TB['u2_l' + String(n).padStart(2, '0')] || []).forEach(([title, content], i) => ex.push({ id: id('b', i + 1), type: 'other_activity', icon: '📗', title: '교과서 활동 — ' + title, content, fit_slides: ['concept', 'real_world', 'offline_activity'] }));
   ex.push({ id: id('x', 1), type: 'misconception', icon: '⚠️', title: '오개념 확인', content: t.mis[0].replace(/\*\*/g, '') + ' → ' + t.mis[1].replace(/\*\*/g, ''), fit_slides: ['misconception', 'basic_problem'] });
   return ex;
 }
@@ -274,7 +292,7 @@ keys.forEach((key, idx) => {
   t.basic.forEach((pi, i) => { const p = s.problems[pi]; if (!p || !(p.part === 'pad' || p.part === 'mcq')) throw new Error(key + ' 기본 문제 ' + pi + ' 꼴 ' + (p && p.part)); add('basic_problem', '기본문제', problemData(p, '기본 문제 ' + '①②③'[i], t.scene), [has('t')[0]]); });
   add('leveled_problem', '기본문제', { title: '수준을 골라 풀어요', levels: t.lev }, has('g'), t.levTn);
   add('offline_activity', '응용문제', { title: t.act.t, type: t.act.type, goal: t.act.goal, steps: t.act.steps, solo: t.act.solo, materials: t.act.mats, minutes: t.act.min }, has('g'), t.act.tn);
-  add('real_world', '응용문제', { title: t.real[0], scenario: { icon: t.real[1], body: t.real[2] }, content: t.real[3] }, has('r'));
+  add('real_world', '응용문제', { title: t.real[0], scenario: { icon: t.real[1], body: t.real[2] }, content: t.real[3] }, has('r').concat(has('b')));
   const ap = s.problems[t.adv[0]]; if (!ap || !(ap.opts || ap.a)) throw new Error(key + ' 응용 ' + t.adv[0]);
   add('advanced_problem', '응용문제', { title: '생각을 넓혀요', context: (t.adv[2] || ap.prompt || t.scene).replace(/\s*\n\s*/g, ' '), challenge: ap.q + (ap.opts ? ' (' + ap.opts.map((o, i) => optText(ap, i).replace(/\*\*/g, '')).join(' / ') + ')' : ''), note: '풀이: ' + (ap.hints || []).join(' ') + ' → **' + String(ansOf(ap)).replace(/\*\*/g, '') + '**' }, has('q').slice(2, 3), t.adv[1]);
   add('exit_ticket', '정리', { title: '오늘 확인해요', items: t.exit, self: ['오늘 배운 것을 혼자 설명할 수 있어요', '조금 헷갈려요', '다시 배우고 싶어요'] }, []);
