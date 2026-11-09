@@ -4,7 +4,7 @@
    F 산수·단위 전수(× + − ÷ 식 · 「Q + Q = Q」·「Q = Q」 들이·무게 식 — L·mL / kg·g·t 을 mL·g 로 바꾸어 전수 재계산)
    G 그림(beaker·dial 눈금·읽은 값 · tvert base 1000 결과 · tubs 합 = 목표 · show 식 재계산)
    H 재료 충실(자기주도 원문 계승) · L 선행 용어(L·mL·리터 l02 전 · kg·g·t·킬로그램·톤 l06 전 학생 화면 0)
-   I 실렌더(닫힘·열림) + 1인 흐름 · J extras 22·연결 · K 발문 6장↑
+   I 실렌더(닫힘·열림) + 1인 흐름 · J extras 22(+교과서 활동 덤 b_lN_i)·연결 · K 발문 6장↑
    실행: NODE_PATH=/home/claude/.jsdom/node_modules node kedu/teacher/표준/gate_g3s2_math_u5.js */
 'use strict';
 const fs = require('fs');
@@ -133,7 +133,8 @@ KEYS.forEach(k => T(k + ' 19장 × 닫힘·열림 렌더 예외 0 · 빈 본문 
   if (s.block === 'concept') ok(/class="fig"/.test(r.body), s.id + ' 그림 안 섬'); if (s.block === 'offline_activity') ok(/class="solo"/.test(r.body) && (r.body.match(/<i>→<\/i>/g) || []).length === s.data.solo.length - 1, s.id + ' 1인 흐름 줄'); })); }));
 
 console.log('═══ J. extras ═══');
-KEYS.forEach(k => T(k + ' extras 22 · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; ok(ex.length === 22, ex.length); const ids = ex.map(e => e.id); ok(new Set(ids).size === 22, 'id 중복');
+/* 2026-11-09 교과서판: extras 22 + 「교과서 활동」 덤(id b_lN_i · other_activity · 📗)은 따로 센다 */
+KEYS.forEach(k => T(k + ' extras 22 (+교과서 활동 덤) · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; const tb = ex.filter(e => /^b_l\d+_\d+$/.test(e.id)); ok(ex.length - tb.length === 22, ex.length - tb.length); tb.forEach(e => ok(e.type === 'other_activity' && e.icon === '📗' && /^교과서 활동 — /.test(e.title), e.id)); const ids = ex.map(e => e.id); ok(new Set(ids).size === ex.length, 'id 중복');
   L[k].slides.forEach(s => (s.suggested_extras || []).forEach(id => ok(ids.indexOf(id) >= 0, s.id + ' → ' + id))); ex.forEach(e => ok(e.title && (e.content || e.url), e.id + ' 내용')); }));
 
 console.log('═══ K. 발문 ═══');
