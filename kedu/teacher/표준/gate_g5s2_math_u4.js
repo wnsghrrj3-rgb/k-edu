@@ -7,7 +7,7 @@
    G 그림 — cll 식 줄 사슬 · tnc 배율 이름표 = 두 수에서 셈 · mch 곱·배율 = 셈 · ecd 어림값·계산 값·크기 견주기 = 셈 · jml 끝 = 걸음×횟수
      · pbr 칠한 칸·끝 값 = 전체×n/10 · dar 칠한 칸 = 가로칸×세로칸 · 값 · vml 세로셈 곱 줄 숫자·소수점 = 셈(bug 는 숫자 같고 소수점만 틀림) · dtb 표
      · ask 그림은 답(곱·끝·칸 수·배율·어림값)을 그리지 않음 · 기본 문제 그림 속 수에 정답 0 · 검사기 자체 확인
-   H 원문 충실(개념 글 = 원문 · 기본 문제 = 원문 앞머리·수·보기·정답) · I 실렌더 · J extras 22 · K 발문·물음 끝맺음·다음 단원
+   H 원문 충실(개념 글 = 원문 · 기본 문제 = 원문 앞머리·수·보기·정답) · I 실렌더 · J extras 22(+교과서 활동 덤 b_lN_i) · K 발문·물음 끝맺음·다음 단원
    L 선행(「1/100배」 l03 · 「넓이 모델」 l06 · 「1/1000배」 l07 · 「소수점 아래 숫자의 개수」 l08 — l01 예외) · M 차단 어휘 · 「결」 0 · 인물 0(원문 민주·다을·봄·주연·예건 · 곰이·펭이)
    실행: NODE_PATH=/home/claude/.jsdom/node_modules node kedu/teacher/표준/gate_g5s2_math_u4.js */
 'use strict';
@@ -206,7 +206,8 @@ KEYS.forEach(k => T(k + ' 19장 × 닫힘·열림 렌더 예외 0 · 빈 본문 
   if (s.block === 'concept' || (s.block === 'basic_problem' && s.data.fig)) ok(/class="fig/.test(r.body), s.id + ' 그림 안 섬'); if (s.block === 'offline_activity') ok(/class="solo"/.test(r.body) && (r.body.match(/<i>→<\/i>/g) || []).length === s.data.solo.length - 1, s.id + ' 1인 흐름 줄'); })); }));
 
 console.log('═══ J. extras ═══');
-KEYS.forEach(k => T(k + ' extras 22 · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; ok(ex.length === 22, ex.length); const ids = ex.map(e => e.id); ok(new Set(ids).size === 22, 'id 중복');
+/* 2026-11-10 교과서판: extras 22 + 「교과서 활동」 덤(id b_lN_i · other_activity · 📗)은 따로 센다 */
+KEYS.forEach(k => T(k + ' extras 22 (+교과서 활동 덤) · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; const tb = ex.filter(e => /^b_l\d+_\d+$/.test(e.id)); ok(ex.length - tb.length === 22, ex.length - tb.length); tb.forEach(e => ok(e.type === 'other_activity' && e.icon === '📗' && /^교과서 활동 — /.test(e.title), e.id)); const ids = ex.map(e => e.id); ok(new Set(ids).size === ids.length, 'id 중복');
   L[k].slides.forEach(s => (s.suggested_extras || []).forEach(id => ok(ids.indexOf(id) >= 0, s.id + ' → ' + id))); ex.forEach(e => ok(e.title && (e.content || e.url), e.id + ' 내용')); }));
 
 console.log('═══ K. 발문 · 물음 끝맺음 · 다음 단원 ═══');
