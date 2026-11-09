@@ -8,7 +8,7 @@
    F 식 전수 — 「a × b = c」「a ÷ b = c」「a + b = c」 값이 맞음(cm·개·° 떼고)
    G 그림 — pg(변 수 = 점 수 = path 조각 수 · 정다각형 = 좌표 재계산 · 대각선 수·끝점 이웃 아님 · 변 가운데 선 · 직각 표시 = 90° 꼭짓점 · 같은 변 눈금)
        · pgs(이름 ↔ 변 수 · 「정」 ↔ 정다각형 · 주황 칸 = 다각형) · blk(조각 꼴 합동 · 겹침 0 · 목표 안 · 넓이 같음 · 바깥쪽 변) · panels 캡션 = 그림 · 문제 그림엔 답 없음
-   H 재료 충실 · I 실렌더(닫힘·열림) + 1인 흐름 · J extras 22 · K 발문 · L 선행 용어(원문 차례와 같음)
+   H 재료 충실 · I 실렌더(닫힘·열림) + 1인 흐름 · J extras 22(+교과서 활동 덤 b_lN_i) · K 발문 · L 선행 용어(원문 차례와 같음)
    실행: NODE_PATH=/home/claude/node_modules node kedu/teacher/표준/gate_g4s2_math_u4.js */
 'use strict';
 const fs = require('fs');
@@ -277,7 +277,8 @@ KEYS.forEach(k => T(k + ' 19장 × 닫힘·열림 렌더 예외 0 · 빈 본문 
   if (s.block === 'concept' || (s.block === 'basic_problem' && s.data.fig)) ok(/class="fig"/.test(r.body), s.id + ' 그림 안 섬'); if (s.block === 'offline_activity') ok(/class="solo"/.test(r.body) && (r.body.match(/<i>→<\/i>/g) || []).length === s.data.solo.length - 1, s.id + ' 1인 흐름 줄'); })); }));
 
 console.log('═══ J. extras ═══');
-KEYS.forEach(k => T(k + ' extras 22 · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; ok(ex.length === 22, ex.length); const ids = ex.map(e => e.id); ok(new Set(ids).size === 22, 'id 중복');
+/* 2026-11-09 교과서판: extras 22 + 「교과서 활동」 덤(id b_lN_i · other_activity · 📗)은 따로 센다 */
+KEYS.forEach(k => T(k + ' extras 22 (+교과서 활동 덤) · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; const tb = ex.filter(e => /^b_l\d+_\d+$/.test(e.id)); ok(ex.length - tb.length === 22, ex.length - tb.length); tb.forEach(e => ok(e.type === 'other_activity' && e.icon === '📗' && /^교과서 활동 — /.test(e.title), e.id)); const ids = ex.map(e => e.id); ok(new Set(ids).size === ids.length, 'id 중복');
   L[k].slides.forEach(s => (s.suggested_extras || []).forEach(id => ok(ids.indexOf(id) >= 0, s.id + ' → ' + id))); ex.forEach(e => ok(e.title && (e.content || e.url), e.id + ' 내용')); }));
 
 console.log('═══ K. 발문 ═══');
