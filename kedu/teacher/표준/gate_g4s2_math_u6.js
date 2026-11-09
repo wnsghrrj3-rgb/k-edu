@@ -8,7 +8,7 @@
    F 식 전수
    G 그림(점·다각형 = 게이트 셈 · 이동 전 = 재료 · wrong 그림은 신고 이동과 다름 · 모눈 안 · 자동차 겹침 0 · 무늬 칸 = 밑모양에 줄·칸 이동을 게이트가 거듭 적용
      · 글자 변환 · 개념 글 주장(둘레 자리 · 옮긴 칸 · 깃발 천 · 창문 · 같은 모양 두 말 · 뒤집기≠돌리기))
-   H 재료 충실(차단 어휘 「결과」→「모양」 같은 표로 원문을 바꿔 대조) · I 실렌더(닫힘·열림) + 1인 흐름 · J extras 22 · K 발문 · L 선행 용어
+   H 재료 충실(차단 어휘 「결과」→「모양」 같은 표로 원문을 바꿔 대조) · I 실렌더(닫힘·열림) + 1인 흐름 · J extras 22(+교과서 활동 덤 b_lN_i) · K 발문 · L 선행 용어
    실행: NODE_PATH=/home/claude/.jsdom/node_modules node kedu/teacher/표준/gate_g4s2_math_u6.js */
 'use strict';
 const fs = require('fs');
@@ -310,7 +310,8 @@ KEYS.forEach(k => T(k + ' 19장 × 닫힘·열림 렌더 예외 0 · 빈 본문 
   if (s.block === 'concept' || (s.block === 'basic_problem' && s.data.fig)) ok(/class="fig"/.test(r.body), s.id + ' 그림 안 섬'); if (s.block === 'offline_activity') ok(/class="solo"/.test(r.body) && (r.body.match(/<i>→<\/i>/g) || []).length === s.data.solo.length - 1, s.id + ' 1인 흐름 줄'); })); }));
 
 console.log('═══ J. extras ═══');
-KEYS.forEach(k => T(k + ' extras 22 · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; ok(ex.length === 22, ex.length); const ids = ex.map(e => e.id); ok(new Set(ids).size === 22, 'id 중복');
+/* 2026-11-09 교과서판: extras 22 + 「교과서 활동」 덤(id b_lN_i · other_activity · 📗)은 따로 센다 */
+KEYS.forEach(k => T(k + ' extras 22 (+교과서 활동 덤) · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; const tb = ex.filter(e => /^b_l\d+_\d+$/.test(e.id)); ok(ex.length - tb.length === 22, ex.length - tb.length); tb.forEach(e => ok(e.type === 'other_activity' && e.icon === '📗' && /^교과서 활동 — /.test(e.title), e.id)); const ids = ex.map(e => e.id); ok(new Set(ids).size === ids.length, 'id 중복');
   L[k].slides.forEach(s => (s.suggested_extras || []).forEach(id => ok(ids.indexOf(id) >= 0, s.id + ' → ' + id))); ex.forEach(e => ok(e.title && (e.content || e.url), e.id + ' 내용')); }));
 
 console.log('═══ K. 발문 ═══');
