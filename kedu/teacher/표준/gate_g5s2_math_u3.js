@@ -7,7 +7,7 @@
    F 글 속 「… = …」 사슬 다시 셈 · G 그림 — cgf 짝 변·각 · 길이·각 이름표 = 기하 · hide 가림 / syf 갈래·그은 축·가운데 점 = 기하 · fake 는 돌리면 어긋남
      / sgd 완성 도형 = 축·중심 대칭 · ask 는 나머지 반 안 그림 / fpk 칸 갈래 = 기하 / crr 「두 점 사이 = 한쪽 × 2」 / lcut 조각 합동·나무 수 = 기하
      · 문제 그림은 답을 그리지 않음(대칭축 수 물음 = 축 안 그림 · 길이·각 물음 = 가림 · crr 물음 칸 = ?) · 검사기 자체 확인
-   H 원문 충실 · I 실렌더 · J extras 22 · K 발문·물음 끝맺음·다음 단원(4단원 소수의 곱셈)
+   H 원문 충실 · I 실렌더 · J extras 22(+교과서 활동 덤 b_lN_i) · K 발문·물음 끝맺음·다음 단원(4단원 소수의 곱셈)
    L 선행(합동 l02 · 대응 l03 · 선대칭·대칭축 l04 · 수직이등분 l05 · 점대칭·대칭의 중심 l07 — l01 예외) · M 차단 어휘 · 「결」 0 · 인물 0(원문 달곰이·여울이·순달이·현주)
    실행: NODE_PATH=/home/claude/.jsdom/node_modules node kedu/teacher/표준/gate_g5s2_math_u3.js */
 'use strict';
@@ -226,7 +226,8 @@ KEYS.forEach(k => T(k + ' 19장 × 닫힘·열림 렌더 예외 0 · 빈 본문 
   if (s.block === 'concept' || (s.block === 'basic_problem' && s.data.fig)) ok(/class="fig/.test(r.body), s.id + ' 그림 안 섬'); if (s.block === 'offline_activity') ok(/class="solo"/.test(r.body) && (r.body.match(/<i>→<\/i>/g) || []).length === s.data.solo.length - 1, s.id + ' 1인 흐름 줄'); })); }));
 
 console.log('═══ J. extras ═══');
-KEYS.forEach(k => T(k + ' extras 22 · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; ok(ex.length === 22, ex.length); const ids = ex.map(e => e.id); ok(new Set(ids).size === 22, 'id 중복');
+/* 2026-11-10 교과서판: extras 22 + 「교과서 활동」 덤(id b_lN_i · other_activity · 📗)은 따로 센다 */
+KEYS.forEach(k => T(k + ' extras 22 (+교과서 활동 덤) · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; const tb = ex.filter(e => /^b_l\d+_\d+$/.test(e.id)); ok(ex.length - tb.length === 22, ex.length - tb.length); tb.forEach(e => ok(e.type === 'other_activity' && e.icon === '📗' && /^교과서 활동 — /.test(e.title), e.id)); const ids = ex.map(e => e.id); ok(new Set(ids).size === ids.length, 'id 중복');
   L[k].slides.forEach(s => (s.suggested_extras || []).forEach(id => ok(ids.indexOf(id) >= 0, s.id + ' → ' + id))); ex.forEach(e => ok(e.title && (e.content || e.url), e.id + ' 내용')); }));
 
 console.log('═══ K. 발문 · 물음 끝맺음 · 다음 단원 ═══');
