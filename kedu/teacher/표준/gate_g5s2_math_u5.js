@@ -6,7 +6,7 @@
    F 식 전수 — 개념 글·요약·교사 층 글 속 「… = …」 사슬을 다시 셈 · 검산기 자체 확인
    G 그림 — bxi 모서리 12(숨은 셋 = ㅁ 에서 만나는 점선) · 칠한 면 = 상자의 면 · 길이 이름표 · bxr · bxn 접은 결과 = 게이트 접기 · 접는 선 = 맞닿은 칸
      · 바른 전개도의 접는 선 = 5 · npk · dpg 끝 눈 = 게이트 굴리기 · ask 가림 · 문제 그림 속 정답 0 · 검사기 자체 확인
-   H 원문 충실 · I 실렌더 · J extras 22 · K 발문·물음 끝맺음·다음 단원
+   H 원문 충실 · I 실렌더 · J extras 22(+교과서 활동 덤 b_lN_i) · K 발문·물음 끝맺음·다음 단원
    L 선행(「정육면체」 l03 · 「겨냥도」 l04 · 「밑면」「옆면」 l05 · 「전개도」 l06 — l01 예외) · M 차단 어휘 · 「결」 0(파일 주소 빼고) · 인물 0(원문 달곰이·지우·윤수·서연·태민 · 곰이·펭이)
    실행: NODE_PATH=/home/claude/.jsdom/node_modules node kedu/teacher/표준/gate_g5s2_math_u5.js */
 'use strict';
@@ -287,7 +287,8 @@ KEYS.forEach(k => T(k + ' 19장 × 닫힘·열림 렌더 예외 0 · 빈 본문 
   if (s.block === 'concept' || (s.block === 'basic_problem' && s.data.fig)) ok(/class="fig/.test(r.body), s.id + ' 그림 안 섬'); if (s.block === 'offline_activity') ok(/class="solo"/.test(r.body) && (r.body.match(/<i>→<\/i>/g) || []).length === s.data.solo.length - 1, s.id + ' 1인 흐름 줄'); })); }));
 
 console.log('═══ J. extras ═══');
-KEYS.forEach(k => T(k + ' extras 22 · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; ok(ex.length === 22, ex.length); const ids = ex.map(e => e.id); ok(new Set(ids).size === 22, 'id 중복');
+/* 2026-11-10 교과서판: extras 22 + 「교과서 활동」 덤(id b_lN_i · other_activity · 📗)은 따로 센다 */
+KEYS.forEach(k => T(k + ' extras 22 (+교과서 활동 덤) · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; const tb = ex.filter(e => /^b_l\d+_\d+$/.test(e.id)); ok(ex.length - tb.length === 22, ex.length - tb.length); tb.forEach(e => ok(e.type === 'other_activity' && e.icon === '📗' && /^교과서 활동 — /.test(e.title), e.id)); const ids = ex.map(e => e.id); ok(new Set(ids).size === ids.length, 'id 중복');
   L[k].slides.forEach(s => (s.suggested_extras || []).forEach(id => ok(ids.indexOf(id) >= 0, s.id + ' → ' + id))); ex.forEach(e => ok(e.title && (e.content || e.url), e.id + ' 내용')); }));
 
 console.log('═══ K. 발문 · 물음 끝맺음 · 다음 단원 ═══');
