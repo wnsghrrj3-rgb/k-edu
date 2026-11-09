@@ -8,6 +8,22 @@
  * ============================================================ */
 (function (g) {
   'use strict';
+  /* ── 문턱·별칭은 여기 한 곳 — 실기기(mic-test.html) 결과를 보고 여기만 고친다 ──
+     2026-11-10 현재 실기기 결과가 아직 기록되지 않아 처음 값 그대로. */
+  var CONF = {
+    pass: 0.8,        /* 단어: 들린 낱말과 글자가 이만큼 닮으면 통과 */
+    alias: 0.9,       /* 별칭(아래 ALIAS)에 걸렸을 때 쳐 주는 닮음 값 — pass 보다 커야 통과 */
+    frame: 0.75,      /* 문장: 틀 낱말(like …)이 이만큼 닮으면 틀이 들린 것으로 */
+    timeout: 7000,    /* 한 번 듣는 길이(ms) — 화면에는 안 보인다 */
+    alternatives: 5   /* 전사 후보를 몇 개까지 받아 볼지 */
+  };
+  /* 느슨한 별칭 — 음성 전사가 자주 내는 꼴. 발음 평가가 아니므로 넉넉히 */
+  var ALIAS = {
+    chips: ['chip', 'ships', 'cheeps', 'tips'], ham: ['hum', 'hem', 'hamm'], jam: ['gem', 'jem', 'jim', 'jamm', 'jump'],
+    lunch: ['launch', 'lunche', 'lunge'], shop: ['shopp', 'shob', 'shaw'], fish: ['fishy', 'fiss', 'feesh'],
+    dish: ['dishh', 'deesh', 'wish'], chop: ['chopp', 'chup', 'job']
+  };
+
   var SR = g.SpeechRecognition || g.webkitSpeechRecognition;
   var rec = null, busy = false, denied = false;
 
@@ -22,13 +38,6 @@
   }
   function sim(a, b) { var L = Math.max(a.length, b.length); return L ? 1 - lev(a, b) / L : 1; }
 
-  /* 느슨한 별칭 — 음성 전사가 자주 내는 꼴. 발음 평가가 아니므로 넉넉히 */
-  var ALIAS = {
-    chips: ['chip', 'ships', 'cheeps', 'tips'], ham: ['hum', 'hem', 'hamm'], jam: ['gem', 'jem', 'jim', 'jamm', 'jump'],
-    lunch: ['launch', 'lunche', 'lunge'], shop: ['shopp', 'shob', 'shaw'], fish: ['fishy', 'fiss', 'feesh'],
-    dish: ['dishh', 'deesh', 'wish'], chop: ['chopp', 'chup', 'job']
-  };
-
   /* 들은 글(heard)이 target 을 뜻하는가. others = 같은 구역의 다른 재료(혼동 방지) */
   function matchWord(heard, target, others) {
     var toks = norm(heard).split(' ').filter(Boolean);
@@ -38,12 +47,12 @@
     toks.forEach(function (tk) {
       cands.forEach(function (c) {
         var s = sim(tk, c);
-        if ((ALIAS[c] || []).indexOf(tk) >= 0) s = Math.max(s, 0.9);
+        if ((ALIAS[c] || []).indexOf(tk) >= 0) s = Math.max(s, CONF.alias);
         if (tk === c) s = 1;
         if (s > bestScore) { bestScore = s; best = c; }
       });
     });
-    return best === target && bestScore >= 0.8;
+    return best === target && bestScore >= CONF.pass;
   }
   /* 문장: 핵심 단어(key)가 들어 있고, 틀(frame) 단어 중 하나 이상(like/lik/light…)이 들리면 통과 */
   function matchSentence(heard, key, others, frame) {
@@ -51,7 +60,7 @@
     if (!matchWord(h, key, others)) return false;
     frame = frame || ['like', 'lik', 'light', 'likes'];
     var toks = h.split(' ');
-    for (var i = 0; i < toks.length; i++) for (var j = 0; j < frame.length; j++) if (sim(toks[i], frame[j]) >= 0.75) return true;
+    for (var i = 0; i < toks.length; i++) for (var j = 0; j < frame.length; j++) if (sim(toks[i], frame[j]) >= CONF.frame) return true;
     return false;
   }
 
@@ -67,8 +76,8 @@
       if (busy && rec) { try { rec.abort(); } catch (e) {} }
       try { if (g.speechSynthesis) g.speechSynthesis.cancel(); } catch (e) {}     /* 내 소리가 마이크로 들어가지 않게 */
       rec = new SR();
-      rec.lang = 'en-US'; rec.interimResults = true; rec.maxAlternatives = 5; rec.continuous = false;
-      var done = false, alts = [], timer = setTimeout(function () { finish(alts.length ? { alts: alts, partial: true } : { error: 'timeout' }); try { rec.stop(); } catch (e) {} }, opt.timeout || 7000);
+      rec.lang = 'en-US'; rec.interimResults = true; rec.maxAlternatives = CONF.alternatives; rec.continuous = false;
+      var done = false, alts = [], timer = setTimeout(function () { finish(alts.length ? { alts: alts, partial: true } : { error: 'timeout' }); try { rec.stop(); } catch (e) {} }, opt.timeout || CONF.timeout);
       function finish(r) { if (done) return; done = true; busy = false; clearTimeout(timer); note(r.error ? 'error:' + r.error : 'heard:' + (r.alts || []).join(' | ')); resolve(r); }
       rec.onresult = function (ev) {
         alts = [];
@@ -91,6 +100,7 @@
   var ERR_KO = { 'not-allowed': '마이크 허용이 필요해요 — 주소창 왼쪽 자물쇠에서 마이크를 켜 주세요', 'service-not-allowed': '이 브라우저에선 음성 인식을 쓸 수 없어요', network: '음성 인식 서버에 연결하지 못했어요(인터넷 확인)', 'audio-capture': '마이크를 찾지 못했어요', unavailable: '이 브라우저엔 음성 인식이 없어요(크롬에서 열어 주세요)', nospeech: '소리가 안 들렸어요', 'no-speech': '소리가 안 들렸어요', timeout: '소리가 안 들렸어요', start: '마이크를 켜지 못했어요' };
 
   var PlaySpeech = {
+    CONF: CONF, ALIAS: ALIAS,
     available: function () { return !!SR && !denied && navigator.onLine !== false; },
     supported: function () { return !!SR; },
     denied: function () { return denied; },
