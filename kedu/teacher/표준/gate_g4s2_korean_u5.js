@@ -4,7 +4,7 @@
    B 19장 골격 · C 7요소 · D 복습 계보(g4s2_korean u4_l15 → l01 → … → l11)
    E 정답 표시(하나 고르기 = 원문 정답 · 모두 고르기 = 원문 hit 그대로(보기 3~6) · 짝 잇기 = 원문 짝 전부 · 종류 합 24) · 수준별·출구
    F 원문 계승(개념 말풍선 = 원문 글 · 글 판 = 원문 줄 · 기본 문제 = 원문 문항 · 정리 = 원문 「④ 정리」 recap(있는 차시) · 없는 차시는 SUMSRC 표의 원문 recap · 잇기 그림 = 원문 짝)
-   G 그림 렌더(부품 8가지) · H 중복 0 · I 실렌더 + 1인 흐름 + 모두 고르기 표시 · J extras 22 · K 발문 6장↑·분 합 = 차시 분의 0.75~1.1배 · L 선행 용어(원문도 같은 차례) · M 이야기 인물 조사
+   G 그림 렌더(부품 8가지) · H 중복 0 · I 실렌더 + 1인 흐름 + 모두 고르기 표시 · J extras 22(+교과서 활동 덤 b_lN_i) · K 발문 6장↑·분 합 = 차시 분의 0.75~1.1배 · L 선행 용어(원문도 같은 차례) · M 이야기 인물 조사
    N 저작권·차단 어휘(박음·빵꾸·갈아엎·결로·박수 0 · 「결」 0 — 201차: 원문의 「결」은 l13 ① 만나기 말풍선 「결국」 하나뿐이고 그 장은 개념으로 쓰지 않음)
    실행: NODE_PATH=<jsdom 있는 node_modules> node kedu/teacher/표준/gate_g4s2_korean_u5.js */
 'use strict';
@@ -125,7 +125,8 @@ KEYS.forEach(k => T(k + ' 19장 × 닫힘·열림 렌더 예외 0 · 빈 본문 
 T('2세대 꼴 — 개념 장 cv2 · 문제 장 pv3·pa2·ch2', () => KEYS.forEach(k => { const les = L[k]; les.slides.slice(3, 7).forEach((s, j) => { const r = render(s, les, false); ok(/cv2/.test(r.cls || ''), k + ' concept s' + (j + 4) + ' cls ' + r.cls); }); les.slides.slice(8, 11).forEach((s, j) => { const r = render(s, les, false); ok(/pa2|pv3|ch2/.test((r.cls || '') + r.body.slice(0, 200)), k + ' basic s' + (j + 9) + ' cls ' + r.cls); }); }));
 
 console.log('═══ J. extras ═══');
-KEYS.forEach(k => T(k + ' extras 22 · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; ok(ex.length === 22, ex.length); const ids = ex.map(e => e.id); ok(new Set(ids).size === 22, 'id 중복');
+/* 2026-11-09 교과서판: extras 22 + 「교과서 활동」 덤(id b_lN_i · other_activity · 📗)은 따로 센다 */
+KEYS.forEach(k => T(k + ' extras 22 (+교과서 활동 덤) · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; const tb = ex.filter(e => /^b_l\d+_\d+$/.test(e.id)); ok(ex.length - tb.length === 22, ex.length - tb.length); tb.forEach(e => ok(e.type === 'other_activity' && e.icon === '📗' && /^교과서 활동 — /.test(e.title), e.id)); const ids = ex.map(e => e.id); ok(new Set(ids).size === ex.length, 'id 중복');
   L[k].slides.forEach(s => (s.suggested_extras || []).forEach(id => ok(ids.indexOf(id) >= 0, s.id + ' → ' + id))); ex.forEach(e => ok(e.title && (e.content || e.url), e.id)); }));
 
 console.log('═══ K. 발문 ═══');
