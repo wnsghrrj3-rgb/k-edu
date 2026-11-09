@@ -4152,6 +4152,182 @@
     global.KT2_DEC63 = { qdiv, qexact, rnd63, ratio63 };
     Object.assign(PARTS, { dvs, dsc, rdq, lft });
   }
+  // ══ N65(2026-11-09) 6학년 2학기 수학 5단원 「원의 둘레와 넓이」 부품 — 지도서 그림(원 안 정육각형·원 밖 정사각형 · 원주 펼치기 · 모눈 어림 · 정사각형 어림 · 원 잘라 이어 붙이기 · 겹원 · 반지름 k배 · 원 안쪽 정다각형 · 반원 옮기기)을 2세대로 ══
+  //   cpm5(원주 사이 — 정육각형 둘레 = 지름 × 3 · 정사각형 둘레 = 지름 × 4, 둘레는 부품이 셈) · cun5(원주 펼치기 — 지름 3번과 조금 더 · 원주 = 지름 × 3.14 를 부품이 셈)
+  //   cgd5(1 cm² 모눈 위 반지름 r 원 — 완전히 들어간 칸·걸친 칸을 부품이 셈) · csq5(원 안 마름모 = (반지름)²×2 · 원 밖 정사각형 = (반지름)²×4 를 부품이 셈)
+  //   csr5(원을 n등분해 번갈아 이어 붙이기 — 가로 = 원주의 반 = 반지름 × 3.14 · 세로 = 반지름 · 넓이를 부품이 셈) · crg5(중심이 같은 원 — 가·나·다·라 넓이를 부품이 셈)
+  //   ckk5(반지름 k배 — 넓이와 배수 k × k 를 부품이 셈) · cpl5(원 안쪽에 맞닿는 정다각형 — (둘레) ÷ (지름)을 부품이 셈) · cmv5(반원 옮기기 — 가로 2r · 세로 r 직사각형 넓이를 부품이 셈)
+  //   ⛔ ask 면 답이 되는 수를 그리지 않는다. 원주율 = 3.14(교과서). 수는 BigInt 정수 + 소수 자릿수(부동소수 금지) — 그림 좌표만 부동소수.
+  {
+    const C65 = { ink: '#2B3440', o: '#C2551A', oS: '#FFE3CF', b: '#2F6FB5', bS: '#DCE8FB', g: '#2A9D8F', gS: '#D5F0EC', p: '#8E5CC9', pS: '#EFE4FB', soft: '#8A97A8', line: '#B9C4D2', q: '#FF7A2F' };
+    const T65 = (x, y, t, sz, col, wt, anc) => '<text x="' + (+x).toFixed(1) + '" y="' + (+y).toFixed(1) + '" text-anchor="' + (anc || 'middle') + '" font-size="' + (sz || 24) + '" font-weight="' + (wt || 800) + '" fill="' + (col || C65.ink) + '">' + esc(t) + '</text>';
+    const d5 = (s) => { s = String(s); if (!/^\d+(\.\d+)?$/.test(s)) throw new Error('원 부품: 수 아님 ' + s); const i = s.indexOf('.'); return i < 0 ? [BigInt(s), 0] : [BigInt(s.replace('.', '')), s.length - i - 1]; };
+    const p5 = (k) => 10n ** BigInt(k);
+    const al5 = (a, k) => a[0] * p5(k - a[1]);
+    const mul5 = (a, b) => [a[0] * b[0], a[1] + b[1]];
+    const add5 = (a, b) => { const k = Math.max(a[1], b[1]); return [al5(a, k) + al5(b, k), k]; };
+    const sub5 = (a, b) => { const k = Math.max(a[1], b[1]); return [al5(a, k) - al5(b, k), k]; };
+    const f5 = (a) => { let n = a[0]; const k = a[1]; const neg = n < 0n; if (neg) n = -n; let s = n.toString(); if (k > 0) { while (s.length <= k) s = '0' + s; s = s.slice(0, s.length - k) + '.' + s.slice(s.length - k); s = s.replace(/0+$/, '').replace(/\.$/, ''); } return (neg ? '-' : '') + s; };
+    const PI5 = [314n, 2];
+    const pos5 = (s, nm) => { const v = d5(s); if (v[0] <= 0n) throw new Error(nm + ': 0보다 커야'); return v; };
+    const circ5 = (d) => f5(mul5(d5(d), PI5));
+    const area5 = (r) => f5(mul5(mul5(d5(r), d5(r)), PI5));
+    function div5(a, b) { const k = Math.max(a[1], b[1]); const N = al5(a, k), D = al5(b, k); if (D === 0n) throw new Error('원 부품: 0으로 나눔'); for (let s = 0; s <= 8; s++) { const num = N * p5(s); if (num % D === 0n) return f5([num / D, s]); } throw new Error('원 부품: 나누어떨어지지 않음'); }
+    const cap65 = (o, y) => o.cap ? T65(380, y, o.cap, 22, C65.soft, 900) : '';
+    const wrap65 = (s, cls, h, data, key) => svgWrap(s, cls, '0 0 760 ' + h).replace('<svg ', '<svg data-' + key + '="' + esc(data) + '" ');
+    const ngon = (cx, cy, R, n, a0) => Array.from({ length: n }, (_, i) => { const a = (a0 == null ? 90 : a0) * Math.PI / 180 + 2 * Math.PI * i / n; return (cx + R * Math.cos(a)).toFixed(1) + ',' + (cy - R * Math.sin(a)).toFixed(1); }).join(' ');
+    // ── cpm5 ── 원 안 정육각형 · 원 밖 정사각형
+    function cpm5(o) {
+      const has = o.d != null, u = o.unit || 'cm'; const d = has ? pos5(o.d, 'cpm5') : null;
+      if (o.ask && ['hex', 'sq'].indexOf(o.ask) < 0) throw new Error('cpm5: ask');
+      const hex = has ? f5(mul5(d, [3n, 0])) : null, sq = has ? f5(mul5(d, [4n, 0])) : null;
+      const cx = 380, cy = 200, R = 120; let s = '';
+      s += '<rect x="' + (cx - R) + '" y="' + (cy - R) + '" width="' + 2 * R + '" height="' + 2 * R + '" fill="' + C65.pS + '" stroke="' + C65.p + '" stroke-width="4"/>';
+      s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="#fff" stroke="' + C65.ink + '" stroke-width="5"/>';
+      s += '<polygon class="cpm-hex" points="' + ngon(cx, cy, R, 6, 0) + '" fill="' + C65.gS + '" stroke="' + C65.g + '" stroke-width="4"/>';
+      s += '<line x1="' + (cx - R) + '" y1="' + cy + '" x2="' + (cx + R) + '" y2="' + cy + '" stroke="' + C65.o + '" stroke-width="5"/><circle cx="' + cx + '" cy="' + cy + '" r="6" fill="' + C65.ink + '"/>';
+      s += T65(cx, cy - 12, has ? '지름 ' + f5(d) + ' ' + u : '지름', 22, C65.o);
+      const hx = has ? (o.ask === 'hex' ? '정육각형의 둘레 ?' : '정육각형의 둘레 ' + hex + ' ' + u) : '정육각형의 둘레';
+      const sx = has ? (o.ask === 'sq' ? '정사각형의 둘레 ?' : '정사각형의 둘레 ' + sq + ' ' + u) : '정사각형의 둘레';
+      s += T65(135, 150, '원 안', 22, C65.g) + T65(135, 186, hx, 21, C65.g, 900).replace('<text ', '<text class="cpm-h" ') + (has ? (o.ask !== 'hex' ? T65(135, 216, f5(d) + ' × 3', 20, C65.soft) : '') : T65(135, 216, '= 지름 × 3', 20, C65.g, 900));
+      s += T65(625, 150, '원 밖', 22, C65.p) + T65(625, 186, sx, 21, C65.p, 900).replace('<text ', '<text class="cpm-s" ') + (has ? (o.ask !== 'sq' ? T65(625, 216, f5(d) + ' × 4', 20, C65.soft) : '') : T65(625, 216, '= 지름 × 4', 20, C65.p, 900));
+      const lo = has ? (o.ask === 'hex' ? '?' : hex + ' ' + u) : '지름의 3배', hi = has ? (o.ask === 'sq' ? '?' : sq + ' ' + u) : '지름의 4배';
+      s += T65(cx, 368, lo + ' < 원주 < ' + hi, 26, C65.ink, 900).replace('<text ', '<text class="cpm-r" ');
+      s += cap65(o, 404);
+      return wrap65(s, 'fig-cpm5', o.cap ? 420 : 390, (has ? f5(d) : '') + '|' + (hex || '') + '|' + (sq || '') + '|' + (o.ask || ''), 'cpm5');
+    }
+    // ── cun5 ── 원주 펼치기(지름 3번과 조금 더)
+    function cun5(o) {
+      const has = o.d != null, u = o.unit || 'cm'; const d = has ? pos5(o.d, 'cun5') : null; const C = has ? circ5(o.d) : null;
+      if (o.ask && o.ask !== 'C') throw new Error('cun5: ask');
+      const cy = 170, r = 60, x0 = 200, dp = 150; let s = '';
+      s += '<circle cx="110" cy="' + (cy - r) + '" r="' + r + '" fill="' + C65.bS + '" stroke="' + C65.b + '" stroke-width="5"/><line x1="50" y1="' + (cy - r) + '" x2="170" y2="' + (cy - r) + '" stroke="' + C65.o + '" stroke-width="4"/><circle cx="110" cy="' + (cy - r) + '" r="5" fill="' + C65.ink + '"/>';
+      s += '<path d="M150 ' + (cy + 18) + ' q30 20 46 0" fill="none" stroke="' + C65.q + '" stroke-width="4"/>';
+      for (let i = 0; i < 3; i++) { const a = x0 + dp * i; s += '<rect class="cun-d" x="' + a + '" y="' + (cy - 14) + '" width="' + dp + '" height="28" rx="4" fill="' + (i % 2 ? '#FFD0A8' : C65.oS) + '" stroke="' + C65.o + '" stroke-width="2"/>' + T65(a + dp / 2, cy + 8, has ? '지름 ' + f5(d) : '지름', 18, C65.o); }
+      const xe = x0 + dp * 3.14; s += '<rect class="cun-e" x="' + (x0 + dp * 3) + '" y="' + (cy - 14) + '" width="' + (dp * 0.14).toFixed(1) + '" height="28" fill="' + C65.gS + '" stroke="' + C65.g + '" stroke-width="2"/>';
+      s += '<line x1="' + x0 + '" y1="' + (cy + 30) + '" x2="' + xe.toFixed(1) + '" y2="' + (cy + 30) + '" stroke="' + C65.b + '" stroke-width="4"/>' + T65(((x0 + xe) / 2).toFixed(1), cy + 62, '원주(펼친 둘레)', 22, C65.b);
+      s += T65(xe.toFixed(1), cy - 26, '조금 더', 18, C65.g, 900);
+      const head = has ? (o.ask === 'C' ? '원주 = ' + f5(d) + ' × 3.14 = ?' : '원주 = ' + f5(d) + ' × 3.14 = ' + C + ' ' + u) : (o.plain ? '원주 — 지름을 3번 놓고도 조금 더' : '원주 = 지름 × 3.14 — 지름의 3배보다 조금 더');
+      s += T65(380, 42, head, 26, C65.ink, 900).replace('<text ', '<text class="cun-h" ');
+      s += cap65(o, 268);
+      return wrap65(s, 'fig-cun5', o.cap ? 284 : 256, (has ? f5(d) : '') + '|' + (C || '') + '|' + (o.ask || ''), 'cun5');
+    }
+    // ── cgd5 ── 1 cm² 모눈 위 반지름 r 원(완전히 들어간 칸 · 걸친 칸)
+    function cg5count(r) { let a = 0, b = 0; for (let i = -r; i < r; i++) for (let j = -r; j < r; j++) { const fx = Math.max(Math.abs(i), Math.abs(i + 1)), fy = Math.max(Math.abs(j), Math.abs(j + 1)); if (fx * fx + fy * fy <= r * r) a++; const nx = i > 0 ? i : (i + 1 < 0 ? i + 1 : 0), ny = j > 0 ? j : (j + 1 < 0 ? j + 1 : 0); if (nx * nx + ny * ny < r * r) b++; } return [a, b]; }
+    function cgd5(o) {
+      const r = +o.r; if (!(Number.isInteger(r) && r >= 2 && r <= 8)) throw new Error('cgd5: 반지름 2~8 자연수');
+      if (o.ask && ['in', 'out'].indexOf(o.ask) < 0) throw new Error('cgd5: ask');
+      const [a, b] = cg5count(r), S = 300 / (2 * r), X0 = 60, Y0 = 50, cx = X0 + r * S, cy = Y0 + r * S; let s = '';
+      for (let i = -r; i < r; i++) for (let j = -r; j < r; j++) { const fx = Math.max(Math.abs(i), Math.abs(i + 1)), fy = Math.max(Math.abs(j), Math.abs(j + 1)); const nx = i > 0 ? i : (i + 1 < 0 ? i + 1 : 0), ny = j > 0 ? j : (j + 1 < 0 ? j + 1 : 0);
+        const full = fx * fx + fy * fy <= r * r, touch = nx * nx + ny * ny < r * r; const fill = full ? C65.gS : touch ? C65.oS : '#fff';
+        s += '<rect class="cgd-c' + (full ? ' in' : touch ? ' edge' : '') + '" x="' + (cx + i * S).toFixed(1) + '" y="' + (cy + j * S).toFixed(1) + '" width="' + S.toFixed(1) + '" height="' + S.toFixed(1) + '" fill="' + fill + '" stroke="' + C65.line + '" stroke-width="1"/>'; }
+      s += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (r * S).toFixed(1) + '" fill="none" stroke="' + C65.ink + '" stroke-width="4"/><line x1="' + cx.toFixed(1) + '" y1="' + cy.toFixed(1) + '" x2="' + (cx + r * S).toFixed(1) + '" y2="' + cy.toFixed(1) + '" stroke="' + C65.o + '" stroke-width="4"/>' + T65((cx + r * S / 2).toFixed(1), (cy - 8).toFixed(1), r + ' cm', 20, C65.o);
+      s += '<rect x="470" y="70" width="26" height="26" fill="' + C65.gS + '" stroke="' + C65.line + '"/>' + T65(508, 90, '원 안에 완전히 들어간 칸', 20, C65.g, 900, 'start');
+      s += T65(508, 122, o.ask === 'in' ? '? 칸' : a + '칸', 24, C65.g, 900, 'start').replace('<text ', '<text class="cgd-a" ');
+      s += '<rect x="470" y="160" width="26" height="26" fill="' + C65.oS + '" stroke="' + C65.line + '"/>' + T65(508, 180, '원에 걸친 칸까지 세면', 20, C65.o, 900, 'start');
+      s += T65(508, 212, o.ask === 'out' ? '? 칸' : b + '칸', 24, C65.o, 900, 'start').replace('<text ', '<text class="cgd-b" ');
+      s += T65(600, 262, '한 칸 = 1 cm²', 18, C65.soft, 800);
+      s += T65(380, 392, (o.ask === 'in' ? '?' : a) + ' cm² < (원의 넓이) < ' + (o.ask === 'out' ? '?' : b) + ' cm²', 24, C65.ink, 900).replace('<text ', '<text class="cgd-r" ');
+      s += cap65(o, 428);
+      return wrap65(s, 'fig-cgd5', o.cap ? 444 : 410, r + '|' + a + '|' + b + '|' + (o.ask || ''), 'cgd5');
+    }
+    // ── csq5 ── 원 안 마름모 · 원 밖 정사각형 · 반지름을 한 변으로 하는 정사각형
+    function csq5(o) {
+      const has = o.r != null; const r = has ? pos5(o.r, 'csq5') : null; if (o.ask && ['lo', 'hi'].indexOf(o.ask) < 0) throw new Error('csq5: ask');
+      const rr = has ? f5(mul5(r, r)) : null, lo = has ? f5(mul5(mul5(r, r), [2n, 0])) : null, hi = has ? f5(mul5(mul5(r, r), [4n, 0])) : null;
+      const cx = 250, cy = 190, R = 130; let s = '';
+      s += '<rect x="' + (cx - R) + '" y="' + (cy - R) + '" width="' + 2 * R + '" height="' + 2 * R + '" fill="' + C65.pS + '" stroke="' + C65.p + '" stroke-width="4"/>';
+      s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="#fff" stroke="' + C65.ink + '" stroke-width="5"/>';
+      s += '<polygon points="' + cx + ',' + (cy - R) + ' ' + (cx + R) + ',' + cy + ' ' + cx + ',' + (cy + R) + ' ' + (cx - R) + ',' + cy + '" fill="' + C65.gS + '" stroke="' + C65.g + '" stroke-width="4"/>';
+      s += '<rect x="' + cx + '" y="' + (cy - R) + '" width="' + R + '" height="' + R + '" fill="' + C65.oS + '" fill-opacity=".75" stroke="' + C65.o + '" stroke-width="4"/>' + T65(cx + R / 2, cy - R / 2 + 8, has ? rr + ' cm²' : '(반지름)²', 20, C65.o);
+      s += T65(cx + R / 2, cy + 26, has ? '반지름 ' + f5(r) + ' cm' : '반지름', 19, C65.o);
+      s += T65(590, 120, '원 안 마름모', 22, C65.g) + T65(590, 152, has ? (o.ask === 'lo' ? '?' : '(반지름)² × 2 = ' + lo + ' cm²') : '(반지름) × (반지름) × 2', 20, C65.g, 900).replace('<text ', '<text class="csq-lo" ');
+      s += T65(590, 220, '원 밖 정사각형', 22, C65.p) + T65(590, 252, has ? (o.ask === 'hi' ? '?' : '(반지름)² × 4 = ' + hi + ' cm²') : '(반지름) × (반지름) × 4', 20, C65.p, 900).replace('<text ', '<text class="csq-hi" ');
+      s += T65(590, 316, has ? (o.ask === 'lo' ? '?' : lo) + ' cm² < 원의 넓이 < ' + (o.ask === 'hi' ? '?' : hi) + ' cm²' : '2배 < 원의 넓이 < 4배 → 약 3배', 21, C65.ink, 900).replace('<text ', '<text class="csq-r" ');
+      s += cap65(o, 360);
+      return wrap65(s, 'fig-csq5', o.cap ? 376 : 344, (has ? f5(r) : '') + '|' + (lo || '') + '|' + (hi || '') + '|' + (o.ask || ''), 'csq5');
+    }
+    // ── csr5 ── 원을 n등분해 번갈아 이어 붙이기
+    function csr5(o) {
+      const n = +o.n; if ([4, 8, 16, 32, 64].indexOf(n) < 0) throw new Error('csr5: n 4·8·16·32·64');
+      const has = o.r != null; const r = has ? pos5(o.r, 'csr5') : null; if (o.ask && ['w', 'h', 'a'].indexOf(o.ask) < 0) throw new Error('csr5: ask');
+      const w = has ? f5(mul5(r, PI5)) : null, A = has ? area5(o.r) : null;
+      const cx = 120, cy = 150, R = 90; let s = '';
+      for (let i = 0; i < n; i++) { const a1 = 2 * Math.PI * i / n, a2 = 2 * Math.PI * (i + 1) / n; const p1 = [cx + R * Math.cos(a1), cy - R * Math.sin(a1)], p2 = [cx + R * Math.cos(a2), cy - R * Math.sin(a2)];
+        s += '<path class="csr-s" d="M' + cx + ' ' + cy + ' L' + p1[0].toFixed(1) + ' ' + p1[1].toFixed(1) + ' A' + R + ' ' + R + ' 0 0 0 ' + p2[0].toFixed(1) + ' ' + p2[1].toFixed(1) + ' Z" fill="' + (i < n / 2 ? C65.oS : C65.bS) + '" stroke="#fff" stroke-width="' + (n > 16 ? 0.6 : 1.5) + '"/>'; }
+      s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="none" stroke="' + C65.ink + '" stroke-width="4"/>';
+      s += '<path d="M228 150 h40" stroke="' + C65.q + '" stroke-width="6"/><path d="M268 140 l14 10 l-14 10 Z" fill="' + C65.q + '"/>';
+      const X0 = 300, WW = 390, H0 = 90, base = 200, half = WW / (n / 2); // 가로 = 원주의 반
+      if (o.rect) s += '<rect x="' + X0 + '" y="' + (base - H0) + '" width="' + WW + '" height="' + H0 + '" fill="' + C65.oS + '" stroke="' + C65.ink + '" stroke-width="4"/>';
+      else for (let i = 0; i < n; i++) { const up = i % 2 === 0, k = Math.floor(i / 2), xa = X0 + (up ? k * half : k * half + half / 2), xb = xa + half, xm = (xa + xb) / 2;
+        s += up ? '<path d="M' + xm.toFixed(1) + ' ' + base + ' L' + xa.toFixed(1) + ' ' + (base - H0) + ' Q' + xm.toFixed(1) + ' ' + (base - H0 - 12 * 8 / n) + ' ' + xb.toFixed(1) + ' ' + (base - H0) + ' Z" fill="' + C65.oS + '" stroke="' + C65.o + '" stroke-width="1.5"/>'
+          : '<path d="M' + xm.toFixed(1) + ' ' + (base - H0) + ' L' + xa.toFixed(1) + ' ' + base + ' Q' + xm.toFixed(1) + ' ' + (base + 12 * 8 / n) + ' ' + xb.toFixed(1) + ' ' + base + ' Z" fill="' + C65.bS + '" stroke="' + C65.b + '" stroke-width="1.5"/>'; }
+      s += T65(cx, 272, n + '등분', 22, C65.ink);
+      s += T65(X0 + WW / 2, base + 40, has ? (o.ask === 'w' ? '가로 = 원주의 반 = ?' : '가로 = 원주의 반 = ' + f5(r) + ' × 3.14 = ' + w + ' cm') : '가로 = (원주) × 1/2', 20, C65.o, 900).replace('<text ', '<text class="csr-w" ');
+      s += T65(X0 + WW + 6, base - H0 / 2 + 6, has ? (o.ask === 'h' ? '?' : f5(r) + ' cm') : '반지름', 18, C65.b, 900, 'start').replace('<text ', '<text class="csr-h" ');
+      if (o.rect) s += T65(X0 + WW / 2, base - H0 / 2 + 8, '한없이 자르면 직사각형', 20, C65.ink, 900);
+      if (has && o.area) s += T65(X0 + WW / 2, base + 74, o.ask === 'a' ? '넓이 = ?' : '넓이 = ' + w + ' × ' + f5(r) + ' = ' + A + ' cm²', 22, C65.ink, 900).replace('<text ', '<text class="csr-a" ');
+      s += cap65(o, 318);
+      return wrap65(s, 'fig-csr5', o.cap ? 334 : 300, n + '|' + (has ? f5(r) : '') + '|' + (w || '') + '|' + (A || '') + '|' + (o.ask || ''), 'csr5');
+    }
+    // ── crg5 ── 중심이 같은 원(가·나·다·라)
+    function crg5(o) {
+      const rs = (o.radii || []).map(String); if (rs.length < 2 || rs.length > 4) throw new Error('crg5: 반지름 2~4개');
+      const v = rs.map(x => pos5(x, 'crg5')); for (let i = 1; i < v.length; i++) if (sub5(v[i], v[i - 1])[0] <= 0n) throw new Error('crg5: 반지름은 커지는 차례로');
+      const A = rs.map(area5), parts = A.map((a, i) => i === 0 ? a : f5(sub5(d5(a), d5(A[i - 1])))); const hi = o.hi == null ? null : +o.hi; if (hi != null && !(hi >= 0 && hi < rs.length)) throw new Error('crg5: hi');
+      const nm = ['가', '나', '다', '라'], cx = 200, cy = 190, RM = 160, sc = RM / +rs[rs.length - 1], fills = [C65.bS, C65.pS, C65.oS, C65.gS]; let s = '';
+      for (let i = rs.length - 1; i >= 0; i--) s += '<circle class="crg-c" cx="' + cx + '" cy="' + cy + '" r="' + (+rs[i] * sc).toFixed(1) + '" fill="' + (hi === i ? '#FFC79B' : fills[i]) + '" stroke="' + C65.ink + '" stroke-width="3"/>';
+      s += '<line x1="' + cx + '" y1="' + cy + '" x2="' + (cx + RM) + '" y2="' + cy + '" stroke="' + C65.ink + '" stroke-width="2"/>';
+      rs.forEach((x, i) => { const a = i ? +rs[i - 1] * sc : 0, b = +x * sc; s += T65(cx + (a + b) / 2, cy - 10, nm[i], 22, C65.ink, 900); });
+      rs.forEach((x, i) => { s += T65(cx + +x * sc, cy + 26 + (i % 2) * 20, x + ' cm', 16, C65.soft, 800); });
+      if (hi != null) { const t = hi === 0 ? rs[0] + ' × ' + rs[0] + ' × 3.14' : rs[hi] + ' × ' + rs[hi] + ' × 3.14 − ' + rs[hi - 1] + ' × ' + rs[hi - 1] + ' × 3.14';
+        s += T65(575, 150, nm[hi] + ' 부분의 넓이', 24, C65.o) + T65(575, 190, t, 19, C65.ink, 800) + T65(575, 228, o.ask ? '= ? cm²' : '= ' + parts[hi] + ' cm²', 24, C65.o, 900).replace('<text ', '<text class="crg-v" '); }
+      else s += T65(575, 180, '큰 원 − 작은 원', 24, C65.o) + T65(575, 216, '고리 모양의 넓이', 20, C65.soft);
+      s += cap65(o, 386);
+      return wrap65(s, 'fig-crg5', o.cap ? 402 : 372, rs.join(',') + '|' + parts.join(',') + '|' + (hi == null ? '' : hi) + '|' + (o.ask ? 1 : ''), 'crg5');
+    }
+    // ── ckk5 ── 반지름 k배 → 넓이 k × k 배
+    function ckk5(o) {
+      const r = pos5(o.r, 'ckk5'), ks = (o.ks || [1, 2, 3]).map(Number); if (!ks.length || ks.length > 3 || ks[0] !== 1 || ks.some(k => !Number.isInteger(k) || k < 1)) throw new Error('ckk5: ks [1, …]');
+      const rs = ks.map(k => f5(mul5(r, [BigInt(k), 0]))), A = rs.map(area5), R = ks.map(k => String(k * k)); const ask = o.ask == null ? null : +o.ask;
+      const unitPx = 34 / Math.max(1, ks[ks.length - 1] / 3) ; let s = '', x = 30;
+      ks.forEach((k, i) => { const rad = Math.min(110, 34 * k * 3 / ks[ks.length - 1]); const cx = x + rad; s += '<circle class="ckk-c" cx="' + cx.toFixed(1) + '" cy="150" r="' + rad.toFixed(1) + '" fill="' + [C65.bS, C65.oS, C65.gS][i] + '" stroke="' + C65.ink + '" stroke-width="3"/><line x1="' + cx.toFixed(1) + '" y1="150" x2="' + (cx + rad).toFixed(1) + '" y2="150" stroke="' + C65.o + '" stroke-width="3"/>';
+        s += T65(cx, 292, '반지름 ' + rs[i] + ' cm', 18, C65.o) + T65(cx, 320, ask === i ? '넓이 ?' : '넓이 ' + A[i] + ' cm²', 18, C65.ink, 900).replace('<text ', '<text class="ckk-a" ') + (i ? T65(cx, 348, ask === i ? '' : k + ' × ' + k + ' = ' + R[i] + '배', 18, C65.g, 900) : T65(cx, 348, '기준', 16, C65.soft));
+        x += 2 * rad + 40; void unitPx; });
+      s += cap65(o, 384);
+      return wrap65(s, 'fig-ckk5', o.cap ? 400 : 366, f5(r) + '|' + ks.join(',') + '|' + A.join(',') + '|' + R.join(',') + '|' + (ask == null ? '' : ask), 'ckk5');
+    }
+    // ── cpl5 ── 원 안쪽에 맞닿는 정다각형 · (둘레) ÷ (지름)
+    const NG5 = { 4: '정사각형', 6: '정육각형', 8: '정팔각형', 12: '정십이각형', 22: '정이십이각형' };
+    function cpl5(o) {
+      const r = pos5(o.r, 'cpl5'), d = mul5(r, [2n, 0]), it = o.items || []; if (!it.length || it.length > 4) throw new Error('cpl5: 1~4개');
+      const ask = o.ask == null ? null : +o.ask; const rat = it.map(([n, per]) => { if (!NG5[n]) throw new Error('cpl5: 정다각형 ' + n); return div5(pos5(per, 'cpl5'), d); });
+      if (rat.some(x => !(+x < 3.14159))) throw new Error('cpl5: 원 안쪽 다각형의 (둘레)÷(지름)은 원주율보다 작아야');
+      const pw = 760 / it.length; let s = '';
+      it.forEach(([n, per], i) => { const cx = pw * i + pw / 2, cy = 120, R = Math.min(80, pw / 2 - 20);
+        s += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy + '" r="' + R.toFixed(1) + '" fill="#fff" stroke="' + C65.ink + '" stroke-width="3"/><polygon points="' + ngon(cx, cy, R, n, n === 4 ? 90 : 0) + '" fill="' + C65.bS + '" stroke="' + C65.b + '" stroke-width="2.5"/>';
+        s += T65(cx, 232, NG5[n], 20, C65.ink) + T65(cx, 262, '둘레 ' + per + ' cm', 18, C65.b) + T65(cx, 292, ask === i ? per + ' ÷ ' + f5(d) + ' = ?' : per + ' ÷ ' + f5(d) + ' = ' + rat[i], 18, C65.o, 900).replace('<text ', '<text class="cpl-v" '); });
+      s += T65(380, 336, '변의 수가 늘수록 원에 가까워지고, 값은 원주율 3.14에 가까워져요', 20, C65.soft, 900);
+      s += cap65(o, 372);
+      return wrap65(s, 'fig-cpl5', o.cap ? 388 : 354, f5(r) + '|' + it.map(([n, per], i) => n + ':' + per + ':' + rat[i]).join(',') + '|' + (ask == null ? '' : ask), 'cpl5');
+    }
+    // ── cmv5 ── 반원 옮기기(정사각형 안 원 — 윗부분 바깥 · 아랫부분 반원을 색칠 → 직사각형)
+    function cmv5(o) {
+      const r = pos5(o.r, 'cmv5'), A = f5(mul5(mul5(r, [2n, 0]), r)), u = o.unit || 'cm'; let s = '';
+      const x0 = 60, y0 = 40, S = 220, R = S / 2, cx = x0 + R, cy = y0 + R;
+      s += '<path d="M' + x0 + ' ' + y0 + ' L' + (x0 + S) + ' ' + y0 + ' L' + (x0 + S) + ' ' + cy + ' A' + R + ' ' + R + ' 0 0 0 ' + x0 + ' ' + cy + ' Z" fill="' + C65.gS + '"/>';
+      s += '<path d="M' + x0 + ' ' + cy + ' A' + R + ' ' + R + ' 0 0 0 ' + (x0 + S) + ' ' + cy + ' Z" fill="' + C65.gS + '"/>';
+      s += '<rect x="' + x0 + '" y="' + y0 + '" width="' + S + '" height="' + S + '" fill="none" stroke="' + C65.ink + '" stroke-width="3"/><circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="none" stroke="' + C65.g + '" stroke-width="3"/><line x1="' + x0 + '" y1="' + cy + '" x2="' + (x0 + S) + '" y2="' + cy + '" stroke="' + C65.g + '" stroke-width="2"/>';
+      s += '<line x1="' + cx + '" y1="' + cy + '" x2="' + (cx + R) + '" y2="' + cy + '" stroke="' + C65.o + '" stroke-width="4"/>' + T65(cx + R / 2, cy - 10, f5(r) + ' ' + u, 20, C65.o);
+      s += '<path d="M318 150 h50" stroke="' + C65.q + '" stroke-width="6"/><path d="M368 140 l14 10 l-14 10 Z" fill="' + C65.q + '"/>' + T65(350, 186, '반원 옮기기', 18, C65.q, 900);
+      s += '<rect x="420" y="' + y0 + '" width="' + S + '" height="' + R + '" fill="' + C65.gS + '" stroke="' + C65.ink + '" stroke-width="3"/>' + T65(420 + R, y0 + R + 32, '가로 ' + f5(mul5(r, [2n, 0])) + ' ' + u, 20, C65.ink) + T65(420 + S + 8, y0 + R / 2 + 8, '세로 ' + f5(r) + ' ' + u, 18, C65.ink, 800, 'start');
+      s += T65(420 + R, y0 + R + 72, o.ask ? '넓이 = ?' : '넓이 = ' + f5(mul5(r, [2n, 0])) + ' × ' + f5(r) + ' = ' + A + ' ' + u + '²', 22, C65.g, 900).replace('<text ', '<text class="cmv-a" ');
+      s += cap65(o, 300);
+      return wrap65(s, 'fig-cmv5', o.cap ? 316 : 284, f5(r) + '|' + A + '|' + (o.ask ? 1 : ''), 'cmv5');
+    }
+    global.KT2_CIR65 = { circ5, area5, div5, cg5count };
+    Object.assign(PARTS, { cpm5, cun5, cgd5, csq5, csr5, crg5, ckk5, cpl5, cmv5 });
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
