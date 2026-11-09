@@ -235,6 +235,26 @@ const T = {
   }
 };
 
+/* ── 교과서판 보탬 (2026-11-09, 교과서판 2학기 트랙) — 지도서 2단원 116~283쪽(『사회』 60~145) 활동 가운데 위 8차시(지도서 2~12차시) 19장·extras 에 없던 것만(교과서 열쇠말 기계 대조 194 가운데 171 있음 → 빠진 것만).
+   「교과서 활동」 덤 장(other_activity · 📗 · id b_lN_i)으로 넣고 그 차시 「실생활」 장의 추천 덤에 건다. 19장 골격·extras 22 는 그대로.
+   앞 차시 덤에는 뒤 차시 용어(게이트 L 표)를 쓰지 않는다(아래에서 확인) · 차단 어휘는 게이트 N 이 데이터·생성기에서 잡는다 · 교과서·지도서에 없는 사실·수는 쓰지 않는다. ── */
+const TB = {
+  u2_l01: [['동시 「설날 아침」 빈칸', '『사회』 66쪽 생각을 열어요 — 동시 「설날 아침」(김나은)의 빈칸에 알맞은 말을 보기(설빔 · 세배 · 복주머니 · 떡국 · 덕담 · 까치)에서 찾아 쓰고, 동시와 비슷한 우리 가족의 설날 모습 이야기하기 · 낱말 풀이: 설빔(설을 맞이해 새로 마련해 입는 옷이나 신발) · 덕담(남이 잘되기를 바라며 서로 나누는 좋은 말) · 설날 이외의 다른 명절에 경험한 풍습도 이야기해 보기(지도서 128).'],
+           ['사진으로 보는 풍습(활동지)', '『사회』 67쪽 사진 — ① 생일날 미역국 ② 첫 번째 생일의 돌잔치 ③ 남자와 여자가 하는 전통 결혼식 ④ 겨울이 되기 전 사람들이 모여 김장을 하고 나눔 → 옛날부터 되풀이되어 전해 오는 생활 습관과 생활 모습 = 풍습. 지도서 133쪽 활동지 — 사진에 알맞은 설명을 보기(㉠ 첫 생일에 돌잔치를 합니다 · ㉡ 전통 놀이를 즐깁니다 · ㉢ 겨울이 되기 전 김장을 합니다 · ㉣ 조상에게 차례를 지냅니다 · ㉤ 여러 가지 세시 음식을 먹습니다 · ㉥ 남자와 여자가 결혼식을 하고 부부가 됩니다)에서 골라 기호 쓰기.']],
+  u2_l02: [['일생 동안의 풍습 이어 보기(활동지)', '『사회』 70~71쪽 — 출생(대문에 21일 동안 금줄) · 백일 · 첫돌(돌잡이 — 쌀, 붓, 활, 돈, 실) · 관례(결혼하기 전에 하던 성인식) · 혼례(주로 집안 어른들이 정한 사람과 결혼) · 회갑(환갑이라고도 부름 — 부모님이 60년 동안 건강하게 사신 것을 축하하려고 자식들이 생신상을 크게 차리고 잔치) · 장례(남은 가족을 위로하고 죽은 사람의 복을 빎). 지도서 140쪽 활동지 — 출생·첫돌·회갑·장례와 설명을 선으로 잇고, 옛날 풍습으로 알 수 있는 생각 쓰기(기쁜 일과 슬픈 일이 있을 때 축하하거나 위로하며 마음을 나누고 서로 도와줌).']],
+  u2_l03: [['옛날 결혼 차례 · 폐백의 대추와 밤', '『사회』 72~73쪽 — ① 결혼하는 날 신랑은 나무 기러기를 가지고 말을 타고 신부 집으로 ② 나무 기러기를 신부 측에 건네고 혼례복을 입고 혼례 ③ 신부 집에서 며칠을 보낸 뒤 신랑은 말을, 신부는 가마를 타고 신랑 집으로 ④ 신부가 신랑 집안에 새로 들어왔다는 뜻으로 어른들께 폐백(신부가 처음으로 신랑 부모나 신랑 쪽 어른들을 뵐 때 큰절을 올리는 것) · 어른들이 대추와 밤을 던져 주는 까닭: 신랑 신부가 자식을 많이 낳고 부자가 되라는 뜻 · 오늘날에는 양쪽 집안 어른들께 폐백을 드리기도 하며, 폐백 풍습은 지역이나 가정 문화에 따라 달라 모든 결혼식에서 드리는 것은 아님(지도서 144).'],
+           ['장례 기사 · 인터넷으로 조사한 출생 · 병풍 책', '『사회』 75쪽 미디어 활동 — 시신을 땅에 묻는 매장이 줄고 수목장(화장 후 뼛가루를 나무 밑이나 주변에 묻음)·해양장(화장 후 뼛가루를 바다에 뿌림) 같은 자연장이 늘어, 명절에 묘지에 가서 성묘(조상의 산소를 찾아가서 돌보는 일, 주로 봄과 가을)하던 사람들이 다른 장소를 찾아 추모함. 76쪽 디지털 할 수 있어요 — 출생: 옛날 집 · 대문에 금줄 · 삼신할머니에게 아기의 안전과 건강을 빎 / 오늘날 산부인과 병원 · 신생아실 · 예방 주사 / 비슷한 점: 아기가 건강하기를 바람, 산모가 미역국을 먹음. 과정 중심 평가(지도서 151~154) — 풍습 하나(예: 제사)를 골라 옛날과 오늘날의 다른 점·비슷한 점을 병풍 책으로 만들기.']],
+  u2_l04: [['새해 덕담 · 단오 부채 만들기', '『사회』 77쪽 스스로 활동 — 우리 반 친구들과 나누고 싶은 새해 덕담 쓰기(예: 「☆☆야, 아프지 말고 건강하길 바라.」). 79쪽 — 단오에는 농악을 울리며 흥을 돋우고, 여름을 시원하게 보내라고 부채를 주고받음 → 활동 자료로 단오 부채 만들기(도안에 단오의 의미를 생각하며 그림 → 더운 여름날의 건강을 기원하는 글 → 완성한 부채로 부채질).'],
+           ['추석 — 한가위 · 경험해 보고 싶은 풍습', '『사회』 80쪽 — 추석(음력 8월 15일)에는 그해에 새로 난 곡식과 과일로 차례를 지내고, 조상들에게 감사하며 성묘하고, 새로 난 쌀로 송편을 빚고, 보름달 아래에서 강강술래, 자기 마을의 소를 응원하며 소싸움 · 한가위는 8월의 한가운데에 있는 큰 날이란 뜻(지도서 158) → 친구와 활동: 추석 풍습 가운데 경험해 보고 싶은 풍습과 까닭을 쓰고 이야기하기(지난 추석 때 무엇을 했는지 먼저 떠올림).']],
+  u2_l05: [['사회 관계망 서비스에 올린 설날 글', '『사회』 85쪽 스스로 활동 — 설날 아침 동해에 가서 일출을 보고 할아버지 댁으로 → 친척들이 모여 차례(나는 절, 사촌 동생들은 서서 기도) → 세배 · 떡국 · 고모가 사 온 케이크 후식 → 점심에 공원에서 자전거 · 보드게임 → 우리 가족은 영화관, 사촌 동생네는 남은 연휴에 해외여행. 옛날과 비슷한 점(친척 모임 · 차례 · 세배 · 떡국)에 밑줄을 긋고 다른 점을 쓰기.'],
+           ['우리 반 친구들이 명절에 하는 일 조사', '『사회』 84쪽 친구와 활동 — 친구 이름과 명절에 주로 하는 일 조사(예: 설날에 여행 가기 · 설날에 세배하기 · 놀이공원 가기 · 추석에 영화 보기) → 옛날 명절 모습과 비슷한 점·다른 점 견주기 · 조사 결과를 교실 칠판에 막대그래프로 나타내 볼 수도 있음(지도서 166).']],
+  u2_l06: [['윷놀이 방법', '『사회』 88쪽 — 윷놀이할 때 필요한 것은 윷, 윷판, 윷말 · 윷판을 펼쳐 놓고 편을 둘로 나누어 윷말을 네 개씩 가짐 · 윷을 던져 나온 결과(도, 개, 걸, 윷, 모)에 따라 윷말을 움직임 · 윷 또는 모가 나오거나 상대편 윷말을 잡으면 한 번 더 던짐 · 네 개의 윷말이 먼저 출발점으로 들어오면 이김 · 체험할 때는 안전에 유의하고 규칙을 잘 지킴.']],
+  u2_l08: [['물속·하늘의 교통수단 · 생활의 필요(활동지)', '『사회』 95쪽 — 물에도 배가 다니도록 정해진 길이 있음 · 물에서 다니는 교통수단(화물선 · 유람선 · 요트 · 물속으로 다니는 잠수함) · 하늘로 다니는 교통수단(비행기 · 헬리콥터 · 물건을 옮길 때 쓰는 드론 — 지도서 185). 지도서 188~189쪽 활동지 — 생활의 필요에 따라 이용하는 교통수단 쓰기: 농사지을 때 트랙터·경운기 · 길에 쌓인 눈을 치울 때 제설차 · 범죄로부터 안전한 사회를 만들려고 경찰차·순찰차 — 같은 교통수단도 여러 목적으로 쓰이므로 하나의 정답을 요구하지 않음.']],
+};
+const TB_FIRST = [['두레', 'u2_l02'], ['품앗이', 'u2_l02'], ['폐백', 'u2_l03'], ['수목장', 'u2_l03'], ['해양장', 'u2_l03'], ['부럼', 'u2_l04'], ['오곡밥', 'u2_l04'], ['양력', 'u2_l04'], ['수리취떡', 'u2_l04'], ['직업', 'u2_l05'], ['투호', 'u2_l06'], ['고누', 'u2_l06'], ['제기차기', 'u2_l06'], ['지도사', 'u2_l06'], ['카네이션', 'u2_l07'], ['플라잉 디스크', 'u2_l07'], ['교통수단', 'u2_l08'], ['교통로', 'u2_l08'], ['항공로', 'u2_l08'], ['수로', 'u2_l08'], ['케이블카', 'u2_l08']];
+(() => { const ks = Object.keys(T); Object.keys(TB).forEach(k => { if (ks.indexOf(k) < 0) throw new Error('TB 키 ' + k); const txt = JSON.stringify(TB[k]);
+  TB_FIRST.forEach(([w, k0]) => { if (ks.indexOf(k) < ks.indexOf(k0) && txt.indexOf(w) >= 0) throw new Error('TB 선행 용어 ' + k + ' ' + w); }); }); })();
+
 const TYPE = { video: ['video', '🎥', ['concept', 'motivate']], q: ['fun_question', '💡', ['concept', 'basic_problem']], tip: ['tip', '🧩', ['concept', 'misconception']], real: ['real_world', '🌍', ['real_world', 'summary']], game: ['game', '🎮', ['leveled_problem', 'offline_activity']], x: ['misconception', '⚠️', ['misconception', 'basic_problem']], e: ['example', '📝', ['concept', 'offline_activity']], c: ['checklist', '✅', ['next_lesson']] };
 const PFX = { video: 'v', q: 'q', tip: 't', real: 'r', game: 'g', x: 'x', e: 'e', c: 'c' };
 function extras(n, list) {
@@ -266,8 +286,9 @@ keys.forEach((key, idx) => {
     .concat(s.problems.map((q, i) => i).filter(i => used.indexOf(i) < 0).map((i, j) => 'q|더 물어보기 ' + (j + 1) + '|' + s.problems[i].t))
     .concat(fin.map((f, i) => i).filter(i => i !== finOk).map((i, j) => 'x|헷갈리는 생각 ' + (j + 1) + '|' + fin[i] + ' — 알맞지 않아요.'))
     .concat(['c|' + t.prep]);
-  const ex = extras(n, auto.concat(t.ex)); const id = (k, i) => ex.filter(e => e.id.startsWith(PFX[k] + '_l' + n + '_'))[i - 1].id;
-  if (ex.length !== 22) throw new Error(key + ' extras ' + ex.length);
+  const ex0 = extras(n, auto.concat(t.ex)); if (ex0.length !== 22) throw new Error(key + ' extras ' + ex0.length);
+  const ex = ex0.concat((TB[key] || []).map(([title, content], i) => ({ id: 'b_l' + n + '_' + (i + 1), type: 'other_activity', icon: '📗', title: '교과서 활동 — ' + title, content, fit_slides: ['concept', 'real_world', 'offline_activity'] })));
+  const id = (k, i) => ex.filter(e => e.id.startsWith(PFX[k] + '_l' + n + '_'))[i - 1].id;
   const prevExit = idx === 0 ? PREV_EXIT : T[keys[idx - 1]].exit;
   const slides = [];
   const add = (block, stage, data, sug, tn, src) => { const sl = { id: 's' + String(slides.length + 1).padStart(2, '0'), stage, block, data }; if (src != null) sl.src = src; if (tn) data.tnote = tn; sl.suggested_extras = sug || []; slides.push(sl); };
@@ -281,7 +302,7 @@ keys.forEach((key, idx) => {
   t.basic.forEach(([pi, body, icon], i) => add('basic_problem', '기본문제', problemData(s.problems[pi], '기본 문제 ' + '①②③'[i], body, icon), bsug[i], null, 'p' + pi));
   add('leveled_problem', '기본문제', { title: '수준을 골라 풀어요', levels: t.lev }, [id('q', 5), id('game', 1)], t.levTn);
   add('offline_activity', '응용문제', { title: t.act.t, type: t.act.type, goal: t.act.goal, steps: t.act.steps, solo: t.act.solo, materials: t.act.mats, minutes: t.act.min }, [id('game', 2), id('tip', 4)], t.act.tn);
-  add('real_world', '응용문제', { title: t.real[0], scenario: { icon: t.real[1], body: t.real[2] }, content: t.real[3] }, [id('real', 2), id('real', 3)]);
+  add('real_world', '응용문제', { title: t.real[0], scenario: { icon: t.real[1], body: t.real[2] }, content: t.real[3] }, [id('real', 2), id('real', 3)].concat(ex.filter(e => /^b_l\d+_\d+$/.test(e.id)).map(e => e.id)));
   add('advanced_problem', '응용문제', { title: '생각을 넓혀요', context: t.adv[0], challenge: t.adv[1], note: t.adv[2] }, [id('tip', 5)], t.adv[3]);
   add('exit_ticket', '정리', { title: '오늘 확인해요', items: t.exit, self: ['오늘 배운 것을 혼자 설명할 수 있어요', '조금 헷갈려요', '다시 배우고 싶어요'] }, []);
   add('summary', '정리', { title: '오늘 배운 것', points: s.summary.concat(t.story), arrows: t.arrows }, [id('real', 1)]);

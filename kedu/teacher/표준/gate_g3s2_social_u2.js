@@ -1,7 +1,7 @@
 /* gate_g3s2_social_u2.js — 3학년 2학기 사회 2단원 「옛날과 오늘날의 생활 모습」 케이티처 2세대 게이트 (53차, 베프 · 54차 l07·l08 이어 붙임) · u1 게이트와 같은 꼴.
    재료 = 자기주도 사회 3-2 2단원(지금 채워진 l01~l08) → src_g3s2_social_u2.json(parse_selfdirected_soc.js). 2세대 무대(stage2.js renderSlide)로 실렌더한다.
    A 로드·meta(두 시간 한 파일 l03·l04·l06 = 80분 · covers = 지도서 2~12차시 빈틈 0 · 성취기준 = 원문 [4사04-01] · l08 만 [4사04-02]) · B 19장 골격 · C 7요소 · D 복습 계보(1단원 u1_l12 → l01 → … → l08)
-   E 정답 표시 · F 원문 계승 · G 그림(판 부품 = groups 3·led(전광판)·tline·then·tools·chain) · H 중복 0 · I 실렌더 + 1인 흐름 · J extras 22 · K 발문 6장↑·분 합
+   E 정답 표시 · F 원문 계승 · G 그림(판 부품 = groups 3·led(전광판)·tline·then·tools·chain) · H 중복 0 · I 실렌더 + 1인 흐름 · J extras 22(+교과서 활동 덤 b_lN_i) · K 발문 6장↑·분 합
    L 선행 용어(학생 화면: 두레·품앗이 l02 전 · 폐백·수목장·해양장 l03 전 · 부럼·오곡밥·양력·수리취떡 l04 전 · 직업 l05 전 · 투호·고누·제기차기·지도사 l06 전 · 카네이션·플라잉 디스크 l07 전 · 교통수단·교통로·항공로·수로·케이블카 l08 전 0 — 표지·다음 예고 제외 · 원문도 같은 차례)
    M 판 대조(원문 판의 표 ↔ 판 그림 + 뜻 규칙으로 따로 셈: l01 두 동그라미 · l02 일생 길 축하·위로 · l03 비교표 같아요/달라요 · l04 다섯 명절 단서 · l05 형광펜 두 색 · l06 만들기 차례 · l07 전광판(led) 두 갈래 + 켠 칸 모양 = 숫자 24 · l08 네 길) · N 차단 어휘 0
    실행: NODE_PATH=/home/claude/.jsdom/node_modules node kedu/teacher/표준/gate_g3s2_social_u2.js */
@@ -95,7 +95,8 @@ KEYS.forEach(k => T(k + ' 19장 × 닫힘·열림 렌더 예외 0 · 빈 본문 
   if (s.block === 'offline_activity') ok(r.body.indexOf(s.data.solo[0]) >= 0, s.id + ' 1인 흐름'); if (s.block === 'basic_problem' && rev) ok((r.body.match(/opt ok/g) || []).length === 1, s.id + ' 정답 열림'); })); }));
 
 console.log('═══ J. extras ═══');
-KEYS.forEach(k => T(k + ' extras 22 · id 유일 · 추천 연결 전부 존재 · 더 물어보기 = 원문 문항 · 헷갈리는 생각 = 판 마무리 틀린 보기', () => { const ex = L[k].extras; ok(ex.length === 22, ex.length); const ids = ex.map(e => e.id); ok(new Set(ids).size === 22, 'id');
+/* 2026-11-09 교과서판: extras 22 + 「교과서 활동」 덤(id b_lN_i · other_activity · 📗)은 따로 센다 */
+KEYS.forEach(k => T(k + ' extras 22 (+교과서 활동 덤) · id 유일 · 추천 연결 전부 존재 · 더 물어보기 = 원문 문항 · 헷갈리는 생각 = 판 마무리 틀린 보기', () => { const ex = L[k].extras; const tb = ex.filter(e => /^b_l\d+_\d+$/.test(e.id)); ok(ex.length - tb.length === 22, ex.length - tb.length); tb.forEach(e => ok(e.type === 'other_activity' && e.icon === '📗' && /^교과서 활동 — /.test(e.title), e.id)); const ids = ex.map(e => e.id); ok(new Set(ids).size === ids.length, 'id');
   L[k].slides.forEach(s => (s.suggested_extras || []).forEach(id => ok(ids.indexOf(id) >= 0, s.id + ' → ' + id))); ex.forEach(e => ok(e.title && (e.content || e.url), e.id));
   const qs = ex.filter(e => e.type === 'fun_question'); ok(qs.length === 5 && qs.every(e => SRC[k].problems.some(p => p.t === e.content)), '더 물어보기'); const b = BD(k), P = PRE(k); ex.filter(e => e.type === 'misconception').forEach(e => ok(b[P + '_FINQ'].some((f, i) => i !== b[P + '_FIN_OK'] && e.content.indexOf(f) === 0), 'x ' + e.content)); }));
 
