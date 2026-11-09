@@ -4020,6 +4020,138 @@
     global.KT2_SK = { front: (h) => skFront(skRows(h)), side: (h) => skSide(skRows(h)), top: (h) => skTop(skRows(h)), hidden: (h) => skHidden(skRows(h)), seen: skdSeen };
     Object.assign(HTML_PARTS, { skp, skd });
   }
+  // ══ N63(2026-11-09) 6학년 2학기 수학 3단원 「소수의 나눗셈」 부품 — 지도서 그림(소수점 옮기는 세로셈 · 10배·100배 해도 몫은 그대로 · 몫 반올림 · 덜어 내고 남는 양)을 2세대로 ══
+  //   dvs(소수 나눗셈 세로셈 — 나누는 수가 자연수가 되게 두 수의 소수점을 옮기는 화살표 · 빈 자리 0 채움 · 0을 내려 계산 · 몫의 소수점은 옮긴 자리 위 · 몫·곱·남은 수 줄은 부품이 셈 · bug = 몫의 소수점만 어긋난 오답 시연)
+  //   dsc(두 수에 똑같이 10배·100배 — 배 이름표·몫은 부품이 셈, 두 수의 배가 다르거나 몫이 다르면 던짐) · rdq(몫 반올림 판 — 자리마다 반올림 값은 부품이 셈)
+  //   lft(덜어 내기 막대 — 전체에서 한 몫씩 n번 덜고 남는 양 · n·남는 양은 부품이 셈)
+  //   ⛔ ask 면 답이 되는 수(몫·배·반올림 값·남는 양)를 그리지 않는다. 수는 BigInt 정수 + 소수 자릿수(부동소수 금지).
+  {
+    const C63 = { q: '#C2551A', soft: '#9AA7B8', red: '#E0413C', b: '#2A9D8F', bSoft: '#D5F0EC', a: '#FF7A2F', aSoft: '#FFE3CF', line: '#B9C4D2' };
+    const m63 = (n) => String(Math.round(n * 100) / 100);
+    const isD = (s) => /^\d+(\.\d+)?$/.test(String(s));
+    const dp63 = (s) => { s = String(s); const i = s.indexOf('.'); return i < 0 ? 0 : s.length - i - 1; };
+    const dg63 = (s) => BigInt(String(s).replace('.', ''));
+    const p10 = (k) => { let v = 1n; for (let i = 0; i < k; i++) v *= 10n; return v; };
+    function fmt63(n, p) { let s = n.toString(); if (p <= 0) return s; while (s.length <= p) s = '0' + s; const ip = s.slice(0, s.length - p), fp = s.slice(s.length - p).replace(/0+$/, ''); return fp ? ip + '.' + fp : ip; }
+    // a ÷ b 를 소수 n 자리까지(버림) — [글, 끝났는가]
+    function qdiv(a, b, n) {
+      const k = Math.max(dp63(a), dp63(b)), A = dg63(a) * p10(k - dp63(a)), B = dg63(b) * p10(k - dp63(b)); if (B === 0n) throw new Error('0으로 나눔');
+      const num = A * p10(n), q = num / B, exact = num % B === 0n;
+      return [fmt63(q, n), exact];
+    }
+    function qexact(a, b) { for (let n = 0; n <= 8; n++) { const [t, ex] = qdiv(a, b, n); if (ex) return t; } return null; }
+    function rnd63(a, b, p) { // 반올림해 소수 p 자리
+      const k = Math.max(dp63(a), dp63(b)), A = dg63(a) * p10(k - dp63(a)), B = dg63(b) * p10(k - dp63(b));
+      const num = A * p10(p + 1), q = num / B, last = q % 10n; let r = q / 10n; if (last >= 5n) r += 1n; return fmt63(r, p);
+    }
+    function ratio63(x, y) { // y 는 x 의 몇 배(10의 거듭제곱) — '10배' 등, 아니면 던짐
+      const p = Math.max(dp63(x), dp63(y)), X = dg63(x) * p10(p - dp63(x)), Y = dg63(y) * p10(p - dp63(y)); if (X === 0n || Y <= X || Y % X) throw new Error('배: 10의 거듭제곱 배로 커지지 않음 ' + x + ' → ' + y);
+      let q = Y / X, k = 0; while (q % 10n === 0n) { q /= 10n; k++; } if (q !== 1n) throw new Error('배: 10의 거듭제곱 아님 ' + x + ' → ' + y); return '1' + '0'.repeat(k) + '배';
+    }
+    // ── dvs ── 소수 나눗셈 세로셈
+    function dvs(o) {
+      const a = String(o.a), b = String(o.b); if (!isD(a) || !isD(b) || dg63(b) === 0n) throw new Error('dvs: 수');
+      const k = dp63(b), B = dg63(b); const ai = a.indexOf('.'), aInt = ai < 0 ? a : a.slice(0, ai), aDec = ai < 0 ? '' : a.slice(ai + 1);
+      const fill = Math.max(0, k - aDec.length), digs = (aInt + aDec + '0'.repeat(fill)).split('').map(Number), P = aInt.length + k;
+      const upto = o.upto == null ? 4 : +o.upto; if (!(upto >= 0 && upto <= 4)) throw new Error('dvs: upto');
+      const qd = [], rows = []; let cur = 0n, started = false, first = true, i = 0, tail = '';
+      for (; ; i++) {
+        const d = i < digs.length ? BigInt(digs[i]) : 0n; cur = cur * 10n + d;
+        if (!started && cur < B && i < P - 1) { qd.push(null); continue; }
+        started = true; const q = cur / B; qd.push(Number(q));
+        if (q > 0n) { if (!first) rows.push({ v: cur.toString(), c: i }); rows.push({ v: (q * B).toString(), c: i, p: 1 }); cur -= q * B; first = false; }
+        const done = i >= digs.length - 1 && i >= P - 1 && cur === 0n;
+        if (done) break;
+        if (i - (P - 1) >= upto && i >= digs.length - 1) { tail = '…'; break; }
+        if (i > 40) throw new Error('dvs: 너무 김');
+      }
+      if (!first) rows.push({ v: cur.toString(), c: i });
+      const last = i, s0 = qd.findIndex(x => x !== null);
+      let qs = ''; for (let c = s0; c <= last; c++) { if (c === P && c <= last) qs += '.'; qs += String(qd[c]); }
+      if (P - 1 < s0) throw new Error('dvs: 몫 자리');
+      qs = qs.replace(/^0+(?=\d)/, ''); if (qs.startsWith('.')) qs = '0' + qs;
+      const right = qexact(a, b); if (!tail && right !== qs) throw new Error('dvs: 몫 셈이 어긋남 ' + qs + ' ≠ ' + right);
+      if (tail && qdiv(a, b, upto)[0] !== qs) throw new Error('dvs: 몫 셈이 어긋남(…) ' + qs);
+      let shown = qs + tail, bug = '';
+      if (o.bug) { bug = String(o.bug); if (bug.replace('.', '').replace(/^0+(?=\d)/, '') !== qs.replace('.', '').replace(/^0+(?=\d)/, '')) throw new Error('dvs: bug 는 소수점만 어긋난 몫'); if (bug === qs) throw new Error('dvs: bug 가 바른 몫과 같음'); shown = bug; }
+      // 자리 잡기
+      const bch = b.replace('.', '').split(''), bdot = b.indexOf('.'), CW = 38, RH = 48, X0 = 30 + bch.length * CW + 18, ncol = Math.max(digs.length, last + 1);
+      const W = X0 + ncol * CW + 40, YQ = 52, YD = 108, H = YD + RH * (rows.length) + (o.cap ? 60 : 26);
+      const cx = (c) => X0 + c * CW + CW / 2; let s = '';
+      // 몫
+      const qcol = (c) => cx(c);
+      if (o.ask) s += txt(m63((qcol(s0) + qcol(last)) / 2), YQ, '?', 40, ORANGE, 900).replace('<text ', '<text class="dvs-q ask" ');
+      else {
+        const sd = shown.replace(/…$/, ''), sdig = sd.replace('.', ''), di = sd.indexOf('.');
+        for (let j = 0; j < sdig.length; j++) { const c = last - (sdig.length - 1 - j); s += txt(m63(qcol(c)), YQ, sdig[j], 34, bug ? C63.red : C63.q, 900).replace('<text ', '<text class="dvs-qd" data-c="' + c + '" '); }
+        if (di >= 0) { const dc = last - (sd.length - di - 1) + 1; s += txt(m63(X0 + dc * CW - 2), YQ, '.', 34, bug ? C63.red : C63.q, 900).replace('<text ', '<text class="dvs-qdot" data-c="' + dc + '" '); }
+        if (tail) s += txt(m63(qcol(last) + CW * 0.75), YQ, '…', 28, C63.q, 900);
+        if (bug) s += txt(m63(qcol(last) + CW * 1.1), YQ, '✗', 30, C63.red, 900);
+      }
+      // 나누는 수 · 괄호
+      bch.forEach((ch, j) => { s += txt(m63(30 + j * CW + CW / 2), YD, ch, 32, INK, 900).replace('<text ', '<text class="dvs-b" '); });
+      if (k > 0) { const ox = 30 + bdot * CW, nx = 30 + bch.length * CW; s += txt(m63(ox), YD, '.', 32, C63.soft, 900) + '<path class="dvs-mv" d="M' + m63(ox) + ' ' + (YD + 8) + ' Q' + m63((ox + nx) / 2) + ' ' + (YD + 26) + ' ' + m63(nx) + ' ' + (YD + 8) + '" fill="none" stroke="' + C63.red + '" stroke-width="2.5"/>' + '<circle cx="' + m63(nx) + '" cy="' + (YD + 2) + '" r="3.6" fill="' + C63.red + '"/>'; }
+      s += '<path d="M' + (X0 - 10) + ' ' + (YD + 12) + ' Q' + (X0 + 2) + ' ' + (YD - 14) + ' ' + (X0 - 4) + ' ' + (YD - 36) + ' H' + m63(X0 + ncol * CW + 6) + '" fill="none" stroke="' + INK + '" stroke-width="3"/>';
+      // 나누어지는 수(적힌 숫자 · 채운 0 · 내린 0)
+      for (let c = 0; c < ncol; c++) { const ch = c < digs.length ? String(digs[c]) : '0', light = c >= aInt.length + aDec.length; s += txt(m63(cx(c)), YD, ch, 32, light ? C63.soft : INK, 900).replace('<text ', '<text class="dvs-a' + (light ? ' fill' : '') + '" data-c="' + c + '" '); }
+      if (ai >= 0) s += txt(m63(X0 + aInt.length * CW - 2), YD, '.', 32, k > 0 ? C63.soft : INK, 900);
+      else if (k === 0 && last >= P) s += txt(m63(X0 + P * CW - 2), YD, '.', 32, INK, 900);
+      if (k > 0) { const ox = X0 + aInt.length * CW - 2, nx = X0 + P * CW - 2; if (ai >= 0) s += '<path class="dvs-mv" d="M' + m63(ox) + ' ' + (YD + 8) + ' Q' + m63((ox + nx) / 2) + ' ' + (YD + 26) + ' ' + m63(nx) + ' ' + (YD + 8) + '" fill="none" stroke="' + C63.red + '" stroke-width="2.5"/>'; s += '<circle class="dvs-nd" cx="' + m63(nx) + '" cy="' + (YD + 2) + '" r="3.6" fill="' + C63.red + '"/>'; }
+      // 셈 줄
+      rows.forEach((r, j) => { const y = YD + RH * (j + 1); const v = r.v; for (let t = 0; t < v.length; t++) s += txt(m63(cx(r.c - (v.length - 1 - t))), y, v[t], 30, INK, 800).replace('<text ', '<text class="dvs-r' + (r.p ? ' p' : '') + '" data-j="' + j + '" ');
+        if (r.p) s += '<line x1="' + m63(X0 + (r.c - v.length + 1) * CW - 4) + '" y1="' + (y + 12) + '" x2="' + m63(X0 + (r.c + 1) * CW + 2) + '" y2="' + (y + 12) + '" stroke="' + INK + '" stroke-width="2"/>'; });
+      if (o.cap) s += txt(m63(W / 2), H - 22, o.cap, 22, C63.soft, 900);
+      const key = a + '|' + b + '|' + k + '|' + qs + tail + '|' + (o.ask ? 1 : 0) + '|' + bug;
+      return svgWrap(s, 'fig-dvs', '0 0 ' + Math.round(Math.max(W, 260)) + ' ' + Math.round(H)).replace('<svg ', '<svg data-dvs="' + esc(key) + '" ');
+    }
+    // ── dsc ── 두 수에 똑같이 10배·100배 해도 몫은 그대로
+    function dsc(o) {
+      const R = (o.rows || []).map(r => [String(r[0]), String(r[1])]); if (R.length < 2) throw new Error('dsc: 줄 둘 이상');
+      R.forEach(r => { if (!isD(r[0]) || !isD(r[1])) throw new Error('dsc: 수'); });
+      const q0 = qexact(R[0][0], R[0][1]); if (q0 == null) throw new Error('dsc: 몫이 끝나지 않음');
+      const labs = [];
+      for (let i = 1; i < R.length; i++) { const la = ratio63(R[i - 1][0], R[i][0]), lb = ratio63(R[i - 1][1], R[i][1]); if (la !== lb) throw new Error('dsc: 두 수의 배가 다름 ' + la + ' ' + lb); labs.push(la); if (qexact(R[i][0], R[i][1]) !== q0) throw new Error('dsc: 몫이 다름'); }
+      const RH = 120, X = [150, 260, 370, 470, 590], H = 70 + RH * (R.length - 1) + (o.cap ? 50 : 20); let s = '';
+      R.forEach((r, i) => { const y = 60 + RH * i, hide = o.ask === i || o.ask === 'q';
+        s += '<rect x="' + (X[0] - 70) + '" y="' + (y - 36) + '" width="140" height="50" rx="25" fill="' + C63.aSoft + '"/>' + txt(X[0], y, r[0], 30, INK, 900).replace('<text ', '<text class="dsc-a" data-i="' + i + '" ');
+        s += txt(X[1], y, '÷', 30, C63.soft, 900) + '<rect x="' + (X[2] - 70) + '" y="' + (y - 36) + '" width="140" height="50" rx="25" fill="' + C63.bSoft + '"/>' + txt(X[2], y, r[1], 30, INK, 900).replace('<text ', '<text class="dsc-b" data-i="' + i + '" ');
+        s += txt(X[3], y, '=', 30, C63.soft, 900) + txt(X[4], y, hide ? '?' : q0, hide ? 36 : 32, hide ? ORANGE : C63.q, 900).replace('<text ', '<text class="dsc-q" data-i="' + i + '" ');
+        if (i) { const y0 = y - RH; [X[0], X[2]].forEach(x => { s += '<line x1="' + x + '" y1="' + (y0 + 20) + '" x2="' + x + '" y2="' + (y - 44) + '" stroke="' + C63.a + '" stroke-width="3"/><path d="M' + (x - 8) + ' ' + (y - 54) + ' L' + x + ' ' + (y - 40) + ' L' + (x + 8) + ' ' + (y - 54) + 'Z" fill="' + C63.a + '"/>' + txt(x + 52, (y0 + y) / 2 - 6, o.ask === 'k' ? '?' : labs[i - 1], 24, o.ask === 'k' ? ORANGE : C63.q, 900).replace('<text ', '<text class="dsc-l" '); }); } });
+      if (o.cap) s += txt(380, H - 16, o.cap, 22, C63.soft, 900);
+      return svgWrap(s, 'fig-dsc', '0 0 760 ' + H).replace('<svg ', '<svg data-dsc="' + esc(R.map(r => r.join('/')).join(';') + '|' + q0 + '|' + labs.join(',') + '|' + (o.ask == null ? '' : o.ask)) + '" ');
+    }
+    // ── rdq ── 몫 반올림 판
+    const PL63 = ['일의 자리', '소수 첫째 자리', '소수 둘째 자리'];
+    function rdq(o) {
+      const a = String(o.a), b = String(o.b), pl = (o.places || [0, 1, 2]).map(Number); if (!isD(a) || !isD(b)) throw new Error('rdq: 수');
+      if (pl.some(p => !(p >= 0 && p <= 2))) throw new Error('rdq: 자리');
+      const n = Math.max(...pl) + 2, [t, ex] = qdiv(a, b, n); if (ex && qexact(a, b) !== null && dp63(qexact(a, b)) <= Math.max(...pl)) throw new Error('rdq: 반올림할 것 없이 끝나는 몫');
+      const head = a + ' ÷ ' + b + ' = ' + t + (ex ? '' : '…'); const vals = pl.map(p => rnd63(a, b, p));
+      let s = txt(380, 50, head, 32, INK, 900).replace('<text ', '<text class="rdq-h" '); const H = 90 + 62 * pl.length + (o.cap ? 40 : 10);
+      pl.forEach((p, i) => { const y = 112 + 62 * i, hide = o.ask === i; const look = PL63[p + 1] || '소수 셋째 자리';
+        s += '<rect x="60" y="' + (y - 38) + '" width="640" height="52" rx="12" fill="' + (i % 2 ? '#fff' : '#F4F7FB') + '" stroke="' + C63.line + '"/>';
+        s += txt(80, y, PL63[p] + '까지', 26, INK, 900, 'start') + txt(380, y, hide ? '' : '(' + look + ' 숫자를 봐요)', 20, C63.soft, 800) + txt(660, y, hide ? '?' : vals[i], 32, hide ? ORANGE : C63.q, 900, 'end').replace('<text ', '<text class="rdq-v" data-p="' + p + '" '); });
+      if (o.cap) s += txt(380, H - 12, o.cap, 22, C63.soft, 900);
+      return svgWrap(s, 'fig-rdq', '0 0 760 ' + H).replace('<svg ', '<svg data-rdq="' + esc(a + '|' + b + '|' + pl.join(',') + '|' + vals.join(',') + '|' + (o.ask == null ? '' : o.ask)) + '" ');
+    }
+    // ── lft ── 덜어 내기 막대(전체 T 에서 e 씩 n 번 · 남는 양 r)
+    function lft(o) {
+      const T = String(o.total), e = String(o.each), u = o.unit || ''; if (!isD(T) || !isD(e) || dg63(e) === 0n) throw new Error('lft: 수');
+      const p = Math.max(dp63(T), dp63(e)), TT = dg63(T) * p10(p - dp63(T)), EE = dg63(e) * p10(p - dp63(e)), n = TT / EE, R = TT - n * EE; if (n < 1n || n > 12n) throw new Error('lft: 덜어 내는 횟수 1~12');
+      const r = fmt63(R, p), X0 = 50, X1 = 710, px = (v) => X0 + (X1 - X0) * Number(v) / Number(TT), Y = 70, BH = 56; let s = '';
+      s += txt(380, 36, '전체 ' + T + (u ? ' ' + u : ''), 26, INK, 900).replace('<text ', '<text class="lft-t" ');
+      for (let i = 0n; i < n; i++) { const xa = px(i * EE), xb = px((i + 1n) * EE); s += '<rect class="lft-s" data-i="' + i + '" x="' + m63(xa) + '" y="' + Y + '" width="' + m63(xb - xa) + '" height="' + BH + '" fill="' + (i % 2n ? C63.aSoft : '#FFD0A8') + '" stroke="' + C63.q + '" stroke-width="2"/>';
+        if (o.ask !== 'n' || i === 0n) s += txt(m63((xa + xb) / 2), Y + BH / 2 + 9, e, 22, C63.q, 900); }
+      const xr = px(n * EE); s += '<rect class="lft-r" x="' + m63(xr) + '" y="' + Y + '" width="' + m63(X1 - xr) + '" height="' + BH + '" fill="' + C63.bSoft + '" stroke="' + C63.b + '" stroke-width="2" stroke-dasharray="6 4"/>';
+      s += '<rect x="' + X0 + '" y="' + Y + '" width="' + (X1 - X0) + '" height="' + BH + '" fill="none" stroke="' + INK + '" stroke-width="3.5"/>';
+      s += txt(m63((X0 + xr) / 2), Y + BH + 40, o.ask === 'n' ? e + (u ? ' ' + u : '') + '씩 ?번' : e + (u ? ' ' + u : '') + '씩 ' + n + '번', 24, C63.q, 900).replace('<text ', '<text class="lft-n" ');
+      s += txt(m63(Math.min(Math.max((xr + X1) / 2, 90), 690)), Y + BH + 40, o.ask === 'r' ? '남는 양 ?' : '남는 양 ' + r + (u ? ' ' + u : ''), 24, C63.b, 900).replace('<text ', '<text class="lft-rem" ');
+      let H = Y + BH + 66; if (o.cap) { s += txt(380, H + 10, o.cap, 22, C63.soft, 900); H += 36; }
+      return svgWrap(s, 'fig-lft', '0 0 760 ' + H).replace('<svg ', '<svg data-lft="' + esc(T + '|' + e + '|' + n + '|' + r + '|' + (o.ask || '')) + '" ');
+    }
+    global.KT2_DEC63 = { qdiv, qexact, rnd63, ratio63 };
+    Object.assign(PARTS, { dvs, dsc, rdq, lft });
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
