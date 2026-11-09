@@ -4328,6 +4328,197 @@
     global.KT2_CIR65 = { circ5, area5, div5, cg5count };
     Object.assign(PARTS, { cpm5, cun5, cgd5, csq5, csr5, crg5, ckk5, cpl5, cmv5 });
   }
+  // ══ N66(2026-11-09) 6학년 2학기 수학 6단원 「원기둥, 원뿔, 구」 부품 — 지도서 그림(입체도형 겨냥도 · 한 바퀴 돌리기 · 원기둥의 전개도 · 위·앞·옆에서 본 모양)을 2세대로 ══
+  //   sol6(겨냥도 — cyl·cone·sph·frus(위아래 원의 크기가 다른 통)·prism(삼각기둥)·pyr(각뿔) · 밑면 수·꼭짓점·평평한 면 진리표는 부품이 들고 · 라벨은 입체마다 허용표 안에서만 · 치수 라벨과 ask · lay = 눕힌 원기둥)
+  //   rot6(직사각형·직각삼각형·반원을 막대에 붙여 한 바퀴 — 붙인 변 = 높이 · 뻗은 변 = 밑면의 반지름 · 지름 = 2배 · 만들어지는 입체는 부품이 셈)
+  //   net6(원기둥의 전개도 — 밑면 지름 픽셀 PD × 3.14 = 옆면 가로 픽셀 · 세로 = 같은 배율(PD × 높이 ÷ 지름) · 가로 길이(지름 × 3.14)는 부품이 셈 · bad = skew 옆면 기울임 · same 두 원이 같은 쪽 · diff 두 원의 크기가 다름)
+  //   fvw6(views = 위·앞·옆에서 본 모양 진리표 · front = 원뿔 앞모양 삼각형(밑변 = 지름)·원기둥 앞모양 직사각형 넓이와, 넓이가 같을 때 모르는 길이를 부품이 셈)
+  //   ⛔ ask 면 답이 되는 수·이름을 그리지 않는다. 수는 BigInt 정수 + 소수 자릿수(부동소수 금지) · 회전체·모서리 같은 말은 그림에 쓰지 않는다.
+  {
+    const C66 = { line: '#3E4A5C', fill: '#EAF2FC', fill2: '#FFE9D6', base: '#BFD9F6', base2: '#FFC99E', soft: '#8C99AB', red: '#E0413C', blue: '#2F6FD6', ok: '#2A9D8F', ask: '#FF7A2F' };
+    const m66 = (n) => String(Math.round(n * 100) / 100);
+    const isN = (s) => /^\d+(\.\d+)?$/.test(String(s));
+    const dpx = (s) => { s = String(s); const i = s.indexOf('.'); return i < 0 ? 0 : s.length - i - 1; };
+    const big = (s) => BigInt(String(s).replace('.', ''));
+    const p10 = (k) => { let v = 1n; for (let i = 0; i < k; i++) v *= 10n; return v; };
+    function fmt(n, p) { let s = n.toString(); if (p <= 0) return s; while (s.length <= p) s = '0' + s; const ip = s.slice(0, s.length - p), fp = s.slice(s.length - p).replace(/0+$/, ''); return fp ? ip + '.' + fp : ip; }
+    const D = (s) => { s = String(s); if (!isN(s)) throw new Error('수 아님 ' + s); return [big(s), dpx(s)]; };
+    const dmul = (a, b) => { const [x, p] = D(a), [y, q] = D(b); return fmt(x * y, p + q); };
+    const dadd = (a, b) => { const [x, p] = D(a), [y, q] = D(b), k = Math.max(p, q); return fmt(x * p10(k - p) + y * p10(k - q), k); };
+    function ddiv(a, b) { const [x, p] = D(a), [y, q] = D(b); if (y === 0n) throw new Error('0으로 나눔'); for (let n = 0; n <= 6; n++) { const k = Math.max(p, q) + n, A = x * p10(k - p), B = y * p10(k - q) / p10(n); if (B !== 0n && (A % B === 0n)) return fmt(A / B, n); } throw new Error('끝나지 않는 나눗셈 ' + a + '÷' + b); }
+    const PI66 = '3.14';
+    const TRUTH = { cyl: { bases: 2, apex: 0, flat: 2, name: '원기둥' }, cone: { bases: 1, apex: 1, flat: 1, name: '원뿔' }, sph: { bases: 0, apex: 0, flat: 0, name: '구' },
+      frus: { bases: 2, apex: 0, flat: 2, name: '' }, prism: { bases: 2, apex: 0, flat: 5, name: '삼각기둥' }, pyr: { bases: 1, apex: 1, flat: 5, name: '각뿔' } };
+    const LAB_OK = { cyl: ['밑면', '옆면', '높이'], cone: ['밑면', '옆면', '원뿔의 꼭짓점', '모선', '높이'], sph: ['구의 중심', '구의 반지름'], frus: [], prism: [], pyr: [] };
+    const DIM_OK = { cyl: ['r', 'd', 'h'], cone: ['r', 'd', 'h', 'l'], sph: ['r', 'd'], frus: [], prism: [], pyr: [] };
+    const lbl = (x, y, t, col, anc, cls) => txt(m66(x), m66(y), t, 22, col || C66.line, 900, anc).replace('<text ', '<text class="' + (cls || 's6-l') + '" ');
+    const ell = (cx, cy, rx, ry, fill, dash, cls) => '<ellipse class="' + (cls || '') + '" cx="' + m66(cx) + '" cy="' + m66(cy) + '" rx="' + m66(rx) + '" ry="' + m66(ry) + '" fill="' + (fill || 'none') + '" stroke="' + C66.line + '" stroke-width="3"' + (dash ? ' stroke-dasharray="7 5"' : '') + '/>';
+    const seg = (x1, y1, x2, y2, col, dash, w, cls) => '<line class="' + (cls || '') + '" x1="' + m66(x1) + '" y1="' + m66(y1) + '" x2="' + m66(x2) + '" y2="' + m66(y2) + '" stroke="' + (col || C66.line) + '" stroke-width="' + (w || 3) + '"' + (dash ? ' stroke-dasharray="7 5"' : '') + '/>';
+    const right = (x, y, s, dx) => '<path d="M' + m66(x + dx * s) + ' ' + m66(y) + ' V' + m66(y - s) + ' H' + m66(x) + '" fill="none" stroke="' + C66.line + '" stroke-width="2"/>';
+    function dimTxt(o, k, unit) { const v = o.dim && o.dim[k]; if (v == null) return null; if (!isN(v)) throw new Error('치수 수 아님 ' + k); return o.ask === k ? '? ' + (unit || 'cm') : v + ' ' + (unit || 'cm'); }
+    // ── sol6 ── 겨냥도
+    function sol6(o) {
+      const k = o.kind; const T = TRUTH[k]; if (!T) throw new Error('sol6: kind');
+      const show = [].concat(o.show || []); show.forEach(s => { if (LAB_OK[k].indexOf(s) < 0) throw new Error('sol6: ' + k + ' 에 붙일 수 없는 라벨 ' + s); });
+      const dims = Object.keys(o.dim || {}); dims.forEach(d => { if (DIM_OK[k].indexOf(d) < 0) throw new Error('sol6: ' + k + ' 에 붙일 수 없는 치수 ' + d); });
+      if (o.ask && dims.indexOf(o.ask) < 0) throw new Error('sol6: ask 치수 없음');
+      if (o.dim && o.dim.r != null && o.dim.d != null) throw new Error('sol6: 반지름과 지름을 함께 주지 않음');
+      if (k === 'cone' && o.dim && o.dim.h != null && o.dim.l != null && !(Number(o.dim.l) > Number(o.dim.h))) throw new Error('sol6: 모선은 높이보다 길어야 함');
+      const dd = o.dim ? (o.dim.d != null ? Number(o.dim.d) : o.dim.r != null ? 2 * Number(o.dim.r) : null) : null; const hh = o.dim && o.dim.h != null ? Number(o.dim.h) : null;
+      let s = '', W = 420, H = 300, cx = 190;
+      const hiB = o.hi === 'base', hiS = o.hi === 'side';
+      if (k === 'cyl' && o.lay) {   // 눕힌 원기둥 — 두 밑면이 왼쪽·오른쪽
+        let u = (dd && hh) ? Math.min(150 / dd, 260 / hh) : 1; let ph = dd ? dd * u : 130, pw = hh ? hh * u : 220; if (!dd) ph = 130; if (!hh) pw = 220;
+        const x0 = 70, y0 = 150 - ph / 2, rx = Math.max(14, ph * 0.22);
+        s += '<path d="M' + m66(x0) + ' ' + m66(y0) + ' H' + m66(x0 + pw) + ' A' + m66(rx) + ' ' + m66(ph / 2) + ' 0 0 1 ' + m66(x0 + pw) + ' ' + m66(y0 + ph) + ' H' + m66(x0) + '" fill="' + (hiS ? C66.fill2 : C66.fill) + '" stroke="' + C66.line + '" stroke-width="3"/>';
+        s += ell(x0, 150, rx, ph / 2, hiB ? C66.base2 : C66.base, false, 's6-base') + ell(x0 + pw, 150, rx, ph / 2, 'none', true, 's6-base');
+        const th = dimTxt(o, 'h'); if (th) { s += seg(x0, y0 + ph + 26, x0 + pw, y0 + ph + 26, C66.soft, false, 2) + lbl(x0 + pw / 2, y0 + ph + 54, th, o.ask === 'h' ? C66.ask : C66.line); }
+        const td = dimTxt(o, 'd') || dimTxt(o, 'r'); if (td) s += seg(x0, y0, x0, y0 + ph, C66.soft, true, 2) + lbl(x0 - 12, 150, td, o.ask === 'd' || o.ask === 'r' ? C66.ask : C66.line, 'end');
+        H = y0 + ph + 80; W = 420;
+      } else if (k === 'cyl' || k === 'frus' || k === 'prism') {
+        let u = (dd && hh) ? Math.min(200 / dd, 200 / hh) : 1; let pw = dd ? dd * u : 170, ph = hh ? hh * u : 160;
+        const rx = pw / 2, ry = Math.max(10, rx * 0.26), top = 50, bot = top + ph;
+        if (k === 'prism') { const a = [cx - 80, bot], b = [cx + 60, bot], c = [cx - 20, bot - 50]; s += '<path d="M' + a + ' L' + b + ' L' + (b[0] + 0) + ' ' + (b[1] - ph) + ' L' + a[0] + ' ' + (a[1] - ph) + 'Z M' + a[0] + ' ' + (a[1] - ph) + ' L' + c[0] + ' ' + (c[1] - ph) + ' L' + b[0] + ' ' + (b[1] - ph) + '" fill="' + C66.fill + '" stroke="' + C66.line + '" stroke-width="3"/>' + seg(a[0], a[1], c[0], c[1], C66.soft, true, 2) + seg(c[0], c[1], b[0], b[1], C66.soft, true, 2) + seg(c[0], c[1], c[0], c[1] - ph, C66.soft, true, 2); }
+        else {
+          const rTop = k === 'frus' ? rx * 0.62 : rx;
+          s += '<path class="s6-side" d="M' + m66(cx - rTop) + ' ' + top + ' L' + m66(cx - rx) + ' ' + m66(bot) + ' A' + m66(rx) + ' ' + m66(ry) + ' 0 0 0 ' + m66(cx + rx) + ' ' + m66(bot) + ' L' + m66(cx + rTop) + ' ' + top + '" fill="' + (hiS ? C66.fill2 : C66.fill) + '" stroke="' + C66.line + '" stroke-width="3"/>';
+          s += ell(cx, top, rTop, ry * rTop / rx, hiB ? C66.base2 : C66.base, false, 's6-base') + '<path d="M' + m66(cx - rx) + ' ' + m66(bot) + ' A' + m66(rx) + ' ' + m66(ry) + ' 0 0 1 ' + m66(cx + rx) + ' ' + m66(bot) + '" fill="none" stroke="' + C66.line + '" stroke-width="2.5" stroke-dasharray="7 5"/>';
+          if (hiB) s += '<path d="M' + m66(cx - rx) + ' ' + m66(bot) + ' A' + m66(rx) + ' ' + m66(ry) + ' 0 0 0 ' + m66(cx + rx) + ' ' + m66(bot) + '" fill="none" stroke="' + C66.ask + '" stroke-width="5"/>';
+          s += '<circle cx="' + cx + '" cy="' + top + '" r="4" fill="' + C66.line + '"/>';
+          const tr = dimTxt(o, 'r'), td = dimTxt(o, 'd'), th = dimTxt(o, 'h');
+          if (tr) s += seg(cx, top, cx + rTop, top, C66.line, true, 2.5, 's6-rd') + lbl(cx + rTop / 2 + 6, top - 16, tr, o.ask === 'r' ? C66.ask : C66.line);
+          if (td) s += seg(cx - rTop, top, cx + rTop, top, C66.line, true, 2.5, 's6-rd') + lbl(cx, top - 16, td, o.ask === 'd' ? C66.ask : C66.line);
+          if (th || show.indexOf('높이') >= 0) { s += seg(cx + rx + 26, top, cx + rx + 26, bot, C66.soft, false, 2) + seg(cx + rx + 18, top, cx + rx + 34, top, C66.soft, false, 2) + seg(cx + rx + 18, bot, cx + rx + 34, bot, C66.soft, false, 2); s += lbl(cx + rx + 40, (top + bot) / 2 + 8, th ? (show.indexOf('높이') >= 0 ? '높이 ' : '') + th : '높이', o.ask === 'h' ? C66.ask : C66.line, 'start'); }
+          if (show.indexOf('밑면') >= 0) s += lbl(cx - rx - 14, top + 6, '밑면', C66.blue, 'end') + lbl(cx - rx - 14, bot + 8, '밑면', C66.blue, 'end');
+          if (show.indexOf('옆면') >= 0) s += lbl(cx, (top + bot) / 2 + 8, '옆면', C66.red);
+        }
+        H = bot + ry + 40;
+      } else if (k === 'cone' || k === 'pyr') {
+        let u = (dd && hh) ? Math.min(220 / dd, 200 / hh) : 1; let pw = dd ? dd * u : 200, ph = hh ? hh * u : 180;
+        const rx = pw / 2, ry = Math.max(10, rx * 0.26), base = 40 + ph, apex = [cx, base - ph];
+        if (k === 'pyr') { s += '<path d="M' + (cx - 90) + ' ' + base + ' L' + (cx + 70) + ' ' + base + ' L' + (cx + 100) + ' ' + (base - 36) + ' M' + (cx - 90) + ' ' + base + ' L' + apex + ' L' + (cx + 70) + ' ' + base + ' M' + apex + ' L' + (cx + 100) + ' ' + (base - 36) + '" fill="' + C66.fill + '" stroke="' + C66.line + '" stroke-width="3"/>'; H = base + 40; }
+        else {
+          s += '<path class="s6-side" d="M' + apex + ' L' + m66(cx - rx) + ' ' + m66(base) + ' A' + m66(rx) + ' ' + m66(ry) + ' 0 0 0 ' + m66(cx + rx) + ' ' + m66(base) + ' Z" fill="' + (hiS ? C66.fill2 : C66.fill) + '" stroke="' + C66.line + '" stroke-width="3"/>';
+          s += '<path class="s6-base" d="M' + m66(cx - rx) + ' ' + m66(base) + ' A' + m66(rx) + ' ' + m66(ry) + ' 0 0 1 ' + m66(cx + rx) + ' ' + m66(base) + '" fill="none" stroke="' + C66.line + '" stroke-width="2.5" stroke-dasharray="7 5"/>';
+          if (hiB) s += ell(cx, base, rx, ry, C66.base2, false, 's6-base');
+          s += '<circle cx="' + cx + '" cy="' + m66(base) + '" r="4" fill="' + C66.line + '"/>';
+          const th = dimTxt(o, 'h'), tl = dimTxt(o, 'l'), tr = dimTxt(o, 'r'), td = dimTxt(o, 'd');
+          if (th || show.indexOf('높이') >= 0) s += seg(apex[0], apex[1], cx, base, C66.line, true, 2.5, 's6-h') + right(cx, base, 12, 1) + lbl(cx + 10, apex[1] + ph * 0.55, th ? (show.indexOf('높이') >= 0 ? '높이 ' : '') + th : '높이', o.ask === 'h' ? C66.ask : C66.line, 'start');
+          if (tl || show.indexOf('모선') >= 0) s += seg(apex[0], apex[1], cx + rx, base, C66.red, false, 4, 's6-gen') + lbl(cx + rx * 0.5 + 22, apex[1] + ph * 0.42, tl ? (show.indexOf('모선') >= 0 ? '모선 ' : '') + tl : '모선', o.ask === 'l' ? C66.ask : C66.red, 'start');
+          if (tr) s += seg(cx, base, cx - rx, base, C66.line, true, 2.5, 's6-rd') + lbl(cx - rx / 2, base + 34, tr, o.ask === 'r' ? C66.ask : C66.line);
+          if (td) s += seg(cx - rx, base, cx + rx, base, C66.line, true, 2.5, 's6-rd') + lbl(cx, base + 34, td, o.ask === 'd' ? C66.ask : C66.line);
+          if (show.indexOf('원뿔의 꼭짓점') >= 0) s += lbl(apex[0] - 14, apex[1] + 4, '원뿔의 꼭짓점', C66.blue, 'end');
+          if (show.indexOf('밑면') >= 0) s += lbl(cx - rx - 12, base + 8, '밑면', C66.blue, 'end');
+          if (show.indexOf('옆면') >= 0) s += lbl(cx - rx * 0.45, apex[1] + ph * 0.7, '옆면', C66.red, 'end');
+          H = base + ry + 50;
+        }
+      } else if (k === 'sph') {
+        const R = 110, cy = 150; s += '<circle class="s6-sph" cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="' + C66.fill + '" stroke="' + C66.line + '" stroke-width="3"/>' + ell(cx, cy, R, R * 0.26, 'none', true);
+        s += '<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="' + C66.line + '"/>';
+        const tr = dimTxt(o, 'r'), td = dimTxt(o, 'd');
+        if (tr || show.indexOf('구의 반지름') >= 0) s += seg(cx, cy, cx + R, cy, C66.red, false, 3.5, 's6-rd') + lbl(cx + R / 2, cy - 14, tr || '구의 반지름', o.ask === 'r' ? C66.ask : C66.red);
+        if (td) s += seg(cx - R, cy, cx + R, cy, C66.red, false, 3.5, 's6-rd') + lbl(cx, cy - 14, td, o.ask === 'd' ? C66.ask : C66.red);
+        if (show.indexOf('구의 중심') >= 0) s += lbl(cx - 10, cy + 30, '구의 중심', C66.blue, 'end');
+        H = cy + R + 30;
+      }
+      if (o.cap) { s += txt(W / 2, H + 6, o.cap, 22, C66.soft, 900); H += 30; }
+      const dimS = dims.map(d => d + '=' + o.dim[d]).join(',');
+      return svgWrap(s, 'fig-sol6', '0 0 ' + W + ' ' + m66(H)).replace('<svg ', '<svg data-sol="' + esc(k + '|' + T.bases + '|' + T.apex + '|' + T.flat + '|' + show.join(',') + '|' + dimS + '|' + (o.ask || '') + '|' + (o.lay ? 'lay' : '')) + '" ');
+    }
+    // ── rot6 ── 한 바퀴 돌리기
+    const ROT = { rect: 'cyl', rtri: 'cone', semi: 'sph' };
+    function rot6(o) {
+      const sh = o.shape, solid = ROT[sh]; if (!solid) throw new Error('rot6: shape');
+      let stick, out;
+      if (sh === 'semi') { if (!isN(o.r)) throw new Error('rot6: r'); out = String(o.r); stick = dmul(o.r, '2'); }
+      else { if (!isN(o.stick) || !isN(o.out)) throw new Error('rot6: 변'); stick = String(o.stick); out = String(o.out); }
+      const dia = dmul(out, '2'); const S = Number(stick), Ou = Number(out); const u = Math.min(150 / S, 120 / Ou, 30);
+      const sx = 90, top = 40, ph = S * u, pw = Ou * u, bot = top + ph; let s = '';
+      s += seg(sx, top - 18, sx, bot + 18, '#8A5A2B', false, 6, 'r6-stick');
+      if (sh === 'rect') s += '<rect class="r6-shape" x="' + sx + '" y="' + top + '" width="' + m66(pw) + '" height="' + m66(ph) + '" fill="' + C66.fill2 + '" stroke="' + C66.line + '" stroke-width="3"/>';
+      if (sh === 'rtri') s += '<path class="r6-shape" d="M' + sx + ' ' + top + ' L' + sx + ' ' + m66(bot) + ' L' + m66(sx + pw) + ' ' + m66(bot) + 'Z" fill="' + C66.fill2 + '" stroke="' + C66.line + '" stroke-width="3"/>' + right(sx, bot, 12, 1);
+      if (sh === 'semi') s += '<path class="r6-shape" d="M' + sx + ' ' + top + ' A' + m66(pw) + ' ' + m66(pw) + ' 0 0 1 ' + sx + ' ' + m66(bot) + ' Z" fill="' + C66.fill2 + '" stroke="' + C66.line + '" stroke-width="3"/><circle cx="' + sx + '" cy="' + m66((top + bot) / 2) + '" r="4" fill="' + C66.line + '"/>';
+      const hideH = o.ask === 'h', hideO = o.ask === 'r' || o.ask === 'd';
+      if (sh !== 'semi') s += lbl(sx - 12, (top + bot) / 2 + 8, (hideH ? '?' : stick) + ' cm', hideH ? C66.ask : C66.line, 'end') + lbl(sx + pw / 2, bot + 30, (o.ask === 'r' ? '?' : out) + ' cm', o.ask === 'r' ? C66.ask : C66.line);
+      else s += lbl(sx + pw / 2, (top + bot) / 2 - 8, (o.ask === 'r' ? '?' : out) + ' cm', o.ask === 'r' ? C66.ask : C66.line) + seg(sx, (top + bot) / 2, sx + pw, (top + bot) / 2, C66.line, true, 2);
+      s += '<path d="M' + m66(sx + pw + 40) + ' ' + m66((top + bot) / 2) + ' h46 l-10 -9 m10 9 l-10 9" fill="none" stroke="' + C66.ask + '" stroke-width="4"/>';
+      const ox = sx + pw + 120, ocx = ox + pw; let r = '';
+      if (solid === 'cyl') r = '<path d="M' + m66(ocx - pw) + ' ' + top + ' V' + m66(bot) + ' A' + m66(pw) + ' ' + m66(pw * 0.26) + ' 0 0 0 ' + m66(ocx + pw) + ' ' + m66(bot) + ' V' + top + '" fill="' + C66.fill + '" stroke="' + C66.line + '" stroke-width="3"/>' + ell(ocx, top, pw, pw * 0.26, C66.base);
+      if (solid === 'cone') r = '<path d="M' + m66(ocx) + ' ' + top + ' L' + m66(ocx - pw) + ' ' + m66(bot) + ' A' + m66(pw) + ' ' + m66(pw * 0.26) + ' 0 0 0 ' + m66(ocx + pw) + ' ' + m66(bot) + ' Z" fill="' + C66.fill + '" stroke="' + C66.line + '" stroke-width="3"/>';
+      if (solid === 'sph') r = '<circle cx="' + m66(ocx) + '" cy="' + m66((top + bot) / 2) + '" r="' + m66(pw) + '" fill="' + C66.fill + '" stroke="' + C66.line + '" stroke-width="3"/>' + ell(ocx, (top + bot) / 2, pw, pw * 0.26, 'none', true);
+      s += r + seg(ocx, top - 18, ocx, bot + 18, '#8A5A2B', true, 3, 'r6-axis');
+      const nm = o.ask === 'solid' ? '?' : TRUTH[solid].name;
+      s += txt(m66(ocx), m66(bot + (solid === 'sph' ? 34 : 48)), nm, 26, o.ask === 'solid' ? C66.ask : C66.blue, 900).replace('<text ', '<text class="r6-name" ');
+      if (solid !== 'sph') s += lbl(ocx + pw + 10, bot + 8, '지름 ' + (o.ask === 'd' ? '?' : dia) + ' cm', o.ask === 'd' ? C66.ask : C66.line, 'start');
+      const W = Math.max(420, ocx + pw + 150), H = bot + 70;
+      return svgWrap(s, 'fig-rot6', '0 0 ' + m66(W) + ' ' + m66(H)).replace('<svg ', '<svg data-rot="' + esc(sh + '|' + solid + '|' + stick + '|' + out + '|' + dia + '|' + (o.ask || '')) + '" ');
+    }
+    // ── net6 ── 원기둥의 전개도 (가로 = 지름 × 3.14 를 픽셀로도)
+    function net6(o) {
+      if ((o.r == null) === (o.d == null)) throw new Error('net6: 반지름이나 지름 하나만');
+      const d = o.d != null ? String(o.d) : dmul(o.r, '2'), r = o.r != null ? String(o.r) : ddiv(o.d, '2'), h = String(o.h); if (!isN(d) || !isN(h)) throw new Error('net6: 수');
+      const w = dmul(d, PI66), bad = o.bad || ''; if (bad && ['skew', 'same', 'diff'].indexOf(bad) < 0) throw new Error('net6: bad');
+      const show = o.show || ['r', 'w', 'h']; if (o.ask && show.indexOf(o.ask) < 0 && !(o.ask === 'd' && show.indexOf('r') >= 0)) throw new Error('net6: ask 가 보이지 않는 치수');
+      let PD = 80; if (PD * Number(h) / Number(d) > 150) PD = 150 * Number(d) / Number(h); if (PD * 3.14 > 470) PD = 470 / 3.14;
+      const W = PD * 3.14, SH = PD * Number(h) / Number(d), R = PD / 2; const x0 = (620 - W) / 2, top = 30 + PD + 6, bot = top + SH; let s = '';
+      const sk = bad === 'skew' ? 34 : 0;
+      s += '<path class="n6-side" d="M' + m66(x0 + sk) + ' ' + m66(top) + ' H' + m66(x0 + W + sk) + ' L' + m66(x0 + W) + ' ' + m66(bot) + ' H' + m66(x0) + ' Z" fill="' + C66.fill + '" stroke="' + C66.line + '" stroke-width="3"/>';
+      if (o.mark) s += seg(x0 + sk, top, x0 + W + sk, top, C66.red, false, 5, 'n6-red') + seg(x0, bot, x0 + W, bot, C66.red, false, 5, 'n6-red') + seg(x0 + W + sk, top, x0 + W, bot, C66.blue, false, 5, 'n6-blue') + seg(x0 + sk, top, x0, bot, C66.blue, false, 5, 'n6-blue');
+      const ccx = x0 + W * 0.35 + sk / 2, R2 = bad === 'diff' ? R * 0.6 : R;
+      s += '<circle class="n6-base" cx="' + m66(ccx) + '" cy="' + m66(top - R) + '" r="' + m66(R) + '" fill="' + C66.base + '" stroke="' + C66.line + '" stroke-width="3"/>';
+      if (bad === 'same') s += '<circle class="n6-base" cx="' + m66(ccx + PD + 14) + '" cy="' + m66(top - R) + '" r="' + m66(R) + '" fill="' + C66.base + '" stroke="' + C66.line + '" stroke-width="3"/>';
+      else s += '<circle class="n6-base" cx="' + m66(ccx) + '" cy="' + m66(bot + R2) + '" r="' + m66(R2) + '" fill="' + C66.base + '" stroke="' + C66.line + '" stroke-width="3"/>';
+      const val = (k, v) => (o.ask === k ? '?' : v) + ' cm', col = (k) => (o.ask === k ? C66.ask : C66.line);
+      if (show.indexOf('r') >= 0) { s += '<circle cx="' + m66(ccx) + '" cy="' + m66(top - R) + '" r="3.5" fill="' + C66.line + '"/>' + seg(ccx, top - R, ccx + R, top - R, C66.line, true, 2); s += lbl(ccx + R + 10, top - R + 8, o.ask === 'd' ? '지름 ? cm' : val('r', r), o.ask === 'r' || o.ask === 'd' ? C66.ask : C66.line, 'start'); }
+      if (show.indexOf('w') >= 0) s += lbl(x0 + W * 0.7 + sk / 2, top + SH / 2 + 8, val('w', w), col('w'));
+      if (show.indexOf('h') >= 0) s += lbl(x0 + W + sk + 12, top + SH / 2 + 8, val('h', h), col('h'), 'start');
+      const H = bot + (bad === 'same' ? 30 : 2 * R2 + 24);
+      return svgWrap(s, 'fig-net6', '0 0 620 ' + m66(H)).replace('<svg ', '<svg data-net="' + esc(d + '|' + h + '|' + w + '|' + m66(W / PD) + '|' + m66(SH / PD) + '|' + bad + '|' + (o.ask || '')) + '" ');
+    }
+    // ── fvw6 ── 위·앞·옆 / 앞에서 본 모양의 넓이
+    const VIEW = { cyl: ['원', '직사각형', '직사각형'], cone: ['원', '삼각형', '삼각형'], sph: ['원', '원', '원'] };
+    const SIDES = ['위', '앞', '옆'];
+    function shapeAt(nm, cx, cy, sz) {
+      if (nm === '원') return '<circle cx="' + cx + '" cy="' + cy + '" r="' + sz + '" fill="' + C66.fill + '" stroke="' + C66.line + '" stroke-width="3"/>';
+      if (nm === '직사각형') return '<rect x="' + (cx - sz) + '" y="' + (cy - sz * 0.8) + '" width="' + 2 * sz + '" height="' + 1.6 * sz + '" fill="' + C66.fill + '" stroke="' + C66.line + '" stroke-width="3"/>';
+      return '<path d="M' + cx + ' ' + (cy - sz) + ' L' + (cx + sz) + ' ' + (cy + sz * 0.8) + ' H' + (cx - sz) + ' Z" fill="' + C66.fill + '" stroke="' + C66.line + '" stroke-width="3"/>';
+    }
+    function fvw6(o) {
+      if (o.mode === 'views') {
+        const v = VIEW[o.kind]; if (!v) throw new Error('fvw6: kind'); if (o.ask != null && SIDES.indexOf(o.ask) < 0) throw new Error('fvw6: ask');
+        let s = txt(330, 34, TRUTH[o.kind].name + '을(를) 본 모양', 24, C66.line, 900).replace('을(를)', o.kind === 'sph' ? '를' : '을');
+        SIDES.forEach((sd, i) => { const cx = 120 + i * 210; s += '<rect x="' + (cx - 85) + '" y="54" width="170" height="160" rx="14" fill="#fff" stroke="#B9C4D2" stroke-width="2"/>' + txt(cx, 84, sd + '에서 본 모양', 20, C66.soft, 900);
+          s += o.ask === sd ? txt(cx, 160, '?', 44, C66.ask, 900) : shapeAt(v[i], cx, 150, 44) + txt(cx, 232, v[i], 20, C66.line, 900).replace('<text ', '<text class="f6-v" data-s="' + sd + '" '); });
+        return svgWrap(s, 'fig-fvw6', '0 0 660 250').replace('<svg ', '<svg data-fvw="' + esc('views|' + o.kind + '|' + SIDES.map((sd, i) => sd + ':' + v[i]).join(',') + '|' + (o.ask || '')) + '" ');
+      }
+      const cn = o.cone, cy = o.cyl; if (!cn && !cy) throw new Error('fvw6: 원뿔이나 원기둥');
+      let s = '', triA = '', base = '', rectA = '', cw = '', ch = '';
+      const X1 = cy && cn ? 210 : 380, X2 = 520;
+      if (cn) {
+        base = cn.d != null ? String(cn.d) : dmul(cn.r, '2'); const hh = String(cn.h); triA = ddiv(dmul(base, hh), '2');
+        if (cn.l != null && !(Number(cn.l) > Number(hh))) throw new Error('fvw6: 모선은 높이보다 길어야 함');
+        const bw = 220, th = Math.min(170, 220 * Number(hh) / Number(base)), by = 50 + th;
+        s += '<path class="f6-tri" d="M' + X1 + ' 50 L' + (X1 + bw / 2) + ' ' + m66(by) + ' H' + (X1 - bw / 2) + ' Z" fill="' + C66.fill2 + '" stroke="' + C66.line + '" stroke-width="3"/>' + seg(X1, 50, X1, by, C66.line, true, 2.5) + right(X1, by, 12, 1);
+        s += lbl(X1, by + 32, '밑변 ' + base + ' cm', C66.line) + lbl(X1 + 10, 50 + th * 0.6, '높이 ' + hh + ' cm', C66.line, 'start');
+        if (cn.l != null) s += lbl(X1 - bw / 4 - 10, 50 + th * 0.45, '모선 ' + cn.l + ' cm', C66.soft, 'end');
+        s += txt(X1, by + 66, o.ask === 'triA' ? '넓이 ? cm²' : '넓이 ' + triA + ' cm²', 24, o.ask === 'triA' ? C66.ask : C66.blue, 900).replace('<text ', '<text class="f6-a" ');
+      }
+      if (cy) {
+        cw = cy.d != null ? String(cy.d) : cy.r != null ? dmul(cy.r, '2') : ''; ch = cy.h != null ? String(cy.h) : '';
+        if (o.same) { if (!triA) throw new Error('fvw6: same 은 원뿔이 있어야'); if (!cw && !ch) throw new Error('fvw6: same — 하나는 알아야'); if (!cw) cw = ddiv(triA, ch); if (!ch) ch = ddiv(triA, cw); if (dmul(cw, ch) !== triA) throw new Error('fvw6: 넓이가 같지 않음'); }
+        if (!cw || !ch) throw new Error('fvw6: 원기둥 가로·세로');
+        rectA = dmul(cw, ch); const rw = 180, rh = Math.min(170, 180 * Number(ch) / Number(cw)), rx = (cn ? X2 : 380) - rw / 2;
+        s += '<rect class="f6-rect" x="' + rx + '" y="50" width="' + rw + '" height="' + m66(rh) + '" fill="' + C66.fill + '" stroke="' + C66.line + '" stroke-width="3"/>';
+        s += lbl(rx + rw / 2, 50 + rh + 32, '가로 ' + (o.ask === 'cw' ? '?' : cw) + ' cm', o.ask === 'cw' ? C66.ask : C66.line) + lbl(rx + rw + 10, 50 + rh / 2 + 8, '세로 ' + (o.ask === 'ch' ? '?' : ch) + ' cm', o.ask === 'ch' ? C66.ask : C66.line, 'start');
+        s += txt(rx + rw / 2, 50 + rh + 66, (o.ask === 'rectA' ? '넓이 ? cm²' : '넓이 ' + rectA + ' cm²'), 24, o.ask === 'rectA' ? C66.ask : C66.blue, 900).replace('<text ', '<text class="f6-a" ');
+      }
+      if (o.ask && ['triA', 'rectA', 'cw', 'ch'].indexOf(o.ask) < 0) throw new Error('fvw6: ask');
+      if (o.same) s += txt(380, 30, '두 앞모양의 넓이가 같아요', 22, C66.soft, 900);
+      return svgWrap(s, 'fig-fvw6', '0 0 760 330').replace('<svg ', '<svg data-fvw="' + esc('front|' + base + '|' + (cn ? cn.h : '') + '|' + triA + '|' + cw + '|' + ch + '|' + rectA + '|' + (o.ask || '')) + '" ');
+    }
+    global.KT2_SOLID66 = { TRUTH, VIEW, dmul, ddiv, dadd };
+    Object.assign(PARTS, { sol6, rot6, net6, fvw6 });
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
