@@ -4,7 +4,7 @@
    E 정답 표시(하나 고르기 = 원문 정답 · 모두 고르기 = 원문 hit 그대로·틀린 보기 1↑ · 짝 잇기 = 원문 짝 전부) · 수준별·출구
    F 원문 계승(개념 말풍선 = 원문 글 · 글 판 = 원문 줄 · 인물 말·잇기 그림 = 원문 · 기본 문제 = 원문 문항 · 정리 = 원문 정리 줄)
    G 그림 렌더(개념 4장 전부 국어 부품 · 카드 이름 ** 없음 · 인물 이름 = 원문 인물) · M 이름 조사(받침에 맞는 조사 · 학생 화면·재료·원문 HTML 전수) · H 중복 0 · I 실렌더 + 1인 흐름 + 모두 고르기 표시
-   J extras 22 · K 발문 6장↑·분 합(40분 30~45 · 80분 60~88 · 120분 90~130) · L 선행 용어(학생 화면: 그러나 l07 전 0 · 처음·가운데·끝 l09 예고 전 0 · 이용 설명서 l10 예고 전 0 · -데 l14 전 0)
+   J extras 22(+교과서 활동 덤 b_lN_i) · K 발문 6장↑·분 합(40분 30~45 · 80분 60~88 · 120분 90~130) · L 선행 용어(학생 화면: 그러나 l07 전 0 · 처음·가운데·끝 l09 예고 전 0 · 이용 설명서 l10 예고 전 0 · -데 l14 전 0)
    실행: NODE_PATH=/home/claude/.jsdom/node_modules node kedu/teacher/표준/gate_g3s2_korean_u3.js */
 'use strict';
 const fs = require('fs');
@@ -103,7 +103,8 @@ KEYS.forEach(k => T(k + ' 19장 × 닫힘·열림 렌더 예외 0 · 빈 본문 
   if (s.block === 'basic_problem' && !s.data.multi && s.data.options && rev) ok((r.body.match(/opt ok/g) || []).length === 1, s.id + ' 열림 정답 1'); })); }));
 
 console.log('═══ J. extras ═══');
-KEYS.forEach(k => T(k + ' extras 22 · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; ok(ex.length === 22, ex.length); const ids = ex.map(e => e.id); ok(new Set(ids).size === 22, 'id 중복');
+/* 2026-11-09 교과서판: extras 22 + 「교과서 활동」 덤(id b_lN_i · other_activity · 📗)은 따로 센다 */
+KEYS.forEach(k => T(k + ' extras 22 (+교과서 활동 덤) · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; const tb = ex.filter(e => /^b_l\d+_\d+$/.test(e.id)); ok(ex.length - tb.length === 22, ex.length - tb.length); tb.forEach(e => ok(e.type === 'other_activity' && e.icon === '📗' && /^교과서 활동 — /.test(e.title), e.id)); const ids = ex.map(e => e.id); ok(new Set(ids).size === ex.length, 'id 중복');
   L[k].slides.forEach(s => (s.suggested_extras || []).forEach(id => ok(ids.indexOf(id) >= 0, s.id + ' → ' + id))); ex.forEach(e => ok(e.title && (e.content || e.url), e.id)); }));
 
 console.log('═══ K. 발문 ═══');
