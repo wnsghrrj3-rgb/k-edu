@@ -3920,6 +3920,106 @@
     }
     Object.assign(PARTS, { fdv, dnl });
   }
+  // ══ 6-2 수학 2단원 「공간과 입체」 부품 (2026-11-09 준비본 — 오푸스 5.5) — stage2-fig.js 의 `  function one(f) {` 바로 위에 그대로 끼운다 ══
+  //   skp: 쌓기나무 판 — h(높이 표, 줄 = 뒤 → 앞, 칸 = 왼쪽 → 오른쪽) 하나에서 쌓은 모양(겨냥도)·위·앞·옆에서 본 모양·수 쓴 그림·층별 그림을 부품이 스스로 셈해 그린다.
+  //        show [iso|top|num|front|side|layers] · ask [front|side|top|num|layers] = 그 판 자리에 「?」 · q [줄, 칸] = 수 쓴 그림의 ? · qlayer k = k층 그림 ? · marks {'줄,칸': 글} · cap
+  //        data-h(높이 표) · data-n(개수) · data-hidden(겨냥도에서 다 가려진 자리 「줄,칸;…」) · 판마다 data-view·data-grid(그린 칸)
+  //        겨냥도는 교과서처럼 앞면이 왼쪽 아래, 오른쪽 옆면이 오른쪽 아래(x → 오른쪽 아래, 뒤 → 오른쪽 위).
+  //   skd: 방향 판 — 탁자(또는 물체) 위에서 내려다본 평면도 + 방향 화살표 + 「…에서 보면」 줄. items [{name, x, y}](0~1, x 오른쪽 · y 뒤쪽) · dirs {이름: front|back|left|right} · from 이름 · ask(줄을 ?로) · notes {이름: 글}
+  //        「…에서 보면」 줄의 왼쪽 → 오른쪽 차례는 부품이 셈한다(앞: x 작은 것부터 · 뒤: x 큰 것부터 · 왼쪽: 뒤(y 큰 것)부터 · 오른쪽: 앞(y 작은 것)부터). data-seen
+  {
+    const SK = { top: '#FCE3B4', front: '#F5B76A', right: '#D98E3F', line: '#8A5A2B', cell: '#F7D9A6', ink: '#3B2A1A', q: '#E4572E' };
+    const skNum = (v) => Number.isInteger(v) && v >= 0 && v <= 4;
+    function skRows(h) {
+      if (!Array.isArray(h) || !h.length || h.some(r => !Array.isArray(r) || r.length !== h[0].length)) throw new Error('skp: h 는 같은 길이 줄의 배열');
+      h.forEach(r => r.forEach(v => { if (!skNum(v)) throw new Error('skp: 높이는 0~4 정수 — ' + v); }));
+      const n = h.reduce((a, r) => a + r.reduce((b, v) => b + v, 0), 0); if (!n || n > 40) throw new Error('skp: 쌓기나무 1~40개');
+      return { h, ny: h.length, nx: h[0].length, n, top: Math.max.apply(null, h.map(r => Math.max.apply(null, r))) };
+    }
+    const skFront = (R) => Array.from({ length: R.nx }, (_, x) => Math.max.apply(null, R.h.map(r => r[x])));
+    const skSide = (R) => R.h.slice().reverse().map(r => Math.max.apply(null, r));
+    const skTop = (R, k) => R.h.map(r => r.map(v => (v > (k || 0) ? 1 : 0)));
+    // 겨냥도 — 쌓기나무 (x, 뒤로 d, z) 의 바닥 앞 왼쪽 꼭짓점 = x·EX + d·ED + z·EZ
+    const EX = [30, 11], ED = [20, -13], EZ = [0, -32];
+    const P3 = (x, d, z) => [x * EX[0] + d * ED[0] + z * EZ[0], x * EX[1] + d * ED[1] + z * EZ[1]];
+    function skFaces(x, d, z) {
+      const p = (a, b, c) => P3(x + a, d + b, z + c);
+      return { front: [p(0, 0, 0), p(1, 0, 0), p(1, 0, 1), p(0, 0, 1)], right: [p(1, 0, 0), p(1, 1, 0), p(1, 1, 1), p(1, 0, 1)], top: [p(0, 0, 1), p(1, 0, 1), p(1, 1, 1), p(0, 1, 1)] };
+    }
+    function skCubes(R) { const out = []; R.h.forEach((r, ri) => r.forEach((v, x) => { for (let z = 0; z < v; z++) out.push({ x, d: R.ny - 1 - ri, z, ri }); })); // 뒤(d 큰 것) → 앞, 왼쪽 → 오른쪽, 아래 → 위
+      return out.sort((a, b) => (b.d - a.d) || (a.x - b.x) || (a.z - b.z)); }
+    const inPoly = (pt, poly) => { let o = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const a = poly[i], b = poly[j]; if ((a[1] > pt[1]) !== (b[1] > pt[1]) && pt[0] < (b[0] - a[0]) * (pt[1] - a[1]) / (b[1] - a[1]) + a[0]) o = !o; } return o; };
+    const pArea = (p) => { let s = 0; for (let i = 0; i < p.length; i++) { const a = p[i], b = p[(i + 1) % p.length]; s += a[0] * b[1] - b[0] * a[1]; } return Math.abs(s) / 2; };
+    function skHidden(R) { // 자리마다 맨 위 쌓기나무가 그림에서 20% 미만으로 보이면 「다 가려진 자리」
+      const cs = skCubes(R), polys = []; cs.forEach((c, i) => { const F = skFaces(c.x, c.d, c.z); ['front', 'right', 'top'].forEach(k => polys.push([F[k], i])); });
+      const all = [].concat.apply([], polys.map(p => p[0])), mnx = Math.min.apply(null, all.map(p => p[0])), mxx = Math.max.apply(null, all.map(p => p[0])), mny = Math.min.apply(null, all.map(p => p[1])), mxy = Math.max.apply(null, all.map(p => p[1]));
+      const own = {}, st = 1.5; for (let X = mnx + st / 2; X < mxx; X += st) for (let Y = mny + st / 2; Y < mxy; Y += st) { let who = -1; polys.forEach(([pp, i]) => { if (inPoly([X, Y], pp)) who = i; }); if (who >= 0) own[who] = (own[who] || 0) + 1; }
+      const hid = []; R.h.forEach((r, ri) => r.forEach((v, x) => { if (!v) return; const i = cs.findIndex(c => c.ri === ri && c.x === x && c.z === v - 1); const F = skFaces(x, R.ny - 1 - ri, v - 1); const area = pArea(F.front) + pArea(F.right) + pArea(F.top); if ((own[i] || 0) * st * st / area < 0.2) hid.push(ri + ',' + x); }));
+      return hid;
+    }
+    function skIso(R) {
+      const cs = skCubes(R); const all = []; cs.forEach(c => { const F = skFaces(c.x, c.d, c.z); all.push.apply(all, F.front.concat(F.right, F.top)); });
+      const mnx = Math.min.apply(null, all.map(p => p[0])), mxx = Math.max.apply(null, all.map(p => p[0])), mny = Math.min.apply(null, all.map(p => p[1])), mxy = Math.max.apply(null, all.map(p => p[1]));
+      const pad = 10, W = Math.ceil(mxx - mnx + pad * 2), Hh = Math.ceil(mxy - mny + pad * 2) + 30, tx = (p) => (p[0] - mnx + pad).toFixed(1) + ',' + (p[1] - mny + pad).toFixed(1);
+      let s = ''; cs.forEach(c => { const F = skFaces(c.x, c.d, c.z); s += '<g class="skp-c">' + ['front', 'right', 'top'].map(k => '<polygon points="' + F[k].map(tx).join(' ') + '" fill="' + SK[k] + '" stroke="' + SK.line + '" stroke-width="1.6" stroke-linejoin="round"/>').join('') + '</g>'; });
+      const fp = P3(0, 0, 0); s += '<text x="' + (fp[0] - mnx + pad - 2).toFixed(1) + '" y="' + (mxy - mny + pad + 24).toFixed(1) + '" font-size="18" font-weight="800" fill="' + SK.ink + '">앞 ↗</text>';
+      return svgWrap(s, 'skp-svg', '0 0 ' + W + ' ' + Hh).replace('<svg ', '<svg style="width:' + Math.min(340, W * 1.25).toFixed(0) + 'px" ');
+    }
+    function skGrid(rows, front) { // rows: 0/1 또는 글자 칸(빈 칸 = 0·'') · front = 아래에 「앞」 표시
+      const cs = 34, R = rows.length, C = Math.max.apply(null, rows.map(r => r.length)), W = C * cs + 8, Hh = R * cs + 8 + (front ? 30 : 0);
+      let s = ''; for (let i = 0; i < R; i++) for (let j = 0; j < C; j++) { const v = rows[i][j], on = v !== 0 && v !== '' && v != null; const X = 4 + j * cs, Y = 4 + i * cs;
+        s += '<rect x="' + X + '" y="' + Y + '" width="' + cs + '" height="' + cs + '" fill="' + (on ? SK.cell : '#fff') + '" stroke="' + (on ? SK.line : '#B8C4D6') + '" stroke-width="' + (on ? 1.8 : 1) + '"' + (on ? '' : ' stroke-dasharray="3 3"') + '/>';
+        if (on && v !== 1) s += '<text x="' + (X + cs / 2) + '" y="' + (Y + cs * 0.7) + '" text-anchor="middle" font-size="20" font-weight="900" fill="' + (v === '?' ? SK.q : SK.ink) + '">' + esc(v) + '</text>'; }
+      if (front) s += '<text x="' + (W / 2) + '" y="' + (Hh - 6) + '" text-anchor="middle" font-size="17" font-weight="800" fill="' + SK.ink + '">↑ 앞</text>';
+      return svgWrap(s, 'skp-svg', '0 0 ' + W + ' ' + Hh).replace('<svg ', '<svg style="width:' + Math.round(W * 1.15) + 'px" ');
+    }
+    const skCols = (hs) => { const t = Math.max.apply(null, hs.concat([1])); const rows = []; for (let z = t - 1; z >= 0; z--) rows.push(hs.map(v => (v > z ? 1 : 0))); return rows; };
+    const SK_CAP = { iso: '쌓은 모양', top: '위에서 본 모양', num: '위에서 본 모양', front: '앞에서 본 모양', side: '옆에서 본 모양' };
+    const skPanel = (view, grid, svg, cap) => '<div class="skp-p" data-view="' + view + '" data-grid="' + esc(JSON.stringify(grid)) + '" style="display:flex;flex-direction:column;align-items:center;gap:6px">' + svg + '<div class="skp-cap" style="font-weight:800;font-size:19px;color:#3B2A1A">' + esc(cap) + '</div></div>';
+    const skAsk = (view, cap) => '<div class="skp-p" data-view="' + view + '" data-grid="?" style="display:flex;flex-direction:column;align-items:center;gap:6px"><div class="skp-q" style="width:110px;height:110px;border:3px dashed #E4572E;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:900;color:#E4572E">?</div><div class="skp-cap" style="font-weight:800;font-size:19px;color:#3B2A1A">' + esc(cap) + '</div></div>';
+    function skp(o) {
+      const R = skRows(o.h), show = o.show || ['iso'], ask = o.ask || [], marks = o.marks || {};
+      show.concat(ask).forEach(k => { if (['iso', 'top', 'num', 'front', 'side', 'layers'].indexOf(k) < 0) throw new Error('skp: 모르는 판 ' + k); });
+      if (o.q && !(R.h[o.q[0]] && R.h[o.q[0]][o.q[1]] > 0)) throw new Error('skp: q 자리에 쌓기나무가 없다');
+      Object.keys(marks).forEach(k => { const [r, c] = k.split(',').map(Number); if (!(R.h[r] && R.h[r][c] > 0)) throw new Error('skp: marks 자리에 쌓기나무가 없다 ' + k); });
+      if (o.qlayer !== undefined && !(Number.isInteger(o.qlayer) && o.qlayer >= 1 && o.qlayer <= R.top)) throw new Error('skp: qlayer 범위');
+      const hid = skHidden(R), ps = [];
+      show.forEach(k => {
+        if (ask.indexOf(k) >= 0) { ps.push(skAsk(k, SK_CAP[k] || '?')); return; }
+        if (k === 'iso') ps.push(skPanel('iso', R.h, skIso(R), SK_CAP.iso));
+        else if (k === 'top') { const g = skTop(R); ps.push(skPanel('top', g, skGrid(g, true), SK_CAP.top)); }
+        else if (k === 'num') { const g = R.h.map((r, ri) => r.map((v, x) => { if (!v) return 0; const key = ri + ',' + x; if (o.q && o.q[0] === ri && o.q[1] === x) return '?'; return key in marks ? marks[key] : v; })); ps.push(skPanel('num', g, skGrid(g, true), SK_CAP.num)); }
+        else if (k === 'front') { const f = skFront(R); ps.push(skPanel('front', f, skGrid(skCols(f), false), SK_CAP.front)); }
+        else if (k === 'side') { const sd = skSide(R); ps.push(skPanel('side', sd, skGrid(skCols(sd), false), SK_CAP.side)); }
+        else if (k === 'layers') for (let z = 0; z < R.top; z++) { const g = skTop(R, z); ps.push(o.qlayer === z + 1 ? skAsk('layer' + (z + 1), (z + 1) + '층') : skPanel('layer' + (z + 1), g, skGrid(g, z === 0), (z + 1) + '층')); }
+      });
+      ask.filter(k => show.indexOf(k) < 0).forEach(k => ps.push(skAsk(k, SK_CAP[k])));
+      return '<div class="fig-vert fig-skp" data-h="' + R.h.map(r => r.join(',')).join('/') + '" data-n="' + R.n + '" data-hidden="' + hid.join(';') + '" data-show="' + show.join(',') + '" data-ask="' + ask.join(',') + '">' +
+        '<div class="skp-row" style="display:flex;flex-wrap:wrap;gap:22px;align-items:flex-end;justify-content:center">' + ps.join('') + '</div>' + (o.cap ? '<div class="fig-cap">' + esc(o.cap) + '</div>' : '') + '</div>';
+    }
+    const SKD_SIDE = { front: [0.5, 1.12, '↑'], back: [0.5, -0.12, '↓'], left: [-0.13, 0.5, '→'], right: [1.13, 0.5, '←'] };
+    function skdSeen(items, side) {
+      const it = items.slice(); const key = { front: (a, b) => a.x - b.x, back: (a, b) => b.x - a.x, left: (a, b) => b.y - a.y, right: (a, b) => a.y - b.y }[side];
+      if (!key) throw new Error('skd: 모르는 방향 ' + side); return it.sort(key).map(i => i.name);
+    }
+    function skd(o) {
+      const items = o.items || [], dirs = o.dirs || {}; if (!items.length) throw new Error('skd: 물건 없음');
+      items.forEach(i => { if (!(i.x >= 0 && i.x <= 1 && i.y >= 0 && i.y <= 1)) throw new Error('skd: 자리 0~1 — ' + i.name); });
+      const S = 300, ox = 60, oy = 50, W = S + ox * 2, Hh = S + oy * 2 + 10; const X = (x) => ox + x * S, Y = (y) => oy + (1 - y) * S;
+      let s = '<ellipse cx="' + (ox + S / 2) + '" cy="' + (oy + S / 2) + '" rx="' + (S / 2) + '" ry="' + (S / 2) + '" fill="#F3E6D3" stroke="#B08A5B" stroke-width="4"/>';
+      items.forEach(i => { s += '<circle cx="' + X(i.x).toFixed(1) + '" cy="' + Y(i.y).toFixed(1) + '" r="24" fill="#fff" stroke="#3B2A1A" stroke-width="2.5"/><text x="' + X(i.x).toFixed(1) + '" y="' + (Y(i.y) + 7).toFixed(1) + '" text-anchor="middle" font-size="17" font-weight="900" fill="#3B2A1A">' + esc(i.name) + '</text>'; });
+      Object.keys(dirs).forEach(nm => { const sd = SKD_SIDE[dirs[nm]]; if (!sd) throw new Error('skd: 모르는 방향 ' + dirs[nm]); const x = ox + sd[0] * S, y = oy + sd[1] * S + (dirs[nm] === 'front' ? 18 : 0);
+        s += '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" text-anchor="middle" font-size="22" font-weight="900" fill="#E4572E">' + esc(nm) + ' ' + sd[2] + '</text>'; });
+      const svg = svgWrap(s, 'skd-svg', '0 0 ' + W + ' ' + Hh).replace('<svg ', '<svg style="width:360px" ');
+      let seen = '', ds = '';
+      if (o.from) { const sd = dirs[o.from]; if (!sd) throw new Error('skd: from 방향이 dirs 에 없다'); const order = skdSeen(items, sd); ds = o.from + ':' + order.join(',');
+        seen = '<div class="skd-seen" style="font-weight:800;font-size:20px;margin-top:6px">' + esc(o.from) + ' 방향에서 보면 (왼쪽부터) ' + (o.ask ? '<b style="color:#E4572E">?</b>' : esc(order.join(' · '))) + '</div>'; }
+      const notes = Object.keys(o.notes || {}).map(k => '<div class="skd-note" style="font-size:18px">' + esc(k) + ' — ' + esc(o.notes[k]) + '</div>').join('');
+      return '<div class="fig-vert fig-skd" data-seen="' + esc(o.ask ? '?' : ds) + '" data-items="' + esc(items.map(i => i.name + ':' + i.x + ':' + i.y).join('|')) + '">' + svg + seen + notes + (o.cap ? '<div class="fig-cap">' + esc(o.cap) + '</div>' : '') + '</div>';
+    }
+    global.KT2_SK = { front: (h) => skFront(skRows(h)), side: (h) => skSide(skRows(h)), top: (h) => skTop(skRows(h)), hidden: (h) => skHidden(skRows(h)), seen: skdSeen };
+    Object.assign(HTML_PARTS, { skp, skd });
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
