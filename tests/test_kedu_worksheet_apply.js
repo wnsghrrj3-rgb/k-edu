@@ -83,7 +83,7 @@ setTimeout(() => {
 function partB() {
   const SRC = path.join(R, 'kedu/worksheet/data');
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kws-apply-'));
-  const U = 'g6_2_math_u1';
+  const U = 'g6_1_math_u1';   // 표본 = 교과서판(2학기 트랙)이 건드리지 않는 1학기 단원 — 2026-11-09 g6_2_math_u1 이 교과서판으로 바뀌어 옮김
   const names = fs.readdirSync(SRC).filter(f => f.indexOf(U + '_') === 0).map(f => f.slice(0, -5));
   const lm0 = JSON.parse(fs.readFileSync(path.join(SRC, '_lesson_map.json'), 'utf8'));
   const run = (label, mut, wantFail, needle) => {
@@ -120,7 +120,7 @@ function partB() {
   run('연결표 basic 이 응용을 가리킴', (S, M) => { const k = Object.keys(M.lessons)[0]; M.lessons[k].basic = M.lessons[k].apply[0]; }, true, '응용 세트');
   run('apply 가 교과서판을 가리킴', (S, M) => { const k = Object.keys(M.lessons)[0]; M.lessons[k].apply = [M.lessons[k].challenge]; }, true, '응용 갈래(lesson_apply·unit_apply)가 아니다');
   run('apply 가 빈 배열', (S, M) => { const k = Object.keys(M.lessons)[0]; M.lessons[k].apply = []; }, true, 'apply 는 옛 세트 이름 배열');
-  run('apply 가 없는 세트', (S, M) => { const k = Object.keys(M.lessons)[0]; M.lessons[k].apply = ['g6_2_math_u1_L99_basic']; }, true, 'apply 가 가리키는 세트');
+  run('apply 가 없는 세트', (S, M) => { const k = Object.keys(M.lessons)[0]; M.lessons[k].apply = [U + '_L99_basic']; }, true, 'apply 가 가리키는 세트');
   // tb_flip.py — 교과서판을 올린 뒤 도구 한 번으로 옛 세트·연결표가 응용으로 바뀌고 check_sets 를 통과
   fs.rmSync(tmp, { recursive: true, force: true }); fs.mkdirSync(tmp);
   fs.copyFileSync(path.join(SRC, '_concepts.json'), path.join(tmp, '_concepts.json'));

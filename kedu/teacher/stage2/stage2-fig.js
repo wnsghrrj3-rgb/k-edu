@@ -3819,6 +3819,107 @@
     }
     Object.assign(HTML_PARTS, { abr, sfd, bch, bbx, spn, chl, u6r });
   }
+  // ══ N61(2026-11-09) 6학년 2학기 수학 1단원 「분수의 나눗셈」 부품 — 지도서 그림(덜어 내기 띠 · 이중수직선)을 2세대로 ══
+  //   fdv(덜어 내기 띠 — 나누어지는 수 a칸을 나누는 수 b칸씩 묶음 · 몫·묶음 이름표는 부품이 셈 · coarse = 통분 전 굵은 칸)
+  //   dnl(이중수직선 — 아는 짝 at→val 에서 1에 해당하는 양을 부품이 셈 · 변화 화살표 ×n ÷n 은 부품이 확인, 어긋나면 던짐)
+  //   ⛔ ask 면 답이 되는 수(묶음 이름표·몫 · 물은 자리의 위 값)를 그리지 않는다. 지도서: 이중수직선은 보조 도구 — 수만 정확히.
+  {
+    const g9 = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) { const t = a % b; a = b; b = t; } return a || 1; };
+    const q9 = (n, d) => { if (!d) throw new Error('분수 부품: 0으로 나눔'); const g = g9(n, d); return [n / g, d / g]; };
+    function pf9(s) { const t = String(s).trim(); let m; if ((m = t.match(/^(\d+)\s+(\d+)\/(\d+)$/))) return q9(+m[1] * +m[3] + +m[2], +m[3]); if ((m = t.match(/^(\d+)\/(\d+)$/))) return q9(+m[1], +m[2]); if (/^\d+$/.test(t)) return [+t, 1]; throw new Error('분수 부품: 모르는 수 ' + s); }
+    const mx9 = (q) => { const w = Math.floor(q[0] / q[1]), r = q[0] - w * q[1]; return r ? (w ? w + ' ' + r + '/' + q[1] : r + '/' + q[1]) : String(w); };
+    const eq9 = (a, b) => a[0] === b[0] && a[1] === b[1];
+    const m9 = (n) => String(Math.round(n * 10) / 10);
+    const C9 = { a: '#5B8DEF', aDeep: '#2F5FBF', b: '#FF7A2F', bDeep: '#C2551A', soft: '#6B7C93', line: '#B9C4D2', ok: '#2E7D4F' };
+    // SVG 세로 분수 「n/d」「w n/d」 · 그 밖 글자는 그대로(가운데 x · 가로줄 y)
+    function sf9(x, y, t, sz, col, cls) {
+      sz = sz || 24; col = col || INK; const m = String(t).match(/^(?:(\d+)\s+)?(\d+)\/(\d+)$/);
+      if (!m) return txt(m9(x), m9(y + sz * 0.38), String(t), sz * 1.08, col, 900).replace('<text ', '<text' + (cls ? ' class="' + cls + '"' : '') + ' ');
+      const nw = Math.max(m[2].length, m[3].length) * sz * 0.62 + 8; let s = '', fx = x;
+      if (m[1]) { const ww = m[1].length * sz * 0.66; fx = x + (ww + 4) / 2; s += txt(m9(fx - nw / 2 - 4 - ww / 2), m9(y + sz * 0.38), m[1], sz * 1.08, col, 900); }
+      s += txt(m9(fx), m9(y - 6), m[2], sz, col, 900) + '<line x1="' + m9(fx - nw / 2) + '" y1="' + m9(y) + '" x2="' + m9(fx + nw / 2) + '" y2="' + m9(y) + '" stroke="' + col + '" stroke-width="2.6"/>' + txt(m9(fx), m9(y + sz * 0.92), m[3], sz, col, 900);
+      return '<g' + (cls ? ' class="' + cls + '"' : '') + '>' + s + '</g>';
+    }
+    // 식 한 줄(토큰을 차례로 — 분수는 세로)
+    function row9(cx, y, toks, sz, col) {
+      const wOf = (t) => { const m = String(t).match(/^(?:(\d+)\s+)?(\d+)\/(\d+)$/); return m ? (m[1] ? m[1].length * sz * 0.66 + 6 : 0) + Math.max(m[2].length, m[3].length) * sz * 0.62 + 14 : String(t).length * sz * 0.66 + 14; };
+      const ws = toks.map(wOf), tot = ws.reduce((a, b) => a + b, 0); let x = cx - tot / 2, s = '';
+      toks.forEach((t, i) => { s += sf9(x + ws[i] / 2, y, t, sz, col); x += ws[i]; });
+      return s;
+    }
+    // ── fdv ── 덜어 내기 띠: 1을 d칸으로 · 나누어지는 수 a칸 색 · 나누는 수 b칸씩 묶음(마지막 묶음이 모자라면 r/b 묶음)
+    function fdv(o) {
+      const a = +o.a, b = +o.b, d = +o.d; if (!(a > 0 && b > 0 && d > 0) || a % 1 || b % 1 || d % 1) throw new Error('fdv: 인자');
+      const units = Math.max(1, +(o.units || 0), Math.ceil(Math.max(a, b) / d)); if (a > units * d || b > units * d) throw new Error('fdv: 띠 밖');
+      const coarse = +(o.coarse || 0); if (coarse && d % coarse) throw new Error('fdv: coarse 는 d 의 약수');
+      if (o.ta && !eq9(pf9(o.ta), q9(a, d))) throw new Error('fdv: ta ' + o.ta + ' ≠ ' + a + '/' + d);
+      if (o.tb && !eq9(pf9(o.tb), q9(b, d))) throw new Error('fdv: tb ' + o.tb + ' ≠ ' + b + '/' + d);
+      const Q = q9(a, b), qs = mx9(Q), full = Math.floor(a / b), rest = a - full * b;
+      const X0 = 60, X1 = 700, cw = (X1 - X0) / (units * d), Y = 92, BH = 58; let s = '';
+      // 묶음 괄호(ask 가 아닐 때만)
+      const groups = [];
+      if (!o.ask) {
+        for (let k = 0; k * b < a; k++) {
+          const st = k * b, en = Math.min((k + 1) * b, a), part = en - st < b, xa = X0 + st * cw, xb = X0 + (st + b) * cw, xe = X0 + en * cw;
+          const lab = part ? mx9(q9(en - st, b)) : String(k + 1); groups.push(lab);
+          s += '<g class="fdv-g' + (part ? ' part' : '') + '" data-k="' + k + '" data-lab="' + esc(lab) + '"><path d="M' + m9(xa + 3) + ' ' + (Y - 8) + ' V' + (Y - 22) + ' H' + m9((part ? xb : xe) - 3) + ' V' + (Y - 8) + '" fill="none" stroke="' + (part ? C9.bDeep : C9.b) + '" stroke-width="3.5"' + (part ? ' stroke-dasharray="7 5"' : '') + '/>' + sf9((xa + (part ? xb : xe)) / 2, Y - 46, lab, 20, part ? C9.bDeep : C9.b) + '</g>';
+        }
+      }
+      for (let i = 0; i < units * d; i++) {
+        const on = i < a, x = X0 + i * cw;
+        s += '<rect class="fdv-c' + (on ? ' on' : '') + '" data-i="' + i + '" x="' + m9(x) + '" y="' + Y + '" width="' + m9(cw) + '" height="' + BH + '" fill="' + (on ? C9.a : '#fff') + '" stroke="' + C9.line + '" stroke-width="' + (cw < 16 ? 1.5 : 2.5) + '"/>';
+      }
+      if (coarse) for (let i = 1; i < units * coarse; i++) { const x = X0 + i * (d / coarse) * cw; s += '<line class="fdv-k" x1="' + m9(x) + '" y1="' + (Y - 4) + '" x2="' + m9(x) + '" y2="' + (Y + BH + 4) + '" stroke="' + INK + '" stroke-width="4" stroke-dasharray="6 4"/>'; }
+      s += '<rect x="' + X0 + '" y="' + Y + '" width="' + (X1 - X0) + '" height="' + BH + '" fill="none" stroke="' + INK + '" stroke-width="4"/>';
+      const ly = Y + BH + 18; s += '<line x1="' + X0 + '" y1="' + ly + '" x2="' + X1 + '" y2="' + ly + '" stroke="' + INK + '" stroke-width="3"/>';
+      for (let u = 0; u <= units; u++) { const x = X0 + u * d * cw; s += '<line x1="' + m9(x) + '" y1="' + (ly - 10) + '" x2="' + m9(x) + '" y2="' + (ly + 10) + '" stroke="' + INK + '" stroke-width="3.5"/>' + txt(m9(x), ly + 38, String(u), 24, INK, 900); }
+      // 나누는 수 한 묶음(아래 작은 띠 — 위 띠와 같은 칸 크기, 왼쪽 끝 맞춤 · 이름표는 띠 위 줄)
+      const by = ly + 70, bw = b * cw, bx = X0, tbt = o.tb || (b + '/' + d);
+      s += txt(X0, by - 12, o.lb || ('나누는 수 ' + tbt), 21, C9.bDeep, 900, 'start');
+      s += '<rect class="fdv-b" x="' + bx + '" y="' + by + '" width="' + m9(bw) + '" height="32" fill="#FFE3CF" stroke="' + C9.bDeep + '" stroke-width="3"/>';
+      for (let i = 1; i < b; i++) s += '<line x1="' + m9(bx + i * cw) + '" y1="' + by + '" x2="' + m9(bx + i * cw) + '" y2="' + (by + 32) + '" stroke="' + C9.bDeep + '" stroke-width="1.5"/>';
+      if (bx + bw + 60 <= 740) s += sf9(bx + bw + 34, by + 14, tbt, 20, C9.bDeep);
+      let H = by + 56;
+      if (o.la) { s += txt(X0, 34, o.la, 22, C9.aDeep, 900, 'start'); }
+      const ta = o.ta || (a + '/' + d), tb = o.tb || (b + '/' + d);
+      if (o.eq !== false) { s += '<g class="fdv-eq" data-q="' + (o.ask ? '' : esc(qs)) + '">' + row9(380, H + 18, [ta, '÷', tb, '=', o.ask ? '?' : qs], 24, o.ask ? ORANGE : INK) + '</g>'; H += 62; }
+      if (o.cap) { s += txt(380, H + 12, o.cap, 22, C9.soft, 900); H += 36; }
+      return svgWrap(s, 'fig-fdv', '0 0 760 ' + Math.round(H)).replace('<svg ', '<svg data-fdv="' + a + ',' + b + ',' + d + ',' + units + ',' + (coarse || 0) + '" data-q="' + (o.ask ? '' : esc(qs)) + '" data-groups="' + esc(groups.join('|')) + '" data-ask="' + (o.ask ? 1 : 0) + '" ');
+    }
+    // ── dnl ── 이중수직선: 아래 = 기준 양(0~to, 1을 d칸) · 위 = 구하려는 양 · 아는 짝 at→val · marks 자리마다 위 값은 부품이 셈
+    function dnl(o) {
+      const d = +o.d, to = +(o.to || 1); if (!(d > 0 && to > 0)) throw new Error('dnl: d·to');
+      const at = pf9(o.at), val = pf9(o.val), k = q9(val[0] * at[1], val[1] * at[0]); // 1에 해당하는 양
+      const marks = (o.marks || []).map(String); if (marks.indexOf(String(o.at)) < 0) throw new Error('dnl: 아는 자리 at 이 marks 에 없음');
+      if (o.ask && marks.indexOf(String(o.ask)) < 0) throw new Error('dnl: ask 자리가 marks 에 없음');
+      const top = {}; marks.forEach(m => { const q = pf9(m); if (q[0] * d % q[1]) throw new Error('dnl: 눈금에 없는 자리 ' + m); if (q[0] / q[1] > to) throw new Error('dnl: 수직선 밖 ' + m); top[m] = mx9(q9(k[0] * q[0], k[1] * q[1])); });
+      const X0 = 190, X1 = 700, Y1 = 150, Y2 = 250, px = (q) => X0 + (X1 - X0) * (q[0] / q[1]) / to; let s = '';
+      const opsOut = [];
+      (o.ops || []).forEach(([f, t2, op], i) => {
+        const qf = pf9(f), qt = pf9(t2), m = String(op).match(/^([×÷])\s*(\d+)$/); if (!m) throw new Error('dnl: 화살표 ' + op);
+        const want = m[1] === '×' ? q9(qf[0] * +m[2], qf[1]) : q9(qf[0], qf[1] * +m[2]); if (!eq9(want, qt)) throw new Error('dnl: ' + f + ' ' + op + ' ≠ ' + t2);
+        if (marks.indexOf(String(f)) < 0 || marks.indexOf(String(t2)) < 0) throw new Error('dnl: 화살표 끝이 marks 에 없음');
+        opsOut.push(f + '>' + t2 + ':' + op);
+        const xa = px(qf), xb = px(qt), mid = (xa + xb) / 2, hU = 74 + i * 26, hD = 74 + i * 26, dir = xb > xa ? 1 : -1;
+        const arc = (y0, h, up) => { const yy = up ? y0 - h : y0 + h; return '<path d="M' + m9(xa) + ' ' + y0 + ' Q' + m9(mid) + ' ' + yy + ' ' + m9(xb - dir * 2) + ' ' + y0 + '" fill="none" stroke="' + C9.b + '" stroke-width="3.5"/><path d="M' + m9(xb) + ' ' + y0 + ' l' + m9(-dir * 14) + ' ' + (up ? -6 : 6) + ' l' + m9(dir * 2) + ' ' + (up ? -12 : 12) + 'Z" fill="' + C9.b + '"/>'; };
+        s += '<g class="dnl-op" data-op="' + esc(f + '>' + t2 + ':' + op) + '">' + arc(Y1 - 48, hU - 30, true) + txt(m9(mid), Y1 - 48 - (hU - 30) / 2 - 12, op, 24, C9.bDeep, 900) + arc(Y2 + 62, hD - 30, false) + txt(m9(mid), Y2 + 62 + (hD - 30) / 2 + 30, op, 24, C9.bDeep, 900) + '</g>';
+      });
+      [Y1, Y2].forEach(y => { s += '<line x1="' + X0 + '" y1="' + y + '" x2="' + (X1 + 26) + '" y2="' + y + '" stroke="' + INK + '" stroke-width="3.5"/><path d="M' + (X1 + 26) + ' ' + (y - 8) + 'l16 8l-16 8Z" fill="' + INK + '"/>'; });
+      for (let i = 0; i <= to * d; i++) { const x = X0 + (X1 - X0) * i / (to * d), big = i % d === 0; s += '<line x1="' + m9(x) + '" y1="' + (Y2 - (big ? 13 : 8)) + '" x2="' + m9(x) + '" y2="' + (Y2 + (big ? 13 : 8)) + '" stroke="' + INK + '" stroke-width="' + (big ? 3.5 : 2.2) + '"/>'; }
+      s += txt(16, Y1 + 8, o.tl || '구하려는 양', 22, C9.aDeep, 900, 'start') + txt(16, Y2 + 8, o.bl || '기준 양', 22, C9.soft, 900, 'start');
+      s += sf9(X0, Y1 - 26, '0', 22, INK) + sf9(X0, Y2 + 34, '0', 22, INK);
+      const shown = {};
+      marks.forEach(m => { const q = pf9(m), x = px(q), hid = o.ask && String(o.ask) === m; shown[m] = hid ? '?' : top[m];
+        s += '<line x1="' + m9(x) + '" y1="' + (Y1 + 6) + '" x2="' + m9(x) + '" y2="' + (Y2 - 6) + '" stroke="' + C9.line + '" stroke-width="2.5" stroke-dasharray="6 5"/>';
+        s += '<circle cx="' + m9(x) + '" cy="' + Y1 + '" r="7" fill="' + (hid ? ORANGE : C9.a) + '"/><circle cx="' + m9(x) + '" cy="' + Y2 + '" r="7" fill="' + C9.soft + '"/>';
+        s += sf9(x, Y1 - 26, hid ? '?' : top[m], 22, hid ? ORANGE : C9.aDeep, 'dnl-top') + sf9(x, Y2 + 34, m, 22, INK, 'dnl-bot'); });
+      let H = Y2 + 62 + 74 + Math.max(0, (o.ops || []).length - 1) * 26 + 10;
+      if (o.cap) { s += txt(380, H + 10, o.cap, 22, C9.soft, 900); H += 36; }
+      const key = d + ',' + to + '|' + o.at + '=' + o.val + '|' + marks.map(m => m + ':' + shown[m]).join(';') + '|' + opsOut.join(';');
+      return svgWrap(s, 'fig-dnl', '0 0 760 ' + Math.round(H)).replace('<svg ', '<svg data-dnl="' + esc(key) + '" data-unit="' + (o.ask ? '' : esc(mx9(k))) + '" data-ask="' + esc(o.ask || '') + '" ');
+    }
+    Object.assign(PARTS, { fdv, dnl });
+  }
   function one(f) { if (!f || typeof f !== 'object') return ''; const fn = PARTS[f.k] || HTML_PARTS[f.k] || KO_PARTS[f.k] || SO_PARTS[f.k] || SC_PARTS[f.k]; return fn ? fn(f) : ''; }
   function panel(p) {
     const f = p.fig || p; const inner = one(f); if (!inner) return '';
