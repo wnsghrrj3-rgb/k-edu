@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>점심 가게 | 영어 놀이터</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../play.css">
+<style>
+  body{background:#FFF3E0}
+  .shop{width:100%;max-width:520px;background:#fff;border-radius:26px;padding:14px 14px 18px;box-shadow:0 6px 24px rgba(0,0,0,.08);position:relative}
+  .sign{font-family:Jua;font-size:22px;text-align:center;padding:10px;border-radius:16px;background:#E2E8F0;color:#A0AEC0;letter-spacing:2px;transition:all .5s}
+  .sign.on{background:linear-gradient(135deg,#FF8A3D,#FFB454);color:#fff;box-shadow:0 0 0 4px #FFE0B2,0 0 24px #FFB454}
+  .sam{display:flex;align-items:flex-end;gap:10px;margin:12px 0 6px}
+  .sam .f{font-size:52px;line-height:1}
+  .bub{background:#FFF8EC;border-radius:18px 18px 18px 4px;padding:10px 14px;font-size:16px;line-height:1.45;flex:1;min-height:46px}
+  .bub b{font-family:Jua;font-size:19px;color:#1A202C;display:block}
+  .bub small{color:#A0AEC0;font-size:12.5px}
+  .crates{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+  .crate{aspect-ratio:1;font-size:44px;position:relative}
+  .crate .lab{position:absolute;bottom:4px;left:0;right:0;font-family:Jua;font-size:13px;color:#718096;opacity:0}
+  .crate.open .lab{opacity:1}
+  .crate.open{background:#FFF8EC}
+  .counter{display:flex;flex-direction:column;align-items:center;gap:6px;min-height:150px;justify-content:center}
+  .choices{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%;margin-top:8px}
+  .choices.c3{grid-template-columns:repeat(3,1fr)}
+  .choices .tile{height:96px;font-size:52px}
+  .sides{display:flex;gap:12px;width:100%;align-items:stretch;margin-top:6px}
+  .sides .tile{flex:1;height:150px;font-size:70px;flex-direction:column;gap:4px}
+  .sides .tile small{font-size:13px;color:#A0AEC0;font-family:Jua}
+  .cam{width:120px;height:90px;border-radius:14px;object-fit:cover;transform:scaleX(-1);background:#1A202C;display:block;margin:0 auto}
+  .camwrap{position:relative;width:120px;margin:0 auto}
+  .camwrap .lv{position:absolute;bottom:-6px;left:0;right:0;display:flex;gap:4px;height:5px}
+  .camwrap .lv i{flex:1;background:#E2E8F0;border-radius:3px;overflow:hidden;position:relative}
+  .camwrap .lv i b{position:absolute;inset:0;right:100%;background:#12B886;transition:right .1s}
+  /* 접시 채우기 */
+  .plates{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%}
+  .plate{height:86px;border-radius:16px;background:#F7FAFC;border:3px dashed #CBD5E0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Jua;font-size:16px;color:#4A5568;transition:all .15s}
+  .plate.hot{border-color:#F59F00;background:#FFF8EC;transform:scale(1.04)}
+  .plate.full{border-style:solid;border-color:#12B886;background:#E6FFFA}
+  .plate .got{font-size:34px;line-height:1}
+  .tray{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;min-height:70px;background:#FFF8EC;border-radius:16px;padding:8px}
+  .item{width:60px;height:60px;border-radius:14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;font-size:36px;touch-action:none;cursor:grab}
+  .item.drag{position:fixed;z-index:50;pointer-events:none;transform:scale(1.2);box-shadow:0 10px 24px rgba(0,0,0,.2)}
+  .item.gone{visibility:hidden}
+  /* 챈트 */
+  .chant{display:flex;gap:12px;justify-content:center;min-height:110px;align-items:center;flex-wrap:wrap}
+  .chant span{font-family:Jua;font-size:30px;color:#CBD5E0;transition:all .18s;display:inline-block}
+  .chant span.hit{color:#FF8A3D;transform:scale(1.5) rotate(-4deg);text-shadow:0 4px 0 #FFE0B2}
+  .chant span.done{color:#2D3748}
+  /* 보스 */
+  .pick2{display:flex;gap:10px;width:100%}
+  .pick2 .tile{flex:1;height:110px;font-size:54px}
+  .say{font-family:Jua;font-size:22px;color:#1565C0;background:#EBF4FF;border-radius:14px;padding:8px 16px;text-align:center}
+  .endcard{text-align:center}
+  .endcard .big{font-size:60px}
+  .endcard h2{font-family:Jua;font-size:22px;margin:6px 0}
+  .seedrow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+  .fx{position:fixed;inset:0;pointer-events:none;z-index:80;overflow:hidden}
+  .fx i{position:absolute;top:-20px;width:10px;height:14px;border-radius:3px;animation:fall 1.6s linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(540deg);opacity:.2}}
+  .grow{animation:grow .9s cubic-bezier(.34,1.6,.5,1)}
+  @keyframes grow{0%{transform:scale(.3);filter:grayscale(1)}100%{transform:scale(1)}}
+</style>
+<script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+<div class="top"><span class="t">🏪 점심 가게</span><span class="seedbag" id="bag">🌰 0</span></div>
+<div class="actbar" id="actbar"></div>
+<div class="stage" id="stage"></div>
+<div class="toast" id="toast"></div>
+<div class="fx" id="fx"></div>
+
+<script src="../../v3/data/ladder.js"></script>
+<script src="../../v3/engine/k-progress.js"></script>
+<script src="../../v3/engine/k-tts.js"></script>
+<script src="../../v3/engine/k-collection.js"></script>
+<script src="../data/zones.js"></script>
+<script src="../engine/play-seed.js"></script>
+<script src="../engine/play-speech.js"></script>
+<script src="../engine/play-cam.js"></script>
+<script src="../engine/play-char.js"></script>
+<script>
+(function(){
+  'use strict';
+  var Z = PLAY_ZONES.zone('lv2-02'), WORDS = Z.words, W = WORDS.map(function(w){return w.w;});
+  var $ = function(id){ return document.getElementById(id); }, stage = $('stage');
+  var byW = {}; WORDS.forEach(function(w){ byW[w.w] = w; });
+  var mode = /mode=care/.test(location.search) ? 'care' : 'play';
+  var ACTS = [ ['📦','상자 열기'], ['🙆','몸으로 고르기'], ['🍽️','접시 채우기'], ['👂','듣고 고르기'], ['🎵','챈트'], ['👑','가게 주인'] ];
+  var unlocked = false;
+
+  /* ── 공통 ── */
+  function h(tag, cls, html){ var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+  function shuffle(a){ a = a.slice(); for (var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+  function toast(s){ var t = $('toast'); t.textContent = s; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(function(){ t.classList.remove('show'); }, 1600); }
+  function confetti(){ var fx = $('fx'), cols = ['#FF8A3D','#12B886','#1565C0','#F59F00','#F06595']; for (var i = 0; i < 40; i++){ var p = h('i'); p.style.left = Math.random()*100+'vw'; p.style.background = cols[i%5]; p.style.animationDelay = (Math.random()*.5)+'s'; fx.appendChild(p); setTimeout(function(e){ e.remove(); }.bind(null,p), 2300); } }
+  function others(w){ return W.filter(function(x){ return x !== w; }); }
+  function bag(){ var n = 0, s = PlaySeed.all(); W.forEach(function(w){ if (s[w]) n++; }); $('bag').textContent = '🌰 ' + n + '/' + W.length; }
+  function actbar(i){ var b = $('actbar'); b.innerHTML = ''; ACTS.forEach(function(a, k){ var s = h('span', k < i ? 'ok' : k === i ? 'on' : '', a[0]); s.title = a[1]; b.appendChild(s); }); }
+  function shop(opts){
+    opts = opts || {};
+    var box = h('div','shop');
+    box.innerHTML = '<div class="sign' + (unlocked ? ' on' : '') + '" id="sign">LUNCH SHOP</div>' +
+      '<div class="sam"><div class="f">' + Z.boss.pic + '</div><div class="bub" id="bub">' + (opts.say || '') + '</div></div>' +
+      '<div id="body"></div>';
+    stage.innerHTML = ''; stage.appendChild(box);
+    return $('body');
+  }
+  function sam(en, ko, speak){ var b = $('bub'); if (b) b.innerHTML = '<b>' + en + '</b>' + (ko ? '<small>' + ko + '</small>' : ''); if (speak !== false && en) return KTTS.sentence(en); return Promise.resolve(); }
+  var micOK = PlaySpeech.available();
+
+  /* 말해서 통과 — 공용. kind 'word'|'sentence'. 3번 안 되면 고르기 대체.
+     return Promise({ok:true, by:'speech'|'chosen'}) */
+  function speakGate(opt){
+    var host = opt.host, target = opt.target, tries = 0;
+    var wrap = h('div', '', ''); host.appendChild(wrap);
+    return new Promise(function(resolve){
+      function chooseFallback(){
+        wrap.innerHTML = '<div class="hint">' + (micOK ? '괜찮아! 어느 것인지 골라 봐' : '마이크가 없어서 골라서 열어요') + '</div>';
+        var cs = h('div', 'choices c3'); wrap.appendChild(cs);
+        var pool = shuffle([target].concat(shuffle(opt.pool || others(target)).slice(0, 2)));
+        pool.forEach(function(w){
+          var t = h('button', 'tile', opt.kind === 'sentence' ? '<span style="font-family:Jua;font-size:17px;line-height:1.2">' + Z.sentence(w) + '</span>' : byW[w].pic);
+          t.onclick = function(){
+            if (w === target){ t.classList.add('ok'); (opt.kind === 'sentence' ? KTTS.sentence(Z.sentence(w)) : KTTS.word(w)); setTimeout(function(){ resolve({ ok: true, by: 'chosen' }); }, 500); }
+            else { t.classList.add('no'); setTimeout(function(){ t.classList.remove('no'); t.classList.add('dim'); }, 350); }
+          };
+          cs.appendChild(t);
+        });
+      }
+      if (!micOK) return chooseFallback();
+      wrap.innerHTML = '<button class="mic" id="mic">🎤</button><div class="heard" id="heard">' + (opt.prompt || '말해 봐!') + '</div>';
+      var mic = wrap.querySelector('#mic'), heard = wrap.querySelector('#heard');
+      function listen(){
+        mic.classList.add('on'); heard.textContent = '듣고 있어요…';
+        PlaySpeech.tryOnce(target, { kind: opt.kind, others: opt.others || others(target), onStart: null }).then(function(r){
+          mic.classList.remove('on');
+          if (r.error === 'unavailable' || r.error === 'not-allowed' || r.error === 'service-not-allowed'){ micOK = false; return chooseFallback(); }
+          if (r.ok){ heard.textContent = '👍 ' + (r.heard || target); mic.classList.add('off'); mic.onclick = null; return setTimeout(function(){ resolve({ ok: true, by: 'speech' }); }, 450); }
+          tries++;
+          if (tries >= 3){ heard.textContent = '잘 안 들렸어요'; return chooseFallback(); }
+          heard.textContent = tries === 1 ? '한 번 더!' : '천천히 들어 보고 따라 해 봐';
+          var model = opt.kind === 'sentence' ? KTTS.sentence(opt.model || target, { rate: tries === 2 ? 0.55 : undefined }) : KTTS.word(target, { rate: tries === 2 ? 0.45 : undefined });
+          model.then(function(){ setTimeout(listen, 250); });
+        });
+      }
+      mic.onclick = listen;
+      if (opt.auto !== false) setTimeout(listen, 300);
+    });
+  }
+
+  /* ── 활동 1 : 상자 열기 (말해서 열기) ── */
+  function act1(){
+    actbar(0);
+    var body = shop();
+    sam('Help me! Open the boxes.', '상자를 열어 줘 — 이름을 말하면 열려!');
+    var grid = h('div', 'crates'); body.appendChild(grid);
+    var counter = h('div', 'counter'); body.appendChild(counter);
+    var order = shuffle(W), opened = 0, lock = false;
+    order.forEach(function(w){
+      var c = h('button', 'tile crate', '📦<div class="lab">' + w + '</div>');
+      c.onclick = function(){
+        if (lock || c.classList.contains('open')) return;
+        lock = true; c.classList.add('wiggle');
+        counter.innerHTML = '<div class="pic big">' + byW[w].pic + '</div><div class="word">' + w + '</div>';
+        KTTS.word(w).then(function(){
+          return speakGate({ host: counter, target: w, kind: 'word' });
+        }).then(function(r){
+          c.classList.remove('wiggle'); c.classList.add('open'); c.firstChild.textContent = byW[w].pic;
+          PlaySeed.plant(w, Z.id, r.by); KCollection.add([w]); bag();
+          opened++; lock = false; counter.innerHTML = '<div class="hint">🌰 ' + w + ' 씨앗을 심었어요</div>';
+          if (opened === W.length) setTimeout(act2, 700);
+        });
+      };
+      grid.appendChild(c);
+    });
+    counter.innerHTML = '<div class="hint">상자를 눌러 봐</div>';
+  }
+
+  /* ── 활동 2 : 몸으로 고르기 (웹캠 좌/우) ── */
+  function act2(){
+    actbar(1);
+    var body = shop();
+    sam('Listen! Lean left or right.', '들어 봐 — 몸을 그쪽으로 기울여!');
+    var camw = h('div', 'camwrap', '<video class="cam" id="cam" playsinline muted></video><div class="lv"><i><b id="lvL"></b></i><i><b id="lvR"></b></i></div>');
+    body.appendChild(camw);
+    var sides = h('div', 'sides'); body.appendChild(sides);
+    var hint = h('div', 'hint', '카메라 켜는 중…'); body.appendChild(hint);
+    var rounds = shuffle(W).slice(0, 6), i = 0, useCam = false;
+    PlayCam.start($('cam')).then(function(ok){
+      useCam = ok;
+      if (!ok){ camw.style.display = 'none'; hint.textContent = '카메라가 없어서 눌러서 골라요'; }
+      else hint.textContent = '화면에 내 모습이 보이면 시작!';
+      setTimeout(round, 600);
+    });
+    function round(){
+      if (i >= rounds.length){ PlayCam.stop(); return setTimeout(act3, 500); }
+      var w = rounds[i], alt = shuffle(others(w))[0], pair = shuffle([w, alt]);
+      sides.innerHTML = '';
+      var tiles = pair.map(function(p, k){ var t = h('button', 'tile', byW[p].pic + '<small>' + (k === 0 ? '← 왼쪽' : '오른쪽 →') + '</small>'); sides.appendChild(t); return t; });
+      var picked = false, tries = 0;
+      function judge(side){
+        if (picked) return; var k = side === 'left' ? 0 : 1, p = pair[k];
+        if (p === w){ picked = true; tiles[k].classList.add('ok'); tiles[1-k].classList.add('dim'); PlaySeed.care(w, true, useCam ? 'body' : 'hand'); KTTS.word(w, { natural: true }); i++; setTimeout(round, 900); }
+        else { tiles[k].classList.add('no'); tries++; setTimeout(function(){ tiles[k].classList.remove('no'); }, 400); KTTS.word(w); if (tries >= 2){ picked = true; tiles[1-k].classList.add('ok'); tiles[k].classList.add('dim'); PlaySeed.care(w, false, 'body'); i++; setTimeout(round, 1100); } else if (useCam) camPick(); }
+      }
+      tiles.forEach(function(t, k){ t.onclick = function(){ judge(k === 0 ? 'left' : 'right'); }; });
+      function camPick(){
+        PlayCam.pick({ onLevel: function(e){ $('lvL') && ($('lvL').style.right = Math.max(0, 100 - e.l) + '%'); $('lvR') && ($('lvR').style.right = Math.max(0, 100 - e.r) + '%'); } }).then(function(side){
+          if (picked) return;
+          if (side) judge(side); else { hint.textContent = '안 보이면 눌러도 돼요'; camPick(); }
+        });
+      }
+      hint.textContent = useCam ? '🔊 듣고 몸을 기울여!' : '🔊 듣고 눌러!';
+      KTTS.word(w).then(function(){ if (useCam && !picked) camPick(); });
+    }
+  }
+
+  /* ── 활동 3 : 접시 채우기 (손 — 끌어다 놓기) ── */
+  function act3(){
+    actbar(2);
+    var body = shop();
+    sam('Put them on the right plate.', '글자만 보고 맞는 자리에 올려!');
+    var plates = h('div', 'plates'); body.appendChild(plates);
+    var tray = h('div', 'tray'); body.appendChild(tray);
+    var hint = h('div', 'hint', '그림을 끌어서 글자 위에 놓아요'); body.appendChild(hint);
+    var left = W.length;
+    shuffle(W).forEach(function(w){ var p = h('div', 'plate', w); p.dataset.w = w; plates.appendChild(p); });
+    shuffle(W).forEach(function(w){
+      var it = h('div', 'item', byW[w].pic); it.dataset.w = w; tray.appendChild(it);
+      var ghost = null, hot = null;
+      it.addEventListener('pointerdown', function(ev){
+        if (it.classList.contains('gone')) return;
+        it.setPointerCapture(ev.pointerId);
+        ghost = it.cloneNode(true); ghost.classList.add('drag'); document.body.appendChild(ghost); move(ev); KTTS.word(w);
+      });
+      function move(ev){ if (!ghost) return; ghost.style.left = (ev.clientX - 30) + 'px'; ghost.style.top = (ev.clientY - 30) + 'px';
+        var el = document.elementFromPoint(ev.clientX, ev.clientY), pl = el && el.closest ? el.closest('.plate') : null;
+        if (hot && hot !== pl) hot.classList.remove('hot'); hot = pl && !pl.classList.contains('full') ? pl : null; if (hot) hot.classList.add('hot'); }
+      it.addEventListener('pointermove', move);
+      function up(){
+        if (!ghost) return; ghost.remove(); ghost = null;
+        if (hot){ var pl = hot; hot.classList.remove('hot'); hot = null;
+          if (pl.dataset.w === w){ pl.classList.add('full'); pl.innerHTML = '<div class="got">' + byW[w].pic + '</div>' + w; it.classList.add('gone'); PlaySeed.care(w, true, 'hand'); KTTS.word(w, { natural: true }); left--; if (!left) setTimeout(act4, 700); }
+          else { pl.classList.add('no'); setTimeout(function(){ pl.classList.remove('no'); }, 400); PlaySeed.care(w, false, 'hand'); KTTS.word(pl.dataset.w); }
+        }
+      }
+      it.addEventListener('pointerup', up); it.addEventListener('pointercancel', up);
+    });
+  }
+
+  /* ── 활동 4 : 듣고 고르기 (빠르게 6판) ── */
+  function act4(){
+    actbar(3);
+    var body = shop();
+    sam('Quick! Which one?', '빨리빨리 — 어느 거?');
+    var dots = h('div', 'dots'); body.appendChild(dots);
+    var cs = h('div', 'choices'); body.appendChild(cs);
+    var rounds = shuffle(W).slice(0, 6), i = 0;
+    function round(){
+      dots.innerHTML = rounds.map(function(_, k){ return '<i class="' + (k < i ? 'ok' : k === i ? 'on' : '') + '"></i>'; }).join('');
+      if (i >= rounds.length) return setTimeout(act5, 400);
+      var w = rounds[i], pool = shuffle([w].concat(shuffle(others(w)).slice(0, 3))), done = false, wrong = 0;
+      cs.innerHTML = '';
+      pool.forEach(function(p){ var t = h('button', 'tile', byW[p].pic); t.onclick = function(){ if (done) return;
+        if (p === w){ done = true; t.classList.add('ok'); PlaySeed.care(w, wrong === 0, 'hand'); i++; setTimeout(round, 650); }
+        else { t.classList.add('no'); wrong++; setTimeout(function(){ t.classList.remove('no'); t.classList.add('dim'); }, 350); KTTS.word(w); } }; cs.appendChild(t); });
+      var rep = h('button', 'btn w', '🔊'); rep.style.cssText = 'padding:8px 18px;font-size:16px;margin-top:6px'; rep.onclick = function(){ KTTS.word(w); }; cs.appendChild(rep); rep.style.gridColumn = '1 / -1'; rep.style.justifySelf = 'center';
+      KTTS.word(w);
+    }
+    round();
+  }
+
+  /* ── 활동 5 : 챈트 (키네틱 타이포) ── */
+  function act5(){
+    actbar(4);
+    var body = shop();
+    sam('Sing with me!', '같이 외쳐 봐!');
+    var ch = h('div', 'chant'); body.appendChild(ch);
+    var btn = h('button', 'btn', '▶ 한 번 더'); btn.style.display = 'none'; body.appendChild(btn);
+    var hint = h('div', 'hint', ''); body.appendChild(hint);
+    var lines = Z.chant, spans = [];
+    function build(){ ch.innerHTML = ''; spans = []; lines.forEach(function(l){ var row = h('div'); row.style.cssText = 'width:100%;display:flex;gap:14px;justify-content:center'; l.forEach(function(w){ var s = h('span', '', w); row.appendChild(s); spans.push({ s: s, w: w }); }); ch.appendChild(row); }); }
+    function play(){
+      build(); btn.style.display = 'none'; var chain = Promise.resolve();
+      spans.forEach(function(o, k){ chain = chain.then(function(){ o.s.classList.add('hit'); return KTTS.word(o.w, { natural: true }); }).then(function(){ o.s.classList.remove('hit'); o.s.classList.add('done'); return wait(k % 3 === 2 ? 320 : 90); }); });
+      return chain;
+    }
+    play().then(play).then(function(){
+      btn.style.display = ''; btn.onclick = play;
+      if (!micOK){ hint.textContent = '다 외쳤어? 다음으로!'; var nx = h('button', 'btn g', '다음 →'); nx.onclick = act6; body.appendChild(nx); return; }
+      hint.textContent = '이번엔 혼자! 한 줄을 크게 외쳐 봐';
+      var line = lines[0];
+      var mic = h('button', 'mic', '🎤'); body.appendChild(mic);
+      var heard = h('div', 'heard', ''); body.appendChild(heard);
+      var tries = 0;
+      function go(){ mic.classList.add('on'); heard.textContent = '듣고 있어요…';
+        PlaySpeech.tryOnce(line[0], { kind: 'word', others: [], timeout: 7000 }).then(function(r){
+          mic.classList.remove('on'); var hit = 0; line.forEach(function(w){ if (PlaySpeech.matchWord(r.heard, w, [])) hit++; });
+          if (r.ok || hit >= 2){ heard.textContent = '🎉 ' + (r.heard || ''); confetti(); line.forEach(function(w){ PlaySeed.care(w, true, 'speech'); }); setTimeout(act6, 1200); }
+          else { tries++; heard.textContent = tries >= 2 ? '좋아, 그만하면 됐어!' : '다시 크게!'; if (tries >= 2) setTimeout(act6, 900); }
+        }); }
+      mic.onclick = go;
+    });
+  }
+
+  /* ── 보스전 : 가게 주인 Sam ── */
+  function act6(){
+    actbar(5);
+    var body = shop();
+    var turns = Z.boss.turns, i = 0, bys = [];
+    function turn(){
+      if (i >= turns.length) return finish();
+      var t = turns[i], pool = t.pick;
+      body.innerHTML = '';
+      var pk = h('div', 'pick2'); body.appendChild(pk);
+      var shown = pool.length > 2 ? shuffle(pool).slice(0, 3) : pool.slice();
+      shown.forEach(function(w){ pk.appendChild(h('div', 'tile', byW[w].pic)); });
+      var say = h('div', 'say', 'I like ___.'); body.appendChild(say);
+      var hint = h('div', 'hint', '좋아하는 걸 하나 골라 문장으로 말해 봐'); body.appendChild(hint);
+      sam(t.ask, t.ko).then(function(){
+        /* 아이가 고른 것이 정답 — 보기 중 어느 것이든 「I like X.」 로 말하면 통과 */
+        return anySentence(shown, body);
+      }).then(function(r){
+        bys.push(r.by); say.textContent = Z.sentence(r.word); say.style.background = '#E6FFFA'; say.style.color = '#0B8A63';
+        PlaySeed.care(r.word, true, r.by);
+        sam(i === 0 ? 'Yum! Good choice.' : i === 1 ? 'Me too!' : 'Great! Thank you!', i === 0 ? '냠! 잘 골랐어.' : i === 1 ? '나도!' : '고마워!').then(function(){ i++; setTimeout(turn, 400); });
+      });
+    }
+    /* 여러 후보 중 아무 문장이나 — 말하기 3번 → 고르기 대체 */
+    function anySentence(cands, host){
+      var wrap = h('div'); host.appendChild(wrap); var tries = 0;
+      return new Promise(function(resolve){
+        function fallback(){
+          wrap.innerHTML = '<div class="hint">눌러서 듣고, 따라 말해 봐</div>'; var cs = h('div', 'choices'); wrap.appendChild(cs);
+          cands.slice(0, 2).forEach(function(w){ var b = h('button', 'tile', '<span style="font-family:Jua;font-size:18px">' + Z.sentence(w) + '</span>'); b.onclick = function(){ KTTS.sentence(Z.sentence(w)).then(function(){ if (!micOK) return resolve({ ok: true, by: 'chosen', word: w }); wrap.innerHTML = '<div class="hint">이제 따라 해 봐 — ' + Z.sentence(w) + '</div>'; var m = h('button', 'mic on', '🎤'); wrap.appendChild(m); PlaySpeech.tryOnce(w, { kind: 'sentence', others: others(w), timeout: 7000 }).then(function(r){ resolve({ ok: true, by: r.ok ? 'speech' : 'chosen', word: w }); }); }); }; cs.appendChild(b); });
+        }
+        if (!micOK) return fallback();
+        wrap.innerHTML = '<button class="mic" id="mic">🎤</button><div class="heard" id="heard">말해 봐!</div>';
+        var mic = wrap.querySelector('#mic'), heard = wrap.querySelector('#heard');
+        function listen(){ mic.classList.add('on'); heard.textContent = '듣고 있어요…';
+          PlaySpeech.tryOnce(cands[0], { kind: 'sentence', others: [], timeout: 7000 }).then(function(r){
+            mic.classList.remove('on');
+            if (r.error === 'unavailable' || r.error === 'not-allowed'){ micOK = false; return fallback(); }
+            var hitW = null; cands.forEach(function(w){ if (!hitW && PlaySpeech.matchSentence(r.heard, w, others(w))) hitW = w; });
+            if (!hitW){ cands.forEach(function(w){ if (!hitW && PlaySpeech.matchWord(r.heard, w, others(w))) hitW = w; }); if (hitW && tries === 0){ tries++; heard.textContent = '그래, ' + hitW + '! 이번엔 「I like ' + hitW + '.」'; return KTTS.sentence(Z.sentence(hitW)).then(function(){ setTimeout(listen, 250); }); } if (hitW && tries >= 1) { heard.textContent = '👍 ' + r.heard; return setTimeout(function(){ resolve({ ok: true, by: 'speech', word: hitW }); }, 400); } hitW = null; }
+            if (hitW){ heard.textContent = '👍 ' + r.heard; mic.classList.add('off'); return setTimeout(function(){ resolve({ ok: true, by: 'speech', word: hitW }); }, 450); }
+            tries++; if (tries >= 3){ heard.textContent = '잘 안 들렸어요'; return fallback(); }
+            heard.textContent = '한 번 더! 「I like …」'; KTTS.sentence(Z.sentence(cands[0]), { rate: 0.6 }).then(function(){ setTimeout(listen, 250); });
+          }); }
+        mic.onclick = listen; setTimeout(listen, 300);
+      });
+    }
+    function finish(){
+      var by = bys.indexOf('speech') >= 0 ? 'speech' : 'chosen';
+      PlaySeed.bossPassed(Z.id, by);
+      KProgress.light(Z.id);   /* 사다리와 동기 — lv2-02 점등 */
+      unlocked = true; $('sign').classList.add('on'); confetti();
+      sam('The shop is open!', '가게가 열렸어!').then(function(){ endCard(); });
+    }
+    sam(turns[0].ask, turns[0].ko, false); turn();
+  }
+
+  /* ── 끝 카드 : 심은 씨앗 → 내일 돌보기 ── */
+  function endCard(){
+    var body = $('body'); body.innerHTML = '';
+    var s = PlaySeed.all(), card = h('div', 'endcard');
+    card.innerHTML = '<div class="big">🌰</div><h2>씨앗 ' + W.filter(function(w){ return s[w]; }).length + '개를 심었어요</h2>' +
+      '<div class="seedrow">' + W.map(function(w){ var st = s[w] ? s[w].stage : -1; return '<span class="seed s' + st + '" title="' + w + '">' + byW[w].pic + '</span>'; }).join('') + '</div>' +
+      '<div class="hint" style="font-size:14.5px;color:#4A5568">내일 다시 와서 말해 주면 🌱 새싹이 돼요.<br>3일에 🌸 꽃, 7일에 🍎 열매 — 열매가 되면 진열대에 올라가고<br>앞치마를 입을 수 있어요.</div>' +
+      '<div style="margin-top:14px;display:flex;gap:8px;justify-content:center"><button class="btn" id="home">놀이터로</button></div>';
+    body.appendChild(card); $('home').onclick = function(){ location.href = '../index.html'; };
+  }
+
+  /* ── 돌보기 모드 : 오늘 기한이 된 씨앗을 다시 말한다 ── */
+  function care(){
+    $('actbar').style.display = 'none';
+    var due = PlaySeed.due(Z.id); unlocked = PlaySeed.bossDone(Z.id);
+    var body = shop();
+    if (!due.length){ sam('Nothing to water today.', '오늘 돌볼 씨앗은 없어요'); body.innerHTML = '<div class="counter"><button class="btn w" onclick="location.href=\'../index.html\'">놀이터로</button></div>'; return; }
+    sam('Water your seeds!', '씨앗을 돌봐 줘 — 다시 말하면 자라!');
+    var counter = h('div', 'counter'); body.appendChild(counter);
+    var dots = h('div', 'dots'); body.insertBefore(dots, counter);
+    var i = 0, grown = [];
+    function next(){
+      dots.innerHTML = due.map(function(_, k){ return '<i class="' + (k < i ? 'ok' : k === i ? 'on' : '') + '"></i>'; }).join('');
+      if (i >= due.length) return done();
+      var w = due[i], st = PlaySeed.get(w);
+      counter.innerHTML = '<div class="seed s' + st.stage + '" style="width:54px;height:54px;font-size:30px">' + PlaySeed.STAGE[st.stage].emoji + '</div><div class="pic big">' + byW[w].pic + '</div><div class="word">' + w + '</div>';
+      KTTS.word(w).then(function(){ return speakGate({ host: counter, target: w, kind: 'word' }); }).then(function(r){
+        var s2 = PlaySeed.care(w, true, r.by);
+        counter.innerHTML = '<div class="seed s' + s2.stage + ' grow" style="width:70px;height:70px;font-size:38px">' + PlaySeed.STAGE[s2.stage].emoji + '</div><div class="word">' + w + '</div><div class="hint">' + (s2.grew ? PlaySeed.STAGE[s2.stage].name + '이 됐어요!' : '잘 자라고 있어요') + '</div>';
+        if (s2.grew) grown.push(w);
+        if (s2.stage === 3 && Z.part.when === 'firstFruit' && PlaySeed.givePart(Z.part.id)) { confetti(); toast('🎉 ' + Z.part.name + '을 얻었어요!'); }
+        i++; setTimeout(next, 1100);
+      });
+    }
+    function done(){
+      var p = PlaySeed.parts();
+      counter.innerHTML = '<div style="width:140px;height:140px;margin:0 auto" id="ch"></div><div class="word" style="font-size:22px">오늘 돌보기 끝!</div><div class="hint">' + (grown.length ? grown.length + '개가 자랐어요 🌱' : '내일 또 와요') + '</div><button class="btn" style="margin-top:10px" onclick="location.href=\'../index.html\'">놀이터로</button>';
+      PlayChar.render($('ch'), { parts: p, mood: 'cheer' }); if (grown.length) confetti();
+    }
+    next();
+  }
+
+  /* ── 시작 — 설명 화면 0, 첫 터치에서 소리 잠금 해제 후 바로 ── */
+  document.body.addEventListener('pointerdown', function once(){ KTTS.unlock(); document.body.removeEventListener('pointerdown', once); }, { once: true });
+  bag();
+  if (mode === 'care') care(); else act1();
+})();
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>

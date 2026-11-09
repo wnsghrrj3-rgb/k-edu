@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>영어 놀이터 | K-edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="play.css">
+<style>
+  .hero{background:linear-gradient(135deg,#FF8A3D,#FFB454);border-radius:24px;color:#fff;padding:18px 20px;display:flex;gap:14px;align-items:center}
+  .hero .ch{width:110px;height:110px;flex-shrink:0;background:rgba(255,255,255,.25);border-radius:22px}
+  .hero h1{font-family:Jua;font-size:22px}
+  .hero p{font-size:13.5px;opacity:.95;line-height:1.5;margin-top:4px}
+  .hero .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .hero .pill{background:rgba(255,255,255,.22);border-radius:999px;padding:4px 11px;font-size:13px;font-family:Jua}
+  .today{display:flex;align-items:center;gap:12px}
+  .today .n{font-family:Jua;font-size:34px;color:#12B886;min-width:46px;text-align:center}
+  .today .n.zero{color:#A0AEC0}
+  .today .tx{flex:1;font-size:14.5px;color:#4A5568;line-height:1.45}
+  .today .tx b{font-family:Jua;font-size:17px;color:#2D3748;display:block}
+  /* 안개 지도 */
+  .map{position:relative;background:linear-gradient(180deg,#DFF3E4,#C8E6C9);border-radius:22px;padding:16px;overflow:hidden;min-height:280px}
+  .map h2{font-family:Jua;font-size:16px;color:#2F855A;margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .zone{position:relative;background:#fff;border-radius:18px;padding:12px 8px 10px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,.08);transition:transform .12s}
+  .zone:active{transform:scale(.97)}
+  .zone .e{font-size:38px;line-height:1.1}
+  .zone .nm{font-family:Jua;font-size:14px;margin-top:4px;color:#2D3748}
+  .zone .pr{display:flex;gap:3px;justify-content:center;margin-top:6px}
+  .zone .pr i{width:7px;height:7px;border-radius:50%;background:#E2E8F0}
+  .zone .pr i.s0{background:#A0AEC0}.zone .pr i.s1{background:#38B2AC}.zone .pr i.s2{background:#F06595}.zone .pr i.s3{background:#F59F00}
+  .zone.fog{background:rgba(255,255,255,.55);box-shadow:none;color:#A0AEC0;pointer-events:none}
+  .zone.fog .e{filter:blur(4px);opacity:.5}
+  .zone.fog .nm{color:#A0AEC0;font-size:12px}
+  .zone.fog::after{content:'';position:absolute;inset:0;border-radius:18px;background:repeating-linear-gradient(135deg,rgba(255,255,255,.7) 0 10px,rgba(230,236,240,.7) 10px 20px)}
+  .zone.fog .fogtx{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:1;font-size:26px}
+  .zone .flag{position:absolute;top:-6px;right:-4px;font-size:18px}
+  /* 내 가게 진열 */
+  .shelf{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+  .slot{background:#FFF8EC;border-radius:14px;padding:8px 4px;text-align:center}
+  .slot .p{font-size:30px;line-height:1.1;transition:filter .4s}
+  .slot .p.s-1{filter:grayscale(1) opacity(.25)}
+  .slot .p.s0{filter:grayscale(1) opacity(.6)}
+  .slot .p.s1{filter:grayscale(.6)}
+  .slot .p.s2{filter:grayscale(.2)}
+  .slot .st{font-size:13px;margin-top:2px}
+  .slot .w{font-size:11px;color:#A0AEC0;font-family:Jua}
+  .minor{font-size:12.5px;color:#A0AEC0;text-align:center;margin-top:16px;line-height:1.6}
+  .minor a{color:#718096}
+</style>
+<script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+<div class="top"><span class="t">영어 놀이터</span><span class="seedbag" id="bag">🌰 0</span></div>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="ch" id="char"></div>
+    <div>
+      <h1 id="heroT">내 캐릭터</h1>
+      <p id="heroP">아직 아무것도 없어요. 영어를 말해서 얻은 것만 입을 수 있어요.</p>
+      <div class="row"><span class="pill" id="pFruit">🍎 열매 0</span><span class="pill" id="pStreak">🔥 0일</span></div>
+    </div>
+  </div>
+
+  <div class="card today" id="todayCard" style="margin-top:14px">
+    <div class="n" id="dueN">0</div>
+    <div class="tx"><b id="dueT">오늘 돌볼 씨앗</b><span id="dueS">말해서 심은 씨앗은 며칠 뒤에 다시 말해 주면 자라요.</span></div>
+    <button class="btn g" id="careBtn" style="display:none;padding:10px 16px;font-size:16px">돌보기</button>
+  </div>
+
+  <div class="map">
+    <h2>🏘️ 마을 — 깬 구역부터 안개가 걷혀요</h2>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="jua" style="font-size:16px;color:#B7791F">🏪 내 가게 <span style="font-size:12.5px;color:#A0AEC0;font-family:'Noto Sans KR'">— 열매가 되면 진열대에 올라가요</span></div>
+    <div class="shelf" id="shelf"></div>
+  </div>
+
+  <div class="minor">
+    🌰 씨앗 → 🌱 새싹(1일) → 🌸 꽃(3일) → 🍎 열매(7일) · 틀려도 내려가지 않아요<br>
+    <a href="../v3/index.html">사다리(Lv3~)로 가기</a>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="../v3/data/ladder.js"></script>
+<script src="../v3/engine/k-progress.js"></script>
+<script src="data/zones.js"></script>
+<script src="engine/play-seed.js"></script>
+<script src="engine/play-char.js"></script>
+<script>
+(function(){
+  var Z = PLAY_ZONES, $ = function(id){ return document.getElementById(id); };
+  var parts = PlaySeed.parts(), seeds = PlaySeed.all();
+  PlayChar.render($('char'), { parts: parts });
+  var nParts = Object.keys(parts).length;
+  if (nParts) { $('heroT').textContent = '내 캐릭터'; $('heroP').textContent = '입은 것 ' + nParts + '개 — 전부 내가 말해서 얻은 영어예요.'; }
+
+  var fruit = 0, planted = 0; Object.keys(seeds).forEach(function(w){ planted++; if (seeds[w].stage >= 3) fruit++; });
+  $('bag').textContent = '🌰 ' + planted;
+  $('pFruit').textContent = '🍎 열매 ' + fruit;
+  $('pStreak').textContent = '🔥 ' + PlaySeed.streak() + '일';
+
+  /* 오늘 돌볼 씨앗 — 복습이 새 구역보다 먼저 */
+  var due = PlaySeed.due();
+  $('dueN').textContent = due.length; if (!due.length) $('dueN').className = 'n zero';
+  if (due.length) {
+    $('dueT').textContent = '오늘 돌볼 씨앗 ' + due.length + '개';
+    $('dueS').textContent = '다시 말해 주면 자라요. 새 구역보다 먼저!';
+    $('careBtn').style.display = '';
+    var zid = seeds[due[0]].zone, z = Z.zone(zid);
+    $('careBtn').onclick = function(){ location.href = (z ? z.page : 'zone/food1.html') + '?mode=care'; };
+  } else if (planted) { $('dueT').textContent = '오늘 돌볼 씨앗 없음'; $('dueS').textContent = '다 자라는 중이에요. 내일 다시 와요.'; }
+
+  /* 지도 — 마을 9칸 중 열린 구역 1 + 안개 */
+  var g = $('grid'), cleared = 0;
+  Z.zones.forEach(function(z){
+    var s = PlaySeed.summary(z.id, z.words.map(function(w){return w.w;}));
+    var d = document.createElement('div'); d.className = 'zone';
+    var boss = PlaySeed.bossDone(z.id), clear = PlaySeed.canClear(z.id, z.words.map(function(w){return w.w;}));
+    if (clear) cleared++;
+    d.innerHTML = '<div class="e">' + z.emoji + '</div><div class="nm">' + z.name + '</div>' +
+      '<div class="pr">' + z.words.map(function(w){ var st = s.stages[w.w]; return '<i class="' + (st >= 0 ? 's' + st : '') + '"></i>'; }).join('') + '</div>' +
+      (clear ? '<span class="flag">🚩</span>' : boss ? '<span class="flag">👑</span>' : '');
+    d.onclick = function(){ location.href = z.page; };
+    g.appendChild(d);
+  });
+  var fogNames = ['?', '?', '?', '?', '?', '?', '?', '?'];
+  fogNames.forEach(function(n, i){
+    var d = document.createElement('div'); d.className = 'zone fog';
+    d.innerHTML = '<div class="e">🏠</div><div class="nm">안개</div><div class="fogtx">' + (i === 0 && cleared ? '🌤️' : '☁️') + '</div>';
+    g.appendChild(d);
+  });
+
+  /* 내 가게 진열 */
+  var z0 = Z.zones[0], sh = $('shelf');
+  z0.words.forEach(function(w){
+    var st = seeds[w.w] ? seeds[w.w].stage : -1;
+    var d = document.createElement('div'); d.className = 'slot';
+    d.innerHTML = '<div class="p s' + st + '">' + w.pic + '</div><div class="st">' + (st >= 0 ? PlaySeed.STAGE[st].emoji : '·') + '</div><div class="w">' + (st >= 1 ? w.w : '') + '</div>';
+    sh.appendChild(d);
+  });
+})();
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
