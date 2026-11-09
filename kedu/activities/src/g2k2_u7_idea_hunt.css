@@ -1,0 +1,41 @@
+/* 무대 — 글쓴이의 생각 찾기(문장 토큰) · para_hunt 무대 꼴 + 맨 위 글 이름 줄(tfix) · 칸 판(.say)은 문장이 나란히. 판정 전엔 모든 문장이 같은 모습(답 미노출) */
+#a-root { align-self:stretch; width:100%; }   /* 이 활동만 — 무대가 화면 높이를 다 쓰게(core 무개변) */
+#stage { align-items:stretch; }
+#hunt { display:flex; flex-direction:column; align-items:center; gap:clamp(10px,1.8vh,22px); width:100%; height:100%;
+        padding:clamp(6px,1.4vh,18px) 0 clamp(10px,2.4vh,30px); box-sizing:border-box; }
+#hunt-prompt { flex:none; font-size:clamp(20px,min(3.4vw,3.6vh),42px); color:var(--amber-d); background:#fef3c7; border-radius:14px;
+               padding:clamp(8px,1.2vh,14px) clamp(16px,2vw,28px); text-align:center; word-break:keep-all; }
+#hunt-prompt.turn { color:#fff; } #hunt-prompt.turn.t0 { background:var(--teamA); } #hunt-prompt.turn.t1 { background:var(--teamB); }
+#hunt-text { flex:1; min-height:0; display:flex; flex-direction:column; align-items:stretch; justify-content:center;
+             gap:clamp(8px,1.6vh,18px); width:min(95vw,1500px); overflow-y:auto; box-sizing:border-box; }
+#hunt.idea .tfix { flex:none; align-self:flex-start; font-family:'Jua',sans-serif; font-size:clamp(17px,min(2.8vw,3vh),34px); color:#7c2d12;
+                   background:#ffedd5; border-radius:999px; padding:.18em .8em; word-break:keep-all; }
+#hunt.idea .tok { flex:1 0 auto; min-height:52px; max-height:clamp(120px,22vh,230px); display:flex; align-items:center;
+       font-family:'Jua',sans-serif; font-size:clamp(20px,min(5.4vw,4.2vh),52px); line-height:1.3; text-align:left; word-break:keep-all;
+       background:#fff; color:var(--deep); border:4px solid var(--amber); border-radius:18px;
+       padding:clamp(8px,1.2vh,16px) clamp(14px,2vw,30px); cursor:pointer; box-shadow:0 5px 0 #e7c890; box-sizing:border-box; max-width:100%; }
+#hunt.idea .tok:active { transform:translateY(3px); box-shadow:none; }
+#hunt.idea .tok.got { background:#dcfce7; border-color:var(--good); color:#166534; }
+#hunt.idea .tok.bad, #hunt.idea .tok.shake { border-color:var(--bad); animation:shake .42s; }
+/* 칸 판 — 교과서 225쪽처럼 문장이 칸으로 나란히(줄바꿈은 낱말 단위) */
+#hunt.idea.say #hunt-text { flex-direction:row; flex-wrap:wrap; align-content:center; justify-content:center; }
+#hunt.idea.say .tfix { flex-basis:100%; align-self:center; text-align:center; max-width:max-content; margin:0 auto; }
+#hunt.idea.say .tok { flex:0 1 auto; max-height:none; justify-content:center; text-align:center; }
+@media (max-width:600px) {   /* 폰 세로 — 물음 줄이 우상단 HUD 밑으로 숨지 않게 · 긴 문장(글 ㉲ 첫 문장)이 375px 에서 넘치지 않게 한 단계 작게 */
+  #hunt { padding-top:clamp(56px,8vh,72px); }
+  #hunt-text { width:96vw; gap:8px; }
+  #hunt.idea .tok { max-height:none; min-height:44px; font-size:clamp(16px,4.9vw,24px); padding:8px 12px; border-width:3px; }
+  #hunt.idea .tfix { font-size:clamp(14px,4.2vw,19px); }
+}
+/* 키 작은 화면(폰 가로 844×390 · 320×568) — 문장·틈을 늘 한 단계 낮추고(실측: 낮추기 전 글 상자 안 스크롤 13~39px), 풀이가 뜬 동안은 한 단계 더 · 글 이름 줄 접기 */
+@media (max-height:620px) {
+  #hunt { gap:8px; padding-top:6px; }
+  #hunt-text { gap:6px; }
+  #hunt.idea .tok { font-size:clamp(14px,min(4.4vw,4.2vh),26px); min-height:34px; padding:4px 10px; border-width:3px; box-shadow:0 3px 0 #e7c890; }
+  #hunt.idea .tfix { font-size:clamp(13px,min(3.6vw,3.6vh),18px); }
+  #scr-game:has(#explain.show) #hunt { gap:6px; padding-bottom:6px; }
+  #scr-game:has(#explain.show) #hunt-text { gap:4px; }
+  #scr-game:has(#explain.show) #hunt.idea .tok { font-size:clamp(13px,min(4vw,3.8vh),22px); min-height:30px; padding:3px 9px; }
+  #scr-game:has(#explain.show) #hunt.idea .tfix { display:none; }   /* 풀이가 뜬 동안 글 이름 줄은 접어 문장 자리를 지킴(실측 8~30px 스크롤 → 0) */
+}
+@media (max-height:620px) and (max-width:600px) { #hunt { padding-top:clamp(56px,8vh,72px); } }   /* 폰 세로 키 작은 화면 — HUD 밑 여백은 그대로 */
