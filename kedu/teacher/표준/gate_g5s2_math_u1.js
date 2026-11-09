@@ -7,7 +7,7 @@
      · rtb 구간 찾기 · est Σ) — 글·그림 둘 다 셀 수 있으면 서로 대조
    F 식 전수 · G 그림(rgl ●○·띠·눈금 ↔ 명세 · cap 범위 ↔ 명세 · picks = 범위 자연수 · vch note 조건 ↔ ○△표 · rdial data-calc = 게이트 셈 = 결과 칸
      · 밑줄 자리 · 개념 글 「N을 …하여 …자리까지 나타내면 R」 = 게이트 셈 · nlz pick = 어림 · cap 경계 · rtb 범위 표 겹침·빈틈 0 · 반올림 열 · est 어림값·곱·합·실제 비용)
-   H 원문 충실 · I 실렌더(닫힘·열림) + 1인 흐름 · J extras 22 · K 발문 6↑·30~45분 · 물음 끝맺음(요) · 다음 단원
+   H 원문 충실 · I 실렌더(닫힘·열림) + 1인 흐름 · J extras 22(+교과서 활동 덤 b_lN_i) · K 발문 6↑·30~45분 · 물음 끝맺음(요) · 다음 단원
    L 선행 용어(이상·이하 l02 · 초과·미만 l03 · 올림 l05(「반올림」 안 빼고) · 버림 l06 · 반올림 l07 · l01 단원 도입 예외) · N 차단 어휘 · 「결」 · 곰이·펭이 0
    실행: NODE_PATH=/home/claude/.jsdom/node_modules node kedu/teacher/표준/gate_g5s2_math_u1.js */
 'use strict';
@@ -289,7 +289,8 @@ KEYS.forEach(k => T(k + ' 19장 × 닫힘·열림 렌더 예외 0 · 빈 본문 
   if (s.block === 'concept' || (s.block === 'basic_problem' && s.data.fig)) ok(/class="fig/.test(r.body), s.id + ' 그림 안 섬'); if (s.block === 'offline_activity') ok(/class="solo"/.test(r.body) && (r.body.match(/<i>→<\/i>/g) || []).length === s.data.solo.length - 1, s.id + ' 1인 흐름 줄'); })); }));
 
 console.log('═══ J. extras ═══');
-KEYS.forEach(k => T(k + ' extras 22 · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; ok(ex.length === 22, ex.length); const ids = ex.map(e => e.id); ok(new Set(ids).size === 22, 'id 중복');
+/* 2026-11-10 교과서판: extras 22 + 「교과서 활동」 덤(id b_lN_i · other_activity · 📗)은 따로 센다 */
+KEYS.forEach(k => T(k + ' extras 22 (+교과서 활동 덤) · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; const tb = ex.filter(e => /^b_l\d+_\d+$/.test(e.id)); ok(ex.length - tb.length === 22, ex.length - tb.length); tb.forEach(e => ok(e.type === 'other_activity' && e.icon === '📗' && /^교과서 활동 — /.test(e.title), e.id)); const ids = ex.map(e => e.id); ok(new Set(ids).size === ids.length, 'id 중복');
   L[k].slides.forEach(s => (s.suggested_extras || []).forEach(id => ok(ids.indexOf(id) >= 0, s.id + ' → ' + id))); ex.forEach(e => ok(e.title && (e.content || e.url), e.id + ' 내용')); }));
 
 console.log('═══ K. 발문 · 물음 끝맺음 · 다음 단원 ═══');
