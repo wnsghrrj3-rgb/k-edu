@@ -6,7 +6,7 @@
    F 식 전수 — 개념 글·요약·교사 층 글 속 「… = …」 사슬을 분수 계산기로 다시 셈(오개념 「틀린 생각」 칸만 뺌) · 검산기 자체 확인
    G 그림 — mcc·fln·wyc 계산 줄 사슬(bad 줄은 틀려야 함) · cmm 부등호 = 셈 · opb 묶음 값·끝 이름표 = 전체×n/d · agr 빗금 칸 = an×bn · 전체 = ad×bd
      · mln 끝 이름표 = 걸음×횟수 · mxr 칸 · ask 그림은 답(끝 이름표·칸 수·묶음 값·부등호)을 그리지 않음 · 검사기 자체 확인
-   H 원문 충실(개념 글 = 원문 · 기본 문제 = 원문 앞머리·수·보기·정답) · I 실렌더 · J extras 22 · K 발문·물음 끝맺음·다음 단원
+   H 원문 충실(개념 글 = 원문 · 기본 문제 = 원문 앞머리·수·보기·정답) · I 실렌더 · J extras 22(+교과서 활동 덤 b_lN_i) · K 발문·물음 끝맺음·다음 단원
    L 선행(「가분수로 고쳐」 l03 · 「분모끼리」 l06 — l01 예외) · M 차단 어휘 · 「결」 0 · 곰이·펭이 0(원문 「달곰이」 빼고)
    실행: NODE_PATH=/home/claude/.jsdom/node_modules node kedu/teacher/표준/gate_g5s2_math_u2.js */
 'use strict';
@@ -181,7 +181,8 @@ KEYS.forEach(k => T(k + ' 19장 × 닫힘·열림 렌더 예외 0 · 빈 본문 
   if (s.block === 'concept' || (s.block === 'basic_problem' && s.data.fig)) ok(/class="fig/.test(r.body), s.id + ' 그림 안 섬'); if (s.block === 'offline_activity') ok(/class="solo"/.test(r.body) && (r.body.match(/<i>→<\/i>/g) || []).length === s.data.solo.length - 1, s.id + ' 1인 흐름 줄'); })); }));
 
 console.log('═══ J. extras ═══');
-KEYS.forEach(k => T(k + ' extras 22 · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; ok(ex.length === 22, ex.length); const ids = ex.map(e => e.id); ok(new Set(ids).size === 22, 'id 중복');
+/* 2026-11-10 교과서판: extras 22 + 「교과서 활동」 덤(id b_lN_i · other_activity · 📗)은 따로 센다 */
+KEYS.forEach(k => T(k + ' extras 22 (+교과서 활동 덤) · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; const tb = ex.filter(e => /^b_l\d+_\d+$/.test(e.id)); ok(ex.length - tb.length === 22, ex.length - tb.length); tb.forEach(e => ok(e.type === 'other_activity' && e.icon === '📗' && /^교과서 활동 — /.test(e.title), e.id)); const ids = ex.map(e => e.id); ok(new Set(ids).size === ids.length, 'id 중복');
   L[k].slides.forEach(s => (s.suggested_extras || []).forEach(id => ok(ids.indexOf(id) >= 0, s.id + ' → ' + id))); ex.forEach(e => ok(e.title && (e.content || e.url), e.id + ' 내용')); }));
 
 console.log('═══ K. 발문 · 물음 끝맺음 · 다음 단원 ═══');
