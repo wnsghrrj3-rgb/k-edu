@@ -4,7 +4,7 @@
    F 산수 전수(× + − 식) · 그림 식(「N명 = 10명 그림 a개 + 1명 그림 b개」·「a명 + b명 = c명」) 전수
    G 그림(pgraph data-vals = rows v · 잘못 그린 줄은 정말 틀림 · ptable 합계 · ograph · area2 · 캡션 합)
    H 재료 충실(자기주도 원문 계승 · 자료가 필요한 기본 문제는 상황 칸에 수) — 선행 용어 L 은 없음(l01 제목부터 그림그래프)
-   I 실렌더(닫힘·열림) + 1인 흐름 · J extras 22·연결 · K 발문 6장↑
+   I 실렌더(닫힘·열림) + 1인 흐름 · J extras 22(+교과서 활동 덤 b_lN_i)·연결 · K 발문 6장↑
    실행: NODE_PATH=/home/claude/.jsdom/node_modules node kedu/teacher/표준/gate_g3s2_math_u6.js */
 'use strict';
 const fs = require('fs');
@@ -146,7 +146,8 @@ KEYS.forEach(k => T(k + ' 19장 × 닫힘·열림 렌더 예외 0 · 빈 본문 
   if (s.block === 'concept') ok(/class="fig"/.test(r.body), s.id + ' 그림 안 섬'); if (s.block === 'offline_activity') ok(/class="solo"/.test(r.body) && (r.body.match(/<i>→<\/i>/g) || []).length === s.data.solo.length - 1, s.id + ' 1인 흐름 줄'); })); }));
 
 console.log('═══ J. extras ═══');
-KEYS.forEach(k => T(k + ' extras 22 · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; ok(ex.length === 22, ex.length); const ids = ex.map(e => e.id); ok(new Set(ids).size === 22, 'id 중복');
+/* 2026-11-09 교과서판: extras 22 + 「교과서 활동」 덤(id b_lN_i · other_activity · 📗)은 따로 센다 */
+KEYS.forEach(k => T(k + ' extras 22 (+교과서 활동 덤) · id 유일 · 추천 연결 전부 존재', () => { const ex = L[k].extras; const tb = ex.filter(e => /^b_l\d+_\d+$/.test(e.id)); ok(ex.length - tb.length === 22, ex.length - tb.length); tb.forEach(e => ok(e.type === 'other_activity' && e.icon === '📗' && /^교과서 활동 — /.test(e.title), e.id)); const ids = ex.map(e => e.id); ok(new Set(ids).size === ex.length, 'id 중복');
   L[k].slides.forEach(s => (s.suggested_extras || []).forEach(id => ok(ids.indexOf(id) >= 0, s.id + ' → ' + id))); ex.forEach(e => ok(e.title && (e.content || e.url), e.id + ' 내용')); }));
 
 console.log('═══ K. 발문 ═══');
