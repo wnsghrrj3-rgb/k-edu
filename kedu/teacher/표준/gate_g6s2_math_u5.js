@@ -196,7 +196,7 @@ T('그림 부품 수 — 새 부품 9종 모두 쓰임 · cll ≥ 10', () => { [
 T('그림 검사기 자체 확인 — 거짓 값은 부품이 던지거나 게이트가 잡음', () => { let c = 0; [{ k: 'cll', rows: [{ expr: '80 × 3.14 = 251.3' }] }, { k: 'cll', rows: [{ expr: '6 × 3.14 = 18.84', cls: 'bad' }, { expr: '6 × 3.14 = 18.84', cls: 'hi' }] }, { k: 'cpl5', r: 5, items: [[4, '33']] }].forEach(f => { try { checkFig('probe', f, 'concept', {}); } catch (e) { c++; } }); ok(c === 3, c + '/3'); });
 
 console.log('═══ H. 재료 충실 ═══');
-const nk = (s) => String(s).replace(/원을 (\*\*)?한없이(\*\*)? 잘라서 이어 붙이면 직사각형이 돼요/g, '원을 $1한없이$2 잘게 잘라 이어 붙일수록 직사각형에 점점 가까워져요').replace(/원을 잘라 이어 붙이면 직사각형이 돼요/g, '원을 잘라 이어 붙이면 직사각형에 가까워져요').replace(/계산 결과가/g, '계산한 값이').replace(/결과가/g, '값이').replace(/결과는/g, '값은').replace(/결과를/g, '값을').replace(/어떻게 해결했나/g, '어떻게 풀었나').replace(/해결/g, '풀이');
+const nk = (s) => String(s).replace(/계산 결과가/g, '계산한 값이').replace(/결과가/g, '값이').replace(/결과는/g, '값은').replace(/결과를/g, '값을').replace(/어떻게 해결했나/g, '어떻게 풀었나').replace(/해결/g, '풀이');
 const normT = (t) => String(t).replace(/\*\*/g, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 const numsOf = (t) => (normT(t).match(/\d+(?:\.\d+)?/g) || []).join(',');
 KEYS.forEach(k => T(k + ' 개념 = 원문 장(또는 지도서 쪽 표시) · 기본 문제 = 원문(수·보기·정답) · 다음 시간 = 원문 다음', () => { const src = SK[k] ? SRC[SK[k]] : null;
