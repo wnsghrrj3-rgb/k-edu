@@ -110,7 +110,7 @@
     return $('body');
   }
   function sam(en, ko, speak){ var b = $('bub'); if (b) b.innerHTML = '<b>' + en + '</b>' + (ko ? '<small>' + ko + '</small>' : ''); if (speak !== false && en) return KTTS.sentence(en); return Promise.resolve(); }
-  var micOK = PlaySpeech.available();
+  var micOK = PlaySpeech.available(), primed = false;   /* 첫 듣기는 손가락(탭)에서 시작 — 크롬 마이크 허용 창이 확실히 뜨게 */
 
   /* 말해서 통과 — 공용. kind 'word'|'sentence'. 3번 안 되면 고르기 대체.
      return Promise({ok:true, by:'speech'|'chosen'}) */
@@ -136,19 +136,22 @@
       var mic = wrap.querySelector('#mic'), heard = wrap.querySelector('#heard');
       function listen(){
         mic.classList.add('on'); heard.textContent = '듣고 있어요…';
-        PlaySpeech.tryOnce(target, { kind: opt.kind, others: opt.others || others(target), onStart: null }).then(function(r){
+        PlaySpeech.tryOnce(target, { kind: opt.kind, others: opt.others || others(target), onInterim: function(t){ if (t) heard.textContent = '…' + t; } }).then(function(r){
           mic.classList.remove('on');
-          if (r.error === 'unavailable' || r.error === 'not-allowed' || r.error === 'service-not-allowed'){ micOK = false; return chooseFallback(); }
+          if (r.error === 'unavailable' || r.error === 'not-allowed' || r.error === 'service-not-allowed'){ micOK = false; toast(PlaySpeech.errorKo(r.error)); return chooseFallback(); }
+          primed = true;
+          if (r.error && r.error !== 'nospeech' && r.error !== 'no-speech' && r.error !== 'timeout'){ heard.textContent = PlaySpeech.errorKo(r.error); tries++; if (tries >= 3) return chooseFallback(); return; }
           if (r.ok){ heard.textContent = '👍 ' + (r.heard || target); mic.classList.add('off'); mic.onclick = null; return setTimeout(function(){ resolve({ ok: true, by: 'speech' }); }, 450); }
           tries++;
-          if (tries >= 3){ heard.textContent = '잘 안 들렸어요'; return chooseFallback(); }
-          heard.textContent = tries === 1 ? '한 번 더!' : '천천히 들어 보고 따라 해 봐';
+          if (tries >= 3){ heard.textContent = '잘 안 들렸어요' + (r.heard ? ' (들린 말: ' + r.heard + ')' : ''); return chooseFallback(); }
+          heard.textContent = (r.heard ? '「' + r.heard + '」로 들렸어요 — ' : '') + (tries === 1 ? '한 번 더!' : '천천히 들어 보고 따라 해 봐');
           var model = opt.kind === 'sentence' ? KTTS.sentence(opt.model || target, { rate: tries === 2 ? 0.55 : undefined }) : KTTS.word(target, { rate: tries === 2 ? 0.45 : undefined });
           model.then(function(){ setTimeout(listen, 250); });
         });
       }
       mic.onclick = listen;
-      if (opt.auto !== false) setTimeout(listen, 300);
+      if (!primed) heard.textContent = '🎤를 누르고 말해 봐';
+      else if (opt.auto !== false) setTimeout(listen, 300);
     });
   }
 
@@ -342,16 +345,18 @@
         wrap.innerHTML = '<button class="mic" id="mic">🎤</button><div class="heard" id="heard">말해 봐!</div>';
         var mic = wrap.querySelector('#mic'), heard = wrap.querySelector('#heard');
         function listen(){ mic.classList.add('on'); heard.textContent = '듣고 있어요…';
-          PlaySpeech.tryOnce(cands[0], { kind: 'sentence', others: [], timeout: 7000 }).then(function(r){
+          PlaySpeech.tryOnce(cands[0], { kind: 'sentence', others: [], timeout: 8000, onInterim: function(t){ if (t) heard.textContent = '…' + t; },
+            judge: function(t){ for (var q = 0; q < cands.length; q++) if (PlaySpeech.matchSentence(t, cands[q], others(cands[q]))) return true; return false; } }).then(function(r){
             mic.classList.remove('on');
-            if (r.error === 'unavailable' || r.error === 'not-allowed'){ micOK = false; return fallback(); }
+            if (r.error === 'unavailable' || r.error === 'not-allowed' || r.error === 'service-not-allowed'){ micOK = false; toast(PlaySpeech.errorKo(r.error)); return fallback(); }
+            primed = true;
             var hitW = null; cands.forEach(function(w){ if (!hitW && PlaySpeech.matchSentence(r.heard, w, others(w))) hitW = w; });
             if (!hitW){ cands.forEach(function(w){ if (!hitW && PlaySpeech.matchWord(r.heard, w, others(w))) hitW = w; }); if (hitW && tries === 0){ tries++; heard.textContent = '그래, ' + hitW + '! 이번엔 「I like ' + hitW + '.」'; return KTTS.sentence(Z.sentence(hitW)).then(function(){ setTimeout(listen, 250); }); } if (hitW && tries >= 1) { heard.textContent = '👍 ' + r.heard; return setTimeout(function(){ resolve({ ok: true, by: 'speech', word: hitW }); }, 400); } hitW = null; }
             if (hitW){ heard.textContent = '👍 ' + r.heard; mic.classList.add('off'); return setTimeout(function(){ resolve({ ok: true, by: 'speech', word: hitW }); }, 450); }
             tries++; if (tries >= 3){ heard.textContent = '잘 안 들렸어요'; return fallback(); }
             heard.textContent = '한 번 더! 「I like …」'; KTTS.sentence(Z.sentence(cands[0]), { rate: 0.6 }).then(function(){ setTimeout(listen, 250); });
           }); }
-        mic.onclick = listen; setTimeout(listen, 300);
+        mic.onclick = listen; if (primed) setTimeout(listen, 300); else heard.textContent = '🎤를 누르고 말해 봐';
       });
     }
     function finish(){

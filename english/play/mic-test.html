@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마이크 점검 | 영어 놀이터</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="play.css">
+<style>
+  .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F1F5F9;font-size:15px}
+  .row b{font-family:Jua}
+  .ok{color:#0B8A63}.bad{color:#C92A2A}
+  .words{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .words button{font-family:Jua;font-size:17px;padding:8px 14px;border-radius:12px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  .words button.sel{background:#FF8A3D;color:#fff}
+  pre{background:#1A202C;color:#C6F6D5;border-radius:12px;padding:10px;font-size:12.5px;white-space:pre-wrap;max-height:220px;overflow:auto}
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="top"><span class="t">🎤 마이크 점검</span><a href="index.html" style="font-size:14px;color:#718096">놀이터</a></div>
+<div class="wrap">
+  <div class="card">
+    <div class="row"><span>브라우저</span><b id="ua"></b></div>
+    <div class="row"><span>음성 인식 지원</span><b id="sup"></b></div>
+    <div class="row"><span>마이크 허용</span><b id="perm">—</b></div>
+    <div class="row"><span>인터넷</span><b id="net"></b></div>
+    <div class="row"><span>소리(TTS)</span><b id="tts"></b></div>
+  </div>
+  <div class="card">
+    <div class="jua" style="font-size:16px;color:#B7791F">1. 단어를 고르고 2. 🎤 누르고 3. 말하기</div>
+    <div class="words" id="words"></div>
+    <div style="display:flex;align-items:center;gap:14px;margin-top:6px">
+      <button class="mic" id="mic">🎤</button>
+      <div style="flex:1">
+        <div id="live" style="font-family:Jua;font-size:22px;min-height:30px;color:#2D3748">—</div>
+        <div id="verdict" class="hint" style="text-align:left"></div>
+      </div>
+      <button class="btn w" id="say" style="padding:8px 14px;font-size:15px">🔊 듣기</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="jua" style="font-size:15px;color:#718096;margin-bottom:6px">기록(준호 확인용 — 이 화면 밖으로 안 나감)</div>
+    <pre id="log"></pre>
+  </div>
+</div>
+<script src="../v3/engine/k-tts.js"></script>
+<script src="data/zones.js"></script>
+<script src="engine/play-speech.js"></script>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var Z = PLAY_ZONES.zone('lv2-02'), W = Z.words.map(function(w){ return w.w; }), target = W[0];
+  $('ua').textContent = /Chrome/.test(navigator.userAgent) ? '크롬' + (/Android/.test(navigator.userAgent) ? '(안드로이드)' : /iPhone|iPad/.test(navigator.userAgent) ? '(iOS)' : '') : /Safari/.test(navigator.userAgent) ? '사파리' : /SamsungBrowser/.test(navigator.userAgent) ? '삼성 인터넷' : '기타';
+  $('sup').textContent = PlaySpeech.supported() ? '있음' : '없음(크롬에서 열어 주세요)'; $('sup').className = PlaySpeech.supported() ? 'ok' : 'bad';
+  $('net').textContent = navigator.onLine ? '연결' : '끊김'; $('net').className = navigator.onLine ? 'ok' : 'bad';
+  $('tts').textContent = window.speechSynthesis ? '있음' : '없음'; $('tts').className = window.speechSynthesis ? 'ok' : 'bad';
+  if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({ name: 'microphone' }).then(function(p){ function show(){ $('perm').textContent = { granted: '허용됨', denied: '차단됨 — 주소창 자물쇠에서 켜기', prompt: '아직 안 물어봄' }[p.state] || p.state; $('perm').className = p.state === 'granted' ? 'ok' : p.state === 'denied' ? 'bad' : ''; } show(); p.onchange = show; }).catch(function(){ $('perm').textContent = '확인 불가'; });
+  W.forEach(function(w){ var b = document.createElement('button'); b.textContent = w; if (w === target) b.className = 'sel'; b.onclick = function(){ target = w; Array.prototype.forEach.call($('words').children, function(x){ x.className = x.textContent === w ? 'sel' : ''; }); }; $('words').appendChild(b); });
+  function logLine(x){ var l = $('log'); l.textContent += new Date().toLocaleTimeString() + '  ' + x + '\n'; l.scrollTop = l.scrollHeight; }
+  PlaySpeech.onLog = logLine;
+  $('say').onclick = function(){ KTTS.unlock(); KTTS.word(target); };
+  $('mic').onclick = function(){
+    KTTS.unlock(); $('mic').classList.add('on'); $('live').textContent = '듣고 있어요…'; $('verdict').textContent = '';
+    PlaySpeech.tryOnce(target, { kind: 'word', others: W.filter(function(x){ return x !== target; }), onInterim: function(t){ $('live').textContent = t; } }).then(function(r){
+      $('mic').classList.remove('on');
+      if (r.error){ $('live').textContent = '—'; $('verdict').textContent = PlaySpeech.errorKo(r.error) + '  [' + r.error + ']'; $('verdict').className = 'hint bad'; return; }
+      $('live').textContent = r.heard || '(빈 전사)';
+      $('verdict').textContent = r.ok ? '✅ 「' + target + '」로 인정' : '❌ 「' + target + '」 아님 — 놀이터에선 3번 뒤 고르기로 넘어가요';
+      $('verdict').className = 'hint ' + (r.ok ? 'ok' : 'bad');
+    });
+  };
+  logLine('지원=' + PlaySpeech.supported() + ' 온라인=' + navigator.onLine + ' UA=' + navigator.userAgent);
+})();
+</script>
+</body>
+</html>

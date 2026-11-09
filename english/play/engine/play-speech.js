@@ -55,35 +55,54 @@
     return false;
   }
 
+  var lastError = null, log = [];
+  function note(x) { log.push(x); if (log.length > 30) log.shift(); if (PlaySpeech.onLog) try { PlaySpeech.onLog(x); } catch (e) {} }
+
+  /* 한 번 듣기. 중간 결과(interim)도 받아 onInterim(text) 으로 흘리고, judge(text) 가 true 를 주면 그 자리에서 끝낸다
+     (아이 한 단어는 최종 결과가 늦거나 안 올 때가 있어 중간 결과로 먼저 판정). */
   function listenOnce(opt) {
     opt = opt || {};
     return new Promise(function (resolve) {
       if (!SR || denied) return resolve({ error: 'unavailable' });
-      if (busy) { try { rec.abort(); } catch (e) {} }
+      if (busy && rec) { try { rec.abort(); } catch (e) {} }
+      try { if (g.speechSynthesis) g.speechSynthesis.cancel(); } catch (e) {}     /* 내 소리가 마이크로 들어가지 않게 */
       rec = new SR();
-      rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 5; rec.continuous = false;
-      var done = false, timer = setTimeout(function () { finish({ error: 'timeout' }); try { rec.stop(); } catch (e) {} }, opt.timeout || 6000);
-      function finish(r) { if (done) return; done = true; busy = false; clearTimeout(timer); resolve(r); }
+      rec.lang = 'en-US'; rec.interimResults = true; rec.maxAlternatives = 5; rec.continuous = false;
+      var done = false, alts = [], timer = setTimeout(function () { finish(alts.length ? { alts: alts, partial: true } : { error: 'timeout' }); try { rec.stop(); } catch (e) {} }, opt.timeout || 7000);
+      function finish(r) { if (done) return; done = true; busy = false; clearTimeout(timer); note(r.error ? 'error:' + r.error : 'heard:' + (r.alts || []).join(' | ')); resolve(r); }
       rec.onresult = function (ev) {
-        var alts = [];
+        alts = [];
         for (var i = 0; i < ev.results.length; i++) for (var j = 0; j < ev.results[i].length; j++) alts.push(ev.results[i][j].transcript);
-        finish({ alts: alts });
+        if (opt.onInterim) opt.onInterim(alts[0] || '');
+        var isFinal = ev.results[ev.results.length - 1].isFinal;
+        if (opt.judge) { for (var k = 0; k < alts.length; k++) if (opt.judge(alts[k])) { finish({ alts: [alts[k]].concat(alts) }); try { rec.abort(); } catch (e) {} return; } }
+        if (isFinal) finish({ alts: alts });
       };
       rec.onerror = function (ev) {
+        lastError = ev.error || 'error';
         if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') denied = true;
+        if (ev.error === 'no-speech' || ev.error === 'aborted') { if (alts.length) return finish({ alts: alts, partial: true }); return finish({ error: ev.error }); }
         finish({ error: ev.error || 'error' });
       };
-      rec.onend = function () { finish({ error: 'nospeech' }); };
-      try { busy = true; rec.start(); if (opt.onStart) opt.onStart(); } catch (e) { finish({ error: 'start' }); }
+      rec.onend = function () { if (alts.length) finish({ alts: alts, partial: true }); else finish({ error: 'nospeech' }); };
+      try { busy = true; rec.start(); note('start'); if (opt.onStart) opt.onStart(); } catch (e) { finish({ error: 'start' }); }
     });
   }
+  var ERR_KO = { 'not-allowed': '마이크 허용이 필요해요 — 주소창 왼쪽 자물쇠에서 마이크를 켜 주세요', 'service-not-allowed': '이 브라우저에선 음성 인식을 쓸 수 없어요', network: '음성 인식 서버에 연결하지 못했어요(인터넷 확인)', 'audio-capture': '마이크를 찾지 못했어요', unavailable: '이 브라우저엔 음성 인식이 없어요(크롬에서 열어 주세요)', nospeech: '소리가 안 들렸어요', 'no-speech': '소리가 안 들렸어요', timeout: '소리가 안 들렸어요', start: '마이크를 켜지 못했어요' };
 
   var PlaySpeech = {
     available: function () { return !!SR && !denied && navigator.onLine !== false; },
+    supported: function () { return !!SR; },
+    denied: function () { return denied; },
+    lastError: function () { return lastError; },
+    log: function () { return log.slice(); },
+    errorKo: function (e) { return ERR_KO[e] || ('음성 인식 오류(' + e + ')'); },
     matchWord: matchWord, matchSentence: matchSentence, norm: norm,
     /* 한 번 듣고 판정. kind 'word'|'sentence'. 반환 {ok, heard, error} */
     tryOnce: function (target, opt) {
       opt = opt || {};
+      var judge = function (t) { return opt.kind === 'sentence' ? matchSentence(t, target, opt.others) : matchWord(t, target, opt.others); };
+      opt.judge = opt.judge || judge;
       return listenOnce(opt).then(function (r) {
         if (r.error) return { ok: false, heard: '', error: r.error };
         var ok = false, heard = r.alts[0] || '';
