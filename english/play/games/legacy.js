@@ -30,12 +30,13 @@
     var sides = h('div', 'sides'), hint = h('div', 'hint', '카메라 켜는 중…');
     u.root.appendChild(camw); u.root.appendChild(sides); u.root.appendChild(hint);
     var bars = camw.querySelectorAll('.lv b');
-    var rounds = (ctx.targets || []).map(function (x) { return x.w; }).slice(0, CONF.leanRounds), i = 0, useCam = false;
+    var rounds = (ctx.targets || []).map(function (x) { return x.w; }).slice(0, CONF.leanRounds), i = 0, useCam = false, O = ctx.opt || {};
+    function sayW(w, natural) { if (O.sayItem) return O.sayItem(w) || Promise.resolve(); return tts ? tts.word(w, natural ? { natural: true } : undefined) : Promise.resolve(); }
     return new Promise(function (resolve) {
       function round() {
         if (!u.alive()) return;
         if (i >= rounds.length) { if (useCam && cam.stop) cam.stop(); return setTimeout(function () { resolve({ completed: true }); }, 400); }
-        var w = rounds[i], alt = shuffle(W.filter(function (x) { return x !== w; }))[0], pair = shuffle([w, alt]);
+        var w = rounds[i], alt = (O.altFor && O.altFor(w)) || shuffle(W.filter(function (x) { return x !== w; }))[0], pair = shuffle([w, alt]);
         sides.innerHTML = '';
         var tiles = pair.map(function (p, k) { var t = h('button', 'tile', pic[p] + '<small>' + (k === 0 ? '← 왼쪽' : '오른쪽 →') + '</small>'); t.type = 'button'; sides.appendChild(t); return t; });
         var picked = false, tries = 0, viaCam = false;
@@ -45,9 +46,9 @@
           if (p === w) {
             picked = true; ctx.good(tries === 0); tiles[k].classList.add('ok'); tiles[1 - k].classList.add('dim');
             ctx.emit(E.act(w, 'move', viaCam ? 'cam' : 'touch', tries === 0, tries + 1));
-            if (tts) tts.word(w, { natural: true }); i++; setTimeout(round, 900);
+            sayW(w, true); i++; setTimeout(round, 900);
           } else {
-            ctx.oops(); tiles[k].classList.add('no'); tries++; setTimeout(function () { tiles[k].classList.remove('no'); }, 400); if (tts) tts.word(w);
+            ctx.oops(); tiles[k].classList.add('no'); tries++; setTimeout(function () { tiles[k].classList.remove('no'); }, 400); sayW(w);
             if (tries >= 2) { picked = true; tiles[1 - k].classList.add('ok'); tiles[k].classList.add('dim'); ctx.emit(E.act(w, 'move', viaCam ? 'cam' : 'touch', false, tries + 1)); i++; setTimeout(round, 1100); }
             else if (useCam) camPick();
           }
@@ -60,7 +61,7 @@
           });
         }
         hint.textContent = useCam ? '🔊 듣고 몸을 기울여!' : '🔊 듣고 눌러!';
-        (tts ? tts.word(w) : Promise.resolve()).then(function () { if (useCam && !picked) camPick(); });
+        g.PlayGame.soon(sayW(w)).then(function () { if (useCam && !picked) camPick(); });
       }
       var camOK = cam && cam.available && cam.available() && !(ctx.learner && ctx.learner.cam === false);
       (camOK ? cam.start(camw.querySelector('video')) : Promise.resolve(false)).then(function (ok) {

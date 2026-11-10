@@ -12,6 +12,11 @@
              '<rect x="86" y="104" width="28" height="16" rx="4" fill="#FF8A3D"/>' +
              '<path d="M90 104 L72 92 M110 104 L128 92" stroke="#C77C00" stroke-width="4" stroke-linecap="round"/>' +
              '<rect x="86" y="140" width="28" height="16" rx="5" fill="#FFF3E0"/>';
+    },
+    goggles: function () {   /* 소리 공방 — 보안경 */
+      return '<path d="M60 62 L140 62" stroke="#364FC7" stroke-width="5" stroke-linecap="round"/>' +
+             '<circle cx="86" cy="64" r="12" fill="rgba(116,192,252,.55)" stroke="#364FC7" stroke-width="4"/>' +
+             '<circle cx="114" cy="64" r="12" fill="rgba(116,192,252,.55)" stroke="#364FC7" stroke-width="4"/>';
     }
   };
   function face(mood) {

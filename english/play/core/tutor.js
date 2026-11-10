@@ -5,7 +5,8 @@
  *   음성 인식 실패는 발음 실패가 아니다 — 화면에 「틀렸다」·들린 글자 없음.
  *
  *   PlayTutor.step(tries, hint0) → 'again'|'model'|'slow'|'offer'          (화면 없는 규칙 — 검사는 여기를 본다)
- *   PlayTutor.ask(ctx, { host, target | cands[], kind:'word'|'sentence', sentence(w), frame[틀 낱말], hint0 })
+ *   PlayTutor.ask(ctx, { host, target | cands[], kind:'word'|'sentence', sentence(w), frame[틀 낱말], hint0,
+ *                        model(slowly) — 모델 음성을 바꿔 끼움(소리 조각으로 들려주기) · offerText — 그림 대신 글자 둘 · onOffer() — 고르기로 넘어갈 때 })
  *     → Promise({ word, by:'speech'|'chosen', tries, hinted, mic })
  * ============================================================ */
 (function (g) {
@@ -42,6 +43,7 @@
     function later(ms, fn) { setTimeout(function () { if (alive() && !over) fn(); }, ms); }
     function model(w, slow) {
       hinted = true;
+      if (o.model) return G.soon(o.model(!!slow), 12000);
       if (kind === 'sentence') return G.soon(tts.sentence(sent(w), slow ? { rate: CONF.slowSentence } : undefined));
       return G.soon(tts.word(w, slow ? { rate: CONF.slowRate } : undefined));
     }
@@ -57,6 +59,7 @@
       /* 둘 중 고르기 — 단어는 그림 둘, 문장은 문장 둘(누르면 들려준다) */
       function offer() {
         micEl = heardEl = null; wrap.innerHTML = '';
+        if (o.onOffer) { try { o.onOffer(); } catch (e) {} }
         var box = h('div', 'oq-offer');
         if (kind === 'sentence') {
           wrap.appendChild(h('div', 'heard', '눌러서 듣고 골라 봐'));
@@ -69,7 +72,7 @@
         } else {
           var w = cands[0];
           shuffle([w, altFor(w)]).forEach(function (x) {
-            var t = h('button', 'tile', pic[x] || x); t.type = 'button'; t.setAttribute('data-w', x);
+            var t = h('button', 'tile' + (o.offerText ? ' tu-sent' : ''), o.offerText ? '<span>' + x + '</span>' : (pic[x] || x)); t.type = 'button'; t.setAttribute('data-w', x);
             t.onclick = function () {
               if (over || t.disabled) return;
               if (x === w) { t.classList.add('ok'); return fin(w, 'chosen'); }

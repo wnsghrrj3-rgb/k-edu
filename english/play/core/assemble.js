@@ -21,7 +21,7 @@
     changeAtLeast: 2,             /* 어제와 달라야 하는 놀이 수 */
     keepDays: 14,                 /* 기억해 두는 날 수 */
     order: ['say', 'body', 'ear', 'hand', 'sound'],   /* 하루 안에서 놀이가 놓이는 차례(사건 놀이는 맨 앞) */
-    perGame: { 'order-shop': 8, plates: 8, pop: 6, 'catch': 6, lean: 6, belt: 6 }   /* 놀이별 대상 수(없으면 구역 단어 전부) */
+    perGame: { 'order-shop': 8, plates: 8, pop: 6, 'catch': 6, lean: 6, belt: 6, 'read-aloud': 6, 'sound-bridge': 4, 'sound-train': 4 }   /* 놀이별 대상 수(없으면 구역 단어 전부) */
   };
   var KEY = 'kedu-en-play-stage';
   /* 놀이의 첫 채널 → 겹침을 따지는 묶음 */
@@ -70,36 +70,56 @@
     var yest = days.length ? days[days.length - 1] : null, yGames = yest ? yest.games : [];
 
     /* 켤 수 있는 놀이 */
-    var can = function (id) { var d = G.get(id); return !!d && allowed(d, cell) && !(d.cam && !cam && d.camOnly); };
+    var can = function (id) { var d = G.get(id); return !!d && allowed(d, cell) && !(d.cam && !cam && d.camOnly) && (!d.fits || d.fits(zone)); };
     var cands = (zone.games || []).filter(can);
-    /* 사건 — 그 놀이를 켤 수 있는 것 중, 어제 것이 아니고 가장 오래 안 한 것 */
+    /* 사건 후보 — 그 놀이를 켤 수 있는 것 중, 어제 것이 아니고 오래 안 한 차례로 */
     var events = (o.events || (g.PLAY_EVENTS && g.PLAY_EVENTS[zone.stage]) || []).filter(function (e) { return can(e.game); });
-    var ev = null;
-    if (o.event) ev = events.filter(function (e) { return e.id === o.event; })[0] || null;
-    if (!ev && events.length) {
+    var evList = [];
+    if (o.event) evList = events.filter(function (e) { return e.id === o.event; });
+    if (!evList.length && events.length) {
       var pool = events.filter(function (e) { return !yest || e.id !== yest.event; }); if (!pool.length) pool = events;
-      ev = oldest(pool, function (e) { return ago(days, today, function (d) { return d.event === e.id; }); }, today)[0];
+      evList = oldest(pool, function (e) { return ago(days, today, function (d) { return d.event === e.id; }); }, today);
     }
-    /* 묶음마다 하나 */
-    var byGroup = {}, groups = [];
-    cands.concat(ev ? [ev.game] : []).forEach(function (id) { var gr = groupOf(G.get(id), cam); if (!byGroup[gr]) { byGroup[gr] = []; groups.push(gr); } if (byGroup[gr].indexOf(id) < 0) byGroup[gr].push(id); });
-    var evGroup = ev ? groupOf(G.get(ev.game), cam) : null, pickOf = {};
-    groups.forEach(function (gr) {
-      if (gr === evGroup) { pickOf[gr] = ev.game; return; }
-      var list = byGroup[gr].filter(function (id) { return (zone.games || []).indexOf(id) >= 0; });      /* 사건 전용 놀이는 사건 날에만 */
-      if (!list.length) return;
-      var fresh = list.filter(function (id) { return yGames.indexOf(id) < 0; });                            /* 어제 한 것은 뒤로 */
-      pickOf[gr] = oldest(fresh.length ? fresh : list, function (id) { return ago(days, today, function (d) { return d.games.indexOf(id) >= 0; }); }, today)[0];
+    /* 그 사건으로 하루를 짜 본다 */
+    function build(ev) {
+      /* 묶음마다 하나 */
+      var byGroup = {}, groups = [];
+      cands.concat(ev ? [ev.game] : []).forEach(function (id) { var gr = groupOf(G.get(id), cam); if (!byGroup[gr]) { byGroup[gr] = []; groups.push(gr); } if (byGroup[gr].indexOf(id) < 0) byGroup[gr].push(id); });
+      var evGroup = ev ? groupOf(G.get(ev.game), cam) : null, pickOf = {};
+      groups.forEach(function (gr) {
+        if (gr === evGroup) { pickOf[gr] = ev.game; return; }
+        var list = byGroup[gr].filter(function (id) { return (zone.games || []).indexOf(id) >= 0; });      /* 사건 전용 놀이는 사건 날에만 */
+        if (!list.length) return;
+        var fresh = list.filter(function (id) { return yGames.indexOf(id) < 0; });                            /* 어제 한 것은 뒤로 */
+        pickOf[gr] = oldest(fresh.length ? fresh : list, function (id) { return ago(days, today, function (d) { return d.games.indexOf(id) >= 0; }); }, today)[0];
+      });
+      /* 씨앗이 없는 단어가 있으면 말로 받는 놀이를 — 어제와 둘은 달라야 한다는 규칙을 지키는 한에서 */
+      var diff = function () { return Object.keys(pickOf).filter(function (gr) { return yGames.indexOf(pickOf[gr]) < 0; }).length; };
+      if ((o.unplanted | 0) > 0 && evGroup !== 'say' && byGroup.say) {
+        var plants = byGroup.say.filter(function (id) { return G.get(id).plants && (zone.games || []).indexOf(id) >= 0; })[0];
+        if (plants && pickOf.say !== plants) { var keep = pickOf.say; pickOf.say = plants; if (yest && diff() < CONF.changeAtLeast) pickOf.say = keep; }
+      }
+      /* 묶음이 하루치보다 많으면 — 가장 최근에 한 놀이의 묶음부터 쉰다(사건 놀이·씨앗 심는 놀이는 남긴다) */
+      var extra = Object.keys(pickOf).length - CONF.maxGames;
+      if (extra > 0) {
+        var keepSay = (o.unplanted | 0) > 0 && pickOf.say && G.get(pickOf.say).plants;
+        Object.keys(pickOf).filter(function (gr) { return gr !== evGroup && !(gr === 'say' && keepSay); })
+          .map(function (gr) { return { gr: gr, a: ago(days, today, function (d) { return d.games.indexOf(pickOf[gr]) >= 0; }), i: CONF.order.indexOf(gr) }; })
+          .sort(function (x, y) { return x.a - y.a || y.i - x.i; }).slice(0, extra).forEach(function (x) { delete pickOf[x.gr]; });
+      }
+      /* 차례·개수 */
+      var order = CONF.order.filter(function (gr) { return pickOf[gr] && gr !== evGroup; });
+      var list2 = (ev ? [ev.game] : []).concat(order.map(function (gr) { return pickOf[gr]; })).slice(0, CONF.maxGames);
+      return { ev: ev, minis: list2, changed: list2.filter(function (id) { return yGames.indexOf(id) < 0; }).length };
+    }
+    /* 오래 안 한 사건부터 짜 보고, 어제와 놀이 둘이 바뀌는 첫 세트를 쓴다(끝내 안 되면 가장 많이 바뀌는 것) */
+    var best = null;
+    (evList.length ? evList : [null]).some(function (e) {
+      var t = build(e);
+      if (!best || t.changed > best.changed) best = t;
+      return !yest || !!o.event || t.changed >= CONF.changeAtLeast;
     });
-    /* 씨앗이 없는 단어가 있으면 말로 받는 놀이를 — 어제와 둘은 달라야 한다는 규칙을 지키는 한에서 */
-    var diff = function () { return Object.keys(pickOf).filter(function (gr) { return yGames.indexOf(pickOf[gr]) < 0; }).length; };
-    if ((o.unplanted | 0) > 0 && evGroup !== 'say' && byGroup.say) {
-      var plants = byGroup.say.filter(function (id) { return G.get(id).plants && (zone.games || []).indexOf(id) >= 0; })[0];
-      if (plants && pickOf.say !== plants) { var keep = pickOf.say; pickOf.say = plants; if (yest && diff() < CONF.changeAtLeast) pickOf.say = keep; }
-    }
-    /* 차례·개수 */
-    var order = CONF.order.filter(function (gr) { return pickOf[gr] && gr !== evGroup; });
-    var minis = (ev ? [ev.game] : []).concat(order.map(function (gr) { return pickOf[gr]; })).slice(0, CONF.maxGames);
+    var ev = best.ev, minis = best.minis;
     var res = { day: today, event: ev ? ev.id : null, eventGame: ev ? ev.game : null, minis: minis, set: garden.concat(minis, guest), reused: false };
     if (!o.dry) {
       st.days = days.concat([{ day: today, event: res.event, eventGame: res.eventGame, games: minis }]).slice(-CONF.keepDays);

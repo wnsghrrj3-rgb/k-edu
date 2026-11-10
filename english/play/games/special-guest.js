@@ -3,6 +3,7 @@
  *   처음 보는 손님(Amy)이 새 순서·새 배치로 같은 재료를 묻는다 → 아이가 「I like ___.」 로 답한다.
  *   모델을 먼저 들려주지 않는다(힌트 0). 힌트 없이 말로 답하면 independent, 도움(모델·고르기)을 받으면 assisted.
  *   시험이 아니라 대화 — 아이가 고른 것이 답이고, 손님은 무엇을 골라도 반가워한다. 못 알아들어도 손님은 기다린다.
+ *   소리 공방(구역 kind 'phonics')에서는 대화 대신 「처음 보는 단어 읽기」 — 손님이 단어 카드를 내밀고 아이가 소리 내어 읽는다(응용 단어 먼저).
  *   공통 인터페이스: start(ctx) → Promise({ completed, passed:true, by:'speech'|'chosen' }) · ctx.zone.boss.turns 사용
  * ============================================================ */
 (function (g) {
@@ -14,6 +15,7 @@
     show: 3             /* 열린 질문(What do you like?)에서 보여 줄 그림 수 */
   };
   var REPLY = [['Yum! Good choice.', '냠! 잘 골랐어.'], ['Me too!', '나도!'], ['Great! Thank you!', '고마워!']];
+  var READ_ASK = ['Read it!', '이게 뭐라고 적혀 있을까? 읽어 줘.'];
   function h(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
   function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 
@@ -35,14 +37,23 @@
     var ask = h('div', 'sg-ask'), frame = h('div', 'say', sent('___')), act = h('div', 'oq-act'), dots = h('div', 'dots');
     root.appendChild(ask); root.appendChild(frame); root.appendChild(act); root.appendChild(dots);
     var i = 0, bys = [];
+    /* 읽기 판 — 응용 단어(처음 보는 단어)부터 셋 */
+    var reading = Z.kind === 'phonics' || !turns.length, cards = [];
+    if (reading) {
+      var ws = (Z.words || []).slice(), ap = shuffle(ws.filter(function (x) { return x.role === 'apply'; })), rest = shuffle(ws.filter(function (x) { return x.role !== 'apply'; }));
+      cards = ap.concat(rest).slice(0, CONF.show);
+      frame.style.display = 'none';
+    }
+    var total = reading ? cards.length : turns.length;
     function alive() { return root.parentNode === host && root.isConnected !== false && !(ctx.signal && ctx.signal.aborted); }
     function later(ms, fn) { setTimeout(function () { if (alive()) fn(); }, ms); }
     function speak(en) { return G.soon(tts ? tts.sentence(en) : null); }
 
     return new Promise(function (resolve) {
       function turn() {
-        dots.innerHTML = turns.map(function (_, k) { return '<i class="' + (k < i ? 'ok' : k === i ? 'on' : '') + '"></i>'; }).join('');
-        if (i >= turns.length) return resolve({ completed: true, passed: true, by: bys.indexOf('speech') >= 0 ? 'speech' : 'chosen' });
+        dots.innerHTML = new Array(total + 1).join('x').split('').map(function (_, k) { return '<i class="' + (k < i ? 'ok' : k === i ? 'on' : '') + '"></i>'; }).join('');
+        if (i >= total) return resolve({ completed: true, passed: true, by: bys.indexOf('speech') >= 0 ? 'speech' : 'chosen' });
+        if (reading) return readTurn();
         var t = turns[i];
         npc.react(q.G[who], 'wait'); act.innerHTML = '';
         frame.textContent = sent('___'); frame.classList.remove('done');
@@ -64,6 +75,22 @@
           speak(rep[0]).then(function () { i++; later(CONF.replyGap, turn); });
         });
       }
+      /* 읽기 판의 한 장 — 손님이 카드를 내민다(먼저 들려주지 않는다) */
+      function readTurn() {
+        var x = cards[i];
+        npc.react(q.G[who], 'wait'); q.say('❓', false);
+        ask.innerHTML = '<b>' + READ_ASK[0] + '</b><small>' + READ_ASK[1] + '</small>';
+        g.PlayReader.one(ctx, act, x).then(function (r) {
+          if (!r || !alive()) return;
+          bys.push(r.by); q.say(x.pic || '👍', false);
+          ctx.emit(E.say(x.w, r));
+          ctx.good(r.by === 'speech' && !r.hinted, { at: q.G[who] });
+          npc.react(q.G[who], 'ok', { stay: true });
+          var rep = REPLY[(i + 1) % REPLY.length];
+          ask.innerHTML = '<b>' + rep[0] + '</b><small>' + rep[1] + '</small>';
+          speak(rep[0]).then(function () { i++; later(CONF.replyGap, turn); });
+        });
+      }
       audio.play('enter'); q.place(who, 'front');
       G.soon(ctx.intro, null).then(function () { later(CONF.stepIn, turn); });
     });
@@ -72,7 +99,7 @@
   g.PlaySpecialGuest = { CONF: CONF, plan: plan, start: start };
   if (g.PlayGame) g.PlayGame.register({
     id: 'special-guest', no: 27, name: '특별 손님', icon: '👑', channels: ['say', 'talk'], axis: 'quest', need: {}, last: true,
-    count: function (c) { return ((c.zone && c.zone.boss && c.zone.boss.turns) || []).length; },
+    count: function (c) { var z = c.zone || {}; return z.kind === 'phonics' ? Math.min(CONF.show, (z.words || []).length) : ((z.boss && z.boss.turns) || []).length; },
     intro: { en: 'Oh! A friend!', ko: '처음 보는 손님이야 — 물어보면 대답해 줘!' },
     start: start
   });
