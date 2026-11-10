@@ -54,6 +54,7 @@ const PAL = { circle: ['#ff6b8b', '#ff9d5c', '#ffc94d', '#f06292'], tri: ['#2bb6
 const BOARD = { x: 340, y: 160, w: 600, h: 500 }, TRAY = [{ x: 20, y: 160, w: 300, h: 500 }, { x: 960, y: 160, w: 300, h: 500 }];
 const TRACK = { x0: 250, x1: 1010, y: 84 };
 const HEARTS = 3;
+const CAM_GAIN = 1.6;   // 손 위치를 늘려 가장자리 조각도 화면 가운데 쪽에서 닿게(손이 카메라 밖으로 나가 놓치는 것 방지)
 
 const S = { state: 'menu', round: 0, pic: null, slots: [], pieces: [], grabs: new Map(), cursors: new Map(), T: 0, left: 0, hearts: HEARTS, score: 0, combo: 0, lastPlace: 0, doneN: 0, used: { circle: 0, tri: 0, rect: 0 }, bits: [], msg: null, stT: 0, tickT: 0, stepT: 0, sound: true, banner: null, monFly: 0, close: false };
 const timed = () => OPT.speed !== 'off';
@@ -142,6 +143,7 @@ function drag(id, pt){ const g = S.grabs.get(id); if (!g || S.state !== 'play') 
 function trySnap(p, rad){ let best = null, bd = rad; for (const s of S.slots) { if (s.filled || s.sig !== p.sig) continue; const d = Math.hypot(p.x - s.cx, p.y - s.cy); if (d < bd) { bd = d; best = s; } } if (best) { place(p, best); return true; } return false; }
 function release(id){ const g = S.grabs.get(id); if (!g) return; S.grabs.delete(id); const p = g.piece; if (p.state !== 'tray' || S.state !== 'play') return;
   if (trySnap(p, isCam() ? 80 : 54)) return;
+  if (isCam()) { p.hx = Math.max(p.hw + 8, Math.min(W - p.hw - 8, p.x)); p.hy = Math.max(160 + p.hh, Math.min(H - 50 - p.hh, p.y)); }   // 카메라: 놓은 곳에 그대로 — 다시 잡기 쉽게
   const onBoard = p.x > BOARD.x + 20 && p.x < BOARD.x + BOARD.w - 20 && p.y > BOARD.y && p.y < BOARD.y + BOARD.h;
   if (onBoard) { p.wrong++; SND.nope(); const same = S.slots.some(s => !s.filled && s.k === p.k); S.msg = { txt: same ? `크기가 꼭 맞는 ${KNAME[p.k]} 자리를 찾아봐요!` : `${KNAME[p.k]} 자리가 아니에요`, t: 2 }; }
 }
@@ -154,17 +156,27 @@ const pUp = e => { if (isCam()) return; release('p' + e.pointerId); };
 stage.addEventListener('pointerup', pUp); stage.addEventListener('pointercancel', pUp);
 
 // ── 입력: 카메라 손(주먹·집게 = 잡기)
+// 한번 잡으면 **손을 활짝 펼 때까지** 붙어 있다 — 움직이다 주먹이 잠깐 풀려 보이거나 손이 화면에서 사라져도 놓치지 않게.
+//  · 놓기 = 손바닥을 편 모양(open)이 0.3초 이어질 때만. 애매한 모양(other·point)은 계속 잡은 것으로 본다.
+//  · 손이 안 보이면 조각은 그 자리에 떠서 1.5초 기다리고, 가까운 곳에 손이 다시 나타나면 이어서 잡는다.
+//  · 손 번호가 뒤바뀌어도 되게, 손은 가장 가까운 커서에 이어 붙인다.
+let camSeq = 0;
 function readCam(f){
-  const acts = (f.actions && f.actions.hands) || []; const now = performance.now(); const seen = new Set();
-  acts.forEach((a, i) => { const id = 'h' + i; seen.add(id); const src = a.center || a.pointer; if (!src) return;
-    const tx = Math.max(10, Math.min(W - 10, ((src.x / CW - .5) * 1.3 + .5) * W)), ty = Math.max(10, Math.min(H - 10, ((src.y / CH - .5) * 1.3 + .5) * H));
-    let c = S.cursors.get(id); if (!c) { c = { x: tx, y: ty, grab: false, offT: 0 }; S.cursors.set(id, c); }
-    c.x += (tx - c.x) * .55; c.y += (ty - c.y) * .55; c.seen = now;
+  const now = performance.now(); const free = new Set(S.cursors.keys());
+  const hands = ((f.actions && f.actions.hands) || []).map(a => { const src = a.center || a.pointer; if (!src) return null;
+    return { a, id: null, tx: Math.max(10, Math.min(W - 10, ((src.x / CW - .5) * CAM_GAIN + .5) * W)), ty: Math.max(10, Math.min(H - 10, ((src.y / CH - .5) * CAM_GAIN + .5) * H)) }; }).filter(Boolean);
+  // ① 가까운 커서부터 짝짓기 ② 남은 손은 조각을 든 채 사라진 커서를 이어받기(멀어도) ③ 그래도 없으면 새 손
+  const pairs = []; hands.forEach(h => { for (const k of free) { const q = S.cursors.get(k); const d = Math.hypot(q.tx - h.tx, q.ty - h.ty); if (d < 340) pairs.push({ h, k, d }); } });
+  pairs.sort((x, y) => x.d - y.d).forEach(pr => { if (pr.h.id === null && free.has(pr.k)) { pr.h.id = pr.k; free.delete(pr.k); } });
+  hands.forEach(h => { if (h.id !== null) return; let hd = 1e9, pickId = null; for (const k of free) if (S.grabs.has(k)) { const q = S.cursors.get(k); const d = Math.hypot(q.tx - h.tx, q.ty - h.ty); if (d < hd) { hd = d; pickId = k; } }
+    if (pickId !== null) { h.id = pickId; free.delete(pickId); } else { h.id = 'h' + (++camSeq); S.cursors.set(h.id, { x: h.tx, y: h.ty, tx: h.tx, ty: h.ty, grab: false, offT: 0 }); } });
+  hands.forEach(h => { const a = h.a, id = h.id, c = S.cursors.get(id); c.tx = h.tx; c.ty = h.ty; c.x += (h.tx - c.x) * .5; c.y += (h.ty - c.y) * .5; c.seen = now; c.lost = false;
     const g = !!(a.pinched || a.pose === 'fist' || a.pose === 'pinch');
-    if (g) { c.offT = 0; if (!c.grab) { c.grab = true; grab(id, c, 34); } else if (!S.grabs.has(id) && S.state === 'play') grab(id, c, 34); drag(id, c); }
-    else if (c.grab) { if (!c.offT) c.offT = now; drag(id, c); if (now - c.offT > 180) { c.grab = false; c.offT = 0; release(id); } }
+    if (g) { c.offT = 0; c.grab = true; if (!S.grabs.has(id)) grab(id, c, 40); drag(id, c); }
+    else if (S.grabs.has(id)) { drag(id, c); if (a.pose === 'open') { if (!c.offT) c.offT = now; if (now - c.offT > 300) { c.grab = false; c.offT = 0; release(id); } } else c.offT = 0; }
+    else c.grab = false;
   });
-  for (const [id, c] of S.cursors) if (!seen.has(id) && now - c.seen > 350) { release(id); S.cursors.delete(id); }
+  for (const id of free) { const c = S.cursors.get(id); c.lost = true; if (now - c.seen > 1500 || !S.grabs.has(id) && now - c.seen > 350) { release(id); S.cursors.delete(id); } }
 }
 
 // ── 갱신
@@ -261,7 +273,7 @@ function draw(t){
   S.pieces.filter(p => (p.state === 'tray' && !heldSet.has(p)) || p.state === 'eaten').sort((a, b) => b.area - a.area).forEach(p => drawPiece(p, t, false));
   heldSet.forEach(p => drawPiece(p, t, true));
   // 손 커서
-  if (isCam()) { for (const [id, c] of S.cursors) { ctx.beginPath(); ctx.arc(c.x, c.y, c.grab ? 18 : 24, 0, 6.2832); ctx.fillStyle = c.grab ? 'rgba(255,179,0,.9)' : 'rgba(255,255,255,.55)'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = c.grab ? '#fff' : '#ffb300'; ctx.stroke(); ctx.font = '26px sans-serif'; ctx.fillText(c.grab ? '✊' : '🖐', c.x, c.y + 1); }
+  if (isCam()) { for (const [id, c] of S.cursors) { ctx.globalAlpha = c.lost ? .35 : 1; ctx.beginPath(); ctx.arc(c.x, c.y, c.grab ? 18 : 24, 0, 6.2832); ctx.fillStyle = c.grab ? 'rgba(255,179,0,.9)' : 'rgba(255,255,255,.55)'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = c.grab ? '#fff' : '#ffb300'; ctx.stroke(); ctx.font = '26px sans-serif'; ctx.fillText(c.grab ? '✊' : '🖐', c.x, c.y + 1); } ctx.globalAlpha = 1;
     if (!S.cursors.size && S.state === 'play') { ctx.font = '800 22px sans-serif'; ctx.fillStyle = 'rgba(29,42,68,.7)'; ctx.fillText('손을 카메라에 보여 주세요 — 주먹을 쥐면 잡아요', W / 2, H - 46); } }
   for (const b of S.bits) { ctx.globalAlpha = Math.min(1, b.a); ctx.fillStyle = b.c; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 6.2832); ctx.fill(); } ctx.globalAlpha = 1;
   // 알림
