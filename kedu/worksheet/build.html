@@ -214,21 +214,67 @@ const isApply = q => APPLY_KINDS.indexOf(q.source_kind) >= 0;
 let SHOW_APPLY = false;
 const inScopeAll = q => keyOf(q) === scopeKey();
 const inScope = q => inScopeAll(q) && (SHOW_APPLY || !isApply(q));
+/* 2026-11-10 속도: 원장 6만 문항을 첫 화면에서 전부 받던 것을 끊었다 — 범위(학년·학기·과목) 하나만 그때그때 받는다.
+   학년·학기·과목 선택지는 가벼운 개념 표 + 이미 받은 문항에서 만든다. */
+const SCOPE_SRC = () => CONCEPTS.concat(BANK);
+const LOADED = {};
 function scopeFix(){
-  const grades = uniq(BANK.map(q => q.grade));
+  const SRC = SCOPE_SRC();
+  const grades = uniq(SRC.map(q => q.grade));
   if (!grades.length){ SCOPE = SCOPE || { grade: 1, sem: 1, subj: 'math' }; return; }
   SCOPE = SCOPE || {};
   if (!grades.includes(SCOPE.grade)) SCOPE.grade = grades[0];
-  const sems = uniq(BANK.filter(q => q.grade === SCOPE.grade).map(q => q.semester || 1));
+  const sems = uniq(SRC.filter(q => q.grade === SCOPE.grade).map(q => q.semester || 1));
   if (!sems.includes(SCOPE.sem)) SCOPE.sem = sems[0];
-  const subjs = uniq(BANK.filter(q => q.grade === SCOPE.grade && (q.semester || 1) === SCOPE.sem).map(subjOf));
+  const subjs = uniq(SRC.filter(q => q.grade === SCOPE.grade && (q.semester || 1) === SCOPE.sem).map(subjOf));
   if (!subjs.includes(SCOPE.subj)) SCOPE.subj = subjs[0];
+}
+const SUBJ_RAW = j => Object.keys(SUBJ_MAP).filter(k => SUBJ_MAP[k] === j).concat(SUBJ_MAP[j] ? [] : [j]);
+function mergeBank(rows){
+  const have = new Set(BANK.map(q => q.id));
+  (rows || []).forEach(q => { if (!have.has(q.id)){ BANK.push(q); have.add(q.id); } });
+}
+/* 범위 하나 받기 — 1000행씩, 쪽들은 한꺼번에 */
+function ensureScope(k){
+  if (LOADED[k]) return LOADED[k];
+  const [g, m, j] = k.split('_');
+  const base = () => { let q = db.from('question_bank').select(QCOLS, { count: 'exact' }).eq('is_active', true).eq('grade', +g).in('subject', SUBJ_RAW(j));
+    return +m === 1 ? q.or('semester.is.null,semester.eq.1') : q.eq('semester', +m); };
+  LOADED[k] = (async () => {
+    const first = await base().order('id').range(0, STEP - 1);
+    if (first.error){ delete LOADED[k]; throw first.error; }
+    const rows = [...(first.data || [])], n = first.count || rows.length, froms = [];
+    for (let from = STEP; from < n; from += STEP) froms.push(from);
+    const rs = await Promise.all(froms.map(from => base().order('id').range(from, from + STEP - 1)));
+    rs.forEach(r => rows.push(...(r.data || [])));
+    mergeBank(rows); BANK.sort(bankSort);
+    await loadMaps(rows);
+    LOADED[k] = true;
+  })();
+  return LOADED[k];
+}
+/* 범위 밖 문항(지난 쪽지 결과 등)은 id 로 그때 받는다 */
+async function ensureIds(ids){
+  const need = [...new Set((ids || []).filter(Boolean))].filter(id => !BANK.some(q => q.id === id));
+  for (let i = 0; i < need.length; i += 200){
+    const { data } = await db.from('question_bank').select(QCOLS).in('id', need.slice(i, i + 200));
+    mergeBank(data);
+  }
+}
+/* 범위를 아직 안 받았으면 「불러오는 중」 → 받은 뒤 다시 그린다 */
+function needScope(fn){
+  scopeFix(); const k = scopeKey();
+  if (LOADED[k] === true) return false;
+  view.innerHTML = `<div class="gate">${SCOPE.grade}학년 ${SCOPE.sem}학기 ${SUBJ_KO[SCOPE.subj] || SCOPE.subj} 문항 불러오는 중…</div>`;
+  ensureScope(k).then(() => { if (scopeKey() === k) fn(); }).catch(() => { view.innerHTML = `<div class="gate">문항 원장을 읽을 수 없어요.<br>승인된 선생님 계정만 원장을 볼 수 있어요.</div>`; });
+  return true;
 }
 function scopeBar(prefix){
   scopeFix();
-  const grades = uniq(BANK.map(q => q.grade));
-  const sems = uniq(BANK.filter(q => q.grade === SCOPE.grade).map(q => q.semester || 1));
-  const subjs = uniq(BANK.filter(q => q.grade === SCOPE.grade && (q.semester || 1) === SCOPE.sem).map(subjOf));
+  const SRC = SCOPE_SRC();
+  const grades = uniq(SRC.map(q => q.grade));
+  const sems = uniq(SRC.filter(q => q.grade === SCOPE.grade).map(q => q.semester || 1));
+  const subjs = uniq(SRC.filter(q => q.grade === SCOPE.grade && (q.semester || 1) === SCOPE.sem).map(subjOf));
   const opt = (arr, cur, lab) => arr.map(v => `<option value="${esc(v)}"${String(v) === String(cur) ? ' selected' : ''}>${lab(v)}</option>`).join('');
   return `<div class="filters scope">
     <select id="${prefix}Grade">${opt(grades, SCOPE.grade, g => g + '학년')}</select>
@@ -257,6 +303,11 @@ const KINDNAME = {mc:'선택', sa:'단답', ox:'OX', error:'오류찾기', blank
 /* 학생 카드 라벨 — 3종 설계 v2 §2·§3-2. 평가 단어 없이, 종류마다 한 낱말.
    ① 차시 쪽지 = 「오늘 확인 · {이름}」 / ② 단원 평가 = 「단원 정리 · {이름}」. */
 const CARD_LABEL = { quiz: '오늘 확인', unit_test: '단원 정리' };
+const QCOLS = 'id, qcode, grade, semester, subject, unit_code, lesson_code, concept_code, difficulty, qkind, stem, misconception_codes, source_kind, source_set, source, teacher_id';
+const STEP = 1000;
+const bankSort = (a, b) => (a.grade - b.grade) || ((a.semester || 1) - (b.semester || 1)) || String(a.subject).localeCompare(String(b.subject))
+  || String(a.unit_code).localeCompare(String(b.unit_code), undefined, { numeric: true }) || String(a.lesson_code || '').localeCompare(String(b.lesson_code || ''), undefined, { numeric: true })
+  || (a.difficulty - b.difficulty) || String(a.qcode || '').localeCompare(String(b.qcode || ''), undefined, { numeric: true });
 let ME = null, BANK = [], CONCEPTS = [], CONCEPT_BY = {}, CLASSES = [], CART = [], TAB = 'build', TOP = 'quiz';
 // 개념 이름 칩은 「— 」 앞 머리만 보이고, 긴 설명은 마우스를 올리면(title) 보인다 — 칩이 한 줄 넘게 늘어져 화면이 밀리던 것(2026-10-16)
 const shortName = s => String(s || '').split(/\s+[—–-]\s+/)[0];
@@ -275,34 +326,14 @@ function toast(msg){ const t = document.getElementById('toast'); t.textContent =
   if (!t){ view.innerHTML = `<div class="gate">교사 계정이 아니에요.</div>`; return; }
   ME = t;
 
-  // 원장은 1만 문항을 넘는다 — 한 번에 1000행씩 끝까지 읽는다(이전 limit(2000)은 1학년만 보이던 원인).
-  const QCOLS = 'id, qcode, grade, semester, subject, unit_code, lesson_code, concept_code, difficulty, qkind, stem, misconception_codes, source_kind, source_set, source, teacher_id';
-  // 2026-10-16 속도: 1000행씩 차례로(12번 왕복) → 전체 수를 먼저 세고 모든 쪽을 한꺼번에 요청.
-  //   정렬도 서버 7단 정렬 대신 id 하나로 받아 와서 여기서 한 번만 정렬한다(쪽마다 서버가 1만 행을 7단으로 세우던 비용 제거).
-  const STEP = 1000;
-  const bankSort = (a, b) => (a.grade - b.grade) || ((a.semester || 1) - (b.semester || 1)) || String(a.subject).localeCompare(String(b.subject))
-    || String(a.unit_code).localeCompare(String(b.unit_code), undefined, { numeric: true }) || String(a.lesson_code || '').localeCompare(String(b.lesson_code || ''), undefined, { numeric: true })
-    || (a.difficulty - b.difficulty) || String(a.qcode || '').localeCompare(String(b.qcode || ''), undefined, { numeric: true });
-  const page = from => db.from('question_bank').select(QCOLS).eq('is_active', true).order('id').range(from, from + STEP - 1);
-  async function loadBank(){
-    const { count, error: ce } = await db.from('question_bank').select('id', { count: 'exact', head: true }).eq('is_active', true);
-    if (ce) return null;
-    const n = count || 0;
-    const froms = []; for (let from = 0; from < Math.max(n, 1); from += STEP) froms.push(from);
-    const rs = await Promise.all(froms.map(page));
-    if (rs.every(r => r.error)) return null;
-    const out = []; rs.forEach(r => out.push(...(r.data || [])));
-    // 세는 사이 문항이 늘었을 수도 있다 — 마지막 쪽이 꽉 찼으면 뒤를 이어 읽는다.
-    let from = froms.length * STEP; const last = rs[rs.length - 1];
-    if (last.data && last.data.length === STEP){ for (; from < 60000; from += STEP){ const { data } = await page(from); out.push(...(data || [])); if (!data || data.length < STEP) break; } }
-    return out.sort(bankSort);
-  }
-  const [qs, { data: cs }, { data: cc }, mr] = await Promise.all([
-    loadBank(),
+  // 2026-11-10 속도: 원장 전체(6만 문항)를 받지 않는다 — 처음엔 내 문항·개념·학급만, 문항은 고른 범위만 그때 받는다.
+  const [mine, { data: cs }, { data: cc }, mr] = await Promise.all([
+    db.from('question_bank').select(QCOLS).eq('is_active', true).eq('teacher_id', t.id),
     db.from('concepts').select('code, name, lesson_no, unit_code, grade, subject, semester').eq('is_active', true).order('ord'),
     db.from('class_codes').select('id, code, is_active').eq('teacher_id', t.id).eq('is_active', true),
     Promise.resolve(db.from('misconceptions').select('code, title').eq('is_active', true).order('code')).catch(() => ({ data: [] }))
   ]);
+  const qs = mine.error ? null : (mine.data || []);
 
   // 원장이 비어 있으면 승인 대기이거나 시드 미적용 — 둘을 구분해서 말해 준다.
   if (!qs){ view.innerHTML = `<div class="gate">문항 원장을 읽을 수 없어요.<br>승인된 선생님 계정만 원장을 볼 수 있어요.</div>`; return; }
@@ -311,8 +342,6 @@ function toast(msg){ const t = document.getElementById('toast'); t.textContent =
   CONCEPT_BY = {}; CONCEPTS.forEach(c => { CONCEPT_BY[c.code] = c; });
   MIS_LIST = (mr && mr.data) || [];
   render();
-  // 단원·차시 이름표는 뒤에 오면 그때 다시 그린다 — 지도를 못 읽어도 화면은 선다(N단원·N차시로만 표시).
-  loadMaps(BANK).then(() => { if (TAB === 'build' && (TOP === 'quiz' || TOP === 'unit')) render(); });
 })();
 
 document.querySelectorAll('#subTabs button').forEach(b => b.onclick = () => {
@@ -351,6 +380,7 @@ function f(id){ const el = document.getElementById(id); return el ? el.value : '
 const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
 
 function renderBuild(){
+  if (needScope(renderBuild)) return;
   const bar = scopeBar('f');
   const pool = BANK.filter(inScope), units = uniq(pool.map(q => q.unit_code)), kinds = uniq(pool.map(q => q.qkind));
   const CS = scopedConcepts();
@@ -582,6 +612,7 @@ function equivForms(unit){
 function formLabel(ss){ const m = String(ss).match(/review_([a-z])$/i); return m ? m[1].toUpperCase() + '형' : ss; }
 
 function renderUnit(){
+  if (needScope(renderUnit)) return;
   const bar = scopeBar('u');
   const units = uniq(BANK.filter(inScope).map(q => q.unit_code));
   view.innerHTML = `<div class="cols">
@@ -1122,6 +1153,7 @@ async function showUnitResult(setId, box, set){
   ]);
   if (mxErr){ box.innerHTML = `<p class="hint">결과 표를 읽을 수 없어요 — SQL v3(setup_worksheet_v3.sql)가 적용됐는지 확인해 주세요.</p>`; return; }
   const students = sps || [], its = items || [], rows = mx || [];
+  await ensureIds(its.map(i => i.question_id));
   const qOf = id => BANK.find(q => q.id === id) || {};
   const cell = {}; rows.forEach(r => cell[r.student_id + '|' + r.question_bank_id] = r);
   const totalPts = its.reduce((a, i) => a + (i.points || 1), 0) || 1;
@@ -1185,7 +1217,8 @@ async function showUnitResult(setId, box, set){
   /* 보완 쪽지 — 같은 개념 5문항(기본 배합) 쪽지를 미도달 학생에게만 열기(§8-④). 학급이 여럿이면 각 학급에 연다. */
   box.querySelectorAll('[data-remed]').forEach(b => b.onclick = async () => {
     const c = b.dataset.remed, w = weak.find(x => x.c === c); if (!w || !w.miss.length) return;
-    const pool = BANK.filter(q => q.concept_code === c && q.difficulty <= 2).slice(0, 5);
+    let pool = BANK.filter(q => q.concept_code === c && q.difficulty <= 2).slice(0, 5);
+    if (pool.length < 5){ const { data } = await db.from('question_bank').select(QCOLS).eq('is_active', true).eq('concept_code', c).lte('difficulty', 2).limit(20); mergeBank(data); pool = BANK.filter(q => q.concept_code === c && q.difficulty <= 2).slice(0, 5); }
     if (pool.length < 3) return toast('그 개념의 기본 문항이 부족해요.');
     const { data: ns, error } = await db.from('quiz_sets').insert({
       teacher_id: ME.id, title: withScope('한 번 더 · ' + cname(c), pool[0]), kind: 'quiz', subject: pool[0].subject, grade: pool[0].grade, unit_code: pool[0].unit_code,
@@ -1241,6 +1274,7 @@ async function showResult(setId, set){
     box.innerHTML = `<p class="hint">아직 푼 학생이 없어요.</p>`;
     return;
   }
+  await ensureIds((items || []).map(it => it.question_bank_id));
   const qname = id => { const q = BANK.find(x => x.id === id); return q ? q.stem.slice(0, 40) : '(문항)'; };
   box.innerHTML = `
     ${mis && mis.length ? `<table><tr><th>막힌 곳</th><th>학생</th><th>횟수</th><th>이렇게 도와주세요</th></tr>
