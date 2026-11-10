@@ -1,0 +1,79 @@
+/* ============================================================
+ * 영어 놀이터 — 놀이 #27 「특별 손님」 (게임설계 v1 §4-27 · §9) — 예전 가게 주인 Sam 3턴(보스)을 이어받음
+ *   처음 보는 손님(Amy)이 새 순서·새 배치로 같은 재료를 묻는다 → 아이가 「I like ___.」 로 답한다.
+ *   모델을 먼저 들려주지 않는다(힌트 0). 힌트 없이 말로 답하면 independent, 도움(모델·고르기)을 받으면 assisted.
+ *   시험이 아니라 대화 — 아이가 고른 것이 답이고, 손님은 무엇을 골라도 반가워한다. 못 알아들어도 손님은 기다린다.
+ *   공통 인터페이스: start(ctx) → Promise({ completed, passed:true, by:'speech'|'chosen' }) · ctx.zone.boss.turns 사용
+ * ============================================================ */
+(function (g) {
+  'use strict';
+  var CONF = {
+    guest: 'amy',       /* 특별 손님 */
+    stepIn: 520,        /* 손님이 앞으로 오는 시간(ms) */
+    replyGap: 400,      /* 손님 대답 뒤 다음 질문까지 */
+    show: 3             /* 열린 질문(What do you like?)에서 보여 줄 그림 수 */
+  };
+  var REPLY = [['Yum! Good choice.', '냠! 잘 골랐어.'], ['Me too!', '나도!'], ['Great! Thank you!', '고마워!']];
+  function h(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+  function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  /* 새 순서·새 배치 — 둘 중 고르는 질문들은 섞고, 열린 질문은 맨 뒤 */
+  function plan(turns) {
+    var closed = turns.filter(function (t) { return t.pick.length <= 2; }), open = turns.filter(function (t) { return t.pick.length > 2; });
+    return shuffle(closed).concat(open).map(function (t) { return { ask: t.ask, ko: t.ko, pick: t.pick.length > 2 ? shuffle(t.pick).slice(0, CONF.show) : shuffle(t.pick) }; });
+  }
+
+  function start(ctx) {
+    var S = ctx.services || {}, Z = ctx.zone || {}, E = g.PlayEvidence, G = g.PlayGame, npc = S.npc || g.PlayNpc, scene = S.scene || g.PlayScene, tts = S.tts;
+    var audio = S.audio || { play: function () {} };
+    var turns = plan((Z.boss && Z.boss.turns) || []), sent = Z.sentence || function (w) { return 'I like ' + w + '.'; };
+    var pic = {}; (ctx.pool || ctx.targets || []).forEach(function (x) { pic[x.w] = x.pic; });
+    var who = (ctx.opt && ctx.opt.guest) || CONF.guest;
+    var host = ctx.host; host.innerHTML = '';
+    var root = h('div', 'oq sg'); host.appendChild(root);
+    var q = scene.queue(root, { guests: [who], npc: npc });
+    var ask = h('div', 'sg-ask'), frame = h('div', 'say', sent('___')), act = h('div', 'oq-act'), dots = h('div', 'dots');
+    root.appendChild(ask); root.appendChild(frame); root.appendChild(act); root.appendChild(dots);
+    var i = 0, bys = [];
+    function alive() { return root.parentNode === host && root.isConnected !== false && !(ctx.signal && ctx.signal.aborted); }
+    function later(ms, fn) { setTimeout(function () { if (alive()) fn(); }, ms); }
+    function speak(en) { return G.soon(tts ? tts.sentence(en) : null); }
+
+    return new Promise(function (resolve) {
+      function turn() {
+        dots.innerHTML = turns.map(function (_, k) { return '<i class="' + (k < i ? 'ok' : k === i ? 'on' : '') + '"></i>'; }).join('');
+        if (i >= turns.length) return resolve({ completed: true, passed: true, by: bys.indexOf('speech') >= 0 ? 'speech' : 'chosen' });
+        var t = turns[i];
+        npc.react(q.G[who], 'wait'); act.innerHTML = '';
+        frame.textContent = sent('___'); frame.classList.remove('done');
+        q.say(t.pick.map(function (w) { return pic[w]; }).join(' '), false); q.bub.classList.add('multi');
+        ask.innerHTML = '<b>' + t.ask + '</b><small>' + t.ko + '</small>';
+        speak(t.ask).then(function () {
+          if (!alive()) return;
+          /* 아이가 고른 것이 답 — 보여 준 것 중 무엇이든 「I like X.」 */
+          return g.PlayTutor.ask(ctx, { host: act, cands: t.pick, kind: 'sentence', sentence: sent, hint0: true });
+        }).then(function (r) {
+          if (!r || !alive()) return;
+          bys.push(r.by);
+          frame.textContent = sent(r.word); frame.classList.add('done');
+          ctx.emit(E.say(r.word, r));
+          ctx.good(r.by === 'speech' && !r.hinted, { at: q.G[who] });
+          npc.react(q.G[who], 'ok', { stay: true });
+          var rep = REPLY[i % REPLY.length];
+          ask.innerHTML = '<b>' + rep[0] + '</b><small>' + rep[1] + '</small>';
+          speak(rep[0]).then(function () { i++; later(CONF.replyGap, turn); });
+        });
+      }
+      audio.play('enter'); q.place(who, 'front');
+      G.soon(ctx.intro, null).then(function () { later(CONF.stepIn, turn); });
+    });
+  }
+
+  g.PlaySpecialGuest = { CONF: CONF, plan: plan, start: start };
+  if (g.PlayGame) g.PlayGame.register({
+    id: 'special-guest', no: 27, name: '특별 손님', icon: '👑', channels: ['say', 'talk'], axis: 'quest', need: {}, last: true,
+    count: function (c) { return ((c.zone && c.zone.boss && c.zone.boss.turns) || []).length; },
+    intro: { en: 'Oh! A friend!', ko: '처음 보는 손님이야 — 물어보면 대답해 줘!' },
+    start: start
+  });
+})(window);

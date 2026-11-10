@@ -86,12 +86,14 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="peekcard" id="peek"><div class="who" id="peekWho"></div><div><b id="peekT"></b><span id="peekS"></span></div></div>
 
 <script src="../v3/data/ladder.js"></script>
 <script src="../v3/engine/k-progress.js"></script>
 <script src="data/zones.js"></script>
 <script src="engine/play-seed.js"></script>
 <script src="engine/play-char.js"></script>
+<script src="core/npc.js"></script>
 <script>
 (function(){
   var Z = PLAY_ZONES, $ = function(id){ return document.getElementById(id); };
@@ -129,12 +131,30 @@
     d.onclick = function(){ location.href = z.page; };
     g.appendChild(d);
   });
-  var fogNames = ['?', '?', '?', '?', '?', '?', '?', '?'];
-  fogNames.forEach(function(n, i){
-    var d = document.createElement('div'); d.className = 'zone fog';
-    d.innerHTML = '<div class="e">🏠</div><div class="nm">안개</div><div class="fogtx">' + (i === 0 && cleared ? '🌤️' : '☁️') + '</div>';
+  /* 안개 — 앞 구역의 특별 손님을 넘으면 다음 무대가 보이고 구경할 수 있다(결정 §0-2). 놀이 입장은 그 구역 단어 ¾ 이 꽃일 때 */
+  var peeks = (Z.peek || []).filter(function(p){ return PlaySeed.bossDone(p.after); });
+  function showPeek(p){
+    var az = Z.zone(p.after), ready = az && PlaySeed.canClear(az.id, az.words.map(function(w){ return w.w; }));
+    PlayNpc.render($('peekWho'), p.host || 'mina', { face: 'smile', pose: 'ok' });
+    $('peekT').textContent = p.emoji + ' ' + p.name;
+    $('peekS').textContent = ready ? (p.page ? '어서 와! 들어와서 같이 놀자.' : '곧 문을 열어요. 조금만 기다려 줘!') : '오늘은 구경만! 씨앗이 꽃이 되면 들어올 수 있어 — 내일 또 와.';
+    $('peek').classList.add('show'); clearTimeout(showPeek._t);
+    if (ready && p.page) showPeek._t = setTimeout(function(){ location.href = p.page; }, 1200);
+    else showPeek._t = setTimeout(function(){ $('peek').classList.remove('show'); }, 3200);
+  }
+  for (var fi = 0; fi < 8; fi++) (function(i){
+    var d = document.createElement('div'), p = peeks[i];
+    if (p) {
+      var az = Z.zone(p.after), ready = az && PlaySeed.canClear(az.id, az.words.map(function(w){ return w.w; }));
+      d.className = 'zone peek'; d.setAttribute('data-peek', p.id);
+      d.innerHTML = '<div class="e">' + p.emoji + '</div><div class="nm">' + p.name + '</div><span class="flag">' + (ready ? '🚩' : '🌤️') + '</span>';
+      d.onclick = function(){ showPeek(p); };
+    } else {
+      d.className = 'zone fog';
+      d.innerHTML = '<div class="e">🏠</div><div class="nm">안개</div><div class="fogtx">☁️</div>';
+    }
     g.appendChild(d);
-  });
+  })(fi);
 
   /* 내 가게 진열 */
   var z0 = Z.zones[0], sh = $('shelf');

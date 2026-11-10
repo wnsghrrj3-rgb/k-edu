@@ -44,11 +44,24 @@ window.PLAY_ZONES = {
           { ask: 'Ham or jam?',    ko: '햄? 잼?',          pick: ['ham', 'jam'] },
           { ask: 'What do you like?', ko: '뭐가 좋아?',     pick: ['fish', 'chips', 'ham', 'jam', 'lunch'] }
         ] },
+      /* 엉뚱한 주문(놀이 #2) — 꾸미는 말은 사다리에 나온 것만: big·small = Lv1 수·꾸밈말 칸, red·blue = Lv1 색 칸.
+         attr = 손님이 말하는 것, vs = 견줄 것. nouns = 이 구역 재료 중 그 말이 어울리는 것 */
+      silly: [
+        { kind: 'size',  attr: 'big',   vs: 'small', nouns: ['fish', 'ham', 'chips', 'lunch'] },
+        { kind: 'size',  attr: 'small', vs: 'big',   nouns: ['fish', 'ham', 'dish'] },
+        { kind: 'color', attr: 'red',   vs: 'blue',  nouns: ['jam', 'fish', 'dish'] },
+        { kind: 'color', attr: 'blue',  vs: 'red',   nouns: ['dish', 'fish', 'jam'] }
+      ],
       /* 내 공간 — 음식 구역은 「가게 진열」. 열매가 된 단어가 진열대에 색깔로 올라간다 */
       space: { kind: 'shelf', label: '내 가게' },
       /* 캐릭터 파츠 1종 — 구역 첫 열매에 앞치마 */
       part: { id: 'apron', name: '앞치마', when: 'firstFruit' }
     }
+  ],
+  /* 다음 무대 — after 구역의 특별 손님을 넘으면 안개가 걷혀 구경할 수 있고(결정 §0-2), 그 구역 단어 ¾ 이 꽃이면 들어갈 수 있다.
+     page 가 없으면 아직 짓는 중 */
+  peek: [
+    { id: 'classroom', name: '교실', emoji: '🏫', after: 'lv2-02', host: 'mina', page: '' }
   ],
   zone: function (id) { for (var i = 0; i < this.zones.length; i++) if (this.zones[i].id === id) return this.zones[i]; return null; }
 };

@@ -4,8 +4,8 @@
  *   판마다 조금 빨라지고, 놓치거나 다른 걸 누르면 조금 느려진다. 놓친 것은 곧 다시 올라온다.
  *   실패로 끝나는 길이 없다 — 숫자 시계·점수·목숨 없음. 긴장은 톡톡 올라오는 흐름으로만.
  *
- *   PlayPop.start({ host, words:[{w,pic}], targets:[w…], services:{tts,audio}, sam:{say,react}, intro:Promise, onRound(r) })
- *     → Promise({ completed:true, results:[{word, clean}] })      clean = 다른 것을 한 번도 안 누르고 맞힘
+ *   공통 인터페이스(core/game.js): start(ctx) → Promise({ completed, results:[{word, clean}] })   clean = 다른 것을 한 번도 안 누르고 맞힘
+ *     증거 = 듣기(listen) · touch · clean 이면 independent, 아니면 assisted
  *   PlayPop.machine(targets, pool) — 화면 없는 흐름(빠르기·무엇이 올라올지). 검사는 여기를 직접 본다.
  * ============================================================ */
 (function (g) {
@@ -73,29 +73,29 @@
   function h(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
 
   function start(opt) {
-    var S = opt.services || {}, tts = S.tts, audio = S.audio || { play: function () {} };
-    var sam = opt.sam || { say: function () { return Promise.resolve(); }, react: function () {} };
-    var pic = {}, W = opt.words.map(function (x) { pic[x.w] = x.pic; return x.w; });
-    var targets = opt.targets || shuffle(W).slice(0, CONF.rounds);
+    var S = opt.services || {}, tts = S.tts, audio = S.audio || { play: function () {} }, scene = S.scene || g.PlayScene, E = g.PlayEvidence;
+    var sam = S.sam || opt.sam || { say: function () { return Promise.resolve(); }, react: function () {} };
+    var poolItems = opt.pool || opt.words || opt.targets || [];
+    var pic = {}, W = poolItems.map(function (x) { pic[x.w] = x.pic; return x.w; });
+    var targets = (opt.targets || shuffle(W).slice(0, CONF.rounds)).map(function (x) { return typeof x === 'string' ? x : x.w; });
     var m = machine(targets, W, { rng: opt.rng });
     var host = opt.host;
+    function good(clean) { if (opt.good) opt.good(clean); else { audio.play('ok'); sam.react('ok'); } }
+    function oops() { if (opt.oops) opt.oops(); else { audio.play('soft'); sam.react('no'); } }
 
     host.innerHTML = '';
-    var root = h('div', 'pp'), dots = h('div', 'dots'), board = h('div', 'pp-board'), holes = [];
-    for (var k = 0; k < CONF.holes; k++) (function (k) {
-      var el = h('button', 'pp-hole', '<span class="pp-food"></span>'); el.type = 'button';
-      var hl = { i: k, el: el, food: el.firstChild, up: false, w: null, t: null };
-      el.onclick = function () { tap(hl); };
-      board.appendChild(el); holes.push(hl);
-    })(k);
+    var root = h('div', 'pp'), dots = h('div', 'dots');
+    root.appendChild(dots);
+    var board = scene.holes(root, CONF.holes), holes = board.list;
+    holes.forEach(function (hl) { hl.el.onclick = function () { tap(hl); }; });
     var rep = h('button', 'btn w pp-rep', '🔊'); rep.type = 'button';
     rep.onclick = function () { var t = m.target(); if (t) say(t); };
-    root.appendChild(dots); root.appendChild(board); root.appendChild(rep); host.appendChild(root);
+    root.appendChild(rep); host.appendChild(root);
 
     var loopT = null, lock = true, done;
     var finished = new Promise(function (r) { done = r; });
 
-    function alive() { return root.parentNode === host && (root.isConnected !== false); }
+    function alive() { return root.parentNode === host && (root.isConnected !== false) && !(opt.signal && opt.signal.aborted); }
     function later(ms, fn) { return setTimeout(function () { if (alive()) fn(); }, ms); }
     function say(w) {
       var p = tts ? tts.word(w) : Promise.resolve();
@@ -115,18 +115,15 @@
       if (free.length) {
         var p = m.nextPop(free.map(function (o) { return o.i; }), holes.filter(function (o) { return o.up; }).map(function (o) { return o.w; }));
         var hl = holes[p.hole];
-        hl.up = true; hl.w = p.word; hl.food.textContent = pic[p.word];
-        hl.el.setAttribute('data-w', p.word); hl.el.classList.add('up');
+        board.raise(hl, pic[p.word], p.word);
         audio.play('pop');
         hl.t = later(m.up(), function () { sink(hl, true); });
       }
       loopT = later(Math.round(m.up() * CONF.overlap), popOne);
     }
     function sink(hl, untouched) {
-      clearTimeout(hl.t);
       var was = hl.up, w = hl.w;
-      hl.up = false; hl.w = null;
-      hl.el.classList.remove('up'); hl.el.classList.remove('hit'); hl.el.classList.remove('no'); hl.el.removeAttribute('data-w');
+      board.sink(hl);
       if (was && untouched && !lock && m.sunk(w).type === 'again') say(m.target());   /* 놓쳤다 — 다시 들려주고, 곧 다시 올라온다 */
     }
     function tap(hl) {
@@ -135,14 +132,15 @@
       if (e.type === 'ok') {
         lock = true; clearTimeout(loopT); clearTimeout(hl.t);
         hl.up = false; hl.el.classList.add('hit');
-        audio.play('ok'); sam.react('ok');
+        good(e.clean);
         holes.forEach(function (o) { if (o !== hl) sink(o, false); });
+        if (opt.emit && E) opt.emit(E.act(e.word, 'listen', 'touch', e.clean));
         if (opt.onRound) { try { opt.onRound({ word: e.word, clean: e.clean }); } catch (err) {} }
         later(CONF.nextRound, function () { sink(hl, false); round(); });
       } else if (e.type === 'no') {
         clearTimeout(hl.t); hl.up = false;
         hl.el.classList.add('no');
-        audio.play('soft'); sam.react('no');
+        oops();
         later(350, function () { sink(hl, false); });
         say(m.target());
       }
@@ -154,4 +152,10 @@
   }
 
   g.PlayPop = { CONF: CONF, machine: machine, start: start };
+  if (g.PlayGame) g.PlayGame.register({
+    id: 'pop', no: 17, name: '톡톡 듣기', icon: '👂', channels: ['ear'], axis: 'flow', need: { lv1: 5 },
+    count: function (c) { return Math.min(CONF.rounds, (c.targets || []).length || CONF.rounds); },
+    intro: { en: 'Quick! Which one?', ko: '톡톡 — 들린 것을 눌러!' },
+    start: start
+  });
 })(window);

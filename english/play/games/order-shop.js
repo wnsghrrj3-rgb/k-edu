@@ -4,12 +4,10 @@
  *   → 쟁반이 손님에게 가고 손님이 웃으며 나간다 → 뒤 손님이 앞으로.
  *   깔끔하게 3·5·8번 이어지면 손님들이 손뼉 — 불꽃·환호가 1·2·3단으로 커진다(화면에 숫자 없음, 단계는 core/fx.js).
  *   못 알아들었을 때: 손님이 갸웃하고 그대로 기다린다 — 1번째 모델 다시 · 2번째 느리게 · 3번째 Sam 이 「이거?」 하며 그림 둘.
- *   골라서 끝내도 주문은 끝난다(결정 §0-1) — 씨앗을 심을지는 by('speech'|'chosen')를 보고 무대 쪽이 정한다.
+ *   골라서 끝내도 주문은 끝난다(결정 §0-1) — 증거에는 assisted 로 남고, 씨앗은 말로 받은 주문에만(PlayGame.run 이 정한다).
  *   마이크가 없는 판은 말풍선 그림을 가리고(🔊) 듣고 고른다.
  *
- *   PlayOrder.start({ host, words:[{w,pic}], confuse:[[a,b]], services:{tts,speech,audio,npc,fx},
- *                     sam:{say(en,ko),react(kind)}, mic:{ok(),off(),primed(),prime()}, intro:Promise, onServe(r) })
- *     → Promise({ completed:true, results:[{word, by, tries, guest}] })
+ *   공통 인터페이스(core/game.js): start(ctx) → Promise({ completed, results:[{word, by, tries, guest}] }) · 증거는 ctx.emit 으로
  *   PlayOrder.machine(words) — 화면 없는 흐름(줄·시도·연속). 검사는 여기를 직접 본다.
  * ============================================================ */
 (function (g) {
@@ -19,7 +17,7 @@
     guests: ['mina', 'ben'],   /* 줄 서는 손님(번갈아) */
     maxTries: 3,               /* 이만큼 못 알아들으면 그림 둘 내밀기 */
     slowRate: 0.45,            /* 두 번째부터 모델을 느리게(말 빠르기) */
-    stepIn: 520,               /* 손님이 앞으로 오는 시간(ms) */
+    stepIn: 520,               /* 손님이 앞으로 오는 시간(ms) ← 「손님 줄 속도」 */
     serve: 650,                /* 쟁반이 손님에게 가는 시간 */
     clap: 900,                 /* 손뼉 연출 길이 */
     leave: 560,                /* 손님이 나가는 시간 */
@@ -91,61 +89,54 @@
   function canSound() { var ua = g.navigator && g.navigator.userActivation; return !ua || ua.hasBeenActive; }
 
   function start(opt) {
-    var S = opt.services || {}, tts = S.tts, speech = S.speech, npc = S.npc || g.PlayNpc, fx = S.fx || g.PlayFx;
+    var S = opt.services || {}, tts = S.tts, speech = S.speech, npc = S.npc || g.PlayNpc, fx = S.fx || g.PlayFx, scene = S.scene || g.PlayScene, E = g.PlayEvidence;
     var audio = S.audio || { play: function () {} };
-    var sam = opt.sam || { say: function () { return Promise.resolve(); }, react: function () {} };
+    var sam = S.sam || opt.sam || { say: function () { return Promise.resolve(); }, react: function () {} };
     var micOn = !!(speech && speech.available && speech.available()), primed = false;
-    var mic = opt.mic || { ok: function () { return micOn; }, off: function () { micOn = false; }, primed: function () { return primed; }, prime: function () { primed = true; } };
-    var pic = {}, W = opt.words.map(function (x) { pic[x.w] = x.pic; return x.w; });
-    var confuse = opt.confuse || [];
+    var mic = (opt.learner && opt.learner.mic) || opt.mic || { ok: function () { return micOn; }, off: function () { micOn = false; }, primed: function () { return primed; }, prime: function () { primed = true; } };
+    var items = opt.targets || opt.words || [], poolItems = opt.pool || opt.words || items;
+    var pic = {}, W = items.map(function (x) { return x.w; }), ALL = poolItems.map(function (x) { pic[x.w] = x.pic; return x.w; });
+    items.forEach(function (x) { pic[x.w] = x.pic; });
+    var confuse = opt.confuse || (opt.zone && opt.zone.confuse) || [];
     var m = machine(W, { guests: CONF.guests });
-    var host = opt.host, POS = ['pre', 'back', 'front', 'out'];
+    var host = opt.host;
 
     host.innerHTML = '';
-    var root = h('div', 'oq'), line = h('div', 'oq-line'), act = h('div', 'oq-act'), dots = h('div', 'dots');
-    var G = {};
-    CONF.guests.forEach(function (who) { var e = h('div', 'oq-g pre'); npc.render(e, who, { face: 'idle' }); line.appendChild(e); G[who] = e; });
-    var bub = h('button', 'oq-bub'); bub.type = 'button'; line.appendChild(bub);
-    var tray = h('div', 'oq-tray'); line.appendChild(tray);
-    line.appendChild(h('div', 'oq-clap c1', '👏')); line.appendChild(h('div', 'oq-clap c2', '👏'));
-    root.appendChild(line); root.appendChild(act); root.appendChild(dots); host.appendChild(root);
+    var root = h('div', 'oq'); host.appendChild(root);
+    var q = scene.queue(root, { guests: CONF.guests, npc: npc });
+    var line = q.el, G = q.G, bub = q.bub;
+    var act = h('div', 'oq-act'), dots = h('div', 'dots');
+    root.appendChild(act); root.appendChild(dots);
 
-    var listening = false, unheard = false, micEl = null, heardEl = null, offerBox = null, done;
+    var listening = false, unheard = false, micAtEnter = true, micEl = null, heardEl = null, offerBox = null, done;
     var finished = new Promise(function (r) { done = r; });
 
-    function alive() { return root.parentNode === host && (root.isConnected !== false); }
+    function alive() { return root.parentNode === host && (root.isConnected !== false) && !(opt.signal && opt.signal.aborted); }
     function later(ms, fn) { return setTimeout(function () { if (alive()) fn(); }, ms); }
     function say(w, rate) {
       var p = tts ? tts.word(w, rate ? { rate: rate } : undefined) : Promise.resolve();
       return Promise.race([p, new Promise(function (r) { setTimeout(r, canSound() ? CONF.sayMax : CONF.mutedWait); })]);
     }
-    function place(el, pos) {
-      if (el.classList.contains(pos)) return;
-      /* 나갔던 손님이 다시 줄 설 때는 왼쪽 밖에서부터 들어온다 */
-      if (pos === 'back' && el.classList.contains('out')) { POS.forEach(function (c) { el.classList.remove(c); }); el.classList.add('pre'); void el.offsetWidth; }
-      POS.forEach(function (c) { el.classList.remove(c); }); el.classList.add(pos);
-    }
     function drawDots() { var i = m.index(); dots.innerHTML = W.map(function (_, k) { return '<i class="' + (k < i ? 'ok' : k === i ? 'on' : '') + '"></i>'; }).join(''); }
-    function showPic(w, hide) { bub.innerHTML = '<span>' + (hide ? '🔊' : pic[w]) + '</span>'; bub.classList.toggle('ear', !!hide); }
+    function showPic(w, hide) { q.say(hide ? '🔊' : pic[w], !!hide); }
     /* 헷갈리는 짝(dish↔fish 등)은 내밀지 않는다 — 도와주는 자리라 쉽게 */
     function altFor(w) {
       var bad = {}; confuse.forEach(function (p) { if (p[0] === w) bad[p[1]] = 1; if (p[1] === w) bad[p[0]] = 1; });
-      var pool = W.filter(function (x) { return x !== w && !bad[x]; });
-      if (!pool.length) pool = W.filter(function (x) { return x !== w; });
+      var pool = ALL.filter(function (x) { return x !== w && !bad[x]; });
+      if (!pool.length) pool = ALL.filter(function (x) { return x !== w; });
       return shuffle(pool)[0];
     }
 
     function enter(e) {
-      var who = e.guest, w = e.word, back = m.waiting();
+      var who = e.guest, w = e.word;
       listening = false; micEl = heardEl = offerBox = null;
-      CONF.guests.forEach(function (x) { if (x !== who) { if (back === x) { place(G[x], 'back'); npc.react(G[x], 'wait'); } else place(G[x], 'pre'); } });
-      place(G[who], 'front'); npc.react(G[who], 'wait');
-      bub.classList.remove('show'); bub.setAttribute('data-w', w);
+      q.step(who, m.waiting());
+      q.hush(); bub.setAttribute('data-w', w);
       act.innerHTML = ''; drawDots();
       audio.play('enter');
       later(CONF.stepIn, function () {
-        var hide = !mic.ok();
-        showPic(w, hide); bub.classList.add('show');
+        micAtEnter = mic.ok();
+        showPic(w, !micAtEnter);
         unheard = !canSound();
         say(w).then(function () { if (!alive() || m.word() !== w) return; if (mic.ok()) askSpeak(); else offer(true); });
       });
@@ -173,11 +164,11 @@
       if (listening || m.phase() !== 'order' || !alive() || !micEl) return;
       var w = m.word();
       listening = true; micEl.classList.add('on'); heardEl.textContent = '듣고 있어요…';
-      speech.tryOnce(w, { kind: 'word', others: W.filter(function (x) { return x !== w; }), timeout: CONF.listenMs }).then(function (r) {
+      speech.tryOnce(w, { kind: 'word', others: ALL.filter(function (x) { return x !== w; }), timeout: CONF.listenMs }).then(function (r) {
         listening = false;
         if (!alive() || m.word() !== w || m.phase() !== 'order') return;
         micEl.classList.remove('on');
-        if (r.error === 'unavailable' || r.error === 'not-allowed' || r.error === 'service-not-allowed') { mic.off(); return offer(true); }
+        if (r.error === 'unavailable' || r.error === 'not-allowed' || r.error === 'service-not-allowed') { mic.off(); micAtEnter = false; return offer(true); }
         if (r.error === 'network' || r.error === 'audio-capture' || r.error === 'start') return offer(false);   /* 이번 주문만 골라서 */
         mic.prime();
         var e = m.heard(!!r.ok);
@@ -224,28 +215,25 @@
       showPic(w, false);
       if (micEl) { micEl.classList.add('off'); micEl.onclick = null; }
       if (heardEl) heardEl.textContent = '';
-      var lw = line.offsetWidth || 0;
-      tray.textContent = pic[w];
-      tray.style.setProperty('--tx', (lw ? Math.round(150 - lw / 2) : -70) + 'px');
-      tray.classList.remove('go'); void tray.offsetWidth; tray.classList.add('go');
-      if (opt.onServe) { try { opt.onServe({ word: w, by: e.by, tries: m.tries(), guest: who }); } catch (err) {} }
+      q.serve(pic[w]);
+      var r = { word: w, by: e.by, tries: m.tries(), guest: who };
+      if (opt.emit && E) opt.emit(E.say(w, { by: e.by, tries: r.tries, mic: micAtEnter }));
+      if (opt.onServe) { try { opt.onServe(r); } catch (err) {} }
       var hold = CONF.serve;
       if (e.combo) { later(fx ? fx.CONF.comboDelay : 180, function () { clap(e.level); }); hold += CONF.clap; }
       later(hold, function () {
-        bub.classList.remove('show'); place(el, 'out');
+        q.hush(); q.place(who, 'out');
         later(CONF.leave, advance);
       });
     }
     /* 손뼉 — 단계(1·2·3)가 오를수록 소리·불꽃·환호가 커진다 */
     function clap(level) {
       level = level || 1;
-      line.classList.remove('clap'); void line.offsetWidth; line.classList.add('clap');
-      line.setAttribute('data-combo', String(level));
+      q.clap(level, CONF.clap);
       audio.play(level >= 3 ? 'combo3' : level === 2 ? 'combo2' : 'combo');
       if (fx && fx.burst) fx.burst(level, line);
       sam.react(level >= 2 ? 'cheer' : 'ok');
       CONF.guests.forEach(function (x) { npc.react(G[x], level >= 2 ? 'cheer' : 'ok', { stay: true }); });
-      later(CONF.clap, function () { line.classList.remove('clap'); });
     }
     function advance() {
       var e = m.next();
@@ -256,11 +244,17 @@
     /* 손님은 먼저 줄 서 있고, Sam 의 첫 마디가 끝나면 첫 손님이 주문한다 */
     var first = m.next();
     if (first.type !== 'enter') { done({ completed: true, results: [] }); return finished; }
-    place(G[first.guest], 'front'); var b0 = m.waiting(); if (b0) place(G[b0], 'back');
+    q.place(first.guest, 'front'); var b0 = m.waiting(); if (b0) q.place(b0, 'back');
     drawDots();
     Promise.race([opt.intro || Promise.resolve(), new Promise(function (r) { setTimeout(r, canSound() ? CONF.sayMax : CONF.mutedWait); })]).then(function () { if (alive()) enter(first); });
     return finished;
   }
 
   g.PlayOrder = { CONF: CONF, machine: machine, start: start };
+  if (g.PlayGame) g.PlayGame.register({
+    id: 'order-shop', no: 1, name: '주문 받기', icon: '🛎️', channels: ['say'], axis: 'talk', need: { lv1: 5 },
+    count: function (c) { return (c.targets || []).length; },
+    intro: { en: 'This is my shop!', ko: '손님이 왔어 — 주문을 말로 받아 줘!' },
+    start: start
+  });
 })(window);
