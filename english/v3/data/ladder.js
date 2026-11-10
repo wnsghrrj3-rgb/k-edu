@@ -103,7 +103,7 @@ window.EN_LADDER = {
         { id: 'lv3-25', track: 'V', name: '마을 단어', en: 'park · street · shop' },
         { id: 'lv3-26', track: 'G', name: 'She likes ~ 문장', en: 'She likes cats.' },
         { id: 'lv3-27', track: 'V', name: '동사 단어 5 — 이동', en: 'walk · fly · climb' },
-        { id: 'lv3-28', track: 'V', name: '동물 단어 5 — 아기·집', en: 'puppy · kitten · nest' },
+        { id: 'lv3-28', track: 'V', name: '동물 단어 5 — 아기·몸', en: 'puppy · kitten · nest' },
         { id: 'lv3-29', track: 'R', name: '짧은 글 5 — 주말 이야기', en: '3~5문장 글 2편' },
         { id: 'lv3-30', track: 'V', name: '음식 단어 4 — 요리·맛', en: 'sweet · salty · bake' },
         { id: 'lv3-31', track: 'V', name: '학교 단어 6 — 물건·도구', en: 'glue · tape · ruler' },
