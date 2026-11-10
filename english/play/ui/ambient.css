@@ -1,0 +1,82 @@
+/* ============================================================
+ * 영어 놀이터 — 배경 숨결(ambient)
+ *   화면 뒤에서 하늘·구름·언덕·빛 알갱이가 천천히 움직여 「들어가고 싶은 곳」으로 만든다.
+ *   색은 전부 토큰(var). 무대 색(data-palette)이 바뀌면 하늘·언덕 색도 따라 바뀐다.
+ *   body[data-ambient="world"] = 첫 화면(지도) — 언덕·해·구름 많음 / 그 밖 = 무대 — 옅게.
+ *   움직임 줄이기 설정이면 전부 멈춘다.
+ * ============================================================ */
+.amb{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;
+  background:linear-gradient(to bottom,var(--stage-2-soft) 0%,var(--bg) 62%,var(--bg) 100%)}
+.amb > *{position:absolute;will-change:transform}
+/* 해 — 번지는 빛 한 덩이 */
+.amb .sun{top:-90px;right:-60px;width:340px;height:340px;border-radius:50%;
+  background:radial-gradient(circle,var(--warm-soft) 0%,var(--warm-soft) 30%,transparent 70%);
+  animation:ambSun 9s ease-in-out infinite}
+.amb .sun::after{content:"";position:absolute;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;background:var(--warm);opacity:.35}
+@keyframes ambSun{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.08);opacity:1}}
+/* 구름 — 깊이마다 속도가 다르다 */
+.amb .cl{left:0;fill:var(--surface);animation:ambCloud linear infinite}
+.amb .cl svg{display:block;width:100%;height:auto}
+@keyframes ambCloud{from{transform:translateX(-30vw)}to{transform:translateX(130vw)}}
+/* 언덕 — 세 겹, 앞 겹일수록 진하다 */
+.amb .hills{left:-4%;right:-4%;bottom:0;height:34vh;min-height:180px}
+.amb .hills svg{position:absolute;left:0;bottom:0;width:100%;height:100%}
+.amb .h1{fill:var(--stage-2-soft)}
+.amb .h2{fill:var(--stage-soft)}
+.amb .h3{fill:var(--stage-2);opacity:.28}
+.amb .hills .layer{position:absolute;inset:0;transition:transform 900ms var(--ease)}
+/* 빛 알갱이 — 아래에서 천천히 떠오른다 */
+.amb .mote{bottom:-12px;width:7px;height:7px;border-radius:50%;background:var(--warm);opacity:0;animation:ambMote linear infinite}
+@keyframes ambMote{0%{transform:translate(0,0);opacity:0}12%{opacity:.55}80%{opacity:.35}100%{transform:translate(var(--dx,20px),-78vh);opacity:0}}
+
+/* 무대 화면은 옅게 — 놀이가 주인공 */
+body:not([data-ambient="world"]) .amb{background:linear-gradient(to bottom,var(--stage-soft) 0%,var(--bg) 45%)}
+body:not([data-ambient="world"]) .amb .hills,
+body:not([data-ambient="world"]) .amb .sun{display:none}
+body:not([data-ambient="world"]) .amb .cl{opacity:.7}
+
+/* ── 첫 화면(지도) 위의 것들 ── */
+[data-ambient="world"] .top{background:transparent;backdrop-filter:none}
+[data-ambient="world"] .dock{background:transparent;backdrop-filter:none}
+/* 들어올 때 하나씩 떠오른다 */
+[data-ambient="world"] .home > *{animation:ambRise 520ms var(--ease) both}
+[data-ambient="world"] .home > *:nth-child(2){animation-delay:80ms}
+[data-ambient="world"] .home > *:nth-child(3){animation-delay:160ms}
+[data-ambient="world"] .home > *:nth-child(4){animation-delay:240ms}
+[data-ambient="world"] .home > *:nth-child(n+5){animation-delay:320ms}
+@keyframes ambRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+/* 캐릭터가 숨 쉰다 */
+[data-ambient="world"] .hero .ch{position:relative;animation:ambBreath 3.6s ease-in-out infinite;transform-origin:50% 90%}
+@keyframes ambBreath{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.025)}}
+/* 지도 칸 — 열린 칸은 살짝 떠 있고, 다음에 놀 칸은 빛이 숨 쉰다 */
+[data-ambient="world"] .zone:not(.fog){transition:transform var(--t-2) var(--ease),box-shadow var(--t-2) var(--ease)}
+@media (hover:hover){[data-ambient="world"] .zone:not(.fog):hover{transform:translateY(-4px) scale(1.03)}}
+[data-ambient="world"] .zone:has(.here){animation:ambHere 2.6s ease-in-out infinite}
+@keyframes ambHere{0%,100%{box-shadow:var(--shadow),0 0 0 0 var(--warm-soft)}50%{box-shadow:var(--shadow),0 0 0 10px var(--warm-soft)}}
+[data-ambient="world"] .zone:not(.fog) .e{animation:ambBob 4s ease-in-out infinite}
+[data-ambient="world"] .zone:nth-child(2n) .e{animation-delay:-1.3s}
+[data-ambient="world"] .zone:nth-child(3n) .e{animation-delay:-2.6s}
+@keyframes ambBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+/* 안개 칸 — 진짜 안개가 흘러간다 */
+[data-ambient="world"] .zone.fog{overflow:hidden;background:var(--surface-2)}
+[data-ambient="world"] .zone.fog::before,
+[data-ambient="world"] .zone.fog::after{content:"";position:absolute;inset:-40% -60%;pointer-events:none;
+  background:radial-gradient(closest-side,var(--surface) 0%,transparent 100%) 0 0/46% 70% repeat-x;opacity:.75;animation:ambFog 11s linear infinite}
+[data-ambient="world"] .zone.fog::after{top:-10%;opacity:.5;animation-duration:17s;animation-direction:reverse}
+[data-ambient="world"] .zone.fog .e,[data-ambient="world"] .zone.fog .nm{position:relative;z-index:1}
+[data-ambient="world"] .zone.fog .e{animation:ambBob 5s ease-in-out infinite}
+@keyframes ambFog{from{transform:translateX(-12%)}to{transform:translateX(12%)}}
+/* 닫힌 마을 위 안개도 흘러간다 */
+[data-ambient="world"] .map.wlock .wfog{overflow:hidden;background:transparent;backdrop-filter:blur(4px)}
+[data-ambient="world"] .map.wlock .wfog::before{content:"";position:absolute;inset:-30% -50%;z-index:-1;
+  background:radial-gradient(closest-side,var(--surface) 0%,transparent 100%) 0 0/38% 60% repeat-x;opacity:.8;animation:ambFog 14s linear infinite}
+/* 놀러 가기 — 빛이 한 번씩 스친다 */
+[data-ambient="world"] #goBtn{position:relative;overflow:hidden}
+[data-ambient="world"] #goBtn::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:30%;
+  background:linear-gradient(100deg,transparent,var(--on-stage),transparent);opacity:.28;transform:skewX(-18deg);animation:ambShine 4.5s ease-in-out infinite}
+@keyframes ambShine{0%,60%{left:-40%}100%{left:130%}}
+
+@media (prefers-reduced-motion:reduce){
+  .amb *,.amb *::after,[data-ambient] *,[data-ambient] *::before,[data-ambient] *::after{animation:none!important;transition:none!important}
+  .amb .mote{display:none}
+}
