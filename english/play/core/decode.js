@@ -145,11 +145,7 @@
   /* 구역 표에 올라간 소리 공방 구역들 */
   function stageZones() { var Z = g.PLAY_ZONES; return Z ? Z.zones.filter(function (z) { return z.stage === STAGE.id; }) : []; }
   /* 지금 놀 수 있는 마지막 칸의 차례 — 첫 칸 + 앞 칸이 열림 조건(특별 손님 + 단어 ¾ 이 꽃)을 채운 만큼 */
-  function openIndex(seed) {
-    var zs = stageZones(), k = 0;
-    for (var i = 0; i < zs.length - 1; i++) { if (seed && seed.canClear(zs[i].id, zs[i].words.map(function (x) { return x.w; }))) k = i + 1; else break; }
-    return k;
-  }
+  function openIndex(seed) { var Z = g.PLAY_ZONES; return Z && Z.openIndex ? Z.openIndex(STAGE.id, seed) : 0; }     /* 규칙은 구역 표 한 곳(data/zones.js) */
   /* 내 공간 「소리 기계」 — 칸마다 칩 하나. 특별 손님을 넘으면 불이 들어오고(on), 단어 ¾ 이 꽃이면 금빛(gold). 아직 안 열린 칸은 안개(lock) */
   function machine(el, seed, curId, onTap) {
     if (!el) return;

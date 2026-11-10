@@ -20,12 +20,12 @@
     minGames: 3, maxGames: 4,     /* 하루 미니게임 수 */
     changeAtLeast: 2,             /* 어제와 달라야 하는 놀이 수 */
     keepDays: 14,                 /* 기억해 두는 날 수 */
-    order: ['say', 'body', 'ear', 'hand', 'sound'],   /* 하루 안에서 놀이가 놓이는 차례(사건 놀이는 맨 앞) */
+    order: ['say', 'body', 'ear', 'hand', 'sound', 'make'],   /* 하루 안에서 놀이가 놓이는 차례(사건 놀이는 맨 앞) */
     perGame: { 'order-shop': 8, plates: 8, pop: 6, 'catch': 6, lean: 6, belt: 6, 'read-aloud': 6, 'sound-bridge': 4, 'sound-train': 4 }   /* 놀이별 대상 수(없으면 구역 단어 전부) */
   };
   var KEY = 'kedu-en-play-stage';
   /* 놀이의 첫 채널 → 겹침을 따지는 묶음 */
-  var GROUP = { say: 'say', talk: 'say', ear: 'ear', body: 'body', hand: 'hand', read: 'hand', make: 'hand', sound: 'sound' };
+  var GROUP = { say: 'say', talk: 'say', ear: 'ear', body: 'body', hand: 'hand', read: 'hand', make: 'make', sound: 'sound' };   /* make = 창작(만들기) */
 
   function load() { try { return JSON.parse(g.localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
   function save(d) { try { g.localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
@@ -70,7 +70,7 @@
     var yest = days.length ? days[days.length - 1] : null, yGames = yest ? yest.games : [];
 
     /* 켤 수 있는 놀이 */
-    var can = function (id) { var d = G.get(id); return !!d && allowed(d, cell) && !(d.cam && !cam && d.camOnly) && (!d.fits || d.fits(zone)); };
+    var can = function (id) { var d = G.get(id); return !!d && !d.draft && allowed(d, cell) && !(d.cam && !cam && d.camOnly) && (!d.fits || d.fits(zone)); };
     var cands = (zone.games || []).filter(can);
     /* 사건 후보 — 그 놀이를 켤 수 있는 것 중, 어제 것이 아니고 오래 안 한 차례로 */
     var events = (o.events || (g.PLAY_EVENTS && g.PLAY_EVENTS[zone.stage]) || []).filter(function (e) { return can(e.game); });

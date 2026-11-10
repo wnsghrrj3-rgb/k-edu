@@ -132,5 +132,29 @@
     run(0);
     return { plan: PLAN, zone: Z };
   }
-  g.PlayStage = { start: start };
+  /* 그 무대에서 열 칸 — 주소 ?cell= 이 열린 칸이면 그 칸, 아니면 지금 열린 마지막 칸 */
+  function pick(stage) {
+    var Z = g.PLAY_ZONES, zs = Z.cells(stage), open = Z.openIndex(stage, g.PlaySeed);
+    var m = /[?&]cell=([\w-]+)/.exec(g.location.search), want = m ? zs.filter(function (z) { return z.id === m[1]; })[0] : null;
+    return want && zs.indexOf(want) <= open ? want : zs[open];
+  }
+  /* 칸 띠 — 한 무대의 칸들. 열린 칸은 누르면 옮겨 가고, 앞 칸의 특별 손님만 넘은 다음 칸은 「구경」(내일 또 와), 그 뒤는 안개(결정 §0-2) */
+  function cellbar(el, stage, curId) {
+    if (!el) return;
+    var Z = g.PLAY_ZONES, S = g.PlaySeed, zs = Z.cells(stage), open = Z.openIndex(stage, S);
+    el.innerHTML = ''; if (zs.length < 2) { el.style.display = 'none'; return; }
+    zs.forEach(function (z, i) {
+      var peek = i === open + 1 && S.bossDone(zs[i - 1].id), lock = i > open && !peek;
+      var b = g.document.createElement('button'); b.type = 'button';
+      b.className = 'cb' + (z.id === curId ? ' cur' : '') + (peek ? ' peek' : '') + (lock ? ' lock' : '') + (S.bossDone(z.id) ? ' on' : '');
+      b.setAttribute('data-cell', z.id);
+      b.innerHTML = lock ? '☁️' : '<span>' + (z.cellIcon || z.emoji || '') + '</span>' + (z.cellName || z.name || '');
+      b.onclick = function () {
+        if (lock || peek) { var t = g.document.getElementById('toast'); if (t) { t.textContent = peek ? '오늘은 구경만 — 씨앗이 꽃이 되면 들어올 수 있어. 내일 또 와!' : '앞 칸을 마치면 안개가 걷혀요'; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('show'); }, 2000); } return; }
+        if (z.id !== curId) g.location.href = '?cell=' + z.id;
+      };
+      el.appendChild(b);
+    });
+  }
+  g.PlayStage = { start: start, pick: pick, cellbar: cellbar };
 })(window);
