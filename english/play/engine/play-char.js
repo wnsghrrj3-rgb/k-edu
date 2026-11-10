@@ -31,6 +31,15 @@
       return '<g data-part="sneakers"><path d="M70 186h24c4 0 6 3 6 6H66c0-3 1-6 4-6zM106 186h24c3 0 4 3 4 6H100c0-3 2-6 6-6z" fill="var(--a-red)"/>' +
              '<path d="M70 190h28M104 190h28" stroke="var(--surface)" stroke-width="2" opacity=".7"/></g>';
     },
+    key: function () {   /* 마법 자판기(Lv2) — 목에 건 자판기 열쇠 */
+      return '<g data-part="key"><path d="M86 130l14 18 14-18" stroke="var(--stage-2)" stroke-width="3" fill="none"/><circle cx="100" cy="152" r="6" fill="var(--warm)"/><path d="M100 158v10M100 164h5" stroke="var(--warm)" stroke-width="4"/></g>';
+    },
+    hat: function () {   /* 변신 거울(Lv2) — 챙 모자 */
+      return '<g data-part="hat"><path d="M40 44c0 0 20-6 60-6s60 6 60 6c-8 6-30 8-60 8s-52-2-60-8z" fill="var(--a-plum)"/><path d="M62 42c0-20 16-30 38-30s38 10 38 30z" fill="var(--a-plum)"/><path d="M62 36h76" stroke="var(--warm)" stroke-width="5"/></g>';
+    },
+    bookmark: function () {   /* 그림책방(Lv2) — 손에 든 책갈피 */
+      return '<g data-part="bookmark"><path d="M136 140h12v30l-6-5-6 5z" fill="var(--a-red)"/><circle cx="142" cy="146" r="2.5" fill="var(--surface)"/></g>';
+    },
     bandana: function () {   /* 동물 농장(Lv1) — 목수건 */
       return '<g data-part="bandana"><path d="M72 128c18 8 38 8 56 0l-6 12c-14 5-30 5-44 0z" fill="var(--a-red)"/>' +
              '<path d="M92 136l8 22 8-22z" fill="var(--a-red)"/><circle cx="90" cy="134" r="2" fill="var(--surface)" opacity=".6"/><circle cx="110" cy="134" r="2" fill="var(--surface)" opacity=".6"/></g>';

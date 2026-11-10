@@ -49,13 +49,15 @@ look.forEach(f => {
   if (f !== 'ui/tokens.css' && COLOR.test(src.replace(/&#[0-9]+;/g, ''))) { violations.push(f + ' — 색 값을 직접 적음(토큰 ui/tokens.css 만): ' + (src.match(COLOR) || [''])[0]); visual++; }
 });
 /* 쓰는 그림 이름이 실제로 있는가 */
-load('ui/icons.js'); load('content/art/art.js'); load('content/art/food.js'); load('content/art/home.js'); load('content/art/farm.js'); load('content/art/forest.js'); load('content/art/school.js'); load('content/art/action.js');
+load('ui/icons.js'); load('content/art/art.js'); load('content/art/food.js'); load('content/art/home.js'); load('content/art/farm.js'); load('content/art/forest.js'); load('content/art/school.js'); load('content/art/action.js'); load('content/art/mirror.js'); load('content/art/things.js');
 const IC = win.PlayIcon, AR = win.PlayArt;
 win.PLAY_ZONES.zones.forEach(z => {
   if (z.icon && !IC.has(z.icon)) violations.push(z.id + ' — 없는 아이콘 ' + z.icon);
   if (z.cellIcon && !AR.has(z.cellIcon)) violations.push(z.id + ' — 없는 그림 ' + z.cellIcon);
   (z.decor || []).forEach(x => { if (!IC.has(x.icon)) violations.push(z.id + ' 장식 ' + x.id + ' — 없는 아이콘 ' + x.icon); });
-  if (['lunch-shop', 'animal-farm', 'classroom', 'playground'].indexOf(z.stage) >= 0) z.words.forEach(x => { if (!AR.has(x.art || x.w)) violations.push(z.id + ' ' + x.w + ' — 그린 그림 없음'); });
+  (z.words || []).forEach(x => (x.scene || []).forEach(sc => { if (!AR.has(sc.split(':')[0])) violations.push(z.id + ' 장면 그림 ' + sc + ' — 없음'); }));
+  if (z.gram) { (z.gram.ends || []).concat(z.gram.storyEnds || []).forEach(e => { const k = e.replace(/^an? /, ''), a = (z.gram.art || {})[k] || k; if (!AR.has(a)) violations.push(z.id + ' 자판기 칩 그림 ' + e + ' — 없음'); }); z.words.forEach(x => { if (!/^(I|You|It|He|She|We|They) (am|are|is) /.test(x.w)) violations.push(z.id + ' 문장틀 밖 ' + x.w); }); }
+  if (['lunch-shop', 'animal-farm', 'classroom', 'playground', 'vending', 'mirror'].indexOf(z.stage) >= 0) z.words.forEach(x => { if (!AR.has(x.art || x.w)) violations.push(z.id + ' ' + x.w + ' — 그린 그림 없음'); });
   if (z.stage === 'lv1-gate') z.words.forEach(x => { if (x.art && !AR.has(x.art)) violations.push(z.id + ' ' + x.w + ' — 없는 그림 ' + x.art); });
 });
 /* 구역 안의 챈트·특별 손님 질문·대화 문장은 그 칸 재료 안(W07) */

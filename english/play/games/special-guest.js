@@ -7,6 +7,7 @@
  *   Lv1(W06): 알파벳 칸(letters) = 손님이 소리를 내면 그 소리 글자를 찾는다(묶음마다 하나 — 다섯 묶음을 한 바퀴) ·
  *             대화 칸(talk — I like) = 손님(Amy)이 친구와 대화의 장면을 새 차례로, 모델 없이(PlayTalk) ·
  *             첫 단어 칸(sight)·단어와 그림 칸 = 단어 카드 읽기(통째로 보는 단어는 쪼개지 않는다).
+ *   Lv2(W08): 문법 칸(gram) = 손님 그림 주문 → 문장 자판기 · 그림책방(story) = 처음 보는 지문 읽기.
  *   공통 인터페이스: start(ctx) → Promise({ completed, passed:true, by:'speech'|'chosen' }) · ctx.zone.boss.turns 사용
  * ============================================================ */
 (function (g) {
@@ -37,7 +38,9 @@
     var turns = plan((Z.boss && Z.boss.turns) || []), sent = Z.sentence || function (w) { return 'I like ' + w + '.'; };
     var pic = {}; (ctx.pool || ctx.targets || []).forEach(function (x) { pic[x.w] = x.pic; });
     var who = (ctx.opt && ctx.opt.guest) || CONF.guest, L1 = Z.world === 'lv1', REP = L1 ? REPLY1 : Z.foods ? REPLY : REPLY2, ASK = L1 ? READ_ASK1 : READ_ASK;     /* 「Yum!」은 먹는 무대에서만 */
-    if (Z.talk && g.PlayTalk) return g.PlayTalk.run(ctx, { who: who, hint0: true, guest: true });      /* 대화 칸 — 손님과 대화(힌트 0) */
+    if (Z.talk && g.PlayTalk && !(Z.boss && Z.boss.turns)) return g.PlayTalk.run(ctx, { who: who, hint0: true, guest: true });      /* 대화 칸 — 손님과 대화(힌트 0) */
+    if (Z.gram && g.PlayGram) return g.PlayGram.run(ctx, { guest: true });                   /* 문법 칸(W08) — 손님이 그림으로 주문 → 문장 자판기로 만들고 말하기(힌트 0) */
+    if (Z.kind === 'story' && g.PlayPictureBook) return g.PlayPictureBook.run(ctx, { guest: true });   /* 그림책방(W08) — 처음 보는 지문부터 읽기 */
     var host = ctx.host; host.innerHTML = '';
     var root = h('div', 'oq sg'); host.appendChild(root);
     var q = scene.queue(root, { guests: [who], npc: npc });
@@ -132,7 +135,9 @@
     id: 'special-guest', no: 27, name: '특별 손님', icon: 'crown', channels: ['say', 'talk'], axis: 'quest', need: {}, last: true,
     count: function (c) { var z = c.zone || {};
       if (z.letters && z.bundles) return z.bundles.length;
-      if (z.talk) return z.talk.length;
+      if (z.talk && !(z.boss && z.boss.turns)) return z.talk.length;
+      if (z.gram) return 6;
+      if (z.kind === 'story') return 2;
       return z.kind === 'phonics' || !(z.boss && z.boss.turns && z.boss.turns.length) ? Math.min(CONF.show, (z.words || []).length) : z.boss.turns.length; },
     intro: { en: 'Oh! A friend!', ko: '처음 보는 손님이야 — 물어보면 대답해 줘!' },
     intro1: { en: 'Oh! Hi!', ko: '처음 보는 손님이야 — 손님 말에 대답해 줘!' },     /* Lv1 무대에서 — 그때까지 배운 낱말·감탄만(W06) */

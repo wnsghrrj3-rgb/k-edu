@@ -220,6 +220,197 @@ window.PLAY_ZONES = {
       space: { kind: 'moves', label: '춤 동작 모음' },
       part: { id: 'sneakers', name: '운동화', when: 'firstFruit' }
     },
+    /* ── Lv2 「마을」 마법 자판기 · 변신 거울 · 그림책방(W08) ── */
+    {
+      /* 자판기 ① — 펼침 Lv2 #10 be동사(사다리 첫 발견). 재료 = 10_1 예열 문장 6 + 10_2 되돌림 문장 2. 규칙 문장은 화면이 먼저 말하지 않는다 —
+         맞지 않는 칩은 안 들어가고, 끝에 「내가 만든 문장」을 주어별로 나란히(10_2 정렬 공개) */
+      id: 'lv2-10', world: 'lv2', slug: 'be', stage: 'vending', kind: 'grammar',
+      name: '마법 자판기', cellName: 'am·are·is', cellIcon: 'key', icon: 'vending', palette: 'vend',
+      page: 'zone/vending.html?cell=lv2-10',
+      words: [
+        { w: 'I am Ben.', ko: '나는 벤이야.', art: 'ben' }, { w: 'I am here.', ko: '나 여기 있어.', art: 'here' },
+        { w: 'You are Max.', ko: '너는 맥스야.', art: 'max' }, { w: 'You are big.', ko: '너는 커.', art: 'big' },
+        { w: 'It is a duck.', ko: '그건 오리야.', art: 'duck' }, { w: 'It is a shop.', ko: '그건 가게야.', art: 'shop' },
+        { w: 'I am hot.', ko: '나는 더워.', art: 'hot' }, { w: 'You are Mina.', ko: '너는 미나야.', art: 'mina' }
+      ],
+      confuse: [],
+      gram: { mode: 'be', subjects: ['I', 'You', 'It'], ends: ['Ben', 'here', 'Max', 'big', 'a duck', 'a shop', 'hot', 'Mina'],
+        kinds: { here: 'place', big: 'adj', hot: 'adj' }, art: { Ben: 'ben', Max: 'max', Mina: 'mina' },
+        storyEnds: ['a duck', 'a shop', 'big', 'hot', 'here'], reveal: true },
+      /* 문장 자판기 · 엉뚱한 이야기 · 톡톡 듣기 · 배달 벨트(문장판) · 받기. 특별 손님 = 그림 주문 → 문장 만들기(힌트 0) */
+      games: ['gram-vending', 'silly-story', 'pop', 'belt', 'catch'],
+      host: 'max',
+      decor: [
+        { id: 'bulb', icon: 'bulb', name: '전구' }, { id: 'gear', icon: 'gear', name: '톱니' }, { id: 'sparkle', icon: 'sparkle', name: '반짝이' },
+        { id: 'bell', icon: 'bell', name: '종' }, { id: 'radio', icon: 'radio', name: '라디오' }, { id: 'dial', icon: 'dial', name: '다이얼' }
+      ],
+      space: { kind: 'menu', label: '자판기 메뉴판' },
+      part: { id: 'key', name: '자판기 열쇠', when: 'firstFruit' }
+    },
+    {
+      /* 자판기 ② — 펼침 Lv2 #24 관사 씨앗 a·an(통째로 준다 · 소리 기준). 명사를 먼저 끼우면 관사 칩이 고르라고 흔들린다(24_2) · an 에는 입 그림 */
+      id: 'lv2-24', world: 'lv2', slug: 'aan', stage: 'vending', kind: 'grammar', decorKey: 'lv2-10',
+      name: '마법 자판기', cellName: 'a·an', cellIcon: 'egg', icon: 'vending', palette: 'vend',
+      page: 'zone/vending.html?cell=lv2-24',
+      words: [
+        { w: 'It is a dog.', ko: '강아지야.', art: 'dog' }, { w: 'It is a cat.', ko: '고양이야.', art: 'cat' },
+        { w: 'It is a cake.', ko: '케이크야.', art: 'cake' }, { w: 'It is a boat.', ko: '배야.', art: 'boat' },
+        { w: 'It is an ant.', ko: '개미야.', art: 'ant' }, { w: 'It is an egg.', ko: '달걀이야.', art: 'egg' },
+        { w: 'It is an apple.', ko: '사과야.', art: 'apple' }, { w: 'It is an eye.', ko: '눈이야.', art: 'eye' }
+      ],
+      confuse: [],
+      gram: { mode: 'article', ends: ['dog', 'cat', 'cake', 'boat', 'ant', 'egg', 'apple', 'eye'], storyEnds: ['a dog', 'a cat', 'a cake', 'an egg', 'an apple'] },
+      games: ['gram-vending', 'silly-story', 'pop', 'belt', 'catch'],
+      host: 'max', decor: null,
+      space: { kind: 'menu', label: '자판기 메뉴판' },
+      part: { id: 'key', name: '자판기 열쇠', when: 'firstFruit' }
+    },
+    {
+      /* 자판기 ③ — 펼침 Lv2 #29 종합 조립 It is a ~. / They are ~. They are 뒤엔 꾸밈말·here 만(복수 -s 노출 0 — 29 판정) · 관사 칸에 「—」 칩 */
+      id: 'lv2-29', world: 'lv2', slug: 'total', stage: 'vending', kind: 'grammar', decorKey: 'lv2-10',
+      name: '마법 자판기', cellName: '문장 조립', cellIcon: 'cake', icon: 'vending', palette: 'vend',
+      page: 'zone/vending.html?cell=lv2-29',
+      words: [
+        { w: 'It is a cake.', ko: '케이크야.', art: 'cake' }, { w: 'It is an egg.', ko: '달걀이야.', art: 'egg' },
+        { w: 'They are big.', ko: '그것들은 커.', art: 'big' }, { w: 'They are green.', ko: '그것들은 초록이야.', art: 'green' },
+        { w: 'They are here.', ko: '그것들은 여기 있어.', art: 'here' }, { w: 'He is big.', ko: '그는 커.', art: 'big' },
+        { w: 'We are here.', ko: '우리는 여기 있어.', art: 'here' }, { w: 'She is fine.', ko: '그녀는 괜찮아.', art: 'fine' }
+      ],
+      confuse: [],
+      gram: { mode: 'total', subjects: ['It', 'They', 'He', 'She', 'We'], ends: ['cake', 'egg', 'dog', 'boat', 'big', 'green', 'here', 'fine'],
+        kinds: { big: 'adj', green: 'adj', fine: 'adj', here: 'place' }, storyEnds: ['a cake', 'an egg', 'big', 'fine'] },
+      games: ['gram-vending', 'silly-story', 'pop', 'belt', 'catch'],
+      host: 'max', decor: null,
+      space: { kind: 'menu', label: '자판기 메뉴판' },
+      part: { id: 'key', name: '자판기 열쇠', when: 'firstFruit' }
+    },
+    {
+      /* 거울 ① — 펼침 Lv2 #15 몸·얼굴(feet·eye·hair 는 통단어 — 소리 놀이 재료 아님). 「내 몸에 붙이는 영어」 */
+      id: 'lv2-15', world: 'lv2', slug: 'body', stage: 'mirror', kind: 'body',
+      name: '변신 거울', cellName: '몸·얼굴', cellIcon: 'face', icon: 'mirror', palette: 'mirror',
+      page: 'zone/mirror.html?cell=lv2-15',
+      words: [
+        { w: 'face', ko: '얼굴' }, { w: 'nose', ko: '코' }, { w: 'smile', ko: '미소' }, { w: 'bone', ko: '뼈' },
+        { w: 'hand', ko: '손' }, { w: 'feet', ko: '발' }, { w: 'eye', ko: '눈' }, { w: 'hair', ko: '머리카락' }
+      ],
+      confuse: [['face', 'eye'], ['hand', 'feet'], ['bone', 'hand']],
+      sentence: function (w) { return 'My ' + w + '!'; },
+      boss: { name: 'Amy',
+        turns: [
+          { ask: 'Nose or hand?', ko: '코? 손?', pick: ['nose', 'hand'] },
+          { ask: 'Face or hair?', ko: '얼굴? 머리카락?', pick: ['face', 'hair'] },
+          { ask: 'What is it?', ko: '이건 뭘까?', pick: ['eye', 'feet', 'smile'] }
+        ] },
+      lab: { parts: ['face', 'nose', 'eye', 'hair', 'hand', 'feet'] },
+      /* 주문 받기(몸판) · 로봇 공장(#9) · 크기 연구소(#25) · 색깔 실험실(#24) · 톡톡 · 받기 */
+      games: ['order-shop', 'robot', 'size-lab', 'color-lab', 'pop', 'catch'],
+      host: 'amy',
+      decor: [
+        { id: 'frame', icon: 'frame', name: '액자' }, { id: 'sparkle', icon: 'sparkle', name: '반짝이' }, { id: 'lamp', icon: 'lamp', name: '등' },
+        { id: 'flower', icon: 'flower', name: '꽃' }, { id: 'mask', icon: 'mask', name: '가면' }, { id: 'balloon', icon: 'balloon', name: '풍선' }
+      ],
+      space: { kind: 'closet', label: '거울 앞 옷장' },
+      part: { id: 'hat', name: '모자', when: 'firstFruit' }
+    },
+    {
+      /* 거울 ② — 펼침 Lv2 #30 기분·상태(happy 만 통단어 · glad 제외 판정). 단어는 「I am ___.」 자리에 들어간 모습으로(30_1) */
+      id: 'lv2-30', world: 'lv2', slug: 'feel', stage: 'mirror', kind: 'feeling', decorKey: 'lv2-15',
+      name: '변신 거울', cellName: '기분', cellIcon: 'happy', icon: 'mirror', palette: 'mirror',
+      page: 'zone/mirror.html?cell=lv2-30',
+      words: [
+        { w: 'happy', ko: '기뻐' }, { w: 'sad', ko: '슬퍼' }, { w: 'mad', ko: '화나' }, { w: 'fine', ko: '괜찮아' },
+        { w: 'nice', ko: '좋아' }, { w: 'sick', ko: '아파' }, { w: 'hot', ko: '더워' }, { w: 'wet', ko: '젖었어' }
+      ],
+      confuse: [['sad', 'mad'], ['fine', 'nice'], ['hot', 'sick']],
+      sentence: function (w) { return 'I am ' + w + '.'; },
+      boss: { name: 'Amy',
+        turns: [
+          { ask: 'Happy or sad?', ko: '기뻐? 슬퍼?', pick: ['happy', 'sad'] },
+          { ask: 'Hot or wet?', ko: '더워? 젖었어?', pick: ['hot', 'wet'] },
+          { ask: 'You?', ko: '너는 어때?', pick: ['fine', 'nice', 'sick', 'mad'] }
+        ] },
+      /* 변신 거울(#8 — 얼굴을 골라 변신하고 「I am ~.」) · 톡톡 · 배달 벨트 · 도둑 너구리 · 받기 */
+      games: ['mirror', 'pop', 'belt', 'raccoon', 'catch'],
+      host: 'amy', decor: null,
+      space: { kind: 'closet', label: '거울 앞 옷장' },
+      part: { id: 'hat', name: '모자', when: 'firstFruit' }
+    },
+    {
+      /* 그림책방 — 펼침 Lv2 #9 디코더블①(1문장 3편 · 계단참①) — 동사 없는 칸(be 는 #10). 지문은 펼침 그대로 · 장면 = 그린 그림 조합 · role apply = 숙달 지문(처음 보는 글 — 특별 손님이 먼저 내민다) */
+      id: 'lv2-09', world: 'lv2', slug: 'read1', stage: 'bookshop', kind: 'story',
+      name: '그림책방', cellName: '읽기①', cellIcon: 'fish', icon: 'book', palette: 'book',
+      page: 'zone/bookshop.html?cell=lv2-09',
+      words: [
+        { w: 'I see a big fish.', scene: ['ben:small', 'fish:big'] },
+        { w: 'It is a black duck.', scene: ['mina', 'duck:ink'] },
+        { w: 'I like a shop.', scene: ['max', 'shop'], role: 'apply' }
+      ],
+      confuse: [],
+      /* 그림책 넘기기(#22 문장 — 읽으면 장면이 움직인다) · 배달 벨트(문장판) · 톡톡 듣기. 특별 손님(#27) = 처음 보는 지문 읽기 */
+      games: ['picture-book', 'belt', 'pop'],
+      host: 'mina',
+      decor: [
+        { id: 'book', icon: 'book', name: '책' }, { id: 'lamp', icon: 'lamp', name: '독서등' }, { id: 'plant', icon: 'plant', name: '화분' },
+        { id: 'clock', icon: 'clock', name: '시계' }, { id: 'frame', icon: 'frame', name: '그림' }, { id: 'nest', icon: 'nest', name: '새 둥지' }
+      ],
+      space: { kind: 'bookcase', label: '책장' },
+      part: { id: 'bookmark', name: '책갈피', when: 'firstFruit' }
+    },
+    {
+      /* 그림책방 — 펼침 Lv2 #17 디코더블②(1~2문장 · be동사 첫 지문). 지문은 펼침 그대로 · 장면 = 그린 그림 조합 · role apply = 숙달 지문(처음 보는 글 — 특별 손님이 먼저 내민다) */
+      id: 'lv2-17', world: 'lv2', slug: 'read2', stage: 'bookshop', kind: 'story', decorKey: 'lv2-09',
+      name: '그림책방', cellName: '읽기②', cellIcon: 'cake', icon: 'book', palette: 'book',
+      page: 'zone/bookshop.html?cell=lv2-17',
+      words: [
+        { w: 'I am late. It is a race.', scene: ['amy', 'race'] },
+        { w: 'It is a big cake. I like cake.', scene: ['max', 'cake:big'] },
+        { w: 'You are big. I swim.', scene: ['ben', 'swim'], role: 'apply' }
+      ],
+      confuse: [],
+      /* 그림책 넘기기(#22 문장 — 읽으면 장면이 움직인다) · 배달 벨트(문장판) · 톡톡 듣기. 특별 손님(#27) = 처음 보는 지문 읽기 */
+      games: ['picture-book', 'belt', 'pop'],
+      host: 'mina',
+      decor: null,
+      space: { kind: 'bookcase', label: '책장' },
+      part: { id: 'bookmark', name: '책갈피', when: 'firstFruit' }
+    },
+    {
+      /* 그림책방 — 펼침 Lv2 #26 디코더블③(관사 첫 지문 · 읽고 그림과 맞춰 본다). 지문은 펼침 그대로 · 장면 = 그린 그림 조합 · role apply = 숙달 지문(처음 보는 글 — 특별 손님이 먼저 내민다) */
+      id: 'lv2-26', world: 'lv2', slug: 'read3', stage: 'bookshop', kind: 'story', decorKey: 'lv2-09',
+      name: '그림책방', cellName: '읽기③', cellIcon: 'boat', icon: 'book', palette: 'book',
+      page: 'zone/bookshop.html?cell=lv2-26',
+      words: [
+        { w: 'It is a goat. It is a boat.', scene: ['sam', 'goat', 'boat'] },
+        { w: 'I see an ant. It is green.', scene: ['mina', 'ant', 'green'] },
+        { w: 'I see snow. It is a big coat.', scene: ['ben', 'snow', 'coat:big'], role: 'apply' }
+      ],
+      confuse: [],
+      /* 그림책 넘기기(#22 문장 — 읽으면 장면이 움직인다) · 배달 벨트(문장판) · 톡톡 듣기. 특별 손님(#27) = 처음 보는 지문 읽기 */
+      games: ['picture-book', 'belt', 'pop'],
+      host: 'mina',
+      decor: null,
+      space: { kind: 'bookcase', label: '책장' },
+      part: { id: 'bookmark', name: '책갈피', when: 'firstFruit' }
+    },
+    {
+      /* 그림책방 — 펼침 Lv2 #33 디코더블④ 「Mina네 하루」(아침→낮→저녁 — 다 읽고 차례 짚기). 지문은 펼침 그대로 · 장면 = 그린 그림 조합 · role apply = 숙달 지문(처음 보는 글 — 특별 손님이 먼저 내민다) */
+      id: 'lv2-33', world: 'lv2', slug: 'read4', stage: 'bookshop', kind: 'story', decorKey: 'lv2-09',
+      dayOrder: true,
+      name: '그림책방', cellName: '하루', cellIcon: 'sun', icon: 'book', palette: 'book',
+      page: 'zone/bookshop.html?cell=lv2-33',
+      words: [
+        { w: 'It is a sunny day. I wake.', scene: ['sun', 'wake'] },
+        { w: 'Ben has a green fish. We smile.', scene: ['ben', 'fish:green', 'smile'] },
+        { w: 'They are here. We ride a boat.', scene: ['max', 'sam', 'boat'], role: 'apply' }
+      ],
+      confuse: [],
+      /* 그림책 넘기기(#22 문장 — 읽으면 장면이 움직인다) · 배달 벨트(문장판) · 톡톡 듣기. 특별 손님(#27) = 처음 보는 지문 읽기 */
+      games: ['picture-book', 'belt', 'pop'],
+      host: 'mina',
+      decor: null,
+      space: { kind: 'bookcase', label: '책장' },
+      part: { id: 'bookmark', name: '책갈피', when: 'firstFruit' }
+    },
     /* ── Lv1 「소리 마을」 ── */
     {
       /* 우리 집 입구 ① — 사다리 첫 칸. 재료 = 펼침 Lv1 #1 사이트워드 7(통째로 보는 단어 — 쪼개 읽지 않는다). 아이가 처음 오면 여기서 시작 */
@@ -325,6 +516,9 @@ window.PLAY_ZONES = {
     'lunch-shop':  { id: 'lunch-shop',  name: '점심 가게', icon: 'shop', page: 'zone/food1.html', world: 'lv2' },
     'classroom':   { id: 'classroom',   name: '교실',     icon: 'school', page: 'zone/classroom.html', world: 'lv2' },
     'playground':  { id: 'playground',  name: '운동장',   icon: 'body', page: 'zone/playground.html', world: 'lv2' },
+    'vending':     { id: 'vending',     name: '마법 자판기', icon: 'vending', page: 'zone/vending.html', world: 'lv2' },
+    'mirror':      { id: 'mirror',      name: '변신 거울', icon: 'mirror', page: 'zone/mirror.html', world: 'lv2' },
+    'bookshop':    { id: 'bookshop',    name: '그림책방', icon: 'book', page: 'zone/bookshop.html', world: 'lv2' },
     'lv1-gate':    { id: 'lv1-gate',    name: '우리 집',   icon: 'home', page: 'zone/home.html',  world: 'lv1' },
     'animal-farm': { id: 'animal-farm', name: '동물 농장', icon: 'barn', page: 'zone/farm.html',  world: 'lv1' }
   },
@@ -332,7 +526,11 @@ window.PLAY_ZONES = {
   gates: { 'lv1-03': 'lv1-02', 'lv1-05': 'lv1-04', 'lv1-08': 'lv1-07',
     /* Lv2(W07) — 교실은 점심 가게 첫 칸 뒤(예전 「교실 구경」 그대로) · 읽기 칸은 ee·ea 칸 뒤 · 운동장은 블렌드 l·r 칸 뒤(동작 동사를 읽을 수 있게) ·
        동작② 는 모음짝 칸 뒤(i_e·a_e·ee·-nd — 사다리 #31 자연 칸은 W09 에서 지으면 그 칸으로 옮긴다) */
-    'lv2-04': 'lv2-02', 'lv2-22': 'lv2-21', 'lv2-07': 'lv2-06', 'lv2-32': 'lv2-23' },
+    'lv2-04': 'lv2-02', 'lv2-22': 'lv2-21', 'lv2-07': 'lv2-06', 'lv2-32': 'lv2-23',
+    /* W08 — 사다리 차례(바로 앞 칸이 아직 없으면 지어진 가장 가까운 앞 칸): 그림책방 ← 끝블렌드·매직e 종합·a/an·동작② / 자판기 ← 읽기①·모음짝·읽기③ / 거울 ← 매직e o·u·종합 조립 */
+    'lv2-09': 'lv2-08', 'lv2-17': 'lv2-16', 'lv2-26': 'lv2-24', 'lv2-33': 'lv2-32',
+    'lv2-10': 'lv2-09', 'lv2-24': 'lv2-23', 'lv2-29': 'lv2-26',
+    'lv2-15': 'lv2-14', 'lv2-30': 'lv2-29' },
   /* 앞으로 지을 Lv1 무대(W10) — 지도에는 안개로만 */
   later: { lv1: [{ id: 'picture-books', name: '그림책방', icon: 'book' }, { id: 'festival', name: '마을 축제', icon: 'party' }] },
   cells: function (stage) { return this.zones.filter(function (z) { return z.stage === stage; }); },
@@ -386,4 +584,8 @@ window.PLAY_ZONES = {
 /* 같은 무대의 칸들은 장식 목록을 함께 쓴다(둘째 칸의 decor 는 첫 칸 것) */
 window.PLAY_ZONES.zones.forEach(function (z) { if (!z.decor) { var f = window.PLAY_ZONES.cells(z.stage)[0]; z.decor = f ? f.decor : []; } });
 /* 그림 — 단어마다 그린 그림(content/art/*.js)을 단다. 그림이 없거나 그림 파일을 싣지 않은 곳에선 글자 카드 */
-window.PLAY_ZONES.zones.forEach(function (z) { (z.words || []).forEach(function (x) { x.pic = window.PlayArt ? window.PlayArt.pic(x.art || x.w) : '<span class="art-word">' + x.w + '</span>'; }); });     /* art = 단어와 다른 이름의 그림(문장 칸 — 「I like it.」 → it) */
+window.PLAY_ZONES.zones.forEach(function (z) { (z.words || []).forEach(function (x) {
+  var A = window.PlayArt;
+  if (x.scene && A) { x.pic = '<span class="scn">' + x.scene.map(function (s) { var p = s.split(':'); return '<span class="scn-i' + (p[1] ? ' ' + p[1] : '') + '">' + (A.html(p[0]) || '<span class="art-word">' + p[0] + '</span>') + '</span>'; }).join('') + '</span>'; return; }     /* 그림책 지문 — 장면 = 그린 그림 조합(크기·색 꼬리표) */
+  x.pic = A ? A.pic(x.art || x.w) : '<span class="art-word">' + x.w + '</span>';
+}); });     /* art = 단어와 다른 이름의 그림(문장 칸 — 「I like it.」 → it) */
