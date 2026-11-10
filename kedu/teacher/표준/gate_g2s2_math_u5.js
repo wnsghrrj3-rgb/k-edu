@@ -90,7 +90,7 @@ const EXP = {
     u5_l05: [OVERL(D.RIDES, 10).join(', '), S(D.SNACK.떡볶이 - D.SNACK.라면), UNDERL(D.GAMES, 5).join(', ')],
     u5_l06: [S(SUM(D.GIFTS)), S(D.GIFTS.인형 + 2), SAMEK(D.GIFTS)],
     u5_l07: [S(D.WX.비), S(D.WX.흐림 - D.WX.맑음), SAMEAS(D.FRUIT, '감')],
-    u5_l08: [S(D.SPORT.수영 - D.SPORT.달리기), S(D.SPORT.줄넘기), '가장 많은 학생들이 좋아하는 운동은 ' + MAXK(D.SPORT) + josaIE(MAXK(D.SPORT))]
+    u5_l08: [S(D.SPORT.수영 - D.SPORT.달리기), S(D.SPORT.줄넘기), '가장 많이 좋아하는 운동은 ' + MAXK(D.SPORT) + josaIE(MAXK(D.SPORT))]
   },
   lev: {
     u5_l01: [S(D.SHAPES.삼각형 - D.SHAPES.원) + '개', S(SUM(D.HOLES) - D.HOLES['2개'] - D.HOLES['4개']) + '개'],
