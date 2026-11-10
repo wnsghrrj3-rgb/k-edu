@@ -23,6 +23,14 @@
              '<path d="M100 12c-2 10 0 18 4 22" stroke="var(--a-wood)" stroke-width="4" fill="none" stroke-linecap="round"/>' +
              '<path d="M104 14c10-10 22-8 26-2-8 6-18 6-26 2z" fill="var(--a-leaf)"/><path d="M70 36c10-6 22-9 30-9" stroke="var(--surface)" stroke-width="3" fill="none" opacity=".35" stroke-linecap="round"/></g>';
     },
+    backpack: function () {   /* 교실(Lv2) — 책가방 멜빵 */
+      return '<g data-part="backpack"><path d="M80 136l-6 50M120 136l6 50" stroke="var(--a-fish)" stroke-width="7" stroke-linecap="round"/>' +
+             '<rect x="128" y="146" width="18" height="30" rx="6" fill="var(--a-fish)"/><path d="M131 158h12" stroke="var(--surface)" stroke-width="2" opacity=".5"/></g>';
+    },
+    sneakers: function () {   /* 운동장(Lv2) — 운동화 */
+      return '<g data-part="sneakers"><path d="M70 186h24c4 0 6 3 6 6H66c0-3 1-6 4-6zM106 186h24c3 0 4 3 4 6H100c0-3 2-6 6-6z" fill="var(--a-red)"/>' +
+             '<path d="M70 190h28M104 190h28" stroke="var(--surface)" stroke-width="2" opacity=".7"/></g>';
+    },
     bandana: function () {   /* 동물 농장(Lv1) — 목수건 */
       return '<g data-part="bandana"><path d="M72 128c18 8 38 8 56 0l-6 12c-14 5-30 5-44 0z" fill="var(--a-red)"/>' +
              '<path d="M92 136l8 22 8-22z" fill="var(--a-red)"/><circle cx="90" cy="134" r="2" fill="var(--surface)" opacity=".6"/><circle cx="110" cy="134" r="2" fill="var(--surface)" opacity=".6"/></g>';

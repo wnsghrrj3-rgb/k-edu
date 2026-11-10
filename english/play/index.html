@@ -50,6 +50,10 @@
     <div class="machine tree" id="tree" style="margin-top:10px"></div>
     <div class="sec" id="petT" style="margin-top:16px">따라다니는 동물 <small>동물 이름이 열매가 되면 나를 따라다녀요</small></div>
     <div class="pets" id="pets"></div>
+    <div class="sec" id="lockerT" style="margin-top:16px;display:none">내 사물함 <small>교실 단어가 열매가 되면 들어가요</small></div>
+    <div class="shelf" id="locker"></div>
+    <div class="sec" id="movesT" style="margin-top:16px;display:none">춤 동작 모음 <small>동작이 열매가 되면 모여요</small></div>
+    <div class="shelf" id="moves"></div>
     <div class="sec" id="shelfT" style="margin-top:16px">내 가게 <small>열매가 되면 진열대에 올라가요</small></div>
     <div class="shelf" id="shelf"></div>
     <div class="sec" id="machineT" style="margin-top:16px">소리 기계 <small>소리 칸을 마치면 불이 들어와요</small></div>
@@ -73,6 +77,8 @@
 <script src="content/art/home.js"></script>
 <script src="content/art/farm.js"></script>
 <script src="content/art/forest.js"></script>
+<script src="content/art/school.js"></script>
+<script src="content/art/action.js"></script>
 <script src="data/zones.js"></script>
 <script src="content/phonics.js"></script>
 <script src="content/phonics-lv1.js"></script>
@@ -144,6 +150,15 @@
     var sk = z.stage || z.id, sg = (Z.stages || {})[z.stage];
     if (sg) {                       /* 여러 칸이 한 무대 — 무대마다 한 칸만 그린다(점 = 칸마다의 진행) */
       if (seenStage[sk]) return; seenStage[sk] = 1; tiles++;
+      /* 무대의 문(결정 §0-2 — data/zones.js gates) — 안개면 안개 칸, 앞 칸 특별 손님만 넘었으면 구경 칸 */
+      var door = Z.stageDoor(z.stage, PlaySeed);
+      if (door === 'fog') { var fz = document.createElement('div'); fz.className = 'zone fog'; fz.innerHTML = '<div class="e">' + I('cloud') + '</div><div class="nm">안개</div>'; g.appendChild(fz); return; }
+      if (door === 'peek') {
+        var pz = document.createElement('div'); pz.className = 'zone peek'; pz.setAttribute('data-peek', sk);
+        pz.innerHTML = '<div class="e">' + I(sg.icon) + '</div><div class="nm">' + sg.name + '</div><span class="flag" data-flag="peek">' + I('sun-cloud') + '</span>';
+        pz.onclick = function(){ showPeek({ name: sg.name, host: z.host || 'mina' }); };
+        g.appendChild(pz); return;
+      }
       var cs = Z.zones.filter(function(x){ return x.stage === z.stage; }), t = document.createElement('div'); t.className = 'zone'; t.setAttribute('data-stage', sk);
       if (z.palette) t.setAttribute('data-palette', z.palette);
       t.innerHTML = '<div class="e">' + I(sg.icon) + '</div><div class="nm">' + sg.name + '</div><div class="pr">' + cs.map(function(c){ var ws = c.words.map(function(w){ return w.w; }); return '<i class="' + (PlaySeed.canClear(c.id, ws) ? 's3' : PlaySeed.bossDone(c.id) ? 's1' : '') + '"></i>'; }).join('') + '</div>';
@@ -203,6 +218,21 @@
   });
   var buddy = petWords.filter(function(w){ return seeds[w.w] && seeds[w.w].stage >= 3; })[0];
   if (buddy) { $('petBuddy').innerHTML = PlayArt.html(buddy.w); $('petBuddy').setAttribute('data-w', buddy.w); }
+
+  /* 내 공간 「내 사물함」(교실) · 「춤 동작 모음」(운동장) — 그 무대의 문이 열린 뒤, 열린 칸까지의 단어 */
+  function space(stage, el, head, ic, label){
+    if (Z.stageDoor(stage, PlaySeed) !== 'open' || W2 !== 'open') return;
+    var ws = [], seen = {};
+    Z.cells(stage).slice(0, Z.openIndex(stage, PlaySeed) + 1).forEach(function(c){ c.words.forEach(function(w){ if (!seen[w.w]) { seen[w.w] = 1; ws.push(w); } }); });
+    $(head).style.display = ''; $(head).innerHTML = I(ic) + ' ' + label;
+    ws.forEach(function(w){
+      var st = seeds[w.w] ? seeds[w.w].stage : -1, d = document.createElement('div'); d.className = 'slot' + (st >= 3 ? ' fruit' : ''); d.setAttribute('data-w', w.w);
+      d.innerHTML = '<div class="p s' + st + '">' + w.pic + '</div><div class="st">' + (st >= 0 ? I(PlaySeed.STAGE[st].icon) : '') + '</div><div class="w">' + (st >= 1 ? w.w : '') + '</div>';
+      $(el).appendChild(d);
+    });
+  }
+  space('classroom', 'locker', 'lockerT', 'bag', '내 사물함 <small>교실 단어가 열매가 되면 들어가요</small>');
+  space('playground', 'moves', 'movesT', 'jump', '춤 동작 모음 <small>동작이 열매가 되면 모여요</small>');
 
   /* 내 공간 「소리 기계」 — 소리 공방에서 익힌 소리에 불이 들어온다 */
   if (window.PlayPhonics && $('machine')) PlayPhonics.machine($('machine'), PlaySeed, '', function(z, locked){ if (!locked) location.href = z.page; });

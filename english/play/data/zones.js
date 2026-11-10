@@ -111,6 +111,115 @@ window.PLAY_ZONES = {
       space: { kind: 'shelf', label: '내 가게' },
       part: { id: 'apron', name: '앞치마', when: 'firstFruit' }
     },
+    /* ── Lv2 「마을」 교실 · 운동장(W07) ── */
+    {
+      /* 교실 ① — 재료 8 = 펼침 Lv2 #4 학교①. 해독 강제 대상 아님(book 의 oo · chair 의 ai · pencil 2음절) — 통단어 그림 카드로만, 소리 놀이 재료로 쓰지 않는다 */
+      id: 'lv2-04', world: 'lv2', slug: 'school1', stage: 'classroom', kind: 'things',
+      name: '교실', cellName: '학교', cellIcon: 'desk', icon: 'school', palette: 'school',
+      page: 'zone/classroom.html?cell=lv2-04',
+      words: [
+        { w: 'desk',   ko: '책상' }, { w: 'chair',  ko: '의자' }, { w: 'bag',    ko: '가방' }, { w: 'book',   ko: '책' },
+        { w: 'pen',    ko: '펜' },   { w: 'bench',  ko: '긴 의자' }, { w: 'clock',  ko: '시계' }, { w: 'pencil', ko: '연필' }
+      ],
+      /* 펼침 04_B 혼동 예상쌍 */
+      confuse: [['pen', 'pencil'], ['desk', 'bench'], ['bag', 'book']],
+      /* 문장틀 — Lv1 #17 「I see a ~.」 */
+      sentence: function (w) { return 'I see a ' + w + '.'; },
+      boss: { name: 'Amy',
+        turns: [
+          { ask: 'Pen or pencil?', ko: '펜? 연필?', pick: ['pen', 'pencil'] },
+          { ask: 'Desk or chair?', ko: '책상? 의자?', pick: ['desk', 'chair'] },
+          { ask: 'What do you see?', ko: '뭐가 보여?', pick: ['bag', 'book', 'clock', 'bench'] }
+        ] },
+      /* 친구와 대화(#21) — 「I like ~ / I am ~ / I see ~」(Lv1 #2·#10·#17) */
+      talk: [
+        { show: ['book', 'pen'], line: { en: 'I see a book. I see a pen.', ko: '미나 사물함에 책이랑 펜이 있어.' }, pick: ['I like a book.', 'I like a pen.'],
+          then: { 'I like a book.': { face: 'ok', art: 'book', ko: '미나가 책을 빌려줬어!' }, 'I like a pen.': { face: 'ok', art: 'pen', ko: '미나가 펜을 빌려줬어!' } } },
+        { show: ['desk'], line: { en: 'I am here!', ko: '(벤이 책상 밑에서) 나 여기 있어!' }, pick: ['I see you.', 'I am here.'],
+          then: { 'I see you.': { face: 'cheer', art: 'see', ko: '찾았다! 벤이 웃어.' }, 'I am here.': { face: 'ok', art: 'I', ko: '둘 다 여기 있네!' } } }
+      ],
+      /* 사물함 챙기기(주문 받기) · 마법 주문(#19 — 이름을 부르면 Mina 가 가져온다) · 친구와 대화 · 배달 벨트 · 톡톡 듣기 · 받기 */
+      games: ['order-shop', 'magic-call', 'talk', 'belt', 'pop', 'catch'],
+      /* 교실에서 주문 받기 = 사물함 챙기기(가게 말 「This is my shop!」 대신) */
+      intro: { 'order-shop': { en: 'My bag!', ko: '친구들이 사물함에서 챙길 것을 말해 줘 — 그림을 보고 말로 챙겨 줘!' } },
+      host: 'mina',
+      decor: [
+        { id: 'clock', icon: 'clock', name: '시계' }, { id: 'plant', icon: 'plant', name: '화분' }, { id: 'frame', icon: 'frame', name: '그림' },
+        { id: 'book', icon: 'book', name: '책꽂이' }, { id: 'balloon', icon: 'balloon', name: '풍선' }, { id: 'flag', icon: 'flag', name: '깃발' }
+      ],
+      space: { kind: 'locker', label: '내 사물함' },
+      part: { id: 'backpack', name: '책가방', when: 'firstFruit' }
+    },
+    {
+      /* 교실 ② — 재료 8 = 펼침 Lv2 #22 학교②·읽기(8/8 해독 — ee·ea). 직접 읽어 보고 나서 뜻(22_1) */
+      id: 'lv2-22', world: 'lv2', slug: 'school2', stage: 'classroom', kind: 'read', decorKey: 'lv2-04',
+      name: '교실', cellName: '읽기', cellIcon: 'read', icon: 'school', palette: 'school',
+      page: 'zone/classroom.html?cell=lv2-22',
+      words: [
+        { w: 'read',  ko: '읽다' }, { w: 'see',   ko: '보다' }, { w: 'green', ko: '초록' }, { w: 'tree',  ko: '나무' },
+        { w: 'teach', ko: '가르치다' }, { w: 'speak', ko: '말하다' }, { w: 'clean', ko: '청소하다' }, { w: 'week',  ko: '한 주' }
+      ],
+      confuse: [['read', 'teach'], ['see', 'speak'], ['green', 'clean']],
+      /* 읽어 주기(먼저 읽고 뜻) · 배달 벨트 · 톡톡 듣기 · 도둑 너구리 · 받기. 특별 손님 = 처음 보는 차례로 단어 카드 읽기 */
+      games: ['read-aloud', 'belt', 'pop', 'raccoon', 'catch'],
+      host: 'mina',
+      decor: null,
+      space: { kind: 'locker', label: '내 사물함' },
+      part: { id: 'backpack', name: '책가방', when: 'firstFruit' }
+    },
+    {
+      /* 운동장 ① — 재료 8 = 펼침 Lv2 #7 동작①(블렌드 동사). jump 는 -mp(#8 예열 — 통단어로 먼저). 문장틀 = 「I ___.」(펼침 32_3 · #17 I swim. 선례) */
+      id: 'lv2-07', world: 'lv2', slug: 'action1', stage: 'playground', kind: 'action',
+      name: '운동장', cellName: '동작', cellIcon: 'jump', icon: 'body', palette: 'field',
+      page: 'zone/playground.html?cell=lv2-07',
+      words: [
+        { w: 'stop', ko: '멈추다' }, { w: 'swim', ko: '헤엄치다' }, { w: 'clap', ko: '손뼉 치다' }, { w: 'drop', ko: '떨어뜨리다' },
+        { w: 'grab', ko: '붙잡다' }, { w: 'spin', ko: '빙글 돌다' }, { w: 'snap', ko: '딱 튕기다' }, { w: 'jump', ko: '뛰다' }
+      ],
+      confuse: [['drop', 'stop'], ['spin', 'swim'], ['clap', 'snap']],
+      sentence: function (w) { return 'I ' + w + '.'; },
+      boss: { name: 'Amy',
+        turns: [
+          { ask: 'Swim or stop?', ko: '헤엄칠까? 멈출까?', pick: ['swim', 'stop'] },
+          { ask: 'Clap or snap?', ko: '손뼉? 딱?', pick: ['clap', 'snap'] },
+          { ask: 'Jump or spin?', ko: '점프? 빙글?', pick: ['jump', 'spin'] }
+        ] },
+      /* 챈트 — 재료 8 전부, 한 줄 3박. 펼침 밖 단어 0 */
+      chant: [['stop', 'swim', 'clap'], ['drop', 'grab', 'spin'], ['snap', 'jump', 'stop'], ['clap', 'spin', 'jump']],
+      /* 마법 주문(#19 — 동작 이름을 부르면 Ben 이 한다) · 동물 댄스(#10 — 카메라) · 받기 · 챈트 · 도둑 너구리 · 톡톡 듣기 */
+      games: ['magic-call', 'dance', 'catch', 'chant', 'raccoon', 'pop'],
+      host: 'ben',
+      decor: [
+        { id: 'flag', icon: 'flag', name: '깃발' }, { id: 'balloon', icon: 'balloon', name: '풍선' }, { id: 'sun', icon: 'sun-cloud', name: '해' },
+        { id: 'bell', icon: 'bell', name: '종' }, { id: 'tree', icon: 'tree', name: '나무' }, { id: 'clap', icon: 'clap', name: '응원' }
+      ],
+      space: { kind: 'moves', label: '춤 동작 모음' },
+      part: { id: 'sneakers', name: '운동화', when: 'firstFruit' }
+    },
+    {
+      /* 운동장 ② — 재료 8 = 펼침 Lv2 #32 동작②(해독 7 + 통단어 sing). sleep 은 sl 미도입이라 sweep(펼침 판정) */
+      id: 'lv2-32', world: 'lv2', slug: 'action2', stage: 'playground', kind: 'action', decorKey: 'lv2-07',
+      name: '운동장', cellName: '동작②', cellIcon: 'wave', icon: 'body', palette: 'field',
+      page: 'zone/playground.html?cell=lv2-32',
+      words: [
+        { w: 'ride',  ko: '타다' }, { w: 'wave',  ko: '손 흔들다' }, { w: 'stand', ko: '서다' }, { w: 'sweep', ko: '쓸다' },
+        { w: 'sing',  ko: '노래하다' }, { w: 'wake', ko: '깨다' }, { w: 'smile', ko: '웃다' }, { w: 'jump', ko: '뛰다' }
+      ],
+      confuse: [['wave', 'wake'], ['ride', 'smile'], ['stand', 'sweep']],
+      sentence: function (w) { return 'I ' + w + '.'; },
+      boss: { name: 'Amy',
+        turns: [
+          { ask: 'Wave or smile?', ko: '손 흔들까? 웃을까?', pick: ['wave', 'smile'] },
+          { ask: 'Ride or sing?', ko: '탈까? 노래할까?', pick: ['ride', 'sing'] },
+          { ask: 'Jump or stand?', ko: '뛸까? 설까?', pick: ['jump', 'stand'] }
+        ] },
+      chant: [['ride', 'wave', 'stand'], ['sweep', 'sing', 'wake'], ['smile', 'jump', 'wave'], ['ride', 'sing', 'smile']],
+      games: ['magic-call', 'dance', 'catch', 'chant', 'raccoon', 'pop'],
+      host: 'ben',
+      decor: null,
+      space: { kind: 'moves', label: '춤 동작 모음' },
+      part: { id: 'sneakers', name: '운동화', when: 'firstFruit' }
+    },
     /* ── Lv1 「소리 마을」 ── */
     {
       /* 우리 집 입구 ① — 사다리 첫 칸. 재료 = 펼침 Lv1 #1 사이트워드 7(통째로 보는 단어 — 쪼개 읽지 않는다). 아이가 처음 오면 여기서 시작 */
@@ -210,17 +319,20 @@ window.PLAY_ZONES = {
   ],
   /* 다음 무대 — after 구역의 특별 손님을 넘으면 안개가 걷혀 구경할 수 있고(결정 §0-2), 그 구역 단어 ¾ 이 꽃이면 들어갈 수 있다.
      page 가 없으면 아직 짓는 중 */
-  peek: [
-    { id: 'classroom', name: '교실', icon: 'school', after: 'lv2-02', host: 'mina', page: '' }
-  ],
+  peek: [],      /* W07 — 교실이 지어져 「구경」은 무대의 문(gates)이 맡는다 */
   /* 무대 — 여러 칸이 한 무대를 쓴다(홈 지도는 무대마다 한 칸) */
   stages: {
     'lunch-shop':  { id: 'lunch-shop',  name: '점심 가게', icon: 'shop', page: 'zone/food1.html', world: 'lv2' },
+    'classroom':   { id: 'classroom',   name: '교실',     icon: 'school', page: 'zone/classroom.html', world: 'lv2' },
+    'playground':  { id: 'playground',  name: '운동장',   icon: 'body', page: 'zone/playground.html', world: 'lv2' },
     'lv1-gate':    { id: 'lv1-gate',    name: '우리 집',   icon: 'home', page: 'zone/home.html',  world: 'lv1' },
     'animal-farm': { id: 'animal-farm', name: '동물 농장', icon: 'barn', page: 'zone/farm.html',  world: 'lv1' }
   },
   /* 무대를 건너는 문 — 이 칸은 적힌 칸이 열림 조건을 채워야 들어갈 수 있다(특별 손님만 넘었으면 구경). 사다리 차례 그대로 */
-  gates: { 'lv1-03': 'lv1-02', 'lv1-05': 'lv1-04', 'lv1-08': 'lv1-07' },
+  gates: { 'lv1-03': 'lv1-02', 'lv1-05': 'lv1-04', 'lv1-08': 'lv1-07',
+    /* Lv2(W07) — 교실은 점심 가게 첫 칸 뒤(예전 「교실 구경」 그대로) · 읽기 칸은 ee·ea 칸 뒤 · 운동장은 블렌드 l·r 칸 뒤(동작 동사를 읽을 수 있게) ·
+       동작② 는 모음짝 칸 뒤(i_e·a_e·ee·-nd — 사다리 #31 자연 칸은 W09 에서 지으면 그 칸으로 옮긴다) */
+    'lv2-04': 'lv2-02', 'lv2-22': 'lv2-21', 'lv2-07': 'lv2-06', 'lv2-32': 'lv2-23' },
   /* 앞으로 지을 Lv1 무대(W10) — 지도에는 안개로만 */
   later: { lv1: [{ id: 'picture-books', name: '그림책방', icon: 'book' }, { id: 'festival', name: '마을 축제', icon: 'party' }] },
   cells: function (stage) { return this.zones.filter(function (z) { return z.stage === stage; }); },

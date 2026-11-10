@@ -22,7 +22,7 @@
   function plan(scenes, o) { o = o || {}; return (o.guest ? shuffle(scenes) : scenes.slice()).map(function (s) { return { scene: s, prefer: null }; }); }
   /* 덧붙는 장면 — 아직 씨앗도 없고 오늘 말하지도 않은 문장이 든 장면(그 카드를 앞에). 없으면 null */
   function extra(scenes, planted, said) {
-    for (var k = 0; k < scenes.length; k++) for (var j = 0; j < scenes[k].pick.length; j++) { var w = scenes[k].pick[j]; if (!planted[w] && !said[w]) return { scene: scenes[k], prefer: w }; }
+    for (var k = 0; k < scenes.length; k++) for (var j = 0; j < scenes[k].pick.length; j++) { var w = scenes[k].pick[j]; if (!planted[w] && !said[w]) return { scene: scenes[k], prefer: w }; }     /* planted·said 는 문장으로 묻는다(대상이 낱말인 칸은 run 이 문장으로 옮겨 준다) */
     return null;
   }
 
@@ -30,11 +30,14 @@
     o = o || {};
     var S = ctx.services || {}, Z = ctx.zone || {}, E = g.PlayEvidence, G = g.PlayGame, A = g.PlayArt, npc = S.npc || g.PlayNpc, tts = S.tts, audio = S.audio || { play: function () {} };
     var who = o.who || (ctx.opt && ctx.opt.who) || CONF.who, scenes = Z.talk || [];
-    var planted = {}; if (S.seed && S.seed.all) { var all = S.seed.all(); (Z.words || []).forEach(function (x) { if (all[x.w]) planted[x.w] = 1; }); }
+    /* 문장 ↔ 열쇠·그림·증거 대상. 음성 판정은 낱말 열쇠로(문장틀 like 류 + 끝 낱말 — PlaySpeech.matchSentence).
+       I like 칸(Lv1)은 문장이 곧 칸의 단어(씨앗 = 문장째로) · 교실처럼 낱말 칸이면 증거 대상 = 그 낱말(book), 칸에 없는 문장(I am here.)은 문장째로 */
+    var byW = {}; (Z.words || []).forEach(function (x) { byW[x.w] = x; });
+    function keyFor(sn) { var x = byW[sn]; return x && x.art ? x.art : sn.replace(/[.!?]$/, '').split(' ').pop(); }
+    function targetFor(sn) { if (byW[sn]) return sn; var k = keyFor(sn); return byW[k] ? k : sn; }
+    function picFor(sn) { var x = byW[sn] || byW[keyFor(sn)]; return x ? x.pic : (A.has(keyFor(sn)) ? A.html(keyFor(sn)) : ''); }
+    var planted = {}; if (S.seed && S.seed.all) { var all = S.seed.all(); scenes.forEach(function (sc) { sc.pick.forEach(function (sn) { if (all[targetFor(sn)]) planted[sn] = 1; }); }); }
     var turns = plan(scenes, { guest: !!o.guest, planted: planted });
-    /* 음성 판정은 낱말 열쇠로(문장틀 I like + 끝 낱말 — PlaySpeech.matchSentence) — 문장 ↔ 열쇠(art: it·you·cat·dog) */
-    var pic = {}, keyOf = {}, sentOf = {};
-    (Z.words || []).forEach(function (x) { var k = x.art || x.w.replace(/[.!?]$/, '').split(' ').pop(); pic[x.w] = x.pic; keyOf[x.w] = k; sentOf[k] = x.w; });
     var host = ctx.host; host.innerHTML = '';
     var root = h('div', 'tk' + (o.guest ? ' tk-guest' : '')), dots = h('div', 'dots'), scene = h('div', 'tk-scene'), line = h('div', 'sg-ask'), cards = h('div', 'tk-cards'), act = h('div', 'oq-act');
     scene.innerHTML = '<div class="tk-me">' + A.html('I') + '</div><div class="tk-mid" id="tkMid"></div><div class="tk-friend"></div>';
@@ -51,7 +54,7 @@
         dots.innerHTML = turns.map(function (_, k) { return '<i class="' + (k < i ? 'ok' : k === i ? 'on' : '') + '"></i>'; }).join('');
         if (i >= turns.length && !o.guest && turns.length < CONF.maxTurns) { var x = extra(scenes, planted, said); if (x) turns.push(x); }
         if (i >= turns.length) return resolve({ completed: true, passed: true, by: bys.indexOf('speech') >= 0 ? 'speech' : 'chosen' });
-        var t = turns[i], sc = t.scene, helped = false;
+        var t = turns[i], sc = t.scene, helped = false, sentOf = {};
         var pick = t.prefer ? [t.prefer].concat(sc.pick.filter(function (w) { return w !== t.prefer; })) : (o.guest ? shuffle(sc.pick) : sc.pick.slice());
         mid.className = 'tk-mid'; mid.innerHTML = sc.show.map(function (a) { return '<span class="tk-thing">' + A.html(a) + '</span>'; }).join('');
         npc.react(fr, 'wait'); act.innerHTML = '';
@@ -59,23 +62,23 @@
         /* 대답 카드 — 그림 + (손님 판이 아니면) 문장 글자. 누르면 들려준다 */
         cards.innerHTML = '';
         pick.forEach(function (w) {
-          var c = h('button', 'tk-card' + (t.prefer === w ? ' new' : ''), '<span class="tk-pic">' + (pic[w] || '') + '</span>' + (o.guest ? '' : '<span class="tk-say">' + w + '</span>')); c.type = 'button'; c.setAttribute('data-w', w);
+          var c = h('button', 'tk-card' + (t.prefer === w ? ' new' : ''), '<span class="tk-pic">' + picFor(w) + '</span>' + (o.guest ? '' : '<span class="tk-say">' + w + '</span>')); c.type = 'button'; c.setAttribute('data-w', w);
           c.onclick = function () { if (o.guest) return; helped = true; speak(w); };
           cards.appendChild(c);
         });
         audio.play('enter');
         speak(sc.line.en).then(function () {
           if (!alive()) return;
-          var keys = pick.map(function (w) { return keyOf[w]; }), tctx = {};
+          var keys = pick.map(function (w) { var k = keyFor(w); sentOf[k] = w; return k; }), tctx = {};
           Object.keys(ctx).forEach(function (k) { tctx[k] = ctx[k]; });
-          tctx.pool = keys.map(function (k) { return { w: k, pic: pic[sentOf[k]] }; });          /* 헷갈림 비교는 이 장면의 두 열쇠끼리 */
+          tctx.pool = keys.map(function (k) { return { w: k, pic: picFor(sentOf[k]) }; });          /* 헷갈림 비교는 이 장면의 두 열쇠끼리 */
           return g.PlayTutor.ask(tctx, { host: act, cands: keys, kind: 'sentence', sentence: function (k) { return sentOf[k] || k; }, hint0: !!o.hint0 });     /* 문장틀 판정 = 기본(like 와 비슷한 소리) */
         }).then(function (r) {
           if (!r || !alive()) return;
-          r.word = sentOf[r.word] || r.word;                                                    /* 증거·씨앗 대상 = 문장째로 */
+          r.word = sentOf[r.word] || r.word;                                                    /* 고른 문장 */
           if (helped) r.hinted = true;
           bys.push(r.by); said[r.word] = 1;
-          ctx.emit(E.say(r.word, r));
+          ctx.emit(E.say(targetFor(r.word), r));                                                /* 증거·씨앗 대상(문장 칸 = 문장 · 낱말 칸 = 낱말) */
           ctx.good(r.by === 'speech' && !r.hinted, { at: fr });
           /* 갈라진 반응 — 고른 문장에 따라 */
           var then = (sc.then || {})[r.word] || { face: 'ok' };

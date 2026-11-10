@@ -20,6 +20,7 @@
   var REPLY = [['Yum! Good choice.', '냠! 잘 골랐어.'], ['Me too!', '나도!'], ['Great! Thank you!', '고마워!']];
   var READ_ASK = ['Read it!', '이게 뭐라고 적혀 있을까? 읽어 줘.'];
   /* Lv1 무대 — 손님의 대답·부탁도 Lv1 #1·#2 낱말만 */
+  var REPLY2 = [['Good choice!', '잘 골랐어!'], ['Me too!', '나도!'], ['Great! Thank you!', '고마워!']];
   var REPLY1 = [['I like it!', '좋아!'], ['I like you!', '네가 좋아!'], ['I see it!', '그렇구나!']], READ_ASK1 = ['Hi!', '이게 뭐라고 적혀 있을까? 읽어 줘.'];
   function h(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
   function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
@@ -35,7 +36,7 @@
     var audio = S.audio || { play: function () {} };
     var turns = plan((Z.boss && Z.boss.turns) || []), sent = Z.sentence || function (w) { return 'I like ' + w + '.'; };
     var pic = {}; (ctx.pool || ctx.targets || []).forEach(function (x) { pic[x.w] = x.pic; });
-    var who = (ctx.opt && ctx.opt.guest) || CONF.guest, L1 = Z.world === 'lv1', REP = L1 ? REPLY1 : REPLY, ASK = L1 ? READ_ASK1 : READ_ASK;
+    var who = (ctx.opt && ctx.opt.guest) || CONF.guest, L1 = Z.world === 'lv1', REP = L1 ? REPLY1 : Z.foods ? REPLY : REPLY2, ASK = L1 ? READ_ASK1 : READ_ASK;     /* 「Yum!」은 먹는 무대에서만 */
     if (Z.talk && g.PlayTalk) return g.PlayTalk.run(ctx, { who: who, hint0: true, guest: true });      /* 대화 칸 — 손님과 대화(힌트 0) */
     var host = ctx.host; host.innerHTML = '';
     var root = h('div', 'oq sg'); host.appendChild(root);

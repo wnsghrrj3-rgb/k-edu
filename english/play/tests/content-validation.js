@@ -49,14 +49,21 @@ look.forEach(f => {
   if (f !== 'ui/tokens.css' && COLOR.test(src.replace(/&#[0-9]+;/g, ''))) { violations.push(f + ' — 색 값을 직접 적음(토큰 ui/tokens.css 만): ' + (src.match(COLOR) || [''])[0]); visual++; }
 });
 /* 쓰는 그림 이름이 실제로 있는가 */
-load('ui/icons.js'); load('content/art/art.js'); load('content/art/food.js'); load('content/art/home.js'); load('content/art/farm.js'); load('content/art/forest.js');
+load('ui/icons.js'); load('content/art/art.js'); load('content/art/food.js'); load('content/art/home.js'); load('content/art/farm.js'); load('content/art/forest.js'); load('content/art/school.js'); load('content/art/action.js');
 const IC = win.PlayIcon, AR = win.PlayArt;
 win.PLAY_ZONES.zones.forEach(z => {
   if (z.icon && !IC.has(z.icon)) violations.push(z.id + ' — 없는 아이콘 ' + z.icon);
   if (z.cellIcon && !AR.has(z.cellIcon)) violations.push(z.id + ' — 없는 그림 ' + z.cellIcon);
   (z.decor || []).forEach(x => { if (!IC.has(x.icon)) violations.push(z.id + ' 장식 ' + x.id + ' — 없는 아이콘 ' + x.icon); });
-  if (z.stage === 'lunch-shop' || z.stage === 'animal-farm') z.words.forEach(x => { if (!AR.has(x.art || x.w)) violations.push(z.id + ' ' + x.w + ' — 그린 그림 없음'); });
+  if (['lunch-shop', 'animal-farm', 'classroom', 'playground'].indexOf(z.stage) >= 0) z.words.forEach(x => { if (!AR.has(x.art || x.w)) violations.push(z.id + ' ' + x.w + ' — 그린 그림 없음'); });
   if (z.stage === 'lv1-gate') z.words.forEach(x => { if (x.art && !AR.has(x.art)) violations.push(z.id + ' ' + x.w + ' — 없는 그림 ' + x.art); });
+});
+/* 구역 안의 챈트·특별 손님 질문·대화 문장은 그 칸 재료 안(W07) */
+win.PLAY_ZONES.zones.forEach(z => {
+  const ws = (z.words || []).map(x => x.w);
+  (z.chant || []).forEach(l => l.forEach(w => { if (ws.indexOf(w) < 0) violations.push(z.id + ' 챈트 ' + w + ' — 칸 재료 밖'); }));
+  ((z.boss && z.boss.turns) || []).forEach(t => t.pick.forEach(w => { if (ws.indexOf(w) < 0) violations.push(z.id + ' 특별 손님 ' + w + ' — 칸 재료 밖'); }));
+  (z.confuse || []).forEach(pr => pr.forEach(w => { if (ws.indexOf(w) < 0) violations.push(z.id + ' 혼동쌍 ' + w + ' — 칸 재료 밖'); }));
 });
 Object.keys(win.PLAY_ZONES.stages || {}).forEach(k => { if (!IC.has(win.PLAY_ZONES.stages[k].icon)) violations.push('무대 ' + k + ' — 없는 아이콘'); });
 (win.PLAY_ZONES.peek || []).forEach(x => { if (!IC.has(x.icon)) violations.push('구경 ' + x.id + ' — 없는 아이콘'); });
@@ -87,7 +94,7 @@ const G1 = {}; L1.forEach(z => (z.fixedGames || z.games || []).forEach(id => { G
 ['lv1-gate', 'sound-forest', 'animal-farm'].forEach(st => { load('content/events/' + ({ 'lv1-gate': 'home', 'sound-forest': 'forest', 'animal-farm': 'farm' })[st] + '.js'); (win.PLAY_EVENTS[st] || []).forEach(e => { say1('사건 ' + e.id, e.intro.en); say1('사건 ' + e.id, e.outro.en); }); });
 (ZS.zone('lv1-02').talk || []).forEach((t, k) => { say1('대화 ' + (k + 1), t.line.en); t.pick.forEach(w => { if (!ZS.zone('lv1-02').words.some(x => x.w === w)) violations.push('대화 ' + (k + 1) + ' — 고를 문장 ' + w + ' 이 칸 단어에 없음'); say1('대화 ' + (k + 1), w); }); });
 L1.forEach(z => ((z.boss && z.boss.turns) || []).forEach(t => say1(z.id + ' 특별 손님', t.ask)));
-console.log('소리 마을(Lv1) 검사: 칸 ' + L1.length + ' · 소리 숲 ' + forest.length + '칸 · 알파벳 묶음 ' + (abc ? abc.bundles.length : 0) + ' · 문 ' + Object.keys(ZS.gates).length + ' → 위반 ' + (violations.length - l1v0));
+console.log('소리 마을(Lv1) 검사: 칸 ' + L1.length + ' · 소리 숲 ' + forest.length + '칸 · 알파벳 묶음 ' + (abc ? abc.bundles.length : 0) + ' · 문 ' + Object.keys(ZS.gates).filter(k => /^lv1-/.test(k)).length + ' → 위반 ' + (violations.length - l1v0));
 console.log('비주얼 규범 검사: 제작 파일 ' + look.length + '개 → 위반 ' + visual);
 console.log('소리 공방 재료 검증: ' + cells.length + '칸 · 단어 ' + words + ' · 조립할 수 있는 단어 ' + build + ' · 한 소리 짝 ' + pairs + ' → 위반 ' + violations.length);
 if (violations.length) { console.log(violations.join('\n')); process.exit(1); }

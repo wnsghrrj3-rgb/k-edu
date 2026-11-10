@@ -23,7 +23,7 @@
     changeAtLeast: 2,             /* 어제와 달라야 하는 놀이 수 */
     keepDays: 14,                 /* 기억해 두는 날 수 */
     order: ['say', 'body', 'ear', 'hand', 'sound', 'make'],   /* 하루 안에서 놀이가 놓이는 차례(사건 놀이는 맨 앞) */
-    perGame: { 'order-shop': 8, plates: 8, pop: 6, 'catch': 6, lean: 6, belt: 6, 'read-aloud': 6, 'sound-bridge': 4, 'sound-train': 4 }   /* 놀이별 대상 수(없으면 구역 단어 전부) */
+    perGame: { 'order-shop': 8, plates: 8, pop: 6, 'catch': 6, lean: 6, belt: 6, 'read-aloud': 6, 'sound-bridge': 4, 'sound-train': 4, raccoon: 5, 'picture-book': 6, 'magic-call': 6, dance: 6 }   /* 놀이별 대상 수(없으면 구역 단어 전부) */
   };
   var KEY = 'kedu-en-play-stage';
   /* 놀이의 첫 채널 → 겹침을 따지는 묶음 */

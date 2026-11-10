@@ -104,7 +104,7 @@
         p = PlayEvent.play(EV, { shop: body.parentNode, host: body, services: SV })
           .then(function(){ return PlayGame.run(id, ctxFor(i, body, Promise.resolve())); })
           .then(function(res){ return PlayEvent.end(EV, { shop: body.parentNode, services: SV }).then(function(){ return res; }); });
-      } else { var it = Z.world === 'lv1' && def.intro1 ? def.intro1 : def.intro;     /* Lv1 무대 = 그때까지 배운 낱말·감탄만 */
+      } else { var it = (Z.intro && Z.intro[id]) || (Z.world === 'lv1' && def.intro1 ? def.intro1 : def.intro);     /* 구역이 놀이 첫 마디를 바꿀 수 있다(교실의 주문 받기 = 사물함) · Lv1 무대 = 그때까지 배운 낱말·감탄만 */
         p = PlayGame.run(id, ctxFor(i, body, it ? sam(it.en, it.ko) : Promise.resolve())); }
       p.then(function(res){
         if (id === 'special-guest' && res.passed) return openShop(res.by);

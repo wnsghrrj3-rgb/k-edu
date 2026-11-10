@@ -41,7 +41,10 @@
   var WEAR = {
     apron: '<path d="M46 104h28l4 26H42z" fill="var(--a-cream)"/><path d="M50 104c2-6 18-6 20 0" stroke="var(--a-cream)" stroke-width="3" fill="none"/>',
     bag:   '<path d="M42 100l38 30" stroke="var(--a-wood)" stroke-width="5" stroke-linecap="round"/><rect x="72" y="116" width="14" height="12" rx="3" fill="var(--a-wood)"/>',
-    scarf: '<path d="M44 98c10 6 22 6 32 0v7c-10 6-22 6-32 0z" fill="var(--stage-2)"/><path d="M68 104l4 14-8-1z" fill="var(--stage-2)"/>'
+    scarf: '<path d="M44 98c10 6 22 6 32 0v7c-10 6-22 6-32 0z" fill="var(--stage-2)"/><path d="M68 104l4 14-8-1z" fill="var(--stage-2)"/>',
+    /* 교실 — 이름표 목걸이 · 운동장 — 호루라기(W07) */
+    lanyard: '<path d="M50 98l10 20 10-20" stroke="var(--stage-2)" stroke-width="3" fill="none"/><rect x="53" y="116" width="14" height="10" rx="2" fill="var(--surface)"/><path d="M56 121h8" stroke="var(--ink-3)" stroke-width="2"/>',
+    whistle: '<path d="M50 98l10 18 10-18" stroke="var(--stage-2)" stroke-width="3" fill="none"/><rect x="54" y="114" width="12" height="7" rx="3.5" fill="var(--a-steel)"/><circle cx="57" cy="117.5" r="1.6" fill="var(--ink-3)"/>'
   };
 
   function line(d, w, o) { return '<path d="' + d + '" stroke="' + INK + '" stroke-width="' + (w || 2.6) + '" fill="none" stroke-linecap="round" stroke-linejoin="round"' + (o ? ' opacity="' + o + '"' : '') + '/>'; }
