@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<!-- ════════════════════════════════════════
+     K-edu 영어 v3 양산 · Lv3 #24-3 날씨② 계절 「숙달」 봄 여름 가을 겨울 「숙달」
+     베이스: lv3/23_3_seasky_master.html (Lv3 #23 V판형 숙달 · 어디 살까 나누기 · 게이트②) + 계절 원판 채우기 손활동 · Do you like ___? 👍/👎
+     펼침 원천: handoff kedu/english/v3/lv3/24_weather2_seasons.md
+     ════════════════════════════════════════ -->
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu | 영어 Lv3 — 날씨② 계절 10단어 원판 채우기 · 좋아하는 계절 · 섞어 고르기 (24-3 숙달)</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   골격 = 골든 불변 / 옷 = P트랙 파랑 #1565C0
+   두 글자 한 소리(이중자음) 블록은 자음이므로 파랑 유지 — 모음만 주황
+   ============================================================ */
+:root{
+  --bg:#F0F6FE; --card:#fff;
+  --primary:#1565C0; --primary-light:#E3EEFC; --secondary:#5B8DEF;
+  --vowel:#FF8A3D; --vowel-light:#FFF1E6;
+  --green:#4CAF50; --green-light:#E8F5E9; --red:#F44336; --red-light:#FFEBEE;
+  --yellow:#FFC107; --yellow-light:#FFF8E1;
+  --text:#333; --subtext:#888; --border:#D7E4F7;
+  --shadow:0 4px 16px rgba(0,0,0,.08); --radius:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;gap:8px}
+.back{font-size:18px;color:var(--subtext);text-decoration:none}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 4px}
+.progress-bar{flex:1;height:10px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;color:#e6a800}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 10px;font-size:14px}
+.kedu-logo .logo-circle{width:20px;height:20px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:12px}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 18px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;width:100%;max-width:560px;text-align:center}
+.slide-title{font-size:21px;color:var(--subtext);margin-bottom:8px}
+.badge{display:inline-block;background:var(--primary-light);color:var(--primary);border-radius:99px;padding:4px 14px;font-size:17px;margin-bottom:8px}
+.concept-text{font-size:24px;line-height:1.6;margin:8px 0}
+.highlight{color:var(--primary)}
+/* 표지 */
+.today-label{font-size:22px;color:var(--secondary);letter-spacing:.5px;margin:18px 0 18px}
+.today-en{font-size:42px;color:var(--primary);font-weight:bold;line-height:1.3;margin:8px 0}
+.today-ko{font-size:26px;color:#2B925E;line-height:1.4;margin:14px 0 18px}
+/* 형광 강조 */
+.hl{background:linear-gradient(transparent 58%,#FFE680 58%);background-repeat:no-repeat;background-size:0% 100%;transition:background-size .55s cubic-bezier(.4,0,.2,1) .15s;padding:0 3px;font-weight:bold;color:var(--text)}
+.slide.lit .hl{background-size:100% 100%}
+/* 탭 단계 등장 */
+.step{opacity:0;transform:translateY(34px) scale(.82);transition:opacity .26s ease,transform .42s cubic-bezier(.34,1.6,.5,1);pointer-events:none}
+.step.in{opacity:1;transform:none;pointer-events:auto}
+.concept-big{font-size:30px;line-height:1.5;margin:10px 0}
+@keyframes tapBlink{0%,100%{opacity:.4}50%{opacity:1}}
+.hl-slot{background:var(--yellow-light);border:2px dashed var(--yellow);border-radius:8px;padding:1px 8px;color:#e6a800}
+.kay-says{display:flex;align-items:center;gap:12px;background:var(--primary-light);border-radius:16px;padding:12px 16px;margin:10px 0;text-align:left}
+.kay-icon{font-size:30px;flex-shrink:0}
+.kay-text{font-size:21px;line-height:1.5}
+/* 소리 블록 — 파닉스 심장 */
+.sblocks{display:flex;gap:12px;justify-content:center;align-items:center;margin:14px 0;transition:gap .5s cubic-bezier(.4,0,.2,1);flex-wrap:wrap}
+.sblocks.merged{gap:2px}
+.sblock{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:16px;padding:12px 18px;font-size:40px;line-height:1;cursor:pointer;box-shadow:0 4px 0 rgba(21,101,192,.25);transition:transform .12s,box-shadow .3s;position:relative}
+.sblock .sko{font-size:14px;color:var(--subtext)}
+.sblock.vowel{border-color:var(--vowel);color:var(--vowel);box-shadow:0 4px 0 rgba(255,138,61,.3)}
+.sblock:active{transform:scale(.94)}
+.sblock.singing{transform:scale(1.15);box-shadow:0 0 0 5px var(--yellow-light),0 4px 0 rgba(21,101,192,.25)}
+.sblock.isnew::after{content:'NEW';position:absolute;top:-10px;right:-6px;background:var(--red);color:#fff;font-size:11px;padding:1px 6px;border-radius:99px}
+.sblock.used{opacity:.25;pointer-events:none}
+.sblock.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+/* 소리 슬롯 */
+.sslots{display:flex;gap:10px;justify-content:center;align-items:center;margin:14px 0;flex-wrap:wrap}
+.sslot{min-width:72px;height:70px;border:3px dashed #A8C4EA;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:34px;color:#A8C4EA;background:#F8FBFF;padding:0 10px;transition:all .3s}
+.sslot.filled{border-style:solid;border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.sslot.filled.vslot{border-color:var(--vowel);color:var(--vowel);background:var(--vowel-light)}
+.sslot.swap{animation:swapPop .5s ease}
+@keyframes swapPop{0%{transform:translateY(0)}40%{transform:translateY(-14px) scale(1.1);background:var(--yellow-light);border-color:var(--yellow)}100%{transform:translateY(0)}}
+.word-done{font-size:34px;color:var(--primary);margin:8px 0}
+.mean{font-size:20px;color:var(--subtext)}
+.pic{font-size:80px;margin:6px 0;line-height:1}
+@keyframes popIn{0%{transform:scale(0) rotate(-15deg)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+/* 합치기 다이어그램 */
+.blend-map{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0;flex-wrap:wrap}
+.bm-piece{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:12px;padding:6px 14px;font-size:28px}
+.bm-piece.v{border-color:var(--vowel);color:var(--vowel)}
+.bm-arrow{font-size:26px;color:#e6a800;font-weight:bold}
+.bm-word{background:var(--yellow-light);border:3px solid var(--yellow);color:#e6a800;border-radius:12px;padding:6px 16px;font-size:30px;font-weight:bold}
+/* 문제 */
+.question-label{display:inline-flex;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:17px;margin-bottom:8px}
+.stars{color:#FCD34D}
+.question-text{font-size:23px;margin:6px 0 12px;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
+.choice-btn{background:#fff;border:3px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);color:var(--text)}
+.choice-btn .ko{display:block;font-size:14px;color:var(--subtext)}
+.choice-btn.big{font-size:40px;padding:10px 22px}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}}
+.listen-btn{background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:8px 22px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;color:var(--primary);margin:4px 0 8px}
+.feedback{font-size:19px;margin-top:10px;min-height:34px;border-radius:12px;padding:5px 12px;line-height:1.5}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#e6a800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-emoji{font-size:76px;margin:8px 0;animation:bounce 1s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.result-score{font-size:30px;color:#e6a800;margin:6px 0}
+.result-stars{font-size:34px;margin:4px 0}
+.nav{display:flex;justify-content:space-between;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,.06);flex-shrink:0;gap:10px}
+.nav-btn{flex:1;max-width:200px;background:var(--primary);color:#fff;border:none;border-radius:14px;padding:13px 0;font-family:'Jua',sans-serif;font-size:20px;cursor:pointer}
+.nav-btn:disabled{opacity:.3}
+.hint{font-size:16px;color:var(--subtext);margin-top:6px}
+/* ── V트랙 주황 파생 ── */
+:root{
+  --bg:#FFF6EF;
+  --primary:#FF8A3D; --primary-light:#FFF0E4; --secondary:#FFB27A;
+  --border:#F7DFCB;
+}
+/*SSN324CSS-BEGIN — Lv3 #24 날씨② 그림·계절 원판 · 4파일 + 활동지 문자 단위 동일(blocks/SSN324CSS.css → sync_blocks.py 주입, 하네스 A4·D2b).
+  ★그림 타일(.ssp·.ssz·.em) = Lv3 #6 ANM306CSS · #23 ANM323CSS 와 같은 기하(클래스 이름만 — 액자 모양이 정답 단서가 되지 않는다).
+  ★leaf = Lv2 #31 잎(.lf) 선언 그대로 · 계절 넷 = 나무 한 그루(잎빛 .cv · 줄기 .tk) + 바탕 · 땅 띠(봄 연두 땅 · 여름 파도 · 가을 갈색 땅 · 겨울 눈 땅).
+  ★계절 원판(.whl) = 둥근 판 네 칸(봄 왼쪽 위부터 시계 방향) · 칸 바탕 = 그 계절 바탕색 · 가운데 바늘(.ndl)만 돈다(바늘은 돌리기·가리키기 판에서만 보인다).
+  ★온도 칩(.tmp) 색 = Lv3 #7 온도계 칸 색 그대로(hot 빨강 · warm 주황 · cool 하늘 · cold 파랑).
+  ★가을 칸에 들어간 잎만 주황으로 물든다(.whl .lf.au — 원판 채우기 안에서만 · 그림 카드·선택지의 잎은 언제나 초록). ★움직임 0 — 명사 그림은 멈춰 있다. */
+.ssp{position:relative;display:inline-flex;align-items:center;justify-content:center;width:80px;height:64px;border-radius:14px;background:#FFFDF9;border:2px solid #F1DFCD;box-sizing:border-box;line-height:1;vertical-align:middle;overflow:hidden;text-align:center}
+.ssz{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+.ssz>.ssp{position:absolute;left:0;top:0;transform-origin:0 0}
+.ssp .em{font-size:44px;font-style:normal;line-height:1}
+.ssp .lf{display:inline-block;width:1em;height:.74em;background:#51CF66;border-radius:0 70% 0 70%;border:.04em solid #2F9E44;box-sizing:border-box}
+.ssp.s-leaf{font-size:46px}
+.ssp.s-sky{background:linear-gradient(#4DABF7,#A5D8FF)}
+.ssp .em.cl{font-size:30px}
+.ssp.s-spring{background:linear-gradient(#FFF0F6 0 76%,#8CE99A 76%)}
+.ssp.s-summer{background:linear-gradient(#FFF3BF 0 74%,#4DABF7 74%)}
+.ssp.s-summer::after{content:'';position:absolute;left:0;right:0;bottom:14px;height:5px;background:radial-gradient(circle at 50% 100%,#4DABF7 0 5px,transparent 6px) 0 0/12px 5px repeat-x}
+.ssp.s-fall{background:linear-gradient(#FFF4E6 0 76%,#D9A066 76%)}
+.ssp.s-winter{background:linear-gradient(#E7F5FF 0 74%,#FFFFFF 74%)}
+.ssp .tk{position:absolute;left:50%;bottom:11px;width:8px;height:18px;margin-left:-4px;background:#8D6E63;border-radius:2px}
+.ssp .cv{position:absolute;left:50%;top:4px;width:46px;height:36px;margin-left:-23px;border-radius:50%;box-sizing:border-box;z-index:1}
+.ssp.s-spring .cv{background:radial-gradient(circle at 28% 34%,#F06595 0 3px,transparent 4px),radial-gradient(circle at 66% 28%,#F06595 0 3px,transparent 4px),radial-gradient(circle at 50% 64%,#F06595 0 3px,transparent 4px),radial-gradient(circle at 22% 70%,#F783AC 0 3px,transparent 4px),radial-gradient(circle at 78% 62%,#F783AC 0 3px,transparent 4px),#B2F2BB;border:2px solid #69DB7C}
+.ssp.s-summer .cv{background:#2F9E44;border:2px solid #2B8A3E}
+.ssp.s-fall .cv{background:#FD7E14;border:2px solid #E8590C}
+.ssp.s-winter .cv{background:#FFFFFF;border:2px solid #ADB5BD}
+.whl{position:relative;width:min(300px,100%);aspect-ratio:1/1;margin:8px auto;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;padding:6px;border-radius:50%;border:4px solid var(--border);background:#fff;box-sizing:border-box;overflow:hidden}
+.whl .wc{position:relative;display:flex;flex-direction:column;gap:2px;min-width:0;min-height:0;box-sizing:border-box;cursor:pointer;transition:box-shadow .2s}
+.whl .wc.c-spring{grid-area:1/1;border-radius:100% 0 0 0;background:#FFE3EE;justify-content:flex-end;align-items:flex-end;padding:0 6px 6px 0}
+.whl .wc.c-summer{grid-area:1/2;border-radius:0 100% 0 0;background:#FFF3BF;justify-content:flex-end;align-items:flex-start;padding:0 0 6px 6px}
+.whl .wc.c-fall{grid-area:2/2;border-radius:0 0 100% 0;background:#FFE8CC;justify-content:flex-start;align-items:flex-start;padding:6px 0 0 6px}
+.whl .wc.c-winter{grid-area:2/1;border-radius:0 0 0 100%;background:#D0EBFF;justify-content:flex-start;align-items:flex-end;padding:6px 6px 0 0}
+.whl.m-point .wc{cursor:default}
+.whl .wc .tag{font-family:'Jua',sans-serif;font-size:18px;color:var(--primary);line-height:1.1;min-height:1.1em}
+.whl .wc.found,.whl .wc.ok{box-shadow:0 0 0 4px var(--green) inset}
+.whl .wc.wrong{box-shadow:0 0 0 4px var(--red) inset;animation:shake .4s}
+.whl .wc.pt{box-shadow:0 0 0 4px var(--primary) inset}
+.whl .wc.now{box-shadow:0 0 0 4px var(--yellow) inset}
+.whl .wc .tmp{display:none;font-family:'Jua',sans-serif;font-size:16px;color:#fff;border-radius:99px;padding:0 8px;line-height:1.4}
+.whl .wc .tmp.on{display:inline-block}
+.whl .wc .tmp.t-hot{background:#E53935}
+.whl .wc .tmp.t-warm{background:#FB8C00}
+.whl .wc .tmp.t-cool{background:#4FC3F7}
+.whl .wc .tmp.t-cold{background:#1E88E5}
+.whl .wc .got{display:flex;gap:2px;line-height:0}
+.whl .lf.au{background:#FD7E14;border-color:#E8590C}
+.whl .ndl{position:absolute;left:50%;top:50%;width:6px;height:26%;background:#495057;border-radius:3px;transform-origin:50% 100%;transition:transform .6s;z-index:3;pointer-events:none}
+.whl .ndl::after{content:'';position:absolute;left:50%;top:-11px;margin-left:-8px;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:12px solid #495057}
+.whl.m-find .ndl,.whl.m-fill .ndl{display:none}
+.whl .hub{position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#495057;z-index:4;pointer-events:none}
+/*SSN324CSS-END*/
+.wcards{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.wcard{background:#fff;border:3px solid var(--primary);color:var(--primary);border-radius:16px;
+       padding:6px 10px;font-size:22px;cursor:pointer;box-shadow:0 4px 0 rgba(255,138,61,.25);
+       transition:transform .1s;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:76px}
+.wcard .fe{display:flex;align-items:center}
+.wcard .ko{display:block;font-size:12px;color:var(--subtext)}
+.wcard:active{transform:scale(.94)}
+.qpic{margin:8px 0;height:96px;display:flex;align-items:center;justify-content:center}
+.choice-btn.pic-btn{padding:6px 8px;line-height:1}
+.stamp{display:none;margin:6px 0;background:var(--yellow-light);border:2px solid var(--yellow);color:#C77700;border-radius:99px;padding:4px 14px;font-size:18px}
+.roundtag{font-size:15px;color:var(--subtext)}
+/* ★계절 원판 채우기 — 물건 카드 한 장씩 → 원판 칸(틀린 칸 튕김 + 소리 0 · 맞으면 그 칸 계절 + 물건 낭독 · 진단 미적립) */
+.sortcard{display:inline-flex;align-items:center;gap:8px;border:3px solid var(--primary);border-radius:18px;background:#fff;padding:4px 14px;margin:2px 0}
+.sortcard .sw{font-size:26px;color:var(--primary)}
+.sortcard.pop{animation:cpop .4s}
+.sortsay{font-size:18px;color:var(--subtext);min-height:1.4em}
+/* ★좋아하는 계절 — Do you like ___? → 👍/👎 → I like ___. / I don't like ___.(바른 문장만 · 정답 없음 · 진단 미적립) */
+.likerow{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:8px 0}
+.qbub{background:#fff;border:3px solid var(--secondary);border-radius:18px;padding:6px 14px;font-size:24px;color:var(--text);cursor:pointer;font-family:'Jua',sans-serif}
+.ynrow{display:flex;gap:14px;justify-content:center;margin:6px 0}
+.ynb{font-size:40px;line-height:1;background:#fff;border:3px solid var(--border);border-radius:18px;padding:6px 18px;cursor:pointer}
+.ynb:active{transform:scale(.94)}
+.abub{display:inline-block;min-width:140px;background:#fff;border:3px dashed var(--border);border-radius:16px;padding:4px 12px;font-size:22px;color:#C9B39C}
+.abub.on{border-style:solid;border-color:var(--green);background:var(--green-light);color:var(--text)}
+.mine{font-size:16px;color:var(--subtext);min-height:1.3em}
+/* 친구들의 겨울 — Ben 목도리 다섯 겹 · Amy 건물만 한 눈사람(말·그림 과장 · 눌러서 듣기 · 진단 0) */
+.duo6{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.dcard{border:3px solid var(--primary);border-radius:18px;background:#fff;padding:8px 8px;width:148px;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.dcard.tapped{border-color:var(--green);background:var(--green-light)}
+.dcard .nm{font-size:15px;color:var(--subtext)}
+.dcard .sline{font-size:19px;color:var(--text)}
+.ben5{display:flex;flex-direction:column;align-items:center;line-height:.8}
+.ben5 .pk{font-size:42px;line-height:1}
+.ben5 .sc{font-size:22px;line-height:.62}
+.amyb{display:flex;align-items:flex-end;justify-content:center;height:100px}
+.amyb .big{line-height:0}
+.dcard .nm .tiny{font-weight:normal;color:var(--primary)}
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back" href="../index.html">🪜</a>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 12</span>
+  </div>
+  <div class="score-badge">⭐ <span id="scoreVal">0</span></div>
+  <div class="kedu-logo"><div class="logo-circle">K</div>영어</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesContainer">
+  <!-- ━━━ S0 표지 ━━━ -->
+  <div class="slide active" data-steps>
+    <div class="card">
+      <div class="badge step">영어 Lv3 · 날씨② 계절 24-3</div>
+      <div class="today-label step">숙달 🏁</div>
+      <div class="today-en step">원판을 채우고<br>좋아하는 계절을 말해요</div>
+      <div class="today-ko step">계절 열 단어가 <span class="today-blank">내 말</span>이 됐는지 확인해요</div>
+    </div>
+  </div>
+
+  <!-- ━━━ S1 소환 — 10장 마지막 확인 ━━━ -->
+  <div class="slide" data-steps>
+    <div class="card">
+      <div class="slide-title step">🔊 마지막으로 한 바퀴 — 눌러서 들어 봐</div>
+      <div class="wcards step" id="recall"></div>
+      <div class="kay-says step">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">먼저 <b>계절 원판 채우기</b>, 그다음 <b>좋아하는 계절</b> 말하기, 마지막으로 <b>섞어서</b> 여섯 문제!<br>뒤의 두 문제는 <span class="hl">소리 없이</span> 그림만 보고 골라요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ S2 손활동 — 계절 원판 채우기 (물건 다섯 → 칸 · 진단 미적립) ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">🎡 계절 원판 채우기 — 물건 카드를 <b>그 계절 칸</b>에 넣어요!</div>
+      <div class="roundtag" id="fillRound">1 / 5</div>
+      <div id="fillCard"></div>
+      <div id="whlFill"></div>
+      <div class="sortsay" id="fillSay"></div>
+      <div class="feedback" id="fb2"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S3 손활동 — 좋아하는 계절: Do you like ___? → 👍/👎 → 내 문장 (정답 없음 · 진단 미적립) ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">🙋 좋아하는 계절 — 질문을 듣고 <b>👍</b> 나 <b>👎</b> 를 눌러요!</div>
+      <div class="roundtag" id="likeRound">1 / 4</div>
+      <div class="likerow"><span id="likePic"></span><button class="qbub" id="likeQ">…</button></div>
+      <div class="ynrow"><button class="ynb" data-y="1">👍</button><button class="ynb" data-y="0">👎</button></div>
+      <div><span class="abub" id="likeA">…</span></div>
+      <div class="mine" id="likeMine"></div>
+      <div class="feedback" id="fb3"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S4 친구들의 겨울 — Ben 👎 목도리 다섯 겹 · Amy 건물만 한 눈사람 (눌러서 듣기 · 진단 0) ━━━ -->
+  <div class="slide" data-steps>
+    <div class="card">
+      <div class="slide-title step">❄️ 친구들의 겨울 — 둘 다 눌러 들어 봐</div>
+      <div class="duo6 step">
+        <div class="dcard" id="dcBen" data-say="I don't like winter."><span class="ben5"><span class="pk">🧒</span><span class="sc">🧣</span><span class="sc">🧣</span><span class="sc">🧣</span><span class="sc">🧣</span><span class="sc">🧣</span></span><span class="nm">Ben · 목도리 다섯 겹</span><span class="sline">I don't like winter.</span></div>
+        <div class="dcard" id="dcAmy" data-say="I make a snowman."><span class="amyb"><span class="big" id="amySnow"></span></span><span class="nm"><b class="tiny">Amy</b> · 늘 크게 크게</span><span class="sline">I make a snowman.</span></div>
+      </div>
+      <div class="kay-says step">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text">Ben 은 겨울이 싫대요 — 목도리가 <b>다섯 겹</b>! Amy 의 눈사람은… <span class="hl">건물만 해요</span> 😮</div>
+      </div>
+      <div class="feedback" id="fb4"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S5~S8 섞어 듣고 그림 ①~④ (게이트) ━━━ -->
+  <div class="slide" data-correct="0" data-score="10" data-concept="vocab.meaning" data-gate="1">
+    <div class="card">
+      <div class="question-label">문제 1 <span class="stars">⭐</span></div>
+      <div class="question-text">듣고 맞는 그림을 골라요!</div>
+      <button class="listen-btn big" id="lb5">🔊 다시 듣기</button>
+      <div class="choices" id="ch5"></div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+  <div class="slide" data-correct="2" data-score="10" data-concept="vocab.meaning" data-gate="1">
+    <div class="card">
+      <div class="question-label">문제 2 <span class="stars">⭐</span></div>
+      <div class="question-text">듣고 맞는 그림을 골라요!</div>
+      <button class="listen-btn big" id="lb6">🔊 다시 듣기</button>
+      <div class="choices" id="ch6"></div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+  <div class="slide" data-correct="3" data-score="10" data-concept="vocab.meaning" data-gate="1">
+    <div class="card">
+      <div class="question-label">문제 3 <span class="stars">⭐</span></div>
+      <div class="question-text">듣고 맞는 그림을 골라요!</div>
+      <button class="listen-btn big" id="lb7">🔊 다시 듣기</button>
+      <div class="choices" id="ch7"></div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+  <div class="slide" data-correct="1" data-score="10" data-concept="vocab.meaning" data-gate="1">
+    <div class="card">
+      <div class="question-label">문제 4 <span class="stars">⭐</span></div>
+      <div class="question-text">듣고 맞는 그림을 골라요!</div>
+      <button class="listen-btn big" id="lb8">🔊 다시 듣기</button>
+      <div class="choices" id="ch8"></div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S9~S10 소리 없이 그림 → 단어 ⑤~⑥ (게이트) ━━━ -->
+  <div class="slide" data-correct="1" data-score="10" data-concept="vocab.meaning" data-gate="1" data-kind="pic">
+    <div class="card">
+      <div class="question-label">문제 5 <span class="stars">⭐</span></div>
+      <div class="question-text">🔇 소리 없이 — 이 그림에 맞는 단어는?</div>
+      <div class="qpic" id="q9pic"></div>
+      <div class="choices" id="ch9"></div>
+      <div class="feedback" id="fb9"></div>
+    </div>
+  </div>
+  <div class="slide" data-correct="2" data-score="10" data-concept="vocab.meaning" data-gate="1" data-kind="pic">
+    <div class="card">
+      <div class="question-label">문제 6 <span class="stars">⭐</span></div>
+      <div class="question-text">🔇 소리 없이 — 이 그림에 맞는 단어는?</div>
+      <div class="qpic" id="q10pic"></div>
+      <div class="choices" id="ch10"></div>
+      <div class="feedback" id="fb10"></div>
+    </div>
+  </div>
+
+  <!-- ━━━ S11 결과 — 게이트② ━━━ -->
+  <div class="slide">
+    <div class="card">
+      <div class="result-emoji" id="resultEmoji">🎉</div>
+      <div style="font-size:26px" id="resultTitle">여섯 문제 끝!</div>
+      <div class="result-score">⭐ <span id="finalScore">0</span>점</div>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <div class="stamp" id="stamp">🏅 Lv3 · 스물네 번째 칸 점등!</div>
+      <div class="kay-says">
+        <div class="kay-icon">💡</div>
+        <div class="kay-text" id="gateText">채점 중…</div>
+      </div>
+      <button class="nav-btn" id="wsBtn" style="margin-top:10px;display:none" onclick="location.href='../worksheets/seasons.html'">🖨 활동지 출력</button>
+      <button class="nav-btn" id="gateBtn" style="margin-top:10px">▶ 다음</button>
+      <button class="nav-btn" style="margin-top:10px;background:var(--secondary)" onclick="location.href='../index.html'">🪜 사다리로</button>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script src="../engine/k-tts.js"></script>
+<script src="../engine/k-progress.js"></script>
+<script src="../engine/k-collection.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
+<script>
+let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
+const TOTAL=12;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playTone(f,t,d,g=.3){getCtx();audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d);});}
+function playCorrect(){[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
+function playWrong(){[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
+function playClick(){playTone(880,'sine',.08,.2);}
+document.body.addEventListener('pointerdown',()=>{if(!unlocked){KTTS.unlock();unlocked=true;justUnlocked=true;setTimeout(()=>justUnlocked=false,350);
+  const cur=document.querySelectorAll('.slide')[currentSlide];
+  const last=cur&&cur.querySelectorAll('.step.in');
+  if(last&&last.length){speakStep(last[last.length-1]);}
+}},{once:true});
+
+/* ── 탭 기반 단계 등장 (자동 흐름 ❌) ── */
+let stepState={};
+function setupSlide(slide,idx){
+  slide.classList.add('lit');
+  const steps=slide.querySelectorAll('.step');
+  if(!steps.length)return;
+  if(stepState[idx]===undefined){
+    steps.forEach(s=>s.classList.remove('in'));
+    steps[0].classList.add('in');stepState[idx]=1;
+    speakStep(steps[0]);
+  }else{
+    steps.forEach(s=>s.classList.add('in'));stepState[idx]=steps.length;
+  }
+}
+function speakStep(el){
+  if(!unlocked||!el)return;
+  if(el.dataset.sound)KTTS.sound(el.dataset.sound);
+  else if(el.dataset.speakWord)KTTS.word(el.dataset.speakWord);
+  else if(el.dataset.speak)KTTS.sentence(el.dataset.speak);
+}
+function advanceStep(slide,idx){
+  const steps=[...slide.querySelectorAll('.step')];
+  if(stepState[idx]<steps.length){
+    const el=steps[stepState[idx]];
+    el.classList.add('in');playClick();speakStep(el);
+    stepState[idx]++;
+    return true;
+  }
+  return false;
+}
+function goSlide(n){
+  const sl=document.querySelectorAll('.slide');KTTS.stop();
+  sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');
+  setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);
+  currentSlide=n;sl[n].classList.add('active');updateUI();
+  setupSlide(sl[n],n);
+}
+function nextSlide(){
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  if(slide.hasAttribute('data-steps')&&advanceStep(slide,currentSlide))return;
+  if(currentSlide<TOTAL-1)goSlide(currentSlide+1);
+}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;
+  document.getElementById('scoreVal').textContent=score;
+  if(currentSlide===TOTAL-1)finish();
+}
+function addScore(p){
+  const bonus=combo>=3?Math.floor(p*.5):0;
+  score+=p+bonus;combo++;
+  document.getElementById('scoreVal').textContent=score;
+  if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}
+}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.innerHTML=msg;el.className='feedback '+(ok?'ok':'err');}}
+
+const OK_MSGS=['✅ 정답! +{p}점','🎯 바로 그거야! +{p}점','✨ 소리 박사인데? +{p}점'];
+const SAM_MSGS=['🙋 Sam: "나도 그거 골랐는데…" 다시 들어 봐!','🙋 Sam: "내가 맞다니까!" …아니래. 한 번 더!','🤔 Sam이 또 헷갈리게 했구나 — 소리를 잘 듣고 다시!'];
+function okMsg(p){return OK_MSGS[Math.floor(Math.random()*OK_MSGS.length)].replace('{p}',p);}
+function samMsg(){return SAM_MSGS[Math.floor(Math.random()*SAM_MSGS.length)];}
+/*SSN324-BEGIN — Lv3 #24 날씨② 계절 재료(펼침 lv3/24_weather2_seasons.md) · 4파일 문자 단위 동일(blocks/SSN324.js → sync_blocks.py 주입, 하네스 A4).
+  ★좌표 = 사계절 + 계절의 물건 잠금 → #37 날씨③ · #29 주말 이야기의 연료 · 날씨 사슬 #7 날씨①(온도 네 칸) → #24 계절.
+  ★배지 = 실물 대조(Lv1·Lv2·Lv3 앞 칸 실물 html 전수 대조):
+    · sun 초록 Lv1 #12(12_2 KTTS.blend s·u·n + 「해 ☀️」 실물)
+    · ★leaf 노랑 ea — Lv2 #31 V칸 isrule ea 로 만남 · 조립 KEYS 0(펼침 「초록 Lv2 #31」 정정 — Lv3 #20 week 판정 그대로)
+    · ★sky 하늘 Lv1 #13(13_1 「blue sky 💙」 노출만 — 끝 y /아이/ 짚기 0, #8 dry 판정)
+    · ★snowman 초록 「snow + man」(snow = Lv2 #23 KEYS s·n·ow · man = Lv1 #4 KTTS.blend m·a·n — 붙어서 한 단어 · Lv3 #11 classroom 판형)
+    · spring·summer·fall·winter·flower·ice 회색 통째로(앞 칸 화면 0) · flower 「cow 의 ow」(#9) · fall 「hall·ball 의 all」(#11·#21) 한 줄씩(문항 0).
+  ★그림 = 같은 타일(.ssp — Lv3 #6·#7·#23 타일 기하 그대로) 안에 선다. 같은 단어 = 같은 그림.
+    · 계절 넷 = 나무 한 그루 장면(CSS — 잎빛·바탕·땅 띠만 다르다): 봄 연두 + 분홍 꽃점 · 여름 진초록 + 파도 띠 · 가을 주황 · 겨울 흰 나무 + 눈 땅.
+      ★계절 그림엔 물건 이모지 0 — ☀️(sun)·❄️(Lv2 #23 snow)·🍂 를 넣으면 다른 단어 그림과 겹친다. 잎이 지는 그림 0(fall = 가을 뜻만).
+    · flower 🌷 · ice 🧊 · ★snowman ⛄(Lv2 #23 snow = ❄️ 실물 — 충돌 0 · 앞 칸 ⛄ 는 Lv2 #26·Lv3 #13 눈 오는 날 장면 소품뿐) · sun ☀️ = Lv1 #12 실물
+      · leaf = Lv2 #31 잎 CSS 실물(.lf 선언 그대로) · sky = 파란 띠 + ☁️(#7 cloud 실물).
+  ★계절 원판(.whl) = 네 칸 시계 방향(봄 왼쪽 위 → 여름 → 가을 → 겨울) · 가운데 바늘(.ndl)만 돈다(그림은 뒤집히지 않는다).
+    온도 단어 = #7 온도계 칸 색 그대로(spring warm 주황 · summer hot 빨강 · fall cool 하늘 · winter cold 파랑) — 원판 칩으로만(카드·문항 0).
+  ★뒷면 문장 = 펼침 그대로 열(be · 평서 — 전치사 0 · 바른 꼴만).
+  ★여럿 0 — leaf·snowman·sky·ice·계절 넷 여럿 꼴은 화면·소리 어디에도 만들지 않는다(flower 만 허용 · 이 칸은 안 씀).
+  ★혼동 짝 = 10단어 전부 — ★spring↔fall(둘 다 선선 — 새싹·꽃점 / 주황 잎) · ★summer↔winter · ice↔snowman(얼음 / 눈) · flower↔leaf · sun↔sky. */
+const VA=[
+  {w:'spring', ko:'봄',     k:'ssn', n:1, t:'warm', b:'whole'},
+  {w:'summer', ko:'여름',   k:'ssn', n:2, t:'hot',  b:'whole'},
+  {w:'fall',   ko:'가을',   k:'ssn', n:3, t:'cool', b:'whole'},
+  {w:'winter', ko:'겨울',   k:'ssn', n:4, t:'cold', b:'whole'},
+  {w:'flower', ko:'꽃',     k:'thg', h:'spring', b:'whole',                 e:'🌷'},
+  {w:'ice',    ko:'얼음',   k:'thg', h:'winter', b:'whole',                 e:'🧊'},
+  {w:'snowman',ko:'눈사람', k:'thg', h:'winter', b:'old',  f:'snow + man',  e:'⛄'},
+  {w:'leaf',   ko:'잎',     k:'thg', h:'fall',   b:'rule', r:'ea'},
+  {w:'sun',    ko:'해',     k:'thg', h:'summer', b:'old',  f:'Lv1 #12',     e:'☀️'},
+  {w:'sky',    ko:'하늘',   k:'thg', h:'',       b:'met',  f:'Lv1 #13'}
+];
+const VB=w=>VA.find(x=>x.w===w);
+const VWS=VA.map(x=>x.w);
+const SSNW=['spring','summer','fall','winter'];                     /* 계절 판 — 원판 시계 방향 */
+const THGW=['flower','ice','snowman','leaf','sun','sky'];           /* 물건 판(펼침 순서) */
+const FLIPA=['spring','summer','fall','winter','sky'];              /* 읽고 뒤집기 ① 계절 넷 + 하늘 */
+const FLIPB=['flower','ice','snowman','leaf','sun'];                /* 읽고 뒤집기 ② 원판에 앉는 물건 다섯 */
+const TEMP={spring:'warm',summer:'hot',fall:'cool',winter:'cold'};  /* 원판 온도 — #7 온도계 칸 */
+const CONFUSE={spring:'fall',fall:'spring',summer:'winter',winter:'summer',ice:'snowman',snowman:'ice',flower:'leaf',leaf:'flower',sun:'sky',sky:'sun'};
+/* 짝을 가르는 한 줄 — 오답 피드백·보충 대조 공통(소리 0 · 글자만) */
+const TIP={
+  spring:'연두 잎에 <b>분홍 꽃점</b> — 따뜻해지는 봄이에요!',     fall:'나무가 <b>주황</b>으로 물들어요 — 시원한 가을이에요!',
+  summer:'<b>진초록</b> 나무 · 파란 <b>파도</b> — 더운 여름이에요!', winter:'<b>하얀</b> 나무 · 하얀 땅 — 추운 겨울이에요!',
+  ice:'🧊 <b>네모난</b> 투명 덩어리 — 얼음이에요!',              snowman:'⛄ <b>눈</b>을 굴려 만든 사람 — 눈사람이에요!',
+  flower:'🌷 <b>꽃잎</b>이 동그랗게 — 꽃이에요!',                leaf:'<b>초록 잎</b> 한 장 — 잎이에요!',
+  sun:'☀️ 하늘에 뜬 <b>해</b> 그 자체예요!',                     sky:'<b>파란</b> 바탕에 구름 — 하늘이에요!'
+};
+/* 그림 — 단일 원천. 모든 그림은 같은 타일(.ssp) 안에 선다 */
+function sspIn(w){
+  const x=VB(w);
+  if(x.k==='ssn')return '<i class="cv"></i><i class="tk"></i>';
+  if(w==='leaf')return '<span class="lf"></span>';
+  if(w==='sky')return '<i class="em cl">☁️</i>';
+  return '<i class="em">'+x.e+'</i>';
+}
+function pic(w){return '<span class="ssp s-'+w+'" data-ssp="'+w+'">'+sspIn(w)+'</span>';}
+/* 크기 — 상자째 줄이고 키운다(Lv3 #3 pz 판형) */
+function pz(w,k){return '<span class="ssz" style="width:'+Math.round(80*k)+'px;height:'+Math.round(64*k)+'px"><span class="ssp s-'+w+'" data-ssp="'+w+'" style="transform:scale('+k+')">'+sspIn(w)+'</span></span>';}
+/* 철자 — 맨글자(새 표기 0) */
+const SPELL={};VWS.forEach(w=>{SPELL[w]='<span class="tw">'+w+'</span>';});
+/* 배지 카드 속성 — class + data */
+function bdg(w){
+  const x=VB(w);
+  if(x.b==='rule')return 'isrule" data-rule="'+x.r;
+  if(x.b==='old')return 'isold" data-from="'+x.f;
+  if(x.b==='met')return 'ismet" data-from="'+x.f;
+  return 'iswhole';
+}
+/* 뒷면 문장 — 펼침 그대로(바른 꼴만) */
+const SENT={spring:'It is spring.',summer:'Summer is hot.',fall:'Fall is cool.',winter:'Winter is cold.',flower:'I see a flower.',
+  ice:'It is ice.',snowman:'I make a snowman.',leaf:'It is a leaf.',sun:'The sun is hot.',sky:'The sky is blue.'};
+function sent(w){return SENT[w];}
+function sline(w){return '<span class="sline">'+SENT[w].replace(new RegExp('\\b('+w+')\\b','i'),'<b class="swt">$1</b>')+'</span>';}
+/* 계절 원판 — 네 칸(시계 방향) + 가운데 바늘.
+   mode='find'(짚으면 이름표) · 'spin'(바늘 돌리기 — 온도 칩 자리) · 'point'(문항 — 가리킨 칸 하나 · 글자 0) · 'fill'(물건 채우기 — 이름표 보임) */
+function wheel(mode,pt){
+  const deg={spring:-45,summer:45,fall:135,winter:225};
+  return '<div class="whl m-'+mode+'">'+SSNW.map(w=>'<div class="wc c-'+w+(mode==='point'&&w===pt?' pt':'')+'" data-w="'+w+'">'+pz(w,.9)
+    +'<span class="tag">'+(mode==='fill'?w:'')+'</span>'+(mode==='spin'?'<span class="tmp"></span>':'')+(mode==='fill'?'<span class="got"></span>':'')+'</div>').join('')
+    +'<span class="ndl" style="transform:translate(-50%,-100%) rotate('+(mode==='point'?deg[pt]:-45)+'deg)"></span><span class="hub"></span></div>';
+}
+/*SSN324-END*/
+/* ── Lv3 24-3 숙달 (펼침 24_3) ──
+   ★S2 계절 원판 채우기 = 손활동(진단 미적립) — 물건 카드(그림 + 글자) 다섯 장(🌷·🧊·⛄·잎·☀️ — 섞음) 한 장씩 → 원판 칸.
+     틀린 칸은 튕김 + 소리 0. 맞으면 칸에 들어가고 그 칸 계절 + 물건 단어째 낭독. flower 봄 · sun 여름 · leaf 가을(들어가면 주황으로 물듦) · ice·snowman 겨울. 다섯 = +10.
+   ★S3 좋아하는 계절 = 손활동(정답 없음 · 진단 미적립) — 원판 차례로 넷: Do you like ___? → 👍 / 👎 → I like ___. / I don't like ___.(바른 문장만 · 고른 문장만 낭독).
+     계절은 여럿 꼴 0(spring 그대로 — s 꼬리 칸 0).
+   ★S4 친구들의 겨울 = 펼침 「24_3 장면에만」 — Ben 🧒 목도리 다섯 겹 I don't like winter. · Amy(이름표만 — 인물 풀 규약) 건물만 한 ⛄ I make a snowman.(그림 과장) · 눌러서 듣기 · 진단 0.
+   ★섞어 6 = 듣고 그림 4(4지) + 소리 없이 그림→단어 2(3지) — 10단어 중 겹치지 않게 6개 · 오답 첫 자리에 혼동 짝.
+     게이트② = 이 6문항 첫 시도 4↑(6중 4 · 규약 §2) → KProgress.light('lv3-24').
+   ★소리 = KTTS.word(단어) + 좋아하는 계절·친구 바른 문장(KTTS.sentence) · 오답 때 소리 0 · 낱소리·조각 0. 타이머 없음(계약 §8). */
+const WRONG_AT={};
+let firstTryOK=0;
+document.getElementById('recall').innerHTML=VWS.map(w=>'<div class="wcard" data-word="'+w+'"><span class="fe">'+pz(w,.62)+'</span>'+w+'<span class="ko">'+VB(w).ko+'</span></div>').join('');
+document.getElementById('amySnow').innerHTML=pz('snowman',1.5);
+/* 혼동 짝을 오답 첫 자리에 — 나머지는 무작위 */
+function distractOf(word,n){
+  const rest=VWS.filter(w=>w!==word&&w!==CONFUSE[word]).sort(()=>Math.random()-.5);
+  return [CONFUSE[word]].concat(rest.slice(0,n-1)).sort(()=>Math.random()-.5);
+}
+
+/* S2 계절 원판 채우기 */
+const FILLO=FLIPB.slice().sort(()=>Math.random()-.5);
+(function(){
+  const card=document.getElementById('fillCard'),tag=document.getElementById('fillRound'),say=document.getElementById('fillSay');
+  const box=document.getElementById('whlFill');
+  box.innerHTML=wheel('fill');
+  const cells=[...box.querySelectorAll('.wc')];
+  let r=0,busy=false;
+  function why(w){
+    if(w==='flower')return '🌷 꽃이 피는 계절은? — 따뜻한 <b>봄</b>!';
+    if(w==='sun')return '☀️ 해가 가장 뜨거운 계절은? — 더운 <b>여름</b>!';
+    if(w==='leaf')return '잎이 주황으로 물드는 계절은? — 시원한 <b>가을</b>!';
+    if(w==='ice')return '🧊 물이 꽁꽁 어는 계절은? — 추운 <b>겨울</b>!';
+    return '⛄ 눈을 굴려 눈사람을 만드는 계절은? — 추운 <b>겨울</b>!';
+  }
+  function show(){
+    const w=FILLO[r];
+    tag.textContent=(r+1)+' / '+FILLO.length;
+    card.innerHTML='<div class="sortcard pop" data-cw="'+w+'">'+pz(w,.8)+'<span class="sw">'+w+'</span></div>';
+    say.textContent='';
+  }
+  cells.forEach(c=>c.addEventListener('click',()=>{
+    if(busy||r>=FILLO.length)return;
+    const w=FILLO[r],h=VB(w).h;playClick();
+    if(c.dataset.w===h){
+      busy=true;c.classList.add('ok');playCorrect();
+      c.querySelector('.got').insertAdjacentHTML('beforeend',pz(w,.4));
+      if(w==='leaf'){const lf=c.querySelector('.got .lf');if(lf)lf.classList.add('au');}
+      say.innerHTML='<b>'+h+'</b> · <b>'+w+'</b>';
+      setFB('fb2','✅ <b>'+w+'</b> — '+VB(h).ko+' 칸!'+(w==='leaf'?' 가을엔 잎이 주황으로 물들어요':''),true);
+      KTTS.word(h).then(()=>KTTS.word(w)).then(()=>{
+        setTimeout(()=>{
+          c.classList.remove('ok');r++;busy=false;
+          if(r<FILLO.length){show();return;}
+          card.innerHTML='';tag.textContent='5 / 5';
+          if(!answered[2]){answered[2]=true;addScore(10);}
+          setFB('fb2','🎉 원판이 다 찼어요 — 봄 꽃 · 여름 해 · 가을 잎 · 겨울 얼음과 눈사람! +10점',true);
+        },400);
+      });
+    }else{
+      c.classList.add('wrong');playWrong();
+      setFB('fb2',samMsg()+' '+why(w),false);
+      setTimeout(()=>c.classList.remove('wrong'),450);
+    }
+  }));
+  show();
+})();
+
+/* S3 좋아하는 계절 — 바른 문장은 언제나 이 둘로만 만든다(계절은 여럿 꼴 0) */
+function q24(s){return 'Do you like '+s+'?';}
+function ans24(s,y){return (y?'I like ':"I don't like ")+s+'.';}
+(function(){
+  const pic=document.getElementById('likePic'),q=document.getElementById('likeQ'),a=document.getElementById('likeA'),
+        mine=document.getElementById('likeMine'),tag=document.getElementById('likeRound');
+  const yn=[...document.querySelectorAll('.ynb')];
+  let r=0,busy=false;const got=[];
+  function round(){
+    const s=SSNW[r];
+    tag.textContent=(r+1)+' / '+SSNW.length;
+    pic.innerHTML=pz(s,.9);
+    q.textContent=q24(s);
+    a.textContent='…';a.classList.remove('on');
+  }
+  q.addEventListener('click',()=>{if(r<SSNW.length){playClick();KTTS.sentence(q24(SSNW[r]));}});
+  yn.forEach(b=>b.addEventListener('click',()=>{
+    if(busy||r>=SSNW.length)return;
+    busy=true;playClick();
+    const s=SSNW[r],y=b.dataset.y==='1',t=ans24(s,y);
+    a.textContent=t;a.classList.add('on');
+    got.push((y?'👍 ':'👎 ')+s);mine.textContent='내 마음 — '+got.join(' · ');
+    setFB('fb3',y?'✅ 👍 — <b>like</b>!':"✅ 👎 — 동사 앞에 <b>don't</b>!",true);
+    KTTS.sentence(t).then(()=>{
+      setTimeout(()=>{
+        r++;busy=false;
+        if(r<SSNW.length){round();return;}
+        if(!answered[3]){answered[3]=true;addScore(10);}
+        playCorrect();
+        setFB('fb3','🎉 네 계절에 다 대답했어요 — 대답은 <b>내 마음</b>! 정답은 없어요 +10점',true);
+      },500);
+    });
+  }));
+  round();
+})();
+
+/* S4 친구들의 겨울 — 눌러서 통문장(바른 문장만) */
+(function(){
+  const seen={};
+  ['dcBen','dcAmy'].forEach(id=>{
+    document.getElementById(id).addEventListener('click',function(){
+      playClick();this.classList.add('tapped');KTTS.sentence(this.dataset.say);seen[id]=1;
+      if(seen.dcBen&&seen.dcAmy)setFB('fb4','🎉 Ben 은 겨울이 싫고, Amy 는 눈사람을 — 엄청 크게 만들어요!',true);
+      else setFB('fb4','✅ 다른 친구도 눌러 봐요!',true);
+    });
+  });
+})();
+
+/* ── 출제 — 그림→단어 둘을 먼저 뽑고, 남은 여덟 중 넷을 듣기로 ── */
+const QP=VWS.slice().sort(()=>Math.random()-.5).slice(0,2);
+const QL=VWS.filter(w=>QP.indexOf(w)<0).sort(()=>Math.random()-.5).slice(0,4);
+function buildL(slideIdx,word){
+  const slide=document.querySelectorAll('.slide')[slideIdx];
+  const correct=+slide.dataset.correct;
+  const arr=distractOf(word,3);arr.splice(correct,0,word);
+  document.getElementById('ch'+slideIdx).innerHTML=
+    arr.map((w,i)=>'<button class="choice-btn pic-btn" onclick="answer(this,'+i+')">'+pz(w,.9)+'</button>').join('');
+  document.getElementById('lb'+slideIdx).onclick=()=>{playClick();KTTS.word(word,{natural:true});};
+  slide.dataset.word=word;
+}
+function buildP(slideIdx,word){
+  const slide=document.querySelectorAll('.slide')[slideIdx];
+  const correct=+slide.dataset.correct;
+  const arr=distractOf(word,2);arr.splice(correct,0,word);
+  document.getElementById('q'+slideIdx+'pic').innerHTML=pz(word,1.4);
+  document.getElementById('ch'+slideIdx).innerHTML=
+    arr.map((w,i)=>'<button class="choice-btn" onclick="answer(this,'+i+')">'+w+'</button>').join('');
+  slide.dataset.word=word;
+}
+for(let i=0;i<4;i++)buildL(5+i,QL[i]);
+for(let i=0;i<2;i++)buildP(9+i,QP[i]);
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  try{if(window.KDiagnosis){var _dg=window.__diagDone||(window.__diagDone={});var _ds=document.querySelectorAll('.slide')[currentSlide];if(_ds&&_ds.dataset.concept&&!_dg[currentSlide]){_dg[currentSlide]=1;KDiagnosis.record(_ds.dataset.concept,idx===+_ds.dataset.correct);}}}catch(e){}
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
+  const gated=slide.dataset.gate==='1';
+  const w=slide.dataset.word;
+  playClick();
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);
+    if(gated&&!WRONG_AT[currentSlide])firstTryOK++;
+    KTTS.word(w);
+    setFB('fb'+currentSlide,okMsg(pts)+' — <b>'+w+'</b> '+VB(w).ko,true);
+    answered[currentSlide]=true;
+  }else{
+    btn.classList.add('wrong');playWrong();combo=0;
+    WRONG_AT[currentSlide]=(WRONG_AT[currentSlide]||0)+1;
+    if(WRONG_AT[currentSlide]>=3){
+      setFB('fb'+currentSlide,'정답은 <b>'+w+'</b> ('+VB(w).ko+') — 다시 한 번 담아요!',false);
+    }else if(WRONG_AT[currentSlide]===2){
+      setFB('fb'+currentSlide,'힌트 💡 짝이 숨어 있어요 — spring·fall(꽃점·주황) · summer·winter(진초록·하양) · ice·snowman(얼음·눈) · flower·leaf(꽃잎·잎) · sun·sky(해·하늘)!',false);
+    }else{
+      setFB('fb'+currentSlide,samMsg(),false);
+    }
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+/* ── 게이트② — 6문항 중 첫 시도 4↑ 통과. 미통과 = 24-2 되돌림 ── */
+function finish(){
+  document.getElementById('finalScore').textContent=score;
+  const pass=firstTryOK>=4;
+  document.getElementById('resultStars').textContent=firstTryOK>=6?'⭐⭐⭐⭐⭐':firstTryOK>=4?'⭐⭐⭐⭐':'⭐⭐⭐';
+  const t=document.getElementById('gateText'),b=document.getElementById('gateBtn');
+  if(pass){
+    document.getElementById('resultEmoji').textContent='🏆';
+    document.getElementById('resultTitle').textContent='통과! Lv3 스물네 번째 칸 점등!';
+    document.getElementById('stamp').style.display='inline-block';
+    document.getElementById('wsBtn').style.display='inline-block';
+    try{ if(window.KProgress) KProgress.light('lv3-24'); }catch(e){}
+    try{ if(window.KCollection) KCollection.add(VWS.slice()); }catch(e){}
+    t.innerHTML='오늘 손에 넣은 것 🏆<br>① 계절 <span class="hl">spring · summer · fall · winter</span> · 물건 <span class="hl">flower · ice · snowman · leaf · sun · sky</span><br>② 원판을 채우고, <b>Do you like ___?</b> 에 내 마음으로 대답했어요 🎉<br>다음은 <b>#25</b> — 우리 마을이에요!';
+    b.textContent='▶ 사다리에서 다음 칸';
+    b.onclick=()=>location.href='../index.html';
+  }else{
+    document.getElementById('resultEmoji').textContent='💪';
+    document.getElementById('resultTitle').textContent='조금만 더!';
+    t.innerHTML='한 번에 맞힌 게 <b>'+firstTryOK+' / 6</b>이에요.<br>연습을 한 번 더 하고 오면 <span class="hl">훨씬 쉬워져요</span>!';
+    b.textContent='↩ 연습 한 번 더';
+    b.onclick=()=>location.href='24_2_seasons_practice.html';
+  }
+}
+
+/* 통단어 카드 탭 = KTTS.word (V트랙 관용) */
+document.getElementById('slidesContainer').addEventListener('click',e=>{
+  if(justUnlocked)return;
+  const w=e.target.closest('[data-word]');
+  if(!w||w.classList.contains('slide'))return;
+  const host=w.classList.contains('step')?w:w.closest('.step');
+  if(host&&host.classList.contains('in')&&w.dataset.word)KTTS.word(w.dataset.word);
+});
+
+let tx=0,ty=0;
+const sc=document.getElementById('slidesContainer');
+sc.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;});
+sc.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){d_swipe(dx);return;}
+});
+function d_swipe(dx){dx>0?prevSlide():nextSlide();}
+sc.addEventListener('click',e=>{
+  if(justUnlocked)return;
+  const w=e.target.closest('[data-sound]');
+  if(!w)return;
+  const host=w.classList.contains('step')?w:w.closest('.step');
+  if(!host||host.classList.contains('in'))KTTS.sound(w.dataset.sound);
+});
+updateUI();
+setupSlide(document.querySelectorAll('.slide')[0],0);
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>

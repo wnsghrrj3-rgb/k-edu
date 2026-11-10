@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv3 #24 날씨② 계절 10단어 — weather1.html(Lv3 #7) · seasky.html(Lv3 #23) 판형 계승, V트랙 주황
+     ★그림·원판 = 화면과 같은 그림(SSN324CSS 블록 그대로 · 마크업 = 화면 pz() 를 생성기 ws/gen_seasons.js 로 그대로 뽑음) — 같은 단어 = 같은 그림.
+     ★① 따라쓰기 10(그림 위) · ② 원판 칸에 계절 이름 + 물건 그리기 · ③ 원판 칸 ↔ warm·hot·cool·cold 잇기(#7)
+     ★④ I like ___. 좋아하는 계절 + 이유 그림. 여럿 꼴 0(leaf·snowman 은 하나로만). -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 10mm 12mm 8mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --primary:#d9702a; --border:#e0b48c; --green:#4CAF50; --green-light:#E8F5E9; --red:#E53935; --yellow:#FFC107; --yellow-light:#FFF8E1; }
+  body { font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.45; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d9702a; padding-bottom: 5px; }
+  .brand { font-size: 13px; font-weight: 700; color: #9c4d13; }
+  .brand .lv { background: #d9702a; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 7px; background: #fdeee1; border: 2px solid #d9702a; border-radius: 12px; padding: 7px 13px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 24px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #9c4d13; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 15.5px; font-weight: 800; color: #4a2408; }
+  .seed .main b { color: #d85a30; }
+  .keypoint { margin-top: 6px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 5px 12px; font-size: 12px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  .keypoint .big { font-size: 14px; font-weight: 800; color: #d85a30; }
+  /* 그림·원판 — 화면 블록 그대로 */
+/*SSN324CSS-BEGIN — Lv3 #24 날씨② 그림·계절 원판 · 4파일 + 활동지 문자 단위 동일(blocks/SSN324CSS.css → sync_blocks.py 주입, 하네스 A4·D2b).
+  ★그림 타일(.ssp·.ssz·.em) = Lv3 #6 ANM306CSS · #23 ANM323CSS 와 같은 기하(클래스 이름만 — 액자 모양이 정답 단서가 되지 않는다).
+  ★leaf = Lv2 #31 잎(.lf) 선언 그대로 · 계절 넷 = 나무 한 그루(잎빛 .cv · 줄기 .tk) + 바탕 · 땅 띠(봄 연두 땅 · 여름 파도 · 가을 갈색 땅 · 겨울 눈 땅).
+  ★계절 원판(.whl) = 둥근 판 네 칸(봄 왼쪽 위부터 시계 방향) · 칸 바탕 = 그 계절 바탕색 · 가운데 바늘(.ndl)만 돈다(바늘은 돌리기·가리키기 판에서만 보인다).
+  ★온도 칩(.tmp) 색 = Lv3 #7 온도계 칸 색 그대로(hot 빨강 · warm 주황 · cool 하늘 · cold 파랑).
+  ★가을 칸에 들어간 잎만 주황으로 물든다(.whl .lf.au — 원판 채우기 안에서만 · 그림 카드·선택지의 잎은 언제나 초록). ★움직임 0 — 명사 그림은 멈춰 있다. */
+.ssp{position:relative;display:inline-flex;align-items:center;justify-content:center;width:80px;height:64px;border-radius:14px;background:#FFFDF9;border:2px solid #F1DFCD;box-sizing:border-box;line-height:1;vertical-align:middle;overflow:hidden;text-align:center}
+.ssz{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+.ssz>.ssp{position:absolute;left:0;top:0;transform-origin:0 0}
+.ssp .em{font-size:44px;font-style:normal;line-height:1}
+.ssp .lf{display:inline-block;width:1em;height:.74em;background:#51CF66;border-radius:0 70% 0 70%;border:.04em solid #2F9E44;box-sizing:border-box}
+.ssp.s-leaf{font-size:46px}
+.ssp.s-sky{background:linear-gradient(#4DABF7,#A5D8FF)}
+.ssp .em.cl{font-size:30px}
+.ssp.s-spring{background:linear-gradient(#FFF0F6 0 76%,#8CE99A 76%)}
+.ssp.s-summer{background:linear-gradient(#FFF3BF 0 74%,#4DABF7 74%)}
+.ssp.s-summer::after{content:'';position:absolute;left:0;right:0;bottom:14px;height:5px;background:radial-gradient(circle at 50% 100%,#4DABF7 0 5px,transparent 6px) 0 0/12px 5px repeat-x}
+.ssp.s-fall{background:linear-gradient(#FFF4E6 0 76%,#D9A066 76%)}
+.ssp.s-winter{background:linear-gradient(#E7F5FF 0 74%,#FFFFFF 74%)}
+.ssp .tk{position:absolute;left:50%;bottom:11px;width:8px;height:18px;margin-left:-4px;background:#8D6E63;border-radius:2px}
+.ssp .cv{position:absolute;left:50%;top:4px;width:46px;height:36px;margin-left:-23px;border-radius:50%;box-sizing:border-box;z-index:1}
+.ssp.s-spring .cv{background:radial-gradient(circle at 28% 34%,#F06595 0 3px,transparent 4px),radial-gradient(circle at 66% 28%,#F06595 0 3px,transparent 4px),radial-gradient(circle at 50% 64%,#F06595 0 3px,transparent 4px),radial-gradient(circle at 22% 70%,#F783AC 0 3px,transparent 4px),radial-gradient(circle at 78% 62%,#F783AC 0 3px,transparent 4px),#B2F2BB;border:2px solid #69DB7C}
+.ssp.s-summer .cv{background:#2F9E44;border:2px solid #2B8A3E}
+.ssp.s-fall .cv{background:#FD7E14;border:2px solid #E8590C}
+.ssp.s-winter .cv{background:#FFFFFF;border:2px solid #ADB5BD}
+.whl{position:relative;width:min(300px,100%);aspect-ratio:1/1;margin:8px auto;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;padding:6px;border-radius:50%;border:4px solid var(--border);background:#fff;box-sizing:border-box;overflow:hidden}
+.whl .wc{position:relative;display:flex;flex-direction:column;gap:2px;min-width:0;min-height:0;box-sizing:border-box;cursor:pointer;transition:box-shadow .2s}
+.whl .wc.c-spring{grid-area:1/1;border-radius:100% 0 0 0;background:#FFE3EE;justify-content:flex-end;align-items:flex-end;padding:0 6px 6px 0}
+.whl .wc.c-summer{grid-area:1/2;border-radius:0 100% 0 0;background:#FFF3BF;justify-content:flex-end;align-items:flex-start;padding:0 0 6px 6px}
+.whl .wc.c-fall{grid-area:2/2;border-radius:0 0 100% 0;background:#FFE8CC;justify-content:flex-start;align-items:flex-start;padding:6px 0 0 6px}
+.whl .wc.c-winter{grid-area:2/1;border-radius:0 0 0 100%;background:#D0EBFF;justify-content:flex-start;align-items:flex-end;padding:6px 6px 0 0}
+.whl.m-point .wc{cursor:default}
+.whl .wc .tag{font-family:'Jua',sans-serif;font-size:18px;color:var(--primary);line-height:1.1;min-height:1.1em}
+.whl .wc.found,.whl .wc.ok{box-shadow:0 0 0 4px var(--green) inset}
+.whl .wc.wrong{box-shadow:0 0 0 4px var(--red) inset;animation:shake .4s}
+.whl .wc.pt{box-shadow:0 0 0 4px var(--primary) inset}
+.whl .wc.now{box-shadow:0 0 0 4px var(--yellow) inset}
+.whl .wc .tmp{display:none;font-family:'Jua',sans-serif;font-size:16px;color:#fff;border-radius:99px;padding:0 8px;line-height:1.4}
+.whl .wc .tmp.on{display:inline-block}
+.whl .wc .tmp.t-hot{background:#E53935}
+.whl .wc .tmp.t-warm{background:#FB8C00}
+.whl .wc .tmp.t-cool{background:#4FC3F7}
+.whl .wc .tmp.t-cold{background:#1E88E5}
+.whl .wc .got{display:flex;gap:2px;line-height:0}
+.whl .lf.au{background:#FD7E14;border-color:#E8590C}
+.whl .ndl{position:absolute;left:50%;top:50%;width:6px;height:26%;background:#495057;border-radius:3px;transform-origin:50% 100%;transition:transform .6s;z-index:3;pointer-events:none}
+.whl .ndl::after{content:'';position:absolute;left:50%;top:-11px;margin-left:-8px;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:12px solid #495057}
+.whl.m-find .ndl,.whl.m-fill .ndl{display:none}
+.whl .hub{position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#495057;z-index:4;pointer-events:none}
+/*SSN324CSS-END*/
+  .whl.wsw { width: 262px; margin: 0; flex: none; border-color: #e0b48c; }
+  .whl.wsw .wc { cursor: default; gap: 3px; }
+  .whl.wsw .wc .r1 { display: flex; align-items: center; gap: 3px; }
+  .whl.wsw .wc .no { width: 17px; height: 17px; border-radius: 50%; background: #9c4d13; color: #fff; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; font-family: sans-serif; line-height: 1; flex: none; }
+  .whl.wsw .wc .wl { display: block; width: 66px; border-bottom: 1.6px solid #b4b2a9; height: 16px; }
+  .whl.wsw .wc .dr { display: block; width: 58px; height: 34px; border: 1.6px dashed #c9b39c; border-radius: 8px; background: #fff; }
+  h2 { margin-top: 8px; font-size: 13px; color: #9c4d13; display: flex; align-items: center; gap: 7px; }
+  h2 .n { background: #9c4d13; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2 .hint { font-weight: 400; font-size: 10px; color: #888780; }
+  .trace { display: flex; gap: 5px; margin-top: 3px; }
+  .traceword { text-align: center; flex: 1; min-width: 56px; }
+  .traceword .tpic { line-height: 0; }
+  .traceword .outline { font-size: 17px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.3px #c4c2b8; letter-spacing: 1px; }
+  .traceword .line { border-bottom: 1.5px solid #d3d1c7; height: 12px; margin-top: 1px; }
+  .topwrap { display: flex; gap: 14px; margin-top: 4px; align-items: flex-start; }
+  .side { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .wordbox { font-size: 10.5px; color: #9c4d13; font-weight: 800; line-height: 1.5; border: 1.5px dashed #e0b48c; border-radius: 8px; padding: 3px 8px; background: #fffaf2; }
+  .match { display: flex; justify-content: space-between; gap: 10px; border: 2px solid #e0b48c; border-radius: 12px; padding: 6px 12px; background: #fffaf5; }
+  .mcol { display: flex; flex-direction: column; gap: 6px; }
+  .mcol.r { justify-content: space-around; }
+  .ml, .mr { display: flex; align-items: center; gap: 6px; height: 34px; }
+  .ml .mn { width: 17px; height: 17px; border-radius: 50%; background: #9c4d13; color: #fff; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; font-family: sans-serif; }
+  .ml .tp { line-height: 0; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #4a2408; display: inline-block; flex: none; }
+  .mr .mw { font-size: 18px; font-weight: 800; color: #4a2408; }
+  .mine { border: 2px solid #d9702a; border-radius: 12px; background: #fffaf5; padding: 5px 10px; display: flex; gap: 12px; align-items: center; margin-top: 4px; }
+  .mine .draw { width: 150px; height: 88px; border: 2px dashed #c9b39c; border-radius: 10px; background: #fff; flex: none; }
+  .mine .sent { font-size: 19px; font-weight: 800; color: #4a2408; margin: 4px 0; }
+  .mine .sent .bl { display: inline-block; width: 120px; border-bottom: 1.6px solid #b4b2a9; height: 22px; vertical-align: bottom; }
+  .mine .tbox { font-size: 10.5px; color: #9c4d13; font-weight: 800; line-height: 1.5; }
+  .pairbox { margin-top: 6px; border: 2px dashed #ef9f27; border-radius: 10px; padding: 5px 11px; text-align: center; font-size: 11.5px; background: #fffaf2; }
+  .pairbox b { color: #d85a30; }
+  .recap { margin-top: 6px; background: #4a2408; color: #fdeee1; border-radius: 10px; padding: 6px 13px; text-align: center; font-size: 12px; }
+  .recap b { color: #fac775; }
+  .parent { margin-top: 6px; border-top: 1px dashed #b4b2a9; padding-top: 5px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv3 · 어휘 #24</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main">계절이 돌면 <b>날씨가 바뀌어요.</b></div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 계절 넷은 <span class="big">통째로</span> 담아요 — 봄 여름 가을 겨울, 원판이 한 바퀴.
+    아는 두 단어가 붙으면 한 단어 — <b>snow</b> + <b>man</b> = <b>snowman</b>.
+  </div>
+
+  <h2><span class="n">1</span> 따라 써요 <span class="hint">흐린 글자를 따라 쓰고, 쓰면서 소리 내어 읽어요</span></h2>
+  <div class="trace"><div class="traceword"><div class="tpic"><span class="ssz" style="width:40px;height:32px"><span class="ssp s-spring" data-ssp="spring" style="transform:scale(0.5)"><i class="cv"></i><i class="tk"></i></span></span></div><div class="outline">spring</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="ssz" style="width:40px;height:32px"><span class="ssp s-summer" data-ssp="summer" style="transform:scale(0.5)"><i class="cv"></i><i class="tk"></i></span></span></div><div class="outline">summer</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="ssz" style="width:40px;height:32px"><span class="ssp s-fall" data-ssp="fall" style="transform:scale(0.5)"><i class="cv"></i><i class="tk"></i></span></span></div><div class="outline">fall</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="ssz" style="width:40px;height:32px"><span class="ssp s-winter" data-ssp="winter" style="transform:scale(0.5)"><i class="cv"></i><i class="tk"></i></span></span></div><div class="outline">winter</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="ssz" style="width:40px;height:32px"><span class="ssp s-sky" data-ssp="sky" style="transform:scale(0.5)"><i class="em cl">☁️</i></span></span></div><div class="outline">sky</div><div class="line"></div></div></div>
+  <div class="trace"><div class="traceword"><div class="tpic"><span class="ssz" style="width:40px;height:32px"><span class="ssp s-flower" data-ssp="flower" style="transform:scale(0.5)"><i class="em">🌷</i></span></span></div><div class="outline">flower</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="ssz" style="width:40px;height:32px"><span class="ssp s-ice" data-ssp="ice" style="transform:scale(0.5)"><i class="em">🧊</i></span></span></div><div class="outline">ice</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="ssz" style="width:40px;height:32px"><span class="ssp s-snowman" data-ssp="snowman" style="transform:scale(0.5)"><i class="em">⛄</i></span></span></div><div class="outline">snowman</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="ssz" style="width:40px;height:32px"><span class="ssp s-leaf" data-ssp="leaf" style="transform:scale(0.5)"><span class="lf"></span></span></span></div><div class="outline">leaf</div><div class="line"></div></div><div class="traceword"><div class="tpic"><span class="ssz" style="width:40px;height:32px"><span class="ssp s-sun" data-ssp="sun" style="transform:scale(0.5)"><i class="em">☀️</i></span></span></div><div class="outline">sun</div><div class="line"></div></div></div>
+
+  <h2><span class="n">2</span> 계절 원판 <span class="hint">나무 색을 보고 칸마다 계절 이름을 쓰고, 그 계절의 물건을 하나 그려요</span></h2>
+  <div class="topwrap">
+    <div class="whl wsw"><div class="wc c-spring" data-w="spring"><span class="r1"><span class="no">1</span><span class="ssz" style="width:40px;height:32px"><span class="ssp s-spring" data-ssp="spring" style="transform:scale(0.5)"><i class="cv"></i><i class="tk"></i></span></span></span><span class="wl"></span><span class="dr"></span></div><div class="wc c-summer" data-w="summer"><span class="r1"><span class="no">2</span><span class="ssz" style="width:40px;height:32px"><span class="ssp s-summer" data-ssp="summer" style="transform:scale(0.5)"><i class="cv"></i><i class="tk"></i></span></span></span><span class="wl"></span><span class="dr"></span></div><div class="wc c-fall" data-w="fall"><span class="r1"><span class="no">3</span><span class="ssz" style="width:40px;height:32px"><span class="ssp s-fall" data-ssp="fall" style="transform:scale(0.5)"><i class="cv"></i><i class="tk"></i></span></span></span><span class="wl"></span><span class="dr"></span></div><div class="wc c-winter" data-w="winter"><span class="r1"><span class="no">4</span><span class="ssz" style="width:40px;height:32px"><span class="ssp s-winter" data-ssp="winter" style="transform:scale(0.5)"><i class="cv"></i><i class="tk"></i></span></span></span><span class="wl"></span><span class="dr"></span></div><span class="hub"></span></div>
+    <div class="side">
+      <div class="wordbox">계절 상자 — fall · spring · summer · winter</div>
+      <h2 style="margin-top:2px"><span class="n">3</span> 어떤 날씨? <span class="hint">원판 칸과 날씨 말을 선으로 이어요 (#7 온도 네 칸)</span></h2>
+      <div class="match"><div class="mcol"><div class="ml" data-w="spring"><span class="mn">1</span><span class="ssz" style="width:40px;height:32px"><span class="ssp s-spring" data-ssp="spring" style="transform:scale(0.5)"><i class="cv"></i><i class="tk"></i></span></span><span class="dot"></span></div><div class="ml" data-w="summer"><span class="mn">2</span><span class="ssz" style="width:40px;height:32px"><span class="ssp s-summer" data-ssp="summer" style="transform:scale(0.5)"><i class="cv"></i><i class="tk"></i></span></span><span class="dot"></span></div><div class="ml" data-w="fall"><span class="mn">3</span><span class="ssz" style="width:40px;height:32px"><span class="ssp s-fall" data-ssp="fall" style="transform:scale(0.5)"><i class="cv"></i><i class="tk"></i></span></span><span class="dot"></span></div><div class="ml" data-w="winter"><span class="mn">4</span><span class="ssz" style="width:40px;height:32px"><span class="ssp s-winter" data-ssp="winter" style="transform:scale(0.5)"><i class="cv"></i><i class="tk"></i></span></span><span class="dot"></span></div></div><div class="mcol r"><div class="mr" data-t="cool"><span class="dot"></span><span class="mw">cool</span></div><div class="mr" data-t="hot"><span class="dot"></span><span class="mw">hot</span></div><div class="mr" data-t="cold"><span class="dot"></span><span class="mw">cold</span></div><div class="mr" data-t="warm"><span class="dot"></span><span class="mw">warm</span></div></div></div>
+    </div>
+  </div>
+
+  <h2><span class="n">4</span> 내 문장 <span class="hint">좋아하는 계절을 쓰고, 왜 좋은지 그림으로 그려요</span></h2>
+  <div class="mine">
+    <span class="draw"></span>
+    <div>
+      <div class="sent">I like <span class="bl"></span>.</div>
+      <div class="tbox">계절 상자에서 골라 써요 — 계절 이름 끝에 s 를 붙이지 않아요.</div>
+    </div>
+  </div>
+
+  <div class="pairbox">헷갈리는 짝 —
+    <b>spring</b> ↔ <b>fall</b> (분홍 꽃점 / 주황 나무) &nbsp;·&nbsp; <b>summer</b> ↔ <b>winter</b> (진초록 / 하양) &nbsp;·&nbsp;
+    <b>ice</b> ↔ <b>snowman</b> (얼음 / 눈) &nbsp;·&nbsp; <b>flower</b> ↔ <b>leaf</b> &nbsp;·&nbsp; <b>sun</b> ↔ <b>sky</b>
+  </div>
+
+  <div class="recap">오늘 열 단어 = <b>spring · summer · fall · winter · flower · ice · snowman · leaf · sun · sky</b></div>
+
+  <div class="parent">
+    <b>부모님께</b> · 계절 이름은 아직 배우지 않은 철자가 많아 <b>통째로</b> 담습니다(sun 은 앞에서 소리로 끝까지 읽은 단어, snowman 은 아는 snow 와 man 이 붙은 단어예요). 글자 하나하나의 소리를 설명하지 마세요.
+    · fall 은 <b>「가을」 뜻으로만</b> 씁니다. 다른 뜻은 아직 다루지 않아요.
+    · leaf(잎) · snowman(눈사람)은 여럿일 때 모양이 바뀌는 단어라 <b>아직 하나로만</b> 씁니다 — 여럿 꼴은 가르치지 마세요.
+    · 이 활동지는 <b>보고 옮겨 쓰는</b> 종이입니다. <b>받아쓰기로 확인하지 마세요.</b><br>
+    <b>정답</b> · ② 1 spring · 2 summer · 3 fall · 4 winter (물건 그림은 자유 — 예: 🌷 · ☀️ · 잎 · ⛄🧊) · ③ spring — warm · summer — hot · fall — cool · winter — cold · ④ 좋아하는 계절이면 정답(예: I like summer.)
+  </div>
+</body>
+</html>
