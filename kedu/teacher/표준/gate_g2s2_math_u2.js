@@ -204,7 +204,7 @@ function figOne(w0, f, prob, txt) {
         if (v === '?') { nG.ask++; qs.push(String(p)); } else if (/^\d+$/.test(v)) ok(+v === p, w0 + ' 곱셈표 ' + r[0] + '×' + cols[j] + ' = ' + v); }));
       marks.forEach(m => { const [a, b] = m.split('|'); ok(marks.indexOf(b + '|' + a) >= 0, w0 + ' ★♥ 짝 없음 ' + m); });
       return prob && qs.length === 1 ? qs : []; }
-    if (rows.length === 1) { const v = rows[0]; const nums = v.map((x, i) => [x, i]).filter(([x]) => /^\d+$/.test(x)); const st = (+nums[1][0] - +nums[0][0]) / (nums[1][1] - nums[0][1]);
+    if (!f.head) { const v = [].concat(...rows); const nums = v.map((x, i) => [x, i]).filter(([x]) => /^\d+$/.test(x)); const st = (+nums[1][0] - +nums[0][0]) / (nums[1][1] - nums[0][1]);
       nums.forEach(([x, i]) => ok(+x === +nums[0][0] + st * (i - nums[0][1]), w0 + ' 수 줄 차례 ' + x)); const qi = v.indexOf('?');
       if (qi >= 0) { nG.ask++; return prob ? [String(+nums[0][0] + st * (qi - nums[0][1]))] : []; } return []; }
     // 점수판 — 첫 줄 수 × 둘째 줄 수(셋째 줄 식이 있으면 식 셈 + 같은 짝)
