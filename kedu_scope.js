@@ -57,7 +57,7 @@
   }
   var own = detect();
   var persist = !!(own && own.id.indexOf('u:') === 0);      // 정식 세션(계정·동의 좌석)만 기기에 남긴다
-  var PREF = [/^kedu_(grade|semester|home)$/, /^klab_muted$/, /\.howto$/];
+  var PREF = [/^kedu_(grade|semester|home)$/, /^klab_muted$/, /^kedu-en-play-pref$/, /\.howto$/];   /* kedu-en-play-pref = 영어 놀이터 화면 설정(효과음 끔 등) — 기록·진도는 넣지 않는다 */
   function pref(k) { for (var i = 0; i < PREF.length; i++) if (PREF[i].test(k)) return true; return false; }
   var prefix = own ? '@' + own.id + '|' : '';
   var map = function (k) { k = String(k); return (prefix && !pass(k)) ? prefix + k : k; };

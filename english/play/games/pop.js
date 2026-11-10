@@ -117,6 +117,7 @@
         var hl = holes[p.hole];
         hl.up = true; hl.w = p.word; hl.food.textContent = pic[p.word];
         hl.el.setAttribute('data-w', p.word); hl.el.classList.add('up');
+        audio.play('pop');
         hl.t = later(m.up(), function () { sink(hl, true); });
       }
       loopT = later(Math.round(m.up() * CONF.overlap), popOne);

@@ -51,9 +51,6 @@
   .endcard .big{font-size:60px}
   .endcard h2{font-family:Jua;font-size:22px;margin:6px 0}
   .seedrow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:10px 0}
-  .fx{position:fixed;inset:0;pointer-events:none;z-index:80;overflow:hidden}
-  .fx i{position:absolute;top:-20px;width:10px;height:14px;border-radius:3px;animation:fall 1.6s linear forwards}
-  @keyframes fall{to{transform:translateY(110vh) rotate(540deg);opacity:.2}}
   .grow{animation:grow .9s cubic-bezier(.34,1.6,.5,1)}
   @keyframes grow{0%{transform:scale(.3);filter:grayscale(1)}100%{transform:scale(1)}}
 </style>
@@ -61,7 +58,7 @@
 <script src="/kedu_boxbar.js"></script>
 </head>
 <body>
-<div class="top"><span class="t">🏪 점심 가게</span><span class="seedbag" id="bag">🌰 0</span></div>
+<div class="top"><span class="t">🏪 점심 가게</span><span class="tr"><button class="snd" id="snd" type="button" aria-label="효과음">🔔</button><span class="seedbag" id="bag">🌰 0</span></span></div>
 <div class="actbar" id="actbar"></div>
 <div class="stage" id="stage"></div>
 <div class="toast" id="toast"></div>
@@ -78,6 +75,7 @@
 <script src="../engine/play-char.js"></script>
 <script src="../core/audio.js"></script>
 <script src="../core/npc.js"></script>
+<script src="../core/fx.js"></script>
 <script src="../games/order-shop.js"></script>
 <script src="../games/pop.js"></script>
 <script>
@@ -95,25 +93,42 @@
   function shuffle(a){ a = a.slice(); for (var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
   function toast(s){ var t = $('toast'); t.textContent = s; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(function(){ t.classList.remove('show'); }, 1600); }
-  function confetti(){ var fx = $('fx'), cols = ['#FF8A3D','#12B886','#1565C0','#F59F00','#F06595']; for (var i = 0; i < 40; i++){ var p = h('i'); p.style.left = Math.random()*100+'vw'; p.style.background = cols[i%5]; p.style.animationDelay = (Math.random()*.5)+'s'; fx.appendChild(p); setTimeout(function(e){ e.remove(); }.bind(null,p), 2300); } }
+  function confetti(){ PlayFx.confetti(); }
   function others(w){ return W.filter(function(x){ return x !== w; }); }
   function bag(){ var n = 0, s = PlaySeed.all(); W.forEach(function(w){ if (s[w]) n++; }); $('bag').textContent = '🌰 ' + n + '/' + W.length; }
   function actbar(i){ var b = $('actbar'); b.innerHTML = ''; ACTS.forEach(function(a, k){ var s = h('span', k < i ? 'ok' : k === i ? 'on' : '', a[0]); s.title = a[1]; b.appendChild(s); }); }
   function shop(opts){
     opts = opts || {};
     var box = h('div','shop');
-    box.innerHTML = '<div class="sign' + (unlocked ? ' on' : '') + '" id="sign">LUNCH SHOP</div>' +
+    box.innerHTML = '<div class="sign fx-glow' + (unlocked ? ' on' : '') + '" id="sign"><span>LUNCH SHOP</span></div>' +
       '<div class="sam"><div class="f" id="samf"></div><div class="bub" id="bub">' + (opts.say || '') + '</div></div>' +
       '<div id="body"></div>';
     stage.innerHTML = ''; stage.appendChild(box);
-    PlayNpc.render($('samf'), 'sam', { face: 'idle' });   /* Sam 표정 — 대기=기본 · 성공=웃음 · 실패=갸웃 */
+    PlayNpc.render($('samf'), 'sam', { face: 'idle', wear: 'apron' });   /* Sam — 대기=기본 · 성공=웃음+손 번쩍 · 실패=갸웃+손을 턱에 */
+    glow();
     return $('body');
   }
   function samFace(kind){ var e = $('samf'); if (e) PlayNpc.react(e, kind); }
+  /* ── 공통 연출(core/) — 성공·실패·콤보·평판 ──
+     평판 불빛: 손님이 만족할 때마다 간판이 조금씩 밝아진다(여섯 활동을 다 하면 1). 보스를 넘으면 완전히 켜진다 */
+  var STREAK = PlayFx.streak(), REP = PlayFx.meter(8 + 6 + 8 + 6 + 1 + 3);
+  function glow(){ var s = $('sign'); if (s) PlayFx.glow(s, unlocked ? 1 : REP.value()); }
+  /* 성공 — 0.3초 안에 소리 + Sam 웃음, 깔끔하게 3·5·8번 이어지면 콤보(소리·불꽃·환호가 단계로 커짐).
+     o.quiet = 소리·표정은 놀이 모듈이 이미 냈다 · clean === false = 도움 받은 성공(연속에서 뺀다) */
+  function reward(clean, o){
+    o = o || {};
+    if (!o.quiet){ PlayAudio.play('ok'); samFace('ok'); }
+    REP.add(); glow();
+    var lv = clean === false ? STREAK.miss() : STREAK.hit();
+    if (lv) setTimeout(function(){ PlayAudio.combo(lv); PlayFx.burst(lv, $('samf')); samFace(lv >= 2 ? 'cheer' : 'ok'); }, PlayFx.CONF.comboDelay);
+    return lv;
+  }
+  /* 실패 — 「틀렸다」 없이 부드러운 소리 + Sam 갸웃(모델 다시 들려주기는 각 활동이) */
+  function nudge(){ PlayAudio.play('soft'); samFace('no'); STREAK.miss(); }
   function sam(en, ko, speak){ var b = $('bub'); if (b) b.innerHTML = '<b>' + en + '</b>' + (ko ? '<small>' + ko + '</small>' : ''); if (speak !== false && en) return KTTS.sentence(en); return Promise.resolve(); }
   var micOK = PlaySpeech.available(), primed = false;   /* 첫 듣기는 손가락(탭)에서 시작 — 크롬 마이크 허용 창이 확실히 뜨게 */
   /* 놀이 모듈(games/)에 넘기는 것 — 무대는 조립만 한다 */
-  var SV = { tts: KTTS, speech: PlaySpeech, audio: PlayAudio, npc: PlayNpc };
+  var SV = { tts: KTTS, speech: PlaySpeech, audio: PlayAudio, npc: PlayNpc, fx: PlayFx };
   var SAM = { say: sam, react: samFace };
   var MIC = { ok: function(){ return micOK; }, off: function(){ if (micOK) toast(PlaySpeech.errorKo(PlaySpeech.lastError() || 'unavailable')); micOK = false; }, primed: function(){ return primed; }, prime: function(){ primed = true; } };
 
@@ -130,8 +145,8 @@
         pool.forEach(function(w){
           var t = h('button', 'tile', opt.kind === 'sentence' ? '<span style="font-family:Jua;font-size:17px;line-height:1.2">' + Z.sentence(w) + '</span>' : byW[w].pic);
           t.onclick = function(){
-            if (w === target){ t.classList.add('ok'); (opt.kind === 'sentence' ? KTTS.sentence(Z.sentence(w)) : KTTS.word(w)); setTimeout(function(){ resolve({ ok: true, by: 'chosen' }); }, 500); }
-            else { t.classList.add('no'); setTimeout(function(){ t.classList.remove('no'); t.classList.add('dim'); }, 350); }
+            if (w === target){ PlayAudio.play('ok'); samFace('ok'); t.classList.add('ok'); (opt.kind === 'sentence' ? KTTS.sentence(Z.sentence(w)) : KTTS.word(w)); setTimeout(function(){ resolve({ ok: true, by: 'chosen' }); }, 500); }
+            else { nudge(); t.classList.add('no'); setTimeout(function(){ t.classList.remove('no'); t.classList.add('dim'); }, 350); }
           };
           cs.appendChild(t);
         });
@@ -146,8 +161,8 @@
           if (r.error === 'unavailable' || r.error === 'not-allowed' || r.error === 'service-not-allowed'){ micOK = false; toast(PlaySpeech.errorKo(r.error)); return chooseFallback(); }
           primed = true;
           if (r.error && r.error !== 'nospeech' && r.error !== 'no-speech' && r.error !== 'timeout'){ heard.textContent = PlaySpeech.errorKo(r.error); tries++; if (tries >= 3) return chooseFallback(); return; }
-          if (r.ok){ heard.textContent = '👍 ' + (r.heard || target); mic.classList.add('off'); mic.onclick = null; return setTimeout(function(){ resolve({ ok: true, by: 'speech' }); }, 450); }
-          tries++;
+          if (r.ok){ PlayAudio.play('ok'); samFace('ok'); heard.textContent = '👍 ' + (r.heard || target); mic.classList.add('off'); mic.onclick = null; return setTimeout(function(){ resolve({ ok: true, by: 'speech' }); }, 450); }
+          tries++; if (r.heard) nudge(); else samFace('no');
           if (tries >= 3){ heard.textContent = '잘 안 들렸어요' + (r.heard ? ' (들린 말: ' + r.heard + ')' : ''); return chooseFallback(); }
           heard.textContent = (r.heard ? '「' + r.heard + '」로 들렸어요 — ' : '') + (tries === 1 ? '한 번 더!' : '천천히 들어 보고 따라 해 봐');
           var model = opt.kind === 'sentence' ? KTTS.sentence(opt.model || target, { rate: tries === 2 ? 0.55 : undefined }) : KTTS.word(target, { rate: tries === 2 ? 0.45 : undefined });
@@ -167,7 +182,7 @@
     var body = shop();
     var intro = sam('This is my shop!', '손님이 왔어 — 주문을 말로 받아 줘!');
     PlayOrder.start({ host: body, words: shuffle(WORDS), confuse: Z.confuse, services: SV, sam: SAM, mic: MIC, intro: intro,
-      onServe: function(r){ if (r.by === 'speech') PlaySeed.plant(r.word, Z.id, 'speech'); KCollection.add([r.word]); bag(); }
+      onServe: function(r){ if (r.by === 'speech') PlaySeed.plant(r.word, Z.id, 'speech'); KCollection.add([r.word]); bag(); REP.add(); glow(); }
     }).then(function(){ setTimeout(act2, 700); });
   }
 
@@ -195,8 +210,8 @@
       var picked = false, tries = 0;
       function judge(side){
         if (picked) return; var k = side === 'left' ? 0 : 1, p = pair[k];
-        if (p === w){ picked = true; tiles[k].classList.add('ok'); tiles[1-k].classList.add('dim'); PlaySeed.care(w, true, useCam ? 'body' : 'hand'); KTTS.word(w, { natural: true }); i++; setTimeout(round, 900); }
-        else { tiles[k].classList.add('no'); tries++; setTimeout(function(){ tiles[k].classList.remove('no'); }, 400); KTTS.word(w); if (tries >= 2){ picked = true; tiles[1-k].classList.add('ok'); tiles[k].classList.add('dim'); PlaySeed.care(w, false, 'body'); i++; setTimeout(round, 1100); } else if (useCam) camPick(); }
+        if (p === w){ picked = true; reward(); tiles[k].classList.add('ok'); tiles[1-k].classList.add('dim'); PlaySeed.care(w, true, useCam ? 'body' : 'hand'); KTTS.word(w, { natural: true }); i++; setTimeout(round, 900); }
+        else { nudge(); tiles[k].classList.add('no'); tries++; setTimeout(function(){ tiles[k].classList.remove('no'); }, 400); KTTS.word(w); if (tries >= 2){ picked = true; tiles[1-k].classList.add('ok'); tiles[k].classList.add('dim'); PlaySeed.care(w, false, 'body'); i++; setTimeout(round, 1100); } else if (useCam) camPick(); }
       }
       tiles.forEach(function(t, k){ t.onclick = function(){ judge(k === 0 ? 'left' : 'right'); }; });
       function camPick(){
@@ -235,8 +250,8 @@
       function up(){
         if (!ghost) return; ghost.remove(); ghost = null;
         if (hot){ var pl = hot; hot.classList.remove('hot'); hot = null;
-          if (pl.dataset.w === w){ pl.classList.add('full'); pl.innerHTML = '<div class="got">' + byW[w].pic + '</div>' + w; it.classList.add('gone'); PlaySeed.care(w, true, 'hand'); KTTS.word(w, { natural: true }); left--; if (!left) setTimeout(act4, 700); }
-          else { pl.classList.add('no'); setTimeout(function(){ pl.classList.remove('no'); }, 400); PlaySeed.care(w, false, 'hand'); KTTS.word(pl.dataset.w); }
+          if (pl.dataset.w === w){ reward(); pl.classList.add('full'); pl.innerHTML = '<div class="got">' + byW[w].pic + '</div>' + w; it.classList.add('gone'); PlaySeed.care(w, true, 'hand'); KTTS.word(w, { natural: true }); left--; if (!left) setTimeout(act4, 700); }
+          else { nudge(); pl.classList.add('no'); setTimeout(function(){ pl.classList.remove('no'); }, 400); PlaySeed.care(w, false, 'hand'); KTTS.word(pl.dataset.w); }
         }
       }
       it.addEventListener('pointerup', up); it.addEventListener('pointercancel', up);
@@ -249,7 +264,7 @@
     var body = shop();
     var intro = sam('Quick! Which one?', '톡톡 — 들린 것을 눌러!');
     PlayPop.start({ host: body, words: WORDS, services: SV, sam: SAM, intro: intro,
-      onRound: function(r){ PlaySeed.care(r.word, r.clean, 'hand'); }
+      onRound: function(r){ PlaySeed.care(r.word, r.clean, 'hand'); reward(r.clean, { quiet: true }); }
     }).then(function(){ setTimeout(act5, 400); });
   }
 
@@ -279,7 +294,7 @@
       function go(){ mic.classList.add('on'); heard.textContent = '듣고 있어요…';
         PlaySpeech.tryOnce(line[0], { kind: 'word', others: [], timeout: 7000 }).then(function(r){
           mic.classList.remove('on'); var hit = 0; line.forEach(function(w){ if (PlaySpeech.matchWord(r.heard, w, [])) hit++; });
-          if (r.ok || hit >= 2){ heard.textContent = '🎉 ' + (r.heard || ''); confetti(); line.forEach(function(w){ PlaySeed.care(w, true, 'speech'); }); setTimeout(act6, 1200); }
+          if (r.ok || hit >= 2){ reward(); heard.textContent = '🎉 ' + (r.heard || ''); confetti(); line.forEach(function(w){ PlaySeed.care(w, true, 'speech'); }); setTimeout(act6, 1200); }
           else { tries++; heard.textContent = tries >= 2 ? '좋아, 그만하면 됐어!' : '다시 크게!'; if (tries >= 2) setTimeout(act6, 900); }
         }); }
       mic.onclick = go;
@@ -304,7 +319,7 @@
         /* 아이가 고른 것이 정답 — 보기 중 어느 것이든 「I like X.」 로 말하면 통과 */
         return anySentence(shown, body);
       }).then(function(r){
-        bys.push(r.by); say.textContent = Z.sentence(r.word); say.style.background = '#E6FFFA'; say.style.color = '#0B8A63';
+        reward(); bys.push(r.by); say.textContent = Z.sentence(r.word); say.style.background = '#E6FFFA'; say.style.color = '#0B8A63';
         PlaySeed.care(r.word, true, r.by);
         sam(i === 0 ? 'Yum! Good choice.' : i === 1 ? 'Me too!' : 'Great! Thank you!', i === 0 ? '냠! 잘 골랐어.' : i === 1 ? '나도!' : '고마워!').then(function(){ i++; setTimeout(turn, 400); });
       });
@@ -329,7 +344,7 @@
             var hitW = null; cands.forEach(function(w){ if (!hitW && PlaySpeech.matchSentence(r.heard, w, others(w))) hitW = w; });
             if (!hitW){ cands.forEach(function(w){ if (!hitW && PlaySpeech.matchWord(r.heard, w, others(w))) hitW = w; }); if (hitW && tries === 0){ tries++; heard.textContent = '그래, ' + hitW + '! 이번엔 「I like ' + hitW + '.」'; return KTTS.sentence(Z.sentence(hitW)).then(function(){ setTimeout(listen, 250); }); } if (hitW && tries >= 1) { heard.textContent = '👍 ' + r.heard; return setTimeout(function(){ resolve({ ok: true, by: 'speech', word: hitW }); }, 400); } hitW = null; }
             if (hitW){ heard.textContent = '👍 ' + r.heard; mic.classList.add('off'); return setTimeout(function(){ resolve({ ok: true, by: 'speech', word: hitW }); }, 450); }
-            tries++; if (tries >= 3){ heard.textContent = '잘 안 들렸어요'; return fallback(); }
+            tries++; if (r.heard) nudge(); else samFace('no'); if (tries >= 3){ heard.textContent = '잘 안 들렸어요'; return fallback(); }
             heard.textContent = '한 번 더! 「I like …」'; KTTS.sentence(Z.sentence(cands[0]), { rate: 0.6 }).then(function(){ setTimeout(listen, 250); });
           }); }
         mic.onclick = listen; if (primed) setTimeout(listen, 300); else heard.textContent = '🎤를 누르고 말해 봐';
@@ -339,7 +354,7 @@
       var by = bys.indexOf('speech') >= 0 ? 'speech' : 'chosen';
       PlaySeed.bossPassed(Z.id, by);
       KProgress.light(Z.id);   /* 사다리와 동기 — lv2-02 점등 */
-      unlocked = true; $('sign').classList.add('on'); confetti();
+      unlocked = true; $('sign').classList.add('on'); glow(); PlayAudio.play('done'); confetti();
       sam('The shop is open!', '가게가 열렸어!').then(function(){ endCard(); });
     }
     sam(turns[0].ask, turns[0].ko, false); turn();
@@ -384,13 +399,17 @@
     function done(){
       var p = PlaySeed.parts();
       counter.innerHTML = '<div style="width:140px;height:140px;margin:0 auto" id="ch"></div><div class="word" style="font-size:22px">오늘 돌보기 끝!</div><div class="hint">' + (grown.length ? grown.length + '개가 자랐어요 🌱' : '내일 또 와요') + '</div><button class="btn" style="margin-top:10px" onclick="location.href=\'../index.html\'">놀이터로</button>';
-      PlayChar.render($('ch'), { parts: p, mood: 'cheer' }); if (grown.length) confetti();
+      PlayChar.render($('ch'), { parts: p, mood: 'cheer' }); PlayAudio.play('done'); if (grown.length) confetti();
     }
     next();
   }
 
   /* ── 시작 — 설명 화면 0, 첫 터치에서 소리 잠금 해제 후 바로 ── */
   document.body.addEventListener('pointerdown', function once(){ KTTS.unlock(); PlayAudio.unlock(); document.body.removeEventListener('pointerdown', once); }, { once: true });
+  /* 효과음 끄기 — 화면 설정이라 기기에 남는다(kedu-en-play-pref) */
+  function sndBtn(){ var b = $('snd'), on = PlayAudio.enabled(); b.textContent = on ? '🔔' : '🔕'; b.classList.toggle('off', !on); b.title = on ? '효과음 켜짐' : '효과음 꺼짐'; }
+  $('snd').onclick = function(){ PlayAudio.setEnabled(!PlayAudio.enabled()); sndBtn(); PlayAudio.play('ok'); };
+  sndBtn();
   bag();
   if (mode === 'care') care(); else act1();
 })();

@@ -61,6 +61,32 @@ button{font-family:inherit;cursor:pointer;border:0;background:none}
 .npc .hd{transform-box:view-box;transform-origin:60px 96px;transition:transform .22s cubic-bezier(.34,1.6,.5,1)}
 .npc.npc-ok svg{animation:npcHop .5s cubic-bezier(.34,1.6,.5,1)}
 @keyframes npcHop{0%,100%{transform:translateY(0)}40%{transform:translateY(-9px)}}
+.npc[data-face="cheer"].npc-ok svg{animation:npcHop2 .6s cubic-bezier(.34,1.6,.5,1) 2}
+@keyframes npcHop2{0%,100%{transform:translateY(0) scale(1)}40%{transform:translateY(-14px) scale(1.06)}}
+.npc [data-p]{transform-box:view-box}
+.npc.npc-ok [data-p="ok"]{animation:npcWave .5s ease-in-out 2;transform-origin:60px 110px}
+@keyframes npcWave{0%,100%{transform:rotate(0)}50%{transform:rotate(4deg) translateY(-2px)}}
+/* ── 공통 연출 (core/fx.js) ── */
+.fx{position:fixed;inset:0;pointer-events:none;z-index:80;overflow:hidden}
+.fx i.cf{position:absolute;top:-20px;width:10px;height:14px;border-radius:3px;animation:fall 1.6s linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg);opacity:.2}}
+.fx i.spark{position:absolute;border-radius:50%;animation:fxSpark var(--ms,900ms) cubic-bezier(.1,.7,.3,1) forwards}
+@keyframes fxSpark{0%{transform:translate(0,0) scale(.4);opacity:1}65%{opacity:1}100%{transform:translate(var(--dx,0),var(--dy,0)) scale(1);opacity:0}}
+.fx-shake{animation:shake .35s}
+.fx-pop{animation:pop .4s}
+.fx-giant{position:relative;z-index:20;animation:fxGiant var(--fx-ms,900ms) cubic-bezier(.34,1.5,.5,1) forwards}
+@keyframes fxGiant{0%{transform:scale(1)}100%{transform:scale(var(--fx-scale,3.2))}}
+.fx-puff{animation:fxPuff var(--fx-ms,700ms) ease-in-out}
+@keyframes fxPuff{0%,100%{transform:scale(1)}40%{transform:scale(var(--fx-scale,1.5)) rotate(-4deg)}70%{transform:scale(calc(var(--fx-scale,1.5)*.92)) rotate(3deg)}}
+.fx-tint{transition:filter .5s}
+/* 평판 불빛 — 대상(간판 등)이 --glow 0→1 만큼 밝아진다 */
+.fx-glow{position:relative}
+.fx-glow::before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,#FF8A3D,#FFB454);opacity:var(--glow,0);transition:opacity .6s;box-shadow:0 0 calc(var(--glow,0)*24px) rgba(255,180,84,.9)}
+.fx-glow>*{position:relative;z-index:1;text-shadow:0 1px 2px rgba(176,92,20,calc(var(--glow,0)*.6))}
+/* 효과음 단추 */
+.top .tr{display:flex;align-items:center;gap:8px}
+.top .snd{width:38px;height:38px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.06);font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
+.top .snd.off{opacity:.55}
 /* ── 놀이 #1 손님 주문 받기 (games/order-shop.js) ── */
 .oq{width:100%;display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:8px}
 .oq-line{position:relative;width:100%;height:158px;overflow:hidden;border-radius:18px;background:linear-gradient(180deg,#FFF8EC 0,#FFF8EC 76%,#F3D9B1 76%,#F3D9B1 100%)}
@@ -87,6 +113,8 @@ button{font-family:inherit;cursor:pointer;border:0;background:none}
 .oq-clap.c2{left:150px;top:4px}
 .oq-line.clap .oq-clap{animation:oqClap .9s ease-out}
 .oq-line.clap .oq-clap.c2{animation-delay:.08s}
+.oq-line[data-combo="2"] .oq-clap{font-size:40px}
+.oq-line[data-combo="3"] .oq-clap{font-size:48px}
 @keyframes oqClap{0%{opacity:0;transform:translateY(10px) scale(.5)}20%{opacity:1;transform:translateY(-6px) scale(1.25) rotate(-12deg)}40%{opacity:1;transform:translateY(0) scale(1) rotate(10deg)}60%{opacity:1;transform:translateY(-6px) scale(1.2) rotate(-10deg)}100%{opacity:0;transform:translateY(-18px) scale(1)}}
 .oq-act{width:100%;min-height:128px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
 .oq-offer{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
