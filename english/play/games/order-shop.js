@@ -98,12 +98,13 @@
     var pic = {}, W = items.map(function (x) { return x.w; }), ALL = poolItems.map(function (x) { pic[x.w] = x.pic; return x.w; });
     items.forEach(function (x) { pic[x.w] = x.pic; });
     var confuse = opt.confuse || (opt.zone && opt.zone.confuse) || [];
-    var m = machine(W, { guests: CONF.guests });
+    var GUESTS = (opt.opt && opt.opt.guests) || CONF.guests;      /* 사건(단체 손님)이 줄 서는 손님을 바꿀 수 있다 */
+    var m = machine(W, { guests: GUESTS });
     var host = opt.host;
 
     host.innerHTML = '';
     var root = h('div', 'oq'); host.appendChild(root);
-    var q = scene.queue(root, { guests: CONF.guests, npc: npc });
+    var q = scene.queue(root, { guests: GUESTS, npc: npc });
     var line = q.el, G = q.G, bub = q.bub;
     var act = h('div', 'oq-act'), dots = h('div', 'dots');
     root.appendChild(act); root.appendChild(dots);
@@ -233,7 +234,7 @@
       audio.play(level >= 3 ? 'combo3' : level === 2 ? 'combo2' : 'combo');
       if (fx && fx.burst) fx.burst(level, line);
       sam.react(level >= 2 ? 'cheer' : 'ok');
-      CONF.guests.forEach(function (x) { npc.react(G[x], level >= 2 ? 'cheer' : 'ok', { stay: true }); });
+      GUESTS.forEach(function (x) { npc.react(G[x], level >= 2 ? 'cheer' : 'ok', { stay: true }); });
     }
     function advance() {
       var e = m.next();
@@ -252,7 +253,7 @@
 
   g.PlayOrder = { CONF: CONF, machine: machine, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'order-shop', no: 1, name: '주문 받기', icon: '🛎️', channels: ['say'], axis: 'talk', need: { lv1: 5 },
+    id: 'order-shop', no: 1, name: '주문 받기', icon: '🛎️', channels: ['say'], axis: 'talk', need: { lv1: 5 }, plants: true,   /* plants = 구역 단어를 전부 말하게 하는 놀이(씨앗 심기) */
     count: function (c) { return (c.targets || []).length; },
     intro: { en: 'This is my shop!', ko: '손님이 왔어 — 주문을 말로 받아 줘!' },
     start: start

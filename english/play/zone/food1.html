@@ -38,6 +38,7 @@
 <script src="../../v3/engine/k-tts.js"></script>
 <script src="../../v3/engine/k-collection.js"></script>
 <script src="../data/zones.js"></script>
+<script src="../content/events/food.js"></script>
 <script src="../engine/play-seed.js"></script>
 <script src="../engine/play-speech.js"></script>
 <script src="../engine/play-cam.js"></script>
@@ -49,6 +50,8 @@
 <script src="../core/scene.js"></script>
 <script src="../core/game.js"></script>
 <script src="../core/tutor.js"></script>
+<script src="../core/event.js"></script>
+<script src="../core/assemble.js"></script>
 <script src="../games/garden.js"></script>
 <script src="../games/silly-order.js"></script>
 <script src="../games/order-shop.js"></script>
@@ -58,8 +61,9 @@
 <script src="../games/special-guest.js"></script>
 <script src="../games/legacy.js"></script>
 <script>
-/* 점심 가게 — 무대 페이지는 조립만 한다. 놀이는 games/, 공통 부품은 core/.
-   하루 세트: (돌볼 씨앗이 있으면) 정원 → 엉뚱한 주문 → 손님 주문 받기 → 받기(카메라 없으면 톡톡 듣기) → 배달 벨트 → 특별 손님 */
+/* 점심 가게 — 무대 페이지는 조립만 한다. 놀이는 games/, 공통 부품은 core/, 사건 표는 content/events/.
+   오늘 무엇을 할지는 조립기(core/assemble.js)가 자료에서 정한다:
+   (돌볼 씨앗이 있으면) 정원 → 오늘의 사건이 입힌 놀이 → 채널이 겹치지 않는 놀이들 → 특별 손님 → 무대에 장식 하나 */
 (function(){
   'use strict';
   var Z = PLAY_ZONES.zone('lv2-02'), WORDS = Z.words, W = WORDS.map(function(w){return w.w;});
@@ -70,18 +74,19 @@
 
   /* ── 공통 ── */
   function h(tag, cls, html){ var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
-  function shuffle(a){ a = a.slice(); for (var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   function toast(s){ var t = $('toast'); t.textContent = s; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(function(){ t.classList.remove('show'); }, 1600); }
   function confetti(){ PlayFx.confetti(); }
   function bag(){ var n = 0, s = PlaySeed.all(); W.forEach(function(w){ if (s[w]) n++; }); $('bag').textContent = '🌰 ' + n + '/' + W.length; }
-  function shop(){
+  function decor(fresh){ var d = $('decor'); if (d) d.innerHTML = PlayAssemble.decor(Z.id, Z).map(function(x){ return '<span title="' + x.name + '"' + (fresh && fresh.id === x.id ? ' class="new"' : '') + '>' + x.pic + '</span>'; }).join(''); }
+  function shop(ev){
     var box = h('div','shop');
-    box.innerHTML = '<div class="sign fx-glow' + (unlocked ? ' on' : '') + '" id="sign"><span>LUNCH SHOP</span></div>' +
+    box.innerHTML = '<div class="sign fx-glow' + (unlocked ? ' on' : '') + '" id="sign"><span>LUNCH SHOP</span></div><div class="decor" id="decor"></div>' +
       '<div class="sam"><div class="f" id="samf"></div><div class="bub" id="bub"></div></div>' +
       '<div id="body"></div>';
     stage.innerHTML = ''; stage.appendChild(box);
     PlayNpc.render($('samf'), 'sam', { face: 'idle', wear: 'apron' });   /* Sam — 대기=기본 · 성공=웃음+손 번쩍 · 실패=갸웃+손을 턱에 */
-    glow();
+    PlayEvent.dress(box, ev || null);
+    glow(); decor();
     return $('body');
   }
   function samFace(kind){ var e = $('samf'); if (e) PlayNpc.react(e, kind); }
@@ -97,28 +102,26 @@
   var SV = { tts: KTTS, speech: PlaySpeech, cam: PlayCam, seed: PlaySeed, audio: PlayAudio, npc: PlayNpc, fx: PlayFx, scene: PlayScene, evidence: PlayEvidence, char: PlayChar,
     sam: { say: sam, react: samFace, el: function(){ return $('samf'); } } };
 
-  /* ── 오늘의 세트 ── 주소에 ?set=a,b,c 가 있으면 그 놀이들만(점검·다시 하기) */
-  function buildSet(){
-    var m = /[?&]set=([^&]+)/.exec(QS);
-    if (m) return decodeURIComponent(m[1]).split(',').filter(function(id){ return !!PlayGame.get(id); });
-    if (mode === 'care') return ['garden'];
-    var s = [];
-    if (PlaySeed.due(Z.id).length) s.push('garden');
-    s.push('silly-order', 'order-shop', PlayCam.available() ? 'catch' : 'pop', 'belt', 'special-guest');
-    return s;
+  /* ── 오늘의 세트 — 조립기가 정한다. 주소에 ?set=a,b,c 가 있으면 그 놀이들만(점검·다시 하기), ?event=이름 이면 그 사건으로 */
+  function unplanted(){ var s = PlaySeed.all(); return W.filter(function(w){ return !s[w]; }); }
+  function review(){ var sm = PlayEvidence.summary(Z.id, W); return W.filter(function(w){ var k = sm[w].skills; return Object.keys(k).some(function(x){ return k[x] !== 'independent'; }); }); }
+  function makePlan(){
+    var m = /[?&]set=([^&]+)/.exec(QS), e = /[?&]event=([\w-]+)/.exec(QS);
+    if (m) return { manual: true, event: null, set: decodeURIComponent(m[1]).split(',').filter(function(id){ return !!PlayGame.get(id); }) };
+    if (mode === 'care') return { manual: true, event: null, set: ['garden'] };
+    return PlayAssemble.plan({ zone: Z, cell: Z.id, cam: PlayCam.available(), unplanted: unplanted().length, due: PlaySeed.due(Z.id).length, event: e ? e[1] : null });
   }
-  function targetsFor(id){
+  var PLAN = makePlan(), SET = PLAN.set, INFO = { unplanted: unplanted(), review: review() };
+  var EV = PLAN.event ? (PLAY_EVENTS[Z.stage] || []).filter(function(x){ return x.id === PLAN.event; })[0] : null;
+  var TARGETS = SET.map(function(id){
     if (id === 'garden') return PlaySeed.due(Z.id).filter(function(w){ return byW[w]; }).map(function(w){ return byW[w]; });
-    if (id === 'order-shop' || id === 'plates') return shuffle(WORDS);
-    if (id === 'pop' || id === 'catch' || id === 'lean' || id === 'belt') return shuffle(WORDS).slice(0, 6);
-    return WORDS.slice();
-  }
-  var SET = buildSet(), TARGETS = SET.map(targetsFor);
+    return PlayAssemble.targets(id, Z, INFO);
+  });
+  function optFor(i){ var o = { last: i === SET.length - 1 }, x = EV && SET[i] === PLAN.eventGame ? EV.opt : null; if (x) Object.keys(x).forEach(function(k){ o[k] = x[k]; }); return o; }
   function ctxFor(i, body, intro){
-    return { host: body, zone: Z, cell: Z.id, targets: TARGETS[i], pool: WORDS, learner: { mic: MIC }, services: SV, intro: intro,
-      opt: { last: i === SET.length - 1 }, onEvidence: onEvidence };
+    return { host: body, zone: Z, cell: Z.id, targets: TARGETS[i], pool: WORDS, learner: { mic: MIC }, services: SV, intro: intro, opt: optFor(i), onEvidence: onEvidence };
   }
-  REP = PlayFx.meter(SET.reduce(function(n, id, i){ return n + PlayGame.count(id, { zone: Z, targets: TARGETS[i], learner: { mic: MIC } }); }, 0) || 1);
+  REP = PlayFx.meter(SET.reduce(function(n, id, i){ return n + PlayGame.count(id, { zone: Z, targets: TARGETS[i], learner: { mic: MIC }, opt: optFor(i) }); }, 0) || 1);
 
   function actbar(i){ var b = $('actbar'); b.innerHTML = ''; if (SET.length < 2){ b.style.display = 'none'; return; } SET.forEach(function(id, k){ var d = PlayGame.get(id), s = h('span', k < i ? 'ok' : k === i ? 'on' : '', d.icon); s.title = d.name; b.appendChild(s); }); }
 
@@ -131,9 +134,13 @@
   function run(i){
     if (i >= SET.length) return endCard();
     actbar(i);
-    var id = SET[i], def = PlayGame.get(id), body = shop();
-    var intro = def.intro ? sam(def.intro.en, def.intro.ko) : Promise.resolve();
-    PlayGame.run(id, ctxFor(i, body, intro)).then(function(res){
+    var id = SET[i], def = PlayGame.get(id), dressed = !!EV && id === PLAN.eventGame, body = shop(dressed ? EV : null), p;
+    if (dressed) {       /* 오늘의 사건 — 등장·한마디 → 그 사건이 입힌 놀이 → 사건 끝 한마디 */
+      p = PlayEvent.play(EV, { shop: body.parentNode, host: body, services: SV })
+        .then(function(){ return PlayGame.run(id, ctxFor(i, body, Promise.resolve())); })
+        .then(function(res){ return PlayEvent.end(EV, { shop: body.parentNode, services: SV }).then(function(){ return res; }); });
+    } else p = PlayGame.run(id, ctxFor(i, body, def.intro ? sam(def.intro.en, def.intro.ko) : Promise.resolve()));
+    p.then(function(res){
       if (id === 'special-guest' && res.passed) return openShop(res.by);
       setTimeout(function(){ run(i + 1); }, 600);
     });
@@ -147,7 +154,7 @@
     sam('The shop is open!', '가게가 열렸어!').then(function(){ endCard(); });
   }
 
-  /* ── 끝 카드 : 심은 씨앗 → 내일 돌보기 ── */
+  /* ── 끝 카드 : 심은 씨앗 → 내일 돌보기 · 오늘 무대에 생긴 것 ── */
   function endCard(){
     var body = $('body') || shop();
     if (mode === 'care' || (SET.length === 1 && SET[0] === 'garden')) {
@@ -155,6 +162,8 @@
       $('home').onclick = function(){ location.href = '../index.html'; };
       return;
     }
+    var deco = PLAN.manual ? null : PlayAssemble.finish(Z.id, Z);      /* 마무리 — 무대의 작은 변화 하나 */
+    decor(deco);
     body.innerHTML = '';
     var s = PlaySeed.all(), card = h('div', 'endcard');
     var nSeed = W.filter(function(w){ return s[w]; }).length;
@@ -162,6 +171,7 @@
       '<div class="seedrow">' + W.map(function(w){ var st = s[w] ? s[w].stage : -1; return '<span class="seed s' + st + '" title="' + w + '">' + byW[w].pic + '</span>'; }).join('') + '</div>' +
       (nSeed ? '' : '<div class="note" style="margin-bottom:6px">🎤 말로 주문을 받으면 씨앗이 심겨요.</div>') +
       '<div class="note">내일 다시 와서 말해 주면 🌱 새싹이 돼요.<br>3일에 🌸 꽃, 7일에 🍎 열매 — 열매가 되면 진열대에 올라가고<br>앞치마를 입을 수 있어요.</div>' +
+      (deco ? '<div class="note" id="newdeco" style="margin-top:8px">' + deco.pic + ' 가게에 ' + deco.name + '이(가) 생겼어요 — 내일은 또 무엇이 생길까요?</div>' : '') +
       (unlocked ? '<div class="note" style="margin-top:8px">🌤️ 옆 무대의 안개가 걷혔어요 — 놀이터에서 구경해 봐요.</div>' : '') +
       '<div class="homebtn"><button class="btn" id="home">놀이터로</button></div>';
     body.appendChild(card); $('home').onclick = function(){ location.href = '../index.html'; };

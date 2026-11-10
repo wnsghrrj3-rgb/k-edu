@@ -11,7 +11,7 @@ window.PLAY_ZONES = {
   ],
   zones: [
     {
-      id: 'lv2-02', world: 'lv2', slug: 'food1',
+      id: 'lv2-02', world: 'lv2', slug: 'food1', stage: 'lunch-shop',
       name: '점심 가게', emoji: '🏪', color: '#FF8A3D',
       page: 'zone/food1.html',
       /* 재료 8 — 출처 v3 Lv2 #2 */
@@ -44,6 +44,15 @@ window.PLAY_ZONES = {
           { ask: 'Ham or jam?',    ko: '햄? 잼?',          pick: ['ham', 'jam'] },
           { ask: 'What do you like?', ko: '뭐가 좋아?',     pick: ['fish', 'chips', 'ham', 'jam', 'lunch'] }
         ] },
+      /* 이 무대에서 조립기가 고를 수 있는 미니게임(적힌 차례 = 처음 만나는 차례). 사건 전용 놀이(엉뚱한 주문)는 사건 표가 데려온다.
+         정원(돌보기)·특별 손님은 날마다 앞뒤에 붙는다 */
+      games: ['order-shop', 'chant', 'pop', 'catch', 'lean', 'belt', 'plates'],
+      /* 무대의 작은 변화 — 하루를 마칠 때마다 하나씩 생기는 장식(열매·아이템과는 별개) */
+      decor: [
+        { id: 'plant', pic: '🪴', name: '화분' }, { id: 'menu', pic: '📋', name: '메뉴판' }, { id: 'lamp', pic: '🏮', name: '등' },
+        { id: 'balloon', pic: '🎈', name: '풍선' }, { id: 'clock', pic: '🕰️', name: '시계' }, { id: 'frame', pic: '🖼️', name: '그림' },
+        { id: 'basket', pic: '🧺', name: '바구니' }, { id: 'bell', pic: '🛎️', name: '종' }
+      ],
       /* 엉뚱한 주문(놀이 #2) — 꾸미는 말은 사다리에 나온 것만: big·small = Lv1 수·꾸밈말 칸, red·blue = Lv1 색 칸.
          attr = 손님이 말하는 것, vs = 견줄 것. nouns = 이 구역 재료 중 그 말이 어울리는 것 */
       silly: [
