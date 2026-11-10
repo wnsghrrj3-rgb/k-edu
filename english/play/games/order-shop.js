@@ -253,9 +253,11 @@
 
   g.PlayOrder = { CONF: CONF, machine: machine, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'order-shop', no: 1, name: '주문 받기', icon: 'order', channels: ['say'], axis: 'talk', need: { lv1: 5 }, plants: true,   /* plants = 구역 단어를 전부 말하게 하는 놀이(씨앗 심기) */
+    id: 'order-shop', no: 1, name: '주문 받기', icon: 'order', channels: ['say'], axis: 'talk', need: { lv1: 1 }, plants: true,   /* W06 — Lv1 첫 칸(사이트워드 그림판)부터 */
+    fits: function (zone) { return !zone.talk; },     /* 문장 칸(I like)은 친구와 대화로 — 주문은 낱말 */   /* plants = 구역 단어를 전부 말하게 하는 놀이(씨앗 심기) */
     count: function (c) { return (c.targets || []).length; },
     intro: { en: 'This is my shop!', ko: '손님이 왔어 — 주문을 말로 받아 줘!' },
+    intro1: { en: 'Hi!', ko: '손님이 왔어 — 그림을 보고 말로 받아 줘!' },     /* Lv1 무대에서 — 그때까지 배운 낱말·감탄만(W06) */
     start: start
   });
 })(window);

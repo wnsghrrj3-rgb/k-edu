@@ -17,6 +17,15 @@
       return '<g data-part="goggles"><path d="M58 70h84" stroke="var(--stage-deep)" stroke-width="5" stroke-linecap="round"/>' +
              '<circle cx="86" cy="72" r="13" fill="var(--a-fish)" opacity=".45"/><circle cx="114" cy="72" r="13" fill="var(--a-fish)" opacity=".45"/>' +
              '<circle cx="86" cy="72" r="13" fill="none" stroke="var(--stage-deep)" stroke-width="4"/><circle cx="114" cy="72" r="13" fill="none" stroke="var(--stage-deep)" stroke-width="4"/></g>';
+    },
+    leafhat: function () {   /* 소리 숲(Lv1) — 나뭇잎 모자 */
+      return '<g data-part="leafhat"><path d="M54 46c8-26 30-34 46-34s38 8 46 34c-14-8-30-12-46-12s-32 4-46 12z" fill="var(--a-leaf)"/>' +
+             '<path d="M100 12c-2 10 0 18 4 22" stroke="var(--a-wood)" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+             '<path d="M104 14c10-10 22-8 26-2-8 6-18 6-26 2z" fill="var(--a-leaf)"/><path d="M70 36c10-6 22-9 30-9" stroke="var(--surface)" stroke-width="3" fill="none" opacity=".35" stroke-linecap="round"/></g>';
+    },
+    bandana: function () {   /* 동물 농장(Lv1) — 목수건 */
+      return '<g data-part="bandana"><path d="M72 128c18 8 38 8 56 0l-6 12c-14 5-30 5-44 0z" fill="var(--a-red)"/>' +
+             '<path d="M92 136l8 22 8-22z" fill="var(--a-red)"/><circle cx="90" cy="134" r="2" fill="var(--surface)" opacity=".6"/><circle cx="110" cy="134" r="2" fill="var(--surface)" opacity=".6"/></g>';
     }
   };
   function line(d, w) { return '<path d="' + d + '" stroke="' + INK + '" stroke-width="' + (w || 4) + '" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'; }

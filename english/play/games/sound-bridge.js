@@ -81,6 +81,7 @@
   g.PlaySoundBuild = { CONF: CONF, pick: pick, run: run };
   if (g.PlayGame) g.PlayGame.register({
     id: 'sound-bridge', no: 14, name: '소리 다리', icon: 'bridge', channels: ['hand', 'sound'], axis: 'quest', need: { lv1: 4 },
+    fits: function (zone) { return !zone.letters && !!g.PlayPhonics && pick({ zone: zone }, 3).length >= 3; },     /* 조립할 수 있는 단어가 셋은 있어야 */
     count: function (c) { return Math.min(CONF.words, pick(c, CONF.words).length); },
     intro: { en: 'Go! Go!', ko: '소리 조각을 차례로 놓아 다리를 이어 줘!' },
     start: function (ctx) { return run(ctx, 'bridge'); }

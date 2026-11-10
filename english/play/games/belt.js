@@ -92,6 +92,7 @@
     id: 'belt', no: 18, name: '배달 벨트', icon: 'box', channels: ['read', 'hand'], axis: 'flow', need: { lv1: 8 },
     count: function (c) { return Math.min(CONF.tickets, (c.targets || []).length || CONF.tickets); },
     intro: { en: 'Read and put!', ko: '글자만 보고 맞는 음식을 올려 줘!' },
+    intro1: { en: 'Oh!', ko: '이름표를 읽고 맞는 그림을 올려 줘!' },     /* Lv1 무대에서 — 그때까지 배운 낱말·감탄만(W06) */
     start: start
   });
 })(window);

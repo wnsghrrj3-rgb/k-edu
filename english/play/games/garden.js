@@ -65,6 +65,7 @@
     id: 'garden', no: 26, name: '씨앗 돌보기', icon: 'plant', channels: ['say'], axis: 'grow', need: {},
     count: function (c) { return (c.targets || []).length; },
     intro: { en: 'Water your seeds!', ko: '씨앗을 돌봐 줘 — 다시 말하면 자라!' },
+    intro1: { en: 'Hi!', ko: '어제 심은 씨앗에게 다시 말해 주자!' },     /* Lv1 무대에서 — 그때까지 배운 낱말·감탄만(W06) */
     start: start
   });
 })(window);

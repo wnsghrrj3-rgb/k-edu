@@ -157,10 +157,10 @@
   if (g.PlayGame) {
     g.PlayGame.register({ id: 'lean', no: 0, name: '몸으로 고르기', icon: 'body', channels: ['body'], axis: 'flow', need: { lv1: 5 }, cam: true,
       count: function (c) { return Math.min(CONF.leanRounds, (c.targets || []).length || CONF.leanRounds); },
-      intro: { en: 'Listen! Lean left or right.', ko: '들어 봐 — 몸을 그쪽으로 기울여!' }, start: lean });
+      intro1: { en: 'Listen!', ko: '들린 쪽으로 몸을 기울여!' }, intro: { en: 'Listen! Lean left or right.', ko: '들어 봐 — 몸을 그쪽으로 기울여!' }, start: lean });
     g.PlayGame.register({ id: 'plates', no: 0, name: '접시 채우기', icon: 'plate', channels: ['read', 'hand'], axis: 'make', need: { lv1: 8 },
       count: function (c) { return (c.targets || []).length; },
-      intro: { en: 'Put them on the right plate.', ko: '글자만 보고 맞는 자리에 올려!' }, start: plates });
+      intro1: { en: 'Oh!', ko: '이름표를 읽고 맞는 접시에 올려 줘!' }, intro: { en: 'Put them on the right plate.', ko: '글자만 보고 맞는 자리에 올려!' }, start: plates });
     g.PlayGame.register({ id: 'chant', no: 20, name: '챈트', icon: 'note', channels: ['say', 'ear'], axis: 'body', need: { lv1: 5 },
       count: function (c) { return (((c.zone || {}).chant || [])[0] || []).length; },
       intro: { en: 'Sing with me!', ko: '같이 외쳐 봐!' }, start: chant });

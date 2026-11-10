@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>소리 숲 | 영어 놀이터</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Noto+Sans+KR:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../ui/tokens.css">
+<link rel="stylesheet" href="../play.css">
+<script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body data-palette="forest">
+<div class="top"><span class="t" id="title">소리 숲</span><span class="tr"><button class="snd" id="snd" type="button" aria-label="효과음"></button><span class="seedbag" id="bag">0</span></span></div>
+<div class="wrap" style="padding-top:8px;padding-bottom:0"><div class="machine tree" id="machine"></div></div>
+<div class="actbar" id="actbar"></div>
+<div class="stage" id="stage"></div>
+<div class="toast" id="toast"></div>
+<div class="fx" id="fx"></div>
+
+<script src="../../v3/data/ladder.js"></script>
+<script src="../../v3/engine/k-progress.js"></script>
+<script src="../../v3/engine/k-tts.js"></script>
+<script src="../../v3/engine/k-collection.js"></script>
+<script src="../ui/icons.js"></script>
+<script src="../content/art/art.js"></script>
+<script src="../content/art/farm.js"></script>
+<script src="../content/art/forest.js"></script>
+<script src="../data/zones.js"></script>
+<script src="../content/phonics-lv1.js"></script>
+<script src="../content/events/forest.js"></script>
+<script src="../engine/play-seed.js"></script>
+<script src="../engine/play-speech.js"></script>
+<script src="../engine/play-cam.js"></script>
+<script src="../engine/play-char.js"></script>
+<script src="../core/audio.js"></script>
+<script src="../core/npc.js"></script>
+<script src="../core/fx.js"></script>
+<script src="../core/evidence.js"></script>
+<script src="../core/scene.js"></script>
+<script src="../core/game.js"></script>
+<script src="../core/tutor.js"></script>
+<script src="../core/event.js"></script>
+<script src="../core/assemble.js"></script>
+<script src="../core/decode.js"></script>
+<script src="../core/stage.js"></script>
+<script src="../games/garden.js"></script>
+<script src="../games/legacy.js"></script>
+<script src="../games/read-aloud.js"></script>
+<script src="../games/sound-monster.js"></script>
+<script src="../games/sound-jump.js"></script>
+<script src="../games/sound-bridge.js"></script>
+<script src="../games/sound-train.js"></script>
+<script src="../games/sound-swap.js"></script>
+<script src="../games/special-guest.js"></script>
+<script>
+/* 소리 숲 — Lv1 소리 칸 여덟이 한 무대(알파벳 소리 → a·i·o·e·u 단어 → 여러 자음 → 섞어 읽기). 재료 = content/phonics-lv1.js(생성 파일).
+   알파벳 칸은 한 칸 = 여러 날 — 하루 한 소리 묶음(소리 몬스터·소리 점프만), 마지막 묶음 날 특별 손님을 넘으면 칸 점등.
+   첫 칸은 우리 집 입구(I like)를 마치면 열린다(data/zones.js gates). 소리 나무 = 칸마다 불이 들어오는 열매 */
+(function(){
+  var ST = 'sound-forest', cells = PLAY_ZONES.zones.filter(function(z){ return z.stage === ST; });
+  var open = PlayPhonics.openIndex(PlaySeed, ST);
+  var m = /[?&]cell=([\w-]+)/.exec(location.search), want = m ? cells.filter(function(z){ return z.id === m[1]; })[0] : null;
+  var cur = want && cells.indexOf(want) <= open ? want : cells[open];
+  PlayPhonics.machine(document.getElementById('machine'), PlaySeed, cur.id, function(z, locked){
+    if (locked) { var t = document.getElementById('toast'); t.textContent = '앞 칸의 씨앗이 꽃이 되면 열려요 — 내일 또 와!'; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); }, 1800); return; }
+    if (z.id !== cur.id) location.href = '?cell=' + z.id;
+  }, ST);
+  PlayStage.start({
+    icon: 'tree',
+    zone: cur,
+    sign: 'a · b · c', host: 'mina', where: '숲',
+    open: { en: 'I see it!', ko: '소리 나무에 불이 켜졌어!' }, opened: '소리 나무에 불이 켜졌어요!',
+    seedHint: '소리 내어 읽으면 씨앗이 심겨요.',
+    endNote: '내일 다시 와서 읽어 주면 새싹이 돼요.<br>3일에 꽃, 7일에 열매 — 꽃이 많아지면 다음 소리 칸이 열리고<br>열매가 되면 나뭇잎 모자를 쓸 수 있어요.',
+    nextNote: '소리 나무의 불이 하나 더 켜졌어요.'
+  });
+})();
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>

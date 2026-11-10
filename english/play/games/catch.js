@@ -133,6 +133,7 @@
     id: 'catch', no: 11, name: '받기', icon: 'body', channels: ['body'], axis: 'flow', need: { lv1: 5 }, cam: true,
     count: function (c) { return Math.min(CONF.rounds, (c.targets || []).length || CONF.rounds); },
     intro: { en: 'Listen! Left or right?', ko: '들린 것만 받아 — 몸을 그쪽으로 기울여!' },
+    intro1: { en: 'Listen!', ko: '들린 쪽으로 몸을 기울여 받아 줘!' },     /* Lv1 무대에서 — 그때까지 배운 낱말·감탄만(W06) */
     start: start
   });
 })(window);

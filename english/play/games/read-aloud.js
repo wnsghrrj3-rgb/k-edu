@@ -19,9 +19,10 @@
     o = o || {};
     var S = ctx.services || {}, P = g.PlayPhonics, tts = S.tts, helped = false;
     host.innerHTML = '';
-    var card = h('div', 'rd-card', P ? P.html(x) : x.w), help = h('button', 'btn w pp-rep', g.PlayIcon.html('speaker')), act = h('div', 'oq-act'); help.type = 'button';
+    var face = function () { return P && !x.sight ? P.html(x) : '<span class="ph-w">' + x.w + '</span>'; };      /* 통째로 보는 단어(사이트워드)는 쪼개 보이지 않는다 */
+    var card = h('div', 'rd-card', face()), help = h('button', 'btn w pp-rep', g.PlayIcon.html('speaker')), act = h('div', 'oq-act'); help.type = 'button';
     host.appendChild(card); host.appendChild(help); host.appendChild(act);
-    var model = function (slowly) { helped = true; return tts && tts.blend && P ? tts.blend(P.sounds(x), { passes: slowly ? 1 : 2, word: x.w }) : (tts ? tts.word(x.w) : null); };
+    var model = function (slowly) { helped = true; return tts && tts.blend && P && !x.sight && P.sounds(x).length ? tts.blend(P.sounds(x), { passes: slowly ? 1 : 2, word: x.w }) : (tts ? tts.word(x.w, slowly ? { rate: 0.6 } : undefined) : null); };
     help.onclick = function () { model(true); };
     return g.PlayTutor.ask(ctx, {
       host: act, target: x.w, kind: 'word', hint0: true, offerText: true, model: model,
@@ -30,7 +31,7 @@
       if (!r) return r;
       if (helped) r.hinted = true;
       card.classList.remove('ear'); card.classList.add('done');
-      card.innerHTML = (x.pic ? '<span class="rd-pic">' + x.pic + '</span>' : '') + (P ? P.html(x) : x.w); help.style.display = 'none';
+      card.innerHTML = (x.pic ? '<span class="rd-pic">' + x.pic + '</span>' : '') + face(); help.style.display = 'none';
       return r;
     });
   }
@@ -61,9 +62,11 @@
 
   g.PlayReader = { CONF: CONF, one: one, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'read-aloud', no: 0, name: '읽어 주기', icon: 'speech', channels: ['say', 'read'], axis: 'talk', need: { lv1: 8 }, plants: true,
+    id: 'read-aloud', no: 0, name: '읽어 주기', icon: 'speech', channels: ['say', 'read'], axis: 'talk', need: { lv1: 4 }, plants: true,   /* W06 — 소리 숲 a 칸(cat 읽기)부터 · 알파벳 칸(단어 0)에선 빠짐 */
+    fits: function (zone) { return !zone.letters && (zone.words || []).length > 0; },
     count: function (c) { return Math.min(CONF.words, (c.targets || []).length); },
     intro: { en: 'Read it!', ko: '기계가 찍어 낸 단어를 소리 내어 읽어 줘!' },
+    intro1: { en: 'I see it!', ko: '단어 카드를 소리 내어 읽어 줘!' },     /* Lv1 무대에서 — 그때까지 배운 낱말·감탄만(W06) */
     start: start
   });
 })(window);

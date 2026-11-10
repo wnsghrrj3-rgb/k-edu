@@ -45,11 +45,12 @@
     var best = null, bestScore = 0;
     var cands = [target].concat(others || []);
     toks.forEach(function (tk) {
-      cands.forEach(function (c) {
+      cands.forEach(function (c0) {
+        var c = String(c0).toLowerCase();                 /* 대문자 재료(사이트워드 I)도 같은 잣대로 */
         var s = sim(tk, c);
         if ((ALIAS[c] || []).indexOf(tk) >= 0) s = Math.max(s, CONF.alias);
         if (tk === c) s = 1;
-        if (s > bestScore) { bestScore = s; best = c; }
+        if (s > bestScore) { bestScore = s; best = c0; }
       });
     });
     return best === target && bestScore >= CONF.pass;

@@ -8,6 +8,7 @@
   'use strict';
   if (g.PlayGame && g.PlaySoundBuild) g.PlayGame.register({
     id: 'sound-train', no: 15, name: '소리 기차', icon: 'train', channels: ['hand', 'sound'], axis: 'quest', need: { lv1: 4 },
+    fits: function (zone) { return !zone.letters && g.PlaySoundBuild.pick({ zone: zone }, 3).length >= 3; },
     count: function (c) { return Math.min(g.PlaySoundBuild.CONF.words, g.PlaySoundBuild.pick(c, g.PlaySoundBuild.CONF.words).length); },
     intro: { en: 'Go! Go!', ko: '들린 차례대로 기차 칸을 이어 줘!' },
     start: function (ctx) { return g.PlaySoundBuild.run(ctx, 'train'); }

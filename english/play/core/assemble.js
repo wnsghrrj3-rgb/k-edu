@@ -7,8 +7,10 @@
  *   · 조건 칸에 못 미친 놀이는 빠진다(놀이의 need — 그 칸까지 배운 것으로만 논다).
  *   · 씨앗이 아직 없는 단어가 있으면 말로 받는 놀이(주문 받기)를 먼저 넣는다 — 「둘은 바뀐다」를 해치지 않는 한에서.
  *   같은 날 다시 열면 같은 세트. 무엇을 할지는 화면이 아니라 여기(자료)에서 정해진다.
+ *   · 알파벳 칸(구역 bundles — Lv1 #3)은 한 칸 = 여러 날: 오늘의 묶음 = 그 칸에서 지낸 날 수(마지막 묶음에서 멈춤).
+ *     놀이는 구역 fixedGames(소리 몬스터·소리 점프)만, 특별 손님은 마지막 묶음 날부터 — 그때 칸이 점등된다(W06).
  *
- *   PlayAssemble.plan({ zone, cell, cam, unplanted, due, day }) → { day, event, eventGame, set[], minis[], reused }
+ *   PlayAssemble.plan({ zone, cell, cam, unplanted, due, day }) → { day, event, eventGame, set[], minis[], reused, bundle? }
  *   PlayAssemble.targets(id, zone, { unplanted[], review[] }) → 그 놀이의 대상 단어들
  *   PlayAssemble.finish(cell, zone) → 오늘 무대에 생긴 것(장식 하나) 또는 null
  *   저장: localStorage 'kedu-en-play-stage'(kedu_scope 규칙 — 동의 전에는 이 화면 동안만. 그때는 날짜로 돌려 고른다)
@@ -65,8 +67,12 @@
     ROTATE = o.rotate != null ? !!o.rotate : null;
     var same = st.days.filter(function (d) { return d.day === today; })[0];
     var garden = (o.due | 0) > 0 && G.get('garden') ? ['garden'] : [], guest = G.get('special-guest') ? ['special-guest'] : [];
+    /* 알파벳 칸 — 오늘의 묶음(지낸 날 수). 마지막 묶음 전에는 특별 손님이 오지 않는다 */
+    var bundle = zone.bundles ? Math.min(days.length, zone.bundles.length - 1) : null;
+    if (bundle != null && bundle < zone.bundles.length - 1) guest = [];
+    var withB = function (r) { if (bundle != null) r.bundle = bundle; return r; };
     if (same && !o.event && same.games.every(function (id) { return !!G.get(id); }))            /* 같은 날 다시 = 같은 세트 */
-      return { day: today, event: same.event || null, eventGame: same.eventGame || null, minis: same.games.slice(), set: garden.concat(same.games, guest), reused: true };
+      return withB({ day: today, event: same.event || null, eventGame: same.eventGame || null, minis: same.games.slice(), set: garden.concat(same.games, guest), reused: true });
     var yest = days.length ? days[days.length - 1] : null, yGames = yest ? yest.games : [];
 
     /* 켤 수 있는 놀이 */
@@ -79,6 +85,15 @@
     if (!evList.length && events.length) {
       var pool = events.filter(function (e) { return !yest || e.id !== yest.event; }); if (!pool.length) pool = events;
       evList = oldest(pool, function (e) { return ago(days, today, function (d) { return d.event === e.id; }); }, today);
+    }
+    /* 놀이가 정해진 칸(알파벳) — 그 놀이들만. 사건은 그 놀이를 입히는 것 중 오래 안 한 것 */
+    if (zone.fixedGames) {
+      var fixed = zone.fixedGames.filter(function (id) { var d = G.get(id); return !!d && !d.draft && allowed(d, cell); });
+      var fev = evList.filter(function (e) { return fixed.indexOf(e.game) >= 0; })[0] || null;
+      var fm = fev ? [fev.game].concat(fixed.filter(function (id) { return id !== fev.game; })) : fixed;
+      var fr = withB({ day: today, event: fev ? fev.id : null, eventGame: fev ? fev.game : null, minis: fm, set: garden.concat(fm, guest), reused: false });
+      if (!o.dry) { st.days = days.concat([{ day: today, event: fr.event, eventGame: fr.eventGame, games: fm }]).slice(-CONF.keepDays); put(cell, st); }
+      return fr;
     }
     /* 그 사건으로 하루를 짜 본다 */
     function build(ev) {
@@ -120,7 +135,7 @@
       return !yest || !!o.event || t.changed >= CONF.changeAtLeast;
     });
     var ev = best.ev, minis = best.minis;
-    var res = { day: today, event: ev ? ev.id : null, eventGame: ev ? ev.game : null, minis: minis, set: garden.concat(minis, guest), reused: false };
+    var res = withB({ day: today, event: ev ? ev.id : null, eventGame: ev ? ev.game : null, minis: minis, set: garden.concat(minis, guest), reused: false });
     if (!o.dry) {
       st.days = days.concat([{ day: today, event: res.event, eventGame: res.eventGame, games: minis }]).slice(-CONF.keepDays);
       put(cell, st);

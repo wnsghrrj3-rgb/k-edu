@@ -153,9 +153,10 @@
 
   g.PlayPop = { CONF: CONF, machine: machine, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'pop', no: 17, name: '톡톡 듣기', icon: 'ear', channels: ['ear'], axis: 'flow', need: { lv1: 5 },
+    id: 'pop', no: 17, name: '톡톡 듣기', icon: 'ear', channels: ['ear'], axis: 'flow', need: { lv1: 1 },
     count: function (c) { return Math.min(CONF.rounds, (c.targets || []).length || CONF.rounds); },
     intro: { en: 'Quick! Which one?', ko: '톡톡 — 들린 것을 눌러!' },
+    intro1: { en: 'Listen!', ko: '톡톡 올라오면 들린 것을 눌러 줘!' },     /* Lv1 무대에서 — 그때까지 배운 낱말·감탄만(W06) */
     start: start
   });
 })(window);

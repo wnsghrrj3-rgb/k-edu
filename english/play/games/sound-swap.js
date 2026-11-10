@@ -74,9 +74,10 @@
   g.PlaySoundSwap = { CONF: CONF, plan: plan, start: start };
   if (g.PlayGame) g.PlayGame.register({
     id: 'sound-swap', no: 16, name: '소리 변신', icon: 'wand', channels: ['sound'], axis: 'laugh', need: { lv1: 14 },
-    fits: function (zone) { return !!g.PlayPhonics && g.PlayPhonics.pairs(zone.id).length >= 2; },
+    fits: function (zone) { return !zone.letters && !!g.PlayPhonics && g.PlayPhonics.pairs(zone.id).length >= 2; },
     count: function (c) { return Math.min(CONF.rounds, plan((c.zone || {}).id, CONF.rounds).length); },
     intro: { en: 'One, two!', ko: '한 조각만 바꾸면 다른 단어가 돼 — 바꿀 조각을 골라 줘!' },
+    intro1: { en: 'Oh!', ko: '소리 하나만 바꾸면 다른 것이 돼!' },     /* Lv1 무대에서 — 그때까지 배운 낱말·감탄만(W06) */
     start: start
   });
 })(window);

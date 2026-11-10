@@ -34,13 +34,23 @@
     <div class="tx"><b id="dueT">오늘 돌볼 씨앗</b><span id="dueS">말해서 심은 씨앗은 며칠 뒤에 다시 말해 주면 자라요.</span></div>
   </section>
 
-  <section class="map">
+  <section class="map" id="map1">
+    <h2 id="mapT1">소리 마을 — 처음 온 친구는 여기부터</h2>
+    <div class="grid g5" id="grid1"></div>
+  </section>
+
+  <section class="map" id="map2">
     <h2 id="mapT">마을 — 놀이를 마칠 때마다 안개가 걷혀요</h2>
     <div class="grid" id="grid"></div>
+    <div class="wfog" id="wfog"></div>
   </section>
 
   <section>
-    <div class="sec" id="shelfT">내 가게 <small>열매가 되면 진열대에 올라가요</small></div>
+    <div class="sec" id="treeT">소리 나무 <small>소리 숲 칸을 마치면 열매에 불이 들어와요</small></div>
+    <div class="machine tree" id="tree" style="margin-top:10px"></div>
+    <div class="sec" id="petT" style="margin-top:16px">따라다니는 동물 <small>동물 이름이 열매가 되면 나를 따라다녀요</small></div>
+    <div class="pets" id="pets"></div>
+    <div class="sec" id="shelfT" style="margin-top:16px">내 가게 <small>열매가 되면 진열대에 올라가요</small></div>
     <div class="shelf" id="shelf"></div>
     <div class="sec" id="machineT" style="margin-top:16px">소리 기계 <small>소리 칸을 마치면 불이 들어와요</small></div>
     <div class="machine" id="machine" style="margin-top:10px"></div>
@@ -60,8 +70,12 @@
 <script src="ui/icons.js"></script>
 <script src="content/art/art.js"></script>
 <script src="content/art/food.js"></script>
+<script src="content/art/home.js"></script>
+<script src="content/art/farm.js"></script>
+<script src="content/art/forest.js"></script>
 <script src="data/zones.js"></script>
 <script src="content/phonics.js"></script>
+<script src="content/phonics-lv1.js"></script>
 <script src="engine/play-seed.js"></script>
 <script src="engine/play-char.js"></script>
 <script src="core/npc.js"></script>
@@ -70,7 +84,7 @@
 (function(){
   var Z = PLAY_ZONES, $ = function(id){ return document.getElementById(id); }, I = PlayIcon.html;
   var parts = PlaySeed.parts(), seeds = PlaySeed.all();
-  PlayChar.render($('char'), { parts: parts });
+  PlayChar.render($('char'), { parts: parts }); $('char').insertAdjacentHTML('beforeend', '<span class="pet" id="petBuddy"></span>');     /* 따라다니는 동물 자리 */
   var nParts = Object.keys(parts).length;
   if (nParts) { $('heroT').textContent = '내 캐릭터'; $('heroP').textContent = '입은 것 ' + nParts + '개 — 전부 내가 말해서 얻은 영어예요.'; }
 
@@ -80,6 +94,9 @@
   $('pStreak').innerHTML = I('flame') + ' ' + PlaySeed.streak() + '일';
   $('title').innerHTML = I('map') + ' 영어 놀이터';
   $('mapT').innerHTML = I('map') + ' 마을 — 놀이를 마칠 때마다 안개가 걷혀요';
+  $('mapT1').innerHTML = I('tree') + ' 소리 마을 — 처음 온 친구는 여기부터';
+  $('treeT').innerHTML = I('tree') + ' 소리 나무 <small>소리 숲 칸을 마치면 열매에 불이 들어와요</small>';
+  $('petT').innerHTML = I('paw') + ' 따라다니는 동물 <small>동물 이름이 열매가 되면 나를 따라다녀요</small>';
   $('shelfT').innerHTML = I('shop') + ' 내 가게 <small>열매가 되면 진열대에 올라가요</small>';
   $('machineT').innerHTML = I('wrench') + ' 소리 기계 <small>소리 칸을 마치면 불이 들어와요</small>';
 
@@ -93,11 +110,37 @@
     var zid = seeds[due[0]].zone, z = Z.zone(zid);
     $('careBtn').onclick = function(){ location.href = (z ? z.page : 'zone/food1.html') + (z && /\?/.test(z.page) ? '&' : '?') + 'mode=care'; };
   } else if (planted) { $('dueT').textContent = '오늘 돌볼 씨앗 없음'; $('dueS').textContent = '다 자라는 중이에요. 내일 다시 와요.'; }
-  $('goBtn').onclick = function(){ location.href = Z.stages['lunch-shop'].page; };
+  /* 월드의 문(결정 §0-2 를 월드 단위로) — Lv1 「소리 마을」은 늘 열림. Lv2 「마을」은 이미 시작했거나 Lv1 을 마치면 열림(주소 ?world=lv2 = 어른 점검용 — 이 화면에서만) */
+  var W2 = /[?&]world=lv2/.test(location.search) ? 'open' : Z.worldDoor('lv2', PlaySeed);
+  var next1 = Z.nextCell('lv1', PlaySeed);
+  /* 놀러 가기 — Lv2 가 열린 아이는 점심 가게(예전 그대로), 아니면 Lv1 에서 다음에 놀 칸(처음 온 아이 = 첫 단어 칸) */
+  var goLv2 = W2 === 'open' || !next1, goTo = goLv2 ? Z.stages['lunch-shop'].page : next1.page;
+  $('goBtn').setAttribute('data-go', goLv2 ? 'lunch-shop' : next1.id);
+  $('goBtn').onclick = function(){ location.href = goTo; };
 
-  /* 지도 — 무대마다 한 칸 + 안개 */
+  /* Lv1 지도 — 무대마다 한 칸(문이 열린 무대 · 구경 · 안개) + 앞으로 지을 무대는 안개 */
+  var g1 = $('grid1'), seen1 = {};
+  Z.worldCells('lv1').forEach(function(z){
+    if (seen1[z.stage]) return; seen1[z.stage] = 1;
+    var sg = Z.stages[z.stage] || { name: z.name, icon: z.icon, page: z.page }, door = Z.stageDoor(z.stage, PlaySeed), cs = Z.cells(z.stage);
+    var t = document.createElement('div'); t.className = 'zone' + (door === 'fog' ? ' fog' : door === 'peek' ? ' peek' : ''); t.setAttribute('data-stage', z.stage);
+    if (z.palette) t.setAttribute('data-palette', z.palette);
+    if (door === 'fog') t.innerHTML = '<div class="e">' + I('cloud') + '</div><div class="nm">안개</div>';
+    else t.innerHTML = '<div class="e">' + I(sg.icon) + '</div><div class="nm">' + sg.name + '</div>' +
+      (door === 'peek' ? '<span class="flag" data-flag="peek">' + I('sun-cloud') + '</span>' : '<div class="pr">' + cs.map(function(c){ return '<i class="' + (Z.ready(c.id, PlaySeed) ? 's3' : PlaySeed.bossDone(c.id) ? 's1' : '') + '"></i>'; }).join('') + '</div>') +
+      (next1 && next1.stage === z.stage && !goLv2 ? '<span class="here">' + I('play') + '</span>' : '');
+    t.onclick = function(){
+      if (door === 'open') { location.href = sg.page; return; }
+      showPeek({ name: sg.name, host: z.host || 'mina', fog: door === 'fog' });
+    };
+    g1.appendChild(t);
+  });
+  ((Z.later || {}).lv1 || []).forEach(function(){ var d = document.createElement('div'); d.className = 'zone fog'; d.innerHTML = '<div class="e">' + I('cloud') + '</div><div class="nm">안개</div>'; g1.appendChild(d); });
+
+  /* Lv2 지도 — 무대마다 한 칸 + 안개 */
   var g = $('grid'), tiles = 0, seenStage = {};
   Z.zones.forEach(function(z){
+    if (z.world !== 'lv2') return;
     var sk = z.stage || z.id, sg = (Z.stages || {})[z.stage];
     if (sg) {                       /* 여러 칸이 한 무대 — 무대마다 한 칸만 그린다(점 = 칸마다의 진행) */
       if (seenStage[sk]) return; seenStage[sk] = 1; tiles++;
@@ -120,10 +163,10 @@
   /* 안개 — 앞 구역의 특별 손님을 넘으면 다음 무대가 보이고 구경할 수 있다(결정 §0-2). 놀이 입장은 그 구역 단어 ¾ 이 꽃일 때 */
   var peeks = (Z.peek || []).filter(function(p){ return PlaySeed.bossDone(p.after); });
   function showPeek(p){
-    var az = Z.zone(p.after), ready = az && PlaySeed.canClear(az.id, az.words.map(function(w){ return w.w; }));
+    var az = p.after ? Z.zone(p.after) : null, ready = az && PlaySeed.canClear(az.id, az.words.map(function(w){ return w.w; }));
     PlayNpc.render($('peekWho'), p.host || 'mina', { face: 'smile', pose: 'ok' });
     $('peekT').textContent = p.name;
-    $('peekS').textContent = ready ? (p.page ? '어서 와! 들어와서 같이 놀자.' : '곧 문을 열어요. 조금만 기다려 줘!') : '오늘은 구경만! 씨앗이 꽃이 되면 들어올 수 있어 — 내일 또 와.';
+    $('peekS').textContent = p.fog ? '아직 안개가 끼어 있어 — 앞 자리를 마치면 걷혀요.' : ready ? (p.page ? '어서 와! 들어와서 같이 놀자.' : '곧 문을 열어요. 조금만 기다려 줘!') : '오늘은 구경만! 씨앗이 꽃이 되면 들어올 수 있어 — 내일 또 와.';
     $('peek').classList.add('show'); clearTimeout(showPeek._t);
     if (ready && p.page) showPeek._t = setTimeout(function(){ location.href = p.page; }, 1200);
     else showPeek._t = setTimeout(function(){ $('peek').classList.remove('show'); }, 3200);
@@ -141,6 +184,25 @@
     }
     g.appendChild(d);
   })(fi);
+
+  /* Lv2 월드가 아직 닫혀 있으면 — 무대 칸은 그대로 보이되 위에 안개 한 겹, 누르면 「소리 마을을 마치면 열려요」 */
+  if (W2 !== 'open') {
+    $('map2').classList.add('wlock'); $('map2').setAttribute('data-door', W2);
+    $('wfog').innerHTML = I(W2 === 'peek' ? 'sun-cloud' : 'cloud') + '<span>' + (W2 === 'peek' ? '소리 마을의 칸이 모두 꽃이 되면 들어갈 수 있어요 — 오늘은 구경만!' : '소리 마을을 마치면 안개가 걷혀요') + '</span>';
+    Array.prototype.forEach.call(g.children, function(t){ t.onclick = function(){ showPeek({ name: '마을', host: 'sam', fog: W2 === 'fog' }); }; });
+  }
+  /* 내 공간 「소리 나무」 — 소리 숲 칸을 마치면 그 칸 열매에 불이 들어온다 */
+  if (window.PlayPhonics && $('tree')) PlayPhonics.machine($('tree'), PlaySeed, '', function(z, locked){ if (!locked) location.href = z.page; }, 'sound-forest');
+  /* 따라다니는 동물 — 동물 농장 단어 중 그림이 있는 동물·물건. 열매가 된 첫째가 캐릭터 옆에 선다 */
+  var petWords = [], petSeen = {};
+  Z.cells('animal-farm').forEach(function(c){ c.words.forEach(function(w){ if (!petSeen[w.w] && PlayArt.has(w.w)) { petSeen[w.w] = 1; petWords.push(w); } }); });
+  petWords.forEach(function(w){
+    var st = seeds[w.w] ? seeds[w.w].stage : -1, d = document.createElement('div'); d.className = 'slot' + (st >= 3 ? ' fruit' : ''); d.setAttribute('data-w', w.w);
+    d.innerHTML = '<div class="p s' + st + '">' + w.pic + '</div><div class="st">' + (st >= 0 ? I(PlaySeed.STAGE[st].icon) : '') + '</div><div class="w">' + (st >= 1 ? w.w : '') + '</div>';
+    $('pets').appendChild(d);
+  });
+  var buddy = petWords.filter(function(w){ return seeds[w.w] && seeds[w.w].stage >= 3; })[0];
+  if (buddy) { $('petBuddy').innerHTML = PlayArt.html(buddy.w); $('petBuddy').setAttribute('data-w', buddy.w); }
 
   /* 내 공간 「소리 기계」 — 소리 공방에서 익힌 소리에 불이 들어온다 */
   if (window.PlayPhonics && $('machine')) PlayPhonics.machine($('machine'), PlaySeed, '', function(z, locked){ if (!locked) location.href = z.page; });

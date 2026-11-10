@@ -34,6 +34,7 @@
     id: 'sound-jump', no: 12, name: '소리 점프', icon: 'jump', channels: ['body', 'sound'], axis: 'flow', need: { lv1: 3 }, cam: true,
     count: function () { return CONF.rounds; },
     intro: { en: 'Listen! Left or right?', ko: '들린 소리 쪽으로 몸을 기울여!' },
+    intro1: { en: 'Listen!', ko: '들린 소리 쪽으로 몸을 기울여!' },     /* Lv1 무대에서 — 그때까지 배운 낱말·감탄만(W06) */
     start: start
   });
 })(window);
