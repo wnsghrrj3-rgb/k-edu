@@ -218,7 +218,7 @@ function errOrder(LX) { const er = [];
 const PARTS_USED = ['text', 'mood', 'sort2', 'note', 'letter', 'sound', 'link', 'tools', 'chain'];
 function errFigs(LX) { const er = []; let nF = 0, nS = 0;
   KEYS.forEach(k => LX[k].slides.forEach(s => { const f = s.data.fig; if (!f) return; nF++; const at = k + ' ' + s.id + ' ' + f.k;
-    if (PARTS_USED.indexOf(f.k) < 0) er.push(at + ' 모르는 부품'); const h = FIG.render(f); if (!h || /NaN|undefined|\[object/.test(h)) er.push(at + ' 렌더');
+    if (f.k === 'panels' ? !(f.items || []).length || f.items.some(it => !it.fig || PARTS_USED.indexOf(it.fig.k) < 0) : PARTS_USED.indexOf(f.k) < 0) er.push(at + ' 모르는 부품'); /* panels 한 칸 = 글 상자 min-width 풀기(실렌더 — 정답 공개 때 480 칸) */ const h = FIG.render(f); if (!h || /NaN|undefined|\[object/.test(h)) er.push(at + ' 렌더');
     if (f.k === 'sound') (f.items || []).forEach(it => { nS++; let want; try { want = '[' + hieut(it.w) + ']'; } catch (e) { er.push(at + ' ' + e.message); return; } if (it.s.replace(/ː/g, '') !== want) er.push(at + ' 소리 ' + it.w + ' ' + it.s + ' ≠ 규칙 ' + want); });
     if (s.block === 'basic_problem') { const d = s.data; const tx = nsp(docOf(h).body.textContent); const cs = d.options.filter(o => o.correct).map(o => clean(o.text));
       cs.forEach(a => { if (nsp(d.question).indexOf(nsp(a)) >= 0) return; if (tx.indexOf(nsp(a)) >= 0) er.push(at + ' 문제 그림에 정답 「' + a + '」'); });
