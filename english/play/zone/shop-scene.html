@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>점심 가게 (장면 시안) | 영어 놀이터</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Noto+Sans+KR:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../ui/tokens.css">
+<link rel="stylesheet" href="../play.css">
+<style>
+/* ============================================================
+ * 점심 가게 — 장면형 시안 (카드 화면이 아니라 가게 안에 서 있는 느낌)
+ *   뒤: 벽·창(밖 구름)·선반·메뉴판·문·흔들리는 등   가운데: 손님·카운터·접시   앞: 재료 쟁반
+ *   손님이 문으로 들어와 → 주문(소리 + 말풍선) → 재료를 끌어 접시에 → 접시가 손님에게 → 기뻐하며 나감. 세 손님이면 한 판.
+ *   그림 자리(data-slot)는 나중에 다른 그림으로 갈아 끼울 수 있게 이름을 붙여 둔다. 색은 토큰만.
+ * ============================================================ */
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg)}
+.ss-sc{position:fixed;inset:0;overflow:hidden;--cy:56%;--wall:var(--stage-soft)}
+.ss-sc > *{position:absolute}
+/* 뒤 벽 */
+.ss-wall{inset:0 0 calc(100% - var(--cy)) 0}
+.ss-wall svg{width:100%;height:100%;display:block}
+/* 바닥 */
+.ss-floor{left:0;right:0;top:var(--cy);bottom:0}
+.ss-floor svg{width:100%;height:100%;display:block}
+/* 창 밖 구름 */
+.ss-sky-cl{animation:skyCl 38s linear infinite}
+.ss-sky-cl.b{animation-duration:55s;animation-delay:-20s}
+@keyframes skyCl{from{transform:translateX(-140px)}to{transform:translateX(420px)}}
+/* 등 — 살짝 흔들리고 빛이 숨 쉰다 */
+.ss-lamp{top:0;width:120px;margin-left:-60px;transform-origin:50% 0;animation:lampSw 6s ease-in-out infinite}
+.ss-lamp.b{animation-delay:-2.4s}
+@keyframes lampSw{0%,100%{transform:rotate(-1.6deg)}50%{transform:rotate(1.6deg)}}
+.ss-lamp .glow{animation:glow 4s ease-in-out infinite}
+@keyframes glow{0%,100%{opacity:.55}50%{opacity:.8}}
+/* 창에서 들어오는 빛 */
+.ss-beam{left:4%;top:12%;width:40%;height:88%;pointer-events:none;background:linear-gradient(160deg,var(--surface) 0%,transparent 70%);opacity:.32;clip-path:polygon(18% 0,52% 0,100% 100%,30% 100%);mix-blend-mode:soft-light;animation:beam 9s ease-in-out infinite}
+@keyframes beam{0%,100%{opacity:.26}50%{opacity:.4}}
+.ss-dust{width:4px;height:4px;border-radius:50%;background:var(--warm-soft);opacity:0;animation:dust linear infinite;pointer-events:none}
+@keyframes dust{0%{transform:translate(0,0);opacity:0}20%{opacity:.9}100%{transform:translate(60px,-120px);opacity:0}}
+/* 문 */
+.ss-door{right:4%;bottom:calc(100% - var(--cy));width:15%;max-width:190px;aspect-ratio:9/19}
+.ss-door .ss-frame{position:absolute;inset:0;background:var(--a-wood);border-radius:var(--r-1) var(--r-1) 0 0}
+.ss-door .ss-in{position:absolute;inset:7% 8% 0;background:linear-gradient(to bottom,var(--stage-2-soft),var(--surface))}
+.ss-door .ss-leaf{position:absolute;inset:7% 8% 0;background:linear-gradient(90deg,var(--stage-deep),var(--stage));transform-origin:100% 50%;transition:transform 520ms var(--ease);border-radius:3px 3px 0 0}
+.ss-door .ss-leaf::before{content:"";position:absolute;left:14%;right:14%;top:8%;height:30%;background:var(--stage-2-soft);opacity:.6;border-radius:4px}
+.ss-door .ss-leaf::after{content:"";position:absolute;left:12%;top:55%;width:9%;aspect-ratio:1;border-radius:50%;background:var(--warm)}
+.ss-door.open .ss-leaf{transform:perspective(600px) rotateY(-68deg)}
+/* 메뉴판 */
+.ss-menu{left:50%;top:7%;transform:translateX(-50%);width:min(38vw,380px);aspect-ratio:2.6/1;background:var(--ink);border-radius:var(--r-2);box-shadow:0 10px 0 -4px var(--a-wood),0 18px 24px -12px var(--ink);display:flex;align-items:center;justify-content:space-around;padding:0 4%;color:var(--on-stage)}
+.ss-menu .ss-it{display:flex;flex-direction:column;align-items:center;gap:2px;font:800 clamp(10px,1.2vw,15px)/1 var(--font-en);opacity:.92}
+.ss-menu .art{font-size:clamp(26px,3.6vw,46px)}
+.ss-menu .ss-tt{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--stage);color:var(--on-stage);font:800 clamp(11px,1.2vw,14px)/1 var(--font-en);letter-spacing:.12em;padding:6px 14px;border-radius:var(--r-pill)}
+/* 손님 — 카운터 뒤에 서서 아랫몸은 카운터에 가린다 */
+.ss-guest{left:50%;bottom:calc(100% - var(--cy) + 2%);width:min(34vh,280px);aspect-ratio:120/130;margin-left:calc(min(34vh,280px) / -2 - 10%);transition:transform 1500ms cubic-bezier(.35,.1,.3,1),opacity 400ms;z-index:2}
+.ss-guest.out{transform:translateX(62vw);opacity:0}
+.ss-guest.away{transform:translateX(62vw)}
+.ss-guest .ss-body{width:100%;height:100%}
+.ss-guest.walk .ss-body{animation:walk 380ms ease-in-out infinite}
+@keyframes walk{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-7%) rotate(1.5deg)}}
+.ss-guest:not(.walk) .ss-body{animation:idle 3.2s ease-in-out infinite}
+@keyframes idle{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-1%) scaleY(1.012)}}
+.ss-guest .ss-shd{position:absolute;left:18%;right:18%;bottom:-3%;height:8%;border-radius:50%;background:var(--ink);opacity:.12;filter:blur(4px)}
+/* 말풍선 */
+.ss-bub{position:absolute;left:80%;top:14%;min-width:120px;background:var(--surface);border-radius:var(--r-3);padding:12px 14px 12px 12px;box-shadow:0 12px 26px -10px var(--ink);display:flex;align-items:center;gap:10px;transform:scale(.6);opacity:0;transform-origin:0 100%;transition:transform 320ms var(--ease),opacity 220ms;z-index:3;cursor:pointer}
+.ss-bub.show{transform:scale(1);opacity:1}
+.ss-bub::after{content:"";position:absolute;left:-8px;bottom:14px;border:10px solid transparent;border-right-color:var(--surface);border-left:0}
+.ss-bub .ss-spk{width:46px;height:46px;border-radius:50%;background:var(--stage);color:var(--on-stage);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.ss-bub.talk .ss-spk{animation:listen 900ms ease-in-out infinite}
+.ss-bub .ss-hint{font-size:54px;line-height:0;max-width:0;overflow:hidden;opacity:0;transition:max-width 300ms var(--ease),opacity 300ms}
+.ss-bub.hinted .ss-hint{max-width:60px;opacity:1}
+.ss-bub .ss-w{font:800 22px/1 var(--font-en);color:var(--ink)}
+/* 카운터 — 윗면 + 앞면 */
+.ss-counter{left:6%;right:6%;top:calc(var(--cy) - 3%);height:22%;z-index:4}
+.ss-counter .ss-top{position:absolute;left:-1.5%;right:-1.5%;top:0;height:22%;background:linear-gradient(to bottom,var(--a-cream),var(--surface-2));border-radius:var(--r-1) var(--r-1) 4px 4px;box-shadow:0 6px 0 var(--surface-3)}
+.ss-counter .ss-front{position:absolute;left:0;right:0;top:22%;bottom:0;background:linear-gradient(to bottom,var(--stage),var(--stage-deep));border-radius:0 0 6px 6px;overflow:hidden}
+.ss-counter .ss-front::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 11%,var(--ink) 11% 11.4%);opacity:.12}
+.ss-counter .ss-front::after{content:"";position:absolute;left:0;right:0;top:0;height:12%;background:var(--ink);opacity:.14}
+.ss-counter .ss-sign{position:absolute;left:50%;top:44%;transform:translateX(-50%);font:800 clamp(14px,2vw,26px)/1 var(--font-en);letter-spacing:.2em;color:var(--on-stage);opacity:.9}
+.ss-counter .ss-cshd{position:absolute;left:2%;right:2%;bottom:-16%;height:18%;background:var(--ink);opacity:.12;filter:blur(10px);border-radius:50%}
+/* 접시 — 놓는 곳 */
+.ss-plate{left:57%;top:calc(var(--cy) - 9%);width:min(17vw,170px);aspect-ratio:2.2/1;margin-left:calc(min(17vw,170px) / -2);z-index:5;transition:transform 640ms cubic-bezier(.4,.1,.3,1)}
+.ss-plate .ss-dish{position:absolute;inset:0;border-radius:50%;background:radial-gradient(ellipse at 50% 40%,var(--surface) 0 45%,var(--surface-2) 46% 60%,var(--surface) 61%);box-shadow:0 6px 10px -4px var(--ink)}
+.ss-plate .ss-ring{position:absolute;inset:-14%;border-radius:50%;border:3px dashed var(--warm);opacity:0;transition:opacity 200ms}
+.ss-plate.target .ss-ring{opacity:1;animation:breathe 1s ease-in-out infinite}
+.ss-plate .ss-food{position:absolute;left:50%;bottom:30%;transform:translateX(-50%);font-size:min(10vw,96px);line-height:0}
+.ss-plate .ss-food .art{filter:drop-shadow(0 6px 4px var(--scrim))}
+.ss-plate.serve{transform:translate(-9vw,-6vh) scale(.9)}
+.ss-plate.gone{transition:opacity 260ms;opacity:0}
+/* 재료 쟁반 */
+.ss-tray{left:50%;bottom:calc(4% + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(92vw,720px);height:clamp(110px,19vh,170px);z-index:6}
+.ss-tray .ss-board{position:absolute;inset:22% 0 0;background:linear-gradient(to bottom,var(--a-wood),var(--stage-deep));border-radius:var(--r-3);box-shadow:0 14px 26px -12px var(--ink)}
+.ss-tray .ss-board::before{content:"";position:absolute;left:3%;right:3%;top:8%;height:18%;border-radius:var(--r-pill);background:var(--surface);opacity:.12}
+.ss-tray .ss-row{position:absolute;inset:0 3% 12%;display:flex;align-items:flex-end;justify-content:space-around}
+.ss-ing{position:relative;font-size:clamp(64px,11vh,104px);line-height:0;cursor:grab;touch-action:none;transition:transform 220ms var(--ease);border-radius:var(--r-2);outline:none}
+.ss-ing .art{display:block;filter:drop-shadow(0 8px 5px var(--scrim))}
+.ss-ing::after{content:"";position:absolute;left:14%;right:14%;bottom:-4px;height:10px;border-radius:50%;background:var(--ink);opacity:.18;filter:blur(3px);z-index:-1}
+.ss-ing:hover,.ss-ing:focus-visible{transform:translateY(-8px) scale(1.06)}
+.ss-ing:focus-visible{box-shadow:0 0 0 4px var(--warm-soft)}
+.ss-ing.home{transition:transform 360ms cubic-bezier(.3,1.4,.5,1)}
+.ss-ing.drag{cursor:grabbing;z-index:20;transition:none}
+.ss-ing.drag .art{filter:drop-shadow(0 22px 12px var(--scrim))}
+.ss-ing.used{visibility:hidden}
+.ss-ing.glow{animation:ingGlow 1s ease-in-out infinite}
+@keyframes ingGlow{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px) scale(1.08)}}
+/* 위 줄 */
+.ss-hud{left:0;right:0;top:0;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 16px 0 116px;z-index:30}
+.ss-hud .ss-nm{white-space:nowrap;display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:var(--r-pill);padding:8px 14px;box-shadow:var(--shadow);font-weight:700;font-size:15px}
+.ss-hud .ss-nm .ic{color:var(--stage)}
+.ss-hud .ss-dots{display:flex;gap:5px;margin-left:4px}
+.ss-hud .ss-dots i{width:9px;height:9px;border-radius:50%;background:var(--surface-3);transition:background 300ms}
+.ss-hud .ss-dots i.on{background:var(--ok)}
+.ss-hud .ss-r{display:flex;gap:8px;align-items:center}
+.ss-hud .ss-coin{display:flex;align-items:center;gap:6px;background:var(--surface);border-radius:var(--r-pill);padding:8px 14px;box-shadow:var(--shadow);font:800 16px/1 var(--font-en)}
+.ss-hud .ss-coin b{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--warm-soft),var(--warm) 60%);display:inline-block}
+.ss-hud .ss-coin.pop{animation:lift 350ms var(--ease)}
+.ss-hud button{width:42px;height:42px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--ink-2);border:0}
+.ss-hud button.off{color:var(--ink-4)}
+/* 날아가는 동전 */
+.ss-fly{position:fixed;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--warm-soft),var(--warm) 60%);z-index:50;pointer-events:none;transition:transform 700ms cubic-bezier(.5,-.3,.6,1),opacity 700ms}
+.ss-spark{position:fixed;width:10px;height:10px;border-radius:50%;background:var(--warm);z-index:50;pointer-events:none;animation:spark 620ms ease-out forwards}
+@keyframes spark{to{transform:translate(var(--sx),var(--sy)) scale(.2);opacity:0}}
+/* 한 판 끝 */
+.ss-end{inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:var(--veil);opacity:0;pointer-events:none;transition:opacity 400ms}
+.ss-end.show{opacity:1;pointer-events:auto}
+.ss-end .ss-box{background:var(--surface);border-radius:var(--r-3);padding:26px 30px;text-align:center;box-shadow:var(--shadow);min-width:260px}
+.ss-end .ss-big{font:800 30px/1.1 var(--font-en);color:var(--stage)}
+.ss-end p{color:var(--ink-2);margin:8px 0 18px;font-size:15px}
+.ss-end .btn{width:100%}
+.ss-tap{inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:var(--veil)}
+.ss-tap .btn{min-width:220px}
+/* 세로 화면 — 손님·카운터를 크게, 쟁반 위로 여유 */
+@media (max-aspect-ratio:3/4){
+  .ss-sc{--cy:58%}
+  .ss-menu{top:9%;width:72vw}
+  .ss-guest{width:min(34vh,260px);margin-left:calc(min(34vh,260px) / -2 - 4%)}
+  .ss-bub{left:62%;top:-8%}
+  .ss-counter{left:2%;right:2%;height:17%}
+  .ss-plate{left:66%;width:34vw;margin-left:-17vw}
+  .ss-plate .ss-food{font-size:20vw}
+  .ss-guest{margin-left:calc(min(34vh,260px) / -2 - 14%)}
+  .ss-hud{padding-left:108px}.ss-hud .ss-nm{font-size:14px;padding:8px 12px}.ss-hud .ss-dots{display:none}
+  .ss-door{width:24%;right:-4%}
+  .ss-lamp.b{display:none}
+}
+@media (prefers-reduced-motion:reduce){.ss-sc *,.ss-guest .ss-body{animation:none!important}}
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+<body data-palette="shop">
+<div class="ss-sc" id="sc">
+  <div class="ss-wall" data-slot="shop-wall"><svg viewBox="0 0 1440 560" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="gW" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--stage-soft)"/><stop offset="1" style="stop-color:var(--bg)"/></linearGradient>
+      <linearGradient id="gSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--stage-2-soft)"/><stop offset="1" style="stop-color:var(--surface)"/></linearGradient>
+      <radialGradient id="gLamp"><stop offset="0" style="stop-color:var(--warm-soft)"/><stop offset="1" style="stop-color:var(--warm-soft);stop-opacity:0"/></radialGradient>
+      <clipPath id="cWin"><rect x="110" y="120" width="300" height="230" rx="10"/></clipPath>
+    </defs>
+    <rect width="1440" height="560" fill="url(#gW)"/>
+    <rect y="400" width="1440" height="160" style="fill:var(--stage-2-soft)"/>
+    <rect y="396" width="1440" height="10" style="fill:var(--surface)"/>
+    <g opacity=".08" style="fill:var(--ink)"><rect x="0" y="406" width="1440" height="6"/></g>
+    <!-- 창 -->
+    <rect x="96" y="106" width="328" height="258" rx="16" style="fill:var(--a-wood)"/>
+    <g clip-path="url(#cWin)">
+      <rect x="110" y="120" width="300" height="230" fill="url(#gSky)"/>
+      <path d="M110 300 C180 270 250 290 320 276 C360 268 390 280 410 276 V350 H110Z" style="fill:var(--stage-2)" opacity=".5"/>
+      <path d="M110 324 C200 300 280 318 410 300 V350 H110Z" style="fill:var(--a-leaf)" opacity=".55"/>
+      <g class="ss-sky-cl"><path d="M40 190a18 18 0 0 1 22-24 26 26 0 0 1 48 4 16 16 0 0 1 4 30H48a14 14 0 0 1-8-10z" style="fill:var(--surface)"/></g>
+      <g class="ss-sky-cl b"><path d="M0 236a14 14 0 0 1 16-18 20 20 0 0 1 36 2 12 12 0 0 1 4 24H6a10 10 0 0 1-6-8z" style="fill:var(--surface)" opacity=".85"/></g>
+    </g>
+    <rect x="256" y="120" width="8" height="230" style="fill:var(--a-wood)"/>
+    <rect x="110" y="232" width="300" height="8" style="fill:var(--a-wood)"/>
+    <rect x="86" y="362" width="348" height="16" rx="6" style="fill:var(--surface-3)"/>
+    <!-- 화분 -->
+    <path d="M150 362 l6-34 h40 l6 34z" style="fill:var(--a-red)"/>
+    <path d="M176 330 c-26-12-30-40-10-52 c4 18 10 30 10 52z M176 330 c22-16 30-40 12-54 c-6 20-10 32-12 54z" style="fill:var(--a-leaf)"/>
+    <!-- 선반 -->
+    <g data-slot="shop-shelf">
+      <rect x="1000" y="150" width="260" height="12" rx="4" style="fill:var(--a-wood)"/>
+      <rect x="1000" y="262" width="260" height="12" rx="4" style="fill:var(--a-wood)"/>
+      <rect x="1018" y="106" width="34" height="44" rx="8" style="fill:var(--a-red)" opacity=".85"/><rect x="1016" y="100" width="38" height="10" rx="4" style="fill:var(--surface-3)"/>
+      <rect x="1064" y="114" width="30" height="36" rx="8" style="fill:var(--warm)" opacity=".85"/><rect x="1062" y="108" width="34" height="9" rx="4" style="fill:var(--surface-3)"/>
+      <rect x="1108" y="98" width="24" height="52" rx="10" style="fill:var(--stage-2)"/>
+      <circle cx="1170" cy="132" r="18" style="fill:var(--surface-3)"/><circle cx="1210" cy="136" r="14" style="fill:var(--a-cream)"/>
+      <rect x="1020" y="214" width="70" height="48" rx="6" style="fill:var(--surface)"/><rect x="1028" y="226" width="54" height="8" rx="3" style="fill:var(--stage)" opacity=".7"/>
+      <path d="M1110 262 q24-60 48 0z" style="fill:var(--a-gold)"/><path d="M1170 262 q20-44 40 0z" style="fill:var(--a-gold)" opacity=".8"/>
+    </g>
+    <!-- 액자 -->
+    <rect x="560" y="290" width="80" height="64" rx="6" style="fill:var(--surface)"/><rect x="568" y="298" width="64" height="48" rx="3" style="fill:var(--stage-2-soft)"/><path d="M570 344 l20-22 14 14 10-10 16 18z" style="fill:var(--stage-2)"/>
+    <!-- 등 빛 번짐 -->
+    <circle class="glow" cx="420" cy="170" r="190" fill="url(#gLamp)"/>
+    <circle class="glow" cx="1000" cy="170" r="170" fill="url(#gLamp)"/>
+  </svg></div>
+  <div class="ss-floor" data-slot="shop-floor"><svg viewBox="0 0 1440 400" preserveAspectRatio="none" aria-hidden="true">
+    <defs><linearGradient id="gF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--a-wood)"/><stop offset="1" style="stop-color:var(--stage-deep)"/></linearGradient></defs>
+    <rect width="1440" height="400" fill="url(#gF)"/>
+    <g style="stroke:var(--ink)" opacity=".14" stroke-width="3">
+      <path d="M720 0 L-400 400 M720 0 L0 400 M720 0 L360 400 M720 0 L720 400 M720 0 L1080 400 M720 0 L1440 400 M720 0 L1840 400"/>
+      <path d="M0 60 H1440 M0 140 H1440 M0 250 H1440"/>
+    </g>
+    <rect width="1440" height="400" style="fill:var(--ink)" opacity=".12"/>
+  </svg></div>
+  <div class="ss-beam"></div>
+  <div class="ss-lamp" style="left:29%"><svg viewBox="0 0 120 150"><path d="M60 0 V70" style="stroke:var(--ink)" stroke-width="2"/><path d="M28 104 Q30 70 60 68 Q90 70 92 104z" style="fill:var(--ink)"/><ellipse cx="60" cy="104" rx="32" ry="6" style="fill:var(--warm)"/></svg></div>
+  <div class="ss-lamp b" style="left:70%"><svg viewBox="0 0 120 150"><path d="M60 0 V70" style="stroke:var(--ink)" stroke-width="2"/><path d="M28 104 Q30 70 60 68 Q90 70 92 104z" style="fill:var(--ink)"/><ellipse cx="60" cy="104" rx="32" ry="6" style="fill:var(--warm)"/></svg></div>
+  <div class="ss-menu" id="menu" data-slot="shop-menu"><span class="ss-tt">MENU</span></div>
+  <div class="ss-door" id="door" data-slot="shop-door"><div class="ss-frame"></div><div class="ss-in"></div><div class="ss-leaf"></div></div>
+  <div class="ss-guest out" id="guest" data-slot="guest"><div class="ss-shd"></div><div class="ss-body npc" id="gBody"></div>
+    <div class="ss-bub" id="bub" role="button" tabindex="0" aria-label="다시 듣기"><span class="ss-spk" id="spk"></span><span class="ss-hint" id="hint"></span></div>
+  </div>
+  <div class="ss-counter" data-slot="shop-counter"><div class="ss-cshd"></div><div class="ss-front"><span class="ss-sign">LUNCH SHOP</span></div><div class="ss-top"></div></div>
+  <div class="ss-plate" id="plate" data-slot="plate"><div class="ss-ring"></div><div class="ss-dish"></div><div class="ss-food" id="pFood"></div></div>
+  <div class="ss-tray" data-slot="tray"><div class="ss-board"></div><div class="ss-row" id="row"></div></div>
+  <div class="ss-hud"><span class="ss-nm"><span id="hIc"></span> 점심 가게 <span class="ss-dots" id="dots"></span></span>
+    <span class="ss-r"><span class="ss-coin" id="coin"><b></b><span id="coinN">0</span></span><button id="snd" type="button" aria-label="소리 켜고 끄기"></button></span></div>
+  <div class="ss-end" id="end"><div class="ss-box"><div class="ss-big">Yum!</div><p>손님 세 명이 모두 맛있게 먹었어요.</p><button class="btn" id="again" type="button">한 판 더</button></div></div>
+  <div class="ss-tap" id="tap"><button class="btn" id="start" type="button">가게 문 열기</button></div>
+</div>
+
+<script src="../ui/icons.js"></script>
+<script src="../content/art/art.js"></script>
+<script src="../content/art/food.js"></script>
+<script src="../core/audio.js"></script>
+<script src="../core/npc.js"></script>
+<script>
+(function(){
+  'use strict';
+  /* ── 상수 — 태블릿에서 보고 바꾸는 곳 ── */
+  var CONF = {
+    foods: ['fish', 'chips', 'ham', 'jam'],          /* 쟁반 재료(점심 가게 Lv2 #2) */
+    orders: [{ who: 'mina', w: 'fish' }, { who: 'ben', w: 'chips' }, { who: 'mina', w: 'ham' }],
+    walk: 1500, idleHint: 9000, rate: 0.85
+  };
+  var $ = function(id){ return document.getElementById(id); }, I = PlayIcon.html, A = window.PlayAudio || { play: function(){}, unlock: function(){}, enabled: function(){ return true; }, setEnabled: function(o){ return o; } };
+  var muted = !A.enabled(), coins = 0, step = 0, cur = null, wrong = 0, busy = true, idleT = 0;
+
+  $('hIc').innerHTML = I('shop'); $('spk').innerHTML = I('speaker');
+  $('menu').insertAdjacentHTML('beforeend', CONF.foods.map(function(w){ return '<span class="ss-it">' + PlayArt.html(w) + w + '</span>'; }).join(''));
+  $('dots').innerHTML = CONF.orders.map(function(){ return '<i></i>'; }).join('');
+  function paintSnd(){ $('snd').innerHTML = I(muted ? 'bell-off' : 'bell'); $('snd').classList.toggle('off', muted); }
+  paintSnd();
+  $('snd').onclick = function(){ muted = !muted; A.setEnabled(!muted); paintSnd(); if (muted) try { speechSynthesis.cancel(); } catch (e) {} };
+
+  /* 빛 알갱이 — 창에서 들어오는 빛 속 먼지 */
+  for (var d = 0; d < 10; d++) { var s = document.createElement('div'); s.className = 'ss-dust'; s.style.left = (10 + Math.random() * 30) + '%'; s.style.top = (30 + Math.random() * 50) + '%'; s.style.animationDuration = (6 + Math.random() * 6) + 's'; s.style.animationDelay = (-Math.random() * 10) + 's'; $('sc').appendChild(s); }
+
+  /* 말하기 — 소리가 안 나도 놀이는 이어진다(그림 힌트가 대신) */
+  var voice = null;
+  function pickVoice(){ try { var v = speechSynthesis.getVoices().filter(function(x){ return /^en(-|_)/i.test(x.lang); }); voice = v.filter(function(x){ return /US|GB/.test(x.lang); })[0] || v[0] || null; } catch (e) {} }
+  try { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; } catch (e) {}
+  function say(text){
+    return new Promise(function(res){
+      if (muted || !window.speechSynthesis) { setTimeout(res, 600); return; }
+      try {
+        speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = CONF.rate; if (voice) u.voice = voice;
+        var done = false, fin = function(){ if (!done) { done = true; res(); } };
+        u.onend = fin; u.onerror = fin; setTimeout(fin, 3500); speechSynthesis.speak(u);
+      } catch (e) { res(); }
+    });
+  }
+  function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+  function sfx(n){ if (!muted) try { A.play(n); } catch (e) {} }
+
+  /* 쟁반 */
+  function buildTray(){
+    $('row').innerHTML = '';
+    CONF.foods.forEach(function(w){
+      var b = document.createElement('div'); b.className = 'ss-ing'; b.tabIndex = 0; b.setAttribute('role', 'button'); b.setAttribute('aria-label', w); b.setAttribute('data-w', w); b.setAttribute('data-slot', 'food-' + w);
+      b.innerHTML = PlayArt.html(w); $('row').appendChild(b); drag(b);
+      b.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); drop(b, true); } });
+    });
+  }
+  /* 끌기 — 손가락·마우스 같게. 살짝 누르고 떼면(끌지 않으면) 접시로 날아간다 = 탭 대체 */
+  function drag(el){
+    var sx, sy, moved, on = false;
+    el.addEventListener('pointerdown', function(e){
+      if (busy) return; A.unlock(); on = true; moved = false; sx = e.clientX; sy = e.clientY;
+      el.setPointerCapture(e.pointerId); el.classList.remove('home'); el.classList.add('drag'); $('plate').classList.add('target'); sfx('pop'); poke();
+    });
+    el.addEventListener('pointermove', function(e){
+      if (!on) return; var dx = e.clientX - sx, dy = e.clientY - sy; if (Math.abs(dx) + Math.abs(dy) > 8) moved = true;
+      el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(1.12)';
+    });
+    function up(e){
+      if (!on) return; on = false; el.classList.remove('drag'); $('plate').classList.remove('target');
+      if (!moved) { drop(el, true); return; }
+      var p = $('plate').getBoundingClientRect(), pad = 60;
+      var hit = e.clientX > p.left - pad && e.clientX < p.right + pad && e.clientY > p.top - pad * 1.6 && e.clientY < p.bottom + pad;
+      if (hit) drop(el, false); else back(el);
+    }
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  }
+  function back(el){ el.classList.add('home'); el.style.transform = ''; }
+  function drop(el, fly){
+    if (busy) return;
+    var w = el.getAttribute('data-w');
+    if (fly) { /* 탭·키보드 — 접시까지 날아가는 모습 */
+      var a = el.getBoundingClientRect(), p = $('plate').getBoundingClientRect();
+      el.classList.add('home'); el.style.transform = 'translate(' + (p.left + p.width / 2 - a.left - a.width / 2) + 'px,' + (p.top - a.top - a.height * .4) + 'px) scale(1.05)';
+      busy = true; setTimeout(function(){ busy = false; judge(el, w); }, 360);
+    } else judge(el, w);
+  }
+  function judge(el, w){
+    if (w === cur.w) return serve(el, w);
+    /* 다른 재료 — 손님이 갸웃 「Ham?」 하고 재료는 제자리로. 두 번째부터 그림 힌트 + 맞는 재료가 살짝 뛴다 */
+    wrong++; back(el); sfx('soft'); PlayNpc.react($('gBody'), 'no');
+    busy = true;
+    say(w + '?').then(function(){ return wait(250); }).then(function(){ return order(); }).then(function(){ busy = false; });
+    if (wrong >= 2) hint(true);
+  }
+  function hint(strong){
+    $('bub').classList.add('hinted');
+    if (strong) { var g = document.querySelector('.ss-ing[data-w="' + cur.w + '"]'); if (g) g.classList.add('glow'); }
+  }
+  function poke(){ clearTimeout(idleT); idleT = setTimeout(function(){ if (!busy) { hint(false); order(); } }, CONF.idleHint); }
+
+  async function serve(el, w){
+    busy = true; clearTimeout(idleT);
+    el.classList.add('used'); el.style.transform = ''; el.classList.remove('glow');
+    $('pFood').innerHTML = PlayArt.html(w); sfx('tray');
+    sparks($('plate'), 10);
+    await wait(380);
+    $('plate').classList.add('serve'); await wait(520);
+    $('pFood').innerHTML = ''; $('plate').classList.add('gone');
+    PlayNpc.react($('gBody'), 'cheer', { stay: true }); $('bub').classList.remove('show'); sfx('ok');
+    await say('Yum! I like ' + w + '!');
+    pay(wrong ? 1 : 3);
+    $('dots').children[step].classList.add('on');
+    await wait(600);
+    await leave();
+    $('plate').classList.remove('serve', 'gone'); el.classList.remove('used'); back(el);
+    step++;
+    if (step >= CONF.orders.length) { sfx('done'); $('end').classList.add('show'); return; }
+    next();
+  }
+  function sparks(node, n){
+    var r = node.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height * .3;
+    for (var i = 0; i < n; i++) { var s = document.createElement('div'); s.className = 'ss-spark'; var a = Math.PI * 2 * i / n, d = 50 + Math.random() * 40;
+      s.style.left = cx + 'px'; s.style.top = cy + 'px'; s.style.setProperty('--sx', Math.cos(a) * d + 'px'); s.style.setProperty('--sy', Math.sin(a) * d - 20 + 'px');
+      document.body.appendChild(s); setTimeout(function(x){ return function(){ x.remove(); }; }(s), 700); }
+  }
+  function pay(n){
+    var g = $('guest').getBoundingClientRect(), c = $('coin').getBoundingClientRect();
+    for (var i = 0; i < n; i++) (function(i){
+      var f = document.createElement('div'); f.className = 'ss-fly'; f.style.left = (g.left + g.width * .5) + 'px'; f.style.top = (g.top + g.height * .4) + 'px'; document.body.appendChild(f);
+      setTimeout(function(){ f.style.transform = 'translate(' + (c.left - g.left - g.width * .5) + 'px,' + (c.top - g.top - g.height * .4) + 'px) scale(.8)'; }, 60 + i * 140);
+      setTimeout(function(){ f.remove(); coins++; $('coinN').textContent = coins; $('coin').classList.remove('pop'); void $('coin').offsetWidth; $('coin').classList.add('pop'); sfx('pop'); }, 780 + i * 140);
+    })(i);
+  }
+
+  /* 손님 — 문이 열리고 걸어 들어와 카운터 앞에 선다 */
+  async function enter(o){
+    var G = $('guest');
+    PlayNpc.render($('gBody'), o.who, { face: 'idle', pose: 'wait' });
+    G.classList.add('away'); G.classList.remove('out'); G.style.transition = 'none'; void G.offsetWidth; G.style.transition = '';
+    $('door').classList.add('open'); sfx('enter'); await wait(380);
+    G.classList.add('walk'); G.classList.remove('away'); await wait(CONF.walk);
+    G.classList.remove('walk'); $('door').classList.remove('open');
+    PlayNpc.react($('gBody'), 'wow'); await wait(420);
+  }
+  async function leave(){
+    var G = $('guest'); G.classList.add('walk'); $('door').classList.add('open'); G.classList.add('out');
+    await wait(CONF.walk); G.classList.remove('walk'); $('door').classList.remove('open');
+  }
+  async function order(){
+    $('bub').classList.add('show', 'talk');
+    await say(cur.w + '!');
+    $('bub').classList.remove('talk');
+  }
+  async function next(){
+    cur = CONF.orders[step]; wrong = 0; busy = true;
+    $('hint').innerHTML = PlayArt.html(cur.w); $('bub').classList.remove('hinted', 'show');
+    if (muted || !window.speechSynthesis) $('bub').classList.add('hinted');   /* 소리가 없으면 처음부터 그림 */
+    await enter(cur);
+    await order();
+    busy = false; poke();
+  }
+  $('bub').onclick = $('bub').onkeydown = function(e){ if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return; if (!busy) { busy = true; order().then(function(){ busy = false; poke(); }); } };
+  $('start').onclick = function(){ A.unlock(); $('tap').remove(); buildTray(); next(); };
+  $('again').onclick = function(){ $('end').classList.remove('show'); step = 0; Array.prototype.forEach.call($('dots').children, function(i){ i.classList.remove('on'); }); next(); };
+})();
+</script>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
