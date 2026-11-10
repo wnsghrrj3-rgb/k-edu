@@ -239,14 +239,15 @@ function draw(t){
   ctx.save(); ctx.translate(BOARD.x + BOARD.w / 2, BOARD.y + BOARD.h / 2); ctx.scale(bounce, bounce); ctx.translate(-(BOARD.x + BOARD.w / 2), -(BOARD.y + BOARD.h / 2));
   // 그림자
   const DARK = '#2b3a67'; ctx.lineJoin = 'round';
-  if (!done) {
-    for (const s of S.slots) if (!s.inner) { shapePath(s, s.cx, s.cy); ctx.fillStyle = DARK; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = DARK; ctx.stroke(); }
-    for (const s of S.slots) { if (s.filled) continue;
-      if (s.inner) { shapePath(s, s.cx, s.cy); ctx.fillStyle = '#56679f'; ctx.fill(); }
-      if (OPT.level === 'easy' || s.inner) { shapePath(s, s.cx, s.cy); ctx.setLineDash([9, 8]); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.stroke(); ctx.setLineDash([]); }
-      if (s.glow > .02) { shapePath(s, s.cx, s.cy); ctx.lineWidth = 7 + Math.sin(t / 140) * 2; ctx.strokeStyle = `rgba(255,211,92,${s.glow})`; ctx.stroke(); ctx.fillStyle = `rgba(255,211,92,${s.glow * .25})`; ctx.fill(); } }
-  }
-  S.pieces.filter(p => p.state === 'placed').sort((a, b) => a.slot.i - b.slot.i).forEach(p => drawPiece(p, t, false));
+  const placed = S.pieces.filter(p => p.state === 'placed').sort((a, b) => a.slot.i - b.slot.i);
+  if (!done) for (const s of S.slots) if (!s.inner) { shapePath(s, s.cx, s.cy); ctx.fillStyle = DARK; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = DARK; ctx.stroke(); }
+  placed.filter(p => !p.slot.inner).forEach(p => drawPiece(p, t, false));
+  // 빈 자리 표시는 놓인 큰 조각 **위에** — 큰 조각을 먼저 넣어도 안쪽 작은 자리가 보이게
+  if (!done) for (const s of S.slots) { if (s.filled) continue;
+    if (s.inner) { shapePath(s, s.cx, s.cy); ctx.fillStyle = 'rgba(43,58,103,.55)'; ctx.fill(); }
+    if (OPT.level === 'easy' || s.inner) { shapePath(s, s.cx, s.cy); ctx.setLineDash([9, 8]); ctx.lineWidth = s.inner ? 4 : 3; ctx.strokeStyle = s.inner ? '#fff' : 'rgba(255,255,255,.75)'; ctx.stroke(); ctx.setLineDash([]); }
+    if (s.glow > .02) { shapePath(s, s.cx, s.cy); ctx.lineWidth = 7 + Math.sin(t / 140) * 2; ctx.strokeStyle = `rgba(255,211,92,${s.glow})`; ctx.stroke(); ctx.fillStyle = `rgba(255,211,92,${s.glow * .25})`; ctx.fill(); } }
+  placed.filter(p => p.slot.inner).forEach(p => drawPiece(p, t, false));
   ctx.restore();
   // 그림 이름
   if (S.pic && S.state !== 'end') { ctx.font = '900 26px sans-serif'; ctx.fillStyle = '#3b4a66'; ctx.fillText(`${S.pic.icon} ${S.pic.name}`, BOARD.x + BOARD.w / 2, BOARD.y + 30); ctx.font = '800 15px sans-serif'; ctx.fillStyle = '#8a97b3'; ctx.fillText(`그림 ${S.round + 1} / ${PICS.length}`, BOARD.x + BOARD.w / 2, BOARD.y + BOARD.h - 18); }
