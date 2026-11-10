@@ -36,7 +36,7 @@
       PlayEvent.dress(o.shop, ev);
       if (host) {
         host.innerHTML = '';
-        var card = h('div', 'ev-card', '<div class="ev-icon">' + (ev.icon || '') + '</div><div class="ev-who"></div><div class="ev-name">' + ev.name + '</div>');
+        var card = h('div', 'ev-card', '<div class="ev-icon">' + (g.PlayIcon ? g.PlayIcon.html(ev.icon) : '') + '</div><div class="ev-who"></div><div class="ev-name">' + ev.name + '</div>');
         host.appendChild(card);
         if (npc && ev.who) npc.render(card.querySelector('.ev-who'), ev.who, { face: 'wow', pose: 'ok' });
       }

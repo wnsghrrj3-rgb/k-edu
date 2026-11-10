@@ -29,7 +29,7 @@
     var S = ctx.services || {}, P = g.PlayPhonics, E = g.PlayEvidence, tts = S.tts, cellId = (ctx.zone && ctx.zone.id) || ctx.cell;
     var rounds = (ctx.opt && ctx.opt.pairs) || plan(cellId, CONF.rounds);
     var host = ctx.host; host.innerHTML = '';
-    var root = h('div', 'sw'), dots = h('div', 'dots'), thing = h('div', 'sw-thing'), row = h('div', 'sb-track sw-row'), opts = h('div', 'sb-tray'), rep = h('button', 'btn w pp-rep', '🔊'); rep.type = 'button';
+    var root = h('div', 'sw'), dots = h('div', 'dots'), thing = h('div', 'sw-thing'), row = h('div', 'sb-track sw-row'), opts = h('div', 'sb-tray'), rep = h('button', 'btn w pp-rep', g.PlayIcon.html('speaker')); rep.type = 'button';
     root.appendChild(dots); root.appendChild(thing); root.appendChild(row); root.appendChild(opts); root.appendChild(rep); host.appendChild(root);
     var i = 0, cur = null;
     function alive() { return root.parentNode === host && root.isConnected !== false && !(ctx.signal && ctx.signal.aborted); }
@@ -73,7 +73,7 @@
 
   g.PlaySoundSwap = { CONF: CONF, plan: plan, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'sound-swap', no: 16, name: '소리 변신', icon: '✨', channels: ['sound'], axis: 'laugh', need: { lv1: 14 },
+    id: 'sound-swap', no: 16, name: '소리 변신', icon: 'wand', channels: ['sound'], axis: 'laugh', need: { lv1: 14 },
     fits: function (zone) { return !!g.PlayPhonics && g.PlayPhonics.pairs(zone.id).length >= 2; },
     count: function (c) { return Math.min(CONF.rounds, plan((c.zone || {}).id, CONF.rounds).length); },
     intro: { en: 'One, two!', ko: '한 조각만 바꾸면 다른 단어가 돼 — 바꿀 조각을 골라 줘!' },

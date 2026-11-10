@@ -89,7 +89,7 @@
 
   g.PlayBelt = { CONF: CONF, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'belt', no: 18, name: '배달 벨트', icon: '📦', channels: ['read', 'hand'], axis: 'flow', need: { lv1: 8 },
+    id: 'belt', no: 18, name: '배달 벨트', icon: 'box', channels: ['read', 'hand'], axis: 'flow', need: { lv1: 8 },
     count: function (c) { return Math.min(CONF.tickets, (c.targets || []).length || CONF.tickets); },
     intro: { en: 'Read and put!', ko: '글자만 보고 맞는 음식을 올려 줘!' },
     start: start

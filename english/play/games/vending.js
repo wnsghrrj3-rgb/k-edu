@@ -90,7 +90,7 @@
 
   g.PlayVending = { CONF: CONF, cards: cards, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'vending', no: 4, name: '마법 자판기', icon: '🎰', channels: ['make', 'say'], axis: 'make', need: { lv1: 15 },
+    id: 'vending', no: 4, name: '마법 자판기', icon: 'vending', channels: ['make', 'say'], axis: 'make', need: { lv1: 15 },
     fits: function (zone) { var c = cards(zone.silly); return c.attrs.length >= 2 && c.nouns.length >= 2; },
     count: function (c) { return CONF.makes * (c.learner && c.learner.mic && c.learner.mic.ok() ? 2 : 1); },
     intro: { en: 'Big? Small?', ko: '마법 자판기야 — 카드 둘을 골라서 네 마음대로 만들어 봐!' },

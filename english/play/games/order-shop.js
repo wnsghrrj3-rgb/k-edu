@@ -5,7 +5,7 @@
  *   깔끔하게 3·5·8번 이어지면 손님들이 손뼉 — 불꽃·환호가 1·2·3단으로 커진다(화면에 숫자 없음, 단계는 core/fx.js).
  *   못 알아들었을 때: 손님이 갸웃하고 그대로 기다린다 — 1번째 모델 다시 · 2번째 느리게 · 3번째 Sam 이 「이거?」 하며 그림 둘.
  *   골라서 끝내도 주문은 끝난다(결정 §0-1) — 증거에는 assisted 로 남고, 씨앗은 말로 받은 주문에만(PlayGame.run 이 정한다).
- *   마이크가 없는 판은 말풍선 그림을 가리고(🔊) 듣고 고른다.
+ *   마이크가 없는 판은 말풍선 그림을 소리 표시로 가리고 듣고 고른다.
  *
  *   공통 인터페이스(core/game.js): start(ctx) → Promise({ completed, results:[{word, by, tries, guest}] }) · 증거는 ctx.emit 으로
  *   PlayOrder.machine(words) — 화면 없는 흐름(줄·시도·연속). 검사는 여기를 직접 본다.
@@ -119,7 +119,7 @@
       return Promise.race([p, new Promise(function (r) { setTimeout(r, canSound() ? CONF.sayMax : CONF.mutedWait); })]);
     }
     function drawDots() { var i = m.index(); dots.innerHTML = W.map(function (_, k) { return '<i class="' + (k < i ? 'ok' : k === i ? 'on' : '') + '"></i>'; }).join(''); }
-    function showPic(w, hide) { q.say(hide ? '🔊' : pic[w], !!hide); }
+    function showPic(w, hide) { q.say(hide ? g.PlayIcon.html('speaker') : pic[w], !!hide); }
     /* 헷갈리는 짝(dish↔fish 등)은 내밀지 않는다 — 도와주는 자리라 쉽게 */
     function altFor(w) {
       var bad = {}; confuse.forEach(function (p) { if (p[0] === w) bad[p[1]] = 1; if (p[1] === w) bad[p[0]] = 1; });
@@ -151,15 +151,15 @@
 
     function askSpeak() {
       act.innerHTML = '';
-      micEl = h('button', 'mic', '🎤'); micEl.type = 'button'; heardEl = h('div', 'heard', '');
+      micEl = h('button', 'mic', g.PlayIcon.html('mic')); micEl.type = 'button'; heardEl = h('div', 'heard', '');
       act.appendChild(micEl); act.appendChild(heardEl);
       micEl.onclick = function () {
         if (listening || m.phase() !== 'order') return;
-        if (unheard) { unheard = false; heardEl.textContent = '🔊'; return say(m.word()).then(function () { later(CONF.listenGap, listen); }); }
+        if (unheard) { unheard = false; heardEl.textContent = '잘 들어 봐'; return say(m.word()).then(function () { later(CONF.listenGap, listen); }); }
         listen();
       };
       if (mic.primed() && !unheard) later(CONF.listenGap, listen);
-      else heardEl.textContent = '🎤 누르고 말해 봐';
+      else heardEl.textContent = '마이크를 누르고 말해 봐';
     }
     function listen() {
       if (listening || m.phase() !== 'order' || !alive() || !micEl) return;
@@ -205,7 +205,7 @@
         offerBox.appendChild(t);
       });
       act.appendChild(offerBox);
-      if (listenMode && unheard) { offerBox.classList.add('wait'); act.appendChild(h('div', 'heard', '🔊 눌러서 들어 봐')); }
+      if (listenMode && unheard) { offerBox.classList.add('wait'); act.appendChild(h('div', 'heard', '말풍선을 눌러서 들어 봐')); }
       sam.react('wait');
       sam.say(w + '?', '이거?');
     }
@@ -216,7 +216,7 @@
       showPic(w, false);
       if (micEl) { micEl.classList.add('off'); micEl.onclick = null; }
       if (heardEl) heardEl.textContent = '';
-      q.serve(pic[w]);
+      q.serve(pic[w], w);
       var r = { word: w, by: e.by, tries: m.tries(), guest: who };
       if (opt.emit && E) opt.emit(E.say(w, { by: e.by, tries: r.tries, mic: micAtEnter }));
       if (opt.onServe) { try { opt.onServe(r); } catch (err) {} }
@@ -253,7 +253,7 @@
 
   g.PlayOrder = { CONF: CONF, machine: machine, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'order-shop', no: 1, name: '주문 받기', icon: '🛎️', channels: ['say'], axis: 'talk', need: { lv1: 5 }, plants: true,   /* plants = 구역 단어를 전부 말하게 하는 놀이(씨앗 심기) */
+    id: 'order-shop', no: 1, name: '주문 받기', icon: 'order', channels: ['say'], axis: 'talk', need: { lv1: 5 }, plants: true,   /* plants = 구역 단어를 전부 말하게 하는 놀이(씨앗 심기) */
     count: function (c) { return (c.targets || []).length; },
     intro: { en: 'This is my shop!', ko: '손님이 왔어 — 주문을 말로 받아 줘!' },
     start: start

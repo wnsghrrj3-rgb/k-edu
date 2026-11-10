@@ -15,13 +15,15 @@
     var byW = {}; WORDS.forEach(function(w){ byW[w.w] = w; });
     var QS = location.search, mode = /mode=care/.test(QS) ? 'care' : 'play';
     var unlocked = PlaySeed.bossDone(Z.id), DKEY = Z.decorKey || Z.id, HOST = conf.host || 'sam';
+    if (Z.palette) document.body.setAttribute('data-palette', Z.palette);     /* 무대색(ui/tokens.css) */
+    if (conf.icon && $('title')) $('title').innerHTML = PlayIcon.html(conf.icon) + ' ' + $('title').textContent.trim();
 
     /* ── 공통 ── */
     function h(tag, cls, html){ var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
     function toast(s){ var t = $('toast'); t.textContent = s; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(function(){ t.classList.remove('show'); }, 1600); }
     function confetti(){ PlayFx.confetti(); }
-    function bag(){ var n = 0, s = PlaySeed.all(); W.forEach(function(w){ if (s[w]) n++; }); $('bag').textContent = '🌰 ' + n + '/' + W.length; }
-    function decor(fresh){ var d = $('decor'); if (d) d.innerHTML = PlayAssemble.decor(DKEY, Z).map(function(x){ return '<span title="' + x.name + '"' + (fresh && fresh.id === x.id ? ' class="new"' : '') + '>' + x.pic + '</span>'; }).join(''); }
+    function bag(){ var n = 0, s = PlaySeed.all(); W.forEach(function(w){ if (s[w]) n++; }); $('bag').innerHTML = PlayIcon.html('seed') + ' ' + n + '/' + W.length; }
+    function decor(fresh){ var d = $('decor'); if (d) d.innerHTML = PlayAssemble.decor(DKEY, Z).map(function(x){ return '<span title="' + x.name + '"' + (fresh && fresh.id === x.id ? ' class="new"' : '') + '>' + PlayIcon.html(x.icon) + '</span>'; }).join(''); }
     function shop(ev){
       var box = h('div','shop');
       box.innerHTML = '<div class="sign fx-glow' + (unlocked ? ' on' : '') + '" id="sign"><span>' + (conf.sign || '') + '</span></div><div class="decor" id="decor"></div>' +
@@ -67,12 +69,12 @@
     }
     REP = PlayFx.meter(SET.reduce(function(n, id, i){ return n + PlayGame.count(id, { zone: Z, cell: Z.id, targets: TARGETS[i], learner: { mic: MIC }, opt: optFor(i) }); }, 0) || 1);
 
-    function actbar(i){ var b = $('actbar'); b.innerHTML = ''; if (SET.length < 2){ b.style.display = 'none'; return; } SET.forEach(function(id, k){ var d = PlayGame.get(id), s = h('span', k < i ? 'ok' : k === i ? 'on' : '', d.icon); s.title = d.name; b.appendChild(s); }); }
+    function actbar(i){ var b = $('actbar'); b.innerHTML = ''; if (SET.length < 2){ b.style.display = 'none'; return; } SET.forEach(function(id, k){ var d = PlayGame.get(id), s = h('span', k < i ? 'ok' : k === i ? 'on' : '', PlayIcon.html(d.icon)); s.title = d.name; b.appendChild(s); }); }
 
     /* 증거 한 건 — 씨앗 가방·도감·평판·첫 열매 파츠 */
     function onEvidence(v){
       if (byW[v.targetId]) KCollection.add([v.targetId]); bag(); REP.add(); glow();
-      if (v.seed && v.seed.stage === 3 && Z.part && Z.part.when === 'firstFruit' && PlaySeed.givePart(Z.part.id)) { confetti(); toast('🎉 ' + Z.part.name + '을 얻었어요!'); }
+      if (v.seed && v.seed.stage === 3 && Z.part && Z.part.when === 'firstFruit' && PlaySeed.givePart(Z.part.id)) { confetti(); toast(Z.part.name + '을 얻었어요!'); }
     }
 
     function run(i){
@@ -112,11 +114,11 @@
       body.innerHTML = '';
       var s = PlaySeed.all(), card = h('div', 'endcard');
       var nSeed = W.filter(function(w){ return s[w]; }).length;
-      card.innerHTML = '<div class="big">🌰</div><h2>' + (nSeed ? '씨앗 ' + nSeed + '개를 심었어요' : unlocked ? (conf.opened || '해냈어요!') : '오늘 놀이 끝!') + '</h2>' +
+      card.innerHTML = '<div class="big">' + PlayIcon.html('seed') + '</div><h2>' + (nSeed ? '씨앗 ' + nSeed + '개를 심었어요' : unlocked ? (conf.opened || '해냈어요!') : '오늘 놀이 끝!') + '</h2>' +
         '<div class="seedrow">' + W.map(function(w){ var st = s[w] ? s[w].stage : -1; return '<span class="seed s' + st + '" title="' + w + '">' + (byW[w].pic || '<i class="seedw">' + w + '</i>') + '</span>'; }).join('') + '</div>' +
-        (nSeed ? '' : '<div class="note" style="margin-bottom:6px">' + (conf.seedHint || '🎤 말로 하면 씨앗이 심겨요.') + '</div>') +
-        '<div class="note">' + (conf.endNote || '내일 다시 와서 말해 주면 🌱 새싹이 돼요.') + '</div>' +
-        (deco ? '<div class="note" id="newdeco" style="margin-top:8px">' + deco.pic + ' ' + (conf.where || '무대') + '에 ' + deco.name + '이(가) 생겼어요 — 내일은 또 무엇이 생길까요?</div>' : '') +
+        (nSeed ? '' : '<div class="note" style="margin-bottom:6px">' + (conf.seedHint || '말로 하면 씨앗이 심겨요.') + '</div>') +
+        '<div class="note">' + (conf.endNote || '내일 다시 와서 말해 주면 새싹이 돼요.') + '</div>' +
+        (deco ? '<div class="note" id="newdeco" style="margin-top:8px">' + PlayIcon.html(deco.icon) + ' ' + (conf.where || '무대') + '에 ' + deco.name + '이(가) 생겼어요 — 내일은 또 무엇이 생길까요?</div>' : '') +
         (unlocked && conf.nextNote ? '<div class="note" style="margin-top:8px">' + conf.nextNote + '</div>' : '') +
         '<div class="homebtn"><button class="btn" id="home">놀이터로</button></div>';
       body.appendChild(card); $('home').onclick = function(){ location.href = conf.home || '../index.html'; };
@@ -125,7 +127,7 @@
     /* ── 시작 — 설명 화면 0, 첫 터치에서 소리 잠금 해제 후 바로 ── */
     document.body.addEventListener('pointerdown', function once(){ KTTS.unlock(); PlayAudio.unlock(); document.body.removeEventListener('pointerdown', once); }, { once: true });
     /* 효과음 끄기 — 화면 설정이라 기기에 남는다(kedu-en-play-pref) */
-    function sndBtn(){ var b = $('snd'), on = PlayAudio.enabled(); b.textContent = on ? '🔔' : '🔕'; b.classList.toggle('off', !on); b.title = on ? '효과음 켜짐' : '효과음 꺼짐'; }
+    function sndBtn(){ var b = $('snd'), on = PlayAudio.enabled(); b.innerHTML = PlayIcon.html(on ? 'bell' : 'bell-off'); b.classList.toggle('off', !on); b.title = on ? '효과음 켜짐' : '효과음 꺼짐'; }
     $('snd').onclick = function(){ PlayAudio.setEnabled(!PlayAudio.enabled()); sndBtn(); PlayAudio.play('ok'); };
     sndBtn();
     bag();
@@ -148,7 +150,7 @@
       var b = g.document.createElement('button'); b.type = 'button';
       b.className = 'cb' + (z.id === curId ? ' cur' : '') + (peek ? ' peek' : '') + (lock ? ' lock' : '') + (S.bossDone(z.id) ? ' on' : '');
       b.setAttribute('data-cell', z.id);
-      b.innerHTML = lock ? '☁️' : '<span>' + (z.cellIcon || z.emoji || '') + '</span>' + (z.cellName || z.name || '');
+      b.innerHTML = lock ? g.PlayIcon.html('cloud') : ((g.PlayArt && g.PlayArt.html(z.cellIcon)) || g.PlayIcon.html(z.icon)) + (z.cellName || z.name || '');
       b.onclick = function () {
         if (lock || peek) { var t = g.document.getElementById('toast'); if (t) { t.textContent = peek ? '오늘은 구경만 — 씨앗이 꽃이 되면 들어올 수 있어. 내일 또 와!' : '앞 칸을 마치면 안개가 걷혀요'; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('show'); }, 2000); } return; }
         if (z.id !== curId) g.location.href = '?cell=' + z.id;

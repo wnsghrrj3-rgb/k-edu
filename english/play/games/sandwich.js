@@ -27,8 +27,8 @@
     var foods = (Z.foods || []).slice(), orders = (ctx.opt && ctx.opt.orders) || g.PlaySandwich.plan(foods), pic = {};
     (ctx.pool || ctx.targets || []).forEach(function (x) { pic[x.w] = x.pic; });
     var host = ctx.host; host.innerHTML = '';
-    var root = h('div', 'sd'), dots = h('div', 'dots'), top = h('div', 'sd-top', '<div class="sd-guest"></div><div class="sd-tower"><div class="sd-stack"></div><div class="sd-bread">🍞</div></div>');
-    var hint = h('div', 'sd-hint'), tray = h('div', 'sd-tray'), rep = h('button', 'btn w pp-rep', '🔊'); rep.type = 'button';
+    var root = h('div', 'sd'), dots = h('div', 'dots'), top = h('div', 'sd-top', '<div class="sd-guest"></div><div class="sd-tower"><div class="sd-stack"></div><div class="sd-bread">' + g.PlayArt.html('bread') + '</div></div>');
+    var hint = h('div', 'sd-hint'), tray = h('div', 'sd-tray'), rep = h('button', 'btn w pp-rep', g.PlayIcon.html('speaker')); rep.type = 'button';
     root.appendChild(dots); root.appendChild(top); root.appendChild(hint); root.appendChild(tray); root.appendChild(rep); host.appendChild(root);
     var guest = top.querySelector('.sd-guest'), tower = top.querySelector('.sd-tower'), stack = top.querySelector('.sd-stack');
     if (npc) npc.render(guest, 'mina', { face: 'idle' });
@@ -70,7 +70,7 @@
             if (tts) tts.word(w, { natural: true });
             if (at < o.length) return;
             /* 다 쌓았다 — 뚜껑 빵, 흔들흔들, 한입 */
-            done = true; stack.insertBefore(h('div', 'sd-layer lid', '🍞'), stack.firstChild); tower.classList.add('wobble');
+            done = true; stack.insertBefore(h('div', 'sd-layer lid', g.PlayArt.html('bread')), stack.firstChild); tower.classList.add('wobble');
             ctx.good(clean, { at: guest });
             o.forEach(function (x) { ctx.emit(E.act(x, 'listen', 'touch', clean, tries)); });
             if (npc) npc.react(guest, 'cheer', { stay: true });
@@ -86,7 +86,7 @@
 
   g.PlaySandwich = { CONF: CONF, plan: plan, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'sandwich', no: 5, name: '샌드위치 탑', icon: '🥪', channels: ['hand', 'ear'], axis: 'laugh', need: { lv2: 2 },
+    id: 'sandwich', no: 5, name: '샌드위치 탑', icon: 'sandwich', channels: ['hand', 'ear'], axis: 'laugh', need: { lv2: 2 },
     fits: function (zone) { return (zone.foods || []).length >= 3; },
     count: function (c) { return g.PlaySandwich.plan((c.zone || {}).foods).reduce(function (n, o) { return n + o.length; }, 0); },
     intro: { en: 'Listen! One, two!', ko: '부르는 차례대로 재료를 쌓아 줘 — 탑이 흔들려도 괜찮아!' },

@@ -38,7 +38,7 @@
         if (i >= rounds.length) { if (useCam && cam.stop) cam.stop(); return setTimeout(function () { resolve({ completed: true }); }, 400); }
         var w = rounds[i], alt = (O.altFor && O.altFor(w)) || shuffle(W.filter(function (x) { return x !== w; }))[0], pair = shuffle([w, alt]);
         sides.innerHTML = '';
-        var tiles = pair.map(function (p, k) { var t = h('button', 'tile', pic[p] + '<small>' + (k === 0 ? '← 왼쪽' : '오른쪽 →') + '</small>'); t.type = 'button'; sides.appendChild(t); return t; });
+        var tiles = pair.map(function (p, k) { var t = h('button', 'tile', pic[p] + '<small>' + (k === 0 ? '← 왼쪽' : '오른쪽 →') + '</small>'); t.type = 'button'; t.setAttribute('data-w', p); sides.appendChild(t); return t; });
         var picked = false, tries = 0, viaCam = false;
         function judge(side, byCam) {
           if (picked) return; var k = side === 'left' ? 0 : 1, p = pair[k];
@@ -60,7 +60,7 @@
             if (side) judge(side, true); else { hint.textContent = '안 보이면 눌러도 돼요'; camPick(); }
           });
         }
-        hint.textContent = useCam ? '🔊 듣고 몸을 기울여!' : '🔊 듣고 눌러!';
+        hint.textContent = useCam ? '잘 듣고 몸을 기울여!' : '잘 듣고 눌러!';
         g.PlayGame.soon(sayW(w)).then(function () { if (useCam && !picked) camPick(); });
       }
       var camOK = cam && cam.available && cam.available() && !(ctx.learner && ctx.learner.cam === false);
@@ -117,7 +117,7 @@
     var S = ctx.services || {}, E = g.PlayEvidence, tts = S.tts, speech = S.speech, u = setup(ctx, 'lg');
     var mic = (ctx.learner && ctx.learner.mic) || { ok: function () { return false; }, prime: function () {} };
     var lines = (ctx.zone && ctx.zone.chant) || [], line = lines[0] || [];
-    var ch = h('div', 'chant'), btn = h('button', 'btn', '▶ 한 번 더'), hint = h('div', 'hint', ''); btn.type = 'button'; btn.style.display = 'none';
+    var ch = h('div', 'chant'), btn = h('button', 'btn w', g.PlayIcon.html('play') + ' 한 번 더'), hint = h('div', 'hint', ''); btn.type = 'button'; btn.style.display = 'none';
     u.root.appendChild(ch); u.root.appendChild(btn); u.root.appendChild(hint);
     var spans = [];
     function build() { ch.innerHTML = ''; spans = []; lines.forEach(function (l) { var row = h('div', 'chant-row'); l.forEach(function (w) { var s = h('span', '', w); row.appendChild(s); spans.push({ s: s, w: w }); }); ch.appendChild(row); }); }
@@ -137,14 +137,14 @@
         btn.style.display = ''; btn.onclick = play;
         if (!mic.ok()) { hint.textContent = '다 외쳤어? 다음으로!'; var nx = h('button', 'btn g', '다음 →'); nx.type = 'button'; nx.onclick = function () { end(''); }; u.root.appendChild(nx); return; }
         hint.textContent = '이번엔 혼자! 한 줄을 크게 외쳐 봐';
-        var m = h('button', 'mic', '🎤'), heard = h('div', 'heard', ''); m.type = 'button'; u.root.appendChild(m); u.root.appendChild(heard);
+        var m = h('button', 'mic', g.PlayIcon.html('mic')), heard = h('div', 'heard', ''); m.type = 'button'; u.root.appendChild(m); u.root.appendChild(heard);
         var tries = 0, busy = false;
         m.onclick = function () {
           if (busy) return; busy = true; m.classList.add('on'); heard.textContent = '듣고 있어요…';
           speech.tryOnce(line[0], { kind: 'word', others: [], timeout: CONF.chantTimeout }).then(function (r) {
             busy = false; m.classList.remove('on'); if (!u.alive()) return;
             var hit = 0; line.forEach(function (w) { if (speech.matchWord(r.heard, w, [])) hit++; });
-            if (r.ok || hit >= 2) { mic.prime(); ctx.good(); heard.textContent = '🎉'; if (S.fx) S.fx.confetti(); m.onclick = null; return end(r.heard || line.join(' ')); }
+            if (r.ok || hit >= 2) { mic.prime(); ctx.good(); heard.textContent = '좋아!'; if (S.fx) S.fx.confetti(); m.onclick = null; return end(r.heard || line.join(' ')); }
             tries++; heard.textContent = tries >= CONF.chantTries ? '좋아, 그만하면 됐어!' : '다시 크게!';
             if (tries >= CONF.chantTries) { m.onclick = null; end(''); }
           });
@@ -155,13 +155,13 @@
 
   g.PlayLegacy = { CONF: CONF, lean: lean, plates: plates, chant: chant };
   if (g.PlayGame) {
-    g.PlayGame.register({ id: 'lean', no: 0, name: '몸으로 고르기', icon: '🙆', channels: ['body'], axis: 'flow', need: { lv1: 5 }, cam: true,
+    g.PlayGame.register({ id: 'lean', no: 0, name: '몸으로 고르기', icon: 'body', channels: ['body'], axis: 'flow', need: { lv1: 5 }, cam: true,
       count: function (c) { return Math.min(CONF.leanRounds, (c.targets || []).length || CONF.leanRounds); },
       intro: { en: 'Listen! Lean left or right.', ko: '들어 봐 — 몸을 그쪽으로 기울여!' }, start: lean });
-    g.PlayGame.register({ id: 'plates', no: 0, name: '접시 채우기', icon: '🍽️', channels: ['read', 'hand'], axis: 'make', need: { lv1: 8 },
+    g.PlayGame.register({ id: 'plates', no: 0, name: '접시 채우기', icon: 'plate', channels: ['read', 'hand'], axis: 'make', need: { lv1: 8 },
       count: function (c) { return (c.targets || []).length; },
       intro: { en: 'Put them on the right plate.', ko: '글자만 보고 맞는 자리에 올려!' }, start: plates });
-    g.PlayGame.register({ id: 'chant', no: 20, name: '챈트', icon: '🎵', channels: ['say', 'ear'], axis: 'body', need: { lv1: 5 },
+    g.PlayGame.register({ id: 'chant', no: 20, name: '챈트', icon: 'note', channels: ['say', 'ear'], axis: 'body', need: { lv1: 5 },
       count: function (c) { return (((c.zone || {}).chant || [])[0] || []).length; },
       intro: { en: 'Sing with me!', ko: '같이 외쳐 봐!' }, start: chant });
   }

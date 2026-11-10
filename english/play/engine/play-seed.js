@@ -10,10 +10,10 @@
   'use strict';
   var KEY = 'kedu-en-play-seeds';
   var STAGE = [
-    { n: 0, name: '씨앗', emoji: '🌰', after: 0 },
-    { n: 1, name: '새싹', emoji: '🌱', after: 1 },
-    { n: 2, name: '꽃',   emoji: '🌸', after: 3 },
-    { n: 3, name: '열매', emoji: '🍎', after: 7 }
+    { n: 0, name: '씨앗', icon: 'seed', after: 0 },
+    { n: 1, name: '새싹', icon: 'sprout', after: 1 },
+    { n: 2, name: '꽃',   icon: 'flower', after: 3 },
+    { n: 3, name: '열매', icon: 'fruit', after: 7 }
   ];
   function load() {
     try { return JSON.parse(localStorage.getItem(KEY)) || { seeds: {}, days: [], xp: { spoken: 0, recalled: 0 }, parts: {}, cleared: {} }; }

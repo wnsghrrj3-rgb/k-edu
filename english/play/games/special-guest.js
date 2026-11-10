@@ -78,11 +78,11 @@
       /* 읽기 판의 한 장 — 손님이 카드를 내민다(먼저 들려주지 않는다) */
       function readTurn() {
         var x = cards[i];
-        npc.react(q.G[who], 'wait'); q.say('❓', false);
+        npc.react(q.G[who], 'wait'); q.say(g.PlayIcon.html('speech'), false);
         ask.innerHTML = '<b>' + READ_ASK[0] + '</b><small>' + READ_ASK[1] + '</small>';
         g.PlayReader.one(ctx, act, x).then(function (r) {
           if (!r || !alive()) return;
-          bys.push(r.by); q.say(x.pic || '👍', false);
+          bys.push(r.by); q.say(x.pic || g.PlayIcon.html('check'), false);
           ctx.emit(E.say(x.w, r));
           ctx.good(r.by === 'speech' && !r.hinted, { at: q.G[who] });
           npc.react(q.G[who], 'ok', { stay: true });
@@ -98,7 +98,7 @@
 
   g.PlaySpecialGuest = { CONF: CONF, plan: plan, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'special-guest', no: 27, name: '특별 손님', icon: '👑', channels: ['say', 'talk'], axis: 'quest', need: {}, last: true,
+    id: 'special-guest', no: 27, name: '특별 손님', icon: 'crown', channels: ['say', 'talk'], axis: 'quest', need: {}, last: true,
     count: function (c) { var z = c.zone || {}; return z.kind === 'phonics' ? Math.min(CONF.show, (z.words || []).length) : ((z.boss && z.boss.turns) || []).length; },
     intro: { en: 'Oh! A friend!', ko: '처음 보는 손님이야 — 물어보면 대답해 줘!' },
     start: start

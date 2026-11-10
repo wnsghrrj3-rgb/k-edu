@@ -1,7 +1,7 @@
 /* ============================================================
  * 영어 놀이터 — 소리 공방 재료 (Lv2 파닉스 12칸) : 칸별 소리·배운 범위·단어
- * ★ 자동 생성 — 손으로 고치지 않는다. 생성기: handoff/scripts/gen_en_play_phonics.js
- *   원천: 재료 대장 kedu/english/v3/lv2/_LV2_WORDBANK.md (단어·역할) · v3 사다리(칸 이름) · v3 차시(그림·뜻)
+ * ※ 자동 생성 — 손으로 고치지 않는다. 생성기: handoff/scripts/gen_en_play_phonics.js
+ *   원천: 재료 대장 kedu/english/v3/lv2/_LV2_WORDBANK.md (단어·역할) · v3 사다리(칸 이름) · v3 차시(뜻)
  *   칸마다 units = 새로 배운 「글자 둘, 소리 하나」 · blends = 새로 배운 자음 묶음(두 소리 잇기)
  *          known·knownBlends = 그 칸까지 배운 것 전부(Lv1 의 낱글자 26 은 늘 아는 것)
  *   단어: role = main(본재료)·apply(응용)·practice(연습)·contrast(대조 — 앞 칸·Lv1 단어, 씨앗 대상 아님)
@@ -24,14 +24,14 @@ window.PLAY_PHONICS = {
    "knownBlends": [],
    "words": [
     { "w": "ship", "role": "main", "t": ["sh", "i", "p"] },
-    { "w": "shop", "role": "main", "t": ["sh", "o", "p"], "pic": "🏪", "ko": "가게" },
-    { "w": "fish", "role": "main", "t": ["f", "i", "sh"], "pic": "🐟", "ko": "물고기" },
+    { "w": "shop", "role": "main", "t": ["sh", "o", "p"], "ko": "가게" },
+    { "w": "fish", "role": "main", "t": ["f", "i", "sh"], "ko": "물고기" },
     { "w": "chat", "role": "main", "t": ["ch", "a", "t"] },
     { "w": "chin", "role": "main", "t": ["ch", "i", "n"] },
-    { "w": "lunch", "role": "main", "t": ["l", "u", "n", "ch"], "pic": "🍱", "ko": "점심" },
+    { "w": "lunch", "role": "main", "t": ["l", "u", "n", "ch"], "ko": "점심" },
     { "w": "cash", "role": "apply", "t": ["c", "a", "sh"] },
-    { "w": "chop", "role": "apply", "t": ["ch", "o", "p"], "pic": "🔪", "ko": "썰다" },
-    { "w": "cat", "role": "contrast", "t": ["c", "a", "t"], "pic": "🐱", "ko": "고양이" },
+    { "w": "chop", "role": "apply", "t": ["ch", "o", "p"], "ko": "썰다" },
+    { "w": "cat", "role": "contrast", "t": ["c", "a", "t"], "ko": "고양이" },
     { "w": "sip", "role": "contrast", "t": ["s", "i", "p"] }
    ]
   },
@@ -47,7 +47,7 @@ window.PLAY_PHONICS = {
    "known": ["sh", "ch", "th", "ck"],
    "knownBlends": [],
    "words": [
-    { "w": "this", "role": "main", "t": ["th", "i", "s"], "s": ["dh", "i", "s"], "pic": "👇", "ko": "이것" },
+    { "w": "this", "role": "main", "t": ["th", "i", "s"], "s": ["dh", "i", "s"], "ko": "이것" },
     { "w": "that", "role": "main", "t": ["th", "a", "t"], "s": ["dh", "a", "t"] },
     { "w": "bath", "role": "main", "t": ["b", "a", "th"] },
     { "w": "duck", "role": "main", "t": ["d", "u", "ck"] },
@@ -122,7 +122,7 @@ window.PLAY_PHONICS = {
     { "w": "sand", "role": "apply", "t": ["s", "a", "n", "d"], "ko": "모래" },
     { "w": "nest", "role": "apply", "t": ["n", "e", "s", "t"] },
     { "w": "pin", "role": "contrast", "t": ["p", "i", "n"] },
-    { "w": "ten", "role": "contrast", "t": ["t", "e", "n"], "pic": "🔟", "ko": "열" },
+    { "w": "ten", "role": "contrast", "t": ["t", "e", "n"], "ko": "열" },
     { "w": "bet", "role": "contrast", "t": ["b", "e", "t"] },
     { "w": "jump", "role": "main", "t": ["j", "u", "m", "p"], "ko": "뛰어오르다" }
    ]
@@ -139,10 +139,10 @@ window.PLAY_PHONICS = {
    "known": ["sh", "ch", "th", "ck", "a_e"],
    "knownBlends": ["st", "sp", "sn", "sw", "bl", "cl", "fl", "gr", "fr", "dr", "nd", "nt", "mp", "nk"],
    "words": [
-    { "w": "cake", "role": "main", "t": ["c", "a_e", "k"], "pic": "🎂", "ko": "케이크" },
-    { "w": "name", "role": "main", "t": ["n", "a_e", "m"], "pic": "📛", "ko": "이름" },
-    { "w": "game", "role": "main", "t": ["g", "a_e", "m"], "pic": "🎮", "ko": "게임" },
-    { "w": "late", "role": "main", "t": ["l", "a_e", "t"], "pic": "⏰", "ko": "늦은" },
+    { "w": "cake", "role": "main", "t": ["c", "a_e", "k"], "ko": "케이크" },
+    { "w": "name", "role": "main", "t": ["n", "a_e", "m"], "ko": "이름" },
+    { "w": "game", "role": "main", "t": ["g", "a_e", "m"], "ko": "게임" },
+    { "w": "late", "role": "main", "t": ["l", "a_e", "t"], "ko": "늦은" },
     { "w": "face", "role": "apply", "t": ["f", "a_e", "c"], "build": false, "ko": "얼굴" },
     { "w": "gate", "role": "apply", "t": ["g", "a_e", "t"] },
     { "w": "cape", "role": "practice", "t": ["c", "a_e", "p"] },
@@ -162,11 +162,11 @@ window.PLAY_PHONICS = {
    "known": ["sh", "ch", "th", "ck", "a_e", "i_e"],
    "knownBlends": ["st", "sp", "sn", "sw", "bl", "cl", "fl", "gr", "fr", "dr", "nd", "nt", "mp", "nk"],
    "words": [
-    { "w": "bike", "role": "main", "t": ["b", "i_e", "k"], "pic": "🚲", "ko": "자전거" },
-    { "w": "five", "role": "main", "t": ["f", "i_e", "v"], "pic": "5️⃣", "ko": "다섯" },
-    { "w": "time", "role": "main", "t": ["t", "i_e", "m"], "pic": "⏳", "ko": "시간" },
+    { "w": "bike", "role": "main", "t": ["b", "i_e", "k"], "ko": "자전거" },
+    { "w": "five", "role": "main", "t": ["f", "i_e", "v"], "ko": "다섯" },
+    { "w": "time", "role": "main", "t": ["t", "i_e", "m"], "ko": "시간" },
     { "w": "smile", "role": "main", "t": ["s", "m", "i_e", "l"], "build": false, "ko": "미소" },
-    { "w": "nine", "role": "apply", "t": ["n", "i_e", "n"], "pic": "9️⃣", "ko": "아홉" },
+    { "w": "nine", "role": "apply", "t": ["n", "i_e", "n"], "ko": "아홉" },
     { "w": "ride", "role": "apply", "t": ["r", "i_e", "d"], "ko": "타다" },
     { "w": "kite", "role": "practice", "t": ["k", "i_e", "t"] },
     { "w": "bite", "role": "practice", "t": ["b", "i_e", "t"] },
@@ -185,7 +185,7 @@ window.PLAY_PHONICS = {
    "known": ["sh", "ch", "th", "ck", "a_e", "i_e", "o_e", "u_e"],
    "knownBlends": ["st", "sp", "sn", "sw", "bl", "cl", "fl", "gr", "fr", "dr", "nd", "nt", "mp", "nk"],
    "words": [
-    { "w": "home", "role": "main", "t": ["h", "o_e", "m"], "pic": "🏠", "ko": "집" },
+    { "w": "home", "role": "main", "t": ["h", "o_e", "m"], "ko": "집" },
     { "w": "nose", "role": "main", "t": ["n", "o_e", "s"], "ko": "코" },
     { "w": "bone", "role": "main", "t": ["b", "o_e", "n"], "ko": "뼈" },
     { "w": "cute", "role": "main", "t": ["c", "u_e", "t"] },
@@ -237,10 +237,10 @@ window.PLAY_PHONICS = {
    "known": ["sh", "ch", "th", "ck", "a_e", "i_e", "o_e", "u_e", "ai", "ay"],
    "knownBlends": ["st", "sp", "sn", "sw", "bl", "cl", "fl", "gr", "fr", "dr", "nd", "nt", "mp", "nk"],
    "words": [
-    { "w": "rain", "role": "main", "t": ["r", "ai", "n"], "pic": "🌧️", "ko": "비" },
-    { "w": "wait", "role": "main", "t": ["w", "ai", "t"], "pic": "🚏", "ko": "기다리다" },
-    { "w": "day", "role": "main", "t": ["d", "ay"], "pic": "📅", "ko": "하루" },
-    { "w": "play", "role": "main", "t": ["p", "l", "ay"], "build": false, "pic": "🛝", "ko": "놀다" },
+    { "w": "rain", "role": "main", "t": ["r", "ai", "n"], "ko": "비" },
+    { "w": "wait", "role": "main", "t": ["w", "ai", "t"], "ko": "기다리다" },
+    { "w": "day", "role": "main", "t": ["d", "ay"], "ko": "하루" },
+    { "w": "play", "role": "main", "t": ["p", "l", "ay"], "build": false, "ko": "놀다" },
     { "w": "mail", "role": "apply", "t": ["m", "ai", "l"] },
     { "w": "say", "role": "apply", "t": ["s", "ay"] }
    ]
@@ -257,13 +257,13 @@ window.PLAY_PHONICS = {
    "known": ["sh", "ch", "th", "ck", "a_e", "i_e", "o_e", "u_e", "ai", "ay", "ee", "ea"],
    "knownBlends": ["st", "sp", "sn", "sw", "bl", "cl", "fl", "gr", "fr", "dr", "nd", "nt", "mp", "nk"],
    "words": [
-    { "w": "tree", "role": "main", "t": ["t", "r", "ee"], "build": false, "pic": "🌳", "ko": "나무" },
-    { "w": "green", "role": "main", "t": ["g", "r", "ee", "n"], "pic": "🟢", "ko": "초록색" },
+    { "w": "tree", "role": "main", "t": ["t", "r", "ee"], "build": false, "ko": "나무" },
+    { "w": "green", "role": "main", "t": ["g", "r", "ee", "n"], "ko": "초록색" },
     { "w": "eat", "role": "main", "t": ["ea", "t"] },
-    { "w": "read", "role": "main", "t": ["r", "ea", "d"], "pic": "📖", "ko": "읽다" },
+    { "w": "read", "role": "main", "t": ["r", "ea", "d"], "ko": "읽다" },
     { "w": "sea", "role": "apply", "t": ["s", "ea"], "ko": "바다" },
     { "w": "seat", "role": "apply", "t": ["s", "ea", "t"] },
-    { "w": "see", "role": "main", "t": ["s", "ee"], "pic": "👀", "ko": "보다" },
+    { "w": "see", "role": "main", "t": ["s", "ee"], "ko": "보다" },
     { "w": "feet", "role": "main", "t": ["f", "ee", "t"], "ko": "발" }
    ]
   },
@@ -279,12 +279,12 @@ window.PLAY_PHONICS = {
    "known": ["sh", "ch", "th", "ck", "a_e", "i_e", "o_e", "u_e", "ai", "ay", "ee", "ea", "oa", "ow"],
    "knownBlends": ["st", "sp", "sn", "sw", "bl", "cl", "fl", "gr", "fr", "dr", "nd", "nt", "mp", "nk"],
    "words": [
-    { "w": "boat", "role": "main", "t": ["b", "oa", "t"], "pic": "⛵", "ko": "배" },
+    { "w": "boat", "role": "main", "t": ["b", "oa", "t"], "ko": "배" },
     { "w": "road", "role": "main", "t": ["r", "oa", "d"], "ko": "길" },
-    { "w": "goat", "role": "main", "t": ["g", "oa", "t"], "pic": "🐐", "ko": "염소" },
-    { "w": "snow", "role": "main", "t": ["s", "n", "ow"], "pic": "❄️", "ko": "눈" },
+    { "w": "goat", "role": "main", "t": ["g", "oa", "t"], "ko": "염소" },
+    { "w": "snow", "role": "main", "t": ["s", "n", "ow"], "ko": "눈" },
     { "w": "grow", "role": "main", "t": ["g", "r", "ow"] },
-    { "w": "coat", "role": "apply", "t": ["c", "oa", "t"], "pic": "🧥", "ko": "외투" },
+    { "w": "coat", "role": "apply", "t": ["c", "oa", "t"], "ko": "외투" },
     { "w": "show", "role": "apply", "t": ["sh", "ow"] }
    ]
   }

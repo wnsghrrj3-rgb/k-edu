@@ -30,7 +30,7 @@
     var S = ctx.services || {}, P = g.PlayPhonics, E = g.PlayEvidence, tts = S.tts, cellId = (ctx.zone && ctx.zone.id) || ctx.cell;
     var words = (ctx.opt && ctx.opt.words) || pick(ctx, CONF.words);
     var host = ctx.host; host.innerHTML = '';
-    var root = h('div', 'sb sb-' + skin), dots = h('div', 'dots'), pic = h('div', 'sb-pic'), track = h('div', 'sb-track'), tray = h('div', 'sb-tray'), rep = h('button', 'btn w pp-rep', '🔊'); rep.type = 'button';
+    var root = h('div', 'sb sb-' + skin), dots = h('div', 'dots'), pic = h('div', 'sb-pic'), track = h('div', 'sb-track'), tray = h('div', 'sb-tray'), rep = h('button', 'btn w pp-rep', g.PlayIcon.html('speaker')); rep.type = 'button';
     root.appendChild(dots); root.appendChild(pic); root.appendChild(track); root.appendChild(tray); root.appendChild(rep); host.appendChild(root);
     var i = 0, cur = null;
     function alive() { return root.parentNode === host && root.isConnected !== false && !(ctx.signal && ctx.signal.aborted); }
@@ -44,7 +44,7 @@
         if (i >= words.length) return resolve({ completed: true });
         var x = words[i], t = x.t, snd = P.sounds(x), at = 0, clean = true, tries = 1, busy = false;
         cur = x;
-        pic.innerHTML = (x.pic ? '<span class="sb-emoji">' + x.pic + '</span>' : '') + '<span class="sb-walker">' + (skin === 'train' ? '🚂' : '🧒') + '</span>';
+        pic.innerHTML = (x.pic ? '<span class="sb-emoji">' + x.pic + '</span>' : '') + '<span class="sb-walker">' + g.PlayArt.html(skin === 'train' ? 'train' : 'kid') + '</span>';
         track.innerHTML = ''; tray.innerHTML = ''; track.className = 'sb-track';
         var slots = t.map(function () { var s = h('div', 'sb-slot'); track.appendChild(s); return s; });
         slots[0].classList.add('next');
@@ -80,7 +80,7 @@
 
   g.PlaySoundBuild = { CONF: CONF, pick: pick, run: run };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'sound-bridge', no: 14, name: '소리 다리', icon: '🌉', channels: ['hand', 'sound'], axis: 'quest', need: { lv1: 4 },
+    id: 'sound-bridge', no: 14, name: '소리 다리', icon: 'bridge', channels: ['hand', 'sound'], axis: 'quest', need: { lv1: 4 },
     count: function (c) { return Math.min(CONF.words, pick(c, CONF.words).length); },
     intro: { en: 'Go! Go!', ko: '소리 조각을 차례로 놓아 다리를 이어 줘!' },
     start: function (ctx) { return run(ctx, 'bridge'); }

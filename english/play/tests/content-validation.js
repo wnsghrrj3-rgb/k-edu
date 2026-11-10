@@ -33,5 +33,29 @@ const Z = win.PLAY_ZONES.zones.filter(z => z.stage === 'sound-shop');
 if (Z.length !== cells.length) violations.push('구역 수가 칸 수와 다름');
 Z.forEach(z => z.words.forEach(x => { if (!P.decodable(x.w, z.id).ok) violations.push(z.id + ' 구역 단어 ' + x.w + ' — 안 배운 소리'); }));
 
+/* ── §15 비주얼 규범: 제작 파일에 이모지 0 · Jua 0 · 토큰 밖 색 값 0 ── */
+const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{20E3}\u{200D}]/u;
+const COLOR = /#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/;
+const look = [];
+(function walk(d) { fs.readdirSync(path.join(ROOT, d)).forEach(f => { const r = d ? d + '/' + f : f, st = fs.statSync(path.join(ROOT, r)); if (st.isDirectory()) { if (f !== 'tests') walk(r); } else if (/\.(js|html|css|svg)$/.test(f)) look.push(r); }); })('');
+let visual = 0;
+look.forEach(f => {
+  const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+  if (EMOJI.test(src)) { violations.push(f + ' — 이모지 문자(§15: 그린 그림·선 아이콘만)'); visual++; }
+  if (/\bJua\b/.test(src)) { violations.push(f + ' — Jua 글꼴(§15)'); visual++; }
+  if (f !== 'ui/tokens.css' && COLOR.test(src.replace(/&#[0-9]+;/g, ''))) { violations.push(f + ' — 색 값을 직접 적음(토큰 ui/tokens.css 만): ' + (src.match(COLOR) || [''])[0]); visual++; }
+});
+/* 쓰는 그림 이름이 실제로 있는가 */
+load('ui/icons.js'); load('content/art/art.js'); load('content/art/food.js');
+const IC = win.PlayIcon, AR = win.PlayArt;
+win.PLAY_ZONES.zones.forEach(z => {
+  if (z.icon && !IC.has(z.icon)) violations.push(z.id + ' — 없는 아이콘 ' + z.icon);
+  if (z.cellIcon && !AR.has(z.cellIcon)) violations.push(z.id + ' — 없는 그림 ' + z.cellIcon);
+  (z.decor || []).forEach(x => { if (!IC.has(x.icon)) violations.push(z.id + ' 장식 ' + x.id + ' — 없는 아이콘 ' + x.icon); });
+  if (z.stage === 'lunch-shop') z.words.forEach(x => { if (!AR.has(x.w)) violations.push(z.id + ' ' + x.w + ' — 그린 그림 없음'); });
+});
+Object.keys(win.PLAY_ZONES.stages || {}).forEach(k => { if (!IC.has(win.PLAY_ZONES.stages[k].icon)) violations.push('무대 ' + k + ' — 없는 아이콘'); });
+(win.PLAY_ZONES.peek || []).forEach(x => { if (!IC.has(x.icon)) violations.push('구경 ' + x.id + ' — 없는 아이콘'); });
+console.log('비주얼 규범 검사: 제작 파일 ' + look.length + '개 → 위반 ' + visual);
 console.log('소리 공방 재료 검증: ' + cells.length + '칸 · 단어 ' + words + ' · 조립할 수 있는 단어 ' + build + ' · 한 소리 짝 ' + pairs + ' → 위반 ' + violations.length);
 if (violations.length) { console.log(violations.join('\n')); process.exit(1); }

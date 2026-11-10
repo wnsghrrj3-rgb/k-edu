@@ -35,7 +35,7 @@
     var rounds = (ctx.opt && ctx.opt.rounds) || plan(Z.silly, CONF.rounds), pic = {};
     (ctx.pool || ctx.targets || []).forEach(function (x) { pic[x.w] = x.pic; });
     var host = ctx.host; host.innerHTML = '';
-    var root = h('div', 'mo'), dots = h('div', 'dots'), mon = h('button', 'mo-mon', '<span class="mo-face">👾</span><span class="mo-bub">🔊</span>'), tray = h('div', 'mo-tray');
+    var root = h('div', 'mo'), dots = h('div', 'dots'), mon = h('button', 'mo-mon', '<span class="mo-face">' + g.PlayArt.html('monster') + '</span><span class="mo-bub">' + g.PlayIcon.html('speaker') + '</span>'), tray = h('div', 'mo-tray');
     mon.type = 'button';
     root.appendChild(dots); root.appendChild(mon); root.appendChild(tray); host.appendChild(root);
     var i = 0, cur = null, face = mon.firstChild;
@@ -55,7 +55,7 @@
         dots.innerHTML = rounds.map(function (_, k) { return '<i class="' + (k < i ? 'ok' : k === i ? 'on' : '') + '"></i>'; }).join('');
         if (i >= rounds.length) return resolve({ completed: true });
         var o = rounds[i], clean = true, tries = 1, done = false;
-        cur = o; tray.innerHTML = ''; mon.className = 'mo-mon'; if (fx) fx.reset(face); face.textContent = '👾';
+        cur = o; tray.innerHTML = ''; mon.className = 'mo-mon'; if (fx) fx.reset(face);
         var opts = [];
         [o.noun, o.other].forEach(function (n) { [o.attr, o.vs].forEach(function (a) { opts.push({ noun: n, attr: a }); }); });
         shuffle(opts).forEach(function (c) {
@@ -87,7 +87,7 @@
 
   g.PlayMonster = { CONF: CONF, plan: plan, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'monster', no: 3, name: '배고픈 몬스터', icon: '👾', channels: ['ear', 'hand'], axis: 'laugh', need: { lv1: 13 },
+    id: 'monster', no: 3, name: '배고픈 몬스터', icon: 'monster', channels: ['ear', 'hand'], axis: 'laugh', need: { lv1: 13 },
     fits: function (zone) { return plan(zone.silly, 1).length > 0; },
     count: function (c) { return Math.min(CONF.rounds, plan((c.zone || {}).silly, CONF.rounds).length); },
     intro: { en: 'Yum! Yum!', ko: '배고픈 몬스터가 왔어 — 먹고 싶다는 것을 골라 먹여 줘!' },

@@ -88,7 +88,7 @@
     root.appendChild(dots);
     var board = scene.holes(root, CONF.holes), holes = board.list;
     holes.forEach(function (hl) { hl.el.onclick = function () { tap(hl); }; });
-    var rep = h('button', 'btn w pp-rep', '🔊'); rep.type = 'button';
+    var rep = h('button', 'btn w pp-rep', g.PlayIcon.html('speaker')); rep.type = 'button';
     rep.onclick = function () { var t = m.target(); if (t) say(t); };
     root.appendChild(rep); host.appendChild(root);
 
@@ -153,7 +153,7 @@
 
   g.PlayPop = { CONF: CONF, machine: machine, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'pop', no: 17, name: '톡톡 듣기', icon: '👂', channels: ['ear'], axis: 'flow', need: { lv1: 5 },
+    id: 'pop', no: 17, name: '톡톡 듣기', icon: 'ear', channels: ['ear'], axis: 'flow', need: { lv1: 5 },
     count: function (c) { return Math.min(CONF.rounds, (c.targets || []).length || CONF.rounds); },
     intro: { en: 'Quick! Which one?', ko: '톡톡 — 들린 것을 눌러!' },
     start: start

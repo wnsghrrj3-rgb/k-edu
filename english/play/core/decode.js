@@ -11,11 +11,11 @@
   var D = g.PLAY_PHONICS || { cells: [], letters: [] };
   var TEAMS = ['sh', 'ch', 'th', 'ck', 'ai', 'ay', 'ee', 'ea', 'oa', 'ow'];          /* 글자 둘, 소리 하나(전체 목록 — 배웠는지는 칸마다 다르다) */
   var VOW = 'aeiou';
-  var STAGE = { id: 'sound-shop', name: '소리 공방', emoji: '🔧', page: 'zone/sound-shop.html' };
+  var STAGE = { id: 'sound-shop', name: '소리 공방', icon: 'wrench', page: 'zone/sound-shop.html' };
   var GAMES = ['read-aloud', 'sound-monster', 'sound-jump', 'sound-bridge', 'sound-train', 'sound-swap'];
   var DECOR = [
-    { id: 'gear', pic: '⚙️', name: '톱니' }, { id: 'bolt', pic: '🔩', name: '나사' }, { id: 'radio', pic: '📻', name: '라디오' }, { id: 'magnet', pic: '🧲', name: '자석' },
-    { id: 'bulb', pic: '💡', name: '전구' }, { id: 'dial', pic: '🎛️', name: '조절판' }, { id: 'torch', pic: '🔦', name: '손전등' }, { id: 'bell', pic: '🔔', name: '종' }
+    { id: 'gear', icon: 'gear', name: '톱니' }, { id: 'bolt', icon: 'bolt', name: '나사' }, { id: 'radio', icon: 'radio', name: '라디오' }, { id: 'magnet', icon: 'magnet', name: '자석' },
+    { id: 'bulb', icon: 'bulb', name: '전구' }, { id: 'dial', icon: 'dial', name: '조절판' }, { id: 'torch', icon: 'torch', name: '손전등' }, { id: 'bell', icon: 'bell', name: '종' }
   ];
 
   function scan(s) { var out = [], i = 0; while (i < s.length) { var two = s.slice(i, i + 2); if (TEAMS.indexOf(two) >= 0) { out.push(two); i += 2; } else { out.push(s.charAt(i)); i++; } } return out; }
@@ -134,8 +134,8 @@
     D.cells.forEach(function (c) {
       Z.zones.push({
         id: c.id, world: 'lv2', slug: 'p' + c.n, stage: STAGE.id, kind: 'phonics', decorKey: STAGE.id,
-        name: STAGE.name, cellName: c.label, emoji: STAGE.emoji, color: '#4C6EF5', page: STAGE.page + '?cell=' + c.id,
-        words: own(c.id).map(function (x) { return { w: x.w, ko: x.ko || '', pic: x.pic || '', t: x.t, s: x.s, build: x.build !== false, role: x.role }; }),
+        name: STAGE.name, cellName: c.label, icon: STAGE.icon, palette: 'sound', page: STAGE.page + '?cell=' + c.id,
+        words: own(c.id).map(function (x) { return { w: x.w, ko: x.ko || '', pic: g.PlayArt && g.PlayArt.has(x.w) ? g.PlayArt.html(x.w) : '', t: x.t, s: x.s, build: x.build !== false, role: x.role }; }),     /* 그림은 그린 그림이 있을 때만(없으면 글자로 읽게) */
         confuse: [], games: GAMES.slice(), decor: DECOR,
         space: { kind: 'machine', label: '소리 기계' }, part: { id: 'goggles', name: '보안경', when: 'firstFruit' }
       });
@@ -157,7 +157,7 @@
       var b = g.document.createElement('button'); b.type = 'button';
       b.className = 'mc' + (gold ? ' gold' : on ? ' on' : '') + (lock ? ' lock' : '') + (z.id === curId ? ' cur' : '');
       b.setAttribute('data-cell', z.id); b.title = c ? c.name : '';
-      b.innerHTML = lock ? '☁️' : label;
+      b.innerHTML = lock ? g.PlayIcon.html('cloud') : label;
       if (onTap) b.onclick = function () { onTap(z, lock); };
       el.appendChild(b);
     });

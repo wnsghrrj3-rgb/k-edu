@@ -91,7 +91,7 @@
       function pass(word) {
         listening = false;
         if (micEl) { micEl.classList.remove('on'); micEl.classList.add('off'); micEl.onclick = null; }
-        if (heardEl) heardEl.textContent = '👍';
+        if (heardEl) heardEl.textContent = '좋아!';
         later(350, function () { fin(word, 'speech'); });
       }
       function miss(heard) {
@@ -131,10 +131,10 @@
       }
 
       if (!mic.ok()) return offer();
-      micEl = h('button', 'mic', '🎤'); micEl.type = 'button'; heardEl = h('div', 'heard', '');
+      micEl = h('button', 'mic', g.PlayIcon.html('mic')); micEl.type = 'button'; heardEl = h('div', 'heard', '');
       wrap.appendChild(micEl); wrap.appendChild(heardEl);
       micEl.onclick = function () { if (!listening && !over) listen(); };
-      if (mic.primed() && G.canSound()) later(CONF.listenGap, listen); else heardEl.textContent = '🎤 누르고 말해 봐';
+      if (mic.primed() && G.canSound()) later(CONF.listenGap, listen); else heardEl.textContent = '마이크를 누르고 말해 봐';
     });
   }
 

@@ -68,7 +68,7 @@
         var o = orders[i], clean = true, tries = 1;
         npc.react(q.G[who], 'wait'); gag.innerHTML = ''; gag.className = 'so-gag';
         line.textContent = ''; act.innerHTML = '';
-        q.say('🔊', true); q.bub.setAttribute('data-w', phrase(o));
+        q.say(g.PlayIcon.html('speaker'), true); q.bub.setAttribute('data-w', phrase(o));
         q.bub.onclick = function () { speak(o); };
         var box = h('div', 'oq-offer so-offer');
         shuffle([o.attr, o.vs]).forEach(function (attr) {
@@ -120,7 +120,7 @@
 
   g.PlaySilly = { CONF: CONF, plan: plan, phrase: phrase, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'silly-order', no: 2, name: '엉뚱한 주문', icon: '🤪', channels: ['ear', 'say'], axis: 'laugh', need: { lv1: 15 },
+    id: 'silly-order', no: 2, name: '엉뚱한 주문', icon: 'mask', channels: ['ear', 'say'], axis: 'laugh', need: { lv1: 15 },
     count: function (c) { var n = Math.min(CONF.rounds, plan((c.zone || {}).silly, CONF.rounds).length); return n * (c.learner && c.learner.mic && c.learner.mic.ok() ? 2 : 1); },
     intro: { en: 'Oh! Ben!', ko: '장난꾸러기 Ben 이 왔어 — 잘 듣고 골라 줘!' },
     start: start

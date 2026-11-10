@@ -11,7 +11,7 @@
     rounds: 6,
     options: 3,        /* 몬스터 수 */
     nextMs: 900,
-    faces: ['👾', '👻', '🤖', '🐙', '🦖', '🐸']
+    faces: ['monster', 'monster2', 'monster3']     /* 그린 그림(content/art/art.js) */
   };
   function h(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
   function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
@@ -28,7 +28,7 @@
     var S = ctx.services || {}, P = g.PlayPhonics, E = g.PlayEvidence, tts = S.tts, cellId = (ctx.zone && ctx.zone.id) || ctx.cell;
     var targets = (ctx.opt && ctx.opt.units) || plan(cellId, CONF.rounds);
     var host = ctx.host; host.innerHTML = '';
-    var root = h('div', 'sm'), dots = h('div', 'dots'), field = h('div', 'sm-field'), rep = h('button', 'btn w pp-rep', '🔊'); rep.type = 'button';
+    var root = h('div', 'sm'), dots = h('div', 'dots'), field = h('div', 'sm-field'), rep = h('button', 'btn w pp-rep', g.PlayIcon.html('speaker')); rep.type = 'button';
     root.appendChild(dots); root.appendChild(field); root.appendChild(rep); host.appendChild(root);
     var i = 0, cur = null;
     function alive() { return root.parentNode === host && root.isConnected !== false && !(ctx.signal && ctx.signal.aborted); }
@@ -44,7 +44,7 @@
         cur = u; field.innerHTML = '';
         var faces = shuffle(CONF.faces);
         opts.forEach(function (k, n) {
-          var b = h('button', 'sm-mon', '<span class="sm-face">' + faces[n % faces.length] + '</span>' + P.chip(k)); b.type = 'button'; b.setAttribute('data-u', k);
+          var b = h('button', 'sm-mon', '<span class="sm-face">' + g.PlayArt.html(faces[n % faces.length]) + '</span>' + P.chip(k)); b.type = 'button'; b.setAttribute('data-u', k);
           b.onclick = function () {
             if (done || b.disabled) return;
             if (k !== u) { clean = false; tries++; b.classList.add('no'); b.disabled = true; ctx.oops(); later(380, function () { b.classList.remove('no'); b.classList.add('dim'); }); return sound(u, true); }
@@ -62,7 +62,7 @@
 
   g.PlaySoundMonster = { CONF: CONF, plan: plan, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'sound-monster', no: 13, name: '소리 몬스터', icon: '👾', channels: ['ear', 'sound'], axis: 'find', need: { lv1: 3 },
+    id: 'sound-monster', no: 13, name: '소리 몬스터', icon: 'monster', channels: ['ear', 'sound'], axis: 'find', need: { lv1: 3 },
     count: function () { return CONF.rounds; },
     intro: { en: 'Listen!', ko: '들린 소리를 달고 있는 몬스터를 찾아 줘!' },
     start: start

@@ -28,7 +28,7 @@
     guests.forEach(function (who) { var e = h('div', 'oq-g pre'); npc.render(e, who, { face: 'idle', wear: o.wear }); line.appendChild(e); G[who] = e; });
     var bub = h('button', 'oq-bub'); bub.type = 'button'; line.appendChild(bub);
     var tray = h('div', 'oq-tray'); line.appendChild(tray);
-    line.appendChild(h('div', 'oq-clap c1', '👏')); line.appendChild(h('div', 'oq-clap c2', '👏'));
+    line.appendChild(h('div', 'oq-clap c1', g.PlayIcon.html('clap'))); line.appendChild(h('div', 'oq-clap c2', g.PlayIcon.html('sparkle')));
     host.appendChild(line);
     var q = {
       el: line, G: G, bub: bub, tray: tray, guests: guests,
@@ -47,9 +47,9 @@
       say: function (html, ear) { bub.innerHTML = '<span>' + html + '</span>'; bub.classList.toggle('ear', !!ear); bub.classList.add('show'); },
       hush: function () { bub.classList.remove('show'); },
       /* 쟁반이 앞 손님에게 */
-      serve: function (html) {
+      serve: function (html, w) {
         var lw = line.offsetWidth || 0;
-        tray.innerHTML = html;
+        tray.innerHTML = html; if (w) tray.setAttribute('data-w', w);
         tray.style.setProperty('--tx', (lw ? Math.round(CONF.frontX - lw / 2) : -70) + 'px');
         restart(tray, 'go');
       },

@@ -31,7 +31,7 @@
 
   g.PlaySoundJump = { CONF: CONF, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'sound-jump', no: 12, name: '소리 점프', icon: '🤸', channels: ['body', 'sound'], axis: 'flow', need: { lv1: 3 }, cam: true,
+    id: 'sound-jump', no: 12, name: '소리 점프', icon: 'jump', channels: ['body', 'sound'], axis: 'flow', need: { lv1: 3 }, cam: true,
     count: function () { return CONF.rounds; },
     intro: { en: 'Listen! Left or right?', ko: '들린 소리 쪽으로 몸을 기울여!' },
     start: start

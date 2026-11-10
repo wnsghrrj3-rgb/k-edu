@@ -14,7 +14,8 @@
 
   function start(ctx) {
     var S = ctx.services || {}, seed = S.seed, E = g.PlayEvidence, sam = S.sam || { say: function () { return Promise.resolve(); }, react: function () {} };
-    var STAGE = (seed && seed.STAGE) || [{ emoji: '🌰', name: '씨앗' }, { emoji: '🌱', name: '새싹' }, { emoji: '🌸', name: '꽃' }, { emoji: '🍎', name: '열매' }];
+    var STAGE = (seed && seed.STAGE) || [{ icon: 'seed', name: '씨앗' }, { icon: 'sprout', name: '새싹' }, { icon: 'flower', name: '꽃' }, { icon: 'fruit', name: '열매' }];
+    var IC = function (st) { return g.PlayIcon.html(STAGE[st].icon); };
     var due = (ctx.targets || []).slice(), pic = {}; (ctx.pool || ctx.targets || []).forEach(function (x) { pic[x.w] = x.pic; }); due.forEach(function (x) { pic[x.w] = x.pic; });
     var host = ctx.host; host.innerHTML = '';
     var root = h('div', 'gd'), dots = h('div', 'dots'), counter = h('div', 'counter');
@@ -25,7 +26,7 @@
     return new Promise(function (resolve) {
       function end() {
         dots.innerHTML = due.map(function () { return '<i class="ok"></i>'; }).join('');
-        counter.innerHTML = '<div class="gd-ch" id="ch"></div><div class="word gd-end">오늘 돌보기 끝!</div><div class="hint">' + (grown ? new Array(grown + 1).join('🌱') + ' 자랐어요' : '내일 또 와요') + '</div>';
+        counter.innerHTML = '<div class="gd-ch" id="ch"></div><div class="word gd-end">오늘 돌보기 끝!</div><div class="hint">' + (grown ? new Array(grown + 1).join(g.PlayIcon.html('sprout')) + ' 자랐어요' : '내일 또 와요') + '</div>';
         if (S.char && seed) S.char.render(counter.querySelector('#ch'), { parts: seed.parts(), mood: 'cheer' });
         if (S.audio) S.audio.play('done');
         if (grown && S.fx) S.fx.confetti();
@@ -36,7 +37,7 @@
         dots.innerHTML = due.map(function (_, k) { return '<i class="' + (k < i ? 'ok' : k === i ? 'on' : '') + '"></i>'; }).join('');
         if (i >= due.length) return end();
         var w = due[i].w, st = seed && seed.get(w) ? seed.get(w).stage : 0;
-        counter.innerHTML = '<div class="seed s' + st + ' gd-seed">' + STAGE[st].emoji + '</div><div class="pic big">' + pic[w] + '</div><div class="word">' + w + '</div>';
+        counter.innerHTML = '<div class="seed s' + st + ' gd-seed">' + IC(st) + '</div><div class="pic big">' + pic[w] + '</div><div class="word">' + w + '</div>';
         ctx.say(w).then(function () {
           if (!alive()) return;
           return g.PlayTutor.ask(ctx, { host: counter, target: w, kind: 'word' });
@@ -46,7 +47,7 @@
           ctx.good(r.by === 'speech' && r.tries === 0);
           var s2 = seed && seed.get(w) ? seed.get(w) : { stage: st }, grew = !!(ev && ev.seed && ev.seed.grew);
           if (grew) grown++;
-          counter.innerHTML = '<div class="seed s' + s2.stage + ' grow gd-seed big">' + STAGE[s2.stage].emoji + '</div><div class="word">' + w + '</div><div class="hint">' + (grew ? STAGE[s2.stage].name + '이 됐어요!' : r.by === 'speech' ? '잘 자라고 있어요' : '내일 말해 주면 자라요') + '</div>';
+          counter.innerHTML = '<div class="seed s' + s2.stage + ' grow gd-seed big">' + IC(s2.stage) + '</div><div class="word">' + w + '</div><div class="hint">' + (grew ? STAGE[s2.stage].name + '이 됐어요!' : r.by === 'speech' ? '잘 자라고 있어요' : '내일 말해 주면 자라요') + '</div>';
           i++; setTimeout(next, CONF.showMs);
         });
       }
@@ -61,7 +62,7 @@
 
   g.PlayGarden = { CONF: CONF, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'garden', no: 26, name: '씨앗 돌보기', icon: '🪴', channels: ['say'], axis: 'grow', need: {},
+    id: 'garden', no: 26, name: '씨앗 돌보기', icon: 'plant', channels: ['say'], axis: 'grow', need: {},
     count: function (c) { return (c.targets || []).length; },
     intro: { en: 'Water your seeds!', ko: '씨앗을 돌봐 줘 — 다시 말하면 자라!' },
     start: start

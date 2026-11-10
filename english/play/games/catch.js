@@ -71,7 +71,7 @@
     var camw = h('div', 'camwrap', '<video class="cam" playsinline muted></video>');
     root.appendChild(dots); root.appendChild(camw);
     var ln = scene.lanes(root, 2);
-    var hint = h('div', 'hint', ''), rep = h('button', 'btn w pp-rep', '🔊'); rep.type = 'button';
+    var hint = h('div', 'hint', ''), rep = h('button', 'btn w pp-rep', g.PlayIcon.html('speaker')); rep.type = 'button';
     root.appendChild(hint); root.appendChild(rep); host.appendChild(root);
     var useCam = false, usedCam = false, lock = true, cur = null, done;
     function alive() { return root.parentNode === host && root.isConnected !== false && !(ctx.signal && ctx.signal.aborted); }
@@ -130,7 +130,7 @@
 
   g.PlayCatch = { CONF: CONF, machine: machine, start: start };
   if (g.PlayGame) g.PlayGame.register({
-    id: 'catch', no: 11, name: '받기', icon: '🙆', channels: ['body'], axis: 'flow', need: { lv1: 5 }, cam: true,
+    id: 'catch', no: 11, name: '받기', icon: 'body', channels: ['body'], axis: 'flow', need: { lv1: 5 }, cam: true,
     count: function (c) { return Math.min(CONF.rounds, (c.targets || []).length || CONF.rounds); },
     intro: { en: 'Listen! Left or right?', ko: '들린 것만 받아 — 몸을 그쪽으로 기울여!' },
     start: start
