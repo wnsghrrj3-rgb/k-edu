@@ -134,7 +134,9 @@ body{background:var(--bg)}
 /* 세로 화면 — 손님·카운터를 크게, 쟁반 위로 여유 */
 @media (max-aspect-ratio:3/4){
   .ss-sc{--cy:58%}
-  .ss-menu{top:9%;width:72vw}
+  .ss-menu{top:15%;width:72vw}
+  .ss-skins{left:50%;right:auto;transform:translateX(-50%);top:64px}
+  .ss-pot{left:1%;width:16vw}
   .ss-guest{width:min(34vh,260px);margin-left:calc(min(34vh,260px) / -2 - 4%)}
   .ss-bub{left:62%;top:-8%}
   .ss-counter{left:2%;right:2%;height:17%}
@@ -145,6 +147,50 @@ body{background:var(--bg)}
   .ss-door{width:24%;right:-4%}
   .ss-lamp.b{display:none}
 }
+
+/* ============================================================
+ * 덧씌우기(스킨) — 같은 장면 위에 옷만 갈아입힌다. 주소 ?skin=b · ?skin=c 또는 오른쪽 위 단추
+ *   A 기본 · B 저녁 빛(실감: 타일·나무결·체크 바닥·조명 웅덩이·가장자리 어둠·질감) · C 그림책(종이 결·손으로 그린 흔들림·잉크 선)
+ * ============================================================ */
+.ss-skins{position:fixed;right:16px;top:70px;z-index:31;display:flex;gap:4px;background:var(--surface);border-radius:var(--r-pill);padding:4px;box-shadow:var(--shadow)}
+.ss-skins button{border:0;background:transparent;border-radius:var(--r-pill);padding:7px 12px;font:700 13px/1 var(--font);color:var(--ink-2);cursor:pointer}
+.ss-skins button.on{background:var(--ink);color:var(--on-stage)}
+.ss-x{position:absolute;pointer-events:none;display:none}
+.ss-floor{overflow:hidden}
+/* 김 나는 냄비 — 모든 옷 공통 */
+.ss-pot{left:15%;top:calc(var(--cy) - 13%);width:min(11vw,120px);aspect-ratio:1.3/1;z-index:5}
+.ss-pot svg{width:100%;height:100%;display:block;overflow:visible}
+.ss-steam{position:absolute;bottom:72%;width:22%;height:90%;border-radius:50%;background:var(--surface);filter:blur(8px);opacity:0;animation:steam 3.6s ease-out infinite}
+.ss-steam:nth-child(2){left:24%;animation-delay:-1.2s}.ss-steam:nth-child(3){left:46%;animation-delay:-2.4s}.ss-steam:nth-child(4){left:62%;animation-delay:-.6s}
+@media (max-aspect-ratio:3/4){.ss-pot{left:1%;width:16vw}}
+@keyframes steam{0%{transform:translateY(20%) scale(.5);opacity:0}30%{opacity:.75}100%{transform:translateY(-120%) translateX(10%) scale(1.3);opacity:0}}
+
+/* ── B 저녁 빛 ── */
+[data-skin="b"] .ss-tile{display:block;left:0;right:0;bottom:calc(100% - var(--cy));height:calc(var(--cy) * .29);background-color:var(--surface);
+  background-image:linear-gradient(var(--surface-3) 2px,transparent 2px),linear-gradient(90deg,var(--surface-3) 2px,transparent 2px);background-size:56px 28px;box-shadow:inset 0 10px 14px -8px var(--ink-3)}
+[data-skin="b"] .ss-check{display:block;left:-60%;right:-60%;top:0;height:260%;transform-origin:50% 0;transform:perspective(420px) rotateX(64deg);
+  background:conic-gradient(var(--a-cream) 25%,var(--a-wood) 0 50%,var(--a-cream) 0 75%,var(--a-wood) 0) 0 0/110px 110px}
+[data-skin="b"] .ss-floor::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,var(--ink) 0%,transparent 60%);opacity:.28}
+[data-skin="b"] .ss-counter .ss-front{background:linear-gradient(to bottom,var(--a-wood),var(--stage-deep))}
+[data-skin="b"] .ss-counter .ss-front::before{background:repeating-linear-gradient(90deg,transparent 0 3%,var(--ink) 3% 3.2%,transparent 3.2% 7%,var(--ink) 7% 7.1%);opacity:.14}
+[data-skin="b"] .ss-counter .ss-top{background:radial-gradient(ellipse at 30% 40%,var(--surface) 0 30%,transparent 60%),radial-gradient(ellipse at 75% 60%,var(--surface-2) 0 25%,transparent 55%),linear-gradient(to bottom,var(--a-cream),var(--surface-3));box-shadow:0 6px 0 var(--surface-3),0 -1px 0 var(--surface) inset}
+[data-skin="b"] .ss-pool{display:block;inset:0;z-index:7;mix-blend-mode:soft-light;background:radial-gradient(circle at 29% 16%,var(--warm) 0,transparent 28%),radial-gradient(circle at 70% 16%,var(--warm) 0,transparent 26%),radial-gradient(ellipse at 50% 60%,var(--warm-soft) 0,transparent 55%)}
+[data-skin="b"] .ss-vig{display:block;inset:0;z-index:8;background:radial-gradient(ellipse at 50% 42%,transparent 50%,var(--ink) 140%);opacity:.5}
+[data-skin="b"] .ss-grain{display:block;inset:0;z-index:9;opacity:.07;mix-blend-mode:multiply}
+[data-skin="b"] .ss-guest .ss-body svg,[data-skin="b"] .ss-ing .art,[data-skin="b"] .ss-plate .ss-food .art{filter:drop-shadow(0 12px 10px color-mix(in srgb,var(--ink) 28%,transparent))}
+[data-skin="b"] .ss-menu{box-shadow:0 10px 0 -4px var(--a-wood),0 30px 40px -16px var(--ink),0 0 0 6px var(--a-wood)}
+[data-skin="b"] .ss-lamp .ss-cone{display:block}
+.ss-lamp .ss-cone{display:none}
+
+/* ── C 그림책 ── */
+[data-skin="c"] .ss-sc{filter:saturate(.88) contrast(.97)}
+[data-skin="c"] .ss-wall svg,[data-skin="c"] .ss-floor svg,[data-skin="c"] .ss-counter,[data-skin="c"] .ss-menu,[data-skin="c"] .ss-door,[data-skin="c"] .ss-tray .ss-board,[data-skin="c"] .ss-pot svg{filter:url(#ssWob)}
+[data-skin="c"] .ss-counter .ss-front,[data-skin="c"] .ss-counter .ss-top,[data-skin="c"] .ss-menu,[data-skin="c"] .ss-tray .ss-board,[data-skin="c"] .ss-door .ss-frame,[data-skin="c"] .ss-plate .ss-dish,[data-skin="c"] .ss-bub{box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--ink) 75%,transparent)}
+[data-skin="c"] .ss-guest .ss-body svg,[data-skin="c"] .ss-ing .art{filter:url(#ssWob) drop-shadow(3px 4px 0 color-mix(in srgb,var(--ink) 18%,transparent))}
+[data-skin="c"] .ss-grain{display:block;inset:0;z-index:9;opacity:.22;mix-blend-mode:multiply}
+[data-skin="c"] .ss-paper{display:block;inset:0;z-index:8;background:radial-gradient(ellipse at 50% 45%,transparent 55%,var(--a-cream) 120%);opacity:.9}
+[data-skin="c"] .ss-beam,[data-skin="c"] .ss-dust{display:none}
+
 @media (prefers-reduced-motion:reduce){.ss-sc *,.ss-guest .ss-body{animation:none!important}}
 </style>
 <script src="/kedu_gate.js"></script>
@@ -194,7 +240,8 @@ body{background:var(--bg)}
     <circle class="glow" cx="420" cy="170" r="190" fill="url(#gLamp)"/>
     <circle class="glow" cx="1000" cy="170" r="170" fill="url(#gLamp)"/>
   </svg></div>
-  <div class="ss-floor" data-slot="shop-floor"><svg viewBox="0 0 1440 400" preserveAspectRatio="none" aria-hidden="true">
+  <div class="ss-tile ss-x" data-slot="shop-tile"></div>
+  <div class="ss-floor" data-slot="shop-floor"><div class="ss-check ss-x"></div><svg viewBox="0 0 1440 400" preserveAspectRatio="none" aria-hidden="true">
     <defs><linearGradient id="gF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--a-wood)"/><stop offset="1" style="stop-color:var(--stage-deep)"/></linearGradient></defs>
     <rect width="1440" height="400" fill="url(#gF)"/>
     <g style="stroke:var(--ink)" opacity=".14" stroke-width="3">
@@ -204,16 +251,21 @@ body{background:var(--bg)}
     <rect width="1440" height="400" style="fill:var(--ink)" opacity=".12"/>
   </svg></div>
   <div class="ss-beam"></div>
-  <div class="ss-lamp" style="left:29%"><svg viewBox="0 0 120 150"><path d="M60 0 V70" style="stroke:var(--ink)" stroke-width="2"/><path d="M28 104 Q30 70 60 68 Q90 70 92 104z" style="fill:var(--ink)"/><ellipse cx="60" cy="104" rx="32" ry="6" style="fill:var(--warm)"/></svg></div>
-  <div class="ss-lamp b" style="left:70%"><svg viewBox="0 0 120 150"><path d="M60 0 V70" style="stroke:var(--ink)" stroke-width="2"/><path d="M28 104 Q30 70 60 68 Q90 70 92 104z" style="fill:var(--ink)"/><ellipse cx="60" cy="104" rx="32" ry="6" style="fill:var(--warm)"/></svg></div>
+  <div class="ss-lamp" style="left:29%"><svg viewBox="0 0 120 150" style="overflow:visible"><path class="ss-cone" d="M32 106 L-60 600 L180 600 L88 106Z" style="fill:var(--warm-soft)" opacity=".35"/><path d="M60 0 V70" style="stroke:var(--ink)" stroke-width="2"/><path d="M28 104 Q30 70 60 68 Q90 70 92 104z" style="fill:var(--ink)"/><ellipse cx="60" cy="104" rx="32" ry="6" style="fill:var(--warm)"/></svg></div>
+  <div class="ss-lamp b" style="left:70%"><svg viewBox="0 0 120 150" style="overflow:visible"><path class="ss-cone" d="M32 106 L-60 600 L180 600 L88 106Z" style="fill:var(--warm-soft)" opacity=".35"/><path d="M60 0 V70" style="stroke:var(--ink)" stroke-width="2"/><path d="M28 104 Q30 70 60 68 Q90 70 92 104z" style="fill:var(--ink)"/><ellipse cx="60" cy="104" rx="32" ry="6" style="fill:var(--warm)"/></svg></div>
   <div class="ss-menu" id="menu" data-slot="shop-menu"><span class="ss-tt">MENU</span></div>
   <div class="ss-door" id="door" data-slot="shop-door"><div class="ss-frame"></div><div class="ss-in"></div><div class="ss-leaf"></div></div>
   <div class="ss-guest out" id="guest" data-slot="guest"><div class="ss-shd"></div><div class="ss-body npc" id="gBody"></div>
     <div class="ss-bub" id="bub" role="button" tabindex="0" aria-label="다시 듣기"><span class="ss-spk" id="spk"></span><span class="ss-hint" id="hint"></span></div>
   </div>
   <div class="ss-counter" data-slot="shop-counter"><div class="ss-cshd"></div><div class="ss-front"><span class="ss-sign">LUNCH SHOP</span></div><div class="ss-top"></div></div>
+  <div class="ss-pot" data-slot="pot"><div class="ss-steam"></div><div class="ss-steam"></div><div class="ss-steam"></div><div class="ss-steam"></div><svg viewBox="0 0 130 100"><ellipse cx="65" cy="92" rx="56" ry="7" style="fill:var(--ink)" opacity=".18"/><path d="M14 30 H116 V74 Q116 92 96 92 H34 Q14 92 14 74Z" style="fill:var(--ink-2)"/><rect x="8" y="24" width="114" height="12" rx="6" style="fill:var(--ink)"/><rect x="0" y="40" width="16" height="8" rx="4" style="fill:var(--ink)"/><rect x="114" y="40" width="16" height="8" rx="4" style="fill:var(--ink)"/><path d="M22 42 H40 V80" style="stroke:var(--surface)" stroke-width="4" fill="none" opacity=".25" stroke-linecap="round"/></svg></div>
   <div class="ss-plate" id="plate" data-slot="plate"><div class="ss-ring"></div><div class="ss-dish"></div><div class="ss-food" id="pFood"></div></div>
   <div class="ss-tray" data-slot="tray"><div class="ss-board"></div><div class="ss-row" id="row"></div></div>
+  <div class="ss-pool ss-x"></div><div class="ss-vig ss-x"></div><div class="ss-paper ss-x"></div>
+  <svg class="ss-grain ss-x" width="100%" height="100%" aria-hidden="true"><rect width="100%" height="100%" filter="url(#ssGrain)"/></svg>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="ssGrain"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><filter id="ssWob"><feTurbulence type="fractalNoise" baseFrequency=".018" numOctaves="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="5"/></filter></svg>
+  <div class="ss-skins" id="skins" role="group" aria-label="디자인 고르기"><button type="button" data-k="a">기본</button><button type="button" data-k="b">저녁 빛</button><button type="button" data-k="c">그림책</button></div>
   <div class="ss-hud"><span class="ss-nm"><span id="hIc"></span> 점심 가게 <span class="ss-dots" id="dots"></span></span>
     <span class="ss-r"><span class="ss-coin" id="coin"><b></b><span id="coinN">0</span></span><button id="snd" type="button" aria-label="소리 켜고 끄기"></button></span></div>
   <div class="ss-end" id="end"><div class="ss-box"><div class="ss-big">Yum!</div><p>손님 세 명이 모두 맛있게 먹었어요.</p><button class="btn" id="again" type="button">한 판 더</button></div></div>
@@ -379,6 +431,11 @@ body{background:var(--bg)}
     busy = false; poke();
   }
   $('bub').onclick = $('bub').onkeydown = function(e){ if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return; if (!busy) { busy = true; order().then(function(){ busy = false; poke(); }); } };
+
+  /* 덧씌우기 고르기 */
+  function skin(k){ document.body.setAttribute('data-skin', k); Array.prototype.forEach.call($('skins').children, function(b){ b.classList.toggle('on', b.getAttribute('data-k') === k); }); }
+  Array.prototype.forEach.call($('skins').children, function(b){ b.onclick = function(){ skin(b.getAttribute('data-k')); }; });
+  skin((location.search.match(/[?&]skin=([abc])/) || [])[1] || 'a');
   $('start').onclick = function(){ A.unlock(); $('tap').remove(); buildTray(); next(); };
   $('again').onclick = function(){ $('end').classList.remove('show'); step = 0; Array.prototype.forEach.call($('dots').children, function(i){ i.classList.remove('on'); }); next(); };
 })();
