@@ -61,6 +61,11 @@ fence(-10, 8, -4, 13, A.top); fence(2, -13, 9, -13, A.top);
 path(0, 2, dirAB.x * (A.r - 1), dirAB.y * (A.r - 1), A.top); path(0, 2, -7, -3, A.top, 1.8); path(0, 2, -2, 6.5, A.top, 1.8); path(-7, -3, -11, -9, A.top, 1.6);
 sign(dirAB.x * (A.r - 3) + nAB.x * 3, dirAB.y * (A.r - 3) + nAB.y * 3, A.top, '숲 섬 →', Math.atan2(dirAB.x, dirAB.y) + Math.PI); sign(-9.5, -7.5, A.top, '뒷동산 ↑', .8, 3.2);
 flag(1.5, 1.5, A.top, '출발 섬');
+// 나루터: 널다리 끝의 배에 오르면 「활동의 섬」으로 간다(첫 배 = 가게 섬)
+const dP = new THREE.Vector2(-.35, 1).normalize(), ports = [];
+path(0, 4, dP.x * (A.r - 1), dP.y * (A.r - 1), A.top, 1.9); sign(dP.x * (A.r - 2.5) + 3.2, dP.y * (A.r - 2.5) + .6, A.top, '가게 섬 가는 배', Math.atan2(dP.x, dP.y) + Math.PI, 4.4);
+for (let i = 0; i < 4; i++) { const d = A.r + 1.2 + i * 2.0; stone(dP.x * d, dP.y * d, 1.15, 2.05, 0xb9853b); }
+{ const d = A.r + 11.2, bx = dP.x * d, bz = dP.y * d; const deck = stone(bx, bz, 1.05, 3.4, 0xd9a05b); const hull = box(4.2, .9, 4.2, 0x8a5a2b); hull.position.set(bx, .45, bz); const mast = cyl(.12, .12, 4.6, 0xf4e6c8, 6); mast.position.set(bx, 3.3, bz); const sail = box(.08, 2.6, 2.4, 0xff6b6b); sail.position.set(bx, 3.6, bz + .1); scene.add(hull, mast, sail); bobbers.push({ p: deck, ph: 1.7 }); ports.push({ x: bx, z: bz, top: 1.05, name: '가게 섬', href: '/math/play/shop/', t: 0 }); }
 for (let i = 0; i < 9; i++) coin(dirAB.x * (4 + i * 2.2), A.top + 1.0, dirAB.y * (4 + i * 2.2) + 2 - i * .2);               // 길 따라 동전
 for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28; coin(-14.5 + Math.cos(a) * 1.1, 4.6 + 1.0, -14.5 + Math.sin(a) * 1.1); }        // 뒷동산 꼭대기
 for (const [x, z] of [[8, 7], [-11, 7.5], [-2, 12.5], [9, -6], [17, -8], [-18, 2], [5, 19], [-7, -17]]) coin(x, A.top + 1.0, z);
@@ -153,6 +158,7 @@ function step(dt, t){
     const p = g.p; if (p.num != null && !p.stepped && !p.sink && !p.shake) { p.stepped = true; setTimeout(() => { p.stepped = false; }, 1200); if (p.ok) { p.mesh.material.color.set(0x7dffa8); p.face.material.color.set(0x9dffbf); SFX.good(); burst(p.x, p.top + .3, p.z, 0x7dffa8, 10, 4); } else { p.shake = .32; p.face.material.color.set(0xff9a9a); setTimeout(() => p.face.material.color.set(0xffffff), 3600); } } }
   if (P.y < .15) { P.dead = .9; me.visible = true; SFX.splash(); burst(P.x, .3, P.z, 0xbfefff, 22, 6); say('풍덩! 깃발로 돌아가요', 2); }
   for (const f of flags) if (!f.on && Math.hypot(P.x - f.x, P.z - f.z) < 2.2 && Math.abs(P.y - f.top) < 1) { f.on = true; f.f.material.color.set(0xff4d6a); P.spawn = { x: f.x + .8, y: f.top, z: f.z + .8 }; if (f.name !== '출발 섬') { SFX.flag(); big(f.name, '여기서부터 다시 시작해요', 2.2); if (goal < 2 && f.name === '숲 섬') goal = 1; if (f.name === '보물 섬') goal = 2; } }
+  for (const po of ports) { if (Math.hypot(P.x - po.x, P.z - po.z) < 1.5 && P.on && P.y < 1.6) { po.t += dt; if (po.t > .5 && !po.go) { po.go = true; SFX.flag(); big(po.name + '으로 출발!', '', 2); setTimeout(() => { location.href = po.href; }, 1300); } } else if (!po.go) po.t = 0; }
   if (!won && Math.hypot(P.x - chest.position.x, P.z - chest.position.z) < 2.3 && Math.abs(P.y - chest.position.y) < 1) { won = true; SFX.win(); big('보물을 찾았어!', `동전 ${nCoins}개를 모았어요`, 6); for (let i = 0; i < 5; i++) setTimeout(() => burst(chest.position.x, chest.position.y + 1.2, chest.position.z, [0xffd35c, 0xff7a3d, 0x7dffa8, 0x8fe3ff][i % 4], 26, 9), i * 260); }
   if (won) { chest.lid.rotation.x += (-1.9 - chest.lid.rotation.x) * Math.min(1, dt * 4); chest.glow.intensity += (60 - chest.glow.intensity) * dt * 2; }
   // 몸짓
@@ -170,4 +176,4 @@ function resize(){ const w = innerWidth, h = innerHeight; R.setSize(w, h, false)
 cam.position.set(P.x + 8, 9, P.z + 9);
 let last = performance.now(), T = 0; function loop(now){ requestAnimationFrame(loop); const dt = Math.min(.05, (now - last) / 1000); last = now; T += dt; step(dt, T); camera(dt); R.render(scene, cam); }
 say(isTouch ? '왼쪽 막대로 걷고, 「점프」로 뛰어요. 화면을 끌면 둘러봐요' : '방향키로 걷고, 스페이스로 뛰어요. 마우스로 끌면 둘러봐요', 6); requestAnimationFrame(loop);
-window.__isle = { P, plats, bridge, coins, flags, chest, key, get won(){ return won; }, get nCoins(){ return nCoins; }, set camYaw(v){ camYaw = v; }, get camYaw(){ return camYaw; }, A, B, C, step, T: () => T };
+window.__isle = { ports, P, plats, bridge, coins, flags, chest, key, get won(){ return won; }, get nCoins(){ return nCoins; }, set camYaw(v){ camYaw = v; }, get camYaw(){ return camYaw; }, A, B, C, step, T: () => T };
