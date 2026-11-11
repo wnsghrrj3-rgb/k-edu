@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>K-MOTION 셈 자리 넣기 · 먹보가 오기 전에!</title>
+<link rel="stylesheet" href="../kmotion-theme.css">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#bfe8ff;color:#1d2a44;font-family:var(--font, 'Pretendard','Noto Sans KR',sans-serif);overflow:hidden}
+#app{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#bfe8ff}
+#stage{width:100%;height:100%;object-fit:contain;display:block;touch-action:none}
+.cam{position:absolute;left:14px;top:40px;width:min(12vw,150px);aspect-ratio:4/3;background:#000;border-radius:12px;overflow:hidden;border:3px solid #fff;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.cam.off{display:none}
+.cam video{display:none}.cam canvas{width:100%;height:100%;display:block}
+.cam .st{position:absolute;left:6px;bottom:4px;font-size:.62rem;color:#fff;background:rgba(0,0,0,.5);padding:1px 6px;border-radius:999px}
+.tools{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);display:flex;gap:8px}
+.tools button{background:rgba(255,255,255,.9);color:#1d2a44;border:2px solid #ffd35c;border-radius:999px;padding:6px 14px;font-size:.9rem;font-weight:900;cursor:pointer;font-family:inherit}
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(191,232,255,.94);text-align:center;padding:24px;overflow:auto}
+.ov.hidden{display:none}
+.ov .k{font-size:.9rem;letter-spacing:.3em;color:#3a7bd5;font-weight:900}
+.ov h1{font-size:clamp(2rem,6vw,3.2rem);font-weight:900;color:#1d2a44}
+.ov p{color:#3b4a66;line-height:1.7;max-width:660px;font-size:1.08rem}
+.ov p b{color:#e8475f}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center}
+.row .lb{font-weight:900;color:#3b4a66;min-width:4em;text-align:right}
+.row button{background:#fff;color:#1d2a44;border:3px solid #d6e6f5;border-radius:999px;padding:9px 18px;font-size:1rem;font-weight:800;cursor:pointer;font-family:inherit}
+.row button.on{border-color:#ffb300;background:#fff6d6}
+.big{background:#ffd35c;color:#2a1a00;border:0;border-radius:999px;padding:16px 46px;font-size:1.3rem;font-weight:900;cursor:pointer;box-shadow:0 10px 26px rgba(255,170,40,.35);font-family:inherit}
+.res{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;font-size:1.3rem;font-weight:900}
+.res span{background:#fff;border-radius:18px;padding:10px 20px;box-shadow:0 6px 16px rgba(30,60,120,.15)}
+a.back{position:absolute;left:16px;top:10px;color:#3b4a66;text-decoration:none;font-weight:800;z-index:5;font-size:.9rem}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="stage" width="1280" height="720"></canvas>
+  <div class="cam off" id="camBox"><video id="v" autoplay playsinline muted></video><canvas id="c" width="480" height="360"></canvas><div class="st" id="camSt">카메라 준비</div></div>
+  <div class="tools" id="tools" style="display:none"><button id="bSkip">⏭ 다음 문제</button><button id="bSnd">🔊 소리</button><button id="bFs">⛶ 전체 화면</button><button id="bMenu">처음으로</button></div>
+  <section class="ov" id="ov">
+    <span class="k">K-MOTION · 1학년 수학 · 덧셈과 뺄셈 복습</span>
+    <h1>🔢 셈 자리 넣기</h1>
+    <p>식을 보고 <b>답 숫자 카드</b>를 집어서 <b>십의 자리·일의 자리</b>에 넣어요.<br><b>먹보</b>가 오기 전에 맞히면 먹보가 날아가요! 빨리 맞힐수록 점수가 커져요.</p>
+    <div class="row" id="optI"><span class="lb">어떻게</span><button data-v="touch" class="on">👆 화면 터치 (전자칠판 · 여럿이)</button><button data-v="cam">🖐 카메라 손 (웹캠)</button></div>
+    <div class="row" id="optP"><span class="lb">문제</span><button data-v="mix" class="on">섞어서</button><button data-v="add">한 자리 + 한 자리</button><button data-v="sub">십몇 − 한 자리</button></div>
+    <div class="row" id="optL"><span class="lb">단계</span><button data-v="all" class="on">전부</button><button data-v="carry">받아올림·받아내림만 (도전)</button></div>
+    <div class="row" id="optS"><span class="lb">먹보</span><button data-v="off">없음 (연습)</button><button data-v="slow">느릿느릿</button><button data-v="normal" class="on">보통</button><button data-v="fast">빠르게</button></div>
+    <button class="big" id="bStart">시작</button>
+    <p id="msg" style="font-size:.95rem">터치: 숫자 카드를 눌러 끌어다 놓아요. · 카메라: 주먹을 쥐면 잡고, 손을 활짝 펴면 놓아요. 답이 한 자리 수면 일의 자리에만 넣어요.</p>
+  </section>
+  <section class="ov hidden" id="ovEnd"></section>
+  <a class="back" href="../">← 케이모션</a>
+</div>
+<script src="../kmotion.js"></script>
+<script src="./numslot.js?v=1"></script>
+</body>
+</html>
