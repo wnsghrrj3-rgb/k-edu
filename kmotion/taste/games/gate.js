@@ -1,6 +1,7 @@
 /* 성문 지키기(1장 「막기」 맛보기) — 조건에 맞는 것만 손바닥으로 막는다. 나머지는 지나가게 둔다(주민이 받는 선물).
  * 받는 문제 모양: judge {text, ok(v), gen()} */
 import { W, H, txt, panel, circle, rr, dist, lerp, danger, sign } from '../ui.js';
+import { scene, villager, glow } from '../scenes.js';
 export default function(api){
   const SHOTS = 16, DUR = 4.6, EVERY = 2.5, GATE = { x: 640, y: 610 }, R = 54, SHIELD = 92;
   const S = { rule: null, shots: [], spawned: 0, st: 0, cracks: 0, done: 0, msg: null, mt: 0 };
@@ -19,24 +20,29 @@ export default function(api){
       for (const s of S.shots) {
         if (s.state === 'fly') { s.t += dt / DUR; Object.assign(s, pos(s, Math.min(1, s.t)));
           if (s.t < .93 && shields.some(c => dist(c, s) < SHIELD + R * .5)) { s.state = 'back'; s.bt = 0; S.done++; api.sfx('block');
-            if (s.need) { api.correct(); say('막았다!'); } else { api.wrong(); say('앗, 그건 선물이었어'); } }
-          else if (s.t >= 1) { S.done++; if (s.need) { s.state = 'hit'; api.wrong(); api.threat.v = Math.min(.999, api.threat.v + .34); S.cracks++; say('성문에 금이 갔어!'); api.sfx('hit'); if (api.threat.v > .99) api.threat.v = 1; }
-            else { s.state = 'gift'; api.correct(); say('선물 도착!'); } } }
+            api.fx.burst(s.x, s.y, '#bff1ff', 20, 480); api.fx.ring(s.x, s.y, '#bff1ff');
+            if (s.need) { api.correct(); say('막았다!'); api.fx.text(s.x, s.y - 70, '철컹!', '#bff1ff', 46); } else { api.wrong(); say('앗, 그건 선물이었어'); } }
+          else if (s.t >= 1) { S.done++; if (s.need) { s.state = 'hit'; api.wrong(); api.threat.v = Math.min(.999, api.threat.v + .34); S.cracks++; say('성문에 금이 갔어!'); api.sfx('hit'); api.fx.shake(26); api.fx.flash('255,80,60', .35); api.fx.burst(GATE.x, GATE.y - 60, '#8b7a94', 26, 500); if (api.threat.v > .99) api.threat.v = 1; }
+            else { s.state = 'gift'; api.correct(); say('선물 도착!'); api.fx.burst(GATE.x, GATE.y - 40, '#ffd35c', 16, 360); api.fx.burst(GATE.x, GATE.y - 40, '#ff8fd0', 10, 300); } } }
         else s.bt += dt; }
       S.shots = S.shots.filter(s => s.state === 'fly' || s.bt < .7);
       if (S.done >= SHOTS && !S.shots.length) api.finish();
     },
     draw(c, t){
-      const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#20305a'); g.addColorStop(1, '#3d5a4a'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+      const v = api.threat.v; scene.castle(c, t, v);
       sign(c, S.rule.text, W / 2, 90, S.rule.text.length > 14 ? 40 : 52);
-      // 성문
-      const v = api.threat.v; panel(c, GATE.x - 150, GATE.y - 120, 300, 230, '#6f5a45', '#e2c58e', 16); rr(c, GATE.x - 70, GATE.y - 60, 140, 170, 60); c.fillStyle = '#2b1d10'; c.fill();
-      c.strokeStyle = '#1a0f06'; c.lineWidth = 5; for (let k = 0; k < Math.ceil(v * 3 - .01); k++) { c.beginPath(); c.moveTo(GATE.x - 120 + k * 90, GATE.y - 118); c.lineTo(GATE.x - 100 + k * 90, GATE.y - 60); c.lineTo(GATE.x - 126 + k * 90, GATE.y - 10); c.stroke(); }
-      txt(c, '🧑‍🌾', GATE.x - 210, GATE.y + 60, 60); txt(c, '👧', GATE.x + 210, GATE.y + 60, 60);
+      // 성문 탑
+      c.fillStyle = '#9a8aa3'; c.fillRect(GATE.x - 170, GATE.y - 170, 340, 290); c.fillStyle = '#7c6d86'; for (let x = GATE.x - 170; x < GATE.x + 170; x += 68) c.fillRect(x, GATE.y - 200, 44, 34);
+      c.strokeStyle = 'rgba(0,0,0,.2)'; c.lineWidth = 2; for (let yy = GATE.y - 130; yy < GATE.y + 120; yy += 44) { c.beginPath(); c.moveTo(GATE.x - 170, yy); c.lineTo(GATE.x + 170, yy); c.stroke(); }
+      rr(c, GATE.x - 78, GATE.y - 70, 156, 190, 70); c.fillStyle = '#5a3a1c'; c.fill(); c.strokeStyle = '#2b1d10'; c.lineWidth = 6; c.stroke(); c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 3; for (let x = GATE.x - 52; x < GATE.x + 78; x += 26) { c.beginPath(); c.moveTo(x, GATE.y - 60); c.lineTo(x, GATE.y + 118); c.stroke(); }
+      c.strokeStyle = '#120a04'; c.lineWidth = 6; c.lineJoin = 'round'; for (let k = 0; k < Math.ceil(v * 3 - .01); k++) { const x0 = GATE.x - 130 + k * 110; c.beginPath(); c.moveTo(x0, GATE.y - 168); c.lineTo(x0 + 24, GATE.y - 100); c.lineTo(x0 - 8, GATE.y - 40); c.lineTo(x0 + 18, GATE.y + 30); c.stroke(); }
+      const cheer = S.mt > 0 && !(S.msg.includes('금') || S.msg.includes('앗')) ? 1 : 0;
+      villager(c, GATE.x - 260, 512, t, '#4d9dff', cheer); villager(c, GATE.x + 260, 512, t, '#ff8fd0', cheer); villager(c, GATE.x - 400, 512, t, '#6dd08f', cheer); villager(c, GATE.x + 400, 512, t, '#ffd35c', cheer);
       for (const s of S.shots) { let x = s.x, y = s.y, a = 1; if (s.state === 'back') { x += s.from * s.bt * 900; y -= s.bt * 500; a = 1 - s.bt / .7; } else if (s.state !== 'fly') a = 1 - s.bt / .7;
-        c.globalAlpha = Math.max(0, a); circle(c, x, y, R, '#f4efe2', '#7b5a2c', 6); txt(c, s.v, x, y + 3, String(s.v).length > 2 ? 40 : 54, '#2b1d10'); c.globalAlpha = 1; }
-      for (const q of api.cursors()) { if (!(q.cam || q.grab)) continue; c.save(); c.translate(q.x, q.y); c.beginPath(); c.arc(0, 0, SHIELD, 0, Math.PI * 2); c.fillStyle = 'rgba(90,200,255,.22)'; c.fill(); c.strokeStyle = '#7fe0ff'; c.lineWidth = 8; c.stroke(); txt(c, '✋', 0, 4, 64); c.restore(); }
-      if (S.mt > 0) txt(c, S.msg, W / 2, 190, 44, S.msg.includes('금') || S.msg.includes('앗') ? '#ffb3b3' : '#6dffb0');
+        c.globalAlpha = Math.max(0, a); if (s.state === 'fly') { for (let k = 1; k <= 5; k++) { const q = pos(s, Math.max(0, s.t - k * .018)); c.fillStyle = `rgba(255,190,90,${.3 - k * .05})`; c.beginPath(); c.arc(q.x, q.y, R * (1 - k * .13), 0, 7); c.fill(); } }
+        const g = c.createRadialGradient(x - 16, y - 18, 6, x, y, R); g.addColorStop(0, '#fffdf2'); g.addColorStop(1, '#d9cba6'); c.fillStyle = g; c.beginPath(); c.arc(x, y, R, 0, 7); c.fill(); c.strokeStyle = '#7b5a2c'; c.lineWidth = 6; c.stroke(); txt(c, s.v, x, y + 3, String(s.v).length > 2 ? 40 : 54, '#2b1d10'); c.globalAlpha = 1; }
+      for (const q of api.cursors()) { if (!(q.cam || q.grab)) continue; glow(c, q.x, q.y, SHIELD * 1.9, 'rgba(110,210,255,A)', .45); c.save(); c.translate(q.x, q.y); c.beginPath(); c.arc(0, 0, SHIELD, 0, Math.PI * 2); c.fillStyle = 'rgba(90,200,255,.25)'; c.fill(); c.strokeStyle = '#bff1ff'; c.lineWidth = 9; c.stroke(); c.rotate(t / 500); c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 4; for (let k = 0; k < 6; k++) { c.rotate(Math.PI / 3); c.beginPath(); c.moveTo(SHIELD * .45, 0); c.lineTo(SHIELD * .8, 0); c.stroke(); } c.restore(); }
+      if (S.mt > 0) txt(c, S.msg, W / 2, 190, 46, S.msg.includes('금') || S.msg.includes('앗') ? '#ffd0d0' : '#6dffb0');
       danger(c, v, t);
     } };
 }

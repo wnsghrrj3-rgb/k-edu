@@ -5,18 +5,19 @@
  * 저장 0(기록·설정 어디에도 안 남김). 주소: ?g=1&s=2&game=split&input=cam&speed=slow */
 import { TERMS, makePack } from './packs.js';
 import { W, H, txt, circle } from './ui.js';
+import { fx } from './fx.js';
 import run from './games/run.js'; import split from './games/split.js'; import merge from './games/merge.js';
 import lamp from './games/lamp.js'; import gate from './games/gate.js'; import clock from './games/clock.js';
 
 const $ = id => document.getElementById(id);
 const stage = $('stage'), ctx = stage.getContext('2d');
 const qs = new URLSearchParams(location.search);
-const OPT = { term: qs.get('g') && qs.get('s') ? `${qs.get('g')}-${qs.get('s')}` : '1-2', input: qs.get('input') === 'cam' || qs.get('mouse') ? 'cam' : 'touch', speed: qs.get('speed') || 'slow', steer: qs.get('steer') || 'lean' };
+const OPT = { term: qs.get('g') && qs.get('s') ? `${qs.get('g')}-${qs.get('s')}` : '1-2', input: qs.get('input') === 'cam' || qs.get('mouse') ? 'cam' : 'touch', speed: qs.get('speed') || 'slow', steer: qs.get('steer') || 'lean', sound: 'on' };
 if (!TERMS.some(t => t.id === OPT.term)) OPT.term = '1-2';
 const SPEED = { off: 0, slow: 1.6, normal: 1 };
 const CAM_GAIN = 1.6, HEARTS = 3;
 
-const S = { state: 'menu', game: null, pack: null, score: { ok: 0, no: 0 }, hearts: HEARTS, rescued: false, flash: null, ft: 0, lane: 0, sound: true };
+const S = { state: 'menu', game: null, pack: null, score: { ok: 0, no: 0 }, hearts: HEARTS, rescued: false, flash: null, ft: 0, lane: 0, sound: true, streak: 0, intro: 0, beat: 0 };
 const threat = { v: 0 };
 const cursors = new Map();          // id → {id,x,y,grab,prev,jg,jr,cam,seen,offT,gone,pendingUp}
 
@@ -28,10 +29,10 @@ const SFX = { ok(){ tone(660, .12); tone(990, .2, 'triangle', .15, .09); }, no()
 function say(text){ try { if (!S.sound || !window.speechSynthesis) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(String(text)); u.lang = 'ko-KR'; u.rate = 1.05; u.pitch = 1.2; speechSynthesis.speak(u); } catch (_) {} }
 
 // ── 놀이에 넘기는 것
-const api = { W, H, threat, pack: null, rnd: Math.random, say, sfx: n => SFX[n] && SFX[n](), lane: () => S.lane, cursors: () => [...cursors.values()], cursor: id => cursors.get(id),
+const api = { W, H, threat, fx, pack: null, rnd: Math.random, say, sfx: n => SFX[n] && SFX[n](), lane: () => S.lane, cursors: () => [...cursors.values()], cursor: id => cursors.get(id),
   flash(m){ S.flash = m; S.ft = 1; },
-  correct(){ S.score.ok++; threat.v = Math.max(0, threat.v - (S.game.pushBack || 0)); SFX.ok(); },
-  wrong(){ S.score.no++; SFX.no(); },
+  correct(){ S.score.ok++; S.streak++; threat.v = Math.max(0, threat.v - (S.game.pushBack || 0)); SFX.ok(); if (S.streak >= 3 && S.game.id !== 'run') fx.text(W - 122, 150, `${S.streak}연속!`, '#ffd35c', 36); },
+  wrong(){ S.score.no++; S.streak = 0; SFX.no(); },
   finish(){ end(false); } };
 const GAMES = [run, split, merge, lamp, gate, clock].map(f => f(api));
 
@@ -78,15 +79,17 @@ function show(id){ ['menu', 'brief', 'end'].forEach(k => $(k).classList.toggle('
 function openBrief(g){ S.game = g; $('bTerm').textContent = TERMS.find(t => t.id === OPT.term).label + ' 내용'; $('bTitle').textContent = `${g.icon} ${g.title}`; $('bHow').textContent = OPT.input === 'cam' ? g.how : g.touch; $('bMsg').textContent = ''; S.state = 'brief'; show('brief'); }
 async function begin(){ audio(); const g = S.game;
   if (OPT.input === 'cam') { $('bMsg').textContent = '카메라 여는 중…'; try { await startCam(g.needs === 'lane' && OPT.steer === 'lean'); } catch (e) { $('bMsg').textContent = '카메라를 열 수 없어요(' + e.message + ') — 조작을 「화면 터치」로 바꿔 보세요.'; $('camBox').classList.add('off'); return; } } else stopCam();
-  api.pack = S.pack = makePack(OPT.term); S.score = { ok: 0, no: 0 }; S.hearts = HEARTS; S.rescued = false; threat.v = 0; S.lane = 0; S.flash = null;
+  api.pack = S.pack = makePack(OPT.term); S.score = { ok: 0, no: 0 }; S.hearts = HEARTS; S.rescued = false; threat.v = 0; S.lane = 0; S.flash = null; S.streak = 0; S.intro = 1.7; S.beat = 0; S.sound = OPT.sound !== 'off'; fx.clear();
   for (const [id, c] of cursors) if (!c.mouse) cursors.delete(id);
   g.start(); S.state = 'play'; show(null);
-  if (g.needs === 'lane' && OPT.input === 'cam' && OPT.steer === 'lean') api.flash('가운데에 바르게 앉아요'); }
+}
 function end(quit){ if (S.state !== 'play') return; S.state = 'end'; try { speechSynthesis.cancel(); } catch (_) {}
   if (quit) { S.state = 'menu'; show('menu'); return; }
   const n = S.score.ok + S.score.no, acc = n ? S.score.ok / n : 0, stars = 1 + (acc >= .7 ? 1 : 0) + (S.hearts === HEARTS && !S.rescued ? 1 : 0);
   $('eTerm').textContent = `${S.game.title} · ${S.pack.label}`; $('eStars').textContent = '⭐'.repeat(S.rescued ? 1 : stars) + '☆'.repeat(3 - (S.rescued ? 1 : stars));
   $('eTitle').textContent = S.rescued ? '부엉이가 구해 줬어!' : '끝까지 갔어!'; $('eLine').textContent = `맞힘 ${S.score.ok} · 틀림 ${S.score.no} · 남은 하트 ${Math.max(0, S.hearts)}`; SFX.win(); show('end'); }
+
+function heart(c, x, y, s, on){ c.save(); c.translate(x, y); c.beginPath(); c.moveTo(0, s * .8); c.bezierCurveTo(-s * 1.5, -s * .2, -s * .7, -s * 1.2, 0, -s * .4); c.bezierCurveTo(s * .7, -s * 1.2, s * 1.5, -s * .2, 0, s * .8); c.closePath(); c.fillStyle = on ? '#ff4d6a' : 'rgba(255,255,255,.15)'; c.fill(); c.strokeStyle = on ? '#fff' : 'rgba(255,255,255,.4)'; c.lineWidth = 3; c.stroke(); c.restore(); }
 
 // ── 한 프레임
 let last = 0;
@@ -97,14 +100,19 @@ function tick(t){ requestAnimationFrame(tick); const dt = last ? Math.min(.05, (
   const press = cur.find(c => !c.cam && c.grab); const hand = cur.find(c => c.cam);
   if (press) S.lane = press.x < W / 3 ? -1 : press.x > W * 2 / 3 ? 1 : 0;
   else if (OPT.input === 'cam' && g.needs === 'lane') { if (OPT.steer === 'lean') S.lane = lean.lane; else if (hand) { const x = hand.x / W; if (x < .36) S.lane = -1; else if (x > .64) S.lane = 1; else if (x > .42 && x < .58) S.lane = 0; } }
-  // 위협
-  const mul = SPEED[OPT.speed]; if (!mul) threat.v = 0; else if (g.threatSec) threat.v += dt / (g.threatSec * mul);
-  g.update(dt, cur, t);
-  if (S.state === 'play' && threat.v >= 1) { S.hearts--; threat.v = .12; SFX.heart(); api.flash('앗!'); if (S.hearts <= 0) { S.rescued = true; end(false); } }
+  // 위협 (처음 1.7초는 「준비 — 시작」: 그동안은 멈춰 있다)
+  const mul = SPEED[OPT.speed], intro = S.intro > 0; if (intro) { S.intro -= dt; if (S.intro <= 0) SFX.dash(); }
+  if (!intro) { if (!mul) threat.v = 0; else if (g.threatSec) threat.v += dt / (g.threatSec * mul);
+    g.update(dt, cur, t);
+    if (S.state === 'play' && threat.v >= 1) { S.hearts--; threat.v = .12; SFX.heart(); api.flash('앗!'); fx.shake(34); fx.flash('255,50,50', .5); if (S.hearts <= 0) { S.rescued = true; end(false); } }
+    // 긴장 박동: 위협이 찰수록 빨라지는 북소리
+    if (mul) { S.beat += dt * (1.5 + threat.v * 3); if (S.beat >= 1) { S.beat -= 1; tone(threat.v > .7 ? 104 : 78, .11, 'sine', .1 + threat.v * .14); if (threat.v > .7) tone(208, .05, 'square', .04, .12); } } }
+  fx.update(dt);
   for (const c of cur) { if (c.pendingUp) { c.pendingUp = false; c.prev = true; c.grab = false; } else c.prev = c.grab; if (c.gone && !c.grab && !c.prev) cursors.delete(c.id); }
   // 그리기
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.clearRect(0, 0, W, H); g.draw(ctx, t);
-  for (let i = 0; i < HEARTS; i++) txt(ctx, i < S.hearts ? '❤️' : '🖤', W - 70 - i * 52, 44, 36);
+  const o = fx.offset(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.clearRect(0, 0, W, H); ctx.setTransform(1, 0, 0, 1, o.x, o.y); g.draw(ctx, t); fx.draw(ctx); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  for (let i = 0; i < HEARTS; i++) heart(ctx, W - 64 - i * 54, 44, 22, i < S.hearts);
+  if (intro) { ctx.fillStyle = 'rgba(5,8,16,.45)'; ctx.fillRect(0, 0, W, H); const go = S.intro < .6, k = go ? S.intro / .6 : (S.intro - .6) / 1.1; ctx.globalAlpha = Math.min(1, k * 3); txt(ctx, go ? '시작!' : '준비', W / 2, H / 2, go ? 170 : 130 + (1 - k) * 30, go ? '#ffd35c' : '#fff'); ctx.globalAlpha = 1; }
   const pr = g.prog ? g.prog() : null; if (pr) txt(ctx, `${Math.min(pr[0] + (g.id === 'gate' ? 0 : 1), pr[1])} / ${pr[1]}`, W - 122, 92, 26, '#dfe9ff', 'center', 700);
   if (g.id !== 'gate') for (const c of cursors.values()) { if (!c.cam && !c.mouse) continue; circle(ctx, c.x, c.y, c.grab ? 20 : 30, c.grab ? 'rgba(255,211,92,.85)' : 'rgba(255,255,255,.12)', c.grab ? '#fff' : 'rgba(255,255,255,.9)', 5); }
   if (S.flash && S.ft > 0) { S.ft -= dt; ctx.globalAlpha = Math.min(1, S.ft * 2); txt(ctx, S.flash, W / 2, H / 2 - 40, 84, '#fff'); ctx.globalAlpha = 1; }
@@ -112,7 +120,7 @@ function tick(t){ requestAnimationFrame(tick); const dt = last ? Math.min(.05, (
 
 // ── 메뉴
 TERMS.forEach(t => { const b = document.createElement('button'); b.dataset.v = t.id; b.textContent = t.label; $('rTerm').appendChild(b); });
-[['rTerm', 'term'], ['rInput', 'input'], ['rSpeed', 'speed'], ['rSteer', 'steer']].forEach(([row, key]) => { setOn(row, OPT[key]); $(row).querySelectorAll('button').forEach(b => b.onclick = () => { OPT[key] = b.dataset.v; setOn(row, OPT[key]); }); });
+[['rTerm', 'term'], ['rInput', 'input'], ['rSpeed', 'speed'], ['rSteer', 'steer'], ['rSound', 'sound']].forEach(([row, key]) => { setOn(row, OPT[key]); $(row).querySelectorAll('button').forEach(b => b.onclick = () => { OPT[key] = b.dataset.v; setOn(row, OPT[key]); }); });
 GAMES.forEach(g => { const b = document.createElement('button'); b.className = 'card'; b.innerHTML = `<i>${g.icon}</i>${g.title}`; b.onclick = () => openBrief(g); $('cards').appendChild(b); });
 $('bStart').onclick = begin; $('bBack').onclick = () => { S.state = 'menu'; show('menu'); }; $('eAgain').onclick = () => openBrief(S.game); $('eMenu').onclick = () => { S.state = 'menu'; show('menu'); }; $('quit').onclick = () => end(true);
 const pre = GAMES.find(g => g.id === qs.get('game')); if (pre) openBrief(pre);
