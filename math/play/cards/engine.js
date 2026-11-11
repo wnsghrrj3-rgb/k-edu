@@ -77,7 +77,7 @@ export function attack(s, picks, enemyId){ const ev = []; if (s.phase !== 'battl
   if (s.relics.includes('stairs') && abs.some((v, i) => i > 1 && abs[i - 1] === v - 1 && abs[i - 2] === v - 2)) { ev.push({ t: 'relic', id: 'stairs' }); drawN(s, 2, ev); }
   if (!alive(s).length) win(s, ev); return ev; }
 function kill(s, e, ev, exact){ e.dead = true; e.hp = 0; e.diedTurn = s.turn; s.stat.kills++; ev.push({ t: exact ? 'exact' : 'kill', id: e.id }); }
-function win(s, ev){ ev.push({ t: 'clear', node: s.node }); if (s.node >= NODES.length - 1) { s.phase = 'won'; ev.push({ t: 'won' }); return; }
+function win(s, ev){ ev.push({ t: 'clear', node: s.node }); if (s.tut) { s.phase = 'tutdone'; return; } if (s.node >= NODES.length - 1) { s.phase = 'won'; ev.push({ t: 'won' }); return; }
   const pool = shuffle(Object.keys(RELICS).filter(k => !s.relics.includes(k)), s.r).slice(0, 2).map(id => ({ kind: 'relic', id })); const cv = s.cfg.add[Math.floor(s.r() * s.cfg.add.length)];
   s.reward = shuffle([...pool, { kind: 'card', v: cv }, ...(pool.length < 2 ? [{ kind: 'card', v: s.cfg.add[0] }] : [])].slice(0, 3), s.r); s.phase = 'reward'; }
 
@@ -90,4 +90,6 @@ export function endTurn(s){ const ev = []; if (s.phase !== 'battle') return ev; 
   s.discard.push(...s.hand.splice(0)); s.turn++; s.used = {}; s.guard = 0; s.acts = ACTS; drawN(s, handSize(s)); ev.push({ t: 'turn', n: s.turn }); return ev; }
 export function takeReward(s, i){ if (s.phase !== 'reward') return; const r = s.reward[i]; if (!r) return; if (r.kind === 'relic') { s.relics.push(r.id); s.seen.relic.add(r.id); } else s.deck.push({ id: s.uid(), v: r.v }); s.reward = null; s.node++; enter(s); }
 export function rest(s){ if (s.phase !== 'rest') return; s.hp = Math.min(s.maxHp, s.hp + 2); s.node++; enter(s); }
+/* 배우는 방(하는 법): 정해진 몬스터와 손패로 싸움 하나를 차린다 */
+export function custom(s, enemies, hand, draw = []){ s.phase = 'battle'; s.enemies = enemies.map(([type, hp, cd]) => { const e = mk(s, type, hp); e.cd = cd || e.wait; return e; }); s.hand = hand.map(v => ({ id: s.uid(), v })); s.draw = draw.map(v => ({ id: s.uid(), v })); s.discard = []; s.turn = 1; s.used = {}; s.guard = 0; s.acts = ACTS; s.reward = null; s.tut = true; }
 export const score = s => s.stat.exact * 30 + s.stat.kills * 10 + s.node * 40 + (s.phase === 'won' ? 300 + s.hp * 40 : 0);

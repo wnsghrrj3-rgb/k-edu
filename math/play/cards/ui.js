@@ -3,12 +3,12 @@ import * as E from './engine.js';
 import * as grow from '/kmotion/taste/grow.js';
 const $ = id => document.getElementById(id), sleep = ms => new Promise(r => setTimeout(r, ms));
 const qs = new URLSearchParams(location.search);
-const OPT = { term: qs.get('g') && qs.get('s') ? `${qs.get('g')}-${qs.get('s')}` : '1-2', sum: 'hide', hard: 0 };
+const OPT = { term: qs.get('g') && qs.get('s') ? `${qs.get('g')}-${qs.get('s')}` : '1-2', sum: 'show', hard: 0 };      // sum 'show' = 도움 눈금 켬(기본) · 'hide' = 혼자 셈하기
 if (!E.TERMS.some(t => t.id === OPT.term)) OPT.term = '1-2';
 const META_KEY = 'kedu_mathplay_cards_v1';
-const meta = (() => { try { return Object.assign({ wins: 0, best: 0, mon: [], relic: [], hard: 0 }, JSON.parse(localStorage.getItem(META_KEY) || '{}')); } catch (_) { return { wins: 0, best: 0, mon: [], relic: [], hard: 0 }; } })();
+const meta = (() => { try { return Object.assign({ wins: 0, best: 0, mon: [], relic: [], hard: 0, tut: 0 }, JSON.parse(localStorage.getItem(META_KEY) || '{}')); } catch (_) { return { wins: 0, best: 0, mon: [], relic: [], hard: 0 }; } })();
 const saveMeta = () => { try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (_) {} };
-let S = null, sel = [], busy = false;        // sel = [{id, neg, dbl}]
+let S = null, sel = [], busy = false, TUT = 0, tutMsg = '';      // TUT = 배우는 방 단계(0 = 아님)        // sel = [{id, neg, dbl}]
 
 // ── 소리
 let ac = null; const audio = () => { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (_) {} };
@@ -33,20 +33,32 @@ function render(){ if (!S) return;
   $('hearts').innerHTML = Array.from({ length: S.maxHp }, (_, i) => `<i class="${i < S.hp ? '' : 'off'}"></i>`).join('');
   $('cry').textContent = '수정 ' + S.crystals; $('relics').innerHTML = S.relics.map(id => `<span data-r="${id}" title="${E.RELICS[id].desc}">${E.RELICS[id].name}</span>`).join('');
   const f = $('field'); const have = new Set([...f.children].map(n => +n.dataset.id));
-  S.enemies.forEach((e, k) => { let n = f.querySelector(`[data-id="${e.id}"]`); if (!n) { n = document.createElement('div'); n.className = 'mon'; n.dataset.id = e.id; n.innerHTML = monSVG(e.type, k) + `<div class="hp"></div><div class="cd"></div><div class="nm"></div><div class="tip"></div>`; n.onclick = () => strike(e.id); f.appendChild(n); }
+  S.enemies.forEach((e, k) => { let n = f.querySelector(`[data-id="${e.id}"]`); if (!n) { n = document.createElement('div'); n.className = 'mon'; n.dataset.id = e.id; n.innerHTML = monSVG(e.type, k) + `<div class="hp"></div><div class="cd"></div><div class="gauge"></div><div class="nm"></div><div class="tip"></div>`; n.onclick = () => strike(e.id); f.appendChild(n); }
     n.classList.toggle('dead', e.dead); n.querySelector('.hp').textContent = e.dead ? '' : e.hp; const cd = n.querySelector('.cd'); cd.textContent = e.cd <= 1 ? '곧 공격!' : `${e.cd}턴 뒤`; cd.classList.toggle('hot', e.cd <= 1); cd.style.display = e.dead ? 'none' : '';
-    n.querySelector('.nm').textContent = e.name; n.querySelector('.tip').textContent = e.type === 'golem' ? `딱 ${e.weak}으로 치면 두 배!` : (e.type === 'slime' ? '' : E.MON[e.type].tip); n.classList.toggle('aim', sel.length > 0 && !e.dead); have.delete(e.id); });
+    n.querySelector('.nm').textContent = e.name; n.querySelector('.tip').textContent = e.type === 'golem' ? `딱 ${e.weak}으로 치면 두 배!` : (e.type === 'slime' ? '' : E.MON[e.type].tip); n.classList.toggle('aim', sel.length > 0 && !e.dead); gauge(n.querySelector('.gauge'), e); have.delete(e.id); });
   for (const id of have) f.querySelector(`[data-id="${id}"]`)?.remove();
-  const h = $('hand'); h.innerHTML = ''; S.hand.forEach((c, i) => { const p = sel.find(x => x.id === c.id), b = document.createElement('button'); b.className = 'card' + (p ? ' sel' : '') + (p?.neg ? ' neg' : '') + (p?.dbl ? ' dbl' : ''); b.style.animationDelay = (i * .04) + 's'; b.textContent = p?.neg ? '−' + c.v : p?.dbl ? c.v + '×2' : c.v; if (p?.dbl) b.style.fontSize = 'clamp(1.2rem,3.4vw,2rem)';
+  const h = $('hand'); h.innerHTML = ''; S.hand.forEach((c, i) => { const p = sel.find(x => x.id === c.id), b = document.createElement('button'); b.className = 'card' + (p ? ' sel' : '') + (p?.neg ? ' neg' : '') + (p?.dbl ? ' dbl' : ''); b.style.animationDelay = (i * .04) + 's'; b.innerHTML = `<span>${p?.neg ? '−' + c.v : p?.dbl ? c.v + '×2' : c.v}</span>` + (c.v <= 10 ? `<span class="dots">${'<i></i>'.repeat(c.v)}</span>` : ''); if (p?.dbl) b.style.fontSize = 'clamp(1.2rem,3.4vw,2rem)';
     b.onclick = () => { if (busy) return; audio(); SFX.pick(); const j = sel.findIndex(x => x.id === c.id); if (j >= 0) sel.splice(j, 1); else sel.push({ id: c.id }); render(); };
     if (p) { const mods = []; if (S.relics.includes('minus') && !S.used.minus && !sel.some(x => x.neg && x.id !== c.id)) mods.push(['neg', p.neg ? '더하기로' : '빼기로']); if (S.relics.includes('double') && !S.used.double && !sel.some(x => x.dbl && x.id !== c.id)) mods.push(['dbl', p.dbl ? '그대로' : '두 배']);
       if (mods.length) { const m = document.createElement('span'); m.className = 'mod'; mods.forEach(([k, label]) => { const mb = document.createElement('b'); mb.textContent = label; mb.onclick = ev => { ev.stopPropagation(); p[k] = !p[k]; if (k === 'neg' && p.neg) p.dbl = false; if (k === 'dbl' && p.dbl) p.neg = false; render(); }; m.appendChild(mb); }); b.appendChild(m); } }
     h.appendChild(b); });
   $('acts').innerHTML = '칠 수 있는 횟수 ' + Array.from({ length: Math.max(E.ACTS, S.acts) }, (_, i) => `<i class="${i < S.acts ? '' : 'off'}"></i>`).join(''); $('endTurn').disabled = busy || S.phase !== 'battle';
   expr(); }
+/* 도움 눈금: 몬스터 수만큼 칸이 있고, 고른 카드의 합이 몇 칸을 채우는지 미리 보인다(딱 = 초록, 모자람 = 노랑, 넘침 = 빨강) */
+function gauge(g, e){ if (e.dead || OPT.sum !== 'show') { g.innerHTML = ''; return; } const v = vals(), sum = v.reduce((a, b) => a + b, 0), on = v.length > 0 && sum > 0;
+  const blocked = on && ((e.type === 'shield' && sum % 2) || (e.type === 'bat' && sum % 2 === 0)), dmg = e.type === 'golem' && sum === e.weak ? sum * 2 : sum, cls = !on ? '' : blocked ? 'no' : dmg === e.hp ? 'ok' : dmg > e.hp ? 'over' : 'part';
+  if (e.hp <= 20) g.innerHTML = Array.from({ length: e.hp }, (_, i) => `<i class="${on && !blocked && i < dmg ? cls : ''}"></i>`).join('') + (cls === 'over' ? `<em>+${dmg - e.hp}</em>` : '');
+  else g.innerHTML = `<u><b class="${cls}" style="width:${on && !blocked ? Math.min(100, dmg / e.hp * 100) : 0}%"></b></u>` + (cls === 'over' ? `<em>+${dmg - e.hp}</em>` : '');
+  g.dataset.s = cls; g.title = blocked ? (e.type === 'shield' ? '짝수만' : '홀수만') : ''; }
 function vals(){ return sel.map(p => { const c = S.hand.find(h => h.id === p.id); return c ? (p.dbl ? c.v * 2 : c.v) * (p.neg ? -1 : 1) : 0; }); }
 const fmt = v => v.map((x, i) => (i ? (x < 0 ? ' − ' : ' + ') : (x < 0 ? '−' : '')) + Math.abs(x)).join('');
-function expr(extra){ const v = vals(); if (extra) { $('expr').innerHTML = extra; return; } if (!v.length) { $('expr').innerHTML = `<small>${S.acts > 0 ? '카드를 고르고 몬스터를 눌러요' : '다 쳤어요 — 턴 넘기기'}</small>`; return; } const sum = v.reduce((a, b) => a + b, 0); $('expr').innerHTML = fmt(v) + (v.length > 1 || OPT.sum === 'show' ? ` = <span class="q">${OPT.sum === 'show' ? sum : '?'}</span>` : ''); }
+function expr(extra){ const v = vals(); coach(); if (extra) { $('expr').innerHTML = extra; return; } if (!v.length) { $('expr').innerHTML = '&nbsp;'; return; } const sum = v.reduce((a, b) => a + b, 0); $('expr').innerHTML = fmt(v) + (v.length > 1 || OPT.sum === 'show' ? ` = <span class="q">${OPT.sum === 'show' ? sum : '?'}</span>` : ''); }
+/* 지금 무엇을 하면 되는지 한 줄 + 누를 곳이 반짝 */
+function coach(){ const c = $('coach'); if (!S || S.phase !== 'battle') { c.textContent = ''; return; } const en = E.alive(S), hot = en.find(e => e.cd <= 1); let m, glow = null;
+  if (busy) m = c.textContent; else if (S.acts <= 0 || !S.hand.length) { m = '이번 차례에 칠 수 있는 만큼 다 쳤어요. 「내 차례 끝」을 눌러요'; glow = 'end'; }
+  else if (!sel.length) { m = TUT ? tutMsg : (hot ? `「곧 공격!」 붙은 몬스터부터! 그 수를 만들 카드를 골라요` : `몬스터 수와 같아지게 카드를 골라요 (여러 장을 더해도 돼요)`); glow = 'hand'; }
+  else { const sum = vals().reduce((a, b) => a + b, 0), ex = en.find(e => e.hp === sum); m = ex ? `${sum}! 수가 ${sum}인 몬스터를 누르면 「딱」` : `지금 ${OPT.sum === 'show' ? sum : '?'}. 카드를 더 고르거나, 칠 몬스터를 눌러요`; glow = 'mon'; }
+  c.textContent = m; $('hand').classList.toggle('glow', glow === 'hand'); $('field').classList.toggle('glow', glow === 'mon'); $('endTurn').classList.toggle('glow', glow === 'end'); }
 function float(id, text, col = '#fff'){ const n = $('field').querySelector(`[data-id="${id}"]`); if (!n) return; const f = document.createElement('div'); f.className = 'fl'; f.style.color = col; f.textContent = text; n.appendChild(f); setTimeout(() => f.remove(), 1100); }
 function flash(col){ const f = $('flash'); f.style.background = col; f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }
 function shake(id){ const n = $('field').querySelector(`[data-id="${id}"]`); if (!n) return; n.classList.remove('hit'); void n.offsetWidth; n.classList.add('hit'); }
@@ -72,12 +84,12 @@ async function play(ev){ busy = true; render();
     case 'guard': expr('<small>짝수 방패가 막았어!</small>'); await sleep(500); break;
     case 'hurt': flash('#ff3050'); SFX.hurt(); render(); await sleep(520); break;
     case 'turn': render(); break; } }
-  busy = false; sel = sel.filter(p => S.hand.some(c => c.id === p.id)); render(); after(); }
-function strike(id){ if (busy || !S || S.phase !== 'battle') return; audio(); if (!sel.length) { expr('<small>먼저 카드를 골라요</small>'); return; } const picks = sel.slice(); sel = []; play(E.attack(S, picks, id)); }
+  busy = false; sel = sel.filter(p => S.hand.some(c => c.id === p.id)); render(); after(ev); }
+function strike(id){ if (busy || !S || S.phase !== 'battle') return; audio(); if (!sel.length) { expr('<small>먼저 카드를 골라요</small>'); return; } const picks = sel.slice(); sel = []; const me = $('me'); me.classList.remove('cast'); void me.offsetWidth; me.classList.add('cast'); play(E.attack(S, picks, id)); }
 $('endTurn').onclick = () => { if (busy || !S || S.phase !== 'battle') return; audio(); sel = []; play(E.endTurn(S)); };
 
 // ── 방 사이
-function after(){ if (S.phase === 'reward') { $('rwK').textContent = `${E.NODES[S.node]} 방을 깼어!`; const box = $('rwPick'); box.innerHTML = ''; S.reward.forEach((r, i) => { const b = document.createElement('button'); b.innerHTML = r.kind === 'relic' ? `<b>${E.RELICS[r.id].name}</b><span>${E.RELICS[r.id].desc}</span>` : `<em>${r.v}</em><b>새 카드</b><span>내 카드 묶음에 ${r.v} 카드가 한 장 들어와요</span>`; b.onclick = () => { E.takeReward(S, i); $('reward').classList.add('hidden'); $('field').innerHTML = ''; sel = []; render(); after(); }; box.appendChild(b); }); SFX.win(); $('reward').classList.remove('hidden'); }
+function after(ev = []){ if (TUT) return tutAfter(ev); if (S.phase === 'reward') { $('rwK').textContent = `${E.NODES[S.node]} 방을 깼어!`; const box = $('rwPick'); box.innerHTML = ''; S.reward.forEach((r, i) => { const b = document.createElement('button'); b.innerHTML = r.kind === 'relic' ? `<b>${E.RELICS[r.id].name}</b><span>${E.RELICS[r.id].desc}</span>` : `<em>${r.v}</em><b>새 카드</b><span>내 카드 묶음에 ${r.v} 카드가 한 장 들어와요</span>`; b.onclick = () => { E.takeReward(S, i); $('reward').classList.add('hidden'); $('field').innerHTML = ''; sel = []; render(); after(); }; box.appendChild(b); }); SFX.win(); $('reward').classList.remove('hidden'); }
   else if (S.phase === 'rest') $('rest').classList.remove('hidden');
   else if (S.phase === 'won' || S.phase === 'lost') finish(); }
 $('restGo').onclick = () => { E.rest(S); $('rest').classList.add('hidden'); $('field').innerHTML = ''; render(); };
@@ -87,13 +99,26 @@ function finish(){ const won = S.phase === 'won', pts = E.score(S); for (const m
   $('eK').textContent = `${E.TERMS.find(t => t.id === S.term).label}` + (S.hard ? ` · 오름 ${S.hard}` : ''); $('eScore').textContent = pts.toLocaleString('ko-KR') + '점'; $('eTitle').textContent = won ? '골렘을 쓰러뜨렸어!' : `${E.NODES[S.node]} 방에서 쓰러졌어`;
   $('eLine').textContent = `딱 맞힘 ${S.stat.exact}번 · 쓰러뜨림 ${S.stat.kills} · 넘침 ${S.stat.over}번 · 능력 ${S.relics.length}개` + (won && S.hard < 5 ? ` · 오름 ${S.hard + 1} 이 열렸어` : '');
   $('eGrow').textContent = `성장 +${gr.gained} · 레벨 ${gr.after.lv} 「${gr.after.title}」` + (gr.after.lv > gr.before.lv ? ' — 레벨 업!' : ''); won ? SFX.win() : SFX.hurt(); $('end').classList.remove('hidden'); }
-function start(){ audio(); S = E.newRun(OPT.term, (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0, OPT.hard); sel = []; busy = false; $('field').innerHTML = ''; ['title', 'end', 'reward', 'rest'].forEach(k => $(k).classList.add('hidden')); render(); }
+/* ── 배우는 방: 세 걸음. 말로 읽히는 규칙 대신 손으로 한 번씩 해 본다 */
+const TUTS = [null,
+  { en: [['slime', 5, 3]], hand: [5, 2, 3], msg: '슬라임 배에 5가 적혀 있어요. 아래에서 5 카드를 눌러요', done: '수가 같으면 「딱!」 한 번에 쓰러져요' },
+  { en: [['slime', 7, 3]], hand: [3, 4, 6], msg: '이번엔 7이에요. 카드 두 장을 골라 7을 만들어요', done: '3 + 4 = 7. 카드를 더해서 딱 맞췄어요!' },
+  { en: [['slime', 4, 1], ['slime', 6, 3]], hand: [4, 1, 5, 2], draw: [3, 2], msg: '둘이에요. 「곧 공격!」이 붙은 4부터! 딱 맞히면 한 번 더 칠 수 있어요', done: '딱 맞히면 카드도 한 장 더, 한 번 더! 이제 진짜 모험을 떠나요' }];
+function tutStart(n){ audio(); TUT = n; S = E.newRun(OPT.term, 7, 0); const T = TUTS[n]; E.custom(S, T.en, T.hand, T.draw || []); tutMsg = T.msg; sel = []; busy = false; $('field').innerHTML = ''; ['title', 'end', 'reward', 'rest', 'tutEnd'].forEach(k => $(k).classList.add('hidden')); $('tutBar').textContent = `하는 법 ${n} / 3`; render(); }
+function tutAfter(ev){ const T = TUTS[TUT];
+  if (S.phase === 'tutdone') { const over = ev.some(e => e.t === 'over'), clean = S.stat.over === 0;
+    if (!clean) { $('coach').textContent = '넘치게 쳐도 쓰러지긴 해요. 하지만 딱 맞혀야 덤이 있어요 — 한 번 더 해 봐요'; setTimeout(() => tutStart(TUT), 1900); return; }
+    $('coach').textContent = T.done; setTimeout(() => { if (TUT < 3) tutStart(TUT + 1); else { TUT = 0; meta.tut = 1; saveMeta(); $('tutBar').textContent = ''; $('tutEnd').classList.remove('hidden'); } }, 1900); return; }
+  if (S.phase === 'lost') { tutStart(TUT); return; }
+  const left = E.alive(S)[0]; if (left) tutMsg = S.acts <= 0 ? '' : `${left.hp} 남았어요. ${left.hp}을(를) 만들 카드를 골라요`.replace('을(를)', [0, 1, 3, 6, 7, 8].includes(left.hp % 10) ? '을' : '를'); render(); }
+function start(){ if (!meta.tut && !TUT) return tutStart(1); audio(); TUT = 0; $('tutBar').textContent = ''; S = E.newRun(OPT.term, (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0, OPT.hard); sel = []; busy = false; $('field').innerHTML = ''; ['title', 'end', 'reward', 'rest', 'tutEnd'].forEach(k => $(k).classList.add('hidden')); render(); }
 function title(){ const row = $('rHard'); row.innerHTML = ''; for (let h = 0; h <= meta.hard; h++) { const b = document.createElement('button'); b.textContent = h ? `오름 ${h}` : '기본'; b.dataset.v = h; b.className = OPT.hard === h ? 'on' : ''; b.onclick = () => { OPT.hard = h; title(); }; row.appendChild(b); } row.style.display = meta.hard ? '' : 'none';
   $('dex').textContent = `도감 — 몬스터 ${meta.mon.length}/${Object.keys(E.MON).length} · 능력 ${meta.relic.length}/${Object.keys(E.RELICS).length} · 이긴 횟수 ${meta.wins} · 가장 멀리 간 방 ${meta.best}/${E.NODES.length}` + (grow.persists() ? '' : '  (지금은 이 화면을 닫으면 사라져요)');
   ['end', 'reward', 'rest'].forEach(k => $(k).classList.add('hidden')); $('title').classList.remove('hidden'); }
 E.TERMS.forEach(t => { const b = document.createElement('button'); b.dataset.v = t.id; b.textContent = t.label; $('rTerm').appendChild(b); });
 [['rTerm', 'term'], ['rSum', 'sum']].forEach(([row, key]) => { const set = () => $(row).querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === OPT[key])); set(); $(row).querySelectorAll('button').forEach(b => b.onclick = () => { OPT[key] = b.dataset.v; set(); }); });
-$('go').onclick = start; $('again').onclick = start; $('toTitle').onclick = title;
+$('go').onclick = start; $('again').onclick = start; $('toTitle').onclick = title; $('howto').onclick = () => tutStart(1); $('tutGo').onclick = () => { meta.tut = 1; start(); };
+$('me').innerHTML = `<svg viewBox="0 0 160 190"><ellipse cx="80" cy="180" rx="52" ry="9" fill="rgba(0,0,0,.35)"/><path d="M40 176 54 96h52l14 80Z" fill="#5b3fd6" stroke="#c9b8ff" stroke-width="4"/><circle cx="80" cy="78" r="30" fill="#ffd9b3"/><circle cx="70" cy="76" r="4" fill="#122"/><circle cx="92" cy="76" r="4" fill="#122"/><path d="M70 90q10 8 22 0" stroke="#122" stroke-width="3" fill="none"/><path d="M38 58h84L88 4Z" fill="#3a2bb0" stroke="#c9b8ff" stroke-width="4"/><rect x="30" y="54" width="100" height="10" rx="5" fill="#3a2bb0" stroke="#c9b8ff" stroke-width="3"/><circle cx="88" cy="6" r="7" fill="#ffd35c"/><path d="M118 120 150 70" stroke="#8a5a2b" stroke-width="7" stroke-linecap="round"/><circle cx="152" cy="66" r="11" fill="#8fe3ff" stroke="#fff" stroke-width="3"/></svg>나`;
 for (let i = 0; i < 40; i++) { const s = document.createElement('i'); s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 60 + '%'; s.style.animationDelay = Math.random() * 3 + 's'; $('bg').appendChild(s); }
 title();
-window.__cards = { get S(){ return S; }, E, OPT, meta, start, strike, get sel(){ return sel; }, set sel(v){ sel = v; }, render };
+window.__cards = { get S(){ return S; }, get TUT(){ return TUT; }, E, OPT, meta, start, tutStart, strike, get sel(){ return sel; }, set sel(v){ sel = v; }, render };
