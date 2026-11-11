@@ -44,7 +44,7 @@
         head.querySelector('.lp-ear').onclick = function () { sound(ch); };
         sheet.innerHTML = '';
         sound(ch);
-        W.write(sheet, { text: ch, mode: hear ? 'free' : hand === 'faint' ? 'faint' : 'trace', strict: true, key: ch, onMiss: function () { ctx.oops(); sound(ch); } }).then(function (res) {
+        W.write(sheet, { text: ch, mode: hear ? 'free' : hand === 'faint' ? 'faint' : 'trace', strict: true, key: ch, onLetter: function () { if (S.audio) S.audio.play('pop'); }, onMiss: function () { ctx.oops(); sound(ch); } }).then(function (res) {
           if (!alive()) return;
           ctx.emit(E.write(ch, { skill: 'write', support: res.support, clean: res.clean, attempts: res.attempts, inputMode: 'pen', unit: 'letter' }));
           ctx.good(res.clean, { at: sheet });

@@ -144,7 +144,7 @@
           act.querySelector('.sg-rc-ear').onclick = function () { ctx.say(noteW.w); };
           act.querySelector('.sg-later').onclick = end;
           ctx.say(noteW.w);
-          W.write(act.querySelector('.sg-rc-sheet'), { text: noteW.w, mode: 'free', onMiss: function () { ctx.oops(); ctx.say(noteW.w, 0.6); } }).then(function (r) {
+          W.write(act.querySelector('.sg-rc-sheet'), { text: noteW.w, mode: 'free', onLetter: function () { audio.play('pop'); }, onMiss: function () { ctx.oops(); ctx.say(noteW.w, 0.6); } }).then(function (r) {
             if (done || !alive()) return;
             ctx.emit(E.write(noteW.w, { skill: 'write', support: r.support, clean: r.clean, attempts: r.attempts, inputMode: 'pen' })); ctx.good(r.clean, { at: q.G[who] });
             later(CONF.replyGap, end);

@@ -123,7 +123,7 @@
           var ch = x.w.charAt(0), hear = st >= 2, P = g.PlayPhonics, snd = function () { return x.path === 'letter' ? G.soon(P && P.say && tts ? P.say(tts, ch) : null) : ctx.say(x.w); };
           counter.innerHTML = '<div class="gd-wr">' + (x.path === 'oral' ? '<span class="pic">' + (x.pic || '') + '</span>' : '') + (hear ? '' : '<span class="gd-tag gd-letter">' + ch + '</span>') + '<button type="button" class="btn w pp-rep gd-ear">' + g.PlayIcon.html('speaker') + '</button></div><div class="gd-sheet"></div>';
           counter.querySelector('.gd-ear').onclick = snd; snd();
-          return W.write(counter.querySelector('.gd-sheet'), { text: ch, mode: hear ? 'free' : 'trace', key: ch, onMiss: function () { ctx.oops(); snd(); } }).then(function (res) {
+          return W.write(counter.querySelector('.gd-sheet'), { text: ch, mode: hear ? 'free' : 'trace', key: ch, onLetter: function () { if (S.audio) S.audio.play('pop'); }, onMiss: function () { ctx.oops(); snd(); } }).then(function (res) {
             return ctx.emit(E.write(x.w, { skill: 'write', support: res.support, clean: res.clean, attempts: res.attempts, inputMode: 'pen', unit: 'letter' }));
           });
         }

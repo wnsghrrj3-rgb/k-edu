@@ -7,6 +7,9 @@
  *     혼자: 칸 안 잉크를 크기 맞춘 점 구름으로 바꿔 그 글자 본과의 평균 거리 ≤ free 이고, 같은 크기 글자 26 가운데 그 글자가 가장 가깝다(gap 안).
  *           어디에 얼마나 크게 썼는지는 안 본다. 헷갈리는 글자(b·d·p·q · n·h · a·o) 쪽이 더 가까우면 실패가 아니라 시범(글자가 돌아서 제자리로) 뒤 다시.
  *     두 번 안 되면 옅게, 세 번째는 따라, 따라에서도 두 번 안 되면 같이 쓴다 — 끝은 반드시 난다(assisted).
+ *   쓰는 도중에 끊기지 않게: 획마다 따로 덮였는지 본다(f·t 의 가로 획, i·j 의 점을 안 쓰고는 통과 안 됨) · 손을 뗄 때 저절로 통과되는 것은 거의 다 썼을 때만(coverAuto),
+ *     「다 썼어요」를 누르면 설계 문턱(cover)으로 본다 · 이미 된 칸에도 잉크는 계속 나온다(마저 쓰는 획 — 낱말이 끝날 때까지) · 한 번에 한 손가락.
+ *   잘 쓴 글자는 바뀐다: 칸이 초록으로 · 잉크가 또렷해지고 · 귀퉁이에 인쇄 글자 도장이 찍힌다(쓰기 전에는 화면에 그 글자가 없다).
  *   차례 요구(strict)는 글자 길(#30)에서만: 시작 점을 눌러야 잉크가 나오고, 획을 차례대로 하나씩 따라간다.
  *   통과한 글씨는 획으로 남긴다: localStorage 'kedu-en-play-ink'(kedu_scope 규칙 그대로 — 동의 전에는 이 화면 동안만).
  *     낱말마다 처음 것 + 가장 최근 것, 모두 keep 건까지. 서버 전송 0.
@@ -24,6 +27,10 @@
     near: 0.065,                  /* 표본 점에서 잉크가 이 안이면 「덮였다」(칸 높이 = 1 — 작은 글자의 키가 0.3) */
     far: 0.11,                    /* 잉크가 길에서 이보다 멀면 「벗어났다」 */
     cover: 0.8, stray: 0.25,
+    coverEach: 0.7,               /* 획마다 따로 이만큼은 덮여야 한다(세로 획만 쓴 f·t, 점을 안 찍은 i·j 가 통과되지 않게) */
+    coverAuto: 0.92,              /* 손을 뗄 때 저절로 통과되는 덮임 — 쓰는 도중에 끊기지 않게 높다(「다 썼어요」는 cover) */
+    extra: 0.5,                   /* 이미 된 칸에 더 쓴 획 — 길에서 벗어난 몫이 이보다 크면 지운다 */
+    edge: 0.15,                   /* 칸 경계에서 이만큼(칸 너비의 몫) 안에서 시작했고 그 칸은 이미 됐으면, 옆의 아직 안 된 칸의 획으로 */
     /* 혼자 — 점 구름 거리 */
     cloudN: 48,                   /* 점 구름의 점 수 */
     free: 0.12,                   /* 본과의 평균 거리 문턱(글자의 긴 변 = 1) */
@@ -84,7 +91,9 @@
     if (!ik.length) return { ok: false, empty: true, cover: 0, stray: 0 };
     var cover = tm.filter(function (p) { return minDist(p, ik) <= CONF.near; }).length / tm.length;
     var stray = ik.filter(function (p) { return minDist(p, dense) > CONF.far; }).length / ik.length;
-    return { ok: cover >= CONF.cover && stray <= CONF.stray, cover: cover, stray: stray };
+    var each = 1;
+    if (gl.length > 1) gl.forEach(function (s) { var sm = sample([s], Math.max(4, Math.round(CONF.samples / gl.length))), c = sm.filter(function (p) { return minDist(p, ik) <= CONF.near; }).length / sm.length; if (c < each) each = c; });
+    return { ok: cover >= CONF.cover && each >= CONF.coverEach && stray <= CONF.stray, cover: cover, each: each, stray: stray };
   }
   /* 혼자 — 점 구름 거리. 헷갈리는 글자 쪽이 더 가까우면 confused 에 그 글자 */
   function judgeFree(ch, ink) {
@@ -189,7 +198,9 @@
         attempts: 1 + Math.max.apply(null, cells.map(function (c) { return c.fails; }).concat([0])), given: given, allGiven: cells.length > 0 && given === cells.length, modes: cells.map(function (c) { return LV[c.level]; }) };
       later(CONF.okMs, function () { resolveDone(res); });
     }
-    function pass(c) { c.ok = true; paint(c); if (o.onLetter) o.onLetter(c.i, c.ch, { mode: LV[c.level], fails: c.fails, given: c.given }); if (cells.every(function (x) { return x.ok; })) finish(); }
+    /* 잘 쓴 글자의 도장 — 귀퉁이에 인쇄 글자(통과한 뒤에만 생긴다) */
+    function stamp(c) { var t = doc.createElementNS(NS, 'text'); t.setAttribute('class', 'pw-got'); t.setAttribute('x', r1(c.x + CW - 15)); t.setAttribute('y', 24); t.setAttribute('text-anchor', 'middle'); t.textContent = c.ch; c.el.appendChild(t); }
+    function pass(c) { c.ok = true; paint(c); stamp(c); if (o.onLetter) o.onLetter(c.i, c.ch, { mode: LV[c.level], fails: c.fails, given: c.given }); if (cells.every(function (x) { return x.ok; })) finish(); }
     function give(c) { clearInk(c); c.given = true; c.strokes = glyph(c.ch).map(function (s) { return s.map(function (p) { return p.slice(); }); }); c.strokes.forEach(function (s) { c.lines.push(line(c, s, 'given')); }); pass(c); }
     function failCell(c, why) {
       c.fails++; c.at++; wobble(c); clearInk(c);
@@ -207,9 +218,14 @@
       later(reduced() ? 0 : CONF.flipMs, function () { c.el.classList.remove('flip'); clearInk(c); paint(c); demo(c); });
     }
     function strictNow(c) { return strict && c.level > 0; }
-    function endStroke(c, st, ln) {
-      if (finished || c.ok) return;
+    function endStroke(c, st, ln, extra) {
       var gl = glyph(c.ch), r;
+      if (extra || c.ok || finished) {       /* 이미 된 칸·이미 된 획에 마저 쓴 획 — 길 근처면 남기고(저장되는 글씨에도 든다), 벗어났으면 조용히 지운다 */
+        var ex = sample([st], 12), dn = sample(gl, CONF.samples * 2);
+        if (!finished && !c.given && ex.filter(function (p) { return minDist(p, dn) > CONF.far; }).length / ex.length <= CONF.extra) { c.strokes.push(st); c.lines.push(ln); }
+        else if (ln.parentNode) ln.parentNode.removeChild(ln);
+        return;
+      }
       if (strictNow(c)) {
         r = judgeTrace(c.ch, [st], c.k);
         if (r.ok) { c.strokes.push(st); c.lines.push(ln); ln.setAttribute('class', 'pw-ink done'); c.k++; c.miss = 0; if (c.k >= gl.length) return pass(c); return paint(c); }
@@ -219,7 +235,7 @@
       }
       c.strokes.push(st); c.lines.push(ln);
       if (c.level === 0) { if (c.strokes.length >= gl.length) { r = judgeFree(c.ch, c.strokes); if (r.ok) return pass(c); if (r.confused) return confused(c, r.confused); } }
-      else { r = judgeTrace(c.ch, c.strokes); if (r.ok) pass(c); }
+      else { r = judgeTrace(c.ch, c.strokes); if (r.ok && r.cover >= CONF.coverAuto) pass(c); }      /* 덜 썼으면 기다린다 — 「다 썼어요」를 누르면 그때 본다 */
     }
     /* 「다 썼어요」 — 아직 안 된 칸을 지금 본다 */
     function check() {
@@ -232,17 +248,30 @@
     }
     /* 포인터 → 그림 좌표. 크기를 모르는 자리(검사 환경)에서는 그림 단위 그대로 */
     function toVB(ev) { var r = svgEl.getBoundingClientRect ? svgEl.getBoundingClientRect() : null; if (!r || !r.width) return [ev.clientX || 0, ev.clientY || 0]; return [(ev.clientX - r.left) * lay.width / r.width, (ev.clientY - r.top) * CH / r.height]; }
-    function cellAt(x) { for (var i = 0; i < cells.length; i++) if (x >= cells[i].x && x < cells[i].x + CW) return cells[i]; return null; }
+    function cellAt(x) {
+      var hit = null, i, f, nb;
+      for (i = 0; i < cells.length; i++) if (x >= cells[i].x && x < cells[i].x + CW) hit = cells[i];
+      if (hit && hit.ok) {       /* 옆 칸 글자의 획을 경계 너머에서 시작한 것(가로 획이 긴 f·t) */
+        f = (x - hit.x) / CW; nb = f < CONF.edge ? cells[hit.i - 1] : f > 1 - CONF.edge ? cells[hit.i + 1] : null;
+        if (nb && !nb.ok && Math.abs(nb.x - hit.x) <= CW + 1) hit = nb;
+      }
+      return hit;
+    }
     function begin(c, q) {
-      if (finished || !c || c.ok || c.given) return false;
-      if (strictNow(c)) { var s0 = glyph(c.ch)[c.k][0]; if (dist(px(q), px(s0)) > CONF.startR) { var dot = c.el.querySelector('.pw-start.now'); if (dot) { dot.classList.remove('pulse'); try { void dot.getBoundingClientRect(); } catch (e) {} dot.classList.add('pulse'); } return false; } }
+      if (finished || !c || c.given) return false;
+      if (c.ok) { cur = { c: c, pts: [q], ln: line(c, [q]), extra: true }; return true; }       /* 마저 쓰는 획 */
+      if (strictNow(c)) { var s0 = glyph(c.ch)[c.k][0]; if (dist(px(q), px(s0)) > CONF.startR) {
+          /* 앞 획을 조금 남기고 손을 뗐다가 마저 쓰는 것 — 이미 지나간 길 위에서 시작하면 잉크가 나온다 */
+          if (c.k > 0 && minDist(px(q), sample(glyph(c.ch).slice(0, c.k), CONF.samples)) <= CONF.near * 1.5) { cur = { c: c, pts: [q], ln: line(c, [q], 'done'), extra: true }; return true; }
+          var dot = c.el.querySelector('.pw-start.now'); if (dot) { dot.classList.remove('pulse'); try { void dot.getBoundingClientRect(); } catch (e) {} dot.classList.add('pulse'); } return false; } }
       cur = { c: c, pts: [q], ln: line(c, [q]) }; return true;
     }
     function extend(q) { if (!cur) return; var p = cur.pts[cur.pts.length - 1]; if (dist(px(p), px(q)) < 0.012) return; cur.pts.push(q); cur.ln.setAttribute('d', pathD([cur.pts], cur.c.x)); }
-    function end() { if (!cur) return; var x = cur; cur = null; endStroke(x.c, x.pts, x.ln); }
-    svgEl.addEventListener('pointerdown', function (ev) { var p = toVB(ev), c = cellAt(p[0]); if (!c) return; if (begin(c, [(p[0] - c.x) / CW, p[1] / CH])) { if (ev.preventDefault) ev.preventDefault(); try { svgEl.setPointerCapture(ev.pointerId); } catch (e) {} } });
-    svgEl.addEventListener('pointermove', function (ev) { if (!cur) return; var p = toVB(ev); extend([(p[0] - cur.c.x) / CW, p[1] / CH]); });
-    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (n) { svgEl.addEventListener(n, function () { end(); }); });
+    function end() { if (!cur) return; var x = cur; cur = null; endStroke(x.c, x.pts, x.ln, x.extra); }
+    var same = function (ev) { return !cur || cur.id == null || ev.pointerId == null || ev.pointerId === cur.id; };      /* 한 번에 한 손가락 — 다른 손가락·손바닥은 지금 획을 끊지 않는다 */
+    svgEl.addEventListener('pointerdown', function (ev) { if (cur) return; var p = toVB(ev), c = cellAt(p[0]); if (!c) return; if (begin(c, [(p[0] - c.x) / CW, p[1] / CH])) { cur.id = ev.pointerId; if (ev.preventDefault) ev.preventDefault(); try { svgEl.setPointerCapture(ev.pointerId); } catch (e) {} } });
+    svgEl.addEventListener('pointermove', function (ev) { if (!cur || !same(ev)) return; var p = toVB(ev); extend([(p[0] - cur.c.x) / CW, p[1] / CH]); });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (n) { svgEl.addEventListener(n, function (ev) { if (same(ev)) end(); }); });
     root.querySelector('.pw-ok').onclick = check;
     root.querySelector('.pw-clear').onclick = function () { if (finished) return; cells.forEach(function (c) { if (!c.ok) { clearInk(c); paint(c); } }); };
     root.querySelector('.pw-demo').onclick = function () { if (finished) return; var c = cells.filter(function (x) { return !x.ok; })[0]; if (c) { c.helped = true; demo(c); } };

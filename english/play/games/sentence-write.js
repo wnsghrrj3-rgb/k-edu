@@ -32,6 +32,7 @@
     root.appendChild(pic); root.appendChild(line); root.appendChild(work); host.appendChild(root);
     function alive() { return root.parentNode === host && root.isConnected !== false && !(ctx.signal && ctx.signal.aborted); }
     function tell(slow) { return G.soon(tts ? tts.sentence(x.w, slow ? { rate: 0.7 } : undefined) : null, 9000); }
+    function pop() { if (S.audio) S.audio.play('pop'); }      /* 글자 하나가 될 때마다 톡 */
     function show(at, mine) { line.innerHTML = tk.map(function (t, k) { var done = mine && mine[k]; return '<span class="sw-w' + (k === at ? ' now' : '') + (done ? ' mine' : '') + '" data-k="' + k + '">' + (done ? done : (o.blank && k === at ? '<i class="sw-gap"></i>' + t.t.replace(/[A-Za-z]/g, '') : t.t)) + '</span>'; }).join(' '); }
     /* 낱말 칩 차례 맞추기 */
     function chips() {
@@ -62,7 +63,7 @@
             return res(ctx.emit(E.write(x.w, { skill: 'write', support: 'ghost', clean: false, attempts: worst, inputMode: 'pen', unit: unit })));
           }
           show(k, mine); work.innerHTML = '';
-          W.write(work, { text: tk[k].t, mode: 'trace', keep: false, demo: k === 0, onMiss: function () { ctx.oops(); } }).then(function (r) {
+          W.write(work, { text: tk[k].t, mode: 'trace', keep: false, demo: k === 0, onLetter: pop, onMiss: function () { ctx.oops(); } }).then(function (r) {
             if (!alive()) return;
             r.cells.forEach(function (c) { cells.push(c); }); worst = Math.max(worst, r.attempts);
             mine[k] = W.svg({ text: tk[k].t, cells: r.cells, first: r.cells }); k++; step();
@@ -73,7 +74,7 @@
     /* 빈칸 낱말만 손으로 */
     function blank() {
       var at = blankAt(tk); show(at); work.innerHTML = '';
-      return W.write(work, { text: tk[at].bare, mode: o.mode || 'free', onMiss: function () { ctx.oops(); tell(true); } }).then(function (r) {
+      return W.write(work, { text: tk[at].bare, mode: o.mode || 'free', onLetter: pop, onMiss: function () { ctx.oops(); tell(true); } }).then(function (r) {
         if (!alive()) return null;
         var mine = {}; mine[at] = W.svg({ text: tk[at].bare, cells: r.cells, first: r.cells }) + tk[at].t.replace(/[A-Za-z]/g, ''); show(-1, mine);
         return ctx.emit(E.write(x.w, { skill: 'write', support: r.support, clean: r.clean, attempts: r.attempts, inputMode: 'pen', unit: unit }));
