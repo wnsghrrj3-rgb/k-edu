@@ -45,4 +45,15 @@
     '<path d="M24 76l6-18 11 11z" fill="var(--a-cream)"/><path d="M24 76l2.5-7.5 5 5z" fill="' + INK + '"/>' +
     '<path d="M62 26l8 8" stroke="' + SURF + '" stroke-width="3" opacity=".4"/>' +
     '<path d="M56 32l8 8" stroke="' + INK + '" stroke-width="3" opacity=".2"/>');
+  /* ── 글자 숲 첫 걸음(A01 사과나무 빈터)의 입말 낱말 — 지은 그림이 없던 둘 ── */
+  A.add('ax',
+    '<path d="M44 20h8v64h-8z" fill="var(--a-wood)"/>' +
+    '<path d="M52 22c14-4 26 2 30 14-6 8-18 12-30 8z" fill="' + M('var(--a-steel)') + '"/>' +
+    '<path d="M76 30c3 3 5 5 6 6-2 3-5 5-9 7 3-4 4-8 3-13z" fill="' + SURF + '" opacity=".5"/>' + sh('M44 76h8v8h-8z', '.15'));
+  A.add('alligator',
+    '<path d="M8 58c0-10 12-16 30-16h26c12 0 24 4 24 12 0 6-8 10-20 10H26c-10 0-18-2-18-6z" fill="' + M('var(--a-leaf)') + '"/>' +
+    '<path d="M60 44c2-8 10-10 14-4-4 0-8 2-10 6z" fill="' + M('var(--a-leaf)') + '"/><circle cx="68" cy="42" r="2.4" fill="' + INK + '"/>' +
+    '<path d="M62 60h26c0 4-6 6-14 6H64z" fill="var(--a-cream)"/><path d="M66 60l2 4 2-4 2 4 2-4 2 4 2-4 2 4 2-4" stroke="' + SURF + '" stroke-width="1.6" fill="none"/>' +
+    '<path d="M22 64v8M36 64v8M52 64v8" stroke="' + M('var(--a-leaf)') + '" stroke-width="5" stroke-linecap="round"/>' +
+    '<path d="M14 50l4-5 4 5 4-5 4 5 4-5 4 5" stroke="' + INK + '" stroke-width="2" fill="none" opacity=".25"/>' + sh('M10 60c8 4 40 4 52 0-10 6-44 6-52 0z', '.12'));
 })(window);

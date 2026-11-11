@@ -19,6 +19,7 @@
   /* 한 판씩의 목표 소리 — 새로 배운 것을 고루, 모자라면 되풀이 */
   function plan(cellId, n) {
     var P = g.PlayPhonics, u = P.units(cellId), out = [];
+    if (!u.length && g.PlayPath && g.PlayPath.zone(cellId)) u = (g.PlayPath.zone(cellId).letterItems || []).map(function (x) { return x.w; });      /* 한 해 길의 글자 걸음 = 그 걸음의 글자 */
     if (!u.length) return out;
     while (out.length < n) out = out.concat(shuffle(u));
     return out.slice(0, n);

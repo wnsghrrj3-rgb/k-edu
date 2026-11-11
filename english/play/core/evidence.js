@@ -14,14 +14,25 @@
  *     말했지만 못 알아들어 골라서 끝냄 = assisted · touch · unverified
  *     마이크 없음·거부로 골라서 끝냄 = assisted · touch · unavailable
  *   저장: localStorage 'kedu-en-play-evidence'(kedu_scope 규칙 그대로 — 동의 전에는 이 화면 동안만). 서버는 리포트 묶음에서.
+ *
+ *   증거 v2(설계 v2 §8-1 — 더하기만 한다. 지우는 것 0, v1 기록·하네스 그대로):
+ *     unit    'sound'|'letter'|'word'|'chunk'|'sentence'|'text'            — 무엇의 단위(놀이 등록 정보가 채운다. 없으면 칸을 만들지 않는다)
+ *     skill   … + 'spell'(조각으로 쓰기 — 소리 상자) · 'write'(손 쓰기)
+ *     inputMode … + 'pen'(손가락·펜·마우스의 획)
+ *     support 'none'|'model'|'slow'|'picture'|'choice'|'ghost'|'tiles'     — 받은 도움(없으면 칸을 만들지 않는다)
+ *   PlayEvidence.power(e)  → 'L'|'S'|'R'|'W'   (listen·move → L / say → S / read·blend → R / build·spell·write → W)
+ *   PlayEvidence.powers(n) → 힘별 최근 n건의 「혼자 해냄」 비율 { L:{n,solo,rate}, … }(조립기 약한 힘 보충 · 리포트)
  * ============================================================ */
 (function (g) {
   'use strict';
   var KEY = 'kedu-en-play-evidence';
   var MAX = 800;                                  /* 기기에 남기는 최근 기록 수 */
-  var SKILL = ['say', 'listen', 'read', 'move', 'build', 'blend'];
+  var SKILL = ['say', 'listen', 'read', 'move', 'build', 'blend', 'spell', 'write'];
   var OUTCOME = ['independent', 'assisted', 'attempted', 'not_observed'];   /* 앞일수록 좋은 것 */
-  var INPUT = ['speech', 'touch', 'cam', 'drag'];
+  var INPUT = ['speech', 'touch', 'cam', 'drag', 'pen'];
+  var UNIT = ['sound', 'letter', 'word', 'chunk', 'sentence', 'text'];
+  var SUPPORT = ['none', 'model', 'slow', 'picture', 'choice', 'ghost', 'tiles'];
+  var POWER = { listen: 'L', move: 'L', say: 'S', read: 'R', blend: 'R', build: 'W', spell: 'W', write: 'W' };
   var SPEECH = ['recognized', 'unverified', 'unavailable', 'not_used'];
 
   function load() { try { return JSON.parse(g.localStorage.getItem(KEY)) || []; } catch (e) { return []; } }
@@ -35,9 +46,20 @@
     var sp = o.speechStatus || (o.inputMode === 'speech' ? 'recognized' : 'not_used');
     if (SPEECH.indexOf(sp) < 0) return null;
     if (o.inputMode === 'speech' && sp !== 'recognized') return null;         /* 말로 통과했다면 인식된 것 */
-    return { targetId: String(o.targetId), skill: o.skill, outcome: o.outcome, inputMode: o.inputMode, speechStatus: sp,
+    var v = { targetId: String(o.targetId), skill: o.skill, outcome: o.outcome, inputMode: o.inputMode, speechStatus: sp,
       attempts: Math.max(1, o.attempts | 0), at: o.at || Date.now() };
+    if (o.unit != null) { if (UNIT.indexOf(o.unit) < 0) return null; v.unit = o.unit; }                 /* v2 — 준 것만 적는다 */
+    if (o.support != null) { if (SUPPORT.indexOf(o.support) < 0) return null; v.support = o.support; }
+    return v;
   }
+  /* 쓰기 한 건(v2) — 조각(spell)·손(write). support 'none' = 혼자, 그 밖(유령·조각·시범) = 도움 */
+  function write(targetId, o) {
+    o = o || {};
+    var sup = o.support || 'none';
+    return make({ targetId: targetId, skill: o.skill || 'write', outcome: sup === 'none' && o.clean !== false ? 'independent' : 'assisted',
+      inputMode: o.inputMode || (o.skill === 'spell' ? 'touch' : 'pen'), speechStatus: 'not_used', attempts: o.attempts || 1, unit: o.unit, support: sup });
+  }
+  function power(e) { return (e && POWER[e.skill]) || ''; }
   /* 말하기 한 건 — r = { by:'speech'|'chosen', tries(못 알아들은 횟수), hinted, mic(마이크가 있었나) } */
   function say(targetId, r) {
     r = r || {};
@@ -60,8 +82,15 @@
   }
 
   var PlayEvidence = {
-    KEY: KEY, SKILL: SKILL, OUTCOME: OUTCOME, INPUT: INPUT, SPEECH: SPEECH,
-    make: make, say: say, act: act, spoken: spoken, nextReview: nextReview,
+    KEY: KEY, SKILL: SKILL, OUTCOME: OUTCOME, INPUT: INPUT, SPEECH: SPEECH, UNIT: UNIT, SUPPORT: SUPPORT, POWER: POWER,
+    make: make, say: say, act: act, write: write, spoken: spoken, nextReview: nextReview, power: power,
+    /* 힘별 최근 n건의 혼자 해냄 비율 — 증거가 없는 힘은 n 0 · rate null */
+    powers: function (n) {
+      var out = { L: { n: 0, solo: 0, rate: null }, S: { n: 0, solo: 0, rate: null }, R: { n: 0, solo: 0, rate: null }, W: { n: 0, solo: 0, rate: null } }, a = load();
+      for (var i = a.length - 1; i >= 0; i--) { var p = power(a[i]), o = out[p]; if (!o || o.n >= (n || 30)) continue; o.n++; if (a[i].outcome === 'independent') o.solo++; }
+      Object.keys(out).forEach(function (k) { if (out[k].n) out[k].rate = out[k].solo / out[k].n; });
+      return out;
+    },
     /* meta = { zone, cell, game } */
     record: function (meta, list) {
       meta = meta || {};

@@ -11,7 +11,8 @@
   function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 
   function start(ctx) {
-    var P = g.PlayPhonics, S = ctx.services || {}, cellId = (ctx.zone && ctx.zone.id) || ctx.cell, u = P.units(cellId), list = [];
+    var P = g.PlayPhonics, S = ctx.services || {}, cellId = (ctx.zone && ctx.zone.id) || ctx.cell, list = [];
+    var u = ctx.zone && ctx.zone.step && (ctx.zone.letterItems || []).length ? ctx.zone.letterItems.map(function (x) { return x.w; }) : P.units(cellId);      /* 한 해 길의 글자 걸음 = 그 걸음의 글자 */
     while (u.length && list.length < CONF.rounds) list = list.concat(shuffle(u));
     list = list.slice(0, CONF.rounds);
     /* 소리마다 견줄 것 하나씩 — 같은 종류에서, 소리가 같은 짝은 빼고 */

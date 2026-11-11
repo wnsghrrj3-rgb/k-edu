@@ -583,6 +583,25 @@ window.PLAY_ZONES = {
 };
 /* 같은 무대의 칸들은 장식 목록을 함께 쓴다(둘째 칸의 decor 는 첫 칸 것) */
 window.PLAY_ZONES.zones.forEach(function (z) { if (!z.decor) { var f = window.PLAY_ZONES.cells(z.stage)[0]; z.decor = f ? f.decor : []; } });
+/* 씨앗의 길(설계 v2 §3 · W13) — 낱말마다 하나. 문장째 씨앗 = sentence · 지문 = text · 펼침이 「통단어·해독 강제 대상 아님」으로 적은 것 = sight · 그 밖 = word.
+   (소리 공방·소리 숲의 해독 낱말 = decode 는 core/decode.js 가 붙인다.) 길 없는 재료 0 — tests/content-validation.js 가 센다 */
+window.PLAY_ZONES.SIGHT = {
+  'lv1-01': '*',                              /* 사이트워드 7 */
+  'lv1-05': ['fish', 'bird'],                 /* 펼침 5-1 「fish·bird 는 CVC 아님 → 통째 인지」 */
+  'lv2-04': '*',                              /* 펼침 #4 「해독 강제 대상 아님 — 통단어 카드로만」 */
+  'lv2-07': ['jump'],                         /* -mp 는 #8 예열 — 통단어로 먼저 */
+  'lv2-15': ['feet', 'eye', 'hair'],          /* 펼침 #15 통단어 셋 */
+  'lv2-30': ['happy'], 'lv2-32': ['sing']
+};
+window.PLAY_ZONES.pathFor = function (z, x) {
+  if (x.path) return x.path;
+  if (z.kind === 'story') return 'text';
+  if (/ /.test(x.w)) return 'sentence';
+  var s = this.SIGHT[z.id];
+  if (x.sight || s === '*' || (s && s.indexOf(x.w) >= 0)) return 'sight';
+  return z.kind === 'phonics' ? 'decode' : 'word';
+};
+window.PLAY_ZONES.zones.forEach(function (z) { (z.words || []).forEach(function (x) { x.path = window.PLAY_ZONES.pathFor(z, x); }); });
 /* 그림 — 단어마다 그린 그림(content/art/*.js)을 단다. 그림이 없거나 그림 파일을 싣지 않은 곳에선 글자 카드 */
 window.PLAY_ZONES.zones.forEach(function (z) { (z.words || []).forEach(function (x) {
   var A = window.PlayArt;

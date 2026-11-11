@@ -7,6 +7,9 @@
  *   화면 뼈대: #actbar · #stage · #toast · #bag · #snd (무대 페이지가 둔다)
  *   문(결정 §0-2): 칸의 문이 아직 「구경」이면 무대 주인이 반기고 「내일 또 와」 — 놀이는 없다(?set= 점검은 그대로 들어간다).
  *   알파벳 칸(구역 bundles): 조립기가 정한 오늘의 묶음을 소리 도구에 알리고(PlayPhonics.setBundle), 가방·끝 카드는 묶음 차례로.
+ *   W13(설계 v2 · 한 해 길): 씨앗은 열쇠로 본다(PlaySeed.key — 입말·글자는 따로 심긴다) · 물 주기 = 단계별 오늘 차례(새싹 6·꽃 4·열매 글자 12 — 조립기 caps) ·
+ *     한 해 길의 걸음(zone.step)은 조립기 v2(PlayAssemble.day — 만나는 날·읽는 날·쓰는 날)로 짜고, 문은 걸음 차례(PlayPath.open), 끝나면 덮는 사다리 칸 점등(PlayPath.finish) ·
+ *     어른 설정 「손 쓰기 대신 조각으로」(?tiles=1 로 켜고 ?tiles=0 으로 끔 — 화면 설정에 남는다).
  * ============================================================ */
 (function (g) {
   'use strict';
@@ -15,7 +18,12 @@
     var document = g.document, location = g.location;
     var $ = function(id){ return document.getElementById(id); }, stage = $('stage');
     var byW = {}; WORDS.forEach(function(w){ byW[w.w] = w; });
+    /* 씨앗 열쇠 — 입말(o:)·글자(l:)는 따로 심긴다 */
+    var K = function(x){ return PlaySeed.key ? PlaySeed.key(x.w, x.path) : x.w; }, KEYS = WORDS.map(K), byK = {};
+    WORDS.concat(Z.letterItems || []).forEach(function(x){ byK[K(x)] = x; });
     var QS = location.search, mode = /mode=care/.test(QS) ? 'care' : 'play';
+    if (/[?&]tiles=[01]/.test(QS) && PlayGame.setPref) PlayGame.setPref('tiles', /[?&]tiles=1/.test(QS));
+    var TILES = !!(PlayGame.pref && PlayGame.pref('tiles'));
     var unlocked = PlaySeed.bossDone(Z.id), DKEY = Z.decorKey || Z.id, HOST = conf.host || 'sam';
     if (Z.palette) document.body.setAttribute('data-palette', Z.palette);     /* 무대색(ui/tokens.css) */
     if (conf.icon && $('title')) $('title').innerHTML = PlayIcon.html(conf.icon) + ' ' + $('title').textContent.trim();
@@ -26,7 +34,7 @@
     function confetti(){ PlayFx.confetti(); }
     function bag(){
       if (Z.bundles) { var k = typeof BUNDLE === 'number' ? BUNDLE : 0; $('bag').innerHTML = PlayIcon.html('abc') + ' ' + (k + 1) + '/' + Z.bundles.length; return; }     /* 알파벳 칸 — 소리 묶음 차례 */
-      var n = 0, s = PlaySeed.all(); W.forEach(function(w){ if (s[w]) n++; }); $('bag').innerHTML = PlayIcon.html('seed') + ' ' + n + '/' + W.length; }
+      var n = 0, s = PlaySeed.all(); KEYS.forEach(function(k){ if (s[k]) n++; }); $('bag').innerHTML = PlayIcon.html('seed') + ' ' + n + '/' + W.length; }
     function decor(fresh){ var d = $('decor'); if (d) d.innerHTML = PlayAssemble.decor(DKEY, Z).map(function(x){ return '<span title="' + x.name + '"' + (fresh && fresh.id === x.id ? ' class="new"' : '') + '>' + PlayIcon.html(x.icon) + '</span>'; }).join(''); }
     function shop(ev){
       var box = h('div','shop');
@@ -53,7 +61,7 @@
       sam: { say: sam, react: samFace, el: function(){ return $('samf'); } } };
 
     /* ── 문 — 아직 구경만 되는 칸(앞 칸의 특별 손님만 넘음)·안개 칸이면 놀이 없이 반기기만 ── */
-    var DOOR = /[?&]set=/.test(QS) || !g.PLAY_ZONES || !g.PLAY_ZONES.door ? 'open' : g.PLAY_ZONES.door(Z.id, PlaySeed);
+    var DOOR = /[?&]set=/.test(QS) ? 'open' : Z.step ? (!g.PlayPath || g.PlayPath.open(Z.id, PlaySeed) ? 'open' : 'fog') : (!g.PLAY_ZONES || !g.PLAY_ZONES.door ? 'open' : g.PLAY_ZONES.door(Z.id, PlaySeed));
     if (DOOR !== 'open') return visit(DOOR);
     function visit(door) {
       $('actbar').style.display = 'none'; if ($('snd')) $('snd').style.display = 'none'; bag();     /* 구경 — 놀이도 효과음 단추도 없다 */
@@ -66,23 +74,33 @@
     }
 
     /* ── 오늘의 세트 — 조립기가 정한다 ── */
-    function unplanted(){ var s = PlaySeed.all(); return W.filter(function(w){ return !s[w]; }); }
+    function unplanted(){ var s = PlaySeed.all(); return WORDS.filter(function(x){ return !s[K(x)]; }).map(function(x){ return x.w; }); }
+    /* 오늘 물 줄 것 — 단계별 차례(오래 기다린 것부터) + 하루 상한. 걸음은 지난 걸음 낱말까지, 예전 칸은 그 칸 것만 */
+    function dueNow(){
+      if (!PlaySeed.dueBy || !PlayAssemble.caps) return { sprout: PlaySeed.due(Z.id).filter(function(w){ return byW[w]; }).map(function(w){ return byW[w]; }), flower: [], fruit: [] };
+      var look = function(k){ return byK[k] || (Z.step && g.PlayPath && g.PlayPath.item(k) ? g.PlayPath.item(k).item : null); };
+      var jobs = function(x){ return !g.PlayGarden || !g.PlayGarden.jobs || g.PlayGarden.jobs(x, PlaySeed.get(K(x)), { tiles: TILES, api: PlaySeed }).filter(function(j){ return (j !== 'spell' && j !== 'write') || !!g.PlaySoundBox; }).length > 0; };
+      var pick = function(st){ return PlaySeed.dueBy(st, Z.step ? undefined : Z.id).map(look).filter(Boolean).filter(jobs); };
+      return PlayAssemble.caps({ sprout: pick(1), flower: pick(2), fruit: TILES ? pick(3) : [] });
+    }
+    var DUE = dueNow(), DUELIST = DUE.sprout.concat(DUE.flower, DUE.fruit);
     function review(){ var sm = PlayEvidence.summary(Z.id, W); return W.filter(function(w){ var k = sm[w].skills; return Object.keys(k).some(function(x){ return k[x] !== 'independent'; }); }); }
     function makePlan(){
       var m = /[?&]set=([^&]+)/.exec(QS), e = /[?&]event=([\w-]+)/.exec(QS);
       if (m) return { manual: true, event: null, set: decodeURIComponent(m[1]).split(',').filter(function(id){ return !!PlayGame.get(id); }) };
       if (mode === 'care') return { manual: true, event: null, set: ['garden'] };
-      return PlayAssemble.plan({ zone: Z, cell: Z.id, cam: PlayCam.available(), unplanted: unplanted().length, due: PlaySeed.due(Z.id).length, event: e ? e[1] : null });
+      if (Z.step && PlayAssemble.day) return PlayAssemble.day({ zone: Z, cell: Z.id, cam: PlayCam.available(), mic: micOK, due: DUELIST.length });      /* 한 해 길의 걸음 — 조립 v2 */
+      return PlayAssemble.plan({ zone: Z, cell: Z.id, cam: PlayCam.available(), unplanted: unplanted().length, due: DUELIST.length, event: e ? e[1] : null });
     }
-    var PLAN = makePlan(), SET = PLAN.set, INFO = { unplanted: unplanted(), review: review() };
+    var PLAN = makePlan(), SET = PLAN.set, INFO = { unplanted: unplanted(), review: review(), flower: DUE.flower };
     var BUNDLE = Z.bundles ? (PLAN.bundle != null ? PLAN.bundle : Math.min(PlayAssemble.history(Z.id).days.filter(function(d){ return d.day < PlayAssemble.today(); }).length, Z.bundles.length - 1)) : null;
     if (BUNDLE != null && g.PlayPhonics) g.PlayPhonics.setBundle(Z.id, BUNDLE);      /* 오늘 연습할 소리 = 이 묶음 */
-    var EV = PLAN.event ? ((g.PLAY_EVENTS || {})[Z.stage] || []).filter(function(x){ return x.id === PLAN.event; })[0] : null;
+    var EV = PLAN.event ? ((g.PLAY_EVENTS || {})[Z.id] || (g.PLAY_EVENTS || {})[Z.stage] || []).filter(function(x){ return x.id === PLAN.event; })[0] : null;
     var TARGETS = SET.map(function(id){
-      if (id === 'garden') return PlaySeed.due(Z.id).filter(function(w){ return byW[w]; }).map(function(w){ return byW[w]; });
+      if (id === 'garden') return DUELIST;
       return PlayAssemble.targets(id, Z, INFO);
     });
-    function optFor(i){ var o = { last: i === SET.length - 1 }, x = EV && SET[i] === PLAN.eventGame ? EV.opt : null; if (x) Object.keys(x).forEach(function(k){ o[k] = x[k]; }); return o; }
+    function optFor(i){ var o = { last: i === SET.length - 1, tiles: TILES }, x = EV && SET[i] === PLAN.eventGame ? EV.opt : null; if (x) Object.keys(x).forEach(function(k){ o[k] = x[k]; }); return o; }
     function ctxFor(i, body, intro){
       return { host: body, zone: Z, cell: Z.id, targets: TARGETS[i], pool: WORDS, learner: { mic: MIC }, services: SV, intro: intro, opt: optFor(i), onEvidence: onEvidence };
     }
@@ -115,8 +133,9 @@
     /* 특별 손님을 넘었다 — 무대가 열리고(사다리 칸 점등), 다음 자리의 안개가 걷힌다(결정 §0-2: 구경은 바로, 놀이 입장은 꽃 ¾ 뒤) */
     function openShop(by){
       PlaySeed.bossPassed(Z.id, by);
-      KProgress.light(Z.id);   /* 사다리와 동기 — 그 칸 점등 */
+      if (!Z.step) KProgress.light(Z.id);   /* 사다리와 동기 — 그 칸 점등 */
       unlocked = true; $('sign').classList.add('on'); glow(); PlayAudio.play('done'); confetti();
+      if (Z.step && g.PlayPath) g.PlayPath.finish(Z.id, PlaySeed);      /* 한 해 길의 걸음 — 문이 다 찼을 때 덮는 사다리 칸들 */
       var o = conf.open || { en: 'Good!', ko: '해냈어!' };
       sam(o.en, o.ko).then(function(){ endCard(); });
     }
@@ -133,7 +152,8 @@
       decor(deco);
       body.innerHTML = '';
       var s = PlaySeed.all(), card = h('div', 'endcard');
-      var nSeed = W.filter(function(w){ return s[w]; }).length;
+      var nSeed = KEYS.filter(function(k){ return s[k]; }).length;
+      if (Z.step && g.PlayPath) g.PlayPath.finish(Z.id, PlaySeed);        /* 걸음의 문이 오늘 다 찼으면 사다리 칸 점등 */
       if (Z.bundles) {       /* 알파벳 칸 — 오늘 익힌 소리 묶음 · 내일은 다음 묶음(마지막 묶음 날 특별 손님을 넘으면 칸 점등) */
         var last = BUNDLE >= Z.bundles.length - 1;
         card.innerHTML = '<div class="big">' + PlayIcon.html('abc') + '</div><h2>' + (unlocked ? (conf.opened || '해냈어요!') : '오늘의 소리 ' + (BUNDLE + 1) + '/' + Z.bundles.length) + '</h2>' +
@@ -146,7 +166,7 @@
         return;
       }
       card.innerHTML = '<div class="big">' + PlayIcon.html('seed') + '</div><h2>' + (nSeed ? '씨앗 ' + nSeed + '개를 심었어요' : unlocked ? (conf.opened || '해냈어요!') : '오늘 놀이 끝!') + '</h2>' +
-        '<div class="seedrow">' + W.map(function(w){ var st = s[w] ? s[w].stage : -1; return '<span class="seed s' + st + '" title="' + w + '">' + (byW[w].pic || '<i class="seedw">' + w + '</i>') + '</span>'; }).join('') + '</div>' +
+        '<div class="seedrow">' + WORDS.map(function(x){ var st = s[K(x)] ? s[K(x)].stage : -1; return '<span class="seed s' + st + '" title="' + x.w + '">' + (x.pic || '<i class="seedw">' + x.w + '</i>') + '</span>'; }).join('') + '</div>' +
         (nSeed ? '' : '<div class="note" style="margin-bottom:6px">' + (conf.seedHint || '말로 하면 씨앗이 심겨요.') + '</div>') +
         '<div class="note">' + (conf.endNote || '내일 다시 와서 말해 주면 새싹이 돼요.') + '</div>' +
         (deco ? '<div class="note" id="newdeco" style="margin-top:8px">' + PlayIcon.html(deco.icon) + ' ' + (conf.where || '무대') + '에 ' + deco.name + '이(가) 생겼어요 — 내일은 또 무엇이 생길까요?</div>' : '') +

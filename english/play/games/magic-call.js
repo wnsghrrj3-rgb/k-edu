@@ -119,7 +119,7 @@
   g.PlayMagic = { CONF: CONF, machine: machine, start: start };
   if (g.PlayGame) g.PlayGame.register({
     id: 'magic-call', no: 19, name: '마법 주문', icon: 'wand', channels: ['say'], axis: 'talk', need: { lv1: 5 }, plants: true,
-    fits: function (zone) { return (zone.kind === 'things' || zone.kind === 'action') && (zone.words || []).filter(function (x) { return g.PlayArt && g.PlayArt.has(x.art || x.w); }).length >= CONF.shelf; },
+    fits: function (zone) { return (zone.kind === 'things' || zone.kind === 'action' || zone.step) && (zone.words || []).filter(function (x) { return x.drawn !== false && g.PlayArt && g.PlayArt.has(x.art || x.w); }).length >= CONF.shelf; },
     count: function (c) { return Math.min(CONF.rounds, (c.targets || []).length); },
     intro: { en: 'Call it!', ko: '하나를 골라 이름을 불러 봐 — 그대로 해 줄게!' },
     start: start

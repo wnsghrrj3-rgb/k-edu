@@ -8,6 +8,9 @@
  *             대화 칸(talk — I like) = 손님(Amy)이 친구와 대화의 장면을 새 차례로, 모델 없이(PlayTalk) ·
  *             첫 단어 칸(sight)·단어와 그림 칸 = 단어 카드 읽기(통째로 보는 단어는 쪼개지 않는다).
  *   Lv2(W08): 문법 칸(gram) = 손님 그림 주문 → 문장 자판기 · 그림책방(story) = 처음 보는 지문 읽기.
+ *   특별 손님 v2(설계 v2 §4 · W13): 그 칸에 꽃 이상 낱말이 있으면 한 번은 글자만 적힌 쪽지로 주문한다(읽기 — 혼자 읽어 냈는지의 증거. 문 조건은 그대로 말).
+ *   한 해 길 글자 숲(part A): 앞 걸음 낱말을 섞어 「무슨 소리로 시작해?」(첫 글자 고르기 셋) + 끝에 「I like it!」 한마디.
+ *   한 해 길의 그 밖 걸음: 처음 보는 낱말(응용 — zone.more) 읽기부터.
  *   공통 인터페이스: start(ctx) → Promise({ completed, passed:true, by:'speech'|'chosen' }) · ctx.zone.boss.turns 사용
  * ============================================================ */
 (function (g) {
@@ -48,14 +51,22 @@
     root.appendChild(ask); root.appendChild(frame); root.appendChild(act); root.appendChild(dots);
     var i = 0, bys = [];
     /* 읽기 판 — 응용 단어(처음 보는 단어)부터 셋 */
-    var letters = !!(Z.letters && Z.bundles && g.PlayPhonics), reading = !letters && (Z.kind === 'phonics' || !turns.length), cards = [];
+    var letters = !!(Z.letters && Z.bundles && g.PlayPhonics), firsts = !!(Z.step && Z.part === 'A' && (Z.letterItems || []).length), reading = !letters && !firsts && (Z.kind === 'phonics' || !turns.length), cards = [];
+    if (firsts) {                                    /* 글자 숲 — 이 걸음과 앞 걸음의 입말 낱말에서 셋 */
+      var oralAll = (Z.words || []).filter(function (x) { return x.path === 'oral' && x.drawn !== false; });
+      if (g.PlayPath) g.PlayPath.steps().slice(0, Math.max(0, g.PlayPath.index(Z.id))).forEach(function (s2) { (g.PlayPath.zone(s2.id).words || []).forEach(function (x) { if (x.path === 'oral' && x.drawn !== false) oralAll.push(x); }); });
+      cards = shuffle(oralAll).slice(0, CONF.show); frame.textContent = 'I like it!';
+    }
+    /* 쪽지 주문 — 꽃 이상인 낱말 하나(그림이 있는 것) */
+    var seedS = S.seed, noteW = null;
+    if (!letters && !firsts && !reading && seedS && seedS.all) { var allS = seedS.all(); noteW = shuffle((Z.words || []).filter(function (x) { var e = allS[seedS.key ? seedS.key(x.w, x.path) : x.w]; return e && e.stage >= 2 && x.pic && !/ /.test(x.w); }))[0] || null; if (noteW) turns.splice(Math.min(1, turns.length), 0, { note: noteW }); }
     if (letters) { cards = Z.bundles.map(function (b) { return shuffle(b)[0]; }); frame.style.display = 'none'; }        /* 묶음마다 소리 하나 */
     if (reading) {
-      var ws = (Z.words || []).slice(), ap = shuffle(ws.filter(function (x) { return x.role === 'apply'; })), rest = shuffle(ws.filter(function (x) { return x.role !== 'apply'; }));
+      var ws = (Z.words || []).filter(function (x) { return !Z.step || x.path === 'decode' || x.path === 'sight'; }).concat(Z.step ? (Z.more || []) : []), ap = shuffle(ws.filter(function (x) { return x.role === 'apply'; })), rest = shuffle(ws.filter(function (x) { return x.role !== 'apply'; }));
       cards = ap.concat(rest).slice(0, CONF.show);
       frame.style.display = 'none';
     }
-    var total = reading || letters ? cards.length : turns.length;
+    var total = firsts ? cards.length + 1 : reading || letters ? cards.length : turns.length;
     function alive() { return root.parentNode === host && root.isConnected !== false && !(ctx.signal && ctx.signal.aborted); }
     function later(ms, fn) { setTimeout(function () { if (alive()) fn(); }, ms); }
     function speak(en) { return G.soon(tts ? tts.sentence(en) : null); }
@@ -65,6 +76,8 @@
         dots.innerHTML = new Array(total + 1).join('x').split('').map(function (_, k) { return '<i class="' + (k < i ? 'ok' : k === i ? 'on' : '') + '"></i>'; }).join('');
         if (i >= total) return resolve({ completed: true, passed: true, by: bys.indexOf('speech') >= 0 ? 'speech' : 'chosen' });
         if (letters) return soundTurn();
+        if (firsts) return i < cards.length ? firstTurn() : likeTurn();
+        if (!reading && turns[i].note) return noteTurn(turns[i].note);
         if (reading) return readTurn();
         var t = turns[i];
         npc.react(q.G[who], 'wait'); act.innerHTML = '';
@@ -86,6 +99,49 @@
           ask.innerHTML = '<b>' + rep[0] + '</b><small>' + rep[1] + '</small>';
           speak(rep[0]).then(function () { i++; later(CONF.replyGap, turn); });
         });
+      }
+      /* 보기 타일 — 맞는 것을 고를 때까지(다르면 그 타일만 흐려진다). done(clean, tries) */
+      function choose(opts, want, face, again, done, cls) {
+        var tries = 1, clean = true, over = false, box = h('div', 'oq-offer ' + (cls || 'sg-letters')); act.innerHTML = '';
+        shuffle(opts).forEach(function (k) {
+          var b = h('button', 'tile', face(k)); b.type = 'button'; b.setAttribute('data-u', k); b.setAttribute('data-w', k);
+          b.onclick = function () { if (over || b.disabled) return; if (k !== want) { clean = false; tries++; b.disabled = true; b.classList.add('dim'); ctx.oops(); if (again) again(); return; } over = true; b.classList.add('ok'); done(clean, tries); };
+          box.appendChild(b);
+        });
+        act.appendChild(box);
+      }
+      function replyNext() { var rep = REP[i % REP.length]; ask.innerHTML = '<b>' + rep[0] + '</b><small>' + rep[1] + '</small>'; speak(rep[0]).then(function () { i++; later(CONF.replyGap, turn); }); }
+      /* 글자 숲 — 무슨 소리로 시작해? */
+      function firstTurn() {
+        var x = cards[i], c = x.letter || x.w.charAt(0), v = 'aeiou', pool = (v.indexOf(c) >= 0 ? v : 'bcdfghjklmnprstvwyz').split('').filter(function (k) { return k !== c; });
+        npc.react(q.G[who], 'wait'); q.say(x.pic, false);
+        ask.innerHTML = '<b>Listen!</b><small>무슨 소리로 시작할까? 글자를 골라 줘.</small>';
+        var say = function () { return G.soon(tts ? tts.word(x.w) : null); };
+        choose([c].concat(shuffle(pool).slice(0, 2)), c, function (k) { return '<span class="ph-chip">' + k + '</span>'; }, say, function (clean, tries) {
+          bys.push('chosen'); ctx.emit(E.act(x.w, 'listen', 'touch', clean, tries)); ctx.good(clean, { at: q.G[who] }); npc.react(q.G[who], 'ok', { stay: true }); replyNext();
+        });
+        say();
+      }
+      /* 글자 숲 — 끝에 한마디 「I like it!」 */
+      function likeTurn() {
+        npc.react(q.G[who], 'wait'); act.innerHTML = ''; frame.style.display = ''; frame.textContent = 'I like it!';
+        ask.innerHTML = '<b>I like it!</b><small>너도 말해 줘!</small>';
+        speak('I like it!').then(function () { if (!alive()) return; return g.PlayTutor.ask(ctx, { host: act, cands: ['it'], kind: 'sentence', sentence: function () { return 'I like it!'; }, hint0: true }); }).then(function (r) {
+          if (!r || !alive()) return;
+          bys.push(r.by); frame.classList.add('done'); ctx.good(r.by === 'speech' && !r.hinted, { at: q.G[who] }); npc.react(q.G[who], 'cheer', { stay: true });
+          i++; later(CONF.replyGap, turn);
+        });
+      }
+      /* 쪽지 주문 — 글자만 보고 그 그림을 고른다(읽기) */
+      function noteTurn(x) {
+        npc.react(q.G[who], 'wait'); frame.style.display = 'none';
+        q.say('<span class="sg-note">' + x.w + '</span>', false); q.bub.classList.remove('multi');
+        ask.innerHTML = '<b>' + ASK[0] + '</b><small>쪽지에 적힌 것을 찾아 줘.</small>';
+        var others = shuffle((Z.words || []).filter(function (y) { return y.w !== x.w && y.pic && !/ /.test(y.w); })).slice(0, 2).map(function (y) { return y.w; });
+        choose([x.w].concat(others), x.w, function (k) { return pic[k] || k; }, null, function (clean, tries) {
+          bys.push('chosen'); ctx.emit(E.make({ targetId: x.w, skill: 'read', outcome: clean ? 'independent' : 'assisted', inputMode: 'touch', attempts: tries, support: clean ? 'none' : 'choice' }));
+          ctx.good(clean, { at: q.G[who] }); npc.react(q.G[who], 'ok', { stay: true }); frame.style.display = ''; replyNext();
+        }, 'sg-notes');
       }
       /* 알파벳 판의 한 소리 — 손님이 소리를 내면 글자 셋 중에서 찾는다(지금까지 익힌 글자에서). 다르면 그 글자만 흐려지고 소리를 다시 */
       function soundTurn() {
@@ -135,6 +191,7 @@
     id: 'special-guest', no: 27, name: '특별 손님', icon: 'crown', channels: ['say', 'talk'], axis: 'quest', need: {}, last: true,
     count: function (c) { var z = c.zone || {};
       if (z.letters && z.bundles) return z.bundles.length;
+      if (z.step && z.part === 'A') return (z.letterItems || []).length ? CONF.show + 1 : 0;
       if (z.talk && !(z.boss && z.boss.turns)) return z.talk.length;
       if (z.gram) return 6;
       if (z.kind === 'story') return 2;

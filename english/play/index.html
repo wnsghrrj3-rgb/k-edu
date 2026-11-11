@@ -35,6 +35,12 @@
     <div class="tx"><b id="dueT">오늘 돌볼 씨앗</b><span id="dueS">말해서 심은 씨앗은 며칠 뒤에 다시 말해 주면 자라요.</span></div>
   </section>
 
+  <section class="pathcard" id="pathCard" style="display:none">
+    <div class="pi" id="pathI"></div>
+    <div class="pt"><b id="pathT"></b><span id="pathS"></span><i id="pathD"></i></div>
+    <button class="btn" id="pathBtn" type="button">가기</button>
+  </section>
+
   <section class="map" id="map1">
     <h2 id="mapT1">소리 마을 — 처음 온 친구는 여기부터</h2>
     <div class="grid g5" id="grid1"></div>
@@ -89,12 +95,14 @@
 <script src="content/art/mirror.js"></script>
 <script src="content/art/things.js"></script>
 <script src="data/zones.js"></script>
+<script src="data/path.js"></script>
 <script src="content/phonics.js"></script>
 <script src="content/phonics-lv1.js"></script>
 <script src="engine/play-seed.js"></script>
 <script src="engine/play-char.js"></script>
 <script src="core/npc.js"></script>
 <script src="core/decode.js"></script>
+<script src="core/path.js"></script>
 <script>
 (function(){
   var Z = PLAY_ZONES, $ = function(id){ return document.getElementById(id); }, I = PlayIcon.html;
@@ -116,7 +124,7 @@
   $('machineT').innerHTML = I('wrench') + ' 소리 기계 <small>소리 칸을 마치면 불이 들어와요</small>';
 
   /* 오늘 돌볼 씨앗 — 복습이 새 구역보다 먼저(아래 단추 하나가 돌보기로 바뀐다) */
-  var due = PlaySeed.due();
+  var due = PlaySeed.dueBy ? PlaySeed.dueBy(1).concat(PlaySeed.dueBy(2)) : PlaySeed.due();      /* 물 줄 것 — 새싹·꽃 차례(열매는 손 쓰기 — W14) */
   $('dueN').textContent = due.length; if (!due.length) $('dueN').className = 'n zero';
   if (due.length) {
     $('dueT').textContent = '오늘 돌볼 씨앗 ' + due.length + '개';
@@ -125,6 +133,17 @@
     var zid = seeds[due[0]].zone, z = Z.zone(zid);
     $('careBtn').onclick = function(){ location.href = (z ? z.page : 'zone/food1.html') + (z && /\?/.test(z.page) ? '&' : '?') + 'mode=care'; };
   } else if (planted) { $('dueT').textContent = '오늘 돌볼 씨앗 없음'; $('dueS').textContent = '다 자라는 중이에요. 내일 다시 와요.'; }
+  /* 한 해 길(한 해 길 v1 — 파닉스부터 52걸음) — 오늘의 걸음. 방 이름·그 주의 글자(낱말) · 걸음의 문이 찬 만큼 점(숫자 0). 섬 지도는 W16 */
+  if (window.PlayPath && PlayPath.steps().length) {
+    var st = PlayPath.current(PlaySeed);
+    if (st) {
+      var pz = PlayPath.zone(st.id), gt = PlayPath.gate(st.id, PlaySeed), need = gt.letters.need + gt.words.need + 1, have = Math.min(gt.letters.have, gt.letters.need) + Math.min(gt.words.have, gt.words.need) + (gt.guest ? 1 : 0);
+      $('pathCard').style.display = ''; $('pathCard').setAttribute('data-step', st.id); $('pathCard').setAttribute('data-palette', pz.palette);
+      $('pathI').innerHTML = I(pz.icon); $('pathT').textContent = pz.name; $('pathS').textContent = '오늘의 걸음 — ' + st.title;
+      $('pathD').innerHTML = new Array(need + 1).join('x').split('').map(function(_, k){ return '<u class="' + (k < have ? 'on' : '') + '"></u>'; }).join('');
+      $('pathBtn').onclick = function(){ location.href = pz.page; };
+    }
+  }
   /* 월드의 문(결정 §0-2 를 월드 단위로) — Lv1 「소리 마을」은 늘 열림. Lv2 「마을」은 이미 시작했거나 Lv1 을 마치면 열림(주소 ?world=lv2 = 어른 점검용 — 이 화면에서만) */
   var W2 = /[?&]world=lv2/.test(location.search) ? 'open' : Z.worldDoor('lv2', PlaySeed);
   var next1 = Z.nextCell('lv1', PlaySeed);

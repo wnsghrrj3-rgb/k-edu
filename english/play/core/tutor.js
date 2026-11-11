@@ -133,6 +133,7 @@
       if (!mic.ok()) return offer();
       micEl = h('button', 'mic', g.PlayIcon.html('mic')); micEl.type = 'button'; heardEl = h('div', 'heard', '');
       wrap.appendChild(micEl); wrap.appendChild(heardEl);
+      if (g.PlayEcho && !o.hint0) g.PlayEcho.button(wrap);            /* 메아리(#35) — 내 소리를 바로 다시 듣기(판정 0 · 저장 0). 힌트 0 판(특별 손님)에는 없다 */
       micEl.onclick = function () { if (!listening && !over) listen(); };
       if (mic.primed() && G.canSound()) later(CONF.listenGap, listen); else heardEl.textContent = '마이크를 누르고 말해 봐';
     });

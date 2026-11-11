@@ -5,6 +5,9 @@
  *   ② 조건 칸: 놀이의 need 가 그 칸보다 앞인가(조건 칸 미달 놀이가 켜지지 않는가)는 조립기 하네스가 본다
  *   ③ Lv1 「소리 마을」(W06): 소리 숲 8칸 재료 검사(같은 규칙) · 알파벳 묶음 · 칸 12 · 문(gates) · 단어와 그림 칸 = 앞 소리 칸에서 읽을 수 있는 CVC ·
  *      Lv1 무대에서 들리는 영어(놀이 시작 한마디·사건·대화·특별 손님)는 Lv1 #1·#2 낱말 + 그 칸까지의 동물 + 감탄만
+ *   ④ 설계 v2 · 한 해 길(W13): 길 없는 재료 0(구역 낱말·걸음 낱말마다 씨앗의 길) · 걸음 재료가 길 자료 안 · 길 자료 = 생성 파일 ·
+ *      걸음마다 내용 최소치(사건 넷 · 켤 수 있는 놀이 여덟(힘마다 둘) · 쪽지 셋 · 부탁 하나 · 챈트 하나 · 이야기 세 마디)를 세어 **목록으로 보고**한다
+ *      (모자란 것은 위반이 아니다 — 걸음 상세판과 그 무대 묶음에서 채운다). 자세한 목록: --min
  *   위반이 하나라도 있으면 종료 코드 1.
  * ============================================================ */
 const fs = require('fs'), path = require('path'), vm = require('vm');
@@ -17,6 +20,7 @@ load('../v3/engine/k-tts.js');
 load('data/zones.js');
 load('content/phonics.js');
 load('content/phonics-lv1.js');
+load('data/path.js');
 load('core/decode.js');
 
 const P = win.PlayPhonics, cells = P.cells();     /* 소리 공방(Lv2) 12칸 — Lv1 소리 숲 칸은 아래 ③ */
@@ -97,6 +101,38 @@ const G1 = {}; L1.forEach(z => (z.fixedGames || z.games || []).forEach(id => { G
 (ZS.zone('lv1-02').talk || []).forEach((t, k) => { say1('대화 ' + (k + 1), t.line.en); t.pick.forEach(w => { if (!ZS.zone('lv1-02').words.some(x => x.w === w)) violations.push('대화 ' + (k + 1) + ' — 고를 문장 ' + w + ' 이 칸 단어에 없음'); say1('대화 ' + (k + 1), w); }); });
 L1.forEach(z => ((z.boss && z.boss.turns) || []).forEach(t => say1(z.id + ' 특별 손님', t.ask)));
 console.log('소리 마을(Lv1) 검사: 칸 ' + L1.length + ' · 소리 숲 ' + forest.length + '칸 · 알파벳 묶음 ' + (abc ? abc.bundles.length : 0) + ' · 문 ' + Object.keys(ZS.gates).filter(k => /^lv1-/.test(k)).length + ' → 위반 ' + (violations.length - l1v0));
+/* ── ④ 설계 v2 · 한 해 길 ── */
+load('core/path.js'); load('engine/play-seed.js'); load('core/game.js');
+fs.readdirSync(path.join(ROOT, 'games')).filter(f => /\.js$/.test(f)).forEach(f => { try { load('games/' + f); } catch (e) { violations.push('놀이 파일 ' + f + ' — 실을 수 없음: ' + e.message); } });
+const PP = win.PlayPath, PS = win.PlaySeed, PG = win.PlayGame, v4 = violations.length;
+const PATHS = Object.keys(PS.PATHS);
+win.PLAY_ZONES.zones.forEach(z => (z.words || []).forEach(x => { if (PATHS.indexOf(x.path) < 0) violations.push(z.id + ' ' + x.w + ' — 씨앗의 길이 없음'); }));
+const VOC = PP.vocab(), outside = {};
+win.PLAY_ZONES.zones.forEach(z => (z.words || []).forEach(x => String(x.w).toLowerCase().replace(/[^a-z' ]/g, ' ').split(/\s+/).filter(Boolean).forEach(t => { if (!VOC[t]) (outside[z.id] = outside[z.id] || []).push(t); })));
+if (PP.steps().length !== 52) violations.push('한 해 길 — 걸음이 52 가 아님');
+const short = [], tally = { story: 0, chant: 0, events: 0, notes: 0, favor: 0, games: 0, full: 0 };
+PP.steps().forEach(st => {
+  const z = PP.zone(st.id);
+  z.words.concat(z.letterItems).forEach(x => { if (PATHS.indexOf(x.path) < 0) violations.push(st.id + ' ' + x.w + ' — 씨앗의 길이 없음'); });
+  z.words.forEach(x => String(x.w).toLowerCase().replace(/[^a-z' ]/g, ' ').split(/\s+/).filter(Boolean).forEach(t => { if (!VOC[t]) violations.push(st.id + ' ' + x.w + ' — 길 자료 밖 낱말'); }));
+  (st.covers || []).forEach(c => { if (!/^lv[12]-\d\d$/.test(c)) violations.push(st.id + ' 덮는 칸 ' + c + ' — 사다리 칸 이름이 아님'); });
+  /* 내용 최소치(설계 v2 §1-2 표) */
+  const usable = z.games.filter(id => { const d = PG.get(id); return d && !d.draft && (!d.fits || d.fits(z)); });
+  const per = { L: 0, S: 0, R: 0, W: 0 }; usable.forEach(id => (PG.get(id).skills || []).forEach(p => { if (per[p] != null) per[p]++; }));
+  const lack = [];
+  if (st.story.length < 3) { lack.push('이야기 ' + st.story.length + '/3'); tally.story++; }
+  if (st.chant.length < 1) { lack.push('챈트 0/1'); tally.chant++; }
+  if ((st.events || []).length < 4) { lack.push('사건 ' + (st.events || []).length + '/4'); tally.events++; }
+  if ((st.notes || []).length < 3) { lack.push('쪽지 ' + (st.notes || []).length + '/3'); tally.notes++; }
+  if (!st.favor) { lack.push('부탁 0/1'); tally.favor++; }
+  if (usable.length < 8 || Object.keys(per).some(k => per[k] < 2)) { lack.push('놀이 ' + usable.length + '/8(' + Object.keys(per).map(k => k + per[k]).join(' ') + ')'); tally.games++; }
+  if (!lack.length) tally.full++; else short.push(st.id + ' ' + st.title + ' — ' + lack.join(' · '));
+});
+const nOut = Object.keys(outside).reduce((n, k) => n + outside[k].length, 0);
+console.log('한 해 길 검사: 걸음 ' + PP.steps().length + ' · 길 낱말 ' + Object.keys(VOC).length + ' → 위반 ' + (violations.length - v4));
+console.log('  내용 최소치 — 다 갖춘 걸음 ' + tally.full + '/52 · 모자란 걸음: 사건 ' + tally.events + ' · 쪽지 ' + tally.notes + ' · 부탁 ' + tally.favor + ' · 놀이(여덟·힘마다 둘) ' + tally.games + ' · 챈트 ' + tally.chant + ' · 이야기 ' + tally.story + ' (목록: --min)');
+if (nOut) console.log('  예전 칸 재료 중 길 자료 밖 낱말 ' + nOut + ' — ' + Object.keys(outside).map(k => k + ':' + outside[k].join('·')).join(' / ') + ' (그 칸은 길의 걸음으로 옮길 때 길 재료로 바뀐다)');
+if (process.argv.indexOf('--min') >= 0) console.log(short.join('\n'));
 console.log('비주얼 규범 검사: 제작 파일 ' + look.length + '개 → 위반 ' + visual);
 console.log('소리 공방 재료 검증: ' + cells.length + '칸 · 단어 ' + words + ' · 조립할 수 있는 단어 ' + build + ' · 한 소리 짝 ' + pairs + ' → 위반 ' + violations.length);
 if (violations.length) { console.log(violations.join('\n')); process.exit(1); }

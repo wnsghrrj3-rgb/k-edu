@@ -169,11 +169,11 @@
         var z = {
           id: c.id, world: S.stage.world, slug: 'p' + c.n, stage: S.stage.id, kind: 'phonics', decorKey: S.stage.id,
           name: S.stage.name, cellName: c.label, icon: S.stage.icon, palette: S.palette, page: S.stage.page + '?cell=' + c.id,
-          words: own(c.id).map(function (x) { return { w: x.w, ko: x.ko || '', pic: g.PlayArt && g.PlayArt.has(x.w) ? g.PlayArt.html(x.w) : '', t: x.t, s: x.s, build: x.build !== false, role: x.role }; }),     /* 그림은 그린 그림이 있을 때만(없으면 글자로 읽게) */
+          words: own(c.id).map(function (x) { return { w: x.w, ko: x.ko || '', pic: g.PlayArt && g.PlayArt.has(x.w) ? g.PlayArt.html(x.w) : '', t: x.t, s: x.s, build: x.build !== false, role: x.role, path: 'decode' }; }),     /* 그림은 그린 그림이 있을 때만(없으면 글자로 읽게) */
           confuse: [], games: GAMES.slice(), decor: S.decor, host: S.host,
           space: S.space, part: S.part
         };
-        if (c.bundles) { z.letters = true; z.bundles = c.bundles; z.fixedGames = ['sound-monster', 'sound-jump']; }     /* 알파벳 칸 — 묶음마다 소리 몬스터·소리 점프(W06) */
+        if (c.bundles) { z.letters = true; z.bundles = c.bundles; z.letterItems = [].concat.apply([], c.bundles).map(function (k) { return { w: k, path: 'letter' }; }); z.fixedGames = ['sound-monster', 'sound-jump']; }     /* 알파벳 칸 — 묶음마다 소리 몬스터·소리 점프(W06) */
         Z.zones.push(z);
       });
     });
