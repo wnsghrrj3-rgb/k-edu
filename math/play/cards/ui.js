@@ -1,5 +1,5 @@
 /* 수 카드 모험 — 화면. 규칙은 engine.js 가 전부 정하고, 여기는 보여 주고 누른 것을 넘길 뿐이다. */
-import * as E from './engine.js';
+import * as E from './engine.js?v=4';
 import * as grow from '/kmotion/taste/grow.js';
 const $ = id => document.getElementById(id), sleep = ms => new Promise(r => setTimeout(r, ms));
 const qs = new URLSearchParams(location.search);
@@ -37,11 +37,12 @@ function render(){ if (!S) return;
     n.classList.toggle('dead', e.dead); n.querySelector('.hp').textContent = e.dead ? '' : e.hp; const cd = n.querySelector('.cd'); cd.textContent = e.cd <= 1 ? '곧 공격!' : `${e.cd}턴 뒤`; cd.classList.toggle('hot', e.cd <= 1); cd.style.display = e.dead ? 'none' : '';
     n.querySelector('.nm').textContent = e.name; n.querySelector('.tip').textContent = e.type === 'golem' ? `딱 ${e.weak}으로 치면 두 배!` : (e.type === 'slime' ? '' : E.MON[e.type].tip); n.classList.toggle('aim', sel.length > 0 && !e.dead); gauge(n.querySelector('.gauge'), e); have.delete(e.id); });
   for (const id of have) f.querySelector(`[data-id="${id}"]`)?.remove();
-  const h = $('hand'); h.innerHTML = ''; S.hand.forEach((c, i) => { const p = sel.find(x => x.id === c.id), b = document.createElement('button'); b.className = 'card' + (p ? ' sel' : '') + (p?.neg ? ' neg' : '') + (p?.dbl ? ' dbl' : ''); b.style.animationDelay = (i * .04) + 's'; b.innerHTML = `<span>${p?.neg ? '−' + c.v : p?.dbl ? c.v + '×2' : c.v}</span>` + (c.v <= 10 ? `<span class="dots">${'<i></i>'.repeat(c.v)}</span>` : ''); if (p?.dbl) b.style.fontSize = 'clamp(1.2rem,3.4vw,2rem)';
-    b.onclick = () => { if (busy) return; audio(); SFX.pick(); const j = sel.findIndex(x => x.id === c.id); if (j >= 0) sel.splice(j, 1); else sel.push({ id: c.id }); render(); };
+  // 손패: 카드 구성이 바뀔 때만 새로 깐다(누를 때마다 다시 깔면 카드가 손가락 밑에서 사라졌다 나타난다)
+  const h = $('hand'), sig = S.hand.map(c => c.id).join(','); if (h.dataset.sig !== sig) { h.dataset.sig = sig; h.innerHTML = ''; S.hand.forEach((c, i) => { const b = document.createElement('button'); b.className = 'card'; b.dataset.id = c.id; b.style.animationDelay = (i * .04) + 's'; b.onclick = () => tapCard(c.id); h.appendChild(b); }); }
+  S.hand.forEach(c => { const b = h.querySelector(`[data-id="${c.id}"]`), p = sel.find(x => x.id === c.id); if (!b) return; b.classList.toggle('sel', !!p); b.classList.toggle('neg', !!(p && p.neg)); b.classList.toggle('dbl', !!(p && p.dbl)); b.style.fontSize = p && p.dbl ? 'clamp(1.2rem,3.4vw,2rem)' : '';
+    b.innerHTML = `<span>${p && p.neg ? '−' + c.v : p && p.dbl ? c.v + '×2' : c.v}</span>` + (c.v <= 10 ? `<span class="dots">${'<i></i>'.repeat(c.v)}</span>` : '');
     if (p) { const mods = []; if (S.relics.includes('minus') && !S.used.minus && !sel.some(x => x.neg && x.id !== c.id)) mods.push(['neg', p.neg ? '더하기로' : '빼기로']); if (S.relics.includes('double') && !S.used.double && !sel.some(x => x.dbl && x.id !== c.id)) mods.push(['dbl', p.dbl ? '그대로' : '두 배']);
-      if (mods.length) { const m = document.createElement('span'); m.className = 'mod'; mods.forEach(([k, label]) => { const mb = document.createElement('b'); mb.textContent = label; mb.onclick = ev => { ev.stopPropagation(); p[k] = !p[k]; if (k === 'neg' && p.neg) p.dbl = false; if (k === 'dbl' && p.dbl) p.neg = false; render(); }; m.appendChild(mb); }); b.appendChild(m); } }
-    h.appendChild(b); });
+      if (mods.length) { const m = document.createElement('span'); m.className = 'mod'; mods.forEach(([k, label]) => { const mb = document.createElement('b'); mb.textContent = label; mb.onclick = ev => { ev.stopPropagation(); p[k] = !p[k]; if (k === 'neg' && p.neg) p.dbl = false; if (k === 'dbl' && p.dbl) p.neg = false; render(); }; m.appendChild(mb); }); b.appendChild(m); } } });
   $('acts').innerHTML = '칠 수 있는 횟수 ' + Array.from({ length: Math.max(E.ACTS, S.acts) }, (_, i) => `<i class="${i < S.acts ? '' : 'off'}"></i>`).join(''); $('endTurn').disabled = busy || S.phase !== 'battle';
   expr(); }
 /* 도움 눈금: 몬스터 수만큼 칸이 있고, 고른 카드의 합이 몇 칸을 채우는지 미리 보인다(딱 = 초록, 모자람 = 노랑, 넘침 = 빨강) */
@@ -50,6 +51,9 @@ function gauge(g, e){ if (e.dead || OPT.sum !== 'show') { g.innerHTML = ''; retu
   if (e.hp <= 20) g.innerHTML = Array.from({ length: e.hp }, (_, i) => `<i class="${on && !blocked && i < dmg ? cls : ''}"></i>`).join('') + (cls === 'over' ? `<em>+${dmg - e.hp}</em>` : '');
   else g.innerHTML = `<u><b class="${cls}" style="width:${on && !blocked ? Math.min(100, dmg / e.hp * 100) : 0}%"></b></u>` + (cls === 'over' ? `<em>+${dmg - e.hp}</em>` : '');
   g.dataset.s = cls; g.title = blocked ? (e.type === 'shield' ? '짝수만' : '홀수만') : ''; }
+/* 카드 누르기 — 같은 카드가 0.35초 안에 두 번 눌리면 한 번으로 친다(기기에 따라 한 번 눌러도 두 번 들어와 골랐다가 바로 풀리는 일을 막음) */
+let lastTap = { id: 0, t: 0 };
+function tapCard(id){ if (busy || !S || S.phase !== 'battle') return; const now = performance.now(); if (lastTap.id === id && now - lastTap.t < 350) return; lastTap = { id, t: now }; audio(); SFX.pick(); const j = sel.findIndex(x => x.id === id); if (j >= 0) sel.splice(j, 1); else sel.push({ id }); render(); }
 function vals(){ return sel.map(p => { const c = S.hand.find(h => h.id === p.id); return c ? (p.dbl ? c.v * 2 : c.v) * (p.neg ? -1 : 1) : 0; }); }
 const fmt = v => v.map((x, i) => (i ? (x < 0 ? ' − ' : ' + ') : (x < 0 ? '−' : '')) + Math.abs(x)).join('');
 function expr(extra){ const v = vals(); coach(); if (extra) { $('expr').innerHTML = extra; return; } if (!v.length) { $('expr').innerHTML = '&nbsp;'; return; } const sum = v.reduce((a, b) => a + b, 0); $('expr').innerHTML = fmt(v) + (v.length > 1 || OPT.sum === 'show' ? ` = <span class="q">${OPT.sum === 'show' ? sum : '?'}</span>` : ''); }
@@ -85,7 +89,7 @@ async function play(ev){ busy = true; render();
     case 'hurt': flash('#ff3050'); SFX.hurt(); render(); await sleep(520); break;
     case 'turn': render(); break; } }
   busy = false; sel = sel.filter(p => S.hand.some(c => c.id === p.id)); render(); after(ev); }
-function strike(id){ if (busy || !S || S.phase !== 'battle') return; audio(); if (!sel.length) { expr('<small>먼저 카드를 골라요</small>'); return; } const picks = sel.slice(); sel = []; const me = $('me'); me.classList.remove('cast'); void me.offsetWidth; me.classList.add('cast'); play(E.attack(S, picks, id)); }
+function strike(id){ if (busy || !S || S.phase !== 'battle') return; audio(); if (!sel.length) { $('coach').textContent = '먼저 아래에서 카드를 눌러 골라요. 그다음 몬스터!'; $('hand').classList.add('glow'); return; } const picks = sel.slice(); sel = []; const me = $('me'); me.classList.remove('cast'); void me.offsetWidth; me.classList.add('cast'); play(E.attack(S, picks, id)); }
 $('endTurn').onclick = () => { if (busy || !S || S.phase !== 'battle') return; audio(); sel = []; play(E.endTurn(S)); };
 
 // ── 방 사이
@@ -120,5 +124,6 @@ E.TERMS.forEach(t => { const b = document.createElement('button'); b.dataset.v =
 $('go').onclick = start; $('again').onclick = start; $('toTitle').onclick = title; $('howto').onclick = () => tutStart(1); $('tutGo').onclick = () => { meta.tut = 1; start(); };
 $('me').innerHTML = `<svg viewBox="0 0 160 190"><ellipse cx="80" cy="180" rx="52" ry="9" fill="rgba(0,0,0,.35)"/><path d="M40 176 54 96h52l14 80Z" fill="#5b3fd6" stroke="#c9b8ff" stroke-width="4"/><circle cx="80" cy="78" r="30" fill="#ffd9b3"/><circle cx="70" cy="76" r="4" fill="#122"/><circle cx="92" cy="76" r="4" fill="#122"/><path d="M70 90q10 8 22 0" stroke="#122" stroke-width="3" fill="none"/><path d="M38 58h84L88 4Z" fill="#3a2bb0" stroke="#c9b8ff" stroke-width="4"/><rect x="30" y="54" width="100" height="10" rx="5" fill="#3a2bb0" stroke="#c9b8ff" stroke-width="3"/><circle cx="88" cy="6" r="7" fill="#ffd35c"/><path d="M118 120 150 70" stroke="#8a5a2b" stroke-width="7" stroke-linecap="round"/><circle cx="152" cy="66" r="11" fill="#8fe3ff" stroke="#fff" stroke-width="3"/></svg>나`;
 for (let i = 0; i < 40; i++) { const s = document.createElement('i'); s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 60 + '%'; s.style.animationDelay = Math.random() * 3 + 's'; $('bg').appendChild(s); }
+$('ver').textContent = 'v0.3';
 title();
 window.__cards = { get S(){ return S; }, get TUT(){ return TUT; }, E, OPT, meta, start, tutStart, strike, get sel(){ return sel; }, set sel(v){ sel = v; }, render };
