@@ -13,7 +13,7 @@
 </script>
 <style>
 /* ============================================================
- * 사과나무 빈터 — 입체 시험판 3 (W15 의 첫 판 · 한 해 길 첫 걸음 A01 「a · b」 · 설계 v2 §7 · 상세판 A01)
+ * 사과나무 빈터 — 입체 시험판 4 (W15 의 첫 판 · 한 해 길 첫 걸음 A01 「a · b」 · 설계 v2 §7 · 상세판 A01)
  *   준호가 모양과 느낌을 먼저 보려는 판이다 — 하루 흐름(씨앗·증거)에는 아직 잇지 않았다.
  *   잘라 낸 숲속 빈터를 비스듬히 내려다본다. 그 걸음의 낱말 여덟이 전부 빈터 안의 물건이다:
  *     왼쪽(a) 사과 · 개미 줄 · 도끼 · 악어(개울)   /   오른쪽(b) 배낭 · 침대 · 통나무 버스 · 새
@@ -26,6 +26,12 @@
  *     · 빈터가 살아 있다 — 풀잎이 흔들리고, 꽃·갈대·연잎·물무늬·나비·떨어지는 잎, 사람은 말할 때 입이 움직이고 눈을 깜박인다
  *     · 잘 되면 눈에 보인다 — 따라 말하면 물건에서 빛 알갱이가 튀고 낱말 글자가 뛴다 · 쓴 글씨는 팻말로 날아가 붙는다
  *     · 쓰는 판은 가로 화면에서 옆에 뜬다(빈터와 팻말이 그대로 보인다) · 듣고 찾기에는 「다시 듣기」
+ *   시험판 4(준호 11-12 「모션 사건 이어서」) — 상세판 A01 의 「오늘의 사건 넷」이 걸음의 마디마다 벌어지고, 그 일이 그 마디의 놀이를 감싼다:
+ *     ① 굴러간 열매(a 듣고 말하기) — a 열매가 떨어져 굴러오고 Max 가 번쩍 든다 → 받침돌에 올라앉아 박자에 들썩
+ *     ② 개미 줄(b 듣고 말하기) — 개미들이 b 열매를 메고 가 버린다 → b 낱말을 부를 때마다 한 걸음씩 돌아와 받침돌에 내려놓고 사과 조각을 받아 간다
+ *     ④ 악어의 하품(듣기) — 하품하면 그림 물방울 넷이 떠오른다 → 들린 이름의 물방울을 톡
+ *     ③ 버스 떠날 채비(말하기) — 통나무 버스가 짐칸 넷을 달고 앞길로 나온다 → 그림을 보고 이름을 부르면 칸에 불이 켜진다 → 김이 뿜, 열매가 나무로
+ *   (설계의 세 날에 나뉘어 있던 사건을 준호 결정 「한 번에 이어지게」에 맞춰 한 걸음 안에 차례로 놓았다 · 사건의 글과 한마디는 상세판 그대로)
  *   자리는 상세판의 빈터 판형에서 서로 가리지 않게 조금 옮겼다(침대 뒤로 · 버스 앞으로 · 개울 오른쪽으로) · 색은 전부 토큰(ui/tokens.css) · 끌면 빈터가 조금 돈다 · ?q=low = 가벼운 판.
  * ============================================================ */
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--ink);touch-action:none;user-select:none;-webkit-user-select:none}
@@ -83,6 +89,14 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:
 .gword .mic,.gword .said{pointer-events:auto;border:0;border-radius:var(--r-pill);background:var(--stage);color:var(--on-stage);box-shadow:var(--shadow);font:700 16px/1 var(--font);display:flex;align-items:center;justify-content:center}
 .gword .mic{width:68px;height:68px;font-size:32px;animation:gListen 1100ms ease-in-out infinite}
 .gword .said{height:52px;padding:0 24px}
+/* 그림 딱지 — 물방울·짐칸 위에 뜨는 그림(입체 자리를 따라다닌다) */
+.gpic{position:fixed;left:0;top:0;z-index:4;width:84px;height:84px;margin:-42px 0 0 -42px;padding:0;border:0;border-radius:50%;background:var(--surface);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-size:52px;line-height:1;opacity:0;pointer-events:none;touch-action:manipulation}
+.gpic.tap{pointer-events:auto}
+.gpic.drop{background:var(--veil);box-shadow:var(--shadow),inset 0 0 0 3px var(--surface)}
+.gpic.now{box-shadow:var(--shadow),0 0 0 5px var(--stage)}
+.gpic.lit{box-shadow:var(--shadow),0 0 0 5px var(--warm)}
+/* 낱말 띠 — 이름을 떠올릴 때는 첫 글자만 보이고 나머지는 빈 줄 */
+.gword .w i.q{width:.48em;height:.13em;margin:0 .07em;border-radius:var(--r-pill);background:var(--ink-4)}
 /* 듣고 찾기 — 다시 듣기 */
 .ghear{position:fixed;left:50%;bottom:calc(68px + env(safe-area-inset-bottom));z-index:5;transform:translate(-50%,20px);opacity:0;pointer-events:none;transition:opacity 240ms,transform 240ms var(--ease);display:flex;align-items:center;gap:8px;height:54px;padding:0 22px 0 18px;border:0;border-radius:var(--r-pill);background:var(--stage);color:var(--on-stage);box-shadow:var(--shadow);font:700 16px/1 var(--font)}
 .ghear .ic{font-size:24px}
@@ -183,6 +197,11 @@ const CONF = {
   /* 빈터 판형의 자리([x, z]. 뒤쪽이 -z) — 상세판 GLADE 에서 서로 가리지 않게 조금 옮긴 것 */
   slot: { Lb: [-3.4, -1.8], Lc: [-5.6, 1.2], Ld: [-3.3, 1], Rc: [6.0, -0.2], Rd: [3.5, 0.8], Re: [4.9, 3.5], treeL: [-5, -3.2], treeR: [5, -3.2], creek: [0.8, -3.7],
     owner: [0, -0.8], me: [-1.5, 1.9], guide: [1.5, 1.9], sign: [7.25, 3.7], path: [0, 4.3] },
+  /* 오늘의 사건 넷 — 자리와 빠르기 */
+  ev: { stoneA: [-0.75, 0.55], stoneB: [0.75, 0.55],                                /* 받침돌 둘 — 글자 열매가 올라앉는 자리 */
+    antRoad: [[2.9, 2.9], [-4.6, 3.6], [-3.0, 3.6], [-1.4, 3.6], [0.2, 3.6], [0.75, 1.3]],   /* 개미 줄 — 열매를 메는 곳 · 메고 간 곳 · 한 걸음씩 돌아오는 자리 넷 */
+    drops: 4, dropX: [-2.5, -0.8, 0.9, 2.6], dropY: [2.5, 3.1, 3.2, 2.6],           /* 악어의 하품 — 물방울 넷이 뜨는 자리(개울 기준) */
+    cars: 4, carGap: [1.85, 1.15], busTo: -2.4, roadZ: 4.35, thinkMs: 2600 },        /* 낱말 기차 — 짐칸 수 · 버스 뒤 간격 · 버스가 서는 곳 · 마이크가 없을 때 떠올릴 틈(ms) */
   /* 낱말 여덟 — 왼쪽은 a, 오른쪽은 b. dy = 눈이 따라갈 때 볼 높이 · r = 아래에 밝아지는 자리의 크기 */
   words: [{ w: 'apple', l: 'a', dy: 0.7, r: 1.3 }, { w: 'ant', l: 'a', dy: 0.4, r: 1.7 }, { w: 'ax', l: 'a', dy: 0.9, r: 1.6 }, { w: 'alligator', l: 'a', dy: 0.3, r: 2.3 },
           { w: 'bag', l: 'b', dy: 1.4, r: 1.2 }, { w: 'bed', l: 'b', dy: 0.8, r: 1.9 }, { w: 'bus', l: 'b', dy: 0.9, r: 1.9 }, { w: 'bird', l: 'b', dy: 2.5, r: 1.1 }]
@@ -426,18 +445,18 @@ const P = n => CONF.slot[n];
   { const rug = new THREE.Mesh(new THREE.CircleGeometry(0.62, 28), M(mix('a-pink', 'a-cream', 0.4), { roughness: 1 })); rug.rotation.x = -Math.PI / 2; rug.scale.set(1.4, 1, 1); rug.position.set(0.1, 0.012, 1.25); rug.receiveShadow = true; g.add(rug); }
   g.userData.act = t => { blanket.position.y = 0.82 + wave(t, 2) * 0.16; pillow.scale.y = 0.5 + wave(t, 2) * 0.2; }; }
 { /* bus — 통나무 버스(굴뚝에서 김 · 앞에 불 · 정류장 기둥) */
-  const g = thing('bus', ...P('Re')), car = new THREE.Group(); car.position.y = 0.42; car.rotation.y = -0.2; car.scale.setScalar(0.82); g.add(car);
+  const g = thing('bus', ...P('Re')), car = new THREE.Group(); car.position.y = 0.42; car.rotation.y = 0.15; car.scale.setScalar(0.82); g.add(car);
   const log = mesh(new THREE.CylinderGeometry(0.78, 0.78, 2.9, 24), M('a-wood', { roughness: 0.9 }), 0, 0.72, 0); log.rotation.z = Math.PI / 2; car.add(log);
   [-1.46, 1.46].forEach(x2 => { const c = mesh(new THREE.CylinderGeometry(0.72, 0.72, 0.04, 24), M('a-cream', { roughness: 0.8 }), x2, 0.72, 0); c.rotation.z = Math.PI / 2; car.add(c); const r = mesh(new THREE.TorusGeometry(0.4, 0.025, 6, 24), M(mix('a-cream', 'a-wood', 0.5)), x2 + Math.sign(x2) * 0.03, 0.72, 0); r.rotation.y = Math.PI / 2; r.castShadow = false; car.add(r); });
   const glass = new THREE.MeshStandardMaterial({ color: C('warm-soft'), emissive: C('warm'), emissiveIntensity: 0.4, roughness: 0.3 });
   [-0.05, 0.8].forEach(x2 => { const wd = rbox(0.56, 0.5, 0.1, 0.14, glass); wd.position.set(x2, 0.95, 0.72); car.add(wd); const fr2 = rbox(0.66, 0.6, 0.06, 0.16, M(mix('a-wood', 'ink', 0.25))); fr2.position.set(x2, 0.95, 0.7); car.add(fr2); });
   { const door = rbox(0.5, 0.95, 0.08, 0.14, M(mix('a-red', 'a-wood', 0.3), { roughness: 0.6 })); door.position.set(-0.92, 0.72, 0.73); car.add(door); car.add(ball(0.04, M('a-gold', { metalness: 0.5, roughness: 0.3 }), -0.76, 0.7, 0.79)); }
-  const lamps = [-1, 1].map(s => { const l = new THREE.Mesh(new THREE.SphereGeometry(0.13, 14, 10), new THREE.MeshStandardMaterial({ color: C('warm-soft'), emissive: C('warm'), emissiveIntensity: 0.9, roughness: 0.3 })); l.position.set(1.5, 0.5, s * 0.38); l.scale.x = 0.5; car.add(l); return l; });
-  { const bp = rbox(0.16, 0.16, 1.5, 0.07, M('ink-2', { roughness: 0.5 })); bp.position.set(1.52, 0.16, 0); car.add(bp); }
+  const lamps = [-1, 1].map(s => { const l = new THREE.Mesh(new THREE.SphereGeometry(0.13, 14, 10), new THREE.MeshStandardMaterial({ color: C('warm-soft'), emissive: C('warm'), emissiveIntensity: 0.9, roughness: 0.3 })); l.position.set(-1.5, 0.5, s * 0.38); l.scale.x = 0.5; car.add(l); return l; });
+  { const bp = rbox(0.16, 0.16, 1.5, 0.07, M('ink-2', { roughness: 0.5 })); bp.position.set(-1.52, 0.16, 0); car.add(bp); }
   [[-0.95, 0.6], [0.95, 0.6], [-0.95, -0.6], [0.95, -0.6]].forEach(w2 => { const wh = mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.2, 20), M('ink', { roughness: 0.6 }), w2[0], 0, w2[1]); wh.rotation.x = Math.PI / 2; car.add(wh); const hub = mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.22, 12), M('a-cream'), w2[0], 0, w2[1]); hub.rotation.x = Math.PI / 2; car.add(hub); });
   car.add(mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.6, 12), M('ink-2', { roughness: 0.5 }), 0.9, 1.7, 0)); car.add(ball(0.3, M('a-red', { roughness: 0.5 }), -1.2, 1.5, 0, 1.2, 0.35, 1.2));
   const steam = []; for (let i = 0; i < 6; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), new THREE.MeshStandardMaterial({ color: C('surface'), transparent: true, opacity: 0, roughness: 1, depthWrite: false })); m.position.set(0.9, 2.0, 0); car.add(m); steam.push({ m, t: i / 6 }); }
-  { const stop = new THREE.Group(); stop.position.set(-1.7, 0, 0.55); stop.add(mesh(new THREE.CylinderGeometry(0.045, 0.06, 1.4, 8), M('ink-2', { roughness: 0.5 }), 0, 0.7, 0)); const d = mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.06, 24), M('a-fish', { roughness: 0.5 }), 0, 1.55, 0); d.rotation.x = Math.PI / 2; stop.add(d); const d2 = mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.07, 24), M('a-cream', { roughness: 0.6 }), 0, 1.55, 0); d2.rotation.x = Math.PI / 2; stop.add(d2); g.add(stop); }
+  { const stop = new THREE.Group(); stop.position.set(P('Re')[0] + 1.75, 0, P('Re')[1] - 0.8); stop.add(mesh(new THREE.CylinderGeometry(0.045, 0.06, 1.4, 8), M('ink-2', { roughness: 0.5 }), 0, 0.7, 0)); const d = mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.06, 24), M('a-fish', { roughness: 0.5 }), 0, 1.55, 0); d.rotation.x = Math.PI / 2; stop.add(d); const d2 = mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.07, 24), M('a-cream', { roughness: 0.6 }), 0, 1.55, 0); d2.rotation.x = Math.PI / 2; stop.add(d2); glade.add(stop); }
   g.userData.steam = steam; g.userData.car = car; g.userData.lamps = lamps; g.userData.act = t => { car.position.y = 0.42 + Math.abs(Math.sin(t * Math.PI * 4)) * 0.12; car.rotation.z = Math.sin(t * Math.PI * 4) * 0.03; lamps.forEach(l => { l.material.emissiveIntensity = 0.9 + wave(t, 4) * 1.6; }); }; }
 { /* bird — b 나무 가지 위의 통통한 새(누르면 깃을 턴다) */
   const g = thing('bird', P('treeR')[0] + 1.9, P('treeR')[1] + 1.2), blue = M(mix('a-fish', 'word-blue', 0.35), { roughness: 0.6 }), deep = M(mix('a-fish', 'ink', 0.25), { roughness: 0.6 });
@@ -451,6 +470,44 @@ const P = n => CONF.slot[n];
   [-0.08, 0.08].forEach(z2 => b.add(mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.22, 5), M('a-gold'), 0, -0.34, z2)));
   g.userData.b = b; g.userData.act = t => { b.position.y = 2.42 + wave(t, 2) * 0.28; wings.forEach((w2, i) => { w2.rotation.x = (i ? 1 : -1) * Math.abs(wave(t, 6)) * 1.1; }); b.rotation.z = Math.sin(t * Math.PI * 6) * 0.08; }; }
 CONF.words.forEach(x => { things[x.w].userData.dy = x.dy; things[x.w].userData.r = x.r; });
+/* ── 사건의 소품 — 받침돌 둘 · 열매를 메는 개미 넷 · 버스 짐칸 · 그림 물방울 · 그림 딱지 ── */
+const EV = CONF.ev;
+[EV.stoneA, EV.stoneB].forEach(p => glade.add(ball(0.56, M(mix(mix('a-steel', 'stage-2', 0.3), 'ink', 0.18), { roughness: 0.9 }), p[0], 0.06, p[1], 1, 0.36, 0.85)));
+function antBody(ink){ const a = new THREE.Group(); a.add(ball(0.13, ink, 0.17, 0.16, 0)); a.add(ball(0.1, ink, 0, 0.15, 0)); a.add(ball(0.15, ink, -0.2, 0.17, 0, 1.2, 1, 1));
+  [-1, 1].forEach(s => { for (let k = 0; k < 3; k++) { const leg = mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.2, 5), ink, (k - 1) * 0.11, 0.07, s * 0.1); leg.rotation.x = s * 0.7; leg.castShadow = false; a.add(leg); }
+    const an = mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.16, 5), ink, 0.26, 0.27, s * 0.05); an.rotation.z = -0.7; an.castShadow = false; a.add(an); a.add(ball(0.03, M('surface', { roughness: 0.3 }), 0.27, 0.19, s * 0.07)); });
+  a.scale.setScalar(1.3); return a; }
+const carry = new THREE.Group(); carry.visible = false; glade.add(carry);
+{ const ink = M(mix('ink', 'a-wood', 0.3), { roughness: 0.4 }); carry.userData.ants = [0.84, 0.28, -0.28, -0.84].map(x => { const a = antBody(ink); a.position.x = x; carry.add(a); return a; });
+  const bit = ball(0.16, M('a-red', { roughness: 0.4 }), 0, 0.5, 0, 1, 0.7, 0.8); bit.visible = false; carry.add(bit); carry.userData.bit = bit; carry.userData.moving = false; }
+/* 짐칸 — 등이 하나씩 달린 작은 통나무 수레 */
+const cars = [];
+for (let i = 0; i < EV.cars; i++) { const g = new THREE.Group(), wd = M('a-wood', { roughness: 0.9 });
+  const bd = rbox(0.95, 0.4, 0.66, 0.1, wd); bd.position.y = 0.42; g.add(bd); const rim = rbox(1.02, 0.1, 0.72, 0.05, M(mix('a-wood', 'ink', 0.25), { roughness: 0.8 })); rim.position.y = 0.64; g.add(rim);
+  [[-0.3, 0.36], [0.3, 0.36], [-0.3, -0.36], [0.3, -0.36]].forEach(w2 => { const wh = mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.1, 16), M('ink', { roughness: 0.6 }), w2[0], 0.17, w2[1]); wh.rotation.x = Math.PI / 2; g.add(wh); });
+  { const hitch = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.3, 6), M('ink-2'), -0.6, 0.36, 0); hitch.rotation.z = Math.PI / 2; g.add(hitch); }
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 10), new THREE.MeshStandardMaterial({ color: C('surface-3'), emissive: C('warm'), emissiveIntensity: 0, roughness: 0.3 })); lamp.position.set(0, 0.5, 0.4); lamp.scale.z = 0.6; g.add(lamp);
+  g.userData = { lamp, on: 0, r: 1.2, dy: 0.8 }; g.scale.setScalar(0); g.visible = false; glade.add(g); cars.push(g); }
+/* 버스가 나가는 길 — 정류장에서 앞 흙길로 */
+const road = (() => { const pts = [], hb = things.bus.userData.home; for (let i = 0; i <= 60; i++) { const u = i / 60, x = hb.x + (EV.busTo - hb.x) * u, k = Math.min(1, (hb.x - x) / 2.2); pts.push([x, hb.z + (EV.roadZ - hb.z) * (k * k * (3 - 2 * k))]); }
+  const len = [0]; for (let i = 1; i < pts.length; i++) len.push(len[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  return { pts, len, total: len[len.length - 1] }; })();
+function roadAt(s){ const L = road.len, n = L.length; if (s <= 0) return { x: road.pts[0][0] - s, z: road.pts[0][1], a: 0 };                    /* 떠나기 전 — 버스 뒤로 곧게 */
+  s = Math.min(s, road.total - 0.001); let i = 1; while (i < n - 1 && L[i] < s) i++; const u = (s - L[i - 1]) / (L[i] - L[i - 1]), a = road.pts[i - 1], b = road.pts[i];
+  return { x: a[0] + (b[0] - a[0]) * u, z: a[1] + (b[1] - a[1]) * u, a: Math.atan2(b[1] - a[1], -(b[0] - a[0])) }; }
+function trainAt(s){ const bus = things.bus, p = roadAt(s); bus.position.x = p.x; bus.position.z = p.z; bus.rotation.y = p.a;
+  cars.forEach((c, i) => { const cs = s - EV.carGap[0] - i * EV.carGap[1], q = roadAt(cs); c.position.set(q.x, c.position.y, q.z); c.rotation.y = q.a; const on = cs > 0.05 ? 1 : 0; if (on && !c.userData.on) sfx('pop'); c.userData.on = on; }); }   /* 정류장을 지날 때 짐칸이 하나씩 달린다 */
+/* 그림 물방울 — 악어가 하품하면 떠오른다 */
+const dropM = new THREE.MeshStandardMaterial({ color: C('surface'), transparent: true, opacity: 0.36, roughness: 0.05, metalness: 0.1, depthWrite: false });
+const drops = [];
+for (let i = 0; i < EV.drops; i++) { const m = fx(new THREE.Mesh(new THREE.SphereGeometry(0.62, 24, 18), dropM)); m.visible = false; m.userData = { home: new THREE.Vector3(CK[0] + EV.dropX[i], EV.dropY[i], CK[1] + 0.7), k: i * 1.7, w: null, float: false }; glade.add(m); drops.push(m); }
+const dropEye = new THREE.Object3D(); dropEye.position.set(CK[0] + 0.1, 2.2, CK[1] + 0.7); glade.add(dropEye);
+const mouthAt = new THREE.Object3D(); mouthAt.position.set(1.0, 0.15, 0); things.alligator.userData.jaw.add(mouthAt);
+/* 그림 딱지 — 입체 자리(obj) 위에 뜨는 그림. 매 장면 자리를 다시 잡는다 */
+const pics = [];
+function picAt(obj, w, dy, cls){ const d = document.createElement('button'); d.type = 'button'; d.className = 'gpic' + (cls ? ' ' + cls : ''); d.setAttribute('aria-label', w); d.innerHTML = PlayArt.html(w); const [x, y] = screenOf(obj, dy); d.style.transform = 'translate(' + x + 'px,' + y + 'px) scale(0)'; document.body.appendChild(d); const q = { d, obj, dy, w, on: 1, k: 0, size: 0.6, pulse: 0 }; pics.push(q); return q; }
+function picOff(q){ if (!q || !q.on) return; q.on = 0; q.d.classList.remove('tap'); setTimeout(() => { q.d.remove(); const i = pics.indexOf(q); if (i >= 0) pics.splice(i, 1); }, 420); }
+
 
 /* ── 인물(머리 큰 2.5등신) — 눈을 깜박이고, 말할 때 입이 움직이고, 보는 쪽으로 고개를 돌린다 ── */
 function person(o){
@@ -582,18 +639,19 @@ function unpresent(){ focus(null); spotAt(null); lookAll(null); }
 async function poke(w){ sfx('pop'); present(w, CONF.cam.word); word(w, 'hear'); tagAt(things[w], letterOf(w)); act(w); await sayWord(w); clearTimeout(poke.t); poke.t = setTimeout(() => { if (!mode) { word(null); unpresent(); } }, 1500); }
 
 /* ── 낱말 띠(위) — 들을 때 낱말이 크게 함께 뜬다(듣는 것과 보는 것을 같이 · 준호 11-11). 첫 글자는 색으로 · 누르면 다시 들린다 ── */
-let mode = null, chantHalf = 0, curW = null, listening = false, hearing = false;
-function word(w, phase, hint){
+let mode = null, chantHalf = 0, curW = null, curCue = false, listening = false, hearing = false;
+function word(w, phase, hint, cue){
   const el = $('word'), wt = $('wordT'); if (w == null) { el.classList.remove('show', 'gsay', 'gok', 'glisten'); curW = null; return; }
-  if (w !== curW) { $('wordP').innerHTML = w.length > 1 ? PlayArt.html(w) : ''; wt.innerHTML = w.split('').map((ch, i) => '<i' + (i ? '' : ' class="f"') + ' style="--i:' + i + '">' + ch + '</i>').join(''); wt.classList.remove('joy'); }
+  cue = !!cue; if (w !== curW || cue !== curCue) { $('wordP').innerHTML = w.length > 1 ? PlayArt.html(w) : ''; wt.innerHTML = w.split('').map((ch, i) => '<i' + (i ? (cue ? ' class="q"' : '') : ' class="f"') + ' style="--i:' + i + '">' + (i && cue ? '' : ch) + '</i>').join(''); wt.classList.remove('joy'); }
   else if (phase === 'ok') { wt.classList.remove('joy'); void wt.offsetWidth; wt.classList.add('joy'); }
-  curW = w; el.classList.add('show'); el.classList.toggle('gsay', phase === 'say'); el.classList.toggle('gok', phase === 'ok'); el.classList.remove('glisten');
+  curW = w; curCue = cue; el.classList.add('show'); el.classList.toggle('gsay', phase === 'say'); el.classList.toggle('gok', phase === 'ok'); el.classList.remove('glisten');
   $('wordC').innerHTML = phase === 'ok' ? I('check') : ''; $('wordH').textContent = hint || ''; $('mic').style.display = 'none'; $('said').style.display = 'none';
 }
 function dots(n, k){ $('wordD').innerHTML = n > 0 ? Array.from({ length: n }, (_, i) => '<span class="' + (i < k ? 'done' : i === k ? 'on' : '') + '"></span>').join('') : ''; }
-$('wordR').onclick = () => { if (!curW || listening || hearing) return; hearing = true; (curW.length > 1 ? sayWord(curW) : saySound(curW)).then(() => { hearing = false; }); };
-function bubble(html){ const b = $('bub'); if (html == null) { b.classList.remove('show'); return; } b.innerHTML = html; b.classList.add('show'); }
-function stomp(){ max.userData.stomp = 1; sfx('belt'); }
+$('wordR').onclick = () => { if (!curW || curCue || listening || hearing) return; hearing = true; (curW.length > 1 ? sayWord(curW) : saySound(curW)).then(() => { hearing = false; }); };
+let bubWho = null;
+function bubble(html, who){ const b = $('bub'); if (html == null) { b.classList.remove('show'); return; } bubWho = who || max; b.innerHTML = html; b.classList.add('show'); }
+function stomp(){ max.userData.stomp = 1; sfx('belt'); const f = beatFruit; if (f) tween(240, t => f.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.12), t => t); }
 const beatMs = () => 60000 / CONF.bpm;
 /* 챈트 한 줄 — Max 가 발을 구르고, 낱말 자리에서 그 물건을 가리키면 눈이 그쪽으로 가고 낱말이 위에 뜬다 */
 async function chantLine(x){
@@ -669,25 +727,128 @@ async function answer(w){
   if (want && misses >= 2) { hop(things[want], 0.6, 600); spotAt(things[want]); }                 /* 두 번 다르면 찾는 것이 들썩 */
   if (want) await sayWord(want, 0.8); answer.busy = false;
 }
-$('hear').onclick = () => { if (want && !answer.busy && !hearing) { hearing = true; mood(max, 'lead', 600); sayWord(want).then(() => { hearing = false; }); } };
-/* ── 오늘의 걸음 — 듣고 보기 → 따라 말하기 → 쓰기 → 듣고 찾기가 한 흐름으로 이어진다 ──
-   글자마다: 낱말 넷(챈트 한 줄 + 따라 말하기) → 그 글자 쓰기. 두 글자를 마치면 듣고 찾기, 그리고 마무리 */
-const STEPS = [['a', 'ear', 'a 듣고 말하기'], ['a', 'pencil', 'a 쓰기'], ['b', 'ear', 'b 듣고 말하기'], ['b', 'pencil', 'b 쓰기'], ['', 'sparkle', '듣고 찾기']];
+$('hear').onclick = () => { const w = want || dropWant; if (w && !answer.busy && !pickDrop.busy && !hearing) { hearing = true; mood(max, 'lead', 600); sayWord(w).then(() => { hearing = false; }); } };
+/* ── 오늘의 사건 넷(상세판 A01) — 걸음의 마디마다 빈터에 일이 벌어지고, 그 일이 그 마디의 놀이를 감싼다 ── */
+const fruitOf = l => (l === 'a' ? treeA : treeB).userData.fruit;
+let beatFruit = null;
+function fruitTo(f, to, dur, o = {}){ const from = f.position.clone(); return tween(dur, t => { f.position.lerpVectors(from, to, t); if (o.arc) f.position.y += Math.sin(t * Math.PI) * o.arc; }, o.ease); }
+function fruitHome(l){ const tr = l === 'a' ? treeA : treeB, f = tr.userData.fruit; if (f.parent === tr) return Promise.resolve(); tr.attach(f); f.rotation.set(0, 0, 0); f.scale.setScalar(1); return fruitTo(f, tr.userData.fruitHome, 900, { arc: 1.2 }); }
+async function fruitSit(l){ const f = fruitOf(l), s = l === 'a' ? EV.stoneA : EV.stoneB; await fruitTo(f, new THREE.Vector3(s[0], 0.74, s[1]), 520, { arc: 0.6 }); sfx('pop'); beatFruit = f; }
+/* ① 굴러간 열매(Max · 소리 챈트) — a 열매가 톡 떨어져 데굴데굴 Max 발 앞에. Max 가 한 손에 번쩍 든다 */
+async function evFruit(){
+  const f = fruitOf('a'); glade.attach(f); const land = new THREE.Vector3(-5.6, 0.52, -0.3), stop = new THREE.Vector3(-1.05, 0.52, -0.45);
+  focus(f, 1.15, 0.5, 0, 0, 0); lookAll(f); await wait(500); sfx('pop'); mood(me, 'point', 2400);
+  { const from = f.position.clone(); await tween(520, t => { f.position.lerpVectors(from, land, t); f.position.y = from.y + (land.y - from.y) * t * t; }, t => t); } sfx('tray');
+  await tween(1500, t => { f.position.lerpVectors(land, stop, t); f.position.y = 0.52 + Math.abs(Math.sin(t * Math.PI * 3)) * 0.25 * (1 - t); f.rotation.z = -t * Math.PI * 4; }); f.rotation.z = 0;
+  mood(max, 'lift'); await fruitTo(f, new THREE.Vector3(max.position.x + 1.25, 2.1, max.position.z + 0.1), 460, { arc: 0.3 });
+  bubble('<span class="say">Oh! Listen!</span>'); burstAt(f, 0.2, 8); await sayLine('Oh! Listen!'); await wait(250); bubble(null);
+}
+/* ② 개미 줄(Mina · 마법 주문 자리) — 개미들이 b 열매를 메고 가 버린다. b 낱말을 부를 때마다 한 걸음씩 돌아온다 */
+function antsGo(to, dur, withFruit){ const from = carry.position.clone(), tv = new THREE.Vector3(to[0], 0, to[1]), f = fruitOf('b'); carry.rotation.y = Math.atan2(-(tv.z - from.z), tv.x - from.x); carry.userData.moving = true;
+  return tween(dur, t => { carry.position.lerpVectors(from, tv, t); if (withFruit) f.position.set(carry.position.x, 0.98 + Math.abs(Math.sin(t * dur / 110)) * 0.05, carry.position.z); }, t => t * t * (3 - 2 * t)).then(() => { carry.userData.moving = false; }); }
+async function evAnts(){           /* b 열매가 떨어진다 */
+  const f = fruitOf('b'), at = EV.antRoad[0]; glade.attach(f); f.rotation.set(0, 0, 0);
+  focus(f, 1.15, 0.5, 0, 0, 0); lookAll(f); await wait(400); sfx('pop');
+  const from = f.position.clone(), land = new THREE.Vector3(at[0], 0.52, at[1]); await tween(700, t => { f.position.lerpVectors(from, land, t); f.position.y = from.y + (land.y - from.y) * t * t + Math.sin(t * Math.PI) * 0.6; }, t => t); sfx('tray');
+  await tween(300, t => { f.position.y = 0.52 + Math.sin(t * Math.PI) * 0.22; }, t => t);
+}
+async function antsTake(){         /* 개미들이 달려와 메고 가 버린다 */
+  const f = fruitOf('b'), R0 = EV.antRoad; carry.visible = true; carry.scale.setScalar(1); carry.userData.bit.visible = false; carry.position.set(-0.6, 0, 3.9); word(null);
+  focus(f, 1.2, 0.6, 0, 0, 0); sfx('belt'); await antsGo(R0[0], 900, false);
+  await tween(260, t => { f.position.y = 0.52 + t * 0.46; }); sfx('belt');
+  mood(mina, 'point'); lookAll(carry); focus(carry, 1.2, 0.7, 0, 0, 0.6);
+  const go = antsGo(R0[1], 2400, true); await wait(600); bubble('<span class="say">Oh! Hi, ant!</span>', mina); await sayLine('Oh! Hi, ant!', mina); await go; await wait(300); bubble(null); mood(mina, 'idle');
+}
+async function antsStep(i){        /* i = 0..3 — b 낱말 하나를 부를 때마다 한 걸음 */
+  const R0 = EV.antRoad, last = i === R0.length - 3; focus(carry, 1.25, 0.7, 0, 0, 0.6); lookAll(carry); spotAt(null); sfx('belt');
+  await antsGo(R0[2 + i], last ? 1300 : 900, true);
+  if (!last) { await wait(150); return; }
+  const f = fruitOf('b'); await fruitSit('b'); burstAt(f, 0.3, 10); people.forEach(p => mood(p, 'happy', 800));                 /* 열매를 받침돌에 내려놓는다 */
+  const bit = carry.userData.bit, from = carry.worldToLocal(new THREE.Vector3(max.position.x + 0.5, 1.5, max.position.z + 0.3)), to = new THREE.Vector3(0, 0.5, 0);   /* 사과 조각 하나를 받아 간다 */
+  bit.visible = true; await tween(480, t => { bit.position.lerpVectors(from, to, t); bit.position.y += Math.sin(t * Math.PI) * 0.6; }, t => t); sfx('pop');
+  (async () => { await antsGo([0.2, 3.6], 900, false); await antsGo([-4.4, 3.5], 2000, false); await antsGo([-5.2, 1.9], 900, false); await tween(300, t => carry.scale.setScalar(1 - t)); carry.visible = false; })();
+}
+/* ④ 악어의 하품(톡톡 듣기) — 악어가 크게 하품하면 그림 물방울이 떠오른다. 들린 이름의 물방울을 톡 */
+let dropWant = null, dropNext = null, dropMiss = 0; const dropPics = [];
+async function evYawn(n){
+  const al = things.alligator, u = al.userData, all = CONF.words.map(x => x.w), order = all.slice().sort(() => Math.random() - 0.5).slice(0, n);
+  unpresent(); word(null); focus(dropEye, 1.2, 1, 0, 0.02, 0); lookAll(al); u.busy = true; mood(mina, 'point', 1500);
+  bubble('<span class="say">Wow! Big!</span>', mina); tween(900, t => { u.jaw.rotation.z = t * 0.95; u.body.position.y = 0.02 + t * 0.3; }); ripple(al.position.x, al.position.z, 1.8); await sayLine('Wow! Big!', mina); await wait(400); bubble(null); tip('들리는 그림 물방울을 톡 눌러 봐', 3400);
+  for (const w of order) {
+    if (mode === 'stop') break;
+    const picks = [w].concat(all.filter(x => x !== w).sort(() => Math.random() - 0.5).slice(0, drops.length - 1)).sort(() => Math.random() - 0.5);
+    await tween(350, t => { u.jaw.rotation.z = 0.5 + t * 0.45; }); ripple(al.position.x, al.position.z, 1.8); mouthAt.getWorldPosition(vA); const from = vA.clone();
+    drops.forEach((m, i) => { const mu = m.userData; mu.w = picks[i]; mu.float = false; m.visible = true; m.scale.setScalar(0.1); m.position.copy(from); const q = picAt(m, picks[i], 0, 'drop'); dropPics[i] = q; q.d.onclick = () => pickDrop(i);
+      setTimeout(() => { sfx('pop'); tween(900, t => { m.position.lerpVectors(from, mu.home, t); m.position.x += Math.sin(t * Math.PI) * (i % 2 ? 0.3 : -0.3); m.scale.setScalar(0.1 + t * 0.9); }).then(() => { mu.float = true; }); }, i * 160); });
+    await wait(160 * drops.length + 950); tween(500, t => { u.jaw.rotation.z = 0.95 - t * 0.45; });
+    dropWant = w; dropMiss = 0; dropPics.forEach(q => q.d.classList.add('tap')); $('hear').classList.add('show'); mood(max, 'lead', 600); await sayWord(w);
+    await new Promise(r => { dropNext = r; });
+    $('hear').classList.remove('show');
+    if (mode !== 'stop') { word(w, 'ok'); await wait(1200); word(null); }
+  }
+  dropWant = null; $('hear').classList.remove('show'); await tween(500, t => { u.jaw.rotation.z = 0.5 * (1 - t); u.body.position.y = 0.32 - t * 0.3; });
+  ripple(al.position.x, al.position.z, 2); await tween(700, t => { u.body.position.y = 0.02 - t * 0.32; }); await wait(500); await tween(900, t => { u.body.position.y = -0.3 + t * 0.32; }); u.busy = false; unpresent();      /* 눈을 끔벅하고 물속으로 들어갔다가 다시 */
+}
+async function pickDrop(i){
+  const m = drops[i], w = m.userData.w; if (!dropWant || pickDrop.busy || !m.visible) return; pickDrop.busy = true;
+  if (w === dropWant) { sfx('ok'); dropWant = null; burstAt(m, 0, 14, ['surface', 'a-fish', 'warm-soft', 'stage-soft']); ripple(m.position.x, CK[1] + 0.3, 1.2); people.forEach(p => mood(p, 'happy', 900));
+    drops.forEach((d, j) => { picOff(dropPics[j]); d.userData.float = false; const s0 = d.scale.x; tween(j === i ? 180 : 420, t => d.scale.setScalar(s0 * (j === i ? 1 + t * 0.4 : 1 - t))).then(() => { d.visible = false; }); });
+    await wait(450); const r = dropNext; dropNext = null; pickDrop.busy = false; if (r) r(); return; }
+  dropMiss++; sfx('soft'); mood(max, 'ear', 1400); tween(400, t => m.scale.setScalar(1 + Math.sin(t * Math.PI * 3) * 0.08), t => t); word(w, 'hear'); await sayWord(w, 0.9); await wait(250); word(null);      /* 누른 것의 이름을 들려주고 */
+  if (dropWant && dropMiss >= 2) { const k = drops.findIndex(d => d.userData.w === dropWant); if (dropPics[k]) dropPics[k].pulse = 1; }                                   /* 두 번 다르면 찾는 물방울이 들썩 */
+  if (dropWant) await sayWord(dropWant, 0.8); pickDrop.busy = false;
+}
+/* ③ 버스 떠날 채비(Max · 낱말 기차) — 통나무 버스가 짐칸을 달고 앞길로 나온다. 칸마다 그림 하나 — 이름을 부르면 칸에 불이 켜진다 */
+const micErr = r => ['not-allowed', 'service-not-allowed', 'unavailable', 'audio-capture', 'start'].indexOf(r.error) >= 0;
+async function hearOnce(x){ $('word').classList.add('glisten'); listening = true; const r = await SP.tryOnce(x.w, { kind: 'word', others: CONF.words.map(y => y.w).filter(w => w !== x.w), timeout: CONF.sayMs }); $('word').classList.remove('glisten'); listening = false; if (micErr(r)) micOff = true; return r; }
+/* 그림을 보고 이름을 말한다 — 첫 글자만 보여 주고 기다렸다가, 낱말을 다 보여 주고 들려준 뒤 한 번 더. 못 알아들어도 넘어간다(틀렸다는 말 0) */
+async function nameIt(x){
+  let said = false; mood(max, 'ear'); mood(me, 'speak'); word(x.w, 'say', '이름을 말해 봐', true);
+  if (micOK() && !micPrimed) { $('wordH').textContent = '마이크를 누르고 이름을 말해 봐'; const ok = await tapOf('mic', 9000); if (ok) micPrimed = true; else micOff = true; $('wordH').textContent = '이름을 말해 봐'; }
+  if (micOK() && micPrimed) { const r = await hearOnce(x); if (r.ok) said = 'speech'; } else await wait(EV.thinkMs);
+  word(x.w, said ? 'ok' : 'say', said ? '' : '따라 말해 봐'); mood(max, 'point', 900); await sayWord(x.w);                    /* 낱말이 다 보이고 들린다 */
+  if (!said && micOK() && micPrimed) { mood(max, 'ear'); const r = await hearOnce(x); if (r.ok) said = 'speech'; else if (r.heard) said = 'heard'; }
+  sfx(said === 'speech' ? 'ok' : 'pop'); word(x.w, 'ok'); mood(me, 'happy', 800); mood(max, 'happy', 600); await wait(650);
+  mood(max, 'idle'); if (me.userData.mood === 'speak') mood(me, 'idle'); return said || 'pass';
+}
+let trainS = 0;
+async function evTrain(n){
+  const bus = things.bus, bu = bus.userData, pick = l => CONF.words.filter(x => x.l === l).sort(() => Math.random() - 0.5).slice(0, Math.ceil(n / 2)), list = pick('a').concat(pick('b')).sort(() => Math.random() - 0.5).slice(0, n);
+  bu.busy = true; unpresent(); focus(bus, 1.12, 0.6, 0, 0.05, 0.8); lookAll(bus); mood(max, 'point', 1500); sfx('tray');
+  cars.forEach(c => { c.userData.lamp.material.emissiveIntensity = 0; });
+  await tween(3400, t => { trainS = t * road.total; trainAt(trainS); bu.car.rotation.y = 0.15 * (1 - Math.min(1, t * 5)); bu.car.position.y = 0.42 + Math.abs(Math.sin(t * 40)) * 0.03; }, t => t * t * (3 - 2 * t));
+  const cards = list.map((x, i) => { const q = picAt(cars[i], x.w, 1.42, ''); q.size = 0.46; return q; }); await wait(500);
+  for (let i = 0; i < list.length; i++) { if (mode === 'stop') break; const c = cars[i], q = cards[i]; q.d.classList.add('now'); q.pulse = 1; focus(c, 1.3, 0.75, 0, -0.02, 1.1); lookAll(c);
+    await nameIt(list[i]); q.pulse = 0; q.d.classList.remove('now'); q.d.classList.add('lit'); tween(400, t => { c.userData.lamp.material.emissiveIntensity = t * 2.4; }); burstAt(c, 1.0, 8); tween(300, t => { c.position.y = Math.sin(t * Math.PI) * 0.18; }, t => t); word(null); await wait(380); }
+  /* 다 켜졌다 — 굴뚝에서 김이 뿜 */
+  unpresent(); sfx('done'); cards.forEach(picOff); bus.getWorldPosition(vA); const px = vA.x + 0.75, pz = vA.z;
+  for (let i = 0; i < 16; i++) spawn(vB.set(px, 2.0, pz), vR.set((Math.random() - 0.5) * 1.4, 2 + Math.random() * 2, (Math.random() - 0.5) * 1.0), 1.4, 'surface', { g: -1.5, size: 1.6 });
+  tween(600, t => { bu.car.scale.setScalar(0.82 * (1 + Math.sin(t * Math.PI) * 0.08)); }, t => t);
+}
+function trainHome(){ const bu = things.bus.userData, s0 = trainS; return tween(2600, t => { trainS = s0 * (1 - t); trainAt(trainS); bu.car.rotation.y = 0.15 * Math.max(0, t * 5 - 4); }, t => t * t * (3 - 2 * t)).then(() => { bu.busy = false; }); }
+/* ── 오늘의 걸음 — 듣고 보기 → 따라 말하기 → 쓰기 → 듣기 → 말하기가 한 흐름으로 이어진다(준호 11-11) ──
+   글자마다: 사건(열매) → 낱말 넷(챈트 한 줄 + 따라 말하기) → 그 글자 쓰기. 두 글자를 마치면 악어의 하품(듣고 톡) → 낱말 기차(이름 말하기) → 마무리 */
+const STEPS = [['a', 'ear', 'a 듣고 말하기'], ['a', 'pencil', 'a 쓰기'], ['b', 'ear', 'b 듣고 말하기'], ['b', 'pencil', 'b 쓰기'], ['', 'sparkle', '듣고 톡'], ['', 'train', '이름 말하기']];
 function steps(k){ $('steps').innerHTML = STEPS.map((s, i) => '<span class="' + (i < k ? 'done' : i === k ? 'on' : '') + '" title="' + s[2] + '">' + I(i < k ? 'check' : s[1]) + (s[0] ? '<b>' + s[0] + '</b>' : '') + '</span>').join(''); $('steps').classList.toggle('hide', k < 0); }
 async function lesson(){
-  if (mode) return; mode = 'lesson'; $('dock').classList.add('hide'); let k = 0;
+  if (mode) return; mode = 'lesson'; $('dock').classList.add('hide'); let k = 0; beatFruit = null;
+  await Promise.all([fruitHome('a'), fruitHome('b')]);
   for (const l of ['a', 'b']) {
-    if (mode !== 'lesson') break;
-    steps(k++); dots(0);
-    /* 글자를 먼저 만난다 — 눈이 열매로 가고, 열매가 커지며 소리 */
-    { const tr = l === 'a' ? treeA : treeB, f = tr.userData.fruit; focus(f, 1.3, 0.6, 0, -0.1, 0); lookAll(f); word(l, 'hear'); tween(700, t => f.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.4), t => t); burstAt(f, 0.2, 8); await saySound(l); await wait(250); tween(500, t => f.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.25), t => t); await saySound(l); await wait(350); }
+    steps(k++); dots(0); const f = fruitOf(l);
+    if (l === 'a') await evFruit(); else await evAnts();                                                                      /* 사건 — 열매가 떨어진다 */
+    /* 글자를 만난다 — 눈이 열매로 가고, 열매가 커지며 소리 */
+    focus(f, 1.3, 0.6, 0, -0.1, 0); lookAll(f); word(l, 'hear'); tween(700, t => f.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.4), t => t); burstAt(f, 0.2, 8); await saySound(l); await wait(250); tween(500, t => f.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.25), t => t); await saySound(l); await wait(350);
+    if (l === 'a') { await fruitSit('a'); mood(max, 'idle'); } else await antsTake();
     const list = CONF.words.filter(y => y.l === l);
-    for (let i = 0; i < list.length; i++) { if (mode !== 'lesson') break; dots(list.length, i); await chantLine(list[i]); await repeat(list[i]); dots(list.length, i + 1); }
-    if (mode !== 'lesson') break;
-    dots(0); steps(k++); mood(max, 'idle'); await writeOne(l);
+    for (let i = 0; i < list.length; i++) { dots(list.length, i); await chantLine(list[i]); await repeat(list[i]); dots(list.length, i + 1); if (l === 'b') await antsStep(i); }
+    dots(0); steps(k++); mood(max, 'idle'); beatFruit = null; await writeOne(l);
   }
-  if (mode === 'lesson') { steps(k++); await findGame(CONF.finds); }
-  if (mode === 'lesson') { steps(5); sfx('done'); unpresent(); people.forEach(p => mood(p, 'happy', 2600)); word(null); bubble('<span class="say">I like it!</span>'); petals(); CONF.words.forEach((x, i) => setTimeout(() => { act(x.w, 700); burstAt(things[x.w], x.dy + 0.3, 6); }, i * 130)); [treeA, treeB].forEach(tr => tween(900, t => tr.userData.fruit.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.3), t => t)); await sayLine('I like it!'); await wait(1500); }
+  steps(k++); await evYawn(CONF.finds);
+  steps(k++); word(null); await evTrain(EV.cars);
+  /* 마무리 — 열매가 두 나무에 다시 달린다 */
+  steps(STEPS.length); people.forEach(p => mood(p, 'happy', 2600)); word(null); bubble('<span class="say">I like it!</span>'); petals(); ['a', 'b'].forEach(l => { burstAt(fruitOf(l), 0.2, 8); fruitHome(l); });
+  CONF.words.forEach((x, i) => setTimeout(() => { if (!things[x.w].userData.busy) act(x.w, 700); burstAt(things[x.w], x.dy + 0.3, 6); }, i * 130)); await sayLine('I like it!'); await wait(1500); bubble(null);
+  await trainHome();
   bubble(null); word(null); dots(0); steps(-1); unpresent(); mood(max, 'idle'); mode = null; setDock(null); $('dock').classList.remove('hide');
 }
 /* ── 마친 뒤 — 골라서 다시(챈트 · 듣고 찾기 · 팻말에 쓰기 · 처음부터) ── */
@@ -735,15 +896,8 @@ function tap(e){
 let entered = false;
 async function enter(){
   if (A) A.unlock(); if (T) T.unlock();
-  $('cover').classList.add('hide'); entered = true; focus(null);
-  const f = treeA.userData.fruit, from = f.position.clone(), land = new THREE.Vector3(-0.6, 0.5, 2.9), end = new THREE.Vector3(4.0, 0.5, 2.6);   /* 나무 기준 자리 */
-  await wait(900); sfx('pop'); lookAll(f); mood(me, 'point', 2200);
-  await tween(520, t => { f.position.lerpVectors(from, land, t); f.position.y = from.y + (land.y - from.y) * t * t; }, t => t); sfx('tray');
-  await tween(1500, t => { f.position.lerpVectors(land, end, t); f.position.y = 0.5 + Math.abs(Math.sin(t * Math.PI * 3)) * 0.25 * (1 - t); f.rotation.z = -t * Math.PI * 4; });
-  mood(max, 'happy', 1200); bubble('<span class="say">Oh! Listen!</span>'); await sayLine('Oh! Listen!'); await wait(300); bubble(null); lookAll(null);
+  $('cover').classList.add('hide'); entered = true; focus(null); await wait(900);
   await lesson();
-  /* 열매는 나무로 돌아간다 */
-  const back = f.position.clone(); tween(900, t => { f.position.lerpVectors(back, from, t); f.position.y += Math.sin(t * Math.PI) * 1.2; f.rotation.z = 0; });
 }
 $('go').onclick = enter;
 
@@ -773,6 +927,11 @@ function frame(){
   shafts.forEach(m => { m.material.opacity = m.userData.o * (0.75 + Math.sin(t * 0.5 + m.userData.k) * 0.25); });
   { const u = spot.userData, m = spot.material; m.opacity += ((u.on ? 0.85 : 0) - m.opacity) * Math.min(1, dt * 6); const s = u.r * (1 + Math.sin(t * 4) * 0.04); spot.scale.set(s, s, 1); }
   leafT -= dt; if (leafT <= 0) { leafT = LOW ? 4.5 : 1.7 + Math.random() * 1.6; leafFall(); }
+  /* 사건의 소품 — 개미 줄 · 짐칸 · 물방울 · 그림 딱지 */
+  if (carry.visible) carry.userData.ants.forEach((a, i) => { a.position.y = carry.userData.moving ? Math.abs(Math.sin(t * 14 + i * 1.6)) * 0.07 : 0; });
+  cars.forEach(c => { const s = c.scale.x + (c.userData.on * 0.9 - c.scale.x) * Math.min(1, dt * 9); c.scale.setScalar(s); c.visible = s > 0.02; });
+  drops.forEach(m => { const u = m.userData; if (m.visible && u.float) { m.position.y = u.home.y + Math.sin(t * 1.6 + u.k) * 0.1; m.position.x = u.home.x + Math.sin(t * 0.9 + u.k) * 0.08; } });
+  { const ppu = innerHeight / (2 * cam.top / cam.zoom); for (const q of pics) { q.k += (q.on - q.k) * Math.min(1, dt * 10); const [x, y] = screenOf(q.obj, q.dy), s = q.k * Math.max(0.55, Math.min(1.5, q.size * 2 * ppu / 84)) * (1 + (q.pulse ? Math.sin(t * 9) * 0.07 : 0)); q.d.style.opacity = String(Math.min(1, q.k * 1.5)); q.d.style.transform = 'translate(' + x + 'px,' + y + 'px) scale(' + s + ')'; } }
   /* 알갱이 */
   { let any = false; for (let i = 0; i < PN; i++) { const q = parts[i]; if (q.life <= 0) continue; any = true; q.age += dt;
       if (q.age >= q.life) { q.life = 0; dummy.scale.setScalar(0); dummy.updateMatrix(); partM.setMatrixAt(i, dummy.matrix); continue; }
@@ -793,6 +952,7 @@ function frame(){
     else if (m === 'ear') { hz = 0.24; az[1] = 2.4; ax[1] = -0.3; brow = 1; smile = 0.85; }                                  /* 귀에 손 — 네 말을 듣는다 */
     else if (m === 'lead') { by = -u.stomp * 0.12 + Math.sin(u.stomp * Math.PI) * 0.16; bsy = 1 - u.stomp * 0.08; az[0] = -(0.5 + u.stomp * 1.2); az[1] = 0.5 + u.stomp * 1.2; hz = Math.sin(t * 3) * 0.06; smile = 1.25; snap = true; }
     else if (m === 'point') { const sd = yawTo >= 0 ? 1 : 0; ax[sd] = -1.3; ay[sd] = yawTo - bodyYaw; az[sd] = 0; by += u.stomp * 0.1; smile = 1.25; brow = 0.6; }   /* 그 물건을 가리킨다 */
+    else if (m === 'lift') { az[1] = 2.2; az[0] = -0.5; smile = 1.4; brow = 1; }                                               /* 한 손에 번쩍 든다 */
     else if (m === 'speak') { by = Math.abs(Math.sin(t * 5)) * 0.05; ax[0] = ax[1] = -0.7; az[0] = 0.35; az[1] = -0.35; brow = 0.8; }       /* 두 손을 입가에 — 따라 말한다 */
     if (p !== max && max.userData.mood === 'lead' && m === 'idle') by += max.userData.stomp * 0.1;           /* 둘은 박자에 맞춰 까딱 */
     u.body.position.y += (by - u.body.position.y) * (snap ? 1 : k); u.body.scale.y += (bsy - u.body.scale.y) * k;
@@ -805,14 +965,14 @@ function frame(){
   });
   for (let i = tags.length - 1; i >= 0; i--) { const q = tags[i], p = (now - q.t0) / 1600; if (p >= 1) { q.d.remove(); tags.splice(i, 1); continue; } const [x, y] = screenOf(q.g, q.dy); q.d.style.opacity = String(p < 0.12 ? p / 0.12 : p > 0.8 ? (1 - p) / 0.2 : 1); q.d.style.transform = 'translate(' + x + 'px,' + (y - p * 30) + 'px) scale(' + (p < 0.12 ? 0.4 + p / 0.12 * 0.7 : p < 0.2 ? 1.1 - (p - 0.12) / 0.08 * 0.1 : 1) + ')'; }
   /* 말풍선은 Max 머리 위(화면 밖으로 나가지 않게) */
-  { const b = $('bub'); if (b.classList.contains('show')) { const [x, y] = screenOf(max.userData.head, 0.95), w = b.offsetWidth, h = b.offsetHeight; b.style.transform = 'translate(' + Math.max(8, Math.min(innerWidth - w - 8, x - w / 2)) + 'px,' + Math.max(70, y - h) + 'px)'; } }
+  { const b = $('bub'); if (b.classList.contains('show')) { const [x, y] = screenOf((bubWho || max).userData.head, 0.95), w = b.offsetWidth, h = b.offsetHeight; b.style.transform = 'translate(' + Math.max(8, Math.min(innerWidth - w - 8, x - w / 2)) + 'px,' + Math.max(70, y - h) + 'px)'; } }
   comp.render();
   if (!lowChecked) { fpsN++; fpsT += dt; if (fpsT > 2) { lowChecked = true; if (fpsN / fpsT < 40) { if (ao) ao.enabled = false; bloom.enabled = false; R.setPixelRatio(1); resize(); } } }   /* 느린 기기면 가볍게 */
   if (!window.__pause) requestAnimationFrame(frame);
 }
 frame();
 $('ldT').textContent = '숲속 빈터에 아침이 왔어요'; $('go').style.display = '';
-window.__glade = { frame, things, people, enter, lesson, chant, find, writeSign, poke, answer, paintSign, focus, burstAt, petals, get mode(){ return mode; }, get want(){ return want; }, cam, CONF };
+window.__glade = { frame, things, people, enter, lesson, chant, find, writeSign, poke, answer, paintSign, focus, burstAt, petals, pickDrop, drops, cars, carry, get mode(){ return mode; }, get want(){ return want; }, get dropWant(){ return dropWant; }, cam, CONF };
 </script>
 <script src="/kedu_back.js"></script>
 </body>
