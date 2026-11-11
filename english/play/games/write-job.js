@@ -13,7 +13,7 @@
   'use strict';
   var CONF = {
     words: 3,         /* 하루에 쓰는 열매 차례 낱말 수 */
-    nextMs: 1100      /* 다 쓴 낱말(내 글씨 + 인쇄 낱말)을 보여 주고 다음으로 */
+    nextMs: 2500      /* 다 쓴 낱말(내 글씨 + 인쇄 낱말)을 보여 주고 다음으로 */
   };
   var KIND = { word: 1, decode: 1, sight: 1 };
   function h(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
