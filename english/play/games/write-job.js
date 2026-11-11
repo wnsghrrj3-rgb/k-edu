@@ -39,7 +39,7 @@
   /* 다 쓴 낱말 — 그림 + 내 글씨 + 인쇄 낱말 */
   function done(host, x) {
     var W = g.PlayWrite, mine = W && W.ink(x.w) ? W.svg(x.w) : '';
-    host.innerHTML = '<div class="wj-ok" data-w="' + x.w + '">' + (x.pic ? '<span class="pic">' + x.pic + '</span>' : '') + (mine ? '<span class="wj-mine">' + mine + '</span>' : '') + '<span class="word wj-print">' + x.w + '</span></div>';
+    host.innerHTML = '<div class="wj-ok" data-w="' + x.w + '"><span class="wj-success">참 잘했어! 내 글씨가 완성됐어 ✨</span>' + (x.pic ? '<span class="pic">' + x.pic + '</span>' : '') + (mine ? '<span class="wj-mine">' + mine + '</span>' : '') + '<span class="word wj-print">' + x.w + '</span></div>';
   }
 
   function start(ctx) {
