@@ -26,7 +26,7 @@
     <div>
       <h1 id="heroT">내 캐릭터</h1>
       <p id="heroP">아직 아무것도 없어요. 영어를 말해서 얻은 것만 입을 수 있어요.</p>
-      <div class="row"><span class="pill" id="pFruit">열매 0</span><span class="pill" id="pStreak">0일</span></div>
+      <div class="row"><span class="pill" id="pFruit">열매 0</span><span class="pill" id="pStreak">0일</span><a class="pill" id="nbLink" href="notebook.html" style="display:none">내 공책</a></div>
     </div>
   </section>
 
@@ -77,6 +77,13 @@
     씨앗 → 새싹(1일) → 꽃(3일) → 열매(7일) · 틀려도 내려가지 않아요<br>
     <a href="../v3/index.html">사다리(Lv3~)로 가기</a>
   </div>
+  <div class="adultbar">
+    <button class="adult-link" id="adultBtn" type="button">어른 메뉴</button>
+    <div class="adultbox" id="adultBox" style="display:none">
+      <div class="ar"><span>손 쓰기 대신 조각으로<small>손으로 쓰기 어려운 기기에서 — 글자 조각을 놓아 열매를 맺어요</small></span><button class="btn w" id="tilesBtn" type="button">꺼짐</button></div>
+      <div class="ar"><span>내 공책<small>아이가 쓴 글씨 보기 · A4 인쇄</small></span><a class="btn w" id="nbAdult" href="notebook.html?adult=1">열기</a></div>
+    </div>
+  </div>
 </div>
 <div class="dock"><button class="btn" id="careBtn" type="button" style="display:none">씨앗 돌보기</button><button class="btn" id="goBtn" type="button">놀러 가기</button></div>
 <div class="toast" id="toast"></div>
@@ -98,7 +105,9 @@
 <script src="data/path.js"></script>
 <script src="content/phonics.js"></script>
 <script src="content/phonics-lv1.js"></script>
+<script src="content/letters.js"></script>
 <script src="engine/play-seed.js"></script>
+<script src="engine/play-write.js"></script>
 <script src="engine/play-char.js"></script>
 <script src="core/npc.js"></script>
 <script src="core/decode.js"></script>
@@ -124,7 +133,15 @@
   $('machineT').innerHTML = I('wrench') + ' 소리 기계 <small>소리 칸을 마치면 불이 들어와요</small>';
 
   /* 오늘 돌볼 씨앗 — 복습이 새 구역보다 먼저(아래 단추 하나가 돌보기로 바뀐다) */
-  var due = PlaySeed.dueBy ? PlaySeed.dueBy(1).concat(PlaySeed.dueBy(2)) : PlaySeed.due();      /* 물 줄 것 — 새싹·꽃 차례(열매는 손 쓰기 — W14) */
+  var due = PlaySeed.dueBy ? PlaySeed.dueBy(1).concat(PlaySeed.dueBy(2), window.PlayWrite && PlayWrite.available() ? PlaySeed.dueBy(3) : []) : PlaySeed.due();      /* 물 줄 것 — 새싹·꽃 차례 + 열매 차례(손 쓰기 — W14) */
+  /* 내 공책(#36) — 쓴 글씨가 있으면 가는 길이 생긴다 · 어른 메뉴 「손 쓰기 대신 조각으로」(화면 설정) */
+  if (window.PlayWrite && PlayWrite.count()) { $('nbLink').style.display = ''; $('nbLink').innerHTML = I('notebook') + ' 내 공책 ' + PlayWrite.all().length; }
+  (function(){
+    var tb = $('tilesBtn'), show = function(){ var on = !!PlayWrite.tiles(); tb.textContent = on ? '켜짐' : '꺼짐'; tb.classList.toggle('on', on); };
+    $('adultBtn').onclick = function(){ var bx = $('adultBox'); bx.style.display = bx.style.display === 'none' ? '' : 'none'; };
+    tb.onclick = function(){ PlayWrite.setTiles(!PlayWrite.tiles()); show(); };
+    show();
+  })();
   $('dueN').textContent = due.length; if (!due.length) $('dueN').className = 'n zero';
   if (due.length) {
     $('dueT').textContent = '오늘 돌볼 씨앗 ' + due.length + '개';

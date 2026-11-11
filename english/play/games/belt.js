@@ -55,7 +55,7 @@
     function pick(food) { if (sel) sel.classList.remove('sel'); sel = food; if (sel) sel.classList.add('sel'); }
 
     items.forEach(function (x, i) {
-      var t = belt.add(x.w, x.w, i, items.length);
+      var t = belt.add(g.PlayWrite ? g.PlayWrite.face(x.w, x.w) : x.w, x.w, i, items.length);      /* 내가 쓴 낱말의 주문표는 내 글씨로(W14) */
       t.onclick = function () { if (sel && !sel.classList.contains('gone')) { var w = sel.getAttribute('data-w'); pick(null); put(w, t, 'touch'); } else ctx.say(x.w); };
     });
     shuffle(items).forEach(function (x) {

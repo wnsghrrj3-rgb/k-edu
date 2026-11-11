@@ -3,7 +3,8 @@
  *   오늘 차례가 된 씨앗(심은 지 1·3·7일)마다, 다음 단계로 자라는 데 아직 남은 조건만 한 가지씩 한다(조건표 = 씨앗 엔진의 PATHS — engine/play-seed.js).
  *     새싹(+1일) — 입으로: 이름표를 읽고(말하기) 그 식물에 꽂는다(읽기 — 글자만 보고 고르기)
  *     꽃(+3일)   — 손으로: 이름표 글자를 맞춘다(소리 상자를 부른다 — games/sound-box.js)
- *     열매(+7일) — 손으로: 이름표를 내가 쓴다(손 쓰기는 W14. 지금은 어른 메뉴 「손 쓰기 대신 조각으로」가 켜진 때만 조각으로)
+ *     열매(+7일) — 손으로: 이름표를 내가 쓴다(손 쓰기 엔진 — engine/play-write.js). 열매에 내 글씨 이름표가 달린다.
+ *                  어른 메뉴 「손 쓰기 대신 조각으로」가 켜져 있으면 글자 조각 놓기로(증거 support tiles)
  *   길마다 꼴: 글자(letter) 새싹 = 글자 보고 소리 고르기 · 입말(oral) 새싹 = 그림 보고 말하기 + 첫소리 글자 고르기 ·
  *             문장(sentence) 새싹 = 낱말 칩 차례 맞추기 + 그림 고르기 · 꽃 = 그림 보고 문장 말하기.
  *   간격이 된 뒤 며칠에 나눠 채워도 된다 — 오늘 못 한 조건은 내일 정원에 다시 나온다. 틀려도 내려가지 않는다.
@@ -29,7 +30,7 @@
       if (p === 'S') out.push('say');
       else if (p === 'R') out.push(path === 'letter' ? 'sounds' : 'stick');
       else if (p === 'L') { if (path === 'oral') out.push('first'); }                      /* 지문의 꽃(이야기 듣기)은 그림책방에서 */
-      else if (p === 'W') { if (next === 3 || path === 'letter' || (path === 'oral' && next === 2)) { if (o.tiles) out.push('write'); } else out.push(path === 'sentence' ? 'chips' : 'spell'); }
+      else if (p === 'W') { if (next === 3 || path === 'letter' || (path === 'oral' && next === 2)) { if (o.tiles || (o.pen && (!(path === 'sentence' || path === 'text') || o.sent))) out.push('write'); } else out.push(path === 'sentence' ? 'chips' : 'spell'); }
     });
     return out;
   }
@@ -38,7 +39,7 @@
     var S = ctx.services || {}, seed = S.seed, E = g.PlayEvidence, G = g.PlayGame, A = g.PlayArt, tts = S.tts, sam = S.sam || { say: function () { return Promise.resolve(); }, react: function () {} };
     var STAGE = (seed && seed.STAGE) || [{ icon: 'seed', name: '씨앗' }, { icon: 'sprout', name: '새싹' }, { icon: 'flower', name: '꽃' }, { icon: 'fruit', name: '열매' }];
     var IC = function (st) { return g.PlayIcon.html(STAGE[st].icon); };
-    var due = (ctx.targets || []).slice(), pool = (ctx.pool || []).concat(due), tiles = !!(ctx.opt && ctx.opt.tiles);
+    var due = (ctx.targets || []).slice(), pool = (ctx.pool || []).concat(due), tiles = !!(ctx.opt && ctx.opt.tiles), W = g.PlayWrite, pen = !tiles && !!(W && W.available());
     var keyOf = function (x) { return seed && seed.key ? seed.key(x.w, x.path) : x.w; };
     var host = ctx.host; host.innerHTML = '';
     var root = h('div', 'gd'), dots = h('div', 'dots'), counter = h('div', 'counter');
@@ -112,9 +113,19 @@
             });
           });
         },
-        /* 이름표 쓰기(열매) — 손 쓰기는 W14. 「조각으로」 길 */
-        write: function (x) {
-          return g.PlaySoundBox.one(ctx, counter, x, { asWrite: true }).then(function () { return ctx.emit(E.write(x.w, { skill: 'write', support: 'tiles', inputMode: 'touch', unit: x.path === 'letter' || x.path === 'oral' ? 'letter' : 'word' })); });
+        /* 이름표 쓰기(열매 · 글자와 입말은 꽃부터) — 손으로. 어른 메뉴 「조각으로」면 글자 조각 놓기 */
+        write: function (x, st) {
+          var unit = x.path === 'letter' || x.path === 'oral' ? 'letter' : x.path === 'sentence' ? 'sentence' : x.path === 'text' ? 'text' : 'word';
+          if (!pen) return g.PlaySoundBox.one(ctx, counter, x, { asWrite: true }).then(function () { return ctx.emit(E.write(x.w, { skill: 'write', support: 'tiles', inputMode: 'touch', unit: unit })); });
+          if (unit === 'sentence' || unit === 'text') return g.PlaySentenceWrite.one(ctx, counter, x, { blank: g.PlaySentenceWrite.blankZone(ctx.zone), chips: false });
+          if (unit === 'word') return g.PlayWriteJob.one(ctx, counter, x, { mode: 'free' });
+          /* 글자·입말 — 꽃(st 1 → 2)은 따라 쓰기, 열매는 소리 듣고 혼자. 입말은 첫 글자만 */
+          var ch = x.w.charAt(0), hear = st >= 2, P = g.PlayPhonics, snd = function () { return x.path === 'letter' ? G.soon(P && P.say && tts ? P.say(tts, ch) : null) : ctx.say(x.w); };
+          counter.innerHTML = '<div class="gd-wr">' + (x.path === 'oral' ? '<span class="pic">' + (x.pic || '') + '</span>' : '') + (hear ? '' : '<span class="gd-tag gd-letter">' + ch + '</span>') + '<button type="button" class="btn w pp-rep gd-ear">' + g.PlayIcon.html('speaker') + '</button></div><div class="gd-sheet"></div>';
+          counter.querySelector('.gd-ear').onclick = snd; snd();
+          return W.write(counter.querySelector('.gd-sheet'), { text: ch, mode: hear ? 'free' : 'trace', key: ch, onMiss: function () { ctx.oops(); snd(); } }).then(function (res) {
+            return ctx.emit(E.write(x.w, { skill: 'write', support: res.support, clean: res.clean, attempts: res.attempts, inputMode: 'pen', unit: 'letter' }));
+          });
         }
       };
       /* 보기 셋 중 하나 — 다르면 그 보기만 흐려지고 다시 */
@@ -139,7 +150,7 @@
         if (!alive()) return;
         dots.innerHTML = due.map(function (_, k) { return '<i class="' + (k < i ? 'ok' : k === i ? 'on' : '') + '"></i>'; }).join('');
         if (i >= due.length) return end();
-        var x = due[i], k = keyOf(x), s0 = seed ? seed.get(k) : null, st = s0 ? s0.stage : 0, todo = jobs(x, s0, { tiles: tiles, api: seed }), grew = false, spoke = false;
+        var x = due[i], k = keyOf(x), s0 = seed ? seed.get(k) : null, st = s0 ? s0.stage : 0, todo = jobs(x, s0, { tiles: tiles, pen: pen, sent: !!g.PlaySentenceWrite, api: seed }), grew = false, spoke = false;
         function step() {
           if (!alive()) return;
           var job = todo.shift();
@@ -149,7 +160,8 @@
         function shown() {
           var s2 = seed && seed.get(k) ? seed.get(k) : { stage: st };
           if (grew) grown++;
-          counter.innerHTML = '<div class="seed s' + s2.stage + ' grow gd-seed big">' + IC(s2.stage) + '</div><div class="word">' + x.w + '</div><div class="hint">' + (grew ? STAGE[s2.stage].name + '이 됐어요!' : spoke ? '잘 자라고 있어요' : '내일 말해 주면 자라요') + '</div>';
+          var mine = W && W.ink(x.path === 'letter' || x.path === 'oral' ? x.w.charAt(0) : x.w) && s2.stage >= 2 ? W.svg(x.path === 'letter' || x.path === 'oral' ? x.w.charAt(0) : x.w) : '';      /* 내 글씨 이름표 */
+          counter.innerHTML = '<div class="seed s' + s2.stage + ' grow gd-seed big">' + IC(s2.stage) + '</div>' + (mine ? '<div class="gd-ink" data-w="' + x.w + '">' + mine + '</div>' : '') + '<div class="word">' + x.w + '</div><div class="hint">' + (grew ? STAGE[s2.stage].name + '이 됐어요!' : spoke ? '잘 자라고 있어요' : '내일 말해 주면 자라요') + '</div>';
           i++; setTimeout(next, CONF.showMs);
         }
         step();

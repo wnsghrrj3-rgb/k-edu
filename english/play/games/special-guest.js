@@ -9,6 +9,7 @@
  *             첫 단어 칸(sight)·단어와 그림 칸 = 단어 카드 읽기(통째로 보는 단어는 쪼개지 않는다).
  *   Lv2(W08): 문법 칸(gram) = 손님 그림 주문 → 문장 자판기 · 그림책방(story) = 처음 보는 지문 읽기.
  *   특별 손님 v2(설계 v2 §4 · W13): 그 칸에 꽃 이상 낱말이 있으면 한 번은 글자만 적힌 쪽지로 주문한다(읽기 — 혼자 읽어 냈는지의 증거. 문 조건은 그대로 말).
+ *   특별 손님 v2 끝(W14): 쪽지 주문이 있던 날은 끝에 영수증에 그 낱말을 손으로 쓴다(쓰기 — 혼자 써냈는지의 증거. 문 조건 아님 · 「다음에」로 넘길 수 있다).
  *   한 해 길 글자 숲(part A): 앞 걸음 낱말을 섞어 「무슨 소리로 시작해?」(첫 글자 고르기 셋) + 끝에 「I like it!」 한마디.
  *   한 해 길의 그 밖 걸음: 처음 보는 낱말(응용 — zone.more) 읽기부터.
  *   공통 인터페이스: start(ctx) → Promise({ completed, passed:true, by:'speech'|'chosen' }) · ctx.zone.boss.turns 사용
@@ -74,7 +75,7 @@
     return new Promise(function (resolve) {
       function turn() {
         dots.innerHTML = new Array(total + 1).join('x').split('').map(function (_, k) { return '<i class="' + (k < i ? 'ok' : k === i ? 'on' : '') + '"></i>'; }).join('');
-        if (i >= total) return resolve({ completed: true, passed: true, by: bys.indexOf('speech') >= 0 ? 'speech' : 'chosen' });
+        if (i >= total) return receipt().then(function () { resolve({ completed: true, passed: true, by: bys.indexOf('speech') >= 0 ? 'speech' : 'chosen' }); });
         if (letters) return soundTurn();
         if (firsts) return i < cards.length ? firstTurn() : likeTurn();
         if (!reading && turns[i].note) return noteTurn(turns[i].note);
@@ -132,10 +133,28 @@
           i++; later(CONF.replyGap, turn);
         });
       }
+      /* 영수증 — 쪽지로 주문했던 낱말을 손으로 쓴다(문 조건 아님). 손 쓰기가 없거나 「조각으로」면 건너뛴다 */
+      function receipt() {
+        var W = g.PlayWrite;
+        if (!noteW || !W || !W.available() || (ctx.opt && ctx.opt.tiles) || !alive()) return Promise.resolve();
+        return new Promise(function (res) {
+          var done = false, end = function () { if (done) return; done = true; res(); };
+          frame.style.display = 'none'; ask.innerHTML = '<b>' + noteW.w.charAt(0).toUpperCase() + noteW.w.slice(1) + '!</b><small>영수증에 써 줘.</small>';
+          act.innerHTML = '<div class="sg-receipt"><div class="sg-rc-top">' + g.PlayIcon.html('pencil') + '<span class="pic">' + (noteW.pic || '') + '</span><button type="button" class="btn w pp-rep sg-rc-ear">' + g.PlayIcon.html('speaker') + '</button></div><div class="sg-rc-sheet"></div><button type="button" class="btn w sg-later">다음에</button></div>';
+          act.querySelector('.sg-rc-ear').onclick = function () { ctx.say(noteW.w); };
+          act.querySelector('.sg-later').onclick = end;
+          ctx.say(noteW.w);
+          W.write(act.querySelector('.sg-rc-sheet'), { text: noteW.w, mode: 'free', onMiss: function () { ctx.oops(); ctx.say(noteW.w, 0.6); } }).then(function (r) {
+            if (done || !alive()) return;
+            ctx.emit(E.write(noteW.w, { skill: 'write', support: r.support, clean: r.clean, attempts: r.attempts, inputMode: 'pen' })); ctx.good(r.clean, { at: q.G[who] });
+            later(CONF.replyGap, end);
+          });
+        });
+      }
       /* 쪽지 주문 — 글자만 보고 그 그림을 고른다(읽기) */
       function noteTurn(x) {
         npc.react(q.G[who], 'wait'); frame.style.display = 'none';
-        q.say('<span class="sg-note">' + x.w + '</span>', false); q.bub.classList.remove('multi');
+        q.say('<span class="sg-note">' + (g.PlayWrite ? g.PlayWrite.face(x.w, x.w) : x.w) + '</span>', false); q.bub.classList.remove('multi');      /* 내가 쓴 낱말이면 쪽지도 내 글씨로 */
         ask.innerHTML = '<b>' + ASK[0] + '</b><small>쪽지에 적힌 것을 찾아 줘.</small>';
         var others = shuffle((Z.words || []).filter(function (y) { return y.w !== x.w && y.pic && !/ /.test(y.w); })).slice(0, 2).map(function (y) { return y.w; });
         choose([x.w].concat(others), x.w, function (k) { return pic[k] || k; }, null, function (clean, tries) {

@@ -103,6 +103,7 @@ L1.forEach(z => ((z.boss && z.boss.turns) || []).forEach(t => say1(z.id + ' 특�
 console.log('소리 마을(Lv1) 검사: 칸 ' + L1.length + ' · 소리 숲 ' + forest.length + '칸 · 알파벳 묶음 ' + (abc ? abc.bundles.length : 0) + ' · 문 ' + Object.keys(ZS.gates).filter(k => /^lv1-/.test(k)).length + ' → 위반 ' + (violations.length - l1v0));
 /* ── ④ 설계 v2 · 한 해 길 ── */
 load('core/path.js'); load('engine/play-seed.js'); load('core/game.js');
+load('content/letters.js'); load('engine/play-write.js');      /* 손 쓰기(W14) — 쓰는 놀이가 그 걸음에 맞는지 보려면 글자 자료가 있어야 한다 */
 fs.readdirSync(path.join(ROOT, 'games')).filter(f => /\.js$/.test(f)).forEach(f => { try { load('games/' + f); } catch (e) { violations.push('놀이 파일 ' + f + ' — 실을 수 없음: ' + e.message); } });
 const PP = win.PlayPath, PS = win.PlaySeed, PG = win.PlayGame, v4 = violations.length;
 const PATHS = Object.keys(PS.PATHS);

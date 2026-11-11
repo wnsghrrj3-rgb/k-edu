@@ -522,6 +522,12 @@ window.PLAY_ZONES = {
     'lv1-gate':    { id: 'lv1-gate',    name: '우리 집',   icon: 'home', page: 'zone/home.html',  world: 'lv1' },
     'animal-farm': { id: 'animal-farm', name: '동물 농장', icon: 'barn', page: 'zone/farm.html',  world: 'lv1' }
   },
+  /* 무대의 글자 자리(설계 v2 §7-4 — 쓰는 일 #31 이 낱말을 쓰는 곳. 지금은 2D 판, 입체 방은 W15~) */
+  inks: {
+    'lunch-shop': { id: 'menu', name: '메뉴판' }, 'classroom': { id: 'board', name: '칠판' }, 'playground': { id: 'sand', name: '모래밭' }, 'vending': { id: 'menu', name: '자판기 메뉴판' },
+    'mirror': { id: 'memo', name: '거울 메모' }, 'bookshop': { id: 'card', name: '독서 카드' }, 'lv1-gate': { id: 'note', name: '쪽지' }, 'animal-farm': { id: 'plate', name: '문패' },
+    'sound-shop': { id: 'sample', name: '견본판' }, 'sound-forest': { id: 'path', name: '흙길' }
+  },
   /* 무대를 건너는 문 — 이 칸은 적힌 칸이 열림 조건을 채워야 들어갈 수 있다(특별 손님만 넘었으면 구경). 사다리 차례 그대로 */
   gates: { 'lv1-03': 'lv1-02', 'lv1-05': 'lv1-04', 'lv1-08': 'lv1-07',
     /* Lv2(W07) — 교실은 점심 가게 첫 칸 뒤(예전 「교실 구경」 그대로) · 읽기 칸은 ee·ea 칸 뒤 · 운동장은 블렌드 l·r 칸 뒤(동작 동사를 읽을 수 있게) ·

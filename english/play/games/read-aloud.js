@@ -19,7 +19,8 @@
     o = o || {};
     var S = ctx.services || {}, P = g.PlayPhonics, tts = S.tts, helped = false;
     host.innerHTML = '';
-    var face = function () { return P && !x.sight ? P.html(x) : '<span class="ph-w">' + x.w + '</span>'; };      /* 통째로 보는 단어(사이트워드)는 쪼개 보이지 않는다 */
+    var print = function () { return P && !x.sight ? P.html(x) : '<span class="ph-w">' + x.w + '</span>'; };
+    var face = function () { return g.PlayWrite ? g.PlayWrite.face(x.w, print()) : print(); };      /* 내가 쓴 낱말의 카드는 내 글씨로(W14) — 읽기 판정은 그대로 */      /* 통째로 보는 단어(사이트워드)는 쪼개 보이지 않는다 */
     var card = h('div', 'rd-card', face()), help = h('button', 'btn w pp-rep', g.PlayIcon.html('speaker')), act = h('div', 'oq-act'); help.type = 'button';
     host.appendChild(card); host.appendChild(help); host.appendChild(act);
     var model = function (slowly) { helped = true; return tts && tts.blend && P && !x.sight && P.sounds(x).length ? tts.blend(P.sounds(x), { passes: slowly ? 1 : 2, word: x.w }) : (tts ? tts.word(x.w, slowly ? { rate: 0.6 } : undefined) : null); };

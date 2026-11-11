@@ -38,7 +38,7 @@
     weakGap: 0.15, window: 30, weakMin: 4,           /* 15%p · 최근 30건 · 힘마다 이만큼은 쌓여야 견준다 */
     mergeGap: 3,                                      /* 둘째 날이 첫날에서 이만큼(일) 지났으면 읽는 날 + 쓰는 날 */
     maxDay: 7,                                        /* 하루 놀이 수 상한(물 주기·특별 손님 포함) */
-    perGame: { 'sound-box': 3, 'word-train': 8, 'first-basket': 6, 'order-shop': 8, plates: 8, pop: 6, 'catch': 6, lean: 6, belt: 6, 'read-aloud': 6, 'sound-bridge': 4, 'sound-train': 4, raccoon: 5, 'picture-book': 6, 'magic-call': 6, dance: 6 }   /* 놀이별 대상 수(없으면 구역 단어 전부) */
+    perGame: { 'write-job': 3, 'sound-box': 3, 'word-train': 8, 'first-basket': 6, 'order-shop': 8, plates: 8, pop: 6, 'catch': 6, lean: 6, belt: 6, 'read-aloud': 6, 'sound-bridge': 4, 'sound-train': 4, raccoon: 5, 'picture-book': 6, 'magic-call': 6, dance: 6 }   /* 놀이별 대상 수(없으면 구역 단어 전부) */
   };
   var KEY = 'kedu-en-play-stage';
   /* 놀이의 첫 채널 → 겹침을 따지는 묶음 */

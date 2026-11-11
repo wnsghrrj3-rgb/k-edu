@@ -69,6 +69,7 @@
       words: words, letterItems: s.letters.map(function (l) { return { w: l, path: 'letter' }; }), letters: s.letters.length > 0, more: s.more.map(function (w) { return item(w, 'decode', { role: 'apply' }); }),
       frames: s.frames, chantLines: s.chant, story: s.story, life: s.life, ink: s.ink, twist: s.twist, chains: s.chains, family: s.family,
       notes: s.notes, guestAsk: s.guest, favor: s.favor,
+      inks: [{ id: 'sign', name: s.ink || '팻말' }],      /* 그 걸음의 글자 자리(쓰는 일 #31) */
       confuse: [], games: games, days: s.days, covers: s.covers,
       decorKey: 'path:' + s.stage, decor: DECOR, space: null, part2: null
     };

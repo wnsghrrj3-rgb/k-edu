@@ -80,7 +80,7 @@
     u.root.appendChild(box); u.root.appendChild(tray); u.root.appendChild(hint);
     var left = W.length, clean = {};
     return new Promise(function (resolve) {
-      shuffle(W).forEach(function (w) { var p = h('div', 'plate', w); p.setAttribute('data-w', w); box.appendChild(p); clean[w] = true; });
+      shuffle(W).forEach(function (w) { var p = h('div', 'plate', g.PlayWrite ? g.PlayWrite.face(w, w) : w); p.setAttribute('data-w', w); box.appendChild(p); clean[w] = true; });
       shuffle(W).forEach(function (w) {
         var it = h('div', 'item', pic[w]); it.setAttribute('data-w', w); tray.appendChild(it);
         var ghost = null, hot = null;

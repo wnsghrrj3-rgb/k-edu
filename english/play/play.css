@@ -682,3 +682,125 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
 .pathcard .pt i u{width:7px;height:7px;border-radius:var(--r-pill);background:var(--surface-3);text-decoration:none}
 .pathcard .pt i u.on{background:var(--grow-1)}
 .pathcard .btn{flex-shrink:0;padding:0 16px;height:44px}
+
+/* ── W14 손 쓰기(설계 v2 §8-4) — 영어 공책 네 줄 · 글자마다 한 칸 · 화면은 2D ── */
+/* 읽고 쓰는 재료의 글꼴(--font-read — ui/tokens.css) : 낱말 카드·이름표·주문표·공책 */
+.word,.ph-w,.gd-tag,.bl-ticket,.plate,.sg-note,.rd-card,.lp-letter,.wj-model,.sw-line,.nb-word{font-family:var(--font-read)}
+.pw{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
+.pw-sheet{box-sizing:border-box;width:100%;max-width:calc(var(--pw-n,1) * 172px + 12px);overflow-x:auto;border-radius:var(--r-2);background:var(--surface);box-shadow:var(--shadow);padding:6px}
+.pw-svg{display:block;width:100%;min-width:calc(var(--pw-n,1) * 96px * .75);height:auto;aspect-ratio:calc(var(--pw-n,1) * .75);touch-action:none;cursor:crosshair}
+.pw-line{stroke:var(--ink-4);stroke-width:1;fill:none}
+.pw-base{stroke:var(--ink-3);stroke-width:1.6}
+.pw-mid{stroke-dasharray:5 5}
+.pw-box{fill:var(--surface-2);opacity:.4;stroke:none}
+.pw-cell.ok .pw-box{fill:var(--ok-soft);opacity:.9}
+.pw-ghost{fill:none;stroke:var(--ink);stroke-width:9;stroke-linecap:round;stroke-linejoin:round;opacity:0;pointer-events:none}
+.pw-cell[data-level="trace"] .pw-ghost{opacity:var(--pw-trace,.4)}
+.pw-cell[data-level="faint"] .pw-ghost{opacity:var(--pw-faint,.15)}
+.pw-cell.ok .pw-ghost{opacity:0}
+.pw-ink{fill:none;stroke:var(--stage-deep);stroke-width:7;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.pw-cell.ok .pw-ink{stroke:var(--ok)}
+.pw-cell .pw-ink.given{stroke:var(--ink-3)}
+.pw-start,.pw-num{display:none;pointer-events:none}
+.pw-cell[data-level="trace"] .pw-start.now{display:block;fill:var(--warm)}
+.pw-cell[data-level="trace"] .pw-num.now{display:block;fill:var(--ink-2);font-size:11px;font-weight:800;font-family:var(--font-en)}
+.pw-start.pulse{animation:pwPulse var(--t-3) var(--ease) 2;transform-box:fill-box;transform-origin:center}
+.pw-demo-line{fill:none;stroke:var(--warm);stroke-width:8;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;animation:pwDraw 650ms linear forwards;pointer-events:none}
+.pw-demo-line.still{stroke-dashoffset:0;animation:none;opacity:.7}
+.pw-cell.no .pw-box{animation:pwNo var(--t-3) var(--ease)}
+.pw-cell.flip .pw-inks{transform-box:fill-box;transform-origin:center;animation:pwFlip 600ms var(--ease) forwards}
+.pw-mark{font-family:var(--font-read);font-size:64px;fill:var(--ink-2)}
+@keyframes pwDraw{to{stroke-dashoffset:0}}
+@keyframes pwPulse{50%{transform:scale(1.9)}}
+@keyframes pwNo{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+@keyframes pwFlip{to{transform:scaleX(-1)}}
+.pw-bar{display:flex;gap:10px;justify-content:center}
+.pw-bar .btn{min-width:60px;min-height:48px;padding:0 16px;font-size:22px}
+.pw.strict .pw-ok{display:none}
+.pw.done .pw-bar{visibility:hidden}
+@media (prefers-reduced-motion: reduce){.pw-demo-line{animation:none;stroke-dashoffset:0}.pw-cell.flip .pw-inks,.pw-start.pulse,.pw-cell.no .pw-box{animation:none}}
+/* 내 글씨 — 읽기 카드·이름표·글자 자리·공책 */
+.pw-face{height:1.5em;width:auto;vertical-align:middle;overflow:visible}
+.pw-face .pw-ink{stroke:currentColor;stroke-width:8}
+.pw-mine{display:inline-flex;align-items:center}
+.pw-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+/* #30 글자 길 — 흙길과 발자국 */
+.lp{display:flex;flex-direction:column;align-items:center;gap:12px}
+.lp-head{display:flex;align-items:center;gap:12px}
+.lp-letter{display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:var(--r-2);background:var(--a-cream);font-weight:700;font-size:48px;line-height:1;color:var(--ink)}
+.lp-letter.lp-hid{color:var(--ink-3);font-size:34px}
+.lp-sheet{width:100%}
+.lp .pw-sheet{background:var(--a-cream)}
+.lp .pw-ink.done,.lp .pw-cell.ok .pw-ink{stroke:var(--a-wood);stroke-width:8;stroke-dasharray:2 11}
+/* #31 쓰는 일 — 무대의 글자 자리 */
+.wj{display:flex;flex-direction:column;align-items:center;gap:12px}
+.wj-board{width:100%;max-width:520px;border-radius:var(--r-2);padding:10px 14px;background:var(--surface-2)}
+.wj-name{font-size:13px;font-weight:700;color:var(--ink-2);display:flex;align-items:center;gap:6px}
+.wj-lines{display:flex;flex-wrap:wrap;gap:8px;min-height:44px;margin-top:6px}
+.wj-line{display:inline-flex;padding:2px 10px;border-radius:var(--r-1);background:var(--surface);color:var(--ink);font-size:28px}
+.wj-at-board .wj-board{background:var(--ink)}
+.wj-at-board .wj-name{color:var(--ink-4)}
+.wj-at-board .wj-line{background:transparent;color:var(--on-stage)}
+.wj-at-sand .wj-board{background:var(--warm-soft)}
+.wj-at-sand .wj-line{background:transparent;color:var(--a-wood)}
+.wj-at-plate .wj-board,.wj-at-sign .wj-board,.wj-at-path .wj-board{background:var(--a-cream)}
+.wj-at-memo .wj-line,.wj-at-note .wj-line{background:var(--warm-soft)}
+.wj-work{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
+.wj-top{display:flex;align-items:center;gap:12px;justify-content:center}
+.wj-top .pic{font-size:64px;line-height:1}
+.wj-model{font-size:34px;font-weight:700;padding:4px 14px;border-radius:var(--r-1);background:var(--a-cream)}
+.wj-sheet{width:100%}
+/* #32 문장 쓰기 */
+.swg{display:flex;flex-direction:column;gap:10px}
+.sw{display:flex;flex-direction:column;align-items:center;gap:12px}
+.sw-pic{font-size:64px;line-height:1}
+.sw-line{font-size:26px;font-weight:700;color:var(--ink);min-height:44px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center}
+.sw-w{padding:2px 6px;border-radius:var(--r-1);color:var(--ink-3)}
+.sw-w.now{background:var(--stage-soft);color:var(--stage-deep)}
+.sw-w.mine{color:var(--ink)}
+.sw-gap{display:inline-block;width:64px;height:1.1em;border-bottom:3px solid var(--stage);vertical-align:bottom}
+.sw-work{width:100%;display:flex;flex-direction:column;align-items:center}
+/* #28 이름표 — 손으로 쓰는 열매 */
+.gd-wr{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px}
+.gd-wr .pic{font-size:60px;line-height:1}
+.gd-sheet{width:100%}
+.gd-ink{display:inline-flex;padding:4px 12px;border-radius:var(--r-1);background:var(--a-cream);box-shadow:var(--shadow);font-size:30px;color:var(--ink);margin:6px 0}
+/* 특별 손님 — 영수증 */
+.sg-receipt{display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px;border-radius:var(--r-2);background:var(--surface);width:100%}
+.sg-rc-top{display:flex;align-items:center;gap:12px;font-size:22px;color:var(--ink-2)}
+.sg-rc-top .pic{font-size:48px;line-height:1}
+.sg-rc-sheet{width:100%}
+.sg-later{min-height:40px;padding:0 16px;font-size:14px}
+/* 홈 — 내 공책 가는 길 · 어른 메뉴 */
+a.pill{text-decoration:none}
+.adultbar{display:flex;flex-direction:column;align-items:center;gap:10px}
+.adult-link{font-size:12px;color:var(--ink-3);text-decoration:underline;padding:6px 10px}
+.adultbox{width:100%;max-width:520px;border-radius:var(--r-2);background:var(--surface);box-shadow:var(--shadow);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.adultbox .ar{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;color:var(--ink-2)}
+.adultbox .ar small{display:block;font-size:12px;color:var(--ink-3)}
+.adultbox .btn{min-height:40px;padding:0 14px;font-size:14px;flex-shrink:0}
+.adultbox .btn.on{background:var(--ok);color:var(--on-stage)}
+/* #36 내 공책(2D 판) */
+.nb{max-width:720px;margin:0 auto;padding:14px 16px 120px;display:flex;flex-direction:column;gap:14px}
+.nb-empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:48px 0;color:var(--ink-3);font-size:15px}
+.nb-empty .ic{font-size:44px}
+.nb-book{border-radius:var(--r-3);background:var(--surface);box-shadow:var(--shadow);padding:14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;min-height:240px}
+.nb-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;border-radius:var(--r-2);background:var(--a-cream);color:var(--ink)}
+.nb-item .pw-face{height:76px;max-width:100%}
+.nb-item .pw-face .pw-ink{stroke-width:6}
+.nb-date{font-size:12px;color:var(--ink-3)}
+.nb-word{font-size:15px;font-weight:700;color:var(--ink-2)}
+.nb-nav{display:flex;align-items:center;justify-content:center;gap:12px}
+.nb-nav .btn{min-height:44px;padding:0 16px;font-size:15px}
+.nb-nav .btn[disabled]{opacity:.35}
+.nb-nav #prev .ic{transform:none}
+.nb-no{font-size:14px;font-weight:700;color:var(--ink-2);min-width:56px;text-align:center}
+.nb-print{display:none}
+@media print{
+  .top,.nb-nav,.nb-book,.adultbar,.dock,.toast{display:none!important}
+  body{background:var(--surface)}
+  .nb{padding:0;max-width:none}
+  .nb-print{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8mm}
+  .nb-print .nb-item{break-inside:avoid;background:transparent;box-shadow:none;border-bottom:1px solid var(--ink-4);border-radius:0}
+  @page{size:A4;margin:14mm}
+}

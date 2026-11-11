@@ -9,7 +9,10 @@
  *   알파벳 칸(구역 bundles): 조립기가 정한 오늘의 묶음을 소리 도구에 알리고(PlayPhonics.setBundle), 가방·끝 카드는 묶음 차례로.
  *   W13(설계 v2 · 한 해 길): 씨앗은 열쇠로 본다(PlaySeed.key — 입말·글자는 따로 심긴다) · 물 주기 = 단계별 오늘 차례(새싹 6·꽃 4·열매 글자 12 — 조립기 caps) ·
  *     한 해 길의 걸음(zone.step)은 조립기 v2(PlayAssemble.day — 만나는 날·읽는 날·쓰는 날)로 짜고, 문은 걸음 차례(PlayPath.open), 끝나면 덮는 사다리 칸 점등(PlayPath.finish) ·
- *     어른 설정 「손 쓰기 대신 조각으로」(?tiles=1 로 켜고 ?tiles=0 으로 끔 — 화면 설정에 남는다).
+ *     어른 설정 「손 쓰기 대신 조각으로」(?tiles=1 로 켜고 ?tiles=0 으로 끔 — 화면 설정에 남는다. 홈의 어른 메뉴에도 있다).
+ *   W14(손 쓰기): 열매 차례는 손으로 쓴다(engine/play-write.js). 오늘 세트에 쓰는 놀이가 있으면 그 놀이가 제 몫을 가져가고(쓰는 일 = 낱말 · 글자 길 = 글자 · 문장 쓰기 = 문장),
+ *     남은 것만 정원에서(이름표) — 조건은 평소 놀이 안에서 채워지고, 남은 것만 정원에서(설계 v2 §3-4).
+ *     주소 ?hand=free|faint|trace = 점검용 — 쓰는 일·글자 길의 맛보기를 그 모드로 연다.
  * ============================================================ */
 (function (g) {
   'use strict';
@@ -23,7 +26,8 @@
     WORDS.concat(Z.letterItems || []).forEach(function(x){ byK[K(x)] = x; });
     var QS = location.search, mode = /mode=care/.test(QS) ? 'care' : 'play';
     if (/[?&]tiles=[01]/.test(QS) && PlayGame.setPref) PlayGame.setPref('tiles', /[?&]tiles=1/.test(QS));
-    var TILES = !!(PlayGame.pref && PlayGame.pref('tiles'));
+    var TILES = !!(PlayGame.pref && PlayGame.pref('tiles')), PEN = !TILES && !!(g.PlayWrite && g.PlayWrite.available());
+    var HANDMODE = (/[?&]hand=(free|faint|trace)/.exec(QS) || [])[1] || '';      /* 점검 — 손 쓰기 맛보기를 이 모드로(아이 글씨로 문턱을 맞춰 볼 때) */
     var unlocked = PlaySeed.bossDone(Z.id), DKEY = Z.decorKey || Z.id, HOST = conf.host || 'sam';
     if (Z.palette) document.body.setAttribute('data-palette', Z.palette);     /* 무대색(ui/tokens.css) */
     if (conf.icon && $('title')) $('title').innerHTML = PlayIcon.html(conf.icon) + ' ' + $('title').textContent.trim();
@@ -79,9 +83,9 @@
     function dueNow(){
       if (!PlaySeed.dueBy || !PlayAssemble.caps) return { sprout: PlaySeed.due(Z.id).filter(function(w){ return byW[w]; }).map(function(w){ return byW[w]; }), flower: [], fruit: [] };
       var look = function(k){ return byK[k] || (Z.step && g.PlayPath && g.PlayPath.item(k) ? g.PlayPath.item(k).item : null); };
-      var jobs = function(x){ return !g.PlayGarden || !g.PlayGarden.jobs || g.PlayGarden.jobs(x, PlaySeed.get(K(x)), { tiles: TILES, api: PlaySeed }).filter(function(j){ return (j !== 'spell' && j !== 'write') || !!g.PlaySoundBox; }).length > 0; };
+      var jobs = function(x){ return !g.PlayGarden || !g.PlayGarden.jobs || g.PlayGarden.jobs(x, PlaySeed.get(K(x)), { tiles: TILES, pen: PEN, sent: !!g.PlaySentenceWrite, api: PlaySeed }).filter(function(j){ return j === 'write' ? (PEN || !!g.PlaySoundBox) : j !== 'spell' || !!g.PlaySoundBox; }).length > 0; };
       var pick = function(st){ return PlaySeed.dueBy(st, Z.step ? undefined : Z.id).map(look).filter(Boolean).filter(jobs); };
-      return PlayAssemble.caps({ sprout: pick(1), flower: pick(2), fruit: TILES ? pick(3) : [] });
+      return PlayAssemble.caps({ sprout: pick(1), flower: pick(2), fruit: TILES || PEN ? pick(3) : [] });
     }
     var DUE = dueNow(), DUELIST = DUE.sprout.concat(DUE.flower, DUE.fruit);
     function review(){ var sm = PlayEvidence.summary(Z.id, W); return W.filter(function(w){ var k = sm[w].skills; return Object.keys(k).some(function(x){ return k[x] !== 'independent'; }); }); }
@@ -96,11 +100,20 @@
     var BUNDLE = Z.bundles ? (PLAN.bundle != null ? PLAN.bundle : Math.min(PlayAssemble.history(Z.id).days.filter(function(d){ return d.day < PlayAssemble.today(); }).length, Z.bundles.length - 1)) : null;
     if (BUNDLE != null && g.PlayPhonics) g.PlayPhonics.setBundle(Z.id, BUNDLE);      /* 오늘 연습할 소리 = 이 묶음 */
     var EV = PLAN.event ? ((g.PLAY_EVENTS || {})[Z.id] || (g.PLAY_EVENTS || {})[Z.stage] || []).filter(function(x){ return x.id === PLAN.event; })[0] : null;
+    /* 손으로 쓸 차례를 나눈다 — 쓰는 놀이가 오늘 세트에 있으면 그 놀이가 제 몫을, 남은 것은 정원이 */
+    var HAND = {}, isSent = function(x){ return x.path === 'sentence' || x.path === 'text'; }, take = function(id, list){ if (SET.indexOf(id) < 0) return; HAND[id] = list; DUELIST = DUELIST.filter(function(x){ return list.indexOf(x) < 0; }); };
+    if (PEN || TILES) {
+      take('write-job', DUE.fruit.filter(function(x){ return x.path !== 'letter' && x.path !== 'oral' && !isSent(x); }).slice(0, g.PlayWriteJob ? g.PlayWriteJob.CONF.words : 3));
+      take('sentence-write', DUE.fruit.filter(isSent).slice(0, g.PlaySentenceWrite ? g.PlaySentenceWrite.CONF.sentences : 1));
+      if (PEN) take('letter-path', DUE.flower.concat(DUE.fruit).filter(function(x){ return x.path === 'letter'; }).slice(0, g.PlayLetterPath ? g.PlayLetterPath.CONF.letters : 4));
+      if (!DUELIST.length && SET.length > 1 && !PLAN.manual) SET = SET.filter(function(id){ return id !== 'garden'; });
+    }
     var TARGETS = SET.map(function(id){
       if (id === 'garden') return DUELIST;
+      if (id === 'write-job' || id === 'sentence-write' || id === 'letter-path') return HAND[id] || [];
       return PlayAssemble.targets(id, Z, INFO);
     });
-    function optFor(i){ var o = { last: i === SET.length - 1, tiles: TILES }, x = EV && SET[i] === PLAN.eventGame ? EV.opt : null; if (x) Object.keys(x).forEach(function(k){ o[k] = x[k]; }); return o; }
+    function optFor(i){ var o = { last: i === SET.length - 1, tiles: TILES, hand: HANDMODE }, x = EV && SET[i] === PLAN.eventGame ? EV.opt : null; if (x) Object.keys(x).forEach(function(k){ o[k] = x[k]; }); return o; }
     function ctxFor(i, body, intro){
       return { host: body, zone: Z, cell: Z.id, targets: TARGETS[i], pool: WORDS, learner: { mic: MIC }, services: SV, intro: intro, opt: optFor(i), onEvidence: onEvidence };
     }
