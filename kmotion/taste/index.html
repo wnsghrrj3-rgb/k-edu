@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>K-MOTION MATH WIZARD · 놀이 맛보기</title>
+<link rel="stylesheet" href="../kmotion-theme.css">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#070a12;color:#fff;font-family:var(--font,"Pretendard","Noto Sans KR",sans-serif);overflow:hidden}
+#app{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+#stage{width:100%;height:100%;object-fit:contain;display:block;touch-action:none}
+.cam{position:absolute;right:10px;bottom:10px;width:min(17vw,210px);aspect-ratio:4/3;background:#000;border-radius:12px;overflow:hidden;border:2px solid rgba(255,255,255,.3);opacity:.9;pointer-events:none}
+.cam.off{display:none}.cam video{display:none}.cam canvas{width:100%;height:100%;display:block}
+.cam .st{position:absolute;left:6px;bottom:4px;font-size:.66rem;background:rgba(0,0,0,.55);padding:1px 7px;border-radius:999px}
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(5,8,16,.86);text-align:center;padding:20px;overflow:auto}
+.ov.hidden{display:none}
+.k{font-size:.82rem;letter-spacing:.3em;color:#4de1ff;font-weight:800}
+h1{font-size:clamp(1.6rem,4.4vw,2.7rem);font-weight:900}
+p{color:#b9c6dc;line-height:1.65;max-width:640px}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center}
+.row .lab{font-size:.82rem;color:#8fa3c2;min-width:64px;text-align:right}
+.row button{background:rgba(255,255,255,.08);color:#fff;border:2px solid rgba(255,255,255,.18);border-radius:999px;padding:9px 16px;font-weight:800;font-size:.95rem;cursor:pointer}
+.row button.on{background:#4de1ff;color:#06121f;border-color:#4de1ff}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(150px,210px));gap:12px;margin-top:6px}
+.card{background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.2);border-radius:18px;padding:16px 10px;cursor:pointer;color:#fff;font-weight:900;font-size:1.05rem}
+.card:hover{border-color:#ffd35c}.card i{display:block;font-style:normal;font-size:2.2rem;margin-bottom:6px}
+.card small{display:block;font-weight:600;color:#9fb1cc;font-size:.74rem;margin-top:4px}
+.btn{background:#ffd35c;color:#2b1c00;border:0;border-radius:999px;padding:15px 44px;font-size:1.25rem;font-weight:900;cursor:pointer}
+.btn.sub{background:rgba(255,255,255,.12);color:#fff}
+.stars{font-size:3.4rem;letter-spacing:.1em}
+#quit{position:absolute;left:12px;top:12px;background:rgba(5,8,16,.7);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:8px 16px;font-weight:800;cursor:pointer;display:none}
+a.back{position:absolute;left:14px;top:14px;color:#8fa3c2;text-decoration:none;font-size:.9rem}
+@media(max-width:640px){.cards{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="stage" width="1280" height="720"></canvas>
+  <div class="cam off" id="camBox"><video id="v" autoplay playsinline muted></video><canvas id="c" width="480" height="360"></canvas><div class="st" id="camSt">카메라 준비</div></div>
+  <button id="quit">← 그만</button>
+
+  <section class="ov" id="menu">
+    <a class="back" href="../">← 케이모션</a>
+    <span class="k">MATH WIZARD · 맛보기</span><h1>놀이 여섯 가지, 짧게 한 판씩</h1>
+    <p>놀이는 같고, 학년·학기를 바꾸면 안에 나오는 문제만 달라져요.</p>
+    <div class="row" id="rTerm"><span class="lab">내용</span></div>
+    <div class="row" id="rInput"><span class="lab">조작</span><button data-v="touch">화면 터치·마우스</button><button data-v="cam">카메라(손·몸)</button></div>
+    <div class="row" id="rSpeed"><span class="lab">긴장</span><button data-v="off">없음(연습)</button><button data-v="slow">느릿</button><button data-v="normal">보통</button></div>
+    <div class="row" id="rSteer"><span class="lab">달리기</span><button data-v="lean">몸 기울이기</button><button data-v="hand">손 위치로</button></div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section class="ov hidden" id="brief">
+    <span class="k" id="bTerm"></span><h1 id="bTitle"></h1><p id="bHow"></p>
+    <button class="btn" id="bStart">시작</button><button class="btn sub" id="bBack">다른 놀이</button><p id="bMsg"></p>
+  </section>
+
+  <section class="ov hidden" id="end">
+    <span class="k" id="eTerm"></span><div class="stars" id="eStars"></div><h1 id="eTitle"></h1><p id="eLine"></p>
+    <div class="row"><button class="btn" id="eAgain">한 번 더</button><button class="btn sub" id="eMenu">다른 놀이</button></div>
+  </section>
+</div>
+<script src="../kmotion.js"></script>
+<script type="module" src="./taste.js?v=1"></script>
+</body>
+</html>
