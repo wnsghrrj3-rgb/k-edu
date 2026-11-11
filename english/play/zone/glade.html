@@ -17,8 +17,10 @@
  *   준호가 모양과 느낌을 먼저 보려는 판이다 — 하루 흐름(씨앗·증거·세 날)에는 아직 잇지 않았다.
  *   잘라 낸 숲속 빈터를 비스듬히 내려다본다. 그 걸음의 낱말 여덟이 전부 빈터 안의 물건이다:
  *     왼쪽(a) 사과 · 개미 줄 · 도끼 · 악어(개울)   /   오른쪽(b) 배낭 · 침대 · 통나무 버스 · 새
- *   물건을 누르면 움직이며 이름이 들린다. 아래 세 단추 — 챈트(Max 가 박자를 구르고 낱말 자리에서 물건이 들썩) ·
- *   듣고 찾기(들린 것을 빈터에서 찾아 누른다) · 팻말에 쓰기(손으로 쓴 a·b 가 빈터 팻말에 붙는다).
+ *   들어가면 오늘의 걸음이 한 흐름으로 이어진다(준호 11-11 — 듣기만 하지 않게 · 쓰기까지 한 번에):
+ *     글자마다 낱말 넷[챈트 한 줄(듣기 + 낱말이 위에 크게 = 보기) → 따라 말하기] → 그 글자 쓰기(빈터 팻말에 붙는다) … 두 글자를 마치면 듣고 찾기 → 마무리.
+ *   낱말은 들릴 때 위에 크게 뜬다(첫 글자는 색으로). 따라 말하기는 시험이 아니라 메아리 — 두 번 안에 못 알아들어도 넘어간다.
+ *   마친 뒤에는 골라서 다시: 챈트 · 듣고 찾기 · 팻말에 쓰기 · 처음부터. 그때는 물건을 누르면 움직이며 이름이 들린다.
  *   자리는 상세판의 빈터 판형(GLADE 자리 표) 그대로 · 색은 전부 토큰(ui/tokens.css) · 끌면 빈터가 조금 돈다 · ?q=low = 가벼운 판.
  * ============================================================ */
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--ink);touch-action:none;user-select:none;-webkit-user-select:none}
@@ -43,7 +45,32 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:
 /* 누른 물건 위에 뜨는 첫 글자 */
 .tag{position:fixed;left:0;top:0;z-index:4;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-family:var(--font-read);font-weight:700;font-size:28px;color:var(--stage-deep);pointer-events:none;animation:tagUp 1500ms var(--ease) forwards}
 @keyframes tagUp{0%{opacity:0;transform:translate(var(--x),var(--y)) scale(.4)}15%{opacity:1;transform:translate(var(--x),calc(var(--y) - 14px)) scale(1.1)}80%{opacity:1;transform:translate(var(--x),calc(var(--y) - 30px)) scale(1)}100%{opacity:0;transform:translate(var(--x),calc(var(--y) - 44px)) scale(1)}}
-/* 아래 단추 셋 */
+/* 낱말 띠(위) — 들을 때 낱말이 크게 뜬다 */
+.gword{position:fixed;left:50%;top:74px;z-index:5;transform:translate(-50%,-14px) scale(.92);opacity:0;transition:opacity 200ms,transform 240ms var(--ease);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
+.gword.show{opacity:1;transform:translate(-50%,0) scale(1)}
+.gword .row{display:flex;align-items:center;gap:14px;background:var(--surface);border-radius:var(--r-3);padding:8px 22px 10px 16px;box-shadow:var(--shadow)}
+.gword .p{font-size:clamp(40px,7vw,60px);line-height:1;display:flex}
+.gword .p:empty{display:none}
+.gword .w{font-family:var(--font-read);font-weight:700;font-size:clamp(44px,8.5vw,76px);line-height:1.05;color:var(--ink);letter-spacing:.01em}
+.gword .w b{color:var(--stage);font-weight:700}
+.gword.gok .row{background:var(--ok-soft)}
+.gword.gok .w,.gword.gok .w b{color:var(--ok)}
+.gword.gsay .row{box-shadow:var(--shadow),0 0 0 4px var(--warm-soft)}
+.gword.glisten .row{animation:gListen 900ms ease-in-out infinite}
+@keyframes gListen{50%{box-shadow:var(--shadow),0 0 0 10px var(--warm-soft)}}
+.gword .h{font-weight:700;font-size:14px;color:var(--ink-2);background:var(--surface);border-radius:var(--r-pill);padding:6px 14px;box-shadow:var(--shadow)}
+.gword .h:empty{display:none}
+.gword .mic,.gword .said{pointer-events:auto;border:0;border-radius:var(--r-pill);background:var(--stage);color:var(--on-stage);box-shadow:var(--shadow);font:700 16px/1 var(--font);display:flex;align-items:center;justify-content:center}
+.gword .mic{width:68px;height:68px;font-size:32px;animation:gListen 1100ms ease-in-out infinite}
+.gword .said{height:52px;padding:0 24px}
+/* 걸음 표시(아래) — 듣고 말하기 · 쓰기 · 듣고 말하기 · 쓰기 · 듣고 찾기 */
+.gsteps{position:fixed;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:8px;z-index:5;pointer-events:none;transition:opacity 300ms}
+.gsteps.hide{opacity:0}
+.gsteps span{display:flex;align-items:center;gap:4px;height:38px;padding:0 12px;border-radius:var(--r-pill);background:var(--surface);box-shadow:var(--shadow);font-size:18px;color:var(--ink-4)}
+.gsteps span b{font-family:var(--font-read);font-size:19px}
+.gsteps span.on{background:var(--stage);color:var(--on-stage)}
+.gsteps span.done{color:var(--ok)}
+/* 아래 단추(마친 뒤 — 골라서 다시) */
 .gdock{position:fixed;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:12px;z-index:5;pointer-events:none;transition:opacity 300ms,transform 300ms}
 .gdock.hide{opacity:0;transform:translateY(30px)}
 .gdock button{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:92px;padding:10px 14px;border:0;border-radius:var(--r-3);background:var(--surface);box-shadow:var(--shadow);font:700 13px/1.2 var(--font);color:var(--ink-2)}
@@ -75,10 +102,13 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:
 <div class="hud"><span class="chip"><span id="ic"></span>사과나무 빈터 <small>입체 시험판</small></span><button class="sndb" id="snd" type="button" aria-label="소리"></button></div>
 <div class="gbub" id="bub"></div>
 <div class="gtip" id="tip"></div>
+<div class="gword" id="word"><div class="row"><span class="p" id="wordP"></span><span class="w" id="wordT"></span></div><span class="h" id="wordH"></span><button class="mic" id="mic" type="button" aria-label="마이크" style="display:none"></button><button class="said" id="said" type="button" style="display:none">말했어요</button></div>
+<div class="gsteps hide" id="steps"></div>
 <div class="gdock hide" id="dock">
   <button type="button" id="bChant"><span id="iChant"></span>챈트</button>
   <button type="button" id="bFind"><span id="iFind"></span>듣고 찾기</button>
   <button type="button" id="bWrite"><span id="iWrite"></span>팻말에 쓰기</button>
+  <button type="button" id="bAgain"><span id="iAgain"></span>처음부터</button>
 </div>
 <div class="gsheet" id="sheet"><button class="x" id="sheetX" type="button">닫기</button><div class="head"><span class="lt" id="sheetL">a</span><span>점에서 출발해 따라 써 줘</span></div><div id="pad"></div></div>
 <div class="gcover" id="cover"><div class="box"><div class="big">사과나무 빈터</div><div class="ab">a · b</div><p id="ldT">빈터를 가꾸는 중…</p><button class="btn" id="go" type="button" style="display:none">들어가기</button></div></div>
@@ -95,6 +125,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:
 <script src="../core/audio.js"></script>
 <script src="../content/letters.js"></script>
 <script src="../engine/play-write.js"></script>
+<script src="../engine/play-speech.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -109,6 +140,7 @@ const $ = id => document.getElementById(id), I = PlayIcon.html, A = window.PlayA
 const CONF = {
   bpm: 104,                         /* 챈트 박자(상세판 처음 값 — 듣기 단) */
   finds: 4,                         /* 듣고 찾기 한 판 */
+  sayTries: 2, sayMs: 4500,         /* 따라 말하기 — 듣는 횟수 · 한 번 듣는 길이(ms). 두 번 안에 못 알아들어도 넘어간다 */
   cam: { yaw: 0.2, pitch: 0.6, dist: 30, yawMin: -0.25, yawMax: 0.6, pitchMin: 0.42, pitchMax: 0.82 },
   /* 빈터 판형의 자리(상세판 GLADE — [x, z]. 뒤쪽이 -z) */
   slot: { Lb: [-3.4, -1.8], Lc: [-5.6, 1], Ld: [-3.4, 1], Rc: [5.6, 1], Rd: [3.4, 1], Re: [5, 3.6], treeL: [-5, -3.2], treeR: [5, -3.2], center: [0, -3.4],
@@ -381,65 +413,117 @@ const letterOf = w => CONF.words.find(x => x.w === w).l;
 function act(w, dur = 900){ const g = things[w]; if (g.userData.busy) return Promise.resolve(); g.userData.busy = true; return tween(dur, t => g.userData.act(t), t => t).then(() => { g.userData.act(0); g.userData.busy = false; }); }
 function hop(g, h = 0.5, dur = 420){ return tween(dur, t => { g.position.y = (g.userData.home ? g.userData.home.y : 0) + Math.sin(t * Math.PI) * h; }, t => t); }
 function mood(p, m, ms){ p.userData.mood = m; if (ms) setTimeout(() => { if (p.userData.mood === m) p.userData.mood = 'idle'; }, ms); }
-async function poke(w){ sfx('pop'); tagAt(things[w], letterOf(w)); act(w); await sayWord(w); }
+async function poke(w){ sfx('pop'); word(w, 'hear'); tagAt(things[w], letterOf(w)); act(w); await sayWord(w); clearTimeout(poke.t); poke.t = setTimeout(() => { if (!mode) word(null); }, 1400); }
 
-/* ── 챈트(듣기 단) — Max 가 발을 구르고, 낱말 자리에서 그 물건이 들썩인다 ── */
+/* ── 낱말 띠(위) — 들을 때 낱말이 크게 함께 뜬다(듣는 것과 보는 것을 같이 · 준호 11-11). 첫 글자는 색으로 ── */
 let mode = null, chantHalf = 0;
+function word(w, phase, hint){
+  const el = $('word'); if (w == null) { el.classList.remove('show', 'gsay', 'gok', 'glisten'); return; }
+  $('wordP').innerHTML = w.length > 1 ? PlayArt.html(w) : ''; $('wordT').innerHTML = w.length > 1 ? '<b>' + w.charAt(0) + '</b>' + w.slice(1) : '<b>' + w + '</b>';
+  el.classList.add('show'); el.classList.toggle('gsay', phase === 'say'); el.classList.toggle('gok', phase === 'ok'); el.classList.remove('glisten');
+  $('wordH').textContent = hint || ''; $('mic').style.display = 'none'; $('said').style.display = 'none';
+}
 function bubble(html){ const b = $('bub'); if (html == null) { b.classList.remove('show'); return; } b.innerHTML = html; b.classList.add('show'); }
 function stomp(){ max.userData.stomp = 1; sfx('belt'); }
-async function chant(){
-  if (mode) return; mode = 'chant'; setDock('bChant');
-  const letter = chantHalf % 2 ? 'b' : 'a', list = CONF.words.filter(x => x.l === letter), beat = 60000 / CONF.bpm;
-  mood(max, 'lead');
-  for (const x of list) {
-    if (mode !== 'chant') break;
-    bubble('<span class="cell">' + letter + '</span><span class="cell">' + letter + '</span><span class="cell snd">/' + letter + '/</span><span class="cell snd">/' + letter + '/</span><span class="cell pic">' + PlayArt.html(x.w) + '</span>');
-    const cells = $('bub').children, on = k => Array.prototype.forEach.call(cells, (c, i) => c.classList.toggle('on', i === k));
-    on(0); stomp(); await wait(beat); await wait(beat * 0.5); on(1); await wait(beat * 0.5); stomp(); await wait(beat);
-    on(2); stomp(); saySound(letter); await wait(beat); on(3); saySound(letter); await wait(beat);
-    on(4); stomp(); tagAt(things[x.w], letter); act(x.w, beat * 1.8); await sayWord(x.w); await wait(beat * 0.6);
-  }
-  if (mode === 'chant') { bubble('<span class="say">' + (letter === 'a' ? 'Hi, ant!' : 'Hi, big bird!') + '</span>'); mood(max, 'happy', 1400); act(letter === 'a' ? 'ant' : 'bird', 1200); await sayLine(letter === 'a' ? 'Hi, ant!' : 'Hi, big bird!'); await wait(500); }
-  chantHalf++; bubble(null); mood(max, 'idle'); mode = null; setDock(null);
+const beatMs = () => 60000 / CONF.bpm;
+/* 챈트 한 줄 — Max 가 발을 구르고, 낱말 자리에서 그 물건이 들썩이며 낱말이 위에 뜬다 */
+async function chantLine(x){
+  const letter = x.l, beat = beatMs(); mood(max, 'lead');
+  bubble('<span class="cell">' + letter + '</span><span class="cell">' + letter + '</span><span class="cell snd">/' + letter + '/</span><span class="cell snd">/' + letter + '/</span><span class="cell pic">' + PlayArt.html(x.w) + '</span>');
+  const cells = $('bub').children, on = k => Array.prototype.forEach.call(cells, (c, i) => c.classList.toggle('on', i === k));
+  on(0); stomp(); await wait(beat); await wait(beat * 0.5); on(1); await wait(beat * 0.5); stomp(); await wait(beat);
+  on(2); stomp(); saySound(letter); await wait(beat); on(3); saySound(letter); await wait(beat);
+  on(4); stomp(); word(x.w, 'hear'); tagAt(things[x.w], letter); act(x.w, beat * 1.8); await sayWord(x.w); await wait(beat * 0.5);
 }
-/* ── 듣고 찾기 — 들린 것을 빈터에서 찾아 누른다 ── */
-let want = null, found = 0, misses = 0;
-async function find(){
-  if (mode) return; mode = 'find'; setDock('bFind'); found = 0;
-  const order = CONF.words.map(x => x.w).sort(() => Math.random() - 0.5).slice(0, CONF.finds);
-  for (const w of order) {
-    if (mode !== 'find') break;
-    want = w; misses = 0; bubble('<span class="cell pic">' + I('ear') + '</span>'); mood(max, 'lead', 600); await sayWord(w);
-    await new Promise(r => { find.next = r; });
-    found++; await wait(450);
+/* ── 따라 말하기 — 들은 낱말을 바로 따라 말한다. 시험이 아니라 메아리: 두 번 안에 못 알아들어도 넘어간다(틀렸다는 말 0) ──
+   마이크가 없거나 막혀 있으면 「말했어요」 단추로. 첫 번은 마이크 단추를 눌러 시작(브라우저의 마이크 허용 창이 뜨게) */
+const SP = window.PlaySpeech; let micPrimed = false, micOff = false;
+const micOK = () => !!SP && !micOff && SP.available();
+function tapOf(id, ms){ return new Promise(r => { const b = $(id); b.style.display = ''; let done = false; const f = v => { if (done) return; done = true; b.style.display = 'none'; b.onclick = null; r(v); }; b.onclick = () => f(true); if (ms) setTimeout(() => f(false), ms); }); }
+async function repeat(x){
+  bubble(null); mood(max, 'tilt'); word(x.w, 'say', '따라 말해 봐');
+  const others = CONF.words.map(y => y.w).filter(w => w !== x.w);
+  let said = false;
+  if (micOK() && !micPrimed) { $('wordH').textContent = '마이크를 누르고 따라 말해 봐'; const ok = await tapOf('mic', 9000); if (ok) micPrimed = true; else micOff = true; $('wordH').textContent = '따라 말해 봐'; }
+  for (let n = 0; n < CONF.sayTries && micOK() && micPrimed && !said; n++) {
+    $('word').classList.add('glisten');
+    const r = await SP.tryOnce(x.w, { kind: 'word', others, timeout: CONF.sayMs });
+    $('word').classList.remove('glisten');
+    if (r.error === 'not-allowed' || r.error === 'service-not-allowed' || r.error === 'unavailable' || r.error === 'audio-capture' || r.error === 'start') { micOff = true; break; }
+    if (r.ok) { said = 'speech'; break; }
+    if (n + 1 < CONF.sayTries) { $('wordH').textContent = '한 번 더!'; mood(max, 'lead', 700); await sayWord(x.w, 0.8); }
+    else if (r.heard) said = 'heard';                    /* 뭔가 말했다 — 메아리는 그것으로 충분하다 */
   }
-  want = null; if (mode === 'find') { sfx('done'); mood(max, 'happy', 1600); people.forEach(p => p !== max && mood(p, 'happy', 1600)); bubble('<span class="say">I like it!</span>'); await sayLine('I like it!'); await wait(400); }
-  bubble(null); mode = null; setDock(null);
+  if (!said && !(micOK() && micPrimed)) { $('wordH').textContent = '따라 말하고 눌러 줘'; said = (await tapOf('said', 7000)) ? 'tap' : false; }
+  if (said) { sfx(said === 'speech' ? 'ok' : 'pop'); word(x.w, 'ok'); mood(me, 'happy', 900); mood(max, 'happy', 700); await act(x.w, 700); }
+  else { word(x.w, 'hear'); await sayWord(x.w, 0.8); }
+  mood(max, 'idle'); await wait(250);
+  return said;
+}
+/* ── 쓰기 — 글자 하나를 손으로. 쓴 글씨는 빈터 팻말에 붙는다 ── */
+async function writeOne(l){
+  bubble(null); word(l, 'hear', '점에서 출발해 따라 써 줘'); $('pad').innerHTML = ''; $('sheet').classList.add('show'); saySound(l);
+  const res = await new Promise(r => { writeOne.cancel = () => r(null); PW.write($('pad'), { text: l, mode: 'trace', strict: true, key: l, onLetter: () => sfx('pop'), onMiss: () => { sfx('soft'); saySound(l); } }).then(r); });
+  writeOne.cancel = null; $('sheet').classList.remove('show'); $('pad').innerHTML = '';
+  if (!res) return false;
+  paintSign(); sfx('ok'); word(l, 'ok'); hop(signG, 0.35, 500); mood(mina, 'happy', 1000); await wait(900); return true;
+}
+$('sheetX').onclick = () => { if (writeOne.cancel) writeOne.cancel(); };
+/* ── 듣고 찾기 — 들린 것을 빈터에서 찾아 누른다. 찾으면 그 낱말이 위에 뜬다 ── */
+let want = null, misses = 0, findNext = null;
+async function findGame(n){
+  const order = CONF.words.map(x => x.w).sort(() => Math.random() - 0.5).slice(0, n);
+  for (const w of order) {
+    if (mode === 'stop') break;
+    want = w; misses = 0; word(null); bubble('<span class="cell pic">' + I('ear') + '</span>'); mood(max, 'lead', 600); await sayWord(w);
+    await new Promise(r => { findNext = r; });
+    if (mode !== 'stop') { word(w, 'ok'); await wait(900); }
+  }
+  want = null; bubble(null);
 }
 async function answer(w){
   if (!want || answer.busy) return; answer.busy = true;
-  if (w === want) { sfx('ok'); tagAt(things[w], letterOf(w)); mood(max, 'happy', 900); mood(me, 'happy', 900); await act(w, 800); const r = find.next; find.next = null; want = null; answer.busy = false; if (r) r(); return; }
+  if (w === want) { sfx('ok'); tagAt(things[w], letterOf(w)); mood(max, 'happy', 900); mood(me, 'happy', 900); await act(w, 800); const r = findNext; findNext = null; want = null; answer.busy = false; if (r) r(); return; }
   misses++; sfx('soft'); mood(max, 'tilt', 900); act(w, 500); await sayWord(w, 0.9); await wait(200);
   if (misses >= 2) hop(things[want], 0.6, 600);                 /* 두 번 다르면 찾는 것이 들썩 */
   await sayWord(want, 0.8); answer.busy = false;
 }
-/* ── 팻말에 쓰기 — 손으로 쓴 a·b 가 빈터 팻말에 붙는다 ── */
-async function writeSign(){
-  if (mode || !PW) return; mode = 'write'; setDock('bWrite'); $('dock').classList.add('hide');
+/* ── 오늘의 걸음 — 듣고 보기 → 따라 말하기 → 쓰기 → 듣고 찾기가 한 흐름으로 이어진다 ──
+   글자마다: 낱말 넷(챈트 한 줄 + 따라 말하기) → 그 글자 쓰기. 두 글자를 마치면 듣고 찾기, 그리고 마무리 */
+const STEPS = [['a', 'ear', 'a 듣고 말하기'], ['a', 'pencil', 'a 쓰기'], ['b', 'ear', 'b 듣고 말하기'], ['b', 'pencil', 'b 쓰기'], ['', 'sparkle', '듣고 찾기']];
+function steps(k){ $('steps').innerHTML = STEPS.map((s, i) => '<span class="' + (i < k ? 'done' : i === k ? 'on' : '') + '" title="' + s[2] + '">' + I(i < k ? 'check' : s[1]) + (s[0] ? '<b>' + s[0] + '</b>' : '') + '</span>').join(''); $('steps').classList.toggle('hide', k < 0); }
+async function lesson(){
+  if (mode) return; mode = 'lesson'; $('dock').classList.add('hide'); let k = 0;
   for (const l of ['a', 'b']) {
-    if (mode !== 'write') break;
-    $('sheetL').textContent = l; $('pad').innerHTML = ''; $('sheet').classList.add('show'); saySound(l);
-    const res = await new Promise(r => { writeSign.cancel = () => r(null); PW.write($('pad'), { text: l, mode: 'trace', strict: true, key: l, onLetter: () => sfx('pop'), onMiss: () => { sfx('soft'); saySound(l); } }).then(r); });
-    if (!res) break;
-    paintSign(); sfx('ok'); hop(signG, 0.35, 500); mood(mina, 'happy', 1000); await wait(700);
+    if (mode !== 'lesson') break;
+    steps(k++);
+    /* 글자를 먼저 만난다 — 열매가 커지며 소리 */
+    { const f = (l === 'a' ? treeA : treeB).userData.fruit; word(l, 'hear'); tween(700, t => f.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.4), t => t); await saySound(l); await wait(250); await saySound(l); await wait(350); }
+    for (const x of CONF.words.filter(y => y.l === l)) { if (mode !== 'lesson') break; await chantLine(x); await repeat(x); }
+    if (mode !== 'lesson') break;
+    steps(k++); mood(max, 'idle'); await writeOne(l);
   }
-  $('sheet').classList.remove('show'); $('pad').innerHTML = ''; $('dock').classList.remove('hide'); mode = null; setDock(null);
+  if (mode === 'lesson') { steps(k++); await findGame(CONF.finds); }
+  if (mode === 'lesson') { steps(5); sfx('done'); people.forEach(p => mood(p, 'happy', 2200)); word(null); bubble('<span class="say">I like it!</span>'); CONF.words.forEach((x, i) => setTimeout(() => act(x.w, 700), i * 120)); await sayLine('I like it!'); await wait(900); }
+  bubble(null); word(null); steps(-1); mood(max, 'idle'); mode = null; setDock(null); $('dock').classList.remove('hide');
 }
-$('sheetX').onclick = () => { if (writeSign.cancel) writeSign.cancel(); };
-function setDock(id){ ['bChant', 'bFind', 'bWrite'].forEach(b => $(b).classList.toggle('on', b === id)); $('dock').classList.toggle('busy', !!id); }
+/* ── 마친 뒤 — 골라서 다시(챈트 · 듣고 찾기 · 팻말에 쓰기 · 처음부터) ── */
+function setDock(id){ ['bChant', 'bFind', 'bWrite', 'bAgain'].forEach(b => $(b).classList.toggle('on', b === id)); $('dock').classList.toggle('busy', !!id); }
+async function chant(){
+  if (mode) return; mode = 'chant'; setDock('bChant');
+  const letter = chantHalf % 2 ? 'b' : 'a';
+  for (const x of CONF.words.filter(y => y.l === letter)) { if (mode !== 'chant') break; await chantLine(x); }
+  if (mode === 'chant') { const end = letter === 'a' ? 'Hi, ant!' : 'Hi, big bird!'; word(null); bubble('<span class="say">' + end + '</span>'); mood(max, 'happy', 1400); act(letter === 'a' ? 'ant' : 'bird', 1200); await sayLine(end); await wait(500); }
+  chantHalf++; bubble(null); word(null); mood(max, 'idle'); mode = null; setDock(null);
+}
+async function find(){ if (mode) return; mode = 'find'; setDock('bFind'); await findGame(CONF.finds); if (mode === 'find') { sfx('done'); people.forEach(p => mood(p, 'happy', 1600)); bubble('<span class="say">I like it!</span>'); await sayLine('I like it!'); await wait(400); } bubble(null); word(null); mode = null; setDock(null); }
+async function writeSign(){ if (mode || !PW) return; mode = 'write'; setDock('bWrite'); $('dock').classList.add('hide'); for (const l of ['a', 'b']) { if (!(await writeOne(l))) break; } word(null); $('dock').classList.remove('hide'); mode = null; setDock(null); }
 $('bChant').onclick = () => { if (mode === 'chant') { mode = 'stop'; return; } chant(); };
-$('bFind').onclick = () => { if (mode === 'find') { mode = 'stop'; if (find.next) find.next(); return; } find(); };
+$('bFind').onclick = () => { if (mode === 'find') { mode = 'stop'; if (findNext) findNext(); return; } find(); };
 $('bWrite').onclick = () => writeSign();
+$('bAgain').onclick = () => lesson();
+$('iAgain').innerHTML = I('play'); $('mic').innerHTML = I('mic');
+steps(-1);
 
 /* ── 누르기 · 살짝 돌리기 ── */
 const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
@@ -454,11 +538,12 @@ function tap(e){
   const hit = ray.intersectObjects(Object.values(things).concat([signG, treeA.userData.fruit, treeB.userData.fruit]).concat(people), true)[0]; if (!hit) return;
   let o = hit.object; while (o && !(o.userData && o.userData.w) && o !== signG && o !== treeA.userData.fruit && o !== treeB.userData.fruit && people.indexOf(o) < 0) o = o.parent;
   if (!o) return;
+  if (want) { if (o.userData && o.userData.w) answer(o.userData.w); return; }
+  if (mode === 'lesson') return;                                   /* 걸음이 흐르는 동안은 지금 하는 일만 */
   if (o === signG) { if (!mode) writeSign(); return; }
   if (o === treeA.userData.fruit || o === treeB.userData.fruit) { const l = o === treeA.userData.fruit ? 'a' : 'b'; sfx('pop'); tween(500, t => { o.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.35); }, t => t); saySound(l); return; }
   if (people.indexOf(o) >= 0) { mood(o, 'happy', 900); sfx('pop'); if (o === max && !mode) chant(); return; }
-  if (mode === 'find') return answer(o.userData.w);
-  if (mode === 'chant' || mode === 'write') return;
+  if (mode) return;
   poke(o.userData.w);
 }
 
@@ -472,8 +557,7 @@ async function enter(){
   await tween(520, t => { f.position.lerpVectors(from, land, t); f.position.y = from.y + (land.y - from.y) * t * t; }, t => t); sfx('tray');
   await tween(1500, t => { f.position.lerpVectors(land, end, t); f.position.y = 0.5 + Math.abs(Math.sin(t * Math.PI * 3)) * 0.25 * (1 - t); f.rotation.z = -t * Math.PI * 4; });
   mood(max, 'happy', 1200); bubble('<span class="say">Oh! Listen!</span>'); await sayLine('Oh! Listen!'); await wait(300); bubble(null);
-  $('dock').classList.remove('hide'); tip('빈터의 물건을 눌러 봐 — 이름이 들려', 5000);
-  await chant();
+  await lesson();
   /* 열매는 나무로 돌아간다 */
   const back = f.position.clone(); tween(900, t => { f.position.lerpVectors(back, from, t); f.position.y += Math.sin(t * Math.PI) * 1.2; f.rotation.z = 0; });
 }
@@ -508,7 +592,7 @@ function frame(){
 }
 frame();
 $('ldT').textContent = '숲속 빈터에 아침이 왔어요'; $('go').style.display = '';
-window.__glade = { frame, things, people, enter, chant, find, writeSign, poke, answer, paintSign, get mode(){ return mode; }, get want(){ return want; }, cam, CONF };
+window.__glade = { frame, things, people, enter, lesson, chant, find, writeSign, poke, answer, paintSign, get mode(){ return mode; }, get want(){ return want; }, cam, CONF };
 </script>
 <script src="/kedu_back.js"></script>
 </body>

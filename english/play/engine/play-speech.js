@@ -21,7 +21,11 @@
   var ALIAS = {
     chips: ['chip', 'ships', 'cheeps', 'tips'], ham: ['hum', 'hem', 'hamm'], jam: ['gem', 'jem', 'jim', 'jamm', 'jump'],
     lunch: ['launch', 'lunche', 'lunge'], shop: ['shopp', 'shob', 'shaw'], fish: ['fishy', 'fiss', 'feesh'],
-    dish: ['dishh', 'deesh', 'wish'], chop: ['chopp', 'chup', 'job']
+    dish: ['dishh', 'deesh', 'wish'], chop: ['chopp', 'chup', 'job'],
+    /* 한 해 길 첫 걸음(a · b) — 아주 짧은 낱말은 전사가 흔히 다른 낱말로 나온다(11-11 준호 「음성 인식이 잘 안 된다」) */
+    apple: ['apples', 'appel', 'apel', 'able', 'april'], ant: ['aunt', 'and', 'ants', 'end', 'ent', 'at', 'hand'], ax: ['axe', 'acts', 'ask', 'x', 'as', 'axed', 'ex', 'access'],
+    alligator: ['aligator', 'alligators', 'allegator', 'gator'], bag: ['back', 'bags', 'beg', 'bug', 'big'], bed: ['bad', 'bet', 'beds', 'bid', 'bread', 'bud'],
+    bus: ['boss', 'but', 'buzz', 'buss', 'bust', 'bass', 'us'], bird: ['burd', 'birds', 'word', 'heard', 'bert', 'board', 'third', 'burn']
   };
 
   var SR = g.SpeechRecognition || g.webkitSpeechRecognition;
