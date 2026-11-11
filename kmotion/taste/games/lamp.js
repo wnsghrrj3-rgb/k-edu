@@ -3,7 +3,7 @@
 import { W, H, txt, panel, circle, rr, dist, danger, sign } from '../ui.js';
 import { scene, horse, glow } from '../scenes.js';
 export default function(api){
-  const N = 5, CART = { x: 500, y: 250, w: 560, h: 360 };
+  const CART = { x: 500, y: 250, w: 560, h: 360 };
   const LOOK = { 1000: ['#b06cff', '천'], 100: ['#4d9dff', '백'], 10: ['#ffb02e', '십'], 1: ['#ffe27a', '일'] };
   const S = { i: 0, q: null, cnt: {}, held: new Map(), phase: 'play', pt: 0, pop: 0, bounce: 0, src: [] };
   const total = () => S.q.units.reduce((s, u) => s + u * S.cnt[u], 0);
@@ -12,13 +12,11 @@ export default function(api){
     if (u === 1) { glow(c, 0, 0, 46, 'rgba(255,240,140,A)', .6); circle(c, 0, 0, 22, col, '#b78a12', 3); } else { const w = u === 10 ? 64 : u === 100 ? 96 : 120, h = u === 10 ? 96 : 84; rr(c, -w / 2, -h / 2, w, h, 12); c.fillStyle = col; c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 4; c.stroke(); txt(c, u, 0, 2, u === 10 ? 34 : 32, '#1a1206'); } c.restore(); }
   return {
     id: 'lamp', icon: '🏮', title: '등불 창고', how: '수레에 적힌 수만큼 실어요. 왼쪽 상자를 쥐어서 수레 위에서 펴요. 묶음째 나르면 빨라요.', touch: '왼쪽 상자를 끌어다 수레에 놓아요',
-    threatSec: 26, pushBack: .6, total: N,
-    dbg: () => S,
-    prog: () => [S.i, N],
+    threatSec: 26, pushBack: .6, dbg: () => S,
     start(){ S.i = 0; next(); },
     update(dt, cur){
       S.pop = Math.max(0, S.pop - dt); S.bounce = Math.max(0, S.bounce - dt);
-      if (S.phase !== 'play') { S.pt -= dt; if (S.pt <= 0) { S.i++; if (S.i >= N) return api.finish(); next(); } return; }
+      if (S.phase !== 'play') { S.pt -= dt; if (S.pt <= 0) { S.i++; next(); } return; }
       for (const c of cur) {
         if (c.jg && !S.held.has(c.id)) { const s = S.src.find(s => dist(s, c) < 105); if (s) { S.held.set(c.id, s.u); api.sfx('grab'); } }
         if (S.held.has(c.id) && c.jr) { const u = S.held.get(c.id); S.held.delete(c.id);

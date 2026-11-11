@@ -4,18 +4,16 @@
 import { W, H, txt, panel, circle, dist, lerp, danger, rr } from '../ui.js';
 import { scene, orb, bolt, glow } from '../scenes.js';
 export default function(api){
-  const N = 7, HOME = [[190, 270], [190, 500], [1090, 270], [1090, 500], [640, 590]], RAD = 70, DOOR = { x: 640, y: 190 };
+  const HOME = [[190, 270], [190, 500], [1090, 270], [1090, 500], [640, 590]], RAD = 70, DOOR = { x: 640, y: 190 };
   const S = { i: 0, q: null, items: [], phase: 'play', pt: 0, sum: 0, pair: null };
   function next(){ S.q = api.pack.compose(); S.items = S.q.shelf.map((v, k) => ({ v, hx: HOME[k][0], hy: HOME[k][1], x: HOME[k][0], y: HOME[k][1], held: null, dwell: 0, gone: false })); S.phase = 'play'; S.pair = null; api.say(S.q.say); }
   function join(a, b){ S.sum = a.v + b.v; S.pair = [a, b]; const ok = S.sum === S.q.target; S.phase = ok ? 'ok' : 'no'; S.pt = ok ? 1.0 : .8; a.held = b.held = null; a.dwell = b.dwell = 0; const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2; if (ok) { a.gone = b.gone = true; api.correct(); api.fx.burst(mx, my, '#ffe27a', 30, 520); api.fx.ring(mx, my, '#fff3c2'); api.fx.ring(DOOR.x, DOOR.y, '#6dffb0', 60); } else { api.wrong(); api.fx.burst(mx, my, '#9fb6ff', 12, 300); api.fx.shake(10); } }
   return {
     id: 'merge', icon: '🟡', title: '구슬 모으기', how: '양손에 하나씩 쥐고 가운데서 맞대면 합쳐져요. 문에 적힌 수를 만들어요. (한 손이면: 하나를 쥐어 다른 것 위에 올려 두기)', touch: '하나를 끌어다 다른 것 위에 겹쳐요',
-    threatSec: 17, pushBack: .5, total: N,
-    dbg: () => S,
-    prog: () => [S.i, N],
+    threatSec: 17, pushBack: .5, dbg: () => S,
     start(){ S.i = 0; next(); },
     update(dt, cur){
-      if (S.phase !== 'play') { S.pt -= dt; if (S.pt <= 0) { if (S.phase === 'ok') { S.i++; if (S.i >= N) return api.finish(); next(); } else S.phase = 'play'; } }
+      if (S.phase !== 'play') { S.pt -= dt; if (S.pt <= 0) { if (S.phase === 'ok') { S.i++; next(); } else S.phase = 'play'; } }
       const live = S.items.filter(it => !it.gone);
       for (const it of live) { const c = it.held && cur.find(q => q.id === it.held);
         if (it.held && (!c || !c.grab)) it.held = null;

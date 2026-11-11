@@ -4,7 +4,7 @@
 import { W, H, txt, panel, circle, clamp, dist, danger, sign } from '../ui.js';
 import { scene, slimeBody } from '../scenes.js';
 export default function(api){
-  const N = 7, CY = 420, CLOSE = 480, OPEN = 700;      // 화면(1280) 기준 두 손 사이: 손 한 뼘쯤 붙이면 모음, 어깨너비 넘게 벌리면 가름
+  const CY = 420, CLOSE = 480, OPEN = 700;      // 화면(1280) 기준 두 손 사이: 손 한 뼘쯤 붙이면 모음, 어깨너비 넘게 벌리면 가름
   const S = { i: 0, q: null, gap: null, armed: false, hold: null, phase: 'play', pt: 0, left: 0, lastTwo: 0 };
   const sp = () => Math.min(72, 940 / S.q.n), x0 = () => W / 2 - (S.q.n - 1) * sp() / 2;
   const gapAt = x => clamp(Math.round((x - x0()) / sp() + .5), 1, S.q.n - 1);
@@ -12,12 +12,10 @@ export default function(api){
   function cut(g){ S.left = g; const ok = g === S.q.a || S.q.n - g === S.q.a; S.phase = ok ? 'ok' : 'no'; S.pt = ok ? 1.1 : .8; S.gap = null; S.armed = false; S.hold = null; if (ok) { api.correct(); const gx = x0() + (g - .5) * sp(); api.fx.burst(gx, CY, '#8ff0a8', 26); api.fx.burst(gx, CY, '#ffe27a', 10); api.fx.ring(gx, CY, '#bfffd6'); } else { api.wrong(); api.fx.shake(10); } }
   return {
     id: 'split', icon: '🟢', title: '슬라임 가르기', how: '두 손을 모아 슬라임에 대고, 자리를 정한 뒤 양옆으로 벌리면 갈라져요. (한 손이면: 주먹 쥐고 자리 정하고 활짝 펴기)', touch: '가르고 싶은 자리를 누른 채 옮기고, 손을 떼면 갈라져요',
-    threatSec: 15, pushBack: .5, total: N,
-    dbg: () => S,
-    prog: () => [S.i, N],
+    threatSec: 15, pushBack: .5, dbg: () => S,
     start(){ S.i = 0; next(); },
     update(dt, cur, t){
-      if (S.phase !== 'play') { S.pt -= dt; if (S.pt <= 0) { if (S.phase === 'ok') { S.i++; if (S.i >= N) return api.finish(); next(); } else S.phase = 'play'; } return; }
+      if (S.phase !== 'play') { S.pt -= dt; if (S.pt <= 0) { if (S.phase === 'ok') { S.i++; next(); } else S.phase = 'play'; } return; }
       const near = cur.filter(c => Math.abs(c.y - CY) < 260);
       // ① 두 손: 모으면 틈이 잡히고, 벌리면 갈라진다
       if (near.length >= 2) { const [a, b] = near; const d = dist(a, b), mx = (a.x + b.x) / 2; S.lastTwo = t;

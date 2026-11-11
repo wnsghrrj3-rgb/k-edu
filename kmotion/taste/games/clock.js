@@ -3,7 +3,7 @@
 import { W, H, txt, panel, circle, dist, danger, sign } from '../ui.js';
 import { scene, glow } from '../scenes.js';
 export default function(api){
-  const N = 6, C = { x: 640, y: 410 }, RAD = 235;
+  const C = { x: 640, y: 410 }, RAD = 235;
   const S = { i: 0, q: null, M: 0, hold: null, la: 0, phase: 'play', pt: 0, miss: 0, said: false };
   const target = () => (S.q.h % 12) * 60 + S.q.m;
   const norm = m => ((m % 720) + 720) % 720;
@@ -12,12 +12,10 @@ export default function(api){
   function check(){ S.M = read(S.M).raw; if (!(S.moved > .15) && S.M !== target()) return; if (S.M === target()) { S.phase = 'ok'; S.pt = 1.2; api.correct(); api.sfx('bell'); api.fx.ring(C.x, C.y, '#ffe9a8', RAD, 420); api.fx.ring(C.x, C.y, '#fff', RAD * .6, 520); api.fx.burst(C.x, C.y - RAD, '#ffe27a', 26, 460); } else { S.miss++; if (S.miss === 1) api.wrong(); } }
   return {
     id: 'clock', icon: '🕰️', title: '시계탑 고치기', how: '긴바늘을 쥐고 빙글 돌려요. 짧은바늘이 따라 움직여요. 맞춘 뒤 손을 펴요.', touch: '시계를 누른 채 빙글 돌리고, 손을 떼요',
-    threatSec: 26, pushBack: .6, total: N,
-    dbg: () => S,
-    prog: () => [S.i, N],
+    threatSec: 26, pushBack: .6, dbg: () => S,
     start(){ S.i = 0; next(); },
     update(dt, cur){
-      if (S.phase === 'ok') { S.pt -= dt; if (S.pt <= 0) { S.i++; if (S.i >= N) return api.finish(); next(); } return; }
+      if (S.phase === 'ok') { S.pt -= dt; if (S.pt <= 0) { S.i++; next(); } return; }
       for (const c of cur) {
         if (c.jg && !S.hold && dist(c, C) < RAD + 90) { S.hold = c.id; S.moved = 0; S.la = Math.atan2(c.y - C.y, c.x - C.x); }
         if (S.hold === c.id) { if (c.grab) { if (dist(c, C) > 34) { const a = Math.atan2(c.y - C.y, c.x - C.x); let d = a - S.la; if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; S.la = a; S.M += d / (Math.PI * 2) * 60; S.moved += Math.abs(d); } } else { S.hold = null; check(); } } }
