@@ -8,6 +8,8 @@ import { W, H, txt, circle } from './ui.js';
 import { fx } from './fx.js';
 import run from './games/run.js'; import split from './games/split.js'; import merge from './games/merge.js';
 import lamp from './games/lamp.js'; import gate from './games/gate.js'; import clock from './games/clock.js';
+import wall from './games/wall.js'; import slice from './games/slice.js'; import hop from './games/hop.js'; import bowl from './games/bowl.js';
+import * as grow from './grow.js';
 
 const $ = id => document.getElementById(id);
 const stage = $('stage'), ctx = stage.getContext('2d');
@@ -38,9 +40,9 @@ const api = { W, H, threat, fx, level: () => S.level, pack: null, rnd: Math.rand
     addPts((10 + bonus + (S.level - 1) * 2) * mult());
     const L = 1 + Math.floor(S.score.ok / PER_LEVEL); if (L > S.level) { S.level = L; api.flash(`레벨 ${L}!`); SFX.dash(); fx.flash('255,230,140', .28); } },
   bonus(p){ addPts(p); },
-  wrong(){ S.score.no++; if (S.combo >= 3) fx.text(W - 120, 140, '콤보 끊김', '#ffb3b3', 30); S.combo = 0; SFX.no(); },
+  wrong(){ S.score.no++; if (S.combo >= 3) fx.text(W - 120, 210, '콤보 끊김', '#ffb3b3', 30); S.combo = 0; SFX.no(); },
   finish(){ end(false); } };
-const GAMES = [run, split, merge, lamp, gate, clock].map(f => f(api));
+const GAMES = [wall, slice, hop, bowl, run, split, merge, lamp, gate, clock].map(f => f(api));
 
 // ── 입력 ①: 화면 터치·마우스 (누르는 동안 = 쥠)
 function toStage(e){ const r = stage.getBoundingClientRect(), s = Math.min(r.width / W, r.height / H), ox = (r.width - W * s) / 2, oy = (r.height - H * s) / 2; return { x: (e.clientX - r.left - ox) / s, y: (e.clientY - r.top - oy) / s }; }
@@ -94,7 +96,13 @@ function end(quit){ if (S.state !== 'play') return; S.state = 'end'; try { speec
   const key = S.game.id + '|' + S.pack.id, prev = BEST.get(key) || 0, rec = S.pts > prev && S.pts > 0; if (rec) BEST.set(key, S.pts);
   $('eTerm').textContent = `${S.game.title} · ${S.pack.label}`; $('eStars').textContent = S.pts.toLocaleString('ko-KR') + '점';
   $('eTitle').textContent = rec && prev ? '최고 기록을 넘었어!' : S.left <= 0 && S.timed ? '시간 끝!' : S.hearts <= 0 ? '여기까지!' : '끝!';
-  $('eLine').textContent = `레벨 ${S.level} · 최고 콤보 ${S.maxCombo} · 맞힘 ${S.score.ok} · 틀림 ${S.score.no}` + (prev ? ` · 지난 최고 ${prev.toLocaleString('ko-KR')}점` : ''); SFX.win(); show('end'); }
+  $('eLine').textContent = `놀이 레벨 ${S.level} · 최고 콤보 ${S.maxCombo} · 맞힘 ${S.score.ok} · 틀림 ${S.score.no}`;
+  // 내 성장: 경험치 · 메달 · 도장
+  const gr = grow.apply({ id: S.game.id, term: S.pack.id, pts: S.pts, ok: S.score.ok, glevel: S.level }), a = gr.after, news = [];
+  if (a.lv > gr.before.lv) news.push(`성장 레벨 ${gr.before.lv} → ${a.lv} 「${a.title}」`); if (gr.medalNew) news.push(`${grow.MEDAL[gr.medalNew]}메달 획득`); if (gr.stampNew) news.push('도장 하나'); if (gr.bestNew && !rec) news.push('내 최고 점수');
+  $('eGrowTxt').textContent = `성장 +${gr.gained}  ·  레벨 ${a.lv} 「${a.title}」  ${a.cur} / ${a.need}`; $('eGrowBar').style.width = '0%'; setTimeout(() => { $('eGrowBar').style.width = Math.round(a.cur / a.need * 100) + '%'; }, 60);
+  $('eNews').textContent = news.join('  ·  '); $('eNews').style.display = news.length ? 'block' : 'none'; if (a.lv > gr.before.lv || gr.medalNew) setTimeout(() => SFX.bell(), 500);
+  renderProfile(); SFX.win(); show('end'); }
 
 function heart(c, x, y, s, on){ c.save(); c.translate(x, y); c.beginPath(); c.moveTo(0, s * .8); c.bezierCurveTo(-s * 1.5, -s * .2, -s * .7, -s * 1.2, 0, -s * .4); c.bezierCurveTo(s * .7, -s * 1.2, s * 1.5, -s * .2, 0, s * .8); c.closePath(); c.fillStyle = on ? '#ff4d6a' : 'rgba(255,255,255,.15)'; c.fill(); c.strokeStyle = on ? '#fff' : 'rgba(255,255,255,.4)'; c.lineWidth = 3; c.stroke(); c.restore(); }
 
@@ -134,8 +142,15 @@ function tick(t){ requestAnimationFrame(tick); const dt = last ? Math.min(.05, (
 // ── 메뉴
 TERMS.forEach(t => { const b = document.createElement('button'); b.dataset.v = t.id; b.textContent = t.label; $('rTerm').appendChild(b); });
 [['rTerm', 'term'], ['rMode', 'mode'], ['rInput', 'input'], ['rSpeed', 'speed'], ['rSteer', 'steer'], ['rSound', 'sound']].forEach(([row, key]) => { setOn(row, OPT[key]); $(row).querySelectorAll('button').forEach(b => b.onclick = () => { OPT[key] = b.dataset.v; setOn(row, OPT[key]); }); });
-GAMES.forEach(g => { const b = document.createElement('button'); b.className = 'card'; b.innerHTML = `<i>${g.icon}</i>${g.title}`; b.onclick = () => openBrief(g); $('cards').appendChild(b); });
+GAMES.forEach(g => { const b = document.createElement('button'); b.className = 'card'; b.dataset.id = g.id; b.onclick = () => openBrief(g); $('cards').appendChild(b); });
+function renderProfile(){ const p = grow.load(), L = grow.levelOf(p.xp), n = grow.counts(p);
+  $('pLv').textContent = L.lv; $('pTitle').textContent = L.title; $('pBar').style.width = Math.round(L.cur / L.need * 100) + '%'; $('pXp').textContent = `${L.cur} / ${L.need}`;
+  $('pCount').textContent = `메달 ${n.medals}/${GAMES.length}` + (n.gold ? ` (금 ${n.gold})` : '') + ` · 도장 ${n.stamps}/${GAMES.length * TERMS.length}`;
+  $('pNote').textContent = grow.persists() ? '기록이 내 계정에 남아요' : '지금은 이 화면을 닫으면 기록이 사라져요 (학급에 들어와 동의한 친구는 계속 남아요)';
+  document.querySelectorAll('#cards .card').forEach(b => { const g = GAMES.find(x => x.id === b.dataset.id), r = p.games[g.id] || {}, st = TERMS.filter(t => p.stamps[g.id + '|' + t.id]).length;
+    b.innerHTML = `<i>${g.icon}</i>${g.title}<small>${g.tag || '터치·몸'}${r.best ? ' · 최고 ' + r.best.toLocaleString('ko-KR') : ''}</small>` + (r.medal ? `<b class="md" style="background:${grow.MEDAL_COL[r.medal]}">${grow.MEDAL[r.medal]}</b>` : '') + `<span class="st">${'●'.repeat(st)}${'○'.repeat(TERMS.length - st)}</span>`; }); }
+renderProfile();
 $('bStart').onclick = begin; $('bBack').onclick = () => { S.state = 'menu'; show('menu'); }; $('eAgain').onclick = () => openBrief(S.game); $('eMenu').onclick = () => { S.state = 'menu'; show('menu'); }; $('quit').onclick = () => end(true);
 const pre = GAMES.find(g => g.id === qs.get('game')); if (pre) openBrief(pre);
 requestAnimationFrame(tick);
-window.__taste = { S, OPT, GAMES, cursors, threat, api, readCam, lean };     // 점검용
+window.__taste = { S, OPT, GAMES, cursors, threat, api, readCam, lean, grow };     // 점검용

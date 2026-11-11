@@ -91,6 +91,33 @@ export const scene = {
     c.fillStyle = '#4a2f2a'; c.beginPath(); c.moveTo(C.x - RAD - 110, C.y - RAD - 38); c.lineTo(C.x, C.y - RAD - 150); c.lineTo(C.x + RAD + 110, C.y - RAD - 38); c.closePath(); c.fill();
   } };
 
+// ── 터치 놀이용 배경 셋
+scene.orchard = function(c, t, v){        // 과일 베기 — 과수원 하늘
+  c.fillStyle = grad(c, 0, 0, 0, H, [[0, '#3aa0e8'], [.6, '#a8e0ff'], [1, '#e8f7c8']]); c.fillRect(0, 0, W, H);
+  glow(c, 1080, 120, 260, 'rgba(255,245,180,A)', .9); c.fillStyle = '#fff3a8'; c.beginPath(); c.arc(1080, 120, 54, 0, 7); c.fill();
+  cloud(c, (t * .012) % (W + 300) - 200, 120, 1.2, 'rgba(255,255,255,.85)'); cloud(c, (t * .02 + 640) % (W + 300) - 200, 220, .8, 'rgba(255,255,255,.7)');
+  hills(c, 600, 120, 1.1, '#7fcf7a'); hills(c, 650, 80, 3.7, '#4fae5c');
+  for (let i = 0; i < 6; i++) { const x = 80 + i * 230 + h(i) * 50, y = 640 + h(i + 4) * 30, s = 150 + h(i + 8) * 60; c.fillStyle = '#6b4526'; c.fillRect(x - 9, y - s * .5, 18, s * .5); c.fillStyle = '#2f8f47'; c.beginPath(); c.arc(x, y - s * .7, s * .42, 0, 7); c.fill(); c.fillStyle = '#3fae5a'; c.beginPath(); c.arc(x - s * .18, y - s * .78, s * .26, 0, 7); c.fill(); for (let k = 0; k < 4; k++) { c.fillStyle = k % 2 ? '#ff5d5d' : '#ffb02e'; c.beginPath(); c.arc(x + (h(i * 7 + k) - .5) * s * .6, y - s * (.55 + h(i * 3 + k) * .35), 8, 0, 7); c.fill(); } }
+  c.fillStyle = grad(c, 0, 660, 0, H, [[0, '#4fae5c'], [1, '#2f7d43']]); c.fillRect(0, 668, W, 60);
+  if (v > .7) { c.fillStyle = `rgba(255,70,50,${(v - .7) * .5})`; c.fillRect(0, 0, W, H); }
+};
+scene.pond = function(c, t, v, lineY){     // 수직선 폴짝 — 연못
+  c.fillStyle = grad(c, 0, 0, 0, 330, [[0, '#254a8a'], [1, '#f2b880']]); c.fillRect(0, 0, W, 330); stars(c, t, 20, .5, 140);
+  hills(c, 330, 120, 2.4, '#2e5a52'); hills(c, 345, 70, 5.2, '#234a45');
+  c.fillStyle = grad(c, 0, 330, 0, H, [[0, '#2c7a8c'], [1, '#12384a']]); c.fillRect(0, 330, W, H - 330);
+  c.strokeStyle = 'rgba(255,255,255,.14)'; c.lineWidth = 3; for (let i = 0; i < 16; i++) { const y = 350 + i * 24, o = Math.sin(t / 900 + i) * 40; c.beginPath(); c.moveTo(60 + (i % 3) * 120 + o, y); c.lineTo(260 + (i % 3) * 120 + o, y); c.moveTo(700 + (i % 4) * 90 - o, y + 8); c.lineTo(900 + (i % 4) * 90 - o, y + 8); c.stroke(); }
+  for (let i = 0; i < 9; i++) { const x = 30 + i * 150 + h(i) * 60, y = 330; c.strokeStyle = '#1d5a3a'; c.lineWidth = 5; c.beginPath(); c.moveTo(x, y + 30); c.quadraticCurveTo(x + Math.sin(t / 700 + i) * 10, y - 40, x + Math.sin(t / 700 + i) * 16, y - 80 - h(i + 2) * 40); c.stroke(); c.fillStyle = '#5a3a1e'; c.beginPath(); c.ellipse(x + Math.sin(t / 700 + i) * 16, y - 86 - h(i + 2) * 40, 7, 18, 0, 0, 7); c.fill(); }
+  motes(c, t, 16, 'rgba(230,255,140,A)', 120, 330, 1);
+};
+scene.alley = function(c, t, v){           // 볼링 — 불 켜진 볼링장
+  c.fillStyle = grad(c, 0, 0, 0, H, [[0, '#1a1033'], [1, '#2a1a4a']]); c.fillRect(0, 0, W, H);
+  for (let i = 0; i < 12; i++) { const col = ['#ff5d8f', '#ffd35c', '#5dd0ff', '#7dff9a'][i % 4]; c.fillStyle = col; c.globalAlpha = .5 + .5 * Math.sin(t / 300 + i); c.beginPath(); c.arc(60 + i * 106, 40, 10, 0, 7); c.fill(); c.globalAlpha = 1; }
+  c.fillStyle = grad(c, 0, 150, 0, H, [[0, '#c9955a'], [1, '#e8c088']]); c.beginPath(); c.moveTo(W / 2 - 210, 150); c.lineTo(W / 2 + 210, 150); c.lineTo(W / 2 + 430, H); c.lineTo(W / 2 - 430, H); c.closePath(); c.fill();
+  c.strokeStyle = 'rgba(90,50,20,.25)'; c.lineWidth = 2; for (let k = -5; k <= 5; k++) { c.beginPath(); c.moveTo(W / 2 + k * 40, 150); c.lineTo(W / 2 + k * 82, H); c.stroke(); }
+  for (const sx of [-1, 1]) { c.fillStyle = '#3a2a5a'; c.beginPath(); c.moveTo(W / 2 + sx * 210, 150); c.lineTo(W / 2 + sx * 250, 150); c.lineTo(W / 2 + sx * 520, H); c.lineTo(W / 2 + sx * 430, H); c.closePath(); c.fill(); }
+  c.fillStyle = '#120a26'; c.fillRect(W / 2 - 250, 96, 500, 60);
+};
+
 // ── 등장인물(도형)
 export function wizardCart(c, x, y, t, dash){ c.save(); c.translate(x, y + Math.sin(t / 60) * 3);
   c.fillStyle = 'rgba(0,0,0,.3)'; c.beginPath(); c.ellipse(0, 52, 80, 14, 0, 0, 7); c.fill();

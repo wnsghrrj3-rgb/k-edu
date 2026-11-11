@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>K-MOTION MATH WIZARD · 놀이 맛보기</title>
+<title>수학 놀이터 · K-edu</title>
+<script src="/kedu_scope.js"></script>
 <link rel="stylesheet" href="../kmotion-theme.css">
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -23,7 +24,15 @@ p{color:#b9c6dc;line-height:1.65;max-width:640px}
 .row .lab{font-size:.82rem;color:#8fa3c2;min-width:64px;text-align:right}
 .row button{background:rgba(255,255,255,.08);color:#fff;border:2px solid rgba(255,255,255,.18);border-radius:999px;padding:9px 16px;font-weight:800;font-size:.95rem;cursor:pointer}
 .row button.on{background:#4de1ff;color:#06121f;border-color:#4de1ff}
-.cards{display:grid;grid-template-columns:repeat(3,minmax(150px,210px));gap:12px;margin-top:6px}
+.cards{display:grid;grid-template-columns:repeat(5,minmax(130px,190px));gap:10px;margin-top:6px}
+.card{position:relative}.card .md{position:absolute;right:8px;top:8px;width:30px;height:30px;border-radius:50%;color:#2b1c00;font-size:.85rem;line-height:30px;font-weight:900;box-shadow:0 0 0 2px rgba(255,255,255,.6)}
+.card .st{display:block;font-size:.6rem;letter-spacing:.25em;color:#ffd35c;margin-top:4px}
+.prof{display:flex;gap:14px;align-items:center;background:rgba(255,255,255,.07);border:2px solid rgba(255,211,92,.5);border-radius:18px;padding:10px 18px;min-width:min(520px,92vw)}
+.prof .lv{width:62px;height:62px;border-radius:50%;background:#ffd35c;color:#2b1c00;font-weight:900;font-size:1.8rem;display:flex;align-items:center;justify-content:center;flex:none}
+.prof .pi{flex:1;text-align:left}.prof .pt{display:flex;justify-content:space-between;font-size:1.05rem}.prof .pt span{color:#9fb1cc;font-size:.8rem}
+.pb{height:12px;background:rgba(255,255,255,.14);border-radius:999px;overflow:hidden;margin:6px 0}.pb i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6dffb0,#ffd35c);border-radius:999px;transition:width .9s ease}
+.prof .pc{font-size:.78rem;color:#b9c6dc}.note{font-size:.72rem;color:#8fa3c2}
+.grow{width:min(460px,86vw)}.grow .gt{font-size:.95rem;color:#dfe9ff;margin-bottom:4px}.news{color:#6dffb0;font-weight:900;font-size:1.15rem}
 .card{background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.2);border-radius:18px;padding:16px 10px;cursor:pointer;color:#fff;font-weight:900;font-size:1.05rem}
 .card:hover{border-color:#ffd35c}.card i{display:block;font-style:normal;font-size:2.2rem;margin-bottom:6px}
 .card small{display:block;font-weight:600;color:#9fb1cc;font-size:.74rem;margin-top:4px}
@@ -32,7 +41,8 @@ p{color:#b9c6dc;line-height:1.65;max-width:640px}
 .stars{font-size:4.2rem;font-weight:900;color:#ffd35c}
 #quit{position:absolute;left:12px;top:12px;background:rgba(5,8,16,.7);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:8px 16px;font-weight:800;cursor:pointer;display:none}
 a.back{position:absolute;left:14px;top:14px;color:#8fa3c2;text-decoration:none;font-size:.9rem}
-@media(max-width:640px){.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.cards{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.cards{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -43,8 +53,10 @@ a.back{position:absolute;left:14px;top:14px;color:#8fa3c2;text-decoration:none;f
 
   <section class="ov" id="menu">
     <a class="back" href="../">← 케이모션</a>
-    <span class="k">MATH WIZARD · 맛보기</span><h1>놀이 여섯 가지 — 점수·콤보·레벨</h1>
-    <p>맞힐수록 빨라지고, 연달아 맞히면 점수가 몇 배로 붙어요. 학년·학기를 바꾸면 문제만 달라져요.</p>
+    <span class="k">K-EDU · 맛보기</span><h1>수학 놀이터</h1>
+    <div class="prof"><div class="lv"><span id="pLv">1</span></div><div class="pi"><div class="pt"><b id="pTitle">씨앗</b><span id="pXp"></span></div><div class="pb"><i id="pBar"></i></div><div class="pc" id="pCount"></div></div></div>
+    <div class="note" id="pNote"></div>
+    <p>놀이를 하면 내 성장 레벨이 오르고, 놀이마다 메달과 도장이 모여요. 학년·학기를 바꾸면 문제만 달라져요.</p>
     <div class="row" id="rTerm"><span class="lab">내용</span></div>
     <div class="row" id="rMode"><span class="lab">방식</span><button data-v="endless">끝없이 (하트 다 잃을 때까지)</button><button data-v="time">90초 도전</button></div>
     <div class="row" id="rInput"><span class="lab">조작</span><button data-v="touch">화면 터치·마우스</button><button data-v="cam">카메라(손·몸)</button></div>
@@ -61,10 +73,11 @@ a.back{position:absolute;left:14px;top:14px;color:#8fa3c2;text-decoration:none;f
 
   <section class="ov hidden" id="end">
     <span class="k" id="eTerm"></span><div class="stars" id="eStars"></div><h1 id="eTitle"></h1><p id="eLine"></p>
+    <div class="grow"><div class="gt" id="eGrowTxt"></div><div class="pb"><i id="eGrowBar"></i></div></div><div class="news" id="eNews"></div>
     <div class="row"><button class="btn" id="eAgain">한 번 더</button><button class="btn sub" id="eMenu">다른 놀이</button></div>
   </section>
 </div>
 <script src="../kmotion.js"></script>
-<script type="module" src="./taste.js?v=3"></script>
+<script type="module" src="./taste.js?v=4"></script>
 </body>
 </html>

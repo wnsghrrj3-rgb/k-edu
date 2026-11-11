@@ -65,6 +65,19 @@ export function makePack(id, rnd = Math.random){
     '2-1': () => T(R(1, 12), one([0, 10, 20, 30, 40, 50]), 5),
     '2-2': () => T(R(1, 12), R(0, 11) * 5, 5) };
 
+  // 수직선 뛰기: start 에서 steps 로 뛰어 target 에 딱 서기. tick = 눈금 간격, lo~hi = 보이는 범위
+  const hop = {
+    '1-1': () => { const start = R(0, 3), target = Math.min(9, start + R(3, 6)); return { start, target, steps: [1, 2, 3], lo: 0, hi: 10, tick: 1, say: `${target}까지 폴짝` }; },
+    '1-2': () => { const start = R(0, 8), target = Math.min(20, start + R(5, 12)); return { start, target, steps: [2, 3, 5], lo: 0, hi: 20, tick: 1, say: `${target}까지 폴짝` }; },
+    '2-1': () => { const lo = R(0, 4) * 10, start = lo + R(1, 9), target = Math.min(lo + 58, start + R(12, 38)); return { start, target, steps: [10, 5, 1], lo, hi: lo + 60, tick: 10, say: `${target}까지 폴짝` }; },
+    '2-2': () => { const k = R(2, 9), n = R(3, 8); return { start: 0, target: k * n, steps: [k, k * 2, k * 3], lo: 0, hi: k * 10, tick: k, say: `${k}씩 뛰어 ${k * n}까지` }; } };
+  // 볼링: 핀 n 개 가운데 k 개가 쓰러짐 → 남은 핀
+  const P3 = (n, k) => ({ n, k, ans: n - k, opts: opts3(n - k, [n - k + 1, n - k - 1, k, n - k + 10, n - k - 10]) });
+  const pins = {
+    '1-1': () => { const n = R(5, 9); return P3(n, R(1, n - 1)); },
+    '1-2': () => rnd() < .6 ? P3(10, R(1, 9)) : (() => { const n = R(11, 16); return P3(n, R(n - 9, 9)); })(),
+    '2-1': () => { const n = R(2, 3) * 10; return P3(n, R(2, 12)); },
+    '2-2': () => { const n = R(21, 36); return P3(n, R(4, 15)); } };
   const term = TERMS.find(t => t.id === id) || TERMS[1];
-  return { id: term.id, label: term.label, pick: pick[term.id], part: part[term.id], compose: compose[term.id], place: place[term.id], judge: judge[term.id], time: time[term.id] };
+  return { id: term.id, label: term.label, pick: pick[term.id], part: part[term.id], compose: compose[term.id], place: place[term.id], judge: judge[term.id], time: time[term.id], hop: hop[term.id], pins: pins[term.id] };
 }
