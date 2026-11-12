@@ -13,7 +13,7 @@
   'use strict';
   var CONF = {
     words: 3,         /* 하루에 쓰는 열매 차례 낱말 수 */
-    nextMs: 1100      /* 다 쓴 낱말(내 글씨 + 인쇄 낱말)을 보여 주고 다음으로 */
+    nextMs: 2500      /* 다 쓴 낱말(내 글씨 + 인쇄 낱말)을 보여 주고 다음으로 */
   };
   var KIND = { word: 1, decode: 1, sight: 1 };
   function h(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
@@ -39,7 +39,7 @@
   /* 다 쓴 낱말 — 그림 + 내 글씨 + 인쇄 낱말 */
   function done(host, x) {
     var W = g.PlayWrite, mine = W && W.ink(x.w) ? W.svg(x.w) : '';
-    host.innerHTML = '<div class="wj-ok" data-w="' + x.w + '">' + (x.pic ? '<span class="pic">' + x.pic + '</span>' : '') + (mine ? '<span class="wj-mine">' + mine + '</span>' : '') + '<span class="word wj-print">' + x.w + '</span></div>';
+    host.innerHTML = '<div class="wj-ok" data-w="' + x.w + '"><span class="wj-success">참 잘했어! 내 글씨가 완성됐어 ✨</span>' + (x.pic ? '<span class="pic">' + x.pic + '</span>' : '') + (mine ? '<span class="wj-mine">' + mine + '</span>' : '') + '<span class="word wj-print">' + x.w + '</span></div>';
   }
 
   function start(ctx) {
