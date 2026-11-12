@@ -11,6 +11,7 @@
  *     「다 썼어요」를 누르면 설계 문턱(cover)으로 본다 · 이미 된 칸에도 잉크는 계속 나온다(마저 쓰는 획 — 낱말이 끝날 때까지) · 한 번에 한 손가락.
  *   잘 쓴 글자는 바뀐다: 칸이 초록으로 · 잉크가 또렷해지고 · 귀퉁이에 인쇄 글자 도장이 찍힌다(쓰기 전에는 화면에 그 글자가 없다).
  *   차례 요구(strict)는 글자 길(#30)에서만: 시작 점을 눌러야 잉크가 나오고, 획을 차례대로 하나씩 따라간다.
+ *     손을 떼는 자리는 자유다 — 한 획을 나누어 써도(길 위의 조각은 남아서 합쳐 본다), 두 획을 한 번에 이어 써도(잇단 획을 한꺼번에 덮으면 그만큼 넘어간다) 된다.
  *   통과한 글씨는 획으로 남긴다: localStorage 'kedu-en-play-ink'(kedu_scope 규칙 그대로 — 동의 전에는 이 화면 동안만).
  *     낱말마다 처음 것 + 가장 최근 것, 모두 keep 건까지. 서버 전송 0.
  *   남긴 획은 어디에나 다시 그린다: PlayWrite.draw(ink, ctx, box)(캔버스) · PlayWrite.svg(ink)(화면 조각) · PlayWrite.face(낱말, 인쇄 글씨)(읽기 카드).
@@ -42,6 +43,7 @@
     giveAfter: 2,                 /* 따라에서 이만큼 안 되면 같이 쓴다(끝) */
     strokeMiss: 2,                /* 차례 요구에서 한 획이 이만큼 안 되면 시범을 다시 */
     startR: 0.2,                  /* 시작 점을 눌렀다고 보는 거리(칸 높이 = 1) */
+    partMin: 0.08,                /* 차례 요구에서 쓰다 만 조각을 남겨 두는 문턱 — 남은 길의 이만큼은 덮었을 때(점 하나 찍은 것은 조각이 아니다) */
     ghost: { trace: 0.4, faint: 0.15 },   /* 유령 글씨 진하기 */
     /* 저장 */
     keep: 300,                    /* 남기는 글씨 건수(처음 + 최근을 따로 센다) */
@@ -86,7 +88,7 @@
   /* 따라·옅게 — 길 덮임. ink = 칸 좌표의 획들. only = 그 획 하나만 볼 때(차례 요구) */
   function judgeTrace(ch, ink, only) {
     var gl = glyph(ch); if (!gl) return { ok: false };
-    if (only != null) gl = [gl[only]];
+    if (only != null) gl = typeof only === 'number' ? [gl[only]] : gl.slice(only[0], only[0] + only[1]);      /* 획 하나 · [k, m] = k 째부터 잇단 m 획 */
     var tm = sample(gl, CONF.samples), dense = sample(gl, CONF.samples * 2), ik = sample(ink, CONF.samples * 2);
     if (!ik.length) return { ok: false, empty: true, cover: 0, stray: 0 };
     var cover = tm.filter(function (p) { return minDist(p, ik) <= CONF.near; }).length / tm.length;
@@ -172,7 +174,7 @@
     var svgEl = root.querySelector('.pw-svg'), finished = false, resolveDone, done = new Promise(function (r) { resolveDone = r; }), cur = null, timers = [];
     var cells = lay.items.filter(function (it) { return it.letter; }).map(function (it) {
       var el = root.querySelector('.pw-cell[data-i="' + it.i + '"]');
-      return { i: it.i, ch: it.ch, x: it.x, el: el, inks: el.querySelector('.pw-inks'), demos: el.querySelector('.pw-demos'), level: start, at: 0, fails: 0, miss: 0, k: 0, conf: 0, helped: false, given: false, ok: false, strokes: [], lines: [] };
+      return { i: it.i, ch: it.ch, x: it.x, el: el, inks: el.querySelector('.pw-inks'), demos: el.querySelector('.pw-demos'), level: start, at: 0, fails: 0, miss: 0, k: 0, conf: 0, helped: false, given: false, ok: false, strokes: [], lines: [], part: [], partLn: [] };
     });
     function later(ms, fn) { var t = setTimeout(function () { if (root.parentNode) fn(); }, ms); timers.push(t); return t; }
     function paint(c) {
@@ -181,7 +183,7 @@
       root.setAttribute('data-mode', LV[Math.max.apply(null, cells.map(function (x) { return x.level; }))]);
     }
     function line(c, st, cls) { var e = doc.createElementNS(NS, 'path'); e.setAttribute('class', 'pw-ink' + (cls ? ' ' + cls : '')); e.setAttribute('d', pathD([st], c.x)); c.inks.appendChild(e); return e; }
-    function clearInk(c) { c.strokes = []; c.lines = []; c.k = 0; c.miss = 0; c.inks.innerHTML = ''; }
+    function clearInk(c) { c.strokes = []; c.lines = []; c.part = []; c.partLn = []; c.k = 0; c.miss = 0; c.inks.innerHTML = ''; }
     function wobble(c) { c.el.classList.remove('no'); try { void c.el.getBoundingClientRect(); } catch (e) {} c.el.classList.add('no'); }
     /* 획 차례 시범 — 움직임 줄이기면 멈춘 그림 */
     function demo(c) {
@@ -227,10 +229,22 @@
         return;
       }
       if (strictNow(c)) {
-        r = judgeTrace(c.ch, [st], c.k);
-        if (r.ok) { c.strokes.push(st); c.lines.push(ln); ln.setAttribute('class', 'pw-ink done'); c.k++; c.miss = 0; if (c.k >= gl.length) return pass(c); return paint(c); }
+        /* 손을 떼는 자리는 아이마다 다르다(b 를 막대 긋고 떼었다가 동그라미 · 한 번에 이어서 — 둘 다 된다):
+           ① 한 획을 나누어 써도 — 길 위에 쓴 조각은 남겨 두고 이어 쓴 것과 합쳐서 본다
+           ② 두 획을 한 번에 이어 써도 — 지금 획부터 잇단 획들을 한꺼번에 덮었으면 그만큼 넘어간다. 차례는 그대로 지킨다 */
+        var parts = c.part.concat([st]), m, rest = gl.length - c.k;
+        for (m = 1; m <= rest; m++) {
+          r = judgeTrace(c.ch, parts, [c.k, m]);
+          if (r.ok) {
+            c.partLn.concat([ln]).forEach(function (e) { e.setAttribute('class', 'pw-ink done'); });
+            c.strokes = c.strokes.concat(parts); c.lines = c.lines.concat(c.partLn, [ln]); c.part = []; c.partLn = [];
+            c.k += m; c.miss = 0; if (c.k >= gl.length) return pass(c); return paint(c);
+          }
+        }
+        r = judgeTrace(c.ch, [st], [c.k, rest]);
+        if (r.stray <= CONF.stray && r.cover >= CONF.partMin) { c.part.push(st); c.partLn.push(ln); return; }       /* 길 위의 조각 — 남기고 기다린다(안 된 것으로 세지 않는다) */
         if (ln.parentNode) ln.parentNode.removeChild(ln); c.miss++;
-        if (c.miss >= CONF.strokeMiss) { c.miss = 0; failCell(c, 'stroke'); }
+        if (c.miss >= CONF.strokeMiss) { c.miss = 0; c.partLn.forEach(function (e) { if (e.parentNode) e.parentNode.removeChild(e); }); c.part = []; c.partLn = []; failCell(c, 'stroke'); }
         return;
       }
       c.strokes.push(st); c.lines.push(ln);
@@ -262,6 +276,8 @@
       if (c.ok) { cur = { c: c, pts: [q], ln: line(c, [q]), extra: true }; return true; }       /* 마저 쓰는 획 */
       if (strictNow(c)) { var s0 = glyph(c.ch)[c.k][0]; if (dist(px(q), px(s0)) > CONF.startR) {
           /* 앞 획을 조금 남기고 손을 뗐다가 마저 쓰는 것 — 이미 지나간 길 위에서 시작하면 잉크가 나온다 */
+          /* 지금 획을 쓰다가 손을 뗐다 — 쓰던 길 위 어디서든 이어 쓴다(b 의 막대를 긋고 떼었다가 동그라미) */
+          if (c.part.length && minDist(px(q), sample([glyph(c.ch)[c.k]], CONF.samples)) <= CONF.startR * 0.6) { cur = { c: c, pts: [q], ln: line(c, [q]) }; return true; }
           if (c.k > 0 && minDist(px(q), sample(glyph(c.ch).slice(0, c.k), CONF.samples)) <= CONF.near * 1.5) { cur = { c: c, pts: [q], ln: line(c, [q], 'done'), extra: true }; return true; }
           var dot = c.el.querySelector('.pw-start.now'); if (dot) { dot.classList.remove('pulse'); try { void dot.getBoundingClientRect(); } catch (e) {} dot.classList.add('pulse'); } return false; } }
       cur = { c: c, pts: [q], ln: line(c, [q]) }; return true;
