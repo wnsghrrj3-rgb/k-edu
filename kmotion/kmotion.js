@@ -22,6 +22,9 @@
  *   opt.numPoses:2 + opt.ownerLock:true (실험) — 두 사람 중 처음 잡은 사람(주인)만 따라감
  *   opt.worker (예약) — 아직 메인 스레드만. 켜면 warn 이벤트만 냄
  * 0.7.1: 마우스 모드 가짜 몸에 MATH WIZARD 시험 키 추가(마우스 모드에서만, 기존 키 무변경) — Z/X 왼손/오른손 휙 내밀기 · V 두 손 모아 머리 위(떼면 내림) · B 팔 X자
+ * 0.7.2: opt.duo:true — 두 사람 동시 추적(기존 활동 무변경). f.duo = [1P(화면 왼쪽), 2P(화면 오른쪽)] 각 33관절 또는 null.
+ *   어깨 넓은(가까이 선) 두 명만 고르고, 직전 자리에 가까운 쪽으로 이어 붙여 둘이 잠깐 엇갈려도 1P·2P 가 안 바뀜. 사람마다 떨림 보정 따로.
+ *   마우스 모드: 1P = 가짜 몸, 2P = 같은 가짜 몸을 오른쪽에(개발용)
  * 영상은 기기 안에서만 처리되고 어디에도 보내지 않는다. 기록(kmotion-data.js)은 관절 좌표·행동 이벤트만.
  *
  * 사용:
@@ -32,7 +35,7 @@
  * 좌표는 전부 캔버스(거울) 픽셀, 원유로 필터로 떨림 보정. 랜드마크 {x,y,z,v}. score = 자체 판정 점수(모델 신뢰도와 다름).\n * 손 actions: dir(손 방향 0~359°, 위=0 시계방향)·pointDir(검지 방향)·facing(palm/back)·pointer(검지 끝)·pinchPt(엄지·검지 사이). 몸: facing(front/left/right)·lean(기울기°).
  */
 (function(){
-  const ENGINE_VERSION = '0.7.1';
+  const ENGINE_VERSION = '0.7.2';
   const ACTION_VERSION = 'rule-0.4.0';
   const MODEL_VERSION  = { hands: 'hand_landmarker/float16/1', pose: 'pose_landmarker_lite/float16/1', vision: 'tasks-vision@0.10.21' };
   const VENDOR = new URL('./vendor/tasks-vision/', document.currentScript ? document.currentScript.src : location.href).href;
@@ -87,7 +90,7 @@
     const drain = {}; // 끈 모드의 잡기·몸 상태를 한 번 비워 release/body:lost 를 내기
     let inferEvery = Math.max(1, opt.inferEvery | 0 || 1), tick = 0;
     let modelBase = opt.modelBase ? new URL(opt.modelBase, location.href).href.replace(/\/?$/, '/') : null;
-    const NP = Math.max(1, opt.numPoses | 0 || 1), ownerLock = !!opt.ownerLock && NP > 1; let owner = null;
+    const DUO = !!opt.duo; const NP = Math.max(DUO ? 3 : 1, opt.numPoses | 0 || 1), ownerLock = !!opt.ownerLock && NP > 1; let owner = null;
     // 촬영 시각: requestVideoFrameCallback(크롬) — 없으면 null
     let vfMeta = null, vfOn = false;
     function watchFrames(){ if (vfOn || !video.requestVideoFrameCallback) return; vfOn = true;
@@ -371,6 +374,18 @@
       else { let bw = -1; all.forEach((p, i) => { const w = dist(p[11], p[12]); if (w > bw) { bw = w; best = i; } }); } // 처음엔 가장 가까운(어깨 넓은) 사람
       owner = mid(all[best][11], all[best][12]); return all[best]; }
     km.resetOwner = () => { owner = null; return km; };
+    // ── 0.7.2 두 사람(duo): 1P = 화면 왼쪽 자리, 2P = 오른쪽 자리
+    const duoSm = [smoother(33), smoother(33)], duoPrev = [null, null], duoSeen = [0, 0];
+    function pickDuo(list, t){
+      const all = (list || []).map(toPx).filter(p => p[11].v > .4 && p[12].v > .4).sort((a, b) => dist(b[11], b[12]) - dist(a[11], a[12])).slice(0, 2);
+      const c = all.map(p => mid(p[11], p[12])), out = [null, null];
+      const ref = i => duoPrev[i] || { x: W * (i ? .75 : .25), y: H / 2 };
+      if (all.length === 2) { const keep = dist(c[0], ref(0)) + dist(c[1], ref(1)) <= dist(c[0], ref(1)) + dist(c[1], ref(0)); out[0] = all[keep ? 0 : 1]; out[1] = all[keep ? 1 : 0]; }
+      else if (all.length === 1) { out[dist(c[0], ref(0)) <= dist(c[0], ref(1)) ? 0 : 1] = all[0]; }
+      for (let i = 0; i < 2; i++) { if (out[i]) { duoPrev[i] = mid(out[i][11], out[i][12]); duoSeen[i] = t; out[i] = duoSm[i].apply(out[i], t); }
+        else { duoSm[i].reset(); if (t - duoSeen[i] > 1500) duoPrev[i] = null; } }
+      return out; }
+    km.resetDuo = () => { duoPrev[0] = duoPrev[1] = null; duoSm.forEach(s => s.reset()); return km; };
 
     // ── 루프
     let raf = 0, lastVideoTime = -1, fpsT = 0, fpsN = 0;
@@ -380,7 +395,8 @@
       const f = { ctx, W, H, t, motion: modes.has('motion') ? motion : null, hands: [], handedness: null, pose: null, actions: { hands: [], body: null }, fresh: false };
       if (mouseMode) { f.fresh = true;
         if (km.isActive('hands')) { f.hands = [mockHand()]; f.handedness = [[{ categoryName: 'Right', score: 1 }]]; f.actions.hands = stepHands(f); }
-        if (km.isActive('pose')) { f.pose = mockPose(); f.actions.body = stepBody(f); }
+        if (km.isActive('pose')) { f.pose = mockPose(); f.actions.body = stepBody(f);
+          if (DUO) { f.duo = [f.pose.map(q => ({ ...q, x: q.x - W * .22 })), f.pose.map(q => ({ ...q, x: q.x + W * .22 }))]; } }
         if (modes.has('motion')) { grid.fill(0); const gx = (W - mouse.x) / S | 0, gy = mouse.y / S | 0; if (mouse.down) for (let yy = gy - 4; yy <= gy + 4; yy++) for (let xx = gx - 4; xx <= gx + 4; xx++) if (yy >= 0 && xx >= 0 && yy < off.height && xx < off.width) grid[yy * off.width + xx] = 1; }
         fpsN++; if (t - fpsT > 1000) { km.fps = fpsN; fpsN = 0; fpsT = t; }
         km.emit('frame', { hands: f.hands, pose: f.pose, actions: f.actions, fps: km.fps });
@@ -392,7 +408,8 @@
           if (modes.has('motion')) stepMotion();
           if (handLm && active.has('hands')) { const r = handLm.detectForVideo(srcImg(), t); f.hands = (r.landmarks || []).map((lm, i) => handSm[i] ? handSm[i].apply(toPx(lm), t) : toPx(lm)); f.handedness = r.handednesses;
             for (let i = f.hands.length; i < NH; i++) handSm[i].reset(); }
-          if (poseLm && active.has('pose')) { const r = poseLm.detectForVideo(srcImg(), t); const raw = pickPose(r.landmarks);
+          if (poseLm && active.has('pose') && DUO) { const r = poseLm.detectForVideo(srcImg(), t); f.duo = pickDuo(r.landmarks, t); }
+          else if (poseLm && active.has('pose')) { const r = poseLm.detectForVideo(srcImg(), t); const raw = pickPose(r.landmarks);
             if (raw) { f.pose = poseSm.apply(raw, t); poseSeen = true; } else { f.pose = null; if (poseSeen) { poseSm.reset(); poseSeen = false; } }
             }
           if (km.segmentOn) { try { if (stepSeg(t)) f.maskCanvas = maskCanvas; } catch (e) { km.emit('error', { kind: 'mask', message: String(e), score: 0 }); } }
