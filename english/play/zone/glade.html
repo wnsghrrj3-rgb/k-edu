@@ -13,7 +13,7 @@
 </script>
 <style>
 /* ============================================================
- * 사과나무 빈터 — 입체 시험판 5 (W15 의 첫 판 · 한 해 길 첫 걸음 A01 「a · b」 · 설계 v2 §7 · 상세판 A01)
+ * 사과나무 빈터 — 입체 시험판 6 (W15 의 첫 판 · 한 해 길 첫 걸음 A01 「a · b」 · 설계 v2 §7 · 상세판 A01)
  *   준호가 모양과 느낌을 먼저 보려는 판이다 — 하루 흐름(씨앗·증거)에는 아직 잇지 않았다.
  *   잘라 낸 숲속 빈터를 비스듬히 내려다본다. 그 걸음의 낱말 여덟이 전부 빈터 안의 물건이다:
  *     왼쪽(a) 사과 · 개미 줄 · 도끼 · 악어(개울)   /   오른쪽(b) 배낭 · 침대 · 통나무 버스 · 새
@@ -38,6 +38,12 @@
  *     특별 손님(악어 · 낱말 기차 뒤) 뭍에 올라와 그림을 내민다 → 이름을 말하고 받침돌의 두 글자 열매 가운데 첫소리를 고른다(ant · bus) → 사과 한입 「I like it!」 → 꼬리 물장구에 무지개, 버스 문이 열린다
  *     쪽지 3(발자국 서명 · 손님 뒤) 버스를 누른다 → 경적
  *   쪽지의 그림 아래에는 낱말을 다 적는다(준호 11-11 결정 — 설계는 첫 글자만) · 손님의 둘째 질문은 앞 걸음 낱말이 없는 첫 걸음이라 이 걸음 낱말로
+ *   시험판 6(준호 11-13 「나눠 줘」) — 걸음 하나가 길어서 세 마디로 나눴다. 한 번에 한 마디:
+ *     첫째 「a 열매」 굴러간 열매 → a 낱말 넷 → a 쓰기 → 쪽지 1
+ *     둘째 「b 열매」 개미 줄 → b 낱말 넷 → b 쓰기 → 악어의 하품 → 쪽지 2
+ *     셋째 「기차와 손님」 낱말 기차 → 특별 손님 → 쪽지 3 → 마무리
+ *     마디가 남긴 것은 빈터에 남는다(받침돌의 열매 · 버스 지붕의 새). 어디까지 했는지는 이 기기에만 적는다 — 처음 화면에 다음 마디가 골라져 있고, 눌러서 바꿀 수 있다(주소에 ?part=1~3 도 된다).
+ *     마친 뒤 「골라서 다시」는 배운 글자만.
  *   자리는 상세판의 빈터 판형에서 서로 가리지 않게 조금 옮겼다(침대 뒤로 · 버스 앞으로 · 개울 오른쪽으로) · 색은 전부 토큰(ui/tokens.css) · 끌면 빈터가 조금 돈다 · ?q=low = 가벼운 판.
  * ============================================================ */
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--ink);touch-action:none;user-select:none;-webkit-user-select:none}
@@ -161,6 +167,12 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:
 .gcover .ab{font-family:var(--font-read);font-weight:700;font-size:40px;color:var(--stage);letter-spacing:.2em;margin:6px 0 2px}
 .gcover p{color:var(--ink-2);margin:6px 0 18px;font-size:14px}
 .gcover .btn{width:100%}
+.gcover .parts{display:flex;justify-content:center;gap:8px;margin:12px 0 4px}
+.gcover .parts button{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:86px;padding:8px 10px 9px;border:0;border-radius:var(--r-2);background:var(--stage-soft);font:700 13px/1.2 var(--font);color:var(--ink-2);transition:transform 160ms var(--ease),background 160ms}
+.gcover .parts .m{display:flex;align-items:center;justify-content:center;height:34px;font-family:var(--font-read);font-weight:700;font-size:30px;line-height:1;color:var(--stage-deep)}
+.gcover .parts button.on{background:var(--stage);color:var(--on-stage);transform:translateY(-2px) scale(1.05)}
+.gcover .parts button.on .m{color:var(--on-stage)}
+.gcover .parts .ck{position:absolute;right:-5px;top:-7px;width:22px;height:22px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--ok)}
 @media (prefers-reduced-motion: reduce){.gword .w i,.gword .w.joy i,.gword .ck,.gword .bars i{animation:none}}
 </style>
 <script src="/kedu_gate.js"></script>
@@ -178,10 +190,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:
   <button type="button" id="bChant"><span id="iChant"></span>챈트</button>
   <button type="button" id="bFind"><span id="iFind"></span>듣고 찾기</button>
   <button type="button" id="bWrite"><span id="iWrite"></span>팻말에 쓰기</button>
-  <button type="button" id="bAgain"><span id="iAgain"></span>처음부터</button>
+  <button type="button" id="bAgain"><span id="iAgain"></span><span id="tAgain">처음부터</span></button>
 </div>
 <div class="gsheet" id="sheet"><button class="x" id="sheetX" type="button">닫기</button><div class="head"><span class="lt" id="sheetL">a</span><span>점에서 출발해 따라 써 줘</span></div><div id="pad"></div></div>
-<div class="gcover" id="cover"><div class="box"><div class="big">사과나무 빈터</div><div class="ab">a · b</div><p id="ldT">빈터를 가꾸는 중…</p><button class="btn" id="go" type="button" style="display:none">들어가기</button></div></div>
+<div class="gcover" id="cover"><div class="box"><div class="big">사과나무 빈터</div><div class="ab">a · b</div><div class="parts" id="parts"></div><p id="ldT">빈터를 가꾸는 중…</p><button class="btn" id="go" type="button" style="display:none">들어가기</button></div></div>
 
 <script src="../../v3/engine/k-tts.js"></script>
 <script src="../ui/icons.js"></script>
@@ -739,7 +751,7 @@ $('sheetX').onclick = () => { if (writeOne.cancel) writeOne.cancel(); };
 /* ── 듣고 찾기 — 들린 것을 빈터에서 찾아 누른다. 찾으면 눈이 그쪽으로 가고 그 낱말이 위에 뜬다 ── */
 let want = null, misses = 0, findNext = null;
 async function findGame(n){
-  const order = CONF.words.map(x => x.w).sort(() => Math.random() - 0.5).slice(0, n); tip('들리는 것을 찾아 눌러 봐', 3200);
+  const order = CONF.words.filter(x => known().indexOf(x.l) >= 0).map(x => x.w).sort(() => Math.random() - 0.5).slice(0, n); tip('들리는 것을 찾아 눌러 봐', 3200);
   for (const w of order) {
     if (mode === 'stop') break;
     want = w; misses = 0; word(null); unpresent(); bubble('<span class="cell pic">' + I('ear') + '</span>'); mood(max, 'lead', 600); $('hear').classList.add('show'); await sayWord(w);
@@ -958,14 +970,41 @@ async function evGuest(){
   await tween(1400, t => { al.position.lerpVectors(land, home, t); u.body.position.y = 0.14 - t * 0.12; u.body.rotation.y = -0.9 + t * 0.4; u.tail.rotation.y = Math.sin(t * 18) * 0.3; }, t => t * t * (3 - 2 * t)); ripple(home.x, home.z, 2); u.jaw.rotation.z = 0; u.busy = false; u.wag = false; unpresent();
 }
 /* ── 오늘의 걸음 — 듣고 보기 → 따라 말하기 → 쓰기 → 듣기 → 말하기가 한 흐름으로 이어진다(준호 11-11) ──
-   글자마다: 사건(열매) → 낱말 넷(챈트 한 줄 + 따라 말하기) → 그 글자 쓰기. a 쓰기 뒤 쪽지 1. 두 글자를 마치면 악어의 하품(듣고 톡) → 쪽지 2 → 낱말 기차(이름 말하기) → 특별 손님 → 쪽지 3 → 마무리 */
-const STEPS = [['a', 'ear', 'a 듣고 말하기'], ['a', 'pencil', 'a 쓰기'], ['b', 'ear', 'b 듣고 말하기'], ['b', 'pencil', 'b 쓰기'], ['', 'sparkle', '듣고 톡'], ['', 'train', '이름 말하기'], ['', 'paw', '특별 손님']];
+   글자마다: 사건(열매) → 낱말 넷(챈트 한 줄 + 따라 말하기) → 그 글자 쓰기. a 쓰기 뒤 쪽지 1. 두 글자를 마치면 악어의 하품(듣고 톡) → 쪽지 2 → 낱말 기차(이름 말하기) → 특별 손님 → 쪽지 3 → 마무리.
+   시험판 6 — 이 흐름을 세 마디로 끊어 한 번에 한 마디만 한다(PARTS) */
+/* 걸음 하나를 세 마디로 나눈다(준호 11-13 「나눠 줘」) — 한 번에 한 마디. 마디마다 쪽지 한 장으로 끝나고, 그 마디가 남긴 것이 빈터에 남는다(받침돌의 열매 · 버스 지붕의 새) */
+const PARTS = [
+  { name: 'a 열매', mark: 'a', steps: [['a', 'ear', 'a 듣고 말하기'], ['a', 'pencil', 'a 쓰기'], ['', 'leaf', '쪽지']], bye: 'a 열매 이야기 끝! 다음은 b 열매 차례예요' },
+  { name: 'b 열매', mark: 'b', steps: [['b', 'ear', 'b 듣고 말하기'], ['b', 'pencil', 'b 쓰기'], ['', 'sparkle', '듣고 톡'], ['', 'leaf', '쪽지']], bye: 'b 열매 이야기 끝! 다음은 버스가 떠날 채비를 해요' },
+  { name: '기차와 손님', mark: '', icon: 'train', steps: [['', 'train', '이름 말하기'], ['', 'paw', '특별 손님'], ['', 'leaf', '쪽지']] }
+];
+/* 어디까지 했는지 — 이 기기에만 적는다(마친 마디 수 · 다음에 할 마디). 주소에 ?part=1~3 을 붙이면 그 마디부터 */
+const SAVE = 'kedu-en-play-glade';
+const prog = (() => { try { const o = JSON.parse(localStorage.getItem(SAVE) || '{}'); return { done: Math.max(0, Math.min(PARTS.length, o.done | 0)), next: Math.max(0, Math.min(PARTS.length - 1, o.next | 0)) }; } catch (e) { return { done: 0, next: 0 }; } })();
+function saveProg(){ try { localStorage.setItem(SAVE, JSON.stringify(prog)); } catch (e) {} }
+const known = () => (prog.done >= 2 ? ['a', 'b'] : ['a']);            /* 골라서 다시 할 때 — 배운 글자만 */
+let STEPS = PARTS[0].steps;
 function steps(k){ $('steps').innerHTML = STEPS.map((s, i) => '<span class="' + (i < k ? 'done' : i === k ? 'on' : '') + '" title="' + s[2] + '">' + I(i < k ? 'check' : s[1]) + (s[0] ? '<b>' + s[0] + '</b>' : '') + '</span>').join(''); $('steps').classList.toggle('hide', k < 0); }
-async function lesson(){
-  if (mode) return; mode = 'lesson'; $('dock').classList.add('hide'); let k = 0; beatFruit = null;
-  await Promise.all([fruitHome('a'), fruitHome('b')]);
-  for (const l of ['a', 'b']) {
-    steps(k++); dots(0); const f = fruitOf(l);
+/* 마디를 시작할 때의 빈터 — 앞 마디가 남긴 것을 그대로 놓는다. 잇달아 불러도 차례대로 */
+let staged = Promise.resolve();
+async function stageNow(p){
+  const jobs = ['a', 'b'].map((l, i) => { const f = fruitOf(l), s = i ? EV.stoneB : EV.stoneA; if (p <= i) return fruitHome(l); glade.attach(f); f.rotation.set(0, 0, 0); f.scale.setScalar(1); f.position.set(s[0], 0.74, s[1]); return null; });
+  const u = things.bird.userData, roof = things.bus.userData.car;
+  if (p > 1) { if (u.b.parent !== roof) { u.busy = true; roof.attach(u.b); u.b.position.set(0.3, 1.91, 0); } } else jobs.push(birdHome());
+  await Promise.all(jobs);
+}
+function stage(p){ staged = staged.then(() => stageNow(p)); return staged; }
+/* 마디 끝(첫째 · 둘째) — 오늘은 여기까지. 꽃잎이 날리고, 다음 이야기를 한 줄로 알려 준다 */
+async function partEnd(p){
+  steps(STEPS.length); word(null); await wait(600); unpresent(); sfx('done'); people.forEach(q => mood(q, 'happy', 2200)); petals(18); burstAt(fruitOf(p ? 'b' : 'a'), 0.2, 10);
+  tip(PARTS[p].bye, 4600); await wait(2600);
+}
+async function lesson(p){
+  if (mode) return; p = p == null ? prog.next : Math.max(0, Math.min(PARTS.length - 1, p));
+  mode = 'lesson'; STEPS = PARTS[p].steps; $('dock').classList.add('hide'); let k = 0; beatFruit = null;
+  await stage(p);
+  if (p < 2) {
+    const l = p ? 'b' : 'a', f = fruitOf(l); steps(k++); dots(0);
     if (l === 'a') await evFruit(); else await evAnts();                                                                      /* 사건 — 열매가 떨어진다 */
     /* 글자를 만난다 — 눈이 열매로 가고, 열매가 커지며 소리 */
     focus(f, 1.3, 0.6, 0, -0.1, 0); lookAll(f); word(l, 'hear'); tween(700, t => f.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.4), t => t); burstAt(f, 0.2, 8); await saySound(l); await wait(250); tween(500, t => f.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.25), t => t); await saySound(l); await wait(350);
@@ -973,31 +1012,41 @@ async function lesson(){
     const list = CONF.words.filter(y => y.l === l);
     for (let i = 0; i < list.length; i++) { dots(list.length, i); await chantLine(list[i]); await repeat(list[i]); dots(list.length, i + 1); if (l === 'b') await antsStep(i); }
     dots(0); steps(k++); mood(max, 'idle'); beatFruit = null; await writeOne(l);
-    if (l === 'a') await note1();                                                                                             /* 쪽지 1 — 개미에게서 */
+    if (l === 'a') { steps(k++); await note1(); }                                                                             /* 쪽지 1 — 개미에게서 */
+    else { steps(k++); await evYawn(EV.yawns); steps(k++); await note2(); }                                                   /* 악어의 하품 → 쪽지 2 — 새에게서 */
+    await partEnd(p);
+  } else {
+    steps(k++); word(null); await evTrain(EV.cars);
+    steps(k++); await evGuest();                                                                                              /* 특별 손님 — 악어 */
+    steps(k++); await note3();                                                                                                /* 쪽지 3 — 다음 빈터의 초대 */
+    /* 마무리 — 열매가 두 나무에 다시 달린다 */
+    steps(STEPS.length); unpresent(); people.forEach(q => mood(q, 'happy', 2600)); word(null); bubble('<span class="say">I like it!</span>'); petals(); ['a', 'b'].forEach(x => { burstAt(fruitOf(x), 0.2, 8); fruitHome(x); });
+    CONF.words.forEach((x, i) => setTimeout(() => { if (!things[x.w].userData.busy) act(x.w, 700); burstAt(things[x.w], x.dy + 0.3, 6); }, i * 130)); await sayLine('I like it!'); await wait(1500); bubble(null);
+    { const door = things.bus.userData.door, x0 = door.position.x; tween(500, t => { door.position.x = x0 + (-0.92 - x0) * t; }); }
+    await birdHome(); await trainHome();
   }
-  steps(k++); await evYawn(EV.yawns);
-  await note2();                                                                                                              /* 쪽지 2 — 새에게서 */
-  steps(k++); word(null); await evTrain(EV.cars);
-  steps(k++); await evGuest();                                                                                                /* 특별 손님 — 악어 */
-  await note3();                                                                                                              /* 쪽지 3 — 다음 빈터의 초대 */
-  /* 마무리 — 열매가 두 나무에 다시 달린다 */
-  steps(STEPS.length); unpresent(); people.forEach(p => mood(p, 'happy', 2600)); word(null); bubble('<span class="say">I like it!</span>'); petals(); ['a', 'b'].forEach(l => { burstAt(fruitOf(l), 0.2, 8); fruitHome(l); });
-  CONF.words.forEach((x, i) => setTimeout(() => { if (!things[x.w].userData.busy) act(x.w, 700); burstAt(things[x.w], x.dy + 0.3, 6); }, i * 130)); await sayLine('I like it!'); await wait(1500); bubble(null);
-  { const door = things.bus.userData.door, x0 = door.position.x; tween(500, t => { door.position.x = x0 + (-0.92 - x0) * t; }); }
-  await birdHome(); await trainHome();
-  bubble(null); word(null); dots(0); steps(-1); unpresent(); mood(max, 'idle'); mode = null; setDock(null); $('dock').classList.remove('hide');
+  prog.done = Math.max(prog.done, p + 1); prog.next = (p + 1) % PARTS.length; saveProg();
+  bubble(null); word(null); dots(0); steps(-1); unpresent(); mood(max, 'idle'); mode = null; setDock(null); dockNext(); $('dock').classList.remove('hide');
+}
+/* 아래 단추 줄의 끝 칸 — 다음 마디(셋을 다 했으면 처음부터) */
+function dockNext(){ $('tAgain').textContent = prog.next ? '다음 · ' + PARTS[prog.next].name : '처음부터'; }
+/* 처음 화면 — 마디 셋 가운데 오늘 할 것(다음 차례가 골라져 있다 · 눌러서 바꿀 수 있다) */
+let sel = prog.next;
+function pick(p){
+  sel = p; $('parts').innerHTML = PARTS.map((x, i) => '<button type="button" class="' + (i === sel ? 'on' : '') + (i < prog.done ? ' done' : '') + '" data-p="' + i + '"><span class="m">' + (x.mark || I(x.icon)) + '</span><span>' + x.name + '</span>' + (i < prog.done ? '<span class="ck">' + I('check') + '</span>' : '') + '</button>').join('');
+  $('parts').querySelectorAll('button').forEach(b => { b.onclick = () => pick(+b.dataset.p); }); stage(p);
 }
 /* ── 마친 뒤 — 골라서 다시(챈트 · 듣고 찾기 · 팻말에 쓰기 · 처음부터) ── */
 function setDock(id){ ['bChant', 'bFind', 'bWrite', 'bAgain'].forEach(b => $(b).classList.toggle('on', b === id)); $('dock').classList.toggle('busy', !!id); }
 async function chant(){
   if (mode) return; mode = 'chant'; setDock('bChant');
-  const letter = chantHalf % 2 ? 'b' : 'a';
+  const ls = known(), letter = ls[chantHalf % ls.length];
   for (const x of CONF.words.filter(y => y.l === letter)) { if (mode !== 'chant') break; await chantLine(x); }
   if (mode === 'chant') { const end = letter === 'a' ? 'Hi, ant!' : 'Hi, big bird!', w = letter === 'a' ? 'ant' : 'bird'; word(null); present(w, CONF.cam.word); bubble('<span class="say">' + end + '</span>'); mood(max, 'happy', 1400); act(w, 1200); await sayLine(end); await wait(500); }
   chantHalf++; bubble(null); word(null); unpresent(); mood(max, 'idle'); mode = null; setDock(null);
 }
 async function find(){ if (mode) return; mode = 'find'; setDock('bFind'); await findGame(CONF.finds); if (mode === 'find') { sfx('done'); people.forEach(p => mood(p, 'happy', 1600)); bubble('<span class="say">I like it!</span>'); petals(18); await sayLine('I like it!'); await wait(400); } bubble(null); word(null); mode = null; setDock(null); }
-async function writeSign(){ if (mode || !PW) return; mode = 'write'; setDock('bWrite'); $('dock').classList.add('hide'); for (const l of ['a', 'b']) { if (!(await writeOne(l))) break; } word(null); $('dock').classList.remove('hide'); mode = null; setDock(null); }
+async function writeSign(){ if (mode || !PW) return; mode = 'write'; setDock('bWrite'); $('dock').classList.add('hide'); for (const l of known()) { if (!(await writeOne(l))) break; } word(null); $('dock').classList.remove('hide'); mode = null; setDock(null); }
 $('bChant').onclick = () => { if (mode === 'chant') { mode = 'stop'; return; } chant(); };
 $('bFind').onclick = () => { if (mode === 'find') { mode = 'stop'; if (findNext) findNext(); return; } find(); };
 $('bWrite').onclick = () => writeSign();
@@ -1035,7 +1084,7 @@ let entered = false;
 async function enter(){
   if (A) A.unlock(); if (T) T.unlock();
   $('cover').classList.add('hide'); entered = true; focus(null); await wait(900);
-  await lesson();
+  await lesson(sel);
 }
 $('go').onclick = enter;
 
@@ -1111,7 +1160,8 @@ function frame(){
 }
 frame();
 $('ldT').textContent = '숲속 빈터에 아침이 왔어요'; $('go').style.display = '';
-window.__glade = { frame, things, people, enter, lesson, chant, find, writeSign, poke, answer, paintSign, focus, burstAt, petals, pickDrop, drops, cars, carry, get mode(){ return mode; }, get want(){ return want; }, get dropWant(){ return dropWant; }, noteTap, pickLetter, noteShow, noteHide, evGuest, get noteWant(){ return noteWant; }, get letterWant(){ return letterWant; }, cam, CONF };
+{ const q = /[?&]part=([123])/.exec(location.search); pick(q ? +q[1] - 1 : prog.next); dockNext(); }
+window.__glade = { frame, things, people, enter, lesson, chant, find, writeSign, poke, answer, paintSign, focus, burstAt, petals, pickDrop, drops, cars, carry, get mode(){ return mode; }, get want(){ return want; }, get dropWant(){ return dropWant; }, noteTap, pickLetter, noteShow, noteHide, evGuest, PARTS, prog, pick, stage, get sel(){ return sel; }, get noteWant(){ return noteWant; }, get letterWant(){ return letterWant; }, cam, CONF };
 </script>
 <script src="/kedu_back.js"></script>
 </body>
