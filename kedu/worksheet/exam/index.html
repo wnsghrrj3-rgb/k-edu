@@ -90,6 +90,18 @@ input[type=number]{width:64px}
 #measure{position:absolute;left:-9999px;top:0;visibility:hidden}
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#22304A;color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
 .toast.on{opacity:1}
+.it.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft,#E6EEFF)}
+#pdfModal{position:fixed;inset:0;background:rgba(20,28,45,.55);display:none;z-index:40;padding:24px}
+#pdfModal.on{display:flex}
+.pm-box{background:#fff;border-radius:14px;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.pm-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--rule)}
+.pm-bar .sp{flex:1}
+.pm-help{padding:6px 14px;background:var(--tint)}
+.pm-view{flex:1;overflow:auto;background:#E9EDF3;position:relative}
+.pm-stage{position:relative;display:inline-block;margin:16px;cursor:crosshair;touch-action:none;user-select:none}
+.pm-stage canvas{display:block;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.pm-rect{position:absolute;border:2px solid var(--accent);background:rgba(47,107,255,.12);display:none;pointer-events:none}
+.pm-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--soft)}
 .note{font-size:12.5px;color:var(--soft);line-height:1.7;background:var(--tint);border-radius:10px;padding:8px 12px;margin-top:8px}
 </style>
 <script src="/kedu_teacher_gate.js"></script>
@@ -232,7 +244,11 @@ function itemCard(x, i) {
       ${x.options.length < (+S.choices || 5) ? `<button class="btn sm" data-act="addopt" style="margin-top:4px">＋ 보기 하나 더</button>` : ''}<div class="mini" style="margin-top:3px">보기는 글자 수가 짧은 것부터 ①로 내보내요</div>` : '';
   const box = x.box ? `<div class="boxed">${esc((x.box.title ? '[' + x.box.title + ']\n' : '') + x.box.lines.join('\n'))}</div>` : '';
   const st = x.statement != null && x.kind === 'ox' ? `<textarea data-f="statement" rows="2">${esc(x.statement)}</textarea>` : '';
-  const pic = (x.picture || x.img || x.subject === 'soc' || x.subject === 'sci') ? `<div class="pic">${x.img ? `<img src="${x.img.src}">` : ''}<button class="btn sm" data-act="pic">🖼 그림 ${x.img ? '바꾸기' : '넣기'}</button>${x.img ? '<button class="btn sm" data-act="unpic">그림 빼기</button>' : ''}${x.picture && !x.img ? '<span class="mini">원래 문항에 그림이 있어요</span>' : ''}</div>` : '';
+  const pic = `<div class="pic">${x.img ? `<img src="${x.img.src}">` : ''}
+      <button class="btn sm" data-act="pdf" title="교과서·지도서 PDF를 열어 사진 부분을 네모로 잘라 넣어요">📄 PDF에서 잘라 넣기</button>
+      <button class="btn sm" data-act="pic" title="그림 파일 고르기">🖼 파일</button>
+      ${x.img ? `<select data-size title="그림 크기">${[['s', '작게'], ['m', '보통'], ['l', '크게']].map(([v, n]) => `<option value="${v}" ${(x.img.size || 'l') === v ? 'selected' : ''}>${n}</option>`).join('')}</select><button class="btn sm" data-act="unpic">빼기</button>` : `<span class="mini">또는 캡처한 뒤 이 칸을 누르고 Ctrl+V</span>`}
+      ${x.picture && !x.img ? '<span class="mini" style="color:var(--warn)">원래 문항에 그림이 있어요</span>' : ''}</div>`;
   return `<div class="it" data-i="${i}">
     <div class="hd"><span class="no">${i + 1}.</span><span class="tag">${esc(x.unit.replace('u', ''))}단원</span><span class="tag">${esc(x.type)} · ${esc(x.diff)}</span>${tags.join('')}<span class="sp"></span>
       <button class="btn sm" data-act="up" title="위로">↑</button><button class="btn sm" data-act="down" title="아래로">↓</button>
@@ -345,11 +361,14 @@ function svgToPng(svg) {
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(c));
   });
 }
-function fitImg(src, wpx, hpx) {
-  let w = Math.round(wpx / U2PX), h = Math.round(hpx / U2PX); const max = H.COL_W - 400;
+const SIZE_K = { s: 0.45, m: 0.7, l: 1 };
+function fitImg(src, wpx, hpx, size) {
+  const max = Math.round((H.COL_W - 400) * SIZE_K[size || 'l']);
+  if (size) { const k = max / (wpx / U2PX); wpx *= k; hpx *= k; }
+  let w = Math.round(wpx / U2PX), h = Math.round(hpx / U2PX);
   if (w > max) { h = Math.round(h * max / w); w = max; }
   if (h > 22000) { w = Math.round(w * 22000 / h); h = 22000; }
-  return { src, w, h };
+  return { src, w, h, size: size || undefined, nw: wpx, nh: hpx };
 }
 async function drawPictures() {
   const need = S.items.filter(x => x.picture && !x.img);
@@ -407,19 +426,98 @@ document.addEventListener('click', async e => {
     case 'swap': { await loadCards(); const c = K.swapCandidate(CARDS, x, S.items.map(y => y.id), Date.now()); if (!c) { toast('바꿀 문항이 없어요'); break; } S.items[i] = K.toItem(c, { seed: S.seed, choices: S.choices, pool: POOL() }); await drawPictures(); save(); relayout(); break; }
     case 'addopt': x.options.push({ t: '', added: true }); renderWork(); drawPages(); const ins = $(`.it[data-i="${i}"] input[data-opt="${x.options.length - 1}"]`); if (ins) ins.focus(); break;
     case 'pic': picTarget = i; $('#picIn').click(); break;
+    case 'pdf': openPdfModal(i); break;
     case 'unpic': x.img = null; save(); relayout(); break;
     case 'dl-q': downloadQ().catch(err => toast('만들지 못했어요: ' + (err.message || err))); break;
     case 'dl-k': downloadK().catch(err => toast('만들지 못했어요: ' + (err.message || err))); break;
   }
 });
-$('#picIn').addEventListener('change', e => {
-  const f = e.target.files[0]; e.target.value = ''; if (!f || picTarget == null) return;
-  const rd = new FileReader(); rd.onload = () => { const img = new Image(); img.onload = () => {
-    const k = Math.min(1, 1600 / img.width), cv = document.createElement('canvas'); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
-    const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(img, 0, 0, cv.width, cv.height);
-    const wpx = 300, hpx = 300 * img.height / img.width;
-    S.items[picTarget].img = fitImg(cv.toDataURL('image/png'), wpx, hpx); save(); relayout(); }; img.src = rd.result; }; rd.readAsDataURL(f);
+/* ---------- 그림 넣기 — 파일 · 붙여넣기 · 끌어다 놓기 · PDF 잘라 넣기 (모두 이 컴퓨터 안에서만, 서버로 보내지 않는다) ---------- */
+function setPicFromImage(i, img, srcW, srcH) {
+  const k = Math.min(1, 1800 / srcW), cv = document.createElement('canvas'); cv.width = Math.round(srcW * k); cv.height = Math.round(srcH * k);
+  const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(img, 0, 0, cv.width, cv.height);
+  S.items[i].img = fitImg(cv.toDataURL('image/png'), 300, 300 * srcH / srcW, 'l'); save(); relayout(); toast(`${i + 1}번에 그림을 넣었어요`);
+}
+function setPicFromBlob(i, blob) {
+  if (i == null || i < 0 || !S.items[i] || !blob) return;
+  const rd = new FileReader(); rd.onload = () => { const img = new Image(); img.onload = () => setPicFromImage(i, img, img.width, img.height); img.src = rd.result; }; rd.readAsDataURL(blob);
+}
+$('#picIn').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; setPicFromBlob(picTarget, f); });
+/* 붙여넣기 — 마지막으로 누른 문항 칸에 */
+let curCard = null;
+document.addEventListener('pointerdown', e => { const c = e.target.closest('.it'); document.querySelectorAll('.it.sel').forEach(x => x.classList.remove('sel')); if (c) { curCard = +c.dataset.i; c.classList.add('sel'); } });
+document.addEventListener('paste', e => {
+  const it = [...(e.clipboardData || {}).items || []].find(x => x.type && x.type.startsWith('image/'));
+  if (!it) return;
+  if (curCard == null) { toast('그림을 넣을 문항 칸을 먼저 눌러 주세요'); return; }
+  e.preventDefault(); setPicFromBlob(curCard, it.getAsFile());
 });
+document.addEventListener('dragover', e => { if (e.target.closest('.it')) e.preventDefault(); });
+document.addEventListener('drop', e => { const c = e.target.closest('.it'); if (!c) return; e.preventDefault(); const f = [...e.dataTransfer.files].find(f => f.type.startsWith('image/')); if (f) setPicFromBlob(+c.dataset.i, f); });
+
+/* PDF 잘라 넣기 — pdf.js 로 이 브라우저에서만 연다. 연 PDF·쪽은 다음 문항에도 그대로 */
+const PDFV = { doc: null, name: '', page: 1, scale: 1.6, target: null, sel: null };
+let pdfjsReady = null;
+function pdfjs() {
+  if (pdfjsReady) return pdfjsReady;
+  pdfjsReady = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'; sc.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; ok(window.pdfjsLib); }; sc.onerror = no; document.head.appendChild(sc); });
+  return pdfjsReady;
+}
+function openPdfModal(i) {
+  PDFV.target = i; PDFV.sel = null;
+  let m = $('#pdfModal');
+  if (!m) {
+    m = document.createElement('div'); m.id = 'pdfModal'; document.body.appendChild(m);
+    m.innerHTML = `<div class="pm-box"><div class="pm-bar">
+      <b id="pmTitle">PDF에서 잘라 넣기</b><span class="mini" id="pmName"></span><span class="sp"></span>
+      <label class="btn sm">📂 PDF 열기<input type="file" id="pmFile" accept="application/pdf" style="display:none"></label>
+      <button class="btn sm" data-pm="prev">◀</button><input type="number" id="pmPage" min="1" value="1" style="width:64px"><span class="mini" id="pmCount"></span><button class="btn sm" data-pm="next">▶</button>
+      <button class="btn sm" data-pm="zoomout">－</button><button class="btn sm" data-pm="zoomin">＋</button>
+      <button class="btn primary sm" data-pm="put" disabled>이 부분 넣기</button><button class="btn sm" data-pm="close">닫기</button></div>
+      <div class="pm-help mini">PDF는 이 컴퓨터에서만 열려요(서버로 가지 않아요). 사진 부분을 마우스로 끌어 네모를 그린 뒤 「이 부분 넣기」.</div>
+      <div class="pm-view" id="pmView"><div class="pm-stage" id="pmStage"><canvas id="pmCanvas"></canvas><div class="pm-rect" id="pmRect"></div></div><div class="pm-empty" id="pmEmpty">「📂 PDF 열기」로 교과서·지도서 PDF를 열어 주세요</div></div></div>`;
+    $('#pmFile').addEventListener('change', async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; const lib = await pdfjs(); PDFV.doc = await lib.getDocument({ data: await f.arrayBuffer() }).promise; PDFV.name = f.name; PDFV.page = 1; renderPdfPage(); });
+    $('#pmPage').addEventListener('change', e => { PDFV.page = Math.max(1, Math.min(PDFV.doc ? PDFV.doc.numPages : 1, +e.target.value || 1)); renderPdfPage(); });
+    m.addEventListener('click', e => { const b = e.target.closest('[data-pm]'); if (!b) { if (e.target === m) m.classList.remove('on'); return; }
+      const a = b.dataset.pm;
+      if (a === 'close') m.classList.remove('on');
+      if (a === 'prev' && PDFV.doc && PDFV.page > 1) { PDFV.page--; renderPdfPage(); }
+      if (a === 'next' && PDFV.doc && PDFV.page < PDFV.doc.numPages) { PDFV.page++; renderPdfPage(); }
+      if (a === 'zoomin') { PDFV.scale = Math.min(4, PDFV.scale * 1.25); renderPdfPage(); }
+      if (a === 'zoomout') { PDFV.scale = Math.max(0.6, PDFV.scale / 1.25); renderPdfPage(); }
+      if (a === 'put') putPdfCrop();
+    });
+    /* 네모 그리기 */
+    const stage = $('#pmStage'), rect = $('#pmRect'); let start = null;
+    stage.addEventListener('pointerdown', e => { if (!PDFV.doc) return; const r = stage.getBoundingClientRect(); start = { x: e.clientX - r.left, y: e.clientY - r.top }; stage.setPointerCapture(e.pointerId); PDFV.sel = null; rect.style.display = 'none'; $('[data-pm="put"]').disabled = true; });
+    stage.addEventListener('pointermove', e => { if (!start) return; const r = stage.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+      PDFV.sel = { x: Math.min(start.x, x), y: Math.min(start.y, y), w: Math.abs(x - start.x), h: Math.abs(y - start.y) };
+      Object.assign(rect.style, { display: 'block', left: PDFV.sel.x + 'px', top: PDFV.sel.y + 'px', width: PDFV.sel.w + 'px', height: PDFV.sel.h + 'px' }); });
+    stage.addEventListener('pointerup', () => { start = null; if (PDFV.sel && PDFV.sel.w > 8 && PDFV.sel.h > 8) $('[data-pm="put"]').disabled = false; else { PDFV.sel = null; rect.style.display = 'none'; } });
+  }
+  $('#pmTitle').textContent = `${i + 1}번 문항에 그림 넣기`;
+  m.classList.add('on'); if (PDFV.doc) renderPdfPage();
+}
+async function renderPdfPage() {
+  const doc = PDFV.doc; if (!doc) return;
+  $('#pmEmpty').style.display = 'none'; $('#pmName').textContent = PDFV.name; $('#pmPage').value = PDFV.page; $('#pmCount').textContent = '/ ' + doc.numPages;
+  const page = await doc.getPage(PDFV.page), vp = page.getViewport({ scale: PDFV.scale }), cv = $('#pmCanvas');
+  cv.width = vp.width; cv.height = vp.height; cv.style.width = vp.width + 'px'; cv.style.height = vp.height + 'px';
+  await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+  PDFV.sel = null; $('#pmRect').style.display = 'none'; $('[data-pm="put"]').disabled = true;
+}
+async function putPdfCrop() {
+  const s0 = PDFV.sel; if (!s0 || PDFV.target == null) return;
+  /* 고르게 보이도록 3배로 다시 그려서 자른다 */
+  const page = await PDFV.doc.getPage(PDFV.page), hi = 3 / PDFV.scale * 1.0, vp = page.getViewport({ scale: 3 });
+  const big = document.createElement('canvas'); big.width = vp.width; big.height = vp.height;
+  await page.render({ canvasContext: big.getContext('2d'), viewport: vp }).promise;
+  const k = 3 / PDFV.scale, cut = document.createElement('canvas'); cut.width = Math.round(s0.w * k); cut.height = Math.round(s0.h * k);
+  cut.getContext('2d').drawImage(big, s0.x * k, s0.y * k, cut.width, cut.height, 0, 0, cut.width, cut.height);
+  setPicFromImage(PDFV.target, cut, cut.width, cut.height);
+  $('#pdfModal').classList.remove('on');
+}
+
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'fRound') { S.round = t.value; save(); return; }
@@ -439,6 +537,7 @@ document.addEventListener('change', e => {
     if (S.items.length && !confirm('범위가 바뀌면 고른 문항이 지워져요. 바꿀까요?')) { render(); renderWork(); drawPages(); return; }
     S.grade = +$('#fGrade').value; S.sem = +$('#fSem').value; S.subject = $('#fSubj').value; S.units = {}; S.items = []; LAYOUT = []; save(); render(); return;
   }
+  if (t.hasAttribute && t.hasAttribute('data-size')) { const x = S.items[+t.closest('.it').dataset.i]; x.img = fitImg(x.img.src, x.img.nw || 300, x.img.nh || 200, t.value); save(); relayout(); return; }
   if (t.id === 'fChoices') { S.choices = +t.value; save(); if (S.items.length) toast('「🎲 모두 다시 바꾸기」를 누르면 지금 문항에도 반영돼요'); return; }
   if (t.hasAttribute('data-uon')) { const u = t.closest('.unit'), st = S.units[u.dataset.unit] = S.units[u.dataset.unit] || {}; st.on = t.checked; if (st.on && !st.n) { st.n = 10; u.querySelector('[data-un]').value = 10; } u.classList.toggle('on', st.on); save(); planStat(); }
 });
