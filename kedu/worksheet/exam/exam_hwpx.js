@@ -25,8 +25,8 @@
   var CP = { body: 32, bold: 33, box: 27, boxBold: 38 };
   var PP = { body: 11, ans: 50, center: 2, right: 54, hang1: 55, hang2: 56, opt: 57 };
   /* 내어쓰기(준호 2026-11-14: 둘째 줄이 첫 줄 글자 시작에 맞게) — 양식 header 에 문단 모양 셋을 더한다
-     hang1 = 「1. 」 · hang2 = 「12. 」 · opt = 보기 「① 」(왼쪽 들여 600 + 내어쓰기). 값 = HWPUNIT(11pt 함초롬바탕 글자 폭 어림) */
-  var HANG = { hang1: 1250, hang2: 1800, opt: 1400, optLeft: 600 };
+     hang1 = 「 1. 」 · hang2 = 「 12. 」(앞 한 칸) · opt = 보기 「① 」(왼쪽 들여 600 + 내어쓰기). 값 = HWPUNIT(11pt 함초롬바탕 글자 폭 어림) */
+  var HANG = { hang1: 1650, hang2: 2200, opt: 1400, optLeft: 600 };   // 번호 앞 한 칸(준호 2026-11-14) 포함
   function hangParaPr(id, left, intent) {
     var m = function (k) { return '<hh:margin><hc:intent value="' + Math.round(intent * k) + '" unit="HWPUNIT"/><hc:left value="' + Math.round(left * k) + '" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/>'; };
     return '<hh:paraPr id="' + id + '" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="0" suppressLineNumbers="0" checked="0" textDir="AUTO"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/>' +
@@ -62,7 +62,7 @@
 
   function blocks(it, no) {
     var B = [];
-    B.push({ p: true, para: no >= 10 ? 'hang2' : 'hang1', runs: [{ t: no + '. ' }].concat(textRuns(it.stem)) });
+    B.push({ p: true, para: no >= 10 ? 'hang2' : 'hang1', runs: [{ t: ' ' + no + '. ' }].concat(textRuns(it.stem)) });
     if (it.kind === 'mc') B.push({ p: true, para: 'ans', runs: [{ t: '   -----------------------------(       )' }] });
     if (it.statement) B.push({ box: true, title: '', lines: [it.statement] });
     if (it.box) B.push({ box: true, title: it.box.title || '', lines: it.box.lines });
