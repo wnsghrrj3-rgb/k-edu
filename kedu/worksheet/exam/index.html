@@ -305,11 +305,25 @@ function relayout() {
   });
   /* 마지막 단 + 맺음(검토 문구·이름 칸) */
   if (cur.used + close > capOf(cols.length)) { cols.push(cur); cur = { items: [], used: 0 }; }
-  cur.used += close; cur.closing = true; cols.push(cur);
+  cur.closing = true; cols.push(cur);
+  if (cols.length % 2) { const last = cols[cols.length - 1]; cols.push({ items: [], used: 0, closing: true }); last.closing = false; }
+  /* 쪽마다 왼쪽·오른쪽을 고르게(준호 2026-11-14: 왼쪽만 꽉 차고 오른쪽이 빈다) — 차례는 그대로, 두 단 중 높은 쪽이 가장 낮아지는 곳에서 나눈다 */
+  const hOf = (list, withClose) => list.reduce((s0, idx, k) => s0 + hs[idx] + (k ? BLANK_PX : 0), 0) + (withClose ? close + (list.length ? BLANK_PX : 0) : 0);
+  for (let pi = 0; pi < cols.length; pi += 2) {
+    const L = cols[pi], R = cols[pi + 1], all = L.items.concat(R.items).map(x => x.idx), lastPage = pi + 2 >= cols.length, cap = capOf(pi);
+    let best = null;
+    for (let k = 0; k <= all.length; k++) {
+      const hl = hOf(all.slice(0, k), false), hr = hOf(all.slice(k), lastPage), fit = hl <= cap && hr <= cap, score = Math.max(hl, hr);
+      if (fit && (!best || score < best.score)) best = { k, score };
+    }
+    if (best) { L.items = all.slice(0, best.k).map(idx => ({ idx, gap: 1 })); R.items = all.slice(best.k).map(idx => ({ idx, gap: 1 })); }
+    L.closing = false; R.closing = lastPage;
+  }
   cols.forEach((c, n) => {
-    c.cap = capOf(n); c.over = c.used > c.cap / SAFE;
-    const gaps = c.items.length - 1 + (c.closing && c.items.length ? 1 : 0);
-    if (gaps > 0 && !c.closing) { const extra = Math.floor((c.cap - c.used) / BLANK_PX / gaps); c.items.forEach((it, k) => { if (k) it.gap = 1 + Math.max(0, Math.min(3, extra)); }); c.used += Math.max(0, Math.min(3, extra)) * gaps * BLANK_PX; }
+    c.cap = capOf(n); c.used = hOf(c.items.map(x => x.idx), c.closing); c.over = c.used > c.cap / SAFE;
+    const gaps = c.items.length - 1;
+    /* 남는 자리는 문항 사이 빈 줄로(한 사이에 최대 4줄) — 마지막 단은 맺음이 붙으므로 위에서부터 채운다 */
+    if (gaps > 0 && !c.closing) { const extra = Math.max(0, Math.min(3, Math.floor((c.cap - c.used) / BLANK_PX / gaps))); c.items.forEach((it, k) => { if (k) it.gap = 1 + extra; }); c.used += extra * gaps * BLANK_PX; }
   });
   LAYOUT = cols; renderWork(); drawPages();
 }
