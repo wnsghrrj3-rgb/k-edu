@@ -49,7 +49,7 @@
     keep: 300,                    /* 남기는 글씨 건수(처음 + 최근을 따로 센다) */
     maxPts: 16,                   /* 획마다 남기는 점 수 */
     /* 움직임(ms) */
-    demoMs: 650, flipMs: 600, okMs: 350
+    demoMs: 650, flipMs: 600, okMs: 350, hintMs: 700
   };
   var KEY = 'kedu-en-play-ink', PREF = 'kedu-en-play-pref';
   var LV = ['free', 'faint', 'trace'];
@@ -86,10 +86,10 @@
   function cloudOf(ch) { if (!CLOUD[ch]) CLOUD[ch] = norm(sample(glyph(ch), CONF.cloudN)); return CLOUD[ch]; }
 
   /* 따라·옅게 — 길 덮임. ink = 칸 좌표의 획들. only = 그 획 하나만 볼 때(차례 요구) */
-  function judgeTrace(ch, ink, only) {
-    var gl = glyph(ch); if (!gl) return { ok: false };
+  function judgeTrace(ch, ink, only, wide) {
+    var gl = glyph(ch), all = gl; if (!gl) return { ok: false };
     if (only != null) gl = typeof only === 'number' ? [gl[only]] : gl.slice(only[0], only[0] + only[1]);      /* 획 하나 · [k, m] = k 째부터 잇단 m 획 */
-    var tm = sample(gl, CONF.samples), dense = sample(gl, CONF.samples * 2), ik = sample(ink, CONF.samples * 2);
+    var tm = sample(gl, CONF.samples), dense = sample(wide && only != null && typeof only !== 'number' ? all.slice(0, only[0] + only[1]) : gl, CONF.samples * 2), ik = sample(ink, CONF.samples * 2);
     if (!ik.length) return { ok: false, empty: true, cover: 0, stray: 0 };
     var cover = tm.filter(function (p) { return minDist(p, ik) <= CONF.near; }).length / tm.length;
     var stray = ik.filter(function (p) { return minDist(p, dense) > CONF.far; }).length / ik.length;
@@ -192,6 +192,12 @@
       c.el.classList.add('demo'); if (o.onDemo) o.onDemo(c.i, c.ch);
       return new Promise(function (r) { later(still ? 0 : gl.length * CONF.demoMs + 120, function () { if (!still) { c.demos.innerHTML = ''; c.el.classList.remove('demo'); } r(); }); });
     }
+    /* 다음 획 길잡이 — 한 획이 끝나면 다음 획의 길이 시작 점에서부터 한 번 흘러간다(어디로 이어 가는지 말 없이 보인다) */
+    function hint(c) {
+      if (reduced() || c.ok || !glyph(c.ch)[c.k]) return;
+      var k = c.k; c.demos.innerHTML = '<path class="pw-demo-line pw-hint" pathLength="1" style="animation-duration:' + CONF.hintMs + 'ms" d="' + pathD([glyph(c.ch)[k]], c.x) + '"/>';
+      later(CONF.hintMs + 400, function () { if (c.k === k && !c.el.classList.contains('demo')) c.demos.innerHTML = ''; });
+    }
     function finish() {
       if (finished) return; finished = true; root.classList.add('done');
       var clean = cells.every(function (c) { return start === 0 && c.level === 0 && !c.fails && !c.conf && !c.helped && !c.given; });
@@ -222,6 +228,7 @@
     function strictNow(c) { return strict && c.level > 0; }
     function endStroke(c, st, ln, extra) {
       var gl = glyph(c.ch), r;
+      var back = extra === 'back' && !c.ok && !finished; if (back) extra = false;
       if (extra || c.ok || finished) {       /* 이미 된 칸·이미 된 획에 마저 쓴 획 — 길 근처면 남기고(저장되는 글씨에도 든다), 벗어났으면 조용히 지운다 */
         var ex = sample([st], 12), dn = sample(gl, CONF.samples * 2);
         if (!finished && !c.given && ex.filter(function (p) { return minDist(p, dn) > CONF.far; }).length / ex.length <= CONF.extra) { c.strokes.push(st); c.lines.push(ln); }
@@ -233,15 +240,16 @@
            ① 한 획을 나누어 써도 — 길 위에 쓴 조각은 남겨 두고 이어 쓴 것과 합쳐서 본다
            ② 두 획을 한 번에 이어 써도 — 지금 획부터 잇단 획들을 한꺼번에 덮었으면 그만큼 넘어간다. 차례는 그대로 지킨다 */
         var parts = c.part.concat([st]), m, rest = gl.length - c.k;
-        for (m = 1; m <= rest; m++) {
-          r = judgeTrace(c.ch, parts, [c.k, m]);
+        for (m = rest; m >= 1; m--) {       /* 많이 덮은 쪽부터 — d·q 를 이어 쓴 것(동그라미 + 막대)이 동그라미 하나로만 세어지지 않게 */
+          r = judgeTrace(c.ch, parts, [c.k, m], true);       /* 앞 획을 되짚은 몫(b 의 막대를 다시 올라가 동그라미로)은 벗어난 것이 아니다 */
           if (r.ok) {
             c.partLn.concat([ln]).forEach(function (e) { e.setAttribute('class', 'pw-ink done'); });
             c.strokes = c.strokes.concat(parts); c.lines = c.lines.concat(c.partLn, [ln]); c.part = []; c.partLn = [];
-            c.k += m; c.miss = 0; if (c.k >= gl.length) return pass(c); return paint(c);
+            c.k += m; c.miss = 0; if (c.k >= gl.length) return pass(c); paint(c); return hint(c);
           }
         }
-        r = judgeTrace(c.ch, [st], [c.k, rest]);
+        r = judgeTrace(c.ch, [st], [c.k, rest], true);
+        if (back && r.cover < CONF.partMin) { if (r.stray <= CONF.extra) { ln.setAttribute('class', 'pw-ink done'); c.strokes.push(st); c.lines.push(ln); } else if (ln.parentNode) ln.parentNode.removeChild(ln); return; }      /* 앞 획을 마저 쓴 것뿐 — 조용히 */
         if (r.stray <= CONF.stray && r.cover >= CONF.partMin) { c.part.push(st); c.partLn.push(ln); return; }       /* 길 위의 조각 — 남기고 기다린다(안 된 것으로 세지 않는다) */
         if (ln.parentNode) ln.parentNode.removeChild(ln); c.miss++;
         if (c.miss >= CONF.strokeMiss) { c.miss = 0; c.partLn.forEach(function (e) { if (e.parentNode) e.parentNode.removeChild(e); }); c.part = []; c.partLn = []; failCell(c, 'stroke'); }
@@ -272,13 +280,14 @@
       return hit;
     }
     function begin(c, q) {
+      if (c && !c.el.classList.contains('demo') && c.demos.firstChild) c.demos.innerHTML = '';       /* 쓰기 시작하면 길잡이는 사라진다 */
       if (finished || !c || c.given) return false;
       if (c.ok) { cur = { c: c, pts: [q], ln: line(c, [q]), extra: true }; return true; }       /* 마저 쓰는 획 */
       if (strictNow(c)) { var s0 = glyph(c.ch)[c.k][0]; if (dist(px(q), px(s0)) > CONF.startR) {
           /* 앞 획을 조금 남기고 손을 뗐다가 마저 쓰는 것 — 이미 지나간 길 위에서 시작하면 잉크가 나온다 */
           /* 지금 획을 쓰다가 손을 뗐다 — 쓰던 길 위 어디서든 이어 쓴다(b 의 막대를 긋고 떼었다가 동그라미) */
           if (c.part.length && minDist(px(q), sample([glyph(c.ch)[c.k]], CONF.samples)) <= CONF.startR * 0.6) { cur = { c: c, pts: [q], ln: line(c, [q]) }; return true; }
-          if (c.k > 0 && minDist(px(q), sample(glyph(c.ch).slice(0, c.k), CONF.samples)) <= CONF.near * 1.5) { cur = { c: c, pts: [q], ln: line(c, [q], 'done'), extra: true }; return true; }
+          if (c.k > 0 && minDist(px(q), sample(glyph(c.ch).slice(0, c.k), CONF.samples)) <= CONF.near * 1.5) { cur = { c: c, pts: [q], ln: line(c, [q]), extra: 'back' }; return true; }
           var dot = c.el.querySelector('.pw-start.now'); if (dot) { dot.classList.remove('pulse'); try { void dot.getBoundingClientRect(); } catch (e) {} dot.classList.add('pulse'); } return false; } }
       cur = { c: c, pts: [q], ln: line(c, [q]) }; return true;
     }
