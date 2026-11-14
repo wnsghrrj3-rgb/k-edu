@@ -27,4 +27,18 @@ ok(K.fill('{X}{을} 좋아하여', '피아노') === '피아노를 좋아하여' 
 const cnt = [0, 0, 0, 0, 0]; for (let i = 0; i < 30; i++) { const p = K.assign(5, 2, i, 0, 's'); ok(p.length === 2 && p[0] !== p[1], '개수'); p.forEach(x => cnt[x]++); }
 ok(Math.max(...cnt) - Math.min(...cnt) <= 2, '고른 분배 ' + cnt); ok(K.assign(3, 5, 0, 0, 's').length === 3, '기준보다 많이 고르면 전부');
 ok(K.subjectText(pc, [0, 1], { 1: 'l' }) === '바르게 씀. 도움을 받아 읽음.', '문장 잇기'); ok(K.bytes('가a\n') === 6, '바이트'); ok(K.watch('학원에서 배운').length === 1, '확인 낱말');
+// 5) 고학년 글감 — 같은 길이 규칙 · 저학년 말씨가 섞이지 않음
+let nh = 0;
+K.LINES_HIGH.forEach(L => { const ids = L.traits.map(t => t.id);
+  ['h', 'm', 'l'].forEach(lv => ids.forEach(a => {
+    const one = K.candidates(L.id, { sel: { [a]: lv } }, { seed: a, band: 'high' }); ok(one.length >= 2, '고 후보 수 ' + a);
+    [one[0]].concat(ids.filter(b => b > a).map(b => K.compose(L.id, { sel: { [a]: lv, [b]: 'h' } }, { seed: a + b, band: 'high' }))).forEach(t => { nh++; ok(/\.$/.test(t) && t.length >= 33 && t.length <= 48, '고 ' + t.length + ' ' + t); ok(!/종이접기|율동|어린이|가위질|우유/.test(t), '저학년 말씨 ' + t); });
+  }));
+  ['수학', '피아노', '학급 회장'].forEach(x => ['h', 'm', 'l'].forEach(lv => { const t = K.compose(L.id, { x, xl: lv }, { seed: x, band: 'high' }); ok(t.indexOf(x) >= 0 && t.length >= 30 && t.length <= 48, '고 ' + t); }));
+});
+ok(K.bandOfGrade(1) === 'low' && K.bandOfGrade(3) === 'low' && K.bandOfGrade(4) === 'high' && K.bandOfGrade(6) === 'high' && K.bandOfGrade(null) === 'low', '학년 범위');
+ok(K.linesFor('high') === K.LINES_HIGH && K.linesFor('x') === K.LINES, '글감 고르기');
+ok(K.levelText('비율을 구한다', 'l', 'high') === '기초적인 수준에서 비율을 구함' && K.levelText('비율을 구한다', 'l') === '도움을 받아 비율을 구함', '고학년 노력 문장');
+ok(K.subjectsFor(1).length === 5 && K.subjectsFor(4).indexOf('실과') < 0 && K.subjectsFor(6).indexOf('실과') === 5, '학년별 교과');
+console.log('고학년 ' + nh + ' 문장');
 console.log(fail ? fail + ' FAILED' : 'OK (' + n + ' 문장)'); process.exit(fail ? 1 : 0);

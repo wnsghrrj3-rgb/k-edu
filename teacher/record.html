@@ -87,6 +87,7 @@ select.btn{padding-right:8px}
 .xrow input{border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;width:190px}
 .seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
 .seg button{border:none;background:#fff;padding:6px 10px;font-size:13px;cursor:pointer;color:var(--sub);font-weight:700}
+.band-seg{margin-left:6px}.band-seg button.on{background:var(--primary);color:#fff}
 .seg button.on.h{background:var(--primary);color:#fff}.seg button.on.m{background:var(--green-light);color:var(--green)}.seg button.on.l{background:var(--orange-light);color:var(--orange)}
 .out{display:flex;gap:8px;align-items:center}
 .out textarea{flex:1;border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:14px;line-height:1.5;resize:none;background:#FAFBFD;min-height:42px}
@@ -190,6 +191,10 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&a
 
 let db = null, classes = [], classId = null, serverRoster = [];
 let S = null;                         // 저장되는 상태
+let classGrade = null;                // 학급 학년(class_codes.grade)
+const BAND = () => (S && S.band) || K.bandOfGrade(classGrade);
+const LINES = () => K.linesFor(BAND());
+const PC = text => K.parseCriteria(text, BAND());
 let tab = 'hb', curSid = null, curItem = { subj: 0, cc: 0 };
 
 /* ---------- 저장(이 기기 · 이 계정) ---------- */
@@ -197,7 +202,7 @@ const keyOf = () => 'kedu_record_v1:' + (classId || 'local');
 function newItem(name) { return { id: 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, crit: '', n: 2, lv: {}, shift: {}, over: {} }; }
 function blank() {
   return { v: 1, manualRoster: null, hb: {},
-    subj: ['국어', '수학', '바른 생활', '슬기로운 생활', '즐거운 생활'].map(newItem),
+    band: K.bandOfGrade(classGrade), subj: K.subjectsFor(classGrade).map(newItem),
     cc: ['자율·자치활동', '동아리활동', '진로활동'].map(newItem) };
 }
 function load() {
@@ -223,7 +228,8 @@ const tsv = s => String(s || '').replace(/[\t\n]+/g, ' ');
    ① 행동특성 및 종합의견
    ============================================================ */
 function hbOf(sid) {
-  if (!S.hb[sid]) { S.hb[sid] = {}; K.LINES.forEach(L => { S.hb[sid][L.id] = { sel: {}, x: '', xl: 'h', text: '', roll: 0 }; }); }
+  if (!S.hb[sid]) S.hb[sid] = {};
+  LINES().forEach(L => { if (!S.hb[sid][L.id]) S.hb[sid][L.id] = { sel: {}, x: '', xl: 'h', text: '', roll: 0 }; });
   return S.hb[sid];
 }
 function usedBy(lineId, exceptSid) {
@@ -232,11 +238,11 @@ function usedBy(lineId, exceptSid) {
 }
 function regen(sid, lineId) {
   const d = hbOf(sid)[lineId];
-  d.text = K.compose(lineId, d, { seed: sid + ':' + lineId, roll: d.roll, used: usedBy(lineId, sid) });
+  d.text = K.compose(lineId, d, { seed: sid + ':' + lineId, roll: d.roll, used: usedBy(lineId, sid), band: BAND() });
   save();
 }
-const hbFull = sid => { const h = S.hb[sid]; return h ? K.LINES.map(L => (h[L.id].text || '').trim()).filter(Boolean).join(' ') : ''; };
-const picked = d => Object.keys(d.sel).length + (d.x.trim() ? 1 : 0);
+const hbFull = sid => { const h = S.hb[sid]; return h ? LINES().map(L => (h[L.id].text || '').trim()).filter(Boolean).join(' ') : ''; };
+const picked = (d, L) => Object.keys(d.sel).filter(k => !L || L.byId[k]).length + (d.x.trim() ? 1 : 0);
 
 function renderHb() {
   const rs = roster();
@@ -246,10 +252,10 @@ function renderHb() {
 }
 function renderStuList() {
   const el = $('#stu-list'); if (!el) return;
-  const used = {}; K.LINES.forEach(L => { used[L.id] = usedBy(L.id, null); });
+  const used = {}; LINES().forEach(L => { used[L.id] = usedBy(L.id, null); });
   el.innerHTML = roster().map(s => {
     const h = S.hb[s.id];
-    const dots = K.LINES.map(L => { const t = h && h[L.id].text; return `<i class="${!t ? '' : (used[L.id][t] > 1 ? 'dup' : 'ok')}"></i>`; }).join('');
+    const dots = LINES().map(L => { const t = h && h[L.id].text; return `<i class="${!t ? '' : (used[L.id][t] > 1 ? 'dup' : 'ok')}"></i>`; }).join('');
     return `<button class="stu ${s.id === curSid ? 'on' : ''}" data-sid="${esc(s.id)}"><span class="no">${s.no != null ? s.no : ''}</span><span class="nm">${esc(s.name || '')}</span><span class="dots">${dots}</span></button>`;
   }).join('');
 }
@@ -261,7 +267,7 @@ function renderEditor() {
   el.innerHTML = `
     <div class="ed-head"><span class="ed-name">${esc(label(s))}</span><span class="mini">한 줄에 두 가지까지 · 한 줄 40자 안팎</span></div>
     <div class="legend">칩을 누를 때마다 <b class="lv-h">◎ 뛰어남</b>→<b class="lv-m">○ 잘함</b>→<b class="lv-l">△ 노력 중</b>→ 꺼짐</div>
-    ${K.LINES.map((L, i) => { const d = h[L.id]; return `
+    ${LINES().map((L, i) => { const d = h[L.id]; return `
     <div class="line" data-line="${L.id}">
       <div class="line-h"><span class="n">${i + 1}</span><span class="t">${esc(L.label)}</span></div>
       <div class="chips">${L.traits.map(t => `<button class="chip ${d.sel[t.id] || ''}" data-trait="${t.id}">${esc(t.label)}${d.sel[t.id] ? ' ' + LV_MARK[d.sel[t.id]] : ''}</button>`).join('')}</div>
@@ -279,7 +285,7 @@ function renderEditor() {
 function grow(ta) { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px'; }
 function refreshLine(lineId, keepText) {
   const box = $(`.line[data-line="${lineId}"]`); if (!box) return; const d = hbOf(curSid)[lineId];
-  box.querySelectorAll('.chip').forEach(c => { const lv = d.sel[c.dataset.trait]; c.className = 'chip ' + (lv || ''); const t = K.LINES.find(L => L.id === lineId).traits.find(t => t.id === c.dataset.trait); c.textContent = t.label + (lv ? ' ' + LV_MARK[lv] : ''); });
+  box.querySelectorAll('.chip').forEach(c => { const lv = d.sel[c.dataset.trait]; c.className = 'chip ' + (lv || ''); const t = LINES().find(L => L.id === lineId).traits.find(t => t.id === c.dataset.trait); c.textContent = t.label + (lv ? ' ' + LV_MARK[lv] : ''); });
   box.querySelectorAll('[data-xl]').forEach(b => b.classList.toggle('on', b.dataset.xl === d.xl));
   const ta = $('textarea[data-text]', box); if (!keepText) ta.value = d.text; grow(ta);
   $('[data-cnt]', box).innerHTML = cntHtml(d.text);
@@ -289,7 +295,7 @@ function refreshResult() {
   const full = hbFull(curSid), el = $('#res-txt'); if (!el) return;
   el.textContent = full || '세 줄이 여기에 이어져요.'; el.classList.toggle('empty', !full);
   $('#res-cnt').textContent = full ? `${full.length}자 · ${K.bytes(full)}바이트` : '';
-  K.LINES.forEach(L => {
+  LINES().forEach(L => {
     const box = $(`.line[data-line="${L.id}"]`), t = hbOf(curSid)[L.id].text, msgs = [];
     if (t && usedBy(L.id, curSid)[t]) msgs.push('같은 문장을 쓴 학생이 있어요 — 🔄 로 바꿔 보세요');
     K.watch(t).forEach(w => msgs.push('기재요령 확인: ' + w));
@@ -331,7 +337,7 @@ function renderSj() {
   renderSjTable();
 }
 function renderSjTable() {
-  const el = $('#sj-table'); if (!el) return; const it = item(), crit = K.parseCriteria(it.crit), rs = roster();
+  const el = $('#sj-table'); if (!el) return; const it = item(), crit = PC(it.crit), rs = roster();
   $('#n-val').textContent = Math.min(it.n, Math.max(1, crit.length));
   if (!crit.length) { el.innerHTML = `<div class="empty-box">기준을 넣으면 여기에 학생별 표가 생겨요.<br>칸을 눌러 <b>잘함 → 보통 → 노력요함</b>으로 바꾸면 문장이 그 수준에 맞게 바뀝니다.</div>`; return; }
   if (!rs.length) { el.innerHTML = `<div class="empty-box">명단이 비어 있어요. 위쪽 「👥 명단」에서 학생을 넣어 주세요.</div>`; return; }
@@ -351,8 +357,8 @@ function renderSjTable() {
   el.querySelectorAll('textarea[data-over]').forEach(grow);
 }
 function sjCopy(all) {
-  const rs = roster(), a = all ? items().filter(x => K.parseCriteria(x.crit).length) : [item()];
-  const crits = a.map(x => K.parseCriteria(x.crit));
+  const rs = roster(), a = all ? items().filter(x => PC(x.crit).length) : [item()];
+  const crits = a.map(x => PC(x.crit));
   const lines = [['번호', '이름'].concat(a.map(x => x.name)).join('\t')];
   rs.forEach((s, order) => lines.push([s.no != null ? s.no : '', s.name || ''].concat(a.map((x, i) => tsv(sjText(x, crits[i], order, s.id)))).join('\t')));
   copy(lines.join('\n'), '표를 복사했어요 — 엑셀·한글에 붙여 넣으세요');
@@ -368,6 +374,7 @@ function renderShell() {
       <button class="tab" data-tab="subj">교과 · 학기말 종합의견</button>
       <button class="tab" data-tab="cc">창의적 체험활동</button>
       <button class="btn sm" data-act="hb-all" id="btn-hb-all" style="margin-left:6px">전체 보기 · 복사</button>
+      <span class="seg band-seg" title="학년에 맞는 말씨로 문장을 지어요">${['low', 'high'].map(b => `<button class="${BAND() === b ? 'on' : ''}" data-band="${b}">${K.BAND_LABEL[b]}</button>`).join('')}</span>
       <span class="lock-note">🔒 이 컴퓨터의 내 계정에만 저장돼요 · 서버로 보내지 않아요</span>
     </div><div id="view"></div>`;
   renderTab();
@@ -401,21 +408,22 @@ function backupModal() {
 document.addEventListener('click', e => {
   const t = e.target.closest('button, [data-act]'); if (!t) { if (e.target.id === 'modal') closeModal(); return; }
   if (t.dataset.tab) { tab = t.dataset.tab; renderTab(); return; }
+  if (t.dataset.band) { setBand(t.dataset.band); return; }
   if (t.dataset.sid && t.classList.contains('stu')) { curSid = t.dataset.sid; renderStuList(); renderEditor(); return; }
   const lineBox = t.closest('.line');
   if (lineBox) {
-    const lid = lineBox.dataset.line, d = hbOf(curSid)[lid];
+    const lid = lineBox.dataset.line, d = hbOf(curSid)[lid], LL = LINES().find(L => L.id === lid);
     if (t.dataset.trait) {
       const id = t.dataset.trait, cur = d.sel[id];
-      if (!cur) { if (picked(d) >= K.MAX_PICK) { toast('한 줄에 두 가지까지예요'); return; } d.sel[id] = 'h'; }
+      if (!cur) { if (picked(d, LL) >= K.MAX_PICK) { toast('한 줄에 두 가지까지예요'); return; } d.sel[id] = 'h'; }
       else if (cur === 'l') delete d.sel[id]; else d.sel[id] = LV[LV.indexOf(cur) + 1];
       d.roll = 0; regen(curSid, lid); refreshLine(lid); return;
     }
     if (t.dataset.xl) { d.xl = t.dataset.xl; d.roll = 0; regen(curSid, lid); refreshLine(lid); return; }
-    if (t.hasAttribute('data-roll')) { if (!picked(d)) { toast('먼저 칩을 고르거나 낱말을 적어 주세요'); return; } d.roll++; regen(curSid, lid); refreshLine(lid); return; }
+    if (t.hasAttribute('data-roll')) { if (!picked(d, LL)) { toast('먼저 칩을 고르거나 낱말을 적어 주세요'); return; } d.roll++; regen(curSid, lid); refreshLine(lid); return; }
   }
   if (t.dataset.item != null) { curItem[tab] = +t.dataset.item; renderSj(); return; }
-  if (t.dataset.n) { const it = item(), k = K.parseCriteria(it.crit).length || 9; it.n = Math.max(1, Math.min(k, Math.min(it.n, k) + (+t.dataset.n))); it.over = {}; save(); renderSjTable(); return; }
+  if (t.dataset.n) { const it = item(), k = PC(it.crit).length || 9; it.n = Math.max(1, Math.min(k, Math.min(it.n, k) + (+t.dataset.n))); it.over = {}; save(); renderSjTable(); return; }
   const row = t.closest('tr[data-sid]');
   if (row && tab !== 'hb') {
     const it = item(), sid = row.dataset.sid;
@@ -452,7 +460,7 @@ document.addEventListener('input', e => {
   }
   if (t.id === 'crit') { const it = item(); it.crit = t.value; it.over = {}; save(); clearTimeout(_critT); _critT = setTimeout(renderSjTable, 250); return; }
   if (t.id === 'item-name') { item().name = t.value.trim() || '이름 없음'; save(); const p = $('.pill.on'); if (p) p.textContent = item().name; return; }
-  if (t.hasAttribute('data-over')) { const row = t.closest('tr'), it = item(), sid = row.dataset.sid, v = t.value.replace(/\n/g, ' '); const auto = autoText(it, K.parseCriteria(it.crit), +row.dataset.order, sid); if (v === auto) delete it.over[sid]; else it.over[sid] = v; save(); grow(t); $('[data-len]', row).textContent = v.length + '자'; }
+  if (t.hasAttribute('data-over')) { const row = t.closest('tr'), it = item(), sid = row.dataset.sid, v = t.value.replace(/\n/g, ' '); const auto = autoText(it, PC(it.crit), +row.dataset.order, sid); if (v === auto) delete it.over[sid]; else it.over[sid] = v; save(); grow(t); $('[data-len]', row).textContent = v.length + '자'; }
 });
 $('#file-in').addEventListener('change', async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -463,10 +471,23 @@ $('#file-in').addEventListener('change', async e => {
   } catch (err) { toast('케이생기부 백업 파일이 아니에요'); }
 });
 
+/* ---------- 학년 범위(저학년·고학년) ---------- */
+function setBand(b) {
+  if (b === BAND()) return;
+  const made = roster().filter(st => S.hb[st.id] && Object.values(S.hb[st.id]).some(d => d && d.text)).length;
+  S.band = b;
+  /* 새 범위에 없는 칩은 떼어 낸다 */
+  roster().forEach(st => { const h = S.hb[st.id]; if (!h) return; LINES().forEach(L => { const d = h[L.id]; if (d) Object.keys(d.sel).forEach(k => { if (!L.byId[k]) delete d.sel[k]; }); }); });
+  if (made && confirm(`이미 문장을 지은 학생이 ${made}명 있어요. ${K.BAND_LABEL[b]} 말씨로 다시 지을까요?\n(손으로 고친 문장도 새로 지어져요)`)) {
+    roster().forEach(st => { const h = S.hb[st.id]; if (!h) return; LINES().forEach(L => { const d = h[L.id]; if (!d) return; if (picked(d, L)) { d.roll = 0; regen(st.id, L.id); } else d.text = ''; }); });
+  }
+  save(); renderShell(); toast(K.BAND_LABEL[b] + ' 말씨로 바꿨어요');
+}
+
 /* ---------- 시작 ---------- */
 function showError(ttl, desc) { $('#app').innerHTML = `<div class="center-state"><div style="font-size:40px">🔒</div><div class="ttl">${esc(ttl)}</div><div>${esc(desc)}</div></div>`; }
 async function loadClass(id) {
-  classId = id; serverRoster = [];
+  classId = id; serverRoster = []; classGrade = ((classes.find(c => c.id === id) || {}).grade) || null;
   if (id) {
     const { data } = await db.from('student_seats').select('id, nickname, seat_no').eq('class_code_id', id);
     serverRoster = (data || []).map(x => ({ id: 'seat:' + x.id, no: x.seat_no, name: x.nickname || '' }))
@@ -481,7 +502,7 @@ async function init() {
   if (!session) { location.href = '/auth/?redirect=' + encodeURIComponent(location.href); return; }
   const { data: t } = await db.from('teachers').select('id, name').eq('user_id', session.user.id).maybeSingle();
   if (!t) { showError('교사 권한이 없습니다', '케이생기부는 승인된 교사만 쓸 수 있습니다.'); return; }
-  const { data: cc } = await db.from('class_codes').select('id, code, label').eq('teacher_id', t.id).eq('is_active', true).order('created_at', { ascending: false });
+  const { data: cc } = await db.from('class_codes').select('id, code, label, grade').eq('teacher_id', t.id).eq('is_active', true).order('created_at', { ascending: false });
   classes = cc || [];
   const want = new URLSearchParams(location.search).get('class_code_id');
   const first = (classes.find(c => c.id === want) || classes[0] || {}).id || null;
