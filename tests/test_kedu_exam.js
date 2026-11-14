@@ -9,6 +9,11 @@ const f = K.fifthOption([{ t: '⟨2/5⟩', correct: true }, { t: '⟨3/5⟩' }, 
 ok(f.t === '⟨5/5⟩', '분수 다섯째 보기 ' + f.t);
 ok(K.fifthOption([{ t: '12 cm' }, { t: '13 cm' }, { t: '14 cm' }, { t: '11 cm' }], [], K.rng('x'), []).t === '15 cm', '수 다섯째 보기');
 ok(K.fifthOption([{ t: '사과' }, { t: '배' }, { t: '감' }, { t: '귤' }], ['포도'], K.rng('x'), []).blank, '글 보기는 남의 오답을 빌리지 않음');
+const NM = { names: JSON.parse(fs.readFileSync(__dirname + '/../kedu/worksheet/exam/names.json')), kids: ['금성', '아름', '슬기', '바름', '용기'], classes: ['아름반', '슬기반', '바름반', '용기반'] };
+const rn = s => { const it = { stem: s, subject: 'math' }; K.renameItem(it, NM); return it.stem; };
+ok(rn('지유는 서준이 말한 것을 하늘반 친구에게 알렸다. 도윤아!') === '금성이는 아름이가 말한 것을 아름반 친구에게 알렸다. 슬기야!', '이름 바꾸기 ' + rn('지유는 서준이 말한 것을 하늘반 친구에게 알렸다. 도윤아!'));
+ok(rn('하늘이 맑다') === '하늘이 맑다', '낱말은 그대로');
+ok(K.sortOptions([{ t: '바람개비' }, { t: '온도계' }, { t: '빗물 받는 그릇' }]).map(o => o.t).join() === '온도계,바람개비,빗물 받는 그릇', '보기 짧은 순');
 /* 실제 세트로: 단원 뽑기 · 문항 수 · 같은 발문 없음 · 정답 표시 */
 const D = __dirname + '/../kedu/worksheet/data/';
 [['tb_g4_2_math_u1', 'u1'], ['g4_2_soc_u1', 'u1'], ['tb_g4_2_kor_u2', 'u2'], ['g5_2_sci_u2', 'u2']].forEach(([pre, u]) => {

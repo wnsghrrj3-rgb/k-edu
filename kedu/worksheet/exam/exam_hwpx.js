@@ -69,15 +69,8 @@
     if (it.img) B.push({ img: true, src: it.img.src, w: it.img.w, h: it.img.h });
     if (it.kind === 'mc' && it.options) {
       var ops = it.options.filter(function (o) { return o.t !== '' && o.t != null; });
-      var short = ops.every(function (o) { return widthOf(o.t) <= 14; }) && ops.every(function (o) { return !/⟨/.test(o.t) || widthOf(o.t) <= 10; });
-      if (short) {
-        for (var i = 0; i < ops.length; i += 2) {
-          var a = K.CIRC[i] + ' ', b = ops[i + 1] ? K.CIRC[i + 1] + ' ' : '';
-          var runs = [{ t: a }].concat(textRuns(ops[i].t, { noBold: true }));
-          if (ops[i + 1]) runs = runs.concat([{ t: new Array(Math.max(2, 18 - widthOf(ops[i].t)) + 1).join(' ') + b }]).concat(textRuns(ops[i + 1].t, { noBold: true }));
-          B.push({ p: true, para: 'opt', runs: runs });
-        }
-      } else ops.forEach(function (o, k) { B.push({ p: true, para: 'opt', runs: [{ t: K.CIRC[k] + ' ' }].concat(textRuns(o.t, { noBold: true })) }); });
+      /* 한 줄에 하나씩 — 글자 수 짧은 것이 위, 긴 것이 아래(준호 2026-11-14) */
+      ops.forEach(function (o, k) { B.push({ p: true, para: 'opt', runs: [{ t: K.CIRC[k] + ' ' }].concat(textRuns(o.t, { noBold: true })) }); });
     }
     if (it.kind === 'ox') B.push({ p: true, para: 'ans', runs: [{ t: '   -----------------------------(       )' }] });
     if (it.kind === 'sa') B.push({ p: true, para: 'ans', runs: [{ t: '   답: (                              )' }] });

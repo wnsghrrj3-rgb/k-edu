@@ -189,6 +189,87 @@
     return { t: '', added: true, blank: true };      // 화면에서 교사가 채운다
   }
 
+  /* 글자 수가 짧은 보기부터 ①…⑤ (같으면 수 크기·처음 차례) — 빈 보기는 끝 (준호 2026-11-14) */
+  function sortOptions(os) {
+    return os.map(function (o, k) { o._k = k; return o; }).sort(function (a, b) {
+      if (!!a.blank !== !!b.blank) return a.blank ? 1 : -1;
+      var la = plain(a.t).replace(/\s/g, '').length, lb = plain(b.t).replace(/\s/g, '').length; if (la !== lb) return la - lb;
+      var na = parseFloat(plain(a.t).replace(/[^\d.\/-]/g, '')), nb = parseFloat(plain(b.t).replace(/[^\d.\/-]/g, '')); if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+      return a._k - b._k;
+    }).map(function (o) { delete o._k; return o; });
+  }
+
+  /* ---------- ⑥ 우리 학교 이름 (준호 2026-11-14) ----------
+     문항 속 반 이름 → 아름반·슬기반·바름반·용기반, 사람 이름 → 금성이·아름이·슬기·바름이·용기 (나오는 차례대로)
+     - 사람 이름 사전 = names.json(케이학습지 대화 말한 사람·「도윤 —」 보기 머리에서 모음)
+     - 받침 있는 이름은 「이」를 붙여 부르고(금성이는) 말한 사람 표시(금성:)는 그대로
+     - 조사는 새 이름에 맞춘다(은→는 · 이→가 · 과→와 · 을→를 · 으로→로 · 아→야)
+     - 국어 작품 지문(제목 있는 상자)의 인물 이름은 바꾸지 않는다 — 작품이 바뀐다 */
+  var CLASS_WORDS = ['하늘빛', '별무리', '초록잎', '반딧불', '꿈나무', '솔바람', '햇살', '솔빛', '별빛', '하늘', '바다', '새싹', '누리', '다솜', '푸름', '초록', '나래', '물결', '들꽃', '이슬', '새봄', '튼튼', '노을', '푸른', '은하', '햇빛'];
+  function hasJong(ch) { var c = ch ? ch.charCodeAt(0) - 0xAC00 : -1; return c >= 0 && c < 11172 && c % 28 !== 0; }
+  var VOWEL_P = { '은': '는', '이': '가', '과': '와', '을': '를', '으로': '로', '아': '야' };
+  var NEXT_OK = /^(은|는|이|가|과|와|을|를|으로|로|아|야|의|도|에게|한테|랑|이랑|만|께서|처럼|보다|에서|하고|네|나|며|요|씨)/;
+  function renameText(txt, map, order) {
+    if (!txt) return txt;
+    order.forEach(function (o) {
+      var t = map[o], L = hasJong(t.charAt(t.length - 1)) ? t + '이' : t, out = '', i = 0, idx;
+      while ((idx = txt.indexOf(o, i)) >= 0) {
+        var before = txt.charAt(idx - 1), j = idx + o.length;
+        if (before && /[가-힣]/.test(before)) { out += txt.slice(i, j); i = j; continue; }
+        var rest = txt.slice(j);
+        if (/^\s*[:：—]/.test(rest)) { out += txt.slice(i, idx) + t; i = j; continue; }       // 말한 사람 표시
+        if (hasJong(o.charAt(o.length - 1)) && /^이(?=(는|가|와|의|를|도|에게|한테|랑|야|만|처럼|보다|네|며|고))/.test(rest)) { j++; rest = txt.slice(j); }
+        var m = rest.match(/^(으로|은|이|과|을|아)(?![가-힣])/) || rest.match(/^(으로|은|과|을)/) || (rest.match(/^야(?![가-힣])/) ? ['야', '아'] : null);
+        if (rest && /^[가-힣]/.test(rest) && !NEXT_OK.test(rest)) { out += txt.slice(i, j); i = j; continue; }   // 다른 낱말의 일부
+        if (m && m[1] === '아') { out += txt.slice(i, idx) + t + (hasJong(t.charAt(t.length - 1)) ? '아' : '야'); i = j + m[0].length; }   // 부르는 말(도윤아 → 금성아)
+        else if (m) { out += txt.slice(i, idx) + L + VOWEL_P[m[1]]; i = j + m[1].length; }
+        else { out += txt.slice(i, idx) + L; i = j; }
+      }
+      txt = out + txt.slice(i);
+    });
+    return txt;
+  }
+  function renameClasses(txt, cmap) {
+    if (!txt) return txt;
+    return txt.replace(new RegExp('(^|[^가-힣])(' + CLASS_WORDS.join('|') + '|\\d{1,2})반(?=[^가-힣]|의|은|는|이|가|에|과|와|을|를|도|에서|친구|학생|일지|교실|어린이|$)', 'g'), function (m0, pre, w) { return pre + (cmap[w] || w + '반'); });
+  }
+  function renameItem(it, cfg) {
+    cfg = cfg || {}; var kids = cfg.kids || [], classes = cfg.classes || [], dict = cfg.names || [];
+    var strs = [];
+    var walk = function (fn) {
+      it.stem = fn(it.stem); it.statement = fn(it.statement); it.answer = fn(it.answer);
+      if (it.box) { it.box.title = fn(it.box.title); it.box.lines = it.box.lines.map(fn); }
+      if (it.options) it.options.forEach(function (o) { o.t = fn(o.t); });
+      if (it.pairs) { it.pairs.left = it.pairs.left.map(fn); it.pairs.right = it.pairs.right.map(fn); }
+      if (it.essay) { it.essay.answer = fn(it.essay.answer); it.essay.criteria = it.essay.criteria.map(fn); }
+    };
+    walk(function (x) { if (x) strs.push(x); return x; });
+    var all = strs.join('\n');
+    /* 반 */
+    if (classes.length) {
+      var seen = [], re = new RegExp('(?:^|[^가-힣])(' + CLASS_WORDS.join('|') + '|\\d{1,2})반(?=[^가-힣]|의|은|는|이|가|에|과|와|을|를|도|에서|친구|학생|일지|교실|어린이|$)', 'g'), m;
+      while ((m = re.exec(all))) if (seen.indexOf(m[1]) < 0 && classes.indexOf(m[1] + '반') < 0) seen.push(m[1]);
+      var cmap = {}; seen.forEach(function (w, k) { if (classes[k]) cmap[w] = classes[k]; });
+      if (seen.length) walk(function (x) { return renameClasses(x, cmap); });
+    }
+    /* 사람 */
+    var lit = it.subject === 'kor' && it.box && it.box.title;
+    if (kids.length && !lit) {
+      var found = [];
+      dict.forEach(function (n) { if (kids.indexOf(n) >= 0) return; var k = -1, from = 0;
+        while ((k = all.indexOf(n, from)) >= 0) { if (!/[가-힣]/.test(all.charAt(k - 1))) { found.push({ n: n, at: k }); break; } from = k + 1; } });
+      /* 긴 이름이 품은 짧은 이름(이슬기 ⊃ 슬기)은 뺀다 */
+      found = found.filter(function (f) { return !found.some(function (g) { return g.n !== f.n && g.n.length > f.n.length && g.n.indexOf(f.n) >= 0 && f.at >= g.at && f.at < g.at + g.n.length; }); });
+      found.sort(function (a, b) { return a.at - b.at; });
+      var map = {}, order = [];
+      found.slice(0, kids.length).forEach(function (f, k) { map[f.n] = kids[k]; order.push(f.n); });
+      order.sort(function (a, b) { return b.length - a.length; });
+      if (order.length) walk(function (x) { return renameText(x, map, order); });
+    }
+    if (it.options) { it.options = sortOptions(it.options); var ci = it.options.findIndex(function (o) { return o.correct; }); if (ci >= 0) it.answer = CIRC[ci]; }
+    return it;
+  }
+
   /* ---------- 시험 문항 만들기 ---------- */
   /* opts: {seed, five:true, pool:[오답 글…]} → item */
   function toItem(card, opts) {
@@ -213,13 +294,7 @@
         var pool = (opts.pool && card.q.concept && opts.pool[card.q.concept]) || [];
         while (os.length < want) { os.push(fifthOption(os, pool, r, card.subject === 'math' ? [] : own, q.stem)); }
       }
-      /* 글자 수가 짧은 보기부터 ①…⑤ (같으면 수 크기·처음 차례) — 빈 보기는 끝 */
-      os = os.map(function (o, k) { o._k = k; return o; }).sort(function (a, b) {
-        if (a.blank !== b.blank) return a.blank ? 1 : -1;
-        var la = plain(a.t).replace(/\s/g, '').length, lb = plain(b.t).replace(/\s/g, '').length; if (la !== lb) return la - lb;
-        var na = parseFloat(plain(a.t).replace(/[^\d.\/-]/g, '')), nb = parseFloat(plain(b.t).replace(/[^\d.\/-]/g, '')); if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
-        return a._k - b._k;
-      }).map(function (o) { delete o._k; return o; });
+      os = sortOptions(os);
       it.options = os; it.kind = 'mc';
       var ci = os.findIndex(function (o) { return o.correct; });
       it.answer = ci >= 0 ? CIRC[ci] : '';
@@ -249,6 +324,7 @@
     it.borrowed = (it.options || []).some(function (o) { return o.borrowed; });
     it.added = (it.options || []).some(function (o) { return o.added; });
     it.needFill = (it.options || []).some(function (o) { return o.blank; });
+    if (opts.names) renameItem(it, opts.names);
     return it;
   }
 
@@ -332,6 +408,6 @@
     stripTags: stripTags, examEnding: examEnding, declarative: declarative, examStem: examStem, bookPages: bookPages,
     splitMath: splitMath, plain: plain, assetBox: assetBox, hasPicture: hasPicture,
     cardsOf: cardsOf, usable: usable, variantOf: variantOf, fifthOption: fifthOption, toItem: toItem, wrongPool: wrongPool,
-    recommend: recommend, countTypes: countTypes, typeOf: typeOf, swapCandidate: swapCandidate, pageRange: pageRange
+    renameItem: renameItem, sortOptions: sortOptions, recommend: recommend, countTypes: countTypes, typeOf: typeOf, swapCandidate: swapCandidate, pageRange: pageRange
   };
 });

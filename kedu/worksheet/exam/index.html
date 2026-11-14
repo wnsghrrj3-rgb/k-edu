@@ -144,14 +144,16 @@ const U2PX = 96 / 7200;                       // HWPUNIT → px
 const SAFE = 0.92;                            // 단 높이의 92 %까지
 const SUBJ = [['kor', '국어'], ['math', '수학'], ['soc', '사회'], ['sci', '과학']];
 const DRAFT = 'kedu_exam_draft_v1';
-let INDEX = null, ME = null;
+let INDEX = null, ME = null, NAMES = [];
+const splitList = v => String(v || '').split(/[,，\s]+/).map(x => x.trim()).filter(Boolean);
+const NAMECFG = () => ({ names: NAMES, kids: splitList(S.kidNames).map(x => x.replace(/이$/, x.length > 2 ? '' : '이').replace(/반$/, '')), classes: splitList(S.classNames).map(x => /반$/.test(x) ? x : x + '반') });
 let S = null;                                 // 초안 상태
 let CARDS = [];                               // 고른 단원의 원본 카드
 let LAYOUT = [];                              // [{items:[{idx, gap}], closing}]
 
 function blankState() {
   const now = new Date(), sem = now.getMonth() >= 7 || now.getMonth() < 1 ? 2 : 1;
-  return { v: 1, round: `${now.getFullYear()}-${sem}-2차`, grade: 4, sem, subject: 'soc', author: '', total: 25, choices: 5, nShort: 3, nEssay: 2, seed: String(Date.now() % 100000),
+  return { v: 1, round: `${now.getFullYear()}-${sem}-2차`, grade: 4, sem, subject: 'soc', author: '', total: 25, choices: 5, nShort: 3, nEssay: 2, classNames: '아름반, 슬기반, 바름반, 용기반', kidNames: '금성, 아름, 슬기, 바름, 용기', seed: String(Date.now() % 100000),
     units: {}, items: [] };
 }
 function save() { try { localStorage.setItem(DRAFT, JSON.stringify(S)); } catch (e) {} }
@@ -170,6 +172,9 @@ const unitsOf = () => (INDEX && INDEX[key()]) || [];
   INDEX = await fetch('sets_index.json').then(r => r.json());
   S = load() || blankState();
   if (!S.author) S.author = (t.name || '').split('').join(' ');
+  if (S.classNames == null) S.classNames = '아름반, 슬기반, 바름반, 용기반';
+  if (S.kidNames == null) S.kidNames = '금성, 아름, 슬기, 바름, 용기';
+  NAMES = await fetch('names.json').then(r => r.json()).catch(() => []);
   if (S.choices == null) { S.choices = S.five === false ? 4 : 5; S.nShort = 3; S.nEssay = 2; delete S.five; }
   render();
   if (S.items.length) { await loadCards(); relayout(); }
@@ -190,6 +195,11 @@ function render() {
       <label>단답형 <input type="number" id="fShort" min="0" max="25" value="${S.nShort ?? 3}">개</label>
       <label>서술형 <input type="number" id="fEssay" min="0" max="10" value="${S.nEssay ?? 2}">개</label>
       <span class="mini">나머지는 선택형</span>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <label>문항 속 반 이름 <input type="text" id="fClasses" value="${esc(S.classNames ?? '')}" style="width:220px" placeholder="비우면 바꾸지 않아요"></label>
+      <label>문항 속 사람 이름 <input type="text" id="fKids" value="${esc(S.kidNames ?? '')}" style="width:220px" placeholder="비우면 바꾸지 않아요"></label>
+      <span class="mini">나오는 차례대로 바꿔요 · 받침 있는 이름은 「금성이는」처럼 · 국어 작품 지문의 인물은 그대로</span>
     </div>
   </div>
   <div class="card"><h2>② 출제 범위 <span class="mini">— 단원을 고르고 문항 수를 정해요. 교과서 쪽수는 목록표 「교과서」 칸에 들어가요(문항에서 찾은 쪽수가 있으면 자동).</span></h2>
@@ -336,7 +346,7 @@ async function pick() {
   const ro = { seed: S.seed, allowPicture: true, quota: { '단답': +S.nShort || 0, '서술': +S.nEssay || 0 } };
   const cards = K.recommend(CARDS, plan, ro);
   const pool = POOL();
-  S.items = cards.map(c => K.toItem(c, { seed: S.seed, choices: S.choices, pool }));
+  S.items = cards.map(c => K.toItem(c, { seed: S.seed, choices: S.choices, pool, names: NAMECFG() }));
   const lack = Object.entries(ro.report || {}).filter(([, v]) => v > 0);
   if (lack.length) setTimeout(() => toast(lack.map(([t, v]) => `${t}형이 ${v}개 모자라 다른 유형으로 채웠어요`).join(' · ')), 2600);
   await drawPictures();
@@ -419,11 +429,11 @@ document.addEventListener('click', async e => {
   if (b.dataset.ok != null && x) { x.options.forEach((o, k) => { o.correct = k === +b.dataset.ok; }); x.answer = K.CIRC[+b.dataset.ok]; save(); renderWork(); drawPages(); return; }
   switch (b.dataset.act) {
     case 'pick': await pick(); break;
-    case 'reroll': { if (!confirm('모든 문항의 말투·보기 순서·바꾼 문제를 새로 뽑을까요? 손으로 고친 내용은 지워져요.')) break; await loadCards(); S.seed = String(Date.now() % 100000); const pool = POOL(); S.items = S.items.map(o => { const c = CARDS.find(c => c.id === o.id); if (!c) return o; const n = K.toItem(c, { seed: S.seed, choices: S.choices, pool }); if (o.img && !o.picture) n.img = o.img; return n; }); await drawPictures(); save(); relayout(); break; }
+    case 'reroll': { if (!confirm('모든 문항의 말투·보기 순서·바꾼 문제를 새로 뽑을까요? 손으로 고친 내용은 지워져요.')) break; await loadCards(); S.seed = String(Date.now() % 100000); const pool = POOL(); S.items = S.items.map(o => { const c = CARDS.find(c => c.id === o.id); if (!c) return o; const n = K.toItem(c, { seed: S.seed, choices: S.choices, pool, names: NAMECFG() }); if (o.img && !o.picture) n.img = o.img; return n; }); await drawPictures(); save(); relayout(); break; }
     case 'up': if (i > 0) { [S.items[i - 1], S.items[i]] = [S.items[i], S.items[i - 1]]; save(); relayout(); } break;
     case 'down': if (i < S.items.length - 1) { [S.items[i + 1], S.items[i]] = [S.items[i], S.items[i + 1]]; save(); relayout(); } break;
     case 'del': S.items.splice(i, 1); save(); relayout(); break;
-    case 'swap': { await loadCards(); const c = K.swapCandidate(CARDS, x, S.items.map(y => y.id), Date.now()); if (!c) { toast('바꿀 문항이 없어요'); break; } S.items[i] = K.toItem(c, { seed: S.seed, choices: S.choices, pool: POOL() }); await drawPictures(); save(); relayout(); break; }
+    case 'swap': { await loadCards(); const c = K.swapCandidate(CARDS, x, S.items.map(y => y.id), Date.now()); if (!c) { toast('바꿀 문항이 없어요'); break; } S.items[i] = K.toItem(c, { seed: S.seed, choices: S.choices, pool: POOL(), names: NAMECFG() }); await drawPictures(); save(); relayout(); break; }
     case 'addopt': x.options.push({ t: '', added: true }); renderWork(); drawPages(); const ins = $(`.it[data-i="${i}"] input[data-opt="${x.options.length - 1}"]`); if (ins) ins.focus(); break;
     case 'pic': picTarget = i; $('#picIn').click(); break;
     case 'pdf': openPdfModal(i); break;
@@ -522,6 +532,7 @@ document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'fRound') { S.round = t.value; save(); return; }
   if (t.id === 'fAuthor') { S.author = t.value; save(); return; }
+  if (t.id === 'fClasses' || t.id === 'fKids') { S[t.id === 'fClasses' ? 'classNames' : 'kidNames'] = t.value; save(); return; }
   if (t.id === 'fShort' || t.id === 'fEssay') { S[t.id === 'fShort' ? 'nShort' : 'nEssay'] = Math.max(0, +t.value || 0); save(); planStat(); return; }
   const u = t.closest('.unit');
   if (u) { const st = S.units[u.dataset.unit] = S.units[u.dataset.unit] || {}; if (t.hasAttribute('data-un')) st.n = t.value; if (t.hasAttribute('data-up')) st.page = t.value; if (t.value && t.hasAttribute('data-un') && !st.on) { st.on = true; u.classList.add('on'); u.querySelector('[data-uon]').checked = true; } save(); planStat(); return; }
@@ -538,6 +549,7 @@ document.addEventListener('change', e => {
     S.grade = +$('#fGrade').value; S.sem = +$('#fSem').value; S.subject = $('#fSubj').value; S.units = {}; S.items = []; LAYOUT = []; save(); render(); return;
   }
   if (t.hasAttribute && t.hasAttribute('data-size')) { const x = S.items[+t.closest('.it').dataset.i]; x.img = fitImg(x.img.src, x.img.nw || 300, x.img.nh || 200, t.value); save(); relayout(); return; }
+  if ((t.id === 'fClasses' || t.id === 'fKids') && S.items.length) { toast('「🎲 모두 다시 바꾸기」를 누르면 지금 문항에도 반영돼요'); return; }
   if (t.id === 'fChoices') { S.choices = +t.value; save(); if (S.items.length) toast('「🎲 모두 다시 바꾸기」를 누르면 지금 문항에도 반영돼요'); return; }
   if (t.hasAttribute('data-uon')) { const u = t.closest('.unit'), st = S.units[u.dataset.unit] = S.units[u.dataset.unit] || {}; st.on = t.checked; if (st.on && !st.n) { st.n = 10; u.querySelector('[data-un]').value = 10; } u.classList.toggle('on', st.on); save(); planStat(); }
 });
