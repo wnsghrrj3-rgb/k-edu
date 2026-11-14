@@ -23,7 +23,19 @@
 
   /* 양식 header.xml 번호 */
   var CP = { body: 32, bold: 33, box: 27, boxBold: 38 };
-  var PP = { body: 11, ans: 50, center: 2, right: 54 };
+  var PP = { body: 11, ans: 50, center: 2, right: 54, hang1: 55, hang2: 56, opt: 57 };
+  /* 내어쓰기(준호 2026-11-14: 둘째 줄이 첫 줄 글자 시작에 맞게) — 양식 header 에 문단 모양 셋을 더한다
+     hang1 = 「1. 」 · hang2 = 「12. 」 · opt = 보기 「① 」(왼쪽 들여 600 + 내어쓰기). 값 = HWPUNIT(11pt 함초롬바탕 글자 폭 어림) */
+  var HANG = { hang1: 1250, hang2: 1800, opt: 1400, optLeft: 600 };
+  function hangParaPr(id, left, intent) {
+    var m = function (k) { return '<hh:margin><hc:intent value="' + Math.round(intent * k) + '" unit="HWPUNIT"/><hc:left value="' + Math.round(left * k) + '" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="0" unit="HWPUNIT"/><hc:next value="0" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/>'; };
+    return '<hh:paraPr id="' + id + '" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="0" suppressLineNumbers="0" checked="0" textDir="AUTO"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="KEEP_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/>' +
+      '<hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar">' + m(0.5) + '</hp:case><hp:default>' + m(1) + '</hp:default></hp:switch><hh:border borderFillIDRef="4" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr>';
+  }
+  function addParaPrs(header) {
+    var extra = hangParaPr(PP.hang1, HANG.hang1, -HANG.hang1) + hangParaPr(PP.hang2, HANG.hang2, -HANG.hang2) + hangParaPr(PP.opt, HANG.optLeft + HANG.opt, -HANG.opt);
+    return header.replace(/<hh:paraProperties itemCnt="(\d+)">/, function (_, n) { return '<hh:paraProperties itemCnt="' + (+n + 3) + '">'; }).replace('</hh:paraProperties>', extra + '</hh:paraProperties>');
+  }
   var BF = { box: 2, none: 11 };
   var COL_W = 24669;                       // 단 안쪽 너비(양식 상자 너비)
   var CAP = { first: 65200, next: 76100 }; // 단 안쪽 높이(셀 높이 − 여백)
@@ -50,7 +62,7 @@
 
   function blocks(it, no) {
     var B = [];
-    B.push({ p: true, para: 'body', runs: [{ t: ' ' + no + '. ' }].concat(textRuns(it.stem)) });
+    B.push({ p: true, para: no >= 10 ? 'hang2' : 'hang1', runs: [{ t: no + '. ' }].concat(textRuns(it.stem)) });
     if (it.kind === 'mc') B.push({ p: true, para: 'ans', runs: [{ t: '   -----------------------------(       )' }] });
     if (it.statement) B.push({ box: true, title: '', lines: [it.statement] });
     if (it.box) B.push({ box: true, title: it.box.title || '', lines: it.box.lines });
@@ -60,12 +72,12 @@
       var short = ops.every(function (o) { return widthOf(o.t) <= 14; }) && ops.every(function (o) { return !/⟨/.test(o.t) || widthOf(o.t) <= 10; });
       if (short) {
         for (var i = 0; i < ops.length; i += 2) {
-          var a = '  ' + K.CIRC[i] + ' ', b = ops[i + 1] ? K.CIRC[i + 1] + ' ' : '';
+          var a = K.CIRC[i] + ' ', b = ops[i + 1] ? K.CIRC[i + 1] + ' ' : '';
           var runs = [{ t: a }].concat(textRuns(ops[i].t, { noBold: true }));
           if (ops[i + 1]) runs = runs.concat([{ t: new Array(Math.max(2, 18 - widthOf(ops[i].t)) + 1).join(' ') + b }]).concat(textRuns(ops[i + 1].t, { noBold: true }));
-          B.push({ p: true, para: 'body', runs: runs });
+          B.push({ p: true, para: 'opt', runs: runs });
         }
-      } else ops.forEach(function (o, k) { B.push({ p: true, para: 'body', runs: [{ t: '  ' + K.CIRC[k] + ' ' }].concat(textRuns(o.t, { noBold: true })) }); });
+      } else ops.forEach(function (o, k) { B.push({ p: true, para: 'opt', runs: [{ t: K.CIRC[k] + ' ' }].concat(textRuns(o.t, { noBold: true })) }); });
     }
     if (it.kind === 'ox') B.push({ p: true, para: 'ans', runs: [{ t: '   -----------------------------(       )' }] });
     if (it.kind === 'sa') B.push({ p: true, para: 'ans', runs: [{ t: '   답: (                              )' }] });
@@ -221,6 +233,7 @@
       var map = {}; pairs.forEach(function (p) { map[p[0]] = p[1]; });
       out.file('mimetype', 'application/hwp+zip', { compression: 'STORE', createFolders: false });
       map['Contents/section0.xml'] = section;
+      if (/paraPrIDRef="5[5-7]"/.test(section)) map['Contents/header.xml'] = addParaPrs(String(map['Contents/header.xml']));
       map['Preview/PrvText.txt'] = (prv || '').slice(0, 1000);
       map['settings.xml'] = String(map['settings.xml']).replace(/<ha:CaretPosition [^>]*\/>/, '<ha:CaretPosition listIDRef="0" paraIDRef="0" pos="0"/>');
       if (bins.length) {
@@ -242,7 +255,7 @@
       .then(function (a) { return { section: a[0], rowFirst: a[1], rowMid: a[2], rowLast: a[3], essay: a[4], cellPara: a[5] }; });
   }
 
-  return { CP: CP, PP: PP, COL_W: COL_W, CAP: CAP, LINE_H: LINE_H, CLOSING: CLOSING,
+  return { CP: CP, PP: PP, HANG: HANG, addParaPrs: addParaPrs, COL_W: COL_W, CAP: CAP, LINE_H: LINE_H, CLOSING: CLOSING,
     blocks: blocks, closingBlocks: closingBlocks, textRuns: textRuns, widthOf: widthOf,
     blocksXML: blocksXML, buildExamSection: buildExamSection, buildKeySection: buildKeySection, pack: pack, readTpl: readTpl, esc: esc };
 });

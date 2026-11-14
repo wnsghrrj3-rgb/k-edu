@@ -8,8 +8,9 @@
       - 없으면 말투(-요 → -시오/-습니까)·보기 순서를 바꾸고 「손볼 문제」로 표시한다(교사가 화면에서 고친다)
       - 교과서판(tb_)이 아닌 옛 세트(학생 화면에서 숨긴 응용 문항)를 먼저 고른다
    ② 시험 말씨: 교과서 쪽수 표시(『국어』 36쪽 …)는 지우고, 그 쪽수는 출제근거목록표 「교과서」 칸으로 모은다
-   ③ 보기 다섯(5지선다): 수·분수 보기는 계산해서 하나 더, 글 보기는 그 문항에 미리 써 둔 오답에서만.
-      없으면 넷으로 두고(four) 화면에서 교사가 「＋ 보기」로 채운다 — 다른 문항 오답을 빌리면 이 문항에선 정답일 수 있어서
+   ③ 보기 수 = 교사가 4지·5지 중 고름(기본 5). 모자라면 수·분수는 계산으로, 글은 그 문항의 다른 오답 →
+      같은 개념 다른 문항 오답(낱말 겹치는 것, 「않은 것」 물음엔 안 빌림 · 빌린 보기 표시) → 그래도 없으면 빈 보기(교사가 채움)
+   ⑤ 보기 차례 = 글자 수가 짧은 것부터 ①→⑤ (준호 2026-11-14)
    ④ 분수 ⟨3/4⟩·⟨1 2/3⟩ 은 한글 수식 조각 {eq} 로 나눈다
 
    브라우저(window.KeduExam)·node(module.exports) 양쪽에서 돈다.
@@ -144,6 +145,7 @@
   function numVal(s) { var t = plain(s).trim().replace(/,/g, ''); var m = t.match(/^(-?\d+(?:\.\d+)?)(\s*)(\D{0,6})$/); return m ? { v: +m[1], sep: m[2], unit: m[3], dec: (m[1].split('.')[1] || '').length } : null; }
   function fracVal(s) { var m = String(s).trim().match(/^⟨\s*(?:(\d+)\s+)?(\d+)\s*\/\s*(\d+)\s*⟩(\s*[^\d⟨⟩\s]{0,4})$/); return m ? { w: m[1] ? +m[1] : 0, n: +m[2], d: +m[3], u: m[4] || '' } : null; }
   function fracStr(w, n, d, u) { return '⟨' + (w ? w + ' ' : '') + n + '/' + d + '⟩' + (u || ''); }
+  var NEG = /(않은|아닌|틀린|잘못|옳지\s*않|없는)/;
   var KEYS = function (t) { var o = {}; plain(t).split(/[^가-힣A-Za-z0-9]+/).forEach(function (w) { if (w.length >= 2) o[w.slice(0, 2)] = 1; }); return o; };
   /* own = 이 문항(과 바꾼 문제들)에 미리 써 둔 오답 보기 — 없으면 빈칸으로 두고 교사가 채운다 */
   function fifthOption(opts, pool, r, own, ctx) {
@@ -175,7 +177,15 @@
     var similar = function (t) { var kt = KEYS(t), n = 0, m = 0; for (var x in kt) { m++; } return opts.some(function (o) { var ko = KEYS(o.t), hit = 0; for (var y in kt) if (ko[y]) hit++; return m && hit / m >= 0.6; }); };
     var a = (own || []).filter(function (t) { return fresh(t) && near(t) && shape(t) && !similar(t); });
     if (a.length) return { t: a[Math.floor(r() * a.length)], added: true };
-    /* 다른 문항의 오답 보기는 빌리지 않는다 — 이 문항에서는 정답일 수 있다(정답 둘 위험). 교사가 채운다. */
+    /* 같은 개념 다른 문항의 오답 보기 — 낱말이 겹치는 것만, 빌린 보기는 표시(교사 확인).
+       「알맞지 않은 것」처럼 틀린 것을 고르는 물음에는 빌리지 않는다 — 빌린 오답이 또 하나의 정답이 된다 */
+    if (!NEG.test(ctx || '')) {
+      var ck = KEYS([ctx || ''].concat(opts.map(function (o) { return o.t; })).join(' '));
+      var b = (pool || []).filter(function (t) { return fresh(t) && near(t) && shape(t) && !similar(t); })
+        .map(function (t) { var kk = KEYS(t), n = 0; for (var x in kk) if (ck[x]) n++; return { t: t, n: n, r: r() }; })
+        .filter(function (x) { return x.n >= 1; }).sort(function (p, q) { return (q.n - p.n) || (p.r - q.r); });
+      if (b.length) return { t: b[0].t, added: true, borrowed: true };
+    }
     return { t: '', added: true, blank: true };      // 화면에서 교사가 채운다
   }
 
@@ -194,13 +204,22 @@
     var stem = examStem(q.stem);
     if (q.kind === 'mc' || q.kind === 'blank' || q.kind === 'error') {
       var os = (q.options || []).map(function (o) { return { t: plain(optText(o.t)) === optText(o.t) ? optText(o.t) : optText(o.t), correct: !!o.correct }; });
-      if (opts.five !== false && os.length >= 3 && os.length < 5) {
+      /* 보기 수 맞추기 — 4지·5지(교사가 고름, 기본 5) */
+      var want = +opts.choices === 4 ? 4 : 5;
+      while (os.length > want) { var wi = os.map(function (o, k) { return o.correct ? -1 : k; }).filter(function (k) { return k >= 0; }); os.splice(wi[Math.floor(r() * wi.length)], 1); }
+      if (os.length >= 2 && os.length < want) {
         var own = [];
         ((card.q.variant_rule && card.q.variant_rule.alt) || []).concat([{ options: card.q.options }]).forEach(function (p) { (p.options || []).forEach(function (o) { if (!o.correct && typeof o.t === 'string') own.push(o.t); }); });
         var pool = (opts.pool && card.q.concept && opts.pool[card.q.concept]) || [];
-        while (os.length < 5) { var f = fifthOption(os, pool, r, card.subject === 'math' ? [] : own, q.stem); if (f.blank) { it.four = true; break; } os.push(f); }
+        while (os.length < want) { os.push(fifthOption(os, pool, r, card.subject === 'math' ? [] : own, q.stem)); }
       }
-      os = shuffle(os, r);
+      /* 글자 수가 짧은 보기부터 ①…⑤ (같으면 수 크기·처음 차례) — 빈 보기는 끝 */
+      os = os.map(function (o, k) { o._k = k; return o; }).sort(function (a, b) {
+        if (a.blank !== b.blank) return a.blank ? 1 : -1;
+        var la = plain(a.t).replace(/\s/g, '').length, lb = plain(b.t).replace(/\s/g, '').length; if (la !== lb) return la - lb;
+        var na = parseFloat(plain(a.t).replace(/[^\d.\/-]/g, '')), nb = parseFloat(plain(b.t).replace(/[^\d.\/-]/g, '')); if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+        return a._k - b._k;
+      }).map(function (o) { delete o._k; return o; });
       it.options = os; it.kind = 'mc';
       var ci = os.findIndex(function (o) { return o.correct; });
       it.answer = ci >= 0 ? CIRC[ci] : '';
@@ -229,6 +248,7 @@
     it.stem = stem;
     it.borrowed = (it.options || []).some(function (o) { return o.borrowed; });
     it.added = (it.options || []).some(function (o) { return o.added; });
+    it.needFill = (it.options || []).some(function (o) { return o.blank; });
     return it;
   }
 
@@ -239,44 +259,62 @@
     return out;
   }
 
-  /* ---------- 추천: 단원별 문항 수 · 난이도 고르게 ---------- */
-  /* plan = [{unit, n}] · 하:중:상 ≈ 3:4:3 · 서술은 시험당 1~2개 · 같은 발문 겹치지 않게 · 옛 세트·바꾼 문제 먼저 */
+  /* ---------- 추천: 단원별 문항 수 · 유형 수 · 난이도 고르게 ---------- */
+  /* 유형 = 시험지 갈래: 선택(mc·blank·error) · 단답(sa·ox·match) · 서술(essay) */
+  function typeOf(q) { return q.kind === 'essay' ? '서술' : (q.kind === 'sa' || q.kind === 'ox' || q.kind === 'match') ? '단답' : '선택'; }
+  /* 큰 나머지 방식으로 정수 나누기 */
+  function share(total, weights) {
+    var sum = weights.reduce(function (a, b) { return a + b; }, 0) || 1, raw = weights.map(function (w) { return total * w / sum; }), out = raw.map(Math.floor), left = total - out.reduce(function (a, b) { return a + b; }, 0);
+    raw.map(function (x, i) { return { i: i, f: x - Math.floor(x) }; }).sort(function (a, b) { return b.f - a.f; }).slice(0, left).forEach(function (x) { out[x.i]++; });
+    return out;
+  }
+  /* plan = [{unit, n}] · opts.quota = {단답, 서술}(시험 전체) · 선택 = 나머지 · opts.report 에 모자란 것 */
   function recommend(cards, plan, opts) {
-    opts = opts || {}; var r = rng('rec:' + (opts.seed || 'k')), used = {}, stems = {}, out = [];
+    opts = opts || {}; var r = rng('rec:' + (opts.seed || 'k')), used = {}, stems = {}, out = [], report = opts.report || {};
     (opts.keep || []).forEach(function (id) { used[id] = 1; });
-    var essayMax = opts.essayMax == null ? 2 : opts.essayMax, essays = 0;
-    plan.forEach(function (p) {
+    var qt = opts.quota || {}, ns = plan.map(function (p) { return p.n; });
+    var essayBy = share(Math.max(0, +qt['서술'] || 0), ns), shortBy = share(Math.max(0, +qt['단답'] || 0), ns);
+    var LV = { '선택': [1, 2, 3, 2, 1, 3, 2], '단답': [2, 1, 3, 2], '서술': [3, 2, 3, 2] };
+    plan.forEach(function (p, pi) {
       var pool = cards.filter(function (c) { return c.unit === p.unit && usable(c) && !used[c.id] && (opts.allowPicture || !hasPicture(c.q)); });
-      var want = { 1: Math.round(p.n * 0.3), 3: Math.round(p.n * 0.3) }; want[2] = p.n - want[1] - want[3];
-      var score = function (c) { return (c.q.variant_rule && c.q.variant_rule.alt ? 0 : 2) + (c.tb ? 1 : 0) + (c.kind === 'unit_review' ? -0.5 : 0) + (c.q.kind === 'ox' ? 2 : 0) + (c.q.kind === 'mc' ? -0.3 : 0) + r() * 1.5; };
-      [1, 2, 3].forEach(function (lv) {
-        var cand = pool.filter(function (c) { return (lv === 3 ? c.q.difficulty >= 3 : c.q.difficulty === lv); })
-          .map(function (c) { return { c: c, s: score(c) }; }).sort(function (a, b) { return a.s - b.s; });
-        var got = 0;
-        for (var i = 0; i < cand.length && got < want[lv]; i++) {
-          var c = cand[i].c, k = examStem(c.q.stem).slice(0, 24);
-          if (used[c.id] || stems[k]) continue;
-          if (c.q.kind === 'essay') { if (essays >= essayMax) continue; essays++; }
-          used[c.id] = 1; stems[k] = 1; out.push(c); got++;
+      var want = { '서술': Math.min(essayBy[pi], p.n) }; want['단답'] = Math.min(shortBy[pi], p.n - want['서술']); want['선택'] = p.n - want['서술'] - want['단답'];
+      var score = function (c) { return (c.q.variant_rule && c.q.variant_rule.alt ? 0 : 2) + (c.tb ? 1 : 0) + (c.kind === 'unit_review' ? -0.5 : 0) + (c.q.kind === 'ox' ? 1 : 0) + r() * 1.5; };
+      var take = function (type, n) {
+        var cand = pool.filter(function (c) { return typeOf(c.q) === type || type === '*'; }).map(function (c) { return { c: c, s: score(c) }; }).sort(function (a, b) { return a.s - b.s; });
+        var got = 0, lv = LV[type] || LV['선택'], k = 0, tries = 0;
+        while (got < n && tries < 400) {
+          var d = lv[k++ % lv.length]; tries++;
+          var pickOne = cand.find(function (x) { var c = x.c; return !used[c.id] && Math.min(c.q.difficulty || 2, 3) === d && !stems[examStem(c.q.stem).slice(0, 24)]; })
+            || (tries > lv.length * 2 && cand.find(function (x) { return !used[x.c.id] && !stems[examStem(x.c.q.stem).slice(0, 24)]; }));
+          if (!pickOne) { if (tries > lv.length * 3) break; continue; }
+          used[pickOne.c.id] = 1; stems[examStem(pickOne.c.q.stem).slice(0, 24)] = 1; out.push(pickOne.c); got++;
         }
-        if (got < want[lv]) want[lv === 3 ? 2 : lv + 1] = (want[lv === 3 ? 2 : lv + 1] || 0) + (want[lv] - got);
+        return got;
+      };
+      ['서술', '단답', '선택'].forEach(function (t) {
+        var got = take(t, want[t]);
+        if (got < want[t]) { report[t] = (report[t] || 0) + (want[t] - got); var more = take(t === '선택' ? '*' : '선택', want[t] - got); if (more < want[t] - got) take('*', want[t] - got - more); }
       });
-      /* 모자라면 남은 것에서 */
-      var count = out.filter(function (c) { return c.unit === p.unit; }).length;
-      for (var j = 0; j < pool.length && count < p.n; j++) { var c2 = pool[j]; if (used[c2.id] || c2.q.kind === 'essay') continue; used[c2.id] = 1; out.push(c2); count++; }
     });
-    /* 단원 안에서 쉬운 것 → 어려운 것, 서술형은 단원 끝 */
-    var rank = function (c) { return (c.q.kind === 'essay' ? 10 : 0) + (c.q.difficulty || 2); };
+    /* 단원 안에서 선택 → 단답 → 서술, 같은 갈래는 쉬운 것부터 */
+    var TR = { '선택': 0, '단답': 10, '서술': 20 }, rank = function (c) { return TR[typeOf(c.q)] + (c.q.difficulty || 2); };
     var unitOrder = plan.map(function (p) { return p.unit; });
     out.sort(function (a, b) { return (unitOrder.indexOf(a.unit) - unitOrder.indexOf(b.unit)) || (rank(a) - rank(b)); });
+    opts.report = report;
     return out;
+  }
+  /* 단원별 갈래마다 쓸 수 있는 문항 수 */
+  function countTypes(cards, units) {
+    var o = { '선택': 0, '단답': 0, '서술': 0 };
+    cards.forEach(function (c) { if (units.indexOf(c.unit) >= 0 && usable(c)) o[typeOf(c.q)]++; });
+    return o;
   }
 
   /* 같은 단원·난이도에서 다른 문항 하나 */
   function swapCandidate(cards, item, takenIds, seed) {
     var r = rng('swap:' + seed + ':' + item.id), tk = {}; takenIds.forEach(function (x) { tk[x] = 1; });
-    var pool = cards.filter(function (c) { return c.unit === item.unit && usable(c) && !tk[c.id] && Math.min(c.q.difficulty, 3) === Math.min(item.difficulty, 3) && !hasPicture(c.q); });
-    if (!pool.length) pool = cards.filter(function (c) { return c.unit === item.unit && usable(c) && !tk[c.id] && !hasPicture(c.q); });
+    var pool = cards.filter(function (c) { return c.unit === item.unit && usable(c) && !tk[c.id] && typeOf(c.q) === item.type && Math.min(c.q.difficulty, 3) === Math.min(item.difficulty, 3); });
+    if (!pool.length) pool = cards.filter(function (c) { return c.unit === item.unit && usable(c) && !tk[c.id] && typeOf(c.q) === item.type; });
     return pool.length ? pool[Math.floor(r() * pool.length)] : null;
   }
 
@@ -294,6 +332,6 @@
     stripTags: stripTags, examEnding: examEnding, declarative: declarative, examStem: examStem, bookPages: bookPages,
     splitMath: splitMath, plain: plain, assetBox: assetBox, hasPicture: hasPicture,
     cardsOf: cardsOf, usable: usable, variantOf: variantOf, fifthOption: fifthOption, toItem: toItem, wrongPool: wrongPool,
-    recommend: recommend, swapCandidate: swapCandidate, pageRange: pageRange
+    recommend: recommend, countTypes: countTypes, typeOf: typeOf, swapCandidate: swapCandidate, pageRange: pageRange
   };
 });
