@@ -1,8 +1,12 @@
 /* 섬 탐험 — 수학 놀이터의 「느낌 맛보기」. 작은 섬 셋을 내 캐릭터로 걷고 뛰어 건넌다.
  * 수학은 딱 한 군데: 숲 섬 → 보물 섬의 「수 다리」(2씩 뛰어 센 돌만 버틴다). 문제 창도 채점도 없다 — 틀린 돌은 그냥 가라앉는다.
  * 조작: 방향키/WASD + 스페이스 · 마우스 끌기 = 둘러보기 / 터치: 왼쪽 막대 + 점프 단추, 오른쪽 끌기 = 둘러보기
- * 저장 0. 3D: /labs/vendor/three185 (r185). 설계: 핸드오프 kmotion/math-wizard/23_수학놀이터_섬세계_설계_v1.md */
+ * 3D: /labs/vendor/three185 (r185). 설계: 핸드오프 kmotion/math-wizard/24_수학놀이터_활동의섬_설계_v1.md
+ * 동전 = 지갑(../common/wallet.js). 주운 동전은 그날 다시 나오지 않는다. 마을 한가운데 게시판에 다가가면 「오늘의 부탁」 셋이 뜨고, 해낸 부탁엔 도장이 찍힌다. */
 import * as THREE from 'three';
+import { wallet, art, glyph, hud, pay, did, audio, tone, sfx, confetti } from '../common/kit.js?v=2';
+// 내가 정한 수치(게시판)
+const BOARD = { x: 4.4, z: 3.2, near: 3.6, stampGap: 550 };
 const $ = id => document.getElementById(id);
 const R = new THREE.WebGLRenderer({ canvas: $('c'), antialias: true, powerPreference: 'high-performance' });
 R.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75)); R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFShadowMap; R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.08;
@@ -61,6 +65,20 @@ fence(-10, 8, -4, 13, A.top); fence(2, -13, 9, -13, A.top);
 path(0, 2, dirAB.x * (A.r - 1), dirAB.y * (A.r - 1), A.top); path(0, 2, -7, -3, A.top, 1.8); path(0, 2, -2, 6.5, A.top, 1.8); path(-7, -3, -11, -9, A.top, 1.6);
 sign(dirAB.x * (A.r - 3) + nAB.x * 3, dirAB.y * (A.r - 3) + nAB.y * 3, A.top, '숲 섬 →', Math.atan2(dirAB.x, dirAB.y) + Math.PI); sign(-9.5, -7.5, A.top, '뒷동산 ↑', .8, 3.2);
 flag(1.5, 1.5, A.top, '출발 섬');
+// 게시판: 마을 한가운데. 판에는 오늘의 부탁 셋(그림 + 짧은 말 + 도장 자리)이 그려진다
+const board = (() => { const g = new THREE.Group(), rot = Math.atan2(0 - BOARD.x, 3.5 - BOARD.z); g.position.set(BOARD.x, A.top, BOARD.z); g.rotation.y = rot;
+  const c = document.createElement('canvas'); c.width = 768; c.height = 512; const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  const p1 = box(.24, 3.6, .24, 0x8a5a2b); p1.position.set(-2.05, 1.8, 0); const p2 = p1.clone(); p2.position.x = 2.05; const wood = M(0xb9853b);
+  const panel = new THREE.Mesh(new THREE.BoxGeometry(4.5, 3.0, .2), [wood, wood, wood, wood, new THREE.MeshStandardMaterial({ map: tex, roughness: .9 }), wood]); panel.position.y = 2.2; panel.castShadow = true;
+  const roof = box(5.2, .26, 1.1, 0xe5574d); roof.position.set(0, 3.86, 0); const roof2 = box(4.4, .22, .7, 0xf0766c); roof2.position.set(0, 4.08, 0);
+  const mark = new THREE.Mesh(new THREE.OctahedronGeometry(.42, 0), new THREE.MeshStandardMaterial({ color: 0xffd35c, emissive: 0xffa800, emissiveIntensity: .9, flatShading: true })); mark.position.y = 5.1;
+  g.add(p1, p2, panel, roof, roof2, mark); scene.add(g); for (const k of [-1.6, 0, 1.6]) solids.push({ x: BOARD.x + Math.cos(rot) * k, z: BOARD.z - Math.sin(rot) * k, r: .55 });
+  function draw(){ const x = c.getContext('2d'), qs = wallet.quests(); x.fillStyle = '#fff4d6'; x.fillRect(0, 0, 768, 512); x.fillStyle = '#e5574d'; x.fillRect(0, 0, 768, 96); x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '900 62px "Pretendard","Noto Sans KR",sans-serif'; x.fillText('오늘의 부탁', 384, 52);
+    qs.forEach((q, i) => { const y = 118 + i * 128; x.fillStyle = '#fff'; x.strokeStyle = '#e2c88e'; x.lineWidth = 6; x.beginPath(); x.roundRect(26, y, 716, 108, 22); x.fill(); x.stroke(); const gl = glyph(q.art); x.textAlign = 'center'; x.fillStyle = '#4a2c0a'; if (gl) { x.font = '70px "Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif'; x.fillText(gl, 90, y + 58); }
+      x.textAlign = 'left'; x.font = '900 60px "Pretendard","Noto Sans KR",sans-serif'; x.fillText(q.short, 160, y + 58);
+      x.save(); x.translate(664, y + 54); if (q.stamped) { x.rotate(-.24); x.strokeStyle = '#e5484d'; x.lineWidth = 7; x.beginPath(); x.arc(0, 0, 42, 0, 7); x.stroke(); x.lineWidth = 3; x.beginPath(); x.arc(0, 0, 33, 0, 7); x.stroke(); x.fillStyle = '#e5484d'; x.textAlign = 'center'; x.font = '900 28px "Pretendard","Noto Sans KR",sans-serif'; x.fillText('했어!', 0, 2); } else { x.setLineDash([10, 9]); x.strokeStyle = '#e2c88e'; x.lineWidth = 5; x.beginPath(); x.arc(0, 0, 40, 0, 7); x.stroke(); } x.restore(); });
+    tex.needsUpdate = true; }
+  draw(); return { g, mark, draw, on: false, seen: false }; })();
 // 나루터: 널다리 끝의 배에 오르면 「활동의 섬」으로 간다(첫 배 = 가게 섬)
 const dP = new THREE.Vector2(-.35, 1).normalize(), ports = [];
 path(0, 4, dP.x * (A.r - 1), dP.y * (A.r - 1), A.top, 1.9); sign(dP.x * (A.r - 2.5) + 3.2, dP.y * (A.r - 2.5) + .6, A.top, '가게 섬 가는 배', Math.atan2(dP.x, dP.y) + Math.PI, 4.4);
@@ -98,6 +116,10 @@ const cIn = { x: C.x - dirBC.x * (C.r - 1.5), z: C.z - dirBC.y * (C.r - 1.5) }; 
 for (let i = 0; i < 8; i++) { const a = i / 8 * 6.28; coin(C.x + 1 + Math.cos(a) * 5, 3.2 + 1.0, C.z + Math.sin(a) * 5); }
 const chest = new THREE.Group(); chest.position.set(C.x + 1, 4.3, C.z); { const b = box(1.5, .9, 1.0, 0x9a5b22); b.position.y = .45; const band = box(1.56, .16, 1.06, 0xffc928, { metalness: .7, roughness: .3 }); band.position.y = .5; const lid = new THREE.Group(); lid.position.set(0, .9, -.5); const l = box(1.5, .4, 1.0, 0xb26a28); l.position.set(0, .2, .5); const lock = box(.26, .3, .1, 0xffc928, { metalness: .7, roughness: .3 }); lock.position.set(0, .1, 1.02); lid.add(l, lock); chest.add(b, band, lid); chest.lid = lid; const glowL = new THREE.PointLight(0xffd35c, 0, 9); glowL.position.y = 1.4; chest.add(glowL); chest.glow = glowL; } scene.add(chest); solids.push({ x: chest.position.x, z: chest.position.z, r: 1.0 });
 
+// 오늘 이미 주운 동전은 치워 둔다(날이 바뀌면 다시 나온다)
+const SAVE = wallet.island('plaza'); if (SAVE.day !== wallet.dayKey()) { SAVE.day = wallet.dayKey(); SAVE.got = []; }
+for (const i of SAVE.got) if (coins[i]) { coins[i].got = true; coins[i].m.visible = false; }
+
 // ── 내 캐릭터(상자 몸)
 const me = new THREE.Group(); const body = new THREE.Group(); me.add(body);
 { const face = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#ffd9a8'; x.fillRect(0, 0, 128, 128); x.fillStyle = '#1b2233'; x.beginPath(); x.arc(42, 56, 9, 0, 7); x.arc(86, 56, 9, 0, 7); x.fill(); x.strokeStyle = '#1b2233'; x.lineWidth = 7; x.lineCap = 'round'; x.beginPath(); x.arc(64, 74, 22, .2 * Math.PI, .8 * Math.PI); x.stroke(); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
@@ -122,8 +144,6 @@ cv.addEventListener('pointermove', e => { if (e.pointerId !== look.id) return; c
 cv.addEventListener('wheel', e => { camDist = Math.max(6, Math.min(18, camDist + e.deltaY * .01)); }, { passive: true });
 
 // ── 소리
-let ac = null; function audio(){ try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (_) {} }
-function tone(f, d = .12, type = 'triangle', g = .12, delay = 0, to){ if (!ac) return; try { const t = ac.currentTime + delay, o = ac.createOscillator(), a = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (to) o.frequency.exponentialRampToValueAtTime(to, t + d); a.gain.setValueAtTime(g, t); a.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(a); a.connect(ac.destination); o.start(t); o.stop(t + d + .02); } catch (_) {} }
 const SFX = { jump: () => tone(380, .16, 'sine', .1, 0, 760), land: () => tone(140, .08, 'sine', .1, 0, 80), coin: () => { tone(988, .07, 'square', .06); tone(1319, .16, 'square', .06, .07); }, splash: () => tone(500, .45, 'sawtooth', .08, 0, 90), good: () => { tone(660, .1); tone(880, .16, 'triangle', .12, .08); }, sink: () => tone(220, .5, 'sine', .14, 0, 70), flag: () => [523, 659, 784].forEach((f, i) => tone(f, .16, 'triangle', .12, i * .08)), win: () => [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, .28, 'triangle', .14, i * .11)) };
 
 // ── 알림
@@ -131,6 +151,17 @@ let msgT = 0; function say(t, sec = 3.5){ $('msg').textContent = t; $('msg').sty
 function big(t, s, sec = 3){ $('bigT').textContent = t; $('bigS').textContent = s || ''; $('big').style.opacity = 1; setTimeout(() => { $('big').style.opacity = 0; }, sec * 1000); }
 let nCoins = 0, won = false, goal = 0; const GOALS = [{ x: B.x - 3, z: B.z + 2.5, t: '숲 섬으로' }, { x: flags[2].x, z: flags[2].z, t: '수 다리를 건너 보물 섬으로' }, { x: chest.position.x, z: chest.position.z, t: '둔덕 꼭대기 보물 상자!' }];
 const parts = []; function burst(x, y, z, col, n = 14, sp = 5){ for (let i = 0; i < n; i++) { const m = new THREE.Mesh(new THREE.BoxGeometry(.16, .16, .16), new THREE.MeshBasicMaterial({ color: col })); m.position.set(x, y, z); scene.add(m); parts.push({ m, vx: (rnd() - .5) * sp, vy: 2 + rnd() * sp, vz: (rnd() - .5) * sp, t: .9 + rnd() * .5 }); } }
+
+// ── 게시판: 다가가면 부탁 셋이 뜨고, 해낸 부탁에 도장이 찍힌다. 셋 다 찍히면 동전 덤
+function boardHtml(thunk = []){ const qs = wallet.quests(); return '<h2>' + art('board.pin') + ' 오늘의 부탁</h2>' + qs.map(q => `<div class="q${q.stamped ? ' done' : ''}${thunk.includes(q.id) ? ' thunk' : ''}" data-q="${q.id}"><span class="ic">${art(q.art)}</span><div class="tx">${q.text}${q.need > 1 ? `<div class="pips">${'<u class="on"></u>'.repeat(q.have)}${'<u></u>'.repeat(q.need - q.have)}</div>` : ''}</div><span class="st">했어!</span></div>`).join('')
+  + `<div class="foot">${wallet.bonusGiven() ? '오늘 부탁을 다 했어! 내일 또 새 부탁이 와' : `셋 다 하면 ${art('coin')} ${wallet.TUNE.QUEST_BONUS}개를 더 줘`}</div>`; }
+const boardWaiting = () => wallet.quests().some(q => q.done && !q.stamped);
+function boardOpen(){ board.on = true; board.seen = true; $('msg').style.opacity = 0; msgT = 0; const el = $('board'); el.innerHTML = boardHtml(); el.classList.add('on');
+  const todo = wallet.quests().filter(q => q.done && !q.stamped).map(q => q.id); if (!todo.length) return; const r = wallet.stampQuests();      /* 지갑에는 바로 적고, 화면에서는 하나씩 꾹 찍는다 */
+  todo.forEach((id, i) => setTimeout(() => { const row = el.querySelector(`[data-q="${id}"]`); if (row) { row.classList.add('done', 'thunk'); } sfx.stamp(); board.draw(); }, 350 + i * BOARD.stampGap));
+  if (r.bonus) setTimeout(() => { el.innerHTML = boardHtml(); sfx.win(); confetti(); $('big').classList.add('over'); big('부탁 셋을 다 했어!', `동전 ${r.bonus}개를 더 받았어요`, 3.4); setTimeout(() => $('big').classList.remove('over'), 3800); }, 350 + todo.length * BOARD.stampGap + 300); }
+function boardStep(t){ const near = Math.hypot(P.x - BOARD.x, P.z - BOARD.z) < BOARD.near && Math.abs(P.y - A.top) < 1.2; if (near && !board.on) boardOpen(); else if (!near && board.on) { board.on = false; $('board').classList.remove('on'); }
+  const call = !board.seen || boardWaiting(); board.mark.visible = call; board.mark.rotation.y = t * 2.2; board.mark.position.y = 5.1 + Math.sin(t * 3) * .22; }
 
 // ── 한 걸음
 const SPEED = 6.2, JUMP = 8.6, GRAV = 23;
@@ -140,10 +171,11 @@ function step(dt, t){
   const sp = seaG.attributes.position; for (let i = 0; i < sp.count; i++) { const x = seaBase[i * 3] + sea.position.x, z = seaBase[i * 3 + 2] + sea.position.z; sp.array[i * 3 + 1] = Math.sin(x * .16 + t * 1.1) * .16 + Math.cos(z * .2 + t * .8) * .14; } sp.needsUpdate = true; seaG.computeVertexNormals();
   for (const c of clouds) { c.position.x += dt * .9; if (c.position.x > 130) c.position.x = -130; }
   for (const b of bobbers) b.p.mesh.position.y = b.p.baseY + Math.sin(t * 1.4 + b.ph) * .22;
-  for (const c of coins) { if (c.got) continue; c.m.rotation.z = t * 2.4 + c.ph; c.m.position.y = c.y + Math.sin(t * 2 + c.ph) * .14; if (Math.hypot(P.x - c.x, P.z - c.z) < .95 && Math.abs(P.y + .9 - c.m.position.y) < 1.3) { c.got = true; c.m.visible = false; nCoins++; $('coins').textContent = nCoins; SFX.coin(); burst(c.x, c.m.position.y, c.z, 0xffd35c, 8, 3); } }
+  for (const c of coins) { if (c.got) continue; c.m.rotation.z = t * 2.4 + c.ph; c.m.position.y = c.y + Math.sin(t * 2 + c.ph) * .14; if (Math.hypot(P.x - c.x, P.z - c.z) < .95 && Math.abs(P.y + .9 - c.m.position.y) < 1.3) { c.got = true; c.m.visible = false; nCoins++; SAVE.got.push(coins.indexOf(c)); pay(1, 'island'); SFX.coin(); burst(c.x, c.m.position.y, c.z, 0xffd35c, 8, 3); } }
   for (const p of bridge) { if (p.shake > 0) { p.shake -= dt; p.mesh.position.x = p.x + Math.sin(t * 60) * .06; if (p.shake <= 0) { p.sink = 3.2; SFX.sink(); } } else p.mesh.position.x = p.x; if (p.sink > 0) { p.sink -= dt; p.mesh.position.y = Math.max(-2.2, p.mesh.position.y - dt * 7); if (p.sink <= 0) p.mesh.position.y = p.baseY; } else if (!p.shake) p.mesh.position.y += (p.baseY - p.mesh.position.y) * Math.min(1, dt * 4); }
   for (let i = parts.length - 1; i >= 0; i--) { const q = parts[i]; q.vy -= 14 * dt; q.m.position.x += q.vx * dt; q.m.position.y += q.vy * dt; q.m.position.z += q.vz * dt; q.m.rotation.x += dt * 6; q.t -= dt; if (q.t <= 0) { scene.remove(q.m); parts.splice(i, 1); } }
   if (msgT > 0) { msgT -= dt; if (msgT <= 0) $('msg').style.opacity = 0; }
+  boardStep(t);
   // 빠졌다가 돌아오기
   if (P.dead > 0) { P.dead -= dt; me.position.y -= dt * 2; if (P.dead <= 0) { Object.assign(P, { x: P.spawn.x, y: P.spawn.y + .2, z: P.spawn.z, vx: 0, vy: 0, vz: 0 }); me.visible = true; } return; }
   // 걷기(카메라가 보는 쪽 기준)
@@ -161,7 +193,7 @@ function step(dt, t){
   if (P.y < .15) { P.dead = .9; me.visible = true; SFX.splash(); burst(P.x, .3, P.z, 0xbfefff, 22, 6); say('풍덩! 깃발로 돌아가요', 2); }
   for (const f of flags) if (!f.on && Math.hypot(P.x - f.x, P.z - f.z) < 2.2 && Math.abs(P.y - f.top) < 1) { f.on = true; f.f.material.color.set(0xff4d6a); P.spawn = { x: f.x + .8, y: f.top, z: f.z + .8 }; if (f.name !== '출발 섬') { SFX.flag(); big(f.name, '여기서부터 다시 시작해요', 2.2); if (goal < 2 && f.name === '숲 섬') goal = 1; if (f.name === '보물 섬') goal = 2; } }
   for (const po of ports) { if (Math.hypot(P.x - po.x, P.z - po.z) < 1.5 && P.on && P.y < 1.6) { po.t += dt; if (po.t > .5 && !po.go) { po.go = true; SFX.flag(); big(po.name + '으로 출발!', '', 2); setTimeout(() => { location.href = po.href; }, 1300); } } else if (!po.go) po.t = 0; }
-  if (!won && Math.hypot(P.x - chest.position.x, P.z - chest.position.z) < 2.3 && Math.abs(P.y - chest.position.y) < 1) { won = true; SFX.win(); big('보물을 찾았어!', `동전 ${nCoins}개를 모았어요`, 6); for (let i = 0; i < 5; i++) setTimeout(() => burst(chest.position.x, chest.position.y + 1.2, chest.position.z, [0xffd35c, 0xff7a3d, 0x7dffa8, 0x8fe3ff][i % 4], 26, 9), i * 260); }
+  if (!won && Math.hypot(P.x - chest.position.x, P.z - chest.position.z) < 2.3 && Math.abs(P.y - chest.position.y) < 1) { won = true; did('course.treasure'); board.draw(); SFX.win(); big('보물을 찾았어!', `동전 ${nCoins}개를 모았어요`, 6); for (let i = 0; i < 5; i++) setTimeout(() => burst(chest.position.x, chest.position.y + 1.2, chest.position.z, [0xffd35c, 0xff7a3d, 0x7dffa8, 0x8fe3ff][i % 4], 26, 9), i * 260); }
   if (won) { chest.lid.rotation.x += (-1.9 - chest.lid.rotation.x) * Math.min(1, dt * 4); chest.glow.intensity += (60 - chest.glow.intensity) * dt * 2; }
   // 몸짓
   const moving = Math.hypot(P.vx, P.vz) > .6 && P.on; P.walk += dt * (moving ? 11 : 0); const sw = moving ? Math.sin(P.walk) * .9 : 0; P.land = Math.max(0, P.land - dt);
@@ -173,9 +205,9 @@ function camera(dt){ const tx = P.x, ty = Math.max(P.y, .4) + 1.5, tz = P.z, cx 
   for (const tr of trees) { const ax = cam.position.x, az = cam.position.z, bx = P.x - ax, bz = P.z - az, L = bx * bx + bz * bz || 1, u = Math.max(0, Math.min(1, ((tr.x - ax) * bx + (tr.z - az) * bz) / L)), d = Math.hypot(ax + u * bx - tr.x, az + u * bz - tr.z), want = d < 2.4 && u < .93 && cam.position.y < tr.h + 9 ? .16 : 1; if (Math.abs(want - tr.a) > .01) { tr.a += (want - tr.a) * Math.min(1, dt * 8); tr.g.traverse(o => { if (o.material) { o.material.transparent = tr.a < .99; o.material.opacity = tr.a; o.castShadow = tr.a > .6; } }); } }
   sea.position.x = deep.position.x = Math.round(P.x / 10) * 10; sea.position.z = deep.position.z = Math.round(P.z / 10) * 10;
   sun.position.set(P.x - 30, 46, P.z + 22); sun.target.position.set(P.x, 0, P.z);
-  const G = GOALS[goal]; if (G && !won) { const a = Math.atan2(G.x - P.x, G.z - P.z) - camYaw + Math.PI; $('arrowSvg').style.transform = `rotate(${-a}rad)`; $('arrowT').textContent = G.t; } else $('arrow').style.opacity = 0; }
+  const G = (!board.seen || boardWaiting()) && !board.on ? { x: BOARD.x, z: BOARD.z, t: boardWaiting() ? '게시판에 도장 받으러!' : '게시판을 봐요' } : board.on ? null : GOALS[goal]; $('arrow').style.opacity = G && (!won || G.x === BOARD.x) ? 1 : 0; if (G && (!won || G.x === BOARD.x)) { const a = Math.atan2(G.x - P.x, G.z - P.z) - camYaw + Math.PI; $('arrowSvg').style.transform = `rotate(${-a}rad)`; $('arrowT').textContent = G.t; } }
 function resize(){ const w = innerWidth, h = innerHeight; R.setSize(w, h, false); cam.aspect = w / h; cam.fov = w < h ? 72 : 58; cam.updateProjectionMatrix(); } addEventListener('resize', resize); resize();
 cam.position.set(P.x + 8, 9, P.z + 9);
-let last = performance.now(), T = 0; function loop(now){ requestAnimationFrame(loop); const dt = Math.min(.05, (now - last) / 1000); last = now; T += dt; step(dt, T); camera(dt); R.render(scene, cam); }
-say(isTouch ? '왼쪽 막대로 걷고, 「점프」로 뛰어요. 화면을 끌면 둘러봐요' : '방향키로 걷고, 스페이스로 뛰어요. 마우스로 끌면 둘러봐요', 6); requestAnimationFrame(loop);
-window.__isle = { ports, P, plats, bridge, coins, flags, chest, key, get won(){ return won; }, get nCoins(){ return nCoins; }, set camYaw(v){ camYaw = v; }, get camYaw(){ return camYaw; }, A, B, C, step, T: () => T };
+let last = performance.now(), T = 0; function loop(now){ requestAnimationFrame(loop); const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now; T += dt;      /* 첫 그림의 시각이 앞설 수 있다(음수면 시작하자마자 바다로 떨어짐) */ step(dt, T); camera(dt); R.render(scene, cam); }
+hud({ back: { href: '/math/play/', label: '← 놀이터' } }); say(isTouch ? '왼쪽 막대로 걷고, 「점프」로 뛰어요. 화면을 끌면 둘러봐요' : '방향키로 걷고, 스페이스로 뛰어요. 마우스로 끌면 둘러봐요', 6); requestAnimationFrame(loop);
+window.__isle = { board, BOARD, wallet, boardWaiting, ports, P, plats, bridge, coins, flags, chest, key, get won(){ return won; }, get nCoins(){ return nCoins; }, set camYaw(v){ camYaw = v; }, get camYaw(){ return camYaw; }, A, B, C, step, T: () => T };
