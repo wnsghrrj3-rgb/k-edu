@@ -78,6 +78,8 @@ export class Game {
     this.p.bindJoystick(document.getElementById('stick'), document.getElementById('knob'));
     // 풍경층: 원경 산·바람 풀·새·꽃가루·손맛 — world.scenery 가 있을 때만, ?fx=0 이면 끔(후처리 없이 도는 가벼운 층)
     if (this.world.scenery && qs.get('fx') !== '0') addScenery(this.e, this.world.scenery, this.quality(), this.p);
+    /* 외형 시험 2(2026-11-16): ?look=2 일 때만 질감·빛 층을 얹는다 — 기본 화면은 그대로 */
+    if (qs.get('look') === '2') { const { applyLook2 } = await import('./look2.js'); applyLook2(this); }
     // 시작 시선: 야영지 쪽(있으면) 을 바라봄
     const camp = this.e.areas.get(this.world.face || 'camp'); if (camp) { const d = camp.clone().sub(this.p.pos); this.p.yaw = Math.atan2(-d.x, -d.z); }
     if (this.world.look) this.applyLook(this.world.look);

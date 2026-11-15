@@ -117,5 +117,22 @@ def bark():
     r = .9 - ridge * .1
     save('bark', a, h, r, 0.8)
 
+# ---------- 잎 덩어리: 겹친 잎 뭉치(월리) + 잎맥 잔결 + 사이 그늘 — 뭉툭한 나무 덩어리에 입혀 잎이 보이게 ----------
+def leaf():
+    d1, d2 = worley(N, 26, 51); e1, e2 = worley(N, 9, 52)
+    blade = np.clip(1 - d1 * 1.15, 0, 1) ** .7          # 잎 하나하나의 볼록함
+    gap = np.clip((d2 - d1) * 2.2, 0, 1)                 # 잎 사이 틈(0=틈)
+    clump = np.clip(1 - e1 * .9, 0, 1)                   # 큰 뭉치
+    fine = fbm(N, 64, 3, 53); tone = fbm(N, 6, 4, 54)
+    h = gaussian_filter(blade * .55 + clump * .35 + fine * .1, 1.0) * (0.35 + gap * .65)
+    a = mix(col('2e4a22'), col('5d7d34'), np.clip(blade * .7 + clump * .3, 0, 1))
+    a = mix(a, col('8fa64a'), np.clip(blade - .72, 0, 1) * 2.2 * tone)      # 볕 받은 잎 끝
+    a = mix(a, col('16240f'), (1 - gap) ** 2 * .85)                          # 잎 사이 그늘
+    a *= (0.82 + fine * .3)[..., None]
+    r = .78 + (1 - blade) * .15
+    save('leaf', a, h, r, 1.1)
+
 if __name__ == '__main__':
-    rock(); dirt(); grass(); bark()
+    import sys
+    if 'leaf' in sys.argv: leaf()
+    else: rock(); dirt(); grass(); bark()
