@@ -41,4 +41,19 @@ ok(K.linesFor('high') === K.LINES_HIGH && K.linesFor('x') === K.LINES, '글감 �
 ok(K.levelText('비율을 구한다', 'l', 'high') === '기초적인 수준에서 비율을 구함' && K.levelText('비율을 구한다', 'l') === '도움을 받아 비율을 구함', '고학년 노력 문장');
 ok(K.subjectsFor(1).length === 5 && K.subjectsFor(4).indexOf('실과') < 0 && K.subjectsFor(6).indexOf('실과') === 5, '학년별 교과');
 console.log('고학년 ' + nh + ' 문장');
-console.log(fail ? fail + ' FAILED' : 'OK (' + n + ' 문장)'); process.exit(fail ? 1 : 0);
+console.log(fail ? fail + ' FAILED' : 'OK (' + n + ' 문장)');
+/* v1.2 표현 바꾸기 — 반 안에 같은 문장 없음 · 한 학생 안에서 같은 말끝 되풀이 없음 · 꼴 점검 */
+(function () {
+  let f = 0; const bad = (c, m) => { if (!c) { f++; console.log('FAIL', m); } };
+  const cr = K.parseCriteria('글자를 바르게 쓴다\n글을 소리 내어 읽는다\n자신의 생각을 문장으로 표현할 수 있다\n친구의 말을 귀 기울여 듣는다\n10까지의 수를 셀 수 있다\n모양을 만든다');
+  bad(K.variants(cr[2], 'h').some(t => t === '자신의 생각을 문장으로 표현하는 모습이 돋보임'), '수 있 → 줄기');
+  bad(K.variants(cr[3], 'l').indexOf('친구의 말을 귀 기울여 들으려고 꾸준히 노력함') >= 0, 'ㄷ 불규칙');
+  bad(K.variants(cr[5], 'h').indexOf('모양을 만드는 모습이 돋보임') >= 0 && K.variants(cr[5], 'h').indexOf('모양을 만들 수 있음') >= 0, 'ㄹ 줄기');
+  const rows = Array.from({ length: 28 }, (_, i) => ({ picks: K.assign(6, 2, i, 0, 'z'), levels: {}, seed: 's' + i }));
+  const ts = K.subjectTexts(cr, rows); bad(new Set(ts).size === ts.length, '반 안 중복');
+  ts.forEach(t => { const ends = t.split('. ').map(x => x.replace(/\.$/, '').slice(-5)); bad(new Set(ends).size === ends.length || /고 /.test(t), '말끝 되풀이 ' + t); bad(!/수 있는 데|있으려고|있는 편임/.test(t), '어색 ' + t); });
+  const own = K.parseCriteria('정확하게 읽는다 | 읽는다 | 도움을 받아 읽는다')[0];
+  bad(K.variants(own, 'l').length === 1 && !K.variants(own, 'm').some(t => /뛰어남|돋보임/.test(t)), '직접 적은 수준 문장 보존');
+  if (f) { fail += f; } console.log(f ? 'v1.2 ' + f + ' FAILED' : 'v1.2 OK');
+  process.exit(fail ? 1 : 0);
+})();

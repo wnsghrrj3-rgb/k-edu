@@ -375,19 +375,108 @@
     var s = String(src || '').replace(/\s+/g, ' ').trim().replace(/[.。!?]+$/, '').trim();
     if (!s) return { ok: false, text: '' };
     var last = s.charAt(s.length - 1);
-    if (/(습니다)$/.test(s)) return { ok: true, text: nounForm(s.slice(0, -3)) };
-    if (/니다$/.test(s) && jongOf(s.charAt(s.length - 3)) === 'ㅂ') { var b = s.slice(0, -2); return { ok: true, text: nounForm(b.slice(0, -1) + setJong(b.charAt(b.length - 1), '')) }; }
+    if (/(습니다)$/.test(s)) return { ok: true, text: nounForm(s.slice(0, -3)), stem: s.slice(0, -3) };
+    if (/니다$/.test(s) && jongOf(s.charAt(s.length - 3)) === 'ㅂ') { var b = s.slice(0, -2), st = restoreL(b.slice(0, -1) + setJong(b.charAt(b.length - 1), '')); return { ok: true, text: nounForm(st), stem: st }; }
     if (/(어요|아요|해요|예요|에요)$/.test(s)) return { ok: true, text: s, raw: true };
     if (last === '다' && s.length >= 2) {
       var body = s.slice(0, -1), p = body.charAt(body.length - 1), stem;
       if (p === '는' && body.length >= 2 && isHangul(body.charAt(body.length - 2)) && body.charAt(body.length - 2) !== ' ') stem = body.slice(0, -1);         // 읽는다 → 읽
       else if (jongOf(p) === 'ㄴ' && !/[않많]/.test(p)) stem = restoreL(body.slice(0, -1) + setJong(p, ''));   // 쓴다 → 쓰, 만든다 → 만들
       else stem = body;                                                                                  // 있다 · 이다 · 쉽다
-      return { ok: true, text: nounForm(stem) };
+      return { ok: true, text: nounForm(stem), stem: stem };
     }
     var j = jongOf(last);
-    if (j === 'ㅁ' || j === 'ㄻ') return { ok: true, text: s };          // 이미 ~함 · ~음 꼴
+    if (j === 'ㅁ' || j === 'ㄻ') return { ok: true, text: s, stem: stemFromNoun(s) };          // 이미 ~함 · ~음 꼴
     return { ok: true, text: s, noun: true };                             // 「글자 바르게 쓰기」 같은 이름꼴
+  }
+  /* 이미 「~함·~음」 꼴이면 줄기를 되짚는다(헷갈리는 꼴은 null) */
+  function stemFromNoun(s) {
+    var ch = s.charAt(s.length - 1), head = s.slice(0, -1), j = jongOf(ch);
+    if (j === 'ㄻ') return head + setJong(ch, 'ㄹ');                       // 만듦 → 만들
+    if (j === 'ㅁ' && ch !== '음') return head + setJong(ch, '');           // 함 → 하, 씀 → 쓰
+    if (ch === '음') { var p = head.charAt(head.length - 1), pj = jongOf(p); if (!isHangul(p) || pj === 'ㄹ' || pj === '' || /움$/.test(s)) return null; return head; }   // 읽음 → 읽 (들음·걸음은 모름)
+    return null;
+  }
+  var IRR_D = /(듣|걷|묻|깨닫|싣)$/, IRR_B = /(돕|눕|줍)$/, IRR_S = /(짓|잇|긋|젓|낫|붓)$/;
+  function lastCh(st) { return st.charAt(st.length - 1); }
+  /* 꾸밈꼴 ~는 */
+  function adn(st) { var ch = lastCh(st); if (jongOf(ch) === 'ㄹ') return st.slice(0, -1) + setJong(ch, '') + '는'; return st + '는'; }
+  /* ~(으)ㄹ  (뒤에 「수 있음」 등) */
+  function fut(st) {
+    var ch = lastCh(st), j = jongOf(ch), h = st.slice(0, -1);
+    if (!j) return h + setJong(ch, 'ㄹ');
+    if (j === 'ㄹ') return st;
+    if (IRR_D.test(st)) return h + setJong(ch, 'ㄹ') + '을';
+    if (IRR_B.test(st)) return h + setJong(ch, '') + '울';
+    if (IRR_S.test(st)) return h + setJong(ch, '') + '을';
+    return st + '을';
+  }
+  /* ~(으)려고 */
+  function tryF(st) {
+    var ch = lastCh(st), j = jongOf(ch), h = st.slice(0, -1);
+    if (!j || j === 'ㄹ') return st + '려고';
+    if (IRR_D.test(st)) return h + setJong(ch, 'ㄹ') + '으려고';
+    if (IRR_B.test(st)) return h + setJong(ch, '') + '우려고';
+    if (IRR_S.test(st)) return h + setJong(ch, '') + '으려고';
+    return st + '으려고';
+  }
+  /* ── 표현 바꾸기: 같은 기준을 학생마다 다른 말로 ── */
+  var VAR = {
+    stem: {
+      h: [function (x) { return x.text; }, function (x) { return adn(x.st) + ' 모습이 돋보임'; }, function (x) { return adn(x.st) + ' 능력이 뛰어남'; },
+          function (x) { return x.can ? null : fut(x.st) + ' 수 있음'; }, function (x) { return adn(x.st) + ' 데 능숙함'; }, function (x) { return '스스로 ' + x.text; }],
+      m: [function (x) { return '대체로 ' + x.text; }, function (x) { return adn(x.st) + ' 편임'; }, function (x) { return adn(x.st) + ' 데 큰 어려움이 없음'; },
+          function (x) { return x.can ? null : '대체로 ' + fut(x.st) + ' 수 있음'; }],
+      l: [function (x, lead) { return lead + x.text; }, function (x) { return tryF(x.st) + ' 꾸준히 노력함'; }, function (x) { return adn(x.st) + ' 데 노력이 필요함'; },
+          function (x) { return adn(x.st) + ' 힘을 기르고 있음'; }]
+    },
+    noun: {
+      h: [function (x) { return x.text + josa(x.text, '을') + ' 잘함'; }, function (x) { return x.text + '에 능숙함'; }, function (x) { return x.text + josa(x.text, '을') + ' 정확하게 해냄'; }, function (x) { return x.text + '에 자신감을 보임'; }],
+      m: [function (x) { return x.text + josa(x.text, '을') + ' 대체로 잘함'; }, function (x) { return x.text + josa(x.text, '을') + ' 무난하게 해냄'; }],
+      l: [function (x, lead) { return lead + x.text + josa(x.text, '을') + ' 함'; }, function (x) { return x.text + '에 노력이 필요함'; }, function (x) { return x.text + josa(x.text, '을') + ' 꾸준히 연습하고 있음'; }]
+    }
+  };
+  /* 한 기준·한 수준의 표현 후보 전부(첫 번째 = 기본 문장) */
+  function variants(c, lv) {
+    var base = c[lv]; if (!base) return [];
+    var p = c.parts && c.parts[lv]; if (!p) return [base];
+    var out = [base], seen = {}; seen[base] = 1;
+    var kind = p.noun ? 'noun' : (p.st ? 'stem' : null); if (!kind) return out;
+    /* 교사가 그 수준 문장을 직접 적었으면 앞머리(대체로·도움을 받아)를 덧붙이지 않는다 */
+    var fns = VAR[kind][lv]; if (p.own) fns = lv === 'm' ? VAR[kind].m.slice(1, 3) : [];
+    fns.forEach(function (f) { var t = f(p, c.lead || '도움을 받아 '); if (t && !seen[t]) { seen[t] = 1; out.push(t); } });
+    return out;
+  }
+  /* 한 학생의 문장 — vary 가 있으면 표현을 바꾸고, 같은 수준 두 기준을 「~고」로 잇기도 한다 */
+  function subjectText(criteria, picks, levels, vary) {
+    if (!vary) return picks.map(function (i) { var c = criteria[i]; if (!c) return ''; var lv = (levels && levels[i]) || 'h'; return c[lv] ? c[lv] + '.' : ''; }).filter(Boolean).join(' ');
+    var r = rng('vary:' + vary.seed), items = [], usedKey = {};
+    function keyOf(t) { var f = t.split(' ')[0]; return (f === '스스로' || f === '대체로' || f === '도움을') ? f : t.slice(-5); }
+    picks.forEach(function (i, k) {
+      var c = criteria[i]; if (!c) return; var lv = (levels && levels[i]) || 'h', vs = variants(c, lv); if (!vs.length) return;
+      var vi = (vary.order + i * 2 + k + (vary.salt || 0) + Math.floor(r() * vs.length)) % vs.length, tries = 0;
+      while (tries < vs.length && usedKey[keyOf(vs[vi])]) { vi = (vi + 1) % vs.length; tries++; }   // 한 학생 안에서 같은 말끝 되풀이 피하기
+      usedKey[keyOf(vs[vi])] = 1; items.push({ c: c, lv: lv, text: vs[vi] });
+    });
+    var out = [], joinOn = r() < 0.35;
+    for (var k = 0; k < items.length; k++) {
+      var a = items[k], b = items[k + 1], p = a.c.parts && a.c.parts[a.lv];
+      if (joinOn && b && a.lv === b.lv && a.lv !== 'l' && p && p.st && !p.own) {
+        var bt = b.text.replace(/^대체로 /, ''), lead = a.lv === 'm' ? '대체로 ' : (/^스스로 /.test(bt) ? '스스로 ' : '');
+        out.push(lead + p.st + '고 ' + bt.replace(/^스스로 /, '') + '.'); k++; joinOn = false; continue;
+      }
+      out.push(a.text + '.');
+    }
+    return out.join(' ');
+  }
+  /* 반 전체 — 같은 문장이 둘 나오지 않게 표현을 더 돌린다. rows = [{picks, levels, seed}] */
+  function subjectTexts(criteria, rows) {
+    var used = {};
+    return rows.map(function (row, order) {
+      var t = '', salt = 0;
+      do { t = subjectText(criteria, row.picks, row.levels, { seed: row.seed, order: order, salt: salt }); salt++; } while (used[t] && salt < 12);
+      used[t] = 1; return t;
+    });
   }
   function stripLead(s) {
     return String(s || '').replace(/^\s*(?:[-•·*▶▷■□○●◦]|\(?\d{1,2}[.)]|[①-⑳]|[가-하][.)])\s*/, '').replace(/^\s*(잘함|매우\s?잘함|보통|노력\s?요함|상|중|하)\s*[:：]\s*/, '').trim();
@@ -407,15 +496,22 @@
   }
   /* 기준 붙여넣기 → [{src, h, m, l}]  (한 줄에 하나 · 「잘함 | 보통 | 노력요함」도 받음) */
   function parseCriteria(text, band) {
-    var out = [];
+    var out = [], lead = band === 'high' ? '기초적인 수준에서 ' : '도움을 받아 ';
+    function part(src, own) {
+      var n = nominalize(src); if (!n.ok || n.raw) return null;
+      var st = n.stem || null, m = st && st.match(/^(.*?)(\S+) 수 있$/);
+      if (m) { var w = m[2], core = /을$/.test(w) ? w.slice(0, -1) : (jongOf(lastCh(w)) === 'ㄹ' ? restoreL(w.slice(0, -1) + setJong(lastCh(w), '')) : null); st = core ? m[1] + core : null; }
+      return { text: n.text, st: st, noun: !!n.noun, can: !!m, own: !!own };
+    }
     String(text || '').split(/\r?\n/).forEach(function (line) {
       if (!line.trim()) return;
       var parts = line.split(/\s*[|\t]\s*/).map(stripLead).filter(function (x) { return x; });
       if (!parts.length) return;
-      var plain = function (s) { return nominalize(s).text; };
-      if (parts.length >= 3) out.push({ src: parts[0], h: plain(parts[0]), m: plain(parts[1]), l: plain(parts[2]), given: 3 });
-      else if (parts.length === 2) out.push({ src: parts[0], h: plain(parts[0]), m: plain(parts[1]), l: levelText(parts[0], 'l', band), given: 2 });
-      else out.push({ src: parts[0], h: levelText(parts[0], 'h', band), m: levelText(parts[0], 'm', band), l: levelText(parts[0], 'l', band), given: 1 });
+      var plain = function (s) { return nominalize(s).text; }, c, b = part(parts[0]);
+      if (parts.length >= 3) c = { src: parts[0], h: plain(parts[0]), m: plain(parts[1]), l: plain(parts[2]), given: 3, parts: { h: b, m: part(parts[1], true), l: part(parts[2], true) } };
+      else if (parts.length === 2) c = { src: parts[0], h: plain(parts[0]), m: plain(parts[1]), l: levelText(parts[0], 'l', band), given: 2, parts: { h: b, m: part(parts[1], true), l: b } };
+      else c = { src: parts[0], h: levelText(parts[0], 'h', band), m: levelText(parts[0], 'm', band), l: levelText(parts[0], 'l', band), given: 1, parts: { h: b, m: b, l: b } };
+      c.lead = lead; out.push(c);
     });
     return out;
   }
@@ -440,11 +536,6 @@
     }
     return seq[(((order + (shift || 0)) % seq.length) + seq.length) % seq.length];
   }
-  /* 고른 기준 + 수준 → 한 학생의 문장 */
-  function subjectText(criteria, picks, levels) {
-    return picks.map(function (i) { var c = criteria[i]; if (!c) return ''; var lv = (levels && levels[i]) || 'h'; return c[lv] ? c[lv] + '.' : ''; }).filter(Boolean).join(' ');
-  }
-
   /* 학년별 기본 교과 목록(새 반을 열 때만) */
   function subjectsFor(g) {
     g = parseInt(g, 10) || 1;
@@ -470,6 +561,6 @@
     josa: josa, fill: fill, bytes: bytes,
     candidates: candidates, compose: compose,
     nominalize: nominalize, levelText: levelText, parseCriteria: parseCriteria,
-    combos: combos, assign: assign, subjectText: subjectText, watch: watch
+    combos: combos, assign: assign, subjectText: subjectText, subjectTexts: subjectTexts, variants: variants, watch: watch
   };
 });

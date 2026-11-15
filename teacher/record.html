@@ -315,7 +315,13 @@ function hbOverview() {
 const items = () => S[tab];
 const item = () => { const a = items(); if (curItem[tab] >= a.length) curItem[tab] = Math.max(0, a.length - 1); return a[curItem[tab]]; };
 function picksOf(it, crit, order, sid) { return K.assign(crit.length, Math.min(it.n, crit.length), order, it.shift[sid] || 0, it.id); }
-function autoText(it, crit, order, sid) { return K.subjectText(crit, picksOf(it, crit, order, sid), it.lv[sid] || {}); }
+/* 반 전체를 한 번에 지어 같은 문장이 둘 나오지 않게(표현 바꾸기 켬일 때) */
+function classAuto(it, crit) {
+  const rs = roster();
+  if (it.vary === false) return rs.map((s, order) => K.subjectText(crit, picksOf(it, crit, order, s.id), it.lv[s.id] || {}));
+  return K.subjectTexts(crit, rs.map((s, order) => ({ picks: picksOf(it, crit, order, s.id), levels: it.lv[s.id] || {}, seed: it.id + ':' + s.id + ':' + (it.shift[s.id] || 0) + ':' + (it.vseed || 0) })));
+}
+function autoText(it, crit, order, sid) { return classAuto(it, crit)[order] || ''; }
 function sjText(it, crit, order, sid) { return it.over[sid] != null ? it.over[sid] : autoText(it, crit, order, sid); }
 
 function renderSj() {
@@ -330,7 +336,8 @@ function renderSj() {
         <input class="nm" id="item-name" value="${esc(it.name)}" maxlength="20">
         <div><div class="mini" style="margin-bottom:5px">학생마다 몇 가지를 넣을까요?</div>
           <div class="stepper"><button data-n="-1">−</button><b id="n-val">${it.n}</b><button data-n="1">＋</button><span class="mini">가지</span></div></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="sj-shuffle">🔀 다시 나누기</button><button class="btn sm ghost" data-act="item-del">삭제</button></div>
+        <label class="mini" style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--text);font-weight:600"><input type="checkbox" id="vary-on" ${it.vary === false ? '' : 'checked'}> 학생마다 표현 다르게</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="sj-shuffle">🔀 다시 나누기</button><button class="btn sm" data-act="sj-reword" title="고른 기준은 그대로, 말만 새로">✏️ 표현만 새로</button><button class="btn sm ghost" data-act="item-del">삭제</button></div>
       </div>
     </div>
     <div id="sj-table"></div></div>`;
@@ -342,8 +349,9 @@ function renderSjTable() {
   if (!crit.length) { el.innerHTML = `<div class="empty-box">기준을 넣으면 여기에 학생별 표가 생겨요.<br>칸을 눌러 <b>잘함 → 보통 → 노력요함</b>으로 바꾸면 문장이 그 수준에 맞게 바뀝니다.</div>`; return; }
   if (!rs.length) { el.innerHTML = `<div class="empty-box">명단이 비어 있어요. 위쪽 「👥 명단」에서 학생을 넣어 주세요.</div>`; return; }
   const head = crit.map((c, i) => `<th title="${esc(c.h)}">${i + 1}</th>`).join('');
+  const autos = classAuto(it, crit);
   const rows = rs.map((s, order) => {
-    const picks = picksOf(it, crit, order, s.id), lv = it.lv[s.id] || {}, t = sjText(it, crit, order, s.id);
+    const picks = picksOf(it, crit, order, s.id), lv = it.lv[s.id] || {}, t = it.over[s.id] != null ? it.over[s.id] : autos[order];
     const cells = crit.map((c, i) => { const v = lv[i] || 'h', inn = picks.indexOf(i) >= 0; return `<td><button class="cell ${inn ? 'in ' + v : ''}" data-ci="${i}" title="${esc(c[v])}">${LV_SUBJ[v]}</button></td>`; }).join('');
     return `<tr data-sid="${esc(s.id)}" data-order="${order}"><td class="nm"><span class="no">${s.no != null ? s.no : ''}</span>${esc(s.name || '')}</td>${cells}
       <td><button class="btn sm ghost" data-row-roll title="이 학생만 다른 조합으로">🔄</button></td>
@@ -360,7 +368,8 @@ function sjCopy(all) {
   const rs = roster(), a = all ? items().filter(x => PC(x.crit).length) : [item()];
   const crits = a.map(x => PC(x.crit));
   const lines = [['번호', '이름'].concat(a.map(x => x.name)).join('\t')];
-  rs.forEach((s, order) => lines.push([s.no != null ? s.no : '', s.name || ''].concat(a.map((x, i) => tsv(sjText(x, crits[i], order, s.id)))).join('\t')));
+  const autos = a.map((x, i) => classAuto(x, crits[i]));
+  rs.forEach((s, order) => lines.push([s.no != null ? s.no : '', s.name || ''].concat(a.map((x, i) => tsv(x.over[s.id] != null ? x.over[s.id] : autos[i][order]))).join('\t')));
   copy(lines.join('\n'), '표를 복사했어요 — 엑셀·한글에 붙여 넣으세요');
 }
 
@@ -446,6 +455,7 @@ document.addEventListener('click', e => {
     case 'item-add': items().push(newItem(tab === 'cc' ? '새 영역' : '새 과목')); curItem[tab] = items().length - 1; save(); renderSj(); $('#item-name').select(); break;
     case 'item-del': if (confirm(`「${item().name}」을(를) 지울까요? 넣어 둔 기준과 수준도 함께 지워져요.`)) { items().splice(curItem[tab], 1); curItem[tab] = 0; save(); renderSj(); } break;
     case 'sj-shuffle': { const it = item(); roster().forEach(s => { it.shift[s.id] = (it.shift[s.id] || 0) + 1; }); it.over = {}; save(); renderSjTable(); break; }
+    case 'sj-reword': { const it = item(); it.vseed = (it.vseed || 0) + 1; it.over = {}; if (it.vary === false) it.vary = true; save(); renderSj(); toast('표현을 새로 지었어요'); break; }
     case 'sj-copy': sjCopy(false); break;
     case 'sj-copy-all': sjCopy(true); break;
   }
@@ -459,6 +469,7 @@ document.addEventListener('input', e => {
     if (t.hasAttribute('data-text')) { d.text = t.value.replace(/\n/g, ' '); save(); refreshLine(lid, true); return; }
   }
   if (t.id === 'crit') { const it = item(); it.crit = t.value; it.over = {}; save(); clearTimeout(_critT); _critT = setTimeout(renderSjTable, 250); return; }
+  if (t.id === 'vary-on') { const it = item(); it.vary = t.checked; it.over = {}; save(); renderSjTable(); return; }
   if (t.id === 'item-name') { item().name = t.value.trim() || '이름 없음'; save(); const p = $('.pill.on'); if (p) p.textContent = item().name; return; }
   if (t.hasAttribute('data-over')) { const row = t.closest('tr'), it = item(), sid = row.dataset.sid, v = t.value.replace(/\n/g, ' '); const auto = autoText(it, PC(it.crit), +row.dataset.order, sid); if (v === auto) delete it.over[sid]; else it.over[sid] = v; save(); grow(t); $('[data-len]', row).textContent = v.length + '자'; }
 });
