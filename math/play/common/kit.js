@@ -1,8 +1,8 @@
 /* 수학 놀이터 섬 틀 — 섬 페이지가 같이 쓰는 한 벌: 위쪽 띠(뒤로 · 동전) · 동전이 날아가는 연출 · 한 줄 알림 · 효과음 ·
  * 걸음이 오를 때의 「커졌어!」 · 부탁을 해냈을 때의 리본 · 저장 안내 한 줄(동의 전).
  * 섬 페이지는 걸음 표(STAGES)·반응·커짐만 가진다. 같은 기능을 섬마다 따로 쓰지 않는다. */
-import * as wallet from './wallet.js';
-import { art, arts, group, paint, glyph } from './art.js';
+import * as wallet from './wallet.js?v=1';
+import { art, arts, group, paint, glyph } from './art.js?v=2';
 export { wallet, art, arts, group, paint, glyph };
 
 // ── 내가 정한 수치

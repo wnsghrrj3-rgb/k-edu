@@ -4,7 +4,9 @@
 const ART = {
   'coin': '🪙',
   // 가게 섬
-  'fruit.apple': '🍎', 'fruit.orange': '🍊', 'fruit.banana': '🍌', 'shop.box': '📦',
+  'fruit.apple': '🍎', 'fruit.orange': '🍊', 'fruit.banana': '🍌', 'fruit.grape': '🍇', 'shop.box': '📦',
+  'shop.hammer': '🔨', 'shop.basket': '🧺', 'shop.awning': '⛱️', 'shop.bell': '🔔', 'shop.sign': '🪧', 'shop.pot': '🪴', 'shop.lamp': '🏮',
+  'shop.heart': '❤️', 'shop.heart.empty': '🤍', 'guest.mark.hurry': '💦', 'guest.mark.regular': '💛',
   'guest.bear': '🐻', 'guest.rabbit': '🐰', 'guest.cat': '🐱', 'guest.dog': '🐶', 'guest.fox': '🦊', 'guest.panda': '🐼', 'guest.frog': '🐸', 'guest.monkey': '🐵',
   // 낚시 섬
   'fish.blue': '🐟', 'fish.tropical': '🐠', 'fish.puffer': '🐡', 'fish.shrimp': '🦐', 'fish.octopus': '🐙', 'fisher.cat': '🐱',
@@ -12,7 +14,7 @@ const ART = {
   'deco.sun': '☀️', 'deco.cloud': '☁️', 'deco.palm': '🌴', 'deco.sailboat': '⛵', 'deco.isle': '🏝️',
   // 광장 게시판
   'board.shop': '🍎', 'board.fish': '🐟', 'board.course': '🎁', 'board.stamp': '💮', 'board.pin': '📌' };
-const GROUPS = { guest: Object.keys(ART).filter(k => k.startsWith('guest.')), fish: Object.keys(ART).filter(k => k.startsWith('fish.')) };
+const GROUPS = { guest: Object.keys(ART).filter(k => k.startsWith('guest.') && !k.startsWith('guest.mark.')), fish: Object.keys(ART).filter(k => k.startsWith('fish.')) };
 
 /** 그림 한 개. 글자(이모지)면 그 글자, 그린 그림이면 <img> 글. */
 export function art(name){ const a = ART[name]; if (a == null) return '?'; return typeof a === 'string' ? a : `<img class="art" alt="" draggable="false" src="${a.src}">`; }

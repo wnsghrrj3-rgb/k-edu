@@ -4,7 +4,7 @@
  * 3D: /labs/vendor/three185 (r185). 설계: 핸드오프 kmotion/math-wizard/24_수학놀이터_활동의섬_설계_v1.md
  * 동전 = 지갑(../common/wallet.js). 주운 동전은 그날 다시 나오지 않는다. 마을 한가운데 게시판에 다가가면 「오늘의 부탁」 셋이 뜨고, 해낸 부탁엔 도장이 찍힌다. */
 import * as THREE from 'three';
-import { wallet, art, glyph, hud, pay, did, audio, tone, sfx, confetti } from '../common/kit.js?v=2';
+import { wallet, art, glyph, hud, pay, did, audio, tone, sfx, confetti } from '../common/kit.js?v=3';
 // 내가 정한 수치(게시판)
 const BOARD = { x: 4.4, z: 3.2, near: 3.6, stampGap: 550 };
 const $ = id => document.getElementById(id);
