@@ -286,53 +286,98 @@
   var BAND_LABEL = { low: '저학년(1~3학년)', high: '고학년(4~6학년)' };
   function bandOfGrade(g) { g = parseInt(g, 10); return g >= 4 ? 'high' : 'low'; }
   function linesFor(band) { return BANDS[band] || LINES; }
+  /* v1.3 보탬 글감 합치기 (record_bank_more.js) */
+  (function () {
+    var M = null;
+    try { M = (typeof module === 'object' && module.exports) ? require('./record_bank_more.js') : (typeof self !== 'undefined' ? self.KeduRecordMore : null); } catch (e) { M = null; }
+    if (!M) return;
+    var sp = function (x) { return x ? String(x).split(/\s*\/\s*/).filter(Boolean) : []; };
+    Object.keys(BANDS).forEach(function (band) {
+      var fix = function (arr) { return band === 'high' ? arr.map(function (x) { return x.replace(/어린이(임|로|가)/g, '학생$1'); }) : arr; };
+      BANDS[band].forEach(function (L) {
+        var add = M.ADD[L.id] || {};
+        L.traits.forEach(function (t) {
+          var a = add[t.id]; if (!a) return;
+          t.c = t.c.concat(fix(sp(a.c))); t.cl = t.cl.concat(fix(sp(a.cl)));
+          ['h', 'm', 'l'].forEach(function (lv) { t.t[lv] = t.t[lv].concat(fix(sp(a[lv]))); });
+        });
+        var cl = M.CLOSE && M.CLOSE[L.id];
+        if (cl) ['h', 'm', 'l'].forEach(function (lv) { fix(sp(cl[lv])).forEach(function (x) { L.close[lv].push({ s: x }); }); });
+        (M.NEW[L.id] || []).forEach(function (n) {
+          if (n.band && n.band !== band) return;
+          if (L.traits.some(function (t) { return t.id === n.id; })) return;
+          L.traits.push({ id: n.id, label: n.label, tag: n.tag, c: fix(sp(n.c)), cl: fix(sp(n.cl)), t: { h: fix(sp(n.h)), m: fix(sp(n.m)), l: fix(sp(n.l)) } });
+        });
+      });
+    });
+  })();
   var LINE_BY_ID = {};
   Object.keys(BANDS).forEach(function (b) { LINE_BY_ID[b] = {}; BANDS[b].forEach(function (L) { LINE_BY_ID[b][L.id] = L; L.byId = {}; L.traits.forEach(function (t) { L.byId[t.id] = t; }); }); });
 
-  var TARGET = 40, MAX_PICK = 2;
+  var TARGET = 40, MAX_PICK = 99;   /* v1.3: 글자 수·개수 제한 없음(준호 2026-11-16) */
 
   /* 낱말 되풀이 세기 — 앞 두 글자가 같은 낱말 수(조사 차이는 무시) */
   function keysOf(s) { var out = {}; s.split(/\s+/).forEach(function (w) { w = w.replace(/[^가-힣A-Za-z0-9]/g, ''); if (w.length >= 2) out[w.slice(0, 2)] = 1; }); return out; }
   function repeats(a, b) { var ka = keysOf(a), kb = keysOf(b), n = 0; for (var k in ka) if (kb[k]) n++; return n; }
 
-  /* 한 줄에 쓸 글감 꾸러미로 — sel:{traitId:'h'|'m'|'l'}, x:'낱말', xl:수준 */
+  /* 한 줄에 쓸 글감 꾸러미로 — sel:{traitId:'h'|'m'|'l'}(누른 차례대로), x:'낱말', xl:수준 */
   function providers(L, input) {
     var out = [], sel = (input && input.sel) || {};
-    L.traits.forEach(function (t) { if (sel[t.id]) out.push({ c: t.c, cl: t.cl, t: t.t, lv: sel[t.id], tag: t.tag || null }); });
+    Object.keys(sel).forEach(function (id) { var t = L.byId[id]; if (t && sel[id]) out.push({ id: id, c: t.c, cl: t.cl, t: t.t, lv: sel[id], tag: t.tag || null }); });
     var x = input && String(input.x || '').trim();
     if (x) {
       var f = function (arr) { return arr.map(function (s) { return fill(s, x); }); };
-      out.push({ c: f(L.x.c), cl: f(L.x.cl), t: { h: f(L.x.t.h), m: f(L.x.t.m), l: f(L.x.t.l) }, lv: (input.xl || 'h'), tag: null, isX: true });
+      out.push({ id: '_x', c: f(L.x.c), cl: f(L.x.cl), t: { h: f(L.x.t.h), m: f(L.x.t.m), l: f(L.x.t.l) }, lv: (input.xl || 'h'), tag: null, isX: true });
     }
-    return out.slice(0, MAX_PICK);
+    return out;
   }
-
-  /* 한 줄의 후보 문장 전부(마침표 포함) — 좋은 순서로 */
+  /* 관찰 한 마디 → 생기부 말끝(~함)으로 */
+  function obsSentence(obs) {
+    var o = String(obs || '').replace(/\s+/g, ' ').trim(); if (!o) return '';
+    return o.split(/(?<=[.!?。])\s+|\n/).map(function (one) {
+      one = one.replace(/[.!?。]+$/, '').trim(); if (!one) return '';
+      var n = nominalize(one); return (n.ok && !n.raw ? n.text : one) + '.';
+    }).filter(Boolean).join(' ');
+  }
+  /* 칩 하나만 골랐을 때 맺음꼴 앞에 얹는 말(보통·노력 중) */
+  var PRE = { m: ['평소', '학교생활 전반에서', '여러 활동에서'], l: ['선생님의 격려 속에', '꾸준한 지도로', '반복 연습을 통해', '학년 초에 비해'] };
+  function pick(arr, r) { return arr[Math.floor(r() * arr.length)]; }
+  /* 꾸러미 하나를 한 문장으로 짓는다: 둘씩 짝지어 「이음꼴 + 맺음꼴」, 홀로 남으면 맺음꼴만(하나뿐이면 이음꼴 + 줄 맺음말) */
+  function build(L, ps, r) {
+    var conn = function (p) { return p.lv === 'l' ? p.cl : p.c; };
+    if (ps.length === 1) {
+      var p = ps[0], closes = L.close[p.lv].filter(function (cl) { return !cl.tag || (p.tag && cl.tag === p.tag); });
+      var pre = PRE[p.lv] || [];
+      if (pre.length && r() < 0.3) return [pick(pre, r) + ' ' + pick(p.t[p.lv], r)];   // 「학년 초에 비해 ~하고 있음」
+      if (r() < 0.3 || !closes.length) return [pick(p.t[p.lv], r)];          // 맺음꼴 한 문장으로도
+      return [pick(conn(p), r) + ' ' + pick(closes, r).s];
+    }
+    var out = [], i = 0;
+    while (i < ps.length) {
+      var a = ps[i], b = ps[i + 1];
+      if (!b) { out.push(pick(a.t[a.lv], r)); break; }
+      if (ps.length - i === 3 && r() < 0.2) { var c3 = ps[i + 2]; out.push(pick(conn(a), r) + ' ' + pick(conn(b), r) + ' ' + pick(c3.t[c3.lv], r)); break; }   // 셋을 한 문장으로 잇기도
+      out.push(pick(conn(a), r) + ' ' + pick(b.t[b.lv], r)); i += 2;
+    }
+    return out;
+  }
+  /* 한 줄의 후보 문장들(마침표 포함) — 좋은 순서로. 많이 고를수록 경우가 많아 고르게 뽑아 쓴다 */
   function candidates(lineId, input, opts) {
     var L = (LINE_BY_ID[(opts && opts.band) || 'low'] || LINE_BY_ID.low)[lineId]; if (!L) return [];
-    var ps = providers(L, input), list = [];
-    function conn(p) { return p.lv === 'l' ? p.cl : p.c; }
-    if (ps.length === 1) {
-      var p = ps[0];
-      conn(p).forEach(function (c) {
-        L.close[p.lv].forEach(function (cl) {
-          if (cl.tag && p.tag && cl.tag !== p.tag) return;
-          if (cl.tag && !p.tag) return;
-          list.push({ a: c, b: cl.s });
-        });
-      });
-    } else if (ps.length >= 2) {
-      [[ps[0], ps[1]], [ps[1], ps[0]]].forEach(function (pair) {
-        conn(pair[0]).forEach(function (c) { pair[1].t[pair[1].lv].forEach(function (t) { list.push({ a: c, b: t }); }); });
-      });
+    var ps = providers(L, input), obs = obsSentence(input && input.obs);
+    if (!ps.length) return obs ? [obs] : [];
+    var used = (opts && opts.used) || {}, r = rng(((opts && opts.seed) || 'x') + ':' + ps.map(function (p) { return p.id + p.lv; }).join(',')), seen = {}, list = [];
+    for (var k = 0; k < 160 && list.length < 48; k++) {
+      var order = ps.slice();
+      if (k % 2 === 1) for (var j = order.length - 1; j > 0; j--) { var q = Math.floor(r() * (j + 1)), tmp = order[j]; order[j] = order[q]; order[q] = tmp; }   // 차례도 섞어 본다
+      var parts = build(L, order, r), text = parts.map(function (x) { return x + '.'; }).join(' ') + (obs ? ' ' + obs : '');
+      if (seen[text]) continue; seen[text] = 1;
+      var rep = 0; for (var u = 0; u < parts.length; u++) for (var v = u + 1; v < parts.length; v++) rep += repeats(parts[u], parts[v]);
+      var inner = 0; parts.forEach(function (x) { var h = x.split(/고 |며 /); if (h.length > 1) inner += repeats(h[0], h.slice(1).join(' ')); });
+      list.push({ text: text, dup: used[text] ? 1 : 0, rep: rep + inner, r: r() });
     }
-    var used = (opts && opts.used) || {}, rand = rng((opts && opts.seed) || 'x');
-    var scored = list.map(function (x) {
-      var text = x.a + ' ' + x.b + '.', d = Math.abs(text.length - TARGET);
-      return { text: text, dup: used[text] ? 1 : 0, rep: repeats(x.a, x.b), band: d <= 4 ? 0 : (d <= 7 ? 1 : d), r: rand() };
-    });
-    scored.sort(function (p, q) { return (p.dup - q.dup) || (p.rep - q.rep) || (p.band - q.band) || (p.r - q.r); });
-    return scored.map(function (s) { return s.text; });
+    list.sort(function (p, q) { return (p.dup - q.dup) || (p.rep - q.rep) || (p.r - q.r); });
+    return list.map(function (x) { return x.text; });
   }
   /* roll 번째 후보(다시 짓기를 누를 때마다 다음 것) */
   function compose(lineId, input, opts) {
@@ -559,7 +604,7 @@
     LINES: LINES, LINES_HIGH: LINES_HIGH, BANDS: BANDS, BAND_LABEL: BAND_LABEL, bandOfGrade: bandOfGrade, linesFor: linesFor, subjectsFor: subjectsFor,
     TARGET: TARGET, MAX_PICK: MAX_PICK,
     josa: josa, fill: fill, bytes: bytes,
-    candidates: candidates, compose: compose,
+    candidates: candidates, compose: compose, obsSentence: obsSentence,
     nominalize: nominalize, levelText: levelText, parseCriteria: parseCriteria,
     combos: combos, assign: assign, subjectText: subjectText, subjectTexts: subjectTexts, variants: variants, watch: watch
   };

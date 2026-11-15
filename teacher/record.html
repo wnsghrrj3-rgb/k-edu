@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../kedu_config.js"></script>
+<script src="record_bank_more.js"></script>
 <script src="record_engine.js"></script>
 <style id="kedu-title-font">
 @font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
@@ -15,7 +16,7 @@
 <style>
 /* =============================================
    케이생기부 v1 (2026-11-12) — 규칙 기반 · API 없음 · 이 기기에만 저장
-   · 행동특성 및 종합의견: 세 줄(학습·수업 태도 / 인품·친구 관계 / 예체능 특기), 한 줄 40자 안팎
+   · 행동특성 및 종합의견: 세 줄(학습·수업 태도 / 인품·친구 관계 / 예체능 특기), 한 줄에 칩 여러 개 · 글자 수 제한 없음 (v1.3)
    · 교과·학기말 종합의견 / 창체: 수행평가 기준을 넣고 학생마다 N가지씩 나누어 넣기
    · 문장 짓기는 record_engine.js
    ============================================= */
@@ -85,6 +86,7 @@ select.btn{padding-right:8px}
 .xrow{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 .xrow label{font-size:12.5px;color:var(--sub);font-weight:600}
 .xrow input{border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;width:190px}
+.xrow input.obs{flex:1;min-width:220px;width:auto}
 .seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
 .seg button{border:none;background:#fff;padding:6px 10px;font-size:13px;cursor:pointer;color:var(--sub);font-weight:700}
 .band-seg{margin-left:6px}.band-seg button.on{background:var(--primary);color:#fff}
@@ -229,7 +231,7 @@ const tsv = s => String(s || '').replace(/[\t\n]+/g, ' ');
    ============================================================ */
 function hbOf(sid) {
   if (!S.hb[sid]) S.hb[sid] = {};
-  LINES().forEach(L => { if (!S.hb[sid][L.id]) S.hb[sid][L.id] = { sel: {}, x: '', xl: 'h', text: '', roll: 0 }; });
+  LINES().forEach(L => { if (!S.hb[sid][L.id]) S.hb[sid][L.id] = { sel: {}, x: '', xl: 'h', obs: '', text: '', roll: 0 }; });
   return S.hb[sid];
 }
 function usedBy(lineId, exceptSid) {
@@ -242,7 +244,7 @@ function regen(sid, lineId) {
   save();
 }
 const hbFull = sid => { const h = S.hb[sid]; return h ? LINES().map(L => (h[L.id].text || '').trim()).filter(Boolean).join(' ') : ''; };
-const picked = (d, L) => Object.keys(d.sel).filter(k => !L || L.byId[k]).length + (d.x.trim() ? 1 : 0);
+const picked = (d, L) => Object.keys(d.sel).filter(k => !L || L.byId[k]).length + (d.x.trim() ? 1 : 0) + ((d.obs || '').trim() ? 1 : 0);
 
 function renderHb() {
   const rs = roster();
@@ -259,13 +261,13 @@ function renderStuList() {
     return `<button class="stu ${s.id === curSid ? 'on' : ''}" data-sid="${esc(s.id)}"><span class="no">${s.no != null ? s.no : ''}</span><span class="nm">${esc(s.name || '')}</span><span class="dots">${dots}</span></button>`;
   }).join('');
 }
-function cntHtml(t) { const n = (t || '').length; return `<span class="cnt ${!n ? '' : (Math.abs(n - K.TARGET) <= 6 ? 'ok' : 'far')}">${n}자</span>`; }
+function cntHtml(t) { const n = (t || '').length; return `<span class="cnt">${n}자</span>`; }
 function renderEditor() {
   const el = $('#editor'); if (!el) return; const s = stuOf(curSid);
   if (!s) { el.innerHTML = `<div class="empty-box">명단이 비어 있어요. 위쪽 「👥 명단」에서 학생을 넣어 주세요.</div>`; return; }
   const h = hbOf(s.id);
   el.innerHTML = `
-    <div class="ed-head"><span class="ed-name">${esc(label(s))}</span><span class="mini">한 줄에 두 가지까지 · 한 줄 40자 안팎</span></div>
+    <div class="ed-head"><span class="ed-name">${esc(label(s))}</span><span class="mini">칩은 몇 개든 고를 수 있어요 · 고른 차례대로 문장이 이어져요</span></div>
     <div class="legend">칩을 누를 때마다 <b class="lv-h">◎ 뛰어남</b>→<b class="lv-m">○ 잘함</b>→<b class="lv-l">△ 노력 중</b>→ 꺼짐</div>
     ${LINES().map((L, i) => { const d = h[L.id]; return `
     <div class="line" data-line="${L.id}">
@@ -273,6 +275,7 @@ function renderEditor() {
       <div class="chips">${L.traits.map(t => `<button class="chip ${d.sel[t.id] || ''}" data-trait="${t.id}">${esc(t.label)}${d.sel[t.id] ? ' ' + LV_MARK[d.sel[t.id]] : ''}</button>`).join('')}</div>
       <div class="xrow"><label>${esc(L.xLabel)}</label><input type="text" data-x maxlength="14" placeholder="${esc(L.xHint)}" value="${esc(d.x)}">
         <span class="seg">${LV.map(v => `<button class="${v} ${d.xl === v ? 'on' : ''}" data-xl="${v}">${LV_MARK[v]}</button>`).join('')}</span></div>
+      <div class="xrow"><label>관찰 한 마디</label><input type="text" data-obs class="obs" maxlength="80" placeholder="예: 운동회 이어달리기에서 반 대표로 뛰었다 → 문장 끝에 「~함」으로 붙어요" value="${esc(d.obs || '')}"></div>
       <div class="out"><textarea rows="1" data-text placeholder="칩을 고르거나 낱말을 적으면 문장이 나와요">${esc(d.text)}</textarea><span data-cnt>${cntHtml(d.text)}</span><button class="btn sm" data-roll title="다른 문장으로">🔄</button></div>
       <div class="flag" data-flag></div>
     </div>`; }).join('')}
@@ -424,7 +427,7 @@ document.addEventListener('click', e => {
     const lid = lineBox.dataset.line, d = hbOf(curSid)[lid], LL = LINES().find(L => L.id === lid);
     if (t.dataset.trait) {
       const id = t.dataset.trait, cur = d.sel[id];
-      if (!cur) { if (picked(d, LL) >= K.MAX_PICK) { toast('한 줄에 두 가지까지예요'); return; } d.sel[id] = 'h'; }
+      if (!cur) d.sel[id] = 'h';
       else if (cur === 'l') delete d.sel[id]; else d.sel[id] = LV[LV.indexOf(cur) + 1];
       d.roll = 0; regen(curSid, lid); refreshLine(lid); return;
     }
@@ -465,7 +468,8 @@ document.addEventListener('input', e => {
   const t = e.target, lineBox = t.closest('.line');
   if (lineBox && curSid) {
     const lid = lineBox.dataset.line, d = hbOf(curSid)[lid];
-    if (t.hasAttribute('data-x')) { d.x = t.value; d.roll = 0; regen(curSid, lid); refreshLine(lid); if (t.value.trim() && Object.keys(d.sel).length >= K.MAX_PICK) toast('칩을 하나 끄면 이 낱말이 문장에 들어가요'); return; }
+    if (t.hasAttribute('data-obs')) { d.obs = t.value; d.roll = 0; clearTimeout(window._obsT); window._obsT = setTimeout(() => { regen(curSid, lid); refreshLine(lid); }, 250); return; }
+    if (t.hasAttribute('data-x')) { d.x = t.value; d.roll = 0; regen(curSid, lid); refreshLine(lid); return; }
     if (t.hasAttribute('data-text')) { d.text = t.value.replace(/\n/g, ' '); save(); refreshLine(lid, true); return; }
   }
   if (t.id === 'crit') { const it = item(); it.crit = t.value; it.over = {}; save(); clearTimeout(_critT); _critT = setTimeout(renderSjTable, 250); return; }

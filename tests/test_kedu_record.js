@@ -9,14 +9,14 @@ let fail = 0; const ok = (c, m) => { if (!c) { fail++; console.log('FAIL', m); }
 ok(K.levelText('수를 센다', 'm') === '대체로 수를 셈' && K.levelText('수를 센다', 'l') === '도움을 받아 수를 셈', '수준 문장');
 const pc = K.parseCriteria('1. 바르게 쓴다\n정확하게 읽는다 | 읽는다 | 도움을 받아 읽는다\n\n');
 ok(pc.length === 2 && pc[1].m === '읽음' && pc[1].l === '도움을 받아 읽음' && pc[0].h === '바르게 씀', '기준 읽기');
-// 2) 행동특성 — 모든 조합이 33~48자, 마침표로 끝남
+// 2) 행동특성 — 모든 조합이 마침표로 끝남(v1.3 글자 수 제한 없음)
 let n = 0;
 K.LINES.forEach(L => { const ids = L.traits.map(t => t.id);
   ['h', 'm', 'l'].forEach(lv => ids.forEach(a => {
     const one = K.candidates(L.id, { sel: { [a]: lv } }, { seed: a }); ok(one.length >= 2, '후보 수 ' + a);
-    [one[0]].concat(ids.filter(b => b > a).map(b => K.compose(L.id, { sel: { [a]: lv, [b]: 'h' } }, { seed: a + b }))).forEach(t => { n++; ok(t.length >= 33 && t.length <= 48 && /[음임함됨앎듦줌삼냄씀힘끎감봄짐침]\.$/.test(t) || /\.$/.test(t) && t.length >= 33 && t.length <= 48, t.length + ' ' + t); });
+    [one[0]].concat(ids.filter(b => b > a).map(b => K.compose(L.id, { sel: { [a]: lv, [b]: 'h' } }, { seed: a + b }))).forEach(t => { n++; ok(/[가-힣]\.$/.test(t) && t.length >= 15, t.length + ' ' + t); });
   }));
-  ['수학', '피아노', '우유 당번'].forEach(x => ['h', 'm', 'l'].forEach(lv => { const t = K.compose(L.id, { x, xl: lv }, { seed: x }); ok(t.indexOf(x) >= 0 && t.length >= 30 && t.length <= 48, t); }));
+  ['수학', '피아노', '우유 당번'].forEach(x => ['h', 'm', 'l'].forEach(lv => { const t = K.compose(L.id, { x, xl: lv }, { seed: x }); ok(t.indexOf(x) >= 0 && /\.$/.test(t), t); }));
 });
 // 3) 같은 반 중복 피하기 · 다시 짓기
 const first = K.compose('l1', { sel: { focus: 'h', present: 'h' } }, { seed: 'a' });
@@ -32,9 +32,9 @@ let nh = 0;
 K.LINES_HIGH.forEach(L => { const ids = L.traits.map(t => t.id);
   ['h', 'm', 'l'].forEach(lv => ids.forEach(a => {
     const one = K.candidates(L.id, { sel: { [a]: lv } }, { seed: a, band: 'high' }); ok(one.length >= 2, '고 후보 수 ' + a);
-    [one[0]].concat(ids.filter(b => b > a).map(b => K.compose(L.id, { sel: { [a]: lv, [b]: 'h' } }, { seed: a + b, band: 'high' }))).forEach(t => { nh++; ok(/\.$/.test(t) && t.length >= 33 && t.length <= 48, '고 ' + t.length + ' ' + t); ok(!/종이접기|율동|어린이|가위질|우유/.test(t), '저학년 말씨 ' + t); });
+    [one[0]].concat(ids.filter(b => b > a).map(b => K.compose(L.id, { sel: { [a]: lv, [b]: 'h' } }, { seed: a + b, band: 'high' }))).forEach(t => { nh++; ok(/[가-힣]\.$/.test(t), '고 ' + t); ok(!/종이접기|율동|어린이|가위질|우유/.test(t), '저학년 말씨 ' + t); });
   }));
-  ['수학', '피아노', '학급 회장'].forEach(x => ['h', 'm', 'l'].forEach(lv => { const t = K.compose(L.id, { x, xl: lv }, { seed: x, band: 'high' }); ok(t.indexOf(x) >= 0 && t.length >= 30 && t.length <= 48, '고 ' + t); }));
+  ['수학', '피아노', '학급 회장'].forEach(x => ['h', 'm', 'l'].forEach(lv => { const t = K.compose(L.id, { x, xl: lv }, { seed: x, band: 'high' }); ok(t.indexOf(x) >= 0, '고 ' + t); }));
 });
 ok(K.bandOfGrade(1) === 'low' && K.bandOfGrade(3) === 'low' && K.bandOfGrade(4) === 'high' && K.bandOfGrade(6) === 'high' && K.bandOfGrade(null) === 'low', '학년 범위');
 ok(K.linesFor('high') === K.LINES_HIGH && K.linesFor('x') === K.LINES, '글감 고르기');
@@ -55,5 +55,21 @@ console.log(fail ? fail + ' FAILED' : 'OK (' + n + ' 문장)');
   const own = K.parseCriteria('정확하게 읽는다 | 읽는다 | 도움을 받아 읽는다')[0];
   bad(K.variants(own, 'l').length === 1 && !K.variants(own, 'm').some(t => /뛰어남|돋보임/.test(t)), '직접 적은 수준 문장 보존');
   if (f) { fail += f; } console.log(f ? 'v1.2 ' + f + ' FAILED' : 'v1.2 OK');
+})();
+/* v1.3 칩 여러 개 · 보탬 글감 · 관찰 한 마디 */
+(function () {
+  let f = 0; const bad = (c, m) => { if (!c) { f++; console.log('FAIL', m); } };
+  ['low', 'high'].forEach(b => K.linesFor(b).forEach(L => { bad(L.traits.length >= 15, b + L.id + ' 칩 수 ' + L.traits.length);
+    L.traits.forEach(t => ['h', 'm', 'l'].forEach(lv => bad(t.t[lv].length >= 2 && (lv === 'l' ? t.cl : t.c).length >= 2, b + ' ' + t.id + lv))); }));
+  const five = K.compose('l2', { sel: { kind: 'h', friendly: 'h', polite: 'm', rule: 'h', grateful: 'h' } }, { seed: 'a' });
+  bad(five.split('. ').length >= 3, '다섯 칩 → 여러 문장 ' + five);
+  ['배려', '사이좋게', '예의', '규칙', '감사'].length;
+  const used = {}; let u = 0; for (let i = 0; i < 25; i++) { const t = K.compose('l2', { sel: { kind: 'm' } }, { seed: 'k' + i, used }); if (!used[t]) u++; used[t] = 1; }
+  bad(u >= 15, '같은 칩 25명 서로 다른 문장 ' + u);
+  const o = K.compose('l3', { sel: { run: 'h' }, obs: '운동회 이어달리기에서 반 대표로 뛰었다' }, { seed: 'a' });
+  bad(/반 대표로 뛰었음\.$/.test(o), '관찰 한 마디 ' + o);
+  bad(K.compose('l1', { obs: '받아쓰기를 매번 다 맞힘' }, { seed: 'a' }) === '받아쓰기를 매번 다 맞힘.', '관찰만');
+  bad(!K.linesFor('high').some(L => L.traits.some(t => t.t.h.concat(t.t.m, t.t.l).some(x => /어린이(임|로|가)/.test(x)))) && !K.linesFor('high')[0].traits.some(t => t.id === 'hangul'), '고학년 말씨');
+  if (f) fail += f; console.log(f ? 'v1.3 ' + f + ' FAILED' : 'v1.3 OK');
   process.exit(fail ? 1 : 0);
 })();
