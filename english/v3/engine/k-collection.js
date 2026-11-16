@@ -38,6 +38,8 @@ window.KCollection = (function () {
     count: function () { return Object.keys(load()).length; },
     list:  function () { return Object.keys(load()); },
     has:   function (w) { return !!load()[w]; },
+    /* 읽기 전용 — 항목 날짜·횟수 사본 { first, last, n } · 없으면 null(먼 소환 「도감 닦기」 빛바램 — Lv3 #39·#42) */
+    info:  function (w) { var x = load()[w]; return x ? { first: x.first, last: x.last, n: x.n } : null; },
     _reset: function () { save({}); }   /* 검수·초기화용 */
   };
 })();

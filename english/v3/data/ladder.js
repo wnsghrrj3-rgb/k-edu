@@ -114,7 +114,7 @@ window.EN_LADDER = {
         { id: 'lv3-36', track: 'V', name: '동물 단어 6 — 벌레', en: 'ant · bee · spider' },
         { id: 'lv3-37', track: 'V', name: '날씨 단어 2 — 하늘·자연', en: 'rainbow · storm · fog' },
         { id: 'lv3-38', track: 'G', name: '묻고 답하기 종합', en: 'Do you ~? Yes, I do.' },
-        { id: 'lv3-39', track: 'V', name: '동사 단어 6 — 다시 모으기', en: 'miss · wait · start' },
+        { id: 'lv3-39', track: 'V', name: '동사 단어 6 — 반대 짝 다시 모으기', en: 'come · go · stop' },
         { id: 'lv3-40', track: 'V', name: '아침 준비 단어', en: 'comb · mirror · towel' },
         { id: 'lv3-41', track: 'V', name: '학교 행사 단어', en: 'picnic · festival' },
         { id: 'lv3-42', track: 'V', name: '동물 단어 7 — 다시 모으기', en: 'animals review' },
