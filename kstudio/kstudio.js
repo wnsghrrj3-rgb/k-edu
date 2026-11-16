@@ -59,9 +59,49 @@ function drawBg(t){ if (bg === 'camera') { km.drawCamera(); return; } if (bg ===
     ctx.fillStyle = '#9c6b3f'; for (let i = 0; i < 5; i++) { const x = i * W / 5; ctx.fillRect(x + 10, H * .42, W / 5 - 20, H * .36); ctx.fillStyle = '#3b3b3b'; ctx.beginPath(); ctx.moveTo(x - 10, H * .44); ctx.lineTo(x + W / 10, H * .3); ctx.lineTo(x + W / 5 + 10, H * .44); ctx.fill(); ctx.fillStyle = '#9c6b3f'; }
     ctx.fillStyle = '#6b4a2b'; for (let i = 0; i < 5; i++) ctx.fillRect(i * W / 5 + W / 10 - 30, H * .55, 60, H * .23);
     ctx.fillStyle = '#c9a070'; ctx.fillRect(0, H * .78, W, H * .22); ctx.strokeStyle = 'rgba(0,0,0,.08)'; for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x, H * .78); ctx.lineTo(x - 80, H); ctx.stroke(); } return; }
+  if (DBG[bg]) { ctx.drawImage(dinoBg(bg), 0, 0, W, H); if (bg === 'volcano') { for (let i = 0; i < 40; i++) { const u = (t / 1000 * (.04 + (i % 7) * .012) + i * .137) % 1, x = W * (.5 + ((i * 53) % 100) / 380) + Math.sin(t / 700 + i) * 18 - u * 60, y = H * .3 - u * H * .3 + ((i * 29) % 60); ctx.fillStyle = `rgba(255,${150 + (i % 5) * 20},60,${(1 - u) * .8})`; ctx.fillRect(x, y, 2 + i % 2, 2 + i % 2); } } return; }
   if (bg === 'forest') { const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#bfe6ff'); g.addColorStop(.5, '#dff7e4'); g.addColorStop(1, '#5c9a4a'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     for (let i = 0; i < 9; i++) { const x = i * W / 8 + ((i * 37) % 40), s = .8 + ((i * 13) % 5) / 10; ctx.fillStyle = '#5b3a1e'; ctx.fillRect(x - 12 * s, H * .45, 24 * s, H * .35); ctx.fillStyle = i % 2 ? '#2f7d4a' : '#3f9a5a'; for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.moveTo(x, H * (.18 + k * .09)); ctx.lineTo(x - (70 - k * 12) * s, H * (.36 + k * .08)); ctx.lineTo(x + (70 - k * 12) * s, H * (.36 + k * .08)); ctx.fill(); } }
     ctx.fillStyle = '#4f8a3f'; ctx.fillRect(0, H * .8, W, H * .2); return; } }
+
+// ───── 공룡 시대 배경(한 번 그려 두고 다시 씀)
+const DBG = { jungle: paintJungle, volcano: paintVolcano, plain: paintPlain };
+function dinoBg(k){ if (bgCache[k]) return bgCache[k]; const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); let sd = k.length * 7919 + 13; const R = (a, b) => { sd = (sd * 1664525 + 1013904223) >>> 0; return a + sd / 4294967296 * (b - a); }; DBG[k](x, R); return bgCache[k] = c; }
+const lg = (x, y0, y1, st) => { const g = x.createLinearGradient(0, y0, 0, y1); st.forEach((s, i) => g.addColorStop(s[0], s[1])); return g; };
+function ridge(x, R, y, amp, col, step){ x.fillStyle = col; x.beginPath(); x.moveTo(0, H); let yy = y; for (let px = 0; px <= W; px += step || 24) { yy += R(-amp, amp); yy = clamp(yy, y - amp * 3, y + amp * 3); x.lineTo(px, yy); } x.lineTo(W, H); x.fill(); }
+function frond(x, R, ox, oy, ang, len, col, wd){ x.strokeStyle = col; x.lineCap = 'round'; const ex = ox + Math.cos(ang) * len, ey = oy + Math.sin(ang) * len + len * .35, cx = ox + Math.cos(ang) * len * .55, cy = oy + Math.sin(ang) * len * .55 - len * .1;
+  x.lineWidth = wd; x.beginPath(); x.moveTo(ox, oy); x.quadraticCurveTo(cx, cy, ex, ey); x.stroke(); x.lineWidth = Math.max(1, wd * .45);
+  for (let i = 1; i < 12; i++) { const u = i / 12, a = (1 - u) * (1 - u), b = 2 * (1 - u) * u, c = u * u, px = a * ox + b * cx + c * ex, py = a * oy + b * cy + c * ey, l = len * .2 * Math.sin(Math.PI * u * .9 + .15), tx = ex - ox, ty = ey - oy, n = Math.hypot(tx, ty) || 1;
+    for (const s of [-1, 1]) { x.beginPath(); x.moveTo(px, py); x.lineTo(px + (-ty / n * s * .9 + tx / n * .5) * l, py + (tx / n * s * .9 + ty / n * .5) * l + l * .25); x.stroke(); } } }
+function treeFern(x, R, bx, by, h, col){ const lean = R(-.12, .12) * h; x.strokeStyle = col; x.lineCap = 'round'; x.lineWidth = h * .06; x.beginPath(); x.moveTo(bx, by); x.quadraticCurveTo(bx + lean * .3, by - h * .5, bx + lean, by - h); x.stroke();
+  const n = 11; for (let i = 0; i < n; i++) frond(x, R, bx + lean, by - h, -Math.PI * (.05 + .9 * i / (n - 1)) + R(-.1, .1), h * R(.42, .6), col, h * .02); }
+function cycad(x, R, bx, by, s, col){ x.fillStyle = col; x.beginPath(); x.ellipse(bx, by - s * .18, s * .16, s * .24, 0, 0, Math.PI * 2); x.fill(); for (let i = 0; i < 9; i++) frond(x, R, bx, by - s * .38, -Math.PI * (.08 + .84 * i / 8), s * R(.5, .7), col, s * .03); }
+function paintJungle(x, R){ x.fillStyle = lg(x, 0, H, [[0, '#bfe3d0'], [.4, '#f1efc6'], [.62, '#a9cf9a'], [1, '#23492a']]); x.fillRect(0, 0, W, H);
+  let g = x.createRadialGradient(W * .72, H * .12, 0, W * .72, H * .12, W * .5); g.addColorStop(0, 'rgba(255,250,210,.9)'); g.addColorStop(1, 'rgba(255,250,210,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  ridge(x, R, H * .48, 10, '#a8cdb4'); ridge(x, R, H * .54, 8, '#8fbb9c');
+  [[9, .58, .2, '#7fae8c'], [8, .66, .3, '#4f8a62'], [6, .76, .46, '#2c6440']].forEach(L => { for (let i = 0; i < L[0]; i++) treeFern(x, R, (i + R(.1, .9)) * W / L[0], H * L[1] + R(-8, 8), H * L[2] * R(.75, 1.15), L[3]); x.fillStyle = 'rgba(235,245,215,.14)'; x.fillRect(0, 0, W, H); });
+  x.fillStyle = lg(x, H * .74, H, [[0, 'rgba(40,84,48,0)'], [.25, '#2c5a34'], [1, '#12301c']]); x.fillRect(0, H * .74, W, H * .26);
+  x.globalCompositeOperation = 'lighter'; for (let i = 0; i < 6; i++) { const sx = W * (.45 + i * .08), w = R(20, 50); x.fillStyle = 'rgba(255,250,200,.07)'; x.beginPath(); x.moveTo(sx, 0); x.lineTo(sx + w, 0); x.lineTo(sx + w - H * .55, H); x.lineTo(sx - H * .55 - w, H); x.fill(); } x.globalCompositeOperation = 'source-over';
+  for (let i = 0; i < 7; i++) cycad(x, R, R(0, 1) < .5 ? R(0, W * .28) : R(W * .72, W), H * R(.98, 1.06), H * R(.3, .46), i % 2 ? '#0f2a18' : '#163a22'); }
+function paintVolcano(x, R){ x.fillStyle = lg(x, 0, H, [[0, '#160d1c'], [.35, '#4a1a22'], [.62, '#c6542a'], [.72, '#f0a04a'], [1, '#1a0e0e']]); x.fillRect(0, 0, W, H);
+  const cx = W * .6, py = H * .24, by = H * .74; ridge(x, R, H * .62, 12, '#3a1820'); 
+  for (let i = 0; i < 46; i++) { const u = i / 46, px = cx - u * W * .42 + R(-30, 30), pyy = py - 10 - u * H * .3 + R(-20, 20), r = 26 + u * 70; const g = x.createRadialGradient(px, pyy + r * .3, 0, px, pyy, r); g.addColorStop(0, `rgba(${200 - u * 120},${90 - u * 40},${60},${.5 - u * .25})`); g.addColorStop(1, 'rgba(40,24,34,0)'); x.fillStyle = g; x.beginPath(); x.arc(px, pyy, r, 0, Math.PI * 2); x.fill(); }
+  x.fillStyle = lg(x, py, by, [[0, '#3a1c1c'], [1, '#120a0d']]); x.beginPath(); x.moveTo(cx - W * .36, by); for (let u = 0; u <= 1; u += .05) x.lineTo(cx - W * .36 + u * (W * .36 - 34) , by - Math.pow(u, 1.5) * (by - py) + R(-3, 3)); x.lineTo(cx + 34, py + 4); for (let u = 0; u <= 1; u += .05) x.lineTo(cx + 34 + u * W * .34, py + Math.pow(u, .7) * (by - py) + R(-3, 3)); x.fill();
+  let g = x.createRadialGradient(cx, py, 0, cx, py, 150); g.addColorStop(0, 'rgba(255,220,120,.95)'); g.addColorStop(.25, 'rgba(255,120,40,.6)'); g.addColorStop(1, 'rgba(255,80,20,0)'); x.fillStyle = g; x.fillRect(cx - 160, py - 160, 320, 320);
+  x.shadowColor = '#ff6a1a'; x.shadowBlur = 18; x.lineCap = 'round'; for (let k = 0; k < 4; k++) { let lx = cx + R(-24, 24), ly = py + 4; x.strokeStyle = k % 2 ? '#ffb347' : '#ff7a2a'; x.lineWidth = R(3, 7); x.beginPath(); x.moveTo(lx, ly); const dir = R(-1, 1); while (ly < by - R(0, 60)) { lx += dir * R(4, 16) + R(-6, 6); ly += R(12, 26); x.lineTo(lx, ly); } x.stroke(); } x.shadowBlur = 0;
+  ridge(x, R, H * .76, 5, '#140b0d', 16); x.strokeStyle = 'rgba(255,120,40,.55)'; x.lineWidth = 2; for (let i = 0; i < 9; i++) { let lx = R(0, W), ly = R(H * .82, H); x.beginPath(); x.moveTo(lx, ly); for (let k = 0; k < 5; k++) { lx += R(-50, 50); ly += R(-8, 14); x.lineTo(lx, ly); } x.stroke(); }
+  for (let i = 0; i < 5; i++) cycad(x, R, R(0, 1) < .5 ? R(0, W * .22) : R(W * .8, W), H * R(1, 1.05), H * R(.26, .38), '#080405'); }
+function paintPlain(x, R){ const hz = H * .6; x.fillStyle = lg(x, 0, hz, [[0, '#272852'], [.45, '#8a4a6a'], [.8, '#e8805a'], [1, '#ffd07a']]); x.fillRect(0, 0, W, hz);
+  const sx = W * .3, sy = hz - 26; let g = x.createRadialGradient(sx, sy, 0, sx, sy, 260); g.addColorStop(0, 'rgba(255,240,190,1)'); g.addColorStop(.12, 'rgba(255,220,140,.9)'); g.addColorStop(1, 'rgba(255,170,90,0)'); x.fillStyle = g; x.fillRect(0, 0, W, hz); x.fillStyle = '#fff3cf'; x.beginPath(); x.arc(sx, sy, 34, 0, Math.PI * 2); x.fill();
+  for (let i = 0; i < 9; i++) { x.fillStyle = `rgba(255,${170 + R(0, 50) | 0},150,${R(.12, .3)})`; x.beginPath(); x.ellipse(R(0, W), R(H * .08, H * .4), R(90, 220), R(5, 13), 0, 0, Math.PI * 2); x.fill(); }
+  ridge(x, R, hz - 34, 7, '#6a3b58', 40); ridge(x, R, hz - 12, 4, '#4a2a48', 30);
+  x.fillStyle = lg(x, hz, H * .76, [[0, '#ffc98a'], [1, '#6a4a6a']]); x.fillRect(0, hz, W, H * .16); x.fillStyle = 'rgba(255,240,200,.55)'; for (let i = 0; i < 16; i++) { const yy = hz + 4 + i * 5; x.fillRect(sx - 40 + R(-30, 30) - i * 2, yy, 80 + R(-30, 40) + i * 4, 2); }
+  const sauro = (bx, by, s, flip) => { x.save(); x.translate(bx, by); x.scale(flip ? -s : s, s); x.fillStyle = '#2c1a35'; x.beginPath(); x.ellipse(0, -52, 46, 24, 0, 0, Math.PI * 2); x.fill(); for (const lx of [-28, -14, 16, 30]) x.fillRect(lx - 6, -44, 12, 46);
+    x.lineCap = 'round'; x.strokeStyle = '#2c1a35'; x.lineWidth = 14; x.beginPath(); x.moveTo(36, -62); x.quadraticCurveTo(70, -90, 78, -150); x.stroke(); x.lineWidth = 9; x.beginPath(); x.moveTo(78, -150); x.lineTo(92, -154); x.stroke(); x.lineWidth = 12; x.beginPath(); x.moveTo(-40, -56); x.quadraticCurveTo(-90, -50, -120, -22); x.stroke(); x.restore(); };
+  sauro(W * .66, hz + 6, .62, false); sauro(W * .8, hz + 8, .45, true); sauro(W * .12, hz + 4, .34, false);
+  x.strokeStyle = '#2c1a35'; x.lineWidth = 2.5; for (let i = 0; i < 5; i++) { const px = R(W * .4, W * .95), py = R(H * .1, H * .32), s = R(8, 18); x.beginPath(); x.moveTo(px - s, py - s * .2); x.quadraticCurveTo(px - s * .4, py - s * .7, px, py); x.quadraticCurveTo(px + s * .4, py - s * .7, px + s, py - s * .2); x.stroke(); }
+  x.fillStyle = lg(x, H * .74, H, [[0, '#3a2440'], [1, '#150d1a']]); x.fillRect(0, H * .74, W, H * .26); ridge(x, R, H * .76, 3, '#2a1a30', 10);
+  for (let i = 0; i < 6; i++) cycad(x, R, R(0, 1) < .5 ? R(0, W * .26) : R(W * .74, W), H * R(.98, 1.05), H * R(.26, .4), '#0d0812'); }
 
 // ───── 효과
 function spawnFx(p, b, t){ if (!p || !b) return;
@@ -101,7 +141,11 @@ function syncSegment(){ const m = dino ? dino.mode : 'off'; const need = (bg !==
 $('bg').onchange = e => { bg = e.target.value; if (bg === 'upload') $('bgfile').click(); syncSegment(); km.emit('kstudio:bg', { bg }); };
 $('bgfile').onchange = e => { const f = e.target.files[0]; if (!f) return; const img = new Image(); img.onload = () => bgImg = img; img.src = URL.createObjectURL(f); };
 $('fs').onclick = () => { const el = $('stage'); document.fullscreenElement ? document.exitFullscreen() : el.requestFullscreen && el.requestFullscreen(); };
-$('snap').onclick = () => { const a = document.createElement('a'); a.download = `kstudio-${Date.now()}.png`; a.href = $('c').toDataURL('image/png'); a.click(); addClip(a.download, a.href, '📷'); };
+function takePhoto(){ const fl = document.createElement('div'); fl.setAttribute('style', 'position:absolute;inset:0;background:#fff;opacity:.9;transition:opacity .5s;pointer-events:none;z-index:5'); $('stage').appendChild(fl); requestAnimationFrame(() => fl.style.opacity = 0); setTimeout(() => fl.remove(), 600);
+  const kind = dino && dino.mode === 'wear' ? '-' + dino.species : ''; const a = document.createElement('a'); a.download = `kstudio${kind}-${Date.now()}.png`; a.href = $('c').toDataURL('image/png'); a.click(); addClip(a.download, a.href, '📷'); km.emit('kstudio:photo', { bg }); }
+$('snap').onclick = () => { if (km.running) takePhoto(); };
+$('snap3').onclick = () => { if (!km.running || $('cntdown')) return; const d = document.createElement('div'); d.id = 'cntdown'; d.setAttribute('style', 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:160px;font-weight:900;color:#fff;text-shadow:0 4px 24px #000;pointer-events:none;z-index:4'); let n = 3; d.textContent = n; $('stage').appendChild(d);
+  const iv = setInterval(() => { n--; if (n > 0) { d.textContent = n; return; } clearInterval(iv); d.remove(); requestAnimationFrame(() => requestAnimationFrame(takePhoto)); }, 1000); };
 // 녹화: 합성 캔버스 그대로 webm
 let recorder = null, chunks = [], recording = false, recT0 = 0, recTimer = 0;
 $('rec').onclick = async () => { if (recording) return stopRec(); if (!km.running) return;
@@ -111,19 +155,20 @@ $('rec').onclick = async () => { if (recording) return stopRec(); if (!km.runnin
   recorder.onstop = () => { const blob = new Blob(chunks, { type: 'video/webm' }); const url = URL.createObjectURL(blob); addClip(`kstudio-${Date.now()}.webm`, url, '🎞', blob.size); km.emit('kstudio:clip', { seconds: Math.round((now() - recT0) / 1000), bytes: blob.size, view, bg }); };
   recorder.start(250); recording = true; recT0 = now(); $('rec').textContent = '⏹ 정지'; $('rec').classList.add('rec'); recTimer = setInterval(() => $('rectime').textContent = '⏺ ' + Math.round((now() - recT0) / 1000) + '초', 500); };
 function stopRec(){ recording = false; clearInterval(recTimer); $('rectime').textContent = '—'; $('rec').textContent = '⏺ 녹화'; $('rec').classList.remove('rec'); if (recorder && recorder.state !== 'inactive') recorder.stop(); }
-function addClip(name, url, icon, bytes){ const a = document.createElement('a'); a.href = url; a.download = name; a.textContent = `${icon} ${name}${bytes ? ' · ' + (bytes / 1048576).toFixed(1) + 'MB' : ''} ↓`; $('clips').prepend(a); }
+function addClip(name, url, icon, bytes){ const a = document.createElement('a'); a.href = url; a.download = name; if (icon === '📷') { const im = document.createElement('img'); im.src = url; a.appendChild(im); a.appendChild(document.createTextNode('📷 다시 저장 ↓')); } else a.textContent = `${icon} ${name}${bytes ? ' · ' + (bytes / 1048576).toFixed(1) + 'MB' : ''} ↓`; $('clips').prepend(a); }
 addEventListener('pagehide', () => { if (recording) stopRec(); });
 
 // ───── 공룡(🦖) — 처음 누를 때 만든다(크롬북 첫 화면 가볍게)
 let dino = null, dinoWas = false;
 function getDino(){ if (dino) return dino; if (!window.KDino) return null; dino = KDino.create({ W, H, scale: +$('dinoSize').value }); if (!dino) { $('dinoGo').textContent = '🦖 이 기기에선 안 돼요'; $('dinoGo').disabled = true; return null; }
-  dino.setOffset(+$('dinoSide').value * +$('dinoGap').value); dino.sound = $('dinoSnd').checked; return dino; }
+  dino.setSpecies($('dinoKind').value); dino.setOffset(+$('dinoSide').value * +$('dinoGap').value); dino.sound = $('dinoSnd').checked; return dino; }
 function syncDinoBtn(){ const m = dino ? dino.mode : 'off', walk = m !== 'off' && m !== 'wear'; $('dinoGo').textContent = walk ? '👋 공룡 퇴장' : '🚶 공룡 등장'; $('dinoGo').classList.toggle('on', walk); $('dinoWear').textContent = m === 'wear' ? '🧍 사람으로' : '🦖 공룡 되기'; $('dinoWear').classList.toggle('on', m === 'wear'); }
 $('dinoWear').onclick = () => { if (!km.running) return; const d = getDino(); if (!d) return; if (d.mode === 'wear') d.unwear(); else { d.wear(); km.emit('kstudio:dino', { act: 'wear' }); } syncSegment(); syncDinoBtn(); };
 $('dinoGo').onclick = () => { if (!km.running) return; const d = getDino(); if (!d) return; if (d.mode === 'wear') d.unwear(); if (d.mode === 'off') { d.enter(); km.emit('kstudio:dino', { act: 'enter' }); } else d.leave(); syncSegment(); syncDinoBtn(); };
 $('dinoRoar').onclick = () => { if (!km.running) return; const d = getDino(); if (!d) return; d.roar(); syncSegment(); km.emit('kstudio:dino', { act: 'roar' }); };
 $('dinoSide').onchange = $('dinoGap').oninput = () => { if (dino) dino.setOffset(+$('dinoSide').value * +$('dinoGap').value); };
 $('dinoSize').oninput = () => { if (dino) dino.setUserScale(+$('dinoSize').value); };
+$('dinoKind').onchange = () => { const d = getDino(); if (d) d.setSpecies($('dinoKind').value); };
 $('dinoSnd').onchange = () => { if (dino) dino.sound = $('dinoSnd').checked; };
 
 // ───── 시작

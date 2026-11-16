@@ -78,14 +78,14 @@ function makeAudio(){ let ac = null, master = null, dest = null, noiseBuf = null
     step(vol){ if (!ensure()) return; const t = ac.currentTime, v = vol == null ? 1 : vol;
       const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(62, t); o.frequency.exponentialRampToValueAtTime(26, t + .45); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.95 * v, t + .015); g.gain.exponentialRampToValueAtTime(.001, t + .6); o.connect(g); g.connect(master); o.start(t); o.stop(t + .65);
       const n = noise(), f = ac.createBiquadFilter(), ng = ac.createGain(); f.type = 'lowpass'; f.frequency.value = 260; ng.gain.setValueAtTime(.5 * v, t); ng.gain.exponentialRampToValueAtTime(.001, t + .35); n.connect(f); f.connect(ng); ng.connect(master); n.start(t, Math.random()); n.stop(t + .4); },
-    roar(len){ if (!ensure()) return; const t = ac.currentTime, L = len || 2.3;
+    roar(len, pit){ if (!ensure()) return; const t = ac.currentTime, L = len || 2.3, P = pit || 1;
       const env = ac.createGain(); env.gain.setValueAtTime(0, t); env.gain.linearRampToValueAtTime(.55, t + .28); env.gain.setValueAtTime(.55, t + L * .55); env.gain.exponentialRampToValueAtTime(.001, t + L);
       const shaper = ac.createWaveShaper(); shaper.curve = curve(18); const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(900, t); lp.frequency.linearRampToValueAtTime(2200, t + .5); lp.frequency.linearRampToValueAtTime(700, t + L); lp.Q.value = 2.5;
       const trem = ac.createGain(), lfo = ac.createOscillator(), lfoG = ac.createGain(); lfo.frequency.value = 23; lfoG.gain.value = .35; trem.gain.value = .65; lfo.connect(lfoG); lfoG.connect(trem.gain);
       shaper.connect(lp); lp.connect(trem); trem.connect(env); env.connect(master);
       const vib = ac.createOscillator(), vibG = ac.createGain(); vib.frequency.value = 6.5; vibG.gain.value = 7; vib.connect(vibG);
       [[1, 'sawtooth', .5], [.5, 'square', .32], [1.51, 'sawtooth', .18]].forEach(([m, type, a]) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = type;
-        o.frequency.setValueAtTime(64 * m, t); o.frequency.linearRampToValueAtTime(118 * m, t + .45); o.frequency.linearRampToValueAtTime(96 * m, t + L * .6); o.frequency.linearRampToValueAtTime(52 * m, t + L);
+        o.frequency.setValueAtTime(64 * m * P, t); o.frequency.linearRampToValueAtTime(118 * m * P, t + .45); o.frequency.linearRampToValueAtTime(96 * m * P, t + L * .6); o.frequency.linearRampToValueAtTime(52 * m * P, t + L);
         vibG.connect(o.frequency); g.gain.value = a; o.connect(g); g.connect(shaper); o.start(t); o.stop(t + L + .05); });
       const n = noise(), bp = ac.createBiquadFilter(), ng = ac.createGain(); bp.type = 'bandpass'; bp.frequency.setValueAtTime(450, t); bp.frequency.linearRampToValueAtTime(1400, t + .5); bp.frequency.linearRampToValueAtTime(380, t + L); bp.Q.value = .9; ng.gain.value = .9; n.connect(bp); bp.connect(ng); ng.connect(shaper); n.start(t, Math.random()); n.stop(t + L + .05);
       const sub = ac.createOscillator(), sg = ac.createGain(); sub.type = 'sine'; sub.frequency.setValueAtTime(38, t); sub.frequency.linearRampToValueAtTime(30, t + L); sg.gain.setValueAtTime(0, t); sg.gain.linearRampToValueAtTime(.6, t + .3); sg.gain.exponentialRampToValueAtTime(.001, t + L); sub.connect(sg); sg.connect(master); sub.start(t); sub.stop(t + L + .05);
@@ -195,7 +195,7 @@ function create(opt){ const T = window.THREE, W = opt.W, H = opt.H;
   function screenOf(v){ tmpV2.copy(v).project(camera); return { x: (tmpV2.x * .5 + .5) * W, y: (-tmpV2.y * .5 + .5) * H }; }
   function personTarget(p){ if (!p || !p[0] || p[0].v < .4) return false; const nx = p[0].x / W * 2 - 1, ny = -(p[0].y / H * 2 - 1); tmpV.set(nx, ny, .5).unproject(camera).sub(camera.position).normalize();
     const zP = 1.6, k = (zP - camera.position.z) / tmpV.z; target.copy(camera.position).addScaledVector(tmpV, k); return true; }
-  function act(name){ st.act = name; st.actT = 0; if (name === 'roar') { soundOn && audio.roar(2.3); st.cool = 5; } if (name === 'sniff') { st.cool = 2.5; } if (name === 'growl') { soundOn && audio.growl(); st.cool = 3; } }
+  function act(name){ st.act = name; st.actT = 0; if (name === 'roar') { soundOn && audio.roar(2.3, st.mode === 'wear' ? SP.pitch : 1); st.cool = 5; } if (name === 'sniff') { st.cool = 2.5; } if (name === 'growl') { soundOn && audio.growl(); st.cool = 3; } }
 
   const api = { canvas: cv, audio, get mode(){ return st.mode; }, get shake(){ return st.shake; },
     set sound(v){ soundOn = !!v; }, get sound(){ return soundOn; }, setScale, setSide(s){ st.side = s >= 0 ? 1 : -1; st.goalX = st.side * Math.abs(st.goalX); if (st.mode === 'idle') st.mode = 'walk'; },
@@ -205,6 +205,7 @@ function create(opt){ const T = window.THREE, W = opt.W, H = opt.H;
     roar(){ if (st.mode === 'off') return api.enter(); act('roar'); },
     wear(){ audio.ensure(); st.mode = 'wear'; st.act = null; st.cool = 1; st.wearInit = false; },
     unwear(){ if (st.mode === 'wear') { st.mode = 'off'; face.ok = false; } },
+    setSpecies(k){ setSpecies(k); }, get species(){ return st.species; },
     setUserScale(v){ st.userScale = v; if (st.mode !== 'wear') setScale(v); },
     startle(){ if (st.mode === 'idle' && st.cool <= 0 && st.seen) act('roar'); },
     update, drawTo };
@@ -215,11 +216,13 @@ function create(opt){ const T = window.THREE, W = opt.W, H = opt.H;
   sScene.add(new T.HemisphereLight(0xfff4e0, 0x5a4a3a, .85)); const sKey = new T.DirectionalLight(0xfff1dc, 1.25); sKey.position.set(-.5, .8, 1); sScene.add(sKey);
   const sMat = D.skin.clone(); sMat.side = T.DoubleSide; sMat.bumpScale = 1.6;
   const gum = new T.MeshStandardMaterial({ color: 0x2a0606, roughness: .7, side: T.DoubleSide }), toothM = new T.MeshStandardMaterial({ color: 0xf1e8d0, roughness: .4 }), clawM2 = new T.MeshStandardMaterial({ color: 0x2b2420, roughness: .35 }), eyeM2 = new T.MeshStandardMaterial({ color: 0xd49a14, roughness: .15, emissive: 0x3a2400, emissiveIntensity: .5 }), dark = new T.MeshBasicMaterial({ color: 0x0a0503 });
+  const PAL = { side: C_SIDE, belly: C_BELLY, stripe: 1 }, painted = [];
   const suitColor = belly => (p, n, o) => { const front = smooth(.25, .85, n.z), bl = (fbm(p.x * 3 + 4, p.y * 5 + p.z * 3) - .5) * .3, stripe = smooth(.6, .85, Math.sin(p.y * 15 + fbm(p.x * 2, p.y * 3) * 4)) * .35 * (1 - front), back = 1 - smooth(0, -.8, n.z) * .35;
-    for (let k = 0; k < 3; k++) o[k] = C_SIDE[k] * (1 + bl * (k === 2 ? .6 : 1)) * (1 - stripe) * back;
-    if (belly) { const band = .88 + .12 * smooth(-.2, .2, Math.sin(p.y * 40)), f = front * smooth(.75, .35, Math.abs(p.x)); for (let k = 0; k < 3; k++) o[k] = lerp(o[k], C_BELLY[k] * band, f); } return o; };
-  function paint(g, fn, ux, uy){ const P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, c = [], o = [0, 0, 0], v = new T.Vector3(), n = new T.Vector3();
-    for (let k = 0; k < P.count; k++) { v.fromBufferAttribute(P, k); n.fromBufferAttribute(N, k); toLin(fn(v, n, o)); c.push(o[0], o[1], o[2]); U.setXY(k, U.getX(k) * (ux || 3), U.getY(k) * (uy || 2)); } g.setAttribute('color', new T.Float32BufferAttribute(c, 3)); return g; }
+    for (let k = 0; k < 3; k++) o[k] = PAL.side[k] * (1 + bl * (k === 2 ? .6 : 1)) * (1 - stripe * PAL.stripe) * back;
+    if (belly) { const band = .88 + .12 * smooth(-.2, .2, Math.sin(p.y * 40)), f = front * smooth(.75, .35, Math.abs(p.x)); for (let k = 0; k < 3; k++) o[k] = lerp(o[k], PAL.belly[k] * band, f); } return o; };
+  function repaint(g, fn){ const P = g.attributes.position, N = g.attributes.normal, C = g.attributes.color, o = [0, 0, 0], v = new T.Vector3(), n = new T.Vector3();
+    for (let k = 0; k < P.count; k++) { v.fromBufferAttribute(P, k); n.fromBufferAttribute(N, k); toLin(fn(v, n, o)); C.setXYZ(k, o[0], o[1], o[2]); } C.needsUpdate = true; }
+  function paint(g, fn, ux, uy){ const U = g.attributes.uv; for (let k = 0; k < U.count; k++) U.setXY(k, U.getX(k) * (ux || 3), U.getY(k) * (uy || 2)); g.setAttribute('color', new T.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 3), 3)); repaint(g, fn); painted.push([g, fn]); return g; }
   const cap = t => { const e = Math.min(t, 1 - t); return e < .3 ? Math.pow(1 - Math.pow((.3 - e) / .3, 2.4), .5) : 1; };
   function lathe(rf, fn, ux, uy){ const pts = []; for (let i = 0; i <= 48; i++) { const t = i / 48; pts.push(new T.Vector2(Math.max(.0005, rf(t)), t)); } return paint(new T.LatheGeometry(pts, 22), fn, ux, uy); }
   const ball = (fn, ux, uy) => paint(new T.SphereGeometry(1, 28, 20), fn || suitColor(false), ux || 4, uy || 3);
@@ -232,6 +235,9 @@ function create(opt){ const T = window.THREE, W = opt.W, H = opt.H;
   const feet = [0, 1].map(() => { const g = new T.Group(); suit.add(g); const m = mk(gBall, sMat, g); m.scale.set(.3, .2, .34); m.position.set(0, -.1, .1); for (const k of [-1, 0, 1]) { const c = mk(gCone, clawM2, g); c.scale.set(.06, .2, .06); c.position.set(k * .17, -.2, .35); c.rotation.x = Math.PI * .62; } return g; });
   const tailG = []; { let par = suit; for (let i = 0; i < 8; i++) { const g = new T.Group(); par.add(g); g.userData.m = mk(i === 7 ? gTip : gTail, sMat, g); tailG.push(g); par = g; } }
   // 머리(탈): 단위 = 얼굴 크기. 위턱(머리통·주둥이·눈·윗니) / 아래턱(턱·아랫니) / 입 안(얼굴 구멍 둘레)
+  const parts = {}, part = (sp, o) => { (parts[sp] || (parts[sp] = [])).push(o); o.userData.sp = false; return o; };
+  const SPEC = { trex: { side: C_SIDE, belly: C_BELLY, stripe: 1, tail: 1, pitch: 1 }, trike: { side: [.47, .40, .29], belly: [.80, .74, .60], stripe: .3, tail: .7, pitch: .8 }, stego: { side: [.25, .40, .17], belly: [.74, .72, .46], stripe: .8, tail: 1, pitch: .7 },
+    para: { side: [.18, .38, .38], belly: [.84, .76, .52], stripe: 1.2, tail: 1, pitch: 1.5 }, ptera: { side: [.38, .43, .52], belly: [.86, .86, .83], stripe: .4, tail: .3, pitch: 2.1 } };
   const hd = new T.Group(), hUp = new T.Group(), hLo = new T.Group(); suit.add(hd); hd.add(hUp); hd.add(hLo);
   const HX = .6, HY = .77;                                                              // 얼굴 구멍 반지름
   { const sk = mk(gBall, sMat, hUp); sk.scale.set(1.55, 1.3, 1.1); sk.position.set(0, .55, -.45);
@@ -241,7 +247,28 @@ function create(opt){ const T = window.THREE, W = opt.W, H = opt.H;
     const neck = mk(gBall, sMat, hLo); neck.scale.set(1.45, .95, .95); neck.position.set(0, -.7, -.55); const jw = mk(gBall, sMat, hLo); jw.scale.set(1.12, .46, .8); jw.position.set(0, -1.22, .15);
     const ring = mk(new T.RingGeometry(HX, 1.02, 48), gum, hd); ring.scale.set(1, HY / HX, 1); ring.position.z = .9;
     const teeth = (par, a0, a1, n) => { for (let i = 0; i < n; i++) { const a = (a0 + (a1 - a0) * i / (n - 1)) * Math.PI / 180, c = mk(gCone, toothM, par), big = .75 + .5 * Math.abs(Math.sin(a)) * rnd(.8, 1.1); c.scale.set(.055 * big, .27 * big, .055 * big); c.position.set(Math.cos(a) * .95, Math.sin(a) * 1.2, .95); c.rotation.z = Math.atan2(Math.cos(a), -Math.sin(a) * 1.25) + rnd(-.08, .08); } };
-    teeth(hUp, 22, 158, 13); teeth(hLo, 202, 338, 11); }
+    const tUp = new T.Group(), tLo = new T.Group(); hUp.add(tUp); hLo.add(tLo); teeth(tUp, 22, 158, 13); teeth(tLo, 202, 338, 11); part('trex', tUp); part('trex', tLo);
+    const horn = new T.MeshStandardMaterial({ color: 0xe6dcc0, roughness: .45 }), plateM = new T.MeshStandardMaterial({ color: 0xc8521c, roughness: .6 }), crestM = new T.MeshStandardMaterial({ color: 0xc23a22, roughness: .55 }), beakM = new T.MeshStandardMaterial({ color: 0xd9b45a, roughness: .5 }), billM = new T.MeshStandardMaterial({ color: 0x5a4a34, roughness: .6 });
+    const cone = (sp, par, m, x, y, z, sx, sy, sz, rz, rx) => { const c = mk(gCone, m, par); c.position.set(x, y, z); c.scale.set(sx, sy, sz); c.rotation.set(rx || 0, 0, rz || 0); return part(sp, c); };
+    // 트리케라톱스: 목 프릴 + 뿔 셋 + 부리
+    { const fr = mk(gBall, sMat, hUp); fr.scale.set(2.5, 2.1, .3); fr.position.set(0, .75, -1.3); part('trike', fr);
+      for (let i = 0; i < 9; i++) { const a = (12 + i * 19.5) * Math.PI / 180; cone('trike', hUp, horn, Math.cos(a) * 2.42, .75 + Math.sin(a) * 2.02, -1.3, .15, .34, .15, a - Math.PI / 2); }
+      cone('trike', hUp, horn, -.72, 1.4, .25, .17, 1.6, .17, .28, .2); cone('trike', hUp, horn, .72, 1.4, .25, .17, 1.6, .17, -.28, .2); cone('trike', hUp, horn, 0, 1.6, .9, .15, .55, .15, 0, .5); cone('trike', hUp, billM, 0, 1.12, 1.0, .3, .36, .25, Math.PI); }
+    // 스테고사우루스: 머리 뒤 골판(꼬리 골판·가시는 아래)
+    cone('stego', hUp, plateM, 0, 1.35, -1.2, .8, 1.45, .12); cone('stego', hUp, plateM, -1.05, 1.0, -1.25, .65, 1.15, .12, .5); cone('stego', hUp, plateM, 1.05, 1.0, -1.25, .65, 1.15, .12, -.5);
+    // 파라사우롤로푸스: 뒤로 뻗은 볏 + 넓은 주둥이
+    { const cr = mk(gLimb, sMat, hUp); cr.position.set(.1, 1.35, -.6); cr.rotation.z = -.6; cr.scale.set(.3, 2.5, .3); part('para', cr); const tip = mk(gBall, crestM, hUp); tip.scale.set(.3, .34, .3); tip.position.set(.1 + Math.sin(.6) * 2.4, 1.35 + Math.cos(.6) * 2.4, -.6); part('para', tip);
+      const bill = mk(gBall, billM, hUp); bill.scale.set(.95, .2, .55); bill.position.set(0, 1.02, .85); part('para', bill); }
+    // 프테라노돈: 긴 볏 + 위아래 부리(날개는 팔에)
+    cone('ptera', hUp, crestM, .25, 1.45, -.6, .36, 2.7, .2, -.55); cone('ptera', hUp, beakM, 0, 1.25, .95, .42, 1.0, .3, 0, .5); cone('ptera', hLo, beakM, 0, -1.15, .6, .44, 1.7, .3, Math.PI); }
+  // 꼬리 장식(스테고): 골판 + 끝 가시
+  { const plateM = new T.MeshStandardMaterial({ color: 0xc8521c, roughness: .6 }), horn = new T.MeshStandardMaterial({ color: 0xe6dcc0, roughness: .45 });
+    tailG.forEach((g, i) => { const m = g.userData.m; if (i < 6) { const c = mk(gCone, plateM, m); c.rotation.z = Math.PI / 2; c.position.set(-.75, .5, 0); c.scale.set(.5, 1.6, .16); part('stego', c); }
+      if (i === 7) for (const y of [.35, .62]) for (const sd of [-1, 1]) { const c = mk(gCone, horn, m); c.rotation.z = sd * Math.PI / 2; c.position.set(-sd * .5 * (1 - y), y, 0); c.scale.set(.12, 3.2, .6); part('stego', c); } }); }
+  // 날개막(프테라노돈): 어깨–팔꿈치–손목–날개 끝–허리
+  const wings = [0, 1].map(() => { const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(new Float32Array(15), 3)); g.setIndex([0, 1, 4, 1, 2, 4, 2, 3, 4]); const m = new T.Mesh(g, new T.MeshStandardMaterial({ color: 0x3a2c34, roughness: .8, side: T.DoubleSide })); m.frustumCulled = false; suit.add(m); return part('ptera', m); });
+  let SP = SPEC.trex; setSpecies('trex');
+  function setSpecies(k){ if (!SPEC[k]) return; SP = SPEC[k]; PAL.side = SP.side; PAL.belly = SP.belly; PAL.stripe = SP.stripe; painted.forEach(q => repaint(q[0], q[1])); for (const n in parts) parts[n].forEach(o => o.userData.sp = n === k); st.species = k; }
   const w = { S: 0, lift: [0, 0], was: [0, 0], jaw: 0, sway: 0, hx: null }, face = { ok: false, x: 0, y: 0, rx: 0, ry: 0, roll: 0 }, faceC = document.createElement('canvas');
   function place(m, a, b, wid, dep, z, e){ const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1, k = e || 0; m.position.set(a.x - dx * k, -(a.y - dy * k), z); m.rotation.z = Math.atan2(-dx, -dy); m.scale.set(wid, len * (1 + 2 * k), dep); m.visible = true; }
   function updateWear(dt, p, b){ st.cool = Math.max(0, st.cool - dt); st.shake = Math.max(0, st.shake - dt * 2.2);
@@ -256,9 +283,12 @@ function create(opt){ const T = window.THREE, W = opt.W, H = opt.H;
         if (ok(p, 27 + i)) { place(shin[i], kn, an, S * .25 * pk, S * .25, -30, .06); const f = feet[i]; f.visible = true; f.position.set(an.x, -an.y, 0); f.scale.setScalar(S * pk);
           if (w.was[i] > .3 && g < .12) { w.was[i] = 0; st.shake = Math.min(1, st.shake + .6); soundOn && audio.step(1); for (let n = 0; n < 14; n++) dust.push({ x: an.x + rnd(-50, 50), y: an.y + S * .15 + rnd(-6, 4), vx: rnd(-1.8, 1.8), vy: rnd(-1.2, -.2), r: rnd(14, 34), life: 1 }); } } }
       if (g > .3) w.was[i] = g; }
+    if (st.species === 'ptera') wings.forEach((m, i) => { const sh = p[11 + i], el = p[13 + i], wr = p[15 + i]; if (!(ok(p, 13 + i) && ok(p, 15 + i))) { m.visible = false; return; } const dx = wr.x - sh.x, dy = wr.y - sh.y, l = Math.hypot(dx, dy) || 1, sd = Math.sign(sh.x - sm.x) || 1, A = m.geometry.attributes.position;
+      A.setXYZ(0, sh.x, -sh.y, -120); A.setXYZ(1, el.x, -el.y, -120); A.setXYZ(2, wr.x, -wr.y, -120); A.setXYZ(3, wr.x + dx / l * S * 1.1, -(wr.y + dy / l * S * 1.1), -120); A.setXYZ(4, hm.x + sd * S * .45, -hm.y, -120); A.needsUpdate = true; m.geometry.computeVertexNormals(); });
     // 꼬리: 엉덩이 뒤에서 옆으로 뻗어 살랑, 몸이 움직이면 늦게 따라옴
     const vx = w.hx == null ? 0 : (hm.x - w.hx) / Math.max(dt, .001); w.hx = hm.x; w.sway = lerp(w.sway, clamp(-vx / (S * 6), -.5, .5), Math.min(1, dt * 4));
-    tailG.forEach((g, i) => { const L = S * .42 * Math.pow(.92, i), R = S * .34 * pk * Math.pow(.8, i); g.userData.m.scale.set(R, L, R * .9); if (i === 0) { g.position.set(hm.x + S * .15, -(hm.y - S * .05), -300); g.rotation.z = -1.95 + w.sway + Math.sin(st.t * 1.4) * .06; } else { g.position.set(0, S * .42 * Math.pow(.92, i - 1) * .96, 0); g.rotation.z = .16 + Math.sin(st.t * 1.6 - i * .6) * .07 + w.sway * .35; } });
+    const tl = SP.tail; for (const n in parts) parts[n].forEach(o => o.visible = o.userData.sp);
+    tailG.forEach((g, i) => { const L = S * .42 * tl * Math.pow(.92, i), R = S * .34 * pk * (.55 + .45 * tl) * Math.pow(.8, i); g.userData.m.scale.set(R, L, R * .9); if (i === 0) { g.position.set(hm.x + S * .15, -(hm.y - S * .05), -300); g.rotation.z = -1.95 + w.sway + Math.sin(st.t * 1.4) * .06; } else { g.position.set(0, S * .42 * tl * Math.pow(.92, i - 1) * .96, 0); g.rotation.z = .16 + Math.sin(st.t * 1.6 - i * .6) * .07 + w.sway * .35; } });
     // 머리 탈 + 포효(양손 번쩍 → 입이 쩍)
     if (b && b.ok && b.armsUp && st.cool <= 0) act('roar'); let jg = .1 + Math.max(0, Math.sin(st.t * .9)) * .05, sh = 0;
     if (st.act === 'roar') { st.actT += dt; const a = st.actT; if (a < 2.4) { const q = smooth(.1, .4, a) * (1 - smooth(2.0, 2.4, a)); jg = q; sh = Math.sin(a * 30) * .03 * q; st.shake = Math.max(st.shake, .5 * q); } else st.act = null; } else if (st.act) st.act = null;
