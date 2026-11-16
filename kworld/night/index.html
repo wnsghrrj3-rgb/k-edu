@@ -8,47 +8,64 @@
 { "imports": { "three": "/labs/vendor/three185/three.module.min.js" } }
 </script>
 <style>
-html{background:#05070d}
-html,body{margin:0;height:100%;overflow:hidden;font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#f3ead8;-webkit-user-select:none;user-select:none;touch-action:none}
+html{background:#0b1730}
+html,body{margin:0;height:100%;overflow:hidden;font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#fff;-webkit-user-select:none;user-select:none;touch-action:none}
 canvas{display:block;position:fixed;inset:0;width:100%;height:100%}
 #vig{position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 180px 60px rgba(190,20,20,0);transition:box-shadow .12s linear}
-#dawn{position:fixed;left:0;right:0;top:0;height:5px;background:rgba(255,255,255,.08);pointer-events:none}
-#dawn i{display:block;height:100%;width:0;background:linear-gradient(90deg,#3b4a7a,#f2b46a 80%,#fff3c8)}
-#hud{position:fixed;left:14px;top:16px;display:flex;gap:8px;font-size:17px;font-weight:700;pointer-events:none}
-#hud span{background:rgba(8,12,22,.62);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:6px 12px}
-#hud .off{opacity:.3}
-#moon{position:fixed;left:50%;transform:translateX(-50%);top:16px;font-size:15px;font-weight:700;background:rgba(8,12,22,.62);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:6px 12px;pointer-events:none;transition:background .3s,color .3s}
-#moon.out{background:#e9eefc;color:#1a2238}
-#moon.soon{background:#58618a}
-#say{position:fixed;left:50%;bottom:19%;transform:translateX(-50%);background:rgba(8,12,22,.78);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:10px 18px;font-size:18px;font-weight:700;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
-#goal{position:fixed;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:radial-gradient(circle,#fff2b0 0,#ffb53a 45%,rgba(255,160,40,0) 72%);pointer-events:none;display:none;animation:pul 1.4s ease-in-out infinite}
+.pill{background:rgba(22,44,78,.88);border-radius:999px;padding:8px 14px;font-weight:800;font-size:16px;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+#top{position:fixed;left:14px;top:14px;display:flex;gap:8px;align-items:center;pointer-events:none}
+#todo{position:fixed;left:14px;top:60px;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+#todo div{background:rgba(22,44,78,.78);border-radius:12px;padding:6px 12px;font-weight:700;font-size:14px;opacity:.72;transition:all .3s}
+#todo div.on{background:#ffcf4d;color:#3a2a00;opacity:1}
+#todo div.main{opacity:1;background:rgba(22,44,78,.92)}
+#right{position:fixed;right:14px;top:14px;display:flex;gap:8px;align-items:center}
+#moon{transition:background .3s,color .3s;pointer-events:none}
+#moon.out{background:#eef3ff;color:#1a2a4a}
+#moon.soon{background:#6c7bb0}
+#bView{border:0;color:#fff;font-family:inherit;cursor:pointer}
+#dawn{position:fixed;left:50%;transform:translateX(-50%);top:14px;width:min(38vw,360px);pointer-events:none;text-align:center;font-size:12px;font-weight:700;color:#cfe0ff}
+#dawn b{display:block;height:10px;border-radius:6px;background:rgba(10,20,40,.7);overflow:hidden;margin-top:3px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+#dawn i{display:block;height:100%;width:0;background:linear-gradient(90deg,#5a78d8,#ffb45a 78%,#fff0b8)}
+#say{position:fixed;left:50%;bottom:20%;transform:translateX(-50%);background:rgba(14,24,44,.86);border-radius:16px;padding:11px 20px;font-size:19px;font-weight:800;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+#goal{position:fixed;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:radial-gradient(circle,#fff6c4 0,#ffb53a 45%,rgba(255,160,40,0) 72%);pointer-events:none;display:none;animation:pul 1.4s ease-in-out infinite}
 @keyframes pul{50%{transform:scale(1.5)}}
-#eye{position:fixed;width:54px;height:8px;margin:-4px 0 0 -27px;border-radius:5px;background:rgba(0,0,0,.55);overflow:hidden;pointer-events:none;display:none}
+.bar{position:fixed;width:60px;height:10px;margin:-5px 0 0 -30px;border-radius:6px;background:rgba(0,0,0,.6);overflow:hidden;pointer-events:none;display:none}
 #eye i{display:block;height:100%;width:0;background:#ff5a3c}
-.btn{position:fixed;bottom:26px;width:84px;height:84px;border-radius:50%;border:2px solid rgba(255,255,255,.32);background:rgba(20,26,44,.6);color:#f3ead8;font-weight:700;font-size:18px;font-family:inherit;display:none;align-items:center;justify-content:center}
+#work i{display:block;height:100%;width:0;background:#ffcf4d}
+.btn{position:fixed;bottom:26px;width:86px;height:86px;border-radius:50%;border:0;background:rgba(22,44,78,.82);color:#fff;font-weight:800;font-size:18px;font-family:inherit;display:none;align-items:center;justify-content:center;box-shadow:0 4px 0 rgba(0,0,0,.3)}
 #bRun{right:22px}
-#stick{position:fixed;left:26px;bottom:26px;width:130px;height:130px;border-radius:50%;border:2px solid rgba(255,255,255,.22);background:rgba(20,26,44,.4);display:none}
-#stick i{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px;border-radius:50%;background:rgba(243,234,216,.55)}
+#stick{position:fixed;left:26px;bottom:26px;width:130px;height:130px;border-radius:50%;background:rgba(22,44,78,.5);display:none}
+#stick i{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px;border-radius:50%;background:rgba(255,255,255,.7)}
 .touch .btn{display:flex}.touch #stick{display:block}
-#ov{position:fixed;inset:0;background:rgba(3,5,10,.86);display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
-#ov .box{max-width:520px}
-#ov h1{font-size:44px;margin:0 0 10px;letter-spacing:.06em}
-#ov p{font-size:19px;line-height:1.6;margin:8px 0;color:#d9cfb9}
-#ov .fact{font-size:16px;color:#f0c987;border-top:1px solid rgba(255,255,255,.15);padding-top:12px;margin-top:16px}
-#ov .keys{font-size:15px;color:#9aa3bd;margin-top:14px}
-#ov button{margin-top:22px;font-weight:800;font-size:21px;font-family:inherit;color:#1a1408;background:#ffc45a;border:0;border-radius:14px;padding:14px 38px}
-#back{position:fixed;left:14px;bottom:12px;font-size:13px;color:#8d96b3;text-decoration:none}
+#ov{position:fixed;inset:0;background:rgba(6,12,28,.88);display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;overflow:auto}
+#ov .box{max-width:560px}
+#ov h1{font-size:46px;margin:0 0 10px;letter-spacing:.04em}
+#ov p{font-size:19px;line-height:1.6;margin:8px 0;color:#dfe8fb}
+#ov .marks{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:14px 0 4px}
+#ov .marks span{border-radius:12px;padding:8px 12px;font-size:15px;font-weight:800;background:rgba(255,255,255,.1)}
+#ov .marks span.ok{background:#ffcf4d;color:#3a2a00}
+#ov .fact{font-size:15px;line-height:1.65;color:#ffdf9a;border-top:1px solid rgba(255,255,255,.18);padding-top:12px;margin-top:14px;text-align:left}
+#ov .keys{font-size:15px;color:#a9b9dc;margin-top:12px}
+#ov button{margin-top:20px;font-weight:800;font-size:21px;font-family:inherit;color:#3a2a00;background:#ffcf4d;border:0;border-radius:16px;padding:14px 38px;box-shadow:0 5px 0 #c9962a;cursor:pointer}
+#back{position:fixed;left:14px;bottom:12px;font-size:13px;color:#a9b9dc;text-decoration:none}
 .touch #back{display:none}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="vig"></div>
-<div id="dawn"><i></i></div>
-<div id="hud"><span id="hStone">🪨 3</span><span id="hRice" class="off">🍙</span><span id="hLimp" style="display:none"></span></div>
-<div id="moon">☁️ 구름</div>
+<div id="top"><span class="pill" id="hStone">🪨 3</span><span class="pill" id="hLimp" style="display:none"></span></div>
+<div id="todo">
+  <div class="main" id="tLamp">🏮 강 건너 나루의 등불까지</div>
+  <div id="tDoc">📜 안채의 노비 문서 태우기</div>
+  <div id="tCloth">👘 빨랫줄의 상민 옷 입기</div>
+  <div id="tRice">🍙 부엌의 주먹밥(뱃삯)</div>
+</div>
+<div id="dawn">새벽 종(파루)까지<b><i></i></b></div>
+<div id="right"><span class="pill" id="moon">☁️ 구름</span><button class="pill" id="bView">👁 시점</button></div>
 <div id="goal"></div>
-<div id="eye"><i></i></div>
+<div class="bar" id="eye"><i></i></div>
+<div class="bar" id="work"><i></i></div>
 <div id="say"></div>
 <div id="stick"><i></i></div>
 <button class="btn" id="bRun">뛰기</button>
@@ -56,9 +73,9 @@ canvas{display:block;position:fixed;inset:0;width:100%;height:100%}
 <div id="ov"><div class="box">
   <h1>그믐밤</h1>
   <p>조선, 어느 양반집 행랑채.<br>오늘 밤 달아난다. <b>강 건너 나루의 등불</b>까지.</p>
-  <p class="keys" id="keys">방향키로 걷기 · Shift 뛰기(소리 남) · 땅을 누르면 돌 던지기</p>
+  <p class="keys" id="keys">방향키 걷기 · Shift 뛰기(소리 남) · 땅을 누르면 돌 던지기 · V 시점 바꾸기</p>
   <button id="go">달아난다</button>
 </div></div>
-<script type="module" src="./night.js?v=1"></script>
+<script type="module" src="./night.js?v=2"></script>
 </body>
 </html>
