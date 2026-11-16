@@ -31,3 +31,11 @@ export function play(v, choose){ const cargo = v.cargo.slice(); let singles = 0,
   return { singles, lost, left: cargo, ok: guard < 200 }; }
 /** 길 끝의 물음: 세 틈에 놓은 판자의 합과 고를 수 셋(하나만 맞음, 순서 섞임). → { sum, picks } */
 export function total(v, rnd = Math.random){ const sum = v.gaps.reduce((a, g) => a + g.need, 0), near = shuffle([sum - 2, sum - 1, sum + 1, sum + 2].filter(n => n > 0), rnd).slice(0, 2); return { sum, picks: shuffle([sum, ...near], rnd) }; }
+
+// ── 흥미진진(준호 2026-11-17 「여러 가지로 계속 섞어서」): 길마다 사건이 다르다. 생각하는 동안에만 시계가 간다(판자가 놓이고 달리는 동안은 멈춤).
+//   tide = 밀물(물이 차올라 건너편 주민의 발밑까지) · ship = 해적선(먼저 닿으면 주민을 태워 감) · drift = 물살(뗏목이 흔들려 떠다님)
+export const PRESS = { BUDGET: [80, 60, 50, 42, 36, 32], BACK: .05, RAFT_P: .6, RAFT_N: [1, 2, 3] };   // 생각할 수 있는 시간(초, 데려온 주민 수에 따라) · 딱 맞추면 시계가 되감기는 몫 · 통에서 뗏목이 나올 확률 · 그 뗏목의 크기
+/** 이번 길의 사건. saved = 지금까지 데려온 주민 수(놓쳐도 어려워지지 않는다). */
+export function event(saved, rnd = Math.random){ const kind = saved === 0 ? 'tide' : saved === 1 ? 'ship' : rnd() < .5 ? 'tide' : 'ship', drift = saved === 2 || (saved > 2 && rnd() < .5); return { kind, drift, budget: PRESS.BUDGET[Math.min(saved, PRESS.BUDGET.length - 1)] }; }
+/** 쉬어 가는 땅의 통을 열면: 덤 뗏목 또는 물고기 양동이. */
+export function barrel(rnd = Math.random){ return rnd() < PRESS.RAFT_P ? { kind: 'raft', n: PRESS.RAFT_N[Math.floor(rnd() * PRESS.RAFT_N.length)] } : { kind: 'fish' }; }
