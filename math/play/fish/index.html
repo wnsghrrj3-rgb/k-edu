@@ -7,42 +7,66 @@
 <script src="/kedu_scope.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+[hidden]{display:none!important}
 html{background:#2a9fd0;--kit-toast-top:44%}html,body{height:100%;overflow:hidden;font-family:"Pretendard","Noto Sans KR",system-ui,sans-serif;touch-action:manipulation}
-.sky{position:fixed;left:0;right:0;top:0;height:36%;background:linear-gradient(#6ec3f4,#c9edff);z-index:0}
-.sea{position:fixed;left:0;right:0;top:36%;bottom:0;background:linear-gradient(#35b0dc 0%,#1b7fb4 55%,#0f4f86 100%);z-index:0;overflow:hidden}
+.sky{position:fixed;left:0;right:0;top:0;height:36%;background:linear-gradient(#6ec3f4,#c9edff);z-index:0;transition:background 1s}
+.sea{position:fixed;left:0;right:0;top:36%;bottom:0;background:linear-gradient(#35b0dc 0%,#1b7fb4 55%,#0f4f86 100%);z-index:0;overflow:hidden;transition:background 1s;touch-action:none}
 .sea::before{content:"";position:absolute;left:-10%;right:-10%;top:-14px;height:28px;background:radial-gradient(circle at 20px 0,#c9edff 18px,transparent 19px) 0 0/40px 28px repeat-x;opacity:.9;animation:wave 3s linear infinite}
 @keyframes wave{to{transform:translateX(40px)}}
 .deco span{position:fixed;font-size:3.4rem;z-index:0;pointer-events:none}
+.deco .moon,.deco .star{display:none}
+html.night{background:#0d1d3a}html.night .sky{background:linear-gradient(#0b1530,#26355e)}html.night .sea{background:linear-gradient(#1c4f7a 0%,#123a63 55%,#08223f 100%)}html.night .sea::before{background:radial-gradient(circle at 20px 0,#26355e 18px,transparent 19px) 0 0/40px 28px repeat-x}
+html.night .deco .sun,html.night .deco .cloud{display:none}html.night .deco .moon,html.night .deco .star{display:block}
+html.night .fish{filter:drop-shadow(0 0 10px rgba(255,240,150,.85))}
+/* 위 띠 아래: 배 꾸미기 · 밤 */
+.tools{position:fixed;left:50%;top:calc(54px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:6;display:flex;gap:8px;align-items:center}
+.nightBtn{background:#26355e;color:#fff;border:4px solid #fff;border-radius:999px;width:44px;height:44px;font-size:1.3rem;line-height:1;box-shadow:0 5px 0 rgba(0,0,0,.18)}
 /* 배 */
-#boat{position:fixed;left:50%;top:36%;transform:translate(-50%,-78%);z-index:3;display:flex;align-items:flex-end;gap:10px;animation:bob 3s ease-in-out infinite}
-@keyframes bob{50%{transform:translate(-50%,-74%) rotate(-1deg)}}
+#boat{position:fixed;left:50%;top:36%;transform:translate(-50%,-80%);z-index:3;display:flex;align-items:flex-end;gap:10px;animation:bob 3s ease-in-out infinite}
+@keyframes bob{50%{transform:translate(-50%,-76%) rotate(-1deg)}}
 .hull{position:relative;background:#b9743a;border:5px solid #7a4a1e;border-radius:10px 10px 60px 60px/10px 10px 46px 46px;padding:10px 16px 14px;display:flex;align-items:flex-end;gap:12px;box-shadow:0 10px 0 rgba(0,0,0,.15)}
-.cat{font-size:clamp(3rem,8vw,4.6rem);line-height:1}.cat.yay{animation:hopp .45s 2}@keyframes hopp{50%{transform:translateY(-16px)}}
-.say{position:absolute;left:8px;top:-44px;background:#fff;border:3px solid #2b2f3a;border-radius:16px;padding:3px 12px;font-weight:900;font-size:1.05rem;color:#2b2f3a;white-space:nowrap;opacity:0;transition:opacity .25s}
-.bucket{background:#e9f6ff;border:5px solid #4a7ea8;border-radius:10px 10px 18px 18px;padding:6px;display:grid;grid-template-columns:repeat(5,clamp(22px,4.4vw,34px));gap:4px}
-.bucket.tip{animation:tip .45s}@keyframes tip{30%{transform:rotate(-10deg)}70%{transform:rotate(8deg)}}
-.bucket.go{transition:transform .7s,opacity .7s;transform:translate(60vw,-30px);opacity:0}
-.bucket i{aspect-ratio:1;border-radius:7px;background:rgba(40,90,130,.16);border:2px dashed rgba(40,90,130,.35)}
-.bucket i.on{background:#ffb347;border:2px solid #c9731a;animation:drop .25s}.bucket i.c1{background:#ff8f6b;border-color:#c9502a}.bucket i.c2{background:#7fd6a8;border-color:#2f9e68}.bucket i.c3{background:#b79bff;border-color:#6a4fd0}
+#boat.big .hull{background:#2d6fa8;border-color:#1d4a73;padding:12px 22px 16px}
+.cat{font-size:clamp(2.6rem,7vw,4.4rem);line-height:1}.cat.yay{animation:hopp .45s 2}@keyframes hopp{50%{transform:translateY(-16px)}}
+.say{position:absolute;left:8px;top:-44px;background:#fff;border:3px solid #2b2f3a;border-radius:16px;padding:3px 12px;font-weight:900;font-size:1.05rem;color:#2b2f3a;white-space:nowrap;opacity:0;transition:opacity .25s;z-index:5}
+.lampOn{position:absolute;right:-16px;top:-30px;font-size:1.8rem;display:none;filter:drop-shadow(0 0 8px #ffd35c)}#boat.lamp .lampOn{display:block}
+.netOn{position:absolute;left:-26px;bottom:6px;font-size:1.7rem;display:none}#boat.net .netOn{display:block}
+#tubs{display:flex;gap:10px;align-items:flex-end}
+.tub{position:relative;background:#e9f6ff;border:5px solid #4a7ea8;border-radius:10px 10px 18px 18px;padding:6px;display:grid;gap:3px;cursor:pointer;transition:box-shadow .2s,transform .2s}
+.tub.sel{box-shadow:0 0 0 5px #ffd35c,0 0 22px 6px rgba(255,211,92,.9)}
+.tub.done{border-color:#2f9e68;background:#dcffe9}
+.tub.tip{animation:tip .45s}@keyframes tip{30%{transform:rotate(-10deg)}70%{transform:rotate(8deg)}}
+.tub.go{transition:transform .7s,opacity .7s;transform:translate(60vw,-30px);opacity:0}
+.tub i{aspect-ratio:1;border-radius:6px;background:rgba(40,90,130,.16);border:2px dashed rgba(40,90,130,.35)}
+.tub i.on{background:#ffb347;border:2px solid #c9731a;animation:drop .25s}.tub i.c1{background:#ff8f6b;border-color:#c9502a}.tub i.c2{background:#7fd6a8;border-color:#2f9e68}.tub i.c3{background:#b79bff;border-color:#6a4fd0}
 @keyframes drop{from{transform:scale(.3)}}
-.lv{position:fixed;left:50%;top:calc(52px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:4;color:#0d3a5c;font-weight:800;font-size:.9rem;text-align:center;white-space:nowrap}
+.tub.order{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:clamp(96px,18vw,150px);padding:0 6px 6px}
+.tub .lid{margin:-14px -10px 2px;align-self:stretch;background:#7a4a1e;color:#fff4d6;border-radius:10px;text-align:center;font-weight:900;font-size:clamp(1.6rem,4.4vw,2.4rem);line-height:1.25;box-shadow:0 4px 0 rgba(0,0,0,.25)}
+.tub .chips{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;min-height:30px}
+.tub .chips u{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#ffb347;border:2px solid #c9731a;font-weight:900;font-size:.95rem;color:#4a2c0a;text-decoration:none;animation:drop .25s}
 /* 물고기 */
 .fish{position:fixed;z-index:2;font-size:var(--s);line-height:1;padding:0;border:0;background:none;font-family:inherit;cursor:pointer;filter:drop-shadow(0 6px 4px rgba(0,0,0,.25))}
 .fish .e{display:block;transform:scaleX(var(--f))}
 .fish b{position:absolute;left:50%;top:50%;transform:translate(-50%,-56%);min-width:1.25em;height:1.25em;line-height:1.25em;border-radius:50%;background:#fff;color:#12314a;font-size:calc(var(--s)*.42);font-weight:900;text-align:center;border:3px solid #12314a}
+.fish.gold .e{filter:sepia(1) saturate(6) hue-rotate(-12deg) brightness(1.15)}.fish.gold b{background:#ffd35c;border-color:#9a6a00}
+.fish.crab b{background:#ffe0d6;border-color:#c9502a;color:#c9502a}
+.fish.puff .e{transform:scaleX(var(--f)) scale(1.35);transition:transform .3s}
 .fish small{position:absolute;left:50%;bottom:-14px;transform:translateX(-50%);display:flex;gap:3px}.fish small u{width:8px;height:8px;border-radius:50%;background:#ffe27a;border:1px solid #9a7a10}
 .fish.up{transition:left .45s ease-in,top .45s cubic-bezier(.2,-.5,.6,1),opacity .45s;opacity:.2;pointer-events:none}
 .fish.back{animation:shake .4s}@keyframes shake{25%{transform:translateX(-12px)}75%{transform:translateX(12px)}}
+.fish.netted{outline:4px dashed rgba(255,255,255,.85);outline-offset:4px;border-radius:50%}
 #line{position:fixed;z-index:1;width:3px;background:#fff;transform-origin:top center;opacity:0;transition:opacity .2s;pointer-events:none}
+#netSvg{position:fixed;inset:0;z-index:4;pointer-events:none}
 .bub{position:fixed;width:10px;height:10px;border-radius:50%;border:2px solid rgba(255,255,255,.5);z-index:1;animation:rise linear infinite}@keyframes rise{to{transform:translateY(-70vh);opacity:0}}
+.flyfish{position:fixed;z-index:5;font-size:2.4rem;pointer-events:none;transition:transform .5s cubic-bezier(.3,-.5,.6,1),opacity .5s}
 </style>
 </head>
 <body>
 <div class="sky"></div><div class="sea" id="sea"></div>
-<div class="deco"><span data-art="deco.sun" style="left:6%;top:6%;font-size:4.4rem"></span><span data-art="deco.cloud" style="left:26%;top:9%"></span><span data-art="deco.cloud" style="left:72%;top:5%"></span><span data-art="deco.isle" style="right:3%;top:17%;font-size:4.6rem"></span></div>
-<div class="lv" id="lv"></div>
-<div id="boat"><div class="hull"><span class="say" id="say"></span><span class="cat" id="cat" data-art="fisher.cat"></span><div class="bucket" id="bucket"></div></div></div>
-<div id="line"></div>
-<script type="module" src="./fish.js?v=6"></script>
+<div class="deco"><span class="sun" data-art="deco.sun" style="left:6%;top:6%;font-size:4.4rem"></span><span class="cloud" data-art="deco.cloud" style="left:26%;top:9%"></span><span class="cloud" data-art="deco.cloud" style="left:72%;top:5%"></span><span data-art="deco.isle" style="right:3%;top:17%;font-size:4.6rem"></span><span class="moon" data-art="night.moon" style="left:8%;top:7%;font-size:3.8rem"></span><span class="star" data-art="night.star" style="left:34%;top:10%;font-size:1.6rem"></span><span class="star" data-art="night.star" style="left:62%;top:6%;font-size:1.3rem"></span><span class="star" data-art="night.star" style="left:80%;top:14%;font-size:1.5rem"></span></div>
+<div class="tools"><button class="hammer" id="hammer"><span data-art="shop.hammer"></span><b>배 꾸미기</b><i id="restPips"></i></button><button class="nightBtn" id="nightBtn" hidden data-art="night.moon"></button></div>
+<div id="boat"><div class="hull"><span class="say" id="say"></span><span class="lampOn" data-art="boat.lamp"></span><span class="netOn" data-art="boat.net"></span><span class="cat" id="cat" data-art="fisher.cat"></span><div id="tubs"></div></div></div>
+<div id="line"></div><svg id="netSvg"><polyline id="netLine" fill="none" stroke="#fff" stroke-width="5" stroke-dasharray="10 8" stroke-linecap="round" points=""/></svg>
+<div class="sheet" id="sheet"><div class="card" id="sheetCard"></div></div>
+<script type="module" src="./fish.js?v=7"></script>
 </body>
 </html>

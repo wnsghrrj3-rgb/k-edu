@@ -7,6 +7,7 @@
  * 틀(위쪽 띠·동전·알림·효과음·「커졌어!」)은 ../common/kit.js, 그림은 ../common/art.js. 산 것·하트·단골·오늘 장사는 지갑의 가게 칸에 남는다. */
 import { wallet, art, arts, group, paint, hud, pay, grew, did, audio, tone, sfx, toast } from '../common/kit.js?v=3';
 import * as R from './rules.js?v=2';
+import * as UP from '../common/upgrade.js?v=1';
 const $ = id => document.getElementById(id), one = a => a[Math.floor(Math.random() * a.length)], wait = ms => new Promise(r => setTimeout(r, ms));
 const ARTN = { apple: 'fruit.apple', orange: 'fruit.orange', banana: 'fruit.banana', grape: 'fruit.grape', bread: 'bake.bread', croissant: 'bake.croissant' }, pic = k => art(ARTN[k]), FACES = group('guest');
 const SAVE = R.migrate(wallet.island('shop')), O = () => SAVE.owned;
@@ -28,9 +29,7 @@ function shelf(fresh){ const o = O(), sh = $('shelf'), price = R.priceOn(o, S.sh
 function stockMarks(){ if (!dayMode() || T().phase !== 'open') return; const k = key(), n = T().stock, a = $('shelf').querySelector(`[data-k="${k}"]`), b = $('shelf').querySelector('[data-k="box"]');
   if (a) { let s = a.querySelector('.stock'); if (!s) { s = el('span', 'stock'); a.appendChild(s); } s.textContent = n; a.classList.toggle('empty', n < 1); } if (b) b.classList.toggle('empty', n < 10); }
 function hearts(up){ const h = $('hearts'); h.innerHTML = arts('shop.heart', SAVE.heart) + arts('shop.heart.empty', R.TUNE.HEART - SAVE.heart); if (up) { h.classList.remove('up'); void h.offsetWidth; h.classList.add('up'); } }
-function hammer(){ const b = $('hammer'), rest = SAVE.rest > 0, offs = R.offers(O()); b.classList.toggle('rest', rest); b.hidden = !offs.length && !rest;
-  $('restPips').innerHTML = rest ? Array.from({ length: R.TUNE.REST }, (_, i) => `<u class="${i < R.TUNE.REST - SAVE.rest ? 'on' : ''}"></u>`).join('') : '';
-  b.classList.toggle('glow', !rest && offs.some(c => c.price <= wallet.coins())); }
+function hammer(){ UP.hammer($('hammer'), { rest: SAVE.rest, REST: R.TUNE.REST, offers: R.offers(O()), coins: wallet.coins() }); }
 function dayBar(up){ const on = dayMode() && T().phase !== 'morning'; $('till').hidden = !on; $('dayPips').innerHTML = on ? T().plan.map(g => `<u class="${g.done ? 'on' : ''}"></u>`).join('') : '';
   if (on) { $('tillN').textContent = T().till.ten * 10 + T().till.one; if (up) { const t = $('till'); t.classList.remove('up'); void t.offsetWidth; t.classList.add('up'); } } }
 
@@ -120,14 +119,9 @@ setInterval(() => { if (S.paused) return; const qcap = R.queueCap(SAVE);
 function sheet(html, cls = ''){ $('sheetCard').innerHTML = html; const s = $('sheet'); s.className = 'sheet on ' + cls; S.paused = true; S.panel = cls || 'deco'; }
 function closeSheet(){ $('sheet').className = 'sheet'; S.paused = false; S.panel = null; }
 function itemPic(c){ if (c.id !== 'fruit') return art(c.art); const ch = R.choices(O(), 'fruit'); return `<span style="font-size:${ch.length > 2 ? .62 : .8}em">${ch.map(f => pic(f)).join('')}</span>`; }
-function openSheet(){ if (S.panel && S.panel !== 'deco') return; audio(); const offs = R.offers(O()), c = wallet.coins();
-  if (SAVE.rest > 0) { const b = $('hammer'); b.classList.remove('glow'); b.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-6deg)' }, { transform: 'rotate(6deg)' }, { transform: 'rotate(0)' }], 360); tone(240, .1, 'sine', .06); return; }
-  const items = offs.map(x => `<button class="item${x.price > c ? ' no' : ''}" data-id="${x.id}"><span class="pic">${itemPic(x)}</span><b>${x.name}</b><span class="price">${art('coin')} ${x.price}</span><span class="more">${x.price > c ? `${x.price - c}개 더` : ''}</span></button>`).join('');
-  sheet(`<h2>${art('shop.hammer')} 가게 꾸미기</h2>` + (offs.length ? `<div class="items">${items}</div>` : '<div class="empty">가게를 다 꾸몄어!</div>') + '<button class="close" id="sheetClose">닫기</button>');
-  $('sheetClose').onclick = closeSheet; $('sheetCard').querySelectorAll('.item').forEach(b => b.onclick = () => { const x = offs.find(o => o.id === b.dataset.id); if (x.price > wallet.coins()) { b.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'translateX(0)' }], 300); tone(220, .12, 'sine', .07); return; } x.choose ? choose(x) : doBuy(x.id); }); }
-function choose(x){ const ch = R.choices(O(), x.id), opt = v => x.id === 'fruit' ? `<span class="pic">${pic(v)}</span><b>${R.NAME[v]}</b>` : `<span class="pic">${art('shop.sign')}</span><b>${v}</b>`;
-  sheet(`<h2>${art('shop.hammer')} ${x.id === 'fruit' ? '어떤 과일?' : '어떤 간판?'}</h2><div class="items">${ch.map(v => `<button class="item pick" data-v="${v}">${opt(v)}<span class="price">${art('coin')} ${x.price}</span></button>`).join('')}</div><button class="close" id="sheetBack">뒤로</button>`);
-  $('sheetBack').onclick = openSheet; $('sheetCard').querySelectorAll('.item').forEach(b => b.onclick = () => doBuy(x.id, b.dataset.v)); }
+function openSheet(){ if (S.panel && S.panel !== 'deco') return; if (SAVE.rest > 0) { UP.nudge($('hammer')); return; }
+  UP.open({ show: h => sheet(h), hide: closeSheet, card: $('sheetCard'), title: '가게 꾸미기', doneText: '가게를 다 꾸몄어!', offers: R.offers(O()), coins: () => wallet.coins(), itemPic,
+    choices: x => R.choices(O(), x.id), chooseTitle: x => x.id === 'fruit' ? '어떤 과일?' : '어떤 간판?', option: (x, v) => x.id === 'fruit' ? `<span class="pic">${pic(v)}</span><b>${R.NAME[v]}</b>` : `<span class="pic">${art('shop.sign')}</span><b>${v}</b>`, onBuy: doBuy }); }
 function doBuy(id, pick){ const price = R.priceOf(O(), id), c = R.CATALOG.find(c => c.id === id); if (!wallet.spend(price)) return; const msg = R.buy(SAVE, id, pick); keep(); closeSheet(); look();
   if (id === 'fruit') shelf(pick); else if (id === 'box' && S.shop === 'fruit') shelf('box'); grew(c.math ? '가게가 커졌어!' : '가게가 예뻐졌어!', msg);
   if (R.bakeryOpen(O()) && !SAVE.bakery) { SAVE.bakery = 1; keep(); setTimeout(() => grew('빵집 문이 열렸어!', '아침에 어느 가게를 열지 골라'), 3000); } }

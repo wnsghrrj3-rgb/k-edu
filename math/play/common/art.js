@@ -11,6 +11,7 @@ const ART = {
   'guest.bear': '🐻', 'guest.rabbit': '🐰', 'guest.cat': '🐱', 'guest.dog': '🐶', 'guest.fox': '🦊', 'guest.panda': '🐼', 'guest.frog': '🐸', 'guest.monkey': '🐵',
   // 낚시 섬
   'fish.blue': '🐟', 'fish.tropical': '🐠', 'fish.puffer': '🐡', 'fish.shrimp': '🦐', 'fish.octopus': '🐙', 'fisher.cat': '🐱',
+  'fish.gold': '🐠', 'fish.crab': '🦀', 'fish.whale': '🐋', 'boat.tub': '🪣', 'boat.tub2': '🪣', 'boat.bigtub': '🛢️', 'boat.bait': '🪱', 'boat.flag': '🚩', 'boat.net': '🥅', 'boat.lamp': '🪔', 'night.moon': '🌙', 'night.star': '⭐', 'book.new': '📖',
   // 배경
   'deco.sun': '☀️', 'deco.cloud': '☁️', 'deco.palm': '🌴', 'deco.sailboat': '⛵', 'deco.isle': '🏝️',
   // 광장 게시판
