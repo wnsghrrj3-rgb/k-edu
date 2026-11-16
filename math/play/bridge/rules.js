@@ -2,6 +2,7 @@
  * 한 번의 길: 끊어진 다리 셋(칸은 늘 열 개, 이미 놓인 판자 5~9). 앤은 떠날 때 판자 뗏목 넷을 끌고 간다 — 세 틈에 딱 맞는 셋 + 덤 하나. 뗏목은 그게 전부다.
  * 딱 맞으면 건넌다 · 넘치면 건너되 남는 판자는 물에 떨어져 사라진다 · 모자라면 놓은 판자는 남고 뗏목을 더 써야 한다.
  * 쓸 수 있는 뗏목이 없으면(남은 칸보다 작은 게 없으면) 낱 판자가 한 장씩 떠내려온다 — 막히지 않는다.
+ * 틈에는 수가 적혀 있다(빈 칸 수). 그 수만큼 판자를 놓는다. 셋을 다 이으면 「이번 길에 놓은 판자는 모두 몇 장」을 고른다(세 수의 합).
  * 설계: 핸드오프 kmotion/math-wizard/25_수학놀이터_네곳_설계_v1.md 3절 */
 export const SLOTS = 10;                                   // 다리 칸(10 만들기)
 // ── 내가 정한 수치(준호가 해 보고 바꾼다)
@@ -28,3 +29,5 @@ export function play(v, choose){ const cargo = v.cargo.slice(); let singles = 0,
       if (!(i >= 0 && i < cargo.length)) { if (single) { singles++; filled++; continue; } i = cargo.findIndex(n => n <= room); }
       const out = place(filled, cargo.splice(i, 1)[0]); lost += out.extra; filled = out.filled; } }
   return { singles, lost, left: cargo, ok: guard < 200 }; }
+/** 길 끝의 물음: 세 틈에 놓은 판자의 합과 고를 수 셋(하나만 맞음, 순서 섞임). → { sum, picks } */
+export function total(v, rnd = Math.random){ const sum = v.gaps.reduce((a, g) => a + g.need, 0), near = shuffle([sum - 2, sum - 1, sum + 1, sum + 2].filter(n => n > 0), rnd).slice(0, 2); return { sum, picks: shuffle([sum, ...near], rnd) }; }

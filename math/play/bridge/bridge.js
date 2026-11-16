@@ -1,17 +1,19 @@
 /* 다리 길 — 1학년 「10 만들기」. 설계: 핸드오프 kmotion/math-wizard/25_수학놀이터_네곳_설계_v1.md 3절(걸음 ①).
  * 건너편 섬에서 누가 손을 흔든다. 앤은 판자 뗏목 넷을 끌고 끊어진 다리 셋을 이어 데리러 간다. 뗏목은 떠날 때 실은 것이 전부다.
  * 딱 맞으면 다리가 이어져 건넌다 · 넘치면 건너되 남는 판자는 물에 떨어져 사라진다 · 모자라면 놓은 판자는 남고 앤이 끝에서 고개를 젓는다.
+ * 틈마다 빈 칸 수가 팻말에 적혀 있다 — 그 수만큼 판자가 실린 뗏목을 세어서 고른다. 셋을 다 이으면 놓은 판자의 합(2 + 3 + 4 = ?)을 고른다(준호 2026-11-17).
  * 들어갈 뗏목이 없으면 낱 판자가 한 장씩 떠내려온다(막히지 않는다). 아껴 쓰고 남은 뗏목은 우리 선착장 나무 더미가 된다.
  * 가위표·정답 표시·점수·설명 글 없음. 세계가 답한다. 숫자와 화물은 ./rules.js 가 매번 다르게 낸다.
  * 화면은 기성 3D 재료(Quaternius Pirate Kit, CC0)만 쓴다 — 판자·받침·기둥은 선착장 모형을 조각으로 나눠 그대로 쓴다(assets/CREDITS.md). */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneRig } from 'three/addons/utils/SkeletonUtils.js';
-import * as R from './rules.js?v=2';
+import * as R from './rules.js?v=3';
 import { wallet, audio, tone } from '../common/kit.js?v=3';
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)
-const T = { PICK_PX: 70, DECK: 1.0, SLOT: 0.4, PLANK_W: 1.3, RAFT_GAP: .42, RAFT_SPACE: .8, SEG: 8,      // SEG: 틈과 틈 사이(다리 4 + 땅 4)
+const T = { PICK_PX: 70, DECK: 1.0, SLOT: 0.4, PLANK_W: 1.3, RAFT_GAP: .36, RAFT_STAG: .16, RAFT_SPACE: .9, SLOTS_SHOWN: false,      // 뗏목 판자는 촘촘히·엇갈리게(틈 너비와 눈으로 맞춰지지 않게 — 세어야 한다) · SLOTS_SHOWN: 빈 칸 자리를 보여 줄지(끄면 수 팻말만)
+   SEG: 8,      // SEG: 틈과 틈 사이(다리 4 + 땅 4)
   WALK: 1.5, RUN: 4.4, PLANK_MS: 240, RAFT_Z: 3.1, RAFT_Y: .2, DROP_X: [-0.7, 4.7], DROP_Z: 1.9, START_X: -1.25, END_X: 5.3,
   INTRO_HOLD: [1500, 700], INTRO_MS: [3400, 2200],                 // 떠나는 장면: 먼 섬에 머무는 시간 · 돌아오는 시간([맨 처음, 그 뒤])
   SINGLE_MS: 1700, HINT_MS: 5000, HOME_MAX: 6, PILE_MAX: 12,        // 낱 판자가 떠내려오는 시간 · 손 그림자까지 · 선착장에 서는 주민 수 · 나무 더미에 보이는 판자 수
@@ -92,13 +94,25 @@ function pileAdd(p){ const i = S.pile.length; p.rotation.set(0, Math.PI / 2, 0);
 function newVoyage(){ for (const b of S.bridge) for (const p of b) if (p) scene.remove(p); for (const g of S.ghosts) for (const p of g) if (p) scene.remove(p); for (const r of S.rafts) { for (const p of r.planks) scene.remove(p); scene.remove(r.group); }
   S.voy = R.voyage(Math.random, { first: SAVE.saved === 0 && S.voyages === 0, prev: S.voy }); S.voyages++; S.gi = 0; S.rafts = []; S.bridge = []; S.ghosts = [];
   S.voy.gaps.forEach((g, k) => { const b = Array(R.SLOTS).fill(null), gh = Array(R.SLOTS).fill(null);
-    for (let i = 0; i < R.SLOTS; i++) { if (i < g.have) { b[i] = plank(i + k * 3); b[i].position.set(slotX(k, i), plankY(), 0); } else { gh[i] = plank(i, S.ghostMat); gh[i].position.set(slotX(k, i), plankY() - .01, 0); } } S.bridge.push(b); S.ghosts.push(gh); });
+    for (let i = 0; i < R.SLOTS; i++) { if (i < g.have) { b[i] = plank(i + k * 3); b[i].position.set(slotX(k, i), plankY(), 0); } else if (T.SLOTS_SHOWN) { gh[i] = plank(i, S.ghostMat); gh[i].position.set(slotX(k, i), plankY() - .01, 0); } } S.bridge.push(b); S.ghosts.push(gh); });
   S.filled = S.voy.gaps[0].have; S.voy.cargo.forEach((n, j) => raft(n, j)); layout(0);
   S.anne.obj.position.set(T.START_X, standY(), 0); face(S.anne, 1); play(S.anne, 'Idle');
   if (S.guest) unperson(S.guest); S.guest = person(T.TINT[SAVE.saved % T.TINT.length]); S.guest.obj.position.set(DEST + 2.2, standY(), -.5); face(S.guest, -1); play(S.guest, 'Wave');
+  signs(); $('tray').innerHTML = ''; $('tray').className = ''; $('pick').innerHTML = ''; $('pick').className = '';
   S.log.push({ voyage: S.voy.gaps.map(g => g.have), cargo: S.voy.cargo.slice() }); }
+// ── 수 팻말: 틈마다 빈 칸 수가 떠 있다(놓을수록 준다). 다 이은 틈의 수는 위쪽 띠로 올라가 모인다(2 + 3 + 4)
+function signs(){ document.querySelectorAll('.sign').forEach(e => e.remove()); S.signs = S.voy.gaps.map(() => { const e = document.createElement('div'); e.className = 'sign'; document.body.appendChild(e); return e; }); }
+const roomOf = k => k < S.gi ? 0 : R.SLOTS - (k === S.gi ? S.filled : S.voy.gaps[k].have);
+function signsDraw(){ if (!S.signs) return; S.signs.forEach((e, k) => { const room = roomOf(k), have = R.SLOTS - room; if (!room) { e.style.display = 'none'; return; } const q = window.__bridge.screenOf(new THREE.Vector3(ox(k) + (have + R.SLOTS) / 2 * T.SLOT, T.DECK + .95, 0));
+  if (q.x < -40 || q.x > innerWidth + 40) { e.style.display = 'none'; return; } e.style.display = ''; e.style.left = q.x + 'px'; e.style.top = q.y + 'px'; if (e.textContent !== String(room)) { e.textContent = room; e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); } }); }
+function trayAdd(n){ const t = $('tray'); if (t.children.length) { const p = document.createElement('i'); p.textContent = '+'; t.appendChild(p); } const b = document.createElement('b'); b.textContent = n; t.appendChild(b); t.className = 'on'; }
+/** 길 끝: 놓은 판자의 합을 고른다. 아닌 수를 누르면 그 수가 물러날 뿐(표시·감점 없음), 맞는 수를 누를 때까지. */
+function ask(){ return new Promise(res => { const q = R.total(S.voy), t = $('tray'), pk = $('pick'); S.ask = q; const eq = document.createElement('i'); eq.textContent = '='; const hole = document.createElement('b'); hole.className = 'hole'; hole.textContent = '?'; t.append(eq, hole); pk.innerHTML = ''; pk.className = 'on';
+  q.picks.forEach(n => { const b = document.createElement('button'); b.textContent = n; b.dataset.n = n; b.onclick = () => { audio(); S.log.push({ pick: n, right: n === q.sum });
+    if (n !== q.sum) { b.disabled = true; b.classList.add('away'); play(S.anne, 'No', true); tone(240, .25, 'sine', .08); setTimeout(() => { if (S.anne.act === S.anne.acts.No) play(S.anne, 'Idle'); }, 1300); return; }
+    pk.className = ''; hole.textContent = n; hole.className = 'done'; S.ask = null; res(n); }; pk.appendChild(b); }); }); }
 function raft(n, j, single = false){ const g = new THREE.Group(); scene.add(g); const r = { n, group: g, home: new THREE.Vector3(0, T.RAFT_Y, T.RAFT_Z), planks: [], used: false, single, ph: j * 1.7 };
-  for (let k = 0; k < n; k++) { const p = plank(k + j * 3); scene.remove(p); p.position.set((k - (n - 1) / 2) * T.RAFT_GAP, 0, 0); g.add(p); r.planks.push(p); } S.rafts.push(r); return r; }
+  for (let k = 0; k < n; k++) { const p = plank(k + j * 3); scene.remove(p); p.position.set((k - (n - 1) / 2) * T.RAFT_GAP, 0, (k % 2 ? 1 : -1) * T.RAFT_STAG * (n > 1 ? 1 : 0)); g.add(p); r.planks.push(p); } S.rafts.push(r); return r; }
 const live = () => S.rafts.filter(r => !r.used);
 /** 남은 뗏목을 지금 틈 앞 물 위에 나란히 세운다(ms 가 있으면 물결을 타고 옮겨 간다). */
 function layout(ms){ const rs = live(), w = rs.map(r => r.n * T.RAFT_GAP), total = w.reduce((a, b) => a + b, 0) + (rs.length - 1) * T.RAFT_SPACE; let x = ox(S.gi) + 2 - total / 2; const jobs = [];
@@ -124,12 +138,12 @@ async function drop(r){ S.busy = true; S.drops++; hintOff(); audio(); const k = 
   if (!out.done) { await sleep(250); await go(S.anne, Math.max(ox(k) + T.START_X, slotX(k, S.filled - 1) - .05)); play(S.anne, 'No', true); tone(240, .25, 'sine', .08); await sleep(1300); await go(S.anne, ox(k) + T.START_X); face(S.anne, 1); S.busy = false; S.idle = S.t; single(); return out; }
   // 열째 판자: 다리가 이어졌다 — 판자가 차례로 통 튄다
   S.bridge[k].forEach((p, i) => { setTimeout(() => { tween(p, { 'position.y': plankY() + .1 }, 90).then(() => tween(p, { 'position.y': plankY() }, 140)); tone(392 + i * 44, .07, 'triangle', .07); }, i * 45); });
-  await sleep(650); await go(S.anne, ox(k) + T.END_X);
+  trayAdd(S.voy.gaps[k].need); await sleep(650); await go(S.anne, ox(k) + T.END_X);
   if (k < R.TUNE.GAPS - 1) { S.gi = k + 1; S.filled = S.voy.gaps[S.gi].have; await Promise.all([tween(cam, { x: ox(S.gi) + 2 }, 1500), go(S.anne, ox(S.gi) + T.START_X), layout(1500)]); S.busy = false; S.idle = S.t; single(); return out; }
   await arrive(); return out; }
 
 // ── 건너편에 닿았다: 주민과 함께 내가 놓은 다리 셋을 달려 돌아온다 · 남은 뗏목은 나무 더미로
-async function arrive(){ const g = S.guest, left = live(); play(S.anne, 'Yes', true); play(g, 'Yes', true); tone(660, .12, 'triangle', .1); tone(880, .16, 'triangle', .1, .12); await sleep(1400);
+async function arrive(){ const g = S.guest, left = live(); await ask(); play(S.anne, 'Yes', true); play(g, 'Yes', true); tone(660, .12, 'triangle', .1); tone(880, .16, 'triangle', .1, .12); await sleep(1400);
   const spot = homeSpot(Math.min(S.home.length, T.HOME_MAX - 1)), ms = (S.anne.obj.position.x - T.START_X) / T.RUN * 1000;
   tween(cam, { x: HOME - 3 }, ms, t => t); for (const r of left) tween(r.group, { 'position.x': -4.2, 'position.z': 2.4 }, ms, t => t);
   setTimeout(() => go(g, spot.x, true).then(() => { tween(g.obj, { 'position.z': spot.z }, 300); face(g, 1); play(g, 'Wave'); }), 350); await go(S.anne, T.START_X, true); face(S.anne, 1);
@@ -166,7 +180,7 @@ let last = performance.now(); function loop(now){ requestAnimationFrame(loop); c
   for (let i = S.tweens.length - 1; i >= 0; i--) { const w = S.tweens[i]; w.t += dt * 1000; const k = Math.min(1, w.t / w.ms), e = w.ease(k); for (const key in w.to) setPath(w.o, key, w.from[key] + (w.to[key] - w.from[key]) * e); if (k >= 1) { S.tweens.splice(i, 1); w.res(); } }
   for (const p of S.people) p.mixer.update(dt);
   camera.position.set(cam.x, cam.y, cam.z); camera.lookAt(cam.x, .7, cam.lz); sun.position.set(cam.x - 8, 11, 8); sun.target.position.set(cam.x, 0, 0);
-  if (S.ready) hint(); renderer.render(scene, camera); }
+  if (S.ready) { hint(); signsDraw(); } renderer.render(scene, camera); }
 requestAnimationFrame(loop);
 // 하네스용: 화면 좌표 · 지금 틈의 첫 빈 칸 위
 window.__bridge.screenOf = obj => { const v = (obj.isVector3 ? obj.clone() : obj.getWorldPosition(new THREE.Vector3())).project(camera), b = canvas.getBoundingClientRect(); return { x: b.left + (v.x + 1) / 2 * b.width, y: b.top + (1 - v.y) / 2 * b.height }; };
