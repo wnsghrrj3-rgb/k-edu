@@ -4,7 +4,8 @@
  *   두 가지 손이 같은 두 알림을 낸다 — 장면 코드는 지금 어느 손인지 모른다.
  *     'hands' : KMotion(MediaPipe 손 21관절 · 떨림 보정 · 거울 좌표)의 손바닥 가운데
  *     'touch' : 손가락(포인터). 카메라 없음 · 거부 · 모델 못 받음 · 느림 · 아이가 손가락을 고름
- *   손가락은 'hands' 일 때도 늘 같이 된다(손이 안 보일 때 손가락으로 해도 이어진다 — 설계 §3).
+ *   손가락은 'hands' 일 때도 늘 같이 된다(손이 안 보일 때 손가락으로 해도 이어진다 — 설계 §3). 다만 그때는 누르고 있는 동안만(지나가는 마우스가 카메라 손과 다투지 않게).
+ *   두 손이 보이면 따라가던 손을 계속 따라간다(두 손을 흔들어도 손 자리가 이 손 저 손으로 튀지 않는다).
  *
  *   PlayMotion.start({ video, prefer, shakeZone })  → Promise('hands' | 'touch')
  *       prefer 'touch' = 카메라를 열지 않는다 · shakeZone(x, y) = 손가락이 이 자리에서 문지를 때만 흔들기로 센다(없으면 어디서나)
@@ -103,7 +104,7 @@
     if (e.type === 'pointerdown') ptrDown = true;
     var p = ptXY(e), touch = e.pointerType === 'touch' || e.pointerType === 'pen';
     if (e.type === 'pointerup' || e.type === 'pointercancel') { ptrDown = false; if (touch) feed({ seen: false }); return; }
-    if (touch && !ptrDown) return;                                                     /* 손가락은 닿아 있을 때만 */
+    if (!ptrDown && (touch || mode === 'hands')) return;                               /* 손가락은 닿아 있을 때만 · 손 추적 중에는 마우스도 누르고 있을 때만 */
     var zone = !opt.shakeZone || opt.shakeZone(p.x, p.y);
     feed({ x: p.x, y: p.y, shake: ptrDown && zone });
   }
@@ -117,18 +118,19 @@
   }
 
   /* ── 손 추적(KMotion) ── */
-  var slowSince = 0, startedAt = 0, lostTimer = 0;
+  var slowSince = 0, startedAt = 0, lostTimer = 0, camHand = null;
   function mouseMode() { try { return /[?&]mouse(=|&|$)/.test(g.location.search); } catch (e) { return false; } }
   function zoneMap(v) { var z = CONF.zone, a = (1 - z) / 2; return clamp01((v - a) / z); }
   function onFrame(e) {
     if (!running || !km) return;
-    var t = now(), hs = (e.actions && e.actions.hands) || [], a = null;
-    for (var i = 0; i < hs.length; i++) if (hs[i] && hs[i].center && (!a || hs[i].span > a.span)) a = hs[i];   /* 가장 크게(가까이) 보이는 손 */
-    if (a) {
-      var nx = a.center.x / km.W, ny = a.center.y / km.H;
+    var t = now(), hs = (e.actions && e.actions.hands) || [], best = null, bd = 1e9, stick = camHand && t - camHand.t < CONF.lostMs;
+    for (var i = 0; i < hs.length; i++) { var h = hs[i]; if (!h || !h.center) continue;
+      var nx = h.center.x / km.W, ny = h.center.y / km.H;
       if (!km.mouse) { nx = zoneMap(nx); ny = zoneMap(ny); }                               /* 마우스 모드는 이미 화면 자리 */
-      feed({ x: nx, y: ny, t: t });
-    }
+      /* 따라가던 손이 있으면 그 손(가장 가까운 것) · 없으면 가장 크게(가까이) 보이는 손 */
+      var d = stick ? Math.hypot(nx - camHand.x, ny - camHand.y) : -(h.span || 0);
+      if (d < bd) { bd = d; best = { x: nx, y: ny, t: t }; } }
+    if (best) { camHand = best; feed(best); }
     /* 느림 판정 — 켜고 조금 지난 뒤, 추론이 너무 드물거나 늦게 이어지면 손가락으로(마우스 모드 제외) */
     if (!km.mouse && t - startedAt > CONF.slow.graceMs) {
       var slow = (km.fps && km.fps < CONF.slow.fps) || (e.lagMs != null && e.lagMs > CONF.slow.lagMs);
@@ -151,7 +153,7 @@
 
   function start(o) {
     stop();
-    opt = o || {}; running = true; startedAt = now(); slowSince = 0; sh.reset(); last = { x: 0.5, y: 0.5, seen: false, t: 0 };
+    opt = o || {}; running = true; startedAt = now(); slowSince = 0; camHand = null; sh.reset(); last = { x: 0.5, y: 0.5, seen: false, t: 0 };
     var tok = ++startTok;
     lostLoop();
     var useCam = opt.prefer !== 'touch' && !denied && g.KMotion && (mouseMode() || (g.navigator && g.navigator.mediaDevices && g.navigator.mediaDevices.getUserMedia));
