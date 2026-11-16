@@ -133,7 +133,7 @@ export function stepThings(things, dt, t){
 /* ── 씨앗 단계가 물건에 보인다 — 빛바램 · 선반의 나무 조각 · 아이 글씨 이름표 ── */
 export function shelves(K, glade, things, o){
   const { THREE, M, C, mix, mesh, rbox, canvasTex, hex, letterTex } = K;
-  const SH = {}, made = {}, base = new Map();
+  const SH = {}, made = {}, base = new Map(), FADE = o.fade != null ? o.fade : 0.42;      /* 심기 전 빛바램 — 바탕색 쪽으로 이만큼 */
   /* 선반 둘 — 제 나무 앞(왼쪽 = 첫 글자 · 오른쪽 = 둘째 글자) · 처음엔 빈 판자 */
   const wood = M(mix('a-wood', 'warm', 0.15), { roughness: 0.85 }), dark = M(mix('a-wood', 'ink', 0.2), { roughness: 0.9 });
   const boards = ['left', 'right'].map(side => { const at = o[side], g = new THREE.Group(); g.position.set(at[0], 0, at[1]); g.rotation.y = at[2] || 0;
@@ -145,7 +145,7 @@ export function shelves(K, glade, things, o){
   /* 빛바램 — 재질 색을 바탕색 쪽으로(되돌릴 수 있게 처음 색을 기억) */
   function fade(w, on){ const g = things[w]; if (!g) return; g.userData.faded = !!on; const pale = C('bg');
     eachMat(g, m => { if (!m.material.userData.own) { m.material = m.material.clone(); m.material.userData.own = 1; base.set(m.material, m.material.color.clone()); }
-      const c0 = base.get(m.material); m.material.color.copy(on ? c0.clone().lerp(pale, 0.55) : c0); }); }
+      const c0 = base.get(m.material); m.material.color.copy(on ? c0.clone().lerp(pale, FADE) : c0); }); }
   /* 작은 나무 조각 — 그 물건을 나무로 깎은 모양(본을 떠서 나무 재질로) */
   function piece(w){ if (made[w]) return made[w]; const src = things[w], side = boards[sideOf(w)], k = side.userData.used++;
     const g = new THREE.Group(), copy = src.clone(true); copy.position.set(0, 0, 0); copy.rotation.set(0, 0, 0); copy.scale.setScalar(1);

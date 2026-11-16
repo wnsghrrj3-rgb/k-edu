@@ -209,6 +209,15 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:
 <script src="../content/letters.js"></script>
 <script src="../engine/play-write.js"></script>
 <script src="../engine/play-speech.js"></script>
+<script src="../core/evidence.js"></script>
+<script src="../engine/play-seed.js"></script>
+<script src="../data/path.js"></script>
+<script src="../data/path-detail.js"></script>
+<script>
+/* 웹GL 이 없는 기기 — 2D 걸음 화면(step.html)으로 같은 걸음(A01)을 한다. 같은 씨앗 열쇠 · 같은 증거 약속(설계 v2 §7-3) · ?flat=1 은 시험용 */
+(function () { var ok = false; try { var c = document.createElement('canvas'); ok = !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl'))); } catch (e) {}
+  if (!ok || /[?&]flat=1/.test(location.search)) location.replace('step.html?step=A01'); })();
+</script>
 <script type="module">
 import * as THREE from 'three';
 import { createKit } from '../core/diorama.js';
@@ -219,7 +228,7 @@ import { buildThings, stepThings, shelves, ROOM_AB } from '../content/rooms/glad
 const $ = id => document.getElementById(id), I = PlayIcon.html, A = window.PlayAudio, T = window.KTTS, PW = window.PlayWrite, SP = window.PlaySpeech;
 /* ── 상수는 여기 한 곳 ── */
 const CONF = {
-  bpm: 104,                         /* 챈트 박자(상세판 처음 값 — 듣기 단) */
+  bpm: 104,                         /* 챈트 박자 — 아래에서 한 해 길 자료(CHANT 듣기 단)로 덮는다 */
   finds: 4,                         /* 듣고 찾기 한 판 */
   sayTries: 2, sayMs: 4500,         /* 따라 말하기 — 듣는 횟수 · 한 번 듣는 길이(ms). 두 번 안에 못 알아들어도 넘어간다 */
   cam: { yaw: 0.2, pitch: 0.6, dist: 30, yawMin: -0.25, yawMax: 0.6, pitchMin: 0.42, pitchMax: 0.82,
@@ -233,13 +242,44 @@ const CONF = {
     antRoad: [[3.1, 3.3], [-4.6, 3.6], [-3.0, 3.6], [-1.4, 3.6], [0.2, 3.6], [0.75, 1.3]],   /* 개미 줄 — 열매를 메는 곳 · 메고 간 곳 · 한 걸음씩 돌아오는 자리 넷 */
     drops: 4, dropX: [-2.5, -0.8, 0.9, 2.6], dropY: [2.5, 3.1, 3.2, 2.6],           /* 악어의 하품 — 물방울 넷이 뜨는 자리(개울 기준) */
     cars: 4, carGap: [1.85, 1.15], busTo: -2.4, roadZ: 4.35, thinkMs: 2600,
-    yawns: 3, guestAt: [2.3, -1.75], guestAsk: ['ant', 'bus'] },                      /* 하품 횟수 · 악어가 올라오는 자리 · 악어가 내미는 그림 둘 */
-  /* 쪽지 셋 — 보낸 이(paw = 아직 못 만난 친구의 발자국) · 글자 칸 · 그림 · 통째로 읽는 한 줄 */
-  notes: [{ from: 'ant', letters: ['a'], pics: ['apple'], line: 'I like it!' }, { from: 'bird', letters: ['b'], pics: ['bird', 'bus'], line: 'Hi, big bird!' }, { from: 'paw', letters: [], pics: ['apple', 'bus'], line: 'Hi! I like it!' }],        /* 낱말 기차 — 짐칸 수 · 버스 뒤 간격 · 버스가 서는 곳 · 마이크가 없을 때 떠올릴 틈(ms) */
-  /* 낱말 여덟 — 왼쪽은 a, 오른쪽은 b. dy = 눈이 따라갈 때 볼 높이 · r = 아래에 밝아지는 자리의 크기 */
-  words: [{ w: 'apple', l: 'a', dy: 0.7, r: 1.3 }, { w: 'ant', l: 'a', dy: 0.4, r: 1.7 }, { w: 'ax', l: 'a', dy: 0.9, r: 1.6 }, { w: 'alligator', l: 'a', dy: 0.3, r: 2.3 },
-          { w: 'bag', l: 'b', dy: 1.4, r: 1.2 }, { w: 'bed', l: 'b', dy: 0.8, r: 1.9 }, { w: 'bus', l: 'b', dy: 0.9, r: 1.9 }, { w: 'bird', l: 'b', dy: 2.5, r: 1.1 }]
+    yawns: 3, guestAt: [2.3, -1.75] },                                                /* 하품 횟수 · 악어가 올라오는 자리(내미는 그림은 상세판 자료에서) */
+  /* 낱말마다 보는 모양 — dy = 눈이 따라갈 때 볼 높이 · r = 아래에 밝아지는 자리의 크기(낱말 자체는 한 해 길 자료에서) */
+  look: { apple: { dy: 0.7, r: 1.3 }, ant: { dy: 0.4, r: 1.7 }, ax: { dy: 0.9, r: 1.6 }, alligator: { dy: 0.3, r: 2.3 }, bag: { dy: 1.4, r: 1.2 }, bed: { dy: 0.8, r: 1.9 }, bus: { dy: 0.9, r: 1.9 }, bird: { dy: 2.5, r: 1.1 } }
 };
+/* ── 걸음 자료 — 한 해 길(data/path.js) · 걸음 상세판(data/path-detail.js). 낱말 · 쪽지 · 손님 · 사건의 한마디 · 박자는 손으로 다시 적지 않고 자료에서 읽는다 ── */
+const STEP = PLAY_PATH.steps.find(s => s.id === 'A01'), DET = PLAY_PATH_DETAIL.steps.A01;
+CONF.bpm = PLAY_PATH_DETAIL.chant.bpm.listen;
+CONF.words = STEP.oral.map(w => Object.assign({ w, l: w.charAt(0) }, CONF.look[w] || { dy: 0.8, r: 1.4 }));          /* 왼쪽은 첫 글자, 오른쪽은 둘째 글자(빈터 판형) */
+const bits = (show, open) => show.filter(x => x.charAt(0) === open).map(x => x.slice(1, -1));
+CONF.notes = DET.notes.map(n => ({ from: n.sign ? 'paw' : n.from, letters: bits(n.show, '['), pics: bits(n.show, '{'), line: n.en }));   /* 아직 못 만난 친구는 서명이 그림(발자국) */
+CONF.ev.guestAsk = DET.guest.turns.filter(t => t.show).map(t => t.show);
+const EVL = {}; DET.events.forEach(e => { EVL[e.id] = e.en; });
+const ORAL = new Set(STEP.oral), wordsIn = f => f.toLowerCase().replace(/[^a-z ]/g, ' ').split(/\s+/).filter(x => ORAL.has(x));
+const LINE = { roll: EVL.roll, ants: EVL.ants, yawn: EVL.yawn, ready: EVL.busready, guest: (DET.guest.turns.find(t => t.say) || {}).say,
+  like: STEP.frames.find(f => !wordsIn(f).length),                                                   /* 통말 한 줄(I like it!) */
+  frame: l => STEP.frames.find(f => wordsIn(f).some(x => x.charAt(0) === l)) };                       /* 그 글자 낱말이 든 문장(Hi, ant! · Hi, big bird!) */
+const frameWord = l => wordsIn(LINE.frame(l)).find(x => x.charAt(0) === l);
+
+/* ── 증거 — 놀이 코어(core/game.js)와 같은 길: 기록(PlayEvidence · 계약 그대로) + 씨앗(PlaySeed — 입으로 통과한 것만 심고 키운다 · 결정 §0-1) + 물건에 보이는 단계.
+     2D 걸음 화면(step.html?step=A01)과 같은 구역 이름 · 같은 열쇠(입말 = o:낱말 · 글자 = l:글자)라서 두 판의 증거가 한 줄로 모인다 ── */
+const ZONE = STEP.id, EVD = window.PlayEvidence, SEED = window.PlaySeed, evLog = [];
+const pathOf = id => (ORAL.has(id) ? 'oral' : STEP.letters.indexOf(id) >= 0 ? 'letter' : 'sentence');
+function emit(game, v){
+  if (!v) return null; evLog.push({ game, v });
+  try { if (EVD) EVD.record({ zone: ZONE, cell: ZONE, game }, [v]); } catch (e) {}
+  try { if (SEED && SEED.feed) SEED.feed(v.targetId, v, { zone: ZONE, path: pathOf(v.targetId) }); } catch (e) {}
+  if (ORAL.has(v.targetId) && typeof paintStage === 'function') paintStage(v.targetId);
+  return v;
+}
+/* 말하기 한 건 — 'speech' = 말로 통과(인식됨) · 'heard'·'tap' = 말했지만 골라서 끝냄 · 'pass'·false = 관찰 안 됨(기록하지 않음) */
+function sayEv(id, said, game){
+  if (!EVD || !said || said === 'pass') return null;
+  const v = said === 'speech' ? EVD.say(id, { by: 'speech' }) : EVD.say(id, { by: 'chosen', mic: !micOff && !!SP && SP.available() });
+  if (v) v.unit = ORAL.has(id) ? 'word' : 'sentence';
+  return emit(game, v);
+}
+const hearEv = (id, game, miss) => EVD ? emit(game, Object.assign(EVD.act(id, 'listen', 'touch', !miss, (miss | 0) + 1), { unit: 'word' })) : null;
+
 /* ── 키트(core/diorama.js) — 렌더러 · 장면 · 재질 · 도형 · 글자판 · 트윈 · 후처리 · 품질 3단 · 눈 ── */
 const K = createKit({ canvas: $('cv') });
 const { LOW, C, hex, mix, hexOf, RNG, R, S, M, canvasTex, mesh, ball, rshape, rbox, flat, oval, soft, glowTex, letterTex, FX, fx, cam } = K;
@@ -273,6 +313,9 @@ const things = buildThings(K, glade, { slot: CONF.slot, creek: CK });
 CONF.words.forEach(x => { things[x.w].userData.dy = x.dy; things[x.w].userData.r = x.r; });
 /* 씨앗 단계가 보이는 선반 — 제 나무 앞(왼쪽 a · 오른쪽 b). 단계는 씨앗(engine/play-seed.js)에서 */
 const SH = shelves(K, glade, things, { left: [-6.45, -1.35, 0.35], right: [3.7, -2.35, -0.25], letters: ROOM_AB.letters, letterOf: w => CONF.words.find(x => x.w === w).l });
+/* 그 낱말의 씨앗 단계를 물건에 — 심기 전 빛바램 · 씨앗 제 색 · 꽃 선반의 나무 조각 · 열매 아이 글씨 이름표(처음 쓴 그 글자) */
+function paintStage(w){ const sd = SEED && SEED.get(SEED.key ? SEED.key(w, 'oral') : 'o:' + w), ink = window.PlayWrite && PlayWrite.ink ? PlayWrite.ink(w.charAt(0)) : null; SH.set(w, sd ? sd.stage : -1, ink); }
+CONF.words.forEach(x => paintStage(x.w));
 /* ── 사건의 소품 — 받침돌 둘 · 열매를 메는 개미 넷 · 버스 짐칸 · 그림 물방울 · 그림 딱지 ── */
 const EV = CONF.ev;
 [EV.stoneA, EV.stoneB].forEach(p => glade.add(ball(0.56, M(mix(mix('a-steel', 'stage-2', 0.3), 'ink', 0.18), { roughness: 0.9 }), p[0], 0.06, p[1], 1, 0.36, 0.85)));
@@ -458,6 +501,7 @@ async function writeOne(l){
   word(l, 'hear'); $('sheetL').textContent = l; $('pad').innerHTML = ''; $('sheet').classList.add('show'); saySound(l, mina);
   const res = await new Promise(r => { writeOne.cancel = () => r(null); PW.write($('pad'), { text: l, mode: 'trace', strict: true, key: l, onLetter: () => sfx('pop'), onMiss: () => { sfx('soft'); saySound(l, mina); } }).then(r); });
   writeOne.cancel = null;
+  if (res && EVD) emit('letter-path', EVD.write(l, { unit: 'letter', support: res.support, clean: res.clean, attempts: res.attempts }));
   if (res) await fly(l);
   $('sheet').classList.remove('show'); $('pad').innerHTML = '';
   if (!res) { mood(mina, 'idle'); unpresent(); return false; }
@@ -479,7 +523,7 @@ async function findGame(n){
 }
 async function answer(w){
   if (!want || answer.busy) return; answer.busy = true;
-  if (w === want) { sfx('ok'); bubble(null); $('hear').classList.remove('show'); present(w, CONF.cam.find); tagAt(things[w], letterOf(w)); burstAt(things[w], things[w].userData.dy + 0.4, 14); people.forEach(p => mood(p, 'happy', 900)); await act(w, 800); const r = findNext; findNext = null; want = null; answer.busy = false; if (r) r(); return; }
+  if (w === want) { hearEv(w, 'find', misses); sfx('ok'); bubble(null); $('hear').classList.remove('show'); present(w, CONF.cam.find); tagAt(things[w], letterOf(w)); burstAt(things[w], things[w].userData.dy + 0.4, 14); people.forEach(p => mood(p, 'happy', 900)); await act(w, 800); const r = findNext; findNext = null; want = null; answer.busy = false; if (r) r(); return; }
   misses++; sfx('soft'); mood(max, 'ear', 1400); act(w, 500); word(w, 'hear'); await sayWord(w, 0.9); await wait(250); word(null);      /* 누른 것의 이름을 들려주고 */
   if (want && misses >= 2) { hop(things[want], 0.6, 600); spotAt(things[want]); }                 /* 두 번 다르면 찾는 것이 들썩 */
   if (want) await sayWord(want, 0.8); answer.busy = false;
@@ -498,7 +542,7 @@ async function evFruit(){
   { const from = f.position.clone(); await tween(520, t => { f.position.lerpVectors(from, land, t); f.position.y = from.y + (land.y - from.y) * t * t; }, t => t); } sfx('tray');
   await tween(1500, t => { f.position.lerpVectors(land, stop, t); f.position.y = 0.52 + Math.abs(Math.sin(t * Math.PI * 3)) * 0.25 * (1 - t); f.rotation.z = -t * Math.PI * 4; }); f.rotation.z = 0;
   mood(max, 'lift'); await fruitTo(f, new THREE.Vector3(max.position.x + 1.25, 2.1, max.position.z + 0.1), 460, { arc: 0.3 });
-  bubble('<span class="say">Oh! Listen!</span>'); burstAt(f, 0.2, 8); await sayLine('Oh! Listen!'); await wait(250); bubble(null);
+  bubble('<span class="say">' + LINE.roll + '</span>'); burstAt(f, 0.2, 8); await sayLine(LINE.roll); await wait(250); bubble(null);
 }
 /* ② 개미 줄(Mina · 마법 주문 자리) — 개미들이 b 열매를 메고 가 버린다. b 낱말을 부를 때마다 한 걸음씩 돌아온다 */
 function antsGo(to, dur, withFruit){ const from = carry.position.clone(), tv = new THREE.Vector3(to[0], 0, to[1]), f = fruitOf('b'); carry.rotation.y = Math.atan2(-(tv.z - from.z), tv.x - from.x); carry.userData.moving = true;
@@ -514,7 +558,7 @@ async function antsTake(){         /* 개미들이 달려와 메고 가 버린�
   focus(f, 1.2, 0.6, 0, 0, 0); sfx('belt'); await antsGo(R0[0], 900, false);
   await tween(260, t => { f.position.y = 0.52 + t * 0.46; }); sfx('belt');
   mood(mina, 'point'); lookAll(carry); focus(carry, 1.2, 0.7, 0, 0, 0.6);
-  const go = antsGo(R0[1], 2400, true); await wait(600); bubble('<span class="say">Oh! Hi, ant!</span>', mina); await sayLine('Oh! Hi, ant!', mina); await go; await wait(300); bubble(null); mood(mina, 'idle');
+  const go = antsGo(R0[1], 2400, true); await wait(600); bubble('<span class="say">' + LINE.ants + '</span>', mina); await sayLine(LINE.ants, mina); await go; await wait(300); bubble(null); mood(mina, 'idle');
 }
 async function antsStep(i){        /* i = 0..3 — b 낱말 하나를 부를 때마다 한 걸음 */
   const R0 = EV.antRoad, last = i === R0.length - 3; focus(carry, 1.25, 0.7, 0, 0, 0.6); lookAll(carry); spotAt(null); sfx('belt');
@@ -530,7 +574,7 @@ let dropWant = null, dropNext = null, dropMiss = 0; const dropPics = [];
 async function evYawn(n){
   const al = things.alligator, u = al.userData, all = CONF.words.map(x => x.w), order = all.slice().sort(() => Math.random() - 0.5).slice(0, n);
   unpresent(); word(null); focus(dropEye, 1.2, 1, 0, 0.02, 0); lookAll(al); u.busy = true; mood(mina, 'point', 1500);
-  bubble('<span class="say">Wow! Big!</span>', mina); tween(900, t => { u.jaw.rotation.z = t * 0.95; u.body.position.y = 0.02 + t * 0.3; }); ripple(al.position.x, al.position.z, 1.8); await sayLine('Wow! Big!', mina); await wait(400); bubble(null); tip('들리는 그림 물방울을 톡 눌러 봐', 3400);
+  bubble('<span class="say">' + LINE.yawn + '</span>', mina); tween(900, t => { u.jaw.rotation.z = t * 0.95; u.body.position.y = 0.02 + t * 0.3; }); ripple(al.position.x, al.position.z, 1.8); await sayLine(LINE.yawn, mina); await wait(400); bubble(null); tip('들리는 그림 물방울을 톡 눌러 봐', 3400);
   for (const w of order) {
     if (mode === 'stop') break;
     const picks = [w].concat(all.filter(x => x !== w).sort(() => Math.random() - 0.5).slice(0, drops.length - 1)).sort(() => Math.random() - 0.5);
@@ -548,7 +592,7 @@ async function evYawn(n){
 }
 async function pickDrop(i){
   const m = drops[i], w = m.userData.w; if (!dropWant || pickDrop.busy || !m.visible) return; pickDrop.busy = true;
-  if (w === dropWant) { sfx('ok'); dropWant = null; burstAt(m, 0, 14, ['surface', 'a-fish', 'warm-soft', 'stage-soft']); ripple(m.position.x, CK[1] + 0.3, 1.2); people.forEach(p => mood(p, 'happy', 900));
+  if (w === dropWant) { hearEv(w, 'pop', dropMiss); sfx('ok'); dropWant = null; burstAt(m, 0, 14, ['surface', 'a-fish', 'warm-soft', 'stage-soft']); ripple(m.position.x, CK[1] + 0.3, 1.2); people.forEach(p => mood(p, 'happy', 900));
     drops.forEach((d, j) => { picOff(dropPics[j]); d.userData.float = false; const s0 = d.scale.x; tween(j === i ? 180 : 420, t => d.scale.setScalar(s0 * (j === i ? 1 + t * 0.4 : 1 - t))).then(() => { d.visible = false; }); });
     await wait(450); const r = dropNext; dropNext = null; pickDrop.busy = false; if (r) r(); return; }
   dropMiss++; sfx('soft'); mood(max, 'ear', 1400); tween(400, t => m.scale.setScalar(1 + Math.sin(t * Math.PI * 3) * 0.08), t => t); word(w, 'hear'); await sayWord(w, 0.9); await wait(250); word(null);      /* 누른 것의 이름을 들려주고 */
@@ -576,7 +620,7 @@ async function evTrain(n){
   await tween(3400, t => { trainS = t * road.total; trainAt(trainS); bu.car.rotation.y = 0.15 * (1 - Math.min(1, t * 5)); bu.car.position.y = 0.42 + Math.abs(Math.sin(t * 40)) * 0.03; }, t => t * t * (3 - 2 * t));
   const cards = list.map((x, i) => { const q = picAt(cars[i], x.w, 1.42, ''); q.size = 0.46; return q; }); await wait(500);
   for (let i = 0; i < list.length; i++) { if (mode === 'stop') break; const c = cars[i], q = cards[i]; q.d.classList.add('now'); q.pulse = 1; focus(c, 1.3, 0.75, 0, -0.02, 1.1); lookAll(c);
-    await nameIt(list[i]); q.pulse = 0; q.d.classList.remove('now'); q.d.classList.add('lit'); tween(400, t => { c.userData.lamp.material.emissiveIntensity = t * 2.4; }); burstAt(c, 1.0, 8); tween(300, t => { c.position.y = Math.sin(t * Math.PI) * 0.18; }, t => t); word(null); await wait(380); }
+    sayEv(list[i].w, await nameIt(list[i]), 'word-train'); q.pulse = 0; q.d.classList.remove('now'); q.d.classList.add('lit'); tween(400, t => { c.userData.lamp.material.emissiveIntensity = t * 2.4; }); burstAt(c, 1.0, 8); tween(300, t => { c.position.y = Math.sin(t * Math.PI) * 0.18; }, t => t); word(null); await wait(380); }
   /* 다 켜졌다 — 굴뚝에서 김이 뿜 */
   unpresent(); sfx('done'); cards.forEach(picOff); bus.getWorldPosition(vA); const px = vA.x + 0.75, pz = vA.z;
   for (let i = 0; i < 16; i++) spawn(vB.set(px, 2.0, pz), vR.set((Math.random() - 0.5) * 1.4, 2 + Math.random() * 2, (Math.random() - 0.5) * 1.0), 1.4, 'surface', { g: -1.5, size: 1.6 });
@@ -602,7 +646,7 @@ function noteHide(){ $('note').classList.remove('show'); $('tip').classList.remo
 function noteAsk(ok, hint, again){ return new Promise(done => { noteWant = { ok, hint, again, done, miss: 0 }; }); }
 async function noteTap(w){
   const nw = noteWant; if (!nw || noteTap.busy) return; noteTap.busy = true;
-  if (nw.ok(w)) { noteWant = null; sfx('ok'); present(w, CONF.cam.find); word(w, 'ok'); tagAt(things[w], letterOf(w)); burstAt(things[w], things[w].userData.dy + 0.4, 12); people.forEach(p => mood(p, 'happy', 900)); act(w, 800); await sayWord(w); await wait(500); word(null); noteTap.busy = false; nw.done(w); return; }
+  if (nw.ok(w)) { hearEv(w, 'note', nw.miss); noteWant = null; sfx('ok'); present(w, CONF.cam.find); word(w, 'ok'); tagAt(things[w], letterOf(w)); burstAt(things[w], things[w].userData.dy + 0.4, 12); people.forEach(p => mood(p, 'happy', 900)); act(w, 800); await sayWord(w); await wait(500); word(null); noteTap.busy = false; nw.done(w); return; }
   nw.miss++; sfx('soft'); mood(max, 'ear', 1200); act(w, 500); word(w, 'hear'); await sayWord(w, 0.9); await wait(250); word(null);
   if (nw.miss >= 2 && nw.hint) nw.hint(); if (nw.again) await nw.again(); noteTap.busy = false;
 }
@@ -646,8 +690,8 @@ let letterWant = null;
 function jawTalk(dur, amp){ const u = things.alligator.userData; return tween(dur, t => { u.jaw.rotation.z = Math.abs(Math.sin(t * Math.PI * 2)) * amp; }, t => t); }
 async function pickLetter(l){
   const lw = letterWant; if (!lw || pickLetter.busy) return; pickLetter.busy = true; const f = fruitOf(l); await tween(360, t => f.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.3), t => t);
-  if (l === lw.l) { letterWant = null; sfx('ok'); burstAt(f, 0.2, 12); ['a', 'b'].forEach(x => fruitOf(x).scale.setScalar(1)); await saySound(l); pickLetter.busy = false; lw.done(); return; }
-  sfx('soft'); mood(max, 'ear', 1200); await saySound(l); await wait(200); await lw.again(); pickLetter.busy = false;      /* 고른 글자의 소리를 들려주고, 낱말을 다시 */
+  if (l === lw.l) { if (EVD && lw.w) emit('special-guest', Object.assign(EVD.act(lw.w, 'listen', 'touch', !lw.miss, (lw.miss | 0) + 1), { unit: 'word' })); letterWant = null; sfx('ok'); burstAt(f, 0.2, 12); ['a', 'b'].forEach(x => fruitOf(x).scale.setScalar(1)); await saySound(l); pickLetter.busy = false; lw.done(); return; }
+  lw.miss = (lw.miss | 0) + 1; sfx('soft'); mood(max, 'ear', 1200); await saySound(l); await wait(200); await lw.again(); pickLetter.busy = false;      /* 고른 글자의 소리를 들려주고, 낱말을 다시 */
 }
 async function guestName(w){           /* 그림만 보고 이름을 말한다(글자는 보이지 않는다 — 곧 고를 것이므로). 그 뒤 악어가 그 낱말을 말한다 */
   const x = { w }; let said = false; mood(max, 'ear'); mood(me, 'speak'); word(w, 'say', '이름을 말해 봐', 2);
@@ -660,9 +704,9 @@ async function guestName(w){           /* 그림만 보고 이름을 말한다(�
 async function guestOne(w){
   const al = things.alligator, l = letterOf(w); focus(al, 1.25, 0.75, 0, -0.05, 0.9); lookAll(al);
   const q = picAt(mouthAt, w, 1.35, 'now'); q.size = 0.62; q.pulse = 1; sfx('pop'); jawTalk(500, 0.5); await wait(650);
-  await guestName(w);
+  sayEv(w, await guestName(w), 'special-guest');
   focus(null); lookAll(null); word(w, 'say', '무슨 소리로 시작할까? 열매를 눌러 봐', 2);                    /* 첫소리 글자 열매를 고른다 */
-  await new Promise(done => { letterWant = { l, done, again: async () => { jawTalk(500, 0.4); await sayWord(w, 0.8, null); } }; });
+  await new Promise(done => { letterWant = { l, w, miss: 0, done, again: async () => { jawTalk(500, 0.4); await sayWord(w, 0.8, null); } }; });
   q.pulse = 0; q.d.classList.remove('now'); q.d.classList.add('lit'); word(w, 'ok'); people.forEach(p => mood(p, 'happy', 800)); jawTalk(500, 0.4); await sayWord(w, 0, null); await wait(600); picOff(q); word(null);
 }
 async function evGuest(){
@@ -675,7 +719,7 @@ async function evGuest(){
   focus(al, 1.25, 0.75, 0, -0.05, 0.9); lookAll(al); mood(max, 'point', 900); mouthAt.getWorldPosition(vA); const to = vA.clone(), from = new THREE.Vector3(max.position.x + 0.5, 1.5, max.position.z + 0.3);
   bite.visible = true; bite.scale.set(1, 0.92, 1); tween(400, t => { u.jaw.rotation.z = t * 0.7; }); await tween(560, t => { bite.position.lerpVectors(from, to, t); bite.position.y += Math.sin(t * Math.PI) * 1.0; }, t => t);
   for (let i = 0; i < 2; i++) { await tween(160, t => { u.jaw.rotation.z = 0.7 * (1 - t); }); sfx('pop'); burstAt(bite, 0, 5, ['a-red', 'a-cream', 'surface']); bite.scale.multiplyScalar(0.6); await tween(160, t => { u.jaw.rotation.z = 0.7 * t; }); }
-  await tween(160, t => { u.jaw.rotation.z = 0.7 * (1 - t); }); bite.visible = false; mood(me, 'speak'); await lineOrTap('I like it!'); mood(me, 'happy', 900);
+  await tween(160, t => { u.jaw.rotation.z = 0.7 * (1 - t); }); bite.visible = false; mood(me, 'speak'); sayEv(LINE.guest, await lineOrTap(LINE.guest), 'special-guest'); mood(me, 'happy', 900);
   /* 인사 — 꼬리로 물을 튕겨 작은 무지개. 버스 문이 열린다 */
   focus(dropEye, 1.12, 0.8, 0, 0, 0); sfx('combo'); tween(1000, t => { u.tail.rotation.y = Math.sin(t * Math.PI * 4) * 0.7; }, t => t); ripple(home.x - 1, home.z, 2.2); ripple(home.x, home.z - 0.4, 1.6);
   for (let i = 0; i < 14; i++) spawn(vB.set(home.x - 1.2 + Math.random() * 0.8, 0.3, home.z + Math.random() * 0.6), vR.set((Math.random() - 0.5) * 2, 3 + Math.random() * 2.5, (Math.random() - 0.5) * 1.2), 1.1, i % 2 ? 'surface' : 'a-fish', { size: 0.8 });
@@ -726,7 +770,7 @@ async function lesson(p){
     focus(f, 1.3, 0.6, 0, -0.1, 0); lookAll(f); word(l, 'hear'); tween(700, t => f.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.4), t => t); burstAt(f, 0.2, 8); await saySound(l); await wait(250); tween(500, t => f.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.25), t => t); await saySound(l); await wait(350);
     if (l === 'a') { await fruitSit('a'); mood(max, 'idle'); } else await antsTake();
     const list = CONF.words.filter(y => y.l === l);
-    for (let i = 0; i < list.length; i++) { dots(list.length, i); await chantLine(list[i]); await repeat(list[i]); dots(list.length, i + 1); if (l === 'b') await antsStep(i); }
+    for (let i = 0; i < list.length; i++) { dots(list.length, i); await chantLine(list[i]); sayEv(list[i].w, await repeat(list[i]), 'sound-chant'); dots(list.length, i + 1); if (l === 'b') await antsStep(i); }
     dots(0); steps(k++); mood(max, 'idle'); beatFruit = null; await writeOne(l);
     if (l === 'a') { steps(k++); await note1(); }                                                                             /* 쪽지 1 — 개미에게서 */
     else { steps(k++); await evYawn(EV.yawns); steps(k++); await note2(); }                                                   /* 악어의 하품 → 쪽지 2 — 새에게서 */
@@ -736,8 +780,8 @@ async function lesson(p){
     steps(k++); await evGuest();                                                                                              /* 특별 손님 — 악어 */
     steps(k++); await note3();                                                                                                /* 쪽지 3 — 다음 빈터의 초대 */
     /* 마무리 — 열매가 두 나무에 다시 달린다 */
-    steps(STEPS.length); unpresent(); people.forEach(q => mood(q, 'happy', 2600)); word(null); bubble('<span class="say">I like it!</span>'); petals(); ['a', 'b'].forEach(x => { burstAt(fruitOf(x), 0.2, 8); fruitHome(x); });
-    CONF.words.forEach((x, i) => setTimeout(() => { if (!things[x.w].userData.busy) act(x.w, 700); burstAt(things[x.w], x.dy + 0.3, 6); }, i * 130)); await sayLine('I like it!'); await wait(1500); bubble(null);
+    steps(STEPS.length); unpresent(); people.forEach(q => mood(q, 'happy', 2600)); word(null); bubble('<span class="say">' + LINE.ready + '</span>'); petals(); ['a', 'b'].forEach(x => { burstAt(fruitOf(x), 0.2, 8); fruitHome(x); });
+    CONF.words.forEach((x, i) => setTimeout(() => { if (!things[x.w].userData.busy) act(x.w, 700); burstAt(things[x.w], x.dy + 0.3, 6); }, i * 130)); await sayLine(LINE.ready); await wait(1500); bubble(null);
     { const door = things.bus.userData.door, x0 = door.position.x; tween(500, t => { door.position.x = x0 + (-0.92 - x0) * t; }); }
     await birdHome(); await trainHome();
   }
@@ -758,10 +802,10 @@ async function chant(){
   if (mode) return; mode = 'chant'; setDock('bChant');
   const ls = known(), letter = ls[chantHalf % ls.length];
   for (const x of CONF.words.filter(y => y.l === letter)) { if (mode !== 'chant') break; await chantLine(x); }
-  if (mode === 'chant') { const end = letter === 'a' ? 'Hi, ant!' : 'Hi, big bird!', w = letter === 'a' ? 'ant' : 'bird'; word(null); present(w, CONF.cam.word); bubble('<span class="say">' + end + '</span>'); mood(max, 'happy', 1400); act(w, 1200); await sayLine(end); await wait(500); }
+  if (mode === 'chant') { const end = LINE.frame(letter), w = frameWord(letter); word(null); present(w, CONF.cam.word); bubble('<span class="say">' + end + '</span>'); mood(max, 'happy', 1400); act(w, 1200); await sayLine(end); await wait(500); }
   chantHalf++; bubble(null); word(null); unpresent(); mood(max, 'idle'); mode = null; setDock(null);
 }
-async function find(){ if (mode) return; mode = 'find'; setDock('bFind'); await findGame(CONF.finds); if (mode === 'find') { sfx('done'); people.forEach(p => mood(p, 'happy', 1600)); bubble('<span class="say">I like it!</span>'); petals(18); await sayLine('I like it!'); await wait(400); } bubble(null); word(null); mode = null; setDock(null); }
+async function find(){ if (mode) return; mode = 'find'; setDock('bFind'); await findGame(CONF.finds); if (mode === 'find') { sfx('done'); people.forEach(p => mood(p, 'happy', 1600)); bubble('<span class="say">' + LINE.like + '</span>'); petals(18); await sayLine(LINE.like); await wait(400); } bubble(null); word(null); mode = null; setDock(null); }
 async function writeSign(){ if (mode || !PW) return; mode = 'write'; setDock('bWrite'); $('dock').classList.add('hide'); for (const l of known()) { if (!(await writeOne(l))) break; } word(null); $('dock').classList.remove('hide'); mode = null; setDock(null); }
 $('bChant').onclick = () => { if (mode === 'chant') { mode = 'stop'; return; } chant(); };
 $('bFind').onclick = () => { if (mode === 'find') { mode = 'stop'; if (findNext) findNext(); return; } find(); };
@@ -829,7 +873,7 @@ function frame(){
 frame();
 $('ldT').textContent = '숲속 빈터에 아침이 왔어요'; $('go').style.display = '';
 { const q = /[?&]part=([123])/.exec(location.search); pick(q ? +q[1] - 1 : prog.next); dockNext(); }
-window.__glade = { frame, things, SH, K, people, enter, lesson, chant, find, writeSign, poke, answer, paintSign, focus, burstAt, petals, pickDrop, drops, cars, carry, get mode(){ return mode; }, get want(){ return want; }, get dropWant(){ return dropWant; }, noteTap, pickLetter, noteShow, noteHide, evGuest, PARTS, prog, pick, stage, get sel(){ return sel; }, get noteWant(){ return noteWant; }, get letterWant(){ return letterWant; }, cam, CONF };
+window.__glade = { frame, things, SH, K, evLog, paintStage, people, enter, lesson, chant, find, writeSign, poke, answer, paintSign, focus, burstAt, petals, pickDrop, drops, cars, carry, get mode(){ return mode; }, get want(){ return want; }, get dropWant(){ return dropWant; }, noteTap, pickLetter, noteShow, noteHide, evGuest, PARTS, prog, pick, stage, get sel(){ return sel; }, get noteWant(){ return noteWant; }, get letterWant(){ return letterWant; }, cam, CONF };
 </script>
 <script src="/kedu_back.js"></script>
 </body>
