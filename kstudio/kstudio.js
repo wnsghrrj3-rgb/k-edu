@@ -68,7 +68,7 @@ function spawnFx(p, b, t){ if (!p || !b) return;
   if (fx.fire) for (const w of [15, 16]) if (p[w].v > .4) for (let i = 0; i < 3; i++) parts.push({ x: p[w].x + rnd(-8, 8), y: p[w].y, vx: rnd(-1, 1), vy: rnd(-4, -1.5), r: rnd(6, 14), life: 1, decay: .04, kind: 'fire' });
   if (fx.sparkle) for (let i = 0; i < 2; i++) { const k = [0, 11, 12, 15, 16, 23, 24][Math.random() * 7 | 0]; parts.push({ x: p[k].x + rnd(-30, 30), y: p[k].y + rnd(-30, 30), vx: rnd(-.5, .5), vy: rnd(-1.5, -.3), r: rnd(2, 5), life: 1, decay: .025, kind: 'spark', hue: rnd(0, 360) }); } }
 km.on('warn', e => { if (e.kind === 'slow') { $('posetxt').textContent = '느림 — 고급 가장자리를 끄거나 효과를 줄여 보세요'; } if (e.kind === 'gl') { $('refine').checked = false; $('refine').disabled = true; } });
-km.on('body:land', e => { if (fx.shock) shocks.push({ x: e.pos.x, y: Math.min(H - 10, e.pos.y + (km.last && km.last.pose ? (km.last.pose[27].y - e.pos.y) : 150)), r: 10, life: 1 }); });
+km.on('body:land', e => { if (dino) dino.startle(); if (fx.shock) shocks.push({ x: e.pos.x, y: Math.min(H - 10, e.pos.y + (km.last && km.last.pose ? (km.last.pose[27].y - e.pos.y) : 150)), r: 10, life: 1 }); });
 function drawFx(p, t){ for (const q of parts) { q.x += q.vx; q.y += q.vy; q.life -= q.decay; if (q.kind === 'fire') { q.r *= .97; const g = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, q.r); g.addColorStop(0, `rgba(255,240,150,${q.life})`); g.addColorStop(.5, `rgba(255,120,30,${q.life * .8})`); g.addColorStop(1, 'rgba(200,30,0,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, Math.PI * 2); ctx.fill(); }
     else { ctx.fillStyle = `hsla(${q.hue},90%,70%,${q.life})`; ctx.beginPath(); for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + t / 300; ctx.moveTo(q.x, q.y); ctx.lineTo(q.x + Math.cos(a) * q.r * 2, q.y + Math.sin(a) * q.r * 2); } ctx.strokeStyle = `hsla(${q.hue},90%,75%,${q.life})`; ctx.lineWidth = 2; ctx.stroke(); } } parts = parts.filter(q => q.life > 0);
   for (const s of shocks) { s.r += 14; s.life -= .05; ctx.strokeStyle = `rgba(255,255,255,${s.life})`; ctx.lineWidth = 8 * s.life + 2; ctx.beginPath(); ctx.ellipse(s.x, s.y, s.r, s.r * .35, 0, 0, Math.PI * 2); ctx.stroke(); ctx.strokeStyle = `rgba(255,211,92,${s.life * .8})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(s.x, s.y, s.r * .7, s.r * .25, 0, 0, Math.PI * 2); ctx.stroke(); } shocks = shocks.filter(s => s.life > 0);
@@ -78,12 +78,16 @@ function drawFx(p, t){ for (const q of parts) { q.x += q.vx; q.y += q.vy; q.life
 // ───── 프레임
 let last = 0;
 km.onFrame = f => { const t = now(), dt = Math.min(.05, (t - last) / 1000 || .016); last = t; const p = f.pose, b = f.actions.body, ok = !!(p && b && b.ok);
+  const dOn = !!(dino && dino.mode !== 'off'); if (dOn !== dinoWas) { dinoWas = dOn; syncSegment(); syncDinoBtn(); }
+  if (dOn) dino.update(dt, p, b);
+  const sh = dOn ? dino.shake : 0; ctx.save(); if (sh > .01) { const a = sh * 9; ctx.translate(rnd(-a, a), rnd(-a, a)); ctx.translate(W / 2, H / 2); ctx.scale(1 + sh * .02, 1 + sh * .02); ctx.translate(-W / 2, -H / 2); }
   $('posedot').className = 'dot ' + (ok ? 'on' : km.running ? 'bad' : ''); $('posetxt').textContent = !km.running ? '인식 대기' : ok ? '인식 중' : '몸이 안 보여요';
   drawBg(t);
-  if (view !== 'robot') { if (bg === 'camera') { /* 카메라 그대로면 이미 사람 포함 */ } else if (f.maskCanvas && !km.mouse) km.drawPerson(ctx); else if (!km.mouse && km.segmentOn) { ctx.font = '700 18px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText('사람 분리 준비 중…', W / 2, H - 30); } }
+  if (dOn) dino.drawTo(ctx); // 공룡은 사람 뒤 — 사람 분리 마스크로 사람을 다시 앞에 그림
+  if (view !== 'robot') { if (bg === 'camera' && !(dOn && f.maskCanvas && !km.mouse)) { /* 카메라 그대로면 이미 사람 포함 */ } else if (f.maskCanvas && !km.mouse) km.drawPerson(ctx); else if (!km.mouse && km.segmentOn) { ctx.font = '700 18px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText('사람 분리 준비 중…', W / 2, H - 30); } }
   if (km.segmentOn && $('smooth')) { km.maskSmooth = +$('smooth').value; km.maskFeather = +$('feather').value; km.maskRefine = $('refine').checked; }
   if (view !== 'person') { retarget(p, b); renderRobot(dt); ctx.drawImage(tcv, 0, 0, W, H); }
-  spawnFx(p, b, t); drawFx(p, t);
+  spawnFx(p, b, t); drawFx(p, t); ctx.restore();
   if (recording) { ctx.fillStyle = '#ff4d6d'; ctx.beginPath(); ctx.arc(W - 26, 26, 10, 0, Math.PI * 2); ctx.fill(); }
   if (km.mouse) km.drawMouseHelp();
   if (!dev.classList.contains('hidden')) dev.textContent = `fps ${km.fps} view ${view} bg ${bg} mask ${!!f.maskCanvas} ` + (b ? `squat ${b.squat} air ${b.air} lean ${b.lean}` : 'no body'); };
@@ -91,7 +95,7 @@ km.onFrame = f => { const t = now(), dt = Math.min(.05, (t - last) / 1000 || .01
 // ───── UI
 document.querySelectorAll('[data-view]').forEach(btn => btn.onclick = () => { view = btn.dataset.view; document.querySelectorAll('[data-view]').forEach(x => x.classList.toggle('on', x === btn)); syncSegment(); km.emit('kstudio:view', { view }); });
 document.querySelectorAll('[data-fx]').forEach(btn => btn.onclick = () => { fx[btn.dataset.fx] = !fx[btn.dataset.fx]; btn.classList.toggle('on', fx[btn.dataset.fx]); });
-function syncSegment(){ const need = bg !== 'camera' && view !== 'robot'; if (need !== km.segmentOn) km.setSegment(need); }
+function syncSegment(){ const need = (bg !== 'camera' && view !== 'robot') || !!(dino && dino.mode !== 'off'); if (need !== km.segmentOn) km.setSegment(need); }
 $('bg').onchange = e => { bg = e.target.value; if (bg === 'upload') $('bgfile').click(); syncSegment(); km.emit('kstudio:bg', { bg }); };
 $('bgfile').onchange = e => { const f = e.target.files[0]; if (!f) return; const img = new Image(); img.onload = () => bgImg = img; img.src = URL.createObjectURL(f); };
 $('fs').onclick = () => { const el = $('stage'); document.fullscreenElement ? document.exitFullscreen() : el.requestFullscreen && el.requestFullscreen(); };
@@ -99,7 +103,7 @@ $('snap').onclick = () => { const a = document.createElement('a'); a.download = 
 // 녹화: 합성 캔버스 그대로 webm
 let recorder = null, chunks = [], recording = false, recT0 = 0, recTimer = 0;
 $('rec').onclick = async () => { if (recording) return stopRec(); if (!km.running) return;
-  const stream = $('c').captureStream(30); if ($('mic').checked) { try { const a = await navigator.mediaDevices.getUserMedia({ audio: true }); a.getAudioTracks().forEach(tr => stream.addTrack(tr)); } catch (e) { console.warn('마이크 없음', e); } }
+  const stream = $('c').captureStream(30); if (dino && dino.sound && dino.audio.stream) dino.audio.stream.getAudioTracks().forEach(tr => stream.addTrack(tr)); if ($('mic').checked) { try { const a = await navigator.mediaDevices.getUserMedia({ audio: true }); a.getAudioTracks().forEach(tr => stream.addTrack(tr)); } catch (e) { console.warn('마이크 없음', e); } }
   const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m)) || '';
   recorder = new MediaRecorder(stream, type ? { mimeType: type, videoBitsPerSecond: 6e6 } : undefined); chunks = []; recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
   recorder.onstop = () => { const blob = new Blob(chunks, { type: 'video/webm' }); const url = URL.createObjectURL(blob); addClip(`kstudio-${Date.now()}.webm`, url, '🎞', blob.size); km.emit('kstudio:clip', { seconds: Math.round((now() - recT0) / 1000), bytes: blob.size, view, bg }); };
@@ -107,6 +111,17 @@ $('rec').onclick = async () => { if (recording) return stopRec(); if (!km.runnin
 function stopRec(){ recording = false; clearInterval(recTimer); $('rectime').textContent = '—'; $('rec').textContent = '⏺ 녹화'; $('rec').classList.remove('rec'); if (recorder && recorder.state !== 'inactive') recorder.stop(); }
 function addClip(name, url, icon, bytes){ const a = document.createElement('a'); a.href = url; a.download = name; a.textContent = `${icon} ${name}${bytes ? ' · ' + (bytes / 1048576).toFixed(1) + 'MB' : ''} ↓`; $('clips').prepend(a); }
 addEventListener('pagehide', () => { if (recording) stopRec(); });
+
+// ───── 공룡(🦖) — 처음 누를 때 만든다(크롬북 첫 화면 가볍게)
+let dino = null, dinoWas = false;
+function getDino(){ if (dino) return dino; if (!window.KDino) return null; dino = KDino.create({ W, H, scale: +$('dinoSize').value }); if (!dino) { $('dinoGo').textContent = '🦖 이 기기에선 안 돼요'; $('dinoGo').disabled = true; return null; }
+  dino.setOffset(+$('dinoSide').value * +$('dinoGap').value); dino.sound = $('dinoSnd').checked; return dino; }
+function syncDinoBtn(){ const on = !!(dino && dino.mode !== 'off'); $('dinoGo').textContent = on ? '👋 공룡 퇴장' : '🦖 공룡 등장'; $('dinoGo').classList.toggle('on', on); }
+$('dinoGo').onclick = () => { if (!km.running) return; const d = getDino(); if (!d) return; if (d.mode === 'off') { d.enter(); km.emit('kstudio:dino', { act: 'enter' }); } else d.leave(); syncSegment(); syncDinoBtn(); };
+$('dinoRoar').onclick = () => { if (!km.running) return; const d = getDino(); if (!d) return; d.roar(); syncSegment(); km.emit('kstudio:dino', { act: 'roar' }); };
+$('dinoSide').onchange = $('dinoGap').oninput = () => { if (dino) dino.setOffset(+$('dinoSide').value * +$('dinoGap').value); };
+$('dinoSize').oninput = () => { if (dino) dino.setScale(+$('dinoSize').value); };
+$('dinoSnd').onchange = () => { if (dino) dino.sound = $('dinoSnd').checked; };
 
 // ───── 시작
 function setup(){ ov.innerHTML = `<h2>🎬 케이스튜디오</h2><p>몸으로 만드는 CG 스튜디오 — 내가 움직이면 캐릭터가 따라 하고, 배경이 바뀌고, 손에서 불꽃이 나와요.<br>녹화 버튼을 누르면 보이는 그대로 영상 파일이 돼요.</p><p style="color:var(--dim)">머리부터 무릎까지 보이게 두세 걸음 떨어져 서면 캐릭터가 제일 잘 따라 해요</p><button class="btn" id="start">스튜디오 열기</button>`; ov.classList.remove('hidden'); $('start').onclick = begin; }
