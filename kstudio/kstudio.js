@@ -83,8 +83,12 @@ km.onFrame = f => { const t = now(), dt = Math.min(.05, (t - last) / 1000 || .01
   const sh = dOn ? dino.shake : 0; ctx.save(); if (sh > .01) { const a = sh * 9; ctx.translate(rnd(-a, a), rnd(-a, a)); ctx.translate(W / 2, H / 2); ctx.scale(1 + sh * .02, 1 + sh * .02); ctx.translate(-W / 2, -H / 2); }
   $('posedot').className = 'dot ' + (ok ? 'on' : km.running ? 'bad' : ''); $('posetxt').textContent = !km.running ? '인식 대기' : ok ? '인식 중' : '몸이 안 보여요';
   drawBg(t);
-  if (dOn) dino.drawTo(ctx); // 공룡은 사람 뒤 — 사람 분리 마스크로 사람을 다시 앞에 그림
-  if (view !== 'robot') { if (bg === 'camera' && !(dOn && f.maskCanvas && !km.mouse)) { /* 카메라 그대로면 이미 사람 포함 */ } else if (f.maskCanvas && !km.mouse) km.drawPerson(ctx); else if (!km.mouse && km.segmentOn) { ctx.font = '700 18px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText('사람 분리 준비 중…', W / 2, H - 30); } }
+  if (plateWant && bg === 'camera' && !km.mouse) { plateWant = false; if (!plate) { plate = document.createElement('canvas'); plate.width = W; plate.height = H; } const pc = plate.getContext('2d'); pc.setTransform(1, 0, 0, 1, 0, 0); km.drawCamera(); pc.drawImage($('c'), 0, 0); syncSegment(); }
+  const wear = dOn && dino.mode === 'wear';
+  if (wear) { if (plate && bg === 'camera' && f.maskCanvas && !km.mouse) erasePerson(); }   // 공룡 되기: 빈 배경으로 내 몸을 지우고 공룡만
+  else if (dOn) dino.drawTo(ctx); // 공룡 등장: 공룡은 사람 뒤 — 사람 분리 마스크로 사람을 다시 앞에 그림
+  if (wear) { if (bg !== 'camera' && !plate && f.maskCanvas && !km.mouse && view !== 'robot') km.drawPerson(ctx); dino.drawTo(ctx); }
+  else if (view !== 'robot') { if (bg === 'camera' && !(dOn && f.maskCanvas && !km.mouse)) { /* 카메라 그대로면 이미 사람 포함 */ } else if (f.maskCanvas && !km.mouse) km.drawPerson(ctx); else if (!km.mouse && km.segmentOn) { ctx.font = '700 18px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText('사람 분리 준비 중…', W / 2, H - 30); } }
   if (km.segmentOn && $('smooth')) { km.maskSmooth = +$('smooth').value; km.maskFeather = +$('feather').value; km.maskRefine = $('refine').checked; }
   if (view !== 'person') { retarget(p, b); renderRobot(dt); ctx.drawImage(tcv, 0, 0, W, H); }
   spawnFx(p, b, t); drawFx(p, t); ctx.restore();
@@ -95,7 +99,7 @@ km.onFrame = f => { const t = now(), dt = Math.min(.05, (t - last) / 1000 || .01
 // ───── UI
 document.querySelectorAll('[data-view]').forEach(btn => btn.onclick = () => { view = btn.dataset.view; document.querySelectorAll('[data-view]').forEach(x => x.classList.toggle('on', x === btn)); syncSegment(); km.emit('kstudio:view', { view }); });
 document.querySelectorAll('[data-fx]').forEach(btn => btn.onclick = () => { fx[btn.dataset.fx] = !fx[btn.dataset.fx]; btn.classList.toggle('on', fx[btn.dataset.fx]); });
-function syncSegment(){ const need = (bg !== 'camera' && view !== 'robot') || !!(dino && dino.mode !== 'off'); if (need !== km.segmentOn) km.setSegment(need); }
+function syncSegment(){ const m = dino ? dino.mode : 'off'; const need = (bg !== 'camera' && view !== 'robot') || (m !== 'off' && m !== 'wear') || (m === 'wear' && !!plate); if (need !== km.segmentOn) km.setSegment(need); }
 $('bg').onchange = e => { bg = e.target.value; if (bg === 'upload') $('bgfile').click(); syncSegment(); km.emit('kstudio:bg', { bg }); };
 $('bgfile').onchange = e => { const f = e.target.files[0]; if (!f) return; const img = new Image(); img.onload = () => bgImg = img; img.src = URL.createObjectURL(f); };
 $('fs').onclick = () => { const el = $('stage'); document.fullscreenElement ? document.exitFullscreen() : el.requestFullscreen && el.requestFullscreen(); };
@@ -116,11 +120,18 @@ addEventListener('pagehide', () => { if (recording) stopRec(); });
 let dino = null, dinoWas = false;
 function getDino(){ if (dino) return dino; if (!window.KDino) return null; dino = KDino.create({ W, H, scale: +$('dinoSize').value }); if (!dino) { $('dinoGo').textContent = '🦖 이 기기에선 안 돼요'; $('dinoGo').disabled = true; return null; }
   dino.setOffset(+$('dinoSide').value * +$('dinoGap').value); dino.sound = $('dinoSnd').checked; return dino; }
-function syncDinoBtn(){ const on = !!(dino && dino.mode !== 'off'); $('dinoGo').textContent = on ? '👋 공룡 퇴장' : '🦖 공룡 등장'; $('dinoGo').classList.toggle('on', on); }
-$('dinoGo').onclick = () => { if (!km.running) return; const d = getDino(); if (!d) return; if (d.mode === 'off') { d.enter(); km.emit('kstudio:dino', { act: 'enter' }); } else d.leave(); syncSegment(); syncDinoBtn(); };
+function syncDinoBtn(){ const m = dino ? dino.mode : 'off', walk = m !== 'off' && m !== 'wear'; $('dinoGo').textContent = walk ? '👋 공룡 퇴장' : '🚶 공룡 등장'; $('dinoGo').classList.toggle('on', walk); $('dinoWear').textContent = m === 'wear' ? '🧍 사람으로' : '🦖 공룡 되기'; $('dinoWear').classList.toggle('on', m === 'wear'); }
+// 빈 배경(사람 없는 교실) — 공룡이 된 동안 사람 자리를 이걸로 덮어 몸을 지운다
+let plate = null, eraseC = null;
+function erasePerson(){ if (!eraseC) { eraseC = document.createElement('canvas'); eraseC.width = W; eraseC.height = H; } const e = eraseC.getContext('2d'); e.globalCompositeOperation = 'source-over'; e.clearRect(0, 0, W, H); e.save(); e.translate(W, 0); e.scale(-1, 1); e.filter = 'blur(6px)'; e.drawImage(km.maskCanvas, -14, -14, W + 28, H + 28); e.drawImage(km.maskCanvas, -14, -14, W + 28, H + 28); e.filter = 'none'; e.restore(); e.globalCompositeOperation = 'source-in'; e.drawImage(plate, 0, 0); ctx.drawImage(eraseC, 0, 0); }
+$('dinoPlate').onclick = () => { if (!km.running || km.mouse) return; const btn = $('dinoPlate'); let n = 3; btn.disabled = true; ov.innerHTML = `<h2>📸 빈 배경 찍기</h2><p>카메라 밖으로 나가 주세요!</p><h2 id="cnt">3</h2>`; ov.classList.remove('hidden');
+  const iv = setInterval(() => { n--; if (n > 0) { $('cnt').textContent = n; return; } clearInterval(iv); ov.classList.add('hidden'); plateWant = true; btn.disabled = false; btn.classList.add('on'); btn.textContent = '📸 빈 배경 다시 찍기'; }, 1000); };
+let plateWant = false;
+$('dinoWear').onclick = () => { if (!km.running) return; const d = getDino(); if (!d) return; if (d.mode === 'wear') d.unwear(); else { d.wear(); km.emit('kstudio:dino', { act: 'wear' }); } syncSegment(); syncDinoBtn(); };
+$('dinoGo').onclick = () => { if (!km.running) return; const d = getDino(); if (!d) return; if (d.mode === 'wear') d.unwear(); if (d.mode === 'off') { d.enter(); km.emit('kstudio:dino', { act: 'enter' }); } else d.leave(); syncSegment(); syncDinoBtn(); };
 $('dinoRoar').onclick = () => { if (!km.running) return; const d = getDino(); if (!d) return; d.roar(); syncSegment(); km.emit('kstudio:dino', { act: 'roar' }); };
 $('dinoSide').onchange = $('dinoGap').oninput = () => { if (dino) dino.setOffset(+$('dinoSide').value * +$('dinoGap').value); };
-$('dinoSize').oninput = () => { if (dino) dino.setScale(+$('dinoSize').value); };
+$('dinoSize').oninput = () => { if (dino) dino.setUserScale(+$('dinoSize').value); };
 $('dinoSnd').onchange = () => { if (dino) dino.sound = $('dinoSnd').checked; };
 
 // ───── 시작

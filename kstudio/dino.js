@@ -122,7 +122,7 @@ function build(T){ const tex = scaleTextures(T);
   const mouthColor = (zone) => (p, n, out, t) => { skinColor(p, n, out); const inside = zone === 'up' ? smooth(-.35, -.85, n.y) : smooth(.35, .85, n.y); const mid = 1 - smooth(.12, .3, Math.abs(p.z));
     const m = inside * mid * smooth(.04, .12, t) * (1 - smooth(.9, .98, t)); out[0] = lerp(out[0], C_MOUTH[0], m); out[1] = lerp(out[1], C_MOUTH[1], m); out[2] = lerp(out[2], C_MOUTH[2], m); return out; };
   const skullC = catmull(T, [[-.5, .02], [.05, .12], [.8, .03], [1.42, -.08], [1.72, -.12]]);
-  const skullR = table([[0, .36, .3, .36, 1], [.15, .5, .27, .46, .85], [.35, .5, .24, .44, .8], [.65, .38, .2, .34, .8], [.88, .3, .17, .27, .85], [.97, .2, .12, .18, .9], [1, .03, .03, .03, 1]]);
+  const skullR = table([[0, .36, .3, .36, 1], [.15, .5, .27, .46, .85], [.35, .5, .24, .44, .8], [.65, .38, .2, .34, .8], [.88, .3, .17, .27, .85], [.96, .22, .13, .2, .95], [.99, .12, .08, .11, 1], [1, .001, .001, .001, 1]]);
   const skull = new T.Mesh(sweep(T, { rings: 48, segs: 26, at: t => { const r = skullR(t); return { c: skullC.getPoint(t), rT: r[0], rB: r[1], rZ: r[2], p: r[3], lump: .05 }; }, color: mouthColor('up') }), skin); skull.castShadow = true; head.add(skull);
   // 눈썹 융기 + 코 위 울퉁불퉁
   [-1, 1].forEach(sd => { const brow = new T.Mesh(sweep(T, { rings: 14, segs: 12, at: t => ({ c: new T.Vector3(.0 + t * .45, .5 - t * .06, sd * (.38 - t * .05)), rT: .07 * Math.sin(Math.PI * t) + .01, rB: .05 * Math.sin(Math.PI * t) + .01, rZ: .08 * Math.sin(Math.PI * t) + .01, p: 1 }) }), skin); head.add(brow);
@@ -132,7 +132,7 @@ function build(T){ const tex = scaleTextures(T);
     const nost = new T.Mesh(new T.SphereGeometry(.035, 10, 8), new T.MeshBasicMaterial({ color: 0x120a05 })); nost.scale.set(1.6, .7, .6); nost.position.set(1.6, .02, sd * .14); head.add(nost); });
   const jaw = new T.Group(); jaw.position.set(-.05, -.08, 0); head.add(jaw);
   const jawC = catmull(T, [[0, -.12], [.5, -.18], [1.1, -.16], [1.55, -.12], [1.66, -.1]]);
-  const jawR = table([[0, .12, .26, .38, .9], [.2, .14, .3, .4, .85], [.55, .12, .22, .32, .85], [.85, .1, .14, .24, .9], [.97, .07, .08, .15, 1], [1, .02, .02, .02, 1]]);
+  const jawR = table([[0, .12, .26, .38, .9], [.2, .14, .3, .4, .85], [.55, .12, .22, .32, .85], [.85, .1, .14, .24, .9], [.96, .08, .09, .16, 1], [.99, .05, .05, .09, 1], [1, .001, .001, .001, 1]]);
   const jawM = new T.Mesh(sweep(T, { rings: 40, segs: 22, at: t => { const r = jawR(t); return { c: jawC.getPoint(t), rT: r[0], rB: r[1], rZ: r[2], p: r[3], lump: .05 }; }, color: mouthColor('down') }), skin); jawM.castShadow = true; jaw.add(jawM);
   const tongue = new T.Mesh(new T.SphereGeometry(.5, 16, 8), new T.MeshStandardMaterial({ color: 0x6a1c1c, roughness: .5 })); tongue.scale.set(1.3, .1, .32); tongue.position.set(.6, -.03, 0); jaw.add(tongue);
   const palate = new T.Mesh(new T.SphereGeometry(.5, 16, 8), new T.MeshStandardMaterial({ color: 0x4a1414, roughness: .6, side: T.DoubleSide })); palate.scale.set(1.45, .06, .36); palate.position.set(.7, -.1, 0); head.add(palate);
@@ -164,7 +164,8 @@ function build(T){ const tex = scaleTextures(T);
     A.el = new T.Group(); A.el.position.y = -.4; A.sh.add(A.el); A.el.add(seg(.36, .07, .05, .1));
     for (const k of [-1, 1]) { const c = new T.Mesh(new T.ConeGeometry(.025, .13, 6), clawM); c.position.set(.03, -.4, k * .03); c.rotation.z = .5; A.el.add(c); } return A; }
   const arms = [arm(1), arm(-1)];
-  return { root, body, bones, tail, chest, belly, neck1, neck2, headB, head, jaw, legs, arms, hipY: hipP.y }; }
+  const anchor = new T.Object3D(); anchor.position.set(.5, .12, 0); head.add(anchor);
+  return { root, body, bones, tail, chest, belly, neck1, neck2, headB, head, jaw, legs, arms, anchor, hipY: hipP.y }; }
 
 // ───── 걷기 자세(다리 각) — 휴식 각 + 위상
 const LEG_REST = { hip: .45, knee: -1.15, ankle: .95 };
@@ -190,7 +191,7 @@ function create(opt){ const T = window.THREE, W = opt.W, H = opt.H;
   const st = { mode: 'off', x: 14, side: 1, goalX: 4.2, face: Math.PI, faceGoal: Math.PI, phase: 0, walkAmp: 0, t: 0, act: null, actT: 0, cool: 0, idleT: 0, hideT: 0, lookYaw: 0, lookPitch: 0, jaw: 0, shake: 0, scale: 1, z: -2, lastStep: [0, 0], seen: true };
   const dust = []; const tmpV = new T.Vector3(), tmpV2 = new T.Vector3(), target = new T.Vector3(0, 2, 1.5);
   function setScale(s){ st.scale = s; stage.scale.setScalar(s); }
-  setScale(opt.scale || 1.25);
+  st.userScale = opt.scale || 1.25; setScale(st.userScale);
   function screenOf(v){ tmpV2.copy(v).project(camera); return { x: (tmpV2.x * .5 + .5) * W, y: (-tmpV2.y * .5 + .5) * H }; }
   function personTarget(p){ if (!p || !p[0] || p[0].v < .4) return false; const nx = p[0].x / W * 2 - 1, ny = -(p[0].y / H * 2 - 1); tmpV.set(nx, ny, .5).unproject(camera).sub(camera.position).normalize();
     const zP = 1.6, k = (zP - camera.position.z) / tmpV.z; target.copy(camera.position).addScaledVector(tmpV, k); return true; }
@@ -199,13 +200,57 @@ function create(opt){ const T = window.THREE, W = opt.W, H = opt.H;
   const api = { canvas: cv, audio, get mode(){ return st.mode; }, get shake(){ return st.shake; },
     set sound(v){ soundOn = !!v; }, get sound(){ return soundOn; }, setScale, setSide(s){ st.side = s >= 0 ? 1 : -1; st.goalX = st.side * Math.abs(st.goalX); if (st.mode === 'idle') st.mode = 'walk'; },
     setOffset(x){ st.goalX = x; st.side = x >= 0 ? 1 : -1; if (st.mode === 'idle') st.mode = 'walk'; },
-    enter(){ audio.ensure(); st.side = st.goalX >= 0 ? 1 : -1; st.x = st.side * 15; st.face = st.side > 0 ? Math.PI : 0; st.mode = 'walk'; st.act = null; st.cool = 1.2; st.seen = true; },
+    enter(){ audio.ensure(); stage.position.y = 0; st.side = st.goalX >= 0 ? 1 : -1; st.x = st.side * 15; st.face = st.side > 0 ? Math.PI : 0; st.mode = 'walk'; st.act = null; st.cool = 1.2; st.seen = true; },
     leave(){ if (st.mode === 'off') return; st.mode = 'exit'; st.act = null; },
     roar(){ if (st.mode === 'off') return api.enter(); act('roar'); },
+    wear(){ audio.ensure(); st.mode = 'wear'; st.act = null; st.cool = 1; st.wearInit = false; },
+    unwear(){ if (st.mode === 'wear') { st.mode = 'off'; stage.rotation.set(0, 0, 0); floor.position.y = 0; setScale(st.userScale); } },
+    setUserScale(v){ st.userScale = v; if (st.mode !== 'wear') setScale(v); },
     startle(){ if (st.mode === 'idle' && st.cool <= 0 && st.seen) act('roar'); },
     update, drawTo };
 
-  function update(dt, pose, b){ st.t += dt; if (st.mode === 'off') return;
+  // ── 공룡 되기: 사람 몸에 공룡을 씌운다 — 머리를 내 머리에 맞추고, 고개·팔·다리·앉기·점프를 그대로 따라 함
+  const ray = new T.Vector3(), hw = new T.Vector3(), Zh = -1, w = { turn: 0, pitch: 0, roll: 0, armE: [0, 0], armB: [0, 0], lift: [0, 0], crouch: 0, scale: 2, was: [0, 0], lean: 0, side: 1, face: .5 };
+  const ok = (p, i) => p[i] && p[i].v > .4, dst = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  function elev(a, b){ return Math.atan2(Math.abs(b.x - a.x), b.y - a.y); }           // 아래로 늘어뜨림 0 → 위로 π
+  function bend(a, b, c){ const v1x = a.x - b.x, v1y = a.y - b.y, v2x = c.x - b.x, v2y = c.y - b.y; return Math.PI - Math.acos(clamp((v1x * v2x + v1y * v2y) / ((Math.hypot(v1x, v1y) * Math.hypot(v2x, v2y)) || 1), -1, 1)); }
+  function updateWear(dt, p, b){ const k = Math.min(1, dt * 10); st.cool = Math.max(0, st.cool - dt); st.shake = Math.max(0, st.shake - dt * 2.2);
+    const seen = p && ok(p, 0) && ok(p, 11) && ok(p, 12);
+    if (seen) { const shW = Math.max(40, dst(p[11], p[12])), d = camera.position.z - Zh, ppu = H / (2 * d * Math.tan(camera.fov * Math.PI / 360));
+      w.scale = lerp(w.scale, clamp(shW * 1.75 / (1.48 * ppu) * (st.userScale / 1.25), .4, 9), st.wearInit ? k * .5 : 1);
+      if (ok(p, 7) && ok(p, 8)) { const ex = (p[7].x + p[8].x) / 2, ey = (p[7].y + p[8].y) / 2, ed = Math.max(20, dst(p[7], p[8]));
+        w.turn = lerp(w.turn, clamp((p[0].x - ex) / ed * 2.2, -1, 1), k); w.pitch = lerp(w.pitch, clamp(-((p[0].y - ey) / ed - .15) * 1.3, -.6, .5), k);
+        let r = Math.atan2(p[8].y - p[7].y, p[8].x - p[7].x); if (Math.abs(r) > Math.PI / 2) r -= Math.sign(r) * Math.PI; w.roll = lerp(w.roll, clamp(-r, -.6, .6), k); }
+      w.lean = lerp(w.lean, clamp(Math.atan2(p[12].y - p[11].y, p[12].x - p[11].x) * (p[12].x > p[11].x ? 1 : 0), -.5, .5), k);
+      [[11, 13, 15], [12, 14, 16]].forEach((q, i) => { if (ok(p, q[1])) { w.armE[i] = lerp(w.armE[i], elev(p[q[0]], p[q[1]]), k); if (ok(p, q[2])) w.armB[i] = lerp(w.armB[i], bend(p[q[0]], p[q[1]], p[q[2]]), k); } });
+      [[23, 25], [24, 26]].forEach((q, i) => { let g = 0; if (ok(p, q[0]) && ok(p, q[1])) g = clamp(1 + (p[q[0]].y - p[q[1]].y) / (shW * .95), 0, 1); w.lift[i] = lerp(w.lift[i], g, k); });
+      w.crouch = lerp(w.crouch, b && b.ok && b.squat ? 1 : 0, k * .6);
+      if (b && b.ok && b.armsUp && st.cool <= 0) act('roar'); }
+    if (w.turn > .3) w.side = 1; else if (w.turn < -.3) w.side = -1; w.face = lerp(w.face, w.side * .5 + w.turn * .3, Math.min(1, dt * 3));   // 정면 대신 살짝 옆(3/4)으로 — 고개 돌리는 쪽으로 몸도 돌아섬
+    setScale(w.scale); stage.rotation.set(0, -Math.PI / 2 + w.face, 0);
+    // 다리: 무릎 들기 = 발 들기, 앉기 = 웅크림, 내려놓으면 쿵
+    D.legs.forEach((L, i) => { const g = w.lift[i], c = w.crouch, hip = LEG_REST.hip + g * 1.0 + c * .35, knee = LEG_REST.knee - g * .75 - c * .5, ankle = LEG_REST.ankle + g * .3 + c * .3;
+      L.hip.rotation.z = hip; L.knee.rotation.z = knee; L.ankle.rotation.z = ankle; L.toe.rotation.z = -(hip + knee + ankle) - g * .4;
+      if (w.was[i] > .3 && g < .12) { w.was[i] = 0; st.shake = Math.min(1, st.shake + .6); soundOn && audio.step(1); const fp = new T.Vector3(); L.toe.getWorldPosition(fp); const sp = screenOf(fp); for (let n = 0; n < 14; n++) dust.push({ x: sp.x + rnd(-50, 50), y: sp.y + rnd(-6, 4), vx: rnd(-1.8, 1.8), vy: rnd(-1.2, -.2), r: rnd(14, 34), life: 1 }); }
+      if (g > .3) w.was[i] = g; });
+    const breathe = Math.sin(st.t * 1.6); D.root.position.y = lift - w.crouch * .45 + breathe * .015; D.root.rotation.x = w.lean * .5; D.chest.rotation.z = breathe * .02 - w.crouch * .12; D.belly.scale.setScalar(1 + breathe * .012);
+    D.tail.forEach((bn, i) => { const t = (i + 1) / D.tail.length; bn.rotation.y = Math.sin(st.t * 1.3 - i * .55) * .06 * (1 + t) - w.turn * .12; bn.rotation.z = Math.sin(st.t * 1.1 - i * .4) * .02 + w.crouch * .04; });
+    D.arms.forEach((A, i) => { A.sh.rotation.z = .35 + w.armE[i] * .85; A.sh.rotation.x = (i ? 1 : -1) * Math.min(1, w.armE[i]) * .5; A.el.rotation.z = .5 + w.armB[i] * .7; });
+    // 머리·턱
+    let jawGoal = .05, extraP = 0, shakeYaw = 0;
+    if (st.act === 'roar') { st.actT += dt; const a = st.actT; if (a < 2.4) { const q = smooth(.1, .4, a) * (1 - smooth(2.0, 2.4, a)); jawGoal = .05 + q * .8 + Math.sin(a * 38) * .03 * q; extraP = q * .12; shakeYaw = Math.sin(a * 9) * .07 * q; st.shake = Math.max(st.shake, .55 * q); } else st.act = null; }
+    st.jaw = lerp(st.jaw, jawGoal, Math.min(1, dt * 12)); D.jaw.rotation.z = -st.jaw;
+    const yaw = w.turn * .75 - w.face * .2 + shakeYaw, pit = w.pitch + extraP;
+    D.neck1.rotation.set(0, yaw * .3, pit * .3); D.neck2.rotation.set(w.roll * .3, yaw * .3, pit * .3); D.headB.rotation.set(w.roll * .7, yaw * .4, pit * .4);
+    // 공룡 머리를 내 머리 자리에 맞춤(깊이 Zh 고정) → 몸 전체가 따라옴
+    if (seen) { stage.updateMatrixWorld(true); D.anchor.getWorldPosition(hw); ray.set(p[0].x / W * 2 - 1, -(p[0].y / H * 2 - 1), .5).unproject(camera).sub(camera.position).normalize(); const tt = (Zh - camera.position.z) / ray.z;
+      tmpV.copy(camera.position).addScaledVector(ray, tt).sub(hw); if (st.wearInit) { stage.position.x += tmpV.x * Math.min(1, dt * 18); stage.position.y += tmpV.y * Math.min(1, dt * 18); stage.position.z += tmpV.z; } else { stage.position.add(tmpV); st.wearInit = true; } }
+    floor.position.y = stage.position.y; key.target.position.copy(stage.position); key.position.set(stage.position.x - 6 * w.scale, stage.position.y + 12 * w.scale, stage.position.z + 9 * w.scale);
+    const sb = 12 * w.scale; if (Math.abs(sc.right - sb) > .5) { sc.left = -sb; sc.right = sb; sc.top = sb; sc.bottom = -sb * .4; sc.far = 40 * w.scale; sc.updateProjectionMatrix(); }
+    renderer.render(scene, camera); }
+
+  function update(dt, pose, b){ st.t += dt; if (st.mode === 'off') return; if (st.mode === 'wear') return updateWear(dt, pose, b);
+    if (floor.position.y !== 0 || D.root.rotation.x) { floor.position.y = 0; D.root.rotation.x = 0; key.target.position.set(0, 0, 0); key.position.set(-6, 12, 9); sc.left = -12; sc.right = 12; sc.top = 12; sc.bottom = -4; sc.far = 40; sc.updateProjectionMatrix(); setScale(st.userScale); D.arms.forEach(A => A.sh.rotation.x = 0); }
     const has = personTarget(pose); st.cool = Math.max(0, st.cool - dt); st.shake = Math.max(0, st.shake - dt * 2.2);
     // 반응
     if (st.mode === 'idle' && b && b.ok) { if (b.squat) { st.hideT += dt; if (st.hideT > .5 && st.seen) { st.seen = false; act('sniff'); soundOn && audio.snort(); } } else { if (!st.seen) { st.seen = true; if (st.cool < 1.5) act('growl'); } st.hideT = 0; }
