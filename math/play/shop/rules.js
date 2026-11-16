@@ -90,3 +90,44 @@ export function nextGuest(save, regsOut, rnd = Math.random){
   return { kind: 'plain', reg: null, newReg: false }; }
 /** 그 주문이 지금 가게로 채워지는가(진열대에 있는 것만 · 바구니에 들어감). */
 export const fillable = (order, o) => { const ks = Object.keys(order); return ks.length > 0 && ks.every(k => crates(o).includes(k) && Number.isInteger(order[k]) && order[k] >= 1) && slotsOf(order, o) <= basketCap(o); };
+
+// ═══════════ M03 — 하루 장사 · 값 · 거스름 · 빵집 ═══════════
+// 내가 정한 수치
+export const DAY = { GUESTS: 8, NEED_MIN: 15, NEED_MAX: 60, BOXES: 9, TRIES: 80 };   // 하루 손님 · 아침에 필요한 수의 범위 · 실을 수 있는 상자
+export const PRICE = { apple: 1, orange: 2, banana: 3, grape: 4, bread: 10, croissant: 5 };
+export const DRAWER = { ten: 4, one: 9 };                                              // 거스름 서랍(늘 채워져 있음)
+TUNE.CHANGE_AFTER = 10;            // 값을 받은 손님이 이만큼 되면 거스름 걸음
+TUNE.SHORT_P = .4;                 // 값 걸음에서 손님이 덜 낼 확률
+export const BAKERY = { items: ['bread', 'croissant'], name: '빵집' };
+export const STOCK = { fruit: 'apple', bakery: 'croissant' };                         // 아침에 상자(열 개)로 들여오는 것
+export const NAME2 = { ...NAME, bread: '식빵', croissant: '크루아상' };
+
+export const bakeryOpen = o => allOwned(o);
+export const dayOn = (o, shop = 'fruit') => shop === 'bakery' || !!o.box;
+export const priceOn = (o, shop = 'fruit') => shop === 'bakery' || (o.fruits || []).length >= 3;
+export const changeOn = (save, shop = 'fruit') => priceOn(save.owned, shop) && (save.paid | 0) >= TUNE.CHANGE_AFTER;
+export const goods = (o, shop = 'fruit') => shop === 'bakery' ? BAKERY.items.slice() : crates(o);
+export const priceTotal = order => Object.keys(order).reduce((a, k) => a + PRICE[k] * order[k], 0);
+/** 빵집 주문: 식빵(10)·크루아상(5), 값이 20~50. */
+export function bakeryOrder(kind = 'plain', rnd = Math.random){ const R = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+  for (let i = 0; i < 200; i++) { const b = kind === 'lots' ? R(2, 4) : R(0, 3), c = kind === 'lots' ? R(2, 4) : R(0, 6), t = b * 10 + c * 5; if (b + c > 0 && t >= 20 && t <= 50) { const o = {}; if (b) o.bread = b; if (c) o.croissant = c; return o; } }
+  return { bread: 2 }; }
+export const orderOf = (o, shop, kind, rnd = Math.random) => shop === 'bakery' ? bakeryOrder(kind, rnd) : orderFor(o, kind, rnd);
+/** 그 주문을 채울 수 있는가(가게별). */
+export const fillableIn = (order, o, shop) => shop === 'bakery' ? Object.keys(order).length > 0 && Object.keys(order).every(k => BAKERY.items.includes(k) && Number.isInteger(order[k]) && order[k] >= 1) && Object.values(order).reduce((a, b) => a + b, 0) <= TUNE.BASKET_BIG : fillable(order, o);
+
+/** 하루 계획: 손님 DAY.GUESTS 명의 종류와 주문을 아침에 미리 정한다 → { plan:[{kind, reg, order}], need } (need = 상자로 들여올 것의 합). */
+export function planDay(save, shop = 'fruit', rnd = Math.random){ const key = STOCK[shop]; let best = null;
+  for (let t = 0; t < DAY.TRIES; t++) { const plan = [], regs = shop === 'fruit' ? Object.keys(save.regs || {}) : [];
+    for (let i = 0; i < DAY.GUESTS; i++) { const g = nextGuest({ ...save, heart: 0 }, regs, rnd); if (g.kind === 'regular') { regs.splice(regs.indexOf(g.reg), 1); plan.push({ kind: 'regular', reg: g.reg, order: { ...save.regs[g.reg].o } }); } else plan.push({ kind: shop === 'bakery' && g.kind === 'regular' ? 'plain' : g.kind, reg: null, order: orderOf(save.owned, shop, g.kind, rnd) }); }
+    const need = plan.reduce((a, g) => a + (g.order[key] || 0), 0); if (need >= DAY.NEED_MIN && need <= DAY.NEED_MAX) return { plan, need }; if (!best || Math.abs(need - 37) < Math.abs(best.need - 37)) best = { plan, need }; }
+  while (best.need > DAY.NEED_MAX && best.plan.length > 3) { const g = best.plan.pop(); best.need -= g.order[key] || 0; }
+  return best; }
+/** 손님이 계산대에 올려놓는 동전. mode = 'price'(딱 맞게, 가끔 덜) · 'change'(10원짜리로 넉넉히). */
+export function payCoins(price, mode = 'price', rnd = Math.random){
+  if (mode === 'change') { let paid = Math.ceil(price / 10) * 10; if (paid === price) paid += 10; return { paid, short: 0, ten: paid / 10, one: 0, change: paid - price }; }
+  const short = price > 1 && rnd() < TUNE.SHORT_P ? 1 + Math.floor(rnd() * Math.min(3, price - 1)) : 0, x = price - short; return { paid: x, short, ten: Math.floor(x / 10), one: x % 10, change: 0 }; }
+/** 서랍 동전으로 거스름을 줄 수 있는가. */
+export const changeFits = c => c >= 0 && Math.floor(c / 10) <= DRAWER.ten && c % 10 <= DRAWER.one;
+/** 오늘 받은 돈을 동전으로 나눠 둔다(10원짜리·1원짜리). */
+export const split = n => ({ ten: Math.floor(n / 10), one: n % 10 });

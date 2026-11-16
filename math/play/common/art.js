@@ -6,6 +6,7 @@ const ART = {
   // 가게 섬
   'fruit.apple': '🍎', 'fruit.orange': '🍊', 'fruit.banana': '🍌', 'fruit.grape': '🍇', 'shop.box': '📦',
   'shop.hammer': '🔨', 'shop.basket': '🧺', 'shop.awning': '⛱️', 'shop.bell': '🔔', 'shop.sign': '🪧', 'shop.pot': '🪴', 'shop.lamp': '🏮',
+  'bake.bread': '🍞', 'bake.croissant': '🥐', 'shop.cart': '🛒', 'shop.till': '💰', 'shop.safe': '🏦', 'shop.door': '🚪', 'shop.memo': '📝', 'day.morning': '🌅', 'day.evening': '🌇',
   'shop.heart': '❤️', 'shop.heart.empty': '🤍', 'guest.mark.hurry': '💦', 'guest.mark.regular': '💛',
   'guest.bear': '🐻', 'guest.rabbit': '🐰', 'guest.cat': '🐱', 'guest.dog': '🐶', 'guest.fox': '🦊', 'guest.panda': '🐼', 'guest.frog': '🐸', 'guest.monkey': '🐵',
   // 낚시 섬
