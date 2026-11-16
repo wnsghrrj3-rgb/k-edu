@@ -21,6 +21,10 @@
  *   화면 글은 낱말 띠뿐(조작 안내 글 0 — Max 의 몸짓 시범과 손 그림으로) · 숫자 · 타이머 · 실패 화면 0 · 모은 수는 바구니의 빈 자리로.
  *   시험판은 저장 0(씨앗 · 증거 · 진도) · 카메라 영상은 기기 안에서만 · 장면이 끝나면 카메라를 끈다.
  *   ?q=low = 가벼운 판 · ?mouse=1 = 카메라 없이 마우스로 손 추적 흉내(KMotion 마우스 모드).
+ *   11-16 준호 「조금 속도감 · 사과가 1+1+1=3개라는 것도 같이」:
+ *     · 셈 띠(core/sum-strip.js) — 바구니 위에 하나 넣을 때마다 한 칸씩: 1 → 1 + 1 = 2 → 1 + 1 + 1 = 3(더하는 수마다 사과 그림). 끝에는 크게 가운데로.
+ *       글은 수와 기호뿐 — 영어 낱말은 늘리지 않았다(one·two·three 는 한 해 길 B09 에서 처음 나온다). 넣을 때마다 한 음씩 올라가는 소리.
+ *     · 빠르기 — 흔들기가 덜 걸리고(PlayShakeCatch.CONF) 사과가 더 빨리 떨어지고, 챈트 박자 · 따라 말하기 틈 · 사이사이 기다림을 줄였다(아래 CONF).
  * ============================================================ */
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--ink);touch-action:none;user-select:none;-webkit-user-select:none}
 #cv{position:fixed;inset:0;display:block;width:100%;height:100%}
@@ -103,6 +107,17 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:
 .gdock.hide{opacity:0;transform:translateY(30px);pointer-events:none}
 .gdock button,.gdock a{width:74px;height:74px;border:0;border-radius:50%;background:var(--surface);box-shadow:var(--shadow);color:var(--stage);display:flex;align-items:center;justify-content:center;touch-action:manipulation}
 .gdock .ic{width:36px;height:36px}
+/* 셈 띠 — 바구니 위. 하나 넣을 때마다 한 칸씩 자란다(1 → 1 + 1 = 2 → 1 + 1 + 1 = 3). 끝에는 크게 가운데로 */
+.gsum{position:fixed;left:0;top:0;z-index:5;display:flex;align-items:flex-end;gap:6px;padding:8px 14px 10px;border-radius:var(--r-3);background:var(--surface);box-shadow:var(--shadow);font-family:var(--font-read);font-weight:700;color:var(--ink);opacity:0;pointer-events:none;transition:opacity 220ms;transform-origin:50% 100%}
+.gsum.show{opacity:1}
+.gsum > span{display:flex;flex-direction:column;align-items:center;font-size:34px;line-height:1}
+.gsum .sm-pic{font-size:30px;line-height:1;margin-bottom:2px}
+.gsum .sm-op{color:var(--ink-3);padding:0 2px}
+.gsum .sm-sum{min-width:44px;height:44px;border-radius:var(--r-2);background:var(--warm-soft);color:var(--stage-deep);display:flex;align-items:center;justify-content:center}
+.gsum .sm-new{animation:gPop 360ms var(--ease) both;animation-delay:calc(var(--i) * 90ms)}
+.gsum.big{left:50% !important;top:96px !important;transform:translateX(-50%) scale(1.5) !important;transform-origin:50% 0;transition:opacity 220ms,transform 420ms var(--ease)}
+.gsum.big .sm-sum{background:var(--stage);color:var(--on-stage)}
+@media (prefers-reduced-motion: reduce){.gsum .sm-new{animation:none}}
 @media (prefers-reduced-motion: reduce){.gword .w i,.gword .w.joy i,.gword .ck,.gword .bars i,.hint .hb,.ring.on,.gcover .wait{animation:none}}
 </style>
 <script src="/kedu_gate.js"></script>
@@ -113,6 +128,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:
 <div class="gbub" id="bub"></div>
 <div class="gword" id="word"><div class="row" id="wordR"><span class="p" id="wordP"></span><span class="w" id="wordT"></span><span class="ck" id="wordC"></span></div><span class="bars" id="wordB"><span id="wordM"></span><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i></span></div>
 <div class="ring" id="ring"></div>
+<div class="gsum" id="sum"></div>
 <div class="hint" id="hint"><div class="hb" id="hintB"></div></div>
 <div class="hcur" id="cur"></div>
 <button class="mirror" id="mirror" type="button" aria-label="거울"><video id="vid" autoplay playsinline muted></video><span class="mf" id="mirF"></span></button>
@@ -134,6 +150,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:
 <script src="../../../kmotion/kmotion.js"></script>
 <script src="../engine/play-motion.js"></script>
 <script src="../core/shake-catch.js"></script>
+<script src="../core/sum-strip.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -149,9 +166,11 @@ const CONF = {
   /* 들리는 말 — 전부 A01 자료 안(설계 §3). 화면 글은 낱말 띠의 낱말뿐 */
   say: { hi: 'Hi!', oh: 'Oh!', word: 'apple', like: 'I like it!', listen: 'Oh! Listen!' },
   letter: 'a',
-  bpm: 104,                                        /* 챈트 박자(빈터와 같게) */
+  bpm: 116,                                        /* 챈트 박자 — 한 해 길의 「다 같이」 박자(빈터의 듣기 단 104 보다 한 걸음 빠르게 · 11-16 속도감) */
   apples: 3,                                       /* 바구니의 빈 자리 */
-  echo: { ms: 2600, mic: true },                   /* 따라 말하기(메아리) — 듣는 길이(마이크가 바로 안 돼도 이만큼은 기다린다) · 마이크가 되면 한 번 들어 본다(못 알아들어도 넘어간다) */
+  math: { on: true, ups: ['combo', 'combo2', 'combo3'] },   /* 셈 띠(1 + 1 + 1 = 3) · 넣을 때마다 한 음씩 올라가는 소리 */
+  pace: { hiMs: 500, putMs: 300, afterEcho: 300, wordMs: 1800, endMs: 900, fruitFall: 450, fruitRoll: 1300 },   /* 사이사이 기다림(ms) — 11-16 속도감 */
+  echo: { ms: 1900, mic: true },                   /* 따라 말하기(메아리) — 듣는 길이(마이크가 바로 안 돼도 이만큼은 기다린다) · 마이크가 되면 한 번 들어 본다(못 알아들어도 넘어간다) */
   ohGap: 3200, ohAt: 0.25,                         /* 흔드는 동안 「Oh!」 — 같은 말이 겹치지 않게 간격 · 세기가 이만큼 넘을 때 */
   rustleMs: 230, leafRate: 16,                     /* 흔들림 소리 간격 · 흔들 때 날리는 잎(세기 1 에서 초당) */
   tree: { lean: 0.9, leanMax: 0.16, wobble: 0.07, tug: 0.4 },/* 나무가 손을 따라 기우는 정도 · 가장 많이 · 흔들기 세기에 따른 떨림 · 곧 떨어질 사과가 달랑거리는 정도 */
@@ -453,7 +472,7 @@ $('mirror').onclick = () => $('mirror').classList.toggle('fold');
 /* ── 놀이 알림 → 보이는 것 ── */
 const appleState = () => game.apples.map(a => a.s);
 let wordT = 0;
-game.on('drop', i => { sfx('pop'); burstAt(loose[i].position, 6, ['a-leaf', 'warm-soft']); word(CONF.say.word, 'hear'); sayWord(CONF.say.word); mood('point'); max.userData.look = loose[i]; clearTimeout(wordT); wordT = setTimeout(() => { if (curW === CONF.say.word && phase === 'shake') word(null); }, 2600); });
+game.on('drop', i => { sfx('pop'); burstAt(loose[i].position, 6, ['a-leaf', 'warm-soft']); word(CONF.say.word, 'hear'); sayWord(CONF.say.word); mood('point'); max.userData.look = loose[i]; clearTimeout(wordT); wordT = setTimeout(() => { if (curW === CONF.say.word && phase === 'shake') word(null); }, CONF.pace.wordMs); });
 game.on('land', (i, bounce) => { sfx(bounce ? 'tok' : 'tray'); if (bounce) burstAt(loose[i].position, 4, ['a-leaf', 'stage-soft']); });
 game.on('near', (i, on) => { ringI = on ? i : (ringI === i ? -1 : ringI); });
 game.on('catch', i => { sfx('pop'); burstAt(loose[i].position, 10); $('cur').classList.add('hold'); mood('idle'); max.userData.look = loose[i]; });
@@ -462,11 +481,17 @@ game.on('basketNear', on => { basket.userData.k = on ? 1.16 : 1; });
 game.on('put', (i, slot) => { $('cur').classList.remove('hold'); putApple(i, slot); });
 let ringI = -1;
 
+/* ── 셈 띠 — 넣은 사과 수만큼 1 을 더한다(1 → 1 + 1 = 2 → 1 + 1 + 1 = 3) ── */
+function sumShow(n){ const el = $('sum'); el.classList.remove('big'); if (!CONF.math.on || !n) { el.classList.remove('show'); el.innerHTML = ''; return; }
+  el.innerHTML = PlaySum.html(Array(n).fill(1), { art: PlayArt.html(CONF.say.word), fresh: n === 1 ? 1 : 4 }); el.classList.add('show'); placeSum(); sfx(CONF.math.ups[Math.min(n, CONF.math.ups.length) - 1]); }
+function sumBig(){ if (CONF.math.on && game.filled()) $('sum').classList.add('big'); }
+function placeSum(){ const el = $('sum'); if (!el.classList.contains('show') || el.classList.contains('big')) return; const [x, y] = screenOf(basket.localToWorld(vA.set(0, 1.0, 0))), w = el.offsetWidth, h = el.offsetHeight; el.style.transform = 'translate(' + Math.max(8, Math.min(innerWidth - w - 8, x - w / 2)) + 'px,' + Math.max(8, y - h) + 'px)'; }
 async function putApple(i, slot){
   const a = loose[i], s = slots[slot]; basket.attach(a); const from = a.position.clone(), to = new THREE.Vector3(s[0], s[1], s[2]);
   sfx('ok'); game.pause(true); phase = 'chant';
-  await tween(420, t => { a.position.lerpVectors(from, to, t); a.position.y += Math.sin(t * Math.PI) * 0.5; a.rotation.z = t * 2; });
+  await tween(CONF.pace.putMs, t => { a.position.lerpVectors(from, to, t); a.position.y += Math.sin(t * Math.PI) * 0.5; a.rotation.z = t * 2; });
   ghosts[slot].visible = false; basket.userData.bounce = 1; burstAt(basket.localToWorld(vA.set(s[0], s[1] + 0.2, s[2])), 12); max.userData.look = basket;
+  sumShow(game.filled());
   await chantLine(); await echo();
   word(null); bubble(null); mood('idle');
   if (game.done()) { finish(); return; }
@@ -491,7 +516,7 @@ async function echo(){
   let ok = false; const t0 = performance.now();
   if (micOK()) { const r = await soon(SP.tryOnce(w, { kind: 'word', others: [], timeout: CONF.echo.ms }), CONF.echo.ms + 600); if (r && r.ok) ok = true; if (r && ['not-allowed', 'service-not-allowed', 'unavailable', 'audio-capture', 'start'].indexOf(r.error) >= 0) { micOff = true; $('wordM').style.display = 'none'; } }
   if (!ok) await wait(Math.max(0, CONF.echo.ms - (performance.now() - t0)));          /* 마이크가 바로 안 돼도 따라 말할 틈은 그대로 둔다 */
-  word(w, 'ok'); if (ok) sfx('ok'); mood('happy', 800); burstAt(basket.localToWorld(vA.set(0, 1, 0)), ok ? 14 : 6); await wait(700);
+  word(w, 'ok'); if (ok) sfx('ok'); mood('happy', 800); burstAt(basket.localToWorld(vA.set(0, 1, 0)), ok ? 14 : 6); await wait(CONF.pace.afterEcho);
   echoing = false;
 }
 
@@ -506,18 +531,18 @@ async function begin(prefer){
   curIcon(m); mirror(true); $('cur').classList.add('on');
   mood('wave'); max.userData.look = null; await sayLine(CONF.say.hi);
   phase = 'shake'; game.pause(false); demoAt = performance.now(); lastSeen = performance.now(); max.userData.look = tree;
-  await wait(1400); if (max.userData.mood === 'wave') mood('idle');
+  await wait(CONF.pace.hiMs); if (max.userData.mood === 'wave') mood('idle');
 }
 async function finish(){
   phase = 'end'; const my = run;
   PM.stop(); unlisten(); mirror(false); clearTimeout(wordT); $('cur').classList.remove('on', 'seen', 'dim', 'hold'); $('ring').classList.remove('on'); hint(null);
-  mood('happy'); max.userData.hop = 1; petals(44); sfx('done'); max.userData.look = basket; await wait(1300);
+  mood('happy'); max.userData.hop = 1; petals(44); sfx('done'); max.userData.look = basket; sumBig(); await wait(CONF.pace.endMs);
   if (my !== run) return;
   mood('idle'); max.userData.look = fruit;
   /* a 열매가 톡 떨어져 Max 발 앞으로 굴러간다(빈터의 사건 ① 과 같은 몸짓) */
   glade.attach(fruit); const land = new THREE.Vector3(TS[0] + 0.5, 0.5, -0.8), stop = new THREE.Vector3(MS[0] - 0.85, 0.5, MS[1] + 0.45);   /* 바구니 뒤로 지나 Max 발 앞에 */
-  sfx('pop'); { const from = fruit.position.clone(); await tween(560, t => { fruit.position.lerpVectors(from, land, t); fruit.position.y = from.y + (land.y - from.y) * t * t; }, t => t); }
-  sfx('tok'); await tween(1700, t => { fruit.position.lerpVectors(land, stop, t); fruit.position.y = 0.5 + Math.abs(Math.sin(t * Math.PI * 3)) * 0.25 * (1 - t); fruit.rotation.z = -t * Math.PI * 4; }); fruit.rotation.z = 0;
+  sfx('pop'); { const from = fruit.position.clone(); await tween(CONF.pace.fruitFall, t => { fruit.position.lerpVectors(from, land, t); fruit.position.y = from.y + (land.y - from.y) * t * t; }, t => t); }
+  sfx('tok'); await tween(CONF.pace.fruitRoll, t => { fruit.position.lerpVectors(land, stop, t); fruit.position.y = 0.5 + Math.abs(Math.sin(t * Math.PI * 3)) * 0.25 * (1 - t); fruit.rotation.z = -t * Math.PI * 4; }); fruit.rotation.z = 0;
   if (my !== run) return;
   mood('happy', 900); bubble('<span class="say">' + CONF.say.like + '</span>'); await sayLine(CONF.say.like); await wait(250);
   mood('point'); bubble('<span class="say">' + CONF.say.listen + '</span>'); burstAt(fruit.position, 8); await sayLine(CONF.say.listen); await wait(300); bubble(null); mood('idle');
@@ -530,7 +555,7 @@ function again(){
   ghosts.forEach(g => { g.visible = true; }); basket.userData.k = 1;
   crown.attach(fruit); fruit.position.copy(fruitHome); fruit.rotation.set(0, 0, 0);
   word(null); bubble(null); hint(null); mood('idle'); max.userData.look = null; ringI = -1;
-  clearTimeout(wordT); $('cur').classList.remove('on', 'seen', 'dim', 'hold'); $('ring').classList.remove('on'); $('dock').classList.add('hide'); $('cover').classList.remove('hide');
+  clearTimeout(wordT); sumShow(0); $('cur').classList.remove('on', 'seen', 'dim', 'hold'); $('ring').classList.remove('on'); $('dock').classList.add('hide'); $('cover').classList.remove('hide');
 }
 $('bHands').onclick = () => begin('hands');
 $('bTouch').onclick = () => begin('touch');
@@ -614,7 +639,7 @@ function frame(){
     u.brows.forEach(b => { b.position.y += (0.21 + brow * 0.05 - b.position.y) * k; });
     const talking = u.talk > 0; u.open.visible = talking; u.mouth.visible = !talking;
     if (talking) u.open.scale.set(1.1, 0.3 + Math.abs(Math.sin(t * 13)) * 0.9, 0.5); else { u.mouth.scale.x += (smile - u.mouth.scale.x) * k; u.mouth.scale.y += (smile - u.mouth.scale.y) * k; } }
-  if ($('bub').classList.contains('show')) placeBub();
+  if ($('bub').classList.contains('show')) placeBub(); placeSum();
   comp.render();
   if (!lowChecked) { fpsN++; fpsT += dt; if (fpsT > 2) { lowChecked = true; if (fpsN / fpsT < 40) { slowDevice = true; effects(lightFx); } } }   /* 느린 기기면 가볍게 */
   if (!window.__pause) requestAnimationFrame(frame);
