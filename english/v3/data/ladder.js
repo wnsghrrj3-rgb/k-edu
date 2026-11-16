@@ -116,7 +116,7 @@ window.EN_LADDER = {
         { id: 'lv3-38', track: 'G', name: '묻고 답하기 종합', en: 'Do you ~? Yes, I do.' },
         { id: 'lv3-39', track: 'V', name: '동사 단어 6 — 반대 짝 다시 모으기', en: 'come · go · stop' },
         { id: 'lv3-40', track: 'V', name: '아침 준비 단어', en: 'comb · mirror · towel' },
-        { id: 'lv3-41', track: 'V', name: '학교 행사 단어', en: 'picnic · festival' },
+        { id: 'lv3-41', track: 'V', name: '학교 단어 7 — 행사', en: 'picnic · festival · photo' },
         { id: 'lv3-42', track: 'V', name: '동물 단어 7 — 다시 모으기', en: 'animals review' },
         { id: 'lv3-43', track: 'R', name: '짧은 글 6 — Mina와 친구들', en: '대화가 든 글 2편', star: true },
         { id: 'lv3-44', track: 'M', name: 'Lv3 마무리 평가', en: 'read & answer', mission: true }
