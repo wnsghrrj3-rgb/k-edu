@@ -109,7 +109,7 @@ window.EN_LADDER = {
         { id: 'lv3-31', track: 'V', name: '학교 단어 6 — 물건·도구', en: 'glue · tape · ruler' },
         { id: 'lv3-32', track: 'V', name: '시간 단어 2 — 하루 흐름', en: 'morning · noon · night' },
         { id: 'lv3-33', track: 'R', name: '동물 상식 글 2', en: '설명하는 글 2편' },
-        { id: 'lv3-34', track: 'V', name: '놀이·취미 단어', en: 'hobby · kite · puzzle' },
+        { id: 'lv3-34', track: 'V', name: '놀이·취미 단어', en: 'kite · puzzle · drum' },
         { id: 'lv3-35', track: 'V', name: '가족 단어 2', en: 'uncle · aunt · cousin' },
         { id: 'lv3-36', track: 'V', name: '동물 단어 6 — 벌레', en: 'ant · bee · spider' },
         { id: 'lv3-37', track: 'V', name: '날씨 단어 2 — 하늘·자연', en: 'rainbow · storm · fog' },
