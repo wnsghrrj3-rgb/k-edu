@@ -5,7 +5,8 @@
    관아에 갈 때마다 궤가 커진다(죽은 사람 몫·갓난아이 몫). 탈춤 날(사흘째) 우리 장 마당에서 구경하면 그날 값이 좋아진다.
    좌표: x 동쪽(+), z 남쪽(+). 서쪽 집과 논 → 가운데 우리 장(북쪽 관아) → 동쪽 고개 → 이웃 장. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop } from '../scene/kit.js?v=1';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artInst } from '../scene/kit.js?v=3';
+await loadArt('people');   /* 블렌더로 만든 모델(사람·자연·집·소품) */
 
 const W = 96, H = 60, BX = [3, 93], BZ = [4, 56], DAYLEN = 40, DAYS = 5, FOOD = 5;
 const HOME = [13, 25], JAR = [20.5, 28], JOUT = [18.9, 29.6], JIN = [22.1, 29.6], FIELD = [4, 36, 26, 54], TOB = [23.5, 51];

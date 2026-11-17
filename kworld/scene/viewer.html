@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>케이월드 모델 보기</title>
+<script type="importmap">
+{ "imports": { "three": "/labs/vendor/three185/three.module.min.js" } }
+</script>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#9fb6d8;font-family:'Pretendard','Malgun Gothic',sans-serif}canvas{display:block;position:fixed;inset:0;width:100%;height:100%}.lb{position:fixed;transform:translate(-50%,0);font-size:11px;font-weight:800;color:#1e2436;background:rgba(255,255,255,.8);border-radius:6px;padding:1px 5px;pointer-events:none;white-space:nowrap}</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="say"></div>
+<script type="module">
+/* 블렌더로 만든 모델을 한 판에 늘어놓고 본다. 주소: ?pack=people,nature,build,props · ?only=이름조각 · ?cam=x,y,z · ?look=x,y,z · ?people=0 */
+import * as THREE from 'three';
+import { stage, sunLight, M, people, loadArt, ART, art, rng } from './kit.js?v=3';
+const Q = new URLSearchParams(location.search), packs = (Q.get('pack') || 'people').split(',');
+const { renderer, scene, cam, resize } = stage({ fog: [0xbcd0ea, 80, 260], exposure: 1.05, fov: 38 });
+scene.add(new THREE.HemisphereLight(0xdfeaff, 0x7a8a6a, 1.25));
+const sun = sunLight(scene, { color: 0xfff1d6, intensity: 2.0, box: [40, 40], far: 160, pos: [-30, 46, 34], target: [0, 0, 0] });
+addEventListener('resize', resize); resize(); scene.background = new THREE.Color(0xbcd0ea);
+const g = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), M(0x8fbf6a)); g.rotation.x = -Math.PI / 2; g.receiveShadow = true; scene.add(g);
+await loadArt(...packs);
+const { person, walkAnim } = people(scene), labels = [], walkers = [];
+const label = (t, x, y, z) => { const e = document.createElement('div'); e.className = 'lb'; e.textContent = t; document.body.appendChild(e); labels.push({ e, p: new THREE.Vector3(x, y, z) }); };
+let maxX = 0;
+if (ART.head && Q.get('people') !== '0') {
+  const L = [['top', 0xc8b08a, 0x7a5a3a, {}], ['wild', 0xb89a70, 0x6a5034, { style: 'hide' }], ['cap', 0x2a2e3a, 0x2a2e3a, { mood: 'stern' }], ['fedora', 0x4a4a52, 0x3a3a40, {}], ['hair', 0xd8d0c0, 0x6a5a5a, { chima: true, pants: 0x3a5a8a }], ['gat', 0xf4f0e6, 0xe8e2d4, {}], ['guard', 0x3a4a7a, 0x2a2a3a, { mood: 'stern', spear: true }], ['satgat', 0x8a8070, 0x5a5448, {}], ['scarf', 0xe8e2d4, 0x6a6a72, {}], ['paeraengi', 0x9a8a68, 0x6a5034, {}], ['braid', 0xf0c8d0, 0xc84a5a, { chima: true, pants: 0xc84a5a }], ['bun', 0xe8f0e0, 0x4a6a8a, { chima: true, pants: 0x4a6a8a }], ['top', 0x8a3a2a, 0x4a2a1a, { mood: 'stern', torch: true }], ['gat', 0x7fc8c0, 0x4a6a8a, { lantern: true }]];
+  L.forEach(([hat, shirt, pants, o], i) => { const p = person({ shirt, pants, hat, ...o }); p.position.set(-9 + i * 1.8, 0, 6); p.rotation.y = i % 3 === 0 ? 0.4 : i % 3 === 1 ? -0.3 : 0; label(hat, p.position.x, 0, 6.6); if (i % 2) walkers.push(p); });
+  [0.62, 0.78].forEach((s, i) => { const p = person({ shirt: [0xc87a4a, 0x8a6a4a][i], pants: 0x3a3a44, hat: i ? 'top' : 'braid' }); p.scale.setScalar(s); p.position.set(-9 + i * 1.4, 0, 8.4); walkers.push(p); });
+}
+const only = Q.get('only'), names = Object.keys(ART).filter((n) => !/^(head|brow|hair|hat|torso|skirt|chima|arm|leg)/.test(n) && (!only || n.includes(only))).sort();
+let x = -24, z = -4, rowH = 0; const gap = +(Q.get('gap') || 2);
+for (const n of names) { const A = ART[n]; let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (let i = 0; i < A.pos.length; i += 3) { x0 = Math.min(x0, A.pos[i]); x1 = Math.max(x1, A.pos[i]); z0 = Math.min(z0, A.pos[i + 2]); z1 = Math.max(z1, A.pos[i + 2]); }
+  const w = x1 - x0, d = z1 - z0; if (x + w > 26) { x = -24; z -= rowH + gap + 1; rowH = 0; }
+  const m = art(n, { a: 0xc8b08a, b: 0x8a6a4a, c: 0x4a6a8a }); m.position.set(x - x0, 0, z - z1); scene.add(m); label(n, x + w / 2, 0, z + 0.6); x += w + gap; rowH = Math.max(rowH, d); }
+const cp = (Q.get('cam') || '0,13,26').split(',').map(Number), lk = (Q.get('look') || '0,1,0').split(',').map(Number);
+cam.position.set(cp[0], cp[1], cp[2]); cam.lookAt(lk[0], lk[1], lk[2]);
+let t = 0; const v = new THREE.Vector3();
+function loop() { t += 1 / 30; walkers.forEach((p, i) => walkAnim(p, t * 9 + i, true)); renderer.render(scene, cam);
+  for (const l of labels) { v.copy(l.p).project(cam); l.e.style.left = ((v.x + 1) / 2) * innerWidth + 'px'; l.e.style.top = ((1 - v.y) / 2) * innerHeight + 'px'; l.e.style.display = v.z < 1 ? '' : 'none'; }
+  requestAnimationFrame(loop); }
+loop(); window.__scene = { ART, names, cam };
+</script>
+</body>
+</html>

@@ -3,7 +3,8 @@
    떼의 성질: 다가가면 반대쪽으로 달아난다(걸으면 조금, 뛰면 멀리) · 옆이 비어 있으면 옆으로 샌다 · 바람을 등지고 다가가면 냄새로 일찍 흩어진다 · 늑대가 끼어든다.
    좌표: x 동쪽(+), z 남쪽(+). 강은 남쪽(z 63~), 골짜기는 북동쪽. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, gridPath, losRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop } from '../scene/kit.js?v=1';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, gridPath, losRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artInst } from '../scene/kit.js?v=3';
+await loadArt('people');   /* 블렌더로 만든 모델(사람·자연·집·소품) */
 
 const W = 96, H = 72;
 const BX = [5.5, 89], BZ = [6, 61.5]; /* 걸을 수 있는 곳 */

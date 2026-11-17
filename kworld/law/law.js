@@ -5,7 +5,8 @@
    고인돌에서 「어떻게 하라는지 모르겠다」를 들었으므로: 따라갈 것은 늘 빛나고, 할 일은 「곁에 서기·가만히 서기·데려가기」 셋뿐이다.
    좌표: x 동쪽(+), z 남쪽(+). 흙성 안. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop } from '../scene/kit.js?v=1';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artInst } from '../scene/kit.js?v=3';
+await loadArt('people');   /* 블렌더로 만든 모델(사람·자연·집·소품) */
 
 const W = 80, H = 60, BX = [7, 73], BZ = [7, 53], TRIAL = 240;
 const GRANARY = [18, 13.5], DOOR = [18, 18.4], COURT = [40, 46.5], DRUM = [40, 45.6], WELL = [38, 30], MARKET = [55, 22], SMITHY = [62, 42];

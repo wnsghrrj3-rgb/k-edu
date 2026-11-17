@@ -5,7 +5,8 @@
    실제 인물·지명은 넣지 않는다(「어느 읍내」). 끝 화면에 진압은 그리지 않는다.
    좌표: x 동쪽(+), z 남쪽(+). 서쪽 예배당, 북쪽 주재소, 남동쪽 장터. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, losRects, rayLenRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop } from '../scene/kit.js?v=1';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, losRects, rayLenRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artInst } from '../scene/kit.js?v=3';
+await loadArt('people');   /* 블렌더로 만든 모델(사람·자연·집·소품) */
 
 const W = 70, H = 50, BX = [1, 69], BZ = [1, 49], DAWN = 210;
 const HOUSES = [[22, 12], [34, 20], [55, 14], [63, 30], [28, 45]];

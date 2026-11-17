@@ -4,7 +4,8 @@
    굴림대: 돌 밑에 둘 이상 있어야 움직인다. 지나온 것은 주워서 돌 앞 길에 놓는다(아이 하나도 천천히 돕는다).
    좌표: x 동쪽(+), z 남쪽(+). 길은 z=24 를 따라 서쪽 채석장 → 동쪽 무덤 언덕. 마을은 남쪽. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop } from '../scene/kit.js?v=1';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artInst } from '../scene/kit.js?v=3';
+await loadArt('people');   /* 블렌더로 만든 모델(사람·자연·집·소품) */
 
 const W = 92, H = 58, BX = [4, 88], BZ = [8, 52];
 const ROAD_Z = 24, S0 = 17, GOAL = 73, MOUND = [73, 24], DAY = 320;

@@ -5,7 +5,8 @@
    순시하는 관리의 불빛 안에서 서성이면(가만히 서 있거나 일하면) 첫 문 밖으로 쫓겨난다. 담을 넘다 들키면 벼슬을 잃는다.
    좌표: x 동쪽(+), z 남쪽(+). 남쪽 바깥뜰에서 북쪽 전각으로. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, losRects, rayLenRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop } from '../scene/kit.js?v=1';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, losRects, rayLenRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artInst } from '../scene/kit.js?v=3';
+await loadArt('people');   /* 블렌더로 만든 모델(사람·자연·집·소품) */
 
 const W = 80, H = 70, BX = [2, 78], BZ = [1, 66], DUSK = 200;
 const GZ = [46, 34, 22, 10], GX = [37.5, 42.5];

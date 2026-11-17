@@ -5,7 +5,8 @@
    군인과 싸움은 그리지 않는다. 뒤쪽 하늘의 불빛과 낮은 소리만. 쓰러진 사람도 그리지 않는다(버려진 짐과 수레까지).
    좌표: x 동쪽(+), z 남쪽(+) — 화면 아래(z 큰 쪽)에서 위(z 작은 쪽)로 걷는다. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, glowSprite, people, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, edgeGoal, overBar, runLoop, backdrop } from '../scene/kit.js?v=2';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, glowSprite, people, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, edgeGoal, overBar, runLoop, backdrop, loadArt, ART, art, artInst } from '../scene/kit.js?v=3';
+await loadArt('people');   /* 블렌더로 만든 모델(사람·자연·집·소품) */
 
 const W = 80, H = 320, START = [41, 316], RIVER = [72, 90], FORD = [12.5, 19.5], ICE = [56.5, 69.5], DOCK = [40, 92.6], DOCK_S = [40, 69.4], CAP = 4.5, BACK0 = 370, BACKV = 2.9;
 const VIEWS_R = ['길 따라', '가까이', '어깨 너머', '지도'];

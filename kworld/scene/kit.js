@@ -3,6 +3,7 @@
    화면 틀(아이디): #c 캔버스 · #say 한 줄 · #ov 덮개 · #goal 가장자리 빛 · #bView ⟲#bL ⟳#bR #rot 시점 · #stick #bRun 터치.
    좌표: x 동쪽(+), z 남쪽(+). 한 줄 가운데 슬래시 두 개 주석 금지(블록 주석만). */
 import * as THREE from 'three';
+import { GLTFLoader } from '/labs/vendor/three185/addons/loaders/GLTFLoader.js';
 
 export const $ = (id) => document.getElementById(id);
 export const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -40,7 +41,22 @@ export const box = (w, h, d, c, o) => { const m = new THREE.Mesh(new THREE.BoxGe
 export const cyl = (rt, rb, h, c, seg = 10, o) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), M(c, o)); m.castShadow = m.receiveShadow = true; return m; };
 export const at = (m, x, y, z) => { m.position.set(x, y, z); return m; };
 export function canvasTex(w, h, fn) { const cv = document.createElement('canvas'); cv.width = w; cv.height = h; fn(cv.getContext('2d'), w, h); const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t; }
-export function flatMaker(scene) { return (x0, z0, x1, z1, c, y = 0.02) => { const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, 0.1, z1 - z0), M(c)); m.position.set((x0 + x1) / 2, y - 0.05, (z0 + z1) / 2); m.receiveShadow = true; scene.add(m); return m; }; }
+/* 땅 무늬(11-17): 얼룩과 잔점이 있는 밝기 무늬 한 장을 온 땅에 되풀이한다 — 민짜 색판이 흙·풀밭처럼 보이게. 좌표는 땅 위치를 따라서 판끼리 이어진다. */
+let _gtex = null;
+export function groundTex() { if (_gtex) return _gtex; const r = rng(77); _gtex = canvasTex(256, 256, (g) => { g.fillStyle = '#f0f0f0'; g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 90; i++) { const x = r() * 256, y = r() * 256, rad = 14 + r() * 40, d = r() < 0.5; for (const [ox, oy] of [[0, 0], [256, 0], [-256, 0], [0, 256], [0, -256]]) { const gr = g.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, rad); gr.addColorStop(0, d ? 'rgba(150,150,150,.20)' : 'rgba(255,255,255,.30)'); gr.addColorStop(1, 'rgba(200,200,200,0)'); g.fillStyle = gr; g.fillRect(x + ox - rad, y + oy - rad, rad * 2, rad * 2); } }
+  for (let i = 0; i < 900; i++) { g.fillStyle = r() < 0.5 ? 'rgba(120,120,120,.16)' : 'rgba(255,255,255,.22)'; g.fillRect(r() * 256, r() * 256, 1 + r() * 2.4, 1 + r() * 2.4); } });
+  _gtex.wrapS = _gtex.wrapT = THREE.RepeatWrapping; _gtex.anisotropy = 4; return _gtex; }
+export function flatMaker(scene) { return (x0, z0, x1, z1, c, y = 0.02) => { const ge = new THREE.BoxGeometry(x1 - x0, 0.1, z1 - z0), uv = ge.attributes.uv, ps = ge.attributes.position, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2; for (let i = 0; i < uv.count; i++) uv.setXY(i, (ps.getX(i) + cx) / 14, (ps.getZ(i) + cz) / 14);
+  const m = new THREE.Mesh(ge, M(c, { map: groundTex() })); m.position.set(cx, y - 0.05, cz); m.receiveShadow = true; scene.add(m); return m; }; }
+/* 뿌리기: 풀·꽃·돌·나무를 한 넓이에 흩는다(이름마다 그리기 한 번). avoid(x, z) 가 참인 자리는 비운다. 돌려주는 값 = 놓인 자리들 [[x, z, 크기, 이름]] */
+export function scatter(scene, rnd, { area, n, names, avoid = null, scale = [0.8, 1.25], tints = {}, y = 0, shadow = true, minGap = 0 }) {
+  const by = {}, put = []; let tries = 0;
+  while (put.length < n && tries++ < n * 12) { const x = area[0] + rnd() * (area[2] - area[0]), z = area[1] + rnd() * (area[3] - area[1]); if (avoid && avoid(x, z)) continue; if (minGap && put.some((p) => Math.abs(p[0] - x) < minGap && Math.abs(p[1] - z) < minGap)) continue;
+    const nm = names[Math.floor(rnd() * names.length)], sc = scale[0] + rnd() * (scale[1] - scale[0]); (by[nm] = by[nm] || []).push([x, typeof y === 'function' ? y(x, z) : y, z, sc, rnd() * 6.28]); put.push([x, z, sc, nm]); }
+  for (const nm in by) artInst(scene, nm, by[nm], tints, { shadow });
+  return put;
+}
 /* 하늘: 둥근 지붕(아래→위 두 빛) + 별(있으면) */
 export function skyDome(scene, rnd, { top, low, stars = 0 }) {
   const skyMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false });
@@ -74,11 +90,87 @@ export function ringsFx(scene) {
   return { ring, update, rings };
 }
 
-/* ───── 사람 — 섬과 같은 네모 사람 ───── */
+/* ───── 블렌더로 직접 만든 모델(2026-11-17 준호 「디자인이 너무 단순하다」) ─────
+   만드는 곳 = kworld/tools/blender/make_*.py → kworld/scene/assets/*.glb. 물체 하나 = 이름 하나.
+   읽을 때 물체마다 조각을 한 덩이로 합치고(그리기 한 번), 재질 이름으로 색을 굽는다: tint_* 는 부르는 쪽이 정하고 나머지는 모델의 색.
+   glow_* 재질은 스스로 빛나는 조각(창 불빛)으로 따로 둔다. 음영은 꼭짓점 색에 들어 있다. */
+export const ART = {};
+export const ARTV = 1;
+export const artMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, metalness: 0, side: THREE.DoubleSide });
+export const artGlowMat = new THREE.MeshBasicMaterial({ vertexColors: true });
+const artLoaded = {}, _c = new THREE.Color();
+export async function loadArt(...names) {
+  const L = new GLTFLoader();
+  await Promise.all(names.filter((n) => !artLoaded[n]).map(async (n) => {
+    const g = await L.loadAsync(new URL(`./assets/${n}.glb?v=${ARTV}`, import.meta.url).href); artLoaded[n] = 1;
+    for (const node of g.scene.children) { const ms = []; node.traverse((o) => { if (o.isMesh) ms.push(o); }); if (!ms.length) continue;
+      let nv = 0, ni = 0; for (const m of ms) { nv += m.geometry.attributes.position.count; ni += m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count; }
+      const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), shade = new Float32Array(nv), mid = new Uint8Array(nv), index = new Uint32Array(ni), pal = []; let v0 = 0, i0 = 0;
+      for (const m of ms) { const ge = m.geometry, P = ge.attributes.position, N = ge.attributes.normal, C = ge.attributes.color, k = pal.length; pal.push({ name: m.material.name, r: m.material.color.r, g: m.material.color.g, b: m.material.color.b });
+        for (let i = 0; i < P.count; i++) { pos[(v0 + i) * 3] = P.getX(i); pos[(v0 + i) * 3 + 1] = P.getY(i); pos[(v0 + i) * 3 + 2] = P.getZ(i); nor[(v0 + i) * 3] = N.getX(i); nor[(v0 + i) * 3 + 1] = N.getY(i); nor[(v0 + i) * 3 + 2] = N.getZ(i); shade[v0 + i] = C ? C.getX(i) : 1; mid[v0 + i] = k; }
+        if (ge.index) for (let i = 0; i < ge.index.count; i++) index[i0 + i] = ge.index.getX(i) + v0; else for (let i = 0; i < P.count; i++) index[i0 + i] = v0 + i;
+        v0 += P.count; i0 += ge.index ? ge.index.count : P.count; }
+      ART[node.name] = { pos, nor, shade, mid, index, pal, pivot: node.position.clone(), cache: {} }; }
+  }));
+  return ART;
+}
+/* 이름(또는 이름 여럿)의 모양에 색을 구워 돌려준다. tints = { shirt: 0x…, … } — 같은 색 조합은 한 번만 만든다. glow 가 true 면 빛나는 조각만. */
+export function artGeo(names, tints = {}, glow = false) {
+  const list = Array.isArray(names) ? names : [names], key = list.join('+') + '|' + Object.keys(tints).sort().map((k) => k + ':' + (tints[k] && tints[k].isColor ? tints[k].getHex() : tints[k])).join(',') + (glow ? '|g' : '');
+  const A0 = ART[list[0]]; if (!A0) return null; if (A0.cache[key]) return A0.cache[key];
+  const P = [], N = [], C = [], I = []; let base = 0;
+  for (const nm of list) { const A = ART[nm]; if (!A) continue; const cols = A.pal.map((m) => { if (m.name.startsWith('tint_')) { const t = tints[m.name.slice(5)]; if (t == null) return [m.r, m.g, m.b]; _c.set(t); return [_c.r, _c.g, _c.b]; } return [m.r, m.g, m.b]; }), isG = A.pal.map((m) => m.name.startsWith('glow'));
+    const map = new Int32Array(A.shade.length).fill(-1); let n = 0;
+    for (let i = 0; i < A.shade.length; i++) { if (isG[A.mid[i]] !== glow) continue; map[i] = base + n++; const c = cols[A.mid[i]], s = A.shade[i]; P.push(A.pos[i * 3], A.pos[i * 3 + 1], A.pos[i * 3 + 2]); N.push(A.nor[i * 3], A.nor[i * 3 + 1], A.nor[i * 3 + 2]); C.push(c[0] * s, c[1] * s, c[2] * s); }
+    for (let i = 0; i < A.index.length; i += 3) { const a = map[A.index[i]], b = map[A.index[i + 1]], c = map[A.index[i + 2]]; if (a >= 0 && b >= 0 && c >= 0) I.push(a, b, c); }
+    base += n; }
+  let g = null; if (I.length) { g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); g.setIndex(I); }
+  A0.cache[key] = g; return g;
+}
+/* 모델 하나를 세운다(그림자 드리움). 빛나는 조각이 있으면 묶음으로 돌려준다. */
+export function art(names, tints = {}, { shadow = true } = {}) {
+  const g = artGeo(names, tints), gl = artGeo(names, tints, true), m = new THREE.Mesh(g || new THREE.BufferGeometry(), artMat); m.castShadow = shadow; m.receiveShadow = true;
+  if (!gl) return m; const grp = new THREE.Group(); grp.add(m, new THREE.Mesh(gl, artGlowMat)); grp.userData.glow = grp.children[1]; return grp;
+}
+/* 제 재질을 따로 가진 모델 — 비쳐 보이게 할 집(occluders 묶음)이나 혼자 색·밝기를 바꿀 것에 쓴다(공통 재질을 건드리면 온 장면이 같이 바뀐다) */
+export function artOwn(names, tints = {}, o = {}) { const m = art(names, tints, o); const t = m.isMesh ? m : m.children[0]; t.material = artMat.clone(); return m; }
+/* 같은 모델 여럿(나무·바위·풀): list = [[x, y, z, 크기(수 또는 [sx, sy, sz]), 돌림y], …] */
+const _d = new THREE.Object3D();
+export function artInst(scene, names, list, tints = {}, { shadow = true } = {}) {
+  const g = artGeo(names, tints); if (!g || !list.length) return null; const m = new THREE.InstancedMesh(g, artMat, list.length);
+  list.forEach((t, i) => { _d.position.set(t[0], t[1], t[2]); const s = t[3] == null ? 1 : t[3]; if (Array.isArray(s)) _d.scale.set(s[0], s[1], s[2]); else _d.scale.setScalar(s); _d.rotation.set(0, t[4] || 0, 0); _d.updateMatrix(); m.setMatrixAt(i, _d.matrix); });
+  m.castShadow = shadow; m.receiveShadow = true; m.frustumCulled = false; scene.add(m);
+  const gl = artGeo(names, tints, true); if (gl) { const m2 = new THREE.InstancedMesh(gl, artGlowMat, list.length); for (let i = 0; i < list.length; i++) { m.getMatrixAt(i, _d.matrix); m2.setMatrixAt(i, _d.matrix); } m2.frustumCulled = false; scene.add(m2); m.userData.glow = m2; }
+  return m;
+}
+
+/* ───── 사람 — 블렌더 모델(people.glb)이 있으면 그것으로, 없으면 예전 네모 사람 ───── */
 export const faceTex = (skin, mood) => canvasTex(64, 64, (g) => { g.fillStyle = skin; g.fillRect(0, 0, 64, 64); g.fillStyle = '#2b2118'; g.fillRect(16, 26, 8, 9); g.fillRect(40, 26, 8, 9); if (mood === 'stern') { g.fillRect(12, 19, 14, 4); g.fillRect(38, 19, 14, 4); g.fillRect(22, 46, 20, 4); } else { g.fillRect(24, 46, 16, 4); } });
 export function people(scene) {
   /* hat: 'guard'(전립) · 'gat'(갓) · 'satgat'(삿갓) · 'hair'(헝클어진 긴 머리) · 그 밖(상투). lantern: 오른손 초롱 · torch: 오른손 횃불 · spear: 왼손 창 */
-  function person({ shirt, pants, hat, mood = 'soft', lantern = false, torch = false, spear = false, skin: skinC = 0xffd9a8, hairC = 0x2b2118 }) {
+  /* 블렌더 사람: 머리(얼굴·머리칼·쓰개) · 몸통(저고리·자락) · 팔 둘 · 다리 둘 = 그리기 여섯 번. 옷 색은 꼭짓점 색에 굽는다.
+     hat 에 더 쓸 수 있는 것: 'scarf'(머릿수건) · 'paeraengi'(패랭이) · 'braid'(댕기 머리) · 'bun'(쪽머리) · 'wild'(헝클어진 머리) · 'cap'(챙 모자, pants 색) · 'fedora'(중절모, pants 색).
+     chima: true 면 긴 치마(pants 색). style: 'hide' 면 선사 시대 가죽옷(깃 없음 · 맨팔 · 맨다리 · 가죽신), 'coat' 면 근대 단추 옷(제복·교복). */
+  function personArt({ shirt, pants, hat, mood = 'soft', lantern = false, torch = false, spear = false, skin: skinC = 0xffd9a8, hairC = 0x2b2118, chima = false, style = null }) {
+    const g = new THREE.Group(), tm = { skin: skinC, shirt, pants, hair: hairC }, hide = style === 'hide';
+    const HAT = { guard: ['hair_base', 'hat_guard'], gat: ['hair_base', 'hat_gat'], satgat: ['hair_base', 'hat_satgat'], hair: ['hair_base', 'hair_fall'], scarf: ['hair_base', 'hat_scarf'], paeraengi: ['hair_base', 'hat_paeraengi'], braid: ['hair_base', 'hair_braid'], bun: ['hair_base', 'hair_bun'], wild: ['hair_wild'], cap: ['hair_base', 'hat_cap'], fedora: ['hair_base', 'hat_fedora'] };
+    const headN = ['head', ...(HAT[hat] || (hide ? ['hair_wild'] : ['hair_base', 'hair_knot'])), ...(mood === 'stern' ? ['brow_stern'] : [])], bodyN = hide ? ['torso_hide', 'skirt_hide'] : [style === 'coat' ? 'torso_coat' : 'torso', chima ? 'chima' : 'skirt'], sfx = hide ? '_bare' : '';
+    const mk = (names) => { const m = new THREE.Mesh(artGeo(names, tm), artMat); m.castShadow = true; m.receiveShadow = true; return m; };
+    const head = mk(headN), body = mk(bodyN), limbs = {};
+    for (const n of ['legL', 'legR', 'armL', 'armR']) { const p = new THREE.Group(); p.position.copy(ART[n].pivot); p.add(mk(n + sfx)); limbs[n] = p; }
+    if (chima) { limbs.legL.visible = limbs.legR.visible = false; }
+    g.add(limbs.legL, limbs.legR, body, limbs.armL, limbs.armR, head);
+    const retint = () => { head.geometry = artGeo(headN, tm); body.geometry = artGeo(bodyN, tm); for (const n in limbs) limbs[n].children[0].geometry = artGeo(n + sfx, tm); };
+    const proxy = (k) => ({ material: { color: { set(c) { tm[k] = new THREE.Color().set(c).getHex(); retint(); } } } });
+    let flame = null; const { armR } = limbs;
+    if (lantern) { armR.rotation.x = -1.1; const l = new THREE.Group(); l.add(at(cyl(0.03, 0.03, 0.9, 0x6a4526, 5), 0, 0, 0), at(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.38, 0.3), new THREE.MeshBasicMaterial({ color: 0xffd27a })), 0, -0.5, 0)); l.rotation.x = Math.PI / 2; l.position.set(0.46, 1.1, 0.7); g.add(l); }
+    if (torch) { armR.rotation.x = -2.4; const t = new THREE.Group(); t.add(at(cyl(0.05, 0.06, 1.1, 0x6a4526, 5), 0, 0, 0)); flame = new THREE.Group(); for (let k = 0; k < 3; k++) flame.add(at(new THREE.Mesh(new THREE.ConeGeometry(0.16 - k * 0.04, 0.42 + k * 0.08, 5), new THREE.MeshBasicMaterial({ color: [0xff5a2a, 0xffa23a, 0xffe07a][k] })), 0, 0.66 + k * 0.04, 0)); t.add(flame); t.position.set(0.5, 2.0, 0.25); g.add(t); }
+    if (spear) { const s = new THREE.Group(); s.add(at(cyl(0.04, 0.05, 2.6, 0x7a5230, 5), 0, 0, 0), at(new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.32, 4), M(0x8d8d96)), 0, 1.44, 0)); s.position.set(-0.6, 1.25, 0.1); g.add(s); }
+    g.userData = { legL: limbs.legL, legR: limbs.legR, armL: limbs.armL, armR, body: proxy('shirt'), skirt: proxy('shirt'), head, lantern: lantern || torch, flame, retint, tm };
+    scene.add(g); return g;
+  }
+  function person(o) { return ART.head ? personArt(o) : personBox(o); }
+  function personBox({ shirt, pants, hat, mood = 'soft', lantern = false, torch = false, spear = false, skin: skinC = 0xffd9a8, hairC = 0x2b2118 }) {
     const g = new THREE.Group(), skinHex = '#' + skinC.toString(16).padStart(6, '0'), skin = M(skinC), face = new THREE.MeshStandardMaterial({ map: faceTex(skinHex, mood), roughness: 0.85 });
     const legL = new THREE.Group(), legR = new THREE.Group(); legL.add(at(box(0.26, 0.62, 0.3, pants), 0, -0.31, 0)); legR.add(at(box(0.26, 0.62, 0.3, pants), 0, -0.31, 0)); legL.position.set(-0.17, 0.62, 0); legR.position.set(0.17, 0.62, 0);
     const body = at(box(0.7, 0.72, 0.42, shirt), 0, 0.98, 0), skirt = at(box(0.78, 0.22, 0.5, shirt), 0, 0.7, 0);

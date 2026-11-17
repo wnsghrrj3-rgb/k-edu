@@ -4,7 +4,8 @@
    조여 오는 것: 철(잎 색·하늘, 끝에 첫눈) · 멧돼지(밭을 파헤침) · 비(덮지 않으면 널어 둔 이삭이 썩음) · 새 떼(널어 둔 이삭을 쪼아 먹음).
    좌표: x 동쪽(+), z 남쪽(+). 강은 남쪽(z 52~), 밭은 동쪽, 숲은 북쪽·동쪽. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop } from '../scene/kit.js?v=1';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artInst } from '../scene/kit.js?v=3';
+await loadArt('people');   /* 블렌더로 만든 모델(사람·자연·집·소품) */
 
 const W = 80, H = 60;
 const BX = [4, 76], BZ = [6, 50];
