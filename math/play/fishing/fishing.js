@@ -24,7 +24,9 @@ const S = { ready: false, busy: true, intro: false, missing: false, trip: null, 
 const stage = createStage({ canvas: $('c'), seaX: 0, seaW: 160, fog: [16, 60], shadow: { left: -8, right: 8, top: 6, bottom: -6 }, assets: '../bridge/assets/' }), { scene, camera, sea, sun, hemi } = stage;
 const K = {};
 const NAMES = ['Environment_Dock', 'Prop_Bucket_Fishes', 'Ship_Small', 'Characters_Anne', 'Environment_Cliff1', 'Environment_Cliff4', 'Environment_PalmTree_1', 'Environment_PalmTree_3', 'Environment_Rock_1', 'Environment_Rock_4', 'Environment_Dock_Pole'];
-const OPT = ['Characters_Crab'];   /* 있으면 쓰는 모형(게) — 없으면 게 사건은 건너뜀 */
+const OPT = ['Characters_Crab'];
+/* 물고기(준호가 올린 Quaternius Cute Fish, CC0 — 헤엄·물 밖 파닥임 움직임): 보통 열 종 · 황금 = 금붕어 · 복어 · 큰 물고기 = 상어·아귀 · 앤의 낚싯대 */
+const FISH = ['Clownfish', 'BlueTang', 'YellowTang', 'Koi', 'Tetra', 'ButterflyFish', 'CardinalFish', 'RoyalGramma', 'Betta', 'Tang'], SPECIAL = { gold: 'Goldfish', puffer: 'Puffer', big: ['Shark', 'Anglerfish'] };   /* 있으면 쓰는 모형(게) — 없으면 게 사건은 건너뜀 */
 
 // ── 모형 조각: 물고기 양동이 → 빈 통 + 물고기 넷(몸통과 가까운 지느러미를 한 마리로)
 function bucketKit(g){ let mesh = null; g.scene.traverse(m => { if (m.isMesh && !mesh) mesh = m; }); const ps = stage.pieces(mesh), bodies = ps.filter(p => p.tris > 300);
@@ -40,6 +42,7 @@ const tint = (o, color, glow = 0) => { o.traverse(m => { if (m.isMesh) { m.mater
 
 // ── 무대 꾸리기
 async function build(){ await Promise.all(NAMES.map(async n => { K[n] = await stage.load(n); })); await Promise.all(OPT.map(async n => { try { K[n] = await stage.load(n); } catch (_) { K[n] = null; } }));
+  const fishNames = [...FISH, SPECIAL.gold, SPECIAL.puffer, ...SPECIAL.big]; await Promise.all(fishNames.map(async n => { try { K['Fish_' + n] = await stage.load('Fish_' + n); } catch (_) { K['Fish_' + n] = null; } })); try { K.Prop_FishingRod = await stage.load('Prop_FishingRod'); } catch (_) { K.Prop_FishingRod = null; }
   KIT = bucketKit(K.Prop_Bucket_Fishes); const dk = stage.dockKit(K.Environment_Dock), step = Math.abs(dk.plankAt[1].x - dk.plankAt[0].x) || .36;
   // 선착장(판자 조각) · 기둥
   let i = 0; for (let x = -7.5; x <= 3.4; x += step, i++) { const m = new THREE.Mesh(dk.planks[i % dk.planks.length], dk.mat); m.position.set(x, T.DECK - dk.plankH / 2, T.TUB_Z); scene.add(stage.shadows(m)); }
@@ -47,19 +50,20 @@ async function build(){ await Promise.all(NAMES.map(async n => { K[n] = await st
   stage.put(K.Environment_Cliff1, -11, 0, -4, 1.1, .5); stage.put(K.Environment_Cliff4, 12, 0, -9, 1.0, -.6); stage.put(K.Environment_PalmTree_3, -9.2, 1.4, -3.4, 1.0, .3); stage.put(K.Environment_PalmTree_1, 10.5, 1.0, -6.5, 1.0, 2); stage.put(K.Environment_Rock_4, 6.5, -.2, -8.5, 1.2, 1); stage.put(K.Environment_Rock_1, -6, -.2, -7.8, 1.1);
   S.boat = stage.put(K.Ship_Small, T.BOAT[0], T.BOAT[1], T.BOAT[2], T.BOAT_S, Math.PI / 2);
   S.anne = stage.person(K.Characters_Anne); S.anne.obj.position.set(T.ANNE[0], T.DECK + .02, T.ANNE[1]); S.anne.obj.rotation.y = Math.PI; stage.play(S.anne, 'Idle');
+  /* 낚싯대: 앤 손(무기 자리)에 쥐여 준다 */ let slot = null; S.anne.obj.traverse(m => { if (/^Weapon_/.test(m.name) && !slot) slot = m; }); if (slot && K.Prop_FishingRod) { const rod = K.Prop_FishingRod.scene.clone(); rod.position.copy(slot.position); rod.quaternion.copy(slot.quaternion); const ws = new THREE.Vector3(); slot.parent.getWorldScale(ws); rod.scale.setScalar(.62 / ws.x); slot.parent.add(stage.shadows(rod)); S.rod = rod; }
   stage.onResize = aim; stage.resize();
   if (!wallet.persists()) { const n = document.createElement('div'); n.id = 'note'; n.textContent = '지금은 구경 중이에요 · 화면을 나가면 처음으로 돌아가요'; document.body.appendChild(n); }
   S.signs = A.signs(3 + 18); S.signs.forEach((e, k) => { if (k >= 3) e.classList.add('fs'); });
   newTrip(); $('loading').style.opacity = 0; setTimeout(() => $('loading').remove(), 500); S.ready = true; intro(); }
 
 // ── 카메라: 선착장(통 셋·배)이 화면 폭에 들어오고, 위로 앞바다가 보이게
-function aim(w, h){ const tall = h > w, asp = w / h; S.fk = tall ? 1.45 : 1;   /* 세로 화면은 물고기를 크게 */ camera.fov = tall ? 50 : 42; const half = Math.atan(Math.tan(camera.fov * Math.PI / 360) * asp), dist = Math.max(7.5, (tall ? 3.6 : 4.4) / Math.tan(half));
-  camera.position.set(-.2, dist * (tall ? .72 : .56), T.TUB_Z + dist * (tall ? .7 : .8)); camera.lookAt(-.2, 0, -2.6);   /* 수평선(노을)이 위쪽에 보이게 */
+function aim(w, h){ const tall = h > w, asp = w / h; S.fk = tall ? 1.25 : 1;   /* 세로 화면은 물고기를 크게 */ camera.fov = tall ? 50 : 42; const half = Math.atan(Math.tan(camera.fov * Math.PI / 360) * asp), dist = Math.max(7.5, (tall ? 3.6 : 4.4) / Math.tan(half));
+  camera.position.set(-.2, dist * (tall ? .9 : .56), T.TUB_Z + dist * (tall ? .55 : .8)); camera.lookAt(-.2, 0, tall ? -2.2 : -2.6);   /* 수평선(노을)이 위쪽에 보이게 */
   /* 선착장이 화면 아래쪽(아래에서 14%)에 오게 그림을 위아래로 옮긴다 — 위로 앞바다가 넓게 */
   camera.clearViewOffset(); camera.aspect = asp; camera.updateProjectionMatrix(); camera.updateMatrixWorld(); const p = new THREE.Vector3(-.2, T.DECK, T.TUB_Z + .6).project(camera), dy = h * .86 - (1 - p.y) / 2 * h; camera.setViewOffset(w, h, 0, -dy, w, h); }
 
 // ── 한 판
-function newTrip(){ for (const f of S.fish) scene.remove(f.obj); S.fish = []; for (const t of S.tubs) scene.remove(t); for (const fl of S.tubFish) for (const o of fl) scene.remove(o); if (S.thief) { scene.remove(S.thief.obj); S.thief = null; }
+function newTrip(){ for (const f of S.fish) drop(f.obj); S.fish = []; for (const t of S.tubs) scene.remove(t); for (const fl of S.tubFish) for (const o of fl) drop(o); if (S.thief) { scene.remove(S.thief.obj); S.thief = null; }
   S.trip = R.trip(SAVE.trips, Math.random, { prev: S.trip, no: OPT.filter(n => !K[n]).map(() => 'crab') }); S.ti = 0; S.fill = [[], [], []]; S.tubFish = [[], [], []]; S.loaded = []; S.left = S.trip.tubs[0]; S.clock = 0; S.missing = false; S.overInTub = false;
   S.tubs = T.TUB_X.map(x => { const t = KIT.tub.clone(); t.position.set(x, T.DECK, T.TUB_Z); t.scale.setScalar(T.TUB_S); scene.add(t); return t; });
   S.thiefIn = R.MIX.GULL.every[0]; S.schoolIn = 6 + Math.random() * 6; dusk(0); A.trayClear(); A.flames(S.streak); S.ask = null;
@@ -69,9 +73,15 @@ function newTrip(){ for (const f of S.fish) scene.remove(f.obj); S.fish = []; fo
 // ── 화면 가장자리(그 깊이 z 에서 화면 끝이 되는 x) — 물고기는 화면 안에서 돌아선다
 const _v = new THREE.Vector3(); function edgeX(z, side){ _v.set(0, .04, z).project(camera); const a = _v.x; _v.set(1, .04, z).project(camera); const b = _v.x - a; return b ? (side * .96 - a) / b : side * 5; }
 // ── 물고기
-function fishModel(kind, v){ const proto = KIT.fish[(v + S.id) % KIT.fish.length], o = proto.clone(true); o.traverse(m => { if (m.isMesh) m.castShadow = true; });
-  if (kind === 'gold') tint(o, '#ffcf3a', .55); else if (kind === 'puffer') { tint(o, '#f3e3a2'); o.scale.set(1, 1.35, 1.25); } else if (kind === 'big') o.userData.big = true;
-  const s = T.FISH_S * (S.fk || 1) * (kind === 'big' ? 1.7 : .8 + Math.min(v, 9) * .06); o.scale.multiplyScalar(s); scene.add(o); return o; }
+/* 물고기 하나: 고른 모형(움직임 있음)을 감싸서(모형은 +z 를 봄 → 감싼 쪽이 +x 를 보게) 돌려준다. 모형이 없으면 양동이 조각으로 */
+function fishModel(kind, v){ const name = kind === 'gold' ? SPECIAL.gold : kind === 'puffer' ? SPECIAL.puffer : kind === 'big' ? SPECIAL.big[S.id % 2] : FISH[(v * 3 + S.id) % FISH.length], rig = K['Fish_' + name], o = new THREE.Group();
+  if (rig) { const p = stage.person(rig, { scale: 1 }); scene.remove(p.obj); p.obj.rotation.y = Math.PI / 2; o.add(p.obj); stage.play(p, 'Swimming_Normal'); if (p.act) p.act.time = Math.random() * 2; o.userData.p = p; if (kind === 'gold') tint(p.obj, '#ffcf3a', .45); }
+  else { o.add(KIT.fish[(v + S.id) % KIT.fish.length].clone(true)); if (kind === 'gold') tint(o, '#ffcf3a', .55); else if (kind === 'puffer') { tint(o, '#f3e3a2'); o.scale.set(1, 1.35, 1.25); } }
+  o.traverse(m => { if (m.isMesh) m.castShadow = true; }); if (kind === 'big') o.userData.big = true;
+  const s = T.FISH_S * (S.fk || 1) * (kind === 'big' ? 1.45 : .8 + Math.min(v, 9) * .06) * (rig ? .95 : 1); o.scale.multiplyScalar(s); scene.add(o); return o; }
+/** 물고기를 치운다(움직임도 멈춤). */
+function drop(o){ if (!o) return; scene.remove(o); if (o.userData.p) stage.unperson(o.userData.p); }
+const flap = o => { const p = o && o.userData.p; if (p) stage.play(p, 'Out_Of_Water'); };
 function addFish(first = false, forced = null){ const t = S.trip, spec = forced || R.spawn(S.left, t, S.fish, Math.random, { filled: S.fill[S.ti] && S.fill[S.ti].length > 0 }), dir = Math.random() < .5 ? 1 : -1;
   const f = { id: ++S.id, kind: spec.kind, v: spec.v, dir, x: 0, z: T.SEA.z[0] + Math.random() * (T.SEA.z[1] - T.SEA.z[0]),
     sp: (T.SPEED[0] + Math.random() * (T.SPEED[1] - T.SPEED[0])) * (forced && forced.fast ? 3.2 : 1), ph: Math.random() * 6, pulls: 0, caught: false, fast: !!(forced && forced.fast) };
@@ -94,17 +104,17 @@ const flyMs = () => T.FLY_MS * (1 - T.LINE_FAST * Math.min(S.streak, R.MIX.STREA
 async function hook(f){ if (S.hooking) return; S.hooking = true; try { await hook1(f); } finally { S.hooking = false; } }
 async function hook1(f){ S.busy = true; lineTo(f); stage.play(S.anne, 'Sword', true); tone(520 + S.streak * 60, .1, 'sine', .1, 0, 1040);
   if (f.kind === 'big' && ++f.pulls < R.MIX.BIG_TAPS) { const k = f.pulls / R.MIX.BIG_TAPS; await stage.tween(f.obj.position, { z: f.z + (T.SEA.z[1] - f.z) * k * .6 }, 260); f.z = f.obj.position.z; tone(300 + f.pulls * 80, .12, 'square', .06); S.log.push({ pull: f.pulls }); S.busy = false; return; }
-  const o = R.land(S.left, f), tub = S.tubs[S.ti], at = tub.position.clone(); at.y += .9; f.caught = true; S.log.push({ fish: f.v, kind: f.kind, out: o.kind, left: S.left });
+  const o = R.land(S.left, f), tub = S.tubs[S.ti], at = tub.position.clone(); at.y += .9; f.caught = true; flap(f.obj); S.log.push({ fish: f.v, kind: f.kind, out: o.kind, left: S.left });
   await stage.tween(f.obj.position, { x: at.x, y: at.y + 1.2, z: at.z }, flyMs() * .65, t => t * (2 - t)); await stage.tween(f.obj.position, { y: at.y }, flyMs() * .35, t => t * t);
   if (o.kind === 'over') { S.overInTub = true; S.streak = 0; A.flames(0); wobble(tub); tone(220, .25, 'sine', .1, 0, 140); S.scatter = T.SCATTER;
-    await stage.tween(f.obj.position, { x: f.x, y: .05, z: f.z }, 700, t => t); f.caught = false; f.dir *= -1; f.sp *= 1.5; stage.play(S.anne, 'No', true); S.busy = false; return; }
+    await stage.tween(f.obj.position, { x: f.x, y: .05, z: f.z }, 700, t => t); f.caught = false; if (f.obj.userData.p) stage.play(f.obj.userData.p, 'Swimming_Normal'); f.dir *= -1; f.sp *= 1.5; stage.play(S.anne, 'No', true); S.busy = false; return; }
   // 통에 들어감
-  scene.remove(f.obj); S.fish = S.fish.filter(x => x !== f); S.fill[S.ti].push(o.w); putInTub(S.ti, f, o.w); S.left = o.left; A.trayAdd(o.w, S.fill[S.ti].length > 1 ? '+' : '', f.kind === 'puffer' ? '부풂' : f.kind === 'gold' ? '황금' : '');
+  drop(f.obj); S.fish = S.fish.filter(x => x !== f); S.fill[S.ti].push(o.w); putInTub(S.ti, f, o.w); S.left = o.left; A.trayAdd(o.w, S.fill[S.ti].length > 1 ? '+' : '', f.kind === 'puffer' ? '부풂' : f.kind === 'gold' ? '황금' : '');
   tone(700 + S.fill[S.ti].reduce((a, b) => a + b, 0) * 25, .08, 'square', .06); if (f.kind === 'puffer') { tone(880, .2, 'sine', .08, 0, 1320); }
   if (o.kind === 'fit') { await closeTub(); return; }
   topUp(); S.busy = false; }
 function putInTub(k, f, w){ const n = S.tubFish[k].length, o = fishModel(f.kind, f.v); o.scale.multiplyScalar(T.IN_TUB_S / T.FISH_S / (S.fk || 1)); const a = n * 2.4, r = .1 + (n % 4) * .05; o.position.set(S.tubs[k].position.x + Math.cos(a) * r, T.DECK + .64 + Math.floor(n / 4) * .06, T.TUB_Z + Math.sin(a) * r); o.rotation.set(-.3, a, 0);
-  if (f.kind === 'puffer') stage.tween(o.scale, { y: o.scale.y * 1.35, z: o.scale.z * 1.25 }, 300); S.tubFish[k].push(o); }
+  if (f.kind === 'puffer') stage.tween(o.scale, { y: o.scale.y * 1.35, z: o.scale.z * 1.25 }, 300); flap(o); S.tubFish[k].push(o); }
 function wobble(tub){ stage.tween(tub.rotation, { z: .28 }, 120).then(() => stage.tween(tub.rotation, { z: -.2 }, 160)).then(() => stage.tween(tub.rotation, { z: 0 }, 200)); }
 function topUp(){ while (S.fish.filter(f => !f.fast).length < S.trip.n) addFish(false); }
 
@@ -130,7 +140,7 @@ async function miss(){ if (S.missing) return; S.missing = true; S.busy = true; S
 // ── 도둑 배(갈매기 자리): 통으로 다가와 오래 두면 한 마리 가져간다(팻말 +). 누르면 돌아간다.
 function thiefCome(){ const x0 = edgeX(-2.5, 1) - .9, o = stage.put(K.Ship_Small, x0, 0, -2.5, .45, -Math.PI / 2); S.thief = { obj: o, t: 0, away: false, x0 };   /* 화면 오른쪽 끝 안쪽에서 나타남 */ S.log.push({ thief: 'come' }); tone(196, .25, 'square', .05); }
 function shoo(){ const th = S.thief; if (!th || th.away) return; th.away = true; S.log.push({ thief: 'shoo' }); tone(880, .1, 'square', .06); stage.tween(th.obj.position, { x: 12, z: -6 }, 1400, t => t * t).then(() => { scene.remove(th.obj); if (S.thief === th) S.thief = null; }); S.thiefIn = R.MIX.GULL.every[0] + Math.random() * (R.MIX.GULL.every[1] - R.MIX.GULL.every[0]); }
-function thiefTake(){ const th = S.thief, v = R.gullTake(S.fill[S.ti]); if (v) { const o = S.tubFish[S.ti].pop(); if (o) scene.remove(o); S.left += v; A.trayAdd(v, '−', '가져감'); tone(260, .3, 'sine', .08, 0, 150); } S.log.push({ thief: 'took', v }); shoo(); }
+function thiefTake(){ const th = S.thief, v = R.gullTake(S.fill[S.ti]); if (v) { const o = S.tubFish[S.ti].pop(); drop(o); S.left += v; A.trayAdd(v, '−', '가져감'); tone(260, .3, 'sine', .08, 0, 150); } S.log.push({ thief: 'took', v }); shoo(); }
 
 // ── 해넘이: 하늘 · 해 · 바다 빛
 const DAY = { hemi: hemi.intensity, sun: sun.intensity, fog: scene.fog.color.clone() }, DAYSEA = new THREE.Color(LOOK.SEA), DUSKSEA = new THREE.Color(T.DUSK.SEA_DUSK);
@@ -145,8 +155,10 @@ async function intro(){ const my = S.introId = (S.introId | 0) + 1; S.intro = tr
 function signsDraw(){ const sg = S.signs; S.tubs.forEach((t, k) => { const e = sg[k], done = k < S.loaded.length, cur = k === S.ti && !done;
     if (S.missing && !done) { A.signDraw(e, null); return; }
     const left = cur ? S.left : done ? 0 : S.trip.tubs[k]; e.classList.toggle('off', !cur && !done); e.classList.toggle('done', done); A.signDraw(e, stage.screenOf(new THREE.Vector3(t.position.x, t.position.y + 1.2, t.position.z + .2)), done ? '✓' : left); });
-  const live = S.fish.filter(f => !f.caught); for (let i = 3; i < sg.length; i++) { const f = live[i - 3], e = sg[i]; if (!f || S.ask) { A.signDraw(e, null); continue; } e.classList.toggle('dots', f.v <= 5 && f.kind !== 'gold'); e.classList.toggle('gold', f.kind === 'gold');
-    A.signDraw(e, stage.screenOf(new THREE.Vector3(f.obj.position.x, f.obj.position.y + .55 * (f.kind === 'big' ? 1.6 : 1), f.obj.position.z)), fishText(f)); } }
+  /* 물고기 팻말: 겹치면 위로 비켜 선다(화면 위 표시끼리만 — 물고기는 그대로) */
+  const live = S.fish.filter(f => !f.caught), pts = live.map(f => { const q = stage.screenOf(new THREE.Vector3(f.obj.position.x, f.obj.position.y + .55 * (f.kind === 'big' ? 1.6 : 1), f.obj.position.z)); return { f, x: q.x, y: q.y, w: f.v <= 5 && f.kind !== 'gold' ? 14 + f.v * 12 : 38 }; }).sort((a, b) => b.y - a.y);
+  for (let a = 0; a < pts.length; a++) for (let b = 0; b < a; b++) { const A = pts[a], B = pts[b]; if (Math.abs(A.x - B.x) < (A.w + B.w) / 2 + 4 && Math.abs(A.y - B.y) < 34) A.y = B.y - 36; }
+  for (let i = 3; i < sg.length; i++) { const p = pts[i - 3], e = sg[i]; if (!p || S.ask) { A.signDraw(e, null); continue; } const f = p.f; e.classList.toggle('dots', f.v <= 5 && f.kind !== 'gold'); e.classList.toggle('gold', f.kind === 'gold'); A.signDraw(e, { x: p.x, y: p.y }, fishText(f)); } }
 
 // ── 한 장면의 일
 stage.frame((dt, t) => { S.t = t; if (!S.ready) return;
@@ -157,7 +169,7 @@ stage.frame((dt, t) => { S.t = t; if (!S.ready) return;
   S.scatter = Math.max(0, S.scatter - dt); const boost = 1 + S.scatter;
   for (const f of S.fish) { if (f.caught) continue; f.x += f.dir * f.sp * boost * dt; const o = f.obj; o.position.set(f.x, .04 + Math.sin(t * 2 + f.ph) * .05, f.z + Math.sin(t * .7 + f.ph) * .25); o.rotation.y = f.dir > 0 ? 0 : Math.PI; o.rotation.z = Math.sin(t * 6 + f.ph) * .12;
     const l = edgeX(f.z, -1) - .9, r = edgeX(f.z, 1) + .9; if (f.fast) { if ((f.dir > 0 && f.x > r + 2) || (f.dir < 0 && f.x < l - 2)) f.gone = true; }   /* 떼는 지나간 쪽 끝에서만 사라짐 */ else if ((f.x < l + 1.4 && f.dir < 0) || (f.x > r - 1.4 && f.dir > 0)) f.dir *= -1; }
-  for (const f of S.fish.filter(f => f.gone)) scene.remove(f.obj); S.fish = S.fish.filter(f => !f.gone);
+  for (const f of S.fish.filter(f => f.gone)) drop(f.obj); S.fish = S.fish.filter(f => !f.gone);
   if (!S.busy && !S.missing && S.left > 0) { const live = S.fish.filter(f => !f.caught); const u = R.unstick(S.left, S.trip, live); if (u != null) { const f = live.find(x => x.kind === 'plain') || live[0]; if (f) { f.kind = 'plain'; f.v = u; } } }
   // 빠른 떼
   if (S.trip.ev.school && thinking && !S.ask && (S.schoolIn -= dt) <= 0) { S.schoolIn = 14 + Math.random() * 10; const dir = Math.random() < .5 ? 1 : -1, z = -2 - Math.random() * 2.5; R.school(S.left, S.trip, Math.random).forEach((v, i) => { const f = addFish(false, { kind: 'plain', v, fast: true }); f.dir = dir; f.x = (dir > 0 ? edgeX(z, -1) - 1 : edgeX(z, 1) + 1) - dir * i * .9; f.z = z + (i % 2) * .5; }); S.log.push({ school: true }); tone(660, .08, 'triangle', .06); }

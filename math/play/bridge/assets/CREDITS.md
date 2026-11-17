@@ -17,3 +17,8 @@
 - 물고기: 고른 꾸러미(후보 — Animated Cute Fish Pack 추천)가 오기 전까지 `Prop_Bucket_Fishes` 모형을 조각으로 나눠 물고기 넷(몸통 + 가까운 지느러미)과 빈 통으로 씀. 아틀라스 자리로 나눔(통 = 왼쪽, 물고기 = 오른쪽). 새로 그린 도형 없음.
 - 도둑 배(갈매기 자리) = `Ship_Small`. 게(`Characters_Crab`)는 있으면 씀 — 없으면 게 사건은 건너뜀.
 - `math/play/art/*.png` — 장터 물건·광장 나무 그림은 이 폴더의 모형(UI_Wood·Rock_5·Prop_Barrel·Prop_Bucket_Fishes·Environment_Dock 판자)을 three.js 로 찍은 것.
+
+## 낚시 섬 물고기(2026-11-17, 준호가 올린 Quaternius **Animated Cute Fish Pack**, CC0 — handoff `inbox/quaternius/cutefish/` FBX 원본)
+- FBX → GLB(three FBXLoader + GLTFExporter, 빛깔 공간만 바로잡음) → gltf-transform 로 움직임 둘(Swimming_Normal · Out_Of_Water)만 남기고 압축.
+- `Fish_Clownfish · BlueTang · YellowTang · Koi · Tetra · ButterflyFish · CardinalFish · RoyalGramma · Betta · Tang`(보통) · `Fish_Goldfish`(황금 물고기, 빛깔 입힘) · `Fish_Puffer`(복어) · `Fish_Shark` · `Fish_Anglerfish`(큰 물고기) · `Prop_FishingRod`(앤의 낚싯대).
+- 양동이 조각 물고기는 모형을 못 불러올 때만 씀.
