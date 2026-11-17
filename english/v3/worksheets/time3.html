@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv4 #30 차례 말 10단어 — time2.html(Lv4 #22) 판형 계승, V트랙 주황
+     ★그림 = 화면과 같은 그림(DAY320CSS · SEQ430CSS 블록 그대로) — 그림 마크업 = 화면 SEQ430 pic430(w,true) · big430 을 생성기 ws/gen_time3.js 로 그대로 뽑음 + .still(움직임 끔).
+     ★차례 띠 네 칸(화면 .bs430 · 번호 1~4 · 단어 글자 0) + 앞·뒤 판 · ① 따라쓰기 10(차례 판 / 때 판) · ② 차례 띠 칸에 First, · Next, · Then · Last, 옮겨 쓰기(칸 그림은 이미 차례대로)
+     · ③ 짝 고르기 3(before / after · start / finish · early / late — 그림 보고) · ④ 내 아침 한 줄 First, I ___.(상자 wake · wash · eat · go) + 그리기.
+     ★next 와 then 은 띠 칸 자리로만 · before · after 는 때 이름 앞에만 · 받아쓰기 금지. -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root { --primary:#FF8A3D; --green:#4CAF50; --red:#F44336; --subtext:#888780; --border:#F7DFCB; --text:#1f2430; }
+  @page { size: A4; margin: 10mm 12mm 8mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.45; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d9702a; padding-bottom: 5px; }
+  .brand { font-size: 13px; font-weight: 700; color: #9c4d13; }
+  .brand .lv { background: #d9702a; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 7px; background: #fdeee1; border: 2px solid #d9702a; border-radius: 12px; padding: 7px 13px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 24px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #9c4d13; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 15px; font-weight: 800; color: #4a2408; }
+  .keypoint { margin-top: 6px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 5px 12px; font-size: 12px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  .rowlab { margin-top: 5px; font-size: 10.5px; font-weight: 700; color: #9c4d13; }
+  h2 { margin-top: 7px; font-size: 13px; color: #9c4d13; display: flex; align-items: center; gap: 7px; }
+  h2 .n { background: #9c4d13; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2 .hint { font-weight: 400; font-size: 10px; color: #888780; }
+  .trace { display: flex; gap: 8px; margin-top: 3px; }
+  .traceword { text-align: center; flex: 1; min-width: 56px; position: relative; }
+  .traceword .outline { font-size: 18px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.4px #c4c2b8; letter-spacing: 1px; }
+  .traceword .line { border-bottom: 1.5px solid #d3d1c7; height: 13px; margin-top: 2px; }
+  .twocol { display: flex; gap: 10px; margin-top: 4px; align-items: stretch; }
+  .recap { margin-top: 7px; background: #4a2408; color: #fdeee1; border-radius: 10px; padding: 6px 13px; text-align: center; font-size: 12px; }
+  .recap b { color: #fac775; }
+  .parent { margin-top: 6px; border-top: 1px dashed #b4b2a9; padding-top: 5px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+  /* 그림 — 화면 블록 그대로(움직임은 .still 로 꺼짐) */
+  .pic { position: relative; display: inline-block; overflow: hidden; width: 48px; height: 39px; line-height: 0; }
+  .pic .dyp { transform-origin: 0 0; transform: scale(.6); }
+  .bk { position: relative; display: inline-block; overflow: hidden; width: 80px; height: 64px; line-height: 0; }
+/*DAY320CSS-BEGIN — Lv3 #20 시간·요일① 그림·일곱 칸 달력 · 4파일 + 활동지 문자 단위 동일(blocks/DAY320CSS.css → sync_blocks.py 주입, 하네스 A4·D2b).
+  ★그림 타일(.dyp·.dyz) = Lv3 #6 .anp·.anz 와 같은 기하(같은 단어 = 같은 그림 · 액자 모양이 정답 단서가 되지 않는다).
+  ★요일 = 일곱 칸 띠(.cal · 월요일 시작) — 그 칸만 켜짐(.on) + 한글 첫 글자(.kd). 토 = 파랑 · 일 = 빨강(켜지지 않아도 옅게).
+  ★today = 띠의 한 칸 동그라미(.rg) + 👆 · week = Lv2 #22 일곱 칸 그림(.wk 세 줄 = 22-1 실물 그대로) · day = 📅.
+  ★일곱 칸 달력 한 장(.wcal) = 칸마다 따로 눌린다 · 칸 얼굴 = 한글 첫 글자만. 움직임 0 — 명사 그림은 멈춰 있다. */
+.dyp{position:relative;display:inline-flex;align-items:center;justify-content:center;width:80px;height:64px;border-radius:14px;background:#FFFDF9;border:2px solid #F1DFCD;box-sizing:border-box;line-height:1;vertical-align:middle;overflow:hidden;text-align:center}
+.dyz{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+.dyz>.dyp{position:absolute;left:0;top:0;transform-origin:0 0}
+.dyp .em{position:relative;font-size:42px;font-style:normal;line-height:1}
+.dyp .cal{position:absolute;left:5px;right:5px;top:7px;height:14px;display:flex;gap:2px}
+.dyp .cal i{flex:1;border-radius:3px;background:#FFF3E0;border:1px solid #E0C3A8;box-sizing:border-box}
+.dyp .cal i.c6{background:#E3F2FD;border-color:#90CAF9}
+.dyp .cal i.c7{background:#FFEBEE;border-color:#EF9A9A}
+.dyp .cal i.on{background:#FF8A65;border-color:#E64A19}
+.dyp .cal i.c6.on{background:#42A5F5;border-color:#1565C0}
+.dyp .cal i.c7.on{background:#EF5350;border-color:#C62828}
+.dyp .cal i.rg{border:2.5px solid #7E57C2;border-radius:50%;background:#fff}
+.dyp .kd{position:relative;top:9px;font-size:30px;font-style:normal;font-weight:700;color:#5D4037;line-height:1;font-family:'Jua',sans-serif}
+.dyp .kd.d6{color:#1E88E5}
+.dyp .kd.d7{color:#E53935}
+.dyp .fg{position:absolute;left:22px;top:22px;font-size:28px;font-style:normal;line-height:1}
+.dyp .wk{font-size:50px}
+.wk{display:inline-flex;gap:.05em;vertical-align:middle;padding:.07em;border:.06em solid #8D6E63;border-radius:.14em;background:#fff;box-sizing:border-box}
+.wk i{display:block;width:.12em;height:.5em;background:#FFCC80;border-radius:.03em}
+.wk i:first-child{background:#FF8A65}
+.wcal{width:min(360px,100%);margin:8px auto;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:6px;border-radius:16px;border:3px solid var(--border);background:#FFE9D6;box-sizing:border-box}
+.wcal .cell{position:relative;aspect-ratio:1/1.25;border-radius:9px;border:3px solid #D7B899;background:#FFFDF9;box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;min-width:0;line-height:1;transition:transform .15s}
+.wcal .cell.c6{background:#E3F2FD;border-color:#90CAF9}
+.wcal .cell.c7{background:#FFEBEE;border-color:#EF9A9A}
+.wcal .cell:active{transform:scale(.93)}
+.wcal .ck{font-size:24px;font-weight:700;color:#5D4037;font-family:'Jua',sans-serif}
+.wcal .ck.d6{color:#1E88E5}
+.wcal .ck.d7{color:#E53935}
+.wcal .cell.found{border-color:var(--green);box-shadow:0 0 0 2px var(--green) inset}
+.wcal .cell.ring{border-color:#7E57C2;box-shadow:0 0 0 3px #B39DDB}
+.wcal .cell .tag{display:none;position:absolute;left:50%;bottom:-.9em;transform:translateX(-50%);font-size:11px;background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:8px;padding:0 3px;white-space:nowrap;font-family:'Jua',sans-serif;line-height:1.2;z-index:3}
+.wcal .cell.found .tag{display:block}
+.wcal .choice-btn.cell{font-family:inherit;box-shadow:none;min-height:0}
+.wcal .choice-btn.cell.correct{border-color:var(--green);box-shadow:0 0 0 3px var(--green) inset}
+.wcal .choice-btn.cell.wrong{border-color:var(--red);box-shadow:0 0 0 3px var(--red) inset}
+/*DAY320CSS-END*/
+/*SEQ430CSS-BEGIN — Lv4 #30 시간③ 차례 말 그림 · 뒷면 장면 · 큰 차례 띠 · 차례 칩 · 카드 테두리 · 4파일 + 활동지 문자 단위 동일(blocks/SEQ430CSS.css → sync_blocks.py 주입, 하네스 A4·W4).
+  ★그림 = Lv3 #20 그림 타일(.dyp 80×64 · DAY320CSS 블록째 — #10 · #22 판형) 안 — 차례 띠(.os430) · 앞·뒤 판(.ba430) · 시작 · 끝(.tk430 · CSS 아이 .kid430) 은 새 그림.
+  ★원 칸 줄 = 문자 그대로 옮김(블록째 주입 0): ①Lv3 #1 VB301CSS .vs · .vz · .vz>.vs · .vs .pr 네 줄 ②Lv3 #32 TM332CSS 하루 띠 칸 · 창 · 얼굴 · late 줄(+ 그 keyframes)
+    ③Lv4 #22 CLK422CSS 시계 판 여섯 줄(.cf422 · tk422 · n12 · hh422 · mh422 · cp422) ④#10 CAL410CSS .still 한 줄 — 하네스가 원천 블록 안에 같은 줄이 있는지 잰다.
+  ★카드 테두리 = ★때 말 점선(차례 넷 · before · after · early · late — #10 → #22 → #30) · 하는 일 둥근(start · finish — #6 판형).
+  ★차례 칩 = 쉼표째 한 칩(First, · Next, · Last, — Lv3 #44 Yes, 칩 판형) · Then 만 쉼표 0 · 큰 차례 띠 번호 칸 = #12 순서 배열 .ono 판형(흰 동그라미).
+  ★움직임 = start 아이 뛰어나감 · 뒷면 finish 숟가락 · early 눈 깜빡 · late ⏰ 흔들림뿐 · .still = 움직임 끔(활동지 · 숙달 진행형 1슬 시작). */
+/* ── 원 칸 줄 ① Lv3 #1 VB301CSS — .vs 상자 · 물건 자리 ── */
+.vs{position:relative;display:inline-block;width:140px;height:64px;line-height:0;vertical-align:middle;text-align:left}
+.vz{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+.vz>.vs{position:absolute;left:0;top:0;transform-origin:0 0}
+.vs .pr{position:absolute;font-size:20px;line-height:1;font-style:normal}
+/* ── 원 칸 줄 ② Lv3 #32 TM332CSS — 하루 띠 칸 · 창 · 얼굴 · late(⏰ · 허둥지둥 줄) ── */
+.vs .sk32{position:absolute;left:3px;top:2px;width:134px;height:60px;border-radius:10px;overflow:hidden;display:block;box-sizing:border-box;border:2px solid rgba(0,0,0,.12)}
+.sk32 .gd32{position:absolute;left:0;right:0;bottom:0;height:12px;display:block;background:#8CC66B}
+.sk32 .sn32{position:absolute;width:20px;height:20px;border-radius:50%;display:block;background:#FFD43B;box-shadow:0 0 0 4px rgba(255,212,59,.35)}
+.sk32 .kd32{position:absolute;left:62px;top:28px;width:10px;height:18px;display:block}
+.sk32 .kd32::before{content:'';position:absolute;left:1px;top:0;width:8px;height:8px;border-radius:50%;background:#5C3B00}
+.sk32 .kd32::after{content:'';position:absolute;left:2px;top:8px;width:6px;height:10px;border-radius:3px 3px 1px 1px;background:#E8590C}
+.sk32 .sd32{position:absolute;top:44px;height:4px;border-radius:50%;display:block;background:rgba(0,0,0,.35)}
+.k-mo{background:linear-gradient(#FFF3BF,#FFD8A8)}
+.k-mo .sn32{left:12px;top:36px;background:#FFC078;box-shadow:0 0 0 5px rgba(255,192,120,.35);animation:t32Rise 2.4s ease-out infinite}
+.k-no{background:linear-gradient(#4DABF7,#D0EBFF)}
+.k-no .sn32{left:56px;top:3px}
+.k-no .sd32{left:61px;width:12px}
+.k-af{background:linear-gradient(#74C0FC,#FFF3BF)}
+.k-af .sn32{left:98px;top:12px}
+.k-af .sd32{left:26px;width:42px}
+.k-ev{background:linear-gradient(#FF922B,#FFA8A8 70%,#F783AC)}
+.k-ev .sn32{left:102px;top:36px;background:#FF6B00;box-shadow:0 0 0 5px rgba(255,107,0,.3);animation:t32Set 2.4s ease-in infinite}
+.k-ev .gd32{background:#6B8E3D}
+.k-ni{background:linear-gradient(#1C2A5A,#3B5BDB)}
+.k-ni .gd32{background:#2B3A2B}
+.k-ni .mn32{position:absolute;left:98px;top:7px;width:18px;height:18px;border-radius:50%;display:block;background:#FFF9DB;box-shadow:0 0 0 4px rgba(255,249,219,.2)}
+.k-ni .st32{position:absolute;left:14px;top:8px;width:2px;height:2px;border-radius:50%;display:block;background:#fff;box-shadow:18px 10px #fff,40px 2px #fff,58px 16px #fff,26px 24px #FFF3BF,70px 30px #fff,6px 30px #FFF3BF;animation:t32Twinkle 1.6s ease-in-out infinite}
+.vs .wn32{position:absolute;left:8px;top:6px;width:54px;height:50px;border-radius:6px;border:4px solid #B07A3E;overflow:hidden;display:block;box-sizing:border-box}
+.wn32::before,.wn32::after{content:'';position:absolute;background:#B07A3E;z-index:1}
+.wn32::before{left:21px;top:0;width:4px;height:100%}
+.wn32::after{left:0;top:19px;width:100%;height:4px}
+.wn32 .sn32{position:absolute;width:16px;height:16px;border-radius:50%;display:block;background:#FFD43B}
+.wn32 .mn32{position:absolute;left:24px;top:4px;width:13px;height:13px;border-radius:50%;display:block;background:#FFF9DB}
+.w-pre{background:linear-gradient(#2C3E66,#6C5B9B 58%,#F8A5C2)}
+.w-pre .sn32{left:8px;top:34px;background:#FFA94D}
+.w-hi{background:#A5D8FF}
+.w-hi .sn32{left:3px;top:2px}
+.vs .fz32{position:absolute;width:34px;height:34px;border-radius:50%;display:block;background:#FFE3C4;border:2px solid #E0A872;box-sizing:border-box}
+.fz32 .ey32{position:absolute;left:7px;top:11px;width:16px;height:6px;display:block}
+.fz32 .ey32::before,.fz32 .ey32::after{content:'';position:absolute;top:0;width:5px;height:5px;border-radius:50%;background:#5C3B00}
+.fz32 .ey32::before{left:0}
+.fz32 .ey32::after{right:0}
+.fz32::after{content:'';position:absolute;left:10px;top:20px;width:10px;height:5px;border:2px solid #5C3B00;border-top:0;border-radius:0 0 8px 8px;box-sizing:border-box}
+.f-up{left:80px;top:14px}
+.f-up .ey32{animation:t32Blink 2.6s ease-in-out infinite}
+.v32-late .pr{left:74px;top:12px;font-size:34px;animation:t32Ring .5s ease-in-out infinite}
+.vs .dh32{position:absolute;left:114px;top:16px;width:22px;height:20px;display:block;background:repeating-linear-gradient(#868E96 0 3px,transparent 3px 7px);animation:t32Dash .6s linear infinite}
+@keyframes t32Rise{0%{transform:translateY(8px)}100%{transform:translateY(0)}}
+@keyframes t32Set{0%{transform:translateY(0)}100%{transform:translateY(8px)}}
+@keyframes t32Twinkle{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes t32Blink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(.2)}}
+@keyframes t32Float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes t32Ring{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
+@keyframes t32Dash{0%{transform:translateX(3px);opacity:.4}100%{transform:translateX(-3px);opacity:1}}
+/* ── 원 칸 줄 ③ Lv4 #22 CLK422CSS — 시계 판(뒷면 장면 · 시계 판 1슬) ── */
+.dyp .cf422{position:absolute;left:12px;top:4px;width:56px;height:56px;display:block;border-radius:50%;box-sizing:border-box;border:3px solid #495057;background:#fff}
+.cf422 .tk422{position:absolute;left:0;top:0;width:50px;height:50px;display:block;border-radius:50%;background:repeating-conic-gradient(from -2deg,#495057 0 4deg,transparent 4deg 30deg);-webkit-mask:radial-gradient(circle,transparent 0 76%,#000 77%);mask:radial-gradient(circle,transparent 0 76%,#000 77%)}
+.cf422 .n12{position:absolute;left:0;right:0;top:6px;display:block;text-align:center;font-style:normal;font-size:9px;line-height:1;font-weight:700;color:#495057;font-family:'Jua',sans-serif}
+.cf422 .hh422{position:absolute;left:23px;top:11px;width:4px;height:14px;display:block;border-radius:2px;background:#364FC7;transform-origin:50% 100%}
+.cf422 .mh422{position:absolute;left:23.5px;top:4px;width:3px;height:21px;display:block;border-radius:2px;background:#E8590C;transform-origin:50% 100%}
+.cf422 .cp422{position:absolute;left:22px;top:22px;width:6px;height:6px;display:block;border-radius:50%;background:#212529}
+/* ── 원 칸 줄 ④ #10 CAL410CSS — 움직임 끔 ── */
+.dyp.still,.dyp.still *{animation:none!important}
+/* ── 차례 띠(타일 속 .os430) — 네 칸 · 그 칸 하나만 켜짐(주황) · 아래 차례 화살표 ── */
+.dyp .os430{position:absolute;left:4px;top:13px;width:72px;height:34px;display:flex;gap:2px}
+.os430 .c{flex:1;display:flex;align-items:center;justify-content:center;min-width:0;border-radius:5px;border:1.5px solid #CED4DA;background:#F1F3F5;font-style:normal;font-size:13px;line-height:1;box-sizing:border-box;filter:grayscale(1);opacity:.45}
+.os430 .c.on{filter:none;opacity:1;background:#FFE8CC;border:2.5px solid #FD7E14;font-size:16px;box-shadow:0 0 0 2px #FFD8A8}
+.os430::before{content:'';position:absolute;left:3px;right:8px;bottom:-8px;height:2px;border-radius:1px;background:#ADB5BD}
+.os430::after{content:'';position:absolute;right:2px;bottom:-11px;border-left:7px solid #ADB5BD;border-top:4px solid transparent;border-bottom:4px solid transparent}
+/* ── 앞·뒤 판(타일 속 .ba430) — 가운데 때 이름(점선 테 · 늘 켜짐) · 왼쪽 / 오른쪽 칸 켜짐(초록) ── */
+.dyp .ba430{position:absolute;left:3px;top:12px;width:74px;height:40px;display:flex;gap:3px;align-items:center}
+.ba430 .c{flex:1;height:30px;display:flex;align-items:center;justify-content:center;min-width:0;border-radius:6px;border:1.5px solid #CED4DA;background:#F1F3F5;font-style:normal;font-size:14px;line-height:1;box-sizing:border-box;filter:grayscale(1);opacity:.45}
+.ba430 .c.m{flex:1.25;height:40px;filter:none;opacity:1;background:#FFF9DB;border:2.5px dashed #FAB005;font-size:21px}
+.ba430 .c.on{filter:none;opacity:1;background:#E6FCF5;border:2.5px solid #12B886;font-size:17px;box-shadow:0 0 0 2px #96F2D7}
+/* ── 시작 · 끝(타일 속 .tk430) — 하늘 + 달리기 길 · 출발선 + 신호등(초록 불) / 결승 기둥 + 끊어진 리본 · CSS 아이(ACT 0) ── */
+.dyp .tk430{position:absolute;left:0;top:0;width:80px;height:64px;display:block;background:linear-gradient(#E7F5FF 0 62%,#E8835A 62%)}
+.tk430 .sl430{position:absolute;left:21px;top:40px;width:4px;height:24px;display:block;background:#fff}
+.tk430 .gl430{position:absolute;left:4px;top:3px;width:12px;height:30px;display:flex;flex-direction:column;justify-content:space-around;align-items:center;padding:2px 0;border-radius:4px;background:#343A40;box-sizing:border-box}
+.tk430 .gl430::after{content:'';position:absolute;left:5px;top:30px;width:2px;height:10px;background:#495057}
+.tk430 .gl430 i{display:block;width:7px;height:7px;border-radius:50%;background:#5C636A}
+.tk430 .gl430 i.go{background:#40C057;box-shadow:0 0 4px 2px rgba(64,192,87,.7)}
+.tk430 .fp430{position:absolute;top:20px;width:3px;height:24px;display:block;border-radius:1px;background:#868E96}
+.tk430 .fp430.l{left:45px}
+.tk430 .fp430.r{left:74px}
+.tk430 .rb430{position:absolute;top:27px;width:13px;height:3px;display:block;border-radius:1px;background:#FA5252}
+.tk430 .rb430.a{left:47px;transform-origin:0 50%;transform:rotate(55deg)}
+.tk430 .rb430.b{left:61px;transform-origin:100% 50%;transform:rotate(-55deg)}
+.kid430{position:absolute;width:20px;height:34px;display:block}
+.kid430 i{position:absolute;display:block;font-style:normal}
+.kid430 .hd{left:5px;top:0;width:10px;height:10px;border-radius:50%;background:#FFD8A8;border:1.5px solid #E8A86B;box-sizing:border-box}
+.kid430 .bd{left:7px;top:10px;width:6px;height:13px;border-radius:3px;background:#4DABF7}
+.kid430 .am{top:11px;width:3px;height:10px;border-radius:2px;background:#E8A86B;transform-origin:50% 0}
+.kid430 .am.l{left:5px}
+.kid430 .am.r{left:12px}
+.kid430 .lg{top:22px;width:3px;height:12px;border-radius:2px;background:#495057;transform-origin:50% 0}
+.kid430 .lg.l{left:7px}
+.kid430 .lg.r{left:10px}
+.k-st .kid430{left:25px;top:29px;animation:s430Go 1.4s ease-in infinite}
+.k-st .kid430 .am.l{transform:rotate(45deg)}
+.k-st .kid430 .am.r{transform:rotate(-45deg)}
+.k-st .kid430 .lg.l{transform:rotate(30deg)}
+.k-st .kid430 .lg.r{transform:rotate(-35deg)}
+.k-fn .kid430{left:50px;top:29px}
+.k-fn .kid430 .am.l{transform:rotate(135deg)}
+.k-fn .kid430 .am.r{transform:rotate(-135deg)}
+@keyframes s430Go{0%{transform:translateX(0)}100%{transform:translateX(22px)}}
+/* ── 뒷면 장면 — 「나」(#22 .me422 값) · 작은 시계 판(#22 .mf422 판형 · 오른쪽 위) · Lv3 #32 상자(왼쪽 아래) · 🍱 + 숟가락 ── */
+.dyp .me430{position:absolute;right:2px;bottom:2px;width:22px;height:22px;border-radius:50%;background:#FFE066;border:2px solid #F0C419;color:#7a5600;font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-style:normal;box-sizing:border-box;z-index:2}
+.ss430 .os430,.ss430 .ba430{top:3px}
+.dyp .mf430{position:absolute;right:0;top:0;width:80px;height:64px;display:block;transform:scale(.4);transform-origin:100% 0;z-index:1}
+.dyp .bx430{position:absolute;left:3px;bottom:3px;display:block;line-height:0}
+.ss430.p-early .me430,.ss430.p-late .me430{left:2px;top:2px;right:auto;bottom:auto}
+.dyp .lb430{position:absolute;left:8px;top:24px;font-size:34px;font-style:normal;line-height:1}
+.dyp .sp430{position:absolute;left:40px;top:6px;font-size:24px;font-style:normal;line-height:1;transform-origin:20% 80%;animation:f430Spoon 1.3s ease-in-out infinite}
+@keyframes f430Spoon{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(-10px,12px) rotate(-25deg)}}
+@media (prefers-reduced-motion:reduce){.k-st .kid430,.dyp .sp430{animation:none!important}}
+/* ── 카드 테두리 — 때 말 점선 · 하는 일 둥근 ── */
+.wcard.dt430,.fcard.dt430,.vw.dt430,.pcol.dt430{border-style:dashed}
+.wcard.rd430,.vw.rd430,.pcol.rd430{border-radius:999px}
+/* ── 작은 말 at · to — 문장 속 보라 밑줄(#22 .at422 · #16 .to416 값 · 설명 0) ── */
+.sline .sm430{text-decoration:none;border-bottom:3px solid #B197FC}
+/* ── Lv3 #32 하루 띠(소환 1슬) — 다섯 칸 한 줄 ── */
+.dy430{display:flex;gap:3px;justify-content:center;flex-wrap:wrap;margin:4px 0;line-height:0}
+/* ── 큰 차례 띠(.bs430) — 네 칸 · 번호 칸(#12 순서 배열 .ono 판형 — 흰 동그라미) · 아래 화살표 · 340px 안 ── */
+.bs430{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;width:min(340px,100%);margin:12px auto 6px;box-sizing:border-box}
+.bs430 .spot{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:72px;padding:4px 0;border-radius:12px;border:3px solid #CED4DA;background:#F8F9FA;box-sizing:border-box;cursor:pointer;line-height:1;transition:transform .15s}
+.bs430 .spot:active{transform:scale(.95)}
+.bs430 .spot .ce{font-style:normal;font-size:34px;line-height:1;filter:grayscale(1);opacity:.5;transition:filter .3s,opacity .3s}
+.bs430 .spot .sn430{position:absolute;left:-5px;top:-9px;width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid var(--border);color:var(--subtext);font-size:13px;font-style:normal;display:flex;align-items:center;justify-content:center;line-height:1;box-sizing:border-box}
+.bs430 .spot.on,.bs430 .spot.found{border-color:#FD7E14;background:#FFE8CC}
+.bs430 .spot.on .ce,.bs430 .spot.found .ce,.bs430.m-q .spot .ce,.bs430.m-chip .spot .ce,.bs430.m-ws .spot .ce{filter:none;opacity:1}
+.bs430 .spot .tag{display:none;position:absolute;left:50%;bottom:-.8em;transform:translateX(-50%);font-size:13px;background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:8px;padding:0 4px;white-space:nowrap;font-family:'Jua',sans-serif;line-height:1.2;z-index:3}
+.bs430 .spot.found .tag{display:block}
+.bs430 .choice-btn.spot{font-family:inherit;box-shadow:none;margin:0;min-height:72px}
+.bs430 .choice-btn.spot.correct{border-color:var(--green);box-shadow:0 0 0 3px var(--green) inset}
+.bs430 .choice-btn.spot.wrong{border-color:var(--red);box-shadow:0 0 0 3px var(--red) inset}
+.bs430 .spot .slot{display:block;margin-top:5px;min-width:56px;height:28px;border:2px dashed #ADB5BD;border-radius:99px;font-family:'Jua',sans-serif;font-size:15px;line-height:24px;color:var(--text);text-align:center;box-sizing:border-box}
+.bs430 .spot .slot.got{border-style:solid;border-color:#7048E8;background:#F3F0FF;color:#5F3DC4}
+.bs430 .spot.nope{animation:shake .4s}
+.bs430 .ar430{grid-column:1/-1;position:relative;display:block;height:12px}
+.bs430 .ar430::before{content:'';position:absolute;left:6px;right:14px;top:4px;height:3px;border-radius:2px;background:#ADB5BD}
+.bs430 .ar430::after{content:'';position:absolute;right:4px;top:0;border-left:11px solid #ADB5BD;border-top:5.5px solid transparent;border-bottom:5.5px solid transparent}
+/* ── 차례 칩(.ch430) — ★쉼표째 한 칩(First, · Next, · Last,) · Then 만 쉼표 0 — Lv3 #44 Yes, 칩 판형 ── */
+.cp430{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0}
+.ch430{font-family:'Jua',sans-serif;font-size:19px;line-height:1.2;padding:6px 12px;border:3px solid #7048E8;border-radius:99px;background:#fff;color:#5F3DC4;cursor:pointer;box-shadow:0 3px 0 rgba(112,72,232,.25);white-space:nowrap}
+.ch430.sel{background:#E5DBFF;box-shadow:0 0 0 3px #B197FC}
+.ch430.used{visibility:hidden}
+.ch430.bounce{animation:shake .4s}
+.ch430.heard{border-color:var(--green);background:var(--green-light);color:#2B8A3E}
+.bs430 .spot .ch430{font-size:15px;padding:3px 7px;margin-top:5px;border-width:2px}
+/*SEQ430CSS-END*/
+  .toprow { display: flex; gap: 12px; align-items: center; margin-top: 2px; }
+  .toprow .bs430 { flex: 1.6; width: auto; margin: 6px 0 0; gap: 5px; }
+  .bs430 .spot { min-height: 50px; cursor: default; border-width: 2px; }
+  .bs430 .spot .ce { font-size: 26px; }
+  .bs430 .spot .sn430 { width: 17px; height: 17px; font-size: 10px; left: -4px; top: -7px; color: #fff; background: #9c4d13; border-color: #9c4d13; font-weight: 800; }
+  .bs430 .ar430 { height: 9px; }
+  .bapair { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; }
+  .bapair .or { font-style: normal; color: #b4b2a9; }
+  .cbox, .pbox, .sbox { flex: 1; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 5px 10px; }
+  .cbox .bs430 { width: 100%; margin: 8px 0 0; }
+  .cbox .bs430 .spot .slot { width: 92%; min-width: 0; height: 24px; border-color: #b4b2a9; }
+  .wb2 { font-size: 13px; color: #4a2408; text-align: center; margin-top: 2px; letter-spacing: .3px; }
+  .wb2 b { display: inline-block; border: 1.5px solid #7048E8; color: #5F3DC4; border-radius: 99px; padding: 0 8px; margin: 0 2px; font-weight: 800; }
+  .pk3 { display: flex; flex-direction: column; gap: 3px; }
+  .pk3 .pq { display: flex; align-items: center; gap: 10px; }
+  .pk3 .po { font-size: 14px; color: #4a2408; }
+  .pk3 .po b { font-weight: 800; padding: 0 6px; }
+  .pk3 .po i { font-style: normal; color: #b4b2a9; }
+  .s4r { display: flex; align-items: center; gap: 12px; }
+  .dbx { display: inline-block; width: 96px; height: 60px; border: 2px dashed #e0b48c; border-radius: 10px; background: #fff; }
+  .s { font-size: 17px; font-weight: 800; color: #4a2408; display: flex; align-items: flex-end; gap: 5px; letter-spacing: .4px; }
+  .s .cf { color: #5F3DC4; }
+  .s .ln { display: inline-block; width: 110px; border-bottom: 1.8px solid #b4b2a9; height: 20px; }
+  .wb { font-size: 10px; color: #888780; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv4 · 어휘 #30</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main">일에는 차례가 있어요 — first, next, then, last.</div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 차례 판 — first · next · then · last / 때 판 — before · after · start · finish · early · late
+  </div>
+
+  <div class="rowlab">🪟 차례 띠 네 칸(손 씻기 → 점심 → 공놀이 → 잠) · 앞·뒤 판(점심 전에 · 점심 뒤에)</div>
+  <div class="toprow"><div class="bs430 m-ws"><div class="spot" data-i="0"><i class="sn430">1</i><i class="ce">🧼</i></div><div class="spot" data-i="1"><i class="sn430">2</i><i class="ce">🍱</i></div><div class="spot" data-i="2"><i class="sn430">3</i><i class="ce">⚽</i></div><div class="spot" data-i="3"><i class="sn430">4</i><i class="ce">🛏️</i></div><b class="ar430"></b></div><div class="bapair"><span class="bk" data-w="before"><span class="dyp p-before still" data-dyp="before"><b class="ba430"><i class="c l on">🧼</i><i class="c m">🍱</i><i class="c r">⚽</i></b></span></span><i class="or">·</i><span class="bk" data-w="after"><span class="dyp p-after still" data-dyp="after"><b class="ba430"><i class="c l">🧼</i><i class="c m">🍱</i><i class="c r on">⚽</i></b></span></span></div></div>
+
+  <h2><span class="n">1</span> 따라 써요 <span class="hint">흐린 글자를 따라 써요 — 위 줄 차례 판 · 아래 줄 때 판</span></h2>
+  <div class="trace"><div class="traceword"><div class="outline">first</div><div class="line"></div></div><div class="traceword"><div class="outline">next</div><div class="line"></div></div><div class="traceword"><div class="outline">then</div><div class="line"></div></div><div class="traceword"><div class="outline">last</div><div class="line"></div></div></div>
+  <div class="trace"><div class="traceword"><div class="outline">before</div><div class="line"></div></div><div class="traceword"><div class="outline">after</div><div class="line"></div></div><div class="traceword"><div class="outline">start</div><div class="line"></div></div><div class="traceword"><div class="outline">finish</div><div class="line"></div></div><div class="traceword"><div class="outline">early</div><div class="line"></div></div><div class="traceword"><div class="outline">late</div><div class="line"></div></div></div>
+
+  <div class="twocol">
+    <div style="flex:1.3;display:flex;flex-direction:column">
+      <h2><span class="n">2</span> 칸 자리에 옮겨 써요 <span class="hint">그림 칸은 이미 차례대로 — 칸 아래에</span></h2>
+      <div class="cbox"><div class="bs430 m-chip"><div class="spot" data-i="0"><i class="sn430">1</i><i class="ce">🧼</i><span class="slot"></span></div><div class="spot" data-i="1"><i class="sn430">2</i><i class="ce">🍱</i><span class="slot"></span></div><div class="spot" data-i="2"><i class="sn430">3</i><i class="ce">⚽</i><span class="slot"></span></div><div class="spot" data-i="3"><i class="sn430">4</i><i class="ce">🛏️</i><span class="slot"></span></div><b class="ar430"></b></div><div class="wb2"><b>First,</b> <b>Next,</b> <b>Then</b> <b>Last,</b></div></div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column">
+      <h2><span class="n">3</span> 그림에 맞는 말 <span class="hint">맞는 말에 동그라미</span></h2>
+      <div class="pbox"><div class="pk3"><div class="pq" data-w="before"><span class="pic"><span class="dyp p-before still" data-dyp="before"><b class="ba430"><i class="c l on">🧼</i><i class="c m">🍱</i><i class="c r">⚽</i></b></span></span><span class="po"><b>before</b><i>/</i><b>after</b></span></div><div class="pq" data-w="finish"><span class="pic"><span class="dyp p-finish still" data-dyp="finish"><b class="tk430 k-fn"><b class="fp430 l"></b><b class="fp430 r"></b><b class="rb430 a"></b><b class="rb430 b"></b><b class="kid430"><i class="hd"></i><i class="bd"></i><i class="am l"></i><i class="am r"></i><i class="lg l"></i><i class="lg r"></i></b></b></span></span><span class="po"><b>start</b><i>/</i><b>finish</b></span></div><div class="pq" data-w="late"><span class="pic"><span class="dyp p-late still" data-dyp="late"><span class="vz" style="width:76px;height:35px"><span class="vs v32-late" data-vs="late" style="transform:scale(0.54)"><b class="wn32 w-hi"><b class="sn32"></b></b><i class="pr">⏰</i><i class="dh32"></i></span></span></span></span><span class="po"><b>early</b><i>/</i><b>late</b></span></div></div></div>
+    </div>
+  </div>
+
+  <h2><span class="n">4</span> 내 아침 한 줄 <span class="hint">상자를 보고 한 단어 · 네모에 그림도 그려요</span></h2>
+  <div class="sbox"><div class="s4r"><span class="dbx"></span><span class="s"><b class="cf">First,</b> I <span class="ln"></span>.</span></div><div class="wb">상자 · wake · wash · eat · go</div></div>
+
+  <div class="recap">오늘 열 단어 = <b>first · next · then · last · before · after · start · finish · early · late</b></div>
+
+  <div class="parent">
+    <b>부모님께</b> · <b>next</b> 와 <b>then</b> 은 둘 다 「그다음」 — 띠에서 <b>둘째 칸 · 셋째 칸</b> 말로 익혀요.
+    · <b>before · after</b> 는 「점심 전에 · 학교 끝나고」 처럼 <b>때 이름 앞에서만</b> 써요(<b>before lunch</b> · <b>after school</b>).
+    · 문장 앞 차례 말에는 쉼표가 붙어요(<b>First,</b> · <b>Next,</b> · <b>Last,</b>) — <b>Then</b> 만 쉼표 없이.
+    · 이 활동지는 <b>보고 옮겨 쓰는</b> 종이입니다. <b>받아쓰기로 확인하지 마세요.</b><br>
+    <b>정답</b> · ② First, · Next, · Then · Last, · ③ before · finish · late · ④ wake · wash · eat · go 중 하나(그림과 같게)
+  </div>
+</body>
+</html>
