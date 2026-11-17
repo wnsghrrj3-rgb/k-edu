@@ -9,6 +9,9 @@
  *   p.userData.look = 볼 물건(없으면 천천히 두리번) · p.userData.talk = 말하는 중이면 1 이상(입) · p.userData.hop = 1 이면 한 번 폴짝
  *   ⏳ 걷기는 아직 — 지금 장면은 서서 하는 몸짓만 쓴다(걷는 장면이 생기면 여기 더한다).
  * ============================================================ */
+/* 몸짓 이름 — 방 자료의 how.body 가 고른다(챈트 몸짓은 걸음마다 다르다) */
+export const MOODS = ['idle', 'happy', 'wave', 'ear', 'lead', 'point', 'lift', 'speak', 'tilt', 'knee', 'clink', 'trunk', 'horns', 'jump'];
+export const BEAT_MOODS = ['lead', 'knee', 'clink', 'trunk', 'horns', 'jump'];      /* 박자(stomp)를 타는 몸짓 */
 export const PEOPLE = {
   /* 이름 있는 사람들의 겉모습(빈터의 셋 — 뒤 걸음도 같은 사람) */
   max:  { skin: 'skin-3', hair: 'hair-1', shirt: 'stage', scarf: 'warm', pocket: 'stage-deep' },
@@ -58,6 +61,12 @@ export function stepPeople(K, people, dt, t, o = {}){
     else if (m === 'point') { const sd = yawTo >= 0 ? 1 : 0; ax[sd] = -1.3; ay[sd] = yawTo - bodyYaw; az[sd] = 0; by += u.stomp * 0.1; smile = 1.25; brow = 0.6; }     /* 그 물건을 가리킨다 */
     else if (m === 'lift') { az[1] = 2.2; az[0] = -0.5; smile = 1.4; brow = 1; }                                                                              /* 한 손에 번쩍 든다 */
     else if (m === 'speak') { by = Math.abs(Math.sin(t * 5)) * 0.05; ax[0] = ax[1] = -0.7; az[0] = 0.35; az[1] = -0.35; brow = 0.8; }                        /* 두 손을 입가에 — 따라 말한다 */
+    /* 챈트 몸짓(WD0 · 다름 설계 ⑪ — 걸음마다 다른 몸짓. stomp 가 박자마다 1 → 0) */
+    else if (m === 'knee') { by = -u.stomp * 0.1; bsy = 1 - u.stomp * 0.06; ax[0] = ax[1] = -0.5 - u.stomp * 0.5; az[0] = 0.3; az[1] = -0.3; hz = Math.sin(t * 3) * 0.05; smile = 1.25; snap = true; }                 /* 무릎 치기 */
+    else if (m === 'clink') { ax[0] = ax[1] = -1.25; az[0] = 0.55 - u.stomp * 0.35; az[1] = -0.55 + u.stomp * 0.35; by = Math.sin(u.stomp * Math.PI) * 0.06; smile = 1.3; brow = 0.6; snap = true; }                          /* 검지 둘 맞부딪치기 */
+    else if (m === 'trunk') { ax[1] = -1.5 + Math.sin(t * 5) * 0.5; az[1] = Math.sin(t * 5 + 1) * 0.7; az[0] = -0.3; hz = Math.sin(t * 5) * 0.1; by = u.stomp * 0.06; smile = 1.3; }                                           /* 팔을 코끼리 코처럼 */
+    else if (m === 'horns') { az[0] = -2.75; az[1] = 2.75; ax[0] = ax[1] = -0.15; hz = (u.stomp - 0.5) * 0.3; by = u.stomp * 0.05; smile = 1.35; brow = 1; snap = true; }                                                     /* 머리 위 염소 뿔 까딱 */
+    else if (m === 'jump') { by = Math.sin(u.stomp * Math.PI) * 0.5; az[0] = -0.6 - u.stomp; az[1] = 0.6 + u.stomp; smile = 1.5; brow = 1; snap = true; }                                                                    /* 제자리에서 폴짝 */
     else if (m === 'tilt') { hz = 0.32; brow = 1; smile = 0.9; az[1] = 0.9; ax[1] = -0.6; }                                                                   /* 갸웃 */
     if (o.leader && p !== o.leader && o.leader.userData.mood === 'lead' && m === 'idle') by += o.leader.userData.stomp * 0.1;           /* 박자에 맞춰 까딱 */
     by += Math.sin(u.hop * Math.PI) * 0.6;

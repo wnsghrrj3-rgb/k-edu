@@ -698,7 +698,8 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
 .pw-cell[data-level="trace"] .pw-ghost{opacity:var(--pw-trace,.4)}
 .pw-cell[data-level="faint"] .pw-ghost{opacity:var(--pw-faint,.15)}
 .pw-cell.ok .pw-ghost{opacity:0}
-.pw-ink{fill:none;stroke:var(--stage-deep);stroke-width:7;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.pw-ink{fill:none;stroke:var(--pen-ink,var(--stage-deep));stroke-width:var(--pen-w,7);stroke-linecap:var(--pen-cap,round);stroke-linejoin:round;stroke-dasharray:var(--pen-dash,none);opacity:var(--pen-op,1);pointer-events:none}
+[data-pen] .pw-svg{background:var(--pen-bg);border-radius:var(--r-2)}      /* 쓰는 것(core/pens.js) — 도구마다 선과 바탕이 다르다. 글씨 판정은 같다 */
 .pw-cell.ok .pw-ink{stroke:var(--ok);stroke-width:8;transition:stroke var(--t-2) var(--ease),stroke-width var(--t-2) var(--ease)}
 .pw-got{font-family:var(--font-read);font-size:24px;font-weight:700;fill:var(--ok);pointer-events:none;transform-box:fill-box;transform-origin:center;animation:pwGot var(--t-3) var(--ease)}
 @keyframes pwGot{0%{opacity:0;transform:scale(.3)}70%{transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
@@ -814,3 +815,20 @@ a.pill{text-decoration:none}
   .nb-print .nb-item{break-inside:avoid;background:transparent;box-shadow:none;border-bottom:1px solid var(--ink-4);border-radius:0}
   @page{size:A4;margin:14mm}
 }
+
+/* ── 손짓 부품의 2D 칸(core/hands.js — PlayHands.cell) ── */
+.ph-cell{position:relative;display:flex;flex-direction:column;gap:18px;align-items:center;justify-content:center;padding:14px;touch-action:none;user-select:none;-webkit-user-select:none}
+.ph-items,.ph-zones{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.ph-item{position:relative;width:76px;height:76px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;transition:transform 160ms var(--ease),box-shadow var(--t-2) var(--ease),opacity var(--t-2) var(--ease);z-index:2;--k:0}
+.ph-item .ph-pic,.ph-item .ph-pic svg,.ph-item .ph-pic .art{width:52px;height:52px;display:block;pointer-events:none}
+.ph-item .ph-ring{position:absolute;inset:-5px;border-radius:50%;background:conic-gradient(var(--warm) calc(var(--k) * 360deg),transparent 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 6px),var(--ink) calc(100% - 5px));mask:radial-gradient(farthest-side,transparent calc(100% - 6px),var(--ink) calc(100% - 5px));pointer-events:none}
+.ph-item.held{box-shadow:var(--shadow),0 0 0 4px var(--stage);transition:none;z-index:5}
+.ph-item.fly{transition:transform 420ms var(--ease)}
+.ph-item.lit{box-shadow:var(--shadow),0 0 0 5px var(--warm)}
+.ph-item.gone{opacity:0;pointer-events:none}
+.ph-item.hint{animation:phHint 520ms var(--ease)}
+.ph-rub .ph-item .ph-pic{opacity:calc(.18 + var(--k) * .82)}
+.ph-hold .ph-item{transform:scale(calc(1 + var(--k) * .22))}
+.ph-zone{width:92px;height:92px;border-radius:var(--r-3);border:3px dashed var(--ink-4);display:flex;align-items:center;justify-content:center;color:var(--ink-2);font-family:var(--font-read);font-weight:700;font-size:34px}
+@keyframes phHint{0%,100%{transform:scale(1)}40%{transform:scale(1.14)}}
+@media (prefers-reduced-motion: reduce){.ph-item,.ph-item.fly{transition:none}.ph-item.hint{animation:none}}

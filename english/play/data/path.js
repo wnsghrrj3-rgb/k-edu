@@ -4,7 +4,8 @@
  *   원천: handoff kedu/english/play-path/path_v1.js (문서 kedu/영어_플레이_한해길_v1.md)
  *   구역 여섯: A 글자 숲 · B 낱말 마당 · C 소리 공방 · D 마법 e · E 모음 짝 · F 문장 마을
  *   낱말 종류: oral 입말(듣고 말한다 — 글자는 첫 글자만) · read 읽기(네 힘) · more 응용(처음 보는 낱말 — 씨앗 없음) · whole·sight 통말
- *   days = 세 날(meet 만나는 날 · read 읽는 날 · write 쓰는 날)의 놀이 차례(놀이 id). 아직 안 지은 놀이는 조립기가 건너뛴다.
+ *   days = 세 날(meet 만나는 날 · read 읽는 날 · write 쓰는 날)의 놀이 차례(놀이 id) — 걸음마다 한 벌(다름 설계 v1 §5 · 구역의 parts.days 는 바탕). 아직 안 지은 놀이는 조립기가 건너뛴다.
+ *   sigDays = 그 걸음의 얼굴 놀이를 온전히 하는 날(full)과 짧게 한 번 더 하는 날(brief).
  *   notes·events·guest·favor·layout = 걸음 상세판(채워진 걸음만). covers = 그 걸음이 끝나면 점등되는 사다리 칸.
  * ============================================================ */
 window.PLAY_PATH = {
@@ -367,8 +368,12 @@ window.PLAY_PATH = {
    "layout": null,
    "days": {
     "meet": ["sound-chant", "pop", "order-shop", "letter-path", "note"],
-    "read": ["garden", "sound-chant", "first-basket", "letter-fruit", "magic-call", "letter-path"],
+    "read": ["garden", "magic-call", "sound-chant", "first-basket", "letter-fruit", "letter-path"],
     "write": ["garden", "word-train", "sound-jump", "letter-dict", "special-guest", "note"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": []
   },
@@ -406,9 +411,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "pop", "order-shop", "letter-path", "note"],
-    "read": ["garden", "sound-chant", "first-basket", "letter-fruit", "magic-call", "letter-path"],
-    "write": ["garden", "word-train", "sound-jump", "letter-dict", "special-guest", "note"]
+    "meet": ["order-shop", "sound-chant", "pop", "letter-path", "note"],
+    "read": ["garden", "first-basket", "letter-fruit", "sound-chant", "magic-call", "letter-path"],
+    "write": ["garden", "sound-jump", "word-train", "letter-dict", "special-guest", "note"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": []
   },
@@ -446,9 +455,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "pop", "order-shop", "letter-path", "note"],
-    "read": ["garden", "sound-chant", "first-basket", "letter-fruit", "magic-call", "letter-path"],
+    "meet": ["pop", "order-shop", "sound-chant", "letter-path", "note"],
+    "read": ["garden", "letter-fruit", "sound-chant", "first-basket", "magic-call", "letter-path"],
     "write": ["garden", "word-train", "sound-jump", "letter-dict", "special-guest", "note"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": []
   },
@@ -487,8 +500,12 @@ window.PLAY_PATH = {
    "layout": null,
    "days": {
     "meet": ["sound-chant", "pop", "order-shop", "letter-path", "note"],
-    "read": ["garden", "sound-chant", "first-basket", "letter-fruit", "magic-call", "letter-path"],
-    "write": ["garden", "word-train", "sound-jump", "letter-dict", "special-guest", "note"]
+    "read": ["garden", "sound-chant", "magic-call", "first-basket", "letter-fruit", "letter-path"],
+    "write": ["garden", "sound-jump", "word-train", "letter-dict", "special-guest", "note"]
+   },
+   "sigDays": {
+    "full": "write",
+    "brief": "meet"
    },
    "covers": []
   },
@@ -526,9 +543,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "pop", "order-shop", "letter-path", "note"],
-    "read": ["garden", "sound-chant", "first-basket", "letter-fruit", "magic-call", "letter-path"],
-    "write": ["garden", "word-train", "sound-jump", "letter-dict", "special-guest", "note"]
+    "meet": ["order-shop", "sound-chant", "pop", "letter-path", "note"],
+    "read": ["garden", "first-basket", "sound-chant", "letter-fruit", "magic-call", "letter-path"],
+    "write": ["garden", "sound-jump", "word-train", "letter-dict", "special-guest", "note"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": []
   },
@@ -566,9 +587,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "pop", "order-shop", "letter-path", "note"],
-    "read": ["garden", "sound-chant", "first-basket", "letter-fruit", "magic-call", "letter-path"],
-    "write": ["garden", "word-train", "sound-jump", "letter-dict", "special-guest", "note"]
+    "meet": ["letter-path", "sound-chant", "pop", "order-shop", "note"],
+    "read": ["garden", "letter-path", "letter-fruit", "sound-chant", "first-basket", "magic-call"],
+    "write": ["garden", "letter-dict", "word-train", "sound-jump", "special-guest", "note"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": []
   },
@@ -606,9 +631,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "pop", "order-shop", "letter-path", "note"],
-    "read": ["garden", "sound-chant", "first-basket", "letter-fruit", "magic-call", "letter-path"],
-    "write": ["garden", "word-train", "sound-jump", "letter-dict", "special-guest", "note"]
+    "meet": ["pop", "order-shop", "sound-chant", "letter-path", "note"],
+    "read": ["garden", "first-basket", "letter-fruit", "magic-call", "sound-chant", "letter-path"],
+    "write": ["garden", "letter-dict", "word-train", "sound-jump", "special-guest", "note"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": []
   },
@@ -646,9 +675,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "pop", "order-shop", "letter-path", "note"],
-    "read": ["garden", "sound-chant", "first-basket", "letter-fruit", "magic-call", "letter-path"],
-    "write": ["garden", "word-train", "sound-jump", "letter-dict", "special-guest", "note"]
+    "meet": ["order-shop", "sound-chant", "pop", "letter-path", "note"],
+    "read": ["garden", "magic-call", "sound-chant", "first-basket", "letter-fruit", "letter-path"],
+    "write": ["garden", "letter-dict", "word-train", "sound-jump", "special-guest", "note"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": []
   },
@@ -687,8 +720,12 @@ window.PLAY_PATH = {
    "layout": null,
    "days": {
     "meet": ["sound-chant", "pop", "order-shop", "letter-path", "note"],
-    "read": ["garden", "sound-chant", "first-basket", "letter-fruit", "magic-call", "letter-path"],
-    "write": ["garden", "word-train", "sound-jump", "letter-dict", "special-guest", "note"]
+    "read": ["garden", "sound-chant", "letter-fruit", "first-basket", "magic-call", "letter-path"],
+    "write": ["garden", "sound-jump", "word-train", "letter-dict", "special-guest", "note"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": []
   },
@@ -726,9 +763,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "pop", "order-shop", "letter-path", "note"],
-    "read": ["garden", "sound-chant", "first-basket", "letter-fruit", "magic-call", "letter-path"],
+    "meet": ["pop", "sound-chant", "order-shop", "letter-path", "note"],
+    "read": ["garden", "first-basket", "sound-chant", "letter-fruit", "magic-call", "letter-path"],
     "write": ["garden", "word-train", "sound-jump", "letter-dict", "special-guest", "note"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": []
   },
@@ -767,8 +808,12 @@ window.PLAY_PATH = {
    "layout": null,
    "days": {
     "meet": ["sound-chant", "pop", "order-shop", "letter-path", "note"],
-    "read": ["garden", "sound-chant", "first-basket", "letter-fruit", "magic-call", "letter-path"],
-    "write": ["garden", "word-train", "sound-jump", "letter-dict", "special-guest", "note"]
+    "read": ["garden", "sound-chant", "magic-call", "first-basket", "letter-fruit", "letter-path"],
+    "write": ["garden", "sound-jump", "word-train", "letter-dict", "special-guest", "note"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": []
   },
@@ -806,9 +851,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "pop", "order-shop", "letter-path", "note"],
-    "read": ["garden", "sound-chant", "first-basket", "letter-fruit", "magic-call", "letter-path"],
-    "write": ["garden", "word-train", "sound-jump", "letter-dict", "special-guest", "note"]
+    "meet": ["letter-path", "pop", "sound-chant", "order-shop", "note"],
+    "read": ["garden", "letter-path", "first-basket", "sound-chant", "letter-fruit", "magic-call"],
+    "write": ["garden", "letter-dict", "word-train", "sound-jump", "special-guest", "note"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": []
   },
@@ -846,9 +895,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "pop", "order-shop", "letter-path", "note"],
-    "read": ["garden", "sound-chant", "first-basket", "letter-fruit", "magic-call", "letter-path"],
+    "meet": ["order-shop", "sound-chant", "pop", "letter-path", "note"],
+    "read": ["garden", "letter-fruit", "sound-chant", "first-basket", "magic-call", "letter-path"],
     "write": ["garden", "word-train", "sound-jump", "letter-dict", "special-guest", "note"]
+   },
+   "sigDays": {
+    "full": "write",
+    "brief": "meet"
    },
    "covers": ["lv1-03", "lv1-14"]
   },
@@ -886,9 +939,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "sound-monster", "word-train", "letter-path", "note"],
+    "meet": ["sound-monster", "word-train", "sound-chant", "letter-path", "note"],
     "read": ["garden", "first-basket", "letter-fruit", "sound-jump", "letter-dict", "talk"],
-    "write": ["garden", "word-train", "letter-path", "letter-dict", "special-guest", "note"]
+    "write": ["garden", "letter-path", "word-train", "letter-dict", "special-guest", "note"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": ["lv1-01", "lv1-02"]
   },
@@ -926,9 +983,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-slide", "sound-chant", "read-aloud", "family-wheel", "letter-path", "note"],
-    "read": ["garden", "sound-slide", "sound-chant", "rhyme-pair", "belt", "sound-box"],
-    "write": ["garden", "hidden-sound", "sound-box", "write-job", "talk", "special-guest"]
+    "meet": ["letter-path", "sound-slide", "read-aloud", "sound-chant", "family-wheel", "note"],
+    "read": ["garden", "sound-chant", "sound-slide", "rhyme-pair", "belt", "sound-box"],
+    "write": ["garden", "talk", "hidden-sound", "sound-box", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": []
   },
@@ -966,9 +1027,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-slide", "sound-chant", "read-aloud", "family-wheel", "letter-path", "note"],
-    "read": ["garden", "sound-slide", "sound-chant", "rhyme-pair", "belt", "sound-box"],
-    "write": ["garden", "hidden-sound", "sound-box", "write-job", "talk", "special-guest"]
+    "meet": ["read-aloud", "sound-chant", "sound-slide", "family-wheel", "letter-path", "note"],
+    "read": ["garden", "rhyme-pair", "sound-chant", "sound-slide", "belt", "sound-box"],
+    "write": ["garden", "hidden-sound", "sound-box", "talk", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": ["lv1-04"]
   },
@@ -1006,9 +1071,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-slide", "sound-chant", "read-aloud", "family-wheel", "letter-path", "note"],
-    "read": ["garden", "sound-slide", "sound-chant", "rhyme-pair", "belt", "sound-box"],
-    "write": ["garden", "hidden-sound", "sound-box", "write-job", "talk", "special-guest"]
+    "meet": ["family-wheel", "sound-slide", "sound-chant", "read-aloud", "letter-path", "note"],
+    "read": ["garden", "belt", "sound-slide", "sound-chant", "rhyme-pair", "sound-box"],
+    "write": ["garden", "sound-box", "hidden-sound", "talk", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": []
   },
@@ -1046,9 +1115,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-slide", "sound-chant", "read-aloud", "family-wheel", "letter-path", "note"],
-    "read": ["garden", "sound-slide", "sound-chant", "rhyme-pair", "belt", "sound-box"],
-    "write": ["garden", "hidden-sound", "sound-box", "write-job", "talk", "special-guest"]
+    "meet": ["sound-chant", "sound-slide", "read-aloud", "family-wheel", "letter-path", "note"],
+    "read": ["garden", "sound-chant", "sound-slide", "rhyme-pair", "belt", "sound-box"],
+    "write": ["garden", "talk", "hidden-sound", "sound-box", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": ["lv1-11", "lv1-13"]
   },
@@ -1086,9 +1159,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-slide", "sound-chant", "read-aloud", "family-wheel", "letter-path", "note"],
-    "read": ["garden", "sound-slide", "sound-chant", "rhyme-pair", "belt", "sound-box"],
-    "write": ["garden", "hidden-sound", "sound-box", "write-job", "talk", "special-guest"]
+    "meet": ["letter-path", "read-aloud", "sound-chant", "sound-slide", "family-wheel", "note"],
+    "read": ["garden", "rhyme-pair", "sound-slide", "sound-chant", "belt", "sound-box"],
+    "write": ["garden", "write-job", "hidden-sound", "sound-box", "talk", "special-guest"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": []
   },
@@ -1127,8 +1204,12 @@ window.PLAY_PATH = {
    "layout": null,
    "days": {
     "meet": ["sound-slide", "sound-chant", "read-aloud", "family-wheel", "letter-path", "note"],
-    "read": ["garden", "sound-slide", "sound-chant", "rhyme-pair", "belt", "sound-box"],
-    "write": ["garden", "hidden-sound", "sound-box", "write-job", "talk", "special-guest"]
+    "read": ["garden", "belt", "sound-chant", "sound-slide", "rhyme-pair", "sound-box"],
+    "write": ["garden", "hidden-sound", "sound-box", "talk", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": ["lv1-06"]
   },
@@ -1166,9 +1247,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-slide", "sound-chant", "read-aloud", "family-wheel", "letter-path", "note"],
-    "read": ["garden", "sound-slide", "sound-chant", "rhyme-pair", "belt", "sound-box"],
-    "write": ["garden", "hidden-sound", "sound-box", "write-job", "talk", "special-guest"]
+    "meet": ["sound-chant", "sound-slide", "read-aloud", "family-wheel", "letter-path", "note"],
+    "read": ["garden", "sound-chant", "sound-box", "sound-slide", "rhyme-pair", "belt"],
+    "write": ["garden", "talk", "hidden-sound", "sound-box", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": []
   },
@@ -1206,9 +1291,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-slide", "sound-chant", "read-aloud", "family-wheel", "letter-path", "note"],
+    "meet": ["family-wheel", "sound-chant", "sound-slide", "read-aloud", "letter-path", "note"],
     "read": ["garden", "sound-slide", "sound-chant", "rhyme-pair", "belt", "sound-box"],
-    "write": ["garden", "hidden-sound", "sound-box", "write-job", "talk", "special-guest"]
+    "write": ["garden", "write-job", "hidden-sound", "sound-box", "talk", "special-guest"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": ["lv1-07", "lv1-05"]
   },
@@ -1246,9 +1335,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-slide", "sound-chant", "read-aloud", "family-wheel", "letter-path", "note"],
-    "read": ["garden", "sound-slide", "sound-chant", "rhyme-pair", "belt", "sound-box"],
-    "write": ["garden", "hidden-sound", "sound-box", "write-job", "talk", "special-guest"]
+    "meet": ["read-aloud", "sound-slide", "sound-chant", "family-wheel", "letter-path", "note"],
+    "read": ["garden", "rhyme-pair", "sound-slide", "sound-chant", "belt", "sound-box"],
+    "write": ["garden", "sound-box", "hidden-sound", "talk", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": ["lv1-15"]
   },
@@ -1287,8 +1380,12 @@ window.PLAY_PATH = {
    "layout": null,
    "days": {
     "meet": ["sound-slide", "sound-chant", "read-aloud", "family-wheel", "letter-path", "note"],
-    "read": ["garden", "sound-slide", "sound-chant", "rhyme-pair", "belt", "sound-box"],
-    "write": ["garden", "hidden-sound", "sound-box", "write-job", "talk", "special-guest"]
+    "read": ["garden", "belt", "sound-chant", "sound-slide", "rhyme-pair", "sound-box"],
+    "write": ["garden", "write-job", "hidden-sound", "sound-box", "talk", "special-guest"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": ["lv1-12"]
   },
@@ -1335,9 +1432,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-swap", "sound-slide", "sound-bridge", "sound-chant", "sound-box", "note"],
+    "meet": ["sound-bridge", "sound-swap", "sound-chant", "sound-slide", "sound-box", "note"],
     "read": ["garden", "sound-train", "hidden-sound", "belt", "family-wheel", "sound-box"],
-    "write": ["garden", "sound-swap", "sound-box", "write-job", "special-guest", "note"]
+    "write": ["garden", "sound-swap", "sound-box", "special-guest", "write-job", "note"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": ["lv1-16", "lv1-08"]
   },
@@ -1377,7 +1478,11 @@ window.PLAY_PATH = {
    "days": {
     "meet": ["story-listen", "picture-book", "talk", "gram-vending", "sentence-write", "note"],
     "read": ["garden", "picture-book", "belt", "silly-story", "sentence-write", "echo"],
-    "write": ["garden", "picture-book", "sentence-write", "write-job", "special-guest", "note"]
+    "write": ["garden", "sentence-write", "picture-book", "special-guest", "write-job", "note"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": ["lv1-17", "lv1-10", "lv1-09"]
   },
@@ -1415,9 +1520,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["word-train", "sound-chant", "talk", "silly-story", "note"],
+    "meet": ["sound-chant", "word-train", "talk", "silly-story", "note"],
     "read": ["garden", "picture-book", "belt", "sound-swap", "sentence-write"],
-    "write": ["garden", "gram-vending", "sentence-write", "write-job", "special-guest"]
+    "write": ["garden", "gram-vending", "sentence-write", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": ["lv1-18"]
   },
@@ -1455,9 +1564,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "sound-slide", "read-aloud", "order-shop", "write-job", "note"],
-    "read": ["garden", "sound-swap", "belt", "pop", "sound-box", "talk"],
-    "write": ["garden", "word-train", "sound-box", "write-job", "magic-call", "special-guest"]
+    "meet": ["sound-slide", "sound-chant", "read-aloud", "order-shop", "write-job", "note"],
+    "read": ["garden", "belt", "sound-swap", "pop", "sound-box", "talk"],
+    "write": ["garden", "write-job", "word-train", "sound-box", "magic-call", "special-guest"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": []
   },
@@ -1495,9 +1608,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "sound-slide", "read-aloud", "order-shop", "write-job", "note"],
-    "read": ["garden", "sound-swap", "belt", "pop", "sound-box", "talk"],
-    "write": ["garden", "word-train", "sound-box", "write-job", "magic-call", "special-guest"]
+    "meet": ["order-shop", "sound-slide", "sound-chant", "read-aloud", "write-job", "note"],
+    "read": ["garden", "talk", "sound-swap", "belt", "pop", "sound-box"],
+    "write": ["garden", "magic-call", "word-train", "sound-box", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": ["lv2-01", "lv2-02"]
   },
@@ -1535,9 +1652,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "sound-slide", "read-aloud", "order-shop", "write-job", "note"],
-    "read": ["garden", "sound-swap", "belt", "pop", "sound-box", "talk"],
-    "write": ["garden", "word-train", "sound-box", "write-job", "magic-call", "special-guest"]
+    "meet": ["read-aloud", "sound-slide", "order-shop", "sound-chant", "write-job", "note"],
+    "read": ["garden", "pop", "sound-swap", "belt", "sound-box", "talk"],
+    "write": ["garden", "sound-box", "word-train", "magic-call", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "write",
+    "brief": "meet"
    },
    "covers": ["lv2-03", "lv2-04"]
   },
@@ -1575,9 +1696,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "sound-slide", "read-aloud", "order-shop", "write-job", "note"],
-    "read": ["garden", "sound-swap", "belt", "pop", "sound-box", "talk"],
-    "write": ["garden", "word-train", "sound-box", "write-job", "magic-call", "special-guest"]
+    "meet": ["sound-slide", "read-aloud", "sound-chant", "order-shop", "write-job", "note"],
+    "read": ["garden", "talk", "sound-swap", "belt", "pop", "sound-box"],
+    "write": ["garden", "word-train", "sound-box", "magic-call", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "write",
+    "brief": "meet"
    },
    "covers": ["lv2-05"]
   },
@@ -1615,9 +1740,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "sound-slide", "read-aloud", "order-shop", "write-job", "note"],
-    "read": ["garden", "sound-swap", "belt", "pop", "sound-box", "talk"],
-    "write": ["garden", "word-train", "sound-box", "write-job", "magic-call", "special-guest"]
+    "meet": ["read-aloud", "sound-chant", "sound-slide", "order-shop", "write-job", "note"],
+    "read": ["garden", "pop", "sound-swap", "belt", "sound-box", "talk"],
+    "write": ["garden", "write-job", "word-train", "sound-box", "magic-call", "special-guest"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": ["lv2-06", "lv2-07"]
   },
@@ -1657,7 +1786,11 @@ window.PLAY_PATH = {
    "days": {
     "meet": ["sound-chant", "sound-slide", "read-aloud", "order-shop", "write-job", "note"],
     "read": ["garden", "sound-swap", "belt", "pop", "sound-box", "talk"],
-    "write": ["garden", "word-train", "sound-box", "write-job", "magic-call", "special-guest"]
+    "write": ["garden", "word-train", "sound-box", "magic-call", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": ["lv2-08"]
   },
@@ -1697,7 +1830,11 @@ window.PLAY_PATH = {
    "days": {
     "meet": ["story-listen", "picture-book", "read-aloud", "talk", "note"],
     "read": ["garden", "picture-book", "belt", "echo", "sentence-write"],
-    "write": ["garden", "picture-book", "sentence-write", "write-job", "special-guest"]
+    "write": ["garden", "write-job", "picture-book", "sentence-write", "special-guest"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": ["lv2-09"]
   },
@@ -1735,9 +1872,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["gram-vending", "talk", "echo", "sentence-write", "note"],
-    "read": ["garden", "gram-vending", "belt", "mirror", "sentence-write"],
-    "write": ["garden", "silly-story", "sentence-write", "write-job", "special-guest"]
+    "meet": ["sentence-write", "gram-vending", "talk", "echo", "note"],
+    "read": ["garden", "sentence-write", "belt", "gram-vending", "mirror"],
+    "write": ["garden", "sentence-write", "write-job", "silly-story", "special-guest"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": ["lv2-10"]
   },
@@ -1775,9 +1916,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-swap", "sound-chant", "read-aloud", "silly-order", "write-job", "note"],
-    "read": ["garden", "family-wheel", "belt", "monster", "sound-box", "vending"],
-    "write": ["garden", "hidden-sound", "sound-box", "write-job", "talk", "special-guest"]
+    "meet": ["read-aloud", "sound-swap", "sound-chant", "silly-order", "write-job", "note"],
+    "read": ["garden", "vending", "family-wheel", "belt", "monster", "sound-box"],
+    "write": ["garden", "write-job", "hidden-sound", "sound-box", "talk", "special-guest"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": ["lv2-11", "lv2-12"]
   },
@@ -1815,9 +1960,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-swap", "sound-chant", "read-aloud", "silly-order", "write-job", "note"],
+    "meet": ["sound-chant", "sound-swap", "read-aloud", "silly-order", "write-job", "note"],
     "read": ["garden", "family-wheel", "belt", "monster", "sound-box", "vending"],
-    "write": ["garden", "hidden-sound", "sound-box", "write-job", "talk", "special-guest"]
+    "write": ["garden", "talk", "hidden-sound", "sound-box", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": ["lv2-13", "lv2-18"]
   },
@@ -1856,8 +2005,12 @@ window.PLAY_PATH = {
    "layout": null,
    "days": {
     "meet": ["sound-swap", "sound-chant", "read-aloud", "silly-order", "write-job", "note"],
-    "read": ["garden", "family-wheel", "belt", "monster", "sound-box", "vending"],
-    "write": ["garden", "hidden-sound", "sound-box", "write-job", "talk", "special-guest"]
+    "read": ["garden", "belt", "family-wheel", "monster", "sound-box", "vending"],
+    "write": ["garden", "hidden-sound", "sound-box", "talk", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": ["lv2-14", "lv2-15"]
   },
@@ -1904,9 +2057,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-swap", "sound-chant", "hidden-sound", "sound-box", "note"],
-    "read": ["garden", "sound-swap", "belt", "family-wheel", "sound-box"],
-    "write": ["garden", "word-train", "sound-box", "write-job", "special-guest"]
+    "meet": ["sound-swap", "hidden-sound", "sound-chant", "sound-box", "note"],
+    "read": ["garden", "belt", "sound-swap", "family-wheel", "sound-box"],
+    "write": ["garden", "write-job", "word-train", "sound-box", "special-guest"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": ["lv2-16"]
   },
@@ -1946,7 +2103,11 @@ window.PLAY_PATH = {
    "days": {
     "meet": ["story-listen", "picture-book", "read-aloud", "talk", "note"],
     "read": ["garden", "picture-book", "belt", "echo", "sentence-write"],
-    "write": ["garden", "picture-book", "sentence-write", "write-job", "special-guest"]
+    "write": ["garden", "sentence-write", "picture-book", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": ["lv2-17"]
   },
@@ -1984,9 +2145,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "sound-slide", "read-aloud", "magic-call", "write-job", "note"],
-    "read": ["garden", "family-wheel", "belt", "catch", "sound-box", "talk"],
-    "write": ["garden", "word-train", "sound-box", "write-job", "silly-story", "special-guest"]
+    "meet": ["magic-call", "sound-chant", "sound-slide", "read-aloud", "write-job", "note"],
+    "read": ["garden", "catch", "family-wheel", "belt", "sound-box", "talk"],
+    "write": ["garden", "write-job", "word-train", "sound-box", "silly-story", "special-guest"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": ["lv2-19", "lv2-20"]
   },
@@ -2024,9 +2189,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "sound-slide", "read-aloud", "magic-call", "write-job", "note"],
-    "read": ["garden", "family-wheel", "belt", "catch", "sound-box", "talk"],
-    "write": ["garden", "word-train", "sound-box", "write-job", "silly-story", "special-guest"]
+    "meet": ["read-aloud", "sound-slide", "sound-chant", "magic-call", "write-job", "note"],
+    "read": ["garden", "talk", "family-wheel", "belt", "catch", "sound-box"],
+    "write": ["garden", "silly-story", "word-train", "sound-box", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": ["lv2-21", "lv2-22"]
   },
@@ -2064,9 +2233,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "sound-slide", "read-aloud", "magic-call", "write-job", "note"],
+    "meet": ["sound-slide", "read-aloud", "magic-call", "sound-chant", "write-job", "note"],
     "read": ["garden", "family-wheel", "belt", "catch", "sound-box", "talk"],
-    "write": ["garden", "word-train", "sound-box", "write-job", "silly-story", "special-guest"]
+    "write": ["garden", "sound-box", "word-train", "silly-story", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": ["lv2-23", "lv2-25"]
   },
@@ -2106,7 +2279,11 @@ window.PLAY_PATH = {
    "days": {
     "meet": ["gram-vending", "first-basket", "talk", "sentence-write", "note"],
     "read": ["garden", "picture-book", "gram-vending", "belt", "sentence-write"],
-    "write": ["garden", "picture-book", "sentence-write", "write-job", "special-guest"]
+    "write": ["garden", "write-job", "picture-book", "sentence-write", "special-guest"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": ["lv2-24", "lv2-26"]
   },
@@ -2144,9 +2321,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["story-listen", "talk", "magic-call", "gram-vending", "note"],
-    "read": ["garden", "picture-book", "belt", "silly-story", "sentence-write"],
-    "write": ["garden", "word-train", "sentence-write", "write-job", "special-guest"]
+    "meet": ["magic-call", "story-listen", "talk", "gram-vending", "note"],
+    "read": ["garden", "belt", "picture-book", "silly-story", "sentence-write"],
+    "write": ["garden", "sentence-write", "word-train", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": ["lv2-27"]
   },
@@ -2184,9 +2365,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["sound-chant", "pop", "order-shop", "sandwich", "write-job", "note"],
-    "read": ["garden", "belt", "catch", "talk", "garden"],
-    "write": ["garden", "word-train", "write-job", "monster", "special-guest"]
+    "meet": ["order-shop", "sound-chant", "pop", "sandwich", "write-job", "note"],
+    "read": ["garden", "catch", "belt", "talk", "garden"],
+    "write": ["garden", "word-train", "monster", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": ["lv2-28"]
   },
@@ -2224,9 +2409,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["gram-vending", "talk", "story-listen", "sentence-write", "note"],
-    "read": ["garden", "gram-vending", "picture-book", "belt", "sentence-write"],
-    "write": ["garden", "silly-story", "sentence-write", "write-job", "special-guest"]
+    "meet": ["sentence-write", "gram-vending", "talk", "story-listen", "note"],
+    "read": ["garden", "sentence-write", "picture-book", "gram-vending", "belt"],
+    "write": ["garden", "sentence-write", "write-job", "silly-story", "special-guest"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": ["lv2-29"]
   },
@@ -2265,8 +2454,12 @@ window.PLAY_PATH = {
    "layout": null,
    "days": {
     "meet": ["mirror", "talk", "pop", "write-job", "note"],
-    "read": ["garden", "belt", "mirror", "sound-box", "sentence-write"],
-    "write": ["garden", "word-train", "sentence-write", "write-job", "special-guest"]
+    "read": ["garden", "sound-box", "belt", "mirror", "sentence-write"],
+    "write": ["garden", "sentence-write", "word-train", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "meet",
+    "brief": "read"
    },
    "covers": ["lv2-30"]
   },
@@ -2304,9 +2497,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["story-listen", "talk", "order-shop", "gram-vending", "write-job", "note"],
-    "read": ["garden", "picture-book", "belt", "sandwich", "sound-box", "sentence-write"],
-    "write": ["garden", "word-train", "sentence-write", "write-job", "silly-story", "special-guest"]
+    "meet": ["order-shop", "story-listen", "talk", "gram-vending", "write-job", "note"],
+    "read": ["garden", "sandwich", "picture-book", "belt", "sound-box", "sentence-write"],
+    "write": ["garden", "write-job", "word-train", "sentence-write", "silly-story", "special-guest"]
+   },
+   "sigDays": {
+    "full": "read",
+    "brief": "write"
    },
    "covers": ["lv2-31"]
   },
@@ -2344,9 +2541,13 @@ window.PLAY_PATH = {
    "favor": "",
    "layout": null,
    "days": {
-    "meet": ["dance", "magic-call", "sound-chant", "write-job", "note"],
-    "read": ["garden", "belt", "catch", "sound-box", "talk"],
-    "write": ["garden", "word-train", "dance", "write-job", "special-guest"]
+    "meet": ["sound-chant", "magic-call", "dance", "write-job", "note"],
+    "read": ["garden", "catch", "belt", "sound-box", "talk"],
+    "write": ["garden", "dance", "word-train", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "write",
+    "brief": "meet"
    },
    "covers": ["lv2-32"]
   },
@@ -2386,7 +2587,11 @@ window.PLAY_PATH = {
    "days": {
     "meet": ["story-listen", "picture-book", "read-aloud", "talk", "note"],
     "read": ["garden", "picture-book", "belt", "echo", "sentence-write"],
-    "write": ["garden", "picture-book", "sentence-write", "write-job", "special-guest"]
+    "write": ["garden", "write-job", "picture-book", "sentence-write", "special-guest"]
+   },
+   "sigDays": {
+    "full": "write",
+    "brief": "meet"
    },
    "covers": ["lv2-33"]
   },
@@ -2426,7 +2631,11 @@ window.PLAY_PATH = {
    "days": {
     "meet": ["word-train", "sound-chant", "picture-book", "talk", "note"],
     "read": ["garden", "picture-book", "belt", "silly-story", "sentence-write"],
-    "write": ["garden", "gram-vending", "sentence-write", "write-job", "special-guest"]
+    "write": ["garden", "gram-vending", "sentence-write", "special-guest", "write-job"]
+   },
+   "sigDays": {
+    "full": "write",
+    "brief": "meet"
    },
    "covers": ["lv2-34"]
   }

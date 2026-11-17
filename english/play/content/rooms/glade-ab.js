@@ -25,7 +25,9 @@ export const ROOM_AB = {
       rocks: [[-7.5, 0.6, 0.42], [-7.4, 4.1, 0.36], [-4.9, 4.3, 0.3], [4.4, -1.7, 0.28]],
       plants: [['clover', -4.7, 2.6, 1.0], ['clover', 2.4, 2.5, 0.9], ['clover', -1.4, 3.2, 0.8], ['clover', 6.3, 1.6, 1.0], ['clover', -7.2, -0.6, 0.9]] },
     look:   { kind: 'creekFront' }
-  }
+  },
+  /* 방법 일곱 칸(다름 설계 v1 §4 · WD0) — 구도 · 손짓 · 얼굴 놀이 · 여는 꼴과 그 글은 생성 자료(data/path-differ.js)에서 읽는다. 여기는 이 방이 고른 부품만: 글자 그릇 둘 · 쓰는 것 · 챈트 몸짓 */
+  how: { carrier: { L: { kind: 'fruit' }, R: { kind: 'fruit' } }, pen: { kind: 'charcoal' }, body: { kind: 'knee' } }      /* 사과나무의 열매(열매는 이 걸음뿐) · 빈터 팻말에 숯 막대 · 무릎 치기 */
 };
 
 export function buildThings(K, glade, o){

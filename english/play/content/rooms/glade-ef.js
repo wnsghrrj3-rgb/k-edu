@@ -12,10 +12,12 @@ export default {
     back:   { kind: 'cliffFall', fallX: 0.4 },
     sky:    { kind: 'sprayNoon' },
     around: { kind: 'weeping', trees: { L: { leaf: ['a-leaf', 'a-fish', 0.25], fruit: 'warm' }, R: { leaf: ['a-leaf', 'stage-deep', 0.25], fruit: 'a-pink' } },
-      rocks: [[-7.5, 0.6, 0.42], [-7.4, 4.1, 0.36], [7.4, 3.9, 0.4], [-7.6, -3.6, 0.5], [7.9, -3.2, 0.5]], rockCap: ['a-leaf', 'stage-deep', 0.4],
-      plants: [['bigleaf', -7.8, -1.9, 1.1], ['bigleaf', -4.4, -1.1, 0.8], ['bigleaf', 4.6, -1.2, 0.9], ['bigleaf', 8.0, -1.3, 1.1], ['bigleaf', -7.9, 2.4, 0.9], ['bigleaf', 8.1, 1.9, 0.9], ['mossrock', -2.2, -1.0, 0.7], ['mossrock', 5.6, 2.4, 0.6]] },
+      rocks: [[-7.9, -0.6, 0.42], [-7.4, 4.1, 0.36], [7.6, 2.2, 0.4], [-8.0, -4.2, 0.5], [8.1, -4.3, 0.5]], rockCap: ['a-leaf', 'stage-deep', 0.4],
+      plants: [['bigleaf', -8.1, -1.4, 1.1], ['bigleaf', 0.9, 1.5, 0.8], ['bigleaf', 8.1, -1.2, 1.0], ['bigleaf', -7.9, 2.6, 0.9], ['bigleaf', 8.0, 0.4, 0.8], ['mossrock', -1.6, 0.6, 0.6], ['mossrock', 5.6, 2.6, 0.6]] },
     look:   { kind: 'cliffTeal' }
   },
+  /* 방법 일곱 칸(다름 설계 v1 §4 · WD0) — 구도 · 손짓 · 얼굴 놀이 · 여는 꼴과 그 글은 생성 자료(data/path-differ.js)에서 읽는다. 여기는 이 방이 고른 부품만: 글자 그릇 둘 · 쓰는 것 · 챈트 몸짓 */
+  how: { carrier: { L: { kind: 'eggshell', tone: 'a-cream', at: [-2.3, -1.3] }, R: { kind: 'fin', tone: 'warm', at: [-1.9, -3.6] } }, pen: { kind: 'wetfinger' }, body: { kind: 'trunk' } },      /* 알 껍데기(물가) · 물고기 지느러미(소 안) / 젖은 바위에 물 묻힌 손가락 / 팔을 코끼리 코처럼 */
   beat: { wave: 'sine', vol: 0.14, notes: [[880, 0, 0.09, 1320]] },                         /* 물방울 똑 */
   words: {
     egg:      { make: 'egg', at: [0.9, -1.0] },                         /* 소 앞 물가의 풀 둥지 */

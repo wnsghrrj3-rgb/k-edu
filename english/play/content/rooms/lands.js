@@ -9,11 +9,12 @@
  *       ⑤ around TREES   글자 나무 둘의 생김새(걸음마다 다른 모델) + 그 곳의 풀 · 바위(PLANTS) · 덤불 · 버섯
  *       ⑥ look   LOOKS   글씨 없이 그 걸음인 줄 알게 하는 한 가지 — 눈(카메라)의 자리
  *   const G = buildLand(K, place, { blocks, paint, slots, letters, view, shadow, GW, GD, road, trees })
- *     G.group · G.heightAt(x, z)(물 위는 물 높이) · G.freeAt · G.ripple · G.step(dt, t) · G.creek · G.treeA · G.treeB · G.lit · G.cam · G.weather · G.bounds
+ *     G.group · G.heightAt(x, z)(물 위는 물 높이) · G.freeAt · G.ripple · G.step(dt, t) · G.creek · G.treeA · G.treeB · G.carrierA · G.carrierB(글자 그릇 — WD0) · G.lit · G.cam · G.weather · G.bounds
  *   터 부품을 더하는 법: 그 칸의 표(LANDS · FLOORS · BACKS · SKIES · WEATHER · TREES · PLANTS · LOOKS)에 이름 하나를 더한다. 같은 부품을 색만 바꿔 다른 걸음에 다시 쓰지 않는다(R1 · R3).
  *   색은 토큰 이름만(코드에 색 값 0).
  * ============================================================ */
 import { GLADE, freeAtOf } from './glade.js';
+import { carrier } from './carriers.js';
 
 export const PLACE_KEYS = ['land', 'floor', 'back', 'sky', 'around', 'look'];
 const sm = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
@@ -155,15 +156,11 @@ function mounds(K, c, n){ const { M, ball } = K, rnd = K.RNG(83), m = M(K.mix('s
   while (k < n && guard++ < n * 20) { const x = c.bx(rnd()), z = c.bz(rnd()); if (!c.freeAt(x, z) || Math.abs(x) < 3.2 && z > -1 || z > 2.6) continue; const s = 0.3 + rnd() * 0.5, b = ball(s, m, x, c.heightAt(x, z) + s * 0.05, z, 1.5, 0.34, 1.1); b.castShadow = false; c.group.add(b); k++; } }
 
 /* ── ⑤ 둘레 — 글자 나무(걸음마다 다른 생김새 · tr.userData = { crown, trunk, fruit, fruitHome }) ── */
-/* 가지 끝에 매달린 큰 글자 열매 — 어느 나무든 같은 열매(누르는 것 · 사건에서 옮겨 다니는 것) */
-function letterFruit(K, o){ const { THREE, M, mesh, ball, hex, letterTex } = K, r = o.fruitR || 0.52, fruit = new THREE.Group();
-  fruit.add(ball(r, M(o.fruitTone, { roughness: 0.35 }), 0, 0, 0, 1, 0.95, 1)); fruit.add(mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.55, 6), M('a-wood'), 0, 0.7, 0));
-  { const lf = ball(0.18, M(o.stemLeaf || 'a-leaf'), 0.16, 0.56, 0, 1.3, 0.25, 0.7); lf.rotation.z = -0.5; fruit.add(lf); }
-  const sp = new THREE.Mesh(new THREE.CircleGeometry(0.36, 32), new THREE.MeshBasicMaterial({ map: letterTex(o.letter, hex('ink'), hex('a-cream')) })); sp.position.set(0.07, 0.02, r + 0.025); sp.rotation.y = 0.12; fruit.add(sp); fruit.userData.label = sp;
-  return fruit; }
+/* 글자를 드는 것은 글자 그릇(rooms/carriers.js) — 나무는 그 곳의 나무일 뿐이다. 사과나무 빈터(A01)에서만 열매 그릇이 가지에 달린다(o.letter 가 있을 때) */
 const FRUIT_AT = l => (l === 'a' ? [-1.25, 1.95, 1.95] : [-0.9, 2.15, 2.2]);
 function treeBase(K, o){ const g = new K.THREE.Group(); g.position.set(o.x, o.y || 0, o.z); const trunk = new K.THREE.Group(); g.add(trunk); return { g, trunk, bark: K.M(o.bark || 'a-wood', { roughness: 0.9 }) }; }
-function treeDone(K, t, crown, o){ const fruit = letterFruit(K, o); fruit.position.set(...(o.fruitAt || FRUIT_AT(o.letter))); (o.fruitInCrown ? crown : t.g).add(fruit); t.g.userData = { crown, trunk: t.trunk, fruit, fruitHome: fruit.position.clone(), kind: o.kind }; return t.g; }
+function treeDone(K, t, crown, o){ let fruit = null; if (o.letter) { fruit = carrier(K, 'fruit', { letter: o.letter, tone: o.fruitTone, r: o.fruitR }); fruit.position.set(...(o.fruitAt || FRUIT_AT(o.letter))); (o.fruitInCrown ? crown : t.g).add(fruit); }
+  t.g.userData = { crown, trunk: t.trunk, fruit, fruitHome: fruit ? fruit.position.clone() : null, kind: o.kind }; return t.g; }
 function limb(K, t, from, to, r){ const { THREE } = K, a = new THREE.Vector3(...from), b = new THREE.Vector3(...to), m = K.mesh(new THREE.CylinderGeometry(r * 0.6, r, a.distanceTo(b), 7), t.bark); m.position.copy(a).lerp(b, 0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize()); t.trunk.add(m); return m; }
 export const TREES = {
   /* 둥글고 낮은 사과나무 — 줄기 · 뿌리 · 둥근 잎 머리 · 작은 열매들(A01 기준판 그대로) */
@@ -381,11 +378,16 @@ export function buildLand(K, place, opt = {}){
   (AR.mushrooms || []).forEach(m => group.add(mushroomOf(K, m[0], heightAt(m[0], m[1]), m[1], m[2])));
   (AR.rocks || []).forEach((r, i) => group.add(rockOf(K, r[0], heightAt(r[0], r[1]), r[1], r[2], i, AR.rockCap ? tone(AR.rockCap) : null)));
   (AR.plants || []).forEach(p => { const f = PLANTS[p[0]]; if (!f) throw new Error('없는 풀 ' + p[0]); const g = f(K, p[3] || 1); g.position.set(p[1], heightAt(p[1], p[2]), p[2]); g.rotation.y = p[1] * 1.7 + p[2]; group.add(g); });
-  /* 글자 나무 둘 — 왼쪽 = 첫 글자 · 오른쪽 = 둘째 글자. 생김새는 그 걸음의 것 */
-  let treeA = null, treeB = null;
-  if (opt.trees !== false) { const sl = opt.slots || {}, tl = sl.treeL || [-5, -3.2], tr = sl.treeR || [5, -3.2], ls = opt.letters || ['a', 'b'], T = AR.trees || { L: {}, R: {} };
-    const mk = (p, l, t, lean) => letterTree(K, Object.assign({ kind: AR.kind, x: p[0], y: heightAt(p[0], p[1]), z: p[1], letter: l, lean }, t, { leaf: tone(t.leaf || 'a-leaf'), bark: t.bark ? tone(t.bark) : null, fruitTone: t.fruit || 'a-red', apples: t.apples }));
-    treeA = mk(tl, ls[0], T.L, 1); treeB = mk(tr, ls[1], T.R, 1); group.add(treeA, treeB); }
+  /* 그 곳의 나무 둘(생김새는 그 걸음의 것) + 글자 그릇 둘 — 그릇이 'fruit' 이고 구도가 나무 자리('tree')면 가지에 달고, 아니면 구도가 준 자리에 받침째 놓는다 */
+  let treeA = null, treeB = null, carrierA = null, carrierB = null;
+  if (opt.trees !== false) { const sl = opt.slots || {}, tl = sl.treeL || [-5, -3.2], tr = sl.treeR || [5, -3.2], ls = opt.letters || ['a', 'b'], T = AR.trees || { L: {}, R: {} }, CR = opt.carriers || { L: { kind: 'fruit', at: 'tree' }, R: { kind: 'fruit', at: 'tree' } };
+    const onTree = c => c.kind === 'fruit' && (c.at === 'tree' || !c.at);
+    const mk = (p, l, t, c) => letterTree(K, Object.assign({ kind: AR.kind, x: p[0], y: heightAt(p[0], p[1]), z: p[1], letter: onTree(c) ? l : null, lean: 1 }, t, { leaf: tone(t.leaf || 'a-leaf'), bark: t.bark ? tone(t.bark) : null, fruitTone: t.fruit || 'a-red', apples: t.apples }));
+    treeA = mk(tl, ls[0], T.L, CR.L); treeB = mk(tr, ls[1], T.R, CR.R); group.add(treeA, treeB);
+    const put = (c, l, t, tree) => { if (onTree(c)) return tree.userData.fruit; const g2 = carrier(K, c.kind, { letter: l, tone: c.tone || t.fruit }), at = c.at, wet = inWater(at[0], at[1]), h = heightAt(at[0], at[1]);
+      if (!wet) { const st = mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.42, 12), M(mix('a-wood', 'ink', 0.1), { roughness: 0.9 }), at[0], h + 0.21, at[1]); group.add(st); }      /* 받침 그루터기 */
+      g2.position.set(at[0], h + (wet ? 0.34 : 0.98) + (c.y || 0), at[1]); g2.userData.y0 = g2.position.y; g2.userData.home = g2.position.clone(); group.add(g2); return g2; };
+    carrierA = put(CR.L, ls[0], T.L, treeA); carrierB = put(CR.R, ls[1], T.R, treeB); }
   /* 하늘 — 색 띠 · 빛 · 안개 · 날씨 */
   K.sky(SK.stops);
   const lit = K.light(SK.light, Object.assign({ tune: SK.tune, shafts: SK.shafts, dustTone: SK.dustTone, dustSize: SK.dustSize, dust: [16, 4, 10] }, opt.light || {}));
@@ -401,5 +403,5 @@ export function buildLand(K, place, opt = {}){
     rings.forEach(m => { const u = m.userData; if (u.t >= 1) { m.material.opacity = 0; return; } u.t = Math.min(1, u.t + dt / 1.9); m.scale.setScalar(0.12 + u.t * u.max); m.material.opacity = (1 - u.t) * 0.55; });
     steps.forEach(f => f(dt, t)); Object.values(weather).forEach(w => w.step(dt, t)); lit.step(dt, t);
   }
-  return { group, GW, GD, bounds: { x0, x1, z0, z1 }, creek: land.creek || null, land, place, heightAt, bedAt: land.heightAt, inWater, waterY, freeAt, ripple, step, wind: windU, waterTex, lilies, reeds, rings, bushes, treeA, treeB, lit, weather, cam: LOOK.cam || {}, sky: SK };
+  return { group, GW, GD, bounds: { x0, x1, z0, z1 }, creek: land.creek || null, land, place, heightAt, bedAt: land.heightAt, inWater, waterY, freeAt, ripple, step, wind: windU, waterTex, lilies, reeds, rings, bushes, treeA, treeB, carrierA, carrierB, lit, weather, cam: LOOK.cam || {}, sky: SK };
 }

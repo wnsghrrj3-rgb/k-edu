@@ -12,10 +12,12 @@ export default {
     back:   { kind: 'farHills' },
     sky:    { kind: 'cloudAfternoon' },
     around: { kind: 'windswept', trees: { L: { leaf: 'a-leaf', fruit: 'a-red' }, R: { leaf: ['a-leaf', 'a-gold', 0.3], fruit: 'a-gold' } },
-      rocks: [[-7.6, 1.2, 0.4], [7.6, 2.6, 0.36], [-2.4, -4.9, 0.44], [3.4, -0.4, 0.3]], rockCap: ['a-leaf', 'a-gold', 0.4],
-      plants: [['thistle', -7.7, -2.6, 1.1], ['thistle', -4.6, 3.4, 0.9], ['thistle', 5.6, -4.6, 1.0], ['thistle', 8.0, 0.9, 1.0], ['thistle', -1.7, -5.0, 0.9], ['thistle', 1.6, 3.2, 0.8], ['thistle', -8.0, 3.9, 0.9]] },
+      rocks: [[-7.6, 2.4, 0.4], [7.9, 2.8, 0.36], [-1.4, -5.0, 0.44], [2.6, -5.0, 0.3]], rockCap: ['a-leaf', 'a-gold', 0.4],
+      plants: [['thistle', -8.0, -0.9, 1.1], ['thistle', -4.6, 3.4, 0.9], ['thistle', 5.6, -4.6, 1.0], ['thistle', 8.0, 0.9, 1.0], ['thistle', -1.7, -5.0, 0.9], ['thistle', 1.6, 3.2, 0.8], ['thistle', -8.0, 3.9, 0.9]] },
     look:   { kind: 'skyHalf' }
   },
+  /* 방법 일곱 칸(다름 설계 v1 §4 · WD0) — 구도 · 손짓 · 얼굴 놀이 · 여는 꼴과 그 글은 생성 자료(data/path-differ.js)에서 읽는다. 여기는 이 방이 고른 부품만: 글자 그릇 둘 · 쓰는 것 · 챈트 몸짓 */
+  how: { carrier: { L: { kind: 'pawn', tone: 'a-red' }, R: { kind: 'hatband', tone: 'a-red' } }, pen: { kind: 'chalkstone' }, body: { kind: 'horns' } },      /* 놀이판의 말 · 모자 띠 / 납작 바위 놀이판에 분필돌 / 염소 뿔 까딱 */
   beat: { wave: 'sine', vol: 0.12, notes: [[1046, 0, 0.12], [1318, 0.01, 0.18]] },          /* 염소 방울 딸랑 */
   words: {
     goat: { make: 'animal', o: { body: 'a-cream', belly: 'surface', ear: 'droop', horn: true, bell: true, tail: 'short', scale: 0.95, wag: 5 } },

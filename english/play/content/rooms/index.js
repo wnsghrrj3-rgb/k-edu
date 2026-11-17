@@ -6,6 +6,7 @@
  *
  *   방 파일 꼴(export default):
  *     id · beat(박자 소리 — PlayAudio 합성 한 벌)
+ *     how: { carrier: { L: { kind, at?, tone? }, R }, pen: { kind }, body: { kind } }   — 방법 일곱 칸 가운데 이 방이 고르는 부품(WD0 · 다름 설계 v1). 나머지 넷(구도 · 손짓 · 얼굴 놀이 · 여는 꼴)은 data/path-differ.js 가 준다 — howOf() 가 합친다. 빈 방은 짓지 않는다
  *     place: { land, floor, back, sky, around, look }              — 무대 여섯 칸(무대 설계 v1 §1). 칸마다 { kind: 터 부품 이름, … } — 부품은 rooms/lands.js. 여섯 칸이 비면 짓지 않는다
  *            빛 · 안개 · 바람은 sky 가, 글자 나무 둘(왼쪽 = 첫 글자 · 오른쪽 = 둘째 글자)은 around.trees 가 정한다
  *     words: { 낱말: { make: props 부품 이름 | 'person' | 'me', o: 부품에 넘길 것, at?: [x, z], y?, rot?, mood? } }
@@ -15,6 +16,9 @@
  *     onRound?(사건 id, 몇 번째, ctx)                              — 그 방만의 맛(찻집 방석 하나 · …)
  * ============================================================ */
 import * as PR from './props.js';
+import { AXES } from './glade.js';
+import { CARRIERS } from './carriers.js';
+import { MOODS } from '../../core/diorama-people.js';
 export { PR };
 
 /* 빈터 하나 = 한 줄. 걸음 id → 방 파일(필요할 때 불러온다) */
@@ -28,9 +32,26 @@ export const hasRoom = id => !!ROOMS[id];
 export async function loadRoom(id){ const f = ROOMS[id]; return f ? (await f()).default : null; }
 
 /* 자리 약속(자리 이름 → 좌표)은 판형 glade.js 에 있다 — 모든 방이 그 표를 쓴다 */
-export { ROOM_SLOTS, GLADE, sideOf } from './glade.js';
+export { ROOM_SLOTS, GLADE, sideOf, AXES, slotsFor } from './glade.js';
 /* 그 걸음의 무대 여섯 칸(place) — A01 은 기준판 방 자료(glade-ab.js), 나머지는 방 파일. 입체 판 · 2D 판 · 한 장 보기가 같은 것을 읽는다 */
 export async function loadPlace(id){ if (id === 'A01') return (await import('./glade-ab.js')).ROOM_AB.place; const r = await loadRoom(id); return r ? r.place : null; }
+
+/* ── 방법 일곱 칸(how · WD0 · 다름 설계 v1 §6) — 걸음의 다름 자료(data/path-differ.js 의 그 걸음 줄)에 방이 고른 부품(글자 그릇 둘 · 쓰는 것 · 챈트 몸짓)을 더한 것 ──
+   howOf(differ, id, room) → { carrier: { L, R, text }, axis, hand, handLook, sig, sigLine, sigEvent, body: { kind, text }, pen: { kind, text }, open, cam } | null
+   checkHow(how, env) → 비었거나 아직 짓지 않은 부품인 칸 이름들(빈 방은 짓지 않는다). env = { hands, pens }(없으면 화면의 PlayHands · PlayPens) */
+export const HOW_KEYS = ['carrier', 'axis', 'hand', 'sig', 'body', 'pen', 'open'];
+export const OPEN_KINDS = ['scene', 'guest', 'ear', 'beat', 'hand', 'seek', 'note'];      /* 여는 꼴 일곱 — 빈터 화면이 하나씩 짓는다 */
+export async function loadHowParts(id){ if (id === 'A01') return (await import('./glade-ab.js')).ROOM_AB.how; const r = await loadRoom(id); return r ? r.how : null; }
+export function howOf(differ, id, parts){ const d = differ && differ.steps && differ.steps[id]; if (!d || !parts) return null; const c = parts.carrier || {};
+  return { carrier: { L: c.L || null, R: c.R || null, text: d.carrier }, axis: d.axis, hand: d.hand, handLook: d.handLook, sig: d.sig, sigLine: d.sigLine, sigEvent: d.sigEvent || null,
+    body: parts.body ? Object.assign({ text: d.body }, parts.body) : null, pen: parts.pen ? Object.assign({ text: d.pen }, parts.pen) : null, open: d.open, cam: !!d.cam }; }
+export function checkHow(how, env){ const G = typeof globalThis !== 'undefined' ? globalThis : {}, e = env || {}, hands = e.hands || (G.PlayHands && G.PlayHands.KINDS) || [], pens = e.pens || (G.PlayPens && Object.keys(G.PlayPens.PENS)) || [];
+  if (!how) return HOW_KEYS.slice();
+  const ok = { carrier: !!(how.carrier && how.carrier.text && ['L', 'R'].every(k => how.carrier[k] && CARRIERS[how.carrier[k].kind])), axis: !!AXES[how.axis], hand: hands.indexOf(how.hand) >= 0, sig: !!(how.sig && how.sigLine),
+    body: !!(how.body && how.body.text && MOODS.indexOf(how.body.kind) >= 0), pen: !!(how.pen && how.pen.text && pens.indexOf(how.pen.kind) >= 0), open: OPEN_KINDS.indexOf(how.open) >= 0 };
+  return HOW_KEYS.filter(k => !ok[k]); }
+/* 이웃한 두 걸음의 방법(N2) — 구도 · 손짓 · 여는 꼴이 셋 다 달라야 한다 */
+export const howSame = (a, b) => ['axis', 'hand', 'open'].filter(k => a[k] === b[k]);
 
 /* 낱말 → 빈터 위 자리(방 파일의 at > 상세판 자리 이름 → 빈터 판형) */
 export function slotOf(room, det, glade, w){
