@@ -13,11 +13,11 @@ import * as H from '../common/hint.js?v=3';
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)
 const T = { DECK: .45, CELL: .56, PZ: 1.2, PLANK_Z: .62, STEP_MS: 330, BACK_MS: 150, PICK_PX: 46, PICK_Y: 120,
-  SHIP: { from: [3.2, -17], to: [1.6, -2.7], s: .5 }, BEAT: .7, BARREL_S: .62, DRIFT: { s: .6, z: 2.6, speed: .75, px: 80 }, WOOD_GIFT: 2, HINT_MS: [2600, 9000] };
+  SHIP: { from: [3.2, -17], to: [1.6, -2.7], s: .5 }, BEAT: .7, BARREL_S: .62, DRIFT: { s: .6, z: 2.6, speed: .75, px: 80 }, WOOD_GIFT: 2, PILE: { MAX: 9, S: .5, DX: .52, DY: .45, X: -3.15, Z: -.6 }, HINT_MS: [2600, 9000] };
 const $ = id => document.getElementById(id);
 const SAVE = wallet.island('treasure'); SAVE.found = Math.max(0, SAVE.found | 0);
 const BR = wallet.island('bridge');
-const S = { ready: false, busy: true, missing: false, r: null, ni: 0, pos: 0, at: 0, count: 0, walking: false, okFlash: 0, clock: 0, streak: 0, log: [], ask: null, t: 0, beat: 0, idle: 0, rid: 0, cells: [], poles: [], barrels: [], drift: null, driftIn: -1, gain: null, final: null, signs: [] };
+const S = { ready: false, busy: true, missing: false, r: null, ni: 0, pos: 0, at: 0, count: 0, walking: false, okFlash: 0, clock: 0, streak: 0, log: [], ask: null, t: 0, beat: 0, idle: 0, rid: 0, cells: [], poles: [], pile: [], barrels: [], drift: null, driftIn: -1, gain: null, final: null, signs: [] };
 
 const stage = createStage({ canvas: $('c'), seaX: 0, seaW: 160, fog: [18, 64], shadow: { left: -9, right: 9, top: 6, bottom: -6 }, assets: '../bridge/assets/' }), { scene, camera } = stage;
 const K = {}, NAMES = ['Environment_Dock', 'Environment_Dock_Pole', 'Ship_Small', 'Characters_Anne', 'Environment_Cliff2', 'Environment_PalmTree_1', 'Environment_PalmTree_3', 'Environment_Rock_1', 'Environment_Rock_4', 'Prop_Barrel'];
@@ -39,12 +39,15 @@ async function build(){ await Promise.all(NAMES.map(async n => { K[n] = await st
   S.ship.visible = !CALM; S.anne = stage.person(K.Characters_Anne); S.anne.obj.rotation.y = 0; stage.play(S.anne, 'Idle');
   stage.onResize = () => aim(); stage.resize();
   if (!wallet.persists()) { const n = document.createElement('div'); n.id = 'note'; n.textContent = '지금은 구경 중이에요 · 화면을 나가면 처음으로 돌아가요'; document.body.appendChild(n); }
-  S.signs = A.signs(7 + 9); S.signs[0].classList.add('memo'); [1, 2, 3, 4].forEach(i => S.signs[i].classList.add('fs')); S.signs[6].classList.add('gain'); for (let i = 7; i < 16; i++) S.signs[i].classList.add('fs', 'learn');
+  S.signs = A.signs(7 + 9 + 1); S.signs[16].classList.add('fs'); pileDraw(false); S.signs[0].classList.add('memo'); [1, 2, 3, 4].forEach(i => S.signs[i].classList.add('fs')); S.signs[6].classList.add('gain'); for (let i = 7; i < 16; i++) S.signs[i].classList.add('fs', 'learn');
   coinsDraw(); wallet.onChange(coinsDraw);
   await newRound(); $('loading').style.opacity = 0; setTimeout(() => $('loading').remove(), 500); S.ready = true;
   if (SAVE.found < 2) H.tell('treasure', '쪽지의 수만큼 걸어갈 판자를 눌러요!'); }
 function coinsDraw(){ let c = $('coins'); if (!c) { c = document.createElement('div'); c.id = 'coins'; document.body.appendChild(c); } const v = `${art('coin')}<b>${wallet.coins()}</b>`; if (c.dataset.v !== v) { c.dataset.v = v; c.innerHTML = v; } }
 
+// ── 찾은 보물이 섬 선착장에 쌓인다(통 아홉까지 · 팻말에 찾은 수)
+function pileDraw(pop = true){ const P = T.PILE, n = Math.min(SAVE.found, P.MAX); while (S.pile.length < n) { const k = S.pile.length, up = k >= 5, c = K.Prop_Barrel.scene.clone(); c.position.set(P.X + (up ? k - 5 + .5 : k) * P.DX, T.DECK + (up ? P.DY : 0), T.PZ + P.Z); c.rotation.y = k * 1.3; pier.add(stage.shadows(c)); S.pile.push(c);
+    if (pop) { c.scale.setScalar(.01); stage.tween(c.scale, { x: P.S, y: P.S, z: P.S }, 450, t => 1 - (1 - t) ** 3); } else c.scale.setScalar(P.S); } }
 // ── 카메라: 판자 길 전체가 화면 너비에 들어오게(세로 화면은 섬 쪽을 덜 보여 주고 판자를 크게)
 function aim(){ const w = innerWidth, h = innerHeight, tall = h > w, n = S.r ? S.r.cells : R.CELLS.NEAR, xl = cx(0) - (tall ? 1.2 : 3.4), xr = cx(n) + (tall ? .6 : 1.5), mid = (xl + xr) / 2;
   camera.fov = tall ? 50 : 40; const half = Math.atan(Math.tan(camera.fov * Math.PI / 360) * (w / h)), dist = Math.max(6.5, (xr - xl) / 2 / Math.tan(half));
@@ -81,7 +84,7 @@ function barrelAt(x, z){ const b = stage.put(K.Prop_Barrel, x, -1.3, z, T.BARREL
 async function finish(id){ S.ask = A.ask({ sum: S.r.sum, onPick: (n, right) => { audio(); S.log.push({ pick: n, right }); }, onWrong: () => tone(240, .25, 'sine', .08) }); await S.ask.promise; S.ask = null; if (id !== S.rid) return;
   S.final = { i: S.pos, n: S.r.sum }; const x = cx(S.pos); barrelAt(x - (S.r.twin ? .4 : 0), T.PZ + 1.4); if (S.r.twin) barrelAt(x + .4, T.PZ + 1.4); tone(196, .3, 'sine', .1, 0, 392); stage.play(S.anne, 'Yes', true); await sleep(800); if (id !== S.rid) return;
   const p = R.prize(Math.random, S.r.twin); wallet.earn(p.coins, 'treasure'); if (p.gift === 'fish') L.bucketFish(1); if (p.gift === 'wood') { BR.wood = Math.max(0, BR.wood | 0) + T.WOOD_GIFT; wallet.save(); }
-  SAVE.found++; wallet.save(); S.log.push({ found: SAVE.found, coins: p.coins, gift: p.gift });
+  SAVE.found++; wallet.save(); pileDraw(); S.log.push({ found: SAVE.found, coins: p.coins, gift: p.gift });
   S.gain = `${art('coin')}+${p.coins}` + (p.gift === 'fish' ? ` ${art('market.fish')}+${L.LOOP.BUCKET_FISH}` : p.gift === 'wood' ? ` ${art('plaza.wood')}+${T.WOOD_GIFT}` : '');
   for (const b of S.barrels) stage.tween(b.position, { y: .25 }, 220).then(() => stage.tween(b.position, { y: -.12 }, 260)); [784, 988, 1175, 1568].forEach((f, k) => tone(f, .14, 'triangle', .11, k * .08)); stage.play(S.anne, 'Wave'); await sleep(1900); if (id !== S.rid) return;
   stage.play(S.anne, 'Idle'); await newRound(); }
@@ -117,10 +120,11 @@ stage.frame((dt, t) => { S.t = t; if (!S.ready || !S.r) return;
   [[p5, 5], [p10, 10], [p15, 15]].forEach(([e, n]) => { if (n > S.r.cells || (S.final && S.final.i === n)) A.signDraw(e, null); else A.signDraw(e, so(cellPos(n, .62, -.8)), n); });
   if (S.final) { A.signDraw(fin, so(cellPos(S.final.i, 1.9)), S.final.n); fin.classList.add('done'); } else A.signDraw(fin, null);
   if (S.gain && S.barrels[0]) A.signDraw(gain, so(new THREE.Vector3(cx(S.pos), -1.05, T.PZ + 1.4)), S.gain); else A.signDraw(gain, null);
+  if (SAVE.found > 0 && S.pile.length) A.signDraw(S.signs[16], so(new THREE.Vector3(cx(0) + T.PILE.X + T.PILE.DX * 2, T.DECK + 1.25, T.PZ + T.PILE.Z)), SAVE.found, '', art('market.barrel')); else A.signDraw(S.signs[16], null);
   /* 처음 두 보물까지: 쪽지 쪽 판자들에 걸음 수가 옅게 */
   const learn = SAVE.found < R.MIX.LEARN && thinking, q = S.r.notes[S.ni]; for (let k = 1; k <= 9; k++) { const e = S.signs[6 + k], i = q ? S.pos + q.dir * k : 0; if (learn && q && i >= 1 && i <= S.r.cells) A.signDraw(e, so(cellPos(i, -.32, .55)), k); else A.signDraw(e, null); }
   /* 손 그림: 처음 네 보물까지, 가만히 있으면 갈 판자를 짚는다 */
   if (thinking && q && SAVE.found < 4 && H.idle(T.HINT_MS[SAVE.found < R.MIX.LEARN ? 0 : 1]) && t - S.idle > 2) { const at = so(cellPos(S.pos + q.dir * q.n)); H.show(at.x, at.y + 6); } else if (!thinking && H.shown()) H.hide(); });
 
-window.__treasure = { S, R, T, SAVE, stage, wallet, L, restart: (n, opt) => { SAVE.found = n; S.streak = 0; A.flames(0); return newRound(opt); }, cellAt: i => stage.screenOf(cellPos(i)), tap, newRound, miss, driftCome, driftGrab, screenOf: stage.screenOf };
+window.__treasure = { S, R, T, SAVE, stage, wallet, L, restart: (n, opt) => { SAVE.found = n; for (const c of S.pile) pier.remove(c); S.pile = []; pileDraw(false); S.streak = 0; A.flames(0); return newRound(opt); }, cellAt: i => stage.screenOf(cellPos(i)), tap, newRound, miss, driftCome, driftGrab, screenOf: stage.screenOf };
 build().catch(e => { $('loading').textContent = '불러오지 못했어요'; console.error(e); });
