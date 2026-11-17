@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv4 #34 음식② 식사 10단어 — chores.html(Lv4 #35) 판형 계승, V트랙 주황
+     ★그림 = 화면과 같은 그림(DAY320CSS · MEL434CSS 블록 그대로) — 그림 마크업 = 화면 MEL434 pz(w,px,true) · 하루 밥상 띠 strip434('ws') · 밥상 판 board434('ws') · 음식 칩 FOOD 를 생성기 ws/gen_meals.js 로 그대로 뽑음 + .still(움직임 끔).
+     ★① 따라쓰기 10(번호 1~10 = 재료 차례) · ② 하루 밥상 띠 다섯 + 밥상 다섯 옆 칸에 번호 · ③ 짝 고르기 3(breakfast / dinner · spoon / fork · snack / dessert — 그림 보고)
+     · ④ 오늘 내 밥 I eat ___ for breakfast.(상자 eggs · rice · bread · pizza — 먹는 것만 · milk 0) + 그리기.
+     for = 밥때 이름 앞에만. breakfast · dinner 앞엔 a 0. 받아쓰기 금지. -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root { --primary:#FF8A3D; --primary-light:#FFF0E4; --secondary:#FFB27A; --green:#4CAF50; --green-light:#E8F5E9; --red:#F44336; --yellow:#FFC107; --yellow-light:#FFF8E1; --subtext:#888780; --border:#F7DFCB; }
+  @page { size: A4; margin: 10mm 12mm 8mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.45; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d9702a; padding-bottom: 5px; }
+  .brand { font-size: 13px; font-weight: 700; color: #9c4d13; }
+  .brand .lv { background: #d9702a; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 7px; background: #fdeee1; border: 2px solid #d9702a; border-radius: 12px; padding: 7px 13px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 24px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #9c4d13; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 15px; font-weight: 800; color: #4a2408; }
+  .keypoint { margin-top: 6px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 5px 12px; font-size: 12px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  h2 { margin-top: 7px; font-size: 13px; color: #9c4d13; display: flex; align-items: center; gap: 7px; }
+  h2 .n { background: #9c4d13; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2 .hint { font-weight: 400; font-size: 10px; color: #888780; }
+  .trace { display: flex; gap: 8px; margin-top: 3px; }
+  .traceword { text-align: center; flex: 1; min-width: 56px; position: relative; }
+  .traceword .tn { position: absolute; left: 0; top: 2px; line-height: 1; font-size: 10px; font-weight: 800; color: #fff; background: #9c4d13; border-radius: 50%; width: 15px; height: 15px; display: inline-flex; align-items: center; justify-content: center; }
+  .traceword .outline { font-size: 18px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.4px #c4c2b8; letter-spacing: 1px; }
+  .traceword .line { border-bottom: 1.5px solid #d3d1c7; height: 14px; margin-top: 2px; }
+  .twocol { display: flex; gap: 10px; margin-top: 2px; align-items: stretch; }
+  .recap { margin-top: 7px; background: #4a2408; color: #fdeee1; border-radius: 10px; padding: 6px 13px; text-align: center; font-size: 12px; }
+  .recap b { color: #fac775; }
+  .parent { margin-top: 6px; border-top: 1px dashed #b4b2a9; padding-top: 5px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+/*DAY320CSS-BEGIN — Lv3 #20 시간·요일① 그림·일곱 칸 달력 · 4파일 + 활동지 문자 단위 동일(blocks/DAY320CSS.css → sync_blocks.py 주입, 하네스 A4·D2b).
+  ★그림 타일(.dyp·.dyz) = Lv3 #6 .anp·.anz 와 같은 기하(같은 단어 = 같은 그림 · 액자 모양이 정답 단서가 되지 않는다).
+  ★요일 = 일곱 칸 띠(.cal · 월요일 시작) — 그 칸만 켜짐(.on) + 한글 첫 글자(.kd). 토 = 파랑 · 일 = 빨강(켜지지 않아도 옅게).
+  ★today = 띠의 한 칸 동그라미(.rg) + 👆 · week = Lv2 #22 일곱 칸 그림(.wk 세 줄 = 22-1 실물 그대로) · day = 📅.
+  ★일곱 칸 달력 한 장(.wcal) = 칸마다 따로 눌린다 · 칸 얼굴 = 한글 첫 글자만. 움직임 0 — 명사 그림은 멈춰 있다. */
+.dyp{position:relative;display:inline-flex;align-items:center;justify-content:center;width:80px;height:64px;border-radius:14px;background:#FFFDF9;border:2px solid #F1DFCD;box-sizing:border-box;line-height:1;vertical-align:middle;overflow:hidden;text-align:center}
+.dyz{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+.dyz>.dyp{position:absolute;left:0;top:0;transform-origin:0 0}
+.dyp .em{position:relative;font-size:42px;font-style:normal;line-height:1}
+.dyp .cal{position:absolute;left:5px;right:5px;top:7px;height:14px;display:flex;gap:2px}
+.dyp .cal i{flex:1;border-radius:3px;background:#FFF3E0;border:1px solid #E0C3A8;box-sizing:border-box}
+.dyp .cal i.c6{background:#E3F2FD;border-color:#90CAF9}
+.dyp .cal i.c7{background:#FFEBEE;border-color:#EF9A9A}
+.dyp .cal i.on{background:#FF8A65;border-color:#E64A19}
+.dyp .cal i.c6.on{background:#42A5F5;border-color:#1565C0}
+.dyp .cal i.c7.on{background:#EF5350;border-color:#C62828}
+.dyp .cal i.rg{border:2.5px solid #7E57C2;border-radius:50%;background:#fff}
+.dyp .kd{position:relative;top:9px;font-size:30px;font-style:normal;font-weight:700;color:#5D4037;line-height:1;font-family:'Jua',sans-serif}
+.dyp .kd.d6{color:#1E88E5}
+.dyp .kd.d7{color:#E53935}
+.dyp .fg{position:absolute;left:22px;top:22px;font-size:28px;font-style:normal;line-height:1}
+.dyp .wk{font-size:50px}
+.wk{display:inline-flex;gap:.05em;vertical-align:middle;padding:.07em;border:.06em solid #8D6E63;border-radius:.14em;background:#fff;box-sizing:border-box}
+.wk i{display:block;width:.12em;height:.5em;background:#FFCC80;border-radius:.03em}
+.wk i:first-child{background:#FF8A65}
+.wcal{width:min(360px,100%);margin:8px auto;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:6px;border-radius:16px;border:3px solid var(--border);background:#FFE9D6;box-sizing:border-box}
+.wcal .cell{position:relative;aspect-ratio:1/1.25;border-radius:9px;border:3px solid #D7B899;background:#FFFDF9;box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;min-width:0;line-height:1;transition:transform .15s}
+.wcal .cell.c6{background:#E3F2FD;border-color:#90CAF9}
+.wcal .cell.c7{background:#FFEBEE;border-color:#EF9A9A}
+.wcal .cell:active{transform:scale(.93)}
+.wcal .ck{font-size:24px;font-weight:700;color:#5D4037;font-family:'Jua',sans-serif}
+.wcal .ck.d6{color:#1E88E5}
+.wcal .ck.d7{color:#E53935}
+.wcal .cell.found{border-color:var(--green);box-shadow:0 0 0 2px var(--green) inset}
+.wcal .cell.ring{border-color:#7E57C2;box-shadow:0 0 0 3px #B39DDB}
+.wcal .cell .tag{display:none;position:absolute;left:50%;bottom:-.9em;transform:translateX(-50%);font-size:11px;background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:8px;padding:0 3px;white-space:nowrap;font-family:'Jua',sans-serif;line-height:1.2;z-index:3}
+.wcal .cell.found .tag{display:block}
+.wcal .choice-btn.cell{font-family:inherit;box-shadow:none;min-height:0}
+.wcal .choice-btn.cell.correct{border-color:var(--green);box-shadow:0 0 0 3px var(--green) inset}
+.wcal .choice-btn.cell.wrong{border-color:var(--red);box-shadow:0 0 0 3px var(--red) inset}
+/*DAY320CSS-END*/
+/*MEL434CSS-BEGIN — Lv4 #34 음식② 식사 그림 · 뒷면 장면 · 하루 밥상 띠 · 밥상 판 · 내 밥상 · 카드 테두리 · 4파일 + 활동지 문자 단위 동일(blocks/MEL434CSS.css → sync_blocks.py 주입, 하네스 A4 · W4).
+  ★그림 상자 하나(.ml434 · 3em × 3em · 크기 = 글자 크기 하나 — #20 .fd420 판형) — 이모지 다섯은 상자 가득(.em434) · CSS 다섯은 조각(i)으로 그린다.
+  ★원 칸 줄 = 문자 그대로 옮김(블록째 주입 0): ①Lv3 #1 VB301CSS .vs · .vz · .vz>.vs 세 줄 ②Lv3 #32 TM332CSS 하루 띠 칸 다섯(.sk32 · k-mo · k-no · k-af · k-ev · k-ni 줄 + 그 keyframes 셋)
+    ③Lv4 #22 CLK422CSS 시계 판 여섯 줄(.cf422 · tk422 · n12 · hh422 · mh422 · cp422 — .dyp 타일 = DAY320CSS 블록째) ④Lv4 #20 FOD420CSS 그림 상자 세 줄(.fd420 · .fd420>i · .em420 — 🧈 · 🥚)
+    — 하네스가 원천 블록 안에 같은 줄이 있는지 잰다. ★창 하늘 = k-mo · k-ev 줄 그대로(breakfast / dinner 창).
+  ★카드 테두리 = 밥때 이름 점선(breakfast · lunch · dinner · dessert — #10 → #22 → #30 때 말 판형) · 물건 사각(snack · spoon · fork · napkin · table · plate — #35 값 3px).
+  ★움직임 = 밥 김 · 해 뜸 / 짐(k-mo · k-ev 줄) · lunch 뒷면 숟가락뿐 · .still = 움직임 끔(활동지 · 작은 칸). */
+/* ── 원 칸 줄 ① Lv3 #1 VB301CSS — .vs 상자 ── */
+.vs{position:relative;display:inline-block;width:140px;height:64px;line-height:0;vertical-align:middle;text-align:left}
+.vz{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+.vz>.vs{position:absolute;left:0;top:0;transform-origin:0 0}
+/* ── 원 칸 줄 ② Lv3 #32 TM332CSS — 하루 띠 칸 다섯 ── */
+.vs .sk32{position:absolute;left:3px;top:2px;width:134px;height:60px;border-radius:10px;overflow:hidden;display:block;box-sizing:border-box;border:2px solid rgba(0,0,0,.12)}
+.sk32 .gd32{position:absolute;left:0;right:0;bottom:0;height:12px;display:block;background:#8CC66B}
+.sk32 .sn32{position:absolute;width:20px;height:20px;border-radius:50%;display:block;background:#FFD43B;box-shadow:0 0 0 4px rgba(255,212,59,.35)}
+.sk32 .kd32{position:absolute;left:62px;top:28px;width:10px;height:18px;display:block}
+.sk32 .kd32::before{content:'';position:absolute;left:1px;top:0;width:8px;height:8px;border-radius:50%;background:#5C3B00}
+.sk32 .kd32::after{content:'';position:absolute;left:2px;top:8px;width:6px;height:10px;border-radius:3px 3px 1px 1px;background:#E8590C}
+.sk32 .sd32{position:absolute;top:44px;height:4px;border-radius:50%;display:block;background:rgba(0,0,0,.35)}
+.k-mo{background:linear-gradient(#FFF3BF,#FFD8A8)}
+.k-mo .sn32{left:12px;top:36px;background:#FFC078;box-shadow:0 0 0 5px rgba(255,192,120,.35);animation:t32Rise 2.4s ease-out infinite}
+.k-no{background:linear-gradient(#4DABF7,#D0EBFF)}
+.k-no .sn32{left:56px;top:3px}
+.k-no .sd32{left:61px;width:12px}
+.k-af{background:linear-gradient(#74C0FC,#FFF3BF)}
+.k-af .sn32{left:98px;top:12px}
+.k-af .sd32{left:26px;width:42px}
+.k-ev{background:linear-gradient(#FF922B,#FFA8A8 70%,#F783AC)}
+.k-ev .sn32{left:102px;top:36px;background:#FF6B00;box-shadow:0 0 0 5px rgba(255,107,0,.3);animation:t32Set 2.4s ease-in infinite}
+.k-ev .gd32{background:#6B8E3D}
+.k-ni{background:linear-gradient(#1C2A5A,#3B5BDB)}
+.k-ni .gd32{background:#2B3A2B}
+.k-ni .mn32{position:absolute;left:98px;top:7px;width:18px;height:18px;border-radius:50%;display:block;background:#FFF9DB;box-shadow:0 0 0 4px rgba(255,249,219,.2)}
+.k-ni .st32{position:absolute;left:14px;top:8px;width:2px;height:2px;border-radius:50%;display:block;background:#fff;box-shadow:18px 10px #fff,40px 2px #fff,58px 16px #fff,26px 24px #FFF3BF,70px 30px #fff,6px 30px #FFF3BF;animation:t32Twinkle 1.6s ease-in-out infinite}
+@keyframes t32Rise{0%{transform:translateY(8px)}100%{transform:translateY(0)}}
+@keyframes t32Set{0%{transform:translateY(0)}100%{transform:translateY(8px)}}
+@keyframes t32Twinkle{0%,100%{opacity:1}50%{opacity:.35}}
+/* ── 원 칸 줄 ③ Lv4 #22 CLK422CSS — 시계 판(snack 뒷면 세 시) ── */
+.dyp .cf422{position:absolute;left:12px;top:4px;width:56px;height:56px;display:block;border-radius:50%;box-sizing:border-box;border:3px solid #495057;background:#fff}
+.cf422 .tk422{position:absolute;left:0;top:0;width:50px;height:50px;display:block;border-radius:50%;background:repeating-conic-gradient(from -2deg,#495057 0 4deg,transparent 4deg 30deg);-webkit-mask:radial-gradient(circle,transparent 0 76%,#000 77%);mask:radial-gradient(circle,transparent 0 76%,#000 77%)}
+.cf422 .n12{position:absolute;left:0;right:0;top:6px;display:block;text-align:center;font-style:normal;font-size:9px;line-height:1;font-weight:700;color:#495057;font-family:'Jua',sans-serif}
+.cf422 .hh422{position:absolute;left:23px;top:11px;width:4px;height:14px;display:block;border-radius:2px;background:#364FC7;transform-origin:50% 100%}
+.cf422 .mh422{position:absolute;left:23.5px;top:4px;width:3px;height:21px;display:block;border-radius:2px;background:#E8590C;transform-origin:50% 100%}
+.cf422 .cp422{position:absolute;left:22px;top:22px;width:6px;height:6px;display:block;border-radius:50%;background:#212529}
+.ck434 .dyp{background:#fff;border-color:#DEE2E6}
+/* ── 원 칸 줄 ④ Lv4 #20 FOD420CSS — 그림 상자(🧈 butter · 🥚 egg) ── */
+.fd420{position:relative;display:inline-block;width:3em;height:3em;line-height:0;vertical-align:middle;text-align:left;flex:none}
+.fd420>i{position:absolute;display:block;font-style:normal}
+.fd420 .em420{left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.3em;line-height:1}
+/* ── 그림 상자 ── */
+.ml434{position:relative;display:inline-block;width:3em;height:3em;line-height:0;vertical-align:middle;text-align:left;flex:none}
+.ml434>i{position:absolute;display:block;font-style:normal}
+.ml434 .em434{left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.3em;line-height:1}
+.ml434.still,.ml434.still *,.ss434.still,.ss434.still *{animation:none!important}
+/* table — 3/4 식탁(윗판 · 앞 모서리 · 다리 둘) — breakfast · dinner · 밥상 판이 같은 조각 */
+.ml434 .tt434{left:.1em;top:1.3em;width:2.8em;height:.82em;border-radius:.16em;background:#E3A869;box-shadow:inset 0 .1em 0 rgba(255,255,255,.35)}
+.ml434 .te434{left:.1em;top:2.04em;width:2.8em;height:.2em;border-radius:0 0 .1em .1em;background:#A8652F}
+.ml434 .tl434{left:.34em;top:2.2em;width:.2em;height:.72em;border-radius:0 0 .06em .06em;background:#8F5326}
+.ml434 .tl434.r{left:auto;right:.34em}
+/* breakfast · dinner — 창(하늘 = Lv3 #32 띠 칸 색) + 같은 식탁 + 접시 위 밥 + 김 */
+.ml434 .wd434{left:.2em;top:.12em;width:1.2em;height:.98em;border:.08em solid #B07A3E;border-radius:.08em;box-sizing:border-box;overflow:hidden}
+.ml434 .wd434::before,.ml434 .wd434::after{content:'';position:absolute;background:#B07A3E;z-index:1}
+.ml434 .wd434::before{left:.48em;top:0;width:.07em;height:100%}
+.ml434 .wd434::after{left:0;top:.38em;width:100%;height:.07em}
+.ml434 .su434{position:absolute;width:.34em;height:.34em;border-radius:50%;display:block}
+.ml434 .wd434.k-mo .su434{left:.06em;top:.52em;background:#FFC078;box-shadow:0 0 0 .07em rgba(255,192,120,.35);animation:m434Rise 2.4s ease-out infinite}
+.ml434 .wd434.k-ev .su434{left:.66em;top:.52em;background:#FF6B00;box-shadow:0 0 0 .07em rgba(255,107,0,.3);animation:m434Set 2.4s ease-in infinite}
+.ml434 .ds434{left:1.25em;top:1.5em;width:1.1em;height:.34em;border-radius:50%;background:#fff;border:.05em solid #CED4DA;box-sizing:border-box}
+.ml434 .fo434{left:1.47em;top:1.3em;width:.66em;height:.34em;border-radius:.33em .33em .1em .1em;background:#F08C00}
+.ml434 .sm434{left:1.62em;top:.66em;width:.07em;height:.5em;border-radius:.04em;background:rgba(134,142,150,.6);animation:m434Steam 1.8s ease-out infinite}
+.ml434 .sm434.s2{left:1.9em;animation-delay:.9s}
+/* fork — 은빛 갈래 넷(그 사이 틈 셋) + 목 + 손잡이 */
+.ml434 .ft434{left:1.14em;top:.22em;width:.72em;height:.86em;border-radius:.05em .05em 0 0;background:repeating-linear-gradient(90deg,#ADB5BD 0 .12em,transparent .12em .2em)}
+.ml434 .fn434{left:1.14em;top:1.04em;width:.72em;height:.3em;border-radius:0 0 .36em .36em;background:#ADB5BD}
+.ml434 .fh434{left:1.36em;top:1.26em;width:.28em;height:1.5em;border-radius:.14em;background:linear-gradient(90deg,#CED4DA,#868E96)}
+/* napkin — 접은 분홍 천(바느질 점선 · 접힌 금) */
+.ml434 .nk434{left:.45em;top:.62em;width:2.1em;height:1.76em;border-radius:.14em;background:#FFC9DE;border:.06em solid #F783AC;box-sizing:border-box}
+.ml434 .nk434::after{content:'';position:absolute;left:.12em;top:.12em;right:.12em;bottom:.12em;border:.04em dashed #F06595;border-radius:.08em}
+.ml434 .nf434{left:.45em;top:.62em;width:2.1em;height:1.76em;border-radius:.14em;background:linear-gradient(140deg,rgba(255,255,255,.55) 0 49%,rgba(240,101,149,.35) 50%,transparent 53%)}
+@keyframes m434Rise{0%{transform:translateY(.12em)}100%{transform:translateY(0)}}
+@keyframes m434Set{0%{transform:translateY(0)}100%{transform:translateY(.12em)}}
+@keyframes m434Steam{0%{transform:translateY(.15em);opacity:0}40%{opacity:1}100%{transform:translateY(-.25em);opacity:0}}
+/* ── 뒷면 장면 — 한 줄로 늘어선 그림(주어 · 소품) ── */
+.ss434{position:relative;display:inline-flex;align-items:flex-end;justify-content:center;gap:.15em;min-width:5.2em;height:3.4em;padding:.2em .3em;line-height:1;vertical-align:middle;border-radius:.6em;background:#FFF9DB;box-sizing:border-box}
+.ss434>.ml434{font-size:.9em}
+.ss434>.ml434.big{font-size:1.05em}
+.ss434 .me434{display:flex;align-items:center;justify-content:center;width:1.5em;height:1.5em;border-radius:50%;background:#FFE066;border:.12em solid #F0C419;color:#7a5600;font-size:.8em;line-height:1;font-weight:700;box-sizing:border-box;flex:none}
+.nm434{display:inline-flex;align-items:center;gap:2px;font-size:14px;line-height:1.3;font-style:normal;background:#fff;border:2px solid #FF8A3D;color:#FF8A3D;border-radius:8px;padding:0 6px;font-family:'Jua',sans-serif}
+.nm434 .dd434{font-size:16px;font-style:normal}
+.ss434 .nm434{position:absolute;left:3px;top:3px;font-size:11px;padding:0 4px}
+.ss434 .nm434 .dd434{font-size:13px}
+.pr434{display:inline-block;font-style:normal;font-size:1.6em;line-height:1}
+.ss434>.fd420{font-size:.55em}
+.ss434 .bb434{position:absolute;right:.25em;top:.25em;font-style:normal;font-size:.75em;line-height:1;color:#C2255C;background:#fff;border:2px solid #F783AC;border-radius:.6em;padding:.12em .3em;font-family:'Jua',sans-serif}
+.ss434 .ck434{flex:none}
+.ss434 .wr434{position:relative;display:inline-block;width:2.7em;height:2.7em;line-height:0}
+.ss434 .wr434>.ml434{position:absolute;left:0;top:0;font-size:.9em}
+.ss434 .wr434>.ml434.on{transform:rotate(-55deg) scale(.85)}
+.ss434 .tie434{position:absolute;left:.35em;top:1.05em;width:2em;height:.12em;border-radius:.06em;background:#C2255C;transform:rotate(-12deg)}
+.ss434 .tie434.t2{top:1.55em;transform:rotate(10deg)}
+.ss434 .ot434{position:relative;display:inline-block;width:2.7em;height:2.7em;line-height:0}
+.ss434 .ot434>.ml434{position:absolute;left:0;top:0;font-size:.9em}
+.ss434 .ot434>.ml434.p0{left:.6em;top:.15em;font-size:.5em}
+.ss434 .ot434>.ml434.p1{left:.3em;top:.42em;font-size:.38em}
+.ss434 .ot434>.ml434.p2{left:1.25em;top:.42em;font-size:.38em}
+.ss434 .ot434.mx{width:3.4em;height:3em}
+.ss434 .ot434>.ml434.sm{left:.95em;top:1.35em;font-size:.5em}
+.ss434 .ot434>.ml434.huge{left:0;top:-.15em;font-size:1.1em}
+.ss434 .spm434{position:absolute;left:1.75em;top:.2em;font-style:normal;font-size:.7em;line-height:1;transform-origin:20% 80%;animation:m434Spoon 1.3s ease-in-out infinite}
+@keyframes m434Spoon{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(-.6em,.55em) rotate(-25deg)}}
+@media (prefers-reduced-motion:reduce){.ss434 .spm434,.ml434 .sm434{animation:none!important}}
+/* ── 카드 테두리 — 밥때 이름 점선 · 물건 사각 ── */
+.wcard.dt434,.fcard.dt434,.vw.dt434,.pcol.dt434{border-style:dashed}
+.wcard.sq434,.fcard.sq434,.vw.sq434,.pcol.sq434{border-radius:3px}
+/* ── 작은 말 — ★for 분홍(새 색) · at 보라(#22) · very 하늘(#11) · on 연두(#2) ── */
+.sline .fr434{text-decoration:none;border-bottom:3px solid #F783AC;padding:0 1px}
+.sline .at434{text-decoration:none;border-bottom:3px solid #B197FC;padding:0 1px}
+.sline .vy434{text-decoration:none;border-bottom:3px solid #74C0FC}
+.sline .on434{text-decoration:none;border-bottom:3px solid #94D82D;padding:0 1px}
+/* ── 하루 밥상 띠(.ms434) — Lv3 #32 띠 칸 넷(.48 = 67 × 31px) · 칸 아래 밥 자리(저녁 칸 = dinner · dessert 둘) ── */
+.ms434{display:flex;gap:4px;justify-content:center;align-items:flex-start;margin:8px auto 4px;max-width:330px}
+.ms434 .mc434{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.ms434 .mc434 .sky{display:block;line-height:0}
+.ms434 .mm{display:flex;gap:2px;justify-content:center}
+.ms434 .mslot{position:relative;display:flex;flex-direction:column;align-items:center;padding:2px;border:2.5px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;line-height:0;box-sizing:border-box;font-family:inherit}
+.ms434 .mm .mslot:nth-child(2){border-style:dashed}
+.ms434.m-find .mslot .ml434{filter:grayscale(1);opacity:.45;transition:filter .3s,opacity .3s}
+.ms434.m-find .mslot.found .ml434{filter:none;opacity:1}
+.ms434 .mslot.now{border-color:var(--yellow);background:var(--yellow-light);animation:tapBlink 1.1s infinite}
+.ms434 .mslot.found{border-color:var(--green);background:var(--green-light)}
+.ms434 .mslot.bad{animation:shake .4s}
+.ms434 .mslot .tag{display:none;font-size:12px;line-height:1.2;color:var(--primary);font-family:'Jua',sans-serif;margin-top:1px}
+.ms434 .mslot.found .tag{display:block}
+.ms434 .mslot.correct{border-color:var(--green);box-shadow:0 0 0 3px var(--green) inset}
+.ms434 .mslot.wrong{border-color:var(--red);box-shadow:0 0 0 3px var(--red) inset}
+.ms434 .wn434,.tb434 .wn434{display:block;width:22px;height:18px;margin-top:2px;border:1.5px solid #9c4d13;border-radius:4px;background:#fff}
+/* ── 밥상 판(.tb434) — table 그림을 76px 로(228px) · 윗판 위 자리 셋 · 쟁반 ── */
+.tb434{display:flex;flex-direction:column;align-items:center;gap:4px;margin:4px 0}
+.tb434 .tbw{position:relative;display:inline-block;line-height:0;border-radius:14px;cursor:pointer}
+.tb434 .tbw.now{box-shadow:0 0 0 4px var(--yellow);animation:tapBlink 1.1s infinite}
+.tb434 .tbw.found{box-shadow:0 0 0 3px var(--green)}
+.tb434 .ts{position:absolute;top:95px;width:62px;height:66px;display:flex;align-items:center;justify-content:center;border:2.5px dashed rgba(143,83,38,.4);border-radius:12px;box-sizing:border-box}
+.tb434 .ts.l{left:16px}
+.tb434 .ts.c{left:83px}
+.tb434 .ts.r{left:150px}
+.tb434 .ts .it{display:none;position:absolute;line-height:0}
+.tb434 .ts .it.on{display:block}
+.tb434 .ts .it-fork.on{transform:rotate(-30deg)}
+.tb434 .ts.pick{border-color:var(--primary);background:rgba(255,138,61,.12)}
+.tb434 .ts.nope{animation:shake .45s;border-color:var(--red)}
+.tb434.m-find .ts{border-color:transparent}
+.tb434.m-ws .ts{border-color:transparent}
+.tb434.m-ws .ts .it{display:block}
+.tb434.m-ws .ts .it .wn434{position:absolute;right:-6px;top:-10px;margin:0;width:18px;height:16px;z-index:3}
+.tb434.m-ws .ts.l .it-napkin{left:-14px}
+.tb434.m-ws .ts.l .it-fork{left:18px}
+.tb434 .wn434.wt{position:absolute;right:8px;bottom:6px;margin:0}
+.tray434{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.tray434 .ti{border:3px solid var(--border);border-radius:14px;background:#fff;padding:3px 5px;cursor:pointer;line-height:0;font-family:inherit}
+.tray434 .ti.now{border-color:var(--yellow);background:var(--yellow-light);animation:tapBlink 1.1s infinite}
+.tray434 .ti.sel{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
+.tray434 .ti.used{visibility:hidden}
+.tray434 .ti.bad{animation:shake .4s}
+/* ── 숙달 내 밥상(.my434) — 밥때 칸 넷 · 음식 칩 다섯 ── */
+.my434{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;width:min(340px,100%);margin:6px auto;box-sizing:border-box}
+.my434 .mcell{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;padding:4px 2px;border:2.5px dashed var(--border);border-radius:12px;background:#fff;cursor:pointer;line-height:1.1}
+.my434 .mcell .mn{font-size:13px;color:var(--primary);font-family:'Jua',sans-serif}
+.my434 .mcell .got{min-height:28px;display:flex;align-items:center;justify-content:center;line-height:1}
+.my434 .mcell.full{border-style:solid;border-color:var(--green);background:var(--green-light)}
+.my434 .mcell.nope{animation:shake .4s}
+.my434.mx .mcell{border-color:#F783AC;background:#FFF0F6}
+.fd434{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:4px 0}
+.fd434 .fc{display:inline-flex;align-items:center;gap:3px;font-size:17px;line-height:1.2;padding:3px 9px;border:3px solid var(--primary);border-radius:99px;background:#fff;color:var(--primary);cursor:pointer;font-family:inherit}
+.fd434 .fc .pr434{font-size:20px}
+.fd434 .fc .fd420{font-size:8px}
+.fd434 .fc.sel{background:var(--primary-light);box-shadow:0 0 0 3px var(--secondary)}
+.fd434 .fc.used{opacity:.3;pointer-events:none}
+/*MEL434CSS-END*/
+  .bx { flex: 1; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 5px 10px; }
+  .tw2 { display: flex; gap: 18px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+  .tw2 .tc { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .tw2 .cap { font-size: 12px; color: #4a2408; }
+  .tw2 .ms434 { margin: 2px 0; }
+  .tw2 .ms434 .mslot { cursor: default; }
+  .tw2 .ms434 .sky * { animation: none !important; }
+  .bdw { width: 183px; height: 178px; overflow: hidden; }
+  .bdw .tb434 { margin: 0; transform: scale(.8); transform-origin: 0 0; }
+  .bdw .tbw { cursor: default; }
+  .pk3 { display: flex; flex-direction: column; gap: 6px; }
+  .pk3 .pkr { position: relative; display: flex; align-items: center; gap: 8px; border: 1.5px solid #e0b48c; border-radius: 8px; background: #fff; padding: 3px 8px; }
+  .pk3 .mn { font-size: 10px; font-weight: 800; color: #fff; background: #9c4d13; border-radius: 50%; width: 15px; height: 15px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .pk3 .op { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .pk3 .op b { font-size: 15px; color: #4a2408; border: 1.5px dashed #c4c2b8; border-radius: 99px; padding: 0 8px; }
+  .pk3 .op i { font-style: normal; color: #b4b2a9; }
+  .s4 { display: flex; flex-direction: column; gap: 6px; }
+  .s4r { display: flex; flex-direction: column; gap: 4px; }
+  .s { font-size: 14px; font-weight: 800; color: #4a2408; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; letter-spacing: .4px; }
+  .s .bl { display: inline-block; width: 64px; border-bottom: 1.8px solid #9c4d13; height: 16px; }
+  .fbox { display: flex; gap: 6px; flex-wrap: wrap; border: 1.5px dashed #e0b48c; border-radius: 8px; padding: 3px 6px; background: #fff; }
+  .fbox .fi { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; color: #4a2408; }
+  .fbox .fi .pr434 { font-size: 16px; }
+  .fbox .fi .fd420 { font-size: 6px; }
+  .draw { min-height: 84px; border: 2px dashed #e0b48c; border-radius: 12px; background: #fffaf5; font-size: 10px; color: #888780; padding: 4px 8px; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv4 · 어휘 #34</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main">밥때마다 이름이 있어요 — breakfast, lunch, dinner, 그리고 사이에 snack.</div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 밥때 — breakfast · lunch · snack · dinner · dessert / 밥상 — table · plate · spoon · fork · napkin.
+  </div>
+
+  <h2><span class="n">1</span> 따라 써요 <span class="hint">흐린 글자를 따라 써요 — 번호를 기억해요</span></h2>
+  <div class="trace"><div class="traceword"><span class="tn">1</span><div class="outline">breakfast</div><div class="line"></div></div><div class="traceword"><span class="tn">2</span><div class="outline">dinner</div><div class="line"></div></div><div class="traceword"><span class="tn">3</span><div class="outline">snack</div><div class="line"></div></div><div class="traceword"><span class="tn">4</span><div class="outline">dessert</div><div class="line"></div></div><div class="traceword"><span class="tn">5</span><div class="outline">spoon</div><div class="line"></div></div></div>
+  <div class="trace"><div class="traceword"><span class="tn">6</span><div class="outline">fork</div><div class="line"></div></div><div class="traceword"><span class="tn">7</span><div class="outline">napkin</div><div class="line"></div></div><div class="traceword"><span class="tn">8</span><div class="outline">table</div><div class="line"></div></div><div class="traceword"><span class="tn">9</span><div class="outline">lunch</div><div class="line"></div></div><div class="traceword"><span class="tn">10</span><div class="outline">plate</div><div class="line"></div></div></div>
+
+  <h2><span class="n">2</span> 하루 밥상 띠와 밥상 <span class="hint">그림 옆 칸에 ①의 번호를 써요</span></h2>
+  <div class="bx"><div class="tw2"><div class="tc"><b class="cap">하루 밥상 띠</b><div class="ms434 m-ws"><div class="mc434" data-k="morning"><span class="sky"><span class="vz" style="width:67px;height:31px"><span class="vs v32-morning" data-vs="morning" style="transform:scale(0.48)"><b class="sk32 k-mo"><b class="sn32"></b><b class="gd32"></b></b></span></span></span><div class="mm"><div class="mslot" data-w="breakfast"><span class="ml434 m-breakfast still" data-vs="breakfast" style="font-size:12px"><i class="wd434 k-mo"><i class="su434"></i></i><i class="tt434"></i><i class="te434"></i><i class="tl434"></i><i class="tl434 r"></i><i class="ds434"></i><i class="fo434"></i><i class="sm434"></i><i class="sm434 s2"></i></span><b class="wn434"></b></div></div></div><div class="mc434" data-k="noon"><span class="sky"><span class="vz" style="width:67px;height:31px"><span class="vs v32-noon" data-vs="noon" style="transform:scale(0.48)"><b class="sk32 k-no"><b class="sn32"></b><b class="kd32"></b><b class="sd32"></b><b class="gd32"></b></b></span></span></span><div class="mm"><div class="mslot" data-w="lunch"><span class="ml434 m-lunch still" data-vs="lunch" style="font-size:12px"><i class="em434">🍱</i></span><b class="wn434"></b></div></div></div><div class="mc434" data-k="afternoon"><span class="sky"><span class="vz" style="width:67px;height:31px"><span class="vs v32-afternoon" data-vs="afternoon" style="transform:scale(0.48)"><b class="sk32 k-af"><b class="sn32"></b><b class="kd32"></b><b class="sd32"></b><b class="gd32"></b></b></span></span></span><div class="mm"><div class="mslot" data-w="snack"><span class="ml434 m-snack still" data-vs="snack" style="font-size:12px"><i class="em434">🍿</i></span><b class="wn434"></b></div></div></div><div class="mc434" data-k="evening"><span class="sky"><span class="vz" style="width:67px;height:31px"><span class="vs v32-evening" data-vs="evening" style="transform:scale(0.48)"><b class="sk32 k-ev"><b class="sn32"></b><b class="gd32"></b></b></span></span></span><div class="mm"><div class="mslot" data-w="dinner"><span class="ml434 m-dinner still" data-vs="dinner" style="font-size:12px"><i class="wd434 k-ev"><i class="su434"></i></i><i class="tt434"></i><i class="te434"></i><i class="tl434"></i><i class="tl434 r"></i><i class="ds434"></i><i class="fo434"></i><i class="sm434"></i><i class="sm434 s2"></i></span><b class="wn434"></b></div><div class="mslot" data-w="dessert"><span class="ml434 m-dessert still" data-vs="dessert" style="font-size:12px"><i class="em434">🍮</i></span><b class="wn434"></b></div></div></div></div></div><div class="tc"><b class="cap">밥상</b><div class="bdw"><div class="tb434 m-ws"><div class="tbw" data-w="table"><span class="ml434 m-table still" data-vs="table" style="font-size:76px"><i class="tt434"></i><i class="te434"></i><i class="tl434"></i><i class="tl434 r"></i></span><b class="wn434 wt"></b><div class="ts l" data-s="l"><span class="it it-napkin" data-w="napkin"><span class="ml434 m-napkin still" data-vs="napkin" style="font-size:16px"><i class="nk434"></i><i class="nf434"></i></span><b class="wn434"></b></span><span class="it it-fork" data-w="fork"><span class="ml434 m-fork still" data-vs="fork" style="font-size:16px"><i class="ft434"></i><i class="fn434"></i><i class="fh434"></i></span><b class="wn434"></b></span></div><div class="ts c" data-s="c"><span class="it it-plate" data-w="plate"><span class="ml434 m-plate still" data-vs="plate" style="font-size:16px"><i class="em434">🍽</i></span><b class="wn434"></b></span></div><div class="ts r" data-s="r"><span class="it it-spoon" data-w="spoon"><span class="ml434 m-spoon still" data-vs="spoon" style="font-size:16px"><i class="em434">🥄</i></span><b class="wn434"></b></span></div></div></div></div></div></div></div>
+
+  <div class="twocol">
+    <div style="flex:1.1;display:flex;flex-direction:column">
+      <h2><span class="n">3</span> 짝 고르기 <span class="hint">그림을 보고 맞는 단어에 동그라미</span></h2>
+      <div class="bx"><div class="pk3"><div class="pkr" data-w="dinner"><span class="mn">1</span><span class="ml434 m-dinner still" data-vs="dinner" style="font-size:15px"><i class="wd434 k-ev"><i class="su434"></i></i><i class="tt434"></i><i class="te434"></i><i class="tl434"></i><i class="tl434 r"></i><i class="ds434"></i><i class="fo434"></i><i class="sm434"></i><i class="sm434 s2"></i></span><span class="op"><b>breakfast</b><i>/</i><b>dinner</b></span></div><div class="pkr" data-w="fork"><span class="mn">2</span><span class="ml434 m-fork still" data-vs="fork" style="font-size:15px"><i class="ft434"></i><i class="fn434"></i><i class="fh434"></i></span><span class="op"><b>spoon</b><i>/</i><b>fork</b></span></div><div class="pkr" data-w="snack"><span class="mn">3</span><span class="ml434 m-snack still" data-vs="snack" style="font-size:15px"><i class="em434">🍿</i></span><span class="op"><b>snack</b><i>/</i><b>dessert</b></span></div></div></div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column">
+      <h2><span class="n">4</span> 오늘 내 아침밥 <span class="hint">상자에서 골라 옮겨 쓰고 — 그려요</span></h2>
+      <div class="bx"><div class="s4"><div class="s4r"><span class="s">I eat <b class="bl"></b> for breakfast.</span><div class="fbox"><span class="fi" data-f="eggs"><span class="fd420 f-egg"><i class="em420">🥚</i></span><b>eggs</b></span><span class="fi" data-f="rice"><i class="pr434">🍚</i><b>rice</b></span><span class="fi" data-f="bread"><i class="pr434">🍞</i><b>bread</b></span><span class="fi" data-f="pizza"><i class="pr434">🍕</i><b>pizza</b></span></div></div><div class="draw">오늘 내 아침밥을 그려요</div></div></div>
+    </div>
+  </div>
+
+  <div class="recap">오늘 열 단어 = <b>breakfast · dinner · snack · dessert · spoon · fork · napkin · table · lunch · plate</b></div>
+
+  <div class="parent">
+    <b>부모님께</b> · <b>for</b> 는 밥때 이름 앞에서 「~으로」 예요 — for breakfast(아침밥으로) · for dinner · for dessert · for a snack. 「~을 위해」 뜻으로는 아직 쓰지 않아요.
+    · <b>breakfast · dinner 앞엔 a 를 붙이지 않아요</b> — 간식 하나만 a snack.
+    · <b>We are eating lunch now.</b> 는 「우리는 지금 점심을 먹고 있어요」 — 보고 읽기만 하는 문장이에요.
+    · 이 활동지는 <b>보고 옮겨 쓰는</b> 종이입니다. <b>받아쓰기로 확인하지 마세요.</b><br>
+    <b>정답</b> · ② breakfast 1 · lunch 9 · snack 3 · dinner 2 · dessert 4 / table 8 · plate 10 · spoon 5 · fork 6 · napkin 7 · ③ 1 dinner · 2 fork · 3 snack · ④ 내가 먹은 것 하나(eggs · rice · bread · pizza)
+  </div>
+</body>
+</html>
