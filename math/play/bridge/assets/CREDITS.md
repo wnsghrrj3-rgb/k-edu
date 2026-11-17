@@ -22,3 +22,4 @@
 - FBX → GLB(three FBXLoader + GLTFExporter, 빛깔 공간만 바로잡음) → gltf-transform 로 움직임 둘(Swimming_Normal · Out_Of_Water)만 남기고 압축.
 - `Fish_Clownfish · BlueTang · YellowTang · Koi · Tetra · ButterflyFish · CardinalFish · RoyalGramma · Betta · Tang`(보통) · `Fish_Goldfish`(황금 물고기, 빛깔 입힘) · `Fish_Puffer`(복어) · `Fish_Shark` · `Fish_Anglerfish`(큰 물고기) · `Prop_FishingRod`(앤의 낚싯대).
 - 양동이 조각 물고기는 모형을 못 불러올 때만 씀.
+- 다리 길의 상어 사건도 `Fish_Shark`(Cute Fish Pack)를 씀 — 앞바다를 돌다 물에 떨어진 판자를 물고, 낱 판자를 노림.

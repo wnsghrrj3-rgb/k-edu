@@ -23,9 +23,10 @@ const T = { PICK_PX: 70, DECK: 1.0, SLOT: 0.4, PLANK_W: 1.3, RAFT_GAP: .36, RAFT
   NIGHT: { HEMI: .32, SUN: .25, SKY: ['#0d1630', '#24345c', '#3b4f7a'], FOG: 0x1c2a48, GLOW: .55, LIGHT: 6 },   // 밤 다리: 빛의 세기 · 하늘 · 놓인 판자의 빛 · 등불 빛
   FALL_FROM: -6.5, TWIN_ZOOM: 1.32, BIG_ZOOM: 1.0, LONG_ZOOM: 1.5, PILLAR: .5,   // 스무 칸 다리: 카메라를 물리는 정도 · 가운데 돌기둥 자리(판자 칸 사이 너비)
                     // 무너지는 다리가 시작하는 곳 · 쌍둥이 틈일 때 카메라를 물리는 정도
+  SHARK: { P: .6, SEC: 5.5, S: 1.3, Z: 4.4, R: 3.4, TAP_PX: 95 },   // 상어: 낱 판자를 노릴 확률 · 닿기까지(생각하는 시간, 초) · 크기 · 도는 자리
   TINT: ['#ffd49a', '#a9dcff', '#c8f2ae', '#ffb9cf', '#dcc6ff', '#fff0a0'] };   // 주민 빛깔(앤·헨리 모형에 번갈아)
 const $ = id => document.getElementById(id), HOME = 2;
-const EXTRA = ['Ship_Large', 'Characters_Shark'];   /* 있으면 쓰는 모형: 해적선(돛 달린 큰 배) · 상어 */
+const EXTRA = ['Ship_Large', 'Fish_Shark'];   /* 있으면 쓰는 모형: 해적선(돛 달린 큰 배) · 상어 */
 
 // ── 무대
 const stage = createStage({ canvas: $('c'), seaX: 20, seaW: 200 }), { scene, camera, sea, sun, hemi } = stage;
@@ -55,6 +56,7 @@ async function build(){
   // 우리 섬(왼쪽) — 늘 그대로
   put(cliffL, -7.4, 0, -2.2, 1.0, .4); put(palm1, -5.8, 1.9, -2.6, 1.0, .5); put(rock2, -4.6, 0, 1.4, 1.3, .3); put(rock1, -5.4, 0, 2.8, 1.2); put(rock1, 1.6, 0, -3.6, 1.0, 2); put(ship, -8, 0, -17, .9, .5);
   S.chaser = put(shipL || ship, -6, 0, T.SHIP_Z, shipL ? .55 : T.SHIP_S, T.SHIP_RY); S.chaser.visible = false;
+  if (shark) { const p = stage.person(shark, { scale: T.SHARK.S }); scene.remove(p.obj); p.obj.rotation.y = Math.PI / 2; const w = new THREE.Group(); w.add(p.obj); w.position.set(0, -.1, T.SHARK.Z); w.visible = false; scene.add(w); stage.play(p, 'Swimming_Normal'); S.shark = { o: w, mode: 'idle', k: 0, target: null, from: new THREE.Vector3(), cool: false }; }   /* 모형은 +z 를 봄 → 감싼 쪽이 +x */
   S.lamp = new THREE.PointLight(0xffc86a, 0, 9, 1.6); S.lamp.position.set(0, T.DECK + 1.6, .6); scene.add(S.lamp);
   for (let i = 0; i < Math.min(SAVE.fish, 4); i++) S.buckets.push(put(bucket, -5.4 + i * .5, T.DECK, .62, .5, i));
   // 사람: 앤(무기는 숨김) · 주민은 앤·헨리 모형에 번갈아 빛깔
@@ -111,6 +113,7 @@ function newVoyage(){ for (const b of S.bridge) for (const p of b) if (p) scene.
   S.anne.obj.position.set(T.START_X, standY(), 0); S.anne.obj.visible = true; stage.face(S.anne, 1); stage.play(S.anne, 'Idle');
   if (S.guest) stage.unperson(S.guest); S.guest = resident(SAVE.saved); S.guest.obj.position.set(S.dest + 2.2, standY(), -.5); stage.face(S.guest, -1); stage.play(S.guest, 'Wave');
   for (const o of S.loot) scene.remove(o); S.loot = []; S.fish = 0; S.mapGot = 0;
+  if (S.shark) { S.shark.mode = 'idle'; S.shark.target = null; S.shark.cool = false; }
   S.clock = 0; S.rise = 0; S.front = -99; S.missing = false; S.chaser.visible = S.ev.kind === 'ship' && !CALM; A.flames(S.streak);
   S.signs = A.signs(S.voy.gaps.reduce((a, g) => a + (g.slots > R.SLOTS ? 2 : 1), 0)); A.trayClear(); S.ask = null; S.qkind = R.askKind(S.voyages);
   S.log.push({ voyage: S.voy.gaps.map(g => g.have), cargo: S.voy.cargo.slice(), ev: S.ev.kind + (S.ev.drift ? '+drift' : '') + (S.ev.night ? '+night' + S.ev.night : '') + (S.ev.twin ? '+twin' : '') + (S.ev.shark ? '+shark' : '') + (S.ev.big ? '+big' : '') + (S.voy.long != null ? '+long' : ''), night: [...S.nightGaps] }); }
@@ -142,7 +145,13 @@ function layout(ms){ const rs = live(), w = rs.map(r => r.n * T.RAFT_GAP), all =
   rows.forEach(([a, b], ri) => { const tw = w.slice(a, b).reduce((p, q) => p + q, 0) + (b - a - 1) * T.RAFT_SPACE; let x = rowMid() - tw / 2; for (let i = a; i < b; i++) { place[i] = [x + w[i] / 2, rows.length > 1 && ri === 0 ? T.RAFT_Z - .75 : rows.length > 1 ? T.RAFT_Z + 1.15 : T.RAFT_Z];   /* 두 줄은 화면에서 겹치지 않게 넉넉히 */ x += w[i] + T.RAFT_SPACE; } });
   rs.forEach((r, i) => { r.home.set(place[i][0], T.RAFT_Y, place[i][1]); if (S.drag && S.drag.r === r) return; if (!ms) r.group.position.copy(r.home); else if (Math.abs(r.group.position.x - r.home.x) + Math.abs(r.group.position.z - r.home.z) > .02) jobs.push(stage.tween(r.group, { 'position.x': r.home.x, 'position.y': r.home.y, 'position.z': r.home.z }, ms)); }); return Promise.all(jobs); }
 /** 들어갈 뗏목이 없으면 낱 판자 한 장이 떠내려온다(지금 열린 틈 가운데 하나라도 들어갈 뗏목이 있으면 오지 않는다). */
-function single(){ const rooms = active().map(roomOf).filter(Boolean); if (!rooms.length || live().some(r => rooms.some(m => r.n <= m))) return; const r = raft(1, S.rafts.length, true); S.loaded++; r.group.position.set(ox(S.gi) - 5.5, T.RAFT_Y, T.RAFT_Z + .5); S.log.push({ single: true, rooms, cargo: live().filter(x => x !== r).map(x => x.n) }); return layout(T.SINGLE_MS); }
+// ── 상어(N02): 물에 떨어진 판자를 물고 간다 · 가끔 떠내려오는 낱 판자를 노린다(눌러서 쫓음 — 두면 가져가고 새 낱 판자가 다시 온다)
+function sharkBite(x){ const sh = S.shark; if (!sh || !S.ev.shark || sh.mode === 'bite') return; sh.mode = 'bite'; sh.target = null; S.log.push({ shark: 'bite' }); const o = sh.o; o.rotation.y = x > o.position.x ? 0 : Math.PI; stage.tween(o.position, { x, z: 1.4 }, 520).then(() => { tone(150, .18, 'square', .08); return sleep(380); }).then(() => { sh.mode = 'idle'; }); }
+function sharkHunt(r){ const sh = S.shark; if (!sh || !S.ev.shark || CALM || sh.cool || sh.mode !== 'idle' || Math.random() > T.SHARK.P) return; sh.mode = 'hunt'; sh.target = r; sh.k = 0; sh.from.copy(sh.o.position); S.log.push({ shark: 'hunt' }); tone(110, .3, 'sawtooth', .05); }
+function sharkShoo(){ const sh = S.shark; if (!sh || sh.mode !== 'hunt') return false; sh.mode = 'flee'; sh.target = null; sh.cool = true; S.log.push({ shark: 'shoo' }); tone(880, .1, 'square', .06); const o = sh.o; o.rotation.y = Math.PI; stage.tween(o.position, { x: o.position.x - 7, z: T.SHARK.Z + 1.2 }, 900).then(() => { sh.mode = 'idle'; }); return true; }
+function sharkSteal(){ const sh = S.shark, r = sh.target; sh.target = null; sh.cool = true; sh.mode = 'flee'; if (r && !r.used) { r.used = true; scene.remove(r.group); S.lost += r.n; S.log.push({ shark: 'took', n: r.n }); tone(150, .25, 'square', .08); layout(400); }
+  sh.o.rotation.y = 0; stage.tween(sh.o.position, { x: sh.o.position.x + 7, z: T.SHARK.Z + 1.2 }, 1000).then(() => { sh.mode = 'idle'; if (!S.busy && !S.missing) single(); }); }
+function single(){ const rooms = active().map(roomOf).filter(Boolean); if (!rooms.length || live().some(r => rooms.some(m => r.n <= m))) return; const r = raft(1, S.rafts.length, true); S.loaded++; r.group.position.set(ox(S.gi) - 5.5, T.RAFT_Y, T.RAFT_Z + .5); S.log.push({ single: true, rooms, cargo: live().filter(x => x !== r).map(x => x.n) }); sharkHunt(r); return layout(T.SINGLE_MS); }
 
 const wait = async ms => { for (let t = 0; t < ms && !S.skip; t += 50) await sleep(50); };
 // ── 떠나는 장면: 건너편에서 누가 손을 흔든다 → 끊어진 다리를 따라 돌아와 앤 앞에 선다(화면을 누르면 건너뜀)
@@ -155,9 +164,9 @@ async function drop(r, k = S.gi){ S.busy = true; S.drops++; hintOff(); audio(); 
   r.used = true; const moved = r.planks.slice(), night = S.nightGaps.has(k);
   for (let j = 0; j < moved.length; j++) { const p = moved[j]; p.getWorldPosition(wp); r.group.remove(p); scene.add(p); p.position.copy(wp); p.rotation.set(0, 0, 0);
     if (j < out.put) { const i = S.fill[k] + j; S.bridge[k][i] = p; if (night) p.material = S.glowMat; if (S.ghosts[k][i]) { scene.remove(S.ghosts[k][i]); S.ghosts[k][i] = null; } await stage.tween(p, { 'position.x': slotX(k, i), 'position.y': plankY(), 'position.z': 0 }, T.PLANK_MS); tone(300 + i * 40, .09, 'triangle', .1); }
-    else { S.lost++; await stage.tween(p, { 'position.x': slotX(k, slotsOf(k) - 1) + .6 + (j - out.put) * .3, 'position.y': T.DECK + .4, 'position.z': .2 }, T.PLANK_MS); stage.tween(p, { 'position.y': -1.4, 'position.z': 1.1, 'rotation.z': -1.4, 'rotation.x': .6 }, 900, t => t * t).then(() => scene.remove(p)); tone(180, .3, 'sine', .1, 0, 90); } }
+    else { S.lost++; if (j === out.put) sharkBite(slotX(k, slotsOf(k) - 1) + .8); await stage.tween(p, { 'position.x': slotX(k, slotsOf(k) - 1) + .6 + (j - out.put) * .3, 'position.y': T.DECK + .4, 'position.z': .2 }, T.PLANK_MS); stage.tween(p, { 'position.y': -1.4, 'position.z': 1.1, 'rotation.z': -1.4, 'rotation.x': .6 }, 900, t => t * t).then(() => scene.remove(p)); tone(180, .3, 'sine', .1, 0, 90); } }
   scene.remove(r.group); S.fill[k] = out.filled; S.placed += out.put; S.filled = S.fill[S.gi]; if (longTall() && Math.abs(cam.x - camHome()) > .1 && !out.done) stage.tween(cam, { x: camHome() }, 700); layout(500); if (S.missing) return out;
-  if (out.kind === 'fit') { S.streak++; S.clock = Math.max(0, S.clock - R.PRESS.BACK); stage.tween(cam, { zoom: .93 }, 120).then(() => stage.tween(cam, { zoom: 1 }, 260)); } else S.streak = 0; A.flames(S.streak);
+  if (S.shark) S.shark.cool = false; if (out.kind === 'fit') { S.streak++; S.clock = Math.max(0, S.clock - R.PRESS.BACK); stage.tween(cam, { zoom: .93 }, 120).then(() => stage.tween(cam, { zoom: 1 }, 260)); } else S.streak = 0; A.flames(S.streak);
   const startX = ox(S.gi) + T.START_X;
   if (!out.done) { await sleep(150); await go(S.anne, Math.max(startX, slotX(k, S.fill[k] - 1) - .05), true); stage.play(S.anne, 'No', true); tone(240, .25, 'sine', .08); await sleep(900); await go(S.anne, startX, true); stage.face(S.anne, 1); if (S.missing) return out; S.busy = false; S.idle = S.t; single(); return out; }
   // 열째 판자: 다리가 이어졌다 — 판자가 차례로 통 튄다
@@ -227,7 +236,8 @@ function cargoGo(){ if (!live().length) return; audio(); S.voy.cargo = live().ma
 
 // ── 손으로 끌기
 const liftPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(T.DECK + .45)), hit = new THREE.Vector3(), canvas = $('c');
-canvas.addEventListener('pointerdown', e => { if (S.loading && !S.intro) { cargoTap(e); return; } if (S.intro) { S.skip = true; S.tweens.forEach(w => { if (w.o === cam) w.t = w.ms; }); return; } if (S.busy || !S.ready || S.missing) return; audio(); hintOff(); const ray = stage.pointerRay(e), rs = live(), h = ray.intersectObjects(rs.flatMap(r => r.planks), false)[0];
+canvas.addEventListener('pointerdown', e => { if (S.loading && !S.intro) { cargoTap(e); return; } if (S.intro) { S.skip = true; S.tweens.forEach(w => { if (w.o === cam) w.t = w.ms; }); return; } if (S.shark && S.shark.mode === 'hunt' && S.ready && !S.missing) { const q = stage.screenOf(S.shark.o); if (Math.hypot(q.x - e.clientX, q.y - e.clientY) < T.SHARK.TAP_PX) { audio(); sharkShoo(); return; } }
+  if (S.busy || !S.ready || S.missing) return; audio(); hintOff(); const ray = stage.pointerRay(e), rs = live(), h = ray.intersectObjects(rs.flatMap(r => r.planks), false)[0];
   let r = h ? rs.find(x => x.planks.includes(h.object)) : null;
   if (!r) { let best = 1e9; for (const x of rs) { const q = stage.screenOf(x.group), d = Math.hypot(q.x - e.clientX, q.y - e.clientY); if (d < best) { best = d; r = x; } } if (best > T.PICK_PX) r = null; }   /* 판자 사이 틈을 눌러도 집힘 */
   if (!r || S.tweens.some(w => w.o === r.group)) return; S.drag = { r, id: e.pointerId }; canvas.setPointerCapture(e.pointerId); tone(520, .06, 'sine', .06); });
@@ -254,6 +264,10 @@ stage.frame((dt, t) => { S.t = t;
   if (nightNow) { const k = active().find(j => S.nightGaps.has(j)); S.lamp.position.x = ox(k) + Math.max(.4, S.fill[k] / 2 * T.SLOT); }
   for (const r of S.rafts) if (!r.used) { r.home.y = T.RAFT_Y + S.rise; if ((!S.drag || S.drag.r !== r) && !S.tweens.some(w => w.o === r.group)) { r.group.position.y = r.home.y + Math.sin(t * 1.6 + r.ph) * .05; r.group.rotation.z = Math.sin(t * 1.1 + r.ph) * .03; if (S.ev && S.ev.drift && !S.busy) r.group.position.x = r.home.x + Math.sin(t * T.DRIFT_HZ + r.ph) * T.DRIFT; } }
   const zoom = cam.zoom * cam.wide; camera.position.set(cam.x, cam.y * zoom, cam.z * zoom); camera.lookAt(cam.x, .7, cam.lz); sun.position.set(cam.x - 8, 11, 8); sun.target.position.set(cam.x, 0, 0);
+  // 상어: 뗏목 앞바다를 돈다 · 낱 판자를 노릴 때는 생각하는 동안에만 다가온다
+  const sh = S.shark; if (sh) { const on = !!(S.ev && S.ev.shark) && !S.intro && !S.loading && !S.missing; sh.o.visible = on; if (on) { const o = sh.o; o.position.y = S.rise - .1;
+    if (sh.mode === 'idle') { const a = t * .45, nx = cam.x + Math.sin(a) * T.SHARK.R, nz = T.SHARK.Z + Math.cos(a) * .6, k = Math.min(1, dt * 2); if (Math.abs(nx - o.position.x) > .01) o.rotation.y = nx > o.position.x ? 0 : Math.PI; o.position.x += (nx - o.position.x) * k; o.position.z += (nz - o.position.z) * k; }
+    else if (sh.mode === 'hunt') { const r = sh.target; if (!r || r.used || (S.drag && S.drag.r === r)) { sh.mode = 'idle'; sh.target = null; } else if (!S.busy) { sh.k += dt / T.SHARK.SEC; const g = r.group.position; o.position.x = sh.from.x + (g.x - sh.from.x) * sh.k; o.position.z = sh.from.z + (g.z + .25 - sh.from.z) * sh.k; o.rotation.y = g.x > o.position.x ? 0 : Math.PI; if (sh.k >= 1) sharkSteal(); } } } }
   if (S.ready) { hint(); signsDraw(); } });
 /** 뒤에서 무너지는 다리: 앞줄(front)보다 뒤에 있는 판자가 한 장씩 떨어진다. */
 function crumble(){ const fall = m => { m.userData.fallen = true; stage.tween(m.position, { y: -1.6 }, 900, t => t * t).then(() => { m.visible = false; }); stage.tween(m.rotation, { z: (Math.random() - .5) * 1.6 }, 900); };
@@ -264,7 +278,7 @@ function crumble(){ const fall = m => { m.userData.fallen = true; stage.tween(m.
 // 하네스용: 화면 좌표 · 지금 틈의 첫 빈 칸 위
 window.__bridge.screenOf = stage.screenOf;
 window.__bridge.gap = (k = S.gi) => new THREE.Vector3(slotX(k, Math.min(slotsOf(k) - 1, S.fill[k])), T.DECK + .45, 0);
-window.__bridge.slotsOf = slotsOf; window.__bridge.cargoAdd = cargoAdd; window.__bridge.cargoGo = cargoGo; window.__bridge.L = LP; window.__bridge.span = span;
+window.__bridge.slotsOf = slotsOf; window.__bridge.single = single; window.__bridge.cargoAdd = cargoAdd; window.__bridge.cargoGo = cargoGo; window.__bridge.L = LP; window.__bridge.span = span;
 window.__bridge.live = live; window.__bridge.active = active; window.__bridge.stage = stage;
 window.__bridge.restart = () => { S.tweens.length = 0; cam.zoom = 1; newVoyage(); mapDraw(); return intro(); };   /* 하네스용: 데려온 수를 바꾼 뒤 길을 새로 */
 build().catch(e => { $('loading').textContent = '불러오지 못했어요'; console.error(e); });
