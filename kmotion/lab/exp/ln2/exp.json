@@ -1,0 +1,355 @@
+{
+  "id": "ln2",
+  "title": "영하 196도",
+  "subtitle": "액체 질소",
+  "shelfLabel": "너무 차갑다",
+
+  "env": {
+    "temps": { "air": 20, "ln2": -196, "hands": 34, "warm": 60 },
+    "rates": { "air": 0.2, "ln2": 1, "hands": 0.5, "warm": 2 },
+    "maxStep": 0.05
+  },
+  "bowl": {
+    "capacity": 1, "minDip": 0.12, "ks": 0.6, "area": 1.4,
+    "boilFloor": 0.08, "quiet": 0.35, "loud": 0.5,
+    "baseEvap": 0.004, "boilEvap": 0.012,
+    "waterPower": 1.5, "flashRate": 0.12, "flashBoil": 2, "cloudRise": 1.2, "cloudFall": 6, "cloudBig": 0.8
+  },
+  "dewar": { "amount": 2.5, "evap": 0.001, "refills": 1, "tiltStart": 25, "tiltEmpty": 70, "splash": 0.05 },
+  "bottle": { "capacity": 0.3, "evap": 0.01, "gain": 60, "popAt": 3 },
+  "kettle": { "warmPerUnit": 20, "warmMax": 4, "iceCoatBelow": -60 },
+  "frost": { "start": 0, "full": -60 },
+  "touch": { "cold": -20 },
+  "nail": { "full": 6 },
+  "flow": { "gearOffEachMission": true, "accidentCooldown": 3, "restockDelay": 2.5, "tickSlice": 0.25 },
+
+  "items": [
+    { "id": "dewar", "name": "액체 질소 통", "mat": "metal", "role": "ln2source", "shelf": "shelf_1_1", "appears": "taste", "weight": 1.8, "needs": ["visor", "gloves"] },
+    { "id": "bowl", "name": "스테인리스 그릇", "mat": "metal", "role": "vessel", "shelf": "shelf_1_2", "appears": "taste", "weight": 1.2 },
+    { "id": "tongs", "name": "긴 집게", "mat": "metal", "role": "tool", "shelf": "shelf_1_3", "appears": "taste", "weight": 0.7,
+      "thermal": { "ks": 1.2, "kc": 1.2, "area": 0.15, "gulp": 0.005 } },
+    { "id": "mallet", "name": "고무망치", "mat": "rubber", "role": "tool", "shelf": "shelf_1_4", "appears": "taste", "weight": 1.0,
+      "thermal": { "ks": 0.5, "kc": 0.3, "area": 0.3, "gulp": 0.01 } },
+    { "id": "gloves", "name": "극저온 장갑", "mat": "cloth", "role": "wear", "wear": "hands", "shelf": "shelf_1_5", "appears": "taste", "weight": 0.5 },
+    { "id": "visor", "name": "보안면", "mat": "plastic", "role": "wear", "wear": "face", "shelf": "shelf_1_6", "appears": "taste", "weight": 0.5 },
+    { "id": "woodblock", "name": "나무토막과 못", "mat": "wood", "role": "target", "shelf": "shelf_1_7", "appears": "banana", "weight": 1.0,
+      "thermal": { "ks": 0.3, "kc": 0.1, "area": 0.5, "gulp": 0.02 } },
+
+    { "id": "rose", "name": "장미", "mat": "soft", "role": "sample", "shelf": "shelf_2_1", "appears": "taste", "weight": 0.4,
+      "thermal": { "ks": 0.35, "kc": 0.35, "area": 0.5, "core": 0, "gulp": 0.02, "rates": { "air": 0.08 } },
+      "states": { "base": "fresh", "surface": { "below": -60, "state": "glass" }, "thawed": "limp",
+        "names": { "fresh": "싱싱함", "glass": "유리", "limp": "축 늘어짐" },
+        "onState": { "limp": { "discover": "limpRose" } } } },
+    { "id": "balloon", "name": "빨간 풍선", "mat": "rubber", "role": "sample", "shelf": "shelf_2_2", "appears": "balloon", "weight": 0.3, "flagsReset": true,
+      "thermal": { "ks": 0.75, "kc": 0.75, "area": 0.9, "core": 0, "gulp": 0.03, "rates": { "air": 0.25, "hands": 0.75 },
+        "volume": { "curve": [[20, 1.0], [-150, 0.35], [-190, 0.06], [-196, 0.05]], "flatAt": 0.12, "recoverMax": 0.95 } },
+      "states": { "byVolume": [[0.12, "flat"], [0.9, "wrinkled"], [9, "full"]],
+        "names": { "full": "탱탱함", "wrinkled": "쭈글쭈글", "flat": "납작함" },
+        "revive": { "from": "flat", "to": "full", "flag": "revived" } },
+      "warm": { "popBelow": -60, "outcome": "balloonPopWarm" },
+      "onLift": [{ "ifState": "wrinkled", "outcome": "balloonHalf" }] },
+    { "id": "banana", "name": "바나나", "mat": "soft", "role": "sample", "count": 3, "shelf": "shelf_2_3", "slots": ["shelf_2_3a", "shelf_2_3b", "shelf_2_3c"], "appears": "banana", "weight": 0.6,
+      "thermal": { "ks": 0.9, "kc": 0.09, "kcThaw": 0.03, "area": 1.0, "core": 0.7, "gulp": 0.04 },
+      "states": { "base": "soft", "surface": { "below": -40, "state": "crust" }, "core": { "below": -80, "state": "stone" }, "thawed": "mushy",
+        "names": { "soft": "무름", "crust": "겉만 얾", "stone": "돌", "mushy": "검게 무름" },
+        "onState": { "mushy": { "discover": "mushyBanana" } } } },
+    { "id": "ball", "name": "고무공", "mat": "rubber", "role": "sample", "count": 2, "shelf": "shelf_2_4", "slots": ["shelf_2_4a", "shelf_2_4b"], "appears": "balls", "weight": 0.4,
+      "thermal": { "ks": 0.8, "kc": 0.22, "kcThaw": 0.08, "area": 0.8, "core": 0.7, "gulp": 0.02 },
+      "states": { "base": "bouncy", "surface": { "below": -30, "state": "dull" }, "core": { "below": -70, "state": "glass" },
+        "names": { "bouncy": "탱탱", "dull": "둔함", "glass": "유리" },
+        "revive": { "from": "glass", "to": "bouncy", "discover": "revivedBall" } } },
+    { "id": "bottle", "name": "빈 페트병과 풍선", "mat": "plastic", "role": "bottle", "shelf": "shelf_2_5", "appears": "balloon", "weight": 0.4 },
+    { "id": "kettle", "name": "따뜻한 물 주전자", "mat": "metal", "role": "warmwater", "shelf": "shelf_2_6", "appears": "balloon", "weight": 1.2 },
+
+    { "id": "tangerine", "name": "귤", "mat": "soft", "role": "sample", "free": true, "shelf": "shelf_3_1", "appears": "free", "weight": 0.5,
+      "thermal": { "ks": 0.8, "kc": 0.11, "kcThaw": 0.04, "area": 0.9, "core": 0.7, "gulp": 0.03 },
+      "states": { "base": "fresh", "surface": { "below": -40, "state": "crust" }, "core": { "below": -90, "state": "stone" }, "thawed": "mushy",
+        "names": { "fresh": "말랑함", "crust": "겉만 얾", "stone": "돌", "mushy": "흐물흐물" } } },
+    { "id": "lettuce", "name": "상추 잎", "mat": "soft", "role": "sample", "free": true, "shelf": "shelf_3_2", "appears": "free", "weight": 0.3,
+      "thermal": { "ks": 1.2, "kc": 1.2, "area": 0.4, "core": 0, "gulp": 0.01, "rates": { "air": 0.06 } },
+      "states": { "base": "fresh", "surface": { "below": -50, "state": "crisp" }, "thawed": "wilted",
+        "names": { "fresh": "싱싱함", "crisp": "바삭함", "wilted": "흐물흐물" } } },
+    { "id": "egg", "name": "삶은 달걀", "mat": "soft", "role": "sample", "free": true, "shelf": "shelf_3_3", "appears": "free", "weight": 0.5,
+      "thermal": { "ks": 0.8, "kc": 0.1, "kcThaw": 0.04, "area": 0.85, "core": 0.7, "gulp": 0.03 },
+      "states": { "base": "fresh", "surface": { "below": -40, "state": "crust" }, "core": { "below": -90, "state": "stone" }, "thawed": "rubbery",
+        "names": { "fresh": "말랑함", "crust": "겉만 얾", "stone": "돌", "rubbery": "질겨짐" } } },
+    { "id": "eraser", "name": "지우개", "mat": "rubber", "role": "sample", "free": true, "shelf": "shelf_3_4", "appears": "free", "weight": 0.4,
+      "thermal": { "ks": 0.7, "kc": 0.25, "kcThaw": 0.1, "area": 0.6, "core": 0.8, "gulp": 0.01 },
+      "states": { "base": "soft", "surface": { "below": -40, "state": "dull" }, "core": { "below": -70, "state": "hard" },
+        "names": { "soft": "말랑함", "dull": "둔함", "hard": "딱딱함" } } },
+    { "id": "papercup", "name": "종이컵", "mat": "paper", "role": "sample", "free": true, "shelf": "shelf_3_5", "appears": "free", "weight": 0.3,
+      "thermal": { "ks": 1.0, "kc": 1.0, "area": 0.3, "core": 0, "gulp": 0.01 },
+      "states": { "base": "same", "names": { "same": "그대로" } },
+      "onLift": [{ "ifBelow": -150, "outcome": "cupSame" }] },
+    { "id": "rubberband", "name": "고무줄", "mat": "rubber", "role": "sample", "free": true, "shelf": "shelf_3_6", "appears": "free", "weight": 0.2,
+      "thermal": { "ks": 1.5, "kc": 1.5, "area": 0.1, "core": 0, "gulp": 0.005, "rates": { "air": 0.05 } },
+      "states": { "base": "soft", "surface": { "below": -40, "state": "stiff" },
+        "names": { "soft": "말랑함", "stiff": "빳빳함" } } },
+    { "id": "bubblewand", "name": "비눗방울 대롱", "mat": "plastic", "role": "special", "free": true, "shelf": "shelf_3_7", "appears": "free", "weight": 0.2,
+      "onDip": { "withLn2": "frozenBubble", "without": "plainBubble" } }
+  ],
+
+  "strike": {
+    "mallet>rose": { "states": { "fresh": ["roseWobble", "rosePetals", "roseCrush"], "glass": ["roseChip", "roseShatter", "roseShatter"], "limp": ["roseWobble", "roseCrush", "roseCrush"] } },
+    "mallet>balloon": { "states": { "full": ["balloonBoing", "balloonPop", "balloonPop"], "wrinkled": ["balloonBoing", "balloonPop", "balloonPop"], "flat": ["balloonSlosh", "balloonTear", "balloonTear"] } },
+    "mallet>banana": { "states": { "soft": ["dent", "bananaSquash", "bananaSquash"], "crust": ["crackle", "bananaOoze", "bananaOoze"], "stone": ["clink", "clink", "bananaSnap"], "mushy": ["bananaSquash", "bananaSquash", "bananaSquash"] } },
+    "banana>woodblock": { "by": "tool", "states": { "soft": ["bananaThud", "bananaSquash", "bananaSquash"], "crust": ["crackle", "bananaOoze", "bananaOoze"], "stone": ["nail1", "nail2", "nail3"], "mushy": ["bananaSquash", "bananaSquash", "bananaSquash"] } },
+    "mallet>woodblock": { "states": { "*": ["nail1", "nail2", "nail3"] } },
+    "mallet>ball": { "states": { "bouncy": ["ballBoing", "ballBoing", "ballBoing"], "dull": ["thud", "thud", "ballSplit"], "glass": ["ballChip", "ballShatterMallet", "ballShatterMallet"] } },
+    "mallet>tangerine": { "states": { "fresh": ["dent", "tangerineSquirt", "tangerineSquirt"], "crust": ["crackle", "tangerineSquirt", "tangerineSquirt"], "stone": ["clink", "tangerineBeads", "tangerineBeads"], "mushy": ["tangerineSquirt", "tangerineSquirt", "tangerineSquirt"] } },
+    "mallet>lettuce": { "states": { "fresh": ["lettuceFlop", "lettuceFlop", "lettuceFlop"], "crisp": ["lettuceCrumble", "lettuceCrumble", "lettuceCrumble"], "wilted": ["lettuceFlop", "lettuceFlop", "lettuceFlop"] } },
+    "mallet>egg": { "states": { "fresh": ["dent", "eggSmash", "eggSmash"], "crust": ["crackle", "eggSmash", "eggSmash"], "stone": ["clink", "clink", "eggHalves"], "rubbery": ["dent", "eggSmash", "eggSmash"] } },
+    "mallet>eraser": { "states": { "soft": ["eraserBoing", "eraserBoing", "eraserBoing"], "dull": ["thud", "thud", "thud"], "hard": ["clink", "eraserSnap", "eraserSnap"] } },
+    "mallet>papercup": { "states": { "*": ["cupDent", "cupFlat", "cupFlat"] } },
+    "mallet>rubberband": { "states": { "soft": ["bandBoing", "bandBoing", "bandBoing"], "stiff": ["bandSnap", "bandSnap", "bandSnap"] } },
+    "mallet>bowl": { "states": { "empty": ["bowlClang", "bowlClang", "bowlClang"], "filled": ["bowlClang", "bowlClang", "bowlSplash"] } },
+    "mallet>dewar": { "states": { "*": ["dewarClang", "dewarClang", "dewarClang"] } },
+    "*>*": { "states": { "*": ["tap", "tap", "tap"] } }
+  },
+
+  "drop": {
+    "minHeight": 0.12,
+    "low": { "ball": { "glass": "ballClack" }, "*": { "*": "setDown" } },
+    "table": {
+      "ball": { "bouncy": "ballBounce", "dull": "ballDull", "glass": "ballShatter" },
+      "rose": { "glass": "roseShatter", "*": "plop" },
+      "banana": { "stone": "clack", "*": "plop" },
+      "egg": { "stone": "eggRoll", "*": "plop" },
+      "eraser": { "soft": "eraserBounce", "dull": "thud", "hard": "eraserClack" },
+      "rubberband": { "stiff": "bandSnap", "*": "plop" },
+      "tangerine": { "stone": "tangerineBeads", "*": "plop" },
+      "lettuce": { "crisp": "lettuceCrumble", "*": "plop" },
+      "balloon": { "flat": "plop", "*": "balloonFloat" },
+      "*": { "*": "plop" }
+    }
+  },
+
+  "outcomes": {
+    "roseWobble": { "fx": "wobble", "text": "꽃잎이 살랑 흔들렸어요." },
+    "rosePetals": { "fx": "petals", "grade": "mid", "text": "꽃잎 몇 장이 떨어졌어요. 아직 부드러워요." },
+    "roseCrush": { "fx": "crush", "grade": "fail", "lose": true, "text": "장미가 뭉개졌어요. 얼리지 않으면 깨지지 않아요." },
+    "roseChip": { "fx": "chip", "grade": "mid", "text": "꽃잎 끝만 톡 깨졌어요." },
+    "roseShatter": { "fx": "shatter", "grade": "success", "lose": true, "flag": "shatter", "text": "꽃잎이 유리처럼 산산조각 났어요!" },
+
+    "balloonBoing": { "fx": "boing", "text": "풍선이 통 튕겼어요." },
+    "balloonFloat": { "fx": "boing", "text": "풍선이 둥실 내려앉았어요." },
+    "balloonSlosh": { "fx": "slosh", "discover": "liquidAir", "text": "안에서 액체가 찰랑거려요." },
+    "balloonPop": { "fx": "pop", "grade": "fail", "lose": true, "text": "펑! 풍선이 터졌어요." },
+    "balloonTear": { "fx": "tear", "grade": "fail", "lose": true, "text": "언 고무가 쩍 찢어졌어요." },
+    "balloonPopWarm": { "fx": "pop", "grade": "fail", "lose": true, "text": "펑! 너무 빨리 데워서 터졌어요." },
+    "balloonHalf": { "fx": "peek", "grade": "mid", "text": "풍선이 조금만 줄었어요." },
+
+    "dent": { "fx": "dent", "text": "살짝 눌린 자국이 났어요." },
+    "crackle": { "fx": "crackle", "grade": "mid", "text": "겉에 금만 갔어요." },
+    "clink": { "fx": "clink", "text": "땡! 돌처럼 단단해요." },
+    "clack": { "fx": "clink", "text": "딱! 돌멩이 소리가 나요." },
+    "thud": { "fx": "thud", "text": "툭. 둔한 소리가 나요." },
+    "tap": { "fx": "tap", "text": "툭." },
+    "plop": { "fx": "thud", "text": "툭 떨어졌어요." },
+    "setDown": { "fx": "place", "text": "살며시 내려놓았어요." },
+
+    "bananaThud": { "fx": "thud", "grade": "mid", "text": "물렁해서 못은 그대로예요." },
+    "bananaSquash": { "fx": "squash", "grade": "fail", "lose": true, "text": "바나나가 뭉개졌어요." },
+    "bananaOoze": { "fx": "squash", "grade": "fail", "lose": true, "text": "겉만 깨지고 속이 뭉개졌어요. 속은 아직 안 얼었어요." },
+    "bananaSnap": { "fx": "snap", "grade": "fail", "lose": true, "text": "뚝! 언 바나나가 두 동강 났어요." },
+    "nail1": { "fx": "nail", "subject": "target", "nail": 1, "text": "못이 조금 들어갔어요." },
+    "nail2": { "fx": "nail", "subject": "target", "nail": 2, "text": "못이 쑥 들어갔어요." },
+    "nail3": { "fx": "nail", "subject": "target", "nail": 3, "text": "못이 깊이 박혔어요!" },
+    "nailByMallet": { "fx": "peek", "grade": "mid", "subject": "target", "text": "망치로는 쉬워요. 이번에는 바나나로 박아 봐요." },
+
+    "ballBoing": { "fx": "boing", "text": "망치가 통 튕겨 나왔어요." },
+    "ballSplit": { "fx": "split", "grade": "fail", "lose": true, "text": "공이 쩍 갈라졌어요." },
+    "ballChip": { "fx": "chip", "grade": "mid", "text": "공 귀퉁이가 깨졌어요." },
+    "ballShatterMallet": { "fx": "shatter", "grade": "fail", "lose": true, "text": "공이 산산조각 났어요. 이번에는 떨어뜨려서 알아봐요." },
+    "ballBounce": { "fx": "bounce", "flag": "bounce", "restitution": 0.85, "text": "통통! 높이 튀어요." },
+    "ballDull": { "fx": "thud", "grade": "mid", "restitution": 0.2, "text": "둔하게 툭. 거의 안 튀어요." },
+    "ballShatter": { "fx": "shatter", "grade": "success", "lose": true, "flag": "shatter", "text": "유리구슬처럼 산산조각 났어요!" },
+    "ballClack": { "fx": "clink", "grade": "mid", "text": "딱! 너무 낮아서 깨지지 않았어요." },
+
+    "tangerineSquirt": { "fx": "squash", "lose": true, "text": "즙이 찍 튀었어요." },
+    "tangerineBeads": { "fx": "beads", "lose": true, "discover": "beadTangerine", "text": "귤 알갱이가 구슬처럼 흩어졌어요!" },
+    "lettuceFlop": { "fx": "flop", "text": "잎이 펄럭였어요." },
+    "lettuceCrumble": { "fx": "crumble", "lose": true, "discover": "crispLettuce", "text": "과자처럼 바스락 부서졌어요!" },
+    "eggSmash": { "fx": "squash", "lose": true, "text": "달걀이 으깨졌어요." },
+    "eggHalves": { "fx": "split", "lose": true, "text": "달걀이 반으로 쪼개졌어요. 노른자가 가루가 됐어요." },
+    "eggRoll": { "fx": "roll", "discover": "stoneEgg", "text": "딱! 깨지지 않고 돌멩이처럼 굴러가요." },
+    "eraserBoing": { "fx": "boing", "text": "지우개가 망치를 튕겨 냈어요." },
+    "eraserSnap": { "fx": "snap", "lose": true, "discover": "snapEraser", "text": "뚝! 깨끗하게 두 동강 났어요." },
+    "eraserBounce": { "fx": "bounce", "restitution": 0.45, "text": "통. 조금 튀어요." },
+    "eraserClack": { "fx": "clink", "text": "딱! 하나도 안 튀어요." },
+    "cupDent": { "fx": "dent", "text": "종이컵이 찌그러졌어요." },
+    "cupFlat": { "fx": "squash", "lose": true, "text": "종이컵이 납작해졌어요." },
+    "cupSame": { "fx": "same", "discover": "sameCup", "text": "종이컵은 그대로예요. 얼 물이 없으니까요." },
+    "bandBoing": { "fx": "boing", "text": "고무줄이 탱 튕겼어요." },
+    "bandSnap": { "fx": "shreds", "lose": true, "discover": "snapBand", "text": "마른 국수처럼 뚝뚝 끊어졌어요!" },
+    "frozenBubble": { "fx": "bubbles", "frozen": true, "discover": "iceBubble", "text": "비눗방울이 찬 안개 위에 떠서 얼음 껍질이 됐어요!" },
+    "plainBubble": { "fx": "bubbles", "text": "비눗방울이 둥실 떠올라요." },
+
+    "bowlClang": { "fx": "clang", "text": "땡! 그릇이 울려요." },
+    "bowlSplash": { "fx": "clang", "spill": 0.05, "text": "출렁! 질소가 튀어 나왔어요." },
+    "dewarClang": { "fx": "clang", "text": "텅! 통이 울려요." },
+
+    "warmUp": { "fx": "warm", "text": "따뜻한 물에 금세 데워졌어요." },
+    "iceCoat": { "fx": "icecoat", "discover": "iceCoat", "text": "물이 닿자마자 얼어 얼음 옷을 입었어요!" },
+    "waterOnly": { "fx": "peek", "grade": "fail", "text": "그냥 따뜻한 물이에요. 아무 일도 안 일어나요." },
+    "cloudSmall": { "fx": "cloud", "size": "small", "grade": "mid", "text": "구름이 작게 피어올랐다 사라졌어요." },
+    "cloudBig": { "fx": "cloud", "size": "big", "grade": "success", "flag": "big", "flagKind": "cloud", "text": "하얀 구름이 솟아 실험대를 덮었어요!" }
+  },
+
+  "accidents": {
+    "bareHand": {
+      "when": { "action": "handIn", "needs": "bowlLn2", "missing": "gloves" },
+      "show": "frost",
+      "log": "맨손으로 영하 196도를 만지려 했다",
+      "real": "진짜였다면: 손이 순식간에 얼어 동상을 입어요.",
+      "rule": "액체 질소에는 손을 넣지 않는다. 집게로만 다룬다."
+    },
+    "frozenNoGloves": {
+      "when": { "action": "touch", "needs": "cold", "missing": "gloves" },
+      "show": "frost",
+      "log": "장갑 없이 얼린 물체를 집으려 했다",
+      "real": "진짜였다면: 얼린 물체가 살에 쩍 달라붙어 동상을 입어요.",
+      "rule": "얼린 물체는 극저온 장갑을 끼고 만진다."
+    },
+    "pourNoVisor": {
+      "when": { "action": "pourLn2", "missing": "visor" },
+      "show": "alarm",
+      "log": "보안면 없이 액체 질소를 부었다",
+      "real": "진짜였다면: 튄 방울이 눈에 들어가 크게 다칠 수 있어요.",
+      "rule": "액체 질소를 부을 때는 보안면을 쓴다."
+    },
+    "capBottle": {
+      "when": { "action": "cap", "needs": "bottleLn2" },
+      "show": "alarm",
+      "log": "액체 질소를 병에 넣고 뚜껑을 닫으려 했다",
+      "real": "진짜였다면: 질소가 700배로 불어나 병이 터져요. 그래서 절대 닫지 않아요.",
+      "rule": "액체 질소가 든 그릇은 절대 꼭 닫지 않는다."
+    }
+  },
+
+  "blocks": {
+    "gearFirst": "보안면과 장갑을 먼저 써요.",
+    "useTongs": "장갑을 껴도 손은 넣지 않아요. 집게를 써요.",
+    "notDippable": "이건 넣는 물건이 아니에요.",
+    "predictFirst": "먼저 예상 카드를 골라요."
+  },
+
+  "missions": [
+    {
+      "id": "taste", "title": "맛보기", "note": "장미를 얼려라", "stamp": "유리 장미", "guard": true,
+      "items": ["rose"],
+      "predict": { "q": "장미를 넣으면?", "cards": ["시든다", "그대로다", "유리처럼 된다"], "actual": 2, "when": { "bowlMin": 0.3 }, "gate": ["dip:rose"] },
+      "steps": [
+        { "glow": ["visor", "gloves"], "done": { "worn": ["visor", "gloves"] } },
+        { "glow": ["bowl"], "done": { "at": { "bowl": "bench" } } },
+        { "glow": ["dewar"], "done": { "bowlMin": 0.3 } },
+        { "glow": [], "done": { "predicted": true } },
+        { "glow": ["tongs", "rose"], "done": { "flag": "dip:rose" } },
+        { "glow": ["tongs"], "done": { "flag": "lift:rose" } },
+        { "glow": ["mallet"], "done": { "flag": "shatter:rose" } }
+      ],
+      "done": ["shatter:rose"],
+      "happened": "장미가 유리처럼 산산조각 났다.",
+      "cause": "꽃잎 속 물이 순식간에 얼어 딱딱해졌어요. 휘지 못하니까 깨져요.",
+      "whyNot": "액체 질소는 영하 196도예요. 학교에서는 구할 수도, 담아 둘 수도 없어요.",
+      "hints": { "roseCrush": "먼저 꽁꽁 얼려요", "rosePetals": "먼저 꽁꽁 얼려요", "roseChip": "더 세게 쳐 봐요" }
+    },
+    {
+      "id": "balloon", "title": "풍선 수수께끼", "note": "풍선을 터뜨리지 않고 납작하게 만들었다가, 되살려라", "stamp": "되살아난 풍선",
+      "items": ["balloon"], "pictures": ["visor", "gloves", "tongs", "balloon"],
+      "predict": { "q": "풍선을 넣으면?", "cards": ["펑 터진다", "쭈글쭈글 줄어든다", "꽁꽁 언 공이 된다"], "actual": 1, "gate": ["dip:balloon"] },
+      "done": ["flat:balloon", "revived:balloon"],
+      "ln2Until": "flat:balloon",
+      "happened": "풍선이 납작해졌다가 다시 부풀었다.",
+      "cause": "차가워지면 공기가 차지하는 자리가 줄어들고, 따뜻해지면 다시 늘어나요. 공기는 빠져나간 적이 없어요.",
+      "whyNot": "닿기만 해도 동상을 입을 만큼 차가워요. 맨손으로는 절대 못 만져요.",
+      "hints": { "balloonHalf": "납작해질 때까지 더 담가요", "balloonPop": "망치는 내려놓고, 두 손으로 감싸 봐요", "balloonTear": "망치는 내려놓고, 두 손으로 감싸 봐요", "balloonPopWarm": "천천히 데워요. 두 손으로 감싸 봐요" }
+    },
+    {
+      "id": "banana", "title": "바나나 망치", "note": "바나나로 못을 박아라", "stamp": "바나나 망치",
+      "items": ["banana", "woodblock"],
+      "predict": { "q": "얼린 바나나로 못을 치면?", "cards": ["바나나가 뭉개진다", "못이 박힌다", "바나나가 깨진다"], "actual": 1, "gate": ["dip:banana"] },
+      "done": ["nail:banana"],
+      "happened": "돌처럼 언 바나나로 못을 박았다.",
+      "cause": "바나나 속은 거의 물이라, 속까지 얼면 돌처럼 단단해져요. 끓는 건 바나나의 열을 빼앗는 중이라는 뜻이에요.",
+      "whyNot": "얼린 물체는 깨지면서 차가운 조각이 튀어요. 보안면과 장갑 없이는 못 해요.",
+      "hints": { "bananaSquash": "보글보글이 조용해질 때까지", "bananaOoze": "보글보글이 조용해질 때까지", "bananaThud": "보글보글이 조용해질 때까지", "crackle": "보글보글이 조용해질 때까지", "nailByMallet": "망치 말고 바나나로!" }
+    },
+    {
+      "id": "balls", "title": "튕길까 깨질까", "note": "고무공 하나는 그대로, 하나는 얼려서 떨어뜨려 보라", "stamp": "유리 고무공",
+      "items": ["ball"],
+      "predict": { "q": "얼린 공은?", "cards": ["더 높이 튄다", "안 튄다", "깨진다"], "actual": 2, "gate": ["dip:ball"] },
+      "done": ["bounce:ball", "shatter:ball"],
+      "happened": "안 얼린 공은 통통 튀고, 얼린 공은 유리구슬처럼 산산조각 났다.",
+      "cause": "고무는 아주 차가워지면 늘어나는 성질을 잃어요. 같은 물질인데 온도만으로 성질이 바뀌었어요.",
+      "whyNot": "질소는 기체가 되면 약 700배로 불어나요. 닫힌 곳에 두면 터져요.",
+      "hints": { "ballDull": "더 오래 얼려 봐요", "ballClack": "더 높은 데서 떨어뜨려요", "ballChip": "망치 말고, 높이 들어 떨어뜨려요", "ballShatterMallet": "망치 말고, 높이 들어 떨어뜨려요", "ballSplit": "더 오래 얼려서 떨어뜨려요" }
+    },
+    {
+      "id": "finale", "title": "마무리 한 방", "note": "남은 질소에 따뜻한 물을 부어라", "stamp": "실험대 구름",
+      "items": ["bowl", "kettle"],
+      "predict": { "q": "따뜻한 물을 부으면?", "cards": ["조용히 녹는다", "하얀 구름이 솟는다", "물이 꽁꽁 언다"], "actual": 1, "gate": ["pour:kettle>bowl"] },
+      "done": ["big:cloud"],
+      "happened": "하얀 구름이 솟아 실험대를 덮었다.",
+      "cause": "하얀 것은 질소가 아니에요. 공기 속 물기가 차가워져 생긴 아주 작은 물방울, 구름이에요.",
+      "whyNot": "좁은 방에서는 질소 기체가 숨 쉴 공기를 밀어내요.",
+      "hints": { "waterOnly": "그릇에 질소가 남아 있어야 해요", "cloudSmall": "질소와 물을 더 넉넉히" }
+    }
+  ],
+
+  "whyNot": {
+    "title": "왜 학교에서는 못 할까?",
+    "lines": [
+      "영하 196도라서 닿으면 동상을 입어요.",
+      "기체가 되면 약 700배로 불어나, 닫힌 곳에서는 터져요.",
+      "좁은 방에서는 숨 쉴 공기를 밀어내요."
+    ]
+  },
+
+  "free": { "id": "free", "title": "자유 실험", "note": "이것도 넣어 볼까", "refill": true },
+
+  "demo": {
+    "balloonOnBottle": {
+      "start": "뚜껑이 미끄러져 안 닫혀요. 대신 병 입구에 풍선을 씌워 볼게요.",
+      "pop": "풍선이 엄청나게 부풀다가 펑!",
+      "fizzle": "질소가 모자라 풍선이 부풀다 말았어요.",
+      "cause": "액체 질소는 기체가 되면 약 700배로 불어나요. 갈 곳이 없으면 풍선도 병도 터져요.",
+      "discover": "giantBalloon"
+    }
+  },
+
+  "encyclopedia": [
+    { "id": "rollingDrops", "item": "dewar", "title": "굴러다니는 방울", "text": "방울 밑에 기체 방석이 생겨서 구슬처럼 굴러다니다 사라져요." },
+    { "id": "liquidAir", "item": "balloon", "title": "찰랑이는 공기", "text": "풍선 속 공기가 아주 차가워져 액체가 됐어요." },
+    { "id": "giantBalloon", "item": "bottle", "title": "거대 풍선", "text": "질소 한 숟갈이 기체가 되면 풍선을 터뜨릴 만큼 불어나요." },
+    { "id": "limpRose", "item": "rose", "title": "축 늘어진 장미", "text": "얼었다 녹으면 꽃잎이 힘을 잃고 축 늘어져요." },
+    { "id": "mushyBanana", "item": "banana", "title": "검게 무른 바나나", "text": "얼었다 녹은 바나나는 검게 변하고 물러져요." },
+    { "id": "revivedBall", "item": "ball", "title": "되살아난 고무공", "text": "녹으면 고무는 다시 탱탱해져요. 성질이 돌아왔어요." },
+    { "id": "beadTangerine", "item": "tangerine", "free": true, "title": "구슬 귤", "text": "속까지 언 귤을 치면 알갱이가 구슬처럼 흩어져요." },
+    { "id": "crispLettuce", "item": "lettuce", "free": true, "title": "과자 상추", "text": "얇은 잎은 금세 얼어서 톡 치기만 해도 바스러져요." },
+    { "id": "stoneEgg", "item": "egg", "free": true, "title": "돌 달걀", "text": "속까지 언 달걀은 떨어뜨려도 깨지지 않고 돌처럼 굴러요." },
+    { "id": "snapEraser", "item": "eraser", "free": true, "title": "두 동강 지우개", "text": "언 지우개는 휘지 못하고 뚝 부러져요." },
+    { "id": "sameCup", "item": "papercup", "free": true, "title": "그대로인 종이컵", "text": "종이에는 얼 물이 거의 없어서 얼려도 그대로예요." },
+    { "id": "snapBand", "item": "rubberband", "free": true, "title": "국수 고무줄", "text": "언 고무줄은 늘어나지 않고 마른 국수처럼 끊어져요." },
+    { "id": "iceBubble", "item": "bubblewand", "free": true, "title": "얼음 비눗방울", "text": "비눗방울이 찬 안개 위에 떠서 얇은 얼음 껍질이 돼요." },
+    { "id": "iceCoat", "item": "kettle", "free": true, "title": "얼음 옷", "text": "꽁꽁 언 물체에 물을 부으면 물이 바로 얼어붙어요." }
+  ],
+
+  "texts": {
+    "shallow": "질소가 모자라요. 통에서 더 부어요.",
+    "dewarEmpty": "통이 비었어요.",
+    "ln2Out": "질소가 다 날아갔어요.",
+    "refill": "질소 한 통 더! 이번이 마지막이에요.",
+    "refillFree": "질소 한 통 더!",
+    "ln2OutFinal": "질소가 다 떨어졌어요. 이 의뢰를 다시 해 봐요.",
+    "restock": "선반에 새것이 놓였어요.",
+    "spill": "방울이 구슬처럼 굴러다니다 사라졌어요.",
+    "splash": "질소가 튀었어요!",
+    "capEmpty": "빈 병은 닫아도 괜찮아요.",
+    "lostHand": "제자리로 돌아갔어요.",
+    "noPrediction": "고르지 않음",
+    "stampAccidents": "사고 수집가",
+    "stampEncyclopedia": "도감 완성",
+    "freeStart": "선반에 새 물건이 놓였어요. 무엇이든 넣어 봐요."
+  }
+}
