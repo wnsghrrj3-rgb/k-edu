@@ -54,6 +54,7 @@ export function createInput({ mode, el, camBox, camStatus, video, camCanvas }){
   // ── 자동 재생(세 관문 「한 판」): [{t(초), hand, x, y, grab, tilt}] 사이를 이어 손을 움직인다
   let script = null;
   api.play = function(keys, onDone){ script = { keys: keys.slice().sort((a, b) => a.t - b.t), t0: null, onDone }; api.mode = 'script'; };
+  api.freeze = function(){ script = null; };   // 자동 재생을 그 자리에서 멈춤(손은 그대로 쥔 채) — 화면 찍기용
   api.update = function(now){
     if (!script) return; if (script.t0 == null) script.t0 = now;
     const t = (now - script.t0) / 1000, ks = script.keys;
