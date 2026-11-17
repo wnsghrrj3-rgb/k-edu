@@ -73,5 +73,8 @@ window.KDiagnosis.LABEL = {
   'grammar.plural':    '하나·여럿 (-s)',
   'grammar.do':        'Do·don’t 붙이기',
   'grammar.s3':        '그 사람이 하면 -s',
-  'reading.passage':   '짧은 글 읽기'
+  'reading.passage':   '짧은 글 읽기',
+  /* Lv4 신설 (_LV4_PLAN.md §3) — 보충 링크표는 Lv4 #45 미션이 갖는다(Lv3 #44 SEED 에는 넣지 않음 — 거기서 Lv4 로 보내지 않는다) */
+  'grammar.ing':       '지금 하는 일 (-ing)',
+  'reading.paragraph': '단락 읽기'
 };

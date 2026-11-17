@@ -570,12 +570,15 @@ function wrongMsg(sl){
   쓰는 것 = PSG[key].s[i].{en,w,k,p} · mgw(w) · bare(w) · cell(key,i). 짚는 순서 = 왼→오, 첫 줄 → 끝 줄 강제(Lv1 #17 계승).
   한 문장 끝 = 그 문장 낭독 + 그 칸 하나 켜짐 · 끝 문장 끝 = 네 칸이 한 장면으로 묶이고(.merge) 글 전체 낭독.
   ★낱소리·블렌딩 0 — 단어는 통째로(KTTS.word), 문장은 KTTS.sentence. 틀린 칸을 누르면 소리 0.
-  ★칸 수 = 문장 수(NK) — #5·#9 네 문장 · #13 다섯 문장(규약 §4-1 계단참②). 안내 글자도 문장 수를 따라간다. */
-const NK=['','한','두','세','네','다섯','여섯'];
+  ★칸 수 = 문장 수(NK) — #5·#9 네 문장 · #13 다섯 문장(규약 §4-1 계단참②). 안내 글자도 문장 수를 따라간다.
+  ★Lv4 7·8줄(Lv4 규약 §9-③ — #21·#25·#29·#33·#41 = 7줄 · #44·#45 = 8줄): NK 여덟까지 · 띠는 stripFit 이 두 줄 꺾임 class(.two .n7/.n8 → PTN8CSS 블록 4+3 · 4+4).
+    6줄 이하는 class 0 — Lv3 산출(DOM) 그대로. 띠를 stripHTML 로 직접 채우는 곳(putTF 류)은 stripFit(el,key) 도 부른다. */
+const NK=['','한','두','세','네','다섯','여섯','일곱','여덟'];
 function stripHTML(key,on){
   return PSG[key].s.map((x,i)=>'<div class="cel'+(on?' on':'')+'" data-i="'+i+'"><span class="cno">'+(i+1)+'</span><span class="cp">'+cell(key,i)+'</span><span class="ctx"></span></div>').join('');
 }
-function putStrip(id,key,on){const el=document.getElementById(id);el.innerHTML=stripHTML(key,on);if(on)el.classList.add('merge');return el;}
+function stripFit(el,key){const n=PSG[key].s.length;if(n>=7)el.classList.add('two','n'+n);return el;}
+function putStrip(id,key,on){const el=document.getElementById(id);el.innerHTML=stripHTML(key,on);stripFit(el,key);if(on)el.classList.add('merge');return el;}
 function buildPointN(key,frameId,sentId,stripId,fbId,slideIdx){
   const P=PSG[key],box=document.getElementById(frameId);
   const flat=[];
