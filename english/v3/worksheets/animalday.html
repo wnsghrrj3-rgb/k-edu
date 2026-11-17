@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv4 #33 관찰 글 4 「동물의 하루」 — daytime.html(Lv4 #25) 판형 계승, R트랙 초록 · 생성기 ws/gen_animalday.js
+     ★이 칸의 원리: 동물의 하루 — 매일 하는 일, 그리고 지금 보이는 일(알려 주는 글 세 편 · 일곱 줄씩 · ★too 가 처음 글에 · every day ↔ now 가 한 글에).
+     ★글판 3편(줄 번호) · ① 순서 번호(글 ① 카드 4장 — First, 를 찾아 1번부터 = 화면 ORDER) · ② 「매일 / 지금」 표(글 줄 넷 — 번호를 칸에) · ③ ow 상자(flower · now · cow /아우/ · grow · snow /오/ 나누기) · ④ 우리 집 · 창밖 동물 관찰 한 줄 + 그리기(상자 보고 고르기).
+     ★재료 일치: 지문 단어 + 기지어 cow(Lv3 #6) · grow · snow(Lv2 #23) · 관찰 상자 dog · cat · bird · sleeping · eating · 그림 = 화면 vz() 마크업 그대로 · print-color-adjust: exact -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 12mm 12mm 10mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.45; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #0d7a5c; padding-bottom: 5px; }
+  .brand { font-size: 13px; font-weight: 700; color: #094c39; }
+  .brand .lv { background: #0d7a5c; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 6px; background: #e4f6ef; border: 2px solid #0d7a5c; border-radius: 12px; padding: 4px 14px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 22px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #094c39; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 14px; font-weight: 800; color: #08301f; }
+  .seed .main b { color: #0d7a5c; }
+  .board { margin-top: 5px; border: 1.5px solid #a9ddc9; border-radius: 10px; padding: 4px 5px; background: #f5fdfa; }
+  .blabel { font-size: 10px; color: #094c39; font-weight: 700; text-align: center; margin-bottom: 2px; }
+  .textrow { display: flex; gap: 5px; }
+  .tx { flex: 1; min-width: 0; border: 2px solid #0d7a5c; border-radius: 9px; background: #fff; padding: 3px 5px 4px; text-align: left; }
+  .tx .who { font-size: 10px; color: #094c39; font-weight: 700; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px; }
+  .tx .ln { display: block; font-size: 11px; font-weight: 800; color: #08301f; line-height: 1.4; padding-left: 12px; text-indent: -12px; }
+  .tx .ln b { display: inline-block; width: 12px; text-indent: 0; font-size: 8.5px; color: #0d7a5c; }
+  h2.q { margin-top: 5px; font-size: 12.5px; color: #094c39; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  h2.q .n { background: #094c39; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2.q .sub { font-weight: 400; font-size: 10px; color: #888780; }
+  /* ① 순서 번호 */
+  .ocards { margin-top: 3px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .oc { display: flex; align-items: center; gap: 6px; border: 1.5px solid #d3d1c7; border-radius: 8px; padding: 2px 6px; font-size: 12.5px; font-weight: 800; color: #08301f; }
+  .oc .no { flex: none; width: 22px; height: 22px; border: 2px dashed #0d7a5c; border-radius: 6px; }
+  /* ② 매일 / 지금 */
+  .dnrow { margin-top: 3px; display: flex; gap: 8px; align-items: stretch; }
+  .dnl { flex: 1.4; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 8px; border: 1.5px solid #d3d1c7; border-radius: 10px; padding: 4px 8px; }
+  .dl { font-size: 12px; font-weight: 800; color: #08301f; }
+  .dl b { display: inline-block; width: 16px; color: #0d7a5c; font-size: 11px; }
+  .dnb { flex: 1; display: flex; gap: 6px; }
+  .dbx { flex: 1; border: 2px solid #E8590C; border-radius: 10px; padding: 3px 6px; text-align: center; background: #FFF9F2; }
+  .dbx.n { border-color: #3B5BDB; background: #F3F6FF; }
+  .dbx .hd { font-size: 11px; font-weight: 800; color: #C2410C; }
+  .dbx.n .hd { color: #3B5BDB; }
+  .dbx .two { margin-top: 3px; display: flex; gap: 6px; justify-content: center; }
+  .dbx .two span { width: 26px; height: 24px; border: 2px dashed #b4b2a9; border-radius: 6px; background: #fff; }
+  /* ③ ow */
+  .owb { margin-top: 3px; display: flex; gap: 8px; align-items: center; }
+  .owb .pool { flex: 1.2; border: 1.5px solid #d3d1c7; border-radius: 10px; padding: 3px 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: #08301f; text-align: center; }
+  .owb .bx2 { flex: 1; border: 2px solid #E6A800; border-radius: 10px; padding: 2px 8px; height: 40px; font-size: 11px; font-weight: 800; color: #854f0b; background: #fffaf0; }
+  .owb .bx2.o { border-color: #74C0FC; color: #1864ab; background: #f3f9ff; }
+  /* ④ 우리 집 · 창밖 동물 */
+  .mine { margin-top: 3px; display: flex; gap: 8px; align-items: center; border: 1.5px solid #d3d1c7; border-radius: 10px; padding: 4px 8px; }
+  .mine .pad { width: 150px; height: 62px; border: 2px dashed #a9ddc9; border-radius: 8px; background: #fbfffd; flex: none; }
+  .mine .line { font-size: 15px; font-weight: 800; color: #08301f; }
+  .mine .line span { display: inline-block; border-bottom: 2px solid #1f2430; width: 70px; }
+  .mine .pk0 { line-height: 0; }
+  .wb6 { margin-top: 4px; text-align: center; font-size: 12px; font-weight: 800; color: #854f0b; border: 1.5px dashed #ef9f27; border-radius: 7px; background: #fffaf0; padding: 1px 8px; }
+  .recap { margin-top: 5px; background: #e4f6ef; border: 2px solid #0d7a5c; border-radius: 10px; padding: 3px 12px; font-size: 12px; text-align: center; color: #08301f; }
+  .recap b { color: #0d7a5c; }
+  .parent { margin-top: 4px; border-top: 1.5px dashed #b4b2a9; padding-top: 3px; font-size: 10px; color: #5f5e5a; line-height: 1.42; }
+  .parent b { color: #094c39; }
+  /* 화면 그림(개미 · 꿀벌 · 토끼 — vz() 마크업) — 화면 CSS 줄 그대로(VB301CSS · PSG433CSS) · 종이엔 움직임 0 */
+  .pk0 .vs, .pk0 .vs * { animation: none !important; }
+  .vs{position:relative;display:inline-block;width:140px;height:64px;line-height:0;vertical-align:middle;text-align:left}
+  .vz{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+  .vz>.vs{position:absolute;left:0;top:0;transform-origin:0 0}
+  .vs .me{position:absolute;left:2px;top:24px;width:28px;height:28px;border-radius:50%;background:#FFE066;border:2px solid #F0C419;color:#7a5600;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-style:normal;box-sizing:border-box}
+  .vs .fg{position:absolute;top:20px;left:40px;line-height:0;transform:scale(.78);transform-origin:0 0}
+  .vs .fg.fl .act{transform:scaleX(-1)}
+  .vs .pr{position:absolute;font-size:20px;line-height:1;font-style:normal}
+  .vs .ar{position:absolute;top:0;font-size:15px;line-height:1;font-style:normal}
+  .vs .tb{position:absolute;left:46px;top:47px;width:44px;height:5px;background:#A1887F;border-radius:2px}
+  .vs .tb::before,.vs .tb::after{content:'';position:absolute;top:5px;width:4px;height:12px;background:#A1887F;border-radius:1px}
+  .vs .tb::before{left:3px}
+  .vs .tb::after{right:3px}
+  .vs .lp{position:absolute;left:52px;top:38px;width:22px;height:13px;border-radius:50% 50% 45% 45%;background:#D7B48C;opacity:.4}
+  .vs .to{position:absolute;left:78px;top:38px;font-size:12px;line-height:1;color:#B0A48A;font-style:normal}
+  .vs .sk{position:absolute;font-size:13px;line-height:1;color:#E8A93C;font-style:normal}
+  .vs .ld{position:absolute;left:60px;top:26px;width:28px;height:6px;border-radius:2px;background:#B07A3E;transform-origin:0 100%;transform:rotate(-65deg)}
+  .act.a-walk .aL,.act.a-hold .aL,.act.a-reach .aL,.act.a-knead .aL{transform:rotate(-70deg)}
+  .act.a-walk .aL{animation:vArmL .6s ease-in-out infinite}
+  .act.a-walk .aR{transform:rotate(70deg);animation:vArmR .6s ease-in-out infinite}
+  .act.a-walk .lL{animation:vLegL .6s ease-in-out infinite}
+  .act.a-walk .lR{animation:vLegR .6s ease-in-out infinite}
+  @keyframes vArmL{0%,100%{transform:rotate(-58deg)}50%{transform:rotate(-82deg)}}
+  @keyframes vArmR{0%,100%{transform:rotate(82deg)}50%{transform:rotate(58deg)}}
+  @keyframes vLegL{0%,100%{transform:rotate(18deg)}50%{transform:rotate(-18deg)}}
+  @keyframes vLegR{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(18deg)}}
+  .act.a-hold .aR{transform:rotate(-18deg)}
+  .act.a-reach .aR{transform:rotate(22deg) scaleX(1.25)}
+  .act.a-knead .aR{animation:vKnead .5s ease-in-out infinite}
+  @keyframes vKnead{0%,100%{transform:rotate(14deg)}50%{transform:rotate(34deg)}}
+  .act.a-rise .aL{transform:rotate(30deg)}
+  .act.a-rise .aR{transform:rotate(-70deg)}
+  .act.a-slide .aL{transform:rotate(40deg)}
+  .act.a-slide .aR{transform:rotate(-40deg)}
+  .act.a-slide .lL,.act.a-slide .lR{transform:rotate(-58deg)}
+  .v-go .fg{left:62px;animation:vGo 2.4s linear infinite}
+  .v-go .ar{left:44px}
+  .v-go .pr{left:116px;top:34px}
+  @keyframes vGo{0%{left:30px;opacity:1}78%{left:72px;opacity:1}100%{left:78px;opacity:0}}
+  .v-come .fg{left:42px;animation:vCome 2.4s linear infinite}
+  .v-come .ar{left:70px}
+  @keyframes vCome{0%{left:100px;opacity:0}14%{opacity:1}82%,100%{left:38px;opacity:1}}
+  .v-give .fg{left:98px}
+  .v-give .pr{left:66px;top:30px;animation:vGive 2.2s ease-in-out infinite}
+  .v-give .ar{left:52px}
+  @keyframes vGive{0%,16%{left:32px}72%,100%{left:84px}}
+  .v-get .fg{left:98px}
+  .v-get .pr{left:46px;top:30px;animation:vGet 2.2s ease-in-out infinite}
+  .v-get .ar{left:62px}
+  @keyframes vGet{0%,16%{left:84px}72%,100%{left:32px}}
+  .v-take .fg{left:8px}
+  .v-take .pr{left:38px;top:8px;animation:vTake 2.2s ease-in-out infinite}
+  .v-take .ar{left:100px;top:16px}
+  @keyframes vTake{0%,22%{left:58px;top:28px}72%,100%{left:38px;top:8px}}
+  .v-put .fg{left:8px}
+  .v-put .pr{left:58px;top:28px;animation:vPut 2.2s ease-in-out infinite}
+  .v-put .ar{left:100px;top:16px}
+  @keyframes vPut{0%,22%{left:38px;top:8px}72%,100%{left:58px;top:28px}}
+  .v-make .fg{left:8px}
+  .v-make .lp{animation:vLump 2.6s ease-in-out infinite}
+  .v-make .pr{left:94px;top:28px;animation:vCake 2.6s ease-in-out infinite}
+  .v-make .sk{left:118px;top:20px;animation:vSpark 2.6s ease-out infinite}
+  .v-make .sk::after{content:'✦'}
+  @keyframes vLump{0%,30%{opacity:1;transform:scale(1)}60%,100%{opacity:.4;transform:scale(.8)}}
+  @keyframes vCake{0%,36%{opacity:0;transform:scale(.4)}64%,100%{opacity:1;transform:scale(1)}}
+  @keyframes vSpark{0%,56%{opacity:0}70%{opacity:1}100%{opacity:0}}
+  .v-help .fg{left:6px}
+  .v-help .fg.f2{left:58px}
+  .v-help .f2 .act{transform-origin:50% 100%;transform:rotate(28deg);animation:vRise 2.6s ease-in-out infinite}
+  @keyframes vRise{0%,24%{transform:rotate(82deg)}74%,100%{transform:rotate(0)}}
+  .v-open .fg{left:8px}
+  .v-open .pr{left:60px;top:30px;font-size:24px}
+  .v-open .ld{animation:vLid 2.2s ease-in-out infinite}
+  .v-open .sk{left:72px;top:6px;animation:vSpark 2.2s ease-out infinite}
+  .v-open .sk::after{content:'✦'}
+  @keyframes vLid{0%,24%{transform:rotate(0)}62%,100%{transform:rotate(-65deg)}}
+  .v-play .pr{left:54px;top:16px;font-size:40px}
+  .v-play .fg{left:78px;top:8px;transform:scale(.6);animation:vSlide 1.8s ease-in infinite}
+  @keyframes vSlide{0%{left:58px;top:0}100%{left:98px;top:22px}}
+  .vs.still,.vs.still *{animation:none!important}
+  .dyp{position:relative;display:inline-flex;align-items:center;justify-content:center;width:80px;height:64px;border-radius:14px;background:#FFFDF9;border:2px solid #F1DFCD;box-sizing:border-box;line-height:1;vertical-align:middle;overflow:hidden;text-align:center}
+  .dyp .ds410{position:absolute;left:6px;top:30px;width:68px;height:24px;display:flex;gap:2px}
+  .dyp .ds410 i{flex:1;display:block;border-radius:4px;border:1px solid rgba(0,0,0,.15);box-sizing:border-box}
+  .dyp .ds410 .k1{background:linear-gradient(#FFF3BF,#FFD8A8)}
+  .dyp .ds410 .k2{background:linear-gradient(#4DABF7,#D0EBFF)}
+  .dyp .ds410 .k3{background:linear-gradient(#74C0FC,#FFF3BF)}
+  .dyp .ds410 .k4{background:linear-gradient(#FF922B,#FFA8A8 70%,#F783AC)}
+  .dyp .ds410 .k5{background:linear-gradient(#1C2A5A,#3B5BDB)}
+  .dyp .pt410{position:absolute;left:35px;top:10px;width:13px;height:15px;display:block;background:#E8590C;clip-path:polygon(0 0,100% 50%,0 100%);animation:n410Blink 1s ease-in-out infinite}
+  @keyframes n410Blink{0%,100%{opacity:1}50%{opacity:.15}}
+  .dyp .ev410{position:absolute;left:5px;top:20px;width:70px;height:26px;display:flex;gap:2px}
+  .dyp .ev410 i{flex:1;display:block;border-radius:3px;box-sizing:border-box;border:1.5px solid #D7B899;background:radial-gradient(circle at 50% 50%,transparent 0 2.4px,#E8590C 2.6px 4px,transparent 4.2px),#FFFDF9}
+  .sd432{position:absolute;left:46px;top:22px;width:14px;height:20px;display:block;border-radius:50% 50% 50% 50%/64% 64% 36% 36%;background:radial-gradient(circle at 38% 30%,#E0A96D 0 16%,#8D5524 56%,#5C3317 100%);border:1.5px solid #4E2A12;box-sizing:border-box;transform:rotate(-14deg)}
+  .sd432.s2{left:63px;top:16px;transform:rotate(8deg)}
+  .sd432.s3{left:80px;top:24px;transform:rotate(24deg)}
+  .vs .gr432{position:absolute;left:14px;top:40px;width:112px;height:22px;display:block;border-radius:3px 3px 10px 10px;background:#A1887F;border-top:3px solid #6D4C41;box-sizing:border-box}
+  .vg432{position:absolute;left:20px;top:22px;width:26px;height:22px;display:block;border-radius:50%;background:radial-gradient(circle at 50% 60%,#D8F5A2 0 22%,#8CE99A 24% 46%,#40C057 48%);border:2px solid #2F9E44;box-sizing:border-box}
+  .vg432.v2{left:50px}
+  .vg432.v3{left:98px}
+  .wd432{position:absolute;left:82px;top:4px;width:8px;height:38px;display:block;background:#9CA21B;clip-path:polygon(50% 0,100% 100%,0 100%);transform-origin:50% 100%}
+  .wd432.w2{top:12px;height:30px;transform:rotate(-26deg)}
+  .wd432.w3{top:14px;height:28px;transform:rotate(28deg)}
+  .vs .sf432{left:48px;top:6px;font-size:44px}
+  .vs .fl432{left:50px;top:8px;font-size:42px}
+  .vs .fd402{position:absolute;left:4px;top:4px;width:132px;height:56px;display:block;border-radius:10px;background:linear-gradient(#D0EBFF 0 30%,transparent 30%),repeating-linear-gradient(176deg,#8CE99A 0 8px,#69DB7C 8px 10px)}
+  .vs .gs402{position:absolute;left:4px;top:4px;width:132px;height:56px;display:block;border-radius:10px;background:linear-gradient(#E8F5E9 0 42%,#81C784 42%)}
+  .vs .gl402{position:absolute;left:30px;top:14px;width:8px;height:26px;display:block;background:#2F9E44;border-radius:100% 0 100% 0;transform:rotate(-10deg)}
+  .vs .gl402::before,.vs .gl402::after{content:'';position:absolute;top:6px;width:7px;height:21px;background:#37B24D}
+  .vs .gl402::before{left:9px;border-radius:0 100% 0 100%;transform:rotate(24deg)}
+  .vs .gl402::after{left:-9px;border-radius:100% 0 100% 0;transform:rotate(-24deg)}
+  .vs .gl402.g2{left:66px;top:18px}
+  .vs .gl402.g3{left:102px;top:12px}
+  .vs .yw428{left:49px;top:9px;font-size:40px;animation:v428Yawn 2.4s ease-in-out infinite}
+  @keyframes v428Yawn{0%,20%,90%,100%{transform:scale(1)}50%,70%{transform:scale(1.18)}}
+  .vs .hg417{position:absolute;left:8px;top:8px;width:124px;height:54px;border-radius:6px;background:linear-gradient(#69DB7C 0 14%,#A1887F 14%);border:2px solid #6D4C41;box-sizing:border-box}
+  .vs .hp417{position:absolute;left:60px;top:12px;width:11px;height:22px;background:#3E2723;border-radius:4px;transform:rotate(-24deg)}
+  .vs .hh417{position:absolute;left:52px;top:28px;width:36px;height:26px;border-radius:50%;background:#2B1B17}
+  .vs .hb417{position:absolute;left:10px;top:3px;width:120px;height:7px;border-radius:4px;background:#8D5A2B}
+  .vs .hv417{position:absolute;left:48px;top:9px;width:44px;height:53px;border-radius:50% 50% 46% 46%/42% 42% 58% 58%;background:repeating-linear-gradient(0deg,#FAB005 0 7px,#E67700 7px 9px);border:2px solid #A35200;box-sizing:border-box}
+  .vs .hv417::after{content:'';position:absolute;left:14px;bottom:9px;width:11px;height:8px;border-radius:50%;background:#5C3D1E}
+  .vs .sk32{position:absolute;left:3px;top:2px;width:134px;height:60px;border-radius:10px;overflow:hidden;display:block;box-sizing:border-box;border:2px solid rgba(0,0,0,.12)}
+  .sk32 .gd32{position:absolute;left:0;right:0;bottom:0;height:12px;display:block;background:#8CC66B}
+  .sk32 .sn32{position:absolute;width:20px;height:20px;border-radius:50%;display:block;background:#FFD43B;box-shadow:0 0 0 4px rgba(255,212,59,.35)}
+  .k-mo{background:linear-gradient(#FFF3BF,#FFD8A8)}
+  .k-mo .sn32{left:12px;top:36px;background:#FFC078;box-shadow:0 0 0 5px rgba(255,192,120,.35);animation:t32Rise 2.4s ease-out infinite}
+  @keyframes t32Rise{0%{transform:translateY(8px)}100%{transform:translateY(0)}}
+  .np .lf{display:inline-block;width:1em;height:.74em;background:#51CF66;border-radius:0 70% 0 70%;border:.04em solid #2F9E44;box-sizing:border-box}
+  .vs .sl433{position:absolute;left:4px;top:4px;width:132px;height:56px;display:block;border-radius:10px;background:linear-gradient(#EAF6FF 0 46%,#8CC66B 46% 50%,#A1887F 50%)}
+  .vs .an433{left:30px;top:36px;font-size:15px;animation:a433Walk 2.4s ease-in-out infinite}
+  .vs .an433.a2{left:62px;animation-delay:-.8s}
+  .vs .an433.a3{left:94px;animation-delay:-1.6s}
+  @keyframes a433Walk{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
+  .vs .fg433{position:absolute;left:104px;top:-4px;width:24px;height:40px;display:block;border-radius:12px 12px 10px 10px;background:linear-gradient(#FFE3C7,#F8C9A0);border:2px solid #E0A67A;box-sizing:border-box}
+  .vs .fg433::after{content:'';position:absolute;left:4px;bottom:3px;width:12px;height:9px;border-radius:5px;background:#FFF0F0;border:1px solid #E0A67A}
+  .v433-antsmall .an433.a3{left:76px}
+  .v433-sunup .sn433.lo,.vs .sn433.lo{left:96px;top:10px;font-size:22px;animation:t32Rise 2.4s ease-out infinite}
+  .v433-antfind .sd432{top:36px}
+  .v433-antfind .an433.a1{left:30px;top:30px;transform:scaleX(-1);animation:none}
+  .v433-antfind .an433.a3{left:100px;top:30px;animation:none}
+  .v433-antcarry .an433{top:42px;font-size:13px}
+  .v433-antcarry .sd432{left:30px;top:24px;animation:a433Walk 2.4s ease-in-out infinite}
+  .v433-antcarry .sd432.s2{left:62px;animation-delay:-.8s}
+  .v433-antcarry .sd432.s3{left:94px;animation-delay:-1.6s}
+  .vs .gd433{position:absolute;left:4px;top:4px;width:132px;height:56px;display:block;border-radius:10px;background:linear-gradient(#EAF6FF 0 34%,#69DB7C 34% 39%,#A1887F 39%)}
+  .vs .ho433{position:absolute;left:104px;top:22px;width:16px;height:6px;display:block;border-radius:50%;background:#3E2723}
+  .vs .tn433{position:absolute;left:109px;top:25px;width:6px;height:21px;display:block;border-radius:3px;background:#5D4037}
+  .vs .tn433.t2{left:66px;top:42px;width:48px;height:6px}
+  .vs .rm433{position:absolute;left:36px;top:38px;width:34px;height:18px;display:block;border-radius:50%;background:#5D4037}
+  .v433-antwalk .an433{top:8px;font-size:13px}
+  .v433-antwalk .an433.a1{left:44px}
+  .v433-antwalk .an433.a2{left:64px}
+  .v433-antwalk .an433.a3{left:84px}
+  .v433-anteat .rm433{left:20px;top:30px;width:78px;height:28px}
+  .v433-anteat .tn433.t2{left:96px;top:40px;width:18px}
+  .v433-anteat .an433{top:36px;font-size:13px;animation:none}
+  .v433-anteat .an433.a1{left:30px}
+  .v433-anteat .an433.a2{left:68px;transform:scaleX(-1)}
+  .v433-anteat .sd432.s2{left:52px;top:38px;transform:scale(.6) rotate(8deg)}
+  .vs .dyp.ev433{position:absolute;left:30px;top:0}
+  .ev433 .ev410 i{background:radial-gradient(ellipse 3px 4px at 50% 50%,#8D5524 0 90%,transparent 100%),#FFFDF9}
+  .vs .lf433{position:absolute;left:30px;top:24px;font-size:20px;line-height:1}
+  .vs .lf433.l2{left:62px}
+  .v433-antleaf .an433,.v433-antflower .an433{top:42px;font-size:13px}
+  .v433-antflower .fl432{left:44px;top:12px;font-size:24px}
+  .v433-antgoflower .fl432{left:100px;top:0;font-size:30px}
+  .v433-antgoflower .an433{left:14px}
+  .v433-antgoflower .an433.a2{left:38px}
+  .v433-antgoflower .an433.a3{left:62px}
+  .v433-antfield .an433{top:30px;font-size:13px}
+  .v433-antfield .an433.a1{left:50px}
+  .v433-antfield .an433.a2{left:64px;top:38px}
+  .v433-antfield .an433.a3{left:78px}
+  .vs .sk433{position:absolute;left:4px;top:4px;width:132px;height:56px;display:block;border-radius:10px;background:linear-gradient(#A5D8FF,#E7F5FF)}
+  .vs .dk433{position:absolute;left:4px;top:4px;width:132px;height:56px;display:block;border-radius:10px;background:linear-gradient(#FFA94D,#FFD8A8 60%,#FFE8CC)}
+  .vs .be433{left:12px;top:8px;font-size:22px;animation:b433Bob 1.8s ease-in-out infinite}
+  @keyframes b433Bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  .v433-bee .be433{left:48px;top:6px;font-size:44px}
+  .vs .sn433{left:52px;top:6px;font-size:44px}
+  .vs .pa433{position:absolute;left:36px;top:22px;width:46px;height:0;display:block;border-top:3px dotted #868E96}
+  .vs .pa433.p2{left:40px;top:34px;width:50px}
+  .vs .pa433.p3{left:44px;top:30px;width:52px;border-top-color:#fff}
+  .v433-beeflysf .sf432{left:86px}
+  .v433-beesit .be433{left:64px;top:4px;font-size:18px;animation:none}
+  .vs .po433{position:absolute;left:66px;top:22px;width:4px;height:4px;display:block;border-radius:50%;background:#FAB005;box-shadow:6px 2px #FAB005,12px 0 #FAB005}
+  .vs .po433.o2{left:68px;top:26px}
+  .v433-beeflyred .sf432{left:2px;top:16px;font-size:30px}
+  .v433-beeflyred .fl432{left:94px;top:14px;font-size:34px}
+  .v433-beeflyred .be433{left:60px;top:4px}
+  .v433-beeboth .sf432{left:10px;top:10px;font-size:38px}
+  .v433-beeboth .fl432{left:84px;top:12px;font-size:36px}
+  .v433-beeboth .be433.b2{left:24px;top:0;font-size:16px}
+  .v433-beeboth .be433.b3{left:98px;top:2px;font-size:16px;animation-delay:-.9s}
+  .vs .hz433{position:absolute;left:104px;top:8px;width:140px;height:64px;display:block;transform:scale(.24);transform-origin:0 0;filter:brightness(.45) saturate(.5)}
+  .v433-beehome .be433{left:70px;top:18px;animation:b433Home 2.4s ease-in-out infinite}
+  @keyframes b433Home{0%{transform:translateX(-14px)}100%{transform:translateX(10px)}}
+  .vs .zz433{left:82px;top:0;font-size:18px}
+  .v433-beesleep .fl432{left:40px;top:12px}
+  .v433-beesleep .be433{left:58px;top:6px;font-size:18px;animation:none}
+  .vs .rb433{left:56px;top:16px;font-size:34px}
+  .v433-morning .rb433{left:96px;top:30px;font-size:20px}
+  .v433-rabbitgrass .rb433{left:80px;top:20px;font-size:30px}
+  .v433-rabbitweed .rb433{left:104px;top:18px;font-size:26px}
+  .v433-rabbitears .rb433{left:46px;top:6px;font-size:48px}
+  .vs .er433{position:absolute;left:50px;top:0;width:44px;height:24px;display:block;border:3px dashed #FAB005;border-radius:50%;box-sizing:border-box}
+  .vs .ar433{position:absolute;left:46px;top:12px;width:62px;height:30px;display:block;border-top:3px dashed #E8590C;border-radius:50% 50% 0 0}
+  .vs .bm433{position:absolute;left:106px;top:44px;width:26px;height:10px;display:block;border-radius:50%;background:#3E2723}
+  .v433-rabbithop .rb433{left:22px;top:24px;font-size:26px;animation:r433Hop 1.4s ease-in-out infinite}
+  @keyframes r433Hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .v433-rabbityawn .rb433{left:54px;top:6px;font-size:26px}
+  .v433-rabbityawn .yw428{left:92px;top:0;font-size:22px}
+  .v433-rabbitgw .rb433{left:96px;top:20px;font-size:28px}
+  .v433-rabbitgw .wd432{left:40px;top:10px}
+  .v433-rabbitsf .sf432{left:20px}
+  .v433-rabbitsf .rb433,.v433-rabbitseed .rb433{left:92px;top:22px;font-size:28px}
+  .v433-rabbitseed .sd432{top:36px;left:22px}
+  .v433-rabbitseed .sd432.s2{left:40px;top:30px}
+  .v433-rabbitseed .sd432.s3{left:58px;top:38px}
+  .vs .dyp.nw433{position:absolute;left:30px;top:0}
+  .vs .cw433{left:46px;top:6px;font-size:44px}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv4 · 33 관찰 글 4 · 동물의 하루</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘의 씨앗</div>
+      <div class="main">동물의 하루 — <b>매일 하는 일</b>, 그리고 <b>지금 보이는 일</b>.</div>
+    </div>
+  </div>
+
+  <div class="board">
+    <div class="blabel">Mina 박사의 관찰 노트 세 편 · 소리 내어 한 번 더 읽어요</div>
+    <div class="textrow">
+      <div class="tx"><div class="who"><span class="pk0"><span class="vz" style="width:36px;height:17px"><span class="vs v433-antfind" data-vs="antfind" style="transform:scale(0.26)"><b class="sl433"></b><b class="sd432"></b><b class="sd432 s2"></b><b class="sd432 s3"></b><i class="pr an433 a1">🐜</i><i class="pr an433 a3">🐜</i></span></span></span>1 · 개미의 하루</div><span class="ln"><b>1</b>Ants are very small.</span><span class="ln"><b>2</b>The sun is up.</span><span class="ln"><b>3</b>First, the ants find seeds.</span><span class="ln"><b>4</b>They carry the seeds.</span><span class="ln"><b>5</b>The ants walk to the nest.</span><span class="ln"><b>6</b>The ants are eating seeds now.</span><span class="ln"><b>7</b>They eat seeds every day.</span></div>
+      <div class="tx"><div class="who"><span class="pk0"><span class="vz" style="width:36px;height:17px"><span class="vs v433-beeflysf" data-vs="beeflysf" style="transform:scale(0.26)"><b class="sk433"></b><i class="pr sf432">🌻</i><b class="pa433"></b><i class="pr be433">🐝</i></span></span></span>2 · 꿀벌의 하루</div><span class="ln"><b>1</b>This is a bee.</span><span class="ln"><b>2</b>It is a sunny day.</span><span class="ln"><b>3</b>The bee flies to a sunflower.</span><span class="ln"><b>4</b>It is sitting on the sunflower.</span><span class="ln"><b>5</b>Then it flies to a red flower.</span><span class="ln"><b>6</b>The bee likes red flowers too.</span><span class="ln"><b>7</b>The bee is flying home now.</span></div>
+      <div class="tx"><div class="who"><span class="pk0"><span class="vz" style="width:36px;height:17px"><span class="vs v433-rabbitgrass" data-vs="rabbitgrass" style="transform:scale(0.26)"><b class="gs402"></b><b class="gl402"></b><b class="gl402 g2"></b><b class="gl402 g3"></b><i class="pr rb433">🐰</i></span></span></span>3 · 토끼의 아침</div><span class="ln"><b>1</b>This is a rabbit.</span><span class="ln"><b>2</b>It is morning in the field.</span><span class="ln"><b>3</b>The rabbit eats grass.</span><span class="ln"><b>4</b>It eats weeds too.</span><span class="ln"><b>5</b>It has big ears.</span><span class="ln"><b>6</b>Last, it hops home.</span><span class="ln"><b>7</b>The rabbit is yawning now.</span></div>
+    </div>
+  </div>
+
+  <h2 class="q"><span class="n">1</span> <b>차례</b> — 개미의 하루 네 줄에 1 ~ 4 번호를 써요 <span class="sub">First, 를 찾아 1번부터</span></h2>
+  <div class="ocards"><div class="oc"><span class="no"></span>The ants walk to the nest.</div><div class="oc"><span class="no"></span>First, the ants find seeds.</div><div class="oc"><span class="no"></span>The ants are eating seeds now.</div><div class="oc"><span class="no"></span>They carry the seeds.</div></div>
+
+  <h2 class="q"><span class="n">2</span> <b>매일</b>일까, <b>지금</b>일까 — 번호를 칸에 써요 <span class="sub">every day · now 를 찾아요</span></h2>
+  <div class="dnrow">
+    <div class="dnl"><div class="dl"><b>1</b>The rabbit is yawning now.</div><div class="dl"><b>2</b>They eat seeds every day.</div><div class="dl"><b>3</b>The ants are eating seeds now.</div><div class="dl"><b>4</b>The rabbit eats grass.</div></div>
+    <div class="dnb"><div class="dbx e"><div class="hd">매일 · every day</div><div class="two"><span></span><span></span></div></div><div class="dbx n"><div class="hd">지금 · now</div><div class="two"><span></span><span></span></div></div></div>
+  </div>
+
+  <h2 class="q"><span class="n">3</span> <b>ow</b> 소리 나누기 — 들어 보고 상자에 옮겨 써요 <span class="sub">같은 o·w, 소리는 둘</span></h2>
+  <div class="owb">
+    <div class="pool">flower · now · cow · grow · snow</div>
+    <div class="bx2">/아우/</div>
+    <div class="bx2 o">/오/</div>
+  </div>
+
+  <h2 class="q"><span class="n">4</span> 우리 집 · 창밖 동물 — 지금 보이는 모습을 고르고 그려요 <span class="sub">정답 없음</span></h2>
+  <div class="mine">
+    <span class="pk0"><span class="vz" style="width:70px;height:32px"><span class="vs v433-rabbityawn" data-vs="rabbityawn" style="transform:scale(0.5)"><b class="hg417"></b><b class="hp417"></b><b class="hh417"></b><i class="pr rb433">🐰</i><i class="pr yw428">🥱</i></span></span></span>
+    <div><div class="line">The <span></span> is <span></span> now.</div><div class="wb6">dog · cat · bird · sleeping · eating</div></div>
+    <div class="pad"></div>
+  </div>
+
+  <div class="recap">★ 하루 글 = <b>매일 하는 일</b>(every day) + <b>지금 보이는 일</b>(now) · First, · Last, = <b>차례</b>를 알려 주는 말</div>
+
+  <div class="parent">
+    <b>학습 안내</b> · 네 번째 <b>알려 주는 관찰 글</b>입니다. 하루 글은 「매일」 과 「지금」 을 같이 써요 — <b>매일 하는 일</b>(They eat seeds every day.)과 <b>지금 보이는 일</b>(The ants are eating seeds now.)을 같이 찾아보세요.
+    First, · Last, 는 차례를 알려 주는 말이에요. 먼저 읽어 주지 마세요. <b>아이가 소리 내어 읽은 다음</b> 한 번 통으로 읽어 주세요. flower · now · cow 의 ow 는 들려주기만 하고 받아쓰기로 확인하지 마세요.
+    정답 — ① 3 · 1 · 4 · 2 / ② 매일 <b>2 · 4</b> · 지금 <b>1 · 3</b> / ③ /아우/ = flower · now · cow · /오/ = grow · snow / ④ 정답 없음.
+  </div>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
