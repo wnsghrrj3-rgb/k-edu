@@ -74,7 +74,8 @@ export function createProps({ stage, input, audio, liquid, hud }){
   const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3();
   const slotPos = name => slots.get(name).getWorldPosition(new THREE.Vector3());
 
-  for (const def of ITEMS) {
+  for (const def0 of ITEMS) {
+    const def = stage.pictured && def0.fixed ? { ...def0, home: def0.id === 'block' ? 'bench_e' : 'bench_f' } : def0;   /* 그림 판 방: 컷 B 가 가까워 양끝 고정 자리가 화면 밖 → 실험대 다섯째·여섯째 자리로 */
     const model = BUILD[def.id](); const pivot = new THREE.Group(); pivot.name = def.id; pivot.add(model);
     const grip = model.getObjectByName('grip'), gripLocal = grip ? grip.position.clone() : new THREE.Vector3();
     if (!def.fixed) model.position.copy(gripLocal).multiplyScalar(-1);                              // 쥐는 자리가 회전 중심

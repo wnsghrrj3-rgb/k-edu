@@ -26,7 +26,7 @@ export function createStage(host, opt = {}){
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = 0.45;
 
-  const camera = new THREE.PerspectiveCamera(CUTS.A.fov, 16 / 9, 0.05, 30);
+  const camera = new THREE.PerspectiveCamera(CUTS.A.fov, 16 / 9, 0.05, 600);
   camera.position.copy(CUTS.A.pos); camera.lookAt(CUTS.A.look);
 
   // 빛: 왼쪽 창의 오후 햇빛(따뜻·비스듬) + 형광등 채움빛(푸르스름)
@@ -66,7 +66,7 @@ export function createStage(host, opt = {}){
   // ── 카메라 레일
   const cam = { from: null, to: CUTS.A, t: 1, dur: .8, name: 'A', look: CUTS.A.look.clone(), shake: 0, cOverride: null };
   // 손 좌표용 카메라: A·B 만 따라가고 눈앞 컷(C)·흔들림은 모른다 → 카메라가 가까이 가도 쥔 물체가 미끄러지지 않는다
-  const ctrl = new THREE.PerspectiveCamera(CUTS.A.fov, 16 / 9, 0.05, 30); ctrl.position.copy(CUTS.A.pos); ctrl.lookAt(CUTS.A.look);
+  const ctrl = new THREE.PerspectiveCamera(CUTS.A.fov, 16 / 9, 0.05, 600); ctrl.position.copy(CUTS.A.pos); ctrl.lookAt(CUTS.A.look);
   const cr = { from: null, to: CUTS.A, t: 1, dur: .8, look: CUTS.A.look.clone() };
   function ctrlTo(to, dur){ cr.from = { pos: ctrl.position.clone(), look: cr.look.clone(), fov: ctrl.fov }; cr.to = to; cr.t = 0; cr.dur = dur; }
   function setCut(name, dur){ const to = CUTS[name] || name; if (cam.name === name && !cam.cOverride) return; cam.from = { pos: camera.position.clone(), look: cam.look.clone(), fov: camera.fov }; cam.to = to; cam.t = 0; cam.dur = dur == null ? .8 : dur; cam.name = typeof name === 'string' ? name : 'C'; if (CUTS[name] && cr.to !== CUTS[name]) ctrlTo(CUTS[name], cam.dur); }

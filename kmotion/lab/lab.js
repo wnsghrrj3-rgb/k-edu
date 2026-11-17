@@ -21,10 +21,12 @@ function makeHud(){
   };
 }
 
-function start(mode){
-  $('ov').classList.add('hidden'); $('back').style.display = 'none'; $('tools').style.display = '';
+async function start(mode){
+  $('ov').classList.add('wait'); $('err').textContent = '과학실 문을 여는 중…'; $('back').style.display = 'none';   /* 방 그림이 다 올라올 때까지 시작 화면을 덮어 둔다 */
   const audio = createAudio({ muted: Q.has('mute') }); audio.unlock();
   const stage = createStage($('app'), { capture: Q.has('capture') });
+  if (!Q.has('grey')) { for (let k = 0; k < 3 && !stage.pictured; k++) { try { await stage.loadRoom(); } catch (e) { console.warn('[lab] 방 그림을 못 올림(' + (k + 1) + '번째) — 다시 해 보고 안 되면 회색 판으로', e); } } }   /* 블렌더에서 구운 과학실. ?grey=1 이면 회색 판 */
+  $('ov').classList.add('hidden'); $('ov').classList.remove('wait'); $('err').textContent = ''; $('tools').style.display = ''; document.documentElement.dataset.lab = 'ready';
   const input = createInput({ mode, el: stage.renderer.domElement, camBox: $('camBox'), camStatus: $('camSt'), video: $('v'), camCanvas: $('c') });
   input.onError = e => { $('camSt').textContent = e.message; if (mode === 'cam') openCamPick(e.message); };
   // ── 카메라 고르기 (카메라 손 모드만): 도구 줄 「📷 카메라」·카메라 창 누르기 · 켜기에 실패하면 저절로 열림
