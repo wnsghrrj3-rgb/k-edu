@@ -140,10 +140,10 @@ export function overlay(html, btn, fn) { const o = $('ov'); o.firstElementChild.
 
 /* ───── 조작: 방향키/WASD · Shift 뛰기 · V 시점 · Q/E 돌려 보기 · 휠 당겨 보기 / 터치: 왼쪽 막대 + 오른쪽 단추 ───── */
 export const VIEWS = ['위에서', '가까이', '어깨 너머', '지도'];
-export function controls(S, say) {
+export function controls(S, say, views = VIEWS) {
   const ctl = { keys: {}, sx: 0, sz: 0, run: false, isTouch: false };
   const keys = ctl.keys;
-  ctl.toggleView = () => { S.view = (S.view + 1) % VIEWS.length; S.camYaw = S.pdir; $('bView').textContent = '👁 ' + VIEWS[S.view]; $('rot').style.display = S.view < 2 ? '' : 'none'; say(S.view === 2 ? '어깨 너머 — 좌우로 몸을 틀고, 앞뒤로 걷는다' : S.view === 3 ? '지도처럼 한눈에 본다' : VIEWS[S.view] + ' 본다', null, 1.8); };
+  ctl.toggleView = () => { S.view = (S.view + 1) % views.length; S.camYaw = S.pdir; $('bView').textContent = '👁 ' + views[S.view]; $('rot').style.display = S.view < 2 ? '' : 'none'; say(S.view === 2 ? '어깨 너머 — 좌우로 몸을 틀고, 앞뒤로 걷는다' : S.view === 3 ? '지도처럼 한눈에 본다' : views[S.view] + ' 본다', null, 1.8); };
   ctl.turnView = (d) => { if (S.view > 1) return; S.yawT += d * Math.PI / 2; };
   ctl.yawNow = () => (S.view < 2 ? S.yaw : 0);
   addEventListener('keydown', (e) => { keys[e.code] = true; if (e.code === 'KeyV' && !e.repeat) ctl.toggleView(); if (e.code === 'KeyQ' && !e.repeat) ctl.turnView(-1); if (e.code === 'KeyE' && !e.repeat) ctl.turnView(1); if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault(); });
@@ -176,11 +176,15 @@ export function followCam(cam, S, o) {
   const { W, H } = o, tall = cam.aspect < 1, cx = o.clampX || [6, W - 6], cz = o.clampZ || [2, H - 4], mp = o.map || { h: [82, 150], z: 10, look: -2.5 };
   const nh = o.nearH || [9.5, 13], nb = o.nearBk || [12.5, 16], fh = o.farH || [41, 58], fb = o.farBk || [27, 36];
   if (S.view === 2) { setFov(cam, 60); let d = S.pdir - S.camYaw; d = Math.atan2(Math.sin(d), Math.cos(d)); S.camYaw += d * 0.12; const fx = Math.cos(S.camYaw), fz = Math.sin(S.camYaw); cam.position.lerp(v3.set(S.px - fx * 6.2, 3.6, S.pz - fz * 6.2), 0.14); cam.lookAt(S.px + fx * 5, 1.3, S.pz + fz * 5); }
-  else if (S.view === 3) { setFov(cam, 38); const hh = tall ? mp.h[1] : mp.h[0]; cam.position.lerp(v3.set(W / 2, hh, H / 2 + mp.z), 0.1); cam.lookAt(W / 2, 0, H / 2 + mp.look); }
+  else if (S.view === 3) { setFov(cam, mp.fov || 38); const hh = tall ? mp.h[1] : mp.h[0]; cam.position.lerp(v3.set(W / 2, hh, H / 2 + mp.z), 0.1); cam.lookAt(W / 2, 0, H / 2 + mp.look); }
   else { const d = S.yawT - S.yaw; S.yaw += d * 0.14; const a = S.yaw, near = S.view === 1; setFov(cam, near ? 52 : 38);
     const hh = (near ? (tall ? nh[1] : nh[0]) : (tall ? fh[1] : fh[0])) * S.zoom, bk = (near ? (tall ? nb[1] : nb[0]) : (tall ? fb[1] : fb[0])) * S.zoom, ahead = near ? 3.5 : 5;
+    if (!near && o.farFov) setFov(cam, o.farFov);
     const tx = clamp(S.px - Math.sin(a) * ahead, cx[0], cx[1]), tz = clamp(S.pz - Math.cos(a) * ahead, cz[0], cz[1]);
-    cam.position.lerp(v3.set(tx + Math.sin(a) * bk, hh, tz + Math.cos(a) * bk), near ? 0.1 : 0.08); cam.lookAt(cam.position.x - Math.sin(a) * bk, near ? 1.2 : 0, cam.position.z - Math.cos(a) * bk); }
+    cam.position.lerp(v3.set(tx + Math.sin(a) * bk, hh, tz + Math.cos(a) * bk), near ? 0.1 : 0.08);
+    /* 길 따라(lookY 가 있으면): 땅 대신 앞쪽 먼 곳을 바라봐 화면 위에 지평선·하늘이 걸린다 */
+    if (!near && o.lookY != null) { const af = o.aheadFar || 12; cam.lookAt(cam.position.x - Math.sin(a) * (bk + af - ahead), o.lookY, cam.position.z - Math.cos(a) * (bk + af - ahead)); }
+    else cam.lookAt(cam.position.x - Math.sin(a) * bk, near ? 1.2 : 0, cam.position.z - Math.cos(a) * bk); }
 }
 export function fadeOccluders(occl, cam, S, active) {
   const ccx = cam.position.x, ccz = cam.position.z, sx = S.px - ccx, sz = S.pz - ccz, sl = sx * sx + sz * sz || 1;
@@ -199,6 +203,70 @@ export function overBar(el, cam, x, y, z, k) {
 /* 땅 누른 자리(화면 좌표 → 땅 위 x,z) */
 const _ray = new THREE.Raycaster(), _plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), _v2 = new THREE.Vector2(), _hit = new THREE.Vector3();
 export function groundAt(cam, clientX, clientY) { _v2.set((clientX / innerWidth) * 2 - 1, -(clientY / innerHeight) * 2 + 1); _ray.setFromCamera(_v2, cam); if (!_ray.ray.intersectPlane(_plane, _hit)) return null; return [_hit.x, _hit.z]; }
+
+/* ───── 판 밖 세 겹(못 가지만 보이는 세상, S10 에서 처음) — 그림자 없음 · 충돌 없음 · 면 적게 ─────
+   edge(z) → 그 z 에서 판의 [x0, x1] · field(z) → 논둑을 둘 곳인지 · skip(z) → 아무것도 두지 않을 곳(강 따위).
+   가까운 겹(가장자리~30): 논둑 · 전봇대 줄 · 버려진 수레·보따리 · 언 개울. 중간 겹(30~120): 언덕 · 지붕 · 연기 · 멀리 피란민 줄.
+   먼 겹: 산 능선 두 겹 + 하늘(카메라를 따라다녀서 늘 멀리 있다). 뒤쪽(+z) 하늘은 붉게 — paintSky(k) 로 짙어진다. lite 면 움직이는 점을 뺀다. */
+export function backdrop(scene, o) {
+  const { rnd, z0 = 0, z1 = 320, edge, field = () => true, skip = () => false, skyTop = 0x1d2a4c, skyLow = 0x8f9ab8, backC = 0xd8542c, frontC = 0xffc070, ridgeC = [0x4e5a7a, 0x66729a], lite = false } = o;
+  const d = new THREE.Object3D(), col = new THREE.Color(), lam = (c) => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
+  function inst(geo, mat, list) { const m = new THREE.InstancedMesh(geo, mat, Math.max(1, list.length)); list.forEach((t, i) => { d.position.set(t[0], t[1], t[2]); d.rotation.set(0, t[6] || 0, 0); d.scale.set(t[3], t[4], t[5]); d.updateMatrix(); m.setMatrixAt(i, d.matrix); if (t[7] != null) m.setColorAt(i, col.set(t[7])); }); m.count = list.length; m.frustumCulled = false; scene.add(m); return m; }
+  const ex = (z, side) => { const e = edge(clamp(z, z0, z1)); return side < 0 ? e[0] : e[1]; };
+  /* 가까운 겹 */
+  const dikes = [], poles = [], wires = [], carts = [], wheels = [], bundles = [], ice = [];
+  for (let z = z0 - 48; z <= z1 + 48; z += 8) { if (skip(z)) continue;
+    for (const side of [-1, 1]) { const e = ex(z, side);
+      if (field(z)) { dikes.push([e + side * 17, 0.22, z, 26, 0.44, 0.7, 0]); for (const off of [9, 19]) dikes.push([e + side * off, 0.22, z + 4, 0.7, 0.44, 8, 0]); } } }
+  let prev = null;
+  for (let z = z0 - 48; z <= z1 + 48; z += 14) { if (skip(z)) { prev = null; continue; } const x = ex(z, -1) - 5; poles.push([x, 3, z, 1, 1, 1, 0]); if (prev) wires.push(prev[0] + 0.7, 5.4, prev[1], x + 0.7, 5.4, z, prev[0] - 0.4, 5.4, prev[1], x - 0.4, 5.4, z); prev = [x, z]; }
+  for (let i = 0; i < 18; i++) { const z = z0 + rnd() * (z1 - z0); if (skip(z)) continue; const side = rnd() < 0.5 ? -1 : 1, x = ex(z, side) + side * (3 + rnd() * 11), a = rnd() * 6.28;
+    if (i % 2) { carts.push([x, 0.75, z, 1, 1, 1, a]); for (const s of [-1, 1]) wheels.push([x + Math.cos(a) * 0.78 * s, 0.55, z - Math.sin(a) * 0.78 * s, 1, 1, 1, a]); }
+    for (let k = 0; k < 2 + (i % 3); k++) bundles.push([x + rnd() * 2 - 1, 0.25, z + rnd() * 2 - 1, 0.5 + rnd() * 0.4, 0.5, 0.5 + rnd() * 0.3, rnd() * 3, [0x8a4a3a, 0x3a5a8a, 0xc8a050, 0x6a6a7a][k % 4]]); }
+  for (let z = z0 - 48; z <= z1 + 48; z += 6) { if (skip(z)) continue; const w = Math.sin(z * 0.045) * 5, w2 = Math.sin((z + 6) * 0.045) * 5; ice.push([ex(z, 1) + 24 + (w + w2) / 2, 0.03, z + 3, 2.6, 0.06, 6.6, Math.atan2(w2 - w, 6)]); }
+  inst(new THREE.BoxGeometry(1, 1, 1), lam(0xd2dbe8), dikes);
+  inst(new THREE.CylinderGeometry(0.12, 0.16, 6, 5), lam(0x4a3a2c), poles);
+  inst(new THREE.BoxGeometry(1.6, 0.12, 0.12), lam(0x4a3a2c), poles.map((p) => [p[0] + 0.15, 5.4, p[2], 1, 1, 1, 0]));
+  { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(wires, 3)); scene.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x2a2a34 }))); }
+  inst(new THREE.BoxGeometry(1.4, 0.5, 2.2), lam(0x7a5a3a), carts);
+  const wg = new THREE.CylinderGeometry(0.55, 0.55, 0.12, 8); wg.rotateZ(Math.PI / 2); inst(wg, lam(0x5a4028), wheels);
+  inst(new THREE.BoxGeometry(1, 1, 1), lam(0xffffff), bundles);
+  inst(new THREE.BoxGeometry(1, 1, 1), lam(0xa9c3dc), ice);
+  /* 중간 겹 */
+  const hills = [], walls = [], roofs = [], villages = [];
+  for (let i = 0; i < 22; i++) { const z = z0 - 60 + rnd() * (z1 - z0 + 120), side = i % 2 ? 1 : -1, x = ex(z, side) + side * (45 + rnd() * 70); hills.push([x, -1, z, 18 + rnd() * 22, 4 + rnd() * 9, 18 + rnd() * 22, 0, [0xd8e0ec, 0xc8d2e2, 0xe2e8f2][i % 3]]); }
+  for (let v = 0; v < 4; v++) { const z = z0 + 30 + v * (z1 - z0 - 60) / 3 + rnd() * 20, side = v % 2 ? 1 : -1; if (skip(z)) continue; const vx = ex(z, side) + side * (34 + rnd() * 14); villages.push([vx, z]);
+    for (let k = 0; k < 4; k++) { const x = vx + (rnd() - 0.5) * 16, zz = z + (rnd() - 0.5) * 14, a = rnd() < 0.5 ? 0 : Math.PI / 2, tile = (v + k) % 3 === 0; walls.push([x, 1.2, zz, 5, 2.4, 3.6, a, tile ? 0xc8b8a0 : 0xa89070]); roofs.push([x, 3.2, zz, 4.1, 1.8, 3.2, a + Math.PI / 4, tile ? 0x4e586c : 0xe6ebf2]); } }
+  inst(new THREE.SphereGeometry(1, 9, 5, 0, Math.PI * 2, 0, Math.PI / 2), lam(0xffffff), hills);
+  inst(new THREE.BoxGeometry(1, 1, 1), lam(0xffffff), walls);
+  inst(new THREE.ConeGeometry(1, 1, 4), lam(0xffffff), roofs);
+  const smoke = [];
+  if (villages.length) { const [vx, vz] = villages[0], tex = canvasTex(64, 64, (g) => { const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(120,124,140,.7)'); r.addColorStop(1, 'rgba(120,124,140,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); });
+    for (let k = 0; k < 7; k++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); s.userData.k = k / 7; s.position.set(vx, 4, vz); scene.add(s); smoke.push(s); } }
+  /* 멀리 다른 피란민 줄 — 작은 점들이 같은 쪽(-z)으로 천천히 */
+  const walkers = [];
+  if (!lite) for (const [side, off] of [[-1, 72], [1, 88]]) for (let i = 0; i < 46; i++) walkers.push({ side, off: off + (rnd() - 0.5) * 3, z: z0 - 40 + rnd() * (z1 - z0 + 80), v: 0.6 + rnd() * 0.35 });
+  const wm = new THREE.InstancedMesh(new THREE.BoxGeometry(0.7, 1.5, 0.6), lam(0x343a4e), Math.max(1, walkers.length)); wm.count = walkers.length; wm.frustumCulled = false; scene.add(wm);
+  /* 먼 겹: 하늘과 능선 — 카메라를 따라다닌다 */
+  const far = new THREE.Group(); scene.add(far);
+  const sg = new THREE.SphereGeometry(380, 32, 14), sp = sg.attributes.position, sc = new Float32Array(sp.count * 3); sg.setAttribute('color', new THREE.BufferAttribute(sc, 3));
+  const sky = new THREE.Mesh(sg, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false })); sky.renderOrder = -2; far.add(sky);
+  const cT = new THREE.Color(skyTop), cL = new THREE.Color(skyLow), cB = new THREE.Color(backC), cF = new THREE.Color(frontC), cc = new THREE.Color();
+  function paintSky(k) { for (let i = 0; i < sp.count; i++) { const y = sp.getY(i) / 380, z = sp.getZ(i) / 380, t = clamp(y / 0.6, 0, 1); cc.copy(cL).lerp(cT, Math.pow(t, 0.7)); const back = Math.pow(Math.max(0, z), 1.6) * Math.pow(1 - clamp(y / 0.45, 0, 1), 1.4) * k; cc.lerp(cB, clamp(back, 0, 0.92)); const front = Math.pow(Math.max(0, -z), 4) * Math.pow(1 - clamp(y / 0.12, 0, 1), 2) * 0.35; cc.lerp(cF, front); sc[i * 3] = cc.r; sc[i * 3 + 1] = cc.g; sc[i * 3 + 2] = cc.b; } sg.attributes.color.needsUpdate = true; }
+  paintSky(0.4);
+  function ridge(r, hmin, hmax, c, seed) { const N = 96, hs = []; let h = (hmin + hmax) / 2; for (let i = 0; i < N; i++) { h = clamp(h + (Math.sin(i * 1.7 + seed) + (rnd() - 0.5) * 1.6) * (hmax - hmin) * 0.18, hmin, hmax); hs.push(h); }
+    const pos = [], idx = []; for (let i = 0; i <= N; i++) { const a = (i / N) * Math.PI * 2, hh = hs[i % N]; pos.push(Math.cos(a) * r, -8, Math.sin(a) * r, Math.cos(a) * r, hh, Math.sin(a) * r); if (i < N) { const b = i * 2; idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide, fog: false, depthWrite: false })); m.renderOrder = -1; far.add(m); return m; }
+  const ridges = [ridge(352, 14, 46, ridgeC[1], 1), ridge(318, 6, 30, ridgeC[0], 4)];
+  let tk = 0;
+  function update(dt, cam) {
+    tk += dt; far.position.set(cam.position.x, 0, cam.position.z);
+    for (let i = 0; i < walkers.length; i++) { const w = walkers[i]; w.z -= w.v * dt; if (w.z < z0 - 50) w.z = z1 + 50; d.position.set(ex(w.z, w.side) + w.side * w.off, 0.75 + Math.abs(Math.sin(tk * 3 + i)) * 0.08, w.z); d.rotation.set(0, 0, 0); d.scale.set(1, 1, 1); d.updateMatrix(); wm.setMatrixAt(i, d.matrix); }
+    if (walkers.length) wm.instanceMatrix.needsUpdate = true;
+    for (const s of smoke) { const k = (s.userData.k + tk * 0.06) % 1; s.position.y = 4 + k * 22; s.position.x = villages[0][0] + k * k * 8; s.scale.setScalar(2 + k * 7); s.material.opacity = 0.75 * (1 - k); }
+  }
+  return { update, paintSky, far, ridges, sky, walkers };
+}
 
 /* ───── 돌림 고리: 30분의 1초 걸음, 시험용 고리(window.__scene)에서 쓴다 ───── */
 export function runLoop(update, view, render) {
