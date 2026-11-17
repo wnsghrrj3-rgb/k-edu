@@ -4,7 +4,7 @@
    굴림대: 돌 밑에 둘 이상 있어야 움직인다. 지나온 것은 주워서 돌 앞 길에 놓는다(아이 하나도 천천히 돕는다).
    좌표: x 동쪽(+), z 남쪽(+). 길은 z=24 를 따라 서쪽 채석장 → 동쪽 무덤 언덕. 마을은 남쪽. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop } from '../scene/kit.js?v=1';
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop } from '../scene/kit.js?v=1';
 
 const W = 92, H = 58, BX = [4, 88], BZ = [8, 52];
 const ROAD_Z = 24, S0 = 17, GOAL = 73, MOUND = [73, 24], DAY = 320;
@@ -54,9 +54,14 @@ const supports = [-1.5, 1.5].map((dz) => { const m = box(2.6, supH, 0.7, 0x9a948
 const ramp = new THREE.Mesh(new THREE.BoxGeometry(5, 1, 2.4), M(0x9a7a50)); ramp.geometry.translate(0, 0.5, 0); ramp.position.set(MOUND[0] - 1.2, 2.2, MOUND[1]); ramp.scale.y = 0.001; ramp.castShadow = ramp.receiveShadow = true; scene.add(ramp);
 const capstone = new THREE.Group(); { const a = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 0), M(0x8d877c)); a.scale.set(2.6, 0.75, 1.9); a.castShadow = a.receiveShadow = true; capstone.add(a); const b = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 0), M(0xa6a094)); b.scale.set(1.6, 0.45, 1.2); b.position.set(0.3, 0.5, -0.2); b.castShadow = true; capstone.add(b); } scene.add(capstone);
 const rollGeo = new THREE.CylinderGeometry(0.28, 0.28, 3.6, 8); rollGeo.rotateX(Math.PI / 2);
-const rollers = Array.from({ length: NROLL }, () => { const m = new THREE.Mesh(rollGeo, M(0x8a5a2b)); m.castShadow = true; scene.add(m); return { m, x: 0, z: ROAD_Z, side: false }; });
+const rollers = Array.from({ length: NROLL }, () => { const m = new THREE.Mesh(rollGeo, M(0x8a5a2b)); m.castShadow = true; scene.add(m); const glow = glowSprite(scene, 'rgba(255,230,140,.9)', 'rgba(255,200,80,0)', 2.6); glow.visible = false; return { m, glow, x: 0, z: ROAD_Z, side: false }; });
 const ropeMat = M(0xd8c090), ropeSegs = Array.from({ length: 10 }, () => { const m = new THREE.Mesh(new THREE.BoxGeometry(1, 0.08, 0.08), ropeMat); scene.add(m); return m; });
 const goalPos = new THREE.Vector3(MOUND[0], 3.4, MOUND[1]);
+/* 「무엇을 어떻게」 보이기(11-17 준호 「어떻게 하라는 건지 모르겠다」): 줄 잡는 자리 빛 기둥 · 주울 굴림대 빛 · 내려놓을 자리 고리 · 머리 위 그림 */
+const pillarTex = canvasTex(8, 128, (g) => { const r = g.createLinearGradient(0, 0, 0, 128); r.addColorStop(0, 'rgba(255,230,140,0)'); r.addColorStop(1, 'rgba(255,220,120,.85)'); g.fillStyle = r; g.fillRect(0, 0, 8, 128); });
+const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 9, 18, 1, true), new THREE.MeshBasicMaterial({ map: pillarTex, transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending })); pillar.visible = false; scene.add(pillar);
+const dropRing = new THREE.Mesh(new THREE.RingGeometry(1.1, 1.5, 32), new THREE.MeshBasicMaterial({ color: 0xffcf4d, transparent: true, opacity: 0.8, depthWrite: false })); dropRing.rotation.x = -Math.PI / 2; dropRing.visible = false; scene.add(dropRing);
+const tagEls = {}; function tagEl(k, html) { if (!tagEls[k]) { const e = document.createElement('div'); e.className = 'tag'; e.innerHTML = html; document.body.appendChild(e); tagEls[k] = e; } return tagEls[k]; }
 const goalGlow = glowSprite(scene, 'rgba(255,236,170,.75)', 'rgba(255,200,90,0)', 7); goalGlow.position.copy(goalPos);
 
 /* 사람 */
@@ -90,15 +95,17 @@ const SFX = {
 /* ───── 상태 ───── */
 const S = { mode: 'title', day: 1, view: 0, yaw: 0, yawT: 0, zoom: 1, camYaw: -Math.PI / 2, t: 0, sun: 0, px: 24, pz: 27.5, pdir: -Math.PI / 2, moving: false, running: false, said: {}, sayT: 0,
   s: S0, sv: 0, holding: false, bPh: 0.3, pressed: 0, lastOk: -9, pulls: 0, misses: 0, slips: 0, stuck: 0, hurt: 0, tired: false, meal: false, mealCarry: false, ramp: 0, earth: false, goods: 'altar', carry: -1,
-  away: 0, smokeT: -1, workT: 0, workKey: '', beatT: 0, stepT: 0, endT: 0, shown: false, introT: 0, chiefSaid: 0, crewMax: CREW0 };
+  away: 0, smokeT: -1, workT: 0, workKey: '', beatT: 0, stepT: 0, endT: 0, shown: false, introT: 0, chiefSaid: 0, crewMax: CREW0, tut: 0 };
+const TUT = 3;   /* 처음 세 박자는 따라 하기: 박자가 느리고 폭이 넓고, 맞으면 돌이 크게 움직이고, 어긋나도 굴림대가 안 빠진다 */
 const { say, tick: sayTick } = sayLine(S);
 const ctl = controls(S, say), keys = ctl.keys;
 if (ctl.isTouch) $('keys').textContent = '왼쪽 동그라미로 걷기 · 줄 곁에서 「차!」에 맞춰 「당기기」 · 지나온 굴림대는 주워서 돌 앞에 · 가만히 서면 담고 나른다 · 「시점」 ⟲⟳';
 
 const onSlope = () => S.s >= SLOPE0 && S.s < GOAL;
 const crew = () => Math.max(3, S.crewMax - S.hurt - S.away);
-const period = () => (onSlope() ? 1.5 : 2.0) * lerp(1, 0.84, clamp(S.sun, 0, 1)) * (S.tired ? 0.92 : 1);
-const windowW = () => clamp(0.22 + (S.meal ? 0.12 : 0) - (S.tired ? 0.07 : 0), 0.1, 0.4);
+const period = () => (onSlope() ? 1.5 : 2.0) * lerp(1, 0.84, clamp(S.sun, 0, 1)) * (S.tired ? 0.92 : 1) * (S.tut < TUT ? 1.2 : 1);
+const windowW = () => clamp(0.22 + (S.meal ? 0.12 : 0) - (S.tired ? 0.07 : 0) + (S.tut < TUT ? 0.1 : 0), 0.1, 0.45);
+const pickable = (r) => r !== rollers[helper.carry] && r !== rollers[S.carry] && (r.side || r.x < S.s - 2.8);
 const grab = () => [S.s + 0.4, ROAD_Z + 2.8];   /* 돌 바로 옆 — 굴림대를 뒤에서 앞으로 옮기기 쉽게 */
 const frontSpot = (r) => { let x = S.s + 4.4; while (rollers.some((o) => o !== r && !o.side && !loose(o) && Math.abs(o.x - x) < 0.8) && x > S.s + 1.6) x -= 0.5; return x; }; /* 앞쪽 끝부터 깐다 */
 const loose = (r) => r === rollers[S.carry] || r === rollers[helper.carry];
@@ -131,17 +138,20 @@ function press() {
   if (S.mode !== 'play') return;
   if (!S.holding) { SFX.shout(); say(S.carry >= 0 || S.earth || S.mealCarry ? '먼저 들고 있는 것을 내려놓자' : '돌 옆 줄 끝(남쪽)에 서야 당긴다', 'nohold', 2); return; }
   const P = period(), off = Math.min(S.bPh, 1 - S.bPh) * P;   /* 「차」(위상 0) 와의 거리(초) */
-  if (S.pressed) return miss('또 당겼다 — 한 박자에 한 번!');
+  if (S.pressed) return miss('또 당겼다 — 한 박자에 한 번!', true);
   S.pressed = 1;
   if (off <= windowW()) {
     if (under() < 2) { S.stuck++; SFX.thunk(); say('굴림대가 모자라 꿈쩍 않는다 — 지나온 굴림대를 돌 앞에!', null, 2.4); hud(); return; }
-    let step = 0.24 * crew() * (onSlope() ? 0.62 : 1);
+    let step = 0.24 * crew() * (onSlope() ? 0.62 : 1) * (S.tut < TUT ? 2.2 : 1);
+    if (S.tut < TUT) { S.tut++; say(S.tut < TUT ? `맞았다! 돌이 크게 움직인다 — 따라 하기 ${S.tut}/${TUT}` : '좋다 — 이제 박자마다 한 번씩. 흰 점이 노란 칸에 올 때!', null, 2.6); }
     if (S.s >= SLOPE1 && S.ramp < 4) step *= 0.35;   /* 흙 비탈이 없으면 지레로 조금씩 */
     S.sv += step; S.pulls++; S.lastOk = S.t; SFX.pull(); $('chant').className = 'hit'; ring(S.s, ROAD_Z, 3, 0xffcf4d);
     if (S.s >= SLOPE1 && S.ramp < 4) say('받침돌 사이가 비어 지레로 조금씩 — 흙 비탈을 쌓으면 쉽다', 'noramp', 3);
-  } else miss('박자가 어긋났다 — 돌이 뒤로 밀린다!');
+  } else if (S.tut < TUT) miss(S.bPh < 0.5 ? '조금 늦었다 — 흰 점이 노란 칸 한가운데 올 때 「차!」' : '조금 일렀다 — 흰 점이 노란 칸 한가운데 올 때 「차!」', true);
+  else miss('박자가 어긋났다 — 돌이 뒤로 밀린다!');
 }
-function miss(text) {
+function miss(text, soft) {
+  if (soft && S.tut < TUT) { S.sv -= 0.12; SFX.thunk(); say(text, null, 2.2); ring(S.s, ROAD_Z, 2, 0xff9a6a); return; }
   S.misses++; S.slips++; S.sv -= onSlope() ? 1.2 : 0.6; SFX.slide(); say(text, null, 1.8); ring(S.s, ROAD_Z, 3, 0xff6a4a);
   const u = rollers.filter(isUnder); if (u.length) { const r = u[Math.floor(rnd() * u.length)]; r.side = true; r.z = ROAD_Z + (rnd() < 0.5 ? -2.8 : 2.8); SFX.pop(); }
   if (S.slips >= 4) { S.slips = 0; S.hurt = Math.min(S.hurt + 1, CREW0 - 3); const h = haulers.filter((h) => !h.hurt).pop(); if (h) { h.hurt = true; h.m.visible = false; } say('한 사람이 다쳐 줄에서 빠졌다', null, 2.4); }
@@ -221,11 +231,13 @@ function update(dt) {
   if (S.bPh < ph0) { SFX.cha(); $('chant').textContent = '차!'; haulers.forEach((h) => (h.ph = 0)); }
   if (ph0 < 0.25 && S.bPh >= 0.25) { if (S.holding && !S.pressed && onSlope() && S.t - S.lastOk > P * 1.2) { S.sv -= 0.3; say('비탈에서 손을 놓으면 돌이 미끄러진다!', 'slopeidle', 2.4); } S.pressed = 0; }   /* 다음 박자 준비 */
   const bt = $('beat'); bt.style.display = S.holding ? 'flex' : 'none';
+  const inWin = Math.min(S.bPh, 1 - S.bPh) * P <= windowW(); bt.querySelector('.win').className = 'win' + (inWin ? ' in' : '');
+  const tu = $('tut'); tu.style.display = S.holding && S.tut < TUT ? 'block' : 'none'; if (S.holding && S.tut < TUT) tu.textContent = `따라 하기 ${S.tut + 1}/${TUT} — 흰 점이 노란 칸에 들어올 때 ${ctl.isTouch ? '「당기기」' : '스페이스'}`;
   if (S.holding) { const lane = bt.querySelector('.lane'), w = lane.clientWidth; bt.querySelector('.dot').style.left = ((S.bPh + 0.5) % 1) * w + 'px'; const ww = (windowW() / P) * w, wn = bt.querySelector('.win'); wn.style.right = 'auto'; wn.style.left = (w / 2 - ww) + 'px'; wn.style.width = 2 * ww + 'px'; }
   $('bAct').textContent = S.holding ? '당기기' : '소리';
 
   /* 돌 움직임 */
-  if (Math.abs(S.sv) > 0.001) { const d = S.sv * Math.min(1, dt * 4); S.s = clamp(S.s + d, S0 - 3, GOAL); S.sv -= d; for (const r of rollers) if (isUnder(r)) r.m.rotation.z -= d * 3.5; }
+  if (Math.abs(S.sv) > 0.001) { const d = S.sv * Math.min(1, dt * 4); const s0 = S.s; S.s = clamp(S.s + d, S0 - 3, GOAL); S.sv -= d; if (S.holding) S.px += S.s - s0;   /* 줄을 잡은 손은 돌과 함께 간다 */ for (const r of rollers) if (isUnder(r)) r.m.rotation.z -= d * 3.5; }
   if (S.s >= GOAL - 0.05) return finish(true);
 
   /* 굴림대: 지나온 것 줍기 → 돌 앞 길에 놓기 */
@@ -286,7 +298,18 @@ function placeAll(dt) {
   pMesh.position.set(S.px, groundH(S.px, S.pz), S.pz); pMesh.rotation.y = -S.pdir + Math.PI / 2; pMesh.rotation.z = S.holding ? Math.max(0, 0.4 - (S.t - S.lastOk) * 0.8) : 0; walkAnim(pMesh, S.t * (S.running ? 16 : 10), S.moving);
   pRing.position.set(S.px, groundH(S.px, S.pz) + 0.11, S.pz); pRing.material.color.set(S.holding ? 0xffcf4d : 0xffffff);
   carryM.position.set(S.px, groundH(S.px, S.pz) + 1.95, S.pz);
+  /* 할 일 보이기 */
+  const play = S.mode === 'play', free = S.carry < 0 && !S.earth && !S.mealCarry && S.goods !== 'carry', [gx, gz] = grab(), low = under() < 2, pulse = 0.5 + Math.sin(S.t * 5) * 0.5;
+  pillar.visible = play && free && !S.holding; pillar.position.set(gx, 4.5, gz); pillar.material.opacity = 0.55 + pulse * 0.35;
+  for (const r of rollers) { const on = play && S.carry < 0 && pickable(r); r.glow.visible = on; if (on) { r.glow.position.set(r.x, groundH(r.x, r.z) + 0.6, r.z); r.glow.material.opacity = low ? 0.6 + pulse * 0.4 : 0.35; r.glow.scale.setScalar(low ? 2.6 + pulse : 2); } }
+  dropRing.visible = play && S.carry >= 0; if (dropRing.visible) { dropRing.position.set(S.s + 3.2, groundH(S.s + 3.2, ROAD_Z) + 0.08, ROAD_Z); dropRing.scale.setScalar(0.9 + pulse * 0.25); }
+  const near = play && free ? rollers.filter(pickable).sort((a, b) => dist(a.x, a.z, S.px, S.pz) - dist(b.x, b.z, S.px, S.pz))[0] : null;
+  showTag('grab', '🙌 여기 서서 줄 잡기', play && free && !S.holding, gx, 2.6, gz);
+  showTag('roll', '🪵 들어서 돌 앞으로', !!near && under() < 3, near ? near.x : 0, 1.6, near ? near.z : 0);
+  showTag('drop', '⬇ 여기 내려놓기', dropRing.visible, S.s + 3.2, 1.4, ROAD_Z);
 }
+const tv = new THREE.Vector3();
+function showTag(k, html, on, x, y, z) { const e = tagEl(k, html); if (!on) { e.style.display = 'none'; return; } const q = tv.set(x, y + groundH(x, z), z).project(cam); if (q.z > 1) { e.style.display = 'none'; return; } e.style.display = 'block'; e.style.left = ((q.x + 1) / 2) * innerWidth + 'px'; e.style.top = clamp(((1 - q.y) / 2) * innerHeight, 120, innerHeight - 30) + 'px'; }
 const v3 = new THREE.Vector3();
 function view() {
   if (S.mode === 'title' || S.mode === 'intro') { const k = S.mode === 'intro' ? clamp(S.introT / 3.6, 0, 1) : 0, e = k * k * (3 - 2 * k);
@@ -301,7 +324,7 @@ resetDay(false); placeStone(); placeAll(0.016);
 haulers.forEach((h, k) => { h.x = S.s + 6 + Math.floor(k / 2) * 1.6; h.z = ROAD_Z + (k % 2 ? 1 : -1); });
 $('go').onclick = () => { resumeAudio(); $('ov').style.display = 'none'; S.mode = 'intro'; S.introT = 0; SFX.horn(); };
 runLoop(update, view, () => renderer.render(scene, cam));
-window.__scene = { S, rollers, helper, update, keys, ctl, press, under, period, windowW, grab,
+window.__scene = { S, rollers, pillar, dropRing, pickable, helper, update, keys, ctl, press, under, period, windowW, grab,
   go() { $('go').click(); S.introT = 99; update(0.01); }, tp(x, z) { S.px = x; S.pz = z; }, view(n) { S.view = n; },
   step(sec) { for (let i = 0; i < sec * 30; i++) update(1 / 30); },
   stand(sec) { ctl.sx = ctl.sz = 0; for (let i = 0; i < sec * 30 && S.mode === 'play'; i++) update(1 / 30); },

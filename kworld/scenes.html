@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>케이월드 — 장면으로 걷는 우리 역사</title>
+<script src="/kedu_scope.js"></script>
+<style>
+:root{--bg:#0b1730;--card:rgba(22,44,78,.82);--line:rgba(255,207,77,.35);--gold:#ffcf4d;--ink:#fff;--sub:#a9b9dc}
+html{background:#081226}
+html,body{margin:0;min-height:100vh;background:radial-gradient(ellipse 120% 900px at 50% -10%,#24406e 0%,#0e1d3a 55%,#081226 100%) no-repeat #081226;color:var(--ink);font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif}
+body{padding:28px 16px 70px}
+.wrap{max-width:720px;margin:0 auto}
+header{text-align:center;margin-bottom:22px}
+header .k{font-size:11px;letter-spacing:5px;color:var(--gold);font-weight:800}
+header h1{font-size:clamp(30px,6vw,44px);margin:8px 0 6px;letter-spacing:.02em}
+header p{margin:0;color:#dfe8fb;font-size:16px;line-height:1.6}
+.line{position:relative;padding-left:26px}
+.line:before{content:'';position:absolute;left:9px;top:8px;bottom:8px;width:3px;border-radius:2px;background:linear-gradient(180deg,#8a6a3a,#ffcf4d 50%,#d8542c)}
+a.card{position:relative;display:block;text-decoration:none;color:inherit;background:var(--card);border-radius:18px;padding:14px 16px 13px;margin:0 0 12px;box-shadow:0 4px 0 rgba(0,0,0,.28);transition:transform .15s,box-shadow .15s;border:1px solid transparent}
+a.card:hover,a.card:focus-visible{transform:translateX(3px);border-color:var(--line);box-shadow:0 6px 0 rgba(0,0,0,.3),0 0 0 3px rgba(255,207,77,.18);outline:none}
+a.card:before{content:'';position:absolute;left:-23px;top:20px;width:13px;height:13px;border-radius:50%;background:#0e1d3a;border:3px solid var(--gold)}
+a.card.done:before{background:var(--gold)}
+.row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.era{font-size:12px;font-weight:800;color:#3a2a00;background:var(--gold);border-radius:999px;padding:3px 10px}
+.card h2{font-size:22px;margin:0;letter-spacing:.02em}
+.play{font-size:12px;color:var(--sub);font-weight:700}
+.one{margin:6px 0 0;color:#dfe8fb;font-size:15px;line-height:1.55}
+.trail{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.trail span{font-size:12.5px;font-weight:800;border-radius:10px;padding:4px 9px;background:rgba(255,255,255,.1);color:#dfe8fb}
+.trail span.ok{background:var(--gold);color:#3a2a00}
+.trail .none{background:none;color:var(--sub);padding-left:0;font-weight:700}
+.trail .n{background:none;color:var(--sub);font-weight:700}
+.go{position:absolute;right:16px;top:14px;font-size:13px;font-weight:800;color:var(--gold)}
+footer{margin-top:22px;display:flex;flex-direction:column;align-items:center;gap:10px}
+footer a.big{display:inline-block;text-decoration:none;font-weight:800;font-size:18px;color:#3a2a00;background:var(--gold);border-radius:16px;padding:13px 28px;box-shadow:0 5px 0 #c9962a}
+footer .small{font-size:13px;color:var(--sub)}
+footer .small a,footer .small a:visited{color:#cfe0ff}
+@media (max-width:520px){.card h2{font-size:19px}.one{font-size:14px}.go{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="k">KEDU WORLD · 장면</div>
+  <h1>케이월드</h1>
+  <p>그 시대 사람이 되어 하룻밤, 하루를 걸어 본다.<br>장면을 마치면 남긴 흔적이 <b>족보</b>에 한 줄씩 쌓인다.</p>
+</header>
+<div class="line" id="list"></div>
+<footer>
+  <a class="big" href="./jokbo.html">📜 족보 보기</a>
+  <div class="small"><a href="./?era=paleo">옛 열한 시대 터</a> · <a href="/">← 케이에듀</a></div>
+</footer>
+</div>
+<script>
+/* 장면 차례(시대 순). 주소 = /kworld/<id>/ — 끝 화면의 「남긴 흔적」은 kit.js remember() 가 kworld_scene_trail 에 남긴다 */
+const SCENES = [
+  ['hunt', '구석기', '몰이', '몰기', '해가 지기 전에, 무리와 함께 사슴 떼를 골짜기로 몬다.'],
+  ['winter', '신석기', '첫 겨울', '모으고 지키기', '첫눈이 오기 전에, 겨울 날 곡식을 움집에 들인다.'],
+  ['dolmen', '청동기', '고인돌', '박자 맞춰 끌기', '해가 지기 전에, 여럿이 박자를 맞춰 큰 돌을 받침돌 위에 올린다.'],
+  ['law', '고조선', '여덟 가지 법', '찾아서 가리기', '재판 북이 세 번 울리기 전에, 곳간 곡식을 훔친 사람을 찾아낸다.'],
+  ['fort', '삼국·가야', '성을 지켜라', '나르고 막기', '새벽까지, 산성의 깃발 셋을 지킨다.'],
+  ['gate', '통일신라·발해', '골품의 문', '막힌 문 사이 길 찾기', '문 닫는 종이 울리기 전에, 나라를 살릴 글을 임금 앞에 올린다.'],
+  ['port', '고려', '벽란도', '장사', '물이 빠져 배가 떠나기 전에, 먼 나라 상인들과 거래를 마친다.'],
+  ['night', '조선 전기', '그믐밤', '숨기', '오늘 밤 달아난다 — 순라꾼 불빛을 피해 강 건너 나루의 등불까지.'],
+  ['market', '조선 후기', '장날', '심고 팔고 내기', '관아 북이 울리는 날까지, 낼 것을 내고도 식구 먹을 것을 남긴다.'],
+  ['manse', '개항·일제', '만세 전날 밤', '숨어서 돌리기', '새벽 장이 서기 전에, 태극기와 선언서를 다섯 집에 돌린다.'],
+  ['refuge', '대한민국', '피란길', '식구 데리고 가기', '식구를 하나도 잃지 않고, 강을 건너 남쪽으로 간다.'],
+];
+let trail = []; try { trail = JSON.parse(localStorage.getItem('kworld_scene_trail') || '[]'); } catch (e) { trail = []; }
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+document.getElementById('list').innerHTML = SCENES.map(([id, era, title, play, one]) => {
+  const mine = trail.filter((r) => r.id === id), last = mine[mine.length - 1];
+  const tr = last ? last.marks.map((m) => `<span class="${m.ok ? 'ok' : ''}">${esc(m.t)}</span>`).join('') + (mine.length > 1 ? `<span class="n">· ${mine.length}번 걸음</span>` : '') : '<span class="none">아직 걷지 않았다</span>';
+  return `<a class="card${last ? ' done' : ''}" href="./${id}/"><div class="row"><span class="era">${era}</span><h2>${title}</h2><span class="play">${play}</span></div><p class="one">${one}</p><div class="trail">${tr}</div><span class="go">걸어 보기 →</span></a>`;
+}).join('');
+</script>
+</body>
+</html>

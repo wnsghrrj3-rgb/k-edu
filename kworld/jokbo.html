@@ -18,16 +18,34 @@
   #top{max-width:640px;margin:0 auto 14px;display:flex;justify-content:space-between;align-items:center;font-size:12px;opacity:.85}
   #top a{color:#f2dfb2;text-decoration:none}#top a:hover{color:var(--accent)}
   #top .k{letter-spacing:4px;font-size:10px;color:var(--accent)}
+  #trail{position:relative;max-width:640px;margin:0 auto 18px;background:linear-gradient(180deg,#fbf6ea,#f3ecdb);color:var(--ink);border-radius:20px;padding:24px 28px;box-shadow:0 30px 80px rgba(0,0,0,.5),inset 0 0 0 1px rgba(150,120,70,.18)}
+  #trail h3{margin:8px 0 4px;font-size:24px;font-family:var(--serif)}#trail .tag{display:inline-block;font-size:11px;letter-spacing:2px;color:#9a6a1c;font-weight:700;padding:4px 10px;border:1px solid rgba(154,106,28,.35);border-radius:999px;background:rgba(154,106,28,.06)}
+  #trail .sub{font-size:13px;opacity:.7;margin:4px 0 10px}#trail ol{list-style:none;margin:0;padding:0}
+  #trail li{border-top:1px dashed #d9caa6;padding:9px 0}#trail li .h{font-size:15px;line-height:1.5}#trail li .h b{font-family:var(--serif)}#trail li .d{font-size:12px;opacity:.6;margin-right:6px}
+  #trail li .era{font-size:11px;font-weight:700;color:#9a6a1c;margin-right:6px}#trail .m{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}#trail .m span{font-size:12px;border-radius:8px;padding:2px 7px;background:rgba(154,106,28,.08);color:#6a5434}#trail .m span.ok{background:#f3cd7a;color:#3a2a00;font-weight:700}
+  #trail a{color:#9a6a1c}
   @media print{body{background:#fff;padding:0}#paper{box-shadow:none;border-radius:0}#top{display:none}}
 </style>
 </head>
 <body>
-<div id="top"><span class="k">KEDU WORLD · HISTORY</span><span><a href="./">← 시대로 돌아가기</a> &nbsp;·&nbsp; <a href="./dogam.html">📖 신분 도감</a> &nbsp;·&nbsp; <a href="#" id="print">인쇄</a></span></div>
+<div id="top"><span class="k">KEDU WORLD · HISTORY</span><span><a href="./scenes.html">← 장면 목록</a> &nbsp;·&nbsp; <a href="./dogam.html">📖 신분 도감</a> &nbsp;·&nbsp; <a href="#" id="print">인쇄</a></span></div>
+<div id="trail"></div>
 <div id="paper">불러오는 중…</div>
 <script src="/kedu_scope.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/kedu_config.js"></script>
 <script src="/kedu_tier.js"></script>
+<script>
+/* S11 족보 잇기: 장면 끝 화면의 「남긴 흔적」(kworld/scene/kit.js remember → kworld_scene_trail) 한 줄씩 — 최근 것이 위 */
+(function () {
+  const ERA = { hunt: '구석기', winter: '신석기', dolmen: '청동기', law: '고조선', fort: '삼국·가야', gate: '통일신라·발해', port: '고려', night: '조선 전기', market: '조선 후기', manse: '개항·일제', refuge: '대한민국' };
+  let list = []; try { list = JSON.parse(localStorage.getItem('kworld_scene_trail') || '[]'); } catch (e) { list = []; }
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const day = (iso) => { const d = new Date(iso); return isNaN(d) ? '' : `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`; };
+  const rows = list.slice().reverse().map((r) => `<li><div class="h"><span class="d">${day(r.at)}</span><span class="era">${esc(ERA[r.id] || '')}</span><b>${esc(r.title)}</b> — ${esc(r.head)}</div><div class="m">${(r.marks || []).map((m) => `<span class="${m.ok ? 'ok' : ''}">${esc(m.t)}</span>`).join('')}</div></li>`).join('');
+  document.getElementById('trail').innerHTML = `<span class="tag">족보 · 장면에서 남긴 흔적</span><h3>우리 집이 걸어온 장면</h3><p class="sub">장면을 끝까지 걸으면 그날 남긴 흔적이 한 줄씩 쌓인다.</p>` + (rows ? `<ol>${rows}</ol>` : '<p>아직 마친 장면이 없다. <a href="./scenes.html">장면 목록</a>에서 하나를 끝까지 걸어 보자.</p>');
+})();
+</script>
 <script type="module">
 import { collect, jokboHtml, chronicle, chronicleHtml, JOKBO_CSS } from './core/jokbo.js';
 import { syncJokbo } from './core/save.js';

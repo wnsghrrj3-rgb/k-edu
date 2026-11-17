@@ -136,7 +136,14 @@ export function sayLine(S) {
   function tick(dt) { if (S.sayT > 0) { S.sayT -= dt; if (S.sayT <= 0) $('say').style.opacity = 0; } }
   return { say, tick };
 }
-export function overlay(html, btn, fn) { const o = $('ov'); o.firstElementChild.innerHTML = html + `<button id="go">${btn}</button>`; o.style.display = 'flex'; $('go').onclick = () => { resumeAudio(); o.style.display = 'none'; fn(); }; }
+export function overlay(html, btn, fn) { const o = $('ov'); o.firstElementChild.innerHTML = html + `<button id="go">${btn}</button>`; o.style.display = 'flex'; if (html.includes('class="marks"')) remember(o.firstElementChild); $('go').onclick = () => { resumeAudio(); o.style.display = 'none'; fn(); }; }
+/* 족보 잇기(S11): 끝 화면의 「남긴 흔적」을 한 줄로 남긴다 — 저장은 /kedu_scope.js 를 따른다(계정별, 동의 없으면 기기에도 안 남음) */
+export const TRAIL_KEY = 'kworld_scene_trail';
+export function remember(box) {
+  try { const id = location.pathname.split('/').filter(Boolean).pop() || 'scene', title = (document.title.split('—')[0] || id).trim(), head = (box.querySelector('h1') || {}).textContent || '';
+    const marks = [...box.querySelectorAll('.marks span')].map((e) => ({ t: e.textContent.trim(), ok: e.classList.contains('ok') }));
+    const list = JSON.parse(localStorage.getItem(TRAIL_KEY) || '[]'); list.push({ id, title, head, at: new Date().toISOString(), marks }); while (list.length > 300) list.shift(); localStorage.setItem(TRAIL_KEY, JSON.stringify(list)); } catch (e) { /* 저장 못 해도 판은 그대로 */ }
+}
 
 /* ───── 조작: 방향키/WASD · Shift 뛰기 · V 시점 · Q/E 돌려 보기 · 휠 당겨 보기 / 터치: 왼쪽 막대 + 오른쪽 단추 ───── */
 export const VIEWS = ['위에서', '가까이', '어깨 너머', '지도'];
