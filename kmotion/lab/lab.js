@@ -26,7 +26,23 @@ function start(mode){
   const audio = createAudio({ muted: Q.has('mute') }); audio.unlock();
   const stage = createStage($('app'), { capture: Q.has('capture') });
   const input = createInput({ mode, el: stage.renderer.domElement, camBox: $('camBox'), camStatus: $('camSt'), video: $('v'), camCanvas: $('c') });
-  input.onError = e => { $('camSt').textContent = e.message; };
+  input.onError = e => { $('camSt').textContent = e.message; if (mode === 'cam') openCamPick(e.message); };
+  // ── 카메라 고르기 (카메라 손 모드만): 도구 줄 「📷 카메라」·카메라 창 누르기 · 켜기에 실패하면 저절로 열림
+  async function fillCamList(){
+    const list = $('camList'); const cams = await input.listCameras(); const cur = input.currentCamera();
+    if (!cams.length) { list.innerHTML = '<div class="none">카메라를 찾지 못했어요. 카메라가 꽂혀 있는지, 주소창 옆에서 카메라를 허용했는지 확인해 주세요.</div>'; return; }
+    list.innerHTML = ''; cams.forEach((c, i) => { const b = document.createElement('button'); b.textContent = (c.id && c.id === cur ? '✔ ' : '📷 ') + (c.label || '카메라 ' + (i + 1)); if (c.id && c.id === cur) b.classList.add('on');
+      b.onclick = async () => { list.querySelectorAll('button').forEach(x => x.disabled = true); $('camMsg').className = 'msg'; $('camMsg').textContent = '카메라를 켜는 중…';
+        try { await input.useCamera(c.id); $('camMsg').textContent = '켜졌어요. 손을 카메라에 보여 주세요.'; } catch (e) { $('camMsg').className = 'msg err'; $('camMsg').textContent = e.message || '이 카메라는 켤 수 없어요. 다른 카메라를 골라 주세요.'; }
+        fillCamList(); $('camRange').disabled = !input.camOk; };
+      list.appendChild(b); });
+  }
+  function openCamPick(err){ $('camPick').style.display = ''; $('camMsg').className = err ? 'msg err' : 'msg'; $('camMsg').textContent = err ? err + (/허용/.test(err) ? '' : ' 다른 카메라를 골라 보세요.') : '손이 잘 보이는 카메라를 눌러요. 고른 카메라는 다른 케이모션에도 같이 쓰여요.'; $('camRange').disabled = !input.camOk; fillCamList(); }
+  input.onReady = () => { if ($('camPick').style.display !== 'none') { fillCamList(); $('camRange').disabled = false; } };
+  if (mode === 'cam') { $('bCam').style.display = ''; $('bCam').onclick = () => openCamPick(); $('camBox').onclick = () => openCamPick();
+    $('camClose').onclick = () => { $('camPick').style.display = 'none'; };
+    $('camRange').onclick = () => { $('camPick').style.display = 'none'; input.openRange(); };
+    if (Q.has('campick')) setTimeout(() => openCamPick(), 1500); }
   const hud = makeHud(), liquid = createLiquid(stage);
   const props = createProps({ stage, input, audio, liquid, hud });
   const flow = createFlow({ noteEl: $('note'), props, mode, audio });

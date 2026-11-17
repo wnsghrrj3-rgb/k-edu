@@ -14,7 +14,8 @@ export function createInput({ mode, el, camBox, camStatus, video, camCanvas }){
   // ── 카메라 손
   if (mode === 'cam') {
     camBox.classList.remove('off');
-    const km = api.km = window.KMotion.create({ video, canvas: camCanvas, modes: ['hands'], numHands: 2, activity: 'lab' });
+    // 엔진의 작은 「📷 카메라」 단추는 끄고(카메라 창이 작아 안 보임) 과학실 도구 줄의 카메라 고르기 창을 쓴다
+    const km = api.km = window.KMotion.create({ video, canvas: camCanvas, modes: ['hands'], numHands: 2, activity: 'lab', rangeButton: false });
     km.onStatus = s => { camStatus.textContent = s || '카메라 연결됨'; };
     const grabbed = [false, false];
     km.on('hand:grab', e => { if (e.hand < 2) grabbed[e.hand] = true; });
@@ -27,7 +28,17 @@ export function createInput({ mode, el, camBox, camStatus, video, camCanvas }){
         H.x = reach(p.x / f.W); H.y = reach(p.y / f.H); H.dir = a.dir; H.grab = grabbed[a.hand]; H.present = true; H.lastSeen = performance.now(); H.src = 'cam'; seen[a.hand] = true; }
       hands.forEach((H, i) => { if (!seen[i]) { H.present = false; H.grab = false; grabbed[i] = false; } });
     };
-    km.start().then(() => { api.camOk = true; }).catch(e => { camStatus.textContent = e.message; api.onError && api.onError(e); });
+    const boot = () => km.start().then(() => { api.camOk = true; api.camError = null; api.onReady && api.onReady(); }).catch(e => { api.camOk = false; api.camError = e.message; camStatus.textContent = e.message; api.onError && api.onError(e); throw e; });
+    boot().catch(() => {});
+    // 카메라 고르기 — 저장 키는 엔진과 같은 'kmotion.camId'(모든 케이모션 활동에 같이 적용)
+    api.listCameras = () => km.listCameras();
+    api.currentCamera = () => km.camId || '';
+    api.useCamera = async id => {
+      if (km.running) { await km.switchCamera(id, true); return; }
+      try { if (id) localStorage.setItem('kmotion.camId', id); else localStorage.removeItem('kmotion.camId'); } catch (_) {}
+      await boot();                                                       // 처음 켜기가 실패했으면 고른 카메라로 다시 켠다
+    };
+    api.openRange = onClose => { if (km.running) km.openRangeUI(onClose); };
   }
 
   // ── 화면 터치·마우스 (pointer events 하나로). 첫 손가락 = 손 0, 둘째 = 손 1.

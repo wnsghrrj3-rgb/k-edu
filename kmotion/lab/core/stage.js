@@ -90,7 +90,7 @@ export function createStage(host, opt = {}){
   function project(v){ pv.copy(v).project(ctrl); return { x: (pv.x + 1) / 2, y: (1 - pv.y) / 2, z: pv.z }; }
 
   // ── 크기·그리기
-  function resize(){ const w = host.clientWidth || innerWidth, h = host.clientHeight || innerHeight; renderer.setSize(w, h, false); camera.aspect = ctrl.aspect = w / h; camera.updateProjectionMatrix(); ctrl.updateProjectionMatrix(); }
+  function resize(){ const w = host.clientWidth || innerWidth, h = host.clientHeight || innerHeight; if (w < 2 || h < 2) return;   // 숨은 창(0×0)에서는 비율을 지키려고 그대로 둔다 renderer.setSize(w, h, false); camera.aspect = ctrl.aspect = w / h; camera.updateProjectionMatrix(); ctrl.updateProjectionMatrix(); }
   addEventListener('resize', resize); resize();
   const ticks = []; let last = performance.now(), timeScale = 1, slowUntil = 0;
   function step(dt, now, draw = true){ const ts = now < slowUntil ? timeScale : 1; stepCamera(dt); for (const f of ticks) f(dt * ts, dt, now); if (draw) renderer.render(scene, camera); }
