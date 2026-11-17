@@ -5,6 +5,7 @@
 import { createStage, THREE, sleep, CALM } from '../common/stage3d.js?v=1';
 import { toast, tone, audio } from '../common/kit.js?v=6';
 import * as M5 from './rules.js?v=3';
+import * as H from '../common/hint.js?v=1';   /* 첫 판 한 줄 안내 · 손 그림 */
 
 // ── 내가 정한 수치
 const M = {
@@ -28,6 +29,7 @@ const K = {};
 await Promise.all(NAMES.map(async n => { try { K[n] = await stage.load(n); } catch (_) { K[n] = null; } }));
 const shop = await new Promise(res => { const t = setInterval(() => { if (window.__shop) { clearInterval(t); res(window.__shop); } }, 30); });
 const S = shop.S;
+const N5 = () => shop.SAVE.n5 || (shop.SAVE.n5 = M5.fresh());   /* 장터 걸음 칸(없으면 새로) */
 
 // ── 카메라(전화기 세로는 더 물러나 넓게, 아래 판에 가리지 않게 장면을 위로)
 /* 카메라: 계산대·더미 양끝(±M.FIT)이 늘 화면 폭에 들어오는 거리로 서고, 계산대 앞 끝이 아래 판 바로 위에 오도록 그림을 위아래로 옮긴다(아래 판 높이가 바뀌면 다시) */
@@ -120,7 +122,8 @@ function endRoll(caught){ const r = roll; if (!r) return; roll = null; pick.spli
   else { tween(r.o.position, { y: -1.2, z: r.o.position.z - .7 }, 600, t => t * t).then(() => { scene.remove(r.o); setTimeout(() => r.src.visible = true, 1500); }); tone(200, .3, 'sine', .06, 0, 90); } }   /* 선착장 뒤 끝에서 바다로 퐁 */
 
 // ── 누르기
-$('c').addEventListener('pointerdown', e => { const hit = pointerRay(e).intersectObjects(pick, true)[0]; if (!hit) return; const a = hit.object.userData.act; if (!a) return; e.preventDefault(); audio();
+$('c').addEventListener('pointerdown', e => { if (roll) { const q = screenOf(roll.o); if (Math.hypot(q.x - e.clientX, q.y - e.clientY) < 75) { e.preventDefault(); endRoll(true); return; } }   /* 굴러가는 물건 근처를 누르면 그것부터 잡힌다(뒤의 손님·계산대에 가리지 않게) */
+  const hit = pointerRay(e).intersectObjects(pick, true)[0]; if (!hit) return; const a = hit.object.userData.act; if (!a) return; e.preventDefault(); audio();
   if (a.t === 'pile') { shop.put(a.k, 1); bump(piles[a.k]); }
   else if (a.t === 'box') { shop.put(a.k, 10); bump(piles.box); }
   else if (a.t === 'basket') shop.unput(a.i);
@@ -133,7 +136,9 @@ let t0 = 0;
 let aimT = 0;
 stage.frame((dt, t) => { if ((aimT += dt) > .4) { aimT = 0; const pn = document.querySelector('.inside'), k = innerWidth + 'x' + innerHeight + ':' + Math.round(pn ? pn.getBoundingClientRect().top : 0); if (k !== aimKey) aim(); } piles3(); drawBasket(); drawSlots(); sync(); if (ship) { ship.position.y = Math.sin(t * .8) * .06; ship.rotation.z = Math.sin(t * .6) * .03; }
   if (roll) { roll.t += dt * 1000; const k = roll.t / M.ROLL_MS; roll.o.position.x = roll.x0 + roll.dir * k * 1.6; roll.o.rotation.x -= dt * 7; roll.o.position.z = M.COUNTER_Z + .1 + (M.EDGE_Z - M.COUNTER_Z - .1) * k;   /* 손님 줄 사이를 지나 선착장 뒤 끝으로 */ if (k >= 1) endRoll(false); }
-  else if (!CALM && S.q.length && !S.asking && !S.payG && !S.paused) { const n5 = shop.SAVE.n5; if (rollIn === Infinity) { if (n5.seen.roll) rollIn = M5.rollGap(); else if (M5.rollDue(n5)) rollIn = 2.5; } else { rollIn -= dt; if (rollIn <= 0) { n5.seen.roll = true; shop.wallet.save(); rollIn = M5.rollGap(); startRoll(); } } }
+  else if (!CALM && S.q.length && !S.asking && !S.payG && !S.paused) { const n5 = N5(); if (rollIn === Infinity) { if (n5.seen.roll) rollIn = M5.rollGap(); else if (M5.rollDue(n5)) rollIn = 2.5; } else { rollIn -= dt; if (rollIn <= 0) { n5.seen.roll = true; shop.wallet.save(); rollIn = M5.rollGap(); startRoll(); } } }
+  /* 첫 손님들: 가만히 있으면 손이 담을 물건 칸을, 다 담았으면 「여기요!」를 짚는다 */ if ((N5().served | 0) < 2 && !S.asking && !S.payG && !S.paused && !S.busy && S.sel && !S.sel.leaving && H.idle(4500)) { const g = S.sel, k = Object.keys(g.order).find(k => (g.order[k] || 0) > shop.count(k)); H.at(k ? document.querySelector(`#shelf .crate[data-k="${k}"]`) : shop.matches(g.order) ? $('give') : null); }
   t0 = t; });
 $('loading').style.opacity = 0; setTimeout(() => $('loading').remove(), 500);
+if ((N5().served | 0) < 3) H.tell('market', '손님이 원하는 만큼 담아서 건네요!');
 window.__market = { stage, crowd, piles, basket, pick, M, startRoll, endRoll, get roll(){ return roll; }, screenOf, GOODS };

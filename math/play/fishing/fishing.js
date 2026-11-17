@@ -10,7 +10,8 @@ import { createStage, THREE, LOOK, CALM, sleep } from '../common/stage3d.js?v=1'
 import * as A from '../common/ask.js?v=1';
 import * as R from './rules.js?v=1';
 import { wallet, audio, tone } from '../common/kit.js?v=6';
-import * as L from '../common/loop.js?v=1';   /* N04: 실은 통의 물고기는 장터 생선 진열대로 */
+import * as L from '../common/loop.js?v=1';
+import * as H from '../common/hint.js?v=1';   /* 첫 판 한 줄 안내 · 손 그림 */   /* N04: 실은 통의 물고기는 장터 생선 진열대로 */
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)
 const T = { DECK: .45, TUB_X: [-2.7, -1.65, -.6], TUB_Z: 1.9, TUB_S: 1.3, BOAT: [2.35, 0, 1.25], BOAT_S: .48, ANNE: [.55, 1.7],
@@ -150,7 +151,7 @@ function dusk(k){ const sky = k < .6 ? LOOK.SKY.map((c, i) => mixC(c, T.DUSK.SUN
   sun.intensity = DAY.sun * (1 - .7 * k); hemi.intensity = DAY.hemi * (1 - .5 * k); sun.position.set(-8 + 4 * k, 11 - 9 * k, 6); sun.color.set(mixC('#fff1d8', '#ff9a5a', Math.min(1, k * 1.4))); sea.material.color.copy(DAYSEA).lerp(DUSKSEA, k * .8); scene.fog.color.set(k < .6 ? mixC('#' + DAY.fog.getHexString(), T.DUSK.SUNSET[2], k / .6) : mixC(T.DUSK.SUNSET[2], T.DUSK.NIGHT[2], (k - .6) / .4)); }
 
 // ── 떠나는 장면: 통 셋의 팻말을 보여 주고(누르면 건너뜀)
-async function intro(){ const my = S.introId = (S.introId | 0) + 1; S.intro = true; S.skip = false; S.busy = true; for (let t = 0; t < 1500 && !S.skip; t += 50) await sleep(50); if (S.introId !== my) return; S.intro = false; S.busy = false; S.idle = S.t; }   /* 표가 바뀌었으면(새 판·하네스 restart) 지난 장면은 손대지 않음 */
+async function intro(){ const my = S.introId = (S.introId | 0) + 1; if (SAVE.trips < 2) H.tell('fishing', '통에 적힌 수만큼 물고기를 잡아요!'); S.intro = true; S.skip = false; S.busy = true; for (let t = 0; t < 1500 && !S.skip; t += 50) await sleep(50); if (S.introId !== my) return; S.intro = false; S.busy = false; S.idle = S.t; }   /* 표가 바뀌었으면(새 판·하네스 restart) 지난 장면은 손대지 않음 */
 
 // ── 팻말: 통(남은 칸 · 지금 통은 크게) · 물고기 등의 수
 function signsDraw(){ const sg = S.signs; S.tubs.forEach((t, k) => { const e = sg[k], done = k < S.loaded.length, cur = k === S.ti && !done;
@@ -177,7 +178,8 @@ stage.frame((dt, t) => { S.t = t; if (!S.ready) return;
   // 도둑 배
   if (S.trip.ev.gull && thinking && !S.ask) { if (!S.thief && (S.thiefIn -= dt) <= 0 && S.fill[S.ti].length) thiefCome(); const th = S.thief; if (th && !th.away) { th.t += dt / R.MIX.GULL.land; const tub = S.tubs[S.ti]; th.obj.position.x = th.x0 + (tub.position.x + .3 - th.x0) * th.t; th.obj.position.z = -2.5 + (T.TUB_Z - 1.4 + 2.5) * th.t; th.obj.position.y = Math.sin(t * 1.4) * .05; if (th.t >= 1) thiefTake(); } }
   if (S.boat) { S.boat.position.y = Math.sin(t * 1.2) * .05; }
-  signsDraw(); });
+  signsDraw();
+  /* 첫 판: 가만히 있으면 손이 통에 들어갈 물고기를 짚는다 */ if (SAVE.trips < 1 && !S.busy && !S.ask && !S.missing && H.idle(4500)) { const live = S.fish.filter(f => !f.caught && !f.fast && f.kind !== 'crab'), f = live.find(x => R.worth(x, S.left) === S.left) || live.find(x => R.worth(x, S.left) < S.left); if (f) { const q = stage.screenOf(f.obj); H.show(q.x, q.y + 14); } } else if (S.busy && H.shown()) H.hide(); });
 
 window.__fishing = { S, R, T, SAVE, stage, screenOf: stage.screenOf, hook: f => hook(f), shoo, thiefCome, addFish,
   restart: trips => { SAVE.trips = trips; S.introId = (S.introId | 0) + 1; stage.tweens.length = 0; newTrip(); S.busy = false; S.intro = false; } };

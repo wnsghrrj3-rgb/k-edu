@@ -12,6 +12,7 @@ import * as A from '../common/ask.js?v=1';
 import * as R from './rules.js?v=6';
 import { wallet, audio, tone, art } from '../common/kit.js?v=6';
 import * as LP from '../common/loop.js?v=1';
+import * as H from '../common/hint.js?v=1';   /* 첫 판 한 줄 안내 · 손 그림 */
 const CARGO = !new URLSearchParams(location.search).has('free');   /* ?free = 화물 싣기 없이(옛 방식, 하네스용) */
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)
@@ -113,6 +114,7 @@ function newVoyage(){ for (const b of S.bridge) for (const p of b) if (p) scene.
   S.anne.obj.position.set(T.START_X, standY(), 0); S.anne.obj.visible = true; stage.face(S.anne, 1); stage.play(S.anne, 'Idle');
   if (S.guest) stage.unperson(S.guest); S.guest = resident(SAVE.saved); S.guest.obj.position.set(S.dest + 2.2, standY(), -.5); stage.face(S.guest, -1); stage.play(S.guest, 'Wave');
   for (const o of S.loot) scene.remove(o); S.loot = []; S.fish = 0; S.mapGot = 0;
+  S.dropsV = 0;
   if (S.shark) { S.shark.mode = 'idle'; S.shark.target = null; S.shark.cool = false; }
   S.clock = 0; S.rise = 0; S.front = -99; S.missing = false; S.chaser.visible = S.ev.kind === 'ship' && !CALM; A.flames(S.streak);
   S.signs = A.signs(S.voy.gaps.reduce((a, g) => a + (g.slots > R.SLOTS ? 2 : 1), 0)); A.trayClear(); S.ask = null; S.qkind = R.askKind(S.voyages);
@@ -155,12 +157,12 @@ function single(){ const rooms = active().map(roomOf).filter(Boolean); if (!room
 
 const wait = async ms => { for (let t = 0; t < ms && !S.skip; t += 50) await sleep(50); };
 // ── 떠나는 장면: 건너편에서 누가 손을 흔든다 → 끊어진 다리를 따라 돌아와 앤 앞에 선다(화면을 누르면 건너뜀)
-async function intro(){ S.busy = true; S.intro = true; S.skip = false; const f = S.voyages > 1 ? 1 : 0; cam.x = S.dest + .6; cam.wide = 1; await wait(T.INTRO_HOLD[f]); if (!S.skip) await stage.tween(cam, { x: camHome() }, T.INTRO_MS[f] * (S.ev.big ? 1.5 : 1)); cam.x = camHome(); cam.wide = camWide(); S.intro = false; if (S.loading) { cargoOpen(); return; }   /* 화물 길: 틈 셋을 훑어 본 뒤에 화물 판이 열린다 */ S.busy = false; S.idle = S.t; single(); }
+async function intro(){ S.busy = true; S.intro = true; S.skip = false; const f = S.voyages > 1 ? 1 : 0; cam.x = S.dest + .6; cam.wide = 1; await wait(T.INTRO_HOLD[f]); if (!S.skip) await stage.tween(cam, { x: camHome() }, T.INTRO_MS[f] * (S.ev.big ? 1.5 : 1)); cam.x = camHome(); cam.wide = camWide(); S.intro = false; if (SAVE.saved < 2 && !S.loading) H.tell('bridge', '빈 칸 수만큼 판자를 끌어다 놓아요!'); if (S.loading) { cargoOpen(); return; }   /* 화물 길: 틈 셋을 훑어 본 뒤에 화물 판이 열린다 */ S.busy = false; S.idle = S.t; single(); }
 const camHome = () => longTall() ? longFocus(S.gi) : active().length > 1 || slotsOf(S.gi) > R.SLOTS ? spanMid() : ox(S.gi) + HOME;
 const camWide = () => active().length > 1 ? T.TWIN_ZOOM : longTall() ? 1 : slotsOf(S.gi) > R.SLOTS ? T.LONG_ZOOM : 1;
 
 // ── 뗏목을 틈에 놓았다(쌍둥이 틈이면 놓은 쪽 틈에)
-async function drop(r, k = S.gi){ S.busy = true; S.drops++; hintOff(); audio(); const out = R.place(S.fill[k], r.n, slotsOf(k)), wp = new THREE.Vector3(); S.log.push({ gap: k, drop: r.n, kind: out.kind, single: r.single });
+async function drop(r, k = S.gi){ S.busy = true; S.drops++; S.dropsV = (S.dropsV | 0) + 1; hintOff(); audio(); const out = R.place(S.fill[k], r.n, slotsOf(k)), wp = new THREE.Vector3(); S.log.push({ gap: k, drop: r.n, kind: out.kind, single: r.single });
   r.used = true; const moved = r.planks.slice(), night = S.nightGaps.has(k);
   for (let j = 0; j < moved.length; j++) { const p = moved[j]; p.getWorldPosition(wp); r.group.remove(p); scene.add(p); p.position.copy(wp); p.rotation.set(0, 0, 0);
     if (j < out.put) { const i = S.fill[k] + j; S.bridge[k][i] = p; if (night) p.material = S.glowMat; if (S.ghosts[k][i]) { scene.remove(S.ghosts[k][i]); S.ghosts[k][i] = null; } await stage.tween(p, { 'position.x': slotX(k, i), 'position.y': plankY(), 'position.z': 0 }, T.PLANK_MS); tone(300 + i * 40, .09, 'triangle', .1); }
@@ -215,24 +217,24 @@ async function arrive(){ const g = S.guest; await finalAsk(); if (S.missing) ret
 
 // ── 손 그림자: 맨 처음 길 첫 틈에서 손이 없으면, 뗏목에서 틈으로 한 번 지나간다(글 없음)
 let hintEl = null; function hintOff(){ if (hintEl) { hintEl.remove(); hintEl = null; } }
-function hint(){ if (hintEl || S.busy || S.drag || SAVE.saved > 0 || S.voyages > 1 || S.drops > 0 || S.t - (S.idle || 0) < T.HINT_MS / 1000) return; const r = live().find(x => x.n === roomOf(S.gi)); if (!r) return;
+function hint(){ if (hintEl || S.busy || S.drag || S.loading || SAVE.saved >= 2 || S.dropsV > 0 ||   /* 처음 두 주민을 데려올 때까지: 길마다 첫 뗏목을 놓기 전에 손이 한 번 지나간다 */ S.t - (S.idle || 0) < T.HINT_MS / 1000) return; const r = live().find(x => x.n === roomOf(S.gi)); if (!r) return;
   const a = stage.screenOf(r.group), b = stage.screenOf(window.__bridge.gap()); hintEl = document.createElement('div'); hintEl.id = 'hint'; hintEl.innerHTML = art('hint.hand'); hintEl.style.left = a.x + 'px'; hintEl.style.top = a.y + 'px'; document.body.appendChild(hintEl);
   requestAnimationFrame(() => { if (!hintEl) return; hintEl.style.opacity = 1; setTimeout(() => { if (hintEl) hintEl.style.transform = `translate(${b.x - a.x}px,${b.y - a.y}px)`; }, 350); }); setTimeout(() => { hintOff(); S.idle = S.t; }, 2600); }
 
 // ── 화물 싣기(N04): 길의 틈 팻말 셋이 미리 보인다 · 판자 한 장 = 동전 하나 · 1~5장 묶음으로 싣는다 · 실은 뗏목을 누르면 내린다(동전 돌려받음) · 배를 누르면 떠난다
 const cg = { el: null };
-function cargoOpen(){ S.busy = true; S.loaded = live().reduce((a, r) => a + r.n, 0); cam.x = camHome(); cam.wide = 1; A.trayClear(); for (const r of live()) A.trayAdd(r.n, S.rafts.indexOf(r) ? '+' : '');
+function cargoOpen(){ if (wallet.coins() < LP.LOOP.PLANK && !live().length) H.tell('poor', '동전이 없어요. 장터에서 벌어 오면 판자를 실을 수 있어요!', { times: 4 }); else H.tell('cargo', '길에 놓을 판자를 동전으로 실어요!'); S.busy = true; S.loaded = live().reduce((a, r) => a + r.n, 0); cam.x = camHome(); cam.wide = 1; A.trayClear(); for (const r of live()) A.trayAdd(r.n, S.rafts.indexOf(r) ? '+' : '');
   if (!cg.el) { cg.el = document.createElement('div'); cg.el.id = 'cargo'; document.body.appendChild(cg.el); }
   const need = S.voy.gaps.map(g => g.need), coins = wallet.coins();
   cg.el.innerHTML = `<div class="need">${need.map(n => `<b>${n}</b>`).join('')}</div><div class="coins">${art('coin')}<b id="cgCoins">${coins}</b></div>` +
-    `<div class="bund">${LP.LOOP.BUNDLES.map(n => `<button data-n="${n}" ${n > coins ? 'disabled' : ''}><span>${art('plaza.wood').repeat(1)}</span><b>${n}</b></button>`).join('')}</div><button class="go" id="cgGo" ${live().length ? '' : 'disabled'}>${art('deco.sailboat')}</button>`;
+    `<div class="bund">${LP.LOOP.BUNDLES.map(n => `<button data-n="${n}" ${n > coins ? 'disabled' : ''}><span>${art('plaza.wood').repeat(1)}</span><b>${n}</b></button>`).join('')}</div><button class="go" id="cgGo">${art('deco.sailboat')}</button>` + (coins + S.loaded < need.reduce((a, b) => a + b, 0) ? `<a class="mk" id="cgMarket" href="/math/play/market/${location.search}">${art('coin')}<b>장터</b></a>` : '');
   cg.el.querySelectorAll('.bund button').forEach(b => b.onclick = () => cargoAdd(+b.dataset.n)); cg.el.querySelector('#cgGo').onclick = cargoGo; cg.el.hidden = false; cg.el.classList.toggle('poor', coins < LP.LOOP.PLANK && !live().length); cg.el.classList.toggle('short', coins + S.loaded < need.reduce((a, b) => a + b, 0) && coins < LP.LOOP.BUNDLES[LP.LOOP.BUNDLES.length - 1]); }   /* 동전이 틈 합보다 모자라면 동전 칸이 깜빡임(장터로) */
 function cargoAdd(n){ audio(); if (!LP.buyPlanks(n)) { tone(180, .12, 'sine', .07); return; } const r = raft(n, S.rafts.length); r.group.position.set(ox(0) - 4, T.RAFT_Y, T.RAFT_Z + .4); layout(400); tone(520 + n * 60, .08, 'square', .05); S.log.push({ cargo: n }); cargoOpen(); }
 function cargoTap(e){ if (!S.loading) return; const ray = stage.pointerRay(e), rs = live(), h = ray.intersectObjects(rs.flatMap(r => r.planks), false)[0]; let r = h && rs.find(x => x.planks.includes(h.object));
   if (!r) { let best = 1e9; for (const x of rs) { const q = stage.screenOf(x.group), d = Math.hypot(q.x - e.clientX, q.y - e.clientY); if (d < best) { best = d; r = x; } } if (best > T.PICK_PX) r = null; }   /* 판자 사이를 눌러도 가장 가까운 뗏목 */
   if (!r || r.single) return;
   audio(); LP.refundPlanks(r.n); r.used = true; for (const p of r.planks) scene.remove(p); scene.remove(r.group); S.rafts = S.rafts.filter(x => x !== r); layout(300); tone(300, .08, 'sine', .06); S.log.push({ unload: r.n }); cargoOpen(); }
-function cargoGo(){ if (!live().length) return; audio(); S.voy.cargo = live().map(r => r.n); S.loaded = S.voy.cargo.reduce((a, b) => a + b, 0); S.loading = false; cg.el.hidden = true; A.trayClear(); S.log.push({ depart: S.voy.cargo.slice(), need: S.voy.gaps.map(g => g.need) }); tone(392, .15, 'triangle', .1); tone(523, .2, 'triangle', .1, .15); layout(500); S.busy = false; S.idle = S.t; single(); }   /* 틈은 이미 봤으니 바로 시작 */
+function cargoGo(){ audio();   /* 뗏목이 없어도 떠날 수 있다(판자는 길에서 한 장씩 떠내려온다 — 느리지만 막히지 않음) */ S.voy.cargo = live().map(r => r.n); S.loaded = S.voy.cargo.reduce((a, b) => a + b, 0); S.loading = false; cg.el.hidden = true; A.trayClear(); S.log.push({ depart: S.voy.cargo.slice(), need: S.voy.gaps.map(g => g.need) }); tone(392, .15, 'triangle', .1); tone(523, .2, 'triangle', .1, .15); layout(500); S.busy = false; S.idle = S.t; single(); }   /* 틈은 이미 봤으니 바로 시작 */
 
 // ── 손으로 끌기
 const liftPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(T.DECK + .45)), hit = new THREE.Vector3(), canvas = $('c');
@@ -268,7 +270,8 @@ stage.frame((dt, t) => { S.t = t;
   const sh = S.shark; if (sh) { const on = !!(S.ev && S.ev.shark) && !S.intro && !S.loading && !S.missing; sh.o.visible = on; if (on) { const o = sh.o; o.position.y = S.rise - .1;
     if (sh.mode === 'idle') { const a = t * .45, nx = cam.x + Math.sin(a) * T.SHARK.R, nz = T.SHARK.Z + Math.cos(a) * .6, k = Math.min(1, dt * 2); if (Math.abs(nx - o.position.x) > .01) o.rotation.y = nx > o.position.x ? 0 : Math.PI; o.position.x += (nx - o.position.x) * k; o.position.z += (nz - o.position.z) * k; }
     else if (sh.mode === 'hunt') { const r = sh.target; if (!r || r.used || (S.drag && S.drag.r === r)) { sh.mode = 'idle'; sh.target = null; } else if (!S.busy) { sh.k += dt / T.SHARK.SEC; const g = r.group.position; o.position.x = sh.from.x + (g.x - sh.from.x) * sh.k; o.position.z = sh.from.z + (g.z + .25 - sh.from.z) * sh.k; o.rotation.y = g.x > o.position.x ? 0 : Math.PI; if (sh.k >= 1) sharkSteal(); } } } }
-  if (S.ready) { hint(); signsDraw(); } });
+  if (S.ready) { hint(); signsDraw(); }
+  /* 첫 화물: 가만히 있으면 손이 첫 틈에 맞는 묶음을, 다 실었으면 배 단추를 짚는다 */ if (S.loading && !S.intro && cg.el && !cg.el.hidden && SAVE.saved < 4 && H.idle(4500)) { const need = S.voy.gaps.map(g => g.need), have = live().map(r => r.n), want = need.find(n => { const i = have.indexOf(n); if (i >= 0) { have.splice(i, 1); return false; } return true; }); const b = want && cg.el.querySelector(`.bund button[data-n="${Math.min(want, 5)}"]:not(:disabled)`); H.at(b || (live().length ? cg.el.querySelector('#cgGo') : null)); } });
 /** 뒤에서 무너지는 다리: 앞줄(front)보다 뒤에 있는 판자가 한 장씩 떨어진다. */
 function crumble(){ const fall = m => { m.userData.fallen = true; stage.tween(m.position, { y: -1.6 }, 900, t => t * t).then(() => { m.visible = false; }); stage.tween(m.rotation, { z: (Math.random() - .5) * 1.6 }, 900); };
   let n = 0; for (const c of S.crumble) if (!c.m.userData.fallen && c.x < S.front && n < 2) { fall(c.m); n++; }
