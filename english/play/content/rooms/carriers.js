@@ -7,6 +7,7 @@
  *   어느 그릇이든 글자 판은 +z(보는 쪽)를 향하고, 누르는 크기는 반지름 0.5 안팎으로 같다 — 판정이 그릇에 따라 달라지지 않게.
  *   그릇을 더하는 법: CARRIERS 에 이름 하나. 같은 모델을 색만 바꿔 다른 걸음에 다시 쓰지 않는다(N7).
  *   이번에 지은 것(A01~A05): fruit 사과나무 열매 / saucer 찻잔 받침 · bowl 밥그릇 / eggshell 알 껍데기 · fin 물고기 지느러미 / pawn 놀이판 말 · hatband 모자 띠 / icecube 얼음 조각 · jamlid 잼 병 뚜껑
+ *   WA2 에서 더한 것(A06 · A07): ribbon 연 꼬리 리본 · lampshade 등불 갓 / moondisc 달 · nestegg 둥지 알
  *   색은 토큰 이름만(코드에 색 값 0).
  * ============================================================ */
 function disc(K, letter, r, z, y = 0){ const { THREE } = K, sp = new THREE.Mesh(new THREE.CircleGeometry(r, 32), new THREE.MeshBasicMaterial({ map: K.letterTex(letter, K.hex('ink'), K.hex('a-cream')) })); sp.position.set(0, y, z); return sp; }
@@ -56,7 +57,28 @@ export const CARRIERS = {
   jamlid(K, o){ const { THREE, M, mesh } = K, g = new THREE.Group(), p = new THREE.Group(); p.rotation.x = Math.PI / 2 - 0.3; g.add(p);
     p.add(mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.16, 28), M('a-gold', { metalness: 0.4, roughness: 0.35 }), 0, 0, 0)); p.add(mesh(new THREE.CylinderGeometry(0.58, 0.62, 0.05, 12), M(o.tone || 'a-red', { roughness: 0.8 }), 0, 0.09, 0));
     for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; p.add(K.ball(0.07, M(o.tone || 'a-red', { roughness: 0.8 }), Math.cos(a) * 0.6, 0.04, Math.sin(a) * 0.6, 1, 0.6, 1)); }
-    const sp = disc(K, o.letter, 0.3, 0.16, 0.02); sp.rotation.x = -0.3; g.add(sp); return done(K, g, 'jamlid', o, sp, k => { g.scale.setScalar(Math.max(0.01, k)); g.position.y = (g.userData.y0 || 0) + (1 - k) * 0.5; }); }
+    const sp = disc(K, o.letter, 0.3, 0.16, 0.02); sp.rotation.x = -0.3; g.add(sp); return done(K, g, 'jamlid', o, sp, k => { g.scale.setScalar(Math.max(0.01, k)); g.position.y = (g.userData.y0 || 0) + (1 - k) * 0.5; }); },
+  /* 연 꼬리 리본 — 바람에 접힌 넓은 리본 한 장(A06) */
+  ribbon(K, o){ const { THREE, M, mesh, ball } = K, g = new THREE.Group(), m = M(o.tone || 'a-red', { roughness: 0.6, side: THREE.DoubleSide });
+    const mid = mesh(new THREE.BoxGeometry(0.98, 0.66, 0.05), m, 0, 0, 0); g.add(mid); [-1, 1].forEach(sd => { const w = mesh(new THREE.BoxGeometry(0.44, 0.5, 0.04), m, sd * 0.62, -0.08, -0.08); w.rotation.y = sd * 0.7; w.rotation.z = sd * -0.25; g.add(w); });
+    g.add(ball(0.09, M('a-gold', { metalness: 0.4, roughness: 0.4 }), 0, 0.42, 0)); { const st = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.7, 5), M('ink-2'), 0, 0.78, 0); st.castShadow = false; g.add(st); }      /* 매듭과 연줄 */
+    const sp = disc(K, o.letter, 0.3, 0.035); g.add(sp); return done(K, g, 'ribbon', o, sp, k => { g.scale.setScalar(Math.max(0.01, k)); g.rotation.y = (1 - k) * 3; }); },
+  /* 등불 갓 — 아래가 넓은 갓, 안에서 빛이 샌다(A06) */
+  lampshade(K, o){ const { THREE, M, mesh, ball } = K, g = new THREE.Group(), m = M(o.tone || 'a-gold', { roughness: 0.5, side: THREE.DoubleSide });
+    g.add(mesh(new THREE.CylinderGeometry(0.3, 0.6, 0.72, 18, 1, true), m, 0, 0, 0)); g.add(mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.05, 18), M('a-wood'), 0, 0.37, 0)); g.add(mesh(new THREE.TorusGeometry(0.1, 0.02, 6, 14), M('a-wood'), 0, 0.5, 0));
+    { const gl = ball(0.2, new THREE.MeshBasicMaterial({ color: K.mix('warm-soft', 'surface', 0.4) }), 0, -0.22, 0); gl.castShadow = false; g.add(gl); }      /* 등불 */
+    const sp = disc(K, o.letter, 0.27, 0.47, -0.02); sp.rotation.x = -0.36; g.add(sp); return done(K, g, 'lampshade', o, sp); },
+  /* 달 — 둥근 달이 물그릇처럼 떠 있고 테두리가 빛난다(A07) */
+  moondisc(K, o){ const { THREE, M, mesh } = K, g = new THREE.Group();
+    { const d = mesh(new THREE.CylinderGeometry(0.56, 0.56, 0.08, 36), M(o.tone || K.mix('surface', 'a-gold', 0.2), { roughness: 0.35 }), 0, 0, 0); d.rotation.x = Math.PI / 2; g.add(d); const h = mesh(new THREE.TorusGeometry(0.6, 0.035, 8, 40), new THREE.MeshBasicMaterial({ color: K.mix('surface', 'a-fish', 0.25) }), 0, 0, 0); h.castShadow = false; g.add(h); }
+    [[-0.28, 0.24, 0.1], [0.3, -0.2, 0.07], [0.18, 0.3, 0.05]].forEach(c => { const cr = mesh(new THREE.CylinderGeometry(c[2], c[2], 0.01, 12), M(K.mix('a-steel', 'surface', 0.6), { roughness: 0.6 }), c[0], c[1], 0.045); cr.rotation.x = Math.PI / 2; cr.castShadow = false; g.add(cr); });      /* 달 무늬 */
+    const sp = disc(K, o.letter, 0.3, 0.05); g.add(sp); return done(K, g, 'moondisc', o, sp, k => { g.scale.setScalar(Math.max(0.01, k)); g.position.y += 0; }); },
+  /* 둥지 알 — 지푸라기 둥지에 앉은 큰 알(A07) */
+  nestegg(K, o){ const { THREE, M, mesh, ball } = K, g = new THREE.Group(), straw = M(K.mix('a-gold', 'a-wood', 0.45), { roughness: 0.95 });
+    { const n1 = mesh(new THREE.TorusGeometry(0.46, 0.14, 8, 22), straw, 0, -0.34, 0); n1.rotation.x = Math.PI / 2; g.add(n1); const n2 = mesh(new THREE.CylinderGeometry(0.44, 0.34, 0.14, 18), straw, 0, -0.4, 0); g.add(n2); }
+    for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2, tw = mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.34, 4), straw, Math.cos(a) * 0.52, -0.3, Math.sin(a) * 0.52); tw.rotation.z = Math.cos(a) * 1.1; tw.rotation.x = Math.sin(a) * 1.1; tw.castShadow = false; g.add(tw); }
+    g.add(ball(0.42, M(o.tone || 'a-cream', { roughness: 0.4 }), 0, 0.08, 0, 1, 1.22, 1));
+    const sp = disc(K, o.letter, 0.27, 0.41, 0.1); g.add(sp); return done(K, g, 'nestegg', o, sp); }
 };
 export const hasCarrier = k => !!CARRIERS[k];
 export function carrier(K, kind, o){ const f = CARRIERS[kind]; if (!f) throw new Error('없는 글자 그릇 ' + kind); return f(K, o || {}); }

@@ -26,7 +26,9 @@ export const ROOMS = {
   A02: () => import('./glade-cd.js'),
   A03: () => import('./glade-ef.js'),
   A04: () => import('./glade-gh.js'),
-  A05: () => import('./glade-ij.js')
+  A05: () => import('./glade-ij.js'),
+  A06: () => import('./glade-kl.js'),
+  A07: () => import('./glade-mn.js')
 };
 export const hasRoom = id => !!ROOMS[id];
 export async function loadRoom(id){ const f = ROOMS[id]; return f ? (await f()).default : null; }
@@ -82,6 +84,8 @@ export function buildRoom(K, group, room, ctx){
     if (s.make === 'person') {                               /* 사람 낱말 — 인물 몸에 그 사람의 소품 */
       g = ctx.makePerson(K, s.o); const u = g.userData;
       if (s.cone) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.9, 16), K.M(s.cone, { roughness: 0.7 })); c.position.set(0, 0.62, -0.02); c.rotation.x = -0.25; c.castShadow = true; u.head.add(c); }
+      if (s.crown) { const cr = new THREE.Group(); cr.position.y = 0.52; cr.add(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.27, 0.16, 14, 1, true), K.M(s.crown, { metalness: 0.6, roughness: 0.25, side: THREE.DoubleSide }))); for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2, pk = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.18, 4), K.M(s.crown, { metalness: 0.6, roughness: 0.25 })); pk.position.set(Math.cos(a) * 0.28, 0.16, Math.sin(a) * 0.28); cr.add(pk); } cr.traverse(m => { if (m.isMesh) m.castShadow = true; }); u.head.add(cr); }      /* 왕관(임금님 · 여왕) */
+      if (s.cape) { const cp = K.ball(0.5, K.M(s.cape, s.capeMap ? { map: s.capeMap(K), roughness: 0.95 } : { roughness: 0.9 }), 0, 0.82, -0.16, 1.05, 1.15, 0.62); u.body.add(cp); }      /* 망토 */
       if (s.apron) { const ap = K.rbox(0.5, 0.56, 0.04, 0.1, K.M(s.apron, { roughness: 0.85 })); ap.position.set(0, 0.7, 0.36); u.body.add(ap); }
       if (s.scale) g.scale.setScalar(s.scale);
       u.dy = 1.9 * (s.scale || 1); u.r = 1.0;
@@ -90,6 +94,7 @@ export function buildRoom(K, group, room, ctx){
     } else {
       const make = PR[s.make]; if (!make) throw new Error('없는 부품 ' + s.make + ' (' + w + ')');
       g = make(K, s.o || {});
+      if (s.scale) { g.scale.multiplyScalar(s.scale); g.userData.dy = (g.userData.dy || 1) * s.scale; g.userData.r = (g.userData.r || 1) * s.scale; }      /* 부품을 조금 키우거나 줄인다 */
     }
     g.position.set(at[0], H(at[0], at[1]) + (s.y || 0), at[1]); g.rotation.y = s.rot || 0;      /* 땅에 붙는다(터 부품 상자의 heightAt — 물 위는 물 높이) */
     Object.assign(g.userData, { w, home: g.position.clone(), hop: 0 });

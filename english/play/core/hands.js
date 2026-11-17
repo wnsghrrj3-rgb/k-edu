@@ -27,10 +27,12 @@
     drag:  { drop: 1.3 },                           /* 놓는 자리의 넉넉함(자리 반지름의 몫) */
     hold:  { ms: 850, slipPx: 30 },                 /* 꾹 누르는 시간 · 이만큼 벗어나면 풀린다 */
     'throw': { minSpeed: 0.4, sampleMs: 110, cone: 0.75, drop: 1.3 },   /* 던진 빠르기(점/ms) · 빠르기를 재는 끝 구간 · 자리 쪽으로 본 각의 너그러움(라디안) */
-    rub:   { needPx: 460, maxGapMs: 900, reach: 1.35 }                  /* 물건 위에서 문지른 길이 · 쉬면 풀리는 시간 · 물건 둘레의 넉넉함 */
+    rub:   { needPx: 460, maxGapMs: 900, reach: 1.35 },                 /* 물건 위에서 문지른 길이 · 쉬면 풀리는 시간 · 물건 둘레의 넉넉함 */
+    pull:  { needPx: 84, side: 0.9 },               /* 아래로 당긴 길이 · 옆으로 샌 만큼(당긴 길이의 몫)까지 봐준다 */
+    line:  { drop: 1.3, everyPx: 14 }               /* 닿는 자리의 넉넉함 · 긋는 길에 점을 찍는 사이 */
   };
-  var KINDS = ['shake', 'drag', 'hold', 'throw', 'rub'], CARRY = { drag: true, 'throw': true };
-  var NAME = { shake: '흔들기', drag: '끌어 놓기', hold: '꾹 눌렀다 놓기', 'throw': '던지기', rub: '문지르기' };
+  var KINDS = ['shake', 'drag', 'hold', 'throw', 'rub', 'pull', 'line'], CARRY = { drag: true, 'throw': true, line: true };      /* 옮기는 손짓 = 물건을 자리로(끌어 놓기 · 던지기 · 이어 긋기 — 긋기는 물건이 아니라 길이 간다) */
+  var NAME = { shake: '흔들기', drag: '끌어 놓기', hold: '꾹 눌렀다 놓기', 'throw': '던지기', rub: '문지르기', pull: '당기기', line: '이어 긋기' };
   function near(list, x, y, k) { var best = null, bd = 1e9; (list || []).forEach(function (o) { var d = Math.hypot(o.x - x, o.y - y); if (d <= (o.r || 30) * k && d < bd) { bd = d; best = o; } }); return best; }
 
   function create(kind, env) {
@@ -43,7 +45,8 @@
       var it = near(items(), x, y, kind === 'rub' ? C.reach : CONF.grab);
       st = { x0: x, y0: y, x: x, y: y, t0: t, t: t, it: it, moved: 0, path: [[x, y, t]], turns: 0, dir: 0, run: 0, lastTurn: t, rubbed: 0, charged: false, slipped: false, done: false };
       if (it && CARRY[kind]) emit('grab', { id: it.id });
-      if (it && kind === 'hold') emit('progress', { id: it.id, k: 0 });
+      if (it && (kind === 'hold' || kind === 'pull')) emit('progress', { id: it.id, k: 0 });
+      if (it && kind === 'line') emit('line', { id: it.id, x: x, y: y, start: true });
     }
     function move(x, y, t) {
       if (!st || st.done) return; var dx = x - st.x, dy = y - st.y, d = Math.hypot(dx, dy); st.moved += d; st.path.push([x, y, t]); if (st.path.length > 40) st.path.shift();
@@ -55,6 +58,9 @@
         var it = st.it && Math.hypot(st.it.x - x, st.it.y - y) <= (st.it.r || 30) * C.reach ? st.it : near(items(), x, y, C.reach);
         if (it) { if (!st.it || it.id !== st.it.id) { st.it = it; st.rubbed = 0; } st.rubbed += d; emit('progress', { id: it.id, k: Math.min(1, st.rubbed / C.needPx) }); if (st.rubbed >= C.needPx) { st.done = true; emit('choose', { id: it.id, by: 'gesture' }); } }
       } else if (kind === 'hold' && st.it) { if (Math.hypot(x - st.x0, y - st.y0) > C.slipPx && !st.slipped) { st.slipped = true; emit('progress', { id: st.it.id, k: 0 }); } }
+      else if (kind === 'pull' && st.it) {                                        /* 아래로 당긴 만큼 찬다 — 다 당기면 고른 것 */
+        var py = y - st.y0, px = Math.abs(x - st.x0), kq = py > 0 && px <= Math.max(C.needPx * 0.4, py * C.side) ? Math.min(1, py / C.needPx) : 0; emit('progress', { id: st.it.id, k: kq, dy: Math.max(0, py) }); if (kq >= 1) { st.done = true; emit('choose', { id: st.it.id, by: 'gesture' }); }
+      } else if (kind === 'line' && st.it) { st.run += d; if (st.run >= C.everyPx) { st.run = 0; emit('line', { id: st.it.id, x: x, y: y }); } }      /* 긋는 길 — 물건은 제자리에, 길만 손을 따라간다 */
       else if (CARRY[kind] && st.it) emit('drag', { id: st.it.id, x: x, y: y });
       st.x = x; st.y = y; st.t = t;
     }
@@ -72,6 +78,7 @@
           if (sp >= C.minSpeed) { var best = null, ba = C.cone; zones().forEach(function (q) { var ang = Math.abs(Math.atan2(vx * (q.y - y) - vy * (q.x - x), vx * (q.x - x) + vy * (q.y - y))); if (ang < ba) { ba = ang; best = q; } });
             if (best) { emit('fly', { id: s.it.id, zone: best.id, from: [x, y], to: [best.x, best.y] }); emit('put', { id: s.it.id, zone: best.id, by: 'gesture' }); return; } }
         }
+        if (z && kind === 'line') emit('line', { id: s.it.id, x: z.x, y: z.y, end: true });
         if (z) emit('put', { id: s.it.id, zone: z.id, by: 'gesture' }); else emit('back', { id: s.it.id });
         return;
       }
@@ -79,6 +86,7 @@
       if (kind === 'hold') { if ((s.charged || t - s.t0 >= C.ms) && !s.slipped) emit('choose', { id: s.it.id, by: 'gesture' });      /* 놓는 순간의 시간으로 본다 — 화면이 느려 차오름을 덜 그렸어도 꾹 누른 것은 꾹 누른 것 */ else { emit('progress', { id: s.it.id, k: 0 }); if (isTap && t - s.t0 < C.ms * 0.5) tapOn(s.it); } return; }
       if (kind === 'shake') { emit('progress', { id: s.it.id, k: 0 }); if (isTap) tapOn(s.it); return; }
       if (kind === 'rub') { if (isTap) tapOn(s.it); return; }
+      if (kind === 'pull') { emit('progress', { id: s.it.id, k: 0 }); if (isTap) tapOn(s.it); return; }
     }
     function cancel() { if (st && st.it) emit('back', { id: st.it.id }); st = null; }
     return { kind: kind, carry: !!CARRY[kind], down: down, move: move, up: up, tick: tick, cancel: cancel, get active() { return !!st; }, get picked() { return picked; }, reset: function () { st = null; taps = {}; picked = null; } };
@@ -100,7 +108,7 @@
   function cell(box, kind, spec) {
     var doc = box.ownerDocument, root = doc.createElement('div'); root.className = 'ph-cell ph-' + kind; root.setAttribute('data-hand', kind);
     var row = doc.createElement('div'); row.className = 'ph-items'; var zr = doc.createElement('div'); zr.className = 'ph-zones'; root.appendChild(row); root.appendChild(zr); box.appendChild(root);
-    var els = {}, zels = {};
+    var els = {}, zels = {}, trail = [], NS = 'http://www.w3.org/2000/svg', svg = doc.createElementNS(NS, 'svg'), path = doc.createElementNS(NS, 'polyline'); svg.setAttribute('class', 'ph-lines'); svg.appendChild(path); if (kind === 'line') root.appendChild(svg);      /* 이어 긋기의 길 */
     (spec.items || []).forEach(function (it) { var b = doc.createElement('div'); b.className = 'ph-item'; b.setAttribute('data-id', it.id); b.innerHTML = '<span class="ph-pic">' + (it.html || '') + '</span><i class="ph-ring"></i>'; row.appendChild(b); els[it.id] = b; });
     (spec.zones || []).forEach(function (z) { var b = doc.createElement('div'); b.className = 'ph-zone'; b.setAttribute('data-id', z.id); b.innerHTML = z.html || ''; zr.appendChild(b); zels[z.id] = b; });
     var mid = function (e) { var r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, r: Math.max(r.width, r.height) / 2 }; };
@@ -110,15 +118,16 @@
       var b = els[e.id];
       if (e.type === 'grab' && b) b.classList.add('held');
       else if (e.type === 'drag' && b) { var c = mid(b), t = /translate\(([-\d.]+)px, ([-\d.]+)px\)/.exec(b.style.transform) || [0, 0, 0]; b.style.transform = 'translate(' + (+t[1] + e.x - c.x) + 'px, ' + (+t[2] + e.y - c.y) + 'px)'; }
-      else if (e.type === 'progress' && b) { b.style.setProperty('--k', e.k); if (kind === 'shake') b.style.transform = 'translateX(' + (e.k ? (Math.round(e.k * 10) % 2 ? 6 : -6) : 0) + 'px)'; }
-      else if (e.type === 'back' && b) home(b);
+      else if (e.type === 'progress' && b) { b.style.setProperty('--k', e.k); if (kind === 'shake') b.style.transform = 'translateX(' + (e.k ? (Math.round(e.k * 10) % 2 ? 6 : -6) : 0) + 'px)'; if (kind === 'pull') b.style.transform = e.k ? 'translateY(' + Math.round(e.k * 26) + 'px)' : ''; }
+      else if (e.type === 'line') { var rr = root.getBoundingClientRect(); if (e.start) trail = []; trail.push((e.x - rr.left).toFixed(0) + ',' + (e.y - rr.top).toFixed(0)); path.setAttribute('points', trail.join(' ')); path.setAttribute('class', 'ph-trail' + (e.end ? ' ok' : '')); }
+      else if (e.type === 'back' && b) { home(b); if (kind === 'line') { trail = []; path.setAttribute('points', ''); } }
       else if (e.type === 'fly' && b) { b.classList.add('fly'); b.style.transform = 'translate(' + (e.to[0] - mid(b).x) + 'px, ' + (e.to[1] - mid(b).y) + 'px) scale(.7)'; }
       else if (e.type === 'hint' && b) { b.classList.remove('hint'); void b.offsetWidth; b.classList.add('hint'); }
       if (spec.on) spec.on(e, api);
     } });
     var off = bind(root, h, {});
     var api = { el: root, hand: h, items: els, zones: zels, home: function (id) { if (els[id]) home(els[id]); }, lit: function (id, on) { if (els[id]) els[id].classList.toggle('lit', on !== false); }, gone: function (id) { if (els[id]) els[id].classList.add('gone'); },
-      reset: function () { Object.keys(els).forEach(function (k) { home(els[k]); els[k].classList.remove('gone', 'lit', 'hint'); els[k].style.removeProperty('--k'); }); h.reset(); }, destroy: function () { off(); if (root.parentNode) root.parentNode.removeChild(root); } };
+      reset: function () { Object.keys(els).forEach(function (k) { home(els[k]); els[k].classList.remove('gone', 'lit', 'hint'); els[k].style.removeProperty('--k'); }); trail = []; path.setAttribute('points', ''); h.reset(); }, destroy: function () { off(); if (root.parentNode) root.parentNode.removeChild(root); } };
     return api;
   }
 

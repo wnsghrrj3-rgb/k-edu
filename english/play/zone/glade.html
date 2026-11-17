@@ -149,6 +149,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:
 .gsheet{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--veil);backdrop-filter:blur(6px);border-radius:var(--r-3) var(--r-3) 0 0;padding:14px 16px calc(16px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:10px;transform:translateY(105%);transition:transform 320ms var(--ease);touch-action:auto;box-shadow:var(--shadow)}
 .gsheet.show{transform:none}
 .gsheet .head{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;color:var(--ink-2)}
+.gsheet .lt .art,.gsheet .lt svg{width:44px;height:44px}
 .gsheet .lt{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:var(--r-2);background:var(--a-cream);font-family:var(--font-read);font-weight:700;font-size:34px;color:var(--ink)}
 .gsheet #pad{width:100%;max-width:300px}
 .gsheet .pw-sheet{max-width:none}
@@ -198,7 +199,7 @@ body.still > *:not(#cv){display:none!important}
   <button type="button" id="bSig" style="display:none"><span id="iSig"></span><span id="tSig"></span></button>
   <button type="button" id="bAgain"><span id="iAgain"></span><span id="tAgain">다시 하기</span></button>
 </div>
-<div class="gsheet" id="sheet"><button class="x" id="sheetX" type="button">닫기</button><div class="head"><span class="lt" id="sheetL">a</span><span>점에서 출발해 따라 써 줘</span></div><div id="pad"></div></div>
+<div class="gsheet" id="sheet"><button class="x" id="sheetX" type="button">닫기</button><div class="head"><span class="lt" id="sheetL">a</span><span id="sheetH">점에서 출발해 따라 써 줘</span></div><div id="pad"></div></div>
 <div class="gcover" id="cover"><div class="box"><div class="big" id="coverN">사과나무 빈터</div><div class="ab" id="coverL">a · b</div><div class="parts" id="parts"></div><p id="ldT">빈터를 가꾸는 중…</p><button class="btn" id="go" type="button" style="display:none">들어가기</button></div></div>
 
 <script src="../../v3/engine/k-tts.js"></script>
@@ -249,6 +250,7 @@ const CONF = {
   bpm: 104,                         /* 챈트 박자 — 아래에서 한 해 길 자료(CHANT 듣기 단)로 덮는다 */
   finds: 4,                         /* 듣고 찾기 한 판 */
   sayTries: 2, sayMs: 4500,         /* 따라 말하기 — 듣는 횟수 · 한 번 듣는 길이(ms). 두 번 안에 못 알아들어도 넘어간다 */
+  dict: { n: 3, mode: 'free', hint: '이름의 첫 글자를 써 줘', trace: '점에서 출발해 따라 써 줘' },      /* 첫 글자 쓰기(쓰기 뼈대의 사건 — 그림 사전) — 한 판의 그림 수 · 쓰기 판의 도움 단계(혼자 → 안 되면 쓰기 엔진이 옅게 · 따라로) · 쓰기 판 머리말 */
   aside: { w: 0.95, up: 2.3, down: 0.35, near: 1.25, ms: 520, spots: [[1.9, 0.7], [-1.9, 0.7], [2.6, 0.1], [-2.6, 0.1], [1.4, 1.6], [-1.4, 1.6]] },      /* Max 가 글자 자리를 가릴 때 비켜 서는 곳(제자리에서 x, z 만큼) · w = 가린다고 보는 화면 너비(단위) · up/down = 발에서 위 · 아래로 */
   cam: { yaw: 0.2, pitch: 0.6, dist: 30, yawMin: -0.25, yawMax: 0.6, pitchMin: 0.42, pitchMax: 0.82,
     ease: 3.0, drift: 0.016, far: 0.86,                 /* 따라가는 빠르기 · 가만히 있을 때 좌우로 아주 조금 · 들어가기 전의 먼 눈 */
@@ -548,22 +550,25 @@ async function repeat(x){
 }
 /* ── 쓰기 — 글자 하나를 손으로. 눈은 팻말로 가고, 쓴 글씨는 팻말로 날아가 붙는다 ── */
 const WIDE = matchMedia('(orientation:landscape) and (min-width:820px)');
-async function fly(l){
+async function fly(l, to){
   const cell = $('pad').querySelector('.pw-svg') || $('pad'), pr = cell.getBoundingClientRect(), svg = PW.svg(l); if (!pr.width || !svg) return;
   const d = document.createElement('div'); d.className = 'gfly'; d.innerHTML = svg; d.style.width = pr.width + 'px'; d.style.height = pr.height + 'px'; d.style.transform = 'translate(' + pr.left + 'px,' + pr.top + 'px)'; document.body.appendChild(d);
-  const [sx, sy] = screenOf(signG, 1.5), x0 = pr.left, y0 = pr.top, x1 = sx + (l === L1 ? -0.3 : 0.3) * 60 - pr.width / 2, y1 = sy - pr.height / 2;
+  const [sx, sy] = screenOf(to || signG, to ? (to.userData.dy || 1) : 1.5), x0 = pr.left, y0 = pr.top, x1 = sx + (to ? 0 : l === L1 ? -0.3 : 0.3) * 60 - pr.width / 2, y1 = sy - pr.height / 2;
   await tween(620, t => { const up = Math.sin(t * Math.PI) * 60; d.style.transform = 'translate(' + (x0 + (x1 - x0) * t) + 'px,' + (y0 + (y1 - y0) * t - up) + 'px) scale(' + (1 - t * 0.78) + ')'; d.style.opacity = String(1 - Math.max(0, t - 0.8) * 4); }, t => t * t * (3 - 2 * t));
   d.remove();
 }
 const PEN = HOW.pen.kind;      /* 쓰는 것 — 도구마다 선과 바탕 · 긋는 소리가 다르다(core/pens.js). 글씨 판정은 같다 */
-async function writeOne(l){
-  bubble(null); spotAt(null); const wide = WIDE.matches; focus(signG, CONF.cam.sign, 1, wide ? 0.42 : 0, wide ? 0.05 : 0.42, 1.5); lookAll(signG); mood(mina, 'point');
-  word(l, 'hear'); $('sheetL').textContent = l; $('pad').innerHTML = ''; $('sheet').classList.add('show'); saySound(l, mina);
+async function writeOne(l, opt){          /* opt = { pic, to, game } — 첫 글자 쓰기: 글자 대신 그림을 보여 주고 혼자 쓴다 · 쓴 글자는 그 물건으로 날아간다 */
+  const o = opt || {}, tgt = o.to || signG;
+  bubble(null); spotAt(null); const wide = WIDE.matches; focus(tgt, CONF.cam.sign, 1, wide ? 0.42 : 0, wide ? 0.05 : 0.42, o.to ? (tgt.userData.dy || 1) : 1.5); lookAll(tgt); mood(mina, 'point');
+  if (o.pic) { word(o.pic, 'say', '', 2); $('sheetL').innerHTML = PlayArt.html(o.pic); $('sheetH').textContent = CONF.dict.hint; } else { word(l, 'hear'); $('sheetL').textContent = l; $('sheetH').textContent = CONF.dict.trace; }
+  $('pad').innerHTML = ''; $('sheet').classList.add('show'); if (o.pic) sayWord(o.pic, 0.8, mina); else saySound(l, mina);
   if (PEN) PlayPens.apply($('sheet'), PEN);
-  const res = await new Promise(r => { writeOne.cancel = () => r(null); PW.write($('pad'), { text: l, mode: 'trace', strict: true, key: l, onLetter: () => sfx(PEN ? PlayPens.sound(PEN) : 'pop'), onMiss: () => { sfx('soft'); saySound(l, mina); } }).then(r); });
+  const res = await new Promise(r => { writeOne.cancel = () => r(null); PW.write($('pad'), { text: l, mode: o.pic ? CONF.dict.mode : 'trace', strict: !o.pic, key: l, onLetter: () => sfx(PEN ? PlayPens.sound(PEN) : 'pop'), onMiss: () => { sfx('soft'); if (o.pic) sayWord(o.pic, 0.8, mina); else saySound(l, mina); } }).then(r); });
   writeOne.cancel = null;
-  { const r = PlayFrames.write({ id: l, unit: 'letter' }).result(res); if (r.evidence) emit('letter-path', PlayFrames.value(EVD, r.evidence)); }
-  if (res) await fly(l);
+  { const r = PlayFrames.write({ id: l, unit: 'letter' }).result(res); if (r.evidence) emit(o.game || 'letter-path', PlayFrames.value(EVD, r.evidence)); }
+  if (res) await fly(l, o.to);
+  if (o.pic) { $('sheet').classList.remove('show'); if (res) { sfx('ok'); burstAt(tgt, (tgt.userData.dy || 1) + 0.3, 12); mood(mina, 'happy', 900); mood(me, 'happy', 900); await saySound(l); await wait(300); } return !!res; }
   $('sheet').classList.remove('show'); $('pad').innerHTML = '';
   if (!res) { mood(mina, 'idle'); unpresent(); return false; }
   paintSign(); sfx('ok'); word(l, 'ok'); hop(signG, 0.35, 500); burstAt(signG, 1.6, 14); mood(mina, 'happy', 1000); mood(me, 'happy', 900); await wait(1200); unpresent(); return true;
@@ -641,7 +646,7 @@ async function evYawn(n){
     const picks = [w].concat(all.filter(x => x !== w).sort(() => Math.random() - 0.5).slice(0, drops.length - 1)).sort(() => Math.random() - 0.5);
     await tween(350, t => { u.jaw.rotation.z = 0.5 + t * 0.45; }); ripple(al.position.x, al.position.z, 1.8); mouthAt.getWorldPosition(vA); const from = vA.clone();
     dropRound++;
-    drops.forEach((m, i) => { const mu = m.userData; mu.w = picks[i]; mu.float = false; m.visible = true; m.scale.setScalar(0.1); m.position.copy(from); const q = picAt(m, picks[i], 0, 'drop'); dropPics[i] = q; mu.drop = true; mu.held = false; if (!HANDK) q.d.onclick = () => pickDrop(i);
+    drops.forEach((m, i) => { const mu = m.userData; mu.w = picks[i]; mu.float = false; mu.pull = 0; m.visible = true; m.scale.setScalar(0.1); m.position.copy(from); const q = picAt(m, picks[i], 0, 'drop'); dropPics[i] = q; mu.drop = true; mu.held = false; if (!HANDK) q.d.onclick = () => pickDrop(i);
       setTimeout(() => { sfx('pop'); tween(900, t => { m.position.lerpVectors(from, mu.home, t); m.position.x += Math.sin(t * Math.PI) * (i % 2 ? 0.3 : -0.3); m.scale.setScalar(0.1 + t * 0.9); }).then(() => { mu.float = true; }); }, i * 160); });
     await wait(160 * drops.length + 950); tween(500, t => { u.jaw.rotation.z = 0.95 - t * 0.45; });
     dropWant = w; dropMiss = 0; dropFrame = PlayFrames.pick({ want: w, hand: HANDK }); dropPics.forEach(q => q.d.classList.add('tap')); $('hear').classList.add('show'); mood(max, 'lead', 600); await sayWord(w);
@@ -754,7 +759,7 @@ let letterWant = null;
 function jawTalk(dur, amp){ if (!things.alligator) return guestTalk(dur, amp); const u = things.alligator.userData; return tween(dur, t => { u.jaw.rotation.z = Math.abs(Math.sin(t * Math.PI * 2)) * amp; }, t => t); }
 async function pickLetter(l, by){
   const lw = letterWant; if (!lw || pickLetter.busy) return; pickLetter.busy = true; const f = (lw.row && lw.row[l]) || (lw.binOf ? lw.binOf(l) : fruitOf(l)), fs = f.userData.s || 1; await tween(360, t => f.scale.setScalar(fs * (1 + Math.sin(t * Math.PI) * 0.3)), t => t);
-  const jr = (lw.fr || (lw.fr = PlayFrames.sort({ item: lw.w, bin: lw.l, hand: HANDK }))).answer(l, by);      /* 가르기 뼈대 — 이 낱말은 어느 글자 쪽인가 */
+  const jr = (lw.fr || (lw.fr = PlayFrames.sort({ item: lw.w, bin: lw.l, also: lw.also || null, hand: HANDK }))).answer(l, by);      /* 가르기 뼈대 — 이 낱말은 어느 글자 쪽인가 */
   if (jr && jr.ok) { if (lw.w) emit(lw.game || 'special-guest', PlayFrames.value(EVD, jr.evidence)); letterWant = null; handEnd(); if (lw.tok) tokenOff(); sfx('ok'); burstAt(f, 0.2, 12); STEP.letters.forEach(x => fruitOf(x).scale.setScalar(1)); await saySound(l); pickLetter.busy = false; lw.done(); return; }
   lw.miss = jr ? jr.miss : (lw.miss | 0) + 1; if (lw.tok) handBack(lw.tok); sfx('soft'); mood(max, 'ear', 1200); await saySound(l); await wait(200); await lw.again(); pickLetter.busy = false;      /* 고른 글자의 소리를 들려주고, 낱말을 다시 */
 }
@@ -811,19 +816,24 @@ const actorOf = ev => things[stageOf(ev.id).actor] || max;
    o = { items: () => [{ id, obj, dy?, r? }], zones?: () => [{ id, obj, dy?, r? }], choose(id, by), put?(id, zone, by), progress?(id, k) } */
 const HANDK = HOW.hand, UPV = new THREE.Vector3(0, 1, 0), handPlane = new THREE.Plane();
 let handOff = null, handNow = null;
-function handEnd(){ if (handOff) { handOff(); handOff = null; handNow = null; eye.hold(false); } }
+function handEnd(){ if (handOff) { handOff(); handOff = null; handNow = null; eye.hold(false); if (trail.length) setTimeout(trailOff, 700); } }
 function handBack(m){ if (!m || !m.userData.home || !m.userData.held) return; m.userData.held = false; const fr = m.position.clone(), hm = m.userData.home; tween(320, t => m.position.lerpVectors(fr, hm, t)).then(() => { if (m.userData.drop) m.userData.float = true; }); }
+/* 이어 긋기의 길 — 손이 지나간 자리에 놓이는 빛 점(반딧불). 놓거나 판이 끝나면 걷힌다 */
+const trail = [];
+function trailDot(q, end){ const d = fx(new THREE.Mesh(new THREE.SphereGeometry(end ? 0.16 : 0.1, 8, 6), new THREE.MeshBasicMaterial({ color: K.C('warm'), transparent: true, opacity: 0.95 }))); d.position.copy(q); d.position.y += 0.12; glade.add(d); trail.push(d); tween(260, t => d.scale.setScalar(0.3 + t * 0.7)); if (trail.length > 90) glade.remove(trail.shift()); }
+function trailOff(){ while (trail.length) glade.remove(trail.pop()); }
 function handStart(o){ handEnd(); if (!HANDK) return false;
   const scr = (it, r0) => { const p = screenOf(it.obj, it.dy || 0); return { id: it.id, x: p[0], y: p[1], r: (it.r || r0) * K.ppu() }; }, find = id => o.items().find(x => x.id === id);
   const h = PlayHands.create(HANDK, { items: () => o.items().map(it => scr(it, 0.8)), zones: () => (o.zones ? o.zones() : []).map(z => scr(z, 1.4)), on: e => { const it = e.id != null ? find(e.id) : null, m = it && it.obj, s0 = m ? (m.userData.s || 1) : 1;
-    if (e.type === 'choose') { if (m) { m.scale.setScalar(s0); m.rotation.z = 0; } o.choose(e.id, e.by); }
+    if (e.type === 'choose') { if (m) { m.scale.setScalar(s0); m.rotation.z = 0; if (m.userData.pullY != null) { m.position.y = m.userData.pullY; m.userData.pullY = null; m.userData.pull = 0; } } o.choose(e.id, e.by); }
     else if (e.type === 'put') { if (o.put) o.put(e.id, e.zone, e.by); else o.choose(e.id, e.by); }
     else if (e.type === 'hint') { tip(HANDTIP[HANDK], 2600); if (m) tween(420, t => m.scale.setScalar(s0 * (1 + Math.sin(t * Math.PI) * 0.25)), t => t); }
     else if (!m) return;
-    else if (e.type === 'progress') { m.scale.setScalar(s0 * (1 + e.k * 0.32)); if (HANDK === 'shake') m.rotation.z = e.k ? Math.sin(e.k * 31) * 0.28 : 0; if (o.progress) o.progress(e.id, e.k); }
+    else if (e.type === 'progress') { if (HANDK === 'pull') { const u = m.userData; if (u.pullY == null) u.pullY = m.position.y; u.pull = e.k; if (!u.float) m.position.y = u.pullY - e.k * 0.55; m.scale.set(s0, s0 * (1 + e.k * 0.18), s0); if (!e.k) { if (!u.float) m.position.y = u.pullY; u.pullY = null; } }      /* 당기기 — 당긴 만큼 내려온다(떠 있는 방울은 제 흔들림에 userData.pull 을 더한다) */ else m.scale.setScalar(s0 * (1 + e.k * 0.32)); if (HANDK === 'shake') m.rotation.z = e.k ? Math.sin(e.k * 31) * 0.28 : 0; if (o.progress) o.progress(e.id, e.k); }
+    else if (e.type === 'line') { if (e.start) trailOff(); const q = K.toPlane(e.x, e.y, handPlane.set(UPV, -(m.position.y - 0.1))); if (q) trailDot(q, e.end); if (e.end) sfx('ok'); else if (trail.length % 3 === 0) sfx('pop'); }      /* 이어 긋기 — 물건은 제자리에, 손이 지나간 길에 빛 점이 놓인다 */
     else if (e.type === 'grab') { m.userData.float = false; m.userData.held = true; sfx('pop'); }
     else if (e.type === 'drag') { const q = K.toPlane(e.x, e.y, handPlane.set(UPV, -m.position.y)); if (q) { m.position.x = q.x; m.position.z = q.z; } }
-    else if (e.type === 'back') handBack(m);
+    else if (e.type === 'back') { handBack(m); trailOff(); }
     else if (e.type === 'fly') { const z = (o.zones ? o.zones() : []).find(x => x.id === e.zone); if (z) { z.obj.getWorldPosition(vB); const fr = m.position.clone(), to = vB.clone().setY(vB.y + (z.dy || 0.6)); tween(380, t => { m.position.lerpVectors(fr, to, t); m.position.y += Math.sin(t * Math.PI) * 0.8; }); } }
   } });
   handNow = h; eye.hold(true);
@@ -836,17 +846,18 @@ function tokenOff(){ if (!token) return; const m = token; token = null; picOff(d
 /* 사건의 놀이 = 판정 뼈대(core/frames.js — 놀이 열쇠가 정한다) + 그 걸음의 손짓(core/hands.js — how.hand) + 그 걸음의 글자 그릇(how.carrier). 사건을 몇 가지 판형으로 모으지 않는다 */
 const frameOf = ev => { const f = PlayFrames.of(ev.game); if (!f) throw new Error('뼈대를 정하지 않은 놀이 ' + ev.game); return f; };
 const FRAME_STEP = { say: ['', 'train', '말하기'], pick: ['', 'sparkle', '듣고 고르기'], sort: ['', 'fruit', '첫소리 가르기'], write: ['', 'pencil', '쓰기'], link: ['', 'sparkle', '잇기'], order: ['', 'sparkle', '차례 놓기'] };
-const HANDTIP = { shake: '흔들어 봐', drag: '끌어다 놓아 봐', hold: '꾹 눌렀다가 놓아 봐', throw: '던져 봐', rub: '문질러 봐' };
+const HANDTIP = { shake: '흔들어 봐', drag: '끌어다 놓아 봐', hold: '꾹 눌렀다가 놓아 봐', throw: '던져 봐', rub: '문질러 봐', pull: '아래로 당겨 봐', line: '손가락으로 이어 그어 봐' };
 function roomParts(){ const e0 = EVB(0), e3 = EVB(3);
   return [
     { name: L1 + ' 글자', mark: L1, steps: [[L1, 'ear', L1 + ' 듣고 말하기'], [L1, 'pencil', L1 + ' 쓰기'], ['', 'leaf', '쪽지']], bye: L1 + ' 글자 이야기 끝! 다음에는 ' + L2 + ' 글자를 만나요' },
     { name: L2 + ' 글자', mark: L2, steps: [[L2, 'ear', L2 + ' 듣고 말하기'], [L2, 'pencil', L2 + ' 쓰기'], FRAME_STEP[frameOf(e0)], ['', 'leaf', '쪽지']], bye: L2 + ' 글자 이야기 끝! 다음에는 「' + e3.name + '」' },
     { name: e3.name, mark: '', icon: 'train', steps: [FRAME_STEP[frameOf(e3)], ['', 'paw', '특별 손님'], ['', 'leaf', '쪽지']] }
   ]; }
-const isPerson = g => !!(g.userData.head && g.userData.arms);
+const isPerson = g => !!(g.userData.head && g.userData.arms && g.userData.mouth);
+const facesZ = g => isPerson(g) || g.userData.front === 'z';      /* 사람 · front 'z' 부품은 +z 가 앞 · 동물은 +x 가 앞 */
 /* 걸어간다 — 가는 쪽을 보고 통통(사람은 +z 가 앞 · 동물은 +x 가 앞). 땅을 따라 오르내린다 */
-function walkTo(a, to, dur){ const fr = a.position.clone(), dx = to.x - fr.x, dz = to.z - fr.z; if (Math.hypot(dx, dz) > 0.05) a.rotation.y = isPerson(a) ? Math.atan2(dx, dz) : Math.atan2(-dz, dx);
-  return tween(dur, t => { a.position.lerpVectors(fr, to, t); a.position.y = baseY(a) + Math.abs(Math.sin(t * Math.PI * Math.max(2, dur / 260))) * 0.12; }, t => t * t * (3 - 2 * t)); }
+function walkTo(a, to, dur, o){ const fr = a.position.clone(), dx = to.x - fr.x, dz = to.z - fr.z, l0 = liftOf(a), l1 = o && o.lift != null ? o.lift : l0; if (Math.hypot(dx, dz) > 0.05) a.rotation.y = facesZ(a) ? Math.atan2(dx, dz) : Math.atan2(-dz, dx);      /* o.lift = 닿는 곳에서 땅 위로 뜬 높이(바위 · 가지에 앉은 것이 땅으로 내려와 걷는다 = 0) */
+  return tween(dur, t => { a.position.lerpVectors(fr, to, t); a.position.y = H(a.position.x, a.position.z) + l0 + (l1 - l0) * t + Math.abs(Math.sin(t * Math.PI * Math.max(2, dur / 260))) * 0.12; }, t => t * t * (3 - 2 * t)).then(() => { a.userData.lift = l1; }); }
 async function evIntro(ev){
   const a = actorOf(ev), who = WHO(ev.who), dy = a.userData.dy || 1; unpresent(); word(null);
   focus(a, 1.18, 0.6, 0, -0.08, dy); spotAt(a); lookAll(a); mood(who, 'point', 1800); await wait(450);
@@ -855,11 +866,11 @@ async function evIntro(ev){
 }
 function evDone(ev){ if (ROOM && ROOM.onEvent) try { ROOM.onEvent(ev.id, { decor: DECOR, things, sfx }); } catch (e) {} }
 /* 낱말마다 한 걸음 — 주인공이 from 에서 to(없으면 제자리)로 n 걸음(A01 개미 줄과 같은 몸짓) */
-function stepper(ev, n){ const s = stageOf(ev.id); if (!s.from) return null; const a = actorOf(ev), u = a.userData, home = u.home.clone(), rot0 = a.rotation.y;
+function stepper(ev, n){ const s = stageOf(ev.id); if (!s.from) return null; const a = things[s.walker] || actorOf(ev), u = a.userData, home = u.home.clone(), rot0 = a.rotation.y, lift0 = liftOf(a), gl = s.ground ? { lift: 0 } : null;      /* walker = 걷는 것이 사건의 물건과 다를 때 · ground = 높은 데서 땅으로 내려와 걷는다 */
   const A0 = new THREE.Vector3(s.from[0], home.y, s.from[1]), B0 = s.to ? new THREE.Vector3(s.to[0], home.y, s.to[1]) : home;
-  return { start: async () => { u.busy = true; focus(a, 1.15, 0.6, 0, -0.05, u.dy || 1); lookAll(a); await walkTo(a, A0, 1100); },
+  return { start: async () => { u.busy = true; focus(a, 1.15, 0.6, 0, -0.05, u.dy || 1); lookAll(a); await walkTo(a, A0, 1100, gl); },
     step: async i => { focus(a, 1.2, 0.65, 0, -0.05, u.dy || 1); lookAll(a); spotAt(null); sfx(BEAT); await walkTo(a, A0.clone().lerp(B0, (i + 1) / n), 800); if (i === n - 1) { burstAt(a, (u.dy || 1) + 0.3, 10); people.forEach(p => mood(p, 'happy', 800)); } else await wait(120); },
-    end: async () => { if (s.to) await walkTo(a, home, 1500); a.position.copy(home); a.rotation.y = rot0; u.busy = false; } }; }
+    end: async () => { if (s.to || s.ground) await walkTo(a, home, 1500, { lift: lift0 }); a.position.copy(home); a.userData.lift = lift0; a.rotation.y = rot0; u.busy = false; } }; }
 const pickBoth = n => { const p = l => CONF.words.filter(x => x.l === l).sort(() => Math.random() - 0.5).slice(0, Math.ceil(n / 2)); return p(L1).concat(p(L2)).sort(() => Math.random() - 0.5).slice(0, n); };
 /* 사건의 놀이 — 판형에 따라 A01 의 놀이 하나 */
 async function evRound(ev, n = 4, quiet){
@@ -868,8 +879,16 @@ async function evRound(ev, n = 4, quiet){
   if (fr === 'say') { if (ev.game === 'wtrain') { await evTrain(list); await trainHome(); } else if (ev.game === 'order') await orderRound(ev, list); else await lineRound(ev); }      /* 말하기 — 이름을 부르거나(기차 · 주문), 사건의 한마디를 따라 말한다 */
   else if (fr === 'pick') await popRound(ev, list.map(x => x.w));
   else if (fr === 'sort') await sortRound(ev, list);
-  else if (fr === 'write') for (const x of list.slice(0, 2)) { if (mode === 'stop') break; present(x.w, CONF.cam.word); await sayWord(x.w); if (!(await writeOne(x.l))) break; }
+  else if (fr === 'write') await dictRound(ev, list.slice(0, CONF.dict.n));
   evDone(ev); unpresent(); word(null);
+}
+/* 첫 글자 쓰기(쓰기 뼈대 — 그림 사전) — 주인공 위에 그림이 뜨고 이름이 들린다. 그 낱말의 첫 글자를 쓰기 판에 혼자 써넣는다(글자는 보여 주지 않는다 — 안 되면 쓰기 엔진이 옅게 · 따라로 돕는다). 쓴 글자는 그 물건으로 날아간다 */
+async function dictRound(ev, list){ const a = actorOf(ev), dy = a.userData.dy || 1; unpresent(); word(null); tip('그림의 이름을 듣고 첫 글자를 써 봐', 3400);
+  for (let i = 0; i < list.length; i++) { if (mode === 'stop') break; const x = list[i];
+    focus(a, 1.2, 0.65, 0, -0.05, dy); lookAll(a); const q = picAt(a, x.w, dy + 1.0, 'now'); q.size = 0.5; q.pulse = 1; sfx('enter'); hop(a, 0.3, 400); await wait(450); mood(max, 'lead', 600); await sayWord(x.w);
+    const ok = await writeOne(x.l, { pic: x.w, to: a, game: 'letter-dict' });
+    q.pulse = 0; q.d.classList.remove('now'); q.d.classList.add('lit'); if (!ok) { picOff(q); break; }
+    word(x.w, 'ok'); present(x.w, CONF.cam.word); act(x.w, 700); burstAt(things[x.w], x.dy + 0.3, 8); roundTick(ev, i); await sayWord(x.w); await wait(400); picOff(q); unpresent(); word(null); await wait(200); }
 }
 /* 사건의 한마디를 따라 말한다(말하기 뼈대 — 마이크가 없으면 눌러서) */
 async function lineRound(ev){ const a = actorOf(ev); focus(a, 1.18, 0.6, 0, -0.08, a.userData.dy || 1); mood(me, 'speak'); const r = await lineOrTap(ev.en); sayEv(ev.en, r, ev.game === 'magic' ? 'magic-call' : 'sound-chant'); mood(me, 'happy', 800); hop(a, 0.35, 450); await wait(500); }
@@ -883,25 +902,28 @@ async function orderRound(ev, list){ const a = actorOf(ev), dy = a.userData.dy |
 }
 /* 톡톡 — 주인공에게서 그림 방울이 떠오르고, 들린 이름의 방울을 톡(A01 악어의 하품과 같은 판정) */
 async function popRound(ev, order){
-  const a = actorOf(ev), all = CONF.words.map(x => x.w); a.getWorldPosition(vA); const base = new THREE.Vector3(Math.max(-4.2, Math.min(4.2, vA.x)), (a.userData.dy || 1) + 0.3, Math.max(-3.4, Math.min(1.2, vA.z)));
+  const a = actorOf(ev), all = CONF.words.map(x => x.w), SG = sigOf(ev), sc = SG ? sigCtx(ev) : null; a.getWorldPosition(vA);
+  if (SG && SG.start) { try { await SG.start(sc); } catch (e) {} }                                   /* 얼굴 놀이 — 그 걸음에만 있는 장면을 차린다 */ const base = new THREE.Vector3(Math.max(-4.2, Math.min(4.2, vA.x)), (a.userData.dy || 1) + 0.3, Math.max(-3.4, Math.min(1.2, vA.z)));
   const homes = drops.map((m, i) => new THREE.Vector3(base.x + (i - (drops.length - 1) / 2) * 1.6, base.y + 1.5 + (i % 2 ? 0.45 : 0), base.z + 1.0));
-  unpresent(); word(null); focus(dropEye, 1.12, 0, 0, 0, 0); eye.goal.obj = null; lookAll(a); tip(HANDK ? '들리는 그림 방울을 ' + HANDTIP[HANDK] : '들리는 그림 방울을 톡 눌러 봐', 3400);
+  unpresent(); word(null); focus(dropEye, 1.12, 0, 0, 0, 0); eye.goal.obj = null; lookAll(a); tip(SG && SG.tip ? SG.tip : HANDK ? '들리는 그림 방울을 ' + HANDTIP[HANDK] : '들리는 그림 방울을 톡 눌러 봐', 3400);
   for (const w of order) {
     if (mode === 'stop') break;
     const picks = [w].concat(all.filter(x => x !== w).sort(() => Math.random() - 0.5).slice(0, drops.length - 1)).sort(() => Math.random() - 0.5);
     hop(a, 0.35, 450); const from = base.clone();
     dropRound++;
-    drops.forEach((m, i) => { const mu = m.userData; mu.home = homes[i].clone(); mu.w = picks[i]; mu.float = false; m.visible = true; m.scale.setScalar(0.1); m.position.copy(from); const q = picAt(m, picks[i], 0, 'drop'); dropPics[i] = q; mu.drop = true; mu.held = false; if (!HANDK) q.d.onclick = () => pickDrop(i);
+    drops.forEach((m, i) => { const mu = m.userData; mu.home = homes[i].clone(); mu.w = picks[i]; mu.float = false; mu.pull = 0; m.visible = true; m.scale.setScalar(0.1); m.position.copy(from); const q = picAt(m, picks[i], 0, 'drop'); dropPics[i] = q; mu.drop = true; mu.held = false; if (!HANDK) q.d.onclick = () => pickDrop(i);
       setTimeout(() => { sfx('pop'); tween(900, t => { m.position.lerpVectors(from, mu.home, t); m.position.x += Math.sin(t * Math.PI) * (i % 2 ? 0.3 : -0.3); m.scale.setScalar(0.1 + t * 0.9); }).then(() => { mu.float = true; }); }, i * 160); });
     await wait(160 * drops.length + 950);
     dropWant = w; dropMiss = 0; dropFrame = PlayFrames.pick({ want: w, hand: HANDK }); dropPics.forEach(q => q.d.classList.add('tap')); $('hear').classList.add('show'); mood(max, 'lead', 600); await sayWord(w);
     /* 그 걸음의 손짓으로 고른다 — 방울에 손짓을 하거나(흔들기 · 꾹 · 문지르기), 방울을 주인공에게 옮긴다(끌어 놓기 · 던지기) */
-    handStart({ items: () => drops.map((m, i) => ({ id: String(i), obj: m, r: 0.85 })).filter(x => x.obj.visible), zones: () => [{ id: 'to', obj: a, dy: (a.userData.dy || 1) * 0.6, r: 1.6 }], choose: (id, by) => pickDrop(+id, by), put: (id, z, by) => pickDrop(+id, by) });
+    handStart({ items: () => drops.map((m, i) => ({ id: String(i), obj: m, r: 0.85 })).filter(x => x.obj.visible), zones: () => [{ id: 'to', obj: a, dy: (a.userData.dy || 1) * 0.6, r: 1.6 }], choose: (id, by) => pickDrop(+id, by), put: (id, z, by) => pickDrop(+id, by), progress: SG && SG.progress ? (id, k) => SG.progress(sc, drops[+id], k) : null });
     await new Promise(r => { dropNext = r; });
     handEnd(); $('hear').classList.remove('show'); roundTick(ev, order.indexOf(w));
+    if (SG && SG.ok && mode !== 'stop') { try { await SG.ok(sc, { w, l: w.charAt(0) }, order.indexOf(w), order.length); } catch (e) {} }                /* 그 걸음만의 반응 */
     if (mode !== 'stop') { word(w, 'ok'); await wait(1000); word(null); }
   }
   dropWant = null; $('hear').classList.remove('show'); unpresent();
+  if (SG && SG.end) { try { await SG.end(sc); } catch (e) {} }
 }
 /* 첫소리 고르기 — 들린 낱말의 첫소리 열매(왼쪽 나무 = 첫 글자 · 오른쪽 = 둘째 글자)를 누른다(A01 손님의 열매 고르기와 같은 판정) */
 async function sortRound(ev, list){ const a = actorOf(ev), carry = HANDK && PlayHands.CARRY[HANDK], SG = sigOf(ev), sc = SG ? sigCtx(ev) : null; unpresent(); word(null);
@@ -970,23 +992,27 @@ async function ride(){
 /* 특별 손님 — 그 빈터의 살아 있는 것 하나가 앞으로 걸어 나온다. 그림을 내밀면 이름 → 첫소리 열매(앞 걸음 글자까지) · 몸짓에 한 줄 → 인사 · 버스 문이 열린다 */
 let guestHead = null;
 function guestTalk(dur, amp){ return guestHead ? hop(guestHead, 0.25 * (amp || 0.5) * 2, dur) : wait(dur); }
-function letterRow(ls, near){ near.getWorldPosition(vA); const row = {}, tones = ['a-red', 'a-gold', 'a-plum', 'a-fish'];
-  ls.forEach((l, i) => { const c = LETTER_CARRIER[l] || HOW.carrier.L, f = carrier(K, c.kind, { letter: l, tone: c.tone || tones[i % tones.length] });      /* 그 글자의 걸음이 쓰는 그릇 */
-    f.userData.letter = l; f.position.set(-(ls.length - 1) * 0.75 + i * 1.5, 0.75, 3.5); f.userData.s = 1.15; f.scale.setScalar(0.01); glade.add(f); row[l] = f; tween(420, t => f.scale.setScalar(Math.max(0.01, t * 1.15))); });      /* 앞 흙길 위에 크게 — 사람 · 그림 딱지에 가리지 않게 */
+function letterRow(ls, near, twin){ near.getWorldPosition(vA); const row = {}, tones = ['a-red', 'a-gold', 'a-plum', 'a-fish'];      /* twin = { of, with:[…] } — 같은 소리의 다른 글자가 한 줄기에 쌍둥이로(c · k) */
+  const put = (l, x, tn, sc) => { const c = LETTER_CARRIER[l] || HOW.carrier.L, f = carrier(K, c.kind, { letter: l, tone: c.tone || tn });      /* 그 글자의 걸음이 쓰는 그릇 */
+    f.userData.letter = l; f.position.set(x, 0.75, 3.5); f.userData.s = sc; f.scale.setScalar(0.01); glade.add(f); row[l] = f; tween(420, t => f.scale.setScalar(Math.max(0.01, t * sc))); return f; };      /* 앞 흙길 위에 크게 — 사람 · 그림 딱지에 가리지 않게 */
+  ls.forEach((l, i) => { const x = -(ls.length - 1) * 0.75 + i * 1.5, tn = tones[i % tones.length];
+    if (twin && twin.of === l && twin.with && twin.with.length) { const all = [l].concat(twin.with), w = 1.0; all.forEach((k, j) => put(k, x + (j - (all.length - 1) / 2) * w, tn, 0.9));
+      const tie = mesh(new THREE.CylinderGeometry(0.035, 0.035, w * (all.length - 1), 6), M('a-wood'), x, 1.45, 3.5); tie.rotation.z = Math.PI / 2; tie.add(ball(0.16, M('a-leaf'), 0, 0, 0.1, 0.5, 1.4, 0.8)); tie.userData.s = 1; tie.scale.setScalar(0.01); glade.add(tie); row['+' + l] = tie; tween(420, t => tie.scale.setScalar(Math.max(0.01, t))); }
+    else put(l, x, tn, 1.15); });
   return row; }
-function clearRow(row){ Object.values(row).forEach(f => { tween(300, t => f.scale.setScalar(Math.max(0.01, (1 - t) * 1.15))).then(() => glade.remove(f)); }); }
+function clearRow(row){ Object.values(row).forEach(f => { const s0 = f.userData.s || 1.15; tween(300, t => f.scale.setScalar(Math.max(0.01, (1 - t) * s0))).then(() => glade.remove(f)); }); }
 async function guestRoom(){
-  const al = things[DET.guest.who] || mina, u = al.userData, home = al.position.clone(), rot0 = al.rotation.y, land = new THREE.Vector3(0.2, home.y, 1.3);      /* 내 캐릭터와 Mina 사이 — 앞으로 걸어 나온다 */
+  const al = things[DET.guest.who] || mina, u = al.userData, home = al.position.clone(), rot0 = al.rotation.y, lift0 = liftOf(al), land = new THREE.Vector3(0.2, home.y, 1.3);      /* 내 캐릭터와 Mina 사이 — 앞으로 걸어 나온다 */
   guestHead = al; u.busy = true; unpresent(); word(null); focus(al, 1.2, 0.7, 0, -0.05, u.dy || 1); lookAll(al); sfx('tray'); tip('특별 손님이 와요', 2400);
-  await walkTo(al, land, 1600); al.rotation.y = isPerson(al) ? 0.3 : -Math.PI / 2 + 0.6; people.forEach(p => mood(p, 'happy', 900)); await guestTalk(600, 0.6);
+  await walkTo(al, land, 1600, { lift: Math.min(lift0, 0.05) }); al.rotation.y = facesZ(al) ? 0.3 : -Math.PI / 2 + 0.6; people.forEach(p => mood(p, 'happy', 900)); await guestTalk(600, 0.6);
   let solo = true;
   for (const t of DET.guest.turns) {
     if (t.show) { const q = picAt(al, t.show, (u.dy || 1) + 1.0, 'now'); q.size = 0.62; q.pulse = 1; sfx('pop'); focus(al, 1.25, 0.75, 0, -0.05, (u.dy || 1) + 0.3); await guestTalk(500, 0.5);
       const said = await guestName(t.show); if (said !== 'speech') solo = false; sayEv(t.show, said, 'special-guest');
       focus(al, 1.1, 0.5, 0, -0.2, (u.dy || 1) + 0.6); word(t.show, 'say', '무슨 소리로 시작할까?', 2);
-      const row = letterRow(t.pick, al);
-      handStart({ items: () => Object.keys(row).map(l => ({ id: l, obj: row[l], r: 0.8 })), zones: () => [{ id: 'guest', obj: al, dy: (u.dy || 1) * 0.6, r: 1.5 }], choose: (l, by) => pickLetter(l, by), put: (l, z, by) => pickLetter(l, by) });      /* 열매 줄에서 그 걸음의 손짓으로 */
-      await new Promise(done => { letterWant = { l: t.ans, w: t.show, miss: 0, done, row, game: 'special-guest', again: async () => { await guestTalk(400, 0.4); await sayWord(t.show, 0.8, null); } }; });
+      const row = letterRow(t.pick, al, t.also ? { of: t.ans, with: t.also } : null);      /* also — 같은 소리의 다른 글자(c · k): 쌍둥이로 나오고 어느 쪽이든 받는다 */
+      handStart({ items: () => Object.keys(row).filter(l => l.charAt(0) !== '+').map(l => ({ id: l, obj: row[l], r: 0.8 })), zones: () => [{ id: 'guest', obj: al, dy: (u.dy || 1) * 0.6, r: 1.5 }], choose: (l, by) => pickLetter(l, by), put: (l, z, by) => pickLetter(l, by) });      /* 열매 줄에서 그 걸음의 손짓으로 */
+      await new Promise(done => { letterWant = { l: t.ans, also: t.also || null, w: t.show, miss: 0, done, row, game: 'special-guest', again: async () => { await guestTalk(400, 0.4); await sayWord(t.show, 0.8, null); } }; });
       clearRow(row); q.pulse = 0; q.d.classList.remove('now'); q.d.classList.add('lit'); word(t.show, 'ok'); people.forEach(p => mood(p, 'happy', 800)); await sayWord(t.show, 0, null); await wait(500); picOff(q); word(null); }
     else if (t.say) { focus(al, 1.2, 0.7, 0, -0.05, u.dy || 1); act(al.userData.w, 900); mood(me, 'speak'); const r = await lineOrTap(t.say); if (r !== 'speech') solo = false; sayEv(t.say, r, 'special-guest'); mood(me, 'happy', 900); }
   }
@@ -995,7 +1021,7 @@ async function guestRoom(){
   { const d = BUS.userData.door, x0 = d.position.x; lookAll(BUS); tween(600, t => { d.position.x = x0 + t * 0.52; }); sfx('pop'); }
   people.forEach(p => mood(p, 'happy', 1400)); await wait(1500);
   if (SEED && SEED.bossPassed) try { SEED.bossPassed(ZONE, solo ? 'speech' : 'hand'); } catch (e) {}
-  await walkTo(al, home, 1500); al.position.copy(home); al.rotation.y = rot0; u.busy = false; guestHead = null; unpresent();
+  await walkTo(al, home, 1500, { lift: lift0 }); al.position.copy(home); al.userData.lift = lift0; al.rotation.y = rot0; u.busy = false; guestHead = null; unpresent();
 }
 /* ── 여는 꼴 일곱(다름 설계 ⑬ · how.open) — 그 걸음을 처음 여는 날의 첫 장면. 걸음마다 방법 칸이 하나를 고른다 ──
    scene 장면이 먼저 · guest 손님이 먼저 온다 · ear 소리가 먼저(화면이 가려져 있다) · beat 박자가 먼저 · hand 손으로 불러낸다 · seek 찾기가 먼저 · note 쪽지가 먼저 */
@@ -1179,7 +1205,7 @@ function frame(){
   /* 사건의 소품 — 개미 줄 · 짐칸 · 물방울 · 그림 딱지 */
   if (carry.visible) carry.userData.ants.forEach((a, i) => { a.position.y = carry.userData.moving ? Math.abs(Math.sin(t * 14 + i * 1.6)) * 0.07 : 0; });
   cars.forEach(c => { const s = c.scale.x + (c.userData.on * 0.9 - c.scale.x) * Math.min(1, dt * 9); c.scale.setScalar(s); c.visible = s > 0.02; });
-  drops.forEach(m => { const u = m.userData; if (m.visible && u.float) { m.position.y = u.home.y + Math.sin(t * 1.6 + u.k) * 0.1; m.position.x = u.home.x + Math.sin(t * 0.9 + u.k) * 0.08; } });
+  drops.forEach(m => { const u = m.userData; if (m.visible && u.float) { m.position.y = u.home.y + Math.sin(t * 1.6 + u.k) * 0.1 - (u.pull || 0) * 0.55; m.position.x = u.home.x + Math.sin(t * 0.9 + u.k) * 0.08; } });
   { const ppu = innerHeight / (2 * cam.top / cam.zoom); for (const q of pics) { q.k += (q.on - q.k) * Math.min(1, dt * 10); const [x, y] = screenOf(q.obj, q.dy), s = q.k * Math.max(0.55, Math.min(1.5, q.size * 2 * ppu / 84)) * (1 + (q.pulse ? Math.sin(t * 9) * 0.07 : 0)); q.d.style.opacity = String(Math.min(1, q.k * 1.5)); q.d.style.transform = 'translate(' + x + 'px,' + y + 'px) scale(' + s + ')'; } }
   PT.step(dt);
   /* 사람 — 몸짓은 부드럽게 이어진다(둘은 Max 의 박자에 맞춰 까딱) */

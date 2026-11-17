@@ -10,8 +10,8 @@
  *   ⏳ 걷기는 아직 — 지금 장면은 서서 하는 몸짓만 쓴다(걷는 장면이 생기면 여기 더한다).
  * ============================================================ */
 /* 몸짓 이름 — 방 자료의 how.body 가 고른다(챈트 몸짓은 걸음마다 다르다) */
-export const MOODS = ['idle', 'happy', 'wave', 'ear', 'lead', 'point', 'lift', 'speak', 'tilt', 'knee', 'clink', 'trunk', 'horns', 'jump'];
-export const BEAT_MOODS = ['lead', 'knee', 'clink', 'trunk', 'horns', 'jump'];      /* 박자(stomp)를 타는 몸짓 */
+export const MOODS = ['idle', 'happy', 'wave', 'ear', 'lead', 'point', 'lift', 'speak', 'tilt', 'knee', 'clink', 'trunk', 'horns', 'jump', 'kick', 'nose'];
+export const BEAT_MOODS = ['lead', 'knee', 'clink', 'trunk', 'horns', 'jump', 'kick', 'nose'];      /* 박자(stomp)를 타는 몸짓 */
 export const PEOPLE = {
   /* 이름 있는 사람들의 겉모습(빈터의 셋 — 뒤 걸음도 같은 사람) */
   max:  { skin: 'skin-3', hair: 'hair-1', shirt: 'stage', scarf: 'warm', pocket: 'stage-deep' },
@@ -23,7 +23,7 @@ export function makePerson(K, o){
   const { THREE, M, mesh, ball, rbox, mix } = K;
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
   const skin = M(o.skin, { roughness: 0.55 }), hair = M(o.hair, { roughness: 0.75 }), shirt = M(o.shirt, { roughness: 0.8 }), dark = M('ink', { roughness: 0.3 });
-  [-1, 1].forEach(s => { body.add(mesh(new THREE.CapsuleGeometry(0.12, 0.16, 6, 10), M(o.pants || 'ink-2', { roughness: 0.8 }), s * 0.17, 0.3, 0)); body.add(ball(0.15, M(o.shoe || 'a-wood', { roughness: 0.6 }), s * 0.18, 0.09, 0.07, 1, 0.62, 1.5)); });
+  const legs = [-1, 1].map(s => { const l = new THREE.Group(); l.position.set(s * 0.17, 0.5, 0); l.add(mesh(new THREE.CapsuleGeometry(0.12, 0.16, 6, 10), M(o.pants || 'ink-2', { roughness: 0.8 }), 0, -0.2, 0)); l.add(ball(0.15, M(o.shoe || 'a-wood', { roughness: 0.6 }), s * 0.01, -0.41, 0.07, 1, 0.62, 1.5)); body.add(l); return l; });      /* 다리 — 엉덩이에서 돈다(WA2 「kick · leg」) */
   body.add(mesh(new THREE.CapsuleGeometry(0.36, 0.4, 8, 18), shirt, 0, 0.86, 0));
   if (o.scarf) { const sc = mesh(new THREE.TorusGeometry(0.3, 0.06, 10, 24), M(o.scarf, { roughness: 0.8 }), 0, 1.2, 0); sc.rotation.x = Math.PI / 2; body.add(sc); }
   if (o.pocket) { const pk = rbox(0.3, 0.22, 0.06, 0.07, M(o.pocket, { roughness: 0.8 })); pk.position.set(0, 0.78, 0.35); body.add(pk); }
@@ -40,7 +40,7 @@ export function makePerson(K, o){
   [-1, 1].forEach(s => head.add(ball(0.09, M('cheek', { roughness: 0.8 }), s * 0.3, -0.12, 0.44, 1, 0.6, 0.4)));
   const mouth = mesh(new THREE.TorusGeometry(0.09, 0.018, 8, 20, Math.PI), dark, 0, -0.14, 0.52); mouth.rotation.z = Math.PI; head.add(mouth);
   const open = ball(0.075, M(mix('a-red', 'ink', 0.45), { roughness: 0.6 }), 0, -0.19, 0.51, 1.1, 0.6, 0.5); open.visible = false; open.castShadow = false; head.add(open);
-  g.userData = { body, head, arms, eyes, brows, mouth, open, mood: 'idle', stomp: 0, talk: 0, look: null, hop: 0 }; return g;
+  g.userData = { body, head, arms, legs, eyes, brows, mouth, open, mood: 'idle', stomp: 0, talk: 0, look: null, hop: 0 }; return g;
 }
 
 const clampN = (v, a) => Math.max(-a, Math.min(a, v));
@@ -50,7 +50,7 @@ export function stepPeople(K, people, dt, t, o = {}){
   people.forEach((p, i) => { const u = p.userData, k = Math.min(1, dt * 11), m = u.mood;
     u.stomp = Math.max(0, u.stomp - dt * 4.5); u.hop = Math.max(0, (u.hop || 0) - dt * 1.4);
     let by = Math.sin(t * 2 + i) * 0.02, bsy = 1 + Math.sin(t * 2 + i) * 0.012, hz = 0, eye = ((t + i * 1.3) % 3.7 < 0.12) ? 0.1 : 1, smile = 1, brow = 0, yawTo = Math.sin(t * 0.4 + i * 2) * 0.14, snap = false;
-    const ax = [0, 0], ay = [0, 0], az = [-0.15, 0.15];
+    const ax = [0, 0], ay = [0, 0], az = [-0.15, 0.15]; let leg = 0;
     if (u.look) { u.look.getWorldPosition(vA); const a = Math.atan2(vA.x - p.position.x, vA.z - p.position.z) - p.rotation.y; yawTo = clampN(Math.atan2(Math.sin(a), Math.cos(a)), look); }
     else if (o.idleLook) { const y = o.idleLook(p); if (y != null) yawTo = y; }
     const bodyYaw = clampN(yawTo * bd[0], bd[1]), headYaw = clampN(yawTo - bodyYaw, hd);
@@ -67,11 +67,14 @@ export function stepPeople(K, people, dt, t, o = {}){
     else if (m === 'trunk') { ax[1] = -1.5 + Math.sin(t * 5) * 0.5; az[1] = Math.sin(t * 5 + 1) * 0.7; az[0] = -0.3; hz = Math.sin(t * 5) * 0.1; by = u.stomp * 0.06; smile = 1.3; }                                           /* 팔을 코끼리 코처럼 */
     else if (m === 'horns') { az[0] = -2.75; az[1] = 2.75; ax[0] = ax[1] = -0.15; hz = (u.stomp - 0.5) * 0.3; by = u.stomp * 0.05; smile = 1.35; brow = 1; snap = true; }                                                     /* 머리 위 염소 뿔 까딱 */
     else if (m === 'jump') { by = Math.sin(u.stomp * Math.PI) * 0.5; az[0] = -0.6 - u.stomp; az[1] = 0.6 + u.stomp; smile = 1.5; brow = 1; snap = true; }                                                                    /* 제자리에서 폴짝 */
+    else if (m === 'kick') { leg = -1.25 + Math.sin(t * 6) * 0.2 - u.stomp * 0.5; az[0] = -0.9; az[1] = 0.9; smile = 1.4; brow = 0.8; }                                /* 한 다리를 쭉 든다(박자에 툭 찬다) */
+    else if (m === 'nose') { ax[1] = -2.25; az[1] = -0.5 + u.stomp * 0.25; hz = Math.sin(t * 9) * 0.07; brow = 1; smile = 1.2; }                               /* 손가락으로 코를 톡 — 찡긋 */
     else if (m === 'tilt') { hz = 0.32; brow = 1; smile = 0.9; az[1] = 0.9; ax[1] = -0.6; }                                                                   /* 갸웃 */
     if (o.leader && p !== o.leader && o.leader.userData.mood === 'lead' && m === 'idle') by += o.leader.userData.stomp * 0.1;           /* 박자에 맞춰 까딱 */
     by += Math.sin(u.hop * Math.PI) * 0.6;
     u.body.position.y += (by - u.body.position.y) * (snap || u.hop > 0 ? 1 : k); u.body.scale.y += (bsy - u.body.scale.y) * k;
     u.body.rotation.y += (bodyYaw - u.body.rotation.y) * k * 0.5; u.head.rotation.y += (headYaw - u.head.rotation.y) * k * 0.6; u.head.rotation.z += (hz - u.head.rotation.z) * k;
+    if (u.legs) u.legs[1].rotation.x += (leg - u.legs[1].rotation.x) * k;
     u.arms.forEach((a, j) => { a.rotation.x += (ax[j] - a.rotation.x) * k; a.rotation.y += (ay[j] - a.rotation.y) * k; a.rotation.z += (az[j] - a.rotation.z) * k; });
     u.eyes.forEach(e => { e.scale.y += (eye * 1.35 - e.scale.y) * Math.min(1, dt * 28); });
     u.brows.forEach(b => { b.position.y += (0.21 + brow * 0.05 - b.position.y) * k; });

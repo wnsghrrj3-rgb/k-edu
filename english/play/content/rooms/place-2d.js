@@ -17,7 +17,9 @@ export const BACK2D = {
   trunkWall: () => E(600, 30, 760, 150, ['stage-deep', 'ink', 0.2], 0.5) + [40, 210, 400, 590, 800, 980, 1130].map((x, i) => R(x - 46 - (i % 2) * 14, 0, 92 + (i % 2) * 28, 640, ['a-wood', 'ink', 0.2 + (i % 3) * 0.08], 0.42, 26)).join(''),
   cliffFall: () => [0, 150, 300, 450, 690, 850, 1010].map((x, i) => R(x, -20, 190, 590 - (i % 3) * 22, ['ink-2', 'a-fish', 0.35 + (i % 2) * 0.12], 0.5, 14)).join('') + R(566, -20, 68, 600, 'surface', 0.8, 12) + E(600, 584, 110, 26, 'surface', 0.7),
   farHills: () => P('M0 520 Q220 420 470 500 T900 470 T1200 500 L1200 640 L0 640Z', ['a-fish', 'surface', 0.45], 0.5) + P('M0 560 Q300 470 620 550 T1200 520 L1200 660 L0 660Z', ['a-leaf', 'a-fish', 0.4], 0.45) + E(300, 150, 150, 46, 'surface', 0.85) + E(860, 230, 190, 54, 'surface', 0.8),
-  gorgeGap: () => R(548, 0, 120, 640, 'warm-soft', 0.95) + P('M0 0 L500 0 L566 640 L0 700Z', ['ink-2', 'a-fish', 0.45], 0.5) + P('M1200 0 L700 0 L648 640 L1200 700Z', ['ink-2', 'a-fish', 0.55], 0.5) + P('M0 0 L210 0 L300 700 L0 760Z', ['ink-2', 'surface', 0.3], 0.4) + P('M1200 0 L1000 0 L920 700 L1200 760Z', ['ink-2', 'surface', 0.3], 0.4)
+  gorgeGap: () => R(548, 0, 120, 640, 'warm-soft', 0.95) + P('M0 0 L500 0 L566 640 L0 700Z', ['ink-2', 'a-fish', 0.45], 0.5) + P('M1200 0 L700 0 L648 640 L1200 700Z', ['ink-2', 'a-fish', 0.55], 0.5) + P('M0 0 L210 0 L300 700 L0 760Z', ['ink-2', 'surface', 0.3], 0.4) + P('M1200 0 L1000 0 L920 700 L1200 760Z', ['ink-2', 'surface', 0.3], 0.4),
+  castleWall: () => R(60, 300, 900, 250, ['a-steel', 'a-cream', 0.4], 0.6, 6) + [90, 230, 370, 510, 650, 790].map(x => R(x, 262, 84, 46, ['a-steel', 'a-cream', 0.3], 0.6, 4)).join('') + R(960, 150, 170, 400, ['a-steel', 'a-cream', 0.45], 0.66, 10) + P('M940 160 L1045 40 L1150 160Z', ['a-red', 'a-wood', 0.3], 0.7),      /* 성벽 · 성가퀴 · 탑과 지붕 */
+  moonForest: () => E(300, 250, 130, 130, ['surface', 'a-gold', 0.18], 0.95) + E(300, 250, 210, 210, ['surface', 'a-fish', 0.3], 0.16) + [40, 190, 480, 640, 800, 960, 1120].map((x, i) => P('M' + (x - 90) + ' 600 L' + x + ' ' + (150 + (i % 3) * 50) + ' L' + (x + 90) + ' 600Z', ['ink', 'a-plum', 0.4], 0.6)).join('')      /* 큰 달과 검은 숲 */
 };
 /* 땅 선(바닥 색 fl 로 칠한다) + 그 땅의 물 */
 export const LAND2D = {
@@ -25,9 +27,11 @@ export const LAND2D = {
   hollow: fl => P('M0 520 Q150 560 300 640 Q600 700 900 640 Q1050 560 1200 520 L1200 800 L0 800Z', fl, 0.6),                                                                    /* 둘레가 높고 가운데가 움푹 */
   cliffpool: fl => R(0, 566, 1200, 110, ['stage', 'word-blue', 0.42], 0.55) + P('M0 660 L420 660 L420 690 L800 690 L800 724 L1200 724 L1200 800 L0 800Z', fl, 0.62),            /* 물과 계단 물가 */
   hill: fl => P('M0 700 Q600 330 1200 700 L1200 800 L0 800Z', fl, 0.62),                                                                                                         /* 솟은 언덕 */
-  gorge: fl => P('M0 540 L330 664 L870 664 L1200 540 L1200 800 L0 800Z', fl, 0.7)                                                                                                /* 좁은 골짜기 바닥 */
+  gorge: fl => P('M0 540 L330 664 L870 664 L1200 540 L1200 800 L0 800Z', fl, 0.7),                                                                                                /* 좁은 골짜기 바닥 */
+  ridge: fl => P('M0 590 L520 590 L520 640 L1200 640 L1200 800 L0 800Z', fl, 0.66) + R(0, 590, 520, 8, ['a-steel', 'ink-2', 0.3], 0.4),                                              /* 돌 단이 올라가는 등성이 */
+  roothollow: fl => P('M0 600 Q300 570 600 596 T1200 590 L1200 800 L0 800Z', fl, 0.68) + E(600, 606, 120, 34, ['a-steel', 'a-plum', 0.4], 0.7)      /* 뿌리 사이의 빈터와 달맞이 바위 */
 };
-export const FLOOR2D = { dew: ['stage', 'a-leaf', 0.5], litter: ['a-wood', 'a-gold', 0.45], wetrock: ['ink-2', 'a-fish', 0.55], longgrass: ['a-leaf', 'a-gold', 0.45], snow: ['surface', 'a-fish', 0.2] };
+export const FLOOR2D = { dew: ['stage', 'a-leaf', 0.5], litter: ['a-wood', 'a-gold', 0.45], wetrock: ['ink-2', 'a-fish', 0.55], longgrass: ['a-leaf', 'a-gold', 0.45], snow: ['surface', 'a-fish', 0.2], paving: ['a-steel', 'a-cream', 0.4], rootmoss: ['stage-deep', 'a-plum', 0.35] };
 
 export function backdrop2D(place){
   const sk = Object.assign({}, SKIES[place.sky.kind], place.sky), back = BACK2D[place.back.kind], land = LAND2D[place.land.kind], fl = FLOOR2D[place.floor.kind];

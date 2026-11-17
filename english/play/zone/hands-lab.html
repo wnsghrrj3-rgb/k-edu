@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>손짓 다섯 시험판 | 영어 놀이터</title>
+<title>손짓 시험판 | 영어 놀이터</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="../ui/tokens.css">
 <link rel="stylesheet" href="../play.css">
 <style>
 /* ============================================================
- * 손짓 다섯 시험판 (WD0 · 다름 설계 v1 ⑨ 손짓)
- *   한 화면에 다섯 칸 — 흔들기 · 끌어 놓기 · 꾹 눌렀다 놓기 · 던지기 · 문지르기. 준호가 태블릿에서 아이 손으로 문턱을 본다.
+ * 손짓 시험판 (WD0 · 다름 설계 v1 ⑨ 손짓)
+ *   한 화면에 손짓마다 한 칸 — 흔들기 · 끌어 놓기 · 꾹 눌렀다 놓기 · 던지기 · 문지르기 · (WA2) 당기기 · 이어 긋기. 준호가 태블릿에서 아이 손으로 문턱을 본다.
  *   칸마다 손짓 부품(core/hands.js — 2D 판의 한 칸)이 「골랐다 · 놓았다」 를 알리고, 판정 뼈대(core/frames.js)가 맞는지 본다.
- *   고르기 칸(흔들기 · 꾹 · 문지르기) = 위에 뜬 그림과 같은 것에 손짓 / 가르기 칸(끌어 놓기 · 던지기) = 그림을 첫 글자 칸으로 옮긴다.
+ *   고르기 칸(흔들기 · 꾹 · 문지르기 · 당기기) = 위에 뜬 그림과 같은 것에 손짓 / 가르기 칸(끌어 놓기 · 던지기 · 이어 긋기) = 그림을 첫 글자 칸으로 옮긴다(긋기는 길을 잇는다).
  *   아래 한 줄은 어른이 보는 것 — 방금 손짓으로 됐는지, 누르기로 도와서 됐는지, 증거에 적히는 손의 갈래.
- *   낱말은 A01~A05 의 입말 낱말(한 해 길 자료). 수 · 점수 · 시간은 없다.
+ *   낱말은 그 손짓을 쓰는 걸음의 입말 낱말(한 해 길 자료). 수 · 점수 · 시간은 없다.
  * ============================================================ */
 body{background:var(--bg)}
 .hl-top{padding:14px 16px 4px 124px;min-height:44px}
@@ -34,7 +34,7 @@ body{background:var(--bg)}
 </style>
 </head>
 <body data-palette="forest">
-<div class="hl-top"><h1>손짓 다섯 시험판</h1></div>
+<div class="hl-top"><h1>손짓 시험판</h1></div>
 <p class="hl-tip">칸마다 그 손짓으로 해 보세요. 손짓이 어려우면 그냥 눌러도 됩니다(세 번 누르면 받아 줍니다 · 끌어 놓기와 던지기는 그림을 누르고 칸을 누르기).</p>
 <div class="hl-grid" id="grid"></div>
 
@@ -59,7 +59,9 @@ body{background:var(--bg)}
     { hand: 'drag',  frame: 'sort', words: ['cat', 'cup', 'dog', 'desk'],   how: '그림을 첫 글자 칸으로 끌어다 놓아요' },
     { hand: 'hold',  frame: 'pick', words: ['egg', 'elf', 'fox'],           how: '위의 그림과 같은 것을 꾹 누르고 있다가 테가 차면 놓아요' },
     { hand: 'throw', frame: 'sort', words: ['goat', 'gum', 'hat', 'hen'],   how: '그림을 첫 글자 칸 쪽으로 튕겨 던져요' },
-    { hand: 'rub',   frame: 'pick', words: ['ink', 'jam', 'jug'],           how: '위의 그림과 같은 것을 이리저리 문질러요' }
+    { hand: 'rub',   frame: 'pick', words: ['ink', 'jam', 'jug'],           how: '위의 그림과 같은 것을 이리저리 문질러요' },
+    { hand: 'pull',  frame: 'pick', words: ['kite', 'key', 'lamp'],         how: '위의 그림과 같은 것을 잡고 아래로 쭉 당겨요' },
+    { hand: 'line',  frame: 'sort', words: ['moon', 'map', 'net', 'nut'],   how: '그림에서 첫 글자 칸까지 손가락으로 이어 그어요' }
   ] };
   var $ = function(id){ return document.getElementById(id); }, art = function(w){ return window.PlayArt ? PlayArt.html(w) : w; }, cells = [];
   CONF.cells.forEach(function(c){
@@ -75,7 +77,7 @@ body{background:var(--bg)}
         if (e.type !== 'choose' && e.type !== 'put') return; if (!fr || fr.done) return;
         var r = fr.answer(c.frame === 'pick' ? e.id : e.zone, e.by);
         if (r.ok) { last = r; card.classList.add('ok'); log.textContent = (e.by === 'gesture' ? '손짓으로 됐어요' : '누르기로 도와서 됐어요') + ' · 증거: ' + (r.evidence.mode === 'drag' ? '끌기' : '누르기') + (r.evidence.clean ? ' · 한 번에' : ' · 다시 해서');
-          if (c.frame === 'pick') cell.lit(e.id); else cell.gone('it'); setTimeout(next, CONF.nextMs); }
+          if (c.frame === 'pick') cell.lit(e.id); else if (c.hand !== 'line') cell.gone('it'); setTimeout(next, CONF.nextMs); }
         else { log.textContent = '다른 것이에요 — 다시 해 봐요'; if (c.frame === 'sort') cell.home('it'); }
       } });
     function next(){ card.classList.remove('ok'); cell.reset(); var pool = c.words.filter(function(w){ return w !== cur; }); cur = pool[(Math.random() * pool.length) | 0];
