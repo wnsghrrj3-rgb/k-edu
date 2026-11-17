@@ -2,6 +2,7 @@
 // L00/L01: 회색 판(상자·원통). L02 에서 room.glb 로 갈아 끼우고 자리 이름(shelf_*, bench_*)은 GLB 빈 점에서 읽는다.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const BENCH_Y = 0.80;          // 실험대 높이 80cm (1 단위 = 1m)
 const SHELF_Z = -0.86;         // 기구장 선반 앞뒤 자리
@@ -100,7 +101,32 @@ export function createStage(host, opt = {}){
   let manualNow = 0;
   function advance(sec, fps = 30){ const dt = 1 / fps, n = Math.max(1, Math.round(sec * fps)); if (!manualNow) manualNow = performance.now(); for (let k = 0; k < n; k++) { manualNow += dt * 1000; step(dt, manualNow, k === n - 1); } }   // 그리기는 마지막 장만(긴 묶음에서 GPU 가 끊기지 않게)
 
-  const stage = { THREE, scene, camera, renderer, room, slots, sun, BENCH_Y, WORK_Z, fps: 60,
+  // ── 그림 판 방 올리기: 블렌더에서 구운 room.glb(+ room.json·env.webp). 없으면 회색 판 그대로.
+  //    구운 재질(baked_*)은 조명 계산 없이 그림만 붙인다. 자리(빈 점)·컷·햇빛 방향은 블렌더 장면에서 온 값을 쓴다.
+  async function loadRoom(base = './assets/room/'){
+    let info; try { const r = await fetch(base + 'room.json', { cache: 'no-cache' }); if (!r.ok) return false; info = await r.json(); } catch (_) { return false; }
+    const gltf = await new GLTFLoader().loadAsync(base + (info.file || 'room.glb'));
+    const baked = new Map(), V = a => new THREE.Vector3(a[0], a[1], a[2]);
+    gltf.scene.traverse(o => { if (!o.isMesh) return; const m = o.material, n = (m && m.name) || '';
+      if (n.startsWith('baked')) { if (!baked.has(m)) { const b = new THREE.MeshBasicMaterial({ map: m.map || m.emissiveMap, toneMapped: false }); b.name = n; baked.set(m, b); } o.material = baked.get(m); o.castShadow = o.receiveShadow = false; }
+      else if (n.startsWith('glass')) { o.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: .06, metalness: 0, transparent: true, opacity: .16, envMapIntensity: 1.2, depthWrite: false }); o.material.name = n; o.renderOrder = 2; } });
+    for (const c of [...room.children]) if (c.isMesh) room.remove(c);                       // 회색 벽·실험대·기구장을 걷어 낸다
+    for (const o of slots.values()) room.remove(o); slots.clear();
+    room.add(gltf.scene); gltf.scene.updateMatrixWorld(true);
+    const kindOf = n => n.startsWith('shelf_') ? 'shelf' : n.startsWith('bench_') ? 'bench' : n.startsWith('fix_') ? 'fixture' : n.startsWith('wear_') ? 'wear' : null;
+    gltf.scene.traverse(o => { const k = kindOf(o.name || ''); if (k && !o.isMesh) { o.userData.kind = k; slots.set(o.name, o); } });
+    // 살아 있는 기구가 구운 실험대·선반에 드리우는 그림자(그림자만 받는 투명 판)
+    const catcher = (r, y) => { const g = new THREE.Mesh(new THREE.PlaneGeometry(r.xMax - r.xMin, r.zMax - r.zMin), new THREE.ShadowMaterial({ opacity: info.shadowOpacity || .38 })); g.rotation.x = -Math.PI / 2; g.position.set((r.xMin + r.xMax) / 2, y + .0015, (r.zMin + r.zMax) / 2); g.receiveShadow = true; g.name = 'shadow_catcher'; room.add(g); };
+    if (info.benchTop) { catcher(info.benchTop, info.benchTop.y); stage.BENCH_Y = info.benchTop.y; stage.benchRect = info.benchTop; }
+    for (const sh of info.shelves || []) catcher(sh, sh.y);
+    if (info.sun) { const d = V(info.sun.dir).normalize(), c = info.sun.color || [1, .9, .75]; sun.color.setRGB(c[0], c[1], c[2]); sun.intensity = info.sun.strength || 2.2; sun.target.position.set(0, stage.BENCH_Y, 0); sun.position.copy(sun.target.position).addScaledVector(d, -5); }
+    for (const k of ['A', 'B']) { const c = info.cuts && info.cuts[k]; if (c) { CUTS[k].pos.copy(V(c.pos)); CUTS[k].look.copy(V(c.look)); CUTS[k].fov = c.fov; } }
+    for (const cm of [camera, ctrl]) { cm.position.copy(CUTS.A.pos); cm.fov = CUTS.A.fov; cm.updateProjectionMatrix(); cm.lookAt(CUTS.A.look); } cam.look.copy(CUTS.A.look); cr.look.copy(CUTS.A.look); cam.t = cr.t = 1; cam.name = 'A'; cam.to = cr.to = CUTS.A;
+    try { const tex = await new THREE.TextureLoader().loadAsync(base + (info.env || 'env.webp')); tex.mapping = THREE.EquirectangularReflectionMapping; tex.colorSpace = THREE.SRGBColorSpace; scene.environment = pmrem.fromEquirectangular(tex).texture; scene.environmentIntensity = info.envIntensity || 1; tex.dispose(); } catch (_) {}
+    scene.background = new THREE.Color(0x0c0d0f); stage.roomInfo = info; stage.pictured = true; return true;
+  }
+
+  const stage = { THREE, scene, camera, renderer, room, slots, sun, BENCH_Y, WORK_Z, fps: 60, loadRoom, pictured: false,
     setCut, closeUp, get cut(){ return cam.name; }, shake(v = 1){ cam.shake = Math.max(cam.shake, v); },
     slowMo(scale, sec){ timeScale = scale; slowUntil = performance.now() + sec * 1000; },
     screenToPlane, project, projectView, onTick: f => ticks.push(f), resize, advance, now: () => window.__pause && manualNow ? manualNow : performance.now() };

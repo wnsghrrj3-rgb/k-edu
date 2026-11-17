@@ -62,3 +62,41 @@ a.back{position:absolute;left:16px;top:12px;color:#9fb4c8;text-decoration:none;f
 .campick .list .none{color:#6b7580;font-size:.95rem}
 .campick .range{margin-top:12px;width:100%;background:#1c2126;color:#fff;border:0;border-radius:14px;padding:12px;font:inherit;font-weight:800;cursor:pointer}
 .campick .range:disabled{opacity:.4;cursor:default}
+
+/* 예상하기 카드 — 손을 1초 대면 테두리가 차오르며 골라짐 */
+.cards{position:absolute;left:0;right:0;top:16%;display:flex;flex-direction:column;align-items:center;gap:18px;pointer-events:none;z-index:3}
+.cards .q{background:#f6f1e3;color:#2b2620;font-weight:900;font-size:clamp(1.2rem,2.6vw,1.8rem);padding:10px 22px;border-radius:4px;box-shadow:0 8px 22px rgba(0,0,0,.35);transform:rotate(-.6deg)}
+.cards .row{display:flex;gap:clamp(12px,2.4vw,28px);flex-wrap:wrap;justify-content:center}
+.cards .card{--p:0;position:relative;pointer-events:auto;min-width:clamp(150px,20vw,250px);min-height:clamp(100px,17vh,150px);padding:16px 18px;border:0;border-radius:16px;background:rgba(250,248,242,.96);color:#23201b;font:inherit;font-weight:900;font-size:clamp(1.05rem,2.1vw,1.5rem);box-shadow:0 14px 30px rgba(0,0,0,.4);cursor:pointer;transition:transform .15s,opacity .3s}
+.cards .card .ring{position:absolute;inset:-5px;border-radius:20px;padding:5px;background:conic-gradient(#e8a02c calc(var(--p)*360deg),rgba(255,255,255,.0) 0);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.cards .card.hot{transform:translateY(-4px) scale(1.03)}
+.cards .card.picked{transform:scale(1.08);background:#fff3cf}
+.cards .card.dim{opacity:.25}
+
+/* 까닭 한 줄 (실험이 끝난 뒤에만) */
+.cause{position:absolute;left:50%;bottom:9%;transform:translateX(-50%);max-width:min(820px,88vw);background:rgba(250,248,242,.97);color:#23201b;border-radius:14px;padding:16px 24px;font-size:clamp(1.1rem,2.3vw,1.6rem);font-weight:800;line-height:1.5;box-shadow:0 16px 36px rgba(0,0,0,.45);z-index:3;opacity:0}
+.cause.in{animation:causein .5s ease-out forwards}
+.cause small{display:block;font-size:.62em;letter-spacing:.2em;color:#8a6a2a;font-weight:900;margin-bottom:4px}
+@keyframes causein{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}
+
+/* 사고: 경보 띠 + 화면 서리. 다치는 모습은 보여 주지 않는다 */
+.alarm{position:absolute;left:50%;top:14%;transform:translateX(-50%);max-width:min(760px,88vw);background:rgba(120,20,16,.94);color:#fff;border-radius:12px;padding:14px 22px;font-size:clamp(1rem,2vw,1.35rem);box-shadow:0 0 0 3px rgba(255,120,100,.5),0 16px 36px rgba(0,0,0,.5);z-index:4;animation:alarm .5s steps(2) 4}
+.alarm small{display:block;font-weight:600;opacity:.9;margin-top:4px;font-size:.8em}
+@keyframes alarm{50%{box-shadow:0 0 0 10px rgba(255,80,60,.75),0 16px 36px rgba(0,0,0,.5)}}
+.screen-frost{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 1.4s;z-index:3;background:radial-gradient(ellipse at 50% 55%,rgba(255,255,255,0) 22%,rgba(235,246,255,.72) 70%,rgba(255,255,255,.96) 100%);backdrop-filter:blur(3px)}
+.screen-frost.on{opacity:1;transition:opacity .25s}
+
+/* 실험 노트 */
+.book-btn{position:absolute;left:18px;bottom:12px;pointer-events:auto;background:#f6f1e3;color:#2b2620;border:0;border-radius:10px;padding:8px 14px;font:inherit;font-weight:900;font-size:.95rem;box-shadow:0 6px 16px rgba(0,0,0,.35);cursor:pointer;z-index:3}
+.book-btn.new{animation:booknew .9s ease-out}
+@keyframes booknew{0%{transform:scale(1)}30%{transform:scale(1.18) rotate(-3deg)}100%{transform:scale(1)}}
+.book{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,12,16,.55);pointer-events:auto;z-index:6;padding:16px}
+.book .paper{position:relative;width:min(680px,100%);max-height:100%;overflow:auto;background:#fbf8ef;background-image:repeating-linear-gradient(transparent 0 31px,rgba(70,110,160,.16) 31px 32px);color:#23201b;border-radius:6px 14px 14px 6px;border-left:14px solid #7a5a3a;padding:22px 26px 26px;box-shadow:0 22px 50px rgba(0,0,0,.5);line-height:32px}
+.book h2{font-size:1.5rem;margin-bottom:6px}
+.book h3{font-size:1.15rem;margin-top:12px;display:flex;align-items:center;gap:10px}
+.book p{font-size:1rem}.book p b{color:#7a5a3a;margin-right:6px}
+.book .why{color:#3d3a34}.book .empty{color:#8a8478}
+.book .stamp{display:inline-block;border:2px solid #c0392b;color:#c0392b;border-radius:50%;padding:0 9px;font-size:.8rem;transform:rotate(-9deg);font-weight:900}
+.book .finds{display:flex;flex-wrap:wrap;gap:6px}.book .finds span{border:1px dashed #b8ae98;border-radius:8px;padding:0 10px;color:#b8ae98}.book .finds span.on{border-style:solid;border-color:#7a5a3a;color:#23201b;background:#fff}
+.book .acc small{display:block;color:#7b3b34}
+.book .x{position:absolute;right:14px;top:12px;background:none;border:1px solid #b8ae98;border-radius:999px;padding:0 14px;font:inherit;font-weight:700;cursor:pointer}
