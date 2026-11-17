@@ -23,7 +23,8 @@ export const GLADE_DEFAULT = {
 };
 
 export function buildGlade(K, L0){
-  const L = Object.assign({}, GLADE_DEFAULT, L0 || {}), CR = Object.assign({}, GLADE_DEFAULT.creek, (L0 || {}).creek || {});
+  const NOCREEK = L0 && L0.creek === null;                                          /* 개울 없는 빈터(언덕 · 얼음 골짜기 …) */
+  const L = Object.assign({}, GLADE_DEFAULT, L0 || {}), CR = NOCREEK ? { at: [0, 0], sand: [], free: [], stones: [], lilies: [], reeds: [], rings: 0 } : Object.assign({}, GLADE_DEFAULT.creek, (L0 || {}).creek || {});
   const { THREE, M, C, hex, mix, hexOf, RNG, canvasTex, mesh, ball, rbox, rshape, flat, oval, soft, glowTex, fx, LOW } = K;
   const glade = new THREE.Group(), GW = L.GW, GD = L.GD, CK = CR.at;
   /* 잘라 낸 땅 + 땅 아래의 옅은 그림자(떠 있는 느낌) */
@@ -77,7 +78,7 @@ export function buildGlade(K, L0){
   waterTex.wrapS = waterTex.wrapT = THREE.RepeatWrapping; waterTex.repeat.set(0.22, 0.22);
   const water = M(C('surface'), { map: waterTex, roughness: 0.12, metalness: 0.05, transparent: true, opacity: 0.94 });
   const lilies = [], reeds = [], rings = [];
-  { glade.add(flat(oval(CK[0], CK[1], CR.main[0], CR.main[1]), water, 0.03)); if (CR.second) glade.add(flat(oval(CK[0], CK[1] + CR.second[0], CR.second[1], CR.second[2]), water, 0.03));
+  if (!NOCREEK) { glade.add(flat(oval(CK[0], CK[1], CR.main[0], CR.main[1]), water, 0.03)); if (CR.second) glade.add(flat(oval(CK[0], CK[1] + CR.second[0], CR.second[1], CR.second[2]), water, 0.03));
     CR.stones.forEach(a => glade.add(ball(a[2], M(mix('a-steel', 'ink', 0.08), { roughness: 0.65 }), CK[0] + a[0], 0.07, CK[1] + a[1], 1.25, 0.34, 1)));
     CR.lilies.forEach((a, i) => { const p = new THREE.Mesh(new THREE.CircleGeometry(a[2], 22, 0.35, 5.6), M(mix('a-leaf', 'stage', 0.5), { roughness: 0.6, side: THREE.DoubleSide })); p.rotation.x = -Math.PI / 2; p.rotation.z = i * 1.9; p.position.set(CK[0] + a[0], 0.05, CK[1] + a[1]); p.receiveShadow = true; glade.add(p); lilies.push(p);
       if (i === 0 && CR.lilyFlower) { const f = new THREE.Group(); f.position.set(CK[0] + a[0] + 0.05, 0.08, CK[1] + a[1] - 0.04); for (let k = 0; k < 6; k++) { const pt = ball(0.08, M('a-pink', { roughness: 0.6 }), Math.cos(k * 1.047) * 0.07, 0.03, Math.sin(k * 1.047) * 0.07, 1, 0.55, 0.6); pt.rotation.y = -k * 1.047; f.add(pt); } f.add(ball(0.05, M('warm'), 0, 0.06, 0)); glade.add(f); } });
@@ -102,7 +103,7 @@ export function buildGlade(K, L0){
     reeds.forEach(r => { r.rotation.z = Math.sin(t * 1.2 + r.userData.k) * 0.07; });
     rings.forEach(m => { const u = m.userData; if (u.t >= 1) { m.material.opacity = 0; return; } u.t = Math.min(1, u.t + dt / 1.9); m.scale.setScalar(0.12 + u.t * u.max); m.material.opacity = (1 - u.t) * 0.55; });
   }
-  return { group: glade, GW, GD, creek: CK, freeAt, ripple, step, wind, waterTex, lilies, reeds, rings, bushes };
+  return { group: glade, GW, GD, creek: NOCREEK ? null : CK, freeAt, ripple, step, wind, waterTex, lilies, reeds, rings, bushes };
 }
 
 /* ── 열매 나무 — 줄기 · 뿌리 · 둥근 잎 머리 · 작은 열매들 · 가지 끝의 큰 글자 열매 ── */

@@ -136,7 +136,7 @@ export function shelves(K, glade, things, o){
   const SH = {}, made = {}, base = new Map(), FADE = o.fade != null ? o.fade : 0.42;      /* 심기 전 빛바램 — 바탕색 쪽으로 이만큼 */
   /* 선반 둘 — 제 나무 앞(왼쪽 = 첫 글자 · 오른쪽 = 둘째 글자) · 처음엔 빈 판자 */
   const wood = M(mix('a-wood', 'warm', 0.15), { roughness: 0.85 }), dark = M(mix('a-wood', 'ink', 0.2), { roughness: 0.9 });
-  const boards = ['left', 'right'].map(side => { const at = o[side], g = new THREE.Group(); g.position.set(at[0], 0, at[1]); g.rotation.y = at[2] || 0;
+  const boards = ['left', 'right'].map(side => { const at = o[side], g = new THREE.Group(); g.position.set(at[0], 0, at[1]); g.rotation.y = at[2] || 0; g.scale.setScalar(o.scale || 1);
     const top = rbox(1.9, 0.12, 0.62, 0.05, wood); top.rotation.x = -Math.PI / 2; top.position.y = 0.62; g.add(top);
     [-0.75, 0.75].forEach(x => g.add(mesh(new THREE.CylinderGeometry(0.14, 0.17, 0.58, 10), dark, x, 0.29, 0)));
     g.userData = { used: 0 }; glade.add(g); return g; });
