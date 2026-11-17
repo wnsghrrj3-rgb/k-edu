@@ -29,5 +29,13 @@ export default {
     jump:   { make: 'springPad', o: { tone: 'a-red' } }
   },
   decor(K, glade, PR, things, land){ const c = PR.icicles(K, [[-7.9, -3.9, 1.7], [7.9, -4.0, 1.8]]); c.children.forEach(r => { r.position.y = land.heightAt(r.position.x, r.position.z); }); glade.add(c); return { ice: c, life: c.userData.life }; },      /* 바위벽 아래 처마의 고드름 */
+  /* 얼굴 놀이 「엎질러진 잉크」(상세판 사건 spill) — 글자 그릇 둘(얼음 조각 i · 잼 병 뚜껑 j)이 잉크 얼룩에 덮였다. 들린 낱말의 첫소리 쪽 얼룩을 문질러 닦으면 글자가 드러나고, 무당벌레들이 그쪽으로 줄지어 간다 */
+  sig: { event: 'spill', tip: '들린 낱말의 첫소리 쪽 얼룩을 문질러 닦아 봐', binR: 1.0,
+    start(c){ const T = c.THREE; c.st.blot = {}; c.letters.forEach(l => { const cr = c.carriers[l], m = c.fx(new T.Mesh(new T.SphereGeometry(0.62, 16, 12), new T.MeshStandardMaterial({ color: c.K.C('word-blue'), transparent: true, opacity: 0.92, roughness: 0.25, depthWrite: false })));
+        m.scale.set(1.15, 1.0, 0.5); m.position.copy(cr.position); m.position.z += 0.32; c.glade.add(m); c.st.blot[l] = m; }); c.st.home = c.things.insect.position.clone(); },
+    progress(c, l, k){ const b = c.st.blot[l]; if (b) b.material.opacity = 0.92 * (1 - k * 0.8); },      /* 문지르는 만큼 옅어진다 */
+    async ok(c, x){ const T = c.THREE, b = c.st.blot[x.l], bug = c.things.insect, to = c.carriers[x.l].position; if (b) await c.tween(260, t => { b.material.opacity = 0.2 * (1 - t); });
+      c.sfx('pop'); await c.walkTo(bug, new T.Vector3(to.x - 0.9, bug.position.y, to.z + 0.9), 650); c.act('insect', 600); await c.wait(450); if (b) b.material.opacity = 0.92; },      /* 다음 낱말을 위해 얼룩이 다시 번진다 */
+    async end(c){ Object.values(c.st.blot || {}).forEach(b => c.glade.remove(b)); const bug = c.things.insect; await c.walkTo(bug, c.st.home, 800); bug.position.copy(c.st.home); } },
   stage: { jamsmell: { actor: 'igloo' }, spill: { actor: 'insect', from: [-1.2, 0.8] }, paperjet: { actor: 'jet' }, bugmarch: { actor: 'insect' } }
 };

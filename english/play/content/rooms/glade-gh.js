@@ -30,5 +30,16 @@ export default {
     hand: { make: 'me', mood: 'wave' }
   },
   decor(K, glade, PR, things, land){ const r = PR.hillRock(K); r.position.set(0.4, land.heightAt(0.4, -3.4) - 0.12, -3.4); glade.add(r); return { rock: r, life: r.userData.life }; },      /* 언덕 꼭대기의 납작 바위 */
+  /* 얼굴 놀이 「놀이 한 판」(상세판 사건 oneround) — 비탈에 놀이판 두 칸(g · h). 들린 낱말의 그림 말을 그 칸으로 던지면 염소가 그 칸으로 뛰어가 방울을 흔든다 */
+  sig: { event: 'oneround', tip: '들린 낱말의 그림을 첫소리 칸으로 튕겨 던져 봐', binR: 1.25, binDy: 0.2,
+    bin: (c, l) => c.st.tiles[l],
+    start(c){ const T = c.THREE, at = { [c.letters[0]]: [-2.3, -2.0], [c.letters[1]]: [2.7, -0.1] }; c.st.tiles = {};
+      c.letters.forEach((l, i) => { const g = new T.Group(), x = at[l][0], z = at[l][1]; g.position.set(x, c.H(x, z) + 0.06, z); g.rotation.y = i ? -0.2 : 0.25;
+        const tl = c.rbox(1.5, 1.5, 0.12, 0.2, c.M(i ? 'a-gold' : 'a-red', { roughness: 0.7 })); tl.rotation.x = -Math.PI / 2; g.add(tl);
+        const lb = new T.Mesh(new T.CircleGeometry(0.5, 28), new T.MeshBasicMaterial({ map: c.letterTex(l, c.hex('ink'), c.hex('a-cream')) })); lb.rotation.x = -Math.PI / 2 + 0.5; lb.position.set(0, 0.34, 0.1); g.add(lb);
+        g.scale.setScalar(0.01); c.glade.add(g); c.st.tiles[l] = g; c.tween(420, t => g.scale.setScalar(Math.max(0.01, t))); });
+      c.st.home = c.things.goat.position.clone(); c.st.rot = c.things.goat.rotation.y; c.things.goat.userData.busy = true; },
+    async ok(c, x){ const T = c.THREE, goat = c.things.goat, tl = c.st.tiles[x.l].position; await c.walkTo(goat, new T.Vector3(tl.x, goat.position.y, tl.z + 0.2), 520); c.sfx(c.BEAT); await c.hop(goat, 0.45, 380); c.sfx(c.BEAT); c.burstAt(goat, 1.2, 8); },      /* 염소가 그 칸에서 방울을 흔든다 */
+    async end(c){ const goat = c.things.goat; await c.walkTo(goat, c.st.home, 800); goat.position.copy(c.st.home); goat.rotation.y = c.st.rot; goat.userData.busy = false; Object.values(c.st.tiles).forEach(g => c.tween(300, t => g.scale.setScalar(Math.max(0.01, 1 - t))).then(() => c.glade.remove(g))); } },
   stage: { hatthief: { actor: 'goat' }, hamsmell: { actor: 'goat', from: [-6.6, -1.2], to: [-4.6, 0.2] }, oneround: { actor: 'game' }, bubble: { actor: 'gum' } }
 };

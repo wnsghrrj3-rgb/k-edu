@@ -30,6 +30,15 @@ export default {
     desk: { make: 'desk', rot: -0.4 }
   },
   decor(K, glade, PR, things, land){ const t = PR.teaTable(K); t.position.set(0.4, land.heightAt(0.4, -3.4), -3.4); glade.add(t); return { table: t, seats: t.userData.seats, life: t.userData.life }; },      /* 작은 연못은 땅(place.land.pond)이 판다 */
+  /* 얼굴 놀이 「케이크 눈싸움」(상세판 사건 stare) — 고양이와 강아지가 케이크를 사이에 두고 눈싸움. 들린 낱말의 그림을 고양이 쪽(c) · 강아지 쪽(d)으로 끌어다 놓으면, 맞을 때마다 둘이 한 칸씩 물러나고 방석이 하나 놓인다 */
+  sig: { event: 'stare', tip: '들린 낱말의 그림을 고양이 쪽이나 강아지 쪽으로 끌어다 놓아 봐', binR: 1.2, binDy: 0.5,
+    bin: (c, l) => c.things[l === c.letters[0] ? 'cat' : 'dog'],
+    eye: c => c.things.cake,
+    async start(c){ const cake = c.things.cake.position, T = c.THREE, cat = c.things.cat, dog = c.things.dog; c.st.home = { cat: cat.position.clone(), dog: dog.position.clone(), rc: cat.rotation.y, rd: dog.rotation.y }; cat.userData.busy = dog.userData.busy = true;
+      await Promise.all([c.walkTo(cat, new T.Vector3(cake.x - 1.25, cat.position.y, cake.z + 0.9), 900), c.walkTo(dog, new T.Vector3(cake.x + 1.25, dog.position.y, cake.z + 0.9), 900)]); cat.rotation.y = 0; dog.rotation.y = Math.PI; c.act('cake', 700); },      /* 케이크 양옆에서 마주 본다 */
+    async ok(c, x, i){ const T = c.THREE, cat = c.things.cat, dog = c.things.dog, s = c.decor.seats; if (s && s[i]) s[i].userData.cush.visible = true; c.sfx('pop');
+      await Promise.all([c.walkTo(cat, cat.position.clone().add(new T.Vector3(-0.5, 0, 0.25)), 380), c.walkTo(dog, dog.position.clone().add(new T.Vector3(0.5, 0, 0.25)), 380)]); cat.rotation.y = 0; dog.rotation.y = Math.PI; },      /* 한 칸씩 물러난다 */
+    async end(c){ const h = c.st.home, cat = c.things.cat, dog = c.things.dog; c.act('cake', 900); await Promise.all([c.walkTo(cat, h.cat, 900), c.walkTo(dog, h.dog, 900)]); cat.position.copy(h.cat); dog.position.copy(h.dog); cat.rotation.y = h.rc; dog.rotation.y = h.rd; cat.userData.busy = dog.userData.busy = false; } },
   stage: { empty: { actor: 'dad' }, stare: { actor: 'cat', from: [-1.5, 0.2] }, duckway: { actor: 'duck' }, toytrain: { actor: 'car' } },
   /* 방석 — 손님 없는 찻집이 하나씩 찬다 */
   onEvent(id, c){ const s = c.decor.seats; if (!s) return; const show = n => s.slice(0, n).forEach(x => { x.userData.cush.visible = true; });

@@ -12,7 +12,7 @@
   'use strict';
   var CONF = {
     train: { cars: 8, laps: 3, carMs: 2600, faster: 0.85, minMs: 1500 },
-    basket: { rounds: 6, nextMs: 500 },
+    basket: { rounds: 6, nextMs: 500, howWaitMs: 1500 },      /* howWaitMs = 그 걸음의 방법(그릇 · 구도 · 손짓)을 읽어 올 때까지 첫 판 앞에서 기다려 주는 가장 긴 시간 */
     fruit: { rounds: 4, options: 3, nextMs: 500 }
   };
   function h(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
@@ -85,6 +85,7 @@
         if (i >= list.length) return resolve({ completed: true });
         var x = cur = list[i], want = x.letter || x.w.charAt(0), tries = 1, clean = true, over = false;
         pic.innerHTML = x.pic; row.innerHTML = '';
+        if (how2d()) return howRound(x, want);
         letters.forEach(function (k) {
           var b = h('button', 'fb-basket', g.PlayIcon.html('basket') + '<span class="ph-chip">' + k + '</span>'); b.type = 'button'; b.setAttribute('data-u', k);
           b.onclick = function () {
@@ -97,8 +98,30 @@
         });
         say(x);
       }
+      /* 그 걸음의 방법으로(다름 설계 v1 — 2D 판도 그릇 · 구도 · 손짓이 걸음마다 다르다). 방 자료가 있는 걸음만: zone/step.html 이 window.__how2d 를 적는다.
+         옮기는 손짓(끌어 놓기 · 던지기) = 그림을 글자 그릇으로 옮긴다 / 나머지(흔들기 · 꾹 · 문지르기) = 글자 그릇에 그 손짓을 한다.
+         손짓이 어려운 손 · 글쇠로 하는 아이는 그릇을 그냥 눌러도 된다(누르기는 손짓 부품이 받고, 포인터 없는 누름은 여기서 받는다) */
+      function how2d() { var H = g.__how2d, P = g.PlayHands; return H && P && P.has(H.hand) && Z.id === H.step && letters.length === 2 && letters.every(function (k) { return !!H.carrier[k]; }) ? H : null; }
+      function howRound(x, want) {
+        var H = how2d(), P = g.PlayHands, carry = !!P.CARRY[H.hand], tries = 1, clean = true, over = false, chip = function (k) { return '<span class="ph-chip">' + k + '</span>'; };
+        if (cell) cell.destroy(); row.className = 'fb-baskets fb-how'; row.setAttribute('data-axis', H.axis); pic.style.display = carry ? 'none' : '';
+        function answer(k, by) {
+          if (over) return; var b = (carry ? cell.zones : cell.items)[k];
+          if (k !== want) { clean = false; tries++; if (b) { b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); } if (carry) cell.home('it'); ctx.oops(); return say(x, true); }
+          over = true; b.classList.add('ok'); if (carry) cell.gone('it'); else cell.lit(k);
+          ctx.emit(E.act(x.w, 'listen', carry && by === 'gesture' ? 'drag' : 'touch', clean, tries)); ctx.good(clean, { at: b });
+          i++; setTimeout(round, C.nextMs);
+        }
+        cell = P.cell(row, H.hand, { items: carry ? [{ id: 'it', html: x.pic }] : letters.map(function (k) { return { id: k, html: chip(k) }; }), zones: carry ? letters.map(function (k) { return { id: k, html: chip(k) }; }) : [],
+          on: function (e) { if (e.type === 'choose') answer(e.id, e.by); else if (e.type === 'put') answer(e.zone, e.by); } });
+        var seen = false; cell.el.addEventListener('pointerdown', function () { seen = true; }, true);
+        letters.forEach(function (k) { var b = (carry ? cell.zones : cell.items)[k]; b.classList.add('fb-basket'); b.setAttribute('data-u', k); b.setAttribute('data-carrier', H.carrier[k]); b.setAttribute('role', 'button'); b.tabIndex = 0;
+          b.addEventListener('click', function () { if (!seen) answer(k, 'tap'); seen = false; }); b.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') answer(k, 'tap'); }); });
+        say(x);
+      }
+      var cell = null;
       if (list.length < 1 || letters.length < 2) return resolve({ completed: true });
-      G.soon(ctx.intro, null).then(round);
+      G.soon(ctx.intro, null).then(function () { return g.__how2dReady ? Promise.race([g.__how2dReady, new Promise(function (r) { setTimeout(r, CONF.basket.howWaitMs); })]) : null; }).then(round);
     });
   }
 

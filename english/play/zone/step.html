@@ -95,14 +95,21 @@
 <script src="../games/forest-games.js"></script>
 <script src="../content/letters.js"></script>
 <script src="../engine/play-write.js"></script>
+<script src="../core/pens.js"></script>
+<script src="../data/path-differ.js"></script>
+<script src="../core/hands.js"></script>
 <script src="../games/letter-path.js"></script>
 <script src="../games/write-job.js"></script>
 <script src="../games/sentence-write.js"></script>
 <script src="../games/special-guest.js"></script>
 <script>
-/* 2D 바탕 — 그 걸음의 무대 여섯 칸(방 자료의 place — 입체 판과 같은 것)에서 하늘 색 · 뒤 실루엣 · 땅 선을 그린다(무대 설계 v1 R5). 방이 아직 없는 걸음은 그대로 둔다.
-   걸음이 정해진 뒤(아래 걸음 스크립트가 window.__stepId 를 적는다)에 늦게 불러온다 — 놀이를 막지 않는다 */
-addEventListener('load', function(){ try { Promise.all([import('../content/rooms/index.js'), import('../content/rooms/place-2d.js')]).then(function(m){ return m[0].loadPlace(window.__stepId).then(function(place){ if (place) m[1].mount2D(place); }); }).catch(function(){}); } catch (e) {} });
+/* 2D 바탕과 방법 — 그 걸음의 무대 여섯 칸(방 자료의 place — 입체 판과 같은 것)에서 하늘 색 · 뒤 실루엣 · 땅 선을 그린다(무대 설계 v1 R5). 방이 아직 없는 걸음은 그대로 둔다.
+   */
+/* 걸음이 정해진 뒤(아래 걸음 스크립트가 window.__stepId 를 적은 뒤 = 문서를 다 읽은 뒤)에 불러온다. 다 되면 window.__how2dReady 가 풀린다 — 놀이는 첫 판 앞에서 잠깐만 기다린다 */
+window.__how2dReady = new Promise(function(done){ function go(){ try { Promise.all([import('../content/rooms/index.js'), import('../content/rooms/place-2d.js')]).then(function(m){ return m[0].loadPlace(window.__stepId).then(function(place){ if (place) m[1].mount2D(place); return m[0].loadHowParts(window.__stepId); }).then(function(how){ if (!how) return; if (how.pen && window.PlayPens) PlayPens.apply(document.body, how.pen.kind);      /* 쓰는 것도 그 걸음의 도구로(core/pens.js) */
+    var d = window.PLAY_PATH_DIFFER && PLAY_PATH_DIFFER.steps[window.__stepId], ls = (window.PlayPath.zone(window.__stepId).letterItems || []).map(function(x){ return x.w; }), c = {}; if (!d || !how.carrier || ls.length !== 2) return;
+    c[ls[0]] = how.carrier.L.kind; c[ls[1]] = how.carrier.R.kind; window.__how2d = { step: window.__stepId, hand: d.hand, axis: d.axis, carrier: c }; document.body.setAttribute('data-axis', d.axis); document.body.setAttribute('data-hand', d.hand); }); }).then(done, function(){ done(); }); } catch (e) { done(); } }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go(); });      /* 2D 판의 방법 — 그릇 · 구도 · 손짓(games/forest-games.js 의 첫소리 가르기가 읽는다) */
 </script>
 <script>
 /* 한 해 길의 걸음 — 걸음 하나를 2D 로 돌린다(입체 방은 W15~). 무대 페이지는 걸음과 겉모습만 넘긴다 — 하루 흐름은 core/stage.js,

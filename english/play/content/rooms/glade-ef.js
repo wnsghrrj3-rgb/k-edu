@@ -30,5 +30,16 @@ export default {
     frog:     { make: 'frog', at: [2.6, -2.6] }                           /* 물 위 연잎 */
   },
   /* 폭포와 소는 터가 짓는다(place.back · place.land) — 가운데 장면을 따로 얹지 않는다 */
+  /* 얼굴 놀이 「코끼리 샤워」(상세판 사건 shower) — 들린 낱말의 첫소리 쪽(물가의 알 껍데기 e · 소 안의 지느러미 f)을 꾹 누르면 코끼리 코에 물이 모이고, 놓으면 그쪽으로 뿜는다. 맞으면 그 위에 작은 무지개 */
+  sig: { event: 'shower', tip: '들린 낱말의 첫소리 쪽을 꾹 눌렀다가 놓아 봐 — 코끼리가 물을 뿜어', binR: 1.0,
+    eye: c => c.things.elephant,
+    start(c){ const T = c.THREE, m = new T.MeshStandardMaterial({ color: c.K.mix('a-fish', 'surface', 0.35), transparent: true, opacity: 0.85, roughness: 0.2 }); c.st.jet = []; for (let i = 0; i < 9; i++) { const b = c.fx(new T.Mesh(new T.SphereGeometry(0.11, 8, 6), m)); b.visible = false; c.glade.add(b); c.st.jet.push(b); } },
+    progress(c, l, k){ const u = c.things.elephant.userData; if (u.trunk) u.trunk.rotation.z = -k * 1.1; c.things.elephant.scale.setScalar(1.15 * (1 + k * 0.08)); },      /* 물이 모인다 */
+    async ok(c, x){ const T = c.THREE, el = c.things.elephant, to = c.carriers[x.l].position, fr = el.position.clone().add(new T.Vector3(0.9, 1.3, 0)); el.scale.setScalar(1.15); c.sfx('tray');
+      c.st.jet.forEach(b => { b.visible = true; });
+      await c.tween(620, t => c.st.jet.forEach((b, i) => { const q = Math.max(0, Math.min(1, t * 1.5 - i * 0.055)); b.position.lerpVectors(fr, to, q); b.position.y += Math.sin(q * Math.PI) * 1.6; b.scale.setScalar(1.2 - q * 0.5); }), t => t);
+      c.st.jet.forEach(b => { b.visible = false; }); c.ripple(to.x, to.z, 1.4); c.burstAt(c.carriers[x.l], 0.3, 12, ['surface', 'a-fish', 'stage-soft']);
+      const bow = c.land.weather.spray && c.land.weather.spray.bow; if (bow) { bow.position.set(to.x - 0.2, to.y - 0.9, to.z - 0.3); bow.scale.setScalar(0.5); } await c.wait(350); },      /* 그쪽에 무지개가 뜬다 */
+    end(c){ (c.st.jet || []).forEach(b => c.glade.remove(b)); const u = c.things.elephant.userData; if (u.trunk) u.trunk.rotation.z = 0; } },
   stage: { whoseegg: { actor: 'egg' }, guard: { actor: 'fox', from: [1.6, -0.2] }, babyfish: { actor: 'fish' }, shower: { actor: 'elephant' } }
 };
