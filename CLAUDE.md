@@ -37,3 +37,6 @@
 - 시드: `python3 kedu/worksheet/tools/sets_to_seed.py tb_<접두>` (+ 옛 접두 갈래 갱신).
 - 지도서 글자본은 `handoff/지도서/<과목><학년-학기>_<N>단원_지도서_text.txt` 로 남겨 다음에 다시 뽑지 않게.
 - 공용 엔진(play.html·check_sets.js·sets_to_seed.py·build.html·tests)을 고칠 때는 허브 「공용 엔진 잠금」 규칙.
+
+## 이 PC 도구 경로
+- Blender 5.3.0 (winget `BlenderFoundation.Blender`, 2026-11-17 설치): `C:\Program Files\Blender Foundation\Blender 5.3\blender.exe` — PATH 에 없음. Git Bash 에서는 `"/c/Program Files/Blender Foundation/Blender 5.3/blender.exe" -b --python <script.py>` 로 화면 없이 실행.
