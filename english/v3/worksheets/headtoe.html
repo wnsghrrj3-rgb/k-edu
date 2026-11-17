@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv4 #5 신체① 10단어 — pushpull.html(Lv4 #1) 판형 계승, V트랙 주황
+     ★그림 = 화면과 같은 그림(BOD · BOD405CSS 블록 그대로) — 그림 마크업 = 화면 BOD405 bd405('ws') · sz(w,px,true) 를 생성기 ws/gen_headtoe.js 로 그대로 뽑음 + .still(움직임 끔).
+     ★사람 밑그림(Lv2 #15 같은 사람 · 열 자리 번호 1~10 위 → 아래 · 단어 글자 0) · ① 따라쓰기 10(팔·손 판 / 머리·다리 판) · ② 밑그림 자리 번호 쓰기
+     · ③ 굽는 곳 짝 잇기(elbow ↔ knee · finger ↔ toe · arm ↔ leg) · ④ 그림 보고 I am touching my ___!(상자 head · knee · toes · nose) + 노래 줄 한 번 써 보기.
+     받아쓰기 금지. -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root { --primary:#FF8A3D; --green:#4CAF50; --red:#F44336; --subtext:#888780; --border:#F7DFCB; --green-light:#E8F5E9; }
+  @page { size: A4; margin: 10mm 12mm 8mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.45; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d9702a; padding-bottom: 5px; }
+  .brand { font-size: 13px; font-weight: 700; color: #9c4d13; }
+  .brand .lv { background: #d9702a; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 7px; background: #fdeee1; border: 2px solid #d9702a; border-radius: 12px; padding: 7px 13px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 24px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #9c4d13; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 15.5px; font-weight: 800; color: #4a2408; }
+  .keypoint { margin-top: 6px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 5px 12px; font-size: 12px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  .keypoint .big { font-size: 13px; font-weight: 800; color: #d85a30; }
+  h2 { margin-top: 8px; font-size: 13px; color: #9c4d13; display: flex; align-items: center; gap: 7px; }
+  h2 .n { background: #9c4d13; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2 .hint { font-weight: 400; font-size: 10px; color: #888780; }
+  .trace { display: flex; gap: 8px; margin-top: 3px; }
+  .traceword { text-align: center; flex: 1; min-width: 56px; position: relative; }
+  .outline { font-size: 19px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.4px #c4c2b8; letter-spacing: 1px; }
+  .line { border-bottom: 1.5px solid #d3d1c7; height: 14px; margin-top: 2px; }
+  .twocol { display: flex; gap: 10px; margin-top: 4px; align-items: stretch; }
+  .recap { margin-top: 7px; background: #4a2408; color: #fdeee1; border-radius: 10px; padding: 7px 13px; text-align: center; font-size: 12px; }
+  .recap b { color: #fac775; }
+  .parent { margin-top: 6px; border-top: 1px dashed #b4b2a9; padding-top: 5px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+  /* 그림 — 화면 블록 그대로(움직임은 .still 로 꺼짐) */
+/*BOD-BEGIN — #15 몸 그림 단일 원천(blocks/BOD.css → sync_blocks.py 주입, 하네스가 4파일 동일 검사).
+  ★같은 사람 한 명 + 「어디를 감싸느냐」만 바뀐다(.sp 분홍 동그라미) — #7 .act · Lv1 #15 ⭐ 크기 계보.
+    이모지를 쓰면 face 😀 · smile 😊 가 둘 다 웃는 얼굴이라 그림에서 갈리지 않는다(#11·#13 이모지 그대로 못 씀).
+  ★bone 은 몸 「안」 — 왼팔 엑스레이 창(.bn)으로만 보인다. hand 는 「밖」(팔 끝).
+  ★감싸는 자리(.p-* .sp)와 짚는 자리(.z-*)는 같은 좌표 선언 하나 — 그림과 손이 어긋날 수 없다. */
+.bod{position:relative;display:inline-block;width:6em;height:10em;font-size:10px;vertical-align:middle;flex:none}
+.bod>i{position:absolute;display:block;font-style:normal}
+.bod .hd{left:1.5em;top:.55em;width:3em;height:3.1em;border-radius:50%;background:#FFD9B8}
+.bod .hr{left:1.35em;top:.25em;width:3.3em;height:1.35em;border-radius:1.65em 1.65em .5em .5em;background:#6B4A2E}
+.bod .ey{left:2.15em;top:1.9em;width:.45em;height:.45em;border-radius:50%;background:#333;box-shadow:1.25em 0 0 #333}
+.bod .ns{left:2.83em;top:2.25em;width:.34em;height:.5em;border-radius:.2em .2em .3em .3em;background:#E39A72}
+.bod .mo{left:2.4em;top:2.75em;width:1.2em;height:.5em;border-bottom:.22em solid #D2453A;border-radius:0 0 .7em .7em}
+.bod .tr{left:1.95em;top:3.75em;width:2.1em;height:3em;border-radius:.6em .6em .3em .3em;background:#7FB3E6}
+.bod .ar{left:1.2em;top:3.9em;width:.65em;height:2.4em;border-radius:.3em;background:#FFD9B8;box-shadow:2.95em 0 0 #FFD9B8}
+.bod .hn{left:1.02em;top:6.2em;width:1em;height:1em;border-radius:50%;background:#F7BE93;box-shadow:2.95em 0 0 #F7BE93}
+.bod .lg{left:2.15em;top:6.7em;width:.7em;height:2.2em;background:#4A6FA5;box-shadow:1em 0 0 #4A6FA5}
+.bod .ft{left:1.7em;top:8.8em;width:1.25em;height:.65em;border-radius:.65em .65em .2em .2em;background:#5A4030;box-shadow:1.35em 0 0 #5A4030}
+.bod .bn{left:1.2em;top:3.9em;width:.65em;height:2.4em;border-radius:.3em;background:#3F4B57;opacity:0}
+.bod .bn::before{content:'';position:absolute;left:.22em;top:.45em;width:.21em;height:1.5em;background:#fff;border-radius:.1em}
+.bod .bn::after{content:'';position:absolute;left:.1em;top:.25em;width:.45em;height:.32em;border-radius:50%;background:#fff;box-shadow:0 1.6em 0 #fff}
+.bod.p-bone .bn,.bod.xr .bn{opacity:1}
+.bod .sp{border:.2em solid #FF3D7F;border-radius:50%;background:rgba(255,61,127,.13);opacity:0;pointer-events:none;z-index:6}
+.bod[class*=" p-"] .sp{opacity:1;animation:bodpulse 1.3s ease-in-out infinite}
+@keyframes bodpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.bod.p-face .sp,.bod .z-face{left:1.1em;top:.2em;width:3.8em;height:3.8em}
+.bod.p-hair .sp,.bod .z-hair{left:1.05em;top:-.25em;width:3.9em;height:1.95em}
+.bod.p-eye .sp,.bod .z-eye{left:1.8em;top:1.45em;width:2.4em;height:1em}
+.bod.p-nose .sp,.bod .z-nose{left:2.6em;top:2.05em;width:.8em;height:.9em}
+.bod.p-smile .sp,.bod .z-smile{left:2.15em;top:2.95em;width:1.7em;height:.8em}
+.bod.p-hand .sp,.bod .z-hand{left:.65em;top:5.85em;width:4.7em;height:1.7em}
+.bod.p-bone .sp,.bod .z-bone{left:.85em;top:3.6em;width:1.35em;height:2.2em}
+.bod.p-feet .sp,.bod .z-feet{left:1.3em;top:8.35em;width:3.4em;height:1.55em}
+.bod .hz{border-radius:50%;cursor:pointer;z-index:2}
+.bod .z-face{z-index:1}.bod .z-eye,.bod .z-nose,.bod .z-smile{z-index:4}
+.bod .hz.hit{background:rgba(255,193,7,.35)}
+.bod.blank .hz{border:.08em dashed rgba(217,112,42,.6)}
+.bod.blank .hr,.bod.blank .ey,.bod.blank .ns,.bod.blank .mo{visibility:hidden}
+.bod.blank.has-hair .hr,.bod.blank.has-eye .ey,.bod.blank.has-nose .ns,.bod.blank.has-smile .mo{visibility:visible;animation:bodpop .4s}
+@keyframes bodpop{0%{transform:scale(.3)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+/*BOD-END*/
+/*BOD405CSS-BEGIN — Lv4 #5 몸① 그림·몸 판·뒷면 장면(blocks/BOD405CSS.css → sync_blocks.py 주입 · 4파일 + 활동지 문자 단위 동일, 하네스 A4).
+  ★몸 = Lv2 #15 BOD 한 사람 그대로(BOD 원본 선언은 손대지 않는다 — Lv3 #17 귀·몸 자리 판형) · 새 자리 아홉만 더한다.
+  ★감싸는 자리(.p-* .sp)와 짚는 자리(.z-*)는 같은 좌표 선언 하나(BOD 판형) · 왼쪽/오른쪽 = 보는 쪽 기준:
+    왼쪽 = arm · hand(몸 판) · leg / 오른쪽 = shoulder · elbow · finger · knee · toe — 짝(arm↔leg · elbow↔knee · finger↔toe)이 서로 다른 팔다리라 짚는 자리가 겹치지 않는다.
+  ★head = 머리카락 위 끝부터 턱까지(키 큰 동그라미) — Lv2 #15 face(얼굴 동그라미 3.8em)보다 위로 솟고 좁다.
+  ★finger = 손 끝 다섯 줄 · toe = 발 끝 다섯 점(감싸는 동그라미 안 — 카드 그림에서만).
+  ★몸 판(.b405)에서만 손 자리를 왼손 하나로 좁힌다(오른손 = finger 자리) — BOD p-hand(두 손) 카드 그림은 그대로. */
+.bod.p-head .sp,.bod .z-head{left:1.2em;top:-.35em;width:3.6em;height:4.05em}
+.bod.p-neck .sp,.bod .z-neck{left:2.25em;top:3.2em;width:1.5em;height:.95em}
+.bod.p-shoulder .sp,.bod .z-shoulder{left:3.6em;top:3.5em;width:1.5em;height:1.1em}
+.bod.p-arm .sp,.bod .z-arm{left:.95em;top:3.7em;width:1.2em;height:2.75em}
+.bod.p-elbow .sp,.bod .z-elbow{left:3.85em;top:4.65em;width:1.25em;height:1.1em}
+.bod.p-finger .sp,.bod .z-finger{left:3.75em;top:6.6em;width:1.45em;height:1em}
+.bod.p-leg .sp,.bod .z-leg{left:1.95em;top:6.6em;width:1.1em;height:2.35em}
+.bod.p-knee .sp,.bod .z-knee{left:2.95em;top:7.35em;width:1.1em;height:.95em}
+.bod.p-toe .sp,.bod .z-toe{left:3em;top:8.55em;width:1.5em;height:1.05em}
+.bod.p-finger .sp::before{content:'';position:absolute;left:.15em;top:.2em;width:.08em;height:.42em;border-radius:.04em;background:#C2185B;box-shadow:.2em 0 0 #C2185B,.4em 0 0 #C2185B,.6em 0 0 #C2185B,.8em 0 0 #C2185B}
+.bod.p-toe .sp::before{content:'';position:absolute;left:.12em;top:.45em;width:.14em;height:.14em;border-radius:50%;background:#C2185B;box-shadow:.21em 0 0 #C2185B,.42em 0 0 #C2185B,.63em 0 0 #C2185B,.84em 0 0 #C2185B}
+.bod .z-arm,.bod .z-leg{z-index:3}
+.bod .z-shoulder,.bod .z-elbow,.bod .z-hand{z-index:4}
+.bod .z-neck,.bod .z-finger,.bod .z-toe{z-index:5}
+.bod .z-knee{z-index:6}
+.bod.b405 .z-hand{left:.7em;top:5.95em;width:1.5em;height:1.55em}
+/* 몸 판 — 짚을 차례(now) 깜빡 · 찾은 자리(found/correct) 분홍 테 · 틀린 자리 흔들림(소리 0) */
+.bd405{display:flex;justify-content:center;margin:6px 0;line-height:0}
+.bd405 .bod{font-size:26px}
+.bod.b405 .hz.now{border:.12em dashed #F08C00;background:rgba(255,212,59,.3);animation:tapBlink 1.1s infinite}
+.bod.b405 .hz.found,.bod.b405 .hz.correct{border:.14em solid #FF3D7F;background:rgba(255,61,127,.16)}
+.bod.b405 .hz.wrong,.bod.b405 .hz.bad{background:rgba(244,67,54,.28);animation:shake .4s}
+.bd405.m-ws .bod{font-size:21px}
+.bd405.m-ws .hz{cursor:default}
+.bod .hz .wn405{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:15px;height:15px;border-radius:50%;background:#9c4d13;color:#fff;font-size:10px;line-height:15px;text-align:center;font-weight:800}
+.tags405{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin:4px auto 0;max-width:430px}
+.tags405 .tg405{min-width:52px;padding:0 6px;border:2px dashed #F0C9A6;border-radius:9px;font-size:16px;color:#C9B39C;background:#fff;line-height:1.5;font-style:normal}
+.tags405 .tg405.on{border-style:solid;border-color:var(--green);color:var(--primary);background:var(--green-light)}
+/* 카드 그림 상자 — 몸 그림은 em 으로 그려지니 상자 글자 크기 하나로 키우고 줄인다 */
+.pz405{position:relative;display:inline-block;width:6em;height:10em;line-height:0;vertical-align:middle;text-align:left}
+.pz405 .bod{font-size:inherit}
+.pz405>i{position:absolute;display:block;font-style:normal}
+.pz405 .lg405{left:-.45em;top:7.1em;width:1.9em;height:1.9em;line-height:1}
+.pz405 .lg405 i{font-size:1.7em;font-style:normal;line-height:1}
+/* 뒷면 장면 — 말하는 사람(나 · 이름표) + 몸 그림 + 소품 */
+.ss405{position:relative;display:inline-block;width:11em;height:11em;line-height:0;vertical-align:middle;overflow:hidden;border-radius:.9em;background:#FFF9DB;text-align:left}
+.ss405>.pz405{position:absolute;left:3.8em;top:.6em}
+.ss405 .me405{position:absolute;left:.3em;top:.3em;width:2.3em;height:2.3em;border-radius:50%;background:#FFE066;border:.18em solid #F0C419;color:#7a5600;font-size:1.15em;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-style:normal;box-sizing:border-box}
+.nm405{display:inline-flex;align-items:center;gap:2px;font-size:14px;line-height:1.3;font-style:normal;background:#fff;border:2px solid #FF8A3D;color:#FF8A3D;border-radius:8px;padding:0 6px;font-family:'Jua',sans-serif}
+.nm405 .dd405{font-size:16px;font-style:normal}
+.ss405 .nm405{position:absolute;left:2px;top:2px;font-size:11px;padding:0 4px}
+.ss405 .nm405 .dd405{font-size:13px}
+/* shoulder — 짚는 자리에 동그란 물결(만지는 순간) */
+.pz405 .tp405{left:3.85em;top:3.65em;width:1em;height:.8em;border:.15em solid #F08C00;border-radius:50%;animation:tp405 1.2s ease-out infinite}
+@keyframes tp405{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.5);opacity:0}}
+/* knee — Ben 의 빨간 무릎 + 반창고 다섯 장(허세) */
+.bod.rd405 .sp{background:rgba(224,49,49,.5)}
+.pz405 .ba405{left:2.85em;top:7.15em;width:1.15em;height:.3em;background:#F4C27A;border-radius:.12em;transform:rotate(-18deg);box-shadow:0 .38em 0 #F4C27A,.05em .76em 0 #F4C27A,-.1em -.38em 0 #F4C27A,.1em 1.14em 0 #F4C27A}
+/* toe — ★진행형 1자리: 몸이 숙여 손이 발끝에 닿았다 돌아온다(움직이는 그림) */
+.bod.tt405 .hd,.bod.tt405 .hr,.bod.tt405 .ey,.bod.tt405 .ns,.bod.tt405 .mo{animation:tt405h 2.2s ease-in-out infinite}
+.bod.tt405 .tr{transform-origin:50% 100%;animation:tt405t 2.2s ease-in-out infinite}
+.bod.tt405 .ar,.bod.tt405 .hn{animation:tt405a 2.2s ease-in-out infinite}
+@keyframes tt405h{0%,15%,90%,100%{transform:translateY(0)}45%,70%{transform:translateY(2.5em)}}
+@keyframes tt405t{0%,15%,90%,100%{transform:scaleY(1)}45%,70%{transform:scaleY(.3)}}
+@keyframes tt405a{0%,15%,90%,100%{transform:translateY(0)}45%,70%{transform:translateY(2.55em)}}
+/* arm — 팔에 비누 거품 */
+.pz405 .bb405{left:.55em;top:4.3em;width:.55em;height:.55em;border-radius:50%;background:rgba(116,192,252,.6);box-shadow:1.15em .7em 0 -.05em rgba(116,192,252,.6),.15em 1.35em 0 .05em rgba(116,192,252,.6);animation:bb405 1.6s ease-in-out infinite}
+@keyframes bb405{0%,100%{transform:translateY(0)}50%{transform:translateY(-.4em)}}
+/* neck — Mina 기린 옷 · 목이 천장까지(머리는 위로 밀려 턱만 보인다) */
+.bod.gr405 .hd,.bod.gr405 .hr,.bod.gr405 .ey,.bod.gr405 .ns,.bod.gr405 .mo{transform:translateY(-3em)}
+.bod.gr405.p-neck .sp{top:.15em;height:3.9em}
+.pz405 .gn405{left:2.5em;top:.3em;width:1em;height:3.7em;border-radius:.3em;background:radial-gradient(circle at 30% 20%,#B5651D 0 .14em,transparent .15em),radial-gradient(circle at 70% 55%,#B5651D 0 .16em,transparent .17em),radial-gradient(circle at 35% 85%,#B5651D 0 .13em,transparent .14em),#F5C84C}
+/* finger — Amy 손이 여덟 개(과장) */
+.pz405 .eh405{left:-.2em;top:4.6em;width:1em;height:1em;border-radius:50%;background:#F7BE93;box-shadow:5.15em -.2em 0 #F7BE93,-.35em -1.4em 0 #F7BE93,5.35em -1.6em 0 #F7BE93,.05em -2.7em 0 #F7BE93,4.95em -2.9em 0 #F7BE93}
+/* leg — 차는 발 옆 움직임 줄 */
+.pz405 .kk405{left:4.6em;top:8.5em;width:.9em;height:.12em;border-radius:.06em;background:#868E96;box-shadow:.2em .35em 0 #868E96,0 .7em 0 #868E96;animation:tapBlink .8s infinite}
+/* hand — 두 손 사이 반짝(짝!) */
+.pz405 .cl405{left:2.45em;top:5.7em;width:1.1em;height:1.1em;line-height:1;color:#E8A93C;text-align:center;animation:cl405 .6s ease-out infinite}
+.pz405 .cl405::after{content:'✦';font-size:1.1em}
+@keyframes cl405{0%,30%{opacity:0;transform:scale(.4)}55%{opacity:1;transform:scale(1.1)}100%{opacity:0;transform:scale(1.5)}}
+/* 움직임 끄기(종이 · 작은 칸) */
+.pz405.still *,.ss405.still *{animation:none!important}
+/*BOD405CSS-END*/
+  .figrow { display: flex; gap: 12px; align-items: center; margin-top: 4px; }
+  .figbox { flex: none; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 6px 14px; }
+  .figbox .bd405 { margin: 0; }
+  .nbox { flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 14px; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 8px 12px; }
+  .nq { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .nq .nw { font-size: 16px; font-weight: 800; color: #4a2408; letter-spacing: .3px; }
+  .nq .sq { display: inline-block; width: 26px; height: 24px; border: 1.8px solid #b4b2a9; border-radius: 5px; background: #fff; }
+  .box3, .box4 { flex: 1; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 5px 10px; }
+  .pr3 { display: flex; justify-content: space-between; gap: 40px; }
+  .pc3 { display: flex; flex-direction: column; gap: 6px; }
+  .pc3 .ph3 { font-size: 10.5px; font-weight: 800; color: #9c4d13; }
+  .pc3.R .ph3 { text-align: right; }
+  .pi3 { font-size: 16px; font-weight: 800; color: #4a2408; display: flex; align-items: center; gap: 6px; letter-spacing: .3px; }
+  .pc3.R .pi3 { justify-content: flex-end; }
+  .pi3 .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #9c4d13; }
+  .ing4 { display: flex; gap: 8px; align-items: center; }
+  .pic4 { flex: none; line-height: 0; }
+  .ir4 { display: flex; flex-direction: column; gap: 3px; }
+  .s { font-size: 15px; font-weight: 800; color: #4a2408; display: flex; align-items: flex-end; gap: 4px; letter-spacing: .3px; flex-wrap: wrap; }
+  .s .ln { display: inline-block; width: 70px; border-bottom: 1.8px solid #b4b2a9; height: 20px; }
+  .wb { font-size: 10px; color: #888780; }
+  .song4 { margin-top: 5px; }
+  .song4 .cap4 { font-size: 10.5px; font-weight: 800; color: #9c4d13; }
+  .song4 .outline { font-size: 17px; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv4 · 어휘 #5</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main">몸은 위에서 아래로 — 머리, 어깨, 무릎, 발가락.</div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 팔·손 판 — shoulder · arm · elbow · hand · finger / 머리·다리 판 — head · neck · leg · knee · toe.
+    <span class="big">굽는 곳 — 팔은 elbow, 다리는 knee</span>
+  </div>
+
+  <h2><span class="n">1</span> 따라 써요 <span class="hint">흐린 글자를 따라 써요 — 위 줄 팔·손 판 · 아래 줄 머리·다리 판</span></h2>
+  <div class="trace"><div class="traceword"><div class="outline">shoulder</div><div class="line"></div></div><div class="traceword"><div class="outline">arm</div><div class="line"></div></div><div class="traceword"><div class="outline">elbow</div><div class="line"></div></div><div class="traceword"><div class="outline">hand</div><div class="line"></div></div><div class="traceword"><div class="outline">finger</div><div class="line"></div></div></div>
+  <div class="trace"><div class="traceword"><div class="outline">head</div><div class="line"></div></div><div class="traceword"><div class="outline">neck</div><div class="line"></div></div><div class="traceword"><div class="outline">leg</div><div class="line"></div></div><div class="traceword"><div class="outline">knee</div><div class="line"></div></div><div class="traceword"><div class="outline">toe</div><div class="line"></div></div></div>
+
+  <h2><span class="n">2</span> 몸 판 번호 쓰기 <span class="hint">단어를 읽고 — 그 자리의 번호를 네모에 써요</span></h2>
+  <div class="figrow">
+    <div class="figbox"><div class="bd405 m-ws"><span class="bod b405" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i><i class="hz z-head" data-w="head"><b class="wn405">1</b></i><i class="hz z-neck" data-w="neck"><b class="wn405">2</b></i><i class="hz z-shoulder" data-w="shoulder"><b class="wn405">3</b></i><i class="hz z-arm" data-w="arm"><b class="wn405">4</b></i><i class="hz z-elbow" data-w="elbow"><b class="wn405">5</b></i><i class="hz z-hand" data-w="hand"><b class="wn405">6</b></i><i class="hz z-finger" data-w="finger"><b class="wn405">7</b></i><i class="hz z-leg" data-w="leg"><b class="wn405">8</b></i><i class="hz z-knee" data-w="knee"><b class="wn405">9</b></i><i class="hz z-toe" data-w="toe"><b class="wn405">10</b></i></span></div></div>
+    <div class="nbox"><div class="nq" data-w="knee"><span class="nw">knee</span><span class="sq"></span></div><div class="nq" data-w="hand"><span class="nw">hand</span><span class="sq"></span></div><div class="nq" data-w="neck"><span class="nw">neck</span><span class="sq"></span></div><div class="nq" data-w="toe"><span class="nw">toe</span><span class="sq"></span></div><div class="nq" data-w="shoulder"><span class="nw">shoulder</span><span class="sq"></span></div><div class="nq" data-w="leg"><span class="nw">leg</span><span class="sq"></span></div><div class="nq" data-w="head"><span class="nw">head</span><span class="sq"></span></div><div class="nq" data-w="elbow"><span class="nw">elbow</span><span class="sq"></span></div><div class="nq" data-w="finger"><span class="nw">finger</span><span class="sq"></span></div><div class="nq" data-w="arm"><span class="nw">arm</span><span class="sq"></span></div></div>
+  </div>
+
+  <div class="twocol">
+    <div style="flex:1;display:flex;flex-direction:column">
+      <h2><span class="n">3</span> 짝 잇기 <span class="hint">팔 쪽과 다리 쪽 — 같은 자리끼리 줄로 이어요</span></h2>
+      <div class="box3"><div class="pr3"><div class="pc3 L"><div class="ph3">팔 쪽</div><div class="pi3" data-w="elbow">elbow<i class="dot"></i></div><div class="pi3" data-w="finger">finger<i class="dot"></i></div><div class="pi3" data-w="arm">arm<i class="dot"></i></div></div><div class="pc3 R"><div class="ph3">다리 쪽</div><div class="pi3" data-w="toe"><i class="dot"></i>toe</div><div class="pi3" data-w="leg"><i class="dot"></i>leg</div><div class="pi3" data-w="knee"><i class="dot"></i>knee</div></div></div></div>
+    </div>
+    <div style="flex:1.25;display:flex;flex-direction:column">
+      <h2><span class="n">4</span> 그림 보고 써요 <span class="hint">상자에서 골라 빈칸에 옮겨 써요</span></h2>
+      <div class="box4"><div class="ing4"><span class="pic4"><span class="ss405 still" data-ss="toe" style="font-size:8px"><b class="me405">나</b><span class="pz405"><span class="bod p-toe tt405" data-p="toe"><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i></span></span></span></span><div class="ir4"><div class="s">I am touching my <span class="ln"></span>!</div><div class="wb">상자 · head · knee · toes · nose</div></div></div><div class="song4"><div class="cap4">노래 줄 한 번 써 보기</div><div class="outline">Head, shoulders, knees and toes!</div><div class="line"></div></div></div>
+    </div>
+  </div>
+
+  <div class="recap">오늘 열 단어 = <b>head · shoulder · knee · toe · arm · neck · finger · elbow · leg · hand</b> — 머리부터 발끝까지!</div>
+
+  <div class="parent">
+    <b>부모님께</b> · <b>knee</b> 의 k 는 소리가 나지 않아요 — 이 칸에서는 짚지 않고 <b>통째로</b> 읽습니다.
+    · foot(발 하나)은 아직 배우지 않아요 — feet 와 짝이 규칙 밖이라 뒤로 미뤘습니다.
+    · 이 활동지는 <b>보고 옮겨 쓰는</b> 종이입니다. <b>받아쓰기로 확인하지 마세요.</b><br>
+    <b>정답</b> · ② knee 9 · hand 6 · neck 2 · toe 10 · shoulder 3 · leg 8 · head 1 · elbow 5 · finger 7 · arm 4 · ③ elbow — knee · finger — toe · arm — leg · ④ toes
+  </div>
+</body>
+</html>
