@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv4 #43 음식③ 종합·다시 닦기 10단어 — clothes4.html(Lv4 #39) 판형 계승, V트랙 주황
+     ★그림 = 화면과 같은 그림(FOD443CSS 블록 그대로 — Lv3 #16 타일 · 원 칸 이모지) — 그림 마크업 = 화면 FOD443 pz(w,k) · plates443('ws') 를 생성기 ws/gen_food4.js 로 그대로 뽑음.
+     ★① 따라쓰기 10(bread · cookie · rice · bean · soup / egg · cheese · grape · jam · pie) · ② 접시 다섯 양쪽에 이름 쓰기(상자 보고 — 오른쪽 꼬리 칸엔 s 까지)
+     · ③ is / are 고르기 2(Cheese ___ salty. · Grapes ___ sour.) · ④ 내가 좋아하는 접시 그리기 + I like ___.(상자 열).
+     새 단어 없는 「다시 닦기」 칸 · 받아쓰기 금지. -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root { --primary:#FF8A3D; --green:#4CAF50; --red:#F44336; --subtext:#888780; --border:#F7DFCB; --green-light:#E8F5E9; }
+  @page { size: A4; margin: 10mm 12mm 8mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.45; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d9702a; padding-bottom: 5px; }
+  .brand { font-size: 13px; font-weight: 700; color: #9c4d13; }
+  .brand .lv { background: #d9702a; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 7px; background: #fdeee1; border: 2px solid #d9702a; border-radius: 12px; padding: 7px 13px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 24px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #9c4d13; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 15.5px; font-weight: 800; color: #4a2408; }
+  .keypoint { margin-top: 6px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 5px 12px; font-size: 12px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  .keypoint .big { font-size: 13px; font-weight: 800; color: #d85a30; }
+  h2 { margin-top: 8px; font-size: 13px; color: #9c4d13; display: flex; align-items: center; gap: 7px; }
+  h2 .n { background: #9c4d13; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2 .hint { font-weight: 400; font-size: 10px; color: #888780; }
+  .trace { display: flex; gap: 8px; margin-top: 3px; }
+  .traceword { text-align: center; flex: 1; min-width: 56px; position: relative; }
+  .outline { font-size: 19px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.4px #c4c2b8; letter-spacing: 1px; }
+  .line { border-bottom: 1.5px solid #d3d1c7; height: 14px; margin-top: 2px; }
+  .twocol { display: flex; gap: 10px; margin-top: 4px; align-items: stretch; }
+  .recap { margin-top: 7px; background: #4a2408; color: #fdeee1; border-radius: 10px; padding: 7px 13px; text-align: center; font-size: 12px; }
+  .recap b { color: #fac775; }
+  .parent { margin-top: 6px; border-top: 1px dashed #b4b2a9; padding-top: 5px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+  /* 그림 — 화면 블록 그대로 */
+/*FOD443CSS-BEGIN — Lv4 #43 음식③ 종합·먼 소환 그림·접시 다섯·도감 닦기·뒷면 장면(blocks/FOD443CSS.css → sync_blocks.py 주입 · 4파일 + 활동지 문자 단위 동일, 하네스 A3).
+  ★그림 타일 = Lv3 #16 FD316CSS 줄 문자 그대로 · 이름만 443(.fdp · .fdz · .fdz>.fdp · .fdp .em → .fdp443 · .fdz443 · .em443 — 블록째 주입 0 · Lv4 #39 판형).
+  ★꼬리 칩 .pl443 = Lv3 #16 .pl 줄(= Lv3 #2 PL302CSS 연두) 이름만 443 · 동사 꼬리 .vt443 = Lv4 #18 .vt418 값 · 도감 카드 .dg443 = Lv3 #42 .dg42 값(Lv4 #39 .dg439 줄 이름만).
+  ★-ing 오븐 = Lv3 #30 bake 그림 줄(.ov30 · .ow30 · .ht30 · t30Glow · t30Heat) 이름만 443 · 나 = Lv3 #30 .vs .me 값 · 장면 상자 140×64 = Lv3 #1 .vs 와 같은 자리.
+  ★접시 다섯 — 접시마다 왼쪽 그대로(꼬리 칸 0) · 오른쪽 꼬리 칸(빈 점선 → s 연두로 켜짐) · 원리 판은 꼬리 칸 다섯이 한꺼번에 켜진다(1회 애니 · 설명 0). */
+.fdp443{position:relative;display:inline-flex;align-items:center;justify-content:center;width:80px;height:64px;border-radius:14px;background:#FFFDF9;border:2px solid #F1DFCD;box-sizing:border-box;line-height:1;vertical-align:middle;overflow:hidden;text-align:center}
+.fdz443{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+.fdz443>.fdp443{position:absolute;left:0;top:0;transform-origin:0 0}
+.fdp443 .em443{font-size:44px;font-style:normal;line-height:1}
+.pl443{text-decoration:none;display:inline-block;background:#B2F2BB;color:#2B8A3E;border-radius:6px;padding:0 3px;margin-left:1px}
+.pl443.pop{animation:pl443pop .5s ease-out}
+@keyframes pl443pop{0%{transform:scale(.2) translateX(-10px);opacity:0}70%{transform:scale(1.25)}100%{transform:scale(1);opacity:1}}
+/* 동사 꼬리 — Max always eat+s(늘 쪽 · Lv4 #18 .vt418 값 · 깜빡) */
+.vt443{text-decoration:none;display:inline-block;background:#FFD8A8;color:#D9480F;border-radius:6px;padding:0 3px;margin-left:1px}
+.vt443.blink{animation:tapBlink 1.1s 3}
+/* 뒷면 장면 — 140×64 상자(크기 = 상자째 줄이고 키운다) · 주어가 보인다 · 원 칸 이모지 + 소품 */
+.ssz443{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+.ssz443>.ss443{position:absolute;left:0;top:0;transform-origin:0 0}
+.ss443{position:relative;display:inline-block;width:140px;height:64px;line-height:0;vertical-align:middle;text-align:left;overflow:hidden;border-radius:12px;background:#FFF9DB}
+.ss443>i,.ss443>b{position:absolute;display:block;font-style:normal}
+.ss443 .pr443{position:absolute;display:block;font-style:normal;font-size:34px;line-height:1}
+.ss443 .pr443.c0{left:60px;top:18px}
+.ss443 .pr443.c1{left:44px;top:18px}
+.ss443 .pr443.c2{left:84px;top:18px}
+.ss443 .fg443{left:6px;top:24px;font-size:30px;line-height:1}
+.ss443 .pp443{font-size:18px;line-height:1}
+.nm443{display:inline-flex;align-items:center;gap:2px;font-size:14px;line-height:1.3;font-style:normal;background:#fff;border:2px solid #FF8A3D;color:#FF8A3D;border-radius:8px;padding:0 6px;font-family:'Jua',sans-serif}
+.nm443 .dd443{font-size:16px;font-style:normal}
+.ss443 .nm443{position:absolute;left:2px;top:2px;font-size:11px;padding:0 4px;z-index:2}
+.ss443 .nm443 .dd443{font-size:13px}
+.ss443 .me443{position:absolute;left:2px;top:24px;width:28px;height:28px;border-radius:50%;background:#FFE066;border:2px solid #F0C419;color:#7a5600;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-style:normal;box-sizing:border-box}
+/* bread — ★진행형 1자리: Dad 가 오븐에서 빵을 굽는 중(Lv3 #30 bake 오븐 줄 그대로 · 이름만 443 — 창이 달아오르고 빵이 부푼다 · 움직이는 그림) */
+.ss443 .ov443{position:absolute;left:66px;top:14px;width:56px;height:46px;display:block;border-radius:6px;background:#868E96;border-top:7px solid #495057;box-sizing:border-box}
+.ss443 .ov443 .ow443{position:absolute;left:7px;top:6px;width:38px;height:24px;display:block;border-radius:4px;background:#FFA94D;border:3px solid #343A40;box-sizing:border-box;animation:t443Glow 1.6s ease-in-out infinite}
+.ss443 .ht443{position:absolute;left:78px;top:0;font-style:normal;line-height:1;font-size:12px;color:#FF922B;letter-spacing:3px;animation:t443Heat 1.4s ease-out infinite}
+.ss443 .ht443::before{content:'≀≀≀'}
+@keyframes t443Glow{0%,100%{background:#FFA94D}50%{background:#FF6B00}}
+@keyframes t443Heat{0%{transform:translateY(4px);opacity:0}40%{opacity:1}100%{transform:translateY(-4px);opacity:0}}
+.ss443 .ow443 .pr443.bk443{left:8px;top:1px;font-size:16px;transform-origin:50% 100%;animation:bk443 1.6s ease-in-out infinite}
+@keyframes bk443{0%,100%{transform:scale(.8)}50%{transform:scale(1.1)}}
+/* cookie · cheese · grape — 맛 말 그림 = Lv3 #30 소품(🍬 sweet · 🧂 salty · 🍋 sour — 카드 0) */
+.ss443 .sw443{left:116px;top:6px}
+.ss443 .sa443{left:110px;top:28px;font-size:22px}
+.ss443 .so443{left:118px;top:36px}
+/* rice — 나 + 밥 · 한낮 해(점심 · CSS) */
+.ss443 .nn443{left:116px;top:6px;width:16px;height:16px;border-radius:50%;background:#FFD43B;box-shadow:0 0 0 3px rgba(255,212,59,.4)}
+/* soup — 김(뜨거운) + Sam 이 진지하게 띄운 얼음 하나(🧊 = Lv3 #24 ice 소품) */
+.ss443 .st443{left:64px;top:2px;font-size:13px;line-height:1;color:#ADB5BD;letter-spacing:2px;animation:t443Heat 1.6s ease-out infinite}
+.ss443 .st443::before{content:'∿∿'}
+.ss443 .ic443{left:76px;top:16px;font-size:13px;animation:ic443 1.8s ease-in-out infinite}
+@keyframes ic443{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(2px) rotate(6deg)}}
+/* egg — Max 달걀 둘 · 이레 띠가 칸마다 달걀 둘(늘 · #37 빈도 띠 칸 — 과장) */
+.ss443 .pr443.e1{left:42px;top:10px;font-size:26px}
+.ss443 .pr443.e2{left:70px;top:10px;font-size:26px}
+.ss443 .wk443{left:38px;top:46px;width:98px;height:13px;display:flex;gap:2px}
+.ss443 .wk443>i{flex:1;display:block;border-radius:3px;border:1px solid #F08C00;box-sizing:border-box;background:radial-gradient(circle at 30% 55%,#fff 0 22%,transparent 24%),radial-gradient(circle at 70% 55%,#fff 0 22%,transparent 24%),#FFD43B}
+/* pie — Amy 의 파이가 식탁보다 크다(과장) */
+.ss443 .tb443{left:24px;top:52px;width:92px;height:8px;border-radius:3px;background:#A47148}
+.ss443 .pr443.big443{left:16px;top:-24px;font-size:100px}
+/* 접시 다섯 — 접시마다 왼쪽(그대로) · 오른쪽(꼬리 칸) · 머리 색 다섯 */
+.pls443{display:flex;flex-wrap:wrap;gap:8px 5px;justify-content:center;max-width:360px;margin:6px auto}
+.pt443{display:flex;flex-direction:column;align-items:center;gap:2px;border:3px solid #CED4DA;border-radius:14px;background:#fff;padding:3px 3px 4px;transition:background .3s}
+.pt443 .ph443{font-size:12px;line-height:1.3;color:#fff;border-radius:8px;padding:1px 7px;white-space:nowrap}
+.pt443 .pc443{display:flex;gap:3px;justify-content:center;padding:4px 7px 2px;border-radius:50%/42%;background:radial-gradient(ellipse at center,#fff 0 60%,#E9ECEF 61% 68%,#fff 69%)}
+.pt443.k-bread{border-color:#E8590C}.pt443.k-bread .ph443{background:#E8590C}
+.pt443.k-rice{border-color:#5C940D}.pt443.k-rice .ph443{background:#5C940D}
+.pt443.k-soup{border-color:#1971C2}.pt443.k-soup .ph443{background:#1971C2}
+.pt443.k-snack{border-color:#F08C00}.pt443.k-snack .ph443{background:#F08C00}
+.pt443.k-sweet{border-color:#C2255C}.pt443.k-sweet .ph443{background:#C2255C}
+.pt443.on{background:#FFF9DB}
+.sd443{position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:1px;border:2px solid transparent;border-radius:10px;padding:2px;cursor:pointer;line-height:0;background:transparent}
+.sd443 .lb443{display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1.3;font-weight:400;min-height:20px;white-space:nowrap}
+.sd443 .tg443{font-style:normal;color:#C9B39C;min-width:18px;text-align:center}
+.sd443 .tl443{text-decoration:none;display:inline-block;width:12px;height:16px;margin-left:1px;border:2px dashed #8CE99A;border-radius:5px;color:transparent;font-size:13px;line-height:12px;text-align:center;box-sizing:border-box}
+.sd443 .tl443.on,.pls443.lit .tl443{width:auto;height:auto;border:0;background:#B2F2BB;color:#2B8A3E;border-radius:6px;padding:0 3px;line-height:1.3;animation:pl443pop .5s ease-out}
+.sd443.found,.sd443.correct{border-color:var(--green);background:var(--green-light)}
+.sd443.found .tg443{color:var(--primary)}
+.sd443.wrong{background:rgba(244,67,54,.2);animation:shake .4s}
+.pls443.m-show .tg443{color:var(--primary)}
+.pls443.m-ws .sd443{cursor:default}
+.pls443.m-ws .tg443{display:inline-block;width:44px;height:16px;border-bottom:1.5px solid #b4b2a9}
+/* 도감 닦기 — 빛바랜 카드(빛바램 = 도감 last · f1~f3) · 오래된 칸부터 · Lv3 #42 .dg42 값(Lv4 #39 .dg439 줄 이름만 443) */
+.dgs443{display:flex;flex-wrap:wrap;gap:14px 8px;justify-content:center;margin:12px 0 6px}
+.dg443{position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:1px;background:#fff;border:3px solid #CED4DA;border-radius:14px;padding:6px 4px 3px;min-width:86px;cursor:pointer;transition:border-color .3s,background .3s}
+.dg443 .pic{line-height:0;transition:filter .6s,opacity .6s}
+.dg443 .dw{font-size:20px;line-height:1.2;color:#FF8A3D;transition:filter .6s,opacity .6s}
+.dg443.isold::after{content:attr(data-from);position:absolute;top:-10px;right:-6px;background:#4CAF50;color:#fff;font-size:11px;padding:1px 6px;border-radius:99px;white-space:nowrap}
+.dg443.iswold::after{content:attr(data-from);position:absolute;top:-10px;right:-6px;background:#ECEFF1;color:#607D8B;border:1.5px solid #B0BEC5;font-size:11px;padding:0 6px;border-radius:99px;white-space:nowrap}
+.dg443.isnor::after{content:'🚫 ' attr(data-from);position:absolute;top:-10px;right:-6px;background:#E03131;color:#fff;font-size:11px;padding:1px 6px;border-radius:99px;white-space:nowrap}
+.dg443.f1 .pic,.dg443.f1 .dw{filter:grayscale(.45);opacity:.78}
+.dg443.f2 .pic,.dg443.f2 .dw{filter:grayscale(.75);opacity:.58}
+.dg443.f3 .pic,.dg443.f3 .dw{filter:grayscale(1);opacity:.4}
+.dg443.now{border-color:#FFC107;animation:dg443Now 1.1s infinite}
+@keyframes dg443Now{0%,100%{box-shadow:0 0 0 0 rgba(255,193,7,.0)}50%{box-shadow:0 0 0 5px rgba(255,193,7,.45)}}
+.dg443.shine{border-color:#4CAF50;background:#E8F5E9;animation:none}
+.dg443.shine .pic,.dg443.shine .dw{filter:none;opacity:1}
+.dg443.shine::before{content:'✦';position:absolute;left:4px;top:1px;color:#E8A93C;font-size:13px;line-height:1}
+.dg443.nope{animation:dg443Shk .45s}
+@keyframes dg443Shk{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+/* 움직임 끄기(종이 · 작은 칸) */
+.ss443.still *,.ss443.still *::before{animation:none!important}
+/*FOD443CSS-END*/
+  .sortbox { margin-top: 4px; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 7px 10px; display: flex; flex-direction: column; gap: 6px; }
+  .bank { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; }
+  .bank .bw { font-size: 15px; font-weight: 800; color: #4a2408; letter-spacing: .3px; }
+  .sortbox .pls443 { max-width: none; flex-wrap: nowrap; gap: 6px; margin: 0 auto; }
+  .box3, .box4 { flex: 1; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 5px 10px; }
+  .ia3 { display: flex; flex-direction: column; gap: 5px; }
+  .ia { display: flex; align-items: center; gap: 8px; }
+  .pic3 { line-height: 0; }
+  .s { font-size: 15px; font-weight: 800; color: #4a2408; display: flex; align-items: flex-end; gap: 4px; letter-spacing: .3px; flex-wrap: wrap; }
+  .two { display: inline-flex; gap: 3px; align-items: center; font-size: 14px; }
+  .two .sl3 { font-style: normal; color: #b4b2a9; font-weight: 400; }
+  .draw4 { display: flex; gap: 8px; align-items: center; }
+  .dish4 { flex: none; width: 96px; height: 64px; border: 1.8px dashed #c9a27e; border-radius: 50%; background: #fff; }
+  .ir4 { display: flex; flex-direction: column; gap: 3px; }
+  .s .ln { display: inline-block; width: 78px; border-bottom: 1.8px solid #b4b2a9; height: 20px; }
+  .wb { font-size: 10px; color: #888780; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv4 · 어휘 #43</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main">덜어 먹는 건 그대로, 하나씩 집어 먹는 건 꼬리.</div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 빵 접시 bread · cookies / 밥 그릇 rice · beans / 국 그릇 soup · eggs / 간식 접시 cheese · grapes / 달콤 접시 jam · pies.
+    <span class="big">접시마다 그대로 하나, 꼬리 하나</span>
+  </div>
+
+  <h2><span class="n">1</span> 따라 써요 <span class="hint">흐린 글자를 따라 써요 — 열 개 모두 앞에서 만난 음식</span></h2>
+  <div class="trace"><div class="traceword"><div class="outline">bread</div><div class="line"></div></div><div class="traceword"><div class="outline">cookie</div><div class="line"></div></div><div class="traceword"><div class="outline">rice</div><div class="line"></div></div><div class="traceword"><div class="outline">bean</div><div class="line"></div></div><div class="traceword"><div class="outline">soup</div><div class="line"></div></div></div>
+  <div class="trace"><div class="traceword"><div class="outline">egg</div><div class="line"></div></div><div class="traceword"><div class="outline">cheese</div><div class="line"></div></div><div class="traceword"><div class="outline">grape</div><div class="line"></div></div><div class="traceword"><div class="outline">jam</div><div class="line"></div></div><div class="traceword"><div class="outline">pie</div><div class="line"></div></div></div>
+
+  <h2><span class="n">2</span> 접시 양쪽에 이름 쓰기 <span class="hint">상자의 단어를 읽고 — 그림 밑에 옮겨 써요 · 오른쪽 꼬리 칸엔 s 까지</span></h2>
+  <div class="sortbox"><div class="bank"><span class="bw" data-w="pie">pie</span><span class="bw" data-w="rice">rice</span><span class="bw" data-w="grape">grape</span><span class="bw" data-w="soup">soup</span><span class="bw" data-w="cookie">cookie</span><span class="bw" data-w="jam">jam</span><span class="bw" data-w="bean">bean</span><span class="bw" data-w="cheese">cheese</span><span class="bw" data-w="egg">egg</span><span class="bw" data-w="bread">bread</span></div><div class="pls443 m-ws"><div class="pt443 k-bread" data-k="bread"><div class="ph443">빵 접시</div><div class="pc443"><span class="sd443 n-same" data-w="bread"><span class="fdz443" style="width:40px;height:32px"><span class="fdp443 f-bread" data-fdp="bread" style="transform:scale(0.5)"><i class="em443">🍞</i></span></span><b class="lb443"><i class="tg443"></i></b></span><span class="sd443 n-many" data-w="cookie"><span class="fdz443" style="width:40px;height:32px"><span class="fdp443 f-cookie" data-fdp="cookie" style="transform:scale(0.5)"><i class="em443">🍪</i></span></span><b class="lb443"><i class="tg443"></i><u class="tl443">s</u></b></span></div></div><div class="pt443 k-rice" data-k="rice"><div class="ph443">밥 그릇</div><div class="pc443"><span class="sd443 n-same" data-w="rice"><span class="fdz443" style="width:40px;height:32px"><span class="fdp443 f-rice" data-fdp="rice" style="transform:scale(0.5)"><i class="em443">🍚</i></span></span><b class="lb443"><i class="tg443"></i></b></span><span class="sd443 n-many" data-w="bean"><span class="fdz443" style="width:40px;height:32px"><span class="fdp443 f-bean" data-fdp="bean" style="transform:scale(0.5)"><i class="em443">🫘</i></span></span><b class="lb443"><i class="tg443"></i><u class="tl443">s</u></b></span></div></div><div class="pt443 k-soup" data-k="soup"><div class="ph443">국 그릇</div><div class="pc443"><span class="sd443 n-same" data-w="soup"><span class="fdz443" style="width:40px;height:32px"><span class="fdp443 f-soup" data-fdp="soup" style="transform:scale(0.5)"><i class="em443">🥣</i></span></span><b class="lb443"><i class="tg443"></i></b></span><span class="sd443 n-many" data-w="egg"><span class="fdz443" style="width:40px;height:32px"><span class="fdp443 f-egg" data-fdp="egg" style="transform:scale(0.5)"><i class="em443">🥚</i></span></span><b class="lb443"><i class="tg443"></i><u class="tl443">s</u></b></span></div></div><div class="pt443 k-snack" data-k="snack"><div class="ph443">간식 접시</div><div class="pc443"><span class="sd443 n-same" data-w="cheese"><span class="fdz443" style="width:40px;height:32px"><span class="fdp443 f-cheese" data-fdp="cheese" style="transform:scale(0.5)"><i class="em443">🧀</i></span></span><b class="lb443"><i class="tg443"></i></b></span><span class="sd443 n-many" data-w="grape"><span class="fdz443" style="width:40px;height:32px"><span class="fdp443 f-grape" data-fdp="grape" style="transform:scale(0.5)"><i class="em443">🍇</i></span></span><b class="lb443"><i class="tg443"></i><u class="tl443">s</u></b></span></div></div><div class="pt443 k-sweet" data-k="sweet"><div class="ph443">달콤 접시</div><div class="pc443"><span class="sd443 n-same" data-w="jam"><span class="fdz443" style="width:40px;height:32px"><span class="fdp443 f-jam" data-fdp="jam" style="transform:scale(0.5)"><i class="em443">🍯</i></span></span><b class="lb443"><i class="tg443"></i></b></span><span class="sd443 n-many" data-w="pie"><span class="fdz443" style="width:40px;height:32px"><span class="fdp443 f-pie" data-fdp="pie" style="transform:scale(0.5)"><i class="em443">🥧</i></span></span><b class="lb443"><i class="tg443"></i><u class="tl443">s</u></b></span></div></div></div></div>
+
+  <div class="twocol">
+    <div style="flex:1;display:flex;flex-direction:column">
+      <h2><span class="n">3</span> is / are 고르기 <span class="hint">맞는 쪽에 동그라미</span></h2>
+      <div class="box3"><div class="ia3"><div class="ia" data-w="cheese"><span class="pic3"><span class="fdz443" style="width:40px;height:32px"><span class="fdp443 f-cheese" data-fdp="cheese" style="transform:scale(0.5)"><i class="em443">🧀</i></span></span></span><span class="s">Cheese <span class="two"><span class="ch3">is</span><i class="sl3">/</i><span class="ch3">are</span></span> salty.</span></div><div class="ia" data-w="grape"><span class="pic3"><span class="fdz443" style="width:40px;height:32px"><span class="fdp443 f-grape" data-fdp="grape" style="transform:scale(0.5)"><i class="em443">🍇</i></span></span></span><span class="s">Grapes <span class="two"><span class="ch3">is</span><i class="sl3">/</i><span class="ch3">are</span></span> sour.</span></div></div></div>
+    </div>
+    <div style="flex:1.2;display:flex;flex-direction:column">
+      <h2><span class="n">4</span> 내가 좋아하는 접시 <span class="hint">접시에 그리고 — 상자에서 골라 옮겨 써요</span></h2>
+      <div class="box4"><div class="draw4"><div class="dish4"></div><div class="ir4"><div class="s">I like <span class="ln"></span>.</div><div class="wb">상자 · bread · rice · soup · cheese · jam · cookies · beans · eggs · grapes · pies</div></div></div></div>
+    </div>
+  </div>
+
+  <div class="recap">오늘 열 단어 = <b>bread · cookie · rice · bean · soup · egg · cheese · grape · jam · pie</b> — 접시마다 그대로 하나, 꼬리 하나!</div>
+
+  <div class="parent">
+    <b>부모님께</b> · 이 칸은 <b>새 단어가 없는 「다시 닦기」 칸</b>이에요 — 열 개 모두 앞에서(Lv2 · Lv3 #16 · #30 · Lv4 #20) 만난 음식을 접시마다 둘씩 다시 모읍니다.
+    · <b>bread · rice · soup · cheese · jam</b> 은 덜어 먹는 음식이라 끝에 <b>s 를 붙이지 않아요</b> — 하나씩 집는 cookie · bean · egg · grape · pie 만 여럿이면 s.
+    · 이 활동지는 <b>보고 옮겨 쓰는</b> 종이입니다. <b>받아쓰기로 확인하지 마세요.</b><br>
+    <b>정답</b> · ② 빵 접시 — bread · cookies / 밥 그릇 — rice · beans / 국 그릇 — soup · eggs / 간식 접시 — cheese · grapes / 달콤 접시 — jam · pies · ③ 1 is · 2 are · ④ 고른 음식을 옮겨 쓰면 다 정답
+  </div>
+</body>
+</html>
