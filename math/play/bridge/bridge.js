@@ -10,9 +10,9 @@
 import { createStage, THREE, LITE, CALM, sleep } from '../common/stage3d.js?v=2';
 import * as A from '../common/ask.js?v=1';
 import * as R from './rules.js?v=6';
-import { wallet, audio, tone, art } from '../common/kit.js?v=7';
+import { wallet, audio, tone, art } from '../common/kit.js?v=8';
 import * as LP from '../common/loop.js?v=2';
-import * as H from '../common/hint.js?v=2';   /* 첫 판 한 줄 안내 · 손 그림 */
+import * as H from '../common/hint.js?v=3';   /* 첫 판 한 줄 안내 · 손 그림 */
 const CARGO = !new URLSearchParams(location.search).has('free');   /* ?free = 화물 싣기 없이(옛 방식, 하네스용) */
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)

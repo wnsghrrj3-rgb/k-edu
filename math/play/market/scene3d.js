@@ -3,9 +3,9 @@
  * 손님의 말풍선(주문 팻말)은 shop.js 의 .guest 를 사람 머리 위로 옮겨 쓴다. 물체는 모두 기성 재료(Quaternius Pirate Kit, CC0) — ../bridge/assets/ 를 같이 씀.
  * 물건 모습: 장작 = UI_Wood · 돌 = Environment_Rock_5 · 통 = Prop_Barrel · 물고기 통 = Prop_Bucket_Fishes(음식 꾸러미를 받으면 GOODS 표만 바꾼다). 빵집 물건은 모형이 없어 아래 칸(나무 상자 줄)에서만 담는다. */
 import { createStage, THREE, sleep, CALM } from '../common/stage3d.js?v=2';
-import { toast, tone, audio } from '../common/kit.js?v=7';
+import { toast, tone, audio } from '../common/kit.js?v=8';
 import * as M5 from './rules.js?v=3';
-import * as H from '../common/hint.js?v=2';   /* 첫 판 한 줄 안내 · 손 그림 */
+import * as H from '../common/hint.js?v=3';   /* 첫 판 한 줄 안내 · 손 그림 */
 
 // ── 내가 정한 수치
 const M = {

@@ -9,9 +9,9 @@
 import { createStage, THREE, LOOK, CALM, sleep } from '../common/stage3d.js?v=2';
 import * as A from '../common/ask.js?v=1';
 import * as R from './rules.js?v=3';
-import { wallet, audio, tone, art } from '../common/kit.js?v=7';
+import { wallet, audio, tone, art } from '../common/kit.js?v=8';
 import * as L from '../common/loop.js?v=2';
-import * as H from '../common/hint.js?v=2';   /* 첫 판 한 줄 안내 · 손 그림 */   /* N04: 실은 통의 물고기는 장터 생선 진열대로 */
+import * as H from '../common/hint.js?v=3';   /* 첫 판 한 줄 안내 · 손 그림 */   /* N04: 실은 통의 물고기는 장터 생선 진열대로 */
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)
 const T = { DECK: .45, TUB_X: [-2.7, -1.65, -.6], TUB_Z: 1.9, TUB_S: 1.3, BOAT: [2.35, 0, 1.25], BOAT_S: .48, ANNE: [.55, 1.7],
@@ -62,9 +62,17 @@ function setRod(){ let slot = null; S.anne.obj.traverse(m => { if (/^Weapon_/.te
   const rod = rig.scene.clone(); rod.position.copy(slot.position); rod.quaternion.copy(slot.quaternion); const ws = new THREE.Vector3(); slot.parent.getWorldScale(ws); rod.scale.setScalar(.62 / ws.x); slot.parent.add(stage.shadows(rod)); S.rod = rod; }
 function rodDraw(){ let b = $('rod'); if (!b) { b = document.createElement('button'); b.id = 'rod'; document.body.appendChild(b); b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); rodBuy(); }); wallet.onChange(() => rodDraw()); }
   let c = $('coins'); if (!c) { c = document.createElement('div'); c.id = 'coins'; document.body.appendChild(c); } const cv = `${art('coin')}<b>${wallet.coins()}</b>`; if (c.dataset.v !== cv) { c.dataset.v = cv; c.innerHTML = cv; }   /* 가진 동전(오른쪽 위) */
+  bookDraw();
   const n = R.nextRod(SAVE.rod); if (!n) { b.hidden = true; return; } b.hidden = false; const can = wallet.coins() >= n.price, v = `<span class="pic">${art('rod.' + (SAVE.rod + 2))}</span><span class="pr">${art('coin')}<b>${n.price}</b></span>`; if (b.dataset.v !== v) { b.dataset.v = v; b.innerHTML = v; } b.classList.toggle('can', can); }
 function rodBuy(){ audio(); const o = R.buyRod(SAVE.rod, wallet.coins()); if (!o.ok) { tone(200, .15, 'sine', .07); H.tell('rodpoor', '동전이 모자라요. 장터에서 벌어 오면 살 수 있어요!', { times: 3 }); S.log.push({ rod: 'poor' }); return; }
   wallet.spend(wallet.coins() - o.coins); SAVE.rod = o.level; wallet.save(); setRod(); rodDraw(); [523, 659, 784, 1047].forEach((f, i) => tone(f, .16, 'triangle', .12, i * .09)); stage.play(S.anne, 'Yes', true); S.log.push({ rod: o.level }); }
+
+// ── 도감: 처음 낚은 종류가 남는다(오른쪽 위 단추 → 열네 종 가운데 낚은 것은 또렷이, 아직인 것은 그림자). 보는 동안 해는 멈춘다
+const BOOK = [...FISH, SPECIAL.gold, SPECIAL.puffer, ...SPECIAL.big];
+function bookDraw(){ let b = $('bookBtn'); if (!b) { b = document.createElement('button'); b.id = 'bookBtn'; document.body.appendChild(b); b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); bookOpen(!S.bookOpen); });
+    const o = document.createElement('div'); o.id = 'book'; o.hidden = true; document.body.appendChild(o); o.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); bookOpen(false); }); }
+  const got = new Set(wallet.book('fish3d')), v = `${art('fishbook.' + BOOK[0])}<b>${BOOK.filter(n => got.has(n)).length}/${BOOK.length}</b>`; if (b.dataset.v !== v) { b.dataset.v = v; b.innerHTML = v; } }
+function bookOpen(on){ audio(); S.bookOpen = on; const o = $('book'); o.hidden = !on; if (!on) return; const got = new Set(wallet.book('fish3d')); o.innerHTML = `<div class="grid">${BOOK.map(n => `<span class="${got.has(n) ? 'on' : ''}">${art('fishbook.' + n)}</span>`).join('')}</div>`; tone(660, .1, 'triangle', .08); S.log.push({ book: 'open', n: got.size }); }
 
 // ── 카메라: 선착장(통 셋·배)이 화면 폭에 들어오고, 위로 앞바다가 보이게
 function aim(w, h){ const tall = h > w, asp = w / h; S.fk = tall ? 1.25 : 1;   /* 세로 화면은 물고기를 크게 */ camera.fov = tall ? 50 : 42; const half = Math.atan(Math.tan(camera.fov * Math.PI / 360) * asp), dist = Math.max(7.5, (tall ? 3.6 : 4.4) / Math.tan(half));
@@ -103,9 +111,9 @@ const fishText = f => f.kind === 'gold' ? '?' : f.v <= 5 ? '●'.repeat(f.v) : S
 const canvas = $('c');
 canvas.addEventListener('pointerdown', e => { if (!S.ready) return; audio(); if (S.intro) { S.skip = true; return; } if (S.missing || S.ask) return;
   if (S.thief && !S.thief.away) { const q = stage.screenOf(S.thief.obj); if (Math.hypot(q.x - e.clientX, q.y - e.clientY) < 90) { shoo(); return; } }
-  if (S.busy) return; const ray = stage.pointerRay(e), live = S.fish.filter(f => !f.caught), hit = ray.intersectObjects(live.map(f => f.obj), true)[0];
-  let f = null; if (hit) { let o = hit.object; while (o && !o.userData.fish) o = o.parent; f = o && o.userData.fish; }
-  if (!f) { let best = 1e9; for (const x of live) { const q = stage.screenOf(x.obj), d = Math.hypot(q.x - e.clientX, q.y - e.clientY); if (d < best) { best = d; f = x; } } if (best > T.PICK_PX) f = null; }
+  if (S.busy) return; const live = S.fish.filter(f => !f.caught);
+  /* 누른 자리에서 가장 가까운 물고기(물고기나 그 팻말 가운데) — 겹쳐 있어도 누른 것이 잡힌다 */
+  let f = null, best = T.PICK_PX; for (const x of live) { const q = stage.screenOf(x.obj), d = Math.min(Math.hypot(q.x - e.clientX, q.y - e.clientY), Math.hypot(q.x - e.clientX, q.y - 38 - e.clientY)); if (d < best) { best = d; f = x; } }
   if (f) hook(f); });
 
 function lineTo(f){ const a = stage.screenOf(new THREE.Vector3(T.ANNE[0] - .15, T.DECK + 1.3, T.ANNE[1] - .2)), b = stage.screenOf(f.obj), l = $('line'), len = Math.hypot(b.x - a.x, b.y - a.y);
@@ -119,7 +127,7 @@ async function hook1(f){ S.busy = true; lineTo(f); stage.play(S.anne, 'Sword', t
   if (o.kind === 'over') { S.overInTub = true; S.streak = 0; A.flames(0); wobble(tub); tone(220, .25, 'sine', .1, 0, 140); S.scatter = T.SCATTER;
     await stage.tween(f.obj.position, { x: f.x, y: T.SWIM_Y, z: f.z }, 700, t => t); f.caught = false; if (f.obj.userData.p) stage.play(f.obj.userData.p, 'Swimming_Normal'); f.dir *= -1; f.sp *= 1.5; stage.play(S.anne, 'No', true); S.busy = false; return; }
   // 통에 들어감
-  if (f.obj.userData.name && wallet.collect('fish3d', f.obj.userData.name)) S.log.push({ book: f.obj.userData.name });   /* 도감: 처음 낚은 종류 */
+  if (f.obj.userData.name && wallet.collect('fish3d', f.obj.userData.name)) { S.log.push({ book: f.obj.userData.name }); bookDraw(); const bb = $('bookBtn'); if (bb) { bb.classList.remove('new'); void bb.offsetWidth; bb.classList.add('new'); } tone(1047, .14, 'triangle', .09, .25); }   /* 도감: 처음 낚은 종류 */
   drop(f.obj); S.fish = S.fish.filter(x => x !== f); S.fill[S.ti].push(o.w); putInTub(S.ti, f, o.w); S.left = o.left; A.trayAdd(o.w, S.fill[S.ti].length > 1 ? '+' : '', f.kind === 'puffer' ? '부풂' : f.kind === 'gold' ? '황금' : '');
   tone(700 + S.fill[S.ti].reduce((a, b) => a + b, 0) * 25, .08, 'square', .06); if (f.kind === 'puffer') { tone(880, .2, 'sine', .08, 0, 1320); }
   if (o.kind === 'fit') { await closeTub(); return; }
@@ -173,7 +181,7 @@ function signsDraw(){ const sg = S.signs; S.tubs.forEach((t, k) => { const e = s
 
 // ── 한 장면의 일
 stage.frame((dt, t) => { S.t = t; if (!S.ready) return;
-  const thinking = !S.intro && !S.missing && (!S.busy || S.ask);
+  const thinking = !S.intro && !S.missing && !S.bookOpen && (!S.busy || S.ask);
   if (thinking && !CALM && !S.ask) { S.clock = Math.min(1, S.clock + dt / (S.trip.budget * R.rod(SAVE.rod).sun)); dusk(S.clock); if (S.clock >= 1) miss();
     if (S.clock > T.BEAT && t - S.beat > .25 + (1 - S.clock) * 2.4) { S.beat = t; tone(96, .09, 'sine', .16); tone(72, .12, 'sine', .12, .09); } }
   // 물고기가 헤엄친다(넘친 뒤엔 잠깐 흩어짐)
