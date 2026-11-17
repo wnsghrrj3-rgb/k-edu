@@ -1,0 +1,49 @@
+/* 케이모션 과학실 — 화면 위 글자는 최소(의뢰 쪽지 한 줄 + 카메라 창). 게임 UI 띠를 깔지 않는다. */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#1a1c1f;color:var(--text,#eef2ff);font-family:var(--font,'Pretendard','Noto Sans KR',sans-serif);overflow:hidden;-webkit-user-select:none;user-select:none}
+#app{position:fixed;inset:0;touch-action:none}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
+#hud{position:absolute;inset:0;pointer-events:none}
+
+/* 의뢰 쪽지 (왼쪽 위, 한 줄) */
+.note{position:absolute;left:18px;top:16px;max-width:min(560px,70vw);background:#f6f1e3;color:#2b2620;border-radius:4px;padding:12px 18px 12px 16px;font-size:clamp(1rem,2.1vw,1.35rem);font-weight:800;line-height:1.35;box-shadow:0 8px 22px rgba(0,0,0,.35);transform:rotate(-1.2deg);transition:opacity .3s,transform .3s}
+.note::before{content:'';position:absolute;left:50%;top:-7px;width:44px;height:14px;margin-left:-22px;background:rgba(255,236,170,.75);transform:rotate(2deg)}
+.note.flip{transform:rotate(-1.2deg) scale(1.04)}
+.note small{display:block;font-size:.72em;font-weight:600;color:#6b6152;margin-top:4px}
+
+/* 카메라 창 (오른쪽 위) */
+.cam{position:absolute;right:14px;top:14px;width:min(15vw,180px);aspect-ratio:4/3;background:#000;border-radius:10px;overflow:hidden;border:2px solid rgba(255,255,255,.85);box-shadow:0 6px 16px rgba(0,0,0,.35);transition:width .35s;pointer-events:auto}
+.cam.off{display:none}
+.cam.big{width:min(46vw,520px)}
+.cam video{display:none}.cam canvas{width:100%;height:100%;display:block}
+.cam .st{position:absolute;left:6px;bottom:4px;font-size:.62rem;color:#fff;background:rgba(0,0,0,.5);padding:1px 6px;border-radius:999px}
+.cam .ask{position:absolute;inset:auto 0 18% 0;text-align:center;font-weight:900;font-size:1.2rem;color:#fff;text-shadow:0 2px 6px #000;display:none}
+.cam.big .ask{display:block}
+
+/* 떠오르는 글자(망치 세기 등) */
+.pop{position:absolute;transform:translate(-50%,-50%);font-weight:900;color:#fff;text-shadow:0 3px 10px rgba(0,0,0,.6);pointer-events:none;animation:pop 1s ease-out forwards;white-space:nowrap}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-120%) scale(1)}}
+
+/* 「내 몸」 자리 (화면 아래 가운데) — 쓰기(착용) */
+.body-spot{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);width:min(30vw,320px);height:min(12vh,96px);border:2px dashed rgba(255,255,255,.35);border-radius:60px 60px 14px 14px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.55);font-weight:800;font-size:.95rem;transition:border-color .2s,background .2s;opacity:0}
+.body-spot.show{opacity:1}
+.body-spot.hot{border-color:#ffe08a;background:rgba(255,224,138,.12);color:#ffe08a}
+/* 보안경 테 (쓰면 화면 가장자리에 살짝) */
+.goggle{position:absolute;inset:-4vh -4vw;border:5vh solid rgba(40,48,58,.0);border-radius:44% 44% 38% 38%/52% 52% 40% 40%;box-shadow:inset 0 0 0 0 rgba(0,0,0,0);transition:all .5s;pointer-events:none}
+.goggle.on{border-color:rgba(40,48,58,.55);box-shadow:inset 0 0 60px rgba(120,170,200,.18)}
+
+.tools{position:absolute;right:14px;bottom:12px;display:flex;gap:8px;pointer-events:auto}
+.tools button{background:rgba(20,22,26,.6);color:#eee;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:6px 12px;font:inherit;font-size:.85rem;font-weight:700;cursor:pointer}
+.dbg{position:absolute;left:18px;bottom:12px;font:12px/1.45 ui-monospace,monospace;color:#cfe;background:rgba(0,0,0,.45);padding:6px 9px;border-radius:6px;white-space:pre;pointer-events:none}
+
+/* 시작 화면 */
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:radial-gradient(ellipse at 50% 30%,#2b3036,#141619);text-align:center;padding:24px;z-index:10}
+.ov.hidden{display:none}
+.ov .k{font-size:.85rem;letter-spacing:.32em;color:#9fb4c8;font-weight:800}
+.ov h1{font-size:clamp(2rem,6vw,3.4rem);font-weight:900;color:#f3f5f7;letter-spacing:-.02em}
+.ov p{color:#b8c2cc;line-height:1.7;max-width:640px;font-size:1.05rem}
+.ov .row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.ov .pick{background:#f3f5f7;color:#1c2126;border:0;border-radius:18px;padding:18px 26px;font:inherit;font-size:1.15rem;font-weight:900;cursor:pointer;min-width:210px;box-shadow:0 10px 26px rgba(0,0,0,.35)}
+.ov .pick small{display:block;font-size:.78rem;font-weight:600;color:#56606a;margin-top:4px}
+.ov .err{color:#ffb4a8;font-size:.95rem}
+a.back{position:absolute;left:16px;top:12px;color:#9fb4c8;text-decoration:none;font-weight:800;font-size:.9rem;z-index:11}
