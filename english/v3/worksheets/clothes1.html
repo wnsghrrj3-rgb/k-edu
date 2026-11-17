@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv4 #8 옷① 10단어 — headtoe.html(Lv4 #5) 판형 계승, V트랙 주황
+     ★그림 = 화면과 같은 그림(BOD · CLO408CSS 블록 그대로) — 그림 마크업 = 화면 CLO408 dz408(px,'ws') · pz(w,px,true) 를 생성기 ws/gen_clothes1.js 로 그대로 뽑음 + .still(움직임 끔).
+     ★사람 밑그림(#5 · Lv2 #15 같은 사람 · 몸 자리 번호 1~5 머리 · 몸통 · 허리 · 아래 · 발 · 단어 글자 0) · ① 따라쓰기 10(위 판 / 아래 판) · ② 위 / 아래 상자 나누기
+     · ③ 짝 고르기 3(skirt / dress · jacket / vest · shoe / sock — 그림 보고) · ④ 오늘 내 옷 그리기 + I am wearing a ___.(상자 shirt · skirt · dress · jacket · sweater · vest).
+     받아쓰기 금지. -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root { --primary:#FF8A3D; --green:#4CAF50; --red:#F44336; --subtext:#888780; --border:#F7DFCB; --green-light:#E8F5E9; }
+  @page { size: A4; margin: 10mm 12mm 8mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.45; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d9702a; padding-bottom: 5px; }
+  .brand { font-size: 13px; font-weight: 700; color: #9c4d13; }
+  .brand .lv { background: #d9702a; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 7px; background: #fdeee1; border: 2px solid #d9702a; border-radius: 12px; padding: 7px 13px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 24px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #9c4d13; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 15.5px; font-weight: 800; color: #4a2408; }
+  .keypoint { margin-top: 6px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 5px 12px; font-size: 12px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  .keypoint .big { font-size: 13px; font-weight: 800; color: #d85a30; }
+  h2 { margin-top: 8px; font-size: 13px; color: #9c4d13; display: flex; align-items: center; gap: 7px; }
+  h2 .n { background: #9c4d13; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2 .hint { font-weight: 400; font-size: 10px; color: #888780; }
+  .trace { display: flex; gap: 8px; margin-top: 3px; }
+  .traceword { text-align: center; flex: 1; min-width: 56px; position: relative; }
+  .outline { font-size: 19px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.4px #c4c2b8; letter-spacing: 1px; }
+  .line { border-bottom: 1.5px solid #d3d1c7; height: 14px; margin-top: 2px; }
+  .twocol { display: flex; gap: 10px; margin-top: 4px; align-items: stretch; }
+  .recap { margin-top: 7px; background: #4a2408; color: #fdeee1; border-radius: 10px; padding: 7px 13px; text-align: center; font-size: 12px; }
+  .recap b { color: #fac775; }
+  .parent { margin-top: 6px; border-top: 1px dashed #b4b2a9; padding-top: 5px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+  /* 그림 — 화면 블록 그대로(움직임은 .still 로 꺼짐) */
+/*BOD-BEGIN — #15 몸 그림 단일 원천(blocks/BOD.css → sync_blocks.py 주입, 하네스가 4파일 동일 검사).
+  ★같은 사람 한 명 + 「어디를 감싸느냐」만 바뀐다(.sp 분홍 동그라미) — #7 .act · Lv1 #15 ⭐ 크기 계보.
+    이모지를 쓰면 face 😀 · smile 😊 가 둘 다 웃는 얼굴이라 그림에서 갈리지 않는다(#11·#13 이모지 그대로 못 씀).
+  ★bone 은 몸 「안」 — 왼팔 엑스레이 창(.bn)으로만 보인다. hand 는 「밖」(팔 끝).
+  ★감싸는 자리(.p-* .sp)와 짚는 자리(.z-*)는 같은 좌표 선언 하나 — 그림과 손이 어긋날 수 없다. */
+.bod{position:relative;display:inline-block;width:6em;height:10em;font-size:10px;vertical-align:middle;flex:none}
+.bod>i{position:absolute;display:block;font-style:normal}
+.bod .hd{left:1.5em;top:.55em;width:3em;height:3.1em;border-radius:50%;background:#FFD9B8}
+.bod .hr{left:1.35em;top:.25em;width:3.3em;height:1.35em;border-radius:1.65em 1.65em .5em .5em;background:#6B4A2E}
+.bod .ey{left:2.15em;top:1.9em;width:.45em;height:.45em;border-radius:50%;background:#333;box-shadow:1.25em 0 0 #333}
+.bod .ns{left:2.83em;top:2.25em;width:.34em;height:.5em;border-radius:.2em .2em .3em .3em;background:#E39A72}
+.bod .mo{left:2.4em;top:2.75em;width:1.2em;height:.5em;border-bottom:.22em solid #D2453A;border-radius:0 0 .7em .7em}
+.bod .tr{left:1.95em;top:3.75em;width:2.1em;height:3em;border-radius:.6em .6em .3em .3em;background:#7FB3E6}
+.bod .ar{left:1.2em;top:3.9em;width:.65em;height:2.4em;border-radius:.3em;background:#FFD9B8;box-shadow:2.95em 0 0 #FFD9B8}
+.bod .hn{left:1.02em;top:6.2em;width:1em;height:1em;border-radius:50%;background:#F7BE93;box-shadow:2.95em 0 0 #F7BE93}
+.bod .lg{left:2.15em;top:6.7em;width:.7em;height:2.2em;background:#4A6FA5;box-shadow:1em 0 0 #4A6FA5}
+.bod .ft{left:1.7em;top:8.8em;width:1.25em;height:.65em;border-radius:.65em .65em .2em .2em;background:#5A4030;box-shadow:1.35em 0 0 #5A4030}
+.bod .bn{left:1.2em;top:3.9em;width:.65em;height:2.4em;border-radius:.3em;background:#3F4B57;opacity:0}
+.bod .bn::before{content:'';position:absolute;left:.22em;top:.45em;width:.21em;height:1.5em;background:#fff;border-radius:.1em}
+.bod .bn::after{content:'';position:absolute;left:.1em;top:.25em;width:.45em;height:.32em;border-radius:50%;background:#fff;box-shadow:0 1.6em 0 #fff}
+.bod.p-bone .bn,.bod.xr .bn{opacity:1}
+.bod .sp{border:.2em solid #FF3D7F;border-radius:50%;background:rgba(255,61,127,.13);opacity:0;pointer-events:none;z-index:6}
+.bod[class*=" p-"] .sp{opacity:1;animation:bodpulse 1.3s ease-in-out infinite}
+@keyframes bodpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.bod.p-face .sp,.bod .z-face{left:1.1em;top:.2em;width:3.8em;height:3.8em}
+.bod.p-hair .sp,.bod .z-hair{left:1.05em;top:-.25em;width:3.9em;height:1.95em}
+.bod.p-eye .sp,.bod .z-eye{left:1.8em;top:1.45em;width:2.4em;height:1em}
+.bod.p-nose .sp,.bod .z-nose{left:2.6em;top:2.05em;width:.8em;height:.9em}
+.bod.p-smile .sp,.bod .z-smile{left:2.15em;top:2.95em;width:1.7em;height:.8em}
+.bod.p-hand .sp,.bod .z-hand{left:.65em;top:5.85em;width:4.7em;height:1.7em}
+.bod.p-bone .sp,.bod .z-bone{left:.85em;top:3.6em;width:1.35em;height:2.2em}
+.bod.p-feet .sp,.bod .z-feet{left:1.3em;top:8.35em;width:3.4em;height:1.55em}
+.bod .hz{border-radius:50%;cursor:pointer;z-index:2}
+.bod .z-face{z-index:1}.bod .z-eye,.bod .z-nose,.bod .z-smile{z-index:4}
+.bod .hz.hit{background:rgba(255,193,7,.35)}
+.bod.blank .hz{border:.08em dashed rgba(217,112,42,.6)}
+.bod.blank .hr,.bod.blank .ey,.bod.blank .ns,.bod.blank .mo{visibility:hidden}
+.bod.blank.has-hair .hr,.bod.blank.has-eye .ey,.bod.blank.has-nose .ns,.bod.blank.has-smile .mo{visibility:visible;animation:bodpop .4s}
+@keyframes bodpop{0%{transform:scale(.3)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+/*BOD-END*/
+/*CLO408CSS-BEGIN — Lv4 #8 옷① 그림·옷 입히기 판·뒷면 장면(blocks/CLO408CSS.css → sync_blocks.py 주입 · 4파일 + 활동지 문자 단위 동일, 하네스 A4).
+  ★몸 = Lv2 #15 BOD 한 사람 그대로(BOD 원본 선언은 손대지 않는다 — #5 판형) · 옷은 몸 그림 옆에 겹치는 한 벌(.wr408)로만 더한다.
+  ★상자(.pz408 · .dz408) = 6em × 11em · 몸은 1em 아래(모자 자리) — 옷 좌표 = 몸 좌표 + 1em(세로).
+  ★옷 자리 = 몸 부위 그대로: hat 머리 위 · shirt·sweater·jacket·vest 몸통(jacket·sweater = 팔까지 · vest = 팔 없음) · belt 허리 · skirt 허리 아래만 · dress 몸통부터 무릎까지 통째로 · sock·shoe 발.
+  ★옷 입히기 판(.dz408)은 옷 열 벌을 다 품고 입은 것만 켠다(.on) — 같은 자리는 갈아입는다(wearOn). */
+.pz408,.dz408{position:relative;display:inline-block;width:6em;height:11em;line-height:0;vertical-align:middle;text-align:left;flex:none}
+.pz408>.bod,.dz408>.bod{position:absolute;left:0;top:1em;font-size:inherit}
+.wr408{position:absolute;display:block;font-style:normal;line-height:1;pointer-events:none}
+.wr408>i{display:inline-block;font-style:normal;line-height:1}
+.dz408 .wr408{display:none}
+.dz408 .wr408.on{display:block;animation:bodpop .4s}
+.wr408.wr-hat{left:1.75em;top:0em;width:2.5em;height:2.5em;z-index:5}
+.wr408.wr-hat>i{font-size:2.5em}
+.wr408.wr-shirt{left:1.05em;top:4.3em;width:3.9em;height:3.9em;z-index:1}
+.wr408.wr-shirt>i{font-size:3.9em}
+.wr408.wr-dress{left:.7em;top:4.25em;width:4.6em;height:4.6em;z-index:2}
+.wr408.wr-dress>i{font-size:4.6em}
+.wr408.wr-shoe{left:1.45em;top:9.45em;width:3em;height:1.5em;z-index:3;white-space:nowrap}
+.wr408.wr-shoe>i{font-size:1.5em}
+.wr408.wr-sock{left:1.45em;top:9.35em;width:3em;height:1.5em;z-index:2;white-space:nowrap}
+.wr408.wr-sock>i{font-size:1.5em}
+.wr408.wr-skirt{left:1.7em;top:7.25em;width:2.6em;height:1.75em;z-index:1;background:repeating-linear-gradient(90deg,rgba(0,0,0,.13) 0 .08em,transparent .08em .45em),#E64980;clip-path:polygon(22% 0,78% 0,100% 100%,0 100%)}
+.wr408.wr-jacket{left:1.85em;top:4.65em;width:2.3em;height:3.2em;z-index:4;background:#0B7285;border-radius:.5em .5em .25em .25em}
+.wr408.wr-jacket::before{content:'';position:absolute;left:-.75em;top:.2em;width:.85em;height:2.45em;border-radius:.35em;background:#0B7285;box-shadow:2.95em 0 0 #0B7285}
+.wr408.wr-jacket::after{content:'';position:absolute;left:1.08em;top:.1em;width:.14em;height:3em;background:repeating-linear-gradient(#FFD43B 0 .12em,#5C940D .12em .22em)}
+.wr408.wr-jacket .zt408{position:absolute;left:.97em;top:2.6em;width:.36em;height:.45em;border-radius:.1em;background:#FAB005;z-index:1}
+.wr408.wr-sweater{left:1.85em;top:4.65em;width:2.3em;height:3.05em;z-index:2;background:repeating-linear-gradient(#F59F00 0 .35em,#FFD8A8 .35em .6em);border-radius:.6em .6em .25em .25em;border-bottom:.2em solid #E67700;box-sizing:border-box}
+.wr408.wr-sweater::before{content:'';position:absolute;left:-.75em;top:.2em;width:.85em;height:2.45em;border-radius:.35em;background:repeating-linear-gradient(#F59F00 0 .35em,#FFD8A8 .35em .6em);box-shadow:2.95em 0 0 #F59F00}
+.wr408.wr-sweater::after{content:'';position:absolute;left:.75em;top:-.05em;width:.8em;height:.4em;border-radius:0 0 .4em .4em;background:#E67700}
+.wr408.wr-vest{left:1.85em;top:4.65em;width:2.3em;height:2.9em;z-index:3;background:#2F9E44;border-radius:.3em .3em .25em .25em;clip-path:polygon(0 0,33% 0,50% 32%,67% 0,100% 0,100% 100%,0 100%)}
+.wr408.wr-vest::after{content:'';position:absolute;left:1.05em;top:1.25em;width:.2em;height:.2em;border-radius:50%;background:#FFE066;box-shadow:0 .5em 0 #FFE066,0 1em 0 #FFE066}
+.wr408.wr-belt{left:1.85em;top:7.1em;width:2.3em;height:.45em;z-index:5;background:#212529;border-radius:.08em}
+.wr408.wr-belt::after{content:'';position:absolute;left:.85em;top:-.08em;width:.6em;height:.6em;box-sizing:border-box;border:.12em solid #FAB005;border-radius:.1em}
+/* 옷 입히기 판 — 큰 사람 + 옷장 열 칸(짚을 차례 깜빡 · 입은 칸 초록 · 틀린 칸 흔들림 · 소리 0) */
+.bd408{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:6px 0}
+.cl408{display:grid;grid-template-columns:repeat(5,auto);gap:5px;justify-content:center}
+.ck408{position:relative;display:inline-flex;flex-direction:column;align-items:center;border:2px solid var(--border);border-radius:10px;background:#fff;padding:2px 3px;cursor:pointer;line-height:0}
+.ck408 .tg408{display:block;font-style:normal;font-size:12px;line-height:1.3;color:#C9B39C;min-width:42px;text-align:center}
+.ck408.now{border:2px dashed #F08C00;background:rgba(255,212,59,.3);animation:tapBlink 1.1s infinite}
+.ck408.found,.ck408.correct{border-color:var(--green);background:var(--green-light)}
+.ck408.found .tg408{color:var(--primary)}
+.ck408.wrong,.ck408.bad{background:rgba(244,67,54,.2);animation:shake .4s}
+/* 몸 자리 다섯(숙달 「오늘 뭐 입지?」 · 종이 번호) */
+.dz408 .hz8{position:absolute;display:block;font-style:normal;border-radius:.6em;cursor:pointer;z-index:7}
+.dz408 .z8-hd{left:1.1em;top:0em;width:3.8em;height:4.7em}
+.dz408 .z8-up{left:1em;top:4.7em;width:4em;height:2em}
+.dz408 .z8-wa{left:1.6em;top:6.7em;width:2.8em;height:1.1em}
+.dz408 .z8-lo{left:1.6em;top:7.8em;width:2.8em;height:1.9em}
+.dz408 .z8-ft{left:1.3em;top:9.7em;width:3.4em;height:1.3em}
+.dz408.m-pick .hz8{border:.08em dashed rgba(217,112,42,.55)}
+.dz408 .hz8.bad{background:rgba(244,67,54,.25);animation:shake .4s}
+.dz408 .hz8.ok{background:rgba(76,175,80,.18)}
+.dz408 .hz8 .wn408{position:absolute;right:-.2em;top:50%;transform:translateY(-50%);width:15px;height:15px;border-radius:50%;background:#9c4d13;color:#fff;font-size:10px;line-height:15px;text-align:center;font-weight:800}
+.dz408.m-ws .hz8{border:1.5px dashed #c9a27e;cursor:default}
+/* 뒷면 장면 — 말하는 사람(나 · 이름표) + 같은 사람이 옷을 입은 그림 + 소품 */
+.ss408{position:relative;display:inline-block;width:11em;height:11.5em;line-height:0;vertical-align:middle;overflow:hidden;border-radius:.9em;background:#FFF9DB;text-align:left}
+.ss408>.pz408{position:absolute;left:3.8em;top:.25em}
+.ss408 .me408{position:absolute;left:.3em;top:.3em;width:2.3em;height:2.3em;border-radius:50%;background:#FFE066;border:.18em solid #F0C419;color:#7a5600;font-size:1.15em;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-style:normal;box-sizing:border-box}
+.nm408{display:inline-flex;align-items:center;gap:2px;font-size:14px;line-height:1.3;font-style:normal;background:#fff;border:2px solid #FF8A3D;color:#FF8A3D;border-radius:8px;padding:0 6px;font-family:'Jua',sans-serif}
+.nm408 .dd408{font-size:16px;font-style:normal}
+.ss408 .nm408{position:absolute;left:2px;top:2px;font-size:11px;padding:0 4px}
+.ss408 .nm408 .dd408{font-size:13px}
+.pz408>i:not(.wr408){position:absolute;display:block;font-style:normal}
+/* shirt · dress — 뒷면 문장의 색(red · pink) — 이모지 색은 기기마다 달라 장면에서만 물들인다 */
+.pz408.rd408 .wr-shirt>i{filter:grayscale(1) sepia(1) saturate(6) hue-rotate(-38deg) brightness(.92)}
+.pz408.pk408 .wr-dress>i{filter:grayscale(1) sepia(1) saturate(4) hue-rotate(-72deg) brightness(1.12)}
+/* jacket — ★진행형 1자리: 지퍼 손잡이가 아래에서 위로 올라간다(움직이는 그림) */
+.pz408.zp408 .wr-jacket .zt408{animation:zp408 1.8s ease-in-out infinite}
+@keyframes zp408{0%,15%{top:2.6em}60%,100%{top:.1em}}
+/* jacket — Ben 해 아래 점퍼 다섯 겹(허세 「안 더워!」) */
+.pz408.ly408 .wr-jacket{box-shadow:0 0 0 .14em #F08C00,0 0 0 .28em #E64980,0 0 0 .42em #7950F2,0 0 0 .56em #1C7ED6}
+.pz408 .su408{left:4.4em;top:.4em;width:1.5em;height:1.5em;border-radius:50%;background:#FFD43B;box-shadow:0 0 0 .25em rgba(255,212,59,.45)}
+.pz408 .hb408{left:-3.6em;top:4.6em;padding:.25em .4em;border:.1em solid #FF8A3D;border-radius:.6em;background:#fff;color:#FF8A3D;font-size:1em;line-height:1.2;white-space:nowrap}
+/* belt — Amy 허리띠가 바닥까지 끌린다(과장) */
+.pz408 .bt408{left:3.55em;top:7.4em;width:.32em;height:3.4em;background:#212529;border-radius:.1em}
+.pz408 .bt408::after{content:'';position:absolute;left:0;bottom:-.05em;width:2.3em;height:.32em;background:#212529;border-radius:.1em}
+/* sock — Max 양말에 주스 얼룩 + 젖은 물방울(CSS) */
+.pz408 .js408{left:3.2em;top:9.6em;width:.8em;height:.55em;border-radius:50%;background:rgba(255,146,43,.85);z-index:4}
+.pz408 .dp408{left:1.1em;top:9.05em;width:.3em;height:.3em;border-radius:50%;background:#74C0FC;box-shadow:3.2em .25em 0 #74C0FC,.45em .65em 0 #74C0FC;z-index:4}
+/* 움직임 끄기(종이 · 작은 칸) */
+.pz408.still *,.ss408.still *,.dz408.still *{animation:none!important}
+/*CLO408CSS-END*/
+  .figrow { display: flex; gap: 12px; align-items: center; margin-top: 4px; }
+  .figbox { flex: none; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 6px 14px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .zkey { display: flex; gap: 6px; font-size: 10px; color: #5f5e5a; }
+  .zkey b { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #9c4d13; color: #fff; font-size: 9px; line-height: 14px; text-align: center; }
+  .sortbox { flex: 1; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 8px 12px; display: flex; flex-direction: column; gap: 7px; }
+  .bank { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+  .bank .bw { font-size: 15px; font-weight: 800; color: #4a2408; letter-spacing: .3px; }
+  .ud { display: flex; gap: 12px; }
+  .udc { flex: 1; border: 1.8px dashed #c9a27e; border-radius: 10px; padding: 4px 8px 6px; background: #fff; }
+  .udh { font-size: 11px; font-weight: 800; color: #9c4d13; }
+  .udh i { font-style: normal; font-weight: 400; color: #888780; }
+  .udl { border-bottom: 1.5px solid #d3d1c7; height: 21px; }
+  .box3, .box4 { flex: 1; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 5px 10px; }
+  .pr3 { display: flex; justify-content: space-between; gap: 6px; }
+  .pi3 { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .pic3 { line-height: 0; }
+  .two3 { font-size: 14px; font-weight: 800; color: #4a2408; display: flex; gap: 4px; align-items: center; }
+  .two3 .sl3 { font-style: normal; color: #b4b2a9; font-weight: 400; }
+  .draw4 { display: flex; gap: 8px; align-items: center; }
+  .dbox { flex: none; width: 92px; height: 118px; border: 1.8px dashed #c9a27e; border-radius: 10px; background: #fff; }
+  .ir4 { display: flex; flex-direction: column; gap: 3px; }
+  .s { font-size: 15px; font-weight: 800; color: #4a2408; display: flex; align-items: flex-end; gap: 4px; letter-spacing: .3px; flex-wrap: wrap; }
+  .s .ln { display: inline-block; width: 70px; border-bottom: 1.8px solid #b4b2a9; height: 20px; }
+  .wb { font-size: 10px; color: #888780; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv4 · 어휘 #8</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main">옷도 위에서 아래로 — 머리엔 hat, 발엔 shoe.</div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 위 판 — hat · shirt · sweater · jacket · vest / 아래 판 — belt · skirt · dress · sock · shoe.
+    <span class="big">아래만 skirt, 통째로 dress · 팔까지 jacket, 팔 없으면 vest</span>
+  </div>
+
+  <h2><span class="n">1</span> 따라 써요 <span class="hint">흐린 글자를 따라 써요 — 위 줄 위 판 · 아래 줄 아래 판</span></h2>
+  <div class="trace"><div class="traceword"><div class="outline">hat</div><div class="line"></div></div><div class="traceword"><div class="outline">shirt</div><div class="line"></div></div><div class="traceword"><div class="outline">sweater</div><div class="line"></div></div><div class="traceword"><div class="outline">jacket</div><div class="line"></div></div><div class="traceword"><div class="outline">vest</div><div class="line"></div></div></div>
+  <div class="trace"><div class="traceword"><div class="outline">belt</div><div class="line"></div></div><div class="traceword"><div class="outline">skirt</div><div class="line"></div></div><div class="traceword"><div class="outline">dress</div><div class="line"></div></div><div class="traceword"><div class="outline">sock</div><div class="line"></div></div><div class="traceword"><div class="outline">shoe</div><div class="line"></div></div></div>
+
+  <h2><span class="n">2</span> 위 / 아래 상자 나누기 <span class="hint">단어를 읽고 — 몸 자리 1 · 2 면 위 상자, 3 · 4 · 5 면 아래 상자에 옮겨 써요</span></h2>
+  <div class="figrow">
+    <div class="figbox"><span class="dz408 m-ws" style="font-size:19px"><span class="bod" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i></span><i class="hz8 z8-hd" data-z="hd"><b class="wn408">1</b></i><i class="hz8 z8-up" data-z="up"><b class="wn408">2</b></i><i class="hz8 z8-wa" data-z="wa"><b class="wn408">3</b></i><i class="hz8 z8-lo" data-z="lo"><b class="wn408">4</b></i><i class="hz8 z8-ft" data-z="ft"><b class="wn408">5</b></i></span><div class="zkey"><span><b>1</b> 머리</span><span><b>2</b> 몸통</span><span><b>3</b> 허리</span><span><b>4</b> 아래</span><span><b>5</b> 발</span></div></div>
+    <div class="sortbox"><div class="bank"><span class="bw" data-w="belt">belt</span><span class="bw" data-w="hat">hat</span><span class="bw" data-w="skirt">skirt</span><span class="bw" data-w="jacket">jacket</span><span class="bw" data-w="sock">sock</span><span class="bw" data-w="shirt">shirt</span><span class="bw" data-w="dress">dress</span><span class="bw" data-w="vest">vest</span><span class="bw" data-w="shoe">shoe</span><span class="bw" data-w="sweater">sweater</span></div><div class="ud"><div class="udc" data-k="up"><div class="udh">위 상자 <i>1 · 2</i></div><div class="udl"></div><div class="udl"></div><div class="udl"></div><div class="udl"></div><div class="udl"></div></div><div class="udc" data-k="lo"><div class="udh">아래 상자 <i>3 · 4 · 5</i></div><div class="udl"></div><div class="udl"></div><div class="udl"></div><div class="udl"></div><div class="udl"></div></div></div></div>
+  </div>
+
+  <div class="twocol">
+    <div style="flex:1;display:flex;flex-direction:column">
+      <h2><span class="n">3</span> 짝 고르기 <span class="hint">그림을 보고 — 맞는 단어에 동그라미</span></h2>
+      <div class="box3"><div class="pr3"><div class="pi3" data-w="skirt"><span class="pic3"><span class="pz408 still" data-vs="skirt" style="font-size:6px"><span class="bod" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i></span><i class="wr408 wr-skirt" data-g="skirt"></i></span></span><span class="two3"><span class="ch3">skirt</span><i class="sl3">/</i><span class="ch3">dress</span></span></div><div class="pi3" data-w="vest"><span class="pic3"><span class="pz408 still" data-vs="vest" style="font-size:6px"><span class="bod" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i></span><i class="wr408 wr-vest" data-g="vest"></i></span></span><span class="two3"><span class="ch3">jacket</span><i class="sl3">/</i><span class="ch3">vest</span></span></div><div class="pi3" data-w="shoe"><span class="pic3"><span class="pz408 still" data-vs="shoe" style="font-size:6px"><span class="bod" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i></span><i class="wr408 wr-shoe" data-g="shoe"><i>👟</i><i>👟</i></i></span></span><span class="two3"><span class="ch3">shoe</span><i class="sl3">/</i><span class="ch3">sock</span></span></div></div></div>
+    </div>
+    <div style="flex:1.1;display:flex;flex-direction:column">
+      <h2><span class="n">4</span> 오늘 내 옷 <span class="hint">네모에 그리고 — 상자에서 골라 옮겨 써요</span></h2>
+      <div class="box4"><div class="draw4"><div class="dbox"></div><div class="ir4"><div class="s">I am wearing a <span class="ln"></span>.</div><div class="wb">상자 · shirt · skirt · dress · jacket · sweater · vest</div></div></div></div>
+    </div>
+  </div>
+
+  <div class="recap">오늘 열 단어 = <b>shirt · skirt · dress · shoe · jacket · sweater · vest · belt · sock · hat</b> — 머리부터 발끝까지!</div>
+
+  <div class="parent">
+    <b>부모님께</b> · <b>pants</b> · <b>jeans</b> 처럼 늘 끝에 s 가 붙는 옷 이름은 아직 배우지 않아요 — 하나와 여럿이 흐려져 뒤로 미뤘습니다.
+    · <b>shirt</b> · <b>skirt</b> 의 ir 은 /어-ㄹ/ 소리예요 — 이 칸에서는 <b>통째로</b> 읽습니다.
+    · 이 활동지는 <b>보고 옮겨 쓰는</b> 종이입니다. <b>받아쓰기로 확인하지 마세요.</b><br>
+    <b>정답</b> · ② 위 상자 — hat · shirt · sweater · jacket · vest / 아래 상자 — belt · skirt · dress · sock · shoe · ③ skirt · vest · shoe · ④ 고른 옷이면 다 정답
+  </div>
+</body>
+</html>
