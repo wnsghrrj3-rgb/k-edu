@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>장날 — 케이월드</title>
+<script type="importmap">
+{ "imports": { "three": "/labs/vendor/three185/three.module.min.js" } }
+</script>
+<link rel="stylesheet" href="../scene/kit.css?v=1">
+<style>
+html{background:#241e16}
+#ov{background:rgba(26,20,14,.88)}
+.pill{background:rgba(62,48,30,.88)}
+#todo div{background:rgba(62,48,30,.78)}
+#todo div.main{background:rgba(62,48,30,.92)}
+#days{position:fixed;left:50%;transform:translateX(-50%);top:12px;display:flex;gap:6px;pointer-events:none}
+#days span{width:34px;height:30px;border-radius:9px;background:rgba(62,48,30,.85);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#e8dcc0;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+#days span.now{background:#ffcf4d;color:#3a2a00;transform:scale(1.12)}
+#days span.past{opacity:.4}
+#days span.drum{background:#a8443a;color:#fff}
+#meters{position:fixed;left:50%;transform:translateX(-50%);top:52px;display:flex;gap:12px;pointer-events:none}
+.meter{background:rgba(62,48,30,.88);border-radius:12px;padding:5px 10px;font-weight:800;font-size:14px;color:#fff;min-width:150px;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+.meter b{display:block;height:9px;border-radius:5px;background:rgba(255,255,255,.18);overflow:hidden;margin-top:3px;position:relative}
+.meter b i{display:block;height:100%;width:0}
+.meter b s{position:absolute;top:-2px;bottom:-2px;width:3px;background:#fff}
+#mTax b i{background:linear-gradient(90deg,#d8a040,#ffcf4d)}
+#mJar b i{background:linear-gradient(90deg,#e8e0c8,#fff6dc)}
+#beat{position:fixed;left:50%;bottom:24%;transform:translateX(-50%);display:none;align-items:center;gap:14px;pointer-events:none}
+#beat .lane{position:relative;width:min(70vw,420px);height:22px;border-radius:12px;background:rgba(20,14,8,.7);overflow:hidden}
+#beat .win{position:absolute;top:0;bottom:0;background:rgba(255,207,77,.55)}
+#beat .dot{position:absolute;top:3px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:#fff}
+#beat b{font-size:22px;font-weight:900;color:#ffe9b0;min-width:110px;text-align:center}
+.tag{position:fixed;transform:translate(-50%,-100%);pointer-events:none;background:rgba(255,250,236,.95);color:#2a1e12;border-radius:16px;padding:5px 10px 7px;font-size:20px;font-weight:900;white-space:nowrap;box-shadow:0 4px 0 rgba(0,0,0,.25);display:none;line-height:1.2;text-align:center}
+.tag:after{content:'';position:absolute;left:50%;bottom:-8px;margin-left:-8px;border:8px solid transparent;border-top-color:rgba(255,250,236,.95);border-bottom:0}
+.tag .up{color:#1e8a3a}.tag .dn{color:#c0392b}.tag small{font-size:13px;color:#6a5a4a}
+.btn{background:rgba(62,48,30,.82)}
+@media (max-width:640px){#todo div{font-size:12px;padding:5px 9px}.pill{font-size:14px;padding:7px 10px}#say{font-size:16px;bottom:30%;white-space:normal;text-align:center;width:86vw}#ov h1{font-size:36px}#ov p{font-size:17px}
+#days{top:60px}#days span{width:28px;height:26px;font-size:13px}#meters{top:94px;gap:6px}.meter{min-width:120px;font-size:12px}#top{top:146px}#todo{top:188px}#right{gap:4px}.rb{margin-right:2px}.tag{font-size:16px}#beat .lane{width:56vw}#beat b{font-size:18px;min-width:70px}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div>
+<div id="days"><span>1</span><span>2</span><span>3</span><span>4</span><span class="drum">5🥁</span></div>
+<div id="meters"><div class="meter" id="mTax">🧰 세금 궤 <span>0/14</span><b><i></i></b></div><div class="meter" id="mJar">🏺 쌀독 <span>0</span><b><i></i><s></s></b></div></div>
+<div id="top"><span class="pill" id="hMoney">🪙 0냥</span><span class="pill" id="hCarry">짐 없음</span></div>
+<div id="todo">
+  <div class="main" id="tGoal">🧰 궤를 채우고 🏺 쌀독도 남기기</div>
+  <div id="tCoin">🪙 쌀을 엽전으로 바꾸기</div>
+  <div id="tTob">🚬 논 한쪽에 담배</div>
+  <div id="tMask">🎭 장터 탈춤 구경</div>
+</div>
+<div id="right"><span id="rot"><button class="pill rb" id="bL">⟲</button><button class="pill rb" id="bR">⟳</button></span><button class="pill" id="bView">👁 위에서</button></div>
+<div id="goal"></div>
+<div class="bar" id="work"><i></i></div>
+<div id="beat"><div class="lane"><div class="win"></div><div class="dot"></div></div><b id="chant">모 심자</b></div>
+<div id="tags"></div>
+<div id="say"></div>
+<div id="fade"></div>
+<div id="stick"><i></i></div>
+<button class="btn" id="bAct">심기</button>
+<button class="btn" id="bRun">뛰기</button>
+<a id="back" href="/kworld/">← 케이월드</a>
+<div id="ov"><div class="box">
+  <h1>장날</h1>
+  <p>조선 후기, 어느 마을. 닷새 뒤 관아 북이 울리면 세금을 거둔다.<br><b>세금 궤를 채우고도 우리 집 쌀독</b>을 남긴다.</p>
+  <p class="keys" id="keys">먼저 모내기 — 「심자!」에 맞춰 스페이스 · 방향키 걷기 · Shift 뛰기 · 가만히 서면 꺼내고·팔고·사고·낸다<br>쌀을 지면 느리다(고개는 더) · V 시점 · Q/E 돌려 보기 · 휠 당겨 보기</p>
+  <button id="go">논으로</button>
+</div></div>
+<script type="module" src="./market.js?v=1"></script>
+</body>
+</html>
