@@ -29,4 +29,10 @@ t('의뢰 셋 판정', () => { assert.ok(MISSIONS[0].ok({ size: 'm', layout: 'ba
   assert.ok(MISSIONS[2].ok({ layout: 'face', inner: ['na'] })); });
 t('웃는 얼굴: 고리 + 눈 둘 + 입', () => { const b = buildBurst({ size: 'm', layout: 'face', inner: ['na'] }, rnd); assert.ok(b.stars.length > 60);
   const sp = b.stars.map(s => s.speed / SIZES.m.speed); assert.ok(sp.some(v => v < .5) && sp.some(v => v > .95)); });
+t('야자수는 굵은 알 몇 개가 위쪽으로', () => { const b = buildBurst({ size: 'm', layout: 'palm', inner: [] }, rnd); assert.ok(b.stars.length <= 12 && b.stars.every(s => s.thick && s.tail && s.dir[1] > 0)); });
+t('갈라지는 별은 쪼개진다', () => assert.ok(buildBurst({ size: 'm', layout: 'cross', inner: ['ba'] }, rnd).stars.every(s => s.split)));
+t('금빛 폭포는 가장 오래 남는다', () => { const k = buildBurst({ size: 'l', layout: 'kamuro', inner: [] }, rnd), w = buildBurst({ size: 'l', layout: 'willow', inner: [] }, rnd);
+  const avg = a => a.reduce((x, s) => x + s.life, 0) / a.length; assert.ok(avg(k.stars) > avg(w.stars) && k.stars.length > w.stars.length && k.stars.every(s => s.glitter)); });
+t('속심과 색 바뀜', () => { const b = buildBurst({ size: 'm', layout: 'ball', inner: ['cu'], pistil: ['na'], shift: ['sr'] }, rnd);
+  assert.ok(b.stars.some(s => s.speed < SIZES.m.speed * .5 && s.color[0] > .9)); assert.ok(b.stars.some(s => s.shift && s.shift[0] > .9)); });
 console.log(n + ' 통과');

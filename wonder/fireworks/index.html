@@ -128,18 +128,34 @@ $('snd').onclick = () => { if (!audio.running) { audio.unlock(); audio.set(true)
 // ── 들어오자마자 혼자 돌아가는 쇼(손대지 않아도 이미 멋짐)
 const R = a => a[(Math.random() * a.length) | 0];
 const SHOW = [
-  { size: 'l', layout: 'ball', inner: ['sr'] }, { size: 'm', layout: 'ball', inner: ['ba'] }, { size: 'l', layout: 'willow', inner: [] },
-  { size: 'm', layout: 'double', inner: ['sr'], outer: ['fe'] }, { size: 'm', layout: 'ring', inner: ['cu'] }, { size: 'l', layout: 'ball', inner: ['cu', 'sr'] },
-  { size: 's', layout: 'ball', inner: ['na'] }, { size: 'm', layout: 'ball', inner: ['cu', 'al'] }, { size: 'l', layout: 'double', inner: ['ba'], outer: ['sr'] },
-  { size: 'm', layout: 'heart', inner: ['sr'] }, { size: 'l', layout: 'ball', inner: ['ca', 'al'] }, { size: 's', layout: 'ring', inner: ['ba'] }, { size: 'l', layout: 'willow', inner: ['na'] },
+  { size: 'l', layout: 'ball', inner: ['sr'], pistil: ['na'] }, { size: 'm', layout: 'ball', inner: ['ba'] }, { size: 'l', layout: 'willow', inner: [] },
+  { size: 'm', layout: 'double', inner: ['sr'], outer: ['fe'] }, { size: 'l', layout: 'palm', inner: [] }, { size: 'm', layout: 'ring', inner: ['cu'] },
+  { size: 'l', layout: 'ball', inner: ['cu', 'sr'], shift: ['ba'] }, { size: 'm', layout: 'cross', inner: ['ba'] }, { size: 's', layout: 'ball', inner: ['na'], strobe: true },
+  { size: 'm', layout: 'ball', inner: ['cu', 'al'] }, { size: 'l', layout: 'double', inner: ['ba'], outer: ['sr'] }, { size: 'l', layout: 'kamuro', inner: [] },
+  { size: 'm', layout: 'heart', inner: ['sr'] }, { size: 'l', layout: 'ball', inner: ['ca', 'al'], pistil: ['cu'] }, { size: 'm', layout: 'cross', inner: ['cu', 'sr'] },
+  { size: 'l', layout: 'ball', inner: ['ba'], shift: ['sr'] }, { size: 's', layout: 'ring', inner: ['ba'] }, { size: 'l', layout: 'palm', inner: ['na'] }, { size: 'l', layout: 'willow', inner: ['na'] },
 ];
-let showT = .4, showI = 0;
+const FINALE = [['sr'], ['ba'], ['cu'], ['cu', 'sr'], ['na'], ['ca']];
+let showT = .4, showI = 0, sinceFinale = 0, finale = null;
 function autoShow(dt) {
   if (mine && performance.now() - lastMine < 14000) return;                 // 내가 쏘는 동안은 조용히
   if (mine && fw.busy) return;
+  if (finale) {                                                             // 피날레: 분수가 솟고 연달아 터진 뒤 금빛 폭포
+    finale.t += dt;
+    while (finale.q.length && finale.t >= finale.q[0].at) { const f = finale.q.shift(); f.fn(); }
+    if (!finale.q.length) { finale = null; showT = 5.5; }
+    return;
+  }
   showT -= dt; if (showT > 0) return;
+  sinceFinale++;
+  if (!mine && sinceFinale > 15) { sinceFinale = 0; const q = [];
+    for (let i = 0; i < 5; i++) q.push({ at: i * .12, fn: () => fw.fountain(i, 7.5, i % 2 ? [1, .8, .45] : [1.1, 1.05, .95]) });
+    for (let i = 0; i < 14; i++) q.push({ at: 1.2 + i * .34, fn: () => fw.fire({ size: i % 3 ? 'm' : 'l', layout: i % 5 === 4 ? 'ring' : 'ball', inner: FINALE[i % FINALE.length], pistil: i % 4 === 0 ? ['na'] : null }, i % 5) });
+    for (let i = 0; i < 4; i++) q.push({ at: 6.4 + i * .28, fn: () => fw.fire({ size: 'l', layout: i === 3 ? 'kamuro' : 'willow', inner: [] }, [0, 4, 1, 2][i]) });
+    q.push({ at: 7.4, fn: () => fw.fire({ size: 'l', layout: 'kamuro', inner: [] }, 3) });
+    q.sort((a, b) => a.at - b.at); finale = { t: 0, q }; return; }
   const s = { ...SHOW[showI++ % SHOW.length] }; fw.fire(s);
-  if (Math.random() < .3) { const t = { ...R(SHOW) }; setTimeout(() => fw.fire(t), 260 + Math.random() * 500); }
+  if (Math.random() < .35) { const t = { ...R(SHOW) }; setTimeout(() => fw.fire(t), 260 + Math.random() * 500); }
   showT = mine ? 3.5 + Math.random() * 3 : 1.2 + Math.random() * 1.9;
 }
 setTimeout(() => { if (!mine) $('open').classList.remove('hide'); }, 3500);
@@ -148,7 +164,8 @@ setTimeout(() => { if (!mine) $('open').classList.remove('hide'); }, 3500);
 let last = performance.now();
 function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; autoShow(dt); fw.step(dt); fw.render(dt); fw.tune(dt); requestAnimationFrame(frame); }
 if (qp.get('shot')) {                                                         // 화면 찍기용: 시간을 손으로 감는다
-  window.__w = { fw, pick, shoot, run(sec, script) { const dt = 1 / 30; let t = 0; while (t < sec) { for (const s of script || []) if (!s.done && t >= s.at) { s.done = 1; fw.fire(s.shell, s.tube); } fw.step(dt); fw.render(dt); t += dt; } return fw.count; },
+  window.__w = { fw, pick, shoot, run(sec, script) { const dt = 1 / 30; let t = 0; while (t < sec) { for (const s of script || []) if (!s.done && t >= s.at) { s.done = 1; if (s.fountain) fw.fountain(s.fountain[0], s.fountain[1]); else fw.fire(s.shell, s.tube); } fw.step(dt); fw.render(dt); t += dt; } return fw.count; },
+    fountain: (i, d) => fw.fountain(i, d),
     ui(on) { mine = on; $('open').classList.toggle('hide', on); $('bench').classList.toggle('hide', !on); if (on) showMission(); } };
   fw.render(1 / 30); document.title = 'ready';
 } else requestAnimationFrame(frame);

@@ -58,6 +58,13 @@ export async function createFireworks(canvas, opt = {}) {
         float star = smoothstep(.985,1.,r) * smoothstep(.22,.0,length(fr - (vec2(h21(id+3.1),h21(id+7.7))-.5)*.6));
         star *= .55 + .45*sin(uTime*(1.5+r*4.) + r*60.);
         c += vec3(.9,.95,1.) * star * smoothstep(.04,.3,e) * (.25 + .9*h21(id+1.7));
+        // 달(왼쪽 하늘의 초승달)과 달무리
+        vec3 md = normalize(vec3(-.50, .36, -.79)); float mc = dot(d, md); float ang = acos(clamp(mc,-1.,1.));
+        vec3 sx = normalize(cross(md, vec3(0.,1.,0.))), sy = cross(sx, md); vec2 mp = vec2(dot(d,sx), dot(d,sy)) / .0135;
+        float disc = smoothstep(1.02, .96, length(mp)); float cut = smoothstep(.98, 1.04, length(mp - vec2(.42,.16)));
+        float tex = .82 + .18*vn(mp*3.1+4.);
+        c += vec3(1.,.96,.86) * disc * (cut*1.5*tex + .035);
+        c += vec3(.5,.56,.7) * (.016/(1.+ang*ang*900.) + .006/(1.+ang*ang*60.));
         // 엷은 구름(불꽃 빛을 받는다)
         float cl = smoothstep(.52,.86, fbm(d.xz/(d.y+.28)*1.55 + vec2(uTime*.004, 0.))) * smoothstep(.02,.22,e) * (1.-smoothstep(.55,.9,e));
         vec3 lit = vec3(0.);
@@ -79,8 +86,8 @@ export async function createFireworks(canvas, opt = {}) {
     if (!o.isMesh) return;
     o.frustumCulled = false;
     const n = o.name;
-    if (/^(quay|railing|lamp_post|lamp_head)/.test(n)) o.layers.enable(L_OCC);          // 불꽃을 가리는 가까운 것
-    if (n === 'city') { o.material.emissiveIntensity = 2.0; cityMats.push(o.material); }
+    if (/^(quay|railing|lamp_post|lamp_head)/.test(n)) o.layers.enable(L_OCC);          // quay_props 포함          // 불꽃을 가리는 가까운 것
+    if (n === 'city') { o.material.emissiveIntensity = 2.7; cityMats.push(o.material); }
     const mn = o.material.name || '';
     if (mn === 'light_cool') o.material.emissiveIntensity = 4.5; else if (mn === 'light_warm') o.material.emissiveIntensity = 7; else if (mn === 'light_red') o.material.emissiveIntensity = 3.0;
     else if (mn.startsWith('sign_')) o.material.emissiveIntensity = 1.6; else if (mn === 'lamp_glass') o.material.emissiveIntensity = 6;
@@ -140,7 +147,8 @@ export async function createFireworks(canvas, opt = {}) {
   const P = { n: 0, px: new Float32Array(MAXS), py: new Float32Array(MAXS), pz: new Float32Array(MAXS), vx: new Float32Array(MAXS), vy: new Float32Array(MAXS), vz: new Float32Array(MAXS),
     r: new Float32Array(MAXS), g: new Float32Array(MAXS), b: new Float32Array(MAXS), r2: new Float32Array(MAXS), g2: new Float32Array(MAXS), b2: new Float32Array(MAXS),
     age: new Float32Array(MAXS), life: new Float32Array(MAXS), size: new Float32Array(MAXS), drag: new Float32Array(MAXS), grav: new Float32Array(MAXS), flag: new Uint8Array(MAXS), seed: new Float32Array(MAXS), lum: new Float32Array(MAXS) };
-  const F_GLIT = 1, F_TAIL = 2, F_EMBER = 4, F_COMET = 8, F_FLASH = 16;
+  const F_GLIT = 1, F_TAIL = 2, F_EMBER = 4, F_COMET = 8, F_FLASH = 16, F_SPLIT = 32, F_STROBE = 64, F_THICK = 128;
+  const SHIFT = new Uint8Array(Q.stars);     // 1 = 중간에 색이 확 바뀌는 별
   const sGeo = new THREE.BufferGeometry();
   const aPos = new THREE.BufferAttribute(new Float32Array(MAXS * 3), 3), aCol = new THREE.BufferAttribute(new Float32Array(MAXS * 3), 3), aSize = new THREE.BufferAttribute(new Float32Array(MAXS), 1);
   for (const a of [aPos, aCol, aSize]) a.setUsage(THREE.DynamicDrawUsage);
@@ -160,10 +168,10 @@ export async function createFireworks(canvas, opt = {}) {
     const i = P.n++;
     P.px[i] = x; P.py[i] = y; P.pz[i] = z; P.vx[i] = vx; P.vy[i] = vy; P.vz[i] = vz;
     P.r[i] = c[0]; P.g[i] = c[1]; P.b[i] = c[2]; const e = c2 || c; P.r2[i] = e[0]; P.g2[i] = e[1]; P.b2[i] = e[2];
-    P.age[i] = 0; P.life[i] = life; P.size[i] = size; P.drag[i] = drag; P.grav[i] = grav; P.flag[i] = flag; P.seed[i] = Math.random(); P.lum[i] = 1;
+    P.age[i] = 0; P.life[i] = life; P.size[i] = size; P.drag[i] = drag; P.grav[i] = grav; P.flag[i] = flag; P.seed[i] = Math.random(); P.lum[i] = 1; SHIFT[i] = 0;
     return i;
   }
-  function copy(from, to) { if (from === to) return; for (const k of ['px', 'py', 'pz', 'vx', 'vy', 'vz', 'r', 'g', 'b', 'r2', 'g2', 'b2', 'age', 'life', 'size', 'drag', 'grav', 'flag', 'seed', 'lum']) P[k][to] = P[k][from]; }
+  function copy(from, to) { if (from === to) return; for (const k of ['px', 'py', 'pz', 'vx', 'vy', 'vz', 'r', 'g', 'b', 'r2', 'g2', 'b2', 'age', 'life', 'size', 'drag', 'grav', 'flag', 'seed', 'lum']) P[k][to] = P[k][from]; SHIFT[to] = SHIFT[from]; }
 
   // ── 연기
   const MAXK = Q.smoke; const K = { n: 0, p: new Float32Array(MAXK * 3), v: new Float32Array(MAXK * 3), age: new Float32Array(MAXK), life: new Float32Array(MAXK), size: new Float32Array(MAXK), seed: new Float32Array(MAXK) };
@@ -211,9 +219,9 @@ export async function createFireworks(canvas, opt = {}) {
     let cr = 0, cg = 0, cb = 0;
     for (const st of spec.stars) {
       const d = st.dir, sp = st.speed;
-      let fl = 0; if (st.glitter) fl |= F_GLIT; if (st.tail) fl |= F_TAIL;
-      const i = spawn(to.x, to.y, to.z, d[0] * sp, d[1] * sp, d[2] * sp, st.color, st.color2, st.life, st.size, st.drag, st.grav, fl);
-      if (i < 0) break; cr += st.color[0]; cg += st.color[1]; cb += st.color[2];
+      let fl = 0; if (st.glitter) fl |= F_GLIT; if (st.tail) fl |= F_TAIL; if (st.split) fl |= F_SPLIT; if (st.strobe) fl |= F_STROBE; if (st.thick) fl |= F_THICK;
+      const i = spawn(to.x, to.y, to.z, d[0] * sp, d[1] * sp, d[2] * sp, st.color, st.shift || st.color2, st.life, st.size, st.drag, st.grav, fl);
+      if (i < 0) break; if (st.shift) SHIFT[i] = 1; cr += st.color[0]; cg += st.color[1]; cb += st.color[2];
     }
     const n = spec.stars.length || 1, col = [cr / n, cg / n, cb / n];
     spawn(to.x, to.y, to.z, 0, 0, 0, [1, .96, .9], col, .13, 30, 0, 0, F_FLASH);        // 터지는 순간의 흰 번쩍
@@ -226,10 +234,46 @@ export async function createFireworks(canvas, opt = {}) {
   }
   const SIZE_LIFE = { s: 1.9, m: 2.4, l: 3.0 };
 
+  // ── 바지선 분수: 불티가 부채처럼 솟는다
+  const founts = [];
+  function fountain(tube, dur, col) { founts.push({ p: launch[tube % launch.length], t: 0, dur, col: col || [1, .78, .4] }); }
+  function stepFounts(dt) { for (let i = founts.length - 1; i >= 0; i--) { const f = founts[i]; f.t += dt; if (f.t > f.dur) { founts.splice(i, 1); continue; }
+    const k = Math.min(1, f.t * 2) * Math.min(1, (f.dur - f.t) * 1.5), n = Math.round(dt * 260 * k);
+    for (let j = 0; j < n; j++) { const a = (Math.random() - .5) * .5, b = (Math.random() - .5) * .5, sp = 52 + Math.random() * 30;
+      spawn(f.p.x, f.p.y, f.p.z, Math.sin(a) * sp, Math.cos(a) * Math.cos(b) * sp, Math.sin(b) * sp, f.col, [1, .35, .08], 1.2 + Math.random() * .9, 1.15, .9, 1.0, F_EMBER | (Math.random() < .25 ? F_GLIT : 0)); }
+    if (Math.random() < dt * 2) puff(f.p.x, f.p.y + 14, f.p.z, 16, 7); } }
+
+  // ── 살아 있는 도시: 다리 위 차, 강 위의 배, 깜박이는 붉은 등
+  const CARS = 110, carGeo = new THREE.BufferGeometry(), carP = new Float32Array(CARS * 3), carC = new Float32Array(CARS * 3), carS = new Float32Array(CARS), car = [];
+  for (let i = 0; i < CARS; i++) { const dir = i % 2 ? 1 : -1, lane = dir > 0 ? -555.5 : -563.5; car.push({ x: Math.random() * 3000 - 1500, v: dir * (16 + Math.random() * 9), z: lane + (Math.random() - .5) * 2.4 });
+    const c = dir > 0 ? [1.5, 1.4, 1.15] : [1.3, .12, .08]; carC.set(c, i * 3); carS[i] = dir > 0 ? 1.5 : 1.2; }
+  carGeo.setAttribute('position', new THREE.BufferAttribute(carP, 3).setUsage(THREE.DynamicDrawUsage)); carGeo.setAttribute('color', new THREE.BufferAttribute(carC, 3)); carGeo.setAttribute('aSize', new THREE.BufferAttribute(carS, 1));
+  const lightMat = stars.material.clone(); lightMat.uniforms = { uPx }; lightMat.depthTest = true;
+  const cars = new THREE.Points(carGeo, lightMat); cars.frustumCulled = false; scene.add(cars);
+  const boats = [{ x: -700, z: -250, v: 5.2, len: 26 }, { x: 600, z: -505, v: -3.4, len: 40 }, { x: 150, z: -610, v: 2.3, len: 18 }];
+  const BL = 9, boatGeo = new THREE.BufferGeometry(), boatP = new Float32Array(boats.length * BL * 3), boatC = new Float32Array(boats.length * BL * 3), boatS = new Float32Array(boats.length * BL);
+  boats.forEach((b, bi) => { for (let k = 0; k < BL; k++) { const i = bi * BL + k; const c = k === 0 ? [1.6, 1.6, 1.5] : k === 1 ? [1.2, .1, .08] : k === 2 ? [.1, 1.1, .3] : [1.3, .85, .45]; boatC.set(c, i * 3); boatS[i] = k === 0 ? 1.7 : k < 3 ? 1.2 : 1.35; } });
+  boatGeo.setAttribute('position', new THREE.BufferAttribute(boatP, 3).setUsage(THREE.DynamicDrawUsage)); boatGeo.setAttribute('color', new THREE.BufferAttribute(boatC, 3)); boatGeo.setAttribute('aSize', new THREE.BufferAttribute(boatS, 1));
+  const boatPts = new THREE.Points(boatGeo, lightMat); boatPts.frustumCulled = false; scene.add(boatPts);
+  const hullMat = new THREE.MeshBasicMaterial({ color: 0x010203 });
+  boats.forEach(b => { b.hull = new THREE.Mesh(new THREE.BoxGeometry(b.len, 2.2, 5), hullMat); b.cabin = new THREE.Mesh(new THREE.BoxGeometry(b.len * .45, 2.4, 4), hullMat); scene.add(b.hull, b.cabin); });
+  const redMats = []; world.traverse(o => { if (o.isMesh && o.material.name === 'light_red' && !redMats.includes(o.material)) redMats.push(o.material); });
+  function stepCity(dt) {
+    for (let i = 0; i < CARS; i++) { const c = car[i]; c.x += c.v * dt; if (c.x > 1500) c.x -= 3000; if (c.x < -1500) c.x += 3000; carP[i * 3] = c.x; carP[i * 3 + 1] = 24.9; carP[i * 3 + 2] = c.z; }
+    carGeo.attributes.position.needsUpdate = true;
+    boats.forEach((b, bi) => { b.x += b.v * dt; if (b.x > 1300) b.x = -1300; if (b.x < -1300) b.x = 1300; const s = Math.sign(b.v);
+      b.hull.position.set(b.x, .6, b.z); b.cabin.position.set(b.x - s * b.len * .1, 2.6, b.z);
+      const put = (k, dx, y, dz) => boatP.set([b.x + dx, y, b.z + dz], (bi * BL + k) * 3);
+      put(0, -s * b.len * .1, 7.5, 0); put(1, s * b.len * .45, 2.4, 2.2); put(2, s * b.len * .45, 2.4, -2.2);
+      for (let k = 3; k < BL; k++) put(k, -s * b.len * .3 + (k - 3) * b.len * .09 * s, 3.0, 2.1); });
+    boatGeo.attributes.position.needsUpdate = true;
+    const pulse = .3 + .7 * Math.pow(.5 + .5 * Math.sin(uTime.value * 3.1), 6); for (const m of redMats) m.emissiveIntensity = 3.4 * pulse;
+  }
+
   // ── 한 걸음(시간 dt)
   const tmpC = new THREE.Color();
   function step(dt) {
-    uTime.value += dt;
+    uTime.value += dt; stepFounts(dt); stepCity(dt);
     // 올라가는 껍질
     for (let i = shells.length - 1; i >= 0; i--) { const s = shells[i];
       if (s.fall) { s.fall.v.y -= 9.8 * dt; s.to.addScaledVector(s.fall.v, dt);
@@ -258,7 +302,14 @@ export async function createFireworks(canvas, opt = {}) {
       let lum = 1 - u * u * u;                                                // 끝에서 사그라짐
       if (fl & F_FLASH) lum = (1 - u) * (1 - u);
       if (fl & F_GLIT) { const tw = Math.sin((age * (22 + P.seed[i] * 30) + P.seed[i] * 60)); lum *= u > .35 ? (tw > .55 ? 2.6 : .12) : 1; }
+      if (fl & F_STROBE) lum *= u > .22 ? (Math.sin(age * 34 + P.seed[i] * 40) > .2 ? 2.2 : .03) : 1;
       P.lum[i] = lum;
+      if ((fl & F_SPLIT) && u > .46) {                                         // 넷으로 쪼개짐
+        const c = [P.r[i], P.g[i], P.b[i]], x = P.px[i], y = P.py[i], z = P.pz[i], sz = P.size[i], bvx = P.vx[i] * .4, bvy = P.vy[i] * .4, bvz = P.vz[i] * .4, ph = P.seed[i] * 6.28;
+        P.age[i] = life;
+        for (let k = 0; k < 4; k++) { const a = ph + k * Math.PI / 2; spawn(x, y, z, bvx + Math.cos(a) * 26, bvy + Math.sin(a) * 26, bvz + (Math.random() - .5) * 8, c, null, .85 + Math.random() * .25, sz * .8, 1.4, .5, 0); }
+        spawn(x, y, z, 0, 0, 0, [1.4, 1.3, 1.2], c, .08, sz * 5, 0, 0, F_FLASH); continue; }
+      if ((fl & F_THICK) && Math.random() < dt * 150) spawn(P.px[i] + (Math.random() - .5), P.py[i] + (Math.random() - .5), P.pz[i] + (Math.random() - .5), P.vx[i] * .05 + (Math.random() - .5) * 3, P.vy[i] * .05 - 1, P.vz[i] * .05 + (Math.random() - .5) * 3, [P.r[i], P.g[i] * .8, P.b[i] * .6], [.6, .14, .02], .7 + Math.random() * 1.1, P.size[i] * .45, .7, .2, F_EMBER);
       if ((fl & F_TAIL) && Math.random() < dt * 34) spawn(P.px[i], P.py[i], P.pz[i], P.vx[i] * .08, P.vy[i] * .08 - .6, P.vz[i] * .08, [P.r2[i] * .8, P.g2[i] * .62, P.b2[i] * .5], [.5, .12, .02], .55 + Math.random() * .9, P.size[i] * .62, .6, .16, F_EMBER);
       if ((fl & F_GLIT) && u > .5 && Math.random() < dt * 5) spawn(P.px[i], P.py[i], P.pz[i], (Math.random() - .5) * 6, (Math.random() - .5) * 6, (Math.random() - .5) * 6, [1.6, 1.5, 1.3], [1, .8, .5], .1 + Math.random() * .12, P.size[i] * 1.1, 3, .3, F_EMBER);
     }
@@ -275,9 +326,11 @@ export async function createFireworks(canvas, opt = {}) {
 
   function upload() {
     const pa = aPos.array, ca = aCol.array, sa = aSize.array;
-    for (let i = 0; i < P.n; i++) { const u = P.age[i] / P.life[i], w = Math.min(1, u * 1.6), L = P.lum[i] * 1.55;
+    for (let i = 0; i < P.n; i++) { const u = P.age[i] / P.life[i], L = P.lum[i] * 1.55, fl = P.flag[i];
+      const w = SHIFT[i] ? Math.min(1, Math.max(0, (u - .40) / .10)) : Math.min(1, u * 1.6);
+      const hot = (fl & (F_EMBER | F_FLASH | F_COMET)) ? 0 : Math.max(0, 1 - u * 7) * 1.1;
       pa[i * 3] = P.px[i]; pa[i * 3 + 1] = P.py[i]; pa[i * 3 + 2] = P.pz[i];
-      ca[i * 3] = (P.r[i] + (P.r2[i] - P.r[i]) * w) * L; ca[i * 3 + 1] = (P.g[i] + (P.g2[i] - P.g[i]) * w) * L; ca[i * 3 + 2] = (P.b[i] + (P.b2[i] - P.b[i]) * w) * L;
+      ca[i * 3] = (P.r[i] + (P.r2[i] - P.r[i]) * w + hot) * L; ca[i * 3 + 1] = (P.g[i] + (P.g2[i] - P.g[i]) * w + hot * .92) * L; ca[i * 3 + 2] = (P.b[i] + (P.b2[i] - P.b[i]) * w + hot * .8) * L;
       sa[i] = P.size[i]; }
     sGeo.setDrawRange(0, P.n); aPos.needsUpdate = aCol.needsUpdate = aSize.needsUpdate = true;
     const kp = kPos.array, kd = kDat.array;
@@ -356,5 +409,5 @@ export async function createFireworks(canvas, opt = {}) {
       if (fps < 27 && qName !== 'low') { qName = qName === 'high' ? 'mid' : 'low'; Q = { ...QUALITY[qName], stars: MAXS, smoke: MAXK }; water.material.defines.TAPS = Q.taps; water.material.needsUpdate = true; resize(); }
       else tuned = true; } }
 
-  return { fire, step, render, tune, events, camera, launch, get count() { return P.n; }, get quality() { return qName; }, get busy() { return shells.length; }, size: () => [W, H] };
+  return { fire, fountain, step, render, tune, events, camera, launch, get count() { return P.n; }, get quality() { return qName; }, get busy() { return shells.length; }, size: () => [W, H] };
 }

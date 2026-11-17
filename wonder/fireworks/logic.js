@@ -20,6 +20,9 @@ export const LAYOUTS = {
   double: { name: '두 겹',        says: '두 겹 꽃' },
   willow: { name: '버들',         says: '버들' },
   face:   { name: '웃는 얼굴',    says: '웃는 얼굴' },
+  palm:   { name: '굵은 알 몇 개', says: '야자수' },
+  cross:  { name: '쪼개지는 알',  says: '갈라지는 별' },
+  kamuro: { name: '금빛 가득',    says: '금빛 폭포' },
 };
 export const SIZES = {
   s: { name: '작은 껍질', apex: 115, rise: 1.9, speed: 62,  stars: 190, life: 1.9, starSize: 1.25 },
@@ -65,7 +68,7 @@ export function buildBurst(shell, rnd = Math.random) {
   const star = (dir, sp, c, o = {}) => out.stars.push({
     dir, speed: sp, color: c.rgb.map(v => v * (c.bright || 1)), color2: o.color2 || null,
     life: (o.life || S.life) * (0.85 + rnd() * .3), size: (o.size || S.starSize), drag: o.drag ?? 1.25, grav: o.grav ?? 0.55,
-    glitter: !!(c.glitter || o.glitter), tail: !!(c.tail || o.tail), delay: o.delay || 0 });
+    glitter: !!(c.glitter || o.glitter), tail: !!(c.tail || o.tail), split: !!o.split, strobe: !!o.strobe, thick: !!o.thick, shift: o.shift || null });
   const yaw = (rnd() - .5) * 1.2, pitch = (rnd() - .5) * .5;               // 판 모양은 보는 방향에 따라 조금 납작
   const L = shell.layout || 'ball';
   if (L === 'ball' || L === 'double') {
@@ -73,8 +76,10 @@ export function buildBurst(shell, rnd = Math.random) {
     for (let i = 0; i < n; i++) {
       let d = fib(n, i);
       if (shell.lopsided) { if (d[0] < -.15 && rnd() < .8) continue; d = [d[0] * 1.25 + .2, d[1], d[2]]; }   // 한쪽에 몰아 넣음
-      star(d, S.speed * J(), L === 'double' && outer ? outer : inner, L === 'double' && outer ? { color2: null } : {});
+      star(d, S.speed * J(), L === 'double' && outer ? outer : inner, { strobe: !!shell.strobe, shift: shell.shift ? (mixPowders(shell.shift) || {}).rgb : null });
     }
+    if (L === 'ball' && shell.pistil) { const pc = mixPowders(shell.pistil), m = Math.round(n * .3);           // 속심: 가운데 작은 다른 색 꽃
+      if (pc) for (let i = 0; i < m; i++) star(fib(m, i), S.speed * .42 * J(), pc, { life: S.life * .75 }); }
     if (L === 'double') {                                                    // 속 꽃: 작고 먼저 보인다
       const m = Math.round(n * .45);
       for (let i = 0; i < m; i++) star(fib(m, i), S.speed * .5 * J(), inner, { life: S.life * .8 });
@@ -91,6 +96,16 @@ export function buildBurst(shell, rnd = Math.random) {
     const n = Math.round(S.stars * .42), gold = mixPowders(['fe']);
     const c = inner.ids.length ? { ...inner, tail: true } : gold;
     for (let i = 0; i < n; i++) star(fib(n, i), S.speed * .62 * J(), c, { life: S.life * 2.1, drag: .95, grav: 1.0, tail: true, color2: [1, .5, .12] });
+  } else if (L === 'palm') {                                                  // 굵은 알 몇 개가 굵은 꼬리를 끌며 휘어 내린다
+    const n = shell.size === 'l' ? 11 : shell.size === 's' ? 7 : 9, c = inner.ids.length ? inner : mixPowders(['fe']);
+    for (let i = 0; i < n; i++) { const a = (i + rnd() * .5) / n * Math.PI * 2, up = .25 + rnd() * .55, r = Math.sqrt(1 - up * up);
+      star([Math.cos(a) * r, up, Math.sin(a) * r], S.speed * .95 * J(), c, { life: S.life * 1.5, size: S.starSize * 2.3, drag: 1.0, grav: .95, tail: true, thick: true, color2: [1, .55, .15] }); }
+  } else if (L === 'cross') {                                                 // 날아가다 넷으로 쪼개진다
+    const n = Math.round(S.stars * .11);
+    for (let i = 0; i < n; i++) star(fib(n, i), S.speed * .95 * J(), inner, { life: S.life * .95, size: S.starSize * 1.5, split: true });
+  } else if (L === 'kamuro') {                                                // 금빛이 가득 차 강물까지 흘러내린다
+    const n = Math.round(S.stars * .8), gold = { ...mixPowders(['fe']), glitter: true };
+    for (let i = 0; i < n; i++) star(fib(n, i), S.speed * .78 * J(), gold, { life: S.life * 2.7, drag: 1.02, grav: .72, tail: true, color2: [1, .55, .16] });
   } else if (L === 'face') {
     const n = Math.round(S.stars * .22), put = (x, y, o) => { const len = Math.hypot(x, y) || 1e-3; star(rot([x / len, y / len, 0], yaw * .35, pitch * .35), S.speed * len, inner, { size: S.starSize * 1.3, ...o }); };
     for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; put(Math.cos(a), Math.sin(a)); }

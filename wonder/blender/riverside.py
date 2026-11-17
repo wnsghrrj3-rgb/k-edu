@@ -22,22 +22,22 @@ def window_atlas():
     img = np.zeros((N * CELL, N * CELL, 4), np.float32); img[..., 3] = 1
     warm = np.array([1.0, .78, .46]); cool = np.array([.72, .86, 1.0]); tv = np.array([.45, .6, 1.0])
     for r in range(N):
-        floor_on = random.random() < .06            # 층 전체가 켜진 사무실
-        floor_off = random.random() < .10
+        floor_on = random.random() < .05            # 층 전체가 켜진 사무실
+        floor_off = random.random() < .14
         for c in range(N):
-            p = .34
-            if floor_on: p = .92
-            if floor_off: p = .04
+            p = .27
+            if floor_on: p = .9
+            if floor_off: p = .03
             if random.random() > p: continue
-            col = warm if random.random() < .62 else cool
+            col = warm if random.random() < .6 else cool
             if random.random() < .05: col = tv
-            b = random.uniform(.35, 1.0) ** 1.6
-            y0, x0 = r * CELL + 4, c * CELL + 3
-            h, w = 9, 10
+            b = random.uniform(.18, 1.0) ** 2.2                     # 대부분 어둑하고 몇 개만 환하다
+            y0, x0 = r * CELL + 4, c * CELL + 4
+            h, w = 8, random.choice((7, 7, 8, 5))
             img[y0:y0 + h, x0:x0 + w, :3] = col * b
-            # 창 안의 밝기 얼룩(커튼·가구)
-            img[y0:y0 + 3, x0:x0 + w, :3] *= random.uniform(.5, 1.0)
-            if random.random() < .3: img[y0:y0 + h, x0:x0 + 4, :3] *= .45
+            img[y0:y0 + 2, x0:x0 + w, :3] *= random.uniform(.45, 1.0)   # 창 안의 얼룩(커튼·가구)
+            if random.random() < .35: img[y0:y0 + h, x0:x0 + 3, :3] *= .35
+            if random.random() < .12: img[y0 + 3:y0 + h, x0:x0 + w, :3] *= .2
     im = bpy.data.images.new('windows', N * CELL, N * CELL, alpha=False)
     im.pixels.foreach_set(img.ravel()); im.filepath_raw = os.path.join(OUT, 'windows.png'); im.file_format = 'PNG'; im.save()
     im.pack()
@@ -222,6 +222,22 @@ def quay():
         me = bpy.data.meshes.new('lamp_head'); bg.to_mesh(me); bg.free(); me.materials.append(M_LAMPH); link(bpy.data.objects.new('lamp_head', me))
         e = bpy.data.objects.new('lamp_point', None); e.location = (sx + (1.0 if sx < 0 else -1.0), 5.6, 4.95); link(e)
 quay()
+
+def props():
+    import mathutils
+    bm = bmesh.new()
+    def cyl(r, d, loc, rot=None, seg=20):
+        m = mathutils.Matrix.Translation(loc) @ (rot.to_matrix().to_4x4() if rot else mathutils.Matrix.Identity(4))
+        bmesh.ops.create_cone(bm, cap_ends=True, segments=seg, radius1=r, radius2=r, depth=d, matrix=m)
+    X, Y = 4.1, 5.5                                                             # 오른쪽 난간 앞의 관광 망원경
+    cyl(.16, .05, (X, Y, .025)); cyl(.055, 1.25, (X, Y, .65)); cyl(.085, .1, (X, Y, 1.3))
+    tilt = mathutils.Euler((math.radians(82), 0, 0))
+    for sx in (-.075, .075):
+        cyl(.07, .46, (X + sx, Y + .02, 1.44), tilt); cyl(.082, .05, (X + sx, Y + .24, 1.47), tilt); cyl(.05, .07, (X + sx, Y - .24, 1.41), tilt)
+    box(bm, X - .13, X + .13, Y - .1, Y + .12, 1.34, 1.52)
+    me = bpy.data.meshes.new('props'); bm.to_mesh(me); bm.free(); me.materials.append(M_RAIL); ob = link(bpy.data.objects.new('quay_props', me))
+    for f in me.polygons: f.use_smooth = True
+props()
 
 # 보는 자리(빈 점)
 e = bpy.data.objects.new('eye', None); e.location = (0, 0, 1.6); link(e)
