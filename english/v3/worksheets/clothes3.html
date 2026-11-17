@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv4 #26 옷③ 꾸미기 10단어 — clothes2.html(Lv4 #13) 판형 계승, V트랙 주황
+     ★그림 = 화면과 같은 그림(BOD · CLO426CSS 블록 그대로) — 그림 마크업 = 화면 CLO426 pz(w,px,true) · bod('') · garm · NM · dz426 을 생성기 ws/gen_clothes3.js 로 그대로 뽑음 + .still(움직임 끔).
+     ★① 따라쓰기 10(몸에 다는 판 / 옷에 붙는·드는 판) · ② 상자 나누기(화면 꾸미기 판과 같은 상자 셋 — 몸에 다는 것 · 옷에 붙은 것 · 드는 것)
+     · ③ 짝 고르기 3(necklace / bracelet · button / zip · pocket / bag — 그림 보고) · ④ It is ___'s cap. 그림 보고 2(이름표 · 상자 Ben · Amy · Mina) + 같은 사람 밑그림(자리 번호)에 내 꾸미기.
+     받아쓰기 금지. -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root { --primary:#FF8A3D; --green:#4CAF50; --red:#F44336; --subtext:#888780; --border:#F7DFCB; --green-light:#E8F5E9; }
+  @page { size: A4; margin: 10mm 12mm 8mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.45; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d9702a; padding-bottom: 5px; }
+  .brand { font-size: 13px; font-weight: 700; color: #9c4d13; }
+  .brand .lv { background: #d9702a; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 7px; background: #fdeee1; border: 2px solid #d9702a; border-radius: 12px; padding: 7px 13px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 24px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #9c4d13; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 15.5px; font-weight: 800; color: #4a2408; }
+  .keypoint { margin-top: 6px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 5px 12px; font-size: 12px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  .keypoint .big { font-size: 13px; font-weight: 800; color: #d85a30; }
+  h2 { margin-top: 8px; font-size: 13px; color: #9c4d13; display: flex; align-items: center; gap: 7px; }
+  h2 .n { background: #9c4d13; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2 .hint { font-weight: 400; font-size: 10px; color: #888780; }
+  .trace { display: flex; gap: 8px; margin-top: 3px; }
+  .traceword { text-align: center; flex: 1; min-width: 56px; position: relative; }
+  .outline { font-size: 19px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.4px #c4c2b8; letter-spacing: 1px; }
+  .line { border-bottom: 1.5px solid #d3d1c7; height: 14px; margin-top: 2px; }
+  .twocol { display: flex; gap: 10px; margin-top: 4px; align-items: stretch; }
+  .recap { margin-top: 7px; background: #4a2408; color: #fdeee1; border-radius: 10px; padding: 7px 13px; text-align: center; font-size: 12px; }
+  .recap b { color: #fac775; }
+  .parent { margin-top: 6px; border-top: 1px dashed #b4b2a9; padding-top: 5px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+  /* 그림 — 화면 블록 그대로(움직임은 .still 로 꺼짐) */
+/*BOD-BEGIN — #15 몸 그림 단일 원천(blocks/BOD.css → sync_blocks.py 주입, 하네스가 4파일 동일 검사).
+  ★같은 사람 한 명 + 「어디를 감싸느냐」만 바뀐다(.sp 분홍 동그라미) — #7 .act · Lv1 #15 ⭐ 크기 계보.
+    이모지를 쓰면 face 😀 · smile 😊 가 둘 다 웃는 얼굴이라 그림에서 갈리지 않는다(#11·#13 이모지 그대로 못 씀).
+  ★bone 은 몸 「안」 — 왼팔 엑스레이 창(.bn)으로만 보인다. hand 는 「밖」(팔 끝).
+  ★감싸는 자리(.p-* .sp)와 짚는 자리(.z-*)는 같은 좌표 선언 하나 — 그림과 손이 어긋날 수 없다. */
+.bod{position:relative;display:inline-block;width:6em;height:10em;font-size:10px;vertical-align:middle;flex:none}
+.bod>i{position:absolute;display:block;font-style:normal}
+.bod .hd{left:1.5em;top:.55em;width:3em;height:3.1em;border-radius:50%;background:#FFD9B8}
+.bod .hr{left:1.35em;top:.25em;width:3.3em;height:1.35em;border-radius:1.65em 1.65em .5em .5em;background:#6B4A2E}
+.bod .ey{left:2.15em;top:1.9em;width:.45em;height:.45em;border-radius:50%;background:#333;box-shadow:1.25em 0 0 #333}
+.bod .ns{left:2.83em;top:2.25em;width:.34em;height:.5em;border-radius:.2em .2em .3em .3em;background:#E39A72}
+.bod .mo{left:2.4em;top:2.75em;width:1.2em;height:.5em;border-bottom:.22em solid #D2453A;border-radius:0 0 .7em .7em}
+.bod .tr{left:1.95em;top:3.75em;width:2.1em;height:3em;border-radius:.6em .6em .3em .3em;background:#7FB3E6}
+.bod .ar{left:1.2em;top:3.9em;width:.65em;height:2.4em;border-radius:.3em;background:#FFD9B8;box-shadow:2.95em 0 0 #FFD9B8}
+.bod .hn{left:1.02em;top:6.2em;width:1em;height:1em;border-radius:50%;background:#F7BE93;box-shadow:2.95em 0 0 #F7BE93}
+.bod .lg{left:2.15em;top:6.7em;width:.7em;height:2.2em;background:#4A6FA5;box-shadow:1em 0 0 #4A6FA5}
+.bod .ft{left:1.7em;top:8.8em;width:1.25em;height:.65em;border-radius:.65em .65em .2em .2em;background:#5A4030;box-shadow:1.35em 0 0 #5A4030}
+.bod .bn{left:1.2em;top:3.9em;width:.65em;height:2.4em;border-radius:.3em;background:#3F4B57;opacity:0}
+.bod .bn::before{content:'';position:absolute;left:.22em;top:.45em;width:.21em;height:1.5em;background:#fff;border-radius:.1em}
+.bod .bn::after{content:'';position:absolute;left:.1em;top:.25em;width:.45em;height:.32em;border-radius:50%;background:#fff;box-shadow:0 1.6em 0 #fff}
+.bod.p-bone .bn,.bod.xr .bn{opacity:1}
+.bod .sp{border:.2em solid #FF3D7F;border-radius:50%;background:rgba(255,61,127,.13);opacity:0;pointer-events:none;z-index:6}
+.bod[class*=" p-"] .sp{opacity:1;animation:bodpulse 1.3s ease-in-out infinite}
+@keyframes bodpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.bod.p-face .sp,.bod .z-face{left:1.1em;top:.2em;width:3.8em;height:3.8em}
+.bod.p-hair .sp,.bod .z-hair{left:1.05em;top:-.25em;width:3.9em;height:1.95em}
+.bod.p-eye .sp,.bod .z-eye{left:1.8em;top:1.45em;width:2.4em;height:1em}
+.bod.p-nose .sp,.bod .z-nose{left:2.6em;top:2.05em;width:.8em;height:.9em}
+.bod.p-smile .sp,.bod .z-smile{left:2.15em;top:2.95em;width:1.7em;height:.8em}
+.bod.p-hand .sp,.bod .z-hand{left:.65em;top:5.85em;width:4.7em;height:1.7em}
+.bod.p-bone .sp,.bod .z-bone{left:.85em;top:3.6em;width:1.35em;height:2.2em}
+.bod.p-feet .sp,.bod .z-feet{left:1.3em;top:8.35em;width:3.4em;height:1.55em}
+.bod .hz{border-radius:50%;cursor:pointer;z-index:2}
+.bod .z-face{z-index:1}.bod .z-eye,.bod .z-nose,.bod .z-smile{z-index:4}
+.bod .hz.hit{background:rgba(255,193,7,.35)}
+.bod.blank .hz{border:.08em dashed rgba(217,112,42,.6)}
+.bod.blank .hr,.bod.blank .ey,.bod.blank .ns,.bod.blank .mo{visibility:hidden}
+.bod.blank.has-hair .hr,.bod.blank.has-eye .ey,.bod.blank.has-nose .ns,.bod.blank.has-smile .mo{visibility:visible;animation:bodpop .4s}
+@keyframes bodpop{0%{transform:scale(.3)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+/*BOD-END*/
+/*CLO426CSS-BEGIN — Lv4 #26 옷③ 그림·꾸미기 판·「누구의 것?」·뒷면 장면(blocks/CLO426CSS.css → sync_blocks.py 주입 · 4파일 + 활동지 문자 단위 동일, 하네스 A4).
+  ★몸 = Lv2 #15 BOD 한 사람 그대로(BOD 원본 선언은 손대지 않는다 — #5 · #8 · #13 판형) · 꾸미는 것은 몸 그림 위에 겹치는 한 가지(.wr426)로만 더한다.
+  ★#8 CLO408CSS · #13 CLO413CSS 줄 문자 그대로 + 이름만 426(블록째 주입 0 — #8 · #13 하네스가 앞 칸 파일의 그림 class 이름을 잰다):
+    상자 .pz426 · .dz426 · .wr426 · 장면 소품 jacket 네 줄(#8 · 지퍼 .zt426) · hat 두 줄(#8 🎩 「모자 둘」) · coat 두 줄(#13 🧥) · 뒷면 장면 .ss426 · 나 .me426 · 이름표 .nm426 · 말풍선 .hb426 · 상자 칸 .ck426 · 움직임 끄기.
+  ★꾸미는 자리 = 몸 부위 그대로: cap · ribbon 머리 · necklace 목 · bracelet 왼 팔목 · ring 오른손 · button · pocket · badge · zip 윗옷(몸통) · bag 오른 어깨.
+  ★necklace · bracelet = 같은 구슬(#E64980 점 테두리) — 자리(목 / 팔목)와 크기로만 가른다(이 칸의 심장). */
+.pz426,.dz426{position:relative;display:inline-block;width:6em;height:11em;line-height:0;vertical-align:middle;text-align:left;flex:none}
+.pz426>.bod,.dz426>.bod{position:absolute;left:0;top:1em;font-size:inherit}
+.wr426{position:absolute;display:block;font-style:normal;line-height:1;pointer-events:none}
+.wr426>i{display:inline-block;font-style:normal;line-height:1}
+.dz426 .wr426{display:none}
+.dz426 .wr426.on{display:block;animation:bodpop .4s}
+.dz426 .wr426.on.fly{animation:fl426 .7s ease-out}
+@keyframes fl426{0%{transform:translateY(-3em);opacity:0}100%{transform:none;opacity:1}}
+/* cap 🧢(Lv1 #16) — 머리 위(챙이 앞에만) · hat 🎩(#8 줄 그대로 — 「모자 둘」 1슬) */
+.wr426.g26-cap{left:1.75em;top:0em;width:2.5em;height:2.5em;z-index:5}
+.wr426.g26-cap>i{font-size:2.5em}
+.wr426.g26-hat{left:1.75em;top:0em;width:2.5em;height:2.5em;z-index:5}
+.wr426.g26-hat>i{font-size:2.5em}
+/* ribbon 🎀 — 머리 옆에 맨다 */
+.wr426.g26-ribbon{left:.35em;top:1.15em;width:1.6em;height:1.6em;z-index:6}
+.wr426.g26-ribbon>i{font-size:1.6em}
+/* necklace — 목에 거는 구슬(점 테두리 U) + 작은 펜던트(📿 0) */
+.wr426.g26-necklace{left:2.35em;top:4.35em;width:1.3em;height:.95em;z-index:6;box-sizing:border-box;border:.24em dotted #E64980;border-top:0;border-radius:0 0 .65em .65em}
+.wr426.g26-necklace::after{content:'';position:absolute;left:.21em;top:.52em;width:.4em;height:.4em;background:#F03E3E;border-radius:50% 50% 0 50%;transform:rotate(45deg)}
+/* bracelet — 목걸이와 같은 구슬 · 작은 원 · 왼 팔목 */
+.wr426.g26-bracelet{left:1.1em;top:6.85em;width:.85em;height:.5em;z-index:6;box-sizing:border-box;border:.2em dotted #E64980;border-radius:50%}
+/* ring 💍 — 오른손 손가락 */
+.wr426.g26-ring{left:3.95em;top:7.1em;width:1.1em;height:1.1em;z-index:6}
+.wr426.g26-ring>i{font-size:1.1em}
+/* button — 네 구멍 단추(🔘 0 — 「누르는 단추」 로 읽힘) · 윗옷 왼쪽 아래 */
+.wr426.g26-button{left:2.07em;top:6.3em;width:.72em;height:.72em;z-index:5;border-radius:50%;background:radial-gradient(circle at 34% 34%,#5C3B12 0 .07em,transparent .08em),radial-gradient(circle at 66% 34%,#5C3B12 0 .07em,transparent .08em),radial-gradient(circle at 34% 66%,#5C3B12 0 .07em,transparent .08em),radial-gradient(circle at 66% 66%,#5C3B12 0 .07em,transparent .08em),#FAB005;box-shadow:inset 0 0 0 .07em #E67700}
+/* pocket — 셔츠(BOD 몸통) 가슴 주머니 + 덮개 */
+.wr426.g26-pocket{left:2.02em;top:5.35em;width:.82em;height:.78em;z-index:5;box-sizing:border-box;background:#5C9BD6;border:.08em solid #1C5D99;border-radius:.05em .05em .3em .3em}
+.wr426.g26-pocket::before{content:'';position:absolute;left:-.08em;top:-.08em;width:.82em;height:.25em;background:#1C5D99;border-radius:.05em}
+/* badge — 옷에 꽂는 동그란 핀(무늬 없음 · 📛 = name · 🏅 = UI · ⭐ = UI) · 윗옷 오른쪽 */
+.wr426.g26-badge{left:3.3em;top:5.4em;width:.68em;height:.68em;z-index:5;border-radius:50%;background:#7048E8;box-shadow:0 0 0 .08em #fff,0 0 0 .14em #7048E8}
+/* zip 🤐(Lv1 #14) — 윗옷 가운데 지퍼 이(회색) + 끝에 🤐 */
+.wr426.g26-zip{left:2.6em;top:6.88em;width:.85em;height:.85em;z-index:6}
+.wr426.g26-zip>i{font-size:.85em}
+.wr426.g26-zip::before{content:'';position:absolute;left:.35em;top:-2.1em;width:.12em;height:2.2em;background:repeating-linear-gradient(#868E96 0 .12em,#343A40 .12em .22em)}
+/* bag 🎒(Lv1 #18 · Lv2 #4) — 오른 어깨에 멘다 */
+.wr426.g26-bag{left:4.25em;top:4.55em;width:1.75em;height:1.75em;z-index:4}
+.wr426.g26-bag>i{font-size:1.75em}
+/* 장면 소품 — coat 🧥(#13 줄 그대로) · jacket(#8 줄 그대로) */
+.wr426.g26-coat{left:.95em;top:4.2em;width:4.1em;height:4.1em;z-index:2}
+.wr426.g26-coat>i{font-size:4.1em}
+.wr426.g26-jacket{left:1.85em;top:4.65em;width:2.3em;height:3.2em;z-index:4;background:#0B7285;border-radius:.5em .5em .25em .25em}
+.wr426.g26-jacket::before{content:'';position:absolute;left:-.75em;top:.2em;width:.85em;height:2.45em;border-radius:.35em;background:#0B7285;box-shadow:2.95em 0 0 #0B7285}
+.wr426.g26-jacket::after{content:'';position:absolute;left:1.08em;top:.1em;width:.14em;height:3em;background:repeating-linear-gradient(#FFD43B 0 .12em,#5C940D .12em .22em)}
+.wr426.g26-jacket .zt426{position:absolute;left:.97em;top:2.6em;width:.36em;height:.45em;border-radius:.1em;background:#FAB005;z-index:1}
+/* 분홍 테 — 작은 것이 있는 자리(#5 BOD .sp 값 그대로 · 맥박 bodpulse = BOD 블록) */
+.sp426{position:absolute;display:block;font-style:normal;border:.2em solid #FF3D7F;border-radius:50%;background:rgba(255,61,127,.13);pointer-events:none;z-index:7;box-sizing:border-box;animation:bodpulse 1.3s ease-in-out infinite}
+.sp426.s26-button{left:1.8em;top:6.03em;width:1.26em;height:1.26em}
+.sp426.s26-pocket{left:1.78em;top:5.1em;width:1.3em;height:1.3em}
+.sp426.s26-necklace{left:2.05em;top:4.05em;width:1.9em;height:1.6em}
+.sp426.s26-badge{left:3.04em;top:5.14em;width:1.2em;height:1.2em}
+.sp426.s26-bracelet{left:.85em;top:6.55em;width:1.35em;height:1.1em}
+/* 「누구의 것?」 — 주인을 찾으면 이름표 · 물건 테 · 's 밑줄이 같은 분홍(이어짐) */
+.dz426.m-own .sp426{display:none}
+.ow426{display:inline-flex;flex-direction:column;align-items:center;gap:2px;border:3px solid var(--border);border-radius:14px;background:#fff;padding:3px 4px;cursor:pointer;transition:all .3s}
+.ow426.got{border-color:#F783AC;background:#FFF0F6}
+.ow426.got .nm426{border-color:#F783AC;color:#C2255C}
+.ow426.got .dz426 .sp426{display:block}
+.ow426.bad{animation:shake .4s;background:rgba(244,67,54,.15)}
+.sp426.s26-ocap{left:1.4em;top:-.2em;width:3.2em;height:2.9em}
+.sp426.s26-oribbon{left:.1em;top:.9em;width:2.1em;height:2.1em}
+.sp426.s26-oring{left:3.75em;top:6.9em;width:1.5em;height:1.5em}
+.sp426.s26-obag{left:4em;top:4.3em;width:2.2em;height:2.2em}
+/* 숙달 그림 단서 — Ben 머리에 모자 자국 · Amy 머리에 리본 고무줄 · Mina 손가락에 반지 자국 · Max 어깨에 가방끈 자국 */
+.pz426>i:not(.wr426){position:absolute;display:block;font-style:normal}
+.dz426>i:not(.wr426),.dz426>b{position:absolute;display:block;font-style:normal}
+.dz426 .cu426{left:1.6em;top:2.05em;width:2.8em;height:.16em;border-radius:.1em;background:rgba(255,255,255,.8);z-index:3}
+.dz426 .cb426{left:1.05em;top:1.75em;width:.5em;height:.3em;border-radius:.15em;background:#F06595;z-index:3}
+.dz426 .cr426{left:4.29em;top:7.53em;width:.36em;height:.36em;border-radius:50%;box-sizing:border-box;border:.08em solid #fff;z-index:3}
+.dz426 .cs426{left:3.75em;top:4.75em;width:.24em;height:3.05em;background:rgba(92,59,18,.45);transform:rotate(32deg);transform-origin:50% 0;z-index:3}
+/* 꾸미기 판 — 큰 사람 + 상자 셋(상자 칸 · 단 칸 초록 · 문항 칸) */
+.bd426{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:6px 0}
+.gx426{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:330px}
+.gp426{display:flex;flex-direction:column;align-items:center;gap:3px;border:3px solid #CED4DA;border-radius:12px;background:#fff;padding:3px 4px 5px}
+.gp426 .gh426{font-size:13px;line-height:1.3;color:#fff;border-radius:8px;padding:1px 8px;white-space:nowrap}
+.gp426 .gc426{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+.gp426.k-bd{border-color:#F06595}.gp426.k-bd .gh426{background:#F06595}
+.gp426.k-cl{border-color:#4C6EF5}.gp426.k-cl .gh426{background:#4C6EF5}
+.gp426.k-hd{border-color:#40C057}.gp426.k-hd .gh426{background:#40C057}
+.ck426{position:relative;display:inline-flex;flex-direction:column;align-items:center;border:2px solid var(--border);border-radius:10px;background:#fff;padding:2px 3px;cursor:pointer;line-height:0}
+.ck426 .tg426{display:block;font-style:normal;font-size:12px;line-height:1.3;color:#C9B39C;min-width:42px;text-align:center}
+.ck426.found,.ck426.correct{border-color:var(--green);background:var(--green-light)}
+.ck426.found .tg426{color:var(--primary)}
+.ck426.wrong,.ck426.bad{background:rgba(244,67,54,.2);animation:shake .4s}
+/* 종이 — 꾸미기 자리 번호(머리 · 목 · 팔목 · 손가락 · 옷 · 어깨) */
+.dz426 .wn426{width:1.15em;height:1.15em;border-radius:50%;background:#9c4d13;color:#fff;font-size:.8em;line-height:1.15em;text-align:center;font-weight:800;z-index:7}
+.dz426 .n26-hd{left:4.6em;top:1.2em}
+.dz426 .n26-nk{left:3.9em;top:4.4em}
+.dz426 .n26-wr{left:-.05em;top:6.75em}
+.dz426 .n26-fg{left:4.9em;top:7.55em}
+.dz426 .n26-cl{left:2.45em;top:6.1em}
+.dz426 .n26-sh{left:4.9em;top:4.35em}
+/* 뒷면 장면 — 말하는 사람(나 · 이름표) + 같은 사람이 꾸민 그림 + 소품 */
+.ss426{position:relative;display:inline-block;width:11em;height:11.5em;line-height:0;vertical-align:middle;overflow:hidden;border-radius:.9em;background:#FFF9DB;text-align:left}
+.ss426>.pz426{position:absolute;left:3.8em;top:.25em}
+.ss426 .me426{position:absolute;left:.3em;top:.3em;width:2.3em;height:2.3em;border-radius:50%;background:#FFE066;border:.18em solid #F0C419;color:#7a5600;font-size:1.15em;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-style:normal;box-sizing:border-box}
+.nm426{display:inline-flex;align-items:center;gap:2px;font-size:14px;line-height:1.3;font-style:normal;background:#fff;border:2px solid #FF8A3D;color:#FF8A3D;border-radius:8px;padding:0 6px;font-family:'Jua',sans-serif}
+.nm426 .dd426{font-size:16px;font-style:normal}
+.ss426 .nm426{position:absolute;left:2px;top:2px;font-size:11px;padding:0 4px}
+.ss426 .nm426 .dd426{font-size:13px}
+.pz426 .hb426{left:-3.6em;top:4.6em;padding:.25em .4em;border:.1em solid #FF8A3D;border-radius:.6em;background:#fff;color:#FF8A3D;font-size:1em;line-height:1.2;white-space:nowrap}
+/* button — 외투(🧥 Lv2 #23) 위 큰 단추 셋 */
+.pz426.ct426 .g26-button{left:2.62em;top:5.25em;transform:scale(1.25);box-shadow:inset 0 0 0 .07em #E67700,0 1.05em 0 #FAB005,0 -1.05em 0 #FAB005}
+/* pocket — Mina 주머니에서 개구리(🐸 = frog Lv2 #6) 빼꼼 */
+.pz426 .fg426{left:1.95em;top:4.6em;font-size:1em;line-height:1;z-index:4}
+/* ribbon — Amy 리본이 머리보다 크다(과장) */
+.pz426.tx426 .g26-ribbon{transform:scale(2.4);transform-origin:70% 80%}
+/* badge — 별 배지(별 = #6 star 모양 그대로) */
+.pz426.sb426 .g26-badge::after{content:'';position:absolute;left:.09em;top:.08em;width:.5em;height:.5em;background:linear-gradient(#FFE066,#FAB005);clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+/* bracelet — ★진행형 1자리: 팔찌가 손 아래에서 팔목으로 올라와 끼워진다(움직이는 그림) */
+.pz426.wb426 .g26-bracelet{animation:wb426 2s ease-in-out infinite}
+@keyframes wb426{0%,15%{transform:translateY(1.25em) scale(.85)}60%,100%{transform:none}}
+/* zip — 점퍼(#8) 지퍼 */
+.pz426.jz426 .g26-zip{z-index:6}
+/* cap — Ben 모자를 거꾸로 쓰고 「멋있지?」(허세) */
+.pz426.bw426 .g26-cap>i{transform:scaleX(-1)}
+/* bag — Max 가방이 크고 열리니 간식 가득(먹보 · CSS) */
+.pz426.sk426 .g26-bag{transform:scale(1.25);transform-origin:0 0}
+.pz426 .sn426{left:4.45em;top:4.1em;width:.36em;height:.36em;border-radius:50%;background:#F06595;box-shadow:.42em .08em 0 #FAB005,.84em 0 0 #51CF66,.2em -.32em 0 #8E5A3C,.64em -.3em 0 #74C0FC;z-index:5}
+/* 움직임 끄기(종이 · 작은 칸) */
+.pz426.still *,.ss426.still *,.dz426.still *{animation:none!important}
+/*CLO426CSS-END*/
+  .sortbox { margin-top: 4px; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 8px 12px; display: flex; flex-direction: column; gap: 7px; }
+  .bank { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .bank .bw { font-size: 15px; font-weight: 800; color: #4a2408; letter-spacing: .3px; }
+  .ud { display: flex; gap: 8px; align-items: flex-start; }
+  .udc { flex: 1; border: 1.8px dashed #c9a27e; border-radius: 10px; padding: 4px 8px 6px; background: #fff; }
+  .udc.k-bd { flex: 1.5; border-color: #F06595; } .udc.k-cl { flex: 1.3; border-color: #4C6EF5; } .udc.k-hd { border-color: #40C057; }
+  .udh { font-size: 11px; font-weight: 800; color: #9c4d13; white-space: nowrap; }
+  .udl { border-bottom: 1.5px solid #d3d1c7; height: 21px; }
+  .box3, .box4 { flex: 1; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 5px 10px; }
+  .pr3 { display: flex; justify-content: space-between; gap: 6px; }
+  .pi3 { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .pic3 { line-height: 0; }
+  .two3 { font-size: 14px; font-weight: 800; color: #4a2408; display: flex; gap: 4px; align-items: center; }
+  .two3 .sl3 { font-style: normal; color: #b4b2a9; font-weight: 400; }
+  .ow4w { display: flex; gap: 8px; justify-content: space-between; }
+  .ow4 { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .ow4 .nm426 { font-size: 11px; padding: 0 4px; }
+  .ow4 .pz426 { font-size: 6px; }
+  .b4row { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; }
+  .draw4 { display: flex; flex-direction: column; gap: 2px; align-items: center; width: 92px; }
+  .draw4 .wb { text-align: center; font-size: 9.5px; line-height: 1.35; }
+  .fg4 { flex: none; border: 1.8px dashed #c9a27e; border-radius: 10px; background: #fff; padding: 2px 6px; line-height: 0; }
+  .s { font-size: 12px; font-weight: 800; color: #4a2408; display: flex; align-items: flex-end; gap: 2px; white-space: nowrap; }
+  .s .ln { display: inline-block; width: 36px; border-bottom: 1.8px solid #b4b2a9; height: 17px; }
+  .wb { font-size: 10px; color: #888780; line-height: 1.5; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv4 · 어휘 #26</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main">꾸미는 것은 몸의 자리에 — 누구의 것인지는 's.</div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 몸에 다는 판 — cap · ribbon · necklace · bracelet · ring / 옷에 붙는·드는 판 — button · zip · pocket · badge · bag.
+    <span class="big">목엔 necklace, 팔목엔 bracelet · 이름 뒤 's 는 그 사람의 것</span>
+  </div>
+
+  <h2><span class="n">1</span> 따라 써요 <span class="hint">흐린 글자를 따라 써요 — 위 줄 몸에 다는 판 · 아래 줄 옷에 붙는·드는 판</span></h2>
+  <div class="trace"><div class="traceword"><div class="outline">cap</div><div class="line"></div></div><div class="traceword"><div class="outline">ribbon</div><div class="line"></div></div><div class="traceword"><div class="outline">necklace</div><div class="line"></div></div><div class="traceword"><div class="outline">bracelet</div><div class="line"></div></div><div class="traceword"><div class="outline">ring</div><div class="line"></div></div></div>
+  <div class="trace"><div class="traceword"><div class="outline">button</div><div class="line"></div></div><div class="traceword"><div class="outline">zip</div><div class="line"></div></div><div class="traceword"><div class="outline">pocket</div><div class="line"></div></div><div class="traceword"><div class="outline">badge</div><div class="line"></div></div><div class="traceword"><div class="outline">bag</div><div class="line"></div></div></div>
+
+  <h2><span class="n">2</span> 상자 나누기 <span class="hint">단어를 읽고 — 몸에 다는 것 · 옷에 붙은 것 · 드는 것 상자에 옮겨 써요</span></h2>
+  <div class="sortbox"><div class="bank"><span class="bw" data-w="badge">badge</span><span class="bw" data-w="ring">ring</span><span class="bw" data-w="zip">zip</span><span class="bw" data-w="ribbon">ribbon</span><span class="bw" data-w="bag">bag</span><span class="bw" data-w="button">button</span><span class="bw" data-w="necklace">necklace</span><span class="bw" data-w="pocket">pocket</span><span class="bw" data-w="cap">cap</span><span class="bw" data-w="bracelet">bracelet</span></div><div class="ud"><div class="udc k-bd" data-k="bd"><div class="udh">몸에 다는 것</div><div class="udl"></div><div class="udl"></div><div class="udl"></div><div class="udl"></div><div class="udl"></div></div><div class="udc k-cl" data-k="cl"><div class="udh">옷에 붙은 것</div><div class="udl"></div><div class="udl"></div><div class="udl"></div><div class="udl"></div></div><div class="udc k-hd" data-k="hd"><div class="udh">드는 것</div><div class="udl"></div></div></div></div>
+
+  <div class="twocol">
+    <div style="flex:1;display:flex;flex-direction:column">
+      <h2><span class="n">3</span> 짝 고르기 <span class="hint">그림을 보고 — 맞는 단어에 동그라미</span></h2>
+      <div class="box3"><div class="pr3"><div class="pi3" data-w="necklace"><span class="pic3"><span class="pz426 still" data-vs="necklace" style="font-size:6px"><span class="bod" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i></span><i class="wr426 g26-necklace" data-g="necklace"></i><i class="sp426 s26-necklace"></i></span></span><span class="two3"><span class="ch3">necklace</span><i class="sl3">/</i><span class="ch3">bracelet</span></span></div><div class="pi3" data-w="zip"><span class="pic3"><span class="pz426 still" data-vs="zip" style="font-size:6px"><span class="bod" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i></span><i class="wr426 g26-zip" data-g="zip"><i>🤐</i></i></span></span><span class="two3"><span class="ch3">button</span><i class="sl3">/</i><span class="ch3">zip</span></span></div><div class="pi3" data-w="bag"><span class="pic3"><span class="pz426 still" data-vs="bag" style="font-size:6px"><span class="bod" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i></span><i class="wr426 g26-bag" data-g="bag"><i>🎒</i></i></span></span><span class="two3"><span class="ch3">pocket</span><i class="sl3">/</i><span class="ch3">bag</span></span></div></div></div>
+    </div>
+    <div style="flex:1.2;display:flex;flex-direction:column">
+      <h2><span class="n">4</span> 누구의 것? <span class="hint">이름표를 보고 상자에서 골라 써요 · 내 꾸미기를 그려요</span></h2>
+      <div class="box4"><div class="b4row"><div class="b4own"><div class="ow4w"><div class="ow4" data-n="Mina"><i class="nm426"><i class="dd426">👧</i>Mina</i><span class="pz426 still"><span class="bod" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i></span><i class="wr426 g26-cap" data-g="cap"><i>🧢</i></i></span><div class="s">It is <span class="ln"></span>'s cap.</div></div><div class="ow4" data-n="Ben"><i class="nm426"><i class="dd426">🧒</i>Ben</i><span class="pz426 still"><span class="bod" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i></span><i class="wr426 g26-cap" data-g="cap"><i>🧢</i></i></span><div class="s">It is <span class="ln"></span>'s cap.</div></div></div><div class="wb">상자 · Ben · Amy · Mina</div></div><div class="draw4"><div class="fg4"><span class="dz426 m-ws still" style="font-size:8px"><span class="bod" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i></span><b class="wn426 n26-hd">1</b><b class="wn426 n26-nk">2</b><b class="wn426 n26-wr">3</b><b class="wn426 n26-fg">4</b><b class="wn426 n26-cl">5</b><b class="wn426 n26-sh">6</b></span></div><div class="wb">번호 자리에 내 꾸미기<br>1 머리 2 목 3 팔목 4 손가락 5 옷 6 어깨</div></div></div></div>
+    </div>
+  </div>
+
+  <div class="recap">오늘 열 단어 = <b>button · pocket · ribbon · necklace · ring · badge · bracelet · zip · cap · bag</b> — 몸의 자리에 달아요!</div>
+
+  <div class="parent">
+    <b>부모님께</b> · 이름 뒤에 붙는 <b>'s</b> 는 「그 사람의 것」이에요(<b>It is Ben's cap.</b> = Ben 의 모자예요) — 이름과 물건 사이에만 씁니다.
+    · <b>zip</b> 은 「지퍼」 이름으로만 배워요. · 이 활동지는 <b>보고 옮겨 쓰는</b> 종이입니다. <b>받아쓰기로 확인하지 마세요.</b><br>
+    <b>정답</b> · ② 몸에 다는 것 — cap · ribbon · necklace · bracelet · ring / 옷에 붙은 것 — button · zip · pocket · badge / 드는 것 — bag · ③ necklace · zip · bag · ④ Mina · Ben · 내 꾸미기는 그린 대로 다 정답
+  </div>
+</body>
+</html>
