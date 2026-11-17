@@ -2,7 +2,7 @@
  * 걸음이 오를 때의 「커졌어!」 · 부탁을 해냈을 때의 리본 · 저장 안내 한 줄(동의 전).
  * 섬 페이지는 걸음 표(STAGES)·반응·커짐만 가진다. 같은 기능을 섬마다 따로 쓰지 않는다. */
 import * as wallet from './wallet.js?v=1';
-import { art, arts, group, paint, glyph } from './art.js?v=4';
+import { art, arts, group, paint, glyph } from './art.js?v=5';
 export { wallet, art, arts, group, paint, glyph };
 
 // ── 내가 정한 수치

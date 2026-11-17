@@ -1,5 +1,5 @@
 /* 수학 놀이터 그림 이름표 — 섬 페이지는 그림을 직접 쓰지 않고 art('fruit.apple') 처럼 이름으로 부른다.
- * 지금은 전부 이모지다. 나중에 그린 그림으로 바꿀 때는 이 표만 고친다(값을 { src: '/math/play/art/fruit.apple.png' } 로 두면 <img> 가 된다).
+ * 지금은 전부 이모지다. 나중에 그린 그림으로 바꿀 때는 이 표만 고친다(값을 { src: '/math/play/art/fruit.apple.png?v=2' } 로 두면 <img> 가 된다).
  * 파일 이름 규칙: /math/play/art/<이름표>.png (예: fruit.apple.png · guest.bear.png) */
 const ART = {
   'coin': '🪙',
@@ -8,8 +8,8 @@ const ART = {
   'shop.hammer': '🔨', 'shop.basket': '🧺', 'shop.awning': '⛱️', 'shop.bell': '🔔', 'shop.sign': '🪧', 'shop.pot': '🪴', 'shop.lamp': '🏮',
   'bake.bread': '🍞', 'bake.croissant': '🥐', 'shop.cart': '🛒', 'shop.till': '💰', 'shop.safe': '🏦', 'shop.door': '🚪', 'shop.memo': '📝', 'day.morning': '🌅', 'day.evening': '🌇',
   // 항구 장터·광장(N05 검수): 물건은 Pirate Kit 모형을 찍은 그림(/math/play/art/, CC0 재료에서 만듦)
-  'market.wood': { src: '/math/play/art/market.wood.png' }, 'market.stone': { src: '/math/play/art/market.stone.png' }, 'market.barrel': { src: '/math/play/art/market.barrel.png' }, 'market.fish': { src: '/math/play/art/market.fish.png' },
-  'plaza.wood': { src: '/math/play/art/plaza.wood.png' }, 'map.piece': '🧩', 'hint.hand': '👆',
+  'market.wood': { src: '/math/play/art/market.wood.png?v=2' }, 'market.stone': { src: '/math/play/art/market.stone.png?v=2' }, 'market.barrel': { src: '/math/play/art/market.barrel.png?v=2' }, 'market.fish': { src: '/math/play/art/market.fish.png?v=2' },
+  'plaza.wood': { src: '/math/play/art/plaza.wood.png?v=2' }, 'map.piece': '🧩', 'hint.hand': '👆',
   'shop.heart': '❤️', 'shop.heart.empty': '🤍', 'guest.mark.hurry': '💦', 'guest.mark.regular': '💛',
   'guest.bear': '🐻', 'guest.rabbit': '🐰', 'guest.cat': '🐱', 'guest.dog': '🐶', 'guest.fox': '🦊', 'guest.panda': '🐼', 'guest.frog': '🐸', 'guest.monkey': '🐵',
   // 낚시 섬

@@ -3,8 +3,8 @@
  * 손님의 말풍선(주문 팻말)은 shop.js 의 .guest 를 사람 머리 위로 옮겨 쓴다. 물체는 모두 기성 재료(Quaternius Pirate Kit, CC0) — ../bridge/assets/ 를 같이 씀.
  * 물건 모습: 장작 = UI_Wood · 돌 = Environment_Rock_5 · 통 = Prop_Barrel · 물고기 통 = Prop_Bucket_Fishes(음식 꾸러미를 받으면 GOODS 표만 바꾼다). 빵집 물건은 모형이 없어 아래 칸(나무 상자 줄)에서만 담는다. */
 import { createStage, THREE, sleep, CALM } from '../common/stage3d.js?v=1';
-import { toast, tone, audio } from '../common/kit.js?v=5';
-import * as M5 from './rules.js?v=2';
+import { toast, tone, audio } from '../common/kit.js?v=6';
+import * as M5 from './rules.js?v=3';
 
 // ── 내가 정한 수치
 const M = {
@@ -12,6 +12,7 @@ const M = {
   LINE_Z: -.7, SLOT: 1.55, EDGE: 3.5,          // 손님이 서는 줄(가운데부터 양옆으로)
   COUNTER_Z: 1.75, TOP: .83, BARREL: .62,       // 계산대(통 줄) · 윗면
   ROLL_MS: 3200,                    // 굴러가는 물건이 굴러 떨어지기까지(몇 초마다는 ./rules.js N5.ROLL)
+  EDGE_Z: -2.5,                     // 선착장 뒤 끝(굴러간 물건이 바다에 빠지는 곳)
   WAIT_STOMP: .3,                   // 이보다 덜 남으면 손님이 발을 구른다(고개 젓기)
   FIT: 4.3,                         // 화면 폭에 늘 들어올 양끝(물고기 통 더미 바깥)
 };
@@ -63,7 +64,7 @@ function pile(k, box){ const key = box ? 'box' : k, old = piles[key]; if (old) {
   if (box) for (let i = 0; i < 10; i++) { const o = good(k, .62); if (o) { o.position.set(((i % 5) - 2) * .25, (i < 5 ? 0 : .2), i < 5 ? .12 : -.08); g.add(o); } }
   else for (const [x, y, z] of pileShape(n)) { const o = good(k); if (o) { o.position.set(x, y, z); o.rotation.y = Math.random() * 6; g.add(o); } }
   piles[key] = { g, k, box }; tag(g, { t: box ? 'box' : 'pile', k }); return g; }
-function piles3(){ const o = shop.SAVE.owned, list = shop.R.goods(o, S.shop).filter(k => GOODS[k] && (k !== 'grape' || shop.L.fish() > 0))   /* 생선이 없으면 물고기 통 더미도 없음 */, want = new Set(list.map(k => k)); const box = (o.box && GOODS[shop.R.STOCK[S.shop]]) ? shop.R.STOCK[S.shop] : null;
+function piles3(){ const o = shop.SAVE.owned, list = shop.goodsM().filter(k => GOODS[k] && (k !== 'grape' || shop.L.fish() > 0))   /* 생선이 없으면 물고기 통 더미도 없음 */, want = new Set(list.map(k => k)); const box = (o.box && GOODS[shop.R.STOCK[S.shop]]) ? shop.R.STOCK[S.shop] : null;
   for (const key of Object.keys(piles)) if ((key === 'box' ? !box || piles.box.k !== box : !want.has(key))) { scene.remove(piles[key].g); pick.splice(pick.indexOf(piles[key].g), 1); delete piles[key]; }
   for (const k of list) if (!piles[k]) pile(k); if (box && !piles.box) pile(box, true); }
 
@@ -115,8 +116,8 @@ function startRoll(){ const ks = Object.keys(piles).filter(k => k !== 'box'); if
   const o = good(P.k), from = new THREE.Vector3(); src.getWorldPosition(from); src.visible = false; o.position.copy(from); scene.add(o); const dir = from.x < 0 ? 1 : -1;
   roll = { o, src, k: P.k, t: 0, dir, x0: from.x }; tag(o, { t: 'roll' }); o.position.y = M.FLOOR + .15; tone(330, .2, 'triangle', .06, 0, 220); S.log.push({ roll: 'start' }); }
 function endRoll(caught){ const r = roll; if (!r) return; roll = null; pick.splice(pick.indexOf(r.o), 1); S.log.push({ roll: caught ? 'caught' : 'miss' });
-  if (caught) { audio(); tone(780, .1, 'square', .06); tone(1170, .14, 'square', .06, .08); toast('잡았다!', 900); shop.put(r.k, 1);   /* 잡으면 바로 바구니로(바구니가 차 있으면 더미로 돌아감) */ tween(r.o.position, { y: r.o.position.y + .8 }, 220).then(() => { scene.remove(r.o); r.src.visible = true; }); }
-  else { tween(r.o.position, { y: -1.2, z: r.o.position.z + 1.6 }, 600).then(() => { scene.remove(r.o); setTimeout(() => r.src.visible = true, 1500); }); tone(200, .3, 'sine', .06, 0, 90); } }
+  if (caught) { audio(); tone(780, .1, 'square', .06); tone(1170, .14, 'square', .06, .08); toast('잡았다!', 900); const g = S.sel, want = g && !g.leaving && !S.payG ? (g.order[r.k] || 0) - shop.count(r.k) : 0; if (want > 0) shop.put(r.k, 1);   /* 지금 손님이 그 물건을 더 원하면 바구니로, 아니면 더미로 돌아감(주문을 흐트러뜨리지 않게) */ tween(r.o.position, { y: r.o.position.y + .8 }, 220).then(() => { scene.remove(r.o); r.src.visible = true; }); }
+  else { tween(r.o.position, { y: -1.2, z: r.o.position.z - .7 }, 600, t => t * t).then(() => { scene.remove(r.o); setTimeout(() => r.src.visible = true, 1500); }); tone(200, .3, 'sine', .06, 0, 90); } }   /* 선착장 뒤 끝에서 바다로 퐁 */
 
 // ── 누르기
 $('c').addEventListener('pointerdown', e => { const hit = pointerRay(e).intersectObjects(pick, true)[0]; if (!hit) return; const a = hit.object.userData.act; if (!a) return; e.preventDefault(); audio();
@@ -131,7 +132,7 @@ function bump(P){ if (!P) return; const g = P.g; tween(g.scale, { y: .9 }, 70).t
 let t0 = 0;
 let aimT = 0;
 stage.frame((dt, t) => { if ((aimT += dt) > .4) { aimT = 0; const pn = document.querySelector('.inside'), k = innerWidth + 'x' + innerHeight + ':' + Math.round(pn ? pn.getBoundingClientRect().top : 0); if (k !== aimKey) aim(); } piles3(); drawBasket(); drawSlots(); sync(); if (ship) { ship.position.y = Math.sin(t * .8) * .06; ship.rotation.z = Math.sin(t * .6) * .03; }
-  if (roll) { roll.t += dt * 1000; const k = roll.t / M.ROLL_MS; roll.o.position.x = roll.x0 + roll.dir * k * 4.2; roll.o.rotation.z -= roll.dir * dt * 6; roll.o.position.z = M.COUNTER_Z + .1 - k * .8;   /* 줄 쪽으로(아래 판에 가리지 않게) */ if (k >= 1) endRoll(false); }
+  if (roll) { roll.t += dt * 1000; const k = roll.t / M.ROLL_MS; roll.o.position.x = roll.x0 + roll.dir * k * 1.6; roll.o.rotation.x -= dt * 7; roll.o.position.z = M.COUNTER_Z + .1 + (M.EDGE_Z - M.COUNTER_Z - .1) * k;   /* 손님 줄 사이를 지나 선착장 뒤 끝으로 */ if (k >= 1) endRoll(false); }
   else if (!CALM && S.q.length && !S.asking && !S.payG && !S.paused) { const n5 = shop.SAVE.n5; if (rollIn === Infinity) { if (n5.seen.roll) rollIn = M5.rollGap(); else if (M5.rollDue(n5)) rollIn = 2.5; } else { rollIn -= dt; if (rollIn <= 0) { n5.seen.roll = true; shop.wallet.save(); rollIn = M5.rollGap(); startRoll(); } } }
   t0 = t; });
 $('loading').style.opacity = 0; setTimeout(() => $('loading').remove(), 500);

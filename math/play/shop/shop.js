@@ -5,10 +5,10 @@
  *     과일 상자를 셋 다 사면 값이 붙고(손님이 올려놓은 돈을 보고 「받기」·「더 줘야지?」), 값을 받은 손님이 열이 되면 거스름.
  *     다 꾸미면 옆에 빵집(식빵 10 · 크루아상 5). 규칙은 ./rules.js.
  * 틀(위쪽 띠·동전·알림·효과음·「커졌어!」)은 ../common/kit.js, 그림은 ../common/art.js. 산 것·하트·단골·오늘 장사는 지갑의 가게 칸에 남는다. */
-import { wallet, art, arts, group, paint, hud, pay, grew, did, audio, tone, sfx, toast } from '../common/kit.js?v=5';
+import { wallet, art, arts, group, paint, hud, pay, grew, did, audio, tone, sfx, toast } from '../common/kit.js?v=6';
 import * as R from './rules.js?v=2';
 import * as A from '../common/ask.js?v=1';
-import * as M5 from '../market/rules.js?v=2';
+import * as M5 from '../market/rules.js?v=3';
 import * as L from '../common/loop.js?v=1';   /* N04 고리: 장터의 「물고기 통」은 낚시에서 가져온 생선만큼 */
 const $ = id => document.getElementById(id), one = a => a[Math.floor(Math.random() * a.length)], wait = ms => new Promise(r => setTimeout(r, ms));
 /* N05: 3D 항구 장터(/math/play/market/)는 같은 규칙에 물건 모습만 다르다(음식 꾸러미를 받으면 이 표만 바꾼다). M3 = 3D 쪽에서만 켜지는 것: 팻말의 남은 수 · 줄 끝의 셈 · 거스름 식 · 섞는 것 */
@@ -31,9 +31,12 @@ function look(){ const o = O(), roof = $('roof'), bake = S.shop === 'bakery';
   $('shopName').textContent = bake ? R.BAKERY.name : R.shopName(o); roof.classList.toggle('sign', !!o.sign && !bake); roof.classList.toggle('awning', !!o.awning); roof.classList.toggle('bakery', bake); $('bell').hidden = !o.bell; $('lamp').hidden = !o.lamp;
   $('shop').classList.toggle('has-pot', !!o.pot); $('basket').classList.toggle('big', !!o.basket || bake); shelf(); hearts(); hammer(); dayBar(); }
 /* N04 생선 진열대(3D 만): 나무 상자 칸에 남은 생선 수, 다 팔리면 빈 칸 */
-function fishMark(){ if (!M3) return; const a = $('shelf').querySelector('[data-k="grape"]'); if (!a) return; let s = a.querySelector('.stock'); if (!s) { s = el('span', 'stock'); a.appendChild(s); } const n = L.fish() - count('grape'); s.textContent = Math.max(0, n); a.classList.toggle('empty', n < 1); }
+/* 생선이 있으면 꾸미기와 상관없이 물고기 통을 판다(낚시 → 장터가 처음부터 이어지게). 규칙(rules.js)은 그대로 — 진열 목록과 주문에만 얹는다 */
+const fishOn = () => M3 && S.shop === 'fruit' && L.fish() > 0;
+function goodsM(){ const g = R.goods(O(), S.shop); if (fishOn() && !g.includes('grape')) g.push('grape'); return g; }
+function fishMark(){ if (!M3) return; let a = $('shelf').querySelector('[data-k="grape"]'); if (S.shop === 'fruit' && !a && fishOn()) { shelf(); return; } if (!a) return; let s = a.querySelector('.stock'); if (!s) { s = el('span', 'stock'); a.appendChild(s); } const n = L.fish() - count('grape'); s.textContent = Math.max(0, n); a.classList.toggle('empty', n < 1); }
 function shelf(fresh){ const o = O(), sh = $('shelf'), price = R.priceOn(o, S.shop); sh.innerHTML = '';
-  for (const k of R.goods(o, S.shop)) { const b = el('button', 'crate', pic(k) + (price ? `<span class="tag">${R.PRICE[k]}</span>` : '')); b.dataset.k = k; b.onclick = () => put(k, 1); sh.appendChild(b); }
+  for (const k of goodsM()) { const b = el('button', 'crate', pic(k) + (price ? `<span class="tag">${R.PRICE[k]}</span>` : '')); b.dataset.k = k; b.onclick = () => put(k, 1); sh.appendChild(b); }
   if (o.box || S.shop === 'bakery') { const k = key(), b = el('button', 'crate', `${art('shop.box')}<small>${pic(k)} 10개</small>`); b.dataset.k = 'box'; b.onclick = () => put(k, 10); sh.appendChild(b); }
   if (fresh) { const b = sh.querySelector(`[data-k="${fresh}"]`); if (b) b.classList.add('new'); } stockMarks(); fishMark(); }
 function stockMarks(){ if (!dayMode() || T().phase !== 'open') return; const k = key(), n = T().stock, a = $('shelf').querySelector(`[data-k="${k}"]`), b = $('shelf').querySelector('[data-k="box"]');
@@ -71,6 +74,8 @@ function arrive(){ let kind, face, order, pi = -1, newReg = false;
     newReg = S.shop === 'fruit' && kind !== 'regular' && SAVE.heart >= R.TUNE.HEART && Object.keys(SAVE.regs).length < R.TUNE.REG_MAX; }
   else { const regsOut = Object.keys(SAVE.regs).filter(f => !S.q.some(g => g.face === f)), n = R.nextGuest(SAVE, regsOut); kind = n.kind; newReg = n.newReg;
     const busy = new Set([...S.q.map(g => g.face), ...Object.keys(SAVE.regs)]); face = n.reg || one(FACES.filter(f => !busy.has(f))); order = kind === 'regular' ? { ...SAVE.regs[face].o } : R.orderFor(O(), kind); }
+  /* N04: 생선이 있으면 손님이 생선도 찾는다(꾸미기 전에도 — 낚시 → 장터). 단골이 될 손님·단골 주문에는 얹지 않는다 */
+  if (M3 && !dayMode() && kind !== 'regular' && !newReg && !order.grape && L.fish() > 0 && !(O().fruits || []).includes('grape') && Math.random() < N5.FISH_P) { const n = 1 + Math.floor(Math.random() * Math.min(N5.FISH_MAX, L.fish())); if (total(order) + n <= cap()) order.grape = n; }
   const g = { id: ++S.id, pi, face, kind, newReg, order, wait: 1, hint: 0, leaving: false, el: el('div', 'guest out', '<div class="bubble"></div><span class="face"></span><span class="mark"></span><div class="wait"><i></i></div>') };
   if (kind === 'regular') g.firstUsual = SAVE.regs[face].n <= 1;
   if (M3) { const ev = M5.arrival(SAVE.n5, kind); S.arrivals = SAVE.n5.arrivals; keep(); if (ev.surprise) g.surprise = true; if (ev.fair) { S.fair = N5.FAIR_N; S.log.push({ fair: true }); [196, 247, 294].forEach((f, i) => tone(f, .18, 'square', .06, i * .12)); } else if (S.fair > 0) S.fair--; }
@@ -203,4 +208,4 @@ if (dayMode()) S.shop = T().shop;
 paint(); hud(M3 ? { back: { href: '/math/play/plaza/', label: '← 광장' } } : undefined); look(); drawBasket();
 if (dayMode()) { if (T().phase === 'morning') morning(); else if (T().phase === 'evening') evening(); }
 else if (R.dayOn(O(), 'fruit')) morning();
-window.__shop = { L, S, SAVE, R, wallet, put, unput, select, openSheet, doBuy, arrive, matches, count, morning, evening, E, T, M3, ARTN, NAMEX, M5, CALM };
+window.__shop = { L, goodsM, S, SAVE, R, wallet, put, unput, select, openSheet, doBuy, arrive, matches, count, morning, evening, E, T, M3, ARTN, NAMEX, M5, CALM };

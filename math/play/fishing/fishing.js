@@ -9,14 +9,14 @@
 import { createStage, THREE, LOOK, CALM, sleep } from '../common/stage3d.js?v=1';
 import * as A from '../common/ask.js?v=1';
 import * as R from './rules.js?v=1';
-import { wallet, audio, tone } from '../common/kit.js?v=5';
+import { wallet, audio, tone } from '../common/kit.js?v=6';
 import * as L from '../common/loop.js?v=1';   /* N04: 실은 통의 물고기는 장터 생선 진열대로 */
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)
 const T = { DECK: .45, TUB_X: [-2.7, -1.65, -.6], TUB_Z: 1.9, TUB_S: 1.3, BOAT: [2.35, 0, 1.25], BOAT_S: .48, ANNE: [.55, 1.7],
   SEA: { x: [-5.5, 5.5], z: [-5.8, -2.1] }, FISH_S: 1.35, IN_TUB_S: .58, SPEED: [.55, 1.05], FLY_MS: 650, PICK_PX: 75,
   DUSK: { SUNSET: ['#f08a5d', '#f6b98b', '#ffe0b0'], NIGHT: ['#283057', '#6a4f7d', '#c9806c'], SEA_DUSK: 0x1e5c86 },
-  BEAT: .72, SCATTER: 1.8, THIEF_SPEED: .9, LINE_FAST: .1 };
+  SWIM_Y: -.04, BEAT: .72, SCATTER: 1.8, THIEF_SPEED: .9, LINE_FAST: .1 };
 const $ = id => document.getElementById(id);
 const SAVE = wallet.island('fishing'); SAVE.trips = Math.max(0, SAVE.trips | 0); SAVE.tubs = Math.max(0, SAVE.tubs | 0);
 const S = { ready: false, busy: true, intro: false, missing: false, trip: null, ti: 0, left: 0, fill: [[], [], []], loaded: [], fish: [], tubs: [], tubFish: [[], [], []], clock: 0, streak: 0, overInTub: false, log: [], ask: null, thief: null, thiefIn: 0, schoolIn: 0, t: 0, beat: 0, scatter: 0, signs: [], id: 0 };
@@ -38,7 +38,7 @@ function bucketKit(g){ let mesh = null; g.scene.traverse(m => { if (m.isMesh && 
     const sz = b.size; if (sz.z >= sz.x) inner.rotation.y = Math.PI / 2; const w = new THREE.Group(); w.add(inner); w.userData.len = Math.max(sz.x, sz.z); return w; });
   return { tub, fish, mat: mesh.material }; }
 let KIT = null;
-const tint = (o, color, glow = 0) => { o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.color.set(color); if (glow) { m.material.emissive = new THREE.Color(color); m.material.emissiveIntensity = glow; } } }); return o; };
+const tint = (o, color, glow = 0) => { o.traverse(m => { if (m.isMesh) { const c0 = m.material.color; if (c0.r + c0.g + c0.b < .12) return;   /* 어두운 부분(눈)은 그대로 */ m.material = m.material.clone(); m.material.color.set(color); if (glow) { m.material.emissive = new THREE.Color(color); m.material.emissiveIntensity = glow; } } }); return o; };
 
 // ── 무대 꾸리기
 async function build(){ await Promise.all(NAMES.map(async n => { K[n] = await stage.load(n); })); await Promise.all(OPT.map(async n => { try { K[n] = await stage.load(n); } catch (_) { K[n] = null; } }));
@@ -75,7 +75,7 @@ const _v = new THREE.Vector3(); function edgeX(z, side){ _v.set(0, .04, z).proje
 // ── 물고기
 /* 물고기 하나: 고른 모형(움직임 있음)을 감싸서(모형은 +z 를 봄 → 감싼 쪽이 +x 를 보게) 돌려준다. 모형이 없으면 양동이 조각으로 */
 function fishModel(kind, v){ const name = kind === 'gold' ? SPECIAL.gold : kind === 'puffer' ? SPECIAL.puffer : kind === 'big' ? SPECIAL.big[S.id % 2] : FISH[(v * 3 + S.id) % FISH.length], rig = K['Fish_' + name], o = new THREE.Group();
-  if (rig) { const p = stage.person(rig, { scale: 1 }); scene.remove(p.obj); p.obj.rotation.y = Math.PI / 2; o.add(p.obj); stage.play(p, 'Swimming_Normal'); if (p.act) p.act.time = Math.random() * 2; o.userData.p = p; if (kind === 'gold') tint(p.obj, '#ffcf3a', .45); }
+  if (rig) { const p = stage.person(rig, { scale: 1 }); scene.remove(p.obj); p.obj.rotation.y = Math.PI / 2; o.add(p.obj); stage.play(p, 'Swimming_Normal'); if (p.act) p.act.time = Math.random() * 2; o.userData.p = p; o.userData.name = name; if (kind === 'gold') tint(p.obj, '#ffcf3a', .45); }
   else { o.add(KIT.fish[(v + S.id) % KIT.fish.length].clone(true)); if (kind === 'gold') tint(o, '#ffcf3a', .55); else if (kind === 'puffer') { tint(o, '#f3e3a2'); o.scale.set(1, 1.35, 1.25); } }
   o.traverse(m => { if (m.isMesh) m.castShadow = true; }); if (kind === 'big') o.userData.big = true;
   const s = T.FISH_S * (S.fk || 1) * (kind === 'big' ? 1.45 : .8 + Math.min(v, 9) * .06) * (rig ? .95 : 1); o.scale.multiplyScalar(s); scene.add(o); return o; }
@@ -107,16 +107,17 @@ async function hook1(f){ S.busy = true; lineTo(f); stage.play(S.anne, 'Sword', t
   const o = R.land(S.left, f), tub = S.tubs[S.ti], at = tub.position.clone(); at.y += .9; f.caught = true; flap(f.obj); S.log.push({ fish: f.v, kind: f.kind, out: o.kind, left: S.left });
   await stage.tween(f.obj.position, { x: at.x, y: at.y + 1.2, z: at.z }, flyMs() * .65, t => t * (2 - t)); await stage.tween(f.obj.position, { y: at.y }, flyMs() * .35, t => t * t);
   if (o.kind === 'over') { S.overInTub = true; S.streak = 0; A.flames(0); wobble(tub); tone(220, .25, 'sine', .1, 0, 140); S.scatter = T.SCATTER;
-    await stage.tween(f.obj.position, { x: f.x, y: .05, z: f.z }, 700, t => t); f.caught = false; if (f.obj.userData.p) stage.play(f.obj.userData.p, 'Swimming_Normal'); f.dir *= -1; f.sp *= 1.5; stage.play(S.anne, 'No', true); S.busy = false; return; }
+    await stage.tween(f.obj.position, { x: f.x, y: T.SWIM_Y, z: f.z }, 700, t => t); f.caught = false; if (f.obj.userData.p) stage.play(f.obj.userData.p, 'Swimming_Normal'); f.dir *= -1; f.sp *= 1.5; stage.play(S.anne, 'No', true); S.busy = false; return; }
   // 통에 들어감
+  if (f.obj.userData.name && wallet.collect('fish3d', f.obj.userData.name)) S.log.push({ book: f.obj.userData.name });   /* 도감: 처음 낚은 종류 */
   drop(f.obj); S.fish = S.fish.filter(x => x !== f); S.fill[S.ti].push(o.w); putInTub(S.ti, f, o.w); S.left = o.left; A.trayAdd(o.w, S.fill[S.ti].length > 1 ? '+' : '', f.kind === 'puffer' ? '부풂' : f.kind === 'gold' ? '황금' : '');
   tone(700 + S.fill[S.ti].reduce((a, b) => a + b, 0) * 25, .08, 'square', .06); if (f.kind === 'puffer') { tone(880, .2, 'sine', .08, 0, 1320); }
   if (o.kind === 'fit') { await closeTub(); return; }
   topUp(); S.busy = false; }
 function putInTub(k, f, w){ const n = S.tubFish[k].length, o = fishModel(f.kind, f.v); o.scale.multiplyScalar(T.IN_TUB_S / T.FISH_S / (S.fk || 1)); const a = n * 2.4, r = .1 + (n % 4) * .05; o.position.set(S.tubs[k].position.x + Math.cos(a) * r, T.DECK + .64 + Math.floor(n / 4) * .06, T.TUB_Z + Math.sin(a) * r); o.rotation.set(-.3, a, 0);
-  if (f.kind === 'puffer') stage.tween(o.scale, { y: o.scale.y * 1.35, z: o.scale.z * 1.25 }, 300); flap(o); S.tubFish[k].push(o); }
+  if (f.kind === 'puffer') stage.tween(o.scale, { y: o.scale.y * 1.35, z: o.scale.z * 1.25 }, 300); flap(o); S.tubFish[k].push(o); setTimeout(() => { const p = o.userData.p; if (p) { stage.unperson(p); o.userData.p = null; } }, 1600); }   /* 통 안에서는 잠깐 파닥이고 멈춘다(움직임을 계속 돌리면 무겁다) */
 function wobble(tub){ stage.tween(tub.rotation, { z: .28 }, 120).then(() => stage.tween(tub.rotation, { z: -.2 }, 160)).then(() => stage.tween(tub.rotation, { z: 0 }, 200)); }
-function topUp(){ while (S.fish.filter(f => !f.fast).length < S.trip.n) addFish(false); }
+function topUp(){ while (S.fish.filter(f => !f.fast && !f.leave).length < S.trip.n) addFish(false); }
 
 // ── 통이 딱 찼다: 띠의 식이 닫히고 배에 실린다
 async function closeTub(){ const k = S.ti, cap = S.trip.tubs[k]; A.trayAdd(cap, '=', ''); S.loaded.push(cap); if (!S.overInTub) S.streak++; else S.streak = 0; S.overInTub = false; A.flames(S.streak);
@@ -154,7 +155,7 @@ async function intro(){ const my = S.introId = (S.introId | 0) + 1; S.intro = tr
 // ── 팻말: 통(남은 칸 · 지금 통은 크게) · 물고기 등의 수
 function signsDraw(){ const sg = S.signs; S.tubs.forEach((t, k) => { const e = sg[k], done = k < S.loaded.length, cur = k === S.ti && !done;
     if (S.missing && !done) { A.signDraw(e, null); return; }
-    const left = cur ? S.left : done ? 0 : S.trip.tubs[k]; e.classList.toggle('off', !cur && !done); e.classList.toggle('done', done); A.signDraw(e, stage.screenOf(new THREE.Vector3(t.position.x, t.position.y + 1.2, t.position.z + .2)), done ? '✓' : left); });
+    const left = cur ? S.left : done ? 0 : S.trip.tubs[k]; e.classList.toggle('off', !cur && !done); e.classList.toggle('done', done); A.signDraw(e, stage.screenOf(new THREE.Vector3(t.position.x, t.position.y + (done ? .95 : 1.2), t.position.z + .2)), done ? S.loaded[k] : left); });   /* 실린 통은 그 통의 수를 그대로(끝의 셈에 쓸 수) */
   /* 물고기 팻말: 겹치면 위로 비켜 선다(화면 위 표시끼리만 — 물고기는 그대로) */
   const live = S.fish.filter(f => !f.caught), pts = live.map(f => { const q = stage.screenOf(new THREE.Vector3(f.obj.position.x, f.obj.position.y + .55 * (f.kind === 'big' ? 1.6 : 1), f.obj.position.z)); return { f, x: q.x, y: q.y, w: f.v <= 5 && f.kind !== 'gold' ? 14 + f.v * 12 : 38 }; }).sort((a, b) => b.y - a.y);
   for (let a = 0; a < pts.length; a++) for (let b = 0; b < a; b++) { const A = pts[a], B = pts[b]; if (Math.abs(A.x - B.x) < (A.w + B.w) / 2 + 4 && Math.abs(A.y - B.y) < 34) A.y = B.y - 36; }
@@ -167,10 +168,10 @@ stage.frame((dt, t) => { S.t = t; if (!S.ready) return;
     if (S.clock > T.BEAT && t - S.beat > .25 + (1 - S.clock) * 2.4) { S.beat = t; tone(96, .09, 'sine', .16); tone(72, .12, 'sine', .12, .09); } }
   // 물고기가 헤엄친다(넘친 뒤엔 잠깐 흩어짐)
   S.scatter = Math.max(0, S.scatter - dt); const boost = 1 + S.scatter;
-  for (const f of S.fish) { if (f.caught) continue; f.x += f.dir * f.sp * boost * dt; const o = f.obj; o.position.set(f.x, .04 + Math.sin(t * 2 + f.ph) * .05, f.z + Math.sin(t * .7 + f.ph) * .25); o.rotation.y = f.dir > 0 ? 0 : Math.PI; o.rotation.z = Math.sin(t * 6 + f.ph) * .12;
-    const l = edgeX(f.z, -1) - .9, r = edgeX(f.z, 1) + .9; if (f.fast) { if ((f.dir > 0 && f.x > r + 2) || (f.dir < 0 && f.x < l - 2)) f.gone = true; }   /* 떼는 지나간 쪽 끝에서만 사라짐 */ else if ((f.x < l + 1.4 && f.dir < 0) || (f.x > r - 1.4 && f.dir > 0)) f.dir *= -1; }
+  for (const f of S.fish) { if (f.caught) continue; f.x += f.dir * f.sp * boost * dt; const o = f.obj; o.position.set(f.x, T.SWIM_Y + Math.sin(t * 2 + f.ph) * .05, f.z + Math.sin(t * .7 + f.ph) * .25); o.rotation.y = f.dir > 0 ? 0 : Math.PI; o.rotation.z = Math.sin(t * 6 + f.ph) * .12;
+    const l = edgeX(f.z, -1) - .9, r = edgeX(f.z, 1) + .9; if (f.fast || f.leave) { if ((f.dir > 0 && f.x > r + 2) || (f.dir < 0 && f.x < l - 2)) f.gone = true; }   /* 떼는 지나간 쪽 끝에서만 사라짐 */ else if ((f.x < l + 1.4 && f.dir < 0) || (f.x > r - 1.4 && f.dir > 0)) f.dir *= -1; }
   for (const f of S.fish.filter(f => f.gone)) drop(f.obj); S.fish = S.fish.filter(f => !f.gone);
-  if (!S.busy && !S.missing && S.left > 0) { const live = S.fish.filter(f => !f.caught); const u = R.unstick(S.left, S.trip, live); if (u != null) { const f = live.find(x => x.kind === 'plain') || live[0]; if (f) { f.kind = 'plain'; f.v = u; } } }
+  if (!S.busy && !S.missing && S.left > 0) { const live = S.fish.filter(f => !f.caught); const u = R.unstick(S.left, S.trip, live); if (u != null && !live.some(x => x.rescue)) { const out = live.find(x => x.kind === 'plain' && !x.fast); if (out) out.leave = true; const f = addFish(false, { kind: 'plain', v: u }); f.rescue = true; f.sp *= 1.6; S.log.push({ rescue: u }); } }   /* 맞는 물고기가 없으면: 수를 바꾸지 않고, 맞는 물고기가 새로 들어오고 안 맞는 한 마리가 나간다 */
   // 빠른 떼
   if (S.trip.ev.school && thinking && !S.ask && (S.schoolIn -= dt) <= 0) { S.schoolIn = 14 + Math.random() * 10; const dir = Math.random() < .5 ? 1 : -1, z = -2 - Math.random() * 2.5; R.school(S.left, S.trip, Math.random).forEach((v, i) => { const f = addFish(false, { kind: 'plain', v, fast: true }); f.dir = dir; f.x = (dir > 0 ? edgeX(z, -1) - 1 : edgeX(z, 1) + 1) - dir * i * .9; f.z = z + (i % 2) * .5; }); S.log.push({ school: true }); tone(660, .08, 'triangle', .06); }
   // 도둑 배

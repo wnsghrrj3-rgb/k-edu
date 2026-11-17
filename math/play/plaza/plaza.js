@@ -6,7 +6,7 @@
 import { createStage, THREE, sleep } from '../common/stage3d.js?v=1';
 import * as A from '../common/ask.js?v=1';
 import * as R from './rules.js?v=1';
-import { wallet, audio, tone, art } from '../common/kit.js?v=5';
+import { wallet, audio, tone, art } from '../common/kit.js?v=6';
 import * as L from '../common/loop.js?v=1';   /* N04 나루터: 배 셋 · 팻말(동전·생선·나무) · 주민 부탁 */
 
 // ── 내가 정한 수치

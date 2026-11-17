@@ -10,7 +10,7 @@
 import { createStage, THREE, LITE, CALM, sleep } from '../common/stage3d.js?v=1';
 import * as A from '../common/ask.js?v=1';
 import * as R from './rules.js?v=6';
-import { wallet, audio, tone, art } from '../common/kit.js?v=5';
+import { wallet, audio, tone, art } from '../common/kit.js?v=6';
 import * as LP from '../common/loop.js?v=1';
 const CARGO = !new URLSearchParams(location.search).has('free');   /* ?free = 화물 싣기 없이(옛 방식, 하네스용) */
 
@@ -146,7 +146,7 @@ function single(){ const rooms = active().map(roomOf).filter(Boolean); if (!room
 
 const wait = async ms => { for (let t = 0; t < ms && !S.skip; t += 50) await sleep(50); };
 // ── 떠나는 장면: 건너편에서 누가 손을 흔든다 → 끊어진 다리를 따라 돌아와 앤 앞에 선다(화면을 누르면 건너뜀)
-async function intro(){ if (S.loading) { cargoOpen(); return; } S.busy = true; S.intro = true; S.skip = false; const f = S.voyages > 1 ? 1 : 0; cam.x = S.dest + .6; cam.wide = 1; await wait(T.INTRO_HOLD[f]); if (!S.skip) await stage.tween(cam, { x: camHome() }, T.INTRO_MS[f] * (S.ev.big ? 1.5 : 1)); cam.x = camHome(); cam.wide = camWide(); S.intro = false; S.busy = false; S.idle = S.t; single(); }
+async function intro(){ S.busy = true; S.intro = true; S.skip = false; const f = S.voyages > 1 ? 1 : 0; cam.x = S.dest + .6; cam.wide = 1; await wait(T.INTRO_HOLD[f]); if (!S.skip) await stage.tween(cam, { x: camHome() }, T.INTRO_MS[f] * (S.ev.big ? 1.5 : 1)); cam.x = camHome(); cam.wide = camWide(); S.intro = false; if (S.loading) { cargoOpen(); return; }   /* 화물 길: 틈 셋을 훑어 본 뒤에 화물 판이 열린다 */ S.busy = false; S.idle = S.t; single(); }
 const camHome = () => longTall() ? longFocus(S.gi) : active().length > 1 || slotsOf(S.gi) > R.SLOTS ? spanMid() : ox(S.gi) + HOME;
 const camWide = () => active().length > 1 ? T.TWIN_ZOOM : longTall() ? 1 : slotsOf(S.gi) > R.SLOTS ? T.LONG_ZOOM : 1;
 
@@ -223,11 +223,11 @@ function cargoTap(e){ if (!S.loading) return; const ray = stage.pointerRay(e), r
   if (!r) { let best = 1e9; for (const x of rs) { const q = stage.screenOf(x.group), d = Math.hypot(q.x - e.clientX, q.y - e.clientY); if (d < best) { best = d; r = x; } } if (best > T.PICK_PX) r = null; }   /* 판자 사이를 눌러도 가장 가까운 뗏목 */
   if (!r || r.single) return;
   audio(); LP.refundPlanks(r.n); r.used = true; for (const p of r.planks) scene.remove(p); scene.remove(r.group); S.rafts = S.rafts.filter(x => x !== r); layout(300); tone(300, .08, 'sine', .06); S.log.push({ unload: r.n }); cargoOpen(); }
-function cargoGo(){ if (!live().length) return; audio(); S.voy.cargo = live().map(r => r.n); S.loaded = S.voy.cargo.reduce((a, b) => a + b, 0); S.loading = false; cg.el.hidden = true; A.trayClear(); S.log.push({ depart: S.voy.cargo.slice(), need: S.voy.gaps.map(g => g.need) }); tone(392, .15, 'triangle', .1); tone(523, .2, 'triangle', .1, .15); intro(); }
+function cargoGo(){ if (!live().length) return; audio(); S.voy.cargo = live().map(r => r.n); S.loaded = S.voy.cargo.reduce((a, b) => a + b, 0); S.loading = false; cg.el.hidden = true; A.trayClear(); S.log.push({ depart: S.voy.cargo.slice(), need: S.voy.gaps.map(g => g.need) }); tone(392, .15, 'triangle', .1); tone(523, .2, 'triangle', .1, .15); layout(500); S.busy = false; S.idle = S.t; single(); }   /* 틈은 이미 봤으니 바로 시작 */
 
 // ── 손으로 끌기
 const liftPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(T.DECK + .45)), hit = new THREE.Vector3(), canvas = $('c');
-canvas.addEventListener('pointerdown', e => { if (S.loading) { cargoTap(e); return; } if (S.intro) { S.skip = true; S.tweens.forEach(w => { if (w.o === cam) w.t = w.ms; }); return; } if (S.busy || !S.ready || S.missing) return; audio(); hintOff(); const ray = stage.pointerRay(e), rs = live(), h = ray.intersectObjects(rs.flatMap(r => r.planks), false)[0];
+canvas.addEventListener('pointerdown', e => { if (S.loading && !S.intro) { cargoTap(e); return; } if (S.intro) { S.skip = true; S.tweens.forEach(w => { if (w.o === cam) w.t = w.ms; }); return; } if (S.busy || !S.ready || S.missing) return; audio(); hintOff(); const ray = stage.pointerRay(e), rs = live(), h = ray.intersectObjects(rs.flatMap(r => r.planks), false)[0];
   let r = h ? rs.find(x => x.planks.includes(h.object)) : null;
   if (!r) { let best = 1e9; for (const x of rs) { const q = stage.screenOf(x.group), d = Math.hypot(q.x - e.clientX, q.y - e.clientY); if (d < best) { best = d; r = x; } } if (best > T.PICK_PX) r = null; }   /* 판자 사이 틈을 눌러도 집힘 */
   if (!r || S.tweens.some(w => w.o === r.group)) return; S.drag = { r, id: e.pointerId }; canvas.setPointerCapture(e.pointerId); tone(520, .06, 'sine', .06); });
