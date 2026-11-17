@@ -308,7 +308,7 @@ export function groundAt(cam, clientX, clientY) { _v2.set((clientX / innerWidth)
    가까운 겹(가장자리~30): 논둑 · 전봇대 줄 · 버려진 수레·보따리 · 언 개울. 중간 겹(30~120): 언덕 · 지붕 · 연기 · 멀리 피란민 줄.
    먼 겹: 산 능선 두 겹 + 하늘(카메라를 따라다녀서 늘 멀리 있다). 뒤쪽(+z) 하늘은 붉게 — paintSky(k) 로 짙어진다. lite 면 움직이는 점을 뺀다. */
 export function backdrop(scene, o) {
-  const { rnd, z0 = 0, z1 = 320, edge, field = () => true, skip = () => false, skyTop = 0x1d2a4c, skyLow = 0x8f9ab8, backC = 0xd8542c, frontC = 0xffc070, ridgeC = [0x4e5a7a, 0x66729a], lite = false } = o;
+  const { rnd, z0 = 0, z1 = 320, edge, field = () => true, skip = () => false, skyTop = 0x1d2a4c, skyLow = 0x8f9ab8, backC = 0xd8542c, frontC = 0xffc070, ridgeC = [0x4e5a7a, 0x66729a], lite = false, houses = ['thatch_snow', 'tile_snow'], trees = ['pine_snow', 'tree_bare_snow', 'pine_snow'] } = o;   /* houses·trees = 블렌더 모델 이름(읽어 두었으면 그것으로, 아니면 예전 상자) */
   const d = new THREE.Object3D(), col = new THREE.Color(), lam = (c) => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
   function inst(geo, mat, list) { const m = new THREE.InstancedMesh(geo, mat, Math.max(1, list.length)); list.forEach((t, i) => { d.position.set(t[0], t[1], t[2]); d.rotation.set(0, t[6] || 0, 0); d.scale.set(t[3], t[4], t[5]); d.updateMatrix(); m.setMatrixAt(i, d.matrix); if (t[7] != null) m.setColorAt(i, col.set(t[7])); }); m.count = list.length; m.frustumCulled = false; scene.add(m); return m; }
   const ex = (z, side) => { const e = edge(clamp(z, z0, z1)); return side < 0 ? e[0] : e[1]; };
@@ -317,19 +317,20 @@ export function backdrop(scene, o) {
   for (let z = z0 - 48; z <= z1 + 48; z += 8) { if (skip(z)) continue;
     for (const side of [-1, 1]) { const e = ex(z, side);
       if (field(z)) { dikes.push([e + side * 17, 0.22, z, 26, 0.44, 0.7, 0]); for (const off of [9, 19]) dikes.push([e + side * off, 0.22, z + 4, 0.7, 0.44, 8, 0]); } } }
-  let prev = null;
-  for (let z = z0 - 48; z <= z1 + 48; z += 14) { if (skip(z)) { prev = null; continue; } const x = ex(z, -1) - 5; poles.push([x, 3, z, 1, 1, 1, 0]); if (prev) wires.push(prev[0] + 0.7, 5.4, prev[1], x + 0.7, 5.4, z, prev[0] - 0.4, 5.4, prev[1], x - 0.4, 5.4, z); prev = [x, z]; }
+  let prev = null; const wy = ART.power_pole ? 5.95 : 5.4;
+  for (let z = z0 - 48; z <= z1 + 48; z += 14) { if (skip(z)) { prev = null; continue; } const x = ex(z, -1) - 5; poles.push([x, 3, z, 1, 1, 1, 0]); if (prev) wires.push(prev[0] + 0.7, wy, prev[1], x + 0.7, wy, z, prev[0] - 0.4, wy, prev[1], x - 0.4, wy, z); prev = [x, z]; }
   for (let i = 0; i < 18; i++) { const z = z0 + rnd() * (z1 - z0); if (skip(z)) continue; const side = rnd() < 0.5 ? -1 : 1, x = ex(z, side) + side * (3 + rnd() * 11), a = rnd() * 6.28;
     if (i % 2) { carts.push([x, 0.75, z, 1, 1, 1, a]); for (const s of [-1, 1]) wheels.push([x + Math.cos(a) * 0.78 * s, 0.55, z - Math.sin(a) * 0.78 * s, 1, 1, 1, a]); }
     for (let k = 0; k < 2 + (i % 3); k++) bundles.push([x + rnd() * 2 - 1, 0.25, z + rnd() * 2 - 1, 0.5 + rnd() * 0.4, 0.5, 0.5 + rnd() * 0.3, rnd() * 3, [0x8a4a3a, 0x3a5a8a, 0xc8a050, 0x6a6a7a][k % 4]]); }
   for (let z = z0 - 48; z <= z1 + 48; z += 6) { if (skip(z)) continue; const w = Math.sin(z * 0.045) * 5, w2 = Math.sin((z + 6) * 0.045) * 5; ice.push([ex(z, 1) + 24 + (w + w2) / 2, 0.03, z + 3, 2.6, 0.06, 6.6, Math.atan2(w2 - w, 6)]); }
   inst(new THREE.BoxGeometry(1, 1, 1), lam(0xd2dbe8), dikes);
-  inst(new THREE.CylinderGeometry(0.12, 0.16, 6, 5), lam(0x4a3a2c), poles);
-  inst(new THREE.BoxGeometry(1.6, 0.12, 0.12), lam(0x4a3a2c), poles.map((p) => [p[0] + 0.15, 5.4, p[2], 1, 1, 1, 0]));
+  if (ART.power_pole) artInst(scene, 'power_pole', poles.map((q) => [q[0], 0, q[2], 1, 0]), {}, { shadow: false });
+  else { inst(new THREE.CylinderGeometry(0.12, 0.16, 6, 5), lam(0x4a3a2c), poles); inst(new THREE.BoxGeometry(1.6, 0.12, 0.12), lam(0x4a3a2c), poles.map((q) => [q[0] + 0.15, 5.4, q[2], 1, 1, 1, 0])); }
   { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(wires, 3)); scene.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x2a2a34 }))); }
-  inst(new THREE.BoxGeometry(1.4, 0.5, 2.2), lam(0x7a5a3a), carts);
-  const wg = new THREE.CylinderGeometry(0.55, 0.55, 0.12, 8); wg.rotateZ(Math.PI / 2); inst(wg, lam(0x5a4028), wheels);
-  inst(new THREE.BoxGeometry(1, 1, 1), lam(0xffffff), bundles);
+  if (ART.cart) artInst(scene, 'cart', carts.map((q, i) => [q[0], i % 3 === 0 ? -0.25 : 0, q[2], 1, q[6]]), {}, { shadow: false });
+  else { inst(new THREE.BoxGeometry(1.4, 0.5, 2.2), lam(0x7a5a3a), carts); const wg = new THREE.CylinderGeometry(0.55, 0.55, 0.12, 8); wg.rotateZ(Math.PI / 2); inst(wg, lam(0x5a4028), wheels); }
+  if (ART.bundle) for (const bc of [0x8a4a3a, 0x3a5a8a, 0xc8a050, 0x6a6a7a]) artInst(scene, 'bundle', bundles.filter((q) => q[7] === bc).map((q) => [q[0], 0, q[2], 0.7 + q[3] * 0.5, q[6]]), { cloth: bc }, { shadow: false });
+  else inst(new THREE.BoxGeometry(1, 1, 1), lam(0xffffff), bundles);
   inst(new THREE.BoxGeometry(1, 1, 1), lam(0xa9c3dc), ice);
   /* 중간 겹 */
   const hills = [], walls = [], roofs = [], villages = [];
@@ -337,8 +338,10 @@ export function backdrop(scene, o) {
   for (let v = 0; v < 4; v++) { const z = z0 + 30 + v * (z1 - z0 - 60) / 3 + rnd() * 20, side = v % 2 ? 1 : -1; if (skip(z)) continue; const vx = ex(z, side) + side * (34 + rnd() * 14); villages.push([vx, z]);
     for (let k = 0; k < 4; k++) { const x = vx + (rnd() - 0.5) * 16, zz = z + (rnd() - 0.5) * 14, a = rnd() < 0.5 ? 0 : Math.PI / 2, tile = (v + k) % 3 === 0; walls.push([x, 1.2, zz, 5, 2.4, 3.6, a, tile ? 0xc8b8a0 : 0xa89070]); roofs.push([x, 3.2, zz, 4.1, 1.8, 3.2, a + Math.PI / 4, tile ? 0x4e586c : 0xe6ebf2]); } }
   inst(new THREE.SphereGeometry(1, 9, 5, 0, Math.PI * 2, 0, Math.PI / 2), lam(0xffffff), hills);
-  inst(new THREE.BoxGeometry(1, 1, 1), lam(0xffffff), walls);
-  inst(new THREE.ConeGeometry(1, 1, 4), lam(0xffffff), roofs);
+  if (ART[houses[0]]) houses.forEach((hn, k) => artInst(scene, hn, walls.filter((q, i) => i % houses.length === k).map((q) => [q[0], 0, q[2], 1, q[6]]), {}, { shadow: false }));
+  else { inst(new THREE.BoxGeometry(1, 1, 1), lam(0xffffff), walls); inst(new THREE.ConeGeometry(1, 1, 4), lam(0xffffff), roofs); }
+  /* 중간 겹 나무: 마을 둘레와 언덕 사이 */
+  if (ART[trees[0]]) { const tl = trees.map(() => []); for (let i = 0; i < 70; i++) { const z = z0 - 50 + rnd() * (z1 - z0 + 100); if (skip(z)) continue; const side = rnd() < 0.5 ? -1 : 1, x = ex(z, side) + side * (24 + rnd() * rnd() * 80); tl[i % trees.length].push([x, 0, z, 0.9 + rnd() * 0.9, rnd() * 6.28]); } trees.forEach((tn, k) => artInst(scene, tn, tl[k], {}, { shadow: false })); }
   const smoke = [];
   if (villages.length) { const [vx, vz] = villages[0], tex = canvasTex(64, 64, (g) => { const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(120,124,140,.7)'); r.addColorStop(1, 'rgba(120,124,140,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); });
     for (let k = 0; k < 7; k++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); s.userData.k = k / 7; s.position.set(vx, 4, vz); scene.add(s); smoke.push(s); } }
