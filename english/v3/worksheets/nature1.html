@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv4 #2 자연① 땅과 물 10단어 — skyweather.html(Lv3 #37) 판형 계승, V트랙 주황
+     ★그림 = 화면과 같은 그림(VB301CSS · NAT402CSS 블록 그대로) — 그림 마크업 = 화면 NAT402 vs(w,true) · 뒷면 장면 sz(w,k,true) 를 생성기 ws/gen_nature1.js 로 그대로 뽑음 + .still(움직임 끔).
+     ★풍경 한 장(화면 .ld402 판 · 그림 번호 1~10 · 단어 글자 0) · ① 따라쓰기 10(땅 판 / 발밑·물 판) · ② 땅 / 물 상자 나누기(상자 보고)
+     · ③ 그림 보고 in / on 동그라미 4(🦆 강 · 🐐 산 · 🐜 땅 · 🐄 들 — 뒷면 장면 · 뒷면 문장) · ④ 내가 가고 싶은 곳 I see a ___. 그리기(상자 보고 · 새 단어 0).
+     in · on 밖 전치사 · and · 소유 's = 종이에도 0. 받아쓰기 금지. -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root { --primary:#FF8A3D; --green:#4CAF50; --red:#F44336; --subtext:#888780; --border:#F7DFCB; }
+  @page { size: A4; margin: 10mm 12mm 8mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.45; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d9702a; padding-bottom: 5px; }
+  .brand { font-size: 13px; font-weight: 700; color: #9c4d13; }
+  .brand .lv { background: #d9702a; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 7px; background: #fdeee1; border: 2px solid #d9702a; border-radius: 12px; padding: 7px 13px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 24px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #9c4d13; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 15px; font-weight: 800; color: #4a2408; }
+  .keypoint { margin-top: 6px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 5px 12px; font-size: 12px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  .keypoint .big { font-size: 13px; font-weight: 800; color: #d85a30; }
+  .rowlab { margin-top: 5px; font-size: 10.5px; font-weight: 700; color: #9c4d13; }
+  h2 { margin-top: 8px; font-size: 13px; color: #9c4d13; display: flex; align-items: center; gap: 7px; }
+  h2 .n { background: #9c4d13; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2 .hint { font-weight: 400; font-size: 10px; color: #888780; }
+  .trace { display: flex; gap: 8px; margin-top: 3px; }
+  .traceword { text-align: center; flex: 1; min-width: 56px; position: relative; }
+  .traceword .outline { font-size: 19px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.4px #c4c2b8; letter-spacing: 1px; }
+  .traceword .line { border-bottom: 1.5px solid #d3d1c7; height: 14px; margin-top: 2px; }
+  .twocol { display: flex; gap: 10px; margin-top: 4px; align-items: stretch; }
+  .recap { margin-top: 7px; background: #4a2408; color: #fdeee1; border-radius: 10px; padding: 7px 13px; text-align: center; font-size: 12px; }
+  .recap b { color: #fac775; }
+  .parent { margin-top: 6px; border-top: 1px dashed #b4b2a9; padding-top: 5px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+  /* 그림 — 화면 블록 그대로(움직임은 .still 로 꺼짐) */
+  .pic { position: relative; display: inline-block; overflow: hidden; width: 84px; height: 38px; }
+  .pic .vs { transform-origin: 0 0; transform: scale(.6); }
+/*VB301CSS-BEGIN — Lv3 #1 동사① 장면 그림 · 4파일 문자 단위 동일(blocks/VB301CSS.css → sync_blocks.py 주입, 하네스 A4).
+  ★그림 = Lv2 #7 ACT 사람 도형 + 물건·방향(펼침 01_verbs1.md) — 열 장면 전부 같은 얼개(.vs 상자 안에 도형 하나 이상).
+    도형 없이 이모지만 선 장면은 0 — 섞이면 선택지에서 「이모지냐 도형이냐」가 정답 단서가 된다(Lv2 #7 판정). play 의 🛝 도 도형이 탄다.
+  ★「나」 동그라미(.me) = 방향 넷(go·come·give·get)의 기준 — Lv2 #27 we/they 의 「나」 그대로(노란 동그라미 · 얼굴 0).
+    go/come = 친구 도형이 「나」에게서 멀어지나 ➡ / 다가오나 ⬅. give/get = 물건이 「나」에게서 나가나 ➡ / 들어오나 ⬅.
+  ★갈리는 자리 — take(탁자 위 🖊️ 가 손으로 ⬆) ↔ put(손의 ☕ 가 탁자로 ⬇) · make(반죽 덩어리 → 🎂) ↔ help(누운 친구가 일어선다)
+    · open(📦 뚜껑이 열린다) ↔ play(🛝 를 미끄러져 내려온다).
+  ★give 의 물건 = 🍎(Lv2 #24 apple) — 🎂 는 make 몫이라 겹치지 않게 갈랐다(펼침의 「🎂 를 내민다」 판정 변경).
+  ★기본 위치 = 뜻이 가장 잘 보이는 한 순간(움직임이 꺼진 .still 에서 그대로 보인다 — 활동지·움직임 줄이기). 애니메이션은 거기로 「가는」 길이다. */
+.vs{position:relative;display:inline-block;width:140px;height:64px;line-height:0;vertical-align:middle;text-align:left}
+.vz{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+.vz>.vs{position:absolute;left:0;top:0;transform-origin:0 0}
+.vs .me{position:absolute;left:2px;top:24px;width:28px;height:28px;border-radius:50%;background:#FFE066;border:2px solid #F0C419;color:#7a5600;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-style:normal;box-sizing:border-box}
+.vs .fg{position:absolute;top:20px;left:40px;line-height:0;transform:scale(.78);transform-origin:0 0}
+.vs .fg.fl .act{transform:scaleX(-1)}
+.vs .pr{position:absolute;font-size:20px;line-height:1;font-style:normal}
+.vs .ar{position:absolute;top:0;font-size:15px;line-height:1;font-style:normal}
+.vs .tb{position:absolute;left:46px;top:47px;width:44px;height:5px;background:#A1887F;border-radius:2px}
+.vs .tb::before,.vs .tb::after{content:'';position:absolute;top:5px;width:4px;height:12px;background:#A1887F;border-radius:1px}
+.vs .tb::before{left:3px}
+.vs .tb::after{right:3px}
+.vs .lp{position:absolute;left:52px;top:38px;width:22px;height:13px;border-radius:50% 50% 45% 45%;background:#D7B48C;opacity:.4}
+.vs .to{position:absolute;left:78px;top:38px;font-size:12px;line-height:1;color:#B0A48A;font-style:normal}
+.vs .sk{position:absolute;font-size:13px;line-height:1;color:#E8A93C;font-style:normal}
+.vs .ld{position:absolute;left:60px;top:26px;width:28px;height:6px;border-radius:2px;background:#B07A3E;transform-origin:0 100%;transform:rotate(-65deg)}
+/* 새 자세 여섯 — ACT 10부품 그대로, 클래스 a-xxx 만 더한다(Lv2 #32 ACT32CSS 와 같은 방식) */
+.act.a-walk .aL,.act.a-hold .aL,.act.a-reach .aL,.act.a-knead .aL{transform:rotate(-70deg)}
+.act.a-walk .aL{animation:vArmL .6s ease-in-out infinite}
+.act.a-walk .aR{transform:rotate(70deg);animation:vArmR .6s ease-in-out infinite}
+.act.a-walk .lL{animation:vLegL .6s ease-in-out infinite}
+.act.a-walk .lR{animation:vLegR .6s ease-in-out infinite}
+@keyframes vArmL{0%,100%{transform:rotate(-58deg)}50%{transform:rotate(-82deg)}}
+@keyframes vArmR{0%,100%{transform:rotate(82deg)}50%{transform:rotate(58deg)}}
+@keyframes vLegL{0%,100%{transform:rotate(18deg)}50%{transform:rotate(-18deg)}}
+@keyframes vLegR{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(18deg)}}
+.act.a-hold .aR{transform:rotate(-18deg)}
+.act.a-reach .aR{transform:rotate(22deg) scaleX(1.25)}
+.act.a-knead .aR{animation:vKnead .5s ease-in-out infinite}
+@keyframes vKnead{0%,100%{transform:rotate(14deg)}50%{transform:rotate(34deg)}}
+.act.a-rise .aL{transform:rotate(30deg)}
+.act.a-rise .aR{transform:rotate(-70deg)}
+.act.a-slide .aL{transform:rotate(40deg)}
+.act.a-slide .aR{transform:rotate(-40deg)}
+.act.a-slide .lL,.act.a-slide .lR{transform:rotate(-58deg)}
+/* ── go : 「나」에게서 친구가 멀어진다 ➡ 🏠 ── */
+.v-go .fg{left:62px;animation:vGo 2.4s linear infinite}
+.v-go .ar{left:44px}
+.v-go .pr{left:116px;top:34px}
+@keyframes vGo{0%{left:30px;opacity:1}78%{left:72px;opacity:1}100%{left:78px;opacity:0}}
+/* ── come : 친구가 「나」 쪽으로 다가온다 ⬅ ── */
+.v-come .fg{left:42px;animation:vCome 2.4s linear infinite}
+.v-come .ar{left:70px}
+@keyframes vCome{0%{left:100px;opacity:0}14%{opacity:1}82%,100%{left:38px;opacity:1}}
+/* ── give : 🍎 가 「나」에게서 친구에게 간다 ➡ ── */
+.v-give .fg{left:98px}
+.v-give .pr{left:66px;top:30px;animation:vGive 2.2s ease-in-out infinite}
+.v-give .ar{left:52px}
+@keyframes vGive{0%,16%{left:32px}72%,100%{left:84px}}
+/* ── get : 📕 가 친구에게서 「나」에게 온다 ⬅ ── */
+.v-get .fg{left:98px}
+.v-get .pr{left:46px;top:30px;animation:vGet 2.2s ease-in-out infinite}
+.v-get .ar{left:62px}
+@keyframes vGet{0%,16%{left:84px}72%,100%{left:32px}}
+/* ── take : 탁자 위 🖊️ 가 손으로 올라온다 ⬆ ── */
+.v-take .fg{left:8px}
+.v-take .pr{left:38px;top:8px;animation:vTake 2.2s ease-in-out infinite}
+.v-take .ar{left:100px;top:16px}
+@keyframes vTake{0%,22%{left:58px;top:28px}72%,100%{left:38px;top:8px}}
+/* ── put : 손의 ☕ 가 탁자로 내려간다 ⬇ ── */
+.v-put .fg{left:8px}
+.v-put .pr{left:58px;top:28px;animation:vPut 2.2s ease-in-out infinite}
+.v-put .ar{left:100px;top:16px}
+@keyframes vPut{0%,22%{left:38px;top:8px}72%,100%{left:58px;top:28px}}
+/* ── make : 반죽 덩어리가 🎂 가 된다 ── */
+.v-make .fg{left:8px}
+.v-make .lp{animation:vLump 2.6s ease-in-out infinite}
+.v-make .pr{left:94px;top:28px;animation:vCake 2.6s ease-in-out infinite}
+.v-make .sk{left:118px;top:20px;animation:vSpark 2.6s ease-out infinite}
+.v-make .sk::after{content:'✦'}
+@keyframes vLump{0%,30%{opacity:1;transform:scale(1)}60%,100%{opacity:.4;transform:scale(.8)}}
+@keyframes vCake{0%,36%{opacity:0;transform:scale(.4)}64%,100%{opacity:1;transform:scale(1)}}
+@keyframes vSpark{0%,56%{opacity:0}70%{opacity:1}100%{opacity:0}}
+/* ── help : 누운 친구의 손을 잡아 일으킨다 ── */
+.v-help .fg{left:6px}
+.v-help .fg.f2{left:58px}
+.v-help .f2 .act{transform-origin:50% 100%;transform:rotate(28deg);animation:vRise 2.6s ease-in-out infinite}
+@keyframes vRise{0%,24%{transform:rotate(82deg)}74%,100%{transform:rotate(0)}}
+/* ── open : 📦 뚜껑이 열린다 ── */
+.v-open .fg{left:8px}
+.v-open .pr{left:60px;top:30px;font-size:24px}
+.v-open .ld{animation:vLid 2.2s ease-in-out infinite}
+.v-open .sk{left:72px;top:6px;animation:vSpark 2.2s ease-out infinite}
+.v-open .sk::after{content:'✦'}
+@keyframes vLid{0%,24%{transform:rotate(0)}62%,100%{transform:rotate(-65deg)}}
+/* ── play : 🛝 를 미끄러져 내려온다 ── */
+.v-play .pr{left:54px;top:16px;font-size:40px}
+.v-play .fg{left:78px;top:8px;transform:scale(.6);animation:vSlide 1.8s ease-in infinite}
+@keyframes vSlide{0%{left:58px;top:0}100%{left:98px;top:22px}}
+/* 움직임 끄기 — 활동지·움직임 줄이기 설정. 기본 위치가 곧 뜻이 가장 잘 보이는 순간이다 */
+.vs.still,.vs.still *{animation:none!important}
+@media (prefers-reduced-motion:reduce){.vs,.vs *{animation:none!important}}
+/*VB301CSS-END*/
+/*NAT402CSS-BEGIN — Lv4 #2 자연① 땅과 물 그림 · 풍경 한 장 · in·on 카드 · 4파일 + 활동지 문자 단위 동일(blocks/NAT402CSS.css → sync_blocks.py 주입, 하네스 A4·D2b).
+  ★그림 = .vs 상자(Lv3 #1 VB301CSS 의 .vs·.me·.pr·.still 그대로) — 이모지 둘(⛰️ · 🌴)은 가운데 · CSS 여섯(river · field · forest · grass · ground · mud).
+  ★lake · hill = Lv2 #31 NAT31CSS 줄 문자 그대로(.np · .np .lk · .np .hil — em 단위라 상자 안 글자 크기로 키운다) · grass 띠 = Lv3 #36 서식지 풀 칸 값 그대로.
+  ★in·on 카드(.io44) = Lv3 #44 미션 파트 줄 문자 그대로(📦 안의 🐱 / 📦 위의 🐱).
+  ★풍경 한 장(.ld402) = 위 하늘 띠 · 왼쪽 땅 판(초록 · 3열 · ground = 아래 한 줄 통째) / 오른쪽 물 판(파랑 · 한 줄씩).
+  ★기본 위치 = 뜻이 가장 잘 보이는 한 순간(움직임 0 — 오늘 그림은 멈춰 있다). */
+/* ── Lv2 #31 NAT31CSS 줄 문자 그대로 — lake · hill ── */
+.np{display:inline-flex;align-items:center;justify-content:center;line-height:1;vertical-align:middle}
+.np .lk{display:inline-block;width:1.2em;height:.7em;border-radius:50%;background:radial-gradient(ellipse at 45% 40%,#81D4FA 0 35%,#0288D1 100%);border:.11em solid #66BB6A;box-sizing:border-box}
+.np .hil{display:inline-block;width:1.25em;height:.64em;border-radius:50% 50% 0 0/100% 100% 0 0;background:linear-gradient(#81C784,#43A047);border-bottom:.05em solid #2E7D32;box-sizing:border-box}
+.v402-lake .np{position:absolute;left:30px;top:8px;font-size:66px}
+.v402-hill .np{position:absolute;left:30px;top:14px;font-size:64px}
+/* ── 이모지 둘 — 가운데 ── */
+.v402-mountain .pr,.v402-jungle .pr{left:46px;top:6px;font-size:44px}
+/* ── river : 초록 둑 사이 굽이 물줄기 + 흐르는 쪽 화살 물결(🌊 = sea 0) ── */
+.vs .bk402{position:absolute;left:4px;top:4px;width:132px;height:56px;display:block;border-radius:12px;background:#C5E1A5}
+.vs .rv402{position:absolute;top:12px;width:68px;height:40px;display:block;border:10px solid transparent;border-radius:50%;box-sizing:border-box}
+.vs .rv402.a{left:6px;border-top-color:#339AF0}
+.vs .rv402.b{left:66px;border-bottom-color:#339AF0}
+.vs .fw402{position:absolute;left:30px;top:13px;width:7px;height:7px;display:block;border-top:2px solid #fff;border-right:2px solid #fff;transform:rotate(45deg)}
+.vs .fw402.f2{left:96px;top:43px}
+/* ── field : 하늘 아래 탁 트인 초록 들(줄무늬 들 · 🌾 0) ── */
+.vs .fd402{position:absolute;left:4px;top:4px;width:132px;height:56px;display:block;border-radius:10px;background:linear-gradient(#D0EBFF 0 30%,transparent 30%),repeating-linear-gradient(176deg,#8CE99A 0 8px,#69DB7C 8px 10px)}
+/* ── forest : 나무 머리 여럿 + 줄기 + 그늘(🌳 · 🌲 0) ── */
+.vs .fo402{position:absolute;left:4px;top:2px;width:132px;height:46px;display:block;background:radial-gradient(circle at 12% 58%,#2B8A3E 0 13px,transparent 14px),radial-gradient(circle at 31% 40%,#2F9E44 0 15px,transparent 16px),radial-gradient(circle at 51% 58%,#2B8A3E 0 14px,transparent 15px),radial-gradient(circle at 70% 38%,#2F9E44 0 15px,transparent 16px),radial-gradient(circle at 89% 58%,#2B8A3E 0 13px,transparent 14px)}
+.vs .fs402{position:absolute;left:4px;top:44px;width:132px;height:16px;display:block;border-radius:0 0 10px 10px;background:linear-gradient(90deg,transparent 0 14px,#795548 14px 18px,transparent 18px 40px,#795548 40px 44px,transparent 44px 66px,#795548 66px 70px,transparent 70px 91px,#795548 91px 95px,transparent 95px 115px,#795548 115px 119px,transparent 119px),#2D6A4F}
+/* ── grass : Lv3 #36 서식지 풀 칸 값 그대로 + 풀잎 셋 ── */
+.vs .gs402{position:absolute;left:4px;top:4px;width:132px;height:56px;display:block;border-radius:10px;background:linear-gradient(#E8F5E9 0 42%,#81C784 42%)}
+.vs .gl402{position:absolute;left:30px;top:14px;width:8px;height:26px;display:block;background:#2F9E44;border-radius:100% 0 100% 0;transform:rotate(-10deg)}
+.vs .gl402::before,.vs .gl402::after{content:'';position:absolute;top:6px;width:7px;height:21px;background:#37B24D}
+.vs .gl402::before{left:9px;border-radius:0 100% 0 100%;transform:rotate(24deg)}
+.vs .gl402::after{left:-9px;border-radius:100% 0 100% 0;transform:rotate(-24deg)}
+.vs .gl402.g2{left:66px;top:18px}
+.vs .gl402.g3{left:102px;top:12px}
+/* ── ground : 갈색 땅 단면(겉흙 · 흙 띠 둘 · 작은 돌 셋) ── */
+.vs .gd402{position:absolute;left:4px;top:10px;width:132px;height:50px;display:block;border-radius:8px;background:radial-gradient(circle at 22% 62%,#ADB5BD 0 6px,transparent 7px),radial-gradient(circle at 58% 82%,#868E96 0 5px,transparent 6px),radial-gradient(circle at 84% 56%,#ADB5BD 0 4px,transparent 5px),linear-gradient(#C5E1A5 0 14%,#A1887F 14% 48%,#8D6E63 48%)}
+/* ── jungle : 🌴 + 덩굴 둘(🐒 0 — 원숭이는 뒷면 장면에만) ── */
+.vs .vn402{position:absolute;left:22px;top:0;width:10px;height:48px;display:block;border-left:3px solid #2B8A3E;background:radial-gradient(ellipse at 70% 50%,#51CF66 0 3px,transparent 4px) 0 0/10px 10px repeat-y}
+.vs .vn402.v2{left:104px;height:38px}
+/* ── mud : 진흙 웅덩이(갈색 · 덩이 · 젖은 빛 — 이모지 0) ── */
+.vs .md402{position:absolute;left:14px;top:18px;width:112px;height:42px;display:block;border-radius:50%;border:3px solid #4E342E;box-sizing:border-box;background:radial-gradient(ellipse at 62% 30%,rgba(255,255,255,.55) 0 5px,transparent 6px),radial-gradient(ellipse at 30% 44%,#A1887F 0 8px,transparent 9px),radial-gradient(ellipse at 70% 66%,#6D4C41 0 6px,transparent 7px),radial-gradient(ellipse at 50% 50%,#8D6E63 0 55%,#5D4037 100%)}
+/* ── 뒷면 장면 — 주어가 보인다(동물 여럿 · 「나」) + 인물 개그 셋 ── */
+.nm402{display:inline-flex;align-items:center;gap:2px;font-size:14px;line-height:1.3;font-style:normal;background:#fff;border:2px solid var(--primary);color:var(--primary);border-radius:8px;padding:0 6px;font-family:'Jua',sans-serif}
+.nm402 .dd402{font-size:16px;font-style:normal}
+.vs .nm402{position:absolute;left:2px;top:2px;font-size:11px;padding:0 4px;z-index:2}
+.vs .nm402 .dd402{font-size:13px}
+.ss402 .pr.dk402{left:22px;top:10px;font-size:20px}
+.ss402 .pr.dk402.d2{left:92px;top:30px}
+.ss402 .pr.gt402{left:60px;top:-8px;font-size:20px}
+.ss402 .pr.cw402{left:30px;top:26px;font-size:22px}
+.ss402 .pr.cw402.c2{left:84px;top:32px}
+.ss402 .me.st402{left:56px;top:20px}
+.ss402 .pr.an402{left:30px;top:-4px;font-size:14px}
+.ss402 .pr.an402.a2{left:64px}
+.ss402 .pr.an402.a3{left:98px}
+.ss402 .pr.mk402{left:2px;top:32px;font-size:20px}
+.ss402 .pr.mk402.m2{left:94px;top:4px}
+.ss402 .pr.sl402{left:108px;top:36px;font-size:18px}
+.v402-jungle.ss402 .nm402{left:30px;top:44px}
+.vs .th402{position:absolute;left:42px;top:-12px;width:62px;height:76px;display:block;border-radius:50% 50% 0 0/100% 100% 0 0;background:linear-gradient(#81C784,#43A047);border-bottom:3px solid #2E7D32;box-sizing:border-box}
+.vs .cd402{position:absolute;left:28px;top:10px;width:90px;height:14px;display:block;border-radius:7px;background:#fff;border:1px solid #DEE2E6;box-sizing:border-box}
+.v402-hill.ss402 .nm402{top:42px}
+.vs .sk402{position:absolute;left:54px;top:6px;width:30px;height:24px;display:block;overflow:hidden;line-height:1}
+.vs .sk402 i{font-size:28px;font-style:normal;line-height:1}
+.vs .ok402{position:absolute;left:88px;top:2px;font-size:11px;font-style:normal;line-height:1.3;background:#fff;border:1.5px solid #CED4DA;border-radius:8px;padding:0 4px;white-space:nowrap;font-family:'Jua',sans-serif;color:#495057}
+/* ── 작은 말 in · on — 문장 속 연두 밑줄(뜻 문항 0) ── */
+.sline .io402{text-decoration:none;border-bottom:3px solid #94D82D;padding:0 1px}
+/* ── Lv3 #44 예고 카드 줄 문자 그대로 — in · on(📦 안의 🐱 / 📦 위의 🐱) ── */
+.io44{display:inline-flex;gap:10px;align-items:flex-end}
+.io44 .bx{position:relative;display:inline-block;font-size:26px;line-height:1}
+.io44 .bx .ct{position:absolute;left:50%;transform:translateX(-50%);font-size:15px;line-height:1}
+.io44 .bx.in .ct{top:7px}
+.io44 .bx.on .ct{top:-14px}
+/* ── 풍경 한 장 — 위 하늘 띠 · 왼쪽 땅 판 일곱 / 오른쪽 물 판 셋 ── */
+.ld402{width:min(380px,100%);margin:6px auto 0;box-sizing:border-box;border:3px solid #74C0FC;border-radius:16px;overflow:hidden;background:#fff}
+.ld402 .sky402{height:14px;background:linear-gradient(#A5D8FF,#E7F5FF)}
+.ld402 .bds402{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,3fr)}
+.ld402 .bd402{position:relative;min-width:0;box-sizing:border-box;padding:2px 3px 10px;transition:box-shadow .2s}
+.ld402 .bd402.bl{background:#D3F9D8;border-right:3px solid #74C0FC}
+.ld402 .bd402.bw{background:#D0EBFF}
+.ld402 .bn402{display:block;font-style:normal;font-size:13px;line-height:1.4;color:#495057;font-family:'Jua',sans-serif;text-align:center;margin-bottom:2px}
+.ld402 .bg402{display:grid;gap:10px 3px}
+.ld402 .bl .bg402{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ld402 .bw .bg402{grid-template-columns:minmax(0,1fr)}
+.ld402 .bl .t-ground{grid-column:1/-1}
+.ld402 .spot{position:relative;display:flex;align-items:center;justify-content:center;line-height:0;min-width:0;padding:3px 0;border-radius:10px;box-sizing:border-box;background:#fff;border:2px dashed #ADB5BD;cursor:pointer;transition:transform .15s}
+.ld402 .spot:active{transform:scale(.95)}
+.ld402 .spot .tag{display:none;position:absolute;left:50%;bottom:-.75em;transform:translateX(-50%);font-size:13px;background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:8px;padding:0 5px;white-space:nowrap;font-family:'Jua',sans-serif;line-height:1.2;z-index:2}
+.ld402 .spot.found{border:3px solid var(--green);background:#EBFBEE}
+.ld402 .spot.found .tag{display:block}
+.ld402.all{border-color:var(--green);box-shadow:0 0 0 3px #B2F2BB}
+.ld402 .choice-btn.spot{font-family:inherit;box-shadow:none;margin:0;min-height:0}
+.ld402 .choice-btn.spot.correct{border:2px solid var(--green);box-shadow:0 0 0 3px var(--green) inset}
+.ld402 .choice-btn.spot.wrong{border:2px solid var(--red);box-shadow:0 0 0 3px var(--red) inset}
+.ld402 .got402{position:absolute;right:-3px;top:-8px;font-size:15px;line-height:1;font-style:normal;z-index:2;white-space:nowrap}
+.ld402 .spot.hit{box-shadow:0 0 0 3px var(--green) inset}
+.ld402 .spot.nope{box-shadow:0 0 0 3px var(--red) inset}
+/*NAT402CSS-END*/
+  .ld402 { width: 100%; max-width: 560px; margin: 4px auto 0; }
+  .ld402 .bg402 { gap: 5px 5px; }
+  .ld402 .bl .bg402 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .ld402 .bl .t-ground { grid-column: auto; }
+  .ld402 .bw .bg402 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ld402 .bds402 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  .ld402 .spot { cursor: default; border-style: solid; border-color: #dee2e6; padding: 3px 0 3px 12px; }
+  .ld402 .spot .sn { position: absolute; left: 3px; top: 3px; line-height: 1; font-size: 10px; font-weight: 800; color: #fff; background: #9c4d13; border-radius: 50%; width: 15px; height: 15px; display: inline-flex; align-items: center; justify-content: center; }
+  .wbox, .iobox, .mine { flex: 1; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 5px 10px; }
+  .wbox .cap { font-size: 10.5px; font-weight: 800; color: #9c4d13; }
+  .wbox .bw { font-size: 13px; font-weight: 800; color: #4a2408; letter-spacing: .2px; line-height: 1.5; margin: 2px 0; }
+  .sort2 { display: flex; gap: 8px; }
+  .sort2 .sc { flex: 1; border-radius: 8px; padding: 2px 6px 4px; }
+  .sort2 .sc.land { background: #d3f9d8; flex: 1.4; }
+  .sort2 .sc.water { background: #d0ebff; }
+  .sort2 .sh { font-size: 11px; font-weight: 800; color: #495057; }
+  .sort2 .ln2 { border-bottom: 1.5px solid #b4b2a9; height: 14px; }
+  .io3 { display: flex; flex-direction: column; gap: 3px; margin-top: 2px; }
+  .ior { display: flex; align-items: center; gap: 6px; }
+  .ior .mn { font-size: 10px; font-weight: 800; color: #fff; background: #9c4d13; border-radius: 50%; width: 15px; height: 15px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .ior .ap { line-height: 0; flex: none; }
+  .ior .s3 { font-size: 12.5px; font-weight: 800; color: #4a2408; letter-spacing: .2px; }
+  .ior .ch { color: #d85a30; white-space: nowrap; }
+  .s { font-size: 16px; font-weight: 800; color: #4a2408; display: flex; align-items: flex-end; gap: 4px; letter-spacing: .4px; }
+  .s .ln { display: inline-block; width: 92px; border-bottom: 1.8px solid #b4b2a9; height: 21px; }
+  .s .ln.wide { width: 160px; }
+  .wb { font-size: 10px; color: #888780; }
+  .wb b { color: #d85a30; }
+  .mine { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+  .mine .draw { flex: 1; height: 62px; border: 1.5px dashed #d9702a; border-radius: 9px; background: #fff; font-size: 9px; color: #b4b2a9; text-align: center; padding-top: 3px; }
+  .mine .mr2 { flex: 1.3; display: flex; flex-direction: column; gap: 3px; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv4 · 어휘 #2</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main">땅은 높고 낮고, 물은 흐르고 고여요 — 안에는 in, 위에는 on.</div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 땅 판 — mountain · hill · field · forest · jungle · grass · ground / 물 판 — river · lake · mud.
+    <span class="big">in = 안에 · on = 위에</span>
+  </div>
+
+  <div class="rowlab">🪟 풍경 한 장 — 그림마다 번호가 있어요</div>
+  <div class="ld402 m-ws"><div class="sky402"></div><div class="bds402"><div class="bd402 bl" data-k="land"><i class="bn402">땅</i><div class="bg402"><div class="spot t-mountain" data-w="mountain"><span class="sn">2</span><span class="pic"><span class="vs v402-mountain still" data-vs="mountain"><i class="pr">⛰️</i></span></span></div><div class="spot t-hill" data-w="hill"><span class="sn">9</span><span class="pic"><span class="vs v402-hill still" data-vs="hill"><span class="np" data-pic="hill"><span class="hil"></span></span></span></span></div><div class="spot t-field" data-w="field"><span class="sn">3</span><span class="pic"><span class="vs v402-field still" data-vs="field"><b class="fd402"></b></span></span></div><div class="spot t-forest" data-w="forest"><span class="sn">4</span><span class="pic"><span class="vs v402-forest still" data-vs="forest"><b class="fo402"></b><b class="fs402"></b></span></span></div><div class="spot t-jungle" data-w="jungle"><span class="sn">7</span><span class="pic"><span class="vs v402-jungle still" data-vs="jungle"><i class="pr">🌴</i><b class="vn402"></b><b class="vn402 v2"></b></span></span></div><div class="spot t-grass" data-w="grass"><span class="sn">5</span><span class="pic"><span class="vs v402-grass still" data-vs="grass"><b class="gs402"></b><b class="gl402"></b><b class="gl402 g2"></b><b class="gl402 g3"></b></span></span></div><div class="spot t-ground" data-w="ground"><span class="sn">6</span><span class="pic"><span class="vs v402-ground still" data-vs="ground"><b class="gd402"></b></span></span></div></div></div><div class="bd402 bw" data-k="water"><i class="bn402">물</i><div class="bg402"><div class="spot t-river" data-w="river"><span class="sn">1</span><span class="pic"><span class="vs v402-river still" data-vs="river"><b class="bk402"></b><b class="rv402 a"></b><b class="rv402 b"></b><b class="fw402"></b><b class="fw402 f2"></b></span></span></div><div class="spot t-lake" data-w="lake"><span class="sn">8</span><span class="pic"><span class="vs v402-lake still" data-vs="lake"><span class="np" data-pic="lake"><span class="lk"></span></span></span></span></div><div class="spot t-mud" data-w="mud"><span class="sn">10</span><span class="pic"><span class="vs v402-mud still" data-vs="mud"><b class="md402"></b></span></span></div></div></div></div></div>
+
+  <h2><span class="n">1</span> 따라 써요 <span class="hint">흐린 글자를 따라 써요 — 위 줄 땅 판 · 아래 줄 발밑·물 판</span></h2>
+  <div class="trace"><div class="traceword"><div class="outline">mountain</div><div class="line"></div></div><div class="traceword"><div class="outline">hill</div><div class="line"></div></div><div class="traceword"><div class="outline">field</div><div class="line"></div></div><div class="traceword"><div class="outline">forest</div><div class="line"></div></div><div class="traceword"><div class="outline">jungle</div><div class="line"></div></div></div>
+  <div class="trace"><div class="traceword"><div class="outline">grass</div><div class="line"></div></div><div class="traceword"><div class="outline">ground</div><div class="line"></div></div><div class="traceword"><div class="outline">mud</div><div class="line"></div></div><div class="traceword"><div class="outline">river</div><div class="line"></div></div><div class="traceword"><div class="outline">lake</div><div class="line"></div></div></div>
+
+  <div class="twocol">
+    <div style="flex:1;display:flex;flex-direction:column">
+      <h2><span class="n">2</span> 땅 / 물 나누기 <span class="hint">상자의 단어를 맞는 칸 줄에 옮겨 써요</span></h2>
+      <div class="wbox"><div class="cap">상자</div><div class="bw">mud · forest · river · hill · grass · lake · jungle · field · ground · mountain</div><div class="sort2"><div class="sc land"><div class="sh">땅 (7)</div><div class="ln2"></div><div class="ln2"></div><div class="ln2"></div><div class="ln2"></div><div class="ln2"></div><div class="ln2"></div><div class="ln2"></div></div><div class="sc water"><div class="sh">물 (3)</div><div class="ln2"></div><div class="ln2"></div><div class="ln2"></div></div></div></div>
+    </div>
+    <div style="flex:1.25;display:flex;flex-direction:column">
+      <h2><span class="n">3</span> in 일까 on 일까 <span class="hint">그림을 보고 동그라미</span></h2>
+      <div class="iobox"><div class="io3"><div class="ior" data-w="river"><span class="mn">1</span><span class="ap"><span class="vz" style="width:70px;height:32px"><span class="vs ss402 v402-river still" data-ss="river" style="transform:scale(0.5)"><b class="bk402"></b><b class="rv402 a"></b><b class="rv402 b"></b><b class="fw402"></b><b class="fw402 f2"></b><i class="pr dk402">🦆</i><i class="pr dk402 d2">🦆</i></span></span></span><span class="s3">Ducks swim <span class="ch">( in / on )</span> the river.</span></div><div class="ior" data-w="mountain"><span class="mn">2</span><span class="ap"><span class="vz" style="width:70px;height:32px"><span class="vs ss402 v402-mountain still" data-ss="mountain" style="transform:scale(0.5)"><i class="pr">⛰️</i><i class="pr gt402">🐐</i></span></span></span><span class="s3">A goat is <span class="ch">( in / on )</span> the mountain.</span></div><div class="ior" data-w="ground"><span class="mn">3</span><span class="ap"><span class="vz" style="width:70px;height:32px"><span class="vs ss402 v402-ground still" data-ss="ground" style="transform:scale(0.5)"><b class="gd402"></b><i class="pr an402">🐜</i><i class="pr an402 a2">🐜</i><i class="pr an402 a3">🐜</i></span></span></span><span class="s3">Ants are <span class="ch">( in / on )</span> the ground.</span></div><div class="ior" data-w="field"><span class="mn">4</span><span class="ap"><span class="vz" style="width:70px;height:32px"><span class="vs ss402 v402-field still" data-ss="field" style="transform:scale(0.5)"><b class="fd402"></b><i class="pr cw402">🐄</i><i class="pr cw402 c2">🐄</i></span></span></span><span class="s3">Cows are <span class="ch">( in / on )</span> the field.</span></div></div><div class="wb">들어가 있으면 <b>in</b> · 올라가 있으면 <b>on</b></div></div>
+    </div>
+  </div>
+
+  <h2><span class="n">4</span> 내가 가고 싶은 곳 <span class="hint">그리고, 상자를 보고 한 단어를 써요</span></h2>
+  <div class="mine"><div class="draw">가고 싶은 곳 그림</div><div class="mr2"><div class="s">I see a <span class="ln wide"></span>.</div><div class="wb">상자 · river · mountain · lake · forest · jungle</div></div></div>
+
+  <div class="recap">오늘 열 단어 = <b>river · mountain · field · forest · grass · ground · jungle · lake · hill · mud</b></div>
+
+  <div class="parent">
+    <b>부모님께</b> · <b>grass · mud</b>(그리고 ground)는 하나 둘 세지 않는 말이라 <b>끝에 s 를 붙이지 않고</b> a 도 붙이지 않아요 — 「풀밭에 앉아」는 그냥 the grass 입니다.
+    · <b>in · on</b> 은 문장 속에서 읽어 주세요 — 따로 외우게 하지 않기(뜻 문제는 다음 글에서 처음 나와요).
+    · 이 활동지는 <b>보고 옮겨 쓰는</b> 종이입니다. <b>받아쓰기로 확인하지 마세요.</b><br>
+    <b>정답</b> · ② 땅 mountain · hill · field · forest · jungle · grass · ground / 물 river · lake · mud · ③ 1 in · 2 on · 3 on · 4 in · ④ 정답 없음(가고 싶은 곳 — I see a lake. 처럼)
+  </div>
+</body>
+</html>
