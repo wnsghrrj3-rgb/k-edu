@@ -19,7 +19,8 @@ export const ROOM_AB = {
     floor:  { kind: 'dew' },
     back:   { kind: 'forestEdge', gap: 0.9 },                    /* 개울 뒤 나무 사이로 들어온 길 — 징검돌을 건너 빈터로 */
     sky:    { kind: 'peachMorning' },
-    around: { kind: 'apple', trees: { L: { leaf: 'a-leaf', fruit: 'a-red', apples: true }, R: { leaf: ['a-leaf', 'a-fish', 0.35], fruit: 'a-gold' } },
+    around: { kind: 'apple', swap: { rocks: ['Rock_1', 'Rock_3'], bushes: ['Bush_1', 'Bush_2'], plants: { clover: ['Flowers', 'Grass'] } }, models: [['CommonTree_1', -7.3, -6.9, 4.6], ['CommonTree_3', 7.0, -7.0, 4.2], ['Grass', -8.1, 2.2, 0.7], ['Grass', 8.1, 0.6, 0.7]],
+      trees: { L: { leaf: 'a-leaf', fruit: 'a-red', apples: true }, R: { leaf: ['a-leaf', 'a-fish', 0.35], fruit: 'a-gold' } },
       bushes: [[-7.6, -4.6, 1.25], [3.5, -5.1, 1.05], [7.6, -4.6, 1.3], [-8.0, -1.6, 0.9, 1], [8.1, -1.5, 0.85, 1]],
       mushrooms: [[-6.9, 2.9, 1], [-6.4, 3.3, 0.7], [1.2, 3.2, 0.8], [-1.2, -0.3, 0.6], [7.2, -0.9, 0.9], [-7.4, -3.0, 0.8]],
       rocks: [[-7.5, 0.6, 0.42], [-7.4, 4.1, 0.36], [-4.9, 4.3, 0.3], [4.4, -1.7, 0.28]],

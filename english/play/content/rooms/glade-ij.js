@@ -11,7 +11,8 @@ export default {
     floor:  { kind: 'snow' },
     back:   { kind: 'gorgeGap' },
     sky:    { kind: 'blueShade' },
-    around: { kind: 'conifer', trees: { L: { leaf: ['stage-deep', 'a-fish', 0.22], fruit: 'a-plum' }, R: { leaf: ['stage-deep', 'a-leaf', 0.3], fruit: 'a-red' } },
+    around: { kind: 'conifer', swap: { plants: { snowrock: ['Rock_Snow_1', 'Rock_Snow_4', 'Bush_Snow_1', 'Rock_Snow_6', 'TreeStump_Snow'] } }, models: [['PineTree_Snow_5', -8.1, 1.5, 3.0], ['PineTree_Snow_1', 8.2, 0.2, 3.4], ['BirchTree_Dead_Snow_2', -8.2, -0.3, 3.0]],
+      trees: { L: { leaf: ['stage-deep', 'a-fish', 0.22], fruit: 'a-plum' }, R: { leaf: ['stage-deep', 'a-leaf', 0.3], fruit: 'a-red' } },
       plants: [['snowrock', -7.6, 3.2, 1.0], ['snowrock', 7.7, 2.4, 0.9], ['snowrock', -2.6, -4.7, 1.1], ['snowrock', 3.3, -4.5, 0.9], ['snowrock', -8.0, -3.9, 1.2], ['snowrock', 8.1, -4.3, 1.2], ['snowrock', 1.4, 3.3, 0.6]] },
     look:   { kind: 'blueWindow' }
   },

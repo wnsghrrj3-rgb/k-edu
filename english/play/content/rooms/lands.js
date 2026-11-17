@@ -15,6 +15,7 @@
  * ============================================================ */
 import { GLADE, freeAtOf } from './glade.js';
 import { carrier } from './carriers.js';
+import { swapName, putModel, extraModels, SWAP_SIZE } from './around-models.js';
 
 export const PLACE_KEYS = ['land', 'floor', 'back', 'sky', 'around', 'look'];
 const sm = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
@@ -373,11 +374,16 @@ export function buildLand(K, place, opt = {}){
     for (let i = 0; i < (LOW ? Math.min(3, land.rings || 0) : land.rings || 0); i++) { const m = fx(new THREE.Mesh(new THREE.RingGeometry(0.86, 1, 40), new THREE.MeshBasicMaterial({ color: C('surface'), transparent: true, opacity: 0, depthWrite: false }))); m.rotation.x = -Math.PI / 2; m.position.y = waterY + 0.015; m.userData = { t: 1, max: 1 }; group.add(m); rings.push(m); } }
   function ripple(x, z, max = 0.8){ const m = rings.find(r => r.userData.t >= 1); if (!m) return; m.position.x = x; m.position.z = z; m.userData.t = 0; m.userData.max = max; }
   if (land.ice) { const ic = flat(oval(land.ice.x, land.ice.z, land.ice.rx, land.ice.rz), M(mix('a-fish', 'surface', 0.55), { roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.9 }), heightAt(land.ice.x, land.ice.z) + 0.012); group.add(ic); }      /* 얼음판 */
-  /* 둘레 — 덤불 · 버섯 · 바위 · 그 곳의 풀 */
-  const bushes = (AR.bushes || []).map((b, i) => { const g = bushOf(K, b[0], heightAt(b[0], b[1]), b[1], b[2], i % 2 ? mix(AR.bushTone || 'stage-deep', 'a-leaf', 0.35) : tone(AR.bushTone || 'stage-deep'), b[3]); group.add(g); return g; });
-  (AR.mushrooms || []).forEach(m => group.add(mushroomOf(K, m[0], heightAt(m[0], m[1]), m[1], m[2])));
-  (AR.rocks || []).forEach((r, i) => group.add(rockOf(K, r[0], heightAt(r[0], r[1]), r[1], r[2], i, AR.rockCap ? tone(AR.rockCap) : null)));
-  (AR.plants || []).forEach(p => { const f = PLANTS[p[0]]; if (!f) throw new Error('없는 풀 ' + p[0]); const g = f(K, p[3] || 1); g.position.set(p[1], heightAt(p[1], p[2]), p[2]); g.rotation.y = p[1] * 1.7 + p[2]; group.add(g); });
+  /* 둘레 — 덤불 · 버섯 · 바위 · 그 곳의 풀. 모형이 와 있으면(opt.models — 모형 설계 v1) 방 자료의 around.swap 대로 같은 자리에서 모형으로 바꿔 세우고, 안 왔으면 손으로 지은 것 그대로(G3) */
+  const MS = opt.models || null, sw = (kind, i, sub) => swapName(AR, MS, kind, i, sub), models = [];
+  const model = (n, x, z, size) => { const g = putModel(K, MS, n, x, heightAt(x, z) - 0.03, z, size, AR); group.add(g); models.push(g); return g; };
+  const bushes = (AR.bushes || []).map((b, i) => { const n = sw('bushes', i); if (n) return model(n, b[0], b[1], SWAP_SIZE.bushes(b[2]));
+    const g = bushOf(K, b[0], heightAt(b[0], b[1]), b[1], b[2], i % 2 ? mix(AR.bushTone || 'stage-deep', 'a-leaf', 0.35) : tone(AR.bushTone || 'stage-deep'), b[3]); group.add(g); return g; });
+  (AR.mushrooms || []).forEach((m, i) => { const n = sw('mushrooms', i); if (n) model(n, m[0], m[1], SWAP_SIZE.mushrooms(m[2])); else group.add(mushroomOf(K, m[0], heightAt(m[0], m[1]), m[1], m[2])); });
+  (AR.rocks || []).forEach((r, i) => { const n = sw('rocks', i); if (n) model(n, r[0], r[1], SWAP_SIZE.rocks(r[2])); else group.add(rockOf(K, r[0], heightAt(r[0], r[1]), r[1], r[2], i, AR.rockCap ? tone(AR.rockCap) : null)); });
+  { const seen = {}; (AR.plants || []).forEach(p => { const f = PLANTS[p[0]]; if (!f) throw new Error('없는 풀 ' + p[0]); const k = seen[p[0]] = (seen[p[0]] || 0) + 1, n = sw('plants', k - 1, p[0]); if (n) return model(n, p[1], p[2], SWAP_SIZE.plants(p[3] || 1));
+    const g = f(K, p[3] || 1); g.position.set(p[1], heightAt(p[1], p[2]), p[2]); g.rotation.y = p[1] * 1.7 + p[2]; group.add(g); }); }
+  extraModels(K, group, AR, MS, { heightAt, inWater }).forEach(g => models.push(g));
   /* 그 곳의 나무 둘(생김새는 그 걸음의 것) + 글자 그릇 둘 — 그릇이 'fruit' 이고 구도가 나무 자리('tree')면 가지에 달고, 아니면 구도가 준 자리에 받침째 놓는다 */
   let treeA = null, treeB = null, carrierA = null, carrierB = null;
   if (opt.trees !== false) { const sl = opt.slots || {}, tl = sl.treeL || [-5, -3.2], tr = sl.treeR || [5, -3.2], ls = opt.letters || ['a', 'b'], T = AR.trees || { L: {}, R: {} }, CR = opt.carriers || { L: { kind: 'fruit', at: 'tree' }, R: { kind: 'fruit', at: 'tree' } };
@@ -403,5 +409,5 @@ export function buildLand(K, place, opt = {}){
     rings.forEach(m => { const u = m.userData; if (u.t >= 1) { m.material.opacity = 0; return; } u.t = Math.min(1, u.t + dt / 1.9); m.scale.setScalar(0.12 + u.t * u.max); m.material.opacity = (1 - u.t) * 0.55; });
     steps.forEach(f => f(dt, t)); Object.values(weather).forEach(w => w.step(dt, t)); lit.step(dt, t);
   }
-  return { group, GW, GD, bounds: { x0, x1, z0, z1 }, creek: land.creek || null, land, place, heightAt, bedAt: land.heightAt, inWater, waterY, freeAt, ripple, step, wind: windU, waterTex, lilies, reeds, rings, bushes, treeA, treeB, carrierA, carrierB, lit, weather, cam: LOOK.cam || {}, sky: SK };
+  return { group, GW, GD, bounds: { x0, x1, z0, z1 }, creek: land.creek || null, land, place, heightAt, bedAt: land.heightAt, inWater, waterY, freeAt, ripple, step, wind: windU, waterTex, lilies, reeds, rings, bushes, models, treeA, treeB, carrierA, carrierB, lit, weather, cam: LOOK.cam || {}, sky: SK };
 }

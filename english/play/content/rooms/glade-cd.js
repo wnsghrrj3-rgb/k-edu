@@ -11,7 +11,8 @@ export default {
     floor:  { kind: 'litter' },
     back:   { kind: 'trunkWall' },
     sky:    { kind: 'canopyShafts' },
-    around: { kind: 'pillar', trees: { L: { leaf: ['stage-deep', 'a-leaf', 0.55], fruit: 'a-gold' }, R: { leaf: ['stage-deep', 'a-gold', 0.3], fruit: 'a-plum', bark: ['a-wood', 'ink', 0.12] } },
+    around: { kind: 'pillar', swap: { mushrooms: ['Mushroom_3', 'Mushroom_4'], plants: { fern: ['Plant_1', 'Plant_3'], mossrock: ['Rock_Moss_1'], stump: ['TreeStump_Moss'] } }, models: [['WoodLog_Moss', 9.0, -2.0, 2.0, 1.2], ['TreeStump_Moss', -9.1, -1.2, 1.4], ['Mushroom_4', -9.0, 1.4, 0.6], ['Plant_3', 9.1, 2.4, 1.0]],
+      trees: { L: { leaf: ['stage-deep', 'a-leaf', 0.55], fruit: 'a-gold' }, R: { leaf: ['stage-deep', 'a-gold', 0.3], fruit: 'a-plum', bark: ['a-wood', 'ink', 0.12] } },
       mushrooms: [[-6.9, 2.9, 1], [-6.4, 3.3, 0.7], [1.2, 3.4, 0.8], [7.4, 3.0, 0.9], [-0.9, -5.0, 1.0], [-0.4, -5.2, 0.7]],
       plants: [['fern', -7.6, -3.8, 1.2], ['fern', -6.2, -4.9, 1.0], ['fern', 3.6, -5.0, 1.1], ['fern', 7.9, -4.4, 1.2], ['fern', -8.0, 0.8, 0.9], ['fern', 8.2, 0.9, 1.0], ['fern', -4.6, 4.2, 0.8], ['mossrock', -7.4, 4.3, 0.8], ['mossrock', 1.6, -5.2, 0.7], ['stump', 5.2, -4.9, 1.0]] },
     look:   { kind: 'canopyGold' }

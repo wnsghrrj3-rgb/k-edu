@@ -237,6 +237,8 @@ import * as THREE from 'three';
 import { createKit } from '../core/diorama.js';
 import { makePerson, stepPeople, PEOPLE } from '../core/diorama-people.js';
 import { buildLand, LOOKS } from '../content/rooms/lands.js';
+import { loadModels } from '../core/models.js';
+import { namesOf as modelNames } from '../content/models/kit.js';
 import { buildThings, stepThings, shelves, ROOM_AB } from '../content/rooms/glade-ab.js';
 import { loadRoom, hasRoom, buildRoom, stepRoom, defaultPaint, slotOf, PR, howOf, checkHow, slotsFor, AXES, loadHowParts, ROOMS } from '../content/rooms/index.js';
 import { carrier } from '../content/rooms/carriers.js';
@@ -325,6 +327,8 @@ const { focus } = eye;
 /* ── 터(content/rooms/lands.js) — 그 걸음의 땅(높낮이 · 물) · 바닥 · 뒤 풍경 · 하늘(빛 · 날씨) · 글자 나무 둘. 이 화면은 물건 자리와 얼룩(햇볕 자리 · 오솔길 · 밟힌 자리)만 넘긴다 ── */
 const CARR = k => { const c = HOW.carrier[k], at = c.at || AX.carrier[k]; return Object.assign({}, c, { at: at === 'tree' ? 'tree' : at }); };      /* 글자 그릇 — 방이 고른 것, 자리는 구도가(나무 가지 · 받침 위) */
 const LANDOPT = { letters: [L1, L2], slots: { treeL: CONF.slot.treeL, treeR: CONF.slot.treeR }, carriers: { L: CARR('L'), R: CARR('R') }, light: { view: [CONF.cam.yaw, CONF.cam.pitch] } };
+/* 둘레 모형(모형 설계 v1) — 그 걸음의 모형을 미리 불러온다. 늦거나 못 오면 빈 채로 — 손으로 지은 둘레가 그대로 선다(?models=0 이면 부르지 않는다) */
+LANDOPT.models = /[?&]models=0/.test(location.search) ? null : await loadModels(K, modelNames(PLACE.around));
 const G = buildLand(K, PLACE, Object.assign(LANDOPT, !IS01 ? roomGround() : {
   blocks: [[...CONF.slot.Ld, 1], [...CONF.slot.Lc, 1.3], [...CONF.slot.Lb, 1.5], [...CONF.slot.Rc, 1.7], [...CONF.slot.Rd, 0.9], [...CONF.slot.Re, 1.8], [...CONF.slot.treeL, 0.8], [...CONF.slot.treeR, 0.8],
     [...CONF.slot.owner, 0.7], [...CONF.slot.me, 0.6], [...CONF.slot.guide, 0.6], [...CONF.slot.sign, 0.5]],

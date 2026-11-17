@@ -11,7 +11,8 @@ export default {
     floor:  { kind: 'wetrock' },
     back:   { kind: 'cliffFall', fallX: 0.4 },
     sky:    { kind: 'sprayNoon' },
-    around: { kind: 'weeping', trees: { L: { leaf: ['a-leaf', 'a-fish', 0.25], fruit: 'warm' }, R: { leaf: ['a-leaf', 'stage-deep', 0.25], fruit: 'a-pink' } },
+    around: { kind: 'weeping', swap: { rocks: ['Rock_Moss_4', 'Rock_Moss_6'], plants: { mossrock: ['Rock_Moss_6'] } }, models: [['Willow_1', -8.7, 1.7, 3.8], ['Willow_3', 8.9, -2.1, 3.4], ['Lilypad', 1.7, -4.2, 0.8], ['Lilypad', -0.9, -4.6, 0.6], ['Plant_5', -8.6, -2.8, 0.8], ['Plant_5', 8.7, 1.8, 0.8]],
+      trees: { L: { leaf: ['a-leaf', 'a-fish', 0.25], fruit: 'warm' }, R: { leaf: ['a-leaf', 'stage-deep', 0.25], fruit: 'a-pink' } },
       rocks: [[-7.9, -0.6, 0.42], [-7.4, 4.1, 0.36], [7.6, 2.2, 0.4], [-8.0, -4.2, 0.5], [8.1, -4.3, 0.5]], rockCap: ['a-leaf', 'stage-deep', 0.4],
       plants: [['bigleaf', -8.1, -1.4, 1.1], ['bigleaf', 0.9, 1.5, 0.8], ['bigleaf', 8.1, -1.2, 1.0], ['bigleaf', -7.9, 2.6, 0.9], ['bigleaf', 8.0, 0.4, 0.8], ['mossrock', -1.6, 0.6, 0.6], ['mossrock', 5.6, 2.6, 0.6]] },
     look:   { kind: 'cliffTeal' }

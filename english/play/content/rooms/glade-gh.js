@@ -11,7 +11,8 @@ export default {
     floor:  { kind: 'longgrass' },
     back:   { kind: 'farHills' },
     sky:    { kind: 'cloudAfternoon' },
-    around: { kind: 'windswept', trees: { L: { leaf: 'a-leaf', fruit: 'a-red' }, R: { leaf: ['a-leaf', 'a-gold', 0.3], fruit: 'a-gold' } },
+    around: { kind: 'windswept', swap: { rocks: ['Rock_5', 'Rock_3'], plants: { thistle: ['Wheat', null, 'Grass_2'] } }, models: [['BirchTree_1', -6.3, -6.3, 4.2], ['BirchTree_3', 3.2, -6.4, 3.8], ['BushBerries_1', -7.5, 0.8, 1.2]],
+      trees: { L: { leaf: 'a-leaf', fruit: 'a-red' }, R: { leaf: ['a-leaf', 'a-gold', 0.3], fruit: 'a-gold' } },
       rocks: [[-7.6, 2.4, 0.4], [7.9, 2.8, 0.36], [-1.4, -5.0, 0.44], [2.6, -5.0, 0.3]], rockCap: ['a-leaf', 'a-gold', 0.4],
       plants: [['thistle', -8.0, -0.9, 1.1], ['thistle', -4.6, 3.4, 0.9], ['thistle', 5.6, -4.6, 1.0], ['thistle', 8.0, 0.9, 1.0], ['thistle', -1.7, -5.0, 0.9], ['thistle', 1.6, 3.2, 0.8], ['thistle', -8.0, 3.9, 0.9]] },
     look:   { kind: 'skyHalf' }
