@@ -723,7 +723,7 @@ async function note3(){
 let letterWant = null;
 function jawTalk(dur, amp){ if (!things.alligator) return guestTalk(dur, amp); const u = things.alligator.userData; return tween(dur, t => { u.jaw.rotation.z = Math.abs(Math.sin(t * Math.PI * 2)) * amp; }, t => t); }
 async function pickLetter(l){
-  const lw = letterWant; if (!lw || pickLetter.busy) return; pickLetter.busy = true; const f = (lw.row && lw.row[l]) || fruitOf(l); await tween(360, t => f.scale.setScalar(1 + Math.sin(t * Math.PI) * 0.3), t => t);
+  const lw = letterWant; if (!lw || pickLetter.busy) return; pickLetter.busy = true; const f = (lw.row && lw.row[l]) || fruitOf(l), fs = f.userData.s || 1; await tween(360, t => f.scale.setScalar(fs * (1 + Math.sin(t * Math.PI) * 0.3)), t => t);
   if (l === lw.l) { if (EVD && lw.w) emit(lw.game || 'special-guest', Object.assign(EVD.act(lw.w, 'listen', 'touch', !lw.miss, (lw.miss | 0) + 1), { unit: 'word' })); letterWant = null; sfx('ok'); burstAt(f, 0.2, 12); STEP.letters.forEach(x => fruitOf(x).scale.setScalar(1)); await saySound(l); pickLetter.busy = false; lw.done(); return; }
   lw.miss = (lw.miss | 0) + 1; sfx('soft'); mood(max, 'ear', 1200); await saySound(l); await wait(200); await lw.again(); pickLetter.busy = false;      /* 고른 글자의 소리를 들려주고, 낱말을 다시 */
 }
@@ -880,11 +880,11 @@ let guestHead = null;
 function guestTalk(dur, amp){ return guestHead ? hop(guestHead, 0.25 * (amp || 0.5) * 2, dur) : wait(dur); }
 function letterRow(ls, near){ near.getWorldPosition(vA); const row = {}, tones = ['a-red', 'a-gold', 'a-plum', 'a-fish'];
   ls.forEach((l, i) => { const f = new THREE.Group(); f.add(ball(0.42, M(tones[i % tones.length], { roughness: 0.35 }))); const sp = new THREE.Mesh(new THREE.CircleGeometry(0.3, 28), new THREE.MeshBasicMaterial({ map: letterTex(l, hex('ink'), hex('a-cream')) })); sp.position.z = 0.43; f.add(sp);
-    f.userData.letter = l; f.position.set(Math.max(-4, Math.min(4, vA.x)) - (ls.length - 1) * 0.6 + i * 1.2, 2.7, vA.z + 1.1); f.scale.setScalar(0.01); glade.add(f); row[l] = f; tween(420, t => f.scale.setScalar(Math.max(0.01, t))); });
+    f.userData.letter = l; f.position.set(-(ls.length - 1) * 0.75 + i * 1.5, 0.75, 3.5); f.userData.s = 1.3; f.scale.setScalar(0.01); glade.add(f); row[l] = f; tween(420, t => f.scale.setScalar(Math.max(0.01, t * 1.3))); });      /* 앞 흙길 위에 크게 — 사람 · 그림 딱지에 가리지 않게 */
   return row; }
-function clearRow(row){ Object.values(row).forEach(f => { tween(300, t => f.scale.setScalar(Math.max(0.01, 1 - t))).then(() => glade.remove(f)); }); }
+function clearRow(row){ Object.values(row).forEach(f => { tween(300, t => f.scale.setScalar(Math.max(0.01, (1 - t) * 1.3))).then(() => glade.remove(f)); }); }
 async function guestRoom(){
-  const al = things[DET.guest.who] || mina, u = al.userData, home = al.position.clone(), rot0 = al.rotation.y, land = new THREE.Vector3(1.5, home.y, 0.6);
+  const al = things[DET.guest.who] || mina, u = al.userData, home = al.position.clone(), rot0 = al.rotation.y, land = new THREE.Vector3(0.2, home.y, 1.3);      /* 내 캐릭터와 Mina 사이 — 앞으로 걸어 나온다 */
   guestHead = al; u.busy = true; unpresent(); word(null); focus(al, 1.2, 0.7, 0, -0.05, u.dy || 1); lookAll(al); sfx('tray'); tip('특별 손님이 와요', 2400);
   await walkTo(al, land, 1600); al.rotation.y = isPerson(al) ? 0.3 : -Math.PI / 2 + 0.6; people.forEach(p => mood(p, 'happy', 900)); await guestTalk(600, 0.6);
   let solo = true;
