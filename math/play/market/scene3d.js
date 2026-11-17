@@ -63,7 +63,7 @@ function pile(k, box){ const key = box ? 'box' : k, old = piles[key]; if (old) {
   if (box) for (let i = 0; i < 10; i++) { const o = good(k, .62); if (o) { o.position.set(((i % 5) - 2) * .25, (i < 5 ? 0 : .2), i < 5 ? .12 : -.08); g.add(o); } }
   else for (const [x, y, z] of pileShape(n)) { const o = good(k); if (o) { o.position.set(x, y, z); o.rotation.y = Math.random() * 6; g.add(o); } }
   piles[key] = { g, k, box }; tag(g, { t: box ? 'box' : 'pile', k }); return g; }
-function piles3(){ const o = shop.SAVE.owned, list = shop.R.goods(o, S.shop).filter(k => GOODS[k]), want = new Set(list.map(k => k)); const box = (o.box && GOODS[shop.R.STOCK[S.shop]]) ? shop.R.STOCK[S.shop] : null;
+function piles3(){ const o = shop.SAVE.owned, list = shop.R.goods(o, S.shop).filter(k => GOODS[k] && (k !== 'grape' || shop.L.fish() > 0))   /* 생선이 없으면 물고기 통 더미도 없음 */, want = new Set(list.map(k => k)); const box = (o.box && GOODS[shop.R.STOCK[S.shop]]) ? shop.R.STOCK[S.shop] : null;
   for (const key of Object.keys(piles)) if ((key === 'box' ? !box || piles.box.k !== box : !want.has(key))) { scene.remove(piles[key].g); pick.splice(pick.indexOf(piles[key].g), 1); delete piles[key]; }
   for (const k of list) if (!piles[k]) pile(k); if (box && !piles.box) pile(box, true); }
 

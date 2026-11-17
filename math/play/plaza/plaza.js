@@ -7,6 +7,7 @@ import { createStage, THREE, sleep } from '../common/stage3d.js?v=1';
 import * as A from '../common/ask.js?v=1';
 import * as R from './rules.js?v=1';
 import { wallet, audio, tone, art } from '../common/kit.js?v=5';
+import * as L from '../common/loop.js?v=1';   /* N04 나루터: 배 셋 · 팻말(동전·생선·나무) · 주민 부탁 */
 
 // ── 내가 정한 수치
 const T = { RAFT_X: [-2.6, -1.3, .6], RAFT_Y: .2, RAFT_Z: 2.5, DECK: 1.0, PLANK_W: 1.3, PILE_MAX: 14, HOME_MAX: 6, WANDER: [3, 7], WALK: 1.2, PICK_PX: 80, DROP_PX: 150, PLANK_MS: 220, RISE_MS: 900,
@@ -28,7 +29,8 @@ async function build(){
   // 내 섬과 선착장
   put(M.Environment_Cliff1, -6.6, 0, -2.8, 1.05, .4); put(M.Environment_PalmTree_1, -5.3, 1.9, -3.1, 1.0, .5); put(M.Environment_PalmTree_3, -7.6, 2.2, -1.2, .9, 2); put(M.Environment_Rock_2, -4.4, 0, 1.6, 1.3, .3); put(M.Environment_Rock_1, -5.2, 0, 2.8, 1.2); put(M.Environment_Rock_1, 6.8, 0, 2.6, 1.0, 1.2);
   put(M.Environment_Dock, -2, y0, 0); put(M.Environment_Dock, 0, y0, 0);
-  S.boat = put(M.Ship_Small, 6.4, 0, 2.4, .55, 2.6);   /* 다리 길로 떠나는 배 */
+  S.boat = put(M.Ship_Small, 3.7, 0, 4.4, .45, 2.8);   /* 다리 길로 떠나는 배 */
+  S.boatF = put(M.Ship_Small, -2.5, 0, 4.4, .45, .35); S.boatM = put(M.Ship_Small, .6, 0, 4.7, .45, 3.1);   /* 앞줄: 낚시 · 장터 · 다리 길 */   /* 낚시 섬 배 · 장터 배 */
   for (let i = 0; i < Math.min(4, BR.fish | 0); i++) put(M.Prop_Bucket_Fishes, -2.9 + i * .45, T.DECK, .9, .45, i);
   // 지은 것 · 부서진 선착장(아직 안 고쳤으면)
   for (const id of PL.built) showBuilt(id, false);
@@ -38,7 +40,7 @@ async function build(){
   for (let i = 0; i < Math.min(BR.wood, T.PILE_MAX); i++) pileAdd();
   // 주민(데려온 수만큼, 여섯까지)
   for (let i = 0; i < Math.min(BR.saved, T.HOME_MAX); i++) { const p = stage.person([M.Characters_Anne, M.Characters_Henry][(i + 1) % 2], { tint: T.TINT[i % T.TINT.length] }); p.obj.position.set(-2.6 + (i % 3) * 1.1, standY(), i < 3 ? -.55 : .2); stage.face(p, 1); stage.play(p, 'Idle'); p.next = 1 + i; S.people.push(p); }
-  S.signs = A.signs(2); newBuild(); bundlesDraw(); mapDraw();
+  S.signs = A.signs(5); S.signs.slice(2).forEach(e => e.classList.add('dock')); newBuild(); bundlesDraw(); mapDraw();
   stage.onResize = resize; stage.resize(); $('loading').style.opacity = 0; setTimeout(() => $('loading').hidden = true, 500); S.ready = true; S.busy = false;
   if (!wallet.persists()) { const n = document.createElement('div'); n.id = 'note'; n.textContent = '지금은 구경 중이에요 · 화면을 나가면 처음으로 돌아가요'; document.body.appendChild(n); } }
 const standY = () => T.DECK + .18 * .62;
@@ -95,12 +97,18 @@ function mapDraw(){ const box = $('map'); box.hidden = !PL.map; box.innerHTML = 
 function signsDraw(){ if (!S.signs) return; const [sp, pl] = S.signs;
   if (S.cur && S.spot) A.signDraw(sp, stage.screenOf(new THREE.Vector3(S.spot.x, T.DECK + 1.5, S.spot.z)), S.cur.need - S.cur.put); else A.signDraw(sp, null);
   A.signDraw(pl, stage.screenOf(new THREE.Vector3(-2.55, T.DECK + 1.3 + Math.min(S.pile.length, T.PILE_MAX) / 2 * dk.plankH, -.15)), S.w0 > 0 || S.cur ? S.w0 : 0);
+  /* 나루터 팻말: 장터 배 = 동전 · 낚시 배 = 생선 · 다리 길 배 = 나무 — 모자란 것이 깜빡인다(어디로 갈지) */
+  const st = L.stock(), wt = L.wants(st, S.cur ? S.cur.need - S.cur.put : 0), at = (o, dy) => stage.screenOf(new THREE.Vector3(o.position.x, o.position.y + dy, o.position.z));
+  [[S.signs[2], S.boatM, st.coins, 'coin', wt.coins], [S.signs[3], S.boatF, st.fish, 'market.fish', wt.fish], [S.signs[4], S.boat, st.wood, 'plaza.wood', wt.wood]].forEach(([e, o, n, icon, want]) => { if (!o) return; A.signDraw(e, at(o, 1.6), n, '', art(icon)); e.classList.toggle('want', !!want); });
+  const rq = $('req'), q = L.todayRequest(), p2 = S.people[1] || null; if (q && p2 && !S.ask) { const pq = stage.screenOf(new THREE.Vector3(p2.obj.position.x, T.DECK + 1.75, p2.obj.position.z)); const wq = S.people[0] && S.cur ? stage.screenOf(new THREE.Vector3(S.people[0].obj.position.x, T.DECK + 1.75, S.people[0].obj.position.z)) : null; if (wq && Math.abs(wq.x - pq.x) < 95 && Math.abs(wq.y - pq.y) < 50) pq.x = wq.x + (pq.x >= wq.x ? 95 : -95);   /* 두 말풍선이 겹치면 비킴 */
+    rq.hidden = false; rq.style.left = pq.x + 'px'; rq.style.top = pq.y + 'px'; const v = `<span>${art('market.fish')}</span>${q.n}`; if (rq.dataset.v !== v) { rq.dataset.v = v; rq.innerHTML = v; } rq.classList.toggle('ready', st.fish >= q.n); } else rq.hidden = true;
   const ask = $('wish'), p = S.people[0]; if (p && S.cur && !S.ask) { const q = stage.screenOf(new THREE.Vector3(p.obj.position.x, T.DECK + 1.75, p.obj.position.z)); ask.hidden = false; ask.style.left = q.x + 'px'; ask.style.top = q.y + 'px'; ask.innerHTML = `<span>${art('plaza.wood')}</span>${S.cur.need}`; } else ask.hidden = true; }
 
 // ── 손: 묶음 끌기 · 배 누르기(다리 길로)
 const liftPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(T.DECK + .5)), hit = new THREE.Vector3();
 canvas.addEventListener('pointerdown', e => { if (!S.ready || S.busy || S.ask) return; audio(); const ray = stage.pointerRay(e);
   if (ray.intersectObject(S.boat, true).length) { goBridge(); return; }
+  if (S.boatF && ray.intersectObject(S.boatF, true).length) { sail(S.boatF, '/math/play/fishing/'); return; } if (S.boatM && ray.intersectObject(S.boatM, true).length) { sail(S.boatM, '/math/play/market/'); return; }
   const h = ray.intersectObjects(S.bundles.flatMap(b => b.planks), false)[0]; let b = h ? S.bundles.find(x => x.planks.includes(h.object)) : null;
   if (!b) { let best = 1e9; for (const x of S.bundles) { const q = stage.screenOf(x.group), d = Math.hypot(q.x - e.clientX, q.y - e.clientY); if (d < best) { best = d; b = x; } } if (best > T.PICK_PX) b = null; }
   if (!b) return; S.drag = { b, id: e.pointerId }; canvas.setPointerCapture(e.pointerId); tone(520, .06, 'sine', .06); });
@@ -108,6 +116,9 @@ canvas.addEventListener('pointermove', e => { if (!S.drag || e.pointerId !== S.d
 const end = e => { if (!S.drag || e.pointerId !== S.drag.id) return; const b = S.drag.b; S.drag = null; const q = stage.screenOf(b.group), s = S.spot && stage.screenOf(S.spot);
   if (s && S.cur && Math.hypot(q.x - s.x, q.y - s.y) < T.DROP_PX) drop(b); else stage.tween(b.group, { 'position.x': b.home.x, 'position.y': b.home.y, 'position.z': b.home.z }, 380); };
 canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+async function sail(b, href){ S.busy = true; S.log.push({ sail: href }); tone(660, .12, 'triangle', .1); stage.tween(b.position, { z: b.position.z + 4 }, 1100, t => t * t); await sleep(500); $('fade').style.opacity = 1; await sleep(600); location.href = href + location.search; }
+/** 주민 부탁: 말풍선을 누르면 생선을 건넨다(모자라면 고개만 갸웃) → 그 주민이 다음 길에 짐(덤 뗏목)을 들고 따라온다 */
+function giveReq(){ const p2 = S.people[1]; if (!p2 || S.busy) return; audio(); if (L.giveRequest()) { stage.play(p2, 'Yes', true); [660, 880, 1175].forEach((f, i) => tone(f, .12, 'triangle', .1, i * .07)); S.log.push({ req: 'given' }); } else { stage.play(p2, 'No', true); tone(240, .2, 'sine', .07); S.log.push({ req: 'short' }); } }
 async function goBridge(){ S.busy = true; tone(660, .12, 'triangle', .1); stage.tween(S.boat.position, { x: S.boat.position.x - 6, z: S.boat.position.z + 3 }, 1100, t => t * t); await sleep(500); $('fade').style.opacity = 1; await sleep(600); location.href = '/math/play/bridge/' + location.search; }
 
 // ── 화면 · 한 장면의 일
@@ -118,5 +129,6 @@ stage.frame((dt, t) => { S.t = t; if (!S.cam) return; camera.position.set(.6, S.
   // 주민이 선착장 위를 거닌다(놀이가 아니라 살아 있는 느낌)
   for (const p of S.people) if (!S.busy && !S.ask && t > p.next && !stage.tweens.some(w => w.o === p.obj)) { p.next = t + T.WANDER[0] + Math.random() * (T.WANDER[1] - T.WANDER[0]); const x = -2.8 + Math.random() * (PL.built.includes('dock') ? 6 : PL.built.includes('fix') ? 4 : 3.4); stage.go(p, x, T.WALK).then(() => stage.play(p, Math.random() < .3 ? 'Wave' : 'Idle')); }
   if (S.ready) signsDraw(); });
-window.__plaza.screenOf = stage.screenOf;
+window.__plaza.screenOf = stage.screenOf; window.__plaza.L = L; window.__plaza.giveReq = giveReq;
+$('req').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); giveReq(); });
 build().catch(e => { $('loading').textContent = '불러오지 못했어요'; console.error(e); });

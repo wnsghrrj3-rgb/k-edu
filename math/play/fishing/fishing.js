@@ -10,6 +10,7 @@ import { createStage, THREE, LOOK, CALM, sleep } from '../common/stage3d.js?v=1'
 import * as A from '../common/ask.js?v=1';
 import * as R from './rules.js?v=1';
 import { wallet, audio, tone } from '../common/kit.js?v=5';
+import * as L from '../common/loop.js?v=1';   /* N04: 실은 통의 물고기는 장터 생선 진열대로 */
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)
 const T = { DECK: .45, TUB_X: [-2.7, -1.65, -.6], TUB_Z: 1.9, TUB_S: 1.3, BOAT: [2.35, 0, 1.25], BOAT_S: .48, ANNE: [.55, 1.7],
@@ -117,13 +118,13 @@ async function closeTub(){ const k = S.ti, cap = S.trip.tubs[k]; A.trayAdd(cap, 
 
 // ── 끝의 셈 · 배가 떠난다
 async function askTotal(){ A.trayClear(); S.loaded.forEach((n, i) => A.trayAdd(n, i ? '+' : '')); const q = R.total(S.loaded); S.ask = A.ask({ sum: q.sum, picks: q.picks, onPick: (n, right) => { audio(); S.log.push({ pick: n, right }); }, onWrong: () => { stage.play(S.anne, 'No', true); tone(240, .25, 'sine', .08); } }); const n = await S.ask.promise; S.ask = null; return n; }
-async function finish(){ S.busy = true; await askTotal(); SAVE.trips++; SAVE.tubs += 3; wallet.save(); S.log.push({ done: true, trips: SAVE.trips }); await sail(); }
+async function finish(){ S.busy = true; await askTotal(); SAVE.trips++; SAVE.tubs += 3; L.landFish(S.loaded); wallet.save(); S.log.push({ done: true, trips: SAVE.trips }); await sail(); }
 async function sail(){ tone(392, .2, 'triangle', .1); tone(523, .3, 'triangle', .1, .2); const go = [S.boat, ...S.tubs.filter((t, k) => k < S.loaded.length), ...S.tubFish.slice(0, S.loaded.length).flat()];
   await Promise.all(go.map(o => stage.tween(o.position, { x: o.position.x + 14 }, 2600, t => t * t))); $('fade').style.opacity = 1; await sleep(480); stage.tweens.length = 0;
   S.boat.position.set(T.BOAT[0], T.BOAT[1], T.BOAT[2]); newTrip(); await sleep(80); $('fade').style.opacity = 0; intro(); }
 // 해가 졌다: 다 찬 통만 싣고 떠난다(표시·벌 없음)
 async function miss(){ if (S.missing) return; S.missing = true; S.busy = true; S.streak = 0; A.flames(0); S.log.push({ missed: true, loaded: S.loaded.length }); if (S.thief) shoo(); tone(300, .5, 'sine', .1, 0, 140); stage.play(S.anne, 'No', true);
-  SAVE.tubs += S.loaded.length; wallet.save(); for (let k = S.loaded.length; k < 3; k++) { stage.tween(S.tubs[k].scale, { x: .01, y: .01, z: .01 }, 600); for (const o of S.tubFish[k]) stage.tween(o.scale, { x: .01, y: .01, z: .01 }, 600); }
+  SAVE.tubs += S.loaded.length; if (S.loaded.length) L.landFish(S.loaded); wallet.save(); for (let k = S.loaded.length; k < 3; k++) { stage.tween(S.tubs[k].scale, { x: .01, y: .01, z: .01 }, 600); for (const o of S.tubFish[k]) stage.tween(o.scale, { x: .01, y: .01, z: .01 }, 600); }
   if (S.loaded.length >= 2) { S.missing = false; await askTotal(); S.missing = true; } await sail(); }
 
 // ── 도둑 배(갈매기 자리): 통으로 다가와 오래 두면 한 마리 가져간다(팻말 +). 누르면 돌아간다.

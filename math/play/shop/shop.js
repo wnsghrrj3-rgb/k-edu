@@ -9,6 +9,7 @@ import { wallet, art, arts, group, paint, hud, pay, grew, did, audio, tone, sfx,
 import * as R from './rules.js?v=2';
 import * as A from '../common/ask.js?v=1';
 import * as M5 from '../market/rules.js?v=2';
+import * as L from '../common/loop.js?v=1';   /* N04 고리: 장터의 「물고기 통」은 낚시에서 가져온 생선만큼 */
 const $ = id => document.getElementById(id), one = a => a[Math.floor(Math.random() * a.length)], wait = ms => new Promise(r => setTimeout(r, ms));
 /* N05: 3D 항구 장터(/math/play/market/)는 같은 규칙에 물건 모습만 다르다(음식 꾸러미를 받으면 이 표만 바꾼다). M3 = 3D 쪽에서만 켜지는 것: 팻말의 남은 수 · 줄 끝의 셈 · 거스름 식 · 섞는 것 */
 const M3 = document.body.dataset.mode === '3d';
@@ -29,10 +30,12 @@ const coin = (v, cls = '') => `<button class="c${v} ${cls}" data-v="${v}">${v}</
 function look(){ const o = O(), roof = $('roof'), bake = S.shop === 'bakery';
   $('shopName').textContent = bake ? R.BAKERY.name : R.shopName(o); roof.classList.toggle('sign', !!o.sign && !bake); roof.classList.toggle('awning', !!o.awning); roof.classList.toggle('bakery', bake); $('bell').hidden = !o.bell; $('lamp').hidden = !o.lamp;
   $('shop').classList.toggle('has-pot', !!o.pot); $('basket').classList.toggle('big', !!o.basket || bake); shelf(); hearts(); hammer(); dayBar(); }
+/* N04 생선 진열대(3D 만): 나무 상자 칸에 남은 생선 수, 다 팔리면 빈 칸 */
+function fishMark(){ if (!M3) return; const a = $('shelf').querySelector('[data-k="grape"]'); if (!a) return; let s = a.querySelector('.stock'); if (!s) { s = el('span', 'stock'); a.appendChild(s); } const n = L.fish() - count('grape'); s.textContent = Math.max(0, n); a.classList.toggle('empty', n < 1); }
 function shelf(fresh){ const o = O(), sh = $('shelf'), price = R.priceOn(o, S.shop); sh.innerHTML = '';
   for (const k of R.goods(o, S.shop)) { const b = el('button', 'crate', pic(k) + (price ? `<span class="tag">${R.PRICE[k]}</span>` : '')); b.dataset.k = k; b.onclick = () => put(k, 1); sh.appendChild(b); }
   if (o.box || S.shop === 'bakery') { const k = key(), b = el('button', 'crate', `${art('shop.box')}<small>${pic(k)} 10개</small>`); b.dataset.k = 'box'; b.onclick = () => put(k, 10); sh.appendChild(b); }
-  if (fresh) { const b = sh.querySelector(`[data-k="${fresh}"]`); if (b) b.classList.add('new'); } stockMarks(); }
+  if (fresh) { const b = sh.querySelector(`[data-k="${fresh}"]`); if (b) b.classList.add('new'); } stockMarks(); fishMark(); }
 function stockMarks(){ if (!dayMode() || T().phase !== 'open') return; const k = key(), n = T().stock, a = $('shelf').querySelector(`[data-k="${k}"]`), b = $('shelf').querySelector('[data-k="box"]');
   if (a) { let s = a.querySelector('.stock'); if (!s) { s = el('span', 'stock'); a.appendChild(s); } s.textContent = n; a.classList.toggle('empty', n < 1); } if (b) b.classList.toggle('empty', n < 10); }
 function hearts(up){ const h = $('hearts'); h.innerHTML = arts('shop.heart', SAVE.heart) + arts('shop.heart.empty', R.TUNE.HEART - SAVE.heart); if (up) { h.classList.remove('up'); void h.offsetWidth; h.classList.add('up'); } }
@@ -44,11 +47,11 @@ function dayBar(up){ const on = dayMode() && T().phase !== 'morning'; $('till').
 
 // ── 바구니(하루 장사 중에는 상자로 들여온 것만큼만)
 function drawBasket(){ const b = $('basket'); b.innerHTML = ''; S.basket.forEach((x, i) => { const s = el('span', x.n === 10 ? 'box' : '', x.n === 10 ? arts(ARTN[x.k], 5) + '<br>' + arts(ARTN[x.k], 5) : pic(x.k)); s.onclick = () => { if (S.busy || S.paused || S.payG) return; S.basket.splice(i, 1); if (dayMode() && x.k === key()) { T().stock += x.n; stockMarks(); } tone(300, .06, 'sine'); drawBasket(); }; b.appendChild(s); });
-  const g = S.sel; $('give').classList.toggle('glow', !!g && g.hint > 1 && matches(g.order)); if (M3 && g && !g.leaving && !S.payG) bubble(g); }
+  const g = S.sel; $('give').classList.toggle('glow', !!g && g.hint > 1 && matches(g.order)); if (M3 && g && !g.leaving && !S.payG) bubble(g); fishMark(); }
 /** 바구니에서 i 번째를 뺀다(3D 바구니를 눌렀을 때). */
 function unput(i){ const x = S.basket[i]; if (!x || S.busy || S.paused || S.payG || S.asking) return; S.basket.splice(i, 1); if (dayMode() && x.k === key()) { T().stock += x.n; stockMarks(); } tone(300, .06, 'sine'); drawBasket(); }
 const slots = () => S.basket.reduce((a, b) => a + (b.n === 10 ? 5 : 1), 0), cap = () => S.shop === 'bakery' ? R.TUNE.BASKET_BIG : R.basketCap(O());
-function put(k, n){ if (S.busy || S.paused || S.asking || S.payG || !S.q.length) return; audio(); if (slots() + (n === 10 ? 5 : 1) > cap()) { tone(180, .1, 'sine', .06); return; }
+function put(k, n){ if (S.busy || S.paused || S.asking || S.payG || !S.q.length) return; audio(); if (M3 && k === 'grape' && count('grape') + n > L.fish()) { tone(160, .12, 'sine', .07); fishMark(); return; } if (slots() + (n === 10 ? 5 : 1) > cap()) { tone(180, .1, 'sine', .06); return; }
   if (dayMode() && k === key()) { if (T().stock < n) { tone(160, .12, 'sine', .07); return; } T().stock -= n; stockMarks(); }
   S.basket.push({ k, n }); tone(520 + S.basket.length * 30, .07, 'square', .05); drawBasket(); }
 const matches = o => [...new Set([...Object.keys(o), ...S.basket.map(b => b.k)])].every(k => count(k) === (o[k] || 0)) && S.basket.length > 0;
@@ -77,7 +80,8 @@ function arrive(){ let kind, face, order, pi = -1, newReg = false;
   tone(880, .08, 'sine', .08); tone(1175, .12, 'sine', .08, .1); if (O().bell) { const b = $('bell'); b.classList.remove('ring'); void b.offsetWidth; b.classList.add('ring'); }
   setTimeout(() => soldOut(g), 700); }
 /* 상자로 들여온 것이 모자라면 손님이 「다 팔렸네」 하고 간다(벌 없음 · 하트 그대로) */
-function soldOut(g){ if (!dayMode() || g.leaving || S.payG === g) return false; const k = key(), want = g.order[k] || 0; if (want <= T().stock + (S.sel === g ? count(k) : 0)) return false;
+function soldOut(g){ if (M3 && !g.leaving && S.payG !== g && (g.order.grape || 0) > L.fish()) { say(g, `${pic('grape')} 없네…`); g.el.classList.add('sad'); S.log.push({ nofish: g.order.grape }); leave(g, 'out'); return true; }   /* 생선이 모자라면 「없네」 하고 감(벌 없음) */
+  if (!dayMode() || g.leaving || S.payG === g) return false; const k = key(), want = g.order[k] || 0; if (want <= T().stock + (S.sel === g ? count(k) : 0)) return false;
   say(g, `${pic(k)} 다 팔렸네…`); g.el.classList.add('sad'); T().out = (T().out | 0) + 1; leave(g, 'out'); return true; }
 function leave(g, how){ const happy = how === true; g.leaving = true; S.q = S.q.filter(x => x !== g); if (S.sel === g) { S.sel = null; if (S.q.length) select(S.q[0]); }
   if (g.pi >= 0 && dayMode()) { T().plan[g.pi].done = true; keep(); dayBar(); }
@@ -90,7 +94,7 @@ $('give').onclick = () => { const g = S.sel; if (S.busy || S.paused || S.payG ||
   g.hint++; g.el.classList.remove('sad'); void g.el.offsetWidth; g.el.classList.add('sad'); tone(200, .2, 'sine', .1);
   if (g.kind === 'regular' && !g.reveal) { g.reveal = true; bubble(g, '늘 먹던 건 이거야'); } else bubble(g, less ? `${pic(less)} 더 줘` : `${pic(more)} 너무 많아`); drawBasket(); };
 /* 손님 하나를 다 받았다 — n = 받은 돈(덤 포함). 하루 장사 중이면 오늘 돈통에, 아니면 바로 지갑에 */
-function done(g, n){ S.busy = true; const sold = M3 ? (R.priceOn(O(), S.shop) ? n : total(g.order)) : 0; n += g.kind === 'hurry' ? R.TUNE.HURRY_BONUS : 0; if (M3 && S.streak >= N5.STREAK_BONUS_AT) n += 1; if (M3) { SAVE.n5.served++; if (S.streak > 1) [0, 1, 2].forEach(i => tone(660 * 2 ** ((Math.min(S.streak, 8) * 2 + i * 4) / 12), .12, 'triangle', .1, .22 + i * .07)); }   /* 불꽃: 연달아 맞출수록 음이 오른다 */
+function done(g, n){ S.busy = true; if (M3 && g.order.grape) { L.useFish(g.order.grape); S.log.push({ fishSold: g.order.grape }); } const sold = M3 ? (R.priceOn(O(), S.shop) ? n : total(g.order)) : 0; n += g.kind === 'hurry' ? R.TUNE.HURRY_BONUS : 0; if (M3 && S.streak >= N5.STREAK_BONUS_AT) n += 1; if (M3) { SAVE.n5.served++; if (S.streak > 1) [0, 1, 2].forEach(i => tone(660 * 2 ** ((Math.min(S.streak, 8) * 2 + i * 4) / 12), .12, 'triangle', .1, .22 + i * .07)); }   /* 불꽃: 연달아 맞출수록 음이 오른다 */
   g.el.classList.add('happy'); sfx.yes(); did('shop.guest');
   if (dayMode()) { const t = T().till, s = R.split(n); t.ten += s.ten; t.one += s.one; T().served = (T().served | 0) + 1; flyTill(g.el, n); } else pay(n, 'shop', g.el);
   let line = '고마워!'; if (g.newReg) { SAVE.regs[g.face] = { o: { ...g.order }, n: 1 }; SAVE.heart = 0; line = '또 올게!'; g.el.querySelector('.mark').innerHTML = art('guest.mark.regular'); } else { if (g.kind === 'regular') SAVE.regs[g.face].n++; SAVE.heart = Math.min(R.TUNE.HEART, SAVE.heart + 1); }
@@ -199,4 +203,4 @@ if (dayMode()) S.shop = T().shop;
 paint(); hud(M3 ? { back: { href: '/math/play/plaza/', label: '← 광장' } } : undefined); look(); drawBasket();
 if (dayMode()) { if (T().phase === 'morning') morning(); else if (T().phase === 'evening') evening(); }
 else if (R.dayOn(O(), 'fruit')) morning();
-window.__shop = { S, SAVE, R, wallet, put, unput, select, openSheet, doBuy, arrive, matches, count, morning, evening, E, T, M3, ARTN, NAMEX, M5, CALM };
+window.__shop = { L, S, SAVE, R, wallet, put, unput, select, openSheet, doBuy, arrive, matches, count, morning, evening, E, T, M3, ARTN, NAMEX, M5, CALM };
