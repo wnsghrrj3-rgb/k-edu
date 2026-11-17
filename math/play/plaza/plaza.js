@@ -5,14 +5,15 @@
  * 무대 ../common/stage3d.js · 팻말·띠·끝의 셈 ../common/ask.js · 규칙 ./rules.js · 모형은 다리 길과 같은 꾸러미(../bridge/assets, Quaternius Pirate Kit CC0). */
 import { createStage, THREE, sleep } from '../common/stage3d.js?v=2';
 import * as A from '../common/ask.js?v=1';
-import * as R from './rules.js?v=1';
+import * as R from './rules.js?v=2';
 import { wallet, audio, tone, art } from '../common/kit.js?v=7';
-import * as L from '../common/loop.js?v=1';
+import * as L from '../common/loop.js?v=2';
 import * as H from '../common/hint.js?v=2';   /* 손 그림 길잡이(글 없음) */   /* N04 나루터: 배 셋 · 팻말(동전·생선·나무) · 주민 부탁 */
 
 // ── 내가 정한 수치
 const T = { RAFT_X: [-2.6, -1.3, .6], RAFT_Y: .2, RAFT_Z: 2.5, DECK: 1.0, PLANK_W: 1.3, PILE_MAX: 14, HOME_MAX: 6, WANDER: [3, 7], WALK: 1.2, PICK_PX: 80, DROP_PX: 150, PLANK_MS: 220, RISE_MS: 900,
-  SPOT: { fix: [2, 0], dock: [4, 0], store: [-.3, -.82], hut: [-5.6, -1.2], tower: [-5.4, 1.9], light: [7.2, -2.6] },   // 지을 자리(x, z)
+  SPOT: { fix: [2, 0], dock: [4, 0], store: [-.3, -.82], stairs: [5.9, .2], pier: [1.0, -2.9], rowboat: [6.6, 2.0], wharf: [4.6, -2.9], hut: [-5.6, -1.2], tower: [-5.4, 1.9], light: [7.2, -2.6] },   // 지을 자리(x, z)
+  PUT: { stairs: { ry: Math.PI / 2 }, pier: {}, rowboat: { float: -.12, ry: .5 }, wharf: {} },   // 더 지을 것 놓는 법(윗면을 선착장 높이에 · 배는 물에 띄움)
   TINT: ['#ffd49a', '#a9dcff', '#c8f2ae', '#ffb9cf', '#dcc6ff', '#fff0a0'] };
 const $ = id => document.getElementById(id), canvas = $('c');
 const stage = createStage({ canvas, seaX: 0, seaW: 120, assets: '../bridge/assets/' }), { scene, camera } = stage;
@@ -24,7 +25,7 @@ let dk, M = {};
 async function build(){
   const need = ['Environment_Dock', 'Environment_Dock_Broken', 'Environment_Dock_Pole', 'Characters_Anne', 'Characters_Henry', 'Environment_Cliff1', 'Environment_Cliff2', 'Environment_PalmTree_1', 'Environment_PalmTree_3', 'Environment_Rock_1', 'Environment_Rock_2', 'Prop_Barrel', 'Prop_Bucket_Fishes', 'Ship_Small'];
   const got = await Promise.all(need.map(n => stage.load(n))); need.forEach((n, i) => { M[n] = got[i]; });
-  for (const b of R.BUILDS) if (b.opt && !M[b.model]) M[b.model] = await stage.load(b.model).catch(() => null);
+  for (const b of R.BUILDS) if (!M[b.model]) M[b.model] = await stage.load(b.model).catch(() => null);
   const have = new Set(Object.keys(M).filter(k => M[k])); S.have = have; dk = stage.dockKit(M.Environment_Dock);
   const put = stage.put, y0 = T.DECK - .49;
   // 내 섬과 선착장
@@ -67,6 +68,7 @@ function placedPlank(i){ const m = plankMesh(i); m.rotation.y = Math.PI / 2 * (M
 function showBuilt(id, rise = true){ const [x, z] = T.SPOT[id], y0 = T.DECK - .49; let o;
   if (id === 'fix' || id === 'dock') o = stage.put(M.Environment_Dock, x, y0, z);
   else if (id === 'store') { o = new THREE.Group(); [[0, 0, 0], [.72, 0, 0], [.36, .62, 0]].forEach(([dx, dy]) => { const c = M.Prop_Barrel.scene.clone(); c.scale.setScalar(.7); c.position.set(dx - .36, dy, 0); o.add(c); }); o.position.set(x, T.DECK, z); scene.add(stage.shadows(o)); }
+  else if (T.PUT[id]) { const P = T.PUT[id]; o = stage.put(M[R.BUILDS.find(b => b.id === id).model], x, 0, z, 1, P.ry || 0); const bb = new THREE.Box3().setFromObject(o); o.position.y += P.float != null ? P.float - bb.min.y : T.DECK - bb.max.y; }
   else o = stage.put(M[R.BUILDS.find(b => b.id === id).model], x, id === 'light' ? 0 : 1.9, z, .6, .4);
   S.built[id] = o; if (rise) { const y = o.position.y; o.position.y = y - 3; stage.tween(o.position, { y }, T.RISE_MS, t => 1 - (1 - t) ** 3); } return o; }
 function newIsland(rise = true){ const g = new THREE.Group(); [[M.Environment_Cliff2, 0, 0, 0, 1], [M.Environment_PalmTree_1, -1.5, 3.2, -.5, 1.1], [M.Environment_PalmTree_3, 1.8, 2.8, .4, 1]].forEach(([m, x, y, z, s]) => { const c = m.scene.clone(); c.position.set(x, y, z); c.scale.setScalar(s); g.add(c); }); g.position.set(12, rise ? -8 : 0, -20); scene.add(g); S.island = g; if (rise) stage.tween(g.position, { y: 0 }, 1800); }
@@ -139,7 +141,7 @@ stage.frame((dt, t) => { S.t = t; if (!S.cam) return; camera.position.set(.6, S.
   for (const p of S.people) if (!S.busy && !S.ask && t > p.next && !stage.tweens.some(w => w.o === p.obj)) { p.next = t + T.WANDER[0] + Math.random() * (T.WANDER[1] - T.WANDER[0]); const x = -2.8 + Math.random() * (PL.built.includes('dock') ? 6 : PL.built.includes('fix') ? 4 : 3.4); stage.go(p, x, T.WALK).then(() => stage.play(p, Math.random() < .3 ? 'Wave' : 'Idle')); }
   if (S.ready) { signsDraw(); guide(); } });
 /** 손 길잡이: 가만히 있으면(4초) — 나무 묶음이 있고 아직 처음 짓는 중이면 묶음에서 지을 자리로, 아니면 갈 배를 짚는다. 주민 다섯부터는 안 띄운다 */
-function guide(){ if (!S.told && S.t > .8) { S.told = true; const st = L.stock(); if (st.people === 0 && st.wood === 0) H.tell('plaza', '배를 타고 친구를 데리러 가요!'); else if (S.bundles.length && S.cur && !PL.built.length) H.tell('build', '나무를 끌어다 선착장을 고쳐요!'); else if (S.boatF && S.boatF.visible && st.fish < 1) H.tell('gofish', '물고기를 잡아 장터에 팔아요!'); else if (S.boatM && S.boatM.visible && st.coins < 5) H.tell('gomarket', '장터에서 동전을 벌어 와요!'); }
+function guide(){ if (!S.told && S.t > .8) { S.told = true; const got = L.boatCatch(); if (got) { H.tell('boatfish', `주민이 작은 배로 물고기 ${got}마리를 잡아 왔어요!`, { times: 9999 }); S.log.push({ boatCatch: got }); [523, 784].forEach((f, i) => tone(f, .14, 'triangle', .1, i * .1)); return; } const st = L.stock(); if (st.people === 0 && st.wood === 0) H.tell('plaza', '배를 타고 친구를 데리러 가요!'); else if (S.bundles.length && S.cur && !PL.built.length) H.tell('build', '나무를 끌어다 선착장을 고쳐요!'); else if (S.boatF && S.boatF.visible && st.fish < 1) H.tell('gofish', '물고기를 잡아 장터에 팔아요!'); else if (S.boatM && S.boatM.visible && st.coins < 5) H.tell('gomarket', '장터에서 동전을 벌어 와요!'); }
   if (S.busy || S.ask || S.drag || BR.saved >= 5 || !H.idle(4000)) { if (S.drag || S.busy) H.hide(); return; }
   const first = S.bundles.length && S.cur && S.spot && !PL.built.length; if (first) { const b = S.bundles.find(x => x.n <= S.cur.need - S.cur.put) || S.bundles[0], a = stage.screenOf(b.group), z = stage.screenOf(S.spot), k = (S.t % 3) / 3; H.show(k < .5 ? a.x : z.x, (k < .5 ? a.y : z.y) + 10); return; }
   const o = S.next; if (o && o.visible) { const q = stage.screenOf(o); H.show(q.x, q.y + 26); } }

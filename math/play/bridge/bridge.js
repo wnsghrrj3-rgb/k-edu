@@ -11,7 +11,7 @@ import { createStage, THREE, LITE, CALM, sleep } from '../common/stage3d.js?v=2'
 import * as A from '../common/ask.js?v=1';
 import * as R from './rules.js?v=6';
 import { wallet, audio, tone, art } from '../common/kit.js?v=7';
-import * as LP from '../common/loop.js?v=1';
+import * as LP from '../common/loop.js?v=2';
 import * as H from '../common/hint.js?v=2';   /* 첫 판 한 줄 안내 · 손 그림 */
 const CARGO = !new URLSearchParams(location.search).has('free');   /* ?free = 화물 싣기 없이(옛 방식, 하네스용) */
 
@@ -111,6 +111,7 @@ function newVoyage(){ for (const b of S.bridge) for (const p of b) if (p) scene.
     for (let i = 0; i < N; i++) { if (i < g.have) { b[i] = plank(i + k * 3); b[i].position.set(slotX(k, i), plankY(), 0); } else if (T.SLOTS_SHOWN || SAVE.saved < T.LEARN) { gh[i] = plank(i, S.ghostMat);   /* 처음 두 길은 빈 칸을 흐린 판자로 보여 준다 */ gh[i].position.set(slotX(k, i), plankY() - .01, 0); } } S.bridge.push(b); S.ghosts.push(gh); });
   S.fill = S.voy.gaps.map(g => g.have); S.filled = S.fill[0]; /* N04 화물 싣기: 데려온 주민이 둘이 되면 떠나기 전에 동전으로 판자를 싣는다(그 전 두 길은 뗏목을 선물로) */
   S.loading = CARGO && LP.cargoOn(); if (S.loading) S.voy.cargo = []; const help = LP.takeHelp(); if (help) { S.voy.cargo.push(help); S.log.push({ help }); }
+  if (LP.has('stairs')) { const g = LP.GIVES.STAIRS_RAFT, n = g[0] + Math.floor(Math.random() * (g[1] - g[0] + 1)); S.voy.cargo.push(n); S.log.push({ stairs: n }); }   /* 광장의 계단: 길마다 덤 뗏목 */
   S.voy.cargo.forEach((n, j) => raft(n, j)); S.loaded = S.voy.cargo.reduce((a, b) => a + b, 0); S.placed = 0; S.lost = 0; layout(0);
   S.anne.obj.position.set(T.START_X, standY(), 0); S.anne.obj.visible = true; stage.face(S.anne, 1); stage.play(S.anne, 'Idle');
   if (S.guest) stage.unperson(S.guest); S.guest = resident(SAVE.saved); S.guest.obj.position.set(S.dest + 2.2, standY(), -.5); stage.face(S.guest, -1); stage.play(S.guest, 'Wave');

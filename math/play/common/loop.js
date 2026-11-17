@@ -26,6 +26,13 @@ export const sellFish = (fish, n) => { const sold = Math.min(fish, n); return { 
 /** 오늘의 부탁: 날짜와 순번으로 고른다(누구에게나 같음). → { n } 또는 null(오늘 다 함) */
 export function request(day, done, rnd = null){ if (done >= LOOP.REQ_PER_DAY) return null; let h = 7; for (const c of day + '#' + done) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0; const r = rnd ? rnd() : (h % 1000) / 1000; return { n: LOOP.REQ[0] + Math.floor(r * (LOOP.REQ[1] - LOOP.REQ[0] + 1)) }; }
 
+// ── 광장에서 지은 것이 여는 것(규칙: plaza/rules.js BUILDS 의 gives)
+export const GIVES = { STAIRS_RAFT: [1, 2], BOAT_FISH: 5, WHARF_QUEUE: 1, DEEP_STEP: 1 };   // 계단 덤 뗏목 장 수 · 작은 배가 하루에 잡아 오는 물고기 · 넓은 부두 장터 줄 + · 낚시터 걸음 +
+/** 광장에 그것을 지었는가 */
+export const has = id => { const b = wallet.island('plaza').built; return Array.isArray(b) && b.includes(id); };
+/** 작은 배: 오늘 아직 안 받았으면 물고기를 받는다 → 받은 수(0 = 이미 받았거나 배가 없음) */
+export function boatCatch(){ if (!has('rowboat')) return 0; const o = L(), d = wallet.dayKey(); if (o.boatDay === d) return 0; o.boatDay = d; o.fish = (o.fish | 0) + GIVES.BOAT_FISH; wallet.save(); return GIVES.BOAT_FISH; }
+
 // ── 지갑과 이어진 쪽
 const L = () => { const o = wallet.island('loop'); if (!o.v) { o.v = 1; const F = wallet.island('fishing'), B = wallet.island('bridge'); o.fish = Math.max(0, (F.fish | 0) + (B.fish | 0) * LOOP.BUCKET_FISH); o.tubs = F.tubs | 0; o.help = 0; o.reqDay = ''; o.reqDone = 0; wallet.save(); } return o; };
 /** 지금 가진 것 한눈에 → { coins, wood, fish, people, map, tubs, help } */

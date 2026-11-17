@@ -9,7 +9,7 @@ import { wallet, art, arts, group, paint, hud, pay, grew, did, audio, tone, sfx,
 import * as R from './rules.js?v=2';
 import * as A from '../common/ask.js?v=1';
 import * as M5 from '../market/rules.js?v=3';
-import * as L from '../common/loop.js?v=1';   /* N04 고리: 장터의 「물고기 통」은 낚시에서 가져온 생선만큼 */
+import * as L from '../common/loop.js?v=2';   /* N04 고리: 장터의 「물고기 통」은 낚시에서 가져온 생선만큼 */
 const $ = id => document.getElementById(id), one = a => a[Math.floor(Math.random() * a.length)], wait = ms => new Promise(r => setTimeout(r, ms));
 /* N05: 3D 항구 장터(/math/play/market/)는 같은 규칙에 물건 모습만 다르다(음식 꾸러미를 받으면 이 표만 바꾼다). M3 = 3D 쪽에서만 켜지는 것: 팻말의 남은 수 · 줄 끝의 셈 · 거스름 식 · 섞는 것 */
 const M3 = document.body.dataset.mode === '3d';
@@ -141,7 +141,7 @@ $('more').onclick = async () => { const g = S.payG; if (!g || S.busy || S.paused
   else { say(g, '딱 맞게 냈는데?'); $('trayPaid').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }], 420); } };
 
 // ── 기다림·다음 손님(꾸미는 동안·판이 떠 있는 동안은 멈춘다)
-setInterval(() => { if (S.paused || S.asking) return; const qcap = R.queueCap(SAVE) + (M3 && S.fair > 0 ? N5.FAIR_CAP : 0);
+setInterval(() => { if (S.paused || S.asking) return; const qcap = R.queueCap(SAVE) + (M3 && S.fair > 0 ? N5.FAIR_CAP : 0) + (M3 && L.has('wharf') ? L.GIVES.WHARF_QUEUE : 0);   /* 광장의 넓은 부두: 줄 +1 */
   /* N05: 생각할 시간이 다 돼 가면 북소리(가장 급한 손님 기준, 빨라짐) */ if (M3 && !CALM) { const ws = S.q.filter(g => !g.leaving && S.payG !== g).map(g => g.wait), m = ws.length ? Math.min(...ws) : 1; S.beat = (S.beat || 0) - .1; if (m < N5.DRUM && S.beat <= 0) { S.beat = .25 + m * 3; tone(96, .09, 'sine', .16); tone(72, .12, 'sine', .12, .09); S.drums = (S.drums | 0) + 1; } }
   for (const g of S.q.slice()) { if (g.leaving || S.payG === g) continue; if (!CALM) g.wait -= .1 / g.dur; const w = g.el.querySelector('.wait i'); w.style.width = Math.max(0, g.wait * 100) + '%'; w.style.background = g.wait < .3 ? '#ffb347' : '#35d07f'; if (g.wait <= 0 && !(S.busy && S.sel === g)) leave(g, false); }
   if (dayMode()) { if (T().phase !== 'open') return; if (nextPlan() < 0) { if (!S.q.length && !S.payG && !S.busy) evening(); return; } }

@@ -8,9 +8,9 @@
  * 그림은 기성 3D 재료만(Quaternius Pirate Kit, CC0 — ../bridge/assets). 물고기는 고른 꾸러미가 오기 전까지 「물고기 양동이」 모형의 물고기 조각을 떼어 쓴다. */
 import { createStage, THREE, LOOK, CALM, sleep } from '../common/stage3d.js?v=2';
 import * as A from '../common/ask.js?v=1';
-import * as R from './rules.js?v=2';
+import * as R from './rules.js?v=3';
 import { wallet, audio, tone, art } from '../common/kit.js?v=7';
-import * as L from '../common/loop.js?v=1';
+import * as L from '../common/loop.js?v=2';
 import * as H from '../common/hint.js?v=2';   /* 첫 판 한 줄 안내 · 손 그림 */   /* N04: 실은 통의 물고기는 장터 생선 진열대로 */
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)
@@ -74,7 +74,7 @@ function aim(w, h){ const tall = h > w, asp = w / h; S.fk = tall ? 1.25 : 1;   /
 
 // ── 한 판
 function newTrip(){ for (const f of S.fish) drop(f.obj); S.fish = []; for (const t of S.tubs) scene.remove(t); for (const fl of S.tubFish) for (const o of fl) drop(o); if (S.thief) { scene.remove(S.thief.obj); S.thief = null; }
-  S.trip = R.trip(SAVE.trips, Math.random, { prev: S.trip, no: OPT.filter(n => !K[n]).map(() => 'crab') }); S.ti = 0; S.fill = [[], [], []]; S.tubFish = [[], [], []]; S.loaded = []; S.left = S.trip.tubs[0]; S.clock = 0; S.missing = false; S.overInTub = false;
+  S.trip = R.trip(SAVE.trips, Math.random, { deep: L.has('pier') ? L.GIVES.DEEP_STEP : 0, prev: S.trip, no: OPT.filter(n => !K[n]).map(() => 'crab') }); S.ti = 0; S.fill = [[], [], []]; S.tubFish = [[], [], []]; S.loaded = []; S.left = S.trip.tubs[0]; S.clock = 0; S.missing = false; S.overInTub = false;
   S.tubs = T.TUB_X.map(x => { const t = KIT.tub.clone(); t.position.set(x, T.DECK, T.TUB_Z); t.scale.setScalar(T.TUB_S); scene.add(t); return t; });
   S.thiefIn = R.MIX.GULL.every[0]; S.schoolIn = 6 + Math.random() * 6; dusk(0); A.trayClear(); A.flames(S.streak); S.ask = null;
   while (S.fish.length < S.trip.n) addFish(true);

@@ -9,6 +9,11 @@ export const BUILDS = [
   { id: 'fix', need: [5, 8], model: 'Environment_Dock' },           // 부서진 선착장 고치기(처음부터 보이는 부서진 조각이 온전한 선착장으로)
   { id: 'dock', need: [7, 10], model: 'Environment_Dock' },         // 선착장 넓히기
   { id: 'store', need: [9, 12], model: 'Prop_Barrel' },             // 통 창고(통 셋)
+  /* 더 지을 것(Cute Fish Pack 의 선착장·배 모형) — 지으면 다른 섬에 새것이 열린다(gives → common/loop.js) */
+  { id: 'stairs', need: [8, 11], model: 'Env2_Dock_Stairs', gives: 'raft' },     // 배 타는 계단: 다리 길을 떠날 때마다 덤 뗏목 하나
+  { id: 'pier', need: [10, 14], model: 'Env2_Dock_Long', gives: 'deep' },         // 낚시터: 낚시 섬이 깊은 바다(통·물고기 수가 한 걸음 큼)
+  { id: 'rowboat', need: [12, 16], model: 'Prop_Rowboat', gives: 'catch' },       // 작은 배: 주민이 하루 한 번 물고기를 잡아 옴
+  { id: 'wharf', need: [14, 18], model: 'Env2_Dock_Wide', gives: 'queue' },       // 넓은 부두: 장터 줄이 한 명 길어짐
   { id: 'hut', need: [11, 15], model: 'Environment_House1', opt: true },     // 오두막
   { id: 'tower', need: [13, 17], model: 'Environment_House3', opt: true },   // 망루
   { id: 'light', need: [15, 19], model: 'Environment_House2', opt: true } ]; // 등대 자리

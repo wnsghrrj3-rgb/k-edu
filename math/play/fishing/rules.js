@@ -43,7 +43,7 @@ export function event(trips, rnd = Math.random, opt = {}){ const F = MIX.FIRST, 
   return ev; }
 
 /** 한 판: { tubs:[수×3], step, fishMax, n, budget, ev }. opt.prev = 앞 판(같은 통 셋이 연달아 안 나오게). */
-export function trip(trips, rnd = Math.random, opt = {}){ const step = stepOf(trips), S = STEPS[step]; let tubs, guard = 0;
+export function trip(trips, rnd = Math.random, opt = {}){ const step = Math.min(STEPS.length - 1, stepOf(trips) + (opt.deep | 0)), S = STEPS[step];   /* opt.deep = 광장에 낚시터를 지었으면 한 걸음 깊은 바다 */ let tubs, guard = 0;
   do { tubs = Array.from({ length: TUBS }, () => R(rnd, S.tub[0], S.tub[1])); } while (++guard < 10 && ((new Set(tubs).size < 2) || (opt.prev && opt.prev.tubs.join() === tubs.join())));
   return { tubs, step, fishMax: S.fish, n: S.n, budget: S.budget, ev: event(trips, rnd, opt) }; }
 
