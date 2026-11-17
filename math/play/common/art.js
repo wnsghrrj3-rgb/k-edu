@@ -7,7 +7,9 @@ const ART = {
   'fruit.apple': '🍎', 'fruit.orange': '🍊', 'fruit.banana': '🍌', 'fruit.grape': '🍇', 'shop.box': '📦',
   'shop.hammer': '🔨', 'shop.basket': '🧺', 'shop.awning': '⛱️', 'shop.bell': '🔔', 'shop.sign': '🪧', 'shop.pot': '🪴', 'shop.lamp': '🏮',
   'bake.bread': '🍞', 'bake.croissant': '🥐', 'shop.cart': '🛒', 'shop.till': '💰', 'shop.safe': '🏦', 'shop.door': '🚪', 'shop.memo': '📝', 'day.morning': '🌅', 'day.evening': '🌇',
-  'market.wood': '🪵', 'market.stone': '🪨', 'market.barrel': '🛢️', 'market.fish': '🐟', 'map.piece': '🧩',
+  // 항구 장터·광장(N05 검수): 물건은 Pirate Kit 모형을 찍은 그림(/math/play/art/, CC0 재료에서 만듦)
+  'market.wood': { src: '/math/play/art/market.wood.png' }, 'market.stone': { src: '/math/play/art/market.stone.png' }, 'market.barrel': { src: '/math/play/art/market.barrel.png' }, 'market.fish': { src: '/math/play/art/market.fish.png' },
+  'plaza.wood': { src: '/math/play/art/plaza.wood.png' }, 'map.piece': '🧩', 'hint.hand': '👆',
   'shop.heart': '❤️', 'shop.heart.empty': '🤍', 'guest.mark.hurry': '💦', 'guest.mark.regular': '💛',
   'guest.bear': '🐻', 'guest.rabbit': '🐰', 'guest.cat': '🐱', 'guest.dog': '🐶', 'guest.fox': '🦊', 'guest.panda': '🐼', 'guest.frog': '🐸', 'guest.monkey': '🐵',
   // 낚시 섬

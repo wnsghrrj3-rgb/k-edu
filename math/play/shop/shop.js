@@ -5,9 +5,10 @@
  *     과일 상자를 셋 다 사면 값이 붙고(손님이 올려놓은 돈을 보고 「받기」·「더 줘야지?」), 값을 받은 손님이 열이 되면 거스름.
  *     다 꾸미면 옆에 빵집(식빵 10 · 크루아상 5). 규칙은 ./rules.js.
  * 틀(위쪽 띠·동전·알림·효과음·「커졌어!」)은 ../common/kit.js, 그림은 ../common/art.js. 산 것·하트·단골·오늘 장사는 지갑의 가게 칸에 남는다. */
-import { wallet, art, arts, group, paint, hud, pay, grew, did, audio, tone, sfx, toast } from '../common/kit.js?v=4';
+import { wallet, art, arts, group, paint, hud, pay, grew, did, audio, tone, sfx, toast } from '../common/kit.js?v=5';
 import * as R from './rules.js?v=2';
 import * as A from '../common/ask.js?v=1';
+import * as M5 from '../market/rules.js?v=2';
 const $ = id => document.getElementById(id), one = a => a[Math.floor(Math.random() * a.length)], wait = ms => new Promise(r => setTimeout(r, ms));
 /* N05: 3D 항구 장터(/math/play/market/)는 같은 규칙에 물건 모습만 다르다(음식 꾸러미를 받으면 이 표만 바꾼다). M3 = 3D 쪽에서만 켜지는 것: 팻말의 남은 수 · 줄 끝의 셈 · 거스름 식 · 섞는 것 */
 const M3 = document.body.dataset.mode === '3d';
@@ -15,8 +16,9 @@ const ARTN = M3 ? { apple: 'market.wood', orange: 'market.stone', banana: 'marke
 const SAVE = R.migrate(wallet.island('shop')), O = () => SAVE.owned;
 const S = { q: [], sel: null, basket: [], paused: false, busy: false, nextIn: .6, id: 0, payG: null, shop: 'fruit', panel: null, asking: false, line: [], streak: 0, fair: 0, arrivals: 0, log: [] };
 const NAMEX = M3 ? { apple: '장작', orange: '돌', banana: '통', grape: '물고기 통', bread: '식빵', croissant: '크루아상' } : R.NAME2;
-// N05 내가 정한 수치(3D 만): 줄 끝 셈은 손님 셋마다 · 깜짝 손님 15% · 장날은 손님 일곱마다 다섯 명 동안 줄 +2 · 연달아 딱 맞추면 다음 손님이 빨리(한 번에 10%, 넷까지)
-const N5 = { LINE: 3, SURPRISE_P: .15, FAIR_EVERY: 7, FAIR_N: 5, FAIR_CAP: 2, STREAK_GAP: .1, STREAK_MAX: 4, BONUS: 3 };
+/* N05 수치·사건 표는 ../market/rules.js(3D 만). ?calm = 시계 없이(손님이 기다림을 잃지 않음) */
+const N5 = M5.N5, CALM = M3 && new URLSearchParams(location.search).has('calm');
+if (M3) SAVE.n5 = M5.mend(SAVE.n5);
 function keep(){ wallet.save(); }
 const count = k => S.basket.reduce((n, b) => n + (b.k === k ? b.n : 0), 0), total = o => Object.values(o).reduce((a, b) => a + b, 0);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -68,7 +70,7 @@ function arrive(){ let kind, face, order, pi = -1, newReg = false;
     const busy = new Set([...S.q.map(g => g.face), ...Object.keys(SAVE.regs)]); face = n.reg || one(FACES.filter(f => !busy.has(f))); order = kind === 'regular' ? { ...SAVE.regs[face].o } : R.orderFor(O(), kind); }
   const g = { id: ++S.id, pi, face, kind, newReg, order, wait: 1, hint: 0, leaving: false, el: el('div', 'guest out', '<div class="bubble"></div><span class="face"></span><span class="mark"></span><div class="wait"><i></i></div>') };
   if (kind === 'regular') g.firstUsual = SAVE.regs[face].n <= 1;
-  if (M3) { S.arrivals++; if (kind === 'plain' && SAVE.bought >= 2 && Math.random() < N5.SURPRISE_P) g.surprise = true; if (SAVE.bought >= 3 && S.arrivals % N5.FAIR_EVERY === 0) { S.fair = N5.FAIR_N; S.log.push({ fair: true }); [196, 247, 294].forEach((f, i) => tone(f, .18, 'square', .06, i * .12)); } else if (S.fair > 0) S.fair--; }
+  if (M3) { const ev = M5.arrival(SAVE.n5, kind); S.arrivals = SAVE.n5.arrivals; keep(); if (ev.surprise) g.surprise = true; if (ev.fair) { S.fair = N5.FAIR_N; S.log.push({ fair: true }); [196, 247, 294].forEach((f, i) => tone(f, .18, 'square', .06, i * .12)); } else if (S.fair > 0) S.fair--; }
   g.dur = R.waitSec(O(), kind); g.el.querySelector('.face').innerHTML = art(face); g.el.querySelector('.mark').innerHTML = kind === 'hurry' ? art('guest.mark.hurry') : kind === 'regular' ? art('guest.mark.regular') : '';
   g.el.dataset.kind = kind; g.el.dataset.id = g.id; g.el.addEventListener('pointerdown', e => { e.preventDefault(); audio(); select(g); }); bubble(g); $('line').appendChild(g.el); S.q.push(g);
   requestAnimationFrame(() => requestAnimationFrame(() => g.el.classList.remove('out'))); if (!S.sel) select(g); else select(S.sel);
@@ -88,7 +90,8 @@ $('give').onclick = () => { const g = S.sel; if (S.busy || S.paused || S.payG ||
   g.hint++; g.el.classList.remove('sad'); void g.el.offsetWidth; g.el.classList.add('sad'); tone(200, .2, 'sine', .1);
   if (g.kind === 'regular' && !g.reveal) { g.reveal = true; bubble(g, '늘 먹던 건 이거야'); } else bubble(g, less ? `${pic(less)} 더 줘` : `${pic(more)} 너무 많아`); drawBasket(); };
 /* 손님 하나를 다 받았다 — n = 받은 돈(덤 포함). 하루 장사 중이면 오늘 돈통에, 아니면 바로 지갑에 */
-function done(g, n){ S.busy = true; const sold = M3 ? (R.priceOn(O(), S.shop) ? n : total(g.order)) : 0; n += g.kind === 'hurry' ? R.TUNE.HURRY_BONUS : 0; if (M3 && S.streak >= 3) n += 1; g.el.classList.add('happy'); sfx.yes(); did('shop.guest');
+function done(g, n){ S.busy = true; const sold = M3 ? (R.priceOn(O(), S.shop) ? n : total(g.order)) : 0; n += g.kind === 'hurry' ? R.TUNE.HURRY_BONUS : 0; if (M3 && S.streak >= N5.STREAK_BONUS_AT) n += 1; if (M3) { SAVE.n5.served++; if (S.streak > 1) [0, 1, 2].forEach(i => tone(660 * 2 ** ((Math.min(S.streak, 8) * 2 + i * 4) / 12), .12, 'triangle', .1, .22 + i * .07)); }   /* 불꽃: 연달아 맞출수록 음이 오른다 */
+  g.el.classList.add('happy'); sfx.yes(); did('shop.guest');
   if (dayMode()) { const t = T().till, s = R.split(n); t.ten += s.ten; t.one += s.one; T().served = (T().served | 0) + 1; flyTill(g.el, n); } else pay(n, 'shop', g.el);
   let line = '고마워!'; if (g.newReg) { SAVE.regs[g.face] = { o: { ...g.order }, n: 1 }; SAVE.heart = 0; line = '또 올게!'; g.el.querySelector('.mark').innerHTML = art('guest.mark.regular'); } else { if (g.kind === 'regular') SAVE.regs[g.face].n++; SAVE.heart = Math.min(R.TUNE.HEART, SAVE.heart + 1); }
   SAVE.rest = Math.max(0, SAVE.rest - 1); keep(); say(g, line); hearts(true); hammer();
@@ -130,10 +133,11 @@ $('more').onclick = async () => { const g = S.payG; if (!g || S.busy || S.paused
 
 // ── 기다림·다음 손님(꾸미는 동안·판이 떠 있는 동안은 멈춘다)
 setInterval(() => { if (S.paused || S.asking) return; const qcap = R.queueCap(SAVE) + (M3 && S.fair > 0 ? N5.FAIR_CAP : 0);
-  for (const g of S.q.slice()) { if (g.leaving || S.payG === g) continue; g.wait -= .1 / g.dur; const w = g.el.querySelector('.wait i'); w.style.width = Math.max(0, g.wait * 100) + '%'; w.style.background = g.wait < .3 ? '#ffb347' : '#35d07f'; if (g.wait <= 0 && !(S.busy && S.sel === g)) leave(g, false); }
+  /* N05: 생각할 시간이 다 돼 가면 북소리(가장 급한 손님 기준, 빨라짐) */ if (M3 && !CALM) { const ws = S.q.filter(g => !g.leaving && S.payG !== g).map(g => g.wait), m = ws.length ? Math.min(...ws) : 1; S.beat = (S.beat || 0) - .1; if (m < N5.DRUM && S.beat <= 0) { S.beat = .25 + m * 3; tone(96, .09, 'sine', .16); tone(72, .12, 'sine', .12, .09); S.drums = (S.drums | 0) + 1; } }
+  for (const g of S.q.slice()) { if (g.leaving || S.payG === g) continue; if (!CALM) g.wait -= .1 / g.dur; const w = g.el.querySelector('.wait i'); w.style.width = Math.max(0, g.wait * 100) + '%'; w.style.background = g.wait < .3 ? '#ffb347' : '#35d07f'; if (g.wait <= 0 && !(S.busy && S.sel === g)) leave(g, false); }
   if (dayMode()) { if (T().phase !== 'open') return; if (nextPlan() < 0) { if (!S.q.length && !S.payG && !S.busy) evening(); return; } }
   else if (R.dayOn(O(), 'fruit') && !S.q.length && !S.payG && !S.busy) { morning(); return; }
-  S.nextIn -= .1; if (S.nextIn <= 0 && S.q.length < qcap) { arrive(); S.nextIn = R.gapSec(O()) * (M3 ? (S.fair > 0 ? .5 : 1) * (1 - N5.STREAK_GAP * Math.min(S.streak, N5.STREAK_MAX)) : 1); } else if (S.nextIn <= 0) S.nextIn = .5; }, 100);
+  S.nextIn -= .1; if (S.nextIn <= 0 && S.q.length < qcap) { arrive(); S.nextIn = R.gapSec(O()) * (M3 ? M5.gapMul(S.fair, S.streak) : 1); } else if (S.nextIn <= 0) S.nextIn = .5; }, 100);
 
 // ── 판(꾸미기 · 아침 · 저녁)
 function sheet(html, cls = ''){ $('sheetCard').innerHTML = html; const s = $('sheet'); s.className = 'sheet on ' + cls; S.paused = true; S.panel = cls || 'deco'; }
@@ -195,4 +199,4 @@ if (dayMode()) S.shop = T().shop;
 paint(); hud(M3 ? { back: { href: '/math/play/plaza/', label: '← 광장' } } : undefined); look(); drawBasket();
 if (dayMode()) { if (T().phase === 'morning') morning(); else if (T().phase === 'evening') evening(); }
 else if (R.dayOn(O(), 'fruit')) morning();
-window.__shop = { S, SAVE, R, wallet, put, unput, select, openSheet, doBuy, arrive, matches, count, morning, evening, E, T, M3, ARTN, NAMEX };
+window.__shop = { S, SAVE, R, wallet, put, unput, select, openSheet, doBuy, arrive, matches, count, morning, evening, E, T, M3, ARTN, NAMEX, M5, CALM };

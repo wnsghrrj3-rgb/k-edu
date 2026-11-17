@@ -6,7 +6,7 @@
 import { createStage, THREE, sleep } from '../common/stage3d.js?v=1';
 import * as A from '../common/ask.js?v=1';
 import * as R from './rules.js?v=1';
-import { wallet, audio, tone } from '../common/kit.js?v=4';
+import { wallet, audio, tone, art } from '../common/kit.js?v=5';
 
 // ── 내가 정한 수치
 const T = { RAFT_X: [-2.6, -1.3, .6], RAFT_Y: .2, RAFT_Z: 2.5, DECK: 1.0, PLANK_W: 1.3, PILE_MAX: 14, HOME_MAX: 6, WANDER: [3, 7], WALK: 1.2, PICK_PX: 80, DROP_PX: 150, PLANK_MS: 220, RISE_MS: 900,
@@ -95,7 +95,7 @@ function mapDraw(){ const box = $('map'); box.hidden = !PL.map; box.innerHTML = 
 function signsDraw(){ if (!S.signs) return; const [sp, pl] = S.signs;
   if (S.cur && S.spot) A.signDraw(sp, stage.screenOf(new THREE.Vector3(S.spot.x, T.DECK + 1.5, S.spot.z)), S.cur.need - S.cur.put); else A.signDraw(sp, null);
   A.signDraw(pl, stage.screenOf(new THREE.Vector3(-2.55, T.DECK + 1.3 + Math.min(S.pile.length, T.PILE_MAX) / 2 * dk.plankH, -.15)), S.w0 > 0 || S.cur ? S.w0 : 0);
-  const ask = $('wish'), p = S.people[0]; if (p && S.cur && !S.ask) { const q = stage.screenOf(new THREE.Vector3(p.obj.position.x, T.DECK + 1.75, p.obj.position.z)); ask.hidden = false; ask.style.left = q.x + 'px'; ask.style.top = q.y + 'px'; ask.innerHTML = `<span>🪵</span>${S.cur.need}`; } else ask.hidden = true; }
+  const ask = $('wish'), p = S.people[0]; if (p && S.cur && !S.ask) { const q = stage.screenOf(new THREE.Vector3(p.obj.position.x, T.DECK + 1.75, p.obj.position.z)); ask.hidden = false; ask.style.left = q.x + 'px'; ask.style.top = q.y + 'px'; ask.innerHTML = `<span>${art('plaza.wood')}</span>${S.cur.need}`; } else ask.hidden = true; }
 
 // ── 손: 묶음 끌기 · 배 누르기(다리 길로)
 const liftPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(T.DECK + .5)), hit = new THREE.Vector3();

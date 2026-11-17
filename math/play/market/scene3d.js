@@ -3,15 +3,17 @@
  * 손님의 말풍선(주문 팻말)은 shop.js 의 .guest 를 사람 머리 위로 옮겨 쓴다. 물체는 모두 기성 재료(Quaternius Pirate Kit, CC0) — ../bridge/assets/ 를 같이 씀.
  * 물건 모습: 장작 = UI_Wood · 돌 = Environment_Rock_5 · 통 = Prop_Barrel · 물고기 통 = Prop_Bucket_Fishes(음식 꾸러미를 받으면 GOODS 표만 바꾼다). 빵집 물건은 모형이 없어 아래 칸(나무 상자 줄)에서만 담는다. */
 import { createStage, THREE, sleep, CALM } from '../common/stage3d.js?v=1';
-import { toast, tone, audio } from '../common/kit.js?v=4';
+import { toast, tone, audio } from '../common/kit.js?v=5';
+import * as M5 from './rules.js?v=2';
 
 // ── 내가 정한 수치
 const M = {
   FLOOR: .41,                       // 선착장 판자 윗면
   LINE_Z: -.7, SLOT: 1.55, EDGE: 3.5,          // 손님이 서는 줄(가운데부터 양옆으로)
   COUNTER_Z: 1.75, TOP: .83, BARREL: .62,       // 계산대(통 줄) · 윗면
-  ROLL_MIN: 40, ROLL_MAX: 70, ROLL_MS: 3200,   // 굴러가는 물건: 몇 초마다 · 굴러 떨어지기까지
+  ROLL_MS: 3200,                    // 굴러가는 물건이 굴러 떨어지기까지(몇 초마다는 ./rules.js N5.ROLL)
   WAIT_STOMP: .3,                   // 이보다 덜 남으면 손님이 발을 구른다(고개 젓기)
+  FIT: 4.3,                         // 화면 폭에 늘 들어올 양끝(물고기 통 더미 바깥)
 };
 const GOODS = { apple: { m: 'UI_Wood', s: .62, h: .3 }, orange: { m: 'Environment_Rock_5', s: .48, h: .29 }, banana: { m: 'Prop_Barrel', s: .42, h: .28 }, grape: { m: 'Prop_Bucket_Fishes', s: .4, h: .27 } };
 const PILE_X = { apple: -2.8, orange: -3.55, banana: 2.8, grape: 3.55, box: -2.8 }, PILE_DZ = { box: -.75 };   // 열 개들이 더미는 낱개 더미 바로 뒤
@@ -27,7 +29,13 @@ const shop = await new Promise(res => { const t = setInterval(() => { if (window
 const S = shop.S;
 
 // ── 카메라(전화기 세로는 더 물러나 넓게, 아래 판에 가리지 않게 장면을 위로)
-function aim(w, h){ const tall = h > w; camera.fov = tall ? 64 : 40; camera.position.set(0, tall ? 6 : 4, tall ? 12.6 : 9); camera.lookAt(0, tall ? -1 : -.25, -.6); }
+/* 카메라: 계산대·더미 양끝(±M.FIT)이 늘 화면 폭에 들어오는 거리로 서고, 계산대 앞 끝이 아래 판 바로 위에 오도록 그림을 위아래로 옮긴다(아래 판 높이가 바뀌면 다시) */
+let aimKey = '';
+function aim(w = innerWidth, h = innerHeight){ const tall = h > w, asp = w / h; camera.fov = tall ? 50 : 40; camera.aspect = asp; camera.clearViewOffset();
+  const half = Math.atan(Math.tan(camera.fov * Math.PI / 360) * asp), dist = Math.max(8.4, M.FIT / Math.tan(half));
+  camera.position.set(0, dist * (tall ? .82 : .42), M.COUNTER_Z + dist * (tall ? .62 : .9));   /* 세로 화면은 더 내려다봐서 줄·계산대 사이가 위아래로 벌어지게 */ camera.lookAt(0, 0, -.8); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
+  const panel = document.querySelector('.inside'), top = panel ? panel.getBoundingClientRect().top : h * .7, p = new THREE.Vector3(0, M.TOP, M.COUNTER_Z + .5).project(camera), dy = (top - h * .04) - (1 - p.y) / 2 * h;
+  camera.setViewOffset(w, h, 0, -dy, w, h); camera.updateProjectionMatrix(); aimKey = w + 'x' + h + ':' + Math.round(top); }
 stage.onResize = aim; stage.resize();
 stage.sun.position.set(-5, 10, 7); stage.sun.target.position.set(0, 0, 0);
 
@@ -39,7 +47,7 @@ if (dk) { const step = Math.abs(dk.plankAt[1].x - dk.plankAt[0].x) || .36; let i
 for (let x = -9; x <= 9.1; x += 3) for (const z of [-2.55, 2.95]) add('Environment_Dock_Pole', x, M.FLOOR - .75, z, 1, x);
 add('Environment_Cliff2', -12, -.3, -10, 1.1, .4); add('Environment_Cliff4', 13, -.3, -11, 1.0, -.5);
 add('Environment_PalmTree_3', -8.4, 0, -6.5, 1.1, .6); add('Environment_PalmTree_1', 9.4, 0, -7, 1.0, 2.2); add('Environment_Rock_1', -6.5, -.2, -4.6, 1.2); add('Environment_Rock_4', 7.2, -.2, -4.8, 1.1, 1);
-const ship = add('Ship_Small', 4.5, 0, -9.5, 1.1, -1.2);
+const ship = add('Ship_Small', 6.5, 0, -12.5, 1.1, -1.2);
 // 계산대: 통 셋을 다리로, 위에 판자를 가로로 깐다(물건 「통」과 헷갈리지 않게 판자 탁자로)
 const counter = []; for (const x of [-1.25, 0, 1.25]) counter.push(add('Prop_Barrel', x, M.FLOOR, M.COUNTER_Z, M.BARREL, x * 2));
 if (dk) { const w = Math.abs(dk.plankAt[1].x - dk.plankAt[0].x) || .36; for (const xc of [-1.05, 1.05]) for (let r = 0; r < 3; r++) { const m = new THREE.Mesh(dk.planks[(r + (xc > 0 ? 2 : 0)) % dk.planks.length], dk.mat); m.rotation.y = Math.PI / 2; m.position.set(xc, M.FLOOR + .41 + dk.plankH / 2, M.COUNTER_Z + (r - 1) * w); scene.add(stage.shadows(m)); } M.TOP = M.FLOOR + .41 + dk.plankH; }
@@ -102,7 +110,7 @@ function sync(){ const live = new Set(S.q.map(g => g.id)), here = [...crowd.valu
   for (const c of crowd.values()) { if (c.gone) continue; const s = screenOf(new THREE.Vector3(c.p.obj.position.x, M.FLOOR + 1.25 + (c.carry ? .7 : 0), c.p.obj.position.z)); const e = c.g.el; e.style.left = s.x + 'px'; e.style.top = s.y + 'px'; e.style.zIndex = S.sel === c.g ? 3 : 2; } }
 
 // ── 굴러가는 물건: 가끔 더미 하나가 굴러간다 — 누르면 잡고(제자리), 놓치면 바다에 퐁(아무것도 잃지 않음)
-let rollIn = M.ROLL_MIN + Math.random() * (M.ROLL_MAX - M.ROLL_MIN), roll = null;
+let rollIn = Infinity, roll = null;   /* 처음엔 받은 손님 수로 정한 때(M5.rollDue), 본 뒤로는 M5.rollGap() 마다 */
 function startRoll(){ const ks = Object.keys(piles).filter(k => k !== 'box'); if (!ks.length) return; const P = piles[ks[Math.floor(Math.random() * ks.length)]], src = P.g.children[P.g.children.length - 1]; if (!src) return;
   const o = good(P.k), from = new THREE.Vector3(); src.getWorldPosition(from); src.visible = false; o.position.copy(from); scene.add(o); const dir = from.x < 0 ? 1 : -1;
   roll = { o, src, k: P.k, t: 0, dir, x0: from.x }; tag(o, { t: 'roll' }); o.position.y = M.FLOOR + .15; tone(330, .2, 'triangle', .06, 0, 220); S.log.push({ roll: 'start' }); }
@@ -121,9 +129,10 @@ function bump(P){ if (!P) return; const g = P.g; tween(g.scale, { y: .9 }, 70).t
 
 // ── 매 장면
 let t0 = 0;
-stage.frame((dt, t) => { piles3(); drawBasket(); drawSlots(); sync(); if (ship) { ship.position.y = Math.sin(t * .8) * .06; ship.rotation.z = Math.sin(t * .6) * .03; }
-  if (roll) { roll.t += dt * 1000; const k = roll.t / M.ROLL_MS; roll.o.position.x = roll.x0 + roll.dir * k * 4.2; roll.o.rotation.z -= roll.dir * dt * 6; roll.o.position.z = M.COUNTER_Z + .1 + k * .9; if (k >= 1) endRoll(false); }
-  else if (!CALM && S.q.length && !S.asking && !S.payG && !S.paused) { rollIn -= dt; if (rollIn <= 0) { rollIn = M.ROLL_MIN + Math.random() * (M.ROLL_MAX - M.ROLL_MIN); startRoll(); } }
+let aimT = 0;
+stage.frame((dt, t) => { if ((aimT += dt) > .4) { aimT = 0; const pn = document.querySelector('.inside'), k = innerWidth + 'x' + innerHeight + ':' + Math.round(pn ? pn.getBoundingClientRect().top : 0); if (k !== aimKey) aim(); } piles3(); drawBasket(); drawSlots(); sync(); if (ship) { ship.position.y = Math.sin(t * .8) * .06; ship.rotation.z = Math.sin(t * .6) * .03; }
+  if (roll) { roll.t += dt * 1000; const k = roll.t / M.ROLL_MS; roll.o.position.x = roll.x0 + roll.dir * k * 4.2; roll.o.rotation.z -= roll.dir * dt * 6; roll.o.position.z = M.COUNTER_Z + .1 - k * .8;   /* 줄 쪽으로(아래 판에 가리지 않게) */ if (k >= 1) endRoll(false); }
+  else if (!CALM && S.q.length && !S.asking && !S.payG && !S.paused) { const n5 = shop.SAVE.n5; if (rollIn === Infinity) { if (n5.seen.roll) rollIn = M5.rollGap(); else if (M5.rollDue(n5)) rollIn = 2.5; } else { rollIn -= dt; if (rollIn <= 0) { n5.seen.roll = true; shop.wallet.save(); rollIn = M5.rollGap(); startRoll(); } } }
   t0 = t; });
 $('loading').style.opacity = 0; setTimeout(() => $('loading').remove(), 500);
 window.__market = { stage, crowd, piles, basket, pick, M, startRoll, endRoll, get roll(){ return roll; }, screenOf, GOODS };
