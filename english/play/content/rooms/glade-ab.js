@@ -143,7 +143,8 @@ export function shelves(K, glade, things, o){
   const sideOf = w => (o.letterOf(w) === o.letters[0] ? 0 : 1);
   function eachMat(root, fn){ root.traverse(m => { if (m.isMesh && m.material && m.material.color) fn(m); }); }
   /* 빛바램 — 재질 색을 바탕색 쪽으로(되돌릴 수 있게 처음 색을 기억) */
-  function fade(w, on){ const g = things[w]; if (!g) return; g.userData.faded = !!on; const pale = C('bg');
+  function fade(w, on){ const g = things[w]; if (!g) return; if (g.userData.moodAct) on = false;      /* 몸 낱말은 내 캐릭터의 몸 — 내 캐릭터는 빛바래지 않는다 */
+    g.userData.faded = !!on; const pale = C('bg');
     eachMat(g, m => { if (!m.material.userData.own) { m.material = m.material.clone(); m.material.userData.own = 1; base.set(m.material, m.material.color.clone()); }
       const c0 = base.get(m.material); m.material.color.copy(on ? c0.clone().lerp(pale, FADE) : c0); }); }
   /* 작은 나무 조각 — 그 물건을 나무로 깎은 모양(본을 떠서 나무 재질로) */
