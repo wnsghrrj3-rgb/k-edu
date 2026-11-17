@@ -5,8 +5,8 @@
    관아에 갈 때마다 궤가 커진다(죽은 사람 몫·갓난아이 몫). 탈춤 날(사흘째) 우리 장 마당에서 구경하면 그날 값이 좋아진다.
    좌표: x 동쪽(+), z 남쪽(+). 서쪽 집과 논 → 가운데 우리 장(북쪽 관아) → 동쪽 고개 → 이웃 장. */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artInst } from '../scene/kit.js?v=3';
-await loadArt('people');   /* 블렌더로 만든 모델(사람·자연·집·소품) */
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, at, flatMaker, groundTex, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, runLoop, loadArt, ART, art, artOwn, artInst, artGeo, artMat, scatter } from '../scene/kit.js?v=3';
+await loadArt('people', 'nature', 'build', 'props', 'market');   /* 블렌더로 만든 모델(사람·자연·집·소품 + 이 장면만의 묶음 market.glb = tools/blender/make_market.py) */
 
 const W = 96, H = 60, BX = [3, 93], BZ = [4, 56], DAYLEN = 40, DAYS = 5, FOOD = 5;
 const HOME = [13, 25], JAR = [20.5, 28], JOUT = [18.9, 29.6], JIN = [22.1, 29.6], FIELD = [4, 36, 26, 54], TOB = [23.5, 51];
@@ -35,38 +35,122 @@ const { ring, update: ringsUpdate } = ringsFx(scene);
 /* 땅 · 논 · 길 · 고개 */
 flat(-60, -40, W + 60, H + 40, 0x9ac25a, 0);
 const paddy = []; for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) { const x0 = FIELD[0] + c * 7.4, z0 = FIELD[1] + r * 6; paddy.push(flat(x0, z0, x0 + 7, z0 + 5.6, 0x7ab0c8, 0.04)); }
-const seedlings = new THREE.InstancedMesh(new THREE.BoxGeometry(0.08, 0.5, 0.08).translate(0, 0.25, 0), M(0x7ac04a), 160); seedlings.count = 0; scene.add(seedlings);
-const golden = new THREE.InstancedMesh(new THREE.BoxGeometry(0.1, 0.9, 0.1).translate(0, 0.45, 0), M(0xe8b84a), 360); golden.count = 0; scene.add(golden);
+/* 이웃 논(서쪽·남쪽, 거의 판 밖) — 우리 논과 같이 물빛·가을빛으로 바뀐다. farPad = 봄에는 먼저 심은 모, 가을에는 볏단을 세울 논 */
+const farPad = []; for (let r = 0; r < 5; r++) for (let c = -3; c < 3; c++) { if (c >= 0 && r < 3) continue; const x0 = FIELD[0] + c * 7.4, z0 = FIELD[1] + r * 6; paddy.push(flat(x0, z0, x0 + 7, z0 + 5.6, 0x7ab0c8, 0.04)); if (c === -1 || (r === 3 && c >= 0)) farPad.push([x0, z0]); }
+const crops = (nm, n, sh) => { const m = new THREE.InstancedMesh(artGeo(nm), artMat, n); m.count = 0; m.frustumCulled = false; m.castShadow = sh; m.receiveShadow = true; scene.add(m); return m; };
+const seedlings = crops('crop_rice', 160, false), golden = crops('sheaf', 162, true);   /* 모(박자를 맞출 때마다 한 줄) · 가을걷이한 볏단(논마다 석 줄) */
+const spring = new THREE.Group(), fall = new THREE.Group(); scene.add(spring, fall);   /* 철 따라 보이는 것: 봄 = 이웃 논의 모 · 가을 = 볏단·볏가리·가마니 */
 flat(3, 29, 93, 31.4, 0xd8c498, 0.03); flat(42.8, 10, 45.2, 30, 0xd8c498, 0.03); flat(36, 31, 52, 44, 0xd2c094, 0.03); flat(76, 31, 92, 40, 0xd2c094, 0.03); flat(8, 25, 24, 31, 0xd2c094, 0.03);
-{ const g = new THREE.Group(); for (let k = 0; k < 13; k++) { const x = 60 + k, h = hillH(x + 0.5); g.add(at(box(1.02, Math.max(0.05, h), 14, k % 2 ? 0x8aaa4a : 0x7a9a3a), x + 0.5, Math.max(0.05, h) / 2, 30)); } g.traverse((o) => { if (o.isMesh) o.receiveShadow = true; }); scene.add(g); }
-for (let k = 0; k < 30; k++) { const x = 58 + rnd() * 16, z = 20 + rnd() * 22; if (Math.abs(z - 30) < 2.6) continue; const t = new THREE.Group(); const s = 0.7 + rnd() * 0.5; t.add(at(cyl(0.2, 0.3, 2, 0x7a4f2b, 6), 0, 1, 0), at(box(2.2, 1.6, 2.2, 0x3a8a4a), 0, 2.6, 0)); t.position.set(x, hillH(x), z); t.scale.setScalar(s); t.traverse((o) => { if (o.isMesh) o.castShadow = true; }); scene.add(t); }
-for (let i = 0; i < 60; i++) { const t = box(0.8 + rnd(), 0.08, 0.6 + rnd(), rnd() > 0.5 ? 0xaad06a : 0x8ab84a); t.castShadow = false; at(t, 3 + rnd() * 90, 0.05, 4 + rnd() * 52); scene.add(t); }
+/* 고개: 남북으로 뻗은 산줄기의 낮은 목. 판 안(z 2~58)에서는 hillH 그대로라 걷는 높이와 딱 맞고, 판 밖으로는 솔숲 산으로 솟는다. 길 띠는 흙빛. */
+const ridge = (x, z) => { const o = z < 2 ? 2 - z : z > 58 ? z - 58 : 0; if (!o) return hillH(x); const k = clamp(o / 16, 0, 1), s = k * k * (3 - 2 * k); return (3 + (z < 2 ? 8.5 : 4) * s + Math.sin(x * 0.7 + z * 0.45) * 0.9 * s) * clamp(1 - Math.abs(x - 66 - Math.sin(z * 0.21) * 3 * s) / (6 + 8 * s), 0, 1); };
+{ const xs = [], zs = [-40, -34, -28, -23, -18.5, -14.5, -11, -8, -5, -2, 0, 2, 4.25, 6.5, 8.75, 11, 13.25, 15.5, 17.75, 20, 22.25, 24.5, 26.75, 29, 31.4, 33.6, 35.8, 38, 40.2, 42.4, 44.6, 46.8, 49, 51.25, 53.5, 55.75, 58, 60, 62, 64, 66, 68.2, 70.5, 73, 76, 79.5, 83, 87.5, 92], P = [], C = [], U = [], c1 = new THREE.Color(), c2 = new THREE.Color(), hr = rng(661); for (let x = 48; x <= 84; x += 1.5) xs.push(x);
+  const Y = (x, z) => { const h = ridge(x, z); return h > 0.001 ? h : -0.06; };
+  for (let i = 0; i < xs.length - 1; i++) for (let j = 0; j < zs.length - 1; j++) { const x0 = xs[i], x1 = xs[i + 1], z0 = zs[j], z1 = zs[j + 1], q = [[x0, z0], [x0, z1], [x1, z1], [x1, z0]].map(([x, z]) => [x, Y(x, z), z]); if (q.every((v) => v[1] < 0)) continue;
+    const road = z0 > 28.9 && z1 < 31.5, hi = (q[0][1] + q[2][1]) / 2;
+    for (const t of (i + j) % 2 ? [[0, 1, 2], [0, 2, 3]] : [[0, 1, 3], [1, 2, 3]]) { if (road) c1.set(0xd8c498).lerp(c2.set(0xc8b284), hr() * 0.5); else c1.set(0x8cb552).lerp(c2.set(hi > 4.5 ? 0x5a8446 : 0x7aa64a), hr() * (hi > 4.5 ? 1 : 0.55)); for (const k of t) { P.push(q[k][0], q[k][1], q[k][2]); C.push(c1.r, c1.g, c1.b); U.push(q[k][0] / 14, q[k][2] / 14); } } }
+  const ge = new THREE.BufferGeometry(); ge.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); ge.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); ge.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); ge.computeVertexNormals();
+  const m = new THREE.Mesh(ge, M(0xffffff, { vertexColors: true, map: groundTex() })); m.receiveShadow = true; scene.add(m); }
+/* 먼 둔덕(판 밖 북쪽·옆) — 안개 너머 낮은 산 */
+for (const [x, z, rx, h, rz, c] of [[-10, -36, 24, 9, 13, 0x7aa850], [20, -44, 28, 12, 14, 0x6f9c4c], [45, -38, 20, 8, 10, 0x7aa850], [94, -38, 26, 11, 13, 0x6f9c4c], [118, -14, 16, 9, 18, 0x7aa850], [-30, 14, 13, 8, 22, 0x6f9c4c], [122, 36, 13, 7, 24, 0x6f9c4c], [8, 96, 30, 6, 12, 0x7aa850], [96, 98, 28, 7, 12, 0x7aa850]]) { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 1), M(c)); m.scale.set(rx, h, rz); m.position.set(x, -h * 0.22, z); m.rotation.y = x; scene.add(m); }
+/* 꾸밈 도구: rd = 꾸밈만 쓰는 난수 · gy = 고개에서는 비탈 높이 · busy = 길·마당·논·집 자리(비워 둔다) · spots = 서로 떨어진 자리 고르기 · put = 이름 여럿을 번갈아 세우기 */
+const rd = rng(8126), gy = (x, z) => Math.max(0, ridge(x, z) - 0.14);
+const CLEAR = [[1, 28.3, 95, 32.1], [42, 9, 46, 30], [35.4, 30.4, 52.6, 44.6], [75.4, 30.4, 92.6, 40.6], [6, 18.6, 25, 31.6], [-19.2, 35.2, 26.6, 66.6], [23.5, -4, 56, 14.5]];
+const HOUSES = [[8.5, -1, 0.15, 'thatch_b'], [19, -2.2, -0.1, 'thatch_a'], [-3.4, 11, Math.PI / 2, 'thatch_b'], [-4.2, 25.5, Math.PI / 2 - 0.12, 'thatch_a'], [79.5, -0.8, 0.1, 'thatch_b'], [89.5, -1.6, -0.12, 'thatch_a'], [98.6, 20, -Math.PI / 2, 'thatch_a'], [98, 32.5, -Math.PI / 2 + 0.1, 'thatch_b'], [99.2, 45, -Math.PI / 2 - 0.1, 'thatch_a'], [84, 61.5, Math.PI, 'thatch_b']];
+const busy = (x, z, pad = 0) => CLEAR.some((r) => inRect(x, z, r, pad)) || SOLID.some((r) => inRect(x, z, r, 1 + pad)) || HOUSES.some((h) => Math.abs(h[0] - x) < 5 + pad && Math.abs(h[1] - z) < 5 + pad);
+const inPlay = (x, z, pad = 0) => x > BX[0] - 1 - pad && x < BX[1] + 1 + pad && z > BZ[0] - 1 - pad && z < BZ[1] + 1 + pad;
+const spots = (n, a, ok, gap = 3, sc = [0.85, 1.3]) => { const L = []; let t = 0; while (L.length < n && t++ < n * 40) { const x = a[0] + rd() * (a[2] - a[0]), z = a[1] + rd() * (a[3] - a[1]); if ((ok && !ok(x, z)) || busy(x, z, 0.6) || L.some((p) => Math.abs(p[0] - x) < gap && Math.abs(p[2] - z) < gap)) continue; L.push([x, gy(x, z), z, sc[0] + rd() * (sc[1] - sc[0]), rd() * 6.28]); } return L; };
+const put = (names, L, far) => names.forEach((nm, k) => { const P = L.filter((_, i) => i % names.length === k), near = (t) => !far || inPlay(t[0], t[2], 6); artInst(scene, nm, P.filter(near)); artInst(scene, nm, P.filter((t) => !near(t)), {}, { shadow: false }); });   /* far = 판에서 먼 것은 그림자를 끈다(면 아끼기) */
+const turn = (px, pz, r, lx, lz) => [px + lx * Math.cos(r) + lz * Math.sin(r), pz - lx * Math.sin(r) + lz * Math.cos(r)];
+/* 고개의 솔숲: 길 북쪽은 키 큰 솔, 길 남쪽 가까이는 낮은 것만(아이를 가리지 않게), 고갯마루에는 서낭당 돌무더기와 서낭나무 */
+put(['pine_a', 'pine_b', 'pine_a', 'tree_b'], spots(20, [58.6, 4.5, 73.4, 27], (x, z) => ridge(x, z) > 0.35 && Math.hypot(x - 66, z - 25.6) > 4.2, 2.3));
+put(['pine_k', 'bush', 'stump', 'bush'], spots(9, [59.5, 33.4, 72.5, 42], (x, z) => ridge(x, z) > 0.35, 2.2, [0.7, 0.95]));
+put(['pine_a', 'tree_a', 'pine_a'], spots(10, [58.6, 43.5, 73.4, 56], (x, z) => ridge(x, z) > 0.35, 2.6, [0.8, 1.1]));
+put(['pine_b', 'pine_a', 'pine_a', 'tree_b', 'pine_b'], spots(26, [50, -30, 82, 1], (x, z) => ridge(x, z) > 1, 2.8, [0.9, 1.5]), true);
+put(['pine_a', 'tree_a', 'pine_k'], spots(16, [52, 59.5, 80, 80], (x, z) => ridge(x, z) > 0.8, 2.8, [0.8, 1.15]), true);
+artInst(scene, 'rock_b', [[63.2, gy(63.2, 27.9), 27.9, 0.9, 1], [69.6, gy(69.6, 28), 28, 0.75, 4], [61.3, gy(61.3, 32.9), 32.9, 0.6, 2.2], [70.8, gy(70.8, 33), 33, 0.7, 5], [67.6, gy(67.6, 36.5), 36.5, 0.9, 3], [64, gy(64, 22), 22, 1.1, 0.6]]);
+artInst(scene, 'rock_tall', [[68.9, gy(68.9, 26.2), 26.2, 0.8, 0.4], [62.4, gy(62.4, 18), 18, 1, 2.6], [70.5, gy(70.5, 47), 47, 0.7, 1.2]]);
+scene.add(at(art('cairn'), 65.6, 2.52, 27.3)); { const t = art('tree_big', { leaf: 0x4a8a44 }); t.position.set(66.8, 2.5, 24.6); t.rotation.y = 1.2; scene.add(t); }
+/* 마을 어귀(고개 발치): 장승 한 쌍과 솟대 */
+artInst(scene, 'jangseung', [[58.3, 0, 27.6, 1.05, 0.25], [58.5, 0, 32.9, 1, -0.2], [74.2, 0, 27.7, 1, -0.3]]);
+artInst(scene, 'sotdae', [[57.2, 0, 27.2, 1, 0.4], [56.6, 0, 26.4, 0.86, 2.2], [74.9, 0, 26.9, 0.9, 1]]);
+/* 판 밖 둘레: 이웃 초가(마을이 이어진다) · 숲 · 덤불 — 키 큰 것은 북쪽과 옆, 남쪽은 낮게 */
+for (const [x, z, r, nm] of HOUSES) { const h = art(nm, { wall: 0xdccaa6 }); h.position.set(x, 0, z); h.rotation.y = r; scene.add(h); }
+artInst(scene, 'fence', [[5, 0, 2.2, 1, 0], [8.1, 0, 2.2, 1, 0], [11.2, 0, 2.2, 1, 0], [16, 0, 1.4, 1, 0], [19.1, 0, 1.4, 1, 0], [22.2, 0, 1.4, 1, 0], [78, 0, 2.6, 1, 0], [81.1, 0, 2.6, 1, 0], [87, 0, 2, 1, 0], [90.1, 0, 2, 1, 0], [94.6, 0, 16.4, 1, Math.PI / 2], [94.6, 0, 23.6, 1, Math.PI / 2], [94.9, 0, 43.4, 1, Math.PI / 2], [94.9, 0, 49.6, 1, Math.PI / 2], [0.9, 0, 9.4, 1, Math.PI / 2], [0.9, 0, 12.5, 1, Math.PI / 2], [0.7, 0, 22, 1, Math.PI / 2]], {}, { shadow: false });
+put(['pine_a', 'tree_a', 'pine_b', 'tree_b', 'tree_a', 'tree_big'], spots(34, [-16, -22, 112, 1.2], (x, z) => !(x > 49 && x < 83) && !(z > -6 && (x < 26 || x > 74) && x > -2 && x < 96), 3.4, [0.9, 1.4]), true);
+put(['tree_a', 'pine_a', 'tree_b'], spots(12, [-18, 1.5, 0.6, 34], null, 3.4), true);
+put(['tree_a', 'pine_a', 'tree_b', 'tree_big'], spots(16, [95.4, 2, 114, 60], null, 3.4), true);
+put(['tree_a', 'bush', 'tree_a', 'pine_k'], spots(16, [28, 59, 114, 76], (x, z) => !(x > 50 && x < 82), 3.4, [0.8, 1.1]), true);
+/* 판 안: 길·마당·논을 비우고 띄엄띄엄 — 나무는 길에서 먼 북쪽 풀밭에, 남쪽에는 낮은 나무만 */
+artInst(scene, 'tree_a', [[28.6, 0, 12.4, 1.15, 0.5], [22.4, 0, 6.2, 1, 2.2], [53.2, 0, 18.4, 1.1, 4], [79, 0, 19.5, 1.1, 1.2], [30.4, 0, 47.2, 0.9, 3.3], [40.5, 0, 52.4, 0.85, 0.8], [80.5, 0, 48.6, 0.9, 5.2]]);
+artInst(scene, 'tree_b', [[30.8, 0, 9.6, 1.05, 1.4], [55.6, 0, 21.2, 1, 0.3], [87.4, 0, 12.6, 1.1, 2.6], [50.8, 0, 50.4, 0.8, 1.9], [88.6, 0, 51.4, 0.82, 4.4]]);
+artInst(scene, 'pine_k', [[34.2, 0, 17.4, 1.1, 0.4], [84.2, 0, 22.6, 1, 3.6], [6.2, 0, 8.4, 1.05, 5.5]]);
+{ const t = art('tree_big'); t.position.set(1.4, 0, 16.6); t.rotation.y = 0.7; scene.add(t); }   /* 우리 집 뒤 느티나무(판 가장자리) */
+artInst(scene, 'reed', [[27, 0, 37.2, 0.85, 0], [27.3, 0, 40.8, 0.7, 2], [26.9, 0, 45.4, 0.9, 4], [27.4, 0, 49.6, 0.75, 1], [27, 0, 53.4, 0.85, 3], [-19.6, 0, 40, 0.9, 1], [-19.4, 0, 52, 0.8, 5], [10, 0, 67, 0.8, 2], [22, 0, 67.2, 0.9, 4]], {}, { shadow: false });
+scatter(scene, rd, { area: [-14, -12, 110, 72], n: 250, names: ['grass_a', 'grass_b', 'grass_a'], avoid: (x, z) => busy(x, z), scale: [1, 1.7], y: gy, shadow: false });
+scatter(scene, rd, { area: [-6, -4, 102, 62], n: 70, names: ['flower_y', 'flower_w', 'flower_p'], avoid: (x, z) => busy(x, z), scale: [1.3, 2], y: gy, shadow: false });
+scatter(scene, rd, { area: [-12, -10, 108, 70], n: 26, names: ['rock_a', 'rock_flat', 'rock_a'], avoid: (x, z) => busy(x, z, 1.2) || (inPlay(x, z) && inRect(x, z, [3, 25, 93, 38])), scale: [0.5, 1.05], y: gy, minGap: 4 });
+scatter(scene, rd, { area: [-12, -10, 108, 70], n: 26, names: ['bush'], avoid: (x, z) => busy(x, z, 1.2) || (inPlay(x, z) && inRect(x, z, [3, 22, 93, 46])), scale: [0.7, 1.2], y: gy, minGap: 4 });
+/* 철: 봄 = 이웃 논에 먼저 심은 모(줄 맞춰) · 가을 = 이웃 논의 볏단, 논 머리의 볏가리 */
+artInst(spring, 'crop_rice', farPad.flatMap(([x0, z0]) => Array.from({ length: 28 }, (_, i) => [x0 + 0.7 + (i % 7) * 0.94, 0.04, z0 + 0.8 + Math.floor(i / 7) * 1.34, 1.1 + rd() * 0.25, rd() * 6.28])), {}, { shadow: false });
+{ const r = art('motjul', {}, { shadow: false }); r.position.set(14.9, 0.04, 43.4); spring.add(r); }   /* 못줄 — 줄 맞춰 심는다 */
+artInst(spring, 'crop_rice', Array.from({ length: 10 }, (_, i) => [5.2 + i * 2.2, 0.02, 41.8 + (i % 2) * 0.1, 1.1, i * 1.7]), {}, { shadow: false });   /* 논둑에 놓아 둔 모춤 */
+artInst(fall, 'sheaf', farPad.flatMap(([x0, z0]) => Array.from({ length: 6 }, (_, i) => [x0 + 1.2 + (i % 3) * 2.3 + rd() * 0.4, 0.04, z0 + 1.6 + Math.floor(i / 3) * 2.4 + rd() * 0.4, 0.95 + rd() * 0.2, rd() * 6.28])), {}, { shadow: false });
+artInst(fall, 'straw_stack', [[27.6, 0, 43.2, 1, 0.3], [5.2, 0, 24.6, 0.9, 1.2], [1.6, 0, 33.6, 1.05, 2]]);
+artInst(fall, 'sack_pile', [[16.6, 0, 25.9, 0.9, 0.4]]); artInst(fall, 'scarecrow', [[11.2, 0, 41.8, 1, 0.3], [-3.6, 0, 47.8, 1, -0.4], [18.6, 0, 59.8, 1, 0.2]]);
 /* 집 · 쌀독 · 관아 · 궤 · 장터 · 탈춤 마당 */
-{ const P = [at(box(10, 1.8, 4.6, 0xf2e4c4), 13, 0.9, 22.5)], cols = [0xd9a53c, 0xe4b54c, 0xefc661]; for (let k = 0; k < 3; k++) P.push(at(box(12 - k * 2, 0.6, 6.4 - k * 1.6, cols[k]), 13, 2.1 + k * 0.55, 22.5)); P.push(at(box(1.2, 1.3, 0.12, 0x6a4226), 13, 0.65, 24.85)); group([7, 20, 19, 25], P); }
-const jar = new THREE.Group(); jar.add(at(cyl(0.7, 0.5, 1.2, 0x7a4a2a, 10), 0, 0.6, 0), at(cyl(0.45, 0.45, 0.1, 0x5a3420, 10), 0, 1.22, 0)); const jarRice = at(cyl(0.62, 0.62, 0.1, 0xfff6dc, 10), 0, 0.3, 0); jar.add(jarRice); jar.position.set(JAR[0], 0, JAR[1]); jar.traverse((o) => { if (o.isMesh) o.castShadow = true; }); scene.add(jar);
+/* 우리 집: 초가 세 칸 + 헛간(막는 네모 [7,20,19,25] 안) · 뒤와 옆의 울타리 · 마당의 장독대·고추 멍석·닭 */
+{ const h = artOwn('thatch_a', { wall: 0xf2e4c4 }); h.position.set(11.2, 0, 22); h.scale.setScalar(1.2); const sh = artOwn('shed'); sh.position.set(17.5, 0, 22.2); sh.scale.set(0.68, 0.8, 0.72); group([7, 20, 19, 25], [h, sh]); }
+artInst(scene, 'firewood', [[17, 0, 22.9, 1, 0.1], [17.9, 0, 23, 0.9, 0.2]]); { const j = art('jige'); j.position.set(18.3, 0, 21.6); j.rotation.y = 0.5; scene.add(j); }
+artInst(scene, 'fence', [[8.3, 0, 19.6, 1, 0], [11.4, 0, 19.6, 1, 0], [14.5, 0, 19.6, 1, 0], [17.6, 0, 19.6, 1, 0], [6.7, 0, 21.2, 1, Math.PI / 2], [6.7, 0, 24.3, 1, Math.PI / 2]], {}, { shadow: false });
+{ const j = art('jangdok'); j.position.set(21.2, 0, 23.4); j.rotation.y = -0.12; scene.add(j); const m = art('meongseok', {}, { shadow: false }); m.position.set(11.6, 0.035, 27.3); m.rotation.y = 0.08; scene.add(m); const w = art('well'); w.position.set(29.6, 0, 25.4); w.rotation.y = 0.5; scene.add(w); }
+artInst(scene, 'chicken', [[14.6, 0, 26.6, 1, 0.8], [15.5, 0, 27.3, 0.9, 3.6], [13.8, 0, 27.8, 1, 5.2]]); { const d = art('dog'); d.position.set(18.5, 0, 26.6); d.rotation.y = 0.9; scene.add(d); }
+/* 쌀독: 넓적한 돌 위의 열린 독 — 쌀 더미(jarRice)가 독 안쪽 벽(JP = [높이, 안 반지름])을 따라 오르내린다 */
+const JP = [[0.26, 0.3], [0.34, 0.5], [0.62, 0.63], [0.92, 0.65], [1.18, 0.56], [1.32, 0.47]], jarR = (y) => { for (let i = 0; i < JP.length - 1; i++) if (y <= JP[i + 1][0]) return lerp(JP[i][1], JP[i + 1][1], clamp((y - JP[i][0]) / (JP[i + 1][0] - JP[i][0]), 0, 1)) - 0.02; return 0.45; };
+const jar = new THREE.Group(); jar.add(art('ssaldok')); const jarRice = art('rice_top', {}, { shadow: false }); jar.add(jarRice); jar.position.set(JAR[0], 0, JAR[1]); jar.rotation.y = 0.3; scene.add(jar);
 const jarGlow = glowSprite(scene, 'rgba(255,246,220,.8)', 'rgba(255,220,150,0)', 2.6); jarGlow.position.set(JAR[0], 1.6, JAR[1]);
 const mkPad = (p, c) => { const m = new THREE.Mesh(new THREE.CircleGeometry(0.9, 20), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.55, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.position.set(p[0], 0.07, p[1]); scene.add(m); return m; };
 mkPad(JOUT, 0xffcf4d); mkPad(JIN, 0x7ac0ff);
-const cow = new THREE.Group(); cow.add(at(box(1.8, 0.9, 0.8, 0x8a5a3a), 0, 1.1, 0), at(box(0.6, 0.6, 0.6, 0x8a5a3a), 1.1, 1.4, 0)); for (const [lx, lz] of [[0.6, 0.3], [0.6, -0.3], [-0.6, 0.3], [-0.6, -0.3]]) cow.add(at(box(0.18, 0.7, 0.18, 0x6a4a2a), lx, 0.35, lz)); cow.position.set(7, 0, 28); cow.traverse((o) => { if (o.isMesh) o.castShadow = true; }); scene.add(cow);
-{ const P = [at(box(16, 1, 7, 0xb8b0a0), 44, 0.5, 6.5), at(box(14, 3, 5.6, 0xf2e6d0), 44, 2.5, 6.5)]; for (let k = 0; k <= 5; k++) P.push(at(box(0.4, 3, 0.4, 0x8a2a1a), 37.5 + k * 2.6, 2.5, 9.3)); const r = box(17, 0.8, 8, 0x3a4a6a); at(r, 44, 4.4, 6.5); P.push(r); group([36, 3, 52, 10], P); }
-const chest = new THREE.Group(); chest.add(at(box(1.8, 1, 1.2, 0x6a3a1a), 0, 0.5, 0), at(box(1.9, 0.2, 1.3, 0x4a2a10), 0, 1.05, 0)); const chestFill = at(box(1.6, 0.05, 1.0, 0xe8c050), 0, 0.2, 0); chest.add(chestFill); chest.position.set(GOV[0], 0, GOV[1] - 1.4); scene.add(chest);
-const govDrum = new THREE.Group(); govDrum.add(at(cyl(0.8, 0.8, 1.2, 0xa8443a, 12), 0, 1.4, 0)); govDrum.children[0].rotation.z = Math.PI / 2; govDrum.add(at(box(0.15, 1.4, 0.15, 0x6a4526), -0.7, 0.7, 0), at(box(0.15, 1.4, 0.15, 0x6a4526), 0.7, 0.7, 0)); govDrum.position.set(49, 0, 11.5); scene.add(govDrum);
+const cow = art('ox'); cow.position.set(7, 0, 28); cow.rotation.y = Math.PI / 2; scene.add(cow); { const t = art('trough'); t.position.set(9.4, 0, 26.9); t.rotation.y = 0.2; scene.add(t); }
+/* 관아: 붉은 기둥 기와집(동헌) · 양옆 담과 뒤 곳간 · 앞길의 홍살문 · 깃발 · 세금 궤(엽전 더미 chestFill 이 차오른다) · 북 */
+{ const h = artOwn('hall'); h.position.set(44, 0, 6); h.scale.set(1.08, 1, 1); group([36, 3, 52, 10], [h]); }
+artInst(scene, 'wall_mud', [26.55, 30.65, 34.75, 53.25, 57.35].map((x) => [x, 0, 3, [1, 1.2, 1], 0]), { wall: 0xe2d4b6 });
+artInst(scene, 'granary', [[29.6, 0, -1.8, 1, 0.06], [57.6, 0, -1.8, 1, -0.06]]);
+scene.add(at(art('hongsal'), GOV[0], 0, 24));
+artInst(scene, 'flag', [[37.3, 0, 10.7, 1.2, 0.2], [50.9, 0, 10.7, 1.2, -0.1]], { cloth: 0x2f4f96 });
+const chest = new THREE.Group(); chest.add(art('gwe')); const chestFill = art('coins', {}, { shadow: false }); chest.add(chestFill); chest.position.set(GOV[0], 0, GOV[1] - 1.4); scene.add(chest);
+const govDrum = art('drum'); govDrum.scale.setScalar(1.5); govDrum.position.set(49, 0, 11.5); govDrum.rotation.y = -0.15; scene.add(govDrum);
+[[40.3, 10.9], [51.6, 11.9]].forEach(([x, z]) => { const g = person({ shirt: 0x3a4a7a, pants: 0x2a2a3a, hat: 'guard', mood: 'stern', spear: true }); g.position.set(x, 0, z); });
 const officer = person({ shirt: 0x3a4a7a, pants: 0x2a2a3a, hat: 'gat', mood: 'stern' }); officer.position.set(46.4, 0, 11.2); officer.rotation.y = 0;
-for (const m of MKT) { for (let i = 0; i < 3; i++) { const x = m.x - 4 + i * 4; scene.add(at(box(2, 0.9, 1.2, 0x9a7a50), x, 0.45, m.z - 1), at(box(2.6, 0.12, 2, 0xe8d0a0), x, 2.1, m.z - 1), at(cyl(0.05, 0.05, 2.1, 0x6a4526, 5), x - 1.1, 1.05, m.z - 1.8), at(cyl(0.05, 0.05, 2.1, 0x6a4526, 5), x + 1.1, 1.05, m.z - 1.8)); for (let k = 0; k < 3; k++) scene.add(at(box(0.5, 0.35, 0.5, GOODS[GKEYS[i]].c), x - 0.6 + k * 0.6, 1.08, m.z - 1)); }
-  const pole = at(cyl(0.08, 0.08, 5, 0x6a4526, 6), m.x + 7, 2.5, m.z - 2); scene.add(pole); }
-const mktFlags = MKT.map((m) => { const f = box(1.6, 1, 0.06, 0xc0302a); f.position.set(m.x + 7.85, 4.4, m.z - 2); scene.add(f); return f; });
-scene.add(at(box(7, 0.4, 1.8, 0x9a7a50), MASK[0], 0.2, MASK[1] - 1.8));
+/* 장터: 천 지붕 좌판 셋(쌀 · 무명 · 담배 — 천 빛깔로 가린다)과 물건 · 옆의 가마니·광주리·옹기 · 장 깃발 */
+const STALLC = [0xe9d9a6, 0xa9c0d8, 0xd29a6c];
+GKEYS.forEach((g, i) => { artInst(scene, 'stall', MKT.map((m) => [m.x - 4 + i * 4, 0, m.z - 1.2, [0.74, 1, 1], 0]), { cloth: STALLC[i] }); artInst(scene, 'goods_' + g, MKT.map((m) => [m.x - 4 + i * 4, 0.8, m.z - 1, 1, 0]), {}, { shadow: false }); });
+{ const rel = (list) => MKT.flatMap((m) => list.map(([dx, dz, s, r]) => [m.x + dx, 0, m.z + dz, s, r]));
+  artInst(scene, 'sack_pile', rel([[-6.5, -1.5, 1, 0.3], [-2.1, -3.1, 0.8, 2]])); artInst(scene, 'sack', rel([[-6.3, -0.3, 1, 0.5], [-1.9, -2, 1, 1.3]]));
+  artInst(scene, 'basket', rel([[-2, -1, 1, 0], [2.3, -1.4, 0.9, 1]])); artInst(scene, 'barrel', rel([[2, -2.7, 1, 0], [1.6, -0.8, 0.85, 1]]));
+  artInst(scene, 'jar_a', rel([[5.6, -2.1, 0.9, 0], [6.9, -2.9, 1, 2]])); artInst(scene, 'jar_b', rel([[5.9, -1.1, 1, 0], [6.6, -0.6, 0.9, 1], [5.2, -0.5, 0.8, 3]])); artInst(scene, 'pot_plain', rel([[6.7, -1.6, 1, 0], [4.9, -1.3, 0.9, 2]]));
+  artInst(scene, 'bundle', rel([[-5.5, -3, 1, 0.4], [3.1, -3.2, 0.9, 2]]), { cloth: 0x7a8fb0 }); }
+const mktFlags = MKT.map((m) => { const f = art('flag', { cloth: 0xc0302a }); f.scale.setScalar(1.25); f.position.set(m.x + 7, 0, m.z - 2); scene.add(f); return f; });
+/* 장 가장자리: 짐 실은 달구지 · 길손의 말 · 고추 멍석 난전 */
+{ const C = [[34.3, 37.2, 0.35], [94.9, 36.6, -0.2]]; artInst(scene, 'cart', C.map(([x, z, r]) => [x, 0, z, 1, r])); artInst(scene, 'sack', C.flatMap(([x, z, r]) => [[0, 0.81, -0.5, 0], [0.05, 0.81, 0.45, 0.1], [0, 1.2, 0, 0.05]].map(([lx, y, lz, a]) => { const p = turn(x, z, r, lx, lz); return [p[0], y, p[1], 1, r + Math.PI / 2 + a]; })));
+  const h = art('horse'), hp = turn(C[1][0], C[1][1], C[1][2], 0, 2.6); h.position.set(hp[0], 0, hp[1]); h.rotation.y = C[1][2]; scene.add(h); const m = art('meongseok', {}, { shadow: false }); m.position.set(50.1, 0.035, 42.5); m.rotation.y = 0.06; scene.add(m); }   /* 말은 이웃 장 달구지의 채 사이에 선다 */
+scene.add(at(art('stage'), MASK[0], 0, MASK[1] - 1.8));
 const dancers = [0, 1].map((i) => { const m = person({ shirt: i ? 0xe8e0d0 : 0xc0302a, pants: 0x3a3a3a, hat: i ? 'gat' : 'top' }); m.position.set(MASK[0] - 1.2 + i * 2.4, 0.4, MASK[1] - 1.8); m.rotation.y = 0; m.visible = false; return m; });
-const crowd = Array.from({ length: 8 }, (_, i) => { const m = person({ shirt: [0xb89a70, 0xa89070, 0xc0a880, 0x9a8a68][i % 4], pants: 0x6a5034, hat: 'top' }); m.position.set(MASK[0] - 4 + (i % 4) * 2.6, 0, MASK[1] + 1 + Math.floor(i / 4) * 1.4); m.rotation.y = Math.PI; m.visible = false; return m; });
-const sellers = MKT.flatMap((m) => [0, 1, 2].map((i) => { const p = person({ shirt: [0x9a7a5a, 0x7a8a6a, 0x8a6a5a][i], pants: 0x5a4a3a, hat: 'top' }); p.position.set(m.x - 4 + i * 4, 0, m.z - 2.4); p.rotation.y = 0; return p; }));
-const neighbors = [0, 1, 2, 3, 4].map((i) => { const m = person({ shirt: [0xd8c8a0, 0xc8b890, 0xd0c098, 0xc0b088, 0xd8c8a0][i], pants: 0x6a5a3a, hat: 'top' }); m.visible = false; return m; });
+/* 차림(조선 후기): 농민 = 상투·머릿수건 · 아낙 = 쪽머리에 긴 치마 · 장꾼 = 패랭이 */
+const WOMAN = { hat: 'bun', chima: true }, FOLK = [{ hat: 'top' }, { hat: 'scarf' }, { ...WOMAN, pants: 0x5a6a8a }, { hat: 'paeraengi' }, { hat: 'scarf' }, { ...WOMAN, pants: 0x8a5a52 }, { hat: 'top' }, { hat: 'paeraengi' }];
+const crowd = Array.from({ length: 8 }, (_, i) => { const m = person({ shirt: [0xb89a70, 0xa89070, 0xc0a880, 0x9a8a68][i % 4], pants: 0x6a5034, ...FOLK[i] }); m.position.set(MASK[0] - 4 + (i % 4) * 2.6, 0, MASK[1] + 1 + Math.floor(i / 4) * 1.4); m.rotation.y = Math.PI; m.visible = false; return m; });
+const sellers = MKT.flatMap((m) => [0, 1, 2].map((i) => { const p = person({ shirt: [0x9a7a5a, 0x7a8a6a, 0x8a6a5a][i], pants: 0x5a4a3a, ...(i === 1 ? WOMAN : { hat: 'paeraengi' }) }); p.position.set(m.x - 4 + i * 4, 0, m.z - 2.4); p.rotation.y = 0; return p; }));
+MKT.forEach((m, i) => { const p = person({ shirt: i ? 0xa8946c : 0x8f8468, pants: 0x5a4a3a, hat: i ? 'scarf' : 'paeraengi' }); p.position.set(m.x + 6.1, 0, m.z - 3.2); p.rotation.y = -0.3; });   /* 옹기 장수 */
+const neighbors = [0, 1, 2, 3, 4].map((i) => { const m = person({ shirt: [0xd8c8a0, 0xc8b890, 0xd0c098, 0xc0b088, 0xd8c8a0][i], pants: 0x6a5a3a, ...[{ hat: 'top' }, { hat: 'scarf' }, { hat: 'top' }, WOMAN, { hat: 'scarf' }][i] }); m.visible = false; return m; });
 const tobPatch = flat(TOB[0] - 2, TOB[1] - 2, TOB[0] + 2, TOB[1] + 2, 0x6a5a2a, 0.06); tobPatch.visible = false;
 const tobGlow = glowSprite(scene, 'rgba(255,240,180,.9)', 'rgba(255,200,90,0)', 3); tobGlow.position.set(TOB[0], 1.2, TOB[1]); tobGlow.visible = false;
-const tobPlants = new THREE.Group(); for (let k = 0; k < 9; k++) tobPlants.add(at(box(0.5, 0.9, 0.5, 0x5a8a3a), TOB[0] - 1.2 + (k % 3) * 1.2, 0.45, TOB[1] - 1.2 + Math.floor(k / 3) * 1.2)); tobPlants.visible = false; scene.add(tobPlants);
+const tobPlants = new THREE.Group(); artInst(tobPlants, 'tob_plant', Array.from({ length: 12 }, (_, k) => [TOB[0] - 1.35 + (k % 4) * 0.9 + rd() * 0.2, 0.04, TOB[1] - 1.1 + Math.floor(k / 4) * 1.1 + rd() * 0.2, 1.2 + rd() * 0.25, rd() * 6.28])); tobPlants.visible = false; scene.add(tobPlants);
 /* 나 · 짐 */
 const pMesh = person({ shirt: 0xe8e0c8, pants: 0x7a6a4a, hat: 'top' });
 const pRing = new THREE.Mesh(new THREE.RingGeometry(0.66, 0.84, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, depthWrite: false })); pRing.rotation.x = -Math.PI / 2; scene.add(pRing);
-const packs = [0, 1, 2, 3].map(() => { const m = box(0.5, 0.42, 0.42, 0xffffff); m.visible = false; scene.add(m); return m; });
+/* 등짐: 지게에 얹은 쌀섬 · 무명 필 · 담뱃잎 묶음(무엇을 졌는지 모양으로 보인다) */
+const PKG = { rice: artGeo('pk_rice'), cloth: artGeo('pk_cloth'), tob: artGeo('pk_tob') };
+const packs = [0, 1, 2, 3].map(() => { const m = new THREE.Mesh(PKG.rice, artMat); m.castShadow = true; m.visible = false; scene.add(m); return m; });
+const jige = art('jige'); jige.scale.setScalar(0.9); jige.visible = false; scene.add(jige);
 const tagBox = $('tags'); const mkTag = () => { const d = document.createElement('div'); d.className = 'tag'; tagBox.appendChild(d); return d; };
 const mktTags = MKT.map(mkTag), stallTags = MKT.map(() => [0, 1, 2].map(mkTag)), tagGov = mkTag(), tagJar = mkTag(), tagMask = mkTag();
 
@@ -103,7 +187,7 @@ const nRice = () => S.carry.filter((c) => c === 'rice').length;
 function resetRound(full) {
   if (full) { S.round = 1; S.cow = true; }
   Object.assign(S, { mode: 'title', t: 0, day: 1, px: 14, pz: 46, pdir: -Math.PI / 2, beats: 0, hits: 0, bPh: 0.3, pressed: 0, plantT: 0, tob: false, harvest: 0, jar: 0, money: 0, carry: [], need: 16, paid: 0, visits: 0, inGov: false, outGovT: 99, coinDone: false, maskSeen: false, workT: 0, endT: 0, shown: false, sold: { A: 0, B: 0 } });
-  S.prices = dayPrices(1); seedlings.count = 0; golden.count = 0; tobPatch.visible = tobGlow.visible = tobPlants.visible = false; cow.visible = S.cow; paddy.forEach((p) => p.material.color.set(0x7ab0c8));
+  S.prices = dayPrices(1); seedlings.count = 0; golden.count = 0; spring.visible = true; fall.visible = false; tobPatch.visible = tobGlow.visible = tobPlants.visible = false; cow.visible = S.cow; paddy.forEach((p) => p.material.color.set(0x7ab0c8));
   neighbors.forEach((m, i) => { m.visible = true; m.position.set(9 + i * 3, 0, 44); m.rotation.y = Math.PI; });
   $('fade').style.opacity = 0; lightFor(0); hud();
 }
@@ -114,8 +198,8 @@ function hud() {
   $('hMoney').textContent = '🪙 ' + S.money + '냥';
   const cnt = {}; for (const c of S.carry) cnt[c] = (cnt[c] || 0) + 1; $('hCarry').textContent = S.carry.length ? Object.entries(cnt).map(([k, n]) => GOODS[k].i + GOODS[k].n + ' ' + n).join(' · ') + ` (${S.carry.length}/4)` + (nRice() ? ' 🐢' : '') : '짐 없음 (0/4)';
   $('tCoin').className = S.coinDone ? 'on' : ''; $('tTob').className = S.tob ? 'on' : ''; $('tMask').className = S.maskSeen ? 'on' : '';
-  jarRice.scale.y = 1; jarRice.position.y = 0.15 + clamp(S.jar / 14, 0, 1) * 0.95; chestFill.position.y = 0.15 + clamp(S.paid / S.need, 0, 1) * 0.75;
-  packs.forEach((m, i) => { const c = S.carry[i]; m.visible = !!c; if (c) m.material.color.set(GOODS[c].c); });
+  { const y = 0.3 + clamp(S.jar / 14, 0, 1) * 0.98, r = jarR(y); jarRice.visible = S.jar > 0; jarRice.position.y = y; jarRice.scale.set(r, 1, r); } chestFill.visible = S.paid > 0; chestFill.position.y = 0.1 + clamp(S.paid / S.need, 0, 1) * 0.52;
+  packs.forEach((m, i) => { const c = S.carry[i]; m.visible = !!c; if (c) m.geometry = PKG[c]; }); jige.visible = S.carry.length > 0;
 }
 
 /* ───── 모내기: 「심자!」에 맞춰 ───── */
@@ -123,7 +207,7 @@ const PLANT_P = () => (S.cow ? 1.0 : 0.85), PLANT_W = () => (S.cow ? 0.18 : 0.12
 function act() {
   if (S.mode !== 'plant' || S.beats >= 8) return;
   if (S.pressed) return; S.pressed = 1; const off = Math.min(S.bPh, 1 - S.bPh) * PLANT_P();
-  if (off <= PLANT_W()) { S.hits++; SFX.plant(); const k = seedlings.count; for (let j = 0; j < 6 && seedlings.count < 160; j++) { _o.position.set(6 + (k / 6 % 8) * 2.3 + j * 0.3, 0, 44 + (j % 2) * 0.4); _o.updateMatrix(); seedlings.setMatrixAt(seedlings.count++, _o.matrix); } seedlings.instanceMatrix.needsUpdate = true; $('chant').textContent = '심자!'; }
+  if (off <= PLANT_W()) { S.hits++; SFX.plant(); const k = seedlings.count; for (let j = 0; j < 20 && seedlings.count < 160; j++) { _o.position.set(5 + (k / 20 % 8) * 2.55 + (j % 2) * 0.5, 0.04, 42.5 + Math.floor(j / 2) * 0.5 + (j % 2) * 0.2); _o.rotation.y = j * 1.3; _o.scale.setScalar(1.1); _o.updateMatrix(); seedlings.setMatrixAt(seedlings.count++, _o.matrix); } seedlings.instanceMatrix.needsUpdate = true; $('chant').textContent = '심자!'; }
   else { SFX.miss(); say('박자가 어긋났다 — 줄이 삐뚤어진다', null, 1.2); }
 }
 addEventListener('keydown', (e) => { if (e.code === 'Space' && !e.repeat) act(); });
@@ -133,7 +217,7 @@ function startAutumn() {
   S.harvest = 7 + S.hits; let rice = S.harvest; S.carry = []; if (S.tob) { rice -= 3; S.carry = ['tob', 'tob']; tobPlants.visible = true; }
   S.jar = rice; S.mode = 'fadeA'; S.endT = 0; $('fade').style.opacity = 1;
 }
-function autumnNow() { golden.count = 0; for (let i = 0; i < 360; i++) { const p = paddy[i % 9]; _o.position.set(FIELD[0] + (i % 9 % 3) * 7.4 + 0.4 + rnd() * 6.2, 0, FIELD[1] + Math.floor(i % 9 / 3) * 6 + 0.4 + rnd() * 4.8); _o.updateMatrix(); golden.setMatrixAt(golden.count++, _o.matrix); } golden.instanceMatrix.needsUpdate = true; seedlings.count = 0; paddy.forEach((p) => p.material.color.set(0x9a8a5a)); neighbors.forEach((m) => (m.visible = false));
+function autumnNow() { golden.count = 0; for (let i = 0; i < 162; i++) { const p = i % 9, k = Math.floor(i / 9), x = FIELD[0] + (p % 3) * 7.4 + 0.75 + (k % 6) * 1.1 + rnd() * 0.24, z = FIELD[1] + Math.floor(p / 3) * 6 + 0.9 + Math.floor(k / 6) * 1.85 + rnd() * 0.24; if (S.tob && Math.abs(x - TOB[0]) < 2.4 && Math.abs(z - TOB[1]) < 2.4) continue; _o.position.set(x, 0.04, z); _o.rotation.y = rnd() * 6.28; _o.scale.setScalar(0.92 + rnd() * 0.2); _o.updateMatrix(); golden.setMatrixAt(golden.count++, _o.matrix); } golden.instanceMatrix.needsUpdate = true; seedlings.count = 0; spring.visible = false; fall.visible = true; paddy.forEach((p) => p.material.color.set(0x9a8a5a)); neighbors.forEach((m) => (m.visible = false));
     S.px = JAR[0]; S.pz = JAR[1] + 3.2; S.t = 0; S.day = 1; S.prices = dayPrices(1); S.mode = 'play'; $('fade').style.opacity = 0; hud(); say(`가을걷이 ${S.harvest}섬${S.tob ? ' (담배 두 짐)' : ''} — 닷새 뒤 관아 북이 울린다`, null, 3.6);
 }
 
@@ -233,7 +317,7 @@ function movePlayer(dt) {
 }
 function place() {
   const y = hillH(S.px); pMesh.position.set(S.px, y, S.pz); pMesh.rotation.y = -S.pdir + Math.PI / 2; walkAnim(pMesh, S.t * (S.running ? 16 : 10) * (1 - 0.15 * nRice()), S.moving); pMesh.rotation.z = nRice() && S.moving ? Math.sin(S.t * 6) * 0.05 : 0; pRing.position.set(S.px, y + 0.11, S.pz);
-  packs.forEach((m, i) => m.position.set(S.px - Math.cos(S.pdir) * 0.45, y + 1.0 + i * 0.4, S.pz - Math.sin(S.pdir) * 0.45));
+  packs.forEach((m, i) => { m.position.set(S.px - Math.cos(S.pdir) * 0.52, y + 1.0 + i * 0.4, S.pz - Math.sin(S.pdir) * 0.52); m.rotation.y = pMesh.rotation.y; }); jige.position.set(S.px - Math.cos(S.pdir) * 0.34, y + 0.34, S.pz - Math.sin(S.pdir) * 0.34); jige.rotation.y = pMesh.rotation.y + Math.PI;
   if (S.mode === 'plant' && S.beats < 8) { pMesh.position.set(14, 0, 44); pMesh.rotation.y = Math.PI; pMesh.rotation.x = Math.max(0, 0.6 - S.bPh * 2) * 0.6; pRing.position.set(14, 0.11, 44); } else pMesh.rotation.x = 0;
   $('bAct').style.display = ctl.isTouch && S.mode === 'plant' && S.beats < 8 ? 'flex' : 'none';
   const play = S.mode === 'play';
