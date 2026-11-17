@@ -11,7 +11,21 @@
 export const ROOM_AB = {
   letters: ['a', 'b'],
   words: ['apple', 'ant', 'ax', 'alligator', 'bag', 'bed', 'bus', 'bird'],
-  at: { apple: 'Ld', ant: 'Lc', ax: 'Lb', alligator: 'creek', bag: 'Rd', bed: 'Rc', bus: 'Re', bird: 'treeR' }
+  at: { apple: 'Ld', ant: 'Lc', ax: 'Lb', alligator: 'creek', bag: 'Rd', bed: 'Rc', bus: 'Re', bird: 'treeR' },
+  /* 무대 여섯 칸(무대 설계 v1 §2 · 터 부품 상자 rooms/lands.js) — 개울 낀 완만한 풀밭 · 이슬 맺힌 풀 · 숲 가장자리(나무 사이로 들어온 길) · 복숭아빛 아침과 옅은 안개 · 둥글고 낮은 사과나무 · 반짝이는 개울.
+     개울과 사과나무는 준호가 본 기준판 그대로다 — 뒤 · 하늘 · 바닥만 표에 맞췄다 */
+  place: {
+    land:   { kind: 'meadow' },
+    floor:  { kind: 'dew' },
+    back:   { kind: 'forestEdge', gap: 0.9 },                    /* 개울 뒤 나무 사이로 들어온 길 — 징검돌을 건너 빈터로 */
+    sky:    { kind: 'peachMorning' },
+    around: { kind: 'apple', trees: { L: { leaf: 'a-leaf', fruit: 'a-red', apples: true }, R: { leaf: ['a-leaf', 'a-fish', 0.35], fruit: 'a-gold' } },
+      bushes: [[-7.6, -4.6, 1.25], [3.5, -5.1, 1.05], [7.6, -4.6, 1.3], [-8.0, -1.6, 0.9, 1], [8.1, -1.5, 0.85, 1]],
+      mushrooms: [[-6.9, 2.9, 1], [-6.4, 3.3, 0.7], [1.2, 3.2, 0.8], [-1.2, -0.3, 0.6], [7.2, -0.9, 0.9], [-7.4, -3.0, 0.8]],
+      rocks: [[-7.5, 0.6, 0.42], [-7.4, 4.1, 0.36], [-4.9, 4.3, 0.3], [4.4, -1.7, 0.28]],
+      plants: [['clover', -4.7, 2.6, 1.0], ['clover', 2.4, 2.5, 0.9], ['clover', -1.4, 3.2, 0.8], ['clover', 6.3, 1.6, 1.0], ['clover', -7.2, -0.6, 0.9]] },
+    look:   { kind: 'creekFront' }
+  }
 };
 
 export function buildThings(K, glade, o){
@@ -136,7 +150,7 @@ export function shelves(K, glade, things, o){
   const SH = {}, made = {}, base = new Map(), FADE = o.fade != null ? o.fade : 0.42;      /* 심기 전 빛바램 — 바탕색 쪽으로 이만큼 */
   /* 선반 둘 — 제 나무 앞(왼쪽 = 첫 글자 · 오른쪽 = 둘째 글자) · 처음엔 빈 판자 */
   const wood = M(mix('a-wood', 'warm', 0.15), { roughness: 0.85 }), dark = M(mix('a-wood', 'ink', 0.2), { roughness: 0.9 });
-  const boards = ['left', 'right'].map(side => { const at = o[side], g = new THREE.Group(); g.position.set(at[0], 0, at[1]); g.rotation.y = at[2] || 0; g.scale.setScalar(o.scale || 1);
+  const boards = ['left', 'right'].map(side => { const at = o[side], g = new THREE.Group(); g.position.set(at[0], o.heightAt ? o.heightAt(at[0], at[1]) : 0, at[1]); g.rotation.y = at[2] || 0; g.scale.setScalar(o.scale || 1);
     const top = rbox(1.9, 0.12, 0.62, 0.05, wood); top.rotation.x = -Math.PI / 2; top.position.y = 0.62; g.add(top);
     [-0.75, 0.75].forEach(x => g.add(mesh(new THREE.CylinderGeometry(0.14, 0.17, 0.58, 10), dark, x, 0.29, 0)));
     g.userData = { used: 0 }; glade.add(g); return g; });

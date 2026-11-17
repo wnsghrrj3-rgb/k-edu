@@ -1,16 +1,16 @@
 /* ============================================================
  * 영어 놀이터 — 빈터 방 등록소(rooms/index) (WA1 · 글자 숲 A02~A14 가 따르는 한 가지 길)
- *   빈터 하나 더하기 = ① content/rooms/glade-<글자 둘>.js 를 하나 쓰고 ② 아래 ROOMS 에 한 줄.
+ *   빈터 하나 더하기 = ① content/rooms/glade-<글자 둘>.js 를 하나 쓰고(물건 여덟 + 무대 여섯 칸 place) ② 아래 ROOMS 에 한 줄.
  *   그러면 zone/glade.html?step=<걸음> 이 그 방을 짓고, 낱말 · 쪽지 · 사건 · 손님 · 박자는 상세판 자료(data/path-detail.js)에서 읽어
  *   A01 과 같은 놀이 · 판정으로 세 마디를 돈다. 등록이 없는 걸음은 2D 걸음 화면(step.html)으로 간다.
  *
  *   방 파일 꼴(export default):
- *     id · light('morning'|'day'|'afternoon'|'evening'|'lamp') · fog(빛 이름 | null) · wind(풀 흔들림 배수) · beat(박자 소리 — PlayAudio 합성 한 벌)
- *     trees: { L: { leaf, fruit, apples? }, R: { … } }        — 왼쪽 = 첫 글자, 오른쪽 = 둘째 글자(빈터 판형)
- *     ground: buildGlade 에 넘길 것(개울 · 덤불 · 버섯 · 바위 — 없으면 판형 기본)
+ *     id · beat(박자 소리 — PlayAudio 합성 한 벌)
+ *     place: { land, floor, back, sky, around, look }              — 무대 여섯 칸(무대 설계 v1 §1). 칸마다 { kind: 터 부품 이름, … } — 부품은 rooms/lands.js. 여섯 칸이 비면 짓지 않는다
+ *            빛 · 안개 · 바람은 sky 가, 글자 나무 둘(왼쪽 = 첫 글자 · 오른쪽 = 둘째 글자)은 around.trees 가 정한다
  *     words: { 낱말: { make: props 부품 이름 | 'person' | 'me', o: 부품에 넘길 것, at?: [x, z], y?, rot?, mood? } }
- *            자리는 적지 않으면 상세판 room.props 의 자리 이름(La·Lb·…·center·skyR)을 빈터 판형 GLADE 에서 찾는다
- *     decor(K, glade, PR, things) → { life?(t), … }               — 가운데 장면(찻상 · 폭포 · 바위 · 얼음 처마)
+ *            자리는 적지 않으면 상세판 room.props 의 자리 이름(La·Lb·…·center·skyR)을 자리 약속(glade.js)에서 찾는다 · 높이는 땅이 준다(y 는 그 위로 얼마)
+ *     decor(K, glade, PR, things, land) → { life?(t), … }         — 가운데 장면(찻상 · 바위 · 얼음 처마). land.heightAt(x, z) 로 땅에 붙인다
  *     stage: { 사건 id: { actor: 낱말, from?: [x, z] } }          — 사건이 감싸는 물건 · from 이 있으면 낱말마다 한 걸음씩 제자리로(A01 개미 줄)
  *     onRound?(사건 id, 몇 번째, ctx)                              — 그 방만의 맛(찻집 방석 하나 · …)
  * ============================================================ */
@@ -27,12 +27,10 @@ export const ROOMS = {
 export const hasRoom = id => !!ROOMS[id];
 export async function loadRoom(id){ const f = ROOMS[id]; return f ? (await f()).default : null; }
 
-/* 빈터 판형의 자리를 화면에서 서로 가리지 않게 조금 옮긴 것(A01 기준판이 쓰는 값과 같은 뜻 — 버스 뒤 · 주인 뒤 · 선반 옆이 비게). 모든 방이 이 표를 쓴다 */
-export const ROOM_SLOTS = {
-  La: [-6.9, -0.9], Lb: [-3.2, -1.7], Lc: [-5.7, 1.4], Ld: [-3.6, 1.1], Ra: [7.3, -2.3], Rb: [3.1, -1.9], Rc: [6.5, -0.4], Rd: [3.5, 0.9],
-  center: [0.4, -3.4], skyR: [2.4, -2.6], skyL: [-2.4, -2.6], owner: [-0.5, -0.8], me: [-2.2, 2.3], guide: [1.9, 2.3], Re: [4.9, 3.5], sign: [7.25, 3.7], path: [0, 4.3]
-};
-export const ROOM_BUSHES = [[-7.6, -4.6, 1.25], [-2.7, -5.0, 1.05], [3.5, -5.1, 1.05], [7.6, -4.6, 1.3]];     /* 옆 덤불은 뺀다 — La · Ra 자리가 보이게 */
+/* 자리 약속(자리 이름 → 좌표)은 판형 glade.js 에 있다 — 모든 방이 그 표를 쓴다 */
+export { ROOM_SLOTS, GLADE, sideOf } from './glade.js';
+/* 그 걸음의 무대 여섯 칸(place) — A01 은 기준판 방 자료(glade-ab.js), 나머지는 방 파일. 입체 판 · 2D 판 · 한 장 보기가 같은 것을 읽는다 */
+export async function loadPlace(id){ if (id === 'A01') return (await import('./glade-ab.js')).ROOM_AB.place; const r = await loadRoom(id); return r ? r.place : null; }
 
 /* 낱말 → 빈터 위 자리(방 파일의 at > 상세판 자리 이름 → 빈터 판형) */
 export function slotOf(room, det, glade, w){
@@ -52,7 +50,7 @@ export function defaultPaint(g, P){ const { gx, gz, gs, soft, hex, dirt } = P;
 
 /* 방을 짓는다 — 낱말 여덟의 물건 + 가운데 장면. ctx = { det, glade:GLADE, me, makePerson } → { things, decor } */
 export function buildRoom(K, group, room, ctx){
-  const { THREE } = K, things = {};
+  const { THREE } = K, things = {}, H = ctx.heightAt || (() => 0);
   Object.keys(room.words).forEach(w => {
     const s = room.words[w], at = slotOf(room, ctx.det, ctx.glade, w);
     let g;
@@ -72,12 +70,12 @@ export function buildRoom(K, group, room, ctx){
       const make = PR[s.make]; if (!make) throw new Error('없는 부품 ' + s.make + ' (' + w + ')');
       g = make(K, s.o || {});
     }
-    g.position.set(at[0], s.y || 0, at[1]); g.rotation.y = s.rot || 0;
+    g.position.set(at[0], H(at[0], at[1]) + (s.y || 0), at[1]); g.rotation.y = s.rot || 0;      /* 땅에 붙는다(터 부품 상자의 heightAt — 물 위는 물 높이) */
     Object.assign(g.userData, { w, home: g.position.clone(), hop: 0 });
     if (s.y) g.userData.dy = (g.userData.dy || 1) + s.y;
     group.add(g); things[w] = g;
   });
-  const decor = room.decor ? room.decor(K, group, PR, things) || {} : {};
+  const decor = room.decor ? room.decor(K, group, PR, things, { heightAt: H }) || {} : {};
   return { things, decor };
 }
 

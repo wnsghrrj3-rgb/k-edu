@@ -5,7 +5,8 @@
  *
  *   const K = createKit({ canvas, sky? })     렌더러 · 장면 · 정사영 카메라 · 재질 · 도형 도우미 · 글자판 · 트윈 · 후처리 · 품질 3단 · 화면 자리
  *   K.eye(conf)                              눈(카메라) — 물건 쪽으로 살며시 다가가기(focus) · 끌면 조금 돎 · 세로 화면 맞춤 · 가만히 있으면 아주 조금 흔들림
- *   K.light(preset, o)                       빛 벌 — 'morning' · 'day' · 'afternoon' · 'evening' · 'lamp'(해 · 하늘빛 · 채움빛 · 햇살 · 빛 먼지)
+ *   K.light(preset, o)                       빛 벌 — 'morning' · 'day' · 'afternoon' · 'evening' · 'lamp'(해 · 하늘빛 · 채움빛 · 햇살 · 빛 먼지) · o.tune 으로 그 곳만의 빛
+ *   K.sky(stops)                             하늘 색 띠를 바꾼다(위 · 가운데 · 아래 — 토큰 이름이나 [a, b, t])
  *   K.particles(n)                           알갱이 한 벌 — 빛 튐 · 잎 · 꽃잎(한 번에 그린다)
  *   K.quality                                'high' | 'mid' | 'low' — 처음 2초 동안 빠르기를 보고 저절로 내린다 · ?q=low 는 처음부터 low
  *   K.lighten(on)                            몸 장면처럼 손이 바쁜 동안 화면 효과를 던다(그늘 계산 · 빛 번짐 · 햇살 · 그림자 덜 자주)
@@ -144,6 +145,7 @@ export function createKit(o = {}){
     onResize: f => { sizers.push(f); },
     extra: m => { extras.push(m); m.visible = quality !== 'low' && !light; return m; },
     sun: null,
+    sky: stops => { if (S.background && S.background.dispose) S.background.dispose(); S.background = skyTex(stops); },      /* 하늘 색 띠(위 · 가운데 · 아래) — 걸음마다 다르다 */
     eye: c => eye(K, c), light: (p, op) => lights(K, p, op), particles: n => particles(K, n), ambience: () => ambience(K)
   };
   addEventListener('resize', resize);
@@ -186,9 +188,9 @@ function eye(K, c){
 
 /* ── 빛 벌 ── */
 function lights(K, preset = 'morning', op = {}){
-  const { THREE, S, C, tone, canvasTex, hex, fx, LOW } = K, P = KIT.light[preset] || KIT.light.morning;
+  const { THREE, S, C, tone, canvasTex, hex, fx, LOW } = K, P = Object.assign({}, KIT.light[preset] || KIT.light.morning, op.tune || {});      /* tune = 그 곳만의 빛(터 부품 상자의 하늘이 준다 — 해 · 하늘빛 · 채움빛을 덮는다) */
   const hemi = new THREE.HemisphereLight(tone(P.hemi[0]), tone(P.hemi[1]), P.hemi[2]); S.add(hemi);
-  const sun = new THREE.DirectionalLight(C(P.sun[0]), P.sun[1]); sun.position.set(...P.sun[2]); sun.target.position.set(0, 0, 0); S.add(sun, sun.target);
+  const sun = new THREE.DirectionalLight(tone(P.sun[0]), P.sun[1]); sun.position.set(...P.sun[2]); sun.target.position.set(0, 0, 0); S.add(sun, sun.target);
   const sc = op.shadow || { left: -12, right: 12, top: 10, bottom: -10 };
   sun.castShadow = true; sun.shadow.mapSize.set(LOW ? 1024 : 2048, LOW ? 1024 : 2048); Object.assign(sun.shadow.camera, sc, { near: 1, far: 50 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.04; sun.shadow.radius = 5;
   const fill = new THREE.DirectionalLight(tone(P.fill[0]), P.fill[1]); fill.position.set(9, 8, 10); S.add(fill);
@@ -202,7 +204,7 @@ function lights(K, preset = 'morning', op = {}){
   const box = op.dust || [16, 4, 10], dN = LOW ? Math.round(box[0] * 2) : Math.round(box[0] * 5), dp = new Float32Array(dN * 3);
   for (let i = 0; i < dN; i++) { dp[i * 3] = -box[0] / 2 + Math.random() * box[0]; dp[i * 3 + 1] = 0.5 + Math.random() * box[1]; dp[i * 3 + 2] = -box[2] / 2 + Math.random() * box[2]; }
   const dustG = new THREE.BufferGeometry(); dustG.setAttribute('position', new THREE.BufferAttribute(dp, 3));
-  const dust = new THREE.Points(dustG, new THREE.PointsMaterial({ color: C(P.glow), size: 0.07, transparent: true, opacity: 0.85, depthWrite: false })); S.add(K.extra(dust));
+  const dust = new THREE.Points(dustG, new THREE.PointsMaterial({ color: tone(op.dustTone || P.glow), size: op.dustSize || 0.07, transparent: true, opacity: 0.85, depthWrite: false })); S.add(K.extra(dust));
   function step(dt, t){
     shafts.forEach(m => { m.material.opacity = m.userData.o * (0.75 + Math.sin(t * 0.5 + m.userData.k) * 0.25); });
     if (dust.visible) { const pa = dust.geometry.attributes.position; for (let i = 0; i < dN; i++) { pa.array[i * 3 + 1] += dt * 0.07; pa.array[i * 3] += Math.sin(t * 0.5 + i) * dt * 0.05; if (pa.array[i * 3 + 1] > box[1] + 0.6) pa.array[i * 3 + 1] = 0.4; } pa.needsUpdate = true; }

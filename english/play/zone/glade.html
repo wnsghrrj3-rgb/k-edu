@@ -175,6 +175,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:
 .gcover .parts button.on .m{color:var(--on-stage)}
 .gcover .parts .ck{position:absolute;right:-5px;top:-7px;width:22px;height:22px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--ok)}
 @media (prefers-reduced-motion: reduce){.gword .w i,.gword .w.joy i,.gword .ck,.gword .bars i{animation:none}}
+body.still > *:not(#cv){display:none!important}
 </style>
 <script src="/kedu_gate.js"></script>
 </head>
@@ -227,9 +228,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:
 import * as THREE from 'three';
 import { createKit } from '../core/diorama.js';
 import { makePerson, stepPeople, PEOPLE } from '../core/diorama-people.js';
-import { buildGlade, fruitTree } from '../content/rooms/glade.js';
+import { buildLand, LOOKS } from '../content/rooms/lands.js';
 import { buildThings, stepThings, shelves, ROOM_AB } from '../content/rooms/glade-ab.js';
-import { loadRoom, hasRoom, buildRoom, stepRoom, defaultPaint, slotOf, ROOM_SLOTS, ROOM_BUSHES, PR } from '../content/rooms/index.js';
+import { loadRoom, hasRoom, buildRoom, stepRoom, defaultPaint, slotOf, ROOM_SLOTS, PR } from '../content/rooms/index.js';
 
 const $ = id => document.getElementById(id), I = PlayIcon.html, A = window.PlayAudio, T = window.KTTS, PW = window.PlayWrite, SP = window.PlaySpeech;
 /* ── 상수는 여기 한 곳 ── */
@@ -274,6 +275,10 @@ const ROOM = STEP.id === 'A01' ? null : await loadRoom(STEP.id), IS01 = !ROOM;
 const L1 = STEP.letters[0], L2 = STEP.letters[1];
 if (!IS01) CONF.slot = Object.assign({}, GL.slots, GL.spots, ROOM_SLOTS, { creek: null });      /* 빈터 판형 + 서로 가리지 않게 옮긴 자리(rooms/index.js) */
 const SLOTS = { slots: CONF.slot, spots: {} };
+/* 무대 여섯 칸(무대 설계 v1) — 땅 · 바닥 · 뒤 · 하늘 · 둘레 · 첫눈. 방 자료의 place 를 터 부품 상자(content/rooms/lands.js)가 짓는다. 첫눈 = 눈(카메라)의 자리 */
+const PLACE = IS01 ? ROOM_AB.place : ROOM.place, LOOK = (LOOKS[PLACE.look.kind] || {}).cam || {};
+if (LOOK.pitch != null) CONF.cam.pitch = LOOK.pitch; if (LOOK.yaw != null) CONF.cam.yaw = LOOK.yaw;
+const STILL = /[?&]still=1/.test(location.search);      /* 한 장 보기(zone/glade-sheet.html)에 넣을 첫 화면 한 장 — 글씨와 단추 없이 */
 
 /* ── 증거 — 놀이 코어(core/game.js)와 같은 길: 기록(PlayEvidence · 계약 그대로) + 씨앗(PlaySeed — 입으로 통과한 것만 심고 키운다 · 결정 §0-1) + 물건에 보이는 단계.
      2D 걸음 화면(step.html?step=A01)과 같은 구역 이름 · 같은 열쇠(입말 = o:낱말 · 글자 = l:글자)라서 두 판의 증거가 한 줄로 모인다 ── */
@@ -301,12 +306,12 @@ const { LOW, C, hex, mix, hexOf, RNG, R, S, M, canvasTex, mesh, ball, rshape, rb
 const cv = $('cv');
 const vA = new THREE.Vector3(), vB = new THREE.Vector3(), vR = new THREE.Vector3();
 /* 눈 — 낱말이 나오면 그 물건 쪽으로 살며시 다가갔다가 돌아온다 · 세로 화면은 조금 위로 */
-const eye = K.eye(Object.assign({}, CONF.cam, { home: (h, a) => h.set(0, a < 1 ? 1.6 : 1.0, a < 1 ? 0.3 : -0.1) }));
+const eye = K.eye(Object.assign({}, CONF.cam, { home: (h, a) => h.set(0, (a < 1 ? 1.6 : 1.0) + (LOOK.lift || 0), a < 1 ? 0.3 : -0.1) }));
 const { focus } = eye;
 
-/* ── 빈터 판형(content/rooms/glade.js) — 잘라 낸 땅 · 풀밭 · 풀잎 · 꽃 · 개울 · 뒤 숲 · 버섯 · 바위. 이 걸음의 얼룩(햇볕 자리 · 오솔길 · 밟힌 자리)만 그린다 ── */
-const G = buildGlade(K, !IS01 ? roomGround() : {
-  creek: { at: CONF.slot.creek },
+/* ── 터(content/rooms/lands.js) — 그 걸음의 땅(높낮이 · 물) · 바닥 · 뒤 풍경 · 하늘(빛 · 날씨) · 글자 나무 둘. 이 화면은 물건 자리와 얼룩(햇볕 자리 · 오솔길 · 밟힌 자리)만 넘긴다 ── */
+const LANDOPT = { letters: [L1, L2], slots: { treeL: CONF.slot.treeL, treeR: CONF.slot.treeR }, light: { view: [CONF.cam.yaw, CONF.cam.pitch] } };
+const G = buildLand(K, PLACE, Object.assign(LANDOPT, !IS01 ? roomGround() : {
   blocks: [[...CONF.slot.Ld, 1], [...CONF.slot.Lc, 1.3], [...CONF.slot.Lb, 1.5], [...CONF.slot.Rc, 1.7], [...CONF.slot.Rd, 0.9], [...CONF.slot.Re, 1.8], [...CONF.slot.treeL, 0.8], [...CONF.slot.treeR, 0.8],
     [...CONF.slot.owner, 0.7], [...CONF.slot.me, 0.6], [...CONF.slot.guide, 0.6], [...CONF.slot.sign, 0.5]],
   paint: (g, P) => { const { gx, gz, gs, soft, hex, dirt } = P;
@@ -314,32 +319,34 @@ const G = buildGlade(K, !IS01 ? roomGround() : {
     soft(g, gx(0), gz(4.3), 3.6 * gs, 0.5 * gs, dirt, 0.92, 0.3 * gs);                                                            /* 앞 흙길 — 글자 길이 놓일 자리 */
     [[0.25, 3.5, 0.6], [-0.2, 2.9, 0.5], [0.15, 2.2, 0.45], [-0.05, 1.5, 0.4], [0.05, 0.8, 0.36], [0, 0.1, 0.34]].forEach((p, i) => soft(g, gx(p[0]), gz(p[1]), p[2] * gs, 0.3 * gs, dirt, 0.7 - i * 0.08, 0.22 * gs));   /* 길에서 Max 에게 오는 오솔길 */
     [[CONF.slot.Ld, 1.0], [CONF.slot.Lc, 1.3], [CONF.slot.Rc, 1.6], [CONF.slot.Re, 1.7], [CONF.slot.Lb, 1.1], [CONF.slot.Rd, 0.8]].forEach(p => soft(g, gx(p[0][0]), gz(p[0][1] + 0.1), p[1] * gs, p[1] * 0.6 * gs, dirt, 0.2, 0.5 * gs)); }     /* 물건 둘레의 밟힌 자리 */
-});
-/* 방 자료의 빈터 — 판형 기본 얼룩 + 그 방의 얼룩 · 풀은 물건 자리 · 나무 · 사람 · 팻말 · 버스 · 가운데 장면을 피한다 */
-function roomGround(){ const g = Object.assign({ bushes: ROOM_BUSHES }, ROOM.ground || {}), own = g.paint;
-  g.paint = (c, P) => { defaultPaint(c, P); if (own) own(c, P); };
+}));
+/* 방 자료의 빈터 — 판형 기본 얼룩(햇볕 자리 · 앞 흙길 · 오솔길) · 풀은 물건 자리 · 나무 · 사람 · 팻말 · 버스 · 가운데 장면을 피한다 */
+function roomGround(){ const g = { paint: defaultPaint };
   g.blocks = Object.keys(ROOM.words).map(w => slotOf(ROOM, DET, SLOTS, w)).map(p => [p[0], p[1], 1.1])
     .concat([[...CONF.slot.treeL, 0.9], [...CONF.slot.treeR, 0.9], [...CONF.slot.owner, 0.7], [...CONF.slot.me, 0.6], [...CONF.slot.guide, 0.6], [...CONF.slot.sign, 0.6], [...CONF.slot.Re, 1.8], [0, -3.6, 2.4], [GL.shelf.L[0], GL.shelf.L[1], 1.0], [GL.shelf.R[0], GL.shelf.R[1], 1.0]]);
   return g; }
 const glade = G.group; S.add(glade);
 const GW = G.GW, GD = G.GD, CK = G.creek, ripple = G.ripple;
+/* 땅의 높이 — 물건 · 인물 · 선반 · 소품이 여기에 붙는다(물 위는 물 높이). lift = 그 물건이 땅 위로 떠 있는 만큼(나무 위의 새 · 바위 위의 놀이판) */
+const H = G.heightAt;
+const liftOf = g => { const u = g.userData; if (u.lift == null) u.lift = u.home ? u.home.y - H(u.home.x, u.home.z) : 0; return u.lift; };
+const baseY = g => H(g.position.x, g.position.z) + liftOf(g);
 
-/* ── 나무 둘(왼쪽 = a 열매가 달린 사과나무 · 오른쪽 = b 나무) — 판형의 열매 나무 ── */
-const TR = IS01 ? { L: { leaf: C('a-leaf'), fruit: 'a-red', apples: true }, R: { leaf: mix('a-leaf', 'a-fish', 0.35), fruit: 'a-gold', apples: false } } : ROOM.trees;
+/* ── 글자 나무 둘(왼쪽 = 첫 글자 · 오른쪽 = 둘째 글자) — 생김새는 그 걸음의 것(터 부품 상자가 지었다) ── */
 const tone = v => (Array.isArray(v) ? mix(v[0], v[1], v[2]) : typeof v === 'string' ? C(v) : v);
-const treeA = fruitTree(K, { x: CONF.slot.treeL[0], z: CONF.slot.treeL[1], leaf: tone(TR.L.leaf), letter: L1, fruitTone: TR.L.fruit, apples: !!TR.L.apples }); glade.add(treeA);
-const treeB = fruitTree(K, { x: CONF.slot.treeR[0], z: CONF.slot.treeR[1], leaf: tone(TR.R.leaf), letter: L2, fruitTone: TR.R.fruit, apples: !!TR.R.apples }); glade.add(treeB);
+const treeA = G.treeA, treeB = G.treeB;
 
 const P = n => CONF.slot[n];
 /* ── 인물(core/diorama-people.js) — 머리 큰 2.5등신. 눈을 깜박이고, 말할 때 입이 움직이고, 보는 쪽으로 고개를 돌린다 ── */
 const person = o => makePerson(K, o);
-const max = person(PEOPLE.max); max.position.set(P('owner')[0], 0, P('owner')[1]); max.scale.setScalar(1.12); glade.add(max);
-const mina = person(PEOPLE.mina); mina.position.set(P('guide')[0], 0, P('guide')[1]); mina.rotation.y = -0.3; glade.add(mina);
-const me = person(PEOPLE.me); me.position.set(P('me')[0], 0, P('me')[1]); me.rotation.y = 0.3; glade.add(me);
+const max = person(PEOPLE.max); max.position.set(P('owner')[0], H(...P('owner')), P('owner')[1]); max.scale.setScalar(1.12); glade.add(max);
+const mina = person(PEOPLE.mina); mina.position.set(P('guide')[0], H(...P('guide')), P('guide')[1]); mina.rotation.y = -0.3; glade.add(mina);
+const me = person(PEOPLE.me); me.position.set(P('me')[0], H(...P('me')), P('me')[1]); me.rotation.y = 0.3; glade.add(me);
 const people = [max, mina, me];
+if (G.weather.breath) people.forEach(p => G.weather.breath.add(p, 1.5 * p.scale.y));      /* 추운 곳 — 입김 */
 
 /* ── 낱말 여덟의 물건 — 방 자료(content/rooms/glade-ab.js): 만들고, 누르면 움직이는 법(act) · 살아 있는 몸짓 · 씨앗 단계가 보이는 선반 ── */
-const BUILT = IS01 ? { things: buildThings(K, glade, { slot: CONF.slot, creek: CK }), decor: {} } : buildRoom(K, glade, ROOM, { det: DET, glade: SLOTS, me, makePerson });
+const BUILT = IS01 ? { things: buildThings(K, glade, { slot: CONF.slot, creek: CK }), decor: {} } : buildRoom(K, glade, ROOM, { det: DET, glade: SLOTS, me, makePerson, heightAt: H });
 const things = BUILT.things, DECOR = BUILT.decor;
 if (IS01) CONF.words.forEach(x => { things[x.w].userData.dy = x.dy; things[x.w].userData.r = x.r; });
 else CONF.words.forEach(x => { x.dy = things[x.w].userData.dy || 0.8; x.r = things[x.w].userData.r || 1.3; });
@@ -347,7 +354,7 @@ else CONF.words.forEach(x => { x.dy = things[x.w].userData.dy || 0.8; x.r = thin
 const BUS = things.bus || (() => { const b = PR.logBus(K, CONF.slot.Re); glade.add(b); const st = b.userData.stop; st.position.add(b.position); glade.add(st); return b; })();
 /* 씨앗 단계가 보이는 선반 — 제 나무 앞(왼쪽 a · 오른쪽 b). 단계는 씨앗(engine/play-seed.js)에서 */
 const SH = shelves(K, glade, things, IS01 ? { left: [-6.45, -1.35, 0.35], right: [3.7, -2.35, -0.25], letters: ROOM_AB.letters, letterOf: w => CONF.words.find(x => x.w === w).l }
-  : { left: [GL.shelf.L[0], GL.shelf.L[1] + 0.15, 0.2], right: [GL.shelf.R[0], GL.shelf.R[1] + 0.15, -0.2], scale: 0.78, letters: STEP.letters, letterOf: w => w.charAt(0) });      /* 제 나무 앞(빈터 판형의 선반 자리) */
+  : { left: [GL.shelf.L[0], GL.shelf.L[1] + 0.15, 0.2], right: [GL.shelf.R[0], GL.shelf.R[1] + 0.15, -0.2], scale: 0.78, letters: STEP.letters, letterOf: w => w.charAt(0), heightAt: H });      /* 제 나무 앞(빈터 판형의 선반 자리) */
 /* 그 낱말의 씨앗 단계를 물건에 — 심기 전 빛바램 · 씨앗 제 색 · 꽃 선반의 나무 조각 · 열매 아이 글씨 이름표(처음 쓴 그 글자) */
 function paintStage(w){ const sd = SEED && SEED.get(SEED.key ? SEED.key(w, 'oral') : 'o:' + w), ink = window.PlayWrite && PlayWrite.ink ? PlayWrite.ink(w.charAt(0)) : null; SH.set(w, sd ? sd.stage : -1, ink); }
 CONF.words.forEach(x => paintStage(x.w));
@@ -415,12 +422,11 @@ function paintSign(){
 }
 paintSign();
 
-/* ── 빛(아침) — 키트의 빛 벌 · 나무 사이로 드는 햇살 · 빛 먼지 ── */
-const lit = K.light(IS01 ? 'morning' : ROOM.light, { shafts: [[-5.6, 3.6, -0.4, 1.5, 0.13], [-3.6, 3.2, 0.6, 1.0, 0.1], [-1.4, 3.0, -1.4, 1.8, 0.08]], view: [CONF.cam.yaw, CONF.cam.pitch], dust: [16, 4, 10] });
-if (ROOM && ROOM.fog) S.fog = new THREE.Fog(C(ROOM.fog), 27, 52);              /* 물안개 · 서늘한 그늘 — 먼 것이 옅어진다 */
+/* ── 빛 · 안개 · 날씨는 터가 지었다(하늘 부품 — 걸음마다 다르다) ── */
+const lit = G.lit;
 /* 낱말이 나올 때 그 물건 아래가 밝아진다 */
 const spot = fx(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshBasicMaterial({ map: glowTex(128, 1.1), color: C('warm-soft'), transparent: true, opacity: 0, depthWrite: false }))); spot.rotation.x = -Math.PI / 2; spot.position.y = 0.06; spot.userData = { on: 0, r: 1 }; glade.add(spot);
-function spotAt(g){ if (!g) { spot.userData.on = 0; return; } g.getWorldPosition(vA); spot.position.x = vA.x; spot.position.z = vA.z + 0.1; spot.userData.r = g.userData.r || 1.3; spot.userData.on = 1; }
+function spotAt(g){ if (!g) { spot.userData.on = 0; return; } g.getWorldPosition(vA); spot.position.x = vA.x; spot.position.z = vA.z + 0.1; spot.position.y = H(vA.x, vA.z) + 0.07; spot.userData.r = g.userData.r || 1.3; spot.userData.on = 1; }
 /* 나비 */
 const flies = [];
 for (let i = 0; i < (LOW ? 1 : 3); i++) { const g = new THREE.Group(), wm = M(['a-pink', 'warm', 'surface'][i], { side: THREE.DoubleSide, roughness: 0.6 });
@@ -461,7 +467,7 @@ function tip(s, ms){ const t = $('tip'); t.textContent = s; t.classList.add('sho
 /* ── 물건 하나가 제 몸짓을 한다 · 눈이 그쪽으로 간다 ── */
 const letterOf = w => CONF.words.find(x => x.w === w).l;
 function act(w, dur = 900){ const g = things[w]; if (!g) return Promise.resolve(); if (g.userData.moodAct) { mood(g, g.userData.moodAct, dur); return wait(dur); } if (g.userData.busy) return Promise.resolve(); g.userData.busy = true; if (w === 'alligator') ripple(g.position.x, g.position.z, 1.6); return tween(dur, t => g.userData.act(t), t => t).then(() => { g.userData.act(0); g.userData.busy = false; }); }
-function hop(g, h = 0.5, dur = 420){ return tween(dur, t => { g.position.y = (g.userData.home ? g.userData.home.y : 0) + Math.sin(t * Math.PI) * h; }, t => t); }
+function hop(g, h = 0.5, dur = 420){ return tween(dur, t => { g.position.y = (g.userData.home ? baseY(g) : 0) + Math.sin(t * Math.PI) * h; }, t => t); }      /* 지금 서 있는 땅에서 폴짝 */
 function mood(p, m, ms){ p.userData.mood = m; if (ms) setTimeout(() => { if (p.userData.mood === m) p.userData.mood = 'idle'; }, ms); }
 function lookAll(o){ people.forEach(p => { p.userData.look = o; }); }
 function present(w, set){ const g = things[w]; focus(g, set[0], set[1], 0, -0.12, g.userData.dy); spotAt(g); lookAll(g); }
@@ -784,9 +790,9 @@ function roomParts(){ const e0 = EVB(0), e3 = EVB(3);
     { name: e3.name, mark: '', icon: 'train', steps: [KIND_STEP[roundKind(e3.game)], ['', 'paw', '특별 손님'], ['', 'leaf', '쪽지']] }
   ]; }
 const isPerson = g => !!(g.userData.head && g.userData.arms);
-/* 걸어간다 — 가는 쪽을 보고 통통(사람은 +z 가 앞 · 동물은 +x 가 앞) */
+/* 걸어간다 — 가는 쪽을 보고 통통(사람은 +z 가 앞 · 동물은 +x 가 앞). 땅을 따라 오르내린다 */
 function walkTo(a, to, dur){ const fr = a.position.clone(), dx = to.x - fr.x, dz = to.z - fr.z; if (Math.hypot(dx, dz) > 0.05) a.rotation.y = isPerson(a) ? Math.atan2(dx, dz) : Math.atan2(-dz, dx);
-  return tween(dur, t => { a.position.lerpVectors(fr, to, t); a.position.y = (a.userData.home ? a.userData.home.y : 0) + Math.abs(Math.sin(t * Math.PI * Math.max(2, dur / 260))) * 0.12; }, t => t * t * (3 - 2 * t)); }
+  return tween(dur, t => { a.position.lerpVectors(fr, to, t); a.position.y = baseY(a) + Math.abs(Math.sin(t * Math.PI * Math.max(2, dur / 260))) * 0.12; }, t => t * t * (3 - 2 * t)); }
 async function evIntro(ev){
   const a = actorOf(ev), who = WHO(ev.who), dy = a.userData.dy || 1; unpresent(); word(null);
   focus(a, 1.18, 0.6, 0, -0.08, dy); spotAt(a); lookAll(a); mood(who, 'point', 1800); await wait(450);
@@ -1052,7 +1058,7 @@ $('go').onclick = enter;
 const clock = new THREE.Clock(); let leafT = 2, ripT = 1;
 function frame(){
   const raw = clock.getDelta(), dt = Math.min(raw, 0.05), t = clock.elapsedTime, now = performance.now();
-  K.runTweens(now); eye.step(dt, t); G.step(dt, t * (ROOM && ROOM.wind || 1)); lit.step(dt, t);
+  K.runTweens(now); eye.step(dt, t); G.step(dt, t);      /* 터 — 바람 · 물 · 뒤 풍경 · 날씨 · 빛 */
   /* 살아 있는 것 — 개미 줄 · 악어 · 버스 김 · 새 · 배낭 · 나뭇잎 · 물 · 갈대 · 나비 · 햇살 */
   if (IS01) stepThings(things, dt, t); else { stepRoom(things, DECOR, dt, t); PR.busLife(BUS, dt, t); }
   treeA.userData.crown.rotation.z = Math.sin(t * 0.6) * 0.014; treeB.userData.crown.rotation.z = Math.sin(t * 0.55 + 1) * 0.014; treeA.userData.crown.scale.y = 1 + Math.sin(t * 0.9) * 0.008; treeB.userData.crown.scale.y = 1 + Math.sin(t * 0.8 + 2) * 0.008;
@@ -1076,6 +1082,9 @@ function frame(){
   if (!window.__pause) requestAnimationFrame(frame);
 }
 frame();
+/* 한 장 보기에 넣을 첫 화면(?still=1) — 글씨와 단추를 감추고, 물건은 제 색으로, 몇 장 그린 뒤 그림 한 장을 넘긴다(무대 설계 R7) */
+if (STILL) { document.body.classList.add('still'); [treeA, treeB].forEach(tr => { const lb = tr.userData.fruit.userData.label; if (lb) lb.visible = false; }); CONF.words.forEach(x => { try { SH.set(x.w, 1, null); } catch (e) {} });
+  let n = 0; const shot = () => { if (++n < (LOW ? 8 : 16)) return requestAnimationFrame(shot); K.render(0); const png = cv.toDataURL('image/jpeg', 0.86); window.__still = png; if (parent !== window) parent.postMessage({ gladeStill: STEP.id, png }, location.origin); }; requestAnimationFrame(shot); }
 /* 처음 화면 — 방 이름 · 글자 둘 · 그 걸음 이야기의 첫 마디(한 해 길 자료) */
 document.title = STEP.room + ' | 영어 놀이터'; $('roomN').textContent = STEP.room; $('coverN').textContent = STEP.room; $('coverL').textContent = STEP.letters.join(' · ');
 $('ldT').textContent = IS01 ? '숲속 빈터에 아침이 왔어요' : (STEP.story[0] || ''); $('go').style.display = '';

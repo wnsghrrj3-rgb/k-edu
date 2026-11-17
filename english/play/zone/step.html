@@ -100,13 +100,18 @@
 <script src="../games/sentence-write.js"></script>
 <script src="../games/special-guest.js"></script>
 <script>
+/* 2D 바탕 — 그 걸음의 무대 여섯 칸(방 자료의 place — 입체 판과 같은 것)에서 하늘 색 · 뒤 실루엣 · 땅 선을 그린다(무대 설계 v1 R5). 방이 아직 없는 걸음은 그대로 둔다.
+   걸음이 정해진 뒤(아래 걸음 스크립트가 window.__stepId 를 적는다)에 늦게 불러온다 — 놀이를 막지 않는다 */
+addEventListener('load', function(){ try { Promise.all([import('../content/rooms/index.js'), import('../content/rooms/place-2d.js')]).then(function(m){ return m[0].loadPlace(window.__stepId).then(function(place){ if (place) m[1].mount2D(place); }); }).catch(function(){}); } catch (e) {} });
+</script>
+<script>
 /* 한 해 길의 걸음 — 걸음 하나를 2D 로 돌린다(입체 방은 W15~). 무대 페이지는 걸음과 겉모습만 넘긴다 — 하루 흐름은 core/stage.js,
    세 날(만나는 날·읽는 날·쓰는 날)의 조립은 core/assemble.js 의 day(), 재료는 data/path.js(생성 파일).
    주소 ?step= 이 없거나 아직 안 열린 걸음이면 지금 걸음으로 */
 (function(){
   var m = /[?&]step=([A-F]\d\d)/.exec(location.search), cur = PlayPath.current(PlaySeed), manual = /[?&]set=/.test(location.search);
   var id = m && (manual || PlayPath.open(m[1], PlaySeed)) ? m[1] : (cur ? cur.id : PlayPath.steps()[PlayPath.steps().length - 1].id);
-  var Z = PlayPath.zone(id);
+  var Z = PlayPath.zone(id); window.__stepId = id;
   document.getElementById('title').textContent = Z.name;
   PlayStage.start({
     icon: Z.icon,

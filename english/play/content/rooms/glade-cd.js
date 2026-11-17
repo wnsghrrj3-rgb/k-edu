@@ -4,10 +4,19 @@
  *   그 주만의 맛: 방석이 하루에 하나씩 놓인다(손님 없는 찻집 → 오리 가족까지 와서 꽉 찬다) · 박자는 찻숟가락이 컵을 치는 소리.
  * ============================================================ */
 export default {
-  id: 'A02', light: 'day', fog: null, wind: 1,
+  id: 'A02',
+  /* 무대 여섯 칸(무대 설계 v1 §2 · 터 부품 상자 rooms/lands.js) — 깊은 숲 속 움푹한 자리 · 낙엽과 톱밥 · 줄기 벽 · 빛 기둥 · 굵고 곧은 큰 나무 · 갈색과 금빛 */
+  place: {
+    land:   { kind: 'hollow', rim: 0.8, pond: [7.3, -2.3, 0.9] },
+    floor:  { kind: 'litter' },
+    back:   { kind: 'trunkWall' },
+    sky:    { kind: 'canopyShafts' },
+    around: { kind: 'pillar', trees: { L: { leaf: ['stage-deep', 'a-leaf', 0.55], fruit: 'a-gold' }, R: { leaf: ['stage-deep', 'a-gold', 0.3], fruit: 'a-plum', bark: ['a-wood', 'ink', 0.12] } },
+      mushrooms: [[-6.9, 2.9, 1], [-6.4, 3.3, 0.7], [1.2, 3.4, 0.8], [7.2, 2.0, 0.9], [-2.6, -4.6, 1.1], [-2.1, -4.9, 0.7], [3.2, -4.7, 0.9]],
+      plants: [['fern', -7.6, -3.8, 1.2], ['fern', -6.2, -4.9, 1.0], ['fern', 3.6, -5.0, 1.1], ['fern', 7.9, -4.4, 1.2], ['fern', -8.0, 0.8, 0.9], ['fern', 8.2, 0.9, 1.0], ['fern', -4.6, 4.2, 0.8], ['mossrock', -7.4, 4.3, 0.8], ['mossrock', 2.6, -4.3, 0.7], ['stump', -1.9, -4.6, 1.0]] },
+    look:   { kind: 'canopyGold' }
+  },
   beat: { wave: 'sine', vol: 0.12, notes: [[1568, 0, 0.06], [2349, 0.01, 0.1]] },          /* 찻숟가락 땡 */
-  trees: { L: { leaf: 'a-leaf', fruit: 'a-gold' }, R: { leaf: ['a-leaf', 'warm', 0.25], fruit: 'a-plum' } },
-  ground: { creek: null, mushrooms: [[-6.9, 2.9, 1], [-6.4, 3.3, 0.7], [1.2, 3.4, 0.8], [7.2, 2.0, 0.9]] },
   words: {
     cat:  { make: 'animal', o: { body: 'a-gold', belly: 'a-cream', ear: 'tri', tail: 'thin', scale: 0.8, wag: 4 } },
     cup:  { make: 'cup', o: { tone: 'surface' }, y: 0.72 },
@@ -18,7 +27,7 @@ export default {
     duck: { make: 'bird', o: { body: 'a-cream', wing: ['a-cream', 'a-gold', 0.4], beak: 'warm', flat: true, swim: true }, y: 0.04, rot: Math.PI },
     desk: { make: 'desk', rot: -0.4 }
   },
-  decor(K, glade, PR){ const t = PR.teaTable(K); t.position.set(0.4, 0, -3.4); glade.add(t); const p = PR.pond(K, [7.3, -2.3], 0.9); glade.add(p); return { table: t, seats: t.userData.seats, life: t.userData.life }; },
+  decor(K, glade, PR, things, land){ const t = PR.teaTable(K); t.position.set(0.4, land.heightAt(0.4, -3.4), -3.4); glade.add(t); return { table: t, seats: t.userData.seats, life: t.userData.life }; },      /* 작은 연못은 땅(place.land.pond)이 판다 */
   stage: { empty: { actor: 'dad' }, stare: { actor: 'cat', from: [-1.5, 0.2] }, duckway: { actor: 'duck' }, toytrain: { actor: 'car' } },
   /* 방석 — 손님 없는 찻집이 하나씩 찬다 */
   onEvent(id, c){ const s = c.decor.seats; if (!s) return; const show = n => s.slice(0, n).forEach(x => { x.userData.cush.visible = true; });
