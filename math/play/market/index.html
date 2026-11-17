@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>항구 장터 · 수학 놀이터</title>
+<script src="/kedu_scope.js"></script>
+<script type="importmap">{ "imports": { "three": "/labs/vendor/three185/three.module.min.js", "three/addons/": "/labs/vendor/three185/addons/" } }</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+[hidden]{display:none!important}
+html{background:#8fd3f4}html,body{height:100%;overflow:hidden;font-family:"Pretendard","Noto Sans KR",system-ui,sans-serif;touch-action:manipulation}
+#app{position:relative;height:100%;max-width:1100px;margin:0 auto;display:flex;flex-direction:column}
+.sky{position:fixed;inset:0;background:linear-gradient(#6ec3f4 0%,#bfe9ff 30%,#35b0dc 30.2%,#2a9fd0 40%,#f2dfa8 40.2%,#ecd292 100%);z-index:-3}
+.deco{position:fixed;inset:0;z-index:-1;pointer-events:none}.deco span{position:absolute;font-size:3.4rem;filter:drop-shadow(0 6px 4px rgba(0,0,0,.12))}.deco .cl{animation:drift 18s ease-in-out infinite alternate}.deco .boat{animation:drift 9s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translateX(60px)}}
+@keyframes pop{40%{transform:scale(1.25)}}
+.hudgap{height:calc(50px + env(safe-area-inset-top,0px));flex:none}
+/* 가게 */
+.shop{flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:0 10px 10px;min-height:0}
+.roof{position:relative;height:clamp(40px,7.4vh,60px);margin:0 3%;border-radius:18px 18px 0 0;background:repeating-linear-gradient(90deg,#ff6b6b 0 9%,#fff 9% 18%);box-shadow:0 8px 0 rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center}
+.roof b{display:block;line-height:1.9;font-size:clamp(1rem,2.6vw,1.45rem);color:#7a2a12;font-weight:900;background:rgba(255,244,214,.94);padding:0 22px;border-radius:12px;white-space:nowrap}
+.roof.sign b{background:#7a4a1e;color:#fff4d6;border:4px solid #4a2c0a;box-shadow:0 4px 0 rgba(0,0,0,.25)}
+.roof.awning{height:clamp(52px,9.4vh,76px);background:repeating-linear-gradient(90deg,#2fb36b 0 9%,#fff 9% 18%)}
+.roof.awning::after{content:"";position:absolute;left:0;right:0;bottom:-14px;height:16px;background:radial-gradient(circle at 50% 0,#2fb36b 9px,transparent 10px) 0 0/22px 16px repeat-x}
+.roof .hang{position:absolute;top:30%;font-size:clamp(1.5rem,4vw,2.4rem);line-height:1;z-index:3;transform-origin:50% 0;filter:drop-shadow(0 4px 2px rgba(0,0,0,.2))}
+.roof .bell{left:-.55em}.roof .lamp{right:-.55em;animation:sway 3s ease-in-out infinite}
+.roof .bell.ring{animation:ring .7s}@keyframes ring{20%{transform:rotate(22deg)}45%{transform:rotate(-18deg)}70%{transform:rotate(10deg)}}@keyframes sway{50%{transform:rotate(6deg)}}
+.inside{position:relative;background:#fff4d6;border:6px solid #b9853b;border-top:0;margin:0 3%;padding:8px 12px 0;display:flex;flex-direction:column;gap:4px;min-height:0}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px}
+.hearts{display:flex;gap:2px;font-size:clamp(1rem,2.6vw,1.3rem);padding:3px 10px;background:rgba(255,255,255,.7);border-radius:999px}
+.hearts.up{animation:pop .45s}
+.hammer{position:relative;display:flex;align-items:center;gap:6px;background:#ffd35c;color:#3b2408;border:4px solid #fff;border-radius:999px;padding:4px 14px 4px 10px;font-family:inherit;font-weight:900;font-size:clamp(.95rem,2.5vw,1.15rem);box-shadow:0 5px 0 rgba(0,0,0,.18)}
+.hammer span{font-size:1.45em;line-height:1}
+.hammer.glow{animation:pop .8s infinite}.hammer:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.18)}
+.hammer.rest{background:#e9dcc0;color:#8a7350;box-shadow:none}
+.hammer i{display:flex;gap:3px}.hammer i u{width:9px;height:9px;border-radius:50%;background:#fff;border:2px solid #b99a60}.hammer i u.on{background:#ff8a3d;border-color:#c9731a}
+/* 줄 선 손님 */
+.line{display:flex;justify-content:center;align-items:flex-end;gap:clamp(6px,2vw,22px);min-height:clamp(150px,27vh,240px)}
+.guest{position:relative;width:clamp(96px,25vw,190px);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;transition:transform .5s,opacity .5s;cursor:pointer}
+.guest.out{transform:translateX(-120vw)}.guest.bye{transform:translateX(120vw);opacity:0}
+.guest .face{font-size:clamp(3rem,9vw,5.6rem);line-height:1;display:block;filter:drop-shadow(0 8px 6px rgba(0,0,0,.2));transition:transform .2s}
+.guest .mark{position:absolute;right:6%;bottom:22%;font-size:clamp(1rem,2.6vw,1.5rem);line-height:1}
+.guest.happy .face{animation:hopp .5s 2}.guest.sad .face{animation:shake .4s}
+@keyframes hopp{50%{transform:translateY(-22px)}}@keyframes shake{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+.guest.sel .face{transform:translateY(-6px) scale(1.08)}
+.guest.sel::after{content:"";position:absolute;bottom:4px;left:12%;right:12%;height:12px;border-radius:50%;background:rgba(255,179,71,.65);z-index:-1}
+.bubble{position:relative;margin-bottom:12px;background:#fff;border:4px solid #2b2f3a;border-radius:20px;padding:6px 10px;font-size:clamp(1.05rem,3vw,1.75rem);font-weight:900;color:#2b2f3a;line-height:1.25;text-align:center;box-shadow:0 5px 0 rgba(0,0,0,.15);max-width:100%;white-space:nowrap;word-break:keep-all;transition:opacity .2s,transform .2s}
+.bubble::after{content:"";position:absolute;left:50%;margin-left:-9px;bottom:-16px;border:9px solid transparent;border-top-color:#2b2f3a}
+.guest:not(.sel) .bubble{opacity:.62;transform:scale(.88);border-color:#7d8496}
+.bubble .pics{white-space:normal;display:inline-block;max-width:6.4em;font-size:.86em;letter-spacing:.02em}
+.bubble.say{white-space:normal}
+.bubble.wide{max-width:none;z-index:4;font-size:clamp(1rem,2.8vw,1.5rem)}
+.bubble small{display:block;font-size:.6em;color:#c0392b;white-space:normal}
+.bubble em{display:block;font-style:normal;font-size:.7em;color:#9a5b10}
+.wait{width:80%;height:8px;border-radius:999px;background:rgba(0,0,0,.12);margin-top:6px;overflow:hidden}.wait i{display:block;height:100%;width:100%;background:#35d07f;border-radius:999px}
+/* 계산대 */
+.counter{display:flex;align-items:center;justify-content:center;gap:clamp(6px,2vw,16px);padding:6px 0 8px}
+.pot{font-size:clamp(1.5rem,5.4vw,3rem);line-height:1;display:none}.has-pot .pot{display:block}
+.basket{position:relative;flex:0 1 auto;min-width:clamp(150px,40vw,400px);min-height:clamp(84px,15vh,130px);background:#d9a05b;border:5px solid #8a5a2b;border-radius:14px 14px 26px 26px;padding:6px 8px;display:grid;grid-template-columns:repeat(6,1fr);gap:2px;align-content:start;font-size:clamp(1.3rem,3.6vw,2.2rem);text-align:center;box-shadow:inset 0 -10px 0 rgba(0,0,0,.12);transition:min-width .4s,min-height .4s}
+.basket.big{min-width:clamp(160px,46vw,470px);min-height:clamp(96px,17vh,150px);background:repeating-linear-gradient(45deg,#d9a05b 0 10px,#c98d4a 10px 20px);grid-template-columns:repeat(8,1fr)}
+.basket span{cursor:pointer;animation:drop .22s}.basket .box{grid-column:span 5;background:#fff4d6;border:3px solid #8a5a2b;border-radius:10px;font-size:.55em;padding:2px 0;letter-spacing:.04em;line-height:1.2}
+@keyframes drop{from{transform:translateY(-30px) scale(.6);opacity:0}}
+.give{flex:none;background:#ffd35c;color:#3b2408;border:5px solid #fff;border-radius:50%;width:clamp(78px,13vw,116px);height:clamp(78px,13vw,116px);font-size:clamp(1.05rem,2.7vw,1.45rem);font-weight:900;box-shadow:0 8px 0 rgba(0,0,0,.2);font-family:inherit}
+.give:active{transform:translateY(5px);box-shadow:0 3px 0 rgba(0,0,0,.2)}.give.glow{animation:pop .7s infinite}
+.shelf{display:flex;gap:10px;justify-content:center;padding:8px 0 10px;border-top:6px solid #b9853b;background:#ffe9b8;margin:0 -12px;flex-wrap:wrap}
+.crate{position:relative;width:clamp(74px,14vw,120px);background:#c98b4a;border:5px solid #8a5a2b;border-radius:14px;padding:5px 4px 3px;text-align:center;font-size:clamp(2rem,5.6vw,3.2rem);box-shadow:0 6px 0 rgba(0,0,0,.2);font-family:inherit;line-height:1.1}
+.crate:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.2)}
+.crate small{display:block;font-size:.85rem;font-weight:900;color:#fff4d6}
+.crate.new{animation:pop .5s 3}
+/* 꾸미기 판 */
+.sheet{position:fixed;inset:0;z-index:30;background:rgba(10,20,40,.55);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .25s}
+.sheet.on{opacity:1;pointer-events:auto}
+.sheet .card{width:min(100%,640px);background:#fff4d6;border:6px solid #b9853b;border-radius:24px;padding:14px 14px 16px;box-shadow:0 12px 0 rgba(0,0,0,.25);transform:translateY(20px) scale(.96);transition:transform .3s cubic-bezier(.2,1.4,.4,1)}
+.sheet.on .card{transform:none}
+.sheet h2{display:flex;align-items:center;justify-content:center;gap:8px;font-size:clamp(1.3rem,4vw,1.8rem);font-weight:900;color:#5a3410;margin-bottom:12px}
+.items{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.item{display:flex;flex-direction:column;align-items:center;gap:4px;background:#fff;border:4px solid #e2c88e;border-radius:18px;padding:10px 4px 10px;font-family:inherit;color:#4a2c0a;cursor:pointer;box-shadow:0 6px 0 rgba(0,0,0,.12)}
+.item:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.12)}
+.item .pic{font-size:clamp(2.6rem,9vw,3.8rem);line-height:1.1}
+.item b{font-size:clamp(.95rem,3vw,1.2rem);font-weight:900;line-height:1.2;text-align:center;word-break:keep-all}
+.item .price{display:flex;align-items:center;gap:4px;background:#ffd35c;border-radius:999px;padding:2px 12px;font-weight:900;font-size:clamp(1rem,3vw,1.2rem)}
+.item.no{filter:grayscale(.75);opacity:.7}.item.no .price{background:#e6e0d2}
+.item .more{font-size:.85rem;font-weight:800;color:#9a5b10;min-height:1.2em}
+.item.no .more{color:#7a4a1e}
+.item.pick{border-color:#ff8a3d}
+.sheet .close{display:block;margin:14px auto 0;background:#fff;border:4px solid #b9853b;border-radius:999px;padding:6px 26px;font-family:inherit;font-weight:900;font-size:1.05rem;color:#5a3410}
+.sheet .empty{text-align:center;font-weight:900;font-size:1.2rem;color:#5a3410;padding:22px 0}
+/* M03 — 하루 · 값 · 거스름 · 빵집 */
+.roof.bakery{background:repeating-linear-gradient(90deg,#b0703a 0 9%,#fff4d6 9% 18%)}.roof.bakery.awning{background:repeating-linear-gradient(90deg,#b0703a 0 9%,#fff4d6 9% 18%)}.roof.bakery.awning::after{background:radial-gradient(circle at 50% 0,#b0703a 9px,transparent 10px) 0 0/22px 16px repeat-x}
+.bar .mid{display:flex;align-items:center;gap:8px}
+.pips{display:flex;gap:3px}.pips u{width:11px;height:11px;border-radius:50%;background:#fff;border:2px solid #c9a35c}.pips u.on{background:#7a4a1e;border-color:#7a4a1e}
+.till{display:flex;align-items:center;gap:4px;background:#fff;border:3px solid #e2c88e;border-radius:999px;padding:1px 10px 1px 6px;font-weight:900;color:#5a3410;font-size:clamp(.95rem,2.5vw,1.15rem)}.till span{font-size:1.25em;line-height:1}.till.up{animation:pop .4s}
+@media (max-width:520px){.hammer .t{display:none}.hearts{padding:3px 6px;font-size:.88rem}}
+.crate .tag{position:absolute;right:-8px;top:-10px;min-width:30px;height:30px;line-height:24px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff6b0,#ffc21a 60%,#c98a00);border:3px solid #fff;color:#4a2c0a;font-size:.95rem;font-weight:900;box-shadow:0 2px 0 rgba(0,0,0,.2)}
+.crate .stock{position:absolute;left:4px;top:3px;font-size:.78rem;font-weight:900;color:#fff4d6;background:rgba(0,0,0,.28);border-radius:999px;padding:0 6px;line-height:1.4}
+.crate.empty{filter:grayscale(1);opacity:.45}
+.btns{display:flex;flex-direction:column;gap:8px;align-items:center}
+.btns .give.long{font-size:clamp(.85rem,2.2vw,1.1rem);line-height:1.15}
+.btns .give.alt{background:#fff;font-size:clamp(.9rem,2.3vw,1.15rem)}
+.tray{flex:0 1 auto;min-width:clamp(150px,40vw,400px);min-height:clamp(84px,15vh,130px);background:#fff;border:5px solid #b9853b;border-radius:18px;padding:6px 10px;display:flex;flex-direction:column;gap:6px;justify-content:center}
+.tray .row{display:flex;flex-wrap:wrap;gap:5px;align-items:center;justify-content:center;min-height:42px}
+.tray .row.chg{border-top:3px dashed #e2c88e;padding-top:6px}
+.tray .row.chg:empty::before{content:"";width:40px;height:40px;border-radius:50%;border:3px dashed #e2c88e}
+.c1,.c10{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-weight:900;color:#5a3410;font-family:inherit;line-height:1;flex:none;box-shadow:0 3px 0 rgba(0,0,0,.18);background:radial-gradient(circle at 35% 30%,#fff6b0,#ffc21a 62%,#c98a00);border:3px solid #a8730a;cursor:pointer;padding:0}
+.c1{width:34px;height:34px;font-size:1rem}.c10{width:48px;height:48px;font-size:1.15rem;background:radial-gradient(circle at 35% 30%,#ffe9c2,#e8a35a 62%,#a8622a);border-color:#7a4214;color:#fff}
+.c1.in,.c10.in{animation:drop .22s}
+.drawer{display:none;gap:14px;justify-content:center;align-items:flex-end;padding:8px 0 10px;border-top:6px solid #b9853b;background:#e9d3a8;margin:0 -12px;flex-wrap:wrap}
+.paying-change .drawer{display:flex}.paying-change .shelf{display:none}
+.drawer .pile{display:flex;flex-wrap:wrap;gap:4px;max-width:46%;justify-content:center;background:#fff4d6;border:4px solid #8a5a2b;border-radius:14px;padding:6px}
+/* 아침·저녁 판 */
+.sheet.day .card{background:linear-gradient(#fff7e0,#ffe9b8)}
+.sheet.night .card{background:linear-gradient(#ffe0c2,#f7c6a3)}
+.shopsel{display:flex;gap:10px;justify-content:center;margin-bottom:10px}.shopsel button{font-family:inherit;font-weight:900;font-size:1.05rem;border:4px solid #e2c88e;background:#fff;border-radius:999px;padding:5px 16px;color:#5a3410}.shopsel button.on{border-color:#ff8a3d;background:#ffd35c}
+.memo{display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:4px dashed #c9a35c;border-radius:16px;padding:8px 12px;font-weight:900;font-size:clamp(1.15rem,3.8vw,1.6rem);color:#4a2c0a;margin-bottom:10px;word-break:keep-all;text-align:center}
+.load{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
+.boxes{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-content:flex-end;min-height:120px;background:rgba(255,255,255,.5);border-radius:14px;padding:8px}
+.bx{position:relative;font-size:clamp(1.9rem,6vw,2.6rem);line-height:1;background:none;border:0;padding:0 2px;cursor:pointer;font-family:inherit}
+.bx small{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);font-size:.72rem;font-weight:900;color:#fff;background:#7a4a1e;border-radius:999px;padding:0 5px;white-space:nowrap}
+.cart{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-height:120px;background:rgba(255,255,255,.5);border-radius:14px;padding:8px}
+.cart .on{display:flex;flex-wrap:wrap-reverse;gap:4px;justify-content:center;max-width:100%}
+.cart .cartpic{font-size:clamp(2.4rem,8vw,3.4rem);line-height:1}
+.meter{position:relative;height:22px;border-radius:999px;background:#fff;border:3px solid #c9a35c;margin:14px 4px 4px;overflow:visible}
+.meter i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:#7fd6a8;transition:width .3s}
+.meter b{position:absolute;top:-9px;bottom:-9px;width:4px;margin-left:-2px;background:#e5574d;border-radius:2px}
+.meter.ok i{background:#35d07f}
+.go-open{display:block;margin:14px auto 0;background:#ffd35c;color:#3b2408;border:5px solid #fff;border-radius:999px;padding:8px 34px;font-family:inherit;font-weight:900;font-size:clamp(1.2rem,4vw,1.6rem);box-shadow:0 7px 0 rgba(0,0,0,.2)}
+.go-open:active{transform:translateY(5px);box-shadow:0 2px 0 rgba(0,0,0,.2)}
+.eve{display:grid;grid-template-columns:1.4fr .8fr 1fr;gap:8px;align-items:end}
+.heap{position:relative;overflow:hidden;min-height:150px;background:rgba(255,255,255,.55);border-radius:16px;touch-action:none;cursor:pointer}
+.heap .c1{position:absolute;pointer-events:none}.heap .tens{position:absolute;left:6px;top:6px;right:6px;display:flex;flex-wrap:wrap;gap:4px;z-index:2}.heap .tens .c10{pointer-events:auto}
+.stack{display:flex;flex-direction:column-reverse;align-items:center;min-height:150px;justify-content:flex-start;background:rgba(255,255,255,.35);border-radius:16px;padding:6px 0;cursor:pointer}
+.stack .c1{margin-top:-20px;box-shadow:0 2px 0 rgba(0,0,0,.25)}.stack .c1:last-child{margin-top:0}
+.safe{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-height:150px;background:rgba(255,255,255,.55);border-radius:16px;padding:6px}
+.safe .pic{font-size:2.4rem;line-height:1}.safe .bund{display:flex;flex-wrap:wrap;gap:3px;justify-content:center}.safe .bund u{display:block;width:18px;height:26px;border-radius:6px;background:repeating-linear-gradient(#ffc21a 0 4px,#c98a00 4px 6px);text-decoration:none}.safe .bund u.l{width:14px;height:6px;border-radius:50%;background:#ffc21a;align-self:flex-end}
+.evsum{text-align:center;font-weight:900;color:#5a3410;font-size:clamp(1.3rem,4.4vw,2rem);margin-top:10px;min-height:1.4em}
+.evsum small{display:block;font-size:.55em;color:#7a4a1e}
+
+/* ── N05 3D 항구 장터: 같은 가게 화면 위에 3D 무대. 손님 얼굴·기다림 막대·지붕·바구니 그림은 3D 쪽이 맡는다. */
+html{background:#9fd8f0}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:none}
+.sky,.deco,.roof,.pot{display:none!important}
+#app{z-index:1;pointer-events:none}
+.shop{padding-bottom:0}
+.inside{pointer-events:auto;background:rgba(255,244,214,.9);border-bottom:0;border-radius:22px 22px 0 0}
+.line{position:fixed;inset:0;display:block;pointer-events:none;z-index:2;min-height:0}
+.guest{position:absolute;width:auto;transform:translate(-50%,-100%);transition:opacity .4s;pointer-events:none}
+.guest.out,.guest.bye{transform:translate(-50%,-100%);opacity:0}
+.guest .face,.guest .mark,.guest .wait{display:none}
+.guest .bubble{pointer-events:auto;cursor:pointer;margin-bottom:0}
+.guest.sel .face{transform:none}.guest.sel::after{display:none}
+.guest.sel .bubble{box-shadow:0 0 0 4px #ffd35c,0 6px 0 rgba(0,0,0,.18)}
+.guest.happy .bubble{animation:hopp .5s 2}.guest.sad .bubble{animation:shake .4s}
+@keyframes hopp{50%{transform:translateY(-12px)}}@keyframes shake{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+.counter{min-height:0;padding:4px 0 6px}
+#basket{display:none!important}
+.counter .btns{flex-direction:row}
+.counter .give{width:clamp(70px,10vw,96px);height:clamp(70px,10vw,96px);font-size:clamp(.95rem,2.2vw,1.2rem)}
+.shelf{padding:6px 0 8px}
+.crate{width:clamp(60px,11vw,96px);font-size:clamp(1.6rem,4.4vw,2.5rem)}
+.hint3{position:fixed;z-index:2;transform:translate(-50%,-100%);background:rgba(10,20,40,.6);color:#fff;font-weight:900;border-radius:999px;padding:1px 9px;font-size:.9rem;pointer-events:none;white-space:nowrap}
+#streak{top:calc(58px + env(safe-area-inset-top,0px))!important}
+#slots i{position:fixed;z-index:1;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:3px dashed rgba(255,255,255,.9);background:rgba(255,255,255,.18);pointer-events:none}
+#loading{position:fixed;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;z-index:40;background:#9fd8f0;color:#1d4a63;font-weight:900;font-size:1.3rem;transition:opacity .5s}
+</style>
+</head>
+<body data-mode="3d">
+<canvas id="c"></canvas>
+<div class="sky"></div><div class="deco"><span data-art="deco.sun" style="left:8%;top:8%;font-size:4.6rem"></span><span class="cl" data-art="deco.cloud" style="left:30%;top:11%"></span><span class="cl" data-art="deco.cloud" style="left:66%;top:6%;animation-delay:-9s"></span><span data-art="deco.palm" style="right:5%;top:14%;font-size:5rem"></span><span data-art="deco.palm" style="left:3%;top:21%;font-size:4rem"></span><span class="boat" data-art="deco.sailboat" style="left:74%;top:21%"></span></div>
+<div id="app">
+  <div class="hudgap"></div>
+  <div class="shop" id="shop">
+    <div class="roof" id="roof"><b id="shopName">과일 가게</b><span class="hang bell" id="bell" data-art="shop.bell" hidden></span><span class="hang lamp" id="lamp" data-art="shop.lamp" hidden></span></div>
+    <div class="inside">
+      <div class="bar"><div class="hearts" id="hearts"></div><div class="mid"><div class="pips" id="dayPips"></div><div class="till" id="till" hidden><span data-art="shop.till"></span><b id="tillN">0</b></div></div><button class="hammer" id="hammer"><span data-art="shop.hammer"></span><b class="t">가게 꾸미기</b><i id="restPips"></i></button></div>
+      <div class="line" id="line"></div>
+      <div class="counter"><span class="pot" data-art="shop.pot"></span><div class="basket" id="basket"></div><div class="tray" id="coinTray" hidden><div class="row" id="trayPaid"></div><div class="row chg" id="trayChg" hidden></div></div><div class="btns"><button class="give" id="give">여기요!</button><button class="give" id="take" hidden>받기</button><button class="give alt" id="more" hidden>더<br>줘야지?</button></div><span class="pot" data-art="shop.pot"></span></div>
+      <div class="shelf" id="shelf"></div>
+      <div class="drawer" id="drawer"></div>
+    </div>
+  </div>
+</div>
+<div class="sheet" id="sheet"><div class="card" id="sheetCard"></div></div>
+<div id="loading">장터로 가는 중…</div>
+<script type="module" src="../shop/shop.js?v=14"></script>
+<script type="module" src="./scene3d.js?v=2"></script>
+</body>
+</html>

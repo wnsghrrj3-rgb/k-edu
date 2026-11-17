@@ -9,8 +9,8 @@
  * 화면은 기성 3D 재료(Quaternius Pirate Kit, CC0)만 — 판자·받침·기둥은 선착장 모형을 조각으로 나눠 그대로 쓴다(assets/CREDITS.md). */
 import { createStage, THREE, LITE, CALM, sleep } from '../common/stage3d.js?v=1';
 import * as A from '../common/ask.js?v=1';
-import * as R from './rules.js?v=5';
-import { wallet, audio, tone } from '../common/kit.js?v=3';
+import * as R from './rules.js?v=6';
+import { wallet, audio, tone } from '../common/kit.js?v=4';
 
 // ── 내가 정한 수치(준호가 보고 바꾼다)
 const T = { PICK_PX: 70, DECK: 1.0, SLOT: 0.4, PLANK_W: 1.3, RAFT_GAP: .36, RAFT_STAG: .16, RAFT_SPACE: .9, SLOTS_SHOWN: false,      // 뗏목 판자는 촘촘히·엇갈리게(세어야 한다)
@@ -19,7 +19,8 @@ const T = { PICK_PX: 70, DECK: 1.0, SLOT: 0.4, PLANK_W: 1.3, RAFT_GAP: .36, RAFT
   PLANK_MS: 240, RAFT_Z: 3.1, RAFT_Y: .2, DROP_X: [-0.7, 4.7], DROP_Z: 1.9, START_X: -1.25, END_X: 5.3,
   INTRO_HOLD: [1500, 700], INTRO_MS: [3400, 2200], SINGLE_MS: 1700, HINT_MS: 5000, HOME_MAX: 6, PILE_MAX: 12, GHOST: .5, LAND: '#a59a92',
   NIGHT: { HEMI: .32, SUN: .25, SKY: ['#0d1630', '#24345c', '#3b4f7a'], FOG: 0x1c2a48, GLOW: .55, LIGHT: 6 },   // 밤 다리: 빛의 세기 · 하늘 · 놓인 판자의 빛 · 등불 빛
-  FALL_FROM: -6.5, TWIN_ZOOM: 1.32, BIG_ZOOM: 1.0,                   // 무너지는 다리가 시작하는 곳 · 쌍둥이 틈일 때 카메라를 물리는 정도
+  FALL_FROM: -6.5, TWIN_ZOOM: 1.32, BIG_ZOOM: 1.0, LONG_ZOOM: 1.5, PILLAR: .5,   // 스무 칸 다리: 카메라를 물리는 정도 · 가운데 돌기둥 자리(판자 칸 사이 너비)
+                    // 무너지는 다리가 시작하는 곳 · 쌍둥이 틈일 때 카메라를 물리는 정도
   TINT: ['#ffd49a', '#a9dcff', '#c8f2ae', '#ffb9cf', '#dcc6ff', '#fff0a0'] };   // 주민 빛깔(앤·헨리 모형에 번갈아)
 const $ = id => document.getElementById(id), HOME = 2;
 const EXTRA = ['Ship_Large', 'Characters_Shark'];   /* 있으면 쓰는 모형: 해적선(돛 달린 큰 배) · 상어 */
@@ -35,18 +36,20 @@ const SAVE = wallet.island('bridge'); SAVE.saved = Math.max(0, SAVE.saved | 0); 
 const PLAZA = wallet.island('plaza'); PLAZA.map = Math.max(0, PLAZA.map | 0);
 const S = { voy: null, gi: 0, filled: 0, fill: [], gx: [], dest: 0, bridge: [], ghosts: [], rafts: [], busy: true, ready: false, intro: false, skip: false, drag: null, anne: null, guest: null, people: stage.people, home: [], pile: [], rigs: [], tweens: stage.tweens, t: 0, log: [], drops: 0, voyages: 0, ev: null, clock: 0, rise: 0, streak: 0, missing: false, barrels: [], loot: [], fish: 0, kit: null, chaser: null, buckets: [], course: null, crumble: [], front: -99, nightK: 0, loaded: 0, placed: 0, lost: 0, ask: null, signs: null, mapGot: 0 };
 const ox = k => S.gx[k] != null ? S.gx[k] : k * T.SEG;
+/* 틈 k 의 칸 수(10 · 스무 칸 다리 20)와 다리 길이(10칸 = 4, 20칸 = 8 + 돌기둥) */
+const slotsOf = k => (S.voy && S.voy.gaps[k] && S.voy.gaps[k].slots) || R.SLOTS, span = k => slotsOf(k) > R.SLOTS ? R.SLOTS * 2 * T.SLOT + T.PILLAR : 4;
 window.__bridge = { S, R, T, SAVE, ox, cam, sea, CALM };
 
 let dk = null;   /* 선착장 조각(판자·받침·기둥) */
 async function build(){
-  const names = ['Environment_Dock', 'Characters_Anne', 'Characters_Henry', 'Environment_Cliff1', 'Environment_Cliff4', 'Environment_PalmTree_1', 'Environment_PalmTree_3', 'Environment_Rock_1', 'Environment_Rock_2', 'Environment_Rock_4', 'Prop_Barrel', 'Prop_Bucket_Fishes', 'Ship_Small'];
-  const [dock, anne, henry, cliffL, cliffR, palm1, palm3, rock1, rock2, rock4, barrel, bucket, ship] = await Promise.all(names.map(load));
+  const names = ['Environment_Dock', 'Characters_Anne', 'Characters_Henry', 'Environment_Cliff1', 'Environment_Cliff4', 'Environment_PalmTree_1', 'Environment_PalmTree_3', 'Environment_Rock_1', 'Environment_Rock_2', 'Environment_Rock_4', 'Prop_Barrel', 'Prop_Bucket_Fishes', 'Ship_Small', 'Environment_Rock_5'];
+  const [dock, anne, henry, cliffL, cliffR, palm1, palm3, rock1, rock2, rock4, barrel, bucket, ship, pillar] = await Promise.all(names.map(load));
   const opt = n => load(n).catch(() => null), [shipL, shark] = await Promise.all(EXTRA.map(opt));   /* 꾸러미에서 더 꺼낼 것(내려받지 못했으면 없이 돎) */
   dk = stage.dockKit(dock); S.mat = dk.mat; S.plankGeo = dk.planks; S.plankH = dk.plankH;
   S.ghostMat = S.mat.clone(); S.ghostMat.transparent = true; S.ghostMat.opacity = T.GHOST; S.ghostMat.depthWrite = false; S.ghostMat.emissive = new THREE.Color('#ffffff'); S.ghostMat.emissiveIntensity = .3;
   S.glowMat = S.mat.clone(); S.glowMat.emissive = new THREE.Color('#ffc86a'); S.glowMat.emissiveIntensity = T.NIGHT.GLOW;
   S.landMat = S.mat.clone(); S.landMat.color.set(T.LAND);
-  S.kit = { dock, barrel, bucket, ship, shipL, shark, rock1, rock2, rock4, palm1, palm3, cliffR };
+  S.kit = { dock, barrel, bucket, ship, shipL, shark, rock1, rock2, rock4, palm1, palm3, cliffR, pillar };
   // 우리 섬(왼쪽) — 늘 그대로
   put(cliffL, -7.4, 0, -2.2, 1.0, .4); put(palm1, -5.8, 1.9, -2.6, 1.0, .5); put(rock2, -4.6, 0, 1.4, 1.3, .3); put(rock1, -5.4, 0, 2.8, 1.2); put(rock1, 1.6, 0, -3.6, 1.0, 2); put(ship, -8, 0, -17, .9, .5);
   S.chaser = put(shipL || ship, -6, 0, T.SHIP_Z, shipL ? .55 : T.SHIP_S, T.SHIP_RY); S.chaser.visible = false;
@@ -68,46 +71,53 @@ const go = (p, x, run = false) => stage.go(p, x, run ? runSpeed() : T.WALK, run)
 const homeSpot = i => new THREE.Vector3(-2.3 - (i >> 1) * .62, standY(), i % 2 ? .55 : -.55);
 
 // ── 판자
-const slotX = (k, i) => ox(k) + T.SLOT / 2 + i * T.SLOT, plankY = () => T.DECK - S.plankH / 2;
+const slotX = (k, i) => ox(k) + T.SLOT / 2 + i * T.SLOT + (i >= R.SLOTS ? T.PILLAR : 0), plankY = () => T.DECK - S.plankH / 2;
 function plank(i, mat = S.mat){ const m = new THREE.Mesh(S.plankGeo[Math.abs(i) % S.plankGeo.length], mat); m.scale.x = T.PLANK_W; m.castShadow = mat !== S.ghostMat; m.receiveShadow = true; m.userData.k = i; scene.add(m); return m; }
 function pileAdd(p){ const i = S.pile.length; p.rotation.set(0, Math.PI / 2, 0); p.position.set(-4.3 + (i % 2) * .08, T.DECK + S.plankH * (Math.floor(i / 2) + .5), i % 2 ? .22 : -.22); p.scale.set(T.PLANK_W, 1, .5); S.pile.push(p); }
 
 // ── 길(코스): 틈 자리 · 양쪽 땅(조각으로 지어 무너질 수 있게) · 쉬어 가는 바위 · 통 · 건너편 섬. 길마다 새로 짓는다(쌍둥이 틈 · 큰 길).
-function layoutGaps(ev){ const n = ev.gaps, gx = []; let x = 0, twinAt = -1; if (ev.twin) twinAt = Math.floor(Math.random() * (n - 1));
-  for (let k = 0; k < n; k++) { gx.push(x); x += k === twinAt ? 4 : T.SEG; } return { gx, twinAt }; }
+function layoutGaps(ev, longAt = -1){ const n = ev.gaps, gx = []; let x = 0, twinAt = -1; if (ev.twin) twinAt = Math.floor(Math.random() * (n - 1));
+  for (let k = 0; k < n; k++) { gx.push(x); x += (k === twinAt ? 4 : T.SEG) + (k === longAt ? R.SLOTS * T.SLOT + T.PILLAR : 0); } return { gx, twinAt }; }
 function landDock(g, cx){ const y0 = T.DECK - 0.49; for (const p of dk.frame) { const m = new THREE.Mesh(p.geo, S.landMat); m.position.set(cx, y0, 0); g.add(stage.shadows(m)); }
   dk.planks.forEach((geo, i) => { const m = new THREE.Mesh(geo, S.landMat); const c = dk.plankAt[i]; m.position.set(cx + c.x, y0 + c.y, c.z); m.castShadow = m.receiveShadow = true; g.add(m); S.crumble.push({ m, x: m.position.x }); }); }
 function buildCourse(){ if (S.course) { scene.remove(S.course); } const g = new THREE.Group(); scene.add(g); S.course = g; S.crumble = []; const K = S.kit, n = S.gx.length, y0 = T.DECK - 0.49;
   const add = (o, x, y, z, s = 1, ry = 0) => { const c = o.scene.clone(); c.position.set(x, y, z); c.scale.setScalar(s); c.rotation.y = ry; g.add(stage.shadows(c)); return c; };
   landDock(g, -5); landDock(g, -3);
-  for (let k = 0; k < n; k++) { const before = k === 0 || ox(k) - ox(k - 1) > 4, after = k === n - 1 || ox(k + 1) - ox(k) > 4;
-    if (before) landDock(g, ox(k) - 1); if (after) landDock(g, ox(k) + 5);
-    for (const cx of [ox(k) + 1, ox(k) + 3]) for (const p of dk.frame) { const m = new THREE.Mesh(p.geo, S.mat); m.position.set(cx, y0, 0); g.add(stage.shadows(m)); }
-    if (k < n - 1 && after) { const x = ox(k) + 6; add(K.rock2, x - .2, -.2, -2.3, 2.0, k * 1.3); add(K.rock4, x + 1.1, 0, -1.6, 1.5, 1 + k); add(k % 2 ? K.palm3 : K.palm1, x - .1, .9, -2.5, .8, k * 2); add(K.rock1, x + 3.6, 0, -3.9, 1.0, k + 2); } }
+  for (let k = 0; k < n; k++) { const before = k === 0 || ox(k) - ox(k - 1) > span(k - 1), after = k === n - 1 || ox(k + 1) - ox(k) > span(k), L = span(k);
+    if (before) landDock(g, ox(k) - 1); if (after) landDock(g, ox(k) + L + 1);
+    const long = slotsOf(k) > R.SLOTS, half = R.SLOTS * T.SLOT + T.PILLAR;   /* 스무 칸: 받침 넷 + 가운데 돌기둥 */
+    if (long) { const c = K.pillar.scene.clone(); c.position.set(ox(k) + R.SLOTS * T.SLOT + T.PILLAR / 2, .5, 0); c.scale.set(.95, 3, .95);   /* 돌기둥은 판자 위로 조금 솟아 열 칸과 열 칸을 가른다 */ g.add(stage.shadows(c)); }
+    for (const cx of long ? [ox(k) + 1, ox(k) + 3, ox(k) + half + 1, ox(k) + half + 3] : [ox(k) + 1, ox(k) + 3]) for (const p of dk.frame) { const m = new THREE.Mesh(p.geo, S.mat); m.position.set(cx, y0, 0); g.add(stage.shadows(m)); }
+    if (k < n - 1 && after) { const x = ox(k) + L + 2; add(K.rock2, x - .2, -.2, -2.3, 2.0, k * 1.3); add(K.rock4, x + 1.1, 0, -1.6, 1.5, 1 + k); add(k % 2 ? K.palm3 : K.palm1, x - .1, .9, -2.5, .8, k * 2); add(K.rock1, x + 3.6, 0, -3.9, 1.0, k + 2); } }
   const D = S.dest; landDock(g, D + 2.6); add(K.cliffR, D + 5.8, 0, -1.8, .82, -.6); add(K.palm3, D + 4.4, 2.6, -3.0, 1.0, 2.0); add(K.palm1, D + 6.2, 2.0, .6, .8, 1.2); add(K.rock4, D + 2.6, 0, 1.9, 1.4, 1); add(K.rock4, D + 3.8, 0, 4.4, 1.1, .7);
   add(K.barrel, D + 3.2, T.DECK, -.6, .7, .4); add(K.bucket, D + 3.3, T.DECK, .6, .6, -.8);
-  for (const b of S.barrels) if (b) scene.remove(b); S.barrels = []; for (let k = 0; k < n - 1; k++) S.barrels.push(ox(k + 1) - ox(k) > 4 ? put(K.barrel, ox(k) + 6.2, T.DECK, -.6, .7, k + .4) : null); }
+  for (const b of S.barrels) if (b) scene.remove(b); S.barrels = []; for (let k = 0; k < n - 1; k++) S.barrels.push(ox(k + 1) - ox(k) > span(k) ? put(K.barrel, ox(k) + span(k) + 2.2, T.DECK, -.6, .7, k + .4) : null); }
 
 // ── 한 번의 길 차리기
-const active = () => { const k = S.gi; return S.voy && k + 1 < S.voy.gaps.length && ox(k + 1) - ox(k) <= 4 ? [k, k + 1] : [k]; };   /* 쌍둥이 틈이면 지금 틈 둘 */
+const active = () => { const k = S.gi; return S.voy && k + 1 < S.voy.gaps.length && ox(k + 1) - ox(k) <= span(k) ? [k, k + 1] : [k]; };   /* 쌍둥이 틈이면 지금 틈 둘 */
 function newVoyage(){ for (const b of S.bridge) for (const p of b) if (p) scene.remove(p); for (const g of S.ghosts) for (const p of g) if (p) scene.remove(p); for (const r of S.rafts) { for (const p of r.planks) scene.remove(p); scene.remove(r.group); }
-  S.ev = R.event(SAVE.saved, Math.random, { shark: !!S.kit.shark }); const L = layoutGaps(S.ev); S.gx = L.gx; S.dest = ox(S.ev.gaps - 1) + 4.4;
-  S.voy = R.voyage(Math.random, { first: SAVE.saved === 0 && S.voyages === 0, prev: S.voy && S.voy.gaps.length === S.ev.gaps ? S.voy : null, gaps: S.ev.gaps }); S.voyages++; S.gi = 0; S.rafts = []; S.bridge = []; S.ghosts = [];
+  S.ev = R.event(SAVE.saved, Math.random, { shark: !!S.kit.shark });
+  S.voy = R.voyage(Math.random, { first: SAVE.saved === 0 && S.voyages === 0, prev: S.voy && S.voy.gaps.length === S.ev.gaps ? S.voy : null, gaps: S.ev.gaps, long: S.ev.long, longAt: S.ev.long && SAVE.saved === R.MIX.FIRST.long ? 0 : undefined });
+  const L = layoutGaps(S.ev, S.voy.long != null ? S.voy.long : -1); S.gx = L.gx; S.dest = ox(S.ev.gaps - 1) + span(S.ev.gaps - 1) + .4; S.voyages++; S.gi = 0; S.rafts = []; S.bridge = []; S.ghosts = [];
   const nN = S.ev.night; S.nightGaps = new Set(nN ? (SAVE.saved === R.MIX.FIRST.night ? [1] : S.voy.gaps.map((_, i) => i).sort(() => Math.random() - .5).slice(0, nN)) : []);
   buildCourse();
-  S.voy.gaps.forEach((g, k) => { const b = Array(R.SLOTS).fill(null), gh = Array(R.SLOTS).fill(null);
-    for (let i = 0; i < R.SLOTS; i++) { if (i < g.have) { b[i] = plank(i + k * 3); b[i].position.set(slotX(k, i), plankY(), 0); } else if (T.SLOTS_SHOWN) { gh[i] = plank(i, S.ghostMat); gh[i].position.set(slotX(k, i), plankY() - .01, 0); } } S.bridge.push(b); S.ghosts.push(gh); });
+  S.voy.gaps.forEach((g, k) => { const N = slotsOf(k), b = Array(N).fill(null), gh = Array(N).fill(null);
+    for (let i = 0; i < N; i++) { if (i < g.have) { b[i] = plank(i + k * 3); b[i].position.set(slotX(k, i), plankY(), 0); } else if (T.SLOTS_SHOWN) { gh[i] = plank(i, S.ghostMat); gh[i].position.set(slotX(k, i), plankY() - .01, 0); } } S.bridge.push(b); S.ghosts.push(gh); });
   S.fill = S.voy.gaps.map(g => g.have); S.filled = S.fill[0]; S.voy.cargo.forEach((n, j) => raft(n, j)); S.loaded = S.voy.cargo.reduce((a, b) => a + b, 0); S.placed = 0; S.lost = 0; layout(0);
   S.anne.obj.position.set(T.START_X, standY(), 0); S.anne.obj.visible = true; stage.face(S.anne, 1); stage.play(S.anne, 'Idle');
   if (S.guest) stage.unperson(S.guest); S.guest = resident(SAVE.saved); S.guest.obj.position.set(S.dest + 2.2, standY(), -.5); stage.face(S.guest, -1); stage.play(S.guest, 'Wave');
   for (const o of S.loot) scene.remove(o); S.loot = []; S.fish = 0; S.mapGot = 0;
   S.clock = 0; S.rise = 0; S.front = -99; S.missing = false; S.chaser.visible = S.ev.kind === 'ship' && !CALM; A.flames(S.streak);
-  S.signs = A.signs(S.voy.gaps.length); A.trayClear(); S.ask = null; S.qkind = R.askKind(S.voyages);
-  S.log.push({ voyage: S.voy.gaps.map(g => g.have), cargo: S.voy.cargo.slice(), ev: S.ev.kind + (S.ev.drift ? '+drift' : '') + (S.ev.night ? '+night' + S.ev.night : '') + (S.ev.twin ? '+twin' : '') + (S.ev.shark ? '+shark' : '') + (S.ev.big ? '+big' : ''), night: [...S.nightGaps] }); }
+  S.signs = A.signs(S.voy.gaps.reduce((a, g) => a + (g.slots > R.SLOTS ? 2 : 1), 0)); A.trayClear(); S.ask = null; S.qkind = R.askKind(S.voyages);
+  S.log.push({ voyage: S.voy.gaps.map(g => g.have), cargo: S.voy.cargo.slice(), ev: S.ev.kind + (S.ev.drift ? '+drift' : '') + (S.ev.night ? '+night' + S.ev.night : '') + (S.ev.twin ? '+twin' : '') + (S.ev.shark ? '+shark' : '') + (S.ev.big ? '+big' : '') + (S.voy.long != null ? '+long' : ''), night: [...S.nightGaps] }); }
 
 // ── 수 팻말(틈마다 빈 칸 수, 놓을수록 준다) · 밤 다리는 팻말이 꺼지고 놓인 판자 쪽 기둥에 「놓인 수」만
-const roomOf = k => R.SLOTS - S.fill[k];
-function signsDraw(){ if (!S.signs) return; S.signs.forEach((e, k) => { const room = roomOf(k), have = S.fill[k], done = k < S.gi && !active().includes(k);
+const roomOf = k => slotsOf(k) - S.fill[k];
+function signsDraw(){ if (!S.signs) return; let si = 0; S.voy.gaps.forEach((g, k) => { const e = S.signs[si++], room = roomOf(k), have = S.fill[k], done = k < S.gi && !active().includes(k);
+  if (slotsOf(k) > R.SLOTS) { const e2 = S.signs[si++], [a, b] = R.tens(have, slotsOf(k)), y = T.DECK + .95;   /* 스무 칸: 「10까지 3」 · 「그다음 10」 */
+    if (done || !room) { A.signDraw(e, null); A.signDraw(e2, null); return; }
+    A.signDraw(e, a ? stage.screenOf(new THREE.Vector3((slotX(k, have) + slotX(k, R.SLOTS - 1)) / 2, y, 0)) : null, a, '', '10까지');
+    A.signDraw(e2, stage.screenOf(new THREE.Vector3((slotX(k, Math.max(R.SLOTS, have)) + slotX(k, slotsOf(k) - 1)) / 2, y, 0)), b, '', a ? '그다음' : '20까지'); return; }
   if (!room || done) { A.signDraw(e, null); return; }
   if (S.nightGaps.has(k)) { A.signDraw(e, stage.screenOf(new THREE.Vector3(ox(k) + Math.max(.4, have / 2 * T.SLOT), T.DECK + .95, 0)), have, 'night', '놓인'); return; }
   A.signDraw(e, stage.screenOf(new THREE.Vector3(ox(k) + (have + R.SLOTS) / 2 * T.SLOT, T.DECK + .95, 0)), room); }); }
@@ -115,24 +125,25 @@ function signsDraw(){ if (!S.signs) return; S.signs.forEach((e, k) => { const ro
 function raft(n, j, single = false){ const g = new THREE.Group(); scene.add(g); const r = { n, group: g, home: new THREE.Vector3(0, T.RAFT_Y, T.RAFT_Z), planks: [], used: false, single, ph: j * 1.7 };
   for (let k = 0; k < n; k++) { const p = plank(k + j * 3); scene.remove(p); p.position.set((k - (n - 1) / 2) * T.RAFT_GAP, 0, (k % 2 ? 1 : -1) * T.RAFT_STAG * (n > 1 ? 1 : 0)); g.add(p); r.planks.push(p); } S.rafts.push(r); return r; }
 const live = () => S.rafts.filter(r => !r.used);
-const spanMid = () => { const a = active(); return (ox(a[0]) + ox(a[a.length - 1]) + 4) / 2; };
+const spanMid = () => { const a = active(), l = a[a.length - 1]; return (ox(a[0]) + ox(l) + span(l)) / 2; };
 /** 남은 뗏목을 지금 틈 앞 물 위에 나란히 세운다(ms 가 있으면 물결을 타고 옮겨 간다). */
 function layout(ms){ const rs = live(), w = rs.map(r => r.n * T.RAFT_GAP), total = w.reduce((a, b) => a + b, 0) + (rs.length - 1) * T.RAFT_SPACE; let x = spanMid() - total / 2; const jobs = [];
   rs.forEach((r, i) => { r.home.set(x + w[i] / 2, T.RAFT_Y, T.RAFT_Z); x += w[i] + T.RAFT_SPACE; if (S.drag && S.drag.r === r) return; if (!ms) r.group.position.copy(r.home); else if (Math.abs(r.group.position.x - r.home.x) + Math.abs(r.group.position.z - r.home.z) > .02) jobs.push(stage.tween(r.group, { 'position.x': r.home.x, 'position.y': r.home.y, 'position.z': r.home.z }, ms)); }); return Promise.all(jobs); }
 /** 들어갈 뗏목이 없으면 낱 판자 한 장이 떠내려온다(지금 열린 틈 가운데 하나라도 들어갈 뗏목이 있으면 오지 않는다). */
-function single(){ const rooms = active().map(roomOf).filter(Boolean); if (!rooms.length || live().some(r => rooms.some(m => r.n <= m))) return; const r = raft(1, S.rafts.length, true); S.loaded++; r.group.position.set(ox(S.gi) - 5.5, T.RAFT_Y, T.RAFT_Z + .5); S.log.push({ single: true }); return layout(T.SINGLE_MS); }
+function single(){ const rooms = active().map(roomOf).filter(Boolean); if (!rooms.length || live().some(r => rooms.some(m => r.n <= m))) return; const r = raft(1, S.rafts.length, true); S.loaded++; r.group.position.set(ox(S.gi) - 5.5, T.RAFT_Y, T.RAFT_Z + .5); S.log.push({ single: true, rooms, cargo: live().filter(x => x !== r).map(x => x.n) }); return layout(T.SINGLE_MS); }
 
 const wait = async ms => { for (let t = 0; t < ms && !S.skip; t += 50) await sleep(50); };
 // ── 떠나는 장면: 건너편에서 누가 손을 흔든다 → 끊어진 다리를 따라 돌아와 앤 앞에 선다(화면을 누르면 건너뜀)
-async function intro(){ S.busy = true; S.intro = true; S.skip = false; const f = S.voyages > 1 ? 1 : 0; cam.x = S.dest + .6; cam.wide = 1; await wait(T.INTRO_HOLD[f]); if (!S.skip) await stage.tween(cam, { x: camHome() }, T.INTRO_MS[f] * (S.ev.big ? 1.5 : 1)); cam.x = camHome(); cam.wide = active().length > 1 ? T.TWIN_ZOOM : 1; S.intro = false; S.busy = false; S.idle = S.t; single(); }
-const camHome = () => active().length > 1 ? spanMid() : ox(S.gi) + HOME;
+async function intro(){ S.busy = true; S.intro = true; S.skip = false; const f = S.voyages > 1 ? 1 : 0; cam.x = S.dest + .6; cam.wide = 1; await wait(T.INTRO_HOLD[f]); if (!S.skip) await stage.tween(cam, { x: camHome() }, T.INTRO_MS[f] * (S.ev.big ? 1.5 : 1)); cam.x = camHome(); cam.wide = camWide(); S.intro = false; S.busy = false; S.idle = S.t; single(); }
+const camHome = () => active().length > 1 || slotsOf(S.gi) > R.SLOTS ? spanMid() : ox(S.gi) + HOME;
+const camWide = () => active().length > 1 ? T.TWIN_ZOOM : slotsOf(S.gi) > R.SLOTS ? T.LONG_ZOOM : 1;
 
 // ── 뗏목을 틈에 놓았다(쌍둥이 틈이면 놓은 쪽 틈에)
-async function drop(r, k = S.gi){ S.busy = true; S.drops++; hintOff(); audio(); const out = R.place(S.fill[k], r.n), wp = new THREE.Vector3(); S.log.push({ gap: k, drop: r.n, kind: out.kind, single: r.single });
+async function drop(r, k = S.gi){ S.busy = true; S.drops++; hintOff(); audio(); const out = R.place(S.fill[k], r.n, slotsOf(k)), wp = new THREE.Vector3(); S.log.push({ gap: k, drop: r.n, kind: out.kind, single: r.single });
   r.used = true; const moved = r.planks.slice(), night = S.nightGaps.has(k);
   for (let j = 0; j < moved.length; j++) { const p = moved[j]; p.getWorldPosition(wp); r.group.remove(p); scene.add(p); p.position.copy(wp); p.rotation.set(0, 0, 0);
     if (j < out.put) { const i = S.fill[k] + j; S.bridge[k][i] = p; if (night) p.material = S.glowMat; if (S.ghosts[k][i]) { scene.remove(S.ghosts[k][i]); S.ghosts[k][i] = null; } await stage.tween(p, { 'position.x': slotX(k, i), 'position.y': plankY(), 'position.z': 0 }, T.PLANK_MS); tone(300 + i * 40, .09, 'triangle', .1); }
-    else { S.lost++; await stage.tween(p, { 'position.x': slotX(k, R.SLOTS - 1) + .6 + (j - out.put) * .3, 'position.y': T.DECK + .4, 'position.z': .2 }, T.PLANK_MS); stage.tween(p, { 'position.y': -1.4, 'position.z': 1.1, 'rotation.z': -1.4, 'rotation.x': .6 }, 900, t => t * t).then(() => scene.remove(p)); tone(180, .3, 'sine', .1, 0, 90); } }
+    else { S.lost++; await stage.tween(p, { 'position.x': slotX(k, slotsOf(k) - 1) + .6 + (j - out.put) * .3, 'position.y': T.DECK + .4, 'position.z': .2 }, T.PLANK_MS); stage.tween(p, { 'position.y': -1.4, 'position.z': 1.1, 'rotation.z': -1.4, 'rotation.x': .6 }, 900, t => t * t).then(() => scene.remove(p)); tone(180, .3, 'sine', .1, 0, 90); } }
   scene.remove(r.group); S.fill[k] = out.filled; S.placed += out.put; S.filled = S.fill[S.gi]; layout(500); if (S.missing) return out;
   if (out.kind === 'fit') { S.streak++; S.clock = Math.max(0, S.clock - R.PRESS.BACK); stage.tween(cam, { zoom: .93 }, 120).then(() => stage.tween(cam, { zoom: 1 }, 260)); } else S.streak = 0; A.flames(S.streak);
   const startX = ox(S.gi) + T.START_X;
@@ -140,8 +151,8 @@ async function drop(r, k = S.gi){ S.busy = true; S.drops++; hintOff(); audio(); 
   // 열째 판자: 다리가 이어졌다 — 판자가 차례로 통 튄다
   S.bridge[k].forEach((p, i) => { setTimeout(() => { stage.tween(p, { 'position.y': plankY() + .1 }, 90).then(() => stage.tween(p, { 'position.y': plankY() }, 140)); tone((392 + i * 44) * (1 + .06 * Math.min(S.streak, T.STREAK_MAX)), .07, 'triangle', .07); }, i * 45); });
   A.trayAdd(S.voy.gaps[k].need); const act = active(); if (act.some(j => roomOf(j) > 0)) { await sleep(400); S.busy = false; S.idle = S.t; single(); return out; }   /* 쌍둥이 틈: 다른 쪽이 남았다 */
-  const last = act[act.length - 1]; await sleep(500); await go(S.anne, ox(last) + T.END_X, true); if (S.missing) return out;
-  if (last < S.voy.gaps.length - 1) { S.gi = last + 1; S.filled = S.fill[S.gi]; const w = active().length > 1 ? T.TWIN_ZOOM : 1, camMove = stage.tween(cam, { x: camHome(), wide: w }, 1300); await openBarrel(last); await Promise.all([camMove, layout(900), go(S.anne, ox(S.gi) + T.START_X, true)]); if (S.missing) return out; S.busy = false; S.idle = S.t; single(); return out; }
+  const last = act[act.length - 1]; await sleep(500); await go(S.anne, ox(last) + span(last) + T.END_X - 4, true); if (S.missing) return out;
+  if (last < S.voy.gaps.length - 1) { S.gi = last + 1; S.filled = S.fill[S.gi]; const w = camWide(), camMove = stage.tween(cam, { x: camHome(), wide: w }, 1300); await openBarrel(last); await Promise.all([camMove, layout(900), go(S.anne, ox(S.gi) + T.START_X, true)]); if (S.missing) return out; S.busy = false; S.idle = S.t; single(); return out; }
   await arrive(); return out; }
 
 // ── 쉬어 가는 땅의 통: 뭐가 나올지 모른다(덤 뗏목 · 물고기 양동이 · 지도 조각)
@@ -183,7 +194,7 @@ async function arrive(){ const g = S.guest; await finalAsk(); if (S.missing) ret
 
 // ── 손 그림자: 맨 처음 길 첫 틈에서 손이 없으면, 뗏목에서 틈으로 한 번 지나간다(글 없음)
 let hintEl = null; function hintOff(){ if (hintEl) { hintEl.remove(); hintEl = null; } }
-function hint(){ if (hintEl || S.busy || S.drag || SAVE.saved > 0 || S.voyages > 1 || S.drops > 0 || S.t - (S.idle || 0) < T.HINT_MS / 1000) return; const r = live().find(x => x.n === R.SLOTS - S.filled); if (!r) return;
+function hint(){ if (hintEl || S.busy || S.drag || SAVE.saved > 0 || S.voyages > 1 || S.drops > 0 || S.t - (S.idle || 0) < T.HINT_MS / 1000) return; const r = live().find(x => x.n === roomOf(S.gi)); if (!r) return;
   const a = stage.screenOf(r.group), b = stage.screenOf(window.__bridge.gap()); hintEl = document.createElement('div'); hintEl.id = 'hint'; hintEl.textContent = '👆'; hintEl.style.left = a.x + 'px'; hintEl.style.top = a.y + 'px'; document.body.appendChild(hintEl);
   requestAnimationFrame(() => { if (!hintEl) return; hintEl.style.opacity = 1; setTimeout(() => { if (hintEl) hintEl.style.transform = `translate(${b.x - a.x}px,${b.y - a.y}px)`; }, 350); }); setTimeout(() => { hintOff(); S.idle = S.t; }, 2600); }
 
@@ -195,7 +206,7 @@ canvas.addEventListener('pointerdown', e => { if (S.intro) { S.skip = true; S.tw
   if (!r || S.tweens.some(w => w.o === r.group)) return; S.drag = { r, id: e.pointerId }; canvas.setPointerCapture(e.pointerId); tone(520, .06, 'sine', .06); });
 canvas.addEventListener('pointermove', e => { if (!S.drag || e.pointerId !== S.drag.id) return; const ray = stage.pointerRay(e); if (ray.ray.intersectPlane(liftPlane, hit)) S.drag.r.group.position.set(hit.x, T.DECK + .45, hit.z); });
 const end = e => { if (!S.drag || e.pointerId !== S.drag.id) return; const r = S.drag.r, p = r.group.position; S.drag = null; S.idle = S.t;
-  const k = active().find(j => roomOf(j) > 0 && p.x - ox(j) > T.DROP_X[0] && p.x - ox(j) < T.DROP_X[1]);
+  const k = active().find(j => roomOf(j) > 0 && p.x - ox(j) > T.DROP_X[0] && p.x - ox(j) < T.DROP_X[1] + span(j) - 4);
   if (!S.busy && !S.missing && k != null && Math.abs(p.z) < T.DROP_Z) drop(r, k); else stage.tween(r.group, { 'position.x': r.home.x, 'position.y': r.home.y, 'position.z': r.home.z }, 420); };
 canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
 
@@ -225,7 +236,8 @@ function crumble(){ const fall = m => { m.userData.fallen = true; stage.tween(m.
 
 // 하네스용: 화면 좌표 · 지금 틈의 첫 빈 칸 위
 window.__bridge.screenOf = stage.screenOf;
-window.__bridge.gap = (k = S.gi) => new THREE.Vector3(slotX(k, Math.min(R.SLOTS - 1, S.fill[k])), T.DECK + .45, 0);
+window.__bridge.gap = (k = S.gi) => new THREE.Vector3(slotX(k, Math.min(slotsOf(k) - 1, S.fill[k])), T.DECK + .45, 0);
+window.__bridge.slotsOf = slotsOf; window.__bridge.span = span;
 window.__bridge.live = live; window.__bridge.active = active; window.__bridge.stage = stage;
 window.__bridge.restart = () => { S.tweens.length = 0; cam.zoom = 1; newVoyage(); mapDraw(); return intro(); };   /* 하네스용: 데려온 수를 바꾼 뒤 길을 새로 */
 build().catch(e => { $('loading').textContent = '불러오지 못했어요'; console.error(e); });

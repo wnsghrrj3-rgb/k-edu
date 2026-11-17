@@ -2,7 +2,7 @@
  * 넘치게 낚으면 통이 기우뚱하고 물고기가 도로 뛰어 나간다(문제 창·채점 없음). 통을 보낼수록 배가 커진다(칸 5 → 10 → 20).
  * 수학: 수 세기 → 모으기 → 10 만들기 → 세 수의 덧셈·십몇. 드러내지 않는다.
  * 틀(위쪽 띠·동전·알림·효과음·「커졌어!」)은 ../common/kit.js, 그림은 ../common/art.js. 동전은 지갑으로, 걸음(stage·sent)은 지갑의 낚시 칸에 남는다. */
-import { wallet, art, group, paint, hud, pay, toast, grew, did, audio, tone, sfx } from '../common/kit.js?v=3';
+import { wallet, art, group, paint, hud, pay, toast, grew, did, audio, tone, sfx } from '../common/kit.js?v=4';
 const $ = id => document.getElementById(id), R = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 const STAGES = [ { cap: 5, max: 3, need: 3, n: 4, sp: 1 }, { cap: 10, max: 5, need: 4, n: 5, sp: 1.1, msg: '통이 커졌어! 열 칸' }, { cap: 10, max: 9, need: 5, n: 6, sp: 1.25, msg: '큰 물고기가 나타났어!' }, { cap: 20, max: 9, need: 99, n: 7, sp: 1.35, msg: '배가 커졌어! 스무 칸' } ];
 const KIND = group('fish');
