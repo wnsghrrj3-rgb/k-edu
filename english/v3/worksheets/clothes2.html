@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv4 #13 옷② 계절 옷 10단어 — clothes1.html(Lv4 #8) 판형 계승, V트랙 주황
+     ★그림 = 화면과 같은 그림(BOD · CLO413CSS 블록 그대로) — 그림 마크업 = 화면 CLO413 pz(w,px,true) · bod('') 를 생성기 ws/gen_clothes2.js 로 그대로 뽑음 + .still(움직임 끔).
+     ★① 따라쓰기 10(추운 날 판 / 비·더운 날 판) · ② 날씨 상자 나누기(화면 날씨 판과 같은 상자 넷 — 추운 날 · 선선한 날 · 비 오는 날 · 더운 날)
+     · ③ 짝 고르기 3(glove / mitten · boot / sandal · raincoat / coat — 그림 보고) · ④ 오늘 날씨에 동그라미 + 사람 밑그림(#5 · #8 같은 사람)에 그리기 + I wear ___.(상자 gloves · boots · sandals · a raincoat · a scarf).
+     받아쓰기 금지. -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root { --primary:#FF8A3D; --green:#4CAF50; --red:#F44336; --subtext:#888780; --border:#F7DFCB; --green-light:#E8F5E9; }
+  @page { size: A4; margin: 10mm 12mm 8mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.45; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d9702a; padding-bottom: 5px; }
+  .brand { font-size: 13px; font-weight: 700; color: #9c4d13; }
+  .brand .lv { background: #d9702a; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 7px; background: #fdeee1; border: 2px solid #d9702a; border-radius: 12px; padding: 7px 13px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 24px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #9c4d13; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 15.5px; font-weight: 800; color: #4a2408; }
+  .keypoint { margin-top: 6px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 5px 12px; font-size: 12px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  .keypoint .big { font-size: 13px; font-weight: 800; color: #d85a30; }
+  h2 { margin-top: 8px; font-size: 13px; color: #9c4d13; display: flex; align-items: center; gap: 7px; }
+  h2 .n { background: #9c4d13; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2 .hint { font-weight: 400; font-size: 10px; color: #888780; }
+  .trace { display: flex; gap: 8px; margin-top: 3px; }
+  .traceword { text-align: center; flex: 1; min-width: 56px; position: relative; }
+  .outline { font-size: 19px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.4px #c4c2b8; letter-spacing: 1px; }
+  .line { border-bottom: 1.5px solid #d3d1c7; height: 14px; margin-top: 2px; }
+  .twocol { display: flex; gap: 10px; margin-top: 4px; align-items: stretch; }
+  .recap { margin-top: 7px; background: #4a2408; color: #fdeee1; border-radius: 10px; padding: 7px 13px; text-align: center; font-size: 12px; }
+  .recap b { color: #fac775; }
+  .parent { margin-top: 6px; border-top: 1px dashed #b4b2a9; padding-top: 5px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+  /* 그림 — 화면 블록 그대로(움직임은 .still 로 꺼짐) */
+/*BOD-BEGIN — #15 몸 그림 단일 원천(blocks/BOD.css → sync_blocks.py 주입, 하네스가 4파일 동일 검사).
+  ★같은 사람 한 명 + 「어디를 감싸느냐」만 바뀐다(.sp 분홍 동그라미) — #7 .act · Lv1 #15 ⭐ 크기 계보.
+    이모지를 쓰면 face 😀 · smile 😊 가 둘 다 웃는 얼굴이라 그림에서 갈리지 않는다(#11·#13 이모지 그대로 못 씀).
+  ★bone 은 몸 「안」 — 왼팔 엑스레이 창(.bn)으로만 보인다. hand 는 「밖」(팔 끝).
+  ★감싸는 자리(.p-* .sp)와 짚는 자리(.z-*)는 같은 좌표 선언 하나 — 그림과 손이 어긋날 수 없다. */
+.bod{position:relative;display:inline-block;width:6em;height:10em;font-size:10px;vertical-align:middle;flex:none}
+.bod>i{position:absolute;display:block;font-style:normal}
+.bod .hd{left:1.5em;top:.55em;width:3em;height:3.1em;border-radius:50%;background:#FFD9B8}
+.bod .hr{left:1.35em;top:.25em;width:3.3em;height:1.35em;border-radius:1.65em 1.65em .5em .5em;background:#6B4A2E}
+.bod .ey{left:2.15em;top:1.9em;width:.45em;height:.45em;border-radius:50%;background:#333;box-shadow:1.25em 0 0 #333}
+.bod .ns{left:2.83em;top:2.25em;width:.34em;height:.5em;border-radius:.2em .2em .3em .3em;background:#E39A72}
+.bod .mo{left:2.4em;top:2.75em;width:1.2em;height:.5em;border-bottom:.22em solid #D2453A;border-radius:0 0 .7em .7em}
+.bod .tr{left:1.95em;top:3.75em;width:2.1em;height:3em;border-radius:.6em .6em .3em .3em;background:#7FB3E6}
+.bod .ar{left:1.2em;top:3.9em;width:.65em;height:2.4em;border-radius:.3em;background:#FFD9B8;box-shadow:2.95em 0 0 #FFD9B8}
+.bod .hn{left:1.02em;top:6.2em;width:1em;height:1em;border-radius:50%;background:#F7BE93;box-shadow:2.95em 0 0 #F7BE93}
+.bod .lg{left:2.15em;top:6.7em;width:.7em;height:2.2em;background:#4A6FA5;box-shadow:1em 0 0 #4A6FA5}
+.bod .ft{left:1.7em;top:8.8em;width:1.25em;height:.65em;border-radius:.65em .65em .2em .2em;background:#5A4030;box-shadow:1.35em 0 0 #5A4030}
+.bod .bn{left:1.2em;top:3.9em;width:.65em;height:2.4em;border-radius:.3em;background:#3F4B57;opacity:0}
+.bod .bn::before{content:'';position:absolute;left:.22em;top:.45em;width:.21em;height:1.5em;background:#fff;border-radius:.1em}
+.bod .bn::after{content:'';position:absolute;left:.1em;top:.25em;width:.45em;height:.32em;border-radius:50%;background:#fff;box-shadow:0 1.6em 0 #fff}
+.bod.p-bone .bn,.bod.xr .bn{opacity:1}
+.bod .sp{border:.2em solid #FF3D7F;border-radius:50%;background:rgba(255,61,127,.13);opacity:0;pointer-events:none;z-index:6}
+.bod[class*=" p-"] .sp{opacity:1;animation:bodpulse 1.3s ease-in-out infinite}
+@keyframes bodpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.bod.p-face .sp,.bod .z-face{left:1.1em;top:.2em;width:3.8em;height:3.8em}
+.bod.p-hair .sp,.bod .z-hair{left:1.05em;top:-.25em;width:3.9em;height:1.95em}
+.bod.p-eye .sp,.bod .z-eye{left:1.8em;top:1.45em;width:2.4em;height:1em}
+.bod.p-nose .sp,.bod .z-nose{left:2.6em;top:2.05em;width:.8em;height:.9em}
+.bod.p-smile .sp,.bod .z-smile{left:2.15em;top:2.95em;width:1.7em;height:.8em}
+.bod.p-hand .sp,.bod .z-hand{left:.65em;top:5.85em;width:4.7em;height:1.7em}
+.bod.p-bone .sp,.bod .z-bone{left:.85em;top:3.6em;width:1.35em;height:2.2em}
+.bod.p-feet .sp,.bod .z-feet{left:1.3em;top:8.35em;width:3.4em;height:1.55em}
+.bod .hz{border-radius:50%;cursor:pointer;z-index:2}
+.bod .z-face{z-index:1}.bod .z-eye,.bod .z-nose,.bod .z-smile{z-index:4}
+.bod .hz.hit{background:rgba(255,193,7,.35)}
+.bod.blank .hz{border:.08em dashed rgba(217,112,42,.6)}
+.bod.blank .hr,.bod.blank .ey,.bod.blank .ns,.bod.blank .mo{visibility:hidden}
+.bod.blank.has-hair .hr,.bod.blank.has-eye .ey,.bod.blank.has-nose .ns,.bod.blank.has-smile .mo{visibility:visible;animation:bodpop .4s}
+@keyframes bodpop{0%{transform:scale(.3)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+/*BOD-END*/
+/*CLO413CSS-BEGIN — Lv4 #13 옷② 그림·날씨 판·뒷면 장면(blocks/CLO413CSS.css → sync_blocks.py 주입 · 4파일 + 활동지 문자 단위 동일, 하네스 A4).
+  ★몸 = Lv2 #15 BOD 한 사람 그대로(BOD 원본 선언은 손대지 않는다 — #5 · #8 판형) · 옷은 몸 그림 옆에 겹치는 한 벌(.wr413)로만 더한다.
+  ★#8 CLO408CSS 줄 문자 그대로 + 이름만 413(블록째 주입 0 — #8 하네스 A3m 이 뒤 칸 파일의 #8 그림 class 이름을 「앞 칸 0」 으로 잰다):
+    상자 .pz413 · .dz413(6em × 11em · 몸 1em 아래) · .wr413 · jacket 네 줄(.g13-jacket · 지퍼 .zt413) · 뒷면 장면 .ss413 · 나 .me413 · 이름표 .nm413 · 해 .su413 · 물방울 .dp413 · 옷장 칸 .ck413 · 움직임 끄기.
+  ★옷 자리 = 몸 부위 그대로: hood 머리 · scarf 목 · coat · raincoat · jacket 몸통(팔까지) · glove · mitten 두 손 · umbrella 오른손에 듦 · boot · sandal 두 발.
+  ★창 색 = Lv3 #7 WX307CSS 온도계 칸 값(cold #1E88E5 · cool #4FC3F7 · hot #E53935) · 비 = 하늘 회색. */
+.pz413,.dz413{position:relative;display:inline-block;width:6em;height:11em;line-height:0;vertical-align:middle;text-align:left;flex:none}
+.pz413>.bod,.dz413>.bod{position:absolute;left:0;top:1em;font-size:inherit}
+.wr413{position:absolute;display:block;font-style:normal;line-height:1;pointer-events:none}
+.wr413>i{display:inline-block;font-style:normal;line-height:1}
+.dz413 .wr413{display:none}
+.dz413 .wr413.on{display:block;animation:bodpop .4s}
+.wr413.g13-jacket{left:1.85em;top:4.65em;width:2.3em;height:3.2em;z-index:4;background:#0B7285;border-radius:.5em .5em .25em .25em}
+.wr413.g13-jacket::before{content:'';position:absolute;left:-.75em;top:.2em;width:.85em;height:2.45em;border-radius:.35em;background:#0B7285;box-shadow:2.95em 0 0 #0B7285}
+.wr413.g13-jacket::after{content:'';position:absolute;left:1.08em;top:.1em;width:.14em;height:3em;background:repeating-linear-gradient(#FFD43B 0 .12em,#5C940D .12em .22em)}
+.wr413.g13-jacket .zt413{position:absolute;left:.97em;top:2.6em;width:.36em;height:.45em;border-radius:.1em;background:#FAB005;z-index:1}
+/* coat 🧥(Lv2 #23) — 몸통부터 무릎께까지 긴 옷 */
+.wr413.g13-coat{left:.95em;top:4.2em;width:4.1em;height:4.1em;z-index:2}
+.wr413.g13-coat>i{font-size:4.1em}
+/* raincoat — 노란 비옷(팔까지 · 무릎까지 · 단추 셋) + 빗줄기(머리 양옆 · 🧥 · ☔ 0) */
+.wr413.g13-raincoat{left:1.7em;top:4.6em;width:2.6em;height:4.4em;z-index:3;background:#FCC419;border-radius:.6em .6em .35em .35em}
+.wr413.g13-raincoat::before{content:'';position:absolute;left:-.5em;top:.25em;width:.85em;height:2.5em;border-radius:.35em;background:#FCC419;box-shadow:2.95em 0 0 #FCC419}
+.wr413.g13-raincoat::after{content:'';position:absolute;left:1.19em;top:.8em;width:.22em;height:.22em;border-radius:50%;background:#E67700;box-shadow:0 .8em 0 #E67700,0 1.6em 0 #E67700}
+.wr413 .rn413{position:absolute;left:-1.55em;top:-3.3em;width:1.2em;height:3em;background:repeating-linear-gradient(115deg,transparent 0 .3em,#74C0FC .3em .42em)}
+.wr413 .rn413.r2{left:2.95em}
+/* hood — 점퍼에 달린 머리 덮개(머리카락 · 머리 양옆을 감쌈 · 얼굴은 보임 · 점퍼 색) */
+.wr413.g13-hood{left:1.2em;top:.95em;width:3.6em;height:3.9em;z-index:5;box-sizing:border-box;border:.42em solid #0B7285;border-bottom:0;border-radius:1.8em 1.8em .6em .6em}
+/* scarf 🧣 — 목 */
+.wr413.g13-scarf{left:2em;top:4.05em;width:2em;height:2em;z-index:6}
+.wr413.g13-scarf>i{font-size:2em}
+/* glove 🧤 — 두 손(손가락 다섯) */
+.wr413.g13-glove{left:.85em;top:7.05em;width:4.4em;height:1.35em;z-index:6;white-space:nowrap}
+.wr413.g13-glove>i{font-size:1.35em}
+.wr413.g13-glove>i+i{margin-left:1.2em}
+/* mitten — 두 손(엄지 하나 + 통 · 🧤 0) */
+.wr413.g13-mitten{left:.95em;top:7em;width:1.15em;height:1.4em;z-index:6;border-radius:.58em .58em .4em .4em;background:#E8590C;box-shadow:2.95em 0 0 #E8590C}
+.wr413.g13-mitten::before{content:'';position:absolute;left:.95em;top:.3em;width:.45em;height:.7em;border-radius:.22em;background:#E8590C}
+.wr413.g13-mitten::after{content:'';position:absolute;left:2.7em;top:.3em;width:.45em;height:.7em;border-radius:.22em;background:#E8590C}
+/* umbrella ☂️ — 오른손에 드는 것(펼친 우산 · 빗방울 0) */
+.wr413.g13-umbrella{left:3.4em;top:4.6em;width:2.6em;height:2.6em;z-index:6}
+.wr413.g13-umbrella>i{font-size:2.6em}
+/* boot 👢 · sandal 🩴 — 두 발 */
+.wr413.g13-boot{left:1.3em;top:8.75em;width:3.4em;height:1.75em;z-index:3;white-space:nowrap}
+.wr413.g13-boot>i{font-size:1.7em}
+.wr413.g13-sandal{left:1.45em;top:9.6em;width:3em;height:1.4em;z-index:3;white-space:nowrap}
+.wr413.g13-sandal>i{font-size:1.5em}
+/* 날씨 판 — 큰 사람 + 날씨 창 넷(옷장 칸 · 입은 칸 초록 · 문항 칸) */
+.bd413{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:6px 0}
+.wx413{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:330px}
+.wn413{display:flex;flex-direction:column;align-items:center;gap:3px;border:3px solid #CED4DA;border-radius:12px;background:#fff;padding:3px 4px 5px}
+.wn413 .wh413{font-size:13px;line-height:1.3;color:#fff;border-radius:8px;padding:1px 8px;white-space:nowrap}
+.wn413 .we413{font-style:normal;margin-right:3px}
+.wn413 .wc413{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+.wn413.k-cold{border-color:#1E88E5}.wn413.k-cold .wh413{background:#1E88E5}
+.wn413.k-cool{border-color:#4FC3F7}.wn413.k-cool .wh413{background:#4FC3F7}
+.wn413.k-rain{border-color:#748FFC}.wn413.k-rain .wh413{background:#748FFC}
+.wn413.k-hot{border-color:#E53935}.wn413.k-hot .wh413{background:#E53935}
+.ck413{position:relative;display:inline-flex;flex-direction:column;align-items:center;border:2px solid var(--border);border-radius:10px;background:#fff;padding:2px 3px;cursor:pointer;line-height:0}
+.ck413 .tg413{display:block;font-style:normal;font-size:12px;line-height:1.3;color:#C9B39C;min-width:42px;text-align:center}
+.ck413.found,.ck413.correct{border-color:var(--green);background:var(--green-light)}
+.ck413.found .tg413{color:var(--primary)}
+.ck413.wrong,.ck413.bad{background:rgba(244,67,54,.2);animation:shake .4s}
+/* 사람 상자 바탕 = 지금 날씨(입힌 옷의 창) */
+.dz413[data-wx]{border-radius:.8em}
+.dz413[data-wx="cold"]{background:rgba(30,136,229,.12)}
+.dz413[data-wx="cool"]{background:rgba(79,195,247,.14)}
+.dz413[data-wx="rain"]{background:rgba(116,143,252,.14)}
+.dz413[data-wx="hot"]{background:rgba(229,57,53,.1)}
+/* 몸 자리 다섯(숙달 「오늘 날씨엔?」 · 종이 번호) — 손 = 양쪽 두 칸 */
+.dz413 .hz13{position:absolute;display:block;font-style:normal;border-radius:.6em;cursor:pointer;z-index:7}
+.dz413 .z13-hd{left:1.1em;top:0em;width:3.8em;height:4.1em}
+.dz413 .z13-nk{left:1.6em;top:4.1em;width:2.8em;height:1.2em}
+.dz413 .z13-up{left:1.9em;top:5.3em;width:2.2em;height:2.2em}
+.dz413 .z13-hn{left:.5em;top:6.6em;width:1.4em;height:2.1em}
+.dz413 .z13-hn.r2{left:4.1em}
+.dz413 .z13-ft{left:1.3em;top:8.8em;width:3.4em;height:2.2em}
+.dz413.m-pick .hz13{border:.08em dashed rgba(217,112,42,.55)}
+.dz413 .hz13.bad{background:rgba(244,67,54,.25);animation:shake .4s}
+.dz413 .hz13 .wn413{position:absolute;right:-.2em;top:50%;transform:translateY(-50%);width:15px;height:15px;border-radius:50%;background:#9c4d13;color:#fff;font-size:10px;line-height:15px;text-align:center;font-weight:800}
+.dz413.m-ws .hz13{border:1.5px dashed #c9a27e;cursor:default}
+/* ★숙달 넷째 반전 — Amy 가 후드를 쓰자 후드가 몸 전체를 덮는다 */
+.dz413.am413 .g13-hood{transform:scale(2.6);transform-origin:50% 30%;transition:transform .8s}
+/* 뒷면 장면 — 말하는 사람(나 · 이름표) + 같은 사람이 옷을 입은 그림 + 소품 */
+.ss413{position:relative;display:inline-block;width:11em;height:11.5em;line-height:0;vertical-align:middle;overflow:hidden;border-radius:.9em;background:#FFF9DB;text-align:left}
+.ss413>.pz413{position:absolute;left:3.8em;top:.25em}
+.ss413 .me413{position:absolute;left:.3em;top:.3em;width:2.3em;height:2.3em;border-radius:50%;background:#FFE066;border:.18em solid #F0C419;color:#7a5600;font-size:1.15em;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-style:normal;box-sizing:border-box}
+.nm413{display:inline-flex;align-items:center;gap:2px;font-size:14px;line-height:1.3;font-style:normal;background:#fff;border:2px solid #FF8A3D;color:#FF8A3D;border-radius:8px;padding:0 6px;font-family:'Jua',sans-serif}
+.nm413 .dd413{font-size:16px;font-style:normal}
+.ss413 .nm413{position:absolute;left:2px;top:2px;font-size:11px;padding:0 4px}
+.ss413 .nm413 .dd413{font-size:13px}
+.pz413>i:not(.wr413){position:absolute;display:block;font-style:normal}
+.pz413 .su413{left:4.4em;top:.4em;width:1.5em;height:1.5em;border-radius:50%;background:#FFD43B;box-shadow:0 0 0 .25em rgba(255,212,59,.45)}
+.pz413 .dp413{left:1.1em;top:9.05em;width:.3em;height:.3em;border-radius:50%;background:#74C0FC;box-shadow:3.2em .25em 0 #74C0FC,.45em .65em 0 #74C0FC;z-index:4}
+/* glove — Max 장갑 낀 손에 군고구마(먹보 · CSS 소품 — 🍠 = yam Lv1 #14 0) */
+.pz413 .yp413{left:2.25em;top:7.25em;width:1.5em;height:.85em;border-radius:50%;background:#8E5A3C;box-shadow:inset 0 0 0 .14em #6B3F28;z-index:7}
+.pz413 .yp413::after{content:'';position:absolute;left:.45em;top:-.95em;width:.12em;height:.7em;border-radius:.1em;background:rgba(173,181,189,.85);box-shadow:.35em .1em 0 rgba(173,181,189,.85)}
+/* mitten — 아기(작은 사람) */
+.pz413.bb413{transform:scale(.72);transform-origin:50% 100%}
+/* raincoat — Ben 해가 쨍쨍한데 비옷 + 우산 + 장화(겁 많은 「비 올지도 몰라」 · 빗줄기 0 = 맑은 날) */
+.pz413.sn413 .rn413{display:none}
+/* hood — Amy 후드가 텐트만 하다(과장) */
+.pz413.tn413 .g13-hood{transform:scale(1.55);transform-origin:50% 70%}
+/* coat — Dad 검은 외투(이모지 색은 기기마다 달라 장면에서만 물들인다 — #8 판형) */
+.pz413.bk413 .g13-coat>i{filter:grayscale(1) brightness(.4)}
+/* umbrella — ★진행형 1자리: 비 오는 창 앞에서 우산이 접힌 채 → 펼쳐진다(움직이는 그림) */
+.pz413 .ra413{left:-3.6em;top:3em;width:3.2em;height:6em;border-radius:.4em;border:.15em solid #ADB5BD;background:repeating-linear-gradient(115deg,#E7F5FF 0 .35em,#74C0FC .35em .45em);box-sizing:border-box}
+.pz413.op413 .g13-umbrella>i{transform-origin:50% 90%;animation:op413 2.2s ease-in-out infinite}
+@keyframes op413{0%,15%{transform:scaleX(.18)}55%,100%{transform:scaleX(1)}}
+/* 움직임 끄기(종이 · 작은 칸) */
+.pz413.still *,.ss413.still *,.dz413.still *{animation:none!important}
+/*CLO413CSS-END*/
+  .sortbox { margin-top: 4px; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 8px 12px; display: flex; flex-direction: column; gap: 7px; }
+  .bank { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .bank .bw { font-size: 15px; font-weight: 800; color: #4a2408; letter-spacing: .3px; }
+  .ud { display: flex; gap: 8px; align-items: flex-start; }
+  .udc { flex: 1; border: 1.8px dashed #c9a27e; border-radius: 10px; padding: 4px 8px 6px; background: #fff; }
+  .udc.k-cold { flex: 1.5; border-color: #1E88E5; } .udc.k-cool { border-color: #4FC3F7; } .udc.k-rain { flex: 1.2; border-color: #748FFC; } .udc.k-hot { border-color: #E53935; }
+  .udh { font-size: 11px; font-weight: 800; color: #9c4d13; white-space: nowrap; }
+  .udl { border-bottom: 1.5px solid #d3d1c7; height: 21px; }
+  .box3, .box4 { flex: 1; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 5px 10px; }
+  .pr3 { display: flex; justify-content: space-between; gap: 6px; }
+  .pi3 { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .pic3 { line-height: 0; }
+  .two3 { font-size: 14px; font-weight: 800; color: #4a2408; display: flex; gap: 4px; align-items: center; }
+  .two3 .sl3 { font-style: normal; color: #b4b2a9; font-weight: 400; }
+  .draw4 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .wx4 { display: flex; flex-direction: column; gap: 4px; }
+  .w4 { font-size: 11px; border: 1.5px solid #c9a27e; border-radius: 99px; padding: 1px 8px; white-space: nowrap; }
+  .fg4 { flex: none; border: 1.8px dashed #c9a27e; border-radius: 10px; background: #fff; padding: 2px 6px; line-height: 0; }
+  .fg4 .pz413 { font-size: 10px; }
+  .ir4 { display: flex; flex-direction: column; gap: 3px; }
+  .s { font-size: 15px; font-weight: 800; color: #4a2408; display: flex; align-items: flex-end; gap: 4px; letter-spacing: .3px; flex-wrap: wrap; }
+  .s .ln { display: inline-block; width: 74px; border-bottom: 1.8px solid #b4b2a9; height: 20px; }
+  .wb { font-size: 10px; color: #888780; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv4 · 어휘 #13</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main">추우면 덮고, 비 오면 가리고, 더우면 가볍게.</div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 추운 날 판 — glove · mitten · scarf · boot · coat / 비·더운 날 판 — raincoat · umbrella · hood · sandal · jacket.
+    <span class="big">손가락 다섯 glove, 엄지 하나 mitten · 다 덮는 boot, 드러나는 sandal</span>
+  </div>
+
+  <h2><span class="n">1</span> 따라 써요 <span class="hint">흐린 글자를 따라 써요 — 위 줄 추운 날 판 · 아래 줄 비·더운 날 판</span></h2>
+  <div class="trace"><div class="traceword"><div class="outline">glove</div><div class="line"></div></div><div class="traceword"><div class="outline">mitten</div><div class="line"></div></div><div class="traceword"><div class="outline">scarf</div><div class="line"></div></div><div class="traceword"><div class="outline">boot</div><div class="line"></div></div><div class="traceword"><div class="outline">coat</div><div class="line"></div></div></div>
+  <div class="trace"><div class="traceword"><div class="outline">raincoat</div><div class="line"></div></div><div class="traceword"><div class="outline">umbrella</div><div class="line"></div></div><div class="traceword"><div class="outline">hood</div><div class="line"></div></div><div class="traceword"><div class="outline">sandal</div><div class="line"></div></div><div class="traceword"><div class="outline">jacket</div><div class="line"></div></div></div>
+
+  <h2><span class="n">2</span> 날씨 상자 나누기 <span class="hint">단어를 읽고 — 그 옷을 입는 날의 상자에 옮겨 써요</span></h2>
+  <div class="sortbox"><div class="bank"><span class="bw" data-w="sandal">sandal</span><span class="bw" data-w="glove">glove</span><span class="bw" data-w="hood">hood</span><span class="bw" data-w="coat">coat</span><span class="bw" data-w="umbrella">umbrella</span><span class="bw" data-w="scarf">scarf</span><span class="bw" data-w="jacket">jacket</span><span class="bw" data-w="boot">boot</span><span class="bw" data-w="raincoat">raincoat</span><span class="bw" data-w="mitten">mitten</span></div><div class="ud"><div class="udc k-cold" data-k="cold"><div class="udh">🥶 추운 날</div><div class="udl"></div><div class="udl"></div><div class="udl"></div><div class="udl"></div><div class="udl"></div></div><div class="udc k-cool" data-k="cool"><div class="udh">🍃 선선한 날</div><div class="udl"></div></div><div class="udc k-rain" data-k="rain"><div class="udh">🌧️ 비 오는 날</div><div class="udl"></div><div class="udl"></div><div class="udl"></div></div><div class="udc k-hot" data-k="hot"><div class="udh">🥵 더운 날</div><div class="udl"></div></div></div></div>
+
+  <div class="twocol">
+    <div style="flex:1;display:flex;flex-direction:column">
+      <h2><span class="n">3</span> 짝 고르기 <span class="hint">그림을 보고 — 맞는 단어에 동그라미</span></h2>
+      <div class="box3"><div class="pr3"><div class="pi3" data-w="mitten"><span class="pic3"><span class="pz413 still" data-vs="mitten" style="font-size:6px"><span class="bod" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i></span><i class="wr413 g13-mitten" data-g="mitten"></i></span></span><span class="two3"><span class="ch3">glove</span><i class="sl3">/</i><span class="ch3">mitten</span></span></div><div class="pi3" data-w="boot"><span class="pic3"><span class="pz413 still" data-vs="boot" style="font-size:6px"><span class="bod" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i></span><i class="wr413 g13-boot" data-g="boot"><i>👢</i><i>👢</i></i></span></span><span class="two3"><span class="ch3">boot</span><i class="sl3">/</i><span class="ch3">sandal</span></span></div><div class="pi3" data-w="raincoat"><span class="pic3"><span class="pz413 still" data-vs="raincoat" style="font-size:6px"><span class="bod" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i></span><i class="wr413 g13-raincoat" data-g="raincoat"><i class="rn413"></i><i class="rn413 r2"></i></i></span></span><span class="two3"><span class="ch3">raincoat</span><i class="sl3">/</i><span class="ch3">coat</span></span></div></div></div>
+    </div>
+    <div style="flex:1.2;display:flex;flex-direction:column">
+      <h2><span class="n">4</span> 오늘 날씨 <span class="hint">날씨에 동그라미 · 사람에 옷을 그리고 — 상자에서 골라 옮겨 써요</span></h2>
+      <div class="box4"><div class="draw4"><div class="wx4"><span class="w4" data-k="cold">🥶 추운 날</span><span class="w4" data-k="rain">🌧️ 비 오는 날</span><span class="w4" data-k="hot">🥵 더운 날</span></div><div class="fg4"><span class="pz413 still"><span class="bod" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i></span></span></div><div class="ir4"><div class="s">I wear <span class="ln"></span>.</div><div class="wb">상자 · gloves · boots · sandals · a raincoat · a scarf</div></div></div></div>
+    </div>
+  </div>
+
+  <div class="recap">오늘 열 단어 = <b>glove · scarf · boot · mitten · raincoat · umbrella · sandal · hood · coat · jacket</b> — 날씨에 맞춰 입어요!</div>
+
+  <div class="parent">
+    <b>부모님께</b> · <b>glove</b> 의 o 는 /어/ 소리예요 — 규칙 모양인데 안 지키는 단어라 <b>통째로</b> 외웁니다(come · some 과 같은 서랍).
+    · <b>scarves</b> 처럼 여럿이 될 때 꼴이 바뀌는 말은 아직 배우지 않아요 — gloves · boots 처럼 끝에 s 만 붙는 짝 여럿만 씁니다.
+    · 이 활동지는 <b>보고 옮겨 쓰는</b> 종이입니다. <b>받아쓰기로 확인하지 마세요.</b><br>
+    <b>정답</b> · ② 추운 날 — glove · mitten · scarf · boot · coat / 선선한 날 — jacket / 비 오는 날 — raincoat · umbrella · hood / 더운 날 — sandal · ③ mitten · boot · raincoat · ④ 날씨에 맞게 고른 옷이면 다 정답
+  </div>
+</body>
+</html>
