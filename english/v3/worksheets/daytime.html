@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv4 #25 관찰 글 3 「하루와 시간」 — cloudtree.html(Lv4 #15) 판형 계승, R트랙 초록 · 생성기 ws/gen_daytime.js
+     ★이 칸의 원리: 같은 곳도 시각이 바뀌면 달라진다 — 열두 시엔 작은 그림자, 여섯 시엔 큰 그림자(알려 주는 글 두 편 · 여섯 줄 · 일곱 줄 · ★at · It's 가 처음 글에).
+     ★글판 2편(줄 번호) · ① 순서 배열(글 ② 문장 네 줄에 1~4 번호 — 화면 ORDER) · ② 빈칸 2(상자 보고 — twelve · at six o'clock = 화면 BLANK · PHRASE) · ③ igh 상자(high · night · lightning — 소리 안 나는 gh 에 ✕) · ④ 우리 동네 그림자 관찰 It's ___ o'clock. + 그리기(낮 · 저녁).
+     ★재료 일치: 지문 단어 + 칩 six · eleven · at twelve o'clock · in the afternoon · 기지어 night(Lv3 #32) · lightning(Lv3 #37) · 그림 = 화면 vz() 마크업 그대로 · print-color-adjust: exact -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 13mm 13mm 11mm 13mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.5; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #0d7a5c; padding-bottom: 6px; }
+  .brand { font-size: 13px; font-weight: 700; color: #094c39; }
+  .brand .lv { background: #0d7a5c; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 7px; background: #e4f6ef; border: 2px solid #0d7a5c; border-radius: 12px; padding: 5px 14px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 24px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #094c39; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 14.5px; font-weight: 800; color: #08301f; }
+  .seed .main b { color: #0d7a5c; }
+  .board { margin-top: 6px; border: 1.5px solid #a9ddc9; border-radius: 10px; padding: 5px 6px; background: #f5fdfa; }
+  .blabel { font-size: 10px; color: #094c39; font-weight: 700; text-align: center; margin-bottom: 3px; }
+  .textrow { display: flex; gap: 7px; }
+  .tx { flex: 1; border: 2.5px solid #0d7a5c; border-radius: 10px; background: #fff; padding: 4px 7px 5px; text-align: left; }
+  .tx .who { font-size: 10px; color: #094c39; font-weight: 700; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .tx .ln { display: block; font-size: 12.5px; font-weight: 800; color: #08301f; line-height: 1.45; padding-left: 15px; text-indent: -15px; }
+  .tx .ln b { display: inline-block; width: 15px; text-indent: 0; font-size: 9px; color: #0d7a5c; }
+  h2.q { margin-top: 6px; font-size: 13px; color: #094c39; display: flex; align-items: center; gap: 7px; }
+  h2.q .n { background: #094c39; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2.q .sub { font-weight: 400; font-size: 10px; color: #888780; }
+  /* ① 순서 배열 */
+  .ocards { margin-top: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .oc { display: flex; align-items: center; gap: 6px; border: 1.5px solid #d3d1c7; border-radius: 8px; padding: 3px 6px; font-size: 12.5px; font-weight: 800; color: #08301f; }
+  .oc .no { flex: none; width: 22px; height: 22px; border: 2px dashed #0d7a5c; border-radius: 6px; }
+  /* ② 빈칸 */
+  .row2 { margin-top: 4px; display: flex; gap: 8px; }
+  .blb { flex: 1; border: 1.5px solid #d3d1c7; border-radius: 10px; padding: 5px 9px; }
+  .blb .who { font-size: 11px; font-weight: 800; color: #094c39; }
+  .blb .bl { margin-top: 2px; font-size: 14px; font-weight: 800; color: #08301f; text-align: center; }
+  .blb .bl .bx { display: inline-block; width: 120px; height: 19px; border-bottom: 2px solid #1f2430; vertical-align: bottom; }
+  .blb .bl .bx.s { width: 64px; }
+  .blb .wb3 { margin-top: 3px; text-align: center; font-size: 12px; font-weight: 800; color: #854f0b; border: 1.5px dashed #ef9f27; border-radius: 7px; background: #fffaf0; }
+  /* ③ igh */
+  .grow { margin-top: 4px; display: flex; gap: 18px; align-items: center; border: 1.5px solid #d3d1c7; border-radius: 10px; padding: 4px 14px; }
+  .grow .w { font-size: 23px; font-weight: 800; letter-spacing: 4px; color: #08301f; }
+  .grow .k { display: block; font-size: 9.5px; letter-spacing: 0; color: #888780; font-weight: 400; text-align: center; }
+  .grow .tip { flex: 1; font-size: 11px; color: #5f5e5a; }
+  /* ④ 우리 동네 그림자 */
+  .mine { margin-top: 4px; display: flex; gap: 8px; }
+  .mine .cel4 { flex: 1; display: flex; gap: 8px; align-items: center; border: 1.5px solid #d3d1c7; border-radius: 10px; padding: 5px 8px; }
+  .mine .hd { font-size: 10.5px; font-weight: 800; color: #094c39; text-align: center; }
+  .mine .pad { width: 112px; height: 60px; border: 2px dashed #a9ddc9; border-radius: 8px; background: #fbfffd; flex: none; }
+  .mine .line { font-size: 15px; font-weight: 800; color: #08301f; margin: 2px 0; }
+  .mine .line span { display: inline-block; border-bottom: 2px solid #1f2430; width: 64px; }
+  .mine .pk0 { line-height: 0; }
+  .wb6 { margin-top: 4px; text-align: center; font-size: 12px; font-weight: 800; color: #854f0b; border: 1.5px dashed #ef9f27; border-radius: 7px; background: #fffaf0; padding: 1px 8px; }
+  .recap { margin-top: 6px; background: #e4f6ef; border: 2px solid #0d7a5c; border-radius: 10px; padding: 4px 12px; font-size: 12px; text-align: center; color: #08301f; }
+  .recap b { color: #0d7a5c; }
+  .parent { margin-top: 5px; border-top: 1.5px dashed #b4b2a9; padding-top: 4px; font-size: 10px; color: #5f5e5a; line-height: 1.45; }
+  .parent b { color: #094c39; }
+  /* 화면 그림(공원 · 소나기 · 시계 판 — vz() 마크업) — 화면 CSS 줄 그대로(VB301CSS · PSG425CSS) · 종이엔 움직임 0 */
+  .pk0 .vs, .pk0 .vs * { animation: none !important; }
+  .vs{position:relative;display:inline-block;width:140px;height:64px;line-height:0;vertical-align:middle;text-align:left}
+  .vz{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+  .vz>.vs{position:absolute;left:0;top:0;transform-origin:0 0}
+  .vs .me{position:absolute;left:2px;top:24px;width:28px;height:28px;border-radius:50%;background:#FFE066;border:2px solid #F0C419;color:#7a5600;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-style:normal;box-sizing:border-box}
+  .vs .fg{position:absolute;top:20px;left:40px;line-height:0;transform:scale(.78);transform-origin:0 0}
+  .vs .fg.fl .act{transform:scaleX(-1)}
+  .vs .pr{position:absolute;font-size:20px;line-height:1;font-style:normal}
+  .vs .ar{position:absolute;top:0;font-size:15px;line-height:1;font-style:normal}
+  .vs .tb{position:absolute;left:46px;top:47px;width:44px;height:5px;background:#A1887F;border-radius:2px}
+  .vs .tb::before,.vs .tb::after{content:'';position:absolute;top:5px;width:4px;height:12px;background:#A1887F;border-radius:1px}
+  .vs .tb::before{left:3px}
+  .vs .tb::after{right:3px}
+  .vs .lp{position:absolute;left:52px;top:38px;width:22px;height:13px;border-radius:50% 50% 45% 45%;background:#D7B48C;opacity:.4}
+  .vs .to{position:absolute;left:78px;top:38px;font-size:12px;line-height:1;color:#B0A48A;font-style:normal}
+  .vs .sk{position:absolute;font-size:13px;line-height:1;color:#E8A93C;font-style:normal}
+  .vs .ld{position:absolute;left:60px;top:26px;width:28px;height:6px;border-radius:2px;background:#B07A3E;transform-origin:0 100%;transform:rotate(-65deg)}
+  .act.a-walk .aL,.act.a-hold .aL,.act.a-reach .aL,.act.a-knead .aL{transform:rotate(-70deg)}
+  .act.a-walk .aL{animation:vArmL .6s ease-in-out infinite}
+  .act.a-walk .aR{transform:rotate(70deg);animation:vArmR .6s ease-in-out infinite}
+  .act.a-walk .lL{animation:vLegL .6s ease-in-out infinite}
+  .act.a-walk .lR{animation:vLegR .6s ease-in-out infinite}
+  @keyframes vArmL{0%,100%{transform:rotate(-58deg)}50%{transform:rotate(-82deg)}}
+  @keyframes vArmR{0%,100%{transform:rotate(82deg)}50%{transform:rotate(58deg)}}
+  @keyframes vLegL{0%,100%{transform:rotate(18deg)}50%{transform:rotate(-18deg)}}
+  @keyframes vLegR{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(18deg)}}
+  .act.a-hold .aR{transform:rotate(-18deg)}
+  .act.a-reach .aR{transform:rotate(22deg) scaleX(1.25)}
+  .act.a-knead .aR{animation:vKnead .5s ease-in-out infinite}
+  @keyframes vKnead{0%,100%{transform:rotate(14deg)}50%{transform:rotate(34deg)}}
+  .act.a-rise .aL{transform:rotate(30deg)}
+  .act.a-rise .aR{transform:rotate(-70deg)}
+  .act.a-slide .aL{transform:rotate(40deg)}
+  .act.a-slide .aR{transform:rotate(-40deg)}
+  .act.a-slide .lL,.act.a-slide .lR{transform:rotate(-58deg)}
+  .v-go .fg{left:62px;animation:vGo 2.4s linear infinite}
+  .v-go .ar{left:44px}
+  .v-go .pr{left:116px;top:34px}
+  @keyframes vGo{0%{left:30px;opacity:1}78%{left:72px;opacity:1}100%{left:78px;opacity:0}}
+  .v-come .fg{left:42px;animation:vCome 2.4s linear infinite}
+  .v-come .ar{left:70px}
+  @keyframes vCome{0%{left:100px;opacity:0}14%{opacity:1}82%,100%{left:38px;opacity:1}}
+  .v-give .fg{left:98px}
+  .v-give .pr{left:66px;top:30px;animation:vGive 2.2s ease-in-out infinite}
+  .v-give .ar{left:52px}
+  @keyframes vGive{0%,16%{left:32px}72%,100%{left:84px}}
+  .v-get .fg{left:98px}
+  .v-get .pr{left:46px;top:30px;animation:vGet 2.2s ease-in-out infinite}
+  .v-get .ar{left:62px}
+  @keyframes vGet{0%,16%{left:84px}72%,100%{left:32px}}
+  .v-take .fg{left:8px}
+  .v-take .pr{left:38px;top:8px;animation:vTake 2.2s ease-in-out infinite}
+  .v-take .ar{left:100px;top:16px}
+  @keyframes vTake{0%,22%{left:58px;top:28px}72%,100%{left:38px;top:8px}}
+  .v-put .fg{left:8px}
+  .v-put .pr{left:58px;top:28px;animation:vPut 2.2s ease-in-out infinite}
+  .v-put .ar{left:100px;top:16px}
+  @keyframes vPut{0%,22%{left:38px;top:8px}72%,100%{left:58px;top:28px}}
+  .v-make .fg{left:8px}
+  .v-make .lp{animation:vLump 2.6s ease-in-out infinite}
+  .v-make .pr{left:94px;top:28px;animation:vCake 2.6s ease-in-out infinite}
+  .v-make .sk{left:118px;top:20px;animation:vSpark 2.6s ease-out infinite}
+  .v-make .sk::after{content:'✦'}
+  @keyframes vLump{0%,30%{opacity:1;transform:scale(1)}60%,100%{opacity:.4;transform:scale(.8)}}
+  @keyframes vCake{0%,36%{opacity:0;transform:scale(.4)}64%,100%{opacity:1;transform:scale(1)}}
+  @keyframes vSpark{0%,56%{opacity:0}70%{opacity:1}100%{opacity:0}}
+  .v-help .fg{left:6px}
+  .v-help .fg.f2{left:58px}
+  .v-help .f2 .act{transform-origin:50% 100%;transform:rotate(28deg);animation:vRise 2.6s ease-in-out infinite}
+  @keyframes vRise{0%,24%{transform:rotate(82deg)}74%,100%{transform:rotate(0)}}
+  .v-open .fg{left:8px}
+  .v-open .pr{left:60px;top:30px;font-size:24px}
+  .v-open .ld{animation:vLid 2.2s ease-in-out infinite}
+  .v-open .sk{left:72px;top:6px;animation:vSpark 2.2s ease-out infinite}
+  .v-open .sk::after{content:'✦'}
+  @keyframes vLid{0%,24%{transform:rotate(0)}62%,100%{transform:rotate(-65deg)}}
+  .v-play .pr{left:54px;top:16px;font-size:40px}
+  .v-play .fg{left:78px;top:8px;transform:scale(.6);animation:vSlide 1.8s ease-in infinite}
+  @keyframes vSlide{0%{left:58px;top:0}100%{left:98px;top:22px}}
+  .vs.still,.vs.still *{animation:none!important}
+  .vs .sk406{position:absolute;left:4px;top:4px;width:132px;height:56px;display:block;border-radius:10px;background:linear-gradient(#4DABF7,#A5D8FF)}
+  .vs .ah406{position:absolute;left:112px;top:33px;width:11px;height:11px;display:block;border-top:3px solid #91A7FF;border-right:3px solid #91A7FF;box-sizing:border-box;transform:rotate(45deg)}
+  .vs .gr406{position:absolute;left:34px;top:57px;width:72px;height:4px;display:block;background:#8CC66B;border-radius:2px}
+  .vs .hr406{position:absolute;left:62px;top:4px;width:14px;height:54px;display:block;border:2px solid #868E96;border-radius:3px;box-sizing:border-box;background:repeating-linear-gradient(#fff 0 6px,#CED4DA 6px 8px)}
+  .vs .hd406{position:absolute;left:80px;top:1px;width:13px;height:13px;display:block;border-radius:50%;background:#FA5252;box-shadow:0 0 0 3px rgba(250,82,82,.25)}
+  .vs .sd37{position:absolute;left:36px;top:52px;width:52px;height:9px;display:block;border-radius:50%;background:#343A40;opacity:.85;transform:skewX(-35deg)}
+  .vs .sk32{position:absolute;left:3px;top:2px;width:134px;height:60px;border-radius:10px;overflow:hidden;display:block;box-sizing:border-box;border:2px solid rgba(0,0,0,.12)}
+  .sk32 .gd32{position:absolute;left:0;right:0;bottom:0;height:12px;display:block;background:#8CC66B}
+  .sk32 .sn32{position:absolute;width:20px;height:20px;border-radius:50%;display:block;background:#FFD43B;box-shadow:0 0 0 4px rgba(255,212,59,.35)}
+  .k-af{background:linear-gradient(#74C0FC,#FFF3BF)}
+  .k-af .sn32{left:98px;top:12px}
+  .k-ev{background:linear-gradient(#FF922B,#FFA8A8 70%,#F783AC)}
+  .k-ev .sn32{left:102px;top:36px;background:#FF6B00;box-shadow:0 0 0 5px rgba(255,107,0,.3);animation:t32Set 2.4s ease-in infinite}
+  .k-ev .gd32{background:#6B8E3D}
+  .k-ni{background:linear-gradient(#1C2A5A,#3B5BDB)}
+  .k-ni .gd32{background:#2B3A2B}
+  .k-ni .mn32{position:absolute;left:98px;top:7px;width:18px;height:18px;border-radius:50%;display:block;background:#FFF9DB;box-shadow:0 0 0 4px rgba(255,249,219,.2)}
+  .k-ni .st32{position:absolute;left:14px;top:8px;width:2px;height:2px;border-radius:50%;display:block;background:#fff;box-shadow:18px 10px #fff,40px 2px #fff,58px 16px #fff,26px 24px #FFF3BF,70px 30px #fff,6px 30px #FFF3BF;animation:t32Twinkle 1.6s ease-in-out infinite}
+  @keyframes t32Set{0%{transform:translateY(0)}100%{transform:translateY(8px)}}
+  @keyframes t32Twinkle{0%,100%{opacity:1}50%{opacity:.35}}
+  .dyp{position:relative;display:inline-flex;align-items:center;justify-content:center;width:80px;height:64px;border-radius:14px;background:#FFFDF9;border:2px solid #F1DFCD;box-sizing:border-box;line-height:1;vertical-align:middle;overflow:hidden;text-align:center}
+  .dyp .cf422{position:absolute;left:12px;top:4px;width:56px;height:56px;display:block;border-radius:50%;box-sizing:border-box;border:3px solid #495057;background:#fff}
+  .cf422 .tk422{position:absolute;left:0;top:0;width:50px;height:50px;display:block;border-radius:50%;background:repeating-conic-gradient(from -2deg,#495057 0 4deg,transparent 4deg 30deg);-webkit-mask:radial-gradient(circle,transparent 0 76%,#000 77%);mask:radial-gradient(circle,transparent 0 76%,#000 77%)}
+  .cf422 .n12{position:absolute;left:0;right:0;top:6px;display:block;text-align:center;font-style:normal;font-size:9px;line-height:1;font-weight:700;color:#495057;font-family:'Jua',sans-serif}
+  .cf422 .hh422{position:absolute;left:23px;top:11px;width:4px;height:14px;display:block;border-radius:2px;background:#364FC7;transform-origin:50% 100%}
+  .cf422 .mh422{position:absolute;left:23.5px;top:4px;width:3px;height:21px;display:block;border-radius:2px;background:#E8590C;transform-origin:50% 100%}
+  .cf422 .cp422{position:absolute;left:22px;top:22px;width:6px;height:6px;display:block;border-radius:50%;background:#212529}
+  .vs .rd424{position:absolute;left:2px;top:30px;width:136px;height:32px;display:block;border-radius:6px;background:#868E96}
+  .vs .rd424::after{content:'';position:absolute;left:8px;top:14px;width:120px;height:3px;background:repeating-linear-gradient(90deg,#F8F9FA 0 12px,transparent 12px 22px)}
+  .vs .pd424{position:absolute;left:24px;top:34px;width:72px;height:24px;display:block;border-radius:50%;background:linear-gradient(#4DABF7,#D0EBFF);border:2px solid #A5D8FF;box-sizing:border-box;overflow:hidden}
+  .vs .pd424::after{content:'';position:absolute;left:14px;top:5px;width:20px;height:7px;border-radius:6px;background:#fff;opacity:.9}
+  .vs .fp424{position:absolute;left:104px;top:38px;width:9px;height:14px;display:block;border-radius:50% 50% 45% 45%;background:repeating-linear-gradient(#343A40 0 2px,#495057 2px 4px);opacity:.8}
+  .vs .fp424.p2{left:120px;top:45px}
+  @keyframes r424Fall{0%{transform:translateY(-6px);opacity:0}25%{opacity:1}100%{transform:translateY(20px);opacity:0}}
+  @keyframes v27Up{0%,100%{transform:translateY(8px)}50%{transform:translateY(-4px)}}
+  .vs .pk425{position:absolute;left:4px;top:4px;width:132px;height:56px;display:block;border-radius:10px;background:linear-gradient(#EAF6FF 0 52%,#B2F2BB 52%)}
+  .vs .tr425{left:62px;top:6px;font-size:34px}
+  .vs .tr425.t2{left:24px;top:16px;font-size:24px}
+  .vs .sn425{left:102px;top:2px;font-size:18px}
+  .vs .sd37.sm425{left:72px;top:39px;width:20px;height:6px}
+  .vs .sd37.lg425{left:10px;top:39px;width:74px;height:7px}
+  .vs .sd37.lg425.l2{left:0;top:43px;width:44px;height:5px}
+  .vs .dyp.ck425{position:absolute;left:4px;top:6px;transform:scale(.62);transform-origin:0 0;background:transparent;border:none}
+  .vs .dyp.ck425.bn{left:30px;top:0;transform:none}
+  .vs .hd406.lo425{top:44px}
+  .v425-sunhigh .sn425{left:96px;top:-2px;font-size:22px}
+  .v425-sunlow .sn425{left:96px;top:38px;font-size:22px}
+  .v425-sunlow .dyp.ck425{left:2px}
+  .v425-treebig .sn425{left:112px;top:30px}
+  .v425-evening .tr425{top:8px}
+  .vs .rn425{left:16px;top:4px;font-size:22px}
+  .vs .rn425.sk{left:50px;top:8px;font-size:36px}
+  .vs .gy425{filter:grayscale(1) brightness(.92);font-size:30px;left:14px;top:10px;animation:g425Come 2.4s ease-in-out infinite}
+  .vs .gy425.g2{left:52px;top:20px;font-size:26px;animation-delay:-1.2s}
+  @keyframes g425Come{0%,100%{transform:translateX(-6px)}50%{transform:translateX(8px)}}
+  .v425-shower .pr{left:48px;top:2px;font-size:40px}
+  .vs .st425{position:absolute;left:52px;top:42px;width:3px;height:12px;display:block;background:#4DABF7;border-radius:1px;animation:r424Fall .9s linear infinite}
+  .vs .st425.s2{left:68px;top:46px;animation-delay:-.3s}
+  .vs .st425.s3{left:84px;top:42px;animation-delay:-.6s}
+  .vs .pd424.q2{left:100px;top:40px;width:34px;height:16px}
+  .v425-puddles .fp424,.v425-birdpuddle .fp424,.v425-bluesky .fp424{display:none}
+  .vs .bp425{left:32px;top:30px;font-size:14px;animation:v27Up 2.4s ease-in-out infinite}
+  .vs .bp425.b2{left:52px;top:34px;animation-delay:-.8s}
+  .vs .bp425.b3{left:72px;top:30px;animation-delay:-1.6s}
+  .v425-showerstop .sn425{left:54px;top:6px;font-size:32px}
+  .vs .wc425{left:104px;top:8px;font-size:20px;opacity:.5}
+  .v425-bluesky .rd424{top:40px;height:22px}
+  .v425-bluesky .pd424{top:42px;height:18px}
+  .v425-graysky .sk406{filter:grayscale(1)}
+  .v425-lightning .pr,.v425-shwbin .pr{left:48px;top:10px;font-size:40px}
+  .v425-sunaft .sn32,.v425-shwbin .sn32{display:none}
+  .v425-sunaft .sn425{left:92px;top:4px;font-size:30px}
+  .v425-turn .hh422{transition:transform 1.4s ease-in-out}
+  .v425-turn.late .hh422{transform:rotate(180deg)!important}
+  .v425-turn .sn425,.v425-turn .sd37{transition:all 1.4s ease-in-out}
+  .v425-turn .sd37{left:72px;top:39px;width:20px;height:6px}
+  .v425-turn.late .sd37{left:10px;width:74px;height:7px}
+  .v425-turn.late .sn425{left:112px;top:30px}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv4 · 25 관찰 글 3 · 하루와 시간</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘의 씨앗</div>
+      <div class="main">같은 곳도 <b>시각이 바뀌면</b> 달라진다 — 열두 시엔 작은 그림자, 여섯 시엔 큰 그림자.</div>
+    </div>
+  </div>
+
+  <div class="board">
+    <div class="blabel">Mina 박사의 관찰 노트 두 편 · 소리 내어 한 번 더 읽어요</div>
+    <div class="textrow">
+      <div class="tx"><div class="who"><span class="pk0"><span class="vz" style="width:42px;height:19px"><span class="vs v425-parknoon" data-vs="parknoon" style="transform:scale(0.3)"><b class="pk425"></b><span class="dyp ck425"><b class="cf422"><b class="tk422"></b><i class="n12">12</i><b class="hh422" style="transform:rotate(0deg)"></b><b class="mh422" style="transform:rotate(0deg)"></b><b class="cp422"></b></b></span><i class="pr tr425">🌳</i></span></span></span>1 · 해와 그림자</div><span class="ln"><b>1</b>It's twelve o'clock in the park.</span><span class="ln"><b>2</b>The sun is very high.</span><span class="ln"><b>3</b>The tree has a small shadow.</span><span class="ln"><b>4</b>The sun is low at six o'clock.</span><span class="ln"><b>5</b>The tree has a big shadow.</span><span class="ln"><b>6</b>Shadows are big in the evening.</span></div>
+      <div class="tx"><div class="who"><span class="pk0"><span class="vz" style="width:42px;height:19px"><span class="vs v425-shower" data-vs="shower" style="transform:scale(0.3)"><b class="sk406"></b><i class="pr">🌦️</i><b class="st425"></b><b class="st425 s2"></b><b class="st425 s3"></b></span></span></span>2 · 여름 소나기</div><span class="ln"><b>1</b>It's sunny in the afternoon.</span><span class="ln"><b>2</b>Gray clouds are coming.</span><span class="ln"><b>3</b>It's a summer shower.</span><span class="ln"><b>4</b>Puddles are on the ground.</span><span class="ln"><b>5</b>Birds are in the puddles.</span><span class="ln"><b>6</b>The summer shower stops.</span><span class="ln"><b>7</b>The sky is blue.</span></div>
+    </div>
+  </div>
+
+  <h2 class="q"><span class="n">1</span> <b>일어난 차례</b> — 여름 소나기 글의 네 줄에 1 ~ 4 번호를 써요 <span class="sub">글에서 먼저 나오는 줄부터</span></h2>
+  <div class="ocards"><div class="oc"><span class="no"></span>Puddles are on the ground.</div><div class="oc"><span class="no"></span>Gray clouds are coming.</div><div class="oc"><span class="no"></span>The summer shower stops.</div><div class="oc"><span class="no"></span>It's a summer shower.</div></div>
+
+  <h2 class="q"><span class="n">2</span> <b>빈칸</b> — 글과 같은 말을 골라 옮겨 써요 <span class="sub">상자를 보고</span></h2>
+  <div class="row2">
+    <div class="blb"><div class="who">해와 그림자 · 1번 줄</div><div class="bl">It's <span class="bx s"></span> o'clock in the park.</div><div class="wb3">six · twelve · eleven</div></div>
+    <div class="blb"><div class="who">해와 그림자 · 4번 줄 · 말 덩어리</div><div class="bl">The sun is low <span class="bx"></span>.</div><div class="wb3">at twelve o'clock · at six o'clock · in the afternoon</div></div>
+  </div>
+
+  <h2 class="q"><span class="n">3</span> <b>소리 안 나는 gh</b> — 들어 보고 gh 에 ✕ <span class="sub">igh 는 /아이/</span></h2>
+  <div class="grow">
+    <div class="w">high<span class="k">높은</span></div>
+    <div class="w">night<span class="k">밤</span></div>
+    <div class="w">lightning<span class="k">번개</span></div>
+    <div class="tip">i 뒤에 gh 가 오면 gh 는 소리 안 나요 — 셋 다 /아이/ 가 들려요.</div>
+  </div>
+
+  <h2 class="q"><span class="n">4</span> 우리 동네 그림자 — 같은 자리를 두 번 보고 고르고 그려요 <span class="sub">정답 없음</span></h2>
+  <div class="mine">
+    <div class="cel4"><div><div class="hd">낮</div><span class="pk0"><span class="vz" style="width:56px;height:26px"><span class="vs v425-ck12" data-vs="ck12" style="transform:scale(0.4)"><span class="dyp ck425 bn"><b class="cf422"><b class="tk422"></b><i class="n12">12</i><b class="hh422" style="transform:rotate(0deg)"></b><b class="mh422" style="transform:rotate(0deg)"></b><b class="cp422"></b></b></span></span></span></span></div><div><div class="line">It's <span></span> o'clock.</div><div class="pad"></div></div></div>
+    <div class="cel4"><div><div class="hd">저녁</div><span class="pk0"><span class="vz" style="width:56px;height:26px"><span class="vs v425-ck6" data-vs="ck6" style="transform:scale(0.4)"><span class="dyp ck425 bn"><b class="cf422"><b class="tk422"></b><i class="n12">12</i><b class="hh422" style="transform:rotate(180deg)"></b><b class="mh422" style="transform:rotate(0deg)"></b><b class="cp422"></b></b></span></span></span></span></div><div><div class="line">It's <span></span> o'clock.</div><div class="pad"></div></div></div>
+  </div>
+  <div class="wb6">twelve · six</div>
+
+  <div class="recap">★ 해가 높으면 그림자가 <b>작고</b>, 해가 낮으면 그림자가 <b>커요</b> — 글 차례 = <b>일어난 차례</b></div>
+
+  <div class="parent">
+    <b>학습 안내</b> · 세 번째 <b>알려 주는 관찰 글</b>입니다. 같은 곳을 다른 시각에 보면 달라져요 — <b>해가 높으면 그림자가 짧고, 낮으면 길어요</b>. 운동장에서 <b>같은 자리를 두 번</b>(낮 · 저녁) 같이 보세요.
+    먼저 읽어 주지 마세요. <b>아이가 소리 내어 읽은 다음</b> 한 번 통으로 읽어 주세요. It's 는 It is 를 붙여 쓴 말이에요(설명 없이). high · night · lightning 의 gh 는 들려주기만 하고 받아쓰기로 확인하지 마세요.
+    정답 — ① 3 · 1 · 4 · 2 / ② <b>twelve</b> · <b>at six o'clock</b> / ③ high · night · lightning 의 gh / ④ 정답 없음.
+  </div>
+<script src="/kedu_back.js"></script>
+</body>
+</html>
