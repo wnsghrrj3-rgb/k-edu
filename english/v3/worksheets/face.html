@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv4 #19 신체② 얼굴 10단어 — headtoe.html(Lv4 #5) 판형 계승, V트랙 주황
+     ★그림 = 화면과 같은 그림(BOD · FAC419CSS 블록 그대로) — 그림 마크업 = 화면 FAC419 fb419('ws') · pz(w,px,true) · sz(w,px,true) 를 생성기 ws/gen_face.js 로 그대로 뽑음 + .still(움직임 끔).
+     ★얼굴 밑그림(#5 같은 사람 · 머리 확대 · 열 자리 번호 1~10 위 → 아래 · 단어 글자 0) · ① 따라쓰기 10(위 판 / 입 판) · ② 얼굴 자리 번호 쓰기
+     · ③ 짝 잇기 그림 보고(lip ↔ mouth · cheek ↔ chin · eyebrow ↔ forehead) · ④ 그림 보고 I have two ___. · Grandpa has a ___.(상자 ears · beard · cheeks · tooth).
+     받아쓰기 금지. -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root { --primary:#FF8A3D; --green:#4CAF50; --red:#F44336; --subtext:#888780; --border:#F7DFCB; --green-light:#E8F5E9; }
+  @page { size: A4; margin: 10mm 12mm 8mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.45; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d9702a; padding-bottom: 5px; }
+  .brand { font-size: 13px; font-weight: 700; color: #9c4d13; }
+  .brand .lv { background: #d9702a; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 7px; background: #fdeee1; border: 2px solid #d9702a; border-radius: 12px; padding: 7px 13px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 24px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #9c4d13; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 15.5px; font-weight: 800; color: #4a2408; }
+  .keypoint { margin-top: 6px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 5px 12px; font-size: 12px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  .keypoint .big { font-size: 13px; font-weight: 800; color: #d85a30; }
+  h2 { margin-top: 8px; font-size: 13px; color: #9c4d13; display: flex; align-items: center; gap: 7px; }
+  h2 .n { background: #9c4d13; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2 .hint { font-weight: 400; font-size: 10px; color: #888780; }
+  .trace { display: flex; gap: 8px; margin-top: 3px; }
+  .traceword { text-align: center; flex: 1; min-width: 56px; position: relative; }
+  .outline { font-size: 19px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.4px #c4c2b8; letter-spacing: 1px; }
+  .line { border-bottom: 1.5px solid #d3d1c7; height: 14px; margin-top: 2px; }
+  .twocol { display: flex; gap: 10px; margin-top: 4px; align-items: stretch; }
+  .recap { margin-top: 7px; background: #4a2408; color: #fdeee1; border-radius: 10px; padding: 7px 13px; text-align: center; font-size: 12px; }
+  .recap b { color: #fac775; }
+  .parent { margin-top: 6px; border-top: 1px dashed #b4b2a9; padding-top: 5px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+  /* 그림 — 화면 블록 그대로(움직임은 .still 로 꺼짐) */
+/*BOD-BEGIN — #15 몸 그림 단일 원천(blocks/BOD.css → sync_blocks.py 주입, 하네스가 4파일 동일 검사).
+  ★같은 사람 한 명 + 「어디를 감싸느냐」만 바뀐다(.sp 분홍 동그라미) — #7 .act · Lv1 #15 ⭐ 크기 계보.
+    이모지를 쓰면 face 😀 · smile 😊 가 둘 다 웃는 얼굴이라 그림에서 갈리지 않는다(#11·#13 이모지 그대로 못 씀).
+  ★bone 은 몸 「안」 — 왼팔 엑스레이 창(.bn)으로만 보인다. hand 는 「밖」(팔 끝).
+  ★감싸는 자리(.p-* .sp)와 짚는 자리(.z-*)는 같은 좌표 선언 하나 — 그림과 손이 어긋날 수 없다. */
+.bod{position:relative;display:inline-block;width:6em;height:10em;font-size:10px;vertical-align:middle;flex:none}
+.bod>i{position:absolute;display:block;font-style:normal}
+.bod .hd{left:1.5em;top:.55em;width:3em;height:3.1em;border-radius:50%;background:#FFD9B8}
+.bod .hr{left:1.35em;top:.25em;width:3.3em;height:1.35em;border-radius:1.65em 1.65em .5em .5em;background:#6B4A2E}
+.bod .ey{left:2.15em;top:1.9em;width:.45em;height:.45em;border-radius:50%;background:#333;box-shadow:1.25em 0 0 #333}
+.bod .ns{left:2.83em;top:2.25em;width:.34em;height:.5em;border-radius:.2em .2em .3em .3em;background:#E39A72}
+.bod .mo{left:2.4em;top:2.75em;width:1.2em;height:.5em;border-bottom:.22em solid #D2453A;border-radius:0 0 .7em .7em}
+.bod .tr{left:1.95em;top:3.75em;width:2.1em;height:3em;border-radius:.6em .6em .3em .3em;background:#7FB3E6}
+.bod .ar{left:1.2em;top:3.9em;width:.65em;height:2.4em;border-radius:.3em;background:#FFD9B8;box-shadow:2.95em 0 0 #FFD9B8}
+.bod .hn{left:1.02em;top:6.2em;width:1em;height:1em;border-radius:50%;background:#F7BE93;box-shadow:2.95em 0 0 #F7BE93}
+.bod .lg{left:2.15em;top:6.7em;width:.7em;height:2.2em;background:#4A6FA5;box-shadow:1em 0 0 #4A6FA5}
+.bod .ft{left:1.7em;top:8.8em;width:1.25em;height:.65em;border-radius:.65em .65em .2em .2em;background:#5A4030;box-shadow:1.35em 0 0 #5A4030}
+.bod .bn{left:1.2em;top:3.9em;width:.65em;height:2.4em;border-radius:.3em;background:#3F4B57;opacity:0}
+.bod .bn::before{content:'';position:absolute;left:.22em;top:.45em;width:.21em;height:1.5em;background:#fff;border-radius:.1em}
+.bod .bn::after{content:'';position:absolute;left:.1em;top:.25em;width:.45em;height:.32em;border-radius:50%;background:#fff;box-shadow:0 1.6em 0 #fff}
+.bod.p-bone .bn,.bod.xr .bn{opacity:1}
+.bod .sp{border:.2em solid #FF3D7F;border-radius:50%;background:rgba(255,61,127,.13);opacity:0;pointer-events:none;z-index:6}
+.bod[class*=" p-"] .sp{opacity:1;animation:bodpulse 1.3s ease-in-out infinite}
+@keyframes bodpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.bod.p-face .sp,.bod .z-face{left:1.1em;top:.2em;width:3.8em;height:3.8em}
+.bod.p-hair .sp,.bod .z-hair{left:1.05em;top:-.25em;width:3.9em;height:1.95em}
+.bod.p-eye .sp,.bod .z-eye{left:1.8em;top:1.45em;width:2.4em;height:1em}
+.bod.p-nose .sp,.bod .z-nose{left:2.6em;top:2.05em;width:.8em;height:.9em}
+.bod.p-smile .sp,.bod .z-smile{left:2.15em;top:2.95em;width:1.7em;height:.8em}
+.bod.p-hand .sp,.bod .z-hand{left:.65em;top:5.85em;width:4.7em;height:1.7em}
+.bod.p-bone .sp,.bod .z-bone{left:.85em;top:3.6em;width:1.35em;height:2.2em}
+.bod.p-feet .sp,.bod .z-feet{left:1.3em;top:8.35em;width:3.4em;height:1.55em}
+.bod .hz{border-radius:50%;cursor:pointer;z-index:2}
+.bod .z-face{z-index:1}.bod .z-eye,.bod .z-nose,.bod .z-smile{z-index:4}
+.bod .hz.hit{background:rgba(255,193,7,.35)}
+.bod.blank .hz{border:.08em dashed rgba(217,112,42,.6)}
+.bod.blank .hr,.bod.blank .ey,.bod.blank .ns,.bod.blank .mo{visibility:hidden}
+.bod.blank.has-hair .hr,.bod.blank.has-eye .ey,.bod.blank.has-nose .ns,.bod.blank.has-smile .mo{visibility:visible;animation:bodpop .4s}
+@keyframes bodpop{0%{transform:scale(.3)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+/*BOD-END*/
+/*FAC419CSS-BEGIN — Lv4 #19 몸② 얼굴 판 그림·뒷면 장면(blocks/FAC419CSS.css → sync_blocks.py 주입 · 4파일 + 활동지 문자 단위 동일, 하네스 A4).
+  ★몸 = Lv2 #15 BOD 한 사람 그대로(BOD 원본 선언은 손대지 않는다) · 창(.pz419)이 머리 자리만 남긴다 = #5 몸 판 같은 사람의 머리 확대판(확대 = 글자 크기 하나).
+  ★얼굴에서만 보이는 것은 이 칸이 덧붙인다: 귀 .er419(= Lv3 #17 .er17 값 그대로) · 이마 .fh419(앞머리 사이 살갗) · 눈썹 · 볼 · 벌린 입(이 하나 · 혀) · 수염.
+  ★감싸는 자리(.p-* .sp)와 짚는 자리(.z-*)는 같은 좌표 선언 하나(BOD 판형) · 얼굴 판(.b419) 안에서만 선다(Lv3 #17 p-ear · Lv2 #15 자리와 섞이지 않게).
+    보는 쪽 왼쪽 = eyebrow · ear / 오른쪽 = cheek · 가운데 위 → 아래 = forehead → mouth(lip · tooth · tongue) → chin → beard.
+  ★mouth = 「아—」 벌린 O 전체(채운 동그라미) · lip = 입술 테두리만(빈 고리) — 웃는 곡선(.mo = Lv2 #15 smile)은 벌린 입 그림에서 숨는다. */
+.pz419{position:relative;display:inline-block;width:4.3em;height:4.6em;overflow:hidden;line-height:0;vertical-align:middle;text-align:left;border-radius:.45em;background:#FFFDF8}
+.pz419>.bod{position:absolute;left:-.85em;top:-.05em;font-size:inherit}
+.pz419>i{position:absolute;display:block;font-style:normal}
+/* 얼굴에서만 보이는 것 */
+.bod .er419{left:4.3em;top:1.75em;width:.45em;height:.8em;border-radius:50%;background:#F7BE93;box-shadow:-3.05em 0 0 #F7BE93}
+.bod .fh419{left:2.05em;top:1.02em;width:1.9em;height:.7em;border-radius:.95em .95em .25em .25em;background:#FFD9B8}
+.bod .eb419{left:2.05em;top:1.66em;width:.65em;height:.14em;border-radius:.1em;background:#6B4A2E;box-shadow:1.25em 0 0 #6B4A2E}
+.bod .ck419{left:1.85em;top:2.5em;width:.5em;height:.34em;border-radius:50%;background:rgba(255,135,135,.45);box-shadow:1.8em 0 0 rgba(255,135,135,.45)}
+.bod .om419{left:2.57em;top:2.84em;width:.86em;height:.66em;box-sizing:border-box;border:.09em solid #E64980;border-radius:45%;background:#8B1E2B;display:none}
+.bod .om419 i{position:absolute;display:block}
+.bod .th419{left:.22em;top:0;width:.24em;height:.17em;border-radius:0 0 .06em .06em;background:#fff}
+.bod .tg419{left:.1em;top:.24em;width:.48em;height:.24em;border-radius:.24em .24em .1em .1em;background:#F06595}
+.bod.ah419 .om419{display:block}
+.bod.ah419 .mo{visibility:hidden}
+.bod .bd419{left:2.1em;top:3.45em;width:1.8em;height:1.05em;border-radius:.3em .3em .9em .9em;background:#7B5B3A;display:none}
+.bod.hb419 .bd419{display:block}
+/* 감싸는 자리 = 짚는 자리(얼굴 판 안에서만) */
+.bod.b419 .sp{border-width:.08em}
+.bod.b419.p-forehead .sp,.bod.b419 .z-forehead{left:2em;top:.95em;width:2em;height:.62em}
+.bod.b419.p-eyebrow .sp,.bod.b419 .z-eyebrow{left:1.95em;top:1.48em;width:.85em;height:.45em}
+.bod.b419.p-ear .sp,.bod.b419 .z-ear{left:1.05em;top:1.6em;width:.85em;height:1.1em}
+.bod.b419.p-cheek .sp,.bod.b419 .z-cheek{left:3.5em;top:2.36em;width:.8em;height:.62em}
+.bod.b419.p-mouth .sp,.bod.b419 .z-mouth{left:2.36em;top:2.72em;width:1.28em;height:.86em}
+.bod.b419.p-lip .sp,.bod.b419 .z-lip{left:2.5em;top:2.78em;width:1em;height:.78em}
+.bod.b419.p-tooth .sp,.bod.b419 .z-tooth{left:2.8em;top:2.84em;width:.4em;height:.32em}
+.bod.b419.p-tongue .sp,.bod.b419 .z-tongue{left:2.7em;top:3.16em;width:.6em;height:.34em}
+.bod.b419.p-chin .sp,.bod.b419 .z-chin{left:2.5em;top:3.5em;width:1em;height:.42em}
+.bod.b419.p-beard .sp,.bod.b419 .z-beard{left:2.05em;top:3.5em;width:1.9em;height:1.1em}
+.bod.b419.p-lip .sp{background:none;border-width:.11em}
+.bod.b419.p-tooth .th419{box-shadow:0 0 .12em .04em #FFF3BF}
+.bod.b419 .z-forehead,.bod.b419 .z-beard{z-index:3}
+.bod.b419 .z-mouth{z-index:4}
+.bod.b419 .z-lip{z-index:5}
+.bod.b419 .z-ear,.bod.b419 .z-eyebrow,.bod.b419 .z-cheek,.bod.b419 .z-chin{z-index:6}
+.bod.b419 .z-tooth,.bod.b419 .z-tongue{z-index:7}
+/* 얼굴 판 — 짚을 차례(now) 깜빡 · 맨 위로 · 찾은 자리(found/correct) 분홍 테 · 틀린 자리 흔들림(소리 0) */
+.fb419{display:flex;justify-content:center;margin:6px 0;line-height:0}
+.fb419 .pz419{font-size:54px;border:3px solid var(--border)}
+.bod.b419 .hz.now{border:.05em dashed #F08C00;background:rgba(255,212,59,.35);animation:tapBlink 1.1s infinite;z-index:9}
+.bod.b419 .hz.found,.bod.b419 .hz.correct{border:.05em solid #FF3D7F;background:rgba(255,61,127,.16)}
+.bod.b419 .hz.wrong,.bod.b419 .hz.bad{background:rgba(244,67,54,.28);animation:shake .4s}
+.bod.b419.pop419 .bd419{animation:bodpop .5s}
+.fb419.m-ws .pz419{font-size:44px;border-color:#e0b48c}
+.fb419.m-ws .hz{cursor:default}
+.bod .hz .wn419{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:13px;height:13px;border-radius:50%;background:#9c4d13;color:#fff;font-size:9px;line-height:13px;text-align:center;font-weight:800;font-style:normal}
+.bod .z-lip .wn419{left:0}
+.bod .z-mouth .wn419{left:100%}
+.bod .z-beard .wn419{top:82%}
+.tags419{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin:4px auto 0;max-width:430px}
+.tags419 .tg419{min-width:52px;padding:0 6px;border:2px dashed #F0C9A6;border-radius:9px;font-size:16px;color:#C9B39C;background:#fff;line-height:1.5;font-style:normal}
+.tags419 .tg419.on{border-style:solid;border-color:var(--green);color:var(--primary);background:var(--green-light)}
+/* lip — Lv1 #18 👄 (창 왼쪽 아래) */
+.pz419 .lp419{left:.08em;top:3.3em;width:1.2em;height:1.2em;line-height:1}
+.pz419 .lp419 i{font-size:1em;font-style:normal;line-height:1}
+/* 뒷면 장면 — 말하는 사람(나 · 이름표) + 얼굴 판 + 소품 */
+.ss419{position:relative;display:inline-block;width:6.6em;height:5.2em;line-height:0;vertical-align:middle;overflow:hidden;border-radius:.6em;background:#FFF9DB;text-align:left}
+.ss419>.pz419{position:absolute;left:2.1em;top:.3em}
+.ss419 .me419{position:absolute;left:.25em;top:.3em;width:1.6em;height:1.6em;border-radius:50%;background:#FFE066;border:.12em solid #F0C419;color:#7a5600;font-size:.95em;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-style:normal;box-sizing:border-box}
+.nm419{display:inline-flex;align-items:center;gap:2px;font-size:14px;line-height:1.3;font-style:normal;background:#fff;border:2px solid #FF8A3D;color:#FF8A3D;border-radius:8px;padding:0 6px;font-family:'Jua',sans-serif}
+.nm419 .dd419{font-size:16px;font-style:normal}
+.ss419 .nm419{position:absolute;left:2px;top:2px;font-size:11px;padding:0 4px}
+.ss419 .nm419 .dd419{font-size:13px}
+/* eyebrow — Ben 큰 눈썹을 치켜올림(「무섭지?」) · 옆의 강아지는 하품(허세) */
+.bod.be419 .eb419{top:1.52em;height:.24em;animation:be419 1.2s ease-in-out infinite}
+@keyframes be419{0%,100%{transform:translateY(0)}50%{transform:translateY(-.14em)}}
+.ss419 .dg419{position:absolute;left:.25em;top:3.15em;font-size:1.3em;line-height:1;font-style:normal;transform-origin:50% 100%;animation:dg419 1.8s ease-in-out infinite}
+@keyframes dg419{0%,60%,100%{transform:scaleY(1)}75%{transform:scaleY(1.15)}}
+/* cheek — Mina 빨간 볼 */
+.bod.rc419 .ck419{background:rgba(240,62,62,.7);box-shadow:1.8em 0 0 rgba(240,62,62,.7)}
+/* tooth — 젖니 하나 반짝 */
+.pz419 .sk419{left:2.3em;top:2.45em;width:.5em;height:.5em;line-height:1;color:#F59F00;text-align:center;animation:sk419 .9s ease-out infinite}
+.pz419 .sk419::after{content:'✦';font-size:.5em}
+@keyframes sk419{0%,30%{opacity:0;transform:scale(.4)}55%{opacity:1;transform:scale(1.1)}100%{opacity:0;transform:scale(1.4)}}
+/* tongue — ★진행형 1자리: 혀가 입 밖으로 쏙 나왔다 들어간다(움직이는 그림) */
+.bod.to419 .tg419{animation:to419 1.8s ease-in-out infinite}
+@keyframes to419{0%,15%,90%,100%{transform:translateY(0)}45%,70%{transform:translateY(.34em)}}
+/* forehead — 뜨거운 이마(붉은 이마 + 아지랑이) */
+.bod.ht419 .fh419{background:#FFC9C9}
+.pz419 .hw419{left:3.3em;top:.62em;width:.35em;height:.07em;border-radius:.04em;background:#FF922B;box-shadow:-2.6em 0 0 #FF922B,.08em .22em 0 #FF922B,-2.68em .22em 0 #FF922B;animation:hw419 1s ease-in-out infinite}
+@keyframes hw419{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(-.12em);opacity:1}}
+/* ear — 두 귀(다른 쪽 귀도 감쌈) */
+.pz419 .e2419{left:3.25em;top:1.55em;width:.85em;height:1.1em;box-sizing:border-box;border:.08em solid #FF3D7F;border-radius:50%;background:rgba(255,61,127,.13);animation:bodpulse 1.3s ease-in-out infinite}
+/* mouth — Amy 의 사자 입이 화면 밖까지(과장) */
+.ss419 .ln419{position:absolute;left:1.1em;top:.15em;font-size:5em;line-height:1;font-style:normal;transform-origin:30% 100%;animation:ln419 1.4s ease-in-out infinite}
+@keyframes ln419{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+/* beard — Grandpa 흰머리 · 흰 수염 */
+.bod.gp419 .hr{background:#DEE2E6}
+.bod.gp419 .eb419{background:#ADB5BD;box-shadow:1.25em 0 0 #ADB5BD}
+.bod.gp419 .bd419{background:#F1F3F5;border:.05em solid #CED4DA;box-sizing:border-box}
+/* chin — Sam 은 진지하게 코를 짚는다(그림만 · 감싸는 자리는 턱 그대로) */
+.pz419 .fp419{left:1.98em;top:2.3em;width:.42em;height:.42em;border-radius:50%;background:#F7BE93;border:.05em solid #D9895B;box-sizing:border-box}
+.pz419 .fp419::after{content:'';position:absolute;left:-.5em;top:.32em;width:.55em;height:.2em;border-radius:.1em;background:#F7BE93;transform:rotate(28deg)}
+/* 움직임 끄기(종이 · 작은 칸) */
+.pz419.still *,.ss419.still *{animation:none!important}
+/*FAC419CSS-END*/
+  .figrow { display: flex; gap: 12px; align-items: center; margin-top: 4px; }
+  .figbox { flex: none; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 6px 10px; }
+  .figbox .fb419 { margin: 0; }
+  .nbox { flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 14px; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 8px 12px; }
+  .nq { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .nq .nw { font-size: 16px; font-weight: 800; color: #4a2408; letter-spacing: .3px; }
+  .nq .sq { display: inline-block; width: 26px; height: 24px; border: 1.8px solid #b4b2a9; border-radius: 5px; background: #fff; }
+  .box3, .box4 { flex: 1; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 5px 10px; }
+  .pr3 { display: flex; justify-content: space-between; gap: 30px; }
+  .pc3 { display: flex; flex-direction: column; gap: 5px; }
+  .pi3 { font-size: 15px; font-weight: 800; color: #4a2408; display: flex; align-items: center; gap: 6px; letter-spacing: .3px; }
+  .pc3.R .pi3 { justify-content: flex-end; }
+  .pi3 .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #9c4d13; }
+  .hv4 { display: flex; flex-direction: column; gap: 4px; }
+  .it4 { display: flex; gap: 8px; align-items: center; }
+  .pic4 { flex: none; line-height: 0; }
+  .s { font-size: 15px; font-weight: 800; color: #4a2408; display: flex; align-items: flex-end; gap: 4px; letter-spacing: .3px; flex-wrap: wrap; }
+  .s .ln { display: inline-block; width: 64px; border-bottom: 1.8px solid #b4b2a9; height: 20px; }
+  .wb { font-size: 10px; color: #888780; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv4 · 어휘 #19</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main">얼굴도 위에서 아래로 — 나는 have, 그 사람은 has.</div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 위 판 — forehead · eyebrow · ear · cheek · beard / 입 판 — mouth · lip · tooth · tongue · chin.
+    <span class="big">테두리만 lip, 입 전체 mouth</span>
+  </div>
+
+  <h2><span class="n">1</span> 따라 써요 <span class="hint">흐린 글자를 따라 써요 — 위 줄 위 판 · 아래 줄 입 판</span></h2>
+  <div class="trace"><div class="traceword"><div class="outline">forehead</div><div class="line"></div></div><div class="traceword"><div class="outline">eyebrow</div><div class="line"></div></div><div class="traceword"><div class="outline">ear</div><div class="line"></div></div><div class="traceword"><div class="outline">cheek</div><div class="line"></div></div><div class="traceword"><div class="outline">beard</div><div class="line"></div></div></div>
+  <div class="trace"><div class="traceword"><div class="outline">mouth</div><div class="line"></div></div><div class="traceword"><div class="outline">lip</div><div class="line"></div></div><div class="traceword"><div class="outline">tooth</div><div class="line"></div></div><div class="traceword"><div class="outline">tongue</div><div class="line"></div></div><div class="traceword"><div class="outline">chin</div><div class="line"></div></div></div>
+
+  <h2><span class="n">2</span> 얼굴 판 번호 쓰기 <span class="hint">단어를 읽고 — 그 자리의 번호를 네모에 써요</span></h2>
+  <div class="figrow">
+    <div class="figbox"><div class="fb419 m-ws"><span class="pz419"><span class="bod b419 ah419 hb419" data-p=""><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i><i class="er419"></i><i class="fh419"></i><i class="eb419"></i><i class="ck419"></i><i class="om419"><i class="th419"></i><i class="tg419"></i></i><i class="bd419"></i><i class="hz z-forehead" data-w="forehead"><b class="wn419">1</b></i><i class="hz z-eyebrow" data-w="eyebrow"><b class="wn419">2</b></i><i class="hz z-ear" data-w="ear"><b class="wn419">3</b></i><i class="hz z-cheek" data-w="cheek"><b class="wn419">4</b></i><i class="hz z-mouth" data-w="mouth"><b class="wn419">5</b></i><i class="hz z-lip" data-w="lip"><b class="wn419">6</b></i><i class="hz z-tooth" data-w="tooth"><b class="wn419">7</b></i><i class="hz z-tongue" data-w="tongue"><b class="wn419">8</b></i><i class="hz z-chin" data-w="chin"><b class="wn419">9</b></i><i class="hz z-beard" data-w="beard"><b class="wn419">10</b></i></span></span></div></div>
+    <div class="nbox"><div class="nq" data-w="cheek"><span class="nw">cheek</span><span class="sq"></span></div><div class="nq" data-w="beard"><span class="nw">beard</span><span class="sq"></span></div><div class="nq" data-w="tongue"><span class="nw">tongue</span><span class="sq"></span></div><div class="nq" data-w="forehead"><span class="nw">forehead</span><span class="sq"></span></div><div class="nq" data-w="lip"><span class="nw">lip</span><span class="sq"></span></div><div class="nq" data-w="ear"><span class="nw">ear</span><span class="sq"></span></div><div class="nq" data-w="chin"><span class="nw">chin</span><span class="sq"></span></div><div class="nq" data-w="eyebrow"><span class="nw">eyebrow</span><span class="sq"></span></div><div class="nq" data-w="mouth"><span class="nw">mouth</span><span class="sq"></span></div><div class="nq" data-w="tooth"><span class="nw">tooth</span><span class="sq"></span></div></div>
+  </div>
+
+  <div class="twocol">
+    <div style="flex:1.1;display:flex;flex-direction:column">
+      <h2><span class="n">3</span> 짝 잇기 <span class="hint">그림을 보고 — 헷갈리는 짝끼리 줄로 이어요</span></h2>
+      <div class="box3"><div class="pr3"><div class="pc3 L"><div class="pi3" data-w="lip"><span class="pz419 still" data-vs="lip" style="font-size:13px"><span class="bod p-lip b419 ah419" data-p="lip"><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i><i class="er419"></i><i class="fh419"></i><i class="eb419"></i><i class="ck419"></i><i class="om419"><i class="th419"></i><i class="tg419"></i></i><i class="bd419"></i></span><i class="lp419"><i>👄</i></i></span><b>lip</b><i class="dot"></i></div><div class="pi3" data-w="cheek"><span class="pz419 still" data-vs="cheek" style="font-size:13px"><span class="bod p-cheek b419" data-p="cheek"><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i><i class="er419"></i><i class="fh419"></i><i class="eb419"></i><i class="ck419"></i><i class="om419"><i class="th419"></i><i class="tg419"></i></i><i class="bd419"></i></span></span><b>cheek</b><i class="dot"></i></div><div class="pi3" data-w="eyebrow"><span class="pz419 still" data-vs="eyebrow" style="font-size:13px"><span class="bod p-eyebrow b419" data-p="eyebrow"><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i><i class="er419"></i><i class="fh419"></i><i class="eb419"></i><i class="ck419"></i><i class="om419"><i class="th419"></i><i class="tg419"></i></i><i class="bd419"></i></span></span><b>eyebrow</b><i class="dot"></i></div></div><div class="pc3 R"><div class="pi3" data-w="forehead"><i class="dot"></i><b>forehead</b><span class="pz419 still" data-vs="forehead" style="font-size:13px"><span class="bod p-forehead b419" data-p="forehead"><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i><i class="er419"></i><i class="fh419"></i><i class="eb419"></i><i class="ck419"></i><i class="om419"><i class="th419"></i><i class="tg419"></i></i><i class="bd419"></i></span></span></div><div class="pi3" data-w="mouth"><i class="dot"></i><b>mouth</b><span class="pz419 still" data-vs="mouth" style="font-size:13px"><span class="bod p-mouth b419 ah419" data-p="mouth"><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i><i class="er419"></i><i class="fh419"></i><i class="eb419"></i><i class="ck419"></i><i class="om419"><i class="th419"></i><i class="tg419"></i></i><i class="bd419"></i></span></span></div><div class="pi3" data-w="chin"><i class="dot"></i><b>chin</b><span class="pz419 still" data-vs="chin" style="font-size:13px"><span class="bod p-chin b419" data-p="chin"><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i><i class="er419"></i><i class="fh419"></i><i class="eb419"></i><i class="ck419"></i><i class="om419"><i class="th419"></i><i class="tg419"></i></i><i class="bd419"></i></span></span></div></div></div></div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column">
+      <h2><span class="n">4</span> 그림 보고 써요 <span class="hint">상자에서 골라 빈칸에 옮겨 써요</span></h2>
+      <div class="box4"><div class="hv4"><div class="it4"><span class="pic4"><span class="ss419 still" data-ss="ear" style="font-size:13px"><b class="me419">나</b><span class="pz419"><span class="bod p-ear b419" data-p="ear"><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i><i class="er419"></i><i class="fh419"></i><i class="eb419"></i><i class="ck419"></i><i class="om419"><i class="th419"></i><i class="tg419"></i></i><i class="bd419"></i></span><i class="e2419"></i></span></span></span><div class="s">I have two <span class="ln"></span>.</div></div><div class="it4"><span class="pic4"><span class="ss419 still" data-ss="beard" style="font-size:13px"><i class="nm419"><i class="dd419">👴</i>Grandpa</i><span class="pz419"><span class="bod p-beard b419 hb419 gp419" data-p="beard"><i class="hd"></i><i class="hr"></i><i class="ey"></i><i class="ns"></i><i class="mo"></i><i class="tr"></i><i class="ar"></i><i class="hn"></i><i class="lg"></i><i class="ft"></i><i class="bn"></i><i class="sp"></i><i class="er419"></i><i class="fh419"></i><i class="eb419"></i><i class="ck419"></i><i class="om419"><i class="th419"></i><i class="tg419"></i></i><i class="bd419"></i></span></span></span></span><div class="s">Grandpa has a <span class="ln"></span>.</div></div><div class="wb">상자 · ears · beard · cheeks · tooth</div></div></div>
+    </div>
+  </div>
+
+  <div class="recap">오늘 열 단어 = <b>eyebrow · cheek · tooth · tongue · forehead · ear · mouth · beard · chin · lip</b> — 이마부터 턱까지!</div>
+
+  <div class="parent">
+    <b>부모님께</b> · <b>has</b> 는 have 에 s 를 붙인 꼴이 아니라 <b>통째로</b> 외우는 말이에요 — 나는 have, 그 사람은 has.
+    · <b>tooth</b> 는 이 <b>하나</b>일 때만 써요 — 여럿일 때 꼴은 아직 배우지 않아요.
+    · 이 활동지는 <b>보고 옮겨 쓰는</b> 종이입니다. <b>받아쓰기로 확인하지 마세요.</b><br>
+    <b>정답</b> · ② cheek 4 · beard 10 · tongue 8 · forehead 1 · lip 6 · ear 3 · chin 9 · eyebrow 2 · mouth 5 · tooth 7 · ③ lip — mouth · cheek — chin · eyebrow — forehead · ④ ears · beard
+  </div>
+</body>
+</html>
