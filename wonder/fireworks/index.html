@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>불꽃놀이 공장 · 케이원더</title>
+<script type="importmap">
+{ "imports": { "three": "/labs/vendor/three185/three.module.min.js", "three/addons/": "/labs/vendor/three185/addons/" } }
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#02040a;color:#eef2ff;font-family:'Pretendard','Noto Sans KR',system-ui,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block}
+.top{position:fixed;left:0;right:0;top:0;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 0;display:flex;gap:10px;align-items:flex-start;pointer-events:none}
+.top>*{pointer-events:auto}
+a.back{color:#c9d3f5;text-decoration:none;font-weight:700;font-size:.9rem;background:rgba(8,12,26,.5);border:1px solid rgba(160,180,255,.18);padding:7px 12px;border-radius:999px;backdrop-filter:blur(6px)}
+.note{margin:0 auto;max-width:min(680px,72vw);background:rgba(8,12,26,.55);border:1px solid rgba(160,180,255,.18);border-radius:14px;padding:9px 16px;font-weight:700;font-size:clamp(.95rem,1.7vw,1.15rem);text-align:center;backdrop-filter:blur(6px);transition:opacity .6s}
+.note small{display:block;font-weight:500;color:#aab6de;font-size:.82em;margin-top:2px}
+.note.hide{opacity:0}
+.snd{background:rgba(8,12,26,.5);border:1px solid rgba(160,180,255,.18);color:#eef2ff;border-radius:999px;padding:7px 12px;font:inherit;font-size:.9rem;cursor:pointer;backdrop-filter:blur(6px)}
+.open{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:linear-gradient(180deg,#ffd27a,#ff9d3c);color:#2a1400;border:0;border-radius:999px;padding:14px 30px;font:inherit;font-weight:900;font-size:1.1rem;cursor:pointer;box-shadow:0 8px 30px rgba(255,150,40,.35)}
+.open.hide,.bench.hide{display:none}
+/* 작업대(임시 판 — 나중에 블렌더 작업대 컷으로 바뀐다) */
+.bench{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(860px,96vw);background:rgba(10,14,28,.78);border:1px solid rgba(160,180,255,.2);border-radius:20px;padding:12px 14px;backdrop-filter:blur(10px);display:grid;gap:8px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row .lb{width:3.6em;font-weight:800;color:#aab6de;font-size:.85rem;flex:none}
+.chip{border:2px solid rgba(160,180,255,.22);background:rgba(255,255,255,.04);color:#eef2ff;border-radius:12px;padding:7px 11px;font:inherit;font-size:.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;line-height:1.1}
+.chip i{width:14px;height:14px;border-radius:50%;display:inline-block;box-shadow:0 0 10px currentColor;background:currentColor}
+.chip small{font-weight:500;color:#aab6de}
+.chip.on{border-color:#ffd27a;background:rgba(255,210,122,.14)}
+.chip.sub.on{border-color:#8fd0ff;background:rgba(143,208,255,.14)}
+.go{margin-left:auto;background:linear-gradient(180deg,#ffd27a,#ff9d3c);color:#2a1400;border:0;border-radius:14px;padding:12px 26px;font:inherit;font-weight:900;font-size:1.05rem;cursor:pointer}
+.go:disabled{opacity:.45}
+.x{background:none;border:0;color:#aab6de;font:inherit;font-size:.85rem;cursor:pointer;padding:6px}
+.why{position:fixed;left:50%;top:22%;transform:translateX(-50%);max-width:min(560px,88vw);background:rgba(10,14,28,.82);border:1px solid rgba(255,210,122,.45);border-radius:18px;padding:16px 20px;text-align:center;font-size:1.05rem;line-height:1.6;backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .5s}
+.why.show{opacity:1}
+.why b{color:#ffd27a;display:block;margin-bottom:4px}
+#load{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#02040a;color:#aab6de;font-weight:700;transition:opacity .8s}
+#load.hide{opacity:0;pointer-events:none}
+@media (max-height:520px){.bench{padding:8px 10px;gap:5px}.chip{padding:5px 8px;font-size:.8rem}}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div class="top">
+  <a class="back" href="../">← 케이원더</a>
+  <div class="note hide" id="note"></div>
+  <button class="snd" id="snd">🔇 소리 켜기</button>
+</div>
+<button class="open hide" id="open">🎆 내 불꽃 만들기</button>
+<section class="bench hide" id="bench">
+  <div class="row"><span class="lb">속 가루</span><div class="row" id="inner"></div></div>
+  <div class="row" id="outerRow"><span class="lb">겉 가루</span><div class="row" id="outer"></div></div>
+  <div class="row"><span class="lb">놓는 법</span><div class="row" id="layout"></div></div>
+  <div class="row"><span class="lb">껍질</span><div class="row" id="size"></div>
+    <button class="chip on" id="charge">🧨 터뜨림 약 넣음</button><button class="chip" id="lop">한쪽에 몰아 넣기</button>
+    <button class="go" id="go">쏘기</button><button class="x" id="close">구경만 하기</button></div>
+</section>
+<div class="why" id="why"></div>
+<div id="load">밤하늘을 준비하는 중…</div>
+<script type="module">
+import { createFireworks } from './fireworks.js';
+import { createAudio } from './audio.js';
+import { POWDERS, LAYOUTS, SIZES, MISSIONS, WHY } from './logic.js';
+
+const $ = id => document.getElementById(id);
+const qp = new URLSearchParams(location.search);
+const fw = await createFireworks($('gl'));
+const audio = createAudio();
+$('load').classList.add('hide');
+
+// ── 작업대
+const css = rgb => `rgb(${rgb.map(v => Math.round(Math.min(1, v) * 255)).join(',')})`;
+const pick = { inner: ['ba'], outer: [], layout: 'ball', size: 'm', charge: true, lopsided: false };
+function chips(host, items, key, multi, sub) {
+  host.innerHTML = '';
+  for (const [id, it] of Object.entries(items)) {
+    const b = document.createElement('button'); b.className = 'chip' + (sub ? ' sub' : ''); b.dataset.v = id;
+    b.innerHTML = (it.rgb ? `<i style="color:${css(it.rgb)}"></i>` : '') + it.name + (it.rgb ? '' : ` <small>${it.says || ''}</small>`);
+    b.onclick = () => { if (multi) { const a = pick[key], i = a.indexOf(id); if (i >= 0) a.splice(i, 1); else { a.push(id); if (a.length > 2) a.shift(); } } else pick[key] = id; paint(); };
+    host.appendChild(b);
+  }
+}
+chips($('inner'), POWDERS, 'inner', true); chips($('outer'), POWDERS, 'outer', true, true);
+chips($('layout'), LAYOUTS, 'layout'); chips($('size'), SIZES, 'size');
+function paint() {
+  for (const [hid, key] of [['inner', 'inner'], ['outer', 'outer'], ['layout', 'layout'], ['size', 'size']])
+    for (const b of $(hid).children) b.classList.toggle('on', Array.isArray(pick[key]) ? pick[key].includes(b.dataset.v) : pick[key] === b.dataset.v);
+  $('outerRow').style.display = pick.layout === 'double' ? '' : 'none';
+  $('charge').classList.toggle('on', pick.charge); $('charge').textContent = pick.charge ? '🧨 터뜨림 약 넣음' : '🧨 터뜨림 약 뺌';
+  $('lop').classList.toggle('on', pick.lopsided);
+}
+$('charge').onclick = () => { pick.charge = !pick.charge; paint(); };
+$('lop').onclick = () => { pick.lopsided = !pick.lopsided; paint(); };
+paint();
+
+// ── 의뢰
+let mi = 0, mine = false, lastMine = 0;
+const note = (t, s) => { $('note').innerHTML = t + (s ? `<small>${s}</small>` : ''); $('note').classList.remove('hide'); };
+const showMission = () => mi < MISSIONS.length ? note('의뢰 ' + (mi + 1) + ' · ' + MISSIONS[mi].say) : note('자유롭게 쏘아 보세요', '내 불꽃 쇼를 만들어요');
+function why(i) { const w = $('why'); w.innerHTML = '<b>왜 그럴까?</b>' + WHY[i]; w.classList.add('show'); audio.chime(); setTimeout(() => w.classList.remove('show'), 7000); }
+
+$('open').onclick = () => { mine = true; audio.unlock(); syncSnd(); $('open').classList.add('hide'); $('bench').classList.remove('hide'); showMission(); };
+$('close').onclick = () => { mine = false; $('bench').classList.add('hide'); $('open').classList.remove('hide'); $('note').classList.add('hide'); };
+function shoot() {
+  const shell = { size: pick.size, layout: pick.layout, inner: [...pick.inner], outer: pick.layout === 'double' ? [...pick.outer] : [], charge: pick.charge, lopsided: pick.lopsided };
+  shell.mine = true; fw.fire(shell); lastMine = performance.now();
+}
+$('go').onclick = shoot;
+addEventListener('keydown', e => { if (e.code === 'Space' && mine) { e.preventDefault(); shoot(); } });
+
+fw.events.onLaunch = e => audio.launch(e.dist, e.spec.rise);
+fw.events.onDud = () => { if (mine) note('불발… 풍덩', '가운데 터뜨림 약이 없으면 껍질이 열리지 않아요'); };
+fw.events.onSplash = () => audio.splash(400);
+fw.events.onBurst = e => {
+  audio.burst(e.delay, e.spec);
+  if (!e.shell.mine) return;
+  if (mi < MISSIONS.length) {
+    if (MISSIONS[mi].ok(e.shell)) { const done = mi; mi++; setTimeout(() => { note('성공! ⭐', done === 0 ? '초록은 바륨이 내는 빛' : done === 1 ? '속이 먼저, 겉이 나중에 퍼졌어요' : '놓은 모양 그대로!'); setTimeout(() => why(done), 1400); setTimeout(showMission, 9000); }, 900); }
+    else setTimeout(() => note('의뢰 ' + (mi + 1) + ' · ' + MISSIONS[mi].say, '귀띔: ' + MISSIONS[mi].hint), 1600);
+  }
+};
+
+// ── 소리
+const syncSnd = () => { $('snd').textContent = audio.running && audio.on ? '🔊 소리' : '🔇 소리 켜기'; };
+$('snd').onclick = () => { if (!audio.running) { audio.unlock(); audio.set(true); } else audio.set(!audio.on); setTimeout(syncSnd, 60); };
+
+// ── 들어오자마자 혼자 돌아가는 쇼(손대지 않아도 이미 멋짐)
+const R = a => a[(Math.random() * a.length) | 0];
+const SHOW = [
+  { size: 'l', layout: 'ball', inner: ['sr'] }, { size: 'm', layout: 'ball', inner: ['ba'] }, { size: 'l', layout: 'willow', inner: [] },
+  { size: 'm', layout: 'double', inner: ['sr'], outer: ['fe'] }, { size: 'm', layout: 'ring', inner: ['cu'] }, { size: 'l', layout: 'ball', inner: ['cu', 'sr'] },
+  { size: 's', layout: 'ball', inner: ['na'] }, { size: 'm', layout: 'ball', inner: ['cu', 'al'] }, { size: 'l', layout: 'double', inner: ['ba'], outer: ['sr'] },
+  { size: 'm', layout: 'heart', inner: ['sr'] }, { size: 'l', layout: 'ball', inner: ['ca', 'al'] }, { size: 's', layout: 'ring', inner: ['ba'] }, { size: 'l', layout: 'willow', inner: ['na'] },
+];
+let showT = .4, showI = 0;
+function autoShow(dt) {
+  if (mine && performance.now() - lastMine < 14000) return;                 // 내가 쏘는 동안은 조용히
+  if (mine && fw.busy) return;
+  showT -= dt; if (showT > 0) return;
+  const s = { ...SHOW[showI++ % SHOW.length] }; fw.fire(s);
+  if (Math.random() < .3) { const t = { ...R(SHOW) }; setTimeout(() => fw.fire(t), 260 + Math.random() * 500); }
+  showT = mine ? 3.5 + Math.random() * 3 : 1.2 + Math.random() * 1.9;
+}
+setTimeout(() => { if (!mine) $('open').classList.remove('hide'); }, 3500);
+
+// ── 돌리기
+let last = performance.now();
+function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; autoShow(dt); fw.step(dt); fw.render(dt); fw.tune(dt); requestAnimationFrame(frame); }
+if (qp.get('shot')) {                                                         // 화면 찍기용: 시간을 손으로 감는다
+  window.__w = { fw, pick, shoot, run(sec, script) { const dt = 1 / 30; let t = 0; while (t < sec) { for (const s of script || []) if (!s.done && t >= s.at) { s.done = 1; fw.fire(s.shell, s.tube); } fw.step(dt); fw.render(dt); t += dt; } return fw.count; },
+    ui(on) { mine = on; $('open').classList.toggle('hide', on); $('bench').classList.toggle('hide', !on); if (on) showMission(); } };
+  fw.render(1 / 30); document.title = 'ready';
+} else requestAnimationFrame(frame);
+</script>
+</body>
+</html>
