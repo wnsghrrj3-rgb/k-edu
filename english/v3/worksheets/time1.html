@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv4 #10 시간① 달력 10단어 — nature2.html(Lv4 #6) 판형 계승, V트랙 주황
+     ★그림 = 화면과 같은 그림(DAY320CSS · CAL410CSS 블록 그대로) — 그림 마크업 = 화면 CAL410 pic410(w,true) · 뒷면 장면 sz410(w,k,true) 를 생성기 ws/gen_time1.js 로 그대로 뽑음 + .still(움직임 끔).
+     ★크기 사다리(하루 → week → month → year) · 두 판(화면 .bd410 판 · 그림 번호 1~10 · 단어 글자 0) · ① 따라쓰기 10(달력 판 / 날 판) · ② 달력 판 / 날 판 상자 나누기(상자 보고)
+     · ③ 빈 한 달 장에 내 생일 · 주말 색칠 + It is my ___!(상자 birthday · holiday · weekend) · ④ 그림 보고 I am ___ now.(상자 reading · eating · singing — 보고 옮겨 쓰기).
+     ★달 이름 글자 0(소리로만 — 부모안내) · every = every day 한 덩어리 · now = 문장 끝. 받아쓰기 금지. -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root { --primary:#FF8A3D; --green:#4CAF50; --red:#F44336; --subtext:#888780; --border:#F7DFCB; }
+  @page { size: A4; margin: 10mm 12mm 8mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.45; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d9702a; padding-bottom: 5px; }
+  .brand { font-size: 13px; font-weight: 700; color: #9c4d13; }
+  .brand .lv { background: #d9702a; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 7px; background: #fdeee1; border: 2px solid #d9702a; border-radius: 12px; padding: 7px 13px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 24px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #9c4d13; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 15px; font-weight: 800; color: #4a2408; }
+  .keypoint { margin-top: 6px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 5px 12px; font-size: 12px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  .rowlab { margin-top: 5px; font-size: 10.5px; font-weight: 700; color: #9c4d13; }
+  h2 { margin-top: 7px; font-size: 13px; color: #9c4d13; display: flex; align-items: center; gap: 7px; }
+  h2 .n { background: #9c4d13; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2 .hint { font-weight: 400; font-size: 10px; color: #888780; }
+  .trace { display: flex; gap: 8px; margin-top: 3px; }
+  .traceword { text-align: center; flex: 1; min-width: 56px; position: relative; }
+  .traceword .outline { font-size: 18px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.4px #c4c2b8; letter-spacing: 1px; }
+  .traceword .line { border-bottom: 1.5px solid #d3d1c7; height: 13px; margin-top: 2px; }
+  .twocol { display: flex; gap: 10px; margin-top: 4px; align-items: stretch; }
+  .recap { margin-top: 7px; background: #4a2408; color: #fdeee1; border-radius: 10px; padding: 6px 13px; text-align: center; font-size: 12px; }
+  .recap b { color: #fac775; }
+  .parent { margin-top: 6px; border-top: 1px dashed #b4b2a9; padding-top: 5px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+  /* 그림 — 화면 블록 그대로(움직임은 .still 로 꺼짐) */
+  .pic { position: relative; display: inline-block; overflow: hidden; width: 48px; height: 39px; line-height: 0; }
+  .pic .dyp { transform-origin: 0 0; transform: scale(.6); }
+/*DAY320CSS-BEGIN — Lv3 #20 시간·요일① 그림·일곱 칸 달력 · 4파일 + 활동지 문자 단위 동일(blocks/DAY320CSS.css → sync_blocks.py 주입, 하네스 A4·D2b).
+  ★그림 타일(.dyp·.dyz) = Lv3 #6 .anp·.anz 와 같은 기하(같은 단어 = 같은 그림 · 액자 모양이 정답 단서가 되지 않는다).
+  ★요일 = 일곱 칸 띠(.cal · 월요일 시작) — 그 칸만 켜짐(.on) + 한글 첫 글자(.kd). 토 = 파랑 · 일 = 빨강(켜지지 않아도 옅게).
+  ★today = 띠의 한 칸 동그라미(.rg) + 👆 · week = Lv2 #22 일곱 칸 그림(.wk 세 줄 = 22-1 실물 그대로) · day = 📅.
+  ★일곱 칸 달력 한 장(.wcal) = 칸마다 따로 눌린다 · 칸 얼굴 = 한글 첫 글자만. 움직임 0 — 명사 그림은 멈춰 있다. */
+.dyp{position:relative;display:inline-flex;align-items:center;justify-content:center;width:80px;height:64px;border-radius:14px;background:#FFFDF9;border:2px solid #F1DFCD;box-sizing:border-box;line-height:1;vertical-align:middle;overflow:hidden;text-align:center}
+.dyz{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+.dyz>.dyp{position:absolute;left:0;top:0;transform-origin:0 0}
+.dyp .em{position:relative;font-size:42px;font-style:normal;line-height:1}
+.dyp .cal{position:absolute;left:5px;right:5px;top:7px;height:14px;display:flex;gap:2px}
+.dyp .cal i{flex:1;border-radius:3px;background:#FFF3E0;border:1px solid #E0C3A8;box-sizing:border-box}
+.dyp .cal i.c6{background:#E3F2FD;border-color:#90CAF9}
+.dyp .cal i.c7{background:#FFEBEE;border-color:#EF9A9A}
+.dyp .cal i.on{background:#FF8A65;border-color:#E64A19}
+.dyp .cal i.c6.on{background:#42A5F5;border-color:#1565C0}
+.dyp .cal i.c7.on{background:#EF5350;border-color:#C62828}
+.dyp .cal i.rg{border:2.5px solid #7E57C2;border-radius:50%;background:#fff}
+.dyp .kd{position:relative;top:9px;font-size:30px;font-style:normal;font-weight:700;color:#5D4037;line-height:1;font-family:'Jua',sans-serif}
+.dyp .kd.d6{color:#1E88E5}
+.dyp .kd.d7{color:#E53935}
+.dyp .fg{position:absolute;left:22px;top:22px;font-size:28px;font-style:normal;line-height:1}
+.dyp .wk{font-size:50px}
+.wk{display:inline-flex;gap:.05em;vertical-align:middle;padding:.07em;border:.06em solid #8D6E63;border-radius:.14em;background:#fff;box-sizing:border-box}
+.wk i{display:block;width:.12em;height:.5em;background:#FFCC80;border-radius:.03em}
+.wk i:first-child{background:#FF8A65}
+.wcal{width:min(360px,100%);margin:8px auto;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:6px;border-radius:16px;border:3px solid var(--border);background:#FFE9D6;box-sizing:border-box}
+.wcal .cell{position:relative;aspect-ratio:1/1.25;border-radius:9px;border:3px solid #D7B899;background:#FFFDF9;box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;min-width:0;line-height:1;transition:transform .15s}
+.wcal .cell.c6{background:#E3F2FD;border-color:#90CAF9}
+.wcal .cell.c7{background:#FFEBEE;border-color:#EF9A9A}
+.wcal .cell:active{transform:scale(.93)}
+.wcal .ck{font-size:24px;font-weight:700;color:#5D4037;font-family:'Jua',sans-serif}
+.wcal .ck.d6{color:#1E88E5}
+.wcal .ck.d7{color:#E53935}
+.wcal .cell.found{border-color:var(--green);box-shadow:0 0 0 2px var(--green) inset}
+.wcal .cell.ring{border-color:#7E57C2;box-shadow:0 0 0 3px #B39DDB}
+.wcal .cell .tag{display:none;position:absolute;left:50%;bottom:-.9em;transform:translateX(-50%);font-size:11px;background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:8px;padding:0 3px;white-space:nowrap;font-family:'Jua',sans-serif;line-height:1.2;z-index:3}
+.wcal .cell.found .tag{display:block}
+.wcal .choice-btn.cell{font-family:inherit;box-shadow:none;min-height:0}
+.wcal .choice-btn.cell.correct{border-color:var(--green);box-shadow:0 0 0 3px var(--green) inset}
+.wcal .choice-btn.cell.wrong{border-color:var(--red);box-shadow:0 0 0 3px var(--red) inset}
+/*DAY320CSS-END*/
+/*CAL410CSS-BEGIN — Lv4 #10 시간① 달력 그림 · 뒷면 장면 · 두 판 · 카드 테두리 · 4파일 + 활동지 문자 단위 동일(blocks/CAL410CSS.css → sync_blocks.py 주입, 하네스 A4·W4).
+  ★그림 = Lv3 #20 그림 타일(.dyp 80×64 · DAY320CSS 블록째) 안 — today · week · weekend 의 띠(.cal · .wk · .fg) = DAY320CSS 원 줄 그대로 · 여기는 새 그림 일곱만.
+  ★now 의 하루 띠 다섯 칸 색 = Lv3 #32 TM332CSS k-mo · k-no · k-af · k-ev · k-ni 값 그대로 · ▶ 점 = CSS 삼각(글자 ▶ 0 — 단추 UI 글자와 가름).
+  ★카드 테두리 = 이름 사각 3px(#6 값) · ★때 말 점선(now · every — 세 번째 모양) · 판 칸의 아직 안 짚은 칸 = 실선(점선은 때 말 몫).
+  ★움직임 = now 의 ▶ 깜빡임 · 뒷면 📖 넘김뿐 — 이름 그림은 멈춰 있다 · .still = 움직임 끔(활동지 · 숙달 진행형 1슬 시작). */
+/* ── month : 달력 한 장 — 위 띠 하나 + 칸 서른(6 × 5) ── */
+.dyp .mo410{position:absolute;left:14px;top:6px;width:52px;height:50px;display:block;box-sizing:border-box;border:2px solid #8D6E63;border-radius:4px;background:linear-gradient(#FF8A65,#FF8A65) 0 0/100% 10px no-repeat,repeating-linear-gradient(90deg,transparent 0 7px,#D7CCC8 7px 8px) 0 10px/100% 36px no-repeat,repeating-linear-gradient(transparent 0 6.2px,#D7CCC8 6.2px 7.2px) 0 10px/100% 36px no-repeat,#fff}
+/* ── year : 열두 장 띠 — 고리 막대 + 작은 장 열둘(장마다 숫자 1~12 · 이름 글자 0) ── */
+.dyp .yr410{position:absolute;left:5px;top:6px;width:70px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px 2px;padding-top:5px;box-sizing:border-box;border-top:3px solid #868E96}
+.dyp .yr410 i{position:relative;display:block;height:20px;box-sizing:border-box;border:1px solid #8D6E63;border-radius:2px;background:linear-gradient(#FF8A65 0 4px,#fff 4px);font-style:normal;font-size:8px;line-height:23px;color:#5D4037;font-weight:700;text-align:center;font-family:'Jua',sans-serif}
+.dyp .yr410 i::before{content:'';position:absolute;left:50%;top:-6px;width:3px;height:5px;margin-left:-1.5px;border-radius:2px;background:#868E96}
+/* ── weekend : 요일 띠(.cal — Lv3 #20)의 끝 두 칸만 색칠 + 아래로 끌어낸 두 칸 ── */
+.dyp .we410{position:absolute;left:54px;top:23px;width:21px;height:7px;display:block;box-sizing:border-box;border:2.5px solid #E8590C;border-top:none;border-radius:0 0 6px 6px}
+.dyp .wz410{position:absolute;left:44px;top:34px;display:flex;gap:3px}
+.dyp .wz410 i{display:block;width:16px;height:20px;border-radius:4px;box-sizing:border-box}
+.dyp .wz410 .z6{background:#42A5F5;border:2px solid #1565C0}
+.dyp .wz410 .z7{background:#EF5350;border:2px solid #C62828}
+/* ── birthday · holiday : 달력 한 칸(날짜 숫자) — birthday = 고깔모자 · holiday = 빨간 숫자 + 빨간 테두리 ── */
+.dyp .dc410{position:absolute;left:18px;top:10px;width:44px;height:46px;display:block;box-sizing:border-box;border:2px solid #8D6E63;border-radius:6px;background:#fff}
+.dyp .dn410{position:absolute;left:4px;top:3px;font-size:10px;line-height:1;font-style:normal;font-weight:700;color:#5D4037;font-family:'Jua',sans-serif}
+.dyp .dc410.rd410{border:3px solid #E03131;background:#FFF5F5}
+.dyp .dn410.bg410{left:0;right:0;top:7px;text-align:center;font-size:28px;color:#E03131}
+.dyp .ht410{position:absolute;left:28px;top:14px;width:26px;height:34px;display:block;clip-path:polygon(50% 0,100% 100%,0 100%);background:repeating-linear-gradient(-55deg,#FF6B6B 0 5px,#FFD43B 5px 10px)}
+.dyp .pm410{position:absolute;left:37px;top:9px;width:8px;height:8px;display:block;border-radius:50%;background:#7950F2}
+/* ── calendar : 벽걸이 달력 물건 — 못 + 고리 둘 + 겹친 장 + 넘어가는 귀퉁이 ── */
+.dyp .cl410{position:absolute;left:15px;top:14px;width:46px;height:42px;display:block;box-sizing:border-box;border:2px solid #8D6E63;border-radius:3px;background:linear-gradient(#4DABF7,#4DABF7) 0 0/100% 9px no-repeat,repeating-linear-gradient(transparent 0 7px,#E9ECEF 7px 8px) 0 9px/100% 30px no-repeat,#fff;box-shadow:3px 3px 0 -1px #fff,3px 3px 0 0 #A1887F,6px 6px 0 -1px #fff,6px 6px 0 0 #A1887F}
+.dyp .cu410{position:absolute;right:-2px;bottom:-2px;width:14px;height:14px;display:block;background:linear-gradient(135deg,#fff 0 50%,#CED4DA 50%);border-left:1.5px solid #A1887F;border-top:1.5px solid #A1887F;border-radius:3px 0 0 0;box-sizing:border-box}
+.dyp .rn410{position:absolute;left:25px;top:8px;width:8px;height:11px;display:block;box-sizing:border-box;border:2px solid #495057;border-radius:4px;background:transparent}
+.dyp .rn410.r2{left:43px}
+.dyp .nl410{position:absolute;left:36px;top:2px;width:5px;height:5px;display:block;border-radius:50%;background:#495057;box-shadow:0 0 0 2px #E9ECEF}
+/* ── now : Lv3 #32 하루 띠 다섯 칸 색 + 깜빡이는 ▶ 점 하나 ── */
+.dyp .ds410{position:absolute;left:6px;top:30px;width:68px;height:24px;display:flex;gap:2px}
+.dyp .ds410 i{flex:1;display:block;border-radius:4px;border:1px solid rgba(0,0,0,.15);box-sizing:border-box}
+.dyp .ds410 .k1{background:linear-gradient(#FFF3BF,#FFD8A8)}
+.dyp .ds410 .k2{background:linear-gradient(#4DABF7,#D0EBFF)}
+.dyp .ds410 .k3{background:linear-gradient(#74C0FC,#FFF3BF)}
+.dyp .ds410 .k4{background:linear-gradient(#FF922B,#FFA8A8 70%,#F783AC)}
+.dyp .ds410 .k5{background:linear-gradient(#1C2A5A,#3B5BDB)}
+.dyp .pt410{position:absolute;left:35px;top:10px;width:13px;height:15px;display:block;background:#E8590C;clip-path:polygon(0 0,100% 50%,0 100%);animation:n410Blink 1s ease-in-out infinite}
+@keyframes n410Blink{0%,100%{opacity:1}50%{opacity:.15}}
+/* ── every : 일곱 칸 모든 칸에 같은 동그라미 도장 ── */
+.dyp .ev410{position:absolute;left:5px;top:20px;width:70px;height:26px;display:flex;gap:2px}
+.dyp .ev410 i{flex:1;display:block;border-radius:3px;box-sizing:border-box;border:1.5px solid #D7B899;background:radial-gradient(circle at 50% 50%,transparent 0 2.4px,#E8590C 2.6px 4px,transparent 4.2px),#FFFDF9}
+/* ── 뒷면 장면 — 「나」(Lv2 #27 노란 동그라미 값) · 문장 속 아는 말 소품 ── */
+.dyp .me410{position:absolute;right:2px;bottom:2px;width:22px;height:22px;border-radius:50%;background:#FFE066;border:2px solid #F0C419;color:#7a5600;font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-style:normal;box-sizing:border-box;z-index:2}
+.dyp .pp410{position:absolute;font-size:20px;line-height:1;font-style:normal;z-index:1}
+.dyp .pp410.p-cold{right:2px;bottom:2px}
+.dyp .pp410.p-play{left:2px;bottom:2px}
+.dyp .pp410.p-read{left:4px;top:4px;transform-origin:50% 100%;animation:n410Page 1.6s ease-in-out infinite}
+.dyp .pp410.p-run{left:2px;bottom:1px;font-size:18px}
+.ss410.p-every .ev410{top:8px}
+.ss410.p-now .pt410{left:43px}
+@keyframes n410Page{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+/* 움직임 끄기 — 활동지 · 진행형 1슬 시작(움직이기 전) */
+.dyp.still,.dyp.still *{animation:none!important}
+@media (prefers-reduced-motion:reduce){.dyp .pt410,.dyp .pp410{animation:none!important}}
+/* ── 카드 테두리 — 이름 사각 3px · 때 말 점선 ── */
+.wcard.sq410,.fcard.sq410,.vw.sq410,.pcol.sq410,.pcd410.sq410,.bd410 .spot.sq410{border-radius:3px}
+.wcard.dt410,.fcard.dt410,.vw.dt410,.pcol.dt410,.pcd410.dt410,.bd410 .spot.dt410{border-style:dashed}
+/* ── 두 판 — 달력 판(크기와 묶음) · 날 판(어떤 날 · 어떤 때) ── */
+.bd410{display:flex;flex-direction:column;gap:6px;width:min(380px,100%);margin:6px auto 0;box-sizing:border-box}
+.bd410 .pn410{border:3px solid var(--border);border-radius:14px;padding:3px 4px 12px;box-sizing:border-box;transition:box-shadow .2s}
+.bd410 .pn410.cal{background:#FFF4E6}
+.bd410 .pn410.day{background:#F3F0FF}
+.bd410 .pl410{display:block;font-style:normal;font-size:14px;line-height:1.4;color:#495057;font-family:'Jua',sans-serif;text-align:left;margin:0 0 3px 6px}
+.bd410 .gr410{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.bd410 .spot{position:relative;display:flex;align-items:center;justify-content:center;line-height:0;min-width:0;padding:2px 0;border-radius:10px;box-sizing:border-box;background:#fff;border:2px solid #CED4DA;cursor:pointer;transition:transform .15s}
+.bd410 .spot:active{transform:scale(.95)}
+.bd410 .spot .tag{display:none;position:absolute;left:50%;bottom:-.8em;transform:translateX(-50%);font-size:12px;background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:8px;padding:0 4px;white-space:nowrap;font-family:'Jua',sans-serif;line-height:1.2;z-index:3}
+.bd410 .spot.found{border-color:var(--green);border-width:3px;background:#EBFBEE}
+.bd410 .spot.found .tag{display:block}
+.bd410.all .pn410{border-color:var(--green);box-shadow:0 0 0 3px #B2F2BB}
+.bd410 .choice-btn.spot{font-family:inherit;box-shadow:none;margin:0;min-height:0}
+.bd410 .choice-btn.spot.correct{border-color:var(--green);box-shadow:0 0 0 3px var(--green) inset}
+.bd410 .choice-btn.spot.wrong{border-color:var(--red);box-shadow:0 0 0 3px var(--red) inset}
+/*CAL410CSS-END*/
+  .dyp .dy410 { position: absolute; left: 28px; top: 14px; width: 24px; height: 36px; display: block; box-sizing: border-box; border-radius: 5px; background: #FFF3E0; border: 2px solid #E0C3A8; }
+  .lad { display: flex; align-items: center; gap: 4px; margin-top: 3px; }
+  .lad .rg { display: flex; flex-direction: column; align-items: center; }
+  .lad .rw { font-size: 11px; font-weight: 800; color: #4a2408; line-height: 1.2; }
+  .lad .ar { font-size: 14px; color: #888780; margin-top: -12px; }
+  .bd410 { width: 100%; max-width: none; margin: 3px 0 0; gap: 4px; }
+  .bd410 .pn410 { padding: 2px 4px 4px; border-width: 2px; }
+  .bd410 .pl410 { font-size: 11px; margin: 0 0 2px 4px; font-weight: 800; }
+  .bd410 .spot { cursor: default; border-color: #dee2e6; padding: 2px 0 2px 12px; }
+  .bd410 .spot .sn { position: absolute; left: 2px; top: 2px; line-height: 1; font-size: 10px; font-weight: 800; color: #fff; background: #9c4d13; border-radius: 50%; width: 15px; height: 15px; display: inline-flex; align-items: center; justify-content: center; }
+  .wbox, .dbox, .sbox { flex: 1; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 5px 10px; }
+  .wbox .cap { font-size: 10.5px; font-weight: 800; color: #9c4d13; }
+  .wbox .bw { font-size: 12.5px; font-weight: 800; color: #4a2408; letter-spacing: .2px; line-height: 1.5; margin: 2px 0; }
+  .sort2 { display: flex; gap: 8px; }
+  .sort2 .sc { flex: 1; padding: 2px 6px 4px; border: 2px solid #e0b48c; border-radius: 3px; }
+  .sort2 .sc.cal { background: #fff4e6; }
+  .sort2 .sc.day { background: #f3f0ff; }
+  .sort2 .sh { font-size: 11px; font-weight: 800; color: #495057; }
+  .ln2 { border-bottom: 1.5px solid #b4b2a9; height: 15px; }
+  .ms { border: 2px solid #8D6E63; border-radius: 6px; overflow: hidden; background: #fff; }
+  .ms .mh, .ms .mg { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .ms .mh { background: #FF8A65; }
+  .ms .mh i { font-style: normal; font-size: 10px; font-weight: 800; color: #fff; text-align: center; line-height: 1.6; }
+  .ms .mh i.h6 { background: #42A5F5; }
+  .ms .mh i.h7 { background: #EF5350; }
+  .ms .mg i { font-style: normal; font-size: 8px; color: #5D4037; height: 17px; border-right: 1px solid #E0C3A8; border-bottom: 1px solid #E0C3A8; padding: 1px 2px; line-height: 1.1; }
+  .ms .mg i.c6 { color: #1E88E5; }
+  .ms .mg i.c7 { color: #E53935; }
+  .ms .mg i.em { background: #F8F1EA; }
+  .s4r { display: flex; align-items: center; gap: 10px; }
+  .s4r .ap { line-height: 0; flex: none; }
+  .s { font-size: 16px; font-weight: 800; color: #4a2408; display: flex; align-items: flex-end; gap: 4px; letter-spacing: .4px; }
+  .s.s3 { margin-top: 4px; font-size: 14px; }
+  .s .ln { display: inline-block; width: 100px; border-bottom: 1.8px solid #b4b2a9; height: 20px; }
+  .wb { font-size: 10px; color: #888780; }
+  .wb b { color: #d85a30; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv4 · 어휘 #10</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main">작은 칸이 모이면 큰 칸 — 날, 주, 달, 해.</div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 달력 판 — week · month · year · calendar · weekend / 날 판 — today · birthday · holiday · now · every
+  </div>
+
+  <div class="twocol">
+    <div style="flex:1;display:flex;flex-direction:column">
+      <div class="rowlab">🪜 크기 사다리 — 작은 칸이 모여 큰 칸</div>
+      <div class="lad"><div class="rg"><span class="pic"><span class="dyp still"><b class="dy410"></b></span></span><span class="rw">하루</span></div><span class="ar">→</span><div class="rg"><span class="pic"><span class="dyp p-week still" data-dyp="week"><span class="wk"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span></span><span class="rw">week</span></div><span class="ar">→</span><div class="rg"><span class="pic"><span class="dyp p-month still" data-dyp="month"><b class="mo410"></b></span></span><span class="rw">month</span></div><span class="ar">→</span><div class="rg"><span class="pic"><span class="dyp p-year still" data-dyp="year"><b class="yr410"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i><i>10</i><i>11</i><i>12</i></b></span></span><span class="rw">year</span></div></div>
+    </div>
+    <div style="flex:1.5;display:flex;flex-direction:column">
+      <div class="rowlab">🪟 두 판 — 그림마다 번호가 있어요</div>
+      <div class="bd410 m-ws"><div class="pn410 cal" data-k="cal"><i class="pl410">달력 판</i><div class="gr410"><div class="spot sq410 t-week" data-w="week"><span class="sn">10</span><span class="pic"><span class="dyp p-week still" data-dyp="week"><span class="wk"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span></span></div><div class="spot sq410 t-month" data-w="month"><span class="sn">1</span><span class="pic"><span class="dyp p-month still" data-dyp="month"><b class="mo410"></b></span></span></div><div class="spot sq410 t-year" data-w="year"><span class="sn">2</span><span class="pic"><span class="dyp p-year still" data-dyp="year"><b class="yr410"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i><i>10</i><i>11</i><i>12</i></b></span></span></div><div class="spot sq410 t-calendar" data-w="calendar"><span class="sn">5</span><span class="pic"><span class="dyp p-calendar still" data-dyp="calendar"><b class="cl410"><b class="cu410"></b></b><b class="rn410"></b><b class="rn410 r2"></b><b class="nl410"></b></span></span></div><div class="spot sq410 t-weekend" data-w="weekend"><span class="sn">3</span><span class="pic"><span class="dyp p-weekend still" data-dyp="weekend"><b class="cal"><i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i><i class="c5"></i><i class="c6 on"></i><i class="c7 on"></i></b><b class="we410"></b><b class="wz410"><i class="z6"></i><i class="z7"></i></b></span></span></div></div></div><div class="pn410 day" data-k="day"><i class="pl410">날 판</i><div class="gr410"><div class="spot sq410 t-today" data-w="today"><span class="sn">9</span><span class="pic"><span class="dyp p-today still" data-dyp="today"><b class="cal"><i class="c1"></i><i class="c2"></i><i class="c3 rg"></i><i class="c4"></i><i class="c5"></i><i class="c6"></i><i class="c7"></i></b><i class="fg">👆</i></span></span></div><div class="spot sq410 t-birthday" data-w="birthday"><span class="sn">4</span><span class="pic"><span class="dyp p-birthday still" data-dyp="birthday"><b class="dc410"><i class="dn410">12</i></b><b class="ht410"></b><b class="pm410"></b></span></span></div><div class="spot sq410 t-holiday" data-w="holiday"><span class="sn">6</span><span class="pic"><span class="dyp p-holiday still" data-dyp="holiday"><b class="dc410 rd410"><i class="dn410 bg410">5</i></b></span></span></div><div class="spot dt410 t-now" data-w="now"><span class="sn">7</span><span class="pic"><span class="dyp p-now still" data-dyp="now"><b class="ds410"><i class="k1"></i><i class="k2"></i><i class="k3"></i><i class="k4"></i><i class="k5"></i></b><b class="pt410"></b></span></span></div><div class="spot dt410 t-every" data-w="every"><span class="sn">8</span><span class="pic"><span class="dyp p-every still" data-dyp="every"><b class="ev410"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></b></span></span></div></div></div></div>
+    </div>
+  </div>
+
+  <h2><span class="n">1</span> 따라 써요 <span class="hint">흐린 글자를 따라 써요 — 위 줄 달력 판 · 아래 줄 날 판</span></h2>
+  <div class="trace"><div class="traceword"><div class="outline">week</div><div class="line"></div></div><div class="traceword"><div class="outline">month</div><div class="line"></div></div><div class="traceword"><div class="outline">year</div><div class="line"></div></div><div class="traceword"><div class="outline">calendar</div><div class="line"></div></div><div class="traceword"><div class="outline">weekend</div><div class="line"></div></div></div>
+  <div class="trace"><div class="traceword"><div class="outline">today</div><div class="line"></div></div><div class="traceword"><div class="outline">birthday</div><div class="line"></div></div><div class="traceword"><div class="outline">holiday</div><div class="line"></div></div><div class="traceword"><div class="outline">now</div><div class="line"></div></div><div class="traceword"><div class="outline">every</div><div class="line"></div></div></div>
+
+  <div class="twocol">
+    <div style="flex:1;display:flex;flex-direction:column">
+      <h2><span class="n">2</span> 달력 판 / 날 판 <span class="hint">상자의 단어를 맞는 판 줄에 옮겨 써요</span></h2>
+      <div class="wbox"><div class="cap">상자</div><div class="bw">now · month · birthday · week · every · calendar · today · year · holiday · weekend</div><div class="sort2"><div class="sc cal"><div class="sh">달력 판 (5)</div><div class="ln2"></div><div class="ln2"></div><div class="ln2"></div><div class="ln2"></div><div class="ln2"></div></div><div class="sc day"><div class="sh">날 판 (5)</div><div class="ln2"></div><div class="ln2"></div><div class="ln2"></div><div class="ln2"></div><div class="ln2"></div></div></div></div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column">
+      <h2><span class="n">3</span> 내 달력 <span class="hint">내 생일 칸에 고깔 · 주말(토 · 일) 칸에 색칠 — 상자를 보고 한 단어</span></h2>
+      <div class="dbox"><div class="ms"><div class="mh"><i class="h1">월</i><i class="h2">화</i><i class="h3">수</i><i class="h4">목</i><i class="h5">금</i><i class="h6">토</i><i class="h7">일</i></div><div class="mg"><i class="c1">1</i><i class="c2">2</i><i class="c3">3</i><i class="c4">4</i><i class="c5">5</i><i class="c6">6</i><i class="c7">7</i><i class="c1">8</i><i class="c2">9</i><i class="c3">10</i><i class="c4">11</i><i class="c5">12</i><i class="c6">13</i><i class="c7">14</i><i class="c1">15</i><i class="c2">16</i><i class="c3">17</i><i class="c4">18</i><i class="c5">19</i><i class="c6">20</i><i class="c7">21</i><i class="c1">22</i><i class="c2">23</i><i class="c3">24</i><i class="c4">25</i><i class="c5">26</i><i class="c6">27</i><i class="c7">28</i><i class="c1">29</i><i class="c2">30</i><i class="c3 em"></i><i class="c4 em"></i><i class="c5 em"></i><i class="c6 em"></i><i class="c7 em"></i></div></div><div class="s s3">It is my <span class="ln"></span>!</div><div class="wb">상자 · birthday · holiday · weekend</div></div>
+    </div>
+  </div>
+
+  <h2><span class="n">4</span> 그림 보고 한 단어 <span class="hint">상자를 보고 옮겨 써요</span></h2>
+  <div class="sbox"><div class="s4r" data-w="now"><span class="ap"><span class="dyz" style="width:72px;height:58px"><span class="dyp ss410 p-now still" data-ss="now" style="transform:scale(0.9)"><b class="ds410"><i class="k1"></i><i class="k2"></i><i class="k3"></i><i class="k4"></i><i class="k5"></i></b><b class="pt410"></b><b class="me410">나</b><i class="pp410 p-read">📖</i></span></span></span><span class="s">I am <span class="ln"></span> now.</span></div><div class="wb">상자 · reading · eating · singing</div></div>
+
+  <div class="recap">오늘 열 단어 = <b>month · year · weekend · birthday · calendar · holiday · now · every · today · week</b></div>
+
+  <div class="parent">
+    <b>부모님께</b> · 달 이름(1월~12월)은 화면에서 <b>소리로만</b> 들려주는 말이에요 — 외우게 하지 마세요.
+    · <b>now</b> 는 「지금」, <b>every day</b> 는 「날마다」 — 두 문장을 나란히 놓고 비교하는 건 #18 에서 해요.
+    · 이 활동지는 <b>보고 옮겨 쓰는</b> 종이입니다. <b>받아쓰기로 확인하지 마세요.</b><br>
+    <b>정답</b> · ② 달력 판 week · month · year · calendar · weekend / 날 판 today · birthday · holiday · now · every · ③ birthday · ④ reading
+  </div>
+</body>
+</html>
