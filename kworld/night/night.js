@@ -4,8 +4,8 @@
    v2.1: 시점 넷(위에서·가까이·어깨 너머·지도) + 돌려 보기(Q/E) + 당겨 보기(휠). 받아 온 모델로 바꾼 v3(k-edu ce81149)은 준호 반려로 되돌림.
    좌표: x 동쪽(+), z 남쪽(+). 강은 북쪽(z 0~6). */
 import * as THREE from 'three';
-import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, losRects, rayLenRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artInst } from '../scene/kit.js?v=3';
-await loadArt('people');   /* 블렌더로 만든 모델(사람·자연·집·소품) */
+import { $, clamp, lerp, dist, rng, stage, sunLight, M, box, cyl, at, canvasTex, flatMaker, skyDome, glowSprite, occluders, ringsFx, people, inRect, collideRects, losRects, rayLenRects, gridPath, tone, noise, resumeAudio, sayLine, overlay, controls, followCam, fadeOccluders, edgeGoal, overBar, groundAt, runLoop, loadArt, ART, art, artInst, artGeo, artMat, artGlowMat, scatter } from '../scene/kit.js?v=3';
+await loadArt('people', 'nature', 'build', 'props', 'night');   /* 블렌더로 만든 모델(사람·자연·집·소품 + 이 장면만의 것: tools/blender/make_night.py → night.glb) */
 
 const W = 70, H = 46;
 
@@ -63,84 +63,120 @@ const moon = sunLight(scene, { color: 0xd6e4ff, intensity: 0.6, box: [46, 34], p
 addEventListener('resize', resize); resize();
 const rnd = rng(20261116);
 
+/* 그림 도우미 — 모델 여럿을 한 덩이로 굽는다(그리기 한 번). parts = [[이름, x, y, z, 크기 또는 [sx, sy, sz], 돌림y, 색], …]. own 이 참이면 제 재질(비쳐 보이게 할 묶음용 — 빛나는 조각까지 따로) */
+const _o = new THREE.Object3D();
+function joinGeo(list) { if (!list.length) return null; let nv = 0, ni = 0; for (const g of list) { nv += g.attributes.position.count; ni += g.index.count; }
+  const P = new Float32Array(nv * 3), N = new Float32Array(nv * 3), C = new Float32Array(nv * 3), I = new Uint32Array(ni); let v = 0, i = 0;
+  for (const g of list) { P.set(g.attributes.position.array, v * 3); N.set(g.attributes.normal.array, v * 3); C.set(g.attributes.color.array, v * 3); const ix = g.index.array; for (let k = 0; k < ix.length; k++) I[i + k] = ix[k] + v; v += g.attributes.position.count; i += ix.length; g.dispose(); }
+  const o = new THREE.BufferGeometry(); o.setAttribute('position', new THREE.BufferAttribute(P, 3)); o.setAttribute('normal', new THREE.BufferAttribute(N, 3)); o.setAttribute('color', new THREE.BufferAttribute(C, 3)); o.setIndex(new THREE.BufferAttribute(I, 1)); return o; }
+function bake(parts, own = false, shadow = true) { const gs = [[], []];
+  for (const [name, x, y, z, s = 1, ry = 0, tints = {}] of parts) { _o.position.set(x, y, z); _o.rotation.set(0, ry, 0); if (Array.isArray(s)) _o.scale.set(s[0], s[1], s[2]); else _o.scale.setScalar(s); _o.updateMatrix();
+    for (const k of [0, 1]) { const g = artGeo(name, tints, !!k); if (g) gs[k].push(g.clone().applyMatrix4(_o.matrix)); } }
+  const grp = new THREE.Group(), m = new THREE.Mesh(joinGeo(gs[0]) || new THREE.BufferGeometry(), own ? artMat.clone() : artMat); m.castShadow = shadow; m.receiveShadow = true; grp.add(m);
+  const gl = joinGeo(gs[1]); if (gl) grp.add(new THREE.Mesh(gl, own ? artGlowMat.clone() : artGlowMat)); return grp; }
+/* 뿌리기(kit scatter) + 밤빛에 묻히는 것(솔잎 · 풀)은 제 재질로 조금 밝힌다 */
+const litMat = (r, g, b) => { const m = artMat.clone(); m.color.setRGB(r, g, b); return m; }, pineM = litMat(2.1, 2.25, 2.1), grassM = litMat(1.45, 1.5, 1.3);
+function strew(o) { const n0 = scene.children.length, put = scatter(scene, rnd, o); for (const m of scene.children.slice(n0)) { const nm = o.names.find((n) => artGeo(n, o.tints || {}) === m.geometry) || ''; if (nm.startsWith('pine')) m.material = pineM; else if (nm.startsWith('grass') || nm.startsWith('flower')) m.material = grassM; } return put; }
+
 /* 하늘: 밤빛 둥근 지붕 · 별 · 달과 구름(가까이 시점에서 보인다) */
 const { skyMat } = skyDome(scene, rnd, { top: 0x0a1230, low: 0x2b4a86, stars: 420 });
 const moonDisc = at(new THREE.Mesh(new THREE.SphereGeometry(9, 16, 12), new THREE.MeshBasicMaterial({ color: 0xfff6d8, fog: false })), W / 2 - 60, 96, -200); scene.add(moonDisc);
-const moonCloud = new THREE.Group(); for (let k = 0; k < 5; k++) { const b = new THREE.Mesh(new THREE.BoxGeometry(16 + rnd() * 10, 7 + rnd() * 4, 6), new THREE.MeshBasicMaterial({ color: 0x3a4f80, fog: false })); b.position.set(k * 9 - 18, rnd() * 5, 0); moonCloud.add(b); } moonCloud.position.set(W / 2 - 60, 94, -192); scene.add(moonCloud);
+const moonCloud = new THREE.Group(); { const cm = new THREE.MeshBasicMaterial({ vertexColors: true, fog: false }); for (const [x, y, z, s, r] of [[-5, -4, 0, 7.4, 0], [17, 0, 3, 5, Math.PI], [-23, 1, 2, 4.2, 0.2]]) { const c = new THREE.Mesh(artGeo('cloud'), cm); c.position.set(x, y, z); c.scale.setScalar(s); c.rotation.y = r; moonCloud.add(c); } } moonCloud.position.set(W / 2 - 60, 94, -192); scene.add(moonCloud);
 
-/* 땅 */
+/* 땅 — 물가(z 6)까지. 나루 동쪽은 배가 뜨는 작은 물굽이(z 7.25 까지 물) */
 const flat = flatMaker(scene);
-flat(-40, -4, W + 40, H + 30, 0x58b85c, 0);
+flat(-40, 6, 56.9, H + 30, 0x58b85c, 0); flat(56.9, 7.25, 63.2, H + 30, 0x58b85c, 0); flat(63.2, 6, W + 40, H + 30, 0x58b85c, 0);
 flat(4, 22, 30, 44, 0xe2c692, 0.03);                 /* 마당 */
 flat(30, 31.2, 44, 34.8, 0xd9bd88, 0.03); flat(42, 16, 68, 40, 0xdcc18e, 0.03);
 flat(52, 9, 56.5, 17, 0xd9bd88, 0.04); flat(34, 11, 62, 16, 0xd4b783, 0.035);
 flat(0.5, 9, 3.4, 45, 0x3d8fd0, 0.05);                /* 개울 */
 flat(0, 6.1, 52, 9.3, 0x6a9a4a, 0.04);                /* 갈대밭 바닥 */
-for (let i = 0; i < 150; i++) { const x = rnd() * W, z = 9.5 + rnd() * (H - 10); if ((x > 4 && x < 30 && z > 22 && z < 44) || (x > 42 && z > 16 && z < 40) || x < 3.6) continue; const t = box(0.5 + rnd() * 0.9, 0.1, 0.5 + rnd() * 0.9, rnd() > 0.5 ? 0x6fcb6c : 0x4aa552); t.castShadow = false; at(t, x, 0.06, z); scene.add(t); }
-for (let i = 0; i < 46; i++) { const t = box(0.4 + rnd() * 0.7, 0.08, 0.3 + rnd() * 0.5, 0xd2b684); t.castShadow = false; at(t, i % 2 ? 5 + rnd() * 24 : 43 + rnd() * 24, 0.07, i % 2 ? 23 + rnd() * 20 : 17 + rnd() * 22); scene.add(t); }
-/* 강: 물결 */
-const riverG = new THREE.PlaneGeometry(W + 120, 60, 50, 14); riverG.rotateX(-Math.PI / 2);
-const river = new THREE.Mesh(riverG, new THREE.MeshStandardMaterial({ color: 0x2f7fd0, roughness: 0.25, metalness: 0.15, flatShading: true })); river.position.set(W / 2, 0.0, -24); river.receiveShadow = true; scene.add(river);
+/* 흙바닥·물(풀을 심지 않는 곳) */
+const DIRT = [[4, 22, 30, 44], [30, 31.2, 44, 34.8], [42, 16, 68, 40], [52, 9, 56.5, 17], [34, 11, 62, 16], [0, 6.1, 52, 9.3], [-0.2, 9, 3.7, 45]];
+const onDirt = (x, z, pad = 0.3) => DIRT.some((r) => inRect(x, z, r, pad));
+/* 강: 물결(땅보다 조금 낮다) */
+const riverG = new THREE.PlaneGeometry(W + 120, 66, 50, 15); riverG.rotateX(-Math.PI / 2);
+const river = new THREE.Mesh(riverG, new THREE.MeshStandardMaterial({ color: 0x2f7fd0, roughness: 0.25, metalness: 0.15, flatShading: true })); river.position.set(W / 2, -0.2, -22); river.receiveShadow = true; scene.add(river);
 const riverBase = riverG.attributes.position.array.slice();
 flat(-40, -70, W + 40, -52, 0x3f8f4c, 0.3);           /* 강 건너 */
-for (let i = 0; i < 9; i++) { const h = box(3.2, 1.8, 2.6, 0xf2e3c2); at(h, 14 + i * 7 + (i % 2) * 2, 1.2, -56 - (i % 3) * 3); const r = box(3.9, 0.7, 3.3, 0xe2b04a); at(r, h.position.x, 2.4, h.position.z); const l = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.1), new THREE.MeshBasicMaterial({ color: 0xffd27a, fog: false })); at(l, h.position.x, 1.3, h.position.z + 1.35); scene.add(h, r, l); }
+/* 강 건너 마을: 불 켜진 초가 아홉 채 · 뒤로 솔숲 · 물가 갈대 */
+{ const hs = []; for (let i = 0; i < 9; i++) hs.push([14 + i * 7 + (i % 2) * 2, 0.3, -56 - (i % 3) * 3, 1, ((i % 3) - 1) * 0.22]);
+  artInst(scene, 'choga_b_lit', hs, { wall: 0xe2d2b0 }, { shadow: false });
+  strew({ area: [-34, -69, W + 34, -53.2], n: 50, names: ['pine_a', 'pine_b', 'pine_k', 'tree_a', 'pine_a', 'tree_b'], avoid: (x, z) => hs.some((h) => Math.abs(h[0] - x) < 4.6 && z > h[2] - 3 && z < h[2] + 6), scale: [0.9, 1.5], y: 0.3, shadow: false });
+  strew({ area: [-20, -52.4, W + 20, -51.4], n: 24, names: ['reed_n'], scale: [1.1, 1.6], y: -0.15, shadow: false }); }
 
-/* 집·담 — 가까이 시점에서 아이를 가리면 비쳐 보이게 하려고 묶음으로 둔다 */
+/* 집·담 — 가까이 시점에서 아이를 가리면 비쳐 보이게 하려고 묶음으로 둔다(묶음마다 제 재질 하나, 그리기 한 번) */
 const { occl, group } = occluders(scene);
-function thatchHouse([x0, z0, x1, z1, h]) { const w = x1 - x0, d = z1 - z0, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, wh = h * 0.6, P = [];
-  P.push(at(box(w, wh, d, 0xf3e4c4), cx, wh / 2, cz));
-  for (const [px, pz] of [[x0, z0], [x1, z0], [x0, z1], [x1, z1]]) P.push(at(box(0.3, wh, 0.3, 0x8a5a2b), px, wh / 2, pz));
-  P.push(at(box(1.2, wh * 0.72, 0.12, 0x7a4a26), cx, wh * 0.36, z1 + 0.04)); P.push(at(box(0.9, 0.7, 0.1, 0xfff6dc), cx + w * 0.3, wh * 0.6, z1 + 0.04));
-  const cols = [0xd9a53c, 0xe4b54c, 0xefc661]; for (let k = 0; k < 3; k++) P.push(at(box(w + 1.5 - k * 1.5, 0.62, d + 1.5 - k * 1.3, cols[k]), cx, wh + 0.3 + k * 0.58, cz));
-  group([x0, z0, x1, z1], P); }
-function tileHouse([x0, z0, x1, z1, h]) { const w = x1 - x0, d = z1 - z0, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, wh = h * 0.62, P = [];
-  P.push(at(box(w + 1.2, 0.4, d + 1.2, 0xb9b3a6), cx, 0.2, cz)); P.push(at(box(w, wh, d, 0xfaf3e3), cx, 0.4 + wh / 2, cz));
-  for (let i = 0; i <= 4; i++) P.push(at(box(0.32, wh, 0.32, 0x7a3b22), x0 + (w * i) / 4, 0.4 + wh / 2, z1 + 0.02));
-  for (let i = 0; i < 4; i++) P.push(at(box(w / 4 - 0.7, wh * 0.62, 0.1, i === 1 ? 0x6a4226 : 0xfff6dc), x0 + (w * (i + 0.5)) / 4, 0.4 + wh * 0.42, z1 + 0.05));
-  const s = new THREE.Shape(), half = d / 2 + 1.2; s.moveTo(-half, 0); s.lineTo(-half + 0.5, 0.35); s.lineTo(0, 1.9); s.lineTo(half - 0.5, 0.35); s.lineTo(half, 0); s.closePath();
-  const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: w + 2.2, bevelEnabled: false }), M(0x46527a)); roof.rotation.y = Math.PI / 2; roof.position.set(x0 - 1.1, 0.4 + wh, cz); roof.castShadow = roof.receiveShadow = true; P.push(roof);
-  P.push(at(box(w + 2.5, 0.3, 0.5, 0x323b5c), cx, 0.4 + wh + 2.0, cz));
-  group([x0, z0, x1, z1], P); }
-function wall([x0, z0, x1, z1, h]) { const w = x1 - x0, d = z1 - z0, P = [at(box(w, h, d, 0xcdbb98), (x0 + x1) / 2, h / 2, (z0 + z1) / 2), at(box(w + 0.3, 0.26, d + 0.3, 0x46527a), (x0 + x1) / 2, h + 0.13, (z0 + z1) / 2)];
-  const n = Math.max(1, Math.round(Math.max(w, d) / 2.2)); for (let i = 0; i < n; i++) { const s = box(w > d ? 0.9 : w + 0.06, 0.4, w > d ? d + 0.06 : 0.9, 0xb8a37e); s.castShadow = false; at(s, w > d ? x0 + ((i + 0.5) * w) / n : (x0 + x1) / 2, 0.5 + (i % 2) * 0.5, w > d ? (z0 + z1) / 2 : z0 + ((i + 0.5) * d) / n); P.push(s); }
-  group([x0, z0, x1, z1], P); }
-for (const s of SOLID) (s[5] === 'wall' ? wall : s[5] === 'tile' ? tileHouse : thatchHouse)(s);
-/* 무너진 담 · 수챗구멍 · 대문 */
-scene.add(at(box(2, 0.5, 0.7, 0xcdbb98), 15, 0.25, 22.35)); for (let i = 0; i < 7; i++) { const s = new THREE.Mesh(new THREE.DodecahedronGeometry(0.26 + (i % 3) * 0.1, 0), M(0xb8a37e)); at(s, 13.7 + i * 0.45, 0.2, 21.4 + (i % 2) * 1.9); s.castShadow = true; scene.add(s); }
-scene.add(at(box(0.7, 0.9, 2, 0xcdbb98), 4.35, 1.25, 34), at(box(0.3, 0.26, 2.3, 0x46527a), 4.35, 1.83, 34), at(box(1.6, 0.06, 1.2, 0x3d8fd0), 4.2, 0.06, 34));
-scene.add(at(box(0.5, 2.8, 0.5, 0x7a3b22), 29.65, 1.4, 30.9), at(box(0.5, 2.8, 0.5, 0x7a3b22), 29.65, 1.4, 35.1), at(box(1.6, 0.4, 5.6, 0x46527a), 29.65, 3.0, 33));
+const WALLC = { wall: 0xcdbb98 }, POSTS = [[4.35, 22.35], [29.65, 22.35], [4.35, 43.65], [29.65, 43.65]];
+/* 초가(night.glb 의 choga — build 의 thatch 와 같은 치수): 번호(SOLID 차례) → [모델, 앞이 보는 쪽(0 남 · π 북), 벽 색, 툇마루 위 소품 [이름, 옆자리, 크기, 돌림, 색]] — 뒷벽을 네모 뒤쪽에 맞추고 툇마루가 네모 앞쪽을 채운다 */
+const HOUSES = { 8: ['choga_a', Math.PI, 0xd9c6a2, [['basket', 2.0, 0.6], ['sack', -1.1, 0.8, 0.3]]], 9: ['choga_a', Math.PI, 0xcfbb96, [['jar_b', 2.1, 0.75], ['jar_b', 1.55, 0.6], ['basket', -1.0, 0.55]]],
+  10: ['choga_b', 0, 0xd9c6a2, [['basket', 1.2, 0.6]]], 11: ['choga_b_lit', 0, 0xe2d2b0, [['bundle', 1.3, 0.6, 0, { cloth: 0x9a7a5a }]]], 12: ['choga_b', 0, 0xcfbb96, [['sack', 0.9, 0.8, 0.2], ['jar_b', 1.55, 0.6]]],
+  13: ['choga_b_lit', 0, 0xd9c6a2, [['soban', 1.1, 0.75]]], 14: ['choga_b', 0, 0xe2d2b0, [['basket', 0.5, 0.55], ['bundle', 1.4, 0.55, 1, { cloth: 0x7a8aa0 }]]], 15: ['choga_b', 0, 0xd9c6a2, [['sack', 1.2, 0.8, -0.3]]] };
+function thatchHouse(s, i) { const [x0, z0, x1, z1, h] = s, [name, rot, wc, props] = HOUSES[i], a = name === 'choga_a', bw = a ? 6.4 : 4.4, bd = a ? 3.6 : 3.2, f = Math.cos(rot);
+  const sx = (x1 - x0) / bw, sz = (z1 - z0 + 0.25) / (bd + 0.82), sy = h > 2.7 ? 1 : 0.94, cx = (x0 + x1) / 2, oz = f > 0 ? z0 + (sz * bd) / 2 : z1 - (sz * bd) / 2;
+  const P = [[name, cx, 0, oz, [sx, sy, sz], rot, { wall: wc }]];
+  for (const [pn, lx, ps, pr = 0, pt = {}] of props) P.push([pn, cx + f * lx * sx, 0.55 * sy, oz + f * (bd / 2 + 0.42) * sz, ps, pr, pt]);
+  group([x0, z0, x1, z1], [bake(P, true)]); }
+/* 안채: 다섯 칸 기와집(night.glb) — 벽 몸통이 막는 네모에 꼭 맞는다. 툇마루 위에 소반·보따리 */
+function tileHouse([x0, z0, x1, z1]) { const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+  group([x0, z0, x1, z1], [bake([['anchae', cx, 0, cz, [(x1 - x0) / 11, 1, (z1 - z0) / 5], 0], ['soban', cx - 4.6, 0.77, z1 - 0.48, 0.8, 0.3], ['bundle', cx + 4.9, 0.77, z1 - 0.5, 0.62, 0.8, { cloth: 0x8a6a8a }]], true)]); }
+function wall(s) { const [x0, z0, x1, z1] = s, w = x1 - x0, d = z1 - z0, L = Math.max(w, d), n = Math.max(1, Math.round(L / 4)), P = [];
+  for (let i = 0; i < n; i++) P.push(['wall_n', w > d ? x0 + ((i + 0.5) * w) / n : (x0 + x1) / 2, 0, w > d ? (z0 + z1) / 2 : z0 + ((i + 0.5) * d) / n, [L / n / 4, 1.05, 1.25], w > d ? 0 : Math.PI / 2, WALLC]);
+  for (const p of POSTS) if (!p[2] && inRect(p[0], p[1], s)) { p[2] = 1; P.push(['wall_post', p[0], 0, p[1], 1, 0, WALLC]); }
+  group([x0, z0, x1, z1], [bake(P, true)]); }
+SOLID.forEach((s, i) => (s[5] === 'wall' ? wall : s[5] === 'tile' ? tileHouse : thatchHouse)(s, i));
+/* 무너진 담 · 수챗구멍 · 대문(열린 솟을대문 — 지붕이 아이를 가리면 비쳐 보이게) */
+scene.add(bake([['wall_broken', 15, 0, 22.35, [1, 1.05, 1.25], 0, WALLC], ['drain', 4.35, 0, 34, [1, 1.05, 1.25], Math.PI / 2, WALLC]]));
+group([29.3, 31.6, 30, 37.4], [bake([['gate_open', 29.65, 0, 33, 1, Math.PI / 2]], true)]);   /* 묶음 네모를 남쪽으로 조금 밀어 둔다 — 문 지붕 바로 밑을 지날 때도 비쳐 보이게 */
 
+/* 숨을 곳: 볏가리 · 장독 */
 const hideMeshes = [];
-for (const [x, z, r, kind] of HIDE) { const g = new THREE.Group(); g.position.set(x, 0, z);
-  if (kind === 'hay') { g.add(at(cyl(r * 0.6, r * 0.95, 1.3, 0xe4b54c, 8), 0, 0.65, 0), at(cyl(r * 0.2, r * 0.66, 0.9, 0xefc661, 8), 0, 1.75, 0)); }
-  else for (let i = 0; i < 4; i++) { const j = new THREE.Group(); j.add(at(cyl(0.42, 0.3, 0.5, 0x8a4f33, 8), 0, 0.25, 0), at(cyl(0.3, 0.42, 0.5, 0x8a4f33, 8), 0, 0.75, 0), at(cyl(0.34, 0.34, 0.08, 0x5e3320, 8), 0, 1.04, 0)); j.position.set(Math.cos(i * 1.7) * 0.72, 0, Math.sin(i * 1.7) * 0.72); j.scale.setScalar(0.9 + (i % 2) * 0.25); g.add(j); }
-  scene.add(g); hideMeshes.push(g); }
-for (const [x, z, r] of TREES) { const P = [at(cyl(0.24, 0.36, 2.4, 0x7a4f2b, 7), x, 1.2, z)], cols = [0x2f8f55, 0x3aa866, 0x4cbf78]; for (let k = 0; k < 3; k++) { const b = box((r * 1.5 - k * 0.8), 1.1, (r * 1.5 - k * 0.8), cols[k]); b.rotation.y = k * 0.5; P.push(at(b, x, 2.7 + k * 0.95, z)); } group([x - 1.6, z - 0.4, x + 1.6, z + 0.4], P); }
-/* 갈대 */
-{ const geo = new THREE.BoxGeometry(0.1, 1.4, 0.1), im = new THREE.InstancedMesh(geo, M(0xb5c86a), 700), o = new THREE.Object3D();
-  for (let i = 0; i < 700; i++) { o.position.set(0.5 + rnd() * 51.5, 0.7, 6.2 + rnd() * 3); o.rotation.set((rnd() - 0.5) * 0.3, rnd() * 3, (rnd() - 0.5) * 0.3); o.scale.set(1, 0.7 + rnd() * 0.7, 1); o.updateMatrix(); im.setMatrixAt(i, o.matrix); } scene.add(im);
-  const tip = new THREE.InstancedMesh(new THREE.BoxGeometry(0.16, 0.34, 0.16), M(0x8a6a3a), 220); for (let i = 0; i < 220; i++) { o.position.set(0.5 + rnd() * 51.5, 1.5 + rnd() * 0.3, 6.2 + rnd() * 3); o.rotation.set(0, 0, 0); o.scale.setScalar(1); o.updateMatrix(); tip.setMatrixAt(i, o.matrix); } scene.add(tip); }
+HIDE.forEach(([x, z, r, kind], i) => { const g = new THREE.Group(); g.position.set(x, 0, z); const m = art(kind === 'hay' ? 'straw_stack' : 'jar_hide');
+  if (kind === 'hay') m.scale.set(r * 0.93, 1.02 + (i % 3) * 0.05, r * 0.93); else m.scale.setScalar(r / 1.5); m.rotation.y = i * 1.9; g.add(m); scene.add(g); hideMeshes.push(g); });
+/* 나무: 잎 넓이를 그늘 넓이(r)에 맞추고, 잎 아랫단은 머리 위(2.2쯤)로 — 나무 밑에 선 아이가 잎에 묻히지 않게 */
+TREES.forEach(([x, z, r], i) => { const big = r >= 2.4, k = r / 2.4;
+  group([x - 1.6, z - 0.4, x + 1.6, z + 0.4], [bake([[big ? 'tree_big' : 'tree_a', x, 0, z, big ? [0.74 * k, 0.78, 0.74 * k] : [1.6 * k, 1.45, 1.6 * k], i * 1.3, { leaf: [0x4f8f45, 0x457f4a, 0x5a8f3f][i % 3] }]], true)]); });
+/* 갈대: 갈대밭(숨는 곳)과 그 앞 물가 */
+strew({ area: [0.5, 6.2, 52, 9.2], n: 175, names: ['reed_n'], scale: [0.72, 1.08], shadow: false });
+strew({ area: [-14, 4.8, 53.2, 6.15], n: 60, names: ['reed_n'], scale: [0.8, 1.2], y: (x, z) => (z < 6 ? -0.24 : 0), shadow: false });
 /* 나루 · 배 · 등불 */
-scene.add(at(box(3.4, 0.3, 4.6, 0x9a6a3a), 55.2, 0.25, 7.4)); for (const [px, pz] of [[53.8, 5.4], [56.6, 5.4], [53.8, 9.4], [56.6, 9.4]]) scene.add(at(cyl(0.16, 0.16, 1.0, 0x6a4526, 6), px, 0.3, pz));
-const boat = new THREE.Group(); boat.add(at(box(4.2, 0.5, 1.5, 0x8a5a2b), 0, 0.3, 0), at(box(0.9, 0.5, 1.1, 0x8a5a2b), 2.5, 0.42, 0), at(box(0.9, 0.5, 1.1, 0x8a5a2b), -2.5, 0.42, 0), at(box(3.6, 0.1, 1.1, 0xb98a55), 0, 0.5, 0)); boat.position.set(BOAT[0], 0, BOAT[1]); scene.add(boat);
-scene.add(at(cyl(0.1, 0.12, 3.0, 0x6a4526, 6), LAMP[0], 1.5, LAMP[1]), at(box(1.1, 0.1, 0.1, 0x6a4526), LAMP[0] + 0.45, 2.95, LAMP[1]));
-const lamp = new THREE.Group(); lamp.add(new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.42, 0.62), new THREE.MeshBasicMaterial({ color: 0xff5a4a })), at(new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.42, 0.62), new THREE.MeshBasicMaterial({ color: 0x4a8cff })), 0, -0.42, 0), at(box(0.7, 0.08, 0.7, 0x2a2a33), 0, 0.25, 0)); lamp.position.set(LAMP[0] + 0.9, 2.5, LAMP[1]); scene.add(lamp);
+scene.add(bake([['dock', 55.2, 0, 7.4, 1, 0], ['lamp_pole', LAMP[0], 0, LAMP[1], 1, 0], ['sotdae', 52.6, -0.15, 5.45, 1, 0.6], ['sack', 54.25, 0.4, 5.9, 0.9, 0.5], ['barrel', 54.15, 0.4, 6.75, 0.8, 0]]));
+const boat = new THREE.Group(); boat.add(art('ferry')); boat.position.set(BOAT[0], 0, BOAT[1]); scene.add(boat);
+const lamp = new THREE.Group(); { const c = bake([['chorong', 0, 0, 0]], true, false); for (const m of c.children) { m.material.transparent = true; m.renderOrder = 5; } lamp.add(c); } lamp.position.set(LAMP[0] + 0.9, 2.5, LAMP[1]); scene.add(lamp);   /* 청사초롱 — 빛무리(glow) 위에 그려 붉고 푸른 빛이 살아 있게 */
 const lampL = new THREE.PointLight(0xffb347, 34, 24, 1.6); lampL.position.copy(lamp.position); scene.add(lampL);
 const glow = glowSprite(scene); glow.position.copy(lamp.position);
 
-/* 사람 — 섬과 같은 네모 사람 */
+/* 땅 꾸밈(그림만 — 막지 않는다): 풀·들꽃 · 담 밑 풀 · 마당 디딤돌 · 물가 돌 · 판 밖 숲 */
+{ const inSolid = (x, z, pad) => SOLID.some((s) => inRect(x, z, s, pad)), nearHide = (x, z) => HIDE.some(([hx, hz, r]) => dist(x, z, hx, hz) < r + 0.3);
+  strew({ area: [-10, 9.5, W + 10, H + 8], n: 280, names: ['grass_a', 'grass_b', 'grass_b', 'grass_a', 'grass_b', 'grass_a', 'flower_w'], avoid: (x, z) => onDirt(x, z) || inSolid(x, z, 0.7), scale: [0.8, 1.5], shadow: false });
+  strew({ area: [4, 16, 68, 44], n: 70, names: ['grass_a', 'grass_b'], avoid: (x, z) => !(onDirt(x, z, 0) && inSolid(x, z, 0.75) && !inSolid(x, z, 0.2)) || nearHide(x, z) || (x > 28 && x < 31.5 && z > 30 && z < 36), scale: [0.7, 1.1], shadow: false });
+  artInst(scene, 'rock_flat', [[28.2, 0.03, 33.1, 0.5, 0.2], [26.9, 0.03, 32.9, 0.42, 1.4], [25.7, 0.03, 33.5, 0.46, 2.9], [24.4, 0.03, 33.3, 0.4, 0.7], [23.1, 0.03, 33.6, 0.48, 2.1], [21.8, 0.03, 33.2, 0.42, 3.6], [20.5, 0.03, 33.4, 0.46, 1.1], [19.2, 0.03, 32.9, 0.4, 4.4], [17.9, 0.03, 32.6, 0.46, 0.4], [16.7, 0.03, 32.2, 0.42, 2.5], [15.5, 0.03, 31.9, 0.44, 5.2]].map(([x, y, z, s, r]) => [x, 0.005, z, [s, 0.12, s], r]));
+  /* 개울가 · 강가 돌(못 가는 곳과 가장자리에만) */
+  strew({ area: [-1.6, 9.5, 0.45, 45], n: 22, names: ['rock_a', 'rock_flat', 'rock_a'], scale: [0.5, 1.0], minGap: 0.8 }); strew({ area: [3.45, 9.6, 3.85, 21.6], n: 7, names: ['rock_a', 'rock_flat'], scale: [0.35, 0.6], minGap: 0.9 });
+  strew({ area: [63.6, 5.2, W + 16, 6.25], n: 16, names: ['rock_a', 'rock_b', 'rock_flat'], scale: [0.5, 1.0], y: -0.12, minGap: 0.9 });
+  strew({ area: [-16, 5.0, 0.3, 6.3], n: 9, names: ['rock_a', 'rock_flat'], scale: [0.5, 1.0], y: -0.12, minGap: 0.9 });
+  artInst(scene, 'rock_a', [[57.1, -0.12, 7.2, 0.6, 1], [63.1, -0.1, 7.1, 0.8, 2.2], [62.8, -0.14, 6.3, 0.55, 4], [63.5, -0.05, 6.5, 1.0, 0.4]]);
+  /* 판 밖: 가까운 띠는 덤불·돌·풀, 그 뒤로 숲(키 큰 나무는 아이를 가리지 않게 멀찍이) */
+  const out = (x, z) => x < -1.8 || x > W + 0.6 || z > H + 0.4;
+  strew({ area: [-9, 9.5, W + 8, H + 7.5], n: 46, names: ['bush', 'bush', 'rock_a', 'stump', 'rock_b'], avoid: (x, z) => !out(x, z), scale: [0.7, 1.3], minGap: 1.4, tints: { leaf: 0x457f4a } });
+  const far = (x, z) => x < -8.5 || x > W + 7.5 || z > H + 7.5;
+  strew({ area: [-36, 7, W + 34, H + 26], n: 84, names: ['pine_k', 'pine_a', 'tree_a', 'pine_b', 'tree_big', 'tree_b', 'pine_a', 'pine_k'], avoid: (x, z) => !far(x, z), scale: [0.9, 1.35], minGap: 2.6, shadow: false });
+  /* 마을 어귀 장승 한 쌍 · 판 밖 수레와 짐 */
+  scene.add(bake([['jangseung', 41.5, 0, 30.5, 1, Math.PI / 2], ['jangseung', 41.5, 0, 35.5, 0.92, Math.PI / 2], ['cart', 72.6, 0, 29.5, 1, 0.5], ['sack_pile', 71.6, 0, 26.8, 1, 1.2], ['firewood', 71.4, 0, 20.5, 1.1, 0.3], ['log', 72.2, 0, 22.4, 1, 0.9], ['jige', 71.2, 0, 33.2, 1, -0.8]])); }
+
+/* 사람 — 블렌더로 만든 사람(people.glb) */
 const { person, walkAnim } = people(scene);
 const pMesh = person({ shirt: 0xf6f1e4, pants: 0x9a8a72, hat: 'top' });
 const pRing = new THREE.Mesh(new THREE.RingGeometry(0.66, 0.84, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, depthWrite: false })); pRing.rotation.x = -Math.PI / 2; scene.add(pRing);
-const dog = new THREE.Group(); dog.add(at(box(0.9, 0.42, 0.4, 0xd9a35c), 0, 0.5, 0), at(box(0.4, 0.4, 0.42, 0xd9a35c), 0.6, 0.72, 0), at(box(0.12, 0.2, 0.1, 0x8a5a2b), 0.66, 1.0, 0.14), at(box(0.12, 0.2, 0.1, 0x8a5a2b), 0.66, 1.0, -0.14), at(box(0.12, 0.34, 0.12, 0xd9a35c), -0.5, 0.82, 0)); for (const [lx, lz] of [[0.3, 0.14], [0.3, -0.14], [-0.3, 0.14], [-0.3, -0.14]]) dog.add(at(box(0.14, 0.3, 0.14, 0xc48d48), lx, 0.15, lz)); dog.position.set(DOG[0], 0, DOG[1]); scene.add(dog);
+const dog = new THREE.Group(); { const d = art('dog'); d.rotation.y = Math.PI / 2; d.scale.setScalar(1.05); dog.add(d); } dog.position.set(DOG[0], 0, DOG[1]); scene.add(dog);   /* 모델 머리는 +z — 묶음의 +x 를 보게 돌려 둔다 */
 const boatman = person({ shirt: 0x8fa3b8, pants: 0x6a7686, hat: 'satgat' }); boatman.position.set(FERRY[0], 0.4, FERRY[1]);
 /* 할 일의 물건: 주먹밥 · 문서 궤 · 빨랫줄 */
-const riceMesh = new THREE.Group(); riceMesh.add(at(box(0.5, 0.06, 0.5, 0x8a5a2b), 0, 0, 0), new THREE.Mesh(new THREE.DodecahedronGeometry(0.26, 0), M(0xffffff, { emissive: 0x666655 })), at(box(0.2, 0.12, 0.3, 0x24402a), 0, -0.08, 0.16)); riceMesh.children[1].position.y = 0.22; riceMesh.position.set(RICE[0], 0.5, RICE[1]); scene.add(riceMesh);
-const docMesh = new THREE.Group(); docMesh.add(at(box(1.0, 0.6, 0.6, 0x7a3b22), 0, 0.3, 0), at(box(1.06, 0.1, 0.66, 0x5a2a16), 0, 0.64, 0), at(box(0.14, 0.2, 0.06, 0xffcf4d), 0, 0.36, 0.32), at(box(0.5, 0.06, 0.36, 0xfff6dc, { emissive: 0x554422 }), 0, 0.74, 0)); docMesh.position.set(DOC[0], 0, DOC[1]); scene.add(docMesh);
+const riceMesh = new THREE.Group(); { const r = art('riceball'); r.scale.setScalar(1.15); r.position.y = -0.04; riceMesh.add(r); } riceMesh.position.set(RICE[0], 0.5, RICE[1]); scene.add(riceMesh);
+const docMesh = new THREE.Group(); docMesh.add(art('chest'), at(art('mat_straw', {}, { shadow: false }), 0, 0.035, 0.1), new THREE.Group(), art('doc_scroll')); docMesh.position.set(DOC[0], 0, DOC[1]); scene.add(docMesh);   /* children[3] = 문서(태우면 사라진다) */
 const fire = new THREE.Group(); for (let k = 0; k < 3; k++) fire.add(at(new THREE.Mesh(new THREE.ConeGeometry(0.22 - k * 0.05, 0.5 + k * 0.1, 5), new THREE.MeshBasicMaterial({ color: [0xff5a2a, 0xffa23a, 0xffe07a][k] })), (k - 1) * 0.16, 1.05 + k * 0.05, 0)); fire.position.set(DOC[0], 0, DOC[1]); fire.visible = false; scene.add(fire);
 const fireL = new THREE.PointLight(0xff8a3a, 0, 14, 1.6); fireL.position.set(DOC[0], 1.4, DOC[1]); scene.add(fireL);
-const clothMesh = new THREE.Group(); clothMesh.add(at(cyl(0.07, 0.07, 2.2, 0x7a4f2b, 5), -1.5, 1.1, 0), at(cyl(0.07, 0.07, 2.2, 0x7a4f2b, 5), 1.5, 1.1, 0), at(box(3.0, 0.04, 0.04, 0xd8c9a0), 0, 2.1, 0), at(box(0.9, 0.9, 0.06, 0x7fc8c0), -0.6, 1.62, 0), at(box(0.8, 0.7, 0.06, 0xf6f1e4), 0.55, 1.72, 0)); clothMesh.position.set(CLOTH[0], 0, CLOTH[1]); scene.add(clothMesh);
-const stoneGeo = new THREE.DodecahedronGeometry(0.2, 0), stoneMat = M(0xd6dbe6, { emissive: 0x39404e });
+const clothMesh = new THREE.Group(); clothMesh.add(art('clothesline'), art('cloth_sheet'), new THREE.Group(), art('cloth_jeogori', { cloth: 0x7fc8c0 })); clothMesh.position.set(CLOTH[0], 0, CLOTH[1]); scene.add(clothMesh);   /* children[3] = 상민 옷(입으면 사라진다) */
+const stoneGeo = artGeo('rock_a').clone().scale(0.44, 0.52, 0.44).translate(0, -0.18, 0), stoneMat = artMat.clone(); stoneMat.color.setRGB(2.3, 2.4, 2.6); stoneMat.emissive.set(0x39404e);
 const flying = new THREE.Mesh(stoneGeo, stoneMat); flying.visible = false; scene.add(flying);
 const { ring, update: ringsUpdate } = ringsFx(scene);
 
