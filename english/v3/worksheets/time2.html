@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<!-- K-edu 영어 v3 활동지 · Lv4 #22 시간 단어 2 — 시각 10단어 — time1.html(Lv4 #10) 판형 계승, V트랙 주황
+     ★그림 = 화면과 같은 그림(DAY320CSS · CLK422CSS 블록 그대로) — 그림 마크업 = 화면 CLK422 pic422(w,true) · face422 를 생성기 ws/gen_time2.js 로 그대로 뽑음 + .still(움직임 끔).
+     ★두 판(화면 .bd422 판 · 그림 번호 1~10 · 단어 글자 0) · ① 따라쓰기 10(바늘 판 / 띠·수 판) · ② 시계 셋에 짧은바늘 그리기(seven · twelve · eleven o'clock — 긴바늘 12 고정)
+     · ③ 짝 고르기 3(minute / hour · noon / midnight · eleven / twelve — 그림 보고) · ④ 나의 하루 I wake at ___ o'clock.(상자 six · seven · eight) + 시계 그리기.
+     ★at = 시각 앞만 · 「~시 반」 0 · 받아쓰기 금지. -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root { --primary:#FF8A3D; --green:#4CAF50; --red:#F44336; --subtext:#888780; --border:#F7DFCB; }
+  @page { size: A4; margin: 10mm 12mm 8mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Noto Sans CJK KR', sans-serif; color: #1f2430; font-size: 12px; line-height: 1.45; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d9702a; padding-bottom: 5px; }
+  .brand { font-size: 13px; font-weight: 700; color: #9c4d13; }
+  .brand .lv { background: #d9702a; color: #fff; padding: 2px 9px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
+  .namebox { font-size: 11px; color: #5f5e5a; }
+  .namebox span { display: inline-block; border-bottom: 1px solid #b4b2a9; width: 70px; margin: 0 4px; }
+  .seed { margin-top: 7px; background: #fdeee1; border: 2px solid #d9702a; border-radius: 12px; padding: 7px 13px; display: flex; align-items: center; gap: 12px; }
+  .seed .star { font-size: 24px; color: #ef9f27; line-height: 1; }
+  .seed .label { font-size: 10px; color: #9c4d13; font-weight: 700; letter-spacing: 1px; }
+  .seed .main { font-size: 15px; font-weight: 800; color: #4a2408; }
+  .keypoint { margin-top: 6px; background: #faeeda; border-left: 6px solid #ef9f27; border-radius: 0 8px 8px 0; padding: 5px 12px; font-size: 12px; }
+  .keypoint .k { color: #854f0b; font-weight: 800; }
+  .rowlab { margin-top: 5px; font-size: 10.5px; font-weight: 700; color: #9c4d13; }
+  h2 { margin-top: 7px; font-size: 13px; color: #9c4d13; display: flex; align-items: center; gap: 7px; }
+  h2 .n { background: #9c4d13; color: #fff; width: 19px; height: 19px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+  h2 .hint { font-weight: 400; font-size: 10px; color: #888780; }
+  .trace { display: flex; gap: 8px; margin-top: 3px; }
+  .traceword { text-align: center; flex: 1; min-width: 56px; position: relative; }
+  .traceword .outline { font-size: 18px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.4px #c4c2b8; letter-spacing: 1px; }
+  .traceword .line { border-bottom: 1.5px solid #d3d1c7; height: 13px; margin-top: 2px; }
+  .twocol { display: flex; gap: 10px; margin-top: 4px; align-items: stretch; }
+  .recap { margin-top: 7px; background: #4a2408; color: #fdeee1; border-radius: 10px; padding: 6px 13px; text-align: center; font-size: 12px; }
+  .recap b { color: #fac775; }
+  .parent { margin-top: 6px; border-top: 1px dashed #b4b2a9; padding-top: 5px; font-size: 9.5px; color: #888780; line-height: 1.45; }
+  .parent b { color: #5f5e5a; }
+  /* 그림 — 화면 블록 그대로(움직임은 .still 로 꺼짐) */
+  .pic { position: relative; display: inline-block; overflow: hidden; width: 48px; height: 39px; line-height: 0; }
+  .pic .dyp { transform-origin: 0 0; transform: scale(.6); }
+  .bk { position: relative; display: inline-block; overflow: hidden; width: 96px; height: 77px; line-height: 0; }
+  .bk .dyp { transform-origin: 0 0; transform: scale(1.2); }
+/*DAY320CSS-BEGIN — Lv3 #20 시간·요일① 그림·일곱 칸 달력 · 4파일 + 활동지 문자 단위 동일(blocks/DAY320CSS.css → sync_blocks.py 주입, 하네스 A4·D2b).
+  ★그림 타일(.dyp·.dyz) = Lv3 #6 .anp·.anz 와 같은 기하(같은 단어 = 같은 그림 · 액자 모양이 정답 단서가 되지 않는다).
+  ★요일 = 일곱 칸 띠(.cal · 월요일 시작) — 그 칸만 켜짐(.on) + 한글 첫 글자(.kd). 토 = 파랑 · 일 = 빨강(켜지지 않아도 옅게).
+  ★today = 띠의 한 칸 동그라미(.rg) + 👆 · week = Lv2 #22 일곱 칸 그림(.wk 세 줄 = 22-1 실물 그대로) · day = 📅.
+  ★일곱 칸 달력 한 장(.wcal) = 칸마다 따로 눌린다 · 칸 얼굴 = 한글 첫 글자만. 움직임 0 — 명사 그림은 멈춰 있다. */
+.dyp{position:relative;display:inline-flex;align-items:center;justify-content:center;width:80px;height:64px;border-radius:14px;background:#FFFDF9;border:2px solid #F1DFCD;box-sizing:border-box;line-height:1;vertical-align:middle;overflow:hidden;text-align:center}
+.dyz{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+.dyz>.dyp{position:absolute;left:0;top:0;transform-origin:0 0}
+.dyp .em{position:relative;font-size:42px;font-style:normal;line-height:1}
+.dyp .cal{position:absolute;left:5px;right:5px;top:7px;height:14px;display:flex;gap:2px}
+.dyp .cal i{flex:1;border-radius:3px;background:#FFF3E0;border:1px solid #E0C3A8;box-sizing:border-box}
+.dyp .cal i.c6{background:#E3F2FD;border-color:#90CAF9}
+.dyp .cal i.c7{background:#FFEBEE;border-color:#EF9A9A}
+.dyp .cal i.on{background:#FF8A65;border-color:#E64A19}
+.dyp .cal i.c6.on{background:#42A5F5;border-color:#1565C0}
+.dyp .cal i.c7.on{background:#EF5350;border-color:#C62828}
+.dyp .cal i.rg{border:2.5px solid #7E57C2;border-radius:50%;background:#fff}
+.dyp .kd{position:relative;top:9px;font-size:30px;font-style:normal;font-weight:700;color:#5D4037;line-height:1;font-family:'Jua',sans-serif}
+.dyp .kd.d6{color:#1E88E5}
+.dyp .kd.d7{color:#E53935}
+.dyp .fg{position:absolute;left:22px;top:22px;font-size:28px;font-style:normal;line-height:1}
+.dyp .wk{font-size:50px}
+.wk{display:inline-flex;gap:.05em;vertical-align:middle;padding:.07em;border:.06em solid #8D6E63;border-radius:.14em;background:#fff;box-sizing:border-box}
+.wk i{display:block;width:.12em;height:.5em;background:#FFCC80;border-radius:.03em}
+.wk i:first-child{background:#FF8A65}
+.wcal{width:min(360px,100%);margin:8px auto;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:6px;border-radius:16px;border:3px solid var(--border);background:#FFE9D6;box-sizing:border-box}
+.wcal .cell{position:relative;aspect-ratio:1/1.25;border-radius:9px;border:3px solid #D7B899;background:#FFFDF9;box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;min-width:0;line-height:1;transition:transform .15s}
+.wcal .cell.c6{background:#E3F2FD;border-color:#90CAF9}
+.wcal .cell.c7{background:#FFEBEE;border-color:#EF9A9A}
+.wcal .cell:active{transform:scale(.93)}
+.wcal .ck{font-size:24px;font-weight:700;color:#5D4037;font-family:'Jua',sans-serif}
+.wcal .ck.d6{color:#1E88E5}
+.wcal .ck.d7{color:#E53935}
+.wcal .cell.found{border-color:var(--green);box-shadow:0 0 0 2px var(--green) inset}
+.wcal .cell.ring{border-color:#7E57C2;box-shadow:0 0 0 3px #B39DDB}
+.wcal .cell .tag{display:none;position:absolute;left:50%;bottom:-.9em;transform:translateX(-50%);font-size:11px;background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:8px;padding:0 3px;white-space:nowrap;font-family:'Jua',sans-serif;line-height:1.2;z-index:3}
+.wcal .cell.found .tag{display:block}
+.wcal .choice-btn.cell{font-family:inherit;box-shadow:none;min-height:0}
+.wcal .choice-btn.cell.correct{border-color:var(--green);box-shadow:0 0 0 3px var(--green) inset}
+.wcal .choice-btn.cell.wrong{border-color:var(--red);box-shadow:0 0 0 3px var(--red) inset}
+/*DAY320CSS-END*/
+/*CLK422CSS-BEGIN — Lv4 #22 시간② 시각 그림 · 뒷면 장면 · 두 판 · 큰 시계 판 · 하루 띠 칸 · 카드 테두리 · 4파일 + 활동지 문자 단위 동일(blocks/CLK422CSS.css → sync_blocks.py 주입, 하네스 A4·W4).
+  ★그림 = Lv3 #20 그림 타일(.dyp 80×64 · DAY320CSS 블록째 — #10 판형) 안 — 시계 판(.cf422) · 수 카드(.nc422) 는 새 그림 · clock = .dyp .em 🕐(DAY320CSS 줄).
+  ★원 칸 줄 = 문자 그대로 옮김(블록째 주입 0): ①Lv3 #1 VB301CSS .vs · .vz · .vz>.vs 세 줄 ②Lv3 #32 TM332CSS noon 칸 줄(.sk32 · .gd32 · .sn32 · .kd32 · .sd32 · .k-no) + 하루 띠 색 .k-mo · .k-ni
+    ③#10 CAL410CSS now 줄(.ds410 · k1~k5 · .pt410 · n410Blink · .still) — 하네스가 원천 블록 안에 같은 줄이 있는지 잰다.
+  ★시계 판 = 짧은바늘(.hh422 남색 굵게 · 짧게) · 긴바늘(.mh422 주황 가늘게 · 길게) · 바늘 밑동 = 판 가운데(transform-origin 아래 가운데) · 각도 = 마크업 style.
+    쐐기(.wg422) = half 반쪽(0→180°) · minute 작은 한 칸(0→6°) · hour 숫자 한 칸(0→30°) · 밤 판(.nt) = 남색 + 달 점 · o'clock 반짝 별(.sp422 — CSS 별 · ✨ 0).
+  ★카드 테두리 = 이름 사각 3px · ★때 말 점선(o'clock · noon · midnight · now) · 판 칸의 아직 안 짚은 칸 = 실선(점선은 때 말 몫).
+  ★움직임 = o'clock 반짝 · now ▶ 깜빡 · 뒷면 midnight 의 z 오름뿐 · .still = 움직임 끔(활동지 · 숙달 진행형 1슬 시작). */
+/* ── 원 칸 줄 ① Lv3 #1 VB301CSS — .vs 상자(noon 칸을 담는다) ── */
+.vs{position:relative;display:inline-block;width:140px;height:64px;line-height:0;vertical-align:middle;text-align:left}
+.vz{display:inline-block;position:relative;vertical-align:middle;line-height:0}
+.vz>.vs{position:absolute;left:0;top:0;transform-origin:0 0}
+/* ── 원 칸 줄 ② Lv3 #32 TM332CSS — noon 칸(파랑 · 꼭대기 해 · 짧은 그림자) · 하루 띠 색(아침 · 낮 · 밤) ── */
+.vs .sk32{position:absolute;left:3px;top:2px;width:134px;height:60px;border-radius:10px;overflow:hidden;display:block;box-sizing:border-box;border:2px solid rgba(0,0,0,.12)}
+.sk32 .gd32{position:absolute;left:0;right:0;bottom:0;height:12px;display:block;background:#8CC66B}
+.sk32 .sn32{position:absolute;width:20px;height:20px;border-radius:50%;display:block;background:#FFD43B;box-shadow:0 0 0 4px rgba(255,212,59,.35)}
+.sk32 .kd32{position:absolute;left:62px;top:28px;width:10px;height:18px;display:block}
+.sk32 .kd32::before{content:'';position:absolute;left:1px;top:0;width:8px;height:8px;border-radius:50%;background:#5C3B00}
+.sk32 .kd32::after{content:'';position:absolute;left:2px;top:8px;width:6px;height:10px;border-radius:3px 3px 1px 1px;background:#E8590C}
+.sk32 .sd32{position:absolute;top:44px;height:4px;border-radius:50%;display:block;background:rgba(0,0,0,.35)}
+.k-mo{background:linear-gradient(#FFF3BF,#FFD8A8)}
+.k-no{background:linear-gradient(#4DABF7,#D0EBFF)}
+.k-no .sn32{left:56px;top:3px}
+.k-no .sd32{left:61px;width:12px}
+.k-ni{background:linear-gradient(#1C2A5A,#3B5BDB)}
+/* ── 원 칸 줄 ③ #10 CAL410CSS — now(하루 띠 다섯 칸 + 깜빡 ▶ 점) ── */
+.dyp .ds410{position:absolute;left:6px;top:30px;width:68px;height:24px;display:flex;gap:2px}
+.dyp .ds410 i{flex:1;display:block;border-radius:4px;border:1px solid rgba(0,0,0,.15);box-sizing:border-box}
+.dyp .ds410 .k1{background:linear-gradient(#FFF3BF,#FFD8A8)}
+.dyp .ds410 .k2{background:linear-gradient(#4DABF7,#D0EBFF)}
+.dyp .ds410 .k3{background:linear-gradient(#74C0FC,#FFF3BF)}
+.dyp .ds410 .k4{background:linear-gradient(#FF922B,#FFA8A8 70%,#F783AC)}
+.dyp .ds410 .k5{background:linear-gradient(#1C2A5A,#3B5BDB)}
+.dyp .pt410{position:absolute;left:35px;top:10px;width:13px;height:15px;display:block;background:#E8590C;clip-path:polygon(0 0,100% 50%,0 100%);animation:n410Blink 1s ease-in-out infinite}
+@keyframes n410Blink{0%,100%{opacity:1}50%{opacity:.15}}
+.dyp.still,.dyp.still *{animation:none!important}
+/* ── 시계 판(.cf422) — 타일 가운데 지름 56px · 안쪽 50px · 가운데 (25,25) ── */
+.dyp .cf422{position:absolute;left:12px;top:4px;width:56px;height:56px;display:block;border-radius:50%;box-sizing:border-box;border:3px solid #495057;background:#fff}
+.cf422 .wg422{position:absolute;left:0;top:0;width:50px;height:50px;display:block;border-radius:50%}
+.cf422 .w-half{background:conic-gradient(#FFD8A8 0 180deg,transparent 180deg)}
+.cf422 .w-min{background:conic-gradient(#FF922B 0 6deg,transparent 6deg)}
+.cf422 .w-hr{background:conic-gradient(#A5D8FF 0 30deg,transparent 30deg)}
+.cf422 .tk422{position:absolute;left:0;top:0;width:50px;height:50px;display:block;border-radius:50%;background:repeating-conic-gradient(from -2deg,#495057 0 4deg,transparent 4deg 30deg);-webkit-mask:radial-gradient(circle,transparent 0 76%,#000 77%);mask:radial-gradient(circle,transparent 0 76%,#000 77%)}
+.cf422 .tk422.t60{background:repeating-conic-gradient(from -2deg,#495057 0 4deg,transparent 4deg 30deg),repeating-conic-gradient(from -1deg,#ADB5BD 0 2deg,transparent 2deg 6deg)}
+.cf422 .n12{position:absolute;left:0;right:0;top:6px;display:block;text-align:center;font-style:normal;font-size:9px;line-height:1;font-weight:700;color:#495057;font-family:'Jua',sans-serif}
+.cf422 .n30{position:absolute;left:30px;top:21px;display:block;font-style:normal;font-size:9px;line-height:1;font-weight:700;color:#D9480F;font-family:'Jua',sans-serif}
+.cf422 .hh422{position:absolute;left:23px;top:11px;width:4px;height:14px;display:block;border-radius:2px;background:#364FC7;transform-origin:50% 100%}
+.cf422 .mh422{position:absolute;left:23.5px;top:4px;width:3px;height:21px;display:block;border-radius:2px;background:#E8590C;transform-origin:50% 100%}
+.cf422 .cp422{position:absolute;left:22px;top:22px;width:6px;height:6px;display:block;border-radius:50%;background:#212529}
+.cf422 .sp422{position:absolute;left:18px;top:-10px;width:14px;height:14px;display:block;background:#FCC419;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);animation:c422Spark 1s ease-in-out infinite}
+@keyframes c422Spark{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.6);opacity:.55}}
+.cf422.nt{background:#1C2A5A;border-color:#0B1430}
+.cf422.nt .tk422{background:repeating-conic-gradient(from -2deg,#DEE2E6 0 4deg,transparent 4deg 30deg)}
+.cf422.nt .n12{color:#FFF9DB}
+.cf422.nt .hh422{background:#91A7FF}
+.cf422.nt .mh422{background:#FFA94D}
+.cf422.nt .cp422{background:#FFF9DB}
+.cf422 .mn422{position:absolute;left:8px;top:12px;width:7px;height:7px;display:block;border-radius:50%;background:#FFF9DB;box-shadow:0 0 0 2px rgba(255,249,219,.25)}
+/* ── 수 카드(.nc422) — Lv2 #28 keycap 판형 · CSS 글자 칸(keycap 이모지 0) ── */
+.dyp .nc422{position:relative;display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:9px;box-sizing:border-box;background:linear-gradient(#91A7BC,#5F7A93);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25),inset 0 2px 0 rgba(255,255,255,.35);color:#fff;font-size:26px;line-height:1;font-weight:700;font-style:normal;font-family:'Jua',sans-serif}
+/* ── 뒷면 장면 — 「나」(#10 .me410 값) · Max 이름표 · 문장 속 아는 말 소품 · 밤 z(CSS 글자) ── */
+.dyp .me422{position:absolute;right:2px;bottom:2px;width:22px;height:22px;border-radius:50%;background:#FFE066;border:2px solid #F0C419;color:#7a5600;font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-style:normal;box-sizing:border-box;z-index:2}
+.dyp .pp422{position:absolute;font-size:20px;line-height:1;font-style:normal;z-index:1}
+.dyp .pp422.p-wake,.dyp .pp422.p-wait,.dyp .pp422.p-lunch{left:2px;bottom:2px}
+.dyp .pp422.p-sleep{left:2px;top:2px}
+.dyp .nm422{position:absolute;right:2px;top:2px;display:inline-flex;align-items:center;gap:1px;font-size:11px;line-height:1.3;font-style:normal;background:#fff;border:2px solid var(--primary);color:var(--primary);border-radius:8px;padding:0 4px;font-family:'Jua',sans-serif;z-index:2}
+.dyp .nm422 .dd422{font-size:12px;font-style:normal}
+.dyp .pz422{position:absolute;left:8px;top:14px;width:46px;height:46px;display:block}
+.dyp .pz422 i{position:absolute;left:0;top:0;font-size:44px;line-height:1;font-style:normal}
+.dyp .pz422 .pf{opacity:.18}
+.dyp .pz422 .ph{clip-path:inset(0 50% 0 0)}
+.dyp .zz422{position:absolute;right:6px;top:2px;width:18px;height:24px;display:block}
+.dyp .zz422::before,.dyp .zz422::after{content:'z';position:absolute;font-family:'Jua',sans-serif;font-weight:700;color:#FFF9DB;line-height:1;animation:c422Zz 1.6s ease-out infinite}
+.dyp .zz422::before{left:0;top:12px;font-size:10px}
+.dyp .zz422::after{left:8px;top:4px;font-size:13px;animation-delay:.8s}
+@keyframes c422Zz{0%{transform:translateY(6px);opacity:0}40%{opacity:1}100%{transform:translateY(-6px);opacity:0}}
+.ss422.p-midnight .cf422{background:#1C2A5A}
+.dyp.ss422.p-midnight{background:#2B3A6B;border-color:#1C2A5A}
+.dyp .em.big422{font-size:60px}
+.dyp .mf422{position:absolute;left:0;top:0;width:80px;height:64px;display:block;transform:scale(.46);transform-origin:0 0}
+.ss422.p-now .pt410{left:50px}
+@media (prefers-reduced-motion:reduce){.dyp .pt410,.cf422 .sp422,.dyp .zz422::before,.dyp .zz422::after{animation:none!important}}
+/* ── 카드 테두리 — 이름 사각 3px · 때 말 점선 ── */
+.wcard.sq422,.fcard.sq422,.vw.sq422,.pcol.sq422,.bd422 .spot.sq422{border-radius:3px}
+.wcard.dt422,.fcard.dt422,.vw.dt422,.pcol.dt422,.bd422 .spot.dt422{border-style:dashed}
+/* ── 작은 말 at — 문장 속 보라 밑줄(뜻 문항 0) ── */
+.sline .at422{text-decoration:none;border-bottom:3px solid #B197FC;padding:0 1px}
+/* ── 두 판 — 바늘 판(시계 판 · 시계) · 띠·수 판(하루 띠 · 수) ── */
+.bd422{display:flex;flex-direction:column;gap:6px;width:min(380px,100%);margin:6px auto 0;box-sizing:border-box}
+.bd422 .pn422{border:3px solid var(--border);border-radius:14px;padding:3px 4px 12px;box-sizing:border-box;transition:box-shadow .2s}
+.bd422 .pn422.hand{background:#FFF4E6}
+.bd422 .pn422.band{background:#E7F5FF}
+.bd422 .pl422{display:block;font-style:normal;font-size:14px;line-height:1.4;color:#495057;font-family:'Jua',sans-serif;text-align:left;margin:0 0 3px 6px}
+.bd422 .gr422{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.bd422 .spot{position:relative;display:flex;align-items:center;justify-content:center;line-height:0;min-width:0;padding:2px 0;border-radius:10px;box-sizing:border-box;background:#fff;border:2px solid #CED4DA;cursor:pointer;transition:transform .15s}
+.bd422 .spot:active{transform:scale(.95)}
+.bd422 .spot .tag{display:none;position:absolute;left:50%;bottom:-.8em;transform:translateX(-50%);font-size:12px;background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:8px;padding:0 4px;white-space:nowrap;font-family:'Jua',sans-serif;line-height:1.2;z-index:3}
+.bd422 .spot.found{border-color:var(--green);border-width:3px;background:#EBFBEE}
+.bd422 .spot.found .tag{display:block}
+.bd422.all .pn422{border-color:var(--green);box-shadow:0 0 0 3px #B2F2BB}
+.bd422 .choice-btn.spot{font-family:inherit;box-shadow:none;margin:0;min-height:0}
+.bd422 .choice-btn.spot.correct{border-color:var(--green);box-shadow:0 0 0 3px var(--green) inset}
+.bd422 .choice-btn.spot.wrong{border-color:var(--red);box-shadow:0 0 0 3px var(--red) inset}
+/* ── 큰 시계 판(.dl422) — 숫자 둘레 1~12 단추 · 짧은바늘 · 긴바늘 · 쐐기 · 반짝 · 달 점(원리 · 숙달 손활동) ── */
+.dl422{position:relative;width:min(220px,62vw);aspect-ratio:1/1;margin:6px auto;border-radius:50%;box-sizing:border-box;border:6px solid #495057;background:#fff;transition:background .4s}
+.dl422 .dw422{position:absolute;left:0;top:0;width:100%;height:100%;display:block;border-radius:50%}
+.dl422 .dw422.w-min{background:conic-gradient(#FF922B 0 6deg,transparent 6deg)}
+.dl422 .dw422.w-half{background:conic-gradient(#FFD8A8 0 180deg,transparent 180deg)}
+.dl422 .dw422.w-hr{background:conic-gradient(from 330deg,#A5D8FF 0 30deg,transparent 30deg)}
+.dl422 .dn422{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;padding:0;border-radius:50%;border:2px solid transparent;background:transparent;font-family:'Jua',sans-serif;font-size:18px;line-height:26px;color:#343A40;cursor:pointer;box-shadow:none;min-height:0;z-index:2}
+.dl422 .dn422.lit{border-color:var(--primary);background:#FFF0E4;color:var(--primary)}
+.dl422 .dn422.nc{width:34px;height:34px;margin:-17px 0 0 -17px;border:none;border-radius:7px;background:linear-gradient(#91A7BC,#5F7A93);color:#fff;line-height:34px}
+.dl422 .dh422{position:absolute;left:calc(50% - 4px);top:24%;width:8px;height:26%;display:block;border-radius:4px;background:#364FC7;transform-origin:50% 100%;transition:transform .5s;z-index:3}
+.dl422 .dm422{position:absolute;left:calc(50% - 2.5px);top:9%;width:5px;height:41%;display:block;border-radius:3px;background:#E8590C;transform-origin:50% 100%;transition:transform .5s;z-index:3}
+.dl422 .dc422{position:absolute;left:calc(50% - 7px);top:calc(50% - 7px);width:14px;height:14px;display:block;border-radius:50%;background:#212529;z-index:4}
+.dl422 .dsp422{position:absolute;left:calc(50% - 13px);top:-30px;width:26px;height:26px;display:none;background:#FCC419;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);animation:c422Spark 1s ease-in-out infinite}
+.dl422.sp .dsp422{display:block}
+.dl422 .dmn422{position:absolute;left:24%;top:30%;width:14px;height:14px;display:none;border-radius:50%;background:#FFF9DB;box-shadow:0 0 0 4px rgba(255,249,219,.25)}
+.dl422.nt{background:#1C2A5A;border-color:#0B1430}
+.dl422.nt .dmn422{display:block}
+.dl422.nt .dn422{color:#FFF9DB}
+.dl422.nt .dh422{background:#91A7FF}
+.dl422.nt .dm422{background:#FFA94D}
+.dl422.nt .dc422{background:#FFF9DB}
+.dl422 .dh422.nope{animation:c422Nope .45s ease-in-out 1}
+@keyframes c422Nope{0%,100%{margin-left:0}25%{margin-left:-6px}75%{margin-left:6px}}
+/* ── 하루 띠 칸(.sc422) — Lv3 #32 띠 색(.k-mo 아침 · .k-no 낮 · .k-ni 밤 — 위 원 칸 줄) + 문장 속 아는 말 실물 ── */
+.sc422{position:relative;display:inline-flex;align-items:center;justify-content:center;width:62px;height:44px;border-radius:10px;border:2px solid rgba(0,0,0,.12);box-sizing:border-box;font-size:24px;line-height:1;vertical-align:middle;flex:none}
+.sc422.off{filter:grayscale(1);opacity:.35}
+.sc422 .zz422{position:absolute;right:3px;top:1px;width:16px;height:20px;display:block}
+.sc422 .zz422::before,.sc422 .zz422::after{content:'z';position:absolute;font-family:'Jua',sans-serif;font-weight:700;color:#FFF9DB;line-height:1;animation:c422Zz 1.6s ease-out infinite}
+.sc422 .zz422::before{left:0;top:9px;font-size:10px}
+.sc422 .zz422::after{left:7px;top:2px;font-size:12px;animation-delay:.8s}
+/*CLK422CSS-END*/
+  .bd422 { width: 100%; max-width: none; margin: 3px 0 0; gap: 4px; }
+  .bd422 .pn422 { padding: 2px 4px 4px; border-width: 2px; }
+  .bd422 .pl422 { font-size: 11px; margin: 0 0 2px 4px; font-weight: 800; }
+  .bd422 .spot { cursor: default; border-color: #dee2e6; padding: 2px 0 2px 12px; }
+  .bd422 .spot .sn { position: absolute; left: 2px; top: 2px; line-height: 1; font-size: 10px; font-weight: 800; color: #fff; background: #9c4d13; border-radius: 50%; width: 15px; height: 15px; display: inline-flex; align-items: center; justify-content: center; }
+  .dbox, .pbox, .sbox { flex: 1; border: 2px solid #e0b48c; border-radius: 12px; background: #fffaf5; padding: 5px 10px; }
+  .draw { display: flex; gap: 8px; justify-content: space-around; }
+  .draw .dw { display: flex; flex-direction: column; align-items: center; }
+  .draw .dl { font-size: 13px; font-weight: 800; color: #4a2408; letter-spacing: .3px; }
+  .pk3 { display: flex; flex-direction: column; gap: 3px; }
+  .pk3 .pr { display: flex; align-items: center; gap: 10px; }
+  .pk3 .po { font-size: 14px; color: #4a2408; }
+  .pk3 .po b { font-weight: 800; padding: 0 6px; }
+  .pk3 .po i { font-style: normal; color: #b4b2a9; }
+  .s4r { display: flex; align-items: center; gap: 12px; }
+  .s { font-size: 17px; font-weight: 800; color: #4a2408; display: flex; align-items: flex-end; gap: 5px; letter-spacing: .4px; }
+  .s u.at { text-decoration: none; border-bottom: 3px solid #B197FC; }
+  .s .ln { display: inline-block; width: 90px; border-bottom: 1.8px solid #b4b2a9; height: 20px; }
+  .wb { font-size: 10px; color: #888780; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">K-edu 영어 <span class="lv">Lv4 · 어휘 #22</span></div>
+    <div class="namebox">이름 <span></span> 날짜 <span></span></div>
+  </div>
+
+  <div class="seed">
+    <div class="star">★</div>
+    <div>
+      <div class="label">오늘 진짜 남길 단 하나</div>
+      <div class="main">짧은바늘은 시, 긴바늘은 분 — 몇 시에는 at.</div>
+    </div>
+  </div>
+
+  <div class="keypoint">
+    <span class="k">★ 핵심!</span> 바늘 판 — o'clock · half · minute · hour · clock / 띠·수 판 — noon · midnight · now · eleven · twelve
+  </div>
+
+  <div class="rowlab">🪟 두 판 — 그림마다 번호가 있어요</div>
+  <div class="bd422 m-ws"><div class="pn422 hand" data-k="hand"><i class="pl422">바늘 판</i><div class="gr422"><div class="spot dt422 t-oclock" data-w="o'clock"><span class="sn">1</span><span class="pic"><span class="dyp p-oclock still" data-dyp="o'clock"><b class="cf422"><b class="tk422"></b><i class="n12">12</i><b class="hh422" style="transform:rotate(90deg)"></b><b class="mh422" style="transform:rotate(0deg)"></b><b class="cp422"></b><b class="sp422"></b></b></span></span></div><div class="spot sq422 t-half" data-w="half"><span class="sn">2</span><span class="pic"><span class="dyp p-half still" data-dyp="half"><b class="cf422"><b class="wg422 w-half"></b><b class="tk422"></b><i class="n12">12</i><i class="n30">30</i><b class="mh422" style="transform:rotate(180deg)"></b><b class="cp422"></b></b></span></span></div><div class="spot sq422 t-minute" data-w="minute"><span class="sn">3</span><span class="pic"><span class="dyp p-minute still" data-dyp="minute"><b class="cf422"><b class="wg422 w-min"></b><b class="tk422 t60"></b><i class="n12">12</i><b class="mh422" style="transform:rotate(6deg)"></b><b class="cp422"></b></b></span></span></div><div class="spot sq422 t-hour" data-w="hour"><span class="sn">4</span><span class="pic"><span class="dyp p-hour still" data-dyp="hour"><b class="cf422"><b class="wg422 w-hr"></b><b class="tk422"></b><i class="n12">12</i><b class="hh422" style="transform:rotate(30deg)"></b><b class="cp422"></b></b></span></span></div><div class="spot sq422 t-clock" data-w="clock"><span class="sn">8</span><span class="pic"><span class="dyp p-clock still" data-dyp="clock"><i class="em">🕐</i></span></span></div></div></div><div class="pn422 band" data-k="band"><i class="pl422">띠·수 판</i><div class="gr422"><div class="spot dt422 t-noon" data-w="noon"><span class="sn">9</span><span class="pic"><span class="dyp p-noon still" data-dyp="noon"><span class="vz" style="width:76px;height:35px"><span class="vs v32-noon" data-vs="noon" style="transform:scale(0.54)"><b class="sk32 k-no"><b class="sn32"></b><b class="kd32"></b><b class="sd32"></b><b class="gd32"></b></b></span></span></span></span></div><div class="spot dt422 t-midnight" data-w="midnight"><span class="sn">7</span><span class="pic"><span class="dyp p-midnight still" data-dyp="midnight"><b class="cf422 nt"><b class="tk422"></b><i class="n12">12</i><b class="hh422" style="transform:rotate(0deg)"></b><b class="mh422" style="transform:rotate(0deg)"></b><b class="cp422"></b><b class="mn422"></b></b></span></span></div><div class="spot dt422 t-now" data-w="now"><span class="sn">10</span><span class="pic"><span class="dyp p-now still" data-dyp="now"><b class="ds410"><i class="k1"></i><i class="k2"></i><i class="k3"></i><i class="k4"></i><i class="k5"></i></b><b class="pt410"></b></span></span></div><div class="spot sq422 t-eleven" data-w="eleven"><span class="sn">5</span><span class="pic"><span class="dyp p-eleven still" data-dyp="eleven"><b class="nc422">11</b></span></span></div><div class="spot sq422 t-twelve" data-w="twelve"><span class="sn">6</span><span class="pic"><span class="dyp p-twelve still" data-dyp="twelve"><b class="nc422">12</b></span></span></div></div></div></div>
+
+  <h2><span class="n">1</span> 따라 써요 <span class="hint">흐린 글자를 따라 써요 — 위 줄 바늘 판 · 아래 줄 띠·수 판</span></h2>
+  <div class="trace"><div class="traceword"><div class="outline">o'clock</div><div class="line"></div></div><div class="traceword"><div class="outline">half</div><div class="line"></div></div><div class="traceword"><div class="outline">minute</div><div class="line"></div></div><div class="traceword"><div class="outline">hour</div><div class="line"></div></div><div class="traceword"><div class="outline">clock</div><div class="line"></div></div></div>
+  <div class="trace"><div class="traceword"><div class="outline">noon</div><div class="line"></div></div><div class="traceword"><div class="outline">midnight</div><div class="line"></div></div><div class="traceword"><div class="outline">now</div><div class="line"></div></div><div class="traceword"><div class="outline">eleven</div><div class="line"></div></div><div class="traceword"><div class="outline">twelve</div><div class="line"></div></div></div>
+
+  <div class="twocol">
+    <div style="flex:1.3;display:flex;flex-direction:column">
+      <h2><span class="n">2</span> 짧은바늘을 그려요 <span class="hint">긴바늘은 12 에 있어요 — 짧은바늘만</span></h2>
+      <div class="dbox"><div class="draw"><div class="dw"><span class="bk"><span class="dyp still ck422" data-ck="seven"><b class="cf422"><b class="tk422"></b><i class="n12">12</i><b class="mh422" style="transform:rotate(0deg)"></b><b class="cp422"></b></b></span></span><div class="dl">seven o'clock</div></div><div class="dw"><span class="bk"><span class="dyp still ck422" data-ck="twelve"><b class="cf422"><b class="tk422"></b><i class="n12">12</i><b class="mh422" style="transform:rotate(0deg)"></b><b class="cp422"></b></b></span></span><div class="dl">twelve o'clock</div></div><div class="dw"><span class="bk"><span class="dyp still ck422" data-ck="eleven"><b class="cf422"><b class="tk422"></b><i class="n12">12</i><b class="mh422" style="transform:rotate(0deg)"></b><b class="cp422"></b></b></span></span><div class="dl">eleven o'clock</div></div></div></div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column">
+      <h2><span class="n">3</span> 그림에 맞는 말 <span class="hint">맞는 말에 동그라미</span></h2>
+      <div class="pbox"><div class="pk3"><div class="pr" data-w="hour"><span class="pic"><span class="dyp p-hour still" data-dyp="hour"><b class="cf422"><b class="wg422 w-hr"></b><b class="tk422"></b><i class="n12">12</i><b class="hh422" style="transform:rotate(30deg)"></b><b class="cp422"></b></b></span></span><span class="po"><b>minute</b><i>/</i><b>hour</b></span></div><div class="pr" data-w="midnight"><span class="pic"><span class="dyp p-midnight still" data-dyp="midnight"><b class="cf422 nt"><b class="tk422"></b><i class="n12">12</i><b class="hh422" style="transform:rotate(0deg)"></b><b class="mh422" style="transform:rotate(0deg)"></b><b class="cp422"></b><b class="mn422"></b></b></span></span><span class="po"><b>noon</b><i>/</i><b>midnight</b></span></div><div class="pr" data-w="eleven"><span class="pic"><span class="dyp p-eleven still" data-dyp="eleven"><b class="nc422">11</b></span></span><span class="po"><b>eleven</b><i>/</i><b>twelve</b></span></div></div></div>
+    </div>
+  </div>
+
+  <h2><span class="n">4</span> 나의 하루 <span class="hint">상자를 보고 한 단어 · 시계에 짧은바늘도 그려요</span></h2>
+  <div class="sbox"><div class="s4r"><span class="bk"><span class="dyp still ck422" data-ck="me"><b class="cf422"><b class="tk422"></b><i class="n12">12</i><b class="mh422" style="transform:rotate(0deg)"></b><b class="cp422"></b></b></span></span><span class="s">I wake <u class="at">at</u> <span class="ln"></span> o'clock.</span></div><div class="wb">상자 · six · seven · eight</div></div>
+
+  <div class="recap">오늘 열 단어 = <b>o'clock · half · minute · hour · eleven · twelve · midnight · clock · noon · now</b></div>
+
+  <div class="parent">
+    <b>부모님께</b> · <b>at</b> 은 「몇 시에」 — 시각 앞에만 써요(<b>at seven o'clock</b>).
+    · <b>hour</b> 의 h 는 소리가 안 나서 <b>an hour</b> 라고 해요.
+    · 「~시 반」 표현은 아직 배우지 않아요 — <b>half</b> 는 「반 · 30분」 뜻으로만.
+    · <b>minute</b> 은 끝에 e 가 있어도 통째로 읽는 단어예요.
+    · 이 활동지는 <b>보고 옮겨 쓰는</b> 종이입니다. <b>받아쓰기로 확인하지 마세요.</b><br>
+    <b>정답</b> · ② 짧은바늘 7 · 12 · 11 · ③ hour · midnight · eleven · ④ six · seven · eight 중 하나(시계의 짧은바늘과 같게)
+  </div>
+</body>
+</html>
